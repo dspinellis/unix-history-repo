@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1983 Eric P. Allman
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,10 +33,9 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	5.14 (Berkeley) 8/29/90";
+static char sccsid[] = "@(#)savemail.c	8.1 (Berkeley) 6/7/93";
 #endif /* not lint */
 
-# include <sys/types.h>
 # include <pwd.h>
 # include "sendmail.h"
 
@@ -77,7 +76,7 @@ savemail(e)
 	register struct passwd *pw;
 	register FILE *fp;
 	int state;
-	auto ADDRESS *q;
+	auto ADDRESS *q = NULL;
 	char buf[MAXLINE+1];
 	extern struct passwd *getpwnam();
 	register char *p;
@@ -85,16 +84,18 @@ savemail(e)
 	typedef int (*fnptr)();
 
 	if (tTd(6, 1))
-		printf("\nsavemail, ErrorMode = %c\n", ErrorMode);
-
-	if (bitset(EF_RESPONSE, e->e_flags))
-		return;
-	if (e->e_class < 0)
 	{
-		message(Arpa_Info, "Dumping junk mail");
+		printf("\nsavemail, errormode = %c, id = %s\n  e_from=",
+			e->e_errormode, e->e_id == NULL ? "NONE" : e->e_id);
+		printaddr(&e->e_from, FALSE);
+	}
+
+	if (e->e_id == NULL)
+	{
+		/* can't return a message with no id */
 		return;
 	}
-	ForceMail = TRUE;
+
 	e->e_flags &= ~EF_FATALERRS;
 
 	/*
@@ -104,9 +105,10 @@ savemail(e)
 
 	if (e->e_from.q_paddr == NULL)
 	{
-		if (parseaddr("root", &e->e_from, 0, '\0') == NULL)
+		e->e_sender = "Postmaster";
+		if (parseaddr(e->e_sender, &e->e_from, 0, '\0', NULL, e) == NULL)
 		{
-			syserr("Cannot parse root!");
+			syserr("553 Cannot parse Postmaster!");
 			ExitStat = EX_SOFTWARE;
 			finis();
 		}
@@ -128,7 +130,7 @@ savemail(e)
 	*/
 
 	/* determine starting state */
-	switch (ErrorMode)
+	switch (e->e_errormode)
 	{
 	  case EM_WRITE:
 		state = ESM_REPORT;
@@ -154,9 +156,21 @@ savemail(e)
 		return;
 
 	  default:
-		syserr("savemail: ErrorMode x%x\n");
+		syserr("554 savemail: bogus errormode x%x\n", e->e_errormode);
 		state = ESM_MAIL;
 		break;
+	}
+
+	/* if this is already an error response, send to postmaster */
+	if (bitset(EF_RESPONSE, e->e_flags))
+	{
+		if (e->e_parent != NULL &&
+		    bitset(EF_RESPONSE, e->e_parent->e_flags))
+		{
+			/* got an error sending a response -- can it */
+			return;
+		}
+		state = ESM_POSTMASTER;
 	}
 
 	while (state != ESM_DONE)
@@ -187,7 +201,7 @@ savemail(e)
 				break;
 			}
 
-			expand("\001n", buf, &buf[sizeof buf - 1], e);
+			expand("\201n", buf, &buf[sizeof buf - 1], e);
 			printf("\r\nMessage from %s...\r\n", buf);
 			printf("Errors occurred while sending mail.\r\n");
 			if (e->e_xfp != NULL)
@@ -208,14 +222,13 @@ savemail(e)
 				while (fgets(buf, sizeof buf, fp) != NULL &&
 				       !ferror(stdout))
 					fputs(buf, stdout);
-				(void) fclose(fp);
+				(void) xfclose(fp, "savemail transcript", e->e_id);
 			}
 			printf("Original message will be saved in dead.letter.\r\n");
 			state = ESM_DEADLETTER;
 			break;
 
 		  case ESM_MAIL:
-		  case ESM_POSTMASTER:
 			/*
 			**  If mailing back, do it.
 			**	Throw away all further output.  Don't alias,
@@ -227,39 +240,62 @@ savemail(e)
 			**	it has already been sent to the sender.
 			*/
 
-			if (state == ESM_MAIL)
-			{
-				if (e->e_errorqueue == NULL)
-					sendtolist(e->e_from.q_paddr,
-						(ADDRESS *) NULL,
-						&e->e_errorqueue);
+			if (strcmp(e->e_from.q_paddr, "<>") != 0)
+				(void) sendtolist(e->e_from.q_paddr,
+					  (ADDRESS *) NULL,
+					  &e->e_errorqueue, e);
 
-				/* deliver a cc: to the postmaster if desired */
-				if (PostMasterCopy != NULL)
-					sendtolist(PostMasterCopy,
-						(ADDRESS *) NULL,
-						&e->e_errorqueue);
-				q = e->e_errorqueue;
-			}
-			else
+			/* deliver a cc: to the postmaster if desired */
+			if (PostMasterCopy != NULL)
 			{
-				if (parseaddr("postmaster", q, 0, '\0') == NULL)
-				{
-					syserr("cannot parse postmaster!");
-					ExitStat = EX_SOFTWARE;
-					state = ESM_USRTMP;
-					break;
-				}
+				auto ADDRESS *rlist = NULL;
+
+				(void) sendtolist(PostMasterCopy,
+						  (ADDRESS *) NULL,
+						  &rlist, e);
+				(void) returntosender(e->e_message,
+						      rlist, FALSE, e);
 			}
-			if (returntosender(e->e_message != NULL ? e->e_message :
-					   "Unable to deliver mail",
-					   q, TRUE) == 0)
+			q = e->e_errorqueue;
+			if (q == NULL)
+			{
+				/* this is an error-error */
+				state = ESM_POSTMASTER;
+				break;
+			}
+			if (returntosender(e->e_message,
+					   q, (e->e_class >= 0), e) == 0)
 			{
 				state = ESM_DONE;
 				break;
 			}
 
-			state = state == ESM_MAIL ? ESM_POSTMASTER : ESM_USRTMP;
+			/* didn't work -- return to postmaster */
+			state = ESM_POSTMASTER;
+			break;
+
+		  case ESM_POSTMASTER:
+			/*
+			**  Similar to previous case, but to system postmaster.
+			*/
+
+			q = NULL;
+			if (sendtolist("postmaster", NULL, &q, e) <= 0)
+			{
+				syserr("553 cannot parse postmaster!");
+				ExitStat = EX_SOFTWARE;
+				state = ESM_USRTMP;
+				break;
+			}
+			if (returntosender(e->e_message,
+					   q, (e->e_class >= 0), e) == 0)
+			{
+				state = ESM_DONE;
+				break;
+			}
+
+			/* didn't work -- last resort */
+			state = ESM_USRTMP;
 			break;
 
 		  case ESM_DEADLETTER:
@@ -282,24 +318,23 @@ savemail(e)
 			}
 			if (p == NULL)
 			{
-				syserr("Can't return mail to %s", e->e_from.q_paddr);
+				/* no local directory */
 				state = ESM_MAIL;
 				break;
 			}
 			if (e->e_dfp != NULL)
 			{
-				auto ADDRESS *q;
 				bool oldverb = Verbose;
 
 				/* we have a home directory; open dead.letter */
 				define('z', p, e);
-				expand("\001z/dead.letter", buf, &buf[sizeof buf - 1], e);
+				expand("\201z/dead.letter", buf, &buf[sizeof buf - 1], e);
 				Verbose = TRUE;
-				message(Arpa_Info, "Saving message in %s", buf);
+				message("Saving message in %s", buf);
 				Verbose = oldverb;
 				e->e_to = buf;
 				q = NULL;
-				sendtolist(buf, (ADDRESS *) NULL, &q);
+				(void) sendtolist(buf, &e->e_from, &q, e);
 				if (deliver(e, q) == 0)
 					state = ESM_DONE;
 				else
@@ -317,36 +352,38 @@ savemail(e)
 			**  Log the mail in /usr/tmp/dead.letter.
 			*/
 
-			fp = dfopen("/usr/tmp/dead.letter", "a");
+			if (e->e_class < 0)
+			{
+				state = ESM_DONE;
+				break;
+			}
+
+			fp = dfopen("/usr/tmp/dead.letter",
+				    O_WRONLY|O_CREAT|O_APPEND, FileMode);
 			if (fp == NULL)
 			{
 				state = ESM_PANIC;
 				break;
 			}
 
-			putfromline(fp, ProgMailer);
-			(*e->e_puthdr)(fp, ProgMailer, e);
-			putline("\n", fp, ProgMailer);
-			(*e->e_putbody)(fp, ProgMailer, e);
-			putline("\n", fp, ProgMailer);
+			putfromline(fp, FileMailer, e);
+			(*e->e_puthdr)(fp, FileMailer, e);
+			putline("\n", fp, FileMailer);
+			(*e->e_putbody)(fp, FileMailer, e, NULL);
+			putline("\n", fp, FileMailer);
 			(void) fflush(fp);
 			state = ferror(fp) ? ESM_PANIC : ESM_DONE;
-			(void) fclose(fp);
+			(void) xfclose(fp, "savemail", "/usr/tmp/dead.letter");
 			break;
 
 		  default:
-			syserr("savemail: unknown state %d", state);
+			syserr("554 savemail: unknown state %d", state);
 
 			/* fall through ... */
 
 		  case ESM_PANIC:
-			syserr("savemail: HELP!!!!");
-# ifdef LOG
-			if (LogLevel >= 1)
-				syslog(LOG_ALERT, "savemail: HELP!!!!");
-# endif LOG
-
 			/* leave the locked queue & transcript files around */
+			syserr("554 savemail: cannot save rejected email anywhere");
 			exit(EX_SOFTWARE);
 		}
 	}
@@ -359,6 +396,7 @@ savemail(e)
 **		returnq -- the queue of people to send the message to.
 **		sendbody -- if TRUE, also send back the body of the
 **			message; otherwise just send the header.
+**		e -- the current envelope.
 **
 **	Returns:
 **		zero -- if everything went ok.
@@ -372,80 +410,116 @@ savemail(e)
 static bool	SendBody;
 
 #define MAXRETURNS	6	/* max depth of returning messages */
+#define ERRORFUDGE	100	/* nominal size of error message text */
 
-returntosender(msg, returnq, sendbody)
+returntosender(msg, returnq, sendbody, e)
 	char *msg;
 	ADDRESS *returnq;
 	bool sendbody;
+	register ENVELOPE *e;
 {
 	char buf[MAXNAME];
 	extern putheader(), errbody();
 	register ENVELOPE *ee;
-	extern ENVELOPE *newenvelope();
+	ENVELOPE *oldcur = CurEnv;
 	ENVELOPE errenvelope;
 	static int returndepth;
 	register ADDRESS *q;
 
+	if (returnq == NULL)
+		return (-1);
+
+	if (msg == NULL)
+		msg = "Unable to deliver mail";
+
 	if (tTd(6, 1))
 	{
-		printf("Return To Sender: msg=\"%s\", depth=%d, CurEnv=%x,\n",
-		       msg, returndepth, CurEnv);
-		printf("\treturnq=");
+		printf("Return To Sender: msg=\"%s\", depth=%d, e=%x, returnq=",
+		       msg, returndepth, e);
 		printaddr(returnq, TRUE);
 	}
 
 	if (++returndepth >= MAXRETURNS)
 	{
 		if (returndepth != MAXRETURNS)
-			syserr("returntosender: infinite recursion on %s", returnq->q_paddr);
+			syserr("554 returntosender: infinite recursion on %s", returnq->q_paddr);
 		/* don't "unrecurse" and fake a clean exit */
 		/* returndepth--; */
 		return (0);
 	}
 
 	SendBody = sendbody;
-	define('g', "\001f", CurEnv);
-	ee = newenvelope(&errenvelope);
-	define('a', "\001b", ee);
+	define('g', e->e_from.q_paddr, e);
+	ee = newenvelope(&errenvelope, e);
+	define('a', "\201b", ee);
+	define('r', "internal", ee);
+	define('s', "localhost", ee);
+	define('_', "localhost", ee);
 	ee->e_puthdr = putheader;
 	ee->e_putbody = errbody;
 	ee->e_flags |= EF_RESPONSE;
-	if (!bitset(EF_OLDSTYLE, CurEnv->e_flags))
+	if (!bitset(EF_OLDSTYLE, e->e_flags))
 		ee->e_flags &= ~EF_OLDSTYLE;
 	ee->e_sendqueue = returnq;
+	ee->e_msgsize = e->e_msgsize + ERRORFUDGE;
 	openxscript(ee);
 	for (q = returnq; q != NULL; q = q->q_next)
 	{
+		if (bitset(QBADADDR, q->q_flags))
+			continue;
+
+		if (!bitset(QDONTSEND, q->q_flags))
+			ee->e_nrcpts++;
+
+		if (!DontPruneRoutes && pruneroute(q->q_paddr))
+			parseaddr(q->q_paddr, q, 0, '\0', NULL, e);
+
 		if (q->q_alias == NULL)
-			addheader("to", q->q_paddr, ee);
+			addheader("To", q->q_paddr, ee);
 	}
 
+# ifdef LOG
+	if (LogLevel > 5)
+		syslog(LOG_INFO, "%s: %s: return to sender: %s",
+			e->e_id, ee->e_id, msg);
+# endif
+
 	(void) sprintf(buf, "Returned mail: %s", msg);
-	addheader("subject", buf, ee);
+	addheader("Subject", buf, ee);
+	if (SendMIMEErrors)
+	{
+		addheader("MIME-Version", "1.0", ee);
+		(void) sprintf(buf, "%s.%ld/%s",
+			ee->e_id, curtime(), MyHostName);
+		ee->e_msgboundary = newstr(buf);
+		(void) sprintf(buf, "multipart/mixed; boundary=\"%s\"",
+					ee->e_msgboundary);
+		addheader("Content-Type", buf, ee);
+	}
 
 	/* fake up an address header for the from person */
-	expand("\001n", buf, &buf[sizeof buf - 1], CurEnv);
-	if (parseaddr(buf, &ee->e_from, -1, '\0') == NULL)
+	expand("\201n", buf, &buf[sizeof buf - 1], e);
+	if (parseaddr(buf, &ee->e_from, 1, '\0', NULL, e) == NULL)
 	{
-		syserr("Can't parse myself!");
+		syserr("553 Can't parse myself!");
 		ExitStat = EX_SOFTWARE;
 		returndepth--;
 		return (-1);
 	}
-	loweraddr(&ee->e_from);
+	ee->e_sender = ee->e_from.q_paddr;
 
 	/* push state into submessage */
 	CurEnv = ee;
-	define('f', "\001n", ee);
+	define('f', "\201n", ee);
 	define('x', "Mail Delivery Subsystem", ee);
-	eatheader(ee);
+	eatheader(ee, TRUE);
 
 	/* actually deliver the error message */
 	sendall(ee, SM_DEFAULT);
 
 	/* restore state */
 	dropenvelope(ee);
-	CurEnv = CurEnv->e_parent;
+	CurEnv = oldcur;
 	returndepth--;
 
 	/* should check for delivery errors here */
@@ -475,8 +549,82 @@ errbody(fp, m, e)
 	register ENVELOPE *e;
 {
 	register FILE *xfile;
-	char buf[MAXLINE];
 	char *p;
+	register ADDRESS *q;
+	bool printheader;
+	char buf[MAXLINE];
+
+	if (e->e_parent == NULL)
+	{
+		syserr("errbody: null parent");
+		putline("   ----- Original message lost -----\n", fp, m);
+		return;
+	}
+
+	/*
+	**  Output MIME header.
+	*/
+
+	if (e->e_msgboundary != NULL)
+	{
+		putline("This is a MIME-encapsulated message", fp, m);
+		putline("", fp, m);
+		(void) sprintf(buf, "--%s", e->e_msgboundary);
+		putline(buf, fp, m);
+		putline("", fp, m);
+	}
+
+	/*
+	**  Output error message header (if specified and available).
+	*/
+
+	if (ErrMsgFile != NULL)
+	{
+		if (*ErrMsgFile == '/')
+		{
+			xfile = fopen(ErrMsgFile, "r");
+			if (xfile != NULL)
+			{
+				while (fgets(buf, sizeof buf, xfile) != NULL)
+				{
+					expand(buf, buf, &buf[sizeof buf - 1], e);
+					putline(buf, fp, m);
+				}
+				(void) fclose(xfile);
+				putline("\n", fp, m);
+			}
+		}
+		else
+		{
+			expand(ErrMsgFile, buf, &buf[sizeof buf - 1], e);
+			putline(buf, fp, m);
+			putline("", fp, m);
+		}
+	}
+
+	/*
+	**  Output message introduction
+	*/
+
+	printheader = TRUE;
+	for (q = e->e_parent->e_sendqueue; q != NULL; q = q->q_next)
+	{
+		if (bitset(QBADADDR, q->q_flags))
+		{
+			if (printheader)
+			{
+				putline("   ----- The following addresses failed -----",
+					fp, m);
+				printheader = FALSE;
+			}
+			if (q->q_alias != NULL)
+				putline(q->q_alias->q_paddr, fp, m);
+			else
+				putline(q->q_paddr, fp, m);
+		}
+	}
+	if (!printheader)
+		putline("\n", fp, m);
 
 	/*
 	**  Output transcript of errors
@@ -487,16 +635,16 @@ errbody(fp, m, e)
 	if ((xfile = fopen(p, "r")) == NULL)
 	{
 		syserr("Cannot open %s", p);
-		fprintf(fp, "  ----- Transcript of session is unavailable -----\n");
+		putline("   ----- Transcript of session is unavailable -----\n", fp, m);
 	}
 	else
 	{
-		fprintf(fp, "   ----- Transcript of session follows -----\n");
+		putline("   ----- Transcript of session follows -----\n", fp, m);
 		if (e->e_xfp != NULL)
 			(void) fflush(e->e_xfp);
 		while (fgets(buf, sizeof buf, xfile) != NULL)
 			putline(buf, fp, m);
-		(void) fclose(xfile);
+		(void) xfclose(xfile, "errbody xscript", p);
 	}
 	errno = 0;
 
@@ -505,32 +653,43 @@ errbody(fp, m, e)
 	*/
 
 	if (NoReturn)
-		fprintf(fp, "\n   ----- Return message suppressed -----\n\n");
-	else if (e->e_parent->e_dfp != NULL)
+		SendBody = FALSE;
+	putline("", fp, m);
+	if (e->e_parent->e_df != NULL)
 	{
 		if (SendBody)
-		{
-			putline("\n", fp, m);
 			putline("   ----- Unsent message follows -----\n", fp, m);
-			(void) fflush(fp);
-			putheader(fp, m, e->e_parent);
-			putline("\n", fp, m);
-			putbody(fp, m, e->e_parent);
-		}
 		else
+			putline("   ----- Message header follows -----\n", fp, m);
+		(void) fflush(fp);
+
+		if (e->e_msgboundary != NULL)
 		{
-			putline("\n", fp, m);
-			putline("  ----- Message header follows -----\n", fp, m);
-			(void) fflush(fp);
-			putheader(fp, m, e->e_parent);
+			putline("", fp, m);
+			(void) sprintf(buf, "--%s", e->e_msgboundary);
+			putline(buf, fp, m);
+			putline("Content-Type: message/rfc822", fp, m);
+			putline("", fp, m);
 		}
+		putheader(fp, m, e->e_parent);
+		putline("", fp, m);
+		if (SendBody)
+			putbody(fp, m, e->e_parent, e->e_msgboundary);
+		else
+			putline("   ----- Message body suppressed -----", fp, m);
 	}
 	else
 	{
-		putline("\n", fp, m);
 		putline("  ----- No message was collected -----\n", fp, m);
-		putline("\n", fp, m);
 	}
+
+	if (e->e_msgboundary != NULL)
+	{
+		putline("", fp, m);
+		(void) sprintf(buf, "--%s--", e->e_msgboundary);
+		putline(buf, fp, m);
+	}
+	putline("", fp, m);
 
 	/*
 	**  Cleanup and exit
@@ -538,4 +697,63 @@ errbody(fp, m, e)
 
 	if (errno != 0)
 		syserr("errbody: I/O error");
+}
+/*
+**  PRUNEROUTE -- prune an RFC-822 source route
+** 
+**	Trims down a source route to the last internet-registered hop.
+**	This is encouraged by RFC 1123 section 5.3.3.
+** 
+**	Parameters:
+**		addr -- the address
+** 
+**	Returns:
+**		TRUE -- address was modified
+**		FALSE -- address could not be pruned
+** 
+**	Side Effects:
+**		modifies addr in-place
+*/
+
+pruneroute(addr)
+	char *addr;
+{
+#ifdef NAMED_BIND
+	char *start, *at, *comma;
+	char c;
+	int rcode;
+	char hostbuf[BUFSIZ];
+	char *mxhosts[MAXMXHOSTS + 1];
+
+	/* check to see if this is really a route-addr */
+	if (*addr != '<' || addr[1] != '@' || addr[strlen(addr) - 1] != '>')
+		return FALSE;
+	start = strchr(addr, ':');
+	at = strrchr(addr, '@');
+	if (start == NULL || at == NULL || at < start)
+		return FALSE;
+
+	/* slice off the angle brackets */
+	strcpy(hostbuf, at + 1);
+	hostbuf[strlen(hostbuf) - 1] = '\0';
+
+	while (start)
+	{
+		if (getmxrr(hostbuf, mxhosts, FALSE, &rcode) > 0)
+		{
+			strcpy(addr + 1, start + 1);
+			return TRUE;
+		}
+		c = *start;
+		*start = '\0';
+		comma = strrchr(addr, ',');
+		if (comma && comma[1] == '@')
+			strcpy(hostbuf, comma + 2);
+		else
+			comma = 0;
+		*start = c;
+		start = comma;
+	}
+#endif
+	return FALSE;
 }

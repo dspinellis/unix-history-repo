@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1983 Eric P. Allman
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,13 +33,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	5.19 (Berkeley) 3/2/91";
+static char sccsid[] = "@(#)recipient.c	8.1 (Berkeley) 6/27/93";
 #endif /* not lint */
 
-# include <sys/types.h>
-# include <sys/stat.h>
-# include <pwd.h>
 # include "sendmail.h"
+# include <pwd.h>
 
 /*
 **  SENDTOLIST -- Designate a send list.
@@ -55,9 +53,10 @@ static char sccsid[] = "@(#)recipient.c	5.19 (Berkeley) 3/2/91";
 **			expansion.
 **		sendq -- a pointer to the head of a queue to put
 **			these people into.
+**		e -- the envelope in which to add these recipients.
 **
 **	Returns:
-**		none
+**		The number of addresses actually on the list.
 **
 **	Side Effects:
 **		none.
@@ -65,16 +64,17 @@ static char sccsid[] = "@(#)recipient.c	5.19 (Berkeley) 3/2/91";
 
 # define MAXRCRSN	10
 
-sendtolist(list, ctladdr, sendq)
+sendtolist(list, ctladdr, sendq, e)
 	char *list;
 	ADDRESS *ctladdr;
 	ADDRESS **sendq;
+	register ENVELOPE *e;
 {
 	register char *p;
 	register ADDRESS *al;	/* list of addresses to send to */
 	bool firstone;		/* set on first address sent */
-	bool selfref;		/* set if this list includes ctladdr */
 	char delimiter;		/* the address delimiter */
+	int naddrs;
 
 	if (tTd(25, 1))
 	{
@@ -84,27 +84,27 @@ sendtolist(list, ctladdr, sendq)
 
 	/* heuristic to determine old versus new style addresses */
 	if (ctladdr == NULL &&
-	    (index(list, ',') != NULL || index(list, ';') != NULL ||
-	     index(list, '<') != NULL || index(list, '(') != NULL))
-		CurEnv->e_flags &= ~EF_OLDSTYLE;
+	    (strchr(list, ',') != NULL || strchr(list, ';') != NULL ||
+	     strchr(list, '<') != NULL || strchr(list, '(') != NULL))
+		e->e_flags &= ~EF_OLDSTYLE;
 	delimiter = ' ';
-	if (!bitset(EF_OLDSTYLE, CurEnv->e_flags) || ctladdr != NULL)
+	if (!bitset(EF_OLDSTYLE, e->e_flags) || ctladdr != NULL)
 		delimiter = ',';
 
 	firstone = TRUE;
-	selfref = FALSE;
 	al = NULL;
+	naddrs = 0;
 
 	for (p = list; *p != '\0'; )
 	{
+		auto char *delimptr;
 		register ADDRESS *a;
-		extern char *DelimChar;		/* defined in prescan */
 
 		/* parse the address */
-		while (isspace(*p) || *p == ',')
+		while ((isascii(*p) && isspace(*p)) || *p == ',')
 			p++;
-		a = parseaddr(p, (ADDRESS *) NULL, 1, delimiter);
-		p = DelimChar;
+		a = parseaddr(p, (ADDRESS *) NULL, 1, delimiter, &delimptr, e);
+		p = delimptr;
 		if (a == NULL)
 			continue;
 		a->q_next = al;
@@ -115,34 +115,28 @@ sendtolist(list, ctladdr, sendq)
 		    (firstone && *p == '\0' && bitset(QPRIMARY, ctladdr->q_flags)))
 			a->q_flags |= QPRIMARY;
 
-		/* put on send queue or suppress self-reference */
 		if (ctladdr != NULL && sameaddr(ctladdr, a))
-			selfref = TRUE;
-		else
-			al = a;
+			ctladdr->q_flags |= QSELFREF;
+		al = a;
 		firstone = FALSE;
 	}
-
-	/* if this alias doesn't include itself, delete ctladdr */
-	if (!selfref && ctladdr != NULL)
-		ctladdr->q_flags |= QDONTSEND;
 
 	/* arrange to send to everyone on the local send list */
 	while (al != NULL)
 	{
 		register ADDRESS *a = al;
-		extern ADDRESS *recipient();
 
 		al = a->q_next;
-		setctladdr(a);
-		a = recipient(a, sendq);
+		a = recipient(a, sendq, e);
 
 		/* arrange to inherit full name */
 		if (a->q_fullname == NULL && ctladdr != NULL)
 			a->q_fullname = ctladdr->q_fullname;
+		naddrs++;
 	}
 
-	CurEnv->e_to = NULL;
+	e->e_to = NULL;
+	return (naddrs);
 }
 /*
 **  RECIPIENT -- Designate a message recipient
@@ -154,6 +148,7 @@ sendtolist(list, ctladdr, sendq)
 **		sendq -- a pointer to the head of a queue to put the
 **			recipient in.  Duplicate supression is done
 **			in this queue.
+**		e -- the current envelope.
 **
 **	Returns:
 **		The actual address in the queue.  This will be "a" if
@@ -163,22 +158,22 @@ sendtolist(list, ctladdr, sendq)
 **		none.
 */
 
-extern ADDRESS *getctladdr();
-
 ADDRESS *
-recipient(a, sendq)
+recipient(a, sendq, e)
 	register ADDRESS *a;
 	register ADDRESS **sendq;
+	register ENVELOPE *e;
 {
 	register ADDRESS *q;
 	ADDRESS **pq;
 	register struct mailer *m;
 	register char *p;
 	bool quoted = FALSE;		/* set if the addr has a quote bit */
+	int findusercount = 0;
 	char buf[MAXNAME];		/* unquoted image of the user name */
-	extern bool safefile();
+	extern int safefile();
 
-	CurEnv->e_to = a->q_paddr;
+	e->e_to = a->q_paddr;
 	m = a->q_mailer;
 	errno = 0;
 	if (tTd(26, 1))
@@ -190,7 +185,7 @@ recipient(a, sendq)
 	/* break aliasing loops */
 	if (AliasLevel > MAXRCRSN)
 	{
-		usrerr("aliasing/forwarding loop broken");
+		usrerr("554 aliasing/forwarding loop broken");
 		return (a);
 	}
 
@@ -199,31 +194,23 @@ recipient(a, sendq)
 	*/
 
 	/* set the queue timeout */
-	a->q_timeout = TimeOut;
-
-	/* map user & host to lower case if requested on non-aliases */
-	if (a->q_alias == NULL)
-		loweraddr(a);
+	a->q_timeout = TimeOuts.to_q_return;
 
 	/* get unquoted user for file, program or user.name check */
 	(void) strcpy(buf, a->q_user);
 	for (p = buf; *p != '\0' && !quoted; p++)
 	{
-		if (!isascii(*p) && (*p & 0377) != (SpaceSub & 0377))
+		if (*p == '\\')
 			quoted = TRUE;
 	}
-	stripquotes(buf, TRUE);
+	stripquotes(buf);
 
-	/* do sickly crude mapping for program mailing, etc. */
-	if (m == LocalMailer && buf[0] == '|')
+	/* check for direct mailing to restricted mailers */
+	if (a->q_alias == NULL && m == ProgMailer &&
+	    !bitset(EF_QUEUERUN, e->e_flags))
 	{
-		a->q_mailer = m = ProgMailer;
-		a->q_user++;
-		if (a->q_alias == NULL && !QueueRun && !ForceMail)
-		{
-			a->q_flags |= QDONTSEND|QBADADDR;
-			usrerr("Cannot mail directly to programs");
-		}
+		a->q_flags |= QBADADDR;
+		usrerr("550 Cannot mail directly to programs", m->m_name);
 	}
 
 	/*
@@ -237,17 +224,19 @@ recipient(a, sendq)
 
 	for (pq = sendq; (q = *pq) != NULL; pq = &q->q_next)
 	{
-		if (!ForceMail && sameaddr(q, a))
+		if (sameaddr(q, a))
 		{
 			if (tTd(26, 1))
 			{
 				printf("%s in sendq: ", a->q_paddr);
 				printaddr(q, FALSE);
 			}
-			if (!bitset(QDONTSEND, a->q_flags))
-				message(Arpa_Info, "duplicate suppressed");
 			if (!bitset(QPRIMARY, q->q_flags))
+			{
+				if (!bitset(QDONTSEND, a->q_flags))
+					message("duplicate suppressed");
 				q->q_flags |= a->q_flags;
+			}
 			return (q);
 		}
 	}
@@ -255,95 +244,181 @@ recipient(a, sendq)
 	/* add address on list */
 	*pq = a;
 	a->q_next = NULL;
-	CurEnv->e_nrcpts++;
 
 	/*
-	**  Alias the name and handle :include: specs.
+	**  Alias the name and handle special mailer types.
 	*/
 
-	if (m == LocalMailer && !bitset(QDONTSEND, a->q_flags))
+  trylocaluser:
+	if (tTd(29, 7))
+		printf("at trylocaluser %s\n", a->q_user);
+
+	if (bitset(QDONTSEND|QBADADDR|QVERIFIED, a->q_flags))
+		return (a);
+
+	if (m == InclMailer)
 	{
-		if (strncmp(a->q_user, ":include:", 9) == 0)
+		a->q_flags |= QDONTSEND;
+		if (a->q_alias == NULL && !bitset(EF_QUEUERUN, e->e_flags))
 		{
-			a->q_flags |= QDONTSEND;
-			if (a->q_alias == NULL && !QueueRun && !ForceMail)
-			{
-				a->q_flags |= QBADADDR;
-				usrerr("Cannot mail directly to :include:s");
-			}
-			else
-			{
-				message(Arpa_Info, "including file %s", &a->q_user[9]);
-				include(&a->q_user[9], " sending", a, sendq);
-			}
+			a->q_flags |= QBADADDR;
+			usrerr("550 Cannot mail directly to :include:s");
 		}
 		else
-			alias(a, sendq);
+		{
+			int ret;
+
+			message("including file %s", a->q_user);
+			ret = include(a->q_user, FALSE, a, sendq, e);
+			if (transienterror(ret))
+			{
+#ifdef LOG
+				if (LogLevel > 2)
+					syslog(LOG_ERR, "%s: include %s: transient error: %e",
+						e->e_id, a->q_user, errstring(ret));
+#endif
+				a->q_flags |= QQUEUEUP|QDONTSEND;
+				usrerr("451 Cannot open %s: %s",
+					a->q_user, errstring(ret));
+			}
+			else if (ret != 0)
+			{
+				usrerr("550 Cannot open %s: %s",
+					a->q_user, errstring(ret));
+				a->q_flags |= QBADADDR;
+			}
+		}
 	}
-
-	/*
-	**  If the user is local and still being sent, verify that
-	**  the address is good.  If it is, try to forward.
-	**  If the address is already good, we have a forwarding
-	**  loop.  This can be broken by just sending directly to
-	**  the user (which is probably correct anyway).
-	*/
-
-	if (!bitset(QDONTSEND, a->q_flags) && m == LocalMailer)
+	else if (m == FileMailer)
 	{
 		struct stat stb;
 		extern bool writable();
 
-		/* see if this is to a file */
-		if (buf[0] == '/')
+		p = strrchr(buf, '/');
+		/* check if writable or creatable */
+		if (a->q_alias == NULL && !bitset(EF_QUEUERUN, e->e_flags))
 		{
-			p = rindex(buf, '/');
-			/* check if writable or creatable */
-			if (a->q_alias == NULL && !QueueRun && !ForceMail)
-			{
-				a->q_flags |= QDONTSEND|QBADADDR;
-				usrerr("Cannot mail directly to files");
-			}
-			else if ((stat(buf, &stb) >= 0) ? (!writable(&stb)) :
-			    (*p = '\0', !safefile(buf, getruid(), S_IWRITE|S_IEXEC)))
-			{
-				a->q_flags |= QBADADDR;
-				giveresponse(EX_CANTCREAT, m, CurEnv);
-			}
+			a->q_flags |= QBADADDR;
+			usrerr("550 Cannot mail directly to files");
+		}
+		else if ((stat(buf, &stb) >= 0) ? (!writable(&stb)) :
+		    (*p = '\0', safefile(buf, getruid(), S_IWRITE|S_IEXEC) != 0))
+		{
+			a->q_flags |= QBADADDR;
+			giveresponse(EX_CANTCREAT, m, NULL, e);
+		}
+	}
+
+	if (m != LocalMailer)
+	{
+		if (!bitset(QDONTSEND, a->q_flags))
+			e->e_nrcpts++;
+		return (a);
+	}
+
+	/* try aliasing */
+	alias(a, sendq, e);
+
+# ifdef USERDB
+	/* if not aliased, look it up in the user database */
+	if (!bitset(QDONTSEND|QNOTREMOTE|QVERIFIED, a->q_flags))
+	{
+		extern int udbexpand();
+		extern int errno;
+
+		if (udbexpand(a, sendq, e) == EX_TEMPFAIL)
+		{
+			a->q_flags |= QQUEUEUP|QDONTSEND;
+			if (e->e_message == NULL)
+				e->e_message = newstr("Deferred: user database error");
+# ifdef LOG
+			if (LogLevel > 8)
+				syslog(LOG_INFO, "%s: deferred: udbexpand: %s",
+					e->e_id, errstring(errno));
+# endif
+			message("queued (user database error): %s",
+				errstring(errno));
+			e->e_nrcpts++;
+			return (a);
+		}
+	}
+# endif
+
+	/* if it was an alias or a UDB expansion, just return now */
+	if (bitset(QDONTSEND|QQUEUEUP|QVERIFIED, a->q_flags))
+		return (a);
+
+	/*
+	**  If we have a level two config file, then pass the name through
+	**  Ruleset 5 before sending it off.  Ruleset 5 has the right
+	**  to send rewrite it to another mailer.  This gives us a hook
+	**  after local aliasing has been done.
+	*/
+
+	if (tTd(29, 5))
+	{
+		printf("recipient: testing local?  cl=%d, rr5=%x\n\t",
+			ConfigLevel, RewriteRules[5]);
+		printaddr(a, FALSE);
+	}
+	if (!bitset(QNOTREMOTE, a->q_flags) && ConfigLevel >= 2 &&
+	    RewriteRules[5] != NULL)
+	{
+		maplocaluser(a, sendq, e);
+	}
+
+	/*
+	**  If it didn't get rewritten to another mailer, go ahead
+	**  and deliver it.
+	*/
+
+	if (!bitset(QDONTSEND|QQUEUEUP, a->q_flags))
+	{
+		auto bool fuzzy;
+		register struct passwd *pw;
+		extern struct passwd *finduser();
+
+		/* warning -- finduser may trash buf */
+		pw = finduser(buf, &fuzzy);
+		if (pw == NULL)
+		{
+			a->q_flags |= QBADADDR;
+			giveresponse(EX_NOUSER, m, NULL, e);
 		}
 		else
 		{
-			register struct passwd *pw;
-			extern struct passwd *finduser();
+			char nbuf[MAXNAME];
 
-			/* warning -- finduser may trash buf */
-			pw = finduser(buf);
-			if (pw == NULL)
+			if (fuzzy)
 			{
-				a->q_flags |= QBADADDR;
-				giveresponse(EX_NOUSER, m, CurEnv);
-			}
-			else
-			{
-				char nbuf[MAXNAME];
-
-				if (strcmp(a->q_user, pw->pw_name) != 0)
+				/* name was a fuzzy match */
+				a->q_user = newstr(pw->pw_name);
+				if (findusercount++ > 3)
 				{
-					a->q_user = newstr(pw->pw_name);
-					(void) strcpy(buf, pw->pw_name);
+					a->q_flags |= QBADADDR;
+					usrerr("554 aliasing/forwarding loop for %s broken",
+						pw->pw_name);
+					return (a);
 				}
-				a->q_home = newstr(pw->pw_dir);
-				a->q_uid = pw->pw_uid;
-				a->q_gid = pw->pw_gid;
-				a->q_flags |= QGOODUID;
-				buildfname(pw->pw_gecos, pw->pw_name, nbuf);
-				if (nbuf[0] != '\0')
-					a->q_fullname = newstr(nbuf);
-				if (!quoted)
-					forward(a, sendq);
+
+				/* see if it aliases */
+				(void) strcpy(buf, pw->pw_name);
+				goto trylocaluser;
 			}
+			a->q_home = newstr(pw->pw_dir);
+			a->q_uid = pw->pw_uid;
+			a->q_gid = pw->pw_gid;
+			a->q_ruser = newstr(pw->pw_name);
+			a->q_flags |= QGOODUID;
+			buildfname(pw->pw_gecos, pw->pw_name, nbuf);
+			if (nbuf[0] != '\0')
+				a->q_fullname = newstr(nbuf);
+			if (!quoted)
+				forward(a, sendq, e);
 		}
 	}
+	if (!bitset(QDONTSEND, a->q_flags))
+		e->e_nrcpts++;
 	return (a);
 }
 /*
@@ -357,6 +432,9 @@ recipient(a, sendq)
 **
 **	Parameters:
 **		name -- the name to match against.
+**		fuzzyp -- an outarg that is set to TRUE if this entry
+**			was found using the fuzzy matching algorithm;
+**			set to FALSE otherwise.
 **
 **	Returns:
 **		A pointer to a pw struct.
@@ -367,24 +445,36 @@ recipient(a, sendq)
 */
 
 struct passwd *
-finduser(name)
+finduser(name, fuzzyp)
 	char *name;
+	bool *fuzzyp;
 {
 	register struct passwd *pw;
 	register char *p;
 	extern struct passwd *getpwent();
 	extern struct passwd *getpwnam();
 
-	/* map upper => lower case */
-	for (p = name; *p != '\0'; p++)
-	{
-		if (isascii(*p) && isupper(*p))
-			*p = tolower(*p);
-	}
+	if (tTd(29, 4))
+		printf("finduser(%s): ", name);
+
+	*fuzzyp = FALSE;
 
 	/* look up this login name using fast path */
 	if ((pw = getpwnam(name)) != NULL)
+	{
+		if (tTd(29, 4))
+			printf("found (non-fuzzy)\n");
 		return (pw);
+	}
+
+#ifdef MATCHGECOS
+	/* see if fuzzy matching allowed */
+	if (!MatchGecos)
+	{
+		if (tTd(29, 4))
+			printf("not found (fuzzy disabled)\n");
+		return NULL;
+	}
 
 	/* search for a matching full name instead */
 	for (p = name; *p != '\0'; p++)
@@ -398,12 +488,21 @@ finduser(name)
 		char buf[MAXNAME];
 
 		buildfname(pw->pw_gecos, pw->pw_name, buf);
-		if (index(buf, ' ') != NULL && !strcasecmp(buf, name))
+		if (strchr(buf, ' ') != NULL && !strcasecmp(buf, name))
 		{
-			message(Arpa_Info, "sending to login name %s", pw->pw_name);
+			if (tTd(29, 4))
+				printf("fuzzy matches %s\n", pw->pw_name);
+			message("sending to login name %s", pw->pw_name);
+			*fuzzyp = TRUE;
 			return (pw);
 		}
 	}
+	if (tTd(29, 4))
+		printf("no fuzzy match found\n");
+#else
+	if (tTd(29, 4))
+		printf("not found (fuzzy disabled)\n");
+#endif
 	return (NULL);
 }
 /*
@@ -432,7 +531,8 @@ bool
 writable(s)
 	register struct stat *s;
 {
-	int euid, egid;
+	uid_t euid;
+	gid_t egid;
 	int bits;
 
 	if (bitset(0111, s->st_mode))
@@ -463,7 +563,8 @@ writable(s)
 **
 **	Parameters:
 **		fname -- filename to include.
-**		msg -- message to print in verbose mode.
+**		forwarding -- if TRUE, we are reading a .forward file.
+**			if FALSE, it's a :include: file.
 **		ctladdr -- address template to use to fill in these
 **			addresses -- effective user/group id are
 **			the important things.
@@ -471,70 +572,165 @@ writable(s)
 **			to put these addresses in.
 **
 **	Returns:
-**		none.
+**		open error status
 **
 **	Side Effects:
 **		reads the :include: file and sends to everyone
 **		listed in that file.
 */
 
-include(fname, msg, ctladdr, sendq)
+static jmp_buf	CtxIncludeTimeout;
+
+int
+include(fname, forwarding, ctladdr, sendq, e)
 	char *fname;
-	char *msg;
+	bool forwarding;
 	ADDRESS *ctladdr;
 	ADDRESS **sendq;
+	ENVELOPE *e;
 {
-	char buf[MAXLINE];
 	register FILE *fp;
-	char *oldto = CurEnv->e_to;
+	char *oldto = e->e_to;
 	char *oldfilename = FileName;
 	int oldlinenumber = LineNumber;
+	register EVENT *ev = NULL;
+	int nincludes;
+	int ret;
+	ADDRESS *ca;
+	uid_t uid;
+	char buf[MAXLINE];
+	static int includetimeout();
+
+	if (tTd(27, 2))
+		printf("include(%s)\n", fname);
+	if (tTd(27, 14))
+	{
+		printf("ctladdr ");
+		printaddr(ctladdr, FALSE);
+	}
+
+	/*
+	**  If home directory is remote mounted but server is down,
+	**  this can hang or give errors; use a timeout to avoid this
+	*/
+
+	ca = getctladdr(ctladdr);
+	if (ca == NULL)
+		uid = 0;
+	else
+		uid = ca->q_uid;
+
+	if (setjmp(CtxIncludeTimeout) != 0)
+	{
+		ctladdr->q_flags |= QQUEUEUP|QDONTSEND;
+		errno = 0;
+		usrerr("451 open timeout on %s", fname);
+		return ETIMEDOUT;
+	}
+	ev = setevent((time_t) 60, includetimeout, 0);
+
+	/* the input file must be marked safe */
+	if ((ret = safefile(fname, uid, S_IREAD)) != 0)
+	{
+		/* don't use this .forward file */
+		clrevent(ev);
+		if (tTd(27, 4))
+			printf("include: not safe (uid=%d): %s\n",
+				uid, errstring(ret));
+		return ret;
+	}
 
 	fp = fopen(fname, "r");
 	if (fp == NULL)
 	{
-		usrerr("Cannot open %s", fname);
-		return;
+		int ret = errno;
+
+		clrevent(ev);
+		return ret;
 	}
-	if (getctladdr(ctladdr) == NULL)
+
+	if (ca == NULL)
 	{
 		struct stat st;
 
 		if (fstat(fileno(fp), &st) < 0)
+		{
+			int ret = errno;
+
+			clrevent(ev);
 			syserr("Cannot fstat %s!", fname);
+			return ret;
+		}
 		ctladdr->q_uid = st.st_uid;
 		ctladdr->q_gid = st.st_gid;
 		ctladdr->q_flags |= QGOODUID;
 	}
 
+	clrevent(ev);
+
+	if (bitset(EF_VRFYONLY, e->e_flags))
+	{
+		/* don't do any more now */
+		ctladdr->q_flags |= QVERIFIED;
+		e->e_nrcpts++;
+		xfclose(fp, "include", fname);
+		return 0;
+	}
+
 	/* read the file -- each line is a comma-separated list. */
 	FileName = fname;
 	LineNumber = 0;
+	ctladdr->q_flags &= ~QSELFREF;
+	nincludes = 0;
 	while (fgets(buf, sizeof buf, fp) != NULL)
 	{
-		register char *p = index(buf, '\n');
+		register char *p = strchr(buf, '\n');
 
 		LineNumber++;
 		if (p != NULL)
 			*p = '\0';
-		if (buf[0] == '\0')
+		if (buf[0] == '#' || buf[0] == '\0')
 			continue;
-		CurEnv->e_to = oldto;
-		message(Arpa_Info, "%s to %s", msg, buf);
+		e->e_to = NULL;
+		message("%s to %s",
+			forwarding ? "forwarding" : "sending", buf);
+#ifdef LOG
+		if (forwarding && LogLevel > 9)
+			syslog(LOG_INFO, "%s: forward %s => %s",
+				e->e_id, oldto, buf);
+#endif
+
 		AliasLevel++;
-		sendtolist(buf, ctladdr, sendq);
+		nincludes += sendtolist(buf, ctladdr, sendq, e);
 		AliasLevel--;
 	}
+	if (nincludes > 0 && !bitset(QSELFREF, ctladdr->q_flags))
+	{
+		if (tTd(27, 5))
+		{
+			printf("include: QDONTSEND ");
+			printaddr(ctladdr, FALSE);
+		}
+		ctladdr->q_flags |= QDONTSEND;
+	}
 
-	(void) fclose(fp);
+	(void) xfclose(fp, "include", fname);
 	FileName = oldfilename;
 	LineNumber = oldlinenumber;
+	return 0;
+}
+
+static
+includetimeout()
+{
+	longjmp(CtxIncludeTimeout, 1);
 }
 /*
 **  SENDTOARGV -- send to an argument vector.
 **
 **	Parameters:
 **		argv -- argument vector to send to.
+**		e -- the current envelope.
 **
 **	Returns:
 **		none.
@@ -544,29 +740,15 @@ include(fname, msg, ctladdr, sendq)
 **			send queue.
 */
 
-sendtoargv(argv)
+sendtoargv(argv, e)
 	register char **argv;
+	register ENVELOPE *e;
 {
 	register char *p;
 
 	while ((p = *argv++) != NULL)
 	{
-		if (argv[0] != NULL && argv[1] != NULL && !strcasecmp(argv[0], "at"))
-		{
-			char nbuf[MAXNAME];
-
-			if (strlen(p) + strlen(argv[1]) + 2 > sizeof nbuf)
-				usrerr("address overflow");
-			else
-			{
-				(void) strcpy(nbuf, p);
-				(void) strcat(nbuf, "@");
-				(void) strcat(nbuf, argv[1]);
-				p = newstr(nbuf);
-				argv += 2;
-			}
-		}
-		sendtolist(p, (ADDRESS *) NULL, &CurEnv->e_sendqueue);
+		(void) sendtolist(p, (ADDRESS *) NULL, &e->e_sendqueue, e);
 	}
 }
 /*

@@ -1,5 +1,5 @@
-.\" Copyright (c) 1988, 1991 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1988, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" Redistribution and use in source and binary forms, with or without
 .\" modification, are permitted provided that the following conditions
@@ -29,9 +29,9 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"     @(#)sendmail.8	6.10 (Berkeley) 8/5/91
+.\"     @(#)sendmail.8	8.1 (Berkeley) 6/16/93
 .\"
-.Dd August 5, 1991
+.Dd June 16, 1993
 .Dt SENDMAIL 8
 .Os BSD 4
 .Sh NAME
@@ -80,9 +80,15 @@ expansions, e.g.,
 if `john' sends to `group',
 and `group' includes `john' in the expansion,
 then the letter will not be delivered to `john'.
-.Pp
-Flags are:
+.Ss Parameters
 .Bl -tag -width Fl
+.It Fl B Ns Ar type
+Set the body type to
+.Ar type .
+Current legal values
+.Li 7BIT
+or
+.Li 8BITMIME .
 .It Fl ba
 Go into
 .Tn ARPANET
@@ -169,6 +175,10 @@ Set option
 to the specified
 .Em value .
 Options are described below.
+.It Fl p Ns Ar protocol
+Set the name of the protocol used to receive the message.
+This can be a simple protocol name such as ``UUCP''
+or a protocol and hostname, such as ``UUCP:ucbvax''.
 .It Fl q Ns Bq Ar time
 Processed saved messages in the queue at given intervals.
 If
@@ -218,7 +228,7 @@ receive copies even if listed in the message header.
 Go into verbose mode.
 Alias expansions will be announced, etc.
 .El
-.Pp
+.Ss Options
 There are also a number of processing options that may be set.
 Normally these will only be used by a system administrator.
 Options may be set either on the command line
@@ -226,16 +236,26 @@ using the
 .Fl o
 flag
 or in the configuration file.
-These are described in detail in the
+This is a partial list;
+for a complete list (and details), consult the
 .%T "Sendmail Installation and Operation Guide" .
 The options are:
 .Bl -tag -width Fl
 .It Li A Ns Ar file
 Use alternate alias file.
+.It Li b Ns Ar nblocks
+The minimum number of free blocks needed on the spool filesystem.
 .It Li c
 On mailers that are considered ``expensive'' to connect to,
 don't initiate immediate connection.
 This requires queueing.
+.It Li C Ar N
+Checkpoint the queue file after every
+.Ar N
+successful deliveries (default 10).
+This avoids excessive duplicate deliveries
+when sending to long mailing lists
+interrupted by system crashes.
 .It Li d Ns Ar x
 Set the delivery mode to
 .Ar x .
@@ -279,32 +299,40 @@ and if the sender is local to this machine,
 a copy of the message is appended to the file
 .Pa dead.letter
 in the sender's home directory.
-.It Li F Ns Ar mode
-The mode to use when creating temporary files.
 .It Li f
 Save
 .Tn UNIX Ns \-style
 From lines at the front of messages.
+.It Li G
+Match local mail names against the GECOS portion of the password file.
 .It Li g Ar N
 The default group id to use when calling mailers.
 .It Li H Ns Ar file
 The
 .Tn SMTP
 help file.
+.It Li h Ar N
+The maximum number of times a message is allowed to ``hop''
+before we decide it is in a loop.
 .It Li i
 Do not take dots on a line by themselves
 as a message terminator.
-.It Li k Ar N
-Checkpoint the queue file after every
-.Ar N
-successful deliveries (default 10).
-This avoids excessive duplicate deliveries
-when sending to long mailing lists
-interrupted by system crashes.
+.It Li j
+Send error messages in MIME format.
+.It Li K Ns Ar timeout
+Set connection cache timeout.
+.It Li k Ns Ar N
+Set connection cache size.
 .It Li L Ns Ar n
 The log level.
+.It Li l
+Pay attention to the Errors-To: header.
 .It Li m
 Send to ``me'' (the sender) also if I am in an alias expansion.
+.It Li n
+Validate the right hand side of aliases during a
+.Xr newaliases 1
+command.
 .It Li o
 If set, this message may have
 old style headers.
@@ -315,15 +343,6 @@ If set, an adaptive algorithm is used that will correctly
 determine the header format in most cases.
 .It Li Q Ns Ar queuedir
 Select the directory in which to queue messages.
-.It Li r Ns Ar timeout
-The timeout on reads;
-if none is set,
-.Nm sendmail
-will wait forever for a mailer.
-This option violates the word (if not the intent) of the
-.Tn SMTP
-specification,
-show the timeout should probably be fairly large.
 .It Li S Ns Ar file
 Save statistics in the named file.
 .It Li s
@@ -349,22 +368,11 @@ This may not be available if your sendmail does not have the
 option compiled in.
 .It Li u Ns Ar N
 Set the default user id for mailers.
-.It Li w
-If not set, name server lookups will us a querytype of ANY
-to find types
-.Dv CNAME , A ,
-and
-.Dv MX ,
-and will cause all existing records to be cached by our local server.
-If there is (might be) a wildcard MX in the local domain
-or its parents that are searched, you
-.ul
-must
-set this option, which will use a querytype of
-.Dv CNAME
-only;
-otherwise, it would cause all fully-qualified names
-to match as names in the local domain.
+.It Li Y
+Fork each job during queue runs.
+May be convenient on memory-poor machines.
+.It Li 7
+Strip incoming messages to seven bits.
 .El
 .Pp
 In aliases,
@@ -446,8 +454,7 @@ these values are only approximations.
 .Bl -tag -width /usr/lib/sendmail.fc -compact
 .It Pa /etc/aliases
 raw data for alias names
-.It Pa /etc/aliases.pag
-.It Pa /etc/aliases.dir
+.It Pa /etc/aliases.db
 data base of alias names
 .It Pa /etc/sendmail.cf
 configuration file
@@ -459,6 +466,8 @@ help file
 collected statistics
 .It Pa /var/spool/mqueue/*
 temp files
+.It Pa /var/run/sendmail.pid
+The process id of the daemon
 .El
 .Sh SEE ALSO
 .Xr binmail 1 ,

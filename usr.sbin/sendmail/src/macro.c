@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1983 Eric P. Allman
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)macro.c	5.7 (Berkeley) 6/1/90";
+static char sccsid[] = "@(#)macro.c	8.1 (Berkeley) 6/7/93";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -55,6 +55,7 @@ static char sccsid[] = "@(#)macro.c	5.7 (Berkeley) 6/1/90";
 **		none.
 */
 
+void
 expand(s, buf, buflim, e)
 	register char *s;
 	register char *buf;
@@ -66,8 +67,8 @@ expand(s, buf, buflim, e)
 	bool skipping;		/* set if conditionally skipping output */
 	bool recurse = FALSE;	/* set if recursion required */
 	int i;
+	int iflev;		/* if nesting level */
 	char xbuf[BUFSIZ];
-	extern char *macvalue();
 
 	if (tTd(35, 24))
 	{
@@ -77,6 +78,7 @@ expand(s, buf, buflim, e)
 	}
 
 	skipping = FALSE;
+	iflev = 0;
 	if (s == NULL)
 		s = "";
 	for (xp = xbuf; *s != '\0'; s++)
@@ -90,22 +92,29 @@ expand(s, buf, buflim, e)
 
 		q = NULL;
 		c = *s;
-		switch (c)
+		switch (c & 0377)
 		{
 		  case CONDIF:		/* see if var set */
 			c = *++s;
-			skipping = macvalue(c, e) == NULL;
+			if (skipping)
+				iflev++;
+			else
+				skipping = macvalue(c, e) == NULL;
 			continue;
 
 		  case CONDELSE:	/* change state of skipping */
-			skipping = !skipping;
+			if (iflev == 0)
+				skipping = !skipping;
 			continue;
 
 		  case CONDFI:		/* stop skipping */
-			skipping = FALSE;
+			if (iflev == 0)
+				skipping = FALSE;
+			if (skipping)
+				iflev--;
 			continue;
 
-		  case '\001':		/* macro interpolation */
+		  case MACROEXPAND:	/* macro interpolation */
 			c = *++s;
 			q = macvalue(c & 0177, e);
 			if (q == NULL)
@@ -126,7 +135,8 @@ expand(s, buf, buflim, e)
 			/* copy to end of q or max space remaining in buf */
 			while ((c = *q++) != '\0' && xp < &xbuf[sizeof xbuf - 1])
 			{
-				if (iscntrl(c) && !isspace(c))
+				/* check for any sendmail metacharacters */
+				if ((c & 0340) == 0200)
 					recurse = TRUE;
 				*xp++ = c;
 			}
@@ -188,7 +198,9 @@ expand(s, buf, buflim, e)
 **		$h   to host
 **		$i   queue id
 **		$j   official SMTP hostname, used in messages+
+**		$k   UUCP node name
 **		$l   UNIX-style from line+
+**		$m   The domain part of our full name.
 **		$n   name of sendmail ("MAILER-DAEMON" on local
 **		     net typically)+
 **		$o   delimiters ("operators") for address tokens+
@@ -204,6 +216,7 @@ expand(s, buf, buflim, e)
 **		$x   signature (full name) of from person
 **		$y   the tty id of our terminal
 **		$z   home directory of to person
+**		$_   RFC1413 authenticated sender address
 **
 **		Macros marked with + must be defined in the
 **		configuration file and are used internally, but
@@ -215,6 +228,7 @@ expand(s, buf, buflim, e)
 **		are available.
 */
 
+void
 define(n, v, e)
 	char n;
 	char *v;

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)useful.h	4.6 (Berkeley) 6/1/90
+ *	@(#)useful.h	8.1 (Berkeley) 6/7/93
  */
 
 # include <sys/types.h>
@@ -42,7 +42,7 @@ typedef char	bool;
 
 # ifndef NULL
 # define NULL	0
-# endif NULL
+# endif /* NULL */
 
 /* bit hacking */
 # define bitset(bit, word)	(((word) & (bit)) != 0)
@@ -51,7 +51,7 @@ typedef char	bool;
 # ifndef max
 # define max(a, b)	((a) > (b) ? (a) : (b))
 # define min(a, b)	((a) < (b) ? (a) : (b))
-# endif max
+# endif
 
 /* assertions */
 # ifndef NASSERT
@@ -61,23 +61,13 @@ typedef char	bool;
 		fprintf(stderr, "assertion botch: %s:%d: ", __FILE__, __LINE__);\
 		fprintf(stderr, msg, parm);\
 	}
-# else NASSERT
+# else /* NASSERT */
 # define ASSERT(expr, msg, parm)
-# endif NASSERT
+# endif /* NASSERT */
 
 /* sccs id's */
 # ifndef lint
 # define SCCSID(arg)	static char SccsId[] = "arg";
-# else lint
+# else
 # define SCCSID(arg)
-# endif lint
-
-/* define the types of some common functions */
-extern char	*strcpy(), *strncpy();
-extern char	*strcat(), *strncat();
-extern char	*malloc();
-extern char	*index(), *rindex();
-extern int	errno;
-extern time_t	time();
-extern char	*ctime();
-extern char	*getenv();
+# endif

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1983 Eric P. Allman
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,15 +33,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	5.22 (Berkeley) 6/1/90";
+static char sccsid[] = "@(#)envelope.c	8.1 (Berkeley) 6/7/93";
 #endif /* not lint */
 
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/stat.h>
-#include <pwd.h>
-#include <sys/file.h>
 #include "sendmail.h"
+#include <sys/time.h>
+#include <pwd.h>
 
 /*
 **  NEWENVELOPE -- allocate a new envelope
@@ -50,6 +47,7 @@ static char sccsid[] = "@(#)envelope.c	5.22 (Berkeley) 6/1/90";
 **
 **	Parameters:
 **		e -- the new envelope to fill in.
+**		parent -- the envelope to be the parent of e.
 **
 **	Returns:
 **		e.
@@ -59,15 +57,14 @@ static char sccsid[] = "@(#)envelope.c	5.22 (Berkeley) 6/1/90";
 */
 
 ENVELOPE *
-newenvelope(e)
+newenvelope(e, parent)
 	register ENVELOPE *e;
-{
 	register ENVELOPE *parent;
+{
 	extern putheader(), putbody();
 	extern ENVELOPE BlankEnvelope;
 
-	parent = CurEnv;
-	if (e == CurEnv)
+	if (e == parent && e->e_parent != NULL)
 		parent = e->e_parent;
 	clearenvelope(e, TRUE);
 	if (e == CurEnv)
@@ -76,7 +73,8 @@ newenvelope(e)
 		bcopy((char *) &CurEnv->e_from, (char *) &e->e_from, sizeof e->e_from);
 	e->e_parent = parent;
 	e->e_ctime = curtime();
-	e->e_msgpriority = parent->e_msgsize;
+	if (parent != NULL)
+		e->e_msgpriority = parent->e_msgsize;
 	e->e_puthdr = putheader;
 	e->e_putbody = putbody;
 	if (CurEnv->e_xfp != NULL)
@@ -98,28 +96,30 @@ newenvelope(e)
 **		Unlocks this queue file.
 */
 
+void
 dropenvelope(e)
 	register ENVELOPE *e;
 {
 	bool queueit = FALSE;
 	register ADDRESS *q;
+	char *id = e->e_id;
 
 	if (tTd(50, 1))
 	{
-		printf("dropenvelope %x id=", e);
+		printf("dropenvelope %x: id=", e);
 		xputs(e->e_id);
-		printf(" flags=%o\n", e->e_flags);
+		printf(", flags=%o\n", e->e_flags);
 	}
-#ifdef LOG
-	if (LogLevel > 10)
-		syslog(LOG_DEBUG, "dropenvelope, id=%s, flags=%o, pid=%d",
-				  e->e_id == NULL ? "(none)" : e->e_id,
-				  e->e_flags, getpid());
-#endif LOG
 
 	/* we must have an id to remove disk files */
-	if (e->e_id == NULL)
+	if (id == NULL)
 		return;
+
+#ifdef LOG
+	if (LogLevel > 84)
+		syslog(LOG_DEBUG, "dropenvelope, id=%s, flags=%o, pid=%d",
+				  id, e->e_flags, getpid());
+#endif /* LOG */
 
 	/*
 	**  Extract state information from dregs of send list.
@@ -139,15 +139,16 @@ dropenvelope(e)
 	{
 		auto ADDRESS *rlist = NULL;
 
-		sendtolist(CurEnv->e_receiptto, (ADDRESS *) NULL, &rlist);
-		(void) returntosender("Return receipt", rlist, FALSE);
+		(void) sendtolist(e->e_receiptto, (ADDRESS *) NULL, &rlist, e);
+		(void) returntosender("Return receipt", rlist, FALSE, e);
 	}
 
 	/*
 	**  Arrange to send error messages if there are fatal errors.
 	*/
 
-	if (bitset(EF_FATALERRS|EF_TIMEOUT, e->e_flags) && ErrorMode != EM_QUIET)
+	if (bitset(EF_FATALERRS|EF_TIMEOUT, e->e_flags) &&
+	    e->e_errormode != EM_QUIET)
 		savemail(e);
 
 	/*
@@ -164,13 +165,10 @@ dropenvelope(e)
 	else if (queueit || !bitset(EF_INQUEUE, e->e_flags))
 	{
 #ifdef QUEUE
-		FILE *lockfp, *queueup();
-		lockfp = queueup(e, FALSE, FALSE);
-		if (lockfp != NULL)
-			(void) fclose(lockfp);
-#else QUEUE
-		syserr("dropenvelope: queueup");
-#endif QUEUE
+		queueup(e, FALSE, FALSE);
+#else /* QUEUE */
+		syserr("554 dropenvelope: queueup");
+#endif /* QUEUE */
 	}
 
 	/* now unlock the job */
@@ -178,10 +176,15 @@ dropenvelope(e)
 	unlockqueue(e);
 
 	/* make sure that this envelope is marked unused */
-	e->e_id = e->e_df = NULL;
 	if (e->e_dfp != NULL)
-		(void) fclose(e->e_dfp);
+		(void) xfclose(e->e_dfp, "dropenvelope", e->e_df);
 	e->e_dfp = NULL;
+	e->e_id = e->e_df = NULL;
+
+#ifdef LOG
+	if (LogLevel > 74)
+		syslog(LOG_INFO, "%s: done", id);
+#endif /* LOG */
 }
 /*
 **  CLEARENVELOPE -- clear an envelope without unlocking
@@ -203,6 +206,7 @@ dropenvelope(e)
 **		Marks the envelope as unallocated.
 */
 
+void
 clearenvelope(e, fullclear)
 	register ENVELOPE *e;
 	bool fullclear;
@@ -215,13 +219,16 @@ clearenvelope(e, fullclear)
 	{
 		/* clear out any file information */
 		if (e->e_xfp != NULL)
-			(void) fclose(e->e_xfp);
+			(void) xfclose(e->e_xfp, "clearenvelope xfp", e->e_id);
 		if (e->e_dfp != NULL)
-			(void) fclose(e->e_dfp);
+			(void) xfclose(e->e_dfp, "clearenvelope dfp", e->e_df);
+		e->e_xfp = e->e_dfp = NULL;
 	}
 
 	/* now clear out the data */
 	STRUCTCOPY(BlankEnvelope, *e);
+	if (Verbose)
+		e->e_sendmode = SM_DELIVER;
 	bh = BlankEnvelope.e_header;
 	nhp = &e->e_header;
 	while (bh != NULL)
@@ -249,16 +256,18 @@ clearenvelope(e, fullclear)
 **		forms is set.
 */
 
-initsys()
+void
+initsys(e)
+	register ENVELOPE *e;
 {
 	static char cbuf[5];			/* holds hop count */
 	static char pbuf[10];			/* holds pid */
 #ifdef TTYNAME
-	static char ybuf[10];			/* holds tty id */
+	static char ybuf[60];			/* holds tty id */
 	register char *p;
-#endif TTYNAME
+#endif /* TTYNAME */
 	extern char *ttyname();
-	extern char *macvalue();
+	extern void settime();
 	extern char Version[];
 
 	/*
@@ -266,8 +275,8 @@ initsys()
 	**	I.e., an id, a transcript, and a creation time.
 	*/
 
-	openxscript(CurEnv);
-	CurEnv->e_ctime = curtime();
+	openxscript(e);
+	e->e_ctime = curtime();
 
 	/*
 	**  Set OutChannel to something useful if stdout isn't it.
@@ -276,8 +285,9 @@ initsys()
 	**	tucked away in the transcript).
 	*/
 
-	if (OpMode == MD_DAEMON && QueueRun)
-		OutChannel = CurEnv->e_xfp;
+	if (OpMode == MD_DAEMON && !bitset(EF_QUEUERUN, e->e_flags) &&
+	    e->e_xfp != NULL)
+		OutChannel = e->e_xfp;
 
 	/*
 	**  Set up some basic system macros.
@@ -285,29 +295,29 @@ initsys()
 
 	/* process id */
 	(void) sprintf(pbuf, "%d", getpid());
-	define('p', pbuf, CurEnv);
+	define('p', pbuf, e);
 
 	/* hop count */
-	(void) sprintf(cbuf, "%d", CurEnv->e_hopcount);
-	define('c', cbuf, CurEnv);
+	(void) sprintf(cbuf, "%d", e->e_hopcount);
+	define('c', cbuf, e);
 
 	/* time as integer, unix time, arpa time */
-	settime();
+	settime(e);
 
 #ifdef TTYNAME
 	/* tty name */
-	if (macvalue('y', CurEnv) == NULL)
+	if (macvalue('y', e) == NULL)
 	{
 		p = ttyname(2);
 		if (p != NULL)
 		{
-			if (rindex(p, '/') != NULL)
-				p = rindex(p, '/') + 1;
+			if (strrchr(p, '/') != NULL)
+				p = strrchr(p, '/') + 1;
 			(void) strcpy(ybuf, p);
-			define('y', ybuf, CurEnv);
+			define('y', ybuf, e);
 		}
 	}
-#endif TTYNAME
+#endif /* TTYNAME */
 }
 /*
 **  SETTIME -- set the current time.
@@ -322,7 +332,9 @@ initsys()
 **		Sets the various time macros -- $a, $b, $d, $t.
 */
 
-settime()
+void
+settime(e)
+	register ENVELOPE *e;
 {
 	register char *p;
 	auto time_t now;
@@ -331,21 +343,21 @@ settime()
 	register struct tm *tm;
 	extern char *arpadate();
 	extern struct tm *gmtime();
-	extern char *macvalue();
 
 	now = curtime();
 	tm = gmtime(&now);
-	(void) sprintf(tbuf, "%02d%02d%02d%02d%02d", tm->tm_year, tm->tm_mon+1,
-			tm->tm_mday, tm->tm_hour, tm->tm_min);
-	define('t', tbuf, CurEnv);
+	(void) sprintf(tbuf, "%04d%02d%02d%02d%02d", tm->tm_year + 1900,
+			tm->tm_mon+1, tm->tm_mday, tm->tm_hour, tm->tm_min);
+	define('t', tbuf, e);
 	(void) strcpy(dbuf, ctime(&now));
-	*index(dbuf, '\n') = '\0';
-	if (macvalue('d', CurEnv) == NULL)
-		define('d', dbuf, CurEnv);
+	p = strchr(dbuf, '\n');
+	if (p != NULL)
+		*p = '\0';
+	define('d', dbuf, e);
 	p = newstr(arpadate(dbuf));
-	if (macvalue('a', CurEnv) == NULL)
-		define('a', p, CurEnv);
-	define('b', p, CurEnv);
+	if (macvalue('a', e) == NULL)
+		define('a', p, e);
+	define('b', p, e);
 }
 /*
 **  OPENXSCRIPT -- Open transcript file
@@ -363,20 +375,21 @@ settime()
 **		Creates the transcript file.
 */
 
+#ifndef O_APPEND
+#define O_APPEND	0
+#endif
+
+void
 openxscript(e)
 	register ENVELOPE *e;
 {
 	register char *p;
 	int fd;
 
-# ifdef LOG
-	if (LogLevel > 19)
-		syslog(LOG_DEBUG, "%s: openx%s", e->e_id, e->e_xfp == NULL ? "" : " (no)");
-# endif LOG
 	if (e->e_xfp != NULL)
 		return;
 	p = queuename(e, 'x');
-	fd = open(p, O_WRONLY|O_CREAT, 0644);
+	fd = open(p, O_WRONLY|O_CREAT|O_APPEND, 0644);
 	if (fd < 0)
 		syserr("Can't create %s", p);
 	else
@@ -395,12 +408,13 @@ openxscript(e)
 **		none.
 */
 
+void
 closexscript(e)
 	register ENVELOPE *e;
 {
 	if (e->e_xfp == NULL)
 		return;
-	(void) fclose(e->e_xfp);
+	(void) xfclose(e->e_xfp, "closexscript", e->e_id);
 	e->e_xfp = NULL;
 }
 /*
@@ -427,6 +441,11 @@ closexscript(e)
 **	Parameters:
 **		from -- the person we would like to believe this message
 **			is from, as specified on the command line.
+**		e -- the envelope in which we would like the sender set.
+**		delimptr -- if non-NULL, set to the location of the
+**			trailing delimiter.
+**		internal -- set if this address is coming from an internal
+**			source such as an owner alias.
 **
 **	Returns:
 **		none.
@@ -435,18 +454,20 @@ closexscript(e)
 **		sets sendmail's notion of who the from person is.
 */
 
-setsender(from)
+void
+setsender(from, e, delimptr, internal)
 	char *from;
+	register ENVELOPE *e;
+	char **delimptr;
+	bool internal;
 {
 	register char **pvp;
 	char *realname = NULL;
 	register struct passwd *pw;
+	char delimchar;
 	char buf[MAXNAME];
 	char pvpbuf[PSBUFSIZE];
 	extern struct passwd *getpwnam();
-	extern char *macvalue();
-	extern char **prescan();
-	extern bool safefile();
 	extern char *FullName;
 
 	if (tTd(45, 1))
@@ -457,102 +478,123 @@ setsender(from)
 	**	Username can return errno != 0 on non-errors.
 	*/
 
-	if (QueueRun || OpMode == MD_SMTP || OpMode == MD_ARPAFTP)
+	if (bitset(EF_QUEUERUN, e->e_flags) || OpMode == MD_SMTP)
 		realname = from;
 	if (realname == NULL || realname[0] == '\0')
-	{
-		extern char *username();
-
 		realname = username();
-	}
 
-	/*
-	**  Determine if this real person is allowed to alias themselves.
-	*/
+	if (ConfigLevel < 2)
+		SuprErrs = TRUE;
 
-	if (from != NULL)
-	{
-		extern bool trusteduser();
-
-		if (!trusteduser(realname) && getuid() != geteuid() &&
-		    index(from, '!') == NULL && getuid() != 0)
-		{
-			/* network sends -r regardless (why why why?) */
-			/* syserr("%s, you cannot use the -f flag", realname); */
-			from = NULL;
-		}
-	}
-
-	SuprErrs = TRUE;
-	if (from == NULL || parseaddr(from, &CurEnv->e_from, 1, '\0') == NULL)
+	delimchar = internal ? '\0' : ' ';
+	if (from == NULL ||
+	    parseaddr(from, &e->e_from, 1, delimchar, delimptr, e) == NULL)
 	{
 		/* log garbage addresses for traceback */
-		if (from != NULL)
-		{
 # ifdef LOG
-			if (LogLevel >= 1)
-			    if (realname == from && RealHostName != NULL)
-				syslog(LOG_NOTICE,
-				    "from=%s unparseable, received from %s",
-				    from, RealHostName);
-			    else
-				syslog(LOG_NOTICE,
-				    "Unparseable username %s wants from=%s",
-				    realname, from);
-# endif LOG
-		}
-		from = newstr(realname);
-		if (parseaddr(from, &CurEnv->e_from, 1, '\0') == NULL &&
-		    parseaddr("postmaster", &CurEnv->e_from, 1, '\0') == NULL)
+		if (from != NULL && LogLevel > 2)
 		{
-			syserr("setsender: can't even parse postmaster!");
+			char *p;
+			char ebuf[MAXNAME * 2 + 2];
+
+			p = macvalue('_', e);
+			if (p == NULL)
+			{
+				char *host = RealHostName;
+				if (host == NULL)
+					host = MyHostName;
+				(void) sprintf(ebuf, "%s@%s", realname, host);
+				p = ebuf;
+			}
+			syslog(LOG_NOTICE,
+				"from=%s unparseable, received from %s",
+				from, p);
+		}
+# endif /* LOG */
+		if (from != NULL)
+			SuprErrs = TRUE;
+		if (from == realname ||
+		    parseaddr(from = newstr(realname), &e->e_from, 1, ' ', NULL, e) == NULL)
+		{
+			SuprErrs = TRUE;
+			if (parseaddr("postmaster", &e->e_from, 1, ' ', NULL, e) == NULL)
+				syserr("553 setsender: can't even parse postmaster!");
 		}
 	}
 	else
 		FromFlag = TRUE;
-	CurEnv->e_from.q_flags |= QDONTSEND;
-	loweraddr(&CurEnv->e_from);
+	e->e_from.q_flags |= QDONTSEND;
+	if (tTd(45, 5))
+	{
+		printf("setsender: QDONTSEND ");
+		printaddr(&e->e_from, FALSE);
+	}
 	SuprErrs = FALSE;
 
-	if (CurEnv->e_from.q_mailer == LocalMailer &&
-	    (pw = getpwnam(CurEnv->e_from.q_user)) != NULL)
+	pvp = NULL;
+	if (e->e_from.q_mailer == LocalMailer)
 	{
-		/*
-		**  Process passwd file entry.
-		*/
+# ifdef USERDB
+		register char *p;
+		extern char *udbsender();
+# endif
 
-
-		/* extract home directory */
-		CurEnv->e_from.q_home = newstr(pw->pw_dir);
-		define('z', CurEnv->e_from.q_home, CurEnv);
-
-		/* extract user and group id */
-		CurEnv->e_from.q_uid = pw->pw_uid;
-		CurEnv->e_from.q_gid = pw->pw_gid;
-
-		/* if the user has given fullname already, don't redefine */
-		if (FullName == NULL)
-			FullName = macvalue('x', CurEnv);
-		if (FullName != NULL && FullName[0] == '\0')
-			FullName = NULL;
-
-		/* extract full name from passwd file */
-		if (FullName == NULL && pw->pw_gecos != NULL &&
-		    strcmp(pw->pw_name, CurEnv->e_from.q_user) == 0)
+		if (!internal)
 		{
-			buildfname(pw->pw_gecos, CurEnv->e_from.q_user, buf);
-			if (buf[0] != '\0')
-				FullName = newstr(buf);
+			/* if the user has given fullname already, don't redefine */
+			if (FullName == NULL)
+				FullName = macvalue('x', e);
+			if (FullName != NULL && FullName[0] == '\0')
+				FullName = NULL;
+
+# ifdef USERDB
+			p = udbsender(from);
+
+			if (p != NULL)
+			{
+				/*
+				**  We have an alternate address for the sender
+				*/
+
+				pvp = prescan(p, '\0', pvpbuf, NULL);
+			}
+# endif /* USERDB */
 		}
-		if (FullName != NULL)
-			define('x', FullName, CurEnv);
+
+		if ((pw = getpwnam(e->e_from.q_user)) != NULL)
+		{
+			/*
+			**  Process passwd file entry.
+			*/
+
+
+			/* extract home directory */
+			e->e_from.q_home = newstr(pw->pw_dir);
+			define('z', e->e_from.q_home, e);
+
+			/* extract user and group id */
+			e->e_from.q_uid = pw->pw_uid;
+			e->e_from.q_gid = pw->pw_gid;
+
+			/* extract full name from passwd file */
+			if (FullName == NULL && pw->pw_gecos != NULL &&
+			    strcmp(pw->pw_name, e->e_from.q_user) == 0 &&
+			    !internal)
+			{
+				buildfname(pw->pw_gecos, e->e_from.q_user, buf);
+				if (buf[0] != '\0')
+					FullName = newstr(buf);
+			}
+		}
+		if (FullName != NULL && !internal)
+			define('x', FullName, e);
 	}
-	else
+	else if (!internal)
 	{
-		if (CurEnv->e_from.q_home == NULL)
-			CurEnv->e_from.q_home = getenv("HOME");
-		CurEnv->e_from.q_uid = getuid();
-		CurEnv->e_from.q_gid = getgid();
+		if (e->e_from.q_home == NULL)
+			e->e_from.q_home = getenv("HOME");
+		e->e_from.q_uid = getuid();
+		e->e_from.q_gid = getgid();
 	}
 
 	/*
@@ -560,57 +602,33 @@ setsender(from)
 	**	links in the net.
 	*/
 
-	pvp = prescan(from, '\0', pvpbuf);
+	if (pvp == NULL)
+		pvp = prescan(from, '\0', pvpbuf, NULL);
 	if (pvp == NULL)
 	{
+		/* don't need to give error -- prescan did that already */
 # ifdef LOG
-		if (LogLevel >= 1)
+		if (LogLevel > 2)
 			syslog(LOG_NOTICE, "cannot prescan from (%s)", from);
 # endif
-		usrerr("cannot prescan from (%s)", from);
 		finis();
 	}
-	rewrite(pvp, 3);
-	rewrite(pvp, 1);
-	rewrite(pvp, 4);
-	cataddr(pvp, buf, sizeof buf);
-	define('f', newstr(buf), CurEnv);
+	(void) rewrite(pvp, 3, e);
+	(void) rewrite(pvp, 1, e);
+	(void) rewrite(pvp, 4, e);
+	cataddr(pvp, NULL, buf, sizeof buf, '\0');
+	e->e_sender = newstr(buf);
+	define('f', e->e_sender, e);
 
 	/* save the domain spec if this mailer wants it */
-	if (CurEnv->e_from.q_mailer != NULL &&
-	    bitnset(M_CANONICAL, CurEnv->e_from.q_mailer->m_flags))
+	if (!internal && e->e_from.q_mailer != NULL &&
+	    bitnset(M_CANONICAL, e->e_from.q_mailer->m_flags))
 	{
 		extern char **copyplist();
 
 		while (*pvp != NULL && strcmp(*pvp, "@") != 0)
 			pvp++;
 		if (*pvp != NULL)
-			CurEnv->e_fromdomain = copyplist(pvp, TRUE);
+			e->e_fromdomain = copyplist(pvp, TRUE);
 	}
-}
-/*
-**  TRUSTEDUSER -- tell us if this user is to be trusted.
-**
-**	Parameters:
-**		user -- the user to be checked.
-**
-**	Returns:
-**		TRUE if the user is in an approved list.
-**		FALSE otherwise.
-**
-**	Side Effects:
-**		none.
-*/
-
-bool
-trusteduser(user)
-	char *user;
-{
-	register char **ulist;
-	extern char *TrustedUsers[];
-
-	for (ulist = TrustedUsers; *ulist != NULL; ulist++)
-		if (strcmp(*ulist, user) == 0)
-			return (TRUE);
-	return (FALSE);
 }

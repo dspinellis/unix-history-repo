@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1983 Eric P. Allman
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,10 +33,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	5.22 (Berkeley) 3/12/91";
+static char sccsid[] = "@(#)readcf.c	8.1 (Berkeley) 6/7/93";
 #endif /* not lint */
 
 # include "sendmail.h"
+#ifdef NAMED_BIND
+# include <arpa/nameser.h>
+# include <resolv.h>
+#endif
 
 /*
 **  READCF -- read control file.
@@ -64,9 +68,16 @@ static char sccsid[] = "@(#)readcf.c	5.22 (Berkeley) 3/12/91";
 **				Args specify mailer parameters.
 **		Oxvalue		Set option x to value.
 **		Pname=value	Set precedence name to value.
+**		Vversioncode	Version level of configuration syntax.
+**		Kmapname mapclass arguments....
+**				Define keyed lookup of a given class.
+**				Arguments are class dependent.
 **
 **	Parameters:
 **		cfname -- control file name.
+**		safe -- TRUE if this is the system config file;
+**			FALSE otherwise.
+**		e -- the main envelope.
 **
 **	Returns:
 **		none.
@@ -75,37 +86,106 @@ static char sccsid[] = "@(#)readcf.c	5.22 (Berkeley) 3/12/91";
 **		Builds several internal tables.
 */
 
-readcf(cfname)
+readcf(cfname, safe, e)
 	char *cfname;
+	bool safe;
+	register ENVELOPE *e;
 {
 	FILE *cf;
 	int ruleset = 0;
 	char *q;
-	char **pv;
 	struct rewrite *rwp = NULL;
+	char *bp;
+	int nfuzzy;
 	char buf[MAXLINE];
 	register char *p;
-	extern char **prescan();
 	extern char **copyplist();
+	struct stat statb;
 	char exbuf[MAXLINE];
 	char pvpbuf[PSBUFSIZE];
-	extern char *fgetfolded();
 	extern char *munchstring();
+	extern void makemapentry();
+
+	FileName = cfname;
+	LineNumber = 0;
 
 	cf = fopen(cfname, "r");
 	if (cf == NULL)
 	{
-		syserr("cannot open %s", cfname);
+		syserr("cannot open");
 		exit(EX_OSFILE);
 	}
 
-	FileName = cfname;
-	LineNumber = 0;
-	while (fgetfolded(buf, sizeof buf, cf) != NULL)
+	if (fstat(fileno(cf), &statb) < 0)
 	{
-		/* map $ into \001 (ASCII SOH) for macro expansion */
-		for (p = buf; *p != '\0'; p++)
+		syserr("cannot fstat");
+		exit(EX_OSFILE);
+	}
+
+	if (!S_ISREG(statb.st_mode))
+	{
+		syserr("not a plain file");
+		exit(EX_OSFILE);
+	}
+
+	if (OpMode != MD_TEST && bitset(S_IWGRP|S_IWOTH, statb.st_mode))
+	{
+		if (OpMode == MD_DAEMON || OpMode == MD_FREEZE)
+			fprintf(stderr, "%s: WARNING: dangerous write permissions\n",
+				FileName);
+#ifdef LOG
+		if (LogLevel > 0)
+			syslog(LOG_CRIT, "%s: WARNING: dangerous write permissions",
+				FileName);
+#endif
+	}
+
+#ifdef XLA
+	xla_zero();
+#endif
+
+	while ((bp = fgetfolded(buf, sizeof buf, cf)) != NULL)
+	{
+		if (bp[0] == '#')
 		{
+			if (bp != buf)
+				free(bp);
+			continue;
+		}
+
+		/* map $ into \201 for macro expansion */
+		for (p = bp; *p != '\0'; p++)
+		{
+			if (*p == '#' && p > bp && ConfigLevel >= 3)
+			{
+				/* this is an on-line comment */
+				register char *e;
+
+				switch (*--p & 0377)
+				{
+				  case MACROEXPAND:
+					/* it's from $# -- let it go through */
+					p++;
+					break;
+
+				  case '\\':
+					/* it's backslash escaped */
+					(void) strcpy(p, p + 1);
+					break;
+
+				  default:
+					/* delete preceeding white space */
+					while (isascii(*p) && isspace(*p) && p > bp)
+						p--;
+					if ((e = strchr(++p, '\n')) != NULL)
+						(void) strcpy(p, e);
+					else
+						p[0] = p[1] = '\0';
+					break;
+				}
+				continue;
+			}
+
 			if (*p != '$')
 				continue;
 
@@ -117,23 +197,23 @@ readcf(cfname)
 			}
 
 			/* convert to macro expansion character */
-			*p = '\001';
+			*p = MACROEXPAND;
 		}
 
 		/* interpret this line */
-		switch (buf[0])
+		switch (bp[0])
 		{
 		  case '\0':
 		  case '#':		/* comment */
 			break;
 
 		  case 'R':		/* rewriting rule */
-			for (p = &buf[1]; *p != '\0' && *p != '\t'; p++)
+			for (p = &bp[1]; *p != '\0' && *p != '\t'; p++)
 				continue;
 
 			if (*p == '\0')
 			{
-				syserr("invalid rewrite line \"%s\"", buf);
+				syserr("invalid rewrite line \"%s\"", bp);
 				break;
 			}
 
@@ -152,10 +232,82 @@ readcf(cfname)
 
 			/* expand and save the LHS */
 			*p = '\0';
-			expand(&buf[1], exbuf, &exbuf[sizeof exbuf], CurEnv);
-			rwp->r_lhs = prescan(exbuf, '\t', pvpbuf);
+			expand(&bp[1], exbuf, &exbuf[sizeof exbuf], e);
+			rwp->r_lhs = prescan(exbuf, '\t', pvpbuf, NULL);
+			nfuzzy = 0;
 			if (rwp->r_lhs != NULL)
+			{
+				register char **ap;
+
 				rwp->r_lhs = copyplist(rwp->r_lhs, TRUE);
+
+				/* count the number of fuzzy matches in LHS */
+				for (ap = rwp->r_lhs; *ap != NULL; ap++)
+				{
+					char *botch;
+
+					botch = NULL;
+					switch (**ap & 0377)
+					{
+					  case MATCHZANY:
+					  case MATCHANY:
+					  case MATCHONE:
+					  case MATCHCLASS:
+					  case MATCHNCLASS:
+						nfuzzy++;
+						break;
+
+					  case MATCHREPL:
+						botch = "$0-$9";
+						break;
+
+					  case CANONNET:
+						botch = "$#";
+						break;
+
+					  case CANONUSER:
+						botch = "$:";
+						break;
+
+					  case CALLSUBR:
+						botch = "$>";
+						break;
+
+					  case CONDIF:
+						botch = "$?";
+						break;
+
+					  case CONDELSE:
+						botch = "$|";
+						break;
+
+					  case CONDFI:
+						botch = "$.";
+						break;
+
+					  case HOSTBEGIN:
+						botch = "$[";
+						break;
+
+					  case HOSTEND:
+						botch = "$]";
+						break;
+
+					  case LOOKUPBEGIN:
+						botch = "$(";
+						break;
+
+					  case LOOKUPEND:
+						botch = "$)";
+						break;
+					}
+					if (botch != NULL)
+						syserr("Inappropriate use of %s on LHS",
+							botch);
+				}
+			}
+			else
+				syserr("R line: null LHS");
 
 			/* expand and save the RHS */
 			while (*++p == '\t')
@@ -164,14 +316,62 @@ readcf(cfname)
 			while (*p != '\0' && *p != '\t')
 				p++;
 			*p = '\0';
-			expand(q, exbuf, &exbuf[sizeof exbuf], CurEnv);
-			rwp->r_rhs = prescan(exbuf, '\t', pvpbuf);
+			expand(q, exbuf, &exbuf[sizeof exbuf], e);
+			rwp->r_rhs = prescan(exbuf, '\t', pvpbuf, NULL);
 			if (rwp->r_rhs != NULL)
+			{
+				register char **ap;
+
 				rwp->r_rhs = copyplist(rwp->r_rhs, TRUE);
+
+				/* check no out-of-bounds replacements */
+				nfuzzy += '0';
+				for (ap = rwp->r_rhs; *ap != NULL; ap++)
+				{
+					char *botch;
+
+					botch = NULL;
+					switch (**ap & 0377)
+					{
+					  case MATCHREPL:
+						if ((*ap)[1] <= '0' || (*ap)[1] > nfuzzy)
+						{
+							syserr("replacement $%c out of bounds",
+								(*ap)[1]);
+						}
+						break;
+
+					  case MATCHZANY:
+						botch = "$*";
+						break;
+
+					  case MATCHANY:
+						botch = "$+";
+						break;
+
+					  case MATCHONE:
+						botch = "$-";
+						break;
+
+					  case MATCHCLASS:
+						botch = "$=";
+						break;
+
+					  case MATCHNCLASS:
+						botch = "$~";
+						break;
+					}
+					if (botch != NULL)
+						syserr("Inappropriate use of %s on RHS",
+							botch);
+				}
+			}
+			else
+				syserr("R line: null RHS");
 			break;
 
 		  case 'S':		/* select rewriting set */
-			ruleset = atoi(&buf[1]);
+			ruleset = atoi(&bp[1]);
 			if (ruleset >= MAXRWSETS || ruleset < 0)
 			{
 				syserr("bad ruleset %d (%d max)", ruleset, MAXRWSETS);
@@ -181,58 +381,68 @@ readcf(cfname)
 			break;
 
 		  case 'D':		/* macro definition */
-			define(buf[1], newstr(munchstring(&buf[2])), CurEnv);
+			define(bp[1], newstr(munchstring(&bp[2], NULL)), e);
 			break;
 
 		  case 'H':		/* required header line */
-			(void) chompheader(&buf[1], TRUE);
+			(void) chompheader(&bp[1], TRUE, e);
 			break;
 
 		  case 'C':		/* word class */
-		  case 'F':		/* word class from file */
-			/* read list of words from argument or file */
-			if (buf[0] == 'F')
-			{
-				/* read from file */
-				for (p = &buf[2]; *p != '\0' && !isspace(*p); p++)
-					continue;
-				if (*p == '\0')
-					p = "%s";
-				else
-				{
-					*p = '\0';
-					while (isspace(*++p))
-						continue;
-				}
-				fileclass(buf[1], &buf[2], p);
-				break;
-			}
-
 			/* scan the list of words and set class for all */
-			for (p = &buf[2]; *p != '\0'; )
+			for (p = &bp[2]; *p != '\0'; )
 			{
 				register char *wd;
 				char delim;
 
-				while (*p != '\0' && isspace(*p))
+				while (*p != '\0' && isascii(*p) && isspace(*p))
 					p++;
 				wd = p;
-				while (*p != '\0' && !isspace(*p))
+				while (*p != '\0' && !(isascii(*p) && isspace(*p)))
 					p++;
 				delim = *p;
 				*p = '\0';
 				if (wd[0] != '\0')
-					setclass(buf[1], wd);
+				{
+					if (tTd(37, 2))
+						printf("setclass(%c, %s)\n",
+							bp[1], wd);
+					setclass(bp[1], wd);
+				}
 				*p = delim;
 			}
 			break;
 
+		  case 'F':		/* word class from file */
+			/* read list of words from argument or file */
+			/* read from file */
+			for (p = &bp[2];
+			     *p != '\0' && !(isascii(*p) && isspace(*p));
+			     p++)
+				continue;
+			if (*p == '\0')
+				p = "%s";
+			else
+			{
+				*p = '\0';
+				while (isascii(*++p) && isspace(*p))
+					continue;
+			}
+			fileclass(bp[1], &bp[2], p, safe);
+			break;
+
+#ifdef XLA
+		  case 'L':		/* extended load average description */
+			xla_init(&bp[1]);
+			break;
+#endif
+
 		  case 'M':		/* define mailer */
-			makemailer(&buf[1]);
+			makemailer(&bp[1]);
 			break;
 
 		  case 'O':		/* set option */
-			setoption(buf[1], &buf[2], TRUE, FALSE);
+			setoption(bp[1], &bp[2], safe, FALSE, e);
 			break;
 
 		  case 'P':		/* set precedence */
@@ -241,46 +451,51 @@ readcf(cfname)
 				toomany('P', MAXPRIORITIES);
 				break;
 			}
-			for (p = &buf[1]; *p != '\0' && *p != '=' && *p != '\t'; p++)
+			for (p = &bp[1]; *p != '\0' && *p != '=' && *p != '\t'; p++)
 				continue;
 			if (*p == '\0')
 				goto badline;
 			*p = '\0';
-			Priorities[NumPriorities].pri_name = newstr(&buf[1]);
+			Priorities[NumPriorities].pri_name = newstr(&bp[1]);
 			Priorities[NumPriorities].pri_val = atoi(++p);
 			NumPriorities++;
 			break;
 
 		  case 'T':		/* trusted user(s) */
-			p = &buf[1];
-			while (*p != '\0')
-			{
-				while (isspace(*p))
-					p++;
-				q = p;
-				while (*p != '\0' && !isspace(*p))
-					p++;
-				if (*p != '\0')
-					*p++ = '\0';
-				if (*q == '\0')
-					continue;
-				for (pv = TrustedUsers; *pv != NULL; pv++)
-					continue;
-				if (pv >= &TrustedUsers[MAXTRUST])
-				{
-					toomany('T', MAXTRUST);
-					break;
-				}
-				*pv = newstr(q);
-			}
+			/* this option is obsolete, but will be ignored */
+			break;
+
+		  case 'V':		/* configuration syntax version */
+			ConfigLevel = atoi(&bp[1]);
+			break;
+
+		  case 'K':
+			makemapentry(&bp[1]);
 			break;
 
 		  default:
 		  badline:
-			syserr("unknown control line \"%s\"", buf);
+			syserr("unknown control line \"%s\"", bp);
 		}
+		if (bp != buf)
+			free(bp);
 	}
+	if (ferror(cf))
+	{
+		syserr("I/O read error", cfname);
+		exit(EX_OSFILE);
+	}
+	fclose(cf);
 	FileName = NULL;
+
+	if (stab("host", ST_MAP, ST_FIND) == NULL)
+	{
+		/* user didn't initialize: set up host map */
+		strcpy(buf, "host host");
+		if (ConfigLevel >= 2)
+			strcat(buf, " -a.");
+		makemapentry(buf);
+	}
 }
 /*
 **  TOOMANY -- signal too many of some option
@@ -319,18 +534,35 @@ toomany(id, maxcnt)
 **			the named class.
 */
 
-fileclass(class, filename, fmt)
+fileclass(class, filename, fmt, safe)
 	int class;
 	char *filename;
 	char *fmt;
+	bool safe;
 {
 	FILE *f;
+	struct stat stbuf;
 	char buf[MAXLINE];
 
+	if (stat(filename, &stbuf) < 0)
+	{
+		syserr("fileclass: cannot stat %s", filename);
+		return;
+	}
+	if (!S_ISREG(stbuf.st_mode))
+	{
+		syserr("fileclass: %s not a regular file", filename);
+		return;
+	}
+	if (!safe && access(filename, R_OK) < 0)
+	{
+		syserr("fileclass: access denied on %s", filename);
+		return;
+	}
 	f = fopen(filename, "r");
 	if (f == NULL)
 	{
-		syserr("cannot open %s", filename);
+		syserr("fileclass: cannot open %s", filename);
 		return;
 	}
 
@@ -344,9 +576,9 @@ fileclass(class, filename, fmt)
 		if (sscanf(buf, fmt, wordbuf) != 1)
 			continue;
 		p = wordbuf;
-# else SCANF
+# else /* SCANF */
 		p = buf;
-# endif SCANF
+# endif /* SCANF */
 
 		/*
 		**  Break up the match into words.
@@ -357,14 +589,14 @@ fileclass(class, filename, fmt)
 			register char *q;
 
 			/* strip leading spaces */
-			while (isspace(*p))
+			while (isascii(*p) && isspace(*p))
 				p++;
 			if (*p == '\0')
 				break;
 
 			/* find the end of the word */
 			q = p;
-			while (*p != '\0' && !isspace(*p))
+			while (*p != '\0' && !(isascii(*p) && isspace(*p)))
 				p++;
 			if (*p != '\0')
 				*p++ = '\0';
@@ -406,20 +638,19 @@ makemailer(line)
 	register STAB *s;
 	int i;
 	char fcode;
+	auto char *endp;
 	extern int NextMailer;
 	extern char **makeargv();
 	extern char *munchstring();
-	extern char *DelimChar;
 	extern long atol();
 
 	/* allocate a mailer and set up defaults */
 	m = (struct mailer *) xalloc(sizeof *m);
 	bzero((char *) m, sizeof *m);
-	m->m_mno = NextMailer;
 	m->m_eol = "\n";
 
 	/* collect the mailer name */
-	for (p = line; *p != '\0' && *p != ',' && !isspace(*p); p++)
+	for (p = line; *p != '\0' && *p != ',' && !(isascii(*p) && isspace(*p)); p++)
 		continue;
 	if (*p != '\0')
 		*p++ = '\0';
@@ -428,7 +659,9 @@ makemailer(line)
 	/* now scan through and assign info from the fields */
 	while (*p != '\0')
 	{
-		while (*p != '\0' && (*p == ',' || isspace(*p)))
+		auto char *delimptr;
+
+		while (*p != '\0' && (*p == ',' || (isascii(*p) && isspace(*p))))
 			p++;
 
 		/* p now points to field code */
@@ -437,14 +670,14 @@ makemailer(line)
 			p++;
 		if (*p++ != '=')
 		{
-			syserr("`=' expected");
+			syserr("mailer %s: `=' expected", m->m_name);
 			return;
 		}
-		while (isspace(*p))
+		while (isascii(*p) && isspace(*p))
 			p++;
 
 		/* p now points to the field body */
-		p = munchstring(p);
+		p = munchstring(p, &delimptr);
 
 		/* install the field into the mailer struct */
 		switch (fcode)
@@ -455,21 +688,38 @@ makemailer(line)
 
 		  case 'F':		/* flags */
 			for (; *p != '\0'; p++)
-				setbitn(*p, m->m_flags);
+				if (!(isascii(*p) && isspace(*p)))
+					setbitn(*p, m->m_flags);
 			break;
 
 		  case 'S':		/* sender rewriting ruleset */
 		  case 'R':		/* recipient rewriting ruleset */
-			i = atoi(p);
+			i = strtol(p, &endp, 10);
 			if (i < 0 || i >= MAXRWSETS)
 			{
 				syserr("invalid rewrite set, %d max", MAXRWSETS);
 				return;
 			}
 			if (fcode == 'S')
-				m->m_s_rwset = i;
+				m->m_sh_rwset = m->m_se_rwset = i;
 			else
-				m->m_r_rwset = i;
+				m->m_rh_rwset = m->m_re_rwset = i;
+
+			p = endp;
+			if (*p++ == '/')
+			{
+				i = strtol(p, NULL, 10);
+				if (i < 0 || i >= MAXRWSETS)
+				{
+					syserr("invalid rewrite set, %d max",
+						MAXRWSETS);
+					return;
+				}
+				if (fcode == 'S')
+					m->m_sh_rwset = i;
+				else
+					m->m_rh_rwset = i;
+			}
 			break;
 
 		  case 'E':		/* end of line string */
@@ -483,44 +733,80 @@ makemailer(line)
 		  case 'M':		/* maximum message size */
 			m->m_maxsize = atol(p);
 			break;
+
+		  case 'L':		/* maximum line length */
+			m->m_linelimit = atoi(p);
+			break;
+
+		  case 'D':		/* working directory */
+			m->m_execdir = newstr(p);
+			break;
 		}
 
-		p = DelimChar;
+		p = delimptr;
 	}
 
-	/* now store the mailer away */
+	/* do some heuristic cleanup for back compatibility */
+	if (bitnset(M_LIMITS, m->m_flags))
+	{
+		if (m->m_linelimit == 0)
+			m->m_linelimit = SMTPLINELIM;
+		if (ConfigLevel < 2)
+			setbitn(M_7BITS, m->m_flags);
+	}
+
+	/* do some rationality checking */
+	if (m->m_argv == NULL)
+	{
+		syserr("M%s: A= argument required", m->m_name);
+		return;
+	}
+	if (m->m_mailer == NULL)
+	{
+		syserr("M%s: P= argument required", m->m_name);
+		return;
+	}
+
 	if (NextMailer >= MAXMAILERS)
 	{
 		syserr("too many mailers defined (%d max)", MAXMAILERS);
 		return;
 	}
-	Mailer[NextMailer++] = m;
+
 	s = stab(m->m_name, ST_MAILER, ST_ENTER);
-	s->s_mailer = m;
+	if (s->s_mailer != NULL)
+	{
+		i = s->s_mailer->m_mno;
+		free(s->s_mailer);
+	}
+	else
+	{
+		i = NextMailer++;
+	}
+	Mailer[i] = s->s_mailer = m;
+	m->m_mno = i;
 }
 /*
 **  MUNCHSTRING -- translate a string into internal form.
 **
 **	Parameters:
 **		p -- the string to munch.
+**		delimptr -- if non-NULL, set to the pointer of the
+**			field delimiter character.
 **
 **	Returns:
 **		the munched string.
-**
-**	Side Effects:
-**		Sets "DelimChar" to point to the string that caused us
-**		to stop.
 */
 
 char *
-munchstring(p)
+munchstring(p, delimptr)
 	register char *p;
+	char **delimptr;
 {
 	register char *q;
 	bool backslash = FALSE;
 	bool quotemode = FALSE;
 	static char buf[MAXLINE];
-	extern char *DelimChar;
 
 	for (q = buf; *p != '\0'; p++)
 	{
@@ -561,7 +847,8 @@ munchstring(p)
 		}
 	}
 
-	DelimChar = p;
+	if (delimptr != NULL)
+		*delimptr = p;
 	*q++ = '\0';
 	return (buf);
 }
@@ -592,9 +879,9 @@ makeargv(p)
 	while (*p != '\0' && i < MAXPV)
 	{
 		q = p;
-		while (*p != '\0' && !isspace(*p))
+		while (*p != '\0' && !(isascii(*p) && isspace(*p)))
 			p++;
-		while (isspace(*p))
+		while (isascii(*p) && isspace(*p))
 			*p++ = '\0';
 		argv[i++] = newstr(q);
 	}
@@ -651,6 +938,7 @@ printrules()
 **			reset the user id to avoid security problems.
 **		sticky -- if set, don't let other setoptions override
 **			this value.
+**		e -- the main envelope.
 **
 **	Returns:
 **		none.
@@ -660,20 +948,43 @@ printrules()
 */
 
 static BITMAP	StickyOpt;		/* set if option is stuck */
-extern char	*NetName;		/* name of home (local) network */
 
-setoption(opt, val, safe, sticky)
+
+#ifdef NAMED_BIND
+
+struct resolverflags
+{
+	char	*rf_name;	/* name of the flag */
+	long	rf_bits;	/* bits to set/clear */
+} ResolverFlags[] =
+{
+	"debug",	RES_DEBUG,
+	"aaonly",	RES_AAONLY,
+	"usevc",	RES_USEVC,
+	"primary",	RES_PRIMARY,
+	"igntc",	RES_IGNTC,
+	"recurse",	RES_RECURSE,
+	"defnames",	RES_DEFNAMES,
+	"stayopen",	RES_STAYOPEN,
+	"dnsrch",	RES_DNSRCH,
+	NULL,		0
+};
+
+#endif
+
+setoption(opt, val, safe, sticky, e)
 	char opt;
 	char *val;
 	bool safe;
 	bool sticky;
+	register ENVELOPE *e;
 {
+	register char *p;
 	extern bool atobool();
 	extern time_t convtime();
 	extern int QueueLA;
 	extern int RefuseLA;
 	extern bool trusteduser();
-	extern char *username();
 
 	if (tTd(37, 1))
 		printf("setoption %c=%s", opt, val);
@@ -682,7 +993,7 @@ setoption(opt, val, safe, sticky)
 	**  See if this option is preset for us.
 	*/
 
-	if (bitnset(opt, StickyOpt))
+	if (!sticky && bitnset(opt, StickyOpt))
 	{
 		if (tTd(37, 1))
 			printf(" (ignored)\n");
@@ -695,7 +1006,7 @@ setoption(opt, val, safe, sticky)
 
 	if (!safe && getuid() == 0)
 		safe = TRUE;
-	if (!safe && index("deiLmorsv", opt) == NULL)
+	if (!safe && strchr("bdeEijLmoprsvC7", opt) == NULL)
 	{
 		if (opt != 'M' || (val[0] != 'r' && val[0] != 's'))
 		{
@@ -703,22 +1014,27 @@ setoption(opt, val, safe, sticky)
 				printf(" (unsafe)");
 			if (getuid() != geteuid())
 			{
-				printf("(Resetting uid)\n");
+				if (tTd(37, 1))
+					printf("(Resetting uid)");
 				(void) setgid(getgid());
 				(void) setuid(getuid());
 			}
 		}
 	}
-	else if (tTd(37, 1))
+	if (tTd(37, 1))
 		printf("\n");
 
 	switch (opt)
 	{
+	  case '7':		/* force seven-bit input */
+		SevenBit = atobool(val);
+		break;
+
 	  case 'A':		/* set default alias file */
 		if (val[0] == '\0')
-			AliasFile = "aliases";
+			setalias("aliases");
 		else
-			AliasFile = newstr(val);
+			setalias(val);
 		break;
 
 	  case 'a':		/* look N minutes for "@:@" in alias file */
@@ -734,30 +1050,40 @@ setoption(opt, val, safe, sticky)
 			SpaceSub = ' ';
 		break;
 
+	  case 'b':		/* min blocks free on queue fs/max msg size */
+		p = strchr(val, '/');
+		if (p != NULL)
+		{
+			*p++ = '\0';
+			MaxMessageSize = atol(p);
+		}
+		MinBlocksFree = atol(val);
+		break;
+
 	  case 'c':		/* don't connect to "expensive" mailers */
 		NoConnect = atobool(val);
 		break;
 
-	  case 'C':		/* checkpoint after N connections */
-		CheckPointLimit = atoi(val);
+	  case 'C':		/* checkpoint every N addresses */
+		CheckpointInterval = atoi(val);
 		break;
 
 	  case 'd':		/* delivery mode */
 		switch (*val)
 		{
 		  case '\0':
-			SendMode = SM_DELIVER;
+			e->e_sendmode = SM_DELIVER;
 			break;
 
 		  case SM_QUEUE:	/* queue only */
 #ifndef QUEUE
 			syserr("need QUEUE to set -odqueue");
-#endif QUEUE
+#endif /* QUEUE */
 			/* fall through..... */
 
 		  case SM_DELIVER:	/* do everything */
 		  case SM_FORK:		/* fork after verification */
-			SendMode = *val;
+			e->e_sendmode = *val;
 			break;
 
 		  default:
@@ -768,6 +1094,11 @@ setoption(opt, val, safe, sticky)
 
 	  case 'D':		/* rebuild alias database as needed */
 		AutoRebuild = atobool(val);
+		break;
+
+	  case 'E':		/* error message header/header file */
+		if (*val != '\0')
+			ErrMsgFile = newstr(val);
 		break;
 
 	  case 'e':		/* set error processing mode */
@@ -781,7 +1112,7 @@ setoption(opt, val, safe, sticky)
 			/* fall through... */
 
 		  case EM_PRINT:	/* print errors normally (default) */
-			ErrorMode = *val;
+			e->e_errormode = *val;
 			break;
 		}
 		break;
@@ -792,6 +1123,10 @@ setoption(opt, val, safe, sticky)
 
 	  case 'f':		/* save Unix-style From lines on front */
 		SaveFrom = atobool(val);
+		break;
+
+	  case 'G':		/* match recipients against GECOS field */
+		MatchGecos = atobool(val);
 		break;
 
 	  case 'g':		/* default gid */
@@ -805,16 +1140,75 @@ setoption(opt, val, safe, sticky)
 			HelpFile = newstr(val);
 		break;
 
+	  case 'h':		/* maximum hop count */
+		MaxHopCount = atoi(val);
+		break;
+
 	  case 'I':		/* use internet domain name server */
-		UseNameServer = atobool(val);
+#ifdef NAMED_BIND
+		UseNameServer = TRUE;
+		for (p = val; *p != 0; )
+		{
+			bool clearmode;
+			char *q;
+			struct resolverflags *rfp;
+
+			while (*p == ' ')
+				p++;
+			if (*p == '\0')
+				break;
+			clearmode = FALSE;
+			if (*p == '-')
+				clearmode = TRUE;
+			else if (*p != '+')
+				p--;
+			p++;
+			q = p;
+			while (*p != '\0' && !(isascii(*p) && isspace(*p)))
+				p++;
+			if (*p != '\0')
+				*p++ = '\0';
+			for (rfp = ResolverFlags; rfp->rf_name != NULL; rfp++)
+			{
+				if (strcasecmp(q, rfp->rf_name) == 0)
+					break;
+			}
+			if (clearmode)
+				_res.options &= ~rfp->rf_bits;
+			else
+				_res.options |= rfp->rf_bits;
+		}
+		if (tTd(8, 2))
+			printf("_res.options = %x\n", _res.options);
+#else
+		usrerr("name server (I option) specified but BIND not compiled in");
+#endif
 		break;
 
 	  case 'i':		/* ignore dot lines in message */
 		IgnrDot = atobool(val);
 		break;
 
-	  case 'k':		/* checkpoint every N addresses */
-		CheckpointInterval = atoi(val);
+	  case 'j':		/* send errors in MIME (RFC 1341) format */
+		SendMIMEErrors = atobool(val);
+		break;
+
+	  case 'J':		/* .forward search path */
+		ForwardPath = newstr(val);
+		break;
+
+	  case 'k':		/* connection cache size */
+		MaxMciCache = atoi(val);
+		if (MaxMciCache < 0)
+			MaxMciCache = 0;
+		break;
+
+	  case 'K':		/* connection cache timeout */
+		MciCacheTimeout = convtime(val, 'm');
+		break;
+
+	  case 'l':		/* use Errors-To: header */
+		UseErrorsTo = atobool(val);
 		break;
 
 	  case 'L':		/* log level */
@@ -834,17 +1228,45 @@ setoption(opt, val, safe, sticky)
 		CheckAliases = atobool(val);
 		break;
 
-# ifdef DAEMON
-	  case 'N':		/* home (local?) network name */
-		NetName = newstr(val);
+	    /* 'N' available -- was "net name" */
+
+	  case 'O':		/* daemon options */
+		setdaemonoptions(val);
 		break;
-# endif DAEMON
 
 	  case 'o':		/* assume old style headers */
 		if (atobool(val))
 			CurEnv->e_flags |= EF_OLDSTYLE;
 		else
 			CurEnv->e_flags &= ~EF_OLDSTYLE;
+		break;
+
+	  case 'p':		/* select privacy level */
+		p = val;
+		for (;;)
+		{
+			register struct prival *pv;
+			extern struct prival PrivacyValues[];
+
+			while (isascii(*p) && (isspace(*p) || ispunct(*p)))
+				p++;
+			if (*p == '\0')
+				break;
+			val = p;
+			while (isascii(*p) && isalnum(*p))
+				p++;
+			if (*p != '\0')
+				*p++ = '\0';
+
+			for (pv = PrivacyValues; pv->pv_name != NULL; pv++)
+			{
+				if (strcasecmp(val, pv->pv_name) == 0)
+					break;
+			}
+			if (pv->pv_name == NULL)
+				syserr("readcf: Op line: %s unrecognized", val);
+			PrivacyFlags |= pv->pv_flag;
+		}
 		break;
 
 	  case 'P':		/* postmaster copy address for returned mail */
@@ -860,10 +1282,16 @@ setoption(opt, val, safe, sticky)
 			QueueDir = "mqueue";
 		else
 			QueueDir = newstr(val);
+		if (RealUid != 0 && !safe)
+			auth_warning(e, "Processed from queue %s", QueueDir);
+		break;
+
+	  case 'R':		/* don't prune routes */
+		DontPruneRoutes = atobool(val);
 		break;
 
 	  case 'r':		/* read timeout */
-		ReadTimeout = convtime(val);
+		settimeouts(val);
 		break;
 
 	  case 'S':		/* status file */
@@ -878,10 +1306,21 @@ setoption(opt, val, safe, sticky)
 		break;
 
 	  case 'T':		/* queue timeout */
-		TimeOut = convtime(val);
-		/*FALLTHROUGH*/
+		p = strchr(val, '/');
+		if (p != NULL)
+		{
+			*p++ = '\0';
+			TimeOuts.to_q_warning = convtime(p, 'd');
+		}
+		TimeOuts.to_q_return = convtime(val, 'h');
+		break;
 
 	  case 't':		/* time zone name */
+		TimeZoneSpec = newstr(val);
+		break;
+
+	  case 'U':		/* location of user database */
+		UdbSpec = newstr(val);
 		break;
 
 	  case 'u':		/* set default uid */
@@ -889,9 +1328,17 @@ setoption(opt, val, safe, sticky)
 		setdefuser();
 		break;
 
+	  case 'V':		/* fallback MX host */
+		FallBackMX = newstr(val);
+		break;
+
 	  case 'v':		/* run in verbose mode */
 		Verbose = atobool(val);
 		break;
+
+	    /* 'w' available -- was "no wildcard MX matching" */
+
+	    /* 'W' available -- was wizard password */
 
 	  case 'x':		/* load avg at which to auto-queue msgs */
 		QueueLA = atoi(val);
@@ -944,6 +1391,177 @@ setclass(class, word)
 {
 	register STAB *s;
 
+	if (tTd(37, 8))
+		printf("%s added to class %c\n", word, class);
 	s = stab(word, ST_CLASS, ST_ENTER);
 	setbitn(class, s->s_class);
+}
+/*
+**  MAKEMAPENTRY -- create a map entry
+**
+**	Parameters:
+**		line -- the config file line
+**
+**	Returns:
+**		TRUE if it successfully entered the map entry.
+**		FALSE otherwise (usually syntax error).
+**
+**	Side Effects:
+**		Enters the map into the dictionary.
+*/
+
+void
+makemapentry(line)
+	char *line;
+{
+	register char *p;
+	char *mapname;
+	char *classname;
+	register STAB *map;
+	STAB *class;
+
+	for (p = line; isascii(*p) && isspace(*p); p++)
+		continue;
+	if (!(isascii(*p) && isalnum(*p)))
+	{
+		syserr("readcf: config K line: no map name");
+		return;
+	}
+
+	mapname = p;
+	while (isascii(*++p) && isalnum(*p))
+		continue;
+	if (*p != '\0')
+		*p++ = '\0';
+	while (isascii(*p) && isspace(*p))
+		p++;
+	if (!(isascii(*p) && isalnum(*p)))
+	{
+		syserr("readcf: config K line, map %s: no map class", mapname);
+		return;
+	}
+	classname = p;
+	while (isascii(*++p) && isalnum(*p))
+		continue;
+	if (*p != '\0')
+		*p++ = '\0';
+	while (isascii(*p) && isspace(*p))
+		p++;
+
+	/* look up the class */
+	class = stab(classname, ST_MAPCLASS, ST_FIND);
+	if (class == NULL)
+	{
+		syserr("readcf: map %s: class %s not available", mapname, classname);
+		return;
+	}
+
+	/* enter the map */
+	map = stab(mapname, ST_MAP, ST_ENTER);
+	map->s_map.map_class = &class->s_mapclass;
+	map->s_map.map_mname = newstr(mapname);
+
+	if (class->s_mapclass.map_parse(&map->s_map, p))
+		map->s_map.map_mflags |= MF_VALID;
+}
+/*
+**  SETTIMEOUTS -- parse and set timeout values
+**
+**	Parameters:
+**		val -- a pointer to the values.  If NULL, do initial
+**			settings.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Initializes the TimeOuts structure
+*/
+
+#define MINUTES	* 60
+#define HOUR	* 3600
+
+settimeouts(val)
+	register char *val;
+{
+	register char *p;
+	extern time_t convtime();
+
+	if (val == NULL)
+	{
+		TimeOuts.to_initial = (time_t) 5 MINUTES;
+		TimeOuts.to_helo = (time_t) 5 MINUTES;
+		TimeOuts.to_mail = (time_t) 10 MINUTES;
+		TimeOuts.to_rcpt = (time_t) 1 HOUR;
+		TimeOuts.to_datainit = (time_t) 5 MINUTES;
+		TimeOuts.to_datablock = (time_t) 1 HOUR;
+		TimeOuts.to_datafinal = (time_t) 1 HOUR;
+		TimeOuts.to_rset = (time_t) 5 MINUTES;
+		TimeOuts.to_quit = (time_t) 2 MINUTES;
+		TimeOuts.to_nextcommand = (time_t) 1 HOUR;
+		TimeOuts.to_miscshort = (time_t) 2 MINUTES;
+		return;
+	}
+
+	for (;; val = p)
+	{
+		while (isascii(*val) && isspace(*val))
+			val++;
+		if (*val == '\0')
+			break;
+		for (p = val; *p != '\0' && *p != ','; p++)
+			continue;
+		if (*p != '\0')
+			*p++ = '\0';
+
+		if (isascii(*val) && isdigit(*val))
+		{
+			/* old syntax -- set everything */
+			TimeOuts.to_mail = convtime(val, 'm');
+			TimeOuts.to_rcpt = TimeOuts.to_mail;
+			TimeOuts.to_datainit = TimeOuts.to_mail;
+			TimeOuts.to_datablock = TimeOuts.to_mail;
+			TimeOuts.to_datafinal = TimeOuts.to_mail;
+			TimeOuts.to_nextcommand = TimeOuts.to_mail;
+			continue;
+		}
+		else
+		{
+			register char *q = strchr(val, '=');
+			time_t to;
+
+			if (q == NULL)
+			{
+				/* syntax error */
+				continue;
+			}
+			*q++ = '\0';
+			to = convtime(q, 'm');
+
+			if (strcasecmp(val, "initial") == 0)
+				TimeOuts.to_initial = to;
+			else if (strcasecmp(val, "mail") == 0)
+				TimeOuts.to_mail = to;
+			else if (strcasecmp(val, "rcpt") == 0)
+				TimeOuts.to_rcpt = to;
+			else if (strcasecmp(val, "datainit") == 0)
+				TimeOuts.to_datainit = to;
+			else if (strcasecmp(val, "datablock") == 0)
+				TimeOuts.to_datablock = to;
+			else if (strcasecmp(val, "datafinal") == 0)
+				TimeOuts.to_datafinal = to;
+			else if (strcasecmp(val, "command") == 0)
+				TimeOuts.to_nextcommand = to;
+			else if (strcasecmp(val, "rset") == 0)
+				TimeOuts.to_rset = to;
+			else if (strcasecmp(val, "helo") == 0)
+				TimeOuts.to_helo = to;
+			else if (strcasecmp(val, "quit") == 0)
+				TimeOuts.to_quit = to;
+			else if (strcasecmp(val, "misc") == 0)
+				TimeOuts.to_miscshort = to;
+			else
+				syserr("settimeouts: invalid timeout %s", val);
+		}
+	}
 }

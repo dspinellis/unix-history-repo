@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1983 Eric P. Allman
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,11 +33,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)clock.c	5.10 (Berkeley) 3/4/91";
+static char sccsid[] = "@(#)clock.c	8.1 (Berkeley) 6/7/93";
 #endif /* not lint */
 
 # include "sendmail.h"
 # include <signal.h>
+
+# ifndef sigmask
+#  define sigmask(s)	(1 << ((s) - 1))
+# endif
 
 /*
 **  SETEVENT -- set an event to happen at a specific time.
@@ -71,7 +75,7 @@ setevent(intvl, func, arg)
 
 	if (intvl <= 0)
 	{
-		syserr("setevent: intvl=%ld\n", intvl);
+		syserr("554 setevent: intvl=%ld\n", intvl);
 		return (NULL);
 	}
 
@@ -189,7 +193,7 @@ tick()
 #ifdef SIGVTALRM
 		/* reset 4.2bsd signal mask to allow future alarms */
 		(void) sigsetmask(sigblock(0) & ~sigmask(SIGALRM));
-#endif SIGVTALRM
+#endif /* SIGVTALRM */
 
 		f = ev->ev_func;
 		arg = ev->ev_arg;
@@ -231,6 +235,7 @@ tick()
 
 static bool	SleepDone;
 
+unsigned int
 sleep(intvl)
 	unsigned int intvl;
 {

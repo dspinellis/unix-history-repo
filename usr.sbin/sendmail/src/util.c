@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1983 Eric P. Allman
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,17 +33,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.20 (Berkeley) 3/8/91";
+static char sccsid[] = "@(#)util.c	8.1 (Berkeley) 6/27/93";
 #endif /* not lint */
 
-# include <stdio.h>
-# include <sys/types.h>
-# include <sys/stat.h>
-# include <sysexits.h>
-# include <errno.h>
 # include "sendmail.h"
-
-/*
+# include <sysexits.h>
+/*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
 **
 **	Runs through a string and strips off unquoted quote
@@ -51,8 +46,6 @@ static char sccsid[] = "@(#)util.c	5.20 (Berkeley) 3/8/91";
 **
 **	Parameters:
 **		s -- the string to strip.
-**		qf -- if set, remove actual `` " '' characters
-**			as well as the quote bits.
 **
 **	Returns:
 **		none.
@@ -64,9 +57,8 @@ static char sccsid[] = "@(#)util.c	5.20 (Berkeley) 3/8/91";
 **		deliver
 */
 
-stripquotes(s, qf)
+stripquotes(s)
 	char *s;
-	bool qf;
 {
 	register char *p;
 	register char *q;
@@ -75,76 +67,16 @@ stripquotes(s, qf)
 	if (s == NULL)
 		return;
 
-	for (p = q = s; (c = *p++) != '\0'; )
+	p = q = s;
+	do
 	{
-		if (c != '"' || !qf)
-			*q++ = c & 0177;
-	}
-	*q = '\0';
-}
-/*
-**  QSTRLEN -- give me the string length assuming 0200 bits add a char
-**
-**	Parameters:
-**		s -- the string to measure.
-**
-**	Reurns:
-**		The length of s, including space for backslash escapes.
-**
-**	Side Effects:
-**		none.
-*/
-
-qstrlen(s)
-	register char *s;
-{
-	register int l = 0;
-	register char c;
-
-	while ((c = *s++) != '\0')
-	{
-		if (bitset(0200, c))
-			l++;
-		l++;
-	}
-	return (l);
-}
-/*
-**  CAPITALIZE -- return a copy of a string, properly capitalized.
-**
-**	Parameters:
-**		s -- the string to capitalize.
-**
-**	Returns:
-**		a pointer to a properly capitalized string.
-**
-**	Side Effects:
-**		none.
-*/
-
-char *
-capitalize(s)
-	register char *s;
-{
-	static char buf[50];
-	register char *p;
-
-	p = buf;
-
-	for (;;)
-	{
-		while (!isalpha(*s) && *s != '\0')
-			*p++ = *s++;
-		if (*s == '\0')
-			break;
-		*p++ = toupper(*s);
-		s++;
-		while (isalpha(*s))
-			*p++ = *s++;
-	}
-
-	*p = '\0';
-	return (buf);
+		c = *p++;
+		if (c == '\\')
+			c = *p++;
+		else if (c == '"')
+			continue;
+		*q++ = c;
+	} while (c != '\0');
 }
 /*
 **  XALLOC -- Allocate memory and bitch wildly on failure.
@@ -167,7 +99,6 @@ xalloc(sz)
 	register int sz;
 {
 	register char *p;
-	extern char *malloc();
 
 	p = malloc((unsigned) sz);
 	if (p == NULL)
@@ -222,6 +153,45 @@ copyplist(list, copycont)
 	return (newvp);
 }
 /*
+**  COPYQUEUE -- copy address queue.
+**
+**	This routine is the equivalent of newstr for address queues
+**	addresses marked with QDONTSEND aren't copied
+**
+**	Parameters:
+**		addr -- list of address structures to copy.
+**
+**	Returns:
+**		a copy of 'addr'.
+**
+**	Side Effects:
+**		none.
+*/
+
+ADDRESS *
+copyqueue(addr)
+	ADDRESS *addr;
+{
+	register ADDRESS *newaddr;
+	ADDRESS *ret;
+	register ADDRESS **tail = &ret;
+
+	while (addr != NULL)
+	{
+		if (!bitset(QDONTSEND, addr->q_flags))
+		{
+			newaddr = (ADDRESS *) xalloc(sizeof(ADDRESS));
+			STRUCTCOPY(*addr, *newaddr);
+			*tail = newaddr;
+			tail = &newaddr->q_next;
+		}
+		addr = addr->q_next;
+	}
+	*tail = NULL;
+	
+	return ret;
+}
+/*
 **  PRINTAV -- print argument vector.
 **
 **	Parameters:
@@ -264,7 +234,7 @@ char
 lower(c)
 	register char c;
 {
-	return(isascii(c) && isupper(c) ? tolower(c) : c);
+	return((isascii(c) && isupper(c)) ? tolower(c) : c);
 }
 /*
 **  XPUTS -- put string doing control escapes.
@@ -282,29 +252,67 @@ lower(c)
 xputs(s)
 	register char *s;
 {
-	register char c;
+	register int c;
+	register struct metamac *mp;
+	extern struct metamac MetaMacros[];
 
 	if (s == NULL)
 	{
 		printf("<null>");
 		return;
 	}
-	(void) putchar('"');
-	while ((c = *s++) != '\0')
+	while ((c = (*s++ & 0377)) != '\0')
 	{
 		if (!isascii(c))
 		{
+			if (c == MATCHREPL || c == MACROEXPAND)
+			{
+				putchar('$');
+				continue;
+			}
+			for (mp = MetaMacros; mp->metaname != '\0'; mp++)
+			{
+				if ((mp->metaval & 0377) == c)
+				{
+					printf("$%c", mp->metaname);
+					break;
+				}
+			}
+			if (mp->metaname != '\0')
+				continue;
 			(void) putchar('\\');
 			c &= 0177;
 		}
-		if (c < 040 || c >= 0177)
+		if (isprint(c))
 		{
-			(void) putchar('^');
-			c ^= 0100;
+			putchar(c);
+			continue;
 		}
-		(void) putchar(c);
+
+		/* wasn't a meta-macro -- find another way to print it */
+		switch (c)
+		{
+		  case '\0':
+			continue;
+
+		  case '\n':
+			c = 'n';
+			break;
+
+		  case '\r':
+			c = 'r';
+			break;
+
+		  case '\t':
+			c = 't';
+			break;
+
+		  default:
+			(void) putchar('^');
+			(void) putchar(c ^ 0100);
+			continue;
+		}
 	}
-	(void) putchar('"');
 	(void) fflush(stdout);
 }
 /*
@@ -353,16 +361,30 @@ makelower(p)
 **		none.
 */
 
-buildfname(p, login, buf)
-	register char *p;
+buildfname(gecos, login, buf)
+	register char *gecos;
 	char *login;
 	char *buf;
 {
+	register char *p;
 	register char *bp = buf;
+	int l;
 
-	if (*p == '*')
-		p++;
-	while (*p != '\0' && *p != ',' && *p != ';' && *p != '%')
+	if (*gecos == '*')
+		gecos++;
+
+	/* find length of final string */
+	l = 0;
+	for (p = gecos; *p != '\0' && *p != ',' && *p != ';' && *p != '%'; p++)
+	{
+		if (*p == '&')
+			l += strlen(login);
+		else
+			l++;
+	}
+
+	/* now fill in buf */
+	for (p = gecos; *p != '\0' && *p != ',' && *p != ';' && *p != '%'; p++)
 	{
 		if (*p == '&')
 		{
@@ -370,10 +392,9 @@ buildfname(p, login, buf)
 			*bp = toupper(*bp);
 			while (*bp != '\0')
 				bp++;
-			p++;
 		}
 		else
-			*bp++ = *p++;
+			*bp++ = *p;
 	}
 	*bp = '\0';
 }
@@ -386,26 +407,70 @@ buildfname(p, login, buf)
 **		mode -- mode bits that must match.
 **
 **	Returns:
-**		TRUE if fn exists, is owned by uid, and matches mode.
-**		FALSE otherwise.
+**		0 if fn exists, is owned by uid, and matches mode.
+**		An errno otherwise.  The actual errno is cleared.
 **
 **	Side Effects:
 **		none.
 */
 
-bool
+#ifndef S_IXOTH
+# define S_IXOTH	(S_IEXEC >> 6)
+#endif
+
+int
 safefile(fn, uid, mode)
 	char *fn;
-	int uid;
+	uid_t uid;
 	int mode;
 {
+	register char *p;
 	struct stat stbuf;
 
-	if (stat(fn, &stbuf) >= 0 && stbuf.st_uid == uid &&
-	    (stbuf.st_mode & mode) == mode)
-		return (TRUE);
+	if (tTd(54, 4))
+		printf("safefile(%s, %d, %o): ", fn, uid, mode);
 	errno = 0;
-	return (FALSE);
+
+	for (p = fn; (p = strchr(++p, '/')) != NULL; *p = '/')
+	{
+		*p = '\0';
+		if (stat(fn, &stbuf) < 0 || !bitset(S_IXOTH, stbuf.st_mode))
+		{
+			int ret = errno;
+
+			if (ret == 0)
+				ret = EACCES;
+			if (tTd(54, 4))
+				printf("[dir %s] %s\n", fn, errstring(ret));
+			*p = '/';
+			return ret;
+		}
+	}
+
+	if (stat(fn, &stbuf) < 0)
+	{
+		int ret = errno;
+
+		if (tTd(54, 4))
+			printf("%s\n", errstring(ret));
+
+		errno = 0;
+		return ret;
+	}
+	if (stbuf.st_uid != uid && uid == 0)
+		mode >>= 6;
+	if (tTd(54, 4))
+		printf("[uid %d, stat %o] ", stbuf.st_uid, stbuf.st_mode);
+	if ((stbuf.st_uid == uid || uid == 0) &&
+	    (stbuf.st_mode & mode) == mode)
+	{
+		if (tTd(54, 4))
+			printf("OK\n");
+		return 0;
+	}
+	if (tTd(54, 4))
+		printf("EACCES\n");
+	return EACCES;
 }
 /*
 **  FIXCRLF -- fix <CR><LF> in line.
@@ -432,7 +497,7 @@ fixcrlf(line, stripnl)
 {
 	register char *p;
 
-	p = index(line, '\n');
+	p = strchr(line, '\n');
 	if (p == NULL)
 		return;
 	if (p > line && p[-1] == '\r')
@@ -450,26 +515,59 @@ fixcrlf(line, stripnl)
 **	whatever), so this tries to get around it.
 */
 
+struct omodes
+{
+	int	mask;
+	int	mode;
+	char	*farg;
+} OpenModes[] =
+{
+	O_ACCMODE,		O_RDONLY,		"r",
+	O_ACCMODE|O_APPEND,	O_WRONLY,		"w",
+	O_ACCMODE|O_APPEND,	O_WRONLY|O_APPEND,	"a",
+	O_TRUNC,		0,			"w+",
+	O_APPEND,		O_APPEND,		"a+",
+	0,			0,			"r+",
+};
+
 FILE *
-dfopen(filename, mode)
+dfopen(filename, omode, cmode)
 	char *filename;
-	char *mode;
+	int omode;
+	int cmode;
 {
 	register int tries;
-	register FILE *fp;
+	int fd;
+	register struct omodes *om;
+	struct stat st;
+
+	for (om = OpenModes; om->mask != 0; om++)
+		if ((omode & om->mask) == om->mode)
+			break;
 
 	for (tries = 0; tries < 10; tries++)
 	{
 		sleep((unsigned) (10 * tries));
 		errno = 0;
-		fp = fopen(filename, mode);
-		if (fp != NULL)
+		fd = open(filename, omode, cmode);
+		if (fd >= 0)
 			break;
 		if (errno != ENFILE && errno != EINTR)
 			break;
 	}
-	errno = 0;
-	return (fp);
+	if (fd >= 0 && fstat(fd, &st) >= 0 && S_ISREG(st.st_mode))
+	{
+		int locktype;
+
+		/* lock the file to avoid accidental conflicts */
+		if ((omode & O_ACCMODE) != O_RDONLY)
+			locktype = LOCK_EX;
+		else
+			locktype = LOCK_SH;
+		(void) lockfile(fd, filename, locktype);
+		errno = 0;
+	}
+	return fdopen(fd, om->farg);
 }
 /*
 **  PUTLINE -- put a line like fputs obeying SMTP conventions
@@ -489,8 +587,6 @@ dfopen(filename, mode)
 **		output of l to fp.
 */
 
-# define SMTPLINELIM	990	/* maximum line length */
-
 putline(l, fp, m)
 	register char *l;
 	FILE *fp;
@@ -500,24 +596,24 @@ putline(l, fp, m)
 	register char svchar;
 
 	/* strip out 0200 bits -- these can look like TELNET protocol */
-	if (bitnset(M_LIMITS, m->m_flags))
+	if (bitnset(M_7BITS, m->m_flags))
 	{
-		for (p = l; svchar = *p; ++p)
-			if (svchar & 0200)
+		for (p = l; (svchar = *p) != '\0'; ++p)
+			if (bitset(0200, svchar))
 				*p = svchar &~ 0200;
 	}
 
 	do
 	{
 		/* find the end of the line */
-		p = index(l, '\n');
+		p = strchr(l, '\n');
 		if (p == NULL)
 			p = &l[strlen(l)];
 
 		/* check for line overflow */
-		while ((p - l) > SMTPLINELIM && bitnset(M_LIMITS, m->m_flags))
+		while (m->m_linelimit > 0 && (p - l) > m->m_linelimit)
 		{
-			register char *q = &l[SMTPLINELIM - 1];
+			register char *q = &l[m->m_linelimit - 1];
 
 			svchar = *q;
 			*q = '\0';
@@ -559,15 +655,38 @@ xunlink(f)
 	register int i;
 
 # ifdef LOG
-	if (LogLevel > 20)
-		syslog(LOG_DEBUG, "%s: unlink %s\n", CurEnv->e_id, f);
-# endif LOG
+	if (LogLevel > 98)
+		syslog(LOG_DEBUG, "%s: unlink %s", CurEnv->e_id, f);
+# endif /* LOG */
 
 	i = unlink(f);
 # ifdef LOG
-	if (i < 0 && LogLevel > 21)
+	if (i < 0 && LogLevel > 97)
 		syslog(LOG_DEBUG, "%s: unlink-fail %d", f, errno);
-# endif LOG
+# endif /* LOG */
+}
+/*
+**  XFCLOSE -- close a file, doing logging as appropriate.
+**
+**	Parameters:
+**		fp -- file pointer for the file to close
+**		a, b -- miscellaneous crud to print for debugging
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		fp is closed.
+*/
+
+xfclose(fp, a, b)
+	FILE *fp;
+	char *a, *b;
+{
+	if (tTd(53, 99))
+		printf("xfclose(%x) %s %s\n", fp, a, b);
+	if (fclose(fp) < 0 && tTd(53, 99))
+		printf("xfclose FAILURE: %s\n", errstring(errno));
 }
 /*
 **  SFGETS -- "safe" fgets -- times out and ignores random interrupts.
@@ -576,6 +695,8 @@ xunlink(f)
 **		buf -- place to put the input line.
 **		siz -- size of buf.
 **		fp -- file to read from.
+**		timeout -- the timeout before error occurs.
+**		during -- what we are trying to read (for error messages).
 **
 **	Returns:
 **		NULL on error (including timeout).  This will also leave
@@ -589,31 +710,34 @@ xunlink(f)
 static jmp_buf	CtxReadTimeout;
 
 char *
-sfgets(buf, siz, fp)
+sfgets(buf, siz, fp, timeout, during)
 	char *buf;
 	int siz;
 	FILE *fp;
+	time_t timeout;
+	char *during;
 {
 	register EVENT *ev = NULL;
 	register char *p;
 	static int readtimeout();
 
 	/* set the timeout */
-	if (ReadTimeout != 0)
+	if (timeout != 0)
 	{
 		if (setjmp(CtxReadTimeout) != 0)
 		{
 # ifdef LOG
 			syslog(LOG_NOTICE,
-			    "timeout waiting for input from %s\n",
-			    RealHostName? RealHostName: "local");
+			    "timeout waiting for input from %s during %s\n",
+			    CurHostName? CurHostName: "local", during);
 # endif
 			errno = 0;
-			usrerr("451 timeout waiting for input");
+			usrerr("451 timeout waiting for input during %s",
+				during);
 			buf[0] = '\0';
 			return (NULL);
 		}
-		ev = setevent((time_t) ReadTimeout, readtimeout, 0);
+		ev = setevent(timeout, readtimeout, 0);
 	}
 
 	/* try to read */
@@ -636,8 +760,9 @@ sfgets(buf, siz, fp)
 		buf[0] = '\0';
 		return (NULL);
 	}
-	for (p = buf; *p != '\0'; p++)
-		*p &= ~0200;
+	if (SevenBit)
+		for (p = buf; *p != '\0'; p++)
+			*p &= ~0200;
 	return (buf);
 }
 
@@ -655,7 +780,9 @@ readtimeout()
 **		f -- file to read from.
 **
 **	Returns:
-**		buf on success, NULL on error or EOF.
+**		input line(s) on success, NULL on error or EOF.
+**		This will normally be buf -- unless the line is too
+**			long, when it will be xalloc()ed.
 **
 **	Side Effects:
 **		buf gets lines from f, with continuation lines (lines
@@ -670,6 +797,7 @@ fgetfolded(buf, n, f)
 	FILE *f;
 {
 	register char *p = buf;
+	char *bp = buf;
 	register int i;
 
 	n--;
@@ -685,8 +813,26 @@ fgetfolded(buf, n, f)
 				i = '\r';
 			}
 		}
-		if (--n > 0)
-			*p++ = i;
+		if (--n <= 0)
+		{
+			/* allocate new space */
+			char *nbp;
+			int nn;
+
+			nn = (p - bp);
+			if (nn < MEMCHUNKSIZE)
+				nn *= 2;
+			else
+				nn += MEMCHUNKSIZE;
+			nbp = xalloc(nn);
+			bcopy(bp, nbp, p - bp);
+			p = &nbp[p - bp];
+			if (bp != buf)
+				free(bp);
+			bp = nbp;
+			n = nn - (p - bp);
+		}
+		*p++ = i;
 		if (i == '\n')
 		{
 			LineNumber++;
@@ -694,13 +840,13 @@ fgetfolded(buf, n, f)
 			if (i != EOF)
 				(void) ungetc(i, f);
 			if (i != ' ' && i != '\t')
-			{
-				*--p = '\0';
-				return (buf);
-			}
+				break;
 		}
 	}
-	return (NULL);
+	if (p == bp)
+		return (NULL);
+	*--p = '\0';
+	return (bp);
 }
 /*
 **  CURTIME -- return current time.
@@ -743,7 +889,7 @@ bool
 atobool(s)
 	register char *s;
 {
-	if (*s == '\0' || index("tTyY", *s) != NULL)
+	if (*s == '\0' || strchr("tTyY", *s) != NULL)
 		return (TRUE);
 	return (FALSE);
 }
@@ -849,4 +995,34 @@ bitzerop(map)
 		if (map[i] != 0)
 			return (FALSE);
 	return (TRUE);
+}
+/*
+**  STRCONTAINEDIN -- tell if one string is contained in another
+**
+**	Parameters:
+**		a -- possible substring.
+**		b -- possible superstring.
+**
+**	Returns:
+**		TRUE if a is contained in b.
+**		FALSE otherwise.
+*/
+
+bool
+strcontainedin(a, b)
+	register char *a;
+	register char *b;
+{
+	int l;
+
+	l = strlen(a);
+	for (;;)
+	{
+		b = strchr(b, a[0]);
+		if (b == NULL)
+			return FALSE;
+		if (strncmp(a, b, l) == 0)
+			return TRUE;
+		b++;
+	}
 }

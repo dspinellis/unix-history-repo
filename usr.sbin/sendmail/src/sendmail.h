@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1983 Eric P. Allman
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)sendmail.h	5.17 (Berkeley) 3/12/91
+ *	@(#)sendmail.h	8.1 (Berkeley) 6/7/93
  */
 
 /*
@@ -41,31 +41,47 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.17		3/12/91";
-# endif lint
-# else  _DEFINE
+static char SmailSccsId[] =	"@(#)sendmail.h	8.1		6/7/93";
+# endif
+# else /*  _DEFINE */
 # define EXTERN extern
-# endif _DEFINE
+# endif /* _DEFINE */
 
+# include <unistd.h>
+# include <stddef.h>
+# include <stdlib.h>
 # include <stdio.h>
 # include <ctype.h>
 # include <setjmp.h>
+# include <sysexits.h>
+# include <string.h>
+# include <time.h>
+# include <errno.h>
+
 # include "conf.h"
 # include "useful.h"
 
 # ifdef LOG
-# include <sys/syslog.h>
-# endif LOG
+# include <syslog.h>
+# endif /* LOG */
 
 # ifdef DAEMON
-# ifdef VMUNIX
 # include <sys/socket.h>
+# endif
+# ifdef NETINET
 # include <netinet/in.h>
-# endif VMUNIX
-# endif DAEMON
+# endif
+# ifdef NETISO
+# include <netiso/iso.h>
+# endif
+# ifdef NETNS
+# include <netns/ns.h>
+# endif
+# ifdef NETX25
+# include <netccitt/x25.h>
+# endif
 
 
-# define PSBUFSIZE	(MAXNAME + MAXATOM)	/* size of prescan buffer */
 
 
 /*
@@ -108,12 +124,13 @@ struct address
 	char		*q_host;	/* host name */
 	struct mailer	*q_mailer;	/* mailer to use */
 	u_short		q_flags;	/* status flags, see below */
-	short		q_uid;		/* user-id of receiver (if known) */
-	short		q_gid;		/* group-id of receiver (if known) */
+	uid_t		q_uid;		/* user-id of receiver (if known) */
+	gid_t		q_gid;		/* group-id of receiver (if known) */
 	char		*q_home;	/* home dir (local mailer only) */
 	char		*q_fullname;	/* full name if known */
 	struct address	*q_next;	/* chain */
 	struct address	*q_alias;	/* address this results from */
+	char		*q_owner;	/* owner of q_alias */
 	struct address	*q_tchain;	/* temporary use chain */
 	time_t		q_timeout;	/* timeout for this address */
 };
@@ -126,6 +143,9 @@ typedef struct address ADDRESS;
 # define QPRIMARY	000010	/* set from argv */
 # define QQUEUEUP	000020	/* queue for later transmission */
 # define QSENT		000040	/* has been successfully delivered */
+# define QNOTREMOTE	000100	/* not an address for remote forwarding */
+# define QSELFREF	000200	/* this address references itself */
+# define QVERIFIED	000400	/* verified, but not expanded */
 /*
 **  Mailer definition structure.
 **	Every mailer known to the system is declared in this
@@ -145,38 +165,57 @@ struct mailer
 	BITMAP	m_flags;	/* status flags, see below */
 	short	m_mno;		/* mailer number internally */
 	char	**m_argv;	/* template argument vector */
-	short	m_s_rwset;	/* rewriting set for sender addresses */
-	short	m_r_rwset;	/* rewriting set for recipient addresses */
+	short	m_sh_rwset;	/* rewrite set: sender header addresses */
+	short	m_se_rwset;	/* rewrite set: sender envelope addresses */
+	short	m_rh_rwset;	/* rewrite set: recipient header addresses */
+	short	m_re_rwset;	/* rewrite set: recipient envelope addresses */
 	char	*m_eol;		/* end of line string */
 	long	m_maxsize;	/* size limit on message to this mailer */
+	int	m_linelimit;	/* max # characters per line */
+	char	*m_execdir;	/* directory to chdir to before execv */
 };
 
 typedef struct mailer	MAILER;
 
 /* bits for m_flags */
+# define M_ESMTP	'a'	/* run Extended SMTP protocol */
+# define M_BLANKEND	'b'	/* ensure blank line at end of message */
+# define M_NOCOMMENT	'c'	/* don't include comment part of address */
 # define M_CANONICAL	'C'	/* make addresses canonical "u@dom" */
+		/*	'D'	/* CF: include Date: */
 # define M_EXPENSIVE	'e'	/* it costs to use this mailer.... */
 # define M_ESCFROM	'E'	/* escape From lines to >From */
 # define M_FOPT		'f'	/* mailer takes picky -f flag */
+		/*	'F'	/* CF: include From: or Resent-From: */
+# define M_NO_NULL_FROM	'g'	/* sender of errors should be $g */
 # define M_HST_UPPER	'h'	/* preserve host case distinction */
+		/*	'H'	/* UIUC: MAIL11V3: preview headers */
 # define M_INTERNAL	'I'	/* SMTP to another sendmail site */
-# define M_LOCAL	'l'	/* delivery is to this host */
+# define M_LOCALMAILER	'l'	/* delivery is to this host */
 # define M_LIMITS	'L'	/* must enforce SMTP line limits */
 # define M_MUSER	'm'	/* can handle multiple users at once */
+		/*	'M'	/* CF: include Message-Id: */
 # define M_NHDR		'n'	/* don't insert From line */
+		/*	'N'	/* UIUC: MAIL11V3: DATA returns multi-status */
 # define M_FROMPATH	'p'	/* use reverse-path in MAIL FROM: */
+		/*	'P'	/* CF: include Return-Path: */
 # define M_ROPT		'r'	/* mailer takes picky -r flag */
 # define M_SECURE_PORT	'R'	/* try to send on a reserved TCP port */
 # define M_STRIPQ	's'	/* strip quote chars from user/host */
 # define M_RESTR	'S'	/* must be daemon to execute */
 # define M_USR_UPPER	'u'	/* preserve user case distinction */
 # define M_UGLYUUCP	'U'	/* this wants an ugly UUCP from line */
+		/*	'V'	/* UIUC: !-relativize all addresses */
+		/*	'x'	/* CF: include Full-Name: */
 # define M_XDOT		'X'	/* use hidden-dot algorithm */
+# define M_7BITS	'7'	/* use 7-bit path */
 
 EXTERN MAILER	*Mailer[MAXMAILERS+1];
 
 EXTERN MAILER	*LocalMailer;		/* ptr to local mailer */
 EXTERN MAILER	*ProgMailer;		/* ptr to program mailer */
+EXTERN MAILER	*FileMailer;		/* ptr to *file* mailer */
+EXTERN MAILER	*InclMailer;		/* ptr to *include* mailer */
 /*
 **  Header structure.
 **	This structure is used internally to store header items.
@@ -218,6 +257,8 @@ extern struct hdrinfo	HdrInfo[];
 # define H_TRACE	00200	/* this field contains trace information */
 # define H_FROM		00400	/* this is a from-type field */
 # define H_VALID	01000	/* this field has a validated value */
+# define H_RECEIPTTO	02000	/* this field has return receipt info */
+# define H_ERRORSTO	04000	/* this field has error address info */
 /*
 **  Envelope structure.
 **	This structure defines the message itself.  There is usually
@@ -227,7 +268,9 @@ extern struct hdrinfo	HdrInfo[];
 **	will have their own envelope.
 */
 
-struct envelope
+# define ENVELOPE	struct envelope
+
+ENVELOPE
 {
 	HDR		*e_header;	/* head of header list */
 	long		e_msgpriority;	/* adjusted priority of this message */
@@ -235,6 +278,7 @@ struct envelope
 	char		*e_to;		/* the target person */
 	char		*e_receiptto;	/* return receipt address */
 	ADDRESS		e_from;		/* the person it is from */
+	char		*e_sender;	/* e_from.q_paddr w comments stripped */
 	char		**e_fromdomain;	/* the domain part of the sender */
 	ADDRESS		*e_sendqueue;	/* list of message recipients */
 	ADDRESS		*e_errorqueue;	/* the queue for error responses */
@@ -243,19 +287,26 @@ struct envelope
 	short		e_class;	/* msg class (priority, junk, etc.) */
 	short		e_flags;	/* flags, see below */
 	short		e_hopcount;	/* number of times processed */
-	int		(*e_puthdr)();	/* function to put header of message */
-	int		(*e_putbody)();	/* function to put body of message */
+	short		e_nsent;	/* number of sends since checkpoint */
+	short		e_sendmode;	/* message send mode */
+	short		e_errormode;	/* error return mode */
+	int		(*e_puthdr)__P((FILE *, MAILER *, ENVELOPE *));
+					/* function to put header of message */
+	int		(*e_putbody)__P((FILE *, MAILER *, ENVELOPE *, char *));
+					/* function to put body of message */
 	struct envelope	*e_parent;	/* the message this one encloses */
 	struct envelope *e_sibling;	/* the next envelope of interest */
+	char		*e_bodytype;	/* type of message body */
 	char		*e_df;		/* location of temp file */
 	FILE		*e_dfp;		/* temporary file */
 	char		*e_id;		/* code for this entry in queue */
 	FILE		*e_xfp;		/* transcript file */
+	FILE		*e_lockfp;	/* the lock file for this message */
 	char		*e_message;	/* error message */
+	char		*e_statmsg;	/* stat msg (changes per delivery) */
+	char		*e_msgboundary;	/* MIME-style message part boundary */
 	char		*e_macro[128];	/* macro definitions */
 };
-
-typedef struct envelope	ENVELOPE;
 
 /* values for e_flags */
 #define EF_OLDSTYLE	000001		/* use spaces (not commas) in hdrs */
@@ -267,6 +318,9 @@ typedef struct envelope	ENVELOPE;
 #define EF_KEEPQUEUE	000100		/* keep queue files always */
 #define EF_RESPONSE	000200		/* this is an error or return receipt */
 #define EF_RESENT	000400		/* this message is being forwarded */
+#define EF_VRFYONLY	001000		/* verify only (don't expand aliases) */
+#define EF_WARNING	002000		/* warning message has been sent */
+#define EF_QUEUERUN	004000		/* this envelope is from queue */
 
 EXTERN ENVELOPE	*CurEnv;	/* envelope currently being processed */
 /*
@@ -323,55 +377,175 @@ EXTERN struct rewrite	*RewriteRules[MAXRWSETS];
 */
 
 /* left hand side items */
-# define MATCHZANY	'\020'	/* match zero or more tokens */
-# define MATCHANY	'\021'	/* match one or more tokens */
-# define MATCHONE	'\022'	/* match exactly one token */
-# define MATCHCLASS	'\023'	/* match one token in a class */
-# define MATCHNCLASS	'\024'	/* match anything not in class */
-# define MATCHREPL	'\025'	/* replacement on RHS for above */
+# define MATCHZANY	0220	/* match zero or more tokens */
+# define MATCHANY	0221	/* match one or more tokens */
+# define MATCHONE	0222	/* match exactly one token */
+# define MATCHCLASS	0223	/* match one token in a class */
+# define MATCHNCLASS	0224	/* match anything not in class */
+# define MATCHREPL	0225	/* replacement on RHS for above */
 
 /* right hand side items */
-# define CANONNET	'\026'	/* canonical net, next token */
-# define CANONHOST	'\027'	/* canonical host, next token */
-# define CANONUSER	'\030'	/* canonical user, next N tokens */
-# define CALLSUBR	'\031'	/* call another rewriting set */
+# define CANONNET	0226	/* canonical net, next token */
+# define CANONHOST	0227	/* canonical host, next token */
+# define CANONUSER	0230	/* canonical user, next N tokens */
+# define CALLSUBR	0231	/* call another rewriting set */
 
 /* conditionals in macros */
-# define CONDIF		'\032'	/* conditional if-then */
-# define CONDELSE	'\033'	/* conditional else */
-# define CONDFI		'\034'	/* conditional fi */
+# define CONDIF		0232	/* conditional if-then */
+# define CONDELSE	0233	/* conditional else */
+# define CONDFI		0234	/* conditional fi */
 
 /* bracket characters for host name lookup */
-# define HOSTBEGIN	'\035'	/* hostname lookup begin */
-# define HOSTEND	'\036'	/* hostname lookup end */
+# define HOSTBEGIN	0235	/* hostname lookup begin */
+# define HOSTEND	0236	/* hostname lookup end */
 
-/* \001 is also reserved as the macro expansion character */
+/* bracket characters for generalized lookup */
+# define LOOKUPBEGIN	0205	/* generalized lookup begin */
+# define LOOKUPEND	0206	/* generalized lookup end */
+
+/* macro substitution character */
+# define MACROEXPAND	0201	/* macro expansion */
+# define MACRODEXPAND	0202	/* deferred macro expansion */
+
+/* to make the code clearer */
+# define MATCHZERO	CANONHOST
+
+/* external <==> internal mapping table */
+struct metamac
+{
+	char	metaname;	/* external code (after $) */
+	char	metaval;	/* internal code (as above) */
+};
 /*
-**  Information about hosts that we have looked up recently.
-**
-**	This stuff is 4.2/3bsd specific.
+**  Information about currently open connections to mailers, or to
+**  hosts that we have looked up recently.
 */
 
-# ifdef DAEMON
-# ifdef VMUNIX
+# define MCI	struct mailer_con_info
 
-# define HOSTINFO	struct hostinfo
-
-HOSTINFO
+MCI
 {
-	char		*ho_name;	/* name of this host */
-	struct in_addr	ho_inaddr;	/* internet address */
-	short		ho_flags;	/* flag bits, see below */
-	short		ho_errno;	/* error number on last connection */
-	short		ho_exitstat;	/* exit status from last connection */
+	short		mci_flags;	/* flag bits, see below */
+	short		mci_errno;	/* error number on last connection */
+	short		mci_exitstat;	/* exit status from last connection */
+	short		mci_state;	/* SMTP state */
+	long		mci_maxsize;	/* max size this server will accept */
+	FILE		*mci_in;	/* input side of connection */
+	FILE		*mci_out;	/* output side of connection */
+	int		mci_pid;	/* process id of subordinate proc */
+	char		*mci_phase;	/* SMTP phase string */
+	struct mailer	*mci_mailer;	/* ptr to the mailer for this conn */
+	char		*mci_host;	/* host name */
+	time_t		mci_lastuse;	/* last usage time */
 };
 
 
 /* flag bits */
-#define HOF_VALID	00001		/* this entry is valid */
+#define MCIF_VALID	000001		/* this entry is valid */
+#define MCIF_TEMP	000002		/* don't cache this connection */
+#define MCIF_CACHED	000004		/* currently in open cache */
+#define MCIF_ESMTP	000010		/* this host speaks ESMTP */
+#define MCIF_EXPN	000020		/* EXPN command supported */
+#define MCIF_SIZE	000040		/* SIZE option supported */
+#define MCIF_8BITMIME	000100		/* BODY=8BITMIME supported */
 
-# endif VMUNIX
-# endif DAEMON
+/* states */
+#define MCIS_CLOSED	0		/* no traffic on this connection */
+#define MCIS_OPENING	1		/* sending initial protocol */
+#define MCIS_OPEN	2		/* open, initial protocol sent */
+#define MCIS_ACTIVE	3		/* message being sent */
+#define MCIS_QUITING	4		/* running quit protocol */
+#define MCIS_SSD	5		/* service shutting down */
+#define MCIS_ERROR	6		/* I/O error on connection */
+/*
+**  Name canonification short circuit.
+**
+**	If the name server for a host is down, the process of trying to
+**	canonify the name can hang.  This is similar to (but alas, not
+**	identical to) looking up the name for delivery.  This stab type
+**	caches the result of the name server lookup so we don't hang
+**	multiple times.
+*/
+
+#define NAMECANON	struct _namecanon
+
+NAMECANON
+{
+	short		nc_errno;	/* cached errno */
+	short		nc_herrno;	/* cached h_errno */
+	short		nc_stat;	/* cached exit status code */
+	short		nc_flags;	/* flag bits */
+	char		*nc_cname;	/* the canonical name */
+};
+
+/* values for nc_flags */
+#define NCF_VALID	0x0001	/* entry valid */
+/*
+**  Mapping functions
+**
+**	These allow arbitrary mappings in the config file.  The idea
+**	(albeit not the implementation) comes from IDA sendmail.
+*/
+
+# define MAPCLASS	struct _mapclass
+# define MAP		struct _map
+
+
+/*
+**  An actual map.
+*/
+
+MAP
+{
+	MAPCLASS	*map_class;	/* the class of this map */
+	char		*map_mname;	/* name of this map */
+	int		map_mflags;	/* flags, see below */
+	char		*map_file;	/* the (nominal) filename */
+	void		*map_db1;	/* the open database ptr */
+	void		*map_db2;	/* an "extra" database pointer */
+	char		*map_app;	/* to append to successful matches */
+	char		*map_domain;	/* the (nominal) NIS domain */
+	char		*map_rebuild;	/* program to run to do auto-rebuild */
+};
+
+/* bit values for map_flags */
+# define MF_VALID	0x0001		/* this entry is valid */
+# define MF_INCLNULL	0x0002		/* include null byte in key */
+# define MF_OPTIONAL	0x0004		/* don't complain if map not found */
+# define MF_NOFOLDCASE	0x0008		/* don't fold case in keys */
+# define MF_MATCHONLY	0x0010		/* don't use the map value */
+# define MF_OPEN	0x0020		/* this entry is open */
+# define MF_WRITABLE	0x0040		/* open for writing */
+# define MF_ALIAS	0x0080		/* this is an alias file */
+# define MF_IMPL_HASH	0x1000		/* implicit: underlying hash database */
+# define MF_IMPL_NDBM	0x2000		/* implicit: underlying NDBM database */
+
+
+/*
+**  The class of a map -- essentially the functions to call
+*/
+
+MAPCLASS
+{
+	char	*map_cname;		/* name of this map class */
+	char	*map_ext;		/* extension for database file */
+	short	map_cflags;		/* flag bits, see below */
+	bool	(*map_parse)__P((MAP *, char *));
+					/* argument parsing function */
+	char	*(*map_lookup)__P((MAP *, char *, char **, int *));
+					/* lookup function */
+	void	(*map_store)__P((MAP *, char *, char *));
+					/* store function */
+	bool	(*map_open)__P((MAP *, int));
+					/* open function */
+	void	(*map_close)__P((MAP *));
+					/* close function */
+};
+
+/* bit values for map_cflags */
+#define MCF_ALIASOK	0x0001		/* can be used for aliases */
+#define MCF_ALIASONLY	0x0002		/* usable only for aliases */
+#define MCF_REBUILDABLE	0x0004		/* can rebuild alias files */
 /*
 **  Symbol table definitions
 */
@@ -387,9 +561,11 @@ struct symtab
 		ADDRESS		*sv_addr;	/* pointer to address header */
 		MAILER		*sv_mailer;	/* pointer to mailer */
 		char		*sv_alias;	/* alias */
-# ifdef HOSTINFO
-		HOSTINFO	sv_host;	/* host information */
-# endif HOSTINFO
+		MAPCLASS	sv_mapclass;	/* mapping function class */
+		MAP		sv_map;		/* mapping function */
+		char		*sv_hostsig;	/* host signature */
+		MCI		sv_mci;		/* mailer connection info */
+		NAMECANON	sv_namecanon;	/* canonical name cache */
 	}	s_value;
 };
 
@@ -401,15 +577,24 @@ typedef struct symtab	STAB;
 # define ST_ADDRESS	2	/* an address in parsed format */
 # define ST_MAILER	3	/* a mailer header */
 # define ST_ALIAS	4	/* an alias */
-# define ST_HOST	5	/* host information */
+# define ST_MAPCLASS	5	/* mapping function class */
+# define ST_MAP		6	/* mapping function */
+# define ST_HOSTSIG	7	/* host signature */
+# define ST_NAMECANON	8	/* cached canonical name */
+# define ST_MCI		16	/* mailer connection info (offset) */
 
 # define s_class	s_value.sv_class
 # define s_address	s_value.sv_addr
 # define s_mailer	s_value.sv_mailer
 # define s_alias	s_value.sv_alias
-# define s_host		s_value.sv_host
+# define s_mci		s_value.sv_mci
+# define s_mapclass	s_value.sv_mapclass
+# define s_hostsig	s_value.sv_hostsig
+# define s_map		s_value.sv_map
+# define s_namecanon	s_value.sv_namecanon
 
-extern STAB	*stab();
+extern STAB		*stab __P((char *, int, int));
+extern void		stabapply __P((void (*)(STAB *, int), int));
 
 /* opcodes to stab */
 # define ST_FIND	0	/* find entry */
@@ -426,7 +611,8 @@ extern STAB	*stab();
 struct event
 {
 	time_t		ev_time;	/* time of the function call */
-	int		(*ev_func)();	/* function to call */
+	int		(*ev_func)__P((int));
+					/* function to call */
 	int		ev_arg;		/* argument to ev_func */
 	int		ev_pid;		/* pid that set this event */
 	struct event	*ev_link;	/* link to next item */
@@ -454,7 +640,6 @@ EXTERN EVENT	*EventQueue;		/* head of event queue */
 EXTERN char	OpMode;		/* operation mode, see below */
 
 #define MD_DELIVER	'm'		/* be a mail sender */
-#define MD_ARPAFTP	'a'		/* old-style arpanet protocols */
 #define MD_SMTP		's'		/* run SMTP on standard input */
 #define MD_DAEMON	'd'		/* run as a daemon */
 #define MD_VERIFY	'v'		/* verify: don't collect or deliver */
@@ -464,8 +649,7 @@ EXTERN char	OpMode;		/* operation mode, see below */
 #define MD_FREEZE	'z'		/* freeze the configuration file */
 
 
-EXTERN char	SendMode;	/* send mode, see below */
-
+/* values for e_sendmode -- send modes */
 #define SM_DELIVER	'i'		/* interactive delivery */
 #define SM_QUICKD	'j'		/* deliver w/o queueing */
 #define SM_FORK		'b'		/* deliver in background */
@@ -476,25 +660,83 @@ EXTERN char	SendMode;	/* send mode, see below */
 #define SM_DEFAULT	'\0'		/* unspecified, use SendMode */
 
 
-EXTERN char	ErrorMode;	/* error mode, see below */
-
+/* values for e_errormode -- error handling modes */
 #define EM_PRINT	'p'		/* print errors */
 #define EM_MAIL		'm'		/* mail back errors */
 #define EM_WRITE	'w'		/* write back errors */
 #define EM_BERKNET	'e'		/* special berknet processing */
 #define EM_QUIET	'q'		/* don't print messages (stat only) */
+/*
+**  Additional definitions
+*/
 
-/* offset used to issure that the error messages for name server error
- * codes are unique.
- */
+
+/* Offset used to ensure that name server error * codes are unique */
 #define	MAX_ERRNO	100
+
+
+/*
+**  Privacy flags
+**	These are bit values for the PrivacyFlags word.
+*/
+
+#define PRIV_PUBLIC		0	/* what have I got to hide? */
+#define PRIV_NEEDMAILHELO	00001	/* insist on HELO for MAIL, at least */
+#define PRIV_NEEDEXPNHELO	00002	/* insist on HELO for EXPN */
+#define PRIV_NEEDVRFYHELO	00004	/* insist on HELO for VRFY */
+#define PRIV_NOEXPN		00010	/* disallow EXPN command entirely */
+#define PRIV_NOVRFY		00020	/* disallow VRFY command entirely */
+#define PRIV_AUTHWARNINGS	00040	/* flag possible authorization probs */
+#define PRIV_RESTRMAILQ		01000	/* restrict mailq command */
+#define PRIV_GOAWAY		00777	/* don't give no info, anyway, anyhow */
+
+/* struct defining such things */
+struct prival
+{
+	char	*pv_name;	/* name of privacy flag */
+	int	pv_flag;	/* numeric level */
+};
+
+
+/*
+**  Flags passed to remotename
+*/
+
+#define RF_SENDERADDR		0001	/* this is a sender address */
+#define RF_HEADERADDR		0002	/* this is a header address */
+#define RF_CANONICAL		0004	/* strip comment information */
+#define RF_ADDDOMAIN		0010	/* OK to do domain extension */
+
+
+/*
+**  Regular UNIX sockaddrs are too small to handle ISO addresses, so
+**  we are forced to declare a supertype here.
+*/
+
+union bigsockaddr
+{
+	struct sockaddr		sa;	/* general version */
+#ifdef NETINET
+	struct sockaddr_in	sin;	/* INET family */
+#endif
+#ifdef NETISO
+	struct sockaddr_iso	siso;	/* ISO family */
+#endif
+#ifdef NETNS
+	struct sockaddr_ns	sns;	/* XNS family */
+#endif
+#ifdef NETX25
+	struct sockaddr_x25	sx25;	/* X.25 family */
+#endif
+};
+
+#define SOCKADDR	union bigsockaddr
+
 /*
 **  Global variables.
 */
 
 EXTERN bool	FromFlag;	/* if set, "From" person is explicit */
-EXTERN bool	NoAlias;	/* if set, don't do any aliasing */
-EXTERN bool	ForceMail;	/* if set, mail even if already got a copy */
 EXTERN bool	MeToo;		/* send to the sender also */
 EXTERN bool	IgnrDot;	/* don't let dot end messages */
 EXTERN bool	SaveFrom;	/* save leading "From" lines */
@@ -502,64 +744,105 @@ EXTERN bool	Verbose;	/* set if blow-by-blow desired */
 EXTERN bool	GrabTo;		/* if set, get recipients from msg */
 EXTERN bool	NoReturn;	/* don't return letter to sender */
 EXTERN bool	SuprErrs;	/* set if we are suppressing errors */
-EXTERN bool	QueueRun;	/* currently running message from the queue */
 EXTERN bool	HoldErrs;	/* only output errors to transcript */
 EXTERN bool	NoConnect;	/* don't connect to non-local mailers */
 EXTERN bool	SuperSafe;	/* be extra careful, even if expensive */
 EXTERN bool	ForkQueueRuns;	/* fork for each job when running the queue */
 EXTERN bool	AutoRebuild;	/* auto-rebuild the alias database as needed */
 EXTERN bool	CheckAliases;	/* parse addresses during newaliases */
+EXTERN bool	NoAlias;	/* suppress aliasing */
 EXTERN bool	UseNameServer;	/* use internet domain name server */
+EXTERN bool	SevenBit;	/* force 7-bit data */
 EXTERN int	SafeAlias;	/* minutes to wait until @:@ in alias file */
-EXTERN time_t	TimeOut;	/* time until timeout */
 EXTERN FILE	*InChannel;	/* input connection */
 EXTERN FILE	*OutChannel;	/* output connection */
-EXTERN int	RealUid;	/* when Daemon, real uid of caller */
-EXTERN int	RealGid;	/* when Daemon, real gid of caller */
-EXTERN int	DefUid;		/* default uid to run as */
+EXTERN uid_t	RealUid;	/* when Daemon, real uid of caller */
+EXTERN gid_t	RealGid;	/* when Daemon, real gid of caller */
+EXTERN uid_t	DefUid;		/* default uid to run as */
+EXTERN gid_t	DefGid;		/* default gid to run as */
 EXTERN char	*DefUser;	/* default user to run as (from DefUid) */
-EXTERN int	DefGid;		/* default gid to run as */
 EXTERN int	OldUmask;	/* umask when sendmail starts up */
 EXTERN int	Errors;		/* set if errors (local to single pass) */
 EXTERN int	ExitStat;	/* exit status code */
 EXTERN int	AliasLevel;	/* depth of aliasing */
-EXTERN int	MotherPid;	/* proc id of parent process */
 EXTERN int	LineNumber;	/* line number in current input */
-EXTERN time_t	ReadTimeout;	/* timeout on reads */
 EXTERN int	LogLevel;	/* level of logging to perform */
 EXTERN int	FileMode;	/* mode on files */
 EXTERN int	QueueLA;	/* load average starting forced queueing */
 EXTERN int	RefuseLA;	/* load average refusing connections are */
-EXTERN int	QueueFactor;	/* slope of queue function */
+EXTERN int	CurrentLA;	/* current load average */
+EXTERN long	QueueFactor;	/* slope of queue function */
 EXTERN time_t	QueueIntvl;	/* intervals between running the queue */
-EXTERN char	*AliasFile;	/* location of alias file */
 EXTERN char	*HelpFile;	/* location of SMTP help file */
+EXTERN char	*ErrMsgFile;	/* file to prepend to all error messages */
 EXTERN char	*StatFile;	/* location of statistics summary */
 EXTERN char	*QueueDir;	/* location of queue directory */
 EXTERN char	*FileName;	/* name to print on error messages */
 EXTERN char	*SmtpPhase;	/* current phase in SMTP processing */
 EXTERN char	*MyHostName;	/* name of this host for SMTP messages */
 EXTERN char	*RealHostName;	/* name of host we are talking to */
-EXTERN struct	sockaddr_in RealHostAddr;/* address of host we are talking to */
+EXTERN SOCKADDR RealHostAddr;	/* address of host we are talking to */
 EXTERN char	*CurHostName;	/* current host we are dealing with */
 EXTERN jmp_buf	TopFrame;	/* branch-to-top-of-loop-on-error frame */
 EXTERN bool	QuickAbort;	/*  .... but only if we want a quick abort */
+EXTERN bool	LogUsrErrs;	/* syslog user errors (e.g., SMTP RCPT cmd) */
+EXTERN bool	SendMIMEErrors;	/* send error messages in MIME format */
+EXTERN bool	MatchGecos;	/* look for user names in gecos field */
+EXTERN bool	UseErrorsTo;	/* use Errors-To: header (back compat) */
+EXTERN char	SpaceSub;	/* substitution for <lwsp> */
+EXTERN int	PrivacyFlags;	/* privacy flags */
 extern char	*ConfFile;	/* location of configuration file [conf.c] */
 extern char	*FreezeFile;	/* location of frozen memory image [conf.c] */
-extern char	Arpa_Info[];	/* the reply code for Arpanet info [conf.c] */
+extern char	*PidFile;	/* location of proc id file [conf.c] */
 extern ADDRESS	NullAddress;	/* a null (template) address [main.c] */
-EXTERN char	SpaceSub;	/* substitution for <lwsp> */
-EXTERN int	WkClassFact;	/* multiplier for message class -> priority */
-EXTERN int	WkRecipFact;	/* multiplier for # of recipients -> priority */
-EXTERN int	WkTimeFact;	/* priority offset each time this job is run */
-EXTERN int	CheckPointLimit;	/* deliveries before checkpointing */
-EXTERN int	Nmx;			/* number of MX RRs */
+EXTERN long	WkClassFact;	/* multiplier for message class -> priority */
+EXTERN long	WkRecipFact;	/* multiplier for # of recipients -> priority */
+EXTERN long	WkTimeFact;	/* priority offset each time this job is run */
+EXTERN char	*UdbSpec;	/* user database source spec */
+EXTERN int	MaxHopCount;	/* max # of hops until bounce */
+EXTERN int	ConfigLevel;	/* config file level */
+EXTERN char	*TimeZoneSpec;	/* override time zone specification */
+EXTERN char	*ForwardPath;	/* path to search for .forward files */
+EXTERN long	MinBlocksFree;	/* min # of blocks free on queue fs */
+EXTERN char	*FallBackMX;	/* fall back MX host */
+EXTERN long	MaxMessageSize;	/* advertised max size we will accept */
 EXTERN char	*PostMasterCopy;	/* address to get errs cc's */
-EXTERN char	*MxHosts[MAXMXHOSTS+1];	/* for MX RRs */
-EXTERN char	*TrustedUsers[MAXTRUST+1];	/* list of trusted users */
-EXTERN char	*UserEnviron[MAXUSERENVIRON+1];	/* saved user environment */
 EXTERN int	CheckpointInterval;	/* queue file checkpoint interval */
-/*
+EXTERN bool	DontPruneRoutes;	/* don't prune source routes */
+EXTERN int	MaxMciCache;		/* maximum entries in MCI cache */
+EXTERN time_t	MciCacheTimeout;	/* maximum idle time on connections */
+EXTERN char	*QueueLimitRecipient;	/* limit queue runs to this recipient */
+EXTERN char	*QueueLimitSender;	/* limit queue runs to this sender */
+EXTERN char	*QueueLimitId;		/* limit queue runs to this id */
+
+
+/*
+**  Timeouts
+**
+**	Indicated values are the MINIMUM per RFC 1123 section 5.3.2.
+*/
+
+EXTERN struct
+{
+	time_t	to_initial;	/* initial greeting timeout [5m] */
+	time_t	to_mail;	/* MAIL command [5m] */
+	time_t	to_rcpt;	/* RCPT command [5m] */
+	time_t	to_datainit;	/* DATA initiation [2m] */
+	time_t	to_datablock;	/* DATA block [3m] */
+	time_t	to_datafinal;	/* DATA completion [10m] */
+	time_t	to_nextcommand;	/* next command [5m] */
+			/* following timeouts are not mentioned in RFC 1123 */
+	time_t	to_rset;	/* RSET command */
+	time_t	to_helo;	/* HELO command */
+	time_t	to_quit;	/* QUIT command */
+	time_t	to_miscshort;	/* misc short commands (NOOP, VERB, etc) */
+			/* following are per message */
+	time_t	to_q_return;	/* queue return timeout */
+	time_t	to_q_warning;	/* queue warning timeout */
+} TimeOuts;
+
+
+/*
 **  Trace information
 */
 
@@ -571,7 +854,6 @@ EXTERN u_char	tTdvect[100];
 **  Miscellaneous information.
 */
 
-# include	<sysexits.h>
 
 
 /*
@@ -594,11 +876,49 @@ EXTERN u_char	tTdvect[100];
 **  Declarations of useful functions
 */
 
-extern ADDRESS	*parseaddr();
-extern char	*xalloc();
-extern bool	sameaddr();
-extern FILE	*dfopen();
-extern EVENT	*setevent();
-extern char	*sfgets();
-extern char	*queuename();
-extern time_t	curtime();
+extern ADDRESS		*parseaddr __P((char *, ADDRESS *, int, int, char **, ENVELOPE *));
+extern char		*xalloc __P((int));
+extern bool		sameaddr __P((ADDRESS *, ADDRESS *));
+extern FILE		*dfopen __P((char *, int, int));
+extern EVENT		*setevent __P((time_t, int(*)(), int));
+extern char		*sfgets __P((char *, int, FILE *, time_t, char *));
+extern char		*queuename __P((ENVELOPE *, int));
+extern time_t		curtime __P(());
+extern bool		transienterror __P((int));
+extern const char	*errstring __P((int));
+extern void		expand __P((char *, char *, char *, ENVELOPE *));
+extern void		define __P((int, char *, ENVELOPE *));
+extern char		*macvalue __P((int, ENVELOPE *));
+extern char		**prescan __P((char *, int, char[], char **));
+extern char		*fgetfolded __P((char *, int, FILE *));
+extern ADDRESS		*recipient __P((ADDRESS *, ADDRESS **, ENVELOPE *));
+extern ENVELOPE		*newenvelope __P((ENVELOPE *, ENVELOPE *));
+extern void		dropenvelope __P((ENVELOPE *));
+extern void		clearenvelope __P((ENVELOPE *, int));
+extern char		*username __P(());
+extern MCI		*mci_get __P((char *, MAILER *));
+extern char		*pintvl __P((time_t, int));
+extern char		*map_rewrite __P((MAP *, char *, int, char **));
+extern ADDRESS		*getctladdr __P((ADDRESS *));
+extern char		*anynet_ntoa __P((SOCKADDR *));
+extern char		*remotename __P((char *, MAILER *, int, int *, ENVELOPE *));
+extern bool		shouldqueue __P((long, time_t));
+extern bool		lockfile __P((int, char *, int));
+extern char		*hostsignature __P((MAILER *, char *, ENVELOPE *));
+extern void		openxscript __P((ENVELOPE *));
+extern void		closexscript __P((ENVELOPE *));
+
+/* ellipsis is a different case though */
+#ifdef __STDC__
+extern void		auth_warning(ENVELOPE *, const char *, ...);
+extern void		syserr(const char *, ...);
+extern void		usrerr(const char *, ...);
+extern void		message(const char *, ...);
+extern void		nmessage(const char *, ...);
+#else
+extern void		auth_warning();
+extern void		syserr();
+extern void		usrerr();
+extern void		message();
+extern void		nmessage();
+#endif

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1983 Eric P. Allman
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)stats.c	5.11 (Berkeley) 6/1/90";
+static char sccsid[] = "@(#)stats.c	8.1 (Berkeley) 6/7/93";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -57,13 +57,13 @@ markstats(e, to)
 		{
 			Stat.stat_nf[e->e_from.q_mailer->m_mno]++;
 			Stat.stat_bf[e->e_from.q_mailer->m_mno] +=
-				KBYTES(CurEnv->e_msgsize);
+				KBYTES(e->e_msgsize);
 		}
 	}
 	else
 	{
 		Stat.stat_nt[to->q_mailer->m_mno]++;
-		Stat.stat_bt[to->q_mailer->m_mno] += KBYTES(CurEnv->e_msgsize);
+		Stat.stat_bt[to->q_mailer->m_mno] += KBYTES(e->e_msgsize);
 	}
 }
 /*

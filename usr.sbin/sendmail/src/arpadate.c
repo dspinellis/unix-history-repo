@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1983 Eric P. Allman
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,13 +33,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)arpadate.c	5.11 (Berkeley) 6/1/90";
+static char sccsid[] = "@(#)arpadate.c	8.1 (Berkeley) 6/7/93";
 #endif /* not lint */
 
-# include "conf.h"
-# include <time.h>
-# include <sys/types.h>
-# include "useful.h"
+# include "sendmail.h"
 
 /*
 **  ARPADATE -- Create date in ARPANET format
@@ -79,9 +76,6 @@ arpadate(ud)
 	time_t t;
 	struct tm gmt;
 	static char b[40];
-	extern struct tm *localtime(), *gmtime();
-	extern char *ctime();
-	extern time_t time();
 
 	/*
 	**  Get current time.
@@ -120,7 +114,9 @@ arpadate(ud)
 	*q++ = *p++;
 	*q++ = ' ';
 
-	p = &ud[22];		/* 79 */
+	p = &ud[20];		/* 1979 */
+	*q++ = *p++;
+	*q++ = *p++;
 	*q++ = *p++;
 	*q++ = *p++;
 	*q++ = ' ';

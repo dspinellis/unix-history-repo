@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1983 Eric P. Allman
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	5.11 (Berkeley) 3/2/91";
+static char sccsid[] = "@(#)err.c	8.1 (Berkeley) 6/7/93";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -45,6 +45,11 @@ static char sccsid[] = "@(#)err.c	5.11 (Berkeley) 3/2/91";
 **
 **	Prints an error message via printf to the diagnostic
 **	output.  If LOG is defined, it logs it also.
+**
+**	If the first character of the syserr message is `!' it will
+**	log this as an ALERT message and exit immediately.  This can
+**	leave queue files in an indeterminate state, so it should not
+**	be used lightly.
 **
 **	Parameters:
 **		f -- the format string
@@ -67,21 +72,33 @@ char	MsgBuf[BUFSIZ*2];	/* text of most recent message */
 
 static void fmtmsg();
 
+void
 /*VARARGS1*/
-syserr(fmt, a, b, c, d, e)
-	char *fmt;
+#ifdef __STDC__
+syserr(const char *fmt, ...)
+#else
+syserr(fmt, va_alist)
+	const char *fmt;
+	va_dcl
+#endif
 {
 	register char *p;
 	int olderrno = errno;
-	extern char Arpa_PSyserr[];
-	extern char Arpa_TSyserr[];
+	bool panic;
+	VA_LOCAL_DECL
+
+	panic = *fmt == '!';
+	if (panic)
+		fmt++;
 
 	/* format and output the error message */
 	if (olderrno == 0)
-		p = Arpa_PSyserr;
+		p = "554";
 	else
-		p = Arpa_TSyserr;
-	fmtmsg(MsgBuf, (char *) NULL, p, olderrno, fmt, a, b, c, d, e);
+		p = "451";
+	VA_START(fmt);
+	fmtmsg(MsgBuf, (char *) NULL, p, olderrno, fmt, ap);
+	VA_END;
 	puterrmsg(MsgBuf);
 
 	/* determine exit status if not already set */
@@ -95,10 +112,17 @@ syserr(fmt, a, b, c, d, e)
 
 # ifdef LOG
 	if (LogLevel > 0)
-		syslog(LOG_CRIT, "%s: SYSERR: %s",
+		syslog(panic ? LOG_ALERT : LOG_CRIT, "%s: SYSERR: %s",
 			CurEnv->e_id == NULL ? "NOQUEUE" : CurEnv->e_id,
 			&MsgBuf[4]);
-# endif LOG
+# endif /* LOG */
+	if (panic)
+	{
+#ifdef XLA
+		xla_all_end();
+#endif
+		exit(EX_OSERR);
+	}
 	errno = 0;
 	if (QuickAbort)
 		longjmp(TopFrame, 2);
@@ -120,18 +144,33 @@ syserr(fmt, a, b, c, d, e)
 */
 
 /*VARARGS1*/
-usrerr(fmt, a, b, c, d, e)
-	char *fmt;
+void
+#ifdef __STDC__
+usrerr(const char *fmt, ...)
+#else
+usrerr(fmt, va_alist)
+	const char *fmt;
+	va_dcl
+#endif
 {
+	VA_LOCAL_DECL
 	extern char SuprErrs;
-	extern char Arpa_Usrerr[];
 	extern int errno;
 
 	if (SuprErrs)
 		return;
 
-	fmtmsg(MsgBuf, CurEnv->e_to, Arpa_Usrerr, errno, fmt, a, b, c, d, e);
+	VA_START(fmt);
+	fmtmsg(MsgBuf, CurEnv->e_to, "501", 0, fmt, ap);
+	VA_END;
 	puterrmsg(MsgBuf);
+
+# ifdef LOG
+	if (LogLevel > 3 && LogUsrErrs)
+		syslog(LOG_NOTICE, "%s: %s",
+			CurEnv->e_id == NULL ? "NOQUEUE" : CurEnv->e_id,
+			&MsgBuf[4]);
+# endif /* LOG */
 
 	if (QuickAbort)
 		longjmp(TopFrame, 1);
@@ -140,9 +179,8 @@ usrerr(fmt, a, b, c, d, e)
 **  MESSAGE -- print message (not necessarily an error)
 **
 **	Parameters:
-**		num -- the default ARPANET error number (in ascii)
-**		msg -- the message (printf fmt) -- if it begins
-**			with a digit, this number overrides num.
+**		msg -- the message (printf fmt) -- it can begin with
+**			an SMTP reply code.  If not, 050 is assumed.
 **		a, b, c, d, e -- printf arguments
 **
 **	Returns:
@@ -153,12 +191,21 @@ usrerr(fmt, a, b, c, d, e)
 */
 
 /*VARARGS2*/
-message(num, msg, a, b, c, d, e)
-	register char *num;
-	register char *msg;
+void
+#ifdef __STDC__
+message(const char *msg, ...)
+#else
+message(msg, va_alist)
+	const char *msg;
+	va_dcl
+#endif
 {
+	VA_LOCAL_DECL
+
 	errno = 0;
-	fmtmsg(MsgBuf, CurEnv->e_to, num, 0, msg, a, b, c, d, e);
+	VA_START(msg);
+	fmtmsg(MsgBuf, CurEnv->e_to, "050", 0, msg, ap);
+	VA_END;
 	putmsg(MsgBuf, FALSE);
 }
 /*
@@ -180,12 +227,21 @@ message(num, msg, a, b, c, d, e)
 */
 
 /*VARARGS2*/
-nmessage(num, msg, a, b, c, d, e)
-	register char *num;
-	register char *msg;
+void
+#ifdef __STDC__
+nmessage(const char *msg, ...)
+#else
+nmessage(msg, va_alist)
+	const char *msg;
+	va_dcl
+#endif
 {
+	VA_LOCAL_DECL
+
 	errno = 0;
-	fmtmsg(MsgBuf, (char *) NULL, num, 0, msg, a, b, c, d, e);
+	VA_START(msg);
+	fmtmsg(MsgBuf, (char *) NULL, "050", 0, msg, ap);
+	VA_END;
 	putmsg(MsgBuf, FALSE);
 }
 /*
@@ -214,15 +270,32 @@ putmsg(msg, holdmsg)
 		fprintf(CurEnv->e_xfp, "%s\n", msg);
 
 	/* output to channel if appropriate */
-	if (!holdmsg && (Verbose || msg[0] != '0'))
-	{
-		(void) fflush(stdout);
-		if (OpMode == MD_SMTP || OpMode == MD_ARPAFTP)
-			fprintf(OutChannel, "%s\r\n", msg);
-		else
-			fprintf(OutChannel, "%s\n", &msg[4]);
+	if (holdmsg || (!Verbose && msg[0] == '0'))
+		return;
+
+	(void) fflush(stdout);
+	if (OpMode == MD_SMTP)
+		fprintf(OutChannel, "%s\r\n", msg);
+	else
+		fprintf(OutChannel, "%s\n", &msg[4]);
+	if (msg[3] == ' ')
 		(void) fflush(OutChannel);
-	}
+	if (!ferror(OutChannel))
+		return;
+
+	/* error on output -- if reporting lost channel, just ignore it */
+	if (feof(InChannel) || ferror(InChannel))
+		return;
+
+	/* can't call syserr, 'cause we are using MsgBuf */
+	HoldErrs = TRUE;
+#ifdef LOG
+	if (LogLevel > 0)
+		syslog(LOG_CRIT,
+			"%s: SYSERR: putmsg (%s): error on output channel sending \"%s\"",
+			CurEnv->e_id == NULL ? "NOQUEUE" : CurEnv->e_id,
+			CurHostName, msg);
+#endif
 }
 /*
 **  PUTERRMSG -- like putmsg, but does special processing for error messages
@@ -266,16 +339,17 @@ puterrmsg(msg)
 **		none.
 */
 
-/*VARARGS5*/
 static void
-fmtmsg(eb, to, num, eno, fmt, a, b, c, d, e)
+fmtmsg(eb, to, num, eno, fmt, ap)
 	register char *eb;
 	char *to;
 	char *num;
 	int eno;
 	char *fmt;
+	va_list ap;
 {
 	char del;
+	char *meb;
 
 	/* output the reply code */
 	if (isdigit(fmt[0]) && isdigit(fmt[1]) && isdigit(fmt[2]))
@@ -305,19 +379,22 @@ fmtmsg(eb, to, num, eno, fmt, a, b, c, d, e)
 			*eb++ &= 0177;
 	}
 
+	meb = eb;
+
 	/* output the message */
-	(void) sprintf(eb, fmt, a, b, c, d, e);
+	(void) vsprintf(eb, fmt, ap);
 	while (*eb != '\0')
 		*eb++ &= 0177;
 
 	/* output the error code, if any */
 	if (eno != 0)
 	{
-		extern char *errstring();
-
 		(void) sprintf(eb, ": %s", errstring(eno));
 		eb += strlen(eb);
 	}
+
+	if (CurEnv->e_message == NULL && strchr("45", num[0]) != NULL)
+		CurEnv->e_message = newstr(meb);
 }
 /*
 **  ERRSTRING -- return string description of error code
@@ -332,19 +409,19 @@ fmtmsg(eb, to, num, eno, fmt, a, b, c, d, e)
 **		none.
 */
 
-char *
+const char *
 errstring(errno)
 	int errno;
 {
-	extern char *sys_errlist[];
+	extern const char *const sys_errlist[];
 	extern int sys_nerr;
-	static char buf[100];
+	static char buf[MAXLINE];
 # ifdef SMTP
 	extern char *SmtpPhase;
-# endif SMTP
+# endif /* SMTP */
 
 # ifdef DAEMON
-# ifdef VMUNIX
+# ifdef ETIMEDOUT
 	/*
 	**  Handle special network error codes.
 	**
@@ -380,12 +457,22 @@ errstring(errno)
 		(void) sprintf(buf, "Connection refused by %s", CurHostName);
 		return (buf);
 
-	  case (TRY_AGAIN+MAX_ERRNO):
-		(void) sprintf(buf, "Host Name Lookup Failure");
-		return (buf);
+# ifdef NAMED_BIND
+	  case HOST_NOT_FOUND + MAX_ERRNO:
+		return ("Name server: host not found");
+
+	  case TRY_AGAIN + MAX_ERRNO:
+		return ("Name server: host name lookup failure");
+
+	  case NO_RECOVERY + MAX_ERRNO:
+		return ("Name server: non-recoverable error");
+
+	  case NO_DATA + MAX_ERRNO:
+		return ("Name server: no data known for name");
+# endif
 	}
-# endif VMUNIX
-# endif DAEMON
+# endif
+# endif
 
 	if (errno > 0 && errno < sys_nerr)
 		return (sys_errlist[errno]);

@@ -1,21 +1,25 @@
 cpyr
 cpyr	Copyright (c) 1983  Eric P. Allman
-cpyr	Copyright (c) 1988 The Regents of the University of California.
-cpyr	All rights reserved.
+cpyr	Copyright (c) 1988, 1993
+cpyr	    The Regents of the University of California.  All rights reserved.
 cpyr	
-cpyr	@(#)sendmail.hf	4.5 (Berkeley) 4/23/91
+cpyr	@(#)sendmail.hf	8.1 (Berkeley) 6/7/93
 cpyr
 smtp	Commands:
-smtp		HELO	MAIL	RCPT	DATA	RSET
-smtp		NOOP	QUIT	HELP	VRFY	EXPN
+smtp		HELO	EHLO	MAIL	RCPT	DATA
+smtp		RSET	NOOP	QUIT	HELP	VRFY
+smtp		EXPN	VERB
 smtp	For more info use "HELP <topic>".
-smtp	To report bugs in the implementation contact sendmail@okeeffe.Berkeley.EDU
-smtp	For local information contact postmaster at this site.
+smtp	To report bugs in the implementation send email to
+smtp		sendmail@CS.Berkeley.EDU.
+smtp	For local information send email to Postmaster at your site.
 help	HELP [ <topic> ]
 help		The HELP command gives help info.
 helo	HELO <hostname>
 helo		Introduce yourself.  I am a boor, so I really don't
 helo		care if you do.
+ehlo	EHLO <hostname>
+ehlo		Introduce yourself, and request extended SMTP mode.
 mail	MAIL FROM: <sender>
 mail		Specifies the sender.
 rcpt	RCPT TO: <recipient>
@@ -27,11 +31,16 @@ rset	RSET
 rset		Resets the system.
 quit	QUIT
 quit		Exit sendmail (SMTP).
+verb	VERB
+verb		Go into verbose mode.  This sends 0xy responses that are
+verb		are not RFC821 standard (but should be)  They are recognized
+verb		by humans and other sendmail implementations.
 vrfy	VRFY <recipient>
-vrfy		Not implemented to protocol.  Gives some sexy
-vrfy		information.
+vrfy		Verify an address.  If you want to see what it aliases
+vrfy		to, use EXPN instead.
 expn	EXPN <recipient>
-expn		Same as VRFY in this implementation.
+expn		Expand an address.  If the address indicates a mailing
+expn		list, return the contents of that list.
 noop	NOOP
 noop		Do nothing.
 send	SEND FROM: <sender>

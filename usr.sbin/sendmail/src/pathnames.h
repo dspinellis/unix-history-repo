@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,8 +30,21 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)pathnames.h	5.1 (Berkeley) 4/19/90
+ *	@(#)pathnames.h	8.1 (Berkeley) 6/7/93
  */
 
-#define	_PATH_SENDMAILCF	"/etc/sendmail.cf";
-#define	_PATH_SENDMAILFC	"/etc/sendmail.fc";
+#ifndef _PATH_SENDMAILCF
+# define _PATH_SENDMAILCF	"/etc/sendmail.cf"
+#endif
+
+#ifndef _PATH_SENDMAILFC
+# define _PATH_SENDMAILFC	"/etc/sendmail.fc"
+#endif
+
+#ifndef _PATH_SENDMAILPID
+# ifdef BSD4_4
+#  define _PATH_SENDMAILPID	"/var/run/sendmail.pid"
+# else
+#  define _PATH_SENDMAILPID	"/etc/sendmail.pid"
+# endif
+#endif
