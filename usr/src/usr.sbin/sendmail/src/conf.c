@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.43 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -134,14 +134,25 @@ char	SpaceSub;		/* character to replace <lwsp> in addrs */
 int	QueueLA;		/* load avg > QueueLA -> just queue */
 int	RefuseLA;		/* load avg > RefuseLA -> refuse connections */
 
-	/* set up host name lookup map */
-	s = stab("host", ST_MAPCLASS, ST_ENTER);
-	s->s_mapclass.map_init = host_map_init;
-	s->s_mapclass.map_lookup = maphostname;
+	/* host name lookup map */
+	{
+		extern bool host_map_init();
+		extern char *maphostname();
 
-	/*
-	**  Set up other map classes.
-	*/
+		s = stab("host", ST_MAPCLASS, ST_ENTER);
+		s->s_mapclass.map_init = host_map_init;
+		s->s_mapclass.map_lookup = maphostname;
+	}
+
+	/* dequote map */
+	{
+		extern bool dequote_init();
+		extern char *dequote_map();
+
+		s = stab("dequote", ST_MAPCLASS, ST_ENTER);
+		s->s_mapclass.map_init = dequote_init;
+		s->s_mapclass.map_lookup = dequote_map;
+	}
 
 # ifdef DBM_MAP
 	/* dbm file access */
