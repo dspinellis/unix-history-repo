@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)route.c	7.30 (Berkeley) %G%
+ *	@(#)route.c	7.31 (Berkeley) %G%
  */
 #include "param.h"
 #include "systm.h"
@@ -77,11 +77,17 @@ rtalloc1(dst, report)
 	    ((rn->rn_flags & RNF_ROOT) == 0)) {
 		newrt = rt = (struct rtentry *)rn;
 		if (report && (rt->rt_flags & RTF_CLONING)) {
-			if ((err = rtrequest(RTM_RESOLVE, dst, SA(0),
-					      SA(0), 0, &newrt)) ||
-			    ((rt->rt_flags & RTF_XRESOLVE)
-			      && (msgtype = RTM_RESOLVE))) /* assign intended */
-			    goto miss;
+			err = rtrequest(RTM_RESOLVE, dst, SA(0),
+					      SA(0), 0, &newrt);
+			if (err) {
+				newrt = rt;
+				rt->rt_refcnt++;
+				goto miss;
+			}
+			if ((rt = newrt) && (rt->rt_flags & RTF_XRESOLVE)) {
+				msgtype = RTM_RESOLVE;
+				goto miss;
+			}
 		} else
 			rt->rt_refcnt++;
 	} else {
@@ -100,39 +106,39 @@ rtfree(rt)
 	register struct rtentry *rt;
 {
 	register struct ifaddr *ifa;
+
 	if (rt == 0)
 		panic("rtfree");
 	rt->rt_refcnt--;
 	if (rt->rt_refcnt <= 0 && (rt->rt_flags & RTF_UP) == 0) {
-		rttrash--;
-		ifa = rt->rt_ifa;
 		if (rt->rt_nodes->rn_flags & (RNF_ACTIVE | RNF_ROOT))
 			panic ("rtfree 2");
+		rttrash--;
+		if (rt->rt_refcnt < 0) {
+			printf("rtfree: %x not freed (neg refs)\n", rt);
+			return;
+		}
+		ifa = rt->rt_ifa;
+		IFAFREE(ifa);
 		Free(rt_key(rt));
 		Free(rt);
-		IFAFREE(ifa);
 	}
 }
-int ifafree_verbose;
-struct ifaddr *ifafree_usedlist;
+
+int ifafree_verbose = 1;
+/*
+ * We are still debugging potential overfreeing of ifaddr's
+ */
 void
 ifafree(ifa)
 	register struct ifaddr *ifa;
 {
 	if (ifa == 0)
 		panic("ifafree");
-	/* for now . . . . */
-	if (ifafree_verbose) {
-	    if (ifa->ifa_refcnt < 0)
-		    printf("ifafree(%x): would panic\n", ifa);
-	    if (ifa->ifa_refcnt == 0) {
-		    printf("ifafree((caddr_t)ifa, M_IFADDR)\n");
-		    ifa->ifa_next = ifafree_usedlist;
-		    ifafree_usedlist = ifa;
-	    }
-	    if (ifa->ifa_flags & IFA_ROUTE)
-		    printf("ifafree: has route \n");
-	}
+	if (ifa->ifa_refcnt < 0)
+		printf("ifafree: %x ref %d\n", ifa, ifa->ifa_refcnt);
+	if (ifa->ifa_refcnt == 0 && ifafree_verbose)
+		printf("ifafree: %x not freed.\n", ifa);
 	ifa->ifa_refcnt--;
 }
 
@@ -383,8 +389,10 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 		rttrash++;
 		if (ret_nrt)
 			*ret_nrt = rt;
-		else if (rt->rt_refcnt <= 0)
+		else if (rt->rt_refcnt <= 0) {
+			rt->rt_refcnt++;
 			rtfree(rt);
+		}
 		break;
 
 	case RTM_RESOLVE:
@@ -528,17 +536,30 @@ rtinit(ifa, cmd, flags)
 	}
 	error = rtrequest(cmd, dst, ifa->ifa_addr, ifa->ifa_netmask,
 			flags | ifa->ifa_flags, &nrt);
-	rt_newaddrmsg(cmd, ifa, error, nrt);
 	if (m)
 		(void) m_free(m);
 	if (cmd == RTM_DELETE && error == 0 && (rt = nrt)) {
-		if (rt->rt_refcnt <= 0)
+		rt_newaddrmsg(cmd, ifa, error, nrt);
+		if (rt->rt_refcnt <= 0) {
+			rt->rt_refcnt++;
 			rtfree(rt);
+		}
 	}
 	if (cmd == RTM_ADD && error == 0 && (rt = nrt)) {
-		rt->rt_ifa = ifa;
-		rt->rt_ifp = ifa->ifa_ifp;
 		rt->rt_refcnt--;
+		if (rt->rt_ifa != ifa) {
+			printf("rtinit: wrong ifa (%x) was (%x)\n", ifa,
+				rt->rt_ifa);
+			if (rt->rt_ifa->ifa_rtrequest)
+			    rt->rt_ifa->ifa_rtrequest(RTM_DELETE, rt, SA(0));
+			IFAFREE(rt->rt_ifa);
+			rt->rt_ifa = ifa;
+			rt->rt_ifp = ifa->ifa_ifp;
+			ifa->ifa_refcnt++;
+			if (ifa->ifa_rtrequest)
+			    ifa->ifa_rtrequest(RTM_ADD, rt, SA(0));
+		}
+		rt_newaddrmsg(cmd, ifa, error, nrt);
 	}
 	return (error);
 }
