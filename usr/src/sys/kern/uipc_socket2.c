@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket2.c	7.16.1.1 (Berkeley) %G%
+ *	@(#)uipc_socket2.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -231,27 +231,6 @@ socantrcvmore(so)
 }
 
 /*
- * Socket select/wakeup routines.
- */
-
-/*
- * Queue a process for a select on a socket buffer.
- */
-sbselqueue(sb, cp)
-	struct sockbuf *sb;
-	struct proc *cp;
-{
-	struct proc *p;
-
-	if ((p = sb->sb_sel) && p->p_wchan == (caddr_t)&selwait)
-		sb->sb_flags |= SB_COLL;
-	else {
-		sb->sb_sel = cp;
-		sb->sb_flags |= SB_SEL;
-	}
-}
-
-/*
  * Wait for data to arrive at/drain from a socket buffer.
  */
 sbwait(sb)
@@ -295,11 +274,8 @@ sowakeup(so, sb)
 {
 	struct proc *p;
 
-	if (sb->sb_sel) {
-		selwakeup(sb->sb_sel, sb->sb_flags & SB_COLL);
-		sb->sb_sel = 0;
-		sb->sb_flags &= ~(SB_SEL|SB_COLL);
-	}
+	selwakeup(&sb->sb_sel);
+	sb->sb_flags &= ~SB_SEL;
 	if (sb->sb_flags & SB_WAIT) {
 		sb->sb_flags &= ~SB_WAIT;
 		wakeup((caddr_t)&sb->sb_cc);
