@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_ktrace.c	1.4 (Berkeley) %G%
+ *	@(#)kern_ktrace.c	1.5 (Berkeley) %G%
  */
 
 #ifdef KTRACE
@@ -251,8 +251,7 @@ ktrops(p, ops, facs, vp)
 			 */
 			if (p->p_tracep != NULL)
 				vrele(p->p_tracep);
-			if (vp->v_count == 0)
-				panic("ktrace: bad vnode");
+			VREF(vp);
 			p->p_tracep = vp;
 		}
 		p->p_traceflag |= facs;
