@@ -1,4 +1,4 @@
-/*	machdep.c	4.50	82/01/17	*/
+/*	machdep.c	4.51	82/02/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -715,5 +715,6 @@ machinecheck(cmcf)
 		}
 #endif
 	}
+	memerr();
 	panic("mchk");
 }
