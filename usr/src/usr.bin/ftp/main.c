@@ -191,12 +191,8 @@ cmdscanner(top)
 			fflush(stdout);
 		}
 		if (gets(line) == 0) {
-			if (feof(stdin)) {
-				if (!fromatty)
-					quit();
-				clearerr(stdin);
-				putchar('\n');
-			}
+			if (feof(stdin))
+				quit();
 			break;
 		}
 		if (line[0] == 0)
