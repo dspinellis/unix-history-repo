@@ -1,4 +1,4 @@
-/*	in_cksum.c	1.15	82/10/30	*/
+/*	in_cksum.c	1.16	82/10/31	*/
 
 #include <sys/types.h>
 #include "../h/mbuf.h"
@@ -8,16 +8,15 @@
 /*
  * Checksum routine for Internet Protocol family headers.
  * This routine is very heavily used in the network
- * code and should be rewritten for each CPU to be as fast as possible.
+ * code and should be modified for each CPU to be as fast as possible.
  */
 
-#if vax
 in_cksum(m, len)
 	register struct mbuf *m;
 	register int len;
 {
-	register u_short *w;		/* known to be r9 */
-	register int sum = 0;		/* known to be r8 */
+	register u_short *w;		/* on vax, known to be r9 */
+	register int sum = 0;		/* on vax, known to be r8 */
 	register int mlen = 0;
 
 	for (;;) {
@@ -33,7 +32,12 @@ in_cksum(m, len)
 			 * about a carry-out here because we make sure
 			 * that high part of (32 bit) sum is small below.
 			 */
+#ifdef sun
+			sum += *(u_char *)w;
+#endif
+#ifdef vax
 			sum += *(u_char *)w << 8;
+#endif
 			w = (u_short *)((char *)w + 1);
 			mlen = m->m_len - 1;
 			len--;
@@ -43,6 +47,11 @@ in_cksum(m, len)
 		if (len < mlen)
 			mlen = len;
 		len -= mlen;
+#ifdef sun
+		sum += ocsum(w, mlen>>1);
+		w += mlen>>1;
+#endif
+#ifdef vax
 		/*
 		 * Force to long boundary so we do longword aligned
 		 * memory operations.  It is too hard to do byte
@@ -69,8 +78,8 @@ in_cksum(m, len)
 		 * we carefully use adwc.
 		 */
 		while ((mlen -= 32) >= 0) {
-			asm("clrl r0");		/* clears carry */
 #undef ADD
+			asm("clrl r0");		/* clears carry */
 #define ADD		asm("adwc (r9)+,r8;");
 			ADD; ADD; ADD; ADD; ADD; ADD; ADD; ADD;
 			asm("adwc $0,r8");
@@ -93,8 +102,16 @@ in_cksum(m, len)
 		while ((mlen -= 2) >= 0) {
 			asm("movzwl (r9)+,r0; addl2 r0,r8");
 		}
-		if (mlen == -1)
+		if (mlen == -1) {
 			sum += *(u_char *)w;
+		}
+#endif vax
+#ifdef sun
+		if (mlen & 1) {
+			sum += *(u_char *)w << 8;
+			mlen = -1;
+		}
+#endif
 		if (len == 0)
 			break;
 		/*
@@ -120,8 +137,14 @@ done:
 	 * Have to be careful to not drop the last
 	 * carry here.
 	 */
+#ifdef sun
+	sum = (sum & 0xFFFF) + (sum >> 16);
+	sum = (sum & 0xFFFF) + (sum >> 16);
+	sum = (~sum) & 0xFFFF;
+#endif
+#ifdef vax
 	{ asm("ashl $-16,r8,r0; addw2 r0,r8; adwc $0,r8");
 	  asm("mcoml r8,r8; movzwl r8,r8"); }
+#endif
 	return (sum);
 }
-#endif
