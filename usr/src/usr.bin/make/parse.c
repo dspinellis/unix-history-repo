@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -250,6 +250,7 @@ Parse_Error(type, va_alist)
 	(void)fprintf(stderr, "\"%s\", line %d: ", fname, lineno);
 	if (type == PARSE_WARNING)
 		(void)fprintf(stderr, "Warning: ");
+	va_start(ap);
 	fmt = va_arg(ap, char *);
 	(void)vfprintf(stderr, fmt, ap);
 	va_end(ap);
@@ -1381,7 +1382,6 @@ Parse_DoVar (line, ctxt)
 }
 
 /*-
- *---------------------------------------------------------------------
  * ParseAddCmd  --
  *	Lst_ForEach function to add a command line to all targets
  *
@@ -1390,22 +1390,16 @@ Parse_DoVar (line, ctxt)
  *
  * Side Effects:
  *	A new element is added to the commands list of the node.
- *---------------------------------------------------------------------
  */
-static int
-ParseAddCmd (gn, cmd)
-    GNode          *gn;		/* the node to which the command is to be
-				 * added */
-    char           *cmd;	/* the command to add */
+static
+ParseAddCmd(gn, cmd)
+	GNode *gn;	/* the node to which the command is to be added */
+	char *cmd;	/* the command to add */
 {
-    if (gn->type & OP_HAS_COMMANDS) {
-	Parse_Error(PARSE_WARNING, "Extra command line for \"%s\" ignored",
-		    gn->name);
-    } else {
-	(void)Lst_AtEnd (gn->commands, (ClientData)cmd);
-    }
-
-    return (0);
+	/* if target already supplied, ignore commands */
+	if (!(gn->type & OP_HAS_COMMANDS))
+		(void)Lst_AtEnd(gn->commands, (ClientData)cmd);
+	return(0);
 }
 
 /*-
