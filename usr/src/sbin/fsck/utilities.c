@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -142,8 +142,9 @@ ckfini()
 
 	flush(&dfile, &fileblk);
 	flush(&dfile, &sblk);
-	if (sblk.b_bno != SBLOCK) {
-		sblk.b_bno = SBLOCK;
+	if (sblk.b_bno != SBLOCK * DEV_BSIZE / dev_bsize &&
+	    !preen && reply("UPDATE STANDARD SUPERBLOCK")) {
+		sblk.b_bno = SBLOCK * DEV_BSIZE / dev_bsize;
 		sbdirty();
 		flush(&dfile, &sblk);
 	}
@@ -172,10 +173,10 @@ bread(fcp, buf, blk, size)
 	errs = 0;
 	bzero(buf, size);
 	pfatal("THE FOLLOWING SECTORS COULD NOT BE READ:");
-	for (cp = buf, i = 0; i < size; i += DEV_BSIZE, cp += DEV_BSIZE) {
-		if (read(fcp->rfdes, cp, DEV_BSIZE) < 0) {
-			lseek(fcp->rfdes, (long)dbtob(blk) + i + DEV_BSIZE, 0);
-			printf(" %d,", blk + i / DEV_BSIZE);
+	for (cp = buf, i = 0; i < size; i += dev_bsize, cp += dev_bsize) {
+		if (read(fcp->rfdes, cp, dev_bsize) < 0) {
+			lseek(fcp->rfdes, (long)dbtob(blk) + i + dev_bsize, 0);
+			printf(" %d,", blk + i / dev_bsize);
 			errs++;
 		}
 	}
@@ -204,10 +205,10 @@ bwrite(fcp, buf, blk, size)
 	if (lseek(fcp->wfdes, (long)dbtob(blk), 0) < 0)
 		rwerr("SEEK", blk);
 	pfatal("THE FOLLOWING SECTORS COULD NOT BE WRITTEN:");
-	for (cp = buf, i = 0; i < size; i += DEV_BSIZE, cp += DEV_BSIZE)
-		if (write(fcp->wfdes, cp, DEV_BSIZE) < 0) {
-			lseek(fcp->rfdes, (long)dbtob(blk) + i + DEV_BSIZE, 0);
-			printf(" %d,", blk + i / DEV_BSIZE);
+	for (cp = buf, i = 0; i < size; i += dev_bsize, cp += dev_bsize)
+		if (write(fcp->wfdes, cp, dev_bsize) < 0) {
+			lseek(fcp->rfdes, (long)dbtob(blk) + i + dev_bsize, 0);
+			printf(" %d,", blk + i / dev_bsize);
 		}
 	printf("\n");
 	return;
