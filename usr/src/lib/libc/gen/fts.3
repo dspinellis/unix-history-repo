@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fts.3	5.15 (Berkeley) %G%
+.\"     @(#)fts.3	5.16 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FTS 3
@@ -31,13 +31,12 @@ The
 functions are provided for traversing
 .Tn UNIX
 file hierarchies.
-.Pp
-The simple overview is that the
+A simple overview is that the
 .Fn fts_open
-function returns a ``handle'' on a file hierarchy, which is supplied to
+function returns a ``handle'' on a file hierarchy, which is then supplied to
 the other
 .Nm fts
-functions to determine which hierarchy they operate on.
+functions.
 The function
 .Fn fts_read
 returns a pointer to a structure describing one of the files in the file
@@ -58,7 +57,7 @@ Two structures are defined (and typedef'd) in the include file
 .Aq Pa fts.h .
 The first is
 .Fa FTS ,
-the structure that represents the file hierarchy stream.
+the structure that represents the file hierarchy itself.
 The second is
 .Fa FTSENT ,
 the structure that represents a file in the file
@@ -84,7 +83,7 @@ typedef struct _ftsent {
 	char *fts_name;			/* file name */
 	short fts_namelen;		/* strlen(fts_name) */
 	short fts_level;		/* depth (\-1 to N) */
-	int fts_error;			/* node errno */
+	int fts_error;			/* file errno */
 	long fts_number;		/* local numeric value */
 	void *fts_pointer;		/* local address value */
 	struct ftsent *fts_parent;	/* parent directory */
@@ -128,6 +127,15 @@ A directory which cannot be read.
 This is an error return, and the
 .Fa fts_errno
 field will be set to indicate what caused the error.
+.It Dv FTS_DOT
+A file named
+.Ql \&.
+or
+.Ql ..
+which was not specified as a file name to
+.Fn fts_open
+(see
+.Dv FTS_SEEDOT ) .
 .It Dv FTS_DP
 A directory being visited in post-order.
 The contents of the
@@ -195,13 +203,16 @@ of the traversal is numbered \-1, and the
 structure for the root
 itself is numbered 0.
 .It Fa fts_errno
-Upon return of a node from the
+Upon return of a
+.Fa FTSENT
+structure from the
 .Fn fts_children
 or
 .Fn fts_read
 functions, with its
 .Fa fts_info
 field set to 
+.Dv FTS_DNR ,
 .Dv FTS_ERR
 or
 .Dv FTS_NS ,
@@ -219,11 +230,12 @@ not modified by the
 .Nm fts
 functions.
 It is initialized to 0.
-The fields
+The
 .Fa fts_number
 and
 .Fa fts_pointer
-occupy the same physical location; using both may cause undefined results.
+fields occupy the same physical location; using both may cause undefined
+results.
 .It Fa fts_pointer
 This field is provided for the use of the application program and is
 not modified by the
@@ -231,11 +243,12 @@ not modified by the
 functions.
 It is initialized to
 .Dv NULL .
-The fields
+The
 .Fa fts_number
 and
 .Fa fts_pointer
-occupy the same physical location; using both may cause undefined results.
+fields occupy the same physical location; using both may cause undefined
+results.
 .It Fa fts_parent
 A pointer to the
 .Fa FTSENT
@@ -403,8 +416,7 @@ any files named
 .Ql \&.
 or
 .Ql ..
-encountered in the file hierarchy are
-ignored.
+encountered in the file hierarchy are ignored.
 This option causes the
 .Nm fts
 routines to return
