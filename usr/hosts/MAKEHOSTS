@@ -1,0 +1,20 @@
+#! /bin/sh -x
+cd ${DESTDIR}/usr/hosts
+#
+# We want to save ourselves while cleaning up.  The funny sequence is to
+# minimize the window where the machine could crash and leave MAKEHOSTS
+# misplaced.
+#
+mv MAKEHOSTS .MAKEHOSTS
+/bin/rm -f M*
+mv .MAKEHOSTS MAKEHOSTS
+/bin/rm -f [A-LN-Za-z]*
+for i in `egrep '^128\.32' ${DESTDIR}/etc/hosts | awk '$2 !~ /^ucb|\.berkeley\.edu$/ {print $2} $3 !~ /^ucb|\.berkeley\.edu$|^$/ {print $3} $4 !~ /^ucb|\.berkeley\.edu$|^$/ {print $4}'`;
+do
+	ln -s /usr/ucb/rsh $i
+done
+#
+# Special entries that don't get generated above
+#
+ln -s /usr/ucb/rsh ucbvax
+ln -s /usr/ucb/rsh ucbarpa
