@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vnops.c	7.24 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.25 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -66,6 +66,13 @@ struct vnodeops mfs_vnodeops = {
 	mfs_print,		/* print */
 	mfs_islocked,		/* islocked */
 	mfs_advlock,		/* advlock */
+	mfs_blkatoff,		/* blkatoff */
+	mfs_vget,		/* vget */
+	mfs_valloc,		/* valloc */
+	mfs_vfree,		/* vfree */
+	mfs_truncate,		/* truncate */
+	mfs_update,		/* update */
+	mfs_bwrite,		/* bwrite */
 };
 
 /*

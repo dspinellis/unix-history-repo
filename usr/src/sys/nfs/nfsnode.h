@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsnode.h	7.12 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.13 (Berkeley) %G%
  */
 
 /*
@@ -193,3 +193,31 @@ int	nfs_advlock __P((
 		int op,
 		struct flock *fl,
 		int flags));
+int	nfs_blkatoff __P((
+		struct vnode *vp,
+		off_t offset,
+		char **res,
+		struct buf **bpp));
+int	nfs_vget __P((
+		struct mount *mp,
+		ino_t ino,
+		struct vnode **vpp));
+int	nfs_valloc __P((
+		struct vnode *pvp,
+		int mode,
+		struct ucred *cred,
+		struct vnode **vpp));
+void	nfs_vfree __P((
+		struct vnode *pvp,
+		ino_t ino,
+		int mode));
+int	nfs_truncate __P((
+		struct vnode *vp,
+		u_long length,
+		int flags));
+int	nfs_update __P((
+		struct vnode *vp,
+		struct timeval *ta,
+		struct timeval *tm,
+		int waitfor));
+int	bwrite();		/* NFS needs a bwrite routine */

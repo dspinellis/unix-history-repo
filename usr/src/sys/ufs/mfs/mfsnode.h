@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfsnode.h	7.4 (Berkeley) %G%
+ *	@(#)mfsnode.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -135,3 +135,32 @@ struct mfsnode {
 		int op, \
 		struct flock *fl, \
 		int flags))) mfs_badop)
+#define mfs_blkatoff ((int (*) __P(( \
+		struct vnode *vp, \
+		off_t offset, \
+		char **res, \
+		struct buf **bpp))) mfs_badop)
+#define mfs_vget ((int (*) __P(( \
+		struct mount *mp, \
+		ino_t ino, \
+		struct vnode **vpp))) mfs_badop)
+#define mfs_valloc ((int (*) __P(( \
+		struct vnode *pvp, \
+		int mode, \
+		struct ucred *cred, \
+		struct vnode **vpp))) mfs_badop)
+#define mfs_vfree ((void (*) __P(( \
+		struct vnode *pvp, \
+		ino_t ino, \
+		int mode))) mfs_badop)
+#define mfs_truncate ((int (*) __P(( \
+		struct vnode *vp, \
+		u_long length, \
+		int flags))) mfs_badop)
+#define mfs_update ((int (*) __P(( \
+		struct vnode *vp, \
+		struct timeval *ta, \
+		struct timeval *tm, \
+		int waitfor))) nullop)
+#define mfs_bwrite ((int (*) __P(( \
+		struct buf *bp))) nullop)
