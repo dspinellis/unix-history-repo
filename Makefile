@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.49 1994/05/14 19:45:28 ache Exp $
+#	$Id: Makefile,v 1.50 1994/05/14 20:01:00 ache Exp $
 #
 
 SUBDIR=
@@ -122,7 +122,7 @@ mk:
 	# DONT DO THIS!! chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/share/mk
 	# DONT DO THIS!! chmod 755 ${DESTDIR}/usr/share/mk
 .endif
-	cd ${.CURDIR}/share/mk;			make install;
+	cd ${.CURDIR}/share/mk;			make clean all install;
 
 includes:
 	@echo "--------------------------------------------------------------"
@@ -135,13 +135,13 @@ includes:
 	chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include
 	chmod 755 ${DESTDIR}/usr/include
 .endif
-	cd ${.CURDIR}/include;			make install
+	cd ${.CURDIR}/include;			make clean all install
 	cd ${CCDIR}/libobjc;			make beforeinstall
 	cd ${.CURDIR}/gnu/lib/libg++;		make beforeinstall
 	cd ${.CURDIR}/lib/libcurses;		make beforeinstall
 	cd ${.CURDIR}/lib/libc;			make beforeinstall
 .if !defined(NOCRYPT) && exists(${.CURDIR}/kerberosIV)
-	cd ${.CURDIR}/kerberosIV/include;	make install
+	cd ${.CURDIR}/kerberosIV/include;	make clean all install
 .endif
 
 # You MUST run this the first time you get the new sources to boot strap
