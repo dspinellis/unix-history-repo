@@ -1,4 +1,4 @@
-/*	if_en.c	4.33	82/02/05	*/
+/*	if_en.c	4.34	82/02/21	*/
 
 #include "en.h"
 
@@ -410,6 +410,7 @@ enoutput(ifp, m0, pf)
 	register struct en_header *en;
 	int s;
 
+COUNT(ENOUTPUT);
 	switch (pf) {
 
 #ifdef INET
