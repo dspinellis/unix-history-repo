@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -187,7 +187,6 @@ main(argc, argv)
 		ioctl(0, TIOCSETP, &tmode);
 		setchars();
 		ioctl(0, TIOCSETC, &tc);
-		ioctl(0, TIOCSETD, &ldisp);
 		if (HC)
 			ioctl(0, TIOCHPCL, 0);
 		if (AB) {
@@ -242,6 +241,12 @@ main(argc, argv)
 			for (i = 0; environ[i] != (char *)0; i++)
 				env[i] = environ[i];
 			makeenv(&env[i]);
+
+			/* 
+			 * this is what login was doing anyway.
+			 * soon we rewrite getty completely.
+			 */
+			set_ttydefaults(0);
 			execle(LO, "login", "-p", name, (char *) 0, env);
 			syslog(LOG_ERR, "%s: %m", LO);
 			exit(1);
