@@ -1,8 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)getpw.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpw.c	5.2 (Berkeley) %G%";
 #endif
 
-#include "stdio.h"
+#include <stdio.h>
 
 getpw(uid, buf)
 int uid;

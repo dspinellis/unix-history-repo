@@ -1,10 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)logent.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)logent.c	5.2 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <sys/types.h>
-#include <time.h>
+#include <sys/time.h>
 
 extern	time_t	time();
 
