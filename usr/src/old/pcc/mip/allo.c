@@ -192,7 +192,7 @@ usable( p, n, r ) NODE *p; {
 	/* checks, for the moment */
 	if( !istreg(r) ) cerror( "usable asked about nontemp register" );
 
-	if( busy[r] > 1 ) return(0);
+	if( ISBUSY(r) ) return(0);
 	if( isbreg(r) ){
 		if( n&NAMASK ) return(0);
 		}
@@ -219,7 +219,8 @@ usable( p, n, r ) NODE *p; {
 		if( !istreg(r+1) ) return( 0 );
 		if( busy[r+1] > 1 ) return( 0 );
 		if( busy[r] == 0 && busy[r+1] == 0  ||
-		    busy[r+1] == 0 && shareit( p, r, n ) ||
+		    (busy[r+1] == 0 || (busy[r] & PBUSY)) &&
+			shareit( p, r, n ) ||
 		    busy[r] == 0 && shareit( p, r+1, n ) ){
 			busy[r] |= TBUSY;
 			busy[r+1] |= TBUSY;
@@ -308,6 +309,8 @@ rfree( r, t ) TWORD t; {
 
 	if( istreg(r) ){
 		if( --busy[r] < 0 ) cerror( "register overfreed");
+		if( busy[r] == PBUSY )
+			busy[r] = 0;
 		if( szty(t) == 2 ){
 #ifdef NOEVENODD
 			if( istreg(r) ^ istreg(r+1) ) cerror( "illegal free" );
@@ -333,7 +336,10 @@ rbusy(r,t) TWORD t; {
 
 	if( istreg(r) ) ++busy[r];
 	if( szty(t) == 2 ){
-		if( istreg(r+1) ) ++busy[r+1];
+		if( istreg(r+1) ) {
+			++busy[r+1];
+			busy[r] |= PBUSY;
+			}
 #ifdef NOEVENODD
 		if( istreg(r) ^ istreg(r+1) ) cerror( "illegal register pair freed" );
 #else
@@ -505,11 +511,11 @@ reclaim( p, rw, cookie ) NODE *p; {
 
 	case OREG:
 		if( p->in.op == REG || !R2TEST(p->tn.rval) ) {
-			if( busy[p->tn.rval]>1 && istreg(p->tn.rval) ) cerror( "potential register overwrite");
+			if( ISBUSY(p->tn.rval) && istreg(p->tn.rval) ) cerror( "potential register overwrite");
 			}
 		else
-			if( (R2UPK1(p->tn.rval) != 100 && busy[R2UPK1(p->tn.rval)]>1 && istreg(R2UPK1(p->tn.rval)) )
-				|| (busy[R2UPK2(p->tn.rval)]>1 && istreg(R2UPK2(p->tn.rval)) ) )
+			if( (R2UPK1(p->tn.rval) != 100 && ISBUSY(R2UPK1(p->tn.rval)) && istreg(R2UPK1(p->tn.rval)) )
+				|| (ISBUSY(R2UPK2(p->tn.rval)) && istreg(R2UPK2(p->tn.rval)) ) )
 			   cerror( "potential register overwrite");
 		}
 
