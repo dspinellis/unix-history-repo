@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)interactive.c	5.3 (Berkeley) 7/21/85";
+static char sccsid[] = "@(#)interactive.c	5.5 (Berkeley) 4/23/87";
 #endif not lint
 
 #include "restore.h"
@@ -66,6 +66,8 @@ loop:
 	 * Add elements to the extraction list.
 	 */
 	case 'a':
+		if (strncmp(cmd, "add", strlen(cmd)) != 0)
+			goto bad;
 		ino = dirlookup(name);
 		if (ino == 0)
 			break;
@@ -77,6 +79,8 @@ loop:
 	 * Change working directory.
 	 */
 	case 'c':
+		if (strncmp(cmd, "cd", strlen(cmd)) != 0)
+			goto bad;
 		ino = dirlookup(name);
 		if (ino == 0)
 			break;
@@ -90,6 +94,8 @@ loop:
 	 * Delete elements from the extraction list.
 	 */
 	case 'd':
+		if (strncmp(cmd, "delete", strlen(cmd)) != 0)
+			goto bad;
 		np = lookupname(name);
 		if (np == NIL || (np->e_flags & NEW) == 0) {
 			fprintf(stderr, "%s: not on extraction list\n", name);
@@ -101,6 +107,8 @@ loop:
 	 * Extract the requested list.
 	 */
 	case 'e':
+		if (strncmp(cmd, "extract", strlen(cmd)) != 0)
+			goto bad;
 		createfiles();
 		createlinks();
 		setdirmodes();
@@ -112,8 +120,10 @@ loop:
 	 * List available commands.
 	 */
 	case 'h':
+		if (strncmp(cmd, "help", strlen(cmd)) != 0)
+			goto bad;
 	case '?':
-		fprintf(stderr, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+		fprintf(stderr, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
 			"Available commands are:\n",
 			"\tls [arg] - list directory\n",
 			"\tcd arg - change directory\n",
@@ -125,6 +135,7 @@ loop:
 			"\textract - extract requested files\n",
 			"\tsetmodes - set modes of requested directories\n",
 			"\tquit - immediately exit program\n",
+			"\twhat - list dump header information\n",
 			"\tverbose - toggle verbose flag",
 			" (useful with ``ls'')\n",
 			"\thelp or `?' - print this list\n",
@@ -135,6 +146,8 @@ loop:
 	 * List a directory.
 	 */
 	case 'l':
+		if (strncmp(cmd, "ls", strlen(cmd)) != 0)
+			goto bad;
 		ino = dirlookup(name);
 		if (ino == 0)
 			break;
@@ -144,6 +157,8 @@ loop:
 	 * Print current directory.
 	 */
 	case 'p':
+		if (strncmp(cmd, "pwd", strlen(cmd)) != 0)
+			goto bad;
 		if (curdir[1] == '\0')
 			fprintf(stderr, "/\n");
 		else
@@ -153,12 +168,19 @@ loop:
 	 * Quit.
 	 */
 	case 'q':
+		if (strncmp(cmd, "quit", strlen(cmd)) != 0)
+			goto bad;
+		return;
 	case 'x':
+		if (strncmp(cmd, "xit", strlen(cmd)) != 0)
+			goto bad;
 		return;
 	/*
 	 * Toggle verbose mode.
 	 */
 	case 'v':
+		if (strncmp(cmd, "verbose", strlen(cmd)) != 0)
+			goto bad;
 		if (vflag) {
 			fprintf(stderr, "verbose mode off\n");
 			vflag = 0;
@@ -171,12 +193,24 @@ loop:
 	 * Just restore requested directory modes.
 	 */
 	case 's':
+		if (strncmp(cmd, "setmodes", strlen(cmd)) != 0)
+			goto bad;
 		setdirmodes();
+		break;
+	/*
+	 * Print out dump header information.
+	 */
+	case 'w':
+		if (strncmp(cmd, "what", strlen(cmd)) != 0)
+			goto bad;
+		printdumpinfo();
 		break;
 	/*
 	 * Turn on debugging.
 	 */
 	case 'D':
+		if (strncmp(cmd, "Debug", strlen(cmd)) != 0)
+			goto bad;
 		if (dflag) {
 			fprintf(stderr, "debugging mode off\n");
 			dflag = 0;
@@ -189,6 +223,7 @@ loop:
 	 * Unknown command.
 	 */
 	default:
+	bad:
 		fprintf(stderr, "%s: unknown command; type ? for help\n", cmd);
 		break;
 	}
@@ -398,12 +433,14 @@ expandarg(arg, ap)
 	register struct arglist *ap;
 {
 	static struct afile single;
+	struct entry *ep;
 	int size;
 
 	ap->head = ap->last = (struct afile *)0;
 	size = expand(arg, 0, ap);
 	if (size == 0) {
-		single.fnum = lookupname(arg)->e_ino;
+		ep = lookupname(arg);
+		single.fnum = ep ? ep->e_ino : 0;
 		single.fname = savename(arg);
 		ap->head = &single;
 		ap->last = ap->head + 1;

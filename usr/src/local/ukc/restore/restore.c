@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	5.2 (Berkeley) 3/5/86";
+static char sccsid[] = "@(#)restore.c	5.3 (Berkeley) 6/18/87";
 #endif not lint
 
 #include "restore.h"
@@ -392,7 +392,8 @@ nodeupdates(name, ino, type)
 	 * next incremental tape.
 	 */
 	case NIL:
-		fprintf(stderr, "%s: not found on tape\n", name);
+		fprintf(stderr, "%s: (inode %d) not found on tape\n",
+			name, ino);
 		break;
 
 	/*
