@@ -4,9 +4,8 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	5.1 (Berkeley) %G%
+ *	@(#)pathnames.h	5.2 (Berkeley) %G%
  */
 
+#define	_PATH_BOGLOG		"/var/games/boglog"
 #define	_PATH_DICTIONARY	"/usr/share/games/bogdict"
-
-
