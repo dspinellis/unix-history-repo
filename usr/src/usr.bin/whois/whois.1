@@ -3,38 +3,44 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)whois.1	6.4 (Berkeley) %G%
+.\"	@(#)whois.1	6.5 (Berkeley) %G%
 .\"
 .TH WHOIS 1 ""
 .UC 6
 .SH NAME
-whois \- DARPA Internet user name directory service
+whois \- Internet user name directory service
 .SH SYNOPSIS
-.B whois
-name
-.SH DESCRIPTION
-.TP
-whois help
-Produces a helpful message similar to the following:
-.PP
-Please enter a name or a handle (``ident"), such as ``Smith"
-or ``SRI-NIC".
-Starting with a period forces a name-only search;
-starting with exclamation point forces handle-only.
-Examples:
 .nf
-	Smith			[looks for name or handle SMITH	]
-	!SRI-NIC			[looks for handle SRI-NIC only	]
-	.Smith, John		[looks for name JOHN SMITH only	]
+.ft B
+whois [ \-h hostname ] name ...
+.ft R
 .fi
-Adding ``..." to the argument will match anything from that point,
-e.g. ``ZU..." will match ZUL, ZUM, etc.
+.SH DESCRIPTION
+.I Whois
+is used to look up records in the Network Information Center (NIC)
+database.
 .PP
-To have the ENTIRE membership list of a group or organization,
-if you are asking about a group or org, shown with the record, use
-an asterisk character `*' directly preceding the given argument.
-[CAUTION: If there are a lot of members this will take a long time!]
-You may of course use exclamation point and asterisk, or a period
-and asterisk together.
+The options are as follows:
+.TP
+\-h
+Use the specified host instead of the default NIC (nic.ddn.mil).
+.PP
+The operands specified to
+.I whois
+are concatenated together (separated by white-space) and presented to
+the
+.I whois
+server.
+.PP
+The default action, unless directed otherwise with a special
+.IR name ,
+is to do a very broad search, looking for matches to
+.I name
+in all types of records and most fields (name, nicknames, hostname, net
+address, etc.) in the database.
+For more information as to what
+.I name
+operands have special meaning, and how to guide the search, use
+the special name ``help''.
 .SH SEE ALSO
-RFC 812:  Nicname/Whois
+RFC 812: Nicname/Whois
