@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.24.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.24.1.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -47,9 +47,6 @@ int	ptflag = 0;
 int	connected;
 struct	sockaddr_in myctladdr;
 uid_t	getuid();
-#ifdef RESTART
-off_t	restart_point = 0;
-#endif
 
 FILE	*cin, *cout;
 FILE	*dataconn();
@@ -468,27 +465,6 @@ sendrequest(cmd, local, remote)
 	if (setjmp(sendabort))
 		goto abort;
 
-#ifdef RESTART
-	if (restart_point &&
-	    (strcmp(cmd, "STOR") == 0 || strcmp(cmd, "APPE") == 0)) {
-		if (fseek(fin, (long) restart_point, 0) < 0) {
-			perror(local);
-			restart_point = 0;
-			if (closefunc != NULL)
-				(*closefunc)(fin);
-			return;
-		}
-		if (command("REST %ld", (long) restart_point)
-			!= CONTINUE) {
-			restart_point = 0;
-			if (closefunc != NULL)
-				(*closefunc)(fin);
-			return;
-		}
-		restart_point = 0;
-		mode = "r+w";
-	}
-#endif
 	if (remote) {
 		if (command("%s %s", cmd, remote) != PRELIM) {
 			(void) signal(SIGINT, oldintr);
@@ -723,11 +699,6 @@ recvrequest(cmd, local, remote, mode)
 			setascii();
 			verbose = oldverbose;
 		}
-#ifdef RESTART
-	} else if (restart_point) {
-		if (command("REST %ld", (long) restart_point) != CONTINUE)
-			return;
-#endif
 	}
 	if (remote) {
 		if (command("%s %s", cmd, remote) != PRELIM) {
@@ -810,15 +781,6 @@ recvrequest(cmd, local, remote, mode)
 
 	case TYPE_I:
 	case TYPE_L:
-#ifdef RESTART
-		if (restart_point &&
-		    lseek(fileno(fout), (long) restart_point, L_SET) < 0) {
-			perror(local);
-			if (closefunc != NULL)
-				(*closefunc)(fout);
-			return;
-		}
-#endif
 		errno = d = 0;
 		while ((c = read(fileno(din), buf, bufsize)) > 0) {
 			if ((d = write(fileno(fout), bufp, c)) != c)
@@ -852,29 +814,6 @@ recvrequest(cmd, local, remote, mode)
 		break;
 
 	case TYPE_A:
-#ifdef RESTART
-		if (restart_point) {
-			register int i, n, c;
-
-			if (fseek(fout, 0L, L_SET) < 0)
-				goto done;
-			n = restart_point;
-			i = 0;
-			while (i++ < n) {
-				if ((c=getc(fout)) == EOF)
-					goto done;
-				if (c == '\n')
-					i++;
-			}
-			if (fseek(fout, 0L, L_INCR) < 0) {
-done:
-				perror(local);
-				if (closefunc != NULL)
-					(*closefunc)(fout);
-				return;
-			}
-		}
-#endif
 		while ((c = getc(din)) != EOF) {
 			while (c == '\r') {
 				while (hash && (bytes >= hashbytes)) {

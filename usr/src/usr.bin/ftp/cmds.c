@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.14.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.14.1.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -46,9 +46,6 @@ extern	char *remglob();
 extern	char *getenv();
 extern	char *index();
 extern	char *rindex();
-#ifdef RESTART
-extern off_t restart_point;
-#endif
 extern char reply_string[];
 
 char *mname;
@@ -472,32 +469,12 @@ mput(argc, argv)
 	mflag = 0;
 }
 
-#ifdef RESTART
-reget(argc, argv)
-	char *argv[];
-{
-	(void) getit(argc, argv, 1, "r+w");
-}
-
-get(argc, argv)
-	char *argv[];
-{
-	(void) getit(argc, argv, 0, restart_point ? "r+w" : "w" );
-}
-#endif
 
 /*
  * Receive one file.
  */
-#ifdef RESTART
-getit(argc, argv, restartit, mode)
-#else
 get(argc, argv)
-#endif
 	char *argv[];
-#ifdef RESTART
-	char *mode;
-#endif
 {
 	int loc = 0;
 
@@ -518,11 +495,7 @@ get(argc, argv)
 usage:
 		printf("usage: %s remote-file [ local-file ]\n", argv[0]);
 		code = -1;
-#ifndef RESTART
 		return;
-#else
-		return (0);
-#endif
 	}
 	if (argc < 3) {
 		(void) strcat(line, " ");
@@ -536,11 +509,7 @@ usage:
 		goto usage;
 	if (!globulize(&argv[2])) {
 		code = -1;
-#ifndef RESTART
 		return;
-#else
-		return (0);
-#endif
 	}
 	if (loc && mcase) {
 		char *tp = argv[1], *tp2, tmpbuf[MAXPATHLEN];
@@ -565,67 +534,7 @@ usage:
 		argv[2] = dotrans(argv[2]);
 	if (loc && mapflag)
 		argv[2] = domap(argv[2]);
-#ifdef RESTART
-	if (restartit) {
-		struct stat stbuf;
-		int ret;
-
-		ret = stat(argv[2], &stbuf);
-		if (restartit == 1) {
-			if (ret < 0) {
-				perror(argv[2]);
-				return (0);
-			}
-			restart_point = stbuf.st_size;
-		} else {
-			if (ret == 0) {
-				int overbose;
-
-				overbose = verbose;
-				if (debug == 0)
-					verbose = -1;
-				if (command("MDTM %s", argv[1]) == COMPLETE) {
-					int yy, mo, day, hour, min, sec;
-					struct tm *tm;
-					verbose = overbose;
-					sscanf(reply_string,
-					    "%*s %04d%02d%02d%02d%02d%02d",
-					    &yy, &mo, &day, &hour, &min, &sec);
-					tm = gmtime(&stbuf.st_mtime);
-					tm->tm_mon++;
-					if (tm->tm_year > yy%100)
-						return (1);
-					else if (tm->tm_year == yy%100) {
-						if (tm->tm_mon > mo)
-							return (1);
-					} else if (tm->tm_mon == mo) {
-						if (tm->tm_mday > day)
-							return (1);
-					} else if (tm->tm_mday == day) {
-						if (tm->tm_hour > hour)
-							return (1);
-					} else if (tm->tm_hour == hour) {
-						if (tm->tm_min > min)
-							return (1);
-					} else if (tm->tm_min == min) {
-						if (tm->tm_sec > sec)
-							return (1);
-					}
-				} else {
-					fputs(reply_string, stdout);
-					verbose = overbose;
-					return (0);
-				}
-			}
-		}
-	}
-
-	recvrequest("RETR", argv[2], argv[1], mode);
-	restart_point = 0;
-	return (0);
-#else
 	recvrequest("RETR", argv[2], argv[1], "w");
-#endif
 }
 
 mabort()
@@ -1912,22 +1821,6 @@ cdup()
 	(void) command("CDUP");
 }
 
-#ifdef RESTART
-/* restart transfer at specific point */
-restart(argc, argv)
-	int argc;
-	char *argv[];
-{
-	extern long atol();
-	if (argc != 2)
-		printf("restart: offset not specified\n");
-	else {
-		restart_point = atol(argv[1]);
-		printf("restarting at %ld. %s\n", restart_point,
-		    "execute get, put or append to initiate transfer");
-	}
-}
-#endif
 
 /* show remote system type */
 syst()
@@ -2070,16 +1963,3 @@ rmtstatus(argc, argv)
 {
 	(void) command(argc > 1 ? "STAT %s" : "STAT" , argv[1]);
 }
-#ifdef RESTART
-
-/*
- * get file if modtime is more recent than current file
- */
-newer(argc, argv)
-	char *argv[];
-{
-	if (getit(argc, argv, -1, "w"))
-		printf("Local file \"%s\" is newer than remote file \"%s\"\n",
-			argv[1], argv[2]);
-}
-#endif
