@@ -1,4 +1,4 @@
-#	@(#)bsd.lib.mk	5.10 (Berkeley) %G%
+#	@(#)bsd.lib.mk	5.11 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -45,12 +45,12 @@ MANALL=	${MAN1} ${MAN2} ${MAN3} ${MAN4} ${MAN5} ${MAN6} ${MAN7} ${MAN8}
 
 all: lib${LIB}.a lib${LIB}_p.a ${MANALL}# llib-l${LIB}.ln
 
-OBJS=	${SRCS:S/.c$/.o/g:S/.f$/.o/g:S/.s$/.o/g}
+OBJS+=	${SRCS:S/.c$/.o/g:S/.f$/.o/g:S/.s$/.o/g}
 lib${LIB}.a:: ${OBJS}
 	@echo building standard ${LIB} library
 	@${AR} cr lib${LIB}.a `lorder ${OBJS} | tsort` ${LDADD}
 
-POBJS=	${OBJS:.o=.po}
+POBJS+=	${OBJS:.o=.po}
 lib${LIB}_p.a:: ${POBJS}
 	@echo building profiled ${LIB} library
 	@${AR} cr lib${LIB}_p.a `lorder ${POBJS} | tsort` ${LDADD}
@@ -68,7 +68,7 @@ clean:
 cleandir:
 	rm -f a.out Errs errs mklog core ${CLEANFILES} ${OBJS} ${POBJS} \
 	    profiled/*.o lib${LIB}.a lib${LIB}_p.a llib-l${LIB}.ln
-	rm -f ${MANALL} tags .depend
+	rm -f ${MANALL} ${.CURDIR}/tags .depend
 .endif
 
 .if !target(depend)
@@ -116,17 +116,14 @@ lint:
 
 .if !target(tags)
 tags:
-	tags ${.ALLSRC:M*.c}
-	sed -e 's;../gen/;/usr/src/lib/libc/gen/;' \
-	    -e 's;../compat-43/;/usr/src/lib/libc/gen/;' \
-	    < tags > tags.tmp
+	cd ${.CURDIR}; ctags -f /dev/stdout ${.ALLSRC:M*.c} | \
+	    sed "s;\${.CURDIR}/;;" > tags
 .if !empty(SRCS:M*.s)
-	egrep -o "^ENTRY(.*)|^SYSCALL(.*)" ${.ALLSRC:M*.s} | sed \
-	"s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \`pwd\`/\1 /^\2(\3\4$$/;" \
-	>> tags.tmp
-	sort tags.tmp -o tags.tmp
+	cd ${.CURDIR}; egrep -o "^ENTRY(.*)|^SYSCALL(.*)" ${.ALLSRC:M*.s} | \
+	    sed \
+	    "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \`pwd\`/\1 /^\2(\3\4$$/;" \
+	    >> tags; sort -o tags tags
 .endif
-	mv tags.tmp tags
 .endif
 
 .include <bsd.man.mk>
