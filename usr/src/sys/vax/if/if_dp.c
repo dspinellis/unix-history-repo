@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_dp.c	7.8 (Berkeley) %G%
+ *	@(#)if_dp.c	7.9 (Berkeley) %G%
  */
 
 #include "dp.h"
@@ -62,7 +62,8 @@
  * Driver information for auto-configuration stuff.
  */
 int	dpprobe(), dpattach(), dpinit(), dpioctl(), dprint(), dpxint();
-int	dpoutput(), dpreset(), dptimeout(), dpstart(), x25_ifoutput(), dptestoutput();
+int	dpoutput(), dpreset(), dptimeout(), dpstart(), dptestoutput();
+int	x25_ifoutput(), x25_rtrequest();
 
 struct	uba_device *dpinfo[NDP];
 
@@ -92,6 +93,7 @@ struct dp_softc {
 #define DPF_ONLINE	0x02		/* device running (had a RDYO) */
 #define DPF_RESTART	0x04		/* software restart in progress */
 #define DPF_FLUSH	0x08		/* had a ROVR, flush ipkt when done */
+#define DPF_X25UP	0x10		/* XXX -- someday we'll do PPP also */
 	short	dp_ostate;		/* restarting, etc. */
 	short	dp_istate;		/* not sure this is necessary */
 #define DPS_IDLE	0
@@ -576,26 +578,16 @@ dpioctl(ifp, cmd, data)
 
 	dpstat.ioctl++;
 	switch (cmd) {
-
-	case SIOCSIFADDR:
-		ifp->if_flags |= IFF_UP;
-		switch (ifa->ifa_addr->sa_family) {
-		case AF_INET:
-			ifp->if_output = dptestoutput;
-		default:
-			dpinit(ifp->if_unit);
-			break;
-		}
-		break;
-#ifdef CCITT
 	case SIOCSIFCONF_X25:
 		ifp->if_flags |= IFF_UP;
-		ifp->if_output = x25_ifoutput;
 		error = hd_ctlinput(PRC_IFUP, ifa->ifa_addr);
 		if (error == 0)
 			dpinit(ifp->if_unit);
 		break;
-#endif
+
+	case SIOCSIFADDR:
+		ifa->ifa_rtrequest = x25_rtrequest;
+		break;
 
 	case SIOCSIFFLAGS:
 		if ((ifp->if_flags & IFF_UP) == 0 &&
