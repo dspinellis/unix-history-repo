@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)maketape	4.28 (Berkeley) %G%
+#	@(#)maketape	4.29 (Berkeley) %G%
 #
 #	maketape [ 6250 | 1600 [ tapename [ remotetapemachine ] ] ]
 miniroot=hp0d
@@ -76,15 +76,17 @@ echo "Add user contributed software"
 if [ ${type} != '6250' ]
 then
 	cd /nbsd/usr/src/new; eval tar cf ${tartape} \
+		README Makefile \
 		B X ansi apl bib courier cpm dipress dsh emacs enet help \
-		hyper icon jove kermit mh mkmf mmdf.tar.Z news notes \
+		hyper icon jove kermit mh mkmf mmdf.tar.Z news notes nntp \
 		np100 patch pathalias rcs rn spms sumacc.tar.Z sunrpc \
 		tac tools umodem xns \
 		${remote+'| $remote /usr/local/20b ">" $tape'}
 else
 	cd /nbsd/usr/src/new; eval tar cf ${tartape} \
+		README Makefile \
 		B X ansi apl bib courier cpm dipress dsh emacs enet help \
-		hyper icon jove kermit mh mkmf mmdf news notes \
+		hyper icon jove kermit mh mkmf mmdf news notes nntp \
 		np100 patch pathalias rcs rn spms sumacc sunrpc \
 		tac tools umodem xns \
 		${remote+'| $remote /usr/local/20b ">" $tape'}
