@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)find.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)find.c	4.4 (Berkeley) %G%";
 /*	find	COMPILE:	cc -o find -s -O -i find.c -lS	*/
 #include <stdio.h>
 #include <sys/types.h>
@@ -181,7 +181,7 @@ struct anode *e3() { /* parse parens and predicates */
 		return(mk(ino, (struct anode *)atoi(b), (struct anode *)s));
 	else if(EQ(a, "-group")) {
 		if((i=getunum("/etc/group", b)) == -1) {
-			if(gmatch(b, "[0-9][0-9]*"))
+			if(gmatch(b, "[0-9]*"))
 				return mk(group, (struct anode *)atoi(b), (struct anode *)s);
 			fprintf(stderr, "find: cannot find -group name\n");
 			exit(1);
