@@ -1,4 +1,4 @@
-/*	mkmakefile.c	1.22	82/12/09	*/
+/*	mkmakefile.c	1.23	82/12/18	*/
 
 /*
  * Build the makefile for the system, from
@@ -117,7 +117,7 @@ makefile()
 		if (profiling && strncmp(line, "COPTS=", 6) == 0) {
 			register char *cp;
 
-			fprintf(ofp, "CRT0.EX=/usr/src/libc/csu/crt0.ex\n");
+			fprintf(ofp, "CRT0.EX=/usr/src/lib/libc/csu/crt0.ex\n");
 			cp = index(line, '\n');
 			if (cp)
 				*cp = 0;
