@@ -1,4 +1,4 @@
-/*	@(#)erf.c	4.1	%G%	*/
+/*	@(#)erf.c	4.2	(Berkeley)	%G%	*/
 
 /*
 	C program for floating point error function
@@ -23,7 +23,6 @@
 
 #define M 7
 #define N 9
-int errno;
 static double torp = 1.1283791670955125738961589031;
 static double p1[] = {
 	0.804373630960840172832162e5,
@@ -74,7 +73,6 @@ erf(arg) double arg;{
 	double d, n;
 	int i;
 
-	errno = 0;
 	sign = 1;
 	if(arg < 0.){
 		arg = -arg;
@@ -100,7 +98,6 @@ erfc(arg) double arg;{
 	double n, d;
 	int i;
 
-	errno = 0;
 	if(arg < 0.)
 		return(2. - erfc(-arg));
 /*
