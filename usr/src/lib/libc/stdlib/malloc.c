@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)malloc.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)malloc.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -180,6 +180,7 @@ malloc(nbytes)
 /*
  * Allocate more memory to the indicated bucket.
  */
+static
 morecore(bucket)
 	int bucket;
 {
