@@ -1,0 +1,29 @@
+#!/bin/csh -fx
+#
+#Shell script for building and installing Emacs.
+
+set EMACS=/usr/local/emacs
+set BIN=/usr/local/bin
+
+/bin/sed "s;/usr/local/emacs;$EMACS;" < src/paths.h-dist > src/paths.h
+
+(cd etc; make) || exit 1
+(cd src; make) || exit 1
+
+if (`pwd` != `(cd $EMACS; pwd)`) then
+  mv `pwd` $EMACS
+  if ($status) then
+    mkdir $EMACS
+    echo mv `pwd` to $EMACS failed--using tar to copy.
+    tar cf - . | (cd $EMACS; umask 0; tar xf -)
+    if ($status) then
+      echo tar-copying `pwd` to $EMACS failed.
+      exit 1
+    endif
+  endif
+endif
+
+cp $EMACS/etc/{ctags,etags} $BIN
+mv $EMACS/src/xemacs $BIN/emacs
+rm $EMACS/src/temacs
+chmod 777 $BIN/{ctags,etags,emacs}
