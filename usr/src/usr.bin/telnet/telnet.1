@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)telnet.1	8.3 (Berkeley) %G%
+.\"	@(#)telnet.1	8.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TELNET 1
@@ -15,9 +15,16 @@
 protocol
 .Sh SYNOPSIS
 .Nm telnet
-.Op Fl d
+.Op Fl 8
+.Op Fl E
+.Op Fl F
+.Op Fl K
+.Op Fl L
+.Op Fl S Ar tos
+.Op Fl X Ar authtype
 .Op Fl a
-.Op Fl n Ar tracefile
+.Op Fl c
+.Op Fl d
 .Ar host
 .Op port
 .Oc
@@ -42,11 +49,35 @@ command with those arguments.
 .Pp
 Options:
 .Bl -tag -width indent
-.It Fl d
-Sets the initial value of the
-.Ic debug
-toggle to
-.Dv TRUE
+.It Fl 8
+Specifies an 8-bit data path.  This causes an attempt to
+negotiate the
+.Dv TELNET BINARY
+option on both input and output.
+.It Fl E
+Stops any character from being recognized as an escape character.
+.It Fl F
+If Kerberos V5 authentication is being used, the
+.Fl F
+option allows the local credentials to be forwarded
+to the remote system, including any credentials that
+have already been forwarded into the local environment.
+.It Fl K
+Specifies no automatic login to the remote system.
+.It Fl L
+Specifies an 8-bit data path on output.  This causes the
+BINARY option to be negotiated on output.
+.It Fl S Ar tos
+Sets the IP type-of-service (TOS) option for the telnet
+connection to the value
+.Ar tos,
+which can be a numeric TOS value
+or, on systems that support it, a symbolic
+TOS name found in the /etc/iptos file.
+.It Fl X Ar atype 
+Disables the
+.Ar atype
+type of authentication.
 .It Fl a
 Attempt automatic login.
 Currently, this sends the user name via the
@@ -59,13 +90,38 @@ The name used is that of the current user as returned by
 .Xr getlogin 2
 if it agrees with the current user ID,
 otherwise it is the name associated with the user ID.
-.It Fl n Ar tracefile 
-Opens
-.Ar tracefile
-for recording trace information.
-See the
-.Ic set tracefile
-command below.
+.It Fl c
+Disables the reading of the user's
+.Pa \&.telnetrc
+file.  (See the
+.Ic toggle skiprc
+command on this man page.)
+.It Fl d
+Sets the initial value of the
+.Ic debug
+toggle to
+.Dv TRUE
+.It Fl e Ar escape char 
+Sets the initial
+.Nm
+.Nm telnet
+escape character to
+.Ar escape char.
+If
+.Ar escape char
+is omitted, then
+there will be no escape character.
+.It Fl f
+If Kerberos V5 authentication is being used, the
+.Fl f
+option allows the local credentials to be forwarded to the remote system.
+.It Fl k Ar realm
+If Kerberos authentication is being used, the
+.Fl k
+option requests that telnet obtain tickets for the remote host in
+realm realm instead of the remote host's realm, as determined
+by
+.Xr krb_realmofhost 3 .
 .It Ar host
 Indicates the official name, an alias, or the Internet address
 of a remote host.
@@ -75,6 +131,11 @@ not specified, the default
 .Nm telnet
 port is used.
 .El
+.Pp
+When in rlogin mode, a line of the form ~.  disconnects from the
+remote host; ~ is the telnet escape character.
+Similarly, the line ~^Z suspends the telnet session.
+The line ~^] escapes to the normal telnet escape prompt.
 .Pp
 Once a connection has been opened,
 .Nm telnet
@@ -175,6 +236,26 @@ and
 commands).
 .Pp
 .Bl -tag -width "mode type"
+.It Ic auth Ar argument ... 
+The auth command manipulates the information sent through the
+.Dv TELNET AUTHENTICATE
+option.  Valid arguments for the
+auth command are as follows:
+.Bl -tag -width "disable type"
+.It Ic disable Ar type
+Disables the specified type of authentication.  To
+obtain a list of available types, use the
+.Ic auth disable \&?
+command.
+.It Ic enable Ar type
+Enables the specified type of authentication.  To
+obtain a list of available types, use the
+.Ic auth enable \&?
+command.
+.It Ic status
+Lists the current status of the various types of
+authentication.
+.El
 .It Ic close
 Close a
 .Tn TELNET
@@ -185,6 +266,145 @@ Displays all, or some, of the
 and
 .Ic toggle
 values (see below).
+.It Ic encrypt Ar argument ...
+The encrypt command manipulates the information sent through the
+.Dv TELNET ENCRYPT
+option.
+.Pp
+Note:  Because of export controls, the
+.Dv TELNET ENCRYPT
+option is not supported outside of the United States and Canada.
+.Pp
+Valid arguments for the encrypt command are as follows:
+.Bl -tag -width Ar
+.It Ic disable Ar type Ic [input|output]
+Disables the specified type of encryption.  If you
+omit the input and output, both input and output
+are disabled.  To obtain a list of available
+types, use the
+.Ic encrypt disable \&?
+command.
+.It Ic enable Ar type Ic [input|output]
+Enables the specified type of encryption.  If you
+omit input and output, both input and output are
+enabled.  To obtain a list of available types, use the
+.Ic encrypt enable \&?
+command.
+.It Ic input
+This is the same as the
+.Ic encrypt start input
+command.
+.It Ic -input
+This is the same as the
+.Ic encrypt stop input
+command.
+.It Ic output
+This is the same as the
+.Ic encrypt start output
+command.
+.It Ic -output
+This is the same as the
+.Ic encrypt stop output
+command.
+.It Ic start Ic [input|output]
+Attempts to start encryption.  If you omit
+.Ic input
+and
+.Ic output,
+both input and output are enabled.  To
+obtain a list of available types, use the
+.Ic encrypt enable \&?
+command.
+.It Ic status
+Lists the current status of encryption.
+.It Ic stop Ic [input|output]
+Stops encryption.  If you omit input and output,
+encryption is on both input and output.
+.It Ic type Ar type
+Sets the default type of encryption to be used
+with later
+.Ic encrypt start
+or
+.Ic encrypt stop
+commands.
+.El
+.It Ic environ Ar arguments... 
+The
+.Ic environ
+command is used to manipulate the
+the variables that my be sent through the
+.Dv TELNET ENVIRON
+option.
+The initial set of variables is taken from the users
+environment, with only the
+.Ev DISPLAY
+and
+.Ev PRINTER
+variables being exported by default.
+The
+.Ev USER
+variable is also exported if the
+.Fl a
+or
+.Fl l
+options are used.
+.br
+Valid arguments for the
+.Ic environ
+command are:
+.Bl -tag -width Fl
+.It Ic define Ar variable value 
+Define the variable
+.Ar variable
+to have a value of
+.Ar value.
+Any variables defined by this command are automatically exported.
+The
+.Ar value
+may be enclosed in single or double quotes so
+that tabs and spaces may be included.
+.It Ic undefine Ar variable 
+Remove
+.Ar variable
+from the list of environment variables.
+.It Ic export Ar variable 
+Mark the variable
+.Ar variable
+to be exported to the remote side.
+.It Ic unexport Ar variable 
+Mark the variable
+.Ar variable
+to not be exported unless
+explicitly asked for by the remote side.
+.It Ic list
+List the current set of environment variables.
+Those marked with a
+.Cm *
+will be sent automatically,
+other variables will only be sent if explicitly requested.
+.It Ic \&?
+Prints out help information for the
+.Ic environ
+command.
+.El
+.It Ic logout
+Sends the
+.Dv TELNET LOGOUT
+option to the remote side.
+This command is similar to a
+.Ic close
+command; however, if the remote side does not support the
+.Dv LOGOUT
+option, nothing happens.
+If, however, the remote side does support the
+.Dv LOGOUT
+option, this command should cause the remote side to close the
+.Tn TELNET
+connection.
+If the remote side also supports the concept of
+suspending a user's session for later reattachment,
+the logout argument indicates that you
+should terminate the session immediately.
 .It Ic mode Ar type 
 .Ar Type
 is one of several options, depending on the state of the
@@ -246,17 +466,17 @@ When connecting to a non-standard port,
 .Nm telnet
 omits any automatic initiation of
 .Tn TELNET
-options.  When the port number is preceeded by a minus sign,
-the inital option negotiation is done.
+options.  When the port number is preceded by a minus sign,
+the initial option negotiation is done.
 After establishing a connection, the file
 .Pa \&.telnetrc
 in the
-users home directory is opened.  Lines begining with a # are
+users home directory is opened.  Lines beginning with a # are
 comment lines.  Blank lines are ignored.  Lines that begin
-without whitespace are the start of a machine entry.  The
+without white space are the start of a machine entry.  The
 first thing on the line is the name of the machine that is
 being connected to.  The rest of the line, and successive
-lines that begin with whitespace are assumed to be
+lines that begin with white space are assumed to be
 .Nm telnet
 commands and are processed as if they had been typed
 in manually to the
@@ -365,6 +585,26 @@ data (and may not work if the remote system is a
 .Bx 4.2
 system -- if
 it doesn't work, a lower case \*(Lqr\*(Rq may be echoed on the terminal).
+.It Ic do Ar cmd
+.It Ic dont Ar cmd
+.It Ic will Ar cmd
+.It Ic wont Ar cmd
+Sends the
+.Dv TELNET DO
+.Ar cmd
+sequence.
+.Ar Cmd
+can be either a decimal number between 0 and 255,
+or a symbolic name for a specific
+.Dv TELNET
+command.
+.Ar Cmd
+can also be either
+.Ic help
+or
+.Ic \&?
+to print out help information, including
+a list of known symbolic names.
 .It Ic \&?
 Prints out help information for the
 .Ic send
@@ -402,6 +642,18 @@ and
 .Ic unset
 commands.
 .Bl -tag -width escape
+.It Ic ayt
+If
+.Tn TELNET
+is in localchars mode, or
+.Dv LINEMODE
+is enabled, and the status character is typed, a
+.Dv TELNET AYT
+sequence (see
+.Ic send ayt
+preceding) is sent to the
+remote host.  The initial value for the "Are You There"
+character is the terminal's status character.
 .It Ic echo
 This is the value (initially \*(Lq^E\*(Rq) which, when in
 \*(Lqline by line\*(Rq mode, toggles between doing local echoing
@@ -471,6 +723,17 @@ The initial value for the flush character is taken to be
 the terminal's
 .Ic flush
 character.
+.It Ic forw1
+.It Ic forw2
+If
+.Tn TELNET
+is operating in
+.Dv LINEMODE ,
+these are the
+characters that, when typed, cause partial lines to be
+forwarded to the remote system.  The initial value for
+the forwarding characters are taken from the terminal's
+eol and eol2 characters.
 .It Ic interrupt
 If
 .Nm telnet
@@ -565,6 +828,16 @@ The initial value for the reprint character is taken to be
 the terminal's
 .Ic reprint
 character.
+.It Ic rlogin
+This is the rlogin escape character.
+If set, the normal
+.Tn TELNET
+escape character is ignored unless it is
+preceded by this character at the beginning of a line.
+This character, at the beginning of a line followed by
+a "."  closes the connection; when followed by a ^Z it
+suspends the telnet command.  The initial state is to
+disable the rlogin escape character.
 .It Ic start
 If the
 .Dv TELNET TOGGLE-FLOW-CONTROL
@@ -637,7 +910,7 @@ character.
 The
 .Ic slc
 command (Set Local Characters) is used to set
-or change the state of the special
+or change the state of the the special
 characters when the 
 .Dv TELNET LINEMODE
 option has
@@ -654,6 +927,11 @@ and
 .Ic kill  ) .
 By default, the local special characters are exported.
 .Bl -tag -width Fl
+.It Ic check
+Verify the current settings for the current special characters.
+The remote side is requested to send all the current special
+character settings, and if there are any discrepancies with
+the local side, the local side will switch to the remote value.
 .It Ic export
 Switch to the local defaults for the special characters.  The
 local default characters are those of the local terminal at
@@ -666,17 +944,15 @@ The remote default characters are those of the remote system
 at the time when the 
 .Tn TELNET
 connection was established.
-.It Ic check
-Verify the current settings for the current special characters.
-The remote side is requested to send all the current special
-character settings, and if there are any discrepancies with
-the local side, the local side will switch to the remote value.
 .Ic Ic \&?
 Prints out help information for the
 .Ic slc
 command.
-.It Ic \&?
-.El
+.It Ic status
+Show the current status of
+.Nm telnet  .
+This includes the peer one is connected to, as well
+as the current mode.
 .It Ic toggle Ar arguments ... 
 Toggle (between
 .Dv TRUE
@@ -700,6 +976,8 @@ The state of these flags may be interrogated with the
 command.
 Valid arguments are:
 .Bl -tag -width Ar
+.It Ic authdebug
+Turns on debugging information for the authentication code.
 .It Ic autoflush
 If
 .Ic autoflush
@@ -731,6 +1009,35 @@ done an "stty noflsh", otherwise
 .Dv FALSE
 (see
 .Xr stty  1  ) .
+.It Ic autodecrypt
+When the
+.Dv TELNET ENCRYPT
+option is negotiated, by
+default the actual encryption (decryption) of the data
+stream does not start automatically.  The autoencrypt
+(autodecrypt) command states that encryption of the
+output (input) stream should be enabled as soon as
+possible.
+.Pp
+Note:  Because of export controls, the
+.Dv TELNET ENCRYPT
+option is not supported outside the United States and Canada.
+.It Ic autologin
+If the remote side supports the
+.Dv TELNET AUTHENTICATION
+option
+.Tn TELNET
+attempts to use it to perform automatic authentication.  If the
+.Dv AUTHENTICATION
+option is not supported, the user's login
+name are propagated through the
+.Dv TELNET ENVIRON
+option.
+This command is the same as specifying
+.Ar a
+option on the
+.Ic open
+command.
 .It Ic autosynch
 If
 .Ic autosynch
@@ -800,6 +1107,8 @@ Toggles socket level debugging (useful only to the
 .Ic super user  ) .
 The initial value for this toggle is
 .Dv FALSE .
+.It Ic encdebug
+Turns on debugging information for the encryption code.
 .It Ic localchars
 If this is
 .Dv TRUE ,
@@ -866,11 +1175,36 @@ toggle is enabled, if
 .Ic prettydump
 is enabled the output from the
 .Ic netdata
-command will be formated in a more user readable format.
+command will be formatted in a more user readable format.
 Spaces are put between each character in the output, and the
-begining of any
+beginning of any
 .Tn TELNET
-escape sequence is preceeded by a '*' to aid in locating them.
+escape sequence is preceded by a '*' to aid in locating them.
+.It Ic skiprc
+When the skiprc toggle is
+.Dv TRUE ,
+.Tn TELNET
+skips the reading of the
+.Pa \&.telnetrc
+file in the users home
+directory when connections are opened.  The initial
+value for this toggle is
+.Dv FALSE.
+.It Ic termdata
+Toggles the display of all terminal data (in hexadecimal format).
+The initial value for this toggle is
+.Dv FALSE .
+.It Ic verbose_encrypt
+When the
+.Ic verbose_encrypt
+toggle is
+.Dv TRUE ,
+.Tn TELNET
+prints out a message each time encryption is enabled or
+disabled.  The initial value for this toggle is
+.Dv FALSE.
+Note:  Because of export controls, data encryption
+is not supported outside of the United States and Canada.
 .It Ic \&?
 Displays the legal
 .Ic toggle
@@ -885,13 +1219,8 @@ This command only works when the user is using the
 Execute a single command in a subshell on the local
 system.  If
 .Ic command
-is ommitted, then an interactive
+is omitted, then an interactive
 subshell is invoked.
-.It Ic status
-Show the current status of
-.Nm telnet  .
-This includes the peer one is connected to, as well
-as the current mode.
 .It Ic \&? Op Ar command 
 Get help.  With no arguments,
 .Nm telnet
