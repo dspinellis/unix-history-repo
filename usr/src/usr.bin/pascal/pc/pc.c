@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)pc.c 3.15 %G%";
+static	char sccsid[] = "@(#)pc.c 3.16 %G%";
 
 #include <stdio.h>
 #include <signal.h>
@@ -42,6 +42,42 @@ int	pc3argx = 1;
 /* char	*ldargs[NARGS] =	{ "ld", "-X", "/lib/crt0.o", 0, }; */
 int	asargx;
 char	*asargs[6] =		{ "as", 0, };
+
+char *mesg[] = {
+	0,
+	"Hangup",
+	"Interrupt",	
+	"Quit",
+	"Illegal instruction",
+	"Trace/BPT trap",
+	"IOT trap",
+	"EMT trap",
+	"Floating exception",
+	"Killed",
+	"Bus error",
+	"Segmentation fault",
+	"Bad system call",
+	"Broken pipe",
+	"Alarm clock",
+	"Terminated",
+	"Signal 16",
+	"Stopped (signal)",
+	"Stopped",
+	"Continued",
+	"Child exited",
+	"Stopped (tty input)",
+	"Stopped (tty output)",
+	"Tty input interrupt",
+	"Cputime limit exceeded",
+	"Filesize limit exceeded",
+	"Signal 26",
+	"Signal 27",
+	"Signal 28",
+	"Signal 29",
+	"Signal 30",
+	"Signal 31",
+	"Signal 32"
+};
 
 /*
  * If the number of .p arguments (np) is 1, and the number of .o arguments
@@ -416,8 +452,12 @@ dosys(cmd, argv, in, out)
 	while (wait(&status) != pid)
 		;
 	if (WIFSIGNALED(status)) {
-		if (status.w_termsig != SIGINT)
-			fprintf(stderr, "Fatal error in %s\n", cmd);
+		if (status.w_termsig != SIGINT) {
+			fprintf(stderr, "%s: %s", cmd, mesg[status.w_termsig]);
+			if (status.w_coredump)
+				fprintf(stderr, " (core dumped)");
+			fprintf(stderr, "\n");
+		}
 		errs = 100;
 		done();
 		/*NOTREACHED*/
