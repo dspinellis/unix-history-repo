@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)input.c	4.2 %G%";
+static char sccsid[] = "@(#)input.c	4.3 %G%";
 #endif
 
 /*
@@ -53,7 +53,7 @@ rip_input(from, size)
 		if (newsize > 0) {
 			msg->rip_cmd = RIPCMD_RESPONSE;
 			newsize += sizeof (int);
-			(*afp->af_output)(s, from, newsize);
+			(*afp->af_output)(s, 0, from, newsize);
 		}
 		return;
 
