@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ruserpass.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ruserpass.c	1.3 (Berkeley) %G%";
 #endif not lint
 
 
@@ -27,6 +27,7 @@ extern char macbuf[4096];
 #include <errno.h>
 
 char	*renvlook(), *malloc(), *index(), *getenv(), *getpass(), *getlogin();
+char	*strcpy();
 struct	utmp *getutmp();
 static	FILE *cfile;
 
@@ -66,15 +67,15 @@ static
 rnetrc(host, aname, apass, aacct)
 	char *host, **aname, **apass, **aacct;
 {
-	char *hdir, buf[BUFSIZ], *tmp, c;
-	int t, i;
+	char *hdir, buf[BUFSIZ], *tmp;
+	int t, i, c;
 	struct stat stb;
 	extern int errno;
 
 	hdir = getenv("HOME");
 	if (hdir == NULL)
 		hdir = ".";
-	sprintf(buf, "%s/.netrc", hdir);
+	(void) sprintf(buf, "%s/.netrc", hdir);
 	cfile = fopen(buf, "r");
 	if (cfile == NULL) {
 		if (errno != ENOENT)
@@ -96,8 +97,8 @@ next:
 		case LOGIN:
 			if (token())
 				if (*aname == 0) { 
-					*aname = malloc(strlen(tokval) + 1);
-					strcpy(*aname, tokval);
+					*aname = malloc((unsigned) strlen(tokval) + 1);
+					(void) strcpy(*aname, tokval);
 				} else {
 					if (strcmp(*aname, tokval))
 						goto next;
@@ -111,8 +112,8 @@ next:
 				return(-1);
 			}
 			if (token() && *apass == 0) {
-				*apass = malloc(strlen(tokval) + 1);
-				strcpy(*apass, tokval);
+				*apass = malloc((unsigned) strlen(tokval) + 1);
+				(void) strcpy(*apass, tokval);
 			}
 			break;
 		case ACCOUNT:
@@ -123,8 +124,8 @@ next:
 				return(-1);
 			}
 			if (token() && *aacct == 0) {
-				*aacct = malloc(strlen(tokval) + 1);
-				strcpy(*aacct, tokval);
+				*aacct = malloc((unsigned) strlen(tokval) + 1);
+				(void) strcpy(*aacct, tokval);
 			}
 			break;
 		case MACDEF:
@@ -192,7 +193,8 @@ next:
 		goto done;
 	}
 done:
-	fclose(cfile);
+	(void) fclose(cfile);
+	return(0);
 }
 
 static

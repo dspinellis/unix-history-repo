@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
@@ -5,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)domacro.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)domacro.c	1.2 (Berkeley) %G%";
 #endif not lint
 
 #include "ftp_var.h"
@@ -16,24 +17,22 @@ static char sccsid[] = "@(#)domacro.c	1.1 (Berkeley) %G%";
 #include <ctype.h>
 #include <sys/ttychars.h>
 
-jmp_buf macabort;
-
 domacro(argc, argv)
 	int argc;
 	char *argv[];
 {
 	register int i, j;
 	register char *cp1, *cp2;
-	int count = 2, loopflg = 0, (*oldintr)();
-	char **gargs, **cpp, line2[200];
+	int count = 2, loopflg = 0;
+	char line2[200];
 	extern char **glob(), *globerr;
 	struct cmd *getcmd(), *c;
 	extern struct cmd cmdtab[];
 
 	if (argc < 2) {
-		strcat(line, " ");
+		(void) strcat(line, " ");
 		printf("(macro name) ");
-		gets(&line[strlen(line)]);
+		(void) gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
 		argv = margv;
@@ -53,7 +52,7 @@ domacro(argc, argv)
 		code = -1;
 		return;
 	}
-	strcpy(line2, line);
+	(void) strcpy(line2, line);
 TOP:
 	cp1 = macros[i].mac_start;
 	while (cp1 != macros[i].mac_end) {
@@ -74,7 +73,7 @@ TOP:
 				    }
 				    cp1--;
 				    if (argc - 2 >= j) {
-					strcpy(cp2, argv[j+1]);
+					(void) strcpy(cp2, argv[j+1]);
 					cp2 += strlen(argv[j+1]);
 				    }
 				    break;
@@ -83,7 +82,7 @@ TOP:
 					loopflg = 1;
 					cp1++;
 					if (count < argc) {
-					   strcpy(cp2, argv[count]);
+					   (void) strcpy(cp2, argv[count]);
 					   cp2 += strlen(argv[count]);
 					}
 					break;
@@ -118,9 +117,9 @@ TOP:
 			}
 			(*c->c_handler)(margc, margv);
 			if (bell && c->c_bell) {
-				putchar(CTRL(g));
+				(void) putchar(CTRL(g));
 			}
-			strcpy(line, line2);
+			(void) strcpy(line, line2);
 			makeargv();
 			argc = margc;
 			argv = margv;

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -21,6 +21,7 @@ static char sccsid[] = "@(#)cmds.c	5.4 (Berkeley) %G%";
 #include <errno.h>
 #include <netdb.h>
 #include <ctype.h>
+#include <sys/wait.h>
 
 
 extern	char *globerr;
@@ -53,9 +54,9 @@ setpeer(argc, argv)
 		return;
 	}
 	if (argc < 2) {
-		strcat(line, " ");
+		(void) strcat(line, " ");
 		printf("(to) ");
-		gets(&line[strlen(line)]);
+		(void) gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
 		argv = margv;
@@ -80,7 +81,7 @@ setpeer(argc, argv)
 	if (host) {
 		connected = 1;
 		if (autologin)
-			login(argv[1]);
+			(void) login(argv[1]);
 	}
 }
 
@@ -139,7 +140,7 @@ settype(argc, argv)
 	else
 		comret = command("TYPE %s", p->t_mode);
 	if (comret == COMPLETE) {
-		strcpy(typename, p->t_name);
+		(void) strcpy(typename, p->t_name);
 		type = p->t_type;
 	}
 }
@@ -187,6 +188,7 @@ setebcdic()
 /*
  * Set file transfer mode.
  */
+/*ARGSUSED*/
 setmode(argc, argv)
 	char *argv[];
 {
@@ -198,6 +200,7 @@ setmode(argc, argv)
 /*
  * Set file transfer format.
  */
+/*ARGSUSED*/
 setform(argc, argv)
 	char *argv[];
 {
@@ -209,6 +212,7 @@ setform(argc, argv)
 /*
  * Set file transfer structure.
  */
+/*ARGSUSED*/
 setstruct(argc, argv)
 	char *argv[];
 {
@@ -234,9 +238,9 @@ put(argc, argv)
 		loc++;
 	}
 	if (argc < 2) {
-		strcat(line, " ");
+		(void) strcat(line, " ");
 		printf("(local-file) ");
-		gets(&line[strlen(line)]);
+		(void) gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
 		argv = margv;
@@ -248,9 +252,9 @@ usage:
 		return;
 	}
 	if (argc < 3) {
-		strcat(line, " ");
+		(void) strcat(line, " ");
 		printf("(remote-file) ");
-		gets(&line[strlen(line)]);
+		(void) gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
 		argv = margv;
@@ -291,9 +295,9 @@ mput(argc, argv)
 	char *tp;
 
 	if (argc < 2) {
-		strcat(line, " ");
+		(void) strcat(line, " ");
 		printf("(local-files) ");
-		gets(&line[strlen(line)]);
+		(void) gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
 		argv = margv;
@@ -310,7 +314,7 @@ mput(argc, argv)
 	if (proxy) {
 		char *cp, *tp2, tmpbuf[MAXPATHLEN];
 
-		while ((cp = remglob(argc, argv, 0)) != NULL) {
+		while ((cp = remglob(argv,0)) != NULL) {
 			if (*cp == 0) {
 				mflag = 0;
 				continue;
@@ -419,9 +423,9 @@ get(argc, argv)
 		loc++;
 	}
 	if (argc < 2) {
-		strcat(line, " ");
+		(void) strcat(line, " ");
 		printf("(remote-file) ");
-		gets(&line[strlen(line)]);
+		(void) gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
 		argv = margv;
@@ -433,9 +437,9 @@ usage:
 		return;
 	}
 	if (argc < 3) {
-		strcat(line, " ");
+		(void) strcat(line, " ");
 		printf("(local-file) ");
-		gets(&line[strlen(line)]);
+		(void) gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
 		argv = margv;
@@ -505,9 +509,9 @@ mget(argc, argv)
 	extern jmp_buf jabort;
 
 	if (argc < 2) {
-		strcat(line, " ");
+		(void) strcat(line, " ");
 		printf("(remote-files) ");
-		gets(&line[strlen(line)]);
+		(void) gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
 		argv = margv;
@@ -521,7 +525,7 @@ mget(argc, argv)
 	mflag = 1;
 	oldintr = signal(SIGINT,mabort);
 	(void) setjmp(jabort);
-	while ((cp = remglob(argc, argv, proxy)) != NULL) {
+	while ((cp = remglob(argv,proxy)) != NULL) {
 		if (*cp == '\0') {
 			mflag = 0;
 			continue;
@@ -567,9 +571,9 @@ mget(argc, argv)
 }
 
 char *
-remglob(argc, argv, doswitch)
-	int argc, doswitch;
+remglob(argv,doswitch)
 	char *argv[];
+	int doswitch;
 {
 	char temp[16];
 	static char buf[MAXPATHLEN];
@@ -584,7 +588,7 @@ remglob(argc, argv, doswitch)
 		}
 		else {
 			if (ftemp) {
-				fclose(ftemp);
+				(void) fclose(ftemp);
 				ftemp = NULL;
 			}
 		}
@@ -598,8 +602,8 @@ remglob(argc, argv, doswitch)
 		return (cp);
 	}
 	if (ftemp == NULL) {
-		strcpy(temp, "/tmp/ftpXXXXXX");
-		mktemp(temp);
+		(void) strcpy(temp, "/tmp/ftpXXXXXX");
+		(void) mktemp(temp);
 		oldverbose = verbose, verbose = 0;
 		oldhash = hash, hash = 0;
 		if (doswitch) {
@@ -612,14 +616,14 @@ remglob(argc, argv, doswitch)
 		}
 		verbose = oldverbose; hash = oldhash;
 		ftemp = fopen(temp, "r");
-		unlink(temp);
+		(void) unlink(temp);
 		if (ftemp == NULL) {
 			printf("can't find list of remote files, oops\n");
 			return (NULL);
 		}
 	}
 	if (fgets(buf, sizeof (buf), ftemp) == NULL) {
-		fclose(ftemp), ftemp = NULL;
+		(void) fclose(ftemp), ftemp = NULL;
 		return (NULL);
 	}
 	if ((cp = index(buf, '\n')) != NULL)
@@ -638,6 +642,7 @@ onoff(bool)
 /*
  * Show status.
  */
+/*ARGSUSED*/
 status(argc, argv)
 	char *argv[];
 {
@@ -814,9 +819,9 @@ cd(argc, argv)
 {
 
 	if (argc < 2) {
-		strcat(line, " ");
+		(void) strcat(line, " ");
 		printf("(remote-directory) ");
-		gets(&line[strlen(line)]);
+		(void) gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
 		argv = margv;
@@ -866,9 +871,9 @@ delete(argc, argv)
 {
 
 	if (argc < 2) {
-		strcat(line, " ");
+		(void) strcat(line, " ");
 		printf("(remote-file) ");
-		gets(&line[strlen(line)]);
+		(void) gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
 		argv = margv;
@@ -892,9 +897,9 @@ mdelete(argc, argv)
 	extern jmp_buf jabort;
 
 	if (argc < 2) {
-		strcat(line, " ");
+		(void) strcat(line, " ");
 		printf("(remote-files) ");
-		gets(&line[strlen(line)]);
+		(void) gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
 		argv = margv;
@@ -908,7 +913,7 @@ mdelete(argc, argv)
 	mflag = 1;
 	oldintr = signal(SIGINT, mabort);
 	(void) setjmp(jabort);
-	while ((cp = remglob(argc, argv, 0)) != NULL) {
+	while ((cp = remglob(argv,0)) != NULL) {
 		if (*cp == '\0') {
 			mflag = 0;
 			continue;
@@ -937,9 +942,9 @@ renamefile(argc, argv)
 {
 
 	if (argc < 2) {
-		strcat(line, " ");
+		(void) strcat(line, " ");
 		printf("(from-name) ");
-		gets(&line[strlen(line)]);
+		(void) gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
 		argv = margv;
@@ -951,9 +956,9 @@ usage:
 		return;
 	}
 	if (argc < 3) {
-		strcat(line, " ");
+		(void) strcat(line, " ");
 		printf("(to-name) ");
-		gets(&line[strlen(line)]);
+		(void) gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
 		argv = margv;
@@ -1002,17 +1007,17 @@ mls(argc, argv)
 	extern jmp_buf jabort;
 
 	if (argc < 2) {
-		strcat(line, " ");
+		(void) strcat(line, " ");
 		printf("(remote-files) ");
-		gets(&line[strlen(line)]);
+		(void) gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
 		argv = margv;
 	}
 	if (argc < 3) {
-		strcat(line, " ");
+		(void) strcat(line, " ");
 		printf("(local-file) ");
-		gets(&line[strlen(line)]);
+		(void) gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
 		argv = margv;
@@ -1053,32 +1058,34 @@ mls(argc, argv)
 /*
  * Do a shell escape
  */
+/*ARGSUSED*/
 shell(argc, argv)
 	char *argv[];
 {
-	int i, pid, status, (*old1)(), (*old2)();
+	int pid, (*old1)(), (*old2)();
 	char shellnam[40], *shell, *namep; 
+	union wait status;
 
 	old1 = signal (SIGINT, SIG_IGN);
 	old2 = signal (SIGQUIT, SIG_IGN);
 	if ((pid = fork()) == 0) {
 		for (pid = 3; pid < 20; pid++)
-			close(pid);
-		signal(SIGINT, SIG_DFL);
-		signal(SIGQUIT, SIG_DFL);
+			(void) close(pid);
+		(void) signal(SIGINT, SIG_DFL);
+		(void) signal(SIGQUIT, SIG_DFL);
 		shell = getenv("SHELL");
 		if (shell == NULL)
 			shell = "/bin/sh";
 		namep = rindex(shell,'/');
 		if (namep == NULL)
 			namep = shell;
-		strcpy(shellnam,"-");
-		strcat(shellnam, ++namep);
+		(void) strcpy(shellnam,"-");
+		(void) strcat(shellnam, ++namep);
 		if (strcmp(namep, "sh") != 0)
 			shellnam[0] = '+';
 		if (debug) {
 			printf ("%s\n", shell);
-			fflush (stdout);
+			(void) fflush (stdout);
 		}
 		if (argc > 1) {
 			execl(shell,shellnam,"-c",altarg,(char *)0);
@@ -1093,8 +1100,8 @@ shell(argc, argv)
 	if (pid > 0)
 		while (wait(&status) != pid)
 			;
-	signal(SIGINT, old1);
-	signal(SIGQUIT, old2);
+	(void) signal(SIGINT, old1);
+	(void) signal(SIGQUIT, old2);
 	if (pid == -1) {
 		perror("Try again later");
 		code = -1;
@@ -1112,13 +1119,13 @@ user(argc, argv)
 	int argc;
 	char **argv;
 {
-	char acct[80], *getpass();
+	char acct[80], *mygetpass();
 	int n, aflag = 0;
 
 	if (argc < 2) {
-		strcat(line, " ");
+		(void) strcat(line, " ");
 		printf("(username) ");
-		gets(&line[strlen(line)]);
+		(void) gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
 		argv = margv;
@@ -1131,7 +1138,7 @@ user(argc, argv)
 	n = command("USER %s", argv[1]);
 	if (n == CONTINUE) {
 		if (argc < 3 )
-			argv[2] = getpass("Password: "), argc++;
+			argv[2] = mygetpass("Password: "), argc++;
 		n = command("PASS %s", argv[2]);
 	}
 	if (n == CONTINUE) {
@@ -1145,7 +1152,7 @@ user(argc, argv)
 		aflag++;
 	}
 	if (n != COMPLETE) {
-		fprintf(stderr, "Login failed.\n");
+		fprintf(stdout, "Login failed.\n");
 		return (0);
 	}
 	if (!aflag && argc == 4) {
@@ -1172,9 +1179,9 @@ makedir(argc, argv)
 {
 
 	if (argc < 2) {
-		strcat(line, " ");
+		(void) strcat(line, " ");
 		printf("(directory-name) ");
-		gets(&line[strlen(line)]);
+		(void) gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
 		argv = margv;
@@ -1195,9 +1202,9 @@ removedir(argc, argv)
 {
 
 	if (argc < 2) {
-		strcat(line, " ");
+		(void) strcat(line, " ");
 		printf("(directory-name) ");
-		gets(&line[strlen(line)]);
+		(void) gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
 		argv = margv;
@@ -1220,9 +1227,9 @@ quote(argc, argv)
 	char buf[BUFSIZ];
 
 	if (argc < 2) {
-		strcat(line, " ");
+		(void) strcat(line, " ");
 		printf("(command line to send) ");
-		gets(&line[strlen(line)]);
+		(void) gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
 		argv = margv;
@@ -1232,10 +1239,10 @@ quote(argc, argv)
 		code = -1;
 		return;
 	}
-	strcpy(buf, argv[1]);
+	(void) strcpy(buf, argv[1]);
 	for (i = 2; i < argc; i++) {
-		strcat(buf, " ");
-		strcat(buf, argv[i]);
+		(void) strcat(buf, " ");
+		(void) strcat(buf, argv[i]);
 	}
 	if (command(buf) == PRELIM) {
 		while (getreply(0) == PRELIM);
@@ -1301,8 +1308,8 @@ confirm(cmd, file)
 	if (!interactive)
 		return (1);
 	printf("%s %s? ", cmd, file);
-	fflush(stdout);
-	gets(line);
+	(void) fflush(stdout);
+	(void) gets(line);
 	return (*line != 'n' && *line != 'N');
 }
 
@@ -1310,7 +1317,7 @@ fatal(msg)
 	char *msg;
 {
 
-	fprintf(stderr, "ftp: %s\n");
+	fprintf(stderr, "ftp: %s\n", msg);
 	exit(1);
 }
 
@@ -1348,7 +1355,7 @@ account(argc,argv)
 	int argc;
 	char **argv;
 {
-	char acct[50], *getpass(), *ap;
+	char acct[50], *mygetpass(), *ap;
 
 	if (argc > 1) {
 		++argv;
@@ -1363,7 +1370,7 @@ account(argc,argv)
 		ap = acct;
 	}
 	else {
-		ap = getpass("Account:");
+		ap = mygetpass("Account:");
 	}
 	(void) command("ACCT %s", ap);
 }
@@ -1398,9 +1405,9 @@ doproxy(argc,argv)
 	extern jmp_buf abortprox;
 
 	if (argc < 2) {
-		strcat(line, " ");
+		(void) strcat(line, " ");
 		printf("(command) ");
-		gets(&line[strlen(line)]);
+		(void) gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
 		argv = margv;
@@ -1413,19 +1420,19 @@ doproxy(argc,argv)
 	c = getcmd(argv[1]);
 	if (c == (struct cmd *) -1) {
 		printf("?Ambiguous command\n");
-		fflush(stdout);
+		(void) fflush(stdout);
 		code = -1;
 		return;
 	}
 	if (c == 0) {
 		printf("?Invalid command\n");
-		fflush(stdout);
+		(void) fflush(stdout);
 		code = -1;
 		return;
 	}
 	if (!c->c_proxy) {
 		printf("?Invalid proxy command\n");
-		fflush(stdout);
+		(void) fflush(stdout);
 		code = -1;
 		return;
 	}
@@ -1437,7 +1444,7 @@ doproxy(argc,argv)
 	pswitch(1);
 	if (c->c_conn && !connected) {
 		printf("Not connected\n");
-		fflush(stdout);
+		(void) fflush(stdout);
 		pswitch(0);
 		(void) signal(SIGINT, oldintr);
 		code = -1;
@@ -1531,9 +1538,9 @@ setnmap(argc, argv)
 		return;
 	}
 	if (argc < 3) {
-		strcat(line, " ");
+		(void) strcat(line, " ");
 		printf("(mapout) ");
-		gets(&line[strlen(line)]);
+		(void) gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
 		argv = margv;
@@ -1756,9 +1763,9 @@ macdef(argc, argv)
 		return;
 	}
 	if (argc < 2) {
-		strcat(line, " ");
+		(void) strcat(line, " ");
 		printf("(macro name) ");
-		gets(&line[strlen(line)]);
+		(void) gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
 		argv = margv;
@@ -1771,7 +1778,7 @@ macdef(argc, argv)
 	if (interactive) {
 		printf("Enter macro line by line, terminating it with a null line\n");
 	}
-	strncpy(macros[macnum].mac_name, argv[1], 8);
+	(void) strncpy(macros[macnum].mac_name, argv[1], 8);
 	if (macnum == 0) {
 		macros[macnum].mac_start = macbuf;
 	}
