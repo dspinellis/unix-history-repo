@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)parse.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)parse.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -43,7 +43,7 @@ asyntax(p1, p2)
 {
 
 	while (p1 != p2)
-		if (any(p1->word[0], ";&\n"))
+		if (index(";&\n", p1->word[0]))
 			p1 = p1->next;
 		else {
 			asyn0(p1, p2);
@@ -173,7 +173,7 @@ syntax(p1, p2, flags)
 {
 
 	while (p1 != p2)
-		if (any(p1->word[0], ";&\n"))
+		if (index(";&\n", p1->word[0]))
 			p1 = p1->next;
 		else
 			return (syn0(p1, p2, flags));
@@ -487,7 +487,7 @@ again:
 			}
 			if (p->next == p2)
 				continue;
-			if (any(p->next->word[0], RELPAR))
+			if (index(RELPAR, p->next->word[0]))
 				continue;
 			n--;
 			continue;
@@ -546,7 +546,7 @@ missfile:
 				continue;
 			}
 			p = p->next;
-			if (any(p->word[0], RELPAR))
+			if (index(RELPAR, p->word[0]))
 				goto missfile;
 			if ((flags & POUT) && (flags & PDIAG) == 0 || t->t_drit)
 badout:
@@ -563,7 +563,7 @@ badout:
 			if (p->next == p2)
 				goto missfile;
 			p = p->next;
-			if (any(p->word[0], RELPAR))
+			if (index(RELPAR, p->word[0]))
 				goto missfile;
 			if ((flags & PHERE) && (t->t_dflg & FHERE))
 				seterr("Can't << within ()'s");
