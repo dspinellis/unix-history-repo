@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)parser1.c	3.9 84/01/12";
+static	char *sccsid = "@(#)parser1.c	3.10 84/01/12";
 #endif
 
 #include <stdio.h>
@@ -230,11 +230,11 @@ register struct value *v;
 		ap = 0;
 		if (p_expr0(&t, flag) < 0)
 			if (!p_synerred() && token == T_MUL) {
-				if (c->lc_arg[i].arg_name == 0)
-					p_error("%s: Too many arguments.",
-						c->lc_name);
-				else
-					i++;
+				if (c != 0)
+					if (c->lc_arg[i].arg_name == 0)
+						p_error("%s: Too many arguments.", c->lc_name);
+					else
+						i++;
 				(void) s_gettok();
 				continue;
 			} else
@@ -279,6 +279,7 @@ register struct value *v;
 			if (t.v_type == V_ERR)
 				flag = 0;
 			if (tmp) {
+				/* we know c != 0 */
 				for (ap = c->lc_arg; ap->arg_name != 0; ap++)
 					if (str_match(tmp, ap->arg_name,
 							ap->arg_minlen))
