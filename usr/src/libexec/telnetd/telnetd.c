@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -331,8 +331,14 @@ gotpty:
 
 	if ((i = fork()) < 0)
 		fatalperror(f, "fork");
-	if (i)
+	if (i) {
+		close(t);
 		telnet(f, p);
+	}
+	if (setsid() < 0)
+		fatalperror(f, "setsid");
+	if (ioctl(t, TIOCSCTTY, 0) < 0)
+		fatalperror(f, "ioctl(sctty)");
 	close(f);
 	close(p);
 	dup2(t, 0);
