@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)exports.5	5.3 (Berkeley) %G%
+.\"     @(#)exports.5	5.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt EXPORTS 5
@@ -24,7 +24,7 @@ specifies remote mount points for the
 mount protocol per the
 .Tn NFS
 server specification; see
-.%T "Network File System Protocol Specification \\*(tNRFC\\*(sP 1094" .
+.%T "Network File System Protocol Specification \\*(tNRFC\\*(sP 1094, Appendix A" .
 .Pp
 Each line in the file
 (other than comment lines that begin with a #)
@@ -40,6 +40,8 @@ In a mount entry,
 the first field is the mount point directory path optionally followed
 by groups of export options and specific hosts or ``netgroups''
 to which those options apply.
+The name of a ``netgroup'' is distinguished from that of a host
+by preceeding it with a dollar sign.
 A filesystem may appear multiple times with
 different sets of hosts each with different export options.
 If a set of export options are specified at the end
@@ -133,8 +135,8 @@ in an effort to be backward compatible with older export file formats.
 .Pp
 For example:
 .Bd -literal -offset indent
-UoG= snowhite grumpy
-/usr -root=0:10 $UoG
+friends= snowhite grumpy
+/usr -root=0:10 $friends
 /usr -root=daemon 131.104.48.16 -ro -allanon=daemon
 /usr/local
 /u -root=bin:
