@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)dc.c	4.4	(Berkeley)	%G%";
+static char sccsid[] = "@(#)dc.c	4.5	(Berkeley)	%G%";
 #endif not lint
 
 #include <stdio.h>
@@ -64,12 +64,12 @@ commnds(){
 			binop('*');
 			p = pop();
 			sunputc(p);
-			savk = sk1+sk2;
-			if(savk>k && savk>sk1 && savk>sk2){
+			savk = n = sk1+sk2;
+			if(n>k && n>sk1 && n>sk2){
 				sk = sk1;
 				if(sk<sk2)sk = sk2;
 				if(sk<k)sk = k;
-				p = removc(p,savk-sk);
+				p = removc(p,n-sk);
 				savk = sk;
 			}
 			sputc(p,savk);
@@ -660,7 +660,14 @@ struct blk *ddivd,*ddivr;
 		sbackc(p);
 		salterc(p,dig);
 		sbackc(p);
-		if(--offset >= 0)divd->wt--;
+		if(--offset >= 0){
+			if(d > 0){
+				sbackc(divd);
+				dd=sbackc(divd);
+				salterc(divd,dd+100);
+			}
+			divd->wt--;
+		}
 	}
 	if(divcarry != 0){
 		salterc(p,dig-1);
