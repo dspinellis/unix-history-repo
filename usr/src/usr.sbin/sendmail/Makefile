@@ -1,7 +1,7 @@
 #
 #	Makefile for sendmail base directory
 #
-#		@(#)Makefile	4.11		%G%
+#		@(#)Makefile	4.12		%G%
 #
 
 ALL=	src/sendmail
@@ -24,11 +24,11 @@ all:
 	-cd aux; m4 Makefile.m4 > Makefile; make ${MFLAGS}
 #	cd doc; make ${MFLAGS}
 
-install: $(ALL) $(DIRS)
+install:
 	install -s -o root -g kmem -m 6755	src/sendmail	$(SENDMAIL)
-	install -c -o root -m 644	lib/sendmail.hf	$(SENDMAIL).hf
-	install -c -o root -m 666	/dev/null	$(SENDMAIL).st
-	install -c -o root -m 644	/dev/null	$(SENDMAIL).fc
+	install -c -o bin -g bin -m 644	lib/sendmail.hf	$(SENDMAIL).hf
+	install -c -o bin -g bin -m 666	/dev/null	$(SENDMAIL).st
+	install -c -o bin -g bin -m 644	/dev/null	$(SENDMAIL).fc
 	rm -f					$(DESTDIR)/usr/ucb/newaliases
 	$(LN)			/usr/lib/sendmail  $(DESTDIR)/usr/ucb/newaliases
 	rm -f					$(DESTDIR)/usr/ucb/mailq
@@ -43,7 +43,7 @@ install: $(ALL) $(DIRS)
 #	echo	'5 4 * * * sh /usr/adm/newsyslog' >> $(DESTDIR)/usr/lib/crontab
 
 installcf:
-	install -c -o root -m 644	cf/$(HOST).cf	$(SENDMAIL).cf
+	install -c -o bin -g bin -m 644	cf/$(HOST).cf	$(SENDMAIL).cf
 
 src/sendmail:
 	cd src; make ${MFLAGS} sendmail
@@ -60,6 +60,8 @@ clean:
 	-cd aux; make ${MFLAGS} clean
 	-cd lib; make ${MFLAGS} clean
 	-cd doc; make ${MFLAGS} clean
+
+depend:
 
 dirs:
 	mkdir $(SRCROOT)
