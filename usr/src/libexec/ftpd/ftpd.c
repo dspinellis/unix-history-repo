@@ -53,6 +53,7 @@ char	*remotehost;
 struct	servent *sp;
 
 int	lostconn();
+int	reapchild();
 FILE	*getdatasock(), *dataconn();
 char	*ntoa();
 
@@ -61,7 +62,6 @@ main(argc, argv)
 	char *argv[];
 {
 	int ctrl, s, options = 0;
-	union wait status;
 	char *cp;
 
 	sp = getservbyname("ftp", "tcp");
@@ -106,18 +106,27 @@ main(argc, argv)
 		perror("ftpd: socket");
 		sleep(5);
 	}
+	if (options & SO_DEBUG)
+		if (setsockopt(s, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
+			perror("ftpd: setsockopt (SO_DEBUG)");
+#ifdef notdef
+	if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, 0, 0) < 0)
+		perror("ftpd: setsockopt (SO_KEEPALIVE)");
+#endif
 	while (bind(s, &ctrl_addr, sizeof (ctrl_addr), 0) < 0) {
 		perror("ftpd: bind");
 		sleep(5);
 	}
+	signal(SIGCHLD, reapchild);
 	listen(s, 10);
 	for (;;) {
 		int hisaddrlen = sizeof (his_addr);
 
 		ctrl = accept(s, &his_addr, &hisaddrlen, 0);
 		if (ctrl < 0) {
+			if (errno == EINTR)
+				continue;
 			perror("ftpd: accept");
-			sleep(5);
 			continue;
 		}
 		if (fork() == 0) {
@@ -144,9 +153,15 @@ main(argc, argv)
 			}
 		}
 		close(ctrl);
-		while (wait3(status, WNOHANG, 0) > 0)
-			continue;
 	}
+}
+
+reapchild()
+{
+	union wait status;
+
+	while (wait3(&status, WNOHANG, 0) > 0)
+		;
 }
 
 lostconn()
