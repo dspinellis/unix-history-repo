@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)open.2	6.4 (Berkeley) %G%
+.\"	@(#)open.2	6.5 (Berkeley) %G%
 .\"
 .TH OPEN 2 ""
 .UC 4
@@ -69,8 +69,8 @@ carrier on a dialup line), the open returns immediately.
 The first time the process attempts to perform i/o on the open
 file it will block (not currently implemented).
 .PP
-Upon successful completion a non-negative integer termed a
-file descriptor is returned.
+If successful, \fIopen\fP returns a non-negative integer, termed a
+file descriptor.  It returns -1 on failure.
 The file pointer used to mark the current position within the
 file is set to the beginning of the file.
 .PP
