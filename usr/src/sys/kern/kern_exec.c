@@ -1,4 +1,4 @@
-/*	kern_exec.c	6.7	84/08/29	*/
+/*	kern_exec.c	6.8	84/11/20	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -344,6 +344,10 @@ getxfile(ip, ep, nargc, uid, gid)
 		pagi = SPAGI;
 	else
 		pagi = 0;
+	if (ip->i_flag & IXMOD) {			/* XXX */
+		u.u_error = ETXTBSY;
+		goto bad;
+	}
 	if (ep->a_text != 0 && (ip->i_flag&ITEXT) == 0 &&
 	    ip->i_count != 1) {
 		register struct file *fp;
