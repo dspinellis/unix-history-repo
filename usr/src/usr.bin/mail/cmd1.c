@@ -8,7 +8,7 @@
  * User commands.
  */
 
-static char *SccsId = "@(#)cmd1.c	1.2 %G%";
+static char *SccsId = "@(#)cmd1.c	1.3 %G%";
 
 /*
  * Print the current active headings.
@@ -142,6 +142,10 @@ printhead(mesg)
 		dispc = '*';
 	if (mp->m_flag & MPRESERVE)
 		dispc = 'P';
+	if ((mp->m_flag & MREAD) == 0)
+		dispc = 'U';
+	if (mp->m_flag & MNEW)
+		dispc = 'N';
 	parse(headline, &hl, pbuf);
 	sprintf(wcount, " %d/%d", mp->m_lines, mp->m_size);
 	s = strlen(wcount);
