@@ -30,12 +30,12 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 
 #ifndef lint
 #ifdef NEWDB
-static char sccsid[] = "@(#)alias.c	6.2 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	6.3 (Berkeley) %G% (with NEWDB)";
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.2 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	6.3 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.2 (Berkeley) %G% (without NDBM)";
+static char sccsid[] = "@(#)alias.c	6.3 (Berkeley) %G% (without NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -206,8 +206,6 @@ aliaslookup(name)
 	return (rhs.dbm.dptr);
 # endif /* NEWDB */
 # else /* neither NEWDB nor NDBM */
-	register STAB *s;
-
 	s = stab(keybuf, ST_ALIAS, ST_FIND);
 	if (s != NULL)
 		return (s->s_alias);

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1441,7 +1441,7 @@ sendall(e, mode)
 	{
 		extern bool shouldqueue();
 
-		if (shouldqueue(e->e_msgpriority))
+		if (shouldqueue(e->e_msgpriority, e->e_ctime))
 			mode = SM_QUEUE;
 		else
 			mode = SendMode;
@@ -1631,7 +1631,8 @@ sendall(e, mode)
 				(void) strcat(obuf, "owner");
 			else
 				(void) strcat(obuf, qq->q_user);
-			makelower(obuf);
+			if (!bitnset(M_USR_UPPER, qq->q_mailer->m_flags))
+				makelower(obuf);
 			if (aliaslookup(obuf) == NULL)
 				continue;
 
@@ -1640,6 +1641,10 @@ sendall(e, mode)
 
 			/* owner list exists -- add it to the error queue */
 			sendtolist(obuf, (ADDRESS *) NULL, &e->e_errorqueue, e);
+
+			/* and set the return path to point to it */
+			e->e_returnpath = newstr(obuf);
+
 			ErrorMode = EM_MAIL;
 			break;
 		}

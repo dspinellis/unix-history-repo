@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -130,23 +130,27 @@ int	DtableSize =	50;		/* max open files; reset in 4.2bsd */
 
 setdefaults()
 {
-	QueueLA = 8;
-	QueueFactor = 10000;
-	RefuseLA = 12;
-	SpaceSub = ' ';
-	WkRecipFact = 1000;
-	WkClassFact = 1800;
-	WkTimeFact = 9000;
+	SpaceSub = ' ';				/* option B */
+	QueueLA = 8;				/* option x */
+	RefuseLA = 12;				/* option X */
+	WkRecipFact = 30000L;			/* option y */
+	WkClassFact = 1800L;			/* option z */
+	WkTimeFact = 90000L;			/* option Z */
+	QueueFactor = WkRecipFact * 20;		/* option q */
 	FileMode = (getuid() != geteuid()) ? 0644 : 0600;
-	DefUid = 1;
-	DefGid = 1;
-	CheckpointInterval = 10;
-	MaxHopCount = 17;
-	SendMode = SM_FORK;
-	ErrorMode = EM_PRINT;
-	EightBit = FALSE;
-	MaxMciCache = 1;
-	MciCacheTimeout = 300;
+						/* option F */
+	DefUid = 1;				/* option u */
+	DefGid = 1;				/* option g */
+	CheckpointInterval = 10;		/* option C */
+	MaxHopCount = 25;			/* option h */
+	SendMode = SM_FORK;			/* option d */
+	ErrorMode = EM_PRINT;			/* option e */
+	EightBit = FALSE;			/* option 8 */
+	MaxMciCache = 1;			/* option k */
+	MciCacheTimeout = 300;			/* option K */
+	LogLevel = 9;				/* option L */
+	ReadTimeout = 2 * 60 * 60;		/* option r */
+	TimeOut = 3 * 24 * 60 * 60;		/* option T */
 	setdefuser();
 	setupmaps();
 	setupmailers();
@@ -657,6 +661,7 @@ getla()
 **
 **	Parameters:
 **		pri -- the priority of the message in question.
+**		ctime -- the message creation time.
 **
 **	Returns:
 **		TRUE -- if this message should be queued up for the
@@ -668,8 +673,9 @@ getla()
 */
 
 bool
-shouldqueue(pri)
+shouldqueue(pri, ctime)
 	long pri;
+	time_t ctime;
 {
 	if (CurrentLA < QueueLA)
 		return (FALSE);
