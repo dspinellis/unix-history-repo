@@ -1,4 +1,4 @@
-/*	vcat.c	4.1	80/11/30	*/
+/*	vcat.c	4.2	83/03/17	*/
 /*
  * Cat Simulator for Versatec and Varian
  */ 
