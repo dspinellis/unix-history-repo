@@ -1,4 +1,4 @@
-/*	lfs_inode.c	4.10	82/04/19	*/
+/*	lfs_inode.c	4.11	82/06/07	*/
 
 /* merged into kernel:	@(#)iget.c 2.2 4/8/82 */
 
@@ -131,10 +131,22 @@ loop:
 iput(ip)
 	register struct inode *ip;
 {
+
+	if ((ip->i_flag & ILOCK) == 0)
+		panic("iput");
+	iunlock(ip);
+	irele(ip);
+}
+
+irele(ip)
+	register struct inode *ip;
+{
 	register int i, x;
 	register struct inode *jp;
 	int mode;
 
+	if (ip->i_flag & ILOCK)
+		panic("irele");
 	if (ip->i_count == 1) {
 		ip->i_flag |= ILOCK;
 		if (ip->i_nlink <= 0) {
@@ -145,7 +157,7 @@ iput(ip)
 			ifree(ip, ip->i_number, mode);
 		}
 		IUPDAT(ip, &time, &time, 0);
-		irele(ip);
+		iunlock(ip);
 		i = INOHASH(ip->i_dev, ip->i_number);
 		x = ip - inode;
 		if (inohash[i] == x) {
@@ -164,8 +176,7 @@ done:
 		ifreel = x;
 		ip->i_flag = 0;
 		ip->i_number = 0;
-	} else
-		irele(ip);
+	}
 	ip->i_count--;
 }
 
@@ -458,8 +469,8 @@ wdir(ip)
 #ifdef ilock
 #undef ilock
 #endif
-#ifdef irele
-#undef irele
+#ifdef iunlock
+#undef iunlock
 #endif
 /*
  * Lock an inode. If its already locked, set the WANT bit and sleep.
@@ -478,7 +489,7 @@ ilock(ip)
 /*
  * Unlock an inode.  If WANT bit is on, wakeup.
  */
-irele(ip)
+iunlock(ip)
 	register struct inode *ip;
 {
 
