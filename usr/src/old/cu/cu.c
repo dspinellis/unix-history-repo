@@ -1,4 +1,5 @@
-static	char *sccsid = "@(#)cu.c	4.6 (Berkeley) 81/07/02";
+static	char *sccsid = "@(#)cu.c	4.7 (Berkeley) 82/10/21";
+
 #include <stdio.h>
 #include <signal.h>
 #include <sgtty.h>
@@ -17,10 +18,13 @@ static	char *sccsid = "@(#)cu.c	4.6 (Berkeley) 81/07/02";
 }
 
 /*
- *	cu telno [-t] [-s speed] [-l line] [-a acu]
+ *	cu telno [-t] [-s speed] [-l line] [-a acu] [-p]
  *
  *	-t is for dial-out to terminal.
- *	speeds are: 110, 134, 150, 300, 1200. 300 is default.
+ *	speeds are: 110, 134, 150, 300, 1200, 2400. 300 is default.
+ *
+ *	-p says strip parity of characters transmitted.  (to compensate
+ *	for c100's)
  *
  *	Escape with `~' at beginning of line.
  *	Ordinary diversions are ~<, ~> and ~>>.
@@ -98,7 +102,9 @@ sig14()
 int	dout;
 int	nhup;
 int	dbflag;
+int	pflag;		/* strip parity on chars sent to remote */
 int	nullbrk;	/* turn breaks (nulls) into dels */
+int	pipes[2] = { -1, -1 };
 
 /*
  *	main: get connection, set speed for line.
@@ -136,6 +142,9 @@ char *av[];
 		case 'd':
 			dbflag++;
 			continue;
+		case 'p':
+			pflag++;
+			continue;
 		case 's':
 			lspeed = av[2]; ++av; --ac;
 			break;
@@ -172,6 +181,8 @@ char *av[];
 		speed = B300;break;
 	case 1200:
 		speed = B1200;break;
+	case 2400:
+		speed = B2400;break;
 	}
 	stbuf.sg_ispeed = speed;
 	stbuf.sg_ospeed = speed;
@@ -184,6 +195,7 @@ char *av[];
 	ioctl(ln, TIOCEXCL, (struct sgttyb *)NULL);
 	ioctl(ln, TIOCHPCL, (struct sgttyb *)NULL);
 	prf("Connected");
+	pipe(pipes);
 	if (dout)
 		fk = -1;
 	else
@@ -321,7 +333,7 @@ wr()
 			if (p == b+1 && b[0] == '~') lcl=(c!='~');
 			if (nullbrk && c == 0) oc=c=0177; /* fake break kludge */
 			if (!lcl) {
-				c = oc;
+				if(!pflag)c = oc;
 				if (wrc(ln) == 0) {
 					prf("line gone"); return;
 				}
@@ -403,15 +415,16 @@ A:
 		case '>':
 		case ':':
 			{
-			FILE *fp; char tbuff[128]; register char *q;
-			sprintf(tbuff,"/tmp/cu%d",efk);
-			if(NULL==(fp = fopen(tbuff,"w"))) {
+			register char *q;
+
+			if(pipes[1]==-1) {
 				prf("Can't tell other demon to divert");
 				break;
 			}
-			fprintf(fp,"%s\n",(b[1]=='>'?&b[2]: &b[1] ));
-			if(dbflag) prf("name to be written in temporary:"),prf(&b[2]);
-			fclose(fp);
+			q = b+1;
+			if(*q=='>') q++;
+			write(pipes[1],q,strlen(q)+1);
+			if(dbflag) prf("msg to be delivered:"),prf(q);
 			if (efk != -1) kill(efk,SIGEMT);
 			}
 			break;
@@ -458,9 +471,13 @@ register char *line;
 		}
 		if (narg < 3)
 			args[2] = args[1];
-		wrln("echo '~>:'");
+		write(pipes[1], ">:/dev/null",sizeof(">:/dev/null"));
+		if(dbflag) prf("sending take message");
+		if (efk != -1) kill(efk,SIGEMT);
+		xsleep(5);
+		wrln("echo '~>");
 		wrln(args[2]);
-		wrln(";tee /dev/null <");
+		wrln("'; tee /dev/null <");
 		wrln(args[1]);
 		wrln(";echo '~>'\n");
 		return;
@@ -531,33 +548,33 @@ register char *s;
  */
 int whoami;
 chwrsig(){
-	int dodiver(); 
+	int readmsg(); 
 	whoami = getpid();
-	signal(SIGEMT,dodiver);
+	signal(SIGEMT,readmsg);
 }
-int ds,slnt;
+int ds,slnt,taking;
 int justrung;
-dodiver(){
-	static char dobuff[128], morejunk[256]; register char *cp; 
-	FILE *fp;
+readmsg(){
+	static char dobuff[128], morejunk[256];
+	int n;
 	justrung = 1;
-	signal(SIGEMT,dodiver);
-	sprintf(dobuff,"/tmp/cu%d",whoami);
-	fp = fopen(dobuff,"r");
-	if(fp==NULL) prf("Couldn't open temporary");
-	unlink(dobuff);
+	signal(SIGEMT,readmsg);
 	if(dbflag) {
-		prf("Name of temporary:");
-		prf(dobuff);
+		prf("About to read from pipe");
 	}
-	fgets(dobuff,128,fp); fclose(fp);
+	n = read(pipes[0],morejunk,256);
 	if(dbflag) {
-		prf("Name of target file:");
-		prf(dobuff);
+		prf("diversion mesg recieved is");
+		prf(morejunk);
+		prf(CRLF);
 	}
-	for(cp = dobuff-1; *++cp; ) /* squash newline */
-		if(*cp=='\n') *cp=0;
-	cp = dobuff;
+	dodiver(morejunk);
+}
+dodiver(msg)
+char *msg;
+{
+	register char *cp = msg; 
+
 	if (*cp=='>') cp++;
 	if (*cp==':') {
 		cp++;
@@ -574,7 +591,7 @@ dodiver(){
 		ds = -1;
 		return;
 	}
-	if (*dobuff!='>' || (ds=open(cp,1))<0) ds=creat(cp,0644);
+	if (*msg!='>' || (ds=open(cp,1))<0) ds=creat(cp,0644);
 	lseek(ds, (long)0, 2);
 	if(ds < 0) prf("Creat failed:"), prf(cp);
 	if (ds<0) prf("Can't divert %s",cp+1);
@@ -583,55 +600,76 @@ dodiver(){
 
 /*
  *	rd: read from remote: line -> 1
- *	catch:
- *	~>[>][:][file]
- *	stuff from file...
- *	~>	(ends diversion)
+ *	catch: diversion caught by interrupt routine
  */
+
+#define ORDIN 0
+#define SAWCR 1
+#define EOL   2
+#define SAWTL 3
+#define DIVER 4
 
 rd()
 {
 	extern int ds,slnt;
-	char *p,*q,b[600];
-	p=b;
+	char rb[600], lb[600], *rlim, *llim, c;
+	register char *p,*q;
+	int cnt, state = 0, mustecho, oldslnt;
+
 	ds=(-1);
+	p = lb; llim = lb+600;
 agin:
-	while (rdc(ln) == 1) {
-		if (!slnt) wrc(1);
-		if (p < &b[600])
-			*p++=c;
-		if (c!='\n') continue;
-		q=p; 
-		p=b;
-		if (b[0]!='~' || b[1]!='>') {
-			if (*(q-2) == '\r') {
-				q--; 
-				*(q-1)=(*q);
+	while((cnt = read(ln,rb,600)) > 0) {
+		if(!slnt) write(1,rb,cnt);
+		if(ds < 0) continue;
+		oldslnt = slnt;
+		for( q=rb, rlim = rb + cnt - 1; q <= rlim; ) {
+			c = *q++ & 0177;
+			if(p < llim) *p++ = c;
+			switch(state) {
+			case ORDIN:
+				if(c=='\r') state = SAWCR;
+				break;
+			case SAWCR:
+				if(c=='\n') {
+					state = EOL;
+					p--;
+					p[-1] = '\n';
+				} else state = ORDIN;
+				break;
+			case EOL:
+				state = (c=='~' ? SAWTL : 
+					 (c=='\r' ? SAWCR : ORDIN));
+				break;
+			case SAWTL:
+				state = (c=='>' ? DIVER : 
+					 (c=='\r' ? SAWCR : ORDIN));
+				break;
+			case DIVER:
+				if(c=='\r') {
+					p--;
+				} else if (c=='\n') {
+					state = ORDIN;
+					p[-1] = 0;
+					dodiver(lb+2);
+					c = 0; p = lb;
+				}
 			}
-			if (ds>=0) write(ds,b,q-b);
-			continue;
+			if(slnt==0 && oldslnt) {
+				if(c=='\n') {
+					write(ln,lb,p-lb-1);
+					write(ln,CRLF,sizeof(CRLF));
+				} else if(q==rlim) {
+					write(ln,lb,p-lb);
+					c = '\n';  /*force flush to file*/
+				}
+			}
+			if(c=='\n') {
+				if(ds >= 0)
+					write(ds,lb,p-lb);
+				p = lb;
+			}
 		}
-		if (ds>=0) close(ds);
-		if (slnt) {
-			write(1, b, q - b);
-			write(1, CRLF, sizeof(CRLF));
-		}
-		if (*(q-2) == '\r') q--;
-		*(q-1)=0;
-		slnt=0;
-		q=b+2;
-		if (*q == '>') q++;
-		if (*q == ':') {
-			slnt=1; 
-			q++;
-		}
-		if (*q == 0) {
-			ds=(-1); 
-			continue;
-		}
-		if (b[2]!='>' || (ds=open(q,1))<0) ds=creat(q,0644);
-		lseek(ds, (long)0, 2);
-		if (ds<0) prf("Can't divert %s",b+1);
 	}
 	if(justrung) {
 		justrung = 0;
