@@ -33,7 +33,7 @@
 
 #ifndef lint
 static char sccsid[] = "@(#)dumprmt.c	5.11 (Berkeley) 3/7/91";
-static char rcsid[] = "$Header: /b/source/CVS/src/sbin/dump/dumprmt.c,v 1.3 1993/03/23 00:27:12 cgd Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sbin/dump/dumprmt.c,v 1.2 1993/07/22 16:49:18 jkh Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -68,16 +68,19 @@ int	rmtgetb();
 void	rmtgets();
 int	rmtcall();
 char	*rmtpeer;
+char	*rmtuser;
 
 extern int ntrec;		/* blocking factor on tape */
 extern void msg();
 
 int
-rmthost(host)
+rmthost(host, user)
 	char *host;
+	char *user;
 {
 
 	rmtpeer = host;
+	rmtuser = user;
 	signal(SIGPIPE, rmtconnaborted);
 	rmtgetconn();
 	if (rmtape < 0)
@@ -111,7 +114,7 @@ rmtgetconn()
 	pw = getpwuid(getuid());
 	if (pw && pw->pw_name)
 		name = pw->pw_name;
-	rmtape = rcmd(&rmtpeer, sp->s_port, name, name, _PATH_RMT, 0);
+	rmtape = rcmd(&rmtpeer, sp->s_port, name, rmtuser ? rmtuser : name, _PATH_RMT, 0);
 	size = ntrec * TP_BSIZE;
 	while (size > TP_BSIZE &&
 	    setsockopt(rmtape, SOL_SOCKET, SO_SNDBUF, &size, sizeof (size)) < 0)
