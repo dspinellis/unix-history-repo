@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)acct.h	8.3 (Berkeley) %G%
+ *	@(#)acct.h	8.4 (Berkeley) %G%
  */
 
 /*
@@ -47,4 +47,6 @@ struct acct {
 
 #ifdef KERNEL
 struct vnode	*acctp;
+
+int	acct_process __P((struct proc *p));
 #endif

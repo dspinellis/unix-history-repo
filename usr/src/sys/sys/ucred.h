@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ucred.h	8.3 (Berkeley) %G%
+ *	@(#)ucred.h	8.4 (Berkeley) %G%
  */
 
 #ifndef _SYS_UCRED_H_
@@ -25,9 +25,12 @@ struct ucred {
 
 #ifdef KERNEL
 #define	crhold(cr)	(cr)->cr_ref++
-struct ucred *crget();
-struct ucred *crcopy();
-struct ucred *crdup();
+
+struct ucred	*crcopy __P((struct ucred *cr));
+struct ucred	*crdup __P((struct ucred *cr));
+void		crfree __P((struct ucred *cr));
+struct ucred	*crget __P((void));
+int		suser __P((struct ucred *cred, u_short *acflag));
 #endif /* KERNEL */
 
 #endif /* !_SYS_UCRED_H_ */

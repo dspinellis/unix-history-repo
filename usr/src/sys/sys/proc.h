@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)proc.h	8.12 (Berkeley) %G%
+ *	@(#)proc.h	8.13 (Berkeley) %G%
  */
 
 #ifndef _SYS_PROC_H_
@@ -133,7 +133,8 @@ struct	proc {
 
 /* End area that is copied on creation. */
 #define	p_endcopy	p_thread
-	int	p_thread;	/* Id for this "thread"; Mach glue. XXX */
+
+	void	*p_thread;	/* Id for this "thread"; Mach glue. XXX */
 	struct	user *p_addr;	/* Kernel virtual addr of u-area (PROC ONLY). */
 	struct	mdproc p_md;	/* Any machine-dependent fields. */
 
@@ -234,7 +235,14 @@ struct	prochd {
 struct proc *pfind __P((pid_t));	/* Find process by id. */
 struct pgrp *pgfind __P((pid_t));	/* Find process group by id. */
 
+int	chgproccnt __P((uid_t uid, int diff));
+int	enterpgrp __P((struct proc *p, pid_t pgid, int mksess));
+void	fixjobc __P((struct proc *p, struct pgrp *pgrp, int entering));
+int	inferior __P((struct proc *p));
+int	leavepgrp __P((struct proc *p));
 void	mi_switch __P((void));
+void	pgdelete __P((struct pgrp *pgrp));
+void	procinit __P((void));
 void	resetpriority __P((struct proc *));
 void	setrunnable __P((struct proc *));
 void	setrunqueue __P((struct proc *));

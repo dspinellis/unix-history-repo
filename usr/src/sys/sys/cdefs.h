@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cdefs.h	8.7 (Berkeley) %G%
+ *	@(#)cdefs.h	8.8 (Berkeley) %G%
  */
 
 #ifndef	_CDEFS_H_
@@ -79,7 +79,8 @@
  * these work for GNU C++ (modulo a slight glitch in the C++ grammar
  * in the distribution version of 2.5.5).
  */
-#if !defined(__GNUC__) || __GNUC__ < 2 || __GNUC_MINOR__ < 5
+#if !defined(__GNUC__) || __GNUC__ < 2 || \
+	(__GNUC__ == 2 && __GNUC_MINOR__ < 5)
 #define	__attribute__(x)	/* delete __attribute__ if non-gcc or gcc1 */
 #if defined(__GNUC__) && !defined(__STRICT_ANSI__)
 #define	__dead		__volatile

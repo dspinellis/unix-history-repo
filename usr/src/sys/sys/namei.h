@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)namei.h	8.4 (Berkeley) %G%
+ *	@(#)namei.h	8.5 (Berkeley) %G%
  */
 
 #ifndef _SYS_NAMEI_H_
@@ -146,6 +146,8 @@ struct	namecache {
 u_long	nextvnodeid;
 int	namei __P((struct nameidata *ndp));
 int	lookup __P((struct nameidata *ndp));
+int	relookup __P((struct vnode *dvp, struct vnode **vpp,
+	    struct componentname *cnp));
 #endif
 
 /*

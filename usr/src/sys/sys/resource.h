@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)resource.h	8.3 (Berkeley) %G%
+ *	@(#)resource.h	8.4 (Berkeley) %G%
  */
 
 #ifndef _SYS_RESOURCE_H_
@@ -78,7 +78,7 @@ struct rlimit {
 /* Load average structure. */
 struct loadavg {
 	fixpt_t	ldavg[3];
-	int32_t fscale;
+	long	fscale;
 };
 
 #ifdef KERNEL

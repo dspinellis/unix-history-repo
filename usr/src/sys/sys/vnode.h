@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	8.11 (Berkeley) %G%
+ *	@(#)vnode.h	8.12 (Berkeley) %G%
  */
 
 #include <sys/queue.h>
@@ -334,18 +334,20 @@ struct vop_bwrite_args;
 int 	bdevvp __P((dev_t dev, struct vnode **vpp));
 int 	getnewvnode __P((enum vtagtype tag,
 	    struct mount *mp, int (**vops)(), struct vnode **vpp));
-int	vinvalbuf __P((struct vnode *vp, int save, struct ucred *cred,
-	    struct proc *p, int slpflag, int slptimeo));
 void 	vattr_null __P((struct vattr *vap));
 int 	vcount __P((struct vnode *vp));
 int 	vget __P((struct vnode *vp, int lockflag));
 void 	vgone __P((struct vnode *vp));
 void 	vgoneall __P((struct vnode *vp));
+int	vinvalbuf __P((struct vnode *vp, int save, struct ucred *cred,
+	    struct proc *p, int slpflag, int slptimeo));
+void	vprint __P((char *label, struct vnode *vp));
 int	vn_bwrite __P((struct vop_bwrite_args *ap));
 int 	vn_close __P((struct vnode *vp,
 	    int flags, struct ucred *cred, struct proc *p));
 int 	vn_closefile __P((struct file *fp, struct proc *p));
-int	vn_ioctl __P((struct file *fp, int com, caddr_t data, struct proc *p));
+int	vn_ioctl __P((struct file *fp, u_long com, caddr_t data,
+	    struct proc *p));
 int 	vn_open __P((struct nameidata *ndp, int fmode, int cmode));
 int 	vn_rdwr __P((enum uio_rw rw, struct vnode *vp, caddr_t base,
 	    int len, off_t offset, enum uio_seg segflg, int ioflg,
