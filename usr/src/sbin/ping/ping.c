@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ping.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ping.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -293,21 +293,33 @@ register int t;
  * which arrive ('tis only fair).  This permits multiple copies of this
  * program to be run without having intermingled output (or statistics!).
  */
-pr_pack( icp, cc, from )
-register struct icmp *icp;
+pr_pack( buf, cc, from )
+char *buf;
 int cc;
 struct sockaddr_in *from;
 {
+	struct ip *ip;
+	register struct icmp *icp;
 	register long *lp = (long *) packet;
 	register int i;
 	struct timeval tv;
-	struct timeval *tp = (struct timeval *) &packet[8];
-	int triptime;
+	struct timeval *tp;
+	int hlen, triptime;
 	char *inet_ntoa();
 
 	from->sin_addr.s_addr = ntohl( from->sin_addr.s_addr );
 	gettimeofday( &tv, &tz );
 
+	ip = (struct ip *) buf;
+	hlen = ip->ip_hl << 2;
+	if (cc < hlen + ICMP_MINLEN) {
+		if (verbose)
+			printf("packet too short (%d bytes) from %s\n", cc,
+				inet_ntoa(ntohl(from->sin_addr.s_addr)));
+		return;
+	}
+	cc -= hlen;
+	icp = (struct icmp *)(buf + hlen);
 	if( icp->icmp_type != ICMP_ECHOREPLY )  {
 		if (verbose) {
 			printf("%d bytes from %s: ", cc,
@@ -323,6 +335,7 @@ struct sockaddr_in *from;
 	if( icp->icmp_id != ident )
 		return;			/* 'Twas not our ECHO */
 
+	tp = (struct timeval *)&icp->icmp_data[0];
 	printf("%d bytes from %s: ", cc,
 		inet_ntoa(ntohl(from->sin_addr.s_addr)));
 	printf("icmp_seq=%d. ", icp->icmp_seq );
