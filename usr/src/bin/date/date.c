@@ -12,22 +12,33 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)date.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)date.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
-#include <sys/file.h>
-#include <syslog.h>
-#include <unistd.h>
+
+#include <ctype.h>
+#include <err.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
+#include <syslog.h>
+#include <unistd.h>
+
+#include "extern.h"
 
 time_t tval;
 int retval, nflag;
 
+static void setthetime __P((char *));
+static void badformat __P((void));
+static void usage __P((void));
+
+int logwtmp __P((char *, char *, char *));
+
+int
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -73,15 +84,11 @@ main(argc, argv)
 	 * doesn't belong here, there kernel should not know about either.
 	 */
 	if ((tz.tz_minuteswest || tz.tz_dsttime) &&
-	    settimeofday(NULL, &tz)) {
-		perror("date: settimeofday");
-		exit(1);
-	}
+	    settimeofday(NULL, &tz))
+		err(1, "settimeofday");
 
-	if (!rflag && time(&tval) == -1) {
-		perror("date: time");
-		exit(1);
-	}
+	if (!rflag && time(&tval) == -1)
+		err(1, "time");
 
 	format = "%a %b %e %H:%M:%S %Z %Y\n";
 
@@ -105,6 +112,7 @@ main(argc, argv)
 }
 
 #define	ATOI2(ar)	((ar)[0] - '0') * 10 + ((ar)[1] - '0'); (ar) += 2;
+void
 setthetime(p)
 	register char *p;
 {
@@ -186,12 +194,14 @@ setthetime(p)
 	syslog(LOG_AUTH | LOG_NOTICE, "date set by %s", p);
 }
 
+static void
 badformat()
 {
-	(void)fprintf(stderr, "date: illegal time format.\n");
+	warnx("illegal time format");
 	usage();
 }
 
+static void
 usage()
 {
 	(void)fprintf(stderr,

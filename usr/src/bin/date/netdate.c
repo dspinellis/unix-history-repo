@@ -6,20 +6,25 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)netdate.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)netdate.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/socket.h>
-#include <sys/errno.h>
+
 #include <netinet/in.h>
 #include <netdb.h>
 #define TSPTYPES
 #include <protocols/timed.h>
-#include <unistd.h>
+
+#include <err.h>
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+
+#include "extern.h"
 
 #define	WAITACK		2	/* seconds */
 #define	WAITDATEACK	5	/* seconds */
@@ -33,6 +38,7 @@ extern int retval;
  * notifies the master that a correction is needed.
  * Returns 0 on success.  Returns > 0 on failure, setting retval to 2;
  */
+int
 netsettime(tval)
 	time_t tval;
 {
@@ -46,7 +52,7 @@ netsettime(tval)
 	char hostname[MAXHOSTNAMELEN];
 
 	if ((sp = getservbyname("timed", "udp")) == NULL) {
-		(void)fprintf(stderr, "date: udp/timed: unknown service.n");
+		warnx("udp/timed: unknown service");
 		return (retval = 2);
 	}
 
@@ -56,11 +62,11 @@ netsettime(tval)
 	s = socket(AF_INET, SOCK_DGRAM, 0);
 	if (s < 0) {
 		if (errno != EPROTONOSUPPORT)
-			perror("date: timed");
-		return(retval = 2);
+			warn("timed");
+		return (retval = 2);
 	}
 
-	bzero((char *)&sin, sizeof(sin));
+	memset(&sin, 0, sizeof(sin));
 	sin.sin_family = AF_INET;
 	for (port = IPPORT_RESERVED - 1; port > IPPORT_RESERVED / 2; port--) {
 		sin.sin_port = htons((u_short)port);
@@ -69,17 +75,17 @@ netsettime(tval)
 		if (errno == EADDRINUSE)
 			continue;
 		if (errno != EADDRNOTAVAIL)
-			perror("date: bind");
+			warn("bind");
 		goto bad;
 	}
 	if (port == IPPORT_RESERVED / 2) {
-		(void)fprintf(stderr, "date: all ports in use.\n");
+		warnx("all ports in use");
 		goto bad;
 	}
 	msg.tsp_type = TSP_SETDATE;
 	msg.tsp_vers = TSPVERSION;
 	if (gethostname(hostname, sizeof(hostname))) {
-		perror("date: gethostname");
+		warn("gethostname");
 		goto bad;
 	}
 	(void)strncpy(msg.tsp_name, hostname, sizeof(hostname));
@@ -88,12 +94,12 @@ netsettime(tval)
 	msg.tsp_time.tv_usec = htonl((u_long)0);
 	length = sizeof(struct sockaddr_in);
 	if (connect(s, (struct sockaddr *)&dest, length) < 0) {
-		perror("date: connect");
+		warn("connect");
 		goto bad;
 	}
 	if (send(s, (char *)&msg, sizeof(struct tsp), 0) < 0) {
 		if (errno != ECONNREFUSED)
-			perror("date: send");
+			warn("send");
 		goto bad;
 	}
 
@@ -108,10 +114,10 @@ loop:
 	found = select(FD_SETSIZE, &ready, (fd_set *)0, (fd_set *)0, &tout);
 
 	length = sizeof(err);
-	if (!getsockopt(s, SOL_SOCKET, SO_ERROR, (char *)&err, &length)
-	    && err) {
+	if (!getsockopt(s,
+	    SOL_SOCKET, SO_ERROR, (char *)&err, &length) && err) {
 		if (err != ECONNREFUSED)
-			perror("date: send (delayed error)");
+			warn("send (delayed error)");
 		goto bad;
 	}
 
@@ -120,7 +126,7 @@ loop:
 		if (recvfrom(s, &msg, sizeof(struct tsp), 0,
 		    (struct sockaddr *)&from, &length) < 0) {
 			if (errno != ECONNREFUSED)
-				perror("date: recvfrom");
+				warn("recvfrom");
 			goto bad;
 		}
 		msg.tsp_seq = ntohs(msg.tsp_seq);
@@ -135,18 +141,16 @@ loop:
 			(void)close(s);
 			return (0);
 		default:
-			(void)fprintf(stderr,
-			    "date: wrong ack received from timed: %s.\n", 
+			warnx("wrong ack received from timed: %s", 
 			    tsptype[msg.tsp_type]);
 			timed_ack = -1;
 			break;
 		}
 	}
 	if (timed_ack == -1)
-		(void)fprintf(stderr,
-		    "date: can't reach time daemon, time set locally.\n");
+		warnx("can't reach time daemon, time set locally");
 
 bad:
 	(void)close(s);
-	return(retval = 2);
+	return (retval = 2);
 }
