@@ -1,4 +1,4 @@
-/*	mem.h	4.2	81/02/19	*/
+/*	mem.h	4.3	81/02/23	*/
 
 /*
  * Memory controller registers
@@ -7,9 +7,15 @@ struct	mcr {
 	int	mc_reg[3];
 };
 
+#if VAX780
+#define	MAXNMCR		4
+#else
+#define	MAXNMCR		1
+#endif
+
 #ifdef	KERNEL
 int	nmcr;
-struct	mcr *mcraddr[4];
+struct	mcr *mcraddr[MAXNMCR];
 #endif
 
 #define	M780_HIERR	0x20000000
