@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.10 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -127,6 +127,7 @@ ffs_mount(mp, path, data, ndp, p)
 	register struct fs *fs;
 	u_int size;
 	int error, flags;
+	mode_t accessmode;
 
 	if (error = copyin(data, (caddr_t)&args, sizeof (struct ufs_args)))
 		return (error);
@@ -151,8 +152,23 @@ ffs_mount(mp, path, data, ndp, p)
 			error = ffs_reload(mp, ndp->ni_cnd.cn_cred, p);
 		if (error)
 			return (error);
-		if (fs->fs_ronly && (mp->mnt_flag & MNT_WANTRDWR))
+		if (fs->fs_ronly && (mp->mnt_flag & MNT_WANTRDWR)) {
+			/*
+			 * If upgrade to read-write by non-root, then verify
+			 * that user has necessary permissions on the device.
+			 */
+			if (p->p_ucred->cr_uid != 0) {
+				devvp = ump->um_devvp;
+				VOP_LOCK(devvp);
+				if (error = VOP_ACCESS(devvp, VREAD | VWRITE,
+				    p->p_ucred, p)) {
+					VOP_UNLOCK(devvp);
+					return (error);
+				}
+				VOP_UNLOCK(devvp);
+			}
 			fs->fs_ronly = 0;
+		}
 		if (args.fspec == 0) {
 			/*
 			 * Process export requests.
@@ -176,6 +192,21 @@ ffs_mount(mp, path, data, ndp, p)
 	if (major(devvp->v_rdev) >= nblkdev) {
 		vrele(devvp);
 		return (ENXIO);
+	}
+	/*
+	 * If mount by non-root, then verify that user has necessary
+	 * permissions on the device.
+	 */
+	if (p->p_ucred->cr_uid != 0) {
+		accessmode = VREAD;
+		if ((mp->mnt_flag & MNT_RDONLY) == 0)
+			accessmode |= VWRITE;
+		VOP_LOCK(devvp);
+		if (error = VOP_ACCESS(devvp, accessmode, p->p_ucred, p)) {
+			vput(devvp);
+			return (error);
+		}
+		VOP_UNLOCK(devvp);
 	}
 	if ((mp->mnt_flag & MNT_UPDATE) == 0)
 		error = ffs_mountfs(devvp, mp, p);
