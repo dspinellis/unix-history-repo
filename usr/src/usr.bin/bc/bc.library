@@ -1,4 +1,4 @@
-/*	bc.library	4.1	83/04/02	*/
+/*	bc.library	4.2	86/06/24	*/
 
 scale = 20
 define e(x){
@@ -125,9 +125,11 @@ define c(x){
 define a(x){
 	auto a, b, c, d, e, f, g, s, t
 	if(x==0) return(0)
-	if(x==1)
-		if(scale<52)
+	if(x==1) {
+		if(scale<52) {
 return(.7853981633974483096156608458198757210492923498437764/1)
+		}
+	}
 	t = scale
 	f=1
 	while(x > .5){
