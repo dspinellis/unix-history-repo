@@ -1,7 +1,7 @@
 /*
  * scanw and friends
  *
- * %G% (Berkeley) @(#)scanw.c	1.1
+ * @(#)scanw.c	1.2 (Berkeley) %G%
  */
 
 # include	"curses.ext"
