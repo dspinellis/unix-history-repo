@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.76 (Berkeley) %G%
+#	@(#)READ_ME	8.77 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -13,12 +13,12 @@ For detailed instructions, please read the document ../doc/op.me:
 
 	eqn ../doc/op.me | pic | ditroff -me
 
-*******************
-* DO NOT USE MAKE * to compile sendmail -- instead, use the "makesendmail"
-*******************
-script located in the src directory.  It will find an appropriate
-Makefile, and create an appropriate obj.* subdirectory so that
-multiplatform support works easily.
+*********************
+!! DO NOT USE MAKE !!  to compile sendmail -- instead, use the
+*********************  "makesendmail" script located in the src
+directory.  It will find an appropriate Makefile, and create an
+appropriate obj.* subdirectory so that multiplatform support
+works easily.
 
 The Makefile is for the new (4.4BSD) Berkeley make and uses syntax
 that is not recognized by older makes.  It also has assumptions
@@ -653,6 +653,19 @@ A/UX
 	(not easy at least); the gnu-dbm package "configured" and
 	compiled easily.
 
+SCO Unix
+	From: Thomas Essebier <tom@stallion.oz.au>
+	Organisation:  Stallion Technologies Pty Ltd.
+
+	It will probably help those who are trying to configure sendmail 8.6.9
+	to know that if they are on SCO, they had better set 
+		OI-dnsrch
+	or they will core dump as soon as they try to use the resolver.
+	ie. although SCO has _res.dnsrch defined, and is kinda BIND 4.8.3, it
+	does not inititialise it, nor does it understand 'search' in
+	/etc/named.boot.
+		- sigh -
+
 DG/UX
 	Doug Anderson <dlander@afterlife.ncsc.mil> has successfully run
 	V8 on the DG/UX 5.4.2 and 5.4R3.x platforms under heavy usage.
@@ -914,4 +927,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.76, last update %G% 13:30:20)
+(Version 8.77, last update %G% 08:07:21)
