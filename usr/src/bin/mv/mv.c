@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)mv.c	4.10 (Berkeley) 83/01/31";
+static	char *sccsid = "@(#)mv.c	4.11 (Berkeley) 83/01/31";
 #endif
 
 /*
@@ -65,9 +65,7 @@ main(argc, argv)
 	if (argc < 3)
 		goto usage;
 	dest = argv[argc-1];
-	if (stat(dest, &s2) < 0)
-		goto usage;
-	if (ISDIR(s2)) {
+	if (stat(dest, &s2) >= 0 && ISDIR(s2)) {
 		r = 0;
 		for (i = 1; i < argc-1; i++)
 			r |= movewithshortname(argv[i], dest);
@@ -80,7 +78,7 @@ main(argc, argv)
 	/*NOTREACHED*/
 usage:
 	fprintf(stderr,
-"usage: mv [-if] f1 ... fn d1 (where `fn' is a file or directory)\n");
+"usage: mv [-if] f1 f2 or mv [-if] f1 ... fn d1 (`fn' is a file or directory)\n");
 	return (1);
 }
 
