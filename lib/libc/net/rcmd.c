@@ -233,6 +233,10 @@ ruserok(rhost, superuser, ruser, luser)
 	int baselen = -1;
 	uid_t suid;
 	gid_t sgid;
+	int int_sgid;	/* this is a kludge and should be removed
+			   when we transition to FreeBSD 2.0.  If you
+			   find this code in a 2.0 source tree, please
+			   contact the core team. */
 
 	sp = (char *)rhost;
 	p = fhost;
@@ -254,7 +258,8 @@ again:
 			if (first == 0) {
                                 (void)seteuid(suid);
                                 (void)setegid(sgid);
-                                (void)setgroups(1, &sgid);
+				int_sgid = sgid;
+                                (void)setgroups(1, &int_sgid);
                         }
 			return(0);
 		}
