@@ -291,7 +291,7 @@ private ReadAFM(afmfile) char *afmfile; {
 	*c = '\0';
 	/* ignore blank lines */
 	if (*afmbuf == '\0') continue;
-	if (strcmp(afmbuf,"StartFontMetrics 1.0") == 0) {
+	if (strcmp(afmbuf,"StartFontMetrics 2.0") == 0) {
 	    gotMetrics++;
 	    continue;
 	}
