@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	4.6		%G%);
+SCCSID(@(#)readcf.c	4.7		%G%);
 
 /*
 **  READCF -- read control file.
@@ -546,7 +546,7 @@ makeargv(p)
 
 	/* now make a copy of the argv */
 	avp = (char **) xalloc(sizeof *avp * i);
-	bmove((char *) argv, (char *) avp, sizeof *avp * i);
+	bcopy((char *) argv, (char *) avp, sizeof *avp * i);
 
 	return (avp);
 }
