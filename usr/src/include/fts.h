@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fts.h	5.18 (Berkeley) %G%
+ *	@(#)fts.h	5.19 (Berkeley) %G%
  */
 
 #ifndef	_FTS_H_
@@ -14,7 +14,7 @@ typedef struct {
 	struct _ftsent *fts_cur;	/* current node */
 	struct _ftsent *fts_child;	/* linked list of children */
 	struct _ftsent **fts_array;	/* sort array */
-	dev_t rdev;			/* starting device # */
+	dev_t fts_dev;			/* starting device # */
 	char *fts_path;			/* path for this descent */
 	int fts_rfd;			/* fd for root */
 	int fts_pathlen;		/* sizeof(path) */
@@ -44,8 +44,12 @@ typedef struct _ftsent {
 	char *fts_accpath;		/* access path */
 	char *fts_path;			/* root path */
 	int fts_errno;			/* errno for this node */
-	short fts_pathlen;		/* strlen(fts_path) */
-	short fts_namelen;		/* strlen(fts_name) */
+	u_short fts_pathlen;		/* strlen(fts_path) */
+	u_short fts_namelen;		/* strlen(fts_name) */
+
+	ino_t fts_ino;			/* inode */
+	dev_t fts_dev;			/* device */
+	nlink_t fts_nlink;		/* link count */
 
 #define	FTS_ROOTPARENTLEVEL	-1
 #define	FTS_ROOTLEVEL		 0
@@ -55,14 +59,15 @@ typedef struct _ftsent {
 #define	FTS_DC		 2		/* directory that causes cycles */
 #define	FTS_DEFAULT	 3		/* none of the above */
 #define	FTS_DNR		 4		/* unreadable directory */
-#define	FTS_DP		 5		/* postorder directory */
-#define	FTS_ERR		 6		/* error; errno is set */
-#define	FTS_F		 7		/* regular file */
-#define	FTS_INIT	 8		/* initialized only */
-#define	FTS_NS		 8		/* stat(2) failed */
-#define	FTS_NSOK	 9		/* no stat(2) requested */
-#define	FTS_SL		10		/* symbolic link */
-#define	FTS_SLNONE	11		/* symbolic link without target */
+#define	FTS_DOT		 5		/* dot or dot-dot */
+#define	FTS_DP		 6		/* postorder directory */
+#define	FTS_ERR		 7		/* error; errno is set */
+#define	FTS_F		 8		/* regular file */
+#define	FTS_INIT	 9		/* initialized only */
+#define	FTS_NS		10		/* stat(2) failed */
+#define	FTS_NSOK	11		/* no stat(2) requested */
+#define	FTS_SL		12		/* symbolic link */
+#define	FTS_SLNONE	13		/* symbolic link without target */
 	u_short fts_info;		/* user flags for FTSENT structure */
 
 #define	FTS_AGAIN	 1		/* read node again */
@@ -71,7 +76,7 @@ typedef struct _ftsent {
 #define	FTS_SKIP	 4		/* discard node */
 	u_short fts_instr;		/* fts_set() instructions */
 
-	struct stat fts_statb;		/* stat(2) information */
+	struct stat *fts_statp;		/* stat(2) information */
 	char fts_name[1];		/* file name */
 } FTSENT;
 
