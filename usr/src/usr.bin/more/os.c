@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)os.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)os.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -185,8 +185,6 @@ get_time()
  * The implementation of this is necessarily very operating system
  * dependent.  This implementation is unabashedly only for Unix systems.
  */
-#if GLOB
-
 FILE *popen();
 
 	public char *
@@ -241,18 +239,6 @@ glob(filename)
 	pclose(f);
 	return (buffer);
 }
-
-#else
-
-	public char *
-glob(filename)
-	char *filename;
-{
-	return (filename);
-}
-
-#endif
-
 
 /*
  * Returns NULL if the file can be opened and
