@@ -8,7 +8,7 @@
  * User commands.
  */
 
-static char *SccsId = "@(#)cmd1.c	2.5 %G%";
+static char *SccsId = "@(#)cmd1.c	2.2.1.1 %G%";
 
 /*
  * Print the current active headings.
@@ -22,17 +22,15 @@ headers(msgvec)
 {
 	register int n, mesg, flag;
 	register struct message *mp;
-	int size;
 
-	size = screensize();
 	n = msgvec[0];
 	if (n != 0)
-		screen = (n-1)/size;
+		screen = (n-1)/SCREEN;
 	if (screen < 0)
 		screen = 0;
-	mp = &message[screen * size];
+	mp = &message[screen * SCREEN];
 	if (mp >= &message[msgCount])
-		mp = &message[msgCount - size];
+		mp = &message[msgCount - SCREEN];
 	if (mp < &message[0])
 		mp = &message[0];
 	flag = 0;
@@ -43,7 +41,7 @@ headers(msgvec)
 		mesg++;
 		if (mp->m_flag & MDELETED)
 			continue;
-		if (flag++ >= size)
+		if (flag++ >= SCREEN)
 			break;
 		printhead(mesg);
 		sreset();
@@ -62,17 +60,16 @@ headers(msgvec)
 scroll(arg)
 	char arg[];
 {
-	register int s, size;
+	register int s;
 	int cur[1];
 
 	cur[0] = 0;
-	size = screensize();
 	s = screen;
 	switch (*arg) {
 	case 0:
 	case '+':
 		s++;
-		if (s * size > msgCount) {
+		if (s*SCREEN > msgCount) {
 			printf("On last screenful of messages\n");
 			return(0);
 		}
@@ -94,32 +91,6 @@ scroll(arg)
 	return(headers(cur));
 }
 
-/*
- * Compute what the screen size should be.
- * We use the following algorithm:
- *	If user specifies with screen option, use that.
- *	If baud rate < 1200, use  5
- *	If baud rate = 1200, use 10
- *	If baud rate > 1200, use 20
- */
-screensize()
-{
-	register char *cp;
-	register int s;
-
-	if ((cp = value("screen")) != NOSTR) {
-		s = atoi(cp);
-		if (s > 0)
-			return(s);
-	}
-	if (baud < B1200)
-		s = 5;
-	else if (baud == B1200)
-		s = 10;
-	else
-		s = 20;
-	return(s);
-}
 
 /*
  * Print out the headlines for each message
@@ -293,8 +264,11 @@ type(msgvec)
 
 brokpipe()
 {
-
+# ifdef VMUNIX
 	sigrelse(SIGPIPE);
+# else
+	signal(SIGPIPE, brokpipe);
+# endif
 	longjmp(pipestop, 1);
 }
 
@@ -389,35 +363,6 @@ mboxit(msgvec)
 		dot = &message[*ip-1];
 		dot->m_flag |= MTOUCH|MBOX;
 		dot->m_flag &= ~MPRESERVE;
-	}
-	return(0);
-}
-
-/*
- * List the folders the user currently has.
- */
-folders()
-{
-	char dirname[BUFSIZ], cmd[BUFSIZ];
-	int pid, s, e;
-
-	if (getfold(dirname) < 0) {
-		printf("No value set for \"folder\"\n");
-		return(-1);
-	}
-	switch ((pid = fork())) {
-	case 0:
-		execlp("ls", "ls", dirname, 0);
-		clrbuf(stdout);
-		exit(1);
-
-	case -1:
-		perror("fork");
-		return(-1);
-
-	default:
-		while ((e = wait(&s)) != -1 && e != pid)
-			;
 	}
 	return(0);
 }
