@@ -6,19 +6,22 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ttyslot.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttyslot.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <ttyent.h>
 #include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
+int
 ttyslot()
 {
 	register struct ttyent *ttyp;
 	register int slot;
 	register char *p;
 	int cnt;
-	char *name, *rindex(), *ttyname();
+	char *name;
 
 	setttyent();
 	for (cnt = 0; cnt < 3; ++cnt) 

@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)glob.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -32,10 +32,15 @@ static char sccsid[] = "@(#)glob.c	5.3 (Berkeley) %G%";
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
-
-char *malloc(), *realloc();
+#include <stdlib.h>
 
 typedef int bool_t;
+
+static glob1();
+static glob2();
+static glob3();
+static globextend();
+static bool_t match();
 
 #define	DOLLAR		'$'
 #define	DOT		'.'
@@ -77,12 +82,14 @@ compare(p, q)
  * to find no matches.
  */
 glob(pattern, flags, errfunc, pglob)
-	char *pattern;
-	int flags, (*errfunc)();
+	const char *pattern;
+	int flags;
+	int (*errfunc) __P((char *, int));
 	glob_t *pglob;
 {
 	int err, oldpathc;
-	char *bufnext, *bufend, *compilebuf, *compilepat, *patnext;
+	char *bufnext, *bufend, *compilebuf;
+	const char *compilepat, *patnext;
 	char c, patbuf[MAXPATHLEN+1];
 
 	patnext = pattern;

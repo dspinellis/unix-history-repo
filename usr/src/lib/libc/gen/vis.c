@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vis.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)vis.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -19,10 +19,14 @@ static char sccsid[] = "@(#)vis.c	5.3 (Berkeley) %G%";
  * vis - visually encode characters
  */
 char *
+#if __STDC__
+vis(register char *dst, register char c, register int flag, char nextc)
+#else
 vis(dst, c, flag, nextc)
 	register char *dst, c;
 	char nextc;
 	register int flag;
+#endif
 {
 	if (isascii(c) && isgraph(c) ||
 	   ((flag & VIS_SP) == 0 && c == ' ') ||
@@ -50,7 +54,11 @@ vis(dst, c, flag, nextc)
 			*dst++ = '\\';
 			*dst++ = 'b';
 			goto done;
-		case '\007':	/* waiting for ansi compiler */
+#if __STDC__
+		case '\a':
+#else
+		case '\007':
+#endif
 			*dst++ = '\\';
 			*dst++ = 'a';
 			goto done;
@@ -118,8 +126,11 @@ done:
  *	Strvisx encodes exactly len bytes from src into dst.
  *	This is useful for encoding a block of data.
  */
+int
 strvis(dst, src, flag)
-	register char *dst, *src;
+	register char *dst;
+	register const char *src;
+	int flag;
 {
 	register char c;
 	char *start = dst;
@@ -130,9 +141,12 @@ strvis(dst, src, flag)
 	return (dst - start);
 }
 
+int
 strvisx(dst, src, len, flag)
-	register char *dst, *src;
-	register int len;
+	register char *dst;
+	register const char *src;
+	register size_t len;
+	int flag;
 {
 	char *start = dst;
 

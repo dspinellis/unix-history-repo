@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ttyname.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttyname.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -15,6 +15,7 @@ static char sccsid[] = "@(#)ttyname.c	5.7 (Berkeley) %G%";
 #include <dirent.h>
 #include <sgtty.h>
 #include <ndbm.h>
+#include <unistd.h>
 #include <paths.h>
 
 static char buf[sizeof(_PATH_DEV) + MAXNAMLEN] = _PATH_DEV;

@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)wait.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)wait.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -15,8 +15,8 @@ static char sccsid[] = "@(#)wait.c	5.3 (Berkeley) %G%";
 #include <sys/resource.h>
 
 pid_t
-wait(pstat)
-	union wait *pstat;
+wait(istat)
+	int *istat;
 {
-	return (wait4(WAIT_ANY, pstat, 0, (struct rusage *)0));
+	return (wait4(WAIT_ANY, istat, 0, (struct rusage *)0));
 }

@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)popen.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	5.15 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -17,6 +17,8 @@ static char sccsid[] = "@(#)popen.c	5.14 (Berkeley) %G%";
 #include <sys/wait.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <paths.h>
 
@@ -24,11 +26,11 @@ static pid_t *pids;
 
 FILE *
 popen(program, type)
-	char *program, *type;
+	const char *program;
+	const char *type;
 {
 	FILE *iop;
 	int pdes[2], fds, pid;
-	char *malloc();
 
 	if (*type != 'r' && *type != 'w' || type[1])
 		return (NULL);
@@ -78,14 +80,14 @@ popen(program, type)
 	return (iop);
 }
 
+int
 pclose(iop)
 	FILE *iop;
 {
-	extern int errno;
 	register int fdes;
 	int omask;
 	union wait pstat;
-	pid_t pid, waitpid();
+	pid_t pid;
 
 	/*
 	 * pclose returns -1 if stream is not associated with a
@@ -97,7 +99,7 @@ pclose(iop)
 	(void) fclose(iop);
 	omask = sigblock(sigmask(SIGINT)|sigmask(SIGQUIT)|sigmask(SIGHUP));
 	do {
-		pid = waitpid(pids[fdes], &pstat, 0);
+		pid = waitpid(pids[fdes], (int *) &pstat, 0);
 	} while (pid == -1 && errno == EINTR);
 	(void) sigsetmask(omask);
 	pids[fdes] = 0;

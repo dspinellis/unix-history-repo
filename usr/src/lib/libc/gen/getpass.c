@@ -6,17 +6,18 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getpass.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpass.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/termios.h>
 #include <sys/signal.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <pwd.h>
 
 char *
 getpass(prompt)
-	char *prompt;
+	const char *prompt;
 {
 	struct termios term;
 	register int ch;

@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)scandir.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)scandir.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -19,6 +19,8 @@ static char sccsid[] = "@(#)scandir.c	5.9 (Berkeley) %G%";
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <stdlib.h>
+#include <string.h>
 
 /*
  * The DIRSIZ macro gives the minimum record length which will hold
@@ -30,13 +32,15 @@ static char sccsid[] = "@(#)scandir.c	5.9 (Berkeley) %G%";
 #define DIRSIZ(dp) \
     ((sizeof (struct dirent) - (MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3))
 
+int
 scandir(dirname, namelist, select, dcomp)
-	char *dirname;
+	const char *dirname;
 	struct dirent ***namelist;
-	int (*select)(), (*dcomp)();
+	int (*select) __P((struct dirent *));
+	int (*dcomp) __P((const void *, const void *));
 {
 	register struct dirent *d, *p, **names;
-	register int nitems;
+	register size_t nitems;
 	struct stat stb;
 	long arraysz;
 	DIR *dirp;
@@ -94,8 +98,10 @@ scandir(dirname, namelist, select, dcomp)
 /*
  * Alphabetic order comparison routine for those who want it.
  */
+int
 alphasort(d1, d2)
-	void *d1, *d2;
+	const void *d1;
+	const void *d2;
 {
 	return(strcmp((*(struct dirent **)d1)->d_name,
 	    (*(struct dirent **)d2)->d_name));

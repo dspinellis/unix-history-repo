@@ -6,15 +6,18 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)closedir.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)closedir.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <dirent.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 /*
  * close a directory.
  */
+int
 closedir(dirp)
 	register DIR *dirp;
 {

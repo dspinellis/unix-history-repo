@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)disklabel.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.17 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -17,12 +17,20 @@ static char sccsid[] = "@(#)disklabel.c	5.16 (Berkeley) %G%";
 #include <sys/disklabel.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 static	char *dgetstr();
+static	dgetent();
+static	dnamatch();
+static	dgetnum();
+static	dgetflag();
+static	gettype();
+static	error();
 
 struct disklabel *
 getdiskbyname(name)
-	char *name;
+	const char *name;
 {
 	static struct	disklabel disk;
 	static char 	boot[BUFSIZ];
