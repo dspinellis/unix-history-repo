@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vfsops.c	8.19 (Berkeley) %G%
+ *	@(#)union_vfsops.c	8.20 (Berkeley) %G%
  */
 
 /*
@@ -345,9 +345,10 @@ union_root(mp, vpp)
 			      1);
 
 	if (error) {
-		if (!loselock)
-			VOP_UNLOCK(um->um_uppervp, 0, p);
-		vrele(um->um_uppervp);
+		if (loselock)
+			vrele(um->um_uppervp);
+		else
+			vput(um->um_uppervp);
 		if (um->um_lowervp)
 			vrele(um->um_lowervp);
 	} else {
