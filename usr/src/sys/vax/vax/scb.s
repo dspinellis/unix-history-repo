@@ -1,4 +1,4 @@
-/*	scb.s	4.5	%G%	*/
+/*	scb.s	4.6	%G%	*/
 
 /*
  * System control block
@@ -20,7 +20,7 @@ _scb:	.globl	_scb
 /* 020 */	KS(protflt);	KS(transflt);	KS(tracep);	KS(bptflt);
 /* 030 */	KS(compatflt);	KS(arithtrap);	STRAY;		STRAY;
 /* 040 */	KS(syscall);	KS(chme);	KS(chms);	KS(chmu);
-/* 050 */	STRAY;		STRAY;		STRAY;		STRAY;
+/* 050 */	STRAY;		IS(cmrd);	STRAY;		STRAY;
 /* 060 */	IS(wtime);	STRAY;		STRAY;		STRAY;
 /* 070 */	STRAY;		STRAY;		STRAY;		STRAY;
 /* 080 */	STRAY;		STRAY;		KS(astflt);	STRAY;
