@@ -8,12 +8,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vfsops.c	1.4 (Berkeley) %G%
+ *	@(#)union_vfsops.c	1.5 (Berkeley) %G%
  */
 
 /*
- * Null Layer
- * (See union_vnops.c for a description of what this does.)
+ * Union Layer
  */
 
 #include <sys/param.h>
@@ -52,8 +51,14 @@ union_mount(mp, path, data, ndp, p)
 	/*
 	 * Update is a no-op
 	 */
-	if (mp->mnt_flag & MNT_UPDATE)
+	if (mp->mnt_flag & MNT_UPDATE) {
+		/*
+		 * Need to provide.
+		 * 1. a way to convert between rdonly and rdwr mounts.
+		 * 2. support for nfs exports.
+		 */
 		return (EOPNOTSUPP);
+	}
 
 	/*
 	 * Get argument
@@ -100,17 +105,26 @@ union_mount(mp, path, data, ndp, p)
 	um->um_cred = crdup(p->p_ucred);
 	um->um_cred->cr_uid = p->p_cred->p_ruid;
 
-	if ((lowerrootvp->v_mount->mnt_flag & MNT_LOCAL) ||
+	if ((lowerrootvp->v_mount->mnt_flag & MNT_LOCAL) &&
 	    (upperrootvp->v_mount->mnt_flag & MNT_LOCAL))
 		mp->mnt_flag |= MNT_LOCAL;
+	/*
+	 * Copy in the upper layer's RDONLY flag.  This is for the benefit
+	 * of lookup() which explicitly checks the flag, rather than asking
+	 * the filesystem for it's own opinion.  This means, that an update
+	 * mount of the underlying filesystem to go from rdonly to rdwr
+	 * will leave the unioned view as read-only.
+	 */
+	mp->mnt_flag |= (upperrootvp->v_mount->mnt_flag & MNT_RDONLY);
 	mp->mnt_data = (qaddr_t) um;
 	getnewfsid(mp, MOUNT_UNION);
 
 	(void) copyinstr(path, mp->mnt_stat.f_mntonname, MNAMELEN - 1, &size);
 	bzero(mp->mnt_stat.f_mntonname + size, MNAMELEN - size);
-	(void) copyinstr(args.target, mp->mnt_stat.f_mntfromname, MNAMELEN - 1, 
-	    &size);
-	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
+	bcopy("union:", mp->mnt_stat.f_mntfromname, 6);
+	(void) copyinstr(args.target, mp->mnt_stat.f_mntfromname + 6,
+			MNAMELEN - 1 - 6, &size);
+	bzero(mp->mnt_stat.f_mntfromname + 6 + size, MNAMELEN - 6 - size);
 #ifdef UNION_DIAGNOSTIC
 	printf("union_mount: upper %s, lower at %s\n",
 		mp->mnt_stat.f_mntfromname, mp->mnt_stat.f_mntonname);
