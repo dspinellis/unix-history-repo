@@ -1,4 +1,4 @@
-.\" @(#)window.1	1.1 83/07/28
+.\" @(#)window.1	1.2 83/07/29
 .TH WINDOW 1 local
 .SH NAME
 window \- multiple window shell
@@ -9,44 +9,57 @@ window
 on ordinary CRT terminals.
 .PP
 Windows are rectangular partitions on the physical terminal screen
-that resemble real terminals to all programs running in
+that are indistinguishable from real terminals to processes running in
 them.  Their sizes and placement are determined at creation
 time.  They are framed as necessary to mark the boundaries between
 windows.  Each window, like terminals, has a cursor and a set of
 control functions.  Most intelligent terminal functions such as line and
-character deletion and insertion are supported.  A termcap(5)
-entry is created for each window and passed on to its processes
-in the environment (see environ(8)).  The windows are labeled
-with the digits ``1'' through ``9''.  There are a maximum of nine windows.
+character deletion and insertion are supported.  A \fItermcap (5)\fP
+entry tailored to each window is passed on to its processes
+in the environment (see \fIenviron (8)\fP).  A pseudo-terminal
+device (\fIpty (4)\fP) is allocated for each window.  This becomes
+the standard input, output, and diagnostic output of the processes.
+Initially, a shell, usually \fIcsh (1)\fP, is placed in the window.
+.PP
+Windows are labeled with the digits ``1'' through ``9''.
+Thus a maximum of nine are supported.
 One window, the current window, is treated specially.
-This window is indicated by showing its label in reverse video.  Windows
-can overlap.  Some can be completely obscured by others.
+This window is indicated by displaying its label in reverse video.
+.PP
+Windows can overlap.  Some can be completely obscured by others.
 The current window is alway on top of all others.
 .PP
-The \fIwindow\fP program has two basic modes of operation:  command mode
-and conversation mode.  In conversation mode, the terminal's
+The \fIwindow\fP program has two functional modes:  command mode
+and conversation mode.
+.PP
+In conversation mode, the terminal's
 real cursor is placed at the cursor position of the current
 window and all keyboard input is sent to the process in that
 window.  Output from windows is displayed at all times,
 even in command mode.
 .PP
-Typing \fIwindow\fP's escape character (initially ^P)
-in conversation mode switches the program into
+Typing \fIwindow\fP's escape character (normally ^P)
+in conversation mode switches \fIwindow\fP into
 command mode.  In command mode, the top line of the
 terminal screen becomes the command prompt window.
 And the cursor in the current window is replaced by a
-reverse video blinking block.
+blinking reverse video block (if these functions are supported
+by the terminal).
 .PP
-The available commands are:
+The commands are
 .TP
 .B [1-9]
-Select window [1-9] and return to conversation mode.
+Select window \fI[1-9]\fP as the current window
+and return to conversation mode.
 .TP
 .B %[1-9]
-Select window [1-9] but stay in command mode.
+Select window \fI[1-9]\fP but stay in command mode.
 .TP
 .B ?
 List a short summary of commands.
+.TP
+.B ^L
+Redraw the screen.
 .TP
 .B escape
 Return to conversation mode.
@@ -56,65 +69,45 @@ Return to conversation mode and write ^P to the
 current window.  Thus, typing two ^P's in conversation
 mode sends one to the current window.  If the \fIwindow\fP
 escape is changed to some other character, that
-character takes the place of ^P.
+character takes the place of ^P here.
 .TP
-.B .
-Exit \fIwindow\fP.  You are asked to confirm this.
+.B q
+Exit \fIwindow\fP.  Confirmation is requested.
 .TP
 .B w
-Create a new window.  You are prompted for the position
-and size of the window.  The cursor is placed on the screen
-and the keys ``h,j,k,l''
+Create a new window.  You are prompted for the positions
+of the upper left and lower right corners of the window.
+The cursor is placed on the screen and the keys ``h,j,k,l''
 moves the cursor left, down, up, and right, respectively.
-And the keys ``H,J,K,L'' moves the cursor to the respective
+The keys ``H,J,K,L'' moves the cursor to the respective
 limits of the screen.  Typing a number before the movement keys
-repeats the movement the appropriate number of times.
-Return enters the cursor position
+repeats the movement that number of times.
+Typing return enters the cursor position
 as the upper left corner of the window.  The lower right corner
 is entered in the same manner.  Typing escape (or ^[) at any
 point returns you to command mode.
 .IP
-A pseudo-terminal device (pty(5)) is allocated for the window and
-the terminal modes and special characters (see stty(1)) made
-identical to the real terminal.  A shell is then started with
-the pseudo-terminal as the standard input, output and diagnostic
-output.  The environment variable SHELL is checked to find the
-name of the shell program.  \fICsh\fP(1) is used by default.
+The environment variable SHELL is checked to find the
+name of the shell program to place in the window.
+\fICsh\fP (1) is used by default.
 .IP
 This window is given the first available label.
 .TP
 .B c[1-9]
-Close the window [1-9].  The process in the window is sent
-the hangup signal (see kill(1,2)).  \fICsh\fP(1) should
+Close the window \fI[1-9]\fP.  The process in the window is sent
+the hangup signal (see \fIkill (1)\fP).  \fICsh (1)\fP should
 handle this signal correctly and cause no problems.
 .TP
 .B C
-Close all windows with no processes.
-.TP
-.B Z
 Close all windows.
 .TP
-.B Q
+.B S
 Show all windows.  Each window is brought to the top in sequence,
 with the terminal cursor placed on its label.  Typing escape
 at this point will select this window as the current window.
 Return will let you see the next one.  This command is useful
 when there are a large number of windows and some are completely
-obscured by others.
-.TP
-.B e
-Set the escape character.
-.TP
-.B R
-Normally, windows are updated only when all keyboard inputs and
-program outputs are processed.  This command forces the
-current window to refresh after every new line and every
-line deletion and insertion.  In this mode, the window
-will operates in a more terminal like manner, but considerably
-more CPU time will be consumed.
-.TP
-.B r
-Cancels the \fB``R''\fP command on the current window.
+hidden by others.
 .TP
 .B ^U
 Scroll the current window up by half the window size.
@@ -140,18 +133,54 @@ Move the cursor of the current window up by one line.
 .B l
 Move the cursor of the current window right by one column.
 .TP
-.B ^L
-Redraw the screen.
+.B :
+Enter a long command.
+.PP
+A long command consists of a command name followed by zero
+or more arguments, separated by spaces or tabs.  They can
+be read in from files and executed (see the \fIsource\fP
+command below), or entered interactively with the \fB``:''\fP
+command.
+.TP
+.B escape C
+Set the escape character to \fIC\fP.
+.TP
+.B terse [off]
+Turn on (or off) terse mode.  In terse mode, the command window
+stays hidden even in command mode, and errors are reported by
+sounding the terminal's bell.
+.TP
+.B window row col nrow ncol
+Open a window with upper left corner at \fIrow\fP, \fIcol\fP
+and size \fInrow\fP, \fIncol\fP.
+.TP
+.B label [1-9] string
+Label the window \fI[1-9]\fP with \fIstring\fP.  This is in addition
+to the numeric label which is always displayed.
+.TP
+.B %[1-9]
+Make window \fI[1-9]\fP the current window.
+.TP
+.B source file
+Execute the commands in \fIfile\fP.  Recursive
+\fIsource\fP is not allowed.
+.PP
+When \fIwindow\fP starts up, the file \fI.windowrc\fP in the
+user's home directory is checked.  If it exists, then the
+commands contained in it are executed.  All long commands
+are legal.  If \fI.windowrc\fP does not exist, then two
+equal sized windows are created by default.
 .SH FILES
 .ta 15
-~/.windowcf	startup configuration file.
+~/.windowrc	startup command file.
+.br
 /dev/ptyp?	pseudo-terminal devices.
 .SH SEE ALSO
 .SH DIAGNOSTICS
 Should be self explanatory.
 .SH BUGS
 When all pseudo-terminal devices are used, the \fB``w''\fP
-command will fail mysteriously.
+command fails mysteriously.
 .PP
 When a window is scrolled or the cursor moved, output from
 the process in the window will be displayed at the new cursor
