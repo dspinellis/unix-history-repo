@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asmain.c 4.6 %G%";
+static	char sccsid[] = "@(#)asmain.c 4.7 %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
@@ -10,7 +10,7 @@ static	char sccsid[] = "@(#)asmain.c 4.6 %G%";
 #include "asscan.h"
 
 #ifdef UNIX
-#define	unix_lang_name "VAX/UNIX Assembler V%G% 4.6"
+#define	unix_lang_name "VAX/UNIX Assembler V%G% 4.7"
 #endif
 
 #ifdef VMS
@@ -190,14 +190,14 @@ main(argc, argv)
 	if (anyerrs) delexit();
 
 	open_a_out();			/* open a.out */
-	roundsegments();		/* round segments to FW */
+	roundsegments();		/* round segments to DW */
 	build_hdr();			/* build initial header, and output */
 	
 	i_pass2();			/* reopen temporary file, etc */
 	pass2();			/* second pass through the virtual .s */
 	if (anyerrs) delexit();
 
-	fillsegments();			/* fill segments with 0 to FW */
+	fillsegments();			/* fill segments with 0 to DW */
 	reloc_syms();			/* dump relocation and symbol table */
 
 	delete();			/* remove tmp file */
@@ -438,7 +438,7 @@ roundsegments()
 	 */
 	tsize = 0;
 	for (locindex=0; locindex<NLOC; locindex++) {
-		v = round(usedot[locindex].e_xvalue, FW);
+		v = round(usedot[locindex].e_xvalue, DW);
 		usedot[locindex].e_xvalue = tsize;
 		if ((locindex == 0) || (v != 0) ){
 			usefile[locindex] = (BFILE *)Calloc(1, sizeof(BFILE));
@@ -454,9 +454,9 @@ roundsegments()
 	/*
 	 *		Round and assign data segment origins.
 	 */
-	datbase = round(tsize, FW);
+	datbase = round(tsize, DW);
 	for (locindex=0; locindex<NLOC; locindex++) {
-		v = round(usedot[NLOC+locindex].e_xvalue, FW);
+		v = round(usedot[NLOC+locindex].e_xvalue, DW);
 		usedot[NLOC+locindex].e_xvalue = datbase + dsize;
 		if (v != 0){
 			usefile[NLOC + locindex] = (BFILE *)Calloc(1,sizeof(BFILE));
@@ -540,13 +540,13 @@ fillsegments()
 {
 	int	locindex;
 	/*
-	 *	Round text and data segments to FW by appending zeros
+	 *	Round text and data segments to DW by appending zeros
 	 */
 	for (locindex = 0; locindex < NLOC + NLOC; locindex++) {
 		if (usefile[locindex]) {
 			txtfil = usefile[locindex];
 			dotp = &usedot[locindex];
-			while (usedot[locindex].e_xvalue & FW)
+			while (usedot[locindex].e_xvalue & DW)
 				outb(0);
 		}
 	}
