@@ -1,4 +1,4 @@
-/*	conf.c	4.46	82/01/17	*/
+/*	conf.c	4.47	82/02/06	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -285,17 +285,21 @@ int	dnopen(), dnclose(), dnwrite(), dnselect();
 #define	dnselect	selecttrue
 #endif
 
+/*
 #include "un.h"
 #if NUN > 0
 int	unopen(), unclose(), unread(), unwrite(), unioctl(), unreset();
 #else
+*/
 #define	unopen		nodev
 #define unclose		nodev
 #define unread		nodev
 #define unwrite		nodev
 #define unioctl		nodev
 #define unreset		nulldev
+/*
 #endif
+*/
 
 int	ttselect(), seltrue();
 
