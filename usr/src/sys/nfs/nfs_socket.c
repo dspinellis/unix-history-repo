@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_socket.c	7.21 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.22 (Berkeley) %G%
  */
 
 /*
@@ -20,6 +20,7 @@
 #include "kernel.h"
 #include "malloc.h"
 #include "mbuf.h"
+#include "namei.h"
 #include "vnode.h"
 #include "domain.h"
 #include "protosw.h"
@@ -398,6 +399,7 @@ tryagain:
 			auio.uio_iovcnt = 1;
 			auio.uio_segflg = UIO_SYSSPACE;
 			auio.uio_rw = UIO_READ;
+			auio.uio_procp = (struct proc *)0;
 			auio.uio_offset = 0;
 			auio.uio_resid = sizeof(u_long);
 			do {
@@ -690,7 +692,7 @@ nfs_request(vp, mreq, xid, procnum, procp, tryhard, mp, mrp, mdp, dposp)
 {
 	register struct mbuf *m, *mrep;
 	register struct nfsreq *rep;
-	register u_long *p;
+	register u_long *tl;
 	register int len;
 	struct nfsmount *nmp;
 	struct mbuf *md;
@@ -828,10 +830,10 @@ nfs_request(vp, mreq, xid, procnum, procp, tryhard, mp, mrp, mdp, dposp)
 	 * break down the rpc header and check if ok
 	 */
 	dpos = mtod(md, caddr_t);
-	nfsm_disect(p, u_long *, 5*NFSX_UNSIGNED);
-	p += 2;
-	if (*p++ == rpc_msgdenied) {
-		if (*p == rpc_mismatch)
+	nfsm_disect(tl, u_long *, 5*NFSX_UNSIGNED);
+	tl += 2;
+	if (*tl++ == rpc_msgdenied) {
+		if (*tl == rpc_mismatch)
 			error = EOPNOTSUPP;
 		else
 			error = EACCES;
@@ -842,16 +844,16 @@ nfs_request(vp, mreq, xid, procnum, procp, tryhard, mp, mrp, mdp, dposp)
 	 * skip over the auth_verf, someday we may want to cache auth_short's
 	 * for nfs_reqhead(), but for now just dump it
 	 */
-	if (*++p != 0) {
-		len = nfsm_rndup(fxdr_unsigned(long, *p));
+	if (*++tl != 0) {
+		len = nfsm_rndup(fxdr_unsigned(long, *tl));
 		nfsm_adv(len);
 	}
-	nfsm_disect(p, u_long *, NFSX_UNSIGNED);
+	nfsm_disect(tl, u_long *, NFSX_UNSIGNED);
 	/* 0 == ok */
-	if (*p == 0) {
-		nfsm_disect(p, u_long *, NFSX_UNSIGNED);
-		if (*p != 0) {
-			error = fxdr_unsigned(int, *p);
+	if (*tl == 0) {
+		nfsm_disect(tl, u_long *, NFSX_UNSIGNED);
+		if (*tl != 0) {
+			error = fxdr_unsigned(int, *tl);
 			m_freem(mrep);
 			return (error);
 		}
@@ -889,7 +891,7 @@ nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, procnum, cr,
 	int *wascomp;
 {
 	register int i;
-	register u_long *p;
+	register u_long *tl;
 	register long t1;
 	caddr_t dpos, cp2;
 	int error = 0;
@@ -918,58 +920,58 @@ nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, procnum, cr,
 	} else
 		*wascomp = 0;
 	dpos = mtod(mrep, caddr_t);
-	nfsm_disect(p, u_long *, 10*NFSX_UNSIGNED);
-	*retxid = *p++;
-	if (*p++ != rpc_call) {
+	nfsm_disect(tl, u_long *, 10*NFSX_UNSIGNED);
+	*retxid = *tl++;
+	if (*tl++ != rpc_call) {
 		m_freem(mrep);
 		return (ERPCMISMATCH);
 	}
-	if (*p++ != rpc_vers) {
+	if (*tl++ != rpc_vers) {
 		m_freem(mrep);
 		return (ERPCMISMATCH);
 	}
-	if (*p++ != prog) {
+	if (*tl++ != prog) {
 		m_freem(mrep);
 		return (EPROGUNAVAIL);
 	}
-	if (*p++ != vers) {
+	if (*tl++ != vers) {
 		m_freem(mrep);
 		return (EPROGMISMATCH);
 	}
-	*procnum = fxdr_unsigned(u_long, *p++);
+	*procnum = fxdr_unsigned(u_long, *tl++);
 	if (*procnum == NFSPROC_NULL) {
 		*mrp = mrep;
 		return (0);
 	}
-	if (*procnum > maxproc || *p++ != rpc_auth_unix) {
+	if (*procnum > maxproc || *tl++ != rpc_auth_unix) {
 		m_freem(mrep);
 		return (EPROCUNAVAIL);
 	}
-	len = fxdr_unsigned(int, *p++);
+	len = fxdr_unsigned(int, *tl++);
 	if (len < 0 || len > RPCAUTH_MAXSIZ) {
 		m_freem(mrep);
 		return (EBADRPC);
 	}
-	len = fxdr_unsigned(int, *++p);
+	len = fxdr_unsigned(int, *++tl);
 	if (len < 0 || len > NFS_MAXNAMLEN) {
 		m_freem(mrep);
 		return (EBADRPC);
 	}
 	nfsm_adv(nfsm_rndup(len));
-	nfsm_disect(p, u_long *, 3*NFSX_UNSIGNED);
-	cr->cr_uid = fxdr_unsigned(uid_t, *p++);
-	cr->cr_gid = fxdr_unsigned(gid_t, *p++);
-	len = fxdr_unsigned(int, *p);
+	nfsm_disect(tl, u_long *, 3*NFSX_UNSIGNED);
+	cr->cr_uid = fxdr_unsigned(uid_t, *tl++);
+	cr->cr_gid = fxdr_unsigned(gid_t, *tl++);
+	len = fxdr_unsigned(int, *tl);
 	if (len < 0 || len > RPCAUTH_UNIXGIDS) {
 		m_freem(mrep);
 		return (EBADRPC);
 	}
-	nfsm_disect(p, u_long *, (len + 2)*NFSX_UNSIGNED);
+	nfsm_disect(tl, u_long *, (len + 2)*NFSX_UNSIGNED);
 	for (i = 1; i <= len; i++)
 		if (i < NGROUPS)
-			cr->cr_groups[i] = fxdr_unsigned(gid_t, *p++);
+			cr->cr_groups[i] = fxdr_unsigned(gid_t, *tl++);
 		else
-			p++;
+			tl++;
 	cr->cr_ngroups = (len >= NGROUPS) ? NGROUPS : (len + 1);
 	/*
 	 * Do we have any use for the verifier.
@@ -977,7 +979,7 @@ nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, procnum, cr,
 	 * should be AUTH_NULL, but some clients make it AUTH_UNIX?
 	 * For now, just skip over it
 	 */
-	len = fxdr_unsigned(int, *++p);
+	len = fxdr_unsigned(int, *++tl);
 	if (len < 0 || len > RPCAUTH_MAXSIZ) {
 		m_freem(mrep);
 		return (EBADRPC);
@@ -1004,7 +1006,7 @@ nfs_rephead(siz, retxid, err, mrq, mbp, bposp)
 	struct mbuf **mbp;
 	caddr_t *bposp;
 {
-	register u_long *p;
+	register u_long *tl;
 	register long t1;
 	caddr_t bpos;
 	struct mbuf *mreq, *mb, *mb2;
@@ -1013,38 +1015,38 @@ nfs_rephead(siz, retxid, err, mrq, mbp, bposp)
 	mb = mreq;
 	if ((siz+RPC_REPLYSIZ) > MHLEN)
 		MCLGET(mreq, M_WAIT);
-	p = mtod(mreq, u_long *);
+	tl = mtod(mreq, u_long *);
 	mreq->m_len = 6*NFSX_UNSIGNED;
-	bpos = ((caddr_t)p)+mreq->m_len;
-	*p++ = retxid;
-	*p++ = rpc_reply;
+	bpos = ((caddr_t)tl)+mreq->m_len;
+	*tl++ = retxid;
+	*tl++ = rpc_reply;
 	if (err == ERPCMISMATCH) {
-		*p++ = rpc_msgdenied;
-		*p++ = rpc_mismatch;
-		*p++ = txdr_unsigned(2);
-		*p = txdr_unsigned(2);
+		*tl++ = rpc_msgdenied;
+		*tl++ = rpc_mismatch;
+		*tl++ = txdr_unsigned(2);
+		*tl = txdr_unsigned(2);
 	} else {
-		*p++ = rpc_msgaccepted;
-		*p++ = 0;
-		*p++ = 0;
+		*tl++ = rpc_msgaccepted;
+		*tl++ = 0;
+		*tl++ = 0;
 		switch (err) {
 		case EPROGUNAVAIL:
-			*p = txdr_unsigned(RPC_PROGUNAVAIL);
+			*tl = txdr_unsigned(RPC_PROGUNAVAIL);
 			break;
 		case EPROGMISMATCH:
-			*p = txdr_unsigned(RPC_PROGMISMATCH);
-			nfsm_build(p, u_long *, 2*NFSX_UNSIGNED);
-			*p++ = txdr_unsigned(2);
-			*p = txdr_unsigned(2);	/* someday 3 */
+			*tl = txdr_unsigned(RPC_PROGMISMATCH);
+			nfsm_build(tl, u_long *, 2*NFSX_UNSIGNED);
+			*tl++ = txdr_unsigned(2);
+			*tl = txdr_unsigned(2);	/* someday 3 */
 			break;
 		case EPROCUNAVAIL:
-			*p = txdr_unsigned(RPC_PROCUNAVAIL);
+			*tl = txdr_unsigned(RPC_PROCUNAVAIL);
 			break;
 		default:
-			*p = 0;
+			*tl = 0;
 			if (err != VNOVAL) {
-				nfsm_build(p, u_long *, NFSX_UNSIGNED);
-				*p = txdr_unsigned(err);
+				nfsm_build(tl, u_long *, NFSX_UNSIGNED);
+				*tl = txdr_unsigned(err);
 			}
 			break;
 		};
