@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_print.c	7.18 (Berkeley) %G%
+ *	@(#)kdb_print.c	7.19 (Berkeley) %G%
  */
 
 #include "machine/mtpr.h"
@@ -16,9 +16,6 @@
 #include "mount.h"
 
 char	*kdbBADRAD;
-
-ADDR	kdblastframe;
-ADDR	kdbcallpc;
 
 char	*kdbBADMOD;
 char	*kdblp;
@@ -35,13 +32,10 @@ extern	REGLIST kdbreglist[];
 
 kdbprinttrace(modif)
 {
-	register narg, i;
+	register int i;
 	register BKPTR bkptr;
-	register ADDR word;
 	register char *comptr;
-	register ADDR argp, frame;
 	register struct nlist *sp;
-	int ntramp;
 	register struct proc *p;
 	extern struct proc *allproc;
 
@@ -87,68 +81,7 @@ kdbprinttrace(modif)
 		return;
 
 	case 'c': case 'C':
-		if (kdbadrflg) {
-			frame = kdbadrval;
-			kdbcallpc = getprevpc(frame);
-		} else {
-			frame = kdbpcb.pcb_fp;
-			kdbcallpc = kdbpcb.pcb_pc;
-		}
-		kdblastframe = NOFRAME;
-		ntramp = 0;
-		while (kdbcntval-- && frame != NOFRAME) {
-			char *name;
-
-			kdbchkerr();
-			/* check for pc in pcb (signal trampoline code) */
-			if (issignalpc(kdbcallpc)) {
-				name = "sigtramp";
-				ntramp++;
-			} else {
-				ntramp = 0;
-				(void) kdbfindsym((long)kdbcallpc, ISYM);
-				if (kdbcursym)
-					name = kdbcursym->n_un.n_name;
-				else
-					name = "?";
-			}
-			kdbprintf("%s(", name);
-			narg = getnargs(frame);
-			if (narg > 10)
-				narg = 10;
-			argp = frame;
-			if (ntramp != 1)
-				while (narg) {
-					kdbprintf("%R",
-					    kdbget((off_t)(argp = nextarg(argp)),
-					        DSP));
-					if (--narg != 0)
-						kdbprintc(',');
-				}
-			kdbprintf(") at ");
-			kdbpsymoff((long)kdbcallpc, ISYM, "\n");
-
-			if (modif=='C') {
-				while (kdblocalsym((long)frame)) {
-					word = kdbget((off_t)kdblocalval, DSP);
-					kdbprintf("%8t%s:%10t",
-					    kdbcursym->n_un.n_name);
-					if (kdberrflg) {
-						kdbprintf("?\n");
-						kdberrflg = 0;
-					} else
-						kdbprintf("%R\n", word);
-				}
-			}
-			if (ntramp != 1) {
-				kdbcallpc = getprevpc(frame);
-				kdblastframe = frame;
-				frame = getprevframe(frame);
-			} else
-				kdbcallpc = getsignalpc(kdblastframe);
-			if (!kdbadrflg && !INSTACK(frame))
-				break;
-		}
+		kdbstacktrace(modif == 'C');
 		break;
 
 		/*print externals*/
