@@ -1,0 +1,431 @@
+#! /bin/sh
+echo
+echo 'Building config.h...
+'
+exec >config.h
+cat <<'foo'
+/* this file is created automatically by buildzsh */
+
+/* define this if you are sysvish */
+foo
+if test -f /usr/include/sys/resource.h
+then echo '/* #define SYSV */'; echo 'looks like a BSDish system...' >&2
+else echo '#define SYSV'; echo 'looks like a SYSVish system...' >&2
+fi
+echo
+if grep ULTRIX /usr/include/stdio.h >/dev/null 2>&1
+then echo '/* ULTRIX termios is weird... */
+/* #define TERMIOS */'; echo 'using sgttyb...' >&2
+else
+if test -f /usr/include/termios.h && test ! -f /hp-ux
+then echo '#define TERMIOS
+/* #define TTY_NEEDS_DRAINING */
+/* #define CLOBBERS_TYPEAHEAD */'
+echo 'using termios...' >&2
+else
+if grep sgttyb /usr/include/sys/ioctl.h >/dev/null 2>&1
+then echo '/* #define TERMIO */'
+else echo '#define TERMIO'
+echo 'using termio...' >&2
+fi
+echo '#define TTY_NEEDS_DRAINING
+#define CLOBBERS_TYPEAHEAD'
+echo 'using sgttyb...' >&2
+fi
+fi
+echo
+if test -f /usr/include/stdlib.h
+then echo '#define HAS_STDLIB'; echo 'using <stdlib.h>...' >&2
+else echo '/*#define HAS_STDLIB*/'; echo 'not using <stdlib.h>...' >&2
+fi
+echo
+if test -f /usr/include/string.h
+then echo '#define HAS_STRING'; echo 'using <string.h>...' >&2
+else echo '/*#define HAS_STRING*/'; echo 'using <strings.h>...' >&2
+echo '#define strchr	index
+#define strrchr	rindex
+#define memcpy(dst, src, n)	bcopy(src, dst, n)
+#define memset(dst, ch, n)	bfill(dst, n, ch)
+#define memcmp(s1, s2, n)	bcopy(s1, s2, n)'
+fi
+echo
+if test -f /usr/include/locale.h
+then echo '#define HAS_LOCALE'; echo 'using <locale.h>...' >&2
+else echo '/*#define HAS_LOCALE*/'; echo 'not using <locale.h>...' >&2
+fi
+echo
+echo '/* define this if you have a host field in utmp */'
+if grep ut_host /usr/include/utmp.h >/dev/null
+then echo '#define UTMP_HOST'; echo 'host field in utmp...' >&2
+else echo '/* #define UTMP_HOST */'; echo 'no host field in utmp...' >&2
+fi
+echo
+echo '/* define this if you have WAITPID */'
+if man 2 wait 2>/dev/null | sed 's/_.//g' | grep waitpid >/dev/null
+then echo '#define WAITPID'; echo 'using waitpid()...' >&2
+else echo '/* #define WAITPID */'; echo 'not using waitpid()...' >&2
+fi
+echo
+echo '/* define this if you have SELECT */'
+if grep FD_SET /usr/include/sys/types.h >/dev/null ||
+	test -f /usr/include/sys/select.h
+then echo '#define HAS_SELECT'; echo 'using select()...' >&2
+else echo '/* #define HAS_SELECT */'; echo 'not using select()...' >&2
+fi
+echo
+echo '/* define this if you have <sys/select.h> */'
+if test -f /usr/include/sys/select.h
+then echo '#define HAS_SYS_SELECT'
+else echo '/* #define HAS_SYS_SELECT */'
+fi
+echo "
+/* we can't just test for S_IFIFO or check to see if the mknod worked,
+   because the NeXTs sold by a vendor which will remain nameless will
+   happily create the FIFO for you, and then panic when you try to do
+	something weird with them, because they aren't supported by the OS. */
+"
+if test -f /mach
+then echo '#define NO_FIFOS'; echo 'no FIFOs...' >&2
+else echo '/* #define NO_FIFOS */'; echo 'using FIFOs...' >&2
+fi
+echo
+echo '/* define this if you have strftime() */'
+if man 3 strftime 2>/dev/null | grep return >/dev/null
+then echo '#define HAS_STRFTIME'; echo 'using strftime()...' >&2
+else echo '/* #define HAS_STRFTIME */'; echo 'not using strftime()...' >&2
+fi
+echo
+if man tcsetpgrp 2>/dev/null | grep process >/dev/null
+then echo '#define HAS_TCSETPGRP'; echo 'using tcsetpgrp()...' >&2
+else echo '/* #define HAS_TCSETPGRP */'; echo 'not using tcsetpgrp()...' >&2
+fi
+echo
+if grep tcgetattr /usr/include/termios.h >/dev/null 2>/dev/null ||
+	grep tcgetattr /usr/include/sys/termios.h >/dev/null 2>/dev/null ||
+	grep tcgetattr /usr/include/sys/termio.h >/dev/null 2>/dev/null
+then echo '#define HAS_TCCRAP'; echo 'using tcgetattr() and friends...' >&2
+else echo '/* #define HAS_TCCRAP */'; echo 'not using tcgetattr()...' >&2
+fi
+echo
+if test -f /bin/hinv
+then echo '/* SGI setpgid() is weird...  setpgrp() is better anyway */
+/* #define HAS_SETPGID */'; echo 'using setpgrp()...' >&2
+elif man setpgid 2>/dev/null | grep process >/dev/null
+then echo '#define HAS_SETPGID'; echo 'using setpgid()...' >&2
+else echo '/* #define HAS_SETPGID */'; echo 'using setpgrp()...' >&2
+fi
+echo
+if test ! -f /hp-ux && man sigrelse 2>/dev/null | grep signal >/dev/null
+then echo '#define HAS_SIGRELSE'; echo 'using sigrelse()...' >&2
+else echo '/* #define HAS_SIGRELSE */'; echo 'using sigblock()...' >&2
+fi
+echo
+echo '/* define this if you have RFS */'
+if test -d /../.CONTROL
+then echo '#define HAS_RFS'; echo 'you seem to have RFS...' >&2
+else echo '/* #define HAS_RFS */'; echo 'no RFS, it seems...' >&2
+fi
+echo
+echo '/* define this if you have a working getrusage and wait3 */'
+if test -f /hp-ux
+then echo '/* #define HAS_RUSAGE */'; echo 'no getrusage...' >&2
+elif test -f /usr/include/sys/resource.h
+then echo '#define HAS_RUSAGE'; echo 'has getrusage...' >&2
+else echo '/* #define HAS_RUSAGE */'; echo 'no getrusage...' >&2
+fi
+echo '
+/* define this if your signal handlers return void */'
+if grep SIG_DFL /usr/include/signal.h /usr/include/sys/signal.h |
+	grep void >/dev/null
+then echo '#define SIGVOID'; echo 'signal handlers return void...' >&2
+else echo '/* #define SIGVOID */'; echo 'signal handlers return int...' >&2
+fi
+cat <<'foo'
+#ifdef sgi
+#undef SIGVOID
+#endif
+foo
+echo
+echo '/* define this if signal handlers need to be reset each time */'
+if grep SIGTSTP /usr/include/signal.h /usr/include/sys/signal.h >/dev/null
+then echo '/* #define RESETHANDNEEDED */'
+echo 'signal handlers need no resetting...' >&2
+else echo '#define RESETHANDNEEDED'
+echo 'signal handlers need to be reset...' >&2
+fi
+echo
+cat <<'foo'
+#ifdef SIGVOID
+#define HANDTYPE void
+#else
+#define HANDTYPE int
+#define INTHANDTYPE
+#endif
+
+/* a string corresponding to the host type */
+foo
+echo '#define HOSTTYPE "' | tr -d '\012'
+host=`(tcsh -fc 'echo $HOSTTYPE' || arch) 2>/dev/null`
+case $host in
+'') if grep ULTRIX /usr/include/stdio.h >/dev/null 2>&1
+    then host=ultrix
+	 elif test -f /bin/hinv
+	 then host=iris
+	 elif test -d /NextApps
+	 then host=next
+	 elif test $machine
+	 then host=$machine
+	 else
+	 echo 1>&2 '
+
+I cannot figure out what sort of host this is.  Please enter one
+short alphanumeric string describing this host.  (This will be used
+to set the $HOSTTYPE variable, so '"you don't have to be very
+accurate if you're not in a multivendor environment.)
+"
+	 echo "? " | tr -d '\012' 1>&2
+	 read host
+	 echo ' ' 1>&2
+	 fi
+  ;;
+esac
+echo $host'"'
+echo "using host type $host..." >&2
+echo
+echo '/* the default editor for the fc builtin */'
+echo '#define DEFFCEDIT "vi"'
+echo
+if grep UTMP_FILE /usr/include/utmp.h >/dev/null
+then :
+else 
+echo '/* the path of wtmp */'
+echo '#define WTMP_FILE "' | tr -d '\012'
+if test -f /etc/wtmp
+then echo /etc/wtmp
+elif test -f /usr/etc/wtmp
+then echo /usr/etc/wtmp
+elif test -f /var/adm/wtmp
+then echo /var/adm/wtmp
+elif test -f /usr/adm/wtmp
+then echo /usr/adm/wtmp
+else echo /dev/null
+fi | tr -d '\012'
+echo '"
+
+/* the path of utmp */
+#define UTMP_FILE "/etc/utmp"
+'
+fi
+cat <<'foo'
+/* default prefix for temporary files */
+#define DEFTMPPREFIX "/tmp/zsh"
+
+/* define if you prefer "suspended" to "stopped" */
+#define USE_SUSPENDED
+
+/* the file to source whenever zsh is run; if undefined, don't source
+	anything */
+#define GLOBALZSHRC "/etc/zshrc"
+
+/* the file to source whenever zsh is run as a login shell; if
+	undefined, don't source anything */
+#define GLOBALZLOGIN "/etc/zlogin"
+
+/* the file to source whenever zsh is run as a login shell, before
+	zshrc is read; if undefined, don't source anything */
+#define GLOBALZPROFILE "/etc/zprofile"
+
+/* the default HISTSIZE */
+#define DEFAULT_HISTSIZE 30
+
+#define _BSD_SIGNALS   /* this could be an iris, you never know */
+#define _BSD           /* this could be HP-UX, you never know */
+#define _BSD_INCLUDES  /* this could be AIX, you never know */
+
+/* if your compiler doesn't like void *, change this to char *
+	and ignore all the warnings.
+*/
+
+typedef void *vptr;
+
+#define JOB_CONTROL
+foo
+exec 1>&2
+echo
+echo 'Building signals.h...' | tr -d '\012'
+echo `sh 'kill -l'` | tr ' ' '\012' >signals.h
+#was echo `csh -fc 'kill -l'` | tr ' ' '\012' >signals.h
+lct=`wc -l < signals.h`
+cp signals.h signams.h
+(
+echo '/* this file is created automatically by buildzsh */
+/* if all this is wrong, blame csh ;-) */
+
+#define SIGCOUNT '"$lct"'
+
+#ifdef GLOBALS
+
+char *sigmsg[SIGCOUNT+2] = {
+	"done",'
+sed -e 's/^/SIG/' -e '/SIGHUP/s//hangup/
+/SIGINT/s//interrupt/
+/SIGQUIT/s//quit/
+/SIGILL/s//illegal instruction/
+/SIGTRAP/s//trace trap/
+/SIGIOT/s//IOT instruction/
+/SIGABRT/s//abort/
+/SIGEMT/s//EMT instruction/
+/SIGFPE/s//floating point exception/
+/SIGKILL/s//killed/
+/SIGBUS/s//bus error/
+/SIGSEGV/s//segmentation fault/
+/SIGSYS/s//bad system call/
+/SIGPIPE/s//broken pipe/
+/SIGTERM/s//terminated/
+/SIGPWR/s//power fail/
+/SIGVTALRM/s//virtual time alarm/
+/SIGCONT/s//continued/
+/SIGXCPU/s//cpu limit exceeded/
+/SIGXFSZ/s//filesize limit exceeded/' -e 's/.*/	"&",/' signals.h
+echo '	NULL
+};
+
+char *sigs[SIGCOUNT+4] = {
+	"EXIT",' ) >sigtmp.h
+mv sigtmp.h signals.h
+if grep SIGSTOP signals.h >/dev/null
+then ed signals.h <<'foo' >/dev/null 2>&1
+/SIGSTOP/c
+#ifdef USE_SUSPENDED
+	"suspended (signal)",
+#else
+	"stopped (signal)",
+#endif
+.
+/SIGTSTP/c
+#ifdef USE_SUSPENDED
+	"suspended",
+#else
+	"stopped",
+#endif
+.
+/SIGTTIN/c
+#ifdef USE_SUSPENDED
+	"suspended (tty input)",
+#else
+	"stopped (tty input)",
+#endif
+.
+/SIGTTOU/c
+#ifdef USE_SUSPENDED
+	"suspended (tty output)",
+#else
+	"stopped (tty output)",
+#endif
+.
+w
+q
+foo
+fi
+(sed 's/.*/	"&",/' signams.h
+echo '	"ERR",
+	"DEBUG",
+	NULL
+};
+
+#else
+
+extern char *sigs[SIGCOUNT+4],*sigmsg[SIGCOUNT+2];
+
+#endif') >>signals.h
+rm signams.h
+echo done
+echo 'Building Makefile...' | tr -d '\012'
+exec >Makefile
+cat <<'foo'
+#! /bin/make -f
+# Makefile for zsh
+# generated by buildzsh
+
+OBJS=builtin.o cond.o exec.o glob.o hist.o init.o jobs.o lex.o loop.o \
+math.o mem.o params.o parse.o subst.o table.o text.o utils.o watch.o \
+zle_bindings.o zle_hist.o zle_main.o zle_misc.o zle_move.o zle_refresh.o \
+zle_tricky.o zle_utils.o zle_vi.o zle_word.o
+
+BINDIR=/usr/local/bin
+MANDIR=/usr/local/man/man1
+
+# debugging flags
+#CFLAGS=-g -Wreturn-type -Wunused -Wpointer-arith -DQDEBUG
+#CC=gcc -traditional
+
+CC=cc
+foo
+if test -f /usr/include/ndir.h -a ! -f /usr/lib/libBSD.a
+then echo 'CFLAGS= -O -Aa'
+elif strings /usr/bin/cc 2>/dev/null | grep cckr >/dev/null 2>&1
+then echo 'CFLAGS= -O -cckr'
+else echo 'CFLAGS= -O'
+fi
+if test -f /bin/hinv
+then
+if grep '^\+' /etc/passwd >/dev/null
+then echo 'LIBS= -lcurses -lmalloc -lbsd -lsun'
+else echo 'LIBS= -lcurses -lmalloc -lbsd'
+fi
+elif test -f /usr/lib/libcposix.a
+then echo 'LIBS= -lcposix -ltermcap'
+elif test -f /usr/lib/libBSD.a
+then echo 'LIBS= -ltermcap -lBSD'
+elif test -f /usr/lib/libtermcap.a || test -f /usr/ucblib/libtermcap.a
+then
+	if grep 'Property of IBM' /usr/include/stdio.h >/dev/null 2>&1
+	then echo 'LIBS= -lcurses'
+	else echo 'LIBS= -ltermcap'
+	fi
+else echo 'LIBS= -lcurses'
+fi
+cat <<'foo'
+
+ZSHPATH=zsh
+
+.c.o:
+	$(CC) $(CFLAGS) -c $<
+
+all: $(ZSHPATH)
+
+$(ZSHPATH): $(OBJS)
+	$(CC) -o $(ZSHPATH) $(OBJS) $(LIBS) $(LFLAGS)
+	
+tags: /tmp
+	ctags *.[cy]
+
+# I hate this next line
+$(OBJS): config.h zsh.h zle.h signals.h ztype.h funcs.h
+
+clean:
+	rm -f *.o zsh core 
+
+cleanall:
+	rm -f *.o zsh core Makefile signals.h config.h
+
+install: zsh
+	install -s -m 755 zsh $(BINDIR)
+	install -m 444 ../man/man1/zsh.1 $(MANDIR)
+foo
+exec 1>&2
+cat <<'foo'
+done
+
+You may want to look at the files I just created (config.h, Makefile,
+and signals.h) to make sure they are correct.  Or you may just want
+to go ahead and try running make now to see what happens.
+
+foo
+echo 'Shall I execute make now?' | tr -d '\012' 
+read reply
+echo
+case "$reply" in
+[yY]*) exec make ;;
+esac
+
