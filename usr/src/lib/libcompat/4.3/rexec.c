@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rexec.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)rexec.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -47,7 +47,7 @@ rexec(ahost, rport, name, pass, cmd, fd2p)
 
 	hp = gethostbyname(*ahost);
 	if (hp == 0) {
-		fprintf(stderr, "%s: unknown host\n", *ahost);
+		herror(*ahost);
 		return (-1);
 	}
 	*ahost = hp->h_name;

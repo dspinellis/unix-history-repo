@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rcmd.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcmd.c	5.18 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -52,7 +52,7 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 	pid = getpid();
 	hp = gethostbyname(*ahost);
 	if (hp == 0) {
-		fprintf(stderr, "%s: unknown host\n", *ahost);
+		herror(*ahost);
 		return (-1);
 	}
 	*ahost = hp->h_name;
