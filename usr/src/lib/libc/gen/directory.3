@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)directory.3	6.7 (Berkeley) %G%
+.\"     @(#)directory.3	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DIRECTORY 3
@@ -129,7 +129,7 @@ Sample code which searchs a directory for entry ``name'' is:
 .Bd -literal -offset indent
 len = strlen(name);
 dirp = opendir(".");
-for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp))
+while ((dp = readdir(dirp)) != NULL)
 	if (dp->d_namlen == len && !strcmp(dp->d_name, name)) {
 		(void)closedir(dirp);
 		return FOUND;
