@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.55 92/12/26$
  *
- *	@(#)hpux_compat.c	7.36 (Berkeley) %G%
+ *	@(#)hpux_compat.c	8.1 (Berkeley) %G%
  */
 
 /*
