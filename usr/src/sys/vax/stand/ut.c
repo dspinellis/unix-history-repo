@@ -1,4 +1,4 @@
-/*	ut.c	4.6	83/02/20	*/
+/*	ut.c	4.7	83/03/06	*/
 
 /*
  * SI Model 9700 -- emulates TU45 on the UNIBUS
@@ -22,14 +22,12 @@ u_short	utstd[] = { 0172440 };		/* non-standard */
 utopen(io)
 	register struct iob *io;
 {
-	register skip;
+	int skip;
 
 	utstrategy(io, UT_REW);
 	skip = io->i_boff;
-	while (skip--) {
-		io->i_cc = 0;
-		utstrategy(io, UT_SFORW);
-	}
+	while (skip-- > 0)
+		utstrategy(io, UT_SFORWF);
 }
 
 utclose(io)
