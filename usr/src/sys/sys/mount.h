@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mount.h	7.10 (Berkeley) %G%
+ *	@(#)mount.h	7.11 (Berkeley) %G%
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -32,6 +32,37 @@ struct fid {
 };
 
 /*
+ * file system statistics
+ */
+
+#define MNAMELEN 90	/* length of buffer for returned name */
+
+struct statfs {
+	short	f_type;			/* type of filesystem (see below) */
+	short	f_flags;		/* copy of mount flags */
+	long	f_fsize;		/* fundamental file system block size */
+	long	f_bsize;		/* optimal transfer block size */
+	long	f_blocks;		/* total data blocks in file system */
+	long	f_bfree;		/* free blocks in fs */
+	long	f_bavail;		/* free blocks avail to non-superuser */
+	long	f_files;		/* total file nodes in file system */
+	long	f_ffree;		/* free file nodes in fs */
+	fsid_t	f_fsid;			/* file system id */
+	long	f_spare[9];		/* spare for later */
+	char	f_mntonname[MNAMELEN];	/* directory on which mounted */
+	char	f_mntfromname[MNAMELEN];/* mounted filesystem */
+};
+/*
+ * File system types.
+ */
+#define	MOUNT_NONE	0
+#define	MOUNT_UFS	1
+#define	MOUNT_NFS	2
+#define	MOUNT_MFS	3
+#define	MOUNT_PC	4
+#define	MOUNT_MAXTYPE	4
+
+/*
  * Structure per mounted file system.
  * Each mounted file system has an array of
  * operations and an instance record.
@@ -44,10 +75,8 @@ struct mount {
 	struct vnode	*m_vnodecovered;	/* vnode we mounted on */
 	struct vnode	*m_mounth;		/* list of vnodes this mount */
 	int		m_flag;			/* flags */
-	long		m_fsize;		/* fundamental block size */
-	long		m_bsize;		/* optimal transfer size */
-	fsid_t		m_fsid;			/* identifier */
 	uid_t		m_exroot;		/* exported mapping for uid 0 */
+	struct statfs	m_stat;			/* cache of filesystem stats */
 	qaddr_t		m_data;			/* private data */
 };
 
@@ -105,44 +134,15 @@ struct vfsops {
 #define	VFS_VPTOFH(VP, FIDP)	  (*(VP)->v_mount->m_op->vfs_vptofh)(VP, FIDP)
 
 /*
+ * Flags for various system call interfaces.
+ *
  * forcibly flags for vfs_umount().
- * waitfor flags to vfs_sync()
+ * waitfor flags to vfs_sync() and getfsstat()
  */
 #define MNT_FORCE	1
 #define MNT_NOFORCE	2
 #define MNT_WAIT	1
 #define MNT_NOWAIT	2
-
-/*
- * file system statistics
- */
-
-#define MNAMELEN 90	/* length of buffer for returned name */
-
-struct statfs {
-	short	f_type;			/* type of filesystem (see below) */
-	short	f_flags;		/* copy of mount flags */
-	long	f_fsize;		/* fundamental file system block size */
-	long	f_bsize;		/* optimal transfer block size */
-	long	f_blocks;		/* total data blocks in file system */
-	long	f_bfree;		/* free blocks in fs */
-	long	f_bavail;		/* free blocks avail to non-superuser */
-	long	f_files;		/* total file nodes in file system */
-	long	f_ffree;		/* free file nodes in fs */
-	fsid_t	f_fsid;			/* file system id */
-	long	f_spare[9];		/* spare for later */
-	char	f_mntonname[MNAMELEN];	/* directory on which mounted */
-	char	f_mntfromname[MNAMELEN];/* mounted filesystem */
-};
-/*
- * File system types.
- */
-#define	MOUNT_NONE	0
-#define	MOUNT_UFS	1
-#define	MOUNT_NFS	2
-#define MOUNT_MFS	3
-#define	MOUNT_PC	4
-#define	MOUNT_MAXTYPE	4
 
 /*
  * Generic file handle
