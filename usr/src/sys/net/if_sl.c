@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_sl.c	7.21 (Berkeley) %G%
+ *	@(#)if_sl.c	7.22 (Berkeley) %G%
  */
 
 /*
@@ -45,7 +45,7 @@
 #if NSL > 0
 
 #include "param.h"
-#include "user.h"
+#include "proc.h"
 #include "mbuf.h"
 #include "buf.h"
 #include "dk.h"
@@ -55,17 +55,18 @@
 #include "tty.h"
 #include "kernel.h"
 #include "conf.h"
-#include "errno.h"
 
 #include "if.h"
 #include "if_types.h"
 #include "netisr.h"
 #include "route.h"
 #if INET
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/in_var.h"
-#include "../netinet/ip.h"
+#include "netinet/in.h"
+#include "netinet/in_systm.h"
+#include "netinet/in_var.h"
+#include "netinet/ip.h"
+#else
+Huh? Slip without inet?
 #endif
 
 #include "machine/mtpr.h"
@@ -210,11 +211,12 @@ slopen(dev, tp)
 	dev_t dev;
 	register struct tty *tp;
 {
+	struct proc *p = curproc;		/* XXX */
 	register struct sl_softc *sc;
 	register int nsl;
 	int error;
 
-	if (error = suser(u.u_cred, &u.u_acflag))
+	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
 
 	if (tp->t_line == SLIPDISC)
@@ -273,8 +275,7 @@ sltioctl(tp, cmd, data, flag)
 	int s;
 
 	switch (cmd) {
-	case TIOCGETD:				/* XXX */
-	case SLIOGUNIT:
+	case SLIOCGUNIT:
 		*(int *)data = sc->sc_if.if_unit;
 		break;
 
