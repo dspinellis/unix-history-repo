@@ -1,25 +1,24 @@
-#	Makefile	4.3	%G%
+#	Makefile	4.4	81/03/15
 
-CPU=	780
 DESTDIR=
-CFLAGS=	-O -DSTANDALONE -DVAX=${CPU}
-COPTS=	-DVAX=${CPU}
+CFLAGS=	-O -DSTANDALONE ${COPTS}
+COPTS=	-DVAX750 -DVAX780
 RELOC=	70000
-DRIVERS=hp.o ht.o mba.o rk.o tm.o up.o uba.o
+SRCS=	sys.c conf.c prf.c machdep.c \
+	autoconf.c hp.c ht.c mba.c rk.c tm.c ts.c up.c uba.c
+DRIVERS=autoconf.o hp.o ht.o mba.o rk.o tm.o ts.o up.o uba.o
 
-all:	/usr/lib/libsa.a srt0.o boot cat ls icheck mkfs restor prconf \
+all:	/usr/lib/libsa.a srt0.o boot cat ls icheck mkfs restor \
 	tpicheck tpmkfs tprestor sboot
 
-/usr/lib/libsa.a:	sys.o conf.o ${DRIVERS} prf.o machdep.o chkaddr.o \
-			dummyscb.o
+/usr/lib/libsa.a: sys.o conf.o ${DRIVERS} prf.o machdep.o
 	ar crv ${DESTDIR}/usr/lib/libsa.a $?
 	ranlib ${DESTDIR}/usr/lib/libsa.a
 
 ${DRIVERS}:
 	cc -c -S ${COPTS} $*.c
-	/lib/c2 -i $*.s $*.os
-	as -o $*.o $*.os
-	rm $*.s $*.os
+	/lib/c2 -i $*.s | as -o $*.o
+	rm $*.s
 
 boot:	boot.o relsrt0.o ${DESTDIR}/usr/lib/libsa.a
 	ld -N -T ${RELOC} relsrt0.o boot.o -lsa -lc
@@ -40,35 +39,22 @@ ls:	ls.o srt0.o ${DESTDIR}/usr/lib/libsa.a
 	ld -N srt0.o ls.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=ls ibs=32 skip=1; rm b.out
 
-prconf.o:
-	cc -S $(CFLAGS) prconf.c
-	sed -f sed.prconf prconf.s | as -o prconf.o
-	rm -f prconf.s
-
-prconf:	prconf.o scbbase.o srt0.o ${DESTDIR}/usr/lib/libsa.a
-	ld -e entry -N scbbase.o srt0.o prconf.o -lsa -lc
-	cp a.out b.out; strip b.out; dd if=b.out of=prconf ibs=32 skip=1; \
-	    rm b.out
-
-xprconf: prconf
-	ld -n -o xprconf -e entry scbbase.o srt0.o prconf.o -lsa -lc
-
-mkfs.o:	/ra/src/cmd/mkfs.c
-	cc ${CFLAGS} -c /ra/src/cmd/mkfs.c
+mkfs.o:	/usr/src/cmd/mkfs.c
+	cc ${CFLAGS} -c /usr/src/cmd/mkfs.c
 
 mkfs:	mkfs.o srt0.o ${DESTDIR}/usr/lib/libsa.a
 	ld -N srt0.o mkfs.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=mkfs ibs=32 skip=1; rm b.out
 
-restor.o: /ra/src/cmd/restor.c
-	cc ${CFLAGS} -c /ra/src/cmd/restor.c
+restor.o: /usr/src/cmd/restor.c
+	cc ${CFLAGS} -c /usr/src/cmd/restor.c
 
 restor:	restor.o srt0.o ${DESTDIR}/usr/lib/libsa.a
 	ld -N srt0.o restor.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=restor ibs=32 skip=1; rm b.out
 
-icheck.o: /ra/src/cmd/icheck.c
-	cc ${CFLAGS} -c /ra/src/cmd/icheck.c
+icheck.o: /usr/src/cmd/icheck.c
+	cc ${CFLAGS} -c /usr/src/cmd/icheck.c
 
 icheck: icheck.o srt0.o ${DESTDIR}/usr/lib/libsa.a
 	ld -N srt0.o icheck.o -lsa -lc
@@ -86,46 +72,33 @@ tpicheck: icheck.o tpsrt0.o ${DESTDIR}/usr/lib/libsa.a
 	ld -N tpsrt0.o icheck.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=tpicheck ibs=32 skip=1; rm b.out
 
-srt0.o: rel.m ../h/mtpr.m ../h/mba.m ../h/uba.m srt0.s
-	/lib/cpp -DVAX=${CPU} srt0.s >srt0.i
-	as -o srt0.o rel.m ../h/mtpr.m ../h/mba.m ../h/uba.m srt0.i
+srt0.o: srt0.c
+	cc -E -DRELOC=${RELOC} srt0.c | as -o srt0.o
 
-chkaddr.o: ../h/mtpr.m chkaddr.s
-	/lib/cpp -DVAX=${CPU} chkaddr.s >chkaddr.i
-	as -o chkaddr.o ../h/mtpr.m chkaddr.i
+tpsrt0.o: tpsrt0.c
+	cc -E -DRELOC=${RELOC} tpsrt0.c | as -o tpsrt0.o 
 
-tpsrt0.o: rel.m ../h/mtpr.m ../h/mba.m ../h/uba.m tpsrt0.s
-	/lib/cpp -DVAX=${CPU} tpsrt0.s >tpsrt0.i
-	as -o tpsrt0.o rel.m ../h/mtpr.m ../h/mba.m ../h/uba.m tpsrt0.i
+relsrt0.o: relsrt0.c
+	cc -E -DRELOC=${RELOC} relsrt0.c | as -o relsrt0.o
 
-relsrt0.o: rel.m ../h/mtpr.m ../h/mba.m ../h/uba.m relsrt0.s
-	/lib/cpp -DVAX=${CPU} relsrt0.s >relsrt0.i
-	as -o relsrt0.o rel.m ../h/mtpr.m ../h/mba.m ../h/uba.m relsrt0.i
-
-rpboot: rpboot.s
-	as rpboot.s
-	cp a.out b.out; strip b.out; dd if=b.out of=rpboot bs=32 skip=1; rm b.out
 print:
-	@pr makefile
-	@/usr/ucb/ls -l | pr
-	@pr *.h
-	@pr *.m *.s
-	@pr *.c
-
-vgrindt:
-	@vgrind -t -n makefile;
-	@vgrind -t *.h;
-	@vgrind -t -n *.m *.s;
-	@vgrind -t *.c;
+	@pr -f makefile
+	@/usr/ucb/ls -l | pr -f
+	@pr -f *.h *.c
 
 clean:
 	rm -f *.o *.exe *.i
 	rm -f a.out b.out boot cat ls icheck mkfs restor rpboot \
 	    tpicheck tpmkfs tprestor sboot
 
+lint:
+	lint ${COPTS} -hxbn boot.c ${SRCS} | \
+	    grep -v 'possible pointer alignment' | \
+	    grep -v 'struct/unit .* never defined'
+
 install:
 	cp tprestor ${DESTDIR}/sys/restor
 	cp tpicheck ${DESTDIR}/sys/icheck
 	cp tpmkfs ${DESTDIR}/sys/mkfs
 	cp sboot ${DESTDIR}/sys/boot
-	cp boot icheck mkfs restor cat prconf ls ../floppy
+	cp boot icheck mkfs restor cat ls ../floppy
