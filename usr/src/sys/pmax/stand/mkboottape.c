@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mkboottape.c	7.2 (Berkeley) %G%
+ *	@(#)mkboottape.c	7.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -64,9 +64,8 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
-	if (argc != 5)
+	if (argc != 4)
 		usage();
-	rootsize = atoi(argv[4]);
 
 	if (makebootfile)
 		ofd = open(argv[1], O_CREAT|O_TRUNC|O_WRONLY, DEFFILEMODE);
@@ -81,6 +80,7 @@ bootferr:	err("%s: %s", argv[2], strerror(errno));
 	if ((rfd = open(argv[3], 0, 0)) < 0)
 rooterr:	err("%s: %s", argv[3], strerror(errno));
 
+	rootsize = atoi(argv[4]);
 
 	/*
 	 * Check for exec header and skip to code segment.
