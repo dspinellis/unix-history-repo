@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)mdoc.samples.7	5.5 (Berkeley) %G%
+.\"     @(#)mdoc.samples.7	5.6 (Berkeley) %G%
 .\"
 .\"	This sampler invokes every macro in the package several
 .\" 	times and is garanteed to give a worst case performance
@@ -23,9 +23,9 @@ A tutorial sampler for writing
 .Bx
 manual pages with the
 .Nm \-mdoc
-macro package; a
-.Em content Ns \-
-based formatting
+macro package, a
+.Em content Ns \-based
+formatting
 package for
 .Xr troff 1 .
 Its predecessor, the
@@ -239,42 +239,46 @@ the result would be:
 .Pp
 .Dl Fn fetch char *str
 .Pp
-Note what happens if the parameter list overlaps a newline
-boundary. For example, the next two examples are repeated several times
-to make sure a line boundary is crossed:
-.Bd -literal
-\&.Fn struct\e\ dtable\e\ *dlookup struct\e\ dtable\e\ *tab[]
-.Ed
-.Pp
-produces, nudge nudge,
-.Fn struct\ dtable\ *dlookup char\ *h struct\ dtable\ *tab[] ,
-.Fn struct\ dtable\ *dlookup char\ *h struct\ dtable\ *tab[] ,
-nudge
-.Fn struct\ dtable\ *dlookup char\ *h struct\ dtable\ *tab[] .
-.Pp
-If double quotes are used, for example:
-.Bd -literal
-\&.Fn \*qstruct dtable *dlookup\*q \*qchar *h\*q \*qstruct dtable *tab[]\*q
-.Ed
-.Pp
-produces, nudge nudge,
-.Fn "struct dtable *dlookup" "char *h" "struct dtable *tab[]" ,
-nudge
-.Fn "struct dtable *dlookup" "char *h" "struct dtable *tab[]" ,
-nudge
-.Fn "struct dtable *dlookup" "char *h" "struct dtable *tab[]" .
-.Pp
-Not a pretty sight...
-In a paragraph, a long parameter containing unpaddable spaces as
-in the former example will cause
-.Xr troff
-to break the line and spread
-the remaining words out.  The latter example will adjust nicely to
-justified margins, but may break in between an argument and its
-declaration. In
-.Xr nroff
-the right margin adjustment is normally ragged and the problem is
-not as severe.
+For an example of what happens when the parameter list overlaps
+a newline boundary, see the
+.Sx BUGS
+section.
+.\" Note what happens if the parameter list overlaps a newline
+.\" boundary. For example, the next two examples are repeated several times
+.\" to make sure a line boundary is crossed:
+.\" .Bd -literal
+.\" \&.Fn struct\e\ dictionarytable\e\ *dictionarylookup struct\e\ dictionarytable\e\ *tab[]
+.\" .Ed
+.\" .Pp
+.\" produces, nudge nudge,
+.\" .Fn struct\ dictionarytable\ *dictionarylookup char\ *h struct\ dictionarytable\ *tab[] ,
+.\" .Fn struct\ dictionarytable\ *dictionarylookup char\ *h struct\ dictionarytable\ *tab[] ,
+.\" nudge
+.\" .Fn struct\ dictionarytable\ *dictionarylookup char\ *h struct\ dictionarytable\ *tab[] .
+.\" .Pp
+.\" If double quotes are used, for example:
+.\" .Bd -literal
+.\" \&.Fn \*qstruct dictionarytable *dictionarylookup\*q \*qchar *h\*q \*qstruct dictionarytable *tab[]\*q
+.\" .Ed
+.\" .Pp
+.\" produces, nudge nudge,
+.\" .Fn "struct dictionarytable *dictionarylookup" "char *h" "struct dictionarytable *tab[]" ,
+.\" nudge
+.\" .Fn "struct dictionarytable *dictionarylookup" "char *h" "struct dictionarytable *tab[]" ,
+.\" nudge
+.\" .Fn "struct dictionarytable *dictionarylookup" "char *h" "struct dictionarytable *tab[]" .
+.\" .Pp
+.\" Not a pretty sight...
+.\" In a paragraph, a long parameter containing unpaddable spaces as
+.\" in the former example will cause
+.\" .Xr troff
+.\" to break the line and spread
+.\" the remaining words out.  The latter example will adjust nicely to
+.\" justified margins, but may break in between an argument and its
+.\" declaration. In
+.\" .Xr nroff
+.\" the right margin adjustment is normally ragged and the problem is
+.\" not as severe.
 .Ss Trailing Blank Space Characters
 .Xr Troff
 can be confused by blank space characters at the end of a line. It
@@ -473,10 +477,10 @@ called
 .Em arguments .
 The macros which formatted the above example:
 .Pp
-.Bd -ragged -offset indent
-.Li \&.Nm filter
-.Li \&.Op \&Fl flag
-.Li \&.Ar infile outfile
+.Bd -literal -offset indent
+\&.Nm filter
+\&.Op \&Fl flag
+\&.Ar infile outfile
 .Ed
 .Pp
 In the third case, discussion of commands and command syntax
@@ -659,25 +663,6 @@ and
 .Ql \&.Ao .
 .Ql \&.Aq
 is callable by other macros and may call other macros.
-.Ss Apostrophes
-The simple act of appending an apostrophe to the end of a word
-is quite painful with out the apostrophe macro. All arguments
-in
-.Nm \-mdoc
-are measured for width and the apostrophe character is misinterpreted
-as a width delimiter.  To get around this, the aprostrophe macro
-appends the apostrophe character to the word after is has been measured.
-.Pp
-.Dl Usage: .(macro_name) string Ap appended string \*(Pu
-.Bl -tag -width ".Aq Pa ctype.h ) ," -compact -offset 14n
-.It Li \&.Em execve \&Ap ing
-.Em execve Ap ing
-.El
-.Pp
-The
-.Ql \&Ap
-macro may be called by other macros and may call other macros, it cannot
-however, be the first macro on a request line.
 .Ss Bracket Quotes/Enclosure
 Bracket quotes should be used when the string being bracketed is
 .Em not
@@ -1032,7 +1017,7 @@ The .Fn macro is modeled on ANSI C conventions.
 .Bd -literal
 Usage: .Fn [type] function [[type] params ... \*(Pu]
 .Ed
-.Bl -tag -width ".Fn .int align. .const * char *sptrs" -compact
+.Bl -tag -width ".Fn .int align. .const * char *sptrsxx" -compact
 .It Li "\&.Fn getchar"
 .Fn getchar
 .It Li "\&.Fn strlen ) ,"
@@ -1203,11 +1188,6 @@ follows it.
 The macro
 .Ql \&.Ns
 is callable and may call other macros.
-For the special case of appending an apostrophe to a string, see
-.Ql \&Ap .
-.Sx Apostrophes .
-For prefixes see
-.Sx Prefixes.
 .Ss Options
 The
 .Ql \&.Op
@@ -1306,9 +1286,11 @@ works in the identical manner as
 .Ql \&.Dq.
 .Ss Prefix Macro
 The
-.Ql \&.Pf is a short cut for combining
+.Ql \&.Pf
+macro
+is a short cut for combining
 two strings together, the first of which is
-in the default font, and the second is a content
+in the default font, and the second a content
 specified string.
 .Pp
 .Bl -tag -width ".Pf ( Fa name2 " -offset 14n -compact
