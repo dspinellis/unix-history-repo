@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)mkhosts.c	4.2 (Berkeley) 84/02/02";
+static	char *sccsid = "@(#)mkhosts.c	4.3 (Berkeley) 84/05/17";
 #endif
 
 #include <sys/file.h>
@@ -27,6 +27,10 @@ main(argc, argv)
 		fprintf(stderr, "usage: mkhosts [ -v ] file\n");
 		exit(1);
 	}
+	if (access(argv[1], R_OK) < 0) {
+		perror(argv[1]);
+		exit(1);
+	}
 	umask(0);
 	dp = ndbmopen(argv[1], O_WRONLY|O_CREAT|O_EXCL, 0644);
 	if (dp == NULL) {
@@ -35,6 +39,7 @@ main(argc, argv)
 		exit(1);
 	}
 	dp->db_maxbno = 0;
+	sethostfile(argv[1]);
 	sethostent(1);
 	while (hp = gethostent()) {
 		cp = buf;
