@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
@@ -36,6 +36,7 @@ int	naptime = 5;
 int     die();
 int     display();
 int     suspend();
+int	(*sigtstpdfl)();
 
 double	ccpu;
 int     dellave;
@@ -131,7 +132,7 @@ main(argc, argv)
         dellave = 0.0;
 
         signal(SIGALRM, display);
-        signal(SIGTSTP, suspend);
+        sigtstpdfl = signal(SIGTSTP, suspend);
         display();
         noecho();
         crmode();

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -22,6 +22,7 @@ command(cmd)
         register struct cmdtab *p;
 	int interval, omask;
         char *arg;
+	extern (*sigtstpdfl)();
 
 	omask = sigblock(sigmask(SIGALRM));
         for (cp = cmd; *cp && !isspace(*cp); cp++)
@@ -156,7 +157,7 @@ suspend()
         refresh();
         echo();
         nocrmode();
-        signal(SIGTSTP, SIG_DFL);
+        signal(SIGTSTP, sigtstpdfl);
         oldmask = sigsetmask(0);
         kill(getpid(), SIGTSTP);
         sigsetmask(oldmask);
@@ -164,7 +165,6 @@ suspend()
         crmode();
         noecho();
         move(CMDLINE, col);
-        wrefresh(curscr);
 	alarm(naptime);
 }
 
