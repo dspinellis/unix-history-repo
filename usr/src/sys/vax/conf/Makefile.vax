@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile.vax	6.19 (Berkeley) %G%
+#	@(#)Makefile.vax	6.20 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -26,7 +26,7 @@
 #
 C2=	/lib/c2
 LD=	/bin/ld
-INLINE=	../vax/inline/inline
+INLINE=	../vax/inline/inline ${INLINEOPTS}
 TOUCH=	touch -f -c
 
 INCLUDES= -I. -I../h
@@ -69,6 +69,9 @@ locore.o: assym.s ${AHEADS} ../vax/rpb.s ../vax/scb.s ubvec.s \
 	@echo 'as -o locore.o $${AHEADS} locore.i'
 	@as -o locore.o ${AHEADS} locore.i
 	@rm locore.i
+
+emulate.o: ../vax/emulate.s
+	/lib/cpp -I. ${COPTS} ../vax/emulate.s | ${AS} -o emulate.o
 
 # the following is necessary because autoconf.o depends on #if GENERIC
 autoconf.o tu.o: Makefile

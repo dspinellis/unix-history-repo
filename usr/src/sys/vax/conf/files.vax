@@ -7,6 +7,7 @@ vax/crl.c		standard
 vax/dkbad.c		standard
 vax/flp.c		standard
 vax/in_cksum.c		optional inet
+vax/ka630.c		standard
 vax/ns_cksum.c		optional ns
 vax/machdep.c		standard config-dependent
 vax/mem.c		standard
@@ -30,6 +31,7 @@ vaxif/if_hy.c		optional hy device-driver
 vaxif/if_il.c		optional il device-driver
 vaxif/if_ix.c		optional np device-driver
 vaxif/if_pcl.c		optional pcl device-driver
+vaxif/if_qn.c		optional qn device-driver
 vaxif/if_uba.c		optional inet device-driver
 vaxif/if_uba.c		optional ns device-driver
 vaxif/if_vv.c		optional vv device-driver
