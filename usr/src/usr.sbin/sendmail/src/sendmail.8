@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)sendmail.8	6.1 (Berkeley) %G%
+.\"	@(#)sendmail.8	6.2 (Berkeley) %G%
 .\"
 .\"	@(#)sendmail.8	4.2		7/28/83
 .TH SENDMAIL 8 ""
@@ -20,9 +20,13 @@ address ...
 .B newaliases
 .PP
 .B mailq
+[
+.B \-v
+]
 .SH DESCRIPTION
 .I Sendmail
-sends a message to one or more people,
+sends a message to one or more
+.IR recipients ,
 routing the message over whatever networks
 are necessary.
 .I Sendmail
@@ -39,11 +43,11 @@ is used only to deliver pre-formatted messages.
 With no flags,
 .I sendmail
 reads its standard input
-up to a control-D
-or a line with a single dot
-and sends a copy of the letter found there
+up to an end-of-file
+or a line consisting only of a single dot
+and sends a copy of the message found there
 to all of the addresses listed.
-It determines the network to use
+It determines the network(s) to use
 based on the syntax and contents of the addresses.
 .PP
 Local addresses are looked up in a file
@@ -68,6 +72,11 @@ fields are examined for the name of the sender.
 .TP 1.2i
 .B \-bd
 Run as a daemon.  This requires Berkeley IPC.
+.I Sendmail
+will fork and run in background
+listening on socket 25 for incoming SMTP connections.
+This is normally run from
+.IR /etc/rc .
 .TP 1.2i
 .B \-bi
 Initialize the alias database.
@@ -79,7 +88,8 @@ Deliver mail in the usual way (default).
 Print a listing of the queue.
 .TP 1.2i
 .B \-bs
-Use the \s-2SMTP\s0 protocol as described in RFC821.
+Use the \s-2SMTP\s0 protocol as described in RFC821
+on standard input and output.
 This flag implies all the operations of the
 .B \-ba
 flag that are compatible with \s-2SMTP\s0.
@@ -99,6 +109,9 @@ Create the configuration freeze file.
 .TP 1.2i
 .BI \-C file
 Use alternate configuration file.
+.I Sendmail
+refuses to run as root if an alternate configuration file is specified.
+The frozen configuration file is bypassed.
 .TP 1.2i
 .BI \-d X
 Set debugging value to
@@ -112,11 +125,12 @@ Sets the name of the ``from'' person
 (i.e., the sender of the mail).
 .B \-f
 can only be used
-by the special users
+by ``trusted'' users
+(normally
 .I root,
 .I daemon,
 and
-.I network,
+.I network)
 or if the person you are trying to become
 is the same as the person you are.
 .TP 1.2i
@@ -128,6 +142,8 @@ processed.
 When it reaches a limit,
 the mail is returned with an error message,
 the victim of an aliasing loop.
+If not specified,
+``Received:'' lines in the message are counted.
 .TP 1.2i
 .B \-n
 Don't do aliasing.
@@ -142,10 +158,10 @@ Options are described below.
 .BI \-q[ time ]
 Processed saved messages in the queue at given intervals.
 If
-.IT time
+.I time
 is omitted,
 process the queue once.
-.IT Time
+.I Time
 is given as a tagged number,
 with `s' being seconds,
 `m' being minutes,
@@ -156,6 +172,13 @@ and
 For example,
 ``\-q1h30m'' or ``\-q90m''
 would both set the timeout to one hour thirty minutes.
+If
+.I time
+is specified,
+.I sendmail
+will run in background.
+This option can be used safely with
+.BR \-bd .
 .TP 1.2i
 .BI \-r name
 An alternate and obsolete form of the
@@ -164,9 +187,13 @@ flag.
 .TP 1.2i
 .B \-t
 Read message for recipients.
-To:, Cc:, and Bcc: lines will be scanned for people to send to.
+To:, Cc:, and Bcc: lines will be scanned for recipient addresses.
 The Bcc: line will be deleted before transmission.
-Any addresses in the argument list will be suppressed.
+Any addresses in the argument list will be suppressed,
+that is,
+they will
+.I not
+receive copies even if listed in the message header.
 .TP 1.2i
 .B \-v
 Go into verbose mode.
@@ -181,7 +208,7 @@ flag
 or in the configuration file.
 These are described in detail in the
 .ul
-Installation and Operation Guide.
+Sendmail Installation and Operation Guide.
 The options are:
 .TP 1.2i
 .RI A file
@@ -266,6 +293,8 @@ The timeout on reads;
 if none is set,
 .I sendmail
 will wait forever for a mailer.
+This option violates the word (if not the intent) of the SMTP specification,
+show the timeout should probably be fairly large.
 .TP 1.2i
 .RI S file
 Save statistics in the named file.
@@ -273,11 +302,14 @@ Save statistics in the named file.
 s
 Always instantiate the queue file,
 even under circumstances where it is not strictly necessary.
+This provides safety against system crashes during delivery.
 .TP 1.2i
 .RI T time
-Set the timeout on messages in the queue to the specified time.
-After sitting in the queue for this amount of time,
-they will be returned to the sender.
+Set the timeout on undelivered messages in the queue to the specified time.
+After delivery has failed
+(e.g., because of a host being down)
+for this amount of time,
+failed messages will be returned to the sender.
 The default is three days.
 .TP 1.2i
 .RI t stz,dtz
@@ -286,14 +318,31 @@ Set the name of the time zone.
 .RI u N
 Set the default user id for mailers.
 .PP
-If the first character of the user name
-is a vertical bar,
-the rest of the user name is used as the name of a program
+In aliases,
+the first character of a name may be
+a vertical bar to cause interpretation of
+the rest of the name as a command
 to pipe the mail to.
-It may be necessary to quote the name of the user
+It may be necessary to quote the name
 to keep
 .I sendmail
 from suppressing the blanks from between arguments.
+For example, a common alias is:
+.PP
+	msgs: "|/usr/ucb/msgs -s"
+.PP
+Aliases may also have the syntax ``:include:\c
+.IR filename ''
+to ask
+.I sendmail
+to read the named file for a list of recipients.
+For example, an alias such as:
+.PP
+	poets: ":include:/usr/local/lib/poets.list"
+.PP
+would read
+.I /usr/local/lib/poets.list
+for the list of addresses making up the group.
 .PP
 .I Sendmail
 returns an exit status
@@ -358,35 +407,21 @@ these values are only approximations.
 .br
 /usr/lib/sendmail.st	collected statistics
 .br
-/usr/bin/uux	to deliver uucp mail
-.br
-/usr/net/bin/v6mail	to deliver local mail
-.br
-/usr/net/bin/sendberkmail	to deliver Berknet mail
-.br
-/usr/lib/mailers/arpa	to deliver ARPANET mail
-.br
 /usr/spool/mqueue/*	temp files
-.br
 .SH SEE\ ALSO
-biff(1), binmail(1), mail(1), aliases(5), sendmail.cf(5),
-rmail(1), mailaddr(7);
+binmail(1), mail(1), rmail(1),
+syslog(3),
+aliases(5), sendmail.cf(5),
+mailaddr(7),
+rc(8);
 .br
 DARPA Internet Request For Comments
 RFC819, RFC821, RFC822;
 .br
 .ul
-Sendmail \- An Internetwork Mail Router;
+Sendmail \- An Internetwork Mail Router
+(SMM:9);
 .br
 .ul
-Sendmail Installation and Operation Guide.
-.SH BUGS
-.I Sendmail
-converts blanks in addresses to dots.
-This is incorrect according to the
-old
-.SM ARPANET
-mail protocol RFC733 (NIC 41952),
-but is consistent with the
-new protocols
-(RFC822).
+Sendmail Installation and Operation Guide
+(SMM:8)
