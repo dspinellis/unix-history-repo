@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)systm.h	7.19 (Berkeley) %G%
+ *	@(#)systm.h	7.20 (Berkeley) %G%
  */
 
 extern const char *panicstr;	/* panic message */
@@ -38,9 +38,6 @@ extern struct sysent {		/* system call table */
 } sysent[];
 
 extern int boothowto;		/* reboot flags, from console subsystem */
-#ifdef	KADB
-extern char *bootesym;		/* end of symbol info from boot */
-#endif
 
 /* casts to keep lint happy */
 #define	insque(q,p)	_insque((caddr_t)q,(caddr_t)p)
