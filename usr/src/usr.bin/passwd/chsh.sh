@@ -1,12 +1,16 @@
-static char *sccsid = "@(#)chsh.sh	4.4 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid = "@(#)chsh.sh	4.5 (Berkeley) %G%";
+#endif
+
 /*
  * chsh
  */
 #include <stdio.h>
-#include <sys/types.h>
-#include <stat.h>
 #include <signal.h>
 #include <pwd.h>
+#include <sys/file.h>
+#include <time.h>
+#include <resource.h>
 
 char	passwd[] = "/etc/passwd";
 char	temp[]	 = "/etc/ptmp";
@@ -15,111 +19,108 @@ struct	passwd *getpwent();
 int	endpwent();
 char	*crypt();
 char	*getpass();
-char	*pw;
-char	pwbuf[10];
+char	*strcat();
 char	buf[BUFSIZ];
 
 main(argc, argv)
-char *argv[];
+register char *argv[];
 {
-	char *p;
-	int i;
-	char saltc[2];
-	long salt;
-	int u,fi,fo;
-	int insist;
-	int ok, flags;
-	int c;
-	int pwlen;
-	FILE *tf;
-	struct stat sbuf;
+	register int u, fd;
+	register FILE *tf;
 
-	insist = 0;
-	if(argc < 2 || argc > 3) {
+	if (argc < 2 || argc > 3) {
 		printf("Usage: chsh user [ /bin/csh ]\n");
-		goto bex;
+		exit(1);
 	}
 	if (argc == 2)
 		argv[2] = "";
-	else if (strcmp(argv[2], "/bin/csh") != 0 &&
-		 strcmp(argv[2], "/usr/new/csh") != 0 && getuid()) {
-		printf("Only /bin/csh or /usr/new/csh may be specified\n");
-		exit(1);
-	}
-	if (argc == 3)
-		if (stat(argv[2],&sbuf) < 0)
-		{
-			printf("%s is unavailable\n",argv[2]);
+	else {
+		if (argv[2][0] != '/')
+			argv[2] = strcat(
+			    "/bin/\0 12345678901234567890123456789", argv[2]);
+		if (strcmp(argv[2], "/bin/csh") &&
+		    strcmp(argv[2], "/bin/oldcsh") &&
+		    strcmp(argv[2], "/bin/newcsh") &&
+		    strcmp(argv[2], "/usr/new/csh") &&
+			/* and, for cretins who can't read the manual */
+		    strcmp(argv[2], "/bin/sh") &&
+		    getuid()) {
+			printf(
+			    "Only /bin/csh may be specified\n"
+			);
 			exit(1);
 		}
-	while((pwd=getpwent()) != NULL){
-		if(strcmp(pwd->pw_name,argv[1]) == 0){
-			u = getuid();
-			if(u!=0 && u != pwd->pw_uid){
-				printf("Permission denied.\n");
-				goto bex;
-				}
-			break;
-			}
+		if (access(argv[2], 1) < 0) {
+			printf("%s is not available\n", argv[2]);
+			exit(1);
 		}
-	endpwent();
-	signal(SIGHUP, 1);
-	signal(SIGINT, 1);
-	signal(SIGQUIT, 1);
-	signal(SIGTSTP, 1);
-
-	if(access(temp, 0) >= 0) {
-		printf("Temporary file busy -- try again\n");
-		goto bex;
 	}
-	if((tf=fopen(temp,"w")) == NULL) {
-		printf("Cannot create temporary file\n");
-		goto bex;
-	}
-
-/*
- *	copy passwd to temp, replacing matching lines
- *	with new shell.
- */
-
-	while((pwd=getpwent()) != NULL) {
-		if(strcmp(pwd->pw_name,argv[1]) == 0) {
+	unlimit(RLIMIT_CPU);
+	unlimit(RLIMIT_FSIZE);
+	while ((pwd=getpwent()) != NULL) {
+		if (strcmp(pwd->pw_name, argv[1]) == 0) {
 			u = getuid();
-			if(u != 0 && u != pwd->pw_uid) {
+			if (u!=0 && u != pwd->pw_uid) {
+				printf("Permission denied.\n");
+				exit(1);
+			}
+			break;
+		}
+	}
+	endpwent();
+
+	signal(SIGHUP, SIG_IGN);
+	signal(SIGINT, SIG_IGN);
+	signal(SIGQUIT, SIG_IGN);
+	signal(SIGTSTP, SIG_IGN);
+	if ((fd = open(temp, O_CREAT|O_EXCL|O_RDWR, 0644)) < 0) {
+		printf("Temporary file busy -- try again\n");
+		exit(1);
+	}
+	if ((tf=fdopen(fd, "w")) == NULL) {
+		printf("Absurd fdopen failure - seek help\n");
+		goto out;
+	}
+	/*
+	 * Copy passwd to temp, replacing matching lines
+	 * with new shell.
+	 */
+	while ((pwd=getpwent()) != NULL) {
+		if (strcmp(pwd->pw_name, argv[1]) == 0) {
+			u = getuid();
+			if (u != 0 && u != pwd->pw_uid) {
 				printf("Permission denied.\n");
 				goto out;
 			}
 			pwd->pw_shell = argv[2];
 		}
-		fprintf(tf,"%s:%s:%d:%d:%s:%s:%s\n",
-			pwd->pw_name,
-			pwd->pw_passwd,
-			pwd->pw_uid,
-			pwd->pw_gid,
-			pwd->pw_gecos,
-			pwd->pw_dir,
-			pwd->pw_shell);
+		if (strcmp(pwd->pw_shell, "/bin/sh") == 0)
+			pwd->pw_shell = "";
+		fprintf(tf, "%s:%s:%d:%d:%s:%s:%s\n"
+			, pwd->pw_name
+			, pwd->pw_passwd
+			, pwd->pw_uid
+			, pwd->pw_gid
+			, pwd->pw_gecos
+			, pwd->pw_dir
+			, pwd->pw_shell
+		);
 	}
 	endpwent();
+	if (rename(temp, passwd) < 0) {
+		fprintf(stderr, "chsh: "); perror("rename");
+  out:
+		unlink(temp);
+		exit(1);
+	}
 	fclose(tf);
+	exit(0);
+}
 
-/*
- *	copy temp back to passwd file
- */
+unlimit(lim)
+{
+	struct rlimit rlim;
 
-	if((fi=open(temp,0)) < 0) {
-		printf("Temp file disappeared!\n");
-		goto out;
-	}
-	if((fo=creat(passwd, 0644)) < 0) {
-		printf("Cannot recreat passwd file.\n");
-		goto out;
-	}
-	while((u=read(fi,buf,sizeof(buf))) > 0) write(fo,buf,u);
-
-out:
-	unlink(temp);
-
-bex:
-	exit(1);
+	rlim.rlim_cur = rlim.rlim_max = RLIM_INFINITY;
+	setrlimit(lim, &rlim);
 }
