@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.8	(Berkeley)	%G%
+#	@(#)Makefile	4.9	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -19,11 +19,12 @@ SUBDIR=	adventure backgammon boggle compat cribbage doctor fortune \
 # C programs that live in the current directory and do not need
 # explicit make lines.
 #
-STD=	arithmetic btlgammon banner bcd cfscores chess fish number wump
+STD=	arithmetic btlgammon banner bcd cfscores chess factor \
+	fish number wump
 
 # C programs that live in the current directory and need explicit make lines.
 #
-NSTD=	canfield rain worm worms
+NSTD=	canfield primes rain worm worms
 
 all:	${SUBDIR} ${STD} ${NSTD}
 
@@ -68,17 +69,19 @@ depend:
 # Files listed in ${NSTD} have explicit make lines given below.
 
 canfield:
-	cc -o canfield canfield.c -lcurses -ltermcap
+	cc -o canfield ${CFLAGS} canfield.c -lcurses -ltermcap
 
+primes:
+	cc -o primes ${CFLAGS} primes.c -lm
 
 rain:
-	cc -o rain rain.c -lcurses -ltermcap
+	cc -o rain ${CFLAGS} rain.c -lcurses -ltermcap
 
 worm:
-	cc -o worm worm.c -lcurses -ltermcap
+	cc -o worm ${CFLAGS} worm.c -lcurses -ltermcap
 
 worms:
-	cc -o worms worms.c -lcurses -ltermcap
+	cc -o worms ${CFLAGS} worms.c -lcurses -ltermcap
 
 # DO NOT DELETE THIS LINE -- make depend uses it
 
