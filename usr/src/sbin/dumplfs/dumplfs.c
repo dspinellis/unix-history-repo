@@ -12,10 +12,11 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumplfs.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumplfs.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
+#include <sys/ucred.h>
 #include <sys/mount.h>
 #include <sys/file.h>
 
