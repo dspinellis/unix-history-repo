@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)setup.c	4.6 82/10/28";
+static	char sccsid[] = "@(#)setup.c	4.7 84/07/25";
 /*
  * adb - routines to read a.out+core at startup
  */
@@ -142,9 +142,6 @@ setcor()
 	datmap.f1 = ctob(UPAGES);
 	datmap.b2 = MAXSTOR - stksiz;
 	datmap.e2 = MAXSTOR;
-	if (filhdr.a_magic && u.u_exdata.ux_mag &&
-	    filhdr.a_magic != u.u_exdata.ux_mag)
-		printf("corefile not from this program");
 }
 
 getpcb()
