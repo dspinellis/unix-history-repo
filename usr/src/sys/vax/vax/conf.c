@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	7.6 (Berkeley) %G%
+ *	@(#)conf.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -571,7 +571,7 @@ struct cdevsw	cdevsw[] =
 	nodev,		nodev,		nulldev,	0,
 	seltrue,	nodev,
 	udopen,		udclose,	udread,		udwrite,	/*9*/
-	nodev,		nodev,		udreset,	0,
+	udioctl,	nodev,		udreset,	0,
 	seltrue,	nodev,
 	vaopen,		vaclose,	nodev,		vawrite,	/*10*/
 	vaioctl,	nulldev,	vareset,	0,
