@@ -1,4 +1,4 @@
-/* @(#)popen.c	4.3 (Berkeley) %G% */
+/* @(#)popen.c	4.4 (Berkeley) %G% */
 #include <stdio.h>
 #include <signal.h>
 #define	tst(a,b)	(*mode == 'r'? (b) : (a))
@@ -28,8 +28,11 @@ char	*mode;
 		execl("/bin/sh", "sh", "-c", cmd, 0);
 		_exit(1);
 	}
-	if(pid == -1)
+	if(pid == -1) {
+		close(myside);
+		close(hisside);
 		return NULL;
+	}
 	popen_pid[myside] = pid;
 	close(hisside);
 	return(fdopen(myside, mode));
