@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	8.3 (Berkeley) %G%
+ *	@(#)mount.h	8.4 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -52,19 +52,20 @@ struct statfs {
  * File system types.
  */
 #define	MOUNT_NONE	0
-#define	MOUNT_UFS	1
-#define	MOUNT_NFS	2
-#define	MOUNT_MFS	3
-#define	MOUNT_PC	4
-#define	MOUNT_LFS	5
-#define	MOUNT_LOFS	6
-#define	MOUNT_FDESC	7
-#define	MOUNT_PORTAL	8
-#define MOUNT_NULL	9
-#define MOUNT_UMAP	10
-#define MOUNT_KERNFS	11
-#define MOUNT_PROCFS	12
-#define MOUNT_MAXTYPE	12
+#define	MOUNT_UFS	1	/* Fast Filesystem */
+#define	MOUNT_NFS	2	/* Sun-compatible Network Filesystem */
+#define	MOUNT_MFS	3	/* Memory-based Filesystem */
+#define	MOUNT_MSDOS	4	/* MS/DOS Filesystem */
+#define	MOUNT_LFS	5	/* Log-based Filesystem */
+#define	MOUNT_LOFS	6	/* Loopback Filesystem */
+#define	MOUNT_FDESC	7	/* File Descriptor Filesystem */
+#define	MOUNT_PORTAL	8	/* Portal Filesystem */
+#define MOUNT_NULL	9	/* Minimal Filesystem Layer */
+#define MOUNT_UMAP	10	/* User/Group Identifer Remapping Filesystem */
+#define MOUNT_KERNFS	11	/* Kernel Information Filesystem */
+#define MOUNT_PROCFS	12	/* /proc Filesystem */
+#define MOUNT_AFS	13	/* Andrew Filesystem */
+#define MOUNT_MAXTYPE	13
 
 #define INITMOUNTNAMES { \
 	"none",		/*  0 MOUNT_NONE */ \
