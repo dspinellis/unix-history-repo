@@ -3,85 +3,85 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_input.c	7.4 (Berkeley) %G%
+ *	@(#)kdb_input.c	7.5 (Berkeley) %G%
  */
 
 #include "../kdb/defs.h"
 
 char	line[LINSIZ];
-char	*lp;
-char	peekc,lastc = EOR;
+char	*kdblp;
+char	kdbpeekc,kdblastc = EOR;
 
 /* input routines */
 
-eol(c)
+kdbeol(c)
 	char c;
 {
 	return (c==EOR || c==';');
 }
 
-rdc()
+kdbrdc()
 {
 	do
-		(void) readchar();
-	while (lastc==SP || lastc==TB);
-	return (lastc);
+		(void) kdbreadchar();
+	while (kdblastc==SP || kdblastc==TB);
+	return (kdblastc);
 }
 
-readchar()
+kdbreadchar()
 {
 	static char *erase = "\b \b";
 
-	if (lp==0) {
-		lp=line;
+	if (kdblp==0) {
+		kdblp=line;
 		do {
-			(void) kdbreadc(lp);
-			if (mkfault)
-				error((char *)0);
-			switch (*lp) {
+			(void) kdbreadc(kdblp);
+			if (kdbmkfault)
+				kdberror((char *)0);
+			switch (*kdblp) {
 			case CTRL('h'): case 0177:
-				if (lp > line)
-					kdbwrite(erase, 3), lp--;
+				if (kdblp > line)
+					kdbwrite(erase, 3), kdblp--;
 				break;
 			case CTRL('u'):
-				while (lp > line) 
-					kdbwrite(erase, 3), lp--;
+				while (kdblp > line) 
+					kdbwrite(erase, 3), kdblp--;
 				break;
 			case CTRL('r'):
 				kdbwrite("^R\n", 3);
-				if (lp > line)
-					kdbwrite(line, lp-line);
+				if (kdblp > line)
+					kdbwrite(line, kdblp-line);
 				break;
 			case CTRL('w'):
-				if (lp <= line)
+				if (kdblp <= line)
 					break;
 				do {
-					if (!isspace(*lp))
+					if (!isspace(*kdblp))
 						goto erasenb;
 					kdbwrite(erase, 3);
-				} while (--lp > line);
+				} while (--kdblp > line);
 				break;
 			erasenb:
 				do
 					kdbwrite(erase, 3);
-				while (--lp > line && !isspace(*lp));
+				while (--kdblp > line && !isspace(*kdblp));
 				break;
 			default:
-				echo(*lp++);
+				kdbecho(*kdblp++);
 				break;
 			}
-		} while (lp == line || lp[-1] != EOR);
-		*lp=0; lp=line;
+		} while (kdblp == line || kdblp[-1] != EOR);
+		*kdblp=0; kdblp=line;
 	}
-	if (lastc = peekc)
-		peekc=0;
-	else  if (lastc = *lp)
-		lp++;
-	return (lastc);
+	if (kdblastc = kdbpeekc)
+		kdbpeekc=0;
+	else  if (kdblastc = *kdblp)
+		kdblp++;
+	return (kdblastc);
 }
 
 static
-echo(c)
+kdbecho(c)
 	char c;
 {
 	char buf[2];
@@ -94,37 +94,37 @@ echo(c)
 		kdbwrite(&c, 1);
 }
 
-nextchar()
+kdbnextchar()
 {
 
-	if (eol(rdc())) {
-		lp--;
+	if (kdbeol(kdbrdc())) {
+		kdblp--;
 		return (0);
 	}
-	return (lastc);
+	return (kdblastc);
 }
 
-quotchar()
+kdbquotchar()
 {
 
-	if (readchar()=='\\')
-		return (readchar());
-	if (lastc=='\'')
+	if (kdbreadchar()=='\\')
+		return (kdbreadchar());
+	if (kdblastc=='\'')
 		return (0);
-	return (lastc);
+	return (kdblastc);
 }
 
-getformat(deformat)
+kdbgetformat(deformat)
 	char *deformat;
 {
 	register char *fptr;
 	register int quote;
 
 	fptr=deformat; quote=0;
-	while ((quote ? readchar()!=EOR : !eol(readchar())))
-		if ((*fptr++ = lastc)=='"')
+	while ((quote ? kdbreadchar()!=EOR : !kdbeol(kdbreadchar())))
+		if ((*fptr++ = kdblastc)=='"')
 			quote = ~quote;
-	lp--;
+	kdblp--;
 	if (fptr!=deformat)
 		*fptr++ = '\0';
 }
