@@ -55,6 +55,7 @@ main()
 	printf("#define\tV_PDMA %d\n", &vm->v_pdma);
 	printf("#define\tV_FAULTS %d\n", &vm->v_faults);
 	printf("#define\tV_PGREC %d\n", &vm->v_pgrec);
+	printf("#define\tV_FASTPGREC %d\n", &vm->v_fastpgrec);
 	printf("#define\tUPAGES %d\n", UPAGES);
 	printf("#define\tCLSIZE %d\n", CLSIZE);
 	printf("#define\tSYSPTSIZE %d\n", SYSPTSIZE);
