@@ -1,4 +1,4 @@
-/*	dh.c	3.12	%G%	*/
+/*	dh.c	3.13	%G%	*/
 
 /*
  *	DH-11 driver
@@ -48,7 +48,6 @@ int	ttrstrt();
 int	dh_ubinfo;
 int	cbase;
 int	getcbase;
-int	dhinit;
 extern struct cblock cfree[];
 
 /*
@@ -280,11 +279,12 @@ dhparam(dev)
 	register struct tty *tp;
 	register struct device *addr;
 	register d;
+	int s;
 
 	d = minor(dev) & 0177;
 	tp = &dh11[d];
 	addr = (struct device *)tp->t_addr;
-	spl5();
+	s = spl5();
 	addr->un.dhcsrl = (d&017) | IENAB;
 	/*
 	 * Hang up line?
@@ -306,7 +306,7 @@ dhparam(dev)
 	if ((tp->t_ospeed) == 3)	/* 110 baud */
 		d |= TWOSB;
 	addr->dhlpr = d;
-	spl0();
+	splx(s);
 }
 
 /*
@@ -332,8 +332,6 @@ dhxint(dev)
 	}
 	sbar = &dhsar[d];
 	bar = *sbar & ~addr->dhbar;
-	if (dhinit)
-		bar = ~0;
 	d <<= 4; ttybit = 1;
 
 	for(; bar; d++, ttybit <<= 1) {
@@ -346,7 +344,6 @@ dhxint(dev)
 				tp->t_state &= ~FLUSH;
 			else {
 				addr->un.dhcsrl = (d&017)|IENAB;
-				if (dhinit == 0)
 				ndflush(&tp->t_outq,
 				    (int)addr->dhcar-UBACVT(tp->t_outq.c_cf));
 			}
@@ -487,24 +484,25 @@ dhreset()
 	if (getcbase == 0)
 		return;
 	printf(" dh");
-	dhinit = 1;
 	dhisilo = 0;
 	ubafree(dh_ubinfo);
 	dh_ubinfo = uballoc((caddr_t)cfree, NCLIST*sizeof (struct cblock), 0);
 	cbase = (short)dh_ubinfo;
-	for (d = 0; d < NDH11; d++) {
-		tp = &dh11[d];
-		if (tp->t_state & (ISOPEN|WOPEN))
-			dhparam(d);
-	}
-	dhtimer();
 	d = 0;
 	do {
 		addr = DHADDR + d;
-		addr->un.dhcsr |= IENAB;
 		if (dhact & (1<<d))
-			dhxint(d<<4);
+			addr->un.dhcsr |= IENAB;
 		d++;
 	} while (d < (NDH11+15)/16);
-	dhinit = 0;
+	for (d = 0; d < NDH11; d++) {
+		tp = &dh11[d];
+		if (tp->t_state & (ISOPEN|WOPEN)) {
+			dhparam(d);
+			dmctl(d, TURNON, DMSET);
+			tp->t_state &= ~BUSY;
+			dhstart(tp);
+		}
+	}
+	dhtimer();
 }
