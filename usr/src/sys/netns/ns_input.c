@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_input.c	6.8 (Berkeley) %G%
+ *	@(#)ns_input.c	6.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -67,6 +67,7 @@ nsintr()
 	register struct idp *idp;
 	register struct mbuf *m;
 	register struct nspcb *nsp;
+	struct ifnet *ifp;
 	struct mbuf *m0;
 	register int i;
 	int len, s, error;
@@ -78,7 +79,7 @@ next:
 	 * in first mbuf.
 	 */
 	s = splimp();
-	IF_DEQUEUE(&nsintrq, m);
+	IF_DEQUEUEIF(&nsintrq, m, ifp);
 	splx(s);
 	nsintr_getpck++;
 	if (m == 0)
