@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.61		%G%);
+SCCSID(@(#)deliver.c	3.62		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -257,7 +257,7 @@ deliver(firstto, editfcn)
 
 		if (m == LocalMailer)
 		{
-			if (index(user, '/') != NULL)
+			if (user[0] == '/')
 			{
 				i = mailfile(user, getctladdr(to));
 				giveresponse(i, TRUE, m);
@@ -858,8 +858,7 @@ putmessage(fp, m, xdot)
 # ifdef UGLYUUCP
 		char *p = rindex(m->m_mailer, '/');
 
-		if (p != NULL && strcmp(p, "/uux") == 0 &&
-		    strcmp(m->m_name, "uucp") == 0)
+		if (bitset(M_UGLYUUCP, m->m_flags))
 			(void) expand("From $f  $d remote from $U", buf,
 					&buf[sizeof buf - 1]);
 		else
