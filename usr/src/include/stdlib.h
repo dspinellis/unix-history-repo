@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdlib.h	5.24 (Berkeley) %G%
+ *	@(#)stdlib.h	5.25 (Berkeley) %G%
  */
 
 #ifndef _STDLIB_H_
@@ -99,6 +99,7 @@ int	 cgetset __P((char *));
 int	 cgetstr __P((char *, char *, char **));
 int	 cgetustr __P((char *, char *, char **));
 
+int	 getloadavg __P((double [], int));
 extern char *optarg;			/* getopt(3) external variables */
 extern int opterr, optind, optopt;
 int	 getopt __P((int, char * const *, const char *));
@@ -106,7 +107,7 @@ int	 getopt __P((int, char * const *, const char *));
 extern char *suboptarg;			/* getsubopt(3) external variable */
 int	 getsubopt __P((char **, char * const *, char **));
 
-void	*alloca __P((size_t));	/* built-in for gcc */
+void	*alloca __P((size_t));		/* built-in for gcc */
 int	 heapsort __P((void *, size_t, size_t,
 	    int (*)(const void *, const void *)));
 char	*initstate __P((unsigned, char *, int));
