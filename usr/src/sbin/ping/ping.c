@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ping.c	4.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)ping.c	4.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -135,15 +135,15 @@ char *argv[];
 		hostname = hnamebuf;
 	} else {
 		hp = gethostbyname(av[0]);
-		if (hp) {
-			to->sin_family = hp->h_addrtype;
-			bcopy(hp->h_addr, (caddr_t)&to->sin_addr, hp->h_length);
-			hostname = hp->h_name;
-			toaddr = inet_ntoa(to->sin_addr.s_addr);
-		} else {
-			printf("%s: unknown host %s\n", argv[0], av[0]);
+		if (!hp) {
+			fprintf(stderr, "ping: %s: ", av[0]);
+			herror((char *)NULL);
 			exit(1);
 		}
+		to->sin_family = hp->h_addrtype;
+		bcopy(hp->h_addr, (caddr_t)&to->sin_addr, hp->h_length);
+		hostname = hp->h_name;
+		toaddr = inet_ntoa(to->sin_addr.s_addr);
 	}
 
 	if( argc >= 2 )
