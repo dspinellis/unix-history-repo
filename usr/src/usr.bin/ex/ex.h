@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ex.h	7.10.1.1 (Berkeley) %G%
+ *	@(#)ex.h	7.11 (Berkeley) %G%
  */
 
 #ifdef V6
@@ -158,7 +158,9 @@ extern	 struct	option options[NOPTS + 1];
 #	define	BUFSIZ	512
 #  endif
 # endif
+# ifndef NULL
 #	define	NULL	0
+# endif
 #	define	EOF	-1
 #endif
 
