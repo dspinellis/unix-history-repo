@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)csh.c	5.13 (Berkeley) %G%";
+static char *sccsid = "@(#)csh.c	5.14 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -296,8 +296,8 @@ retry:
 				opgrp = shpgrp;
 				shpgrp = getpid();
 				tpgrp = shpgrp;
-				(void) ioctl(f, TIOCSPGRP, (char *)&shpgrp);
 				(void) setpgrp(0, shpgrp);
+				(void) ioctl(f, TIOCSPGRP, (char *)&shpgrp);
 				(void) ioctl(dcopy(f, FSHTTY), FIOCLEX,
 					(char *)0);
 			} else {
