@@ -1,4 +1,4 @@
-/*	config.h	4.2	85/04/08	*/
+/*	config.h	4.3	85/08/22	*/
 
 #ifndef _CONFIG_
 #define	_CONFIG_
@@ -28,6 +28,7 @@
 #define SWITSZ		500		/* switch table size */
 #define	DELAYS		20		/* delayed evaluation table size */
 #define NRECUR		(10*TREESZ)	/* maximum eval recursion depth */
+#define	MAXSCOPES	(SYMTSZ/30)	/* maximum active scopes */
 
 /* in case anyone still uses fixed length names */
 #ifndef FLEXNAMES

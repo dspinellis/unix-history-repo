@@ -1,10 +1,13 @@
 #ifndef lint
-static char *sccsid ="@(#)pftn.c	1.8 (Berkeley) %G%";
+static char *sccsid ="@(#)pftn.c	1.9 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
 
 unsigned int offsz;
+
+struct symtab *schain[MAXSCOPES];	/* sym chains for clearst */
+int chaintop;				/* highest active entry */
 
 struct instk {
 	int in_sz;   /* size of array element */
@@ -30,12 +33,12 @@ int ddebug = 0;
 
 struct symtab * mknonuniq();
 
-defid( q, class )  NODE *q; {
+defid( q, class ) register NODE *q; register int class; {
 	register struct symtab *p;
 	int idp;
-	TWORD type;
+	register TWORD type;
 	TWORD stp;
-	int scl;
+	register int scl;
 	int dsym, ddef;
 	int slev, temp;
 	int changed;
@@ -247,7 +250,7 @@ defid( q, class )  NODE *q; {
 	/* allow nonunique structure/union member names */
 
 	if( class==MOU || class==MOS || class & FIELD ){/* make a new entry */
-		int * memp;
+		register int *memp;
 		p->sflags |= SNONUNIQ;  /* old entry is nonunique */
 		/* determine if name has occurred in this structure/union */
 		if (paramno > 0) for( memp = &paramstk[paramno-1];
@@ -368,6 +371,18 @@ defid( q, class )  NODE *q; {
 		if( blevel == 1 ) p->sflags |= SSET;
 		if( regvar < minrvar ) minrvar = regvar;
 		break;
+		}
+
+	{
+		register int l = p->slevel;
+
+		if( l >= MAXSCOPES )
+			cerror( "scopes nested too deep" );
+
+		p->snext = schain[l];
+		schain[l] = p;
+		if( l >= chaintop )
+			chaintop = l + 1;
 		}
 
 	/* user-supplied routine to fix up new definitions */
@@ -1356,7 +1371,7 @@ nidcl( p ) NODE *p; { /* handle unitialized declarations */
 	defid( p, class );
 
 #ifndef LCOMM
-	if( class==EXTDEF || class==STATIC ){
+	if( class==EXTDEF || class==STATIC )
 #else
 	if (class==STATIC) {
 		register struct symtab *s = &stab[p->tn.rval];
@@ -1370,8 +1385,9 @@ nidcl( p ) NODE *p; { /* handle unitialized declarations */
 			printf("	.lcomm	L%d,%d\n", s->offset, sz);
 		else
 			printf("	.lcomm	%s,%d\n", exname(s->sname), sz);
-	}else if (class == EXTDEF) {
+	}else if (class == EXTDEF)
 #endif
+		{
 		/* simulate initialization by 0 */
 		beginit(p->tn.rval);
 		endinit();
@@ -1809,34 +1825,27 @@ relook(p) register struct symtab *p; {  /* look up p again, and see where it lie
 	return(q);
 	}
 
-clearst( lev ){ /* clear entries of internal scope  from the symbol table */
-	register struct symtab *p, *q, *r;
-	register int temp, rehash;
+clearst( lev ) register int lev; {
+	register struct symtab *p, *q;
+	register int temp;
+	struct symtab *clist = 0;
 
 	temp = lineno;
 	aobeg();
 
-	/* first, find an empty slot to prevent newly hashed entries from
-	   being slopped into... */
+	/* step 1: remove entries */
+	while( chaintop-1 > lev ){
+		register int type;
 
-	for( q=stab; q< &stab[SYMTSZ]; ++q ){
-		if( q->stype == TNULL )goto search;
-		}
-
-	cerror( "symbol table full");
-
-	search:
-	p = q;
-
-	for(;;){
-		if( p->stype == TNULL ) {
-			rehash = 0;
-			goto next;
-			}
-		lineno = p->suse;
-		if( lineno < 0 ) lineno = - lineno;
-		if( p->slevel>lev ){ /* must clobber */
-			if( p->stype == UNDEF || ( p->sclass == ULABEL && lev < 2 ) ){
+		p = schain[--chaintop];
+		schain[chaintop] = 0;
+		for( ; p; p = q ){
+			q = p->snext;
+			type = p->stype;
+			if( p->stype == TNULL || p->slevel <= lev )
+				cerror( "schain botch" );
+			lineno = p->suse < 0 ? -p->suse : p->suse;
+			if( p->stype==UNDEF || ( p->sclass==ULABEL && lev<2 ) ){
 				lineno = temp;
 #ifndef FLEXNAMES
 				uerror( "%.8s undefined", p->sname );
@@ -1846,52 +1855,43 @@ clearst( lev ){ /* clear entries of internal scope  from the symbol table */
 				}
 			else aocode(p);
 # ifndef BUG1
+			if( ddebug ){
 #ifndef FLEXNAMES
-			if (ddebug) printf("removing %8s from stab[ %d], flags %o level %d\n",
+				printf( "removing %.8s", p->sname );
 #else
-			if (ddebug) printf("removing %s from stab[ %d], flags %o level %d\n",
+				printf( "removing %s", p->sname );
 #endif
-				p->sname,p-stab,p->sflags,p->slevel);
+				printf( " from stab[%d], flags %o level %d\n",
+					p-stab, p->sflags, p->slevel);
+				}
 # endif
-			if( p->sflags & SHIDES ) unhide(p);
+			if( p->sflags & SHIDES )unhide( p );
 			p->stype = TNULL;
-			rehash = 1;
-			goto next;
+			p->snext = clist;
+			clist = p;
 			}
-		if( rehash ){
-			if( (r=relook(p)) != p ){
-				movestab( r, p );
-				p->stype = TNULL;
+		}
+
+	/* step 2: fix any mishashed entries */
+	p = clist;
+	while( p ){
+		register struct symtab *r;
+
+		q = p;
+		for(;;){
+			if( ++q >= &stab[SYMTSZ] )q = stab;
+			if( q == p || q->stype == TNULL )break;
+			if( (r = relook(q)) != q ) {
+				*r = *q;
+				q->stype = NULL;
 				}
 			}
-		next:
-		if( ++p >= &stab[SYMTSZ] ) p = stab;
-		if( p == q ) break;
+		p = p->snext;
 		}
+
 	lineno = temp;
 	aoend();
 	}
-
-movestab( p, q ) register struct symtab *p, *q; {
-	int k;
-	/* structure assignment: *p = *q; */
-	p->stype = q->stype;
-	p->sclass = q->sclass;
-	p->slevel = q->slevel;
-	p->offset = q->offset;
-	p->sflags = q->sflags;
-	p->dimoff = q->dimoff;
-	p->sizoff = q->sizoff;
-	p->suse = q->suse;
-#ifndef FLEXNAMES
-	for( k=0; k<NCHNAM; ++k ){
-		p->sname[k] = q->sname[k];
-		}
-#else
-	p->sname = q->sname;
-#endif
-	}
-
 
 hide( p ) register struct symtab *p; {
 	register struct symtab *q;
@@ -1900,7 +1900,7 @@ hide( p ) register struct symtab *p; {
 		if( q == p ) cerror( "symbol table full" );
 		if( q->stype == TNULL ) break;
 		}
-	movestab( q, p );
+	*q = *p;
 	p->sflags |= SHIDDEN;
 	q->sflags = (p->sflags&(SMOS|STAG)) | SHIDES;
 #ifndef FLEXNAMES

@@ -11,37 +11,57 @@ static	char sccsid[] = "@(#)c20.c	4.10 (Berkeley) %G%";
 #include <ctype.h>
 #include <sys/types.h>
 
-char _sibuf[BUFSIZ], _sobuf[BUFSIZ];
-caddr_t sbrk();
+char *malloc();
+char firstr[sizeof (char *)];
+char *currentb;
+char *newa;
+char *lasta;
+char *lastr;
+int ncore;
+
 int ioflag;
 int fflag;
+
 long	isn	= 2000000;
+
 struct optab *oplook();
 struct optab *getline();
+
 long lgensym[10] =
   {100000L,200000L,300000L,400000L,500000L,600000L,700000L,800000L,900000L,1000000L};
 
 #define ALLOCSIZE	4096
 
-struct node *
-alloc(an)
+/*
+ * Cheapo space allocator.  Works much like the old one but uses malloc()
+ * and doesn't clash with stdio.  Assumes that no one requests more than
+ * ALLOCSIZE bytes at a time.
+ */
+char *
+xalloc(n)
+int n;
 {
-	register int n;
-	register struct node *p;
+	register char *nextb = * (char **) currentb;
 
-	n = an;
-	n+=sizeof(char *)-1;
-	n &= ~(sizeof(char *)-1);
-	if (lasta+n >= lastr) {
-		if ((int) sbrk(ALLOCSIZE) == -1) {
+	if (n == 0) {	/* Free everything */
+		currentb = firstr;
+		nextb = * (char **) currentb;
+	}
+	if (nextb == NULL) {
+		if ((nextb = malloc(ALLOCSIZE)) == NULL) {
 			fprintf(stderr, "Optimizer: out of space\n");
 			exit(1);
 		}
-		lastr += ALLOCSIZE;
+		ncore += (ALLOCSIZE/1024);
+		* (char **) currentb = nextb;
+		* (char **) nextb = NULL;
 	}
-	p = (struct node *) lasta;
-	lasta += n;
-	return(p);
+	lasta = nextb + sizeof nextb;
+	lastr = nextb + ALLOCSIZE;
+	currentb = nextb;
+	newa = lasta;
+	lasta += XALIGN(n);
+	return(newa);
 }
 
 main(argc, argv)
@@ -69,13 +89,10 @@ char **argv;
 		}
 		argc--; argv++;
 	}
-	setbuf(stdin, _sibuf);
-	setbuf(stdout, _sobuf);
-	lasta = lastr = (char *) sbrk(2);
 	opsetup();
-	lasta = firstr = lastr = (char *) alloc(0);
 	maxiter = 0;
 	do {
+		(void) xalloc(0);
 		isend = input();
 		niter = 0;
 		bmove();
@@ -93,7 +110,6 @@ char **argv;
 		output();
 		if (niter > maxiter)
 			maxiter = niter;
-		lasta = firstr;
 	} while (isend);
 	if (nflag) {
 		fprintf(stderr,"%d iterations\n", maxiter);
@@ -114,7 +130,7 @@ char **argv;
 		fprintf(stderr,"%d redundant tst's\n", nrtst);
 		fprintf(stderr,"%d jump on bit\n", nbj);
 		fprintf(stderr,"%d field operations\n", nfield);
-		fprintf(stderr,"%dK core\n", ((unsigned)lastr+01777) >> 10);
+		fprintf(stderr,"%dK core\n", ncore);
 	}
 	putc('\n',stdout);
 	fflush(stdout); exit(0);
@@ -409,7 +425,7 @@ opsetup()
 	register struct optab *optp, **ophp;
 	register int i,t;
 
-	for(i=NREG+5;--i>=0;) regs[i]=(char *) alloc(C2_ASIZE);
+	for(i=NREG+5;--i>=0;) regs[i] = malloc(C2_ASIZE);
 	for (optp = optab; optp->opstring[0]; optp++) {
 		t=7; i=0; while (--t>=0) i+= i+optp->opstring[t];
 		ophp = &ophash[i % OPHS];
@@ -417,7 +433,7 @@ opsetup()
 /*			fprintf(stderr,"\ncollision: %d %s %s",
 /*				ophp-1-ophash,optp->opstring,(*(ophp-1))->opstring);
 */
-			if (ophp > &ophash[OPHS])
+			if (ophp >= &ophash[OPHS])
 				ophp = ophash;
 		}
 		*--ophp = optp;

@@ -1,4 +1,4 @@
-/*	pass1.h	4.1	85/03/19	*/
+/*	pass1.h	4.2	85/08/22	*/
 
 #ifndef _PASS1_
 #define	_PASS1_
@@ -8,6 +8,10 @@
 
 /*
  * Symbol table definition.
+ *
+ * Colliding entries are moved down with a standard
+ * probe (no quadratic rehash here) and moved back when
+ * entries are cleared.
  */
 struct	symtab {
 #ifndef FLEXNAMES
@@ -15,6 +19,7 @@ struct	symtab {
 #else
 	char	*sname;
 #endif
+	struct	symtab *snext;	/* link to other symbols in the same scope */
 	TWORD	stype;		/* type word */
 	char	sclass;		/* storage class */
 	char	slevel;		/* scope level */
@@ -22,7 +27,7 @@ struct	symtab {
 	int	offset;		/* offset or value */
 	short	dimoff;		/* offset into the dimension table */
 	short	sizoff;		/* offset into the size table */
-	short	suse;		/* line number of last use of the variable */
+	int	suse;		/* line number of last use of the variable */
 };
 
 /*

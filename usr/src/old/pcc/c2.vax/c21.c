@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)c21.c 4.15 %G%";
+static	char sccsid[] = "@(#)c21.c 4.16 %G%";
 #endif
 /* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
 
@@ -723,7 +723,10 @@ register struct node *p;
 			do *cp2++= *cp1; while (*cp1++!=','); cp2[-1]=']';
 			if (!equstr(regs[RT3],"-(sp)")) p->combop=T(MOVA,BYTE);
 			else {p->combop=T(PUSHA,BYTE); *cp2=0;}
-			if (uses[r]==0) {uses[r]=p; regs[r][0]=OPX<<4;}
+			if (r < NUSE && uses[r] == 0) {
+				uses[r]=p;
+				regs[r][0]=OPX<<4;
+			}
 			p->pop=0;
 		}
 	}

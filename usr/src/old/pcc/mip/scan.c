@@ -1,11 +1,13 @@
 #ifndef lint
-static char *sccsid ="@(#)scan.c	1.6 (Berkeley) %G%";
+static char *sccsid ="@(#)scan.c	1.7 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
 # include <a.out.h>
 # include <stab.h>
 # include <ctype.h>
+# include <signal.h>
+
 	/* temporarily */
 
 int asm_esc = 0; /* asm escaped used in file */
@@ -61,6 +63,8 @@ char * lxgcp;
 
 extern int proflg;
 extern int gdebug;
+extern int fpe();
+struct sigvec fpe_sigvec;
 int oldway;		/* allocate storage so lint will compile as well */
 #ifndef LINT
 extern int lastloc;
@@ -167,6 +171,9 @@ mainp1( argc, argv ) int argc; char *argv[]; {  /* control multiple files */
 	/* starts past any of the above */
 	curdim = 16;
 	reached = 1;
+
+	fpe_sigvec.sv_handler = fpe;
+	(void) sigvec(SIGFPE, &fpe_sigvec, (struct sigvec *) NULL);
 
 	yyparse();
 	yyaccpt();

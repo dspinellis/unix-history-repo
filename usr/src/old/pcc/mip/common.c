@@ -1,4 +1,4 @@
-/*	common.c	4.1	85/03/19	*/
+/*	common.c	4.2	85/08/22	*/
 
 #ifdef PASS1COMMON
 #include "pass1.h"
@@ -86,7 +86,7 @@ werror( s, a, b ) char *s; {  /* warning */
 
 tinit(){ /* initialize expression tree search */
 
-	NODE *p;
+	register NODE *p;
 
 	for( p=node; p<= &node[TREESZ-1]; ++p ) p->in.op = FREE;
 	lastfree = node;
@@ -97,7 +97,7 @@ tinit(){ /* initialize expression tree search */
 
 NODE *
 talloc(){
-	NODE *p, *q;
+	register NODE *p, *q;
 
 	q = lastfree;
 	for( p = TNEXT(q); p!=q; p= TNEXT(p))
@@ -109,7 +109,7 @@ talloc(){
 
 tcheck(){ /* ensure that all nodes have been freed */
 
-	NODE *p;
+	register NODE *p;
 
 	if( !nerrors )
 		for( p=node; p<= &node[TREESZ-1]; ++p )
@@ -157,6 +157,7 @@ fwalk( t, f, down ) register NODE *t; int (*f)(); {
 		}
 	}
 
+#ifndef vax
 walkf( t, f ) register NODE *t;  int (*f)(); {
 	register opty;
 
@@ -166,6 +167,46 @@ walkf( t, f ) register NODE *t;  int (*f)(); {
 	if( opty == BITYPE ) walkf( t->in.right, f );
 	(*f)( t );
 	}
+#else
+#define	NR	100
+
+/*
+ * Deliberately avoids recursion -- use this version on machines with
+ * expensive procedure calls.
+ */
+walkf(t, f)
+	register NODE *t;
+	register int (*f)();
+{
+	register int i = 1;
+	register int opty = optype(t->in.op);
+	static NODE *at[NR];
+	static int ao[NR];
+
+#define	PUSH(dir, state) \
+	(ao[i] = state, at[i++] = t, t = t->in.dir, opty = optype(t->in.op))
+#define	POP() \
+	(opty = ao[--i], t = at[i])
+
+	do {
+		switch (opty) {
+		case LTYPE:	(*f)(t); POP(); break;
+		case UTYPE:	PUSH(left, LTYPE); break;
+		case BITYPE:	PUSH(left, BITYPE+1); break;
+		case BITYPE+1:	PUSH(right, LTYPE); break;
+		default:
+			cerror("bad op type in walkf");
+		}
+		if (i >= NR) {
+			walkf(t, f);
+			POP();
+		}
+	} while (i > 0);
+}
+#undef NR
+#undef PUSH
+#undef POP
+#endif
 
 
 
