@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)msg.c	4.4 %G%";
+static char sccsid[] = "@(#)msg.c	4.5 %G%";
 #endif
 
 #
@@ -71,7 +71,7 @@ MSG	profile		= ".profile";
 
 
 /* tables */
-SYSTAB reserved {
+SYSTAB reserved = {
 		{"in",		INSYM},
 		{"esac",	ESSYM},
 		{"case",	CASYM},
@@ -90,7 +90,7 @@ SYSTAB reserved {
 		{0,	0},
 };
 
-STRING	sysmsg[] {
+STRING	sysmsg[] = {
 		0,
 		"Hangup",
 		0,	/* Interrupt */
@@ -129,7 +129,7 @@ INT		num_sysmsg = (sizeof sysmsg / sizeof sysmsg[0]);
 
 MSG		export = "export";
 MSG		readonly = "readonly";
-SYSTAB	commands {
+SYSTAB	commands = {
 		{"cd",		SYSCD},
 		{"read",	SYSREAD},
 /*
