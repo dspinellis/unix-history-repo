@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)hd.c	7.7 (Berkeley) %G%
+ *	@(#)hd.c	7.8 (Berkeley) %G%
  */
 
 #include "hd.h"
@@ -142,10 +142,8 @@ hdcprobe(reg, vm)
 	 * functional integrity test;
 	 */
 	if (wbadaddr(&hdc->hdc_reg->module_id, 4,
-	    vtoph((struct process *)NULL, &id))) {
-		printf("hdc%d: can't access module register.\n", vm->um_ctlr);
+	    vtoph((struct process *)NULL, &id)))
 		return(0);
-	}
 	DELAY(10000);
 	mtpr(PADC, 0);
 	if (id.module_id != (u_char)HDC_MID) {
