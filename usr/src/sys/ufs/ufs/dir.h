@@ -1,9 +1,20 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1989 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)dir.h	7.2 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)dir.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -31,10 +42,6 @@
  * Entries other than the first in a directory do not normally have
  * dp->d_ino set to 0.
  */
-/* so user programs can just include dir.h */
-#if !defined(KERNEL) && !defined(DEV_BSIZE)
-#define	DEV_BSIZE	512
-#endif
 #define DIRBLKSIZ	DEV_BSIZE
 #define	MAXNAMLEN	255
 
@@ -55,7 +62,32 @@ struct	direct {
 #define DIRSIZ(dp) \
     ((sizeof (struct direct) - (MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3))
 
+#ifdef KERNEL
+/*
+ * Template for manipulating directories.
+ * Should use struct direct's, but the name field
+ * is MAXNAMLEN - 1, and this just won't do.
+ */
+struct dirtemplate {
+	u_long	dot_ino;
+	short	dot_reclen;
+	short	dot_namlen;
+	char	dot_name[4];		/* must be multiple of 4 */
+	u_long	dotdot_ino;
+	short	dotdot_reclen;
+	short	dotdot_namlen;
+	char	dotdot_name[4];		/* ditto */
+};
+#endif
+
+/*
+ * The following information should be obtained from <dirent.h>
+ * and is provided solely (and temporarily) for backward compatibility.
+ */
 #ifndef KERNEL
+#ifndef DEV_BSIZE
+#define	DEV_BSIZE	512
+#endif
 /*
  * Definitions for library routines operating on directories.
  */
@@ -77,22 +109,4 @@ extern	long telldir();
 extern	void seekdir();
 #define rewinddir(dirp)	seekdir((dirp), (long)0)
 extern	void closedir();
-#endif
-
-#ifdef KERNEL
-/*
- * Template for manipulating directories.
- * Should use struct direct's, but the name field
- * is MAXNAMLEN - 1, and this just won't do.
- */
-struct dirtemplate {
-	u_long	dot_ino;
-	short	dot_reclen;
-	short	dot_namlen;
-	char	dot_name[4];		/* must be multiple of 4 */
-	u_long	dotdot_ino;
-	short	dotdot_reclen;
-	short	dotdot_namlen;
-	char	dotdot_name[4];		/* ditto */
-};
-#endif
+#endif /* not KERNEL */
