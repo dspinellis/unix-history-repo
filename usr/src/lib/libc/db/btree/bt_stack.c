@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_stack.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_stack.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -26,13 +26,13 @@ static char sccsid[] = "@(#)bt_stack.c	5.1 (Berkeley) %G%";
  * parent pages as we descend the tree.
  *
  * XXX
- * This is a problem for multiple users -- if user a creates a stack, then user
- * b splits the tree, then user a tries to split the tree, there's a new level
- * in the tree that user b doesn't know about.
+ * This is a concurrency problem -- if user a builds a stack, then user b
+ * splits the tree, then user a tries to split the tree, there's a new level
+ * in the tree that user a doesn't know about.
  */
 
 /*
- * BT_PUSH -- Push parent page info onto the stack (LIFO).
+ * __BT_PUSH -- Push parent page info onto the stack (LIFO).
  *
  * Parameters:
  *	t:	tree
@@ -43,7 +43,7 @@ static char sccsid[] = "@(#)bt_stack.c	5.1 (Berkeley) %G%";
  * 	RET_ERROR, RET_SUCCESS
  */
 int
-bt_push(t, pgno, index)
+__bt_push(t, pgno, index)
 	BTREE *t;
 	pgno_t pgno;
 	int index;
