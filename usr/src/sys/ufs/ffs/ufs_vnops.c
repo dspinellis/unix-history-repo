@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	8.5 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -397,7 +397,8 @@ ufs_chmod(vp, mode, cred, p)
 			return (EPERM);
 	}
 	ip->i_mode &= ~ALLPERMS;
-	ip->i_mode |= (mode & ALLPERMS) | IN_CHANGE;
+	ip->i_mode |= (mode & ALLPERMS);
+	ip->i_flag |= IN_CHANGE;
 	if ((vp->v_flag & VTEXT) && (ip->i_mode & S_ISTXT) == 0)
 		(void) vnode_pager_uncache(vp);
 	return (0);
