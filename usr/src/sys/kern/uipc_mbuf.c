@@ -8,7 +8,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)uipc_mbuf.c	7.6 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	7.7 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -226,6 +226,7 @@ m_freem(m)
  */
 
 /*
+/*
  * Make a copy of an mbuf chain starting "off" bytes from the beginning,
  * continuing for "len" bytes.  If len is M_COPYALL, copy to end of mbuf.
  * Should get M_WAIT/M_DONTWAIT from caller.
@@ -281,6 +282,40 @@ m_copy(m, off, len)
 nospace:
 	m_freem(top);
 	return (0);
+}
+
+/*
+ * Copy data from an mbuf chain starting "off" bytes from the beginning,
+ * continuing for "len" bytes, into the indicated buffer.
+ */
+struct mbuf *
+m_copydata(m, off, len, cp)
+	register struct mbuf *m;
+	int off;
+	register int len;
+	caddr_t *cp;
+{
+	register unsigned count;
+
+	if (off < 0 || len < 0)
+		panic("m_copydata");
+	while (off > 0) {
+		if (m == 0)
+			panic("m_copydata");
+		if (off < m->m_len)
+			break;
+		off -= m->m_len;
+		m = m->m_next;
+	}
+	while (len > 0) {
+		if (m == 0)
+			panic("m_copydata");
+		count = MIN(m->m_len, len);
+		bcopy(mtod(m, caddr_t) + off, cp, count);
+		len -= count;
+		off = 0;
+		m = m->m_next;
+	}
 }
 
 m_cat(m, n)
