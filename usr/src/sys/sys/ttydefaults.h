@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ttydefaults.h	1.2 (Berkeley) %G%
+ *	@(#)ttydefaults.h	1.2 (Berkeley) 10/18/88
  */
 
 /*
@@ -18,17 +18,12 @@
  */
 #define	CEOF		CTRL('d')
 #define	CEOL		_POSIX_VDISABLE
-#ifdef DECSTYLE_DEFAULTS
 #define	CERASE		0177
 #define	CINTR		CTRL('c')
-#else
-#define	CERASE		CTRL('h')
-#define	CINTR		0177
-#endif
 #define	CERASE2		_POSIX_VDISABLE
 #define	CKILL		CTRL('u')
 #define	CMIN		1
-#define	CQUIT		034	/* FS, ^\ */
+#define	CQUIT		034		/* FS, ^\ */
 #define	CSUSP		CTRL('z')
 #define	CTIME		0
 #define	CDSUSP		CTRL('y')
@@ -38,7 +33,6 @@
 #define	CFLUSHO 	CTRL('o')
 #define	CWERASE 	CTRL('w')
 #define	CREPRINT 	CTRL('r')
-#define CQUOTE		'\\'
 #define	CEOT		CEOF
 
 /* COMPAT_43 */
@@ -52,7 +46,7 @@
 #define	TTYDEF_IFLAG	(BRKINT | ISTRIP | IMAXBEL | IEXTEN | IXON)
 #define TTYDEF_OFLAG	(0)
 #define TTYDEF_LFLAG	(ECHO | ICANON | ISIG)
-#define TTYDEF_CFLAG	(CREAD | CS7 | PARENB)
+#define TTYDEF_CFLAG	(CREAD | CS7 | PARENB | HUPCL)
 #define TTYDEF_SPEED	(B9600)
 
 #endif /*_TTYDEFAULTS_*/
