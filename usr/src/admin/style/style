@@ -1,7 +1,7 @@
 /*
  * Style guide for BSD's KNF (Kernel Normal Form).
  *
- *	@(#)style	1.7 (Berkeley) %G%
+ *	@(#)style	1.8 (Berkeley) %G%
  */
 
 /*
@@ -30,11 +30,11 @@
  * __P macro from include file <sys/cdefs.h>.  Only the kernel has a name
  * associated with the types, i.e. in the kernel use:
  *
- *	void function __P((int));
+ *	void function __P((int a));
  *
  * in user land use:
  *
- *	void function __P((int a));
+ *	void function __P((int));
  */
 void function __P((int, const char *));
 
@@ -219,7 +219,7 @@ usage()
 	 * each in braces.  Followed by required arguments in the order they
 	 * are specified, followed by optional arguments in the order they
 	 * are specified.  A bar ('|') separates either/or options/arguments,
-	 * and multiple options/arguments wwhich are specified together are
+	 * and multiple options/arguments which are specified together are
 	 * placed in a single set of braces.
 	 *
 	 * "usage: f [-ade] [-b b_arg] [-m m_arg] req1 req2 [opt1 [opt2]]\n"
