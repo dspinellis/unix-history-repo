@@ -1,4 +1,4 @@
-/*	ip_output.c	6.2	83/10/22	*/
+/*	ip_output.c	6.3	83/12/15	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -65,6 +65,12 @@ ip_output(m, opt, ro, flags)
 			}
 			goto gotif;
 		}
+		rtalloc(ro);
+	} else if (ro->ro_rt->rt_flags & RTF_UP == 0) {
+		/*
+		 * The old route has gone away; try for a new one.
+		 */
+		rtfree(ro->ro_rt);
 		rtalloc(ro);
 	}
 	if (ro->ro_rt == 0 || (ifp = ro->ro_rt->rt_ifp) == 0) {
