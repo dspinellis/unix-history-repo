@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.21	(Berkeley)	83/08/11";
+static char sccsid[] = "@(#)tape.c	3.22	(Berkeley)	83/12/30";
 #endif
 
 /* Copyright (c) 1983 Regents of the University of California */
@@ -12,7 +12,7 @@ static char sccsid[] = "@(#)tape.c	3.21	(Berkeley)	83/08/11";
 #include <setjmp.h>
 #include <sys/stat.h>
 
-static long	fssize;
+static long	fssize = MAXBSIZE;
 static int	mt = -1;
 static int	pipein = 0;
 static char	*magtape;
@@ -125,8 +125,9 @@ setup()
 		perror("cannot stat .");
 		done(1);
 	}
-	fssize = stbuf.st_blksize;
-	if (fssize <= 0 || ((fssize - 1) & fssize) != 0) {
+	if (stbuf.st_blksize > 0 && stbuf.st_blksize <= MAXBSIZE)
+		fssize = stbuf.st_blksize;
+	if (((fssize - 1) & fssize) != 0) {
 		fprintf(stderr, "bad block size %d\n", fssize);
 		done(1);
 	}
@@ -341,14 +342,9 @@ extractfile(name)
 		if (pathlen == 0) {
 			vprintf(stdout,
 			    "%s: zero length symbolic link (ignored)\n", name);
-		} else if (symlink(lnkbuf, name) < 0) {
-			fprintf(stderr, "%s: ", name);
-			(void) fflush(stderr);
-			perror("cannot create symbolic link");
-			return (FAIL);
-		} else
-			vprintf(stdout, "extract symbolic link %s\n", name);
-		return (GOOD);
+			return (GOOD);
+		}
+		return (linkit(lnkbuf, name, SYMLINK));
 
 	case IFCHR:
 	case IFBLK:
