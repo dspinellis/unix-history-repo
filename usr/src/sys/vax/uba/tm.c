@@ -1,4 +1,4 @@
-/*	tm.c	4.12	%G%	*/
+/*	tm.c	4.13	%G%	*/
 
 #include "tm.h"
 #if NTM03 > 0
@@ -17,10 +17,10 @@
 #include "../h/file.h"
 #include "../h/map.h"
 #include "../h/pte.h"
+#include "../h/vm.h"
 #include "../h/uba.h"
 #include "../h/mtio.h"
 #include "../h/ioctl.h"
-#include "../h/vm.h"
 #include "../h/cmap.h"
 #include "../h/cpu.h"
 
@@ -34,7 +34,7 @@ struct	uba_minfo *tmminfo[NTM03];
 struct	uba_dinfo *tmdinfo[NTM11];
 u_short	tmstd[] = { 0772520, 0 };
 struct	uba_driver tmdriver =
-	{ tmcntrlr, tmslave, tmdgo, 0, tmstd, "tm", tmdinfo, tmminfo };
+	{ tmcntrlr, tmslave, tmdgo, 0, tmstd, "mt", tmdinfo, "tm", tmminfo };
 
 /* bits in minor device */
 #define	T_NOREWIND	04
@@ -50,7 +50,6 @@ struct	tm_softc {
 	u_short	sc_erreg;
 	u_short	sc_dsreg;
 	short	sc_resid;
-	int	sc_ubinfo;
 } tm_softc[NTM03];
 
 #define	SSEEK	1		/* seeking */
@@ -89,7 +88,7 @@ tmcntrlr(um, reg)
 	return (1);
 }
 
-tmslave(ui, reg, slaveno)
+tmslave(ui, reg)
 	struct uba_dinfo *ui;
 	caddr_t reg;
 {
@@ -103,7 +102,7 @@ tmslave(ui, reg, slaveno)
 	 * Something better will have to be done if you have two
 	 * tapes on one controller, or two controllers
 	 */
-	if (slaveno != 0 || tmdinfo[0])
+	if (ui->ui_slave != 0 || tmdinfo[0])
 		return(0);
 	return (1);
 }
@@ -122,7 +121,7 @@ tmopen(dev, flag)
 		u.u_error = ENXIO;		/* out of range or open */
 		return;
 	}
-	tcommand(dev, NOP, 1);
+	tmcommand(dev, NOP, 1);
 	if ((sc->sc_erreg&SELR) == 0) {
 		u.u_error = EIO;
 		goto eio;
@@ -131,7 +130,7 @@ tmopen(dev, flag)
 	if (sc->sc_erreg&RWS)
 		tmwaitrws(dev);			/* wait for rewind complete */
 	while (sc->sc_erreg&SDWN)
-		tcommand(dev, NOP, 1);		/* await settle down */
+		tmcommand(dev, NOP, 1);		/* await settle down */
 	if ((sc->sc_erreg&TUR)==0 ||
 	    ((flag&(FREAD|FWRITE)) == FWRITE && (sc->sc_erreg&WRL))) {
 		((struct device *)ui->ui_addr)->tmcs = DCLR|GO;
@@ -175,16 +174,16 @@ tmclose(dev, flag)
 	register struct tm_softc *sc = &tm_softc[0];
 
 	if (flag == FWRITE || ((flag&FWRITE) && (sc->sc_flags&LASTIOW))) {
-		tcommand(dev, WEOF, 1);
-		tcommand(dev, WEOF, 1);
-		tcommand(dev, SREV, 1);
+		tmcommand(dev, WEOF, 1);
+		tmcommand(dev, WEOF, 1);
+		tmcommand(dev, SREV, 1);
 	}
 	if ((minor(dev)&T_NOREWIND) == 0)
-		tcommand(dev, REW, 1);
+		tmcommand(dev, REW, 1);
 	sc->sc_openf = 0;
 }
 
-tcommand(dev, com, count)
+tmcommand(dev, com, count)
 	dev_t dev;
 	int com, count;
 {
@@ -285,10 +284,6 @@ loop:
 	}
 	if ((blkno = sc->sc_blkno) == dbtofsb(bp->b_blkno)) {
 		addr->tmbc = -bp->b_bcount;
-		s = spl6();
-		if (sc->sc_ubinfo == 0)
-			sc->sc_ubinfo = ubasetup(ui->ui_ubanum, bp, 1);
-		splx(s);
 		if ((bp->b_flags&B_READ) == 0) {
 			if (um->um_tab.b_errcnt)
 				cmd |= WIRG;
@@ -296,10 +291,12 @@ loop:
 				cmd |= WCOM;
 		} else
 			cmd |= RCOM;
-		cmd |= (sc->sc_ubinfo >> 12) & 0x30;
 		um->um_tab.b_active = SIO;
-		addr->tmba = sc->sc_ubinfo;
-		addr->tmcs = cmd; 
+		if (um->um_ubinfo)
+			panic("tmstart");
+		um->um_cmd = cmd;
+		ubago(ui);
+		splx(s);
 		return;
 	}
 	um->um_tab.b_active = SSEEK;
@@ -314,15 +311,20 @@ loop:
 	return;
 
 next:
-	ubarelse(ui->ui_ubanum, &sc->sc_ubinfo);
+	ubarelse(um->um_ubanum, &um->um_ubinfo);
 	um->um_tab.b_actf = bp->av_forw;
 	iodone(bp);
 	goto loop;
 }
 
-tmdgo()
+tmdgo(um)
+	register struct uba_minfo *um;
 {
+	register struct device *addr = (struct device *)um->um_addr;
 
+	printf("tmdgo %x %x\n", um->um_ubinfo, um->um_cmd);
+	addr->tmba = um->um_ubinfo;
+	addr->tmcs = um->um_cmd | ((um->um_ubinfo >> 12) & 0x30);
 }
 
 /*ARGSUSED*/
@@ -335,6 +337,7 @@ tmintr(d)
 	register struct tm_softc *sc = &tm_softc[0];
 	register state;
 
+	printf("tmintr %x %x\n", um->um_tab.b_actf, um->um_tab.b_active);
 	if (sc->sc_flags&WAITREW && (addr->tmer&RWS) == 0) {
 		sc->sc_flags &= ~WAITREW;
 		wakeup((caddr_t)&sc->sc_flags);
@@ -364,7 +367,7 @@ tmintr(d)
 				if((addr->tmer&SOFT) == NXM)
 					printf("TM UBA late error\n");
 				sc->sc_blkno++;
-				ubarelse(um->um_ubanum, &sc->sc_ubinfo);
+				ubarelse(um->um_ubanum, &um->um_ubinfo);
 				tmstart();
 				return;
 			}
@@ -403,7 +406,7 @@ errout:
 		um->um_tab.b_errcnt = 0;
 		um->um_tab.b_actf = bp->av_forw;
 		bp->b_resid = -addr->tmbc;
-		ubarelse(um->um_ubanum, &sc->sc_ubinfo);
+		ubarelse(um->um_ubanum, &um->um_ubinfo);
 		iodone(bp);
 		break;
 
@@ -503,7 +506,7 @@ tmioctl(dev, cmd, addr, flag)
 		if (callcount <= 0 || fcount <= 0)
 			u.u_error = ENXIO;
 		else while (--callcount >= 0) {
-			tcommand(dev, tmops[mtop.mt_op], fcount);
+			tmcommand(dev, tmops[mtop.mt_op], fcount);
 			if ((mtop.mt_op == MTFSR || mtop.mt_op == MTBSR) &&
 			    ctmbuf.b_resid) {
 				u.u_error = EIO;
