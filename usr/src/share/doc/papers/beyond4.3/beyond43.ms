@@ -5,7 +5,8 @@
 \fB\s+2Current Research by
 The Computer Systems Research Group
 of Berkeley\s-2\fP
-.ds DT "October 23, 1988"
+.ds DT "February 10, 1989
+.\" \fBDRAFT of \*(DT\fP
 .sp 2
 .nf
 Marshall Kirk McKusick
@@ -56,8 +57,8 @@ made about a year after the test release.
 .NH
 Recently Completed Projects
 .PP
-There have been several changes in the system that were recently included
-in the 4.3BSD Tahoe release.
+There have been several changes in the system that were included
+in the recent 4.3BSD Tahoe release.
 .NH 2
 Multi-architecture support
 .PP
@@ -199,8 +200,6 @@ POSIX related changes to the BSD system have included a new terminal
 driver, support for POSIX sessions and job control, expanded signal
 functionality, restructured directory access routines, and new set-user
 and set-group id facilities.
-The POSIX terminal driver interface is derived from System V;
-the 4.3 interface is derived from Seventh Edition.
 We currently have a prototype implementation of the
 POSIX driver with extensions to provide binary compatibility with
 applications developed for the old Berkeley terminal driver.
