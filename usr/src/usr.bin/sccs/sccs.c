@@ -93,7 +93,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.59 %G%";
+static char SccsId[] = "@(#)sccs.c	1.60 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -198,6 +198,8 @@ struct sccsprog SccsProg[] =
 	"diffs",	DIFFS,	NO_SDOT|REALUSER,	NULL,
 	"-diff",	DODIFF,	NO_SDOT|REALUSER,	PROGPATH(bdiff),
 	"print",	CMACRO,	0,			"prt -e/get -p -m -s",
+	"branch",	CMACRO,	NO_SDOT,
+		"get:ixrc -e -b/delta: -s -n -ybranch-place-holder/get:pl -e -t -g",
 	NULL,		-1,	0,			NULL
 };
 
