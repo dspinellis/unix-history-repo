@@ -498,6 +498,9 @@ sendrequest(cmd, local, remote)
 			for (bufp = buf; c > 0; c -= d, bufp += d)
 				if ((d = write(fileno(dout), bufp, c)) <= 0)
 					break;
+			for (bufp = buf; c > 0; c -= d, bufp += d)
+				if ((d = write(fileno(dout), bufp, c)) <= 0)
+					break;
 			if (hash) {
 				while (bytes >= hashbytes) {
 					(void) putchar('#');
@@ -772,6 +775,7 @@ recvrequest(cmd, local, remote, mode)
 		buf = malloc(st.st_blksize);
 		if (buf == NULL) {
 			perror("malloc");
+			bufsize = 0;
 			goto abort;
 		}
 		bufsize = st.st_blksize;
@@ -832,6 +836,9 @@ recvrequest(cmd, local, remote, mode)
 					}
 					if (c == EOF)
 						goto contin2;
+					}
+					if (c == EOF)
+						goto contin2;
 				}
 			}
 			(void) putc(c, fout);
@@ -845,13 +852,13 @@ break2:
 			(void) putchar('\n');
 			(void) fflush(stdout);
 		}
-		if (ferror(din)){
+		if (ferror(din)) {
 			if (errno != EPIPE)
-				perror ("netin");
+				perror("netin");
 			bytes = -1;
 		}
 		if (ferror(fout))
-			perror (local);
+			perror(local);
 		break;
 	}
 	if (closefunc != NULL)
