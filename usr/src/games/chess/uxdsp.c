@@ -510,8 +510,9 @@ short r,c; char x;
   if (color[sq] == black)  x = '*'; else x = ' ';
   if (r % 2 == 0 && c % 2 == 1 || r % 2 == 1 && c % 2 == 0)
 	  standout();
-  gotoXY(5+5*c,5+2*(7-r)); printz("%c%c ",x,pxx[board[sq]]);
+  gotoXY(5+5*c,5+2*(7-r)); printz("%c%c",x,pxx[board[sq]]);
   standend();
+  printz(" ");
 }
 
 
@@ -532,8 +533,8 @@ short i,l,z,m = 0, j;
           printz("%d ", z);
 	  for (j = 0; j < 8; j++) {
 		  printz("|");
-		  if (j % 2 == m)
-			  standout();
+/*		  if (j % 2 == m)
+			  standout(); */
 		  printz("    ");
 		  standend();
 	  }
