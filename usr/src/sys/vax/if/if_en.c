@@ -1,4 +1,4 @@
-/*	if_en.c	4.17	81/12/03	*/
+/*	if_en.c	4.18	81/12/09	*/
 
 #include "en.h"
 
@@ -27,7 +27,7 @@
 #include "../net/ip.h"
 #include "../net/ip_var.h"
 
-#define	ENMTU	1024
+#define	ENMTU	(1024+512)
 
 int	enprobe(), enattach(), enrint(), enxint(), encollide();
 struct	uba_device *eninfo[NEN];
@@ -100,7 +100,7 @@ COUNT(ENATTACH);
 	es->es_if.if_mtu = ENMTU;
 	es->es_if.if_net = ui->ui_flags;
 	es->es_if.if_host[0] =
-	    ~(((struct endevice *)eninfo[ui->ui_unit])->en_addr) & 0xff;
+	    (~(((struct endevice *)eninfo[ui->ui_unit]->ui_addr)->en_addr)) & 0xff;
 	es->es_if.if_addr =
 	    if_makeaddr(es->es_if.if_net, es->es_if.if_host[0]);
 	es->es_if.if_init = eninit;
@@ -193,7 +193,11 @@ COUNT(ENSTART);
 		es->es_oactive = 0;
 		return;
 	}
+	dest = mtod(m, struct en_header *)->en_dhost;
+printf("if_wubaput m=%x\n", m);
 	es->es_olen = if_wubaput(&es->es_ifuba, m);
+printf("wubaput to %x len %d\n", es->es_ifuba.ifu_w.ifrw_addr, es->es_olen);
+asm("halt");
 
 	/*
 	 * Ethernet cannot take back-to-back packets (no
@@ -201,7 +205,6 @@ COUNT(ENSTART);
 	 * receiver, enforce a small delay (about 1ms) in interface
 	 * on successive packets sent to same host.
 	 */
-	dest = mtod(m, struct en_header *)->en_dhost;
 	if (es->es_lastx && es->es_lastx == dest)
 		es->es_delay = enlastdel;
 	else
@@ -233,6 +236,7 @@ enxint(unit)
 	register struct endevice *addr;
 COUNT(ENXINT);
 
+printf("enxint\n");
 	if (es->es_oactive == 0)
 		return;
 	addr = (struct endevice *)ui->ui_addr;
@@ -241,7 +245,7 @@ COUNT(ENXINT);
 	es->es_delay = 0;
 	es->es_mask = ~0;
 	if (addr->en_ostat&EN_OERROR)
-		printf("es%d: output error\n", unit);
+		printf("en%d: output error\n", unit);
 	if (es->es_if.if_snd.ifq_head == 0) {
 		es->es_if.if_oerrors++;
 		if (es->es_ifuba.ifu_xtofree) {
@@ -265,6 +269,7 @@ encollide(unit)
 	register struct en_softc *es = &en_softc[unit];
 COUNT(ENCOLLIDE);
 
+printf("encollide\n");
 	es->es_if.if_collisions++;
 	if (es->es_oactive == 0)
 		return;
@@ -274,7 +279,7 @@ COUNT(ENCOLLIDE);
 	 * backed off 16 times, and give up.
 	 */
 	if (es->es_mask == 0) {
-		printf("es%d: send error\n", unit);
+		printf("en%d: send error\n", unit);
 		enxint(unit);
 		return;
 	}
@@ -308,6 +313,7 @@ enrint(unit)
 	int off;
 COUNT(ENRINT);
 
+printf("enrint\n");
 	es->es_if.if_ipackets++;
 
 	/*
@@ -316,7 +322,7 @@ COUNT(ENRINT);
 	UBAPURGE(es->es_ifuba.ifu_uba, es->es_ifuba.ifu_r.ifrw_bdp);
 	if (addr->en_istat&EN_IERROR) {
 		es->es_if.if_ierrors++;
-		printf("es%d: input error\n", unit);
+		printf("en%d: input error\n", unit);
 		goto setup;
 	}
 
@@ -327,6 +333,7 @@ COUNT(ENRINT);
 	 * Remember that type was trailer by setting off.
 	 */
 	en = (struct en_header *)(es->es_ifuba.ifu_r.ifrw_addr);
+printf("en %x, en->en_type %d\n", en, en->en_type);
 #define	endataaddr(en, off, type)	((type)(((caddr_t)((en)+1)+(off))))
 	if (en->en_type >= ENPUP_TRAIL &&
 	    en->en_type < ENPUP_TRAIL+ENPUP_NTRAILER) {
@@ -337,6 +344,7 @@ COUNT(ENRINT);
 	} else
 		off = 0;
 
+printf("off %d\n", off);
 	/*
 	 * Attempt to infer packet length from type;
 	 * can't deal with packet if can't infer length.
@@ -345,7 +353,7 @@ COUNT(ENRINT);
 
 #ifdef INET
 	case ENPUP_IPTYPE:
-		len = endataaddr(en, off, struct ip *)->ip_len;
+		len = htons(endataaddr(en, off+2, struct ip *)->ip_len)+2;
 		setipintr();
 		inq = &ipintrq;
 		break;
@@ -365,6 +373,10 @@ COUNT(ENRINT);
 	 * the two-byte type which is at the front of any trailer data.
 	 */
 	m = if_rubaget(&es->es_ifuba, len, off);
+	if (m == 0)
+		goto setup;
+	printf("rubaget returns m %x\n", m);
+	asm("halt");
 	if (off) {
 		m->m_off += 2;
 		m->m_len -= 2;
@@ -404,7 +416,8 @@ enoutput(ifp, m0, pf)
 		int off;
 
 		dest = ip->ip_dst.s_addr >> 24;
-		off = ip->ip_len - m->m_len;
+		off = ntohs(ip->ip_len) - m->m_len;
+printf("PF_INET enoutput off %d m->m_off %d m->m_len %d\n", off, m->m_off, m->m_len);
 		if (off > 0 && (off & 0x1ff) == 0 && m->m_off >= MMINOFF + 2) {
 			type = ENPUP_TRAIL + (off>>9);
 			m->m_off -= 2;
@@ -436,12 +449,15 @@ gottrailertype:
 	m0->m_next = 0;
 	m0 = m;
 
+printf("m %x after trailer futz\n", m);
+asm("halt");
 gottype:
 	/*
 	 * Add local net header.  If no space in first mbuf,
 	 * allocate another.
 	 */
-	if (MMINOFF + sizeof (struct en_header) > m->m_off) {
+	if (m->m_off > MMAXOFF ||
+	    MMINOFF + sizeof (struct en_header) > m->m_off) {
 		m = m_get(0);
 		if (m == 0) {
 			m_freem(m0);
@@ -451,7 +467,6 @@ gottype:
 		m->m_off = MMINOFF;
 		m->m_len = sizeof (struct en_header);
 	} else {
-		m = m0;
 		m->m_off -= sizeof (struct en_header);
 		m->m_len += sizeof (struct en_header);
 	}
@@ -465,6 +480,8 @@ gottype:
 	 * not yet active.
 	 */
 	s = splimp();
+printf("queueing %x\n", m);
+asm("halt");
 	IF_ENQUEUE(&ifp->if_snd, m);
 	splx(s);
 	if (en_softc[ifp->if_unit].es_oactive == 0)
