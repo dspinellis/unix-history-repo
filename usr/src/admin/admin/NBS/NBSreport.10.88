@@ -1,4 +1,4 @@
-.\"	@(#)NBSreport.10.88	1.2	88/10/20
+.\"	@(#)NBSreport.10.88	1.3	88/10/21
 .\" *troff -me
 .sp 2
 .ce 100
@@ -88,16 +88,15 @@ and began adding support for enabling multicast reception.  The 802.2
 support was made available to colleagues at the University of Wisconsin,
 who will incorporate it in their upcoming release of ISO for the IBM RT.
 .pp
-The kernel network buffering strategies were revised.
-Many of these interface changes for the ISO protocols also
-provide the framework to improve the performance of the
-TCP/IP networking.
+The kernel network buffering strategies were revised
+to support typed data and record marks and to make them more portable.
+The portability changes will also improve network performance
+on architectures without page-mapped I/O.
 .pp
-We have begun implementing a message-based routing control mechanism,
-having discussed our plans with co-workers at Wisconsin and LBL.
 We designed and coded an alternate interface for communicating routing
-changes with the kernel, and designed and coded our own algorithm for
-hierarchical routing lookups.
+changes with the kernel (after soliciting comments from colleagues
+at Lawrence Berkeley Laboratory and the University of Wisconsin),
+and designed and coded our own algorithm for hierarchical routing lookups.
 .pp
 The prototype POSIX terminal driver that was developed to validate
 the P1003.1 terminal driver specification has been used to
