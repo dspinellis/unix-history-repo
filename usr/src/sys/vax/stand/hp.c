@@ -1,4 +1,4 @@
-/*	hp.c	6.3	83/09/23	*/
+/*	hp.c	6.4	84/02/06	*/
 
 /*
  * RP??/RM?? disk driver
@@ -118,6 +118,7 @@ found:
 			}
 		}	
 	}
+	st = &hpst[hp_type[unit]];
 	if (io->i_boff < 0 || io->i_boff > 7 ||
 	    st->off[io->i_boff]== -1)
 		_stop("hp bad minor");
