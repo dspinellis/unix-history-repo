@@ -39,7 +39,7 @@ static	char	sccsid[] = "@(#)globals.c	3.1  10/29/86";
 
 #include	"globals.h"
 
-#include	"general.h"
+#include	"../general.h"
 
 /*
  * init_system()

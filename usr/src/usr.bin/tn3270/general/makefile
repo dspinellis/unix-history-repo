@@ -3,7 +3,7 @@ PRINT	= print
 
 DEFINES = 
 
-INCLUDES = -I. -I..
+INCLUDES = -I.
 
 OPTIMIZE = -O
 OPTIMIZE = -g
