@@ -1,4 +1,4 @@
-/*	kern_sig.c	6.10	85/03/12	*/
+/*	kern_sig.c	6.11	85/03/12	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -37,6 +37,7 @@ sigvec()
 	struct sigvec vec;
 	register struct sigvec *sv;
 	register int sig;
+	int bit;
 
 	sig = uap->signo;
 	if (sig <= 0 || sig >= NSIG || sig == SIGKILL || sig == SIGSTOP) {
@@ -47,7 +48,12 @@ sigvec()
 	if (uap->osv) {
 		sv->sv_handler = u.u_signal[sig];
 		sv->sv_mask = u.u_sigmask[sig];
-		sv->sv_onstack = (u.u_sigonstack & sigmask(sig)) != 0;
+		bit = sigmask(sig);
+		sv->sv_flags = 0;
+		if ((u.u_sigonstack & bit) != 0)
+			sv->sv_flags |= SV_ONSTACK;
+		if ((u.u_sigintr & bit) != 0)
+			sv->sv_flags |= SV_INTERRUPT;
 		u.u_error =
 		    copyout((caddr_t)sv, (caddr_t)uap->osv, sizeof (vec));
 		if (u.u_error)
@@ -81,7 +87,11 @@ setsigvec(sig, sv)
 	(void) splhigh();
 	u.u_signal[sig] = sv->sv_handler;
 	u.u_sigmask[sig] = sv->sv_mask &~ cantmask;
-	if (sv->sv_onstack)
+	if (sv->sv_flags & SV_INTERRUPT)
+		u.u_sigintr |= bit;
+	else
+		u.u_sigintr &= ~bit;
+	if (sv->sv_flags & SV_ONSTACK)
 		u.u_sigonstack |= bit;
 	else
 		u.u_sigonstack &= ~bit;

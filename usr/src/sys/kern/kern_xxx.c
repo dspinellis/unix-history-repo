@@ -1,4 +1,4 @@
-/*	kern_xxx.c	6.2	84/08/29	*/
+/*	kern_xxx.c	6.3	85/03/12	*/
 
 #include "param.h"
 #include "systm.h"
@@ -341,7 +341,7 @@ ossig()
 		return;
 	}
 	sv->sv_mask = 0;
-	sv->sv_onstack = 0;
+	sv->sv_flags = SV_INTERRUPT;
 	u.u_r.r_val1 = (int)u.u_signal[a];
 	setsigvec(a, sv);
 	p->p_flag |= SOUSIG;		/* mark as simulating old stuff */

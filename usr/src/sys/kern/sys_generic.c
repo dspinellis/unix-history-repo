@@ -1,4 +1,4 @@
-/*	sys_generic.c	6.7	85/02/08	*/
+/*	sys_generic.c	6.8	85/03/12	*/
 
 #include "param.h"
 #include "systm.h"
@@ -130,9 +130,14 @@ rwuio(uio, rw)
 	}
 	count = uio->uio_resid;
 	uio->uio_offset = fp->f_offset;
-	if ((u.u_procp->p_flag&SOUSIG) == 0 && setjmp(&u.u_qsave)) {
-		if (uio->uio_resid == count)
-			u.u_eosys = RESTARTSYS;
+	if (setjmp(&u.u_qsave)) {
+		if (uio->uio_resid == count) {
+			if ((u.u_sigintr & sigmask(u.u_procp->p_cursig)) != 0 ||
+			    (u.u_procp->p_flag & SOUSIG) != 0)
+				u.u_error = EINTR;
+			else
+				u.u_eosys = RESTARTSYS;
+		}
 	} else
 		u.u_error = (*fp->f_ops->fo_rw)(fp, rw, uio);
 	u.u_r.r_val1 = count - uio->uio_resid;

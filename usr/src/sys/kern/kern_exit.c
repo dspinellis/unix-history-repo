@@ -1,4 +1,4 @@
-/*	kern_exit.c	6.5	84/12/20	*/
+/*	kern_exit.c	6.6	85/03/12	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -250,7 +250,11 @@ loop:
 		u.u_r.r_val1 = 0;
 		return (0);
 	}
-	if ((u.u_procp->p_flag&SOUSIG) == 0 && setjmp(&u.u_qsave)) {
+	if (setjmp(&u.u_qsave)) {
+		p = u.u_procp;
+		if ((u.u_sigintr & sigmask(p->p_cursig)) != 0 ||
+		    (p->p_flag & SOUSIG) != 0)
+			return(EINTR);
 		u.u_eosys = RESTARTSYS;
 		return (0);
 	}
