@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)daily	5.7 (Berkeley) %G%
+#	@(#)daily	5.8 (Berkeley) %G%
 #
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local
 host=`hostname -s`
@@ -56,22 +56,22 @@ sa -s > /dev/null
 
 echo ""
 echo "Backup passwd and group files:"
-if cmp $bak/master.passwd.bak /etc/master.passwd >/dev/null; then :; else
+if cmp -s $bak/master.passwd.bak /etc/master.passwd; then :; else
 	echo "$host passwd diffs:"
 	diff $bak/master.passwd.bak /etc/master.passwd
 	mv $bak/master.passwd.bak $bak/master.passwd.bak2
 	cp -p /etc/master.passwd $bak/master.passwd.bak
 fi
-if cmp $bak/group.bak /etc/group >/dev/null; then :; else
+if cmp -s $bak/group.bak /etc/group; then :; else
 	mv $bak/group.bak $bak/group.bak2
 	cp -p /etc/group $bak/group.bak
 fi
-if cmp $bak/aliases.bak /etc/aliases >/dev/null; then :; else
+if cmp -s $bak/aliases.bak /etc/aliases; then :; else
 	mv $bak/aliases.bak $bak/aliases.bak2
 	cp -p /etc/aliases $bak/aliases.bak
 fi
 if [ -f /etc/Distfile ]; then
-	if cmp $bak/Distfile.bak /etc/Distfile >/dev/null; then :; else
+	if cmp -s $bak/Distfile.bak /etc/Distfile; then :; else
 		mv $bak/Distfile.bak $bak/Distfile.bak2
 		cp /etc/Distfile $bak/Distfile.bak
 	fi
