@@ -1,10 +1,12 @@
-.\"	@(#)g0	5.1 (Berkeley) %G%
+.\"	@(#)g0	6.1 (Berkeley) %G%
 .\"
+.EH 'USD:27-%''Typesetting Mathematics _ User\'s Guide'
+.OH 'Typesetting Mathematics _ User\'s Guide''USD:27-%'
 .EQ
 delim $$
 .EN
 \".ND "June 2, 1976"
-.RP
+.\".RP
 \".TM "76-1273-4 76-1271-4" 39199 39199-11
 .TL
 Typesetting Mathematics _ User's Guide
@@ -22,9 +24,7 @@ mathematics,
 using
 the phototypesetters on the
 .UX
-and
-.UC GCOS
-operating systems.
+operating system.
 .PP
 Mathematical expressions are described in a language
 designed to be easy to use
