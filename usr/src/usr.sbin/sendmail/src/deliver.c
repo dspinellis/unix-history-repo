@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.26	%G%";
+static char SccsId[] = "@(#)deliver.c	3.27	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -511,7 +511,10 @@ putmessage(fp, m)
 
 	/* output "From" line unless supressed */
 	if (!bitset(M_NHDR, m->m_flags))
-		fprintf(fp, "%s\n", FromLine);
+	{
+		(void) expand("$l", buf, &buf[sizeof buf - 1]);
+		fprintf(fp, "%s\n", buf);
+	}
 
 	/* output all header lines */
 	for (h = Header; h != NULL; h = h->h_link)
