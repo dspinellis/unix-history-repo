@@ -1,0 +1,52 @@
+#	@(#)README_TOO	7.1 (Berkeley) %G%
+
+Sun Mar 29 22:19:51 PST 1992
+
+steps to bootstap a system.
+
+1) Load kernel and mini-root into memory with one of the PROM commands.
+   This is the only step that depends on what type of machine you are using.
+   The 'cnfg' PROM command will display what devices are avaliable
+   (DEC 5000 only).
+   The 'm' argument tells the kernel to look for a mini-root in memory.
+
+	DEC 3100:	boot -f tz(0,5,0) m	# 5 is the SCSI id of the TK50
+	DEC 5000:	boot 5/tz6 m		# 6 is the SCSI id of the TK50
+	DEC 5000:	boot 6/tftp/bootfile m	# requires bootp on host
+
+2) Format the disk if needed. Most SCSI disks are already formatted.
+	format
+
+3) Label disks and create file systems.
+	# disklabel -W /dev/rrz?c		# This enables writing the label
+	# disklabel -w -r /dev/rrz?c $DISKTYPE
+	# newfs /dev/rrz?a
+	# newfs /dev/rrz?g
+	...
+	# fsck /dev/rrz?a
+	# fsck /dev/rrz?g
+	...
+
+	Supported disk types are listed in /etc/disktab.
+	Feel free to add to this list.
+
+4) Restore / and /usr partitions.
+	# mount -u /
+	# mount /dev/rz?a /a
+	# mount /dev/rz?g /b
+	# cd /a
+	# mt -f /dev/nrmt0 rew
+	# mt -f /dev/nrmt0 fsf 1
+	# restore -rf /dev/nrmt0
+	# cd /b
+	# restore -rf /dev/nrmt0
+	# cd /
+	# sync
+	# umount /a /b
+	# fsck /dev/rz?a /dev/rz?g
+
+5) Initialize the PROM monitor to boot automatically.
+	# halt -q
+
+	DEC 3100:	setenv bootpath boot -f rz(0,?,0)vmunix
+	DEC 5000:	setenv bootpath 5/rz?/vmunix -a
