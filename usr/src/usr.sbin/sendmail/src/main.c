@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.97 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.98 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -954,12 +954,6 @@ main(argc, argv, envp)
 		}
 		for (;;)
 		{
-			register char **pvp;
-			char *q;
-			auto char *delimptr;
-			extern bool invalidaddr();
-			extern char *crackaddr();
-
 			if (Verbose)
 				printf("> ");
 			(void) fflush(stdout);
@@ -967,132 +961,7 @@ main(argc, argv, envp)
 				finis();
 			if (!Verbose)
 				printf("> %s", buf);
-			switch (buf[0])
-			{
-			  case '#':
-				continue;
-
-			  case '?':		/* try crackaddr */
-			  	q = crackaddr(&buf[1]);
-			  	xputs(q);
-			  	printf("\n");
-			  	continue;
-
-			  case '.':		/* config-style settings */
-				switch (buf[1])
-				{
-				  case 'D':
-					define(buf[2], newstr(&buf[3]), CurEnv);
-					break;
-
-				  case 'C':
-					setclass(buf[2], &buf[3]);
-					break;
-
-				  case 'S':		/* dump rule set */
-					{
-						int rs;
-						struct rewrite *rw;
-						char *cp;
-						STAB *s;
-
-						if ((cp = strchr(buf, '\n')) != NULL)
-							*cp = '\0';
-						if (cp == buf+2)
-							continue;
-						s = stab(buf+2, ST_RULESET, ST_FIND);
-						if (s == NULL)
-						{
-							if (!isdigit(buf[2]))
-								continue;
-							rs = atoi(buf+2);
-						}
-						else
-							rs = s->s_ruleset;
-						if (rs < 0 || rs > MAXRWSETS)
-							continue;
-						if ((rw = RewriteRules[rs]) == NULL)
-							continue;
-						do
-						{
-							char **s;
-							putchar('R');
-							s = rw->r_lhs;
-							while (*s != NULL)
-							{
-								xputs(*s++);
-								putchar(' ');
-							}
-							putchar('\t');
-							putchar('\t');
-							s = rw->r_rhs;
-							while (*s != NULL)
-							{
-								xputs(*s++);
-								putchar(' ');
-							}
-							putchar('\n');
-						} while (rw = rw->r_next);
-					}
-					break;
-
-				  default:
-					printf("Unknown config command %s", buf);
-					break;
-				}
-				continue;
-
-			  case '-':		/* set command-line-like opts */
-				switch (buf[1])
-				{
-				  case 'd':
-					if (buf[2] == '\n')
-						tTflag("");
-					else
-						tTflag(&buf[2]);
-					break;
-
-				  default:
-					printf("Unknown \"-\" command %s", buf);
-					break;
-				}
-				continue;
-			}
-
-			for (p = buf; isascii(*p) && isspace(*p); p++)
-				continue;
-			q = p;
-			while (*p != '\0' && !(isascii(*p) && isspace(*p)))
-				p++;
-			if (*p == '\0')
-			{
-				printf("No address!\n");
-				continue;
-			}
-			*p = '\0';
-			if (invalidaddr(p + 1, NULL))
-				continue;
-			do
-			{
-				char pvpbuf[PSBUFSIZE];
-
-				pvp = prescan(++p, ',', pvpbuf, sizeof pvpbuf,
-					      &delimptr, NULL);
-				if (pvp == NULL)
-					continue;
-				p = q;
-				while (*p != '\0')
-				{
-					int stat;
-
-					stat = rewrite(pvp, atoi(p), 0, CurEnv);
-					if (stat != EX_OK)
-						printf("== Ruleset %s status %d\n",
-							p, stat);
-					while (*p != '\0' && *p++ != ',')
-						continue;
-				}
-			} while (*(p = delimptr) != '\0');
+			testmodeline(buf, CurEnv);
 		}
 	}
 
@@ -1673,4 +1542,184 @@ sighup()
 		syslog(LOG_ALERT, "could not exec %s: %m", SaveArgv[0]);
 #endif
 	exit(EX_OSFILE);
+}
+/*
+**  TESTMODELINE -- process a test mode input line
+**
+**	Parameters:
+**		line -- the input line.
+**		e -- the current environment.
+*/
+
+testmodeline(line, e)
+	char *line;
+	ENVELOPE *e;
+{
+	register char *p;
+	char *q;
+	auto char *delimptr;
+	extern bool invalidaddr();
+	extern char *crackaddr();
+
+	switch (line[0])
+	{
+	  case '#':
+		return;
+
+	  case '?':		/* try crackaddr */
+		q = crackaddr(&line[1]);
+		xputs(q);
+		printf("\n");
+		return;
+
+	  case '.':		/* config-style settings */
+		switch (line[1])
+		{
+		  case 'D':
+			define(line[2], newstr(&line[3]), e);
+			break;
+
+		  case 'C':
+			setclass(line[2], &line[3]);
+			break;
+
+		  case 'S':		/* dump rule set */
+			{
+				int rs;
+				struct rewrite *rw;
+				char *cp;
+				STAB *s;
+
+				if ((cp = strchr(line, '\n')) != NULL)
+					*cp = '\0';
+				if (cp == line+2)
+					return;
+				s = stab(line+2, ST_RULESET, ST_FIND);
+				if (s == NULL)
+				{
+					if (!isdigit(line[2]))
+						return;
+					rs = atoi(line+2);
+				}
+				else
+					rs = s->s_ruleset;
+				if (rs < 0 || rs > MAXRWSETS)
+					return;
+				if ((rw = RewriteRules[rs]) == NULL)
+					return;
+				do
+				{
+					char **s;
+					putchar('R');
+					s = rw->r_lhs;
+					while (*s != NULL)
+					{
+						xputs(*s++);
+						putchar(' ');
+					}
+					putchar('\t');
+					putchar('\t');
+					s = rw->r_rhs;
+					while (*s != NULL)
+					{
+						xputs(*s++);
+						putchar(' ');
+					}
+					putchar('\n');
+				} while (rw = rw->r_next);
+			}
+			break;
+
+		  default:
+			printf("Unknown config command %s", line);
+			break;
+		}
+		return;
+
+	  case '-':		/* set command-line-like opts */
+		switch (line[1])
+		{
+		  case 'd':
+			if (line[2] == '\n')
+				tTflag("");
+			else
+				tTflag(&line[2]);
+			break;
+
+		  default:
+			printf("Unknown \"-\" command %s", line);
+			break;
+		}
+		return;
+
+	  case '/':		/* miscellaneous commands */
+		p = strchr(line, '\n');
+		if (p != NULL)
+		{
+			while (p >= line && isascii(*p) && isspace(*p))
+				*p-- = '\0';
+		}
+		p = strpbrk(line, " \t");
+		if (p != NULL)
+		{
+			while (isascii(*p) && isspace(*p))
+				*p++ = '\0';
+		}
+		else
+			p = "";
+		if (strcasecmp(&line[1], "mx") == 0)
+		{
+			/* look up MX records */
+			int nmx;
+			int i;
+			auto int rcode;
+			char *mxhosts[MAXMXHOSTS + 1];
+
+			nmx = getmxrr(p, mxhosts, FALSE, &rcode);
+			printf("%d MX records:\n", nmx);
+			for (i = 0; i < nmx; i++)
+				printf("\t%s\n", mxhosts[i]);
+		}
+		else
+		{
+			printf("Unknown test command %s\n", line);
+		}
+		return;
+	}
+
+	for (p = line; isascii(*p) && isspace(*p); p++)
+		continue;
+	q = p;
+	while (*p != '\0' && !(isascii(*p) && isspace(*p)))
+		p++;
+	if (*p == '\0')
+	{
+		printf("No address!\n");
+		return;
+	}
+	*p = '\0';
+	if (invalidaddr(p + 1, NULL))
+		return;
+	do
+	{
+		register char **pvp;
+		char pvpbuf[PSBUFSIZE];
+
+		pvp = prescan(++p, ',', pvpbuf, sizeof pvpbuf,
+			      &delimptr, NULL);
+		if (pvp == NULL)
+			continue;
+		p = q;
+		while (*p != '\0')
+		{
+			int stat;
+
+			stat = rewrite(pvp, atoi(p), 0, e);
+			if (stat != EX_OK)
+				printf("== Ruleset %s status %d\n",
+					p, stat);
+			while (*p != '\0' && *p++ != ',')
+				continue;
+		}
+	} while (*(p = delimptr) != '\0');
 }
