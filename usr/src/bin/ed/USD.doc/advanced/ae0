@@ -1,18 +1,18 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)ae0	8.1 (Berkeley) %G%
+.\"	@(#)ae0	6.4 (Berkeley) %G%
 .\"
 .nr P1 1
 .EH 'USD:10-%''Advanced Editing on \s-2UNIX\s+2'
 .OH 'Advanced Editing on \s-2UNIX\s+2''USD:10-%'
-.....TM 76-1273-8 39199 39199-11
+.\" .....TM 76-1273-8 39199 39199-11
 .\".RP
 .TL
 Advanced Editing on \s-2UNIX\s+2
 .AU "MH 2C518" 6021
 Brian W. Kernighan
 .AI
-.MH
+Murray Hill, NJ
 .AU
 (Updated for 4.3BSD by Mark Seiden)
 .AB
@@ -53,14 +53,14 @@ and
 Although the treatment is aimed
 at non-programmers,
 new
-.UC UNIX
+UNIX
 users
 with any background
 should find helpful hints
 on how to get their jobs done
 more easily.
 .AE
-.CS 16 0 16 0 0 3
+.\" .CS 16 0 16 0 0 3
 .if n .ls 2
 .if t .2C
 .nr PS 9
