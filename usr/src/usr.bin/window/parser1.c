@@ -1,6 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)parser1.c	3.17 %G%";
+static char sccsid[] = "@(#)parser1.c	3.18 %G%";
 #endif
+
+/*
+ * Copyright (c) 1983 Regents of the University of California,
+ * All rights reserved.  Redistribution permitted subject to
+ * the terms of the Berkeley Software License Agreement.
+ */
 
 #include "parser.h"
 

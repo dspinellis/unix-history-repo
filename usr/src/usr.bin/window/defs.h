@@ -1,4 +1,10 @@
-/*	@(#)defs.h	3.15 84/05/23		*/
+/*	@(#)defs.h	3.16 85/04/24		*/
+
+/*
+ * Copyright (c) 1983 Regents of the University of California,
+ * All rights reserved.  Redistribution permitted subject to
+ * the terms of the Berkeley Software License Agreement.
+ */
 
 #include "ww.h"
 #include <sys/time.h>

@@ -1,5 +1,11 @@
 /*
- * @(#)var.h	3.6 %G%
+ * @(#)var.h	3.7 %G%
+ */
+
+/*
+ * Copyright (c) 1983 Regents of the University of California,
+ * All rights reserved.  Redistribution permitted subject to
+ * the terms of the Berkeley Software License Agreement.
  */
 
 struct var {
