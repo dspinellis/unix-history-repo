@@ -1,0 +1,166 @@
+// This may look like C code, but it is really -*- C++ -*-
+/* 
+Copyright (C) 1988 Free Software Foundation
+    written by Doug Lea (dl@rocky.oswego.edu)
+
+This file is part of GNU CC.
+
+GNU CC is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY.  No author or distributor
+accepts responsibility to anyone for the consequences of using it
+or for whether it serves any particular purpose or works at all,
+unless he says so in writing.  Refer to the GNU CC General Public
+License for full details.
+
+Everyone is granted permission to copy, modify and redistribute
+GNU CC, but only under the conditions described in the
+GNU CC General Public License.   A copy of this license is
+supposed to have been given to you along with GNU CC so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  
+*/
+
+
+#ifndef _<T>BSTSet_h
+#ifdef __GNUG__
+#pragma once
+#pragma interface
+#endif
+#define _<T>BSTSet_h 1
+
+#include "<T>.Set.h"
+
+#ifndef _<T>BSTNode
+#define _<T>BSTNode 1
+
+struct <T>BSTNode
+{
+  <T>BSTNode*         lt;
+  <T>BSTNode*         rt;
+  <T>BSTNode*         par;
+  <T>                 item;
+                      <T>BSTNode(<T&> h, <T>BSTNode* l=0, <T>BSTNode* r=0,
+                                 <T>BSTNode* p = 0);
+                      ~<T>BSTNode();
+};
+
+#if defined(__OPTIMIZE__) || defined(USE_LIBGXX_INLINES)
+
+inline <T>BSTNode::<T>BSTNode(<T&> h, <T>BSTNode* l, <T>BSTNode* r,
+                              <T>BSTNode* p)
+:item(h), lt(l), rt(r), par(p) {}
+
+inline <T>BSTNode::~<T>BSTNode() {}
+
+#endif
+
+typedef <T>BSTNode* <T>BSTNodePtr;
+
+#endif
+
+class <T>BSTSet : public <T>Set
+{
+protected:
+  <T>BSTNode*      root;
+
+  <T>BSTNode*     leftmost();
+  <T>BSTNode*     rightmost();
+  <T>BSTNode*     pred(<T>BSTNode* t);
+  <T>BSTNode*     succ(<T>BSTNode* t);
+  void            _kill(<T>BSTNode* t);
+  <T>BSTNode*     _copy(<T>BSTNode* t);
+
+public:
+                   <T>BSTSet();
+                   <T>BSTSet(<T>BSTSet& a);
+                   ~<T>BSTSet();
+
+  Pix             add(<T&> item);
+  void            del(<T&> item);
+  int             contains(<T&> item);
+
+  void            clear();
+
+  Pix             first();
+  void            next(Pix& i);
+  <T>&            operator () (Pix i);
+  Pix             seek(<T&> item);
+
+  Pix             last();
+  void            prev(Pix& i);
+
+  int             operator == (<T>BSTSet& b);
+  int             operator != (<T>BSTSet& b);
+  int             operator <= (<T>BSTSet& b); 
+
+  void            balance();
+  int             OK();
+};
+
+#if defined(__OPTIMIZE__) || defined(USE_LIBGXX_INLINES)
+
+inline <T>BSTSet::~<T>BSTSet()
+{
+  _kill(root);
+}
+
+inline <T>BSTSet::<T>BSTSet()
+{
+  root = 0;
+  count = 0;
+}
+
+
+inline <T>BSTSet::<T>BSTSet(<T>BSTSet& a)
+{
+  count = a.count;
+  root = _copy(a.root);
+}
+
+inline int <T>BSTSet::operator != (<T>BSTSet& b)
+{
+  return ! (*this == b);
+}
+
+inline Pix <T>BSTSet::first()
+{
+  return Pix(leftmost());
+}
+
+inline Pix <T>BSTSet::last()
+{
+  return Pix(rightmost());
+}
+
+inline void <T>BSTSet::next(Pix& i)
+{
+  if (i != 0) i = Pix(succ((<T>BSTNode*)i));
+}
+
+inline void <T>BSTSet::prev(Pix& i)
+{
+  if (i != 0) i = Pix(pred((<T>BSTNode*)i));
+}
+
+inline <T>& <T>BSTSet::operator () (Pix i)
+{
+  if (i == 0) error("null Pix");
+  return ((<T>BSTNode*)i)->item;
+}
+
+inline void <T>BSTSet::clear()
+{
+  _kill(root);
+  count = 0;
+  root = 0;
+}
+
+inline int <T>BSTSet::contains(<T&> key)
+{
+  return seek(key) != 0;
+}
+
+
+#endif
+#endif

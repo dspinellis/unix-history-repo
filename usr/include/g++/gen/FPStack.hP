@@ -1,0 +1,123 @@
+// This may look like C code, but it is really -*- C++ -*-
+/* 
+Copyright (C) 1988 Free Software Foundation
+    written by Doug Lea (dl@rocky.oswego.edu)
+    based on code by Marc Shapiro (shapiro@sor.inria.fr)
+
+This file is part of GNU CC.
+
+GNU CC is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY.  No author or distributor
+accepts responsibility to anyone for the consequences of using it
+or for whether it serves any particular purpose or works at all,
+unless he says so in writing.  Refer to the GNU CC General Public
+License for full details.
+
+Everyone is granted permission to copy, modify and redistribute
+GNU CC, but only under the conditions described in the
+GNU CC General Public License.   A copy of this license is
+supposed to have been given to you along with GNU CC so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  
+*/
+
+
+#ifndef _<T>FPStack_h
+#ifdef __GNUG__
+#pragma once
+#pragma interface
+#endif
+#define _<T>FPStack_h
+
+#include "<T>.FPlex.h"
+#include "<T>.Stack.h"
+
+class <T>FPStack : public <T>Stack
+{
+  <T>FPlex      p;
+
+public:
+                <T>FPStack(int chunksize = DEFAULT_<T>PLEX_CHUNK_SIZE);
+                <T>FPStack(const <T>FPStack& s);
+                ~<T>FPStack();
+
+  void          operator = (const <T>FPStack&);
+
+  void          push(<T&> item);
+  <T>           pop();
+  <T>&          top();               
+  void          del_top();
+
+  int           empty();
+  int           full();
+  int           length();
+
+  void          clear();
+
+  int           OK();
+
+};
+
+#if defined(__OPTIMIZE__) || defined(USE_LIBGXX_INLINES)
+
+inline <T>FPStack::<T>FPStack(int chunksize) : p(chunksize) {}
+inline <T>FPStack::<T>FPStack(const <T>FPStack& s) : p(s.p) {}
+
+inline <T>FPStack::~<T>FPStack() {}
+
+inline void <T>FPStack::push(<T&>item)
+{
+  p.add_high(item);
+}
+
+inline <T> <T>FPStack::pop()
+{
+  <T> res = p.high_element();
+  p.del_high();
+  return res;
+}
+
+inline <T>& <T>FPStack::top()
+{
+  return p.high_element();
+}
+
+inline void <T>FPStack::del_top()
+{
+  p.del_high();
+}
+
+inline void <T>FPStack::operator =(const <T>FPStack& s)
+{
+  p = s.p;
+}
+
+inline int <T>FPStack::empty() 
+{
+  return p.empty();
+}
+
+inline int <T>FPStack::full() 
+{
+  return p.full();
+}
+
+inline int <T>FPStack::length() 
+{
+  return p.length();
+}
+
+inline int <T>FPStack::OK() 
+{
+  return p.OK();
+}
+
+inline void <T>FPStack::clear() 
+{
+  p.clear();
+}
+
+
+#endif
+#endif
