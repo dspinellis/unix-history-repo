@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.85		%G%);
+SCCSID(@(#)main.c	3.86		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -526,7 +526,7 @@ main(argc, argv)
 		DontSend = TRUE;
 	sendtoargv(argv);
 
-	/* if we have had errors sofar, drop out now */
+	/* if we have had errors sofar, arrange a meaningful exit stat */
 	if (Errors > 0 && ExitStat == EX_OK)
 		ExitStat = EX_USAGE;
 
@@ -551,7 +551,12 @@ main(argc, argv)
 	**	If the fork fails, we will just continue in the
 	**		parent; this is perfectly safe, albeit
 	**		slower than it must be.
+	**	If we have errors sofar, this seems like a good time
+	**		to dispose of them.
 	*/
+
+	if (ExitStat != EX_OK)
+		finis();
 
 	if (Mode == MD_FORK)
 	{
