@@ -1,4 +1,4 @@
-/*	lfs_vnops.c	4.34	82/08/22	*/
+/*	lfs_vnops.c	4.35	82/08/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -579,13 +579,17 @@ chmod1(ip, mode)
 	register struct inode *ip;
 	register int mode;
 {
+	register int *gp;
+
 	ip->i_mode &= ~07777;
 	if (u.u_uid) {
 		mode &= ~ISVTX;
-		if (ip->i_gid >= NGRPS ||
-		    (u.u_grps[ip->i_gid/(sizeof(int)*8)] &
-		     (1 << ip->i_gid%(sizeof(int)*8))) == 0)
-			mode &= ~ISGID;
+		for (gp = u.u_groups; gp < &u.u_groups[NGROUPS]; gp++)
+			if (*gp == ip->i_gid)
+				goto ok;
+		mode &= ~ISGID;
+ok:
+		;
 #ifdef MUSH
 		if (u.u_quota->q_syflags & QF_UMASK && u.u_uid != 0 &&
 		    (ip->i_mode & IFMT) != IFCHR)

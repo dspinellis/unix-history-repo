@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.34	82/08/22	*/
+/*	kern_proc.c	4.35	82/08/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -377,7 +377,7 @@ register struct inode *ip;
 		u.u_uid = uid;
 		u.u_procp->p_uid = uid;
 		u.u_gid = gid;
-		u.u_grps[gid/(sizeof(int)*8)] |= 1 << (gid%(sizeof(int)*8));
+		entergroup(gid);
 	} else
 		psignal(u.u_procp, SIGTRAP);
 	u.u_tsize = ts;
