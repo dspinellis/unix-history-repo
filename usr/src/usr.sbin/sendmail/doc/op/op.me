@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.45 (Berkeley) %G%
+.\"	@(#)op.me	6.46 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.45
+Version 6.46
 .sp
 For Sendmail Version 6.57
 .)l
@@ -3179,8 +3179,8 @@ and :include: lists respectively.
 They default to:
 .(b
 Mprog, P=/bin/sh, F=lsD, A=sh \-c $u
-M*file*, F=lsDEu, A=NULL
-M*include*, F=su, A=NULL
+M*file*, P=/dev/null, F=lsDFMPEu, A=FILE
+M*include*, P=/dev/null, F=su, A=INCLUDE
 .)b
 .pp
 The Sender and Recipient rewriting sets
@@ -6220,7 +6220,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.45
+.\"Version 6.46
 .\".ce 0
 .pn 2
 .bp
