@@ -1,6 +1,6 @@
 /* @(#)user.h 2.1 3/25/82 */
 
-/*	user.h	4.12	82/04/19	*/
+/*	user.h	4.13	82/06/25	*/
 
 #ifdef KERNEL
 #include "../h/pcb.h"
@@ -138,11 +138,7 @@ struct	user
 #define	SIMULATERTI	2
 
 /* u_error codes */
-#ifdef KERNEL
-#include "../errno.h"
-#else
 #include <errno.h>
-#endif
 
 #ifdef KERNEL
 extern	struct user u;
