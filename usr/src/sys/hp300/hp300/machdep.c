@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.74 92/12/20$
  *
- *	@(#)machdep.c	8.12 (Berkeley) %G%
+ *	@(#)machdep.c	8.13 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1610,4 +1610,50 @@ badkstack(oflow, fr)
 	regdump(&fr, 0);
 	panic(oflow ? oflowmsg : uflowmsg);
 }
-#endif
+
+/*
+ * print a primitive backtrace for the requested process.
+ */
+#define MAXARGS 4
+
+backtrace(p)
+	struct proc *p;
+{
+	long fix, arg, pc, *lfp;
+	caddr_t fp;
+	char *fmt;
+	int i;
+
+	if (p != curproc) {
+		pc = *((long *)(p->p_addr->u_pcb.pcb_regs[11] + fix));
+		fp = (caddr_t)p->p_addr->u_pcb.pcb_regs[10];
+		fix = ((caddr_t)p->p_addr - kstack);
+	} else {
+		/*
+		 * Have to grab current frame pointer; start with function
+		 * that called backtrace.
+		 */
+		asm("movl a6, %0" : "=r" (fp));
+		lfp = (long *)fp;
+		pc = lfp[1];
+		fp = (caddr_t)lfp[0];
+		fix = 0;
+	}
+
+	printf("Process %s\n", p->p_comm);
+	while (fp > kstack) {
+		fp += fix;
+		printf("Function: 0x%x(", pc);
+		lfp = (long *)fp;
+		fmt = ", ";
+		for (i = 0; i < MAXARGS; i++) {
+			arg = lfp[i + 2];
+			if (i == MAXARGS - 1)
+				fmt = ")\n";
+			printf("0x%x%s", arg, fmt);
+		}
+		pc = lfp[1];
+		fp = (caddr_t)lfp[0];
+	}
+}
+#endif /* DEBUG */
