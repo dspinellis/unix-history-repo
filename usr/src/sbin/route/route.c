@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)route.c	4.12 (Berkeley) 84/10/15";
+static char sccsid[] = "@(#)route.c	4.13 (Berkeley) 84/10/31";
 #endif
 
 #include <sys/types.h>
@@ -7,7 +7,6 @@ static char sccsid[] = "@(#)route.c	4.12 (Berkeley) 84/10/15";
 #include <sys/ioctl.h>
 #include <sys/mbuf.h>
 
-#define	KERNEL
 #include <net/route.h>
 #include <netinet/in.h>
 
@@ -29,7 +28,7 @@ main(argc, argv)
 
 	if (argc < 2)
 		printf("usage: route [ -f ] [ cmd args ]\n"), exit(1);
-	s = socket(AF_INET, SOCK_RAW, 0, 0);
+	s = socket(AF_INET, SOCK_RAW, 0);
 	if (s < 0) {
 		perror("route: socket");
 		exit(1);
@@ -62,6 +61,8 @@ struct nlist nl[] = {
 	{ "_rthost" },
 #define	N_RTNET		1
 	{ "_rtnet" },
+#define N_RTHASHSIZE	2
+	{ "_rthashsize" },
 	"",
 };
 
@@ -70,8 +71,8 @@ flushroutes()
 	struct mbuf mb;
 	register struct rtentry *rt;
 	register struct mbuf *m;
-	struct mbuf *routehash[RTHASHSIZ];
-	int i, doinghost = 1, kmem;
+	struct mbuf **routehash;
+	int rthashsize, i, doinghost = 1, kmem;
 	char *routename();
 
 	nlist("/vmunix", nl);
@@ -83,16 +84,24 @@ flushroutes()
 		printf("route: \"rtnet\", symbol not in namelist\n");
 		exit(1);
 	}
+	if (nl[N_RTHASHSIZE].n_value == 0) {
+		printf("route: \"rthashsize\", symbol not in namelist\n");
+		exit(1);
+	}
 	kmem = open("/dev/kmem", 0);
 	if (kmem < 0) {
 		perror("route: /dev/kmem");
 		exit(1);
 	}
+	lseek(kmem, nl[N_RTHASHSIZE].n_value, 0);
+	read(kmem, &rthashsize, sizeof (rthashsize));
+	routehash = (struct mbuf **)malloc(rthashsize*sizeof (struct mbuf *));
+
 	lseek(kmem, nl[N_RTHOST].n_value, 0);
-	read(kmem, routehash, sizeof (routehash));
+	read(kmem, routehash, rthashsize*sizeof (struct mbuf *));
 	printf("Flushing routing tables:\n");
 again:
-	for (i = 0; i < RTHASHSIZ; i++) {
+	for (i = 0; i < rthashsize; i++) {
 		if (routehash[i] == 0)
 			continue;
 		m = routehash[i];
@@ -117,11 +126,12 @@ again:
 	}
 	if (doinghost) {
 		lseek(kmem, nl[N_RTNET].n_value, 0);
-		read(kmem, routehash, sizeof (routehash));
+		read(kmem, routehash, rthashsize*sizeof (struct mbuf *));
 		doinghost = 0;
 		goto again;
 	}
 	close(kmem);
+	free(routehash);
 }
 
 char *
