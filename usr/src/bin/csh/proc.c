@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)proc.c	5.4 (Berkeley) %G%";
+static char *sccsid = "@(#)proc.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -585,8 +585,9 @@ pprint(pp, flag)
 				case PINTERRUPTED:
 				case PSTOPPED:
 				case PSIGNALED:
-					if (flag&REASON || reason != SIGINT ||
-					    reason != SIGPIPE)
+					if ((flag&(REASON|AREASON))
+					    && reason != SIGINT
+					    && reason != SIGPIPE)
 						printf(format, mesg[pp->p_reason].pname);
 					break;
 
@@ -789,7 +790,7 @@ dokill(v)
 		}
 		if (digit(v[0][1])) {
 			signum = atoi(v[0]+1);
-			if (signum < 1 || signum > NSIG)
+			if (signum < 0 || signum > NSIG)
 				bferr("Bad signal number");
 		} else {
 			name = &v[0][1];
@@ -847,7 +848,7 @@ pkill(v, signum)
 			}
 			if (signum == SIGTERM || signum == SIGHUP)
 				(void) killpg(pp->p_jobid, SIGCONT);
-		} else if (!digit(*cp))
+		} else if (!(digit(*cp) || *cp == '-'))
 			bferr("Arguments should be jobs or process id's");
 		else {
 			pid = atoi(cp);
@@ -1076,8 +1077,7 @@ pfork(t, wanttty)
 		if (t->t_dflg & FNOHUP)
 			(void) signal(SIGHUP, SIG_IGN);
 		if (t->t_dflg & FNICE)
-			(void) setpriority(PRIO_PROCESS, 0,
-			    getpriority(PRIO_PROCESS, 0) + t->t_nice);
+			(void) setpriority(PRIO_PROCESS, 0, t->t_nice);
 	} else {
 		palloc(pid, t);
 		(void) sigsetmask(omask);
