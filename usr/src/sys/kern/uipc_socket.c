@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_socket.c	6.17 (Berkeley) %G%
+ *	@(#)uipc_socket.c	6.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -700,6 +700,8 @@ sogetopt(so, level, optname, mp)
 			return (ENOPROTOOPT);
 	} else {
 		m = m_get(M_WAIT, MT_SOOPTS);
+		m->m_len = sizeof (int);
+
 		switch (optname) {
 
 		case SO_LINGER:
@@ -715,8 +717,11 @@ sogetopt(so, level, optname, mp)
 		case SO_KEEPALIVE:
 		case SO_REUSEADDR:
 		case SO_BROADCAST:
-			m->m_len = sizeof (int);
 			*mtod(m, int *) = so->so_options & optname;
+			break;
+
+		case SO_TYPE:
+			*mtod(m, int *) = so->so_type;
 			break;
 
 		case SO_ERROR:
