@@ -3,16 +3,16 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)boot.c	7.2 (Berkeley) %G%
+ *	@(#)boot.c	7.3 (Berkeley) %G%
  */
 
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
-#include "../h/vm.h"
+#include "param.h"
+#include "inode.h"
+#include "fs.h"
+#include "vm.h"
 #include <a.out.h>
 #include "saio.h"
-#include "../h/reboot.h"
+#include "reboot.h"
 
 /*
  * Boot program... arguments passed in r10 and r11 determine
@@ -24,7 +24,6 @@
 char line[100];
 
 int	retry = 0;
-unsigned bootdev;
 extern	unsigned opendev;
 
 main()
@@ -35,7 +34,6 @@ main()
 #ifdef lint
 	howto = 0; devtype = 0;
 #endif
-	bootdev = devtype;
 	printf("\nBoot\n");
 #ifdef JUSTASK
 	howto = RB_ASKNAME|RB_SINGLE;
@@ -45,7 +43,7 @@ main()
 		if ((unsigned)type < ndevs && devsw[type].dv_name[0])
 			strcpy(line, UNIX);
 		else
-			howto = RB_SINGLE|RB_ASKNAME;
+			howto |= RB_SINGLE|RB_ASKNAME;
 	}
 #endif
 	for (;;) {
@@ -63,10 +61,10 @@ main()
 			loadpcs();
 			copyunix(howto, opendev, io);
 			close(io);
-			howto = RB_SINGLE|RB_ASKNAME;
+			howto |= RB_SINGLE|RB_ASKNAME;
 		}
 		if (++retry > 2)
-			howto = RB_SINGLE|RB_ASKNAME;
+			howto |= RB_SINGLE|RB_ASKNAME;
 	}
 }
 
@@ -80,8 +78,10 @@ copyunix(howto, devtype, io)
 
 	i = read(io, (char *)&x, sizeof x);
 	if (i != sizeof x ||
-	    (x.a_magic != 0407 && x.a_magic != 0413 && x.a_magic != 0410))
-		_stop("Bad format\n");
+	    (x.a_magic != 0407 && x.a_magic != 0413 && x.a_magic != 0410)) {
+		printf("Bad format\n");
+		return;
+	}
 	printf("%d", x.a_text);
 	if (x.a_magic == 0413 && lseek(io, 0x400, 0) == -1)
 		goto shread;
@@ -96,15 +96,36 @@ copyunix(howto, devtype, io)
 		goto shread;
 	addr += x.a_data;
 	printf("+%d", x.a_bss);
-	x.a_bss += 128*512;	/* slop */
 	for (i = 0; i < x.a_bss; i++)
+		*addr++ = 0;
+	if (howto & RB_KDB && x.a_syms) {
+		*(int *)addr = x.a_syms;		/* symbol table size */
+		addr += sizeof (int);
+		printf("[+%d", x.a_syms);
+		if (read(io, addr, x.a_syms) != x.a_syms)
+			goto shread;
+		addr += x.a_syms;
+		if (read(io, addr, sizeof (int)) != sizeof (int))
+			goto shread;
+		i = *(int *)addr - sizeof (int);	/* string table size */
+		addr += sizeof (int);
+		printf("+%d]", i);
+		if (read(io, addr, i) != i)
+			goto shread;
+		addr += i;
+		esym = roundup((int)addr, sizeof (int));
+		x.a_bss = 0;
+	} else
+		howto &= ~RB_KDB;
+	for (i = 0; i < 128*512; i++)	/* slop */
 		*addr++ = 0;
 	x.a_entry &= 0x7fffffff;
 	printf(" start 0x%x\n", x.a_entry);
 	(*((int (*)()) x.a_entry))();
 	return;
 shread:
-	_stop("Short read\n");
+	printf("Short read\n");
+	return;
 }
 
 /* 750 Patchable Control Store magic */
