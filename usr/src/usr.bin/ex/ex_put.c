@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_put.c	5.2 %G%";
+static char *sccsid = "@(#)ex_put.c	6.1 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -873,8 +873,33 @@ tostart()
 {
 	putpad(VS);
 	putpad(KS);
-	if (!value(MESG))
-		chmod(ttynbuf, 0611);	/* 11 = urgent only allowed */
+	if (!value(MESG)) {
+		if (ttynbuf[0] == 0) {
+			register char *tn;
+			if ((tn=ttyname(2)) == NULL &&
+			    (tn=ttyname(1)) == NULL &&
+			    (tn=ttyname(0)) == NULL)
+				ttynbuf[0] = 1;
+			else
+				strcpy(ttynbuf, tn);
+		}
+		if (ttynbuf[0] != 1) {
+			struct stat sbuf;
+			stat(ttynbuf, &sbuf);
+			ttymesg = sbuf.st_mode & 0777;
+			chmod(ttynbuf,
+#ifdef UCBV7
+	/*
+	 * This applies to the UCB V7 Pdp-11 system with the
+	 * -u write option only.
+	 */
+					0611	/* 11 = urgent only allowed */
+#else
+					0600
+#endif
+						);
+		}
+	}
 }
 
 /*
@@ -1007,6 +1032,20 @@ setty(f)
 		ttcharoff();
 	tty = f;
 #endif
+#ifdef TIMEBOMB
+	/*
+	 * The following is a TEMPORARY hack to help track down a bug.
+	 * It is never intended to get off Ernie CoVax.
+	 */
+	if (f == normf && nlttyc.t_suspc == '\377') {
+		printf("\n\nPlease tell mark suspc is 377, and let him know\n");
+		printf("what you just did.  Did you hit del?\n");
+		nlttyc.t_suspc = CTRL(z);
+		nlttyc.t_dsuspc = CTRL(y);
+		nlttyc.t_flushc = CTRL(o);
+		nlttyc.t_lnextc = CTRL(v);
+	}
+#endif
 	sTTY(1);
 	return (ot);
 }
@@ -1014,8 +1053,6 @@ setty(f)
 gTTY(i)
 	int i;
 {
-	char *tn;
-	struct stat sbuf;
 
 #ifndef USG3TTY
 	ignore(gtty(i, &tty));
@@ -1030,11 +1067,6 @@ gTTY(i)
 #else
 	ioctl(i, TCGETA, &tty);
 #endif
-	if ((tn=ttyname(0)) == NULL && (tn=ttyname(1)) == NULL && (tn=ttyname(2)) == NULL)
-		tn = "/dev/tty";
-	strcpy(ttynbuf, tn);
-	stat(ttynbuf, &sbuf);
-	ttymesg = sbuf.st_mode & 0777;
 }
 
 /*
