@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)test.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)test.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -31,9 +31,8 @@ static char sccsid[] = "@(#)test.c	5.1 (Berkeley) %G%";
 #include <unistd.h>
 #include <dirent.h>
 
-#include "editline.h"
+#include "histedit.h"
 #include "tokenizer.h"
-#include "history.h"
 
 static int continuation = 0;
 static EditLine *el = NULL;

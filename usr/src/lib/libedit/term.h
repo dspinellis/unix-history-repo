@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)term.h	5.1 (Berkeley) %G%
+ *	@(#)term.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -16,7 +16,7 @@
 #ifndef _h_el_term
 #define _h_el_term
 
-#include "editline.h"
+#include "histedit.h"
 
 typedef struct {
     coord_t t_size;			/* # lines and cols	*/
