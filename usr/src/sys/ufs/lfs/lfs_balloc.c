@@ -4,18 +4,25 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_balloc.c	7.14 (Berkeley) %G%
+ *	@(#)lfs_balloc.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "buf.h"
+#include "time.h"
+#include "resource.h"
+#include "resourcevar.h"
 #include "proc.h"
 #include "file.h"
 #include "vnode.h"
+#include "mount.h"
+#include "specdev.h"
 
 #include "../ufs/quota.h"
 #include "../ufs/inode.h"
+#include "../ufs/ufsmount.h"
+#include "trace.h"
 #include "lfs.h"
 #include "lfs_extern.h"
 
@@ -32,15 +39,30 @@ lfs_bmap(ip, bn, bnp)
 {
 	register LFS *fs;					/* LFS */
 	register daddr_t nb;
+	struct vnode *devvp, *vp;
 	struct buf *bp;
-	daddr_t *bap;
-	int i, j, sh;
+	daddr_t *bap, daddr;
+	daddr_t lbn_ind;
+	int i, j, off, sh;
 	int error;
 
 printf("lfs_bmap: block number %d, inode %d\n", bn, ip->i_number);
-	if (bn < 0)
-		return (EFBIG);
 	fs = ip->i_lfs;						/* LFS */
+
+	/*
+	 * We access all blocks in the cache, even indirect blocks by means of
+	 * a logical address. Indirect blocks (single, double, triple) all have
+	 * negative block numbers. The first NDADDR blocks are direct blocks,
+	 * the first NIADDR negative blocks are the indirect block pointers.
+	 * The single, double and triple indirect blocks in the inode
+	 * are addressed: -1, -2 and -3 respectively.  
+	 * XXX we don't handle triple indirect at all.
+	 */
+	if (bn < 0) {
+		/* Shouldn't be here -- we don't think */
+		printf("lfs_bmap: NEGATIVE indirect block number %d\n", bn);
+		panic("negative indirect block number");
+	}
 
 	/*
 	 * The first NDADDR blocks are direct blocks
@@ -59,7 +81,9 @@ printf("lfs_bmap: block number %d, inode %d\n", bn, ip->i_number);
 	 */
 	sh = 1;
 	bn -= NDADDR;
+	lbn_ind = 0;
 	for (j = NIADDR; j > 0; j--) {
+		lbn_ind--;
 		sh *= NINDIR(fs);
 		if (bn < sh)
 			break;
@@ -70,28 +94,39 @@ printf("lfs_bmap: block number %d, inode %d\n", bn, ip->i_number);
 	/*
 	 * Fetch through the indirect blocks.
 	 */
-	nb = ip->i_ib[NIADDR - j];
-	if (nb == 0) {
-		*bnp = (daddr_t)-1;
-		return (0);
-	}
-	for (; j <= NIADDR; j++) {
-		if (error = bread(ip->i_devvp, nb, (int)fs->lfs_bsize,
-		    NOCRED, &bp)) {		/* LFS */
+
+	vp = ITOV(ip);
+	devvp = VFSTOUFS(vp->v_mount)->um_devvp;
+	for (off = NIADDR - j, bap = ip->i_ib; j <= NIADDR; j++) {
+		if((daddr = bap[off]) == 0) {
+			daddr = (daddr_t)-1;
+			break;
+		}
+		if (bp)
 			brelse(bp);
-			return (error);
+		bp = getblk(vp, lbn_ind, fs->lfs_bsize);
+		if (bp->b_flags & (B_DONE | B_DELWRI)) {
+			trace(TR_BREADHIT, pack(vp, size), lbn_ind);
+		} else {
+			trace(TR_BREADMISS, pack(vp, size), lbn_ind);
+			bp->b_blkno = daddr;
+			bp->b_flags |= B_READ;
+			bp->b_dev = devvp->v_rdev;
+			(*(devvp->v_op->vop_strategy))(bp);
+			curproc->p_stats->p_ru.ru_inblock++;	/* XXX */
+			if (error = biowait(bp)) {
+				brelse(bp);
+				return (error);
+			}
 		}
 		bap = bp->b_un.b_daddr;
 		sh /= NINDIR(fs);
-		i = (bn / sh) % NINDIR(fs);
-		nb = bap[i];
-		if (nb == 0) {
-			*bnp = (daddr_t)-1;
-			brelse(bp);
-			return (0);
-		}
-		brelse(bp);
+		off = (bn / sh) % NINDIR(fs);
+		lbn_ind  = -(NIADDR + 1 + off);
 	}
-	*bnp = nb;
+	if (bp)
+		brelse(bp);
+
+	*bnp = daddr;
 	return (0);
 }

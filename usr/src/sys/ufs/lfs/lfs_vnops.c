@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.66 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.67 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -99,7 +99,7 @@ lfs_getattr(vp, vap, cred, p)
 	register struct inode *ip = VTOI(vp);
 
 printf("lfs_getattr\n");
-	ITIMES(ip, &time, &time);
+	ITIMES(ip, &time, &time);				/* LFS */
 	/*
 	 * Copy from inode table
 	 */
@@ -180,8 +180,7 @@ printf("lfs_setattr\n");
 		if (vap->va_mtime.tv_sec != VNOVAL)
 			ip->i_flag |= IUPD;
 		ip->i_flag |= ICHG;				/* LFS */
-		if (error = lfs_iupdat(ip, &vap->va_atime, &vap->va_mtime, 1))
-			return (error);
+		ITIMES(ip, &vap->va_atime, &vap->va_mtime);	/* LFS */
 	}
 	if (vap->va_mode != (u_short)VNOVAL)
 		error = chmod1(vp, (int)vap->va_mode, p);
@@ -274,7 +273,7 @@ lfs_write(vp, uio, ioflag, cred)
 {
 	struct proc *p = uio->uio_procp;
 	register struct inode *ip = VTOI(vp);
-	register struct fs *fs;
+	register LFS *fs;					/* LFS */
 	struct buf *bp;
 	daddr_t lbn, bn;
 	u_long osize;
@@ -318,30 +317,32 @@ printf("lfs_write ino %d\n", ip->i_number);
 	}
 	resid = uio->uio_resid;
 	osize = ip->i_size;
-#ifdef NOTLFS							/* LFS */
-	fs = ip->i_fs;
+	fs = ip->i_lfs;						/* LFS */
 	flags = 0;
+#ifdef NOTLFS
 	if (ioflag & IO_SYNC)
 		flags = B_SYNC;
+#endif
 	do {
 		lbn = lblkno(fs, uio->uio_offset);
-		on = blkoff(fs, uio->uio_offset);
-		n = MIN((unsigned)(fs->fs_bsize - on), uio->uio_resid);
-		if (n < fs->fs_bsize)
+		on = blkoff(fs, uio->uio_offset);		/* LFS */
+		n = MIN((unsigned)(fs->lfs_bsize - on), uio->uio_resid);
+		if (n < fs->lfs_bsize)				/* LFS */
 			flags |= B_CLRBUF;
 		else
-			flags &= ~B_CLRBUF;
-		if (error = balloc(ip, lbn, (int)(on + n), &bp, flags))
+			flags &= ~B_CLRBUF;			/* LFS */
+		if (error = bread(vp, lbn, fs->lfs_bsize, NOCRED, &bp))
 			break;
 		bn = bp->b_blkno;
 		if (uio->uio_offset + n > ip->i_size) {
 			ip->i_size = uio->uio_offset + n;
 			vnode_pager_setsize(vp, ip->i_size);
 		}
-		size = blksize(fs, ip, lbn);
+		size = blksize(fs);
 		(void) vnode_pager_uncache(vp);
 		n = MIN(n, size - bp->b_resid);
 		error = uiomove(bp->b_un.b_addr + on, n, uio);
+#ifdef NOTLFS							/* LFS */
 		if (ioflag & IO_SYNC)
 			(void) bwrite(bp);
 		else if (n + on == fs->fs_bsize) {
@@ -349,21 +350,27 @@ printf("lfs_write ino %d\n", ip->i_number);
 			bawrite(bp);
 		} else
 			bdwrite(bp);
+#else
+		/*
+		 * Update segment usage information; call segment
+		 * writer if necessary.
+		 */
+		lfs_bwrite(bp);
+#endif
 		ip->i_flag |= IUPD|ICHG;
 		if (cred->cr_uid != 0)
 			ip->i_mode &= ~(ISUID|ISGID);
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
-#else
-	/* LFS IMPLEMENT -- write call */
-	panic("lfs_write not implemented");
-#endif
 	if (error && (ioflag & IO_UNIT)) {
+#ifdef NOTLFS
+	/* This just doesn't work... */
 		(void) lfs_itrunc(ip, osize, ioflag & IO_SYNC);
+#endif
 		uio->uio_offset -= resid - uio->uio_resid;
 		uio->uio_resid = resid;
 	}
 	if (!error && (ioflag & IO_SYNC))
-		error = lfs_iupdat(ip, &time, &time, 1);
+		ITIMES(ip, &time, &time);			/* LFS */
 	return (error);
 }
 
@@ -383,8 +390,9 @@ lfs_fsync(vp, fflags, cred, waitfor, p)
 printf("lfs_sync: ino %d\n", ip->i_number);
 	if (fflags & FWRITE)
 		ip->i_flag |= ICHG;
+	ITIMES(ip, &time, &time);				/* LFS */
 	vflushbuf(vp, waitfor == MNT_WAIT ? B_SYNC : 0);	/* LFS */
-	return (lfs_iupdat(ip, &time, &time, waitfor == MNT_WAIT));
+	return (0);
 }
 
 /*
@@ -438,9 +446,8 @@ printf("lfs_link\n");
 		ILOCK(ip);
 	ip->i_nlink++;
 	ip->i_flag |= ICHG;
-	error = lfs_iupdat(ip, &time, &time, 1);		/* LFS */
-	if (!error)
-		error = lfs_direnter(ip, ndp);			/* LFS */
+	ITIMES(ip, &time, &time);				/* LFS */
+	error = lfs_direnter(ip, ndp);				/* LFS */
 	if (ndp->ni_dvp != vp)
 		IUNLOCK(ip);
 	FREE(ndp->ni_pnbuf, M_NAMEI);
@@ -539,7 +546,7 @@ printf("lfs_rename\n");
 	 */
 	ip->i_nlink++;
 	ip->i_flag |= ICHG;
-	error = lfs_iupdat(ip, &time, &time, 1);		/* LFS */
+	ITIMES(ip, &time, &time);				/* LFS */
 	IUNLOCK(ip);
 
 	/*
@@ -604,14 +611,13 @@ printf("lfs_rename\n");
 			}
 			dp->i_nlink++;
 			dp->i_flag |= ICHG;			/* LFS */
-			if (error = lfs_iupdat(dp, &time, &time, 1))
-				goto bad;
+			ITIMES(dp, &time, &time);		/* LFS */
 		}
 		if (error = lfs_direnter(ip, tndp)) {
 			if (doingdirectory && newparent) {
 				dp->i_nlink--;
 				dp->i_flag |= ICHG;		/* LFS */
-				(void) lfs_iupdat(dp, &time, &time, 1);
+				ITIMES(dp, &time, &time);	/* LFS */
 			}
 			goto bad;
 		}
@@ -855,7 +861,7 @@ printf("lfs_mkdir\n");
 	ip->i_mode = dmode;
 	ITOV(ip)->v_type = VDIR;	/* Rest init'd in iget() */
 	ip->i_nlink = 2;
-	error = lfs_iupdat(ip, &time, &time, 1);		/* LFS */
+	ITIMES(ip, &time, &time);				/* LFS */
 
 	/*
 	 * Bump link count in parent directory
@@ -865,8 +871,7 @@ printf("lfs_mkdir\n");
 	 */
 	dp->i_nlink++;
 	dp->i_flag |= ICHG;
-	if (error = lfs_iupdat(dp, &time, &time, 1))		/* LFS */
-		goto bad;
+	ITIMES(dp, &time, &time);				/* LFS */
 
 	/*
 	 * Initialize directory with "."
@@ -1155,13 +1160,7 @@ printf("maknode\n");
 	    suser(ndp->ni_cred, NULL))
 		ip->i_mode &= ~ISGID;
 
-	/*
-	 * Make sure inode goes to disk before directory entry.
-	 *
-	 * XXX Wrong...
-	 */
-	if (error = lfs_iupdat(ip, &time, &time, 1))		/* LFS */
-		goto bad;
+	ITIMES(ip, &time, &time);				/* LFS */
 	if (error = lfs_direnter(ip, ndp))			/* LFS */
 		goto bad;
 	if ((ndp->ni_nameiop & SAVESTART) == 0)

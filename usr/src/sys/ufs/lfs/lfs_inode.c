@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.41 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.42 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -88,7 +88,7 @@ lfs_iget(xp, ino, ipp)
 {
 	dev_t dev = xp->i_dev;
 	struct mount *mntp = ITOV(xp)->v_mount;
-	register struct lfs *fs = VFSTOUFS(mntp)->um_lfs;	/* LFS */
+	register LFS *fs = VFSTOUFS(mntp)->um_lfs;		/* LFS */
 	extern struct vnodeops ufs_vnodeops, spec_inodeops;
 	register struct inode *ip, *iq;
 	register struct vnode *vp;
@@ -253,52 +253,6 @@ ip->i_number, ip->i_mode, ip->i_nlink);
 	return (error);
 }
 
-/*
- * Update the access, modified, and inode change times as specified
- * by the IACC, IMOD, and ICHG flags respectively. The IUPD flag
- * is used to specify that the inode needs to be updated but that
- * the times have already been set. The access and modified times
- * are taken from the second and third parameters; the inode change
- * time is always taken from the current time. If waitfor is set,
- * then wait for the disk write of the inode to complete.
- */
-lfs_iupdat(ip, ta, tm, waitfor)
-	register struct inode *ip;
-	struct timeval *ta, *tm;
-	int waitfor;
-{
-	struct buf *bp;
-	struct vnode *vp = ITOV(ip);
-	struct dinode *dp;
-	register struct fs *fs;
-
-	fs = ip->i_fs;
-	if ((ip->i_flag & (IUPD|IACC|ICHG|IMOD)) == 0)
-		return (0);
-	if (vp->v_mount->mnt_flag & MNT_RDONLY)
-		return (0);
-	error = bread(ip->i_devvp, fsbtodb(fs, itod(fs, ip->i_number)),
-		(int)fs->lfs_bsize, NOCRED, &bp);
-	if (error) {
-		brelse(bp);
-		return (error);
-	}
-	if (ip->i_flag&IACC)
-		ip->i_atime = ta->tv_sec;
-	if (ip->i_flag&IUPD)
-		ip->i_mtime = tm->tv_sec;
-	if (ip->i_flag&ICHG)
-		ip->i_ctime = time.tv_sec;
-	ip->i_flag &= ~(IUPD|IACC|ICHG|IMOD);			/* LFS */
-	*lfs_ifind(fs, ip->i_number, bp->b_un.b_dino) = ip->i_din;
-	if (waitfor) {
-		return (bwrite(bp));
-	} else {
-		bdwrite(bp);
-		return (0);
-	}
-}
-
 #define	SINGLE	0	/* index of single indirect block */
 #define	DOUBLE	1	/* index of double indirect block */
 #define	TRIPLE	2	/* index of triple indirect block */
@@ -313,10 +267,9 @@ lfs_itrunc(oip, length, flags)
 	u_long length;
 	int flags;
 {
-#ifdef NOTLFS						/* LFS */
 	register daddr_t lastblock;
 	daddr_t bn, lbn, lastiblock[NIADDR];
-	register struct fs *fs;
+	register LFS *fs;					/* LFS */
 	register struct inode *ip;
 	struct buf *bp;
 	int offset, osize, size, level;
@@ -328,8 +281,8 @@ lfs_itrunc(oip, length, flags)
 	vnode_pager_setsize(ITOV(oip), length);
 	if (oip->i_size <= length) {
 		oip->i_flag |= ICHG|IUPD;
-		error = lfs_iupdat(oip, &time, &time, 1);
-		return (error);
+		ITIMES(oip, &time, &time);
+		return (0);
 	}
 	/*
 	 * Calculate index into inode's block list of
@@ -337,12 +290,12 @@ lfs_itrunc(oip, length, flags)
 	 * which we want to keep.  Lastblock is -1 when
 	 * the file is truncated to 0.
 	 */
-	fs = oip->i_fs;
-	lastblock = lblkno(fs, length + fs->fs_bsize - 1) - 1;
+	fs = oip->i_lfs;					/* LFS */
+	lastblock = lblkno(fs, length + fs->lfs_bsize - 1) - 1;	/* LFS */
 	lastiblock[SINGLE] = lastblock - NDADDR;
 	lastiblock[DOUBLE] = lastiblock[SINGLE] - NINDIR(fs);
 	lastiblock[TRIPLE] = lastiblock[DOUBLE] - NINDIR(fs) * NINDIR(fs);
-	nblocks = btodb(fs->fs_bsize);
+	nblocks = btodb(fs->lfs_bsize);				/* LFS */
 	/*
 	 * Update the size of the file. If the file is not being
 	 * truncated to a block boundry, the contents of the
@@ -362,18 +315,22 @@ lfs_itrunc(oip, length, flags)
 #ifdef QUOTA
 		if (error = getinoquota(oip))
 			return (error);
-#endif
-		if (error = balloc(oip, lbn, offset, &bp, aflags))
+#endif	
+		if (error = bread(ITOV(oip), lbn, fs->lfs_bsize, NOCRED, &bp))
 			return (error);
 		oip->i_size = length;
 		size = blksize(fs);				/* LFS */
 		(void) vnode_pager_uncache(ITOV(oip));
 		bzero(bp->b_un.b_addr + offset, (unsigned)(size - offset));
 		allocbuf(bp, size);
-		if (flags & IO_SYNC)
+#ifdef NOTLFS
+		if (flags & IO_SYNC)				/* LFS */
 			bwrite(bp);
 		else
 			bdwrite(bp);
+#else
+		lfs_bwrite(bp);
+#endif
 	}
 	/*
 	 * Update file and block pointers
@@ -383,6 +340,7 @@ lfs_itrunc(oip, length, flags)
 	 * lastiblock values are also normalized to -1
 	 * for calls to indirtrunc below.
 	 */
+	/* Will need to modify the segment usage information */	/* LFS */
 	tip = *oip;
 	tip.i_size = osize;
 	for (level = TRIPLE; level >= SINGLE; level--)
@@ -393,9 +351,16 @@ lfs_itrunc(oip, length, flags)
 	for (i = NDADDR - 1; i > lastblock; i--)
 		oip->i_db[i] = 0;
 	oip->i_flag |= ICHG|IUPD;
+#ifdef NOTLFS
 	vinvalbuf(ITOV(oip), (length > 0));
-	allerror = lfs_iupdat(oip, &time, &time, MNT_WAIT);
+	allerror = ITIMES(oip, &time, &time);
+#else
+	/* Need lfs_vinvalbuf to get rid of invalid buffers in the cache */
+	ITIMES(oip, &time, &time);
+	allerror = 0;
+#endif
 
+#ifdef NOTLFS
 	/*
 	 * Indirect blocks first.
 	 */
@@ -417,6 +382,10 @@ lfs_itrunc(oip, length, flags)
 		if (lastiblock[level] >= 0)
 			goto done;
 	}
+#else
+	/* LFS -- not yet implemented.  Need to rewrite indirect blocks */
+	panic("lfs_itrunc: not yet implemented");
+#endif
 
 	/*
 	 * All whole direct blocks or frags.
@@ -429,7 +398,11 @@ lfs_itrunc(oip, length, flags)
 			continue;
 		ip->i_db[i] = 0;
 		bsize = (off_t)blksize(fs);			/* LFS */
+#ifdef NOTLFS
 		blkfree(ip, bn, bsize);
+#else
+		/* LFS Update segment usage information */
+#endif
 		blocksreleased += btodb(bsize);
 	}
 	if (lastblock < 0)
@@ -481,10 +454,6 @@ done:
 		(void) chkdq(oip, -blocksreleased, NOCRED, 0);
 #endif
 	return (allerror);
-#else
-	/* LFS IMPLEMENT -- lfs_itrunc */
-	panic("lfs_itrunc not implemented");
-#endif
 }
 
 /*

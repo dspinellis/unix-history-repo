@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	7.57 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.58 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -226,6 +226,10 @@ lfs_mountfs(devvp, mp, p)
 	brelse(bp);
 	bp = NULL;
 
+	/* Set up the I/O information */
+	fs->lfs_iocount = 0;
+	fs->lfs_seglist = NULL;
+
 	/* Set the file system readonly/modify bits. */
 	fs = ump->um_lfs;
 	fs->lfs_ronly = ronly;
@@ -304,7 +308,7 @@ lfs_unmount(mp, mntflags, p)
 	struct proc *p;
 {
 	register struct ufsmount *ump;
-	register struct lfs *fs;				/* LFS */
+	register LFS *fs;					/* LFS */
 	int i, error, ronly, flags = 0;
 
 printf("lfs_unmount\n");
@@ -454,43 +458,8 @@ printf("lfs_sync\n");
 		allerror = sbupdate(ump, waitfor);
 	}
 #else
-#ifdef DEBUG
-	return (0);
-#else
-	/* LFS IMPLEMENT -- read only access, super-block update */
-	panic("lfs_sync not implemented"); */
+	allerror = lfs_segwrite(mp);
 #endif
-#endif
-	/*
-	 * Write back each (modified) inode.
-	 */
-loop:
-	for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
-		/*
-		 * If the vnode that we are about to sync is no longer
-		 * associated with this mount point, start over.
-		 */
-		if (vp->v_mount != mp)
-			goto loop;
-		if (VOP_ISLOCKED(vp))
-			continue;
-		ip = VTOI(vp);
-		if ((ip->i_flag & (IMOD|IACC|IUPD|ICHG)) == 0 &&
-		    vp->v_dirtyblkhd == NULL)
-			continue;
-		if (vget(vp))
-			goto loop;
-		if (vp->v_dirtyblkhd)
-			vflushbuf(vp, 0);
-		if ((ip->i_flag & (IMOD|IACC|IUPD|ICHG)) &&
-		    (error = lfs_iupdat(ip, &time, &time, 0)))	/* LFS */
-			allerror = error;
-		vput(vp);
-	}
-	/*
-	 * Force stale file system control information to be flushed.
-	 */
-	vflushbuf(ump->um_devvp, waitfor == MNT_WAIT ? B_SYNC : 0);
 #ifdef QUOTA
 	qsync(mp);
 #endif
@@ -521,7 +490,7 @@ lfs_fhtovp(mp, fhp, vpp)
 	struct vnode **vpp;
 {
 	register struct ufid *ufhp;
-	register struct lfs *fs;				/* LFS */
+	register LFS *fs;					/* LFS */
 	register struct inode *ip;
 	IFILE *ifp;
 	struct buf *bp;
