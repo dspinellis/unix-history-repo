@@ -1,4 +1,4 @@
-/*	ts.c	4.1	81/03/15	*/
+/*	ts.c	4.2	81/03/21	*/
 
 /*
  * TS11 tape driver
@@ -31,17 +31,15 @@ tsopen(io)
 	register struct iob *io;
 {
 	static struct ts *ts_ubaddr;
+	long i = 0;
 
 	if (tsaddr == 0)
 		tsaddr = ubamem(io->i_unit, tsstd[0]);
-	if (ts_ubaddr==0 || tsaddr->tssr&(TS_OFL|TS_NBA) || (tsaddr->tssr&TS_SSR)==0) {
-		long i = 0;
-		tsaddr->tssr = 0;
-		while ((tsaddr->tssr & TS_SSR)==0) {
-			if (++i > 1000000) {
-				printf("ts: not ready\n");
-				return;
-			}
+	tsaddr->tssr = 0;
+	while ((tsaddr->tssr & TS_SSR)==0) {
+		if (++i > 1000000) {
+			printf("ts: not ready\n");
+			return;
 		}
 	}
 	if (tsaddr->tssr&TS_OFL) {
@@ -49,16 +47,20 @@ tsopen(io)
 		return;
 	}
 	if (tsaddr->tssr&TS_NBA) {
+		int i;
+
 		ctsbuf.i_ma = (caddr_t) &ts;
 		ctsbuf.i_cc = sizeof(ts);
 		if (ts_ubaddr == 0)
-			ts_ubaddr = (struct ts *)ubasetup(&ctsbuf, 0);
-		ts_uba = (u_short)((long)ts_ubaddr + (((long)ubaddr >> 16) & 03));
+			ts_ubaddr = (struct ts *)ubasetup(&ctsbuf, 2);
+		ts_uba = (u_short)((long)ts_ubaddr + (((long)ts_ubaddr>>16)&03));
 		ts.ts_char.char_addr = (int)&ts_ubaddr->ts_sts;
 		ts.ts_char.char_size = sizeof(ts.ts_sts);
-		ts.ts_char.char_mode = TS_ESS;		/* Stop on 2 tape marks */
-		ts.ts_cmd.c_cmd = TS_ACK|TS_SETCHR;	/* write characteristics */
-		ts.ts_cmd.c_addr = (int)&ts_ubaddr->ts_char;
+		ts.ts_char.char_mode = TS_ESS;
+		ts.ts_cmd.c_cmd = TS_ACK|TS_SETCHR;
+		i = (int)&ts_ubaddr->ts_char;
+		ts.ts_cmd.c_loba = i;
+		ts.ts_cmd.c_hiba = (i>>16)&3;
 		ts.ts_cmd.c_size = sizeof(ts.ts_char);
 		tsaddr->tsdb = ts_uba;
 	}
@@ -70,31 +72,39 @@ tsopen(io)
 tsclose(io)
 	register struct iob *io;
 {
+
 	tsstrategy(io, TS_REW);
 }
 
 tsstrategy(io, func)
 	register struct iob *io;
 {
-	register int errcnt, info;
+	register int errcnt, info = 0;
 
 	errcnt = 0;
 retry:
 	while ((tsaddr->tssr & TS_SSR) == 0)
-		;
-	info = ubasetup(io, 1);
-	ts.ts_cmd.c_size = io->i_cc;
-	ts.ts_cmd.c_addr = info&0777777;
+		DELAY(100);
+	if (func == TS_REW || func == TS_SFORWF)
+		ts.ts_cmd.c_repcnt = io->i_cc;
+	else {
+		info = ubasetup(io, 1);
+		ts.ts_cmd.c_size = io->i_cc;
+		ts.ts_cmd.c_loba = info;
+		ts.ts_cmd.c_hiba = (info>>16)&3;
+	}
 	if (func == READ)
 		func = TS_RCOM;
 	else if (func == WRITE)
 		func = TS_WCOM;
 	ts.ts_cmd.c_cmd = TS_ACK|TS_CVC|func;
 	tsaddr->tsdb = ts_uba;
-	while ((tsaddr->tssr & TS_SSR) == 0)
-		;
-	ubafree(io, info);
-	if (ts.ts_sts.s_xs0 & TS_TMK)	/* tape mark */
+	do
+		DELAY(100)
+	while ((tsaddr->tssr & TS_SSR) == 0);
+	if (info)
+		ubafree(io, info);
+	if (ts.ts_sts.s_xs0 & TS_TMK)
 		return (0);
 	if (tsaddr->tssr & TS_SC) {
 		if (errcnt == 0)
