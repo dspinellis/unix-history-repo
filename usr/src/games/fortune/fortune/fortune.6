@@ -2,14 +2,14 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fortune.6	4.1 (Berkeley) %G%
+.\"	@(#)fortune.6	5.1 (Berkeley) %G%
 .\"
-.TH FORTUNE 6
+.TH FORTUNE 6 "1 February 1983"
 .UC 4
 .SH NAME
 fortune \- print a random, hopefully interesting, adage
 .SH SYNOPSIS
-.B fortune
+.B /usr/games/fortune
 [
 .B \-
 ] [
@@ -18,16 +18,14 @@ fortune \- print a random, hopefully interesting, adage
 ..[ file ]
 .SH DESCRIPTION
 .I Fortune
-with no arguments
-prints out a random adage. The flags mean:
-.sp
+with no arguments prints out a random adage. The flags mean:
+.PP
 .TP 5
 .B \-w
 Waits before termination
 for an amount of time calculated from the number of characters in the message.
 This is useful if it is executed as part of the logout procedure
-to guarantee that the message can be read
-before the screen is cleared.
+to guarantee that the message can be read before the screen is cleared.
 .TP 5
 .B \-s
 Short messages only.
@@ -37,7 +35,7 @@ Long messages only.
 .TP
 .B \-o
 Choose from an alternate list of adages,
-often used for portentially offensive ones.
+often used for potentially offensive ones.
 .TP
 .B \-a
 Choose from either list of adages.
@@ -48,10 +46,8 @@ Choose from either list of adages.
 ...it file.
 ..Only one such file may be named,
 ..subsequent ones are ignored.
-.sp
-Mail suggestions for new fortunes to "fortune".
 .SH FILES
-/usr/lib/fortunes.dat
+/usr/games/lib/fortunes.dat
 .SH AUTHOR
 Ken Arnold
 ...SH SEE\ ALSO
