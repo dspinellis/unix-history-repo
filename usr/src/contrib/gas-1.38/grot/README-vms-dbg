@@ -1,0 +1,127 @@
+	1) You should be aware that GNU-C, as with any other decent compiler,
+will do things when optimization is turned on that you may not expect. 
+Sometimes intermediate results are not written to variables, if they are only
+used in one place, and sometimes variables that are not used at all will not be
+written to the symbol table.  Also, parameters to inline functions are often
+inaccessible. You can see the assembly code equivalent by using KP7 in the
+debugger, and from this you can tell if in fact a variable should have the
+value that you expect.  You can find out if a variable lives withing a register
+by doing a 'show symbol/addr'.
+
+	2) Overly complex data types, such as:
+
+int (*(*(*(*(*(* sarr6)[1])[1])[2])[3])[4])[5];
+
+will not be debugged properly, since the debugging record overflows an internal
+debugger buffer.  gcc-as will convert these to *void as far as the debugger
+symbol table is concerned, which will avoid any problems, and the assembler
+will give you a message informing you that this has happened.
+
+	3) You must, of course, compile and link with /debug.  If you link
+without debug, you still get traceback table in the executable, but there is no
+symbol table for variables.
+
+	4) Included in the patches to VMS.C are fixes to two bugs that are
+unrelated to the changes that I have made.  One of these made it impossible to
+debug small programs sometimes, and the other caused the debugger to become
+confused about which routine it was in, and give this incorrect info in
+tracebacks.
+
+	5) If you are using the GNU-C++ compiler, you should modify the
+compiler driver file GNU_CC:[000000]GCC.COM (or GXX.COM).  If you have a
+seperate GXX.COM, then you need to change one line in GXX.COM to:
+$ if f$locate("D",p2) .ne. P2_Length then Debug = " ""-G0"""
+                                       Notice zero--->  ^
+If you are using a GCC.COM that does both C and C++, add the following lines to
+GCC.COM:
+
+$!
+$! Use old style debugging records for VMS
+$!
+$ if (Debug.nes."" ).and. Plus then Debug = " ""-G0"""
+
+after the variables Plus and Debug are set.  The reason for this, is that C++
+compiler by default generates debugging records that are more complex,
+with many new syntactical elements that allow for the new features of the
+language.  The -G0 switch tells the C++ compiler to use the old style debugging
+records.  Until the debugger understands C++ there is not any point to try and
+use the expanded syntax.
+
+	6) When you have nested scopes, i.e.:
+main(){
+	int i;
+	{int i;
+		{int i;
+};};}
+and you say "EXAM i" the debugger needs to figure out which variable you
+actually want to reference.  I have arranged things to define a block to the
+debugger when you use brackets to enter a new scope, so in the example above,
+the variables would be described as:
+TEST\main\i
+TEST\main\$0\i
+TEST\main\$0\$0\i
+At each level, the block name is a number with a dollar sign prefix, the
+numbers start with 0 and count upward.  When you say EXAM i, the debugger looks
+at the current PC, and decides which block it is currently in.  It works from
+the innermost level outward until it finds a block that has the variable "i"
+defined.  You can always specify the scope explicitly.
+
+	7)  With C++, there can be a lot of inline functions, and it would be
+rather restrictive to force the user to debug the program by converting all of
+the inline functions to normal functions.  What I have done is to essentially
+"add" (with the debugger) source lines from the include files that contain the
+inline functions.  Thus when you step into an inline function it appears as if
+you have called the function, and you can examine variables and so forth. 
+There are several *very* important differences, however.  First of all, since
+there is no function call involved, you cannot step over the inline function
+call - you always step into it. Secondly, since the same source lines are used
+in many locations, there is a seperate copy of the source for *each* usage. 
+Without this, breakpoints do not work, since we must have a 1-to-1 mapping
+between source lines and PC.
+	Since you cannot step over inline function calls, it can be a real pain
+if you are not really interested in what is going on for that function call.
+What I have done is to use the "-D" switch for the assembler to toggle the
+following behavior.  With the "-D" switch, all inline functions are included in
+the object file, and you can debug everything.  Without the "-D" switch
+(default case with VMS implementation), inline functions are included *only* if
+they did not come from system header files (i.e. from GNU_CC_INCLUDE: or
+GNU_GXX_INCLUDE:).  Thus, without the switch the user only debugs his/her own
+inline functions, and not the system ones. (This is especially useful if you do
+a lot of stream I/O in C++).  This probably will not provide enough granularity
+for many users, but for now this is still somewhat experimental, and I would
+like to reflect upon it and get some feedback before I go any further. 
+Possible solutions include an interactive prompting, a logical name, or a new
+command line option in gcc.c (which is then passed through somehow to the guts
+of the assembler).
+	The inline functions from header files appear after the source code
+for the source file.  This has the advantage that the source file itself is
+numbered with the same line numbers that you get with an editor.  In addition,
+the entire header file is not included, since the assembler makes a list of
+the min and max source lines that are used, and only includes those lines from
+the first to the last actually used. (It is easy to change it to include the
+whole file).
+
+	8) When you are debugging C++ objects, the object "this" is refered to
+as "$this".  Actually, the compiler writes it as ".this", but the period is
+not good for the debugger, so I have a routine to convert it to a $.  (It
+actually converts all periods to $, but only for variables, since this was
+intended to allow us to access "this".
+
+	9) If you use the asm("...") keyword for global symbols, you will not
+be able to see that symbol with the debugger.  The reason is that there are two
+records for the symbol stored in the data structures of the assembler.  One
+contains the info such as psect number and offset, and the other one contains
+the information having to do with the data type of the variable.  In order to
+debug as symbol, you need to be able to coorelate these records, and the only
+way to do this is by name.  The record with the storage attributes will take
+the name used in the asm directive, and the record that specifies the data type
+has the actual variable name, and thus when you use the asm directive to change
+a variable name, the symbol becomes invisible.
+
+	10) Older versions of the compiler ( GNU-C 1.37.92 and earlier) place
+global constants in the text psect.  This is unfortunate, since to the linker
+this appears to be an entry point.  I sent a patch to the compiler to RMS,
+which will generate a .const section for these variables, and patched the
+assembler to put these variables into a psect just like that for normal
+variables, except that they are marked NOWRT.  static constants are still
+placed in the text psect, since there is no need for any external access.
