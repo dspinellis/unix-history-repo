@@ -1,4 +1,4 @@
-/*	mkioconf.c	2.2	82/10/24	*/
+/*	mkioconf.c	2.3	82/10/24	*/
 
 #include <stdio.h>
 #include "y.tab.h"
@@ -136,9 +136,6 @@ vax_ioconf()
 			fprintf(fp, ", 0 } ;\n");
 		}
 	}
-	/*
-	 * Now spew forth the uba_minfo structure
-	 */
 	fprintf(fp, "\nstruct uba_ctlr ubminit[] = {\n");
 	fprintf(fp, "/*\t driver,\tctlr,\tubanum,\talive,\tintr,\taddr */\n");
 	for (dp = dtab; dp != NULL; dp = dp->d_next) {
@@ -174,11 +171,10 @@ vax_ioconf()
 		    dp->d_name, dp->d_unit, dp->d_addr);
 	}
 	fprintf(fp, "\t0\n};\n");
-	/*
-	 * Now we go for the uba_device stuff
-	 */
+/* unibus devices */
 	fprintf(fp, "\nstruct uba_device ubdinit[] = {\n");
-	fprintf(fp, "\t/* driver,  unit, ctlr,  ubanum, slave,   intr,    addr,    dk, flags*/\n");
+	fprintf(fp,
+"\t/* driver,  unit, ctlr,  ubanum, slave,   intr,    addr,    dk, flags*/\n");
 	for (dp = dtab; dp != NULL; dp = dp->d_next) {
 		mp = dp->d_conn;
 		if (dp->d_unit == QUES || dp->d_type != DEVICE || mp == NULL ||
