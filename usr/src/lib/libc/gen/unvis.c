@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)unvis.c	1.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)unvis.c	5.1 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -30,13 +30,9 @@ static char sccsid[] = "@(#)unvis.c	1.4 (Berkeley) %G%";
  * unvis - decode characters previously encoded by vis
  */
 int
-#if __STDC__
-unvis(char *cp, char c, int *astate, int flag)
-#else
 unvis(cp, c, astate, flag)
-	char *cp, c;
-	int *astate, flag;
-#endif
+	char *cp;
+	int c, *astate, flag;
 {
 
 	if (flag & UNVIS_END) {
