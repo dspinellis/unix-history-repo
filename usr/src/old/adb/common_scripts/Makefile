@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 
 LIST=	buf callout callout.next clist clist.nxt dino dir dir.nxt \
 	dmap file filsys findinode findinode.nxt findproc host.nxt \
@@ -9,6 +9,7 @@ LIST=	buf callout callout.next clist clist.nxt dino dir dir.nxt \
 	rusage setproc setproc.done socket spp sppcb stat tcpcb tcpip \
 	tcpreass tcpreass.nxt text traceall traceall.nxt tty termios \
 	u u.all ubadev uio un unpcb urppcb vtimes why
+NOOBJ=	noobj
 
 all clean cleandir depend lint tags:
 
@@ -16,4 +17,4 @@ install:
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${LIST} \
 	    ${DESTDIR}/usr/libdata/adb
 
-.include <bsd.own.mk>
+.include <bsd.prog.mk>
