@@ -1,122 +1,136 @@
-/*
- * Copyright (c) 1983, 1985 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Chris Torek.
+ *
+ * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)findfp.c	5.7 (Berkeley) %G%";
-#endif LIBC_SCCS and not lint
+static char sccsid[] = "@(#)findfp.c	5.8 (Berkeley) %G%";
+#endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <errno.h>
+#include "local.h"
+#include "glue.h"
 
-extern int errno;
-
-#define active(iop)	((iop)->_flag & (_IOREAD|_IOWRT|_IORW))
+int	__sdidinit;
 
 #define NSTATIC	20	/* stdin + stdout + stderr + the usual */
+#define	NDYNAMIC 10	/* add ten more whenever necessary */
 
-FILE _iob[NSTATIC] = {
-	{ 0, NULL, NULL, 0, _IOREAD,		0 },	/* stdin  */
-	{ 0, NULL, NULL, 0, _IOWRT,		1 },	/* stdout */
-	{ 0, NULL, NULL, 0, _IOWRT|_IONBF,	2 },	/* stderr */
+#define	std(flags, file) \
+	{0,0,0,flags,file,{0},0,__sF+file,__sread,__swrite,__sseek,__sclose}
+/*	 p r w flags file _bf z  cookie    read    write    seek    close */
+
+static FILE usual[NSTATIC - 3];	/* the usual */
+static struct glue uglue = { 0, NSTATIC - 3, usual };
+
+FILE __sF[3] = {
+	std(__SRD, STDIN_FILENO),		/* stdin */
+	std(__SWR, STDOUT_FILENO),		/* stdout */
+	std(__SWR|__SNBF, STDERR_FILENO)	/* stderr */
 };
+struct glue __sglue = { &uglue, 3, __sF };
 
-extern	char	*calloc();
+static struct glue *
+moreglue(n)
+	register int n;
+{
+	register struct glue *g;
+	register FILE *p;
+	static FILE empty;
 
-static	char sbuf[NSTATIC];
-char	*_smallbuf = sbuf;
-static	FILE	**iobglue;
-static	FILE	**endglue;
+	g = (struct glue *)malloc(sizeof(*g) + n * sizeof(FILE));
+	if (g == NULL)
+		return (NULL);
+	p = (FILE *)(g + 1);
+	g->next = NULL;
+	g->niobs = n;
+	g->iobs = p;
+	while (--n >= 0)
+		*p++ = empty;
+	return (g);
+}
 
 /*
  * Find a free FILE for fopen et al.
- * We have a fixed static array of entries, and in addition
- * may allocate additional entries dynamically, up to the kernel
- * limit on the number of open files.
- * At first just check for a free slot in the fixed static array.
- * If none are available, then we allocate a structure to glue together
- * the old and new FILE entries, which are then no longer contiguous.
  */
 FILE *
-_findiop()
+__sfp()
 {
-	register FILE **iov, *iop;
 	register FILE *fp;
+	register int n;
+	register struct glue *g;
 
-	if (iobglue == 0) {
-		for (iop = _iob; iop < _iob + NSTATIC; iop++)
-			if (!active(iop))
-				return (iop);
-
-		if (_f_morefiles() == 0) {
-			errno = ENOMEM;
-			return (NULL);
-		}
+	if (!__sdidinit)
+		__sinit();
+	for (g = &__sglue;; g = g->next) {
+		for (fp = g->iobs, n = g->niobs; --n >= 0; fp++)
+			if (fp->_flags == 0)
+				goto found;
+		if (g->next == NULL && (g->next = moreglue(NDYNAMIC)) == NULL)
+			break;
 	}
-
-	iov = iobglue;
-	while (*iov != NULL && active(*iov))
-		if (++iov >= endglue) {
-			errno = EMFILE;
-			return (NULL);
-		}
-
-	if (*iov == NULL)
-		*iov = (FILE *)calloc(1, sizeof **iov);
-
-	return (*iov);
+	return (NULL);
+found:
+	fp->_flags = 1;		/* reserve this slot; caller sets real flags */
+	fp->_p = NULL;		/* no current pointer */
+	fp->_w = 0;		/* nothing to read or write */
+	fp->_r = 0;
+	fp->_bf._base = NULL;	/* no buffer */
+	fp->_bf._size = 0;
+	fp->_lbfsize = 0;	/* not line buffered */
+	fp->_file = -1;		/* no file */
+/*	fp->_cookie = <any>; */	/* caller sets cookie, _read/_write etc */
+	fp->_ub._base = NULL;	/* no ungetc buffer */
+	fp->_ub._size = 0;
+	fp->_lb._base = NULL;	/* no line buffer */
+	fp->_lb._size = 0;
+	return (fp);
 }
 
-_f_morefiles()
-{
-	register FILE **iov;
-	register FILE *fp;
-	register char *cp;
-	int nfiles;
-
-	nfiles = getdtablesize();
-
-	iobglue = (FILE **)calloc(nfiles, sizeof *iobglue);
-	if (iobglue == NULL)
-		return (0);
-
-	endglue = iobglue + nfiles;
-
-	for (fp = _iob, iov = iobglue; fp < &_iob[NSTATIC]; /* void */)
-		*iov++ = fp++;
-
-	_smallbuf = calloc(nfiles, sizeof(*_smallbuf));
-	return (1);
-}
-
+/*
+ * XXX.  Force immediate allocation of internal memory.  Not used by stdio,
+ * but documented historically for certain applications.  Bad applications.
+ */
 f_prealloc()
 {
-	register FILE **iov;
-	register FILE *fp;
+	int n = getdtablesize() - NSTATIC + 20;		/* 20 for slop */
+	register struct glue *g;
 
-	if (iobglue == NULL && _f_morefiles() == 0)
-		return;
-
-	for (iov = iobglue; iov < endglue; iov++)
-		if (*iov == NULL)
-			*iov = (FILE *)calloc(1, sizeof **iov);
+	for (g = &__sglue; (n -= g->niobs) > 0 && g->next; g = g->next)
+		/* void */;
+	if (n > 0)
+		g->next = moreglue(n);
 }
 
-_fwalk(function)
-	register int (*function)();
+/*
+ * exit() calls _cleanup() through *__cleanup, set whenever we
+ * open or buffer a file.  This chicanery is done so that programs
+ * that do not use stdio need not link it all in.
+ *
+ * The name `_cleanup' is, alas, fairly well known outside stdio.
+ */
+void
+_cleanup()
 {
-	register FILE **iov;
-	register FILE *fp;
+	/* (void) _fwalk(fclose); */
+	(void) _fwalk(__sflush);		/* `cheating' */
+}
 
-	if (iobglue == NULL) {
-		for (fp = _iob; fp < &_iob[NSTATIC]; fp++)
-			if (active(fp))
-				(*function)(fp);
-	} else {
-		for (iov = iobglue; iov < endglue; iov++)
-			if (*iov && active(*iov))
-				(*function)(*iov);
-	}
+/*
+ * __sinit() is called whenever stdio's internal variables must be set up.
+ */
+void
+__sinit()
+{
+	/* make sure we clean up on exit */
+	__cleanup = _cleanup;		/* conservative */
+	__sdidinit = 1;
 }
