@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	1.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -83,7 +83,7 @@ main(argc, argv)
 	    if (!strcmp(argv[1], "-t")) {
 		if ((argc > 1) && (argv[2][0] != '-')) { /* get file name */
 		    transcom = tline;
-		    (void) strcpy(transcom, argv[1]);
+		    (void) strcpy(transcom, argv[2]);
 		    argv++;
 		    argc--;
 		}
