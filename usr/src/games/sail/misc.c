@@ -16,10 +16,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "externs.h"
+#include "pathnames.h"
 
 #define distance(x,y) (abs(x) >= abs(y) ? abs(x) + abs(y)/2 : abs(y) + abs(x)/2)
 
@@ -176,7 +177,7 @@ register struct ship *s;
 	float net;
 	register struct logs *lp;
 
-	if ((fp = fopen(LOGFILE, "r+")) == NULL)
+	if ((fp = fopen(_PATH_LOGFILE, "r+")) == NULL)
 		return;
 #ifdef LOCK_EX
 	if (flock(fileno(fp), LOCK_EX) < 0)
