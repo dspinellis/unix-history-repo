@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)curses.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)curses.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -19,7 +19,7 @@ bool	_echoit		= TRUE,	/* set if stty indicates ECHO		*/
 	My_term		= FALSE,/* set if user specifies terminal type	*/
 	_endwin		= FALSE;/* set if endwin has been called	*/
 
-char	ttytype[10],		/* long name of tty			*/
+char	ttytype[17],		/* long name of tty			*/
 	*Def_term	= "unknown";	/* default terminal type	*/
 
 int	_tty_ch		= 1,	/* file channel which is a tty		*/
