@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_subr.c	7.2 (Berkeley) %G%
+ *	@(#)kern_subr.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -101,7 +101,35 @@ again:
 	return (0);
 }
 
-#ifdef unused
+strcat(src, append)
+	register char *src, *append;
+{
+
+	for (; *src; ++src)
+		/* void */;
+	while (*src++ = *append++)
+		/* void */;
+}
+
+strcpy(to, from)
+	register char *to, *from;
+{
+
+	for (; *from = *to; ++from, ++to)
+		/* void */;
+}
+
+strncpy(to, from, cnt)
+	register char *to, *from;
+	register int cnt;
+{
+
+	for (; cnt && (*to = *from); --cnt, ++from, ++to)
+		/* void */;
+	*to = '\0';
+}
+
+#ifdef notdef	/* unused */
 /*
  * Get next character written in by user from uio.
  */
@@ -145,4 +173,4 @@ again:
 	uio->uio_offset++;
 	return (c & 0377);
 }
-#endif /* unused */
+#endif /* notdef */
