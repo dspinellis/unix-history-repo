@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)date.c	4.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)date.c	4.14 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -101,7 +101,7 @@ main(argc, argv)
 	username = getlogin();
 	if (username == NULL)		/* single-user or no tty */
 		username = "root";
-	syslog(LOG_NOTICE, "date: set by %s", username);
+	syslog(LOG_NOTICE, "set by %s", username);
 
 	ap = argv[1];
 	wtmp[0].ut_time = tv.tv_sec;
