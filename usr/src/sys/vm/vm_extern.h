@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_extern.h	8.3 (Berkeley) %G%
+ *	@(#)vm_extern.h	8.4 (Berkeley) %G%
  */
 
 struct buf;
@@ -21,7 +21,7 @@ void		 chgkprot __P((caddr_t, int, int));
 
 #ifdef KERNEL
 #ifdef TYPEDEF_FOR_UAP
-int		 getpagesize __P((struct proc *p, void *, int *));
+int		 compat_43_getpagesize __P((struct proc *p, void *, int *));
 int		 madvise __P((struct proc *, void *, int *));
 int		 mincore __P((struct proc *, void *, int *));
 int		 mprotect __P((struct proc *, void *, int *));
