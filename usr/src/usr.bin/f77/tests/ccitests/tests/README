@@ -1,0 +1,54 @@
+
+The following files compose the 1978 Fortran Compiler Validation System
+(FCVS78) V2.0:
+
+	*.f      : are the Fortran source files
+        *.res    : are the expected results corresponding to each .f
+                   file
+        makefile : is a make file used to run the validation system
+
+To run the validation system using the C shell (csh) type:
+
+	nohup make -i >& make_results &
+
+The test will run in background.  Upon completion two files will have
+been created:
+
+	make_results: contains the compile results
+	diff_results: contains the differences between the output the
+		      programs should have produced and what they did
+		      produce
+
+Make_results and diff_results can be examined to determine which of the
+validation files did not compile or run correctly.
+
+To clean up the executables, core file, .o's, .run's, and the fort.*
+files type:
+
+	make clean
+
+Make clean will leave the files make_results and diff_results.
+
+FM257 requires special actions by the user.  The simple way to test
+FM257 is remove it from the makefile file list and compile and run
+it separately.  The more adventurous can allow the makefile to test
+FM257 but the following actions will be needed.  FM257 tests PAUSE
+statements which stop execution and wait for user input.  Using the
+C shell (csh) the user can attach to the background job, supply the
+input, and then return the job to background. These are the steps to
+take:
+	1) When FM257 is reached the process will stop and wait
+	   for user input.  Once the process has stopped examine
+	   the end of the file make_results (`tail make_results`);
+	   the last line will will state some command needed to
+	   get the process running again.  Note this command and
+	   move on to step 2.
+	2) Bring the process into foreground using the csh `fg`
+	   command.
+	3) Type in the command stated at the end of the make_results
+	   file.
+	4) Type ^Z (CNTRL-Z) to stop the process.
+	5) Return the process to background using the csh `bg` command.
+	6) FM257 tests five PAUSE statements each requiring repeating
+	   steps 1-5.  Keep repeating the above steps until the end of
+	   make_results displays compiling information for FM258.
