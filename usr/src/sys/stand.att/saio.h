@@ -14,9 +14,11 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)saio.h	7.13 (Berkeley) %G%
+ *	@(#)saio.h	7.14 (Berkeley) %G%
  */
 
+#include "../ufs/fs.h"
+#include "../ufs/dinode.h"
 #include "saioctl.h"
 #include "saerrno.h"
 
