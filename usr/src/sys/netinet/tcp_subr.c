@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988, 1990 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tcp_subr.c	7.16 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -42,7 +42,12 @@
 #include "tcp_var.h"
 #include "tcpip.h"
 
+/* patchable/settable parameters for tcp */
 int	tcp_ttl = TCP_TTL;
+int 	tcp_mssdflt = TCP_MSS;
+int 	tcp_rttdflt = TCPTV_SRTTDFLT / PR_SLOWHZ;
+
+extern	struct inpcb *tcp_last_inpcb;
 
 /*
  * Tcp initialization
@@ -100,7 +105,7 @@ tcp_template(tp)
 
 /*
  * Send a single message to the TCP at address specified by
- * the given TCP/IP header.  If flags==0, then we make a copy
+ * the given TCP/IP header.  If m == 0, then we make a copy
  * of the tcpiphdr at ti and send directly to the addressed host.
  * This is used to force keep alive messages out using the TCP
  * template for a connection tp->t_template.  If flags are given
@@ -134,7 +139,6 @@ tcp_respond(tp, ti, m, ack, seq, flags)
 #else
 		tlen = 0;
 #endif
-		m->m_len = sizeof (struct tcpiphdr) + tlen;
 		m->m_data += max_linkhdr;
 		*mtod(m, struct tcpiphdr *) = *ti;
 		ti = mtod(m, struct tcpiphdr *);
@@ -143,13 +147,14 @@ tcp_respond(tp, ti, m, ack, seq, flags)
 		m_freem(m->m_next);
 		m->m_next = 0;
 		m->m_data = (caddr_t)ti;
-		tlen = 0;
 		m->m_len = sizeof (struct tcpiphdr);
+		tlen = 0;
 #define xchg(a,b,type) { type t; t=a; a=b; b=t; }
 		xchg(ti->ti_dst.s_addr, ti->ti_src.s_addr, u_long);
 		xchg(ti->ti_dport, ti->ti_sport, u_short);
 #undef xchg
 	}
+	m->m_len = sizeof (struct tcpiphdr) + tlen;
 	ti->ti_next = ti->ti_prev = 0;
 	ti->ti_x1 = 0;
 	ti->ti_len = htons((u_short)(sizeof (struct tcphdr) + tlen));
@@ -182,7 +187,8 @@ tcp_newtcpcb(inp)
 		return ((struct tcpcb *)0);
 	tp = mtod(m, struct tcpcb *);
 	tp->seg_next = tp->seg_prev = (struct tcpiphdr *)tp;
-	tp->t_maxseg = TCP_MSS;
+	tp->t_maxseg = tcp_mssdflt;
+
 	tp->t_flags = 0;		/* sends options! */
 	tp->t_inpcb = inp;
 	/*
@@ -191,12 +197,14 @@ tcp_newtcpcb(inp)
 	 * reasonable initial retransmit time.
 	 */
 	tp->t_srtt = TCPTV_SRTTBASE;
-	tp->t_rttvar = TCPTV_SRTTDFLT << 2;
+	tp->t_rttvar = tcp_rttdflt * PR_SLOWHZ << 2;
+	tp->t_rttmin = TCPTV_MIN;
 	TCPT_RANGESET(tp->t_rxtcur, 
 	    ((TCPTV_SRTTBASE >> 2) + (TCPTV_SRTTDFLT << 2)) >> 1,
 	    TCPTV_MIN, TCPTV_REXMTMAX);
-	tp->snd_cwnd = sbspace(&inp->inp_socket->so_snd);
-	tp->snd_ssthresh = 65535;		/* XXX */
+	tp->snd_cwnd = TCP_MAXWIN;
+	tp->snd_ssthresh = TCP_MAXWIN;
+	inp->inp_ip.ip_ttl = tcp_ttl;
 	inp->inp_ppcb = (caddr_t)tp;
 	return (tp);
 }
@@ -219,6 +227,8 @@ tcp_drop(tp, errno)
 		tcpstat.tcps_drops++;
 	} else
 		tcpstat.tcps_conndrops++;
+	if (errno == ETIMEDOUT && tp->t_softerror)
+		errno = tp->t_softerror;
 	so->so_error = errno;
 	return (tcp_close(tp));
 }
@@ -237,11 +247,82 @@ tcp_close(tp)
 	struct inpcb *inp = tp->t_inpcb;
 	struct socket *so = inp->inp_socket;
 	register struct mbuf *m;
+#ifdef RTV_RTT
+	register struct rtentry *rt;
 
+	/*
+	 * If we sent enough data to get some meaningful characteristics,
+	 * save them in the routing entry.  'Enough' is arbitrarily 
+	 * defined as 4K (default tcp_sendspace) * 16.  This would
+	 * give us 16 rtt samples assuming we only get one sample per
+	 * window (the usual case on a long haul net).  16 samples is
+	 * enough for the srtt filter to converge to within 5% of the correct
+	 * value; fewer samples and we could save a very bogus rtt.
+	 *
+	 * Don't update the default route's characteristics and don't
+	 * update anything that the user "locked".
+	 */
+	if (SEQ_LT(tp->iss+(4096*16), tp->snd_max) &&
+	    (rt = inp->inp_route.ro_rt) &&
+	    ((struct sockaddr_in *) rt_key(rt))->sin_addr.s_addr !=
+	    INADDR_ANY) {
+		register u_long i;
+
+		if ((rt->rt_rmx.rmx_locks & RTV_RTT) == 0) {
+			i = tp->t_srtt *
+			    (RTM_RTTUNIT / (PR_SLOWHZ * TCP_RTT_SCALE));
+			if (rt->rt_rmx.rmx_rtt && i)
+				/*
+				 * filter this update to half the old & half
+				 * the new values, converting scale.
+				 * See route.h and tcp_var.h for a
+				 * description of the scaling constants.
+				 */
+				rt->rt_rmx.rmx_rtt =
+				    (rt->rt_rmx.rmx_rtt + i) / 2;
+			else
+				rt->rt_rmx.rmx_rtt = i;
+		}
+		if ((rt->rt_rmx.rmx_locks & RTV_RTTVAR) == 0) {
+			i = tp->t_rttvar *
+			    (RTM_RTTUNIT / (PR_SLOWHZ * TCP_RTTVAR_SCALE));
+			if (rt->rt_rmx.rmx_rttvar && i)
+				rt->rt_rmx.rmx_rttvar =
+				    (rt->rt_rmx.rmx_rttvar + i) / 2;
+			else
+				rt->rt_rmx.rmx_rttvar = i;
+		}
+		/*
+		 * update the pipelimit (ssthresh) if it has been updated
+		 * already or if a pipesize was specified & the threshhold
+		 * got below half the pipesize.  I.e., wait for bad news
+		 * before we start updating, then update on both good
+		 * and bad news.
+		 */
+		if ((rt->rt_rmx.rmx_locks & RTV_SSTHRESH) == 0 &&
+		    (i = tp->snd_ssthresh) && rt->rt_rmx.rmx_ssthresh ||
+		    i < (rt->rt_rmx.rmx_sendpipe / 2)) {
+			/*
+			 * convert the limit from user data bytes to
+			 * packets then to packet data bytes.
+			 */
+			i = (i + tp->t_maxseg / 2) / tp->t_maxseg;
+			if (i < 2)
+				i = 2;
+			i *= (u_long)(tp->t_maxseg + sizeof (struct tcpiphdr));
+			if (rt->rt_rmx.rmx_ssthresh)
+				rt->rt_rmx.rmx_ssthresh =
+				    (rt->rt_rmx.rmx_ssthresh + i) / 2;
+			else
+				rt->rt_rmx.rmx_ssthresh = i;
+		}
+	}
+#endif RTV_RTT
+	/* free the reassembly queue, if any */
 	t = tp->seg_next;
 	while (t != (struct tcpiphdr *)tp) {
 		t = (struct tcpiphdr *)t->ti_next;
-		m = dtom(t->ti_prev);
+		m = REASS_MBUF((struct tcpiphdr *)t->ti_prev);
 		remque(t->ti_prev);
 		m_freem(m);
 	}
@@ -250,6 +331,9 @@ tcp_close(tp)
 	(void) m_free(dtom(tp));
 	inp->inp_ppcb = 0;
 	soisdisconnected(so);
+	/* clobber input pcb cache if we're closing the cached connection */
+	if (inp == tcp_last_inpcb)
+		tcp_last_inpcb = &tcb;
 	in_pcbdetach(inp);
 	tcpstat.tcps_closed++;
 	return ((struct tcpcb *)0);
@@ -262,12 +346,15 @@ tcp_drain()
 
 /*
  * Notify a tcp user of an asynchronous error;
- * just wake up so that he can collect error status.
+ * store error as soft error, but wake up user
+ * (for now, won't do anything until can select for soft error).
  */
-tcp_notify(inp)
+tcp_notify(inp, error)
 	register struct inpcb *inp;
+	int error;
 {
 
+	((struct tcpcb *)inp->inp_ppcb)->t_softerror = error;
 	wakeup((caddr_t) &inp->inp_socket->so_timeo);
 	sorwakeup(inp->inp_socket);
 	sowwakeup(inp->inp_socket);
