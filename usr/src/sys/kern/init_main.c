@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)init_main.c	7.30 (Berkeley) %G%
+ *	@(#)init_main.c	7.31 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -31,6 +31,10 @@
 int	cmask = CMASK;
 extern	caddr_t proc0paddr;
 extern	int (*mountroot)();
+#if defined(i386)
+extern	char	initflags[];
+#endif
+
 /*
  * Initialization code.
  * Called from cold start routine as
@@ -54,6 +58,18 @@ main(firstaddr)
 	int s;
 
 	rqinit();
+#if defined(i386)
+	/*
+	 * set boot flags
+	 */
+	if (boothowto&RB_SINGLE)
+		bcopy("-s", initflags, 3);
+	else
+		if (boothowto&RB_ASKNAME)
+			bcopy("-a", initflags, 3);
+	else
+		bcopy("-", initflags, 2);
+#endif
 #if defined(hp300) && defined(DEBUG)
 	/*
 	 * Assumes mapping is really on
@@ -179,6 +195,7 @@ main(firstaddr)
 /* kick off timeout driven events by calling first time */
 	roundrobin();
 	schedcpu();
+	enablertclock();		/* enable realtime clock interrupts */
 
 /* set up the root file system */
 	if ((*mountroot)())
@@ -195,7 +212,6 @@ main(firstaddr)
 	u.u_rdir = NULL;
 	boottime = u.u_start =  time;
 
-	enablertclock();		/* enable realtime clock interrupts */
 	/*
 	 * make init process
 	 */
