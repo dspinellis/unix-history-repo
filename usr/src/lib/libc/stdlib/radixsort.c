@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)radixsort.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)radixsort.c	5.15 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -35,7 +35,8 @@ typedef struct {
 	int sn, si;
 } stack;
 
-static void simplesort __P((const u_char **, int, int, const u_char *, u_int));
+static inline void simplesort
+	    __P((const u_char **, int, int, const u_char *, u_int));
 static void r_sort_a __P((const u_char **, int, int, const u_char *, u_int));
 static void r_sort_b __P((const u_char **,
 	    const u_char **, int, int, const u_char *, u_int));
@@ -268,7 +269,7 @@ r_sort_b(a, ta, n, i, tr, endch)
 	}
 }
 		
-static void
+static inline void
 simplesort(a, n, b, tr, endch)	/* insertion sort */
 	register const u_char **a;
 	int n, b;
