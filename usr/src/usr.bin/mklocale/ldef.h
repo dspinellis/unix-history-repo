@@ -1,13 +1,13 @@
 /*-
- * Copyright (c) 1993 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Paul Borman at Krystal Technologies.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ldef.h	5.1 (Berkeley) %G%
+ *	@(#)ldef.h	8.1 (Berkeley) %G%
  */
 
 /*
