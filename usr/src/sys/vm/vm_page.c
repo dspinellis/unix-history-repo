@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_page.c	7.6 (Berkeley) %G%
+ *	@(#)vm_page.c	7.7 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -554,7 +554,7 @@ vm_page_t vm_page_alloc(object, offset)
 	if ((vm_stat.free_count < vm_stat.free_min) ||
 			((vm_stat.free_count < vm_stat.free_target) &&
 			(vm_stat.inactive_count < vm_stat.inactive_target)))
-		thread_wakeup(&vm_pages_needed);
+		thread_wakeup((int)&vm_pages_needed);
 	return(mem);
 }
 
