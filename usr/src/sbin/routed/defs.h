@@ -1,4 +1,4 @@
-/*	defs.h	4.12	82/11/14	*/
+/*	defs.h	4.13	82/12/24	*/
 
 /*
  * Internal data structure definitions for
@@ -163,9 +163,6 @@ struct	afswitch afswitch[AF_MAX];	/* table proper */
 #define	CHECK_INTERVAL	(1*60)
 
 #define	LOOPBACKNET	0177
-/* casts to keep lint happy */
-#define	insque(q,p)	_insque((caddr_t)q,(caddr_t)p)
-#define	remque(q)	_remque((caddr_t)q)
 #define equal(a1, a2) \
 	(bcmp((caddr_t)(a1), (caddr_t)(a2), sizeof (struct sockaddr)) == 0)
 #define	min(a,b)	((a)>(b)?(b):(a))
