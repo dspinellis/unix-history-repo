@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	8.4 (Berkeley) %G%
+ *	@(#)kern_sig.c	8.5 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
