@@ -1,11 +1,12 @@
-# @(#)Makefile	1.1 (ucb.elefunt) %G%
-SCCSID= "@(#)Makefile	1.1 (ucb.elefunt) %G%"
+# @(#)Makefile	1.2 (ucb.elefunt) %G%
+SCCSID= "@(#)Makefile	1.2 (ucb.elefunt) %G%"
 CFLAGS= -DNATIONAL
-MORE=atan2.o cbrt.o tan.o sincos.o cabs.o support.o sqrt.o national.o
+MORE=atan2.o cbrt.o tan.o sincos.o cabs.o\
+     drem.o sqrt.o support.o
 
 .c.o:
 	${CC} -p ${CFLAGS} -c $*.c
-	-lx32 -X -r $*.o
+	-ld -X -r $*.o
 	mv a.out ../profiled/$*.o
 	${CC} ${CFLAGS} -c $*.c
 	-ld -x -r $*.o
