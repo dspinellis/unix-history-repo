@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)glob.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -130,9 +130,9 @@ globbrace(s, p, bl)
 	    i--;
 	}
 
-    if (i != 0) {
+    if (i != 0 || *pe == '\0') {
 	blkfree(nv);
-	return (-LBRC);
+	return (-RBRC);
     }
 
     for (i = 0, pl = pm = p; pm <= pe; pm++)
