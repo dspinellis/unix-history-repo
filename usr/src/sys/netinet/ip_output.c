@@ -1,4 +1,4 @@
-/*	ip_output.c	1.44	83/01/08	*/
+/*	ip_output.c	1.45	83/01/17	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -66,22 +66,22 @@ ip_output(m, opt, ro, allowbroadcast)
 	if (ro->ro_rt->rt_flags & RTF_GATEWAY)
 		dst = &ro->ro_rt->rt_gateway;
 gotif:
+#ifndef notdef
 	/*
 	 * If source address not specified yet, use address
 	 * of outgoing interface.
 	 */
-	if (ip->ip_src.s_addr == INADDR_ANY)
+	if (in_lnaof(ip->ip_src) == INADDR_ANY)
 		ip->ip_src.s_addr =
 		    ((struct sockaddr_in *)&ifp->if_addr)->sin_addr.s_addr;
+#endif
 
 	/*
-	 * Map broadcast address to hardware's broadcast
-	 * address and verify user is allowed to send
+	 * Look for broadcast address and
+	 * and verify user is allowed to send
 	 * such a packet.
 	 */
 	if (in_lnaof(dst) == INADDR_ANY) {
-		struct sockaddr_in *sin;
-
 		if ((ifp->if_flags & IFF_BROADCAST) == 0) {
 			error = EADDRNOTAVAIL;
 			goto bad;
@@ -95,8 +95,6 @@ gotif:
 			error = EMSGSIZE;
 			goto bad;
 		}
-		sin = (struct sockaddr_in *)&ifp->if_broadaddr;
-		((struct sockaddr_in *)dst)->sin_addr = sin->sin_addr;
 	}
 
 	/*
