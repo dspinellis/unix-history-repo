@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.111 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.112 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -182,6 +182,10 @@ readcf(cfname)
 
 			/* convert to macro expansion character */
 			*p++ = MACROEXPAND;
+
+			/* special handling for $=, $~, and $& */
+			if (*p == '=' || *p == '~' || *p == '&')
+				p++;
 
 			/* convert macro name to code */
 			*p = macid(p, &ep);
