@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)mmap.2	6.4 (Berkeley) %G%
+.\"	@(#)mmap.2	6.5 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt MMAP 2
@@ -81,8 +81,8 @@ The file descriptor used for creating
 regions is used only for
 naming, and may be specified as \-1 if no name is associated with the
 region.
-.It Dv MAP_FILE
-Mapped from a regular file or character-special device memory.
+\.".It Dv MAP_FILE
+\."Mapped from a regular file or character-special device memory.
 .It Dv MAP_FIXED
 Do not permit the system to select a different address than the one
 specified.
