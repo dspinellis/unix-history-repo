@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)btree.h	8.2 (Berkeley) %G%
+ *	@(#)btree.h	8.3 (Berkeley) %G%
  */
 
 #include <mpool.h>
@@ -244,6 +244,7 @@ typedef struct _btree {
 
 	DB	*bt_dbp;		/* pointer to enclosing DB */
 
+	EPG	bt_cur;			/* current (pinned) page */
 	PAGE	*bt_pinned;		/* page pinned across calls */
 
 	EPGNO	bt_bcursor;		/* B: btree cursor */
