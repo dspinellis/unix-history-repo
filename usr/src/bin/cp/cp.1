@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)cp.1	6.21 (Berkeley) %G%
+.\"	@(#)cp.1	6.22 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CP 1
@@ -75,7 +75,7 @@ option which does not follow symbolic links by default.
 .It Fl i
 Causes
 .Nm cp
-to write a prompt to standard error before copying a file that would
+to write a prompt to the standard error output before copying a file that would
 overwrite an existing file.
 If the response from the standard input begins with the character
 .Sq Li y ,
@@ -95,8 +95,8 @@ in the copy's permissions.
 If the source file has its set group ID bit on and the group ID cannot
 be preserved, the set group ID bit is not preserved
 in the copy's permissions.
-If the source file has both the set user ID and set group ID bits
-on and either the user ID or group ID cannot be preserved, neither
+If the source file has both its set user ID and set group ID bits on,
+and either the user ID or group ID cannot be preserved, neither
 the set user ID or set group ID bits are preserved in the copy's
 permissions.
 .El
