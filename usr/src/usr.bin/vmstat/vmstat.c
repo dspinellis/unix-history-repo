@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -75,19 +75,24 @@ struct nlist nl[] = {
 	{ "_kmemstats" },
 #define	X_KMEMBUCKETS	22
 	{ "_bucket" },
+#define X_END		22
 #ifdef vax
-#define X_MBDINIT	(X_XSTATS+1)
+#define X_MBDINIT	(X_END+1)
 	{ "_mbdinit" },
-#define X_UBDINIT	(X_XSTATS+2)
+#define X_UBDINIT	(X_END+2)
 	{ "_ubdinit" },
 #endif
 #ifdef tahoe
-#define	X_VBDINIT	(X_XSTATS+1)
+#define	X_VBDINIT	(X_END+1)
 	{ "_vbdinit" },
-#define	X_CKEYSTATS	(X_XSTATS+2)
+#define	X_CKEYSTATS	(X_END+2)
 	{ "_ckeystats" },
-#define	X_DKEYSTATS	(X_XSTATS+3)
+#define	X_DKEYSTATS	(X_END+3)
 	{ "_dkeystats" },
+#endif
+#ifdef hp300
+#define	X_HPDINIT	(X_END+1)
+	{ "_hp_dinit" },
 #endif
 	{ "" },
 };
@@ -99,7 +104,11 @@ int	ndrives = 0;
 #ifdef vax
 char	*defdrives[] = { "hp0", "hp1", "hp2",  0 };
 #else
+#ifdef hp300
+char	*defdrives[] = { "rd0", "rd1", "rd2",  0 };
+#else
 char	*defdrives[] = { 0 };
+#endif
 #endif
 double	stat1();
 int	firstfree, maxfree;
@@ -577,8 +586,9 @@ char *kmemnames[] = {
 	"namecache",	/* 25 M_CACHE */
 	"UFS quota",	/* 26 M_DQUOT */
 	"UFS mount",	/* 27 M_UFSMNT */
-	0,
-	0, 0, 0, 0, 0,
+	"mapmem",	/* 28 M_MAPMEM */
+	"shm",		/* 29 M_SHM */
+	0, 0, 0, 0,
 	0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0,
@@ -701,6 +711,44 @@ read_names()
 		steal(udrv.ud_dname, two_char);
 		sprintf(dr_name[udev.ui_dk], "%c%c%d",
 		     cp[0], cp[1], udev.ui_unit);
+	}
+}
+#endif
+
+#ifdef hp300
+#include <hpdev/device.h>
+
+#define validdisk(cp)	((cp)[1] == 'd' && ((cp)[0] == 'r' || (cp)[0] == 's'))
+
+read_names()
+{
+	struct hp_device hdev;
+	register struct hp_device *hp;
+	struct driver hdrv;
+	short two_char;
+	char *cp = (char *) &two_char;
+	register char *dp;
+
+	hp = (struct hp_device *) nl[X_HPDINIT].n_value;
+	if (hp == 0) {
+		fprintf(stderr, "vmstat: Disk init info not in namelist\n");
+		exit(1);
+	}
+	for (;;) {
+		steal(hp++, hdev);
+		if (hdev.hp_driver == 0)
+			break;
+		steal(hdev.hp_driver, hdrv);
+		steal(hdrv.d_name, two_char);
+		/*
+		 * hp_dk is meaningless if the device isn't a disk
+		 * (d_name not valid) or the disk was not found when
+		 * booting (hp_alive == 0).
+		 */
+		if (!validdisk(cp) || hdev.hp_alive == 0)
+			continue;
+		dp = dr_name[hdev.hp_dk];
+		sprintf(dp, "%c%c%d", cp[0], cp[1], hdev.hp_unit);
 	}
 }
 #endif
