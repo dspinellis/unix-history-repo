@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lfs.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)lfs.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -16,21 +16,25 @@ static char sccsid[] = "@(#)lfs.c	5.2 (Berkeley) %G%";
 #include <sys/resource.h>
 #include <sys/proc.h>
 #include <sys/vnode.h>
-#include <ufs/dinode.h>
-#include <ufs/dir.h>
+
+#include <ufs/ufs/dir.h>
+#include <ufs/ufs/quota.h>
+#include <ufs/ufs/dinode.h>
+#include <ufs/ufs/ufsmount.h>
+#include <ufs/lfs/lfs.h>
+
 #include <unistd.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include "lfs.h"				/* XXX move to <sys/lfs.h> */
 #include "config.h"
 #include "extern.h"
 
-static LFS lfs_default =  {
+static struct lfs lfs_default =  {
 	/* lfs_magic */		LFS_MAGIC,
 	/* lfs_version */	LFS_VERSION,
 	/* lfs_size */		0,
-	/* lfs_ssize */		0,
+	/* lfs_ssize */		DFL_LFSSEG/DFL_LFSBLOCK,
 	/* lfs_dsize */		0,
 	/* lfs_bsize */		DFL_LFSBLOCK,
 	/* lfs_fsize */		DFL_LFSBLOCK,
@@ -42,13 +46,18 @@ static LFS lfs_default =  {
 	/* lfs_ifile */		LFS_IFILE_INUM,
 	/* lfs_lastseg */	0,
 	/* lfs_nextseg */	0,
+	/* lfs_curseg */	0,
+	/* lfs_offset */	0,
 	/* lfs_tstamp */	0,
 	/* lfs_minfree */	MINFREE,
+	/* lfs_dbpseg */	DFL_LFSSEG/DEV_BSIZE,
 	/* lfs_inopb */		DFL_LFSBLOCK/sizeof(struct dinode),
 	/* lfs_ifpb */		DFL_LFSBLOCK/sizeof(IFILE),
+	/* lfs_sepb */		DFL_LFSBLOCK/sizeof(SEGUSE),
 	/* lfs_nindir */	DFL_LFSBLOCK/sizeof(daddr_t),
 	/* lfs_nseg */		0,
 	/* lfs_nspf */		0,
+	/* lfs_cleansz */	0,
 	/* lfs_segtabsz */	0,
 	/* lfs_segmask */	DFL_LFSSEG_MASK,
 	/* lfs_segshift */	DFL_LFSSEG_SHIFT,
@@ -77,6 +86,7 @@ static LFS lfs_default =  {
 struct direct lfs_root_dir[] = {
 	{ ROOTINO, sizeof(struct direct), 1, "."},
 	{ ROOTINO, sizeof(struct direct), 2, ".."},
+	{ LFS_IFILE_INUM, sizeof(struct direct), 5, "ifile"},
 	{ LOSTFOUNDINO, sizeof(struct direct), 10, "lost+found"},
 };
 
@@ -86,7 +96,7 @@ struct direct lfs_lf_dir[] = {
 };
 
 static daddr_t make_dinode 
-	__P((ino_t, struct dinode *, int, daddr_t, LFS *));
+	__P((ino_t, struct dinode *, int, daddr_t, struct lfs *));
 static void make_dir __P(( void *, struct direct *, int));
 static void put __P((int, off_t, void *, size_t));
 
@@ -101,25 +111,30 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 {
 	struct dinode *dip;	/* Pointer to a disk inode */
 	struct dinode *dpagep;	/* Pointer to page of disk inodes */
+	CLEANERINFO *cleaninfo;	/* Segment cleaner information table */
 	FINFO file_info;	/* File info structure in summary blocks */
 	IFILE *ifile;		/* Pointer to array of ifile structures */
 	IFILE *ip;		/* Pointer to array of ifile structures */
-	LFS *lfsp;		/* Superblock */
+	struct lfs *lfsp;	/* Superblock */
 	SEGUSE *segp;		/* Segment usage table */
 	SEGUSE *segtable;	/* Segment usage table */
 	SEGSUM summary;		/* Segment summary structure */
-	SEGSUM *sp, *sp1, *sp2;	/* Segment summary pointer */
+	SEGSUM *sp;		/* Segment summary pointer */
 	daddr_t	last_sb_addr;	/* Address of superblocks */
 	daddr_t last_addr;	/* Previous segment address */
 	daddr_t	sb_addr;	/* Address of superblocks */
 	daddr_t	seg_addr;	/* Address of current segment */
-	void *pagep;		/* Pointer to the page we use to write stuff */
+	void *ipagep;		/* Pointer to the page we use to write stuff */
 	void *sump;		/* Used to copy stuff into segment buffer */
 	u_long *block_array;	/* Array of logical block nos to put in sum */
+	u_long blocks_used;	/* Number of blocks in first segment */
+	u_long *dp;		/* Used to computed checksum on data */
+	u_long *datasump;	/* Used to computed checksum on data */
 	int block_array_size;	/* How many entries in block array */
 	int bsize;		/* Block size */
 	int db_per_fb;		/* Disk blocks per file block */
 	int i, j;
+	int off;		/* Offset at which to write */
 	int sb_to_sum;		/* offset between superblock and summary */
 	int sb_interval;	/* number of segs between super blocks */
 	int seg_seek;		/* Seek offset for a segment */
@@ -145,6 +160,7 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 		lfsp->lfs_inopb = bsize / sizeof(struct dinode);
 /* MIS -- should I round to power of 2 */
 		lfsp->lfs_ifpb = bsize / sizeof(IFILE);
+		lfsp->lfs_sepb = bsize / sizeof(SEGUSE);
 		lfsp->lfs_nindir = bsize / sizeof(daddr_t);
 	}
 
@@ -173,11 +189,12 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	/* 
 	 * The number of free blocks is set from the total data size (lfs_dsize)
 	 * minus one block for each segment (for the segment summary).  Then 
-	 * we'll dubstract off the room for the superblocks, ifile entries and
-	 * segment usage table 
+	 * we'll subtract off the room for the superblocks, ifile entries and
+	 * segment usage table.
 	 */
 	lfsp->lfs_bfree = lfsp->lfs_dsize - lfsp->lfs_nseg;
 	lfsp->lfs_segtabsz = SEGTABSIZE_SU(lfsp);
+	lfsp->lfs_cleansz = CLEANSIZE_SU(lfsp);
 	if ((lfsp->lfs_tstamp = time(NULL)) == -1)
 		fatal("time: %s", strerror(errno));
 	if ((sb_interval = lfsp->lfs_nseg / LFS_MAXNUMSB) < LFS_MIN_SBINTERVAL)
@@ -206,26 +223,33 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	lfsp->lfs_lastseg = lfsp->lfs_sboffs[0];
 	lfsp->lfs_nextseg = 
 	    lfsp->lfs_sboffs[1] ? lfsp->lfs_sboffs[1] : lfsp->lfs_sboffs[0];
+	lfsp->lfs_curseg = lfsp->lfs_lastseg;
 
 	/*
 	 * Initialize the segment usage table.  The first segment will
-	 * contain the superblock, the segusage table (segtabsz), 1
-	 * block's worth of IFILE entries, the root directory, the lost+found
-	 * directory and one block's worth of inodes (containing the ifile,
-	 * root, and l+f inodes).
+	 * contain the superblock, the cleanerinfo (cleansz), the segusage 
+	 * table * (segtabsz), 1 block's worth of IFILE entries, the root 
+	 * directory, the lost+found directory and one block's worth of 
+	 * inodes (containing the ifile, root, and l+f inodes).
 	 */
+	if (!(cleaninfo = malloc(lfsp->lfs_cleansz << lfsp->lfs_bshift)))
+		fatal("%s", strerror(errno));
+	/* XXX When Carl has defined the cleanerinfo, initialize it here */
 	if (!(segtable = malloc(lfsp->lfs_segtabsz << lfsp->lfs_bshift)))
 		fatal("%s", strerror(errno));
 	segp = segtable;
-	segp->su_nbytes = LFS_SBPAD + 
-	    ((lfsp->lfs_segtabsz + 4) << lfsp->lfs_bshift);
+	blocks_used = lfsp->lfs_segtabsz + lfsp->lfs_cleansz + 4;
+	segp->su_nbytes = LFS_SBPAD + (blocks_used << lfsp->lfs_bshift);
 	segp->su_lastmod = lfsp->lfs_tstamp;
 	segp->su_flags = SEGUSE_DIRTY;
-	lfsp->lfs_bfree -= (lfsp->lfs_segtabsz + 4);
+	lfsp->lfs_bfree -= (lfsp->lfs_cleansz + lfsp->lfs_segtabsz + 4);
 
-	/* Now use su_nbytes to figure out the daddr of the ifile inode */
-	lfsp->lfs_idaddr = (((segp->su_nbytes >> lfsp->lfs_bshift) - 1) <<
-	    lfsp->lfs_fsbtodb) + lfsp->lfs_sboffs[0];
+	/* 
+	 * Now figure out the address of the ifile inode. The inode block
+	 * appears immediately after the segment summary.
+	 */
+	lfsp->lfs_idaddr = (LFS_LABELPAD + LFS_SBPAD + LFS_SUMMARY_SIZE) /
+	    lp->d_secsize;
 
 	for (segp = segtable + 1, i = 1; i < lfsp->lfs_nseg; i++, segp++) {
 		if ((i % sb_interval) == 0) {
@@ -248,11 +272,7 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	 */
 	lfsp->lfs_nfiles = LFS_FIRST_INUM - 1;
 	lfsp->lfs_cksum = 
-	    cksum(lfsp, sizeof(LFS) - sizeof(lfsp->lfs_cksum));
-	put(fd, LFS_LABELPAD, lfsp, sizeof(LFS));
-	put(fd, LFS_LABELPAD + LFS_SBPAD, segtable,
-	    lfsp->lfs_segtabsz << lfsp->lfs_bshift);
-	(void)free(segtable);
+	    cksum(lfsp, sizeof(struct lfs) - sizeof(lfsp->lfs_cksum));
 
 	/* Now create a block of disk inodes */
 	if (!(dpagep = malloc(lfsp->lfs_bsize)))
@@ -260,15 +280,19 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	dip = (struct dinode *)dpagep;
 	bzero(dip, lfsp->lfs_bsize);
 
-	/* Create a block of the IFILES. */
-	if (!(pagep = malloc(lfsp->lfs_bsize)))
+	/* Create a block of IFILE structures. */
+	if (!(ipagep = malloc(lfsp->lfs_bsize)))
 		fatal("%s", strerror(errno));
-	ifile = (IFILE *)pagep;
+	ifile = (IFILE *)ipagep;
 
-	/* Initialize IFILE */
-	sb_addr = (LFS_LABELPAD + LFS_SBPAD) / lp->d_secsize;
-	sb_addr = make_dinode(LFS_IFILE_INUM, dip, lfsp->lfs_segtabsz+1, 
-	    sb_addr, lfsp);
+	/* 
+	 * Initialize IFILE.  It is the next block following the
+	 * block of inodes (whose address has been calculated in
+	 * lfsp->lfs_idaddr;
+	 */
+	sb_addr = lfsp->lfs_idaddr + lfsp->lfs_bsize / lp->d_secsize;
+	sb_addr = make_dinode(LFS_IFILE_INUM, dip, 
+	    lfsp->lfs_cleansz + lfsp->lfs_segtabsz+1, sb_addr, lfsp);
 	dip->di_mode = IFREG|IREAD|IWRITE;
 	ip = &ifile[LFS_IFILE_INUM];
 	ip->if_version = 1;
@@ -309,93 +333,109 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	}
 	ifile[lfsp->lfs_ifpb - 1].if_nextfree = LFS_UNUSED_INUM;
 
-	/* Now, write the ifile */
-	if ((wbytes = write(fd, ifile, lfsp->lfs_bsize)) < 0)
-		fatal("%s: %s", special, strerror(errno));
-	if (wbytes != lfsp->lfs_bsize)
-		fatal("%s: short write (%d, not %d)",
-		    special, wbytes, lfsp->lfs_bsize);
+	/* Now, write the segment */
+
+	/* Compute a checksum across all the data you're writing */
+	dp = datasump = malloc (blocks_used * sizeof(u_long));
+	*dp++ = ((u_long *)dip)[0];		/* inode block */
+	for (i = 0; i < lfsp->lfs_cleansz; i++)
+		*dp++ = ((u_long *)cleaninfo)[(i << lfsp->lfs_bshift) / 
+		    sizeof(u_long)];		/* Cleaner info */
+	for (i = 0; i < lfsp->lfs_segtabsz; i++)
+		*dp++ = ((u_long *)segtable)[(i << lfsp->lfs_bshift) / 
+		    sizeof(u_long)];		/* Segusage table */
+	*dp++ = ((u_long *)ifile)[0];		/* Ifile */
+
+	/* Still need the root and l+f bytes; get them later */
+
+	/* Write out the inode block */
+	off = LFS_LABELPAD + LFS_SBPAD + LFS_SUMMARY_SIZE;
+	put(fd, off, dpagep, lfsp->lfs_bsize);
+	free(dpagep);
+	off += lfsp->lfs_bsize;
+
+	/* Write out the ifile */
+
+	put(fd, off, cleaninfo, lfsp->lfs_cleansz << lfsp->lfs_bshift);
+	off += (lfsp->lfs_cleansz << lfsp->lfs_bshift);
+	(void)free(cleaninfo);
+
+	put(fd, off, segtable, lfsp->lfs_segtabsz << lfsp->lfs_bshift);
+	off += (lfsp->lfs_segtabsz << lfsp->lfs_bshift);
+	(void)free(segtable);
+
+	put(fd, off, ifile, lfsp->lfs_bsize);
+	off += lfsp->lfs_bsize;
+
+	/*
+	 * use ipagep for space for writing out other stuff.  It used to 
+	 * contain the ifile, but we're done with it.
+	 */
 
 	/* Write out the root and lost and found directories */
-	bzero(pagep, lfsp->lfs_bsize);
-	make_dir(pagep, lfs_root_dir, 
+	bzero(ipagep, lfsp->lfs_bsize);
+	make_dir(ipagep, lfs_root_dir, 
 	    sizeof(lfs_root_dir) / sizeof(struct direct));
-	if ((wbytes = write(fd, pagep, lfsp->lfs_bsize)) < 0)
-		fatal("%s: %s", special, strerror(errno));
-	if (wbytes != lfsp->lfs_bsize)
-		fatal("%s: short write (%d, not %d)",
-		    special, wbytes, lfsp->lfs_bsize);
+	*dp++ = ((u_long *)ipagep)[0];
+	put(fd, off, ipagep, lfsp->lfs_bsize);
+	off += lfsp->lfs_bsize;
 
-	bzero(pagep, lfsp->lfs_bsize);
-	make_dir(pagep, lfs_lf_dir, 
+	bzero(ipagep, lfsp->lfs_bsize);
+	make_dir(ipagep, lfs_lf_dir, 
 		sizeof(lfs_lf_dir) / sizeof(struct direct));
-	if ((wbytes = write(fd, pagep, lfsp->lfs_bsize)) < 0)
-		fatal("%s: %s", special, strerror(errno));
-	if (wbytes != lfsp->lfs_bsize)
-		fatal("%s: short write (%d, not %d)",
-		    special, wbytes, lfsp->lfs_bsize);
+	*dp++ = ((u_long *)ipagep)[0];
+	put(fd, off, ipagep, lfsp->lfs_bsize);
 
-	/* Finally, write out the inode block */
-	if ((wbytes = write(fd, dpagep, lfsp->lfs_bsize)) < 0)
-		fatal("%s: %s", special, strerror(errno));
-	if (wbytes != lfsp->lfs_bsize)
-		fatal("%s: short write (%d, not %d)",
-		    special, wbytes, lfsp->lfs_bsize);
+	/* Write Supberblock */
+	lfsp->lfs_offset = (off + lfsp->lfs_bsize) / lp->d_secsize;
+	put(fd, LFS_LABELPAD, lfsp, sizeof(struct lfs));
 
-	/* MIS -- probably want to replace with "write block code" */
-	/* Now it's time to write the summary for the first segment. */
+	/* 
+	 * Finally, calculate all the fields for the summary structure
+	 * and write it.
+	 */
+
 	summary.ss_next = lfsp->lfs_nextseg;
-	summary.ss_prev = last_sb_addr;
-	summary.ss_nextsum = -1;
 	summary.ss_create = lfsp->lfs_tstamp;
-	summary.ss_nfinfo = 4;
-	summary.ss_ninos = 1;
-
-	/* Superblock */
-	file_info.fi_nblocks = LFS_SBPAD >> lfsp->lfs_bshift;
-	file_info.fi_version = 1;
-	file_info.fi_ino = LFS_UNUSED_INUM;
+	summary.ss_nfinfo = 3;
+	summary.ss_ninos = 3;
+	summary.ss_datasum = cksum(datasump, sizeof(u_long) * blocks_used);
 
 	/*
 	 * Make sure that we don't overflow a summary block. We have to
-	 * record: FINFO structures for superblock, ifile, root, l+f.
+	 * record: FINFO structures for ifile, root, and l+f.  The number
+	 * of blocks recorded for the ifile is determined by the size of
+	 * the cleaner info and the segments usage table.  There is room
+	 * for one block included in sizeof(FINFO) so we don't need to add
+	 * any extra space for the ROOT and L+F, and one block of the ifile
+	 * is already counted.  Finally, we leave room for 1 inode block
+	 * address.
 	 */
-	sum_size = 4*sizeof(FINFO) + sizeof(SEGSUM) +
-	    file_info.fi_nblocks * sizeof(u_long) +	/* sb blocks */
-	    (lfsp->lfs_segtabsz + 1) * sizeof(u_long) +	/* ifile blocks */
-	    2 * sizeof(u_long);				/* root and l+f block */
+	sum_size = 3*sizeof(FINFO) + sizeof(SEGSUM) + sizeof(daddr_t);
+	    (lfsp->lfs_cleansz + lfsp->lfs_segtabsz) * sizeof(u_long);
 #define	SUMERR \
 "Multiple summary blocks in segment 1 not yet implemented\nsummary is %d bytes."
 	if (sum_size > LFS_SUMMARY_SIZE)
 		fatal(SUMERR, sum_size);
 
-	block_array_size = file_info.fi_nblocks;
-	if ((lfsp->lfs_segtabsz + 1) > block_array_size)
-		block_array_size = lfsp->lfs_segtabsz + 1;
+		block_array_size = lfsp->lfs_cleansz + lfsp->lfs_segtabsz + 1;
 
 	if (!(block_array = malloc(block_array_size *sizeof(int))))
 		fatal("%s: %s", special, strerror(errno));
 
 	/* fill in the array */
-	for (i = 0; i < file_info.fi_nblocks; i++)
+	for (i = 0; i < block_array_size; i++)
 		block_array[i] = i;
 
 	/* copy into segment */
-	sump = pagep;
+	sump = ipagep;
 	bcopy(&summary, sump, sizeof(SEGSUM));
 	sump += sizeof(SEGSUM);
-	bcopy(&file_info, sump, sizeof(FINFO) - sizeof(u_long));
-	sump += sizeof(FINFO) - sizeof(u_long);
-	bcopy(block_array, sump, sizeof(u_long) * file_info.fi_nblocks);
-	sump += sizeof(u_long) * file_info.fi_nblocks;
 
 	/* Now, add the ifile */
-	file_info.fi_nblocks = lfsp->lfs_segtabsz + 1;
+	file_info.fi_nblocks = block_array_size;
 	file_info.fi_version = 1;
 	file_info.fi_ino = LFS_IFILE_INUM;
-
-	for (i = 0; i < file_info.fi_nblocks; i++)
-		block_array[i] = i;
 
 	bcopy(&file_info, sump, sizeof(FINFO) - sizeof(u_long));
 	sump += sizeof(FINFO) - sizeof(u_long);
@@ -414,57 +454,43 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	file_info.fi_ino = LOSTFOUNDINO;
 	bcopy(&file_info, sump, sizeof(FINFO));
 
+	((daddr_t *)ipagep)[LFS_SUMMARY_SIZE / sizeof(daddr_t) - 1] = 
+	    lfsp->lfs_idaddr;
+	((SEGSUM *)ipagep)->ss_sumsum = cksum(ipagep+sizeof(summary.ss_sumsum), 
+	    LFS_SUMMARY_SIZE - sizeof(summary.ss_sumsum));
+	put(fd, LFS_LABELPAD + LFS_SBPAD, ipagep, LFS_SUMMARY_SIZE);
 
-	sb_to_sum = (lfsp->lfs_ssize << lfsp->lfs_bshift) - LFS_SUMMARY_SIZE;
-	((SEGSUM *)pagep)->ss_cksum = cksum(pagep+sizeof(summary.ss_cksum), 
-	    LFS_SUMMARY_SIZE - sizeof(summary.ss_cksum));
-	put(fd, LFS_LABELPAD + sb_to_sum, pagep, LFS_SUMMARY_SIZE);
-
-	/* 
-	 * The first FINFO structure from above is good, just need to change
-	 * the pointers
-	 */
-	sp1 = (SEGSUM *)pagep;
-	sp1->ss_nextsum = -1;
-	sp1->ss_create = 0;
-	sp1->ss_nfinfo = 1;
-	sp1->ss_ninos = 0;
-
-	sp2 = (SEGSUM *)dpagep;
-	sp2->ss_nextsum = -1;
-	sp2->ss_create = 0;
-	sp2->ss_nfinfo = 0;
-	sp2->ss_ninos = 0;
+	sp = (SEGSUM *)ipagep;
+	sp->ss_create = 0;
+	sp->ss_nfinfo = 0;
+	sp->ss_ninos = 0;
+	sp->ss_datasum = 0;
 
 	/* Now, write rest of segments containing superblocks */
 	lfsp->lfs_tstamp = 0;
 	lfsp->lfs_cksum = 
-	    cksum(lfsp, sizeof(LFS) - sizeof(lfsp->lfs_cksum));
+	    cksum(lfsp, sizeof(struct lfs) - sizeof(lfsp->lfs_cksum));
 	for (seg_addr = last_addr = lfsp->lfs_sboffs[0], j = 1, i = 1; 
 	    i < lfsp->lfs_nseg; i++) {
 
 		seg_addr += lfsp->lfs_ssize << lfsp->lfs_fsbtodb;
-		if (seg_addr == lfsp->lfs_sboffs[j]) {
-			sp = sp1;		/* It's a superblock */
-			if (j < (LFS_MAXNUMSB - 2))
-				j++;
-		} else
-			sp = sp2;
-
 		sp->ss_next = last_addr;
 		last_addr = seg_addr;
-
 		seg_seek = seg_addr * lp->d_secsize;
-		if (sp == sp1)
-			put(fd, seg_seek, lfsp, sizeof(LFS));
+
+		if (seg_addr == lfsp->lfs_sboffs[j]) {
+			if (j < (LFS_MAXNUMSB - 2))
+				j++;
+			put(fd, seg_seek, lfsp, sizeof(struct lfs));
+			seg_seek += LFS_SBPAD;
+		} 
 
 		/* Summary */
-		sp->ss_cksum = cksum(&sp->ss_next, 
-		    LFS_SUMMARY_SIZE - sizeof(sp->ss_cksum));
-		put(fd, sb_to_sum + seg_seek, sp, LFS_SUMMARY_SIZE);
+		sp->ss_sumsum = cksum(&sp->ss_datasum, 
+		    LFS_SUMMARY_SIZE - sizeof(sp->ss_sumsum));
+		put(fd, seg_seek, sp, LFS_SUMMARY_SIZE);
 	}
-	free(dpagep);
-	free(pagep);
+	free(ipagep);
 	close(fd);
 	return (0);
 }
@@ -505,7 +531,7 @@ make_dinode(ino, dip, nblocks, saddr, lfsp)
 	struct dinode *dip;			/* disk inode */
 	int nblocks;				/* number of blocks in file */
 	daddr_t saddr;				/* starting block address */
-	LFS *lfsp;				/* superblock */
+	struct lfs *lfsp;			/* superblock */
 {
 	int db_per_fb, i;
 
