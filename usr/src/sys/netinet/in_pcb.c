@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.35	82/10/30	*/
+/*	in_pcb.c	4.36	82/11/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -15,22 +15,6 @@
 #include "../h/protosw.h"
 
 struct	in_addr zeroin_addr;
-
-in_pcbreserve(so, sndcc, rcvcc)
-	struct socket *so;
-	int sndcc, rcvcc;
-{
-
-	if (sbreserve(&so->so_snd, sndcc) == 0)
-		goto bad;
-	if (sbreserve(&so->so_rcv, rcvcc) == 0)
-		goto bad2;
-	return (0);
-bad2:
-	sbrelease(&so->so_snd);
-bad:
-	return (ENOBUFS);
-}
 
 in_pcballoc(so, head)
 	struct socket *so;

@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.69	82/10/30	*/
+/*	tcp_usrreq.c	1.70	82/11/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -287,7 +287,7 @@ tcp_attach(so)
 	struct inpcb *inp;
 	int error;
 
-	error = in_pcbreserve(so, tcp_sendspace, tcp_recvspace);
+	error = soreserve(so, tcp_sendspace, tcp_recvspace);
 	if (error)
 		goto bad;
 	error = in_pcballoc(so, &tcb);

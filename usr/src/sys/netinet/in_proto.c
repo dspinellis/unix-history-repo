@@ -1,12 +1,13 @@
-/*	in_proto.c	5.2	82/08/01	*/
+/*	in_proto.c	5.3	82/11/03	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
 #include "../h/protosw.h"
 #include "../h/domain.h"
 #include "../h/mbuf.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
+
+#include "../netinet/in.h"
+#include "../netinet/in_systm.h"
 
 /*
  * TCP/IP protocol family: IP, ICMP, UDP, TCP.
