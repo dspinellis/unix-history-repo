@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)more.c	4.11 (Berkeley) 83/03/17";
+static	char *sccsid = "@(#)more.c	4.12 (Berkeley) 83/06/25";
 
 /*
 ** more.c - General purpose tty output filter and file perusal program
@@ -1600,6 +1600,8 @@ onsusp ()
     reset_tty ();
     fflush (stdout);
     /* Send the TSTP signal to suspend our process group */
+    signal(SIGTSTP, SIG_DFL);
+    sigsetmask(0);
     kill (0, SIGTSTP);
     /* Pause for station break */
 
