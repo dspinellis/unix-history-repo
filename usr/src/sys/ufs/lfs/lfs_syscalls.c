@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	7.8 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	7.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -71,8 +71,8 @@ lfs_markv(p, uap, retval)
 		return (EINVAL);
 
 	cnt = uap->blkcnt;
-	start = blkp = malloc(cnt * sizeof(BLOCK_INFO), M_SEGMENT, M_WAITOK);
-	if (error = copyin(uap->blkiov, blkp, cnt * sizeof(BLOCK_INFO))) {
+	start = malloc(cnt * sizeof(BLOCK_INFO), M_SEGMENT, M_WAITOK);
+	if (error = copyin(uap->blkiov, start, cnt * sizeof(BLOCK_INFO))) {
 		free(start, M_SEGMENT);
 		return (error);
 	}
@@ -84,7 +84,7 @@ lfs_markv(p, uap, retval)
 	 */
 	fs = VFSTOUFS(mntp)->um_lfs;
 	bsize = fs->lfs_bsize;
-	for (lastino = LFS_UNUSED_INUM; cnt--; ++blkp) {
+	for (lastino = LFS_UNUSED_INUM, blkp = start; cnt--; ++blkp) {
 		/*
 		 * Get the IFILE entry (only once) and see if the file still
 		 * exists.
@@ -132,13 +132,13 @@ lfs_markv(p, uap, retval)
 	free(start, M_SEGMENT);
 
 	cnt = uap->inocnt;
-	start = inop = malloc(cnt * sizeof(INODE_INFO), M_SEGMENT, M_WAITOK);
-	if (error = copyin(uap->inoiov, inop, cnt * sizeof(INODE_INFO))) {
+	start = malloc(cnt * sizeof(INODE_INFO), M_SEGMENT, M_WAITOK);
+	if (error = copyin(uap->inoiov, start, cnt * sizeof(INODE_INFO))) {
 		free(start, M_SEGMENT);
 		return (error);
 	}
 
-	for (; cnt--; ++inop) {
+	for (inop = start; cnt--; ++inop) {
 		LFS_IENTRY(ifp, fs, inop->ii_inode, bp);
 		daddr = ifp->if_daddr;
 		brelse(bp);
