@@ -1,0 +1,2239 @@
+%!
+%%Title: PubTeX output 1991.01.14:1031
+%%Creator: Pubps,       ArborText, Inc.
+%%BoundingBox: (atend)
+%%Pages: (atend)
+%%DocumentFonts: (atend)
+%%EndComments
+
+%! 
+%  Dvips.pro - included prolog for DviLaser-generated PostScript files.
+% 
+%  Copyright (c) 1986-89, ArborText, Inc.
+%  Permission to copy is granted so long as the PostScript code
+%  is not resold or used in a commercial product.
+%
+%  $Header: pubps.pro,v 1.14 90/04/10 12:27:08 jsg Exp $
+
+systemdict /setpacking known  % use array packing mode if its available
+  {/savepackingmode currentpacking def 
+   true setpacking}
+  if
+ 
+/$DviLaser 400 dict def
+ 
+% Begin document
+/BeginDviLaserDoc {
+  vmstatus pop pop 0 eq 
+    { $DviLaser begin 
+      InitializeState }
+    { /DviLaserJob save def
+      $DviLaser begin
+      InitializeState
+      /DviLaserFonts save def }
+    ifelse
+} bind def
+ 
+% End document
+/EndDviLaserDoc {
+  vmstatus pop pop 0 eq 
+    { end }
+    { DviLaserFonts restore
+      end
+      DviLaserJob restore }
+    ifelse
+} bind def
+ 
+$DviLaser begin
+
+/tempstr 64 string def
+/tempint 0 def
+/tempmatrix matrix def
+ 
+%
+%  Debugging routines
+%
+/DebugMode false def
+
+/PrintInt {
+  tempstr cvs print
+} bind def
+
+/PrintLn {
+  (\n) print flush
+} bind def
+ 
+/PrintVMStats {
+  print
+  PrintLn
+  (VM status - ) print
+  vmstatus
+  3 copy
+  PrintInt (\(total\), ) print
+  PrintInt (\(used\), ) print
+  pop
+  exch sub 
+  PrintInt (\(remaining\), ) print
+  PrintInt (\(level\)) print
+  PrintLn
+} bind def
+ 
+/VMS /PrintVMStats load def 
+ 
+/VMSDebug {
+  DebugMode
+    {PrintVMStats}
+    {pop}
+    ifelse
+} bind def
+ 
+(beginning of common prolog) VMSDebug 
+
+% Make it easy to bind definitions.
+/bdef { bind def } bind def
+/xdef { exch def } bdef
+
+% Begin page
+/BP {
+  /Magnification xdef
+  /DviLaserPage save def
+  (beginning of page) VMSDebug 
+} bdef
+ 
+% End page
+/EP {
+  DviLaserPage restore
+} bdef
+ 
+% Exit page (temporarily) to add fonts/characters.
+/XP {
+  % Save current point information so it can be reset later. 
+  /Xpos where {pop Xpos} {0} ifelse
+  /Ypos where {pop Ypos} {0} ifelse
+  /currentpoint cvx stopped {0 0 moveto currentpoint} if 
+  /DviLaserPage where {pop DviLaserPage restore} if
+  moveto
+  /Ypos xdef
+  /Xpos xdef
+} bdef
+ 
+% Resume page
+/RP {
+  /DviLaserPage save def
+} bdef
+ 
+% Purge all fonts to reclaim memory space. 
+/PF {
+  GlobalMode
+  LocalMode
+} bdef
+ 
+% Switch to base save/restore level, saving state information. 
+/GlobalMode {
+  /UserSave where {pop UserSave} if  % invoke "UserSave" if available
+  PortraitMode 
+  PaperWidth 
+  PaperHeight 
+  PxlResolution 
+  Resolution 
+  Magnification
+  Ymax
+  RasterScaleFactor
+  % Save current point information so it can be reset later. 
+  /currentpoint cvx stopped {0 0 moveto currentpoint} if 
+  /DviLaserPage where {pop DviLaserPage restore} if
+  DviLaserFonts restore
+  RecoverState
+} bdef
+ 
+% Preserve state at the base level.
+/RecoverState {
+  10 copy
+  /Ypos xdef
+  /Xpos xdef
+  /RasterScaleFactor xdef
+  /Ymax xdef
+  /Magnification xdef
+  /Resolution xdef
+  /PxlResolution xdef
+  /PaperHeight xdef
+  /PaperWidth xdef
+  /PortraitMode xdef
+  DoInitialScaling
+  PortraitMode not {PaperWidth 0 SetupLandscape} if
+  Xpos Ypos moveto
+} bdef
+
+% Initialize state variables to default values.
+/InitializeState {
+  /Resolution 3600.0 def
+  /PxlResolution 300.0 def
+  /RasterScaleFactor PxlResolution Resolution div def
+  /PortraitMode true def
+  11.0 Resolution mul /PaperHeight xdef
+  8.5 Resolution mul /PaperWidth xdef
+  /Ymax PaperHeight def
+  /Magnification 1000.0 def
+  /Xpos 0.0 def
+  /Ypos 0.0 def
+  /InitialMatrix matrix currentmatrix def
+} bdef
+
+% Switch from base save/restore level, restoring state information. 
+/LocalMode {
+  /Ypos xdef
+  /Xpos xdef
+  /RasterScaleFactor xdef
+  /Ymax xdef
+  /Magnification xdef
+  /Resolution xdef
+  /PxlResolution xdef
+  /PaperHeight xdef
+  /PaperWidth xdef
+  /PortraitMode xdef
+  DoInitialScaling
+  PortraitMode not {PaperWidth 0 SetupLandscape} if
+  Xpos Ypos moveto
+  /UserRestore where {pop UserRestore} if  % invoke "UserRestore" if available
+  /DviLaserFonts save def
+  /DviLaserPage save def
+} bdef
+ 
+% Abbreviations 
+/S /show load def
+/SV /save load def
+/RST /restore load def
+ 
+/Yadjust {Ymax exch sub} bdef
+ 
+% (x,y) position absolute, just set Xpos & Ypos, don't move.
+/SXY {
+  Yadjust 
+  /Ypos xdef /Xpos xdef
+} bdef
+ 
+% (x,y) position absolute
+/XY {
+  Yadjust 
+  2 copy /Ypos xdef /Xpos xdef
+  moveto
+} bdef
+ 
+% (x,0) position absolute
+/X {
+  currentpoint exch pop 
+  2 copy /Ypos xdef /Xpos xdef
+  moveto
+} bdef
+ 
+% (0,y) position absolute
+/Y {
+  currentpoint pop exch Yadjust 
+  2 copy /Ypos xdef /Xpos xdef
+  moveto
+} bdef
+ 
+% (x,y) position relative
+/xy {
+  neg rmoveto
+  currentpoint /Ypos xdef /Xpos xdef
+} bdef
+ 
+% (x,0) position relative
+/x {
+  0.0 rmoveto
+  currentpoint /Ypos xdef /Xpos xdef
+} bdef
+ 
+% (0,y) position relative
+/y {
+  0.0 exch neg rmoveto
+  currentpoint /Ypos xdef /Xpos xdef
+  } bdef
+ 
+% Print a rule.  In order to get correct pixel size and positioning,
+% we usually create a temporary font in which the rule is the only character.
+% When the rule is large, however, we fill a rectangle instead.
+/R {
+  /ht xdef
+  /wd xdef
+  ht 1950 le wd 1950 le and
+    {save
+    /tfd 6 dict def
+    tfd begin
+      /FontType 3 def
+      /FontMatrix [1 0 0 1 0 0] def
+      /FontBBox [0 0 wd ht] def
+      /Encoding 256 array dup 97 /a put def
+      /BuildChar {
+        pop   % ignore character code
+        pop   % ignore font dict, too
+        wd 0 0 0 wd ht setcachedevice
+        wd ht true
+        [1 0 0 -1 0 ht] {<FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF>} imagemask
+        } def
+      end % tfd
+    /tf tfd definefont setfont
+    (a) show
+    restore
+    }
+    {gsave
+    0 setgray
+    currentpoint
+    newpath
+      moveto
+      0.0 ht rlineto
+      wd 0.0 rlineto
+      0.0 ht neg rlineto
+      wd neg 0.0 rlineto
+    closepath fill
+    grestore
+    }
+  ifelse
+  wd 0.0 rmoveto
+  currentpoint /Ypos xdef /Xpos xdef
+} bdef
+
+%
+%  <PXL-file resolution(pix/inch)> <resolution(pix/inch)> RES
+%
+/RES {
+  /Resolution xdef
+  /PxlResolution xdef
+  /RasterScaleFactor PxlResolution Resolution div def
+  DoInitialScaling
+} bdef
+
+%
+% Do initial scaling.
+%
+/DoInitialScaling {
+  InitialMatrix setmatrix
+  72.0 Resolution div dup scale   
+} bdef
+ 
+%
+%  <paper-height(pix)> <paper-width(pix)> PM 
+%
+/PM { 
+  XP
+  /PaperWidth xdef 
+  /PaperHeight xdef
+  /Ymax PaperHeight def
+  /PortraitMode true def
+  DoInitialScaling
+  RP
+} bdef  
+ 
+%
+%  <paper-height(pix)> <paper-width(pix)> LM 
+%
+/LM {
+  XP
+  /PaperWidth xdef 
+  /PaperHeight xdef
+  /Ymax PaperWidth def
+  /PortraitMode false def
+  DoInitialScaling
+  PaperWidth 0 SetupLandscape
+  RP
+} bdef  
+  
+% Change magnification setting
+/MAG {
+  XP
+  /Magnification xdef
+  RP
+} bdef
+ 
+%
+%  Switch to landscape mode
+%
+/SetupLandscape {
+  translate
+  90.0 rotate
+} bdef
+ 
+%
+%  <mode> SPB - begin "\special" mode
+%
+%  This is the PostScript procedure used to transfer from the internal
+%  environment used for the DVI translation code emitted by DVIPS to
+%  a standard PostScript environment.
+%
+%  Parameters: 0 - Local
+%              1 - Global
+%              2 - Inline
+%
+/SPB {
+  /spc_mode xdef
+  spc_mode 0 eq spc_mode 2 eq or
+    {XP}
+    {spc_mode 1 eq {GlobalMode} if} 
+    ifelse
+  Resolution 72.0 div dup scale        % Restore default scaling...
+  Magnification 1000.0 div dup scale   % Adjust for any magnification...
+  /Xpos Xpos 72.0 Resolution div mul 1000.0 Magnification div mul def
+  /Ypos Ypos 72.0 Resolution div mul 1000.0 Magnification div mul def
+} bdef
+ 
+%
+%  <mode> SPE - end "\special" mode
+%
+%  This is the PostScript procedure used to reenter the internal
+%  environment used for the DVI translation code emitted by DVIPS from 
+%  the standard PostScript environment provided for processing user-supplied
+%  PostScript code.
+%
+%  Parameters: 0 - Local
+%              1 - Global
+%              2 - Inline
+%
+/SPE {
+  /spc_mode xdef
+  1000.0 Magnification div dup scale   % Un-adjust for any magnification...
+  72.0 Resolution div dup scale        % Restore default internal scaling...
+  spc_mode 0 eq spc_mode 2 eq or
+    {RP}
+    {spc_mode 1 eq {LocalMode} if} 
+    ifelse
+} bdef
+ 
+%
+%  <num-copies> PP
+%
+/PP {
+  /#copies xdef
+  showpage
+  /#copies 1 def
+} bdef
+ 
+%
+%  /font-name <point-size(pix)> DMF
+%
+/DMF {
+  /psz xdef
+  /nam xdef
+  nam findfont psz scalefont setfont
+} bdef
+ 
+%
+%  /abcd (xxx) str-concat  ==> /abcdxxx
+%
+/str-concatstr 64 string def
+
+/str-concat {
+  /xxx xdef
+  /nam xdef
+  /namstr nam str-concatstr cvs def
+  /newnam namstr length xxx length add string def
+  newnam 0 namstr putinterval
+  newnam namstr length xxx putinterval
+  newnam cvn 
+} bdef
+ 
+%
+%  /abcdef 2 str-strip ==> /cdef
+%
+/str-strip {
+  /num xdef
+  /nam xdef
+  /namstr nam tempstr cvs def
+  /newlen namstr length num sub def
+  namstr num newlen getinterval
+  cvn
+} bdef
+ 
+%
+%  <old-dict> copydict ==> new-dict on stack
+%
+/copydict {
+  dup length 1 add dict /newdict xdef
+    {1 index /FID ne
+      {newdict 3 1 roll put}
+      {pop pop}
+     ifelse
+    } forall 
+  newdict
+} bdef
+ 
+%
+%  <font-type> DefineCMEncoding
+%
+/DefineCMEncoding {
+  /EncodeType xdef
+ 
+  /CMEncoding 256 array def
+  /Times-Roman findfont /Encoding get aload pop CMEncoding astore pop
+ 
+  EncodeType 11 eq {Do-CM-rm-encoding} if
+  EncodeType 12 eq {Do-CM-it-encoding} if
+  EncodeType 13 eq {Do-CM-tt-encoding} if
+} bdef
+ 
+%
+%  Do special mappings for the various CM-font types.  Characters that
+%  get "covered up" are repositioned in the range (128,128+32).
+%
+/Do-standard-CM-encodings {
+  CMEncoding
+  dup 0 /.notdef put
+  dup 1 /.notdef put
+  dup 2 /.notdef put
+  dup 3 /.notdef put
+  dup 4 /.notdef put
+  dup 5 /.notdef put
+  dup 6 /.notdef put
+  dup 7 /.notdef put
+ 
+  dup 8 /.notdef put
+  dup 9 /.notdef put
+  dup 10 /.notdef put
+  dup 11 /.notdef put
+  dup 12 /fi put
+  dup 13 /fl put
+  dup 14 /.notdef put
+  dup 15 /.notdef put
+ 
+  dup 16 /dotlessi put
+  dup 17 /.notdef put
+  dup 18 /grave put
+  dup 19 /acute put
+  dup 20 /caron put
+  dup 21 /breve put
+  dup 22 /macron put
+  dup 23 /ring put
+ 
+  dup 24 /cedilla put
+  dup 25 /germandbls put
+  dup 26 /ae put
+  dup 27 /oe put
+  dup 28 /oslash put
+  dup 29 /AE put
+  dup 30 /OE put
+  dup 31 /Oslash put
+
+  dup 127 /dieresis put
+
+  dup 128 /space put
+  dup 129 /quotedbl put
+  dup 130 /sterling put
+  dup 131 /dollar put
+  dup 132 /less put
+  dup 133 /greater put
+  dup 134 /backslash put
+  dup 135 /asciicircum put
+
+  dup 136 /underscore put
+  dup 137 /braceleft put
+  dup 138 /bar put
+  dup 139 /braceright put
+  dup 140 /asciitilde put
+  pop
+} bdef
+ 
+/Do-CM-rm-encoding {
+  Do-standard-CM-encodings
+  CMEncoding
+  dup 32 /.notdef put
+  dup 34 /quotedblright put
+  dup 60 /exclamdown put
+  dup 62 /questiondown put
+  dup 92 /quotedblleft put
+  dup 94 /circumflex put
+  dup 95 /dotaccent put
+  dup 123 /endash put
+  dup 124 /emdash put
+  dup 125 /hungarumlaut put
+  dup 126 /tilde put
+  pop
+} bdef
+ 
+/Do-CM-it-encoding {
+  Do-standard-CM-encodings
+  CMEncoding
+  dup 32 /.notdef put
+  dup 34 /quotedblright put
+  dup 36 /sterling put
+  dup 60 /exclamdown put
+  dup 62 /questiondown put
+  dup 92 /quotedblleft put
+  dup 94 /circumflex put
+  dup 95 /dotaccent put
+  dup 123 /endash put
+  dup 124 /emdash put
+  dup 125 /hungarumlaut put
+  dup 126 /tilde put
+  pop
+} bdef
+ 
+/Do-CM-tt-encoding {
+  Do-standard-CM-encodings
+  CMEncoding
+  dup 12 /.notdef put
+  dup 13 /quotesingle put
+  dup 14 /exclamdown put
+  dup 15 /questiondown put
+  dup 94 /circumflex put
+  dup 126 /tilde put
+  pop
+} bdef
+
+%
+% Routines to handle packing/unpacking numbers.
+%
+%  <target> <pos> <num> PackHW --> <new target>
+%
+/PackHW {
+  /num xdef
+  /pos xdef
+  /target xdef
+  num 16#0000FFFF and 1 pos sub 16 mul bitshift
+    target or
+} bdef
+
+%
+%  <target> <pos> <num> PackByte --> <new target>
+%
+/PackByte {
+  /num xdef
+  /pos xdef
+  /target xdef
+  num 16#000000FF and 3 pos sub 8 mul bitshift
+    target or
+} bdef
+
+%
+%  <pos> <num> UnpkHW --> <unpacked value>
+%
+/UnpkHW {
+  /num xdef
+  /pos xdef
+  num 1 pos sub -16 mul bitshift 16#0000FFFF and
+  dup 16#00007FFF gt {16#00010000 sub} if
+} bdef
+
+%
+%  <pos> <num> UnpkByte --> <unpacked value>
+%
+/UnpkByte {
+  /num xdef
+  /pos xdef
+  num 3 pos sub -8 mul bitshift 16#000000FF and
+  dup 16#0000007F gt {16#00000100 sub} if
+} bdef
+
+%
+%  <int-font-name> <ext-font-name> <pt-sz(pix)> <type> <loaded-fg> DefineCMFont
+%
+%    type 10: "as-is" PostScript font
+%    type 11: CM-mapped PostScript font - roman
+%    type 12: CM-mapped PostScript font - text italic 
+%    type 13: CM-mapped PostScript font - typewriter type 
+%
+/int-dict-name {int (-dict) str-concat} bdef
+/int-dict {int (-dict) str-concat cvx load} bdef
+
+/DF {
+  true  % signal that the font is already loaded
+  DefineCMFont
+} bdef
+ 
+/DNF {
+  false  % signal that the font is not already loaded
+  DefineCMFont
+} bdef
+
+/DefineCMFont {
+  /loaded xdef
+  /typ xdef
+  /psz xdef
+  /ext xdef
+  /int xdef
+ 
+  typ 10 ne 
+    { % font_type = 11, 12, 13
+    loaded not
+      { /fnam ext 3 str-strip def
+        fnam findfont copydict /newdict xdef 
+        typ DefineCMEncoding
+        newdict /Encoding CMEncoding put
+        ext newdict definefont pop
+      } if
+    int-dict-name ext findfont psz scalefont def
+    currentdict int [int-dict /setfont cvx] cvx put
+    }
+    { % font_type = 10
+    /fnam ext def
+    int-dict-name fnam findfont psz scalefont def
+    currentdict int [int-dict /setfont cvx] cvx put
+    }
+  ifelse
+} bdef 
+ 
+%
+%  <int-font-name> <ext-font-name> <pt-sz(pix)> <PXL mag> <num-chars>
+%      [llx lly urx ury] <newfont-fg> DefinePXLFont
+%
+
+/PXLF {
+  true  % signal that the font is already loaded
+  DefinePXLFont
+} bdef
+ 
+/PXLNF {
+  false  % signal that the font is not already loaded
+  DefinePXLFont
+} bdef
+
+/PXLBuildCharDict 17 dict def
+ 
+/CMEncodingArray 256 array def
+0 1 255 {CMEncodingArray exch dup tempstr cvs cvn put} for
+
+/RasterConvert {RasterScaleFactor div} bdef
+ 
+/TransformBBox {
+  aload pop
+ 
+  /BB-ury xdef
+  /BB-urx xdef
+  /BB-lly xdef
+  /BB-llx xdef
+ 
+  [BB-llx RasterConvert BB-lly RasterConvert 
+   BB-urx RasterConvert BB-ury RasterConvert]
+} bdef
+
+/DefinePXLFont {
+  /newfont xdef
+  /bb xdef
+  /num xdef
+  /psz xdef
+  /dsz xdef
+  /pxlmag xdef
+  /ext xdef
+  /int xdef
+ 
+  /fnam ext (-) str-concat pxlmag tempstr cvs str-concat def
+ 
+  newfont not {
+    int-dict-name 13 dict def
+   
+    int-dict begin
+      /FontType 3 def
+      /FontMatrix [1 dsz div 0 0 1 dsz div 0 0] def
+      /FontBBox bb TransformBBox def
+      /Encoding CMEncodingArray def
+      /CharDict 1 dict def
+      CharDict begin
+        /Char-Info num array def
+        end
+  
+      /BuildChar
+        { 
+          PXLBuildCharDict begin
+            /char xdef
+            /fontdict xdef
+   
+            fontdict /CharDict get /Char-Info get char get aload pop
+   
+            /rasters xdef
+            /PackedWord1 xdef
+   
+            0 PackedWord1 UnpkHW 16#7FFF ne
+              { /PackedWord2 xdef
+                /wx 0 PackedWord1 UnpkHW def
+                /rows 2 PackedWord1 UnpkByte def
+                /cols 3 PackedWord1 UnpkByte def
+                /llx 0 PackedWord2 UnpkByte def
+                /lly 1 PackedWord2 UnpkByte def
+                /urx 2 PackedWord2 UnpkByte def
+                /ury 3 PackedWord2 UnpkByte def }
+              { /PackedWord2 xdef
+                /PackedWord3 xdef
+                /PackedWord4 xdef
+                /wx 1 PackedWord1 UnpkHW def
+                /rows 0 PackedWord2 UnpkHW def
+                /cols 1 PackedWord2 UnpkHW def
+                /llx 0 PackedWord3 UnpkHW def
+                /lly 1 PackedWord3 UnpkHW def
+                /urx 0 PackedWord4 UnpkHW def
+                /ury 1 PackedWord4 UnpkHW def }
+               ifelse
+
+            rows 0 lt
+              { /rows rows neg def
+                /runlength 1 def }
+              { /runlength 0 def }
+             ifelse
+ 
+            wx 0 
+            llx RasterConvert lly RasterConvert 
+            urx RasterConvert ury RasterConvert setcachedevice
+            rows 0 ne
+              {
+              gsave
+                cols rows true 
+                RasterScaleFactor 0 0 RasterScaleFactor neg llx neg ury 
+                  tempmatrix astore
+                {GenerateRasters} imagemask
+              grestore
+              } if
+            end
+        } def
+      end
+   
+      fnam int-dict definefont pop 
+    } if 
+ 
+  int-dict-name fnam findfont psz scalefont def
+  currentdict int [int-dict /setfont cvx] cvx put
+} bdef 
+ 
+%
+%  <int-font-name> <code> <wx> <llx> <lly> <urx> <ury> <rows> <cols> <runlength> <rasters> PXLC
+%
+/PXLC {
+ 
+  /rasters xdef
+  /runlength xdef
+  /cols xdef
+  /rows xdef
+  /ury xdef
+  /urx xdef
+  /lly xdef
+  /llx xdef
+  /wx xdef
+  /code xdef
+  /int xdef
+ 
+  % See if the long or short format is required
+  true cols CKSZ rows CKSZ ury CKSZ urx CKSZ lly CKSZ llx CKSZ 
+    TackRunLengthToRows
+    { int-dict /CharDict get /Char-Info get code 
+        [0 0 llx PackByte 1 lly PackByte 2 urx PackByte 3 ury PackByte
+         0 0 wx PackHW 2 rows PackByte 3 cols PackByte
+         rasters] put}
+    { int-dict /CharDict get /Char-Info get code 
+        [0 0 urx PackHW 1 ury PackHW
+         0 0 llx PackHW 1 lly PackHW
+         0 0 rows PackHW 1 cols PackHW
+         0 0 16#7FFF PackHW 1 wx PackHW
+         rasters] put} 
+    ifelse
+} bdef
+ 
+/CKSZ {abs 127 le and} bdef
+/TackRunLengthToRows {runlength 0 ne {/rows rows neg def} if} bdef
+ 
+%
+%  <wx> <dsz> <psz> <llx> <lly> <urx> <ury> <rows> <cols> <runlength> <rasters> PLOTC
+%
+/PLOTC {
+  /rasters xdef
+  /runlength xdef
+  /cols xdef
+  /rows xdef
+  /ury xdef
+  /urx xdef
+  /lly xdef
+  /llx xdef
+  /psz xdef
+  /dsz xdef
+  /wx xdef
+ 
+  % "Plot" a character's raster pattern.
+  rows 0 ne
+    {
+    gsave
+      currentpoint translate
+      psz dsz div dup scale
+      cols rows true 
+      RasterScaleFactor 0 0 RasterScaleFactor neg llx neg ury 
+        tempmatrix astore
+      {GenerateRasters} imagemask
+    grestore
+    } if
+  wx x
+} bdef
+ 
+% Routine to generate rasters for "imagemask".
+/GenerateRasters {
+  rasters
+  runlength 1 eq {RunLengthToRasters} if
+} bdef
+ 
+% Routine to convert from runlength encoding back to rasters.
+/RunLengthToRasters {
+  % ...not done yet...
+} bdef
+ 
+%
+%  These procedures handle bitmap processing.
+%
+%  <bitmap columns> <bitmap rows> <bitmap pix/inch> <magnification> BMbeg
+%
+/BMbeg {
+  /BMmagnification xdef
+  /BMresolution xdef
+  /BMrows xdef
+  /BMcols xdef
+
+  /BMcurrentrow 0 def
+  gsave
+    0.0 setgray
+    Resolution BMresolution div dup scale
+    currentpoint translate
+    BMmagnification 1000.0 div dup scale
+    0.0 BMrows moveto
+    BMrows dup scale
+    currentpoint translate
+    /BMCheckpoint save def
+  } bdef
+
+/BMend {
+  BMCheckpoint restore
+  grestore
+  } bdef
+
+%
+%  <hex raster bitmap> <rows> BMswath 
+%
+/BMswath {
+  /rows xdef
+  /rasters xdef
+
+  BMcols rows true
+  [BMrows 0 0 BMrows neg 0 BMcurrentrow neg]
+  {rasters}
+  imagemask
+
+  /BMcurrentrow BMcurrentrow rows add def
+  BMcurrentrow % save this on the stack around a restore...
+  BMCheckpoint restore
+  /BMcurrentrow xdef
+  /BMCheckpoint save def
+  } bdef
+
+%
+%  Procedures for implementing the "rotate <theta>" special:
+%  <theta> ROTB -
+%        - ROTE -
+
+/ROTB {
+  XP
+  gsave
+  Xpos Ypos translate
+  rotate % using <theta> from the stack
+  Xpos neg Ypos neg translate
+  RP
+  } bdef
+
+/ROTE {XP grestore RP} bdef
+
+%
+%  Procedures for implementing the "epsfile <filename> [<mag>]" special:
+%  <llx> <lly> <mag> EPSB -
+%  - EPSE -
+
+/EPSB {
+  0 SPB
+  save
+  4 1 roll % push the savelevel below the parameters
+  /showpage {} def
+  Xpos Ypos translate
+  1000 div dup scale % using <mag> from the stack
+  neg exch neg exch translate % using <llx> <lly> from the stack
+  } bdef
+
+/EPSE {restore 0 SPE} bdef
+
+%
+%  Procedure for implementing revision bars:
+%  <bary1> <bary2> <barx> <barw> REVB -
+%  The bar is a line of width barw drawn from (barx,bary1) to (barx,bary2).
+
+/REVB {
+  /barw xdef
+  /barx xdef
+  /bary2 xdef
+  /bary1 xdef
+  gsave
+    barw setlinewidth
+    barx bary1 Yadjust moveto
+    barx bary2 Yadjust lineto
+    stroke
+  grestore
+  } bdef
+
+%
+%  A small dictionary to facilitate The Publisher's implementation
+%  of gray table cells.
+
+/grpm 40 dict def
+
+%
+%  Procedures for implementing the "paper <source>" option:
+%  <name> <eop> SPS          -
+%         <eop> paper-manual -
+%  etc.  The boolean <eop> is passed so that a paper source procedure
+%  knows if it is being called at the beginning (false) or end
+%  (true) of a page.
+
+/SPS {
+  /eop xdef
+  /name xdef
+  name where {pop eop name cvx exec} if
+  } bdef
+
+/paper-manual {
+    {statusdict /manualfeed known
+      {statusdict /manualfeed true put}
+    if}
+  if
+  } bdef
+
+/paper-automatic {
+    {statusdict /manualfeed known
+      {statusdict /manualfeed false put}
+    if}
+  if
+  } bdef
+
+/paper-top-tray {
+    {}
+    {statusdict /setpapertray known
+      {statusdict begin 0 setpapertray end}
+    if}
+  ifelse
+  } bdef
+
+/paper-bottom-tray {
+    {}
+    {statusdict /setpapertray known
+      {statusdict begin 1 setpapertray end}
+    if}
+  ifelse
+  } bdef
+
+/paper-both-trays {
+    {}
+    {statusdict /setpapertray known
+      {statusdict begin 2 setpapertray end}
+    if}
+  ifelse
+  } bdef
+
+(end of common prolog) VMSDebug 
+
+end
+ 
+systemdict /setpacking known 
+  {savepackingmode setpacking}
+  if
+
+% 
+% End of included prolog section.
+%
+
+%%EndProlog
+%%BeginSetup
+BeginDviLaserDoc
+300 300 RES
+%%EndSetup
+
+
+%%PageBoundingBox: (atend)
+%%BeginPageSetup
+1000 BP 3507 2481 PM /paper-automatic false SPS 766 0 XY
+%%EndPageSetup
+XP /F46 /CM-Times-Bold 74.720 11 DNF RP
+766 759 XY F46(RF)S -6 x(A)S 38 x(\320)S 37 x(Remote)S 37 x(File)S
+37 x(Access)S
+XP /F45 /CM-Times-Roman 74.720 11 DNF RP
+688 950 XY F45(A)S 35 x(tool)S 35 x(for)S 35 x(managing)S 35 x
+(access)S 35 x(to)S 34 x(\014les)S 1037 Y 689 X(that)S 35 x(are)S 
+35 x(distributed)S 35 x(at)S 35 x(multiple)S 34 x(sites)S
+XP /F48 /CM-Times-Italic 58.115 12 DNF RP
+1069 1187 XY F48(Oliver)S 32 x(W)S -5 x(enzel)S 70 y 1057 X(GMD)S 
+31 x(\261)S 31 x(Fokus)S 71 y 1015 X(Berlin)S 30 x(\261)S 31 x
+(Germany)S
+XP /F47 /CM-Times-Roman 58.115 11 DF RP
+1112 1527 XY F47(V)S -6 x(ersion)S 35 x(1.0)S
+%%PageTrailer
+/paper-automatic true SPS 1 PP EP
+%%PageBoundingBox: 165 473 437 667
+
+%%PageBoundingBox: (atend)
+%%BeginPageSetup
+1000 BP 3507 2481 PM /paper-automatic false SPS 295 0 XY
+%%EndPageSetup
+XP /F8 /CM-Times-Bold 41.511 11 DF RP
+295 231 XY F8(RF)S -3 x(A)S 295 281 XY 846 3 R 1141 281 XY 
+200 3 R 1340 281 XY 846 3 R -50 y 1977 X(The)S 26 x(Model)S 464 Y 
+295 X F46(1)S 62 x(Intr)S -1 x(oduction)S
+XP /F44 /CM-Times-Roman 45.662 11 DF RP
+295 639 XY F44(This)S 13 x(software)S 12 x(tool)S 12 x(called)S
+XP /F49 /CM-Times-Bold 45.662 11 DF RP
+762 639 XY F49(Remote)S 12 x(File)S 12 x(Access)S 13 x F44(\(RF)S 
+-3 x(A\))S 12 x(has)S 13 x(been)S 12 x(designed)S 12 x(to)S 12 x
+(allow)S 12 x(access)S 13 x(to)S 12 x(a)S 12 x(set)S 12 x(of)S 12 x
+(\014les)S 58 y 295 X(in)S 13 x(a)S 13 x(UNIX)S
+XP /F74 /CM-Times-Roman 33.209 11 DF RP
+492 680 XY F74(TM)S 17 y 16 x F44(\014lesystem)S 14 x(that)S 14 x
+(are)S 14 x(shared)S 14 x(between)S 14 x(multiple)S 13 x(sites.)S 
+20 x(It)S 13 x(has)S 14 x(been)S 13 x(created)S 14 x(within)S 13 x
+(the)S 14 x(VERDI)S 58 y 295 X(3)S 14 x(project)S 13 x(as)S 14 x(a)S
+14 x(result)S 13 x(of)S 14 x(our)S 14 x(own)S 14 x(requirements)S 
+14 x(for)S 14 x(a)S 14 x(distributed)S 14 x(document)S 14 x(and)S 
+14 x(\014le)S 14 x(management)S 14 x(system.)S 58 y 295 X(Basis)S 
+15 x(for)S 15 x(this)S 15 x(requirements)S 15 x(is)S 16 x(the)S 15 x
+(VERDI)S 15 x(3)S 15 x(project)S 15 x(which)S 15 x(members)S 15 x
+(are)S 16 x(located)S 15 x(at)S 15 x(two)S 15 x(dif)S -1 x(ferent)S
+15 x(sites.)S 58 y 295 X(Both)S 16 x(sites)S 17 x(of)S 16 x(the)S 
+16 x(project)S 16 x(share)S 17 x(a)S 16 x(common)S 16 x(set)S 16 x
+(of)S 16 x(documents)S 16 x(and)S 17 x(\014les)S 16 x(which)S 17 x
+(need)S 16 x(to)S 16 x(be)S 16 x(accessed)S 16 x(and)S 58 y 295 X
+(modi)S
+(\014ed)S 15 x(during)S 15 x(the)S 15 x(everyday-project-work.)S 
+20 x(For)S 15 x(some)S 15 x(time)S 15 x(we)S 15 x(used)S 15 x(the)S
+15 x(FT)S -4 x(AM)S 15 x(software)S 15 x(to)S 15 x(exchange)S 58 y 
+295 X(\014les)S 19 x(between)S 18 x(the)S 18 x(two)S 18 x(sites,)S
+19 x(but)S 18 x(after)S 18 x(the)S 19 x(number)S 18 x(of)S 19 x
+(shared)S 18 x(\014les)S 19 x(and)S 18 x(transfer)S 19 x(operations)S
+18 x(grew,)S 19 x(very)S 58 y 295 X(often)S 21 x(questions)S 21 x
+(like)S 1145 Y 378 X(\267)S 67 x(at)S 17 x(which)S 17 x(site)S 17 x
+(the)S 17 x(up-to-date)S 17 x(\(master\))S 17 x(version)S 17 x(of)S
+17 x(the)S 17 x(\014le)S 17 x(is)S 17 x(located)S 17 x(?)S 1228 Y 
+378 X(\267)S 67 x(is)S 19 x(the)S 20 x(local)S 19 x(version)S 19 x
+(up-to-date)S 20 x(?)S 1311 Y 378 X(\267)S 67 x(is)S 19 x(anyone)S
+19 x(already)S 19 x(editing)S 19 x(this)S 20 x(\014le)S 20 x(?)S 
+1394 Y 378 X(\267)S 67 x(are)S 20 x(there)S 19 x(any)S 20 x(newly)S
+20 x(created)S 19 x(\014les)S 20 x(?)S 1493 Y 295 X(appeared.)S 26 x
+(Using)S 18 x(a)S 17 x(distributed)S 17 x(\014lesystem)S 17 x(like)S
+17 x(NFS)S 17 x(was)S 17 x(discussed)S 17 x(as)S 17 x(an)S 17 x
+(alternative)S 17 x(solution,)S 18 x(but)S 17 x(this)S 58 y 295 X
+(did)S 19 x(not)S 20 x(seemed)S 19 x(to)S 20 x(be)S 19 x
+(practicable)S 20 x(because)S 19 x(of)S 20 x(the)S 19 x(very)S 19 x
+(slow)S 19 x(communication)S 19 x(links)S 19 x(between)S 20 x(the)S
+19 x(sites)S 58 y 295 X(\(9600Bps\).)S 20 x(Therefore,)S 14 x(we)S
+13 x(tried)S 13 x(to)S 12 x(build)S 13 x(a)S 13 x(simple)S 12 x
+(tool)S 13 x(to)S 12 x(handle)S 13 x(theses)S 13 x(questions.)S 20 x
+(So)S 13 x(the)S 13 x(RF)S -3 x(A)S 12 x(tool)S 13 x(was)S 59 y 
+295 X(born)S 17 x(and)S 17 x(because)S 16 x(the)S 16 x(project)S 
+17 x(is)S 17 x(working)S 16 x(with)S 16 x(ISO)S 16 x(protocols,)S 
+17 x(we)S 16 x(built)S 17 x(the)S 17 x(tool)S 17 x(on)S 17 x(top)S
+17 x(of)S 16 x(the)S 17 x(ISODE)S 58 y 295 X(software)S 18 x
+(package)S 18 x(using)S 17 x(the)S 17 x(remote)S 17 x(operation)S 
+17 x(compiler)S
+XP /F75 /CM-Times-Italic 45.662 12 DF RP
+1339 1726 XY F75(r)S -2 x(osy\(1\))S F44(.)S 27 x(Currently)S 17 x
+(the)S 17 x(tools)S 17 x(only)S 17 x(supports)S 18 x(to)S 58 y 295 X
+(share)S 14 x(\014les)S 14 x(between)S 14 x(two)S 15 x(sites)S 15 x
+(\(because)S 14 x(this)S 15 x(was)S 15 x(our)S 15 x(primary)S 15 x
+(goal\),)S 15 x(but)S 15 x(it)S 15 x(should)S 14 x(be)S 14 x
+(possible)S 15 x(to)S 15 x(extend)S 58 y 295 X(it)S 20 x(to)S 21 x
+(support)S 20 x(multiple)S 20 x(sites.)S 2164 Y 295 X F46(2)S 62 x
+(The)S 35 x(Model)S
+XP /F76 /CM-Times-Bold 58.115 11 DF RP
+295 2350 XY F76(2.1)S 50 x(The)S 26 x(Data)S 27 x(Model)S 2467 Y 
+295 X F44(The)S 19 x(Data)S 19 x(Model)S 19 x(is)S 19 x(based)S 19 x
+(on)S 19 x(the)S 19 x(hierarchical)S 19 x(structure)S 19 x(of)S 20 x
+(the)S 20 x(UNIX)S -17 y F74(TM)S 17 y 22 x F44(\014lesystem.)S 32 x
+(The)S 20 x(RF)S -3 x(A)S 19 x(tools)S 58 y 295 X(allows)S 18 x(to)S
+18 x(share)S 18 x(a)S 17 x(subtree)S 17 x(of)S 18 x(the)S 17 x
+(hierarchical)S 17 x(\014lesystem)S 17 x(structure)S 18 x(between)S
+17 x(\(currently\))S 18 x(two)S 18 x(sites.)S 27 x(The)S 58 y 295 X
+(structure)S 18 x(of)S 17 x(the)S 18 x(shared)S 18 x(subtree)S 17 x
+(must)S 18 x(be)S 18 x(identical)S 18 x(at)S 17 x(both)S 17 x
+(sites.)S 28 x(The)S 17 x(local)S 18 x(root)S 18 x(of)S 18 x(the)S
+17 x(shared)S 18 x(subtree)S 58 y 295 X(may)S 16 x(be)S 16 x(dif)S
+-1 x(ferent)S 17 x(at)S 16 x(both)S 16 x(sites.)S 24 x(Subject)S 
+16 x(of)S 17 x(the)S 16 x(operation)S 16 x(of)S 17 x(the)S 16 x(RF)S
+-3 x(A)S 16 x(tool)S 17 x(are)S 17 x(the)S 16 x(\014les)S 17 x(and)S
+16 x(directories)S 58 y 295 X(within)S 21 x(the)S 20 x(shared)S 20 x
+(subtree.)S 2886 Y 295 X F76(2.1.1)S 49 x(File)S 26 x(V)S -5 x
+(ersion-T)S -1 x(ime)S 3003 Y 295 X F44(A)S 21 x(\014le)S 21 x
+(within)S 20 x(a)S 21 x(shared)S 21 x(subtree)S 20 x(exists)S 21 x
+(at)S 21 x(the)S 21 x(dif)S -1 x(ferent)S 21 x(sites)S 21 x(as)S 
+21 x(dif)S -1 x(ferent)S 21 x(\(local\))S 20 x(versions)S 20 x(of)S
+21 x(the)S 20 x(\014le.)S 58 y 295 X(The)S 17 x(version-time)S 17 x
+(\(state)S 17 x(of)S 17 x(modi\014cation\))S 17 x(of)S 17 x(a)S 17 x
+(\014le)S 17 x(version)S 17 x(at)S 17 x(a)S 17 x(site)S 17 x(is)S 
+17 x(determined)S 17 x(by)S 17 x(the)S 17 x F75(modi\014cation)S
+XP /F6 /CM-Times-Roman 41.511 11 DF RP
+1230 3276 XY F6(1)S
+%%PageTrailer
+/paper-automatic true SPS 1 PP EP
+%%PageBoundingBox: 71 53 524 794
+
+%%PageBoundingBox: (atend)
+%%BeginPageSetup
+1000 BP 3507 2481 PM /paper-automatic false SPS 295 0 XY
+%%EndPageSetup
+295 231 XY F8(RF)S -3 x(A)S 295 281 XY 846 3 R 1141 281 XY 
+200 3 R 1340 281 XY 846 3 R -50 y 1977 X(The)S 26 x(Model)S 459 Y 
+295 X F75(time)S 16 x F44(provided)S 16 x(by)S 17 x(the)S 17 x(UNIX)S
+-17 y F74(TM)S 17 y 18 x F44(system)S 17 x(call)S 16 x F75
+(stat\(2\))S F44(.)S 24 x(T)S -3 x(o)S 16 x(determine)S 16 x(which)S
+17 x(version)S 16 x(of)S 16 x(\014le)S 17 x(is)S 17 x(up-to-date,)S
+58 y 295 X(the)S 17 x(youngest)S 17 x(version-time)S 17 x(is)S 16 x
+(chosen.)S 25 x(This)S 17 x(requires)S 16 x(that)S 17 x(the)S 16 x
+(sites)S 16 x(participating)S 17 x(in)S 17 x(the)S 17 x(\014le)S 
+17 x(sharing)S 17 x(use)S 58 y 295 X(synchronized)S 11 x(clocks.)S
+19 x(This)S 12 x(is)S 12 x(necessary)S 12 x(because)S 12 x(the)S 
+12 x(modi\014cation)S 11 x(time)S 12 x(is)S 11 x(set)S 12 x
+(automatically)S 12 x(by)S 11 x(the)S 12 x(UNIX)S 58 y 295 X(system)S
+18 x(using)S 18 x(the)S 17 x(local)S 17 x(operating)S 17 x(system)S
+17 x(clock.)S 27 x(The)S 17 x(RF)S -3 x(A)S 17 x(tool)S 17 x
+(provides)S 17 x(an)S 18 x(operation)S 17 x(to)S 17 x(synchronize)S
+59 y 295 X(the)S 18 x(clocks)S 18 x(where)S 18 x(one)S 19 x(of)S 
+18 x(the)S 18 x(sites)S 19 x(is)S 18 x(declared)S 18 x(to)S 18 x(be)S
+19 x(the)S 19 x F75(time-master)S 18 x F44(which)S 18 x(provides)S
+19 x(the)S 18 x(time)S 18 x(to)S 18 x(the)S 58 y 295 X F75
+(time-slave)S F44(.)S 916 Y 295 X F76(2.1.2)S 49 x(RF)S -4 x(A)S 
+26 x(File)S 26 x(Status)S 1025 Y 295 X F44(Each)S 17 x(local)S 18 x
+(version)S 18 x(of)S 18 x(a)S 18 x(\014le)S 18 x(that)S 18 x(exists)S
+17 x(within)S 18 x(the)S 18 x(shared)S 18 x(subtree)S 18 x(at)S 18 x
+(a)S 18 x(site)S 17 x(has)S 18 x(a)S 18 x(RF)S -3 x(A-speci\014c)S
+18 x(status)S 58 y 295 X(which)S 21 x(is)S 21 x(one)S 22 x(of:)S
+XP /F1 /CM-Times-Italic 49.813 12 DF RP
+295 1168 XY F1(MASTER)S -2 y 709 X F44(the)S 13 x(\014le)S 12 x(is)S
+12 x(the)S 12 x(up-to-date)S 12 x(version)S 12 x(of)S 13 x(the)S 
+13 x(\014le)S 12 x(and)S 13 x(modi\014cations)S 13 x(to)S 12 x(the)S
+13 x(local)S 13 x(version)S 58 y 709 X(of)S 19 x(the)S 19 x(\014le)S
+19 x(are)S 19 x(allowed.)S 1308 Y 295 X F1(SLA)S -2 x(VE)S -2 y 
+709 X F44(the)S 18 x(\014le)S 18 x(is)S 18 x(the)S 18 x(read-only)S
+18 x(version)S 18 x(of)S 18 x(the)S 18 x(\014le)S 18 x(and)S 18 x
+(may)S 18 x(be)S 18 x(up-to-date)S 18 x(but)S 18 x(it)S 18 x(need)S
+58 y 709 X(not.)S 20 x(For)S 14 x(each)S 13 x(local)S 13 x(\014le)S
+13 x(with)S 13 x(SLA)S -6 x(VE)S 13 x(status)S 13 x(there)S 13 x
+(must)S 13 x(be)S 13 x(a)S 13 x(MASTER)S 14 x(version)S 13 x(at)S 
+58 y 709 X(the)S 13 x(remote)S 13 x(site.)S 19 x(File)S 13 x
+(version)S 13 x(with)S 13 x(SLA)S -6 x(VE)S 13 x(status)S 13 x(will)S
+12 x(have)S 12 x(\014le)S 12 x(write)S 13 x(permissions)S 59 y 709 X
+(cleared.)S 1565 Y 295 X F1(UNREGISTERED)S -2 y 51 x F44(the)S 16 x
+(\014le)S 15 x(not)S 15 x(shared)S 15 x(and)S 16 x(has)S 16 x(only)S
+15 x(local)S 15 x(signi\014cance.)S 20 x(It)S 15 x(may)S 15 x(be)S
+15 x(modi\014ed)S 15 x(locally.)S 1693 Y 295 X(This)S 14 x(\014le)S
+14 x(status)S 13 x(allows)S 13 x(to)S 13 x(determine)S 13 x(which)S
+13 x(site)S 13 x(has)S 13 x(the)S 14 x(up-to-date)S 14 x(version)S
+14 x(of)S 13 x(a)S 13 x(\014le)S 14 x(and)S 13 x(is)S 13 x(allowed)S
+13 x(to)S 13 x(do)S 58 y 295 X(modi\014cations)S 16 x(to)S 16 x(the)S
+16 x(\014le.)S 22 x(The)S 16 x(site)S 16 x(holding)S 15 x(a)S 16 x
+(SLA)S -6 x(VE)S 16 x(version)S 16 x(of)S 16 x(the)S 15 x(\014le)S
+16 x(has)S 15 x(to)S 16 x(request)S 16 x(the)S 16 x(mastership)S 
+58 y 295 X(before)S 18 x(it)S 18 x(is)S 18 x(allowed)S 18 x(to)S 
+18 x(do)S 18 x(any)S 17 x(modi\014cations.)S 29 x(Further,)S 19 x
+(it)S 18 x(has)S 18 x(to)S 18 x(be)S 18 x(assured)S 18 x(that)S 17 x
+(the)S 18 x(local)S 18 x(version)S 18 x(of)S 58 y 295 X(the)S 16 x
+(\014le)S 15 x(at)S 16 x(the)S 15 x(new)S 16 x(MASTER)S 15 x(site)S
+15 x(is)S 15 x(up-to-date.)S 21 x(Otherwise)S 15 x(the)S 15 x
+(\014le)S 15 x(has)S 16 x(to)S 16 x(be)S 15 x(transferred)S 15 x
+(\014rst.)S 21 x(A)S 15 x(local)S 58 y 295 X(version)S 15 x(of)S 
+14 x(a)S 15 x(\014le)S 15 x(may)S 15 x(change)S 15 x(its)S 15 x
+(status)S 14 x(during)S 15 x(its)S 15 x(lifetime)S 14 x(\(e.g.)S 
+20 x(from)S 14 x(UNREGISTERED)S 15 x(to)S 15 x(MASTER\))S 58 y 295 X
+(as)S 19 x(a)S 19 x(result)S 19 x(of)S 19 x(several)S 19 x(RF)S -3 x
+(A)S 18 x(operations)S 19 x(described)S 19 x(later.)S 2150 Y 295 X 
+F76(2.1.3)S 49 x(File)S 26 x(Locking)S 2259 Y 295 X F44(T)S -3 x(o)S
+21 x(avoid)S 22 x(that)S 21 x(a)S 21 x(\014le)S 21 x(is)S 21 x(modi)S
+(\014ed)S 21 x(by)S 21 x(multiple)S 22 x(users)S 22 x(at)S 21 x(the)S
+21 x(MASTER)S 21 x(site)S 21 x(or)S 21 x(that)S 22 x(the)S 22 x
+(mastership)S 22 x(is)S 58 y 295 X(transferred)S 17 x(to)S 17 x(the)S
+17 x(remote)S 16 x(site)S 16 x(while)S 17 x(the)S 16 x(local)S 17 x
+(version)S 16 x(is)S 16 x(under)S 17 x(modify-access)S 16 x(by)S 
+16 x(a)S 17 x(local)S 16 x(user,)S 17 x(a)S 16 x(local)S 58 y 295 X
+(version)S 16 x(of)S 17 x(a)S 16 x(\014le)S 16 x(can)S 16 x(be)S 
+17 x(\(soft\)-locked.)S 24 x(Locking)S 17 x(of)S 16 x(\014les)S 16 x
+(is)S 17 x(only)S 17 x(applicable)S 17 x(to)S 17 x(\014le)S 17 x
+(versions)S 16 x(with)S 16 x(status)S 58 y 295 X(MASTER)S 21 x(or)S
+20 x(UNREGISTERED.)S 72 y 295 X(Setting)S 15 x(the)S 16 x(lock)S 
+15 x(\015ag)S 15 x(of)S 16 x(a)S 16 x(directory)S 16 x(has)S 15 x
+(the)S 16 x(ef)S -1 x(fect,)S 16 x(that)S 15 x(the)S 16 x F75
+(.rfaexec)S 15 x F44(\014le)S 15 x(is)S 16 x(not)S 16 x(executed)S
+16 x(during)S 16 x(a)S 16 x(RF)S -3 x(A)S 58 y 295 X F75(sync)S 16 x 
+F44(or)S 15 x F75(rsync)S 15 x F44(command.)S 20 x(This)S 15 x(can)S
+15 x(be)S 15 x(used)S 15 x(to)S 15 x(enable)S 15 x(the)S 15 x
+(execution)S 15 x(of)S 15 x(the)S 15 x F75(.rfaexec)S 16 x F44
+(\014le)S 15 x(for)S 16 x(a)S 15 x(period)S 15 x(of)S 58 y 295 X
+(time)S 14 x(\(e.g.)S 19 x(while)S 13 x(doing)S 13 x(incomplete)S 
+13 x(modi\014cations)S 13 x(to)S 13 x(the)S 13 x(source-code)S 13 x
+(when)S 13 x F75(.rfaexec)S 13 x F44(contains)S 13 x(commands)S 58 y 
+295 X(for)S 21 x(re-compilation\).)S 2846 Y 295 X F76(2.1.4)S 49 x
+(T)S -4 x(ransferlevel)S 2954 Y 295 X F44(One)S 14 x(mode)S 14 x(of)S
+13 x(operation)S 13 x(of)S 14 x(the)S 13 x(RF)S -3 x(A)S 13 x(tool)S
+14 x(is)S 14 x(to)S 14 x(synchronize)S 13 x(sets)S 13 x(of)S 14 x
+(local)S 14 x(version)S 14 x(of)S 14 x(\014les)S 13 x(with)S 14 x
+(the)S 13 x(remote)S 58 y 295 X(site.)S 21 x(T)S -3 x(o)S 15 x
+(determine)S 15 x(if)S 15 x(a)S 15 x(\014le)S 16 x(that)S 16 x(is)S
+16 x(mastered)S 16 x(remote)S 15 x(should)S 15 x(be)S 16 x
+(transferred)S 16 x(during)S 16 x(this)S 15 x(synchronization,)S 
+58 y 295 X(a)S 19 x(transferlevel)S 19 x(can)S 20 x(be)S 19 x
+(associated)S 19 x(with)S 19 x(each)S 19 x(\014le:)S 3276 Y 22 x F6
+(2)S
+%%PageTrailer
+/paper-automatic true SPS 1 PP EP
+%%PageBoundingBox: 71 53 524 794
+
+%%PageBoundingBox: (atend)
+%%BeginPageSetup
+1000 BP 3507 2481 PM /paper-automatic false SPS 295 0 XY
+%%EndPageSetup
+295 231 XY F8(RF)S -3 x(A)S 295 281 XY 846 3 R 1141 281 XY 
+200 3 R 1340 281 XY 846 3 R -50 y 1874 X(The)S 25 x(RF)S -3 x(A)S 
+26 x(Client)S 459 Y 295 X F1(REQUEST)S -2 y 709 X F44(The)S 24 x
+(\014le)S 24 x(is)S 24 x(not)S 24 x(transferred)S 24 x
+(automatically)S 24 x(during)S 24 x(synchronization.)S 46 x(If)S 
+24 x(a)S 24 x(new)S 58 y 709 X(MASTER)S 17 x(\014le)S 17 x(is)S 17 x
+(detected)S 18 x(at)S 17 x(the)S 17 x(remote)S 17 x(site,)S 18 x
+(only)S 18 x(a)S 18 x(local)S 18 x(dummy)S 18 x(\(empty)S 17 x
+(\014le\))S 58 y 709 X(is)S 18 x(created)S 17 x(to)S 17 x(indicate)S
+18 x(the)S 18 x(existence)S 18 x(of)S 17 x(the)S 18 x(\014le.)S 
+693 Y 295 X F1(AUT)S -1 x(OMA)S -2 x(TIC)S -2 y 709 X F44(The)S 15 x
+(\014le)S 16 x(is)S 15 x(transferred)S 15 x(automatically)S 15 x
+(during)S 15 x(synchronization)S 15 x(if)S 16 x(the)S 16 x(local)S
+16 x(version)S 58 y 709 X(is)S 19 x(not)S 18 x(up-to-date.)S 31 x
+(If)S 18 x(a)S 18 x(new)S 19 x(MASTER)S 18 x(\014le)S 18 x(is)S 18 x
+(detected)S 19 x(at)S 18 x(the)S 18 x(remote)S 19 x(site,)S 20 x(it)S
+19 x(is)S 58 y 709 X(transferred.)S 1032 Y 295 X F76(2.2)S 50 x(The)S
+25 x(Functional)S 26 x(Model)S 1163 Y 295 X F44(The)S 17 x(RF)S -3 x
+(A)S 16 x(tools)S 16 x(is)S 16 x(built)S 16 x(using)S 16 x(the)S 
+16 x F75(Client-Server)S 17 x F44(model)S 16 x(of)S 16 x(the)S 17 x
+(ISODE)S 16 x(remote)S 16 x(operations)S 16 x(environment.)S 58 y 
+295 X(There)S 15 x(is)S 16 x(a)S 15 x(RF)S -3 x(A)S 15 x(server)S 
+16 x(\(called)S 15 x F75(r)S -2 x(os.rfa\))S 15 x F44(at)S 15 x
+(each)S 15 x(site)S 16 x(which)S 15 x(is)S 15 x(started)S 15 x
+(dynamically)S 15 x(by)S 15 x(the)S 15 x(ISODE)S 16 x F75(tsapd)S 
+F44(.)S 59 y 295 X(Most)S 20 x(of)S 20 x(the)S 19 x(RF)S -3 x(A)S 
+20 x(commands)S 20 x(are)S 20 x(interpreted)S 20 x(by)S 20 x(the)S
+20 x(RF)S -3 x(A)S 19 x(client)S 20 x(\(called)S 20 x F75(rfa)S F44
+(\))S 20 x(which)S 19 x(issues)S 20 x(a)S 20 x(remote)S 58 y 295 X
+(operation)S 21 x(to)S 21 x(the)S 22 x(remote)S 21 x(RF)S -3 x(A)S
+21 x(server.)S 40 x(The)S 21 x(RF)S -3 x(A)S 21 x(client)S 21 x
+(does)S 22 x(not)S 22 x(perform)S 21 x(a)S 22 x(1\261to-1)S 22 x
+(mapping)S 21 x(of)S 22 x(its)S 58 y 295 X(commands)S 14 x(onto)S 
+14 x(the)S 14 x(remote)S 13 x(operations.)S 20 x(It)S 13 x(uses)S 
+14 x(none,)S 14 x(one)S 13 x(or)S 14 x(more)S 13 x(remote)S 14 x
+(operations)S 14 x(to)S 14 x(execute)S 14 x(a)S 14 x(RF)S -3 x(A)S
+58 y 295 X(command.)S 31 x(The)S 19 x(association)S 18 x
+(establishment)S 18 x(is)S 19 x(done)S 19 x(when)S 19 x(the)S 18 x
+(\014rst)S 18 x(remote)S 19 x(operation)S 19 x(is)S 18 x(invoked.)S
+31 x(The)S 58 y 295 X(RF)S -3 x(A)S 17 x(client)S 17 x(can)S 17 x
+(operate)S 17 x(in)S 17 x(an)S 18 x(interactive)S 17 x(mode)S 17 x
+(or)S 18 x(a)S 18 x(command)S 18 x(mode.)S 1592 Y 295 X(One)S 18 x
+(of)S 18 x(the)S 17 x(basic)S 18 x(principles)S 17 x(of)S 18 x(RF)S
+-3 x(A)S 17 x(is)S 17 x(that)S 17 x(modi\014cations)S 18 x(to)S 18 x
+(any)S 18 x(\014les)S 17 x(are)S 18 x(only)S 18 x(performed)S 17 x
+(locally)S 17 x(by)S 58 y 295 X(the)S 17 x(RF)S -3 x(A)S 16 x
+(client.)S 24 x(The)S 17 x(remote)S 17 x(RF)S -3 x(A)S 16 x(server)S
+17 x(never)S 17 x(modi\014es)S 16 x(any)S 17 x(\014le,)S 17 x(so)S
+16 x(no)S 16 x(remote)S 16 x(\014le)S 16 x(modi\014cations)S 16 x
+(are)S 58 y 295 X(possible.)S 20 x(The)S 14 x(ensure)S 14 x(a)S 14 x
+(certain)S 14 x(autonomy)S 14 x(of)S 14 x(the)S 15 x(two)S 14 x
+(sites)S 14 x(concerning)S 14 x(modi\014cations)S 15 x(of)S 14 x
+(their)S 15 x(local)S 15 x(\014les.)S 2067 Y 295 X F46(3)S 62 x(The)S
+34 x(RF)S -6 x(A)S 34 x(Client)S 2279 Y 295 X F44(The)S 16 x(RF)S 
+-3 x(A)S 15 x(client)S 16 x(\()S F75(rfa)S F44(\))S 15 x(provides)S
+15 x(an)S 16 x(interactive)S 15 x(mode)S 15 x(and)S 16 x(a)S 16 x
+(command)S 16 x(mode.)S 21 x(The)S 16 x(rfa)S 16 x(command)S 16 x
+(has)S 15 x(the)S 59 y 295 X(following)S 21 x(syntax:)S
+XP /F78 /CM-Courier 41.511 13 DNF RP
+413 2431 XY F78(rfa)S 25 x([)S 25 x(-u)S 25 x(username)S 25 x(-p)S
+24 x(password)S 25 x(])S 25 x([)S 25 x(-h)S 25 x(hostname])S 25 x([)S
+25 x(-q)S 25 x(])S 49 y 538 X([)S 25 x(-c)S 24 x(rfa-command)S 25 x
+(])S 2582 Y 295 X F44(The)S 16 x(name)S 16 x(of)S 16 x(the)S 16 x
+(host)S 16 x(\(as)S 16 x(de\014ned)S 16 x(in)S 16 x(the)S 16 x F75
+(isoentities)S 16 x F44(database\))S 16 x(where)S 16 x(the)S 16 x
+(remote)S 16 x(site)S 16 x(is)S 16 x(located)S 16 x(can)S 16 x(be)S
+58 y 295 X(speci\014ed)S 12 x(using)S 13 x(the)S 12 x F75(-h)S 13 x 
+F44(option.)S 19 x(Because)S 12 x(the)S 13 x(RF)S -3 x(A)S 13 x
+(client)S 13 x(binds)S 12 x(to)S 12 x(the)S 13 x(remote)S 12 x(RF)S
+-3 x(A)S 12 x(server)S 12 x(with)S 12 x(a)S 13 x(username)S 58 y 
+295 X(that)S 12 x(must)S 13 x(be)S 13 x(valid)S 12 x(at)S 13 x(the)S
+12 x(remote)S 13 x(site,)S 13 x(the)S 12 x F75(-u)S 13 x F44(and)S
+12 x F75(-p)S 13 x F44(options)S 13 x(can)S 13 x(be)S 13 x(used)S 
+13 x(to)S 12 x(specify)S 13 x(the)S 12 x(username)S 13 x(and)S 12 x
+(the)S 58 y 295 X(password)S 15 x(for)S 15 x(the)S 15 x(remote)S 
+15 x(site.)S 20 x(The)S 15 x F75(-q)S 15 x F44(option)S 15 x
+(directs)S 14 x F75(rfa)S 15 x F44(to)S 15 x(run)S 15 x(in)S 15 x
+(quit-mode,)S 15 x(where)S 15 x(only)S 15 x(severe)S 15 x(errors)S
+58 y 295 X(are)S 16 x(reported)S 16 x(and)S 15 x(no)S 16 x(user)S 
+16 x(interaction)S 16 x(is)S 16 x(performed.)S 21 x(Using)S 15 x
+(the)S 16 x F75(-c)S 16 x F44(option,)S 16 x(a)S 16 x(command)S 16 x
+(can)S 16 x(be)S 16 x(passed)S 16 x(to)S 58 y 295 X(rfa)S 18 x(in)S
+18 x(command)S 17 x(mode.)S 28 x(This)S 18 x(can)S 18 x(be)S 17 x
+(any)S 18 x(command)S 17 x(described)S 18 x(below.)S 2952 Y 295 X
+(If)S 15 x(the)S 16 x(rfa)S 15 x(is)S 16 x(called)S 15 x(without)S
+16 x(the)S 16 x F75(-c)S 15 x F44(option,)S 16 x(is)S 15 x(runs)S 
+16 x(in)S 16 x(interactive)S 16 x(mode.)S 22 x(The)S 16 x F75(rfa)S
+16 x F44(provides)S 16 x(the)S 15 x(following)S 58 y 295 X
+(commands.)S 26 x(A)S 17 x(command)S 17 x(can)S 17 x(be)S 17 x
+(abbreviated)S 17 x(with)S 17 x(its)S 17 x(unambiguous)S 18 x(pre)S
+(\014x.)S 3276 Y 1230 X F6(3)S
+%%PageTrailer
+/paper-automatic true SPS 1 PP EP
+%%PageBoundingBox: 71 53 524 794
+
+%%PageBoundingBox: (atend)
+%%BeginPageSetup
+1000 BP 3507 2481 PM /paper-automatic false SPS 295 0 XY
+%%EndPageSetup
+295 231 XY F8(RF)S -3 x(A)S 295 281 XY 846 3 R 1141 281 XY 
+200 3 R 1340 281 XY 846 3 R -50 y 1875 X(The)S 25 x(RF)S -3 x(A)S 
+25 x(Client)S 459 Y 295 X F76(3.1)S 50 x(pwd)S 575 Y 295 X F44
+(During)S 12 x(interactive)S 13 x(mode,)S 13 x F75(rfa)S 13 x F44
+(has)S 13 x(a)S 12 x(current)S 13 x(directory.)S 19 x(This)S 13 x
+(directory)S 13 x(is)S 13 x(relative)S 13 x(to)S 13 x(the)S 12 x
+(root)S 13 x(of)S 12 x(the)S 13 x(shared)S 58 y 295 X(subtree.)S 
+23 x(The)S 17 x F75(pwd)S 16 x F44(command)S 16 x(shows)S 17 x(the)S
+17 x(name)S 16 x(of)S 17 x(the)S 17 x(current)S 17 x(working)S 16 x
+(directory)S 16 x(relative)S 17 x(to)S 17 x(the)S 16 x(root)S 16 x
+(of)S 58 y 295 X(the)S 18 x(shared)S 18 x(subtree.)S 29 x(Initially)S
+19 x(this)S 19 x(is)S 18 x(the)S 18 x(current)S 19 x(working)S 18 x
+(directory)S 18 x(of)S 18 x(the)S 18 x(UNIX)S 18 x F75(sh\(1\))S 
+18 x F44(where)S 18 x F75(rfa)S 18 x F44(has)S 58 y 295 X(been)S 
+20 x(called)S 19 x(if)S 19 x(it)S 19 x(is)S 19 x(within)S 19 x(the)S
+19 x(shared)S 20 x(subtree.)S 934 Y 295 X F76(3.2)S 50 x(cd)S 1050 Y 
+295 X F44(The)S 18 x F75(cd)S 18 x F44(command)S 17 x(changes)S 18 x
+(the)S 17 x(current)S 17 x(directory)S 18 x(of)S 17 x F75(rfa)S 17 x 
+F44(in)S 17 x(interactive)S 18 x(mode)S 18 x(to)S 18 x(the)S 17 x
+(directory)S 18 x(given)S 18 x(as)S 58 y 295 X(the)S 15 x(\014rst)S
+14 x(ar)S -1 x(gument.)S 20 x(No)S 15 x(check)S 14 x(is)S 14 x(made)S
+15 x(if)S 14 x(this)S 15 x(directory)S 15 x(exists.)S 20 x(It)S 15 x
+(is)S 15 x(not)S 15 x(possible)S 14 x(to)S 14 x(change)S 14 x(the)S
+15 x(working)S 58 y 295 X(directory)S 19 x(above)S 20 x(the)S 20 x
+(root)S 19 x(of)S 20 x(the)S 19 x(shared)S 19 x(subtree.)S 1351 Y 
+295 X F76(3.3)S 50 x(list)S 1466 Y 295 X F44(The)S 12 x F75(list)S
+12 x F44(command)S 11 x(provides)S 11 x(a)S 11 x(listing)S 11 x(of)S
+12 x(the)S 12 x(\014les)S 11 x(within)S 11 x(the)S 11 x(directories)S
+11 x(given)S 12 x(as)S 11 x(the)S 11 x(command)S 11 x(ar)S -1 x
+(guments.)S 58 y 295 X(If)S 17 x(no)S 17 x(ar)S -1 x(gument)S 18 x
+(is)S 17 x(given,)S 18 x(the)S 18 x(current)S 18 x(working)S 17 x
+(directory)S 18 x(is)S 18 x(listed.)S 27 x(The)S 18 x(output)S 18 x
+(of)S 17 x(the)S 18 x F75(list)S 18 x F44(command)S 18 x(is)S 58 y 
+295 X(similar)S 19 x(to)S 19 x(the)S 18 x(output)S 18 x(of)S 19 x
+(the)S 18 x(UNIX)S 19 x F75(ls)S 17 x(-lg)S 18 x F44(command,)S 19 x
+(e.g.)S 1664 Y 413 X F78(-rw-rw-r--)S 25 x(M-A)S 25 x(ow)S 1011 X
+(verdi)S 1360 X(754)S 24 x(Jul)S 25 x(12)S 25 x(13:59)S 50 x
+(.sunview)S 50 y 413 X(drwxr-xr-x)S 25 x(---)S 25 x(ow)S 1011 X
+(verdi)S 1360 X(512)S 24 x(Jul)S 25 x(12)S 25 x(14:01)S 50 x(bin)S
+1804 Y 295 X F44(The)S 15 x(three)S 15 x(character)S 15 x(\014eld)S
+16 x(after)S 15 x(the)S 15 x(\014le)S 15 x(permissions)S 15 x(is)S
+16 x(used)S 15 x(to)S 15 x(indicated)S 16 x(the)S 16 x(dif)S -1 x
+(ferent)S 15 x(rfa-speci\014c)S 16 x(states)S 59 y 295 X(of)S 17 x
+(the)S 17 x(\014le.)S 25 x(The)S 17 x(\014rst)S 17 x(character)S 
+17 x(indicates)S 17 x(the)S 17 x(status)S 17 x(of)S 17 x(the)S 17 x
+(\014le,)S 18 x(with)S 17 x F78(M)S 17 x F44(for)S 17 x(master)S 
+17 x(version,)S 17 x F78(S)S 17 x F44(for)S 17 x(slave)S 58 y 295 X
+(V)S -5 x(ersion)S 13 x(and)S 13 x F78(-)S 13 x F44(for)S 13 x
+(unregistered)S 13 x(version.)S 20 x(The)S 12 x(second)S 13 x
+(character)S 13 x(is)S 13 x(the)S 13 x(lock)S 13 x(indicator)S 13 x
+(with)S 13 x(an)S 13 x F78(L)S 12 x F44(indicating)S 58 y 295 X
+(that)S 14 x(the)S 14 x(\014le)S 13 x(is)S 14 x(currently)S 14 x
+(locked)S 14 x(and)S 13 x(an)S 13 x F78(-)S 14 x F44(for)S 14 x
+(unlocked.)S 20 x(The)S 13 x(third)S 14 x(character)S 14 x
+(indicates)S 14 x(the)S 13 x(transfer)S 14 x(mode)S 58 y 295 X(of)S
+18 x(the)S 17 x(\014les)S 17 x(with)S 17 x F78(A)S 17 x F44(for)S 
+17 x(automatic)S 17 x(transfer)S 17 x(and)S 18 x F78(-)S 17 x F44
+(for)S 18 x(transfer)S 17 x(on)S 18 x(request.)S 2222 Y 295 X F76
+(3.4)S 50 x(rlist)S 2337 Y 295 X F44(The)S 18 x F75(rlist)S 17 x F44
+(command)S 17 x(is)S 18 x(similar)S 17 x(to)S 18 x(the)S 18 x F75
+(list)S 18 x F44(command)S 18 x(with)S 18 x(the)S 17 x(dif)S -1 x
+(ference)S 17 x(that)S 18 x(the)S 17 x(\014les)S 18 x(in)S 18 x(the)S
+18 x(directory)S 59 y 295 X(at)S 21 x(the)S 20 x(remote)S 21 x(site)S
+21 x(are)S 20 x(listed.)S 2580 Y 295 X F76(3.5)S 50 x(lock)S 2696 Y 
+295 X F44(The)S 14 x F75(lock)S 14 x F44(command)S 14 x(is)S 14 x
+(used)S 13 x(to)S 13 x(get)S 14 x(a)S 14 x(locked)S 13 x(local)S 
+14 x(version)S 14 x(of)S 14 x(the)S 13 x(\014le\(s\))S 14 x(that)S
+14 x(are)S 13 x(provided)S 13 x(as)S 14 x(ar)S -1 x(gument\(s\))S 
+58 y 295 X(to)S 19 x(the)S 19 x(command.)S 32 x(Only)S 19 x(regular)S
+19 x(\014les)S 19 x(within)S 19 x(the)S 19 x(shared)S 19 x(subtree)S
+19 x(are)S 19 x(valid.)S 32 x(It)S 19 x(is)S 19 x(not)S 19 x
+(possible)S 19 x(to)S 19 x(lock)S 58 y 295 X(directories,)S 16 x
+(links,)S 16 x(etc.)S 21 x(.)S 21 x(If)S 15 x(the)S 15 x(name)S 15 x
+(of)S 16 x(the)S 15 x(\014le)S 16 x(to)S 16 x(be)S 15 x(locked)S 
+15 x(is)S 15 x(a)S 16 x(symbolic)S 16 x(link,)S 15 x(the)S 16 x
+(\014le)S 15 x(referenced)S 15 x(by)S 58 y 295 X(the)S 18 x(link)S
+19 x(is)S 18 x(locked)S 18 x(if)S 19 x(it)S 18 x(is)S 18 x(located)S
+18 x(within)S 18 x(the)S 18 x(shared)S 19 x(subtree.)S 75 y 295 X
+(The)S 18 x F75(lock)S 18 x F44(command)S 18 x(should)S 18 x(be)S 
+18 x(used)S 18 x(whenever)S 18 x(a)S 18 x(\014le)S 17 x(within)S 
+18 x(the)S 18 x(shared)S 18 x(subtree)S 18 x(is)S 18 x(modi\014ed)S
+18 x(to)S 18 x(ensure)S 58 y 295 X(that)S 18 x(the)S 19 x(local)S 
+18 x(version)S 18 x(of)S 19 x(the)S 19 x(\014le)S 19 x(is)S 19 x
+(a\))S 19 x(the)S 18 x(master)S 19 x(version)S 19 x(and)S 18 x(b\))S
+19 x(not)S 19 x(currently)S 19 x(under)S 18 x(modify-access)S 58 y 
+295 X(by)S 21 x(another)S 21 x(local)S 21 x(user.)S 3276 Y 1230 X 
+F6(4)S
+%%PageTrailer
+/paper-automatic true SPS 1 PP EP
+%%PageBoundingBox: 71 53 524 794
+
+%%PageBoundingBox: (atend)
+%%BeginPageSetup
+1000 BP 3507 2481 PM /paper-automatic false SPS 295 0 XY
+%%EndPageSetup
+295 231 XY F8(RF)S -3 x(A)S 295 281 XY 846 3 R 1141 281 XY 
+200 3 R 1340 281 XY 846 3 R -50 y 1874 X(The)S 25 x(RF)S -3 x(A)S 
+26 x(Client)S 459 Y 295 X F44(If)S 15 x(the)S 15 x(local)S 15 x
+(version)S 15 x(of)S 15 x(the)S 16 x(\014les)S 15 x(has)S 15 x(a)S
+16 x(SLA)S -6 x(VE)S 15 x(status,)S 15 x(the)S 15 x(lock)S 15 x
+(command)S 16 x(will)S 15 x(try)S 15 x(to)S 15 x(get)S 15 x(the)S 
+15 x(mastership)S 58 y 295 X(for)S 17 x(the)S 18 x(\014le.)S 28 x
+(Therefore,)S 18 x(it)S 18 x(\014rst)S 17 x(veri\014es)S 18 x(that)S
+18 x(the)S 17 x(local)S 18 x(version)S 18 x(is)S 17 x(up-to-date,)S
+19 x(otherwise)S 18 x(it)S 18 x(transfers)S 18 x(the)S 58 y 295 X
+(up-to-date)S 15 x(version)S 15 x(from)S 16 x(the)S 15 x(current)S
+16 x(master,)S 16 x(similar)S 15 x(to)S 15 x(the)S 16 x F75
+(get\014le)S 16 x F44(command.)S 22 x(After)S 15 x(an)S 15 x
+(up-to-date)S 15 x(local)S 58 y 295 X(version)S 11 x(of)S 11 x(the)S
+11 x(requested)S 11 x(\014le)S 11 x(exists,)S 12 x(a)S 11 x F75
+(RequestMaster)S 11 x F44(operation)S 11 x(is)S 11 x(issued)S 11 x
+(to)S 11 x(the)S 11 x(remote)S 11 x(site)S 11 x(to)S 11 x(transfer)S
+11 x(the)S 59 y 295 X(mastership.)S 19 x(If)S 13 x(the)S 13 x
+(\014le)S 14 x(is)S 13 x(not)S 13 x(locked)S 13 x(at)S 13 x(the)S 
+13 x(remote)S 13 x(site,)S 14 x(the)S 13 x(mastership)S 13 x(is)S 
+14 x(granted)S 13 x(to)S 14 x(the)S 14 x(local)S 14 x(site)S 13 x
+(which)S 58 y 295 X(then)S 15 x(is)S 15 x(the)S 15 x(new)S 15 x
+(master.)S 20 x(The)S 15 x(local)S 16 x(lock)S 15 x(is)S 15 x(set)S
+15 x(the)S 15 x(by)S 15 x(setting)S 15 x(the)S 16 x F78(L)S F44
+(\(ocked\))S 15 x(\015ag)S 15 x(in)S 15 x(the)S 15 x(local)S 15 x
+(\014les)S 15 x(state.)S 831 Y 295 X(If)S 16 x(the)S 16 x(local)S 
+16 x(version)S 16 x(of)S 16 x(the)S 16 x(requested)S 16 x(\014le)S
+16 x(already)S 16 x(is)S 16 x(the)S 16 x(MASTER)S 16 x(version)S 
+16 x(or)S 16 x(is)S 16 x(an)S 16 x(UNREGISTERED)S 58 y 295 X
+(\014le,)S 22 x(it)S 20 x(is)S 20 x(checked)S 21 x(if)S 20 x(the)S
+21 x(\014le)S 21 x(is)S 21 x(already)S 21 x(locked)S 21 x(by)S 21 x
+(another)S 21 x(local)S 21 x(user,)S 22 x(where)S 21 x(the)S 21 x
+(requested)S 20 x(lock)S 21 x(is)S 58 y 295 X(rejected.)S 22 x
+(Otherwise)S 16 x(the)S 16 x(local)S 16 x(lock)S 15 x(is)S 15 x(set)S
+16 x(the)S 15 x(by)S 15 x(setting)S 16 x(the)S 15 x F78(L)S F44
+(\(ocked\))S 15 x(\015ag)S 16 x(in)S 16 x(the)S 16 x(local)S 16 x
+(\014les)S 15 x(state.)S 1029 Y 295 X(Because)S 20 x(the)S 19 x
+(lock)S 19 x(command)S 19 x(will)S 20 x(be)S 19 x(applied)S 19 x(in)S
+19 x(the)S 19 x(most)S 19 x(cases)S 19 x(to)S 19 x(a)S 20 x(local)S
+20 x(version)S 19 x(of)S 20 x(the)S 19 x(\014le)S 20 x(that)S 20 x
+(is)S 58 y 295 X(already)S 17 x(master,)S 18 x(it)S 18 x(is)S 18 x
+(not)S 17 x(necessary)S 18 x(to)S 18 x(execute)S 18 x(the)S 18 x
+(whole)S 18 x F75(rfa)S 18 x F44(program)S 17 x(to)S 18 x(do)S 18 x
+(the)S 18 x(local)S 18 x(lock.)S 28 x(Because)S 58 y 295 X(the)S 
+16 x F75(rfa)S 16 x F44(program)S 16 x(includes)S 16 x(the)S 16 x
+(whole)S 16 x(code)S 17 x(needed)S 16 x(for)S 17 x(the)S 17 x
+(execution)S 17 x(of)S 16 x(the)S 16 x(remote)S 16 x(operations)S 
+16 x(\(ISODE)S 58 y 295 X(stack,)S 13 x(etc.\),)S 13 x(there)S 12 x
+(may)S 13 x(be)S 13 x(a)S 13 x(signi\014cant)S 13 x(time)S 13 x
+(delay)S 12 x(while)S 13 x(loading)S 12 x(this)S 13 x(huge)S 13 x
+(program.)S 19 x(T)S -3 x(o)S 13 x(optimize)S 13 x(this,)S 13 x(a)S
+58 y 295 X(stand-alone)S 12 x(program)S 12 x(called)S 12 x F75
+(llock)S 12 x F44(is)S 11 x(provided)S 12 x(which)S 12 x(is)S 12 x
+(able)S 12 x(to)S 12 x(perform)S 12 x(the)S 12 x(locking)S 12 x(if)S
+12 x(the)S 11 x(local)S 12 x(version)S 12 x(is)S 58 y 295 X(the)S 
+12 x(master)S 13 x(version.)S 20 x(If)S 13 x F75(llock)S 13 x F44
+(could)S 13 x(perform)S 12 x(the)S 12 x(local)S 12 x(lock,)S 12 x
+(it)S 12 x(exits)S 12 x(with)S 13 x(exit\261code)S 12 x(0.)S 19 x
+(If)S 13 x(the)S 12 x(\014le)S 13 x(is)S 13 x(already)S 58 y 295 X
+(locked)S 15 x(locally)S 15 x(or)S 16 x(an)S 15 x(error)S 15 x
+(condition)S 15 x(occurred)S 15 x(it)S 15 x(exits)S 16 x(with)S 15 x
+(exit-code)S 16 x(1.)S 21 x(If)S 16 x(the)S 15 x(local)S 15 x
+(version)S 15 x(of)S 15 x(the)S 16 x(\014le)S 58 y 295 X(is)S 15 x
+(not)S 15 x(MASTER,)S 15 x(it)S 15 x(returns)S 15 x(2)S 14 x(which)S
+15 x(indicates)S 15 x(that)S 15 x(the)S 15 x F75(rfa)S 15 x F44
+(command)S 15 x(is)S 15 x(needed)S 15 x(to)S 15 x(perform)S 15 x
+(the)S 15 x(locking.)S 1671 Y 295 X F76(3.6)S 50 x(unlock)S 1807 Y 
+295 X F44(The)S 15 x F75(unlock)S 15 x F44(command)S 14 x(is)S 14 x
+(used)S 14 x(to)S 14 x(release)S 14 x(a)S 14 x(lock)S 14 x(for)S 
+15 x(a)S 14 x(local)S 14 x(MASTER)S 14 x(version)S 15 x(of)S 14 x
+(the)S 14 x(\014le\(s\))S 14 x(provided)S 14 x(as)S 58 y 295 X
+(command)S 17 x(ar)S -1 x(gument\(s\).)S 24 x(If)S 17 x(the)S 16 x
+(name)S 17 x(of)S 16 x(the)S 16 x(\014le)S 16 x(to)S 16 x(be)S 17 x
+(unlocked)S 17 x(is)S 16 x(a)S 16 x(symbolic)S 16 x(link,)S 16 x
+(the)S 17 x(\014le)S 16 x(referenced)S 58 y 295 X(by)S 16 x(the)S 
+15 x(link)S 15 x(is)S 16 x(unlocked)S 16 x(if)S 16 x(it)S 16 x(is)S
+16 x(located)S 16 x(within)S 16 x(the)S 16 x(shared)S 16 x(subtree.)S
+22 x(There)S 16 x(is)S 15 x(are)S 16 x(no)S 16 x(checks)S 16 x(made)S
+15 x(if)S 16 x(the)S 59 y 295 X(\014le)S 17 x(has)S 18 x(been)S 18 x
+(locked)S 18 x(by)S 17 x(the)S 18 x(user)S 17 x(that)S 17 x
+(performs)S 18 x(the)S 17 x(unlock)S 17 x(operation.)S 2063 Y 295 X
+(Similar)S 12 x(to)S 13 x(the)S 12 x F75(llock)S 12 x F44(command)S
+12 x(there)S 13 x(exists)S 12 x(an)S 12 x F75(lunlock)S 12 x F44
+(command)S 12 x(which)S 12 x(is)S 13 x(capable)S 12 x(to)S 12 x
+(perform)S 12 x(the)S 12 x(release)S 58 y 295 X(of)S 17 x(the)S 17 x
+(\(always\))S 18 x(local)S 17 x(locks)S 17 x(to)S 17 x(avoid)S 17 x
+(the)S 17 x(expensive)S 17 x(use)S 17 x(of)S 17 x(the)S 17 x F75
+(rfa)S 17 x F44(command.)S 2357 Y 295 X F76(3.7)S 50 x(master)S 
+2493 Y 295 X F44(The)S 11 x F75(master)S 11 x F44(command)S 11 x
+(can)S 11 x(be)S 11 x(used)S 11 x(to)S 11 x(request)S 11 x(that)S 
+11 x(the)S 12 x(local)S 11 x(version)S 11 x(of)S 11 x(the)S 11 x
+(\014le\(s\))S 11 x(provided)S 11 x(as)S 11 x(ar)S -1 x(gument\(s\))S
+58 y 295 X(will)S 17 x(become)S 16 x(the)S 16 x(MASTER)S 16 x
+(version.)S 23 x(If)S 16 x(the)S 16 x(name)S 16 x(of)S 16 x(the)S 
+17 x(\014le)S 16 x(is)S 16 x(a)S 16 x(symbolic)S 16 x(link,)S 17 x
+(the)S 16 x(\014le)S 17 x(referenced)S 16 x(by)S 58 y 295 X(the)S 
+17 x(link)S 17 x(is)S 17 x(tar)S -1 x(get)S 17 x(of)S 17 x(the)S 
+17 x(operation)S 17 x(if)S 17 x(it)S 17 x(is)S 17 x(located)S 17 x
+(within)S 17 x(the)S 17 x(shared)S 17 x(subtree.)S 2690 Y 295 X(If)S
+16 x(the)S 16 x(local)S 16 x(version)S 15 x(of)S 16 x(the)S 16 x
+(\014le)S 15 x(is)S 16 x(in)S 16 x(UNREGISTERED)S 16 x(status,)S 
+16 x(its)S 16 x(status)S 16 x(is)S 16 x(set)S 16 x(to)S 16 x(MASTER)S
+16 x(if)S 16 x(there)S 16 x(is)S 58 y 295 X(no)S 17 x(version)S 17 x
+(of)S 17 x(the)S 17 x(\014le)S 17 x(with)S 17 x(MASTER)S 17 x
+(status)S 17 x(at)S 18 x(the)S 18 x(remote)S 18 x(site.)S 27 x(This)S
+17 x(is)S 18 x(the)S 18 x(way)S 17 x(how)S 17 x(locally)S 17 x
+(created)S 59 y 295 X(\014les)S 16 x(will)S 15 x(be)S 15 x
+(introduced)S 15 x(into)S 15 x(the)S 15 x(set)S 15 x(of)S 15 x
+(shared)S 16 x(\014les)S 15 x(where)S 15 x(the)S 15 x(creating)S 
+15 x(site)S 15 x(becomes)S 15 x(the)S 15 x(initial)S 16 x(master.)S
+2888 Y 295 X(If)S 16 x(the)S 16 x(local)S 16 x(version)S 16 x(of)S
+17 x(the)S 17 x(\014le)S 17 x(is)S 16 x(in)S 16 x(SLA)S -6 x(VE)S 
+16 x(status,)S 17 x(then)S 16 x(the)S 16 x(mastership)S 17 x(for)S
+16 x(the)S 16 x(\014le)S 16 x(is)S 16 x(requested)S 16 x(from)S 58 y 
+295 X(the)S 13 x(remote)S 13 x(site)S 13 x(similar)S 13 x(to)S 13 x
+(the)S 13 x F75(lock)S 13 x F44(command.)S 20 x(The)S 13 x(write)S
+13 x(access)S 13 x(permissions)S 13 x(of)S 13 x(the)S 13 x(new)S 
+13 x(local)S 13 x(MASTER)S 58 y 295 X(version)S 21 x(are)S 22 x
+(set.)S 3276 Y 1230 X F6(5)S
+%%PageTrailer
+/paper-automatic true SPS 1 PP EP
+%%PageBoundingBox: 71 53 524 794
+
+%%PageBoundingBox: (atend)
+%%BeginPageSetup
+1000 BP 3507 2481 PM /paper-automatic false SPS 295 0 XY
+%%EndPageSetup
+295 231 XY F8(RF)S -3 x(A)S 295 281 XY 846 3 R 1141 281 XY 
+200 3 R 1340 281 XY 846 3 R -50 y 1875 X(The)S 25 x(RF)S -3 x(A)S 
+25 x(Client)S 459 Y 295 X F76(3.8)S 50 x(slave)S 579 Y 295 X F44
+(The)S 13 x F75(slave)S 13 x F44(command)S 13 x(can)S 13 x(be)S 13 x
+(used)S 13 x(to)S 13 x(request)S 13 x(that)S 13 x(the)S 13 x(local)S
+13 x(version)S 13 x(of)S 13 x(the)S 13 x(\014le\(s\))S 13 x
+(provided)S 13 x(as)S 13 x(ar)S -1 x(gument\(s\))S 58 y 295 X(will)S
+17 x(become)S 16 x(a)S 16 x(SLA)S -6 x(VE)S 16 x(version.)S 24 x(If)S
+16 x(the)S 17 x(name)S 16 x(of)S 17 x(the)S 16 x(\014le)S 16 x(is)S
+16 x(a)S 17 x(symbolic)S 17 x(link,)S 16 x(the)S 17 x(\014le)S 17 x
+(referenced)S 17 x(by)S 16 x(the)S 58 y 295 X(link)S 18 x(is)S 18 x
+(tar)S -1 x(get)S 17 x(of)S 18 x(the)S 18 x(operation)S 18 x(if)S 
+17 x(it)S 18 x(is)S 18 x(located)S 18 x(within)S 17 x(the)S 17 x
+(shared)S 18 x(subtree.)S 771 Y 295 X(If)S 15 x(the)S 15 x(local)S
+15 x(version)S 15 x(of)S 16 x(the)S 16 x(\014le)S 15 x(is)S 15 x(in)S
+16 x(UNREGISTERED)S 15 x(or)S 15 x(MASTER)S 15 x(status,)S 15 x(its)S
+15 x(status)S 16 x(is)S 15 x(set)S 15 x(to)S 15 x(SLA)S -6 x(VE)S 
+58 y 295 X(if)S 17 x(there)S 17 x(is)S 17 x(version)S 16 x(of)S 17 x
+(the)S 17 x(\014le)S 17 x(with)S 17 x(MASTER)S 17 x(status)S 17 x
+(at)S 17 x(the)S 17 x(remote)S 16 x(site.)S 25 x(The)S 17 x(write)S
+16 x(access)S 17 x(permissions)S 58 y 295 X(of)S 20 x(the)S 20 x
+(new)S 19 x(local)S 19 x(SLA)S -6 x(VE)S 19 x(version)S 20 x(are)S
+20 x(cleared.)S 1082 Y 295 X F76(3.9)S 50 x(unr)S -1 x(egister)S 
+1201 Y 295 X F44(The)S 22 x F75(unr)S -2 x(egister)S 23 x F44
+(command)S 21 x(can)S 21 x(be)S 21 x(used)S 22 x(to)S 22 x(request)S
+21 x(that)S 22 x(the)S 22 x(local)S 21 x(version)S 22 x(of)S 21 x
+(the)S 22 x(\014le\(s\))S 22 x(provided)S 22 x(as)S 59 y 295 X(ar)S
+-1 x(gument\(s\))S 15 x(will)S 15 x(become)S 15 x(an)S 15 x
+(UNREGISTERED)S 15 x(version.)S 20 x(If)S 15 x(the)S 15 x(local)S 
+15 x(version)S 15 x(of)S 15 x(the)S 15 x(\014le)S 15 x(is)S 15 x
+(locked,)S 15 x(this)S 58 y 295 X(results)S 16 x(in)S 16 x(an)S 16 x
+(error.)S 22 x(If)S 16 x(the)S 15 x(name)S 16 x(of)S 16 x(the)S 16 x
+(\014le)S 16 x(is)S 16 x(a)S 16 x(symbolic)S 16 x(link,)S 16 x(the)S
+16 x(\014le)S 16 x(referenced)S 16 x(by)S 16 x(the)S 16 x(link)S 
+16 x(is)S 16 x(tar)S -1 x(get)S 58 y 295 X(of)S 19 x(the)S 18 x
+(operation)S 19 x(if)S 18 x(it)S 19 x(is)S 19 x(located)S 18 x
+(within)S 18 x(the)S 18 x(shared)S 19 x(subtree.)S 1571 Y 295 X F76
+(3.10)S 50 x(setr)S -1 x(equest)S 1690 Y 295 X F44(The)S 17 x F75
+(setr)S -2 x(equest)S 16 x F44(command)S 16 x(is)S 17 x(used)S 17 x
+(to)S 17 x(set)S 17 x(the)S 16 x(transfer)S 17 x(mode)S 17 x(of)S 
+16 x(the)S 16 x(local)S 16 x(version)S 16 x(of)S 17 x(the)S 17 x
+(\014le\(s\))S 17 x(provided)S 59 y 295 X(as)S 16 x(ar)S -1 x
+(gument\(s\))S 16 x(to)S 16 x(REQUEST)S 16 x(mode.)S 21 x(If)S 15 x
+(the)S 16 x(name)S 15 x(of)S 16 x(the)S 15 x(\014le)S 15 x(is)S 15 x
+(a)S 15 x(symbolic)S 15 x(link,)S 16 x(the)S 16 x(\014le)S 16 x
+(referenced)S 15 x(by)S 58 y 295 X(the)S 17 x(link)S 17 x(is)S 17 x
+(tar)S -1 x(get)S 17 x(of)S 17 x(the)S 17 x(operation)S 17 x(if)S 
+17 x(it)S 17 x(is)S 17 x(located)S 17 x(within)S 17 x(the)S 17 x
+(shared)S 17 x(subtree.)S 2002 Y 295 X F76(3.11)S 50 x(setauto)S 
+2121 Y 295 X F44(The)S 16 x F75(setauto)S 17 x F44(command)S 16 x
+(is)S 17 x(used)S 17 x(to)S 16 x(set)S 16 x(the)S 16 x(transfer)S 
+16 x(mode)S 17 x(of)S 16 x(the)S 16 x(local)S 16 x(version)S 16 x
+(of)S 17 x(the)S 16 x(\014le\(s\))S 16 x(provided)S 16 x(as)S 58 y 
+295 X(ar)S -1 x(gument\(s\))S 15 x(to)S 15 x(AUT)S -1 x(OMA)S -5 x
+(TIC)S 14 x(mode.)S 20 x(If)S 15 x(the)S 15 x(name)S 15 x(of)S 15 x
+(the)S 15 x(\014le)S 15 x(is)S 15 x(a)S 15 x(symbolic)S 15 x(link,)S
+15 x(the)S 15 x(\014le)S 16 x(referenced)S 15 x(by)S 58 y 295 X(the)S
+17 x(link)S 17 x(is)S 17 x(tar)S -1 x(get)S 17 x(of)S 17 x(the)S 
+17 x(operation)S 17 x(if)S 17 x(it)S 17 x(is)S 17 x(located)S 17 x
+(within)S 17 x(the)S 17 x(shared)S 17 x(subtree.)S 2432 Y 295 X F76
+(3.12)S 50 x(get\014le)S 2552 Y 295 X F44(The)S 17 x F75(get\014le)S
+17 x F44(command)S 16 x(is)S 17 x(used)S 17 x(to)S 17 x(request)S 
+16 x(the)S 16 x(transfer)S 17 x(of)S 16 x(the)S 16 x(shared)S 16 x
+(\014le\(s\))S 17 x(provided)S 16 x(as)S 17 x(ar)S -1 x
+(gument\(s\).)S 24 x(If)S 58 y 295 X(the)S 17 x(name)S 16 x(of)S 
+17 x(the)S 16 x(\014le)S 16 x(is)S 16 x(a)S 16 x(symbolic)S 16 x
+(link,)S 17 x(the)S 16 x(\014le)S 16 x(referenced)S 17 x(by)S 17 x
+(the)S 16 x(link)S 17 x(is)S 17 x(tar)S -1 x(get)S 17 x(of)S 17 x
+(the)S 17 x(operation)S 17 x(if)S 17 x(it)S 58 y 295 X(is)S 20 x
+(located)S 20 x(within)S 20 x(the)S 20 x(shared)S 20 x(subtree.)S 
+2744 Y 295 X(If)S 12 x(the)S 13 x(remote)S 13 x(version)S 13 x(of)S
+12 x(the)S 13 x(\014le)S 12 x(is)S 12 x(in)S 12 x(MASTER)S 12 x
+(status,)S 13 x(a)S 12 x(local)S 13 x(SLA)S -6 x(VE)S 13 x(version)S
+12 x(is)S 12 x(created)S 13 x(if)S 12 x(the)S 12 x(\014le)S 12 x
+(does)S 58 y 295 X(locally)S 17 x(not)S 18 x(exist.)S 27 x(If)S 18 x
+(a)S 17 x(local)S 18 x(SLA)S -6 x(VE)S 17 x(version)S 17 x(already)S
+18 x(exists,)S 18 x(it)S 18 x(is)S 17 x(updated)S 17 x(from)S 18 x
+(the)S 18 x(remote)S 18 x(MASTER)S 58 y 295 X(version.)S 2936 Y 
+295 X(If)S 15 x(the)S 16 x(remote)S 15 x(version)S 16 x(of)S 15 x
+(the)S 16 x(\014le)S 16 x(is)S 16 x(in)S 15 x(UNREGISTERED)S 16 x
+(status,)S 16 x(a)S 16 x(local)S 16 x(version)S 16 x(of)S 16 x(the)S
+16 x(\014le)S 16 x(with)S 16 x(status)S 58 y 295 X(UNREGISTERED)S 
+17 x(is)S 17 x(created)S 17 x(if)S 17 x(the)S 17 x(\014le)S 17 x
+(does)S 17 x(locally)S 17 x(not)S 17 x(exist.)S 25 x(If)S 17 x(a)S
+17 x(local)S 17 x(version)S 17 x(already)S 16 x(exists,)S 17 x(it)S
+17 x(is)S 58 y 295 X(updated)S 20 x(from)S 20 x(the)S 20 x(remote)S
+20 x(version.)S 3276 Y 1230 X F6(6)S
+%%PageTrailer
+/paper-automatic true SPS 1 PP EP
+%%PageBoundingBox: 71 53 524 794
+
+%%PageBoundingBox: (atend)
+%%BeginPageSetup
+1000 BP 3507 2481 PM /paper-automatic false SPS 295 0 XY
+%%EndPageSetup
+295 231 XY F8(RF)S -3 x(A)S 295 281 XY 846 3 R 1141 281 XY 
+200 3 R 1340 281 XY 846 3 R -50 y 1874 X(The)S 25 x(RF)S -3 x(A)S 
+26 x(Client)S 459 Y 295 X F44(The)S 14 x(transfer)S 13 x(of)S 14 x
+(the)S 13 x(\014le)S 14 x(is)S 13 x(performed)S 13 x(according)S 
+13 x(the)S 13 x(version-time)S 14 x(\(time)S 13 x(of)S 14 x(last)S
+13 x(modi\014cation\))S 14 x(of)S 13 x(the)S 13 x(local)S 58 y 295 X
+(and)S 18 x(remote)S 18 x(\014les.)S 28 x(If)S 18 x(both)S 18 x(the)S
+18 x(version-times)S 18 x(of)S 18 x(both)S 18 x(\014les)S 18 x(are)S
+18 x(equal,)S 18 x(no)S 18 x(transfer)S 18 x(has)S 18 x(to)S 18 x
+(be)S 18 x(performed)S 58 y 295 X(because)S 13 x(the)S 13 x(SLA)S 
+-6 x(VE)S 13 x(version)S 14 x(is)S 13 x(already)S 14 x(up-to-date.)S
+19 x(If)S 13 x(the)S 13 x(version-time)S 14 x(of)S 13 x(the)S 14 x
+(remote)S 13 x(MASTER)S 13 x(is)S 13 x(older)S 58 y 295 X(that)S 
+16 x(the)S 16 x(version-time)S 16 x(of)S 17 x(the)S 16 x(local)S 
+16 x(SLA)S -6 x(VE)S 17 x(\(or)S 16 x(UNREGISTERED\))S 17 x
+(version,)S 16 x(an)S 17 x(inconsistency)S 17 x(has)S 17 x(been)S 
+59 y 295 X(detected)S 18 x(and)S 17 x(an)S 17 x(error)S 17 x(is)S 
+18 x(reported.)S 27 x(Otherwise,)S 17 x(the)S 17 x(content)S 17 x
+(of)S 17 x(the)S 17 x(\014le)S 17 x(has)S 17 x(to)S 18 x(be)S 17 x
+(transmitted)S 18 x(to)S 17 x(update)S 58 y 295 X(the)S 18 x(local)S
+18 x(SLA)S -6 x(VE)S 18 x(\(or)S 18 x(UNREGISTERED\))S 19 x(version)S
+18 x(of)S 19 x(the)S 19 x(\014le.)S 831 Y 295 X(The)S 16 x(content)S
+16 x(of)S 16 x(the)S 15 x(\014le)S 15 x(can)S 15 x(be)S 16 x
+(transferred)S 15 x(either)S 16 x(in)S 15 x(uncompressed)S 16 x(or)S
+16 x(in)S 16 x(compressed)S 15 x(mode,)S 16 x(depending)S 59 y 295 X
+(on)S 17 x(the)S 16 x(size)S 17 x(of)S 17 x(the)S 16 x(\014le.)S 
+25 x(The)S 17 x(size)S 17 x(limit)S 17 x(when)S 16 x(compression)S
+17 x(shall)S 17 x(occur)S 17 x(can)S 16 x(be)S 17 x(con\014gured)S
+17 x(as)S 17 x(described)S 58 y 295 X(in)S 22 x(chapter)S 22 x(5.)S
+42 x(The)S 23 x(compression)S 22 x(and)S 23 x(decompression)S 22 x
+(is)S 22 x(done)S 23 x(using)S 22 x(the)S 23 x(UNIX)S -17 y F74(TM)S
+17 y 24 x F75(compr)S -2 x(ess\(1\))S 23 x F44(and)S 58 y 295 X F75
+(uncompr)S -2 x(ess\(1\))S 21 x F44(commands.)S 1088 Y 295 X
+(Optionally,)S 16 x(the)S 16 x(old)S 16 x(version)S 16 x(of)S 16 x
+(the)S 16 x(local)S 15 x(\014le)S 16 x(will)S 15 x(be)S 15 x(saved)S
+16 x(in)S 16 x(as)S 16 x(a)S 16 x(\014le)S 16 x(with)S 16 x(the)S 
+16 x(suf)S -1 x(\014x)S 17 x F75(.bak)S 16 x F44(if)S 16 x(the)S 
+16 x(local)S 58 y 295 X(\014le)S 17 x(is)S 18 x(updated.)S 26 x
+(This)S 18 x(option)S 18 x(can)S 17 x(be)S 18 x(con\014gured)S 17 x
+(as)S 17 x(described)S 18 x(in)S 18 x(chapter)S 17 x(5.)S 1385 Y 
+295 X F76(3.13)S 50 x(syncdir)S 1523 Y 295 X F44(The)S 13 x F75
+(syncdir)S 13 x F44(command)S 13 x(is)S 13 x(used)S 13 x(to)S 13 x
+(synchronize)S 13 x(the)S 13 x(\014les)S 13 x(within)S 13 x(the)S 
+13 x(directory/ies)S 13 x(provided)S 13 x(as)S 13 x(ar)S -1 x
+(gument\(s\))S 58 y 295 X(with)S 12 x(their)S 12 x(counterparts)S 
+12 x(at)S 12 x(the)S 12 x(remote)S 12 x(site.)S 19 x(Here)S 12 x
+(the)S 11 x(basic)S 12 x(principle)S 11 x(is,)S 13 x(that)S 12 x
+(the)S 12 x(site)S 12 x(executing)S 12 x(the)S 12 x F75(syncdir)S 
+58 y 295 X F44(command)S 14 x(is)S 13 x(only)S 14 x(synchronizing)S
+14 x(the)S 14 x(local)S 14 x(site)S 14 x(by)S 14 x(applying)S 14 x
+(the)S 13 x(following)S 14 x(actions)S 14 x(to)S 14 x(the)S 13 x
+(list)S 14 x(of)S 14 x(\014les)S 14 x(that)S 58 y 295 X(exists)S 
+19 x(at)S 19 x(the)S 19 x F49(r)S -1 x(emote)S 18 x F44(site)S 19 x
+(within)S 19 x(the)S 19 x(given)S 19 x(directory:)S 1804 Y 378 X
+(\267)S 67 x(Create)S 17 x(a)S 17 x(local)S 17 x(SLA)S -6 x(VE)S 
+18 x(\014le)S 16 x(versions)S 17 x(for)S 17 x(newly)S 17 x(found)S
+16 x(remote)S 17 x(MASTER)S 17 x(version)S 17 x(\014le.)S 26 x(This)S
+17 x(is)S 58 y 461 X(done)S 18 x(according)S 18 x(to)S 18 x(the)S 
+18 x(transfer)S 18 x(mode)S 18 x(of)S 18 x(the)S 18 x(\014le.)S 28 x
+(If)S 18 x(the)S 18 x(transfer)S 18 x(mode)S 18 x(is)S 18 x(set)S 
+18 x(to)S 18 x(REQUEST,)S 58 y 461 X(only)S 14 x(a)S 14 x(dummy)S 
+14 x(SLA)S -6 x(VE)S 14 x(version)S 14 x(of)S 14 x(\014le)S 15 x(is)S
+14 x(created)S 14 x(which)S 14 x(indicates)S 14 x(the)S 14 x
+(existence)S 14 x(of)S 15 x(the)S 15 x(\014le,)S 15 x(but)S 58 y 
+461 X(does)S 14 x(not)S 14 x(have)S 14 x(its)S 14 x(actual)S 14 x
+(content.)S 20 x(Otherwise,)S 14 x(the)S 14 x(content)S 14 x(of)S 
+14 x(the)S 14 x(\014le)S 14 x(is)S 13 x(transferred)S 14 x(as)S 14 x
+(described)S 58 y 461 X(with)S 20 x(the)S 21 x F75(get\014le)S 20 x 
+F44(command.)S 2119 Y 378 X(\267)S 67 x(Update)S 19 x(local)S 19 x
+(SLA)S -6 x(VE)S 19 x(\014le)S 18 x(version)S 18 x(with)S 19 x(a)S
+19 x(remote)S 19 x(MASTER)S 19 x(version)S 19 x(if)S 19 x(the)S 18 x
+(transfer)S 18 x(mode)S 18 x(of)S 58 y 461 X(the)S 20 x(\014le)S 
+20 x(is)S 21 x(AUT)S -1 x(OMA)S -5 x(TIC)S 2260 Y 378 X(\267)S 67 x
+(Create)S 19 x(local)S 19 x(SLA)S -6 x(VE)S 18 x(sub-directory)S 
+19 x(if)S 19 x(a)S 18 x(new)S 18 x(MASTER)S 19 x(sub-directory)S 
+18 x(has)S 18 x(been)S 18 x(found)S 18 x(at)S 18 x(the)S 58 y 461 X
+(remote)S 17 x(site.)S 26 x(By)S 17 x(this,)S 18 x(the)S 17 x
+(shared)S 17 x(subtree)S 18 x(will)S 17 x(grow)S 17 x(in)S 18 x
+(size.)S 26 x(Directories)S 17 x(found)S 17 x(at)S 17 x(the)S 17 x
+(remote)S 58 y 461 X(site)S 17 x(that)S 18 x(are)S 17 x(in)S 17 x
+(status)S 17 x(UNREGISTERED)S 17 x(are)S 17 x F49(NOT)S 17 x F44
+(created)S 17 x(locally.)S 2459 Y 378 X(\267)S 67 x(Create)S 18 x(a)S
+18 x(local)S 18 x(symbolic)S 18 x(link)S 18 x(if)S 18 x(a)S 17 x
+(symbolic)S 18 x(link)S 18 x(has)S 18 x(been)S 18 x(found)S 18 x(at)S
+18 x(the)S 18 x(remote)S 18 x(site.)S 28 x(This)S 18 x(is)S 59 y 
+461 X(only)S 16 x(done)S 17 x(if)S 17 x(the)S 16 x(\014le)S 16 x
+(referenced)S 16 x(by)S 16 x(the)S 16 x(link)S 17 x(is)S 16 x
+(located)S 16 x(within)S 16 x(the)S 16 x(shared)S 16 x(subtree.)S 
+2601 Y 378 X(\267)S 67 x(Perform)S 18 x(various)S 18 x(checks)S 18 x
+(to)S 18 x(insure)S 18 x(consistency)S 19 x(between)S 18 x(local)S
+18 x(and)S 19 x(remote)S 18 x(sites)S 19 x(views)S 19 x(of)S 18 x
+(the)S 58 y 461 X(\014les)S 21 x(within)S 21 x(the)S 21 x
+(directory.)S 2742 Y 378 X(\267)S 67 x(Removes)S 15 x(local)S 15 x
+(SLA)S -6 x(VE)S 15 x(\014les)S 14 x(if)S 15 x(there)S 15 x(is)S 
+14 x(no)S 15 x(corresponding)S 15 x(MASTER)S 15 x(\014le)S 15 x(at)S
+15 x(the)S 15 x(remote)S 15 x(site.)S 21 x(If)S 58 y 461 X(there)S
+15 x(is)S 16 x(a)S 15 x(UNREGISTERED)S 16 x(\014le)S 15 x(at)S 16 x
+(remote,)S 15 x(the)S 15 x(local)S 16 x(\014le)S 15 x(state)S 15 x
+(is)S 15 x(set)S 15 x(to)S 15 x(UNREGISTERED.)S 2883 Y 378 X(\267)S
+67 x(Execute)S 21 x(a)S 20 x(existing)S 20 x F75(.rfaexec)S 20 x F44
+(\014le)S 20 x(if)S 20 x(any)S 20 x(\014le)S 20 x(within)S 20 x(the)S
+20 x(directory)S 20 x(has)S 21 x(been)S 20 x(updated)S 20 x(and)S 
+20 x(the)S 58 y 461 X(directory)S 20 x(itself)S 20 x(in)S 20 x(not)S
+20 x(LOCKED.)S 3275 Y 1230 X F6(7)S
+%%PageTrailer
+/paper-automatic true SPS 1 PP EP
+%%PageBoundingBox: 71 53 524 794
+
+%%PageBoundingBox: (atend)
+%%BeginPageSetup
+1000 BP 3507 2481 PM /paper-automatic false SPS 295 0 XY
+%%EndPageSetup
+295 231 XY F8(RF)S -3 x(A)S 295 281 XY 846 3 R 1141 281 XY 
+200 3 R 1340 281 XY 846 3 R -50 y 1734 X(The)S 24 x(RF)S -3 x
+(A-EXEC)S 24 x(facility)S 459 Y 295 X F44(T)S -3 x(o)S 19 x(achieve)S
+20 x(a)S 20 x(fully)S 20 x(synchronized)S 20 x(directory,)S 21 x
+(both)S 20 x(sites)S 20 x(need)S 19 x(to)S 20 x(perform)S 19 x(a)S
+19 x F75(syncdir)S 19 x F44(operation)S 20 x(for)S 20 x(that)S 58 y 
+295 X(directory)S 14 x(at)S 15 x(periodic)S 15 x(times.)S 20 x(This)S
+15 x(will)S 14 x(be)S 14 x(typically)S 15 x(done)S 15 x(by)S 15 x
+(creating)S 14 x(an)S 15 x(entry)S 15 x(into)S 14 x(the)S 14 x
+(systems)S 14 x F75(cr)S -2 x(ontab)S F44(.)S 746 Y 295 X F76(3.14)S
+50 x(rsyncdir)S 880 Y 295 X F44(The)S 13 x F75(rsyncdir)S 13 x F44
+(command)S 13 x(is)S 14 x(very)S 13 x(similar)S 13 x(to)S 13 x(the)S
+13 x F75(syncdir)S 13 x F44(command,)S 14 x(but)S 13 x(performs)S 
+13 x(a)S 13 x(recursive)S 13 x(synchroniza-)S 58 y 295 X(tion)S 16 x
+(of)S 16 x(the)S 16 x(whole)S 16 x(subtree)S 16 x(starting)S 16 x
+(at)S 16 x(the)S 16 x(directory/ies)S 16 x(provided)S 16 x(as)S 15 x
+(ar)S -1 x(gument\(s\).)S 22 x(The)S 16 x(same)S 16 x(actions)S 16 x
+(are)S 58 y 295 X(performed)S 18 x(as)S 18 x(within)S 18 x(the)S 
+17 x F75(syncdir)S 18 x F44(command)S 18 x(with)S 17 x(an)S 18 x
+(additional)S 17 x(actions:)S 1124 Y 378 X(\267)S 67 x(If)S 14 x(a)S
+15 x(MASTER)S 14 x(directory)S 15 x(is)S 14 x(detected)S 15 x(at)S
+14 x(the)S 14 x(remote)S 15 x(site)S 14 x(and)S 15 x(the)S 15 x
+(transfer)S 15 x(mode)S 14 x(of)S 15 x(this)S 14 x(directory)S 58 y 
+461 X(is)S 17 x(set)S 17 x(to)S 18 x(AUT)S -1 x(OMA)S -5 x(TIC,)S 
+18 x(the)S 17 x(directory)S 17 x(is)S 17 x(synchronized)S 17 x
+(recursively.)S 1265 Y 378 X(\267)S 67 x(It)S 18 x(does)S 18 x(not)S
+18 x(follow)S 18 x(symbolic)S 18 x(links)S 18 x(pointing)S 18 x(to)S
+17 x(directories)S 1370 Y 295 X(Directories)S 16 x(found)S 15 x(at)S
+16 x(the)S 15 x(remote)S 15 x(site)S 15 x(that)S 15 x(are)S 15 x(in)S
+15 x(status)S 15 x(UNREGISTERED)S 16 x(or)S 15 x(don't)S 15 x(have)S
+16 x(transfer)S 16 x(mode)S 58 y 295 X(AUT)S -1 x(OMA)S -5 x(TIC)S
+15 x(are)S 14 x F49(NOT)S 15 x F44(synchronized)S 15 x(recursively.)S
+20 x(They)S 14 x(have)S 15 x(to)S 14 x(be)S 15 x(updated)S 15 x
+(individually)S 14 x(by)S 14 x(applying)S 58 y 295 X(the)S 21 x F75
+(syncdir)S 21 x F44(command.)S 1567 Y 295 X(Using)S 13 x(the)S 13 x 
+F75(rsyncdir)S 13 x F44(command)S 13 x(it)S 13 x(is)S 12 x(possible)S
+13 x(to)S 13 x(synchronize)S 13 x(the)S 12 x(whole)S 13 x(shared)S
+13 x(subtree.)S 20 x(The)S 13 x(con\014guration)S 58 y 295 X(which)S
+13 x(parts)S 13 x(of)S 14 x(a)S 13 x(subtree)S 14 x(at)S 13 x(a)S 
+14 x(site)S 13 x(belongs)S 14 x(to)S 14 x(that)S 13 x(shared)S 13 x
+(subtree)S 13 x(is)S 13 x(done)S 13 x(by)S 13 x(setting)S 13 x(the)S
+13 x(MASTER)S 13 x(status)S 58 y 295 X(and)S 18 x(the)S 18 x
+(transfer)S 19 x(level)S 18 x(of)S 18 x(the)S 18 x(\014les)S 18 x
+(and)S 18 x(directories)S 18 x(appropriately.)S 1912 Y 295 X F76
+(3.15)S 50 x(timesync)S 2046 Y 295 X F44(T)S -3 x(o)S 17 x
+(synchronize)S 18 x(the)S 17 x(local)S 17 x(clocks)S 17 x(of)S 17 x
+(the)S 17 x(participating)S 17 x(sites,)S 18 x(the)S 18 x F75
+(timesync)S 17 x F44(command)S 17 x(can)S 17 x(be)S 17 x(used.)S 
+26 x(This)S 58 y 295 X(command)S 16 x(synchronizes)S 16 x(the)S 16 x
+(local)S 16 x(clock)S 16 x(of)S 16 x(the)S 16 x(site)S 16 x(acting)S
+16 x(as)S 16 x(the)S 16 x F75(time)S 14 x(slave)S 16 x F44(with)S 
+16 x(the)S 16 x(clock)S 16 x(of)S 16 x(the)S 15 x F75(time)S 58 y 
+295 X(master)S 11 x F44(site.)S 19 x(The)S 12 x(command)S 12 x(can)S
+12 x(be)S 12 x(called)S 12 x(at)S 12 x(both)S 11 x(sites)S 12 x(to)S
+12 x(initiate)S 12 x(the)S 12 x(synchronization.)S 20 x(The)S 12 x
+(con)S
+(\014guration)S 58 y 295 X(of)S 18 x(a)S 18 x(site)S 17 x(to)S 18 x
+(be)S 17 x F75(time)S 16 x(slave)S 18 x F44(or)S 17 x F75(time)S 
+16 x(master)S 18 x F44(is)S 18 x(described)S 18 x(in)S 18 x(chapter)S
+18 x(5)S 2449 Y 295 X F76(3.16)S 50 x(help)S 2583 Y 295 X F44(The)S
+20 x F75(help)S 19 x F44(command)S 20 x(shows)S 20 x(the)S 20 x
+(list)S 20 x(of)S 19 x(available)S 20 x(command)S 19 x(and)S 20 x
+(gives)S 20 x(a)S 20 x(one-line)S 19 x(description)S 20 x(of)S 19 x
+(each)S 58 y 295 X(command.)S 2870 Y 295 X F76(3.17)S 50 x(quit)S 
+3004 Y 295 X F44(Obviously,)S 19 x(the)S 18 x F75(quit)S 19 x F44
+(commands)S 18 x(terminates)S 19 x(the)S 18 x F75(rfa)S 19 x F44
+(session.)S 3276 Y 1230 X F6(8)S
+%%PageTrailer
+/paper-automatic true SPS 1 PP EP
+%%PageBoundingBox: 71 53 524 794
+
+%%PageBoundingBox: (atend)
+%%BeginPageSetup
+1000 BP 3507 2481 PM /paper-automatic false SPS 295 0 XY
+%%EndPageSetup
+295 231 XY F8(RF)S -3 x(A)S 295 281 XY 846 3 R 1141 281 XY 
+200 3 R 1340 281 XY 846 3 R -50 y 1829 X(RF)S -3 x(A)S 25 x
+(Con\014guration)S 464 Y 295 X F46(4)S 62 x(The)S 32 x(RF)S -6 x
+(A-EXEC)S 32 x(facility)S 669 Y 295 X F44(When)S 16 x(a)S 15 x
+(directory)S 16 x(within)S 16 x(the)S 16 x(shared)S 15 x(subtree)S
+16 x(is)S 15 x(synchronized)S 15 x(using)S 16 x(the)S 16 x(RF)S -3 x
+(A)S 15 x F75(sync)S 15 x F44(or)S 15 x F75(rsync)S 16 x F44
+(commands,)S 58 y 295 X(in)S 17 x(most)S 17 x(cases)S 17 x(there)S
+18 x(are)S 17 x(further)S 18 x(actions)S 17 x(required)S 17 x(if)S
+17 x(any)S 18 x(\014les)S 17 x(have)S 18 x(been)S 17 x(updated,)S 
+18 x(e.g.)S 27 x(issuing)S 17 x(a)S 18 x F75(make)S 58 y 295 X F44
+(command)S 18 x(to)S 17 x(re-build)S 18 x(the)S 18 x(updated)S 18 x
+(software.)S 28 x(This)S 18 x(can)S 18 x(be)S 18 x(achieved)S 18 x
+(by)S 17 x(RF)S -3 x(A's)S 18 x(facility)S 18 x(to)S 18 x(create)S
+18 x(a)S 18 x(\014le)S 58 y 295 X(called)S 12 x F75(.rfaexec)S 11 x 
+F44(in)S 11 x(each)S 11 x(directory.)S 19 x(This)S 11 x(\014le)S 
+12 x(is)S 12 x(executed)S 11 x(by)S 11 x F75(sh\(1\))S 12 x F44
+(every)S 12 x(time)S 11 x(the)S 11 x(directory)S 12 x(is)S 12 x
+(synchronized)S 58 y 295 X(and)S 13 x(minimally)S 12 x(one)S 13 x
+(\014le)S 13 x(within)S 13 x(the)S 12 x(directory)S 13 x(has)S 12 x
+(been)S 13 x(updated.)S 19 x(The)S 13 x(\014le)S 13 x F75(.rfaexec)S
+12 x F44(can)S 12 x(be)S 13 x(have)S 13 x(executable)S 58 y 295 X
+(format)S 16 x(\(sh,)S 17 x(csh,)S 16 x(binary\))S 16 x(and)S 17 x
+(should)S 16 x(have)S 16 x(the)S 16 x(executed)S 16 x(permission)S
+16 x(set.)S 23 x(When)S 16 x(RF)S -3 x(A)S 16 x(executed)S 16 x
+(this)S 16 x(\014le,)S 58 y 295 X(it)S 17 x(passes)S 18 x(the)S 18 x
+(names)S 17 x(of)S 18 x(the)S 18 x(\014les)S 17 x(that)S 17 x(have)S
+17 x(been)S 17 x(updated)S 17 x(as)S 17 x(ar)S -1 x(guments)S 18 x
+(to)S 17 x(it.)S 1096 Y 295 X(This)S 16 x(facility)S 16 x(can)S 15 x
+(be)S 16 x(disabled)S 15 x(by)S 15 x(setting)S 15 x(the)S 16 x F75
+(rfaexec)S 15 x F44(tailoring)S 15 x(option)S 15 x(to)S 15 x F75
+(off)S F44(.)S 21 x(Further,)S 15 x(it)S 16 x(can)S 15 x(be)S 16 x
+(disabled)S 58 y 295 X(for)S 21 x(a)S 22 x(single)S 22 x(directory)S
+21 x(by)S 22 x(setting)S 22 x(the)S 21 x(LOCKED)S 21 x(status)S 22 x
+(of)S 22 x(the)S 22 x(directory.)S 40 x(This)S 22 x(is)S 22 x
+(useful)S 22 x(to)S 22 x(prevent)S 58 y 295 X(re-compilations)S 17 x
+(of)S 17 x(software)S 18 x(during)S 18 x(an)S 17 x(un\014nished)S 
+17 x(development)S 18 x(cycle.)S 1291 Y 295 X(For)S 10 x(security)S
+11 x(reasons,)S 12 x(the)S 11 x F75(.rfaexec)S 11 x F44(\014le)S 
+11 x(can)S 11 x F49(NOT)S 10 x F44(be)S 11 x(registered)S 11 x(as)S
+10 x(MASTER)S 10 x(or)S 11 x(SLA)S -6 x(VE)S 11 x(\014le.)S 18 x(An)S
+11 x(automatic)S 58 y 295 X(transfer)S 15 x(of)S 14 x(this)S 15 x
+(\014le)S 15 x(may)S 15 x(cause)S 15 x(a)S 15 x(user)S 15 x(to)S 
+15 x(execute)S 14 x(something)S 14 x(during)S 14 x(the)S 15 x F75
+(sync)S 15 x F44(command)S 15 x(which)S 15 x(has)S 15 x(been)S 58 y 
+295 X(\252imported\272)S 15 x(from)S 16 x(the)S 15 x(remote)S 16 x
+(site.)S 22 x(Therefore,)S 16 x(the)S 15 x F75(.rfaexec)S 16 x F44
+(\014le)S 16 x(is)S 16 x(always)S 15 x(a)S 15 x(local)S 16 x
+(unregistered)S 16 x(\014le.)S 1759 Y 295 X F46(5)S 62 x(RF)S -6 x
+(A)S 32 x(Con\014guration)S 1964 Y 295 X F44(The)S 22 x
+(con\014guration)S 22 x(of)S 21 x(the)S 22 x(RF)S -3 x(A)S 21 x
+(client)S 22 x(\()S F75(rfa)S F44(\))S 22 x(and)S 22 x(the)S 22 x
+(RF)S -3 x(A)S 21 x(server)S 21 x(\()S F75(r)S -2 x(os.rfa\))S 23 x 
+F44(server)S 21 x(can)S 22 x(be)S 22 x(tailored)S 22 x(at)S 58 y 
+295 X(start)S 19 x(time)S 19 x(by)S 19 x(a)S 19 x(con\014guration)S
+19 x(\014le.)S 32 x(This)S 20 x(\014le)S 19 x(is)S 19 x(called)S 
+19 x F75(rfatailor)S 19 x F44(and)S 19 x(can)S 19 x(exist)S 19 x
+(either)S 19 x(in)S 19 x(the)S 20 x(ISODE's)S 58 y 295 X
+(\203\(ETCDIR\))S 19 x(or)S 19 x(the)S 18 x(RF)S -3 x(A)S 19 x
+(speci)S
+(\014c)S 19 x(tailoring)S 18 x(directory)S 19 x(which)S 18 x(is)S 
+18 x(de\014ned)S 19 x(in)S 19 x(the)S 18 x F75(con\014g.h)S 19 x F44
+(\014le)S 19 x(of)S 19 x(RF)S -3 x(A)S 18 x(as)S 58 y 295 X F75(RF)S
+-6 x(A\210T)S -3 x(AILDIR)S F44(.)S 16 x(This)S 16 x(\014le)S 16 x
+(is)S 16 x(read)S 16 x(by)S 16 x(both)S 16 x(the)S 16 x(RF)S -3 x(A)S
+15 x(client)S 16 x(and)S 16 x(server.)S 22 x(The)S 16 x(\014le)S 
+16 x(consists)S 16 x(of)S 16 x(a)S 16 x(number)S 16 x(of)S 58 y 
+295 X(tailoring)S 20 x(statements)S 20 x(with)S 20 x(the)S 20 x
+(syntax)S 2287 Y 413 X F78(tailoringOption)S 912 X(=)S 1036 X
+(tailoringValue)S 2386 Y 295 X F44(Lines)S 20 x(with)S 20 x
+(comments)S 20 x(start)S 20 x(with)S 20 x(a)S 20 x(\252#\272.)S 
+2465 Y 295 X(The)S 18 x(options)S 17 x(that)S 18 x(are)S 18 x(valid)S
+18 x(for)S 18 x(both)S 18 x(the)S 18 x(RF)S -3 x(A)S 17 x(client)S
+18 x(and)S 18 x(server)S 18 x(are:)S 2585 Y 295 X F1(r)S -2 x(oot)S
+4 y 709 X F44(the)S 17 x(pathname)S 17 x(of)S 16 x(the)S 16 x(root)S
+16 x(of)S 17 x(the)S 16 x(shared)S 17 x(subtree)S 17 x(at)S 16 x
+(the)S 16 x(local)S 17 x(site)S 2714 Y 295 X F1(time)S -2 y 709 X 
+F44(the)S 18 x(role)S 17 x(that)S 17 x(the)S 17 x(local)S 17 x(site)S
+17 x(plays)S 17 x(for)S 17 x(time)S 17 x(synchronization.)S 26 x
+(Possible)S 17 x(values)S 17 x(are)S 58 y 709 X F75(master)S 20 x 
+F44(or)S 20 x F75(slave)S F44(.)S 2849 Y 295 X(The)S 18 x(following)S
+18 x(options)S 18 x(are)S 18 x(only)S 18 x(recognized)S 18 x(by)S 
+18 x(the)S 18 x(RF)S -3 x(A)S 18 x(server:)S 2964 Y 295 X F1(compr)S
+-2 x(ess)S 8 y 709 X F44(The)S 11 x(limit)S 11 x(for)S 11 x(the)S 
+11 x(\014lesize)S 11 x(in)S 11 x(bytes)S 11 x(when)S 11 x
+(compression)S 11 x(during)S 11 x(the)S 11 x(transfer)S 11 x
+(operation)S 59 y 709 X(shall)S 20 x(occur.)S 3276 Y 1230 X F6(9)S
+%%PageTrailer
+/paper-automatic true SPS 1 PP EP
+%%PageBoundingBox: 71 53 524 794
+
+%%PageBoundingBox: (atend)
+%%BeginPageSetup
+1000 BP 3507 2481 PM /paper-automatic false SPS 295 0 XY
+%%EndPageSetup
+295 231 XY F8(RF)S -3 x(A)S 295 281 XY 846 3 R 1141 281 XY 
+200 3 R 1340 281 XY 846 3 R -50 y 1829 X(RF)S -3 x(A)S 25 x
+(Con\014guration)S 459 Y 295 X F1(chmod)S -2 y 709 X F44(determines)S
+15 x(if)S 15 x(the)S 15 x(write)S 15 x(permissions)S 15 x(of)S 15 x
+(local)S 15 x(SLA)S -6 x(VE)S 16 x(\014les)S 15 x(shall)S 15 x(be)S
+15 x(removed)S 15 x(and)S 58 y 709 X(write)S 19 x(permissions)S 18 x
+(to)S 18 x(local)S 18 x(MASTER)S 18 x(and)S 18 x(UNREGISTERED)S 18 x
+(versions)S 18 x(shall)S 18 x(be)S 58 y 709 X(set.)S 21 x(This)S 
+16 x(requires)S 15 x(that)S 15 x(user)S 16 x(executing)S 16 x(the)S
+16 x F75(rfa)S 16 x F44(command)S 15 x(is)S 15 x(the)S 15 x(owner)S
+16 x(of)S 15 x(the)S 16 x(\014le)S 58 y 709 X(or)S 15 x(the)S 15 x 
+F75(rfa)S 15 x F44(program)S 15 x(runs)S 15 x(under)S 15 x(the)S 
+15 x(ef)S -1 x(fective)S 15 x(user)S 15 x(id)S 15 x(of)S 16 x(root.)S
+20 x(Possible)S 15 x(values)S 15 x(are)S 58 y 709 X F75(on)S 21 x 
+F44(and)S 20 x F75(off)S F44(.)S 807 Y 295 X F1(debuglog)S -4 y 
+709 X F44(enables)S 22 x(more)S 22 x(detailed)S 23 x(logging)S 22 x
+(information)S 22 x(to)S 22 x(be)S 22 x(written)S 22 x(to)S 23 x
+(the)S 23 x(RF)S -3 x(A)S 21 x(log\014le)S 58 y 709 X F75(rfa.log)S
+16 x F44(in)S 16 x(the)S 17 x(ISODE)S 17 x(logdir.)S 25 x(Possible)S
+16 x(values)S 17 x(are)S 17 x F75(on)S 16 x F44(and)S 17 x F75(off)S
+F44(.)S 938 Y 295 X(The)S 15 x(following)S 15 x(options)S 14 x(are)S
+15 x(only)S 14 x(recognized)S 15 x(by)S 15 x(the)S 14 x(RF)S -3 x(A)S
+14 x(client.)S 20 x(They)S 14 x(may)S 14 x(additionally)S 14 x(be)S
+14 x(de\014ned)S 15 x(on)S 15 x(a)S 58 y 295 X(per-user)S 18 x
+(basis)S 18 x(in)S 17 x(a)S 18 x(\014le)S 18 x(called)S 18 x F75
+(.rfar)S -2 x(c)S 19 x F44(in)S 18 x(the)S 18 x(users)S 18 x(home)S
+18 x(directory.)S 1113 Y 295 X F1(host)S -3 y 709 X F44(the)S 23 x
+(name)S 22 x(of)S 22 x(the)S 22 x(remote)S 22 x(host.)S 41 x(This)S
+23 x(name)S 23 x(must)S 22 x(be)S 22 x(de\014ned)S 22 x(in)S 23 x
+(the)S 23 x(ISODE's)S 59 y 709 X F75(isoentities)S 20 x F44
+(database.)S 1265 Y 295 X F1(user)S 9 y 709 X F44(the)S 20 x
+(username)S 20 x(that)S 20 x(shall)S 20 x(be)S 19 x(used)S 20 x(to)S
+20 x(authenticate)S 19 x(with)S 20 x(the)S 20 x(remote)S 20 x(RF)S
+-3 x(A)S 19 x(server.)S 58 y 709 X(This)S 16 x(must)S 16 x(be)S 16 x
+(a)S 16 x(UNIX)S -17 y F74(TM)S 17 y 18 x F44(login)S 16 x(name)S 
+16 x(that)S 16 x(is)S 16 x(valid)S 16 x(on)S 16 x(the)S 16 x(remote)S
+16 x(site.)S 1448 Y 295 X F1(passwor)S -2 x(d)S -2 y 709 X F44(The)S
+21 x(password)S 21 x(corresponding)S 22 x(to)S 21 x(the)S 22 x(user)S
+21 x(name.)S 39 x(This)S 22 x(password)S 22 x(must)S 22 x(be)S 21 x
+(the)S 58 y 709 X(password)S 17 x(for)S 17 x(the)S 17 x(given)S 17 x
+(login)S 17 x(name)S 17 x(at)S 17 x(the)S 17 x(remote)S 18 x(site.)S
+1622 Y 295 X F1(backup)S -3 y 709 X F44(determines)S 15 x(if)S 15 x
+(a)S 15 x(backup)S 14 x(\014le)S 14 x(with)S 15 x(suf)S -1 x(\014x)S
+15 x F75(.bak)S 14 x F44(shall)S 14 x(be)S 15 x(created)S 14 x(when)S
+15 x(a)S 14 x(local)S 15 x(\014le)S 15 x(is)S 59 y 709 X(updated.)S
+28 x(Possible)S 18 x(values)S 18 x(are)S 18 x F75(on)S 18 x F44(and)S
+18 x F75(off)S F44(.)S 1794 Y 295 X F1(chgrp)S -2 y 709 X F44
+(determines)S 18 x(if)S 19 x(the)S 18 x(group-id)S 19 x(of)S 18 x
+(local)S 18 x(SLA)S -6 x(VE)S 18 x(\014les)S 18 x(shall)S 18 x(be)S
+19 x(set)S 19 x(according)S 18 x(to)S 18 x(the)S 58 y 709 X
+(group-id)S 15 x(of)S 15 x(the)S 14 x(remote)S 15 x(MASTER)S 15 x
+(\014le.)S 20 x(This)S 15 x(requires)S 15 x(that)S 15 x(user)S 15 x
+(executing)S 15 x(the)S 15 x F75(rfa)S 58 y 709 X F44(command)S 20 x
+(is)S 20 x(member)S 20 x(of)S 20 x(all)S 20 x(groups)S 20 x(that)S
+20 x(may)S 20 x(appear)S 20 x(or)S 20 x(the)S 20 x F75(rfa)S 20 x 
+F44(program)S 20 x(runs)S 58 y 709 X(under)S 16 x(the)S 16 x(ef)S 
+-1 x(fective)S 16 x(user)S 16 x(id)S 17 x(of)S 16 x(root.)S 23 x
+(Possible)S 16 x(values)S 16 x(are)S 16 x F75(on)S 17 x F44(and)S 
+16 x F75(off)S F44(.)S 2083 Y 295 X F1(chown)S -2 y 709 X F44
+(determines)S 21 x(if)S 20 x(the)S 21 x(user-id)S 21 x(of)S 20 x
+(local)S 21 x(SLA)S -6 x(VE)S 21 x(\014les)S 21 x(shall)S 21 x(be)S
+21 x(set)S 21 x(according)S 21 x(to)S 21 x(the)S 58 y 709 X(user-id)S
+18 x(of)S 17 x(the)S 17 x(remote)S 17 x(MASTER)S 17 x(\014le.)S 26 x
+(This)S 17 x(requires)S 17 x(that)S 17 x(user)S 17 x(executing)S 
+17 x(the)S 17 x F75(rfa)S 58 y 709 X F44(command)S 17 x(is)S 17 x
+(the)S 17 x(owner)S 17 x(of)S 18 x(the)S 18 x(\014le)S 18 x(or)S 
+17 x(the)S 17 x F75(rfa)S 17 x F44(program)S 17 x(runs)S 17 x(under)S
+18 x(the)S 17 x(ef)S -1 x(fective)S 58 y 709 X(user)S 17 x(id)S 17 x
+(of)S 18 x(root.)S 27 x(Possible)S 18 x(values)S 17 x(are)S 17 x F75
+(on)S 18 x F44(and)S 17 x F75(off)S F44(.)S 2371 Y 295 X F1
+(transfer)S -2 y 709 X F44(the)S 22 x(default)S 22 x(transfer)S 21 x
+(mode)S 21 x(that)S 21 x(is)S 21 x(set)S 21 x(when)S 21 x(a)S 21 x
+(\014le)S 22 x(is)S 21 x(registered)S 21 x(the)S 21 x(\014rst)S 21 x
+(time.)S 58 y 709 X(Possible)S 18 x(values)S 18 x(are)S 18 x F75
+(auto)S 18 x F44(and)S 18 x F75(r)S -2 x(equest)S 2545 Y 295 X F1
+(clearsuid)S -4 y 709 X F44(determines)S 11 x(if)S 11 x(the)S 11 x
+(set-uid-on-execution)S 11 x(bit)S 11 x(of)S 11 x(\014les)S 11 x(is)S
+11 x(cleared)S 11 x(if)S 11 x(they)S 11 x(are)S 11 x(transferred)S
+58 y 709 X(to)S 17 x(the)S 17 x(remote)S 16 x(site.)S 25 x(Possible)S
+17 x(values)S 17 x(are)S 17 x F75(on)S 17 x F44(and)S 17 x F75(off)S
+F44(.)S 25 x(If)S 17 x(RF)S -3 x(A)S 17 x(runs)S 17 x(with)S 17 x
+(ef)S -1 x(fective)S 58 y 709 X(user-id)S 19 x(of)S 18 x(root)S 18 x
+(and)S 19 x F75(chown)S 18 x F44(options)S 18 x(is)S 18 x(enabled,)S
+19 x F75(clearsuid)S 18 x F44(should)S 19 x(be)S 18 x(enabled)S 19 x
+(to)S 58 y 709 X(avoid)S 17 x(that)S 17 x(privileged)S 17 x(users)S
+17 x(from)S 16 x(one)S 17 x(sites)S 17 x(are)S 17 x(able)S 16 x(to)S
+17 x(gain)S 17 x(illegal)S 17 x(privileges)S 17 x(at)S 59 y 709 X
+(the)S 21 x(other)S 20 x(site.)S 2882 Y 295 X F1(rmslaves)S -3 y 
+709 X F44(determines)S 15 x(if)S 16 x(slave)S 15 x(\014les)S 16 x
+(with)S 15 x(no)S 15 x(remote)S 16 x(master)S 16 x(\014le)S 16 x
+(are)S 16 x(deleted)S 15 x(during)S 16 x(the)S 16 x F75(sync)S 58 y 
+709 X F44(and)S 19 x F75(rsync)S 20 x F44(command.)S 34 x(Possible)S
+19 x(values)S 20 x(are)S 19 x F75(on)S 20 x F44(and)S 19 x F75(off)S
+F44(.)S 34 x(If)S 20 x(a)S 20 x(there)S 20 x(is)S 20 x(a)S 20 x
+(remote)S 58 y 709 X(UNREGISTERED)S 18 x(\014le,)S 19 x(the)S 18 x
+(status)S 18 x(of)S 19 x(the)S 19 x(local)S 19 x(SLA)S -6 x(VE)S 
+18 x(\014le)S 18 x(is)S 19 x(only)S 18 x(changed)S 19 x(to)S 58 y 
+709 X(UNREGISTERED.)S 3276 Y 1219 X F6(10)S
+%%PageTrailer
+/paper-automatic true SPS 1 PP EP
+%%PageBoundingBox: 71 53 524 794
+
+%%PageBoundingBox: (atend)
+%%BeginPageSetup
+1000 BP 3507 2481 PM /paper-automatic false SPS 295 0 XY
+%%EndPageSetup
+295 231 XY F8(RF)S -3 x(A)S 295 281 XY 846 3 R 1141 281 XY 
+200 3 R 1340 281 XY 846 3 R -50 y 1731 X(What)S 25 x(is)S 25 x
+(still)S 25 x(missing)S 24 x(...)S 459 Y 295 X F1(rfaexec)S -2 y 
+709 X F44(determines)S 17 x(if)S 17 x(the)S 17 x F75(.rfaexec)S 17 x 
+F44(\014les)S 17 x(are)S 17 x(executed)S 17 x(during)S 17 x(a)S 17 x 
+F75(sync)S 17 x F44(or)S 17 x F75(rsync)S 17 x F44(command.)S 58 y 
+709 X(Possible)S 19 x(values)S 19 x(are)S 19 x F75(on)S 19 x F44
+(and)S 19 x F75(off)S F44(.)S 906 Y 295 X F46(6)S 62 x(Some)S 28 x
+(W)S -4 x(ords)S 27 x(on)S 27 x(User-IDs)S 27 x(and)S 27 x
+(Permissions)S 1149 Y 295 X F44(In)S 15 x(principle,)S 15 x(the)S 
+15 x(RF)S -3 x(A)S 14 x(client)S 15 x(runs)S 15 x(with)S 15 x(the)S
+15 x(user-id)S 15 x(of)S 16 x(the)S 15 x(user)S 15 x(that)S 15 x
+(invokes)S 15 x(the)S 15 x(client.)S 20 x(The)S 15 x(RF)S -3 x(A)S
+14 x(server)S 58 y 295 X(either)S 16 x(runs)S 16 x(with)S 16 x(the)S
+15 x(user-id)S 16 x(of)S 16 x(the)S 16 x(user)S 16 x(who)S 16 x
+(owns)S 16 x(the)S 16 x(server)S 16 x(program)S 16 x(\(as)S 15 x
+(performed)S 16 x(by)S 16 x F75(tsapd\(8\))S F44(\),)S 16 x(or)S 
+58 y 295 X(it)S 16 x(runs)S 16 x(with)S 16 x(the)S 16 x(user-id)S 
+16 x(the)S 16 x(invoker)S 16 x(has)S 16 x(supplied)S 16 x(with)S 
+16 x(the)S 16 x(bind)S 16 x(ar)S -1 x(guments)S 15 x(\(a)S 16 x
+(username)S 16 x(and)S 16 x(password)S 59 y 295 X(valid)S 16 x(at)S
+16 x(the)S 16 x(remote)S 16 x(server)S 16 x(host\).)S 23 x(In)S 16 x
+(the)S 16 x(later)S 16 x(case)S 16 x F75(tsapd)S 16 x F44(needs)S 
+16 x(to)S 16 x(run)S 16 x(with)S 16 x(user-id)S 16 x(of)S 16 x(root)S
+16 x(and)S 16 x(ros.rfa)S 58 y 295 X(needs)S 21 x(to)S 21 x(be)S 
+21 x(owned)S 20 x(by)S 21 x(root.)S 1466 Y 295 X(Under)S 19 x
+(certain)S 19 x(circumstances,)S 20 x(RF)S -3 x(A)S 18 x(client)S 
+19 x(and)S 19 x(server)S 19 x(need)S 19 x(to)S 19 x(do)S 18 x(modi)S
+(\014cation)S 19 x(to)S 19 x(\014les)S 19 x(which)S 18 x(are)S 19 x
+(not)S 58 y 295 X(owned)S 19 x(by)S 19 x(the)S 19 x(user-id)S 18 x
+(that)S 18 x(RF)S -3 x(A)S 18 x(is)S 18 x(running)S 19 x(with,)S 
+20 x(such)S 19 x(as)S 1633 Y 378 X(\267)S 67 x(changing)S 17 x(a)S
+17 x(\014les)S 17 x(access)S 18 x(right)S 17 x(\(e.g.)S 27 x(if)S 
+17 x(it)S 17 x(becomes)S 17 x(a)S 17 x(slave)S 17 x(version\))S 
+1716 Y 378 X(\267)S 67 x(changing)S 13 x(a)S 14 x(\014les)S 13 x
+(owner)S 13 x(of)S 14 x(group)S 14 x(\(e.g.)S 19 x(if)S 14 x(a)S 
+13 x(local)S 14 x(slave)S 13 x(is)S 14 x(updates)S 14 x(according)S
+13 x(to)S 13 x(a)S 13 x(remote)S 13 x(master)S 58 y 461 X(and)S 19 x
+(the)S 18 x F75(chown)S 19 x F44(and)S 19 x F75(chmod)S 19 x F44
+(options)S 19 x(are)S 18 x(enabled)S 1883 Y 295 X(One)S 14 x(way)S
+14 x(to)S 14 x(deal)S 14 x(with)S 14 x(these)S 14 x(problems)S 14 x
+(is)S 14 x(to)S 14 x(disable)S 13 x(these)S 14 x(facilities)S 14 x
+(of)S 14 x(RF)S -3 x(A)S 14 x(by)S 14 x(setting)S 14 x(the)S 14 x 
+F75(chown)S F44(,)S 15 x F75(chgrp)S 58 y 295 X F44(and)S 17 x F75
+(chmod)S 17 x F44(options)S 17 x(to)S 18 x F75(off)S F44(.)S 26 x
+(This)S 18 x(will)S 17 x(be)S 17 x(suitable)S 17 x(in)S 17 x(an)S 
+17 x(environment)S 17 x(where)S 17 x(all)S 17 x(\014les)S 17 x
+(within)S 17 x(the)S 17 x(shared)S 59 y 295 X(subtree)S 16 x(belong)S
+16 x(to)S 16 x(a)S 16 x(single)S 16 x(user)S 16 x(and)S 16 x(only)S
+16 x(this)S 16 x(user)S 16 x(runs)S 16 x(RF)S -3 x(A)S 15 x(client)S
+16 x(and)S 16 x(server)S 16 x(processes.)S 2084 Y 295 X(Otherwise,)S
+15 x(if)S 16 x(dif)S -1 x(ferent)S 15 x(users)S 15 x(access)S 15 x
+(the)S 16 x(\014les,)S 15 x(minimally)S 15 x(the)S 15 x F75(chmod)S
+15 x F44(option)S 15 x(should)S 16 x(be)S 15 x(enabled)S 15 x(to)S
+16 x(avoid)S 58 y 295 X(modi\014cations)S 13 x(to)S 13 x(slave)S 
+14 x(\014les)S 13 x(\(remember)S 14 x(that)S 14 x(locking)S 13 x(in)S
+13 x(rfa)S 13 x(is)S 13 x(advisory\))S 13 x(by)S 13 x(making)S 14 x
+(slave)S 13 x(\014les)S 14 x(read-only.)S 58 y 295 X(Further,)S 15 x
+(the)S 15 x F75(chown)S 15 x F44(and)S 15 x F75(chgrp)S 15 x F44
+(options)S 14 x(should)S 15 x(be)S 15 x(enabled)S 15 x(if)S 15 x
+(the)S 15 x(users)S 15 x(and)S 15 x(groups)S 15 x(are)S 15 x(the)S
+15 x(same)S 15 x(at)S 15 x(both)S 58 y 295 X(sites)S 17 x(to)S 16 x
+(maintain)S 16 x(the)S 16 x(ownership)S 16 x(\(and)S 16 x
+(originatorship)S 16 x(of)S 16 x(modi\014cation\))S 16 x(across)S 
+17 x(the)S 16 x(two)S 16 x(sites.)S 2342 Y 295 X(This)S 12 x(can)S
+12 x(be)S 12 x(achieved)S 12 x(by)S 12 x(running)S 12 x(the)S 12 x
+(RF)S -3 x(A)S 12 x(client)S 12 x(and)S 12 x(server)S 11 x(with)S 
+12 x(the)S 12 x(ef)S -1 x(fective)S 12 x(user-id)S 12 x(of)S 12 x
+(root)S 11 x(\(by)S 12 x(setting)S 58 y 295 X(the)S 15 x
+(set-uid-on-execution)S 14 x(\015ag\).)S 20 x(The)S 14 x(RF)S -3 x
+(A)S 15 x(client)S 15 x(will)S 15 x(set)S 15 x(his)S 15 x(ef)S -1 x
+(fective)S 16 x(user-id)S 15 x(during)S 15 x(start-up)S 14 x(to)S 
+15 x(his)S 15 x(real)S 59 y 295 X(user-id)S 18 x(and)S 17 x
+(switches)S 18 x(back)S 18 x(to)S 18 x(the)S 18 x(ef)S -1 x(fective)S
+18 x(user-id)S 18 x(of)S 17 x(root)S 17 x(only)S 17 x(for)S 18 x
+(these)S 17 x(sections)S 18 x(of)S 17 x(code)S 17 x(where)S 17 x
+(the)S 58 y 295 X(root)S 16 x(permissions)S 17 x(are)S 17 x(really)S
+16 x(required)S 17 x(to)S 16 x(change)S 16 x(the)S 16 x(access)S 
+16 x(mode,)S 17 x(owner)S 16 x(or)S 17 x(group)S 16 x(of)S 17 x
+(\014les.)S 24 x(Otherwise,)S 58 y 295 X(the)S 18 x(RF)S -3 x(A)S 
+17 x(client)S 17 x(run)S 18 x(with)S 17 x(the)S 18 x(ef)S -1 x
+(fective)S 17 x(user-id)S 17 x(equal)S 18 x(to)S 18 x(his)S 17 x
+(real)S 17 x(user-id.)S 2659 Y 295 X(The)S 18 x(RF)S -3 x(A)S 18 x
+(server)S 18 x(changes)S 19 x(his)S 18 x(ef)S -1 x(fective)S 19 x
+(user-id)S 18 x(during)S 18 x(start-up)S 19 x(to)S 18 x(the)S 18 x
+(user-id)S 18 x(provided)S 18 x(by)S 18 x(the)S 18 x(calling)S 58 y 
+295 X(client.)S 20 x(Like)S 15 x(the)S 15 x(RF)S -3 x(A)S 14 x
+(client,)S 15 x(it)S 14 x(switches)S 14 x(back)S 14 x(to)S 14 x(the)S
+15 x(ef)S -1 x(fective)S 14 x(user-id)S 15 x(of)S 14 x(root)S 14 x
+(only)S 15 x(for)S 15 x(these)S 14 x(sections)S 15 x(of)S 58 y 295 X
+(code)S 17 x(where)S 16 x(the)S 16 x(root)S 16 x(permissions)S 16 x
+(are)S 16 x(really)S 16 x(required)S 16 x(to)S 16 x(change)S 16 x
+(the)S 16 x(access)S 16 x(mode)S 16 x(of)S 16 x(a)S 16 x(\014le.)S
+2859 Y 295 X(If)S 22 x(the)S 22 x(RF)S -3 x(A)S 21 x(client)S 22 x
+(and)S 22 x(server)S 23 x(do)S 22 x(not)S 22 x(run)S 22 x(with)S 
+22 x(ef)S -1 x(fective)S 22 x(user-id)S 22 x(of)S 22 x(root,)S 24 x
+(the)S 22 x(time)S 22 x(synchronization)S 59 y 295 X(command)S 16 x
+(of)S 16 x(RF)S -3 x(A)S 16 x(can)S 16 x(only)S 16 x(be)S 16 x
+(used,)S 16 x(if)S 16 x(the)S 16 x(external)S 16 x(program)S 16 x 
+F75(rfatime)S 16 x F44(of)S 16 x(the)S 16 x(RF)S -3 x(A)S 15 x
+(package)S 16 x(is)S 16 x(installed)S 58 y 295 X(to)S 21 x(run)S 
+21 x(with)S 21 x(set-uid)S 21 x(root)S 3276 Y 1219 X F6(11)S
+%%PageTrailer
+/paper-automatic true SPS 1 PP EP
+%%PageBoundingBox: 71 53 524 794
+
+%%PageBoundingBox: (atend)
+%%BeginPageSetup
+1000 BP 3507 2481 PM /paper-automatic false SPS 295 0 XY
+%%EndPageSetup
+295 231 XY F8(RF)S -3 x(A)S 295 281 XY 846 3 R 1141 281 XY 
+200 3 R 1340 281 XY 846 3 R -50 y 1733 X(What)S 24 x(is)S 24 x
+(still)S 24 x(missing)S 24 x(...)S 464 Y 295 X F46(7)S 62 x(What)S
+32 x(is)S 32 x(still)S 31 x(missing)S 32 x(...)S 640 Y 295 X F44
+(The)S 16 x(current)S 16 x(version)S 16 x(of)S 16 x(RF)S -3 x(A)S 
+16 x(is)S 17 x(a)S 16 x(\014rst)S 16 x(shot)S 16 x(which)S 16 x
+(needs)S 16 x(some)S 16 x(completion)S 16 x(and)S 16 x(extensions.)S
+740 Y 378 X(\267)S 67 x(A)S 17 x(command)S 16 x(like)S 17 x
+(\252remote-dif)S -1 x(f\272)S 17 x(could)S 16 x(be)S 16 x(helpful)S
+16 x(for)S 16 x(resolving)S 16 x(inconsistencies.)S 823 Y 378 X
+(\267)S 67 x(The)S 17 x(time)S 16 x(synchronization)S 16 x(only)S 
+16 x(works)S 16 x(if)S 16 x(the)S 16 x(local)S 16 x(time)S 16 x(of)S
+16 x(a)S 17 x F75(time-slave)S 17 x F44(site)S 16 x(can)S 16 x(be)S
+16 x(modi\014ed,)S 58 y 461 X(which)S 18 x(may)S 19 x(not)S 19 x
+(hold)S 18 x(true)S 19 x(in)S 19 x(each)S 18 x(environment.)S 964 Y 
+378 X(\267)S 67 x(There)S 14 x(is)S 14 x(a)S 14 x(problem)S 14 x
+(with)S 14 x(the)S 14 x F75(chown)S F44(,)S 14 x F75(chgrp)S 14 x 
+F44(and)S 14 x F75(chmod)S 14 x F44(facilities)S 14 x(of)S 14 x(RF)S
+-3 x(A)S 14 x(because)S 15 x(the)S 14 x(enabling)S 58 y 461 X(of)S
+19 x(them)S 19 x(may)S 19 x(cause)S 19 x(\252permission)S 19 x
+(denied)S
+(\272)S 18 x(errors)S 18 x(if)S 19 x(the)S 19 x(RF)S -3 x(A)S 18 x
+(does)S 18 x(not)S 19 x(run)S 18 x(with)S 19 x(the)S 18 x(ef)S -1 x
+(fective)S 58 y 461 X(used)S 21 x(id)S 21 x(of)S 21 x(root.)S 1163 Y 
+378 X(\267)S 67 x(RF)S -3 x(A)S 20 x(is)S 21 x(only)S 20 x(capable)S
+20 x(to)S 21 x(support)S 20 x(distribution)S 20 x(over)S 20 x(two)S
+20 x(sites,)S 21 x(which)S 20 x(should)S 20 x(be)S 20 x(extended)S
+21 x(to)S 59 y 461 X(allow)S 18 x(a)S 18 x(multiple)S 18 x(site)S 
+18 x(con\014guration.)S 31 x(This)S 18 x(may)S 19 x(require)S 19 x
+(the)S 19 x(redesign)S 18 x(of)S 19 x(the)S 18 x(RF)S -3 x(A)S 18 x
+(model)S 19 x(and)S 58 y 461 X(will)S 19 x(introduce)S 19 x(a)S 19 x
+(new)S 19 x(level)S 19 x(of)S 19 x(complexity.)S 3276 Y -40 x F6(12)S
+%%PageTrailer
+/paper-automatic true SPS 1 PP EP
+%%PageBoundingBox: 71 53 524 794
+
+%%Trailer
+EndDviLaserDoc
+
+%%BoundingBox: 71 53 524 794
+%%Pages: 13
+%%DocumentFonts: Times-Bold Times-Roman Times-Italic Courier
