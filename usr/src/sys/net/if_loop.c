@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_loop.c	7.21 (Berkeley) %G%
+ *	@(#)if_loop.c	7.22 (Berkeley) %G%
  */
 
 /*
@@ -49,7 +49,6 @@
 #define	LOMTU	(1024+512)
 
 struct	ifnet loif;
-int	looutput(), loioctl();
 
 /* ARGSUSED */
 void
@@ -75,6 +74,7 @@ loopattach(n)
 #endif
 }
 
+int
 looutput(ifp, m, dst, rt)
 	struct ifnet *ifp;
 	register struct mbuf *m;
@@ -172,6 +172,7 @@ lortrequest(cmd, rt, sa)
  * Process an ioctl request.
  */
 /* ARGSUSED */
+int
 loioctl(ifp, cmd, data)
 	register struct ifnet *ifp;
 	int cmd;

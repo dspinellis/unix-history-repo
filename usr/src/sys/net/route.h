@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)route.h	7.18 (Berkeley) %G%
+ *	@(#)route.h	7.19 (Berkeley) %G%
  */
 
 /*
@@ -207,6 +207,29 @@ struct route_cb {
 
 struct	route_cb route_cb;
 struct	rtstat	rtstat;
-struct	rtentry *rtalloc1();
 struct	radix_node_head *rt_tables[AF_MAX+1];
+
+void	 route_init __P((void));
+int	 route_output __P((struct mbuf *, struct socket *));
+int	 route_usrreq __P((struct socket *,
+	    int, struct mbuf *, struct mbuf *, struct mbuf *));
+void	 rt_ifmsg __P((struct ifnet *));
+void	 rt_maskedcopy __P((struct sockaddr *,
+	    struct sockaddr *, struct sockaddr *));
+void	 rt_missmsg __P((int, struct rt_addrinfo *, int, int));
+void	 rt_newaddrmsg __P((int, struct ifaddr *, int, struct rtentry *));
+int	 rt_setgate __P((struct rtentry *,
+	    struct sockaddr *, struct sockaddr *));
+void	 rt_setmetrics __P((u_long, struct rt_metrics *, struct rt_metrics *));
+void	 rtable_init __P((void **));
+void	 rtalloc __P((struct route *));
+struct rtentry *
+	 rtalloc1 __P((struct sockaddr *, int));
+void	 rtfree __P((struct rtentry *));
+int	 rtinit __P((struct ifaddr *, int, int));
+int	 rtioctl __P((int, caddr_t, struct proc *));
+int	 rtredirect __P((struct sockaddr *, struct sockaddr *,
+	    struct sockaddr *, int, struct sockaddr *, struct rtentry **));
+int	 rtrequest __P((int, struct sockaddr *,
+	    struct sockaddr *, struct sockaddr *, int, struct rtentry **));
 #endif
