@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)route.c	7.10 (Berkeley) %G%
+ *	@(#)route.c	7.11 (Berkeley) %G%
  */
 #include "machine/reg.h"
  
@@ -224,8 +224,8 @@ rtioctl(req, data)
 	else
 		return (EINVAL);
 
-	if (!suser())
-		return (u.u_error);
+	if (error = suser(u.u_cred, &u.u_acflag))
+		return (error);
 #if BYTE_ORDER != BIG_ENDIAN
 	if (entry->rt_dst.sa_family == 0 && entry->rt_dst.sa_len < 16) {
 		entry->rt_dst.sa_family = entry->rt_dst.sa_len;

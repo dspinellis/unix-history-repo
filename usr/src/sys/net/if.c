@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if.c	7.6.1.1 (Berkeley) %G%
+ *	@(#)if.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -285,6 +285,7 @@ ifioctl(so, cmd, data)
 {
 	register struct ifnet *ifp;
 	register struct ifreq *ifr;
+	int error;
 
 	switch (cmd) {
 
@@ -295,8 +296,8 @@ ifioctl(so, cmd, data)
 #if defined(INET) && NETHER > 0
 	case SIOCSARP:
 	case SIOCDARP:
-		if (!suser())
-			return (u.u_error);
+		if (error = suser(u.u_cred, &u.u_acflag))
+			return (error);
 		/* FALL THROUGH */
 	case SIOCGARP:
 	case OSIOCGARP:
@@ -318,8 +319,8 @@ ifioctl(so, cmd, data)
 		break;
 
 	case SIOCSIFFLAGS:
-		if (!suser())
-			return (u.u_error);
+		if (error = suser(u.u_cred, &u.u_acflag))
+			return (error);
 		if (ifp->if_flags & IFF_UP && (ifr->ifr_flags & IFF_UP) == 0) {
 			int s = splimp();
 			if_down(ifp);
@@ -332,8 +333,8 @@ ifioctl(so, cmd, data)
 		break;
 
 	case SIOCSIFMETRIC:
-		if (!suser())
-			return (u.u_error);
+		if (error = suser(u.u_cred, &u.u_acflag))
+			return (error);
 		ifp->if_metric = ifr->ifr_metric;
 		break;
 

@@ -27,7 +27,7 @@ SOFTWARE.
 /*
  * $Header: iso.c,v 4.11 88/09/19 14:58:35 root Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/iso.c,v $ 
- *	@(#)iso.c	7.2 (Berkeley) %G%
+ *	@(#)iso.c	7.3 (Berkeley) %G%
  *
  * iso.c: miscellaneous routines to support the iso address family
  */
@@ -440,8 +440,8 @@ iso_control(so, cmd, data, ifp)
 			    SAME_ISOADDR(&ia->ia_addr, &ifra->ifra_addr))
 				break;
 		}
-		if (!suser())
-			return (u.u_error);
+		if (error = suser(u.u_cred, &u.u_acflag))
+			return (error);
 		if (ifp == 0)
 			panic("iso_control");
 		if (ia == (struct iso_ifaddr *)0) {
