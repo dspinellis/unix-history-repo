@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.77 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.78 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -66,19 +66,23 @@ lfs_update(ap)
 	if (vp->v_mount->mnt_flag & MNT_RDONLY)
 		return (0);
 	ip = VTOI(vp);
-	if ((ip->i_flag & (IUPD|IACC|ICHG|IMOD)) == 0)
+	if ((ip->i_flag & (IUPD | IACC | ICHG | IMOD)) == 0)
 		return (0);
-	if (ip->i_flag&IACC)
+	if (ip->i_flag & IACC)
 		ip->i_atime.ts_sec = ap->a_ta->tv_sec;
-	if (ip->i_flag&IUPD) {
+	if (ip->i_flag & IUPD) {
 		ip->i_mtime.ts_sec = ap->a_tm->tv_sec;
 		(ip)->i_modrev++;
 	}
-	if (ip->i_flag&ICHG)
+	if (ip->i_flag & ICHG)
 		ip->i_ctime.ts_sec = time.tv_sec;
-	ip->i_flag &= ~(IUPD|IACC|ICHG|IMOD);
+	ip->i_flag &= ~(IUPD|IACC|ICHG);
 
-	/* Push back the vnode and any dirty blocks it may have. */
+	if (!(ip->i_flag & IMOD))
+		++(VFSTOUFS(vp->v_mount)->um_lfs->lfs_uinodes);
+	ip->i_flag |= IMOD;
+
+	/* If sync, push back the vnode and any dirty blocks it may have. */
 	return (ap->a_waitfor & LFS_SYNC ? lfs_vflush(vp) : 0);
 }
 
@@ -90,7 +94,7 @@ lfs_update(ap)
 			panic("lfs_truncate: negative bytes in segment %d\n", \
 			    lastseg); \
 		sup->su_nbytes -= num << fs->lfs_bshift; \
-		LFS_UBWRITE(sup_bp); \
+		e1 = VOP_BWRITE(sup_bp); \
 		blocksreleased += num; \
 	}
 
@@ -188,7 +192,8 @@ lfs_truncate(ap)
 		(void)vnode_pager_uncache(vp);
 		bzero(bp->b_un.b_addr + offset, (unsigned)(size - offset));
 		allocbuf(bp, size);
-		LFS_UBWRITE(bp);
+		if (e1 = VOP_BWRITE(bp))
+			return (e1);
 	}
 	/*
 	 * Modify sup->su_nbyte counters for each deleted block; keep track
@@ -247,7 +252,8 @@ lfs_truncate(ap)
 					bzero(bp->b_un.b_daddr + inp->in_off,
 					    fs->lfs_bsize - 
 					    inp->in_off * sizeof(daddr_t));
-					LFS_UBWRITE(bp);
+					if (e1 = VOP_BWRITE(bp)) 
+						return (e1);
 				}
 			}
 			if (depth == 0 && a[1].in_off == 0) {
@@ -271,16 +277,24 @@ lfs_truncate(ap)
 	if (length == 0) {
 		LFS_IENTRY(ifp, fs, ip->i_number, bp);
 		++ifp->if_version;
-		LFS_UBWRITE(bp);
+		(void) VOP_BWRITE(bp);
 	}
 
-	ip->i_blocks -= btodb(blocksreleased << fs->lfs_bshift);
-	fs->lfs_bfree +=  btodb(blocksreleased << fs->lfs_bshift);
 #ifdef DIAGNOSTIC
-	if (ip->i_blocks < 0)
+	if (ip->i_blocks < fsbtodb(fs, blocksreleased))
 		panic("lfs_truncate: block count < 0");
 #endif
+	ip->i_blocks -= fsbtodb(fs, blocksreleased);
+	fs->lfs_bfree +=  fsbtodb(fs, blocksreleased);
 	ip->i_flag |= ICHG|IUPD;
+	/*
+	 * Traverse dirty block list counting number of dirty buffers
+	 * that are being deleted out of the cache, so that the lfs_avail
+	 * field can be updated.
+	 */
+	for (bp = vp->v_dirtyblkhd; bp; bp = bp->b_blockf)
+		if (bp->b_flags & B_LOCKED)
+			fs->lfs_avail -= fsbtodb(fs, 1);
 	e1 = vinvalbuf(vp, length > 0, ap->a_cred, ap->a_p); 
 	e2 = VOP_UPDATE(vp, &tv, &tv, 0);
 	return (e1 ? e1 : e2 ? e2 : 0);
