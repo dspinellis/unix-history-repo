@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_1.c	2.8 84/02/23";
+static	char *sccsid = "@(#)dr_1.c	2.9 84/02/28";
 #endif
 
 #include "driver.h"
@@ -18,6 +18,7 @@ char **argv;
 	(void) signal(SIGQUIT, SIG_IGN);
 	(void) signal(SIGTSTP, SIG_IGN);
 	(void) srand(getpid());
+	(void) setruid(geteuid());
 	/* ;;; add code here to check the game number. */
 	game = atoi(argv[1]);
 	cc = &scene[game];
@@ -440,6 +441,8 @@ next()
 			char *p = getenv("WOTD");
 			if (p == 0)
 				p = "Driver";
+			if (islower(*p))
+				*p = toupper(*p);
 			strcpy(bestship->file->captain, p);
 			log(bestship);
 		}
