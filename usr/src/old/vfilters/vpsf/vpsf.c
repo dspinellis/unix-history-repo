@@ -1,4 +1,4 @@
-/*	vpsf.c	4.3	83/04/29	*/
+/*	vpsf.c	4.4	83/05/16	*/
 /*
  * Versatec printer filter
  * 	make wide listings by placing pages side by side
@@ -11,8 +11,8 @@
 #define	PAGELN	86
 #define	LMARG	10
 
-int	pltmode[] = {VPLOT, 0, 0};
-int	prtmode[] = {VPRINT, 0, 0};
+int	pltmode[] = {VPLOT};
+int	prtmode[] = {VPRINT};
 
 char	screen[PAGELN][LINELN];
 char	ul[PAGELN][LINELN];

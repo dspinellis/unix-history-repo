@@ -1,4 +1,4 @@
-/*	vpf.c	4.5	83/04/29	*/
+/*	vpf.c	4.6	83/05/16	*/
 /*
  * Varian/Versatec printer filter
  */
@@ -9,8 +9,8 @@
 
 #define LINELN 440
 
-int	pltmode[] = {VPLOT, 0, 0};
-int	prtmode[] = {VPRINT, 0, 0};
+int	pltmode[] = {VPLOT};
+int	prtmode[] = {VPRINT};
 char	linebuf[LINELN+1];
 char	ovbuf[LINELN];
 int	ov;
