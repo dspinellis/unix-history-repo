@@ -1,4 +1,4 @@
-/*	if.c	4.27	83/03/19	*/
+/*	if.c	4.28	83/05/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -194,7 +194,8 @@ ifrequest(cmd, data)
 		return (ENXIO);		/* couldn't find unit */
 	unit = *cp - '0', *cp = 0;
 	for (ifp = ifnet; ifp; ifp = ifp->if_next) {
-		if (bcmp(ifp->if_name, ifr->ifr_name, cp - ifr->ifr_name))
+		if (bcmp(ifp->if_name, ifr->ifr_name,
+		    (unsigned)(cp - ifr->ifr_name)))
 			continue;
 		if (unit == ifp->if_unit)
 			goto found;
@@ -256,6 +257,7 @@ found:
  * in later ioctl's (above) to get
  * other information.
  */
+/*ARGSUSED*/
 ifconf(cmd, data)
 	int cmd;
 	caddr_t data;

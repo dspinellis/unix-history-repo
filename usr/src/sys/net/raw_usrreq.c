@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.25	83/02/10	*/
+/*	raw_usrreq.c	4.26	83/05/27	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -112,7 +112,8 @@ next:
 			struct mbuf *n;
 			if ((n = m_copy(m->m_next, 0, (int)M_COPYALL)) == 0)
 				goto nospace;
-			if (sbappendaddr(&last->so_rcv, &rh->raw_src, n)==0) {
+			if (sbappendaddr(&last->so_rcv, &rh->raw_src,
+			    n, (struct mbuf *)0) == 0) {
 				/* should notify about lost packet */
 				m_freem(n);
 				goto nospace;
@@ -124,7 +125,8 @@ nospace:
 	}
 	if (last) {
 		m = m_free(m);		/* header */
-		if (sbappendaddr(&last->so_rcv, &rh->raw_src, m) == 0)
+		if (sbappendaddr(&last->so_rcv, &rh->raw_src,
+		    m, (struct mbuf *)0) == 0)
 			goto drop;
 		sorwakeup(last);
 		goto next;
@@ -146,17 +148,22 @@ raw_ctlinput(cmd, arg)
 }
 
 /*ARGSUSED*/
-raw_usrreq(so, req, m, nam)
+raw_usrreq(so, req, m, nam, rights)
 	struct socket *so;
 	int req;
-	struct mbuf *m, *nam;
+	struct mbuf *m, *nam, *rights;
 {
 	register struct rawcb *rp = sotorawcb(so);
-	int error = 0;
+	register int error = 0;
 
-	if (rp == 0 && req != PRU_ATTACH)
-		return (EINVAL);
-
+	if (rights && rights->m_len) {
+		error = EOPNOTSUPP;
+		goto release;
+	}
+	if (rp == 0 && req != PRU_ATTACH) {
+		error = EINVAL;
+		goto release;
+	}
 	switch (req) {
 
 	/*
@@ -165,10 +172,14 @@ raw_usrreq(so, req, m, nam)
 	 * the appropriate raw interface routine.
 	 */
 	case PRU_ATTACH:
-		if ((so->so_state & SS_PRIV) == 0)
-			return (EACCES);
-		if (rp)
-			return (EINVAL);
+		if ((so->so_state & SS_PRIV) == 0) {
+			error = EACCES;
+			goto release;
+		}
+		if (rp) {
+			error = EINVAL;
+			goto release;
+		}
 		error = raw_attach(so);
 		break;
 
@@ -177,8 +188,10 @@ raw_usrreq(so, req, m, nam)
 	 * Flush data or not depending on the options.
 	 */
 	case PRU_DETACH:
-		if (rp == 0)
-			return (ENOTCONN);
+		if (rp == 0) {
+			error = ENOTCONN;
+			goto release;
+		}
 		raw_detach(rp);
 		break;
 
@@ -189,15 +202,27 @@ raw_usrreq(so, req, m, nam)
 	 * nothing else around it should go to). 
 	 */
 	case PRU_CONNECT:
-		if (rp->rcb_flags & RAW_FADDR)
-			return (EISCONN);
+		if (rp->rcb_flags & RAW_FADDR) {
+			error = EISCONN;
+			goto release;
+		}
 		raw_connaddr(rp, nam);
 		soisconnected(so);
 		break;
 
+	case PRU_BIND:
+		if (rp->rcb_flags & RAW_LADDR) {
+			error = EINVAL;			/* XXX */
+			goto release;
+		}
+		error = raw_bind(so, nam);
+		break;
+
 	case PRU_DISCONNECT:
-		if ((rp->rcb_flags & RAW_FADDR) == 0)
-			return (ENOTCONN);
+		if ((rp->rcb_flags & RAW_FADDR) == 0) {
+			error = ENOTCONN;
+			goto release;
+		}
 		raw_disconnect(rp);
 		soisdisconnected(so);
 		break;
@@ -215,12 +240,17 @@ raw_usrreq(so, req, m, nam)
 	 */
 	case PRU_SEND:
 		if (nam) {
-			if (rp->rcb_flags & RAW_FADDR)
-				return (EISCONN);
+			if (rp->rcb_flags & RAW_FADDR) {
+				error = EISCONN;
+				goto release;
+			}
 			raw_connaddr(rp, nam);
-		} else if ((rp->rcb_flags & RAW_FADDR) == 0)
-			return (ENOTCONN);
+		} else if ((rp->rcb_flags & RAW_FADDR) == 0) {
+			error = ENOTCONN;
+			goto release;
+		}
 		error = (*so->so_proto->pr_output)(m, so);
+		m = NULL;
 		if (nam)
 			rp->rcb_flags &= ~RAW_FADDR;
 		break;
@@ -252,5 +282,8 @@ raw_usrreq(so, req, m, nam)
 	default:
 		panic("raw_usrreq");
 	}
+release:
+	if (m != NULL)
+		m_freem(m);
 	return (error);
 }
