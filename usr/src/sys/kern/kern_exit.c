@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exit.c	7.9 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -28,6 +28,7 @@
 #include "vm.h"
 #include "file.h"
 #include "vnode.h"
+#include "ioctl.h"
 #include "tty.h"
 #include "syslog.h"
 #include "malloc.h"
@@ -42,15 +43,12 @@
  */
 rexit()
 {
-	register struct a {
+	struct a {
 		int	rval;
 	} *uap;
-	union wait status;
 
 	uap = (struct a *)u.u_ap;
-	status.w_status = 0;
-	status.w_retcode = uap->rval;
-	exit(status.w_status);
+	exit(W_EXITCODE(uap->rval, 0));
 }
 
 /*
@@ -76,6 +74,7 @@ exit(rv)
 	p->p_flag &= ~(STRC|SULOCK);
 	p->p_flag |= SWEXIT;
 	p->p_sigignore = ~0;
+	p->p_sig = 0;
 	p->p_cpticks = 0;
 	p->p_pctcpu = 0;
 	for (i = 0; i < NSIG; i++)
@@ -164,7 +163,7 @@ exit(rv)
 	}
 	if (p->p_pid == 1) {
 		if (p->p_dsize == 0) {
-			printf("Can't exec init (errno %d)\n", rv >> 8);
+			printf("Can't exec init (errno %d)\n", WEXITSTATUS(rv));
 			for (;;)
 				;
 		} else
@@ -227,11 +226,12 @@ done:
 #ifdef COMPAT_43
 owait()
 {
-	struct a {
+	register struct a {
 		int	pid;
-		union	wait *status;
+		int	*status;
 		int	options;
 		struct	rusage *rusage;
+		int	compat;
 	} *uap = (struct a *)u.u_ap;
 
 	if ((u.u_ar0[PS] & PSL_ALLCC) != PSL_ALLCC) {
@@ -243,13 +243,25 @@ owait()
 	}
 	uap->pid = WAIT_ANY;
 	uap->status = 0;
-	wait1(1);
+	uap->compat = 1;
+	u.u_error = wait1();
 }
 
 wait4()
 {
-	wait1(0);
+	register struct a {
+		int	pid;
+		int	*status;
+		int	options;
+		struct	rusage *rusage;
+		int	compat;
+	} *uap = (struct a *)u.u_ap;
+
+	uap->compat = 0;
+	u.u_error = wait1();
 }
+#else
+#define	wait1	wait4
 #endif
 
 /*
@@ -259,31 +271,27 @@ wait4()
  * Look also for stopped (traced) children,
  * and pass back status from them.
  */
-#ifdef COMPAT_43
-wait1(compat)
-	int compat;
-#else
-wait4()
-#endif
+wait1()
 {
 	register struct a {
 		int	pid;
-		union	wait *status;
+		int	*status;
 		int	options;
 		struct	rusage *rusage;
+#ifdef COMPAT_43
+		int compat;
+#endif
 	} *uap = (struct a *)u.u_ap;
 	register f;
 	register struct proc *p, *q;
-	union wait status;
+	int status, error;
 
 	q = u.u_procp;
 	if (uap->pid == 0)
 		uap->pid = -q->p_pgid;
 #ifdef notyet
-	if (uap->options &~ (WUNTRACED|WNOHANG)) {
-		u.u_error = EINVAL;
-		return;
-	}
+	if (uap->options &~ (WUNTRACED|WNOHANG))
+		return (EINVAL);
 #endif
 loop:
 	f = 0;
@@ -293,24 +301,23 @@ loop:
 			continue;
 		f++;
 		if (p->p_stat == SZOMB) {
-			pgrm(p);			/* off pgrp */
 			u.u_r.r_val1 = p->p_pid;
 #ifdef COMPAT_43
-			if (compat)
+			if (uap->compat)
 				u.u_r.r_val2 = p->p_xstat;
 			else
 #endif
 			if (uap->status) {
-				status.w_status = p->p_xstat;
-				if (u.u_error = copyout((caddr_t)&status,
+				status = p->p_xstat;	/* convert to int */
+				if (error = copyout((caddr_t)&status,
 				    (caddr_t)uap->status, sizeof(status)))
-					return;
+					return (error);
 			}
+			if (uap->rusage && (error = copyout((caddr_t)p->p_ru,
+			    (caddr_t)uap->rusage, sizeof (struct rusage))))
+				return (error);
+			pgrm(p);			/* off pgrp */
 			p->p_xstat = 0;
-			if (uap->rusage)
-				u.u_error = copyout((caddr_t)p->p_ru,
-				    (caddr_t)uap->rusage,
-				    sizeof (struct rusage));
 			ruadd(&u.u_cru, p->p_ru);
 			FREE(p->p_ru, M_ZOMBIE);
 			p->p_ru = 0;
@@ -339,43 +346,38 @@ loop:
 			p->p_flag = 0;
 			p->p_wchan = 0;
 			p->p_cursig = 0;
-			return;
+			return (0);
 		}
 		if (p->p_stat == SSTOP && (p->p_flag & SWTED) == 0 &&
 		    (p->p_flag & STRC || uap->options & WUNTRACED)) {
 			p->p_flag |= SWTED;
 			u.u_r.r_val1 = p->p_pid;
 #ifdef COMPAT_43
-			if (compat)
-				u.u_r.r_val2 = (p->p_cursig<<8) | WSTOPPED;
+			if (uap->compat)
+				u.u_r.r_val2 = W_STOPCODE(p->p_cursig);
 			else
 #endif
 			if (uap->status) {
-				status.w_status = 0;
-				status.w_stopval = WSTOPPED;
-				status.w_stopsig = p->p_cursig;
-				u.u_error = copyout((caddr_t)&status,
+				status = W_STOPCODE(p->p_cursig);
+				error = copyout((caddr_t)&status,
 				    (caddr_t)uap->status, sizeof(status));
-			}
-			return;
+			} else
+				error = 0;
+			return (error);
 		}
 	}
-	if (f == 0) {
-		u.u_error = ECHILD;
-		return;
-	}
+	if (f == 0)
+		return (ECHILD);
 	if (uap->options & WNOHANG) {
 		u.u_r.r_val1 = 0;
-		return;
+		return (0);
 	}
 	if (setjmp(&u.u_qsave)) {
 		p = u.u_procp;
-		if ((u.u_sigintr & sigmask(p->p_cursig)) != 0) {
-			u.u_error = EINTR;
-			return;
-		}
+		if ((u.u_sigintr & sigmask(p->p_cursig)) != 0)
+			return (EINTR);
 		u.u_eosys = RESTARTSYS;
-		return;
+		return (0);
 	}
 	sleep((caddr_t)u.u_procp, PWAIT);
 	goto loop;
