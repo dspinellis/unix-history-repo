@@ -1,0 +1,185 @@
+.th SALLOC VII 6/15/72
+.sh NAME
+salloc \*- string allocation and manipulation
+.sh SYNOPSIS
+.nf
+(get size in r0)
+.bd "jsr	pc,allocate"
+(header address in r1)
+.s3
+(get source header address in r0,
+destination header address in r1)
+.bd "jsr	pc,copy"
+.s3
+.bd "jsr	pc,wc"
+.s3
+(all following routines assume r1 contains header address)
+.s3
+.bd "jsr	pc,release"
+.s3
+(get character in r0)
+.bd "jsr	pc,putchar"
+.s3
+.bd "jsr	pc,lookchar"
+(character in r0)
+.s3
+.bd "jsr	pc,getchar"
+(character in r0)
+.s3
+(get character in r0)
+.bd "jsr	pc,alterchar"
+.s3
+(get position in r0)
+.bd "jsr	pc,seekchar"
+.s3
+.bd "jsr	pc,backspace"
+(character in r0)
+.s3
+(get word in r0)
+.bd "jsr	pc,putword"
+.s3
+.bd "jsr	pc,lookword"
+(word in r0)
+.s3
+.bd "jsr	pc,getword"
+(word in r0)
+.s3
+(get word in r0)
+.bd "jsr	pc,alterword"
+.s3
+.bd "jsr	pc,backword"
+(word in r0)
+.s3
+.bd "jsr	pc,length"
+(length in r0)
+.s3
+.bd "jsr	pc,position"
+(position in r0)
+.s3
+.bd "jsr	pc,rewind"
+.s3
+.bd "jsr	pc,create"
+.s3
+.bd "jsr	pc,fsfile"
+.s3
+.bd "jsr	pc,zero"
+.fi
+.sh DESCRIPTION
+This package is a complete set of routines
+for dealing with almost arbitrary
+length strings of words and bytes.
+It lives in
+.it /lib/libs.a.
+The strings are stored on a disk file, so the sum of
+their lengths can be considerably larger than
+the available core.
+A small buffer cache makes for reasonable speed.
+.s3
+For each string there is a header of four words, namely
+a write pointer, a read pointer and pointers to the beginning and end of
+the block containing the string.
+Initially the read and write pointers point to the beginning of the string.
+All routines that refer to a string require the header address in r1.
+Unless the string is destroyed by the call,
+upon return r1 will point to the same string, although
+the string may have grown to the extent that it had to be
+be moved.
+.s3
+.it Allocate
+obtains a string of the requested size and returns
+a pointer to its header in r1.
+.s3
+.it Release
+releases a string back to free storage.
+.s3
+.it Putchar
+and
+.it putword
+write a byte or word respectively into the string
+and advance the write pointer.
+.s3
+.it Lookchar
+and
+.it lookword
+read
+a byte or word respectively from the string but do not advance the read pointer.
+.s3
+.it Getchar
+and
+.it getword
+read a byte or word respectively from the string and advance the read pointer.
+.s3
+.it Alterchar
+and
+.it alterword
+write a byte or word respectively into the string where the read pointer
+is pointing and advance the read pointer.
+.s3
+.it Backspace
+and
+.it backword
+read the last byte or word written and decrement the write pointer.
+.s3
+All write operations will automatically get a larger block if the current block is exceeded.
+All read operations return with the error bit set if attempting to read beyond the write pointer.
+.s3
+.it Seekchar
+moves the read pointer to the offset specified in r0.
+.s3
+.it Length
+returns the current length of the string (beginning pointer to write pointer) in r0.
+.s3
+.it Position
+returns the current offset of the read pointer in r0.
+.s3
+.it Rewind
+moves the read pointer to the beginning of the string.
+.s3
+.it Create
+returns the read and write pointers to the beginning of the string.
+.s3
+.it Fsfile
+moves the read pointer to the current position of the write pointer.
+.s3
+.it Zero
+zeros the whole string and sets the write pointer to the beginning of the string.
+.s3
+.it Copy
+copies the string whose header pointer is in r0 to the string whose header pointer is in
+r1.
+Care should be taken in using the copy instruction since r1 will be changed if the contents of the source string
+is bigger than the destination string.
+.s3
+.it Wc
+forces the contents of the internal buffers and the header blocks to be written on disc.
+.s3
+An in-core version of this allocator exists in
+.it dc
+(I),
+and a permanent-file version exists in
+.it form
+and 
+.it fed
+(VI).
+.sh FILES
+.if t .ta 1i
+.if n .ta 13
+/lib/libs.a	library, accessed by
+.it "ld ... -ls"
+.br
+alloc.d	temporary file for string storage
+.sh "SEE ALSO"
+alloc (III)
+.sh DIAGNOSTICS
+`error in copy' \*- disk write error encountered in
+.it copy.
+.br
+`error in allocator' \*- routine called with bad header pointer.
+.br
+`cannot open output file' \*- temp file 
+.it alloc.d 
+cannot be created or opened.
+.br
+`out of space' \*- no sufficiently large block or no 
+header is available for a new or growing block.
+.sh BUGS
