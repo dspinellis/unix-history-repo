@@ -1,5 +1,5 @@
 #
-#	@(#)aliases	5.4 (Berkeley) %G%
+#	@(#)aliases	5.5 (Berkeley) %G%
 #
 #  Aliases in this file will NOT be expanded in the header from
 #  Mail, but WILL be visible over networks or from /bin/mail.
@@ -40,7 +40,7 @@ bsd-dist: bsd-dist@ucbvax.berkeley.edu
 fortune: fortune@ucbvax.berkeley.edu
 
 # Termcap maintainer.
-termcap: bigbug@
+termcap: termcap@ucbvax.berkeley.edu
 
 # General bug address.
 ucb-fixes: bigbug@ucbvax.berkeley.edu
