@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -431,6 +431,9 @@ returntosender(msg, sendbody)
 		CurEnv->e_from.q_next = CurEnv->e_sendqueue;
 		CurEnv->e_sendqueue = &CurEnv->e_from;
 	}
+
+	/* mark statistics */
+	markstats(ee, (ADDRESS *) NULL);
 
 	/* should check for delivery errors here */
 	return (0);

@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.1 (Berkeley) %G%
+#	@(#)READ_ME	8.2 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -34,7 +34,8 @@ symbols availble, requiring the following compilation flags in the
 Makefile:
 
 SOLARIS		Define this if you are running Solaris 2.0 or higher.
-NeXT		Define this if you are on a NeXT box.
+__NeXT__	Define this if you are on a NeXT box.  (This one may
+		be pre-defined for you.)
 _AIX3		Define this if you are IBM AIX 3.x.
 
 If you are a system that sendmail has already been ported to, you
@@ -62,6 +63,9 @@ HASUSTAT	Define this if you have the ustat(2) system call.  It's
 HASSETSID	Define this if you have the setsid(2) system call.  This
 		is implied if your system appears to be POSIX compliant.
 HASINITGROUPS	Define this if you have the initgroups(3) routine.
+HASSETVBUF	Define this if you have the setvbuf(3) library call.
+		If you don't, setlinebuf will be used instead.  This
+		defaults on if your compiler defines __STDC__.
 LA_TYPE		The type of load average your kernel supports.  These
 		can be LA_SUBR (4) if you have the getloadavg(3) routine,
 		LA_FLOAT (3) if you read kmem and interpret the value
@@ -128,6 +132,9 @@ files, you must use -Bstatic -- if you do not, frozen configuration
 files fail in bizarre ways and you will open up several security holes.
 
 If you are compiling on OSF/1 (DEC Alpha), you must use -lmld.
+
+If you are compiling on NeXT, you will have to create an empty file
+"unistd.h".
 
 If you use both -DNDBM and -DNEWDB, you must delete the module ndbm.o
 from libdb.a and delete the file "ndbm.h" from the files that get
@@ -197,4 +204,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.1, last update %G% 10:27:15)
+(Version 8.2, last update %G% 06:52:16)

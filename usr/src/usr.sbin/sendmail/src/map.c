@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -83,6 +83,7 @@ map_parseargs(map, ap)
 {
 	register char *p = ap;
 
+	map->map_mflags |= MF_TRY0NULL | MF_TRY1NULL;
 	for (;;)
 	{
 		while (isascii(*p) && isspace(*p))
@@ -93,6 +94,11 @@ map_parseargs(map, ap)
 		{
 		  case 'N':
 			map->map_mflags |= MF_INCLNULL;
+			map->map_mflags &= ~MF_TRY0NULL;
+			break;
+
+		  case 'O':
+			map->map_mflags &= ~MF_TRY1NULL;
 			break;
 
 		  case 'o':
@@ -418,16 +424,28 @@ ndbm_map_lookup(map, name, av, statp)
 		makelower(keybuf);
 		key.dptr = keybuf;
 	}
-	if (bitset(MF_INCLNULL, map->map_mflags))
-		key.dsize++;
 	(void) lockfile(dbm_dirfno((DBM *) map->map_db1), map->map_file, LOCK_SH);
-	val = dbm_fetch((DBM *) map->map_db1, key);
+	val.dptr = NULL;
+	if (bitset(MF_TRY0NULL, map->map_mflags))
+	{
+		val = dbm_fetch((DBM *) map->map_db1, key);
+		if (val.dptr != NULL)
+			map->map_mflags &= ~MF_TRY1NULL;
+	}
+	if (val.dptr == NULL && bitset(MF_TRY1NULL, map->map_mflags))
+	{
+		key.dsize++;
+		val = dbm_fetch((DBM *) map->map_db1, key);
+		if (val.dptr != NULL)
+			map->map_mflags &= ~MF_TRY0NULL;
+	}
 	(void) lockfile(dbm_dirfno((DBM *) map->map_db1), map->map_file, LOCK_UN);
 	if (val.dptr == NULL)
 		return NULL;
 	if (bitset(MF_MATCHONLY, map->map_mflags))
-		av = NULL;
-	return map_rewrite(map, val.dptr, val.dsize, av);
+		return map_rewrite(map, name, strlen(name), NULL);
+	else
+		return map_rewrite(map, val.dptr, val.dsize, av);
 }
 
 
@@ -667,12 +685,23 @@ db_map_lookup(map, name, av, statp)
 	bcopy(name, keybuf, key.size + 1);
 	if (!bitset(MF_NOFOLDCASE, map->map_mflags))
 		makelower(keybuf);
-	if (bitset(MF_INCLNULL, map->map_mflags))
-		key.size++;
 #ifndef OLD_NEWDB
 	(void) lockfile(db->fd(db), map->map_file, LOCK_SH);
 #endif
-	st = db->get(db, &key, &val, 0);
+	st = 1;
+	if (bitset(MF_TRY0NULL, map->map_mflags))
+	{
+		st = db->get(db, &key, &val, 0);
+		if (st == 0)
+			map->map_mflags &= ~MF_TRY1NULL;
+	}
+	if (st != 0 && bitset(MF_TRY1NULL, map->map_mflags))
+	{
+		key.size++;
+		st = db->get(db, &key, &val, 0);
+		if (st == 0)
+			map->map_mflags &= ~MF_TRY0NULL;
+	}
 	saveerrno = errno;
 #ifndef OLD_NEWDB
 	(void) lockfile(db->fd(db), map->map_file, LOCK_UN);
@@ -685,8 +714,9 @@ db_map_lookup(map, name, av, statp)
 		return NULL;
 	}
 	if (bitset(MF_MATCHONLY, map->map_mflags))
-		av = NULL;
-	return map_rewrite(map, val.data, val.size, av);
+		return map_rewrite(map, name, strlen(name), NULL);
+	else
+		return map_rewrite(map, val.data, val.size, av);
 }
 
 
@@ -842,10 +872,22 @@ nis_map_lookup(map, name, av, statp)
 	bcopy(name, keybuf, buflen + 1);
 	if (!bitset(MF_NOFOLDCASE, map->map_mflags))
 		makelower(keybuf);
-	if (bitset(MF_INCLNULL, map->map_mflags))
+	yperr = YPERR_KEY;
+	if (bitset(MF_TRY0NULL, map->map_mflags))
+	{
+		yperr = yp_match(map->map_domain, map->map_file, keybuf, buflen,
+			     &vp, &vsize);
+		if (yperr == 0)
+			map->map_mflags &= ~MF_TRY1NULL;
+	}
+	if (yperr == YPERR_KEY && bitset(MF_TRY1NULL, map->map_mflags))
+	{
 		buflen++;
-	yperr = yp_match(map->map_domain, map->map_file, keybuf, buflen,
-		     &vp, &vsize);
+		yperr = yp_match(map->map_domain, map->map_file, keybuf, buflen,
+			     &vp, &vsize);
+		if (yperr == 0)
+			map->map_mflags &= ~MF_TRY0NULL;
+	}
 	if (yperr != 0)
 	{
 		if (yperr != YPERR_KEY && yperr != YPERR_BUSY)
@@ -853,8 +895,9 @@ nis_map_lookup(map, name, av, statp)
 		return NULL;
 	}
 	if (bitset(MF_MATCHONLY, map->map_mflags))
-		av = NULL;
-	return map_rewrite(map, vp, vsize, av);
+		return map_rewrite(map, name, strlen(name), NULL);
+	else
+		return map_rewrite(map, vp, vsize, av);
 }
 
 

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.1 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.2 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.1 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.2 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -815,6 +815,7 @@ readqf(e)
 		if (tTd(40, 8))
 			printf("readqf(%s): bogus file\n", qf);
 		fclose(qfp);
+		rename(qf, queuename(e, 'Q'));
 		return FALSE;
 	}
 
@@ -937,7 +938,9 @@ readqf(e)
 		  default:
 			syserr("readqf: bad line \"%s\"", e->e_id,
 				LineNumber, bp);
-			break;
+			fclose(qfp);
+			rename(qf, queuename(e, 'Q'));
+			return FALSE;
 		}
 
 		if (bp != buf)

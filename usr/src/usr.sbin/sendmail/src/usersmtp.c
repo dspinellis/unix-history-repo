@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.1 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.2 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.1 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.2 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -75,7 +75,7 @@ smtpinit(m, pvp)
 	extern void esmtp_check();
 	extern void helo_options();
 
-	if (tTd(17, 1))
+	if (tTd(18, 1))
 	{
 		printf("smtpinit ");
 		mci_dump(mci);
@@ -278,7 +278,7 @@ smtpmailfrom(m, mci, e)
 	char buf[MAXNAME];
 	char optbuf[MAXLINE];
 
-	if (tTd(17, 2))
+	if (tTd(18, 2))
 		printf("smtpmailfrom: CurHost=%s\n", CurHostName);
 
 	/* set up appropriate options to include */
@@ -402,11 +402,16 @@ smtprcpt(to, m)
 **		none.
 */
 
+static jmp_buf	CtxDataTimeout;
+
 smtpfinish(m, editfcn)
 	struct mailer *m;
 	int (*editfcn)();
 {
 	register int r;
+	register EVENT *ev;
+	time_t timeout;
+	static int datatimeout();
 
 	/*
 	**  Send the data.
@@ -441,10 +446,31 @@ smtpfinish(m, editfcn)
 	}
 	(*editfcn)(SmtpOut, m, TRUE);
 
+	if (setjmp(CtxDataTimeout) != 0)
+	{
+		mci->mci_errno = errno;
+		mci->mci_exitstat = EX_TEMPFAIL;
+		mci->mci_state = MCIS_ERROR;
+#ifdef LOG
+		syslog(LOG_NOTICE, "%s: timeout writing message to %s",
+			e->e_id, mci->mci_host);
+#endif
+		syserr("451 timeout writing message to %s", mci->mci_host);
+		smtpquit(m, mci, e);
+		return EX_TEMPFAIL;
+	}
+
+	timeout = e->e_msgsize / 64;
+	if (timeout < (time_t) 60)
+		timeout = 60;
+	ev = setevent(timeout, datatimeout, 0);
+
 	/* now output the actual message */
 	(*e->e_puthdr)(SmtpOut, m, CurEnv);
 	putline("\n", SmtpOut, m);
 	(*e->e_putbody)(SmtpOut, m, CurEnv);
+
+	clrevent(ev);
 
 	/* terminate the message */
 	fprintf(SmtpOut, ".%s", m->m_eol);
@@ -476,6 +502,13 @@ smtpfinish(m, editfcn)
 	}
 #endif
 	return (EX_PROTOCOL);
+}
+
+
+static int
+datatimeout()
+{
+	longjmp(CtxDataTimeout, 1);
 }
 /*
 **  SMTPQUIT -- close the SMTP connection.
@@ -615,6 +648,7 @@ reply(m)
 		p = sfgets(SmtpReplyBuffer, sizeof SmtpReplyBuffer, SmtpIn);
 		if (p == NULL)
 		{
+			bool oldholderrs;
 			extern char MsgBuf[];		/* err.c */
 
 			/* if the remote end closed early, fake an error */
@@ -627,23 +661,31 @@ reply(m)
 
 			mci->mci_errno = errno;
 			mci->mci_exitstat = EX_TEMPFAIL;
-			message("451 %s: reply: read error from %s",
-				e->e_id == NULL ? "NOQUEUE" : e->e_id,
-				mci->mci_host);
+			oldholderrs = HoldErrs;
+			HoldErrs = TRUE;
+			usrerr("451 reply: read error from %s", mci->mci_host);
+
 			/* if debugging, pause so we can see state */
 			if (tTd(18, 100))
 				pause();
-# ifdef LOG
-			if (LogLevel > 1)
-				syslog(LOG_INFO, "%s", &MsgBuf[4]);
-# endif /* LOG */
 			SmtpState = SMTP_CLOSED;
 			smtpquit(m, mci, e);
+#ifdef XDEBUG
+			{
+				char wbuf[MAXLINE];
+				sprintf(wbuf, "%s... reply(%s) during %s",
+					e->e_to, mci->mci_host, SmtpPhase);
+				checkfd012(wbuf);
+			}
+#endif
+			HoldErrs = oldholderrs;
 			return (-1);
 		}
 		fixcrlf(bufp, TRUE);
 
-		if (e->e_xfp != NULL && strchr("45", bufp[0]) != NULL)
+		/* EHLO failure is not a real error */
+		if (e->e_xfp != NULL && (bufp[0] == '4' ||
+		    (bufp[0] == '5' && strncmp(SmtpMsgBuffer, "EHLO", 4) != 0)))
 		{
 			/* serious error -- log the previous command */
 			if (SmtpMsgBuffer[0] != '\0')
@@ -727,6 +769,8 @@ smtpmessage(f, m, a, b, c)
 
 	if (tTd(18, 1) || Verbose)
 		nmessage(">>> %s", SmtpMsgBuffer);
+	if (TrafficLogFile != NULL)
+		fprintf(TrafficLogFile, "%05d >>> %s\n", getpid(), SmtpMsgBuffer);
 	if (SmtpOut != NULL)
 		fprintf(SmtpOut, "%s%s", SmtpMsgBuffer,
 			m == NULL ? "\r\n" : m->m_eol);
