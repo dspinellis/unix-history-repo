@@ -1,8 +1,7 @@
-/*	ip_input.c	1.48	82/08/22	*/
+/*	ip_input.c	1.49	82/09/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
-#include "../h/clock.h"
 #include "../h/mbuf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
@@ -13,6 +12,8 @@
 #include "../net/ip_var.h"
 #include "../net/ip_icmp.h"
 #include "../net/tcp.h"
+#include <time.h>
+#include "../h/kernel.h"
 #include <errno.h>
 
 u_char	ip_protox[IPPROTO_MAX];
@@ -38,7 +39,7 @@ ip_init()
 		    pr->pr_protocol && pr->pr_protocol != IPPROTO_RAW)
 			ip_protox[pr->pr_protocol] = pr - protosw;
 	ipq.next = ipq.prev = &ipq;
-	ip_id = time & 0xffff;
+	ip_id = time.tv_sec & 0xffff;
 	ipintrq.ifq_maxlen = ipqmaxlen;
 	ifinet = if_ifwithaf(AF_INET);
 }
