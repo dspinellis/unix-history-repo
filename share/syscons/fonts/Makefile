@@ -14,7 +14,7 @@ NOMAN = noman
 install:
 	cd ${.CURDIR}; \
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${UUFONTS} \
-		${DESTDIR}${FONTDIR}
+		${DESTDIR}${FONTDIR}; \
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${FONTS} \
 		${DESTDIR}${FONTDIR}
 
