@@ -1,0 +1,36 @@
+#include <Server.tmpl>
+
+SRCS =	topcat.c topcatgc.c tcscrinit.c tcGlyph.c tcPutImage.c tcCopPlan.c \
+	tcFillRct.c tcFillSp.c tcPntWin.c tcText.c tcPolyFSR.c tcTileOdd.c \
+	tccmap.c
+
+OBJS =	topcat.o topcatgc.o tcscrinit.o tcGlyph.o tcPutImage.o tcCopPlan.o \
+	tcFillRct.o tcFillSp.o tcPntWin.o tcText.o tcPolyFSR.o tcTileOdd.o \
+	tccmap.o
+
+/*
+SRCS =	topcat.c topcatgc.c tcLines.c tcGlyph.c tcPutImage.c tcCopPlan.c \
+	tcText.c tcshadow.c tcwindow.c
+
+OBJS =	topcat.o topcatgc.o tcLines.o tcGlyph.o tcPutImage.o tcCopPlan.o \
+	tcText.o tcshadow.o tcwindow.o
+*/
+
+#if BSD44
+        DEVINC = -I/sys/hp/dev
+#else
+        DEVINC = -I/sys/hpdev
+#endif
+   INCLUDES = -I. -I.. -I../include -I../../../include -I../../mi -I../mfb -I$(INCLUDESRC) \
+	     -I$(FONTSRC)/include $(DEVINC)
+   LINTLIBS = ../../../dix/llib-ldix.ln ../../../os/4.2bsd/llib-los.ln \
+	      ../mfb/llib-lmfb.ln ../cfb/llib-lcfb.ln ../../mi/llib-lmi.ln \
+	      ../llib-lhp.ln		
+
+NormalLibraryObjectRule()
+NormalLibraryTarget(topcat,$(OBJS))
+NormalLintTarget($(SRCS))
+
+lintlib:
+
+DependTarget()
