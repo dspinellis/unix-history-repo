@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)netstat.1	8.6 (Berkeley) %G%
+.\"	@(#)netstat.1	8.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt NETSTAT 1
@@ -66,6 +66,25 @@ With either interface display (option
 .Fl i
 or an interval, as described below),
 show the number of dropped packets.
+.It Fl f Ar address_family 
+Limit statistics or address control block reports to those
+of the specified
+.Ar address family  .
+The following address families
+are recognized:
+.Ar inet  ,
+for
+.Dv AF_INET  ,
+.Ar ns ,
+for
+.Dv AF_NS  ,
+.Ar iso ,
+for
+.Dv AF_ISO ,
+and
+.Ar unix  ,
+for
+.Dv AF_UNIX  .
 .It Fl g
 Show information related to multicast (group address) routing.
 By default, show the IP Multicast virtual-interface and routing tables.
@@ -76,6 +95,11 @@ option is also present, show multicast routing statistics.
 Show the state of the
 .Tn IMP
 host table (obsolete).
+.It Fl I Ar interface 
+Show information about the specified interface;
+used with a
+.Ar wait
+interval as described below.
 .It Fl i
 Show the state of interfaces which have been auto-configured
 (interfaces statically configured into a system, but not
@@ -86,11 +110,6 @@ options is also present, multicast addresses currently in use are shown
 for each Ethernet interface and for each IP interface address.
 Multicast addresses are shown on separate lines following the interface
 address with which they are associated.
-.It Fl I Ar interface 
-Show information about the specified interface;
-used with a
-.Ar wait
-interval as described below.
 .It Fl M
 Extract values associated with the name list from the specified core
 instead of the default
@@ -126,25 +145,6 @@ Show the routing tables.
 When
 .Fl s
 is also present, show routing statistics instead.
-.It Fl f Ar address_family 
-Limit statistics or address control block reports to those
-of the specified
-.Ar address family  .
-The following address families
-are recognized:
-.Ar inet  ,
-for
-.Dv AF_INET  ,
-.Ar ns ,
-for
-.Dv AF_NS  ,
-.Ar iso ,
-for
-.Dv AF_ISO ,
-and
-.Ar unix  ,
-for
-.Dv AF_UNIX  .
 .It Fl w Ar wait
 Show network interface statistics at intervals of
 .Ar wait
@@ -189,21 +189,21 @@ and
 .Xr route 4
 manual pages.
 The mapping between letters and flags is:
-.Bd -literal
-U   RTF_UP        Route useable 
-G   RTF_GATEWAY   Destination requires forwarding by intermediary
-H   RTF_HOST      Host entry (net otherwise) 
-R   RTF_REJECT    Host or net unreachable 
-D   RTF_DYNAMIC   Created dynamically (by redirect) 
-M   RTF_MODIFIED  Modified dynamically (by redirect) 
-C   RTF_CLONING   Generate new routes on use 
-X   RTF_XRESOLVE  External daemon translates proto to link address
-L   RTF_LLINFO    Valid protocol to link address translation.
-S   RTF_STATIC    Manually added 
-B   RTF_BLACKHOLE Just discard pkts (during updates) 
-1   RTF_PROTO2    Protocol specific routing flag #1 
-2   RTF_PROTO1    Protocol specific routing flag #2 
-.Ed
+.Bl -column XXXX RTF_BLACKHOLE
+1	RTF_PROTO2	Protocol specific routing flag #1 
+2	RTF_PROTO1	Protocol specific routing flag #2 
+B	RTF_BLACKHOLE	Just discard pkts (during updates) 
+C	RTF_CLONING	Generate new routes on use 
+D	RTF_DYNAMIC	Created dynamically (by redirect) 
+G	RTF_GATEWAY	Destination requires forwarding by intermediary
+H	RTF_HOST	Host entry (net otherwise) 
+L	RTF_LLINFO	Valid protocol to link address translation.
+M	RTF_MODIFIED	Modified dynamically (by redirect) 
+R	RTF_REJECT	Host or net unreachable 
+S	RTF_STATIC	Manually added 
+U	RTF_UP	Route useable 
+X	RTF_XRESOLVE	External daemon translates proto to link address
+.El
 .Pp
 Direct routes are created for each
 interface attached to the local host;
