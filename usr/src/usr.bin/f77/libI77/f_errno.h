@@ -1,5 +1,5 @@
 /*
-char id_f_errno[] = "@(#)f_errno.h	1.6";
+char id_f_errno[] = "@(#)f_errno.h	1.7";
  *
  * f77 I/O error definitions
  */
@@ -30,7 +30,7 @@ extern int f_nerr;
 #define F_ERLOGIF	116	/* blank logical input field */
 #define F_ERNEWF	117	/* 'new' file exists */
 #define F_EROLDF	118	/* can't find 'old' file */
-#define F_ERSYS		119	/* unknown system error */
+#define F_ERSYS		119	/* opening too many files or unknown system error */
 #define F_ERSEEK	120	/* requires seek ability */
 #define F_ERARG		121	/* illegal argument */
 #define F_ERNREP	122	/* negative repeat count */

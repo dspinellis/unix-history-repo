@@ -1,5 +1,5 @@
 /*
-char id_f_errlist[] = "@(#)f_errlist.c	1.4";
+char id_f_errlist[] = "@(#)f_errlist.c	1.5";
  *
  * f77 I/O error messages
  */
@@ -25,7 +25,7 @@ char *f_errlist[] =
 /* 116 */	"blank logical input field",
 /* 117 */	"'new' file exists",
 /* 118 */	"can't find 'old' file",
-/* 119 */	"unknown system error",
+/* 119 */	"opening too many files or unknown system error",
 /* 120 */	"requires seek ability",
 /* 121 */	"illegal argument",
 /* 122 */	"negative repeat count",
