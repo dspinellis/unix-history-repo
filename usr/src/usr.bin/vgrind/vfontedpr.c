@@ -248,8 +248,8 @@ main(argc, argv)
 	    cp[16] = '\0';
 	    cp[24] = '\0';
 	    printf(".ds =M %s %s\n", cp+4, cp+20);
-	    ps("'wh 0 he");
-	    ps("'wh -1i fo");
+	    ps("'wh 0 he\n");
+	    ps("'wh -1i fo\n");
 	}
 	if (needbp) {
 	    needbp = 0;
