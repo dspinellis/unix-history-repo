@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fend.c 1.19 %G%";
+static char sccsid[] = "@(#)fend.c 1.20 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -519,6 +519,11 @@ prog_prologue(eecookiep)
     putprintf("	.align	1" , 0 );
     putprintf("	.globl	_program" , 0 );
     putprintf("_program:" , 0 );
+	/*
+	 *	register save mask
+	 */
+    eecookiep -> savlabel = getlab();
+    putprintf("	.word	%s%d", 0, SAVE_MASK_LABEL , eecookiep -> savlabel );
 }
 
 fp_prologue(eecookiep)
