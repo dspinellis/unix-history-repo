@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 
 PROG=	mail
 CFLAGS+=-R -DUSE_OLD_TTY
@@ -13,7 +13,7 @@ MLINKS=	mail.1 Mail.1
 beforeinstall:
 	cd ${.CURDIR}/misc; install -c -o ${BINOWN} -g ${BINGRP} \
 	    -m 444 ${SFILES} ${DESTDIR}/usr/share/misc
-	cd ${.CURDIR}/misc; install -c -o ${BINOWN} -g ${BINGRP} \
-	    -m 444 ${EFILES} ${DESTDIR}/etc
+	cd ${.CURDIR}/misc; install -c -o root -g wheel \
+	    -m 644 ${EFILES} ${DESTDIR}/etc
 
 .include <bsd.prog.mk>
