@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_fork.c	7.38 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.39 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -50,33 +50,33 @@ fork1(p1, isvfork, retval)
 	int isvfork, retval[];
 {
 	register struct proc *p2;
-	register int count, uid;
+	register uid_t uid;
 	struct proc *newproc;
 	struct proc **hash;
+	int count;
 	static int nextpid, pidchecked = 0;
 
-	count = 0;
-	if ((uid = p1->p_ucred->cr_uid) != 0) {
-		for (p2 = (struct proc *)allproc; p2; p2 = p2->p_nxt)
-			if (p2->p_ucred->cr_uid == uid)
-				count++;
-		for (p2 = zombproc; p2; p2 = p2->p_nxt)
-			if (p2->p_ucred->cr_uid == uid)
-				count++;
-	}
 	/*
 	 * Although process entries are dynamically created, we still keep
 	 * a global limit on the maximum number we will create.  Don't allow
-	 * a nonprivileged user to exceed its current limit or to bring us
-	 * within one of the global limit; don't let root exceed the limit.
-	 * nprocs is the current number of processes, maxproc is the limit.
+	 * a nonprivileged user to bring the system within one of the global
+	 * limit; don't let root exceed the limit. The variable nprocs is
+	 * the current number of processes, maxproc is the limit.
 	 */
+	uid = p1->p_cred->p_ruid;
 	if (nprocs >= maxproc || uid == 0 && nprocs >= maxproc + 1) {
 		tablefull("proc");
 		return (EAGAIN);
 	}
-	if (count > p1->p_rlimit[RLIMIT_NPROC].rlim_cur)
+	/*
+	 * Increment the count of procs running with this uid. Don't allow
+	 * a nonprivileged user to exceed their current limit.
+	 */
+	count = chgproccnt(uid, 1);
+	if (uid != 0 && count > p1->p_rlimit[RLIMIT_NPROC].rlim_cur) {
+		(void)chgproccnt(uid, -1);
 		return (EAGAIN);
+	}
 
 	/* Allocate new proc. */
 	MALLOC(newproc, struct proc *, sizeof(struct proc), M_PROC, M_WAITOK);
