@@ -522,7 +522,9 @@ setctty(name)
 	int fd;
 
 	(void) revoke(name);
+#ifdef BROKEN_DTR
 	sleep (2);			/* leave DTR low */
+#endif
 	if ((fd = open(name, O_RDWR)) == -1) {
 		stall("can't open %s: %m", name);
 		_exit(1);
