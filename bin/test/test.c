@@ -90,7 +90,7 @@ struct filestat {
 static void	err __P((const char *, ...));
 static int	expr_is_false __P((struct value *));
 static void	expr_operator __P((int, struct value *, struct filestat *));
-static int	int_tcheck __P((char *));
+static long	chk_atol __P((char *));
 static int	lookup_op __P((char *, char *const *));
 static void	overflow __P((void));
 static int	posix_binary_op __P((char **));
@@ -230,10 +230,9 @@ main(argc, argv)
 				valsp--;
 				c = op_argflag[opsp->op];
 				if (c == OP_INT) {
-					if (valsp->type == STRING &&
-					    int_tcheck(valsp->u.string))
+					if (valsp->type == STRING)
 						valsp->u.num =
-						    atol(valsp->u.string);
+						    chk_atol(valsp->u.string);
 					valsp->type = INTEGER;
 				} else if (c >= OP_STRING) {	
 					            /* OP_STRING or OP_FILE */
@@ -501,9 +500,9 @@ posix_binary_op(argv)
 	op += FIRST_BINARY_OP;
 	c = op_argflag[op];
 
-	if (c == OP_INT && int_tcheck(argv[0]) && int_tcheck(argv[2])) {
-		v[0].u.num = atol(argv[0]);
-		v[1].u.num = atol(argv[2]);
+	if (c == OP_INT) {
+		v[0].u.num = chk_atol(argv[0]);
+		v[1].u.num = chk_atol(argv[2]);
 	} else {
 		v[0].u.string = argv[0];
 		v[1].u.string = argv[2];
@@ -515,25 +514,22 @@ posix_binary_op(argv)
 /*
  * Integer type checking.
  */
-static int
-int_tcheck(v)
+static long 
+chk_atol(v)
 	char *v;
 {
-	char *p = v;
+	char *p;
+	long r;
 
+	errno = 0;
+	r = strtol(v, &p, 10);
+	if (errno != 0)
+		err("\"%s\" -- out of range.", v);
 	while (isspace(*p))
 		p++;
-	
-	if (*p == '-' || *p == '+')
-		p++;
-
-	while (*p) {
-		if (!isdigit(*p))
-			err("illegal operand \"%s\" -- expected integer.", v);
-		p++;
-	}
-
-	return (1);
+	if (*p != '\0')
+		err("illegal operand \"%s\" -- expected integer.", v);
+	return (r);
 }
 
 static void
