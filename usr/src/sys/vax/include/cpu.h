@@ -1,4 +1,4 @@
-/*	cpu.h	4.5	81/03/21	*/
+/*	cpu.h	4.6	81/04/03	*/
 
 #ifndef LOCORE
 /*
@@ -22,12 +22,12 @@ union cpusid {
 			:8,
 			cp_type:8;		/* VAX_750 */
 	} cpu750;
-	/* need structure for 730 */
+	/* need structure for 7ZZ */
 };
 #endif
 #define	VAX_780		1
 #define	VAX_750		2
-#define	VAX_730		3
+#define	VAX_7ZZ		3
 
 #define	VAX_MAX		3
 

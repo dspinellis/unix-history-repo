@@ -1,4 +1,4 @@
-/*	ubareg.h	4.21	81/03/21	*/
+/*	ubareg.h	4.22	81/04/03	*/
 
 /*
  * VAX UNIBUS adapter registers
@@ -105,12 +105,12 @@ struct uba_regs
  */
 #define	NBDP780	15
 #define	NBDP750	3
-#define	NBDP730	0
+#define	NBDP7ZZ	0
 #define	MAXNBDP	15
 
 #define	NUBA780	4
 #define	NUBA750	1
-#define	NUBA730	1
+#define	NUBA7ZZ	1
 #if VAX780
 #define	MAXNUBA	4
 #else
@@ -121,8 +121,8 @@ struct uba_regs
  * Formulas for locations of the last 8k of UNIBUS memory
  * for each possible uba.
  */
-#if VAX730
-#define	UMEM730		((u_short *)(0xffe000))
+#if VAX7ZZ
+#define	UMEM7ZZ		((u_short *)(0xffe000))
 #endif
 #if VAX750
 #define	UMEM750(i)	((u_short *)(0xffe000-(i)*0x40000))

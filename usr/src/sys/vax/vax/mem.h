@@ -1,4 +1,4 @@
-/*	mem.h	4.8	81/04/02	*/
+/*	mem.h	4.9	81/04/03	*/
 
 /*
  * Memory controller registers
@@ -61,19 +61,19 @@ struct	mcr {
 #define	M750_ADDR(mcr)	(((mcr)->mc_reg[0] >> 8) & 0x7fff)
 #endif
 
-#if VAX730
-#define	M730_CRD	0x40000000	/* crd, in [1] */
-#define	M730_FTBPE	0x20000000	/* force tbuf parity error, in [1] */
-#define	M730_ENACRD	0x10000000	/* enable crd interrupt, in [1] */
-#define	M730_MME	0x08000000	/* mem-man enable (ala ipr), in [1] */
-#define	M730_DM		0x04000000	/* diagnostic mode, in [1] */
-#define	M730_DISECC	0x02000000	/* disable ecc, in [1] */
+#if VAX7ZZ
+#define	M7ZZ_CRD	0x40000000	/* crd, in [1] */
+#define	M7ZZ_FTBPE	0x20000000	/* force tbuf parity error, in [1] */
+#define	M7ZZ_ENACRD	0x10000000	/* enable crd interrupt, in [1] */
+#define	M7ZZ_MME	0x08000000	/* mem-man enable (ala ipr), in [1] */
+#define	M7ZZ_DM		0x04000000	/* diagnostic mode, in [1] */
+#define	M7ZZ_DISECC	0x02000000	/* disable ecc, in [1] */
 
-#define	M730_INH(mcr)	((mcr)->mc_reg[1] = M730_MME)
-#define	M730_ENA(mcr)	((mcr)->mc_reg[1] = (M730_MME|M730_ENACRD))
-#define	M730_ERR(mcr)	((mcr)->mc_reg[1] & M730_CRD)
-#define	M730_SYN(mcr)	((mcr)->mc_reg[0] & 0x7f)
-#define	M730_ADDR(mcr)	(((mcr)->mc_reg[0] >> 8) & 0x7fff)
+#define	M7ZZ_INH(mcr)	((mcr)->mc_reg[1] = M7ZZ_MME)
+#define	M7ZZ_ENA(mcr)	((mcr)->mc_reg[1] = (M7ZZ_MME|M7ZZ_ENACRD))
+#define	M7ZZ_ERR(mcr)	((mcr)->mc_reg[1] & M7ZZ_CRD)
+#define	M7ZZ_SYN(mcr)	((mcr)->mc_reg[0] & 0x7f)
+#define	M7ZZ_ADDR(mcr)	(((mcr)->mc_reg[0] >> 8) & 0x7fff)
 #endif
 
 #define	MEMINTVL	(60*60*10)		/* 10 minutes */

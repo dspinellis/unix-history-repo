@@ -1,4 +1,4 @@
-/*	autoconf.c	4.29	81/03/21	*/
+/*	autoconf.c	4.30	81/04/03	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -378,8 +378,8 @@ unifind(vubp, pubp, vumem, pumem)
 		uhp->uh_bdpfree = (1<<NBDP750) - 1;
 		break;
 #endif
-#if VAX730
-	case VAX_730:
+#if VAX7ZZ
+	case VAX_7ZZ:
 		break;
 #endif
 	}

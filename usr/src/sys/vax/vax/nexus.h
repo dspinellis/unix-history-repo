@@ -1,4 +1,4 @@
-/*	nexus.h	4.9	81/04/02	*/
+/*	nexus.h	4.10	81/04/03	*/
 
 /*
  * Information about nexus's.
@@ -17,9 +17,9 @@
 #define	NNEX750	16
 #define	NEX750	((struct nexus *)0xf20000)
 #endif
-#if VAX730
-#define	NNEX730	16
-#define	NEX730	((struct nexus *)0xf20000)
+#if VAX7ZZ
+#define	NNEX7ZZ	16
+#define	NEX7ZZ	((struct nexus *)0xf20000)
 #endif
 #define	NEXSIZE	0x2000
 
