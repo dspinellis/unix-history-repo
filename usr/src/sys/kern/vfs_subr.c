@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.38 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.39 (Berkeley) %G%
  */
 
 /*
@@ -813,4 +813,78 @@ vprint(label, vp)
 		printf(" flags (%s)", &buf[1]);
 	printf("\n\t");
 	VOP_PRINT(vp);
+}
+
+int kinfo_vdebug = 1;
+int kinfo_vgetfailed;
+#define KINFO_VNODESLOP	10
+/*
+ * Dump vnode list (via kinfo).
+ * Copyout address of vnode followed by vnode.
+ */
+kinfo_vnode(op, where, acopysize, arg, aneeded)
+	char *where;
+	int *acopysize, *aneeded;
+{
+	register struct mount *mp = rootfs;
+	register struct vnode *nextvp;
+	struct vnode *vp;
+	register needed = 0;
+	register char *bp = where, *savebp;
+	char *ewhere = where + *acopysize;
+	int error;
+
+#define VPTRSZ	sizeof (struct vnode *)
+#define VNODESZ	sizeof (struct vnode)
+	if (where == NULL) {
+		*aneeded = (numvnodes + KINFO_VNODESLOP) * (VPTRSZ + VNODESZ);
+		return (0);
+	}
+		
+#define RETRY	bp = savebp ; goto again
+	do {
+		/*
+		 * A vget can fail if the vnode is being
+		 * recycled.  In this (rare) case, we have to start
+		 * over with this filesystem.  Also, have to
+		 * check that nextvp is still associated
+		 * with this filesystem.  RACE: could have been
+		 * recycled onto same filesystem.
+		 */
+		savebp = bp;
+again:
+		nextvp = mp->m_mounth;
+		while (vp = nextvp) {
+			if (vget(vp)) {
+				if (kinfo_vdebug)
+					printf("kinfo: vget failed\n");
+				kinfo_vgetfailed++;
+				RETRY;
+			}
+			if (vp->v_mount != mp) {
+				if (kinfo_vdebug)
+					printf("kinfo: vp changed\n");
+				vput(vp);
+				RETRY;
+			}
+			if ((bp + VPTRSZ + VNODESZ <= ewhere) && 
+			    ((error = copyout((caddr_t)&vp, bp, VPTRSZ)) ||
+			     (error = copyout((caddr_t)vp, bp + VPTRSZ, 
+			      VNODESZ)))) {
+				vput(vp);
+				return (error);
+			}
+			bp += VPTRSZ + VNODESZ;
+			nextvp = vp->v_mountf;
+			vput(vp);
+		}
+		mp = mp->m_next;
+	} while (mp != rootfs);
+
+	*aneeded = bp - where;
+	if (bp > ewhere)
+		*acopysize = ewhere - where;
+	else
+		*acopysize = bp - where;
+	return (0);
 }
