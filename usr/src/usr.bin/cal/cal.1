@@ -1,4 +1,4 @@
-.\"	@(#)cal.1	6.1 (Berkeley) %G%
+.\"	@(#)cal.1	6.2 (Berkeley) %G%
 .\"
 .TH CAL 1 ""
 .AT 3
@@ -6,12 +6,14 @@
 cal \- print calendar
 .SH SYNOPSIS
 .B cal
-[ month ] year
+[ month ] [ year ]
 .SH DESCRIPTION
 .I Cal
 prints a calendar for the specified year.
 If a month is also specified, a calendar
 just for that month is printed.
+If no arguments are given, a calendar for
+the current month is printed.
 .I Year
 can be between 1
 and 9999.
