@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -269,7 +269,7 @@ vtrans(ftype, g, fno)
 	char *comm, *vtype();
 	char *name = (char *)NULL;	/* set by devmatch() on a match */
 
-	if (g || fflg) {
+	if (ftype == DTYPE_VNODE && (g || fflg)) {
 		(void)lseek(kmem, (off_t)g, L_SET);
 		if (read(kmem, (char *)&vnode, sizeof(vnode)) != sizeof(vnode)) {
 			rerr2((int)g, "vnode");
