@@ -65,7 +65,7 @@
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
  *
- * $Id: vm_pageout.c,v 1.21 1994/05/15 15:43:23 ats Exp $
+ * $Id: vm_pageout.c,v 1.22 1994/05/29 07:36:11 davidg Exp $
  */
 
 /*
@@ -765,8 +765,6 @@ scanloop:
  		 * Dont mess with pages that are busy.
 		 */
 		if ((m->flags & PG_BUSY) || (m->hold_count != 0)) {
-			queue_remove(&vm_page_queue_active, m, vm_page_t, pageq);
-			queue_enter(&vm_page_queue_active, m, vm_page_t, pageq);
 			m = next;
 			continue;
 		}
