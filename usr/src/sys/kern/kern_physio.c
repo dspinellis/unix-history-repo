@@ -1,4 +1,4 @@
-/*	kern_physio.c	4.13	%G%	*/
+/*	kern_physio.c	4.14	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -60,7 +60,7 @@ struct {
 	long	nreada;
 	long	ncache;
 	long	nwrite;
-	long	bufcount[NBUF];
+	long	bufcount[64];
 } io_info;
 #endif
 
@@ -74,9 +74,9 @@ struct {
  * page push, when the I/O completes, it is inserted 
  * in a list of cleaned pages to be processed by the pageout daemon.
  */
-struct	buf swbuf[NSWBUF];
-short	swsize[NSWBUF];		/* CAN WE JUST USE B_BCOUNT? */
-int	swpf[NSWBUF];
+struct	buf *swbuf;
+short	*swsize;		/* CAN WE JUST USE B_BCOUNT? */
+int	*swpf;
 
 
 #ifndef	UNFAST
@@ -361,7 +361,7 @@ daddr_t blkno;
 			i++;
 			dp = dp->av_forw;
 		}
-		if (i<NBUF)
+		if (i<64)
 			io_info.bufcount[i]++;
 #endif
 		notavail(bp);

@@ -1,4 +1,4 @@
-/*	autoconf.c	4.17	81/02/27	*/
+/*	autoconf.c	4.18	81/02/27	*/
 
 /*
  * Configure the system for the current machine.
@@ -114,6 +114,7 @@ c780(pcpu)
 			}
 			mbafind(nxv, nxp);
 			nummba++;
+			break;
 #else
 			printf("mba's");
 			goto unsupp;
