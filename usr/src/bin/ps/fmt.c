@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fmt.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)fmt.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -54,7 +54,7 @@ cmdpart(arg0)
 {
 	register char *cp;
 
-	return ((cp = rindex(arg0, '/')) != NULL ? cp + 1 : arg0);
+	return ((cp = strrchr(arg0, '/')) != NULL ? cp + 1 : arg0);
 }
 
 char *
