@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdio.h	5.25 (Berkeley) %G%
+ *	@(#)stdio.h	5.26 (Berkeley) %G%
  */
 
 #ifndef	_STDIO_H_
@@ -32,7 +32,13 @@ typedef	_BSD_SIZE_T_	size_t;
 /*
  * This is fairly grotesque, but pure ANSI code must not inspect the
  * innards of an fpos_t anyway.  The library internally uses off_t,
- * which we assume is exactly as big as eight chars.
+ * which we assume is exactly as big as eight chars.  (When we switch
+ * to gcc 2.4 we will use __attribute__ here.)
+ *
+ * WARNING: the alignment constraints on an off_t and the struct below
+ * differ on (e.g.) the SPARC.  Hence, the placement of an fpos_t object
+ * in a structure will change if fpos_t's are not aligned on 8-byte
+ * boundaries.  THIS IS A CROCK, but for now there is no way around it.
  */
 #if !defined(_ANSI_SOURCE) && !defined(__STRICT_ANSI__)
 typedef off_t fpos_t;
@@ -79,6 +85,8 @@ struct __sbuf {
  * that does not match the previous one in _bf.  When this happens,
  * _ub._base becomes non-nil (i.e., a stream has ungetc() data iff
  * _ub._base!=NULL) and _up and _ur save the current values of _p and _r.
+ *
+ * NB: see WARNING above before changing the layout of this structure!
  */
 typedef	struct __sFILE {
 	unsigned char *_p;	/* current position in (some) buffer */
@@ -110,7 +118,7 @@ typedef	struct __sFILE {
 
 	/* Unix stdio files get aligned to block boundaries on fseek() */
 	int	_blksize;	/* stat.st_blksize (may be != _bf._size) */
-	int	_offset;	/* current lseek offset */
+	fpos_t	_offset;	/* current lseek offset (see WARNING) */
 } FILE;
 
 __BEGIN_DECLS
