@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -35,12 +35,14 @@ static char sccsid[] = "@(#)bt_open.c	5.4 (Berkeley) %G%";
  */
 
 #include <sys/param.h>
-#include <sys/file.h>
 #include <sys/stat.h>
-#include <sys/signal.h>
-#include <sys/errno.h>
-#include <sys/types.h>
+#include <signal.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <db.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include "btree.h"
 
 BTREEINFO _DefaultBTInfo = {
@@ -73,10 +75,10 @@ BTREEINFO _DefaultBTInfo = {
 
 DB *
 btree_open(f, flags, mode, b)
-	char *f;
+	const char *f;
 	int flags;
 	int mode;
-	BTREEINFO *b;
+	const BTREEINFO *b;
 {
 	DB *db;
 	BTREE t;
@@ -91,7 +93,7 @@ btree_open(f, flags, mode, b)
 
 	db->internal = (char *) t;
 	db->close = bt_close;
-	db->delete = bt_delete;
+	db->del = bt_delete;
 	db->get = bt_get;
 	db->put = bt_put;
 	db->seq = bt_seq;

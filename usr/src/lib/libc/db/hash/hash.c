@@ -9,19 +9,20 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
-#include <sys/file.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <assert.h>
 #include <db.h>
-#include <unistd.h>
 #include <stdio.h>
-#include "hash.h"
+#include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
+#include "hash.h"
 
 /* Fast arithmetic, relying on powers of 2, */
 
@@ -33,9 +34,6 @@ static char sccsid[] = "@(#)hash.c	5.9 (Berkeley) %G%";
 #define	SUCCESS	0
 #define	ERROR	-1
 #define	ABNORMAL 1
-
-/* external routines */
-extern char *calloc();
 
 /* page.c */
 extern int __get_page();

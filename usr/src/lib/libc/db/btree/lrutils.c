@@ -9,10 +9,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)lrutils.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)lrutils.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/types.h>
+#include <stdlib.h>
+#include <string.h>
 #include "lrucache.h"
 
 /*
