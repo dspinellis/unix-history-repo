@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exec.c	7.11 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -311,7 +311,7 @@ execve()
 badarg:
 		for (cc = 0; cc < nc; cc += CLBYTES) {
 			u.u_error = baddr(argdev_vp, bno + ctod(cc/NBPG),
-				CLBYTES, &tbp);
+				CLBYTES, NOCRED, &tbp);
 			bp = tbp;
 #endif SECSIZE
 			if (bp) {
@@ -354,7 +354,8 @@ badarg:
 				    argdbsize);
 #else SECSIZE
 				error = bread(argdev_vp,
-				    (daddr_t)(bno + ctod(nc / NBPG)), cc, &tbp);
+				    (daddr_t)(bno + ctod(nc / NBPG)), cc,
+				    NOCRED, &tbp);
 				bp = tbp;
 #endif SECSIZE
 				bp->b_flags |= B_AGE;		/* throw away */
