@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.21 (Berkeley) %G%
+		@(#)README	8.22 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -163,8 +163,12 @@ USENET_MAILER_PATH	[/usr/lib/news/inews] The name of the program
 USENET_MAILER_FLAGS	[rlsDFMmn] The mailer flags for the usenet mailer.
 USENET_MAILER_ARGS	[-m -h -n] The command line arguments for the
 			usenet mailer.
+USENET_MAILER_MAX	[100000] The maximum size of messages that will
+			be accepted by the usenet mailer.
 SMTP_MAILER_FLAGS	[undefined] Flags added to SMTP mailer.  Default
 			flags are `mDFMUX' (and `a' for esmtp mailer).
+SMTP_MAILER_MAX		[undefined] The maximum size of messages that will
+			be transported using the smtp or esmtp mailers.
 UUCP_MAILER_FLAGS	[undefined] Flags added to UUCP mailer.  Default
 			flags are `DFMhuU' (and `m' for suucp mailer, minus
 			`U' for uucp-dom mailer).
@@ -172,6 +176,10 @@ UUCP_MAILER_ARGS	[uux - -r -z -a$f -gC $h!rmail ($u)] The arguments
 			passed to the UUCP mailer.
 UUCP_MAX_SIZE		[100000] The maximum size message accepted for
 			transmission by the UUCP mailers.
+FAX_MAILER_PATH		[/usr/local/lib/fax/mailfax] The program used to
+			submit FAX messages.
+FAX_MAILER_MAX		[100000] The maximum size message accepted for
+			transmission by FAX.
 HOSTMAP_SPEC		[dbm -o /etc/hostmap] The value for the builtin
 			hostmap key definition.  You can redefine this
 			to change the class, flags, and filename of
