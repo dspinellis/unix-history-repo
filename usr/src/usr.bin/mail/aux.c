@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)aux.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)aux.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -267,7 +267,7 @@ istrcpy(dest, src)
  * the stack.
  */
 
-static	int	ssp = -1;		/* Top of file stack */
+static	int	ssp;			/* Top of file stack */
 struct sstack {
 	FILE	*s_file;		/* File we were in. */
 	int	s_cond;			/* Saved state of conditionals */
@@ -292,14 +292,15 @@ source(name)
 		perror(cp);
 		return(1);
 	}
-	if (ssp >= NOFILE - 2) {
+	if (ssp >= NOFILE - 1) {
 		printf("Too much \"sourcing\" going on.\n");
 		fclose(fi);
 		return(1);
 	}
-	sstack[++ssp].s_file = input;
+	sstack[ssp].s_file = input;
 	sstack[ssp].s_cond = cond;
 	sstack[ssp].s_loading = loading;
+	ssp++;
 	loading = 0;
 	cond = CANY;
 	input = fi;
@@ -314,7 +315,7 @@ source(name)
 
 unstack()
 {
-	if (ssp < 0) {
+	if (ssp <= 0) {
 		printf("\"Source\" stack over-pop.\n");
 		sourcing = 0;
 		return(1);
@@ -322,10 +323,11 @@ unstack()
 	fclose(input);
 	if (cond != CANY)
 		printf("Unmatched \"if\"\n");
+	ssp--;
 	cond = sstack[ssp].s_cond;
 	loading = sstack[ssp].s_loading;
-	input = sstack[ssp--].s_file;
-	if (ssp < 0)
+	input = sstack[ssp].s_file;
+	if (ssp == 0)
 		sourcing = loading;
 	return(0);
 }

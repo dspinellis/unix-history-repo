@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)popen.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -25,7 +25,7 @@ static char sccsid[] = "@(#)popen.c	5.10 (Berkeley) %G%";
 
 #define READ 0
 #define WRITE 1
-static int *pid = NULL;
+static int *pid;
 
 FILE *
 Popen(cmd, mode)
@@ -35,7 +35,7 @@ Popen(cmd, mode)
 	int p[2];
 	int myside, hisside, fd0, fd1;
 
-	if (pid == NULL)
+	if (pid == 0)
 		pid = (int *) malloc((unsigned) sizeof (int) * getdtablesize());
 	if (pipe(p) < 0)
 		return NULL;

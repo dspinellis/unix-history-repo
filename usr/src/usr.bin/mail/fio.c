@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -338,8 +338,8 @@ done:
 	relsesigs();
 }
 
-static int sigdepth = 0;		/* depth of holdsigs() */
-static int omask = 0;
+static int sigdepth;		/* depth of holdsigs() */
+static int omask;
 /*
  * Hold signals SIGHUP, SIGINT, and SIGQUIT.
  */

@@ -14,9 +14,9 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 #
-CFLAGS=	-O
+CFLAGS=	-O -R
 LIBC=	/lib/libc.a
 SRCS=	version.c aux.c cmd1.c cmd2.c cmd3.c cmdtab.c collect.c edit.c fio.c \
 	getname.c head.c v7.local.c lex.c list.c main.c names.c popen.c \
@@ -76,8 +76,7 @@ cmd1.o: /usr/include/machine/machparam.h /usr/include/machine/endian.h
 cmd1.o: /usr/include/sys/signal.h /usr/include/stdio.h /usr/include/sgtty.h
 cmd1.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
 cmd1.o: /usr/include/sys/ttydev.h /usr/include/ctype.h /usr/include/strings.h
-cmd1.o: local.h v7.local.h glob.h /usr/include/setjmp.h /usr/include/sys/stat.h
-cmd1.o: /usr/include/sys/wait.h
+cmd1.o: local.h v7.local.h glob.h /usr/include/setjmp.h
 cmd2.o: cmd2.c rcv.h def.h /usr/include/sys/param.h /usr/include/sys/types.h
 cmd2.o: /usr/include/signal.h /usr/include/machine/trap.h
 cmd2.o: /usr/include/machine/machparam.h /usr/include/machine/endian.h
@@ -92,8 +91,7 @@ cmd3.o: /usr/include/machine/machparam.h /usr/include/machine/endian.h
 cmd3.o: /usr/include/sys/signal.h /usr/include/stdio.h /usr/include/sgtty.h
 cmd3.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
 cmd3.o: /usr/include/sys/ttydev.h /usr/include/ctype.h /usr/include/strings.h
-cmd3.o: local.h v7.local.h glob.h /usr/include/setjmp.h /usr/include/sys/stat.h
-cmd3.o: /usr/include/sys/wait.h
+cmd3.o: local.h v7.local.h glob.h /usr/include/setjmp.h
 cmdtab.o: cmdtab.c def.h /usr/include/sys/param.h /usr/include/sys/types.h
 cmdtab.o: /usr/include/signal.h /usr/include/machine/trap.h
 cmdtab.o: /usr/include/machine/machparam.h /usr/include/machine/endian.h
@@ -109,15 +107,13 @@ collect.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
 collect.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
 collect.o: /usr/include/ctype.h /usr/include/strings.h local.h v7.local.h
 collect.o: glob.h /usr/include/setjmp.h /usr/include/sys/stat.h
-collect.o: /usr/include/sys/wait.h
 edit.o: edit.c rcv.h def.h /usr/include/sys/param.h /usr/include/sys/types.h
 edit.o: /usr/include/signal.h /usr/include/machine/trap.h
 edit.o: /usr/include/machine/machparam.h /usr/include/machine/endian.h
 edit.o: /usr/include/sys/signal.h /usr/include/stdio.h /usr/include/sgtty.h
 edit.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
 edit.o: /usr/include/sys/ttydev.h /usr/include/ctype.h /usr/include/strings.h
-edit.o: local.h v7.local.h glob.h /usr/include/setjmp.h /usr/include/stdio.h
-edit.o: /usr/include/sys/stat.h /usr/include/sys/wait.h
+edit.o: local.h v7.local.h glob.h /usr/include/setjmp.h /usr/include/sys/stat.h
 fio.o: fio.c rcv.h def.h /usr/include/sys/param.h /usr/include/sys/types.h
 fio.o: /usr/include/signal.h /usr/include/machine/trap.h
 fio.o: /usr/include/machine/machparam.h /usr/include/machine/endian.h
@@ -185,9 +181,8 @@ popen.o: /usr/include/machine/machparam.h /usr/include/machine/endian.h
 popen.o: /usr/include/sys/signal.h /usr/include/stdio.h /usr/include/sgtty.h
 popen.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
 popen.o: /usr/include/sys/ttydev.h /usr/include/ctype.h /usr/include/strings.h
-popen.o: local.h v7.local.h glob.h /usr/include/setjmp.h /usr/include/stdio.h
-popen.o: /usr/include/sys/signal.h /usr/include/sys/types.h
-popen.o: /usr/include/sys/wait.h /usr/include/errno.h
+popen.o: local.h v7.local.h glob.h /usr/include/setjmp.h
+popen.o: /usr/include/sys/signal.h /usr/include/sys/wait.h
 quit.o: quit.c rcv.h def.h /usr/include/sys/param.h /usr/include/sys/types.h
 quit.o: /usr/include/signal.h /usr/include/machine/trap.h
 quit.o: /usr/include/machine/machparam.h /usr/include/machine/endian.h
