@@ -31,6 +31,13 @@
 .\"
 .\"     @(#)csh.1	6.17 (Berkeley) 6/7/91
 .\"
+.\" PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+.\" --------------------         -----   ----------------------
+.\" CURRENT PATCH LEVEL:         1       00130
+.\" --------------------         -----   ----------------------
+.\"
+.\" 06 Apr 93	Sascha Wildner		Misc small fixes
+.\"
 .Dd June 7, 1991
 .Dt CSH 1
 .Os BSD 4
@@ -503,7 +510,7 @@ first argument,  i.e. `1'
 last argument
 .It %
 word matched by (immediately preceding)
-.No \&? Ns Ar s Ns \?
+.No \&? Ns Ar s Ns \&?
 search
 .It Ar \&x\-y
 range of words
@@ -577,9 +584,8 @@ uses the previous string either from a
 or from a
 contextual scan string
 .Ar s
-in `!?
-.Ar s
-\?'.
+in
+.Ns `!? Ns Ar s Ns ?'.
 The trailing delimiter in the substitution may be omitted if a newline
 follows immediately as may the trailing `?' in a contextual scan.
 .Pp

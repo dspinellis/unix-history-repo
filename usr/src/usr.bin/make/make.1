@@ -31,6 +31,13 @@
 .\"
 .\"	@(#)make.1	5.7 (Berkeley) 7/24/91
 .\"
+.\" PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+.\" --------------------         -----   ----------------------
+.\" CURRENT PATCH LEVEL:         1       00130
+.\" --------------------         -----   ----------------------
+.\"
+.\" 06 Apr 93	Sascha Wildner		Misc small fixes
+.\"
 .Dd July 24, 1991
 .Dt MAKE 1
 .Os
@@ -74,7 +81,8 @@ and makefiles, please refer to
 The options are as follows:
 .Bl -tag -width Ds
 .It Fl D Ar variable
-Define Ar variable
+Define
+.Ar variable
 to be 1, in the global context.
 .It Fl d Ar flags
 Turn on debugging, and specify which portions of
