@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)swap.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)swap.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
@@ -14,6 +14,7 @@ static char sccsid[] = "@(#)swap.c	5.8 (Berkeley) %G%";
 #include <sys/text.h>
 #include <sys/conf.h>
 #include <sys/vmmac.h>
+#include <sys/stat.h>
 #include <machine/pte.h>
 #include <paths.h>
 
@@ -257,15 +258,6 @@ fetchswap()
 		error("couldn't read text table");
 }
 
-#ifdef vax
-char	*devnames[] =
-     { "hp", "ht", "up", "rk", "sw", "tm", "ts", "mt", "tu", "ra", "ut",
-       "rb", "rx", "rl" };
-#endif
-#ifdef tahoe
-char	*devnames[] = { "ud", "vd", "xp", "cy", "sw" };
-#endif
-
 labelswap()
 {
 	register int row;
@@ -289,8 +281,7 @@ swaplabel(row, dmbound, donames)
 		if (donames)
 			mvwprintw(wnd,
 			    row, OFFSET + i*(1 + colwidth) + (colwidth - 3)/2,
-			    "%s%d", devnames[major(swdevt[i].sw_dev)],
-			        minor(swdevt[i].sw_dev) >> 3);
+			    "%s", devname(swdevt[i].sw_dev, S_IFBLK));
 		for (j = 0; j + 5 < colwidth; j += 5)
 			mvwprintw(wnd, row + donames,
 			    OFFSET + i*(1 + colwidth) + j, "/%-2d  ", j);
