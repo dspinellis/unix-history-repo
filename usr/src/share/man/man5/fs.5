@@ -1,0 +1,285 @@
+.\"	@(#)fs.5	4.1 (Berkeley) %G%
+.\"
+.TH FILSYS 5
+.AT 3
+.SH NAME
+filsys, flblk, ino \- format of file system volume
+.SH SYNOPSIS
+.B #include <sys/types.h>
+.br
+.B #include <sys/flbk.h>
+.br
+.B #include <sys/filsys.h>
+.br
+.B #include <sys/ino.h>
+.SH DESCRIPTION
+Every
+file system storage volume
+(e.g. RF disk, RK disk, RP disk, DECtape reel)
+has a common format for certain vital information.
+Every such volume is divided into a certain number
+of 1024-byte blocks.
+Block 0 is unused and is available to contain
+a bootstrap program, pack label, or other information.
+.PP
+Block 1 is the
+.I "super block."
+The layout of the super block as defined by the include file
+.I <sys/filsys.h>
+is:
+.PP
+.nf
+.ta \w'struct 'u +\w'daddr_t  'u +\w's_inode[NICINOD]; 'u
+.so /usr/include/sys/filsys.h
+.fi
+.PP
+.I S_isize
+is the address of the first block after the i-list,
+which starts just after the super-block, in block 2.
+Thus the i-list is
+.IR s_isize \-2
+blocks long.
+.I S_fsize
+is the address of the first block not potentially
+available for allocation
+to a file.
+These numbers are used by the system to
+check for bad block addresses;
+if an `impossible' block address is allocated from the free list
+or is freed,
+a diagnostic is written on the on-line console.
+Moreover, the free array is cleared, so as to prevent further
+allocation from a presumably corrupted free list.
+.PP
+The free list for each volume is maintained as
+follows.
+The
+.I s_free
+array contains, in
+.I "s_free[1], ... , s_free[s_nfree\-1],"
+up to NICFREE free block numbers.
+NICFREE is a configuration constant.
+.I S_free[0]
+is the block address of the head
+of a chain of blocks constituting the free list.
+The layout of each block of the free chain as defined
+in the include file
+.I <sys/fblk.h>
+is:
+.PP
+.nf
+.so /usr/include/sys/fblk.h
+.fi
+.PP
+The fields
+.I df_nfree
+and
+.I df_free
+in a free block are used exactly like
+.I s_nfree
+and 
+.I s_free
+in the super block.
+To allocate a block:
+decrement
+.I s_nfree,
+and the new block number is
+.I s_free[s_nfree].
+If the new block address is 0,
+there are no blocks left, so give an error.
+If
+.I s_nfree
+became 0,
+read the new block into
+.I s_nfree
+and 
+.I s_free.
+To free a block, check if
+.I s_nfree
+is NICFREE; if so,
+copy
+.I s_nfree
+and the
+.I s_free
+array into it,
+write it out, and set
+.I s_nfree
+to 0.
+In any event set
+.I s_free[s_nfree]
+to the freed block's address and
+increment
+.I s_nfree.
+.PP
+.I S_ninode
+is the number of free i-numbers in the
+.I s_inode
+array.
+To allocate an i-node:
+if
+.I s_ninode
+is greater than 0,
+decrement it and return
+.I s_inode[s_ninode].
+If it was 0, read the i-list
+and place the numbers of all free inodes
+(up to NICINOD) into the
+.I s_inode
+array,
+then try again.
+To free an i-node,
+provided
+.I s_ninode
+is less than NICINODE,
+place its number into
+.I s_inode[s_ninode]
+and increment
+.I s_ninode.
+If
+.I s_ninode
+is already NICINODE, don't bother to enter the freed i-node into any table.
+This list of i-nodes is only to speed
+up the allocation process; the information
+as to whether the inode is really free
+or not is maintained in the inode itself.
+.PP
+The fields
+.I s_lasti
+and
+.I s_nbehind
+are used to avoid searching the inode list from the beginning
+each time the system runs out of inodes.
+.I S_lasti
+gives the base of the block of inodes last searched on the filesystem
+when inodes ran out, and
+.I s_nbehind
+gives the number of inodes, whose numbers were less than
+.I s_lasti
+when they were freed with
+.I s_ninode
+already
+NICINODE.
+Thus
+.I s_ninode
+is the number of free inodes before
+.I s_lasti.
+The system will search forward for free inodes from
+.I s_lasti
+for more inodes unless
+.I s_nbehind
+is sufficiently large, in which case it will search the file system
+inode list from the beginning.
+This mechanism serves to avoid n**2 behavior in allocating inodes.
+.PP
+.I S_flock
+and
+.I s_ilock
+are flags maintained in the core
+copy of the file system
+while it is mounted
+and their values on disk are immaterial.
+The value of
+.I s_fmod
+on disk is likewise immaterial;
+it is used as a flag to indicate that the super-block has
+changed and should be copied to
+the disk during the next periodic update of file
+system information.
+.I S_ronly
+is a write-protection indicator; its disk value is also immaterial.
+.PP
+.I S_time
+is the last time the super-block of the file system was changed.
+During a reboot,
+.I s_time
+of the super-block for the root file system
+is used to set the system's idea of the time.
+.PP
+The fields
+.I s_tfree, s_tinode, s_fname
+and
+.I s_fpack
+are not currently maintained.
+.PP
+I-numbers begin at 1, and the storage for i-nodes
+begins in block 2.
+.tr |
+I-nodes are 64 bytes long, so 16 of them fit into a block.
+I-node 2 is reserved for the root directory of the file
+system, but no other i-number has a built-in
+meaning.
+Each i-node represents one file.
+The format of an i-node as given in the include file
+.I <sys/ino.h>
+is:
+.PP
+.nf
+.ta \w'#define 'u +\w'time_t  'u +\w'di_addr[40]; 'u
+.so /usr/include/sys/ino.h
+.fi
+.PP
+.I Di_mode
+tells the kind of file; it
+is encoded identically to the
+.I st_mode field of
+.IR stat (2).
+.I Di_nlink
+is the number of directory entries
+(links) that refer to this i-node.
+.I Di_uid
+and
+.I di_gid
+are the owner's user and group IDs.
+.I Size
+is the number of bytes in the file.
+.I Di_atime
+and
+.I di_mtime
+are the times of last access and modification
+of the file contents (read, write or create)
+(see
+.IR times (2));
+.I Di_ctime
+records the time of last modification
+to the inode or to the file, and is used
+to determine whether it should be dumped.
+.PP
+Special files are recognized by their modes
+and not by i-number.
+A block-type special file is one which
+can potentially be mounted as a file system;
+a character-type special file cannot, though it is
+not necessarily character-oriented.
+For special files, the 
+.I di_addr
+field is occupied by the device code
+(see
+.IR types (5)).
+The device codes
+of block and character special files overlap.
+.PP
+Disk addresses of plain files and directories
+are kept in the array
+.I di_addr
+packed into 3 bytes each.
+The first 10 addresses specify device blocks directly.
+The last 3 addresses are singly, doubly, and triply
+indirect and point to blocks of 256 block pointers.
+Pointers in indirect blocks have the type
+.I daddr_t
+(see
+.IR types (5)).
+.PP
+For block
+.I b
+in a file to exist,
+it
+is not necessary that all blocks less than
+.I b
+exist.
+A zero block number either in the address words of
+the i-node or in an indirect block indicates that the
+corresponding block has never been allocated.
+Such a missing block reads as if it contained all zero words.
+.SH "SEE ALSO"
+fsck(8), icheck(8), dcheck(8), dir(5), mount(8), stat(2), types(5)
