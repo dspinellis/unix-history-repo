@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -25,8 +25,8 @@ static char sccsid[] = "@(#)mail.local.c	5.2 (Berkeley) %G%";
 #include <netdb.h>
 #include <pwd.h>
 #include <time.h>
-#include <varargs.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include "pathnames.h"
@@ -245,16 +245,13 @@ usage()
 }
 
 /* VARARGS */
-error(va_alist)
-va_dcl
-{
-	va_list ap;
+error(isfatal, fmt)
 	int isfatal;
 	char *fmt;
+{
+	va_list ap;
 
-	va_start(ap);
-	isfatal = va_arg(ap, int);
-	fmt = va_arg(ap, char *);
+	va_start(ap, fmt);
 	vsyslog(LOG_ERR, fmt, ap);
 	va_end(ap);
 	if (isfatal)
