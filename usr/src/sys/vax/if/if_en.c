@@ -1,4 +1,4 @@
-/*	if_en.c	4.19	81/12/09	*/
+/*	if_en.c	4.20	81/12/11	*/
 
 #include "en.h"
 
@@ -345,7 +345,10 @@ COUNT(ENRINT);
 
 #ifdef INET
 	case ENPUP_IPTYPE:
-		len = htons(endataaddr(en, off+2, struct ip *)->ip_len)+2;
+		len = htons((u_short)endataaddr(en, off ? off+2 : 0, struct ip *)->ip_len);
+		if (off)
+			len += 2;
+printf("enet rcvd len %d\n", len);
 		setipintr();
 		inq = &ipintrq;
 		break;
@@ -408,7 +411,7 @@ enoutput(ifp, m0, pf)
 		int off;
 
 		dest = ip->ip_dst.s_addr >> 24;
-		off = ntohs(ip->ip_len) - m->m_len;
+		off = ntohs((u_short)ip->ip_len) - m->m_len;
 		if (off > 0 && (off & 0x1ff) == 0 && m->m_off >= MMINOFF + 2) {
 			type = ENPUP_TRAIL + (off>>9);
 			m->m_off -= 2;
