@@ -1,5 +1,5 @@
 /*-
- *	@(#)READ_ME	6.4 (Berkeley) %G%
+ *	@(#)READ_ME	6.5 (Berkeley) %G%
  */
 
 THIS IS AN ALPHA VERSION OF SENDMAIL.  DON'T EVEN THINK ABOUT USING IT
@@ -65,7 +65,7 @@ IF YOU WANT TO RUN THE NEW BERKELEY DB SOFTWARE:  ****  DO NOT  ****
 use the version that was on the Net2 tape -- it has a number of
 nefarious bugs that were bad enough when I got them; you shouldn't have
 to go through the same thing.  Instead, get a new version via public
-FTP from okeeffe.CS.Berkeley.EDU, file pub/db.tar.Z.  This software
+FTP from vangogh.CS.Berkeley.EDU, file pub/db.tar.Z.  This software
 is highly recommended; it gets rid of several stupid limits, it's much
 faster, and the interface is nicer to animals and plants.  You will
 also probably find that you have to add -I/where/you/put/db/include
