@@ -84,8 +84,8 @@ main(argc, argv)
 ok:
 	for (c = 1; c < argc; c++) {
 		/* do stat for directory arguments */
-		if (stat(argv[c], &stbuf)) {
-			status += error("can't access %s", argv[c]);
+		if (lstat(argv[c], &stbuf)) {
+			status += Perror(argv[c]);
 			continue;
 		}
 		if (uid && uid != stbuf.st_uid) {
@@ -96,8 +96,8 @@ ok:
 			status += chownr(argv[c], stbuf.st_uid, gid);
 			continue;
 		}
-		if (chown(argv[c], stbuf.st_uid, gid)) {
-			status += error("can't change %s", argv[c]);
+		if (chown(argv[c], -1, gid)) {
+			status += Perror(argv[c]);
 			continue;
 		}
 	}
@@ -129,18 +129,22 @@ chownr(dir, uid, gid)
 	/*
 	 * Change what we are given before doing its contents.
 	 */
-	if (chown(dir, uid, gid) < 0 && error("can't change %s", dir))
+	if (chown(dir, -1, gid) < 0 && Perror(dir))
 		return (1);
-	if (chdir(dir) < 0)
-		return (Perror(dir));
-	if ((dirp = opendir(".")) == NULL)
-		return (Perror(dir));
+	if (chdir(dir) < 0) {
+		Perror(dir);
+		return (1);
+	}
+	if ((dirp = opendir(".")) == NULL) {
+		Perror(dir);
+		return (1);
+	}
 	dp = readdir(dirp);
 	dp = readdir(dirp); /* read "." and ".." */
 	ecode = 0;
 	for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp)) {
-		if (stat(dp->d_name, &st) < 0) {
-			ecode = error("can't access %s", dp->d_name);
+		if (lstat(dp->d_name, &st) < 0) {
+			ecode = Perror(dp->d_name);
 			if (ecode)
 				break;
 			continue;
@@ -156,8 +160,8 @@ chownr(dir, uid, gid)
 				break;
 			continue;
 		}
-		if (chown(dp->d_name, st.st_uid, gid) < 0 &&
-		    (ecode = error("can't change %s", dp->d_name)))
+		if (chown(dp->d_name, -1, gid) < 0 &&
+		    (ecode = Perror(dp->d_name)))
 			break;
 	}
 	closedir(dirp);
@@ -192,7 +196,9 @@ Perror(s)
 	char *s;
 {
 
-	fprintf(stderr, "chgrp: ");
-	perror(s);
-	return (1);
+	if (!fflag) {
+		fprintf(stderr, "chgrp: ");
+		perror(s);
+	}
+	return (!fflag);
 }
