@@ -1,4 +1,4 @@
-/*	trap.c	6.1	83/08/18	*/
+/*	trap.c	6.2	84/06/10	*/
 
 #include "../machine/psl.h"
 #include "../machine/reg.h"
@@ -247,7 +247,6 @@ asm("ok:");						/* GROT */
 #endif
 		(*(callp->sy_call))();
 	}
-	locr0[PS] &= ~PSL_C;
 	if (u.u_eosys == RESTARTSYS)
 		pc = opc;
 #ifdef notdef
@@ -263,6 +262,7 @@ bad:
 	} else {
 		locr0[R0] = u.u_r.r_val1;
 		locr0[R1] = u.u_r.r_val2;
+		locr0[PS] &= ~PSL_C;
 	}
 done:
 	p = u.u_procp;
