@@ -1,4 +1,4 @@
-/*	ip_var.h	6.2	84/08/29	*/
+/*	ip_var.h	6.3	85/05/23	*/
 
 /*
  * Overlay for ip header used by other protocols (tcp, udp).
@@ -55,6 +55,8 @@ struct	ipstat {
 	int	ips_toosmall;		/* not enough data */
 	int	ips_badhlen;		/* ip header length < data size */
 	int	ips_badlen;		/* ip length < ip header length */
+	long	ips_forward;		/* packets forwarded */
+	long	ips_cantforward;	/* packets rcvd for unreachable dest */
 };
 
 #ifdef KERNEL
