@@ -1,4 +1,4 @@
-/*	vd.c	7.1	86/01/12	*/
+/*	vd.c	7.2	86/01/21	*/
 /*
 ** Stand alone driver for the VDDC controller 
 **	TAHOE Version, Oct 1983.
@@ -10,8 +10,9 @@
 #include "inode.h"
 #include "fs.h"
 #define VDGENDATA 1
-#include "../tahoevba/vddcreg.h"
+#include "../tahoevba/vdreg.h"
 #undef	VDGENDATA
+#include "../tahoevba/vbaparam.h"
 #include "saio.h"
 
 #define NVD		4			/* Max number of controllers */
@@ -55,7 +56,7 @@ struct {
 
 static char	junk[1024];
 
-
+#define	VDADDR(ctlr)	((cdr *)(vddcaddr[(ctlr)]+VBIOBASE))
 /*
 **
 */
@@ -103,7 +104,7 @@ register struct iob	*io;
 {
 	register int	ctlr = VDCTLR(io->i_unit);
 	register int	unit = VDUNIT(io->i_unit);
-	register cdr	*ctlr_addr = (cdr *)(vddcaddr[ctlr]+IOBASE);
+	register cdr	*ctlr_addr = VDADDR(ctlr);
 	register char	*ctlr_type;
 
 	/* Check to see if controller is really there */
@@ -229,7 +230,7 @@ int	pass;
 {
 	register int	ctlr = VDCTLR(io->i_unit);
 	register int	unit = VDUNIT(io->i_unit);
-	register cdr	*ctlr_addr = (cdr *)(vddcaddr[ctlr]+IOBASE);
+	register cdr	*ctlr_addr = VDADDR(ctlr);
 
 	dcb.opcode = RSTCFG;		/* command */
 	dcb.intflg = NOINT;
@@ -248,8 +249,7 @@ int	pass;
 	mdcb.firstdcb = &dcb;
 	mdcb.vddcstat = 0;
 	VDDC_ATTENTION(ctlr_addr, &mdcb, ctlr_info[ctlr].ctlr_type);
-	POLLTILLDONE(ctlr_addr,&dcb,5,ctlr_info[ctlr].ctlr_type);
-	if(vdtimeout <= 0)
+	if (!vdpoll(ctlr_addr,&dcb,5,ctlr_info[ctlr].ctlr_type))
 		_stop(" during drive configuration.\n");
 	if(dcb.operrsta & (NOTCYLERR | DRVNRDY))
 		if(!pass) {
@@ -354,7 +354,7 @@ register struct iob	*io;
 register int		function, time;
 {
 	register int	ctlr = VDCTLR(io->i_unit);
-	register cdr	*ctlr_addr = (cdr *)(vddcaddr[ctlr]+IOBASE);
+	register cdr	*ctlr_addr = VDADDR(ctlr);
 
 	dcb.opcode = function;		/* command */
 	dcb.intflg = NOINT;
@@ -365,8 +365,7 @@ register int		function, time;
 	mdcb.firstdcb = &dcb;
 	mdcb.vddcstat = 0;
 	VDDC_ATTENTION(ctlr_addr, &mdcb, ctlr_info[ctlr].ctlr_type);
-	POLLTILLDONE(ctlr_addr,&dcb,time,ctlr_info[ctlr].ctlr_type);
-	if(vdtimeout <= 0)
+	if (!vdpoll(ctlr_addr,&dcb,time,ctlr_info[ctlr].ctlr_type))
 		_stop(" during initialization operation.\n");
 	return dcb.operrsta;
 }
@@ -382,7 +381,7 @@ dskadr			*daddr;
 int			func;
 {
 	register int	ctlr = VDCTLR(io->i_unit);
-	register cdr	*ctlr_addr = (cdr *)(vddcaddr[ctlr]+IOBASE);
+	register cdr	*ctlr_addr = VDADDR(ctlr);
 
 	dcb.opcode = (short)func;		/* format sector command */
 	dcb.intflg = NOINT;
@@ -398,8 +397,7 @@ int			func;
 	mdcb.firstdcb = &dcb;
 	mdcb.vddcstat = 0;
 	VDDC_ATTENTION(ctlr_addr, &mdcb, ctlr_info[ctlr].ctlr_type);
-	POLLTILLDONE(ctlr_addr, &dcb, 60, ctlr_info[ctlr].ctlr_type);
-	if(vdtimeout <= 0)
+	if (!vdpoll(ctlr_addr, &dcb, 60, ctlr_info[ctlr].ctlr_type))
 		_stop(" during I/O operation.\n");
 	return dcb.operrsta;
 }
@@ -430,3 +428,38 @@ register long	*ptr;
 	for(i=0; i<5000000; i++) ;
 }
 
+/*
+ * Poll controller until operation completes
+ * or timeout expires.
+ */
+vdpoll(addr, dcb, t, type)
+	register cdr *addr;
+	register fmt_dcb *dcb;
+	register int t, type;
+{
+
+	t *= 1000;
+	uncache(&dcb->operrsta);
+	while ((dcb->operrsta&(DCBCMP|DCBABT)) == 0) {
+		DELAY(1000);
+		uncache(&dcb->operrsta);
+		if (--t <= 0) {
+			printf("vd: controller timeout");
+			VDDC_ABORT(addr, type);
+			DELAY(30000);
+			uncache(&dcb->operrsta);
+			return (0);
+		}
+	}
+	if (type == SMD_ECTLR) {
+		uncache(&addr->cdr_csr);
+		while (addr->cdr_csr&CS_GO) {
+			DELAY(50);
+			uncache(&addr->cdr_csr);
+		}
+		DELAY(300);
+	}
+	DELAY(200);
+	uncache(&dcb->operrsta);
+	return (1);
+}

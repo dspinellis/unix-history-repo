@@ -1,4 +1,4 @@
-#	Makefile	7.1	86/01/12
+#	Makefile	7.2	86/01/21
 #
 DESTDIR=
 LIBS=	libsa.a ${DESTDIR}/lib/libc.a
@@ -163,7 +163,8 @@ sys.o: ./saio.h
 vdformat.o: vdformat.c ./../machine/mtpr.h ../h/param.h
 vdformat.o: /usr/include/machine/machparam.h ../h/signal.h
 vdformat.o: /usr/include/sys/types.h ../h/inode.h ../h/fs.h ./saio.h
-vdformat.o: ./../tahoevba/vddcreg.h /usr/include/setjmp.h
+vdformat.o: ./../tahoevba/vbaparam.h ./../tahoevba/vdreg.h
+vdformat.o: /usr/include/setjmp.h
 ls.o: ls.c ../h/param.h /usr/include/machine/machparam.h ../h/signal.h
 ls.o: /usr/include/sys/types.h ../h/inode.h ../h/dir.h ../h/fs.h ./saio.h
 fastcopy.o: fastcopy.c
@@ -171,7 +172,8 @@ devcopy.o: devcopy.c
 cat.o: cat.c
 vddc.o: vddc.c ./../machine/mtpr.h ../h/param.h
 vddc.o: /usr/include/machine/machparam.h ../h/signal.h /usr/include/sys/types.h
-vddc.o: ../h/inode.h ../h/fs.h ./../tahoevba/vddcreg.h ./saio.h
+vddc.o: ../h/inode.h ../h/fs.h ./../tahoevba/vdreg.h ./../tahoevba/vbaparam.h
+vddc.o: ./saio.h
 cy.o: cy.c ./../machine/pte.h ./../machine/mtpr.h ../h/param.h
 cy.o: /usr/include/machine/machparam.h ../h/signal.h /usr/include/sys/types.h
-cy.o: ../h/inode.h ../h/fs.h ./saio.h ./cyvar.h
+cy.o: ../h/inode.h ../h/fs.h ./saio.h ./cyvar.h ./../tahoevba/vbaparam.h
