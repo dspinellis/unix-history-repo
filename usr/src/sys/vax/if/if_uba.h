@@ -1,4 +1,4 @@
-/*	if_uba.h	4.4	81/12/09	*/
+/*	if_uba.h	4.5	82/02/03	*/
 
 /*
  * Structure and routine definitions
@@ -40,6 +40,7 @@ struct	ifuba {
 	} ifu_r, ifu_w;
 	struct	pte ifu_wmap[IF_MAXNUBAMR];	/* base pages for output */
 	short	ifu_xswapd;			/* mask of clusters swapped */
+	short	ifu_flags;			/* used during uballoc's */
 	struct	mbuf *ifu_xtofree;		/* pages being dma'd out */
 };
 
