@@ -1,37 +1,51 @@
-/*	in_cksum.c	1.2	86/01/05	*/
-
-#include "../h/types.h"
-#include "../h/mbuf.h"
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
+/*
+ * Copyright (c) 1982, 1988 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *      @(#)in_cksum.c	1.3 (Berkeley) %G%
+ */
+#include "types.h"
+#include "mbuf.h"
 
 /*
- * Checksum routine for Internet Protocol family headers.
+ * Checksum routine for Internet Protocol family headers (CCI Version).
  *
  * This routine is very heavily used in the network
  * code and should be modified for each CPU to be as fast as possible.
- * 
- * This implementation is TAHOE version.
  */
 
-#undef	ADDCARRY
-#define ADDCARRY(sum)  {				\
-			if (sum & 0xffff0000) {		\
-				sum &= 0xffff;		\
-				sum++;			\
-			}				\
-		}
+#define ADDCARRY(x)  (x > 65535 ? x -= 65535 : x)
+#define REDUCE {l_util.l = sum; sum = l_util.s[0] + l_util.s[1]; ADDCARRY(sum);}
+
+#define ADD(n)	asm("adwc n (r10),r9")
+#define MOP	asm("adwc $0,r9")
+#define BOTCH	asm("addl2 r7,r9")
+
 in_cksum(m, len)
 	register struct mbuf *m;
 	register int len;
 {
-	union word {
+	register u_short *w;		/* On CCI, known to be r10 */
+	register int sum = 0;		/* On CCI, known to be r9 */
+	register int mlen = 0;
+	register int ClearCarry = 0;	/* On CCI, known to be r7 */
+	int byte_swapped = 0;
+
+	union {
 		char	c[2];
 		u_short	s;
-	} u;
-	register u_short *w;
-	register int sum = 0;
-	register int mlen = 0;
+	} s_util;
+	union {
+		u_short s[2];
+		long	l;
+	} l_util;
 
 	for (;m && len; m = m->m_next) {
 		if (m->m_len == 0)
@@ -42,37 +56,83 @@ in_cksum(m, len)
 			 * The first byte of this mbuf is the continuation
 			 * of a word spanning between this mbuf and the
 			 * last mbuf.
+			 *
+			 * s_util.c[0] is already saved when scanning previous 
+			 * mbuf.  sum was REDUCEd when we found mlen == -1.
 			 */
-
-			/* u.c[0] is already saved when scanning previous 
-			 * mbuf.
-			 */
-			u.c[1] = *(u_char *)w;
-			sum += u.s;
-			ADDCARRY(sum);
+			s_util.c[1] = *(char *)w;
+			sum += s_util.s;
 			w = (u_short *)((char *)w + 1);
 			mlen = m->m_len - 1;
 			len--;
 		} else
 			mlen = m->m_len;
-
 		if (len < mlen)
 			mlen = len;
 		len -= mlen;
-
 		/*
-		 * add by words.
+		 * Force to long boundary so we do longword aligned
+		 * memory operations.
 		 */
-		while ((mlen -= 2) >= 0) {
-			if ((int)w & 0x1) {
-				/* word is not aligned */
-				u.c[0] = *(char *)w;
-				u.c[1] = *((char *)w+1);
-				sum += u.s;
-				w++;
-			} else
+		if (3 & (int) w) {
+			REDUCE;
+			if (1 & (int) w) {
+				sum <<= 8;
+				sum += *(u_char *)w;
+				w = (u_short *)((char *)w + 1);
+				mlen--;
+				byte_swapped = 1;
+			}
+			if ((2 & (int) w) && mlen >= 2) {
 				sum += *w++;
-			ADDCARRY(sum);
+				mlen -= 2;
+			}
+		}
+		/*
+		 * Do as much of the checksum as possible 32 bits at at time.
+		 * In fact, this loop is unrolled to make overhead from
+		 * branches &c small.
+		 */
+		while ((mlen -= 32) >= 0) {
+			/*
+			 * The loop construct clears carry for us
+			 * on vaxen, however, on the CCI machine subtracting
+			 * a small postive number from a larger one doesn't.
+			 * 
+			 * Doing a bicpsw is very slow (slows down the routine
+			 * by a factor of 2); explicitly adding an immediate
+			 * 0 to a register is optimized out; so we fake out
+			 * the optimizer and add a register whose contents
+			 * is always zero.
+			 */
+			BOTCH;
+			ADD(0); ADD(4); ADD(8); ADD(12);
+			ADD(16); ADD(20); ADD(24); ADD(28);
+			MOP; w += 16;
+		}
+		mlen += 32;
+		while ((mlen -= 8) >= 0) {
+			BOTCH;
+			ADD(0); ADD(4);
+			MOP;
+			w += 4;
+		}
+		mlen += 8;
+		if (mlen == 0 && byte_swapped == 0)
+			continue;	/* worth 1% maybe ?? */
+		REDUCE;
+		while ((mlen -= 2) >= 0) {
+			sum += *w++;
+		}
+		if (byte_swapped) {
+			if (mlen == -1) {
+				s_util.c[0] = *(char *)w;
+				s_util.c[1] = 0;
+				sum += s_util.s;
+				mlen = 0;
+			}
+			sum <<= 8;
+			byte_swapped = 0;
 		}
 		if (mlen == -1)
 			/*
@@ -81,16 +141,16 @@ in_cksum(m, len)
 			 * this mbuf and the next mbuf.
 			 * Save the last byte (to prepend to next mbuf).
 			 */
-			u.c[0] = *(u_char *)w;
+			s_util.c[0] = *(char *)w;
 	}
 	if (len)
 		printf("cksum: out of data\n");
 	if (mlen == -1) {
 		/* The last mbuf has odd # of bytes. Follow the
 		   standard (the odd byte is shifted left by 8 bits) */
-		u.c[1] = 0;
-		sum += u.s;
-		ADDCARRY(sum);
+		s_util.c[1] = 0;
+		sum += s_util.s;
 	}
+	REDUCE;
 	return (~sum & 0xffff);
 }
