@@ -1,4 +1,4 @@
-/*	vfs_cluster.c	4.21	81/05/08	*/
+/*	bio.c	4.21	81/05/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -202,7 +202,7 @@ register struct buf *bp;
 	if ((flag&B_DELWRI) == 0)
 		u.u_vm.vm_oublk++;		/* noone paid yet */
 #ifdef	TRACE
-	trace(TR_BWRITE, bp->b_dev, dbtofsb(bp->b_blkno));
+	trace(TR_BWRITE, bp->b_dev, bp->b_blkno);
 #endif
 	(*bdevsw[major(bp->b_dev)].d_strategy)(bp);
 	if ((flag&B_ASYNC) == 0) {
@@ -391,7 +391,7 @@ daddr_t blkno;
 		goto loop;
 	}
 #ifdef TRACE
-	trace(TR_BRELSE, bp->b_dev, dbtofsb(bp->b_blkno));
+	trace(TR_BRELSE, bp->b_dev, bp->b_blkno);
 #endif
 	bp->b_flags = B_BUSY;
 	bp->b_back->b_forw = bp->b_forw;
@@ -433,7 +433,7 @@ loop:
 		goto loop;
 	}
 #ifdef TRACE
-	trace(TR_BRELSE, bp->b_dev, dbtofsb(bp->b_blkno));
+	trace(TR_BRELSE, bp->b_dev, bp->b_blkno);
 #endif
 	bp->b_flags = B_BUSY|B_INVAL;
 	bp->b_back->b_forw = bp->b_forw;
@@ -597,6 +597,9 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 			swpf[bp - swbuf] = pfcent;
 			swsize[bp - swbuf] = nbytes;
 		}
+#ifdef TRACE
+		trace(TR_SWAPIO, dev, bp->b_blkno);
+#endif
 		(*bdevsw[major(dev)].d_strategy)(bp);
 		if (flag & B_DIRTY) {
 			if (c < nbytes)
