@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ether.c	7.18 (Berkeley) %G%
+ *	@(#)if_ether.c	7.19 (Berkeley) %G%
  */
 
 /*
@@ -177,7 +177,7 @@ arp_rtrequest(req, rt, sa)
 void
 arpwhohas(ac, addr)
 	register struct arpcom *ac;
-	struct inaddr *addr;
+	struct in_addr *addr;
 {
 	register struct mbuf *m;
 	register struct ether_header *eh;
