@@ -1,6 +1,0 @@
-# font family: Titan
-#
-# specify the name mapping from the IP metrics file to Troff metrics format
-#
-XEROX XC1-1-1 Titan-Printwheel		TR    xc1-1-1.map
-XEROX XC1-1-1 Titan-Printwheel-Bold	TB    xc1-1-1.map

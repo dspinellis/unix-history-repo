@@ -1,4 +1,0 @@
-uiucdcs:fa.all,mod.all,net.all,rbe.all,to.uiucdcs
-uiuccsc:net.sources,net.bugs,rbe.all,to.uiuccsc::/usr/ucb/rsh uiuccsc /usr/bin/rnews
-pur-ee:fa.all,mod.all,net.all,to.pur-ee
-to.nf:general,srg,rbe.all,fa.all,mod.all,net.all,!all.ctl:A:/usr/spool/notes/.utilities/newsinput

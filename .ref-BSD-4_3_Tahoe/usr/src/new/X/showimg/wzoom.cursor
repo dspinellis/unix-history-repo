@@ -1,9 +1,0 @@
-#define wzoom_width 13
-#define wzoom_height 13
-#define wzoom_x_hot 6
-#define wzoom_y_hot 6
-static short wzoom_bits[] = {
-   0x0000, 0x0802, 0x0404, 0x0208,
-   0x01f0, 0x0110, 0x0110, 0x0110,
-   0x01f0, 0x0208, 0x0404, 0x0802,
-   0x0000};

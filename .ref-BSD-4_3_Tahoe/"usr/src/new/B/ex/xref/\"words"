@@ -1,8 +1,0 @@
-YIELD words line:
-	PUT {} IN list
-	WHILE SOME head, word, tail PARSING line HAS word'isolated:
-		INSERT word IN list
-		PUT tail IN line
-	RETURN list
-word'isolated:
-	REPORT word>'' AND alphabetic word|1 AND (tail='' OR NOT alphabetic tail|1)

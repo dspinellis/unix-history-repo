@@ -1,0 +1,61 @@
+:
+#!/bin/sh
+#
+#       @(#)runtests	1.2 90/01/03 NFS Rev 2 testsuite
+#
+
+# Master runtests script.  Default is to run tests in each of
+# basic, general, and special subdirectories.  $NFSTESTDIR is
+# removed before general and special tests (if previous test done)
+# so that tests.init invoked from their respective runtests script
+# will not ask if the test dir should be removed (since this was
+# verified in the preceeding test).
+#
+# Special tests are not run as part of the default suite, but can
+# be run manually at this level.
+Program=`basename $0`
+
+InitFile="./tests.init"
+if test $# != 4
+then
+	TESTS=$1
+	TESTARG=$2
+	TESTPATH=$3
+else
+	if test -f $InitFile
+	then
+		echo "$Program:  using test defaults in tests.init"
+		. $InitFile
+	else
+		echo "usage:  $Program tests testargs testpath"
+		exit 1
+	fi
+fi
+if test x$NFSTESTDIR = x
+then
+	echo "$Program:  NFSTESTDIR environment variable not set"
+	exit 1
+fi
+
+export PATH
+
+case $TESTS in
+	-a)	dirs="basic general"	;;
+	-b)	dirs="basic"		;;
+	-g)	dirs="general"		;;
+	-s)	dirs="special"		;;
+esac
+for dir in $dirs
+do
+	echo ""
+	if test -d $NFSTESTDIR
+	then
+		rm -rf $NFSTESTDIR
+	fi
+	(cd $dir; exec sh runtests $TESTARG)
+done
+
+echo ""
+rm -rf $NFSTESTDIR
+
+echo "All tests completed"

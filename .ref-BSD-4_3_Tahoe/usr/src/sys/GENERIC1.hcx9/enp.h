@@ -1,1 +1,0 @@
-#define NENP 0

@@ -1,0 +1,16 @@
+:
+#! /bin/sh
+#
+#       @(#)mkdummy	1.2 90/01/03 NFS Rev 2 testsuite
+#
+
+bases=" 1  2  3  4  5  6  7  8  9 10
+       11 12 13 14 15 16 17 18 19 20
+       21 22 23 24 25"
+rm -rf dummy*
+for i in $bases; do
+	touch dummy$i.o
+done
+for i in $bases; do
+	touch dummy$i.c
+done

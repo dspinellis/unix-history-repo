@@ -1,1 +1,0 @@
-#define NETHER 1
