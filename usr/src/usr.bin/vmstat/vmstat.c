@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.41 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -88,6 +88,10 @@ struct nlist namelist[] = {
 #if defined(hp300) || defined(luna68k)
 #define	X_HPDINIT	(X_END)
 	{ "_hp_dinit" },
+#endif
+#ifdef mips
+#define	X_SCSI_DINIT	(X_END)
+	{ "_scsi_dinit" },
 #endif
 #ifdef tahoe
 #define	X_VBDINIT	(X_END)
@@ -209,11 +213,12 @@ main(argc, argv)
 	if ((c = kvm_nlist(kd, namelist)) != 0) {
 		if (c > 0) {
 			(void)fprintf(stderr,
-			    "vmstat: undefined symbols: ");
+			    "vmstat: undefined symbols:");
 			for (c = 0;
 			    c < sizeof(namelist)/sizeof(namelist[0]); c++)
 				if (namelist[c].n_type == 0)
-					printf(" %s", namelist[c].n_name);
+					fprintf(stderr, " %s",
+					    namelist[c].n_name);
 			(void)fputc('\n', stderr);
 		} else
 			(void)fprintf(stderr, "vmstat: kvm_nlist: %s\n",
