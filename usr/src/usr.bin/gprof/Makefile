@@ -9,7 +9,7 @@
 # software without specific written prior permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -41,8 +41,8 @@ depend: FRC
 
 install: FRC
 	install -s -o bin -g bin -m 755 gprof ${DESTDIR}/usr/ucb/gprof
-	install -c -o bin -g bin -m 644 gprof.flat ${DESTDIR}/usr/lib
-	install -c -o bin -g bin -m 644 gprof.callg ${DESTDIR}/usr/lib
+	install -c -o bin -g bin -m 444 gprof.flat ${DESTDIR}/usr/lib
+	install -c -o bin -g bin -m 444 gprof.callg ${DESTDIR}/usr/lib
 
 lint: FRC
 	lint ${CFLAGS} ${SRCS}
