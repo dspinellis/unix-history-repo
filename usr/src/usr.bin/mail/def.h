@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)def.h	5.1 (Berkeley) %G%
+ *	@(#)def.h	5.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>		/* includes <sys/types.h> */
