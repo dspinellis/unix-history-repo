@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.34 1994/01/29 20:22:31 nate Exp $
+#	$Id: Makefile,v 1.35 1994/01/30 02:12:26 rgrimes Exp $
 #
 
 SUBDIR=
@@ -118,7 +118,7 @@ includes:
 .endif
 	cd ${.CURDIR}/include;			make install
 	cd ${.CURDIR}/gnu/usr.bin/cc/libobjc;	make beforeinstall
-	cd ${.CURDIR}/gnu/usr.bin/libg++;	make beforeinstall
+	cd ${.CURDIR}/gnu/lib/libg++;		make beforeinstall
 	cd ${.CURDIR}/lib/libcurses;		make beforeinstall
 	cd ${.CURDIR}/lib/libc;			make beforeinstall
 
