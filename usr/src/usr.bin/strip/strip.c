@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)strip.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)strip.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -129,8 +129,8 @@ s_stab(fn, fd, ep)
 
 	/* Map the file. */
 	if (fstat(fd, &sb) ||
-	    (ep = (EXEC *)mmap(NULL, (int)sb.st_size, PROT_READ | PROT_WRITE,
-	    MAP_FILE | MAP_SHARED, fd, (off_t)0)) == (EXEC *)-1)
+	    (ep = (EXEC *)mmap(NULL, (size_t)sb.st_size,
+	    PROT_READ | PROT_WRITE, MAP_SHARED, fd, (off_t)0)) == (EXEC *)-1)
 		err("%s: %s", fn, strerror(errno));
 
 	/*
@@ -181,7 +181,7 @@ s_stab(fn, fd, ep)
 	/* Truncate to the current length. */
 	if (ftruncate(fd, (char *)nsym + len - (char *)ep))
 		err("%s: %s", fn, strerror(errno));
-	munmap((caddr_t)ep, sb.st_size);
+	munmap((caddr_t)ep, (size_t)sb.st_size);
 }
 
 void
