@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newwin.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)newwin.c	8.3 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <stdlib.h>
@@ -207,16 +207,11 @@ void
 __swflags(win)
 	register WINDOW *win;
 {
-	win->flags &= 
-	    ~(__ENDLINE | __FULLLINE | __FULLWIN | __SCROLLWIN | __LEAVEOK);
+	win->flags &= ~(__ENDLINE | __FULLWIN | __SCROLLWIN | __LEAVEOK);
 	if (win->begx + win->maxx == COLS) {
 		win->flags |= __ENDLINE;
-		if (win->begx == 0) {
-			if (AL && DL)
-				win->flags |= __FULLLINE;
-			if (win->maxy == LINES && win->begy == 0)
-				win->flags |= __FULLWIN;
-		}
+		if (win->begx == 0 && win->maxy == LINES && win->begy == 0)
+			win->flags |= __FULLWIN;
 		if (win->begy + win->maxy == LINES)
 			win->flags |= __SCROLLWIN;
 	}
