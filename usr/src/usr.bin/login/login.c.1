@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)login.c.1	4.15 82/03/27";
+static	char *sccsid = "@(#)login.c.1	4.16 82/04/03";
 /*
  * login [ name ]
  * login -r
@@ -111,7 +111,7 @@ char **argv;
 				printf("%s: No such user\r\n", lusername);
 			goto abnormal;
 		}
-		hostf = fopen("/etc/hosts.equiv", "r");
+		hostf = pwd->pw_uid ? fopen("/etc/hosts.equiv", "r") : 0;
 	again:
 		if (hostf) {
 		  char ahost[32];
@@ -337,19 +337,19 @@ normal:
 int	stopmotd;
 catch()
 {
+
 	signal(SIGINT, SIG_IGN);
 	stopmotd++;
 }
 
-/*
- * return true if OK for root to login on this terminal
- */
 rootterm(tty)
-	char	*tty;
+	char *tty;
 {
 	register FILE *fd;
-	char	buf[100];
+	char buf[100];
 
+	if (rflag)
+		return(1);
 	if ((fd = fopen(securetty, "r")) == NULL)
 		return(1);
 	while (fgets(buf, sizeof buf, fd) != NULL) {
