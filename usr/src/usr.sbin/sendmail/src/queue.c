@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.15		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.16		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.15		%G%);
+SCCSID(@(#)queue.c	3.16		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -42,8 +42,6 @@ queueup(df)
 	**  Create control file.
 	*/
 
-	strcpy(cf, QueueDir);
-	strcat(cf, "/cfXXXXXX");
 	(void) mktemp(cf);
 	f = fopen(cf, "w");
 	if (f == NULL)
@@ -141,7 +139,7 @@ runqueue(forkflag)
 	if (QueueIntvl != 0)
 	{
 		(void) signal(SIGALRM, reordersig);
-		(void) alarm((unsigned) QueueIntvl);
+		(void) alarm(QueueIntvl);
 	}
 
 	if (forkflag)
@@ -153,7 +151,7 @@ runqueue(forkflag)
 			return;
 		}
 		else
-			(void) alarm((unsigned) 0);
+			(void) alarm(0);
 	}
 
 	for (;;)
@@ -246,7 +244,7 @@ reordersig()
 	*/
 
 	(void) signal(SIGALRM, reordersig);
-	(void) alarm((unsigned) QueueIntvl);
+	(void) alarm(QueueIntvl);
 }
 /*
 **  ORDERQ -- order the work queue.
@@ -310,10 +308,10 @@ orderq()
 			continue;
 
 		/* yes -- find the control file location */
-		strcpy(cbuf, QueueDir);
-		strcat(cbuf, "/");
+		(void) strcpy(cbuf, QueueDir);
+		(void) strcat(cbuf, "/");
 		p = &cbuf[strlen(cbuf)];
-		strcpy(p, d->d_name);
+		(void) strcpy(p, d->d_name);
 
 		/* open control file */
 		cf = fopen(cbuf, "r");

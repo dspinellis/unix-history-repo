@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.77		%G%);
+SCCSID(@(#)main.c	3.78		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -953,7 +953,7 @@ initsys()
 		{
 			if (rindex(p, '/') != NULL)
 				p = rindex(p, '/') + 1;
-			strcpy(ybuf, p);
+			(void) strcpy(ybuf, p);
 			define('y', ybuf);
 		}
 	}

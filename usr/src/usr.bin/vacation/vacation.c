@@ -5,7 +5,7 @@
 # include "useful.h"
 # include "userdbm.h"
 
-SCCSID(@(#)vacation.c	3.6		%G%);
+SCCSID(@(#)vacation.c	3.7		%G%);
 
 /*
 **  VACATION -- return a message to the sender when on vacation.
@@ -100,8 +100,8 @@ main(argc, argv)
 		exit(EX_NOUSER);
 	}
 	homedir = newstr(pw->pw_dir);
-	strcpy(buf, homedir);
-	strcat(buf, "/.vacation");
+	(void) strcpy(buf, homedir);
+	(void) strcat(buf, "/.vacation");
 	dbminit(buf);
 
 	/* read message from standard input (just from line) */
@@ -114,7 +114,7 @@ main(argc, argv)
 		setknows(from, buf);
 
 		/* send the message back */
-		strcat(buf, ".msg");
+		(void) strcat(buf, ".msg");
 		sendmessage(buf, from, myname);
 		/* never returns */
 	}
@@ -273,12 +273,12 @@ initialize()
 	homedir = getenv("HOME");
 	if (homedir == NULL)
 		syserr("No home!");
-	strcpy(buf, homedir);
-	strcat(buf, "/.vacation.dir");
+	(void) strcpy(buf, homedir);
+	(void) strcat(buf, "/.vacation.dir");
 	if (close(creat(buf, 0644)) < 0)
 		syserr("Cannot create %s", buf);
-	strcpy(buf, homedir);
-	strcat(buf, "/.vacation.pag");
+	(void) strcpy(buf, homedir);
+	(void) strcat(buf, "/.vacation.pag");
 	if (close(creat(buf, 0644)) < 0)
 		syserr("Cannot create %s", buf);
 }

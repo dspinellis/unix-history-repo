@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.30		%G%);
+SCCSID(@(#)savemail.c	3.31		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -182,7 +182,6 @@ savemail()
 **		mail.
 */
 
-static char	*ErrorMessage;
 static bool	SendBody;
 
 returntosender(msg, sendbody)
@@ -228,9 +227,6 @@ returntosender(msg, sendbody)
 }
 /*
 **  ERRHDR -- Output the header for error mail.
-**
-**	This is the edit filter to error mailbacks.
-**
 **	Parameters:
 **		xfile -- the transcript file.
 **		fp -- the output file.
@@ -327,7 +323,7 @@ errhdr(fp, m, xdot)
 		{
 			fprintf(fp, "\n  ----- Message header follows -----\n");
 			(void) fflush(fp);
-			putheader(fp, Mailer[1]);
+			putheader(fp, m, CurEnv);
 		}
 	}
 	else

@@ -11,7 +11,7 @@
 # include <sysexits.h>
 # include "useful.h"
 
-SCCSID(@(#)rmail.c	3.10	(Berkeley)	%G%);
+SCCSID(@(#)rmail.c	3.11	(Berkeley)	%G%);
 
 extern FILE *popen();
 extern char *index();
@@ -49,8 +49,8 @@ main(argc, argv)
 		exit(EX_USAGE);
 	}
 
-	strcpy(from, "");
-	strcpy(ufrom, "/dev/null");
+	(void) strcpy(from, "");
+	(void) strcpy(ufrom, "/dev/null");
 
 	for (;;)
 	{
@@ -70,7 +70,7 @@ main(argc, argv)
 				if (p != NULL)
 				{
 					*p = '\0';
-					strcpy(sys, uf);
+					(void) strcpy(sys, uf);
 					uf = p + 1;
 					break;
 				}
@@ -85,24 +85,24 @@ main(argc, argv)
 		}
 		if (cp != NULL)
 			(void) sscanf(cp, "remote from %s", sys);
-		strcat(from, sys);
-		strcat(from, "!");
+		(void) strcat(from, sys);
+		(void) strcat(from, "!");
 #ifdef DEBUG
 		if (Debug)
 			printf("ufrom='%s', sys='%s', from now '%s'\n", uf, sys, from);
 #endif
 	}
-	strcat(from, uf);
+	(void) strcat(from, uf);
 
 	(void) sprintf(cmd, "%s -em -f%s", MAILER, from);
 	while (*++argv != NULL)
 	{
-		strcat(cmd, " '");
+		(void) strcat(cmd, " '");
 		if (**argv == '(')
-			strncat(cmd, *argv + 1, strlen(*argv) - 2);
+			(void) strncat(cmd, *argv + 1, strlen(*argv) - 2);
 		else
-			strcat(cmd, *argv);
-		strcat(cmd, "'");
+			(void) strcat(cmd, *argv);
+		(void) strcat(cmd, "'");
 	}
 #ifdef DEBUG
 	if (Debug)

@@ -2,13 +2,13 @@
 # include "sendmail.h"
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.12		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.13		%G%	(w/o daemon mode));
 #else
 
 # include <sys/socket.h>
 # include <net/in.h>
 
-SCCSID(@(#)daemon.c	3.12		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.13		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -61,7 +61,7 @@ getrequests()
 		{
 			syserr("daemon: cannot fork");
 			sleep(10);
-			close(port);
+			(void) close(port);
 			continue;
 		}
 
@@ -96,7 +96,7 @@ getrequests()
 # endif DEBUG
 
 		(void) wait(&st);
-		close(port);
+		(void) close(port);
 	}
 }
 /*
@@ -190,7 +190,7 @@ makeconnection(host, port, outfile, infile)
 		printf("makeconnection (%s)\n", host);
 # endif DEBUG
 
-	s = socket(SOCK_STREAM, 0, 0, 0);
+	s = socket(SOCK_STREAM, 0, (struct sockaddr_in *) 0, 0);
 	if (s < 0)
 	{
 		syserr("makeconnection: no socket");

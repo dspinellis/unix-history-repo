@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	3.35		%G%);
+SCCSID(@(#)recipient.c	3.36		%G%);
 
 /*
 **  SENDTO -- Designate a send list.
@@ -278,7 +278,7 @@ recipient(a, sendq)
 		extern bool writable();
 		bool quoted = FALSE;
 
-		strcpy(buf, a->q_user);
+		(void) strcpy(buf, a->q_user);
 		for (p = buf; *p != '\0' && !quoted; p++)
 		{
 			if (!isascii(*p) && (*p & 0377) != (SPACESUB & 0377))
@@ -322,7 +322,7 @@ recipient(a, sendq)
 				if (strcmp(a->q_user, pw->pw_name) != 0)
 				{
 					a->q_user = newstr(pw->pw_name);
-					strcpy(buf, pw->pw_name);
+					(void) strcpy(buf, pw->pw_name);
 				}
 				a->q_home = newstr(pw->pw_dir);
 				a->q_uid = pw->pw_uid;

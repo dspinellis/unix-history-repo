@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.25		%G%);
+SCCSID(@(#)readcf.c	3.26		%G%);
 
 /*
 **  READCF -- read control file.
@@ -335,7 +335,7 @@ makemailer(line, safe)
 	margv[i++] = NULL;
 
 	/* save the argv */
-	m->m_argv = (char **) xalloc((unsigned) (sizeof margv[0] * i));
+	m->m_argv = (char **) xalloc(sizeof margv[0] * i);
 	bmove((char *) margv, (char *) m->m_argv, sizeof margv[0] * i);
 	s = stab(m->m_name, ST_MAILER, ST_ENTER);
 	s->s_mailer = m;
