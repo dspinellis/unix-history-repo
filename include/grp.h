@@ -54,7 +54,7 @@ struct group *getgrgid __P((gid_t));
 struct group *getgrnam __P((const char *));
 #ifndef _POSIX_SOURCE
 struct group *getgrent __P((void));
-int setgrent __P((void));
+void setgrent __P((void));
 void endgrent __P((void));
 void setgrfile __P((const char *));
 int setgroupent __P((int));
