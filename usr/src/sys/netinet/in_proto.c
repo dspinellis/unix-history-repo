@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in_proto.c	6.11 (Berkeley) %G%
+ *	@(#)in_proto.c	6.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -40,7 +40,7 @@ int	rimp_output(), hostslowtimo();
 #endif
 
 #ifdef NSIP
-int	idpip_input();
+int	idpip_input(), nsip_ctlinput();
 #endif
 
 extern	struct domain inetdomain;
@@ -73,7 +73,7 @@ struct protosw inetsw[] = {
 },
 #ifdef NSIP
 { SOCK_RAW,	&inetdomain,	IPPROTO_IDP,	PR_ATOMIC|PR_ADDR,
-  idpip_input,	rip_output,	0,		0,
+  idpip_input,	rip_output,	nsip_ctlinput,	0,
   raw_usrreq,
   0,		0,		0,		0,
 },
