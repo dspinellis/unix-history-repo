@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_balloc.c	8.7 (Berkeley) %G%
+ *	@(#)ffs_balloc.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -43,7 +43,7 @@ ffs_balloc(ip, lbn, size, cred, bpp, flags)
 	struct indir indirs[NIADDR + 2];
 	ufs_daddr_t newb, *bap, pref;
 	int deallocated, osize, nsize, num, i, error;
-	ufs_daddr_t *allocib, *blkp, *allocblk, allociblk[NIADDR];
+	ufs_daddr_t *allocib, *blkp, *allocblk, allociblk[NIADDR + 1];
 
 	*bpp = NULL;
 	if (lbn < 0)
@@ -142,7 +142,7 @@ ffs_balloc(ip, lbn, size, cred, bpp, flags)
 	 */
 	--num;
 	nb = ip->i_ib[indirs[0].in_off];
-	allocib = 0;
+	allocib = NULL;
 	allocblk = allociblk;
 	if (nb == 0) {
 		pref = ffs_blkpref(ip, lbn, 0, (ufs_daddr_t *)0);
@@ -150,19 +150,18 @@ ffs_balloc(ip, lbn, size, cred, bpp, flags)
 		    cred, &newb))
 			return (error);
 		nb = newb;
+		*allocblk++ = nb;
 		bp = getblk(vp, indirs[1].in_lbn, fs->fs_bsize, 0, 0);
-		bp->b_blkno = fsbtodb(fs, newb);
+		bp->b_blkno = fsbtodb(fs, nb);
 		clrbuf(bp);
 		/*
 		 * Write synchronously so that indirect blocks
 		 * never point at garbage.
 		 */
-		if (error = bwrite(bp)) {
-			ffs_blkfree(ip, nb, fs->fs_bsize);
-			return (error);
-		}
+		if (error = bwrite(bp))
+			goto fail;
 		allocib = &ip->i_ib[indirs[0].in_off];
-		ip->i_ib[indirs[0].in_off] = newb;
+		*allocib = nb;
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 	}
 	/*
@@ -191,8 +190,8 @@ ffs_balloc(ip, lbn, size, cred, bpp, flags)
 			brelse(bp);
 			goto fail;
 		}
-		*allocblk++ = newb;
 		nb = newb;
+		*allocblk++ = nb;
 		nbp = getblk(vp, indirs[i].in_lbn, fs->fs_bsize, 0, 0);
 		nbp->b_blkno = fsbtodb(fs, nb);
 		clrbuf(nbp);
@@ -225,8 +224,8 @@ ffs_balloc(ip, lbn, size, cred, bpp, flags)
 			brelse(bp);
 			goto fail;
 		}
-		*allocblk++ = newb;
 		nb = newb;
+		*allocblk++ = nb;
 		nbp = getblk(vp, lbn, fs->fs_bsize, 0, 0);
 		nbp->b_blkno = fsbtodb(fs, nb);
 		if (flags & B_CLRBUF)
@@ -262,18 +261,12 @@ fail:
 	 * If we have failed part way through block allocation, we
 	 * have to deallocate any indirect blocks that we have allocated.
 	 */
-	if (allocib == 0) {
-		deallocated = 0;
-	} else {
-		ffs_blkfree(ip, *allocib, fs->fs_bsize);
-		*allocib = 0;
-		deallocated = fs->fs_bsize;
-		ip->i_flag |= IN_CHANGE | IN_UPDATE;
-	}
-	for (blkp = allociblk; blkp < allocblk; blkp++) {
+	for (deallocated = 0, blkp = allociblk; blkp < allocblk; blkp++) {
 		ffs_blkfree(ip, *blkp, fs->fs_bsize);
 		deallocated += fs->fs_bsize;
 	}
+	if (allocib != NULL)
+		*allocib = 0;
 	if (deallocated) {
 #ifdef QUOTA
 		/*
