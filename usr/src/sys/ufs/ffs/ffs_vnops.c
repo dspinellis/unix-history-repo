@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ffs_vnops.c	7.1 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -778,6 +778,8 @@ fsync()
 		return;
 	ip = (struct inode *)fp->f_data;
 	ILOCK(ip);
+	if (fp->f_flag&FWRITE)
+		ip->i_flag |= ICHG;
 	syncip(ip);
 	IUNLOCK(ip);
 }
