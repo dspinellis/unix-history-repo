@@ -60,6 +60,14 @@
  *
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00134
+ * --------------------         -----   ----------------------
+ *
+ * 08 Apr 93	Andrew Herbert		Better messages for kmem_alloc panics
+ *		John Dyson		Add vm_map_simplify's to reduce frags
  */
 
 /*
@@ -214,6 +222,7 @@ void kmem_free(map, addr, size)
 	vm_size_t		size;
 {
 	(void) vm_map_remove(map, trunc_page(addr), round_page(addr + size));
+	vm_map_simplify(map, addr);
 }
 
 /*
@@ -361,17 +370,21 @@ kmem_malloc(map, size, canwait)
 	vm_page_t		m;
 	extern vm_object_t	kmem_object;
 
-	if (map != kmem_map && map != mb_map && map != buffer_map)
-		panic("kern_malloc_alloc: map != {kmem,mb,buffer}_map");
+	if (map != kmem_map && map != mb_map)
+		panic("kern_malloc_alloc: map != {kmem,mb}_map");
 
 	size = round_page(size);
 	addr = vm_map_min(map);
 
 	if (vm_map_find(map, NULL, (vm_offset_t)0,
 			&addr, size, TRUE) != KERN_SUCCESS) {
-		if (canwait)
-			panic("kmem_malloc: kmem_map too small");
-		return(0);
+		if (!canwait) {
+			if (map == kmem_map)
+				panic("kmem_malloc: kmem_map too small");
+			else if (map == mb_map)
+				printf("kmem_malloc: mb_map too small (can't wait)\n");
+		}
+		return 0;
 	}
 
 	/*
@@ -576,6 +589,7 @@ void	kmem_free_wakeup(map, addr, size)
 	(void) vm_map_delete(map, trunc_page(addr), round_page(addr + size));
 	thread_wakeup((int)map);
 	vm_map_unlock(map);
+	vm_map_simplify(map, addr);
 }
 
 /*

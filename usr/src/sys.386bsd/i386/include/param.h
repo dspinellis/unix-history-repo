@@ -34,6 +34,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)param.h	5.8 (Berkeley) 6/28/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00134
+ * --------------------         -----   ----------------------
+ *
+ * 08 Apr 93	Andrew Herbert		Fixes for kmem_alloc panics
+ *		Rodney W. Grimes	Tuneable mbuf sizes
  */
 
 /*
@@ -82,23 +90,29 @@
  * clusters (MAPPED_MBUFS), MCLBYTES must also be an integral multiple
  * of the hardware page size.
  */
+#ifndef	MSIZE
 #define	MSIZE		128		/* size of an mbuf */
-#define	MCLBYTES	1024
-#define	MCLSHIFT	10
-#define	MCLOFSET	(MCLBYTES - 1)
+#endif	/* MSIZE */
+
+#ifndef	MCLSHIFT
+#define	MCLSHIFT	10		/* convert bytes to m_buf clusters */
+#endif	/* MCLSHIFT */
+#define	MCLBYTES	(1 << MCLSHIFT)	/* size of an m_buf cluster */
+#define	MCLOFSET	(MCLBYTES - 1)	/* offset within an m_buf cluster */
+
 #ifndef NMBCLUSTERS
 #ifdef GATEWAY
 #define	NMBCLUSTERS	512		/* map size, max cluster allocation */
 #else
 #define	NMBCLUSTERS	256		/* map size, max cluster allocation */
-#endif
-#endif
+#endif	/* GATEWAY */
+#endif	/* NMBCLUSTERS */
 
 /*
  * Size of kernel malloc arena in CLBYTES-sized logical pages
  */ 
 #ifndef NKMEMCLUSTERS
-#define	NKMEMCLUSTERS	(2048*1024/CLBYTES)
+#define	NKMEMCLUSTERS	(3072*1024/CLBYTES)
 #endif
 /*
  * Some macros for units conversion
