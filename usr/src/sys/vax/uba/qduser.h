@@ -3,8 +3,9 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- * 		@(#)qduser.h	1.3  Berkeley  %G%
+ * 		@(#)qduser.h	1.4  Berkeley  %G%
  */
+/* derived from: @(#)qduser.h	6.1	(ULTRIX)	11/24/87       */
 /************************************************************************
  *									*
  *			Copyright (c) 1986 by				*
@@ -35,7 +36,7 @@
 ***************************************************************************/
 
 /***************************************************************************
-*	revision history: (belongs in sccs)
+*	revision history:
 ****************************************************************************
 *
 * 21 jul 86  ram    fixed define of CURSOR_MIN_Y
