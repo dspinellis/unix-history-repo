@@ -1,0 +1,58 @@
+.\"	@(#)logger.8	1.1		12/2/83
+.TH LOGGER 1
+.SH NAME
+logger \(em make entries in the system log
+.SH SYNOPSIS
+.B logger
+[
+.B \-t
+tag
+] [
+.B \-p
+pri
+] [
+.B \-i
+] [
+.B \-f
+file
+] [
+message ...
+]
+.SH ARGUMENTS
+.TP 12n
+.BI \-t tag
+Mark every line in the log with the specified
+.IR tag .
+.TP
+.BI \-p pri
+Enter the message with the specified priority.
+.TP
+.B \-i
+Log the process id of the logger process
+with each line.
+.TP
+.BI \-f file
+Log the specified file.
+.TP
+message
+The message to log;
+if not specified,
+the
+.B \-f
+file or standard input is logged.
+.SH DESCRIPTION
+.I Logger
+provides a program interface to the
+.IR syslog (3)
+system log module.
+.PP
+A message can be given on the command line,
+which is logged immediately,
+or a file is read and each line is logged.
+.SH EXAMPLES
+logger System rebooted
+.PP
+logger \-t HOSTIDM \-f /dev/idmc
+.SH SEE ALSO
+syslog(3),
+syslog(8)

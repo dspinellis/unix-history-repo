@@ -1,0 +1,195 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)backgammon.src	5.2 (Berkeley) 1/11/86
+.\"
+.th BACKGAMMON PUBLIC \n(mo/\n(dy/\n(yr
+.sh NAME
+backgammon - the game of backgammon
+.sh SYNOPSIS
+.bd backgammon
+[ - ] [ n r w b pr pw pb t\c
+.it term
+s\c
+.it file
+]
+.sh DESCRIPTION
+This program lets you play backgammon against the computer
+or against a "friend".
+All commands only are one letter,
+so you don't need to type a carriage return,
+except at the end of a move.
+The program is mostly self documenting,
+so that a question mark (?) will usually get some help.
+If you answer `y' when the program asks if you want the rules,
+you will get text explaining the rules of the game,
+some hints on strategy,
+instruction on how to use the program,
+and a tutorial consisting of a practice game against the computer.
+A description of how to use the program can be
+obtained by answering `y' when it asks if you want instructions.
+.s3
+The possible arguments for backgammon
+(most are unnecesary but some are very convenient)
+consist of:
+.ne 11
+.s3
+.na
+.lp 16 8
+.bn n
+don't ask for rules or instructions
+.lp 16 8
+.bn r
+player is red (implies n)
+.lp 16 8
+.bn w
+player is white (implies n)
+.lp 16 8
+.bn b
+two players, red and white (implies n)
+.lp 16 8
+.bn pr
+print the board before red's turn
+.lp 16 8
+.bn pw
+print the board before white's turn
+.lp 16 8
+.bn pb
+print the board before both player's turn
+.lp 16 8
+.bn t\fiterm
+terminal is type
+.it term,
+uses /etc/termcap
+.lp 16 8
+.bn s\fifile
+recover previously saved game from
+.it file.
+(This can also be done by executing the saved file,
+i.e., typing its name in as a command)
+.s3
+.ad
+.i0
+Arguments may be optionally preceded by a `-'.
+Several arguments may be concatenated together,
+but not after `s' or `t' arguments,
+since they can be followed by an arbitrary string.
+Any unrecognized arguments are ignored.
+An argument of a lone `-' gets a description of possible arguments.
+.s3
+If
+.it term
+has capabilities for direct cursor movement (see ttycap(VII)),
+.it backgammon
+"fixes" the board after each move,
+so the board does not need to be reprinted,
+unless the screen suffers some horrendous malady.
+Also, any `p' option will be ignored.
+(The `t' option is not necessary unless the terminal type does not match
+the entry in the /etc/htmp data base.)
+.sh QUICK\ REFERENCE
+When the program prompts by typing only your color,
+type a space or carriage return to roll, or
+.ne 5
+.s3
+.na
+.lp 16 8
+.bn d
+to double
+.lp 16 8
+.bn p
+to print the board
+.lp 16 8
+.bn q
+to quit
+.lp 16 8
+.bn s
+to save the game for later
+.s3
+.i0
+.ad
+When the program prompts with 'Move:', type
+.ne 4
+.s3
+.na
+.lp 16 8
+.bn p
+to print the board
+.lp 16 8
+.bn q
+to quit
+.lp 16 8
+.bn s
+to save the game
+.ad
+.i0
+.s3
+or a
+.it move,
+which is a sequence of
+.ne 4
+.s3
+.na
+.lp 16 8
+.bn s-f
+move from
+.bd s
+to
+.bd f
+.lp 16 8
+.bn s/r
+move one man on
+.bd s
+the roll
+.bd r
+.ad
+.i0
+.s3
+separated by commas or spaces and ending with a newline.
+Available abbreviations are
+.ne 4
+.s3
+.na
+.lp 18 10
+.bn s-f1-f2
+means
+.bd s-f1,f1-f2
+.lp 18 10
+.bn s/r1r2
+means
+.bd s/r1,s/r2
+.ad
+.i0
+.s3
+Use `b' for bar and `h' for home,
+or 0 or 25 as appropriate.
+.sh AUTHOR
+Alan Char
+.sh FILES
+.lp 30 25
+.bn /mnt/alan/:toys/teachgammon
+- rules and tutorial
+.br
+.lp 30 25
+.bn /etc/htmp
+- data base on user's environment
+.br
+.lp 30 25
+.bn /etc/termcap
+- terminal capabilities
+.i0
+.sh BUGS
+The program's strategy needs much work.
+.s3
+/mnt/alan/:toys/teachgammon was removed to preserve space in /usr/public
+.sh COMMENTS
+The program is still under development,
+so a description of any bugs found should be mailed to
+.bd alan.
+.s3
+Because of the dynamic state of the program
+(constantly changing),
+the file
+.it /mnt/alan/:toys/gammon.news
+lists current modifications to the program.

@@ -1,8 +1,0 @@
-: ' sendbatchednews : transmit news which has been batched'
-S=/usr/spool/batch
-cd $S
-for sys in *
-do
-	uux -z -gd -r -c $sys!rnews '<' =/usr/lib/news/batch_/usr/spool/batch/$sys
-done
-/usr/lib/uucp/uucico -r1 &

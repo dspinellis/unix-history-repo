@@ -1,0 +1,574 @@
+Only in .: CHANGES
+Only in .: FILES
+Only in .: Makefile
+Only in .: OLD
+Only in .: SCCS
+Only in .: Version.c
+Only in .: Version.o
+diff OLD/alias.c ./alias.c
+8c8
+< SCCSID(@(#)alias.c	4.1		7/25/83	(with DBM));
+---
+> SCCSID(@(#)alias.c	4.2		12/27/83	(with DBM));
+10c10
+< SCCSID(@(#)alias.c	4.1		7/25/83	(without DBM));
+---
+> SCCSID(@(#)alias.c	4.2		12/27/83	(without DBM));
+394c394,397
+< 				p = &p[strlen(p)];
+---
+> 			{
+> 				p = &p[strlen(p) - 1];
+> 				*p = '\0';
+> 			}
+Only in .: alias.o
+Only in .: aliases
+diff OLD/arpadate.c ./arpadate.c
+9c9
+< SCCSID(@(#)arpadate.c	4.1		7/25/83);
+---
+> SCCSID(@(#)arpadate.c	4.3		10/1/83);
+46a47
+> 	extern bool fconvert();
+118c119,120
+< 	if (p[3] != '\0')
+---
+> 	if ((strncmp(p, "GMT", 3) == 0 || strncmp(p, "gmt", 3) == 0) &&
+> 	    p[3] != '\0')
+130a133
+> 		*q = '\0';
+132c135
+< 	else
+---
+> 	else if (!fconvert(p, q))
+137a141
+> 		*q = '\0';
+140d143
+< 	*q = '\0';
+141a145,201
+> }
+> /*
+> **  FCONVERT -- convert foreign timezones to ARPA timezones
+> **
+> **	This routine is essentially from Teus Hagen.
+> **
+> **	Parameters:
+> **		a -- timezone as returned from UNIX.
+> **		b -- place to put ARPA-style timezone.
+> **
+> **	Returns:
+> **		TRUE -- if a conversion was made (and b was filled in).
+> **		FALSE -- if this is not a recognized local time.
+> **
+> **	Side Effects:
+> **		none.
+> */
+> 
+> /* UNIX to arpa conversion table */
+> struct foreign
+> {
+> 	char *f_from; 
+> 	char *f_to; 
+> };
+> 
+> static struct foreign Foreign[] =
+> {
+> 	{ "eet",	" -0200" },	/* eastern europe */
+> 	{ "met",	" -0100" },	/* middle europe */
+> 	{ "wet",	" GMT"   },	/* western europe */
+> 	{ "eet dst",	" -0300" },	/* daylight saving times */
+> 	{ "met dst",	" -0200" },
+> 	{ "wet dst",	" -0100" },
+> 	{ NULL,		NULL	 }
+> };
+> 
+> bool
+> fconvert(a, b)
+> 	register char *a;
+> 	char *b;
+> {
+> 	register struct foreign *euptr;
+> 	register char *p;
+> 
+> 	makelower(a);
+> 	for (euptr = Foreign; euptr->f_from != NULL; euptr++)
+> 	{
+> 		if (strcmp(euptr->f_from, a) == 0)
+> 		{
+> 			p = euptr->f_to;
+> 			while (*p)
+> 				*b++ = *p++;
+> 			*b = '\0';
+> 			return (TRUE);
+> 		}
+> 	}
+> 	return (FALSE);
+Only in .: arpadate.o
+Only in .: bmove.o
+Only in .: clock.o
+Only in .: cmua.cf
+diff OLD/collect.c ./collect.c
+4c4
+< SCCSID(@(#)collect.c	4.1		7/25/83);
+---
+> SCCSID(@(#)collect.c	4.2		11/13/83);
+57,58c57
+< 	if (sfgets(buf, sizeof buf, InChannel) == NULL)
+< 		return;
+---
+> 	(void) sfgets(buf, sizeof buf, InChannel);
+76,77c75
+< 	for (; !feof(InChannel); !feof(InChannel) && !ferror(InChannel) &&
+< 				 sfgets(buf, MAXFIELD, InChannel) != NULL)
+---
+> 	do
+79c77
+< 		register char c;
+---
+> 		int c;
+85c83
+< 			while ((c = getc(InChannel)) != '\n')
+---
+> 			while ((c = getc(InChannel)) != '\n' && c != EOF)
+117c115
+< 	}
+---
+> 	} while (sfgets(buf, MAXFIELD, InChannel) != NULL);
+126d123
+< 	{
+128,129d124
+< 		fixcrlf(buf, TRUE);
+< 	}
+135,136c130
+< 	for (; !feof(InChannel); !feof(InChannel) && !ferror(InChannel) &&
+< 				 sfgets(buf, sizeof buf, InChannel) != NULL)
+---
+> 	do
+160c154
+< 	}
+---
+> 	} while (sfgets(buf, MAXFIELD, InChannel) != NULL);
+Only in .: collect.o
+Only in .: conf.o
+Only in .: convtime.o
+Only in .: daemon.o
+diff OLD/deliver.c ./deliver.c
+6c6
+< SCCSID(@(#)deliver.c	4.2		8/28/83);
+---
+> SCCSID(@(#)deliver.c	4.5		12/27/83);
+386c386
+< 			smtpquit(pv[0], m);
+---
+> 			smtpquit(m);
+760a761,762
+> 		int i;
+> 
+807,822c809,815
+< 		/*
+< 		**  We have to be careful with vfork - we can't mung up the
+< 		**  memory but we don't want the mailer to inherit any extra
+< 		**  open files.  Chances are the mailer won't
+< 		**  care about an extra file, but then again you never know.
+< 		**  Actually, we would like to close(fileno(pwf)), but it's
+< 		**  declared static so we can't.  But if we fclose(pwf), which
+< 		**  is what endpwent does, it closes it in the parent too and
+< 		**  the next getpwnam will be slower.  If you have a weird
+< 		**  mailer that chokes on the extra file you should do the
+< 		**  endpwent().			-MRH
+< 		**
+< 		**  Similar comments apply to log.  However, openlog is
+< 		**  clever enough to set the FIOCLEX mode on the file,
+< 		**  so it will be closed automatically on the exec.
+< 		*/
+---
+> 		/* arrange for all the files to be closed */
+> 		for (i = 3; i < 50; i++)
+> #ifdef FIOCLEX
+> 			(void) ioctl(i, FIOCLEX, 0);
+> #else FIOCLEX
+> 			(void) close(i);
+> #endif FIOCLEX
+824,825d816
+< 		closeall();
+< 
+829,830c820,822
+< 		/* syserr fails because log is closed */
+< 		/* syserr("Cannot exec %s", m->m_mailer); */
+---
+> #ifdef FIOCLEX
+> 		syserr("Cannot exec %s", m->m_mailer);
+> #else FIOCLEX
+832a825
+> #endif FIOCLEX
+901,903d893
+< 		extern char *sys_errlist[];
+< 		extern int sys_nerr;
+< 
+907,912c897
+< 			(void) strcat(buf, ": ");
+< 			if (errno > 0 && errno < sys_nerr)
+< 				(void) strcat(buf, sys_errlist[errno]);
+< 			else
+< 			{
+< 				char xbuf[30];
+---
+> 			extern char *errstring();
+914,916c899,900
+< 				(void) sprintf(xbuf, "Error %d", errno);
+< 				(void) strcat(buf, xbuf);
+< 			}
+---
+> 			(void) strcat(buf, ": ");
+> 			(void) strcat(buf, errstring(errno));
+Only in .: deliver.o
+Only in .: envelope.o
+diff OLD/err.c ./err.c
+3c3
+< SCCSID(@(#)err.c	4.2		9/5/83);
+---
+> SCCSID(@(#)err.c	4.3		10/1/83);
+272,277c272,274
+< 		extern int sys_nerr;
+< 		extern char *sys_errlist[];
+< 		if (errno < sys_nerr && errno > 0)
+< 			(void) sprintf(eb, ": %s", sys_errlist[errno]);
+< 		else
+< 			(void) sprintf(eb, ": error %d", errno);
+---
+> 		extern char *errstring();
+> 
+> 		(void) sprintf(eb, ": %s", errstring(errno));
+279a277,303
+> }
+> /*
+> **  ERRSTRING -- return string description of error code
+> **
+> **	Parameters:
+> **		errno -- the error number to translate
+> **
+> **	Returns:
+> **		A string description of errno.
+> **
+> **	Side Effects:
+> **		none.
+> */
+> 
+> char *
+> errstring(errno)
+> 	int errno;
+> {
+> 	extern char *sys_errlist[];
+> 	extern int sys_nerr;
+> 	static char buf[50];
+> 
+> 	if (errno > 0 && errno < sys_nerr)
+> 		return (sys_errlist[errno]);
+> 
+> 	(void) sprintf(buf, "Error %d", errno);
+> 	return (buf);
+Only in .: err.o
+Only in .: headers.o
+Only in .: lfAA21321
+Only in .: macro.o
+diff OLD/main.c ./main.c
+7c7
+< SCCSID(@(#)main.c	4.3		9/5/83);
+---
+> SCCSID(@(#)main.c	4.7		12/27/83);
+60c60
+< main(argc, argv)
+---
+> main(argc, argv, envp)
+62a63
+> 	char **envp;
+72c73
+< 	bool readconfig = FALSE;
+---
+> 	bool readconfig = TRUE;
+83a85
+> 	extern char **environ;
+123a126,128
+> 	/* reset the environment after the thaw */
+> 	environ = envp;
+> 
+150c155,156
+< 	closeall();
+---
+> 	for (i = 3; i < 50; i++)
+> 		(void) close(i);
+158,163c164
+< 	/* initialize some macros, etc. */
+< 	initmacros();
+< 
+< 	/* hostname */
+< 	av = myhostname(jbuf, sizeof jbuf);
+< 	if (jbuf[0] != '\0')
+---
+> 	if (readconfig)
+165,170c166,167
+< 		p = newstr(jbuf);
+< 		define('w', p, CurEnv);
+< 		setclass('w', p);
+< 	}
+< 	while (av != NULL && *av != NULL)
+< 		setclass('w', *av++);
+---
+> 		/* initialize some macros, etc. */
+> 		initmacros();
+172,173c169,178
+< 	/* version */
+< 	define('v', Version, CurEnv);
+---
+> 		/* hostname */
+> 		av = myhostname(jbuf, sizeof jbuf);
+> 		if (jbuf[0] != '\0')
+> 		{
+> 			p = newstr(jbuf);
+> 			define('w', p, CurEnv);
+> 			setclass('w', p);
+> 		}
+> 		while (av != NULL && *av != NULL)
+> 			setclass('w', *av++);
+174a180,183
+> 		/* version */
+> 		define('v', Version, CurEnv);
+> 	}
+> 
+384c393
+< 	**  If printing the queue, go off and do that.
+---
+> 	**  Do operation-mode-dependent initialization.
+387c396
+< 	if (OpMode == MD_PRINT)
+---
+> 	switch (OpMode)
+388a398,399
+> 	  case MD_PRINT:
+> 		/* print the queue */
+397d407
+< 	}
+399,404c409,411
+< 	/*
+< 	**  Initialize aliases.
+< 	*/
+< 
+< 	initaliases(AliasFile, OpMode == MD_INITALIAS);
+< 	if (OpMode == MD_INITALIAS)
+---
+> 	  case MD_INITALIAS:
+> 		/* initialize alias database */
+> 		initaliases(AliasFile, TRUE);
+405a413,422
+> 
+> 	  case MD_DAEMON:
+> 		/* don't open alias database -- done in srvrsmtp */
+> 		break;
+> 
+> 	  default:
+> 		/* open the alias database */
+> 		initaliases(AliasFile, FALSE);
+> 		break;
+> 	}
+Only in .: main.o
+Only in .: make.out
+Only in .: mqueue
+Only in .: options
+Only in .: osendmail
+diff OLD/parseaddr.c ./parseaddr.c
+3c3
+< SCCSID(@(#)parseaddr.c	4.1		7/25/83);
+---
+> SCCSID(@(#)parseaddr.c	4.3		10/23/83);
+168a169
+> **			If '\t' then we are reading the .cf file.
+223a225
+> 	extern int errno;
+224a227,229
+> 	/* make sure error messages don't have garbage on them */
+> 	errno = 0;
+> 
+251c256
+< 				/* squirrel it away */
+---
+> 				/* see if there is room */
+257a263,264
+> 
+> 				/* squirrel it away */
+264a272,273
+> 			c &= ~0200;
+> 
+271d279
+< 			c &= ~0200;
+962a971
+> 	register char *p;
+1050a1060,1062
+> 	**	Make sure that any real '$' characters in the input are
+> 	**	not accidently interpreted as macro expansions by quoting
+> 	**	them before expansion.
+1053a1066,1068
+> 	for (p = lbuf; *p != '\0'; p++)
+> 		if (*p == '$')
+> 			*p |= 0200;
+1056a1072
+> 	stripquotes(buf, FALSE);
+Only in .: parseaddr.o
+Only in .: qfAA21321
+Only in .: qfAA26161
+Only in .: queue.o
+Only in .: readcf.o
+diff OLD/recipient.c ./recipient.c
+5c5
+< SCCSID(@(#)recipient.c	4.1		7/25/83);
+---
+> SCCSID(@(#)recipient.c	4.2		10/29/83);
+330d329
+< 	extern struct passwd *getpwent();
+332a332,333
+> 	extern struct passwd *getpwent();
+> 	extern struct passwd *getpwnam();
+Only in .: recipient.o
+Only in .: savemail.o
+Only in .: sendmail.cf
+Only in .: sendmail.hf
+Only in .: sl
+Only in .: sm.arpa
+diff OLD/srvrsmtp.c ./srvrsmtp.c
+6c6
+< SCCSID(@(#)srvrsmtp.c	4.3		8/28/83	(no SMTP));
+---
+> SCCSID(@(#)srvrsmtp.c	4.5		11/26/83	(no SMTP));
+9c9
+< SCCSID(@(#)srvrsmtp.c	4.3		8/28/83);
+---
+> SCCSID(@(#)srvrsmtp.c	4.5		11/26/83);
+76c76
+< char	*WizWord = NULL;		/* the wizard word to compare against */
+---
+> char	*WizWord;			/* the wizard word to compare against */
+434c434
+< 				if (strcmp(WizWord, crypt(p, seed)) != 0)
+---
+> 				if (strcmp(WizWord, crypt(p, seed)) == 0)
+436c436,437
+< 					message("500", "You are no wizard!");
+---
+> 					IsWiz = TRUE;
+> 					message("200", "Please pass, oh mighty wizard");
+440,441c441
+< 			IsWiz = TRUE;
+< 			message("200", "Please pass, oh mighty wizard");
+---
+> 			message("500", "You are no wizard!");
+631a632,635
+> 
+> 		/* open alias database */
+> 		initaliases(AliasFile, FALSE);
+> 
+Only in .: srvrsmtp.diff
+Only in .: srvrsmtp.o
+Only in .: stab.o
+Only in .: stats.o
+Only in .: sysexits.o
+Only in .: tags
+Only in .: trace.h
+Only in .: trace.o
+diff OLD/usersmtp.c ./usersmtp.c
+6c6
+< SCCSID(@(#)usersmtp.c	4.4		9/7/83	(no SMTP));
+---
+> SCCSID(@(#)usersmtp.c	4.7		11/13/83	(no SMTP));
+9c9
+< SCCSID(@(#)usersmtp.c	4.4		9/7/83);
+---
+> SCCSID(@(#)usersmtp.c	4.7		11/13/83);
+82a83,89
+> 		if (CurEnv->e_xfp != NULL)
+> 		{
+> 			extern char *errstring();
+> 
+> 			fprintf(CurEnv->e_xfp, "421 %s.%s... Deferred: %s\n",
+> 				pvp[1], m->m_name, errstring(errno));
+> 		}
+277c284
+< **		name -- name of mailer we are quitting.
+---
+> **		m -- a pointer to the mailer.
+286,287c293
+< smtpquit(name, m)
+< 	char *name;
+---
+> smtpquit(m)
+312c318
+< 	i = endmailer(SmtpPid, name);
+---
+> 	i = endmailer(SmtpPid, m->m_argv[0]);
+314c320
+< 		syserr("smtpquit %s: stat %d", name, i);
+---
+> 		syserr("smtpquit %s: stat %d", m->m_argv[0], i);
+371c377
+< 			smtpquit("reply error", m);
+---
+> 			smtpquit(m);
+407c413
+< 			smtpquit("SMTP Shutdown", m);
+---
+> 			smtpquit(m);
+Only in .: usersmtp.o
+diff OLD/util.c ./util.c
+9c9
+< SCCSID(@(#)util.c	4.2		8/31/83);
+---
+> SCCSID(@(#)util.c	4.4		12/27/83);
+622c622,623
+< **		NULL on error (including timeout).
+---
+> **		NULL on error (including timeout).  This will also leave
+> **			buf containing a null string.
+653c654,655
+< 	do
+---
+> 	p = NULL;
+> 	while (p == NULL && !feof(fp) && !ferror(fp))
+657c659,661
+< 	} while (p == NULL && errno == EINTR);
+---
+> 		if (errno == EINTR)
+> 			clearerr(fp);
+> 	}
+663a668,669
+> 	if (p == NULL)
+> 		buf[0] = '\0';
+811,830d816
+< }
+< /*
+< **  CLOSEALL -- close all extraneous file descriptors
+< **
+< **	Parameters:
+< **		none.
+< **
+< **	Returns:
+< **		none.
+< **
+< **	Side Effects:
+< **		Closes all file descriptors except zero, one, and two.
+< */
+< 
+< closeall()
+< {
+< 	int i;
+< 
+< 	for (i = 3; i < 50; i++)
+< 		(void) close(i);
+Only in .: util.o
+diff OLD/version.c ./version.c
+2c2
+< static char	SccsId[] = "@(#)SendMail version 4.12 of 9/7/83";
+---
+> static char	SccsId[] = "@(#)SendMail version 4.24 of 12/27/83";
+5c5
+< char	Version[] = "4.12";
+---
+> char	Version[] = "4.24";
+Only in .: zzz

@@ -1,5 +1,0 @@
-procedure genpos(a,x)
-   local i
-   every i := 1 to *a do
-      if a[i] === x then suspend i
-end

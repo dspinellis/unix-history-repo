@@ -1,3 +1,0 @@
-#! /bin/csh -fx
-int/bin/icon-setup -vax -host gethost -directex -ext -ibin /usr/new/lib/icon/icont\
-	    -cbin /usr/new/lib/icon/iconc -iconx /usr/new/iconx

@@ -1,8 +1,0 @@
-procedure fword()
-   static wchar
-   local line
-   initial wchar := &lcase ++ &ucase ++ '\'-'
-   while line := read() do
-      if line := line[upto(wchar,line):0]
-      then return line[1:many(wchar,line)]
-end

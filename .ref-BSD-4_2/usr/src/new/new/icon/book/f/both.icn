@@ -1,7 +1,0 @@
-procedure both(s1,s2)
-   local line, count
-   count := 0
-   while line := read() do
-      if (find(s1,line),find(s2,line)) then count +:= 1
-   return count
-end

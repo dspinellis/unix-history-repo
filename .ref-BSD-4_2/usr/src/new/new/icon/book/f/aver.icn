@@ -1,7 +1,0 @@
-procedure main()
-   sum := 0.0
-   count := 0
-   while sum +:= read() do
-      count +:= 1
-   write(sum / count)
-end

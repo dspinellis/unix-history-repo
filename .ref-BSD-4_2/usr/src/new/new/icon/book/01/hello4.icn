@@ -1,8 +1,0 @@
-procedure main()
-   greet("Hello","world")
-end
-
-procedure greet(what,who)
-   write(what)
-   write(who)
-end

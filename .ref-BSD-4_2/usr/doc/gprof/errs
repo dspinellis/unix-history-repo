@@ -1,5 +1,0 @@
-tbl postp.me | eqn > postp.tbl.eqn
-tbl < present.me > present.tbl
-vtroff -t -me header.me abstract.me intro.me profiling.me gathering.me  postp.tbl.eqn present.tbl refs.me >vpr-t;
-vpr -t vpr-t
-0.8u 3.1s 0:57 6% 26+11k 42+182io 8pf+0w

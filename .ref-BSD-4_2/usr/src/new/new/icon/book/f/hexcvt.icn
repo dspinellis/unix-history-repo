@@ -1,3 +1,0 @@
-procedure hexcvt(s)
-   return integer("16r" || s)
-end

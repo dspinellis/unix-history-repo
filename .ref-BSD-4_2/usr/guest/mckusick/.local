@@ -1,6 +1,0 @@
-set path=(/a/guest/rrh/bin $path)
-alias netcp 'netcp -q'
-alias unlock rm -f /usr/spool/uucp/LCK..ttyhd
-alias cuwho 'date; ls -l /usr/spool/uucp/LCK*'
-alias csccs sccs -d/arch/rrh/ncc.d
-alias cgen pushd /va/staff/rrh/ncc.d

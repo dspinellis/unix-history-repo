@@ -1,0 +1,27 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)rain.6	6.1 (Berkeley) 5/20/85
+.\"
+.TH RAIN 6 "May 20, 1985"
+.UC 4
+.SH NAME
+rain \- animated raindrops display
+.SH SYNOPSIS
+/usr/games/rain
+.SH DESCRIPTION
+.PP
+.ad b
+.IR Rain 's
+display is modeled after the VAX/VMS program of the same name.
+The terminal has to be set for 9600 baud to obtain the proper effect.
+.PP
+As with all programs that use
+.IR termcap ,
+the TERM environment
+variable must be set (and exported) to the type of the terminal being used.
+.SH FILES
+/etc/termcap
+.SH AUTHOR
+Eric P. Scott

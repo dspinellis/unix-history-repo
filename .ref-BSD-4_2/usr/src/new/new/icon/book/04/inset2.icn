@@ -1,5 +1,0 @@
-procedure inset()
-   chars := ''
-   while chars ++:= read()
-   return chars
-end

@@ -1,0 +1,9 @@
+/* default.map3270:  This file is the system default for the key sequence
+ * if neither the user's TERM nor "unknown" are found in either of
+ * MAP3270 or /etc/map3270.
+ *
+ * @(#)default.map3270	1.1
+ *
+ */
+
+"3a { clear = '^z'; flinp = '^x'; enter = '^m'; delete = '^d' | '^?'; synch = '^r'; reshow = '^v'; eeof = '^e'; tab = '^i'; btab = '^b'; nl = '^n'; left = '^h'; right = '^l'; up = '^k'; down = '^j'; einp = '^w'; reset = '^t'; xoff = '^s'; xon = '^q'; escape = '^c'; ferase = '^u'; insrt = '\\E '; pa1 = '^p1'; pa2 = '^p2'; pa3 = '^p3'; pfk1 = '\\E1'; pfk2 = '\\E2'; pfk3 = '\\E3'; pfk4 = '\\E4'; pfk5 = '\\E5'; pfk6 = '\\E6'; pfk7 = '\\E7'; pfk8 = '\\E8'; pfk9 = '\\E9'; pfk10 = '\\E0'; pfk11 = '\\E-'; pfk12 = '\\E='; pfk13 = '\\E!'; pfk14 = '\\E@'; pfk15 = '\\E#'; pfk16 = '\\E$'; pfk17 = '\\E%'; pfk18 = '\\E\\^'; pfk19 = '\\E&'; pfk20 = '\\E*'; pfk21 = '\\E('; pfk22 = '\\E)'; pfk23 = '\\E_'; pfk24 = '\\E+'; }"

@@ -1,9 +1,0 @@
-procedure exor(s1,s2)
-   count := 0
-   while line := read() do
-      if find(s1,line) then {
-         if not find(s2,line) then count := count + 1
-         }
-      else if find(s2,line) then count := count + 1
-   return count
-end

@@ -1,5 +1,0 @@
-...|:^^:dp=.:dt=:dd=Build RCS file from SCCS file:
-....|:^^:dp=../..:
-man|:dp=man:dt=:dd=reference manual:
-man8|:dp=man/man8:dt=:dd=maintenance command reference manual:
-src|:dp=src:dt=:dd=sccstorcs - build RCS file from SCCS file:

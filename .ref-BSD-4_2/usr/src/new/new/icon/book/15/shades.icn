@@ -1,3 +1,0 @@
-procedure shades()
-   suspend arb() || lmatch(["black","white","gray"])
-end

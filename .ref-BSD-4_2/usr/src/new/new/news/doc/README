@@ -1,7 +1,0 @@
-Documentation in this directory has already been formatted with nroff.
-While the sources are available, some are written with -mm and some
-with -ms.  Since USG systems have only -mm and V7 and 4BSD has only -ms,
-about the only portable way to write documents is to use the -man macros.
-(No thanks!)  To make the documents usable to everyone, they are distributed
-pre-formatted.  Overstriking is done with carriage return (rather than
-backspace) which seems to work better on some line printers.

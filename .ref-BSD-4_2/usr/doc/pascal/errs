@@ -1,2 +1,0 @@
-soelim puman?.n | tbl | csh -cf '/usr/ucb/vtroff -t -x >lpr'
-vpr -t lpr

@@ -1,3 +1,0 @@
-procedure arbno(p)
-   suspend "" | (p() || arbno(p))
-end

@@ -1,0 +1,59 @@
+#
+# Copyright (c) 1983,1986 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile.install	5.2 (Berkeley) 5/11/86
+#
+# Makefile for /usr/include, used to convert system include subdirectories
+# between symbolic links and copies of kernel headers.
+# May also be used to update copies from kernel header files.
+#
+# The ``rm -rf''s used below are safe because rm doesn't
+# follow symbolic links.
+#
+DESTDIR=
+MACHINE=vax
+MACHDEP=${MACHINE} vaxif vaxmba vaxuba
+NETDIRS=net netimp netinet netns
+SYSDIRS=${NETDIRS} stand ${MACHDEP}
+SYS=/sys
+
+all:
+	@echo "\"make symlinks\", \"make copies\", or \"make update\" only"
+	@false
+
+symlinks:
+	for i in ${SYSDIRS}; do \
+		rm -rf $$i; \
+		ln -s ${SYS}/$$i $$i; \
+	done
+	rm -rf sys
+	ln -s ${SYS}/h sys
+
+copies:
+	-for i in ${SYSDIRS}; do \
+		rm -rf $$i; \
+		(cd ${SYS}; tar cf - $$i/*.h) | tar xpfB -; \
+	done
+	rm -rf sys;
+	mkdir sys; 
+	chmod 775 sys;
+	-(cd ${SYS}/h; tar cf - *.h) | (cd sys; tar xpfB -)
+
+update:
+	-for i in ${SYSDIRS}; do \
+		if [ ! -d $$i ]; \
+		then \
+			mkdir $$i; \
+		fi; \
+		for j in `cd ${SYS}/$$i; echo *.[ih]`; do \
+			cmp -s ${SYS}/$$i/$$j $$i/$$j || \
+			install -c -m 444 ${SYS}/$$i/$$j $$i/$$j; \
+		done; \
+	done
+	for j in `cd ${SYS}/h; echo *.[ih]`; do \
+		cmp -s ${SYS}/h/$$j sys/$$j || \
+		{ echo "install -c -m 444 ${SYS}/h/$$j sys/$$j"; \
+		install -c -m 444 ${SYS}/h/$$j sys/$$j; } \
+	done;

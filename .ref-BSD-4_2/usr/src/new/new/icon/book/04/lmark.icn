@@ -1,7 +1,0 @@
-procedure lmark(s)
-   while line := read() do {
-      write(line)
-      write(repl(" ",find(s,line) - 1),"|")
-      }
-   return
-end

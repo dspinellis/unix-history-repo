@@ -1,0 +1,68 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)install.1	6.1 (Berkeley) 4/29/85
+.\"
+.TH INSTALL 1 "April 29, 1985"
+.UC 5
+.SH NAME
+install \- install binaries
+.SH SYNOPSIS
+.B install
+[
+.B \-c
+] [
+.B \-m
+mode ] [
+.B \-o
+owner ] [
+.B \-g
+group ] [
+.B \-s
+] binary destination
+.SH DESCRIPTION
+.I Binary
+is moved (or copied if 
+.B \-c
+is specified) to
+.IR destination .
+If
+.I destination
+already exists,
+it is removed before
+.I binary
+is moved.
+If the destination is a directory then
+.I binary
+is moved into the
+.I destination
+directory with its original file-name.
+.PP
+The mode for
+.I Destination
+is set to 755; the
+.B \-m
+.I mode
+option may be used to specify a different mode.
+.PP
+.I Destination
+is changed to owner root; the
+.B \-o
+.I owner
+option may be used to specify a different owner.
+.PP
+.I Destination
+is changed to group staff; the
+.B \-g
+.I group
+option may be used to specify a different group.
+.PP
+If the
+.B \-s
+option is specified the binary is stripped after being installed.
+.PP
+.I Install
+refuses to move a file onto itself.
+.SH "SEE ALSO"
+chgrp(1), chmod(1), cp(1), mv(1), strip(1), chown(8)

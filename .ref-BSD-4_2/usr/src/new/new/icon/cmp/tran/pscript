@@ -1,4 +1,0 @@
-/"yacc stack overflow"/s/yyerror/syserr/
-/"syntax error"/s//yychar, yylval, yystate/
-w
-q

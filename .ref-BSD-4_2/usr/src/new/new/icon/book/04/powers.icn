@@ -1,8 +1,0 @@
-procedure main()
-   i := 0
-   while i < 10 do {
-      i +:= 1
-      write(right(i,5),right(i ^ 2,8),right(i ^ 3,8),
-         right(i ^ 4,8))
-      }
-end

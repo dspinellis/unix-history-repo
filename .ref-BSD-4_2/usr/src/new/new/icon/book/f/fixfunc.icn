@@ -1,9 +1,0 @@
-procedure fix(exp)
-   while exp ?:= 2(="(",tab(bal(')')),pos(-1))
-   return lassoc(exp,'+-' | '*/') | rassoc(exp,'^') |
-      func(exp) | exp
-end
-
-procedure func(exp)
-   return exp ? tab(upto('(') + 1) || fix(tab(-1)) || tab(0)
-end

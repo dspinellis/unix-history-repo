@@ -1,0 +1,188 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)uda.4	6.2 (Berkeley) 5/16/86
+.\"
+.TH UDA 4 "May 16, 1986"
+.UC 4
+.SH NAME
+uda \- UDA-50 disk controller interface
+.SH SYNOPSIS
+.B "controller uda0 at uba0 csr 0172150 vector udintr"
+.br
+.B "disk ra0 at uda0 drive 0"
+.SH DESCRIPTION
+This is a driver for the DEC UDA-50 disk controller
+and for other compatible controllers.
+The UDA-50 communicates with the host through a packet
+oriented protocol termed the Mass Storage Control Protocol (MSCP).
+Consult the file
+.RI < vax/mscp.h >
+for a detailed description of this protocol.
+.PP
+Files with minor device numbers 0 through 7 refer to various portions
+of drive 0;
+minor devices 8 through 15 refer to drive 1, etc.
+The standard device names begin with ``ra'' followed by
+the drive number and then a letter a-h for partitions 0-7 respectively.
+The character ? stands here for a drive number in the range 0-7.
+.PP
+The block files access the disk via the system's normal
+buffering mechanism and may be read and written without regard to
+physical disk records.  There is also a `raw' interface
+which provides for direct transmission between the disk
+and the user's read or write buffer.
+A single read or write call results in exactly one I/O operation
+and therefore raw I/O is considerably more efficient when
+many words are transmitted.  The names of the raw files
+conventionally begin with an extra `r.'
+.PP
+In raw I/O counts should be a multiple of 512 bytes (a disk sector).
+Likewise
+.I seek
+calls should specify a multiple of 512 bytes.
+.SH "DISK SUPPORT"
+This driver configures the drive type of each drive
+when it is first opened.
+A partition table in the driver is required for each type of disk.
+The origin and size (in sectors) of the pseudo-disks
+on each drive are shown below.
+Not all partitions begin on
+cylinder boundaries, as on other drives, because previous drivers
+used one partition table for all drive types.
+Variants of the partition tables are common;
+check the driver and the file
+.IR /etc/disktab ( disktab (5))
+for other possibilities.
+.PP
+.nf
+.ta .5i +\w'000000    'u +\w'000000    'u +\w'000000    'u +\w'000000    'u
+.PP
+RC25 partitions
+	disk	start	length
+	ra?a	0	15884
+	ra?b	15884	10032
+	ra?c	0	50902
+	ra?g	25916	24986
+RD52 partitions
+	disk	start	length
+	ra?a	0	15884
+	ra?b	15884	9766
+	ra?c	0	60480
+	ra?g	25650	34830
+RD53 partitions
+	disk	start	length
+	ra?a	0	15884
+	ra?b	15884	33440
+	ra?c	0	138672
+	ra?g	49324	89348
+	ra?h	15884	122788
+RA60 partitions
+	disk	start	length
+	ra?a	0	15884
+	ra?b	15884	33440
+	ra?c	0	400176
+	ra?d	49324	82080	same as 4.2BSD ra?g
+	ra?e	131404	268772	same as 4.2BSD ra?h
+	ra?f	49324	350852
+	ra?g	242606	157570
+	ra?h	49324	193282
+.PP
+RA80 partitions
+	disk	start	length
+	ra?a	0	15884
+	ra?b	15884	33440
+	ra?c	0	242606
+	ra?e	49324	193282	same as old Berkeley ra?g
+	ra?f	49324	82080	same as 4.2BSD ra?g
+	ra?g	49910	192696
+	ra?h	131404	111202	same as 4.2BSD
+.PP
+RA81 partitions
+	disk	start	length
+	ra?a	0	15884
+	ra?b	16422	66880
+	ra?c	0	891072
+	ra?d	375564	15884
+	ra?e	391986	307200
+	ra?f	699720	191352
+	ra?g	375564	515508
+	ra?h	83538	291346
+.PP
+RA81 partitions with 4.2BSD-compatible partitions
+	disk	start	length
+	ra?a	0	15884
+	ra?b	16422	66880
+	ra?c	0	891072
+	ra?d	49324	82080	same as 4.2BSD ra?g
+	ra?e	131404	759668	same as 4.2BSD ra?h
+	ra?f	412490	478582	same as 4.2BSD ra?f
+	ra?g	375564	515508
+	ra?h	83538	291346
+.DT
+.fi
+.PP
+The ra?a partition is normally used for the root file system,
+the ra?b partition as a paging area,
+and the ra?c partition for pack-pack copying (it maps the entire disk).
+.SH FILES
+/dev/ra[0-9][a-f]
+.br
+/dev/rra[0-9][a-f]
+.SH DIAGNOSTICS
+.BR "uda: ubinfo %x" .
+(VAX 11/750 only.)
+When allocating UNIBUS resources, the driver found it already
+had resources previously allocated.  This indicates a bug in
+the driver.
+.PP
+.BR "udasa %o, state %d" .
+(Additional status information given after a hard i/o error.)
+The values of the UDA-50 status register and the internal
+driver state are printed.
+.PP
+.BR "uda%d: random interrupt ignored" .
+An unexpected interrupt was received (e.g. when no i/o was
+pending).  The interrupt is ignored.
+.PP
+.BR "uda%d: interrupt in unknown state %d ignored" .
+An interrupt was received when the driver was in an unknown
+internal state.  Indicates a hardware problem or a driver bug.
+.PP
+.BR "uda%d: fatal error (%o)" .
+The UDA-50 indicated a ``fatal error'' in the status returned
+to the host.  The contents of the status register are displayed.
+.PP
+.BR OFFLINE .
+(Additional status information given after a hard i/o error.)
+A hard i/o error occurred because the drive was not on-line.
+.PP
+.BR "status %o" .
+(Additional status information given after a hard i/o error.)
+The status information returned from the UDA-50 is tacked onto
+the end of the hard error message printed on the console.
+.PP
+.BR "uda: unknown packet" .
+An MSCP packet of unknown type was received from the UDA-50.
+Check the cabling to the controller.
+.PP
+The following errors are interpretations of MSCP error messages
+returned by the UDA-50 to the host.
+.PP
+.BR "uda%d: %s error, controller error, event 0%o" .
+.PP
+.BR "uda%d: %s error, host memory access error, event 0%o, addr 0%o" .
+.PP
+.BR "uda%d: %s error, disk transfer error, unit %d" .
+.PP
+.BR "uda%d: %s error, SDI error, unit %d, event 0%o" .
+.PP
+.BR "uda%d: %s error, small disk error, unit %d, event 0%o, cyl %d" .
+.PP
+.BR "uda%d: %s error, unknown error, unit %d, format 0%o, event 0%o" .
+.SH BUGS
+The partition tables attempt to combine compatibility
+with previous drivers and functionality; this is impossible.
+The best solution would be to read the partition tables
+off the drive.

@@ -1,8 +1,0 @@
-r  { file vap data;fd
-fd { 390 Lcreat file
-}(fd < 0)/error
-r  { fd Lap data
-fd { Lclose fd
-}
-error: 'Can''t open file: ',file
-BN 0
