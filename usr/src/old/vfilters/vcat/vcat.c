@@ -1,15 +1,14 @@
-/*	vcat.c	4.2	83/03/17	*/
+/*	vcat.c	4.3	83/04/29	*/
 /*
  * Cat Simulator for Versatec and Varian
  */ 
 
-#include <signal.h>
 #include <stdio.h>
 #include <sys/vcmd.h>
 #include <vfont.h>
 
-int	prtmode[] = {VPRINT, 0, 0};
-int	pltmode[] = {VPLOT, 0, 0};
+int	prtmode[] = {VPRINT};
+int	pltmode[] = {VPLOT};
 
 #define DISPATCHSIZE		256	/* must be a power of two */
 #define CHARMASK		(DISPATCHSIZE-1)
@@ -338,12 +337,6 @@ char spectab[128] = {
 	'8'	/*section mark*/
 };
 
-onintr()
-{
-	signal(SIGTERM, SIG_IGN);
-	exit(1);
-}
-
 main(argc, argv) 
 	int argc;
 	char *argv[];
@@ -351,11 +344,6 @@ main(argc, argv)
 	char *namearg = NULL;
 	char *hostarg = NULL;
 	char *acctfile = NULL;
-
-	signal(SIGHUP, SIG_IGN);
-	signal(SIGINT, SIG_IGN);
-	signal(SIGQUIT, SIG_IGN);
-	signal(SIGTERM, onintr);
 
 	varian = 1;	/* Default is the varian */
 	BYTES_PER_LINE = VA_BYTES_PER_LINE;
@@ -573,7 +561,7 @@ findsize(code)
 		code = -code;
 	esc += code;
 	last_ssize = psp->stupid_code;
-	return (psp->real_code);
+	return(psp->real_code);
 }
 
 account(who, from, acctfile)
@@ -586,10 +574,10 @@ account(who, from, acctfile)
 	if (access(acctfile, 02) || (a = fopen(acctfile, "a")) == NULL)
 		return;
 	/*
-	 * Varian accounting is done by 11 inch pages;
+	 * Varian accounting is done by 8.5 inch pages;
 	 * Versatec accounting is by the (12 inch) foot.
 	 */
-	fprintf(a, "t%6.2f\t", (lines / 200.0) / (varian ? 11.0 : 12.0));
+	fprintf(a, "t%6.2f\t", (lines / 200.0) / (varian ? 8.5 : 12.0));
 	if (from != NULL)
 		fprintf(a, "%s:", from);
 	fprintf(a, "%s\n", who);
@@ -625,7 +613,7 @@ loadfont(fnum, size)
 			dispatch = &fontdes[i].disp[0];
 			bits = fontdes[i].bits;
 			cfont = i;
-			return (0);
+			return(0);
 		}
 	if (fnum < 0 || fnum >= MAXF) {
 		fprintf(stderr, "vcat: Internal error: illegal font\n");
@@ -634,7 +622,7 @@ loadfont(fnum, size)
 	nfontnum = fnum;
 	npsize = size;
 	fontwanted++;
-	return (0);
+	return(0);
 }
 
 
@@ -654,7 +642,7 @@ getfont()
 		fprintf(stderr, "vcat: ");
 		perror(cbuf);
 		fontwanted = 0;
-		return (-1);
+		return(-1);
 	}
 	if (read(font, &header, sizeof header)!=sizeof header || header.magic!=0436)
 		fprintf(stderr, "vcat: %s: Bad font file", cbuf);
@@ -683,7 +671,7 @@ getfont()
 				fontdes[cfont].disp = (struct dispatch *) d;
 				dispatch = &fontdes[cfont].disp[0];
 				fontwanted = 0;
-				return (0);
+				return(0);
 			}
 		}
 	}
@@ -692,7 +680,7 @@ getfont()
 	return(-1);
 }
 
-int lastloaded	= -1;
+int lastloaded = -1;
 
 relfont()
 {
@@ -711,7 +699,7 @@ relfont()
 	if ((int)fontdes[newfont].bits != -1 && fontdes[newfont].bits != 0)
 		nfree(fontdes[newfont].bits);
 	fontdes[newfont].bits = 0;
-	return (newfont);
+	return(newfont);
 }
 
 char *
@@ -793,9 +781,9 @@ outc(code)
 			scanp += scanp_inc+count;
 			addr += count;
 		}
-		return (1);
+		return(1);
 	}
-	return (0);
+	return(0);
 }
 
 slop_lines(nlines)

@@ -5,7 +5,7 @@
 /*	All rights reserved					*/
 /*								*/
 /****************************************************************/
-/*  VPLTDMP: version 4.1			updated %G%
+/*  VPLTDMP: version 4.2			updated %G%
  *
  *  reads raster file created by vplot and dumps it onto the
  *  Varian or Versatec plotter.
@@ -18,7 +18,7 @@
 #define IN	0
 #define OUT	1
 
-static	char *Sid = "@(#)vpltdmp.c	4.1\t%G%";
+static	char *Sid = "@(#)vpltdmp.c	4.2\t%G%";
 
 int	plotmd[] = { VPLOT, 0, 0 };
 int	prtmd[]  = { VPRINT, 0, 0 };
@@ -73,7 +73,7 @@ char *argv[];
 
 	ioctl(OUT, VSETSTATE, prtmd);
 	if (varian)
-		write(OUT, "\014", 2);
+		write(OUT, "\f", 2);
 	else
 		write(OUT, "\n\n\n\n\n", 6);
 	account(name, host, *argv);
@@ -90,10 +90,10 @@ account(who, from, acctfile)
 	if (access(acctfile, 02) || (a = fopen(acctfile, "a")) == NULL)
 		return;
 	/*
-	 * Varian accounting is done by 11 inch pages;
+	 * Varian accounting is done by 8.5 inch pages;
 	 * Versatec accounting is by the (12 inch) foot.
 	 */
-	fprintf(a, "t%6.2f\t", (lines / 200.0) / (varian ? 11.0 : 12.0));
+	fprintf(a, "t%6.2f\t", (lines / 200.0) / (varian ? 8.5 : 12.0));
 	if (from != NULL)
 		fprintf(a, "%s:", from);
 	fprintf(a, "%s\n", who);
