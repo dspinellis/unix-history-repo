@@ -1,4 +1,4 @@
-/* @(#)doprnt.c	4.2 (Berkeley) %G% */
+/* @(#)doprnt.c	4.3 (Berkeley) %G% */
 	# C library -- conversions
 
 .globl	__doprnt
@@ -51,7 +51,7 @@ strfoo:
 	jbr strok				# and try again
 strmore:
 	movzbl (r1)+,r2			# one char
-	tstb (r3)[r2]			# translate
+	tstb strtab[r2]			# translate
 	jeql stresc2			# bad guy in disguise (outbuf is full)
 strout2:		# enter here to force out r2; r0,r1 must be set
 	pushr $3				# save input descriptor
@@ -70,9 +70,28 @@ strout:			# enter via bsb with (r0,r1)=input descriptor
 	jbs $31,r4,strfoo		# negative count is a no no
 strok:
 	addl2 r0,nchar			# we intend to move this many chars
+/******* Start bogus movtuc workaround  *****/
+	clrl r2
+	tstl    r0
+	bleq    movdon
+movlp:
+	tstl    r4
+	bleq    movdon
+	movzbl  (r1)+,r3
+	tstb    strtab[r3]
+	bneq    1f
+	mnegl   $1,r2
+	decl    r1
+	brb     movdon
+1:
+	movb    r3,(r5)+
+	decl    r4
+	sobgtr  r0,movlp
+  /******* End bogus movtuc workaround ***
 	movtuc r0,(r1),$0,(r3),r4,(r5)
-	movpsl r2				# squirrel away condition codes
-	movq r4,*fdesc			# update output descriptor
+	movpsl r2                       /*  squirrel away condition codes */
+  /******* End equally bogus movtuc ****/
+movdon: movq r4,*fdesc                  /*  update output descriptor */
 	subl2 r0,nchar			# some chars not moved
 	jbs $vbit,r2,stresc		# terminated by escape?
 	sobgeq r0,strmore		# no; but out buffer might be full
@@ -100,6 +119,7 @@ __doprnt:
 	clrl nchar				# number of chars transferred
 loop:
 	movzwl $65535,r0		# pseudo length
+	movl r11,r1				# fmt addr
 		# comet sucks.
 	movq *fdesc,r4
 	subl3 r1,r5,r2
@@ -109,7 +129,6 @@ loop:
 	movl r2,r0
 lp1:
 		#
-	movl r11,r1				# fmt addr
 	bsbw strout				# copy to output, stop at null or percent
 	movl r1,r11				# new fmt
 	jbc $vbit,r2,loop		# if no escape, then very long fmt
