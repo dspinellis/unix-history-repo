@@ -28,6 +28,8 @@ what you give them.   Help stamp out software-hoarding!  */
    Make it variable when debugging, so can exercise
    increasing the space dynamically.  */
 
+#include <sys/types.h>
+
 #ifdef emacs
 #include "config.h"
 #endif
@@ -476,7 +478,7 @@ scan_file (string, fd, bufp)
   bufp->ateof = 0;
   *bufp->ptr = 0;
 
-  lseek (fd, 0L, 0);
+  lseek (fd, (off_t) 0, 0);
 
   while (!bufp->ateof)
     {

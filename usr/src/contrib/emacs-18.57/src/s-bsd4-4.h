@@ -18,13 +18,21 @@ along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
+/* This is brutal but we must get BIG_ENDIAN/LITTLE_ENDIAN defined now
+   so we can be careful not to override the value in the m- file.
+   Defining BIG_ENDIAN/LITTLE_ENDIAN with no value in that file will
+   break, e.g. sys/wait.h.  */
+#ifndef YMAKEFILE
+#include <machine/endian.h>
+#endif
+
 /*
  *	Define symbols to identify the version of Unix this is.
  *	Define all the symbols that apply correctly.
  */
 
 #ifndef BSD4_4
-#define BSD4_4
+#define BSD4_4	1
 #endif /* BSD4_4 */
 
 #ifndef BSD4_3
@@ -126,3 +134,29 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    is named _avenrun.  */
 
 #define LDAV_SYMBOL "_avenrun"
+
+/* This macro determines the number of bytes waiting to be written
+   in a FILE buffer.  */
+
+#define PENDING_OUTPUT_COUNT(FILE) ((FILE)->_w - (FILE)->_bf._size)
+
+/* Have POSIX setsid().  */
+
+#define HAVE_SETSID
+
+/* Have BSD getloadavg() library routine.  */
+
+#define HAVE_GETLOADAVG
+
+/* Use dkstat.h in loadst.  */
+
+#define DKSTAT_HEADER_FILE
+
+/* No special libg for debugging.  */
+
+#define LIBS_DEBUG
+
+/* Debugging unexec()ed code is hard enough as is, so why
+   not make it a little harder.  */
+
+#define C_DEBUG_SWITCH -g -traditional -O2

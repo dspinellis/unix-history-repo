@@ -1572,7 +1572,7 @@ before the error is signaled.")
 
   move_gap (point);
   if (GAP_SIZE < st.st_size)
-    make_gap (st.st_size - GAP_SIZE);
+    make_gap ((int)st.st_size - GAP_SIZE);
     
   while (1)
     {
@@ -1739,7 +1739,7 @@ If VISIT is neither t nor nil, it means do not print\n\
   record_unwind_protect (close_file_unwind, make_number (desc));
 
   if (!NULL (append))
-    if (lseek (desc, 0, 2) < 0)
+    if (lseek (desc, (off_t) 0, 2) < 0)
       {
 #ifdef CLASH_DETECTION
 	if (!auto_saving) unlock_file (filename);

@@ -77,8 +77,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    Some s- files override this because their stdio internals differ.  */
 #ifdef __GNU_LIBRARY__
 #define	PENDING_OUTPUT_COUNT(FILE) ((FILE)->__bp - (FILE)->__buf)
-#elif defined(BSD4_4)
-#define PENDING_OUTPUT_COUNT(FILE) ((FILE)->_w - (FILE)->_bf._size)
 #else
 #define PENDING_OUTPUT_COUNT(FILE) ((FILE)->_ptr - (FILE)->_base)
 #endif

@@ -40,7 +40,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* Define BIG_ENDIAN iff lowest-numbered byte in a word
    is the most significant byte.  */
 
+#ifndef BIG_ENDIAN
 #define BIG_ENDIAN
+#endif
 
 /* Define NO_ARG_ARRAY if you cannot take the address of the first of a
  * group of arguments and treat it as an array of the arguments.  */
@@ -80,7 +82,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* Data type of load average, as read out of kmem.  */
 
 #define LOAD_AVE_TYPE double
-#define HAVE_GETLOADAVG
 
 /* Convert that into an integer that is 100 for a load average of 1.0  */
 
@@ -101,9 +102,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* #define VIRT_ADDR_VARIES */
 
-/* For University of Utah 4.3bsd implemetation on HP300s.
-   The #ifndef __GNUC__ definitions are required for the "standard" cc,
-   a very old, brain-dead version of PCC. */
+/* For University of Utah 4.3bsd and standard 4.4bsd on HP300s.  */
 
 #ifdef BSD4_3
 /* Tell crt0.c that this is an ordinary 68020.  */
@@ -111,14 +110,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define CRT0_DUMMIES		bogus_a6,
 
 #define HAVE_ALLOCA
-#define DKSTAT_HEADER_FILE
 
-#ifndef __GNUC__
-#define LIBS_DEBUG		/* don't have -lg that works */
-#define C_DEBUG_SWITCH		/* don't support -g */
-#endif
-
-#ifndef BSD4_4
+#ifndef HAVE_GETLOADAVG
 #undef LOAD_AVE_TYPE
 #undef LOAD_AVE_CVT
 #define LOAD_AVE_TYPE long

@@ -31,7 +31,8 @@ dotemacs:
 xmakefile: ymakefile config.h
 	-rm -f xmakefile junk.c
 	cp ymakefile junk.c
-	$(CPP) junk.c | sed -e 's/^#.*//' -e 's/^[ \f\t][ \f\t]*$$//' -e 's/^ /	/' | \
+	$(CPP) -DYMAKEFILE junk.c | \
+	sed -e 's/^#.*//' -e 's/^[ 	][ 	]*$$//' -e 's/^ /	/' | \
 	sed -n -e '/^..*$$/p' > xmakefile
 	rm -f junk.c
 
