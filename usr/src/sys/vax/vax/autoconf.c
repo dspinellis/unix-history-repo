@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	6.25 (Berkeley) %G%
+ *	@(#)autoconf.c	6.26 (Berkeley) %G%
  */
 
 /*
@@ -113,10 +113,10 @@ configure()
 #endif
 			mtpr(TBIS, Sysbase);
 #if GENERIC
-			setconf();
-#endif
-#if !GENERIC || lint
-			setroot();
+			if ((boothowto & RB_ASKNAME) || setroot() == 0)
+				setconf();
+#else
+			(void) setroot();
 #endif
 			/*
 			 * Configure swap area and related system
@@ -905,28 +905,55 @@ setroot()
 
 	if (boothowto & RB_DFLTROOT ||
 	    (bootdev & B_MAGICMASK) != (u_long)B_DEVMAGIC)
-		return;
+		return (0);
 	majdev = (bootdev >> B_TYPESHIFT) & B_TYPEMASK;
 	if (majdev > sizeof(devname) / sizeof(devname[0]))
-		return;
+		return (0);
 	adaptor = (bootdev >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
 	part = (bootdev >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
 	unit = (bootdev >> B_UNITSHIFT) & B_UNITMASK;
-#if NMBA > 0
 	if (majdev == 0) {	/* MBA device */
+#if NMBA > 0
 		register struct mba_device *mbap;
+		int mask;
 
+/*
+ * The MBA number used at boot time is not necessarily the same as the
+ * MBA number used by the kernel.  In order to change the rootdev we need to
+ * convert the boot MBA number to the kernel MBA number.  The address space
+ * for an MBA used by the boot code is 0x20010000 + 0x2000 * MBA_number
+ * on the 78? and 86?0, 0xf28000 + 0x2000 * MBA_number on the 750.
+ * Therefore we can search the mba_hd table for the MBA that has the physical
+ * address corresponding to the boot MBA number.
+ */
+#define	PHYSADRSHFT	13
+#define	PHYSMBAMASK780	0x7
+#define	PHYSMBAMASK750	0x3
+
+		switch (cpu) {
+
+		case VAX_780:
+		case VAX_8600:
+		default:
+			mask = PHYSMBAMASK780;
+			break;
+
+		case VAX_750:
+			mask = PHYSMBAMASK750;
+			break;
+		}
 		for (mbap = mbdinit; mbap->mi_driver; mbap++)
 			if (mbap->mi_alive && mbap->mi_drive == unit &&
-			    mbap->mi_mbanum == adaptor &&
-			    mbap->mi_drive == unit)
+			    (((long)mbap->mi_hd->mh_physmba >> PHYSADRSHFT)
+			      & mask) == adaptor)
 			    	break;
 		if (mbap->mi_driver == 0)
-			return;
+			return (0);
 		mindev = mbap->mi_unit;
-	} else
+#else
+		return (0);
 #endif
-	{
+	} else {
 		register struct uba_device *ubap;
 
 		for (ubap = ubdinit; ubap->ui_driver; ubap++)
@@ -937,7 +964,7 @@ setroot()
 			    	break;
 
 		if (ubap->ui_driver == 0)
-			return;
+			return (0);
 		mindev = ubap->ui_unit;
 	}
 	mindev = (mindev << PARTITIONSHIFT) + part;
@@ -948,7 +975,7 @@ setroot()
 	 * just calculated, don't need to adjust the swap configuration.
 	 */
 	if (rootdev == orootdev)
-		return;
+		return (1);
 
 	printf("Changing root device to %c%c%d%c\n",
 		devname[majdev][0], devname[majdev][1],
@@ -966,7 +993,7 @@ setroot()
 		}
 	}
 	if (swp->sw_dev == 0)
-		return;
+		return (1);
 
 	/*
 	 * If argdev and dumpdev were the same as the old primary swap
@@ -977,4 +1004,5 @@ setroot()
 	if (temp == argdev)
 		argdev = swdevt[0].sw_dev;
 #endif
+	return (1);
 }
