@@ -31,8 +31,7 @@
  * active, and is put back when the file is no longer being used.
  */
 struct inode {
-	struct	inode  *i_next;	/* Hash chain forward. */
-	struct	inode **i_prev;	/* Hash chain back. */
+	LIST_ENTRY(inode) i_hash;/* Hash chain. */
 	struct	vnode  *i_vnode;/* Vnode associated with this inode. */
 	struct	vnode  *i_devvp;/* Vnode for block I/O. */
 	u_int32_t i_flag;	/* flags, see below */
@@ -67,8 +66,10 @@ struct inode {
 };
 
 #define	i_atime		i_din.di_atime
+#define	i_atimensec	i_din.di_atimensec
 #define	i_blocks	i_din.di_blocks
 #define	i_ctime		i_din.di_ctime
+#define	i_ctimensec	i_din.di_ctimensec
 #define	i_db		i_din.di_db
 #define	i_flags		i_din.di_flags
 #define	i_gen		i_din.di_gen
@@ -76,6 +77,7 @@ struct inode {
 #define	i_ib		i_din.di_ib
 #define	i_mode		i_din.di_mode
 #define	i_mtime		i_din.di_mtime
+#define	i_mtimensec	i_din.di_mtimensec
 #define	i_nlink		i_din.di_nlink
 #define	i_rdev		i_din.di_rdev
 #define	i_shortlink	i_din.di_shortlink
@@ -100,7 +102,7 @@ struct inode {
  * ufs_getlbns and used by truncate and bmap code.
  */
 struct indir {
-	daddr_t	in_lbn;			/* Logical block number. */
+	ufs_daddr_t in_lbn;		/* Logical block number. */
 	int	in_off;			/* Offset in buffer. */
 	int	in_exists;		/* Flag if the block exists. */
 };
@@ -113,13 +115,13 @@ struct indir {
 	if ((ip)->i_flag & (IN_ACCESS | IN_CHANGE | IN_UPDATE)) {	\
 		(ip)->i_flag |= IN_MODIFIED;				\
 		if ((ip)->i_flag & IN_ACCESS)				\
-			(ip)->i_atime.ts_sec = (t1)->tv_sec;		\
+			(ip)->i_atime = (t1)->tv_sec;			\
 		if ((ip)->i_flag & IN_UPDATE) {				\
-			(ip)->i_mtime.ts_sec = (t2)->tv_sec;		\
+			(ip)->i_mtime = (t2)->tv_sec;			\
 			(ip)->i_modrev++;				\
 		}							\
 		if ((ip)->i_flag & IN_CHANGE)				\
-			(ip)->i_ctime.ts_sec = time.tv_sec;		\
+			(ip)->i_ctime = time.tv_sec;			\
 		(ip)->i_flag &= ~(IN_ACCESS | IN_CHANGE | IN_UPDATE);	\
 	}								\
 }
