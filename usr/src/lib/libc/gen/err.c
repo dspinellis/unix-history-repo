@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)err.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <err.h>
@@ -99,7 +99,6 @@ void
 warn(const char *fmt, ...)
 #else
 warn(fmt, va_alist)
-	int eval;
 	const char *fmt;
 	va_dcl
 #endif
@@ -135,7 +134,6 @@ void
 warnx(const char *fmt, ...)
 #else
 warnx(fmt, va_alist)
-	int eval;
 	const char *fmt;
 	va_dcl
 #endif
