@@ -944,7 +944,7 @@ FILE	*fp;				/* for opening gold file */
 		    {
 		    addstr("Enter the X Y coordinates of void ? ");
 		    getstring(Databuf, SZ_DATABUF);
-		    sscanf(Databuf, "%F %F", &temp1, &temp2);
+		    sscanf(Databuf, "%lf %lf", &temp1, &temp2);
 		    Enrgyvoid.ev_x = floor(temp1);
 		    Enrgyvoid.ev_y = floor(temp2);
 		    Enrgyvoid.ev_active = TRUE;
@@ -1050,7 +1050,7 @@ FILE	*fp;				/* for opening gold file */
 	    case '4':	/* move another player */
 		mvaddstr(4, 0, "New X Y coordinates ? ");
 		getstring(Databuf, SZ_DATABUF);
-		sscanf(Databuf, "%F %F", &temp1, &temp2);
+		sscanf(Databuf, "%lf %lf", &temp1, &temp2);
 		tamper = T_RELOCATE;
 		option = "relocate";
 		break;

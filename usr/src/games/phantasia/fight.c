@@ -1467,7 +1467,7 @@ double	dtemp;				/* for temporary calculations */
 
 				    addstr("X Y Coordinates ? ");
 				    getstring(Databuf, SZ_DATABUF);
-				    sscanf(Databuf, "%F %F", &x, &y);
+				    sscanf(Databuf, "%lf %lf", &x, &y);
 				    altercoordinates(x, y, A_FORCED);
 				    }
 				break;
