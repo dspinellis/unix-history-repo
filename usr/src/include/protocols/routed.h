@@ -1,4 +1,4 @@
-/*	routed.h	83/05/25	4.9	*/
+/*	routed.h	4.10	83/08/11	*/
 /*
  * Routing Information Protocol
  *

@@ -1,6 +1,4 @@
-/* Copyright (c) 1983 Regents of the University of California */
-
-/*	@(#)restore.h	3.7	(Berkeley)	83/04/19	*/
+/*	restore.h	3.8	83/08/11	*/
 
 #include <stdio.h>
 #include <sys/param.h>

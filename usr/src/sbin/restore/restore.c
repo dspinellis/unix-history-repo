@@ -1,8 +1,8 @@
-/* Copyright (c) 1983 Regents of the University of California */
-
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	3.16	(Berkeley)	83/05/15";
+static char sccsid[] = "@(#)restore.c	3.17	(Berkeley)	83/08/11";
 #endif
+
+/* Copyright (c) 1983 Regents of the University of California */
 
 #include "restore.h"
 

@@ -1,8 +1,8 @@
-/* Copyright (c) 1983 Regents of the University of California */
-
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.20	(Berkeley)	83/07/01";
+static char sccsid[] = "@(#)tape.c	3.21	(Berkeley)	83/08/11";
 #endif
+
+/* Copyright (c) 1983 Regents of the University of California */
 
 #include "restore.h"
 #include <dumprestor.h>
