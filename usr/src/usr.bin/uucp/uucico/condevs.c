@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)condevs.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)condevs.c	5.10 (Berkeley) %G%";
 #endif
 
 /*
@@ -47,11 +47,15 @@ struct condev condevs[] = {
 	{ "ACU", "dn11", Acuopn, dnopn, dncls },
 #endif DN11
 #ifdef HAYES
-	{ "ACU", "hayes", Acuopn, hysopn, hyscls },
+	{ "ACU", "hayes", Acuopn, hyspopn, hyscls },
+	{ "ACU", "hayespulse", Acuopn, hyspopn, hyscls },
+	{ "ACU", "hayestone", Acuopn, hystopn, hyscls },
 #endif HAYES
 #ifdef HAYESQ	/* a version of hayes that doesn't use result codes */
-	{ "ACU", "hayesq", Acuopn, hysqopn, hysqcls },
-#endif HATESQ
+	{ "ACU", "hayesq", Acuopn, hysqpopn, hysqcls },
+	{ "ACU", "hayesqpulse", Acuopn, hysqpopn, hysqcls },
+	{ "ACU", "hayesqtone", Acuopn, hysqtopn, hysqcls },
+#endif HAYESQ
 #ifdef NOVATION
 	{ "ACU", "novation", Acuopn, novopn, novcls},
 #endif NOVATION
@@ -214,7 +218,8 @@ register char *flds[];
 		return CF_DIAL;
 	}
 	fflush(stdout);
-	fixline(dcr, dev.D_speed);
+	if (fixline(dcr, dev.D_speed) == FAIL)
+		return CF_DIAL;
 	strcpy(devSel, dev.D_line);	/* for latter unlock */
 	CU_end = dircls;
 	return dcr;
@@ -291,11 +296,17 @@ register char *flds[];
 
 			if (acustatus < 1)
 				acustatus = 1;	/* has been found */
-			if (mlock(dev.D_line) == FAIL)
+			if (mlock(dev.D_line) == FAIL) {
+				acustatus++;
 				continue;
+			}
 #ifdef DIALINOUT
-			if (snccmp("inout", dev.D_calldev) == SAME
-				&& disable(dev.D_line) == FAIL) {
+#ifdef ALLACUINOUT
+			if (
+#else !ALLACUINOUT
+			if (snccmp("inout", dev.D_calldev) == SAME &&
+#endif !ALLACUINOUT
+				disable(dev.D_line) == FAIL) {
 					delock(dev.D_line);
 					continue;
 			}
@@ -325,22 +336,20 @@ register char *flds[];
 
 #if defined(VENTEL) || defined(NOVATION) || defined(DF112)
 /*
- * uucpdelay:  delay execution for numerator/denominator seconds.
+ * intervaldelay:  delay execution for numerator/denominator seconds.
  */
 
 #ifdef INTERVALTIMER
-#define uucpdelay(num,denom) intervaldelay(1000000*num/denom)
 #include <sys/time.h>
-catch alarm sig
-SIGALRM
-struct itimerval itimerval;
-itimerval.itimer_reload =
-itimerval.rtime.itimer_interval =
-itimerval.rtime.itimer_value =
-settimer(ITIMER_REAL, &itimerval);
-pause();
-alarm comes in
-turn off timer.
+#define uucpdelay(num,denom) intervaldelay(num,denom)
+intervaldelay(num,denom)
+int num, denom;
+{
+	struct timeval tv;
+	tv.tv_sec = num / denom;
+	tv.tv_usec = (num * 1000000L / denom ) % 1000000L;
+	(void) select (0, (int *)0, (int *)0, (int *)0, &tv);
+}
 #endif INTERVALTIMER
 
 #ifdef FASTTIMER
@@ -472,7 +481,9 @@ char *type, *dev;
 	close(fildes[1]);
 	fil = fdopen(fildes[0],"r");
 	if (fil!=NULL) {
+#ifdef BSD4_2
 		setlinebuf(fil);
+#endif BSD4_2
 		while (fgets(buf, sizeof buf, fil) != NULL) {
 			p = buf + strlen(buf) - 1;
 			if (*p == '\n')
