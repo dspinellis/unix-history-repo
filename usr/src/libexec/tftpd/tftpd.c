@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tftpd.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)tftpd.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -41,12 +41,13 @@ static char sccsid[] = "@(#)tftpd.c	5.14 (Berkeley) %G%";
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
+#include <unistd.h>
 
+#include "tftpsubs.h"
 #include "pathnames.h"
 
 #define	TIMEOUT		5
 
-struct	sockaddr_in sin = { AF_INET };
 int	peer;
 int	rexmtval = TIMEOUT;
 int	maxtimeout = 5*TIMEOUT;
@@ -57,8 +58,10 @@ char	ackbuf[PKTSIZE];
 struct	sockaddr_in from;
 int	fromlen;
 
+void	tftp __P((struct tftphdr *, int));
+
 /*
- * Null-terminated directory prefix list for absolute pathname requests and 
+ * Null-terminated directory prefix list for absolute pathname requests and
  * search list for relative pathname requests.
  *
  * MAXDIRS should be at least as large as the number of arguments that
@@ -72,9 +75,11 @@ static struct dirlist {
 static int	suppress_naks;
 static int	logging;
 
-static char *errtomsg();
-static char *verifyhost();
+static char *errtomsg __P((int));
+static void  nak __P((int));
+static char *verifyhost __P((struct sockaddr_in *));
 
+int
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -82,6 +87,7 @@ main(argc, argv)
 	register struct tftphdr *tp;
 	register int n;
 	int ch, on;
+	struct sockaddr_in sin;
 
 	openlog("tftpd", LOG_PID, LOG_FTP);
 	while ((ch = getopt(argc, argv, "ln")) != EOF) {
@@ -181,6 +187,8 @@ main(argc, argv)
 		syslog(LOG_ERR, "socket: %m\n");
 		exit(1);
 	}
+	memset(&sin, 0, sizeof(sin));
+	sin.sin_family = AF_INET;
 	if (bind(peer, (struct sockaddr *)&sin, sizeof (sin)) < 0) {
 		syslog(LOG_ERR, "bind: %m\n");
 		exit(1);
@@ -196,14 +204,16 @@ main(argc, argv)
 	exit(1);
 }
 
-int	validate_access();
-int	sendfile(), recvfile();
+struct formats;
+int	validate_access __P((char **, int));
+void	sendfile __P((struct formats *));
+void	recvfile __P((struct formats *));
 
 struct formats {
 	char	*f_mode;
-	int	(*f_validate)();
-	int	(*f_send)();
-	int	(*f_recv)();
+	int	(*f_validate) __P((char **, int));
+	void	(*f_send) __P((struct formats *));
+	void	(*f_recv) __P((struct formats *));
 	int	f_convert;
 } formats[] = {
 	{ "netascii",	validate_access,	sendfile,	recvfile, 1 },
@@ -217,6 +227,7 @@ struct formats {
 /*
  * Handle initial connection protocol.
  */
+void
 tftp(tp, size)
 	struct tftphdr *tp;
 	int size;
@@ -290,6 +301,7 @@ FILE *file;
  * Note also, full path name must be
  * given as we have no login directory.
  */
+int
 validate_access(filep, mode)
 	char **filep;
 	int mode;
@@ -309,7 +321,7 @@ validate_access(filep, mode)
 	if (*filename == '/') {
 		/*
 		 * Allow the request if it's in one of the approved locations.
-		 * Special case: check the null prefix ("/") by looking 
+		 * Special case: check the null prefix ("/") by looking
 		 * for length = 1 and relying on the arg. processing that
 		 * it's a /.
 		 */
@@ -336,7 +348,7 @@ validate_access(filep, mode)
 	} else {
 		int err;
 
-		/* 
+		/*
 		 * Relative file name: search the approved locations for it.
 		 * Don't allow write requests or ones that avoid directory
 		 * restrictions.
@@ -347,7 +359,7 @@ validate_access(filep, mode)
 
 		/*
 		 * If the file exists in one of the directories and isn't
-		 * readable, continue looking. However, change the error code 
+		 * readable, continue looking. However, change the error code
 		 * to give an indication that the file exists.
 		 */
 		err = ENOTFOUND;
@@ -391,16 +403,19 @@ timer()
 /*
  * Send the requested file.
  */
+void
 sendfile(pf)
 	struct formats *pf;
 {
 	struct tftphdr *dp, *r_init();
 	register struct tftphdr *ap;    /* ack packet */
-	register int block = 1, size, n;
+	register int size, n;
+	volatile int block;
 
 	signal(SIGALRM, timer);
 	dp = r_init();
 	ap = (struct tftphdr *)ackbuf;
+	block = 1;
 	do {
 		size = readit(file, &dp, pf->f_convert);
 		if (size < 0) {
@@ -410,7 +425,7 @@ sendfile(pf)
 		dp->th_opcode = htons((u_short)DATA);
 		dp->th_block = htons((u_short)block);
 		timeout = 0;
-		(void) setjmp(timeoutbuf);
+		(void)setjmp(timeoutbuf);
 
 send_data:
 		if (send(peer, dp, size + 4, 0) != size + 4) {
@@ -431,16 +446,14 @@ send_data:
 
 			if (ap->th_opcode == ERROR)
 				goto abort;
-			
+
 			if (ap->th_opcode == ACK) {
-				if (ap->th_block == block) {
+				if (ap->th_block == block)
 					break;
-				}
 				/* Re-synchronize with the other side */
 				(void) synchnet(peer);
-				if (ap->th_block == (block -1)) {
+				if (ap->th_block == (block -1))
 					goto send_data;
-				}
 			}
 
 		}
@@ -460,16 +473,19 @@ justquit()
 /*
  * Receive a file.
  */
+void
 recvfile(pf)
 	struct formats *pf;
 {
 	struct tftphdr *dp, *w_init();
 	register struct tftphdr *ap;    /* ack buffer */
-	register int block = 0, n, size;
+	register int n, size;
+	volatile int block;
 
 	signal(SIGALRM, timer);
 	dp = w_init();
 	ap = (struct tftphdr *)ackbuf;
+	block = 0;
 	do {
 		timeout = 0;
 		ap->th_opcode = htons((u_short)ACK);
@@ -568,6 +584,7 @@ errtomsg(error)
  * standard TFTP codes, or a UNIX errno
  * offset by 100.
  */
+static void
 nak(error)
 	int error;
 {
