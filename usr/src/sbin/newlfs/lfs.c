@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lfs.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)lfs.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -241,7 +241,7 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 		fatal("%s", strerror(errno));
 	segp = segtable;
 	blocks_used = lfsp->lfs_segtabsz + lfsp->lfs_cleansz + 4;
-	segp->su_nbytes = LFS_SBPAD + (blocks_used << lfsp->lfs_bshift);
+	segp->su_nbytes = blocks_used << lfsp->lfs_bshift;
 	segp->su_lastmod = lfsp->lfs_tstamp;
 	segp->su_flags = SEGUSE_SUPERBLOCK | SEGUSE_DIRTY;
 	lfsp->lfs_bfree -= lfsp->lfs_cleansz + lfsp->lfs_segtabsz + 4;
@@ -256,13 +256,11 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	for (segp = segtable + 1, i = 1; i < lfsp->lfs_nseg; i++, segp++) {
 		if ((i % sb_interval) == 0) {
 			segp->su_flags = SEGUSE_SUPERBLOCK;
-			segp->su_nbytes = LFS_SBPAD;
 			lfsp->lfs_bfree -= (LFS_SBPAD >> lfsp->lfs_bshift);
-		} else {
+		} else
 			segp->su_flags = 0;
-			segp->su_nbytes = 0;
-		}
 		segp->su_lastmod = 0;
+		segp->su_nbytes = 0;
 	}
 
 	/*
