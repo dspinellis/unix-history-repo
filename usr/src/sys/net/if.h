@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.h	7.10 (Berkeley) %G%
+ *	@(#)if.h	7.11 (Berkeley) %G%
  */
 
 /*
@@ -89,6 +89,7 @@ struct ifnet {
 	int	if_iqdrops;		/* dropped on input, this interface */
 	int	if_noproto;		/* destined for unsupported protocol */
 	int	if_baudrate;		/* linespeed */
+        int	if_pcount;		/* number of promiscuous listeners */
 };
 
 #define	IFF_UP		0x1		/* interface is up */
