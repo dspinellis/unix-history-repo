@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.9 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -221,6 +221,32 @@ fstatfs()
 	if (error = VFS_STATFS(((struct vnode *)fp->f_data)->v_mount, &sb))
 		RETURN (error);
 	RETURN (copyout((caddr_t)&sb, (caddr_t)uap->buf, sizeof(sb)));
+}
+
+/*
+ * Change current working directory to a given file descriptor.
+ */
+fchdir()
+{
+	struct a {
+		int	fd;
+	} *uap = (struct a *)u.u_ap;
+	register struct vnode *vp;
+	struct file *fp;
+	int error;
+
+	if (error = getvnode(uap->fd, &fp))
+		RETURN (error);
+	vp = (struct vnode *)fp->f_data;
+	VOP_LOCK(vp);
+	if (vp->v_type != VDIR)
+		error = ENOTDIR;
+	else
+		error = vn_access(vp, VEXEC, u.u_cred);
+	VOP_UNLOCK(vp);
+	vrele(u.u_cdir);
+	u.u_cdir = vp;
+	RETURN (error);
 }
 
 /*
@@ -702,6 +728,68 @@ readlink()
 out:
 	vput(vp);
 	u.u_r.r_val1 = uap->count - auio.uio_resid;
+	RETURN (error);
+}
+
+/*
+ * Change flags of a file given path name.
+ */
+chflags()
+{
+	struct a {
+		char	*fname;
+		int	flags;
+	} *uap = (struct a *)u.u_ap;
+	register struct nameidata *ndp = &u.u_nd;
+	register struct vnode *vp;
+	struct vattr vattr;
+	int error;
+
+	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = uap->fname;
+	vattr_null(&vattr);
+	vattr.va_flags = uap->flags;
+	if (error = namei(ndp))
+		RETURN (error);
+	vp = ndp->ni_vp;
+	if (vp->v_mount->m_flag & M_RDONLY) {
+		error = EROFS;
+		goto out;
+	}
+	error = VOP_SETATTR(vp, &vattr, ndp->ni_cred);
+out:
+	vput(vp);
+	RETURN (error);
+}
+
+/*
+ * Change flags of a file given a file descriptor.
+ */
+fchflags()
+{
+	struct a {
+		int	fd;
+		int	flags;
+	} *uap = (struct a *)u.u_ap;
+	struct vattr vattr;
+	struct vnode *vp;
+	struct file *fp;
+	int error;
+
+	if (error = getvnode(uap->fd, &fp))
+		RETURN (error);
+	vattr_null(&vattr);
+	vattr.va_flags = uap->flags;
+	vp = (struct vnode *)fp->f_data;
+	VOP_LOCK(vp);
+	if (vp->v_mount->m_flag & M_RDONLY) {
+		error = EROFS;
+		goto out;
+	}
+	error = VOP_SETATTR(vp, &vattr, fp->f_cred);
+out:
+	VOP_UNLOCK(vp);
 	RETURN (error);
 }
 
