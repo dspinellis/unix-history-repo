@@ -1,7 +1,9 @@
-/*	locore.s	4.76	82/12/28	*/
+/*	locore.s	4.76	82/12/29	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
+
+#include "../h/errno.h"
 
 #include "../vax/mtpr.h"
 #include "../vax/trap.h"
@@ -614,7 +616,7 @@ cishort:
 	rsb
 
 ersb:
-	mnegl	$1,r0
+	movl	$EFAULT,r0
 	rsb
 
 _Copyout: 	.globl	_Copyout	# <<<massaged for jsb by asm.sed >>>
