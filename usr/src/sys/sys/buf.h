@@ -1,4 +1,4 @@
-/*	buf.h	4.19	82/12/17	*/
+/*	buf.h	4.20	83/01/16	*/
 
 /*
  * The header for buffers in the buffer pool and otherwise used
@@ -75,7 +75,8 @@ struct buf
 
 struct	buf *buf;		/* the buffer pool itself */
 char	*buffers;
-int	nbuf;
+int	nbuf;			/* number of buffer headers */
+int	bufpages;		/* number of memory pages in the buffer pool */
 struct	buf *swbuf;		/* swap I/O headers */
 int	nswbuf;
 short	*swsize;
