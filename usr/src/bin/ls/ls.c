@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -309,7 +309,7 @@ doargs(argc, argv)
 		for (cnt = 0; cnt < dircnt; ++dstats) {
 			for (endofpath = path, p = dstats->name;
 			    *endofpath = *p++; ++endofpath);
-			subdir(dstats, regcnt, regcnt || dircnt > 1);
+			subdir(dstats, regcnt || cnt, regcnt || dircnt > 1);
 			if (++cnt < dircnt && chdir(top)) {
 				(void)fprintf(stderr, "ls: %s: %s\n",
 				    top, strerror(errno));
