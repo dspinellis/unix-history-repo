@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)passwd.1	6.8 (Berkeley) %G%
+.\"     @(#)passwd.1	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt PASSWD 1
@@ -21,7 +21,7 @@ changes the user's Kerberos password.  First, the user is prompted for their
 current password.
 If the current password is correctly typed, a new password is
 requested.
-The new password must be entered two times to verify any typing errors.
+The new password must be entered twice to avoid typing errors.
 .Pp
 The new password should be at least six characters long and not
 purely alphabetic.
@@ -37,11 +37,8 @@ the Kerberos authenticating host.
 This option causes the password to be updated only in the local
 password file, and not with the Kerberos database.
 When changing only the local password,
-.Xr mkpasswd  8
-is used to update the user database.  This is run in the background, and,
-at very large sites could take several minutes.  Until this update
-is completed, the password file is unavailable for other updates
-and the new password will not be available to programs.
+.Xr pwd_mkdb  8
+is used to update the password databases.
 .Tp
 .Pp
 To change another user's Kerberos password, one must first
@@ -55,7 +52,11 @@ if only the local password is modified.
 .Dw /etc/master.passwd
 .Di L
 .Dp Pa /etc/master.passwd
-the user database
+The user database
+.Dp Pa /etc/passwd 
+A Version 7 format password file
+.Dp Pa /etc/passwd.XXXXXX
+Temporary copy of the password file
 .Dp
 .Sh SEE ALSO
 .Xr chpass 1 ,
@@ -64,7 +65,7 @@ the user database
 .Xr login 1 ,
 .Xr passwd 5 ,
 .Xr kpasswdd 8 ,
-.Xr mkpasswd 8 ,
+.Xr pwd_mkdb 8 ,
 .Xr vipw 8
 .br
 Robert Morris and Ken Thompson,

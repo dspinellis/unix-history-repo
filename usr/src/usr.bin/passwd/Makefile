@@ -1,12 +1,13 @@
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 
 PROG=	passwd
-SRCS=	passwd.c des_rw.c krb_passwd.c
+SRCS=	des_rw.c krb_passwd.c local_passwd.c passwd.c pw_copy.c pw_util.c
 DPADD=	${LIBKRB} ${LIBDES}
+.PATH:  ${.CURDIR}/../../usr.bin/chpass ${.CURDIR}/../../sbin/vipw \
+	${.CURDIR}/../rlogin
 CFLAGS+=-I${.CURDIR} -DKERBEROS -DCRYPT
 LDADD=	-lkrb -ldes
 BINOWN=	root
 BINMODE=4555
-.PATH:	${.CURDIR}/../rlogin
 
 .include <bsd.prog.mk>
