@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)sys_generic.c	7.17 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -355,8 +355,7 @@ ioctl(p, uap, retval)
 	if (size > IOCPARM_MAX)
 		RETURN (ENOTTY);
 	if (size > sizeof (stkbuf)) {
-		memp = (caddr_t)malloc((u_long)IOCPARM_LEN(com), M_IOCTLOPS,
-		    M_WAITOK);
+		memp = (caddr_t)malloc((u_long)size, M_IOCTLOPS, M_WAITOK);
 		data = memp;
 	}
 	if (com&IOC_IN) {
@@ -463,8 +462,6 @@ retry:
 	ncoll = nselcoll;
 	p->p_flag |= SSEL;
 	error = selscan(ibits, obits, uap->nd, retval);
-	if (error == 0)
-		error = u.u_error;		/* XXX */
 	if (error || *retval)
 		goto done;
 	s = splhigh();
