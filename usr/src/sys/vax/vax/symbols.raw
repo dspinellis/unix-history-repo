@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)symbols.raw	7.4 (Berkeley) %G%
+#	@(#)symbols.raw	7.5 (Berkeley) %G%
 #
 	_version
 #dmesg
