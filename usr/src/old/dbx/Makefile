@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.28 (Berkeley) %G%
+#	@(#)Makefile	5.29 (Berkeley) %G%
 
 PROG=	dbx
 CFLAGS+=-I. -I${.CURDIR}
@@ -20,10 +20,12 @@ CLEANFILES+=mkdate makedefs makedefs.o date.c y.tab.h dbx.5.0 \
 	${HDRS} ${MACHINE}.h runtime.${MACHINE}.h ops.${MACHINE}.h \
 	instrs.adb instrs.h
 
+all: dbx
+
+dbx: ${HDRS} dbx.5.0
+
 .c.h:
 	./makedefs -f ${.CURDIR}/$*.c $*.h
-
-all: ${HDRS} dbx.5.0
 
 machine.h: ${MACHINE}.h
 	rm -f machine.h
