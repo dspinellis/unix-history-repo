@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)savecore.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)savecore.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -30,19 +30,7 @@ static char sccsid[] = "@(#)savecore.c	5.27 (Berkeley) %G%";
 #define	LEEWAY	(3*DAY)
 
 #define eq(a,b) (!strcmp(a,b))
-#ifdef vax
-#define ok(number) ((number)&0x7fffffff)
-#else
-#ifdef tahoe
-#define ok(number) ((number)&~0xc0000000)
-#else
-#ifdef i386
-#define ok(number) ((number)&~0xfe000000)
-#else
-#define ok(number) (number)
-#endif
-#endif
-#endif
+#define ok(number) ((number) - KERNBASE)
 
 struct nlist current_nl[] = {	/* namelist for currently running system */
 #define X_DUMPDEV	0
@@ -256,7 +244,7 @@ read_kmem()
 		return;
 	fseek(fp, (long)current_nl[X_VERSION].n_value, L_SET);
 	fgets(vers, sizeof (vers), fp);
-	fclose(fp);
+	(void)fclose(fp);
 }
 
 check_kmem()
@@ -350,10 +338,10 @@ read_number(fn)
 	if (fp == NULL)
 		return (0);
 	if (fgets(lin, 80, fp) == NULL) {
-		fclose(fp);
+		(void)fclose(fp);
 		return (0);
 	}
-	fclose(fp);
+	(void)fclose(fp);
 	return (atoi(lin));
 }
 
@@ -421,8 +409,8 @@ save_core()
 	bfile = path("bounds");
 	fp = fopen(bfile, "w");
 	if (fp) {
-		fprintf(fp, "%d\n", bounds+1);
-		fclose(fp);
+		(void)fprintf(fp, "%d\n", bounds+1);
+		(void)fclose(fp);
 	} else
 		Perror(LOG_ERR, "Can't create bounds file %s: %m", bfile);
 	free(cp);
@@ -509,7 +497,7 @@ log(level, msg, a1, a2)
 	char *msg;
 {
 
-	fprintf(stderr, msg, a1, a2);
+	(void)fprintf(stderr, msg, a1, a2);
 	syslog(level, msg, a1, a2);
 }
 
