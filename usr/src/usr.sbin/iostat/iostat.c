@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -309,7 +309,7 @@ phdr(signo)
 	for (i = 0; i < dk_ndrive; i++)
 		if (dr_select[i])
 			(void)printf(" sps tps msps ");
-	(void)printf(" us ni sy id\n");
+	(void)printf(" us ni sy in id\n");
 }
 
 void
