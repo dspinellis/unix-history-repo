@@ -1,4 +1,4 @@
-/*	compact.h	4.5	84/08/25	*/
+/*	compact.h	4.6	84/08/25	*/
 
 #if defined(vax) || defined(sun)
 typedef int longint;
@@ -56,9 +56,11 @@ union treep {
 
 struct node {
 	struct	fpoint fath;
-	union	treep sp[2];
-	struct	index *top[2];
-	longint	count[2];
+	struct son {
+		union	treep sp;
+		struct	index *top;
+		longint	count;
+	} sons[2];
 #define	LEFT	0
 #define	RIGHT	1
 } dict[NF], *bottom;

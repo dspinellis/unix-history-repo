@@ -1,104 +1,118 @@
 #ifndef lint
-static char sccsid[] = "@(#)tree.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tree.c	4.4 (Berkeley) %G%";
 #endif
 
 #include "compact.h"
 
-insert (ch)
+insert(ch)
 	int ch;
 {
 	register struct node *pp;
-	register int c;
+	register struct son *pson, *bson;
 	union cio d;
-	register struct index *qt, *wt;
+	register struct index *wt;
 
-	c = ch;
 	wt = NEW;
 	pp = bottom++;
+	pson = &pp->sons[RIGHT];
+	bson = &bottom->sons[LEFT];
 	bottom->fath.fp = pp;
-	in[c].flags = (SEEN | FBIT);
-	d.integ = bottom->sp[0].ch = pp->sp[1].ch;
-	in[c].fp = in[d.integ].fp = pp->sp[1].p = wt->pt = bottom;
+	in[ch].flags = (SEEN | FBIT);
+	d.integ = bson->sp.ch = pson->sp.ch;
+	in[ch].fp = in[d.integ].fp = pson->sp.p = wt->pt = bottom;
 	bottom->fath.flags = (LLEAF | RLEAF | FBIT);
 	pp->fath.flags &= ~RLEAF;
 	in[d.integ].flags = SEEN;
 
-	bottom->count[0] = pp->count[1];
-	qt = pp->top[1];
-	bottom->top[0] = qt;
-	bottom->sp[1].ch = c;
-	bottom->count[1] = 0;
-	bottom->top[1] = qt->next = wt;
+	bson->count = pson->count;
+	bson->top = pson->top;
+	bson++;
+	bson->sp.ch = ch;
+	bson->count = 0;
+	bson->top = pson->top->next = wt;
 	wt->next = NULL;
 }
 
-uptree (ch)
+uptree(ch)
 	int ch;
 {
 	register struct node *r;
 	union treep q, s;
-	int rs, qs, ss, ts;
+	int rs, ts, rflags, tflags;
 	longint rc, qc, sc;
 	struct node *t;
+	register struct son *rson, *tson;
 	register struct index *rt, *qt, *st;
 
 	r = in[ch].fp;
 	rs = in[ch].flags & FBIT;
 
 	do {
-		rc = ++r->count[rs];
-		rt = r->top[rs];
+		rson = &r->sons[rs];
+		rc = ++rson->count;
+		rt = rson->top;
 		for (;;) {
-			qs = ss = 1 - rs;
-			s.p = r + rs;
-			sc = s.p->count[ss];
-			st = s.p->top[ss];
-	
 			if (rs) {
+				s.p = r + 1;
 				if (r == bottom) {
 					sc = rc - 2;
 					st = NULL;
+				} else {
+					sc = (r+1)->sons[LEFT].count;
+					st = (r+1)->sons[LEFT].top;
 				}
+				qc = r->sons[LEFT].count;
+				qt = r->sons[LEFT].top;
 			} else {
+				s.p = r;
+				sc = r->sons[RIGHT].count;
+				st = r->sons[RIGHT].top;
 				if (r == dict) {
 					qc = rc + 1;
 					qt = head;
 					break;
+				} else {
+					qc = (r-1)->sons[RIGHT].count;
+					qt = (r-1)->sons[RIGHT].top;
 				}
 			}
-			q.p = r - qs;
-			qc = q.p->count[qs];
-			qt = q.p->top[qs];
 			if (rc <= qc)
 				break;
 
 			t = qt->pt;
-			ts = (rc <= t->count[0]);
+			ts = LEFT;
+			tson = &t->sons[LEFT];
+			if (rc <= tson->count) {
+				tson++;
+				ts++;
+			}
 
 			/* exchange pointers of (t, ts) and (r, rs) */
-			q.ch = t->sp[ts].ch;
-			s.ch = r->sp[rs].ch;
-			t->sp[ts].ch = s.ch;
-			r->sp[rs].ch = q.ch;
+			q.ch = tson->sp.ch;
+			s.ch = rson->sp.ch;
+			tson->sp.ch = s.ch;
+			rson->sp.ch = q.ch;
 			exch(t, ts, q.ch, r, rs);
 			exch(r, rs, s.ch, t, ts);
 
-			qs = (rs ? RLEAF : LLEAF);
-			ss = (ts ? RLEAF : LLEAF);
-			if (((r->fath.flags & qs) << rs) ^ ((t->fath.flags & ss) << ts)) {
-				r->fath.flags ^= qs;
-				t->fath.flags ^= ss;
+			rflags = (rs ? RLEAF : LLEAF);
+			tflags = (ts ? RLEAF : LLEAF);
+			if (((r->fath.flags & rflags) << rs) ^ ((t->fath.flags & tflags) << ts)) {
+				r->fath.flags ^= rflags;
+				t->fath.flags ^= tflags;
 			}
 
-			t->count[ts]++;
-			r->count[rs]--;
-			qt->pt += ts;
+			tson->count++;
+			rson->count--;
+			if (ts)
+				qt->pt++;
 			r = t;
 			rs = ts;
+			rson = tson;
 		}
 
 		if (rc == qc) {
-			r->top[rs] = qt;
+			rson->top = qt;
 			if (rc > sc + 1) {
 				qt->next = st;
 				/* dispose of rt */
@@ -114,7 +128,7 @@ uptree (ch)
 			qt->next = rt;
 			if (st)
 				st->pt = s.p;
-			r->top[rs] = rt;
+			rson->top = rt;
 		}
 		rs = r->fath.flags & FBIT;
 		r = r->fath.fp;

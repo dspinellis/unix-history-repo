@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)compact.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)compact.c	4.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -40,7 +40,7 @@ main(argc, argv)
 		head->next = dirp;
 	}
 	bottom = dirp->pt = dict;
-	dict[0].top[LEFT] = dict[0].top[RIGHT] = dirp;
+	dict[0].sons[LEFT].top = dict[0].sons[RIGHT].top = dirp;
 	dirq = dirp->next;
 	in[EF].flags = FBIT | SEEN;
 	if (argc == 0)
@@ -65,8 +65,8 @@ compact(file)
 
 	for (j = 256; j--; )
 		in[j].flags = 0;
-	bottom->top[RIGHT]->next = flist;
-	bottom->top[RIGHT] = dirp;
+	bottom->sons[RIGHT].top->next = flist;
+	bottom->sons[RIGHT].top = dirp;
 	flist = dirq;
 	cfp = uncfp = NULL;
 	if (strcmp(file, "-") != 0) {
@@ -81,17 +81,17 @@ compact(file)
 		tp = index(cp, '\0');
 		if (tp - cp > MAXNAMLEN || strlen(file) + 2 >= MAXPATHLEN) {
 			fprintf(stderr, "%s: File name too long\n", file);
-			return;
+			goto bad;
 		}
 		uncfp = fopen(file, "r");
 		if (uncfp == NULL) {
 			fprintf(stderr, "compact: "), perror(file);
-			return;
+			goto bad;
 		}
 		fstat(fileno(uncfp), &ucfstatus);
 		if ((ucfstatus.st_mode & S_IFMT) != S_IFREG) {
 			fprintf(stderr, "%s: Not a regular file.\n", file);
-			goto done;
+			goto bad;
 		}
 	} else
 		uncfp = stdin;
@@ -106,7 +106,7 @@ compact(file)
 	if (compress(uncfp, cfp)) {
 		if (cfp != stdout)
 			(void) unlink(fname);
-		goto bad;
+		goto bad2;
 	}
 	encode(EF);
 	if (bits) {
@@ -119,6 +119,7 @@ compact(file)
 	fflush(cfp);
 	if (ferror(uncfp) || ferror(cfp)) {
 		if (cfp != stdout) {
+			fprintf(stderr, "compact: ");
 			if (ferror(cfp))
 				perror(fname);
 			else
@@ -164,13 +165,18 @@ done:
 	if (uncfp != NULL)
 		fclose(uncfp);
 	return (0);
-bad:
+bad2:
 	fprintf(stderr, "compact: ");
-	if (strcmp(infname, "-") != 0)
+	if (cfp != stdout)
 		perror(infname);
 	else
 		fprintf(stderr,
 	    "Unsuccessful compact of standard input to standard output.\n");
+bad:
+	if (cfp != NULL && cfp != stdout)
+		fclose(cfp);
+	if (uncfp != NULL)
+		fclose(uncfp);
 	return (1);
 }
 
@@ -282,7 +288,7 @@ setup(uncfp, ignore)
 	}
 	if (dp->integ == PACKED) {
 		fprintf(stderr,
-		    "%s: Already packed using program pack.  Use unpack.\n",
+		    "%s: Already packed using pack program, use unpack.\n",
 		    infname);
 		*ignore = 1;
 		goto bad;
@@ -290,10 +296,8 @@ setup(uncfp, ignore)
 	if (strcmp(infname, "-") != 0) {
 		sprintf(fname, "%s.C", infname);
 		cfp = fopen(fname, "w");
-		if (cfp == NULL) {
-			perror(fname);
-			goto bad;
-		}
+		if (cfp == NULL)
+			goto bad2;
 		(void) fchmod(fileno(cfp), ucfstatus.st_mode);
 	} else
 		cfp = stdout;
@@ -301,15 +305,15 @@ setup(uncfp, ignore)
 	putc(cp->chars.lob, cfp);
 	putc(cp->chars.hib, cfp);
 	if (ferror(cfp))
-		goto bad;
+		goto bad2;
 	bits = 8;
 	cp->integ = dp->integ & 0377;
 
-	in[NC].fp = in[EF].fp = dict[0].sp[LEFT].p = bottom = dict + 1;
-	bottom->count[LEFT] = bottom->count[RIGHT] =
-	    dict[0].count[RIGHT] = 1;
-	dirp->next = dict[0].top[RIGHT] = bottom->top[LEFT] =
-	    bottom->top[RIGHT] = dirq = NEW;
+	in[NC].fp = in[EF].fp = dict[0].sons[LEFT].sp.p = bottom = dict + 1;
+	bottom->sons[LEFT].count = bottom->sons[RIGHT].count =
+	    dict[0].sons[RIGHT].count = 1;
+	dirp->next = dict[0].sons[RIGHT].top = bottom->sons[LEFT].top =
+	    bottom->sons[RIGHT].top = dirq = NEW;
 	dirq->next = NULL;
 	dict[0].fath.fp = NULL;
 	dirq->pt = bottom->fath.fp = in[cp->integ].fp = dict;
@@ -317,17 +321,19 @@ setup(uncfp, ignore)
 	in[NC].flags = SEEN;
 	dict[0].fath.flags = RLEAF;
 	bottom->fath.flags = (LLEAF | RLEAF);
-	dict[0].count[LEFT] = 2;
+	dict[0].sons[LEFT].count = 2;
 
-	dict[0].sp[RIGHT].ch = cp->integ;
-	bottom->sp[LEFT].ch = NC;
-	bottom->sp[RIGHT].ch = EF;
+	dict[0].sons[RIGHT].sp.ch = cp->integ;
+	bottom->sons[LEFT].sp.ch = NC;
+	bottom->sons[RIGHT].sp.ch = EF;
 	return (cfp);
-bad:
+bad2:
 	if (cfp && cfp != stdout) {
-		perror(fname);
+		fprintf(stderr, "compact: "), perror(fname);
 		(void) unlink(fname);
-		fclose(cfp);
 	}
+bad:
+	if (cfp && cfp != stdout)
+		fclose(cfp);
 	return (NULL);
 }
