@@ -1,4 +1,4 @@
-/*	dh.c	6.6	84/12/20	*/
+/*	dh.c	6.7	85/03/12	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -20,6 +20,7 @@
 #include "buf.h"
 #include "vm.h"
 #include "kernel.h"
+#include "syslog.h"
 
 #include "ubareg.h"
 #include "ubavar.h"
@@ -303,7 +304,7 @@ dhrint(dh)
 			 || (tp->t_flags&(EVENP|ODDP))==ODDP )
 				continue;
 		if ((c & DH_DO) && overrun == 0) {
-			printf("dh%d: silo overflow\n", dh);
+			log(KERN_RECOV, "dh%d: silo overflow\n", dh);
 			overrun = 1;
 		}
 		if (c & DH_FE)
