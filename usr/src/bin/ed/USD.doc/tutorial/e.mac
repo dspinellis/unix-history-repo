@@ -1,4 +1,4 @@
-.\"	@(#)e.mac	5.1 (Berkeley) %G%
+.\"	@(#)e.mac	6.1 (Berkeley) %G%
 .\"
 .ds . \&\s+2.\s0\&
 .de UC
