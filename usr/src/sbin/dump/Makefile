@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 #	dump.h			header file
 #	dumpitime.c		reads /etc/dumpdates
@@ -43,8 +43,8 @@ dump:	$(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o dump
 
 install: rdump dump
-	install -s -m 4750 -g operator rdump $(DESTDIR)/etc
-	install -s -m 4750 -g operator dump $(DESTDIR)/etc
+	install -s -m 6755 -g tty rdump $(DESTDIR)/etc
+	install -s -m 2755 -g tty dump $(DESTDIR)/etc
 
 dumprmain.c:
 	ln -s dumpmain.c dumprmain.c
