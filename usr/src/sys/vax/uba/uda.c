@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uda.c	7.21 (Berkeley) %G%
+ *	@(#)uda.c	7.22 (Berkeley) %G%
  */
 
 /*
@@ -74,7 +74,7 @@
 #include "syslog.h"
 #include "stat.h"
 
-#include "../machine/pte.h"
+#include "machine/pte.h"
 
 #include "../vax/cpu.h"
 #include "ubareg.h"

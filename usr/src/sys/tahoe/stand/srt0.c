@@ -1,6 +1,6 @@
-/*	srt0.c	1.6	87/04/02	*/
+/*	srt0.c	1.7	89/04/25	*/
 
-#include "../machine/mtpr.h"
+#include "machine/mtpr.h"
 #define	LOCORE
 
 /*

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hpmaptype.c	7.8 (Berkeley) %G%
+ *	@(#)hpmaptype.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -11,7 +11,7 @@
  * Used for compatibility with unlabeled disks.
  */
 #ifdef COMPAT_42
-#include "../machine/pte.h"
+#include "machine/pte.h"
 
 #include "param.h"
 #include "inode.h"

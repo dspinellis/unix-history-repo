@@ -1,7 +1,7 @@
-/*	prf.c	1.4	88/03/03	*/
+/*	prf.c	1.5	89/04/25	*/
 /*	prf.c	4.3	81/05/05	*/
 
-#include "../machine/mtpr.h"
+#include "machine/mtpr.h"
 
 #include "param.h"
 #include "../tahoe/cp.h"

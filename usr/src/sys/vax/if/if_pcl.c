@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_pcl.c	7.3 (Berkeley) %G%
+ *	@(#)if_pcl.c	7.4 (Berkeley) %G%
  */
 
 #include "pcl.h"
@@ -24,7 +24,7 @@
  *
  * Written by Mike Muuss and Jeff Schwab.
  */
-#include "../machine/pte.h"
+#include "machine/pte.h"
 
 #include "param.h"
 #include "systm.h"

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kgclock.c	7.1 (Berkeley) %G%
+ *	@(#)kgclock.c	7.2 (Berkeley) %G%
  */
 
 #include "kg.h"
@@ -11,8 +11,8 @@
 /*
  * KL-11 as profiling clock
  */
-#include "../machine/pte.h"
-#include "../machine/psl.h"
+#include "machine/pte.h"
+#include "machine/psl.h"
 
 #include "param.h"
 #include "map.h"

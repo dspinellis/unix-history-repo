@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_acc.c	7.5 (Berkeley) %G%
+ *	@(#)if_acc.c	7.6 (Berkeley) %G%
  */
 
 #include "acc.h"
@@ -23,7 +23,7 @@
 /*
  * ACC LH/DH ARPAnet IMP interface driver.
  */
-#include "../machine/pte.h"
+#include "machine/pte.h"
 
 #include "param.h"
 #include "systm.h"

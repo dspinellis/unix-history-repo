@@ -1,10 +1,10 @@
-/*	cons.c	1.1	88/06/02	*/
+/*	cons.c	1.2	89/04/25	*/
 
 /*
  * Asynchronous versions of getchar and gets
  * for use in disk formatter.
  */
-#include "../machine/mtpr.h"
+#include "machine/mtpr.h"
 
 #include "param.h"
 #include "../tahoe/cp.h"

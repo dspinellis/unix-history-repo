@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)idc.c	7.6 (Berkeley) %G%
+ *	@(#)idc.c	7.7 (Berkeley) %G%
  */
 
 #include "rb.h"
@@ -40,7 +40,7 @@ int	*trp = idctrb;
 #include "kernel.h"
 #include "syslog.h"
 
-#include "../machine/pte.h"
+#include "machine/pte.h"
 #include "../vax/cpu.h"
 #include "ubareg.h"
 #include "ubavar.h"

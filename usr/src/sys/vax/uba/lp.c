@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lp.c	7.1 (Berkeley) %G%
+ *	@(#)lp.c	7.2 (Berkeley) %G%
  */
 
 #include "lp.h"
@@ -14,7 +14,7 @@
  * This driver has been modified to work on printers where
  * leaving IENABLE set would cause continuous interrupts.
  */
-#include "../machine/pte.h"
+#include "machine/pte.h"
 
 #include "param.h"
 #include "dir.h"

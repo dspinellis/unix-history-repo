@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uu.c	7.1 (Berkeley) %G%
+ *	@(#)uu.c	7.2 (Berkeley) %G%
  */
 
 #include "uu.h"
@@ -27,7 +27,7 @@
  *
  */
 
-#include "../machine/pte.h"
+#include "machine/pte.h"
 
 #include "param.h"
 #include "systm.h"

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vp.c	7.1 (Berkeley) %G%
+ *	@(#)vp.c	7.2 (Berkeley) %G%
  */
 
 #include "vp.h"
@@ -18,7 +18,7 @@
  *	default 174/200 is already handled).
  *	Give the address of the plcsr register in the config specification
  */
-#include "../machine/pte.h"
+#include "machine/pte.h"
 
 #include "param.h"
 #include "dir.h"

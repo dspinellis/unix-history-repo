@@ -3,10 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mba.c	7.6 (Berkeley) %G%
+ *	@(#)mba.c	7.7 (Berkeley) %G%
  */
 
-#include "../machine/pte.h"
+#include "machine/pte.h"
 
 #include "param.h"
 #include "inode.h"

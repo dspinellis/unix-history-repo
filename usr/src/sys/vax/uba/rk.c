@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rk.c	7.5 (Berkeley) %G%
+ *	@(#)rk.c	7.6 (Berkeley) %G%
  */
 
 #include "rk.h"
@@ -24,7 +24,7 @@ int	rkbdebug;
  * TODO:
  *	Learn why we lose an interrupt sometime when spinning drives down
  */
-#include "../machine/pte.h"
+#include "machine/pte.h"
 
 #include "param.h"
 #include "systm.h"

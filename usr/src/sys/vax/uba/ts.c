@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ts.c	7.6 (Berkeley) %G%
+ *	@(#)ts.c	7.7 (Berkeley) %G%
  */
 
 #include "ts.h"
@@ -33,7 +33,7 @@
 #include "tty.h"
 #include "syslog.h"
 
-#include "../machine/pte.h"
+#include "machine/pte.h"
 #include "../vax/cpu.h"
 #include "ubareg.h"
 #include "ubavar.h"
