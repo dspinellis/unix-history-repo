@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vnops.c	7.40 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.41 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -315,7 +315,7 @@ mfs_close(ap)
 	 * we must invalidate any in core blocks, so that
 	 * we can, free up its vnode.
 	 */
-	if (error = vinvalbuf(vp, 1, ap->a_cred, ap->a_p))
+	if (error = vinvalbuf(vp, 1, ap->a_cred, ap->a_p, 0, 0))
 		return (error);
 	/*
 	 * There should be no way to have any more uses of this
