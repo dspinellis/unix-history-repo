@@ -273,9 +273,10 @@ rtrequest(req, entry)
 			 * as our clue to the interface.  Otherwise
 			 * we can use the local address.
 			 */
+			ifa = 0;
 			if (entry->rt_flags & RTF_HOST) 
 				ifa = ifa_ifwithdstaddr(&entry->rt_dst);
-			else
+			if (ifa == 0)
 				ifa = ifa_ifwithaddr(&entry->rt_gateway);
 		} else {
 			/*
