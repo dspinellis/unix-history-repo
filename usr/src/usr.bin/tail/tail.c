@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tail.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tail.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /* tail command 
@@ -232,6 +232,7 @@ fexit()
 	for (;;)
 	{	sleep(1);
 		while ((n = read (0, bin, BUFSIZ)) > 0)
-			(void)write (1, bin, n);
+			if (write (1, bin, n) < 0)
+				exit(1);
 	}
 }
