@@ -1,4 +1,4 @@
-/*	raw_ip.c	4.4	82/02/02	*/
+/*	raw_ip.c	4.5	82/03/05	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -10,7 +10,7 @@
 #include "../net/ip.h"
 #include "../net/ip_var.h"
 #include "../net/raw_cb.h"
-#include "/usr/include/errno.h"
+#include "../errno.h"
 
 /*
  * Raw interface to IP protocol.
