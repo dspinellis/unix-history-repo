@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_nqlease.c	7.4 (Berkeley) %G%
+ *	@(#)nfs_nqlease.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -66,7 +66,7 @@ int nqsrv_writeslack = NQ_WRITESLACK;
 int nqsrv_maxlease = NQ_MAXLEASE;
 int nqsrv_maxnumlease = NQ_MAXNUMLEASE;
 void nqsrv_instimeq(), nqsrv_send_eviction(), nfs_sndunlock();
-void nqsrv_unlocklease(), nqsrv_waitfor_expiry();
+void nqsrv_unlocklease(), nqsrv_waitfor_expiry(), nfsrv_slpderef();
 void nqsrv_addhost(), nqsrv_locklease(), nqnfs_serverd();
 struct mbuf *nfsm_rpchead();
 
@@ -226,7 +226,7 @@ nqsrv_getlease(vp, duration, flags, nd, nam, cachablep, frev, cred)
 				bzero((caddr_t)*lphp, sizeof (struct nqm));
 				lph = (*lphp)->lpm_hosts;
 			}
-			nqsrv_addhost(lph, nd->nd_slp, nd->nd_sref, nam);
+			nqsrv_addhost(lph, nd->nd_slp, nam);
 			nqsrv_unlocklease(lp);
 		} else {
 			lp->lc_flag |= LC_NONCACHABLE;
@@ -273,7 +273,7 @@ doreply:
 	bzero((caddr_t)lp, sizeof (struct nqlease));
 	if (flags & NQL_WRITE)
 		lp->lc_flag |= (LC_WRITE | LC_WRITTEN);
-	nqsrv_addhost(&lp->lc_host, nd->nd_slp, nd->nd_sref, nam);
+	nqsrv_addhost(&lp->lc_host, nd->nd_slp, nam);
 	lp->lc_vp = vp;
 	lp->lc_fsid = fh.fh_fsid;
 	bcopy(fh.fh_fid.fid_data, lp->lc_fiddata, fh.fh_fid.fid_len - sizeof (long));
@@ -319,10 +319,9 @@ lease_check(vp, p, cred, flag)
  * Add a host to an nqhost structure for a lease.
  */
 void
-nqsrv_addhost(lph, slp, sref, nam)
+nqsrv_addhost(lph, slp, nam)
 	register struct nqhost *lph;
 	struct nfssvc_sock *slp;
-	u_short sref;
 	struct mbuf *nam;
 {
 	register struct sockaddr_in *saddr;
@@ -338,9 +337,9 @@ nqsrv_addhost(lph, slp, sref, nam)
 		lph->lph_nam = m_copym(nam, 0, M_COPYALL, M_WAIT);
 		lph->lph_flag |= (LC_VALID | LC_CLTP);
 	} else {
-		lph->lph_flag |= LC_VALID;
+		lph->lph_flag |= (LC_VALID | LC_SREF);
 		lph->lph_slp = slp;
-		lph->lph_sref = sref;
+		slp->ns_sref++;
 	}
 }
 
@@ -406,7 +405,7 @@ nqsrv_cmpnam(slp, nam, lph)
 		ret = nfs_netaddr_match(AF_ISO, &lph->lph_claddr,
 			(union nethostaddr *)0, addr);
 	else {
-		if (lph->lph_sref != lph->lph_slp->ns_sref)
+		if ((lph->lph_slp->ns_flag & SLP_VALID) == 0)
 			return (0);
 		saddr = mtod(lph->lph_slp->ns_nam, struct sockaddr_in *);
 		if (saddr->sin_family == AF_INET)
@@ -459,7 +458,7 @@ nqsrv_send_eviction(vp, lp, slp, nam, cred)
 			} else if (lph->lph_flag & LC_CLTP) {
 				nam2 = lph->lph_nam;
 				so = nfs_cltpsock->ns_so;
-			} else if (lph->lph_sref == lph->lph_slp->ns_sref) {
+			} else if (lph->lph_slp->ns_flag & SLP_VALID) {
 				nam2 = (struct mbuf *)0;
 				so = lph->lph_slp->ns_so;
 			} else
@@ -499,7 +498,7 @@ nqsrv_send_eviction(vp, lp, slp, nam, cred)
 					(m->m_pkthdr.len - NFSX_UNSIGNED));
 			}
 			if (((lph->lph_flag & (LC_UDP | LC_CLTP)) == 0 &&
-			    lph->lph_sref != lph->lph_slp->ns_sref) ||
+			    (lph->lph_slp->ns_flag & SLP_VALID) == 0) ||
 			    (solockp && (*solockp & NFSMNT_SNDLOCK)))
 				m_freem(m);
 			else {
@@ -637,6 +636,8 @@ nqnfs_serverd()
 			while (ok && (lph->lph_flag & LC_VALID)) {
 				if (lph->lph_flag & LC_CLTP)
 					MFREE(lph->lph_nam, n);
+				if (lph->lph_flag & LC_SREF)
+					nfsrv_slpderef(lph->lph_slp);
 				if (++i == len) {
 					if (olphnext) {
 						free((caddr_t)olphnext, M_NQMHOST);
