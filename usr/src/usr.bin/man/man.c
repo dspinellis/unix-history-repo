@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	8.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	8.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -266,15 +266,13 @@ main(argc, argv)
 		if (manual(*argv, defp, &pg))
 			found = 1;
 
-	/*
-	 * 7: If nothing found, we're done.
-	 */
+	/* 6: If nothing found, we're done. */
 	if (!found) {
 		cleanup();
 		exit (1);
 	}
 
-	/* 8: If it's simple, display it fast. */
+	/* 7: If it's simple, display it fast. */
 	if (f_cat) {
 		for (ap = pg.gl_pathv; *ap != NULL; ++ap) {
 			if (**ap == '\0')
@@ -304,7 +302,7 @@ main(argc, argv)
 	}
 		
 	/*
-	 * 9: We display things in a single command; build a list of things
+	 * 8: We display things in a single command; build a list of things
 	 *    to display.
 	 */
 	for (ap = pg.gl_pathv, len = strlen(pager) + 1; *ap != NULL; ++ap) {
