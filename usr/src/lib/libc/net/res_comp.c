@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)res_comp.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_comp.c	4.3 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -223,4 +223,50 @@ dn_find(exp_dn, msg, dnptrs, lastdnptr)
 	next:	;
 	}
 	return (-1);
+}
+
+/*
+ * Routines to insert/extract short/long's. Must account for byte
+ * order and non-alignment problems. This code at least has the
+ * advantage of being portable.
+ */
+
+u_short
+getshort(msgp)
+	char *msgp;
+{
+	register u_char *p = (u_char *) msgp;
+
+	return ((*p++ << 8) | *p);
+}
+
+u_long
+getlong(msgp)
+	char *msgp;
+{
+	register u_char *p = (u_char *) msgp;
+
+	return ((((((*p++ << 8) | *p++) << 8) | *p++) << 8) | *p);
+}
+
+u_short
+putshort(s, msgp)
+	register u_short s;
+	register char *msgp;
+{
+
+	msgp[1] = s;
+	msgp[0] = s >> 8;
+}
+
+u_long
+putlong(l, msgp)
+	register u_long l;
+	register char *msgp;
+{
+
+	msgp[3] = l;
+	msgp[2] = (l >>= 8);
+	msgp[1] = (l >>= 8);
+	msgp[0] = l >> 8;
 }

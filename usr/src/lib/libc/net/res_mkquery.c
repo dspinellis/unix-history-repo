@@ -1,4 +1,4 @@
-/*	res_mkquery.c	4.2	85/03/15	*/
+/*	res_mkquery.c	4.3	85/03/27	*/
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -25,6 +25,7 @@ mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 	register int n;
 	char dnbuf[MAXDNAME];
 	char *dnptrs[10], **dpp, **lastdnptr;
+	extern char *index();
 
 	if (_res.options & RES_DEBUG)
 		printf("mkquery(%d, %s, %d, %d)\n", op, dname, class, type);
@@ -49,11 +50,11 @@ mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 	*dpp++ = NULL;
 	lastdnptr = dnptrs + sizeof(dnptrs)/sizeof(dnptrs[0]);
 	/*
-	 * If the domain name does not end in '.', then
+	 * If the domain name contains no dots (single label), then
 	 * append the default domain name to the one given.
 	 */
-	if ((_res.options & RES_DEFNAMES) && (n = strlen(dname)) > 0 &&
-	    dname[n - 1] != '.') {
+	if ((_res.options & RES_DEFNAMES) && dname[0] != '\0' &&
+	    index(dname, '.') == NULL) {
 		if (!(_res.options & RES_INIT))
 			res_init();
 		if (_res.defdname[0] != '\0')
@@ -71,9 +72,9 @@ mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 			return (-1);
 		cp += n;
 		buflen -= n;
-		*((u_short *)cp) = htons(type);
+		putshort(type, cp);
 		cp += sizeof(u_short);
-		*((u_short *)cp) = htons(class);
+		putshort(class, cp);
 		cp += sizeof(u_short);
 		hp->qdcount = HTONS(1);
 		if (op == QUERY || data == NULL)
@@ -81,17 +82,18 @@ mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 		/*
 		 * Make an additional record for completion domain.
 		 */
+		buflen -= RRFIXEDSZ;
 		if ((n = dn_comp(data, cp, buflen, dnptrs, lastdnptr)) < 0)
 			return (-1);
 		cp += n;
 		buflen -= n;
-		*((u_short *)cp) = htons(T_NULL);
+		putshort(T_NULL, cp);
 		cp += sizeof(u_short);
-		*((u_short *)cp) = htons(class);
+		putshort(class, cp);
 		cp += sizeof(u_short);
-		*((u_long *)cp) = 0;
+		putlong(0, cp);
 		cp += sizeof(u_long);
-		*((u_short *)cp) = 0;
+		putshort(0, cp);
 		cp += sizeof(u_short);
 		hp->arcount = HTONS(1);
 		break;
@@ -103,13 +105,13 @@ mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 		if (buflen < 1 + RRFIXEDSZ + datalen)
 			return (-1);
 		*cp++ = '\0';	/* no domain name */
-		*((u_short *)cp) = htons(type);
+		putshort(type, cp);
 		cp += sizeof(u_short);
-		*((u_short *)cp) = htons(class);
+		putshort(class, cp);
 		cp += sizeof(u_short);
-		*((u_long *)cp) = 0;
+		putlong(0, cp);
 		cp += sizeof(u_long);
-		*((u_short *)cp) = htons(datalen);
+		putshort(datalen, cp);
 		cp += sizeof(u_short);
 		if (datalen) {
 			bcopy(data, cp, datalen);
