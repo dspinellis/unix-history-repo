@@ -1,15 +1,15 @@
 #! /bin/sh
-#	@(#)tmail.sh	1.2 %G%
+#	@(#)tmail.sh	1.3 %G%
 # Print out mail backwards.
 # Author: Jay Lepreau, Univ of Utah
 #
-PATH=/usr/new:/bin:/usr/bin:/usr/ucb
+PATH=/usr/contrib/bin:/bin:/usr/bin:/usr/ucb
 case $# in
-	0) file=/usr/spool/mail/$USER
+	0) file=/var/mail/$USER
 	   ;;
-	1) if [ -r /usr/spool/mail/$1 ]
+	1) if [ -r /var/mail/$1 ]
 	   then
-		file=/usr/spool/mail/$1
+		file=/var/mail/$1
 	   else
 	   	file=$1
 	   fi
