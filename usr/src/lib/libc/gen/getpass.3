@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getpass.3	6.3 (Berkeley) %G%
+.\"     @(#)getpass.3	6.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETPASS 3
@@ -18,30 +18,22 @@
 .Sh DESCRIPTION
 The
 .Fn getpass
-function prompts for a password
-from
+function displays a prompt to, and reads in a password from,
 .Pa /dev/tty .
-If the file
-.Pa /dev/tty is not accessible,
-.Fn getpass
-reads from the
-.Em stdin .
-The prompt string must be
-.Dv NUL Ns -terminated
-and after it is written
-to the output,
-.Fn getpass
-turns off character echoing.
+If this file is not accessible,
+.Nm getpass
+displays the prompt on the standard error output and reads from the standard
+input.
+.Pp
+The password may be up to 128 characters in length; any additional
+characters and the terminating newline character are discarded.
+.Pp
+.Nm Getpass
+turns off character echoing while reading the password.
 .Pp
 .Sh RETURN VALUES
-If successful,
-.Fn getpass
-returns a pointer to the
-password. The password may be up to 128
-characters long and is null terminated.
-The calling process should zero the password as soon as possible
-to avoid leaving the cleartext password visible in the process's
-address space.
+.Nm Getpass
+returns a pointer to the null terminated password.
 .Sh FILES
 .Bl -tag -width /dev/tty - compact
 .It Pa /dev/tty
@@ -50,13 +42,18 @@ address space.
 .Xr crypt 3
 .Sh HISTORY
 A
-.Fn getpass
+.Nm getpass
 function appeared in
 .At v7 .
 .Sh BUGS
 The
-.Fn getpass
+.Nm getpass
 function leaves its result in an internal static object and returns
-a pointer to that object. Subsequent calls to
-.Fn getpass
+a pointer to that object.
+Subsequent calls to
+.Nm getpass
 will modify the same object.
+.Pp
+The calling process should zero the password as soon as possible to
+avoid leaving the cleartext password visible in the process's address
+space.
