@@ -1,43 +1,32 @@
 #ifndef lint
-static char sccsid[] = "@(#)n3.c	1.1 (CWI) 85/07/17";
+static char sccsid[] = "@(#)n3.c	2.1 (CWI) 85/07/18";
 #endif lint
+/*      @(#)n3.c	1.1     */
+/*
+ * troff3.c
+ * 
+ * macro and string routines, storage allocation
+ */
+
 
 #include "tdef.h"
-extern
-#include "d.h"
-extern
-#include "v.h"
 #ifdef NROFF
-extern
 #include "tw.h"
 #endif
-#include "s.h"
-
-/*
-troff3.c
-
-macro and string routines, storage allocation
-*/
-
 #include <sgtty.h>
 #include "ext.h"
-#define	blisti(i)	(((i)-NEV*EVS)/BLK)
+
+#define	MHASH(x)	((x>>6)^x)&0177
+struct	contab *mhash[128];	/* 128 == the 0177 on line above */
+#define	blisti(i)	(((i)-NEV*(int)sizeof(env))/BLK)
 filep	blist[NBLIST];
 tchar	*argtop;
 int	pagech = '%';
 int	strflg;
-extern struct contab {
-	int	rq;
-	union {
-		int	(*f)();
-		unsigned	mx;
-	} x;
-} contab[NM];
 
 #ifdef	INCORE
 	tchar *wbuf;
-	tchar *rbuf;
-	tchar corebuf[NBLIST*BLK];
+	tchar corebuf[NEV*sizeof(env)/sizeof(tchar) + NBLIST*BLK+ 1];
 #else
 	tchar wbuf[BLK];
 	tchar rbuf[BLK];
@@ -63,17 +52,72 @@ casern()
 		return;
 	skip();
 	clrmn(findmn(j = getrq()));
-	if (j)
-		contab[oldmn].rq = (contab[oldmn].rq & MMASK) | j;
+	if (j) {
+		munhash(&contab[oldmn]);
+		contab[oldmn].rq = j;
+		maddhash(&contab[oldmn]);
+	}
 }
 
+maddhash(rp)
+register struct contab *rp;
+{
+	register struct contab **hp;
+
+	if (rp->rq == 0)
+		return;
+	hp = &mhash[MHASH(rp->rq)];
+	rp->link = *hp;
+	*hp = rp;
+}
+
+munhash(mp)
+register struct contab *mp;
+{	
+	register struct contab *p;
+	register struct contab **lp;
+
+	if (mp->rq == 0)
+		return;
+	lp = &mhash[MHASH(mp->rq)];
+	p = *lp;
+	while (p) {
+		if (p == mp) {
+			*lp = p->link;
+			p->link = 0;
+			return;
+		}
+		lp = &p->link;
+		p = p->link;
+	}
+}
+
+mrehash()
+{
+	register struct contab *p;
+	register i;
+
+	for (i=0; i<128; i++)
+		mhash[i] = 0;
+	for (p=contab; p < &contab[NM]; p++)
+		p->link = 0;
+	for (p=contab; p < &contab[NM]; p++) {
+		if (p->rq == 0)
+			continue;
+		i = MHASH(p->rq);
+		p->link = mhash[i];
+		mhash[i] = p;
+	}
+}
 
 caserm()
 {
+	int j;
+
 	lgf++;
-	while (!skip()) {
-		clrmn(findmn(getrq()));
-	}
+	while (!skip() && (j = getrq()) != 0)
+		clrmn(findmn(j));
+	lgf--;
 }
 
 
@@ -119,8 +163,12 @@ casede()
 		req = copyb();
 	wbfl();
 	clrmn(oldmn);
-	if (newmn)
-		contab[newmn].rq = i | MMASK;
+	if (newmn) {
+		if (contab[newmn].rq)
+			munhash(&contab[newmn]);
+		contab[newmn].rq = i;
+		maddhash(&contab[newmn]);
+	}
 	if (apptr) {
 		savoff = offset;
 		offset = apptr;
@@ -139,17 +187,12 @@ de1:
 findmn(i)
 register int	i;
 {
-	register j;
 	register struct contab *p;
 
-	for (p = contab; p < &contab[NM]; p++) {
-		if (i == (p->rq & ~MMASK))
-			break;
-	}
-	j = p - contab;
-	if (j == NM)
-		j = -1;
-	return(j);
+	for (p = mhash[MHASH(i)]; p; p = p->link)
+		if (i == p->rq)
+			return(p - contab);
+	return(-1);
 }
 
 
@@ -157,10 +200,12 @@ clrmn(i)
 register int	i;
 {
 	if (i >= 0) {
-		if (contab[i].rq & MMASK)
-			ffree((filep)contab[i].x.mx);
+		if (contab[i].mx)
+			ffree((filep)contab[i].mx);
+		munhash(&contab[i]);
 		contab[i].rq = 0;
-		contab[i].x.mx = 0;
+		contab[i].mx = 0;
+		contab[i].f = 0;
 	}
 }
 
@@ -176,9 +221,9 @@ register int	mn;
 	oldmn = findmn(mn);
 	newmn = 0;
 	apptr = (filep)0;
-	if (app && oldmn >= 0 && (contab[oldmn].rq & MMASK)) {
+	if (app && oldmn >= 0 && contab[oldmn].mx) {
 		savip = ip;
-		ip = (filep)contab[oldmn].x.mx;
+		ip = (filep)contab[oldmn].mx;
 		oldmn = -1;
 		while ((i = rbf()) != 0)
 			;
@@ -196,17 +241,18 @@ register int	mn;
 			app = 0;
 			if (macerr++ > 1)
 				done2(02);
-			fprintf(stderr, "troff: Too many (%d) string/macro names.\n", NM);
+			errprint("Too many (%d) string/macro names", NM);
 			edone(04);
 			return(offset = 0);
 		}
-		contab[i].x.mx = (unsigned) nextb;
+		contab[i].mx = (unsigned) nextb;
 		if (!diflg) {
 			newmn = i;
 			if (oldmn == -1)
 				contab[i].rq = -1;
 		} else {
-			contab[i].rq = mn | MMASK;
+			contab[i].rq = mn;
+			maddhash(&contab[i]);
 		}
 	}
 	app = 0;
@@ -216,7 +262,7 @@ register int	mn;
 
 skip()
 {
-	tchar i;
+	register tchar i;
 
 	while (cbits(i = getch()) == ' ')
 		;
@@ -227,16 +273,16 @@ skip()
 
 copyb()
 {
-	register i, j, k;
-	int	req, state;
-	tchar ii;
+	register i, j, state;
+	register tchar ii;
+	int	req, k;
 	filep savoff;
 
 	if (skip() || !(j = getrq()))
 		j = '.';
 	req = j;
 	k = j >> BYTE;
-	j &= BMASK;
+	j &= BYTEMASK;
 	copyf++;
 	flushi();
 	nlflg = 0;
@@ -287,7 +333,7 @@ c0:
 
 copys()
 {
-	tchar i;
+	register tchar i;
 
 	copyf++;
 	if (skip())
@@ -305,7 +351,7 @@ c0:
 filep alloc()
 {
 	register i;
-	filep j;
+	register filep j;
 
 	for (i = 0; i < NBLIST; i++) {
 		if (blist[i] == 0)
@@ -315,7 +361,7 @@ filep alloc()
 		j = 0;
 	} else {
 		blist[i] = -1;
-		if ((j = ((filep)i * BLK + NEV * EVS)) < NEV * EVS)
+		if ((j = ((filep)i * BLK + NEV*(int)sizeof(env))) < NEV*(int)sizeof(env))
 			j = 0;
 	}
 	return(nextb = j);
@@ -327,13 +373,12 @@ filep i;
 {
 	register j;
 
-	while ((blist[j = blisti(i)]) != -1) {
-		i = ((filep)blist[j]);
+	while (blist[j = blisti(i)] != (unsigned) ~0) {
+		i = (filep) blist[j];
 		blist[j] = 0;
 	}
 	blist[j] = 0;
 }
-
 
 wbt(i)
 tchar i;
@@ -344,7 +389,7 @@ tchar i;
 
 
 wbf(i)
-tchar i;
+register tchar i;
 {
 	register j;
 
@@ -360,9 +405,14 @@ tchar i;
 	wbuf[wbfi++] = i;
 	if (!((++offset) & (BLK - 1))) {
 		wbfl();
-		if (blist[j = blisti(--offset)] == -1) {
+		j = blisti(--offset);
+		if (j < 0 || j >= NBLIST) {
+			errprint("Out of temp file space");
+			done2(01);
+		}
+		if (blist[j] == (unsigned) ~0) {
 			if (alloc() == 0) {
-				fprintf(stderr, "troff: Out of temp file space at %d.\n", v.cd);
+				errprint("Out of temp file space");
 				done2(01);
 			}
 			blist[j] = (unsigned)(nextb);
@@ -390,41 +440,53 @@ wbfl()
 
 tchar rbf()
 {
-	tchar i;
+	register tchar i;
 	register filep j, p;
 	extern filep incoff();
 
+	if (ip == NBLIST*BLK) {		/* for rdtty */
+		if (j = rdtty())
+			return(j);
+		else
+			return(popi());
+	}
 	/* this is an inline expansion of rbf0: dirty! */
-	if ((j = ip & ~(BLK - 1)) != roff) {
-		roff = j;
 #ifndef INCORE
-		lseek(ibf, (long)roff * sizeof(tchar), 0);
-		if (read(ibf, (char *)rbuf, BLK * sizeof(tchar)) == 0)
+	j = ip & ~(BLK - 1);
+	if (j != roff) {
+		roff = j;
+		lseek(ibf, (long)j * sizeof(tchar), 0);
+		if (read(ibf, (char *)rbuf, BLK * sizeof(tchar)) <= 0)
 			i = 0;
 		else
 			i = rbuf[ip & (BLK-1)];
-#else
-		rbuf = &corebuf[roff];
-		i = rbuf[ip & (BLK-1)];
-#endif
 	} else
 		i = rbuf[ip & (BLK-1)];
+#else
+	i = corebuf[ip];
+#endif
 	/* end of rbf0 */
 	if (i == 0) {
 		if (!app)
 			i = popi();
-	} else {
-		/* this is an inline expansion of incoff: also dirty */
-		int i;
-		p = ip;
-		if (!((j = ++p) & (BLK - 1))) {
-			if ((i = blist[blisti(--p)]) == -1) {
-				fprintf(stderr, "troff: Bad storage allocation.\n");
-				done2(-5);
-			}
-			j = ((filep)i);
+		return(i);
+	}
+	/* this is an inline expansion of incoff: also dirty */
+	p = ++ip;
+	if ((p & (BLK - 1)) == 0) {
+		if ((ip = blist[blisti(p-1)]) == (unsigned) ~0) {
+			ip = 0;
+			errprint("Bad storage allocation");
+			done2(-5);
 		}
-		ip = j;
+		/* this was meant to protect against people removing
+		/* the macro they were standing on, but it's too
+		/* sensitive to block boundaries.
+		/* if (ip == 0) {
+		/*	errprint("Block removed while in use");
+		/*	done2(-6);
+		/* }
+		*/
 	}
 	return(i);
 }
@@ -433,36 +495,33 @@ tchar rbf()
 tchar rbf0(p)
 register filep p;
 {
+#ifndef INCORE
 	register filep i;
 
 	if ((i = p & ~(BLK - 1)) != roff) {
 		roff = i;
-#ifndef INCORE
 		lseek(ibf, (long)roff * sizeof(tchar), 0);
 		if (read(ibf, (char *)rbuf, BLK * sizeof(tchar)) == 0)
 			return(0);
-#else
-		rbuf = &corebuf[roff];
-#endif
 	}
 	return(rbuf[p & (BLK-1)]);
+#else
+	return(corebuf[p]);
+#endif
 }
 
 
 filep incoff(p)
 register filep p;
 {
-	register i;
-	register filep j;
-
-	if (!((j = ++p) & (BLK - 1))) {
-		if ((i = blist[blisti(--p)]) == -1) {
-			fprintf(stderr, "troff: Bad storage allocation.\n");
+	p++;
+	if ((p & (BLK - 1)) == 0) {
+		if ((p = blist[blisti(p-1)]) == (unsigned) ~0) {
+			errprint("Bad storage allocation");
 			done2(-5);
 		}
-		j = (filep) i;
 	}
-	return(j);
+	return(p);
 }
 
 
@@ -478,12 +537,8 @@ tchar popi()
 	p->nargs = 0;
 	frame = p->pframe;
 	ip = p->pip;
-	nchar = p->pnchar;
-	rchar = p->prchar;
 	pendt = p->ppendt;
-	ap = p->pap;
-	cp = p->pcp;
-	ch0 = p->pch0;
+	lastpbp = p->lastpbp;
 	return(p->pch);
 }
 
@@ -493,25 +548,23 @@ tchar popi()
  */
 #define SPACETEST(base, size) while ((enda - (size)) <= (char *)(base)){setbrk(DELTA);}
 
-pushi(newip)
+pushi(newip, mname)
 filep newip;
+int mname;
 {
 	register struct s *p;
-	extern char	*setbrk();
+	extern char *setbrk();
 
 	SPACETEST(nxf, sizeof(struct s));
 	p = nxf;
 	p->pframe = frame;
 	p->pip = ip;
-	p->pnchar = nchar;
-	p->prchar = rchar;
 	p->ppendt = pendt;
-	p->pap = ap;
-	p->pcp = cp;
-	p->pch0 = ch0;
 	p->pch = ch;
-	cp = ap = 0;
-	nchar = rchar = pendt = ch0 = ch = 0;
+	p->lastpbp = lastpbp;
+	p->mname = mname;
+	lastpbp = pbp;
+	pendt = ch = 0;
 	frame = nxf;
 	if (nxf->nargs == 0) 
 		nxf += 1;
@@ -525,14 +578,19 @@ char	*setbrk(x)
 int	x;
 {
 	register char	*i;
+	register j;
 	char	*sbrk();
 
-	if (x % 2 == 1) 
-		x++;
-	if ((i = sbrk(x)) == MAXPTR) {
-		fprintf(stderr, "troff: Core limit reached.\n");
+	if (j = x % sizeof(int))	/*allocate only whole words for 3B*/
+		x += sizeof(int) - j;
+	if ((i = sbrk(x)) == (char *) -1) {
+		errprint("Core limit reached");
 		edone(0100);
 	} else {
+		if ((unsigned)i % sizeof(int)) {	/*check alignment for 3B*/
+			errprint("alignment problem");
+			edone(0100);
+		}
 		enda = i + x;
 	}
 	return(i);
@@ -554,10 +612,10 @@ getsn()
 
 setstr()
 {
-	register i;
+	register i, j;
 
 	lgf++;
-	if (((i = getsn()) == 0) ||  ((i = findmn(i)) == -1) ||  !(contab[i].rq & MMASK)) {
+	if ((i = getsn()) == 0 || (j = findmn(i)) == -1 || !contab[j].mx) {
 		lgf--;
 		return(0);
 	} else {
@@ -565,7 +623,7 @@ setstr()
 		nxf->nargs = 0;
 		strflg++;
 		lgf--;
-		return(pushi(((filep)contab[i].x.mx)));
+		return pushi((filep)contab[j].mx, i);
 	}
 }
 
@@ -574,7 +632,7 @@ setstr()
 collect()
 {
 	register j;
-	tchar i;
+	register tchar i;
 	register tchar *strp;
 	tchar * lim;
 	tchar * *argpp, **argppend;
@@ -619,7 +677,7 @@ collect()
 		argpp[j] = (tchar *)0;
 	}
 #if 0
-	fprintf(stderr, "savnxf=0x%x,nxf=0x%x,argpp=0x%x,strp=argppend=0x%x,lim=0x%x,enda=0x%x\n",
+	errprint("savnxf=0x%x,nxf=0x%x,argpp=0x%x,strp=argppend=0x%x,lim=0x%x,enda=0x%x",
 		savnxf, nxf, argpp, strp, lim, enda);
 #endif 0
 	strflg = 0;
@@ -632,7 +690,7 @@ collect()
 			ch = i;
 		while (1) {
 			i = getch();
-			if ( nlflg ||  (!quote && cbits(i) == ' '))
+			if (nlflg || (!quote && cbits(i) == ' '))
 				break;
 			if (   quote
 			    && (cbits(i) == '"')
@@ -641,13 +699,12 @@ collect()
 				break;
 			}
 			*strp++ = i;
-			if (strflg && (strp >= lim)) {
+			if (strflg && strp >= lim) {
 #if 0
-				fprintf(stderr, "strp=0x%x, lim = 0x%x\n",
+				errprint("strp=0x%x, lim = 0x%x",
 					strp, lim);
 #endif 0
-				fprintf(stderr,
-					"troff: Macro argument too long.\n");
+				errprint("Macro argument too long");
 				copyf--;
 				edone(004);
 			}
@@ -668,11 +725,8 @@ seta()
 	register i;
 
 	i = cbits(getch()) - '0';
-	if (   (i > 0)
-	    && (i <= APERMAC)
-	    && (i <= frame->nargs)){
-		ap = *(((tchar **)(frame + 1)) + i - 1);
-	}
+	if (i > 0 && i <= APERMAC && i <= frame->nargs)
+		pushback(*(((tchar **)(frame + 1)) + i - 1));
 }
 
 
@@ -689,12 +743,12 @@ casedi()
 	register *k;
 
 	lgf++;
-	if (skip() || ((i = getrq()) == 0)) {
+	if (skip() || (i = getrq()) == 0) {
 		if (dip != d)
 			wbt((tchar)0);
 		if (dilev > 0) {
-			v.dn = dip->dnl;
-			v.dl = dip->maxl;
+			numtab[DN].val = dip->dnl;
+			numtab[DL].val = dip->maxl;
 			dip = &d[--dilev];
 			offset = dip->op;
 		}
@@ -702,7 +756,7 @@ casedi()
 	}
 	if (++dilev == NDI) {
 		--dilev;
-		fprintf(stderr, "troff: Diversions nested too deep.\n");
+		errprint("Diversions nested too deep");
 		edone(02);
 	}
 	if (dip != d)
@@ -737,103 +791,74 @@ casedt()
 casetl()
 {
 	register j;
-	int	w1, w2, w3;
+	int w[3];
+	tchar buf[LNSIZE];
+	register tchar *tp;
 	tchar i, delim;
-	filep begin;
-	extern width(), pchar();
 
-					/* bug fix jna
-					 * if v.nl isn't 0 and tl is the
-					 * first text to be output, you lose
-					 * the first page. In older n/troff
-					 * the -o1 option fails.
-					 *
-					 * Could in ditroff repaired by
-					 * initializing v.nl to zero,
-					 * but this is more subtle, and
-					 * src compatible with its predecessor
-					 */
-	if ((dip == d) && (v.nl == -1))
-		newline(1); 
-					/* End of fix */
 	dip->nls = 0;
 	skip();
-	if (dip != d)
-		wbfl();
-	if ((offset = begin = alloc()) == 0)
-		return;
 	if (ismot(delim = getch())) {
 		ch = delim;
 		delim = '\'';
 	} else 
 		delim = cbits(delim);
-	if (!nlflg)
-		while (cbits(i = getch()) != '\n') {
-			if (cbits(i) == cbits(delim))
-				i = IMP;
-			wbf(i);
+	tp = buf;
+	numtab[HP].val = 0;
+	w[0] = w[1] = w[2] = 0;
+	j = 0;
+	while (cbits(i = getch()) != '\n') {
+		if (cbits(i) == cbits(delim)) {
+			if (j < 3)
+				w[j] = numtab[HP].val;
+			numtab[HP].val = 0;
+			j++;
+			*tp++ = 0;
+		} else {
+			if (cbits(i) == pagech) {
+				setn1(numtab[PN].val, numtab[findr('%')].fmt,
+				      i&SFMASK);
+				continue;
+			}
+			numtab[HP].val += width(i);
+			if (tp < &buf[LNSIZE-10])
+				*tp++ = i;
 		}
-	wbf((tchar)IMP);
-	wbf((tchar)IMP);
-	wbt((tchar)0);
-
-	w1 = hseg(width, begin);
-	w2 = hseg(width, (filep)0);
-	w3 = hseg(width, (filep)0);
-	offset = dip->op;
+	}
+	if (j<3)
+		w[j] = numtab[HP].val;
+	*tp++ = 0;
+	*tp++ = 0;
+	*tp++ = 0;
+	tp = buf;
 #ifdef NROFF
-	if (!offset)
-		horiz(po);
+	horiz(po);
 #endif
-	hseg(pchar, begin);
-	if (w2 || w3)
-		horiz(j = quant((lt - w2) / 2 - w1, HOR));
-	hseg(pchar, (filep)0);
-	if (w3) {
-		horiz(lt - w1 - w2 - w3 - j);
-		hseg(pchar, (filep)0);
+	while (i = *tp++)
+		pchar(i);
+	if (w[1] || w[2])
+		horiz(j = quant((lt - w[1]) / 2 - w[0], HOR));
+	while (i = *tp++)
+		pchar(i);
+	if (w[2]) {
+		horiz(lt - w[0] - w[1] - w[2] - j);
+		while (i = *tp++)
+			pchar(i);
 	}
 	newline(0);
 	if (dip != d) {
 		if (dip->dnl > dip->hnl)
 			dip->hnl = dip->dnl;
 	} else {
-		if (v.nl > dip->hnl)
-			dip->hnl = v.nl;
+		if (numtab[NL].val > dip->hnl)
+			dip->hnl = numtab[NL].val;
 	}
-	ffree(begin);
 }
 
 
 casepc()
 {
 	pagech = chget(IMP);
-}
-
-
-hseg(f, p)
-int	(*f)();
-filep p;
-{
-	register acc;
-	tchar i;
-	static filep q;
-
-	acc = 0;
-	if (p)
-		q = p;
-	while (1) {
-		i = rbf0(q);
-		q = incoff(q);
-		if (!i || i == IMP)
-			return(acc);
-		if (cbits(i) == pagech) {
-			nrbits = i & SFMASK;
-			nform = fmt[findr('%')];
-			acc += fnumb(v.pn, f);
-		} else 
-			acc += (*f)(i);
-	}
 }
 
 
@@ -848,14 +873,13 @@ casepm()
 	kk = cnt = tcnt = 0;
 	tot = !skip();
 	for (i = 0; i < NM; i++) {
-		if (contab[i].rq)
-			tcnt++;
-		if (!((xx = contab[i].rq) & MMASK))
+		if (!(xx = contab[i].rq))
 			continue;
+		tcnt++;
 		p = pmline;
-		j = (filep) contab[i].x.mx;
+		j = (filep) contab[i].mx;
 		k = 1;
-		while ((j = blist[blisti(j)]) != -1) {
+		while ((j = blist[blisti(j)]) != (unsigned) ~0) {
 			k++; 
 		}
 		cnt++;
@@ -865,13 +889,19 @@ casepm()
 			if (!(*p++ = (xx >> BYTE) & 0177))
 				*(p - 1) = ' ';
 			*p++ = 0;
-			fprintf(stderr, "%s %d\n", pmline, k);
+			fdprintf(stderr, "%s %d\n", pmline, k);
 		}
 	}
-	fprintf(stderr, "pm: total %d, macros %d, space %d\n", tcnt, cnt, kk);
+	fdprintf(stderr, "pm: total %d, macros %d, space %d\n", tcnt, cnt, kk);
 }
 
-
-dummy()
+stackdump()	/* dumps stack of macros in process */
 {
+	struct s *p;
+
+	if (p != stk) {
+		for (p = frame; p != stk; p = p->pframe)
+			fdprintf(stderr, "%c%c ", p->mname&0177, (p->mname>>BYTE)&0177);
+		fdprintf(stderr, "\n");
+	}
 }

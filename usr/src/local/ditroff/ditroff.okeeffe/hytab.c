@@ -1,13 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)hytab.c	1.1 (CWI) 85/07/17";
+static char sccsid[] = "@(#)hytab.c	2.1 (CWI) 85/07/18";
 #endif lint
-
 /*
  * Hyphenation digram tables
  */
 
 /*
- * These table are for the ORIGINAL dialect
+ * These tables are for the ORIGINAL algorithm
  */
 
 char	bxh[1][13] = {
@@ -131,7 +130,7 @@ char	xxh[26][13] = {
 };
 
 /*
- * These tables are for the DUTCH dialect
+ * These tables are for the DUTCH algorithm
  */
 
 char translate[26] =
@@ -205,4 +204,3 @@ char prefix[7][3] = {
 	55, 29, 50,        /*'van'*/
 	42, 35, 52         /*'hier'*/
 } ;
- 

@@ -1,46 +1,32 @@
 #ifndef lint
-static char sccsid[] = "@(#)nii.c	1.1 (CWI) 85/07/17";
+static char sccsid[] = "@(#)nii.c	2.1 (CWI) 85/07/18";
 #endif lint
-
 #include "tdef.h"
 #ifdef NROFF
 #include "tw.h"
 #endif
-#include "s.h"
-#include "d.h"
-#include "v.h"
+#include "ext.h"
 #include <sgtty.h>
 
-int	*vlist = (int *)
-&v;
-struct s *frame, *stk, *ejl;
-struct s *nxf;
+struct 	s *frame, *stk, *ejl;
+struct	s *nxf;
 
 int	pipeflg;
-#ifdef NROFF
-int	hflg;
-int	eqflg;
-#endif
+int	hflg;	/* used in nroff only */
+int	eqflg;	/* used in nroff only */
 
 #ifndef NROFF
 int	xpts;
-int	*pslp;
-int	psflg;
 int	ppts;
 int	pfont;
-int	paper;
 int	mpts;
 int	mfont;
 int	cs;
-int	code;
 int	ccs;
 int	bd;
-int	back;
 #endif
 
-int	level;
 int	stdi;
-int	waitf;
 int	nofeed;
 int	quiet;
 int	stop;
@@ -50,15 +36,15 @@ char	*ibufp;
 char	*xbufp;
 char	*eibuf;
 char	*xeibuf;
-tchar	cbuf[NC];
-tchar	*cp;
+tchar	pbbuf[NC];	/* pushback buffer for arguments, \n, etc. */
+tchar	*pbp = pbbuf;	/* next free slot in pbbuf */
+tchar	*lastpbp = pbbuf;	/* pbp in previous stack frame */
 int	nx;
 int	mflg;
 tchar	ch = 0;
-int	cps;
 int	ibf;
 int	ttyod;
-struct sgttyb ttys;
+struct	sgttyb ttys;
 int	iflg;
 char	*enda;
 int	rargc;
@@ -66,15 +52,10 @@ char	**argp;
 int	trtab[NTRTAB];
 int	lgf;
 int	copyf;
-tchar	ch0;
-int	cwidth;
-filep ip;
+filep	ip;
 int	nlflg;
-tchar	*ap;
 int	donef;
 int	nflush;
-int	nchar;
-tchar	rchar;
 int	nfo;
 int	ifile;
 int	padc;
@@ -88,27 +69,24 @@ int	tflg;
 int	ejf;
 int	gflag;
 int	dilev;
-int	tlss;
-filep offset;
+filep	offset;
 int	em;
 int	ds;
-filep woff;
+filep	woff;
 int	app;
 int	ndone;
 int	lead;
 int	ralss;
-filep nextb;
+filep	nextb;
 tchar	nrbits;
 int	nform;
 int	oldmn;
 int	newmn;
 int	macerr;
-filep apptr;
+filep	apptr;
 int	diflg;
-filep roff;
+filep	roff;
 int	wbfi;
-int	inc[NN];
-int	fmt[NN];
 int	evi;
 int	vflag;
 int	noscale;
@@ -124,12 +102,14 @@ int	esc;
 int	widthp;
 int	xfont;
 int	setwdf;
-int	xbitf;
 int	over;
 int	nhyp;
 tchar	**hyp;
-int	*olinep;
+tchar	*olinep;
 int	ttysave = -1;
 int	dotT;
 char	*unlkp;
 int	no_out;
+struct	widcache widcache[NWIDCACHE];
+struct	d d[NDI];
+struct	d *dip;

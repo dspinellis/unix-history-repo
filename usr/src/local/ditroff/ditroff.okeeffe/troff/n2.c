@@ -1,35 +1,29 @@
 #ifndef lint
-static char sccsid[] = "@(#)n2.c	1.1 (CWI) 85/07/17";
+static char sccsid[] = "@(#)n2.c	2.1 (CWI) 85/07/18";
 #endif lint
+/*
+ * n2.c
+ *
+ * output, cleanup
+ */
 
 #include "tdef.h"
 #include <sgtty.h>
-extern
-#include "d.h"
-extern
-#include "v.h"
+#include <signal.h>
 #ifdef NROFF
-extern
 #include "tw.h"
 #endif
-#include "s.h"
 #include <setjmp.h>
-
-/*
-troff2.c
-
-output, cleanup
-*/
-
 #include "ext.h"
-extern jmp_buf	sjbuf;
+
+extern	jmp_buf	sjbuf;
 int	toolate;
 int	error;
 
 pchar(i)
-tchar i;
+	register tchar i;
 {
-	int j;
+	register int j;
 	static int hx = 0;	/* records if have seen HX */
 
 	if (hx) {
@@ -69,10 +63,9 @@ tchar i;
 
 
 pchar1(i)
-tchar i;
+	register tchar i;
 {
-	register j, *k;
-	static int seendraw;
+	register j;
 
 	j = cbits(i);
 	if (dip != &d[0]) {
@@ -88,101 +81,117 @@ tchar i;
 	if (no_out || j == FILLER)
 		return;
 	if (tflg) {	/* transparent mode, undiverted */
-		fprintf(ptid, "%c", j);
+		fdprintf(ptid, "%c", j);
 		return;
 	}
 #ifndef NROFF
-	if (ascii) {
-		if (ismot(i)) {
-			if(!seendraw) {
-				oput(' ');
-			}
-			return;
-		}
-		if (j < 0177 && j >= 040) {
-			if(!seendraw) {
-				oput(j);
-				return;
-			} else {
-				switch(j) {
-					case DRAWCIRCLE: oputs("CIRCLE");
-						break;
-					case DRAWELLIPSE: oputs("ELLIPSE");
-						break;
-					case DRAWLINE: oputs("LINE");
-						break;
-					case DRAWWIG: oputs("SPLINE");
-						break;
-					case DRAWARC: oputs("ARC");
-						break;
-					case '.':
-						if(seendraw == 2)
-							seendraw = 0;
-						else
-							seendraw++;
-						break;
-					default: oputs("UNKNOWN");
-						break;
-				}
-				return;
-			}
-		}
-		if( j < 040) {
-			switch(j) {
-				case SLANT:
-				case CHARHT:
-				case WORDSP:
-				case HX:
-				case FONTPOS:	/* creeps in as well */
-					return;
-				case DRAWFCN:
-					seendraw++;
-					oputs("DRAWFUNCTION ");
-					return;
-				case '\n':
-					oput(j);
-					return;
-				default:
-					fprintf(stderr,"Unknown 0%o function\n",
-								j);
-					return;
-			}
-		}
-					
-		if (j == HYPHEN || j == MINUS)
-			oput('-');
-		else if (j == LIG_FI)
-			oputs("fi");
-		else if (j == LIG_FL)
-			oputs("fl");
-		else if (j == LIG_FF)
-			oputs("ff");
-		else if (j == LIG_FFI)
-			oputs("ffi");
-		else if (j == LIG_FFL)
-			oputs("ffl");
-		else if (j == NARSP || j == HNARSP || j == WORDSP)
-			;	/* nothing at all */
-		else {
-			oput('\\');
-			oput('(');
-			oput(chname[chtab[j-128]]);
-			oput(chname[chtab[j-128]+1]);
-		}
-	} else
+	if (ascii)
+		outascii(i);
+	else
 #endif
 		ptout(i);
 }
 
+outascii(i)	/* print i in best-guess ascii */
+	tchar i;
+{
+	static int seendraw;
+	int j = cbits(i);
 
+	if (ismot(i)) {
+		if(!seendraw) {
+			oput(' ');
+		}
+		return;
+	}
+	if (j < 0177 && j >= 040) {
+		if(!seendraw) {
+			oput(j);
+			return;
+		} else {
+			switch(j) {
+				case DRAWCIRCLE: oputs("CIRCLE ");
+					break;
+				case DRAWELLIPSE: oputs("ELLIPSE ");
+					break;
+				case DRAWLINE: oputs("LINE ");
+					break;
+				case DRAWSPLINE: oputs("SPLINE ");
+					break;
+				case DRAWARC: oputs("ARC ");
+					break;
+				case '.':oputs(".");
+					/*
+					if(seendraw == 2)
+						seendraw = 0;
+					else
+						seendraw++;
+					*/
+					break;
+				default: oputs("UNKNOWN "); flusho();
+					errprint("Unknown 0%o %c function", j,j);
+					break;
+			}
+			return;
+		}
+	}
+	if( j < 040) {
+		switch(j) {
+			case SLANT:
+			case CHARHT:
+			case WORDSP:
+			case HX:
+				return;
+			case DRAWFCN:
+				if(seendraw == 1){
+					seendraw = 0;
+				} else {
+					oputs("DRAWFUNCTION ");flusho();
+					seendraw++;
+				}
+				/*
+				errprint("Seendraw %d", seendraw);
+				*/
+				return;
+			case '\n':
+				oput(j);
+				return;
+			default:
+				errprint("Unknown (2) 0%o function", j);
+				return;
+		}
+	}
+	if (j == HYPHEN || j == MINUS)
+		oput('-');
+	else if (j == LIG_FI)
+		oputs("fi");
+	else if (j == LIG_FL)
+		oputs("fl");
+	else if (j == LIG_FF)
+		oputs("ff");
+	else if (j == LIG_FFI)
+		oputs("ffi");
+	else if (j == LIG_FFL)
+		oputs("ffl");
+	else {
+		oput('\\');
+		oput('(');
+		oput(chname[chtab[j-128]]);
+		oput(chname[chtab[j-128]+1]);
+	}
+}
+
+
+/*
+ * now a macro
 oput(i)
-char	i;
+	register int	i;
 {
 	*obufp++ = i;
 	if (obufp >= &obuf[OBUFSZ])
 		flusho();
 }
-
+*/
 
 oputs(i)
 register char	*i;
@@ -213,7 +222,8 @@ flusho()
 				char	*p = t.twinit;
 				while (*p++)
 					;
-				write(ptid, t.twinit, p - t.twinit - 1);
+				if (p - t.twinit > 1)
+					write(ptid, t.twinit, p - t.twinit - 1);
 			}
 #endif
 		}
@@ -229,7 +239,6 @@ int	x;
 	register i;
 
 	error |= x;
-	level = 0;
 	app = ds = lgf = 0;
 	if (i = em) {
 		donef = -1;
@@ -264,7 +273,7 @@ done1(x)
 int	x; 
 {
 	error |= x;
-	if (v.nl) {
+	if (numtab[NL].val) {
 		trap = 0;
 		eject((struct s *)0);
 		longjmp(sjbuf, 1);
@@ -330,7 +339,7 @@ casepi()
 	int	id[2];
 
 	if (toolate || skip() || !getname() || pipe(id) == -1 || (i = fork()) == -1) {
-		fprintf(stderr, "Pipe not created.\n");
+		errprint("Pipe not created.");
 		return;
 	}
 	ptid = id[1];
@@ -344,6 +353,6 @@ casepi()
 	dup(id[0]);
 	close(id[1]);
 	execl(nextf, nextf, 0);
-	fprintf(stderr, "Cannot exec %s\n", nextf);
+	errprint("Cannot exec %s", nextf);
 	exit(-4);
 }
