@@ -1,4 +1,4 @@
-/*	@(#)shutdown.c	4.2 (Berkeley/Melbourne) 81/02/28	*/
+/*	@(#)shutdown.c	4.3 (Berkeley/Melbourne) 81/04/03	*/
 
 #include <stdio.h>
 #include <ctype.h>
@@ -311,22 +311,30 @@ do_nothing()
  * make an entry in the shutdown log
  */
 
-log_entry(sdt)
-time_t sdt;
-{
-	FILE *logf;
-	char **mess;
+char *days[] = {
+	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+};
 
-	if ((logf = fopen(LOGFILE, "a")) == NULL)
-	{
-		fprintf(stderr, "*** Can't write on log file ***\n");
-		return;
-	}
-	fseek(logf, 0L, 2);
-	fprintf(logf, "Shutdown by %s at %s",
-			shutter, ctime(&sdt));
+char *months[] = {
+	"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep",
+	"Oct", "Nov", "Dec"
+};
+
+log_entry(now)
+time_t now;
+{
+	register FILE *fp;
+	register char **mess;
+	struct tm *tm, *localtime();
+
+	tm = localtime(&now);
+	fp = fopen(LOGFILE, "a");
+	fseek(fp, 0L, 2);
+	fprintf(fp, "%02d:%02d  %s %s %2d, %4d.  Shutdown:", tm->tm_hour,
+		tm->tm_min, days[tm->tm_wday], months[tm->tm_mon],
+		tm->tm_mday, tm->tm_year + 1900);
 	for (mess = nolog2; *mess; mess++)
-		fprintf(logf, "\t%s\n", *mess);
-	fputc('\n', logf);
-	fclose(logf);
+		fprintf(fp, " %s", *mess);
+	fputc('\n', fp);
+	fclose(fp);
 }
