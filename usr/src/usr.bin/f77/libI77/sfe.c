@@ -1,5 +1,5 @@
 /*
-char id_sfe[] = "@(#)sfe.c	1.4";
+char id_sfe[] = "@(#)sfe.c	1.5";
  *
  * sequential formatted external routines
  */
@@ -33,11 +33,12 @@ s_rsfe(a) cilist *a; /* start */
 
 x_rnew()			/* find next record */
 {	int ch;
-	if(!curunit->uend)
-		while((ch=getc(cf))!='\n' && ch!=EOF);
-	if(recpos==0 && feof(cf))
-	{	curunit->uend = YES;
+	if(curunit->uend)
 		return(EOF);
+	while((ch=getc(cf))!='\n' && ch!=EOF);
+	if(feof(cf))
+	{	curunit->uend = YES;
+		if (recpos==0) return(EOF);
 	}
 	cursor=recpos=reclen=0;
 	return(OK);
