@@ -1,4 +1,4 @@
-/*	vfs_bio.c	4.45	83/05/18	*/
+/*	vfs_bio.c	4.46	83/05/21	*/
 
 #include "../machine/pte.h"
 
@@ -372,7 +372,7 @@ brealloc(bp, size)
 	 * when two buffer are trying to get the same set of disk blocks.
 	 */
 	start = bp->b_blkno;
-	last = start + (size / DEV_BSIZE) - 1;
+	last = start + btodb(size) - 1;
 	dp = BUFHASH(bp->b_dev, bp->b_blkno);
 loop:
 	for (ep = dp->b_forw; ep != dp; ep = ep->b_forw) {
@@ -380,7 +380,7 @@ loop:
 			continue;
 		/* look for overlap */
 		if (ep->b_bcount == 0 || ep->b_blkno > last ||
-		    ep->b_blkno + (ep->b_bcount / DEV_BSIZE) <= start)
+		    ep->b_blkno + btodb(ep->b_bcount) <= start)
 			continue;
 		s = spl6();
 		if (ep->b_flags&B_BUSY) {
@@ -674,7 +674,7 @@ blkflush(dev, blkno, size)
 	int s;
 
 	start = blkno;
-	last = start + (size / DEV_BSIZE) - 1;
+	last = start + btodb(size) - 1;
 	dp = BUFHASH(dev, blkno);
 loop:
 	for (ep = dp->b_forw; ep != dp; ep = ep->b_forw) {
@@ -682,7 +682,7 @@ loop:
 			continue;
 		/* look for overlap */
 		if (ep->b_bcount == 0 || ep->b_blkno > last ||
-		    ep->b_blkno + (ep->b_bcount / DEV_BSIZE) <= start)
+		    ep->b_blkno + btodb(ep->b_bcount) <= start)
 			continue;
 		s = spl6();
 		if (ep->b_flags&B_BUSY) {
