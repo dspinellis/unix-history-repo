@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.h	7.15 (Berkeley) %G%
+ *	@(#)if.h	7.16 (Berkeley) %G%
  */
 
 /*
@@ -46,6 +46,10 @@
 struct rtentry;	
 #endif
 /*
+ * Structure describing information about an interface
+ * which may be of interest to management entities.
+ */
+/*
  * Structure defining a queue for a network interface.
  *
  * (Would like to call this struct ``if'', but C isn't PL/1.)
@@ -53,19 +57,35 @@ struct rtentry;
 
 struct ifnet {
 	char	*if_name;		/* name, e.g. ``en'' or ``lo'' */
-	short	if_unit;		/* sub-unit for lower level driver */
-	short	if_mtu;			/* maximum transmission unit */
-	short	if_flags;		/* up/down, broadcast, etc. */
-	short	if_timer;		/* time 'til if_watchdog called */
-	int	if_metric;		/* routing metric (external only) */
+	struct	ifnet *if_next;		/* all struct ifnets are chained */
 	struct	ifaddr *if_addrlist;	/* linked list of addresses per if */
-	struct	ifqueue {
-		struct	mbuf *ifq_head;
-		struct	mbuf *ifq_tail;
-		int	ifq_len;
-		int	ifq_maxlen;
-		int	ifq_drops;
-	} if_snd;			/* output queue */
+        int	if_pcount;		/* number of promiscuous listeners */
+	u_short	if_index;		/* numeric abbreviation for this if  */
+	short	if_unit;		/* sub-unit for lower level driver */
+	short	if_timer;		/* time 'til if_watchdog called */
+	short	if_flags;		/* up/down, broadcast, etc. */
+	struct	if_data {
+/* generic interface information */
+		short	ifi_mtu;	/* maximum transmission unit */
+		u_char	ifi_type;	/* ethernet, tokenring, etc */
+		u_char	ifi_addrlen;	/* media address length */
+		u_char	ifi_hdrlen;	/* media header length */
+		int	ifi_metric;	/* routing metric (external only) */
+		int	ifi_baudrate;	/* linespeed */
+/* volatile statistics */
+		int	ifi_ipackets;	/* packets received on interface */
+		int	ifi_ierrors;	/* input errors on interface */
+		int	ifi_opackets;	/* packets sent on interface */
+		int	ifi_oerrors;	/* output errors on interface */
+		int	ifi_collisions;	/* collisions on csma interfaces */
+		int	ifi_ibytes;	/* total number of octets received */
+		int	ifi_obytes;	/* total number of octets sent */
+		int	ifi_imcasts;	/* packets received via multicast */
+		int	ifi_omcasts;	/* packets sent via multicast */
+		int	ifi_iqdrops;	/* dropped on input, this interface */
+		int	ifi_noproto;	/* destined for unsupported protocol */
+		struct	timeval ifi_lastchange;/* last updated */
+	}	if_data;
 /* procedure handles */
 	int	(*if_init)		/* init routine */
 		__P((int));
@@ -82,29 +102,32 @@ struct ifnet {
 		__P((int, int));	/* new autoconfig will permit removal */
 	int	(*if_watchdog)		/* timer routine */
 		__P((int));
-/* generic interface statistics */
-	int	if_ipackets;		/* packets received on interface */
-	int	if_ierrors;		/* input errors on interface */
-	int	if_opackets;		/* packets sent on interface */
-	int	if_oerrors;		/* output errors on interface */
-	int	if_collisions;		/* collisions on csma interfaces */
-/* end statistics */
-	struct	ifnet *if_next;
-	u_char	if_type;		/* ethernet, tokenring, etc */
-	u_char	if_addrlen;		/* media address length */
-	u_char	if_hdrlen;		/* media header length */
-	u_char	if_index;		/* numeric abbreviation for this if  */
-/* more statistics here to avoid recompiling netstat */
-	struct	timeval if_lastchange;	/* last updated */
-	int	if_ibytes;		/* total number of octets received */
-	int	if_obytes;		/* total number of octets sent */
-	int	if_imcasts;		/* packets received via multicast */
-	int	if_omcasts;		/* packets sent via multicast */
-	int	if_iqdrops;		/* dropped on input, this interface */
-	int	if_noproto;		/* destined for unsupported protocol */
-	int	if_baudrate;		/* linespeed */
-        int	if_pcount;		/* number of promiscuous listeners */
+	struct	ifqueue {
+		struct	mbuf *ifq_head;
+		struct	mbuf *ifq_tail;
+		int	ifq_len;
+		int	ifq_maxlen;
+		int	ifq_drops;
+	} if_snd;			/* output queue */
 };
+#define	if_mtu		if_data.ifi_mtu
+#define	if_type		if_data.ifi_type
+#define	if_addrlen	if_data.ifi_addrlen
+#define	if_hdrlen	if_data.ifi_hdrlen
+#define	if_metric	if_data.ifi_metric
+#define	if_baudrate	if_data.ifi_baudrate
+#define	if_ipackets	if_data.ifi_ipackets
+#define	if_ierrors	if_data.ifi_ierrors
+#define	if_opackets	if_data.ifi_opackets
+#define	if_oerrors	if_data.ifi_oerrors
+#define	if_collisions	if_data.ifi_collisions
+#define	if_ibytes	if_data.ifi_ibytes
+#define	if_obytes	if_data.ifi_obytes
+#define	if_imcasts	if_data.ifi_imcasts
+#define	if_omcasts	if_data.ifi_omcasts
+#define	if_iqdrops	if_data.ifi_iqdrops
+#define	if_noproto	if_data.ifi_noproto
+#define	if_lastchange	if_data.ifi_lastchange
 
 #define	IFF_UP		0x1		/* interface is up */
 #define	IFF_BROADCAST	0x2		/* broadcast address valid */
@@ -178,11 +201,41 @@ struct ifaddr {
 	struct	ifnet *ifa_ifp;		/* back-pointer to interface */
 	struct	ifaddr *ifa_next;	/* next address for interface */
 	int	(*ifa_rtrequest)();	/* check or clean routes (+ or -)'d */
-	struct 	rtentry *ifa_rt;	/* ??? for ROUTETOIF */
 	u_short	ifa_flags;		/* mostly rt_flags for cloning */
 	short	ifa_refcnt;		/* extra to malloc for link info */
+	int	ifa_metric;		/* cost of going out this interface */
+/*	struct	rtentry *ifa_rt;	/* XXXX for ROUTETOIF ????? */
 };
 #define IFA_ROUTE	RTF_UP		/* route installed */
+
+/*
+ * Message format for use in obtaining information about interfaces
+ * from getkerninfo and the routing socket
+ */
+struct if_msghdr {
+	u_short	ifm_msglen;	/* to skip over non-understood messages */
+	u_char	ifm_version;	/* future binary compatability */
+	u_char	ifm_type;	/* message type */
+	int	ifm_addrs;	/* like rtm_addrs */
+	int	ifm_flags;	/* value of if_flags */
+	u_short	ifm_index;	/* index for associated ifp */
+	struct	if_data ifm_data;/* statistics and other data about if */
+};
+
+/*
+ * Message format for use in obtaining information about interface addresses
+ * from getkerninfo and the routing socket
+ */
+struct ifa_msghdr {
+	u_short	ifam_msglen;	/* to skip over non-understood messages */
+	u_char	ifam_version;	/* future binary compatability */
+	u_char	ifam_type;	/* message type */
+	int	ifam_addrs;	/* like rtm_addrs */
+	int	ifam_flags;	/* value of ifa_flags */
+	u_short	ifam_index;	/* index for associated ifp */
+	int	ifam_metric;	/* value of ifa_metric */
+};
+
 /*
  * Interface request structure used for socket
  * ioctl's.  All interface ioctl's must have parameter
