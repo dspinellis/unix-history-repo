@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)klogin.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)klogin.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -25,21 +25,23 @@ static char sccsid[] = "@(#)klogin.c	5.1 (Berkeley) %G%";
 extern int notickets;
 
 /*
- * return 0 on success
- *	  1 if Kerberos not around (try local)
- *	  2 on failure
+ * Attempt to log the user in using Kerberos authentication
+ *
+ * return 0 on success (will be logged in)
+ *	  1 if Kerberos failed (try local password in login)
  */
 
-klogin(pw, localhost, name, tty)
+klogin(pw, localhost, password)
 	struct passwd *pw;
-	char *localhost, *name, *tty;
+	char *localhost, *password;
 {
 	int kerror;
 	AUTH_DAT authdata;
 	KTEXT_ST ticket;
 	struct hostent *hp;
 	unsigned long faddr;
-	char tkfile[MAXPATHLEN], realm[REALM_SZ], savehost[MAXHOSTNAMELEN];
+	char realm[REALM_SZ], savehost[MAXHOSTNAMELEN];
+	char tkt_location[MAXPATHLEN];
 
 	/*
 	 * If we aren't Kerberos-authenticated, try the normal pw file
@@ -50,19 +52,17 @@ klogin(pw, localhost, name, tty)
 		return(1);
 
 	/*
-	 * get TGT for local realm; by convention, store tickets in file
-	 * associated with tty name, which should be available.
+	 * get TGT for local realm
+	 * tickets are stored in a file determined by calling tkt_string()
 	 */
-	(void)sprintf(tkfile, "%s_%s", TKT_ROOT, tty);
 
-	if (setenv("KRBTKFILE", tkfile, 1) < 0) {
-		kerror = INTK_ERR;
-		syslog(LOG_ERR, "couldn't set tkfile environ");
-	} else {
-		(void)unlink(tkfile);
-		kerror = krb_get_pw_in_tkt(PRINCIPAL_NAME, PRINCIPAL_INST,
-		    realm, INITIAL_TICKET, realm, DEFAULT_TKT_LIFE, name);
-	}
+	(void)sprintf(tkt_location, "%s%d", TKT_ROOT, pw->pw_uid);
+	(void)krb_set_tkt_string(tkt_location);
+	(void)dest_tkt();
+
+	kerror = krb_get_pw_in_tkt(PRINCIPAL_NAME, PRINCIPAL_INST,
+		    realm, INITIAL_TICKET, realm, DEFAULT_TKT_LIFE, password);
+syslog(LOG_ERR, "retval of get_pw_in_tkt: %s", krb_err_txt[kerror]);
 
 	/*
 	 * If we got a TGT, get a local "rcmd" ticket and check it so as to
@@ -74,24 +74,25 @@ klogin(pw, localhost, name, tty)
 	 *	   return value of RD_AP_UNDEC from krb_rd_req().
 	 */
 	if (kerror != INTK_OK) {
-		(void)unlink(tkfile);
+		dest_tkt();
 		if (kerror != INTK_BADPW && kerror != KDC_PR_UNKNOWN)
 			syslog(LOG_ERR, "Kerberos intkt error: %s",
 			    krb_err_txt[kerror]);
-		return(2);
+		return(1);
 	}
 
-	if (chown(tkfile, pw->pw_uid, pw->pw_gid) < 0)
-		syslog(LOG_ERR, "chown tkfile: %m");
+	if (chown(TKT_FILE, pw->pw_uid, pw->pw_gid) < 0)
+		syslog(LOG_ERR, "chown tkfile (%s): %m", TKT_FILE);
 
 	(void)strncpy(savehost, krb_get_phost(localhost), sizeof(savehost));
 	savehost[sizeof(savehost)-1] = NULL;
-	kerror = krb_mk_req(&ticket, VERIFY_SERVICE, savehost, realm, 33);
 
 	/*
 	 * if the "VERIFY_SERVICE" doesn't exist in the KDC for this host,
 	 * still allow login with tickets, but log the error condition.
 	 */
+
+	kerror = krb_mk_req(&ticket, VERIFY_SERVICE, savehost, realm, 33);
 	if (kerror == KDC_PR_UNKNOWN) {
 		syslog(LOG_NOTICE, "warning: TGT not verified (%s)",
 		    krb_err_txt[kerror]);
@@ -104,30 +105,37 @@ klogin(pw, localhost, name, tty)
 		syslog(LOG_NOTICE, "unable to use TGT: (%s)",
 		    krb_err_txt[kerror]);
 		dest_tkt();
-		return(2);
+		return(1);
 	}
 
 	if (!(hp = gethostbyname(localhost))) {
 		syslog(LOG_ERR, "couldn't get local host address");
-		return(2);
+		dest_tkt();
+		return(1);
 	}
+
 	bcopy((void *)hp->h_addr, (void *)&faddr, sizeof(faddr));
 
 	kerror = krb_rd_req(&ticket, VERIFY_SERVICE, savehost, faddr,
 	    &authdata, "");
+
 	if (kerror == KSUCCESS) {
 		notickets = 0;
 		return(0);
 	}
+
+	/* undecipherable: probably didn't have a srvtab on the local host */
 	if (kerror = RD_AP_UNDEC) {
 		syslog(LOG_NOTICE, "krb_rd_req: (%s)\n", krb_err_txt[kerror]);
-		notickets = 0;
-		return(0);
+		dest_tkt();
+		return(1);
 	}
+	/* failed for some other reason */
 	(void)printf("unable to verify %s ticket: (%s)\n", VERIFY_SERVICE,
 	    krb_err_txt[kerror]);
 	syslog(LOG_NOTICE, "couldn't verify %s ticket: %s", VERIFY_SERVICE,
 	    krb_err_txt[kerror]);
-	return(2);
+	dest_tkt();
+	return(1);
 }
 #endif
