@@ -7,22 +7,23 @@
 
 #ifndef lint
 static char sccsid[] = "@(#)scanw.c	5.8 (Berkeley) %G%";
-#endif /* not lint */
+#endif	/* not lint */
 
 /*
- * scanw and friends
- *
+ * scanw and friends.
  */
+
+#include <curses.h>
 
 #if __STDC__
 #include <stdarg.h>
 #else
 #include <varargs.h>
 #endif
-#include "curses.ext"
 
 /*
- *	This routine implements a scanf on the standard screen.
+ * scanw --
+ *	Implement a scanf on the standard screen.
  */
 #if __STDC__
 scanw(const char *fmt, ...)
@@ -40,13 +41,14 @@ scanw(fmt, va_alist)
 #else
 	va_start(ap);
 #endif
-	ret = _sscans(stdscr, fmt, ap);
+	ret = __sscans(stdscr, fmt, ap);
 	va_end(ap);
-	return ret;
+	return (ret);
 }
 
 /*
- *	This routine implements a scanf on the given window.
+ * wscanw --
+ *	Implements a scanf on the given window.
  */
 #if __STDC__
 wscanw(WINDOW *win, const char *fmt, ...)
@@ -65,16 +67,17 @@ wscanw(win, fmt, va_alist)
 #else
 	va_start(ap);
 #endif
-	ret = _sscans(win, fmt, ap);
+	ret = __sscans(win, fmt, ap);
 	va_end(ap);
-	return ret;
+	return (ret);
 }
 
 /*
+ * __sscans --
  *	This routine actually executes the scanf from the window.
  *	THIS SHOULD BE RENAMED vwscanw AND EXPORTED
  */
-_sscans(win, fmt, ap)
+__sscans(win, fmt, ap)
 	WINDOW *win;
 #if __STDC__
 	const char *fmt;
@@ -83,7 +86,7 @@ _sscans(win, fmt, ap)
 #endif
 	va_list ap;
 {
-	char buf[100];
+	char buf[1024];
 
-	return wgetstr(win, buf) == OK ? vsscanf(buf, fmt, ap) : ERR;
+	return (wgetstr(win, buf) == OK ? vsscanf(buf, fmt, ap) : ERR);
 }

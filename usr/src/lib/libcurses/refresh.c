@@ -9,46 +9,37 @@
 static char sccsid[] = "@(#)refresh.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <curses.h>
+
+static int curwin;
+static short ly, lx;
+
+WINDOW *_win;
+
+static void	domvcur __P((int, int, int, int));
+static int	makech __P((WINDOW *, int));
+
 /*
- * make the current screen look like "win" over the area coverd by
- * win.
+ * wrefresh --
+ *	Make the current screen look like "win" over the area coverd by
+ *	win.
  */
-
-# include	"curses.ext"
-
-# ifdef DEBUG
-# define	STATIC
-# else
-# define	STATIC	static
-# endif
-
-STATIC short	ly, lx;
-
-STATIC bool	curwin;
-
-WINDOW	*_win = NULL;
-
-STATIC int	domvcur(), makech();
-
+int
 wrefresh(win)
-reg WINDOW	*win;
+	register WINDOW *win;
 {
-	reg short	wy;
-	reg int		retval;
-	reg WINDOW	*orig;
+	register WINDOW *orig;
+	register int retval;
+	register short wy;
 
-	/*
-	 * make sure were in visual state
-	 */
-	if (_endwin) {
-		_puts(VS);
-		_puts(TI);
-		_endwin = FALSE;
+	/* Make sure were in visual state. */
+	if (__endwin) {
+		tputs(VS, 0, __cputchar);
+		tputs(TI, 0, __cputchar);
+		__endwin = 0;
 	}
 
-	/*
-	 * initialize loop parameters
-	 */
+	/* Initialize loop parameters. */
 
 	ly = curscr->_cury;
 	lx = curscr->_curx;
@@ -58,51 +49,50 @@ reg WINDOW	*win;
 
 	if (win->_clear || curscr->_clear || curwin) {
 		if ((win->_flags & _FULLWIN) || curscr->_clear) {
-			_puts(CL);
+			tputs(CL, 0, __cputchar);
 			ly = 0;
 			lx = 0;
 			if (!curwin) {
-				curscr->_clear = FALSE;
+				curscr->_clear = 0;
 				curscr->_cury = 0;
 				curscr->_curx = 0;
 				werase(curscr);
 			}
 			touchwin(win);
 		}
-		win->_clear = FALSE;
+		win->_clear = 0;
 	}
 	if (!CA) {
 		if (win->_curx != 0)
-			_putchar('\n');
+			putchar('\n');
 		if (!curwin)
 			werase(curscr);
 	}
-# ifdef DEBUG
-	fprintf(outf, "REFRESH(%0.2o): curwin = %d\n", win, curwin);
-	fprintf(outf, "REFRESH:\n\tfirstch\tlastch\n");
-# endif
+#ifdef DEBUG
+	__TRACE("wrefresh: (%0.2o): curwin = %d\n", win, curwin);
+	__TRACE("wrefresh: \tfirstch\tlastch\n");
+#endif
 	for (wy = 0; wy < win->_maxy; wy++) {
-# ifdef DEBUG
-		fprintf(outf, "%d\t%d\t%d\n", wy, win->_firstch[wy],
-			win->_lastch[wy]);
-# endif
+#ifdef DEBUG
+		__TRACE("%d\t%d\t%d\n",
+		    wy, win->_firstch[wy], win->_lastch[wy]);
+#endif
 		if (win->_firstch[wy] != _NOCHANGE)
 			if (makech(win, wy) == ERR)
-				return ERR;
+				return (ERR);
 			else {
 				if (win->_firstch[wy] >= win->_ch_off)
 					win->_firstch[wy] = win->_maxx +
-							    win->_ch_off;
+					    win->_ch_off;
 				if (win->_lastch[wy] < win->_maxx +
-						       win->_ch_off)
+				    win->_ch_off)
 					win->_lastch[wy] = win->_ch_off;
 				if (win->_lastch[wy] < win->_firstch[wy])
 					win->_firstch[wy] = _NOCHANGE;
 			}
-# ifdef DEBUG
-		fprintf(outf, "\t%d\t%d\n", win->_firstch[wy],
-			win->_lastch[wy]);
-# endif
+#ifdef DEBUG
+		__TRACE("\t%d\t%d\n", win->_firstch[wy], win->_lastch[wy]);
+#endif
 	}
 
 	if (win == curscr)
@@ -117,13 +107,11 @@ reg WINDOW	*win;
 			    lx < win->_maxx) {
 				win->_cury = ly;
 				win->_curx = lx;
-			}
-			else
+			} else
 				win->_cury = win->_curx = 0;
-		}
-		else {
+		} else {
 			domvcur(ly, lx, win->_cury + win->_begy,
-				win->_curx + win->_begx);
+			    win->_curx + win->_begx);
 			curscr->_cury = win->_cury + win->_begy;
 			curscr->_curx = win->_curx + win->_begx;
 		}
@@ -131,30 +119,31 @@ reg WINDOW	*win;
 	retval = OK;
 ret:
 	_win = NULL;
-	fflush(stdout);
-	return retval;
+	(void)fflush(stdout);
+	return (retval);
 }
 
 /*
- * make a change on the screen
+ * makech --
+ *	Make a change on the screen.
  */
-STATIC
+static int
 makech(win, wy)
-reg WINDOW	*win;
-short		wy;
+	register WINDOW *win;
+	int wy;
 {
-	reg char	*nsp, *csp, *ce;
-	reg short	wx, lch, y;
-	reg int		nlsp, clsp;	/* last space in lines		*/
+	register int nlsp, clsp;		/* Last space in lines. */
+	register short wx, lch, y;
+	register char *nsp, *csp, *ce;
 
 	wx = win->_firstch[wy] - win->_ch_off;
 	if (wx >= win->_maxx)
-		return OK;
+		return (OK);
 	else if (wx < 0)
 		wx = 0;
 	lch = win->_lastch[wy] - win->_ch_off;
 	if (lch < 0)
-		return OK;
+		return (OK);
 	else if (lch >= win->_maxx)
 		lch = win->_maxx - 1;;
 	y = wy + win->_begy;
@@ -171,7 +160,6 @@ short		wy;
 				break;
 		nlsp = ce - win->_y[wy];
 	}
-
 	if (!curwin)
 		ce = CE;
 	else
@@ -180,91 +168,88 @@ short		wy;
 	while (wx <= lch) {
 		if (*nsp != *csp) {
 			domvcur(ly, lx, y, wx + win->_begx);
-# ifdef DEBUG
-			fprintf(outf, "MAKECH: 1: wx = %d, lx = %d\n", wx, lx);
-# endif	
+#ifdef DEBUG
+			__TRACE("makech: 1: wx = %d, lx = %d\n", wx, lx);
+#endif
 			ly = y;
 			lx = wx + win->_begx;
 			while (*nsp != *csp && wx <= lch) {
 				if (ce != NULL && wx >= nlsp && *nsp == ' ') {
-					/*
-					 * check for clear to end-of-line
-					 */
+					/* Check for clear to end-of-line. */
 					ce = &curscr->_y[ly][COLS - 1];
 					while (*ce == ' ')
 						if (ce-- <= csp)
 							break;
 					clsp = ce - curscr->_y[ly] - win->_begx;
-# ifdef DEBUG
-					fprintf(outf, "MAKECH: clsp = %d, nlsp = %d\n", clsp, nlsp);
-# endif
+#ifdef DEBUG
+				__TRACE("makech: clsp = %d, nlsp = %d\n",
+				    clsp, nlsp);
+#endif
 					if (clsp - nlsp >= strlen(CE)
 					    && clsp < win->_maxx) {
-# ifdef DEBUG
-						fprintf(outf, "MAKECH: using CE\n");
-# endif
-						_puts(CE);
+#ifdef DEBUG
+						__TRACE("makech: using CE\n");
+#endif
+						tputs(CE, 0, __cputchar);
 						lx = wx + win->_begx;
 						while (wx++ <= clsp)
 							*csp++ = ' ';
-						return OK;
+						return (OK);
 					}
 					ce = NULL;
 				}
-				/*
-				 * enter/exit standout mode as appropriate
-				 */
-				if (SO && (*nsp&_STANDOUT) != (curscr->_flags&_STANDOUT)) {
+				/* Enter/exit standout mode as appropriate. */
+				if (SO && (*nsp & _STANDOUT) !=
+				    (curscr->_flags & _STANDOUT)) {
 					if (*nsp & _STANDOUT) {
-						_puts(SO);
+						tputs(SO, 0, __cputchar);
 						curscr->_flags |= _STANDOUT;
-					}
-					else {
-						_puts(SE);
+					} else {
+						tputs(SE, 0, __cputchar);
 						curscr->_flags &= ~_STANDOUT;
 					}
 				}
 				wx++;
 				if (wx >= win->_maxx && wy == win->_maxy - 1)
 					if (win->_scroll) {
-					    if ((curscr->_flags&_STANDOUT) &&
-					        (win->_flags & _ENDLINE))
-						    if (!MS) {
-							_puts(SE);
-							curscr->_flags &= ~_STANDOUT;
-						    }
-					    if (!curwin)
-						_putchar((*csp = *nsp) & 0177);
-					    else
-						_putchar(*nsp & 0177);
-					    if (win->_flags&_FULLWIN && !curwin)
-						scroll(curscr);
-					    ly = win->_begy+win->_cury;
-					    lx = win->_begx+win->_curx;
-					    return OK;
-					}
-					else if (win->_flags&_SCROLLWIN) {
-					    lx = --wx;
-					    return ERR;
-					}
+						if (curscr->_flags & _STANDOUT
+						    && win->_flags & _ENDLINE)
+							if (!MS) {
+								tputs(SE, 0,
+								    __cputchar);
+								curscr->_flags &= ~_STANDOUT;
+							}
+						if (!curwin)
+							putchar((*csp = *nsp) & 0177);
+						else
+							putchar(*nsp & 0177);
+						if (win->_flags & _FULLWIN && !curwin)
+							scroll(curscr);
+						ly = win->_begy + win->_cury;
+						lx = win->_begx + win->_curx;
+						return (OK);
+					} else
+						if (win->_flags & _SCROLLWIN) {
+							lx = --wx;
+							return (ERR);
+						}
 				if (!curwin)
-					_putchar((*csp++ = *nsp) & 0177);
+					putchar((*csp++ = *nsp) & 0177);
 				else
-					_putchar(*nsp & 0177);
-# ifdef FULLDEBUG
-				fprintf(outf,
-					"MAKECH:putchar(%c)\n", *nsp & 0177);
-# endif
+					putchar(*nsp & 0177);
+#ifdef DEBUG
+				__TRACE("makech: putchar(%c)\n", *nsp & 0177);
+#endif
 				if (UC && (*nsp & _STANDOUT)) {
-					_putchar('\b');
-					_puts(UC);
+					putchar('\b');
+					tputs(UC, 0, __cputchar);
 				}
 				nsp++;
 			}
-# ifdef DEBUG
-			fprintf(outf, "MAKECH: 2: wx = %d, lx = %d\n", wx, lx);
-# endif	
-			if (lx == wx + win->_begx)	/* if no change */
+#ifdef DEBUG
+			__TRACE("makech: 2: wx = %d, lx = %d\n", wx, lx);
+#endif
+			if (lx == wx + win->_begx)	/* If no change. */
 				break;
 			lx = wx + win->_begx;
 			if (lx >= COLS && AM) {
@@ -275,12 +260,11 @@ short		wy;
 				 * we just feed it now and forget about it.
 				 */
 				if (XN) {
-					_putchar('\n');
-					_putchar('\r');
+					putchar('\n');
+					putchar('\r');
 				}
 			}
-		}
-		else if (wx <= lch)
+		} else if (wx <= lch)
 			while (*nsp == *csp && wx <= lch) {
 				nsp++;
 				if (!curwin)
@@ -289,22 +273,23 @@ short		wy;
 			}
 		else
 			break;
-# ifdef DEBUG
-		fprintf(outf, "MAKECH: 3: wx = %d, lx = %d\n", wx, lx);
-# endif	
+#ifdef DEBUG
+		__TRACE("makech: 3: wx = %d, lx = %d\n", wx, lx);
+#endif
 	}
-	return OK;
+	return (OK);
 }
 
 /*
- * perform a mvcur, leaving standout mode if necessary
+ * domvcur --
+ *	Do a mvcur, leaving standout mode if necessary.
  */
-STATIC
+static void
 domvcur(oy, ox, ny, nx)
-int	oy, ox, ny, nx; {
-
+	int oy, ox, ny, nx;
+{
 	if (curscr->_flags & _STANDOUT && !MS) {
-		_puts(SE);
+		tputs(SE, 0, __cputchar);
 		curscr->_flags &= ~_STANDOUT;
 	}
 	mvcur(oy, ox, ny, nx);
