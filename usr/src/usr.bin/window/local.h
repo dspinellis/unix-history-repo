@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)local.h	3.11 (Berkeley) %G%
+ *	@(#)local.h	3.12 (Berkeley) %G%
  */
 
 /*
@@ -17,3 +17,9 @@
 #define RUNCOM		".windowrc"
 #define ESCAPEC		ctrl('p')
 #define NLINE		48			/* default text buffer size */
+
+#ifdef TERMINFO
+#define _PATH_CAPTOINFO	"/usr/5bin/captoinfo"
+#define _PATH_TIC	"/usr/5bin/tic"
+#define _PATH_RM	"/bin/rm"
+#endif

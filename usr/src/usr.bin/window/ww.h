@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ww.h	3.64 (Berkeley) %G%
+ *	@(#)ww.h	3.65 (Berkeley) %G%
  */
 
 #ifdef OLD_TTY
@@ -261,11 +261,15 @@ jmp_buf wwjmpbuf;	/* jmpbuf for above */
 #define WWT_DC		"dc=\\EN:"
 char wwwintermcap[1024];	/* terminal-specific but window-independent
 				   part of the window termcap */
+#ifdef TERMINFO
+	/* where to put the temporary terminfo directory */
+char wwterminfopath[1024];
+#endif
 
 	/* our functions */
 struct ww *wwopen();
 void wwchild();
-void wwsuspend();
+void wwquit();
 char **wwalloc();
 char *wwerror();
 

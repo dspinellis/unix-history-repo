@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwinit.c	3.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwinit.c	3.41 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -28,9 +28,12 @@ wwinit()
 	wwhead.ww_forw = &wwhead;
 	wwhead.ww_back = &wwhead;
 
-	s = sigblock(sigmask(SIGIO));
+	s = sigblock(sigmask(SIGIO) | sigmask(SIGCHLD) |
+		sigmask(SIGHUP) | sigmask(SIGTERM));
 	if (signal(SIGIO, wwrint) == BADSIG ||
 	    signal(SIGCHLD, wwchild) == BADSIG ||
+	    signal(SIGHUP, wwquit) == BADSIG ||
+	    signal(SIGTERM, wwquit) == BADSIG ||
 	    signal(SIGPIPE, SIG_IGN) == BADSIG) {
 		wwerrno = WWE_SYS;
 		return -1;
@@ -71,13 +74,14 @@ wwinit()
 	wwnewtty.ww_termios = wwoldtty.ww_termios;
 	wwnewtty.ww_termios.c_iflag &=
 		~(ISTRIP | INLCR | IGNCR | ICRNL | IXON | IXOFF | IMAXBEL);
-	wwnewtty.ww_termios.c_iflag |= INPCK;
 	wwnewtty.ww_termios.c_oflag = 0;
 	wwnewtty.ww_termios.c_cflag &= ~(CSIZE | PARENB);
 	wwnewtty.ww_termios.c_cflag |= CS8;
 	wwnewtty.ww_termios.c_lflag = 0;
 	for (i = 0; i < NCCS; i++)
 		wwnewtty.ww_termios.c_cc[i] = _POSIX_VDISABLE;
+	wwnewtty.ww_termios.c_cc[VMIN] = 0;
+	wwnewtty.ww_termios.c_cc[VTIME] = 0;
 #endif
 	wwnewtty.ww_fflags = wwoldtty.ww_fflags | FASYNC;
 	if (wwsettty(0, &wwnewtty) < 0)
@@ -257,6 +261,10 @@ wwinit()
 	 * wwterm now points to the copy.
 	 */
 	(void) setenv("TERM", WWT_TERM, 1);
+#ifdef TERMINFO
+	if (wwterminfoinit() < 0)
+		goto bad;
+#endif
 
 	(void) sigsetmask(s);
 	/* catch typeahead before ASYNC was set */
