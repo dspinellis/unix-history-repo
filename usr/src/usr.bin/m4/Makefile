@@ -1,7 +1,10 @@
 Virgin BTL M4 as sent out in 4.1
 #
-# Copyright (c) 1987 The Regents of the University of California.
+# Copyright (c) 1989 The Regents of the University of California.
 # All rights reserved.
+#
+# This code is derived from software contributed to Berkeley by
+# Ozan Yigit.
 #
 # Redistribution and use in source and binary forms are permitted
 # provided that the above copyright notice and this paragraph are
@@ -13,14 +16,19 @@ Virgin BTL M4 as sent out in 4.1
 # from this software without specific prior written permission.
 # THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) 8/28/89
 #
-CFLAGS=	-O
+
+#
+#	-DEXTENDED 
+#		if you like to get paste & spaste macros.
+#
+CFLAGS=	-O -DEXTENDED
 LIBC=	/lib/libc.a
-SRCS=	m4.c m4y.c
-OBJS=	m4.o m4y.o
+SRCS =  main.c eval.c serv.c look.c misc.c expr.c
+OBJS =  main.o eval.o serv.o look.o misc.o expr.o
 MAN=	m4.0
 
 all: m4
@@ -29,7 +37,7 @@ m4: ${OBJS} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${OBJS}
 
 clean:
-	rm -f ${OBJS} core m4 m4y.c
+	rm -f ${OBJS} core m4
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
@@ -38,7 +46,7 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 m4 ${DESTDIR}/usr/bin
+	install -s -o bin -g bin -m 755 m4 ${DESTDIR}/usr/bin/m4
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
 lint: ${SRCS}
