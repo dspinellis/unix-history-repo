@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)vax.c 1.7 %G%";
+static char sccsid[] = "@(#)vax.c 1.8 %G%";
 
 /*
  * Target machine dependent stuff.
@@ -602,6 +602,7 @@ Boolean isnext;
 		    addrstatus = KNOWN;
 		    addr = return_addr();
 		    stepto(addr);
+		    bpact();
 		} else {
 		    callnews(/* iscall = */ true);
 		}
@@ -614,6 +615,7 @@ Boolean isnext;
 	    callnews(/* iscall = */ false);
 	    addr = return_addr();
 	    stepto(addr);
+	    bpact();
 	    break;
 
 	case O_BNEQ: case O_BEQL: case O_BGTR:
