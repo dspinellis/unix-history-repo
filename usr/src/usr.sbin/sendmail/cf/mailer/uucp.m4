@@ -16,7 +16,7 @@ POPDIVERT
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	8.18 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	8.19 (Berkeley) %G%')
 
 #
 #  There are innumerable variations on the UUCP mailer.  It really
@@ -24,24 +24,24 @@ VERSIONID(`@(#)uucp.m4	8.18 (Berkeley) %G%')
 #
 
 # old UUCP mailer (two names)
-Muucp,		P=UUCP_MAILER_PATH, F=CONCAT(DFMhuU, UUCP_MAILER_FLAGS), S=12, R=22/42, M=UUCP_MAX_SIZE, T=X-UUCP,
+Muucp,		P=UUCP_MAILER_PATH, F=CONCAT(DFMhuUd, UUCP_MAILER_FLAGS), S=12, R=22/42, M=UUCP_MAX_SIZE, T=X-UUCP,
 		A=UUCP_MAILER_ARGS
-Muucp-old,	P=UUCP_MAILER_PATH, F=CONCAT(DFMhuU, UUCP_MAILER_FLAGS), S=12, R=22/42, M=UUCP_MAX_SIZE, T=X-UUCP,
+Muucp-old,	P=UUCP_MAILER_PATH, F=CONCAT(DFMhuUd, UUCP_MAILER_FLAGS), S=12, R=22/42, M=UUCP_MAX_SIZE, T=X-UUCP,
 		A=UUCP_MAILER_ARGS
 
 # smart UUCP mailer (handles multiple addresses) (two names)
-Msuucp,		P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuU, UUCP_MAILER_FLAGS), S=12, R=22/42, M=UUCP_MAX_SIZE, T=X-UUCP,
+Msuucp,		P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuUd, UUCP_MAILER_FLAGS), S=12, R=22/42, M=UUCP_MAX_SIZE, T=X-UUCP,
 		A=UUCP_MAILER_ARGS
-Muucp-new,	P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuU, UUCP_MAILER_FLAGS), S=12, R=22/42, M=UUCP_MAX_SIZE, T=X-UUCP,
+Muucp-new,	P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuUd, UUCP_MAILER_FLAGS), S=12, R=22/42, M=UUCP_MAX_SIZE, T=X-UUCP,
 		A=UUCP_MAILER_ARGS
 
 ifdef(`_MAILER_smtp_',
 `# domain-ized UUCP mailer
-Muucp-dom,	P=UUCP_MAILER_PATH, F=CONCAT(mDFMhu, UUCP_MAILER_FLAGS), S=52/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), M=UUCP_MAX_SIZE, T=X-UUCP,
+Muucp-dom,	P=UUCP_MAILER_PATH, F=CONCAT(mDFMhud, UUCP_MAILER_FLAGS), S=52/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), M=UUCP_MAX_SIZE, T=X-UUCP,
 		A=UUCP_MAILER_ARGS
 
 # domain-ized UUCP mailer with UUCP-style sender envelope
-Muucp-uudom,	P=UUCP_MAILER_PATH, F=CONCAT(mDFMhu, UUCP_MAILER_FLAGS), S=72/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), M=UUCP_MAX_SIZE, T=X-UUCP,
+Muucp-uudom,	P=UUCP_MAILER_PATH, F=CONCAT(mDFMhud, UUCP_MAILER_FLAGS), S=72/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), M=UUCP_MAX_SIZE, T=X-UUCP,
 		A=UUCP_MAILER_ARGS')
 
 
