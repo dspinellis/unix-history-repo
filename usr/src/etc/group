@@ -8,3 +8,4 @@ operator:*:5:root
 staff:*:10:root
 guest:*:31:root
 ingres:*:74:ingres
+dialer:*:117
