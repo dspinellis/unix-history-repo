@@ -1,9 +1,11 @@
-/*	@(#)defs.h	1.6 83/07/28		*/
+/*	@(#)defs.h	1.7 83/07/28		*/
 
 #include "ww.h"
 #include <signal.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+
+#define NWINDOW 9
 
 int nread;
 int nreade;
