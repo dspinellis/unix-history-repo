@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.21 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.22 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -393,6 +393,9 @@ R $+ : $* ;		$@ $1 : $2;			list syntax
 R$+ @ $+		$: $1 < @ $2 >			focus on domain
 R$+ < $+ @ $+ >		$1 $2 < @ $3 >			move gaze right
 R$+ < @ $+ >		$@ $>_SET_96_ $1 < @ $2 >		already canonical
+
+# do some sanity checking
+R$* < @ $* : $* > $*	$1 < @ $2 $3 > $4		nix colons in addrs
 
 ifdef(`_NO_UUCP_', `dnl',
 `# convert old-style addresses to a domain-based address
