@@ -1,4 +1,4 @@
-/*	dkbad.h	4.1	81/05/08	*/
+/*	dkbad.h	4.2	81/05/09	*/
 
 /*
  * Definitions needed to perform bad block
@@ -28,9 +28,11 @@
 struct dkbad {
 	long	bt_csn;			/* cartridge serial number */
 	u_short	bt_magic;		/* magic number for sanity check */
+#ifdef notdef
 #define	BADMAGIC	0122155
+#endif
 	u_short	bt_flag;		/* -1 => alignment cartridge */
-	struct {
+	struct bt_bad {
 		u_short	bt_cyl;		/* cylinder number of bad block */
 		u_short	bt_trksec;	/* track and sector number */
 	} bt_bad[126];
