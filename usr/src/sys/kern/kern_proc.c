@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.16	81/11/20	*/
+/*	kern_proc.c	4.17	81/11/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -94,10 +94,8 @@ exece()
 	u.u_segflg = 0;
 	if (u.u_error)
 		goto bad;
-#if 0
-	if (u.u_count > sizeof(u.u_exdata) - sizeof(u.u_exdata.Ux_A))
-#endif
-	if (u.u_exdata.ux_shell[0] != '#') {
+	if (u.u_count > sizeof(u.u_exdata) - sizeof(u.u_exdata.Ux_A) &&
+	    u.u_exdata.ux_shell[0] != '#') {
 		u.u_error = ENOEXEC;
 		goto bad;
 	}
