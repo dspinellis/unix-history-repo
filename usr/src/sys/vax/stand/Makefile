@@ -1,4 +1,4 @@
-#	Makefile	4.16	82/11/13
+#	Makefile	4.17	82/12/19
 
 DESTDIR=/
 CFLAGS=	-O -DSTANDALONE ${COPTS} 
@@ -58,7 +58,7 @@ tpcopy:	copy.c tpsrt0.o /usr/lib/libsa.a
 boot:	boot.o relsrt0.o bootconf.o /usr/lib/libsa.a
 	ld -N -T ${RELOC} -o boot relsrt0.o boot.o bootconf.o -lsa -lc
 
-bootconf.o: conf.c ../h/param.h ../h/inode.h ../h/pte.h
+bootconf.o: conf.c ../h/param.h ../h/inode.h ../machine/pte.h
 bootconf.o: ../h/fs.h saio.h ../vaxmba/mbareg.h
 	cp conf.c bootconf.c
 	cc -c ${COPTS} -DBOOT bootconf.c
@@ -100,18 +100,18 @@ bootup.o: bootxx.c
 	/lib/c2 -i bootxx.s | as -o bootup.o
 	rm -f bootxx.s
 
-boothp.o: bootxx.c ../h/param.h ../h/inode.h ../h/pte.h ../h/reboot.h
+boothp.o: bootxx.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h
 boothp.o: ../h/fs.h saio.h
-boothk.o: bootxx.c ../h/param.h ../h/inode.h ../h/pte.h ../h/reboot.h
+boothk.o: bootxx.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h
 boothk.o: ../h/fs.h saio.h
-bootup.o: bootxx.c ../h/param.h ../h/inode.h ../h/pte.h ../h/reboot.h
+bootup.o: bootxx.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h
 
-confrk.o: confrk.c ../h/param.h ../h/fs.h ../h/pte.h ../h/inode.h saio.h
-	$(CC) -c $(CFLAGS) confrk.c
-confhp.o: confhp.c ../h/param.h ../h/fs.h ../h/pte.h ../h/inode.h saio.h
-	$(CC) -c $(CFLAGS) confhp.c
-confup.o: confup.c ../h/param.h ../h/fs.h ../h/pte.h ../h/inode.h saio.h
-	$(CC) -c $(CFLAGS) confup.c
+confrk.o: confrk.c ../h/param.h ../h/fs.h ../machine/pte.h ../h/inode.h saio.h
+	${CC} -c ${CFLAGS} confrk.c
+confhp.o: confhp.c ../h/param.h ../h/fs.h ../machine/pte.h ../h/inode.h saio.h
+	${CC} -c ${CFLAGS} confhp.c
+confup.o: confup.c ../h/param.h ../h/fs.h ../machine/pte.h ../h/inode.h saio.h
+	${CC} -c ${CFLAGS} confup.c
 
 confrk.c: confxx.c
 	sed -e 's/XX/hk/' -e 's/xx/rk/g' <confxx.c >confrk.c
