@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.106 (Berkeley) %G%
+#	@(#)termcap.src	5.107 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -1950,7 +1950,7 @@ vt131|dec vt131:\
 	:ku=\E[A:kd=\E[B:kr=\E[C:kl=\E[D:kb=^H:\
 	:ho=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:ta=^I:pt:sr=5\EM:vt#3:xn:\
 	:sc=\E7:rc=\E8:cs=\E[%i%d;%dr:
-vt132|vt132:\
+vt132:\
 	:al=99\E[L:dl=99\E[M:ip=7:dc=7\E[P:ei=\E[4l:im=\E[4h:xn:dN#30:tc=vt100:
 gt40|dec gt40:\
 	:do=^J:le=^H:bs:co#72:ns:li#30:os:
@@ -3273,7 +3273,7 @@ ibmx|ibmpcx|IBM PC xenix console display:\
 	:HM=\E[Y:EN=\E[d:PU=\E[Z:PD=\E[e:
 ibmc|ibmcpc|IBM PC xenix color console display:\
 	:tc=ibm:
-ibmcx|ibmcpcx|IBM PC xenix color console display:\
+ibmcx|ibmcpcx:\
 	:tc=ibmx:
 kaypro|kaypro2|kaypro II:\
 	:am:bs:cm=\E=%+ %+ :cl=1^Z:co#80:ho=^^:li#24:ma=^K^P:nd=^L:up=^K:\
