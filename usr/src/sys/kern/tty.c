@@ -1,4 +1,4 @@
-/*	tty.c	6.4	83/09/25	*/
+/*	tty.c	6.5	83/09/25	*/
 
 #include "../machine/reg.h"
 
@@ -1530,6 +1530,6 @@ scanc(size, cp, table, mask)
 
 	while ((table[*(u_char *)(cp + i)]&mask) == 0 && i < size)
 		i++;
-	return (i);
+	return (size - i);
 }
 #endif
