@@ -1,4 +1,4 @@
-.\"	@(#)cron.8	6.2 (Berkeley) %G%
+.\"	@(#)cron.8	6.3 (Berkeley) %G%
 .\"
 .TH CRON 8 ""
 .AT 3
@@ -45,16 +45,15 @@ commas meaning any of the numbers;
 or an asterisk meaning all legal values.
 The sixth field is a user name: the
 command will be run ``as'' that user.
-The seventh field is a string
-that is executed by the Shell at the
+The seventh field consists of all the text
+on a line following the sixth field,
+including spaces and tabs;
+this text is treated as a command
+which is executed by the Shell at the
 specified times.
-A percent character
+A percent character (``%'')
 in this field is translated to a new-line
 character.
-Only the first line (up to a % or end of line)
-of the command field is executed by the Shell.
-The other lines are made available to the
-command as standard input.
 .PP
 Both
 crontab files are checked by
