@@ -4,7 +4,7 @@
  * implement the mvscanw commands.  Due to the variable number of
  * arguments, they cannot be macros.  Another sigh....
  *
- * %G% (Berkeley) @(#)mvscanw.c	1.2
+ * @(#)mvscanw.c	1.3 (Berkeley) %G%
  */
 
 mvscanw(y, x, fmt, args)
