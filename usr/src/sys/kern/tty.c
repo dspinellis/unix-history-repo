@@ -1,4 +1,4 @@
-/*	tty.c	4.10	81/07/08	*/
+/*	tty.c	4.11	81/07/09	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -376,7 +376,7 @@ caddr_t addr;
 			flags = FREAD|FWRITE;
 		else if (copyin(addr, (caddr_t)&flags, sizeof (flags))) {
 			u.u_error = EFAULT;
-			return;
+			return(1);
 		}
 		flushtty(tp, flags);
 		break;
