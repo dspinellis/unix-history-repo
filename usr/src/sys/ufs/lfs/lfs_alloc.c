@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.38 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.39 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -28,16 +28,18 @@ extern u_long nextgennumber;
 /* ARGSUSED */
 int
 lfs_valloc(pvp, notused, cred, vpp)
-	VNODE *pvp, **vpp;
+	struct vnode *pvp, **vpp;
 	int notused;
-	UCRED *cred;
+	struct ucred *cred;
 {
 	struct lfs *fs;
-	BUF *bp;
-	IFILE *ifp;
-	INODE *ip;
-	VNODE *vp;
+	struct buf *bp;
+	struct ifile *ifp;
+	struct inode *ip;
+	struct vnode *vp;
+	daddr_t blkno;
 	ino_t new_ino;
+	u_long i, max;
 	int error;
 
 #ifdef VERBOSE
@@ -46,31 +48,54 @@ lfs_valloc(pvp, notused, cred, vpp)
 	/* Get the head of the freelist. */
 	fs = VTOI(pvp)->i_lfs;
 	new_ino = fs->lfs_free;
-	if (new_ino == LFS_UNUSED_INUM) {
-		/*
-		 * XXX
-		 * Currently, no more inodes are allocated if the ifile fills
-		 * up.  The ifile should be extended instead.
-		 */
-		uprintf("\n%s: no inodes left\n", fs->lfs_fsmnt);
-		log(LOG_ERR, "uid %d on %s: out of inodes\n",
-		    cred->cr_uid, fs->lfs_fsmnt);
-		return (ENOSPC);
-	}
 #ifdef ALLOCPRINT
 	printf("lfs_ialloc: allocate inode %d\n", new_ino);
 #endif
 
 	/*
-	 * Remove the inode from the free list and write the free list
-	 * back.
+	 * Remove the inode from the free list and write the new start
+	 * of the free list into the superblock.
 	 */
 	LFS_IENTRY(ifp, fs, new_ino, bp);
 	if (ifp->if_daddr != LFS_UNUSED_DADDR)
 		panic("lfs_ialloc: inuse inode on the free list");
 	fs->lfs_free = ifp->if_nextfree;
-	ifp->if_st_atime = time.tv_sec;
-	LFS_IWRITE(fs, bp);
+	brelse(bp);
+
+	/* Extend IFILE so that the next lfs_valloc will succeed. */
+	if (fs->lfs_free == LFS_UNUSED_INUM) {
+		vp = fs->lfs_ivnode;
+		ip = VTOI(vp);
+		blkno = lblkno(fs, ip->i_size);
+printf("Extending ifile: blkno = %d\n", blkno);
+		bp = getblk(vp, blkno, fs->lfs_bsize);
+		if (!bp) {
+			uprintf("\n%s: no inodes left\n", fs->lfs_fsmnt);
+			log(LOG_ERR, "uid %d on %s: out of inodes\n",
+			    cred->cr_uid, fs->lfs_fsmnt);
+			return (ENOSPC);
+		}
+		i = (blkno - fs->lfs_segtabsz - fs->lfs_cleansz) *
+		    fs->lfs_ifpb;
+printf("Extending ifile: first inum = %d\n", i);
+		fs->lfs_free = i;
+		max = i + fs->lfs_ifpb;
+printf("Extending ifile: max inum = %d\n", max);
+		for (ifp = (struct ifile *)bp->b_un.b_words; i < max; ++ifp) {
+			ifp->if_version = 1;
+			ifp->if_daddr = LFS_UNUSED_DADDR;
+			ifp->if_nextfree = ++i;
+		}
+		ifp--;
+		ifp->if_nextfree = LFS_UNUSED_INUM;
+
+		++ip->i_blocks;			/* XXX This may not be right. */
+		ip->i_size += fs->lfs_bsize;
+printf("Extending ifile: blocks = %d size = %d\n", ip->i_blocks, ip->i_size);
+		vnode_pager_setsize(vp, ip->i_size);
+		vnode_pager_uncache(vp);
+		LFS_UBWRITE(bp);
+	}
 
 	/* Create a vnode to associate with the inode. */
 	if (error = lfs_vcreate(pvp->v_mount, new_ino, &vp))
@@ -78,6 +103,9 @@ lfs_valloc(pvp, notused, cred, vpp)
 	*vpp = vp;
 	ip = VTOI(vp);
 	VREF(ip->i_devvp);
+
+	/* Zero out the direct and indirect block addresses. */
+	bzero(ip->i_db, (NDADDR + NIADDR) * sizeof(daddr_t));
 
 	/* Set a new generation number for this inode. */
 	if (++nextgennumber < (u_long)time.tv_sec)
@@ -96,13 +124,13 @@ lfs_valloc(pvp, notused, cred, vpp)
 /* Create a new vnode/inode pair and initialize what fields we can. */
 int
 lfs_vcreate(mp, ino, vpp)
-	MOUNT *mp;
+	struct mount *mp;
 	ino_t ino;
-	VNODE **vpp;
+	struct vnode **vpp;
 {
 	extern struct vnodeops lfs_vnodeops;
-	INODE *ip;
-	UFSMOUNT *ump;
+	struct inode *ip;
+	struct ufsmount *ump;
 	int error, i;
 
 #ifdef VERBOSE
@@ -140,13 +168,13 @@ lfs_vcreate(mp, ino, vpp)
 /* ARGUSED */
 void
 lfs_vfree(vp, notused1, notused2)
-	VNODE *vp;
+	struct vnode *vp;
 	ino_t notused1;
 	int notused2;
 {
-	BUF *bp;
-	IFILE *ifp;
-	INODE *ip;
+	struct buf *bp;
+	struct ifile *ifp;
+	struct inode *ip;
 	struct lfs *fs;
 	ino_t ino;
 
@@ -167,7 +195,7 @@ lfs_vfree(vp, notused1, notused2)
 	++ifp->if_version;
 	ifp->if_nextfree = fs->lfs_free;
 	fs->lfs_free = ino;
-	LFS_IWRITE(fs, bp);
+	LFS_UBWRITE(bp);
 
 	/* Set superblock modified bit and decrement file count. */
 	fs->lfs_fmod = 1;
