@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile.vax	6.16 (Berkeley) %G%
+#	@(#)Makefile.vax	6.17 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -140,6 +140,7 @@ ioconf.o: ioconf.c ../h/param.h ../machine/pte.h ../h/buf.h ../h/map.h \
 	rm -f ioconf.s
 
 param.c: ../conf/param.c
+	-rm -f param.c
 	cp ../conf/param.c .
 
 param.o: param.c Makefile
