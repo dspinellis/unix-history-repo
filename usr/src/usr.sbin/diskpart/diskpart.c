@@ -1,18 +1,24 @@
 /*
  * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
 char copyright[] =
 "@(#) Copyright (c) 1983 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)diskpart.c	5.7 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)diskpart.c	5.8 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * Program to calculate standard disk partition sizes.
@@ -115,11 +121,14 @@ main(argc, argv)
 		}
 	} else {
 		if (dp->d_flags & D_REMOVABLE)
-			strncpy(dp->d_name, "removable", sizeof(dp->d_name));
+			strncpy(dp->d_typename, "removable",
+			    sizeof(dp->d_typename));
 		else if (dp->d_flags & D_RAMDISK)
-			strncpy(dp->d_name, "simulated", sizeof(dp->d_name));
+			strncpy(dp->d_typename, "simulated",
+			    sizeof(dp->d_typename));
 		else
-			strncpy(dp->d_name, "winchester", sizeof(dp->d_name));
+			strncpy(dp->d_typename, "winchester",
+			    sizeof(dp->d_typename));
 	}
 	spc = dp->d_secpercyl;
 	/*
@@ -234,7 +243,7 @@ main(argc, argv)
 			defparam[PART('g')].p_fsize = temp;
 		}
 		printf("%s:\\\n", dp->d_typename);
-		printf("\t:ty=%s:ns#%d:nt#%d:nc#%d:", dp->d_name,
+		printf("\t:ty=%s:ns#%d:nt#%d:nc#%d:", dp->d_typename,
 			dp->d_nsectors, dp->d_ntracks, dp->d_ncylinders);
 		if (dp->d_secpercyl != dp->d_nsectors * dp->d_ntracks)
 			printf("sc#%d:", dp->d_secpercyl);
@@ -348,11 +357,11 @@ gettype:
 		fprintf(stderr, "%s: bad disk type\n", buf);
 		goto gettype;
 	}
-	strncpy(dp->d_name, buf, sizeof(dp->d_name));
+	strncpy(dp->d_typename, buf, sizeof(dp->d_typename));
 	fprintf(stderr, "(type <cr> to get default value, if only one)\n");
 	if (dp->d_type == DTYPE_SMD)
 	   fprintf(stderr, "Do %ss support bad144 bad block forwarding (yes)? ",
-		dp->d_name);
+		dp->d_typename);
 	(void) gets(buf);
 	if (*buf != 'n')
 		dp->d_flags |= D_BADSECT;
