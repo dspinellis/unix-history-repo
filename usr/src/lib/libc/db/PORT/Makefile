@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
 LIBDB=	libdb.a
 OBJ1=	bt_close.o bt_conv.o bt_debug.o bt_delete.o bt_get.o bt_open.o \
@@ -31,7 +31,7 @@ ${OBJ5}:
 	${CC} -c -O -I. -Iinclude -I../recno ../recno/*.c
 
 mktemp.o:
-	${CC} -c -O -I. -Iinclude ../clib/mktemp.c
+	${CC} -c -O -I. -Iinclude clib/mktemp.c
 
 clean:
 	rm -f ${LIBDB} ${OBJ1} ${OBJ2} ${OBJ3} ${OBJ4} ${OBJ5} ${COMP}
