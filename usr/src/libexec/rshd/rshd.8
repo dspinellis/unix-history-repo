@@ -13,14 +13,14 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)rshd.8	6.7 (Berkeley) %G%
+.\"	@(#)rshd.8	6.8 (Berkeley) %G%
 .\"
 .TH RSHD 8 ""
 .UC 5
 .SH NAME
 rshd \- remote shell server
 .SH SYNOPSIS
-.B rshd [-l]
+.B rshd [-ln]
 .SH DESCRIPTION
 .I Rshd
 is the server for the 
@@ -55,7 +55,7 @@ second connection is also in the range 0-1023.
 .IP 4)
 The server checks the client's source address
 and requests the corresponding host name (see
-.IR gethostbyaddr (3N),
+.IR gethostbyaddr (3),
 .IR hosts (5)
 and
 .IR named (8)).
@@ -84,7 +84,7 @@ then validates the user using
 .IR ruserok (3),
 which uses the file ``/etc/hosts.equiv'' and the ``.rhosts''
 file found in the user's home directory.  The
-.I -p
+.I -l
 option prevents
 .IR ruserok (3)
 from doing any validation based on the user's ``.rhosts'' file,
@@ -96,6 +96,12 @@ shell of the user.  The
 shell inherits the network connections established
 by
 .IR rshd .
+.PP
+Transport-level keepalive messages are enabled unless the
+.B \-n
+option is present.
+The use of keepalive messages allows sessions to be timed out
+if the client crashes or becomes unreachable.
 .SH DIAGNOSTICS
 Except for the last one listed below,
 all diagnostic messages
