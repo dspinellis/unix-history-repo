@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)execve.2	6.5 (Berkeley) %G%
+.\"	@(#)execve.2	6.6 (Berkeley) %G%
 .\"
 .TH EXECVE 2 ""
 .UC 4
@@ -188,7 +188,10 @@ is allowed by the imposed maximum
 .TP 15
 [E2BIG]
 The number of bytes in the new process's argument list
-is larger than the system-imposed limit of {ARG_MAX} bytes.
+is larger than the system-imposed limit.
+The limit in the system as released is 20480 bytes
+(NCARGS in
+.IR <sys/param.h> .
 .TP 15
 [EFAULT]
 The new process file is not as long as indicated by
