@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)spp_usrreq.c	6.3 (Berkeley) %G%
+ *	@(#)spp_usrreq.c	6.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -264,8 +264,10 @@ register struct spidp *si;
 	 * If this is a system packet, we don't need to
 	 * queue it up, and won't update acknowledge #
 	 */
-	if (si->si_cc & SP_SP)
+	if (si->si_cc & SP_SP) {
+		m_freem(dtom(si));
 		return (0);
+	}
 
 	/*
 	 * If this packet number has a sequence number less
