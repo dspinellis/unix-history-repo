@@ -7,7 +7,7 @@
  *
  * from: hp300/hp300/conf.c	7.13 (Berkeley) 7/9/92
  *
- *	@(#)conf.c	7.5 (Berkeley) %G%
+ *	@(#)conf.c	7.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -60,6 +60,7 @@ int	ttselect	__P((dev_t, int, struct proc *));
 	(dev_type_dump((*))) enodev, 0, 0 }
 
 #define	bdev_notdef()	bdev_tape_init(0,no)
+
 bdev_decl(no);	/* dummy declarations */
 
 #include "st.h"
@@ -186,6 +187,14 @@ cdev_decl(log);
 cdev_decl(st);
 cdev_decl(sd);
 
+cdev_decl(fb);
+/* open, close, ioctl, mmap */
+#define	cdev_fb_init(c,n) { \
+	dev_init(c,n,open), dev_init(c,n,close), (dev_type_read((*))) nullop, \
+	(dev_type_write((*))) nullop, dev_init(c,n,ioctl), \
+	(dev_type_stop((*))) enodev, (dev_type_reset((*))) nullop, 0, \
+	dev_init(c,n,select), dev_init(c,n,map), 0 }
+
 #include "sio.h"
 cdev_decl(sio);
 
@@ -231,8 +240,8 @@ struct cdevsw	cdevsw[] =
 	cdev_log_init(1,log),		/* 6: /dev/klog */
 	cdev_notdef(),			/* 7 */
 	cdev_disk_init(NSD,sd),		/* 8: scsi disk */
-	cdev_notdef(),			/* 9: ram disk */
-	cdev_notdef(),			/* 10 */
+	cdev_notdef(),			/* 9 */
+	cdev_fb_init(1,fb),		/* 10: frame buffer */
 	cdev_notdef(),			/* 11 */
 	cdev_tty_init(NSIO,sio),	/* 12: built-in single-port serial */
 	cdev_tty_init(NBMC,bmc),	/* 13: console terminal emulator */
