@@ -1,9 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)mbuf.c	4.7 84/11/16";
+static char sccsid[] = "@(#)mbuf.c	4.8 85/04/07";
 #endif
 
+#include <stdio.h>
 #include <sys/param.h>
 #include <sys/mbuf.h>
+#define	YES	1
+typedef int bool;
 
 struct	mbstat mbstat;
 extern	int kmem;
@@ -24,8 +27,12 @@ static struct mbtypes {
 	{ MT_ZOMBIE,	"zombie process information" },
 	{ MT_SOOPTS,	"socket options" },
 	{ MT_RIGHTS,	"access rights" },
+	{ MT_IFADDR,	"interface addresses" }, 
 	{ 0, 0 }
 };
+
+int nmbtypes = sizeof(mbstat.m_mtypes) / sizeof(short);
+bool seen[256];			/* "have we seen this type yet?" */
 
 /*
  * Print mbuf statistics.
@@ -34,8 +41,13 @@ mbpr(mbaddr)
 	off_t mbaddr;
 {
 	register int totmem, totfree, totmbufs;
+	register int i;
 	register struct mbtypes *mp;
 
+	if (nmbtypes != 256) {
+		fprintf(stderr, "unexpected change to mbstat; check source\n");
+		return;
+	}
 	if (mbaddr == 0) {
 		printf("mbstat: symbol not in namelist\n");
 		return;
@@ -50,9 +62,17 @@ mbpr(mbaddr)
 	totmbufs = 0;
 	for (mp = mbtypes; mp->mt_name; mp++)
 		if (mbstat.m_mtypes[mp->mt_type]) {
+			seen[mp->mt_type] = YES;
 			printf("\t%d mbufs allocated to %s\n",
-				mbstat.m_mtypes[mp->mt_type], mp->mt_name);
+			    mbstat.m_mtypes[mp->mt_type], mp->mt_name);
 			totmbufs += mbstat.m_mtypes[mp->mt_type];
+		}
+	seen[MT_FREE] = YES;
+	for (i = 0; i < nmbtypes; i++)
+		if (!seen[i] && mbstat.m_mtypes[i]) {
+			printf("\t%d mbufs allocated to <mbuf type %d>\n",
+			    mbstat.m_mtypes[i], i);
+			totmbufs += mbstat.m_mtypes[i];
 		}
 	if (totmbufs != mbstat.m_mbufs - mbstat.m_mtypes[MT_FREE])
 		printf("*** %d mbufs missing ***\n",
