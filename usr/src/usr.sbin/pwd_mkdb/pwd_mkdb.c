@@ -12,13 +12,14 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pwd_mkdb.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pwd_mkdb.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 
 #include <db.h>
+#include <err.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -28,6 +29,8 @@ static char sccsid[] = "@(#)pwd_mkdb.c	8.1 (Berkeley) %G%";
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#include "pw_scan.h"
 
 #define	INSECURE	1
 #define	SECURE		2
@@ -42,8 +45,6 @@ HASHINFO openinfo = {
 	NULL,		/* hash() */
 	0		/* lorder */
 };
-
-char *progname = "pwd_mkdb";
 
 static enum state { FILE_INSECURE, FILE_SECURE, FILE_ORIG } clean;
 static struct passwd pwd;			/* password structure */
@@ -60,14 +61,12 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	extern int optind;
-	register int len, makeold;
-	register char *p, *t;
 	DB *dp, *edp;
 	DBT data, key;
 	FILE *fp, *oldfp;
 	sigset_t set;
-	int ch, cnt, tfd;
+	int ch, cnt, len, makeold, tfd;
+	char *p, *t;
 	char buf[MAX(MAXPATHLEN, LINE_MAX * 2)], tbuf[1024];
 
 	makeold = 0;
@@ -283,7 +282,7 @@ scan(fp, pw)
 	char *p;
 
 	if (!fgets(line, sizeof(line), fp))
-		return(0);
+		return (0);
 	++lcnt;
 	/*
 	 * ``... if I swallow anything evil, put your fingers down my
@@ -291,27 +290,28 @@ scan(fp, pw)
 	 *	-- The Who
 	 */
 	if (!(p = strchr(line, '\n'))) {
-		(void)fprintf(stderr, "pwd_mkdb: line too long\n");
+		warnx("line too long");
 		goto fmt;
 
 	}
 	*p = '\0';
 	if (!pw_scan(line, pw)) {
-		(void)fprintf(stderr, "pwd_mkdb: at line #%d.\n", lcnt);
-fmt:		errno = EFTYPE;
+		warnx("at line #%d", lcnt);
+fmt:		errno = EFTYPE;	/* XXX */
 		error(pname);
 	}
+
+	return (1);
 }
 
 void
 mv(from, to)
 	char *from, *to;
 {
-	int sverrno;
 	char buf[MAXPATHLEN];
 
 	if (rename(from, to)) {
-		sverrno = errno;
+		int sverrno = errno;
 		(void)snprintf(buf, sizeof(buf), "%s to %s", from, to);
 		errno = sverrno;
 		error(buf);
@@ -322,7 +322,8 @@ void
 error(name)
 	char *name;
 {
-	(void)fprintf(stderr, "pwd_mkdb: %s: %s\n", name, strerror(errno));
+
+	warn(name);
 	cleanup();
 	exit(1);
 }
@@ -350,6 +351,7 @@ cleanup()
 void
 usage()
 {
+
 	(void)fprintf(stderr, "usage: pwd_mkdb [-p] file\n");
 	exit(1);
 }
