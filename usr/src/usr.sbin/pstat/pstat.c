@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	8.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	8.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -663,7 +663,8 @@ kinfo_vnodes(avnodes)
 	bp = vbuf;
 	evbuf = vbuf + (numvnodes + 20) * (VPTRSZ + VNODESZ);
 	KGET(V_MOUNTLIST, mountlist);
-	for (mp = mountlist.tqh_first; mp != NULL; mp = mp->mnt_list.tqe_next) {
+	for (num = 0, mp = mountlist.tqh_first;
+	    mp != NULL; mp = mp->mnt_list.tqe_next) {
 		KGET2(mp, &mount, sizeof(mount), "mount entry");
 		for (vp = mount.mnt_vnodelist.lh_first;
 		    vp != NULL; vp = vp->v_mntvnodes.le_next) {
