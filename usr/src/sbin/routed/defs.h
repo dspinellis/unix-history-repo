@@ -1,4 +1,4 @@
-/*	defs.h	4.10	82/06/10	*/
+/*	defs.h	4.11	82/11/02	*/
 
 /*
  * Internal data structure definitions for
@@ -6,7 +6,36 @@
  * protocol specs with mods relevant to more
  * general addressing scheme.
  */
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <net/in.h>
 #include <net/route.h>
+#include <stdio.h>
+#include <netdb.h>
+#include "rip.h"
+
+/*
+ * Trace record format.
+ */
+struct	iftrace {
+	time_t	ift_stamp;		/* time stamp */
+	struct	sockaddr ift_who;	/* from/to */
+	char	*ift_packet;		/* pointer to packet */
+	short	ift_size;		/* size of packet */
+	short	ift_metric;		/* metric on associated metric */
+};
+
+/*
+ * Per interface packet tracing buffers.  An incoming and
+ * outgoing circular buffer of packets is maintained, per
+ * interface, for debugging.  Buffers are dumped whenever
+ * an interface is marked down.
+ */
+struct	ifdebug {
+	struct	iftrace *ifd_records;	/* array of trace records */
+	struct	iftrace *ifd_front;	/* next empty trace record */
+	struct	interface *ifd_if;	/* for locating stuff */
+};
 
 /*
  * An ``interface'' is similar to an ifnet structure,
@@ -28,6 +57,11 @@ struct interface {
 	int	int_metric;			/* init's routing entry */
 	int	int_flags;			/* see below */
 	int	int_net;			/* network # */
+	struct	ifdebug int_input, int_output;	/* packet tracing stuff */
+	int	int_ipackets;			/* input packets received */
+	int	int_opackets;			/* output packets sent */
+	char	*int_name;			/* from kernel if structure */
+	u_short	int_transitions;		/* times gone up-down */
 };
 
 /*
@@ -124,3 +158,60 @@ struct	afswitch afswitch[AF_MAX];	/* table proper */
  * come up.
  */
 #define	CHECK_INTERVAL	(1*60)
+
+#define	LOOPBACKNET	0177
+/* casts to keep lint happy */
+#define	insque(q,p)	_insque((caddr_t)q,(caddr_t)p)
+#define	remque(q)	_remque((caddr_t)q)
+#define equal(a1, a2) \
+	(bcmp((caddr_t)(a1), (caddr_t)(a2), sizeof (struct sockaddr)) == 0)
+#define	min(a,b)	((a)>(b)?(b):(a))
+
+struct	sockaddr_in routingaddr;
+struct	sockaddr_in noroutingaddr;
+
+int	s;
+int	snoroute;		/* socket with no routing */
+int	kmem;
+int	supplier;		/* process should supply updates */
+int	install;		/* if 1 call kernel */
+int	lookforinterfaces;
+int	performnlist;
+int	externalinterfaces;	/* # of remote and local interfaces */
+int	timeval;
+
+/*
+ * Packet tracing stuff.
+ */
+int	tracing;		/* on/off */
+FILE	*ftrace;		/* output trace file */
+#define	TRACE_ACTION(action, route) \
+	{ if (tracing) \
+		traceaction(ftrace, "action", route); \
+	}
+#define	TRACE_INPUT(ifp, from, size) \
+	{ if (tracing) { \
+		ifp = if_iflookup(from); \
+		if (ifp) \
+			trace(&ifp->int_input, from, packet, size, \
+				ifp->int_metric); \
+	  } \
+	}
+#define	TRACE_OUTPUT(ifp, to, size) \
+	{ if (tracing) \
+		trace(&ifp->int_output, to, packet, size, ifp->int_metric); \
+	}
+
+char	packet[MAXPACKETSIZE+1];
+struct	rip *msg;
+
+char	**argv0;
+struct	servent *sp;
+
+struct	in_addr inet_makeaddr();
+struct	interface *if_ifwithaddr(), *if_ifwithnet(), *if_iflookup();
+extern	char *malloc(), *sys_errlist[];
+extern	int errno, exit();
+
+int	sendmsg(), supply();
+int	timer(), cleanup();
