@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)gcos.c	4.1 (Berkeley) 81/02/28";
+static	char *sccsid = "@(#)gcos.c	4.2 (Berkeley) 85/04/16";
 /* GCOS DEPENDENT PROCEDURES */
 
 
@@ -137,8 +137,9 @@ getcat() {
 	catsiz = i;
 	}
 
- exists( cp ) char *cp; {
-	char *s, name[13];
+ exists( p ) 
+ struct nameblock *p; {
+	char *s, *cp, name[13];
 	int i, *p, bcd[2];
 
 /*
@@ -147,6 +148,8 @@ getcat() {
    at t=1 (long time ago); otherwise, assume it
    does not exist
 */
+
+cp = p->namep;
 
 for(s=cp ; *s ; ++s)
 	if(*s == '/')
