@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	From:	@(#)nfs_bio.c	7.19 (Berkeley) 4/16/91
- *	$Id: nfs_bio.c,v 1.3 1993/09/09 22:06:00 rgrimes Exp $
+ *	$Id: nfs_bio.c,v 1.4 1993/11/28 09:16:07 davidg Exp $
  */
 
 #include "param.h"
@@ -256,7 +256,9 @@ nfs_write(vp, uio, ioflag, cred)
 	 */
 	biosize = VFSTONFS(vp->v_mount)->nm_rsize;
 	np->n_flag |= NMODIFIED;
-	vnode_pager_uncache(vp);
+	if ((ioflag & IO_PAGER) == 0)
+		vnode_pager_uncache(vp);
+
 	do {
 		nfsstats.biocache_writes++;
 		lbn = uio->uio_offset / biosize;

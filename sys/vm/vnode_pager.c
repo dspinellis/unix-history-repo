@@ -37,7 +37,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vnode_pager.c	7.5 (Berkeley) 4/20/91
- *	$Id: vnode_pager.c,v 1.9 1994/01/17 09:34:11 davidg Exp $
+ *	$Id: vnode_pager.c,v 1.10 1994/01/31 04:22:01 davidg Exp $
  */
 
 /*
@@ -568,7 +568,7 @@ vnode_pager_io(vnp, m, count, reqpage, rw)
 	int errtype=0; /* 0 is file type otherwise vm type */
 	int error = 0;
 
-	object = m[0]->object;	/* all vm_page_t items are in same object */
+	object = m[reqpage]->object;	/* all vm_page_t items are in same object */
 	paging_offset = object->paging_offset;
 
 	/*
@@ -622,38 +622,32 @@ vnode_pager_io(vnp, m, count, reqpage, rw)
 		/*
 		 * here on I/O through VFS
 		 */
-
 		for (i = 0; i < count; i++) {
-			foff = m[i]->offset + paging_offset;
+			if (i != reqpage) {
+				vnode_pager_freepage(m[i]);
+				m[i] = 0;
+			}
+		}
+		m[0] = m[reqpage];
+		foff = m[0]->offset + paging_offset;
+		reqpage = 0;
+		count = 1;
 	/*
 	 * Return failure if beyond current EOF
 	 */
-			if (foff >= vnp->vnp_size) {
-				if (i == reqpage) {
-					errtype = 1;
-					error = VM_PAGER_BAD;
-					i += 1;
-				}
-				for (j = i; j < count; j++) {
-					if (j != reqpage) {
-						vnode_pager_freepage(m[j]);
-						m[j] = 0;
-					} else {
-						errtype = 1;
-						error = VM_PAGER_BAD;
-					}
-				}
-				break;
-			}
+		if (foff >= vnp->vnp_size) {
+			errtype = 1;
+			error = VM_PAGER_BAD;
+		} else {
 			if (foff + NBPG > vnp->vnp_size)
 				size = vnp->vnp_size - foff;
 			else
 				size = NBPG;
-	/*
-	 * Allocate a kernel virtual address and initialize so that
-	 * we can use VOP_READ/WRITE routines.
-	 */
-			kva = vm_pager_map_page(m[i]);
+/*
+ * Allocate a kernel virtual address and initialize so that
+ * we can use VOP_READ/WRITE routines.
+ */
+			kva = vm_pager_map_page(m[0]);
 			aiov.iov_base = (caddr_t)kva;
 			aiov.iov_len = size;
 			auio.uio_iov = &aiov;
@@ -670,7 +664,7 @@ vnode_pager_io(vnp, m, count, reqpage, rw)
 			}
 			if (!error) {
 				register int count = size - auio.uio_resid;
-	
+
 				if (count == 0)
 					error = EINVAL;
 				else if (count != NBPG && rw == UIO_READ)
