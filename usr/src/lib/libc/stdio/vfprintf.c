@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -19,8 +19,7 @@ static char sccsid[] = "@(#)vfprintf.c	5.10 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 
-#define	MAXBUF	120
-#define	DEFPREC	6
+#define	MAXBUF	40
 
 #define	PUTC(ch)	{++cnt; putc(ch, fp);}
 
@@ -31,37 +30,52 @@ static char sccsid[] = "@(#)vfprintf.c	5.10 (Berkeley) %G%";
 	r = argsize&LONGINT ? va_arg(argp, long) : \
 	    argsize&SHORTINT ? va_arg(argp, short) : va_arg(argp, int);
 
-static int alternate;
-static char printsign;
+static int alt;
+static char sign;
 
 x_doprnt(fmt, argp, fp)
 	register char *fmt;
 	va_list argp;
 	register FILE *fp;
 {
-	register int base, cnt;
-	register char *bp, *t;
-	register u_long reg_ulong;
-	register long reg_long;
+	register int cnt, n;
+	register char ch, *t;
 	double _double;
-	char argsize, padc, *_cvt(), *digs, buf[MAXBUF];
-	int n, ladjust, width, prec, size;
+	u_long _ulong;
+	int base, ladjust, width, prec, size;
+	char argsize, padc, *digs, *_cvt(), buf[MAXBUF];
 
 	digs = "0123456789abcdef";
-	for (cnt = 0; *fmt; ++fmt) {
-		if (*fmt != '%') {
-			PUTC(*fmt);
-			continue;
+	for (cnt = 0;; ++fmt) {
+		if ((n = fp->_cnt) >= 0) {
+			for (t = fp->_ptr; (ch = *fmt) != '%' && ch; ++fmt) {
+				if (--n < 0)
+					break;
+				*t++ = ch;
+			}
+			fp->_ptr = t;
+			cnt += fp->_cnt - n;
+			fp->_cnt = n;
+			if (ch != '%' && ch) {
+				PUTC(ch);
+				continue;
+			}
 		}
+		else for (; *fmt && *fmt != '%'; ++fmt)
+			PUTC(*fmt);
 
-		alternate = ladjust = width = 0;
+		if (!*fmt)
+			return(cnt);
+
+		alt = ladjust = width = 0;
 		prec = -1;
 		padc = ' ';
-		argsize = printsign = '\0';
+		argsize = sign = '\0';
+		t = buf;
 
 flags:		switch (*++fmt) {
 		case '#':
-			alternate = 1;
+			alt = 1;
 			goto flags;
 		case '*':
 			/*
@@ -78,7 +92,7 @@ flags:		switch (*++fmt) {
 			ladjust = 1;
 			goto flags;
 		case '+':
-			printsign = '+';
+			sign = '+';
 			goto flags;
 		case '.':
 			if (*++fmt == '*')
@@ -116,131 +130,117 @@ flags:		switch (*++fmt) {
 		case 'l':
 			argsize |= LONGINT;
 			goto flags;
-		case 'c': {
-			char ch;
-
-			ch = va_arg(argp, int);
-			PUTC(ch);
-			break;
-		}
+		case 'c':
+			*t = va_arg(argp, int);
+			size = 1;
+			goto pforw;
 		case 'd':
-		case 'i':
+		case 'i': {
+			long reg_long;
+
 			GETARG(reg_long);
 			if (reg_long < 0) {
-				reg_ulong = -reg_long;
-				printsign = '-';
+				_ulong = -reg_long;
+				sign = '-';
 			}
 			else {
-				reg_ulong = reg_long;
+				_ulong = reg_long;
 			}
-			if (printsign)
-				PUTC(printsign);
+			if (sign)
+				PUTC(sign);
 			base = 10;
-			goto num1;
+			goto num;
+		}
 		case 'e':
 		case 'E':
 		case 'f':
 		case 'g':
 		case 'G':
 			_double = va_arg(argp, double);
-			bp = _cvt(_double, prec, buf, buf + sizeof(buf), *fmt);
-pbuf:			size = bp - buf;
-			if (size < width && !ladjust)
-				do {
-					PUTC(padc);
-				} while (--width > size);
-			for (t = buf; t < bp; ++t)
-				PUTC(*t);
-			for (; width > size; --width)
-				PUTC(padc);
-			break;
+			size = _cvt(_double, prec, buf, buf + sizeof(buf),
+			    *fmt) - buf;
+			goto pforw;
 		case 'n':
 			*(va_arg(argp, int *)) = cnt;
 			break;
 		case 'o':
-			GETARG(reg_ulong);
+			GETARG(_ulong);
 			base = 8;
-			if (!reg_ulong || !alternate)
-				goto num1;
-			bp = buf + sizeof(buf) - 1;
-			do {
-				*bp-- = digs[reg_ulong % base];
-				reg_ulong /= base;
-			} while(reg_ulong);
-			size = &buf[sizeof(buf) - 1] - bp;
-			if (size < --width && !ladjust)
-				do {
-					PUTC(padc);
-				} while (--width > size);
-			PUTC('0');
-			goto num2;
+			goto num;
 		case 'p':
 		case 's':
-			if (!(bp = va_arg(argp, char *)))
-				bp = "(null)";
-			if (width > 0 && !ladjust) {
-				char *savep;
-
-				savep = bp;
-				for (n = 0; *bp && (prec < 0 || n < prec);
-				    n++, bp++);
-				bp = savep;
-				while (n++ < width)
-					PUTC(' ');
+			if (!(t = va_arg(argp, char *)))
+				t = "(null)";
+			if ((size = strlen(t)) < prec)
+				size = prec;
+pforw:			if (!ladjust && width)
+				for (n = size; n++ < width;)
+					PUTC(padc);
+			if (fp->_cnt - (n = size) >= 0) {
+				cnt += n;
+				fp->_cnt -= n;
+				bcopy(t, fp->_ptr, n);
+				fp->_ptr += n;
 			}
-			for (n = 0; *bp; ++bp) {
-				if (++n > prec && prec >= 0)
-					break;
-				PUTC(*bp);
-			}
-			if (n < width && ladjust)
-				do {
-					PUTC(' ');
-				} while (++n < width);
+			else for (; n--; ++t)
+				PUTC(*t);
+			if (ladjust)
+				while (width-- > size)
+					PUTC(padc);
 			break;
 		case 'u':
-			GETARG(reg_ulong);
+			GETARG(_ulong);
 			base = 10;
-			goto num1;
+			goto num;
 		case 'X':
 			digs = "0123456789ABCDEF";
 			/*FALLTHROUGH*/
 		case 'x':
-			GETARG(reg_ulong);
-			if (alternate && reg_ulong) {
+			GETARG(_ulong);
+			base = 16;
+			/* alternate form for hex; leading 0x/X */
+			if (alt && _ulong) {
 				PUTC('0');
 				PUTC(*fmt);
 			}
-			base = 16;
-num1:			bp = buf + sizeof(buf) - 1;
+num:			t = buf + sizeof(buf) - 1;
 			do {
-				*bp-- = digs[reg_ulong % base];
-				reg_ulong /= base;
-			} while(reg_ulong);
-			size = &buf[sizeof(buf) - 1] - bp;
-			for (; size < prec; *bp-- = '0', ++size);
-			if (size < width && !ladjust)
-				do {
+				*t-- = digs[_ulong % base];
+				_ulong /= base;
+			} while(_ulong);
+			digs = "0123456789abcdef";
+			size = buf + sizeof(buf) - 1 - t;
+			if (size >= prec) {
+				/* alternate form for octal; leading 0 */
+				if (t[1] != '0' && alt && *fmt == 'o') {
+					*t-- = '0';
+					++size;
+				}
+			}
+			else
+				for (; size < prec; ++size)
+					*t-- = '0';
+			if (!ladjust)
+				while (size++ < width)
 					PUTC(padc);
-				} while (--width > size);
-num2:			while (++bp != &buf[MAXBUF])
-				PUTC(*bp);
+			while (++t < buf + sizeof(buf))
+				PUTC(*t);
 			for (; width > size; --width)
 				PUTC(padc);
-			digs = "0123456789abcdef";
 			break;
 		case '\0':		/* "%?" prints ?, unless ? is NULL */
-			return(ferror(fp) ? -1 : cnt);
+			return(cnt);
 		default:
 			PUTC(*fmt);
 		}
 	}
-	return(ferror(fp) ? -1 : cnt);
+	/*NOTREACHED*/
 }
 
 #define	EFORMAT	0x01
 #define	FFORMAT	0x02
 #define	GFORMAT	0x04
+#define	DEFPREC	6
 
 static char *
 _cvt(number, prec, startp, endp, fmtch)
@@ -254,15 +254,14 @@ _cvt(number, prec, startp, endp, fmtch)
 	int decpt;
 	char *savep;
 
-	if (prec == -1)				/* set default precision */
+	if (prec == -1)
 		prec = DEFPREC;
 
-	p = endp - 1;
-	if (number < 0) {			/* set sign */
+	if (number < 0) {
 		*startp++ = '-';
 		number = -number;
 	}
-	else if (printsign)
+	else if (sign)
 		*startp++ = '+';
 
 	switch(fmtch) {
@@ -282,12 +281,13 @@ _cvt(number, prec, startp, endp, fmtch)
 	/*
 	 * if the alternate flag is set, or, at least one digit of precision
 	 * was requested, add a decimal point, unless it's the g/G format
-	 * in which case we require two digits of precision, since it counts
+	 * in which case we require two digits of precision, as it counts
 	 * precision differently.
 	 */
-	decpt = alternate || prec > 1 || !(format&GFORMAT) && prec;
+	decpt = alt || prec > 1 || !(format&GFORMAT) && prec;
 
 	expcnt = 0;
+	p = endp - 1;
 	fract = modf(number, &integer);
 	if (integer) {
 		register char *p2;
@@ -335,9 +335,8 @@ _cvt(number, prec, startp, endp, fmtch)
 			}
 		}
 		/*
-		 * g/G in f format; if run out of precision, replace digits
-		 * with zeroes, note, have to round first, otherwise lose
-		 * rounding point.
+		 * g/G in f format; if out of precision, replace digits with
+		 * zeroes, note, have to round first.
 		 */
 		else if (format&GFORMAT) {
 			for (; ++p < endp && prec; --prec, *p2++ = *p);
@@ -369,7 +368,7 @@ _cvt(number, prec, startp, endp, fmtch)
 	 * just result in an empty string, because it's supposed to remove
 	 * trailing zeroes.  That seems counter-intuitive, so here it does
 	 * what f and e/E do; if no fraction, the number was zero, and if
-	 * no precision can't show anything after the decimal point.
+	 * no precision, can't show anything after the decimal point.
 	 */
 	else if (!fract || !prec) {
 		*startp++ = '0';
@@ -451,7 +450,7 @@ _cvt(number, prec, startp, endp, fmtch)
 	 * if a g/G format and not alternate flag, lose trailing zeroes,
 	 * if e/E or g/G format, and last char is decimal point, lose it.
 	 */
-	if (!alternate) {
+	if (!alt) {
 		if (format&GFORMAT)
 			for (; p[-1] == '0'; --p);
 		if (format&(GFORMAT|EFORMAT) && p[-1] == '.')
