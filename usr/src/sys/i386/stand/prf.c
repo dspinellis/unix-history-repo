@@ -7,10 +7,11 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)prf.c	7.1 (Berkeley) %G%
+ *	@(#)prf.c	7.2 (Berkeley) %G%
  */
 
-#include <sys/types.h>
+#include "types.h"
+
 
 /*
  * Scaled down version of C Library printf.
@@ -52,10 +53,6 @@ loop:
 	}
 again:
 	c = *fmt++;
-	/*
-	 * THIS CODE IS BYTE-ORDER DEPENDENT IN HANDLING %c
-	 * AND IGNORES SHORT/LONG DISTINCTIONS.
-	 */
 	switch (c) {
 
 	case 'l':
@@ -78,7 +75,7 @@ number:
 			if (c = (b >> i) & 0x7f)
 				putchar(c);
 		break;
-#ifndef notyet
+#ifdef notyet
 	case 'b':
 		b = *adx++;
 		s = (char *)*adx;
@@ -135,17 +132,11 @@ printn(n, b)
 	while (cp > prbuf);
 }
 
-#define lf	10	
-#define cr	13	
-
 putchar(c)
 char c;
 {
-        if (c == lf)
-{
-		sput(cr);
-wait(60000);
-}
+        if (c == '\n')
+		sput('\r');
 	sput(c);
 	return(0);
 }
