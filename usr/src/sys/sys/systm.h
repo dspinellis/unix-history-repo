@@ -1,4 +1,4 @@
-/*	systm.h	4.3	%G%	*/
+/*	systm.h	4.4	%G%	*/
 
 /*
  * Random set of variables
@@ -46,8 +46,10 @@ int	updlock;		/* lock for sync */
 daddr_t	rablock;		/* block to be read ahead */
 int	intstack[512];		/* stack for interrupts */
 dev_t	rootdev;		/* device of the root */
+dev_t	dumpdev;		/* device to take dumps on */
+long	dumplo;			/* offset into dumpdev */
 dev_t	swapdev;		/* swapping device */
-dev_t	argdev;
+dev_t	argdev;			/* device for argument lists */
 dev_t	pipedev;		/* pipe device */
 
 extern	int icode[];		/* user init code */
