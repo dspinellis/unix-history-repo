@@ -1,4 +1,4 @@
-/* ip_input.c 1.7 81/10/26 */
+/* ip_input.c 1.8 81/10/27 */
 
 #include "../h/param.h"
 #include "../bbnnet/net.h"
