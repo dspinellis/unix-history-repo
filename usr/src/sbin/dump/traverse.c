@@ -5,12 +5,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)traverse.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)traverse.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "dump.h"
 
-void	indir(), dmpindir(), dsrch();
+void	dmpindir();
+#define	HASDUMPEDFILE	0x1
+#define	HASSUBDIRS	0x2
 
 /*
  * This is an estimation of the number of TP_BSIZE blocks in the file.
@@ -19,11 +21,11 @@ void	indir(), dmpindir(), dsrch();
  * (when some of the blocks are usually used for indirect pointers);
  * hence the estimate may be high.
  */
-void
-est(ip)
+long
+blockest(ip)
 	struct dinode *ip;
 {
-	long s, t;
+	long blkest, sizeest;
 
 	/*
 	 * ip->di_size is the size of the file in bytes.
@@ -31,188 +33,263 @@ est(ip)
 	 * If there are more sectors than the size would indicate, this just
 	 *	means that there are indirect blocks in the file or unused
 	 *	sectors in the last file block; we can safely ignore these
-	 *	(s = t below).
+	 *	(blkest = sizeest below).
 	 * If the file is bigger than the number of sectors would indicate,
 	 *	then the file has holes in it.	In this case we must use the
 	 *	block count to estimate the number of data blocks used, but
 	 *	we use the actual size for estimating the number of indirect
-	 *	dump blocks (t vs. s in the indirect block calculation).
+	 *	dump blocks (sizeest vs. blkest in the indirect block
+	 *	calculation).
 	 */
-	esize++;
-	s = howmany(dbtob(ip->di_blocks), TP_BSIZE);
-	t = howmany(ip->di_size, TP_BSIZE);
-	if (s > t)
-		s = t;
+	blkest = howmany(dbtob(ip->di_blocks), TP_BSIZE);
+	sizeest = howmany(ip->di_size, TP_BSIZE);
+	if (blkest > sizeest)
+		blkest = sizeest;
 	if (ip->di_size > sblock->fs_bsize * NDADDR) {
 		/* calculate the number of indirect blocks on the dump tape */
-		s += howmany(t - NDADDR * sblock->fs_bsize / TP_BSIZE,
+		blkest +=
+			howmany(sizeest - NDADDR * sblock->fs_bsize / TP_BSIZE,
 			TP_NINDIR);
 	}
-	esize += s;
+	return (blkest + 1);
 }
 
-void
-bmapest(map)
-	char *map;
-{
-
-	esize += howmany(msiz * sizeof map[0], TP_BSIZE) + 1;
-}
-
-void
-pass(fn, map)
-	register int (*fn)();
-	register char *map;
-{
-	register int bits = 0;	/* this value not used, but keeps gcc happy */
+/*
+ * Dump pass 1.
+ *
+ * Walk the inode list for a filesystem to find all allocated inodes
+ * that have been modified since the previous dump time. Also, find all
+ * the directories in the filesystem.
+ */
+mapfiles(maxino, tapesize)
 	ino_t maxino;
+	long *tapesize;
+{
+	register int mode;
+	register ino_t ino;
+	register struct dinode *dp;
+	int anydirskipped = 0;
 
-	maxino = sblock->fs_ipg * sblock->fs_ncg - 1;
-	for (ino = 0; ino < maxino; ) {
+	for (ino = 0; ino < maxino; ino++) {
+		dp = getino(ino);
+		if ((mode = (dp->di_mode & IFMT)) == 0)
+			continue;
+		SETINO(ino, usedinomap);
+		if (mode == IFDIR)
+			SETINO(ino, dumpdirmap);
+		if (dp->di_mtime >= spcl.c_ddate ||
+		    dp->di_ctime >= spcl.c_ddate) {
+			SETINO(ino, dumpinomap);
+			if (mode != IFREG && mode != IFDIR && mode != IFLNK) {
+				*tapesize += 1;
+				continue;
+			}
+			*tapesize += blockest(dp);
+			continue;
+		}
+		if (mode == IFDIR)
+			anydirskipped = 1;
+	}
+	/*
+	 * Restore gets very upset if the root is not dumped,
+	 * so ensure that it always is dumped.
+	 */
+	SETINO(ROOTINO, usedinomap);
+	return (anydirskipped);
+}
+
+/*
+ * Dump pass 2.
+ *
+ * Scan each directory on the filesystem to see if it has any modified
+ * files in it. If it does, and has not already been added to the dump
+ * list (because it was itself modified), then add it. If a directory
+ * has not been modified itself, contains no modified files and has no
+ * subdirectories, then it can be deleted from the dump list and from
+ * the list of directories. By deleting it from the list of directories,
+ * its parent may now qualify for the same treatment on this or a later
+ * pass using this algorithm.
+ */
+mapdirs(maxino, tapesize)
+	ino_t maxino;
+	long *tapesize;
+{
+	register struct	dinode *dp;
+	register int i, bits;
+	register char *map;
+	register ino_t ino;
+	long filesize, blkcnt = 0;
+	int ret, change = 0;
+
+	for (map = dumpdirmap, ino = 0; ino < maxino; ) {
 		if ((ino % NBBY) == 0)
-			bits = map ? *map++ : ~0;
+			bits = *map++;
+		else
+			bits >>= 1;
 		ino++;
-		if (bits & 1)
-			(*fn)(getino(ino));
-		bits >>= 1;
-	}
-}
-
-void
-mark(ip)
-	struct dinode *ip;
-{
-	register int f;
-	extern int anydskipped;
-
-	f = ip->di_mode & IFMT;
-	if (f == 0)
-		return;
-	BIS(ino, clrmap);
-	if (f == IFDIR)
-		BIS(ino, dirmap);
-	if ((ip->di_mtime >= spcl.c_ddate || ip->di_ctime >= spcl.c_ddate) &&
-	    !BIT(ino, nodmap)) {
-		BIS(ino, nodmap);
-		if (f != IFREG && f != IFDIR && f != IFLNK) {
-			esize += 1;
-			return;
+		if ((bits & 1) == 0 || TSTINO(ino, dumpinomap))
+			continue;
+		dp = getino(ino);
+		filesize = dp->di_size;
+		for (ret = 0, i = 0; filesize > 0 && i < NDADDR; i++) {
+			if (dp->di_db[i] != 0)
+				ret |= searchdir(ino, dp->di_db[i],
+					dblksize(sblock, dp, i));
+			if (ret & HASDUMPEDFILE)
+				filesize = 0;
+			else
+				filesize -= sblock->fs_bsize;
 		}
-		est(ip);
-	} else if (f == IFDIR)
-		anydskipped = 1;
+		for (i = 0; filesize > 0 && i < NIADDR; i++) {
+			if (dp->di_ib[i] == 0)
+				continue;
+			ret |= dirindir(ino, dp->di_ib[i], i, &filesize);
+		}
+		if (ret & HASDUMPEDFILE) {
+			if (!TSTINO(ino, dumpinomap)) {
+				SETINO(ino, dumpinomap);
+				*tapesize += blockest(dp);
+			}
+			change = 1;
+			continue;
+		}
+		if ((ret & HASSUBDIRS) == 0) {
+			if (!TSTINO(ino, dumpinomap)) {
+				CLRINO(ino, dumpdirmap);
+				change = 1;
+			}
+		}
+	}
+	return (change);
 }
 
-void
-add(ip)
-	register struct	dinode	*ip;
+/*
+ * Read indirect blocks, and pass the data blocks to be searched
+ * as directories. Quit as soon as any entry is found that will
+ * require the directory to be dumped.
+ */
+dirindir(ino, blkno, level, filesize)
+	ino_t ino;
+	daddr_t blkno;
+	int level, *filesize;
 {
+	int ret = 0;
 	register int i;
-	long filesize;
-
-	if(BIT(ino, nodmap))
-		return;
-	nsubdir = 0;
-	dadded = 0;
-	filesize = ip->di_size;
-	for (i = 0; i < NDADDR; i++) {
-		if (ip->di_db[i] != 0)
-			dsrch(ip->di_db[i], dblksize(sblock, ip, i), filesize);
-		filesize -= sblock->fs_bsize;
-	}
-	for (i = 0; i < NIADDR; i++) {
-		if (ip->di_ib[i] != 0)
-			indir(ip->di_ib[i], i, &filesize);
-	}
-	if(dadded) {
-		nadded++;
-		if (!BIT(ino, nodmap)) {
-			BIS(ino, nodmap);
-			est(ip);
-		}
-	}
-	if(nsubdir == 0)
-		if(!BIT(ino, nodmap))
-			BIC(ino, dirmap);
-}
-
-void
-indir(d, n, filesize)
-	daddr_t d;
-	int n, *filesize;
-{
-	register i;
 	daddr_t	idblk[MAXNINDIR];
 
-	bread(fsbtodb(sblock, d), (char *)idblk, sblock->fs_bsize);
-	if(n <= 0) {
-		for(i=0; i < NINDIR(sblock); i++) {
-			d = idblk[i];
-			if(d != 0)
-				dsrch(d, sblock->fs_bsize, *filesize);
-			*filesize -= sblock->fs_bsize;
+	bread(fsbtodb(sblock, blkno), (char *)idblk, sblock->fs_bsize);
+	if (level <= 0) {
+		for (i = 0; *filesize > 0 && i < NINDIR(sblock); i++) {
+			blkno = idblk[i];
+			if (blkno != 0)
+				ret |= searchdir(ino, blkno, sblock->fs_bsize);
+			if (ret & HASDUMPEDFILE)
+				*filesize = 0;
+			else
+				*filesize -= sblock->fs_bsize;
 		}
-	} else {
-		n--;
-		for(i=0; i < NINDIR(sblock); i++) {
-			d = idblk[i];
-			if(d != 0)
-				indir(d, n, filesize);
-		}
+		return (ret);
 	}
+	level--;
+	for (i = 0; *filesize > 0 && i < NINDIR(sblock); i++) {
+		blkno = idblk[i];
+		if (blkno != 0)
+			ret |= dirindir(ino, blkno, level, filesize);
+	}
+	return (ret);
 }
 
-void
-dirdump(ip)
-	struct dinode *ip;
+/*
+ * Scan a disk block containing directory information looking to see if
+ * any of the entries are on the dump list and to see if the directory
+ * contains any subdirectories.
+ */
+searchdir(ino, blkno, size)
+	ino_t ino;
+	daddr_t blkno;
+	register int size;
 {
-	/* watchout for dir inodes deleted and maybe reallocated */
-	if ((ip->di_mode & IFMT) != IFDIR)
-		return;
-	dump(ip);
+	register struct direct *dp;
+	register long loc;
+	char dblk[MAXBSIZE];
+
+	bread(fsbtodb(sblock, blkno), dblk, size);
+	for (loc = 0; loc < size; ) {
+		dp = (struct direct *)(dblk + loc);
+		if (dp->d_reclen == 0) {
+			msg("corrupted directory, inumber %d\n", ino);
+			break;
+		}
+		loc += dp->d_reclen;
+		if (dp->d_ino == 0)
+			continue;
+		if (dp->d_name[0] == '.') {
+			if (dp->d_name[1] == '\0')
+				continue;
+			if (dp->d_name[1] == '.' && dp->d_name[2] == '\0')
+				continue;
+		}
+		if (TSTINO(dp->d_ino, dumpinomap))
+			return (HASDUMPEDFILE);
+		if (TSTINO(dp->d_ino, dumpdirmap))
+			return (HASSUBDIRS);
+	}
+	return (0);
 }
 
+/*
+ * Dump passes 3 and 4.
+ *
+ * Dump the contents of an inode to tape.
+ */
 void
-dump(ip)
+dumpino(ip, ino)
 	struct dinode *ip;
+	ino_t ino;
 {
-	register int i;
+	int mode, level, cnt;
 	long size;
 
-	if(newtape) {
+	if (newtape) {
 		newtape = 0;
-		bitmap(nodmap, TS_BITS);
+		dumpmap(dumpinomap, TS_BITS, ino);
 	}
-	BIC(ino, nodmap);
+	CLRINO(ino, dumpinomap);
 	spcl.c_dinode = *ip;
 	spcl.c_type = TS_INODE;
 	spcl.c_count = 0;
-	i = ip->di_mode & IFMT;
-	if (i == 0) /* free inode */
+	/*
+	 * Check for freed inode.
+	 */
+	if ((mode = (ip->di_mode & IFMT)) == 0)
 		return;
-	if ((i != IFDIR && i != IFREG && i != IFLNK) || ip->di_size == 0) {
-		spclrec();
+	if ((mode != IFDIR && mode != IFREG && mode != IFLNK) ||
+	    ip->di_size == 0) {
+		writeheader(ino);
 		return;
 	}
 	if (ip->di_size > NDADDR * sblock->fs_bsize)
-		i = NDADDR * sblock->fs_frag;
+		cnt = NDADDR * sblock->fs_frag;
 	else
-		i = howmany(ip->di_size, sblock->fs_fsize);
-	blksout(&ip->di_db[0], i);
-	size = ip->di_size - NDADDR * sblock->fs_bsize;
-	if (size <= 0)
+		cnt = howmany(ip->di_size, sblock->fs_fsize);
+	blksout(&ip->di_db[0], cnt, ino);
+	if ((size = ip->di_size - NDADDR * sblock->fs_bsize) <= 0)
 		return;
-	for (i = 0; i < NIADDR; i++) {
-		dmpindir(ip->di_ib[i], i, &size);
+	for (level = 0; level < NIADDR; level++) {
+		dmpindir(ino, ip->di_ib[level], level, &size);
 		if (size <= 0)
 			return;
 	}
 }
 
+/*
+ * Read indirect blocks, and pass the data blocks to be dumped.
+ */
 void
-dmpindir(blk, lvl, size)
+dmpindir(ino, blk, level, size)
+	ino_t ino;
 	daddr_t blk;
-	int lvl;
+	int level;
 	long *size;
 {
 	int i, cnt;
@@ -222,27 +299,31 @@ dmpindir(blk, lvl, size)
 		bread(fsbtodb(sblock, blk), (char *)idblk, sblock->fs_bsize);
 	else
 		bzero((char *)idblk, sblock->fs_bsize);
-	if (lvl <= 0) {
+	if (level <= 0) {
 		if (*size < NINDIR(sblock) * sblock->fs_bsize)
 			cnt = howmany(*size, sblock->fs_fsize);
 		else
 			cnt = NINDIR(sblock) * sblock->fs_frag;
 		*size -= NINDIR(sblock) * sblock->fs_bsize;
-		blksout(&idblk[0], cnt);
+		blksout(&idblk[0], cnt, ino);
 		return;
 	}
-	lvl--;
+	level--;
 	for (i = 0; i < NINDIR(sblock); i++) {
-		dmpindir(idblk[i], lvl, size);
+		dmpindir(ino, idblk[i], level, size);
 		if (*size <= 0)
 			return;
 	}
 }
 
+/*
+ * Collect up the data into tape record sized buffers and output them.
+ */
 void
-blksout(blkp, frags)
+blksout(blkp, frags, ino)
 	daddr_t *blkp;
 	int frags;
+	ino_t ino;
 {
 	register daddr_t *bp;
 	int i, j, count, blks, tbperdb;
@@ -260,124 +341,102 @@ blksout(blkp, frags)
 			else
 				spcl.c_addr[j - i] = 0;
 		spcl.c_count = count - i;
-		spclrec();
+		writeheader(ino);
 		bp = &blkp[i / tbperdb];
 		for (j = i; j < count; j += tbperdb, bp++)
 			if (*bp != 0)
 				if (j + tbperdb <= count)
-					dmpblk(*bp, sblock->fs_bsize);
+					dumpblock(*bp, sblock->fs_bsize);
 				else
-					dmpblk(*bp, (count - j) * TP_BSIZE);
+					dumpblock(*bp, (count - j) * TP_BSIZE);
 		spcl.c_type = TS_ADDR;
 	}
 }
 
+/*
+ * Dump a map to the tape.
+ */
 void
-bitmap(map, typ)
+dumpmap(map, type, ino)
 	char *map;
-	int typ;
+	int type;
+	ino_t ino;
 {
-	register i;
+	register int i;
 	char *cp;
 
-	spcl.c_type = typ;
-	spcl.c_count = howmany(msiz * sizeof(map[0]), TP_BSIZE);
-	spclrec();
+	spcl.c_type = type;
+	spcl.c_count = howmany(mapsize * sizeof(char), TP_BSIZE);
+	writeheader(ino);
 	for (i = 0, cp = map; i < spcl.c_count; i++, cp += TP_BSIZE)
-		taprec(cp);
+		writerec(cp);
 }
 
+/*
+ * Write a header record to the dump tape.
+ */
 void
-spclrec()
+writeheader(ino)
+	ino_t ino;
 {
-	register int s, i, *ip;
+	register long sum, cnt, *lp;
 
 	spcl.c_inumber = ino;
 	spcl.c_magic = NFS_MAGIC;
 	spcl.c_checksum = 0;
-	ip = (int *)&spcl;
-	s = 0;
-	i = sizeof(union u_spcl) / (4*sizeof(int));
-	while (--i >= 0) {
-		s += *ip++; s += *ip++;
-		s += *ip++; s += *ip++;
+	lp = (long *)&spcl;
+	sum = 0;
+	cnt = sizeof(union u_spcl) / (4 * sizeof(long));
+	while (--cnt >= 0) {
+		sum += *lp++;
+		sum += *lp++;
+		sum += *lp++;
+		sum += *lp++;
 	}
-	spcl.c_checksum = CHECKSUM - s;
-	taprec((char *)&spcl);
-}
-
-void
-dsrch(d, size, filesize)
-	daddr_t d;
-	int size, filesize;
-{
-	register struct direct *dp;
-	long loc;
-	char dblk[MAXBSIZE];
-
-	if(dadded)
-		return;
-	if (filesize > size)
-		filesize = size;
-	bread(fsbtodb(sblock, d), dblk, filesize);
-	for (loc = 0; loc < filesize; ) {
-		dp = (struct direct *)(dblk + loc);
-		if (dp->d_reclen == 0) {
-			msg("corrupted directory, inumber %d\n", ino);
-			break;
-		}
-		loc += dp->d_reclen;
-		if(dp->d_ino == 0)
-			continue;
-		if(dp->d_name[0] == '.') {
-			if(dp->d_name[1] == '\0')
-				continue;
-			if(dp->d_name[1] == '.' && dp->d_name[2] == '\0')
-				continue;
-		}
-		if(BIT(dp->d_ino, nodmap)) {
-			dadded++;
-			return;
-		}
-		if(BIT(dp->d_ino, dirmap))
-			nsubdir++;
-	}
+	spcl.c_checksum = CHECKSUM - sum;
+	writerec((char *)&spcl);
 }
 
 struct dinode *
-getino(ino)
-	daddr_t ino;
+getino(inum)
+	ino_t inum;
 {
 	static daddr_t minino, maxino;
-	static struct dinode itab[MAXINOPB];
+	static struct dinode inoblock[MAXINOPB];
 
-	if (ino >= minino && ino < maxino)
-		return (&itab[ino - minino]);
-	bread(fsbtodb(sblock, itod(sblock, ino)), itab, sblock->fs_bsize);
-	minino = ino - (ino % INOPB(sblock));
+	curino = inum;
+	if (inum >= minino && inum < maxino)
+		return (&inoblock[inum - minino]);
+	bread(fsbtodb(sblock, itod(sblock, inum)), inoblock, sblock->fs_bsize);
+	minino = inum - (inum % INOPB(sblock));
 	maxino = minino + INOPB(sblock);
-	return (&itab[ino - minino]);
+	return (&inoblock[inum - minino]);
 }
 
+/*
+ * Read a chunk of data from the disk.
+ * Try to recover from hard errors by reading in sector sized pieces.
+ * Error recovery is attempted at most BREADEMAX times before seeking
+ * consent from the operator to continue.
+ */
 int	breaderrors = 0;		
 #define	BREADEMAX 32
 
 void
-bread(da, ba, cnt)
-	daddr_t da;
-	char *ba;
-	int	cnt;	
+bread(blkno, buf, size)
+	daddr_t blkno;
+	char *buf;
+	int size;	
 {
-	int n, i;
+	int cnt, i;
 	extern int errno;
 
 loop:
-	if (lseek(fi, (long)(da << dev_bshift), 0) < 0)
+	if (lseek(diskfd, (long)(blkno << dev_bshift), 0) < 0)
 		msg("bread: lseek fails\n");
-	n = read(fi, ba, cnt);
-	if (n == cnt)
+	if ((cnt = read(diskfd, buf, size)) == size)
 		return;
-	if (da + (cnt / dev_bsize) > fsbtodb(sblock, sblock->fs_size)) {
+	if (blkno + (size / dev_bsize) > fsbtodb(sblock, sblock->fs_size)) {
 		/*
 		 * Trying to read the final fragment.
 		 *
@@ -388,11 +447,11 @@ loop:
 		 * we punt and scale back the read only when it gets
 		 * us into trouble. (mkm 9/25/83)
 		 */
-		cnt -= dev_bsize;
+		size -= dev_bsize;
 		goto loop;
 	}
 	msg("read error from %s [block %d]: count=%d, got=%d, errno=%d (%s)\n",
-		disk, da, cnt, n, errno, strerror(errno));
+		disk, blkno, size, cnt, errno, strerror(errno));
 	if (++breaderrors > BREADEMAX) {
 		msg("More than %d block read errors from %d\n",
 			BREADEMAX, disk);
@@ -407,13 +466,12 @@ loop:
 	/*
 	 * Zero buffer, then try to read each sector of buffer separately.
 	 */
-	bzero(ba, cnt);
-	for (i = 0; i < cnt; i += dev_bsize, ba += dev_bsize, da++) {
-		if (lseek(fi, (long)(da << dev_bshift), 0) < 0)
+	bzero(buf, size);
+	for (i = 0; i < size; i += dev_bsize, buf += dev_bsize, blkno++) {
+		if (lseek(diskfd, (long)(blkno << dev_bshift), 0) < 0)
 			msg("bread: lseek2 fails!\n");
-		n = read(fi, ba, dev_bsize);
-		if (n != dev_bsize)
+		if ((cnt = read(diskfd, buf, dev_bsize)) != dev_bsize)
 			msg("    read error from %s [sector %d, errno %d]\n",
-			    disk, da, errno);
+			    disk, blkno, errno);
 	}
 }
