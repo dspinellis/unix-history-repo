@@ -1,4 +1,4 @@
-/*	vd.c	1.22	87/11/12	*/
+/*	vd.c	1.23	88/04/23	*/
 
 #include "dk.h"
 #if NVD > 0
@@ -68,10 +68,11 @@ struct vdsoftc {
  * Per-drive state.
  */
 struct	dksoftc {
-	u_short	dk_state;	/* open fsm */
+	int	dk_state;	/* open fsm */
 #ifndef SECSIZE
 	u_short	dk_bshift;	/* shift for * (DEV_BSIZE / sectorsize) XXX */
 #endif SECSIZE
+	int	dk_wlabel;	/* label sector is currently writable */
 	u_long	dk_copenpart;	/* character units open on this drive */
 	u_long	dk_bopenpart;	/* block units open on this drive */
 	u_long	dk_openpart;	/* all units open on this drive */
@@ -83,7 +84,7 @@ struct	dksoftc {
 /*
  * Drive states.  Used during steps of open/initialization.
  * States < OPEN (> 0) are transient, during an open operation.
- * OPENRAW is used for unabeled disks, to allow format operations.
+ * OPENRAW is used for unlabeled disks, to allow format operations.
  */
 #define	CLOSED		0		/* disk is closed */
 #define	WANTOPEN	1		/* open requested, not started */
@@ -181,7 +182,8 @@ vdprobe(reg, vm)
  * manner.  Instead just probe for the drive and leave
  * the pack label stuff to the attach routine.
  */
-vdslave(vi, addr)
+/* ARGSUSED */
+vdslave(vi, vdaddr)
 	register struct vba_device *vi;
 	struct vddevice *vdaddr;
 {
@@ -206,10 +208,10 @@ vdslave(vi, addr)
 		lp->d_secsize = VD_MAXSECSIZE;
 	else
 		lp->d_secsize = VDDC_SECSIZE;
-	lp->d_nsectors = 72;		/* only used on smd-e */
-	lp->d_ntracks = 24;
+	lp->d_nsectors = 68;		/* only used on smd-e */
+	lp->d_ntracks = 23;
 	lp->d_ncylinders = 842;
-	lp->d_secpercyl = 72*24;
+	lp->d_secpercyl = 68*23;
 
 	/*
 	 * Initialize invariant portion of
@@ -351,6 +353,7 @@ vdclose(dev, flags, fmt)
 			sleep((caddr_t)dk, PZERO-1);
 		splx(s);
 		dk->dk_state = CLOSED;
+		dk->dk_wlabel = 0;
 	}
 	return (0);
 }
@@ -375,17 +378,16 @@ vdinit(dev, flags)
 	lp = &dklabel[unit];
 	vi = vddinfo[unit];
 	if (msg = readdisklabel(dev, vdstrategy, lp)) {
-		if (cold)
+		if (cold) {
 			printf(": %s", msg);
-		else
+			dk->dk_state = CLOSED;
+		} else {
 			log(LOG_ERR, "dk%d: %s\n", unit, msg);
-#ifdef COMPAT_42
-		if (!vdmaptype(vi, lp))
 			dk->dk_state = OPENRAW;
-		else
+		}
+#ifdef COMPAT_42
+		if (vdmaptype(vi, lp))
 			dk->dk_state = OPEN;
-#else
-		dk->dk_state = OPENRAW;
 #endif
 	} else {
 		/*
@@ -457,6 +459,10 @@ vdstrategy(bp)
 	dk = &dksoftc[unit];
 	if (dk->dk_state < OPEN)
 		goto q;
+	if (dk->dk_state != OPEN && (bp->b_flags & B_READ) == 0) {
+		bp->b_error = EROFS;
+		goto bad;
+	}
 	part = vdpart(bp->b_dev);
 	if ((dk->dk_openpart & (1 << part)) == 0) {
 		bp->b_error = ENODEV;
@@ -469,6 +475,14 @@ vdstrategy(bp)
 #else SECSIZE
 	sn = bp->b_blkno;
 #endif SECSIZE
+	if (sn + lp->d_partitions[part].p_offset <= LABELSECTOR &&
+#if LABELSECTOR != 0
+	    sn + lp->d_partitions[part].p_offset + sz > LABELSECTOR &&
+#endif
+	    (bp->b_flags & B_READ) == 0 && dk->dk_wlabel == 0) {
+		bp->b_error = EROFS;
+		goto bad;
+	}
 	if (sn < 0 || sn + sz > maxsz) {
 		if (sn == maxsz) {
 			bp->b_resid = bp->b_bcount;
@@ -838,7 +852,8 @@ vdioctl(dev, cmd, data, flag)
 {
 	register int unit = vdunit(dev);
 	register struct disklabel *lp = &dklabel[unit];
-	int error = 0;
+	register struct dksoftc *dk = &dksoftc[unit];
+	int error = 0, wlab;
 
 	switch (cmd) {
 
@@ -857,15 +872,32 @@ vdioctl(dev, cmd, data, flag)
 			error = EBADF;
 		else
 			error = setdisklabel(lp, (struct disklabel *)data,
-			    dksoftc[unit].dk_openpart);
+			    (dk->dk_state == OPENRAW) ? 0 : dk->dk_openpart);
+		if (error == 0)
+			dk->dk_state = OPEN;
+		break;
+
+	case DIOCWLABEL:
+		if ((flag & FWRITE) == 0)
+			error = EBADF;
+		else
+			dk->dk_wlabel = *(int *)data;
 		break;
 
 	case DIOCWDINFO:
+		/* simulate opening partition 0 so write succeeds */
+		dk->dk_openpart |= (1 << 0);		/* XXX */
+		wlab = dk->dk_wlabel;
+		dk->dk_wlabel = 1;
 		if ((flag & FWRITE) == 0)
 			error = EBADF;
 		else if ((error = setdisklabel(lp, (struct disklabel *)data,
-			    dksoftc[unit].dk_openpart)) == 0)
+		    (dk->dk_state == OPENRAW) ? 0 : dk->dk_openpart)) == 0) {
+			dk->dk_state = OPEN;
 			error = writedisklabel(dev, vdstrategy, lp);
+		}
+		dk->dk_openpart = dk->dk_copenpart | dk->dk_bopenpart;
+		dk->dk_wlabel = wlab;
 		break;
 
 	default:
@@ -918,7 +950,8 @@ vddump(dev)
 	if (unit > NDK || (vi = vddinfo[unit]) == 0 || vi->ui_alive == 0)
 		return (ENXIO);
 	dk = &dksoftc[unit];
-	if (dk->dk_state != OPEN && dk->dk_state != OPENRAW)
+	if (dk->dk_state != OPEN && dk->dk_state != OPENRAW &&
+	    vdinit(vdminor(unit, 0), 0) != 0)
 		return (ENXIO);
 	lp = &dklabel[unit];
 	part = vdpart(dev);
@@ -1192,9 +1225,6 @@ struct	vdst {
 		{305280, 218240}, 	/* fuj0f cyl 477 - 817 */
 		{378240, 145280},	/* fuj0g cyl 591 - 817 */
 		{451200, 72320}		/* fug0h cyl 705 - 817 */
-	},
-	{ 32, 23, 850, 1024, "NEC 800-1024",
-		{0,	 703800},	/* a cyl   0 - 849 */
 	},
 	{ 32, 24, 711, 512, "xfd",
 		{ 0,	 40704 },	/* a cyl   0 - 52 */
