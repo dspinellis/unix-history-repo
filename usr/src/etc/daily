@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)daily	5.16 (Berkeley) %G%
+#	@(#)daily	5.17 (Berkeley) %G%
 #
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin
 host=`hostname`
@@ -69,29 +69,6 @@ mv /var/account/acct.1 /var/account/acct.2
 mv /var/account/acct.0 /var/account/acct.1
 cp /var/account/acct /var/account/acct.0
 sa -s > /dev/null
-
-echo ""
-echo "Backup passwd and group files:"
-if cmp -s $bak/master.passwd.bak /etc/master.passwd; then :; else
-	echo "$host passwd diffs:"
-	diff $bak/master.passwd.bak /etc/master.passwd
-	mv $bak/master.passwd.bak $bak/master.passwd.bak2
-	cp -p /etc/master.passwd $bak/master.passwd.bak
-fi
-if cmp -s $bak/group.bak /etc/group; then :; else
-	mv $bak/group.bak $bak/group.bak2
-	cp -p /etc/group $bak/group.bak
-fi
-if cmp -s $bak/aliases.bak /etc/aliases; then :; else
-	mv $bak/aliases.bak $bak/aliases.bak2
-	cp -p /etc/aliases $bak/aliases.bak
-fi
-if [ -f /etc/Distfile ]; then
-	if cmp -s $bak/Distfile.bak /etc/Distfile; then :; else
-		mv $bak/Distfile.bak $bak/Distfile.bak2
-		cp /etc/Distfile $bak/Distfile.bak
-	fi
-fi
 
 # If ROOTBACKUP is set to 1 in the environment, and
 # if filesystem named /altroot is type ufs, on /dev/* and mounted "xx",
