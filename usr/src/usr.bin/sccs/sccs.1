@@ -63,10 +63,39 @@ rather than as the pseudo-user
 .B sccs.
 The
 .B \-p
-flag defines the path to prepend to
+flag defines the pathname of the directory
+in which
 .SM SCCS
-file names;
-``SCCS/s.'' is the default.
+will be found;
+``SCCS'' is the default.
+.PP
+Certain commands (such as
+.IR admin )
+cannot be run by all users,
+since it would allow anyone to change the authorizations.
+If the file
+.I ADMINFILE
+exists in the
+.SM SCCS
+directory,
+lines of the form
+.sp 0.3
+.in +0.5i
+.B A
+.I uid
+.in
+.sp 0.3
+in this file
+authorize the user with
+the numerical
+user id
+.I uid
+to run protected commands.
+If the file is not present,
+anyone can run all commands.
+This file can be expected to expand
+to contain more information
+in the future.
 .SH EXAMPLES
 .de BX
 .nf
@@ -109,8 +138,8 @@ OBJS = <list of object files>
 .sp 0.4
 $(OBJS): $(SRCS)
 .sp 0.4
-\&.DEFAULT:
-	sccs get $(REL) $<
+$(SRCS):
+	sccs get $(REL) $@
 .EX
 .SH "SEE ALSO"
 admin(SCCS),
