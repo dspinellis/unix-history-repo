@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: cpu.h 1.16 91/03/25$
  *
- *	@(#)cpu.h	7.10 (Berkeley) %G%
+ *	@(#)cpu.h	7.11 (Berkeley) %G%
  */
 
 /*
@@ -24,35 +24,34 @@
  */
 #define	COPY_SIGCODE		/* copy sigcode above user stack in exec */
 
-/*
- * function vs. inline configuration;
- * these are defined to get generic functions
- * rather than inline or machine-dependent implementations
- */
-#define	NEED_MINMAX		/* need {,i,l,ul}{min,max} functions */
-#undef	NEED_FFS		/* don't need ffs function */
-#undef	NEED_BCMP		/* don't need bcmp function */
-#undef	NEED_STRLEN		/* don't need strlen function */
-
 #define	cpu_exec(p)	/* nothing */
 #define	cpu_wait(p)	/* nothing */
 #define cpu_setstack(p, ap) \
 	(p)->p_md.md_regs[SP] = ap
 
 /*
- * Arguments to hardclock, softclock and gatherstats
- * encapsulate the previous machine state in an opaque
- * clockframe; for hp300, use just what the hardware
- * leaves on the stack.
+ * Arguments to hardclock, softclock and gatherstats encapsulate the
+ * previous machine state in an opaque clockframe.  One the hp300, we
+ * use what the hardware pushes on an interrupt (but we pad the sr to
+ * a longword boundary).
  */
-typedef struct intrframe {
-	char	*pc;
-	int	ps;
-} clockframe;
+struct clockframe {
+	u_short	pad;		/* pad to get stack aligned */
+	u_short	sr;		/* sr at time of interrupt */
+	u_long	pc;		/* pc at time of interrupt */
+	u_short	vo;		/* vector offset (4-word frame) */
+};
 
-#define	CLKF_USERMODE(framep)	(((framep)->ps & PSL_S) == 0)
-#define	CLKF_BASEPRI(framep)	(((framep)->ps & PSL_IPL7) == 0)
+#define	CLKF_USERMODE(framep)	(((framep)->sr & PSL_S) == 0)
+#define	CLKF_BASEPRI(framep)	(((framep)->sr & PSL_IPL) == 0)
 #define	CLKF_PC(framep)		((framep)->pc)
+#if 0
+/* We would like to do it this way... */
+#define	CLKF_INTR(framep)	(((framep)->sr & PSL_M) == 0)
+#else
+/* but until we start using PSL_M, we have to do this instead */
+#define	CLKF_INTR(framep)	(0)	/* XXX */
+#endif
 
 
 /*
@@ -62,11 +61,11 @@ typedef struct intrframe {
 #define	need_resched()	{ want_resched++; aston(); }
 
 /*
- * Give a profiling tick to the current process from the softclock
- * interrupt.  On hp300, request an ast to send us through trap(),
- * marking the proc as needing a profiling tick.
+ * Give a profiling tick to the current process when the user profiling
+ * buffer pages are invalid.  On the hp300, request an ast to send us
+ * through trap, marking the proc as needing a profiling tick.
  */
-#define	profile_tick(p, framep)	{ (p)->p_flag |= SOWEUPC; aston(); }
+#define	need_proftick(p)	{ (p)->p_flag |= SOWEUPC; aston(); }
 
 /*
  * Notify the current process (p) that it has a signal pending,
