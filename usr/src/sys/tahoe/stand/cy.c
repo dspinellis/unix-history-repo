@@ -1,4 +1,4 @@
-/*	cy.c	7.4	87/02/17	*/
+/*	cy.c	7.5	87/04/02	*/
 
 /*
  * Cypher tape driver. Stand alone version.
@@ -91,7 +91,7 @@ cyopen(io)
 	uncache(&tpb.tpstatus);
 	if (tpb.tpstatus & CYS_ERR) {
 		printf("Cypher initialization error!\n");
-		cy_print_error(tpb.tpstatus);
+		cy_print_error(tpb.tpcmd, tpb.tpstatus);
 		_stop("");
 	}
 	uncache(&tpb.tpcount);
@@ -132,6 +132,7 @@ cystrategy(io, func)
 	register struct iob *io;
 	register func;
 {
+	register count;
 
 #ifndef NOBLOCK
 	if (func != CY_SFORW && func != CY_REW && io->i_bn != cyblock) {
@@ -141,19 +142,24 @@ cystrategy(io, func)
 	if (func == READ || func == WRITE) {
 		struct iob liob;
 		register struct iob *lio = &liob;
-		register count;
 
 		liob = *io;
 		while (lio->i_cc > 0) {
-			if ((count = cycmd(lio, func)) == 0)
+			if ((count = cycmd(lio, func)) == 0) {
+				printf("cy%d: I/O error bn %d\n",
+				    io->i_unit, io->i_bn);
 				return (-1);
+			}
 			lio->i_cc -= count;
 			lio->i_ma += count;
 		}
 		return (io->i_cc);
 	}
 #endif
-	return (cycmd(io, func));
+	count = cycmd(io, func);
+	if (count == -1)
+		printf("cy%d: I/O error bn %d\n", io->i_unit, io->i_bn);
+	return (count);
 }
 
 cycmd(io, func)
@@ -222,9 +228,9 @@ cycmd(io, func)
 	CY_GO(ctlradr);
 	cywait(20000); 
 	uncache(&tpb.tpstatus); 
-	if (err = (tpb.tpstatus & CYS_ERR) &&
+	if ((err = (tpb.tpstatus & CYS_ERR)) &&
 	    err != CYER_FM && (err != CYER_STROBE || tpb.tpcmd != CY_RCOM)) {
-		cy_print_error(tpb.tpstatus);
+		cy_print_error(tpb.tpcmd, tpb.tpstatus);
 		io->i_error = EIO;
 		return (-1);
 	}
@@ -232,8 +238,8 @@ cycmd(io, func)
 	return ((int)htoms(tpb.tpcount));
 }
 	
-cy_print_error(status)
-	int status;
+cy_print_error(op, status)
+	int op, status;
 {
 	register char *message;
 
@@ -241,7 +247,7 @@ cy_print_error(status)
 		message = cyerror[status & CYS_ERR];
 	else
 		message = "unknown error";
-	printf("cy0: %s, status=%b.\n", message, status, CYS_BITS);
+	printf("cy0: cmd %x %s, status=%b.\n", op, message, status, CYS_BITS);
 }
 
 cywait(timeout)
