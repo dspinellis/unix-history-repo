@@ -1,14 +1,14 @@
 # include "sendmail.h"
 # include <sys/stat.h>
-# include <sys/dir.h>
+# include <ndir.h>
 # include <signal.h>
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.11		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.12		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.11		%G%);
+SCCSID(@(#)queue.c	3.12		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -265,10 +265,10 @@ reordersig()
 
 orderq()
 {
-	struct direct d;
+	register struct direct *d;
 	register WORK *w;
 	register WORK **wp;		/* parent of w */
-	register FILE *f;
+	DIR *f;
 	register int i;
 	WORK wlist[WLSIZE];
 	int wn = 0;
@@ -287,7 +287,7 @@ orderq()
 	}
 
 	/* open the queue directory */
-	f = fopen(QueueDir, "r");
+	f = opendir(QueueDir);
 	if (f == NULL)
 	{
 		syserr("orderq: cannot open %s", QueueDir);
@@ -298,7 +298,7 @@ orderq()
 	**  Read the work directory.
 	*/
 
-	while (wn < WLSIZE && fread((char *) &d, sizeof d, 1, f) == 1)
+	while (wn < WLSIZE && (d = readdir(f)) != NULL)
 	{
 		char cbuf[MAXNAME];
 		char lbuf[MAXNAME];
@@ -306,15 +306,14 @@ orderq()
 		register char *p;
 
 		/* is this an interesting entry? */
-		if (d.d_ino == 0 || d.d_name[0] != 'c')
+		if (d->d_name[0] != 'c')
 			continue;
 
 		/* yes -- find the control file location */
 		strcpy(cbuf, QueueDir);
 		strcat(cbuf, "/");
 		p = &cbuf[strlen(cbuf)];
-		strncpy(p, d.d_name, DIRSIZ);
-		p[DIRSIZ] = '\0';
+		strcpy(p, d->d_name);
 
 		/* open control file */
 		cf = fopen(cbuf, "r");
@@ -340,7 +339,7 @@ orderq()
 		wn++;
 		(void) fclose(cf);
 	}
-	(void) fclose(f);
+	(void) closedir(f);
 
 	/*
 	**  Sort the work directory.
