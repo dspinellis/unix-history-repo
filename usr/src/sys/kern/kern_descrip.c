@@ -1,4 +1,4 @@
-/*	kern_descrip.c	5.3	82/08/03	*/
+/*	kern_descrip.c	5.4	82/08/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -39,8 +39,8 @@ dup()
 	register struct a {
 		int	i;
 	} *uap = (struct a *) u.u_ap;
-	register struct file *fp;
-	register int j;
+	struct file *fp;
+	int j;
 
 	if (uap->i &~ 077) { uap->i &= 077; dup2(); return; }	/* XXX */
 
@@ -50,8 +50,7 @@ dup()
 	j = ufalloc();
 	if (j < 0)
 		return;
-	u.u_ofile[j] = fp;
-	fp->f_count++;
+	dupit(j, fp, u.u_pofile[uap->i] & (RDLOCK|WRLOCK));
 }
 
 dup2()
@@ -72,13 +71,28 @@ dup2()
 	if (uap->i == uap->j)
 		return;
 	if (u.u_ofile[uap->j]) {
-		closef(u.u_ofile[uap->j], 0);
+		closef(u.u_ofile[uap->j], 0, u.u_pofile[uap->j]);
 		if (u.u_error)
 			return;
 		/* u.u_ofile[uap->j] = 0; */
+		/* u.u_pofile[uap->j] = 0; */
 	}
-	u.u_ofile[uap->j] = fp;
+	dupit(uap->j, fp, u.u_pofile[uap->i] & (RDLOCK|WRLOCK));
+}
+
+dupit(fd, fp, lockflags)
+	int fd;
+	register struct file *fp;
+	register int lockflags;
+{
+
+	u.u_ofile[fd] = fp;
+	u.u_pofile[fd] = lockflags;
 	fp->f_count++;
+	if (lockflags&RDLOCK)
+		fp->f_inode->i_rdlockc++;
+	if (lockflags&WRLOCK)
+		fp->f_inode->i_wrlockc++;
 }
 
 close()
@@ -91,9 +105,10 @@ close()
 	fp = getf(uap->i);
 	if (fp == 0)
 		return;
-	u.u_ofile[uap->i] = 0;
-	closef(fp, 0);
+	closef(fp, 0, u.u_pofile[uap->i]);
 	/* WHAT IF u.u_error ? */
+	u.u_ofile[uap->i] = NULL;
+	u.u_pofile[uap->i] = 0;
 }
 
 dtype()
@@ -315,7 +330,6 @@ selwakeup(p, coll)
 	}
 }
 
-
 /*
  * Allocate a user file descriptor.
  */
@@ -398,9 +412,12 @@ getf(f)
  * Call device handler on last close.
  * Nouser indicates that the user isn't available to present
  * errors to.
+ *
+ * Handling locking at this level is RIDICULOUS.
  */
-closef(fp, nouser)
+closef(fp, nouser, flags)
 	register struct file *fp;
+	int nouser, flags;
 {
 	register struct inode *ip;
 	register struct mount *mp;
@@ -427,6 +444,9 @@ closef(fp, nouser)
 	ip = fp->f_inode;
 	dev = (dev_t)ip->i_rdev;
 	mode = ip->i_mode & IFMT;
+	flags &= RDLOCK|WRLOCK;			/* conservative */
+	if (flags)
+		funlocki(ip, flags);
 	ilock(ip);
 	iput(ip);
 	fp->f_count = 0;
@@ -467,80 +487,3 @@ closef(fp, nouser)
 	}
 	(*cfunc)(dev, flag, fp);
 }
-
-#ifdef CAD
-/*
- * chfile -- change all references to the inode named by
- *	     device/inum to the file referred to by fd.
- * Used by init to remove all references to the device.
- */
-chfile()
-{
-	register struct file *fp;
-	register struct inode *from;
-	register struct inode *to;
-	off_t offset;
-	dev_t dev;
-	int rw;
-	struct a {
-		int	device;		/* actually dev_t */
-		int	inum;		/* actually ino_t */
-		int	fd;
-	} *uap;
-
-	if (!suser()) {
-		u.u_error = EPERM;
-		return;
-	}
-	uap = (struct a *) u.u_ap;
-	fp = getf(uap->fd);
-	if (fp == NULL) {
-		u.u_error = EBADF;
-		return;
-	}
-	if (fp->f_type == DTYPE_SOCKET) {
-		u.u_error = EINVAL;
-		return;
-	}
-	for (from = &inode[0]; from < &inode[ninode]; from++)
-		if (from->i_number == (ino_t)uap->inum
-		   && from->i_dev == (dev_t)uap->device)
-			break;
-	if (from >= &inode[ninode]) {
-		u.u_error = ENXIO;
-		return;
-	}
-	offset = fp->f_offset;
-	to = fp->f_inode;
-	from->i_count++;
-	for (fp = &file[0]; fp < &file[nfile]; fp++) {
-		if (fp->f_count > 0 && fp->f_inode == from) {
-			fp->f_inode = to;
-			to->i_count++;
-			fp->f_offset = offset;
-			rw |= fp->f_flag & FWRITE;
-			iput(from);
-		}
-	}
-	/*
-	 * This inode is no longer referenced.
-	 * Switch out to the appropriate close
-	 * routine, if required
-	 */
-	dev = (dev_t)from->i_un.i_rdev;
-	switch(from->i_mode & IFMT) {
-
-	case IFCHR:
-		(*cdevsw[major(dev)].d_close)(dev, rw);
-		break;
-	
-	case IFBLK:
-		(*bdevsw[major(dev)].d_close)(dev, rw);
-		break;
-
-	default:
-		break;
-	}
-	iput(from);
-}
-#endif
