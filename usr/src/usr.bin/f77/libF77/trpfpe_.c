@@ -1,6 +1,10 @@
-/* #define	OLD_BSD		if you're running < 4.2bsd */
 /*
-char	id_trpfpe[] = "@(#)trpfpe_.c	1.3";
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)trpfpe_.c	5.1	%G%
+ */
  *
  *	Fortran floating-point error handler
  *
