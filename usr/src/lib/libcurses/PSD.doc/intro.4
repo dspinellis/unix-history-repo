@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)intro.4	6.4 (Berkeley) %G%
+.\"	@(#)intro.4	6.5 (Berkeley) %G%
 .\"
 .sh 1 "Cursor Movement Optimizations"
 .pp
@@ -20,7 +20,7 @@ It usage is simple:
 simply tell it where you are now and where you want to go.
 For example
 .(l
-mvcur(0\*,0\*,LINES/2\*,COLS/2)
+mvcur(0\*,0\*,LINES/2\*,COLS/2);
 .)l
 .lp
 would move the cursor from the home position (0\*,0)
@@ -34,11 +34,10 @@ routines,
 or you can tell
 .Fn mvcur
 that you are impossibly far away,
-like Cleveland.
 For example,
 to absolutely address the lower left hand corner of the screen
 from anywhere
 just claim that you are in the upper right hand corner:
 .(l
-mvcur(0\*,COLS\-1\*,LINES\-1\*,0)
+mvcur(0\*,COLS\-1\*,LINES\-1\*,0);
 .)l

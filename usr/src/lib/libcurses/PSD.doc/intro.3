@@ -3,17 +3,15 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)intro.3	6.4 (Berkeley) %G%
+.\"	@(#)intro.3	6.5 (Berkeley) %G%
 .\"
 .sh 1 Usage
 .pp
 This is a description of how to actually use the screen package.
-In it, we assume all updating, reading, etc.
+For simplicity, we assume all updating, reading, etc.
 is applied to
-.Vn stdscr .
-All instructions will work on any window,
-with changing the function name and parameters as mentioned above.
-.sh 2 "Starting up"
+.Vn stdscr, although a different window can of course be specified.
+.sh 2 "Initialization"
 .pp
 In order to use the screen package,
 the routines must know about terminal characteristics,
@@ -29,7 +27,7 @@ it can overflow core when attempting to do so.
 On this rather rare occasion,
 .Fn initscr
 returns CURSES_ERR.
-.Fn initscr
+.Fn Initscr
 must
 .bi always
 be called before any of the routines which affect windows are used.
@@ -50,78 +48,74 @@ and
 should be called after
 .Fn initscr .
 .pp
-Now that the screen windows have been allocated,
-you can set them up for the run.
-If you want to, say, allow the window to scroll,
-use
+After the initial window allocation done by 
+.Fn initscr ,
+specific window characteristics can be set.
+Scrolling can be enabled by calling
 .Fn scrollok .
 If you want the cursor to be left after the last change, use
 .Fn leaveok .
 If this isn't done,
 .Fn refresh
 will move the cursor to the window's current \*y after updating it.
-New windows of your own can be created, too, by using the functions
+Additional windows can be created by using the functions
 .Fn newwin
 and
 .Fn subwin .
-.Fn delwin
-will allow you to get rid of old windows.
-If you wish to change the official size of the terminal by hand,
-just set the variables
+.Fn Delwin
+allows you to delete an exisiting window.
+The variables
 .Vn LINES
 and
 .Vn COLS
-to be what you want,
-and then call
-.Fn initscr .
-This is best done before,
-but can be done either before or after,
-the first call to
+control the size of the terminal.  They are initially implicitly set by 
 .Fn initscr ,
-as it will always delete any existing
+but can be altered explicitly by the user followed by a call to 
+.Fn initscr .
+Note that any call to 
+Fn initscr ,
+will always delete any existing
 .Vn stdscr
 and/or
 .Vn curscr
-before creating new ones.
+before creating new ones so this change is best done before the initial call to
+.Fn initscr .
 .pp
-.sh 2 "The Nitty-Gritty"
-.sh 3 Output
+.sh 2 "Output"
 .pp
-Now that we have set things up,
-we will want to actually update the terminal.
 The basic functions
 used to change what will go on a window are
 .Fn addch
 and
 .Fn move .
-.Fn addch
+.Fn Addch
 adds a character at the current \*y,
 returning CURSES_ERR if it would cause the window to illegally scroll,
 .i i.e. ,
 printing a character in the lower right-hand corner
 of a terminal which automatically scrolls
 if scrolling is not allowed.
-.Fn move
+.Fn Move
 changes the current \*y to whatever you want them to be.
-It returns CURSES_ERR if you try to move off the window when scrolling is not allowed.
+It returns CURSES_ERR if you try to move off the window.
 As mentioned above, you can combine the two into
 .Fn mvaddch
-to do both things in one fell swoop.
+to do both things in one call.
 .pp
-The other output functions,
-such as
+The other output functions 
+(such as
 .Fn addstr
 and
-.Fn printw ,
+.Fn printw )
 all call
 .Fn addch
 to add characters to the window.
 .pp
-After you have put on the window what you want there,
-when you want the portion of the terminal covered by the window
-to be made to look like it,
-you must call
+After a change has been made to the window,
+you must call 
 .Fn refresh .
+when you want the portion of the terminal covered by the window
+to reflect the change.
 In order to optimize finding changes,
 .Fn refresh
 assumes that any part of the window not changed
@@ -140,18 +134,17 @@ and
 are provided to make it look like a desired part of window has been changed,
 thus forcing
 .Fn refresh
-check that whole subsection of the terminal for changes.
+to check that whole subsection of the terminal for changes.
 .pp
 If you call
 .Fn wrefresh
 with
 .Vn curscr ,
-it will make the screen look like
-.Vn curscr
-thinks it looks like.
+it will make the screen look like the image of 
+.Vn curscr .
 This is useful for implementing a command
-which would redraw the screen in case it get messed up.
-.sh 3 Input
+which would redraw the screen in case it got messed up.
+.sh 2 Input
 .pp
 Input is essentially a mirror image of output.
 The complementary function to
@@ -170,10 +163,10 @@ If it is not,
 .Fn getch
 sets it to be cbreak,
 and then reads in the character.
-.sh 2 "Finishing up"
+.sh 2 "Termination"
 .pp
-In order to do certain optimizations,
-and,
+In order to perform certain optimizations,
+and, 
 on some terminals,
 to work at all,
 some things must be done
@@ -192,7 +185,7 @@ It restores tty modes to what they were
 when
 .Fn initscr
 was first called.
-The terminal state module use the variable 
+The terminal state module uses the variable 
 .Vn origtermio
 to save the original terminal state which is then restored upon a call to 
 .Fn endwin .
@@ -204,5 +197,5 @@ should be called before exiting.  Note however, that
 should always be called 
 .b before
 the final calls to
-.Fn delwin 
+.Fn delwin ,
 which free the storage of the windows.

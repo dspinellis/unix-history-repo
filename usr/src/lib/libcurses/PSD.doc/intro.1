@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)intro.1	6.4 (Berkeley) %G%
+.\"	@(#)intro.1	6.5 (Berkeley) %G%
 .\"
 .bp
 .sh 1 Overview
@@ -15,46 +15,33 @@ The purpose of this package is to allow the C programmer
 to do the most common type of terminal dependent functions,
 those of movement optimization and optimal screen updating,
 without doing any of the dirty work,
-and (hopefully) with nearly as much ease as is necessary to simply print
+and with nearly as much ease as is necessary to simply print
 or read things.
-.pp
-The package is split into three parts:
-(1) Screen updating;
-(2) Screen updating with user input;
-and
-(3) Cursor motion optimization.
-.pp
-It is possible to use the motion optimization
-without using either of the other two,
-and screen updating and input can be done
-without any programmer knowledge of the motion optimization,
-or indeed the \*(et \*(db itself.
 .sh 2 "Terminology"
 .pp
-In this document,
-the following terminology is kept to with reasonable consistency:
+In this document, the following terminology is used:
 .de Ip
 .sp
 .in 5n
 .ti 0n
 .bi "\\$1" :
 ..
-.Ip window
+.b window
 An internal representation
 containing an image of what a section of the terminal screen may look like
 at some point in time.
 This subsection can either encompass the entire terminal screen,
 or any smaller portion down to a single character within that screen.
-.Ip "terminal"
+.b "terminal"
 Sometimes called
-.bi terminal
-.bi screen .
+.b terminal
+.b screen .
 The package's idea of what the terminal's screen currently looks like,
 .i i.e. ,
 what the user sees now.
 This is a special
 .i screen :
-.Ip screen
+.b screen
 This is a subset of windows which are as large as the terminal screen,
 .i i.e. ,
 they start at the upper left hand corner
@@ -63,7 +50,7 @@ One of these,
 .Vn stdscr ,
 is automatically provided for the programmer.
 .rm Ip
-.sh 2 "Compiling Things"
+.sh 2 "Compiling Applications"
 .pp
 In order to use the library,
 it is necessary to have certain types and variables defined.
@@ -72,24 +59,7 @@ Therefore, the programmer must have a line:
 .b "#include <curses.h>"
 .)l
 at the top of the program source.
-The header file
-.b <curses.h>
-needs to include
-.b <sgtty.h> ,
-so the one should not do so oneself\**.
-.(f
-\**
-The screen package also uses the Standard I/O library,
-so
-.b <curses.h>
-includes
-.b <stdio.h> .
-It is redundant
-(but harmless)
-for the programmer to do it, too.
-.)f
-Also,
-compilations should have the following form:
+Compilations should have the following form:
 .(l
 .ie t \fBcc\fR [ \fIflags\fR ] file ... \fB\-lcurses \-ltermcap\fR
 .el \fIcc\fR [ flags ] file ... \fI\-lcurses \-ltermcap\fR
@@ -140,7 +110,7 @@ the routine
 if the window is not
 .Vn stdscr )
 is called.
-.Fn refresh
+.Fn Refresh
 makes the terminal,
 in the area covered by the window,
 look like that window.
@@ -160,18 +130,18 @@ without regard to motion efficiency.
 Then, at will,
 the programmer can effectively say
 .q "make it look like this" ,
-and let the package worry about the best way to do this.
+and the package will execute the changes in an optimal way.
 .sh 2 "Naming Conventions"
 .pp
 As hinted above,
 the routines can use several windows,
-but two are automatically given:
+but two are always available:
 .Vn curscr ,
-which knows what the terminal looks like,
+which is the image of what the terminal looks like at present, 
 and
 .Vn stdscr ,
-which is what the programmer wants the terminal to look like next.
-The user should never really access
+which is the image of what the programmer wants the terminal to look like next.
+The user should not access
 .Vn curscr
 directly.
 Changes should be made to
@@ -204,9 +174,8 @@ Actually,
 is really a
 .q #define
 macro with arguments,
-as are most of the "functions" which deal with
-.Vn stdscr
-as a default.
+as are most of the "functions" which act upon
+.Vn stdscr .
 .)f
 This convention of prepending function names with a
 .Bq w
@@ -225,10 +194,10 @@ and
 are provided.
 However,
 it is often desirable to first move and then perform some I/O operation.
-In order to avoid clumsyness,
+In order to avoid clumsiness,
 most I/O routines can be preceded by the prefix
 .Bq mv
-and the desired \*y then can be added to the arguments to the function.
+and the desired \*y can then be added to the arguments to the function.
 For example,
 the calls
 .(l
@@ -251,5 +220,4 @@ mvwaddch(win\*,y\*,x\*,ch);
 Note that the window description pointer
 .Vn win ) (
 comes before the added \*y.
-If such pointers are need,
-they are always the first parameters passed.
+If a window pointer is needed, it is always the first parameter passed.
