@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.40 (Berkeley) %G%
+		@(#)README	8.41 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -918,6 +918,42 @@ DOTTED_USER(name)
 	defines three dotted users.
 
 
++----------------+
+| SECURITY NOTES |
++----------------+
+
+A lot of sendmail security comes down to you.  Sendmail 8 is much
+more careful about checking for security problems than previous
+versions, but there are some things that you still need to watch
+for.  In particular:
+
+* Make sure the aliases file isn't writable except by trusted
+  system personnel.  This includes both the text and database
+  version.
+
+* Make sure that other files that sendmail reads, such as the
+  mailertable, is only writable by trusted system personnel.
+
+* The queue directory should not be world writable PARTICULARLY
+  if your system allows "file giveaways" (that is, if a non-root
+  user can chown any file they own to any other user).
+
+* If your system allows file giveaways, DO NOT create a publically
+  writable directory for forward files.  This will allow anyone
+  to steal anyone else's e-mail.  Instead, create a script that
+  copies the .forward file from users' home directories once a
+  night (if you want the non-NFS-mounted forward directory).
+
+* If your system allows file giveaways, you'll find that
+  sendmail is much less trusting of :include: files -- in
+  particular, you'll have to have /SENDMAIL/ANY/SHELL/ in
+  /etc/shells before they will be trusted (that is, before
+  files and programs listed in them will be honored).
+
+In general, file giveaways are a mistake -- if you can turn them
+off I recommend you do so.
+
+
 +------------------+
 | FlexFAX SOFTWARE |
 +------------------+
@@ -1118,7 +1154,8 @@ confMIME_FORMAT_ERRORS	True		Oj *	Send error messages as MIME-
 						RFC 1344.
 confFORWARD_PATH	(undefined)	OJ	The colon-separated list of
 						places to search for .forward
-						files.
+						files.  N.B.: see the Security
+						Notes section.
 confMCI_CACHE_SIZE	2		Ok	Size of open connection cache.
 confMCI_CACHE_TIMEOUT	5m		OK	Open connection cache timeout.
 confUSE_ERRORS_TO	False		Ol *	Use the Errors-To: header to
