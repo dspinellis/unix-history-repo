@@ -1,3 +1,9 @@
+
+/*
+ *	$Source: /a/staff/kfall/mit/rlogin/RCS/rlogin.c,v $
+ *	$Header: /a/staff/kfall/mit/rlogin/RCS/rlogin.c,v 5.2 89/07/26 12:11:21 kfall Exp Locker: kfall $
+ */
+
 /*
  * Copyright (c) 1983 The Regents of the University of California.
  * All rights reserved.
@@ -48,12 +54,14 @@ static char sccsid[] = "@(#)rlogin.c	5.12 (Berkeley) 9/19/88";
 #include <setjmp.h>
 
 #ifdef	KERBEROS
-#include <kerberos/krb.h>
+#include <krb.h>
 int		encrypt = 0;
-char		krb_realm[REALM_SZ];
+char		dst_realm_buf[REALM_SZ];
+char		*dest_realm = NULL;
 CREDENTIALS	cred;
 Key_schedule	schedule;
 int		use_kerberos = 1;
+extern char	*krb_realmofhost();
 #endif	/* KERBEROS */
 
 /* concession to sun */
@@ -167,7 +175,8 @@ another:
 			fprintf(stderr, "-k option requires an argument\n");
 			exit(1);
 		}
-		strncpy(krb_realm, *argv, REALM_SZ);
+		dest_realm = dst_realm_buf;
+		strncpy(dest_realm, *argv, REALM_SZ);
 		argv++, argc--;
 		goto another;
 	}
@@ -178,7 +187,8 @@ another:
 		goto usage;
 	if (argc > 0)
 		goto usage;
-	pwd = getpwuid(getuid());
+	uid = getuid();
+	pwd = getpwuid(uid);
 	if (pwd == 0) {
 		fprintf(stderr, "Who are you?\n");
 		exit(1);
@@ -210,7 +220,6 @@ another:
 	if (options & SO_DEBUG &&
 	    setsockopt(rem, SOL_SOCKET, SO_DEBUG, &on, sizeof (on)) < 0)
 		perror("rlogin: setsockopt (SO_DEBUG)");
-	uid = getuid();
 	if (setuid(uid) < 0) {
 		perror("rlogin: setuid");
 		exit(1);
