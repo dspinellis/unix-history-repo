@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	5.3 (Berkeley) %G%
+ *	@(#)pathnames.h	5.4 (Berkeley) %G%
  */
 
-#define	_PATH_SCRIPTS	"/usr/libdata/adb"
+#define	_PATH_SCRIPTS	"/usr/old/libdata/adb"
