@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	8.2 (Berkeley) %G%
+#	@(#)Makefile.inc	8.3 (Berkeley) %G%
 
 # machine-independent gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen
@@ -89,3 +89,4 @@ MLINKS+=tcsetattr.3 tcgetattr.3 tcsetattr.3 cfsetospeed.3 \
 	tcsetattr.3 cfmakeraw.3
 MLINKS+=ttyname.3 isatty.3 ttyname.3 ttyslot.3
 MLINKS+=tzset.3 tzsetwall.3
+MLINKS+=vis.3 strvis.3 vis.3 strvisx.3
