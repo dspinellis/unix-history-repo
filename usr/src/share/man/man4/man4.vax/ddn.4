@@ -1,4 +1,19 @@
-.\"	@(#)ddn.4	6.2 (Berkeley) %G%
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)ddn.4	6.3 (Berkeley) %G%
 .\"
 .TH DDN 4 ""
 .UC 6
@@ -14,9 +29,7 @@ the ACC ACP625 X.25 board.  It is normally used for connecting to
 the Defense Data Network (DDN).  The controller itself is not accessible
 to users, but instead provides a network interface for the
 Internet Protocol described in
-.IR ip (4P).
-.SH SEE ALSO
-intro(4N), ip(4P)
+.IR ip (4).
 .SH DIAGNOSTICS
 .BR "ddn%d: not alive" .
 The initialization routine was entered even though the device
@@ -55,3 +68,5 @@ ACP625.
 .PP
 Any other error message from ddn%d: indicates a serious error
 detected by either the driver or the ACP625 firmware.
+.SH SEE ALSO
+netintro(4), ip(4)
