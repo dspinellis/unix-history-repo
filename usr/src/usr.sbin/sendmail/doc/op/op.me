@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.23 (Berkeley) %G%
+.\"	@(#)op.me	6.24 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.23
+Version 6.24
 .sp
-For Sendmail Version 6.36
+For Sendmail Version 6.37
 .)l
 .sp 2
 .pp
@@ -2514,7 +2514,7 @@ For example, on our system these definitions are:
 .(b
 De$j Sendmail $v/$Z ready at $b
 DnMAILER-DAEMON
-DlFrom $?<$<$|$g$.  $d
+DlFrom $g  $d
 Do.:%@!^/[]
 Dq$?x$x <$g>$|$g$.
 Dj$w
@@ -2611,13 +2611,6 @@ and the
 .b $g
 macro will be
 .q eric@vangogh.CS.Berkeley.EDU.
-.pp
-The
-.b $<
-macro is identical to the
-.b $g
-macro except that it uses the envelope sender
-instead of the From: address in the body of the message.
 .pp
 The
 .b $x
@@ -5259,8 +5252,10 @@ have been fixed.
 Since the From: line is passed in separately from the envelope sender,
 these have both been made visible;
 the
-.b $<
-macro gives access to the envelope sender information.
+.b $g
+macro is set to the envelope sender during processing
+of mailer argument vectors
+and the header sender during processing of headers.
 .pp
 It is also possible to specify separate per-mailer
 envelope and header processing.
@@ -5797,7 +5792,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.23
+.\"Version 6.24
 .\".ce 0
 .pn 2
 .bp
