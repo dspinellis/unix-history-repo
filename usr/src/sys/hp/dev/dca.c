@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dca.c	7.8 (Berkeley) %G%
+ *	@(#)dca.c	7.9 (Berkeley) %G%
  */
 
 #include "dca.h"
@@ -16,7 +16,7 @@
 #include "sys/systm.h"
 #include "sys/ioctl.h"
 #include "sys/tty.h"
-#include "sys/user.h"
+#include "sys/proc.h"
 #include "sys/conf.h"
 #include "sys/file.h"
 #include "sys/uio.h"
@@ -25,7 +25,7 @@
 
 #include "device.h"
 #include "dcareg.h"
-#include "../include/cpu.h"
+#include "machine/cpu.h"
 #include "../hp300/isr.h"
 
 int	dcaprobe();
@@ -37,8 +37,14 @@ int	dcastart(), dcaparam(), dcaintr();
 int	dcasoftCAR;
 int	dca_active;
 int	ndca = NDCA;
+#ifdef DCACONSOLE
+int	dcaconsole = DCACONSOLE;
+#else
 int	dcaconsole = -1;
+#endif
+int	dcaconsinit;
 int	dcadefaultrate = TTYDEF_SPEED;
+int	dcamajor;
 struct	dcadevice *dca_addr[NDCA];
 struct	tty dca_tty[NDCA];
 struct	isr dcaisr[NDCA];
@@ -65,6 +71,8 @@ struct speedtab dcaspeedtab[] = {
 
 extern	struct tty *constty;
 #ifdef KGDB
+#include "machine/remote-sl.h"
+
 extern int kgdb_dev;
 extern int kgdb_rate;
 extern int kgdb_debug_init;
@@ -99,17 +107,18 @@ dcaprobe(hd)
 	dcasoftCAR = hd->hp_flags;
 	isrlink(&dcaisr[unit]);
 #ifdef KGDB
-	if (kgdb_dev == makedev(1, unit)) {
+	if (kgdb_dev == makedev(dcamajor, unit)) {
 		if (dcaconsole == unit)
 			kgdb_dev = -1;	/* can't debug over console port */
 		else {
-			(void) dcainit(unit);
-			dcaconsole = -2; /* XXX */
+			(void) dcainit(unit, kgdb_rate);
 			if (kgdb_debug_init) {
-				printf("dca%d: kgdb waiting...", unit);
-				/* trap into kgdb */
-				asm("trap #15;");
-				printf("connected.\n");
+				/*
+				 * Print prefix of device name,
+				 * let kgdb_connect print the rest.
+				 */
+				printf("dca%d: ", unit);
+				kgdb_connect(1);
 			} else
 				printf("dca%d: kgdb enabled\n", unit);
 		}
@@ -117,18 +126,25 @@ dcaprobe(hd)
 #endif
 	dca->dca_ic = IC_IE;
 	/*
-	 * Need to reset baud rate, etc. of next print so reset dcaconsole.
-	 * Also make sure console is always "hardwired"
+	 * Need to reset baud rate, etc. of next print so reset dcaconsinit.
+	 * Also make sure console is always "hardwired."
 	 */
 	if (unit == dcaconsole) {
-		dcaconsole = -1;
+		dcaconsinit = 0;
 		dcasoftCAR |= (1 << unit);
 	}
 	return (1);
 }
 
-dcaopen(dev, flag)
+/* ARGSUSED */
+#ifdef __STDC__
+dcaopen(dev_t dev, int flag, int mode, struct proc *p)
+#else
+dcaopen(dev, flag, mode, p)
 	dev_t dev;
+	int flag, mode;
+	struct proc *p;
+#endif
 {
 	register struct tty *tp;
 	register int unit;
@@ -144,14 +160,16 @@ dcaopen(dev, flag)
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		tp->t_state |= TS_WOPEN;
 		ttychars(tp);
-		tp->t_iflag = TTYDEF_IFLAG;
-		tp->t_oflag = TTYDEF_OFLAG;
-		tp->t_cflag = TTYDEF_CFLAG;
-		tp->t_lflag = TTYDEF_LFLAG;
-		tp->t_ispeed = tp->t_ospeed = dcadefaultrate;
+		if (tp->t_ispeed == 0) {
+			tp->t_iflag = TTYDEF_IFLAG;
+			tp->t_oflag = TTYDEF_OFLAG;
+			tp->t_cflag = TTYDEF_CFLAG;
+			tp->t_lflag = TTYDEF_LFLAG;
+			tp->t_ispeed = tp->t_ospeed = dcadefaultrate;
+		}
 		dcaparam(tp, &tp->t_termios);
 		ttsetwater(tp);
-	} else if (tp->t_state&TS_XCLUDE && u.u_uid != 0)
+	} else if (tp->t_state&TS_XCLUDE && p->p_ucred->cr_uid != 0)
 		return (EBUSY);
 	(void) dcamctl(dev, MCR_DTR | MCR_RTS, DMSET);
 	if ((dcasoftCAR & (1 << unit)) || (dcamctl(dev, 0, DMGET) & MSR_DCD))
@@ -185,12 +203,12 @@ dcaclose(dev, flag)
 	dca->dca_cfcr &= ~CFCR_SBREAK;
 #ifdef KGDB
 	/* do not disable interrupts if debugging */
-	if (kgdb_dev != makedev(1, unit))
+	if (dev != kgdb_dev)
 #endif
 	dca->dca_ier = 0;
-	if (tp->t_cflag&HUPCL || tp->t_state&TS_WOPEN || 
-	    (tp->t_state&TS_ISOPEN) == 0)
-		(void) dcamctl(dev, 0, DMSET);
+	(void) dcamctl(dev, 0, DMSET);
+	if (tp->t_state & TS_HUPCLS)
+		(*linesw[tp->t_line].l_modem)(tp, 0);
 	ttyclose(tp);
 	return(0);
 }
@@ -243,12 +261,9 @@ dcaintr(unit)
 			code = dca->dca_data;
 			if ((tp->t_state & TS_ISOPEN) == 0) {
 #ifdef KGDB
-				if (kgdb_dev == makedev(1, unit) &&
-				    code == '!') {
-					printf("kgdb trap from dca%d\n", unit);
-					/* trap into kgdb */
-					asm("trap #15;");
-				}
+				if (kgdb_dev == makedev(dcamajor, unit) &&
+				    code == FRAME_END)
+					kgdb_connect(0); /* trap into kgdb */
 #endif
 			} else
 				(*linesw[tp->t_line].l_rint)(code, tp);
@@ -291,11 +306,8 @@ dcaeint(unit, dca)
 #ifdef KGDB
 		/* we don't care about parity errors */
 		if (((stat & (LSR_BI|LSR_FE|LSR_PE)) == LSR_PE) &&
-		    kgdb_dev == makedev(1, unit) && c == '!') {
-			printf("kgdb trap from dca%d\n", unit);
-			/* trap into kgdb */
-			asm("trap #15;");
-		}
+		    kgdb_dev == makedev(dcamajor, unit) && c == FRAME_END)
+			kgdb_connect(0); /* trap into kgdb */
 #endif
 		return;
 	}
@@ -530,7 +542,11 @@ dcacnprobe(cp)
 	struct consdev *cp;
 {
 	int unit, i;
-	extern int dcaopen();
+
+	/* locate the major number */
+	for (dcamajor = 0; dcamajor < nchrdev; dcamajor++)
+		if (cdevsw[dcamajor].d_open == dcaopen)
+			break;
 
 	/* XXX: ick */
 	unit = CONUNIT;
@@ -542,13 +558,8 @@ dcacnprobe(cp)
 		return;
 	}
 
-	/* locate the major number */
-	for (i = 0; i < nchrdev; i++)
-		if (cdevsw[i].d_open == dcaopen)
-			break;
-
 	/* initialize required fields */
-	cp->cn_dev = makedev(i, unit);
+	cp->cn_dev = makedev(dcamajor, unit);
 	cp->cn_tp = &dca_tty[unit];
 	switch (dca_addr[unit]->dca_irid) {
 	case DCAID0:
@@ -563,6 +574,13 @@ dcacnprobe(cp)
 		cp->cn_pri = CN_DEAD;
 		break;
 	}
+	/*
+	 * If dcmconsole is initialized, raise our priority.
+	 */
+	if (dcaconsole == unit)
+		cp->cn_pri = CN_REMOTE;
+	if (major(kgdb_dev) == 1)			/* XXX */
+		kgdb_dev = makedev(dcamajor, minor(kgdb_dev));
 }
 
 dcacninit(cp)
@@ -570,15 +588,16 @@ dcacninit(cp)
 {
 	int unit = UNIT(cp->cn_dev);
 
-	dcainit(unit);
+	dcainit(unit, dcadefaultrate);
 	dcaconsole = unit;
+	dcaconsinit = 1;
 }
 
-dcainit(unit)
-	int unit;
+dcainit(unit, rate)
+	int unit, rate;
 {
 	register struct dcadevice *dca;
-	int s, rate;
+	int s;
 	short stat;
 
 #ifdef lint
@@ -590,7 +609,7 @@ dcainit(unit)
 	DELAY(100);
 	dca->dca_ic = IC_IE;
 	dca->dca_cfcr = CFCR_DLAB;
-	rate = ttspeedtab(dcadefaultrate, dcaspeedtab);
+	rate = ttspeedtab(rate, dcaspeedtab);
 	dca->dca_data = rate & 0xFF;
 	dca->dca_ier = rate >> 8;
 	dca->dca_cfcr = CFCR_8BITS;
@@ -632,9 +651,12 @@ dcacnputc(dev, c)
 #ifdef lint
 	stat = dev; if (stat) return;
 #endif
-	if (dcaconsole == -1) {
-		(void) dcainit(UNIT(dev));
-		dcaconsole = UNIT(dev);
+#ifdef KGDB
+	if (dev != kgdb_dev)
+#endif
+	if (dcaconsinit == 0) {
+		(void) dcainit(UNIT(dev), dcadefaultrate);
+		dcaconsinit = 1;
 	}
 	/* wait for any pending transmission to finish */
 	timo = 50000;

@@ -11,13 +11,13 @@
  *
  * from: $Hdr: dcm.c 1.1 90/07/09$
  *
- *	@(#)dcm.c	7.10 (Berkeley) %G%
+ *	@(#)dcm.c	7.11 (Berkeley) %G%
  */
 
 /*
  * TODO:
  *	Timeouts
- *	Test console/kgdb support.
+ *	Test console support.
  */
 
 #include "dcm.h"
@@ -29,7 +29,7 @@
 #include "sys/systm.h"
 #include "sys/ioctl.h"
 #include "sys/tty.h"
-#include "sys/user.h"
+#include "sys/proc.h"
 #include "sys/conf.h"
 #include "sys/file.h"
 #include "sys/uio.h"
@@ -39,7 +39,7 @@
 
 #include "device.h"
 #include "dcmreg.h"
-#include "../include/cpu.h"
+#include "machine/cpu.h"
 #include "../hp300/isr.h"
 
 #ifndef DEFAULT_BAUD_RATE
@@ -107,15 +107,23 @@ struct	dcmischeme {
 /*
  * Console support
  */
+#ifdef DCMCONSOLE
+int	dcmconsole = DCMCONSOLE;
+#else
 int	dcmconsole = -1;
+#endif
+int	dcmconsinit;
 int	dcmdefaultrate = DEFAULT_BAUD_RATE;
 int	dcmconbrdbusy = 0;
+int	dcmmajor;
 extern	struct tty *constty;
 
 #ifdef KGDB
 /*
  * Kernel GDB support
  */
+#include "machine/remote-sl.h"
+
 extern int kgdb_dev;
 extern int kgdb_rate;
 extern int kgdb_debug_init;
@@ -214,21 +222,22 @@ dcmprobe(hd)
 	dcmisr[brd].isr_intr = dcmintr;
 	isrlink(&dcmisr[brd]);
 #ifdef KGDB
-	if (major(kgdb_dev) == 2 && BOARD(kgdb_dev) == brd) {
+	if (major(kgdb_dev) == dcmmajor && BOARD(kgdb_dev) == brd) {
 		if (dcmconsole == UNIT(kgdb_dev))
 			kgdb_dev = -1;	/* can't debug over console port */
+		/*
+		 * The following could potentially be replaced
+		 * by the corresponding code in dcmcnprobe.
+		 */
 		else {
 			(void) dcminit(kgdb_dev, kgdb_rate);
 			if (kgdb_debug_init) {
-				printf("dcm%d: kgdb waiting...",
-				       UNIT(kgdb_dev));
-				/* trap into kgdb */
-				asm("trap #15;");
-				printf("connected.\n");
+				printf("dcm%d: ", UNIT(kgdb_dev));
+				kgdb_connect(1);
 			} else
-				printf("dcm%d: kgdb enabled\n",
-				       UNIT(kgdb_dev));
+				printf("dcm%d: kgdb enabled\n", UNIT(kgdb_dev));
 		}
+		/* end could be replaced */
 	}
 #endif
 	if (dcmistype == DIS_TIMER)
@@ -251,14 +260,21 @@ dcmprobe(hd)
 	 * Also make sure console is always "hardwired"
 	 */
 	if (isconsole) {
-		dcmconsole = -1;
+		dcmconsinit = 0;
 		dcmsoftCAR[brd] |= (1 << PORT(dcmconsole));
 	}
 	return (1);
 }
 
-dcmopen(dev, flag)
+/* ARGSUSED */
+#ifdef __STDC__
+dcmopen(dev_t dev, int flag, int mode, struct proc *p)
+#else
+dcmopen(dev, flag, mode, p)
 	dev_t dev;
+	int flag, mode;
+	struct proc *p;
+#endif
 {
 	register struct tty *tp;
 	register int unit, brd;
@@ -268,10 +284,6 @@ dcmopen(dev, flag)
 	brd = BOARD(unit);
 	if (unit >= NDCMLINE || (dcm_active & (1 << brd)) == 0)
 		return (ENXIO);
-#ifdef KGDB
-	if (unit == UNIT(kgdb_dev))
-		return (EBUSY);
-#endif
 	tp = &dcm_tty[unit];
 	tp->t_oproc = dcmstart;
 	tp->t_param = dcmparam;
@@ -279,19 +291,20 @@ dcmopen(dev, flag)
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		tp->t_state |= TS_WOPEN;
 		ttychars(tp);
-		tp->t_iflag = TTYDEF_IFLAG;
-		tp->t_oflag = TTYDEF_OFLAG;
-		tp->t_cflag = TTYDEF_CFLAG;
-		tp->t_lflag = TTYDEF_LFLAG;
-		tp->t_ispeed = tp->t_ospeed = TTYDEF_SPEED;
+		if (tp->t_ispeed == 0) {
+			tp->t_iflag = TTYDEF_IFLAG;
+			tp->t_oflag = TTYDEF_OFLAG;
+			tp->t_cflag = TTYDEF_CFLAG;
+			tp->t_lflag = TTYDEF_LFLAG;
+			tp->t_ispeed = tp->t_ospeed = TTYDEF_SPEED;
+		}
 		(void) dcmparam(tp, &tp->t_termios);
 		ttsetwater(tp);
-	} else if (tp->t_state&TS_XCLUDE && u.u_uid != 0)
+	} else if (tp->t_state&TS_XCLUDE && p->p_ucred->cr_uid != 0)
 		return (EBUSY);
 	(void) dcmmctl(dev, MO_ON, DMSET);	/* enable port */
-	if (dcmsoftCAR[brd] & (1 << PORT(unit)))
-		tp->t_state |= TS_CARR_ON;
-	else if (dcmmctl(dev, MO_OFF, DMGET) & MI_CD)
+	if ((dcmsoftCAR[brd] & (1 << PORT(unit))) ||
+	    (dcmmctl(dev, MO_OFF, DMGET) & MI_CD))
 		tp->t_state |= TS_CARR_ON;
 #ifdef DEBUG
 	if (dcmdebug & DDB_MODEM)
@@ -328,9 +341,12 @@ dcmclose(dev, flag)
 	unit = UNIT(dev);
 	tp = &dcm_tty[unit];
 	(*linesw[tp->t_line].l_close)(tp);
-	if (tp->t_cflag&HUPCL || tp->t_state&TS_WOPEN || 
-	    (tp->t_state&TS_ISOPEN) == 0)
-		(void) dcmmctl(dev, MO_OFF, DMSET);
+#ifdef KGDB
+	if (dev != kgdb_dev)
+#endif
+	(void) dcmmctl(dev, MO_OFF, DMSET);
+	if (tp->t_state & TS_HUPCLS)
+		(*linesw[tp->t_line].l_modem)(tp, 0);
 #ifdef DEBUG
 	if (dcmdebug & DDB_OPENCLOSE)
 		printf("dcmclose: u %x st %x fl %x\n",
@@ -516,16 +532,14 @@ dcmreadbuf(unit, dcm, tp)
 #endif
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 #ifdef KGDB
-		if (unit == UNIT(kgdb_dev) &&
+		if ((makedev(dcmmajor, unit) == kgdb_dev) &&
 		    (head = pp->r_head & RX_MASK) != (pp->r_tail & RX_MASK) &&
-		    dcm->dcm_rfifos[3-port][head>>1].data_char == '!') {
+		    dcm->dcm_rfifos[3-port][head>>1].data_char == FRAME_END) {
 			pp->r_head = (head + 2) & RX_MASK;
-			printf("kgdb trap from dcm%d\n", unit);
-			/* trap into kgdb */
-			asm("trap #15;");
+			kgdb_connect(0);	/* trap into kgdb */
 			return;
 		}
-#endif
+#endif /* KGDB */
 		pp->r_head = pp->r_tail & RX_MASK;
 		return;
 	}
@@ -593,10 +607,7 @@ dcmxint(unit, dcm, tp)
 	tp->t_state &= ~TS_BUSY;
 	if (tp->t_state & TS_FLUSH)
 		tp->t_state &= ~TS_FLUSH;
-	if (tp->t_line)
-		(*linesw[tp->t_line].l_start)(tp);
-	else
-		dcmstart(tp);
+	(*linesw[tp->t_line].l_start)(tp);
 }
 
 dcmmint(unit, mcnd, dcm)
@@ -615,6 +626,14 @@ dcmmint(unit, mcnd, dcm)
 	tp = &dcm_tty[unit];
 	delta = mcnd ^ mcndlast[unit];
 	mcndlast[unit] = mcnd;
+	if ((delta & MI_CTS) && (tp->t_state & TS_ISOPEN) &&
+	    (tp->t_flags & CRTSCTS)) {
+		if (mcnd & MI_CTS) {
+			tp->t_state &= ~TS_TTSTOP;
+			ttstart(tp);
+		} else
+			tp->t_state |= TS_TTSTOP;	/* inline dcmstop */
+	}
 	if ((delta & MI_CD) &&
 	    (dcmsoftCAR[BOARD(unit)] & (1 << PORT(unit))) == 0) {
 		if (mcnd & MI_CD)
@@ -627,13 +646,6 @@ dcmmint(unit, mcnd, dcm)
 			SEM_UNLOCK(dcm);
 			DELAY(10); /* time to change lines */
 		}
-	} else if ((delta & MI_CTS) &&
-		   (tp->t_state & TS_ISOPEN) && (tp->t_flags & CRTSCTS)) {
-		if (mcnd & MI_CTS) {
-			tp->t_state &= ~TS_TTSTOP;
-			ttstart(tp);
-		} else
-			tp->t_state |= TS_TTSTOP;	/* inline dcmstop */
 	}
 }
 
@@ -779,7 +791,7 @@ dcmparam(tp, t)
 	dcm->dcm_cr |= (1 << port);
 	SEM_UNLOCK(dcm);
 	/*
-	 * Delay for config change to take place. Weighted by buad.
+	 * Delay for config change to take place. Weighted by baud.
 	 * XXX why do we do this?
 	 */
 	DELAY(16 * DCM_USPERCH(tp->t_ospeed));
@@ -883,6 +895,7 @@ again:
 		head = pp->t_head & TX_MASK;
 		goto again;
 	}
+
 	/*
 	 * Kick it one last time in case it finished while we were
 	 * loading the last bunch.
@@ -1051,8 +1064,12 @@ dcmcnprobe(cp)
 	struct consdev *cp;
 {
 	register struct hp_hw *hw;
-	int unit, i;
-	extern int dcmopen();
+	int unit;
+
+	/* locate the major number */
+	for (dcmmajor = 0; dcmmajor < nchrdev; dcmmajor++)
+		if (cdevsw[dcmmajor].d_open == dcmopen)
+			break;
 
 	/*
 	 * Implicitly assigns the lowest select code DCM card found to be
@@ -1069,13 +1086,8 @@ dcmcnprobe(cp)
 	unit = CONUNIT;
 	dcm_addr[BOARD(CONUNIT)] = (struct dcmdevice *)hw->hw_addr;
 
-	/* locate the major number */
-	for (i = 0; i < nchrdev; i++)
-		if (cdevsw[i].d_open == dcmopen)
-			break;
-
 	/* initialize required fields */
-	cp->cn_dev = makedev(i, unit);
+	cp->cn_dev = makedev(dcmmajor, unit);
 	cp->cn_tp = &dcm_tty[unit];
 	switch (dcm_addr[BOARD(unit)]->dcm_rsid) {
 	case DCMID:
@@ -1086,14 +1098,43 @@ dcmcnprobe(cp)
 		break;
 	default:
 		cp->cn_pri = CN_DEAD;
-		break;
+		return;
 	}
+	/*
+	 * If dcmconsole is initialized, raise our priority.
+	 */
+	if (dcmconsole == UNIT(unit))
+		cp->cn_pri = CN_REMOTE;
+#ifdef KGDB
+	if (major(kgdb_dev) == 2)			/* XXX */
+		kgdb_dev = makedev(dcmmajor, minor(kgdb_dev));
+#ifdef notdef
+	/*
+	 * This doesn't currently work, at least not with ite consoles;
+	 * the console hasn't been initialized yet.
+	 */
+	if (major(kgdb_dev) == dcmmajor && BOARD(kgdb_dev) == BOARD(unit)) {
+		(void) dcminit(kgdb_dev, kgdb_rate);
+		if (kgdb_debug_init) {
+			/*
+			 * We assume that console is ready for us...
+			 * this assumes that a dca or ite console
+			 * has been selected already and will init
+			 * on the first putc.
+			 */
+			printf("dcm%d: ", UNIT(kgdb_dev));
+			kgdb_connect(1);
+		}
+	}
+#endif
+#endif
 }
 
 dcmcninit(cp)
 	struct consdev *cp;
 {
 	dcminit(cp->cn_dev, dcmdefaultrate);
+	dcmconsinit = 1;
 	dcmconsole = UNIT(cp->cn_dev);
 }
 
@@ -1122,7 +1163,7 @@ dcminit(dev, rate)
 	dcm->dcm_cr |= (1 << port);
 	SEM_UNLOCK(dcm);
 	/*
-	 * Delay for config change to take place. Weighted by buad.
+	 * Delay for config change to take place. Weighted by baud.
 	 * XXX why do we do this?
 	 */
 	DELAY(16 * DCM_USPERCH(rate));
@@ -1179,9 +1220,9 @@ dcmcnputc(dev, c)
 #ifdef KGDB
 	if (dev != kgdb_dev)
 #endif
-	if (dcmconsole == -1) {
+	if (dcmconsinit == 0) {
 		(void) dcminit(dev, dcmdefaultrate);
-		dcmconsole = UNIT(dev);
+		dcmconsinit = 1;
 	}
 	tail = pp->t_tail & TX_MASK;
 	while (tail != (pp->t_head & TX_MASK))
