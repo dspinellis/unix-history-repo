@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rm.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rm.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -226,9 +226,10 @@ check(path, name, sp)
 		/*
 		 * If it's not a symbolic link and it's unwritable and we're
 		 * talking to a terminal, ask.  Symbolic links are excluded
-		 * because their permissions are meaningless.
+		 * because their permissions are meaningless.  Check stdin_ok
+		 * first because we may not have stat'ed the file.
 		 */
-		if (S_ISLNK(sp->st_mode) || !stdin_ok || !access(name, W_OK))
+		if (!stdin_ok || S_ISLNK(sp->st_mode) || !access(name, W_OK))
 			return (1);
 		strmode(sp->st_mode, modep);
 		(void)fprintf(stderr, "override %s%s%s/%s for %s? ",
