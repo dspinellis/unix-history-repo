@@ -1,4 +1,4 @@
-/*	uipc_proto.c	4.24	82/10/03	*/
+/*	uipc_proto.c	4.25	82/10/09	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -6,8 +6,8 @@
 #include "../h/mbuf.h"
 #include <time.h>
 #include "../h/kernel.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
+#include "../netinet/in.h"
+#include "../netinet/in_systm.h"
 
 /*
  * Protocol configuration table and routines to search it.

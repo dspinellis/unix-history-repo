@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.51	82/10/05	*/
+/*	uipc_socket.c	4.52	82/10/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -14,10 +14,8 @@
 #include "../h/socketvar.h"
 #include "../h/stat.h"
 #include "../h/ioctl.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
-#include "../net/route.h"
 #include "../h/uio.h"
+#include "../net/route.h"
 
 /*
  * Socket operation routines.

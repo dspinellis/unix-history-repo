@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.29	82/10/05	*/
+/*	uipc_syscalls.c	4.30	82/10/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,8 +12,6 @@
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
 #include "../h/descrip.h"
 #include "../h/uio.h"
 

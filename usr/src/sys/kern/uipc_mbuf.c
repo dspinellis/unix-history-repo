@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.37	82/10/05	*/
+/*	uipc_mbuf.c	1.38	82/10/09	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -8,7 +8,6 @@
 #include "../h/cmap.h"
 #include "../h/map.h"
 #include "../h/mbuf.h"
-#include "../net/in_systm.h"		/* XXX */
 #include "../h/vm.h"
 
 mbinit()
