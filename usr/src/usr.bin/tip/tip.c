@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tip.c	4.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)tip.c	4.16 (Berkeley) %G%";
 #endif
 
 /*
@@ -110,7 +110,7 @@ notnumber:
 	if ((PH = getenv("PHONES")) == NOSTR)
 		PH = "/etc/phones";
 	vinit();				/* init variables */
-	setparity();				/* set the parity table */
+	setparity("even");			/* set the parity table */
 	if ((i = speed(number(value(BAUDRATE)))) == NULL) {
 		printf("tip: bad baud rate %d\n", number(value(BAUDRATE)));
 		delock(uucplock);
@@ -463,14 +463,15 @@ pwrite(fd, buf, n)
 /*
  * Build a parity table with appropriate high-order bit.
  */
-setparity()
+setparity(defparity)
+	char *defparity;
 {
 	register int i;
 	char *parity;
 	extern char evenpartab[];
 
 	if (value(PARITY) == NOSTR)
-		value(PARITY) = "even";
+		value(PARITY) = defparity;
 	parity = value(PARITY);
 	for (i = 0; i < 0200; i++)
 		partab[i] = evenpartab[i];
