@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_subr.c	7.12 (Berkeley) %G%
+ *	@(#)tp_subr.c	7.13 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -676,7 +676,7 @@ tp_stash( tpcb, e )
 			E.e_seq, (u_int)PStat(tpcb, Nb_from_ll), (u_int)E.e_datalen);
 	ENDPERF
 
-	if( E.e_seq == tpcb->tp_rcvnxt ) {
+	if (E.e_seq == tpcb->tp_rcvnxt) {
 
 		IFDEBUG(D_STASH)
 			printf("stash EQ: seq 0x%x datalen 0x%x eot 0x%x\n", 
@@ -687,6 +687,8 @@ tp_stash( tpcb, e )
 			tptraceTPCB(TPPTmisc, "stash EQ: seq len eot", 
 			E.e_seq, E.e_datalen, E.e_eot, 0);
 		ENDTRACE
+
+		SET_DELACK(tpcb);
 
 		sbappend(&tpcb->tp_sock->so_rcv, E.e_data);
 
@@ -751,25 +753,7 @@ tp_stash( tpcb, e )
 			ack_reason = ACK_DONT;
 		}
 	}
-	/*
-	 * an ack should be sent when at least one of the
-	 * following holds:
-	 * a) the TPDU that just arrived represents the
-	 *    full window last advertised, or
-	 * b) when seq X arrives [ where
-	 * 		X = last_sent_uwe - 1/2 last_lcredit_sent 
-	 * 		(the packet representing 1/2 the last advertised window) ]
-	 * 		and lcredit at the time of X arrival >  last_lcredit_sent/2
-	 * 		In other words, if the last ack sent advertised cdt=8 and uwe = 8
-	 * 		then when seq 4 arrives I'd like to send a new ack
-	 * 		iff the credit at the time of 4's arrival is > 4.
-	 * 		The other end thinks it has cdt of 4 so if local cdt
-	 * 		is still 4 there's no point in sending an ack, but if
-	 * 		my credit has increased because the receiver has taken
-	 * 		some data out of the buffer (soreceive doesn't notify
-	 * 		me until the SYSTEM CALL finishes), I'd like to tell
-	 * 		the other end.  
-	 */
+	/* there were some comments of historical interest here. */
 	{
 		LOCAL_CREDIT(tpcb);
 
