@@ -1,9 +1,11 @@
-#	@(#)Makefile	5.6.1.2 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 
-SUBDIR=	accton arp chown chroot config dev_mkdb diskpart edquota \
-	gettable htable implog implogd inetd iostat kgmon kvm_mkdb lpr \
-	mtree named pwd_mkdb quotaon repquota rmt rwhod \
-	sendmail sliplogin syslogd traceroute trpt trsp update vipw
+# BROKEN pstat
+SUBDIR=	ac accton amd arp chown chroot config cron dev_mkdb diskpart \
+	edquota gettable htable implog implogd inetd iostat kgmon kvm_mkdb \
+	lpr mkproto mtree named portmap pwd_mkdb quot quotaon repquota \
+	rmt rwhod sa sendmail sliplogin syslogd traceroute trpt trsp \
+	update vipw
 
 .if   make(clean) || make(cleandir)
 SUBDIR+=bad144 dlmpcc flcopy rxformat timed
