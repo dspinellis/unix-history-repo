@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)file.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)file.c	5.3 (Berkeley) %G%";
 #endif
 
 #ifdef FILEC
@@ -34,7 +34,8 @@ static struct tchars  tchars;		/* INT, QUIT, XON, XOFF, EOF, BRK */
 
 /*
  * Put this here so the binary can be patched with adb to enable file
- * completion by default.
+ * completion by default.  Filec controls completion, nobeep controls
+ * ringing the terminal bell on incomplete expansions.
  */
 bool filec = 0;
 
@@ -66,7 +67,7 @@ setup_tty(on)
 		tchars.t_brkc = -1;
 		(void) ioctl(SHIN, TIOCSETC, (char *)&tchars);
 	}
-	(void) sigsetmask (omask);
+	(void) sigsetmask(omask);
 }
 
 /*
@@ -210,7 +211,7 @@ print_by_column(dir, items, count)
 				}
 			}
 		}
-		printf ("\n");
+		printf("\n");
 	}
 }
 
@@ -261,7 +262,8 @@ static
 beep()
 {
 
-	(void) write(SHOUT, "\07", 1);
+	if (adrof("nobeep") == 0)
+		(void) write(SHOUT, "\007", 1);
 }
 
 /*
@@ -358,7 +360,8 @@ search(word, command, max_word_length)
 {
 	static char **items = NULL;
 	register DIR *dir_fd;
-	register numitems, name_length, looking_for_lognames;
+	register numitems = 0, ignoring = TRUE, nignored = 0;
+	register name_length, looking_for_lognames;
 	char tilded_dir[MAXPATHLEN + 1], dir[MAXPATHLEN + 1];
 	char name[MAXNAMLEN + 1], extended_name[MAXNAMLEN+1];
 	char *entry;
@@ -379,6 +382,8 @@ search(word, command, max_word_length)
 		if (dir_fd == NULL)
 			return (0);
 	}
+
+again:	/* search for matches */
 	name_length = strlen(name);
 	for (numitems = 0; entry = getentry(dir_fd, looking_for_lognames); ) {
 		if (!is_prefix(name, entry))
@@ -400,11 +405,24 @@ search(word, command, max_word_length)
 			items[numitems] = xalloc((unsigned)strlen(entry) + 1);
 			copyn(items[numitems], entry, MAXNAMLEN);
 			numitems++;
-		} else				/* RECOGNIZE command */
-			if (recognize(extended_name, entry, name_length,
-			    ++numitems))
+		} else {			/* RECOGNIZE command */
+			if (ignoring && ignored(entry))
+				nignored++;
+			else if (recognize(extended_name,
+			    entry, name_length, ++numitems))
 				break;
+		}
 	}
+	if (ignoring && numitems == 0 && nignored > 0) {
+		ignoring = FALSE;
+		nignored = 0;
+		if (looking_for_lognames)
+			(void)setpwent();
+		else
+			rewinddir(dir_fd);
+		goto again;
+	}
+
 	if (looking_for_lognames)
 		(void) endpwent();
 	else
@@ -464,17 +482,36 @@ recognize(extended_name, entry, name_length, numitems)
  */
 static
 is_prefix(check, template)
+	register char *check, *template;
+{
+
+	do
+		if (*check == 0)
+			return (TRUE);
+	while (*check++ == *template++);
+	return (FALSE);
+}
+
+/*
+ *  Return true if the chars in template appear at the
+ *  end of check, I.e., are it's suffix.
+ */
+static
+is_suffix(check, template)
 	char *check, *template;
 {
-	register char *check_char, *template_char;
+	register char *c, *t;
 
-	check_char = check;
-	template_char = template;
-	do
-		if (*check_char == 0)
-			return (TRUE);
-	while (*check_char++ == *template_char++);
-	return (FALSE);
+	for (c = check; *c++;)
+		;
+	for (t = template; *t++;)
+		;
+	for (;;) {
+		if (t == template)
+			return 1;
+		if (c == check || *--t != *--c)
+			return 0;
+	}
 }
 
 tenex(inputline, inputline_size)
@@ -484,7 +521,7 @@ tenex(inputline, inputline_size)
 	register int numitems, num_read;
 
 	setup_tty(ON);
-	while ((num_read = read (SHIN, inputline, inputline_size)) > 0) {
+	while ((num_read = read(SHIN, inputline, inputline_size)) > 0) {
 		static char *delims = " '\"\t;&<>()|^%";
 		register char *str_end, *word_start, last_char, should_retype;
 		register int space_left;
@@ -496,7 +533,7 @@ tenex(inputline, inputline_size)
 			break;
 		command = (last_char == ESC) ? RECOGNIZE : LIST;
 		if (command == LIST)
-			putchar ('\n');
+			putchar('\n');
 		str_end = &inputline[num_read];
 		if (last_char == ESC)
 			--str_end;		/* wipeout trailing cmd char */
@@ -515,7 +552,7 @@ tenex(inputline, inputline_size)
 			/* print from str_end on */
 			print_recognized_stuff(str_end);
 			if (numitems != 1)	/* Beep = No match/ambiguous */
-				beep ();
+				beep();
 		}
 
 		/*
@@ -535,9 +572,24 @@ tenex(inputline, inputline_size)
 			printprompt();
 		pushback(inputline);
 		if (should_retype)
-			retype ();
+			retype();
 	}
-	setup_tty (OFF);
+	setup_tty(OFF);
 	return (num_read);
+}
+
+static
+ignored(entry)
+	register char *entry;
+{
+	struct varent *vp;
+	register char **cp;
+
+	if ((vp = adrof("fignore")) == NULL || (cp = vp->vec) == NULL)
+		return (FALSE);
+	for (; *cp != NULL; cp++)
+		if (is_suffix(entry, *cp))
+			return (TRUE);
+	return (FALSE);
 }
 #endif FILEC
