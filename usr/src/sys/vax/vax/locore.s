@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.9 (Berkeley) %G%
+ *	@(#)locore.s	7.10 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -20,6 +20,7 @@
 #include "clock.h"
 #include "ioa.h"
 #include "ka630.h"
+#include "ka820.h"
 #include "../vaxuba/ubareg.h"
 
 #include "dz.h"
@@ -56,7 +57,7 @@ eintstack:
 	.globl	_doadump
 _doadump:
 	nop; nop				# .word 0x0101
-#define	_rpbmap	_Sysmap				# rpb, scb, UNI*vec, istack*4
+#define	_rpbmap	_Sysmap				# rpb, scb, UNIvec[], istack*4
 	bicl2	$PG_PROT,_rpbmap
 	bisl2	$PG_KW,_rpbmap
 	mtpr	$0,$TBIA
@@ -73,8 +74,8 @@ _doadump:
 	pushr	$0x3fff
 	calls	$0,_dumpsys
 1:
-	pushl	$TXDB_BOOT
-	calls	$1,_tocons
+	clrl	r11				# boot flags
+	calls	$0,_vaxboot
 	halt
 
 /*
@@ -106,12 +107,12 @@ SCBVEC(machcheck):
 	.word	5f-0b		# 2 is 750
 	.word	5f-0b		# 3 is 730
 	.word	7f-0b		# 4 is 8600
-	.word	1f-0b		# ???
-	.word	1f-0b		# ???
-	.word	1f-0b		# ???
+	.word	5f-0b		# 5 is 8200
+	.word	1f-0b		# 6 is 8800 (unsupported)
+	.word	1f-0b		# 7 is 610  (unsupported)
 	.word	1f-0b		# 8 is 630
 5:
-#if defined(VAX750) || defined(VAX730)
+#if defined(VAX8200) || defined(VAX750) || defined(VAX730)
 	mtpr	$0xf,$MCESR
 #endif
 	brb	1f
@@ -129,21 +130,136 @@ SCBVEC(machcheck):
 	movl	nofault,(sp)
 	rei
 SCBVEC(kspnotval):
-	PUSHR; PANIC("KSP not valid");
+	PANIC("KSP not valid");
 SCBVEC(powfail):
 	halt
 SCBVEC(chme): SCBVEC(chms): SCBVEC(chmu):
-	PUSHR; PANIC("CHM? in kernel");
-SCBVEC(stray):
-	PUSHR; PRINTF(0, "stray scb interrupt\n"); POPR;
+	PANIC("CHM? in kernel");
+
+SCBVEC(nex0zvec):
+	PUSHR
+	clrl	r0
+	brb	1f
+SCBVEC(nex1zvec):
+	PUSHR
+	movl	$1,r0
+1:
+	cmpl	_cpu,$VAX_8600		# this is a frill
+	beql	2f
+	mfpr	$IPL,-(sp)
+	PRINTF(1, "nexus stray intr ipl%x\n")
+	POPR
 	rei
-SCBVEC(nexzvec):
-	PUSHR; mfpr $IPL,-(sp); PRINTF(1, "nexus stray intr ipl%x\n"); POPR; rei
+2:
+	pushl	r0
+	mfpr	$IPL,-(sp)
+	PRINTF(2, "nexus stray intr ipl%x sbia%d\n")
+	POPR
+	rei
+
 SCBVEC(cmrd):
 	PUSHR; calls $0,_memerr; POPR; rei
-SCBVEC(wtime):
-	PUSHR; pushl 6*4(sp); PRINTF(1,"write timeout %x\n"); POPR;
-	PANIC("wtimo");
+
+SCBVEC(wtime):			/* sbi0err on 8600 */
+#if VAX8600
+	cmpl	_cpu,$VAX_8600
+	bneq	wtimo
+	PANIC("sbia0 error")
+wtimo:
+#endif
+	PUSHR; pushl 6*4(sp); PRINTF(1, "write timeout %x\n"); POPR
+	PANIC("wtimo")
+
+SCBVEC(sbi0fail):
+	PANIC("sbia0 fail")
+SCBVEC(sbi0alert):
+#if VAX8200
+	cmpl	_cpu,$VAX_8200
+	bneq	alert
+	PUSHR; calls $0,_rxcdintr; POPR; rei
+alert:
+#endif
+	PANIC("sbia0 alert")
+SCBVEC(sbi0fault):
+	PANIC("sbia0 fault")
+
+#ifdef notyet
+#if VAX8600
+SCBVEC(sbi1fail):
+	PANIC("sbia1 fail")
+SCBVEC(sbi1alert):
+	PANIC("sbia1 alert")
+SCBVEC(sbi1fault):
+	PANIC("sbia1 fault")
+SCBVEC(sbi1err):
+	PANIC("sbia1 error")
+#endif
+#endif
+
+/*
+ * BI 0 bus error (8200), or SBI silo compare error (others)
+ * VMS boot leaves us 1 BI error to ignore.
+ */
+#if VAX8200 && 0
+	.data
+	.align	2
+_ignorebi: .globl _ignorebi
+	.long	1
+	.text
+#endif VAX8200
+
+SCBVEC(sbisilo):
+#if VAX8200
+	cmpl	_cpu,$VAX_8200
+	bneq	sbisilo
+#if 0
+	blbs	_ignorebi,1f
+#else
+	blbs	_cold,1f
+#endif
+	PUSHR; pushl $0; calls $1,_bi_buserr; POPR
+1:
+	rei
+#endif
+sbisilo:
+	PANIC("sbi silo compare error")
+
+/*
+ * SCB stray interrupt catcher.  Compute and print the actual
+ * SCB vector (for fault diagnosis).
+ */
+	.align	2
+_scbstray: .globl _scbstray
+#define	PJ	PUSHR;jsb 1f
+	/* 128 of 'em */
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+#if VAX8600
+	/* and another 128, for the second SBIA's scb */
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
+#endif
+#undef PJ
+1:
+	subl3	$_scbstray+8,(sp)+,r0
+	mfpr	$IPL,-(sp)
+	ashl	$-1,r0,-(sp)
+/* call a C handler instead? perhaps later */
+	PRINTF(2, "stray scb intr vec 0x%x ipl%x\n")
+	POPR
+	rei
 
 #if NMBA > 0
 SCBVEC(mba3int):
@@ -258,15 +374,15 @@ SCBVEC(netintr):
 	incl	_cnt+V_SOFT
 	rei
 
-#if defined(VAX750) || defined(VAX730) || defined(VAX8600)
 SCBVEC(consdin):
 	PUSHR;
-	incl _intrcnt+I_TUR
-	casel	_cpu,$VAX_750,$VAX_8600
+	incl	_intrcnt+I_TUR
+	casel	_cpu,$VAX_750,$VAX_8200
 0:
 	.word	5f-0b		# 2 is VAX_750
 	.word	3f-0b		# 3 is VAX_730
 	.word	6f-0b		# 4 is VAX_8600
+	.word	7f-0b		# 5 is VAX_8200
 	halt
 5:
 #if defined(VAX750) && !defined(MRSP)
@@ -274,25 +390,28 @@ SCBVEC(consdin):
 #endif
 3:
 #if defined(VAX750) || defined(VAX730)
-	calls $0,_turintr
-	brb 2f
+	calls	$0,_turintr
+	brb	2f
+#else
+	halt
+#endif
+7:
+#if VAX8200
+	calls	$0,_rx50intr
+	brb	2f
 #else
 	halt
 #endif
 6:
 #if VAX8600
-	calls $0, _crlintr
+	calls	$0,_crlintr
 #else
 	halt
 #endif
 2:
-	POPR;
-	incl _cnt+V_INTR;
+	POPR
+	incl	_cnt+V_INTR
 	rei
-#else
-SCBVEC(consdin):
-	halt
-#endif
 
 #if defined(VAX750) || defined(VAX730)
 SCBVEC(consdout):
@@ -513,6 +632,12 @@ tudma:
 #endif
 
 /*
+ * BI passive release things.
+ */
+SCBVEC(passiverel):
+	rei				# well that was useless
+
+/*
  * Stray UNIBUS interrupt catch routines
  */
 	.data
@@ -601,7 +726,7 @@ SCBVEC(bptflt):
 SCBVEC(compatflt):
 	TRAP(COMPATFLT);
 SCBVEC(kdbintr):
-	pushl $0; TRAP(KDBTRAP);
+	pushl $0; TRAP(KDBTRAP)
 SCBVEC(tracep):
 	pushl $0; TRAP(TRCTRAP)
 SCBVEC(arithtrap):
@@ -726,20 +851,33 @@ _/**/mname:	.globl	_/**/mname;		\
 
 	SYSMAP(UMBAbeg	,umbabeg	,0		)
 	SYSMAP(Nexmap	,nexus		,16*MAXNNEXUS	)
-	SYSMAP(UMEMmap	,umem		,(UBAPAGES+UBAIOPAGES)*NUBA	)
+	SYSMAP(UMEMmap	,umem		,(UBAPAGES+UBAIOPAGES)*NUBA )
 #if VAX8600
 	SYSMAP(Ioamap	,ioa		,MAXNIOA*IOAMAPSIZ/NBPG	)
 #endif
+#if VAX8200 || VAX630
+	SYSMAP(Clockmap	,ka630clock	,1		)
+#endif
+#if VAX8200
+	/* alas, the clocks on the 8200 and 630 are not quite identical */
+	/* they could be shared for now, but this seemed cleaner */
+	.globl _ka820clock; .set _ka820clock,_ka630clock
+	SYSMAP(Ka820map	,ka820port	,1		)
+	SYSMAP(RX50map	,rx50device	,1		)
+#ifdef notyet
+	SYSMAP(BRAMmap	,ka820bootram	,KA820_BRPAGES	)
+	SYSMAP(EEPROMmap,ka820eeprom	,KA820_EEPAGES	)
+#endif
+#endif
 #if VAX630
-	SYSMAP(Clockmap	,cldevice	,1		)
 	SYSMAP(Ka630map	,ka630cpu	,1		)
-	/* 
-	 * qvss and qdss can't coexist - one map will suffice 
+	/*
+	 * qvss and qdss can't coexist - one map will suffice
 	 * for either. qvss is 256K each and qdss is 64K each.
 	 */
 #include "qv.h"
 #include "qd.h"
-#if NQV > 0 || NQD > 0	
+#if NQV > 0 || NQD > 0
 	SYSMAP(QVmap	,qvmem		,((512*NQV)+(128*NQD)))
 #endif /* NQV || NQD */
 #endif /* VAX630 */
@@ -801,7 +939,7 @@ start:
 /* clear memory from kernel bss and pages for proc 0 u. and page table */
 	movab	_edata,r6; bicl2 $SYSTEM,r6
 	movab	_end,r5; bicl2 $SYSTEM,r5
-#ifdef KDB
+#ifdef KADB
 	subl2	$4,r5
 1:	clrl	(r6); acbl r5,$4,r6,1b		# clear just bss
 	addl2	$4,r5
@@ -823,7 +961,10 @@ start:
 	clrl	r2
 	movab	eintstack,r1; bbcc $31,r1,0f; 0: ashl $-PGSHIFT,r1,r1
 1:	bisl3	$PG_V|PG_KW,r2,_Sysmap[r2]; aoblss r1,r2,1b
-/* make rpb, scb read-only as red zone for interrupt stack */
+/*
+ * make rpb read-only as red zone for interrupt stack
+ * (scb(s) and UNIvec are write-protected later)
+ */
 	bicl2	$PG_PROT,_rpbmap
 	bisl2	$PG_KR,_rpbmap
 /* make kernel text space read-only */
@@ -839,8 +980,7 @@ start:
 	movl	_maxmem,_physmem
 	movl	_maxmem,_freemem
 /* setup context for proc[0] == Scheduler */
-	bicl3	$SYSTEM,r9,r6
-	bicl2	$NBPG-1,r6		# make page boundary
+	bicl3	$SYSTEM|(NBPG-1),r9,r6	# make phys, page boundary
 /* setup page table for proc[0] */
 	ashl	$-PGSHIFT,r6,r3			# r3 = btoc(r6)
 	bisl3	$PG_V|PG_KW,r3,_Usrptmap	# init first upt entry
@@ -1310,7 +1450,7 @@ ENTRY(savectx, 0)
 	clrl	r0
 	ret
 
-#ifdef KDB
+#ifdef KADB
 /*
  * C library -- reset, setexit
  *
@@ -1323,7 +1463,7 @@ ENTRY(savectx, 0)
  * The returned value is x; on the original
  * call the returned value is 0.
  */
-ENTRY(setexit)
+ENTRY(setexit, 0)
 	movab	setsav,r0
 	movq	r6,(r0)+
 	movq	r8,(r0)+
@@ -1334,7 +1474,7 @@ ENTRY(setexit)
 	clrl	r0
 	ret
 
-ENTRY(reset)
+ENTRY(reset, 0)
 	movl	4(ap),r0	# returned value
 	movab	setsav,r1
 	movq	(r1)+,r6

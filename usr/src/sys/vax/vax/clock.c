@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)clock.c	7.1 (Berkeley) %G%
+ *	@(#)clock.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -32,85 +32,61 @@
  */
 startrtclock()
 {
-#ifdef VAX630
-	if (cpu == VAX_630) {
-		mtpr(ICCS, ICCS_IE);
-	} else {
-#endif
-		mtpr(NICR, -1000000/hz);
-		mtpr(ICCS, ICCS_RUN+ICCS_IE+ICCS_TRANS+ICCS_INT+ICCS_ERR);
-#ifdef VAX630
-	}
-#endif
+
+	(*cpuops->cpu_clock->clkstartrt)();
 }
 
 /*
  * Initialze the time of day register, based on the time base which is, e.g.
  * from a filesystem.  Base provides the time to within six months,
- * and the time of year clock provides the rest.
+ * and the time of year clock (if any) provides the rest.
  */
 inittodr(base)
 	time_t base;
 {
-	register u_int todr = mfpr(TODR);
-	long deltat;
-	int year = YRREF;
-#if VAX630
-	/*
-	 * If this is a Ka630, call ka630tod to handle the funny tod clock.
-	 */
-	if (cpu == VAX_630) {
-		ka630tod(base);
-		return;
-	}
-#endif
+	long deltat, badbase = 0;
+
 	if (base < 5*SECYR) {
-		printf("WARNING: preposterous time in file system");
-		time.tv_sec = 6*SECYR + 186*SECDAY + SECDAY/2;
-		resettodr();
-		goto check;
+		printf("WARNING: preposterous time in file system\n");
+		/* read the system clock anyway */
+		base = 6*SECYR + 186*SECDAY + SECDAY/2;
+		badbase = 1;
 	}
-	/*
-	 * TODRZERO is base used by VMS, which runs on local time.
-	 */
-	if (todr < TODRZERO) {
-		printf("WARNING: todr too small");
-		time.tv_sec = base;
+	switch ((*cpuops->cpu_clock->clkread)(base)) {
+
+	case CLKREAD_BAD:
 		/*
 		 * Believe the time in the file system for lack of
 		 * anything better, resetting the TODR.
 		 */
-		resettodr();
-		goto check;
-	}
+		time.tv_sec = base;
+		if (!badbase)
+			resettodr();
+		break;
 
-	/*
-	 * Sneak to within 6 month of the time in the filesystem,
-	 * by starting with the time of the year suggested by the TODR,
-	 * and advancing through succesive years.  Adding the number of
-	 * seconds in the current year takes us to the end of the current year
-	 * and then around into the next year to the same position.
-	 */
-	time.tv_sec = (todr-TODRZERO)/100;
-	while (time.tv_sec < base-SECYR/2) {
-		if (LEAPYEAR(year))
-			time.tv_sec += SECDAY;
-		year++;
-		time.tv_sec += SECYR;
-	}
+	case CLKREAD_WARN:
+		break;
 
-	/*
-	 * See if we gained/lost two or more days;
-	 * if so, assume something is amiss.
-	 */
-	deltat = time.tv_sec - base;
-	if (deltat < 0)
-		deltat = -deltat;
-	if (deltat < 2*SECDAY)
-		return;
-	printf("WARNING: clock %s %d days",
-	    time.tv_sec < base ? "lost" : "gained", deltat / SECDAY);
-check:
+	case CLKREAD_OK:
+		if (badbase)
+			break;
+		/*
+		 * See if we gained/lost two or more days;
+		 * if so, assume something is amiss.
+		 */
+		deltat = time.tv_sec - base;
+		if (deltat < 0)
+			deltat = -deltat;
+		if (deltat < 2 * SECDAY)
+			return;
+		printf("WARNING: clock %s %d days",
+		    time.tv_sec < base ? "lost" : "gained", deltat / SECDAY);
+		break;
+
+	default:
+		panic("inittodr");
+		/* NOTREACHED */
+	}
 	printf(" -- CHECK AND RESET THE DATE!\n");
 }
 
@@ -123,19 +99,61 @@ check:
  */
 resettodr()
 {
+
+	(*cpuops->cpu_clock->clkwrite)();
+}
+
+/*
+ * ``Standard'' VAX clock routines.
+ */
+#if VAX8600 || VAX8200 || VAX780 || VAX750 || VAX730
+vaxstd_clkstartrt()
+{
+
+	mtpr(NICR, -1000000/hz);
+	mtpr(ICCS, ICCS_RUN+ICCS_IE+ICCS_TRANS+ICCS_INT+ICCS_ERR);
+}
+#endif
+
+#if VAX8600 || VAX780 || VAX750 || VAX730
+vaxstd_clkread(base)
+	time_t base;
+{
+	register u_int todr = mfpr(TODR);
+	int year;
+
+	/*
+	 * TODRZERO is base used by VMS, which runs on local time.
+	 */
+	if (todr < TODRZERO) {
+		printf("WARNING: todr too small");
+		return (CLKREAD_BAD);
+	}
+
+	/*
+	 * Sneak to within 6 month of the time in the filesystem,
+	 * by starting with the time of the year suggested by the TODR,
+	 * and advancing through succesive years.  Adding the number of
+	 * seconds in the current year takes us to the end of the current year
+	 * and then around into the next year to the same position.
+	 */
+	time.tv_sec = (todr - TODRZERO) / 100;
+	year = YRREF;
+	while (time.tv_sec < base - SECYR/2) {
+		if (LEAPYEAR(year))
+			time.tv_sec += SECDAY;
+		year++;
+		time.tv_sec += SECYR;
+	}
+
+	return (CLKREAD_OK);
+}
+
+vaxstd_clkwrite()
+{
 	int year = YRREF;
 	u_int secyr;
 	u_int yrtime = time.tv_sec;
-
-#if VAX630
-	/*
-	 * If this is a ka630, call ka630stod to set the funny tod clock.
-	 */
-	if (cpu == VAX_630) {
-		ka630stod();
-		return;
-	}
-#endif
 
 	/*
 	 * Whittle the time down to an offset in the current year,
@@ -152,3 +170,68 @@ resettodr()
 	}
 	mtpr(TODR, TODRZERO + yrtime*100);
 }
+#endif
+
+#if VAX8200 || VAX630
+/*
+ * This code is defunct after 2099.
+ * Will Unix still be here then??
+ */
+short dayyr[12] = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 };
+
+chiptotime(c)
+	register struct chiptime *c;
+{
+	register int days, yr;
+
+	/* simple sanity checks */
+	if (c->year < 70 || c->mon < 1 || c->mon > 12 ||
+	    c->day < 1 || c->day > 31) {
+		printf("WARNING: preposterous clock chip time");
+		return (0);
+	}
+	days = 0;
+	for (yr = 70; yr < c->year; yr++)
+		days += LEAPYEAR(yr) ? 366 : 365;
+	days += dayyr[c->mon - 1] + c->day - 1;
+	if (LEAPYEAR(yr) && c->mon > 2)
+		days++;
+	/* now have days since Jan 1, 1970; the rest is easy... */
+	return (days * SECDAY + c->hour * 3600 + c->min * 60 + c->sec);
+}
+
+timetochip(c)
+	register struct chiptime *c;
+{
+	register int t, t2, t3;
+
+	/* compute the year */
+	t2 = time.tv_sec / SECDAY;
+	t = 69;
+	while (t2 >= 0) {	/* whittle off years */
+		t3 = t2;
+		t++;
+		t2 -= LEAPYEAR(t) ? 366 : 365;
+	}
+	c->year = t;
+
+	/* t3 = month + day; separate */
+	t = LEAPYEAR(t);
+	for (t2 = 1; t2 < 12; t2++)
+		if (t3 < dayyr[t2] + (t && t2 > 1))
+			break;
+
+	/* t2 is month */
+	c->mon = t2;
+	c->day = t3 - dayyr[t2 - 1] + 1;
+	if (t && t2 > 2)
+		c->day--;
+
+	/* the rest is easy */
+	t = time.tv_sec % SECDAY;
+	c->hour = t / 3600;
+	t %= 3600;
+	c->min = t / 60;
+	c->sec = t % 60;
+}
+#endif

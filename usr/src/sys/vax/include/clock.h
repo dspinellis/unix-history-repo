@@ -37,3 +37,28 @@
  * Software clock is software interrupt level 8,
  * implemented as mtpr(SIRR, 0x8) in asm.sed.
  */
+
+#ifndef LOCORE
+/*
+ * 8200s and 630s have a clock chip like those found in digital alarm
+ * clocks and watches.  Converting this to and from system times is
+ * painful, so we do it in only one place.  The routine chiptotime()
+ * converts a chiptime to the right value for time.tv_sec, and
+ * timetochip converts time.tv_sec back.
+ */
+struct chiptime {
+	int	sec;
+	int	min;
+	int	hour;
+	int	day;
+	int	mon;
+	int	year;
+};
+
+/*
+ * Clock read routine return values.
+ */
+#define	CLKREAD_OK	0	/* success, time.tv_sec set */
+#define	CLKREAD_WARN	1	/* clock appears wrong but time set anyway */
+#define	CLKREAD_BAD	2	/* clock is bad, no time available */
+#endif

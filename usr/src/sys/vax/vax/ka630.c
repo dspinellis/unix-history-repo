@@ -1,8 +1,8 @@
 /*
- *	@(#)ka630.c	7.3 (Berkeley) %G%
+ *	@(#)ka630.c	7.4 (Berkeley) %G%
  */
-#if defined(VAX630)
-/* ka630.c routines for the ka630 clock chip... */
+
+#ifdef VAX630
 #include "param.h"
 #include "time.h"
 #include "kernel.h"
@@ -15,118 +15,142 @@
 #include "ka630.h"
 
 /*
- * These two fuctions handle the tod clock
- * This code is defunct at the end of the century.
- * Will Unix still be here then??
+ * 630-specific routines
  */
+extern struct pte Clockmap[];
+extern struct pte Ka630map[];
+struct ka630clock ka630clock;
+struct ka630cpu ka630cpu;
 
-extern struct cldevice cldevice;
-extern struct ka630cpu ka630cpu;
-static int clkinit;
+ka630_init()
+{
 
-short dayyr[12] = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, };
-/* Starts the tod clock. Called from clkstart... */
-ka630tod(base)
+	/*
+	 * Map in the clock and the CPU.
+	 */
+	ioaccess((caddr_t)0x200b8000, &Clockmap[0], sizeof(struct ka630clock));
+	ioaccess((caddr_t)0x20080000, &Ka630map[0], sizeof(struct ka630cpu));
+
+	/*
+	 * Clear restart and boot in progress flags in the CPMBX.
+	 */
+	ka630clock.cpmbx = (ka630clock.cpmbx & KA630CLK_LANG) | KA630CLK_REBOOT;
+
+	/*
+	 * Enable memory parity error detection.
+	 */
+	ka630cpu.ka630_mser = KA630MSER_PAREN;
+}
+
+/* Start the real-time clock */
+ka630_clkstartrt()
+{
+
+	mtpr(ICCS, ICCS_IE);
+}
+
+/* init system time from tod clock */
+/* ARGSUSED */
+ka630_clkread(base)
 	time_t base;
 {
-	register int tmp1, tmp2;
-	register struct cldevice *claddr = &cldevice;
-	struct ka630cpu *ka630addr = &ka630cpu;
+	register struct ka630clock *claddr = &ka630clock;
+	struct chiptime c;
 
-	/* Enable system page for registers */
-	ioaccess(0x200b8000, &Clockmap[0], sizeof(struct cldevice));
-	ioaccess(0x20080000, &Ka630map[0], sizeof(struct ka630cpu));
-	clkinit = 1;
-
-	/*
-	 * Clear restart and boot in progress flags in the CPMBX. This has
-	 * nothing to do with the clock except that it the CPMBX reg. is a
-	 * byte in the clock's ram.
-	 */
-	claddr->cpmbx=(u_short)((claddr->cpmbx&KA630CLK_LANG)|KA630CLK_REBOOT);
-	/*
-	 * Enable memory parity error detection. again nothing to do with the
-	 * tod clock except for being a convenient place.
-	 */
-	ka630addr->ka630_mser = KA630MSER_PAREN;
 	claddr->csr1 = KA630CLK_SET;
 	while ((claddr->csr0 & KA630CLK_UIP) != 0)
 		;
 	/* If the clock is valid, use it. */
 	if ((claddr->csr3 & KA630CLK_VRT) != 0 &&
 	    (claddr->csr1 & KA630CLK_ENABLE) == KA630CLK_ENABLE) {
-		/* Convert yr,mon,day,hr,min,sec to sec past Jan.1, 1970. */
-		tmp2 = 0;
-		for (tmp1 = 70; tmp1 < claddr->yr; tmp1++) {
-			tmp2 += 365;
-			/* I just luv leap years... */
-			if (LEAPYEAR(tmp1))
-				tmp2++;
-		}
-		tmp2 += (dayyr[claddr->mon-1]+claddr->day-1);
-		if (LEAPYEAR(claddr->yr) && claddr->mon > 2)
-			tmp2++;
-		/* Finally got days past Jan. 1,1970. the rest is easy.. */
-		time.tv_sec = tmp2*SECDAY+claddr->hr*HRSEC+
-			claddr->min*MINSEC+claddr->sec;
-		tmp1 = claddr->csr2;
+		c.sec = claddr->sec;
+		c.min = claddr->min;
+		c.hour = claddr->hr;
+		c.day = claddr->day;
+		c.mon = claddr->mon;
+		c.year = claddr->yr;
+#ifndef lint
+		{ int t = claddr->csr2; }	/* ??? */
+#endif
 		claddr->csr0 = KA630CLK_RATE;
 		claddr->csr1 = KA630CLK_ENABLE;
-	} else if (base < 5*SECYR) {
-		printf("WARNING: preposterous time in file system\n");
-		time.tv_sec = 6*SECYR+186*SECDAY+SECDAY/2;
-		ka630stod();
-	} else {
-		printf("WARNING: Time set via file system\n");
-		time.tv_sec = base;
-		ka630stod();
-	}
-}
-/* Set the time of day clock, called via. stime system call.. */
-ka630stod()
-{
-	register int tmp1, tmp3;
-	register struct cldevice *claddr = &cldevice;
-	long tmp2, tmp4;
 
-	if (clkinit == 0)
-		return;
+		time.tv_sec = chiptotime(&c);
+		return (time.tv_sec ? CLKREAD_OK : CLKREAD_BAD);
+	}
+	printf("WARNING: TOY clock invalid");
+	return (CLKREAD_BAD);
+}
+
+/* Set the time of day clock, called via. stime system call.. */
+ka630_clkwrite()
+{
+	register struct ka630clock *claddr = &ka630clock;
+	struct chiptime c;
+	int s;
+
+	timetochip(&c);
+	s = splhigh();
 	claddr->csr1 = KA630CLK_SET;
 	while ((claddr->csr0 & KA630CLK_UIP) != 0)
 		;
-	/* The reverse of above, sec. past Jan. 1,1970 to yr, mon... */
-	tmp2 = time.tv_sec/HRSEC;
-	tmp4 = tmp2 = tmp2/24;
-	tmp1 = 69;
-	while (tmp2 >= 0) {
-		tmp3 = tmp2;
-		tmp2 -= 365;
-		tmp1++;
-		if (LEAPYEAR(tmp1))
-			tmp2--;
-	}
-	/* Got the year... */
-	claddr->yr = tmp1;
-	tmp1 = -1;
-	do {
-		tmp2 = tmp3-dayyr[++tmp1];
-		if (LEAPYEAR(claddr->yr) && tmp1 > 1)
-			tmp2--;
-	} while (tmp2 >= 0);
-	/* Finally, got the rest... */
-	claddr->mon = tmp1;
-	claddr->day = tmp3-dayyr[tmp1-1]+1;
-	if (LEAPYEAR(claddr->yr) && tmp1 > 2)
-		claddr->day--;
-	tmp2 = time.tv_sec-(tmp4*SECDAY);
-	claddr->hr = tmp2/HRSEC;
-	tmp2 = tmp2%HRSEC;
-	claddr->min = tmp2/MINSEC;
-	tmp2 = tmp2%MINSEC;
-	claddr->sec = tmp2;
-	tmp1 = claddr->csr2;
-	tmp1 = claddr->csr3;
+	claddr->sec = c.sec;
+	claddr->min = c.min;
+	claddr->hr = c.hour;
+	claddr->day = c.day;
+	claddr->mon = c.mon;
+	claddr->yr = c.year;
+#ifndef lint
+	{ int t = claddr->csr2; }	/* ??? */
+	{ int t = claddr->csr3; }	/* ??? */
+#endif
 	claddr->csr0 = KA630CLK_RATE;
 	claddr->csr1 = KA630CLK_ENABLE;
+	splx(s);
+}
+
+ka630_memnop()
+{
+
+	/* void */
+}
+
+#define NMC630	10
+char *mc630[] = {
+	0,		"immcr (fsd)",	"immcr (ssd)",	"fpu err 0",
+	"fpu err 7",	"mmu st(tb)",	"mmu st(m=0)",	"pte in p0",
+	"pte in p1",	"un intr id",
+};
+
+struct mc630frame {
+	int	mc63_bcnt;		/* byte count == 0xc */
+	int	mc63_summary;		/* summary parameter */
+	int	mc63_mrvaddr;		/* most recent vad */
+	int	mc63_istate;		/* internal state */
+	int	mc63_pc;		/* trapped pc */
+	int	mc63_psl;		/* trapped psl */
+};
+
+ka630_mchk(cmcf)
+	caddr_t cmcf;
+{
+	register struct ka630cpu *ka630addr = &ka630cpu;
+	register struct mc630frame *mcf = (struct mc630frame *)cmcf;
+	register u_int type = mcf->mc63_summary;
+
+	printf("machine check %x: %s\n", type,
+	    type < NMC630 ? mc630[type] : "???");
+	printf("\tvap %x istate %x pc %x psl %x\n",
+	    mcf->mc63_mrvaddr, mcf->mc63_istate,
+	    mcf->mc63_pc, mcf->mc63_psl);
+	if (ka630addr->ka630_mser & KA630MSER_MERR) {
+		printf("\tmser=0x%x ", ka630addr->ka630_mser);
+		if (ka630addr->ka630_mser & KA630MSER_CPUER)
+			printf("page=%d", ka630addr->ka630_cear);
+		if (ka630addr->ka630_mser & KA630MSER_DQPE)
+			printf("page=%d", ka630addr->ka630_dear);
+		printf("\n");
+	}
+	return (MCHK_PANIC);
 }
 #endif
