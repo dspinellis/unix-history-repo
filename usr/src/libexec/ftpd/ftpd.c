@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -68,6 +68,7 @@ extern	FILE *ftpd_popen(), *fopen(), *freopen();
 extern	int  ftpd_pclose(), fclose();
 extern	char *getline();
 extern	char cbuf[];
+extern	off_t restart_point;
 
 struct	sockaddr_in ctrl_addr;
 struct	sockaddr_in data_source;
@@ -272,7 +273,7 @@ user(name)
 	register char *cp;
 	FILE *fd;
 	char *shell;
-	char line[BUFSIZ], *index(), *getusershell();
+	char line[BUFSIZ], *getusershell();
 
 	if (logged_in) {
 		if (guest) {
@@ -288,7 +289,8 @@ user(name)
 			guest = 1;
 			askpasswd = 1;
 			reply(331, "Guest login ok, send ident as password.");
-		} else
+		}
+		else
 			reply(530, "User %s unknown.", name);
 		return;
 	}
@@ -407,7 +409,8 @@ pass(passwd)
 		reply(230, "Guest login ok, access restrictions apply.");
 		syslog(LOG_INFO, "ANONYMOUS FTP LOGIN FROM %s, %s",
 		    remotehost, passwd);
-	} else {
+	}
+	else {
 		reply(230, "User %s logged in.", pw->pw_name);
 		syslog(LOG_INFO, "FTP LOGIN FROM %s, %s",
 		    remotehost, pw->pw_name);
@@ -445,16 +448,21 @@ retrieve(cmd, name)
 		reply(550, "%s: not a plain file.", name);
 		goto done;
 	}
+	if (restart_point)
+		if (type == TYPE_A) {
+			if (fseek(fin, restart_point, L_SET) < 0)
+				perror_reply(550, name);
+		}
+		else if (lseek(fileno(fin), restart_point, L_SET) < 0)
+			perror_reply(550, name);
 	dout = dataconn(name, st.st_size, "w");
 	if (dout == NULL)
 		goto done;
 	if ((tmp = send_data(fin, dout, st.st_blksize)) > 0 ||
-	    ferror(dout) > 0) {
+	    ferror(dout) > 0)
 		perror_reply(550, name);
-	}
-	else if (tmp == 0) {
+	else if (tmp == 0)
 		reply(226, "Transfer complete.");
-	}
 	(void) fclose(dout);
 	data = -1;
 	pdata = -1;
@@ -480,6 +488,13 @@ store(name, mode, unique)
 		perror_reply(553, name);
 		return;
 	}
+	if (restart_point)
+		if (type == TYPE_A) {
+			if (fseek(fout, restart_point, L_SET) < 0)
+				perror_reply(550, name);
+		}
+		else if (lseek(fileno(fout), restart_point, L_SET) < 0)
+			perror_reply(550, name);
 	din = dataconn(name, (off_t)-1, "r");
 	if (din == NULL)
 		goto done;
@@ -772,8 +787,8 @@ yyerror(s)
 {
 	char *cp;
 
-	cp = index(cbuf,'\n');
-	*cp = '\0';
+	if (cp = index(cbuf,'\n'))
+		*cp = '\0';
 	reply(500, "'%s': command not understood.",cbuf);
 }
 
