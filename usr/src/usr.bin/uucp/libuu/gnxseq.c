@@ -1,22 +1,20 @@
 #ifndef lint
-static char sccsid[] = "@(#)gnxseq.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)gnxseq.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
-#include <sys/types.h>
 #ifdef BSD4_2
 #include <sys/time.h>
 #else sane
 #include <time.h>
 #endif sane
 
+/*LINTLIBRARY*/
+
 #ifdef GNXSEQ
 
-extern	time_t	time();
-
-/*******
- *	gnxseq(rmtname)		get next conversation sequence number
- *	char *rmtname;
+/*
+ *	get next conversation sequence number
  *
  *	return - 0 no entry | >0 sequence number
  */
@@ -56,10 +54,10 @@ char *rmtname;
 		ret = sscanf(buf, "%s%d", name, &ct);
 		if (ret < 2)
 			ct = 0;
-		name[7] = '\0';
+		name[MAXBASENAME] = '\0';
 		if (ct > 9998)
 			ct = 0;
-		if (strcmp(rmtname, name) != SAME) {
+		if (strncmp(rmtname, name, MAXBASENAME) != SAME) {
 			fputs(buf, fp1);
 			continue;
 		}

@@ -1,14 +1,15 @@
 #ifndef lint
-static char sccsid[] = "@(#)gnamef.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)gnamef.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
-#include <sys/types.h>
 #ifdef	NDIR
 #include "ndir.h"
 #else
 #include <sys/dir.h>
 #endif
+
+/*LINTLIBRARY*/
 
 /*
  *	get next file name from directory

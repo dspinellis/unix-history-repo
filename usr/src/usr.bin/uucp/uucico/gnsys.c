@@ -1,17 +1,18 @@
 #ifndef lint
-static char sccsid[] = "@(#)gnsys.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)gnsys.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
-#include <sys/types.h>
 #ifdef	NDIR
 #include "ndir.h"
 #else
 #include <sys/dir.h>
 #endif
 
-#define LSIZE 100	/* number of systems to store */
+#define LSIZE 128	/* number of systems to store */
 #define WSUFSIZE 6	/* work file name suffix size */
+
+/*LINTLIBRARY*/
 
 /*
  *	this routine will return the next system name which has work to be done.
@@ -20,8 +21,8 @@ static char sccsid[] = "@(#)gnsys.c	5.3 (Berkeley) %G%";
  *	"dir" is the directory to search.
  *
  *	return codes:
- *		0  -  no more names
  *		1  -  name returned in sname
+ *		SUCCESS  -  no more names
  *		FAIL  -  bad directory
  */
 
@@ -68,10 +69,34 @@ retry:
 		for (n = 0; n < nitem; n++)
 			if (list[n] != NULL)
 				free(list[n]);
-		return 0;
+		return SUCCESS;
 	}
 	while(nitem > n) {
+		/* We only have at most a SYSNSIZE character site name encoded
+		 * in the file. However, we would like to use the full sitename
+		 * if possible. If the number of chars in list[n] is < SYSNSIZE
+		 * then the sitename could not have been truncated and
+		 * we don't bother to check. Otherwise, we scan SYSFILE
+		 * looking for the fullname and return it if we find it
+		 */
 		strcpy(sname, list[n++]);
+		if (strlen(sname) >= SYSNSIZE) {
+			register FILE *fp;
+			register char *p;
+			char line[MAXFULLNAME];
+			fp = fopen(SYSFILE, "r");
+			ASSERT(fp != NULL, CANTOPEN, SYSFILE, 0);
+			while (cfgets(line, sizeof(line), fp) != NULL) {
+				p = index(line, ' ');
+				if (p)
+					*p = '\0';
+				if (strncmp(sname, line, SYSNSIZE) == SAME) {
+					strncpy(sname, line, MAXBASENAME);
+					break;
+				}
+			}
+			fclose(fp);
+		}
 		if (callok(sname) == 0)
 			return 1;
 	}
