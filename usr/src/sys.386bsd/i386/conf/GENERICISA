@@ -1,6 +1,16 @@
 #
 # GENERICISA -- Generic ISA machine -- distribution floppy
 #
+#
+# PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+# --------------------         -----   ----------------------
+# CURRENT PATCH LEVEL:         1       00078
+# --------------------         -----   ----------------------
+#
+# 09 Feb 93	Nate Williams		Added options for X code to
+#					compiled in by default
+#
+
 machine		"i386"
 cpu		"i386"
 ident		GENERICISA
@@ -9,6 +19,7 @@ maxusers	10
 options		INET,ISOFS,NFS
 options		"COMPAT_43"
 options		"TCP_COMPAT_42"
+options		XSERVER,UCONSOLE
 
 config		"386bsd"	root on wd0 swap on wd0 and as0
 
