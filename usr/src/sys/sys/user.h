@@ -1,4 +1,4 @@
-/*	user.h	4.26	83/05/21	*/
+/*	user.h	4.27	83/06/02	*/
 
 #ifdef KERNEL
 #include "../machine/pcb.h"
@@ -61,7 +61,8 @@ struct	user {
 
 /* 1.3 - signal management */
 	int	(*u_signal[NSIG])();	/* disposition of signals */
-	long	u_sigmask[NSIG];	/* signals to be blocked */
+	int	u_sigmask[NSIG];	/* signals to be blocked */
+	int	u_oldmask;		/* saved mask from before sigpause */
 	int	u_code;			/* ``code'' to trap */
 	caddr_t	u_sigstack;		/* 0 means no sigstack */
 	int	u_onsigstack;

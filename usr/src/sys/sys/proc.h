@@ -1,4 +1,4 @@
-/*	proc.h	4.22	83/05/22	*/
+/*	proc.h	4.23	83/06/02	*/
 
 /*
  * One structure allocated per active
@@ -20,10 +20,10 @@ struct	proc {
 	char	p_nice;		/* nice for cpu usage */
 	char	p_slptime;	/* time since last block */
 	char	p_cursig;
-	long	p_sig;		/* signals pending to this process */
-	long	p_siga0;	/* low bit of 2 bit signal action */
-	long	p_siga1;	/* high bit of 2 bit signal action */
-#define	p_ignsig p_siga0	/* ignored signal mask */
+	int	p_sig;		/* signals pending to this process */
+	int	p_sigmask;	/* current signal mask */
+	int	p_sigignore;	/* signals being ignored */
+	int	p_sigcatch;	/* signals being caught by user */
 	int	p_flag;
 	short	p_uid;		/* user id, used to direct tty signals */
 	short	p_pgrp;		/* name of process group leader */
@@ -94,7 +94,7 @@ int	whichqs;		/* bit mask summarizing non-empty qs's */
 #define	SULOCK	0x0000040	/* user settable lock in core */
 #define	SPAGE	0x0000080	/* process in page wait state */
 #define	SKEEP	0x0000100	/* another flag to prevent swap out */
-/* was SDLYU */
+#define	SOMASK	0x0000200	/* restore old mask after taking signal */
 #define	SWEXIT	0x0000400	/* working on exiting */
 #define	SPHYSIO	0x0000800	/* doing physical i/o (bio.c) */
 #define	SVFORK	0x0001000	/* process resulted from vfork() */
@@ -105,7 +105,7 @@ int	whichqs;		/* bit mask summarizing non-empty qs's */
 #define	SUANOM	0x0020000	/* user warned of random vm behavior */
 #define	STIMO	0x0040000	/* timing out during sleep */
 /* was SDETACH */
-#define	SNUSIG	0x0100000	/* using new signal mechanism */
+#define	SOUSIG	0x0100000	/* using old signal mechanism */
 #define	SOWEUPC	0x0200000	/* owe process an addupc() call at next ast */
 #define	SSEL	0x0400000	/* selecting; wakeup/waiting danger */
 #define	SLOGIN	0x0800000	/* a login process (legit child of init) */
