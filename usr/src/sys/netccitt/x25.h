@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)x25.h	7.5 (Berkeley) %G%
+ *	@(#)x25.h	7.6 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -32,6 +32,7 @@
 /* socket options */
 #define PK_ACCTFILE		1	/* use level = CCITTPROTO_X25 */
 #define PK_FACILITIES		2	/* use level = CCITTPROTO_X25 */
+#define MAX_FACILITIES		109     /* maximum size for facilities */
 
 /*
  *  X.25 Socket address structure.  It contains the  X.121 or variation of
@@ -68,6 +69,9 @@ struct	sockaddr_x25 {
 #define X25_DBIT		0x02	/* not yet supported */
 #define X25_MQBIT		0x04	/* prepend M&Q bit status byte to packet data */
 #define X25_OLDSOCKADDR		0x08	/* uses old sockaddr structure */
+#define X25_DG_CIRCUIT		0x10	/* lcd_flag: used for datagrams */
+#define X25_DG_ROUTING		0x20	/* lcd_flag: peer addr not yet known */
+#define X25_MBS_HOLD		0x40	/* lcd_flag: collect m-bit sequences */
 		char	op_psize;	/* requested packet size */
 #define X25_PS128		7
 #define X25_PS256		8
