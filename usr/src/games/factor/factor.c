@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)factor.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)factor.c	4.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -37,8 +37,9 @@ static char sccsid[] = "@(#)factor.c	4.4 (Berkeley) %G%";
  * If no args are given, the list of numbers are read from stdin.
  */
 
-#include <stdio.h>
 #include <ctype.h>
+#include <limits.h>
+#include <stdio.h>
 #include "primes.h"
 
 /*
@@ -265,10 +266,11 @@ pr_fact(val)
 
 	/* firewall - catch 0 and 1 */
 	switch (val) {
-	case -2147483648:
-		/* avoid negation problems */
-		puts("-2147483648: -1 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2\n");
-		return;
+	case LONG_MIN:
+		/* avoid negation problems - assumes LONG_MIN is even  XXX */
+		printf("%ld: -1 2", val);
+		val /= -2;
+		break;
 	case -1:
 		puts("-1: -1\n");
 		return;
@@ -281,12 +283,11 @@ pr_fact(val)
 		if (val < 0) {
 			val = -val;
 			printf("%ld: -1", val);
-		} else {
+		} else
 			printf("%ld:", val);
-		}
-		fflush(stdout);
 		break;
 	}
+	fflush(stdout);
 
 	/*
 	 * factor value
