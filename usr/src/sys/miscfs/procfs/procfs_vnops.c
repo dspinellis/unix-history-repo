@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs_vnops.c	8.8 (Berkeley) %G%
+ *	@(#)procfs_vnops.c	8.9 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs_vnops.c,v 3.2 1993/12/15 09:40:17 jsp Exp $
@@ -744,7 +744,7 @@ procfs_readdir(ap)
 		int doingzomb = 0;
 #endif
 		int pcnt = 0;
-		volatile struct proc *p = allproc;
+		volatile struct proc *p = allproc.lh_first;
 
 	again:
 		for (; p && uio->uio_resid >= UIO_MX; i++, pcnt++) {
@@ -771,7 +771,7 @@ procfs_readdir(ap)
 			default:
 				while (pcnt < i) {
 					pcnt++;
-					p = p->p_next;
+					p = p->p_list.le_next;
 					if (!p)
 						goto done;
 				}
@@ -779,7 +779,7 @@ procfs_readdir(ap)
 				dp->d_namlen = sprintf(dp->d_name, "%ld",
 				    (long)p->p_pid);
 				dp->d_type = DT_REG;
-				p = p->p_next;
+				p = p->p_list.le_next;
 				break;
 			}
 
@@ -791,7 +791,7 @@ procfs_readdir(ap)
 #ifdef PROCFS_ZOMBIE
 		if (p == 0 && doingzomb == 0) {
 			doingzomb = 1;
-			p = zombproc;
+			p = zombproc.lh_first;
 			goto again;
 		}
 #endif
