@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dmesg.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)dmesg.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -64,6 +64,10 @@ char **argv;
 	read(mem, &msgbuf, sizeof (msgbuf));
 	if (msgbuf.msg_magic != MSG_MAGIC)
 		done("Magic number wrong (namelist mismatch?)\n");
+	if (msgbuf.msg_bufx >= MSG_BSIZE)
+		msgbuf.msg_bufx = 0;
+	if (omsgbuf.msg_bufx >= MSG_BSIZE)
+		omsgbuf.msg_bufx = 0;
 	mstart = &msgbuf.msg_bufc[omesg.msg_bufx];
 	omp = &omesg.msg_bufc[msgbuf.msg_bufx];
 	mp = msgbufp = &msgbuf.msg_bufc[msgbuf.msg_bufx];
@@ -76,9 +80,9 @@ char **argv;
 			printf("...\n");
 			break;
 		}
-		if (mp == &msgbuf.msg_bufc[MSG_BSIZE])
+		if (mp >= &msgbuf.msg_bufc[MSG_BSIZE])
 			mp = msgbuf.msg_bufc;
-		if (omp == &omesg.msg_bufc[MSG_BSIZE])
+		if (omp >= &omesg.msg_bufc[MSG_BSIZE])
 			omp = omesg.msg_bufc;
 	} while (mp != mstart);
 	if (samef && omesg.msg_bufx == msgbuf.msg_bufx)
@@ -95,7 +99,7 @@ char **argv;
 			ignore = 0;
 		sawnl = (*mp == '\n');
 		mp++;
-		if (mp == &msgbuf.msg_bufc[MSG_BSIZE])
+		if (mp >= &msgbuf.msg_bufc[MSG_BSIZE])
 			mp = msgbuf.msg_bufc;
 	} while (mp != msgbufp);
 	done((char *)NULL);
