@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chmod.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)chmod.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -41,13 +41,12 @@ main(argc, argv)
 	while ((ch = getopt(argc, argv, "Rfrwx")) != EOF)
 		switch((char)ch) {
 		case 'R':
-			rflag++;
+			rflag = 1;
 			break;
-		case 'f':
-			fflag++;
+		case 'f':		/* no longer documented */
+			fflag = 1;
 			break;
-		/* "-[rwx]" are valid file modes */
-		case 'r':
+		case 'r':		/* "-[rwx]" are valid file modes */
 		case 'w':
 		case 'x':
 			--optind;
@@ -135,6 +134,6 @@ error(name)
 
 usage()
 {
-	(void)fprintf(stderr, "chmod: chmod [-fR] mode file ...\n");
+	(void)fprintf(stderr, "chmod: chmod [-R] mode file ...\n");
 	exit(1);
 }
