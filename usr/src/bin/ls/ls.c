@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.65 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.66 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -319,10 +319,9 @@ display(p, list)
 	struct stat *sp;
 	DISPLAY d;
 	NAMES *np;
-	u_long btotal, flen, glen, ulen;
-	u_long maxblock, maxgroup, maxinode, maxlen, maxnlink;
-	u_long maxuser, maxflags;
-	quad_t maxsize;
+	u_long btotal, maxblock, maxinode, maxlen, maxnlink;
+	u_quad_t maxsize;
+	int flen, glen, ulen, maxflags, maxgroup, maxuser;
 	int entries, needstats;
 	char *user, *group, *flags, buf[20];	/* 32 bits == 10 digits */
 
@@ -338,8 +337,9 @@ display(p, list)
 
 	needstats = f_inode || f_longform || f_size;
 	flen = 0;
-	btotal = maxblock = maxinode = maxlen = maxnlink = maxsize = 0;
+	btotal = maxblock = maxinode = maxlen = maxnlink = 0;
 	maxuser = maxgroup = maxflags = 0;
+	maxsize = 0;
 	for (cur = list, entries = 0; cur; cur = cur->fts_link) {
 		if (cur->fts_info == FTS_ERR || cur->fts_info == FTS_NS) {
 			err(0, "%s: %s",
@@ -422,12 +422,12 @@ display(p, list)
 	d.maxlen = maxlen;
 	if (needstats) {
 		d.btotal = btotal;
-		d.s_block = snprintf(buf, sizeof(buf), "%d", maxblock);
+		d.s_block = snprintf(buf, sizeof(buf), "%lu", maxblock);
 		d.s_flags = maxflags;
 		d.s_group = maxgroup;
-		d.s_inode = snprintf(buf, sizeof(buf), "%d", maxinode);
-		d.s_nlink = snprintf(buf, sizeof(buf), "%d", maxnlink);
-		d.s_size = snprintf(buf, sizeof(buf), "%d", maxsize);
+		d.s_inode = snprintf(buf, sizeof(buf), "%lu", maxinode);
+		d.s_nlink = snprintf(buf, sizeof(buf), "%lu", maxnlink);
+		d.s_size = snprintf(buf, sizeof(buf), "%qu", maxsize);
 		d.s_user = maxuser;
 	}
 

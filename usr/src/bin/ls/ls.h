@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ls.h	5.16 (Berkeley) %G%
+ *	@(#)ls.h	5.17 (Berkeley) %G%
  */
 
 #define NO_PRINT	1
@@ -25,16 +25,16 @@ extern int f_type;		/* add type character for non-regular files */
 
 typedef struct {
 	FTSENT *list;
+	u_long btotal;
 	int entries;
 	int maxlen;
-	u_long btotal;
-	u_long s_block;
-	u_long s_inode;
-	u_long s_nlink;
-	u_long s_size;
-	u_long s_user;
-	u_long s_group;
-	u_long s_flags;
+	int s_block;
+	int s_flags;
+	int s_group;
+	int s_inode;
+	int s_nlink;
+	int s_size;
+	int s_user;
 } DISPLAY;
 
 typedef struct {
