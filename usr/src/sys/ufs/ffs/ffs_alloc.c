@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	7.34 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	7.35 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -999,7 +999,7 @@ ffs_blkfree(ip, bno, size)
  *
  * The specified inode is placed back in the free map.
  */
-void
+int
 ffs_vfree (ap)
 	struct vop_vfree_args *ap;
 #define pvp (ap->a_pvp)
@@ -1026,13 +1026,13 @@ ffs_vfree (ap)
 		(int)fs->fs_cgsize, NOCRED, &bp);
 	if (error) {
 		brelse(bp);
-		return;
+		return (0);
 	}
 #endif SECSIZE
 	cgp = bp->b_un.b_cg;
 	if (!cg_chkmagic(cgp)) {
 		brelse(bp);
-		return;
+		return (0);
 	}
 	cgp->cg_time = time.tv_sec;
 	ino %= fs->fs_ipg;
@@ -1055,6 +1055,7 @@ ffs_vfree (ap)
 	}
 	fs->fs_fmod = 1;
 	bdwrite(bp);
+	return (0);
 }
 #undef pvp
 #undef ino
