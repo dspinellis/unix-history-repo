@@ -1,6 +1,6 @@
-#! /bin/csh -f
+#! /bin/csh
 #
-#	@(#)which.csh	4.2	(Berkeley)	83/02/14
+#	@(#)which.csh	4.3	(Berkeley)	84/01/23
 #
 #	which : tells you which program you get
 #
