@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in_proto.c	6.9 (Berkeley) %G%
+ *	@(#)in_proto.c	6.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -72,7 +72,7 @@ struct protosw inetsw[] = {
   0,		0,		0,		0,
 },
 #ifdef NSIP
-{ SOCK_RAW,	&inetdomain,	IPPROTO_PUP,	PR_ATOMIC|PR_ADDR,
+{ SOCK_RAW,	&inetdomain,	IPPROTO_IDP,	PR_ATOMIC|PR_ADDR,
   idpip_input,	rip_output,	0,		0,
   raw_usrreq,
   0,		0,		0,		0,
