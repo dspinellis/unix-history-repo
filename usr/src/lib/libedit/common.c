@@ -9,7 +9,7 @@
  */
 
 #if !defined(lint) && !defined(SCCSID)
-static char sccsid[] = "@(#)common.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)common.c	5.3 (Berkeley) %G%";
 #endif /* not lint && not SCCSID */
 
 /*
@@ -767,7 +767,7 @@ ed_search_prev_history(el, c)
 
     while (hp != NULL) {
 #ifdef SDEBUG
-	(void) fprintf(el->el_errfile, "Comparing with \"%s\"\n", hp->event);
+	(void) fprintf(el->el_errfile, "Comparing with \"%s\"\n", hp);
 #endif
 	if ((strncmp(hp, el->el_line.buffer, 
 		     el->el_line.lastchar - el->el_line.buffer) || 
@@ -825,7 +825,7 @@ ed_search_next_history(el, c)
 
     for (h = 1; h < el->el_history.eventno && hp; h++) {
 #ifdef SDEBUG
-	(void) fprintf(el->el_errfile, "Comparing with \"%s\"\n", hp->event);
+	(void) fprintf(el->el_errfile, "Comparing with \"%s\"\n", hp);
 #endif
 	if ((strncmp(hp, el->el_line.buffer, 
 		     el->el_line.lastchar - el->el_line.buffer) || 

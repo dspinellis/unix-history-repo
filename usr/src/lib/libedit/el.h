@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)el.h	5.4 (Berkeley) %G%
+ *	@(#)el.h	5.5 (Berkeley) %G%
  */
 
 /*
@@ -20,7 +20,7 @@
  */
 #define KSHVI
 #define VIDEFAULT
-/* (XXX - broken) #define ANCHOR*/
+#define ANCHOR
 
 #include <stdio.h>
 #include <sys/types.h>

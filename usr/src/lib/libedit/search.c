@@ -9,7 +9,7 @@
  */
 
 #if !defined(lint) && !defined(SCCSID)
-static char sccsid[] = "@(#)search.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)search.c	5.5 (Berkeley) %G%";
 #endif /* not lint && not SCCSID */
 
 /*
@@ -92,7 +92,7 @@ el_match(str, pat)
     else
     return re_exec(str) == 1;
 #else
-    if ((re = regcomp(pat)) == NULL) {
+    if ((re = regcomp(pat)) != NULL) {
 	rv = regexec(re, str);
 	free((ptr_t) re);
     }
