@@ -3,6 +3,7 @@ vax/clock.c		standard
 vax/conf.c		standard
 vax/cons.c		standard
 vax/cpudata.c		standard
+vax/crl.c		standard
 vax/dkbad.c		standard
 vax/flp.c		standard
 vax/in_cksum.c		optional inet
