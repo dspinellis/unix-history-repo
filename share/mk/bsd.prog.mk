@@ -4,10 +4,7 @@
 .include "${.CURDIR}/../Makefile.inc"
 .endif
 
-.SUFFIXES: .out .o .c .y .l .s .8 .7 .6 .5 .4 .3 .2 .1 .0
-
-.8.0 .7.0 .6.0 .5.0 .4.0 .3.0 .2.0 .1.0:
-	nroff -mandoc ${.IMPSRC} > ${.TARGET}
+.SUFFIXES: .out .o .c .y .l .s
 
 CFLAGS+=${COPTS}
 
@@ -74,10 +71,9 @@ MKDEP=	-p
 .if	!defined(MAN1) && !defined(MAN2) && !defined(MAN3) && \
 	!defined(MAN4) && !defined(MAN5) && !defined(MAN6) && \
 	!defined(MAN7) && !defined(MAN8) && !defined(NOMAN)
-MAN1=	${PROG}.0
+MAN1=	${PROG}.1
 .endif
 .endif
-MANALL=	${MAN1} ${MAN2} ${MAN3} ${MAN4} ${MAN5} ${MAN6} ${MAN7} ${MAN8}
 
 _PROGSUBDIR: .USE
 .if defined(SUBDIR) && !empty(SUBDIR)
@@ -93,17 +89,17 @@ _PROGSUBDIR: .USE
 .endif
 
 .MAIN: all
-all: ${PROG} ${MANALL} _PROGSUBDIR
+all: ${PROG} _PROGSUBDIR
 
 .if !target(clean)
 clean: _PROGSUBDIR
-	rm -f a.out [Ee]rrs mklog core ${PROG} ${OBJS} ${CLEANFILES} ${MANALL}
+	rm -f a.out [Ee]rrs mklog core ${PROG} ${OBJS} ${CLEANFILES} 
 .endif
 
 .if !target(cleandir)
 cleandir: _PROGSUBDIR
 	rm -f a.out [Ee]rrs mklog core ${PROG} ${OBJS} ${CLEANFILES} \
-	      ${MANALL} ${.CURDIR}/tags .depend
+	      ${.CURDIR}/tags .depend
 	cd ${.CURDIR}; rm -rf obj;
 .endif
 

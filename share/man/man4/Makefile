@@ -2,9 +2,10 @@
 #
 # Not for 386bsd:  man4.hp300 man4.tahoe man4.vax
 
-MAN4=	bpf.0 clnp.0 cltp.0 drum.0 esis.0 fd.0 icmp.0 idp.0 imp.0 \
-	inet.0 ip.0 iso.0 kadb.0 lo.0 netintro.0 ns.0 nsip.0 null.0 \
-	pty.0 route.0 spp.0 tcp.0 tp.0 udp.0 unix.0
+MAN4=	bpf.4 clnp.4 cltp.4 drum.4 esis.4 fd.4 icmp.4 idp.4 imp.4 inet.4 ip.4 \
+	iso.4 kadb.4 lo.4 netintro.4 ns.4 nsip.4 null.4 pty.4 route.4 spp.4 \
+	tcp.4 tp.4 udp.4 unix.4
+
 MLINKS=	netintro.4 networking.4
 SUBDIR=	man4.i386
 
