@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_clock.c	7.24 (Berkeley) %G%
+ *	@(#)kern_clock.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -72,7 +72,8 @@ int	adjtimedelta;
 int	stathz;
 int	profhz;
 int	profprocs;
-static int psratio, psdiv, pscnt;	/* prof => stat divider */
+static int psdiv, pscnt;	/* prof => stat divider */
+int	psratio;		/* ratio: prot / stat */
 
 volatile struct	timeval time;
 volatile struct	timeval mono_time;
