@@ -1,0 +1,66 @@
+
+
+
+PFBTOPS(1)             BSD Reference Manual            PFBTOPS(1)
+
+
+NNAAMMEE
+       pfbtops  -  translate  a PostScript font in .pfb format to
+       ASCII
+
+SSYYNNOOPPSSIISS
+       ppffbbttooppss [ _p_f_b___f_i_l_e ]
+
+DDEESSCCRRIIPPTTIIOONN
+       ppffbbttooppss translates a PostScript font  in  ..ppffbb  format  to
+       ASCII.   If  _p_f_b___f_i_l_e is omitted the pfb file will be read
+       from the standard input.  The ASCII format PostScript font
+       will  be written on the standard output.  PostScript fonts
+       for MS-DOS are normally supplied in ..ppffbb format.
+
+       The resulting ASCII format PostScript  font  can  be  used
+       with    groff.     It    must    first    be   listed   in
+       //uussrr//sshhaarree//ggrrooffff__ffoonntt//ddeevvppss//ddoowwnnllooaadd.
+
+SSEEEE AALLSSOO
+       ggrrooppss(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Groff Version 1.08        6 August 1992                         1
+
+
+
+
+

@@ -1,0 +1,990 @@
+
+
+
+REFER(1)               BSD Reference Manual              REFER(1)
+
+
+NNAAMMEE
+       refer - preprocess bibliographic references for groff
+
+SSYYNNOOPPSSIISS
+       rreeffeerr [ --bbeennvvCCPPRRSS ] [ --aa_n ] [ --cc_f_i_e_l_d_s ] [ --ff_n ]
+             [ --ii_f_i_e_l_d_s ] [ --kk_f_i_e_l_d ] [ --ll_m_,_n ] [ --pp_f_i_l_e_n_a_m_e ]
+             [ --ss_f_i_e_l_d_s ] [ --tt_n ] [ --BB_f_i_e_l_d_._m_a_c_r_o ]
+             [ _f_i_l_e_n_a_m_e... ]
+
+DDEESSCCRRIIPPTTIIOONN
+       This file documents the GNU version  of  rreeffeerr,  which  is
+       part  of  the  groff  document  formatting  system.  rreeffeerr
+       copies the contents of _f_i_l_e_n_a_m_e...  to the  standard  out-
+       put,  except that lines between ..[[ and ..]]  are interpreted
+       as citations, and lines between ..RR11  and  ..RR22  are  inter-
+       preted  as  commands  about  how  citations are to be pro-
+       cessed.
+
+       Each citation specifies a  reference.   The  citation  can
+       specify  a  reference that is contained in a bibliographic
+       database by giving a set of keywords that only that refer-
+       ence  contains.   Alternatively it can specify a reference
+       by supplying a database record in the citation.  A  combi-
+       nation of these alternatives is also possible.
+
+       For  each  citation, rreeffeerr can produce a mark in the text.
+       This mark consists of some label which  can  be  separated
+       from  the text and from other labels in various ways.  For
+       each reference it also outputs ggrrooffff commands that can  be
+       used  by  a macro package to produce a formatted reference
+       for each citation.  The output of rreeffeerr must therefore  be
+       processed using a suitable macro package.  The --mmss and --mmee
+       macros are both suitable.  The commands to format a  cita-
+       tion's reference can be output immediately after the cita-
+       tion, or the references may be accumulated, and  the  com-
+       mands  output  at some later point.  If the references are
+       accumulated, then multiple citations of the same reference
+       will produce a single formatted reference.
+
+       The  interpretation  of  lines between ..RR11 and ..RR22 as com-
+       mands is a new feature of GNU refer.  Documents making use
+       of  this feature can still be processed by Unix refer just
+       by adding the lines
+
+              ..ddee RR11
+              ..iigg RR22
+              ....
+       to the beginning of the document.  This will  cause  ttrrooffff
+       to  ignore  everything between ..RR11 and ..RR22.  The effect of
+       some commands can also  be  achieved  by  options.   These
+       options  are  supported mainly for compatibility with Unix
+
+
+
+Groff Version 1.08       19 February 1993                       1
+
+
+
+
+
+
+
+
+REFER(1)               BSD Reference Manual              REFER(1)
+
+
+       refer.  It is usually more convenient to use commands.
+
+       rreeffeerr generates ..llff lines so that filenames and line  num-
+       bers in messages produced by commands that read rreeffeerr out-
+       put will be correct; it also  interprets  lines  beginning
+       with  ..llff  so  that filenames and line numbers in the mes-
+       sages and ..llff lines that it produces will be accurate even
+       if  the  input  has been preprocessed by a command such as
+       ssooeelliimm(1).
+
+OOPPTTIIOONNSS
+       Most options are equivalent to commands (for a description
+       of these commands see the CCoommmmaannddss subsection):
+
+       --bb     nnoo--llaabbeell--iinn--tteexxtt;; nnoo--llaabbeell--iinn--rreeffeerreennccee
+
+       --ee     aaccccuummuullaattee
+
+       --nn     nnoo--ddeeffaauulltt--ddaattaabbaassee
+
+       --CC     ccoommppaattiibbllee
+
+       --PP     mmoovvee--ppuunnttuuaattiioonn
+
+       --SS     llaabbeell  ""((AA..nn||QQ)) '',, '' ((DD..yy||DD))"";; bbrraacckkeett--llaabbeell "" (("" ))
+              "";; ""
+
+       --aa_n    rreevveerrssee AA_n
+
+       --cc_f_i_e_l_d_s
+              ccaappiittaalliizzee _f_i_e_l_d_s
+
+       --ff_n    llaabbeell %%_n
+
+       --ii_f_i_e_l_d_s
+              sseeaarrcchh--iiggnnoorree _f_i_e_l_d_s
+
+       --kk     llaabbeell LL~~%%aa
+
+       --kk_f_i_e_l_d
+              llaabbeell _f_i_e_l_d~~%%aa
+
+       --ll     llaabbeell AA..nnDD..yy%%aa
+
+       --ll_m    llaabbeell AA..nn++_mDD..yy%%aa
+
+       --ll,,_n   llaabbeell AA..nnDD..yy--_n%%aa
+
+       --ll_m,,_n  llaabbeell AA..nn++_mDD..yy--_n%%aa
+
+
+
+
+
+Groff Version 1.08       19 February 1993                       2
+
+
+
+
+
+
+
+
+REFER(1)               BSD Reference Manual              REFER(1)
+
+
+       --pp_f_i_l_e_n_a_m_e
+              ddaattaabbaassee _f_i_l_e_n_a_m_e
+
+       --ss_s_p_e_c ssoorrtt _s_p_e_c
+
+       --tt_n    sseeaarrcchh--ttrruunnccaattee _n
+
+       These options are equivalent  to  the  following  commands
+       with the addition that the filenames specified on the com-
+       mand line are processed as if they were arguments  to  the
+       bbiibblliiooggrraapphhyy command instead of in the normal way:
+
+       --BB     aannnnoottaattee XX AAPP;; nnoo--llaabbeell--iinn--rreeffeerreennccee
+
+       --BB_f_i_e_l_d.._m_a_c_r_o
+              aannnnoottaattee _f_i_e_l_d _m_a_c_r_o;; nnoo--llaabbeell--iinn--rreeffeerreennccee
+
+       The following options have no equivalent commands:
+
+       --vv     Print the version number.
+
+       --RR     Don't recognize lines beginning with ..RR11/..RR22.
+
+UUSSAAGGEE
+   BBiibblliiooggrraapphhiicc ddaattaabbaasseess
+       The  bibliographic  database  is a text file consisting of
+       records separated by one or more blank lines.  Within each
+       record  fields  start with a %% at the beginning of a line.
+       Each field has a one character name that immediately  fol-
+       lows  the  %%.  It is best to use only upper and lower case
+       letters for the names of fields.  The name  of  the  field
+       should  be  followed by exactly one space, and then by the
+       contents of the field.  Empty  fields  are  ignored.   The
+       conventional meaning of each field is as follows:
+
+       AA      The  name  of  an  author.   If the name contains a
+              title such as JJrr..  at the end, it should  be  sepa-
+              rated  from the last name by a comma.  There can be
+              multiple occurences of the AA field.  The  order  is
+              siginificant.   It  is a good idea always to supply
+              an AA field or a QQ field.
+
+       BB      For an article that is part of a book, the title of
+              the book
+
+       CC      The place (city) of publication.
+
+       DD      The date of publication.  The year should be speci-
+              fied in full.  If the month is specified, the  name
+              rather than the number of the month should be used,
+              but only the first three letters are required.   It
+
+
+
+Groff Version 1.08       19 February 1993                       3
+
+
+
+
+
+
+
+
+REFER(1)               BSD Reference Manual              REFER(1)
+
+
+              is  a  good idea always to supply a DD field; if the
+              date is unknown,  a  value  such  as  iinn  pprreessss  or
+              uunnkknnoowwnn can be used.
+
+       EE      For  an article that is part of a book, the name of
+              an editor of the book.  Where the work has  editors
+              and  no authors, the names of the editors should be
+              given as AA fields and ,, ((eedd)) or ,, ((eeddss))  should  be
+              appended to the last author.
+
+       GG      US Government ordering number.
+
+       II      The publisher (issuer).
+
+       JJ      For  an article in a journal, the name of the jour-
+              nal.
+
+       KK      Keywords to be used for searching.
+
+       LL      Label.
+
+       NN      Journal issue number.
+
+       OO      Other information.  This is usually printed at  the
+              end of the reference.
+
+       PP      Page  number.  A range of pages can be specified as
+              _m--_n.
+
+       QQ      The name of the author, if the author is not a per-
+              son.   This  will  only  be  used if there are no AA
+              fields.  There can only be one QQ field.
+
+       RR      Technical report number.
+
+       SS      Series name.
+
+       TT      Title.  For an article in a book or  journal,  this
+              should be the title of the article.
+
+       VV      Volume number of the journal or book.
+
+       XX      Annotation.
+
+       For  all  fields except AA and EE, if there is more than one
+       occurence of a particular field in a record, only the last
+       such field will be used.
+
+       If  accent  strings  are  used,  they  should  follow  the
+       charater to be accented.  This means  that  the  AAMM  macro
+       must  be  used with the --mmss macros.  Accent strings should
+
+
+
+Groff Version 1.08       19 February 1993                       4
+
+
+
+
+
+
+
+
+REFER(1)               BSD Reference Manual              REFER(1)
+
+
+       not be quoted: use one \\ rather than two.
+
+   CCiittaattiioonnss
+       The format of a citation is
+              ..[[_o_p_e_n_i_n_g_-_t_e_x_t
+              _f_l_a_g_s _k_e_y_w_o_r_d_s
+              _f_i_e_l_d_s
+              ..]]_c_l_o_s_i_n_g_-_t_e_x_t
+
+       The _o_p_e_n_i_n_g_-_t_e_x_t, _c_l_o_s_i_n_g_-_t_e_x_t and  _f_l_a_g_s  components  are
+       optional.   Only one of the _k_e_y_w_o_r_d_s and _f_i_e_l_d_s components
+       need be specified.
+
+       The _k_e_y_w_o_r_d_s component says to  search  the  bibliographic
+       databases  for  a reference that contains all the words in
+       _k_e_y_w_o_r_d_s.  It is an error if more than  one  reference  if
+       found.
+
+       The  _f_i_e_l_d_s  components  specifies  additional  fields  to
+       replace or supplement those specified  in  the  reference.
+       When  references  are  being  accumulated and the _k_e_y_w_o_r_d_s
+       component is non-empty, then additional fields  should  be
+       specified  only  on  the  first occasion that a particular
+       reference is cited, and will apply  to  all  citations  of
+       that reference.
+
+       The  _o_p_e_n_i_n_g_-_t_e_x_t  and  _c_l_o_s_i_n_g_-_t_e_x_t  component  specifies
+       strings to be used to bracket the  label  instead  of  the
+       strings specified in the bbrraacckkeett--llaabbeell command.  If either
+       of these components is non-empty, the strings specified in
+       the bbrraacckkeett--llaabbeell command will not be used; this behaviour
+       can be altered using the [[ and ]] flags.  Note that leading
+       and  trailing spaces are significant for these components.
+
+       The _f_l_a_g_s component is a list of non-alphanumeric  charac-
+       ters each of which modifies the treatment of this particu-
+       lar citation.  Unix refer will treat these flags  as  part
+       of  the  keywords  and  so will ignore them since they are
+       non-alphanumeric.  The following flags are currently  rec-
+       ognized:
+
+       ##      This  says to use the label specified by the sshhoorrtt--
+              llaabbeell command, instead of  that  specified  by  the
+              llaabbeell  command.   If no short label has been speci-
+              fied, the normal label will be used.  Typically the
+              short  label  is  used  with author-date labels and
+              consists of only the date  and  possibly  a  disam-
+              biguating  letter;  the ## is supposed to be sugges-
+              tive of a numeric type of label.
+
+       [[      Precede  _o_p_e_n_i_n_g_-_t_e_x_t   with   the   first   string
+
+
+
+Groff Version 1.08       19 February 1993                       5
+
+
+
+
+
+
+
+
+REFER(1)               BSD Reference Manual              REFER(1)
+
+
+              specified in the bbrraacckkeett--llaabbeell command.
+
+       ]]      Follow  _c_l_o_s_i_n_g_-_t_e_x_t  with the second string speci-
+              fied in the bbrraacckkeett--llaabbeell command.
+
+       One advantages of using the [[  and  ]]  flags  rather  than
+       including the brackets in _o_p_e_n_i_n_g_-_t_e_x_t and _c_l_o_s_i_n_g_-_t_e_x_t is
+       that you can change the style of bracket used in the docu-
+       ment  just by changing the bbrraacckkeett--llaabbeell command.  Another
+       advantage is that sorting and merging  of  citations  will
+       not necessarily be inhibited if the flags are used.
+
+       If  a  label  is  to be inserted into the text, it will be
+       attached to the line preceding the ..[[ line.  If  there  is
+       no  such  line, then an extra line will be inserted before
+       the ..[[ line and a warning will be given.
+
+       There is no special notation for making a citation to mul-
+       tiple  references.   Just use a sequence of citations, one
+       for each reference.  Don't put anything between the  cita-
+       tions.   The labels for all the citations will be attached
+       to the line preceding the first citation.  The labels  may
+       also  be  sorted or merged.  See the description of the <<>>
+       label expression,  and  of  the  ssoorrtt--aaddjjaacceenntt--llaabbeellss  and
+       aabbbbrreevviiaattee--llaabbeell--rraannggeess  command.   A  label  will  not be
+       merged if its citation has  a  non-empty  _o_p_e_n_i_n_g_-_t_e_x_t  or
+       _c_l_o_s_i_n_g_-_t_e_x_t.   However,  the  labels for a citation using
+       the ]] flag and without any _c_l_o_s_i_n_g_-_t_e_x_t  immediately  fol-
+       lowed by a citation using the [[ flag and without any _o_p_e_n_-
+       _i_n_g_-_t_e_x_t may be sorted and merged even  though  the  first
+       citation's  _o_p_e_n_i_n_g_-_t_e_x_t or the second citation's _c_l_o_s_i_n_g_-
+       _t_e_x_t is non-empty.  (If you wish to prevent this just make
+       the first citation's _c_l_o_s_i_n_g_-_t_e_x_t \\&&.)
+
+   CCoommmmaannddss
+       Commands are contained between lines starting with ..RR11 and
+       ..RR22.  Recognition of these lines can be prevented  by  the
+       --RR  option.  When a ..RR11 line is recognized any accumulated
+       references are flushed out.  Neither ..RR11  nor  ..RR22  lines,
+       nor anything between them is output.
+
+       Commands  are separated by newlines or ;;s.  ## introduces a
+       comment that extends to the end of the line (but does  not
+       conceal  the  newline).   Each  command  is broken up into
+       words.  Words are separated by spaces  or  tabs.   A  word
+       that  begins with "" extends to the next "" that is not fol-
+       lowed by another "".  If  there  is  no  such  ""  the  word
+       extends  to  the  end  of  the line.  Pairs of "" in a word
+       beginning with "" collapse to a single "".  Neither ## nor  ;;
+       are recognized inside ""s.  A line can be continued by end-
+       ing it with \\; this works everywhere except after a ##.
+
+
+
+Groff Version 1.08       19 February 1993                       6
+
+
+
+
+
+
+
+
+REFER(1)               BSD Reference Manual              REFER(1)
+
+
+       Each command _n_a_m_e that is marked with * has an  associated
+       negative  command  nnoo--_n_a_m_e that undoes the effect of _n_a_m_e.
+       For example, the nnoo--ssoorrtt command specifies that references
+       should not be sorted.  The negative commands take no argu-
+       ments.
+
+       In the following description each argument must be a  sin-
+       gle  word;  _f_i_e_l_d is used for a single upper or lower case
+       letter naming a field; _f_i_e_l_d_s is used for  a  sequence  of
+       such letters; _m and _n are used for a non-negative numbers;
+       _s_t_r_i_n_g is used for an arbitrary string; _f_i_l_e_n_a_m_e  is  used
+       for the name of a file.
+
+       aabbbbrreevviiaattee* _f_i_e_l_d_s _s_t_r_i_n_g_1 _s_t_r_i_n_g_2 _s_t_r_i_n_g_3 _s_t_r_i_n_g_4
+                                Abbreviate  the  first  names  of
+                                _f_i_e_l_d_s.  An initial  letter  will
+                                be separated from another initial
+                                letter by _s_t_r_i_n_g_1, from the  last
+                                name  by  _s_t_r_i_n_g_2,  and from any-
+                                thing else (such as a vvoonn or  ddee)
+                                by  _s_t_r_i_n_g_3.   These default to a
+                                period followed by a space.  In a
+                                hyphenated  first  name, the ini-
+                                tial of the  first  part  of  the
+                                name  will  be separated from the
+                                hyphen by _s_t_r_i_n_g_4; this  defaults
+                                to  a period.  No attempt is made
+                                to handle  any  ambiguities  that
+                                might  result  from abbreviation.
+                                Names  are   abbreviated   before
+                                sorting  and  before  label  con-
+                                struction.
+
+       aabbbbrreevviiaattee--llaabbeell--rraannggeess* _s_t_r_i_n_g
+                                Three  or  more  adjacent  labels
+                                that  refer to consecutive refer-
+                                ences will be  abbreviated  to  a
+                                label  consisting  of  the  first
+                                label, followed  by  _s_t_r_i_n_g  fol-
+                                lowed by the last label.  This is
+                                mainly   useful   with    numeric
+                                labels.   If _s_t_r_i_n_g is omitted it
+                                defaults to --.
+
+       aaccccuummuullaattee*              Accumulate references instead  of
+                                writing  out each reference as it
+                                is encountered.  Accumulated ref-
+                                erences will be written out when-
+                                ever a reference of the form
+
+                                       ..[[
+
+
+
+Groff Version 1.08       19 February 1993                       7
+
+
+
+
+
+
+
+
+REFER(1)               BSD Reference Manual              REFER(1)
+
+
+                                       $$LLIISSTT$$
+                                       ..]]
+
+                                is encountered, after  all  input
+                                files  hve  been  processed,  and
+                                whenever ..RR11 line is  recognized.
+
+       aannnnoottaattee* _f_i_e_l_d _s_t_r_i_n_g   _f_i_e_l_d  is an annotation; print it
+                                at the end of the reference as  a
+                                paragraph preceded by the line
+
+                                       .._s_t_r_i_n_g
+
+                                If   _m_a_c_r_o  is  omitted  it  will
+                                default to AAPP; if _f_i_e_l_d  is  also
+                                omitted  it  will  default  to XX.
+                                Only one field can be an  annota-
+                                tion.
+
+       aarrttiicclleess _s_t_r_i_n_g...       _s_t_r_i_n_g...  are definite or indef-
+                                inite  articles,  and  should  be
+                                ignored  at  the  beginning  of TT
+                                fields when sorting.   Initially,
+                                tthhee,  aa  and aann are recognized as
+                                articles.
+
+       bbiibblliiooggrraapphhyy _f_i_l_e_n_a_m_e... Write out all the references con-
+                                tained   in   the   bibliographic
+                                databases _f_i_l_e_n_a_m_e...
+
+       bbrraacckkeett--llaabbeell _s_t_r_i_n_g_1 _s_t_r_i_n_g_2 _s_t_r_i_n_g_3
+                                In the text, bracket  each  label
+                                with  _s_t_r_i_n_g_1  and  _s_t_r_i_n_g_2.   An
+                                occurrence of _s_t_r_i_n_g_2 immediately
+                                followed   by   _s_t_r_i_n_g_1  will  be
+                                turned into _s_t_r_i_n_g_3.  The default
+                                behaviour is
+
+                                       bbrraacckkeett--llaabbeell  \\**(([[.. \\**((..]]
+                                       "",, ""
+
+       ccaappiittaalliizzee _f_i_e_l_d_s        Convert _f_i_e_l_d_s to caps and  small
+                                caps.
+
+       ccoommppaattiibbllee*              Recognize  ..RR11  and ..RR22 even when
+                                followed  by  a  character  other
+                                than space or newline.
+
+       ddaattaabbaassee _f_i_l_e_n_a_m_e...     Search the bibligraphic databases
+                                _f_i_l_e_n_a_m_e...  For each _f_i_l_e_n_a_m_e if
+                                an  index  _f_i_l_e_n_a_m_e..ii  created by
+
+
+
+Groff Version 1.08       19 February 1993                       8
+
+
+
+
+
+
+
+
+REFER(1)               BSD Reference Manual              REFER(1)
+
+
+                                iinnddxxbbiibb(1) exists, then  it  will
+                                be  searched  instead; each index
+                                can cover multiple databases.
+
+       ddaattee--aass--llaabbeell* _s_t_r_i_n_g    _s_t_r_i_n_g is a label expression that
+                                specifies  a string with which to
+                                replace the DD  field  after  con-
+                                structing  the  label.   See  the
+                                LLaabbeell eexxpprreessssiioonnss subsection  for
+                                a  description  of  label expres-
+                                sions.  This command is useful if
+                                you  do  not want explicit labels
+                                in  the   reference   list,   but
+                                instead want to handle any neces-
+                                sary disambiguation by qualifying
+                                the  date in some way.  The label
+                                used in the text would  typically
+                                be some combination of the author
+                                and  date.   In  most  cases  you
+                                should  also use the nnoo--llaabbeell--iinn--
+                                rreeffeerreennccee command.  For example,
+
+                                       ddaattee--aass--llaabbeell
+                                       DD..++yyDD..yy%%aa**DD..--yy
+
+                                would   attach  a  disambiguating
+                                letter to the year part of the  DD
+                                field in the reference.
+
+       ddeeffaauulltt--ddaattaabbaassee*        The  default  database  should be
+                                searched.  This  is  the  default
+                                behaviour,  so  the negative ver-
+                                sion of this command is more use-
+                                ful.   refer  determines  whether
+                                the default  database  should  be
+                                searched  on  the  first occasion
+                                that it needs  to  do  a  search.
+                                Thus  a  nnoo--ddeeffaauulltt--ddaattaabbaassee com-
+                                mand must be given  before  then,
+                                in order to be effective.
+
+       ddiissccaarrdd* _f_i_e_l_d_s          When   the   reference  is  read,
+                                _f_i_e_l_d_s should  be  discarded;  no
+                                string   definitions  for  _f_i_e_l_d_s
+                                will   be   output.    Initially,
+                                _f_i_e_l_d_s are XXYYZZ.
+
+       eett--aall* _s_t_r_i_n_g _m _n        Control use of eett aall in the eval-
+                                uation of @@ expressions in  label
+                                expressions.   If  the  number of
+                                authors needed to make the author
+
+
+
+Groff Version 1.08       19 February 1993                       9
+
+
+
+
+
+
+
+
+REFER(1)               BSD Reference Manual              REFER(1)
+
+
+                                sequence unambiguous is _u and the
+                                total number of authors is _t then
+                                the  last  _t-_u  authors  will  be
+                                replaced by _s_t_r_i_n_g provided  that
+                                _t-_u  is  not less than _m and _t is
+                                not less  than  _n.   The  default
+                                behaviour is
+
+                                       eett--aall "" eett aall"" 22 33
+
+       iinncclluuddee _f_i_l_e_n_a_m_e         Include  _f_i_l_e_n_a_m_e  and  interpret
+                                the contents as commands.
+
+       jjooiinn--aauutthhoorrss _s_t_r_i_n_g_1 _s_t_r_i_n_g_2 _s_t_r_i_n_g_3
+                                This says how authors  should  be
+                                joined  together.  When there are
+                                exactly two authors, they will be
+                                joined  with _s_t_r_i_n_g_1.  When there
+                                are more than  two  authors,  all
+                                but  the  last two will be joined
+                                with _s_t_r_i_n_g_2, and  the  last  two
+                                authors   will   be  joined  with
+                                _s_t_r_i_n_g_3.  If _s_t_r_i_n_g_3 is  omitted,
+                                it  will  default  to _s_t_r_i_n_g_1; if
+                                _s_t_r_i_n_g_2 is also omitted  it  will
+                                also  default  to  _s_t_r_i_n_g_1.   For
+                                example,
+
+                                       jjooiinn--aauutthhoorrss "" aanndd "" "",,  ""
+                                       "",, aanndd ""
+
+                                will  restore  the default method
+                                for joining authors.
+
+       llaabbeell--iinn--rreeffeerreennccee*      When  outputting  the  reference,
+                                define  the  string  [[FF to be the
+                                reference's label.  This  is  the
+                                default  behaviour;  so the nega-
+                                tive version of this  command  is
+                                more useful.
+
+       llaabbeell--iinn--tteexxtt*           For each reference output a label
+                                in the text.  The label  will  be
+                                separated  from  the  surrounding
+                                text as described in the bbrraacckkeett--
+                                llaabbeell   command.    This  is  the
+                                default behaviour; so  the  nega-
+                                tive  version  of this command is
+                                more useful.
+
+       llaabbeell _s_t_r_i_n_g             _s_t_r_i_n_g  is  a  label   expression
+
+
+
+Groff Version 1.08       19 February 1993                      10
+
+
+
+
+
+
+
+
+REFER(1)               BSD Reference Manual              REFER(1)
+
+
+                                describing how to label each ref-
+                                erence.
+
+       sseeppaarraattee--llaabbeell--sseeccoonndd--ppaarrttss _s_t_r_i_n_g
+                                When  merging  two-part   labels,
+                                separate  the  second part of the
+                                second label from the first label
+                                with _s_t_r_i_n_g.  See the description
+                                of the <<>> label expression.
+
+       mmoovvee--ppuunnccttuuaattiioonn*        In the text, move any punctuation
+                                at  the  end  of  line  past  the
+                                label.  It is usually a good idea
+                                to  give  this command unless you
+                                are using  superscripted  numbers
+                                as labels.
+
+       rreevveerrssee* _s_t_r_i_n_g          Reverse  the  fields  whose names
+                                are in _s_t_r_i_n_g.  Each  field  name
+                                can be followed by a number which
+                                says how many such fields  should
+                                be  reversed.   If  no  number is
+                                given  for  a  field,  all   such
+                                fields will be reversed.
+
+       sseeaarrcchh--iiggnnoorree* _f_i_e_l_d_s    While   searching   for  keys  in
+                                databases  for  which  no   index
+                                exists,  ignore  the  contents of
+                                _f_i_e_l_d_s.   Initially,  fields  XXYYZZ
+                                are ignored.
+
+       sseeaarrcchh--ttrruunnccaattee* _n       Only  require the first _n charac-
+                                ters of keys  to  be  given.   In
+                                effect when searching for a given
+                                key words  in  the  database  are
+                                truncated to the maximum of _n and
+                                the length of the key.  Initially
+                                _n is 6.
+
+       sshhoorrtt--llaabbeell* _s_t_r_i_n_g      _s_t_r_i_n_g is a label expression that
+                                specifies an alternative (usually
+                                shorter) style of label.  This is
+                                used when the ## flag is given  in
+                                the citation.  When using author-
+                                date style labels,  the  identity
+                                of the author or authors is some-
+                                times clear from the context, and
+                                so  it  may  be desirable to omit
+                                the author or  authors  from  the
+                                label.   The  sshhoorrtt--llaabbeell command
+                                will typically be used to specify
+
+
+
+Groff Version 1.08       19 February 1993                      11
+
+
+
+
+
+
+
+
+REFER(1)               BSD Reference Manual              REFER(1)
+
+
+                                a  label  containing  just a date
+                                and  possibly  a   disambiguating
+                                letter.
+
+       ssoorrtt* _s_t_r_i_n_g             Sort   references   according  to
+                                ssttrriinngg.  References will automat-
+                                ically  be  accumulated.   _s_t_r_i_n_g
+                                should be a list of field  names,
+                                each  followed by a number, indi-
+                                cating how many fields  with  the
+                                name  should be used for sorting.
+                                ++ can be used  to  indicate  that
+                                all  the  fields  with  the  name
+                                should be used.  Also ..   can  be
+                                used  to  indicate the references
+                                should be sorted using the  (ten-
+                                tative)    label.    (The   LLaabbeell
+                                eexxpprreessssiioonnss subsection  describes
+                                the   concept   of   a  tentative
+                                label.)
+
+       ssoorrtt--aaddjjaacceenntt--llaabbeellss*    Sort labels that are adjacent  in
+                                the text according to their posi-
+                                tion in the reference list.  This
+                                command  should  usually be given
+                                if  the   aabbbbrreevviiaattee--llaabbeell--rraannggeess
+                                command has been given, or if the
+                                label expression  contains  a  <<>>
+                                expression.   This  will  have no
+                                effect  unless   references   are
+                                being accumulated.
+
+   LLaabbeell eexxpprreessssiioonnss
+       Label  expressions can be evaluated both normally and ten-
+       tatively.  The result of normal  evaluation  is  used  for
+       output.   The  result  of tentative evaluation, called the
+       _t_e_n_t_a_t_i_v_e _l_a_b_e_l_, is used to gather  the  information  that
+       normal  evaluation needs to disambiguate the label.  Label
+       expressions specified by the ddaattee--aass--llaabbeell and sshhoorrtt--llaabbeell
+       commands are not evaluated tentatively.  Normal and tenta-
+       tive evaluation are the same for all types  of  expression
+       other than @@, **, and %% expressions.  The description below
+       applies to normal evaluation, except where otherwise spec-
+       ified.
+
+       _f_i_e_l_d
+       _f_i_e_l_d _n
+              The  _n-th  part  of  _f_i_e_l_d.   If  _n  is omitted, it
+              defaults to 1.
+
+
+
+
+
+Groff Version 1.08       19 February 1993                      12
+
+
+
+
+
+
+
+
+REFER(1)               BSD Reference Manual              REFER(1)
+
+
+       ''_s_t_r_i_n_g''
+              The characters in _s_t_r_i_n_g literally.
+
+       @@      All the authors joined as specified  by  the  jjooiinn--
+              aauutthhoorrss  command.   The whole of each author's name
+              will be  used.   However,  if  the  references  are
+              sorted  by  author  (that is the sort specification
+              starts with AA++), then authors' last names  will  be
+              used instead, provided that this does not introduce
+              ambiguity, and also an initial subsequence  of  the
+              authors  may  be  used  instead of all the authors,
+              again provided that this does not introduce ambigu-
+              ity.   The  use  of only the last name for the _i-th
+              author  of  some  reference  is  considered  to  be
+              ambiguous  if  there  is some other reference, such
+              that the first _i-1 authors of  the  references  are
+              the  same,  the  _i-th authors are not the same, but
+              the _i-th authors'  last  names  are  the  same.   A
+              proper  initial  subsequence  of  the  sequence  of
+              authors for some  reference  is  considered  to  be
+              ambiguous  if  there is a reference with some other
+              sequence of authors which also has that subsequence
+              as  a  proper initial subsequence.  When an initial
+              subsequence  of  authors  is  used,  the  remaining
+              authors are replaced by the string specified by the
+              eett--aall command; this command may also specify  addi-
+              tional requirements that must be met before an ini-
+              tial subsequence can be used.  @@ tentatively evalu-
+              ates  to a canonical representation of the authors,
+              such that authors that compare equally for  sorting
+              purpose will have the same representation.
+
+       %%_n
+       %%aa
+       %%AA
+       %%ii
+       %%II     The   serial  number  of  the  reference  formatted
+              according to the character following  the  %%.   The
+              serial  number  of a reference is 1 plus the number
+              of earlier references with same tentative label  as
+              this   reference.   These  expressions  tentatively
+              evaluate to an empty string.
+
+       _e_x_p_r**  If there is another reference with the same  tenta-
+              tive  label as this reference, then _e_x_p_r, otherwise
+              an empty string.  It tentatively  evaluates  to  an
+              empty string.
+
+       _e_x_p_r++_n
+       _e_x_p_r--_n The  first  (++)  or  last (--) _n upper or lower case
+              letters  or  digits   of   _e_x_p_r.    Troff   special
+
+
+
+Groff Version 1.08       19 February 1993                      13
+
+
+
+
+
+
+
+
+REFER(1)               BSD Reference Manual              REFER(1)
+
+
+              characters (such as \\((''aa) count as a single letter.
+              Accent  strings  are  retained  but  do  not  count
+              towards the total.
+
+       _e_x_p_r..ll _e_x_p_r converted to lowercase.
+
+       _e_x_p_r..uu _e_x_p_r converted to uppercase.
+
+       _e_x_p_r..cc _e_x_p_r converted to caps and small caps.
+
+       _e_x_p_r..rr _e_x_p_r reversed so that the last name is first.
+
+       _e_x_p_r..aa _e_x_p_r  with  first  names  abbreviated.   Note  that
+              fields specified  in  the  aabbbbrreevviiaattee  command  are
+              abbreviated  before any labels are evaluated.  Thus
+              ..aa is useful only when  you  want  a  field  to  be
+              abbreviated in a label but not in a reference.
+
+       _e_x_p_r..yy The year part of _e_x_p_r.
+
+       _e_x_p_r..++yy
+              The  part  of _e_x_p_r before the year, or the whole of
+              _e_x_p_r if it does not contain a year.
+
+       _e_x_p_r..--yy
+              The part of _e_x_p_r after the year, or an empty string
+              if _e_x_p_r does not contain a year.
+
+       _e_x_p_r..nn The last name part of _e_x_p_r.
+
+       _e_x_p_r_1~~_e_x_p_r_2
+              _e_x_p_r_1 except that if the last character of _e_x_p_r_1 is
+              -- then it will be replaced by _e_x_p_r_2.
+
+       _e_x_p_r_1 _e_x_p_r_2
+              The concatenation of _e_x_p_r_1 and _e_x_p_r_2.
+
+       _e_x_p_r_1||_e_x_p_r_2
+              If _e_x_p_r_1 is non-empty then _e_x_p_r_1 otherwise _e_x_p_r_2.
+
+       _e_x_p_r_1&&_e_x_p_r_2
+              If _e_x_p_r_1 is non-empty then _e_x_p_r_2 otherwise an empty
+              string.
+
+       _e_x_p_r_1??_e_x_p_r_2::_e_x_p_r_3
+              If _e_x_p_r_1 is non-empty then _e_x_p_r_2 otherwise _e_x_p_r_3.
+
+       <<_e_x_p_r>> The  label  is in two parts, which are separated by
+              _e_x_p_r.  Two adjacent two-part labels which have  the
+              same  first  part  will  be merged by appending the
+              second part of the  second  label  onto  the  first
+
+
+
+Groff Version 1.08       19 February 1993                      14
+
+
+
+
+
+
+
+
+REFER(1)               BSD Reference Manual              REFER(1)
+
+
+              label separated by the string specified in the sseepp--
+              aarraattee--llaabbeell--sseeccoonndd--ppaarrttss  command   (initially,   a
+              comma  followed  by  a  space); the resulting label
+              will also be a two-part label with the  same  first
+              part  as  before  merging, and so additional labels
+              can be merged into it.  Note that it is permissible
+              for  the  first part to be empty; this maybe desir-
+              able for expressions used in the  sshhoorrtt--llaabbeell  com-
+              mand.
+
+       ((_e_x_p_r)) The same as _e_x_p_r.  Used for grouping.
+
+       The  above  expressions  are listed in order of precedence
+       (highest first); && and || have the same precedence.
+
+   MMaaccrroo iinntteerrffaaccee
+       Each reference starts with a call to the  macro  ]]--.   The
+       string  [[FF will be defined to be the label for this refer-
+       ence, unless the nnoo--llaabbeell--iinn--rreeffeerreennccee  command  has  been
+       given.  There then follows a series of string definitions,
+       one for each field: string [[_X corresponds to field _X.  The
+       number  register  [[PP is set to 1 if the PP field contains a
+       range of pages.  The [[TT, [[AA and [[OO  number  registers  are
+       set  to  1 according as the TT, AA and OO fields end with one
+       of the characters ..??!!.  The [[EE number register will be set
+       to  1  if  the [[EE string contains more than one name.  The
+       reference is followed by a call  to  the  ]][[  macro.   The
+       first  argument  to this macro gives a number representing
+       the type of the reference.  If a reference  contains  a  JJ
+       field,  it  will  be classified as type 1, otherwise if it
+       contains a BB field, it will type 3, otherwise if  it  con-
+       tains  a GG or RR field it will be type 4, otherwise if con-
+       tains a II field it will be type 2, otherwise  it  will  be
+       type  0.   The  second argument is a symbolic name for the
+       type: ootthheerr,  jjoouurrnnaall--aarrttiiccllee,  bbooookk,  aarrttiiccllee--iinn--bbooookk  or
+       tteecchh--rreeppoorrtt.   Groups of references that have been accumu-
+       lated or are produced by the bbiibblliiooggrraapphhyy command are pre-
+       ceded  by a call to the ]]<< macro and followed by a call to
+       the ]]>> macro.
+
+FFIILLEESS
+       //uussrr//sshhaarree//ddiicctt//ppaappeerrss//IInndd  Default database.
+
+       _f_i_l_e..ii                      Index files.
+
+SSEEEE AALLSSOO
+       iinnddxxbbiibb(1), llooookkbbiibb(1), llkkbbiibb(1)
+
+BBUUGGSS
+       In label expressions, <<>> expressions  are  ignored  inside
+       .._c_h_a_r expressions.
+
+
+
+Groff Version 1.08       19 February 1993                      15
+
+
+
+
+

@@ -1,0 +1,198 @@
+
+
+
+GROTTY(1)              BSD Reference Manual             GROTTY(1)
+
+
+NNAAMMEE
+       grotty - groff driver for typewriter-like devices
+
+SSYYNNOOPPSSIISS
+       ggrroottttyy [ --hhffbbuuooddBBUUvv ] [ --FF_d_i_r ] [ _f_i_l_e_s...  ]
+
+DDEESSCCRRIIPPTTIIOONN
+       ggrroottttyy  translates  the  output  of  GNU ttrrooffff into a form
+       suitable for  typewriter-like  devices.   Normally  ggrroottttyy
+       should  invoked  by using the ggrrooffff command with a --TTaasscciiii
+       or --TTllaattiinn11 option.  If no files are  given,  ggrroottttyy  will
+       read  the standard input.  A filename of -- will also cause
+       ggrroottttyy to read the standard input.  Output is  written  to
+       the standard output.
+
+       Normally  ggrroottttyy  prints  a  bold  character  _c  using the
+       sequence `_c BACKSPACE _c' and a italic character _c  by  the
+       sequence  `__  BACKSPACE  _c'.   These sequences can be dis-
+       played on a terminal by piping through uull(1).  Pagers such
+       as  mmoorree(1)  or  lleessss(1)  are  also  able to display these
+       sequences.  Use either --BB or --UU when piping into  lleessss(1);
+       use --bb when piping into mmoorree(1).  There is no need to fil-
+       ter the output through ccooll(1) since ggrroottttyy  never  outputs
+       reverse line feeds.
+
+       The font description file may contain a command
+
+              iinntteerrnnaallnnaammee _n
+
+       where  _n is a decimal integer.  If the 01 bit in _n is set,
+       then the font will be treated as an italic font; if the 02
+       bit  is  set, then it will be treated as a bold font.  The
+       code field in the font description field  gives  the  code
+       which will be used to output the character.  This code can
+       also be used in the \\NN escape sequence in ttrrooffff.
+
+OOPPTTIIOONNSS
+       --FF_d_i_r  Search  the  directory  _d_i_r//ddeevv_n_a_m_e  for  font  and
+              device  description  files; _n_a_m_e is the name of the
+              device, usually aasscciiii or llaattiinn11.
+
+       --hh     Use  horizontal  tabs  in  the  output.   Tabs  are
+              assumed to be set every 8 columns.
+
+       --ff     Use  form feeds in the output.  A form feed will be
+              output at the end of each page that has  no  output
+              on its last line.
+
+       --bb     Suppress  the  use of overstriking for bold charac-
+              ters.
+
+
+
+
+Groff Version 1.08        11 August 1992                        1
+
+
+
+
+
+
+
+
+GROTTY(1)              BSD Reference Manual             GROTTY(1)
+
+
+       --uu     Suppress the use of underlining for italic  charac-
+              ters.
+
+       --BB     Use only overstriking for bold-italic characters.
+
+       --UU     Use only underlining for bold-italic characters.
+
+       --oo     Suppress  overstriking  (other  than  for  bold  or
+              underlined characters).
+
+       --dd     Ignore all \\DD commands.  Without this  ggrroottttyy  will
+              render  \\DD''ll......''   commands  that  have at least at
+              least one zero argument (and so are either horizon-
+              tal or vertical) using --, || and ++ characters.
+
+       --vv     Print the version number.
+
+FFIILLEESS
+       //uussrr//sshhaarree//ggrrooffff__ffoonntt//ddeevvaasscciiii//DDEESSCC
+              Device desciption file for aasscciiii device.
+
+       //uussrr//sshhaarree//ggrrooffff__ffoonntt//ddeevvaasscciiii// FF
+              Font description file for font _F of aasscciiii ddeevviiccee..
+
+       //uussrr//sshhaarree//ggrrooffff__ffoonntt//ddeevvllaattiinn11//DDEESSCC
+              Device desciption file for llaattiinn11 device.
+
+       //uussrr//sshhaarree//ggrrooffff__ffoonntt//ddeevvllaattiinn11// FF
+              Font  description file for font _F of llaattiinn11 ddeevviiccee..
+
+       //uussrr//sshhaarree//ttmmaacc//ttmmaacc..ttttyy
+              Macros for use with ggrroottttyy.
+
+       //uussrr//sshhaarree//ttmmaacc//ttmmaacc..ttttyy--cchhaarr
+              Additional klugey  character  definitions  for  use
+              with ggrroottttyy.
+
+BBUUGGSS
+       ggrroottttyy is intended only for simple documents.
+
+       There  is no support for fractional horizontal or vertical
+       motions.
+
+       There is no support for \\DD commands other than  horizontal
+       and vertical lines.
+
+       Characters  above the first line (ie with a vertical posi-
+       tion of 0) cannot be printed.
+
+SSEEEE AALLSSOO
+       ggrrooffff(1),    ttrrooffff(1),    ggrrooffff__oouutt(5),     ggrrooffff__ffoonntt(5),
+
+
+
+Groff Version 1.08        11 August 1992                        2
+
+
+
+
+
+
+
+
+GROTTY(1)              BSD Reference Manual             GROTTY(1)
+
+
+       ggrrooffff__cchhaarr(7), uull(1), mmoorree(1), lleessss(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Groff Version 1.08        11 August 1992                        3
+
+
+
+
+

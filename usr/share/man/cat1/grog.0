@@ -1,0 +1,66 @@
+
+
+
+GROG(1)                BSD Reference Manual               GROG(1)
+
+
+NNAAMMEE
+       grog - guess options for groff command
+
+SSYYNNOOPPSSIISS
+       ggrroogg [ --_o_p_t_i_o_n ...  ] [ _f_i_l_e_s...  ]
+
+DDEESSCCRRIIPPTTIIOONN
+       ggrroogg reads _f_i_l_e_s and guesses which of the ggrrooffff(1) options
+       --ee, --mmaann, --mmee, --mmmm, --mmss, --pp, --ss, and --tt are  required  for
+       printing  _f_i_l_e_s,  and  prints  the groff command including
+       those options on the standard output.  A filename of --  is
+       taken  to  refer  to  the standard input.  If no files are
+       specified the standard input will be read.  Any  specified
+       options will be included in the printed command.  No space
+       is allowed between options and their arguments.  For exam-
+       ple,
+
+              ``ggrroogg --TTddvvii ppaappeerr..mmss``
+
+       will  guess  the  approriate command to print ppaappeerr..mmss and
+       then run it after adding the --TTddvvii option.
+
+SSEEEE AALLSSOO
+       ddooccttyyppee(1), ggrrooffff(1), ttrrooffff(1),  ttbbll(1),  ppiicc(1),  eeqqnn(1),
+       ssooeelliimm(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Groff Version 1.08        6 August 1992                         1
+
+
+
+
+

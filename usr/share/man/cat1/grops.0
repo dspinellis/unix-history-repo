@@ -1,0 +1,528 @@
+
+
+
+GROPS(1)               BSD Reference Manual              GROPS(1)
+
+
+NNAAMMEE
+       grops - PostScript driver for groff
+
+SSYYNNOOPPSSIISS
+       ggrrooppss  [  --ggllvv  ]  [  --bb_n  ]  [  --cc_n ] [ --ww_n ] [ --FF_d_i_r ] [
+       _f_i_l_e_s...  ]
+
+DDEESSCCRRIIPPTTIIOONN
+       ggrrooppss translates the output of GNU  ttrrooffff  to  PostScript.
+       Normally  ggrrooppss  should be invoked by using the groff com-
+       mand with a --TTppss option.  (Actually, this is  the  default
+       for  groff.)   If  no files are given, ggrrooppss will read the
+       standard input.  A filename of -- will also cause ggrrooppss  to
+       read  the standard input.  PostScript output is written to
+       the standard output.  When ggrrooppss is run by  ggrrooffff  options
+       can be passed to ggrrooppss using the ggrrooffff --PP option.
+
+OOPPTTIIOONNSS
+       --bb_n    Workaround  broken  spoolers  and previewers.  Nor-
+              mally ggrrooppss produces output that conforms the Docu-
+              ment Structuring Conventions version 3.0.  Unfortu-
+              nately some spoolers and  previewers  can't  handle
+              such  output.   The  value of _n controls what ggrrooppss
+              does to its output acceptable to such programs.   A
+              value  of  0  will  cause  grops  not to employ any
+              workarounds.  Add 1 if no %%%%BBeeggiinnDDooccuummeennttSSeettuupp  and
+              %%%%EEnnddDDooccuummeennttSSeettuupp  comments  should  be generated;
+              this is needed for  early  versions  of  TranScript
+              that get confused by anything between the %%%%EEnnddPPrroo--
+              lloogg comment and the first %%%%PPaaggee comment.  Add 2 if
+              lines  in  included files beginning with %%!!  should
+              be stripped out; this is needed for Sun's  pageview
+              previewer.   Add  4 if %%%%PPaaggee, %%%%TTrraaiilleerr and %%%%EEnndd--
+              PPrroolloogg comments should be stripped out of  included
+              files;  this  is  needed  for  spoolers  that don't
+              understand the  %%%%BBeeggiinnDDooccuummeenntt  and  %%%%EEnnddDDooccuummeenntt
+              comments.    Add   8  if  the  first  line  of  the
+              PostScript output should be  %%!!PPSS--AAddoobbee--22..00  rather
+              than  %%!!PPSS--AAddoobbee--33..00;  this  is  needed  when using
+              Sun's Newsprint with a printer that  requires  page
+              reversal.  The default value can be specified by a
+
+                     bbrrookkeenn _n
+
+              command  in  the  DESC file.  Otherwise the default
+              value is 0.
+
+       --cc_n    Print _n copies of each page.
+
+       --gg     Guess the page length.  This  generates  PostScript
+              code  that guesses the page length.  The guess will
+
+
+
+Groff Version 1.08         1 July 1993                          1
+
+
+
+
+
+
+
+
+GROPS(1)               BSD Reference Manual              GROPS(1)
+
+
+              be correct only if the imageable area is vertically
+              centered  on  the  page.  This option allows you to
+              generate documents that can be printed both on let-
+              ter  (8.5x11) paper and on A4 paper without change.
+
+       --ll     Print the document in landscape format.
+
+       --FF_d_i_r  Search  the  directory  _d_i_r//ddeevv_n_a_m_e  for  font  and
+              device  description  files; _n_a_m_e is the name of the
+              device, usually ppss.
+
+       --ww_n    Lines should be drawn using a thickness of _n  thou-
+              sandths of an em.
+
+       --vv     Print the version number.
+
+UUSSAAGGEE
+       There  are  styles  called RR, II, BB, and BBII mounted at font
+       positions 1 to 4.  The fonts are grouped into families  AA,
+       BBMM,  CC,  HH, HHNN, NN, PP and TT having members in each of these
+       styles:
+
+       AARR     AvantGarde-Book
+
+       AAII     AvantGarde-BookOblique
+
+       AABB     AvantGarde-Demi
+
+       AABBII    AvantGarde-DemiOblique
+
+       BBMMRR    Bookman-Light
+
+       BBMMII    Bookman-LightItalic
+
+       BBMMBB    Bookman-Demi
+
+       BBMMBBII   Bookman-DemiItalic
+
+       CCRR     Courier
+
+       CCII     Courier-Oblique
+
+       CCBB     Courier-Bold
+
+       CCBBII    Courier-BoldOblique
+
+       HHRR     Helvetica
+
+       HHII     Helvetica-Oblique
+
+       HHBB     Helvetica-Bold
+
+
+
+Groff Version 1.08         1 July 1993                          2
+
+
+
+
+
+
+
+
+GROPS(1)               BSD Reference Manual              GROPS(1)
+
+
+       HHBBII    Helvetica-BoldOblique
+
+       HHNNRR    Helvetica-Narrow
+
+       HHNNII    Helvetica-Narrow-Oblique
+
+       HHNNBB    Helvetica-Narrow-Bold
+
+       HHNNBBII   Helvetica-Narrow-BoldOblique
+
+       NNRR     NewCenturySchlbk-Roman
+
+       NNII     NewCenturySchlbk-Italic
+
+       NNBB     NewCenturySchlbk-Bold
+
+       NNBBII    NewCenturySchlbk-BoldItalic
+
+       PPRR     Palatino-Roman
+
+       PPII     Palatino-Italic
+
+       PPBB     Palatino-Bold
+
+       PPBBII    Palatino-BoldItalic
+
+       TTRR     Times-Roman
+
+       TTII     Times-Italic
+
+       TTBB     Times-Bold
+
+       TTBBII    Times-BoldItalic
+
+       There is also the following font which is not a member  of
+       a family:
+
+       ZZCCMMII   ZapfChancery-MediumItalic
+
+       There  are  also some special fonts called SSSS and SS.  Zapf
+       Dingbats is avilable as  ZZDD  and  a  reversed  version  of
+       ZapfDingbats (with symbols pointing in the opposite direc-
+       tion) is available as ZZDDRR; most characters in these  fonts
+       are unnamed and must be accessed using \\NN.
+
+       ggrrooppss understands various X commands produced using the \\XX
+       escape sequence; ggrrooppss will only interpret  commands  that
+       begin with a ppss:: tag.
+
+       \\XX''ppss:: eexxeecc _c_o_d_e''
+              This  executes the arbitrary PostScript commands in
+
+
+
+Groff Version 1.08         1 July 1993                          3
+
+
+
+
+
+
+
+
+GROPS(1)               BSD Reference Manual              GROPS(1)
+
+
+              _c_o_d_e.  The PostScript currentpoint will be  set  to
+              the  position  of  the  \\XX command before executing
+              _c_o_d_e.  The origin will be at the top left corner of
+              the  page, and y coordinates will increase down the
+              page.  A procedure uu will be defined that  converts
+              groff  units  to  the  coordinate system in effect.
+              For example,
+
+                     ..nnrr xx 11ii
+                     \\XX''ppss:: eexxeecc \\nnxx uu 00 rrlliinneettoo ssttrrookkee''
+
+              will draw a horizontal line one  inch  long.   _c_o_d_e
+              may  make  changes  to  the graphics state, but any
+              changes will persist only to the end of  the  page.
+              Any  definitions  will  also persist only until the
+              end of the page.  If you use the \\YY escape sequence
+              with  an  argument  that  names  a  macro, _c_o_d_e can
+              extend over multiple lines.  For example,
+
+                     ..nnrr xx 11ii
+                     ..ddee yy
+                     ppss:: eexxeecc
+                     \\nnxx uu 00 rrlliinneettoo
+                     ssttrrookkee
+                     ....
+                     \\YYyy
+
+              is another way to draw a horizontal line  one  inch
+              long.
+
+       \\XX''ppss:: ffiillee _n_a_m_e''
+              This  is  the  same as the eexxeecc command except that
+              the PostScript code is read from file _n_a_m_e.
+
+       \\XX''ppss:: ddeeff _c_o_d_e''
+              Place a PostScript definition contained in _c_o_d_e  in
+              the  prologue.  There should be at most one defini-
+              tion per \\XX command.  Long definitions can be split
+              over  several  \\XX  commands; all the _c_o_d_e arguments
+              are simply joined together separated  by  newlines.
+              The definitions are placed in a dictionary which is
+              automatically pushed on the dictionary  stack  when
+              an  eexxeecc  command  is  executed.  If you use the \\YY
+              escape sequence  with  an  argument  that  names  a
+              macro, _c_o_d_e can extend over multiple lines.
+
+       \\XX''ppss:: mmddeeff _n _c_o_d_e''
+              Like ddeeff, except that _c_o_d_e may contain up to _n def-
+              initions.  ggrrooppss needs to know how many definitions
+              _c_o_d_e  contains  so that it can create an apppropri-
+              ately sized PostScript dictionary to contain  them.
+
+
+
+Groff Version 1.08         1 July 1993                          4
+
+
+
+
+
+
+
+
+GROPS(1)               BSD Reference Manual              GROPS(1)
+
+
+       \\XX''ppss:: iimmppoorrtt _f_i_l_e _l_l_x _l_l_y _u_r_x _u_r_y _w_i_d_t_h [ _h_e_i_g_h_t ]''
+              Import  a  PostScript graphic from _f_i_l_e.  The argu-
+              ments _l_l_x, _l_l_y, _u_r_x, and _u_r_y give the bounding  box
+              of the graphic in the default PostScript coordinate
+              system; they should all be integers;  _l_l_x  and  _l_l_y
+              are  the x and y coordinates of the lower left cor-
+              ner of the graphic; _u_r_x and _u_r_y are  the  x  and  y
+              coordinates  of  the  upper  right  corner  of  the
+              graphic; _w_i_d_t_h and _h_e_i_g_h_t are  integers  that  give
+              the  desired width and height in groff units of the
+              graphic.  The graphic will be scaled so that it has
+              this  width  and  height and translated so that the
+              lower left corner of the graphic is located at  the
+              position associated with \\XX command.  If the height
+              argument is omitted it will be scaled uniformly  in
+              the x and y directions so that it has the specified
+              width.  Note that the contents of  the  \\XX  command
+              are not interpreted by ttrrooffff; so vertical space for
+              the graphic is not  automatically  added,  and  the
+              _w_i_d_t_h  and _h_e_i_g_h_t arguments are not allowed to have
+              attached scaling  indicators.   If  the  PostScript
+              file  complies  with the Adobe Document Structuring
+              Conventions and contains a  %%%%BBoouunnddiinnggBBooxx  comment,
+              then   the   bounding   box  can  be  automatically
+              extracted from within groff by using the ssyy request
+              to run the ppssbbbb command.
+
+              The  --mmppss  macros  (which  are automatically loaded
+              when ggrrooppss is run by the groff command)  include  a
+              PPSSPPIICC  macro  which  allows  a picture to be easily
+              imported.  This has the format
+
+                     ..PPSSPPIICC _f_i_l_e [_w_i_d_t_h [_h_e_i_g_h_t]]
+
+              _f_i_l_e is the name of the file containing the  illus-
+              tration;  _w_i_d_t_h  and  _h_e_i_g_h_t give the desired width
+              and height of the graphic.  The  _w_i_d_t_h  and  _h_e_i_g_h_t
+              arguments may have scaling indicators attached; the
+              default scaling indicator is ii.   This  macro  will
+              scale  the  graphic uniformly in the x and y direc-
+              tions so that it is no more  than  _w_i_d_t_h  wide  and
+              _h_e_i_g_h_t high.
+
+       \\XX''ppss:: iinnvviiss''
+       \\XX''ppss:: eennddiinnvviiss''
+              No  output  will  be generated for text and drawing
+              commands that are bracketed with these \\XX commands.
+              These  commands  are  intended  for use when output
+              from ttrrooffff will be previewed before being processed
+              with  ggrrooppss;  if the previewer is unable to display
+              certain characters or other constructs, then  other
+
+
+
+Groff Version 1.08         1 July 1993                          5
+
+
+
+
+
+
+
+
+GROPS(1)               BSD Reference Manual              GROPS(1)
+
+
+              substitute characters or constructs can be used for
+              previewing by bracketing them with  these  \\XX  com-
+              mands.
+
+              For  example,  ggxxddiittvviieeww  is  not able to display a
+              proper \\((eemm  character  because  the  standard  X11
+              fonts  do not provide it; this problem can be over-
+              come by executing the following request
+
+                     ..cchhaarr \\((eemm \\XX''ppss:: iinnvviiss''\\
+                     \\ZZ''\\vv''--..2255mm''\\hh''..0055mm''\\DD''ll ..99mm 00''\\hh''..0055mm''''\\
+                     \\XX''ppss:: eennddiinnvviiss''\\((eemm
+
+              In this case, ggxxddiittvviieeww will be unable  to  display
+              the  \\((eemm character and will draw the line, whereas
+              ggrrooppss will print the \\((eemm character and ignore  the
+              line.
+
+       The  input  to  ggrrooppss  must  be  in  the  format output by
+       ttrrooffff(1).  This is described in ggrrooffff__oouutt(1).  In addition
+       the  device and font description files for the device used
+       must meet  certain  requirements.   The  device  and  font
+       description  files  supplied  for ppss device meet all these
+       requirements.  aaffmmttooddiitt(1) can  be  used  to  create  font
+       files  from  AFM files.  The resolution must be an integer
+       multiple of 72 times the ssiizzeessccaallee.  The ppss device uses  a
+       resolution  of  72000 and a sizescale of 1000.  The device
+       description file should contain a command
+
+              ppaappeerrlleennggtthh _n
+
+       which says that output should be generated which is  suit-
+       able  for  printing  on  a  page whose length is _n machine
+       units.  Each font description file must contain a command
+
+              iinntteerrnnaallnnaammee _p_s_n_a_m_e
+
+       which says that the PostScript name of the font is _p_s_n_a_m_e.
+       It may also contain a command
+
+              eennccooddiinngg _e_n_c___f_i_l_e
+
+       which  says  that  the PostScript font should be reencoded
+       using the encoding described in _e_n_c___f_i_l_e; this file should
+       consist of a sequence of lines of the form:
+
+              _p_s_c_h_a_r _c_o_d_e
+
+       where  _p_s_c_h_a_r is the PostScript name of the character, and
+       _c_o_d_e is its position in the encoding expressed as a  deci-
+       mal  integer.   The  code  for each character given in the
+
+
+
+Groff Version 1.08         1 July 1993                          6
+
+
+
+
+
+
+
+
+GROPS(1)               BSD Reference Manual              GROPS(1)
+
+
+       font file must correspond to the code for the character in
+       encoding  file, or to the code in the default encoding for
+       the font if the PostScript font is not  to  be  reencoded.
+       This code can be used with the \\NN escape sequence in ttrrooffff
+       to select the character, even if the  character  does  not
+       have  a groff name.  Every character in the font file must
+       exist in the PostScript font, and the widths given in  the
+       font  file  must  match  the widths used in the PostScript
+       font.  ggrrooppss will assume that a  character  with  a  groff
+       name  of  ssppaaccee  is blank (makes no marks on the page); it
+       can make use of such a character to  generate  more  effi-
+       cient and compact PostScript output.
+
+       ggrrooppss  can  automatically  include  the downloadable fonts
+       necessary to print the document.  Any  downloadable  fonts
+       which  should, when required, be included by ggrrooppss must be
+       listed in the  file  //uussrr//sshhaarree//ggrrooffff__ffoonntt//ddeevvppss//ddoowwnnllooaadd;
+       this should consist of lines of the form
+
+              _f_o_n_t  _f_i_l_e_n_a_m_e
+
+       where  _f_o_n_t  is the PostScript name of the font, and _f_i_l_e_-
+       _n_a_m_e is the name of the file containing  the  font;  lines
+       beginning  with  ## and blank lines are ignored; fields may
+       be separated by tabs or spaces; _f_i_l_e_n_a_m_e will be  searched
+       for  using  the same mechanism that is used for groff font
+       metric files.  The  ddoowwnnllooaadd  file  itself  will  also  be
+       searched for using this mechanism.
+
+       If  the  file  containing  a downloadable font or imported
+       document conforms to the Adobe Document  Structuring  Con-
+       ventions,  then  ggrrooppss  will interpret any comments in the
+       files sufficiently to ensure that its own output  is  con-
+       forming.   It  will  also supply any needed font resources
+       that are listed in the ddoowwnnllooaadd file as well as any needed
+       file  resources.  It is also able to handle inter-resource
+       dependencies.  For example, suppose that you have a  down-
+       loadable  font  called  Garamond,  and also a downloadable
+       font called Garamond-Outline  which  depends  on  Garamond
+       (typically  it  would  be  defined to copy Garamond's font
+       dictionary, and change the PaintType), then it  is  neces-
+       sary  for Garamond to be appear before Garamond-Outline in
+       the PostScript document.  ggrrooppss will handle this automati-
+       cally  provided  that the downloadable font file for Gara-
+       mond-Outline indicates its dependence on Garamond by means
+       of  the  Document  Structuring Conventions, for example by
+       beginning with the following lines
+
+              %%!!PPSS--AAddoobbee--33..00 RReessoouurrccee--FFoonntt
+              %%%%DDooccuummeennttNNeeeeddeeddRReessoouurrcceess:: ffoonntt GGaarraammoonndd
+              %%%%EEnnddCCoommmmeennttss
+
+
+
+Groff Version 1.08         1 July 1993                          7
+
+
+
+
+
+
+
+
+GROPS(1)               BSD Reference Manual              GROPS(1)
+
+
+              %%%%IInncclluuddeeRReessoouurrccee:: ffoonntt GGaarraammoonndd
+
+       In this case both Garamond and Garamond-Outline would need
+       to  be  listed  in the ddoowwnnllooaadd file.  A downloadable font
+       should not  include  its  own  name  in  a  %%%%DDooccuummeennttSSuupp--
+       pplliieeddRReessoouurrcceess comment.
+
+       ggrrooppss  will  not  interpret %%%%DDooccuummeennttFFoonnttss comments.  The
+       %%%%DDooccuummeennttNNeeeeddeeddRReessoouurrcceess,    %%%%DDooccuummeennttSSuupppplliieeddRReessoouurrcceess,
+       %%%%IInncclluuddeeRReessoouurrccee,  %%%%BBeeggiinnRReessoouurrccee and %%%%EEnnddRReessoouurrccee com-
+       ments (or possibly the old %%%%DDooccuummeennttNNeeeeddeeddFFoonnttss,  %%%%DDooccuu--
+       mmeennttSSuupppplliieeddFFoonnttss,  %%%%IInncclluuddeeFFoonntt,  %%%%BBeeggiinnFFoonntt and %%%%EEnndd--
+       FFoonntt comments) should be used.
+
+FFIILLEESS
+       //uussrr//sshhaarree//ggrrooffff__ffoonntt//ddeevvppss//DDEESSCC
+              Device desciption file.
+
+       //uussrr//sshhaarree//ggrrooffff__ffoonntt//ddeevvppss//_F
+              Font description file for font _F.
+
+       //uussrr//sshhaarree//ggrrooffff__ffoonntt//ddeevvppss//ddoowwnnllooaadd
+              List of downloadable fonts.
+
+       //uussrr//sshhaarree//ggrrooffff__ffoonntt//ddeevvppss//tteexxtt..eenncc
+              Encoding used for text fonts.
+
+       //uussrr//sshhaarree//ttmmaacc//ttmmaacc..ppss
+              Macros for use with ggrrooppss; automatically loaded  by
+              ttrrooffffrrcc
+
+       //uussrr//sshhaarree//ttmmaacc//ttmmaacc..ppssppiicc
+              Definition  of PPSSPPIICC macro, automatically loaded by
+              ttmmaacc..ppss.
+
+       //uussrr//sshhaarree//ttmmaacc//ttmmaacc..ppssoolldd
+              Macros to disable use of characters not present  in
+              older  PostScript printers; automatically loaded by
+              ttmmaacc..ppss.
+
+       //uussrr//sshhaarree//ttmmaacc//ttmmaacc..ppssnneeww
+              Macros to undo the effect of ttmmaacc..ppssoolldd.
+
+       //ttmmpp//ggrrooppss_X_X_X_X_X_X
+              Temporary file.
+
+SSEEEE AALLSSOO
+       aaffmmttooddiitt(1), ggrrooffff(1),  ttrrooffff(1),  ppssbbbb(1),  ggrrooffff__oouutt(5),
+       ggrrooffff__ffoonntt(5), ggrrooffff__cchhaarr(7)
+
+
+
+
+
+Groff Version 1.08         1 July 1993                          8
+
+
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+PSBB(1)                BSD Reference Manual               PSBB(1)
+
+
+NNAAMMEE
+       psbb - extract bounding box from PostScript document
+
+SSYYNNOOPPSSIISS
+       ppssbbbb _f_i_l_e
+
+DDEESSCCRRIIPPTTIIOONN
+       psbb reads _f_i_l_e which should be a PostScript document con-
+       forming to the Document Structuring conventions and  looks
+       for a %%%%BBoouunnddiinnggBBooxx comment.  If it finds one, it prints a
+       line
+
+              _l_l_x _l_l_y _u_r_x _u_r_y
+
+       on the standard output and exits with zero status.  If  it
+       doesn't  find  such  a  line  or if the line is invalid it
+       prints a message and exits with non-zero status.
+
+SSEEEE AALLSSOO
+       ggrrooppss(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Groff Version 1.08        6 August 1992                         1
+
+
+
+
+
