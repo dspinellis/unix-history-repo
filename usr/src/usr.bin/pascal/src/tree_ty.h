@@ -1,6 +1,10 @@
-/* Copyright (c) 1984 Regents of the University of California */
- 
-/* static char sccsid[]="@(#)tree_ty.h	2.1	(Berkeley)	84/02/08"; */
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)tree_ty.h	5.1 (Berkeley) %G%
+ */
 
 typedef struct /* T_FORU, T_FORD */
 {

@@ -1,4 +1,10 @@
-/*	@(#)whoami.h	2.1	(Berkeley)	84/02/08	*/
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)whoami.h	5.1 (Berkeley) %G%
+ */
 
 /*
  *	we assume one of the following will be defined by the preprocessor:

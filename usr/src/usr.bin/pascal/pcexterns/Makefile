@@ -1,4 +1,11 @@
-SCCSID = @(#)Makefile 1.19 %G%
+#
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	5.1 (Berkeley) %G%
+#
+SCCSID = @(#)Makefile 5.1 %G%
 INSTALL = ${DESTDIR}/usr/ucb
 INSTALLIB = ${DESTDIR}/usr/lib
 SRCDIR=	../src

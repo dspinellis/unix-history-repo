@@ -1,4 +1,12 @@
-/* Copyright (c) 1979 Regents of the University of California */
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)pas.y	5.1 (Berkeley) %G%";
+#endif not lint
 
 /*
  * Yacc grammar for UNIX Pascal
@@ -88,7 +96,7 @@
 
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)pas.y 2.2 %G%"; */
+/* static	char sccsid[] = "@(#)pas.y 5.1 %G%"; */
 
 /*
  * The following line marks the end of the yacc
@@ -98,7 +106,7 @@
 ##
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pas.y 2.2 %G%";
+static	char sccsid[] = "@(#)pas.y 5.1 %G%";
 
 #include "whoami.h"
 #include "0.h"

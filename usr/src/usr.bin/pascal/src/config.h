@@ -1,10 +1,16 @@
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)config.h	5.1 (Berkeley) %G%
+ */
+
     /*
      *	external declarations of things from 
      *		CONFIG.c
      *
      */
-
-    /*	sccsid: @(#)config.h	2.1 (Berkeley) 84/02/08 */
 
     /*
      *	the version of translator

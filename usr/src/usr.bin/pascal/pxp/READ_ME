@@ -1,4 +1,11 @@
-@(#)READ_ME	2.1 (Berkeley) %G%
+#
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)READ_ME	5.1 (Berkeley) %G%
+#
+@(#)READ_ME	5.1 (Berkeley) %G%
 Fri Oct 19 17:59:49 PDT 1979
 
 Pxp was quick and dirty brought up on the vax today.  It seems to work,

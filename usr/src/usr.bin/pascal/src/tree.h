@@ -1,6 +1,10 @@
-/* Copyright (c) 1979 Regents of the University of California */
-
-/* static	char sccsid[] = "@(#)tree.h 2.1 %G%"; */
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)tree.h	5.1 (Berkeley) %G%
+ */
 
 #define T_MINUS 1
 #define T_MOD 2
