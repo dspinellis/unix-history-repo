@@ -1,4 +1,4 @@
-/*	conf.c	4.29	81/03/16	*/
+/*	conf.c	4.30	81/03/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -68,12 +68,18 @@ int	tmioctl(),tmdump(),tmreset();
 #define	tmreset		nodev
 #endif
 
+#include "ts.h"
+#if NTS > 0
+int	tsopen(),tsclose(),tsstrategy(),tsread(),tswrite();
+int	tsioctl(),tsdump(),tsreset();
+#else
 #define	tsopen		nodev
 #define	tsclose		nodev
 #define	tsstrategy	nodev
 #define	tsread		nodev
 #define	tswrite		nodev
 #define	tsdump		nodev
+#endif
 
 #include "up.h"
 #if NSC > 0
