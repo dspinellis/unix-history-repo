@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.11 1993/09/07 19:36:35 rgrimes Exp $
+#	$Id: Makefile,v 1.12 1993/09/10 02:01:34 rgrimes Exp $
 #
 
 SUBDIR=
@@ -88,7 +88,9 @@ includes:
 	@echo " Rebuilding ${DESTDIR}/usr/include"
 	@echo "--------------------------------------------------------------"
 	@echo
+.if defined(CLOBBER)
 	rm -rf ${DESTDIR}/usr/include
+.endif
 	mkdir ${DESTDIR}/usr/include
 	chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include
 	chmod 755 ${DESTDIR}/usr/include
@@ -104,7 +106,9 @@ libraries:
 	@echo " Rebuilding ${DESTDIR}/usr/lib"
 	@echo "--------------------------------------------------------------"
 	@echo
+.if defined(CLOBBER)
 	rm -rf ${DESTDIR}/usr/lib
+.endif
 	mkdir ${DESTDIR}/usr/lib
 	chown -R bin.bin ${DESTDIR}/usr/lib
 	chmod 755 ${DESTDIR}/usr/lib
