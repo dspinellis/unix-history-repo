@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.8.1.1 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.9 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.8.1.1 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.9 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -132,6 +132,12 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 		  case HOST_NOT_FOUND:
 			/* the host just doesn't exist */
 			*rcode = EX_NOHOST;
+
+			if (!UseNameServer)
+			{
+				/* might exist in /etc/hosts */
+				goto punt;
+			}
 			break;
 
 		  case TRY_AGAIN:
@@ -189,8 +195,6 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 			seenlocal = TRUE;
 			continue;
 		}
-		if (fallbackMX != NULL && strcasecmp(bp, fallbackMX) == 0)
-			fallbackMX = NULL;
 		weight[nmx] = mxrand(bp);
 		prefer[nmx] = pref;
 		mxhosts[nmx++] = bp;
@@ -275,35 +279,22 @@ punt:
 				}
 			}
 		}
-		n = strlen(MXHostBuf);
-		bp = &MXHostBuf[n];
-		buflen = sizeof MXHostBuf - n - 1;
 		if (trycanon &&
 		    getcanonname(mxhosts[0], sizeof MXHostBuf - 2, FALSE))
 		{
+			bp = &MXHostBuf[strlen(MXHostBuf)];
 			if (bp[-1] != '.')
 			{
 				*bp++ = '.';
 				*bp = '\0';
-				buflen--;
 			}
 		}
-		bp++;
 		nmx = 1;
 	}
 
 	/* if we have a default lowest preference, include that */
-	if (fallbackMX != NULL && !seenlocal && strlen(fallbackMX) < buflen)
-	{
-		strcpy(bp, fallbackMX);
-		mxhosts[nmx++] = bp;
-		bp += strlen(bp);
-		if (bp[-1] != '.')
-		{
-			*bp++ = '.';
-			*bp = '\0';
-		}
-	}
+	if (fallbackMX != NULL && !seenlocal)
+		mxhosts[nmx++] = fallbackMX;
 
 	return (nmx);
 }
