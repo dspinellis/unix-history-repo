@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)ex1.c	1.1 (Berkeley) %G%
+.\"     @(#)ex1.c	1.2 (Berkeley) %G%
 .\"
 #include <sys/types.h>
 #include <curses.h>
@@ -51,7 +51,7 @@ main()
 		case 'r':		/* Force a refresh on 'r' */
 			wrefresh(curscr);
 			break;
-		default:		/* By defualt output the character */
+		default:		/* By default output the character */
 			addch(c);
 			refresh();
 		}
