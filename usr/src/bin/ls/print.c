@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.39 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -250,13 +250,12 @@ printlink(p)
 	int lnklen;
 	char name[MAXPATHLEN + 1], path[MAXPATHLEN + 1];
 
-
 	if (p->fts_level == FTS_ROOTLEVEL)
 		(void)snprintf(name, sizeof(name), "%s", p->fts_name);
 	else 
 		(void)snprintf(name, sizeof(name),
-		    "%s/%s", p->fts_path, p->fts_name);
-	if ((lnklen = readlink(name, path, sizeof(name) - 1)) == -1) {
+		    "%s/%s", p->fts_parent->fts_accpath, p->fts_name);
+	if ((lnklen = readlink(name, path, sizeof(path) - 1)) == -1) {
 		(void)fprintf(stderr, "\nls: %s: %s\n", name, strerror(errno));
 		return;
 	}
