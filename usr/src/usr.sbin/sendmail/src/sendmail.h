@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.143 (Berkeley) %G%
+ *	@(#)sendmail.h	8.144 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.143		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.144		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -442,6 +442,7 @@ struct envelope
 #define EF_RET_PARAM	0x0100000	/* RCPT command had RET argument */
 #define EF_HAS_DF	0x0200000	/* set when df file is instantiated */
 #define EF_IS_MIME	0x0400000	/* really is a MIME message */
+#define EF_DONT_MIME	0x0800000	/* never MIME this message */
 
 EXTERN ENVELOPE	*CurEnv;	/* envelope currently being processed */
 
