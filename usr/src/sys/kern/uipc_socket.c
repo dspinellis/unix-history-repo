@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988, 1990 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_socket.c	7.17 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -83,7 +83,8 @@ sobind(so, nam)
 	int s = splnet();
 	int error;
 
-	error = (*so->so_proto->pr_usrreq)(so, PRU_BIND,
+	error =
+	    (*so->so_proto->pr_usrreq)(so, PRU_BIND,
 		(struct mbuf *)0, nam, (struct mbuf *)0);
 	splx(s);
 	return (error);
@@ -162,12 +163,6 @@ soclose(so)
 					break;
 		}
 	}
-	/*
-	 * If there is an error on the socket, disregard any
-	 * error from tsleep and return the socket error.
-	 */
-	if (so->so_error)
-		error = so->so_error;
 drop:
 	if (so->so_pcb) {
 		int error2 =
@@ -282,33 +277,48 @@ bad:
  * If must go all at once and not enough room now, then
  * inform user that this would block and do nothing.
  * Otherwise, if nonblocking, send as much as possible.
+ * The data to be sent is described by "uio" if nonzero,
+ * otherwise by the mbuf chain "top" (which must be null
+ * if uio is not).  Data provided in mbuf chain must be small
+ * enough to send all at once.
+ *
+ * Returns nonzero on error, timeout or signal; callers
+ * must check for short counts if EINTR/ERESTART are returned.
+ * Data and control buffers are freed on return.
  */
-sosend(so, nam, uio, flags, control)
+sosend(so, addr, uio, top, control, flags/*, sbwait_func, sbwait_arg*/)
 	register struct socket *so;
-	struct mbuf *nam;
-	register struct uio *uio;
-	int flags;
+	struct mbuf *addr;
+	struct uio *uio;
+	struct mbuf *top;
 	struct mbuf *control;
+	int flags;
+/*
+	int (*sbwait_func)();
+	caddr_t sbwait_arg;
+*/
 {
-	struct mbuf *top = 0, **mp;
+	struct mbuf **mp;
 	register struct mbuf *m;
-	register int space, len;
-	int rlen = 0, error, s, dontroute, mlen;
-	int atomic = sosendallatonce(so);
+	register long space, len, resid;
+	int clen = 0, error, s, dontroute, mlen;
+	int atomic = sosendallatonce(so) || top;
 
-	if (atomic && uio->uio_resid > so->so_snd.sb_hiwat)
-		return (EMSGSIZE);
+	if (uio)
+		resid = uio->uio_resid;
+	else
+		resid = top->m_pkthdr.len;
 	dontroute =
 	    (flags & MSG_DONTROUTE) && (so->so_options & SO_DONTROUTE) == 0 &&
 	    (so->so_proto->pr_flags & PR_ATOMIC);
 	u.u_ru.ru_msgsnd++;
 	if (control)
-		rlen = control->m_len;
+		clen = control->m_len;
 #define	snderr(errno)	{ error = errno; splx(s); goto release; }
 
 restart:
 	if (error = sblock(&so->so_snd))
-		return (error);
+		goto out;
 	do {
 		s = splnet();
 		if (so->so_state & SS_CANTSENDMORE)
@@ -319,31 +329,42 @@ restart:
 			if (so->so_proto->pr_flags & PR_CONNREQUIRED) {
 				if ((so->so_state & SS_ISCONFIRMING) == 0)
 					snderr(ENOTCONN);
-			} else if (nam == 0)
+			} else if (addr == 0)
 				snderr(EDESTADDRREQ);
 		}
+		space = sbspace(&so->so_snd);
 		if (flags & MSG_OOB)
-			space = 1024;
-		else {
-			space = sbspace(&so->so_snd);
-			if (space <= rlen ||
-			   (atomic && space < uio->uio_resid + rlen) ||
-			   (uio->uio_resid >= MCLBYTES && space < MCLBYTES &&
-			   so->so_snd.sb_cc >= MCLBYTES &&
-			   (so->so_state & SS_NBIO) == 0)) {
-				if (so->so_state & SS_NBIO)
-					snderr(EWOULDBLOCK);
-				sbunlock(&so->so_snd);
-				if (error = sbwait(&so->so_snd))
-					snderr(error);
-				splx(s);
-				goto restart;
-			}
+			space += 1024;
+		if (space < resid + clen &&
+		    (atomic || space < so->so_snd.sb_lowat || space < clen)) {
+			if (atomic && resid > so->so_snd.sb_hiwat ||
+			    clen > so->so_snd.sb_hiwat)
+				snderr(EMSGSIZE);
+			if (so->so_state & SS_NBIO)
+				snderr(EWOULDBLOCK);
+			sbunlock(&so->so_snd);
+/*
+			if (sbwait_func)
+				error = (*sbwait_func)(&so->so_snd, sbwait_arg);
+			else
+*/
+				error = sbwait(&so->so_snd);
+			splx(s);
+			if (error)
+				goto out;
+			goto restart;
 		}
 		splx(s);
 		mp = &top;
-		space -= rlen;
-		do {
+		space -= clen;
+		if (uio == NULL) {
+			/*
+			 * Data is prepackaged in "top".
+			 */
+			resid = 0;
+			if (flags & MSG_EOR)
+				top->m_flags |= M_EOR;
+		} else do {
 		   do {
 			if (top == 0) {
 				MGETHDR(m, M_WAIT, MT_DATA);
@@ -354,23 +375,23 @@ restart:
 				MGET(m, M_WAIT, MT_DATA);
 				mlen = MLEN;
 			}
-			if (uio->uio_resid >= MINCLSIZE && space >= MCLBYTES) {
+			if (resid >= MINCLSIZE && space >= MCLBYTES) {
 				MCLGET(m, M_WAIT);
 				if ((m->m_flags & M_EXT) == 0)
 					goto nopages;
 				mlen = MCLBYTES;
 #ifdef	MAPPED_MBUFS
-				len = min(MCLBYTES, uio->uio_resid);
-				if (len < mlen - max_hdr)
-					m->m_data += max_hdr;
+				len = min(MCLBYTES, resid);
 #else
-				len = min(MCLBYTES - max_hdr, uio->uio_resid);
-				m->m_data += max_hdr;
+				if (top == 0) {
+					len = min(MCLBYTES - max_hdr, resid);
+					m->m_data += max_hdr;
+				}
 #endif
 				space -= MCLBYTES;
 			} else {
 nopages:
-				len = min(min(mlen, uio->uio_resid), space);
+				len = min(min(mlen, resid), space);
 				space -= len;
 				/*
 				 * For datagram protocols, leave room
@@ -380,14 +401,15 @@ nopages:
 					MH_ALIGN(m, len);
 			}
 			error = uiomove(mtod(m, caddr_t), len, uio);
+			resid = uio->uio_resid;
 			m->m_len = len;
 			*mp = m;
 			top->m_pkthdr.len += len;
 			if (error)
 				goto release;
 			mp = &m->m_next;
-			if (uio->uio_resid <= 0) {
-				if ((flags & MSG_EOR) && top)
+			if (resid <= 0) {
+				if (flags & MSG_EOR)
 					top->m_flags |= M_EOR;
 				break;
 			}
@@ -397,22 +419,26 @@ nopages:
 		    s = splnet();				/* XXX */
 		    error = (*so->so_proto->pr_usrreq)(so,
 			(flags & MSG_OOB) ? PRU_SENDOOB : PRU_SEND,
-			top, (caddr_t)nam, control);
+			top, addr, control);
 		    splx(s);
 		    if (dontroute)
 			    so->so_options &= ~SO_DONTROUTE;
-		    rlen = 0;
+		    clen = 0;
+		    control = 0;
 		    top = 0;
 		    mp = &top;
 		    if (error)
 			goto release;
-		} while (uio->uio_resid && space > 0);
-	} while (uio->uio_resid);
+		} while (resid && space > 0);
+	} while (resid);
 
 release:
 	sbunlock(&so->so_snd);
+out:
 	if (top)
 		m_freem(top);
+	if (control)
+		m_freem(control);
 	return (error);
 }
 
@@ -421,30 +447,37 @@ release:
  * We depend on the way that records are added to the sockbuf
  * by sbappend*.  In particular, each record (mbufs linked through m_next)
  * must begin with an address if the protocol so specifies,
- * followed by an optional mbuf containing access rights if supported
- * by the protocol, and then zero or more mbufs of data.
+ * followed by an optional mbuf or mbufs containing ancillary data,
+ * and then zero or more mbufs of data.
  * In order to avoid blocking network interrupts for the entire time here,
  * we splx() while doing the actual copy to user space.
  * Although the sockbuf is locked, new data may still be appended,
  * and thus we must maintain consistency of the sockbuf during that time.
+ * 
+ * The caller may receive the data as a single mbuf chain by supplying
+ * an mbuf **mp for use in returning the chain.  The uio is then used
+ * only for the count in uio_resid.
  */
-soreceive(so, aname, uio, flagsp, rightsp, controlp)
+soreceive(so, paddr, uio, mp, controlp, flagsp/*, sbwait_func, sbwait_arg*/)
 	register struct socket *so;
-	struct mbuf **aname;
-	register struct uio *uio;
+	struct mbuf **paddr;
+	struct uio *uio;
+	struct mbuf **mp;
+	struct mbuf **controlp;
 	int *flagsp;
-	struct mbuf **rightsp, **controlp;
+/*
+	int (*sbwait_func)();
+	caddr_t sbwait_arg;
+*/
 {
 	register struct mbuf *m;
-	register int flags, len, error, s, offset;
+	register int resid, flags, len, error, s, offset;
 	struct protosw *pr = so->so_proto;
-	struct mbuf *nextrecord, *m_with_eor;
-	int moff;
+	struct mbuf *nextrecord;
+	int moff, type;
 
-	if (rightsp)
-		*rightsp = 0;
-	if (aname)
-		*aname = 0;
+	if (paddr)
+		*paddr = 0;
 	if (controlp)
 		*controlp = 0;
 	if (flagsp)
@@ -458,10 +491,8 @@ soreceive(so, aname, uio, flagsp, rightsp, controlp)
 		if (error)
 			goto bad;
 		do {
-			len = uio->uio_resid;
-			if (len > m->m_len)
-				len = m->m_len;
-			error = uiomove(mtod(m, caddr_t), (int)len, uio);
+			error = uiomove(mtod(m, caddr_t),
+			    (int) min(uio->uio_resid, m->m_len), uio);
 			m = m_free(m);
 		} while (uio->uio_resid && error == 0 && m);
 bad:
@@ -469,7 +500,10 @@ bad:
 			m_freem(m);
 		return (error);
 	}
-	if (so->so_state & SS_ISCONFIRMING && uio->uio_resid)
+	if (mp)
+		*mp = (struct mbuf *)0;
+	resid = uio->uio_resid;
+	if (so->so_state & SS_ISCONFIRMING && resid)
 		(*pr->pr_usrreq)(so, PRU_RCVD, (struct mbuf *)0,
 		    (struct mbuf *)0, (struct mbuf *)0);
 
@@ -479,9 +513,12 @@ restart:
 	s = splnet();
 
 	m = so->so_rcv.sb_mb;
-	if (m == 0) {
-		if (so->so_rcv.sb_cc)
+	if (m == 0 || (so->so_rcv.sb_cc < resid && 
+	    so->so_rcv.sb_cc < so->so_rcv.sb_lowat)) {
+#ifdef DIAGNOSTIC
+		if (m == 0 && so->so_rcv.sb_cc)
 			panic("receive 1");
+#endif
 		if (so->so_error) {
 			error = so->so_error;
 			so->so_error = 0;
@@ -494,33 +531,43 @@ restart:
 			error = ENOTCONN;
 			goto release;
 		}
-		if (uio->uio_resid == 0)
+		if (resid == 0)
 			goto release;
 		if (so->so_state & SS_NBIO) {
 			error = EWOULDBLOCK;
 			goto release;
 		}
 		sbunlock(&so->so_rcv);
-		if (error = sbwait(&so->so_rcv))
-			goto release;
+/*
+		if (sbwait_func)
+			error = (*sbwait_func)(&so->so_rcv, sbwait_arg);
+		else
+*/
+			error = sbwait(&so->so_rcv);
 		splx(s);
+		if (error)
+			return (error);
 		goto restart;
 	}
 	u.u_ru.ru_msgrcv++;
+#ifdef DIAGNOSTIC
 if (m->m_type == 0)
 panic("receive 3a");
+#endif
 	nextrecord = m->m_nextpkt;
 	if (pr->pr_flags & PR_ADDR) {
+#ifdef DIAGNOSTIC
 		if (m->m_type != MT_SONAME)
 			panic("receive 1a");
+#endif
 		if (flags & MSG_PEEK) {
-			if (aname)
-				*aname = m_copy(m, 0, m->m_len);
+			if (paddr)
+				*paddr = m_copy(m, 0, m->m_len);
 			m = m->m_next;
 		} else {
 			sbfree(&so->so_rcv, m);
-			if (aname) {
-				*aname = m;
+			if (paddr) {
+				*paddr = m;
 				so->so_rcv.sb_mb = m->m_next;
 				m->m_next = 0;
 				m = so->so_rcv.sb_mb;
@@ -530,27 +577,7 @@ panic("receive 3a");
 			}
 		}
 	}
-	if (m && m->m_type == MT_RIGHTS) {
-		if ((pr->pr_flags & PR_RIGHTS) == 0)
-			panic("receive 2");
-		if (flags & MSG_PEEK) {
-			if (rightsp)
-				*rightsp = m_copy(m, 0, m->m_len);
-			m = m->m_next;
-		} else {
-			sbfree(&so->so_rcv, m);
-			if (rightsp) {
-				*rightsp = m;
-				so->so_rcv.sb_mb = m->m_next;
-				m->m_next = 0;
-				m = so->so_rcv.sb_mb;
-			} else {
-				MFREE(m, so->so_rcv.sb_mb);
-				m = so->so_rcv.sb_mb;
-			}
-		}
-	}
-	if (m && m->m_type == MT_CONTROL) {
+	while (m && m->m_type == MT_CONTROL && error == 0) {
 		if (flags & MSG_PEEK) {
 			if (controlp)
 				*controlp = m_copy(m, 0, m->m_len);
@@ -558,6 +585,10 @@ panic("receive 3a");
 		} else {
 			sbfree(&so->so_rcv, m);
 			if (controlp) {
+				if (mtod(m, struct cmsghdr *)->cmsg_type ==
+				    SCM_RIGHTS &&
+				    pr->pr_domain->dom_externalize)
+				   error = (*pr->pr_domain->dom_externalize)(m);
 				*controlp = m;
 				so->so_rcv.sb_mb = m->m_next;
 				m->m_next = 0;
@@ -567,37 +598,60 @@ panic("receive 3a");
 				m = so->so_rcv.sb_mb;
 			}
 		}
+		if (controlp)
+			controlp = &(*controlp)->m_next;
 	}
-	if (m)
+	if (m) {
 		m->m_nextpkt = nextrecord;
+		type = m->m_type;
+	}
 	moff = 0;
 	offset = 0;
-	m_with_eor = 0;
-	while (m && uio->uio_resid > 0 && error == 0) {
+	while (m && m->m_type == type && resid > 0 && error == 0) {
 		if (m->m_type == MT_OOBDATA)
 			flags |= MSG_OOB;
+#ifdef DIAGNOSTIC
 		else if (m->m_type != MT_DATA && m->m_type != MT_HEADER)
 			panic("receive 3");
-		if (m->m_flags & M_EOR)
-			m_with_eor = m;
-		len = uio->uio_resid;
+#endif
+		type = m->m_type;
 		so->so_state &= ~SS_RCVATMARK;
+		len = resid;
 		if (so->so_oobmark && len > so->so_oobmark - offset)
 			len = so->so_oobmark - offset;
 		if (len > m->m_len - moff)
 			len = m->m_len - moff;
-		splx(s);
-		error = uiomove(mtod(m, caddr_t) + moff, (int)len, uio);
-		s = splnet();
+		/*
+		 * If mp is set, just pass back the mbufs.
+		 * Otherwise copy them out via the uio, then free.
+		 * Sockbuf must be consistent here (points to current mbuf,
+		 * it points to next record) when we drop priority;
+		 * we must note any additions to the sockbuf when we
+		 * block interrupts again.
+		 */
+		if (mp == 0) {
+			splx(s);
+			error = uiomove(mtod(m, caddr_t) + moff, (int)len, uio);
+			resid = uio->uio_resid;
+			s = splnet();
+		}
 		if (len == m->m_len - moff) {
+			if (m->m_flags & M_EOR)
+				flags |= MSG_EOR;
 			if (flags & MSG_PEEK) {
 				m = m->m_next;
 				moff = 0;
 			} else {
 				nextrecord = m->m_nextpkt;
 				sbfree(&so->so_rcv, m);
-				MFREE(m, so->so_rcv.sb_mb);
-				m = so->so_rcv.sb_mb;
+				if (mp) {
+					*mp = m;
+					mp = &m->m_next;
+					m = m->m_next;
+				} else {
+					MFREE(m, so->so_rcv.sb_mb);
+					m = so->so_rcv.sb_mb;
+				}
 				if (m)
 					m->m_nextpkt = nextrecord;
 			}
@@ -620,14 +674,34 @@ panic("receive 3a");
 			} else
 				offset += len;
 		}
-		if (m_with_eor)
+		if (flags & MSG_EOR)
 			break;
+		/*
+		 * If the MSG_WAITALL flag is set (for non-atomic socket),
+		 * we must not quit until "resid == 0" or an error
+		 * termination.  If a signal/timeout occurs, return
+		 * prematurely but without error.
+		 * Keep sockbuf locked against other readers.
+		 */
+		while (flags & MSG_WAITALL && m == 0 && resid > 0 &&
+		    !sosendallatonce(so)) {
+			error = sbwait(&so->so_rcv);
+			if (error) {
+				sbunlock(&so->so_rcv);
+				splx(s);
+				if (mp)
+					*mp = (struct mbuf *)0;
+				return (0);
+			}
+			if (m = so->so_rcv.sb_mb)
+				nextrecord = m->m_nextpkt;
+			if (so->so_error || so->so_state & SS_CANTRCVMORE)
+				break;
+			continue;
+		}
 	}
-	if (m_with_eor) {
-		if (m != m_with_eor)
-			flags |= MSG_EOR;
-		/* else data not consumed from mbuf */
-	}
+	if (mp)
+		*mp = (struct mbuf *)0;
 	if ((flags & MSG_PEEK) == 0) {
 		if (m == 0)
 			so->so_rcv.sb_mb = nextrecord;
@@ -639,9 +713,6 @@ panic("receive 3a");
 			(*pr->pr_usrreq)(so, PRU_RCVD, (struct mbuf *)0,
 			    (struct mbuf *)flags, (struct mbuf *)0,
 			    (struct mbuf *)0);
-		if (error == 0 && rightsp && *rightsp &&
-		    pr->pr_domain->dom_externalize)
-			error = (*pr->pr_domain->dom_externalize)(*rightsp);
 	}
 	if (flagsp)
 		*flagsp |= flags;
@@ -693,9 +764,7 @@ sosetopt(so, level, optname, m0)
 	struct mbuf *m0;
 {
 	int error = 0;
-	u_long val;
 	register struct mbuf *m = m0;
-	register struct sockbuf *sb;
 
 	if (level != SOL_SOCKET) {
 		if (so->so_proto && so->so_proto->pr_ctloutput)
@@ -731,16 +800,11 @@ sosetopt(so, level, optname, m0)
 			break;
 
 		case SO_SNDBUF:
-		case SO_SNDLOWAT:
-		case SO_SNDTIMEO:
-			sb = &so->so_snd;
-			goto bufopts;
-
 		case SO_RCVBUF:
+		case SO_SNDLOWAT:
 		case SO_RCVLOWAT:
+		case SO_SNDTIMEO:
 		case SO_RCVTIMEO:
-			sb = &so->so_rcv;
-		bufopts:
 			if (m == NULL || m->m_len < sizeof (int)) {
 				error = EINVAL;
 				goto bad;
@@ -749,31 +813,25 @@ sosetopt(so, level, optname, m0)
 
 			case SO_SNDBUF:
 			case SO_RCVBUF:
-				if ((val = (u_long) *mtod(m, int *)) == 0) {
-					error = EINVAL;
-					goto bad;
-				}
-				if (sbreserve(sb, val) == 0) {
+				if (sbreserve(optname == SO_SNDBUF ?
+				    &so->so_snd : &so->so_rcv,
+				    (u_long) *mtod(m, int *)) == 0) {
 					error = ENOBUFS;
 					goto bad;
 				}
-				if (sb->sb_lowat > sb->sb_hiwat)
-					sb->sb_lowat = sb->sb_hiwat;
 				break;
 
 			case SO_SNDLOWAT:
-			case SO_RCVLOWAT:
-				if ((val = (u_long) *mtod(m, int *)) == 0 ||
-				    val > sb->sb_hiwat) {
-					error = EINVAL;
-					goto bad;
-				}
-				sb->sb_lowat = val;
+				so->so_snd.sb_lowat = *mtod(m, int *);
 				break;
-
+			case SO_RCVLOWAT:
+				so->so_rcv.sb_lowat = *mtod(m, int *);
+				break;
 			case SO_SNDTIMEO:
+				so->so_snd.sb_timeo = *mtod(m, int *);
+				break;
 			case SO_RCVTIMEO:
-				sb->sb_timeo = *mtod(m, int *);
+				so->so_rcv.sb_timeo = *mtod(m, int *);
 				break;
 			}
 			break;
