@@ -21,14 +21,20 @@
 **			the two systems.  If you are running a funny
 **			system, e.g., V6 with long tty names, this
 **			should be checked carefully.
+**		DUMBMAIL -- set if your /bin/mail doesn't have the
+**			-d flag.
 **
 **	Configuration Variables:
-**		ArpaHost -- the name of the host through which arpanet
-**			mail will be sent.
+**		ArpaHost -- the arpanet name of the host through
+**			which arpanet mail will be sent.
 **		MyLocName -- the name of the host on a local network.
 **			This is used to disambiguate the contents of
 **			ArpaHost among many hosts who may be sharing
 **			a gateway.
+**		ArpaLocal -- a list of local names for this host on
+**			the arpanet.  Only functional if HASARPA set.
+**		UucpLocal -- ditto for the Arpanet.
+**		BerkLocal -- ditto for the Berknet.
 **		Mailer -- a table of mailers known to the system.
 **			The fields are:
 **			- the pathname of the mailer.
@@ -89,18 +95,29 @@
 **			  character to turn the trigger character into.
 **			  If we have P_MOVE, it is the site to send it
 **			  to, using the mailer specified above.
+**			This table will almost certainly have to be
+**			changed on your site if you have anything more
+**			than the UUCP net.
 */
 
 
 
 
-static char SccsId[] = "@(#)conf.c	1.8	%G%";
+static char SccsId[] = "@(#)conf.c	1.9	%G%";
 
 
-char	*ArpaHost = "Berkeley";	/* host name of gateway on Arpanet */
 bool	UseMsgId = FALSE;	/* don't put message id's in anywhere */
 
 # include <whoami.h>		/* definitions of machine id's at berkeley */
+
+# ifdef BERKELEY
+char	*ArpaHost = "Berkeley";	/* host name of gateway on Arpanet */
+# else BERKELEY
+char	*ArpaHost = "[unknown]";
+char	*MyLocName = sysname;
+# define HASUUCP		/* default to having UUCP net */
+char	*UucpLocal[] = { sysname, NULL };
+# endif BERKELEY
 
 # ifdef ING70
 static char	*BerkLocal[] = { "i", "ingres", "ing70", NULL };
@@ -111,13 +128,11 @@ char		*MyLocName = "Ing70";
 # endif ING70
 
 # ifdef INGVAX
-/* untested */
 static char	*BerkLocal[] = { "j", "ingvax", NULL };
 char		*MyLocName = "IngVax";
 # endif INGVAX
 
 # ifdef CSVAX
-/* untested */
 static char	*BerkLocal[] = { "v", "csvax", "vax", NULL };
 static char	*UucpLocal[] = { "ucbvax", "ernie", NULL };
 char		*MyLocName = "CSVAX";
@@ -210,6 +225,7 @@ struct mailer Mailer[] =
 
 
 
+# ifdef BERKELEY
 struct parsetab ParseTab[] =
 {
 	':',	M_BERK,		P_ONE,				NULL,
@@ -227,6 +243,19 @@ struct parsetab ParseTab[] =
 	'.',	-1,		P_MAP|P_ONE,			":",
 	'\0',	M_LOCAL,	P_MOVE,				"",
 };
+# else BERKELEY
+struct parsetab ParseTab[] =
+{
+# ifdef HASARPA
+	'@',	M_ARPA,		P_HLAST|P_USR_UPPER,		NULL,
+# endif HASARPA
+# ifdef HASUUCP
+	'^',	-1,		P_MAP,				"!",
+	'!',	M_UUCP,		0,				NULL,
+# endif HASUUCP
+	'\0',	M_LOCAL,	P_MOVE,				"",
+};
+# endif BERKELEY
 /*
 **  GETNAME -- Get the current users login name.
 **
