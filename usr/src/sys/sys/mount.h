@@ -4,8 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	7.29 (Berkeley) %G%
+ *	@(#)mount.h	7.30 (Berkeley) %G%
  */
+
+#ifndef KERNEL
+#include <sys/ucred.h>
+#endif
 
 typedef struct { long val[2]; } fsid_t;		/* file system id type */
 
@@ -66,7 +70,6 @@ struct mount {
 	struct vnode	*mnt_vnodecovered;	/* vnode we mounted on */
 	struct vnode	*mnt_mounth;		/* list of vnodes this mount */
 	int		mnt_flag;		/* flags */
-	uid_t		mnt_exroot;		/* XXX - deprecated */
 	struct statfs	mnt_stat;		/* cache of filesystem stats */
 	qaddr_t		mnt_data;		/* private data */
 };
@@ -138,7 +141,7 @@ struct vfsops {
 				    struct proc *p));
 	int	(*vfs_sync)	__P((struct mount *mp, int waitfor));
 	int	(*vfs_fhtovp)	__P((struct mount *mp, struct fid *fhp,
-				    struct vnode **vpp));
+				    int setgen, struct vnode **vpp));
 	int	(*vfs_vptofh)	__P((struct vnode *vp, struct fid *fhp));
 	int	(*vfs_init)	__P((void));
 };
@@ -151,7 +154,8 @@ struct vfsops {
 #define VFS_QUOTACTL(MP,C,U,A,P)  (*(MP)->mnt_op->vfs_quotactl)(MP, C, U, A, P)
 #define VFS_STATFS(MP, SBP, P)	  (*(MP)->mnt_op->vfs_statfs)(MP, SBP, P)
 #define VFS_SYNC(MP, WAITFOR)	  (*(MP)->mnt_op->vfs_sync)(MP, WAITFOR)
-#define VFS_FHTOVP(MP, FIDP, VPP) (*(MP)->mnt_op->vfs_fhtovp)(MP, FIDP, VPP)
+#define VFS_FHTOVP(MP, FIDP, SG, VPP) \
+	(*(MP)->mnt_op->vfs_fhtovp)(MP, FIDP, SG, VPP)
 #define	VFS_VPTOFH(VP, FIDP)	  (*(VP)->v_mount->mnt_op->vfs_vptofh)(VP, FIDP)
 #endif /* KERNEL */
 
@@ -171,16 +175,43 @@ struct vfsops {
  */
 struct fhandle {
 	fsid_t	fh_fsid;	/* File system id of mount point */
-	struct	fid fh_fid;	/* Id of file */
+	struct	fid fh_fid;	/* File sys specific id */
 };
 typedef struct fhandle	fhandle_t;
 
 /*
+ * Network address hash list element
+ */
+union nethostaddr {
+	u_long had_inetaddr;
+	struct mbuf *had_nam;
+};
+
+struct netaddrhash {
+	struct netaddrhash *neth_next;
+	struct ucred	neth_anon;
+	u_short		neth_family;
+	union nethostaddr neth_haddr;
+	union nethostaddr neth_hmask;
+	int		neth_exflags;
+};
+#define	neth_inetaddr	neth_haddr.had_inetaddr
+#define	neth_inetmask	neth_hmask.had_inetaddr
+#define	neth_nam	neth_haddr.had_nam
+#define	neth_msk	neth_hmask.had_nam
+
+/*
+ * Network address hashing defs.
+ */
+#define	NETHASHSZ	8	/* Must be a power of 2 <= 256 */
+#define	NETMASK_HASH	NETHASHSZ /* Last hash table element is for networks */
+#define	NETADDRHASH(a)	\
+	(((a)->sa_family == AF_INET) ? ((a)->sa_data[5] & (NETHASHSZ - 1)) : \
+	 (((a)->sa_family == AF_ISO) ? iso_addrhash(a) : 0))
+
+/*
  * Arguments to mount UFS-based filesystems
  */
-#ifndef KERNEL
-#include <sys/ucred.h>
-#endif
 struct ufs_args {
 	char	*fspec;		/* block special device to mount */
 	int	exflags;	/* export related flags */
@@ -218,6 +249,7 @@ typedef union nfsv2fh nfsv2fh_t;
  */
 struct nfs_args {
 	struct sockaddr	*addr;		/* file server address */
+	int		addrlen;	/* length of address */
 	int		sotype;		/* Socket type */
 	int		proto;		/* and Protocol */
 	nfsv2fh_t	*fh;		/* File handle to be mounted */
@@ -226,25 +258,46 @@ struct nfs_args {
 	int		rsize;		/* read size in bytes */
 	int		timeo;		/* initial timeout in .1 secs */
 	int		retrans;	/* times to retry send */
+	int		maxgrouplist;	/* Max. size of group list */
+	int		readahead;	/* # of blocks to readahead */
+	int		leaseterm;	/* Term (sec) of lease */
+	int		deadthresh;	/* Retrans threshold */
 	char		*hostname;	/* server's name */
 };
+
 
 /*
  * NFS mount option flags
  */
-#define	NFSMNT_SOFT	0x0001	/* soft mount (hard is default) */
-#define	NFSMNT_WSIZE	0x0002	/* set write size */
-#define	NFSMNT_RSIZE	0x0004	/* set read size */
-#define	NFSMNT_TIMEO	0x0008	/* set initial timeout */
-#define	NFSMNT_RETRANS	0x0010	/* set number of request retrys */
-#define	NFSMNT_HOSTNAME	0x0020	/* set hostname for error printf */
-#define	NFSMNT_INT	0x0040	/* allow interrupts on hard mount */
-#define	NFSMNT_NOCONN	0x0080	/* Don't Connect the socket */
-#define	NFSMNT_SCKLOCK	0x0100	/* Lock socket against others */
-#define	NFSMNT_WANTSCK	0x0200	/* Want a socket lock */
-#define	NFSMNT_SPONGY	0x0400	/* spongy mount (soft for stat and lookup) */
-#define	NFSMNT_COMPRESS	0x0800	/* Compress nfs rpc xdr */
-#define	NFSMNT_LOCKBITS	(NFSMNT_SCKLOCK | NFSMNT_WANTSCK)
+#define	NFSMNT_SOFT		0x00000001  /* soft mount (hard is default) */
+#define	NFSMNT_WSIZE		0x00000002  /* set write size */
+#define	NFSMNT_RSIZE		0x00000004  /* set read size */
+#define	NFSMNT_TIMEO		0x00000008  /* set initial timeout */
+#define	NFSMNT_RETRANS		0x00000010  /* set number of request retrys */
+#define	NFSMNT_MAXGRPS		0x00000020  /* set maximum grouplist size */
+#define	NFSMNT_INT		0x00000040  /* allow interrupts on hard mount */
+#define	NFSMNT_NOCONN		0x00000080  /* Don't Connect the socket */
+#define	NFSMNT_NQNFS		0x00000100  /* Use Nqnfs protocol */
+#define	NFSMNT_MYWRITE		0x00000200  /* Assume writes were mine */
+#define	NFSMNT_KERB		0x00000400  /* Use Kerberos authentication */
+#define	NFSMNT_DUMBTIMR		0x00000800  /* Don't estimate rtt dynamically */
+#define	NFSMNT_RDIRALOOK	0x00001000  /* Do lookup with readdir (nqnfs) */
+#define	NFSMNT_LEASETERM	0x00002000  /* set lease term (nqnfs) */
+#define	NFSMNT_READAHEAD	0x00004000  /* set read ahead */
+#define	NFSMNT_DEADTHRESH	0x00008000  /* set dead server retry thresh */
+#define	NFSMNT_NQLOOKLEASE	0x00010000  /* Get lease for lookup */
+#define	NFSMNT_INTERNAL		0xffe00000  /* Bits set internally */
+#define	NFSMNT_MNTD		0x00200000  /* Mnt server for mnt point */
+#define	NFSMNT_DISMINPROG	0x00400000  /* Dismount in progress */
+#define	NFSMNT_DISMNT		0x00800000  /* Dismounted */
+#define	NFSMNT_SNDLOCK		0x01000000  /* Send socket lock */
+#define	NFSMNT_WANTSND		0x02000000  /* Want above */
+#define	NFSMNT_RCVLOCK		0x04000000  /* Rcv socket lock */
+#define	NFSMNT_WANTRCV		0x08000000  /* Want above */
+#define	NFSMNT_WAITAUTH		0x10000000  /* Wait for authentication */
+#define	NFSMNT_HASAUTH		0x20000000  /* Has authenticator */
+#define	NFSMNT_WANTAUTH		0x40000000  /* Wants an authenticator */
+#define	NFSMNT_AUTHERR		0x80000000  /* Authentication error */
 #endif /* NFS */
 
 #ifdef KERNEL
