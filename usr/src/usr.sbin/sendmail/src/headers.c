@@ -827,27 +827,66 @@ crackaddr(addr)
 		}
 
 		/* check for group: list; syntax */
-		if (c == ':' && anglelev <= 0 && !gotcolon && *p != ':' &&
-		    !ColonOkInAddr)
+		if (c == ':' && anglelev <= 0 && !gotcolon && !ColonOkInAddr)
 		{
 			register char *q;
 
+			if (*p == ':')
+			{
+				/* special case -- :: syntax */
+				if (cmtlev <= 0 && !qmode)
+					quoteit = TRUE;
+				if (copylev > 0 && !skipping)
+				{
+					*bp++ = c;
+					*bp++ = c;
+				}
+				p++;
+				goto putg;
+			}
+
 			gotcolon = TRUE;
 
-			/* consider white space part of the group: part */
-			while (isascii(*p) && isspace(*p))
-				p++;
 			bp = bufhead;
+			if (quoteit)
+			{
+				*bp++ = '"';
+
+				/* back up over the ':' and any spaces */
+				--p;
+				while (isascii(*--p) && isspace(*p))
+					continue;
+				p++;
+			}
 			for (q = addrhead; q < p; )
 			{
 				c = *q++;
 				if (bp < buflim)
 				{
+					if (quoteit && c == '"')
+						*bp++ = '\\';
 					*bp++ = c;
 				}
 			}
+			if (quoteit)
+			{
+				if (bp == &bufhead[1])
+					bp--;
+				else
+					*bp++ = '"';
+				while ((c = *p++) != ':')
+				{
+					if (bp < buflim)
+						*bp++ = c;
+				}
+				*bp++ = c;
+			}
+
+			/* any trailing white space is part of group: */
+			while (isascii(*p) && isspace(*p) && bp < buflim)
+				*bp++ = *p++;
 			copylev = 0;
-			putgmac = FALSE;
+			putgmac = quoteit = FALSE;
 			bufhead = bp;
 			addrhead = p;
 			continue;
