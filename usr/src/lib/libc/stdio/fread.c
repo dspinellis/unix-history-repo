@@ -9,12 +9,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fread.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)fread.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
 #include <string.h>
 
+size_t
 fread(buf, size, count, fp)
 	void *buf;
 	size_t size, count;
