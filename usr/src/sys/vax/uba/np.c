@@ -3,7 +3,16 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)np.c	7.1 (Berkeley) %G%
+ *	@(#)np.c	7.2 (Berkeley) %G%
+ *
+ * From:
+ *	np.c version 1.5
+ *
+ *	This version retrieved: 8/18/86 @ 18:58:54
+ *	    This delta created: 8/18/86 @ 18:19:24
+ *
+ *	static		char	*SCCSID = "@(#)np.c	1.5";
+ *
  */
 
 		/******************************************
@@ -20,6 +29,12 @@
  * control functions are accessed via npioctl() by the NP support utilities.
  */
 
+/*
+ * Modification History:
+ * 4/9/86 DDW Removed pseudo-driver initialization flag resets from NpReset
+ * 5/28/86 CJM Changed iodone() to wakeup() in NpProcQueue().
+ *
+ */
 
 /*
  * Include Files
@@ -27,25 +42,29 @@
 
 #include "np.h"
 #if NNP > 0
-#include "param.h"
-#include "buf.h"
-#include "signal.h"
-#include "systm.h"
-#include "dir.h"
-#include "user.h"
-#include "proc.h"
-#include "uio.h"
-#include "errno.h"
-
+#include "../h/param.h"
+#include "../h/buf.h"
 #include "../vaxuba/ubavar.h"
+#include "../h/signal.h"
+#include "../h/systm.h"
+#include "../h/dir.h"
+#include "../h/user.h"
+#include "../h/proc.h"
+#include "../h/uio.h"
+#include "../h/errno.h"
+
 #include "../vaxuba/npreg.h"
 
+#define b_uio b_forw
+#define b_rp  av_back
 /*
  * Global variables for pseudo-drivers.
  */
 
-int WnInitFlag;
-int IsInitFlag;
+int WnInitFlag = 0;
+int IsInitFlag = 0;
+int (*IxAttach)();
+int (*IxReset)();
 
 /*
  * Debugging level.
@@ -84,6 +103,11 @@ static struct npconn npcnxtab[NNP][NNPCNN];
 
 static struct npreq reqhdr[NNP];
 
+/* Require for diagnostic packages */
+
+typedef struct npreq *reqptr;
+reqptr np_mapreq[NNP];
+
 /* The request structures, one pool per board */
 
 static struct npreq npreqs[NNP][NUMCQE];
@@ -107,6 +131,7 @@ static unsign16 npvectors[NNP];
 struct	uba_driver npdriver =
     { npprobe, 0, npattach, 0, npstd, "np", npdinfo };
 struct	buf	np_tab[NNP];
+static unsigned long np_icount[NNP];
 
 
 /*
@@ -117,8 +142,6 @@ struct npreq * NpGetReq();
 struct npmaster	*NpBoardChange();
 int NpTimer();
 struct CQE * NpRemCQE();
-int (*IxAttach)();
-int (*IxReset)();
 
 extern struct user u;
 
@@ -291,7 +314,6 @@ int flag;
 
 	rp->intr = (int (*)())0;	/* Do not call interrupt routine */
 	rp->bufoffset = 0;		/* Offset into data buffer */
-	rp->flags = NPCLEAR;		/* Clear flags */
 	rp->procp = u.u_procp; 	/* Process structure for this user */
 
 	/* Copy in user's argument to ioctl() call */
@@ -398,13 +420,32 @@ int flag;
 		if(error) break;
 		error = NpSetXeqAddr(mp,(caddr_t)INETBOOT);
 		break;
+	    case NPSETLAST:
+		if (usrarg)
+			mp->flags &= ~LSTCMD;
+		else
+			mp->flags |= LSTCMD;
+		break;
+	    case NPCLRICNT:
+		np_icount[unit] = NPCLEAR;
+		break;
+	    case NPGETICNT:
+		usrarg = np_icount[unit];
+		error = copyout((caddr_t)&usrarg,*addr,sizeof(usrarg));
+		break;
+	    case NPGETIVEC:
+		usrarg = mp->vector;
+		error = copyout((caddr_t)&usrarg,*addr,sizeof(usrarg));
+		break;
+	    case NPMAPMEM:
+		error = NpMem(mp, rp, *addr);
+		break;
 	    default:
 		printf("Bad Maintenance command: %d!\n",cmd);
 		error = EIO;
 		break;
-
 	}
-	if((cmd != NPRESET) && (cmd != NPINIT))
+	if((cmd != NPRESET) && (cmd != NPINIT) && (cmd != NPMAPMEM))
 		NpFreeReq(mp->reqtab,rp);
 
 	if(NpDebug & DEBENTRY)
@@ -420,6 +461,7 @@ npstart(mp)
 register struct npmaster *mp;
 {
 
+	register struct uio 	*uio;
 	register struct buf	*bp;
 	register struct npreq	*rp;
 
@@ -432,7 +474,12 @@ register struct npmaster *mp;
 		np_tab[mp->unit].b_active = 0;
 		return;
 	}
-	if((rp = (struct npreq *)(bp->av_back)) == (struct npreq *)0) {
+	if((rp = (struct npreq *)(bp->b_rp)) == (struct npreq *)0) {
+		bp->b_flags = B_ERROR;
+		iodone(bp);
+		return;
+	}
+	if ((uio = (struct uio *)bp->b_uio) == (struct uio *)0) {
 		bp->b_flags = B_ERROR;
 		iodone(bp);
 		return;
@@ -440,18 +487,17 @@ register struct npmaster *mp;
 	np_tab[mp->unit].b_active = 1;
 
 	if(NpDebug & DEBIO)
-		printf("NP IO src %x dst = %x cnt = %x\n",bp->b_un.b_addr,bp->b_blkno << DEV_BSHIFT,bp->b_bcount);
+		printf("NP IO src %x dst = %x cnt = %x\n", bp->b_un.b_addr,
+			uio->uio_offset, bp->b_bcount);
 
 	/* Send the request to the board via the CSR0 command interface */
 
 	if(bp->b_flags & B_READ) 
-
-		error = NPIO(mp,(paddr_t)((long)bp->b_blkno << DEV_BSHIFT),(paddr_t)(rp->bufaddr),
-	    bp->b_bcount,(bp->b_flags & B_READ)); 
-
+		error = NPIO(mp, (paddr_t)uio->uio_offset, (paddr_t)rp->bufaddr,
+	    		bp->b_bcount, (bp->b_flags & B_READ)); 
 	else
-		error = NPIO(mp,(paddr_t)(rp->bufaddr),(paddr_t)((long)bp->b_blkno << DEV_BSHIFT),
-	    bp->b_bcount,(bp->b_flags & B_READ)); 
+		error = NPIO(mp, (paddr_t)rp->bufaddr, (paddr_t)uio->uio_offset,
+			bp->b_bcount, (bp->b_flags & B_READ)); 
 	
 
 	/* Check return from I/O */
@@ -459,7 +505,6 @@ register struct npmaster *mp;
 	if(error) {
 		bp->b_flags |= B_ERROR;
 		np_tab[mp->unit].b_actf = bp->av_forw;
-
 		if(NpDebug & DEBIO)
 			printf("NPIO return error: b_flags is %x \n",bp->b_flags);
 		iodone(bp);
@@ -470,7 +515,7 @@ register struct npmaster *mp;
 
 }
 /*
- * npstratagey - the strategy routine
+ * npstrategy - the strategy routine
  */
 
 npstrategy(bp)
@@ -486,7 +531,8 @@ register struct buf *bp;
 		printf("npstrategy\n");
 	if(NpDebug & DEBIO)
 		printf("flag = %x count = %x paddr = %x %x blkno = %x %x\n",
-		    bp->b_flags,bp->b_bcount,bp->b_un.b_addr,bp->b_un.b_addr,bp->b_blkno,bp->b_blkno);
+		    bp->b_flags, bp->b_bcount, bp->b_un.b_addr, bp->b_un.b_addr,
+		    bp->b_blkno,bp->b_blkno);
 
 	/* get master structure */
 
@@ -514,8 +560,7 @@ register struct buf *bp;
 
 	rp->bufoffset = 0;		/* This is the start of the buffer */
 	ip = &np_tab[mp->unit];
-	bp->av_forw = (struct buf *)0;
-	bp->av_back = (struct buf *)rp;
+	bp->b_rp = (struct buf *)rp;
 
 	rp->flags |= KERNREQ;		/* Mark it as kernel so not to map */
 
@@ -585,12 +630,14 @@ npread(dev,uio)
 dev_t dev;
 struct uio *uio;
 {
+	struct buf *bp;
+	bp = &npcnxtab[NPUNIT(dev)][NPCONN(dev)].np_rbuf;
 
 	if(NpDebug & DEBENTRY)
 		printf("in npread\n");
 
-	return(physio(npstrategy,&npcnxtab[NPUNIT(dev)][NPCONN(dev)].np_rbuf,dev,B_READ ,nptrim,uio));
-
+	bp->b_uio = (struct buf *)uio;
+	return(physio(npstrategy,bp,dev,B_READ ,nptrim,uio));
 }
 
 /*
@@ -607,10 +654,11 @@ struct uio *uio;
 	if(NpDebug & DEBENTRY)
 		printf("in npwrite \n");
 
+	bp->b_uio = (struct buf *)uio;
 	return(physio(npstrategy,bp,dev,B_WRITE ,nptrim,uio));
 }
-/*
 
+/*
  * npreset - called as result of a UNIBUS reset.
  */
 
@@ -623,6 +671,8 @@ int uban;
 	register struct uba_device *ui;
 	int i;
 
+	if(NpDebug & DEBENTRY)
+		printf("npreset(ubareset)\n");
 	for(i = 0; i < NNP; i++) {
 
 		if(((ui = npdinfo[i]) == (struct uba_device *)NULL) ||
@@ -630,10 +680,20 @@ int uban;
 			continue;
 
 		mp = &npmasters[i];
-		mp->iomapbase = 0;
-		NpReset(mp,0);
+
+		/* Get a Request structure */
+
+		while((rp = NpGetReq(mp->reqtab)) == NULL) {
+			mp->reqtab->flags |= WANTREQ;
+			sleep((caddr_t)(mp->reqtab),PZERO -1);
+		}
+
+		NpReset(mp,rp);
 	}
+	if(NpDebug & DEBENTRY)
+		printf("npreset(ubareset)...\n");
 }
+
 
 /*
  * Nppoll looks for work by polling each board. He goes to sleep if there are
@@ -730,6 +790,9 @@ int unit;
 
 	if(NpDebug & DEBINIT)
 		printf("SW reset on unit %d.\n",unit);
+
+	np_icount[unit] = NPCLEAR;
+	np_mapreq[unit] = (struct npreq *) NPCLEAR;
 
 	/* Initialize master structure pointer for this unit */
 
@@ -849,10 +912,10 @@ int unit;
 	reqhdr[unit].free = &npreqs[unit][0];
 
 	for(j = 0; j < NUMCQE; j++) {
-
 		npreqs[unit][j].free = &npreqs[unit][j + 1];
 		npreqs[unit][j].element = &npsp->elements[j];
 		npreqs[unit][j].forw = npreqs[unit][j].back = (struct npreq *)NULL;
+		npreqs[unit][j].flags = NPCLEAR;
 	}
 	npreqs[unit][--j].free = &reqhdr[unit];
 
@@ -866,6 +929,7 @@ int unit;
 
 	if(NpDebug & DEBENTRY)
 		printf("SW_Init...\n");
+	return(0);
 }
 
 /*
@@ -983,9 +1047,11 @@ int unit;
 		printf("npintr on unit %d!\n",unit);
 
 	mp = &npmasters[unit];
+	np_icount[unit]++;
 
 	if(NpDebug & DEBINTR)
-		printf("npintr mp->flags = %x\n",mp->flags);
+		printf("npintr mp->flags = %x  interupt count = %x\n",
+			mp->flags, np_icount[unit]);
 
 	/* Wake up anyone sleeping on a CSR0 Command */
 
@@ -1172,21 +1238,20 @@ struct npmaster *mp;
 				/* Call interrupt routine */
 
 				(*rp->intr)(mp,rp);
-
 			}
 			else {
 
 			if(NpDebug & DEBINTR)
 				printf("waking up %x\n",rp);
 
-				if(rp->flags & NPUIO)
+				/* if(rp->flags & NPUIO)
 					iodone(&rp->buf);
 				else	wakeup((caddr_t) (rp)); /* Awaken */
 
+				wakeup((caddr_t)(rp)); 	/* Awaken */
 			if(NpDebug & DEBINTR)
 				printf("AWAKE\n");
 			}
-
 		}
 
 		if(!(cqp->chngflag & ON))
@@ -1277,6 +1342,11 @@ struct npreq *head;
 
 	p = head->free;
 	head->free = p->free;
+	if (p->flags & REQALOC)
+		printf("GetReq: Req %x already allocated\n", p);
+	p->flags &= WANTREQ;
+	if (p != head)
+		p->flags |= REQALOC;
 	return(p==head ? (struct npreq *)NULL : p);
 }
 
@@ -1287,13 +1357,29 @@ struct npreq *head;
 NpFreeReq(head,nprp)
 register struct npreq *head, *nprp;
 {
+	int s;
 
 	if(NpDebug & DEBREQ)
 		printf("NpFreeReq, head is %x rp is %x\n",head,nprp);
 
+	if (nprp == NULL) {
+		printf("FREEREQ: attempt to free null pointer\n");
+		return;
+	}
+	if (!(nprp->flags & REQALOC)) {
+		printf("FREEREQ: attempt to free unallocated request %x\n",
+			nprp);
+		return;
+	}
+	if (nprp->flags & REQUSE)
+		printf("FREEREQ: freeing unremoved request %x\n", nprp);
+
+	s = spl5();
 	nprp->forw = nprp->back = (struct npreq *)NULL;
 	nprp->free = head->free;
 	head->free = nprp;
+	nprp->flags &= ~REQALOC;
+	splx(s);
 
 	/* Wake up any processes waiting for a request structure */
 
@@ -1402,17 +1488,21 @@ int base;
 NpAddReq(head,rp)
 register struct npreq *head, *rp;
 {
+	int s;
 
-	if(NpDebug & DEBENTRY)
-		printf("NpAddReq\n");
-
-	if(NpDebug & DEBREQ)
+	if (NpDebug & (DEBENTRY|DEBREQ))
 		printf("NpAddReq: %x\n",rp);
 
+	if (rp->flags & REQUSE)
+		printf("ADDREQ: Request %x allready in use\n", rp);
+
+	s = spl7();
 	rp->forw = head->forw;
 	rp->forw->back = rp;
 	rp->back = head;
 	head->forw = rp;
+	rp->flags |= REQUSE;
+	splx(s);
 
 	if(NpDebug & DEBENTRY)
 		printf("NpAddReq...\n");
@@ -1426,15 +1516,29 @@ register struct npreq *head, *rp;
 NpRemReq(rp)
 register struct npreq *rp;
 {
+	int s;
 
-	if(NpDebug & DEBENTRY)
-		printf("NpRemReq\n");
-
-	if(NpDebug & DEBREQ)
+	if (NpDebug & (DEBENTRY|DEBREQ))
 		printf("NpRemReq: %x\n",rp);
 
+	if (rp == NULL) {
+		printf("REMREQ: null pointer removal requested\n");
+		return;
+	}
+	if (!(rp->flags & REQUSE)) {
+		printf("REMREQ: trying to rem unused req %x\n", rp);
+		return;
+	}
+	if (!(rp->flags & REQALOC)) {
+		printf("REMREQ: trying to rem unallocated req %x\n", rp);
+		return;
+	}
+		
+	s = spl7();
 	rp->back->forw = rp->forw;
 	rp->forw->back = rp->back;
+	rp->flags &= ~REQUSE;
+	splx(s);
 
 	if(NpDebug & DEBENTRY)
 		printf("NpRemReq...\n");
@@ -1639,13 +1743,15 @@ int dir;		/* Direction  READ/WRITE */
 		printf("I/O count = %d \n",count);
 	}
 
-	cmd_block.cmd_word = NPCBI | NPLST | (CBICNT + IOCNT);
+	cmd_block.cmd_word = NPCBI | (CBICNT + IOCNT);
 	cmd_block.intlevel = mp->vector;
 	cmd_block.shi_addr = HIWORD(src);
 	cmd_block.slo_addr = LOWORD(src);
 	cmd_block.dhi_addr = HIWORD(dest);
 	cmd_block.dlo_addr = LOWORD(dest);
 	cmd_block.count = count;
+	if ((mp->flags & LSTCMD) == 0)
+		cmd_block.cmd_word |= NPLST;
 	if(dir == B_READ)
 		cmd_block.cmd_word |= NPDMP;
 	else
@@ -1694,9 +1800,10 @@ struct npreq *curr_rp;
 
 		rp->flags |= (IOABORT | REQDONE);
 		mp->reqtab->reqcnt++;
-		if(rp->flags & NPUIO)
+		/* if(rp->flags & NPUIO)
 			iodone(&rp->buf);
-		else wakeup((caddr_t)rp);
+		else */
+		wakeup((caddr_t)rp);
 	}
 
 	if(NpDebug & DEBMAINT)
@@ -1788,9 +1895,6 @@ struct npreq *rp;
 
 	/* Initialize Pseudo-Drivers */
 
-	WnInitFlag = 0;			/* WN Pseudo-Driver */
-	IsInitFlag = 0;			/* IS Pseudo-Driver */
-
 	if (IxReset)
 		(*IxReset)(mp->unit, mp->devp->ui_ubanum, rp);
 
@@ -1855,7 +1959,6 @@ unsign16 protocol;
 	}
 
 	rp->intr = (int (*)())0;	/* Do not call interrupt routine */
-	rp->flags = NPCLEAR;
 	rp->mapbase = 0;		/* Clear mapping information */
 
 	ep = rp->element;		/* Handy pointer */
@@ -1990,7 +2093,11 @@ int	count;
 	rp->buf.b_proc = rp->procp;
 		
 	rp->procp->p_flag |= SPHYSIO;
+	if(NpDebug & DEBENTRY)
+		printf("vslock\n");
 	vslock(addr,count);
+	if(NpDebug & DEBENTRY)
+		printf("vslock...\n");
 
 	rp->mapbase = ubasetup(mp->devp->ui_ubanum,&rp->buf,0);
 
@@ -2037,7 +2144,7 @@ int i;
 
 	cvec = (uba_hd[numuba].uh_lastiv -= 4); 
 
-#ifdef OLDBSD4_2
+#ifdef OLDBSD
 	/* Find unit number from npstd[] by matching the csr address */
 
 	csraddr = (u_short)((int)reg & 0x0FFFF);
@@ -2051,6 +2158,7 @@ int i;
 	}
 	if(i == NNP)
 		printf("Couldn't find device in npstd[]!\n");
+
 #else
 	npvectors[ui->ui_unit] = cvec;
 #endif
@@ -2071,7 +2179,6 @@ register struct uba_device *ui;
 		printf("In npattach, ui is %x.\n",ui);
 
 	npinit(ui->ui_unit);
-
 	if (IxAttach)
 		(*IxAttach)(ui);
 
@@ -2079,4 +2186,44 @@ register struct uba_device *ui;
 		printf("npattach...\n");
 }
 
+
+NpMem(mp, rp, uaddr)
+struct npmaster *mp;
+struct npreq *rp;
+unsigned long uaddr;
+{
+	struct np_mem mem;
+	register int error = 0;
+
+	if(NpDebug & DEBENTRY)
+		printf("npmem\n");
+
+	if (error = copyin(uaddr, &mem, sizeof(mem)))
+		return (error);
+
+	if (mem.mem_type == NP_SET) {
+		if (np_mapreq[mp->unit] != (struct npreq *)NPCLEAR)
+			error = EBUSY;
+		else {
+			error = NpMapMem(mp, rp, mem.mem_addr, mem.mem_count);
+			if (error != 0) {
+				np_mapreq[mp->unit] = rp;
+				mem.mem_addr = rp->bufaddr;
+			}
+		}
+	} else if (mem.mem_type == NP_USET) {
+		error = NpUnMapMem(mp, np_mapreq[mp->unit]);
+		NpFreeReq(mp->reqtab, rp);
+		NpFreeReq(mp->reqtab, np_mapreq[mp->unit]);
+		np_mapreq[mp->unit] = (struct npreq *)NPCLEAR;
+	} else 
+		error = EIO;
+
+	if (error != 0)
+		error = copyout(&mem, uaddr, sizeof(mem));
+
+	if(NpDebug & DEBENTRY)
+		printf("npmem...\n");
+	return (error);
+}
 #endif
