@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_machdep.c 1.21 91/04/06$
  *
- *	@(#)vm_machdep.c	7.3 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -19,6 +19,7 @@
 #include "proc.h"
 #include "malloc.h"
 #include "buf.h"
+#include "vnode.h"
 #include "user.h"
 
 #include "vm/vm.h"
@@ -112,6 +113,21 @@ cpu_exit(p)
 	kmem_free(kernel_map, (vm_offset_t)p->p_addr, ctob(UPAGES));
 	swtch_exit();
 	/* NOTREACHED */
+}
+
+/*
+ * Dump the machine specific header information at the start of a core dump.
+ * XXX should snapshot FPU here?
+ */
+cpu_coredump(p, vp, cred)
+	struct proc *p;
+	struct vnode *vp;
+	struct ucred *cred;
+{
+
+	return (vn_rdwr(UIO_WRITE, vp, (caddr_t)p->p_addr, ctob(UPAGES),
+	    (off_t)0, UIO_SYSSPACE, IO_NODELOCKED|IO_UNIT, cred, (int *)NULL,
+	    p));
 }
 
 /*
