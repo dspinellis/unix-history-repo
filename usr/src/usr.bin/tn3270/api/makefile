@@ -1,5 +1,12 @@
 #	@(#)makefile	4.5 (Berkeley) 4/26/91
-
+#
+#  PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+#  --------------------         -----   ----------------------
+#  CURRENT PATCH LEVEL:         1       00084
+#  --------------------         -----   ----------------------
+# 
+#  28 Feb 93    Nick Handel	Use correct mk template file.
+#
 DEBUG_FLAGS = #-g
 
 CFLAGS = ${DEBUG_FLAGS}
@@ -88,7 +95,7 @@ disp_asc.o:	disp_asc.OUT asc_disp.out
 
 .MAIN:	myall
 # Actually do some work
-.include <386bsd.lib.mk>
+.include <bsd.lib.mk>
 
 myall:	lib${LIB}.a
 	ranlib lib${LIB}.a
