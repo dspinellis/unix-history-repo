@@ -1,4 +1,4 @@
-/*	getpwnamuid.c	4.3	84/01/31	*/
+/*	getpwnamuid.c	4.4	84/04/26	*/
 
 #include <stdio.h>
 #include <pwd.h>
@@ -10,7 +10,8 @@ static char PASSWD[] = "/etc/passwd";
 static char EMPTY[] = "";
 static char line[BUFSIZ+1];
 static struct passwd passwd;
-static DBM *db = 0;
+DBM *_pw_db = 0;
+int _pw_stayopen = 0;
 
 static struct passwd *
 fetchpw(key)
@@ -20,7 +21,7 @@ fetchpw(key)
 
         if (key.dptr == 0)
                 return ((struct passwd *)NULL);
-	key = dbmfetch(db, key);
+	key = dbmfetch(_pw_db, key);
 	if (key.dptr == 0)
                 return ((struct passwd *)NULL);
         cp = key.dptr;
@@ -46,14 +47,27 @@ getpwnam(nam)
         datum key;
 	register struct passwd *pw;
 
-        if ((db = ndbmopen(PASSWD, O_RDONLY)) == (DBM *)0)
-                return ((struct passwd *)NULL);
-	if (flock(db->db_dirf, LOCK_SH) < 0)
-                return ((struct passwd *)NULL);
+        if (_pw_db == (DBM *)0 &&
+	    (_pw_db = ndbmopen(PASSWD, O_RDONLY)) == (DBM *)0) {
+	oldcode:
+		setpwent();
+		while ((pw = getpwent()) && strcmp(nam, pw->pw_name));
+		endpwent();
+		return (pw);
+	}
+	if (flock(_pw_db->db_dirf, LOCK_SH) < 0) {
+		ndbmclose(_pw_db);
+		_pw_db = (DBM *)0;
+		goto oldcode;
+	}
         key.dptr = nam;
         key.dsize = strlen(nam);
 	pw = fetchpw(key);
-	ndbmclose(db);
+	(void) flock(_pw_db->db_dirf, LOCK_UN);
+	if (!_pw_stayopen) {
+		ndbmclose(_pw_db);
+		_pw_db = (DBM *)0;
+	}
         return (pw);
 }
 
@@ -64,13 +78,26 @@ getpwuid(uid)
         datum key;
 	register struct passwd *pw;
 
-        if ((db = ndbmopen(PASSWD, O_RDONLY)) == (DBM *)0)
-                return ((struct passwd *)NULL);
-	if (flock(db->db_dirf, LOCK_SH) < 0)
-                return ((struct passwd *)NULL);
+        if (_pw_db == (DBM *)0 &&
+	    (_pw_db = ndbmopen(PASSWD, O_RDONLY)) == (DBM *)0) {
+	oldcode:
+		setpwent();
+		while ((pw = getpwent()) && pw->pw_uid != uid);
+		endpwent();
+		return (pw);
+	}
+	if (flock(_pw_db->db_dirf, LOCK_SH) < 0) {
+		ndbmclose(_pw_db);
+		_pw_db = (DBM *)0;
+		goto oldcode;
+	}
         key.dptr = (char *) &uid;
         key.dsize = sizeof uid;
 	pw = fetchpw(key);
-	ndbmclose(db);
+	(void) flock(_pw_db->db_dirf, LOCK_UN);
+	if (!_pw_stayopen) {
+		ndbmclose(_pw_db);
+		_pw_db = (DBM *)0;
+	}
         return (pw);
 }
