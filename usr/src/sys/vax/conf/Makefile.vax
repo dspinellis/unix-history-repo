@@ -72,7 +72,7 @@ SYSTEM_OBJ=	locore.o ${OBJS} param.o ioconf.o vers.o
 SYSTEM_DEP=	Makefile ${SYSTEM_OBJ}
 SYSTEM_LD_HEAD=	rm -f $@
 SYSTEM_LD=	@echo loading vmunix;\
-		${LD} -x -n -o $@ -e start ${SYSTEM_OBJ}
+		${LD} -x -n -o $@ -e start -T 80000000 ${SYSTEM_OBJ}
 SYSTEM_LD_TAIL= 
 #SYSTEM_LD_TAIL= @echo rearranging symbols; symorder symbols.sort $@
 
