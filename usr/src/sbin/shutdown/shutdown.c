@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)shutdown.c	4.7 (Berkeley) 81/05/11";
+static	char *sccsid = "@(#)shutdown.c	4.8 (Berkeley) 81/06/11";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -31,7 +31,7 @@ static	char *sccsid = "@(#)shutdown.c	4.7 (Berkeley) 81/05/11";
 #define	HOURS	*3600
 #define MINUTES	*60
 #define SECONDS
-#define NLOG		20		/* no of lines possible for message */
+#define NLOG		20		/* no of args possible for message */
 #define	NOLOGTIME	5 MINUTES
 
 int	do_nothing();
@@ -70,6 +70,7 @@ struct interval {
 	10 MINUTES,	5 MINUTES,
 	5 MINUTES,	3 MINUTES,
 	2 MINUTES,	30 SECONDS,
+	40 SECONDS,	10 SECONDS,
 	0 SECONDS,	0 SECONDS
 };
 char *shutter, *getlogin();
@@ -105,7 +106,7 @@ main(argc,argv)
 		argc--, argv++;
 	}
 	if (argc < 1) {
-		printf("Usage: %s [ -krd ] shutdowntime [ message ]\n",
+		printf("Usage: %s [ -krh ] shutdowntime [ message ]\n",
 		    argv[0]);
 		finish();
 	}
@@ -137,6 +138,7 @@ main(argc,argv)
 	signal(SIGTERM, finish);
 	signal(SIGALRM, do_nothing);
 	nice(-20);
+	fflush(stdout);
 #ifndef DEBUG
 	if (i = fork()) {
 		printf("[pid %d]\n", i);
@@ -269,17 +271,28 @@ warn(term, sdt, nowtime)
 	long sdt, nowtime;
 {
 	char *ts;
+	register delay = std - nowtime;
 
-	fprintf(term, "\007\007*** System shutdown message from %s ***\n", shutter);
+	if (delay > 8)
+		while (delay % 5)
+			delay++;
+
+	if (shutter)
+		fprintf(term,
+		    "\007\007*** System shutdown message from %s ***\n",
+		    shutter);
+	else
+		fprintf(term,
+		    "\007\007*** System shutdown message ***\n");
 	ts = ctime(&sdt);
-	if (sdt - nowtime > 10 MINUTES)
+	if (delay> 10 MINUTES)
 		fprintf(term, "System going down at %5.5s\n", ts+11);
-	else if ( sdt - nowtime > 60 SECONDS ) {
+	else if ( delay > 60 SECONDS ) {
 		fprintf(term, "System going down in %d minute%s\n",
-		(sdt-nowtime+30)/60, (sdt-nowtime+30)/60 != 1 ? "s" : "");
-	} else if ( sdt - nowtime > 0 ) {
+		(delay+30)/60, (delay+30)/60 != 1 ? "s" : "");
+	} else if ( delay > 0 ) {
 		fprintf(term, "System going down in %d second%s\n",
-		sdt-nowtime, sdt-nowtime != 1 ? "s" : "");
+		delay, delay != 1 ? "s" : "");
 	} else
 		fprintf(term, "System going down IMMEDIATELY\n");
 }
@@ -292,8 +305,10 @@ nolog(sdt)
 
 	if ((nologf = fopen(nologin, "w")) != NULL) {
 		fprintf(nologf, nolog1, (ctime(&sdt)) + 11);
+		putc('\t', nologf);
 		for (mess = nolog2; *mess; mess++)
-			fprintf(nologf, "\t%s\n", *mess);
+			fprintf(nologf, " %s", *mess);
+		putc('\n', nologf);
 		fclose(nologf);
 	}
 }
@@ -341,6 +356,8 @@ time_t now;
 		tm->tm_mday, tm->tm_year + 1900);
 	for (mess = nolog2; *mess; mess++)
 		fprintf(fp, " %s", *mess);
+	if (shutter)
+		fprintf(fp, " (by %s)", shutter);
 	fputc('\n', fp);
 	fclose(fp);
 }
