@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	6.22 (Berkeley) %G%
+ *	@(#)machdep.c	6.23 (Berkeley) %G%
  */
 
 #include "reg.h"
@@ -734,6 +734,10 @@ boot(paniced, arghowto)
 		waittime = 0;
 		(void) splnet();
 		printf("syncing disks... ");
+		/*
+		 * Release inodes held by texts before update.
+		 */
+		xumount(NODEV);
 		update();
 		{ register struct buf *bp;
 		  int iter, nbusy;
@@ -750,6 +754,11 @@ boot(paniced, arghowto)
 		  }
 		}
 		printf("done\n");
+		/*
+		 * If we've been adjusting the clock, the todr
+		 * will be out of synch; adjust it now.
+		 */
+		resettodr();
 	}
 	splx(0x1f);			/* extreme priority */
 	devtype = major(rootdev);
@@ -1081,21 +1090,19 @@ machinecheck(cmcf)
 	panic("mchk");
 }
 
-#ifdef notdef
 microtime(tvp)
-	struct timeval *tvp;
+	register struct timeval *tvp;
 {
-	int s = spl7();
+	int s = splhigh();
 
-	tvp->tv_sec = time.tv_sec;
-	tvp->tv_usec = (lbolt+1)*16667 + mfpr(ICR);
+	*tvp = time;
+	tvp->tv_usec += tick + mfpr(ICR);
 	while (tvp->tv_usec > 1000000) {
 		tvp->tv_sec++;
 		tvp->tv_usec -= 1000000;
 	}
 	splx(s);
 }
-#endif
 
 physstrat(bp, strat, prio)
 	struct buf *bp;
@@ -1107,7 +1114,7 @@ physstrat(bp, strat, prio)
 	/* pageout daemon doesn't wait for pushed pages */
 	if (bp->b_flags & B_DIRTY)
 		return;
-	s = spl6();
+	s = splbio();
 	while ((bp->b_flags & B_DONE) == 0)
 		sleep((caddr_t)bp, prio);
 	splx(s);
