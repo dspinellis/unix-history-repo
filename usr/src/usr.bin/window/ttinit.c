@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttinit.c	3.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttinit.c	3.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -80,6 +80,8 @@ ttinit()
 		wwerrno = WWE_CANTDO;
 		return -1;
 	}
+	tt.tt_scroll_top = 0;
+	tt.tt_scroll_bot = tt.tt_nrow - 1;
 	if (ioctl(0, TIOCGWINSZ, (char *)&winsize) >= 0 &&
 	    winsize.ws_row != 0 && winsize.ws_col != 0) {
 		tt.tt_nrow = winsize.ws_row;
