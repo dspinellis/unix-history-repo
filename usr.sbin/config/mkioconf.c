@@ -639,7 +639,7 @@ i386_ioconf()
 	fprintf(fp, "#include \"sys/param.h\"\n");
 	fprintf(fp, "#include \"sys/buf.h\"\n");
 	fprintf(fp, "\n");
-	fprintf(fp, "#define V(s)	V##s\n");
+	fprintf(fp, "#define V(s)\t__CONCAT(V,s)\n");
 	fprintf(fp, "#define C (caddr_t)\n\n");
 	/*
 	 * First print the isa initialization structures
