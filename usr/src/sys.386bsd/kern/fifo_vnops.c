@@ -31,6 +31,15 @@
  * SUCH DAMAGE.
  *
  *	@(#)fifo_vnops.c	7.7 (Berkeley) 4/15/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00141
+ * --------------------         -----   ----------------------
+ *
+ * 20 Apr 93	Jay Fenlason	1. fi_{readers|fi_writers} of fifoinfo init to 0
+ *				2. fifo_open() was calling tsleep() without
+ *				unlocking the inode of the fifo
  */
 
 #include "param.h"
@@ -130,6 +139,7 @@ fifo_open(vp, mode, cred, p)
 	if ((fip = vp->v_fifoinfo) == NULL) {
 		MALLOC(fip, struct fifoinfo *, sizeof(*fip), M_VNODE, M_WAITOK);
 		vp->v_fifoinfo = fip;
+		fip->fi_readers = fip->fi_writers = 0;
 		if (error = socreate(AF_UNIX, &rso, SOCK_STREAM, 0)) {
 			free(fip, M_VNODE);
 			vp->v_fifoinfo = NULL;
@@ -163,10 +173,14 @@ fifo_open(vp, mode, cred, p)
 		}
 		if (mode & O_NONBLOCK)
 			return (0);
-		while (fip->fi_writers == 0)
-			if (error = tsleep((caddr_t)&fip->fi_readers, PSOCK,
-			    openstr, 0))
+		while (fip->fi_writers == 0) {
+			VOP_UNLOCK(vp);
+			error = tsleep((caddr_t)&fip->fi_readers, PSOCK | PCATCH,
+			    		openstr, 0);
+			VOP_LOCK(vp);
+			if (error)
 				break;
+		}
 	} else {
 		fip->fi_writers++;
 		if (fip->fi_readers == 0 && (mode & O_NONBLOCK)) {
@@ -177,10 +191,14 @@ fifo_open(vp, mode, cred, p)
 				if (fip->fi_readers > 0)
 					wakeup((caddr_t)&fip->fi_readers);
 			}
-			while (fip->fi_readers == 0)
-				if (error = tsleep((caddr_t)&fip->fi_writers,
-				    PSOCK, openstr, 0))
+			while (fip->fi_readers == 0) {
+				VOP_UNLOCK(vp);
+				error = tsleep((caddr_t)&fip->fi_writers,
+				    		PSOCK | PCATCH, openstr, 0);
+				VOP_LOCK(vp);
+				if (error)
 					break;
+			}
 		}
 	}
 	if (error)
