@@ -225,10 +225,6 @@ inputoption()
 /	Allow player to quit upon hitting the interrupt key.
 /	If the player wants to quit while in battle, he/she automatically
 /	dies.
-/	If SHELL is defined, spawn a shell if the if the question is
-/	answered with a '!'.
-/	We are careful to save the state of the screen, and return it
-/	to its original condition.
 /
 /************************************************************************/
 
@@ -239,10 +235,6 @@ register int	loop;		/* counter */
 int	x, y;			/* coordinates on screen */
 int	ch;			/* input */
 unsigned	savealarm;	/* to save alarm value */
-#ifdef SHELL
-register char	*shell;		/* pointer to shell to spawn */
-int	childpid;		/* pid of spawned process */
-#endif
 
 #ifdef SYS3
     signal(SIGINT, SIG_IGN);
@@ -266,61 +258,19 @@ int	childpid;		/* pid of spawned process */
 	/* in midst of fighting */
 	{
 	mvaddstr(4, 0, "Quitting now will automatically kill your character.  Still want to ? ");
-#ifdef SHELL
-	ch = getanswer("NY!", FALSE);
-#else
 	ch = getanswer("NY", FALSE);
-#endif
 	if (ch == 'Y')
 	    death("Bailing out");
 	    /*NOTREACHED*/
 	}
     else
 	{
-#ifdef SHELL
-	mvaddstr(4, 0, "Do you really want to quit [! = Shell] ? ");
-	ch = getanswer("NY!", FALSE);
-#else
 	mvaddstr(4, 0, "Do you really want to quit ? ");
 	ch = getanswer("NY", FALSE);
-#endif
 	if (ch == 'Y')
 	    leavegame();
 	    /*NOTREACHED*/
 	}
-
-#ifdef SHELL
-    if (ch == '!')
-	/* shell escape */
-	{
-	if ((shell = getenv("SHELL")) == NULL)
-	    /* use default */
-	    shell = SHELL;
-
-	if ((childpid = fork()) == 0)
-	    /* in child */
-	    {
-	    clear();
-	    refresh();
-	    cleanup(FALSE);		/* out of curses, close files */
-
-	    setuid(getuid());		/* make sure we are running with real uid */
-	    setgid(getgid());		/* make sure we are running with real gid */
-	    execl(shell, shell, "-i", 0);
-	    execl(SHELL, SHELL, "-i", 0);	/* last resort */
-
-	    exit(0);
-	    /*NOTREACHED*/
-	    }
-	else
-	    /* in parent */
-	    {
-	    while (wait((int *) NULL) != childpid);	/* wait until done */
-	    crmode();			/* restore keyboard */
-	    clearok(stdscr, TRUE);	/* force redraw of screen */
-	    }
-	}
-#endif
 
     mvaddstr(4, 0, line); 		/* restore data on screen */
     move(y, x);				/* restore cursor */
