@@ -1,4 +1,4 @@
-/*	defs.h	4.5	83/10/20	*/
+/*	defs.h	4.6	83/10/26	*/
 
 #include <stdio.h>
 #include <ctype.h>
@@ -43,8 +43,9 @@
 #define VERIFY	0x1
 #define WHOLE	0x2
 #define YOUNGER	0x4
-#define STRIP	0x8
-#define REMOVE	0x10
+#define COMPARE	0x8
+#define STRIP	0x10
+#define REMOVE	0x20
 
 #define ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
 

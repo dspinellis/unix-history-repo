@@ -1,6 +1,6 @@
 %{
 #ifndef lint
-static	char *sccsid = "@(#)gram.y	4.5 (Berkeley) 83/10/20";
+static	char *sccsid = "@(#)gram.y	4.6 (Berkeley) 83/10/26";
 #endif
 
 #include "defs.h"
@@ -93,7 +93,7 @@ cmd:		  INSTALL options opt_name SM = {
 			if ($3 != NULL) {
 				b = expand($3, 0);
 				if (b->b_next != NULL)
-					fatal("exactly one name allowed\n");
+					yyerror("only one name allowed\n");
 				$1->b_name = b->b_name;
 			}
 			$$ = $1;
@@ -103,7 +103,7 @@ cmd:		  INSTALL options opt_name SM = {
 			$$ = $1;
 		}
 		| EXCEPT namelist SM = {
-			$1->b_args = expand($2, 0);
+			$1->b_args = $2;
 			$$ = $1;
 		}
 		;
@@ -203,6 +203,10 @@ again:
 	*cp1 = '\0';
 	if (yytext[0] == '-' && yytext[2] == '\0') {
 		switch (yytext[1]) {
+		case 'b':
+			yylval.intval = COMPARE;
+			return(OPTION);
+
 		case 'r':
 			yylval.intval = REMOVE;
 			return(OPTION);
@@ -251,5 +255,6 @@ yyerror(s)
 	extern int yychar;
 
 	errs++;
+	fflush(stdout);
 	fprintf(stderr, "rdist: line %d: %s\n", yylineno, s);
 }
