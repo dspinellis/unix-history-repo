@@ -5,12 +5,11 @@
  */
 
 #ifndef lint
-static char Msccsid[] = "@(#)Mesgfix	5.1 (Berkeley) 5/29/85";
-static char sccsid[] = "@(#)message.c	4.2 (Berkeley) %G%";
+static char Msccsid[] = "@(#)Mesgfix	5.2 (Berkeley) 1/8/86";
+static char sccsid[] = "@(#)message.c	4.3 (Berkeley) %G%";
 #endif not lint
 
 char	*message[] = {
-	"Last update on Saturday, March 30, 1985.",
-	"Check the file /usr/public/gammon.news for details.",
+	"Last update on Saturday, January 11, 1986.",
 	0
 };
