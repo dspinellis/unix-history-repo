@@ -1,0 +1,86 @@
+cc -O -c getcwd_.c
+getcwd_.c: 88: DIRSIZ: argument mismatch
+0: MAXNAMLEN: unterminated macro call
+*** Error code 1
+cc -O -c getenv_.c
+ld -r -x getenv_.o
+mv a.out getenv_.o
+cc -O -c getgid_.c
+ld -r -x getgid_.o
+mv a.out getgid_.o
+cc -O -c getlog_.c
+ld -r -x getlog_.o
+mv a.out getlog_.o
+cc -O -c getpid_.c
+ld -r -x getpid_.o
+mv a.out getpid_.o
+cc -O -c getuid_.c
+ld -r -x getuid_.o
+mv a.out getuid_.o
+cc -O -c gmtime_.c
+ld -r -x gmtime_.o
+mv a.out gmtime_.o
+cc -O -c iargc_.c
+ld -r -x iargc_.o
+mv a.out iargc_.o
+cc -O -c idate_.c
+ld -r -x idate_.o
+mv a.out idate_.o
+cc -O -c ierrno_.c
+ld -r -x ierrno_.o
+mv a.out ierrno_.o
+cc -O -c isatty_.c
+ld -r -x isatty_.o
+mv a.out isatty_.o
+cc -O -c itime_.c
+ld -r -x itime_.o
+mv a.out itime_.o
+cc -O -c kill_.c
+ld -r -x kill_.o
+mv a.out kill_.o
+cc -O -c loc_.c
+ld -r -x loc_.o
+mv a.out loc_.o
+cc -O -c ltime_.c
+ld -r -x ltime_.o
+mv a.out ltime_.o
+cc -O -c link_.c
+ld -r -x link_.o
+mv a.out link_.o
+cc -O -c perror_.c
+ld -r -x perror_.o
+mv a.out perror_.o
+cc -O -c putc_.c
+ld -r -x putc_.o
+mv a.out putc_.o
+cc -O -c qsort_.c
+ld -r -x qsort_.o
+mv a.out qsort_.o
+cc -O -c signal_.c
+ld -r -x signal_.o
+mv a.out signal_.o
+cc -O -c sleep_.c
+ld -r -x sleep_.o
+mv a.out sleep_.o
+cc -O -c stat_.c
+ld -r -x stat_.o
+mv a.out stat_.o
+cc -O -c system_.c
+ld -r -x system_.o
+mv a.out system_.o
+cc -O -c time_.c
+ld -r -x time_.o
+mv a.out time_.o
+cc -O -c ttynam_.c
+ld -r -x ttynam_.o
+mv a.out ttynam_.o
+cc -O -c unlink_.c
+ld -r -x unlink_.o
+mv a.out unlink_.o
+cc -O -c wait_.c
+ld -r -x wait_.o
+mv a.out wait_.o
+mkvers libU77.a access_.c  alarm_.c  chdir_.c  ctime_.c  dtime_.c  etime_.c  fdate_.c  fgetc_.c  fork_.c  fputc_.c  fseek_.c  fstat_.c  ftell_.c  gerror_.c  getarg_.c  getc_.c  getcwd_.c  getenv_.c  getgid_.c  getlog_.c  getpid_.c  getuid_.c  gmtime_.c  iargc_.c  idate_.c  ierrno_.c  isatty_.c  itime_.c  kill_.c  loc_.c  link_.c  ltime_.c  perror_.c  putc_.c  qsort_.c  signal_.c  sleep_.c  stat_.c  system_.c  time_.c  ttynam_.c  unlink_.c  wait_.c > Version.c
+cc -c Version.c
+mv Version.o Version
+`libU77.a' not remade because of errors
