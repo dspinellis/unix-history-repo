@@ -1,4 +1,4 @@
-/*	autoconf.c	4.18	81/02/27	*/
+/*	autoconf.c	4.19	81/02/28	*/
 
 /*
  * Configure the system for the current machine.
@@ -348,7 +348,7 @@ unifind(vubp, pubp, vumem, pumem)
 	 */
 	uhp = &uba_hd[numuba];
 	uhp->uh_map = (struct map *)calloc(UAMSIZ * sizeof (struct map));
-	mfree(uhp->uh_map, NUBMREG, 1);
+	rminit(uhp->uh_map, NUBMREG, 1, "uba", UAMSIZ);
 	switch (cpu) {
 #if VAX780
 	case VAX_780:

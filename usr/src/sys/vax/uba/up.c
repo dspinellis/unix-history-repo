@@ -1,4 +1,4 @@
-/*	up.c	4.26	81/02/27	*/
+/*	up.c	4.27	81/02/28	*/
 
 #include "up.h"
 #if NSC > 0
@@ -507,9 +507,10 @@ upintr(sc21)
 				return;
 			}
 			harderr(bp);
-			printf("up%d cs2 %b er1 %b er2 %b\n",
-			    dkunit(bp), upaddr->upcs2, UPCS2_BITS, upaddr->uper1,
-			    UPER1_BITS, upaddr->uper2, UPER2_BITS);
+			printf("up%d cs2=%b er1=%b er2=%b\n", dkunit(bp),
+			    upaddr->upcs2, UPCS2_BITS,
+			    upaddr->uper1, UPER1_BITS,
+			    upaddr->uper2, UPER2_BITS);
 			bp->b_flags |= B_ERROR;
 		} else {
 			/*
@@ -658,10 +659,6 @@ upecc(ui)
 	printf("%D ", bp->b_blkno+npf);
 	prdev("ECC", bp->b_dev);
 	mask = up->upec2;
-	if (mask == 0) {
-		up->upof = UP_FMT22;		/* == RTC ???? */
-		return (0);
-	}
 	/*
 	 * Flush the buffered data path, and compute the
 	 * byte and bit position of the error.  The variable i

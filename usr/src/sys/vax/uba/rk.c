@@ -1,8 +1,7 @@
-/*	rk.c	4.16	%G%	*/
+/*	rk.c	4.17	%G%	*/
 
 #include "rk.h"
 #if NHK > 0
-int	rkflags,rkerrs;		/* GROT */
 /*
  * RK11/RK07 disk driver
  *
@@ -35,8 +34,7 @@ struct	rk_softc {
 } rk_softc[NHK];
 
 /* THIS SHOULD BE READ OFF THE PACK, PER DRIVE */
-struct	size
-{
+struct size {
 	daddr_t	nblocks;
 	int	cyloff;
 } rk7_sizes[] ={
@@ -320,7 +318,6 @@ rkintr(rk11)
 			u_short er = rkaddr->rker;
 			if (sc->sc_recal)
 				printf("recal CERR\n");
-			rkerrs++;
 #ifdef notdef
 /* THIS ATTEMPTED TO FIND OUT IF THE DRIVE IS SPUN */
 /* DOWN BUT IT DOESN'T SEEM TO WORK... THE DRIVE SEEMS TO */
@@ -347,7 +344,7 @@ rkintr(rk11)
 			    ds&RKDS_HARD || er&RKER_HARD || cs2&RKCS2_HARD) {
 				bp->b_flags |= B_ERROR;
 				harderr(bp);
-				printf("rk%d cs2 %b ds %b er %b\n",
+				printf("rk%d cs2=%b ds=%b er=%b\n",
 				    dkunit(bp), cs2, RKCS2_BITS, ds, 
 				    RKDS_BITS, er, RKER_BITS);
 			} else
@@ -457,10 +454,6 @@ rkecc(ui)
 	printf("%D ", bp->b_blkno+npf);
 	prdev("ECC", bp->b_dev);
 	mask = rk->rkec2;
-	if (mask == 0) {
-		rk->rkatt = 0;
-		return (0);
-	}
 	ubapurge(um);
 	i = rk->rkec1 - 1;		/* -1 makes 0 origin */
 	bit = i&07;

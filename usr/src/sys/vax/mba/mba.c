@@ -1,4 +1,4 @@
-/*	mba.c	4.10	81/02/26	*/
+/*	mba.c	4.11	81/02/28	*/
 
 #include "mba.h"
 #if NMBA > 0
