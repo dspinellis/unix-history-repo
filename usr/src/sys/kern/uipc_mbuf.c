@@ -1,9 +1,10 @@
 /*
- * All rights reserved.
+ * Copyright (c) 1982, 1986, 1988, 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_mbuf.c	7.26 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
