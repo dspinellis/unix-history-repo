@@ -1,4 +1,4 @@
-.\"	@(#)tac.1	1.1 %G%
+.\"	@(#)tac.1	1.2 %G%
 .\"
 .TH TAC 1 ""
 .SH NAME
@@ -9,7 +9,7 @@ tac \- concatenate and print files in reverse
 .B \-string
 ] [
 .B +string
-] file ...
+] [ file ... ]
 .SH DESCRIPTION
 .I Tac
 reads each
@@ -27,6 +27,15 @@ specifies right-bounded segments.
 The default is
 .I +\en
 (print lines in reverse order).
+If no input
+.I file
+is given, or if the argument `-'
+is encountered,
+.I tac
+reads from the standard input.  Note that in this case
+.I tac
+stores the entire standard input in a temporary
+file before it outputs anything, so for large input it is slow.
 .SH EXAMPLES
 .RS
 tac '-\e
@@ -41,16 +50,16 @@ tac file
 prints the file in reverse, line by line, and:
 .PP
 .RS
-tac file1 file2 >file3
+tac /usr/adm/messages | egrep 'hp.*hard'
 .RE
-reverses each of the first two files by line and places the
-concatenated result on the third.
+prints out the hard errors on MASSBUS disk drives, most recent first.
 .SH SEE ALSO
 cat(1), rev(1), tail(1), tmail(1)
 .SH BUGS
 .I Tac
-doesn't yet handle multiple argument files exactly right.  It's
-also unclear which direction it should process them in.
+doesn't handle multiple argument files exactly right, and it's
+also unclear in which order they should be processed.
 .br
-.I Tac
-does not (and cannot efficiently) work on piped input.
+If invoked as `tac < file', 
+.I tac
+uses a temp file but it doesn't have to.
