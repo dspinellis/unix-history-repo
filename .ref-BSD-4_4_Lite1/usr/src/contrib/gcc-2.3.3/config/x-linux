@@ -1,5 +1,0 @@
-X_CFLAGS=-DPOSIX
-# we are native.
-prefix=/usr
-# no object c, why bother.
-LANGUAGES = c c++ proto
