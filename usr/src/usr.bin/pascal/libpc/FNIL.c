@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)FNIL.c 1.1 %G%";
+static char sccsid[] = "@(#)FNIL.c 1.2 %G%";
 
 #include "h00vars.h"
 #include "h01errs.h"
@@ -20,10 +20,6 @@ FNIL(curfile)
 	}
 	if (curfile->funit & FREAD) {
 		IOSYNC(curfile);
-		if (curfile->funit & EOFF) {
-			ERROR(EPASTEOF, curfile->pfname);
-			return;
-		}
 	}
 	return curfile->fileptr;
 }
