@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_subr.c	7.7 (Berkeley) %G%
+ *	@(#)pk_subr.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -166,7 +166,7 @@ int lcn, type;
 	xp -> fmt_identifier = 1;
 /*	xp -> lc_group_number = 0;*/
 
-	xp -> logical_channel_number = lcn;
+	SET_LCN(xp, lcn);
 	xp -> packet_type = type;
 
 	return (xp);
@@ -366,6 +366,8 @@ register struct x25config *xcp;
 	unsigned posn = 0;
 	octet *cp;
 
+	if (lcp -> lcd_flags & X25_DBIT)
+		lcp -> lcd_template -> d_bit = 1;
 	a = (struct x25_calladdr *) &lcp -> lcd_template -> packet_data;
 	a -> calling_addrlen = strlen (xcp -> xc_addr.x25_addr);
 	a -> called_addrlen = strlen (sa -> x25_addr);
@@ -690,7 +692,7 @@ struct pkcb *pkp;
 register struct x25_packet *xp;
 {
 	register struct x25config *xcp = pkp -> pk_xcp;
-	register int lcn = xp -> logical_channel_number;
+	register int lcn = LCN(xp);
 
 	switch (xp -> packet_data) {
 	case X25_RESTART_LOCAL_PROCEDURE_ERROR: 
@@ -725,7 +727,7 @@ struct pkcb *pkp;
 register struct x25_packet *xp;
 {
 	register struct pklcd *lcp =
-				pkp -> pk_chan[xp -> logical_channel_number];
+				pkp -> pk_chan[LCN(xp)];
 	register int code = xp -> packet_data;
 
 	if (code > MAXRESETCAUSE)
@@ -751,7 +753,7 @@ struct pkcb *pkp;
 register struct x25_packet *xp;
 {
 	register struct pklcd *lcp =
-		pkp -> pk_chan[xp -> logical_channel_number];
+		pkp -> pk_chan[LCN(xp)];
 	register int code = xp -> packet_data;
 
 	if (code > MAXCLEARCAUSE)
@@ -806,7 +808,7 @@ register struct pklcd *lcp;
 	register struct mbuf *m = m0;
 	register struct x25_packet *xp;
 	register struct sockbuf *sb;
-	struct mbuf *next = 0;
+	struct mbuf *head = 0, *next, **mp = &head;
 	int totlen, psize = 1 << (lcp -> lcd_packetsize);
 
 	if (m == 0)
@@ -814,6 +816,7 @@ register struct pklcd *lcp;
 	if (m->m_flags & M_PKTHDR == 0)
 		panic("pk_fragment");
 	totlen = m -> m_pkthdr.len;
+	m -> m_act = 0;
 	sb = lcp -> lcd_so ? &lcp -> lcd_so -> so_snd : & lcp -> lcd_sb;
 	do {
 		if (totlen > psize) {
@@ -823,31 +826,101 @@ register struct pklcd *lcp;
 				goto abort;
 			m_adj(next, psize);
 			totlen -= psize;
-		}
+		} else
+			next = 0;
 		M_PREPEND(m, PKHEADERLN, wait);
 		if (m == 0)
 			goto abort;
+		*mp = m;
+		mp = & m -> m_act;
+		*mp = 0;
 		xp = mtod(m, struct x25_packet *);
 		0[(char *)xp] = 0;
 		if (qbit)
-			xp -> q_bit = qbit;
+			xp -> q_bit = 1;
+		if (lcp -> lcd_flags & X25_DBIT)
+			xp -> d_bit = 1;
 		xp -> fmt_identifier = 1;
-		xp -> logical_channel_number = lcp -> lcd_lcn;
 		xp -> packet_type = X25_DATA;
-		if (next || mbit)
+		SET_LCN(xp, lcp -> lcd_lcn);
+		if (next || (mbit && (totlen == psize ||
+				      (lcp -> lcd_flags & X25_DBIT))))
 			MBIT(xp) = 1;
-		m->m_act = next;
 	} while (m = next);
-	for (m = m0; m; m = next) {
+	for (m = head; m; m = next) {
 		next = m -> m_act;
 		m -> m_act = 0;
 		sbappendrecord(sb, m);
 	}
 	return 0;
 abort:
-	for (m = m0; m; m = next) {
+	if (wait)
+		panic("pk_fragment null mbuf after wait");
+	if (next)
+		m_freem(next);
+	for (m = head; m; m = next) {
 		next = m -> m_act;
 		m_freem(m);
 	}
 	return ENOBUFS;
+}
+
+struct mbuf *
+m_split(m0, len0, wait)
+register struct mbuf *m0;
+int len0;
+{
+	register struct mbuf *m, *n;
+	unsigned len = len0;
+
+	for (m = m0; m && len > m -> m_len; m = m -> m_next)
+		len -= m -> m_len;
+	if (m == 0)
+		return (0);
+	if (m0 -> m_flags & M_PKTHDR) {
+		MGETHDR(n, wait, m0 -> m_type);
+		if (n == 0)
+			return (0);
+		n -> m_pkthdr.rcvif = m0 -> m_pkthdr.rcvif;
+		n -> m_pkthdr.len = m0 -> m_pkthdr.len - len0;
+		m0 -> m_pkthdr.len = len0;
+		if (m -> m_flags & M_EXT)
+			goto extpacket;
+		if (len > MHLEN) {
+			/* m can't be the lead packet */
+			MH_ALIGN(n, 0);
+			n -> m_next = m_split(m, len, wait);
+			if (n -> m_next == 0) {
+				(void) m_free(n);
+				return (0);
+			} else
+				return (n);
+		} else
+			MH_ALIGN(n, len);
+	} else if (len == m -> m_len) {
+		n = m -> m_next;
+		m -> m_next = 0;
+		return (n);
+	}
+extpacket:
+	len = m -> m_len - len;		/* remainder to be copied */
+	m -> m_len -= len;		/* now equals original len */
+	if (m -> m>flags & M_EXT) {
+		n -> m_flags |= M_EXT;
+		n -> m_ext = m -> m_ext;
+		mclrefcnt[mtocl(m -> m_ext.ext_buf)]++;
+		n -> m_data = m -> m_data + m -> m_len;
+	} else {
+		MGET(n, wait, m -> m_type);
+		if (n == 0) {
+			m -> m_len += len;
+			return (0);
+		}
+		M_ALIGN(n, len);
+		bcopy(mtod(m, caddr_t), mtod(n, caddr_t), len);
+	}
+	n -> m_len = len;
+	n -> m_next = m -> m_next;
+	m -> m_next = 0;
+	return (n);
 }
