@@ -1,4 +1,4 @@
-/*	machdep.c	4.68	82/10/23	*/
+/*	machdep.c	4.69	82/10/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -25,7 +25,6 @@
 #include "../h/msgbuf.h"
 #include "../h/quota.h"
 
-#include "../vax/clock.h"
 #include "../vax/cons.h"
 #include "../vax/cpu.h"
 #include "../vax/mem.h"
@@ -194,112 +193,6 @@ startup(firstaddr)
 	 */
 	tocons(TXDB_CWSI);
 	tocons(TXDB_CCSI);
-}
-
-clockstart()
-{
-
-	clkstart();
-}
-
-clockset()
-{
-
-	clkset();
-}
-
-/*
- * Initialze the clock, based on the time base which is, e.g.
- * from a filesystem.  Base provides the time to within six months,
- * and the time of year clock provides the rest.
- */
-clockinit(base)
-	time_t base;
-{
-	register unsigned todr = mfpr(TODR);
-	long deltat;
-	int year = YRREF;
-
-	if (base < 5*SECYR) {
-		printf("WARNING: preposterous time in file system");
-		time.tv_sec = 6*SECYR + 186*SECDAY + SECDAY/2;
-		clkset();
-		goto check;
-	}
-	/*
-	 * Have been told that VMS keeps time internally with base TODRZERO.
-	 * If this is correct, then this routine and VMS should maintain
-	 * the same date, and switching shouldn't be painful.
-	 * (Unfortunately, VMS keeps local time, so when you run UNIX
-	 * and VMS, VMS runs on GMT...).
-	 */
-	if (todr < TODRZERO) {
-		printf("WARNING: todr too small");
-		time.tv_sec = base;
-		/*
-		 * Believe the time in the file system for lack of
-		 * anything better, resetting the TODR.
-		 */
-		clkset();
-		goto check;
-	}
-	/*
-	 * Sneak to within 6 month of the time in the filesystem,
-	 * by starting with the time of the year suggested by the TODR,
-	 * and advancing through succesive years.  Adding the number of
-	 * seconds in the current year takes us to the end of the current year
-	 * and then around into the next year to the same position.
-	 */
-	time.tv_sec = (todr-TODRZERO)/100;
-	while (time.tv_sec < base-SECYR/2) {
-		if (LEAPYEAR(year))
-			time.tv_sec += SECDAY;
-		year++;
-		time.tv_sec += SECYR;
-	}
-
-	/*
-	 * See if we gained/lost two or more days;
-	 * if so, assume something is amiss.
-	 */
-	deltat = time.tv_sec - base;
-	if (deltat < 0)
-		deltat = -deltat;
-	if (deltat < 2*SECDAY)
-		return;
-	printf("WARNING: clock %s %d days",
-	    time.tv_sec < base ? "lost" : "gained", deltat / SECDAY);
-check:
-	printf(" -- CHECK AND RESET THE DATE!\n");
-}
-
-/*
- * Reset the TODR based on the time value; used when the TODR
- * has a preposterous value and also when the time is reset
- * by the stime system call.  Also called when the TODR goes past
- * TODRZERO + 100*(SECYEAR+2*SECDAY) (e.g. on Jan 2 just after midnight)
- * to wrap the TODR around.
- */
-clkset()
-{
-	int year = YRREF;
-	unsigned secyr;
-	unsigned yrtime = time.tv_sec;
-
-	/*
-	 * Whittle the time down to an offset in the current year,
-	 * by subtracting off whole years as long as possible.
-	 */
-	for (;;) {
-		secyr = SECYR;
-		if (LEAPYEAR(year))
-			secyr += SECDAY;
-		if (yrtime < secyr)
-			break;
-		yrtime -= secyr;
-		year++;
-	}
-	mtpr(TODR, TODRZERO + yrtime*100);
 }
 
 #ifdef PGINPROF
