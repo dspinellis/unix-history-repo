@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tip.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)tip.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -534,7 +534,7 @@ pwrite(fd, buf, n)
 		}
 	if (write(fd, buf, n) < 0) {
 		if (errno == EIO)
-			abort("Lost carrier.");
+			tipabort("Lost carrier.");
 		/* this is questionable */
 		perror("write");
 	}
@@ -546,7 +546,7 @@ pwrite(fd, buf, n)
 setparity(defparity)
 	char *defparity;
 {
-	register int i;
+	register int i, flip, clr, set;
 	char *parity;
 	extern char evenpartab[];
 
@@ -556,27 +556,21 @@ setparity(defparity)
 	if (equal(parity, "none")) {
 		bits8 = 1;
 		return;
-	} else
-		bits8 = 0;
+	}
+	bits8 = 0;
+	flip = 0;
+	clr = 0377;
+	set = 0;
+	if (equal(parity, "odd"))
+		flip = 0200;			/* reverse bit 7 */
+	else if (equal(parity, "zero"))
+		clr = 0177;			/* turn off bit 7 */
+	else if (equal(parity, "one"))
+		set = 0200;			/* turn on bit 7 */
+	else if (!equal(parity, "even")) {
+		(void) fprintf(stderr, "%s: unknown parity value\r\n", parity);
+		(void) fflush(stderr);
+	}
 	for (i = 0; i < 0200; i++)
-		partab[i] = evenpartab[i];
-	if (equal(parity, "even"))
-		return;
-	if (equal(parity, "odd")) {
-		for (i = 0; i < 0200; i++)
-			partab[i] ^= 0200;	/* reverse bit 7 */
-		return;
-	}
-	if (equal(parity, "zero")) {
-		for (i = 0; i < 0200; i++)
-			partab[i] &= ~0200;	/* turn off bit 7 */
-		return;
-	}
-	if (equal(parity, "one")) {
-		for (i = 0; i < 0200; i++)
-			partab[i] |= 0200;	/* turn on bit 7 */
-		return;
-	}
-	fprintf(stderr, "%s: unknown parity value\r\n", parity);
-	fflush(stderr);
+		partab[i] = evenpartab[i] ^ flip | set & clr;
 }

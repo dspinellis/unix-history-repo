@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "tip.h"
@@ -599,7 +599,7 @@ chdirectory()
 	printf("!\r\n");
 }
 
-abort(msg)
+tipabort(msg)
 	char *msg;
 {
 
@@ -622,7 +622,7 @@ finish()
 		write(FD, dismsg, strlen(dismsg));
 		sleep(5);
 	}
-	abort(NOSTR);
+	tipabort(NOSTR);
 }
 
 void
