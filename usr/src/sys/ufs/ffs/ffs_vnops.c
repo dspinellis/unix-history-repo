@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	8.10 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	8.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -279,7 +279,8 @@ ffs_reclaim(ap)
 
 	if (error = ufs_reclaim(vp))
 		return (error);
-	FREE(vp->v_data, M_FFSNODE);
+	FREE(vp->v_data, VFSTOUFS(vp->v_mount)->um_devvp->v_tag == VT_MFS ?
+	    M_MFSNODE : M_FFSNODE);
 	vp->v_data = NULL;
 	return (0);
 }
