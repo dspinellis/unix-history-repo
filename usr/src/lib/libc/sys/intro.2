@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.2	6.2 (Berkeley) %G%
+.\"	@(#)intro.2	6.3 (Berkeley) %G%
 .\"
 .TH INTRO 2 ""
 .UC 4
@@ -52,8 +52,8 @@ and
 .I ptrace
 does not exist, or is already dead.
 .en 4 EINTR "Interrupted system call
-An asynchronous signal (such as interrupt or quit),
-which the user has elected to catch,
+An asynchronous signal (such as interrupt or quit)
+that the user has elected to catch
 occurred during a system call.
 If execution is resumed
 after processing the signal,
@@ -67,7 +67,7 @@ or
 This error may in some cases occur
 on a call following the one to which it actually applies.
 .en 6 ENXIO "No such device or address
-I/O on a special file refers to a subdevice which does not
+I/O on a special file refers to a subdevice that does not
 exist,
 or beyond the limits of the device.
 It may also occur when, for example, an illegal tape drive
@@ -79,14 +79,14 @@ is presented to
 .IR execve .
 .en 8 ENOEXEC "Exec format error
 A request is made to execute a file
-which, although it has the appropriate permissions,
+that, although it has the appropriate permissions,
 does not start with a valid magic number, see
 .IR a.out (5).
 .en 9 EBADF "Bad file number
 Either a file descriptor refers to no
 open file,
 or a read (resp. write) request is made to
-a file which is open only for writing (resp. reading).
+a file that is open only for writing (resp. reading).
 .en 10 ECHILD "No children
 .I Wait
 and the process has no
@@ -169,7 +169,7 @@ is not a terminal or one of the other
 devices to which this call applies.
 .en 26 ETXTBSY "Text file busy
 An attempt to execute a pure-procedure
-program which is currently open for writing.
+program that is currently open for writing.
 Also an attempt to open for writing a pure-procedure
 program that is being executed.
 .en 27 EFBIG "File too large
@@ -206,14 +206,14 @@ is out of the domain of the function.
 The value of a function in the math package (3M)
 is unrepresentable within machine precision.
 .en 35 EWOULDBLOCK "Operation would block"
-An operation which would cause a process to block was attempted
+An operation that would cause a process to block was attempted
 on a object in non-blocking mode (see \fIioctl\fP (2)).
 .en 36 EINPROGRESS "Operation now in progress"
-An operation which takes a long time to complete (such as
+An operation that takes a long time to complete (such as
 a \fIconnect\fP (2)) was attempted on a non-blocking object (see
 \fIioctl\fP (2)).
 .en 37 EALREADY "Operation already in progress"
-An operation was attempted on a non-blocking object which already
+An operation was attempted on a non-blocking object that already
 had an operation in progress.
 .en 38 ENOTSOCK "Socket operation on non-socket"
 Self-explanatory.
@@ -222,7 +222,7 @@ A required address was omitted from an operation on a socket.
 .en 40 EMSGSIZE "Message too long"
 A message sent on a socket was larger than the internal message buffer.
 .en 41 EPROTOTYPE "Protocol wrong type for socket"
-A protocol was specified which does not support the semantics of the
+A protocol was specified that does not support the semantics of the
 socket type requested. For example you cannot use the ARPA Internet
 UDP protocol with type SOCK_STREAM.
 .en 42 ENOPROTOOPT "Bad protocol option"
@@ -293,7 +293,7 @@ period is dependent on the communication protocol.)
 .en 61 ECONNREFUSED "Connection refused"
 No connection could be made because the target machine actively
 refused it.  This usually results from trying to connect
-to a service which is inactive on the foreign host.
+to a service that is inactive on the foreign host.
 .en 62 ELOOP "Too many levels of symbolic links"
 A path name lookup involved more than 8 symbolic links.
 .en 63 ENAMETOOLONG "File name too long"
@@ -357,7 +357,7 @@ the real group ID.
 .IP
 All processes have a real user ID and real group ID.
 These are initialized from the equivalent attributes
-of the process which created it.
+of the process that created it.
 .TP 5
 Effective User Id, Effective Group Id, and Access Groups
 .br
@@ -398,10 +398,10 @@ by
 .IR dup (2),
 or 
 .IR pipe (2)
-or a socket is referenced by
+or when a socket is referenced by
 .IR socket (2)
 or
-.IR socketpair (2)
+.IR socketpair (2),
 which uniquely identifies an access path to that file or socket from
 a given process or any of its children.
 .TP 5
@@ -434,8 +434,8 @@ pathname refers to the current directory.
 .TP 5
 Directory
 .br
-A directory is a special type of file which contains entries
-which are references to other files.
+A directory is a special type of file that contains entries
+that are references to other files.
 Directory entries are called links.  By convention, a directory
 contains at least two links, . and .., referred to as
 .I dot
