@@ -209,7 +209,8 @@ dologout()
 	char line[32];
 
 	while ((pid=wait((int *)&status)) > 0) {
-		sprintf(line, "uucp%d", pid);
+		sprintf(line, "uu%d", pid);
+		logout(line);
 		logwtmp(line, "", "");
 	}
 }
@@ -224,6 +225,7 @@ struct sockaddr_in *sin;
 	char line[32];
 	char remotehost[32];
 	int f;
+	time_t cur_time;
 	struct hostent *hp = gethostbyaddr((char *)&sin->sin_addr,
 		sizeof (struct in_addr), AF_INET);
 
@@ -233,17 +235,22 @@ struct sockaddr_in *sin;
 	} else
 		strncpy(remotehost, inet_ntoa(sin->sin_addr),
 		    sizeof (remotehost));
-	sprintf(line, "uucp%d", getpid());
+	sprintf(line, "uu%d", getpid());
 	/* hack, but must be unique and no tty line */
+	time(&cur_time);
 	if ((f = open(_PATH_LASTLOG, O_RDWR)) >= 0) {
 		struct lastlog ll;
 
-		time(&ll.ll_time);
+		ll.ll_time = cur_time;
 		lseek(f, (long)pw->pw_uid * sizeof(struct lastlog), L_SET);
 		SCPYN(ll.ll_line, line);
 		SCPYN(ll.ll_host, remotehost);
 		(void) write(f, (char *) &ll, sizeof ll);
 		(void) close(f);
 	}
-	logwtmp(line, pw->pw_name, remotehost);
+	utmp.ut_time = cur_time;
+	SCPYN(utmp.ut_line, line);
+	SCPYN(utmp.ut_name, pw->pw_name);
+	SCPYN(utmp.ut_host, remotehost);
+	login(&utmp);
 }
