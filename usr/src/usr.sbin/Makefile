@@ -1,10 +1,10 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 
 # not working:	gated
-SUBDIR=	ac accton arp arp_iso chown chroot config cron diskpart edquota \
-	gettable htable implog implogd inetd kgmon kvm_mkdb lpr mkhosts \
-	mkpasswd mkproto mtree named pstat quot quotaon repquota rmt \
-	rwhod sa sendmail sliplogin syslogd timed traceroute trpt trsp update
+SUBDIR=	ac accton arp chown chroot config cron diskpart edquota gettable \
+	htable implog implogd inetd kgmon kvm_mkdb lpr mkhosts mkpasswd \
+	mkproto mtree named pstat quot quotaon repquota rmt rwhod sa \
+	sendmail sliplogin syslogd timed traceroute trpt trsp update
 
 .if   make(clean) || make(cleandir)
 SUBDIR+=arff bad144 dlmpcc flcopy iostat rxformat
