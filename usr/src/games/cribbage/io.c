@@ -1,3 +1,5 @@
+static char	*sccsid = "@(#)io.c	1.11 (Berkeley) %G%";
+
 # include	<curses.h>
 # include	<ctype.h>
 # include	<unctrl.h>
