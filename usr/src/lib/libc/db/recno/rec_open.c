@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_open.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_open.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -22,7 +22,7 @@ static char sccsid[] = "@(#)rec_open.c	5.1 (Berkeley) %G%";
 #include <unistd.h>
 #include <stdio.h>
 #include <stddef.h>
-#include "../btree/btree.h"
+#include "recno.h"
 
 DB *
 __rec_open(fname, flags, mode, openinfo)
@@ -43,6 +43,10 @@ __rec_open(fname, flags, mode, openinfo)
 
 	/* Create a btree in memory (backed by disk). */
 	if (openinfo) {
+		if (openinfo->flags & ~(R_FIXEDLEN|R_NOKEY|R_SNAPSHOT)) {
+			errno = EINVAL;
+			goto err;
+		}
 		btopeninfo.flags = 0;
 		btopeninfo.cachesize = openinfo->cachesize;
 		btopeninfo.psize = 0;
@@ -51,14 +55,14 @@ __rec_open(fname, flags, mode, openinfo)
 		dbp = __bt_open(NULL, O_RDWR, S_IRUSR | S_IWUSR, &btopeninfo);
 	} else
 		dbp = __bt_open(NULL, O_RDWR, S_IRUSR | S_IWUSR, NULL);
-	if (dbp == NULL) {
-		(void)close(rfd);
-		return (NULL);
-	}
+	if (dbp == NULL)
+		goto err;
 
 	/*
 	 * Some fields in the tree structure are recno specific.  Fill them
-	 * in and make the btree structure look like a recno structure.
+	 * in and make the btree structure look like a recno structure.  We
+	 * don't change the bt_ovflsize value, it's close enough and slightly
+	 * bigger.
 	 */
 	t = dbp->internal;
 	if (openinfo) {
@@ -121,7 +125,8 @@ __rec_open(fname, flags, mode, openinfo)
                 goto err;
 	return (dbp);
 
-err:	__bt_close(dbp);
+err:	if (dbp)
+		__bt_close(dbp);
 	(void)close(rfd);
 	return (NULL);
 }
