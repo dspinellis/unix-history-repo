@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)kvm_nlist.3	5.3 (Berkeley) %G%
+.\"     @(#)kvm_nlist.3	5.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt KVM_NLIST 3
@@ -25,19 +25,20 @@ an entry whose n_name field is
 .Dv NULL
 (see
 .Xr nlist 3 ) .
-For each symbol is looked up using the n_name field, and if found, the
+Each symbol is looked up using the n_name field, and if found, the
 corresponding n_type and n_value fields are filled in.  These fields are set
 to 0 if the symbol is not found.
 .Pp
 The program
-.Fn kvm_mkdb
+.Xr kvm_mkdb 8
 builds a database from the running kernel's namelist.
 If the database matches the opened kernel,
 .Fn kvm_nlist
-uses it to speed name to value calculations.
+uses it to speed lookups.
 .Sh RETURN VALUES
+The
 .Fn kvm_nlist
-returns the number of invalid entries found.
+function returns the number of invalid entries found.
 If the kernel symbol table was unreadable, -1 is returned.
 .Sh FILES
 .Bl -tag -width /var/db/kvm_vmunix.db -compact
@@ -45,4 +46,13 @@ If the kernel symbol table was unreadable, -1 is returned.
 .El
 .Sh SEE ALSO
 .Xr kvm 3 ,
+.Xr kvm_close 3 ,
+.Xr kvm_getargv 3 ,
+.Xr kvm_getenvv 3 ,
+.Xr kvm_geterr 3 ,
+.Xr kvm_getprocs 3 ,
+.Xr kvm_open 3 ,
+.Xr kvm_openfiles 3 ,
+.Xr kvm_read 3 ,
+.Xr kvm_write 3 ,
 .Xr kvm_mkdb 8

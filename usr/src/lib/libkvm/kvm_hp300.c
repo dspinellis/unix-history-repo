@@ -6,11 +6,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm_hp300.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_hp300.c	5.24 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
- * hp300 machine depedent routines for kvm.  Hopefully, the forthcoming 
+ * Hp300 machine depedent routines for kvm.  Hopefully, the forthcoming 
  * vm code will one day obsolete this module.
  */
 
@@ -25,7 +25,7 @@ static char sccsid[] = "@(#)kvm_hp300.c	5.23 (Berkeley) %G%";
 #include <vm/vm_param.h>
 
 #include <limits.h>
-#include <ndbm.h>
+#include <db.h>
 
 #include "kvm_private.h"
 

@@ -18,7 +18,7 @@ static char sccsid[] = "@(#)kvm.c	5.25 (Berkeley) %G%";
 #include <fcntl.h>
 #include <nlist.h>
 #include <kvm.h>
-#include <ndbm.h>
+#include <db.h>
 #include <paths.h>
 #include <stdio.h>
 #include <string.h>
@@ -252,7 +252,7 @@ kvm_close(kd)
 	if (kd->swfd >= 0)
 		error |= close(kd->swfd);
 	if (kd->db != 0)
-		dbm_close(kd->db);
+		error |= (kd->db->close)(kd->db);
 	if (kd->vmst)
 		_kvm_freevtop(kd);
 	if (kd->procbase != 0)
@@ -276,7 +276,7 @@ kvm_dbopen(kd, uf)
 	const char *uf;
 {
 	char *cp;
-	datum rec;
+	DBT rec;
 	int dbversionlen;
 	struct nlist nitem;
 	char dbversion[_POSIX2_LINE_MAX];
@@ -286,32 +286,34 @@ kvm_dbopen(kd, uf)
 	if ((cp = rindex(uf, '/')) != 0)
 		uf = cp + 1;
 
-	sprintf(dbname, "%skvm_%s", _PATH_VARRUN, uf);
-	kd->db = dbm_open(dbname, O_RDONLY, 0);
+	(void)snprintf(dbname, sizeof(dbname), "%skvm_%s.db", _PATH_VARDB, uf);
+	kd->db = dbopen(dbname, O_RDONLY, 0, DB_HASH, NULL);
 	if (kd->db == 0)
 		return (-1);
 	/*
 	 * read version out of database
 	 */
-	rec.dptr = VRS_KEY;
-	rec.dsize = sizeof(VRS_KEY) - 1;
-	rec = dbm_fetch(kd->db, rec);
-	if (rec.dptr == 0 || rec.dsize > sizeof(dbversion))
+	rec.data = VRS_KEY;
+	rec.size = sizeof(VRS_KEY) - 1;
+	if ((kd->db->get)(kd->db, (DBT *)&rec, (DBT *)&rec, 0))
+		goto close;
+	if (rec.data == 0 || rec.size > sizeof(dbversion))
 		goto close;
 
-	bcopy(rec.dptr, dbversion, rec.dsize);
-	dbversionlen = rec.dsize;
+	bcopy(rec.data, dbversion, rec.size);
+	dbversionlen = rec.size;
 	/*
 	 * Read version string from kernel memory.
 	 * Since we are dealing with a live kernel, we can call kvm_read()
 	 * at this point.
 	 */
-	rec.dptr = VRS_SYM;
-	rec.dsize = sizeof(VRS_SYM) - 1;
-	rec = dbm_fetch(kd->db, rec);
-	if (rec.dptr == 0 || rec.dsize != sizeof(struct nlist))
+	rec.data = VRS_SYM;
+	rec.size = sizeof(VRS_SYM) - 1;
+	if ((kd->db->get)(kd->db, (DBT *)&rec, (DBT *)&rec, 0))
 		goto close;
-	bcopy((char *)rec.dptr, (char *)&nitem, sizeof(nitem));
+	if (rec.data == 0 || rec.size != sizeof(struct nlist))
+		goto close;
+	bcopy((char *)rec.data, (char *)&nitem, sizeof(nitem));
 	if (kvm_read(kd, (u_long)nitem.n_value, kversion, dbversionlen) != 
 	    dbversionlen)
 		goto close;
@@ -322,7 +324,7 @@ kvm_dbopen(kd, uf)
 	if (bcmp(dbversion, kversion, dbversionlen) == 0)
 		return (0);
 close:
-	dbm_close(kd->db);
+	(void)(kd->db->close)(kd->db);
 	kd->db = 0;
 
 	return (-1);
@@ -345,31 +347,32 @@ kvm_nlist(kd, nl)
 
 	/*
 	 * We can use the kvm data base.  Go through each nlist entry
-	 * and look it up with a dbm query.
+	 * and look it up with a db query.
 	 */
 	nvalid = 0;
 	for (p = nl; p->n_name && p->n_name[0]; ++p) {
 		register int len;
-		datum rec;
+		DBT rec;
 
 		if ((len = strlen(p->n_name)) > 4096) {
 			/* sanity */
 			_kvm_err(kd, kd->program, "symbol too large");
 			return (-1);
 		}
-		rec.dptr = p->n_name;
-		rec.dsize = len;
-		rec = dbm_fetch(kd->db, rec);
-		if (rec.dptr == 0 || rec.dsize != sizeof(struct nlist))
+		rec.data = p->n_name;
+		rec.size = len;
+		if ((kd->db->get)(kd->db, (DBT *)&rec, (DBT *)&rec, 0))
+			continue;
+		if (rec.data == 0 || rec.size != sizeof(struct nlist))
 			continue;
 		++nvalid;
 		/*
 		 * Avoid alignment issues.
 		 */
-		bcopy((char *)&((struct nlist *)rec.dptr)->n_type,
+		bcopy((char *)&((struct nlist *)rec.data)->n_type,
 		      (char *)&p->n_type, 
 		      sizeof(p->n_type));
-		bcopy((char *)&((struct nlist *)rec.dptr)->n_value,
+		bcopy((char *)&((struct nlist *)rec.data)->n_value,
 		      (char *)&p->n_value, 
 		      sizeof(p->n_value));
 	}
