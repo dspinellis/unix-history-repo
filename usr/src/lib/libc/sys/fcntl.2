@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fcntl.2	8.1 (Berkeley) %G%
+.\"     @(#)fcntl.2	6.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FCNTL 2
@@ -447,12 +447,6 @@ the process ID given as argument is not in use.
 .Xr getdtablesize 2 ,
 .Xr open 2 ,
 .Xr sigvec 2
-.Sh BUGS
-The asynchronous I/O facilities of
-.Dv FNDELAY
-and
-.Dv FASYNC
-are currently available only for tty and socket operations.
 .Sh HISTORY
 The
 .Nm
