@@ -1,4 +1,4 @@
-char	*sccsid = "@(#)cal.c	4.1 4.1";
+char	*sccsid = "@(#)cal.c	4.2 82/02/28";
 char	dayw[] = {
 	" S  M Tu  W Th  F  S"
 };
