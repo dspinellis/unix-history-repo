@@ -1,7 +1,9 @@
-.\"	@(#)rm0	5.1 (Berkeley) %G%
+.\"	@(#)rm0	6.1 (Berkeley) %G%
 .\"
-.RP
-.TM 79-1271-13 39199 39199-11
+.EH 'USD:32-%''Writing Tools - the STYLE and DICTION Programs'
+.OH 'Writing Tools - the STYLE and DICTION Programs''USD:32-%'
+.\".RP
+.\".TM 79-1271-13 39199 39199-11
 .TL
 Writing Tools - The STYLE and DICTION
 Programs
@@ -15,8 +17,7 @@ W. Vesterman
 Livingston College
 Rutgers University
 .OK
-readability
-
+\" readability
 .AB
 Text processing systems are now in heavy use in many companies
 to format documents.
