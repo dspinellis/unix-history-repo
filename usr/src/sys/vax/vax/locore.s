@@ -1,4 +1,4 @@
-/*	locore.s	4.69	82/09/18	*/
+/*	locore.s	4.70	82/10/09	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -9,7 +9,6 @@
 #include "../h/ubareg.h"
 #include "../h/cons.h"
 #include "../vax/clock.h"
-#include "../net/in_systm.h"
 
 #include "dz.h"
 #include "mba.h"
@@ -187,11 +186,13 @@ SCBVEC(softclock):
 	calls	$2,_softclock			# softclock(pc,psl)
 	POPR; 
 	rei
+#include "../net/netisr.h"
 	.globl	_netisr
 SCBVEC(netintr):
 	PUSHR
 	bbcc	$NETISR_RAW,_netisr,1f; calls $0,_rawintr; 1:
 #ifdef INET
+#include "../netinet/in_systm.h"
 	bbcc	$NETISR_IP,_netisr,1f; calls $0,_ipintr; 1:
 #endif
 #ifdef NS
