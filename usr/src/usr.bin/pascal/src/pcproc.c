@@ -1251,7 +1251,7 @@ pcproc(r)
 		if (opt('t') && op == O_NEW) {
 		    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 			    , "_blkclr" );
-		    stklval(alv, op == O_NEW ? ( MOD | NOUSE ) : MOD );
+		    stkrval(alv, NIL , RREQ );
 		    putleaf( P2ICON , width( ap ) , 0 , P2INT , 0 );
 		    putop( P2LISTOP , P2INT );
 		    putop( P2CALL , P2INT );
