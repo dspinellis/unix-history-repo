@@ -11,9 +11,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.15 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.16 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.15 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.16 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -290,8 +290,13 @@ getrequests()
 #endif
 
 			(void) close(DaemonSocket);
-			InChannel = fdopen(t, "r");
-			OutChannel = fdopen(dup(t), "w");
+			if ((InChannel = fdopen(t, "r")) == NULL ||
+			    (t = dup(t)) < 0 ||
+			    (OutChannel = fdopen(t, "w")) == NULL)
+			{
+				syserr("cannot open SMTP server channel, fd=%d", t);
+				exit(0);
+			}
 
 			/* should we check for illegal connection here? XXX */
 #ifdef XLA
