@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)zs.c	8.1 (Berkeley) %G%
+ *	@(#)zs.c	7.6 (Berkeley) %G%
  *
- * from: $Header: zs.c,v 1.29 93/07/15 02:57:07 torek Exp $
+ * from: $Header: zs.c,v 1.30 93/07/19 23:44:42 torek Exp $
  */
 
 /*
@@ -241,7 +241,7 @@ zsattach(struct device *parent, struct device *dev, void *aux)
 	}
 	unit++;
 	cs++;
-	tp++;
+	tp = &zs_tty[unit];
 	cs->cs_unit = unit;
 	cs->cs_speed = zs_getspeed(&addr->zs_chan[CHAN_B]);
 	cs->cs_softcar = softcar & 2;
