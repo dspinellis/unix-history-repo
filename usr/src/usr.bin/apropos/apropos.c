@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)apropos.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)apropos.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -39,7 +39,7 @@ main(argc, argv)
 	extern char *optarg;
 	extern int optind;
 	ENTRY *ep;
-	int ch;
+	int ch, rv;
 	char *conffile, **p, *p_augment, *p_path;
 
 	conffile = NULL;
@@ -66,7 +66,7 @@ main(argc, argv)
 	if (argc < 1)
 		usage();
 
-	if ((found = malloc((u_int)argc)) == NULL)
+	if ((found = malloc((u_int)argc * sizeof(int))) == NULL)
 		err(1, NULL);
 	memset(found, 0, argc * sizeof(int));
 
@@ -91,9 +91,13 @@ main(argc, argv)
 		    "apropos: no %s file found.\n", _PATH_WHATIS);
 		exit(1);
 	}
+	rv = 1;
 	for (p = argv; *p; ++p)
-		if (!found[p - argv])
+		if (found[p - argv])
+			rv = 0;
+		else
 			(void)printf("%s: nothing appropriate\n", *p);
+	exit(rv);
 }
 
 apropos(argv, path, buildpath)
