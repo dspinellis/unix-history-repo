@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)Locore.c	6.6 (Berkeley) %G%
+ *	@(#)Locore.c	6.7 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -74,7 +74,7 @@ lowinit()
 #ifdef PUP
 	extern struct domain pupdomain;
 #endif
-#if defined(INET) || defined(BBNNET)
+#ifdef INET
 	extern struct domain inetdomain;
 #endif
 #include "imp.h"
@@ -92,7 +92,7 @@ lowinit()
 	pupdomain.dom_next = domains;
 	domains = &pupdomain;
 #endif
-#if defined(INET) || defined(BBNNET)
+#ifdef INET
 	inetdomain.dom_next = domains;
 	domains = &inetdomain;
 #endif
@@ -147,7 +147,7 @@ lowinit()
 	trap(0, 0, (unsigned)0, 0, 0);
 	syscall(0, 0, (unsigned)0, 0, 0);
 	rawintr();
-#if defined(INET) || defined(BBNNET)
+#ifdef INET
 	ipintr();
 #endif
 #ifdef NS

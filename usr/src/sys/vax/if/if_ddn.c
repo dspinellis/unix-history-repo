@@ -1,4 +1,4 @@
-/*	@(#)if_ddn.c	6.2 (Berkeley) %G% */
+/*	@(#)if_ddn.c	6.3 (Berkeley) %G% */
 
 
 /************************************************************************\
@@ -79,9 +79,6 @@ Revision History:
 #include "../net/netisr.h"
 #include "../net/route.h"
 
-#ifdef	BBNNET
-#define	INET
-#endif
 #ifdef	INET
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"

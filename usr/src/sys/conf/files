@@ -100,29 +100,3 @@ sys/vm_sw.c		standard
 sys/vm_swap.c		standard
 sys/vm_swp.c		standard
 sys/vm_text.c		standard
-bbnnet/icmp.c		optional bbnnet
-bbnnet/ic_output.c	optional bbnnet
-bbnnet/in.c		optional bbnnet
-bbnnet/in_pcb.c		optional bbnnet
-bbnnet/in_proto.c	optional bbnnet
-bbnnet/ip_input.c	optional bbnnet
-bbnnet/ip_output.c	optional bbnnet
-bbnnet/ip_usrreq.c	optional bbnnet
-bbnnet/raw_input.c	optional bbnnet
-bbnnet/tcp_input.c	optional bbnnet
-bbnnet/tcp_prim.c	optional bbnnet
-bbnnet/tcp_procs.c	optional bbnnet
-bbnnet/tcp_states.c	optional bbnnet
-bbnnet/tcp_usrreq.c	optional bbnnet
-bbnnet/udp_usrreq.c	optional bbnnet
-bbnnet/udp.c		optional bbnnet
-bbnnet/hmp.c		optional bbnnet hmp
-bbnnet/hmp_subr.c	optional bbnnet hmp
-bbnnet/hmp_traps.c	optional bbnnet hmp
-bbnnet/rdp_fsm.c	optional bbnnet rdp
-bbnnet/rdp_cksum.s	optional bbnnet
-bbnnet/rdp_input.c	optional bbnnet rdp
-bbnnet/rdp_prim.c	optional bbnnet rdp
-bbnnet/rdp_states.c	optional bbnnet rdp
-bbnnet/rdp_subr.c	optional bbnnet rdp
-bbnnet/rdp_usrreq.c	optional bbnnet rdp
