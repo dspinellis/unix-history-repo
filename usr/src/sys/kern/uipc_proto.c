@@ -1,4 +1,4 @@
-/*	uipc_proto.c	4.11	81/12/12	*/
+/*	uipc_proto.c	4.12	81/12/12	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
