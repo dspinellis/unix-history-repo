@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mailst.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mailst.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -18,7 +18,7 @@ char *user, *str, *file;
 	char buf[BUFSIZ];
 	register int c;
 
-	sprintf(buf, "%s %s", MAIL, user);
+	sprintf(buf, "%s '%s'", MAIL, user);
 	if ((fp = rpopen(buf, "w")) != NULL) {
 		fprintf(fp, "From: uucp\nTo: %s\nSubject: %s\n\n", user, str);
 		if (file && *file != '\0' && (fi = fopen(subfile(file), "r")) != NULL) {

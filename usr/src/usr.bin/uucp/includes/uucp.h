@@ -1,6 +1,6 @@
-/*	uucp.h	5.5	85/01/28	*/
+/*	uucp.h	5.6	85/04/10	*/
 
-#include "stdio.h"
+#include <stdio.h>
 
 /*
  * Determine local uucp name of this machine.
@@ -57,8 +57,10 @@
 /*#define DATAKIT	/* ATT's datakit */
 /*#define PNET		/* Purdue network */
 #define DF02		/* Dec's DF02/DF03 */
+#define DF112		/* Dec's DF112 */
 #define HAYES		/* Hayes' Smartmodem */
 #define VENTEL		/* ventel dialer */
+#define PENRIL		/* PENRIL Dialer */
 #define VADIC		/* Racal-Vadic 345x */
 #define VA212		/* Racal-Vadic 212 */
 #define VA811S		/* Racal-Vadic 811S dialer, 831 adaptor */
@@ -75,7 +77,7 @@
 #define TCPIP
 #endif
 
-#ifdef	VENTEL
+#if defined(VENTEL) || defined(NOVATION) || defined(DF112) || defined(PENRIL)
 /*
  * We need a timer to write slowly to ventels.
  * define INTERVALTIMER to use 4.2 bsd interval timer.
@@ -85,7 +87,7 @@
  * Look at uucpdelay() in condevs.c for details.
  */
 #define	FTIME
-#endif
+#endif VENTEL || NOVATION || DF112 || PENRIL
 
 /*
  * If your site is using "ndir.h" to retrofit the Berkeley
@@ -112,6 +114,11 @@
 
 /*#define VMSDTR	/* Turn on modem control on vms(works DTR) for
 			   develcon and gandalf ports to gain access */
+/*
+ *	If you want to use the same modem for dialing in and out define
+ *	DIALINOUT to be the localtion of the acucntrl program
+ */
+/* #define DIALINOUT	"/usr/lib/uucp/acucntrl" */
 
 /* define the last characters for ACU */
 #define ACULAST "-<"
@@ -149,7 +156,7 @@
  * know where the LCK files are kept, and you have to change your /etc/rc
  * if your rc cleans out the lock files (as it should).
  */
-/*#define	LOCKDIR	"LCK." */
+/*#define	LOCKDIR	"LCK" */
 #define	LOCKDIR	"."
 
 /* 
@@ -161,11 +168,18 @@
 #define DONTCOPY
 
 /*
- * Very few (none I know of) systems use the sequence checking feature.
+ * Very few (that I know of) systems use the sequence checking feature.
  * If you are not going to use it (hint: you are not),
  * do not define GNXSEQ.  This saves precious room on PDP11s.
  */
 /*#define	GNXSEQ/* comment this out to save space */
+
+/*
+ * If you want the logfile stored in a file for each site instead
+ * of one file
+ * define LOGBYSITE as the directory to put the files in
+ */
+/*#define LOGBYSITE	"/usr/spool/uucp/LOG"	*/
 
 #define XQTDIR		"/usr/spool/uucp/XTMP"
 #define SQFILE		"/usr/lib/uucp/SQFILE"
@@ -177,6 +191,7 @@
 #define DIALFILE	"/usr/lib/uucp/L-dialcodes"
 #define USERFILE	"/usr/lib/uucp/USERFILE"
 #define	CMDFILE		"/usr/lib/uucp/L.cmds"
+#define	ALIASFILE	"/usr/lib/uucp/L.aliases"
 
 #define SPOOL		"/usr/spool/uucp"
 #define SQLOCK		"LCK.SQ"
@@ -297,8 +312,23 @@ struct Devices {
 
 #define WKDSIZE 100	/*  size of work dir name  */
 
+#include <sys/types.h>
+#ifndef USG
+#include <sys/timeb.h>
+#else USG
+struct timeb
+{
+	time_t	time;
+	unsigned short millitm;
+	short	timezone;
+	short	dstflag;
+};
+#endif USG
+
+extern struct timeb Now;
+
 extern int Ifn, Ofn;
-extern char Rmtname[];
+extern char *Rmtname;
 extern char User[];
 extern char Loginuser[];
 extern char *Spool;

@@ -1,9 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)chkpth.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)chkpth.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
-#include <sys/types.h>
 #include <sys/stat.h>
 
 struct userpath {
@@ -37,8 +36,10 @@ char *path, *logname, *mchname;
 	register char **p, *s;
 
 	/* Allow only rooted pathnames.  Security wish.  rti!trt */
-	if (*path != '/')
+	if (*path != '/') {
+		DEBUG(4, "filename doesn't begin with /\n", CNULL);
 		return FAIL;
+	}
 
 	if (Uptfirst) {
 		rdpth();
@@ -63,14 +64,17 @@ char *path, *logname, *mchname;
 
 	/*  check for /../ in path name  */
 	for (s = path; *s != '\0'; s++) {
-		if (prefix("/../",s))
+		if (prefix("/../",s)) {
+			DEBUG(4, "filename has /../ in it\n", CNULL);
 			return FAIL;
+		}
 	}
 
 	/* Check for access permission */
 	for (p = u->us_path; *p != NULL; p++)
 		if (prefix(*p, path))
 			return SUCCESS;
+	DEBUG(4, "filename not in list\n", CNULL);
 
 	/* path name not valid */
 	return FAIL;
@@ -209,16 +213,19 @@ char *file, *mopt;
 	extern char *lastpart();
 
 	if (stat(subfile(file), &s) == 0) {
-		if ((s.st_mode & ANYWRITE) == 0)
+		if ((s.st_mode & ANYWRITE) == 0) {
+			DEBUG(4,"file is not writable: mode %o\n", s.st_mode);
 			return FAIL;
+		}
 		return SUCCESS;
 	}
 
 	strcpy(dir, file);
 	*lastpart(dir) = '\0';
-	if ((ret = stat(subfile(dir), &s)) == -1
-	  && mopt == NULL)
+	if ((ret = stat(subfile(dir), &s)) == -1 && mopt == NULL) {
+		DEBUG(4, "can't stat directory %s\n", subfile(dir));
 		return FAIL;
+	}
 
 	if (ret != -1) {
 		if ((s.st_mode & ANYWRITE) == 0)

@@ -1,11 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)cico.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cico.c	5.6 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <signal.h>
 #include <setjmp.h>
-#include <sys/types.h>
 #ifdef	USG
 #include <termio.h>
 #endif
@@ -54,8 +53,10 @@ int ReverseRole = 0;
 int StdErrIsTty = 0;
 int Role = SLAVE;
 int onesys = 0;
+int turntime = 30 * 60;	/* 30 minutes expressed in seconds */
 extern int LocalOnly;
-extern char MaxGrade;
+extern char MaxGrade, DefMaxGrade;
+extern char Myfullname[];
 
 #ifdef	USG
 struct termio Savettyb;
@@ -111,7 +112,8 @@ register char *argv[];
 			Spool = &argv[1][2];
 			break;
 		case 'g':
-			MaxGrade = argv[1][2];
+		case 'p':
+			MaxGrade = DefMaxGrade = argv[1][2];
 			break;
 		case 'r':
 			Role = atoi(&argv[1][2]);
@@ -132,6 +134,9 @@ register char *argv[];
 				Debug = 1;
 			strcat(rflags, argv[1]);
 			logent("ENABLED", "DEBUG");
+			break;
+		case 't':
+			turntime = atoi(&argv[1][2])*60;/* minutes to seconds */
 			break;
 		case 'L':	/* local calls only */
 			LocalOnly++;
@@ -223,7 +228,7 @@ register char *argv[];
 #else  !BSD4_2
 		setbuf(stderr, NULL);
 #endif !BSD4_2
-		sprintf(msg, "here=%s", Myname);
+		sprintf(msg, "here=%s", Myfullname);
 		omsg('S', msg, Ofn);
 		signal(SIGALRM, timeout);
 		alarm(MAXMSGTIME);
@@ -329,7 +334,7 @@ register char *argv[];
 
 #ifdef	NOSTRANGERS
 		/* If we don't know them, we won't talk to them... */
-		if (versys(Rmtname)) {
+		if (versys(&Rmtname)) {
 			logent(Rmtname, "UNKNOWN HOST");
 			omsg('R', "You are unknown to me", Ofn);
 			cleanup(0);
@@ -362,6 +367,10 @@ register char *argv[];
 				break;
 			case 'Q':
 				seq = atoi(++p);
+				break;
+			case 'p':
+				MaxGrade = DefMaxGrade = *++p;
+				DEBUG(4, "MaxGrade set to %c\n", MaxGrade);
 				break;
 			default:
 				break;
@@ -446,6 +455,7 @@ loop:
 		}
 		/*  master part */
 		signal(SIGHUP, SIG_IGN);
+		MaxGrade = DefMaxGrade;
 		if (!iswrk(file, "chk", Spool, wkpre) && !onesys) {
 			logent(Rmtname, "NO WORK");
 			goto next;
@@ -511,6 +521,12 @@ loop:
 #else !GNXSEQ
 		seq = 0;
 #endif !GNXSEQ
+		if (MaxGrade != '\177') {
+			char buf[10];
+			sprintf(buf, " -p%c", MaxGrade);
+			strcat(rflags, buf);
+		}
+
 		sprintf(msg, "%.7s -Q%d %s", Myname, seq, rflags);
 		omsg('S', msg, Ofn);
 		for (;;) {
@@ -559,7 +575,7 @@ loop:
 	DEBUG(1, "Loginuser - %s\n", Loginuser);
 
 	alarm(MAXMSGTIME);
-	if (setjmp(Sjbuf))
+	if (ret=setjmp(Sjbuf))
 		goto Failure;
 	ret = startup(Role);
 	alarm(0);
@@ -567,7 +583,8 @@ loop:
 		logent("startup", _FAILED);
 Failure:
 		US_SST(us_s_start);
-		systat(Rmtname, SS_FAIL, "STARTUP FAILED");
+		systat(Rmtname, SS_FAIL, ret > 0 ? "CONVERSATION FAILED" :
+			"STARTUP FAILED");
 		goto next;
 	} else {
 		logent("startup", "OK");
@@ -640,7 +657,13 @@ register int code;
 			ret = ioctl(0, TCSETA, &Savettyb);
 #else !USG
 			ret = ioctl(0, TIOCHPCL, STBNULL);
+#ifdef TIOCSDTR
+			ret = ioctl(0, TIOCCDTR, STBNULL);
+			sleep(2);
+			ret = ioctl(0, TIOCSDTR, STBNULL);
+#else !TIOCSDTR
 			ret = ioctl(0, TIOCGETP, &Hupvec);
+#endif !TIOCSDTR
 			Hupvec.sg_ispeed = B0;
 			Hupvec.sg_ospeed = B0;
 			ret = ioctl(0, TIOCSETP, &Hupvec);
@@ -661,6 +684,10 @@ register int code;
 		close(Ifn);
 		close(Ofn);
 	}
+#ifdef DIALINOUT
+	/* reenable logins on dialout */
+	reenable();
+#endif DIALINOUT
 	if (code == 0)
 		xuuxqt();
 	else
@@ -685,7 +712,7 @@ register int inter;
 	sprintf(str, "SIGNAL %d", inter);
 	logent(str, "CAUGHT");
 	US_SST(us_s_intr);
-	if (*Rmtname && strcmp(Rmtname, Myname))
+	if (*Rmtname && strncmp(Rmtname, Myname, 7))
 		systat(Rmtname, SS_FAIL, str);
 	if (inter == SIGPIPE && !onesys)
 		longjmp(Pipebuf, 1);
@@ -768,7 +795,7 @@ register int tty;
 timeout()
 {
 	logent(Rmtname, "TIMEOUT");
-	if (*Rmtname && strcmp(Rmtname, Myname)) {
+	if (*Rmtname && strncmp(Rmtname, Myname, 7)) {
 		US_SST(us_s_tmot);
 		systat(Rmtname, SS_FAIL, "TIMEOUT");
 	}

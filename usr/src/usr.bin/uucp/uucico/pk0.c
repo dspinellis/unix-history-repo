@@ -1,16 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)pk0.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pk0.c	5.3 (Berkeley) %G%";
 #endif
 
-extern	char	*malloc();
-
-#include <stdio.h>
-#ifdef	USG
-#include <sys/types.h>
-#endif USG
-#include <sys/param.h>
+#include "uucp.h"
 #include "pk.h"
-#include <sys/buf.h>
 
 /*
  * packet driver
@@ -469,9 +462,9 @@ char *ibuf;
 int icount;
 {
 	register struct pack *pk;
-	register i, rbits;
+	register i;
 	char **bp;
-	int rcheck;
+	int rcheck = 0;
 
 	pk = ipk;
 	pk->p_state |= DRAINO;
@@ -508,7 +501,6 @@ int icount;
 	/*
 	 * free space
 	 */
-	rbits = 1;
 	rcheck = 0;
 	for (i=0;i<8;i++) {
 		if (pk->p_os[i] != B_NULL) {

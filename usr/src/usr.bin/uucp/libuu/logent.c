@@ -1,9 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)logent.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)logent.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
-#include <sys/types.h>
 #ifdef BSD4_2
 #include <sys/time.h>
 #else
@@ -15,46 +14,48 @@ static char sccsid[] = "@(#)logent.c	5.3 (Berkeley) %G%";
 
 extern	time_t	time();
 
-/* This logfile stuff was awful -- it did output to an
- * unbuffered stream.
- *
- * This new version just open the single logfile and writes
- * the record in the stdio buffer.  Once that's done, it
- * positions itself at the end of the file (lseek), and
- * writes the buffer out.  This could mangle things but
- * it isn't likely. -- ittvax!swatt
- *
- * Under USG UNIX & 4.2BSD, the files are opened with "guaranteed append to end"
- * and the lseeks are removed.
- */
-
-
 static FILE *Lp = NULL;
 static FILE *Sp = NULL;
 static Ltried = 0;
 static Stried = 0;
 
-/*******
- *	logent(text, status)	make log entry
- *	char *text, *status;
- *
- *	return code - none
+/*
+ *	make log entry
  */
-
 logent(text, status)
 char *text, *status;
 {
+#ifdef LOGBYSITE
+	char lfile[MAXFULLNAME];
+	static char LogRmtname[64];
+#endif LOGBYSITE
+	if (Rmtname[0] == '\0')
+		strcpy(Rmtname, Myname);
 	/* Open the log file if necessary */
+#ifdef LOGBYSITE
+	if (strcmp(Rmtname, LogRmtname)) {
+		if (Lp != NULL)
+			fclose(Lp);
+		Lp = NULL;
+		Ltried = 0;
+	}
+#endif LOGBYSITE
 	if (Lp == NULL) {
 		if (!Ltried) {
 			int savemask;
-#if defined(USG) || defined(BSD4_2)
+#ifdef F_SETFL
 			int flags;
 #endif
 			savemask = umask(LOGMASK);
+#ifdef LOGBYSITE
+			(void) sprintf(lfile, "%s/%s/%s", LOGBYSITE, Progname, Rmtname);
+			strcpy(LogRmtname, Rmtname);
+			Lp = fopen (lfile, "a");
+#else !LOGBYSITE
 			Lp = fopen (LOGFILE, "a");
+#endif LOGBYSITE
 			umask(savemask);
-#if defined(USG) || defined(BSD4_2)
+#ifdef F_SETFL
 			flags = fcntl(fileno(Lp), F_GETFL, 0);
 			fcntl(fileno(Lp), F_SETFL, flags|O_APPEND);
 #endif
@@ -69,8 +70,8 @@ char *text, *status;
 	mlogent(Lp, status, text);
 }
 
-/***
- *	mlogent(fp, status, text)  - make a log entry
+/*
+ *	make a log entry
  */
 
 mlogent(fp, status, text)
@@ -88,46 +89,39 @@ register FILE *fp;
 		status = "";
 	if (!pid)
 		pid = getpid();
-	if (Rmtname[0] == '\0')
-		strcpy(Rmtname, Myname);
 	time(&clock);
 	tp = localtime(&clock);
 	fprintf(fp, "%s %s ", User, Rmtname);
 #ifdef USG
 	fprintf(fp, "(%d/%d-%2.2d:%2.2d-%d) ", tp->tm_mon + 1,
 		tp->tm_mday, tp->tm_hour, tp->tm_min, pid);
-#endif
-#ifndef USG
+#else !USG
 	fprintf(fp, "(%d/%d-%02d:%02d-%d) ", tp->tm_mon + 1,
 		tp->tm_mday, tp->tm_hour, tp->tm_min, pid);
-#endif
+#endif !USG
 	fprintf(fp, "%s (%s)\n", status, text);
 
 	/* Since it's buffered */
-#ifndef USG
+#ifndef F_SETFL
 	lseek (fileno(fp), (long)0, 2);
-#endif
+#endif !F_SETFL
 	fflush (fp);
 	if (Debug) {
 		fprintf(stderr, "%s %s ", User, Rmtname);
 #ifdef USG
 		fprintf(stderr, "(%d/%d-%2.2d:%2.2d-%d) ", tp->tm_mon + 1,
 			tp->tm_mday, tp->tm_hour, tp->tm_min, pid);
-#endif
-#ifndef USG
+#else !USG
 		fprintf(stderr, "(%d/%d-%02d:%02d-%d) ", tp->tm_mon + 1,
 			tp->tm_mday, tp->tm_hour, tp->tm_min, pid);
-#endif
+#endif !USG
 		fprintf(stderr, "%s (%s)\n", status, text);
 	}
 }
 
-/***
- *	logcls()	close log file
- *
- *	return codes:  none
+/*
+ *	close log file
  */
-
 logcls()
 {
 	if (Lp != NULL)
@@ -142,33 +136,46 @@ logcls()
 }
 
 
-/***
- *	syslog(text)	make system log entry
- *	char *text;
- *
- *	return codes - none
+/*
+ *	make system log entry
  */
-
 syslog(text)
 char *text;
 {
 	register struct tm *tp;
 	extern struct tm *localtime();
-	time_t clock;
+	struct timeb clock;
+#ifdef LOGBYSITE
+	char lfile[MAXFULLNAME];
+	static char SLogRmtname[64];
 
+	if (strcmp(Rmtname, SLogRmtname)) {
+		if (Sp != NULL)
+			fclose(Sp);
+		Sp = NULL;
+		Stried = 0;
+	}
+#endif LOGBYSITE
 	if (Sp == NULL) {
 		if (!Stried) {
 			int savemask;
-#if defined(USG) || defined(BSD4_2)
+#ifdef F_SETFL
 			int flags;
-#endif
+#endif F_SETFL
 			savemask = umask(LOGMASK);
-			Sp = fopen(SYSLOG, "a");
+#ifdef LOGBYSITE
+			(void) sprintf(lfile, "%s/xferstats/%s", LOGBYSITE, Rmtname);
+			strcpy(SLogRmtname, Rmtname);
+			Sp = fopen (lfile, "a");
+#else !LOGBYSITE
+			Sp = fopen (SYSLOG, "a");
+#endif LOGBYSITE
 			umask(savemask);
-#if defined(USG) || defined(BSD4_2)
+#ifdef F_SETFL
 			flags = fcntl(fileno(Sp), F_GETFL, 0);
 			fcntl(fileno(Sp), F_SETFL, flags|O_APPEND);
-#endif
+#endif F_SETFL
+
 		}
 		Stried = 1;
 		if (Sp == NULL)
@@ -176,22 +183,29 @@ char *text;
 		fioclex(fileno(Sp));
 	}
 
-	time(&clock);
-	tp = localtime(&clock);
+#ifdef USG
+	time(&clock.time);
+	clock.millitm = 0;
+#else !USG
+	ftime(&clock);
+#endif !USG
+	tp = localtime(&clock.time);
 
 	fprintf(Sp, "%s %s ", User, Rmtname);
 #ifdef USG
 	fprintf(Sp, "(%d/%d-%2.2d:%2.2d) ", tp->tm_mon + 1,
 		tp->tm_mday, tp->tm_hour, tp->tm_min);
-#endif
-#ifndef USG
+	fprintf(Sp, "(%ld) %s\n", clock.time, text);
+#else !USG
 	fprintf(Sp, "(%d/%d-%02d:%02d) ", tp->tm_mon + 1,
 		tp->tm_mday, tp->tm_hour, tp->tm_min);
-#endif
-	fprintf(Sp, "(%ld) %s\n", clock, text);
+	fprintf(Sp, "(%ld.%02d) %s\n", clock.time, clock.millitm/10, text);
+#endif !USG
 
 	/* Position at end and flush */
+#ifndef F_SETFL
 	lseek (fileno(Sp), (long)0, 2);
+#endif F_SETFL
 	fflush (Sp);
 }
 

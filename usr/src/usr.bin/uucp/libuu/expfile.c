@@ -1,14 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)expfile.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)expfile.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
-#include <sys/types.h>
 #include <sys/stat.h>
 
-/*******
- *	expfile(file)	expand file name
- *	char *file;
+/*
+ *	expand file name
  *
  *	return codes: 0 - Ordinary spool area file
  *		      1 - Other normal file
@@ -25,10 +23,10 @@ char *file;
 
 	switch(file[0]) {
 	case '/':
-		return(1);
+		return 1;
 	case '~':
 		for (fpart = file + 1, up = user; *fpart != '\0'
-			&& *fpart != '/'; fpart++)
+			&& *fpart != '/' && up < user+sizeof(user)-1; fpart++)
 				*up++ = *fpart;
 		*up = '\0';
 		if (!*user || gninfo(user, &uid, full) != 0) {
@@ -53,9 +51,8 @@ char *file;
 }
 
 
-/***
- *	isdir(name)	check if directory name
- *	char *name;
+/*
+ *	check if directory name
  *
  *	return codes:  0 - not directory  |  1 - is directory
  */
@@ -75,32 +72,30 @@ char *name;
 }
 
 
-/***
- *	mkdirs(name)	make all necessary directories
- *	char *name;
+/*
+ *	make all necessary directories
  *
- *	return 0  |  FAIL
+ *	return SUCCESS  |  FAIL
  */
 
 mkdirs(name)
 char *name;
 {
 	int ret, mask;
-	char cmd[MAXFULLNAME], dir[MAXFULLNAME];
+	char dir[MAXFULLNAME];
 	register char *p;
 
 	for (p = dir + 1;; p++) {
 		strcpy(dir, name);
 		if ((p = index(p, '/')) == NULL)
-			return 0;
+			return SUCCESS;
 		*p = '\0';
 		if (isdir(dir))
 			continue;
 
-		sprintf(cmd, "mkdir %s;chmod 0777 %s", dir, dir);
 		DEBUG(4, "mkdir - %s\n", dir);
 		mask = umask(0);
-		ret = shio(cmd, CNULL, CNULL, User);
+		ret = mkdir(dir, 0777);
 		umask(mask);
 		if (ret != 0)
 			return FAIL;
@@ -108,11 +103,11 @@ char *name;
 	/* NOTREACHED */
 }
 
-/***
- *	ckexpf - expfile and check return
+/*
+ *	expfile and check return
  *		print error if it failed.
  *
- *	return code - 0 - ok; FAIL if expfile failed
+ *	return code - SUCCESS - ok; FAIL if expfile failed
  */
 
 ckexpf(file)
@@ -120,7 +115,7 @@ register char *file;
 {
 
 	if (expfile(file) != FAIL)
-		return 0;
+		return SUCCESS;
 
 	/*  could not expand file name */
 	/* the gwd routine failed */

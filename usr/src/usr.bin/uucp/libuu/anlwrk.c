@@ -1,9 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)anlwrk.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)anlwrk.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
-#include <sys/types.h>
 #include <sys/stat.h>
 #include "uust.h"
 #ifdef	NDIR
@@ -11,55 +10,18 @@ static char sccsid[] = "@(#)anlwrk.c	5.3 (Berkeley) %G%";
 #else
 #include <sys/dir.h>
 #endif
-
-/* Re-written to be reasonable
- * Mon Nov 15 17:19:52 EST 1982
- * Alan S. Watt (ittvax!swatt)
- *
- * Tom Truscott (rti!trt):
- * Priority ordering cleaned up.  New 'pcompar' subroutine.
- * 'stat' removed (speeds things up).
- * Possible infinite loop in gtwvec defended against.
- * Feb 23, 1983
- *
- * Changes:
- *
- *  1)	The check for work is much faster; the first filename
- *	that matches the prefix causes a "yes" return.
- *
- *  2)	The filename is not "stat" ed , so
- *	there is no massive delay while the list of potential
- *	names is built.
- *
- *  3)	Requesting work for a new system is now detected so
- *	internal variables are re-initialized properly.  In
- *	particular, the stream pointer for the current work
- *	file is properly closed so work for a system which
- *	hangs up will not be sent to the next system called.
- *
- * Fri Dec  3 09:31:45 EST 1982
- *
- *  5)	As new work files are requested, a check is made
- *	every TLIMIT seconds (5 minutes at present) to see
- *	if new files have entered the spool area.  Since
- *	work file names are now cached up to LLEN, this can
- *	represent a very long transmission time before new
- *	work enters the list to be processed.  If people want
- *	to use the "grade" character to specify a higher
- *	priority, the list must be re-built and re-sorted for
- *	higher priority stuff to have an immediate effect.
- */
-
+#include <ctype.h>
 
 #define TLIMIT	(5*60L)
 #define NITEMS(X)	(sizeof (X) / sizeof ((X)[0]))
 
 int Nfiles = 0;
 char Filent[LLEN][NAMESIZE];
+long fseek(), ftell();
+extern int TransferSucceeded;
 
-/*******
- *	anlwrk(file, wvec)	create a vector of command arguments
- *	char *file, **wvec;
+/*
+ *	create a vector of command arguments
  *
  *	return codes:
  *		0  -  no more work in this file
@@ -71,8 +33,9 @@ int
 anlwrk(file, wvec)
 register char *file, **wvec;
 {
-	static char str[MAXRQST];
+	static char str[MAXRQST], nstr[MAXRQST];
 	static FILE *fp = NULL;
+	static long nextread, nextwrite;
 
 	/*
 	 * If called with a null string, force a shutdown
@@ -85,46 +48,54 @@ register char *file, **wvec;
 		return 0;
 	}
 	if (fp == NULL) {
-		fp = fopen(subfile(file), "r");
+		fp = fopen(subfile(file), "r+w");
 		if (fp == NULL) {
+			char *bnp, rqstr[MAXFULLNAME];
+			bnp = rindex(file, '/');
+			sprintf(rqstr, "%s/%s", CORRUPT, bnp ? bnp + 1 : file);
+			xmv(file, rqstr);
+			logent(file, "CMD FILE UNREADABLE");
 			unlink(subfile(file));
 			return 0;
 		}
 		Usrf = 0;
+		nstr[0] = '\0';
+		nextread = nextwrite = 0L;
 	}
 
-	/* This is what deletes the current work file when EOF
-	 * is reached.  As this is called from gtwvec, which is
-	 * in turn called externally, it is not possible to save
-	 * "C." files in case of error, except for line errors,
-	 * which shuts down the whole system.
-	 */
-	if (fgets(str, MAXRQST, fp) == NULL) {
-		fclose(fp);
-		unlink(subfile(file));
-		USRF(USR_COMP);
-		US_RRS(file, Usrf);
-		Usrf = 0;
-		file[0] = '\0';
-		fp = NULL;
-		return 0;
+	if (nstr[0] != '\0' && TransferSucceeded) {
+		fseek(fp, nextwrite, 0);
+		fputs(nstr, fp);
+		fseek(fp, nextread, 0);
 	}
+
+	do {
+		nextwrite = ftell(fp);
+		if (fgets(str, MAXRQST, fp) == NULL) {
+			fclose(fp);
+			if (TransferSucceeded)
+				unlink(subfile(file));
+			USRF(USR_COMP);
+			US_RRS(file, Usrf);
+			Usrf = 0;
+			file[0] = '\0';
+			fp = NULL;
+			return 0;
+		}
+	} while (!isupper(str[0]));
+
+	nextread = ftell(fp);
+	strncpy(nstr, str, MAXRQST);
+	nstr[0] = tolower(nstr[0]);
 	return getargs(str, wvec, 20);
 }
 
 
-/***
- *	bldflst - build list of work files for given system
- *	 Nfiles, Filent are global
+/*
+ *	build list of work files for given system
  *
  *	return value - 1 if work was found, else 0
  *
- * Jul 26 19:17 1982 (ittvax!swatt). fixed this obnoxious
- * routine to NOT read all the way through the damned directory
- * "stat"'ing every file in sight just to get 10 names!!!
- *
- * It still reads through the directory from the beginning until
- * the list is filled, but this is only once every LLEN names.
  */
 
 /* LOCAL only */
@@ -174,12 +145,9 @@ register char *dir, *pre;
 	return  nfound? 1: 0;
 }
 
-/***
- *	entflst - put new name if list is not full
- *		  or new name is less than the MAX
+/*
+ *	put new name if list is not full  or new name is less than the MAX
  *		  now in the list.
- *	Nfiles, Filent[] are modified.
- *	return value - none
  *
  */
 
@@ -192,7 +160,7 @@ register char *file;
 
 	/* locate position for the new file and make room for it */
 	for (i = Nfiles; i > 0; i--) {
-		if (pcompar(file, Filent[i-1]) >= 0)
+		if (pcompar(file, Filent[i-1]) <= 0)
 			break;
 		if (i <LLEN)
 			strcpy(Filent[i], Filent[i-1]);
@@ -239,9 +207,8 @@ register char *p1, *p2;
 	return strcmp(p2, p1);
 }
 
-/***
- *	gtwrkf - get next work file
- *	 Nfiles, Filent[] are modified.
+/*
+ *	get next work file
  *
  *	return value:
  *
@@ -254,15 +221,20 @@ register char *p1, *p2;
 gtwrkf(dir, file)
 char *file, *dir;
 {
-	if (Nfiles <= 0)
+	register int i;
+
+	if (Nfiles-- <= 0) {
+		Nfiles = 0;
 		return 0;
-	sprintf(file, "%s/%s", dir, Filent[--Nfiles]);
+	}
+	sprintf(file, "%s/%s", dir, Filent[0]);
+	for (i=0; i<Nfiles;i++)
+		strcpy(Filent[i], Filent[i+1]);
 	return 1;
 }
 
-/***
- *	gtwvec(file, dir, wkpre, wrkvec)	get work vector
- *	char *file, *dir, *wkpre, **wrkvec;
+/*
+ *	get work vector
  *
  *	return codes:
  *		positive number  -  number of arguments
@@ -285,10 +257,7 @@ register char *file;
 	return nargs;
 }
 
-/***
- *	iswrk(file, reqst, dir, pre)
- *	char *file, *reqst, *dir, *pre;
- *
+/*
  *	iswrk  -  this routine will check the work list (list).
  *	If it is empty or the present work is exhausted, it
  *	will call bldflst to generate a new list.
@@ -334,7 +303,7 @@ register char *file, *reqst, *dir, *pre;
 	 */
 	for (;;) {
 		ret = 0;
-		if (Nfiles == 0 || newspool((time_t)TLIMIT)) {
+		if (Nfiles <= 0 || newspool((time_t)TLIMIT)) {
 			ret = bldflst (reqst, dir, pre);
 			DEBUG(99,"bldflst returns %d\n",ret);
 		}
@@ -347,7 +316,7 @@ register char *file, *reqst, *dir, *pre;
 		if (*reqst == 'c')
 			return ret;
 
-		if (Nfiles == 0)
+		if (Nfiles <= 0)
 			return 0;
 
 		if (gtwrkf(dir, file))

@@ -1,17 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)tio.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tio.c	4.2 (Berkeley) %G%";
 #endif
 
-#include <sys/types.h>
-#include <setjmp.h>
 #include "uucp.h"
+#include <setjmp.h>
 #include <signal.h>
 #include <sys/stat.h>
-#ifdef USG
-#define ftime time
-#else V7
-#include <sys/timeb.h>
-#endif V7
 
 extern int pkfail();
 extern	time_t	time();
@@ -105,11 +99,7 @@ FILE *fp1;
 	struct tbuf bufr;
 	register int len;
 	int ret, mil;
-#ifdef USG
-	time_t t1, t2;
-#else v7
 	struct timeb t1, t2;
-#endif v7
 	long bytes;
 	char text[TBUFSIZE];
 
@@ -117,7 +107,12 @@ FILE *fp1;
 		return FAIL;
 	signal(SIGALRM, pkfail);
 	bytes = 0L;
+#ifdef USG
+	time(&t1.time);
+	t1.millitm = 0;
+#else !USG
 	ftime(&t1);
+#endif !USG
 	while ((len = read(fileno(fp1), bufr.t_data, TBUFSIZE)) > 0) {
 		bytes += len;
 #if defined(vax) || defined(pdp11)
@@ -142,21 +137,22 @@ FILE *fp1;
 	alarm(0);
 	if (ret != len)
 		return FAIL;
+#ifdef USG
+	time(&t2.time);
+	t2.millitm = 0;
+#else !USG
 	ftime(&t2);
-#ifndef USG
+#endif !USG
+	Now = t2;
 	t2.time -= t1.time;
 	mil = t2.millitm - t1.millitm;
 	if (mil < 0) {
 		--t2.time;
 		mil += 1000;
 	}
-	sprintf(text, "sent data %ld bytes %ld.%03d secs",
-				bytes, (long)t2.time, mil);
+	sprintf(text, "sent data %ld bytes %ld.%02d secs",
+				bytes, (long)t2.time, mil/10);
 	sysacct(bytes, t2.time - t1.time);
-#else USG
-	sprintf(text, "sent data %ld bytes %ld secs", bytes, t2 - t1);
-	sysacct(bytes, t2 - t1);
-#endif USG
 	DEBUG(1, "%s\n", text);
 	syslog(text);
 	return SUCCESS;
@@ -168,18 +164,19 @@ FILE *fp2;
 {
 	register int len, nread;
 	char bufr[TBUFSIZE];
-#ifdef USG
-	time_t t1, t2;
-#else V7
 	struct timeb t1, t2;
 	int mil;
-#endif V7
 	long bytes, Nbytes;
 
 	if(setjmp(Failbuf))
 		return FAIL;
 	signal(SIGALRM, pkfail);
+#ifdef USG
+	time(&t1.time);
+	t1.millitm = 0;
+#else !USG
 	ftime(&t1);
+#endif !USG
 	bytes = 0L;
 	for (;;) {
 		alarm(MAXMSGTIME);
@@ -207,26 +204,26 @@ FILE *fp2;
 			return FAIL;
 		}
 	}
+#ifdef USG
+	time(&t2.time);
+	t2.millitm = 0;
+#else !USG
 	ftime(&t2);
-#ifndef USG
+#endif !USG
+	Now = t2;
 	t2.time -= t1.time;
 	mil = t2.millitm - t1.millitm;
 	if (mil < 0) {
 		--t2.time;
 		mil += 1000;
 	}
-	sprintf(bufr, "received data %ld bytes %ld.%03d secs",
-				bytes, (long)t2.time, mil);
+	sprintf(bufr, "received data %ld bytes %ld.%02d secs",
+				bytes, (long)t2.time, mil/10);
 	sysacct(bytes, t2.time - t1.time);
-#else USG
-	sprintf(bufr, "received data %ld bytes %ld secs", bytes, t2 - t1);
-	sysacct(bytes, t2 - t1);
-#endif USG
 	DEBUG(1, "%s\n", bufr);
 	syslog(bufr);
 	return SUCCESS;
 }
-
 
 #define	TC	1024
 static	int tc = TC;

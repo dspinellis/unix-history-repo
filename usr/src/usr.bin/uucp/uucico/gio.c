@@ -1,16 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)gio.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)gio.c	5.3 (Berkeley) %G%";
 #endif
 
-#include <sys/types.h>
+#include "uucp.h"
 #include "pk.h"
 #include <setjmp.h>
-#include "uucp.h"
-#ifdef USG
-#define ftime time
-#else V7
-#include <sys/timeb.h>
-#endif V7
 
 extern	time_t	time();
 
@@ -96,18 +90,19 @@ FILE *fp1;
 	char bufr[BUFSIZ];
 	register int len;
 	int ret, mil;
-#ifdef USG
-	time_t t1, t2;
-#else v7
 	struct timeb t1, t2;
-#endif v7
 	long bytes;
 	char text[BUFSIZ];
 
 	if(setjmp(Failbuf))
 		return FAIL;
 	bytes = 0L;
+#ifdef USG
+	time(&t1.time);
+	t1.millitm = 0;
+#else !USG
 	ftime(&t1);
+#endif !USG
 	while ((len = read(fileno(fp1), bufr, BUFSIZ)) > 0) {
 		bytes += len;
 		ret = gwrblk(bufr, len, fn);
@@ -118,45 +113,46 @@ FILE *fp1;
 			break;
 	}
 	ret = gwrblk(bufr, 0, fn);
+#ifdef USG
+	time(&t2.time);
+	t2.millitm = 0;
+#else !USG
 	ftime(&t2);
-#ifndef USG
+#endif !USG
+	Now = t2;
 	t2.time -= t1.time;
 	mil = t2.millitm - t1.millitm;
 	if (mil < 0) {
 		--t2.time;
 		mil += 1000;
 	}
-	sprintf(text, "sent data %ld bytes %ld.%03d secs",
-				bytes, (long)t2.time, mil);
+	sprintf(text, "sent data %ld bytes %ld.%02d secs",
+				bytes, (long)t2.time, mil/10);
 	sysacct(bytes, t2.time - t1.time);
-#else USG
-	sprintf(text, "sent data %ld bytes %ld secs", bytes, t2 - t1);
-	sysacct(bytes, t2 - t1);
-#endif USG
 	DEBUG(1, "%s\n", text);
 	syslog(text);
 	return SUCCESS;
 }
-
 
 grddata(fn, fp2)
 FILE *fp2;
 {
 	register int len;
 	char bufr[BUFSIZ];
-#ifdef USG
-	time_t t1, t2;
-#else v7
 	struct timeb t1, t2;
 	int mil;
-#endif v7
 	long bytes;
 	char text[BUFSIZ];
 
 	if(setjmp(Failbuf))
 		return FAIL;
 	bytes = 0L;
+#ifdef USG
+	time(&t1.time);
+	t1.millitm = 0;
+#else !USG
 	ftime(&t1);
+#endif !USG
 	for (;;) {
 		len = grdblk(bufr, BUFSIZ, fn);
 		if (len < 0) {
@@ -168,26 +164,26 @@ FILE *fp2;
 		if (len < BUFSIZ)
 			break;
 	}
+#ifdef USG
+	time(&t2.time);
+	t2.millitm = 0;
+#else !USG
 	ftime(&t2);
-#ifndef USG
+#endif !USG
+	Now = t2;
 	t2.time -= t1.time;
 	mil = t2.millitm - t1.millitm;
 	if (mil < 0) {
 		--t2.time;
 		mil += 1000;
 	}
-	sprintf(text, "received data %ld bytes %ld.%03d secs",
-				bytes, (long)t2.time, mil);
+	sprintf(text, "received data %ld bytes %ld.%02d secs",
+				bytes, (long)t2.time, mil/10);
 	sysacct(bytes, t2.time - t1.time);
-#else USG
-	sprintf(text, "received data %ld bytes %ld secs", bytes, t2 - t1);
-	sysacct(bytes, t2 - t1);
-#endif USG
 	DEBUG(1, "%s\n", text);
 	syslog(text);
 	return SUCCESS;
 }
-
 
 /* call ultouch every TC calls to either grdblk or gwrblk -- rti!trt */
 #define	TC	20

@@ -1,14 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)pk1.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pk1.c	5.3 (Berkeley) %G%";
 #endif
 
-#ifdef USG
-#include <sys/types.h>
-#endif USG
-#include <sys/param.h>
-#include "pk.h"
 #include "uucp.h"
-#include <sys/buf.h>
+#include "pk.h"
 #include <setjmp.h>
 #include <signal.h>
 #ifdef BSD4_2
@@ -330,8 +325,7 @@ int count, flag;
 	if (flag == B_WRITE) {
 		s = p2;
 		d = p1;
-	}
-	else {
+	} else {
 		s = p1;
 		d = p2;
 	}
@@ -358,13 +352,15 @@ cgalarm()
 }
 
 pkcget(fn, b, n)
-int fn, n;
+int fn;
+register int n;
 register char *b;
 {
-	register int nchars, ret;
+	register int ret;
 	extern int linebaudrate;
 #ifdef BSD4_2
-	long r, itime = 0;
+	long r, itime = 100000L; /* guess it's been 1/10th second since we
+				    last read the line */
 	struct timeval tv;
 #endif BSD4_2
 #ifdef VMS
@@ -380,14 +376,32 @@ register char *b;
 	signal(SIGALRM, cgalarm);
 
 	alarm(PKTIME);
-	for (nchars = 0; nchars < n; ) {
+	while (n > 0) {
+#ifdef BSD4_2
+		if (linebaudrate > 0) {
+			r = n  * 100000L;
+			r = r / linebaudrate;
+			r = (r * 100) - itime;
+			itime = 0;
+			/* we predict that more than 1/50th of a
+			   second will go by before the read will
+			   give back all that we want. */
+			if (r > 20000) {
+				tv.tv_sec = r / 1000000L;
+				tv.tv_usec = r % 1000000L;
+				DEBUG(11, "PKCGET stall for %d", tv.tv_sec);
+				DEBUG(11, ".%06d sec\n", tv.tv_usec);
+				(void) select (0, (int *)0, (int *)0, (int *)0, &tv);
+			}
+		}
+#endif BSD4_2
 #ifndef VMS
-		ret = read(fn, b, n - nchars);
+		ret = read(fn, b, n);
 #else VMS
 		_$Cancel_IO_On_Signal = FD_FAB_Pointer[fn];
 		ret = SYS$QioW(_$EFN,(FD_FAB_Pointer[fn]->fab).fab$l_stv,
 				IO$_READVBLK|IO$M_NOFILTR|IO$M_NOECHO,
-				iosb,0,0,b,n-nchars,0,
+				iosb,0,0,b,n,0,
 				iomask,0,0);
 		_$Cancel_IO_On_Signal = 0;
 		if (ret == SS$_NORMAL)
@@ -401,33 +415,11 @@ register char *b;
 		}
 		if (ret <= 0) {
 			alarm(0);
-			logent("PKCGET read failed", sys_errlist[errno]);
+			logent(sys_errlist[errno],"FAILED pkcget Read");
 			longjmp(Sjbuf, 6);
 		}
  		b += ret;
-		nchars += ret;
-		if (nchars < n)
-#ifndef BSD4_2
-			if (linebaudrate > 0 && linebaudrate < 4800)
-				sleep(1);
-#else BSD4_2
-			if (linebaudrate > 0) {
-				r = (n - nchars) * 100000;
-				r = r / linebaudrate;
-				r = (r * 100) - itime;
-				itime = 0;
-				/* we predict that more than 1/50th of a
-				   second will go by before the read will
-				   give back all that we want. */
-			 	if (r > 20000) {
-					tv.tv_sec = r / 1000000L;
-					tv.tv_usec = r % 1000000L;
-					DEBUG(11, "PKCGET stall for %d", tv.tv_sec);
-					DEBUG(11, ".%06d sec\n", tv.tv_usec);
-					(void) select (fn, (int *)0, (int *)0, (int *)0, &tv);
-			    	}
-		    	}
-#endif BSD4_2
+		n -= ret;
 	}
 	alarm(0);
 	return SUCCESS;

@@ -1,23 +1,18 @@
 #ifndef lint
-static char sccsid[] = "@(#)systat.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)systat.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
-#include <sys/types.h>
 
 extern	time_t	time();
 
 #define STATNAME(f, n) sprintf(f, "%s/%s/%.7s", Spool, "STST", n)
 #define S_SIZE 100
 
-/*******
- *	systat(name, type, text)	make system status entry
- *	char *name, *text;
- *	int type.
- *
+/*
+ *	make system status entry
  *	return codes:  none
  */
-
 systat(name, type, text)
 char *name, *text;
 int type;

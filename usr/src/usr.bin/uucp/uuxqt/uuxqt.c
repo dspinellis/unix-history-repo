@@ -1,9 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuxqt.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuxqt.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
-#include <sys/types.h>
 #include <sys/stat.h>
 #ifdef	NDIR
 #include "ndir.h"
@@ -12,7 +11,8 @@ static char sccsid[] = "@(#)uuxqt.c	5.4 (Berkeley) %G%";
 #endif
 #include <signal.h>
 
-#define BADCHARS	"&^|(`\\<>;"
+#define BADCHARS	"&^|(`\\<>;\"{}\n'"
+#define RECHECKTIME	60*10	/* 10 minutes */
 
 #define APPCMD(d) {\
 char *p;\
@@ -31,23 +31,24 @@ int Notify[NCMDS+1];
 #define	NT_NO	2	/* if should not notify ever (-n equivalent) */
 
 extern int Nfiles;
-char *sindex();
+char *strpbrk();
 
+int TransferSucceeded = 1;
 int notiok = 1;
 int nonzero = 0;
 
-#ifdef SIGCHLD
-#include <sys/wait.h>
-reapchild()
-{
-	union wait status;
-
-	while (wait3(&status,WNOHANG,0) > 0)
-		;
-}
-#endif SIGCHLD
-
 char PATH[MAXFULLNAME] = "PATH=/bin:/usr/bin:/usr/ucb";
+char Shell[MAXFULLNAME];
+char HOME[MAXFULLNAME];
+
+extern char **environ;
+char *nenv[] = {
+	PATH,
+	Shell,
+	HOME,
+	0
+};
+
 /*  to remove restrictions from uuxqt
  *  define ALLOK 1
  *
@@ -74,14 +75,12 @@ char *argv[];
 	int uid, ret, ret2, badfiles;
 	register int i;
 	int stcico = 0;
+	time_t xstart, xnow;
 	char retstat[30];
+	char **ep;
 
 	strcpy(Progname, "uuxqt");
 	uucpname(Myname);
-
-#ifdef SIGCHLD
-	signal(SIGCHLD, reapchild);
-#endif SIGCHLD
 
 	umask(WFMASK);
 	Ofn = 1;
@@ -101,13 +100,12 @@ char *argv[];
 		--argc;  argv++;
 	}
 
-	DEBUG(4, "\n\n** %s **\n", "START");
+	DEBUG(4, "\n\n** START **\n", CNULL);
 	ret = subchdir(Spool);
 	ASSERT(ret >= 0, "CHDIR FAILED", Spool, ret);
 	strcpy(Wrkdir, Spool);
 	uid = getuid();
 	guinfo(uid, User, path);
-	/* Try to run as uucp -- rti!trt */
 	setgid(getegid());
 	setuid(geteuid());
 
@@ -170,7 +168,15 @@ char *argv[];
 	fclose(fp);
 
 doprocess:
+
+	(void) sprintf(HOME, "HOME=%s", Spool);
+	(void) sprintf(Shell, "SHELL=%s", SHELL);
+	environ = nenv; /* force use if our environment */
+
+	DEBUG(11,"path = %s\n", getenv("PATH"));
+
 	DEBUG(4, "process %s\n", CNULL);
+	time(&xstart);
 	while (gtxfile(xfile) > 0) {
 		ultouch();
 		/* if /etc/nologin exists, exit cleanly */
@@ -254,9 +260,7 @@ doprocess:
 
 		/* expand file names where necessary */
 		expfile(dfile);
-		strcpy(buf, PATH);
-		strcat(buf, " ");
-		cmdp = buf + strlen(buf);
+		cmdp = buf;
 		ptr = cmd;
 		xcmd[0] = '\0';
 		argnok = 0;
@@ -281,7 +285,7 @@ doprocess:
 		 */
 		if (cmdp > buf && cmdp[0] == '\0' && cmdp[-1] == ' ')
 			*--cmdp = '\0';
-		if (sindex(user, BADCHARS) != NULL) {
+		if (strpbrk(user, BADCHARS) != NULL) {
 			sprintf(lbuf, "%s INVALID CHARACTER IN USERNAME", user);
 			logent(cmd, lbuf);
 			strcpy(user, "postmaster");
@@ -300,7 +304,7 @@ doprocess:
 		mvxfiles(xfile);
 		ret = subchdir(XQTDIR);
 		ASSERT(ret >= 0, "CHDIR FAILED", XQTDIR, ret);
-		ret = shio(buf, fin, dfile, CNULL);
+		ret = shio(buf, fin, dfile);
 		sprintf(retstat, "signal %d, exit %d", ret & 0377,
 		  (ret>>8) & 0377);
 		if (strcmp(xcmd, "rmail") == SAME)
@@ -338,8 +342,7 @@ doprocess:
 			if (prefix(sysout, Myname)) {
 				xmv(dfile, fout);
 				chmod(fout, BASEMODE);
-			}
-			else {
+			} else {
 				char *cp = rindex(user, '!');
 				gename(CMDPRE, sysout, 'O', cfile);
 				fp = fopen(subfile(cfile), "w");
@@ -360,6 +363,14 @@ doprocess:
 		}
 		unlink(subfile(xfile));
 		fclose(xfp);
+
+		/* rescan X. for new work every RECHECKTIME seconds */
+		time(&xnow);
+		if (xnow > (xstart + RECHECKTIME)) {
+			extern int Nfiles;
+			Nfiles = 0; 	/*force rescan for new work */
+		}
+		xstart = xnow;
 	}
 
 	if (stcico)
@@ -378,15 +389,15 @@ int code;
 	 *	Since we run as a BATCH job we must wait for all processes to
 	 *	to finish
 	 */
-	while(wait(0) != -1);
+	while(wait(0) != -1)
+		;
 #endif VMS
 	exit(code);
 }
 
 
-/*******
- *	gtxfile(file)	get a file to execute
- *	char *file;
+/*
+ *	get a file to execute
  *
  *	return codes:  0 - no file  |  1 - file to execute
  */
@@ -444,10 +455,8 @@ retry:
 	goto retry;
 }
 
-
-/***
- *	gotfiles(file)		check for needed files
- *	char *file;
+/*
+ *	check for needed files
  *
  *	return codes:  0 - not ready  |  1 - all files ready
  */
@@ -480,11 +489,8 @@ register char *file;
 }
 
 
-/***
- *	rmxfiles(xfile)		remove execute files to x-directory
- *	char *xfile;
- *
- *	return codes - none
+/*
+ *	remove execute files to x-directory
  */
 
 rmxfiles(xfile)
@@ -510,11 +516,8 @@ register char *xfile;
 }
 
 
-/***
- *	mvxfiles(xfile)		move execute files to x-directory
- *	char *xfile;
- *
- *	return codes - none
+/*
+ *	move execute files to x-directory
  */
 
 mvxfiles(xfile)
@@ -540,15 +543,11 @@ char *xfile;
 		ASSERT(ret == 0, "XQTDIR ERROR", CNULL, ret);
 	}
 	fclose(fp);
-	return;
 }
 
-
-/***
- *	argok(xc, cmd)		check for valid command/argumanet
- *			*NOTE - side effect is to set xc to the
- *				command to be executed.
- *	char *xc, *cmd;
+/*
+ *	check for valid command/argument	
+ *	*NOTE - side effect is to set xc to the	command to be executed.
  *
  *	return 0 - ok | 1 nok
  */
@@ -559,8 +558,9 @@ register char *xc, *cmd;
 	register char **ptr;
 
 #ifndef ALLOK
-	if (sindex(cmd, BADCHARS) != NULL) {
+	if (strpbrk(cmd, BADCHARS) != NULL) {
 		DEBUG(1,"MAGIC CHARACTER FOUND\n", CNULL);
+		logent(cmd, "NASTY MAGIC CHARACTER FOUND");
 		return FAIL;
 	}
 #endif !ALLOK
@@ -588,10 +588,8 @@ register char *xc, *cmd;
 }
 
 
-/***
- *	chknotify(cmd)	check if notification should be sent for
- *			successful execution of cmd
- *	char *cmd;
+/*
+ *	if notification should be sent for successful execution of cmd
  *
  *	return NT_YES - do notification
  *	       NT_ERR - do notification if exit status != 0
@@ -617,10 +615,8 @@ char *cmd;
 
 
 
-/***
- *	notify	send mail to user giving execution results
- *	return code - none
- *	This program assumes new mail command - send remote mail
+/*
+ *	send mail to user giving execution results
  */
 
 notify(user, rmt, cmd, str)
@@ -638,10 +634,9 @@ char *user, *rmt, *cmd, *str;
 	return;
 }
 
-/***
- *	retosndr - return mail to sender
+/*
+ *	return mail to sender
  *
- *	return code - none
  */
 
 retosndr(user, rmt, file)
@@ -665,7 +660,7 @@ char *user, *rmt, *file;
  * this is like index, but takes a string as the second argument
  */
 char *
-sindex(str, chars)
+strpbrk(str, chars)
 register char *str, *chars;
 {
 	register char *cp;
@@ -678,4 +673,56 @@ register char *str, *chars;
 		}
 	} while (*str++);
 	return NULL;
+}
+
+/*
+ *	execute shell of command with fi and fo as standard input/output
+ */
+
+shio(cmd, fi, fo)
+char *cmd, *fi, *fo;
+{
+	int status, f;
+	int uid, pid, ret;
+	char path[MAXFULLNAME];
+	char *args[20];
+	extern int errno;
+
+	if (fi == NULL)
+		fi = DEVNULL;
+	if (fo == NULL)
+		fo = DEVNULL;
+
+	getargs(cmd, args, 20);
+	DEBUG(3, "shio - %s\n", cmd);
+#ifdef SIGCHLD
+	signal(SIGCHLD, SIG_IGN);
+#endif SIGCHLD
+	if ((pid = fork()) == 0) {
+		signal(SIGINT, SIG_IGN);
+		signal(SIGHUP, SIG_IGN);
+		signal(SIGQUIT, SIG_IGN);
+		signal(SIGKILL, SIG_IGN);
+		close(Ifn);
+		close(Ofn);
+		close(0);
+		setuid(getuid());
+		f = open(subfile(fi), 0);
+		if (f != 0) {
+			logent(fi, "CAN'T READ");
+			exit(-errno);
+		}
+		close(1);
+		f = creat(subfile(fo), 0666);
+		if (f != 1) {
+			logent(fo, "CAN'T WRITE");
+			exit(-errno);
+		}
+		execvp(args[0], args);
+		exit(100+errno);
+	}
+	while ((ret = wait(&status)) != pid && ret != -1)
+		;
+	DEBUG(3, "status %d\n", status);
+	return status;
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uupoll.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)uupoll.c	5.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -14,6 +14,8 @@ static char sccsid[] = "@(#)uupoll.c	5.2 (Berkeley) %G%";
 
 #include "uucp.h"
 
+int TransferSucceeded = 1;
+
 main(argc, argv)
 register int argc;
 register char **argv;
@@ -21,9 +23,11 @@ register char **argv;
 	int ret;
 	char wrkpre[MAXFULLNAME];
 	char file[MAXFULLNAME];
+	char grade = 'z';
+	int nocall = 0;
 
 	if (argc < 2) {
-		fprintf(stderr, "usage: uupoll system ...\n");
+		fprintf(stderr, "usage: uupoll [-gX] [-n] system ...\n");
 		cleanup(1);
 	}
 
@@ -37,23 +41,32 @@ register char **argv;
 			fprintf(stderr, "This *is* %s!\n", Myname);
 			continue;
 		}
+		if (strncmp(argv[0],"-g",2) == SAME) {
+			grade = argv[0][2];
+			continue;
+		}
+		if (strcmp(argv[0],"-n") == SAME) {
+			nocall++;
+			continue;
+		}
 
-		if (versys(argv[0])) {
+		if (versys(&argv[0])) {
 			fprintf(stderr, "%s: unknown system.\n", argv[0]);
 			continue;
 		}
 		/* Remove any STST file that might stop the poll */
-		sprintf(wrkpre, "LCK..%.7s", argv[0]);
+		sprintf(wrkpre, "%s/LCK..%.7s", LOCKDIR, argv[0]);
 		if (access(wrkpre, 0) < 0)
 			rmstat(argv[0]);
 		sprintf(wrkpre, "%c.%.7s", CMDPRE, argv[0]);
 		if (!iswrk(file, "chk", Spool, wrkpre)) {
-			sprintf(file, "%s/%c.%.7szPOLL", subdir(Spool, CMDPRE),
-				CMDPRE, argv[0]);
+			sprintf(file, "%s/%c.%.7s%cPOLL", subdir(Spool, CMDPRE),
+				CMDPRE, argv[0], grade);
 			close(creat(file, 0666));
 		}
 		/* Attempt the call */
-		xuucico(argv[0]);
+		if (!nocall)
+			xuucico(argv[0]);
 	}
 	cleanup(0);
 }

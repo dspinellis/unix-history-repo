@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uusnap.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)uusnap.c	5.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -8,7 +8,6 @@ static char sccsid[] = "@(#)uusnap.c	5.3 (Berkeley) %G%";
  */
 
 #include "uucp.h"
-#include <sys/types.h>
 #include <sys/stat.h>
 #ifdef	NDIR
 #include "ndir.h"
@@ -194,7 +193,7 @@ char *sdir;
 		perror(sdir);
 		exit(1);
 	}
-	if ((dirp = opendir(".")) == NULL) {
+	if ((dirp = opendir(LOCKDIR)) == NULL) {
 		perror(sdir);
 		exit(1);
 	}
