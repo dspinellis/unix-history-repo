@@ -1,4 +1,4 @@
-#	@(#)Makefile	2.3 (Berkeley) 5/28/90
+#	@(#)Makefile	2.3 (Berkeley) %G%
 #
 # all executables go in DEST_BIN
 # all man pages go in DEST_MAN
