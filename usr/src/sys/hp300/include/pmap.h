@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.h	7.10 (Berkeley) %G%
+ *	@(#)pmap.h	7.11 (Berkeley) %G%
  */
 
 #ifndef	_PMAP_MACHINE_
@@ -44,7 +44,10 @@ struct pmap {
 typedef struct pmap	*pmap_t;
 
 extern struct pmap	kernel_pmap_store;
-#define kernel_pmap (&kernel_pmap_store)
+
+#define kernel_pmap	(&kernel_pmap_store)
+#define	active_pmap(pm) \
+	((pm) == kernel_pmap || (pm) == curproc->p_vmspace->vm_map.pmap)
 
 /*
  * On the 040 we keep track of which level 2 blocks are already in use
@@ -87,10 +90,14 @@ typedef struct pv_entry {
 	int		pv_flags;	/* flags */
 } *pv_entry_t;
 
-#define	PV_CI		0x01	/* all entries must be cache inhibited */
-#define PV_PTPAGE	0x02	/* entry maps a page table page */
+#define	PV_CI		0x01	/* header: all entries are cache inhibited */
+#define PV_PTPAGE	0x02	/* header: entry maps a page table page */
 
 #ifdef	KERNEL
+#if defined(HP320) || defined(HP350)
+#define	HAVEVAC				/* include cheezy VAC support */
+#endif
+
 pv_entry_t	pv_table;		/* array of entries, one per page */
 
 #define pa_index(pa)		atop(pa - vm_first_phys)
