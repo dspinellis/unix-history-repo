@@ -1,0 +1,1 @@
+#define NMP 0
