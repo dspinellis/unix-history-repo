@@ -223,7 +223,7 @@ typedef long int ftnint;
 #define ISERROR(z) (z->tag==TERROR)
 #define ISPLUSOP(z) (z->tag==TEXPR && z->exprblock.opcode==OPPLUS)
 #define ISSTAROP(z) (z->tag==TEXPR && z->exprblock.opcode==OPSTAR)
-#define ISONE(z) (ISICON(z) && z->constblock.const.ci==1)
+#define ISONE(z) (ISICON(z) && z->constblock.constant.ci==1)
 #define INT(z) ONEOF(z, MSKINT|MSKCHAR)
 #define ICON(z) mkintcon( (ftnint)(z) )
 
