@@ -1,0 +1,108 @@
+#!/bin/sh -x
+#
+# substitute various values for ||STRINGS|| 
+#
+
+set -e
+
+usage()
+{
+  echo "usage: $0 host target release-date bundle bindir srcdir inputfile outputfile"
+  exit 1
+}
+
+if [ $# != 8 ] ; then 
+  usage
+fi
+
+HOSTstr=$1
+TARGETstr=$2
+RELNO=$3
+BUNDLE=$4
+BINDIR=$5
+SRCDIR=$6
+INFILE=$7
+OUTFILE=$8
+
+GCCvn=`awk '{printf "%s", substr ($4, 2, length ($4) - 3); }' ${SRCDIR}/gcc/version.c`
+
+if [ $BUNDLE = "comp-tools" ] ; then
+  if [ ! $TARGETstr = $HOSTstr ] ; then
+    BUNDLE=cross-tools
+  fi
+fi
+
+TAPEdflt=QIC-24
+RELEASEDIR=p3
+INSTALLdir=/usr
+
+case $HOSTstr in 
+  sparc-sun-solaris2)
+        NICK=solaris2
+	HOST="Sun-4"
+	DEVdflt="/dev/rmt/0n"
+	;;
+  sparc-sun-sunos411)
+	NICK=sun4
+	HOST="Sun-4"
+	DEVdflt=/dev/nrst8
+  	;;
+  m68k-sun-sunos411)
+	NICK=sun3
+	HOST="Sun-3"
+	DEVdflt=/dev/nrst8
+	;;
+  mips-dec-ultrix)
+	NICK=decstation
+	HOST="DECstation"
+	DEVdflt=/dev/nrtm0
+	;;
+  mips-sgi-irix4)
+	NICK=iris
+	HOST="Iris"
+	DEVdflt=/dev/mt/tps0d0nrns
+	;;
+  rs6000-ibm-aix)
+	NICK=rs6000
+	HOST="RS/6000"
+	DEVdflt=/dev/rmt0
+	;;
+  m68k-hp-hpux)
+	NICK=hp300
+	HOST="HP 9000/300"
+	DEVdflt=/dev/rmt/0m
+	;;
+  hppa1.1-hp-hpux)
+	NICK=hppa
+	HOST="HP 9000/700"
+	DEVdflt=/dev/rmt/0m
+	TAPEdflt=DAT
+	;;
+esac
+
+TARGET=$TARGETstr
+
+bindu=`du ${DUFLAGS--s} $BINDIR | awk '{print $1}'`
+BINSIZE=`expr $bindu / 1000`
+srcdu=`du ${DUFLAGS--s} $SRCDIR | awk '{print $1}'`
+SRCSIZE=`expr $srcdu / 1000`
+
+TOTALDISK=`expr $BINSIZE + $SRCSIZE`
+
+sed 	-e "s,\|\|RELNO\|\|,$RELNO,g" \
+    	-e "s,\|\|GCCvn\|\|,$GCCvn,g" \
+	-e "s,\|\|HOSTstr\|\|,$HOSTstr,g" \
+	-e "s,\|\|HOST\|\|,$HOST,g" \
+	-e "s,\|\|TARGETstr\|\|,$TARGETstr,g" \
+	-e "s,\|\|TARGET\|\|,$TARGET,g" \
+	-e "s,\|\|BUNDLE\|\|,$BUNDLE,g" \
+	-e "s,\|\|DEVdflt\|\|,$DEVdflt,g" \
+	-e "s,\|\|TAPEdflt\|\|,$TAPEdflt,g" \
+	-e "s,\|\|TAPdflt\|\|,$TAPEdflt,g" \
+	-e "s,\|\|INSTALLdir\|\|,$INSTALLdir,g" \
+	-e "s,\|\|BD\|\|,$BINSIZE,g" \
+	-e "s,\|\|SD\|\|,$SRCSIZE,g" \
+	-e "s,\|\|DF\|\|,$TOTALDISK,g" \
+	-e "s,\|\|RELEASEDIR\|\|,$RELEASEDIR,g" \
+	-e "s,^@clear HOST${NICK},@set HOST${NICK}," \
+	< $INFILE > $OUTFILE
