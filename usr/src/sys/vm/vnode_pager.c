@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode_pager.c	7.7 (Berkeley) %G%
+ *	@(#)vnode_pager.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -22,16 +22,17 @@
 #include "vnodepager.h"
 #if NVNODEPAGER > 0
 
-#include "param.h"
-#include "proc.h"
-#include "malloc.h"
-#include "vnode.h"
-#include "uio.h"
-#include "mount.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/malloc.h>
+#include <sys/vnode.h>
+#include <sys/uio.h>
+#include <sys/mount.h>
 
-#include "vm.h"
-#include "vm_page.h"
-#include "vnode_pager.h"
+#include <vm/vm.h>
+#include <vm/vm_page.h>
+#include <vm/vnode_pager.h>
 
 queue_head_t	vnode_pager_list;	/* list of managed vnodes */
 
@@ -45,7 +46,27 @@ int	vpagerdebug = 0x00;
 #define VDB_SIZE	0x20
 #endif
 
-void
+static vm_pager_t	 vnode_pager_alloc __P((caddr_t, vm_size_t, vm_prot_t));
+static void		 vnode_pager_dealloc __P((vm_pager_t));
+static int		 vnode_pager_getpage
+			    __P((vm_pager_t, vm_page_t, boolean_t));
+static boolean_t	 vnode_pager_haspage __P((vm_pager_t, vm_offset_t));
+static void		 vnode_pager_init __P((void));
+static int		 vnode_pager_io
+			    __P((vn_pager_t, vm_page_t, enum uio_rw));
+static boolean_t	 vnode_pager_putpage
+			    __P((vm_pager_t, vm_page_t, boolean_t));
+
+struct pagerops vnodepagerops = {
+	vnode_pager_init,
+	vnode_pager_alloc,
+	vnode_pager_dealloc,
+	vnode_pager_getpage,
+	vnode_pager_putpage,
+	vnode_pager_haspage
+};
+
+static void
 vnode_pager_init()
 {
 #ifdef DEBUG
@@ -59,7 +80,7 @@ vnode_pager_init()
  * Allocate (or lookup) pager for a vnode.
  * Handle is a vnode pointer.
  */
-vm_pager_t
+static vm_pager_t
 vnode_pager_alloc(handle, size, prot)
 	caddr_t handle;
 	vm_size_t size;
@@ -143,7 +164,7 @@ vnode_pager_alloc(handle, size, prot)
 	return(pager);
 }
 
-void
+static void
 vnode_pager_dealloc(pager)
 	vm_pager_t pager;
 {
@@ -169,6 +190,7 @@ vnode_pager_dealloc(pager)
 	free((caddr_t)pager, M_VMPAGER);
 }
 
+static int
 vnode_pager_getpage(pager, m, sync)
 	vm_pager_t pager;
 	vm_page_t m;
@@ -182,7 +204,7 @@ vnode_pager_getpage(pager, m, sync)
 	return(vnode_pager_io((vn_pager_t)pager->pg_data, m, UIO_READ));
 }
 
-boolean_t
+static boolean_t
 vnode_pager_putpage(pager, m, sync)
 	vm_pager_t pager;
 	vm_page_t m;
@@ -204,7 +226,7 @@ vnode_pager_putpage(pager, m, sync)
 	return(err);
 }
 
-boolean_t
+static boolean_t
 vnode_pager_haspage(pager, offset)
 	vm_pager_t pager;
 	vm_offset_t offset;
@@ -261,6 +283,7 @@ vnode_pager_haspage(pager, offset)
  * Note: this routine may be invoked as a result of a pager put
  * operation (possibly at object termination time), so we must be careful.
  */
+static void
 vnode_pager_setsize(vp, nsize)
 	struct vnode *vp;
 	u_long nsize;
@@ -312,6 +335,7 @@ vnode_pager_setsize(vp, nsize)
 	vm_object_deallocate(object);
 }
 
+static void
 vnode_pager_umount(mp)
 	register struct mount *mp;
 {
@@ -338,7 +362,7 @@ vnode_pager_umount(mp)
  * Note: this routine may be invoked as a result of a pager put
  * operation (possibly at object termination time), so we must be careful.
  */
-boolean_t
+static boolean_t
 vnode_pager_uncache(vp)
 	register struct vnode *vp;
 {
@@ -376,6 +400,7 @@ vnode_pager_uncache(vp)
 	return(uncached);
 }
 
+static int
 vnode_pager_io(vnp, m, rw)
 	register vn_pager_t vnp;
 	vm_page_t m;
@@ -445,7 +470,7 @@ vnode_pager_io(vnp, m, rw)
 		if (count == 0)
 			error = EINVAL;
 		else if (count != PAGE_SIZE && rw == UIO_READ)
-			bzero(kva + count, PAGE_SIZE - count);
+			bzero((void *)(kva + count), PAGE_SIZE - count);
 	}
 	vm_pager_unmap_page(kva);
 	return (error ? VM_PAGER_FAIL : VM_PAGER_OK);
