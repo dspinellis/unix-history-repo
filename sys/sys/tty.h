@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.h	7.10 (Berkeley) 6/26/91
- *	$Id: tty.h,v 1.6 1993/11/25 01:38:07 wollman Exp $
+ *	$Id: tty.h,v 1.7 1993/12/19 00:55:28 wollman Exp $
  */
 
 #ifndef _SYS_TTY_H_
@@ -86,17 +86,19 @@ struct tty {
 	pid_t	t_rsel;			/* tty */
 	pid_t	t_wsel;
 	caddr_t	T_LINEP; 		/* XXX */
+#if 0
 	caddr_t	t_addr;			/* ??? */
+#endif
 	dev_t	t_dev;			/* device */
 	int	t_flags;		/* (compat) some of both */
 	int	t_state;		/* some of both */
 	struct	session *t_session;	/* tty */
 	struct	pgrp *t_pgrp;		/* foreground process group */
-	char	t_line;			/* glue */
-	short	t_col;			/* tty */
-	short	t_rocount, t_rocol;	/* tty */
-	short	t_hiwat;		/* hi water mark */
-	short	t_lowat;		/* low water mark */
+	int     t_line;                 /* glue */
+	int     t_col;                  /* tty */
+	int     t_rocount, t_rocol;     /* tty */
+	int     t_hiwat;                /* hi water mark */
+	int     t_lowat;                /* low water mark */
 	struct	winsize t_winsize;	/* window size */
 	struct	termios t_termios;	/* termios state */
 #define	t_iflag		t_termios.c_iflag
@@ -111,8 +113,10 @@ struct tty {
 	long	t_cancc;		/* stats */
 	long	t_rawcc;
 	long	t_outcc;
-	short	t_gen;			/* generation number */
-	short	t_mask;			/* interrupt mask */
+	int     t_gen;                  /* generation number */
+#if 0
+	int     t_mask;                 /* interrupt mask */
+#endif
 	struct	ringb t_raw;		/* ring buffers */
 	struct	ringb t_can;
 	struct	ringb t_out;
@@ -213,8 +217,6 @@ extern void ttychars(struct tty *);
 extern int ttwflush(struct tty *);
 extern int ttywait(struct tty *);
 extern void ttyflush(struct tty *, int);
-extern void ttyblock(struct tty *);
-extern void ttyunblock(struct tty *);
 extern void ttstart(struct tty *);
 extern void ttrstrt(struct tty *);
 extern int ttioctl(struct tty *, int, caddr_t, int);
@@ -225,17 +227,10 @@ extern void ttylclose(struct tty *, int);
 extern int ttyclose(struct tty *);
 extern int ttymodem(struct tty *, int);
 extern int nullmodem(struct tty *, int);
-extern void ttypend(struct tty *);
 extern void ttyinput(int, struct tty *);
-extern int ttyoutput(int, struct tty *);
 extern int ttread(struct tty *, struct uio *, int);
 extern int ttycheckoutq(struct tty *, int);
 extern int ttwrite(struct tty *, struct uio *, int);
-extern void ttyrub(int, struct tty *);
-extern void ttyrubo(struct tty *, int);
-extern void ttyretype(struct tty *);
-extern void ttyecho(int, struct tty *);
-extern void ttyoutstr(char *, struct tty *);
 extern void ttwakeup(struct tty *);
 extern int ttspeedtab(int, struct speedtab *);
 extern void ttsetwater(struct tty *);
