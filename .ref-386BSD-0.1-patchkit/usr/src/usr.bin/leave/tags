@@ -1,3 +1,0 @@
-Mleave	leave.c	/^main(argc, argv)$/
-doalarm	leave.c	/^doalarm(secs)$/
-usage	leave.c	/^usage()$/

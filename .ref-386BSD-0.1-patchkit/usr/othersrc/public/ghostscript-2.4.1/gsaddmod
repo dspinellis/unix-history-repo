@@ -1,3 +1,0 @@
-export m; m=$1
-shift
-echo ./gsaddres $* >>${m}.dev

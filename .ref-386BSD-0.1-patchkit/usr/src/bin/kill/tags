@@ -1,4 +1,0 @@
-Mkill	kill.c	/^main(argc, argv)$/
-nosig	kill.c	/^nosig(name)$/
-printsig	kill.c	/^printsig(fp)$/
-usage	kill.c	/^usage()$/
