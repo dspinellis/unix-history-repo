@@ -1,0 +1,14 @@
+/lib/cpp -E -DPROF Ogtty.c | as -o Ogtty.o
+ld -x -r Ogtty.o
+mv a.out profiled/Ogtty.o
+/lib/cpp -E Ogtty.c | as -o Ogtty.o
+ld -x -r Ogtty.o
+mv a.out Ogtty.o
+/lib/cpp -E -DPROF Ostty.c | as -o Ostty.o
+ld -x -r Ostty.o
+mv a.out profiled/Ostty.o
+/lib/cpp -E Ostty.c | as -o Ostty.o
+ld -x -r Ostty.o
+mv a.out Ostty.o
+building profiled syslib_p
+buiding normal syslib_p
