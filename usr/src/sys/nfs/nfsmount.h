@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsmount.h	7.10 (Berkeley) %G%
+ *	@(#)nfsmount.h	7.11 (Berkeley) %G%
  */
 
 /*
@@ -91,7 +91,10 @@ int	nfs_sync __P((
 int	nfs_fhtovp __P((
 		struct mount *mp,
 		struct fid *fhp,
-		struct vnode **vpp));
+		struct mbuf *nam,
+		struct vnode **vpp,
+		int *exflagsp,
+		struct ucred **credanonp));
 int	nfs_vptofh __P((
 		struct vnode *vp,
 		struct fid *fhp));
