@@ -21,10 +21,10 @@ for more details.
 For a list of contributors, please see the file "CONTRIB.FreeBSD",
 which should be bundled with your distribution.
 
-The core of FreeBSD does not contain DES code that would inhibit its being
-exported outside the United States.  There is an add-on package to
-the core distribution, for use only in the United States, that contains
-the programs that normally use DES.  The auxilliary packages
+The core of FreeBSD does not contain DES code which would inhibit its
+being exported outside the United States.  There is an add-on package
+to the core distribution, for use only in the United States, that
+contains the programs that normally use DES.  The auxilliary packages
 provided separately can be used by anyone.
 
 2. Supported Configurations
@@ -32,7 +32,7 @@ provided separately can be used by anyone.
 
 FreeBSD currently runs on a wide variety of ISA and EISA bus based
 PC's, ranging from 386sx to 486 class machines (though the 386sx is
-not recommended).  Support for basic IDE/ESDI drive configurations,
+not recommended).  Support for generic IDE or ESDI drive configurations,
 various SCSI controller, network and serial cards is also provided.
 
 Following is a list of all currently known disk controllers and
@@ -43,7 +43,7 @@ this.
 
 2.1. Disk Controllers
 
-WD1003 (IDE)
+WD1003 (any generic IDE)
 
 Adaptec 1542{A,B,C} ISA SCSI controller.
 
@@ -55,9 +55,11 @@ Bustec 742A.
 
 Ultra Store 14F and 34F.
 
-In all SCSI configurations, full support is provided for SCSI-I &
-SCSI-II peripherals, including Disks, Tape drives (including DAT) and
-CDROM drives.
+With all supported SCSI controllers, full support is provided for
+SCSI-I & SCSI-II peripherals, including Disks, tape drives (including
+DAT) and CD ROM drives.  Note:  This is the only way a CD ROM drive
+may be currently attached to a FreeBSD system; we do not support
+SoundBlaster or "mini SCSI" CD ROM configurations.
 
 
 2.2. Ethernet cards
@@ -76,10 +78,11 @@ Novell NE2000 ethernet interface.
 
 2.3. Misc
 
-Various 2 and 4 port serial/parallel cards
+Various 2 and 4 port serial/parallel cards.
 
 
 FreeBSD does NOT support IBM's microchannel (MCA) bus.
+
 
 3. Obtaining FreeBSD.
 ---------------------
@@ -157,20 +160,19 @@ Your suggestions, bug reports and contributions of code are always
 valued - please do not hesitate to report any problems you may find
 (preferably with a fix attached if you can!).
 
-The prefered method to submit bug reports from an internet attached
-machine is to use the sendbug command.  Bug reports will be
+The prefered method to submit bug reports from a machine with internet
+mail connectivity is to use the sendbug command.  Bug reports will be
 dutifully filed by our faithful bugfiler program and you can be sure
 that we'll do our best to respond to all reported bugs as soon as
 possible.
 
-If you can not use the sendbug command to submit your bug please send
-it to one of the following email locations.
-
-	Bug reports:
+If, for some reason, you are unable to use the sendbug command to
+submit a bug report, you can try to send it to:
 
 		FreeBSD-bugs@freefall.cdrom.com
 
-	Questions / Suggestions
+
+Otherwise, for any questions or suggestions, please send mail to:
 
 		FreeBSD-questions@freefall.cdrom.com
 
@@ -239,4 +241,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.5 1993/09/03 20:43:53 jkh Exp $
+$Id: RELNOTES.FreeBSD,v 1.6 1993/09/04 07:30:28 rgrimes Exp $
