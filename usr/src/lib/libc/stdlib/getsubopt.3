@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getsubopt.3	5.4 (Berkeley) %G%
+.\"     @(#)getsubopt.3	5.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETSUBOPT 3
@@ -13,6 +13,7 @@
 .Nd get sub options from an argument
 .Sh SYNOPSIS
 .Fd #include <stdio.h>
+.Vt extern char *suboptarg
 .Ft int
 .Fn getsubopt "char **optionp" "char * const *tokens" "char **valuep"
 .Sh DESCRIPTION
