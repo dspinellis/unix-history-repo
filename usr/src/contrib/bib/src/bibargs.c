@@ -27,6 +27,8 @@
    char *words[MAXDEFS];        /* defined words                             */
    char *defs[MAXDEFS];         /* defined word definitions                  */
    int  wordtop = -1;           /* top of defined words array                */
+   char *bibfname;
+   char *biblineno;
 
 /* where output goes */
    extern FILE *tfd;
@@ -157,6 +159,7 @@
                           style = false;
                           incfile( defstyle );
                           }
+		       bibfname = "<stdin>";
                        rdtext(stdin);
                        numfiles++;
                        break;
@@ -176,6 +179,7 @@
             error(": can't open");
             }
          else {
+            bibfname = argv[i];
             rdtext(fd);
             fclose(fd);
             }
