@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.57 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.58 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.57 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.58 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -110,7 +110,6 @@ smtp(e)
 	bool vrfy;			/* set if this is a vrfy command */
 	char *protocol;			/* sending protocol */
 	char *sendinghost;		/* sending hostname */
-	unsigned long msize;		/* approximate maximum message size */
 	char *peerhostname;		/* name of SMTP peer or "localhost" */
 	auto char *delimptr;
 	char *id;
@@ -361,7 +360,7 @@ smtp(e)
 			}
 
 			/* now parse ESMTP arguments */
-			msize = 0;
+			e->e_msgsize = 0;
 			while (p != NULL && *p != '\0')
 			{
 				char *kp;
@@ -399,14 +398,14 @@ smtp(e)
 				mail_esmtp_args(kp, vp, e);
 			}
 
-			if (MaxMessageSize > 0 && msize > MaxMessageSize)
+			if (MaxMessageSize > 0 && e->e_msgsize > MaxMessageSize)
 			{
 				usrerr("552 Message size exceeds fixed maximum message size (%ld)",
 					MaxMessageSize);
 				/* NOTREACHED */
 			}
 				
-			if (!enoughspace(msize))
+			if (!enoughspace(e->e_msgsize))
 			{
 				message("452 Insufficient disk space; try again later");
 				break;
@@ -838,9 +837,9 @@ mail_esmtp_args(kp, vp, e)
 			/* NOTREACHED */
 		}
 # ifdef __STDC__
-		msize = strtoul(vp, (char **) NULL, 10);
+		e->e_msgsize = strtoul(vp, (char **) NULL, 10);
 # else
-		msize = strtol(vp, (char **) NULL, 10);
+		e->e_msgsize = strtol(vp, (char **) NULL, 10);
 # endif
 	}
 	else if (strcasecmp(kp, "body") == 0)

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.30 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -118,6 +118,7 @@ collect(fp, smtpmode, requeueflag, hdrp, e)
 			e->e_dfino = stbuf.st_ino;
 		}
 		HasEightBits = FALSE;
+		e->e_msgsize = 0;
 	}
 
 	/*
@@ -199,7 +200,8 @@ collect(fp, smtpmode, requeueflag, hdrp, e)
 					c &= 0x7f;
 				else
 					HasEightBits |= bitset(0x80, c);
-				e->e_msgsize++;
+				if (!headeronly)
+					e->e_msgsize++;
 			}
 			if (tTd(30, 94))
 				printf("istate=%d, c=%c (0x%x)\n",
