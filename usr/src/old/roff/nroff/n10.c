@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)n10.c	4.3 %G%";
+static char sccsid[] = "@(#)n10.c	4.4 %G%";
 #endif lint
 
 #include "tdef.h"
@@ -57,7 +57,9 @@ ptinit(){
 		exit(-1);
 	}
 	read(i,(char *)x,8*sizeof(int));
-	read(i,(char *)&t.bset,j = sizeof(int)*((int *)&t.zzz - &t.bset));
+	/* Calc size of table, not counting zzz */
+	j = ((int) &t.zzz - (int) &t.bset);
+	read(i, (char *)&t.bset, j);
 	x[2] -= j;
 	q = setbrk(x[2]);
 	lseek(i,(long)t.twinit+8*sizeof(int),0);

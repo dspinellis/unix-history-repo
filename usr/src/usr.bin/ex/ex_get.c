@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_get.c	7.8 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_get.c	7.9 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -71,7 +71,7 @@ peekcd()
 getach()
 {
 	register int c;
-	static char inline[BUFSIZ];
+	static char inputline[BUFSIZ];
 
 	c = peekc;
 	if (c != 0) {
@@ -95,25 +95,25 @@ top:
 	}
 	flush();
 	if (intty) {
-		c = read(0, inline, sizeof inline - 4);
+		c = read(0, inputline, sizeof inputline - 4);
 		if (c < 0)
 			return (lastc = EOF);
-		if (c == 0 || inline[c-1] != '\n')
-			inline[c++] = CTRL('d');
-		if (inline[c-1] == '\n')
+		if (c == 0 || inputline[c-1] != '\n')
+			inputline[c++] = CTRL('d');
+		if (inputline[c-1] == '\n')
 			noteinp();
-		inline[c] = 0;
+		inputline[c] = 0;
 		for (c--; c >= 0; c--)
-			if (inline[c] == 0)
-				inline[c] = QUOTE;
-		input = inline;
+			if (inputline[c] == 0)
+				inputline[c] = QUOTE;
+		input = inputline;
 		goto top;
 	}
-	c = read(0, inline, sizeof inline - 1);
+	c = read(0, inputline, sizeof inputline - 1);
 	if(c <= 0)
 		return(lastc = EOF);
-	inline[c] = '\0';
-	input = inline;
+	inputline[c] = '\0';
+	input = inputline;
 	goto top;
 }
 

@@ -1,7 +1,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)lextab.l	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lextab.l	4.2	(Berkeley)	%G%";
 #endif not lint
 
 #include "y.tab.h"
@@ -10,6 +10,7 @@ static char sccsid[] = "@(#)lextab.l	4.1	(Berkeley)	%G%";
 #define input()	ninput()
 #undef	unput
 #define unput(c)	nunput(c)
+extern char *malloc();
 extern int yylval;
 #define xxbpmax	1700
 char xxbuf[xxbpmax + 2];
@@ -97,7 +98,7 @@ END			{fixval(); xxbp = -1; return(xxend); }
 \"([^"]|\"\")*\"		{fixval(); xxbp = -1; return(xxstring); }
 '([^']|'')*'				{
 					fixval();
-					xxp = yylval;
+					xxp = (char *)yylval;
 					xxn = slength(xxp);
 					xxtbuff = malloc(2*xxn+1);
 					xxtbuff[0] = '"';
@@ -116,7 +117,7 @@ END			{fixval(); xxbp = -1; return(xxend); }
 					xxtbuff[xxk++] = '"';
 					xxtbuff[xxk] = '\0';
 					free(xxp);
-					yylval = xxtbuff;
+					yylval = (int)xxtbuff;
 					xxbp = -1;
 					return(xxstring);
 					}

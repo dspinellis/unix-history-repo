@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_addr.c	7.4 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_addr.c	7.5 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -132,8 +132,8 @@ setnoaddr()
  * than the number of lines in the file.
  */
 line *
-address(inline)
-	char *inline;
+address(inputline)
+	char *inputline;
 {
 	register line *addr;
 	register int offset, c;
@@ -199,16 +199,16 @@ address(inline)
 			notempty();
 			savere(scanre);
 			addr = dot;
-			if (inline && execute(0, dot)) {
+			if (inputline && execute(0, dot)) {
 				if (c == '/') {
-					while (loc1 <= inline) {
+					while (loc1 <= inputline) {
 						if (loc1 == loc2)
 							loc2++;
 						if (!execute(1))
 							goto nope;
 					}
 					break;
-				} else if (loc1 < inline) {
+				} else if (loc1 < inputline) {
 					char *last;
 doques:
 
@@ -218,7 +218,7 @@ doques:
 							loc2++;
 						if (!execute(1))
 							break;
-					} while (loc1 < inline);
+					} while (loc1 < inputline);
 					loc1 = last;
 					break;
 				}
@@ -241,8 +241,8 @@ error("No match to TOP|Address search hit TOP without matching pattern");
 					}
 				}
 				if (execute(0, addr)) {
-					if (inline && c == '?') {
-						inline = &linebuf[LBSIZE];
+					if (inputline && c == '?') {
+						inputline = &linebuf[LBSIZE];
 						goto doques;
 					}
 					break;
