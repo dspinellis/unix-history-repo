@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umap_vnops.c	8.4 (Berkeley) %G%
+ *	@(#)umap_vnops.c	8.5 (Berkeley) %G%
  */
 
 /*
@@ -297,6 +297,33 @@ umap_getattr(ap)
 	return (0);
 }
 
+/*
+ * We need to verify that we are not being vgoned and then clear
+ * the interlock flag as it applies only to our vnode, not the
+ * vnodes below us on the stack.
+ */
+int
+umap_lock(ap)
+	struct vop_lock_args *ap;
+{
+	struct vnode *vp = ap->a_vp;
+	int error;
+
+	if ((ap->a_flags & LK_INTERLOCK) == 0)
+		simple_lock(&vp->v_interlock);
+	if (vp->v_flag & VXLOCK) {
+		vp->v_flag |= VXWANT;
+		simple_unlock(&vp->v_interlock);
+		tsleep((caddr_t)vp, PINOD, "unionlk1", 0);
+		return (ENOENT);
+	}
+	simple_unlock(&vp->v_interlock);
+	ap->a_flags &= ~LK_INTERLOCK;
+	if (error = umap_bypass(ap))
+		return (error);
+	return (0);
+}
+
 int
 umap_inactive(ap)
 	struct vop_inactive_args /* {
@@ -448,6 +475,7 @@ struct vnodeopv_entry_desc umap_vnodeop_entries[] = {
 	{ &vop_default_desc, umap_bypass },
 
 	{ &vop_getattr_desc, umap_getattr },
+	{ &vop_lock_desc, umap_lock },
 	{ &vop_inactive_desc, umap_inactive },
 	{ &vop_reclaim_desc, umap_reclaim },
 	{ &vop_print_desc, umap_print },
