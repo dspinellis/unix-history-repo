@@ -1,7 +1,7 @@
-/*	hp.c	3.7	%G%	*/
+/*	hp.c	3.8	%G%	*/
 
 /*
- * RP04/RP06/RM03 disk driver
+ * RP06/RM03 disk driver
  */
 
 #include "../h/param.h"
@@ -18,6 +18,7 @@
 #include "../h/pte.h"
 
 #define	DK_N	0
+#define	DK_NMAX	1
 
 struct	device
 {
@@ -195,9 +196,8 @@ register unit;
 
 	if(unit >= NHP)
 		return;
-/*
-	dk_busy &= ~(1<<(unit+DK_N));
-*/
+	if (unit+DK_N <= DK_NMAX)
+		dk_busy &= ~(1<<(unit+DK_N));
 	dp = &hputab[unit];
 	if((bp=dp->b_actf) == NULL)
 		return;
@@ -240,17 +240,18 @@ search:
 		hpaddr->hpda = sn;
 		hpaddr->hpcs1 = SEARCH|GO;
 	}
-/*
 	unit += DK_N;
-	dk_busy |= 1<<unit;
-	dk_numb[unit] += 1;
-*/
+	if (unit <= DK_NMAX && DK_N+NHP <= DK_NMAX) {
+		dk_busy |= 1<<unit;
+		dk_numb[unit]++;
+	}
 	return;
 
 done:
 	dp->b_forw = NULL;
 	if(hptab.b_actf == NULL)
-		hptab.b_actf = dp; else
+		hptab.b_actf = dp;
+	else
 		hptab.b_actl->b_forw = dp;
 	hptab.b_actl = dp;
 }
@@ -309,10 +310,14 @@ loop:
 	hpaddr->hpda = (tn << 8) + sn;
 	mbastart(bp, (int *)hpaddr);
 
-	dk_busy |= 1<<(DK_N /*+NHP*/);
-	dk_numb[DK_N /*+NHP*/] += 1;
-	unit = bp->b_bcount>>6;
-	dk_wds[DK_N /*+NHP*/] += unit;
+	unit = dn+DK_N;
+	if (NHP+DK_N == DK_NMAX)
+		unit = NHP+DK_N;
+	if (unit <= DK_NMAX) {
+		dk_busy |= 1<<unit;
+		dk_numb[unit]++;
+		dk_wds[unit] += bp->b_bcount>>6;
+	}
 }
 
 hpintr(mbastat, as)
@@ -322,10 +327,13 @@ hpintr(mbastat, as)
 	register struct device *hpaddr;
 
 	if(hptab.b_active) {
-		dk_busy &= ~(1<<(DK_N /*+NHP*/));
 		dp = hptab.b_actf;
 		bp = dp->b_actf;
 		unit = dkunit(bp);
+		if (DK_N+NHP == DK_NMAX)
+			dk_busy &= ~(1<<(DK_N+NHP));
+		else if (DK_N+unit <= DK_NMAX)
+			dk_busy &= ~(1<<(DK_N+unit));
 		hpaddr = (struct device *)((int *)HPADDR + 32*unit);
 		if (hpaddr->hpds & ERR || mbastat & MBAEBITS) {		/* error bit */
 			while((hpaddr->hpds & DRY) == 0)
