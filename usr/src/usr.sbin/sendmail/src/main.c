@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.41 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -168,6 +168,9 @@ main(argc, argv, envp)
 	argv[argc] = NULL;
 	av = argv;
 	nothaw = FALSE;
+#ifdef __alpha
+#define OPTIONS		"b:C:cd:e:F:f:h:Iimno:p:q:r:sTtvx"
+#else
 	while ((p = *++av) != NULL)
 	{
 		if (strncmp(p, "-C", 2) == 0)
