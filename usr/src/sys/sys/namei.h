@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)namei.h	7.5 (Berkeley) %G%
+ *	@(#)namei.h	7.6 (Berkeley) %G%
  */
 
 #ifndef _NAMEI_
@@ -47,6 +47,7 @@ struct nameidata {
 	char	*ni_ptr;		/* current location in pathname */
 	char	*ni_next;		/* next location in pathname */
 	u_int	ni_pathlen;		/* remaining chars in path */
+	u_long	ni_hash;		/* hash value of current component */
 	short	ni_namelen;		/* length of current component */
 	short	ni_loopcnt;		/* count of symlinks encountered */
 	char	ni_makeentry;		/* 1 => add entry to name cache */
@@ -55,16 +56,14 @@ struct nameidata {
 		/* results: */
 	struct	vnode *ni_vp;		/* vnode of result */
 	struct	vnode *ni_dvp;		/* vnode of intermediate directory */
+	struct	direct ni_dent;		/* final component name */
 
 		/* side effects: */
-	struct	direct ni_dent;		/* current directory entry */
-
 	/* BEGIN UFS SPECIFIC */
 	off_t	ni_endoff;		/* end of useful directory contents */
 	struct ndirinfo {		/* saved info for new dir entry */
 		struct	iovec nd_iovec;		/* pointed to by ni_iov */
 		struct	uio nd_uio;		/* directory I/O parameters */
-		u_long	nd_hash;		/* hash value of nd_dent */
 	} ni_nd;
 	/* END UFS SPECIFIC */
 };
@@ -78,7 +77,6 @@ struct nameidata {
 #define	ni_resid	ni_nd.nd_uio.uio_resid
 #define	ni_rw		ni_nd.nd_uio.uio_rw
 #define	ni_uio		ni_nd.nd_uio
-#define ni_hash		ni_nd.nd_hash
 
 #ifdef KERNEL
 /*
@@ -110,26 +108,26 @@ struct	namecache {
 	struct	namecache *nc_back;	/* hash chain, MUST BE FIRST */
 	struct	namecache *nc_nxt;	/* LRU chain */
 	struct	namecache **nc_prev;	/* LRU chain */
+	struct	vnode *nc_dvp;		/* vnode of parent of name */
+	u_long	nc_dvpid;		/* capability number of nc_dvp */
 	struct	vnode *nc_vp;		/* vnode the name refers to */
-	struct	vnode *nc_dp;		/* vnode of parent of name */
+	u_long	nc_vpid;		/* capability number of nc_vp */
 	char	nc_nlen;		/* length of name */
 	char	nc_name[NCHNAMLEN];	/* segment name */
-	struct	ucred *nc_cred;		/* ??? credentials */
 };
-
-#define ANYCRED ((struct ucred *) -1)
-#define NOCRED  ((struct ucred *) 0)
 
 #ifdef KERNEL
 struct	namecache *namecache;
 int	nchsize;
+u_long	nextvnodeid;
 #endif
 
 /*
  * Stats on usefulness of namei caches.
  */
 struct	nchstats {
-	long	ncs_goodhits;		/* hits that we can reall use */
+	long	ncs_goodhits;		/* hits that we can really use */
+	long	ncs_neghits;		/* negative hits that we can use */
 	long	ncs_badhits;		/* hits we must drop */
 	long	ncs_falsehits;		/* hits with id mismatch */
 	long	ncs_miss;		/* misses */
@@ -137,4 +135,4 @@ struct	nchstats {
 	long	ncs_pass2;		/* names found with passes == 2 */
 	long	ncs_2passes;		/* number of times we attempt it */
 };
-#endif
+#endif /* _NAMEI_ */
