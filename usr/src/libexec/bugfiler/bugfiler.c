@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	4.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)bugfiler.c	4.11 (Berkeley) %G%";
 #endif
 
 /*
@@ -145,10 +145,9 @@ main(argc, argv)
 #define DATE_I headers[3].h_info
 #define MSGID_I headers[4].h_info
 #define REPLYTO_I headers[5].h_info
-#define RETURNPATH_I headers[6].h_info
-#define TO_I headers[7].h_info
-#define CC_I headers[8].h_info
-#define FIX headers[11]
+#define TO_I headers[6].h_info
+#define CC_I headers[7].h_info
+#define FIX headers[10]
 
 struct header {
 	char	*h_tag;
@@ -156,12 +155,11 @@ struct header {
 	char	*h_info;
 } headers[] = {
 	"From",		H_REQ|H_SAV|H_HDR, 0,
-	"Subject",	H_REQ|H_SAV|H_HDR, 0,
+	"Subject",	H_REQ|H_SAV, 0,
 	"Index",	H_REQ|H_SAV, 0,
 	"Date",		H_SAV|H_HDR, 0,
 	"Message-Id",	H_SAV|H_HDR, 0,
 	"Reply-To",	H_SAV|H_HDR, 0,
-	"Return-Path",	H_SAV|H_HDR, 0,
 	"To",		H_SAV|H_HDR, 0,
 	"Cc",		H_SAV|H_HDR, 0,
 	"Description",	H_REQ,       0,
@@ -699,8 +697,6 @@ reply(to, file1, file2)
 	 */
 	fprintf(fout, "Reply-To: %s%s\n", BUGS_NAME, BUGS_HOME);
 	fprintf(fout, "From: %s%s (Bugs Bunny)\n", BUGS_NAME, BUGS_HOME);
-	if (RETURNPATH_I != NULL)
-		to = RETURNPATH_I;
 	if (REPLYTO_I != NULL)
 		to = REPLYTO_I;
 	if ((to = fixaddr(to)) == 0) {
