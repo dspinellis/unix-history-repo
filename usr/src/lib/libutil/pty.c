@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)pty.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pty.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/cdefs.h>
@@ -27,10 +27,10 @@ openpty(amaster, aslave, name, termp, winp)
 	struct termios *termp;
 	struct winsize *winp;
 {
+	static char line[] = "/dev/ptyXX";
 	register const char *cp1, *cp2;
 	register int master, slave, ttygid;
 	struct group *gr;
-	char line[] = "/dev/ptyXX";
 
 	if ((gr = getgrnam("tty")) != NULL)
 		ttygid = gr->gr_gid;
