@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_mbuf.c	8.1 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -53,10 +53,10 @@ m_clalloc(ncl, nowait)
 	register int ncl;
 	int nowait;
 {
-	int npg, mbx;
+	static int logged;
 	register caddr_t p;
 	register int i;
-	static int logged;
+	int npg;
 
 	npg = ncl * CLSIZE;
 	p = (caddr_t)kmem_malloc(mb_map, ctob(npg), !nowait);

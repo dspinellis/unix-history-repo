@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1982, 1986 Regents of the University of California.
  *
- *	@(#)uipc_usrreq.c	8.2 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -628,7 +628,6 @@ unp_gc()
 	if (unp_gcing)
 		return;
 	unp_gcing = 1;
-restart:
 	unp_defer = 0;
 	for (fp = filehead; fp; fp = fp->f_filef)
 		fp->f_flag &= ~(FMARK|FDEFER);

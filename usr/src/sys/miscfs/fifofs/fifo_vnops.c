@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fifo_vnops.c	8.1 (Berkeley) %G%
+ *	@(#)fifo_vnops.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -271,7 +271,6 @@ fifo_ioctl(ap)
 	} */ *ap;
 {
 	struct file filetmp;
-	int error;
 
 	if (ap->a_command == FIONBIO)
 		return (0);
@@ -293,7 +292,6 @@ fifo_select(ap)
 	} */ *ap;
 {
 	struct file filetmp;
-	int error;
 
 	if (ap->a_fflags & FREAD)
 		filetmp.f_data = (caddr_t)ap->a_vp->v_fifoinfo->fi_readsock;

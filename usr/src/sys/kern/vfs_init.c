@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_init.c	8.2 (Berkeley) %G%
+ *	@(#)vfs_init.c	8.3 (Berkeley) %G%
  */
 
 
@@ -78,7 +78,6 @@ void
 vfs_opv_init()
 {
 	int i, j, k;
-	struct vnodeop_defn *defnp;
 	int (***opv_desc_vector_p)();
 	int (**opv_desc_vector)();
 	struct vnodeopv_entry_desc *opve_descp;
@@ -162,7 +161,7 @@ vfs_opv_init()
 void
 vfs_op_init()
 {
-	int i, j;
+	int i;
 
 	DODEBUG(printf("Vnode_interface_init.\n"));
 	/*

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	8.4 (Berkeley) %G%
+ *	@(#)kern_exit.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -68,7 +68,6 @@ exit1(p, rv)
 	register struct proc *q, *nq;
 	register struct proc **pp;
 	register struct vmspace *vm;
-	int s;
 
 	if (p->p_pid == 1)
 		panic("init died (signal %d, exit %d)",

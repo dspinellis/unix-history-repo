@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vnops.c	8.2 (Berkeley) %G%
+ *	@(#)kernfs_vnops.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -81,8 +81,6 @@ kernfs_xread(kt, buf, len, lenp)
 	int len;
 	int *lenp;
 {
-	int xlen;
-
 	switch (kt->kt_tag) {
 	case KTT_TIME: {
 		struct timeval tv;
@@ -173,11 +171,9 @@ kernfs_lookup(ap)
 	struct vnode **vpp = ap->a_vpp;
 	struct vnode *dvp = ap->a_dvp;
 	struct componentname *cnp = ap->a_cnp;
-	char *pname;
-	struct proc *p;
-	int error;
 	struct vnode *fvp;
-	int i;
+	int error, i;
+	char *pname;
 
 #ifdef KERNFS_DIAGNOSTIC
 	printf("kernfs_lookup(%x)\n", ap);
@@ -422,9 +418,8 @@ kernfs_read(ap)
 	struct kern_target *kt;
 	char strbuf[KSTRING];
 	int off = uio->uio_offset;
-	int len = 0;
-	char *cp = strbuf;
-	int error;
+	int error, len;
+	char *cp;
 
 	if (vp->v_flag & VROOT)
 		return (0);
@@ -435,6 +430,7 @@ kernfs_read(ap)
 	printf("kern_read %s\n", kt->kt_name);
 #endif
 
+	len = 0;
 	error = kernfs_xread(kt, strbuf, sizeof(strbuf), &len);
 	if (error)
 		return (error);
@@ -455,11 +451,8 @@ kernfs_write(ap)
 	struct vnode *vp = ap->a_vp;
 	struct uio *uio = ap->a_uio;
 	struct kern_target *kt;
+	int error, xlen;
 	char strbuf[KSTRING];
-	int len = uio->uio_resid;
-	char *cp = strbuf;
-	int xlen;
-	int error;
 
 	if (vp->v_flag & VROOT)
 		return (0);
