@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)display.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)display.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -87,14 +87,14 @@ print(pr, bp)
 	PR *pr;
 	u_char *bp;
 {
-	f4byte_t f4;
-	f8byte_t f8;
-	s2byte_t s2;
-	s4byte_t s4;
-	s8byte_t s8;
-	u2byte_t u2;
-	u4byte_t u4;
-	u8byte_t u8;
+	   double f8;
+	    float f4;
+	  int16_t s2;
+	   int8_t s8;
+	  int32_t s4;
+	u_int16_t u2;
+	u_int32_t u4;
+	u_int64_t u8;
 
 	switch(pr->flags) {
 	case F_ADDRESS:
