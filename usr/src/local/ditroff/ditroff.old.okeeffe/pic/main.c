@@ -1,4 +1,4 @@
-/* main.c	(Berkeley)	1.7	83/12/19	*/
+/* main.c	(Berkeley)	1.8	84/01/02	*/
 #include	<stdio.h>
 #include	"pic.h"
 #include	"y.tab.h"
@@ -63,7 +63,7 @@ main(argc, argv)
 	char **argv;
 {
 	cmdname = argv[0];
-	while (argc > 1 && *argv[1] == '-') {
+	while (argc > 1 && *argv[1] == '-' && argv[1][1]) {
 		switch (argv[1][1]) {
 		case 'F':
 			devdir = &argv[1][2];
@@ -96,11 +96,16 @@ main(argc, argv)
 		getdata(yyin);
 	} else
 		while (argc-- > 1) {
-			if ((yyin = fopen(*++argv, "r")) == NULL) {
+			filename = *++argv;
+			if ((yyin = fopen(filename, "r")) == NULL) {
+			    if (filename[0] != '-' || filename[1]) {
 				fprintf(stderr, "pic: can't open %s\n", *argv);
 				exit(1);
+			    } else {
+				yyin = stdin;
+				filename = "standard input";
+			    }
 			}
-			filename = *argv;
 			getdata(yyin);
 			fclose(yyin);
 		}
