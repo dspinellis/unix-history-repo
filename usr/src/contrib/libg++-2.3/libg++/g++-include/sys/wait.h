@@ -31,7 +31,7 @@ struct rusage;
 extern _G_pid_t wait _G_ARGS((int*));
 extern _G_pid_t waitpid _G_ARGS((_G_pid_t, int*, int));
 extern _G_pid_t wait3 _G_ARGS((int*, int options, struct rusage*));
-extern _G_pid_t wait4 _G_ARGS((int, int*, int, struct rusage*));
+extern _G_pid_t wait4 _G_ARGS((_G_pid_t, int*, int, struct rusage*));
 #endif
 }
 
