@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	8.16 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	8.17 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -913,13 +913,7 @@ ffs_alloccgblk(fs, cgp, bpref)
 		bno = bpref;
 		goto gotit;
 	}
-	/*
-	 * check for a block available on the same cylinder
-	 */
-	cylno = cbtocylno(fs, bpref);
-	if (cg_blktot(cgp)[cylno] == 0)
-		goto norot;
-	if (fs->fs_cpc == 0) {
+	if (fs->fs_nrpos <= 1 || fs->fs_cpc == 0) {
 		/*
 		 * Block layout information is not available.
 		 * Leaving bpref unchanged means we take the
@@ -930,6 +924,12 @@ ffs_alloccgblk(fs, cgp, bpref)
 		 */
 		goto norot;
 	}
+	/*
+	 * check for a block available on the same cylinder
+	 */
+	cylno = cbtocylno(fs, bpref);
+	if (cg_blktot(cgp)[cylno] == 0)
+		goto norot;
 	/*
 	 * check the summary information to see if a block is 
 	 * available in the requested cylinder starting at the
