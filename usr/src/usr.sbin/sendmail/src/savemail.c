@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.15 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -71,8 +71,6 @@ savemail(e)
 	}
 
 	if (exclusive++ || CurEnv->e_class <= PRI_JUNK)
-	e->e_flags &= ~EF_FATALERRS;
-
 	/*
 	**  In the unhappy event we don't know who to return the mail
 	**  to, make someone up.
@@ -505,7 +503,7 @@ errhdr(fp, m, xdot)
 	for (q = e->e_parent->e_sendqueue; q != NULL; q = q->q_next)
 		if (bitset(QBADADDR, q->q_flags))
 			break;
-	if (q == NULL)
+	if (q == NULL && !bitset(EF_FATALERRS, e->e_parent->e_flags))
 	{
 		putline("    **********************************************",
 			fp, m);
