@@ -32,6 +32,13 @@
  *
  *	@(#)tty.h	7.10 (Berkeley) 6/26/91
  * $Header: /usr/bill/working/sys/sys/RCS/tty.h,v 1.3 92/01/21 21:51:49 william Exp $
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00012
+ * --------------------         -----   ----------------------
+ *
+ * 18 Aug 92	Stephen McKay		Fixed RB_LEN macro
  */
 
 #include <sys/termios.h>
@@ -59,7 +66,7 @@ struct ringb {
 
 #define	RB_LEN(rp) \
 		((rp)->rb_hd <= (rp)->rb_tl ? (rp)->rb_tl - (rp)->rb_hd : \
-		RBSZ - 1 - ((rp)->rb_hd - (rp)->rb_tl))
+		RBSZ - ((rp)->rb_hd - (rp)->rb_tl))
 
 #define	RB_CONTIGPUT(rp) \
 		(RB_PRED(rp, (rp)->rb_hd) < (rp)->rb_tl ?  \
