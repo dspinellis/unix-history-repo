@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.2 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -59,8 +59,8 @@ struct hdrinfo	HdrInfo[] =
 	"from",			H_FROM,
 	"reply-to",		H_FROM,
 	"full-name",		H_ACHECK,
-	"return-receipt-to",	H_FROM,
-	"errors-to",		H_FROM,
+	"return-receipt-to",	H_FROM /* |H_RECEIPTTO */,
+	"errors-to",		H_FROM|H_ERRORSTO,
 		/* destination fields */
 	"to",			H_RCPT,
 	"resent-to",		H_RCPT|H_RESENT,

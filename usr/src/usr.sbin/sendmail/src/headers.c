@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.2 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -302,6 +302,7 @@ eatheader(e)
 
 		if (tTd(32, 1))
 			printf("%s: %s\n", capitalize(h->h_field), h->h_value);
+
 		/* count the number of times it has been processed */
 		if (bitset(H_TRACE, h->h_flags))
 			hopcnt++;
@@ -327,6 +328,14 @@ eatheader(e)
 				msgid = msgidbuf;
 			}
 		}
+
+		/* see if this is a return-receipt header */
+		if (bitset(H_RECEIPTTO, h->h_flags))
+			e->e_receiptto = h->h_value;
+
+		/* see if this is an errors-to header */
+		if (bitset(H_ERRORSTO, h->h_flags))
+			sendtolist(h->h_value, (ADDRESS *) NULL, &e->e_errorqueue, e);
 	}
 	if (tTd(32, 1))
 		printf("----------------------------\n");
@@ -343,16 +352,6 @@ eatheader(e)
 		e->e_msgpriority = e->e_msgsize
 				 - e->e_class * WkClassFact
 				 + e->e_nrcpts * WkRecipFact;
-
-	/* return receipt to */
-	p = hvalue("return-receipt-to", e);
-	if (p != NULL)
-		e->e_receiptto = p;
-
-	/* errors to */
-	p = hvalue("errors-to", e);
-	if (p != NULL)
-		sendtolist(p, (ADDRESS *) NULL, &e->e_errorqueue, e);
 
 	/* full name of from person */
 	p = hvalue("full-name", e);
@@ -378,21 +377,28 @@ eatheader(e)
 # ifdef LOG
 	if (!QueueRun && LogLevel > 1)
 	{
+		char *name;
 		char hbuf[MAXNAME];
-		char *name = hbuf;
-		extern char *inet_ntoa();
+		char sbuf[MAXLINE];
 
 		if (RealHostName == NULL)
 			name = "local";
 		else if (RealHostName[0] == '[')
 			name = RealHostName;
 		else
+		{
+			extern char *inet_ntoa();
+
+			name = hbuf;
 			(void)sprintf(hbuf, "%.80s (%s)", 
 			    RealHostName, inet_ntoa(RealHostAddr.sin_addr));
-		syslog(LOG_INFO,
-		    "%s: from=%s, size=%ld, class=%d, msgid=%s, received from %s\n",
-		    e->e_id, e->e_from.q_paddr, e->e_msgsize,
-		    e->e_class, msgid, name);
+		}
+
+		/* some versions of syslog only take 5 printf args */
+		sprintf(sbuf, "from=%.200s, size=%ld, class=%d, msgid=%.100s",
+		    e->e_from.q_paddr, e->e_msgsize, e->e_class, msgid);
+		syslog(LOG_INFO, "%s: %s, received from %s\n",
+		    e->e_id, sbuf, name);
 	}
 # endif /* LOG */
 }
