@@ -3,8 +3,8 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.10 (Berkeley) %G%
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 #
 # make file for debugger "dbx"
 #
@@ -23,19 +23,17 @@ AOUT	= tdbx
 DESTDIR	=
 DEST	= /usr/ucb/dbx
 
-# Install the mail address of the person maintaining dbx below
-# as -DMAINTAINER.  A null string disables gripes.
-
 CC	= cc
-CFLAGS	= '-DMAINTAINER=""' -O
+AS	= as
+#
+# if you want gripes
+# CFLAGS = -g '-DMAINTAINER="linton@shasta.stanford.edu"'
+#
+CFLAGS	= -O # -g
 
 LD = cc
-LDFLAGS	= 
-LIBRARIES =
-
-# LD	= /bin/oldld
-# LDFLAGS	= -X /lib/crt0.o
-# LIBRARIES = -lg -lc
+LDFLAGS	= # -g
+LIBRARIES = # -lPW for IRIS (System V)
 
 OBJ = \
     y.tab.o \
@@ -140,7 +138,10 @@ SRC = \
 
 .s.o:
 	@echo "assembling $*.s"
-	@${CC}  -c $*.s
+	@rm -f tmp
+	@/lib/cpp $*.s | grep -v "^#" > tmp
+	@${AS} -o $*.o tmp
+	@rm -f tmp
 
 .c.h:
 	./makedefs -f $*.c $*.h
@@ -201,18 +202,24 @@ cleandefs:
 	rm -f ${HDR} y.tab.h
 
 install:
-	install -s ${AOUT} ${DESTDIR}/${DEST}
+	install -s ${AOUT} ${DESTDIR}${DEST}
 
 #
 # Create a tar file called "tape" containing relevant files.
 #
 
-TAPE = tape
+TAPE = f tape
 
 tape:
-	@tar cf ${TAPE} \
-	    Makefile History version READ_ME ${SRC} \
-	    makedefs.c mkdate.c tests pchanges ptests
+	@tar c${TAPE} Makefile History READ_ME ${SRC} \
+	    makedefs.c mkdate.c tests pc0mods dbx.1 newdbx.1 dbxstab.5
+
+#
+# without tests subdirectory
+#
+srconlytape:
+	@tar c${TAPE} Makefile History READ_ME ${SRC} \
+	    makedefs.c mkdate.c dbx.1 newdbx.1 dbxstab.5
 
 #
 # Header dependencies are purposely incomplete since header files

@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)c.c 5.6 %G%";
+static char sccsid[] = "@(#)c.c 5.7 %G%";
 /*
  * C-dependent symbol routines.
  */
@@ -23,7 +23,7 @@ static char sccsid[] = "@(#)c.c 5.6 %G%";
 #include "machine.h"
 
 #ifndef public
-# include "tree.h"
+#   include "tree.h"
 #endif
 
 #define isdouble(range) ( \
@@ -134,7 +134,7 @@ Integer indent;
 
 	case TYPE:
 	case VAR:
-	    if (s->class != TYPE and s->level < 0) {
+	    if (s->class != TYPE and s->storage == INREG) {
 		printf("register ");
 	    }
 	    if (s->type->class == ARRAY) {
@@ -442,8 +442,6 @@ Symbol s;
 		} else {
 		    i = pop(long);
 		}
-		i >>= (s->symvalue.field.offset mod BITSPERBYTE);
-		i &= ((1 << len) - 1);
 		t = rtype(s->type);
 		if (t->class == SCAL) {
 		    printEnum(i, t);
@@ -489,7 +487,7 @@ Symbol s;
 	    } else if (s == t_real->type or isdouble(s)) {
 		switch (s->symvalue.rangev.lower) {
 		    case sizeof(float):
-			prtreal(pop(float));
+			prtreal((double) (pop(float)));
 			break;
 
 		    case sizeof(double):

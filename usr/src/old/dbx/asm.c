@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)asm.c 5.1 %G%";
+static char sccsid[] = "@(#)asm.c 5.2 %G%";
 /*
  * Assembly language dependent symbol routines.
  */
@@ -39,6 +39,7 @@ public asm_init()
     language_setop(lang, L_TYPEMATCH, asm_typematch);
     language_setop(lang, L_BUILDAREF, asm_buildaref);
     language_setop(lang, L_EVALAREF, asm_evalaref);
+    language_setop(lang, L_MODINIT, asm_modinit);
 }
 
 /*
@@ -148,4 +149,10 @@ long i;
 
     t = rtype(s);
     push(long, base + i * size(t->type));
+}
+
+public asm_modinit (typetable)
+Symbol typetable[];
+{
+    /* nothing for right now */
 }
