@@ -8,12 +8,12 @@
  */
 
 #include <sys/param.h>
+#include <sys/vnode.h>
 #include <ufs/ffs/fs.h>
 #include <ufs/ffs/ffs_extern.h>
 
 #ifdef KERNEL
 #include <sys/buf.h>
-#include <sys/vnode.h>
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
 
