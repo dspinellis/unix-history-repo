@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.44 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.45 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -74,7 +74,6 @@ execve(p, uap, retval)
 	int resid, error, paged = 0;
 	vm_offset_t execargs;
 	struct vattr vattr;
-	char cfname[MAXCOMLEN + 1];
 	char cfarg[MAXINTERP];
 	union {
 		char	ex_shell[MAXINTERP];	/* #! and interpreter name */
@@ -92,8 +91,7 @@ execve(p, uap, retval)
 #endif SECSIZE
 
 	ndp = &nd;
-  start:
-	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
+	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF | SAVENAME;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
 	if (error = namei(ndp, p))
@@ -269,16 +267,12 @@ execve(p, uap, retval)
 		}
 		indir = 1;
 		vput(vp);
-		ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
 		ndp->ni_segflg = UIO_SYSSPACE;
 		if (error = namei(ndp, p))
 			return (error);
 		vp = ndp->ni_vp;
 		if (error = VOP_GETATTR(vp, &vattr, cred, p))
 			goto bad;
-		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)cfname,
-		    MAXCOMLEN);
-		cfname[MAXCOMLEN] = '\0';
 		uid = cred->cr_uid;	/* shell scripts can't be setuid */
 		gid = cred->cr_gid;
 		goto again;
@@ -300,7 +294,7 @@ execve(p, uap, retval)
 		ap = NULL;
 		sharg = NULL;
 		if (indir && na == 0) {
-			sharg = cfname;
+			sharg = ndp->ni_ptr;
 			ap = (int)sharg;
 			uap->argp++;		/* ignore argv[0] */
 		} else if (indir && (na == 1 && cfarg[0])) {
@@ -423,16 +417,14 @@ execve(p, uap, retval)
 	 * Remember file name for accounting.
 	 */
 	p->p_acflag &= ~AFORK;
-	if (indir)
-		bcopy((caddr_t)cfname, (caddr_t)p->p_comm, MAXCOMLEN);
-	else {
-		if (ndp->ni_dent.d_namlen > MAXCOMLEN)
-			ndp->ni_dent.d_namlen = MAXCOMLEN;
-		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)p->p_comm,
-		    (unsigned)(ndp->ni_dent.d_namlen + 1));
-	}
+	if (ndp->ni_namelen > MAXCOMLEN)
+		ndp->ni_namelen = MAXCOMLEN;
+	bcopy((caddr_t)ndp->ni_ptr, (caddr_t)p->p_comm,
+	    (unsigned)(ndp->ni_namelen));
+	p->p_comm[ndp->ni_namelen] = '\0';
 	cpu_exec(p);
 bad:
+	FREE(ndp->ni_pnbuf, M_NAMEI);
 	if (execargs)
 		kmem_free_wakeup(exec_map, execargs, NCARGS);
 #endif SECSIZE
