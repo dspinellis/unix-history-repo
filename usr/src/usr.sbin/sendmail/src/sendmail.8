@@ -135,6 +135,13 @@ the mail is returned with an error message,
 the victim of an aliasing loop.
 If not specified,
 ``Received:'' lines in the message are counted.
+.It Fl k Ar N
+Checkpoint the queue file after every
+.Ar N
+successful deliveries (default 10).
+This avoids excessive duplicate deliveries
+when sending to long mailing lists
+interrupted by system crashes.
 .It Fl n
 Don't do aliasing.
 .It Fl o Ns Ar x Em value
