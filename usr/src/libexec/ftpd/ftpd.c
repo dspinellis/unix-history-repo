@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)ftpd.c	4.34 (Berkeley) %G%";
+static	char sccsid[] = "@(#)ftpd.c	4.35 (Berkeley) %G%";
 #endif
 
 /*
@@ -783,14 +783,19 @@ popen(cmd, mode)
 	/* glob each piece */
 	for (gac = ac = 1; av[ac] != NULL; ac++) {
 		char **pop;
-		extern char **glob();
+		extern char **glob(), **copyblk();
 
 		pop = glob(av[ac]);
-		if (pop) {
-			av[ac] = (char *)pop;		/* save to free later */
-			while (*pop && gac < 512)
-				gav[gac++] = *pop++;
+		if (pop == (char **)NULL) {	/* globbing failed */
+			char *vv[2];
+
+			vv[0] = av[ac];
+			vv[1] = 0;
+			pop = copyblk(vv);
 		}
+		av[ac] = (char *)pop;		/* save to free later */
+		while (*pop && gac < 512)
+			gav[gac++] = *pop++;
 	}
 	gav[gac] = (char *)0;
 	myside = tst(p[WTR], p[RDR]);
