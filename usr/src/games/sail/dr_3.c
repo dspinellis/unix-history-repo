@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_3.c	2.2 83/11/01";
+static	char *sccsid = "@(#)dr_3.c	2.3 83/12/12";
 #endif
 
 #include "driver.h"
@@ -8,17 +8,18 @@ moveall()		/* move all comp ships */
 {
 	register struct ship *sp, *sq;		/* r11, r10 */
 	register int n;				/* r9 */
-	struct ship *closest;
-	register int k, l, m, ma;		/* r8, r7, r6, */
-	int ta;
-	char af;
-	int row[NSHIP], col[NSHIP], dir[NSHIP], r1, r2, c1, c2, d1, d2;
-	char clast[NSHIP][sizeof SHIP(0)->file->last];
+	register int k, l, m;			/* r8, r7, r6, */
+	int row[NSHIP], col[NSHIP], dir[NSHIP], drift[NSHIP];
+	char moved[NSHIP];
 
 	/*
 	 * first try to create moves for OUR ships
 	 */
 	foreachship(sp) {
+		struct ship *closest;
+		int ma, ta;
+		char af;
+
 		if (sp->file->captain[0] || sp->file->dir == 0)
 			continue;
 		if (!sp->file->struck && windspeed && !snagged(sp)
@@ -33,43 +34,42 @@ moveall()		/* move all comp ships */
 					ta, ma, af);
 		} else
 			*sp->file->last = '\0';
-		/*
-		makesignal(sp, "move (%d): %s", 0, turn, sp->file->last);
-		*/
 	}
 	/*
 	 * Then execute the moves for ALL ships (dead ones too),
-	 * saving old positions in row[], col[], dir[],
-	 * and the moves in clase[][].
-	 * The new positions are written out.
+	 * checking for collisions and snags at each step.
+	 * The old positions are saved in row[], col[], dir[].
+	 * At the end, we compare and write out the changes.
 	 */
 	n = 0;
 	foreachship(sp) {
 		if (snagged(sp))
-			clast[n][0] = '\0';
+			strcpy(sp->file->last, "d");
 		else
-			(void) strcpy(clast[n], sp->file->last);
+			if (*sp->file->last != 'd')
+				strcat(sp->file->last, "d");
 		row[n] = sp->file->row;
 		col[n] = sp->file->col;
 		dir[n] = sp->file->dir;
-		moveship(sp, clast[n]);
+		drift[n] = sp->file->drift;
+		moved[n] = 0;
 		n++;
 	}
 	/*
 	 * Now resolve collisions.
 	 * This is the tough part.
 	 */
-	for (k = 0; stillmoving(clast, k); k++) {
+	for (k = 0; stillmoving(k); k++) {
 		/*
 		 * Step once.
-		 * And propagate the nulls at the end of clast[].
+		 * And propagate the nulls at the end of sp->file->last.
 		 */
 		n = 0;
 		foreachship(sp) {
-			if (dir[n])
-				step(clast[n][k], sp, row+n, col+n, dir+n);
-			if (!clast[n][k])
-				clast[n][k+1] = '\0';
+			if (!sp->file->last[k])
+				sp->file->last[k+1] = '\0';
+			else if (sp->file->dir)
+				step(sp->file->last[k], sp, &moved[n]);
 			n++;
 		}
 		/*
@@ -77,41 +77,21 @@ moveall()		/* move all comp ships */
 		 */
 		n = 0;
 		foreachship(sp) {
-			if ((d1 = sp->file->dir) == 0 || isolated(sp))
+			if (sp->file->dir == 0 || isolated(sp))
 				goto cont1;
-			r1 = sp->file->row;
-			c1 = sp->file->col;
-			sp->file->dir = dir[n];
-			sp->file->row = row[n];
-			sp->file->col = col[n];
 			l = 0;
 			foreachship(sq) {
+				char snap = 0;
+
 				if (sp == sq)
 					goto cont2;
-				if ((d2 = sq->file->dir) == 0)
+				if (sq->file->dir == 0)
 					goto cont2;
-				r2 = sq->file->row;
-				c2 = sq->file->col;
-				sq->file->dir = dir[l];
-				sq->file->row = row[l];
-				sq->file->col = col[l];
-				if (snagged2(sp, sq)
-				    && push(sp, sq) && range(sp, sq) > 1) {
-					Write(W_SHIPROW, sq, 0,
-						sp->file->row - 1, 0, 0, 0);
-					if (sp->file->dir == 1
-					    || sp->file->dir == 5)
-						Write(W_SHIPCOL, sq, 0,
-							sp->file->col - 1,
-							0, 0, 0);
-					else
-						Write(W_SHIPCOL, sq, 0,
-							sp->file->col, 0, 0, 0);
-					Write(W_SHIPDIR, sq, 0,
-						sp->file->dir, 0, 0, 0);
-				}
-				if (!range(sp, sq) && !fouled2(sp, sq)
-				    && push(sp, sq)) {
+				if (!push(sp, sq))
+					goto cont2;
+				if (snagged2(sp, sq) && range(sp, sq) > 1)
+					snap++;
+				if (!range(sp, sq) && !fouled2(sp, sq)) {
 					makesignal(sp,
 						"collision with %s (%c%c)", sq);
 					if (die() < 4) {
@@ -129,59 +109,55 @@ moveall()		/* move all comp ships */
 							Write(W_FOUL, sq, 0,
 								m, turn, n, 0);
 					}
-					clast[n][k+1] = '\0';
-					sp->file->row = r2;
-					sp->file->col = c2;
-					sp->file->dir = d2;
-					moveship(sp, clast[n]);
-					Write(W_SHIPROW, sq, 0,
-						sp->file->row-1, 0, 0, 0);
+					snap++;
+				}
+				if (snap) {
+					sp->file->last[k + 1] = 0;
+					sq->file->last[k + 1] = 0;
+					sq->file->row = sp->file->row - 1;
 					if (sp->file->dir == 1
 					    || sp->file->dir == 5)
-						Write(W_SHIPCOL, sq, 0,
-							sp->file->col-1, 0, 0, 0);
+						sq->file->col =
+							sp->file->col - 1;
 					else
-						Write(W_SHIPCOL, sq, 0,
-							sp->file->col, 0, 0, 0);
-					Write(W_SHIPDIR, sq, 0,
-						sp->file->dir, 0, 0, 0);
-					Write(W_DRIFT, sq, 0, 0, 0, 0, 0);
-					Write(W_DRIFT, sp, 0, 0, 0, 0, 0);
-					goto cont2;
+						sq->file->col = sp->file->col;
+					sq->file->dir = sp->file->dir;
 				}
-				sq->file->row = r2;
-				sq->file->col = c2;
-				sq->file->dir = d2;
 			cont2:
 				l++;
 			}
-			sp->file->row = r1;
-			sp->file->col = c1;
-			sp->file->dir = d1;
 		cont1:
 			n++;
 		}
 	}
 	/*
-	 * Clear old moves.
+	 * Clear old moves.  And write out new pos.
 	 */
-	foreachship(sp)
-		sp->file->last[0] = 0;
+	n = 0;
+	foreachship(sp) {
+		if (sp->file->dir != 0) {
+			*sp->file->last = 0;
+			if (row[n] != sp->file->row)
+				Write(W_SHIPROW, sp, 0, sp->file->row, 0, 0, 0);
+			if (col[n] != sp->file->col)
+				Write(W_SHIPCOL, sp, 0, sp->file->col, 0, 0, 0);
+			if (dir[n] != sp->file->dir)
+				Write(W_SHIPDIR, sp, 0, sp->file->dir, 0, 0, 0);
+			if (drift[n] != sp->file->drift)
+				Write(W_DRIFT, sp, 0, sp->file->drift, 0, 0, 0);
+		}
+		n++;
+	}
 }
 
-stillmoving(last, k)
-char last[][sizeof SHIP(0)->file->last];	/* how's that for portability */
+stillmoving(k)
 register int k;
 {
 	register struct ship *sp;
-	register char (*p)[sizeof *last];	/* and this? */
 
-	p = last;
-	foreachship(sp) {
-		if ((*p)[k])
+	foreachship(sp)
+		if (sp->file->last[k])
 			return 1;
-		p++;
-	}
 	return 0;
 }
 
@@ -202,8 +178,8 @@ register struct ship *from, *to;
 {
 	register int bs, sb;
 
-	sb = to->specs->class;
-	bs = from->specs->class;
+	sb = to->specs->guns;
+	bs = from->specs->guns;
 	if (sb > bs)
 		return 1;
 	if (sb < bs)
@@ -211,39 +187,44 @@ register struct ship *from, *to;
 	return from < to;
 }
 
-step(com, ship, row, col, dir)
-register struct ship *ship;
-register int *row, *col, *dir;
+step(com, sp, moved)
 char com;
+register struct ship *sp;
+char *moved;
 {
 	register int dist;
 
 	switch (com) {
 	case 'r':
-		if (++*dir == 9)
-			*dir = 1;
+		if (++sp->file->dir == 9)
+			sp->file->dir = 1;
 		break;
 	case 'l':
-		if (--*dir == 0)
-			*dir = 8;
+		if (--sp->file->dir == 0)
+			sp->file->dir = 8;
 		break;
 	case '0': case '1': case '2': case '3':
 	case '4': case '5': case '6': case '7':
-		if (*dir % 2 == 0)
+		if (sp->file->dir % 2 == 0)
 			dist = dtab[com - '0'];
 		else
 			dist = com - '0';
-		*row -= dr[*dir] * dist;
-		*col -= dc[*dir] * dist;
+		sp->file->row -= dr[sp->file->dir] * dist;
+		sp->file->col -= dc[sp->file->dir] * dist;
+		*moved = 1;
 		break;
 	case 'b':
 		break;
 	case 'd':
-		if (ship->specs->class >= 3 && !snagged(ship)
-		    || turn % 2 == 0) {
-			*row -= dr[winddir];
-			*col -= dc[winddir];
-		}
+		if (!*moved) {
+			if (++sp->file->drift > 2 &&
+			    (sp->specs->class >= 3 && !snagged(sp)
+			     || (turn & 1) == 0)) {
+				sp->file->row -= dr[winddir];
+				sp->file->col -= dc[winddir];
+			}
+		} else
+			sp->file->drift = 0;
 		break;
 	}
 }
