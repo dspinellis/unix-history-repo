@@ -3,7 +3,7 @@
 #	   tree: distribution tree: /, /usr, /var
 #	   date: Wed Jul 15 13:40:13 1992
 #
-#	@(#)4.4BSD.dist	5.10 (Berkeley) %G%
+#	@(#)4.4BSD.dist	5.11 (Berkeley) %G%
 
 /set type=dir uname=root gname=wheel mode=0755
 # .
@@ -347,12 +347,6 @@ uucp             gname=daemon uname=uucp
 # ./usr/libdata
 libdata
 
-# ./usr/libdata/adb
-adb
-# ./usr/libdata/adb
-..
-
-
 # ./usr/libdata/learn
 learn
 
@@ -589,6 +583,12 @@ tmac
 
 # ./usr/old/libdata
 libdata
+
+# ./usr/old/libdata/adb
+adb
+# ./usr/old/libdata/adb
+..
+
 
 # ./usr/old/libdata/term
 term
