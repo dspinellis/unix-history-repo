@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	4.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	4.13 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -360,12 +360,13 @@ recvrequest(cmd, local, remote, mode)
 
 			if (dir != NULL)
 				*dir = 0;
-			if (access(dir ? dir : ".", 2) < 0) {
+			d = access(dir ? local : ".", 2);
+			if (dir != NULL)
+				*dir = '/';
+			if (d < 0) {
 				perror(local);
 				goto bad;
 			}
-			if (dir != NULL)
-				*dir = '/';
 		}
 	if (initconn())
 		goto bad;
