@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkglue.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkglue.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -287,7 +287,7 @@ dump_ctrs(fp)
 	fprintf(fp, "\t.align 2\n");
 	fprintf(fp, "_intrcnt:\n");
 	fprintf(fp, "\t.space\t4 * %d\n", si->si_n);
-	fprintf(fp, "_fltintrcnt: %d\n", cntcnt);
+	fprintf(fp, "_fltintrcnt:\n");
 	fprintf(fp, "\t.space\t4 * %d\n", cntcnt);
 	fprintf(fp, "_eintrcnt:\n\n");
 	fprintf(fp, "\t.text\n");
