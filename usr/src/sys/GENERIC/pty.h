@@ -1,0 +1,1 @@
+#define NPTY 1

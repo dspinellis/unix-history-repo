@@ -1,0 +1,1 @@
+#define NDMZ 1
