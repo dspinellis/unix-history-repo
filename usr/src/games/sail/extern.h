@@ -1,12 +1,12 @@
 /*
- * sccsid = "@(#)extern.h	1.1 83/03/17";
+ * sccsid = "@(#)extern.h	1.2 83/05/19";
  */
 #include <stdio.h>
 #include <signal.h>
 #include <ctype.h>
 #include "machdep.h"
 
-#define NUMOFSCENES 32
+#define NUMOFSCENES 31
 
 #define die() (((rand() >> 6) % 6) + 1)
 #define fouled(a) Fouled(a, 342)
