@@ -31,10 +31,12 @@ screenlib:	$(ALLO)
 
 clean:
 	rm -f $(ALLO) errs makefile.bak screenlib
+	-sccs clean
+	-sccs get makefile
 
 sourcelist:	${ALLSOURCE}
 	@for i in ${ALLSOURCE}; \
-		do (echo ${DIRPATH}/$$i); done
+		do (echo ${DIRPATH}$$i); done
 
 print:
 	${PRINT} ${ALLPRINT}

@@ -52,16 +52,18 @@ ALLO	= globals.o ${SUBSO}
 .s.o:
 	/lib/cpp -E $< | as -o $@
 
-general.lib:	${ALLO}
-	ar cr general.lib ${ALLO}
-	ranlib general.lib
+generallib.a:	${ALLO}
+	ar cr generallib.a ${ALLO}
+	ranlib generallib.a
 
 clean:
-	rm -f $(ALLO) errs makefile.bak general.lib
+	rm -f $(ALLO) errs makefile.bak generallib.a
+	-sccs clean
+	-sccs get makefile
 
 sourcelist:	${ALLSOURCE}
 	@for i in ${ALLSOURCE}; \
-		do (echo ${DIRPATH}/$$i); done
+		do (echo ${DIRPATH}$$i); done
 
 print:
 	${PRINT} ${ALLPRINT}
@@ -96,6 +98,5 @@ depend:
 
 # DO NOT DELETE THIS LINE
 
-globals.o: ../ctlr/hostctlr.h ../ascii/ascebc.h ../ctlr/dctype.h
-globals.o: ../ctlr/options.h ../ctlr/screen.h ../ascii/state.h globals.h
-globals.o: ../general/general.h
+globals.o: ../ctlr/hostctlr.h ../ctlr/oia.h ../ctlr/options.h ../ctlr/screen.h
+globals.o: globals.h ../general/general.h

@@ -19,12 +19,12 @@ KBD	= 3270pc.kbd
 KBD	= unix.kbd
 
 # The source files...
-ALLH =	dctype.h ebc_disp.h function.h hostctlr.h inbound.ext oia.h \
+ALLH =	function.h hostctlr.h inbound.ext oia.h \
 	options.ext options.h outbound.ext screen.h scrnctlr.h
 
-ALLC =	dctype.c ebc_disp.c inbound.c oia.c options.c outbound.c
+ALLC =	inbound.c oia.c options.c outbound.c
 
-ALLO =	dctype.o ebc_disp.o inbound.o oia.o options.o outbound.o
+ALLO =	inbound.o oia.o options.o outbound.o
 
 ALLPRINT =	3180.kbd 3270pc.kbd unix.kbd ${ALLH} ${ALLC}
 
@@ -33,17 +33,19 @@ ALLSOURCE =	${ALLPRINT} makefile makefile.mak
 .s.o:
 	/lib/cpp -E $< | as -o $@
 
-ctlr.lib:	${ALLO}
-	ar cr ctlr.lib ${ALLO}
-	ranlib ctlr.lib
+ctlrlib.a:	${ALLO}
+	ar cr ctlrlib.a ${ALLO}
+	ranlib ctlrlib.a
 
 clean:
-	rm -f $(ALLO) mset tn3270 prt3270 m4.out errs makefile.bak ctlr.lib
+	rm -f $(ALLO) mset tn3270 prt3270 m4.out errs makefile.bak ctlrlib.a
 	rm -f kbd.out TMPfunc.out TMPfunc.c
+	-sccs clean
+	-sccs get makefile
 
 sourcelist:	${ALLSOURCE}
 	@for i in ${ALLSOURCE}; \
-		do (echo ${DIRPATH}/$$i); done
+		do (echo ${DIRPATH}$$i); done
 
 print:
 	${PRINT} ${ALLPRINT}
@@ -62,11 +64,11 @@ lint:
 
 kbd.out:	$(KBD) hostctlr.h
 	(cd ../tools; make mkhits $(MFLAGS) )
-	-/bin/rm $@ TMPfunc.out TMPfunc.c
+	-/bin/rm -f $@ TMPfunc.out TMPfunc.c
 	/bin/echo \#include \"function.h\" > TMPfunc.c
 	$(CC) $(CFLAGS) -E TMPfunc.c > TMPfunc.out
 	../tools/mkhits - ../ctlr/TMPfunc.out < $(KBD) > $@
-	-/bin/rm TMPfunc.out TMPfunc.c
+	-/bin/rm -f TMPfunc.out TMPfunc.c
 
 depend:
 	grep '^#include' ${ALLC} | grep -v '<' | \
@@ -86,12 +88,11 @@ depend:
 
 # DO NOT DELETE THIS LINE
 
-dctype.o: dctype.h
 inbound.o: ../general/general.h function.h hostctlr.h oia.h scrnctlr.h screen.h
-inbound.o: options.h dctype.h ebc_disp.h ../general/globals.h inbound.ext
-inbound.o: outbound.ext ../telnet.ext kbd.out
+inbound.o: options.h ../apilib/dctype.h ../apilib/ebc_disp.h
+inbound.o: ../general/globals.h inbound.ext outbound.ext ../telnet.ext kbd.out
 oia.o: ../general/general.h oia.h ../general/globals.h
 options.o: options.h ../general/globals.h options.ext
-outbound.o: ../general/general.h hostctlr.h oia.h screen.h ebc_disp.h
+outbound.o: ../general/general.h hostctlr.h oia.h screen.h ../apilib/ebc_disp.h
 outbound.o: ../general/globals.h options.ext ../telnet.ext inbound.ext
 outbound.o: outbound.ext ../general/bsubs.ext

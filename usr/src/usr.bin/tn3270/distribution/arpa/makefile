@@ -8,7 +8,8 @@ ALLPRINT = ${ALLH} ${ALLC}
 ALLSOURCE = ${ALLPRINT} makefile makefile.mak
 
 clean:
-
+	-sccs clean
+	-sccs get makefile
 
 action:
 	${ACTION}
@@ -19,7 +20,7 @@ print:
 
 sourcelist:	${ALLSOURCE}
 	@for i in ${ALLSOURCE}; \
-		do (echo ${DIRPATH}/$$i); done
+		do (echo ${DIRPATH}$$i); done
 
 .DEFAULT:
 	sccs get $<

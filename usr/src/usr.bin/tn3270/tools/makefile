@@ -72,7 +72,7 @@ mkdctype:	mkdctype.o ../apilib/ebc_disp.o ectype.o
 
 sourcelist:	${ALLSOURCE}
 	@for i in ${ALLSOURCE}; \
-		do (echo ${DIRPATH}/$$i); done
+		do (echo ${DIRPATH}$$i); done
 
 print:
 	${PRINT} ${ALLPRINT}
@@ -84,8 +84,8 @@ action:
 	${ACTION}
 
 clean:
-	-rm errs makefile.bak ${ALLO} ${ALLEXE}
-	sccs clean
+	-rm -f errs makefile.bak ${ALLO} ${ALLEXE}
+	-sccs clean
 	-sccs get makefile
 
 lint:
