@@ -1,7 +1,7 @@
 static	char *sccsid = "@(#)glob.c 4.5 %G%";
 
 #include "sh.h"
-#include <dir.h>
+#include <sys/dir.h>
 
 /*
  * C Shell
@@ -68,9 +68,10 @@ collect(as)
 		printf("backp done, acollect'ing\n");
 #endif
 		for (i = 0; i < pargc; i++)
-			if (noglob)
+			if (noglob) {
 				Gcat(pargv[i], "");
-			else
+				sortbas = &gargv[gargc];
+			} else
 				acollect(pargv[i]);
 		if (pargv)
 			blkfree(pargv), pargv = 0;
@@ -665,6 +666,9 @@ backeval(cp, literal)
 			error(err);
 		if (t)
 			t->t_dflg |= FPAR;
+		sigignore(SIGTSTP);
+		sigignore(SIGTTIN);
+		sigignore(SIGTTOU);
 		execute(t, -1);
 		exitstat();
 	}
