@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)dict.c	4.2	(Berkeley)	82/11/06";
+static char dict_sccsid[] = "@(#)dict.c	4.2	(Berkeley)	82/11/06";
 #endif not lint
 
 struct dict  dict[] = {
@@ -351,7 +351,7 @@ struct dict  dict[] = {
 "mistaken",'d',
 "paid",'d',
 "ran",'d',
-"said",'d',
+"said",'v',
 "sold",'d',
 "sent",'d',
 "shook",'d',
@@ -380,7 +380,7 @@ struct dict  dict[] = {
 "taken",'d',
 "tore",'d',
 "torn",'d',
-"told",'d',
+"told",'v',
 "threw",'d',
 "thrown",'d',
 "understood",'d',

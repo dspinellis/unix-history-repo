@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ehash.c	4.2	(Berkeley)	82/11/06";
+static char ehash_sccsid[] = "@(#)ehash.c	4.2	(Berkeley)	82/11/06";
 #endif not lint
 
 #
@@ -207,10 +207,10 @@ age(a0,a1,ptr)
 {
 	return(aahash(a0,a1,aa3tsize,aa3p1,aa3p2,aa3root,ptr));
 }
-struct hnode aa4root[31];
-#define aa4tsize 31
-#define aa4p1 23
-#define aa4p2 29
+struct hnode aa4root[37];
+#define aa4tsize 37
+#define aa4p1 29
+#define aa4p2 31
 char
 ance(a0,a1,ptr)
 	char *a0;
@@ -262,10 +262,10 @@ ee(a0,a1,ptr)
 {
 	return(aahash(a0,a1,aa10tsize,aa10p1,aa10p2,aa10root,ptr));
 }
-struct hnode aa11root[19];
-#define aa11tsize 19
-#define aa11p1 13
-#define aa11p2 17
+struct hnode aa11root[31];
+#define aa11tsize 31
+#define aa11p1 23
+#define aa11p2 29
 char
 ence(a0,a1,ptr)
 	char *a0;
@@ -339,10 +339,10 @@ ice(a0,a1,ptr)
 {
 	return(aahash(a0,a1,aa20tsize,aa20p1,aa20p2,aa20root,ptr));
 }
-struct hnode aa21root[61];
-#define aa21tsize 61
-#define aa21p1 53
-#define aa21p2 59
+struct hnode aa21root[89];
+#define aa21tsize 89
+#define aa21p1 79
+#define aa21p2 83
 char
 ion(a0,a1,ptr)
 	char *a0;
@@ -460,10 +460,10 @@ man(a0,a1,ptr)
 {
 	return(aahash(a0,a1,aa33tsize,aa33p1,aa33p2,aa33root,ptr));
 }
-struct hnode aa34root[29];
-#define aa34tsize 29
-#define aa34p1 19
-#define aa34p2 23
+struct hnode aa34root[37];
+#define aa34tsize 37
+#define aa34p1 29
+#define aa34p2 31
 char
 ment(a0,a1,ptr)
 	char *a0;
@@ -548,10 +548,10 @@ ing(a0,a1,ptr)
 {
 	return(aahash(a0,a1,aa44tsize,aa44p1,aa44p2,aa44root,ptr));
 }
-struct hnode aa45root[43];
-#define aa45tsize 43
-#define aa45p1 37
-#define aa45p2 41
+struct hnode aa45root[47];
+#define aa45tsize 47
+#define aa45p1 41
+#define aa45p2 43
 char
 ed(a0,a1,ptr)
 	char *a0;
