@@ -79,7 +79,7 @@ disp_asc.OUT: ${.CURDIR}/../tools/mkdstoas/${AS_OBJ_DIR}/mkdstoas
 	ln -s disp_asc.OUT disp_asc.out
 
 inbound.o: kbd.OUT
-CLEANFILES += kbd.OUT kbd.out
+CLEANFILES += kbd.OUT kbd.out TMPfunc.out
 kbd.OUT: ${.CURDIR}/../ctlr/hostctlr.h ${.CURDIR}/../ctlr/${KBD} \
 	 ${.CURDIR}/../tools/mkhits/${HITS_OBJ_DIR}/mkhits
 	${CC} ${CFLAGS} -E ${.CURDIR}/../ctlr/function.c > TMPfunc.out
