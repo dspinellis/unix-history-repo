@@ -5,12 +5,10 @@
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
- * %sccs.include.386.c%
+ * %sccs.include.redist.c%
  *
- *	@(#)swapgeneric.c	5.4 (Berkeley) %G%
+ *	@(#)swapgeneric.c	5.5 (Berkeley) %G%
  */
-
-/*	swapgeneric.c	1.5	86/11/25	*/
 
 #include "machine/pte.h"
 
@@ -25,7 +23,6 @@
  * Generic configuration;  all in one
  */
 dev_t	rootdev = makedev(0,0);
-dev_t	argdev = makedev(0,1);
 dev_t	dumpdev = makedev(0,1);
 int	nswap;
 struct	swdevt swdevt[] = {
