@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_map.h	8.7 (Berkeley) %G%
+ *	@(#)vm_map.h	8.8 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -134,18 +134,17 @@ typedef struct {
  */
 
 #include <sys/proc.h>	/* XXX for curproc and p_pid */
-#define LOCKPID (curproc ? curproc->p_pid : LK_KERNPROC)
 
 #define	vm_map_lock(map) { \
-	lockmgr(&(map)->lock, LK_EXCLUSIVE, (void *)0, LOCKPID); \
+	lockmgr(&(map)->lock, LK_EXCLUSIVE, (void *)0, curproc); \
 	(map)->timestamp++; \
 }
 #define	vm_map_unlock(map) \
-		lockmgr(&(map)->lock, LK_RELEASE, (void *)0, LOCKPID)
+		lockmgr(&(map)->lock, LK_RELEASE, (void *)0, curproc)
 #define	vm_map_lock_read(map) \
-		lockmgr(&(map)->lock, LK_SHARED, (void *)0, LOCKPID)
+		lockmgr(&(map)->lock, LK_SHARED, (void *)0, curproc)
 #define	vm_map_unlock_read(map) \
-		lockmgr(&(map)->lock, LK_RELEASE, (void *)0, LOCKPID)
+		lockmgr(&(map)->lock, LK_RELEASE, (void *)0, curproc)
 #define vm_map_set_recursive(map) { \
 	simple_lock(&(map)->lk_interlock); \
 	(map)->lk_flags |= LK_CANRECURSE; \
