@@ -2,47 +2,47 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getfsent.3	4.1 (Berkeley) %G%
+.\"	@(#)getfsent.3	5.1 (Berkeley) %G%
 .\"
-.TH GETFSENT 3 
+.TH GETFSENT 3X  "19 January 1983"
 .UC 4
 .SH NAME
-getfsent, getfsspec, getfsfile, setfsent, endfsent \- get file system descriptor file entry
+getfsent, getfsspec, getfsfile, getfstype, setfsent, endfsent \- get file system descriptor file entry
 .SH SYNOPSIS
 .nf
 .B #include <fstab.h>
 .PP
 .B struct fstab *getfsent()
 .PP
-.B struct fstab *getfsspec(name)
-.B char *name;
+.B struct fstab *getfsspec(spec)
+.B char *spec;
 .PP
-.B struct fstab *getfsfile(name)
-.B char *name;
+.B struct fstab *getfsfile(file)
+.B char *file;
 .PP
-.B int setfsend()
+.B struct fstab *getfstype(type)
+.B char *type;
+.PP
+.B int setfsent()
 .PP
 .B int endfsent()
 .fi
 .SH DESCRIPTION
-.I Getfsent,
-.I getfsspec
+.IR Getfsent ,
+.IR getfsspec ,
+.IR getfstype ,
 and
 .I getfsfile
-each return a pointer to an object with the
-following structure
-containing the broken-out
-fields of a line in the file system description file,
-.I /usr/include/fstab.h.
+each return a pointer to an object with the following structure
+containing the broken-out fields of a line in the file system description file,
+.IR < fstab.h >.
 .RS
 .PP
 .nf
-#define	FSNMLG	16
-
 struct fstab{
-	char	fs_spec[FSNMLG];
-	char	fs_file[FSNMLG];
-	char	fs_type[3];
+	char	*fs_spec;
+	char	*fs_file;
+	char	*fs_type;
 	int	fs_freq;
 	int	fs_passno;
 };
@@ -66,11 +66,11 @@ closes the file.
 .I Getfsspec
 and
 .I getfsfile
-sequentially search from the beginning
-of the file until a matching
-special file name or
-file system file name is found,
+sequentially search from the beginning of the file until a matching
+special file name or file system file name is found,
 or until EOF is encountered.
+.I Getfstype
+does likewise, matching on the file system type field.
 .SH FILES
 /etc/fstab
 .SH "SEE ALSO"
@@ -79,7 +79,5 @@ fstab(5)
 Null pointer
 (0) returned on EOF or error.
 .SH BUGS
-All information
-is contained in a static area
-so it must be copied if it is
+All information is contained in a static area so it must be copied if it is
 to be saved.
