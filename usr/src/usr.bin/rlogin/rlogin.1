@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rlogin.1	6.6 (Berkeley) %G%
+.\"	@(#)rlogin.1	6.7 (Berkeley) %G%
 .\"
 .TH RLOGIN 1C ""
 .UC 5
@@ -46,7 +46,7 @@ When you
 as the same user on an equivalent host, you don't need
 to give a password.
 Each user may also have a private equivalence list in a file \&.rhosts
-in his login directory.  Each line in this file should contain a \fIrhost\fP
+in his login directory.  Each line in this file should contain an \fIrhost\fP
 and a \fIusername\fP separated by a space, giving additional cases
 where logins without passwords are to be permitted.
 If the originating user is not equivalent to the remote user, then
@@ -55,14 +55,17 @@ a login and password will be prompted for on the remote machine as in
 To avoid some security problems, the \&.rhosts file must be owned by
 either the remote user or root.
 .PP
-Your remote terminal type is the same as your local
+The remote terminal type is the same as your local
 terminal type (as given in your environment TERM variable).
+The terminal or window size is also copied to the remote system
+if the server supports the option,
+and changes in size are reflected as well.
 All echoing takes place at the remote site, so that (except for
 delays) the rlogin is transparent.  Flow control via ^S and ^Q and
 flushing of input and output on interrupts are handled properly.
 The optional argument
 .B \-8
-allows an eight-bit data path at all times;
+allows an eight-bit input data path at all times;
 otherwise parity bits are stripped except when the remote side's
 stop and start characters are other than ^S/^Q.
 The argument
