@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.9 (Berkeley) %G%
+ *	@(#)hp.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -83,10 +83,18 @@ hpopen(io)
 	struct disklabel *dlp;
 	int error = 0;
 
+	/*
+	 * Accept adaptor number as either controller or adaptor,
+	 * but not both.
+	 */
+	if (io->i_ctlr) {
+		if (io->i_adapt == 0)
+			io->i_adapt = io->i_ctlr;
+		else
+			return (ECTLR);
+	}
 	if ((u_int)io->i_adapt >= MAXNMBA || !mbainit(io->i_adapt))
 		return (EADAPT);
-	if ((u_int)io->i_ctlr)
-		return (ECTLR);
 	if ((u_int)unit >= MAXUNIT)
 		return (EUNIT);
 	hpaddr = (struct hpdevice *)mbadrv(io->i_adapt, unit);
