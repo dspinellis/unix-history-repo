@@ -5,14 +5,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)candidate.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)candidate.c	1.2 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
 #include <protocols/timed.h>
 
-#define MASTER 		1
-#define SLAVE 		0
 #define ELECTIONWAIT	3	/* seconds */
 
 extern int trace;
@@ -40,7 +38,7 @@ election()
 	struct tsp *answer, *acksend();
 	long casual();
 
-	syslog(LOG_ERR, "timed: THIS MACHINE IS A CANDIDATE\n");
+	syslog(LOG_INFO, "THIS MACHINE IS A CANDIDATE");
 	if (trace) {
 		fprintf(fd, "THIS MACHINE IS A CANDIDATE\n");
 	}
@@ -91,7 +89,7 @@ loop:
 			server = from;
 			answer = acksend(&msg, resp->tsp_name, TSP_ACK);
 			if (answer == NULL) {
-				syslog(LOG_ERR, "timed: error in election\n");
+				syslog(LOG_ERR, "error in election");
 			} else {
 				(void) addmach(resp->tsp_name);
 			}
