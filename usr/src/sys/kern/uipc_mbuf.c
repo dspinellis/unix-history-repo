@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_mbuf.c	6.7 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	6.8 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -277,7 +277,8 @@ m_adj(mp, len)
 	struct mbuf *mp;
 	register int len;
 {
-	register struct mbuf *m, *n;
+	register struct mbuf *m;
+	register count;
 
 	if ((m = mp) == NULL)
 		return;
@@ -294,49 +295,75 @@ m_adj(mp, len)
 			}
 		}
 	} else {
-		/* a 2 pass algorithm might be better */
+		/*
+		 * Trim from tail.  Scan the mbuf chain,
+		 * calculating its length and finding the last mbuf.
+		 * If the adjustment only affects this mbuf, then just
+		 * adjust and return.  Otherwise, rescan and truncate
+		 * after the remaining size.
+		 */
 		len = -len;
-		while (len > 0 && m->m_len != 0) {
-			while (m != NULL && m->m_len != 0) {
-				n = m;
-				m = m->m_next;
-			}
-			if (n->m_len <= len) {
-				len -= n->m_len;
-				n->m_len = 0;
-				m = mp;
-			} else {
-				n->m_len -= len;
+		count = 0;
+		for (;;) {
+			count += m->m_len;
+			if (m->m_next == (struct mbuf *)0)
+				break;
+			m = m->m_next;
+		}
+		if (m->m_len >= len) {
+			m->m_len -= len;
+			return;
+		}
+		count -= len;
+		/*
+		 * Correct length for chain is "count".
+		 * Find the mbuf with last data, adjust its length,
+		 * and toss data from remaining mbufs on chain.
+		 */
+		for (m = mp; m; m = m->m_next) {
+			if (m->m_len >= count) {
+				m->m_len = count;
 				break;
 			}
+			count -= m->m_len;
 		}
+		while (m = m->m_next)
+			m->m_len = 0;
 	}
 }
 
 /*
  * Rearange an mbuf chain so that len bytes are contiguous
  * and in the data area of an mbuf (so that mtod and dtom
- * will work for a structure of size len).
- * Returns the resulting mbuf chain on success,
- * frees it and returns null on failure.
+ * will work for a structure of size len).  Returns the resulting
+ * mbuf chain on success, frees it and returns null on failure.
+ * If there is room, it will add up to MPULL_EXTRA bytes to the
+ * contiguous region in an attempt to avoid being called next time.
  */
 struct mbuf *
-m_pullup(m0, len)
-	struct mbuf *m0;
+m_pullup(n, len)
+	register struct mbuf *n;
 	int len;
 {
-	register struct mbuf *m, *n;
-	int count;
+	register struct mbuf *m;
+	register int count;
+	int space;
 
-	n = m0;
-	if (len > MLEN)
-		goto bad;
-	MGET(m, M_DONTWAIT, n->m_type);
-	if (m == 0)
-		goto bad;
-	m->m_len = 0;
+	if (n->m_off + len <= MMAXOFF && n->m_next) {
+		m = n;
+		n = n->m_next;
+		len -= m->m_len;
+	} else {
+		if (len > MLEN)
+			goto bad;
+		MGET(m, M_DONTWAIT, n->m_type);
+		if (m == 0)
+			goto bad;
+		m->m_len = 0;
+	}
+	space = MMAXOFF - m->m_off;
 	do {
-		count = MIN(n->m_len, len);
+		count = MIN(MIN(space - m->m_len, len + MPULL_EXTRA), n->m_len);
 		bcopy(mtod(n, caddr_t), mtod(m, caddr_t)+m->m_len,
 		  (unsigned)count);
 		len -= count;
@@ -346,8 +373,8 @@ m_pullup(m0, len)
 			n->m_off += count;
 		else
 			n = m_free(n);
-	} while (len && n);
-	if (len) {
+	} while (len > 0 && n);
+	if (len > 0) {
 		(void) m_free(m);
 		goto bad;
 	}
