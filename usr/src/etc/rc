@@ -1,6 +1,4 @@
-#
-#	@(#)rc	5.16 (Berkeley) %G%
-#
+#	@(#)rc	5.17 (Berkeley) %G%
 
 # System startup script run by init on autoboot
 # or after single-user.
@@ -17,11 +15,11 @@ export PATH
 
 if [ -r /fastboot ]
 then
-	echo Fast boot ... skipping disk checks >/dev/console
+	echo Fast boot ... skipping disk checks
 elif [ $1x = autobootx ]
 then
-	echo Automatic reboot in progress... 		>/dev/console
-	fsck -p						>/dev/console 2>&1
+	echo Automatic reboot in progress...
+	fsck -p
 	case $? in
 	0)
 		;;
@@ -30,15 +28,15 @@ then
 		;;
 	4)
 		reboot
-		echo "reboot failed... help!" >/dev/console
+		echo "reboot failed... help!"
 		exit 1
 		;;
 	8)
-		echo "Automatic file system check failed... help!" >/dev/console
+		echo "Automatic file system check failed... help!"
 		exit 1
 		;;
 	12)
-		echo "Reboot interrupted" >/dev/console
+		echo "Reboot interrupted"
 		exit 1
 		;;
 	130)
@@ -46,7 +44,7 @@ then
 		exit 1
 		;;
 	*)
-		echo "Unknown error in reboot" > /dev/console
+		echo "Unknown error in reboot"
 		exit 1
 		;;
 	esac
@@ -54,10 +52,10 @@ fi
 
 trap "echo 'Reboot interrupted'; exit 1" 3
 
-swapon -a						>/dev/console 2>&1
+swapon -a
 
 umount -a
-mount -a -t nonfs					>/dev/console 2>&1
+mount -a -t nonfs
 rm -f /fastboot		# XXX
 
 # clean up left-over files
@@ -71,31 +69,31 @@ rm -f /var/spool/uucp/STST/*
 
 mount -a -t nfs &	# XXX shouldn't need background
 
-echo -n 'starting system logger'			>/dev/console
+echo -n 'starting system logger'
 rm -f /dev/log
 syslogd
 
 # $timedflags is imported from /etc/netstart;
 # if $timedflags == NO, timed isn't run.
 if [ X${timedflags} != X"NO" ]; then
-    echo -n ', time daemon'	>/dev/console;	timed $timedflags
+	echo -n ', time daemon'; timed $timedflags
 fi
-echo    '.'						>/dev/console
+echo '.'
 
 # /var/crash should be a directory or a symbolic link
 # to the crash directory if core dumps are to be saved.
 if [ -d /var/crash ]; then
-	echo 'checking for core dump... '		>/dev/console
- 	savecore /var/crash				>/dev/console 2>&1
+				echo 'checking for core dump... '
+	savecore /var/crash
 fi
 
-			echo -n 'checking quotas:'	>/dev/console
-quotacheck -a						>/dev/console 2>&1
-			echo ' done.'			>/dev/console
-quotaon -a						>/dev/console 2>&1
+				echo -n 'checking quotas:'
+quotacheck -a
+				echo ' done.'
+quotaon -a
 
 # build kvm database
-kvm_mkdb						>/dev/console 2>&1
+kvm_mkdb
 
 chmod 666 /dev/tty[pqrs]*
 
@@ -103,46 +101,56 @@ chmod 666 /dev/tty[pqrs]*
 if [ -f /etc/ptmp ]
 then
 	logger -s -p auth.err \
-	'password file may be incorrect -- /etc/ptmp exists' >/dev/console 2>&1
+	'password file may be incorrect -- /etc/ptmp exists'
 fi
 
-echo preserving editor files  >/dev/console
+echo preserving editor files
 (cd /var/tmp; /usr/libexec/ex3.7preserve -a)
 (cd /var/tmp; rm Ex[0-9][0-9][0-9][0-9][0-9] Rx[0-9][0-9][0-9][0-9][0-9])
 
-echo clearing /tmp 	>/dev/console
+echo clearing /tmp
+
 # prune quickly with one rm, then use find to clean up /tmp/[lq]*
 # (not needed with mfs /tmp, but doesn't hurt there...)
 (cd /tmp; rm -rf [a-km-pr-zA-Z]* )
 (cd /tmp; find . ! -name . ! -name lost+found ! -name quotas -exec rm -r {} \; )
 
-echo -n standard daemons: >/dev/console
-echo -n ' update'	>/dev/console;	update
-echo -n ' cron'		>/dev/console;	cron
-echo -n ' accounting'	>/dev/console;	accton /var/account/acct
-echo    '.'		>/dev/console
+echo 'turning on accounting';	accton /var/account/acct
 
-echo -n starting network daemons: >/dev/console
+echo -n standard daemons:
+echo -n ' update';		update
+echo -n ' cron';		cron
+echo '.'
+
+echo -n starting network daemons:
 
 # $routedflags is imported from /etc/netstart;
 # if $routedflags == NO, routed isn't run.
 if [ X${routedflags} != X"NO" ]; then
-    echo -n ' routed'	>/dev/console; routed $routedflags
+	echo -n ' routed';	routed $routedflags
 fi
 
-echo -n ' named'	>/dev/console;	named >/dev/console 2>&1
-echo -n ' inetd'	>/dev/console;	inetd
+echo -n ' named';		named
+echo -n ' inetd';		inetd
 
 # $rwhod is imported from /etc/netstart;
 # if $rwhod is set to something other than NO, rwhod is run.
 if [ ${rwhod-NO} != "NO" ]; then
-    echo -n ' rwhod'	>/dev/console;	rwhod
+	echo -n ' rwhod';	rwhod
 fi
 
-echo -n ' printer'	>/dev/console;	lpd
-echo    '.'		>/dev/console
+echo -n ' printer';		lpd
+
+echo -n ' portmap';		portmap &
+echo -n ' mountd';		mountd
+echo -n ' nfsd';		nfsd -u 0,0,4 -t 0,0
+echo -n ' nfsiod';		nfsiod 4
+
+echo -n ' sendmail';		sendmail -bd -q30m
+
+echo '.'
 
 sh /etc/rc.local
 
-date			>/dev/console
+date
 exit 0
