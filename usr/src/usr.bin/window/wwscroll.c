@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwscroll.c	3.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwscroll.c	3.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -90,7 +90,8 @@ int leaveit;
 	/*
 	 * If it's a good idea to scroll and the terminal can, then do it.
 	 */
-	if (nvis < nvismax) {
+	if (nvis < nvismax / 2) {
+		/* not worth it */
 	} else if (!tt.tt_noscroll && row1x == 0 && row2x == wwnrow && dir > 0)
 	{
 		/*
