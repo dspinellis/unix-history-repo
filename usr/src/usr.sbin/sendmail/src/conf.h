@@ -15,7 +15,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)conf.h	5.15 (Berkeley) %G%
+ *	@(#)conf.h	5.16 (Berkeley) %G%
  */
 
 /*
@@ -29,7 +29,7 @@
 
 # define MAXLINE	1024		/* max line length */
 # define MAXNAME	256		/* max length of a name */
-# define MAXFIELD	2500		/* max total length of a hdr field */
+# define MAXFIELD	4096		/* max total length of a hdr field */
 # define MAXPV		40		/* max # of parms to mailers */
 # define MAXHOP		17		/* max value of HopCount */
 # define MAXATOM	100		/* max atoms per address */
