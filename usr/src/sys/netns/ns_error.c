@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_error.c	7.1 (Berkeley) %G%
+ *	@(#)ns_error.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -237,7 +237,7 @@ free:
 u_long
 nstime()
 {
-	int s = spl6();
+	int s = splclock();
 	u_long t;
 
 	t = (time.tv_sec % (24*60*60)) * 1000 + time.tv_usec / 1000;
