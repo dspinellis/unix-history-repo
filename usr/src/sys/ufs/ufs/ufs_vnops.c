@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.99 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.100 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -22,6 +22,7 @@
 #include <sys/specdev.h>
 #include <sys/fifo.h>
 #include <sys/malloc.h>
+#include <sys/dirent.h>
 
 #include <vm/vm.h>
 
@@ -850,6 +851,7 @@ ufs_rename(ap)
 	int doingdirectory = 0, oldparent = 0, newparent = 0;
 	int error = 0;
 	int fdvpneedsrele = 1, tdvpneedsrele = 1;
+	u_char namlen;
 
 	/* Check for cross-device rename */
 	if ((fvp->v_mount != tdvp->v_mount) ||
@@ -1123,7 +1125,15 @@ unlinkit:
 				UIO_SYSSPACE, IO_NODELOCKED, 
 				tcnp->cn_cred, (int *)0, (struct proc *)0);
 			if (error == 0) {
-				if (dirbuf.dotdot_namlen != 2 ||
+#				if (BYTE_ORDER == LITTLE_ENDIAN)
+					if (fvp->v_mount->mnt_maxsymlinklen <= 0)
+						namlen = dirbuf.dotdot_type;
+					else
+						namlen = dirbuf.dotdot_namlen;
+#				else
+					namlen = dirbuf.dotdot_namlen;
+#				endif
+				if (namlen != 2 ||
 				    dirbuf.dotdot_name[0] != '.' ||
 				    dirbuf.dotdot_name[1] != '.') {
 					ufs_dirbad(xp, (doff_t)12,
@@ -1170,6 +1180,10 @@ out:
  * A virgin directory (no blushing please).
  */
 static struct dirtemplate mastertemplate = {
+	0, 12, DT_DIR, 1, ".",
+	0, DIRBLKSIZ - 12, DT_DIR, 2, ".."
+};
+static struct odirtemplate omastertemplate = {
 	0, 12, 1, ".",
 	0, DIRBLKSIZ - 12, 2, ".."
 };
@@ -1194,7 +1208,7 @@ ufs_mkdir(ap)
 	register struct componentname *cnp = ap->a_cnp;
 	register struct inode *ip, *dp;
 	struct vnode *tvp;
-	struct dirtemplate dirtemplate;
+	struct dirtemplate dirtemplate, *dtp;
 	int error;
 	int dmode;
 
@@ -1251,7 +1265,11 @@ ufs_mkdir(ap)
 		goto bad;
 
 	/* Initialize directory with "." and ".." from static template. */
-	dirtemplate = mastertemplate;
+	if (dvp->v_mount->mnt_maxsymlinklen > 0)
+		dtp = &mastertemplate;
+	else
+		dtp = (struct dirtemplate *)&omastertemplate;
+	dirtemplate = *dtp;
 	dirtemplate.dot_ino = ip->i_number;
 	dirtemplate.dotdot_ino = dp->i_number;
 	error = vn_rdwr(UIO_WRITE, ITOV(ip), (caddr_t)&dirtemplate,
@@ -1428,7 +1446,48 @@ ufs_readdir(ap)
 		return (EINVAL);
 	uio->uio_resid = count;
 	uio->uio_iov->iov_len = count;
-	error = VOP_READ(ap->a_vp, uio, 0, ap->a_cred);
+#	if (BYTE_ORDER == LITTLE_ENDIAN)
+		if (ap->a_vp->v_mount->mnt_maxsymlinklen > 0) {
+			error = VOP_READ(ap->a_vp, uio, 0, ap->a_cred);
+		} else {
+			struct dirent *dp, *edp;
+			struct uio auio;
+			struct iovec aiov;
+			caddr_t dirbuf;
+			int readcnt;
+			u_char tmp;
+
+			auio = *uio;
+			auio.uio_iov = &aiov;
+			auio.uio_iovcnt = 1;
+			auio.uio_segflg = UIO_SYSSPACE;
+			aiov.iov_len = count;
+			MALLOC(dirbuf, caddr_t, count, M_TEMP, M_WAITOK);
+			aiov.iov_base = dirbuf;
+			error = VOP_READ(ap->a_vp, uio, 0, ap->a_cred);
+			if (error == 0) {
+				readcnt = count - auio.uio_resid;
+				edp = (struct dirent *)&dirbuf[readcnt];
+				for (dp = (struct dirent *)dirbuf; dp < edp; ) {
+					tmp = dp->d_namlen;
+					dp->d_namlen = dp->d_type;
+					dp->d_type = tmp;
+					if (dp->d_reclen > 0) {
+						dp = (struct dirent *)
+						    ((char *)dp + dp->d_reclen);
+					} else {
+						error = EIO;
+						break;
+					}
+				}
+				if (dp >= edp)
+					error = uiomove(dirbuf, readcnt, uio);
+			}
+			FREE(dirbuf, M_TEMP);
+		}
+#	else
+		error = VOP_READ(ap->a_vp, uio, 0, ap->a_cred);
+#	endif
 	uio->uio_resid += lost;
 	return (error);
 }
