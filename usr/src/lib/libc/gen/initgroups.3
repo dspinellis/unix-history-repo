@@ -1,0 +1,46 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)initgroups.3	5.1 (Berkeley) %G%
+.\"
+.TH INITGROUPS 3X "25 February 1983"
+.UC 5
+.SH NAME
+initgroups \- initialize group access list
+.SH SYNOPSIS
+.B initgroups(name, basegid)
+.br
+.B char *name;
+.br
+.B int basegid;
+.SH DESCRIPTION
+.I Initgroups
+reads through the group file and sets up,
+using the
+.IR setgroups (2)
+call, the group access list for the user
+specified in
+.IR name .
+The
+.I basegid
+is automatically included in the groups list.
+Typically this value is given as
+the group number from the password file.
+.SH FILES
+/etc/group
+.SH SEE ALSO
+setgroups(2)
+.SH DIAGNOSTICS
+.I Initgroups
+returns \-1 if it was not invoked by the super-user.
+.SH BUGS
+.I Initgroups
+uses the routines based on
+.IR getgrent (3).
+If the invoking program uses any of these routines,
+the group structure will
+be overwritten in the call to
+.IR initgroups .
+.PP
+Noone seems to keep /etc/group up to date.
