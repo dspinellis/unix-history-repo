@@ -1,3 +1,4 @@
+/* @(#)mldistrib.c	5.5 (Berkeley) %G% */
 #include <sys/types.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -455,7 +456,7 @@ my_pclose(iop)
 	register int fdes;
 	int omask;
 	int pstat;
-	pid_t wpid, waitpid();
+	pid_t wpid;
 
 	(void)fclose(iop);
 	omask = sigblock(sigmask(SIGINT)|sigmask(SIGQUIT)|sigmask(SIGHUP));
