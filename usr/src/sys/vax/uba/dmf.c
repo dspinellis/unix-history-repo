@@ -1,4 +1,4 @@
-/*	dmf.c	6.4	84/12/20	*/
+/*	dmf.c	6.5	85/03/12	*/
 
 #include "dmf.h"
 #if NDMF > 0
@@ -32,6 +32,7 @@
 #include "clist.h"
 #include "file.h"
 #include "uio.h"
+#include "syslog.h"
 
 #include "ubareg.h"
 #include "ubavar.h"
@@ -272,7 +273,7 @@ dmfrint(dmf)
 			 || (tp->t_flags&(EVENP|ODDP))==ODDP )
 				continue;
 		if ((c & DMF_DO) && overrun == 0) {
-			printf("dmf%d: silo overflow\n", dmf);
+			log(KERN_RECOV, "dmf%d: silo overflow\n", dmf);
 			overrun = 1;
 		}
 		if (c & DMF_FE)

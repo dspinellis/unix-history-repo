@@ -1,4 +1,4 @@
-/*	dz.c	6.5	84/12/20	*/
+/*	dz.c	6.6	85/03/12	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -26,6 +26,7 @@
 #include "file.h"
 #include "uio.h"
 #include "kernel.h"
+#include "syslog.h"
 
 #include "pdma.h"
 #include "ubavar.h"
@@ -263,7 +264,7 @@ dzrint(dz)
 			else
 				c = tp->t_intrc;
 		if (c&DZ_DO && overrun == 0) {
-			/* printf("dz%d,%d: silo overflow\n", dz, (c>>8)&7); */
+			log(KERN_RECOV, "dz%d,%d: silo overflow\n", dz, (c>>8)&7);
 			overrun = 1;
 		}
 		if (c&DZ_PE)	
