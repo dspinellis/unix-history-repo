@@ -939,13 +939,19 @@ ttyoutput(c, tp)
 			(*colp)--;
 		break;
 
+	/*
+	 * This macro is close enough to the correct thing;
+	 * it should be replaced by real user settable delays
+	 * in any event...
+	 */
+#define	mstohz(ms)	(((ms) * hz) >> 10)
 	case NEWLINE:
 		ctype = (tp->t_flags >> 8) & 03;
 		if (ctype == 1) { /* tty 37 */
 			if (*colp > 0)
 				c = max(((unsigned)*colp>>4) + 3, (unsigned)6);
 		} else if (ctype == 2) /* vt05 */
-			c = 6;
+			c = mstohz(100);
 		*colp = 0;
 		break;
 
@@ -968,9 +974,9 @@ ttyoutput(c, tp)
 	case RETURN:
 		ctype = (tp->t_flags >> 12) & 03;
 		if (ctype == 1) /* tn 300 */
-			c = 5;
+			c = mstohz(83);
 		else if (ctype == 2) /* ti 700 */
-			c = 10;
+			c = mstohz(166);
 		else if (ctype == 3) { /* concept 100 */
 			int i;
 
@@ -984,6 +990,7 @@ ttyoutput(c, tp)
 		(void) putc(c|0200, &tp->t_outq);
 	return (-1);
 }
+#undef mstohz
 
 /*
  * Called from device's read routine after it has
