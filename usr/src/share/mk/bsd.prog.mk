@@ -46,7 +46,7 @@ MANALL=	${MAN1} ${MAN2} ${MAN3} ${MAN4} ${MAN5} ${MAN6} ${MAN7} ${MAN8}
 PROGSUBDIR: .USE
 .if defined(SUBDIR) && !empty(SUBDIR)
 	@for entry in ${SUBDIR}; do \
-		(echo "===> $$entry"; \
+		(echo "===> ${PROG}/$$entry"; \
 		if test -d ${.CURDIR}/$${entry}.${MACHINE}; then \
 			cd ${.CURDIR}/$${entry}.${MACHINE}; \
 		else \
@@ -64,15 +64,25 @@ clean: PROGSUBDIR
 	rm -f a.out [Ee]rrs mklog core ${PROG} ${OBJS} ${CLEANFILES}
 .endif
 
-STDCLEANDIR: PROGSUBDIR
+.if !target(cleandir)
+cleandir: PROGSUBDIR
 	rm -f a.out [Ee]rrs mklog core ${PROG} ${OBJS} ${CLEANFILES}
 	rm -f .depend ${.CURDIR}/tags ${MANALL}
+.endif
 
 # some of the rules involve .h sources, so remove them from mkdep line
-STDDEPEND: ${SRCS} PROGSUBDIR
+.if !target(depend)
+depend: .depend
+.depend: ${SRCS} PROGSUBDIR
 	mkdep ${CFLAGS:M-[ID]*} ${.ALLSRC:M*.c}
+.endif
 
-STDINSTALL: PROGSUBDIR
+.if !target(install)
+.if !target(beforeinstall)
+beforeinstall:
+.endif
+
+realinstall: beforeinstall PROGSUBDIR
 	install ${STRIP} -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
 	    ${PROG} ${DESTDIR}${BINDIR}
 .if defined(HIDEGAME)
@@ -80,10 +90,18 @@ STDINSTALL: PROGSUBDIR
 	    chown games.bin ${PROG})
 .endif
 
-STDLINT: PROGSUBDIR
-	@${LINT} ${LINTFLAGS} ${CFLAGS} ${.ALLSRC} | more 2>&1
+install: afterinstall
+afterinstall: realinstall MANINSTALL
+.endif
 
-STDTAGS: PROGSUBDIR
-	tags -f ${.CURDIR}/tags ${.ALLSRC}
+.if !target(lint)
+lint: ${SRCS} PROGSUBDIR
+	@${LINT} ${LINTFLAGS} ${CFLAGS} ${.ALLSRC} | more 2>&1
+.endif
+
+.if !target(tags)
+tags: ${SRCS} PROGSUBDIR
+	ctags -f ${.CURDIR}/tags ${.ALLSRC}
+.endif
 
 .include <bsd.own.mk>

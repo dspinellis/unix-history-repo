@@ -1,43 +1,56 @@
-# A Makefile for handling subdirectories.
-# Machine dependent subdirectories take precedence.
-#
-#	@(#)bsd.subdir.mk	5.3 (Berkeley) %G%
-#
+.include <bsd.global.mk>
 
-# user defines:
-#	SUBDIR -- the list of subdirectories to be processed
-
-# the default target.
 .MAIN: all
 
-# The standard targets change to the subdirectory and make the
-# target.
 STDALL STDDEPEND STDCLEAN STDCLEANDIR STDLINT STDINSTALL STDTAGS: .USE
 	@for entry in ${SUBDIR}; do \
-		(echo "===> $$entry"; \
-		if test -d ${.CURDIR}/$${entry}.${MACHINE}; then \
+		(if test -d ${.CURDIR}/$${entry}.${MACHINE}; then \
+			echo "===> $${entry}.${MACHINE}"; \
 			cd ${.CURDIR}/$${entry}.${MACHINE}; \
 		else \
+			echo "===> $$entry"; \
 			cd ${.CURDIR}/$${entry}; \
 		fi; \
 		${MAKE} ${.TARGET}) \
 	done
 
-# If the user has not specified the target, use the standard version.
-all: STDALL
-clean: STDCLEAN
-cleandir: STDCLEANDIR
-depend: STDDEPEND
-lint: STDLINT
-install: STDINSTALL
-tags: STDTAGS
-
-# If trying to make one of the subdirectories, change to it and make
-# the default target.
-${SUBDIR}:
+${SUBDIR}::
 	@if test -d ${.TARGET}.${MACHINE}; then \
 		cd ${.CURDIR}/${.TARGET}.${MACHINE}; \
 	else \
 		cd ${.CURDIR}/${.TARGET}; \
 	fi; \
-	${MAKE}
+	${MAKE} all
+
+.if !target(all)
+all: STDALL
+.endif
+
+.if !target(clean)
+clean: STDCLEAN
+.endif
+
+.if !target(cleandir)
+cleandir: STDCLEANDIR
+.endif
+
+.if !target(depend)
+depend: STDDEPEND
+.endif
+
+.if !target(lint)
+lint: STDLINT
+.endif
+
+.if !target(tags)
+tags: STDTAGS
+.endif
+
+.if !target(install)
+.if target(beforeinstall)
+install: beforeinstall
+install: STDINSTALL
+.else
+install: STDINSTALL
+.endif
+.endif
