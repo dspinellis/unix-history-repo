@@ -1,0 +1,23 @@
+.(l C
+.sp 1i
+.sz +8
+.b
+MH
+.sp 0.4i
+.sz -4
+.r
+A Mail Handling System
+.sp 0.2i
+for \s-1UNIX\s+1
+.sz -4
+.sp 1i
+October, 1979
+
+Bruce Borden
+.sp 1i
+The Rand Corporation
+1700 Main Street
+Santa Monica, CA 90406
+
+(213) 399-0568 x 7463
+.)l

@@ -1,0 +1,2510 @@
+.de $c                          \" Major Heading printer
+.ce
+.b "\\s12\\n+(ch.\\ \\$1\\s0"   \" 12 Point Bold Header
+.(x
+
+\ \ \ \\n(ch.\\ \\ \\$1
+.)x
+.sp 45p         \" 45 point space or about 1/2 inch
+..
+\".nr xs .15v     \" Put index entries closer together
+.(x
+
+Section
+.)x _
+.de $0          \" Sub-Heading macro called AFTER printing the heading
+.(x
+.sp .3v
+.ti .5i
+\\$1
+.)x
+..
+.de $s          \" Macro to print footnote separator
+\"\l'2i'        \" No line drawn
+.if n \
+.       sp 1.3  \" But extra space to make up for it.
+..
+.fc ^ ~         \" The characters ^ and ~ CANNOT BE USED
+\"                 throughout this document except as field
+\"                 delimiter & pad indicator!
+.he ''-%-''
+.ll 32P         \" 32 Picas or about 5+1/3 inch Line Length
+.if n .ll 72m   \" Use 72 ems for nroff
+.nr ss 30p      \" 30 point space before section titles
+.nr fm 5v       \" Rand likes bigger than normal [3v] bottom margins
+.nr bm 7v       \"   ditto
+.ds . \\fB.\\fP\\h'-(1m/3)' \" Bold period to stand out.
+.ds << <\\h!-(\\w'<'/2)!<
+.ds >> >\\h!-(\\w'>'/2)!>
+.ds ** \v'-3p'\s+1*\s0\v'+3p'
+.++ C
+.+c INTRODUCTION
+.pp
+Although people can travel cross-country in hours and can
+reach others by telephone in seconds, communications still depend
+heavily upon paper, most of which is distributed through the mails.
+.pp
+There are several major reasons for this continued dependence on
+written documents.
+First, a written document may be proofread
+and corrected prior to its distribution, giving the author
+complete control over his words.
+Thus, a written document is
+better than a telephone conversation in this respect.
+Second,
+a carefully written document is far less likely to be
+misinterpreted or poorly translated than a phone conversation.
+Third, a signature offers reasonable verification of authorship,
+which cannot be provided with media such as telegrams.
+.pp
+However, the need for
+.u fast ,
+accurate, and reproducible document distribution is
+obvious.
+One solution in widespread use is the telefax.
+Another
+that is rapidly gaining popularity is electronic mail.
+Electronic mail is similar to telefax in that the data to be sent
+are digitized, transmitted via phone lines, and
+turned back into a document at the receiver.
+The advantage of
+electronic mail is in its compression factor.
+Whereas a telefax
+must scan a page in very fine lines and send all of the black and
+white information, electronic mail assigns characters fixed
+codes which can be transmitted as a few bits of information.
+Telefax presently has the advantage of being able to transmit an
+arbitrary page, including pictures, but electronic mail is
+beginning to deal with this problem.
+Electronic mail also integrates well
+with current directions in office automation, allowing documents
+prepared with sophisticated equipment at one site to be quickly
+transferred and printed at another site.
+.pp
+Currently, most electronic mail is intraorganizational,
+with mail transfer remaining within one computer.
+As computer
+networking becomes more common, however, it is becoming more feasible to
+communicate with anyone whose computer can be linked to your
+own via a network.
+.pp
+The pioneering efforts on general-purpose electronic mail
+were by organizations using the Defense Department's ARPANET.[1]
+The capability to send messages between computers existed before
+the ARPANET was developed, but it was used only in limited ways.
+With the advent of the
+ARPANET, tools began to be developed which made it convenient for
+individuals or organizations to distribute messages
+over broad geographic areas, using
+diverse computer facilities.
+The interest and activity in
+message systems has now reached such proportions that steps
+have been taken within the DoD to coordinate and
+unify the development of military message systems.
+The use of electronic mail is expected to increase
+dramatically in the next few years.
+The utility of such systems
+in the command and control and intelligence environments is
+clear, and applications in these areas will probably lead the
+way.
+As the costs for sending and handling electronic messags
+continue their rapid decrease, such uses can be
+expected to spread rapidly into other areas and, of course, will
+not be limited to the DoD.
+.pp
+A message system provides tools that help users (individuals
+or organizations) deal with messages in various ways.
+Messages
+must be composed, sent, received, stored, retrieved,
+forwarded, and replied to.
+Today's best interactive computer
+systems provide a variety of word-processing and information
+handling capabilities.
+The message handling facilities should be
+well integrated with the rest of the system, so as to be a
+graceful extension of overall system capability.
+.pp
+The message system described in this report, MH, provides most of the
+features that can be found in other message systems and also
+incorporates some new ones.
+It has been built on the UNIX time-sharing
+system,[2] a popular operating system for the DEC PDP-11
+and VAX classes of computers.
+A \*(lqsecure\*(rq operating
+system similar to UNIX is currently being developed,[3]
+and that system will also run MH.
+.pp
+This report provides a complete description of MH and
+thus may serve as a user's manual, although parts of the report
+will be of interest to non-users as well.
+Sections 2 and 3, the
+Overview and Tutorial, present the key
+ideas of MH and will give those not familiar with message systems
+an idea of what such systems are like.
+.pp
+MH consists of a set of commands which use some special
+files and conventions.
+Section 4 covers the information
+a user needs to know in addition to the
+commands.
+The final section, Sec. 5, describes each of
+the MH commands in detail.
+A summary of the commands is given in
+Appendix A, and Appendixes B and C describe the ARPANET
+conventions for messages (we expect that many users of MH
+will be using the ARPANET) and the formal syntax of such
+messages, respectively.
+Finally, Appendix D provides
+an illustration of how MH commands may be used in
+conjunction with other UNIX facilities.
+.pp
+A novel approach has been taken in the design of MH.
+The
+design concept will be reported in detail in a forthcoming Rand
+report, but it can be described briefly as follows.
+Instead of creating a large subsystem that appears as a single
+command to the user, (such as MS[4])
+MH is a collection of separate commands
+which are run as separate programs.
+The file and directory
+system of UNIX are used directly.
+Messages are stored as
+individual files (datasets), and collections of them are grouped
+into directories.
+In contrast, most other message systems store
+messages in a complicated data structure within a monolithic
+file.
+With the MH approach, UNIX commands can be
+interleaved with commands invoking the functions of the message
+handler.
+Conversely, existing UNIX commands
+can be used in connection with messages.
+For
+example, all the usual UNIX editing, text-formatting, and printing
+facilities can be applied directly to individual messages.
+MH,
+therefore, consists of a relatively small amount of new code; it
+makes extensive use of other UNIX software to provide the
+capabilities found in other message systems.
+.+c OVERVIEW
+.pp
+There are three main aspects of MH:  the  way  messages  are
+stored (the message database), the user's profile (which directs
+how certain actions of the message handler take place), and the
+commands for dealing with messages.
+.pp
+Under MH, each message is stored as a separate file.
+A user
+can take any action with a message that he could with an ordinary
+file in UNIX.
+A UNIX directory in which messages are stored is
+called a folder.
+Each folder contains some standard entries to support
+the message-handling functions.
+The messages in a folder have numerical
+names.
+These folders (directories)
+are entries in a particular directory path, described in
+the user profile, through which MH can find message folders.
+Using the UNIX \*(lqlink\*(rq facility, it is possible for one copy of a
+message to be \*(lqfiled\*(rq in more than one folder, providing a
+message index facility.
+Also, using the UNIX tree-structured
+file system, it is possible to have a folder within a folder.
+This two-level organization provides a \*(lqselection-list\*(rq
+facility, with the full power of the MH commands available on
+selected sublists of messages.
+.pp
+Each user of MH has a user profile, a file in his $HOME (initial
+login)
+directory called \*(lq\*.mh\(ruprofile\*(rq.
+This profile contains several
+pieces of information used by the MH commands:  a
+path name to the directory that contains the message folders,
+information concerning which folder the user last referenced (the
+\*(lqcurrent\*(rq folder), and parameters that tailor MH commands
+to the individual user's requirements.
+It also contains
+most of the necessary state information concerning how
+the user is dealing with his messages, enabling MH to be
+implemented as a set of individual UNIX commands, in contrast to the
+usual approach of a monolithic subsystem.
+.pp
+In MH, incoming mail is appended
+to the end of a file called \*.mail in a user's $HOME
+directory.
+The user adds the new messages to his collection of MH messages
+by invoking the command
+.i inc .
+.i Inc
+(incorporate) adds the new
+messages to a folder called \*(lqinbox\*(rq, assigning them names which
+are consecutive integers starting with the next highest integer
+available in inbox.
+.i Inc
+also produces a
+.i scan
+summary of
+the messages thus incorporated.
+.pp
+There are four commands for examining the messages in a
+folder:
+.i show ,
+.i prev ,
+.i next ,
+and
+.i scan .
+.i Show
+displays a
+message in a folder,
+.i prev
+displays the message preceding the
+current message, and
+.i next
+displays the message following the
+current message.
+.i Scan
+summarizes the messages in a folder,
+producing one line per message, showing who the message is from,
+the date, the subject, etc.
+.pp
+The user may move a message from one folder to another with
+the command
+.i file .
+Messages may be removed from a folder
+by means of the command
+.i rmm .
+In addition, a user may query
+what the current folder is and may specify that a new folder
+become the current folder, through the command
+.i folder .
+.pp
+A set of messages based on content may be selected by
+use of the command
+.i pick .
+This command searches through
+messages in a folder and selects those that match a given
+criterion.
+A subfolder is created within the original folder,
+containing links to all the messages that satisfy the selection
+criteria.
+.pp
+A message folder (or subfolder) may be removed by means of
+the command
+.i rmf .
+.pp
+There are five commands enabling the user to create new
+messages and send them:
+.i comp ,
+.i dist ,
+.i forw ,
+.i repl ,
+and
+.i send .
+.i Comp
+provides the facility for the user to compose a
+new message;
+.i dist
+redistributes mail to additional addressees;
+.i forw
+enables the user to forward messages; and
+.i repl
+facilitates the generation of a reply to an incoming message.
+If
+a message is not sent directly by one of these commands, it may
+be sent at a later time using the command
+.i send .
+.pp
+All of the elements summarized above
+are described in more detail in the following sections.
+Many of the
+normal facilities of UNIX provide additional capabilities for
+dealing with messages in various ways.
+For example, it is
+possible to print messages
+on the line-printer without requiring any additional code within
+MH.
+Using standard UNIX facilities, any terminal output can be
+redirected to a file for repeated or future viewing.
+In general,
+the flexibility and capabilities of the UNIX interface with the
+user are preserved as a result of the integration of MH into the UNIX
+structure.
+.+c TUTORIAL
+.pp
+This tutorial provides a brief introduction to the MH commands.
+It should be sufficient
+to allow the user to read his mail, do some simple manipulations of
+it, and create and send messages.
+.pp
+A message has two major pieces:  the
+header and the body.
+The body consists of the text of the message
+(whatever you care to type in).
+It follows the header and is separated from
+it by an empty line.
+(When you compose a message, the form that appears
+on your terminal shows a line of dashes after the header.
+This is for
+convenience and is replaced by an empty line when the message is
+sent.)  The header is composed of several components, including the
+subject of the message and the person to whom it is addressed.
+Each component starts with a name
+and a colon; components must not start with a blank.
+The text of the
+component may take more than one line, but each continuation line must
+start with a blank.
+Messages typically have \*(lqto:\*(rq, \*(lqcc:\*(rq, and
+\*(lqsubject:\*(rq components.
+When composing a message, you should include
+the \*(lqto:\*(rq and \*(lqsubject:\*(rq components; the \*(lqcc:\*(rq (for people
+you want to send copies to) is not necessary.
+.pp
+The basic MH commands are
+.i inc ,
+.i scan ,
+.i show ,
+.i next ,
+.i prev ,
+.i rmm ,
+.i comp ,
+and
+.i repl .
+These are described below.
+
+.i inc
+.pp
+When you get the message \*(lqYou have mail\*(rq, type the command
+.i inc .
+You will get a \*(lqscan listing\*(rq such as:
+
+.nf
+.if t .ta .4i 1.0i 2i
+.if n .ta .4i 1.2i 3i
+^7+~^^\07/13~^^Cas~^revival of measurement work
+^8~^^10/\09~^^Norm~^NBS people and publications
+^9~^^11/26~^^To:norm~^question \*(<<Are there any functions
+.re
+.fi
+.pp
+This shows the messages you received since the last time you
+executed this command (
+.i inc
+adds these new messages to
+your inbox folder).
+You can see this list again, plus a list of any
+other messages you have, by using the
+.i scan
+command.
+
+.i scan
+.pp
+The scan listing shows the message number, followed by the
+date and the sender.
+(If you are the sender, the addressee in the \*(lqto:\*(rq
+component is displayed.
+You may send yourself a message by including
+your name among the \*(lqto:\*(rq or \*(lqcc:\*(rq addressees.)
+It also shows the message's subject; if
+the subject is short, the first part of the body of the message is
+included after the characters \*(<<.
+
+.ne 5
+.i show
+.pp
+This command shows the current message, that is,
+the first one of the new messages after an
+.i inc .
+If the message is not
+specified by name (number), it is
+generally the last message referred to by an MH command.
+For example,
+
+.ta 1i
+.ti .5i
+^\fIshow\fP\05~^will show message 5.
+.pp
+You can use the show command to copy a message or print a
+message.
+
+.(b L
+.in .5i
+.if t .ta 1i
+.if n .ta 1.5i
+^\fIshow\fR\0>\0\fIx\fR~^will copy the message to file x.
+.br
+^\fIshow\fR\0|\0\fIprint\fR~^will print the message, using the \fIprint\fR command.
+.br
+^\fInext\fR~^will show the message that follows the current message.
+.br
+^\fIprev\fR~^will show the message previous to the current message.
+.br
+^\fIrmm\fR~^will remove the current message.
+.br
+^\fIrmm\03\fR~^will remove message 3.
+.)b
+
+.ne 5
+.i comp
+.pp
+The
+.i comp
+command puts you in the editor to write or edit a message.
+Fill in or
+delete the \*(lqto:\*(rq, \*(lqcc:\*(rq, and \*(lqsubject:\*(rq fields, as appropriate, and
+type the body of the message.
+Then
+exit normally from the editor.
+You will be asked
+\*(lqWhat now?\*(rq.
+Type a carriage return to see the options.
+Typing \fBsend\fR
+will cause the message to be sent; typing \fBquit\fR will cause an exit
+from
+.i comp ,
+with the message draft saved.
+.pp
+If you quit without sending the message, it will be saved in a file
+called /usr/<name>/Mail/draft (where /usr/<name> is your $HOME directory).
+You can edit this file and send the message later, using the
+.i send
+command.
+
+.ne 4
+.i "comp\0\-editor\0prompter"
+.pp
+This command uses a different editor and is useful for preparing
+\*(lqquick and dirty\*(rq messages.
+It prompts you for each component of the
+header.
+Type the information for that component, or type a carriage
+return to omit the component.
+After that, type the body of the
+message.
+Backspacing is the only form of editing allowed with this editor.
+When the body is complete, type a carriage return followed by <CTRL-D>
+(<OPEN> on Ann Arbor terminals).
+This completes the initial preparation of the message; from then on, use
+the same procedures as with
+.i comp
+(above).
+
+.ne 5
+.i repl
+.br
+.i "repl\0n"
+.pp
+This command makes up an initial message form with a header
+that is appropriate for
+replying to an existing message.
+The message being answered is the
+current message if no message number is mentioned, or n if a number
+is specified.
+After the header is completed, you can finish the message as in
+.i comp
+(above).
+.pp
+This is enough information to get you going using MH.
+There are more commands,
+and the commands described here have more features.
+Subsequent sections
+explain MH in complete detail.
+The system is quite powerful if you
+want to use its sophisticated features, but the foregoing commands
+suffice for sending and receiving messages.
+.pp
+There are numerous additional capabilities you may wish to explore.
+For example, the
+.i pick
+command will select a subset of messages
+based on specified criteria such as sender or subject.
+Groups of
+messages may be designated, as described in Sec. V, under \*(lqMessage
+Naming\*(rq.
+The file \*(lq\*.mh\(ruprofile\*(rq can be used to tailor your use of
+the message system to your needs and preferences, as described in Sec. V,
+under \*(lqThe User Profile\*(rq.
+In general, you may
+learn additional features of the system selectively, according to your
+requirements,
+by studying the relevant sections of this manual.
+There is no need to
+learn all the details of the system at once.
+.+c "DETAILED DESCRIPTION"
+.pp
+This section describes the MH system in detail, including the components
+of the user profile, the conventions for message naming, and some of
+the other MH conventions.
+Readers who are
+generally familiar with computer systems will be able to follow
+the principal ideas, although some details may be meaningful only to
+those familiar with UNIX.
+.uh "THE USER PROFILE"
+.pp
+The first time an MH command is issued by a new user, the system
+prompts for a \*(lqpath\*(rq and creates an MH \*(lqprofile\*(rq.
+.pp
+Each MH user has a profile which contains current
+state information for the MH package and, optionally, tailoring
+information for each individual program.
+When a folder becomes
+the current folder, it is recorded in the user's profile.
+Other profile entries control the MH path (where folders and
+special files are kept), folder and message protections, editor
+selection, and default arguments for each MH program.
+.pp
+The MH profile is stored in the file \*(lq\*.mh\(ruprofile\*(rq in the
+user's $HOME directory.
+It has the format of a message without
+any body.
+That is, each profile entry is on one line, with a
+keyword followed by a colon (:) followed by text particular to
+the keyword.
+.br
+\(rh\ \ \&
+.i "This file must not have blank lines."
+.br
+The keywords
+may have any combination of upper and lower case.
+(See Appendix
+B for a description of message formats.)
+.pp
+For the average MH user, the only profile entry of
+importance is \*(lqPath\*(rq.
+Path specifies a directory in which MH
+folders and certain files such as \*(lqdraft\*(rq are found.
+The
+argument to this keyword must be a legal UNIX path that names an
+existing directory.
+If this path is unrooted (i.e., does not
+begin with a \fB/\fR), it will be presumed to start from the
+user's $HOME directory.
+All folder and message references within
+MH will relate to this path unless full path names are used.
+.pp
+Message protection defaults to 664, and folder protection to
+751.
+These may be changed by profile entries \*(lqMsg-Protect\*(rq
+and \*(lqFolder-Protect\*(rq, respectively.
+The argument to these
+keywords is an octal number which is used as the UNIX file mode.\**
+.(f
+\**See
+.i chmod (I)
+in the
+.i "UNIX Programmer's Manual" .[5]
+.)f
+.pp
+When an MH program starts running, it looks through the
+user's profile for an entry with a keyword matching the program's
+name.
+For example, when
+.i comp
+is run, it looks for a \*(lqcomp\*(rq
+profile entry.
+If one is found, the text of the profile entry is
+used as the default switch setting until all defaults are overridden
+by explicit switches passed to the program as arguments.
+Thus the profile
+entry \*(lqcomp:\0\-form\0standard.list\*(rq would direct
+.i comp
+to use the
+file \*(lqstandard.list\*(rq as the message skeleton.
+If an explicit
+form switch is given to the
+.i comp
+command, it will override the
+switch obtained from the profile.
+.pp
+In UNIX, a program may exist under several names, either by
+linking or aliasing.
+The actual invocation name is used by an MH
+program when scanning for its profile defaults.
+Thus, each MH program
+may have several names by which it can be invoked, and each name
+may have a different set of default switches.
+For example, if
+.i comp
+is invoked by the name
+.i icomp ,
+the profile entry
+\*(lqicomp\*(rq will control the default switches for this invocation of
+the
+.i comp
+program.
+This provides a powerful
+definitional facility for commonly used switch settings.
+.pp
+The default editor
+for editing within
+.i comp ,
+.i repl ,
+.i forw ,
+and
+.i dist ,
+is \*(lq/bin/ned\*(rq.\**
+.(f
+\**See Ref. 6 for a description of
+the NED text editor.
+.)f
+A different editor may be used by specifying
+the profile entry
+\*(lqEditor: \*(rq.
+The argument to \*(lqEditor\*(rq is the name of an
+executable program or shell command file which can be found via
+the user's $PATH defined search path, excluding the current
+directory.
+The \*(lqEditor:\*(rq profile specification
+may in turn be overridden by a \*(lq\-editor\0<editor>\*(rq
+profile switch associated with
+.i comp ,
+.i repl ,
+.i forw ,
+or
+.i dist .
+Finally, an explicit editor switch specified with any
+of these four commands will have ultimate precedence.
+.pp
+During message composition, more than one editor may be
+used.
+For example, one editor (such as
+.i prompter )
+may be used
+initially, and a second editor may be invoked later to revise
+the message being composed
+(see the discussion of
+.i comp
+in Section 5 for details).
+A profile entry \*(lq<lasteditor>\-next:\0<editor>\*(rq specifies the name of
+the editor to be used after a particular editor.
+Thus \*(lqcomp:\0\-e\0prompter\*(rq
+causes the initial text to be collected by
+.i prompter ,
+and the profile entry \*(lqprompter\-next:\0ed\*(rq names ed as the
+editor to be invoked for the next round of editing.
+.pp
+Some of the MH commands, such as
+.i show ,
+can be used on
+message folders owned by others, if those folders are readable.
+However,
+you cannot write in someone else's folder.
+All the MH command
+actions not requiring write permission may be used with
+a \*(lqread-only\*(rq folder.
+In a writable folder, a file named
+\*(lqcur\*(rq is used to contain its current message name.
+For read-only folders, the current message name is
+stored in the user's profile.
+.pp
+Table 1 lists examples of the currently defined profile
+entries, typical arguments, and the programs that reference the
+entries.
+.in .9i
+.ll -.9i
+.ta 2.3i
+.sp 30p
+.ce
+Table 1
+.sp 8p
+.ce
+P\s-2ROFILE\s0 C\s-2OMPONENTS\s0
+.hl             \" ~12p preceding + 1v (12p) after
+.nf
+^^MH Programs that
+^Keyword and Argument~^\ Use Component\h'|\n(.lu-.9i'\v'4p'\l'|0'\v'-4p'  \" \l'..' does underlining
+.sp
+^Path:\0Mail~^All
+^Current-Folder:\0inbox~^Most
+^Editor:\0/bin/ed~^\fIcomp, dist, forw, repl\fR
+^Msg\-Protect:\0644~^\fIinc\fR
+^Folder\-Protect:\0711~^\fIfile, inc, pick\fR
+^<program>:\0default switches~^All
+^cur\-<read-onlyfolder>:\0172~^Most
+^prompter\-next:\0ed~^\fIcomp, dist, forw, repl\fR
+.hl
+.ll +.9i
+.in 0
+.fi
+.pp
+Path
+.u should
+be present.
+Folder is maintained
+automatically by many MH commands (see the \*(lqContext\*(rq sections of
+the individual commands in Sec. V).
+All other entries are optional,
+defaulting to the values described above.
+.uh "MESSAGE NAMING"
+.pp
+Messages may be referred to explicitly or implicitly when
+using MH commands.
+A formal syntax of message names is given in Appendix C, but the
+following description should be sufficient for most MH users.
+Some details of message naming that apply only to certain
+commands are included in the description of those
+commands.
+.pp
+Most of the MH commands accept arguments specifying one or
+more folders, and one or more messages to operate on.
+The use of
+the word \*(lqmsg\*(rq as an argument to a command means that exactly one
+message name may be specified.
+A message name may be a number,
+such as 1, 33, or 234, or it may be
+one of the \*(lqreserved\*(rq message names:
+first, last, prev, next, and cur.
+(As a shorthand, a
+period (\*.) is equivalent to cur.)
+The meanings of these names
+are straightforward:  \*(lqfirst\*(rq is the first message in the
+folder; \*(lqlast\*(rq is the last
+message in the folder; \*(lqprev\*(rq is the
+message numerically previous to the current message; \*(lqnext\*(rq
+is the message numerically following the current message; \*(lqcur\*(rq
+(or \*(lq\*.\*(rq) is the current message in the folder.
+.pp
+The default in commands that take a \*(lqmsg\*(rq argument is
+always \*(lqcur\*(rq.
+.pp
+The word \*(lqmsgs\*(rq indicates that several messages may be
+specified.
+Such a specification consists of several message
+designations separated by spaces.
+A message designation is
+either a message name or a message range.
+A message range is a
+specification of the form name1\-name2 or name1:n, where name1 and
+name2 are message names and n is an integer.
+The first form
+designates all the messages from name1 to name2 inclusive; this
+must be a non-empty range.
+The second form specifies up to n
+messages, starting with name1 if name1 is a number, or first,
+cur, or next, and ending with name1 if name1 is last or
+prev.
+This interpretation of n is overridden if n is preceded
+by a plus sign or a minus sign;
++n always means up to n messages starting with
+name1, and \-n always means up to n messages ending with name1.
+Repeated specifications of the same message have the same effect
+as a single specification of
+the message.
+Examples of
+specifications are:
+
+.(b
+1 5 7\-11 22
+first 6 8 next
+first\-10
+last:5
+.)b
+.pp
+The message name \*(lqall\*(rq is a shorthand for \*(lqfirst\-last\*(rq,
+indicating all of the messages in the folder.
+.pp
+The limit on the number of messages in an expanded message
+list is generally 999\*-the maximum number of messages in a
+folder.
+However, the
+.i show
+command and the
+commands `\fIpick\0\-scan\fR' and `\fIpick\0\-show\fR'
+are constrained to have argument lists
+that are no more than 512 characters long.
+(Under Version 7 UNIX this limit is 4096.)
+.pp
+In commands that accept \*(lqmsgs\*(rq arguments, the default is
+either cur or all, depending on which makes more sense.
+.pp
+In all of the MH commands, a plus sign preceding an argument
+indicates a folder name.
+Thus, \*(lq+inbox\*(rq is the name of the
+user's standard inbox.
+If an explicit folder argument is given
+to an MH command, it will become the current folder (that is,
+the \*(lqCurrent-Folder:\*(rq entry
+in \*(lq\*.mh\(ruprofile\*(rq will be changed to this
+folder).
+In the case of the
+.i file
+and
+.i pick
+commands, which
+can have multiple output folders, a new source folder (other than
+the default current folder) is specified by \*(lq\-src\0+folder\*(rq.
+.uh "OTHER MH CONVENTIONS"
+.pp
+One very powerful feature of MH is that the MH commands may
+be issued from any current directory, and the proper path to
+the appropriate folder(s) will be taken from the user's profile.
+If the MH path is not appropriate for a specific folder or file,
+the automatic prepending of the MH path can be avoided by
+beginning a folder or file name with \fB/\fR.
+Thus any specific full
+path may be specified.
+.pp
+Arguments to the various programs may be given in any order,
+with the exception of a few switches whose arguments must follow
+immediately, such as \*(lq\-src\0+folder\*(rq for \fIpick\fR and \fIfile\fR.
+.pp
+Whenever an MH command prompts the user, the valid options
+will be listed in response to a <RETURN>.
+(The first of the
+listed options is the default if end-of-file is encountered, such
+as from a command file.)  A valid response is any \fIunique\fR
+abbreviation of one of the listed options.
+.pp
+Standard UNIX documentation conventions are used in this report
+to describe MH command syntax.
+Arguments enclosed in brackets
+([ ]) are optional; exactly one of the arguments enclosed
+within braces ({ }) must be specified, and all other
+arguments are required.
+The use of ellipsis dots (...) indicates
+zero or more repetitions of the previous item.
+For example,
+\*(lq+folder ...\*(rq would indicate that one or more \*(lq+folder\*(rq arguments
+is required and \*(lq[+folder ...]\*(rq indicates that 0 or more
+\*(lq+folder\*(rq arguments may be given.
+.pp
+MH departs from UNIX standards by using switches that consist of
+more than one character, e.g. \*(lq\-header\*(rq.
+To minimize typing,
+only a unique abbreviation of a switch need be typed; thus, for
+\*(lq\-header\*(rq, \*(lq\-hea\*(rq is probably sufficient, depending on the
+other switches the command accepts.
+Each MH program
+accepts the switch \*(lq\-help\*(rq (which \fImust\fR be spelled out fully)
+and produces a syntax description and a list of switches.
+In the
+list of switches, parentheses indicate required characters.
+For example, all \*(lq\-help\*(rq switches will appear as \*(lq\-(help)\*(rq,
+indicating that no abbreviation is accepted.
+.pp
+Many MH switches have both on and off forms, such as
+\*(lq\-format\*(rq and \*(lq\-noformat\*(rq.
+In many of the descriptions in Sec. V,
+only one form is defined; the other form, often used to
+nullify profile switch settings, is assumed to be the opposite.
+.br
+.bp
+.uh "MH COMMANDS"
+.pp
+The MH package comprises 16 programs:
+
+.nf
+.in .5i
+.ta 1.5i
+^comp~^Compose a message
+^dist~^Redistribute a message
+^file~^Move messages between folders
+^folder~^Select/list status of folders
+^forw~^Forward a message
+^inc~^Incorporate new mail
+^next~^Show the next message
+^pick~^Select a set of messages by context
+^prev~^Show the previous message
+^prompter~^Prompting editor front end for composing messages
+^repl~^Reply to a message
+^rmf~^Remove a folder
+^rmm~^Remove messages
+^scan~^Produce a scan listing of selected messages
+^send~^Send a previously composed message
+^show~^Show messages
+.fi
+.re
+.pp
+These programs are described below.
+The form of the descriptions
+conforms to the standard
+form for the description of UNIX commands.
+.if t \{
+.ll 6.5i
+.lt 6.5i
+\}
+.fo '7th Edition'UNIX/32V(Rand)''
+.de SC
+.he '\\$1(1)'-%-'\\$1(1)'
+.bp
+.(x
+.ti .8i
+\\$1
+.)x
+..
+.de NA
+.b \\s-2NAME\\s0
+.ti .5i
+..
+.de SY
+.sp
+.b \\s-2SYNOPSIS\\s0
+.in 1i
+.ti .5i
+.na
+..
+.de DE
+.ad
+.sp
+.in 0
+.b  \\s-2DESCRIPTION\\s0
+.sp
+.fi
+.in .5i
+..
+.de Fi
+.(b L
+.ti 0
+.b \\s-2Files\\s0
+.ta 2i
+..
+.de Pr
+.)b
+.(b L F
+.in 2.5i
+.ti 0
+.b "\\s-2Profile Components\\s0"
+.ti .5i
+..
+.de Ps
+.ti .5i
+..
+.de De
+.)b
+.(b L
+.in .5i
+.ti 0
+.b \\s-2Defaults\\s0
+..
+.de Co
+.)b
+.(b L F
+.ti 0
+.b \\s-2Context\\s0
+.br
+..
+.de En
+.)b
+.in 0
+..
+.SC COMP
+.NA
+comp \- compose a message
+
+.SY
+comp \%[\-editor\ editor] \%[\-form\ formfile] \%[file] \%[\-use]
+\%[\-nouse] \%[\-help]
+
+.DE
+\fIComp\fP is used to create a new message to be mailed.
+If
+\fIfile\fP is not specified, the file named \*(lqdraft\*(rq in the user's MH
+directory will be used.
+\fIComp\fR copies a message form to
+the file being composed and then invokes an editor on the
+file.
+The default editor is /bin/ned, which may be overridden with
+the `\-editor' switch or with a profile entry \*(lqEditor:\*(rq.
+(See Ref. 5 for a
+description of the NED text editing system.)
+The default
+message form contains the following elements:
+
+     To:
+     cc:
+     Subject:
+     ----------
+
+If the file named \*(lqcomponents\*(rq exists in the user's MH directory,
+it will be used instead of this form.
+If `\-form
+formfile' is specified, the specified formfile (from the MH
+directory) will be used as the skeleton.
+The line of dashes
+or a blank line must be left between the header and the
+body of the message for the message to be identified properly when it is
+sent (see \fIsend;\fR).
+The switch `\-use' directs \fIcomp\fR to
+continue editing an already started message.
+That is, if a
+\fIcomp\fR (or \fIdist\fR, \fIrepl\fR, or \fIforw\fR) is terminated without
+sending the message, the message can be edited again via
+\*(lqcomp \-use\*(rq.
+
+If the specified file (or draft) already exists, \fIcomp\fR will ask
+if you want to delete it before continuing.
+A reply of \fBNo\fR will abort the
+\fIcomp\fR, \fByes\fR will replace the existing draft with a blank
+skeleton, \fBlist\fR will display the draft, and \fBuse\fR will use it
+for further composition.
+
+Upon exiting from the editor, \fIcomp\fR will ask \*(lqWhat now?\*(rq.
+The valid
+responses are \fBlist\fR, to list the draft on the terminal; \fBquit\fR, to
+terminate the session and preserve the draft; \fBquit delete\fR, to terminate,
+then delete the draft; \fBsend\fR, to send the message; \fBsend verbose\fR, to
+cause the delivery process to be monitored; \fBedit <editor>\fR, to invoke
+<editor> for further editing; and \fBedit\fR, to re-edit using the
+same editor that was used on the preceding round unless a profile
+entry \*(lq<lasteditor>\-next: <editor>\*(rq names an alternative editor.
+
+.Fi
+^/etc/mh/components~^The message skeleton
+^or <mh-dir>/components~^Rather than the standard skeleton
+^$HOME/\*.mh\(ruprofile~^The user profile
+^<mh-dir>/draft~^The default message file
+^/usr/bin/send~^To send the composed message
+.Pr
+^Path:~^To determine the user's MH directory
+.Ps
+^Editor:~^To override the use of /bin/ned as the default editor
+.Ps
+^<lasteditor>\-next:~^To name an editor to be used after exit from <lasteditor>
+.De
+`file' defaults to draft
+`\-editor' defaults to /bin/ned
+`\-nouse'
+.Co
+\fIComp\fR does not affect either the current folder or the current message.
+.En
+.SC DIST
+.NA
+dist \- redistribute a message to additional addresses
+.SY
+dist \%[+folder] \%[msg] \%[\-form\ formfile] \%[\-editor\ editor]
+\%[\-annotate] \%[\-noannotate]
+\%[\-inplace] \%[\-noinplace]
+\%[\-help]
+.DE
+\fIDist\fR is similar to \fIforw\fR.
+It prepares the specified
+message for redistribution to addresses that (presumably) are
+not on the original address list.
+The file \*(lqdistcomps\*(rq in the
+user's MH directory, or a standard form, or the file specified by
+`\-form formfile' will be used as the blank components file to
+be prepended to the message being distributed.
+The standard form
+has the components \*(lqDistribute-to:\*(rq and \*(lqDistribute-cc:\*(rq.
+When
+the message is sent, \*(lqDistribution-Date:\0date\*(rq,
+\*(lqDistribution-From:\0name\*(rq, and
+\*(lqDistribution-Id:\0id\*(rq (if `\-msgid' is
+specified to \fIsend\fR;) will be prepended to the outgoing message.
+Only those addresses in \*(lqDistribute-To\*(rq, \*(lqDistribute-cc\*(rq, and
+\*(lqDistribute-Bcc\*(rq will be sent.
+Also, a \*(lqDistribute-Fcc:\0folder\*(rq
+will be honored (see \fIsend;\fR).
+
+\fISend\fR recognizes a message as a redistribution message by the
+existence of the field \*(lqDistribute-To:\*(rq, so don't try to
+redistribute a message with only a \*(lqDistribute-cc:\*(rq.
+
+If the `\-annotate' switch is given, each message being
+distributed will be annotated with the lines:
+
+     Distributed:\0\*(<<date\*(>>
+     Distributed:\0Distribute-to: names
+
+where each \*(lqto\*(rq list contains as many lines as required.
+This annotation
+will be done only if the message is sent directly from \fIdist\fR.
+If the
+message is not sent immediately from \fIdist\fR (i.e., if it is sent later
+via \fIsend;\fR),
+\*(lqcomp \-use\*(rq may be used to re-edit and send the constructed message, but
+the annotations won't take place.
+The '\-inplace' switch causes annotation to
+be done in place in order to preserve links to the annotated message.
+
+See \fIcomp\fR for a description of the `\-editor' switch and for options
+upon exiting from the editor.
+
+.Fi
+^/etc/mh/components~^The message skeleton
+^or <mh-dir>/components~^Rather than the standard skeleton
+^$HOME/\*.mh\(ruprofile~^The user profile
+^<mh-dir>/draft~^The default message file
+^/usr/bin/send~^To send the composed message
+.Pr
+^Path:~^To determine the user's MH directory
+.Ps
+^Editor:~^To override the use of /bin/ned as the default editor
+.Ps
+^<lasteditor>\-next:~^To name an editor to be used after exit from <lasteditor>
+.De
+`+folder' defaults to the current folder
+`msg' defaults to cur
+`\-editor' defaults to /bin/ned
+`\-noannotate'
+`\-noinplace'
+.Co
+If a +folder is specified, it will become the current
+folder, and the current message will be set to the message
+being redistributed.
+.En
+.SC FILE
+.NA
+file \- file message(s) in (an)other folder(s)
+.SY
+file \%[\-src\ +folder] \%[msgs] \%[\-link] \%[\-preserve] \%+folder\ ...
+\%[\-nolink] \%[\-nopreserve]
+\%[\-file\ file] \%[\-nofile] \%[\-help]
+.DE
+\fIFile\fR moves (\fImv\fR(I)) or links (\fIln\fR(I)) messages from a
+source folder into one or more destination folders.
+If you think
+of a message as a sheet of paper, this operation is not
+unlike filing the sheet of paper (or copies) in file cabinet
+folders.
+When a message is filed, it is linked into the
+destination folder(s) if possible, and is copied otherwise.
+As long
+as the destination folders are all on the same file system, multiple filing
+causes little storage overhead.
+This facility provides a good way to cross-file or multiply-index
+messages.
+For example, if a message is received from Jones about
+the ARPA Map Project, the command
+
+     file\0cur\0+jones\0+Map
+
+would allow the message to be found in either of the two
+folders `jones' or `Map'.
+
+The option `\-file file' directs \fIfile\fR to use the specified
+file as the source message to be filed, rather than a message from
+a folder.
+
+If a destination folder doesn't exist, \fIfile\fR will ask if you
+want to create one.
+A negative response will abort the file
+operation.
+
+`\-link' preserves the source folder copy of the message
+(i.e., it does a \fIln\fR(I) rather than a \fImv\fR(I)), whereas,
+`\-nolink' deletes the \*(lqfiled\*(rq messages from the source
+folder.
+Normally, when a message is filed, it is assigned the
+next highest number available in each of the destination folders.
+Use of the `\-preserve' switch will override this message
+\*(lqrenaming\*(rq, but name conflicts may occur, so
+use this switch cautiously.
+(See \fIpick\fR for more details on
+message numbering.)
+
+If `\-link' is not specified (or `\-nolink' is specified),
+the filed messages will be removed (unlink(II)) from the
+source folder.
+
+.Fi
+^$HOME/\*.mh\(ruprofile~^The user profile
+.Pr
+^Path:~^To determine the user's MH directory
+.Ps
+^Current-Folder:~^To find the default current folder
+.Ps
+^Folder\-Protect:~^To set mode when creating a new folder
+.De
+`\-src +folder' defaults to the current folder
+`msgs' defaults to cur
+`\-nolink'
+`\-nopreserve'
+`\-nofile'
+.Co
+If `\-src +folder' is given, it will become the
+current folder for future MH commands.
+If neither `\-link' nor
+`all' are specified, the current message in the source
+folder will be set to the last message specified; otherwise, the
+current message won't be changed.
+.En
+.SC FOLDER
+.NA
+folder \- set/list current folder/message
+.SY
+folder \%[+folder] \%[msg] \%[\-all] \%[\-fast] \%[\-nofast] \%[\-up] \%[\-down]
+\%[\-header] \%[\-noheader] \%[\-total] \%[\-nototal] \%[\-pack] \%[\-nopack]
+\%[\-help]
+
+.ti .5i
+folders  <equivalent to 'folder \-all'>
+.DE
+Since the MH environment is the shell, it is easy to lose
+track of the current folder from day to day.
+\fIFolder\fR will
+list the current folder, the number of messages in it, the
+range of the messages (low-high), and the current message within
+the folder, and will flag a selection list or extra files if they
+exist.
+An example of the output is:
+
+      inbox+ has 16 messages ( 3\- 22); cur= 5.
+
+If a `+folder' and/or `msg' are specified, they will
+become the current folder and/or message.
+An `\-all' switch
+will produce a line for each folder in the user's MH directory,
+sorted alphabetically.
+These folders are preceded by the read-only
+folders, which occur as \*.mh\(ruprofile \*(lqcur\-\*(rq entries.
+For example,
+
+.nf
+.ta 1.5i 2.1i 2.7i 3.5i
+^~Folder\ \ ^^~#\ of\ ^^messages~^^(~\ range\~ );\ ^cur msg (other files)
+^~/fsd/rs/m/tacc\ \ ^^has~35\ ^^messages~^^(~1\-\035);\ ^cur=\ 23.
+^~/rnd/phyl/Mail/EP\ \ ^^has~82\ ^^messages~^^(~1\-108);\ ^cur=\ 82.
+^~f\&f\ \ ^^has~4\ ^^messages~^^(~1\-\0\04);\ ^cur=\ \01.
+^~inbox+\ ^^has~16\ ^^messages~^^(~3\-\022);\ ^cur=\ \05.
+^~mh\ \ ^^has~76\ ^^messages~^^(~1\-\076);\ ^cur=\ 70.
+^~notes\ \ ^^has~2\ ^^messages~^^(~1\-\0\02);\ ^cur=\ \01.
+^~ucom\ \ ^^has~124\ ^^messages~^^(~1\-124);\ ^cur=\ \06; (select).
+
+^^^~TOTAL=\0339\ ^messages\0in\0\07\0Folders.
+.re
+.fi
+
+The \*(lq+\*(rq after inbox indicates that it is the current folder.
+The \*(lq(select)\*(rq indicates that the folder ucom has a selection
+list produced by \fIpick\fR.
+If \*(lqothers\*(rq had appeared in parentheses at
+the right of a line, it would indicate that there are files in
+the folder directory that don't belong under the MH file naming
+scheme.
+
+The header is output if either an `\-all' or a `\-header' switch
+is specified; it is suppressed by `\-noheader'.
+Also, if \fIfolder\fR
+is invoked by a name ending with \*(lqs\*(rq (e.g., \fIfolders\fR),
+`\-all' is assumed.
+A `\-total' switch will produce only the
+summary line.
+
+If `\-fast' is given, only the folder name (or names in the
+case of `\-all') will be listed.
+(This is faster because the
+folders need not be read.)
+
+The switches `\-up' and `\-down' change the folder to be the
+one above or below the current folder.
+That is, \*(lqfolder \-down\*(rq
+will set the folder to \*(lq<current\-folder>/select\*(rq, and if the
+current folder is a selection-list folder, \*(lqfolder \-up\*(rq will
+set the current folder to the parent of the selection-list.
+(See \fIpick\fR for details on selection-lists.)
+
+The `\-pack' switch will compress the message names in a folder, removing
+holes in message numbering.
+.Fi
+^$HOME/\*.mh\(ruprofile~^The user profile
+^/bin/ls~^To fast-list the folders
+.Pr
+^Path:~^To determine the user's MH directory
+.Ps
+^Current-Folder:~^To find the default current folder
+.De
+`+folder' defaults to the current folder
+`msg' defaults to none
+`\-nofast'
+`\-noheader'
+`\-nototal'
+`\-nopack'
+.Co
+If `+folder' and/or `msg' are given, they will become the
+current folder and/or message.
+.En
+.SC FORW
+.NA
+forw \- forward messages
+.SY
+forw \%[+folder] \%[msgs] \%[\-editor\ editor] \%[\-form\ formfile]
+\%[\-annotate] \%[\-noannotate]
+\%[\-inplace]  \%[\-noinplace]
+\%[\-help]
+.DE
+\fIForw\fR may be used to prepare a message containing other
+messages.
+It constructs the new message from the components file
+or `\-form formfile' (see \fIcomp\fR), with a body composed of the
+message(s) to be forwarded.
+An editor is invoked as in \fIcomp\fR,
+and after editing is complete, the user is prompted before the message
+is sent.
+
+If the `\-annotate' switch is given, each message being
+forwarded will be annotated with the lines
+
+     Forwarded: \*(<<date\*(>>
+     Forwarded: To: names
+     Forwarded: cc: names
+
+where each \*(lqTo:\*(rq and \*(lqcc:\*(rq list contains as many lines as required.
+This annotation will be done only if the message is sent directly
+from \fIforw\fR.
+If the message is not sent immediately from \fIforw\fR,
+\*(lqcomp \-use\*(rq may be used in a later session to re-edit and send
+the constructed message, but the annotations won't take place.
+The `\-inplace' switch permits annotating a message in place in
+order to preserve its links.
+
+See \fIcomp\fR for a description of the `\-editor' switch.
+.Fi
+^/etc/mh/components~^The message skeleton
+^or <mh-dir>/components~^Rather than the standard skeleton
+^$HOME/\*.mh\(ruprofile~^The user profile
+^<mh-dir>/draft~^The default message file
+^/usr/bin/send~^To send the composed message
+.Pr
+^Path:~^To determine the user's MH directory
+.Ps
+^Editor:~^To override the use of /bin/ned as the default editor
+.Ps
+^Current-Folder:~^To find the default current folder
+.Ps
+^<lasteditor>\-next:~^To name an editor to be used after exit from <lasteditor>
+.De
+`+folder' defaults to the current folder
+`msgs' defaults to cur
+`\-editor' defaults to /bin/ned
+`\-noannotate'
+`\-noinplace'
+.Co
+If a +folder is specified, it will become
+the current folder, and the current message will be set to
+the first message being forwarded.
+.En
+.SC INC
+.NA
+inc \- incorporate new mail
+.SY
+inc \%[+folder] \%[\-audit\ audit-file] \%[\-help]
+.DE
+\fIInc\fR incorporates mail from the user's incoming mail drop
+(\*.mail) into an MH folder.
+If `+folder' isn't specified,
+the folder named \*(lqinbox\*(rq in the user's MH directory will be used.
+The
+new messages being incorporated are assigned numbers starting
+with the next highest number in the folder.
+If the specified (or
+default) folder doesn't exist, the user will be queried prior to
+its creation.
+As the messages are processed, a \fIscan\fR  listing
+of the new mail is produced.
+
+If the user's profile contains a \*(lqMsg\-Protect: nnn\*(rq entry, it
+will be used as the protection on the newly created messages,
+otherwise the MH default of 664 will be used.
+During all
+operations on messages, this initially assigned protection will
+be preserved for each message, so \fIchmod\fR(I) may be used to set a
+protection on an individual message, and its protection will be
+preserved thereafter.
+
+If the switch `\-audit audit-file' is specified (usually as a
+default switch in the profile), then \fIinc\fR will append a header
+line and a line per message to the end of the specified
+audit-file with the format:
+
+.nf
+.ti 1i
+\*(<<inc\*(>> date
+.ti 1.5i
+<scan line for first message>
+.ti 1.5i
+<scan line for second message>
+.ti 2.5i
+<etc.>
+.fi
+
+This is useful for keeping track of volume and source of incoming
+mail.
+Eventually, \fIrepl\fR, \fIforw\fR, \fIcomp\fR, and \fIdist\fR may also
+produce audits to this (or another) file, perhaps with
+\*(lqMessage-Id:\*(rq information to keep an exact correspondence history.
+\*(lqAudit-file\*(rq will be in the user's MH directory unless a full
+path is specified.
+
+\fIInc\fR will incorporate even illegally formatted messages into the
+user's MH folder, inserting a blank line prior to the offending
+component and printing a comment identifying the bad message.
+
+In all cases, the \*.mail file will be zeroed.
+.Fi
+^$HOME/\*.mh\(ruprofile~^The user profile
+^$HOME/\*.mail~^The user's mail drop
+^<mh-dir>/audit-file~^Audit trace file (optional)
+.Pr
+^Path:~^To determine the user's MH directory
+.Ps
+^Folder\-Protect:~^For protection on new folders
+.Ps
+^Msg\-Protect:~^For protection on new messages
+.De
+`+folder' defaults to \*(lqinbox\*(rq
+.Co
+The folder into which the message is
+being incorporated will become the
+current folder, and the first message incorporated will be the
+current message.
+This leaves the context ready for a \fIshow\fR
+of the first new message.
+.En
+.SC NEXT
+.NA
+next \- show the next message
+.SY
+next \%[+folder] \%[\-switches\ for\ \fIl\fR] \%[\-help]
+.DE
+\fINext\fR performs a \fIshow\fR on the next message in the
+specified (or current) folder.
+Like \fIshow\fR, it passes any
+switches on to the program \fIl\fR, which is called to list the
+message.
+This command is exactly equivalent to \*(lqshow next\*(rq.
+.Fi
+^$HOME/\*.mh\(ruprofile~^The user profile
+.Pr
+^Path:~^To determine the user's MH directory
+.Ps
+^Current-Folder:~^To find the default current folder
+.De
+.Co
+If a folder is specified, it will become the current folder, and the
+message that is shown (i.e., the next message in sequence)
+will become the current message.
+.En
+.SC PICK
+.NA
+pick \- select messages by content
+.SY
+.ta .4i 1.8i
+.nf
+.in .5i
+^pick~^^\0\-cc~^ \%[\-src\ +folder] \%[msgs] \%[\-help] \%[\-scan] \%[\-noscan]
+^^^\0\-date~^   \%[\-show] \%[\-noshow] \%[\-nofile] \%[\-nokeep]
+^^^\0\-from~^
+^^^\s+2\b'\(lt\(bv\(bv\(lk\(bv\(bv\(lb'\s0 \-search~\s+2\b'\(rt\(bv\(bv\(rk\(bv\(bv\(rb'\s0^ pattern
+^^^\0\-subject~^
+^^^\0\-to~^ \%[\-file \%[\-preserve] \%[\-link] \%+folder\ ... \%[\-nopreserve] \%[\-nolink] ]
+^^^\0\-\-component~^ \%[\-keep \%[\-stay] \%[\-nostay] \%[+folder\ ...]\ ]
+.fi
+
+.re
+.ti .5i
+typically:
+.in 1i
+pick\0\-from\0jones\0\-scan
+.br
+pick\0\-to\0holloway
+.br
+pick\0\-subject\0ned\0\-scan\0\-keep
+.DE
+\fIPick\fR searches messages within a folder for the specified
+contents, then performs several operations on the selected
+messages.
+
+A modified \fIgrep\fR(I) is used to perform the searching, so the
+full regular expression (see \fIed\fR(I)) facility is available
+within `pattern'.
+With `\-search', pattern is used directly,
+and with the others, the grep pattern constructed is:
+
+.ti +.5i
+\*(lq^component:\*.\*(**pattern\*(rq
+
+This means that the pattern specified for a `\-search' will be
+found everywhere in the message, including the header and the body,
+while the other search requests are limited to the single
+specified component.
+The expression `\-\-component pattern'
+is a shorthand for
+specifying `\-search \*(lqcomponent:\*.\*(**pattern\*(rq\ '; it is used to pick
+a component not in the set [cc date from subject to].
+An
+example is \*(lqpick \-\-reply\-to pooh \-show\*(rq.
+
+Searching is performed on a per-line basis.
+Within the header of
+the message, each component is treated as one long line, but in
+the body, each line is separate.
+Lower-case letters in the
+search pattern will match either lower or upper case in the
+message, while upper case will match only upper case.
+
+Once the search has been performed, the selected messages
+are scanned (see \fIscan\fR) if the `\-scan' switch is given, and
+then they are shown (see \fIshow\fR) if the `\-show' switch is
+given.
+After these two operations, the file operations (if
+requested) are performed.
+
+The `\-file' switch operates exactly like the \fIfile\fR command, with the
+same meaning for the `\-preserve' and `\-link' switches.
+
+The `\-keep' switch is similar to `\-file', but it produces a folder that
+is a subfolder of the folder being searched and defines it as
+the current folder (unless the `\-stay' flag is used).
+This
+subfolder contains the messages which matched the search
+criteria.
+All of the MH commands may be used with the sub-folder
+as the current folder.
+This gives the user considerable power
+in dealing with subsets of messages in a folder.
+
+The messages in a folder produced by `\-keep' will always have the
+same numbers as they have in the source folder (i.e., the
+`\-preserve' switch is automatic).
+This way, the message
+numbers are consistent with the folder from which the messages
+were selected.
+Messages are not removed from the source folder
+(i.e., the `\-link' switch is assumed).
+If a `+folder' is not
+specified, the standard name \*(lqselect\*(rq will be used.
+(This is the
+meaning of \*(lq(select)\*(rq when it appears in the output of the
+\fIfolder\fR command.) If `+folder' arguments are given to
+`\-keep', they will be used rather than \*(lqselect\*(rq for the names
+of the subfolders.
+This allows for several subfolders to be
+maintained concurrently.
+
+When a `\-keep' is performed, the subfolder becomes the current folder.
+This can be overridden by use
+of the `\-stay' switch.
+
+Here's an example:
+
+.nf
+\01  % folder +inbox
+\02           inbox+ has  16 messages (  3\- 22); cur=  3.
+\03  % pick \-from dcrocker
+\04  6 hits.
+\05  [+inbox/select now current]
+\06  % folder
+\07    inbox/select+ has  \06 messages (  3\- 16); cur=  3.
+\08  % scan
+.ds p \\h'\\w'+'u'
+\09   \03+  6/20   Dcrocker          Re: ned file update issue...
+10   \06\*p  6/23   Dcrocker          removal of files from /tm...
+11   \08\*p  6/27   Dcrocker          Problems with the new ned...
+12   13\*p  6/28   d\h'\w'D'u-\w'd'u'crocker          newest nned  \*(<<I would ap...
+13   15\*p  7/\05   Dcrocker          nned  \*(<<Last week I asked...
+14   16\*p  7/\05   d\h'\w'D'u-\w'd'u'crocker          message id format  \*(<<I re...
+15  % show all | print
+16     [produce a full listing of this set of messages on the line printer.]
+17  % folder \-up
+18            inbox+ has  16 messages (  3\- 22); cur=  3; (select).
+19  % folder \-down
+20   inbox/select+ has   6 messages (  3\- 16); cur=  3.
+21  % rmf
+22  [+inbox now current]
+23  % folder
+24            inbox+ has  16 messages (  3\- 22); cur=  3.
+.fi
+
+This is a rather lengthy example, but it shows the power of the
+MH package.
+In item 1, the current folder is set to inbox.
+In 3,
+all of the messages from dcrocker are found in inbox and linked
+into the folder \*(lqinbox/select\*(rq.
+(Since no action switch is
+specified, `\-keep' is assumed.)  Items 6 and 7 show that this
+subfolder is now the current folder.
+Items 8 through 14 are a
+\fIscan\fR of the selected messages (note that they are all from dcrocker
+and are all in upper and lower case).
+Item 15 lists all of the messages to
+the high-speed printer.
+Item 17 directs \fIfolder\fR to set the
+current folder to the parent of the selection-list folder, which
+is now current.
+Item 18 shows that this has been done.
+Item 19 resets
+the current folder to the selection list, and 21 removes the
+selection-list folder and resets the current folder to the
+parent folder, as shown in 22 and 23.
+.Fi
+^$HOME/\*.mh\(ruprofile~^The user profile
+.Pr
+^Path:~^To determine the user's MH directory
+.Ps
+^Folder\-Protect:~^For protection on new folders
+.Ps
+^Current-Folder:~^To find the default current folder
+.De
+`\-src +folder' defaults to current
+`msgs' defaults to all
+.fi
+`\-keep +select' is the default if no `\-scan', `\-show', or `\-file' is specified
+.Co
+If a `\-src +folder' is specified, it will
+become the current folder, unless a `\-keep' with 0 or 1
+folder arguments makes the selection-list subfolder the
+current folder.
+Each selection-list folder will have its
+current message set to the first of the messages linked into
+it unless the selection list already existed, in which case the
+current message won't be changed.
+.En
+.SC PREV
+.NA
+prev \- show the previous message
+.SY
+prev \%[+folder] \%[\-switches\ for\ \fIl\fR] \%[\-help]
+.DE
+\fIPrev\fR performs a \fIshow\fR on the previous message in the specified
+(or current) folder.
+Like \fIshow\fR, it passes any switches on to the
+program \fIl\fR, which is called to list the message.
+This command
+is exactly equivalent to \*(lqshow prev\*(rq.
+.Fi
+^$HOME/\*.mh\(ruprofile~^The user profile
+.Pr
+^Path:~^To determine the user's MH directory
+.Ps
+^Current-Folder:~^To find the default current folder
+.De
+.Co
+If a folder is specified, it will become current, and the
+message that is shown (i.e., the previous message in sequence)
+will become the current message.
+.En
+.SC PROMPTER
+.NA
+prompter \- prompting editor front end
+.SY
+This program is not called directly but takes the place
+of an editor and acts as an editor front end.
+
+.ti .5i
+prompter \%[\-erase\ chr] \%[\-kill\ chr] \%[\-help]
+.DE
+\fIPrompter\fR is an editor which allows rapid composition of
+messages.
+It is particularly useful to network and low-speed
+(less than 2400 baud) users of MH.
+It is an MH program in that
+it can have its own profile entry with switches, but it can't
+be invoked directly as all other MH commands can; it is an editor
+in that it is invoked by an \*(lq\-editor prompter\*(rq switch or by the
+profile entry \*(lqEditor: prompter\*(rq, but functionally it is merely
+a text-collector and not a true editor.
+
+\fIPrompter\fR expects to be called from \fIcomp\fR, \fIrepl\fR, \fIdist\fR, or
+\fIforw\fR, with a draft file as an argument.
+For example, \*(lqcomp
+\-editor prompter\*(rq will call \fIprompter\fR with the file \*(lqdraft\*(rq already set
+up with blank components.
+For each blank component it finds in
+the draft, it prompts the user and accepts a response.
+A
+<RETURN> will cause the whole component to be left out.
+A \*(lq\\\*(rq
+preceding a <RETURN> will continue the response on the next line,
+allowing for multiline components.
+
+Any component that is non-blank will be copied and echoed to the
+terminal.
+
+The start of the message body is prompted by a line of
+dashes.
+If the body is non-blank, the prompt is
+\*(lq--------Enter additional text\*(rq.
+Message-body typing is terminated with
+a <CTRL-D> (or <OPEN>).
+Control is returned to the calling
+program, where the user is asked \*(lqWhat now?\*(rq.
+See \fIcomp\fR for
+the valid options.
+
+The line editing characters for kill and erase may be
+specified by the user via the arguments \*(lq\-kill chr\*(rq and \*(lq\-erase
+chr\*(rq, where chr may be a character; or \*(lq\\nnn\*(rq, where nnn is the
+octal value for the character.
+(Again, these may come from the
+default switches specified in the user's profile.)
+
+A <DEL> during message-body typing is equivalent to
+<CTRL-D> for compatibility with NED.
+A <DEL> during
+component typing will abort the command that invoked
+\fIprompter\fR.
+.Fi
+None
+.Pr
+^prompter-next:~^To name the editor to be used on exit from \fIprompter\fR
+.De
+.Co
+None
+.En
+.SC REPL
+.NA
+repl \- reply to a message
+.SY
+repl \%[+folder] \%[msg] \%[\-editor\ editor] \%[\-inplace] \%[\-annotate]
+\%[\-help] \%[\-noinplace]
+\%[\-noannotate]
+.DE
+\fIRepl\fR aids a user in producing a reply to an existing
+message.
+In its simplest form (with no arguments), it will set up
+a message-form skeleton in reply to the current message in the
+current folder, invoke the editor, and send the composed
+message if so directed.
+The composed message is constructed as
+follows:
+
+.nf
+.in 1i
+To: <Reply-To> or <From>
+cc: <cc>, <To>
+Subject: Re: <Subject>
+In-reply-to: Your message of <Date>
+.ti +\w'In-reply-to: 'u
+<Message-Id>
+.in .5i
+.fi
+
+where field names enclosed in angle brackets (< >) indicate the
+contents of the named field from the message to which the reply
+is being made.
+Once the skeleton is constructed, an editor is
+invoked (as in \fIcomp\fR, \fIdist\fR, and \fIforw\fR).
+While in the editor,
+the message being replied to is available through a link named
+\*(lq@\*(rq.
+In NED, this means the replied-to message may be \*(lqused\*(rq
+with \*(lquse @\*(rq, or put in a window by \*(lqwindow @\*(rq.
+
+As in \fIcomp\fR, \fIdist\fR, and \fIforw\fR, the user will be queried
+before the message is sent.
+If `\-annotate' is
+specified, the replied-to message will be annotated with the
+single line
+
+.ti +.5i
+Replied: \*(<<Date\*(>>.
+
+The command
+\*(lqcomp \-use\*(rq may be used to pick up interrupted editing, as in
+\fIdist\fR and \fIforw\fR; the `\-inplace' switch annotates the message in place,
+so that all folders with links to it will see the annotation.
+.Fi
+^$HOME/\*.mh\(ruprofile~^The user profile
+^<mh-dir>/draft~^The constructed message file
+^/usr/bin/send~^To send the composed message
+.Pr
+^Path:~^To determine the user's MH directory
+.Ps
+^Editor:~^To override the use of /bin/ned as the default editor
+.Ps
+^Current-Folder:~^To find the default current folder
+.De
+`+folder' defaults to current
+`msgs' defaults to cur
+`\-editor' defaults to /bin/ned
+`\-noannotate'
+`\-noinplace'
+.Co
+If a `+folder' is specified, it will become the current
+folder, and the current message will be set to the replied-to
+message.
+.sp 2
+.En
+.SC RMF
+.NA
+rmf \- remove folder
+.SY
+rmf \%[+folder] \%[\-help]
+.DE
+\fIRmf\fR removes all of the files (messages) within the specified
+(or default) folder, and then removes the directory (folder).
+If
+there are any files within the folder which are not a part of MH,
+they will \fInot\fR be removed, and an error will be produced.
+If the
+folder is given explicitly or the current folder is a
+subfolder (i.e., a selection list from \fIpick\fR), it will be
+removed without confirmation.
+If no argument is specified and
+the current folder is not a selection-list folder, the
+user will be asked for confirmation.
+
+\fIRmf\fR irreversibly deletes messages that don't have other links,
+so use it with caution.
+
+If the folder being removed is a subfolder, the parent
+folder will become the new current folder, and \fIrmf\fR will
+produce a message telling the user this has happened.
+This
+provides an easy mechanism for selecting a set of messages,
+operating on the list, then removing the list and returning to
+the current folder from which the list was extracted.
+(See the
+example under \fIpick\fR.)
+
+The files that \fIrmf\fR will delete are cur, any file beginning
+with a comma, and files with purely numeric names.
+All others
+will produce error messages.
+
+\fIRmf\fR of a read-only folder will delete the \*(lqcur\-\*(rq entry from the
+profile without affecting the folder itself.
+.Fi
+^$HOME/\*.mh\(ruprofile~^The user profile
+.Pr
+^Path:~^To determine the user's MH directory
+.Ps
+^Current-Folder:~^To find the default current folder
+.De
+`+folder' defaults to current, usually with confirmation
+.Co
+\fIRmf\fR will set the current folder to the parent folder if a
+subfolder is removed; or if the current folder is removed,
+it will make \*(lqinbox\*(rq current.
+Otherwise, it doesn't change the
+current folder or message.
+.En
+.SC RMM
+.NA
+rmm \- remove messages
+.SY
+rmm \%[+folder] \%[msgs] \%[\-help]
+.DE
+\fIRmm\fR removes the specified messages by renaming the message
+files with preceding commas.
+(This is the Rand-UNIX backup file
+convention.)
+
+The current message is not changed by \fIrmm\fR, so a \fInext\fR  will
+advance to the next message in the folder as expected.
+.Fi
+^$HOME/\*.mh\(ruprofile~^The user profile
+.Pr
+^Path:~^To determine the user's MH directory
+.Ps
+^Current-Folder:~^To find the default current folder
+.De
+`+folder' defaults to current
+`msgs' defaults to cur
+.Co
+If a folder is given, it will become current.
+.En
+.SC SCAN
+.NA
+scan \- produce a one-line-per-message scan listing
+.SY
+scan \%[+folder] \%[msgs] \%[\-f\&f] \%[\-header] \%[\-help]
+\%[\-nof\&f] \%[\-noheader]
+.DE
+\fIScan\fR produces a one-line-per-message listing of the specified
+messages.
+Each \fIscan\fR line contains the message number (name),
+the date, the \*(lqFrom\*(rq field, the \*(lqSubject\*(rq field, and, if room
+allows, some of the body of the message.
+For example:
+
+.nf
+.ta .5i 1.2i 2.6i
+^ #~^^Date~^^  From~^Subject\ \ \ \ \[\*(<<Body]
+^15+~^^7/\05~^^Dcrocker~^nned  \*(<<Last week I asked some of
+^16\ \-~^^7/\05~^^dcrocker~^message id format  \*(<<I recommend
+^18~^^7/\06~^^Obrien~^Re: Exit status from mkdir
+^19~^^7/\07~^^Obrien~^"scan" listing format in MH
+.re
+.fi
+
+The `+' on message 15 indicates that it is the current message.
+The `\-' on message 16 indicates that it has been
+replied to, as indicated by a \*(lqReplied:\*(rq component produced by
+an `\-annotate' switch to the \fIrepl\fR command.
+
+If there is sufficient room left on the \fIscan\fR line after the
+subject, the line will be filled with text from the body,
+preceded by \*(<<.
+\fIScan\fR actually reads each of the specified
+messages and parses them to extract the desired fields.
+During parsing, appropriate error messages will be produced if
+there are format errors in any of the messages.
+
+The `\-header' switch produces a header line prior to the \fIscan\fR
+listing, and the `\-f\&f' switch will cause a form feed to be
+output at the end of the \fIscan\fR listing.
+See Appendix D.
+.Fi
+^$HOME/\*.mh\(ruprofile~^The user profile
+.Pr
+^Path:~^To determine the user's MH directory
+.Ps
+^Current-Folder:~^To find the default current folder
+.De
+Defaults:
+`+folder' defaults to current
+`msgs' defaults to all
+`\-nof\&f'
+`\-noheader'
+.Co
+If a folder is given, it will become current.
+The current
+message is unaffected.
+.En
+.SC SEND
+.NA
+send \- send a message
+.SY
+send \%[file] \%[\-draft] \%[\-verbose] \%[\-format] \%[\-msgid]
+\%[\-help]  \%[\-noverbose] \%[\-noformat] \%[\-nomsgid]
+.DE
+\fISend\fR will cause the specified file (default <mh-dir>/draft) to
+be delivered to each of the addresses in the \*(lqTo:\*(rq, \*(lqcc:\*(rq, and \*(lqBcc:\*(rq
+fields of the message.
+If `\-verbose' is specified, \fIsend;\fR
+will monitor the delivery of local and net mail.
+\fISend\fR with no
+argument will query whether the draft is the intended file, whereas
+`\-draft' will suppress this question.
+Once the message has
+been mailed (or queued) successfully, the file will be renamed
+with a leading comma, which allows it to be retreived until the
+next draft message is sent.
+If there are errors in the
+formatting of the message, \fIsend;\fR will abort with a (hopefully)
+helpful error message.
+
+If a \*(lqBcc:\*(rq field is encountered, its addresses will be used for
+delivery, but the \*(lqBcc:\*(rq field itself will be deleted from all
+copies of the outgoing message.
+
+Prior to sending the message, the fields \*(lqFrom:  user\*(rq, and
+\*(lqDate: now\*(rq will be prepended to the message.
+If `\-msgid' is
+specified, then a \*(lqMessage-Id:\*(rq field will also be added to the
+message.
+If the message already contains a \*(lqFrom:\*(rq field, then a
+\*(lqSender: user\*(rq field will be added instead.
+(An already existing
+\*(lqSender:\*(rq field will be deleted from the message.)
+
+If the user doesn't specify `\-noformat', each of the entries in
+the \*(lqTo:\*(rq and \*(lqcc:\*(rq fields will be replaced with \*(lqstandard\*(rq format
+entries.
+This standard format is designed to be usable by all
+of the message handlers on the various systems around the
+ARPANET.
+
+If an \*(lqFcc: folder\*(rq is encountered, the message will be copied
+to the specified folder in the format in which it will appear to any
+receivers of the message.
+That is, it will have the prepended
+fields and field reformatting.
+
+If a \*(lqDistribute-To:\*(rq field is encountered, the message
+is handled as a redistribution message (see \fIdist\fR for
+details), with \*(lqDistribution-Date: now\*(rq and \*(lqDistribution-From: user\*(rq
+added.
+.Fi
+^$HOME/\*.mh\(ruprofile~^The user profile
+.Pr
+^Path:~^To determine the user's MH directory
+.De
+`file' defaults to draft
+`\-noverbose'
+`\-format'
+`\-nomsgid'
+.Co
+\fISend\fR has no effect on the current message or folder.
+.En
+.SC SHOW
+.NA
+show \- show (list) messages
+.SY
+show \%[+folder] \%[msgs] \%[\-pr] \%[\-nopr] \%[\-draft] \%[\-help]
+\%[\fIl\fR\ or\ \fIpr\fR\ switches]
+.DE
+\fIShow\fR lists each of the specified messages to the standard
+output (typically, the terminal).
+The messages are listed exactly
+as they are, with no reformatting.
+A program called \fIl\fR is
+invoked to do the listing, and any switches not recognized by
+\fIshow\fR are passed along to \fIl\fR.
+
+If no \*(lqmsgs\*(rq are specified, the current message is used.
+If
+more than one message is specified, \fIl\fR will prompt for a
+<return> prior to listing each message.
+
+\fIl\fR will list each message, a page at a time.
+When the end of
+page is reached, \fIl\fR will ring the bell and wait for a <RETURN>
+or <CTRL-D>.
+If a <return> is entered, \fIl\fR will clear the
+screen before listing the next page, whereas <CTRL-D> will not.
+The switches to \fIl\fR are
+`\-p#' to indicate the page length in lines, and `\-w#' to
+indicate the width of the page in characters.
+
+If the standard output is not a terminal, no queries are made,
+and each file is listed with a one-line header and two lines of
+separation.
+
+If `\-pr' is specified, then \fIpr\fR(I) will be invoked rather than
+\fIl\fR, and the switches (other than `\-draft') will be passed
+along.
+\*(lqShow \-draft\*(rq will list the file <mh-dir>/draft if it
+exists.
+.Fi
+^$HOME/\*.mh\(ruprofile~^The user profile
+^/bin/l~^Screen-at-a-time list program
+^/bin/pr~^\fIpr\fR(I)
+.Pr
+^Path:~^To determine the user's MH directory
+.Ps
+^Current-Folder:~^To find the default current folder
+.De
+`+folder' defaults to current
+`msgs' defaults to cur
+`\-nopr'
+.Co
+If a folder is given, it will become the current message.
+The last message
+listed will become the current message.
+.En
+\"
+\"              On to the Appendices
+\"
+.fo ''-%-''
+.he ''''
+.(x
+.sp
+Appendix
+.)x _
+.de $c                          \" Major Heading printer
+.ce
+Appendix \\n+(ch
+.sp 2p
+.ce
+.b "\\s12\\$1\\s0"              \" 12 Point Bold Header
+.(x
+\ \ \ \\n(ch.\\ \\ \\$2
+.)x
+.sp 45p				\" 45 points or about 1/2 inch
+..
+.++ A
+.bp
+.$c "COMMAND SUMMARY\\**" "Command Summary"
+.(f
+\**All commands accept a \-help switch.
+.)f
+.in 1i
+.na
+.ti .5i
+comp \%[\-editor\ editor] \%[\-form\ formfile] \%[file] \%[\-use]
+\%[\-nouse] \%[\-help]
+
+.ti .5i
+dist \%[+folder] \%[msg] \%[\-form\ formfile] \%[\-editor\ editor]
+\%[\-annotate] \%[\-noannotate]
+\%[\-inplace] \%[\-noinplace]
+\%[\-help]
+
+.ti .5i
+file \%[\-src\ +folder] \%[msgs] \%[\-link] \%[\-preserve] \%+folder\ ...
+\%[\-nolink] \%[\-nopreserve]
+\%[\-file\ file] \%[\-nofile] \%[\-help]
+
+.ti .5i
+folder \%[+folder] \%[msg] \%[\-all] \%[\-fast] \%[\-nofast] \%[\-up] \%[\-down]
+\%[\-header] \%[\-noheader] \%[\-total] \%[\-nototal] \%[\-pack] \%[\-nopack]
+\%[\-help]
+
+.ti .5i
+forw \%[+folder] \%[msgs] \%[\-editor\ editor] \%[\-form\ formfile]
+\%[\-annotate] \%[\-noannotate]
+\%[\-inplace]  \%[\-noinplace]
+\%[\-help]
+
+.ti .5i
+inc \%[+folder] \%[\-audit\ audit-file] \%[\-help]
+
+.ti .5i
+next \%[+folder] \%[\-switches\ for\ \fIl\fR] \%[\-help]
+
+.ta .4i 1.8i
+.nf
+.in .5i
+^pick~^^\0\-cc~^ \%[\-src\ +folder] \%[msgs] \%[\-help] \%[\-scan] \%[\-noscan]
+^^^\0\-date~^   \%[\-show] \%[\-noshow] \%[\-nofile] \%[\-nokeep]
+^^^\0\-from~^
+^^^\s+2\b'\(lt\(bv\(bv\(lk\(bv\(bv\(lb'\s0 \-search~\s+2\b'\(rt\(bv\(bv\(rk\(bv\(bv\(rb'\s0^ pattern
+^^^\0\-subject~^
+^^^\0\-to~^ \%[\-file \%[\-preserve] \%[\-link] \%+folder\ ... \%[\-nopreserve] \%[\-nolink] ]
+^^^\0\-\-component~^ \%[\-keep \%[\-stay] \%[\-nostay] \%[+folder\ ...]\ ]
+.fi
+.re
+
+.ti .5i
+prev \%[+folder] \%[\-switches\ for\ \fIl\fR] \%[\-help]
+
+.ti .5i
+prompter \%[\-erase\ chr] \%[\-kill\ chr] \%[\-help]
+
+.ti .5i
+repl \%[+folder] \%[msg] \%[\-editor\ editor] \%[\-inplace] \%[\-annotate]
+\%[\-help] \%[\-noinplace]
+\%[\-noannotate]
+
+.ti .5i
+rmf \%[+folder] \%[\-help]
+
+.ti .5i
+rmm \%[+folder] \%[msgs] \%[\-help]
+
+.ti .5i
+scan \%[+folder] \%[msgs] \%[\-f\&f] \%[\-header] \%[\-help]
+\%[\-nof\&f] \%[\-noheader]
+
+.ti .5i
+send \%[file] \%[\-draft] \%[\-verbose] \%[\-format] \%[\-msgid]
+\%[\-help]  \%[\-noverbose] \%[\-noformat] \%[\-nomsgid]
+
+.ti .5i
+show \%[+folder] \%[msgs] \%[\-pr] \%[\-nopr] \%[\-draft] \%[\-help]
+\%[\fIl\fR\ or\ \fIpr\fR\ switches]
+.ad
+.in 0
+\".+c "MESSAGE FORMAT" "Message Format"
+.if t \{
+.ll 32P
+.lt 32P
+\}
+.bp
+.$c "MESSAGE FORMAT" "Message Format"
+.pp
+This section paraphrases the format of ARPANET text messages
+given in Ref. 6.
+
+.lp
+ASSUMPTIONS
+.np
+Messages
+are expected to consist of lines of text.
+Graphics and binary data are not handled.
+.np
+No data compression is accepted.
+All text is clear
+ASCII 7-bit data.
+
+.lp
+LAYOUT
+.lp
+A general \*(lqmemo\*(rq framework is used.
+A message consists of a
+block of information in a rigid format, followed by general
+text with no specified format.
+The rigidly formatted  first
+part of a message is  called the header, and the free-format
+portion is called the body.
+The header must always
+exist, but the body is optional.
+
+.lp
+THE HEADER
+.lp
+Each header item can be viewed as a single logical line of ASCII
+characters.
+If the text of a header item extends across several
+real lines, the continuation lines are indicated by leading
+spaces or tabs.
+.lp
+Each header item is called a component and is composed of a
+keyword or name, along with associated text.
+The keyword begins at the
+left margin, may contain spaces or tabs, may not exceed 63
+characters, and is terminated by a colon (:).
+Certain
+components (as identified by their keywords) must follow rigidly
+defined formats in their text portions.
+.lp
+The text for most formatted components (e.g., \*(lqDate:\*(rq and \*(lqMessage-Id:\*(rq)
+is produced automatically.
+The only ones entered by the
+user are address fields such as \*(lqTo:\*(rq, \*(lqcc:\*(rq, etc.
+ARPA addresses
+are assigned mailbox names and host computer specifications.
+The
+rough format is \*(lqmailbox at host\*(rq, such as \*(lqBorden at Rand-Unix\*(rq.
+Multiple addresses are separated by commas.
+A missing host is
+assumed to be the local host.
+
+.ne 10
+.lp
+THE BODY
+.lp
+A blank line signals that all following text up to the end of the file
+is the body.
+(A blank line is defined as a pair of
+<end-of-line> characters with \fIno\fR characters in between.)
+No formatting is expected or enforced within the body.
+.lp
+Within MH, a line consisting of dashes is accepted
+as the header delimiter.
+This is a cosmetic feature applying
+only to locally composed mail.
+.bp
+.$c "MESSAGE NAME BNF" "Message Name BNF"
+
+.ta 1.2i 1.8i 3.2i
+.nf
+.in 1i
+^msgs~^^:=~^^msgspec~^|
+^^^^msgs msgspec
+
+^msgspec~^^:=~^^msg~^|
+^^^^^msg-range~^|
+^^^^msg-sequence
+
+^msg~^^:=~^^msg-name~^|
+^^^^<number>^
+
+^msg-name~^^:=~^^\*(lqfirst\*(rq~^|
+^^^^^\*(lqlast\*(rq~^|
+^^^^^\*(lqcur\*(rq~^|
+^^^^^\*(lq\*.\*(rq~^|
+^^^^^\*(lqnext\*(rq~^|
+^^^^\*(lqprev\*(rq
+
+^msg-range~^^:=~^^msg\*(lq-\*(rqmsg~^|
+^^^^^\*(lqall\*(rq
+
+^msg-sequence~^^:=~^msg\*(lq:\*(rqsigned-number
+
+^signed-number~^^:=~^^\*(lq+\*(rq<number>~^|
+^^^^^\*(lq\--\*(rq<number>~^|
+^^^^<number>
+.re \" Reset Tabs
+.fi
+.sp
+.pp
+Where <number> is a decimal number in the range 1 to 999.
+.pp
+Msg-range specifies all of the messages in the given range
+and must not be empty.
+.pp
+Msg-sequence specifies up to <number> of messages, beginning
+with \*(lqmsg\*(rq (in the case of first, cur, next, or <number>),
+or ending with \*(lqmsg\*(rq (in the case of prev or last).
++<number> forces \*(lqstarting with msg\*(rq, and \-<number> forces
+\*(lqending with number\*(rq.
+In all cases, \*(lqmsg\*(rq must exist.
+.bp
+.$c "EXAMPLE OF SHELL COMMANDS"  "Example of Shell Commands"
+.pp
+UNIX commands may be mixed with MH commands to obtain additional
+functions.
+These may be prepared as files (known as
+shell command files or
+shell scripts).
+The following example is a useful function that
+illustrate the possibilities.
+Other functions, such as copying,
+deleting, renaming, etc., can be achieved in a similar fashion.
+
+HARDCOPY
+.pp
+The command:
+
+.ti +.5i
+(scan\0\-f\&f\0\-header;\0show\0all\0\-pr\0\-f)\0|\0print
+
+produces a scan listing of the current folder, followed by a
+form feed, followed by a formatted listing of all messages
+in the folder, one per page.
+Omitting \*(lq\-pr\0\-f\*(rq will cause the
+messages to be concatenated, separated by a one-line header
+and two blank lines.
+.pp
+You can create variations on this theme, using \fIpick\fR.
+.re
+.fi
+.in 0
+.bp
+.ce
+.b \\s12REFERENCES\\s0
+.(x
+.sp
+REFERENCES
+.)x
+.sp 3
+.in .4i
+.ti 0
+1.  Crocker, D. H., J. J. Vittal, K. T. Pogran, and D. A. Henderson, Jr.,
+\*(lqStandard for the Format of ARPA Network Test Messages,\*(rq \fIArpanet Request
+for Comments\fR, No. 733, Network Information Center 41952, Augmentation
+Research Center, Stanford Research Institute,
+November 1977.
+
+.ti 0
+2.  Thompson, K., and D. M. Ritchie, \*(lqThe UNIX Time-sharing System,\*(rq
+\fICommunications of the ACM\fR, Vol. 17, July 1974, pp. 365-375.
+
+.ti 0
+3.  McCauley, E. J., and P. J. Drongowski, \*(lqKSOS\-The Design of a Secure
+Operating System,\*(rq \fIAFIPS Conference Proceedings\fR,
+National Computer Conference,
+Vol. 48, 1979, pp. 345-353.
+
+.ti 0
+4.  Crocker, David H., \fIFramework and Functions of the \*(lqMS\*(rq Personal
+Message System\fR, The Rand Corporation, R-2134-ARPA, December 1977.
+
+.ti 0
+5.  Thompson, K., and D. M. Ritchie, \fIUNIX Programmer's Manual\fR, 6th ed.,
+Western Electric Company, May 1975 (available only to UNIX licensees).
+
+.ti 0
+6.  Bilofsky, Walter, \fIThe CRT Text Editor NED\-Introduction and
+Reference Manual\fR, The Rand Corporation, R-2176-ARPA, December 1977.
+.bp 3
+.de $c
+.ce
+.b "\\s12\\$1\\s0"   \" 12 Point Bold Header
+.(x y
+.sp
+\\$1
+.)x
+.sp 3
+..
+.pn 3
+.++ P
+.fo ''''
+.he ''-%-''
+.+c PREFACE
+.pp
+This report describes a system for dealing with messages transmitted on a
+computer.  Such messages might originate with other users of the same
+computer or might come from an outside source through a network to which the user's
+computer is connected.  Such computer-based message systems are
+becoming increasingly widely used, both within and outside the Department
+of Defense.
+.pp
+The message handling system MH was developed for two reasons.
+One was to investigate some
+research ideas concerning how a message system might take advantage of
+the architecture of the UNIX time-sharing operating system for
+Digital Equipment Corporation PDP-11 and VAX computers, and the special
+features of UNIX's command-level interface with the user (the
+\*(lqshell\*(rq).  The other reason was to provide a better and more
+adaptable base than that of conventional designs
+on which to build a command and control message system.
+The effort has succeeded in both
+regards, although this report mainly describes the message system itself
+and how it fits in with UNIX.  The main research results are being
+described and analyzed in a forthcoming Rand report.
+The system is currently being used as part
+of a tactical command and control \*(lqlaboratory,\*(rq which is also being described
+in a separate report.
+.pp
+The present report should be of interest to three groups of readers.  First,
+it is a complete reference manual for the users of MH (although
+users outside of Rand must take into
+account differences from the local Rand operating system).  Second, it should be
+of interest to those who have a general knowledge of computer-based
+message systems, both in civilian and military applications.  Finally,
+it should be of interest to those who build large subsystems that
+interface with users, since it illustrates a new approach to such
+interfaces.
+.pp
+The MH system was developed by the first
+author, using an approach suggested by the other two authors.
+Valuable assistance was provided by Phyllis Kantar in the later
+stages of the system's implementation.
+Several colleagues
+contributed to the ideas included in this system, particularly
+Robert Anderson and David Crocker.
+In addition, valuable experience
+in message systems, and a valuable source of ideas, was available
+to us in the form of a previous message system for UNIX called
+MS, designed at Rand by David Crocker.
+.pp
+This report was prepared as part of the Rand project entitled \*(lqData
+Automation Research\*(rq, sponsored by Project AIR FORCE.
+.pn 5
+.+c SUMMARY
+.pp
+Electronic communication of text messages is becoming
+commonplace.  Computer-based message systems\-software
+packages that provide tools for dealing with messages\-are used in many
+contexts.  In particular, message systems are becoming
+increasingly important in command and control and intelligence
+applications.
+.pp
+This report describes a message handling system called MH.
+This system provides the user
+with tools to compose, send, receive, store, retrieve, forward, and
+reply to messages.  MH has been built on the UNIX time-sharing system,
+a popular operating system developed for the DEC PDP-11 and VAX classes of
+computers.
+.pp
+A complete description of MH is given for users of
+the system.  For those who do not intend to use the system, this description
+gives a general idea of what a message system is like.  The system involves
+some new ideas about how large subsystems can be constructed.  These design
+concepts and a comparison of MH with other message systems
+will be published in a forthcoming Rand report.
+.pp
+The interesting and unusual features of MH include the
+following:  The user command interface to MH is the UNIX \*(lqshell\*(rq
+(the standard UNIX command interpreter).  Each separable
+component of message handling, such as message composition or
+message display, is a separate command.  Each program is driven from
+and updates a private user environment, which is stored as a file
+between program invocations.  This private environment also contains
+information to \*(lqcustom tailor\*(rq MH to the individual's tastes.  MH
+stores each message as a separate file under UNIX, and it utilizes the
+tree-structured UNIX file system to organize groups of files within
+separate directories or \*(lqfolders.\*(rq  All of the UNIX facilities
+for dealing with files and directories, such as
+renaming, copying, deleting, cataloging, off-line printing, etc., are
+applicable to messages and directories of messages (folders).  Thus,
+important capabilities needed in a message system are available in MH without
+the need (often seen in other message systems) for code that
+duplicates the facilities of the supporting operating system.
+It also allows users familiar with the shell to use MH with minimal
+effort.
+.he ''''
+.fo ''''
+.bp
+.ce
+.b \\s12CONTENTS\\s0
+.sp 3
+.xp y
+.xp x
+
+.bp     \" Spare numbers for cut and paste work!
+.ft B
+
+1       1       1       1       1       1       1       1
+
+1       1       1       1       1       1       1       1
+
+1       1       1       1       1       1       1       1
+
+1       1       1       1       1       1       1       1
+
+2       2       2       2       2       2       2       2
+
+2       2       2       2       2       2       2       2
+
+2       2       2       2       2       2       2       2
+
+3       3       3       3       3       3       3       3
+
+3       3       3       3       3       3       3       3

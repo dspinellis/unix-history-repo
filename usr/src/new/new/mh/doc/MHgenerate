@@ -1,0 +1,122 @@
+                      HOW TO GENERATE AN MH
+
+ASSUMPTIONS/RESTRICTIONS:
+
+        All of the code is written for Version 7 C, and assumes
+the existence of appropriate Version 7 /usr/include files.  It
+also uses the Version 7 stdio package, which is somewhat
+different than the Phototypesetter stdio!
+
+        There is moderate usage of Version 7 UNIX features,
+including:
+
+		ftime() system call
+		execlp() & execvp() environment exec calls
+		getenv() environment access
+
+also, login has to be changed to add the environment entry
+"USER=name".  This is used during scan listings to see if the
+message "From" should be replaced by "To:name".  This string is
+NOT used to determine the "From: name" stamp on outgoing mail.
+
+        All of these usages ARE replaceable by subroutines which
+do the same thing, only slower.  That is, a line of the form:
+
+		homedir = getenv("HOME");
+
+should be replaced by something like:
+
+		homedir = gethome();
+
+and the routine gethome() written to return the home directory by
+looking through /etc/passwd for the line matching the process'
+getuid().  This goes for the environment variable "USER" as well.
+
+The routines execlp() & execvp() are simply fancy exec's, which
+use the "PATH" environment variable to determine the search path
+by which to find the executable image.  They can be replaced by
+routines which use a default search list.  They also call a shell
+to execute the file in the same way the shell handles shell
+scripts.
+
+
+
+PROCEDURE:
+
+
+1) Read the MH directory tree onto a file system.
+
+2) Examine all of the files in directory strings.  These are the
+   names and paths of all of the programs MH calls upon.  Change
+   them to suit your installation.  Most of the files contain
+   short descriptions of what the strings are.
+
+3) In the top level directory, utter:
+
+	make strings.a subs.a all
+
+   This will make both of the libraries: strings.a and subs.a,
+   and ALL of the executable modules.
+
+4) AS SU:
+
+	make onceonly           This renames conflicting bell
+				programs, and makes requisite
+				directories.
+
+	make install            This puts all of the programs
+				into appropriate directories.
+
+That's it.  Take a close look at the Makefile--it does LOTS of
+work.  If you don't want to install everything in standard
+places, run "make install" with the variables MHDIR=newdir and
+BINDIR=newdir pointing wherever you wish.  If you do this, you
+probably have to change some of the path names in the strings
+files.  For most of them, you can get away with adding profile
+entries to change where the default paths are sought.
+
+If you don't have `make':
+
+     You'll have to use the make file as a template for commands
+     to give by hand.  Basically each section of the make file
+     defines the sequence of shell commands needed to create the
+     object before the `:'.  The list immediately after the `:'
+     specifies the dependencies for the object--that is, those
+     objects which either must be made first, or those modules
+     that if they've changed, the object must be rebuilt.  The
+     following lines (up to the next object) are simply shell
+     commands to be executed.  Make knows how to create .o's from
+     .c's, and the "CFLAGS= -O" at the beginning tells it to
+     include optimization when it does a c compile.
+
+If you don't have stdio (i.e. some version 7 C compiler):
+
+     Punt.  I recently converted the whole package from the old
+     getc/putc/iobuf subroutines--including lots of upgrades/
+     improvements, it took me about a week.  Expect it to take a
+     couple of weeks for someone good to convert back.
+     Basically, convert the subroutines, then once you've
+     converted one module (start with show or comp), you'll find
+     all the rest VERY similar.  Some day I may split out all of
+     the system dependencies, but don't hold your breath.
+
+
+
+As a last resort:
+
+     Feel free to call me, but please don't expect me to spend
+hours helping.  Collect your questions/problems, and get in touch
+and I'll see what I can do.  I can be reached:
+
+	via ARPANET:    Borden at Rand-UNIX
+
+	Mail:           The Rand Corporation
+			1700 Main Street
+			Santa Monica, CA 90406
+
+	Phone:          (213) 399-0568 x 7463
+
+
+
+Bruce Borden
+October, 1979

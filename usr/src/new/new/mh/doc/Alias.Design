@@ -1,0 +1,67 @@
+The Alias file for mail delivery is the file
+
+	/etc/MailAliases
+
+Each line of the alias file has the format:
+
+match : alias
+
+Where:
+
+	alias       :=  simple-list
+		    |   "<" alias-file
+		    |   "=" UNIX-group
+		    |   "*"
+
+	simple-list :=  simple-name
+		    |   simple-list, simple-name
+
+Alias-file is a fully qualified UNIX file name.  UNIX-group is a
+group name from /etc/group.  A simple-name is a local user login
+name, including only alphanumerics, `.' and `-'.  Throughout this
+file case is ignored, except for alias-file.
+
+In match, a trailing * on a name will match anything. (See example
+below.)
+
+The procedure for mail aliasing is:
+
+1) Build a list of all addresses from the message to be
+   delivered, eliminating duplicates.
+
+2) For each line in the alias file, compare "match" against all
+   of the existing addresses.  If a match, remove the matched
+   name from the address list, and add each new alias name to the
+   address list if it is not already on the list.
+
+Since the alias file is read line by line, forward references
+work, but backward references are not recognized, thus, there is
+no recursion.
+
+E.g.:
+
+Borden: bruce
+Bruce: bsb
+Wharman: mike
+ASRL: bsb, mike, obrien, giarla
+UNIX-committee: < /usr/people/unix-committee
+System: = sys
+Everyone: *
+news.*: news
+   ...
+
+In the "unix-committee" example, the file "/usr/people/unix-
+committee" contains one simple-name, or a list of comma separated
+simple-names.  A new-line will be treated as a blank in this
+file, s.a.
+
+	foo, fie,
+	fum, fiddle
+
+In the "system" case, the names from the group "sys" will be used
+as the expanded name list.
+
+In the "news.*" case, all names of the form "news.<anything>" will
+be mapped to "news".  This is used for the MH news facility.
+
+Bruce Borden    October 1979

@@ -1,0 +1,178 @@
+This file contains some notes on features/bugs/etc which are
+not documented in the "MH User's Manual", as well as some notes
+on future directions.  See MHgenerate for more info.  Some of
+these notes assume VAX/V7 UNIX--as noted by {V/V7}.
+
+0) Directories:
+	support contains files which get copied to /etc/mh, as
+		well as some miscellaneous Rand support programs
+	subs    contains support subroutines--built into subs.a
+	strings contains c files which define all of the default
+		names and paths used by the package->strings.a
+	Extras  old and un-supported code--much of it not
+                converted to V7.  Look at libg/libh for help in
+                getting around V7 features.
+	DOC     contains the MH User's Manual document in nroff/
+                troff form.  This requires the Phototypesetter or
+                V7 version of nroff/troff, AND the Berkeley -me
+                macros.
+
+1) Undocumented Feature:  The paths to the various programs which
+   MH exec's are kept in variables named something like "lsproc".
+   (See the strings directory.) While reading in the user's
+   profile, (m_getdefs()) a component matching one of these exec
+   path names, will cause the default string to be replaced by
+   the profile entry argument.  Thus, the profile entry "lsproc:
+   /usr/foo/bin/newls" will cause all MH programs using "lsproc"
+   to get a new ls.  At least for now, there is no way to specify
+   switches.  This mapping is arranged by the "procs" structure
+   in m_getdefs.c--keep it up to date if new exec procs are
+   added.
+
+2) Collision:  Take a close look at the "onceonly" entry of the
+   Makefile.  Bell already has a program named `file', which the
+   makefile will rename to `filetype', which is what it tries to
+   indicate.  If you really want to, you might rename the MH
+   command `file', but I have yet to hear of an even vaguely
+   reasonable alternative.
+
+3) Different Approach:  Using the Berkeley C shell (csh),
+   "multiple links to the same file with different profile
+   entries" is better served with aliases.
+
+4) Collision: {V/V7} BELL mail cannot co-exist with MH--IF THEY
+   SHARE THE SAME MAILBOXES, otherwise they co-exist fine!  If
+   you use the standard (VAX) mail directory /usr/spool/mail for
+   MH, you should also install the MH version of the mail
+   program.  It is much nicer, and integrates with MH cleanly.
+   The advantage of using /usr/spool/mail is that login will
+   notify of new mail.
+
+5) Feature: If you add a line like:
+
+	30 1 * * * /etc/mh/aliascheck -mail bsb
+
+   to crontab, then every morning at 1:30 AM, the alias file will
+   be checked against the /etc/passwd file to see that
+   inconsistencies haven't been introduced.  In particular, a
+   line in the alias file may be "tom: jones" (because Tom Jones
+   likes to be called Tom), but if tom is also a valid user name,
+   tom will no longer receive any mail!  This program also prints
+   any mail drops in /usr/spool/mail which don't belong to a
+   valid user (i.e. a deleted or renamed user id).
+
+   "Aliascheck -mail name" will check the consistency and mail
+   the specified user a short status message.
+
+   This program also checks to see if there are any users who do
+   not belong to any group, or any user in a group which is missing
+   from the passwd file.  This latter is an inconsistency on all
+   systems, whereas the former is not required except at Rand, and
+   won't be compiled without the "-DRAND" cc flag in the makefile.
+
+6) Hidden Feature:  At the request of some of the Rand staff,
+   there is the ability to invoke a user-specified deletion-
+   program to implement message deletion, rather than getting the
+   default comma renaming convention (see next item).  If a
+   user's profile contains the line: "Delete-prog: path", the
+   specified path will be called with a list of files needing
+   deletion.  All this code works...
+
+7) Feature:  When a message (draft or in a folder) is "removed",
+   it is really renamed with a leading comma.  E.g. foo -> ,foo.
+   At Rand we have a program called the midnight skulker which
+   goes through the whole system and removes all backup (starting
+   with comma), a.out, and core files.  This backup convention
+   gives users a chance to undo spurious removes, at least all
+   day.  You may want to replace these renames with a simple
+   unlink(), or each user may get this effect by specifying
+   "Delete-prog: /bin/rm" in his/her profile.
+
+8) Feature:  NEWS.  The news facility is undocumented in the MH
+   manual, because it is a very new addition to the package.  SO,
+   here it is...
+
+        The directory /usr/news should be created--it will
+        contain the folders for news topics, and various support
+        files.  The news items are strictly MH folders, and users
+        can utilize all of the MH commands on them.  The news
+        program is similar to "show", but it shows `unseen' news
+        as the default, keeping a separate entry in the users
+        profile for each news topic indicating the highest item
+	the user has seen.  These entries look like
+		"news-<topic>: highest-seen".
+
+        Rather than read through the news folders to determine
+        the number of entries, a file with name .<topic> (i.e.
+        period followed by the topic name) is kept with length
+        equal to highest message number.  Thus, to determine if a
+        user hasn't seen some news, the news directory
+        (/usr/news) is read, and for each non-period beginning
+        file (i.e. each folder), stat the associated period
+        beginning file, and compare its length with the users
+        profile news entry for the same name.  If the user has no
+        entry, or it is less than the length of the period-file,
+        then show him the remainder of the news in each such
+        topic.
+
+        The program `l' is used to display each message, and the
+        highest item profile entry is updated prior to each
+        individual message displayed, so <del> will leave the
+        user's profile in the proper state for the next news
+        request.
+
+        Add a user to the system called news, with home directory
+        /usr/news and add the line:
+
+		news.*: news
+
+        to /etc/MailAlias.  Thus, to add news to a topic, it is
+        only necessary to mail to news.topic, and it will happen.
+        To make the automatic filing into folders happen, copy
+        the file support/news-mh_receiv to /usr/news/.mh_receive.
+        This is a shell script which will get invoked whenever
+        mail is sent to the user news (see next "undocumented
+        feature").
+
+        Problems:  I have yet to write the program which packs
+        news folders.  Items can be readily removed (as long as
+        they are not the last item in the folder), but if the
+        folder is packed (after some months/years the item
+        numbers will reach the 999 limit), it is necessary to go
+        through everyones .mh_profile files and reset the
+        highest-seen numbers.  Not hard to write, I just haven't
+        done it yet.  Also, the receive shell script should be
+        recoded in C to speed it up considerably.
+
+9) Undocumented Feature:  If a user has an executable program or
+   shell script named ".mh_receive" in his home directory, then
+   it will be executed by the mail deliverer RATHER than
+   appending mail items to the user's mail file
+   (/usr/spool/mail/name).  This program will be called with:
+
+	execlp(prog, prog, tmpfil, mail, home, 0);
+
+   where prog is the receive program, tmpfil is a file in
+   /usr/tmp which is the mail to be received, mail is the path of
+   the user's mail drop (/usr/spool/mail/name), and home is the
+   $HOME directory of the user.  File descriptor 3 will have
+   tmpfil opened on it read only.  These are all the RECEIVER'S
+   parameters, not the sender's.  Also, the environment is set up
+   with appropriate values for HOME and USER.
+
+   Eventually, the goal is to have received mail LINKED into
+   user's inbox folders, rather than appended to their mailboxes.
+   This will facilitate the sending of mail to large distribution
+   lists (Rand is always tight on space!) Have a look at the news
+   .mh_receive file for an example of this facility.
+
+   Warning: appropriate interlocks are implemented in "deliver"
+   to prevent collisions when it appends to mailboxes, but it is
+   up to the users's .mh_receive program to provide its own
+   interlocks!
+
+
+
+
+Bruce Borden
+February 1980
