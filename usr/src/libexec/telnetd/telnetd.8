@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)telnetd.8	8.2 (Berkeley) %G%
+.\"	@(#)telnetd.8	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TELNETD 8
@@ -15,21 +15,15 @@
 protocol server
 .Sh SYNOPSIS
 .Nm /usr/libexec/telnetd
-.Op Fl a Ar authmode
-.Op Fl B
+.Op Fl BUhlkns
 .Op Fl D Ar debugmode
-.Op Fl edebug
-.Op Fl h
 .Op Fl I Ns Ar initid
-.Op Fl l
-.Op Fl k
-.Op Fl n
-.Op Fl r Ns Ar lowpty-highpty
-.Op Fl s
 .Op Fl S Ar tos
-.Op Fl u Ar len
-.Op Fl U
 .Op Fl X Ar authtype
+.Op Fl a Ar authmode
+.Op Fl edebug
+.Op Fl r Ns Ar lowpty-highpty
+.Op Fl u Ar len
 .Op Fl debug Op Ar port
 .Sh DESCRIPTION
 The
