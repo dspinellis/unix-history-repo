@@ -1,4 +1,4 @@
-#	@(#)Makefile	6.15 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 # Missing: tmac.a tmac.an.old tmac.cp tmac.r
 
