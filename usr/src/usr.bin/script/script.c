@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)script.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)script.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -30,6 +30,7 @@ static char sccsid[] = "@(#)script.c	5.6 (Berkeley) %G%";
  */
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <termios.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
 #include <sys/file.h>
@@ -44,9 +45,7 @@ int	child;
 int	subchild;
 char	*fname;
 
-struct	sgttyb b;
-struct	tchars tc;
-struct	ltchars lc;
+struct	termios tt;
 struct	winsize win;
 int	lb;
 int	l;
@@ -163,11 +162,13 @@ doshell()
 {
 	int t;
 
+	/***
 	t = open("/dev/tty", O_RDWR);
 	if (t >= 0) {
 		(void) ioctl(t, TIOCNOTTY, (char *)0);
 		(void) close(t);
 	}
+	***/
 	getslave();
 	(void) close(master);
 	(void) fclose(fscript);
@@ -182,12 +183,12 @@ doshell()
 
 fixtty()
 {
-	struct sgttyb sbuf;
+	struct termios rtt;
 
-	sbuf = b;
-	sbuf.sg_flags |= RAW;
-	sbuf.sg_flags &= ~ECHO;
-	(void) ioctl(0, TIOCSETP, (char *)&sbuf);
+	rtt = tt;
+	cfmakeraw(&rtt);
+	rtt.c_lflag &= ~ECHO;
+	(void) tcsetattr(0, TCSADFLUSH, &rtt);
 }
 
 fail()
@@ -208,7 +209,7 @@ done()
 		(void) fclose(fscript);
 		(void) close(master);
 	} else {
-		(void) ioctl(0, TIOCSETP, (char *)&b);
+		(void) tcsetattr(0, TCSADFLUSH, &tt);
 		printf("Script done, file is %s\n", fname);
 	}
 	exit(0);
@@ -237,12 +238,9 @@ getmaster()
 				ok = access(line, R_OK|W_OK) == 0;
 				*tp = 'p';
 				if (ok) {
-				    (void) ioctl(0, TIOCGETP, (char *)&b);
-				    (void) ioctl(0, TIOCGETC, (char *)&tc);
-				    (void) ioctl(0, TIOCGETD, (char *)&l);
-				    (void) ioctl(0, TIOCGLTC, (char *)&lc);
-				    (void) ioctl(0, TIOCLGET, (char *)&lb);
-				    (void) ioctl(0, TIOCGWINSZ, (char *)&win);
+					(void) tcgetattr(0, &tt);
+				    	(void) ioctl(0, TIOCGWINSZ, 
+						(char *)&win);
 					return;
 				}
 				(void) close(master);
@@ -262,10 +260,8 @@ getslave()
 		perror(line);
 		fail();
 	}
-	(void) ioctl(slave, TIOCSETP, (char *)&b);
-	(void) ioctl(slave, TIOCSETC, (char *)&tc);
-	(void) ioctl(slave, TIOCSLTC, (char *)&lc);
-	(void) ioctl(slave, TIOCLSET, (char *)&lb);
-	(void) ioctl(slave, TIOCSETD, (char *)&l);
+	(void) tcsetattr(slave, TCSADFLUSH, &tt);
 	(void) ioctl(slave, TIOCSWINSZ, (char *)&win);
+	(void) setsid();
+	(void) ioctl(slave, TIOCSCTTY, 0);
 }
