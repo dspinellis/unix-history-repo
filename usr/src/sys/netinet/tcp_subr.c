@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.35	82/11/13	*/
+/*	tcp_subr.c	4.36	82/12/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -48,7 +48,7 @@ tcp_template(tp)
 	register struct mbuf *m;
 	register struct tcpiphdr *n;
 
-	m = m_get(M_WAIT);
+	m = m_get(M_WAIT, MT_HEADER);
 	if (m == 0)
 		return (0);
 	m->m_off = MMAXOFF - sizeof (struct tcpiphdr);
@@ -101,7 +101,7 @@ tcp_respond(tp, ti, ack, seq, flags)
 		ro = &tp->t_inpcb->inp_route;
 	}
 	if (flags == 0) {
-		m = m_get(M_DONTWAIT);
+		m = m_get(M_DONTWAIT, MT_HEADER);
 		if (m == 0)
 			return;
 		m->m_len = sizeof (struct tcpiphdr) + 1;
@@ -146,7 +146,7 @@ struct tcpcb *
 tcp_newtcpcb(inp)
 	struct inpcb *inp;
 {
-	struct mbuf *m = m_getclr(M_DONTWAIT);
+	struct mbuf *m = m_getclr(M_DONTWAIT, MT_PCB);
 	register struct tcpcb *tp;
 
 	if (m == 0)

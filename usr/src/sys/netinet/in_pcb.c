@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.36	82/11/03	*/
+/*	in_pcb.c	4.37	82/12/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -23,7 +23,7 @@ in_pcballoc(so, head)
 	struct mbuf *m;
 	register struct inpcb *inp;
 
-	m = m_getclr(M_DONTWAIT);
+	m = m_getclr(M_DONTWAIT, MT_PCB);
 	if (m == 0)
 		return (ENOBUFS);
 	inp = mtod(m, struct inpcb *);

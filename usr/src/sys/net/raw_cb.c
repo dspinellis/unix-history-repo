@@ -1,4 +1,4 @@
-/*	raw_cb.c	4.14	82/11/13	*/
+/*	raw_cb.c	4.15	82/12/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -29,7 +29,7 @@ raw_attach(so)
 	struct mbuf *m;
 	register struct rawcb *rp;
 
-	m = m_getclr(M_DONTWAIT);
+	m = m_getclr(M_DONTWAIT, MT_PCB);
 	if (m == 0)
 		return (ENOBUFS);
 	if (sbreserve(&so->so_snd, RAWSNDQ) == 0)

@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.37	82/11/15	*/
+/*	uipc_syscalls.c	4.38	82/12/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -192,7 +192,7 @@ noname:
 	fp->f_flag = FREAD|FWRITE;
 	fp->f_socket = so;
 ret:
-	nam = m_get(M_WAIT);
+	nam = m_get(M_WAIT, MT_SONAME);
 	(void) soaccept(so, nam, &aopt);
 	if (uap->name) {
 		if (namelen > nam->m_len)
@@ -530,7 +530,7 @@ ssocketaddr()
 		return;
 	}
 	so = fp->f_socket;
-	m = m_getclr(M_WAIT);
+	m = m_getclr(M_WAIT, MT_SONAME);
 	u.u_error =
 		(*so->so_proto->pr_usrreq)(so, PRU_SOCKADDR, 0, m, 0);
 	if (u.u_error)
@@ -550,7 +550,7 @@ sockname(aname, name, namelen)
 
 	if (namelen > MLEN)
 		return (EINVAL);
-	m = m_get(M_WAIT);
+	m = m_get(M_WAIT, MT_SONAME);
 	m->m_len = namelen;
 	if (copyin(name, mtod(m, caddr_t), (u_int)namelen)) {
 		(void) m_free(m);
@@ -575,7 +575,7 @@ sockopt(so, opt)
 		return (EFAULT);
 	if (so->so_optlen < 0 || so->so_optlen > MLEN)
 		return (EINVAL);
-	m = m_get(M_WAIT);
+	m = m_get(M_WAIT, MT_SOOPTS);
 	m->m_len = so->so_optlen;
 	if (copyin(so->so_optdata, mtod(m, caddr_t), (u_int)m->m_len)) {
 		(void) m_free(m);

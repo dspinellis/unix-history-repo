@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.40	82/10/21	*/
+/*	uipc_mbuf.c	1.41	82/12/14	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -61,7 +61,8 @@ m_clalloc(ncl, how)
 	case MPG_MBUFS:
 		for (i = ncl * CLBYTES / sizeof (*m); i > 0; i--) {
 			m->m_off = 0;
-			m->m_free = 0;
+			m->m_type = MT_DATA;
+			mbstat.m_mtypes[MT_DATA]++;
 			mbstat.m_mbufs++;
 			(void) m_free(m);
 			m++;
@@ -100,22 +101,22 @@ steal:
  * for critical paths.
  */
 struct mbuf *
-m_get(canwait)
-	int canwait;
+m_get(canwait, type)
+	int canwait, type;
 {
 	register struct mbuf *m;
 
-	MGET(m, canwait);
+	MGET(m, canwait, type);
 	return (m);
 }
 
 struct mbuf *
-m_getclr(canwait)
-	int canwait;
+m_getclr(canwait, type)
+	int canwait, type;
 {
 	register struct mbuf *m;
 
-	m = m_get(canwait);
+	m = m_get(canwait, type);
 	if (m == 0)
 		return (0);
 	bzero(mtod(m, caddr_t), MLEN);
@@ -134,8 +135,8 @@ m_free(m)
 
 /*ARGSUSED*/
 struct mbuf *
-m_more(type)
-	int type;
+m_more(canwait, type)
+	int canwait, type;
 {
 	register struct mbuf *m;
 
@@ -143,8 +144,8 @@ m_more(type)
 		mbstat.m_drops++;
 		return (NULL);
 	}
-#define m_more(x) (panic("m_more"), (struct mbuf *)0)
-	MGET(m, type);
+#define m_more(x,y) (panic("m_more"), (struct mbuf *)0)
+	MGET(m, canwait, type);
 #undef m_more
 	return (m);
 }
@@ -175,11 +176,13 @@ m_copy(m, off, len)
 {
 	register struct mbuf *n, **np;
 	struct mbuf *top, *p;
+	int type;
 
 	if (len == 0)
 		return (0);
 	if (off < 0 || len < 0)
 		panic("m_copy");
+	type = m->m_type;
 	while (off > 0) {
 		if (m == 0)
 			panic("m_copy");
@@ -196,7 +199,7 @@ m_copy(m, off, len)
 				panic("m_copy");
 			break;
 		}
-		MGET(n, 1);
+		MGET(n, M_WAIT, type);
 		*np = n;
 		if (n == 0)
 			goto nospace;
@@ -291,7 +294,7 @@ m_pullup(m0, len)
 	n = m0;
 	if (len > MLEN)
 		goto bad;
-	MGET(m, M_DONTWAIT);
+	MGET(m, M_DONTWAIT, n->m_type);
 	if (m == 0)
 		goto bad;
 	m->m_len = 0;

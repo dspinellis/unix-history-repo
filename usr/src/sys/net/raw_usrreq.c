@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.22	82/10/20	*/
+/*	raw_usrreq.c	4.23	82/12/14	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -36,7 +36,7 @@ raw_input(m0, proto, src, dst)
 	/*
 	 * Rip off an mbuf for a generic header.
 	 */
-	m = m_get(M_DONTWAIT);
+	m = m_get(M_DONTWAIT, MT_HEADER);
 	if (m == 0) {
 		m_freem(m0);
 		return;

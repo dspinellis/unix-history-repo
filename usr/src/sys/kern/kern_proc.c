@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.50	82/12/09	*/
+/*	kern_proc.c	4.51	82/12/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -544,7 +544,7 @@ exit(rv)
 	register int i;
 	register struct proc *p, *q;
 	register int x;
-	struct mbuf *m = m_getclr(M_WAIT);
+	struct mbuf *m = m_getclr(M_WAIT, MT_ZOMBIE);
 
 #ifdef PGINPROF
 	vmsizmon();

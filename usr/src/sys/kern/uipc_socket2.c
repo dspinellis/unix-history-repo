@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.31	82/11/03	*/
+/*	uipc_socket2.c	4.32	82/12/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -112,7 +112,7 @@ sonewconn(head)
 
 	if (head->so_qlen + head->so_q0len > 3 * head->so_qlimit / 2)
 		goto bad;
-	m = m_getclr(M_DONTWAIT);
+	m = m_getclr(M_DONTWAIT, MT_SOCKET);
 	if (m == 0)
 		goto bad;
 	so = mtod(m, struct socket *);
@@ -454,7 +454,7 @@ SBCHECK(sb, "sbappendaddr begin");
 	}
 	if (len > sbspace(sb))
 		return (0);
-	m = m_get(M_DONTWAIT);
+	m = m_get(M_DONTWAIT, MT_SONAME);
 	if (m == 0)
 		return (0);
 	m->m_len = sizeof (struct sockaddr);
