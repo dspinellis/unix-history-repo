@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.1 (Berkeley) %G%
+		@(#)README	6.30 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -613,6 +613,10 @@ the option or macro that is affected (either Ox for an option or Dx
 for a macro), and a brief description.  Greater detail of the semantics
 can be found in the Installation and Operations Guide.
 
+Some options are likely to be deprecated in future versions -- that is,
+the option is only included to provide back-compatibility.  These are
+marked with "*".
+
 M4 Variable Name	Default		Mac/Opt	Description
 confMAILER_NAME		MAILER-DAEMON	Dn	The sender name used for
 						internally generated
@@ -648,20 +652,25 @@ confTEMP_FILE_MODE	0600		OF	Temporary file mode.
 confDEF_GROUP_ID	1		Og	Default group id.
 confMATCH_GECOS		False		OG	Match GECOS field.
 confMAX_HOP		17		Oh	Maximum hop count.
-confIGNORE_DOTS		False		Oi	Ignore dot as terminator
+confIGNORE_DOTS		False		Oi *	Ignore dot as terminator
 						for incoming messages?
 confBIND_OPTS		(empty)		OI	Default options for BIND.
-confMIME_FORMAT_ERRORS	True		Oj	Send error messages as MIME-
+confMIME_FORMAT_ERRORS	True		Oj *	Send error messages as MIME-
 						encapsulated messages per
 						RFC 1344.
 confMCI_CACHE_SIZE	2		Ok	Size of open connection cache.
 confMCI_CACHE_TIMEOUT	5m		OK	Open connection cache timeout.
+confUSE_ERRORS_TO	False		Ol *	Use the Errors-To: header to
+						deliver error messages.  This
+						should not be necessary because
+						of general acceptance of the
+						envelope/header distinction.
 confLOG_LEVEL		9		OL	Log level.
 confME_TOO		False		Om	Include sender in group
 						expansions.
 confCHECK_ALIASES	True		On	Check RHS of aliases when
 						running newaliases.
-confOLD_STYLE_HEADERS	True		Oo	Assume that headers without
+confOLD_STYLE_HEADERS	True		Oo *	Assume that headers without
 						special chars are old style.
 confDAEMON_OPTIONS	(undefined)	OO	SMTP daemon options.
 confPRIVACY_FLAGS	authwarnings	Op	Privacy flags.
@@ -669,7 +678,7 @@ confCOPY_ERRORS_TO	(undefined)	OP	Address for additional copies
 						of all error messages.
 confQUEUE_FACTOR	(undefined)	Oq	Slope of queue-only function
 confREAD_TIMEOUT	(undefined)	Or	SMTP read timeouts.
-confSAFE_QUEUE		True		Os	Commit all messages to disk
+confSAFE_QUEUE		True		Os *	Commit all messages to disk
 						before forking.
 confMESSAGE_TIMEOUT	5d/4h		OT	Timeout for messages before
 						sending error/warning message.
@@ -681,16 +690,14 @@ confTIME_ZONE		USE_SYSTEM	Ot	Time zone info -- can be
 confDEF_USER_ID		1		Ou	Default user id.
 confUSERDB_SPEC		(undefined)	OU	User database specification.
 confFALLBACK_MX		(undefined)	OV	Fallback MX host.
-confNO_WILDCARD_MX	False		Ow	No wildcard MX records matches
-						our domain.
 confQUEUE_LA		8		Ox	Load average at which queue-only
 						function kicks in.
 confREFUSE_LA		12		OX	Load average at which incoming
 						SMTP connections are refused.
-confSEPARATE_PROC	False		Oy	Run all deliveries in a
-						separate process.
 confWORK_RECIPIENT_FACTOR
-			(undefined)	OY	Cost of each recipient.
+			(undefined)	Oy	Cost of each recipient.
+confSEPARATE_PROC	False		OY	Run all deliveries in a
+						separate process.
 confWORK_CLASS_FACTOR	(undefined)	Oz	Priority multiplier for class.
 confWORK_TIME_FACTOR	(undefined)	OZ	Cost of each delivery attempt.
 confCW_FILE		/etc/sendmail.cw	Name of file used to get the
