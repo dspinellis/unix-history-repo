@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)date.1	6.1 (Berkeley) %G%
+.\"	@(#)date.1	6.2 (Berkeley) %G%
 .\"
 .TH DATE 1 ""
 .UC 4
@@ -13,45 +13,61 @@ date \- print and set the date
 .RB "[ -u ] [ yymmddhhmm [ " . "ss ] ]"
 .SH DESCRIPTION
 If no arguments are given, the current date and time are printed.
-If a date is specified, the current date is set.
+Providing an argument will set the desired date.
+Only the superuser can set the date.
 The
 .I -u
-flag is used to display the date in GMT (universal) time.
-This flag may also be used to set GMT time.
+flag is used to display or set the date in GMT (universal) time.
 .I yy
-is the last two digits of the year;
+represents the last two digits of the year;
 the first
 .I mm
 is the month number;
 .I dd
-is the day number in the month;
+is the day number;
 .I hh
 is the hour number (24 hour system);
 the second
 .I mm
 is the minute number;
 .BI . ss
-is optional and is the seconds.
+is optional and represents the seconds.
 For example:
 .IP
-date 10080045
+date 8506131627
 .PP
-sets the date to Oct 8, 12:45 AM.
-The year, month and day may be omitted, the current
-values being the defaults.
+sets the date to June 13 1985, 4:27 PM.
+The year, month and day may be omitted; the default
+values will be the current ones.
 The system operates in GMT.
 .I Date
 takes care of the conversion to and from
-local standard and daylight time.
+local standard and daylight-saving time.
+.PP
+If 
+.I timed(8)
+is running to synchronize the clocks of machines in a local
+area network, \fIdate\fP sets the time globally on all those
+machines.
 .SH FILES
-/usr/adm/wtmp to record time-setting
+/usr/adm/wtmp to record time-setting.
+In /usr/adm/messages, \fIdate\fP records the name of the user
+setting the time.
 .SH SEE ALSO
-utmp(5)
+gettimeofday(2), utmp(5), timed(8),
+.br
+\fITSP: The Time Synchronization Protocol for UNIX 4.3BSD\fP, 
+R. Gusella and S. Zatti
 .SH DIAGNOSTICS
-`Failed to set date: Not owner' if you try to change the date
+`You are not superuser: date not set' if you try to change the date
 but are not the super-user.
+Occasionally, when \fItimed\fP synchronizes the time on many hosts, 
+the setting of a new time value may require more than a few seconds.
+On these occasions, \fIdate\fP prints: `Network time being set'.
+The message `Communication error with timed' occurs when the communication
+between \fIdate\fP and \fItimed\fP fails.
 .SH BUGS
 The system attempts to keep the date in a format closely compatible
 with VMS.  VMS, however, uses local time (rather than GMT) and does
-not understand daylight savings time.  Thus if you use both UNIX
+not understand daylight-saving time.  Thus, if you use both UNIX
 and VMS, VMS will be running on GMT.
