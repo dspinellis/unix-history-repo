@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lock.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)lock.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -37,10 +37,11 @@ static char sccsid[] = "@(#)lock.c	5.7 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/signal.h>
-#include <pwd.h>
 #include <sgtty.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <strings.h>
 
 #define	TIMEOUT	15
 
@@ -57,44 +58,54 @@ main(argc, argv)
 	char **argv;
 {
 	extern char *optarg;
-	extern int optind;
-	struct passwd *root_pwd, *my_pwd;
+	extern int errno, optind;
+	struct passwd *pw;
 	struct timeval timval;
 	struct itimerval ntimer, otimer;
 	struct tm *timp;
-	int ch, sectimeout, use_mine;
-	char *ttynam, *ap, *tzn;
+	int ch, sectimeout, usemine;
+	char *ap, *mypw, *rootpw, *ttynam, *tzn;
 	char hostname[MAXHOSTNAMELEN], s[BUFSIZ], s1[BUFSIZ];
-	char *crypt(), *index(), *ttyname();
+	char *crypt(), *ttyname();
 
-	use_mine = 0;
 	sectimeout = TIMEOUT;
+	mypw = NULL;
+	usemine = 0;
 	while ((ch = getopt(argc, argv, "pt:")) != EOF)
 		switch((char)ch) {
 		case 't':
 			if ((sectimeout = atoi(optarg)) <= 0)
-				exit(0);
+				exit(1);
 			break;
 		case 'p':
-			use_mine = 1;
+			usemine = 1;
+			if (!(pw = getpwuid(getuid()))) {
+				fprintf(stderr, "lock: unknown uid %d.\n",
+				    getuid());
+				exit(1);
+			}
+			mypw = strdup(pw->pw_passwd);
 			break;
 		case '?':
 		default:
-			fputs("usage: lock [-p] [-t timeout]\n", stderr);
+			fprintf(stderr, "usage: lock [-p] [-t timeout]\n");
 			exit(1);
 	}
 	timeout.tv_sec = sectimeout * 60;
 
-	/* get information for header */
-	if (ioctl(0, TIOCGETP, &tty))
+	rootpw = (pw = getpwnam("root")) ? strdup(pw->pw_passwd) : NULL;
+
+	setuid(getuid());		/* discard privs */
+
+	if (ioctl(0, TIOCGETP, &tty))	/* get information for header */
 		exit(1);
 	gethostname(hostname, sizeof(hostname));
 	if (!(ttynam = ttyname(0))) {
-		puts("lock: not a terminal?");
+		printf("lock: not a terminal?\n");
 		exit(1);
 	}
 	if (gettimeofday(&timval, (struct timezone *)NULL)) {
-		perror("gettimeofday");
+		fprintf(stderr, "lock: gettimeofday: %s\n", strerror(errno));
 		exit(1);
 	}
 	nexttime = timval.tv_sec + (sectimeout * 60);
@@ -107,24 +118,25 @@ main(argc, argv)
 	ntty = tty; ntty.sg_flags &= ~ECHO;
 	(void)ioctl(0, TIOCSETP, &ntty);
 
-	if (!use_mine) {
+	if (!mypw) {
 		/* get key and check again */
-		fputs("Key: ", stdout);
-		if (!gets(s, sizeof(s)))
+		printf("Key: ");
+		if (!fgets(s, sizeof(s), stdin) || *s == '\n')
 			quit();
-		fputs("\nAgain: ", stdout);
+		printf("\nAgain: ");
 		/*
 		 * Don't need EOF test here, if we get EOF, then s1 != s
 		 * and the right things will happen.
 		 */
-		(void)gets(s1, sizeof(s1));
+		(void)fgets(s1, sizeof(s1), stdin);
 		putchar('\n');
 		if (strcmp(s1, s)) {
-			puts("\07lock: passwords didn't match.");
+			printf("\07lock: passwords didn't match.\n");
 			ioctl(0, TIOCSETP, &tty);
 			exit(1);
 		}
 		s[0] = NULL;
+		mypw = s1;
 	}
 
 	/* set signal handlers */
@@ -141,30 +153,25 @@ main(argc, argv)
 	printf ("lock: %s on %s. timeout in %d minutes\ntime now is %.20s%s%s",
 		ttynam, hostname, sectimeout, ap, tzn, ap + 19);
 
-	/* wait */
-	root_pwd = getpwuid(0);
-	if (use_mine)
-		my_pwd = getpwuid(getuid());
 	for (;;) {
-		fputs("Key: ", stdout);
-		if (!gets(s, sizeof(s))) {
+		printf("Key: ");
+		if (!fgets(s, sizeof(s), stdin)) {
 			clearerr(stdin);
 			hi();
 			continue;
 		}
-		if (use_mine) {
-			if (!my_pwd || !*my_pwd->pw_passwd || !strcmp(my_pwd->pw_passwd, crypt(s, my_pwd->pw_passwd)))
+		if (usemine) {
+			if (!strcmp(mypw, crypt(s, mypw)))
 				break;
 		}
-		else if (!strcmp(s1, s))
+		else if (!strcmp(s, s1))
 			break;
-		if (!root_pwd || !*root_pwd->pw_passwd || !strcmp(root_pwd->pw_passwd, crypt(s, root_pwd->pw_passwd)))
+		if (rootpw && !strcmp(rootpw, crypt(s, rootpw)))
 			break;
-		puts("\07");
+		printf("\07\n");
 		if (ioctl(0, TIOCGETP, &ntty))
 			exit(1);
 	}
-	putchar('\n');
 	quit();
 }
 
@@ -181,6 +188,7 @@ hi()
 static
 quit()
 {
+	putchar('\n');
 	(void)ioctl(0, TIOCSETP, &tty);
 	exit(0);
 }
@@ -189,6 +197,6 @@ static
 bye()
 {
 	(void)ioctl(0, TIOCSETP, &tty);
-	puts("lock: timeout");
+	printf("lock: timeout\n");
 	exit(1);
 }
