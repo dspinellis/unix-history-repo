@@ -20,7 +20,7 @@
  */
 
 #ifndef	lint
-static	char	sccsid[] = "@(#)termin.c	1.12 (Berkeley) %G%";
+static	char	sccsid[] = "@(#)termin.c	1.13 (Berkeley) %G%";
 #endif	/* ndef lint */
 
 /* this takes characters from the keyboard, and produces 3270 keystroke
@@ -194,7 +194,7 @@ register int	count;			/* how many bytes in this buffer */
 	    i = count;
 	}
 	while (i--) {
-	    c = (*buffer)&0x7f;
+	    c = (*buffer++)&0x7f;
 	    *TransPointer++ = c|0x80;
 	    if (c == '\r') {
 		SendTransparent(ourBuffer, TransPointer-ourBuffer);
