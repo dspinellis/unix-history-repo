@@ -1,4 +1,4 @@
-/*	mkmakefile.c	1.23	82/12/18	*/
+/*	mkmakefile.c	1.24	83/01/14	*/
 
 /*
  * Build the makefile for the system, from
@@ -117,7 +117,7 @@ makefile()
 		if (profiling && strncmp(line, "COPTS=", 6) == 0) {
 			register char *cp;
 
-			fprintf(ofp, "CRT0.EX=/usr/src/lib/libc/csu/crt0.ex\n");
+			fprintf(ofp, "GPROF.EX=/usr/src/lib/libc/csu/gmon.ex\n");
 			cp = index(line, '\n');
 			if (cp)
 				*cp = 0;
@@ -402,10 +402,10 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 
 		case MACHINE_VAX:
 			fprintf(f, "\t${CC} -I. -c -S %s ../%sc\n", COPTS, np);
-			fprintf(f, "\tex - %ss < ${CRT0.EX}\n", tp);
+			fprintf(f, "\tex - %ss < ${GPROF.EX}\n", tp);
 			fprintf(f,
-		  "\t/lib/cpp %ss | sed -f ../vax/asm.sed | ${AS} -o %so\n",
-			  tp, tp);
+			    "\tsed -f ../vax/asm.sed %ss | ${AS} -o %so\n",
+			    tp, tp);
 			fprintf(f, "\trm -f %ss\n\n", tp);
 			break;
 
