@@ -1,0 +1,71 @@
+.TH MCOPY 1 local
+.SH NAME
+mcopy \- copy MSDOS files to/from Unix
+.SH SYNOPSIS
+.B mcopy
+[
+.B -tnvm
+] sourcefile targetfile
+.PP
+.B mcopy
+[
+.B -tnvm
+] sourcefile [ sourcefiles... ] targetdirectory
+.SH DESCRIPTION
+.I Mcopy
+copies the specified file to the named file, or copies multiple files to
+the named directory.  The source and target can be either MSDOS or Unix
+files.
+.PP
+The use of a drive letter designation on the MSDOS files, 'a:' for
+example, determines the direction of the transfer.  A missing drive
+designation implies a Unix file whose path starts in the current
+directory
+.PP
+.I Mcopy
+will allow the following command line options:
+.TP
+.B t
+Text file transfer.
+.I Mcopy
+will translate incoming carriage return/line feeds to line feeds.
+.TP
+.B n
+No warning.
+.I Mcopy
+will not warn the user when overwriting an existing file.
+.TP
+.B v
+Verbose mode.
+.TP
+.B m
+Preserve the file modification time.
+.PP
+If the target file already exists, and the
+.I -n
+option is not in effect,
+.I mcopy
+asks whether or not to overwrite the file.
+.PP
+MSDOS subdirectory names are supported with either the '/' or '\e\'
+separator.  The use of the '\e\' separator or wildcards will require the
+names to be enclosed in quotes to protect them from the shell.
+.PP
+The
+.I mcd
+command may be used to establish the device and the current working
+directory (relative to MSDOS), otherwise the default is A:/.
+.SH SEE ALSO
+mcd(1), mread(1), mwrite(1)
+.SH BUGS
+Unlike MSDOS, the destination directory may
+.B not
+be omitted.
+.PP
+The '+' operator (append) from MSDOS is not supported.
+.PP
+No other
+.I Mtools
+command
+.B requires
+the use of a drive letter designation on MSDOS files.

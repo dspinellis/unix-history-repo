@@ -1,0 +1,24 @@
+.TH MRD 1 local
+.SH NAME
+mrd \- remove an MSDOS subdirectory
+.SH SYNOPSIS
+.B mrd
+msdosdirectory [ msdosdirectories... ]
+.SH DESCRIPTION
+.I Mrd
+removes a directory from an MSDOS filesystem.
+.PP
+An error occurs if the directory is not empty.
+.PP
+MSDOS subdirectory names are supported with either the '/' or '\e\'
+separator.  The use of the '\e\' separator or wildcards will require the
+directory name to be enclosed in quotes to protect it from the shell.
+.PP
+The
+.I mcd
+command may be used to establish the device and the current working
+directory (relative to MSDOS), otherwise the default is A:/.
+.SH SEE ALSO
+mcd(1), mmd(1)
+.SH BUGS
+Allows multiple arguments, which does not follow the MSDOS convention.

@@ -1,0 +1,29 @@
+New in the v2.0 release....
+
+	1) Support for multiple devices.  Mtools now supports:
+		multiple floppy disks (A:, B:, etc)
+		DOS partitions on a hard disk
+		DOS "images" such as those VP/ix uses.
+
+	2) Wildcards are supported anywhere in a pathname (not just
+	in the "filename" part as before)
+
+	3) Reads and writes to slow devices are now "cylinder buffered"
+	when appropriate.
+
+	4) Versions of CD, FORMAT, LABEL, and ATTRIB have been added.
+
+	5) A Mtools.1 manual page has beed added for an overview of Mtools.
+
+	6) The mkmanifest command has been added.  Although not an 'mtool'
+	command, it makes life easier when fixing up Unix filenames that
+	get clobbered by MSDOS file name restrictions.
+
+	7) The mkdfs program of the "fast-mtools" release for the Sun
+	SparcStation can be replaced with mformat.
+
+	8) The Configure file has been included to help those who must add
+	devices to the devices.c file.
+
+	Many thanks to Viktor Dukhovni (viktor@math.princeton.edu) for
+	many of the ideas in the new release.

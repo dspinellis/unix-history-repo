@@ -1,0 +1,40 @@
+.TH MDIR 1 local
+.SH NAME
+mdir \- display an MSDOS directory
+.SH SYNOPSIS
+.B mdir
+[
+.B -w
+] msdosdirectory
+.PP
+.B mdir
+[
+.B -w
+] msdosfile [ msdosfiles...  ] 
+.SH DESCRIPTION
+.I Mdir
+displays the contents of an MSDOS directory.
+.PP
+.I Mdir
+will allow the following command line option:
+.TP
+.B w
+Wide output.  This option will print the filenames across the page
+without displaying the file size or creation date.
+.PP
+An error occurs if a component of the path is not a directory.
+.PP
+MSDOS subdirectory names are supported with either the '/' or '\e\'
+separator.  The use of the '\e\' separator or wildcards will require the
+names to be enclosed in quotes to protect them from the shell.
+.PP
+The
+.I mcd
+command may be used to establish the device and the current working
+directory (relative to MSDOS), otherwise the default is A:/.
+.SH SEE ALSO
+mcd(1)
+.SH BUGS
+Allows multiple arguments, which does not follow the MSDOS convention.
+.PP
+There is no /P (pause) option.

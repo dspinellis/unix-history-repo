@@ -1,0 +1,130 @@
+How to configure Mtools to your system...
+
+1) Things you'll need to know.
+
+	The full path to the devices you want to use.
+
+	The number of tracks, heads, and sectors supported by each device.
+
+		5.25" 160k = 40 tracks, 1 head, and 8 sectors
+		5.25" 180k = 40 tracks, 1 head, and 9 sectors
+		5.25" 320k = 40 tracks, 2 heads, and 8 sectors
+		5.25" 360k = 40 tracks, 2 heads, and 9 sectors
+		5.25" 1.2m = 80 tracks, 2 heads, and 15 sectors
+		3.5"  720k = 80 tracks, 2 heads, and 9 sectors
+		3.5" 1.44m = 80 tracks, 2 heads, and 18 sectors
+
+	If you choose to use a hard disk partition as one of your devices,
+	then you may have to change the read/write permissions on that
+	partition.
+
+2) The Makefile and msdos.h files
+
+	The following pre-processor variables are used in Mtools.  They
+	should be set with "-Dvariable" in CFLAGS in the Makefile.
+
+		BSD	for systems without System V style strings functions
+			and System V style utime().
+
+		ISC	default devices for ISC's Unix V.
+
+		UNIXPC	default devices for AT&T Unix PC 7300/3B1
+
+		SPARC	default devices for SunOS 4.1 on a SPARCstation
+
+	There is a variable in msdos.h called SIG_TYPE which should be
+	configured to the "base" return type of signal();
+
+3) The devices "database" in devices.c
+
+	WARNING:  The devices.c file, as distributed, has *NO* devices
+	defined.  You *MUST* select from one of the examples or edit the
+	devices database yourself.
+
+	struct device {
+		char drive;			/* the drive letter */
+		char *name;			/* full path to device */
+		long offset;			/* skip this many bytes */
+		int fat_bits;			/* FAT encoding scheme */
+		int mode;			/* any special open() flags */
+		int (*gioctl) ();		/* gioctl() if needed */
+		int tracks;			/* tracks */
+		int heads;			/* heads */
+		int sectors;			/* sectors */
+	};
+
+	drive	the drive letter (in uppercase) that you want to associate
+		to this device.
+
+	name	full path to the device.  Shell expansion is done on the
+		name so things like $HOME/vpix/C: will work.
+
+	offset	skip over a partition table.  Useful for msdos disk "images"
+		such as those VP/ix uses.
+
+	fat_bits The encoding scheme for the File Allocation Table.  Currently
+		supports only 12 and 16 bit FATs.
+
+	mode	any special open() mode flags (not normally used, except
+		in the AT&T Unixpc 7300/3b1).
+
+	gioctl	any special ioctl() calls required after opening the device
+		(not normally used, except in the AT&T Unixpc 7300/3b1).
+
+	tracks	the number of tracks supported by this device or zero if
+		this type of sanity checking is not required.  Do NOT use
+		this field for hard disks or disk "images".  Also used by
+		gioctl(), if present, as a default starting place.
+
+	heads	the number of heads supported by this device or zero if
+		this type of sanity checking is not required.
+
+	sectors	the number of sectors supported by this device or zero if
+		this type of sanity checking is not required.
+
+
+	If a device supports more than one disk capacity (1.2m and
+	360k), then you should place the most frequently used capacity
+	first.  You may get an error message from the device driver when
+	the disk capacity doesn't match the device, but these can be
+	safely ignored.
+
+4)  Examples devices
+
+	for Interactive 386ix 2.0.2 with:
+		1.2m 5.25" as a: (supports 1.2m, 360k, and 320k)
+		1.44m 3.5" as b: (supports 1.44m, 720k)
+		hard disk partition as c:
+		vpix disk image as d:
+		user's vpix disk image as e:
+
+		{'A', "/dev/rdsk/f0q15dt", 0L, 12, 0, (int (*)()) 0, 80, 2, 15},
+		{'A', "/dev/rdsk/f0d9dt", 0L, 12, 0, (int (*)()) 0, 40, 2, 9},
+		{'A', "/dev/rdsk/f0d8dt", 0L, 12, 0, (int (*)()) 0, 40, 2, 8},
+		{'B', "/dev/rdsk/f13ht", 0L, 12, 0, (int (*)()) 0, 80, 2, 18},
+		{'B', "/dev/rdsk/f13dt", 0L, 12, 0, (int (*)()) 0, 80, 2, 9},
+		{'C', "/dev/rdsk/0p1", 0L, 16, 0, (int (*)()) 0, 0, 0, 0},
+		{'D', "/usr/vpix/defaults/C:", 8704L, 12, 0, (int (*)()) 0, 0, 0, 0},
+		{'E', "$HOME/vpix/C:", 8704L, 12, 0, (int (*)()) 0, 0, 0, 0},
+		{'\0', (char *) NULL, 0L, 0, 0, (int (*)()) 0, 0, 0, 0}
+
+
+	for AT&T Unixpc 7300/3b1 with:
+		360k 5.25" as a: (supports 360k, and 320k, 180k, 160k)
+		DOS73 disk image as c:
+
+		{'A', "/dev/rfp020", 0L, 12, O_NDELAY, init_unixpc, 40, 2, 9},
+		{'C', "/usr/bin/DOS/dvd000", 0L, 12, 0, (int (*)()) 0, 0, 0, 0}
+		{'\0', (char *) NULL, 0L, 0, 0, (int (*)()) 0, 0, 0, 0}
+
+
+	for Sun SparcStation with:
+		1.44m 3.5" as a: (supports 1.44m and 720k)
+
+		{'A', "/dev/rfd0c", 0L, 12, 0, (int (*)()) 0, 80, 2, 18},
+		{'A', "/dev/rfd0c", 0L, 12, 0, (int (*)()) 0, 80, 2, 9},
+		{'\0', (char *) NULL, 0L, 0, 0, (int (*)()) 0, 0, 0, 0}
+
+		Note that the two devices are actually the same physical
+		device, and that only the number of sectors are
+		different.

@@ -1,0 +1,39 @@
+.TH MMD 1 local
+.SH NAME
+mmd \- make an MSDOS subdirectory
+.SH SYNOPSIS
+.B mmd
+[
+.B -v
+] msdosdirectory [ msdosdirectories... ]
+.SH DESCRIPTION
+.I Mmd
+makes a new directory on an MSDOS filesystem.
+.PP
+.I Mmd
+will allow the following command line option:
+.TP
+.B v
+Verbose mode.  Display the new directory name if the name supplied is
+invalid.
+.PP
+Reasonable care is taken to create a valid MSDOS directory name.  If an
+invalid name is specified,
+.I mmd
+will change the name (and display the new name if the verbose mode is
+set).
+.PP
+An error occurs if the directory already exists.
+.PP
+MSDOS subdirectory names are supported with either the '/' or '\e\'
+separator.  The use of the '\e\' separator or wildcards will require the
+directory name to be enclosed in quotes to protect it from the shell.
+.PP
+The
+.I mcd
+command may be used to establish the device and the current working
+directory (relative to MSDOS), otherwise the default is A:/.
+.SH SEE ALSO
+mcd(1), mrd(1)
+.SH BUGS
+Allows multiple arguments, which does not follow the MSDOS convention.
