@@ -1,4 +1,4 @@
-#	@(#)Files.misc	8.2 (Berkeley) %G%
+#	@(#)Files.misc	8.3 (Berkeley) %G%
 praliases/Makefile
 praliases/Makefile.dist
 praliases/praliases.c
