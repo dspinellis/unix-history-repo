@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -27,14 +27,14 @@ int isdepth;			/* do directories on post-order visit */
 int isoutput;			/* user specified output operator */
 int isxargs;			/* don't permit xargs delimiting chars */
 
-static void usage();
+static void usage __P((void));
 
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	register char **p, **start;
-	PLAN *find_formplan();
 	int ch;
 
 	(void)time(&now);	/* initialize the time-of-day */
@@ -60,7 +60,6 @@ main(argc, argv)
 			isxargs = 1;
 			break;
 		case 'x':
-			ftsoptions &= ~FTS_NOSTAT;
 			ftsoptions |= FTS_XDEV;
 			break;
 		case '?':
