@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.30 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -684,16 +684,6 @@ writable(filename, ctladdr, flags)
 		egid = RealGid;
 		uname = RealUserName;
 	}
-	if (geteuid() == 0)
-	{
-		if (bitset(S_ISUID, stb.st_mode))
-		{
-			euid = stb.st_uid;
-			uname = NULL;
-		}
-		if (bitset(S_ISGID, stb.st_mode))
-			egid = stb.st_gid;
-	}
 	if (euid == 0)
 	{
 		euid = DefUid;
@@ -701,7 +691,21 @@ writable(filename, ctladdr, flags)
 	}
 	if (egid == 0)
 		egid = DefGid;
-	
+	if (geteuid() == 0)
+	{
+#ifdef SUID_ROOT_FILES_OK
+		if (bitset(S_ISUID, stb.st_mode))
+#else
+		if (bitset(S_ISUID, stb.st_mode) && stb.st_uid != 0)
+#endif
+		{
+			flags |= SFF_ROOTOK;
+			euid = stb.st_uid;
+			uname = NULL;
+		}
+		if (bitset(S_ISGID, stb.st_mode) && stb.st_gid != 0)
+			egid = stb.st_gid;
+	}
 
 	if (tTd(29, 5))
 		printf("\teu/gid=%d/%d, st_u/gid=%d/%d\n",
