@@ -126,16 +126,11 @@ rx*)
 	name=rx; chr=30; blk=12;
 	case $unit in
 	0|1|2|3|4|5|6|7)
-		/etc/mknod ${name}${unit}a	b $blk `expr $unit '*' 8 + 0`
-		/etc/mknod ${name}${unit}b	b $blk `expr $unit '*' 8 + 1`
+		/etc/mknod ${name}${unit}	b $blk `expr $unit '*' 8 + 0`
 		/etc/mknod r${name}${unit}a	c $chr `expr $unit '*' 8 + 0`
 		/etc/mknod r${name}${unit}b	c $chr `expr $unit '*' 8 + 1`
 		/etc/mknod r${name}${unit}c	c $chr `expr $unit '*' 8 + 2`
 		/etc/mknod r${name}${unit}d	c $chr `expr $unit '*' 8 + 3`
-		/etc/mknod r${name}${unit}e	c $chr `expr $unit '*' 8 + 4`
-		/etc/mknod r${name}${unit}f	c $chr `expr $unit '*' 8 + 5`
-		/etc/mknod r${name}${unit}g	c $chr `expr $unit '*' 8 + 6`
-		/etc/mknod r${name}${unit}h	c $chr `expr $unit '*' 8 + 7`
 		;;
 	*)
 		echo bad unit for floppy disk in: $i
