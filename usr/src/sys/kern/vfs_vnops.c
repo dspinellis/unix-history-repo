@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_vnops.c	7.29 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.30 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -53,6 +53,7 @@ vn_open(ndp, p, fmode, cmode)
 			fmode &= ~FTRUNC;
 			vp = ndp->ni_vp;
 		} else {
+			VOP_ABORTOP(ndp);
 			if (ndp->ni_dvp == ndp->ni_vp)
 				vrele(ndp->ni_dvp);
 			else
