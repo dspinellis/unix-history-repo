@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.36 (Berkeley) %G%
+#	@(#)Makefile	5.37 (Berkeley) %G%
 #
 # Doing a make install builds /usr/include
 #
@@ -60,21 +60,25 @@ install: ${SHARED}
 	    ${DESTDIR}/usr/include/Makefile
 	rm -f ${DESTDIR}/usr/include/machine
 	ln -s ./${MACHINE} ${DESTDIR}/usr/include/machine
+	chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include/machine;
 	@echo installing ${LSYS}
 	@-for i in ${LSYS}; do \
 		rm -f ${DESTDIR}/usr/include/$$i; \
 		ln -s sys/$$i ${DESTDIR}/usr/include/$$i; \
+		chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include/$$i; \
 	done
 	@echo installing ${LMCH}
 	@-for i in ${LMCH}; do \
 		rm -f ${DESTDIR}/usr/include/$$i; \
 		ln -s machine/$$i ${DESTDIR}/usr/include/$$i; \
+		chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include/$$i; \
 	done
 
 		rm -rf ${DESTDIR}/usr/include/$$i; \
 		if [ ! -s ${DESTDIR}/usr/include/$$i ]; \
 		then \
 			ln -s /sys/$$i ${DESTDIR}/usr/include/$$i; \
+			chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include/$$i; \
 		else \
 			echo ${DESTDIR}/usr/include/$$i not removed; \
 		fi; \
