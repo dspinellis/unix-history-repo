@@ -12,6 +12,7 @@
 
 #define TRUE	1
 #define FALSE	0
+#define FATAL	1
 				/* imports from dver.c */
 #define  hmot(n)	hpos += n;
 #define  vmot(n)	vgoto(vpos + n);
@@ -220,7 +221,8 @@ int pic;
 	    char *cop = buf;
 
 	    while (*cop++ = *ptr++);	/* copy what's left to the beginning */
-	    fgets ((cop - 1), len - (cop - buf), fp);
+	    if (fgets ((cop - 1), len - (cop - buf), fp) == NULL)
+		error(FATAL, "unexpected end of input");
 	    ptr = buf;
 	}
 	if (npts < MAXPOINTS - 1)	/* if too many points, forget some */
@@ -480,7 +482,7 @@ int filled;
     nx = x;			/* must start out the x and y for first */
     ny = y + radius;		/*   painting going on in while loop */
 
-    while (ny >= 0)
+    while (ny >= y)
     {
         if (filled) {		/* fill from center */
             cx = x;
