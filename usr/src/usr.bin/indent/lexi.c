@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lexi.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)lexi.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*-
@@ -167,19 +167,22 @@ lexi()
 	    fill_buffer();
     }
 
-    /* Scan an alphanumeric token */
+    /* Scan an alphanumeric token.  Note that we must also handle
+     * stuff like "1.0e+03" and "7e-6". */
     if (chartype[*buf_ptr & 0177] == alphanum) {	/* we have a character
 							 * or number */
 	register char *j;	/* used for searching thru list of 
-				 *
 				 * reserved words */
 	register struct templ *p;
+	register int c;
 
-	while (chartype[*buf_ptr & 0177] == alphanum) {	/* copy it over */
+	do {			/* copy it over */
 	    *tok++ = *buf_ptr++;
 	    if (buf_ptr >= buf_end)
 		fill_buffer();
-	}
+	} while (chartype[c = *buf_ptr & 0177] == alphanum ||
+		isdigit(token[0]) && (c == '+' || c == '-') &&
+		(tok[-1] == 'e' || tok[-1] == 'E'));
 	*tok++ = '\0';
 	while (*buf_ptr == ' ' || *buf_ptr == '\t') {	/* get rid of blanks */
 	    if (++buf_ptr >= buf_end)
@@ -284,7 +287,7 @@ lexi()
 	last_code = ident;
 	return (ident);		/* the ident is not in the list */
     }				/* end of procesing for alpanum character */
-    /* l l Scan a non-alphanumeric token */
+    /* Scan a non-alphanumeric token */
 
     *tok++ = *buf_ptr;		/* if it is only a one-character token, it
 				 * is moved here */
