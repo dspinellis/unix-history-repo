@@ -85,3 +85,4 @@
 #define	A_VISUAL		25
 #define	A_TAGFILE		26
 #define	A_FILE_LIST		27
+#define A_SHELL			28

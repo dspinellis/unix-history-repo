@@ -233,7 +233,8 @@ error(s)
 		 * {{ Unless the terminal doesn't have auto margins,
 		 *    in which case we just hammered on the right margin. }}
 		 */
-		repaint();
+		/* repaint(); */
+		screen_trashed = 1;	/* XXX */
 	flush();
 }
 

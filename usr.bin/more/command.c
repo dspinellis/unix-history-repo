@@ -67,6 +67,7 @@ static int longprompt;		/* if stat command instead of prompt */
 static int mca;			/* The multicharacter command (action) */
 static int last_mca;		/* The previous mca */
 static int number;		/* The number typed by the user */
+static char *shellcmd = NULL;	/* Pointer to a shell command */
 static int wsearch;		/* Search for matches (1) or non-matches (0) */
 
 #define	CMD_RESET	cp = cmdbuf	/* reset command buffer to empty */
@@ -260,7 +261,7 @@ exec_mca()
 	extern int file;
 	extern char *tagfile;
 	register char *p;
-	char *glob();
+	char *glob(), *fexpand();
 
 	*cp = '\0';
 	CMD_EXEC;
@@ -274,6 +275,19 @@ exec_mca()
 	case A_EXAMINE:
 		for (p = cmdbuf; isspace(*p); ++p);
 		(void)edit(glob(p));
+		break;
+	case A_SHELL:
+		/*
+		 * Copy cmdbuf to shellcmd,
+		 * expanding any special characters ("%" or "#"
+		 * or an initial !).
+		 */
+		if ((p = fexpand(cmdbuf, shellcmd)) == NULL)
+			break;
+		else if (shellcmd != NULL)
+			free(shellcmd);
+		lsystem(shellcmd = p);
+		error("!done");
 		break;
 	case A_TAGFILE:
 		for (p = cmdbuf; isspace(*p); ++p);
@@ -562,6 +576,13 @@ again:		if (sigs)
 				break;
 			gomark(c);
 			break;
+		case A_SHELL:
+			/*
+			 * Shell escape.
+			 */
+			start_mca(A_SHELL, "!");
+			c = getcc();
+			goto again;
 		case A_PREFIX:
 			/*
 			 * The command is incomplete (more chars are needed).

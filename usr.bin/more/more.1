@@ -209,6 +209,13 @@ Followed by another single quote, returns to the postion at
 which the last "large" movement command was executed, or the
 beginning of the file if no such movements have occurred.
 All marks are lost when a new file is examined.
+.It Ic \&! Ns Ar command
+Invoke a shell command.  The characters `%', `#', and `!'
+are replaced by the current file name, previous filename
+and previous shell command, respectively.  If there is no
+current or previous filename, `%' and `#' are not expanded.
+`\%' `\#' and `\!' are replaced by `%', `#' and `!', 
+respectively.
 .It Ic \&/ Ns Ar pattern
 Search forward in the file for the N-th line containing the pattern.
 N defaults to 1.

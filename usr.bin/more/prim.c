@@ -45,6 +45,10 @@ static char sccsid[] = "@(#)prim.c	5.8 (Berkeley) 6/1/90";
 #include <ctype.h>
 #include <less.h>
 
+#ifdef REGEX
+#include <regex.h>
+#endif
+
 int back_scroll = -1;
 int hit_eof;		/* keeps track of how many times we hit end of file */
 int screen_trashed;
@@ -585,6 +589,9 @@ search(search_forward, pattern, n, wantmatch)
 	register char *q;
 	int linenum;
 	int linematch;
+#ifdef REGEX
+	static regex_t *cpattern = NULL;
+#else
 #ifdef RECOMP
 	char *re_comp();
 	char *errmsg;
@@ -598,7 +605,7 @@ search(search_forward, pattern, n, wantmatch)
 	char *strcpy();
 #endif
 #endif
-
+#endif /*REGEX */
 	/*
 	 * For a caseless search, convert any uppercase in the pattern to
 	 * lowercase.
@@ -607,6 +614,37 @@ search(search_forward, pattern, n, wantmatch)
 		for (p = pattern;  *p;  p++)
 			if (isupper(*p))
 				*p = tolower(*p);
+#ifdef REGEX
+	if (pattern == NULL || *pattern == '\0')
+	{
+		/*
+		 * A null pattern means use the previous pattern.
+		 * The compiled previous pattern is in cpattern, so just use it.
+		 */
+		if (cpattern == NULL)
+		{
+			error("No previous regular expression");
+			return(0);
+		}
+	} else
+	{
+		/*
+		 * Otherwise compile the given pattern.
+		 */
+		if (cpattern == NULL
+		 && (cpattern = (regex_t *) malloc(sizeof(regex_t))) == NULL) {
+			error("cannot allocate memory");
+			quit();
+		}
+		else
+			regfree(cpattern);
+		if (regcomp(cpattern, pattern, 0))
+		{
+			error("Invalid pattern");
+			return(0);
+		}
+	}
+#else
 #ifdef RECOMP
 
 	/*
@@ -665,6 +703,7 @@ search(search_forward, pattern, n, wantmatch)
 	}
 #endif
 #endif
+#endif /* REGEX */
 
 	/*
 	 * Figure out where to start the search.
@@ -778,6 +817,9 @@ search(search_forward, pattern, n, wantmatch)
 		 * This is done in a variety of ways, depending
 		 * on what pattern matching functions are available.
 		 */
+#ifdef REGEX
+		linematch = !regexec(cpattern, line, 0, NULL, 0);
+#else
 #ifdef REGCMP
 		linematch = (regex(cpattern, line) != NULL);
 #else
@@ -787,6 +829,7 @@ search(search_forward, pattern, n, wantmatch)
 		linematch = match(pattern, line);
 #endif
 #endif
+#endif /* REGEX */
 		/*
 		 * We are successful if wantmatch and linematch are
 		 * both true (want a match and got it),
@@ -803,7 +846,7 @@ search(search_forward, pattern, n, wantmatch)
 	return(1);
 }
 
-#if !defined(REGCMP) && !defined(RECOMP)
+#if !defined(REGCMP) && !defined(RECOMP) && !defined(RECOMP)
 /*
  * We have neither regcmp() nor re_comp().
  * We use this function to do simple pattern matching.

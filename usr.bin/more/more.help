@@ -26,14 +26,16 @@
   ?!pattern    * Search backward for N-th line NOT containing the pattern.
   n            * Repeat previous search (for N-th occurence).
 
-  :a              Display the list of files.
-  E [file]        Examine a new file.
-  :n, N        *  Examine the next file.
-  :p, P        *  Examine the previous file.
-  :t [tag]        Examine the tag.
-  v               Run an editor on the current file.
+  !command       Execute command in a subshell.
+  :!command      Execute command in a subshell.
+  :a             Display the list of files.
+  E [file]       Examine a new file.
+  :n, N        * Examine the next file.
+  :p, P        * Examine the previous file.
+  :t [tag]       Examine the tag.
+  v              Run an editor on the current file.
 
-  =, ^G           Print current file name and stats.
+  =, ^G          Print current file name and stats.
 
-  q, :q, or ZZ    Exit.
+  q, :q, or ZZ   Exit.
 

@@ -1,10 +1,10 @@
 #	@(#)Makefile	5.6 (Berkeley) 3/12/91
 
 PROG=	more
-CFLAGS+=-I${.CURDIR}
-SRCS=	ch.c command.c decode.c help.c input.c line.c linenum.c main.c \
-	option.c os.c output.c position.c prim.c screen.c signal.c tags.c \
-	ttyin.c
+CFLAGS+=-I${.CURDIR} -DREGEX -DHAVE_STRING_H=1
+SRCS=	ch.c command.c decode.c filename.c help.c input.c line.c \
+	linenum.c main.c option.c os.c output.c position.c prim.c \
+	screen.c signal.c tags.c ttyin.c regex.c
 DPADD=	${LIBTERM}
 LDADD=	-ltermcap
 MLINKS=	more.1 page.1
