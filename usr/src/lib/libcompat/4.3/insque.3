@@ -1,45 +1,54 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)insque.3	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH INSQUE 3 ""
-.UC 5
-.SH NAME
-insque, remque \- insert/remove element from a queue
-.SH SYNOPSIS
-.nf
-.DT
-.ft B
+.\"     @(#)insque.3	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt INSQUE 3
+.Os BSD 4.2
+.Sh NAME
+.Nm insque ,
+.Nm remque
+.Nd insert/remove element from a queue
+.Sh SYNOPSIS
+.Bd -literal
 struct qelem {
 	struct	qelem *q_forw;
 	struct	qelem *q_back;
 	char	q_data[];
 };
-.PP
-.ft B
-insque(elem, pred)
-struct qelem *elem, *pred;
-.PP
-.ft B
-remque(elem)
-struct qelem *elem;
-.ft R
-.SH DESCRIPTION
-.I Insque
+.Ed
+
+.Fn insque "(caddr_t) struct qelem *elem" "(caddr_t) struct qelem *pred"
+.Fn remque "(caddr_t) struct qelem *elem"
+.Sh DESCRIPTION
+The
+.Fn insque
 and 
-.I remque
+.Fn remque
+functions
 manipulate queues built from doubly linked lists.  Each
-element in the queue must in the form of ``struct qelem''.
-.I Insque
+element in the queue must in the form of
+.Dq Li struct qelem .
+The function
+.Fn insque
 inserts 
-.I elem
+.Fa elem
 in a queue immediately after 
-.IR pred ;
-.I remque
+.Fa pred ;
+.Fn remque
 removes an entry
-.I elem 
+.Fa elem
 from a queue.
-.SH "SEE ALSO
-``VAX Architecture Handbook'', pp. 228-235.
+.Sh SEE ALSO
+.%T "VAX Architecture Handbook" ,
+pp. 228-235.
+.Sh HISTORY
+The
+.Fn insque
+and
+.Fn remque
+functions appeared in 
+.Bx 4.2 .

@@ -1,29 +1,38 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)getdiskbyname.3	6.5 (Berkeley) %G%
+.\"     @(#)getdiskbyname.3	6.6 (Berkeley) %G%
 .\"
-.TH GETDISKBYNAME 3 ""
-.UC 5
-.SH NAME
-getdiskbyname \- get generic disk description by its name
-.SH SYNOPSIS
-.nf
-.B #include <sys/disklabel.h>
-.PP
-.B struct disklabel *
-.B getdiskbyname(name)
-.B char *name;
-.fi
-.SH DESCRIPTION
-.I Getdiskbyname
-takes a disk name (e.g. rm03) and returns a prototype disk label
+.Dd 
+.Dt GETDISKBYNAME 3
+.Os BSD 4.2
+.Sh NAME
+.Nm getdiskbyname
+.Nd get generic disk description by its name
+.Sh SYNOPSIS
+.Fd #include <sys/disklabel.h>
+.Ft struct disklabel *
+.Fn getdiskbyname "const char *name"
+.Sh DESCRIPTION
+The
+.Fn getdiskbyname
+function
+takes a disk name (e.g.
+.Ql rm03 )
+and returns a prototype disk label
 describing its geometry information and the standard
 disk partition tables.  All information is obtained from
 the 
-.IR disktab (5)
+.Xr disktab 5
 file.
-.SH "SEE ALSO"
-disklabel(5), disktab(5), disklabel(8)
+.Sh SEE ALSO
+.Xr disklabel 5 ,
+.Xr disktab 5 ,
+.Xr disklabel 8
+.Sh HISTORY
+The
+.Fn getdiskbyname
+function appeared in 
+.Bx 4.3 .

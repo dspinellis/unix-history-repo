@@ -1,84 +1,97 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)vlimit.3	6.3 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH VLIMIT 3C ""
-.UC 4
-.SH NAME
-vlimit \- control maximum system resource consumption
-.SH SYNOPSIS
-.B "#include <sys/vlimit.h>"
-.PP
-.B vlimit(resource, value)
-.SH DESCRIPTION
-.ft B
+.\"     @(#)vlimit.3	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt VLIMIT 3
+.Os BSD 4
+.Sh NAME
+.Nm vlimit
+.Nd control maximum system resource consumption
+.Sh SYNOPSIS
+.Fd #include <sys/vlimit.h>
+.Fn vlimit resource value
+.Sh DESCRIPTION
+.Bf -symbolic
 This interface is obsoleted by getrlimit(2).
-.br
 It is available from the compatibility library, libcompat.
-.ft R
-.PP
+.Ef
+.Pp
 Limits the consumption by the current process and each process
 it creates to not individually exceed 
-.I value
+.Fa value
 on the specified
-.I resource.
+.Fa resource .
 If
-.I value
+.Fa value
 is specified as \-1, then the current limit is returned and the
 limit is unchanged.
 The resources which are currently controllable are:
-.TP 15
-LIM_NORAISE
+.Bl -tag -width LIM_NORAISE
+.It Dv LIM_NORAISE
 A pseudo-limit; if set non-zero then the limits may not be raised.
-Only the super-user may remove the \fInoraise\fR restriction.
-.TP 15
-LIM_CPU
+Only the super-user may remove the
+.Em noraise
+restriction.
+.It Dv LIM_CPU
 the maximum
 number of cpu-seconds to be used by each process
-.TP 15
-LIM_FSIZE
+.It Dv LIM_FSIZE
 the largest single file which can be created
-.TP 15
-LIM_DATA
+.It Dv LIM_DATA
 the maximum growth of the data+stack region via
-.IR sbrk (2)
+.Xr sbrk 2
 beyond the end of the program text
-.TP 15
-LIM_STACK
+.It Dv LIM_STACK
 the maximum
 size of the automatically-extended stack region
-.TP 15
-LIM_CORE
+.It Dv LIM_CORE
 the size of the largest core dump that will be created.
-.TP 15
-LIM_MAXRSS
+.It Dv LIM_MAXRSS
 a soft limit for the amount of physical memory (in bytes) to be given
 to the program.  If memory is tight, the system will prefer to take memory
-from processes which are exceeding their declared LIM_MAXRSS.
-.PP
+from processes which are exceeding their declared
+.Dv LIM_MAXRSS.
+.El
+.Pp
 Because this information is stored in the per-process information
 this system call must be executed directly by the shell if it
 is to affect all future processes created by the shell;
-.I limit
+.Xr limit
 is thus a built-in command to
-.IR csh (1).
-.PP
+.Xr csh 1 .
+.Pp
 The system refuses to extend the data or stack space when the limits
 would be exceeded in the normal way; a
-.I break
+.Xr break 2
 call fails if the data space limit is reached, or the process is
 killed when the stack limit is reached (since the stack cannot be
 extended, there is no way to send a signal!).
-.PP
-A file i/o operation which would create a file which is too large
-will cause a signal SIGXFSZ to be generated, this normally terminates
+.Pp
+A file
+.Tn I/O
+operation which would create a file which is too large
+will cause a signal
+.Dv SIGXFSZ
+to be generated, this normally terminates
 the process, but may be caught.
-When the cpu time limit is exceeded, a signal SIGXCPU is sent to the
+When the cpu time limit is exceeded, a signal
+.Dv SIGXCPU
+is sent to the
 offending process; to allow it time to process the signal it is
-given 5 seconds grace by raising the cpu time limit.
-.SH SEE ALSO
-csh(1)
-.SH BUGS
-LIM_NORAISE no longer exists.
+given 5 seconds grace by raising the
+.Tn CPU
+time limit.
+.Sh SEE ALSO
+.Xr csh 1
+.Sh HISTORY
+The
+.Fn vlimit
+function appeared in 
+.Bx 4.2 .
+.Sh BUGS
+.Dv LIM_NORAISE
+no longer exists.

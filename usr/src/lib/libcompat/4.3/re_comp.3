@@ -1,70 +1,94 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)re_comp.3	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH REGEX 3 ""
-.UC
-.SH NAME
-re_comp, re_exec \- regular expression handler
-.SH SYNOPSIS
-.B char *re_comp(s)
-.br
-.B char *s;
-.PP
-.B re_exec(s)
-.br
-.B char *s;
-.SH DESCRIPTION
-.I Re_comp
+.\"     @(#)re_comp.3	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt REGEX 3
+.Os
+.Sh NAME
+.Nm re_comp ,
+.Nm re_exec
+.Nd regular expression handler
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft char *
+.Fn re_comp "const char *s"
+.Ft int
+.Fn re_exec "const char *s"
+.Sh DESCRIPTION
+The
+.Fn re_comp
+function
 compiles a string into an internal form suitable for pattern matching. 
-.I Re_exec 
+The
+.Fn re_exec
+function
 checks the argument string against the last string passed to
-.I re_comp.
-.PP
-.I Re_comp
+.Fn re_comp .
+.Pp
+The
+.Fn re_comp
+function
 returns 0 if the string
-.I s
+.Fa s
 was compiled successfully; otherwise a string containing an
 error message is returned. If 
-.I re_comp
+.Fn re_comp
 is passed 0 or a null string, it returns without changing the currently
 compiled regular expression.
-.PP
-.I Re_exec
+.Pp
+The
+.Fn re_exec
+function
 returns 1 if the string
-.I s
+.Fa s
 matches the last compiled regular expression, 0 if the string
-.I s
+.Fa s
 failed to match the last compiled regular expression, and \-1 if the compiled
 regular expression was invalid (indicating an internal error).
-.PP
+.Pp
 The strings passed to both
-.I re_comp
+.Fn re_comp
 and
-.I re_exec
+.Fn re_exec
 may have trailing or embedded newline characters; 
-they are terminated by nulls.
+they are terminated by
+.Dv NUL Ns s.
 The regular expressions recognized are described in the manual entry for 
-.IR ed (1),
+.Xr ed 1 ,
 given the above difference.
-.SH "SEE ALSO"
-ed(1), ex(1), egrep(1), fgrep(1), grep(1), regexp(3)
-.SH DIAGNOSTICS
-.I Re_exec
+.Sh DIAGNOSTICS
+The
+.Fn re_exec
+function
 returns \-1 for an internal error.
-.PP
-.I Re_comp
+.Pp
+The
+.Fn re_comp
+function
 returns one of the following strings if an error occurs:
-.PP
-.nf
-.in +0.5i
-\fINo previous regular expression,
+.Bd -unfilled -offset indent
+No previous regular expression,
 Regular expression too long,
 unmatched \e(,
 missing ],
 too many \e(\e) pairs,
-unmatched \e).\fP
-.in -0.5i
-.fi
+unmatched \e).
+.Ed
+.Sh SEE ALSO
+.Xr ed 1 ,
+.Xr ex 1 ,
+.Xr egrep 1 ,
+.Xr fgrep 1 ,
+.Xr grep 1 ,
+.Xr regexp 3
+.Sh HISTORY
+The
+.Fn re_comp
+and
+.Fn re_exec
+functions appeared in 
+.Bx 4.0 .

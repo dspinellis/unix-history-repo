@@ -1,48 +1,64 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1986, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)@(#)ualarm.3	6.4 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH UALARM 3  ""
-.UC 6
-.SH NAME
-ualarm \- schedule signal after specified time
-.SH SYNOPSIS
-.nf
-.B unsigned ualarm(value, interval)
-.B unsigned value;
-.B unsigned interval;
-.fi
-.SH DESCRIPTION
-.ft B
+.\"     @(#)ualarm.3	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt UALARM 3
+.Os BSD 4.3
+.Sh NAME
+.Nm ualarm
+.Nd schedule signal after specified time
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft u_int 
+.Fn ualarm "u_int microseconds" "u_int interval"
+.Sh DESCRIPTION
+.Bf -symbolic
 This is a simplified interface to setitimer(2).
-.ft R
-.PP
-.I Ualarm
-causes signal SIGALRM, see
-.IR signal (3C),
-to be sent to the invoking process
-in a number of microseconds given by the
-.I value
-argument.
-Unless caught or ignored, the signal terminates the process.
-.PP
+.Ef
+.Pp
+The
+.Fn ualarm
+function
+waits a count of
+.Ar microseconds
+before asserting the terminating signal
+.Dv SIGALRM .
+System activity or time used in processing the call may cause a slight
+delay.
+.Pp
 If the
-.I interval
-argument is non-zero, the SIGALRM signal will be sent
+.Fa interval
+argument is non-zero, the
+.Dv SIGALRM
+signal will be sent
 to the process every
-.I interval
+.Fa interval
 microseconds after the timer expires (e.g. after
-.I value
+.Fa value
 microseconds have passed).
-.PP
-Because of scheduling delays,
-resumption of execution of when the signal is
-caught may be delayed an arbitrary amount.
-The longest specifiable delay time (on the vax) is 2147483647 microseconds.
-.PP
-The return value is the amount of time previously remaining in the alarm clock.
-.SH "SEE ALSO"
-getitimer(2), setitimer(2), sigpause(2), sigvec(2), signal(3C), sleep(3),
-alarm(3), usleep(3)
+.Sh RETURN VALUES
+When the signal has successfully been caught,
+.Fn alarm
+returns the amount of time left on the clock.
+The maximum mumber of
+.Ar microseconds
+allowed
+is 2147483647.
+.Sh SEE ALSO
+.Xr getitimer 2 ,
+.Xr setitimer 2 ,
+.Xr sigpause 2 ,
+.Xr sigvec 2 ,
+.Xr signal 3 ,
+.Xr sleep 3 ,
+.Xr alarm 3 ,
+.Xr usleep 3
+.Sh HISTORY
+The
+.Fn ualarm
+function appeared in 
+.Bx 4.3 .

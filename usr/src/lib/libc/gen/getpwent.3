@@ -1,138 +1,181 @@
-.\" Copyright (c) 1988 The Regents of the University of California.
+.\" Copyright (c) 1988, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)getpwent.3	6.7 (Berkeley) %G%
+.\"     @(#)getpwent.3	6.8 (Berkeley) %G%
 .\"
-.TH GETPWENT 3  ""
-.AT 3
-.SH NAME
-getpwent, getpwnam, getpwuid, setpassent, setpwent,
-endpwent \- get password file entries
-.SH SYNOPSIS
-.nf
-.ft B
-#include <sys/types.h>
-#include <pwd.h>
-
-struct passwd *getpwent(void);
-struct passwd *getpwnam(char *login);
-struct passwd *getpwuid(uid_t uid);
-int setpassent(int stayopen);
-int setpwent(void);
-void endpwent(void);
-.ft R
-.fi
-.SH DESCRIPTION
-.IR Getpwent ,
-.IR getpwuid ,
-and
-.I getpwnam
-each return a pointer to a structure containing the broken-out
-fields of a line in the password file.  This structure is defined
-by the include file
-.IR < pwd.h > ,
-and contains the following fields:
-.PP
-.RS
-.nf
+.Dd 
+.Dt GETPWENT 3
+.Os
+.Sh NAME
+.Nm getpwent ,
+.Nm getpwnam ,
+.Nm getpwuid ,
+.Nm setpassent ,
+.Nm setpwent ,
+.Nm endpwent
+.Nd password database operations
+.Sh SYNOPSIS
+.Fd #include <sys/types.h>
+.Fd #include <pwd.h>
+.Ft struct passwd *
+.Fn getpwent void
+.Ft struct passwd *
+.Fn getpwnam "const char *login"
+.Ft struct passwd *
+.Fn getpwuid "uid_t uid" 
+.Ft int
+.Fn setpassent "int  stayopen"
+.Ft int
+.Fn setpwent void
+.Ft void
+.Fn endpwent void
+.Sh DESCRIPTION
+These functions
+operate on the password database file
+which is described
+in
+.Xr passwd 5 .
+Each entry in the database is defined by the structure
+.Ar passwd
+found in the include
+file
+.Aq Pa pwd.h :
+.Bd -literal -offset indent
 struct passwd {
-	char	*pw_name;			/* user name */
-	char	*pw_passwd;		/* encrypted password */
+	char	*pw_name;	/* user name */
+	char	*pw_passwd;	/* encrypted password */
 	uid_t	pw_uid;		/* user uid */
 	gid_t	pw_gid;		/* user gid */
 	time_t	pw_change;	/* password change time */
-	char	*pw_class;		/* user access class */
-	char	*pw_gecos;		/* Honeywell login info */
-	char	*pw_dir;			/* home directory */
-	char	*pw_shell;		/* default shell */
+	char	*pw_class;	/* user access class */
+	char	*pw_gecos;	/* Honeywell login info */
+	char	*pw_dir;	/* home directory */
+	char	*pw_shell;	/* default shell */
 	time_t	pw_expire;	/* account expiration */
 };
-.fi
-.RE
-.PP
-These fields are more completely described in
-.IR passwd (5).
-.PP
-.I Getpwnam
+.Ed
+.Pp
+The functions
+.Fn getpwnam
 and
-.I getpwuid
-search the password database for a matching user name or user uid,
+.Fn getpwuid
+search the password database for the given login name or user uid,
 respectively, always returning the first one encountered.
-.PP
-.I Getpwent
+.Pp
+The
+.Fn getpwent
+function
 sequentially reads the password database and is intended for programs
 that wish to process the complete list of users.
-.PP
-.I Setpassent
+.Pp
+The
+.Fn setpassent
+function
 accomplishes two purposes.
 First, it causes
-.I getpwent
+.Fn getpwent
 to ``rewind'' to the beginning of the database.
 Additionally, if
-.I stayopen
+.Fa stayopen
 is non-zero, file descriptors are left open, significantly speeding
 up subsequent accesses for all of the routines.
 (This latter functionality is unnecessary for
-.I getpwent
+.Fn getpwent
 as it doesn't close its file descriptors by default.)
-.PP
+.Pp
 It is dangerous for long-running programs to keep the file descriptors
 open the database will become out of date if it is updated while the
 program is running.
-.PP
-.I Setpwent
+.Pp
+The
+.Fn setpwent
+function
 is identical to
-.I setpassent
+.Fn setpassent
 with an argument of zero.
-.PP
-.I Endpwent
+.Pp
+The
+.Fn endpwent
+function
 closes any open files.
-.PP
+.Pp
 These routines have been written to ``shadow'' the password file, e.g.
 allow only certain programs to have access to the encrypted password.
 If the process which calls them has an effective uid of 0, the encrypted
 password will be returned, otherwise, the password field of the retuned
-structure will point to the string ``*''.
-.SH FILES
-/var/db/pwd.db			The insecure password database file
-.br
-/var/db/spwd.db		The secure password database file
-.br
-/etc/master.passwd		The current password file
-.br
-/etc/passwd			A Version 7 format password file
-.SH "SEE ALSO"
-getlogin(3), getgrent(3), passwd(5), pwd_mkdb(8), vipw(8)
-.SH DIAGNOSTICS
-The routines
-.IR getpwent ,
-.IR getpwnam ,
+structure will point to the string
+.Ql * .
+.Sh RETURN VALUES
+The functions
+.Fn getpwent ,
+.Fn getpwnam ,
 and
-.IR getpwuid ,
-return a null pointer on EOF or error.
-.I Setpassent
+.Fn getpwuid ,
+return a valid pointer to a passwd structure on success
+and a null pointer if end-of-file is reached or an error occurs.
+The functions
+.Fn setpassent
 and
-.I setpwent
+.Fn setpwent
 return 0 on failure and 1 on success.
-.I Endpwent
+The
+.Fn endpwent
+function
 has no return value.
-.SH BUGS
-All information is contained in a static buffer which is overwritten
-by each new call.
-It must be copied elsewhere to be retained.
-.PP
-The routines
-.IR getpwent ,
-.IR endpwent ,
-.IR setpassent ,
+.Sh FILES
+.Bl -tag -width /etc/master.passwd -compact
+.It Pa /var/db/pwd.db
+The insecure password database file
+.It Pa /var/db/spwd.db
+The secure password database file
+.It Pa /etc/master.passwd
+The current password file
+.It Pa /etc/passwd
+A Version 7 format password file
+.El
+.Sh SEE ALSO
+.Xr getlogin 3 ,
+.Xr getgrent 3 ,
+.Xr passwd 5 ,
+.Xr pwd_mkdb 8 ,
+.Xr vipw 8
+.Sh HISTORY
+The
+.Nm getpwent ,
+.Nm getpwnam ,
+.Nm getpwuid ,
+.Nm setpwent,
 and
-.IR setpwent
+.Nm endpwent
+functions appeared in
+.At v7 .
+The
+.Nm setpassent
+function appeared in
+.Bx 4.3 Reno .
+.Sh BUGS
+The functions
+.Fn getpwent ,
+.Fn getpwnam ,
+and
+.Fn getpwuid ,
+leave their results in an internal static object and return
+a pointer to that object. Subsequent calls to
+the same function
+will modify the same object.
+.Pp
+The routines
+.Fn getpwent ,
+.Fn endpwent ,
+.Fn setpassent ,
+and
+.Fn setpwent
 are fairly useless in a networked environment and should be
 avoided, if possible.
-.SH COMPATIBILITY
+.Sh COMPATIBILITY
 The historic function
-.IR setpwfile ,
+.Xr setpwfile 3 ,
 which allowed the specification of alternate password databases,
 has been deprecated and is no longer available.

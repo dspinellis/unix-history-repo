@@ -1,32 +1,40 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)abort.3	6.5 (Berkeley) %G%
+.\"     @(#)abort.3	6.6 (Berkeley) %G%
 .\"
-.TH ABORT 3 ""
-.AT 3
-.SH NAME
-abort \- cause abnormal program termination
-.SH SYNOPSIS
-.nf
-.ft B
-#include <stdlib.h>
-
-void
-abort(void);
-.ft R
-.fi
-.SH DESCRIPTION
+.Dd 
+.Dt ABORT 3
+.Os
+.Sh NAME
+.Nm abort
+.Nd cause abnormal program termination
+.Sh SYNOPSIS
+.Fd #include <stdlib.h>
+.Ft void
+.Fn abort void
+.Sh DESCRIPTION
 The
-.I abort
+.Fn abort
 function causes abnormal program termination to occur, unless the
-signal SIGABRT is being caught and the signal handler does not return.
-.PP
+signal
+.Dv SIGABRT
+is being caught and the signal handler does not return.
+.Pp
 No open streams are closed or flushed.
-.SH SEE ALSO
-sigvec(2), exit(2)
-.SH STANDARDS
-.B Abort
-conforms to ANSI X3.159-1989 (``ANSI C'').
+.Sh RETURN VALUES
+The
+.Nm abort
+function
+never returns.
+.Sh SEE ALSO
+.Xr sigaction 2 ,
+.Xr exit 2
+.Sh STANDARDS
+The
+.Fn abort
+function
+conforms to
+.St -ansiC .

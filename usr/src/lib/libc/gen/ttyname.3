@@ -1,47 +1,100 @@
-.\"	@(#)ttyname.3	6.1 (Berkeley) %G%
+.\" Copyright (c) 1991 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.TH TTYNAME 3  ""
-.AT 3
-.SH NAME
-ttyname, isatty, ttyslot \- find name of a terminal
-.SH SYNOPSIS
-.B char *ttyname(filedes)
-.PP
-.B isatty(filedes)
-.PP
-.B ttyslot()
-.SH DESCRIPTION
-.I Ttyname
-returns a pointer to the null-terminated path name
-of the terminal device associated with file descriptor
-.I filedes
-(this is a system file descriptor and has nothing to do with the
-standard I/O FILE typedef).
-.PP
-.I Isatty
-returns 1 if
-.I filedes
-is associated with a terminal device, 0 otherwise.
-.PP
-.I Ttyslot
-returns the number of the entry in the
-.IR ttys (5)
-file for the control terminal of the current process.
-.SH FILES
-/dev/\(**
-.br
-/etc/ttys
-.SH SEE ALSO
-ioctl(2), ttys(5)
-.SH DIAGNOSTICS
-.I Ttyname
-returns a null pointer (0) if
-.I filedes
-does not describe a terminal device in directory `/dev'.
-.PP
-.I Ttyslot
-returns 0 if `/etc/ttys' is inaccessible or if
-it cannot determine the control terminal.
-.SH BUGS
-The return value points to static data
-whose content is overwritten by each call.
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)ttyname.3	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt TTYNAME 3
+.Os
+.Sh NAME
+.Nm ttyname ,
+.Nm isatty ,
+.Nm ttyslot
+.Nd get name of associated terminal (tty) from file descriptor
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft char *
+.Fn ttyname "int fd"
+.Ft int
+.Fn isatty "int fd"
+.Ft int
+.Fn ttyslot 
+.Sh DESCRIPTION
+These functions operate on the system file descriptors for terminal
+type devices. These descriptors are not related to the standard
+.Tn I/O
+.Dv FILE
+typedef, but refer to the special device files found in
+.Pa /dev
+and named
+.Pa /dev/tty Ns Em xx
+and for which an entry exists
+in the initialization file
+.Pa /etc/ttys.
+(See
+.Xr ttys 5 . )
+.Pp
+The
+.Fn isatty
+function
+determines if the file descriptor
+.Fa fd
+refers to a valid
+terminal type device.
+.Pp
+The
+.Fn ttyname
+function
+gets the related device name of
+a file descriptor for which
+.Fn isatty
+is true
+.Pp
+The
+.Fn ttyslot
+function
+fetches the current process' control terminal number from the
+.Xr ttys 5
+file entry.
+.Sh RETURN VALUES
+The
+.Fn ttyname
+function
+returns the null terminated name if the device is found and
+.Fn isatty
+is true; otherwise 
+a
+.Dv NULL
+pointer is returned.
+.Pp
+The
+.Fn ttyslot
+function
+returns the unit number of the device file if found; otherwise
+the value zero is returned.
+.Sh FILES
+.Bl -tag -width /etc/ttys -compact
+.It Pa /dev/\(**
+.It Pa /etc/ttys
+.El
+.Sh SEE ALSO
+.Xr ioctl 2 ,
+.Xr ttys 5
+.Sh HISTORY
+A
+.Fn isatty ,
+.Fn ttyname ,
+and
+.Fn ttyslot
+function
+appeared in
+.At v7 .
+.Sh BUGS
+The
+.Fn ttyname
+function leaves its result in an internal static object and returns
+a pointer to that object. Subsequent calls to
+.Fn ttyname
+will modify the same object.

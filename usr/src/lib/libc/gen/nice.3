@@ -1,44 +1,41 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)nice.3	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH NICE 3C ""
-.UC 4
-.SH NAME
-nice \- set program priority
-.SH SYNOPSIS
-.B nice(incr)
-.SH DESCRIPTION
-.ft B
+.\"     @(#)nice.3	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt NICE 3
+.Os BSD 4
+.Sh NAME
+.Nm nice
+.Nd set program scheduling priority
+.Sh SYNOPSIS
+.Fn nice "int incr"
+.Sh DESCRIPTION
+.Bf -symbolic
 This interface is obsoleted by setpriority(2).
-.ft R
-.PP
-The scheduling
-priority of the process is augmented by
-.IR incr .
-Positive priorities get less
-service than normal.
-Priority 10 is recommended to users
-who wish to execute long-running programs
-without flak from the administration.
-.PP
-Negative increments are ignored except on behalf of 
-the super-user.
-The priority is limited to the range
-\-20 (most urgent) to 20 (least).
-.PP
-The priority of a process is
-passed to a child process by
-.IR fork (2).
-For a privileged process to return to normal priority
-from an unknown state,
-.I nice
-should be called successively with arguments
-\-40 (goes to priority \-20 because of truncation),
-20 (to get to 0),
-then 0 (to maintain compatibility with previous versions
-of this call).
-.SH "SEE ALSO"
-nice(1), setpriority(2), fork(2), renice(8)
+.Ef
+.Pp
+The
+.Fn nice
+function obtains the scheduling priority of the process
+from the system and sets it to the priority value specified in
+.Fa incr .
+The priority is a value in the range -20 to 20.
+The default priority is 0; lower priorities cause more favorable scheduling.
+Only the super-user may lower priorities.
+.Pp
+Children inherit the priority of their parent processes via
+.Xr fork 2 .
+.Sh SEE ALSO
+.Xr nice 1 ,
+.Xr setpriority 2 ,
+.Xr fork 2 ,
+.Xr renice 8
+.Sh HISTORY
+A
+.Fn nice
+syscall appeared in 
+.At v6 .

@@ -1,119 +1,169 @@
-.\" Copyright (c) 1988 The Regents of the University of California.
+.\" Copyright (c) 1988, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)tmpnam.3	5.11 (Berkeley) %G%
+.\"     @(#)tmpnam.3	5.13 (Berkeley) %G%
 .\"
-.TH TMPFILE 3 ""
-.UC 7
-.SH NAME
-tempnam, tmpfile, tmpnam \- temporary file routines
-.SH SYNOPSIS
-.nf
-.ft B
-#include <stdio.h>
-
-FILE *
-tmpfile(void);
-
-char *
-tmpnam(char *str);
-
-char *
-tempnam(const char *tmpdir, const char *prefix);
-.ft R
-.fi
-.SH DESCRIPTION
-.I Tmpfile
+.Dd 
+.Dt TMPFILE 3
+.Os
+.Sh NAME
+.Nm tempnam ,
+.Nm tmpfile ,
+.Nm tmpnam
+.Nd temporary file routines
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft FILE *
+.Fn tmpfile void
+.Ft char *
+.Fn tmpnam "char *str"
+.Ft char *
+.Fn tempnam "const char *tmpdir" "const char *prefix"
+.Sh DESCRIPTION
+The
+.Fn tmpfile
+function
 returns a pointer to a stream associated with a file descriptor returned
 by the routine
-.IR mkstemp (3).
+.Xr mkstemp 3 .
 The created file is unlinked before
-.I tmpfile
+.Fn tmpfile
 returns, causing the file to be automatically deleted when the last
 reference to it is closed.
-The file is opened with the access value ``w+''.
-.PP
-.I Tmpnam
-returns a pointer to a file name, in the ``P_tmpdir'' directory, which
+The file is opened with the access value
+.Ql w+ .
+.Pp
+The
+.Fn tmpnam
+function
+returns a pointer to a file name, in the
+.Dv P_tmpdir
+directory, which
 did not reference an existing file at some indeterminate point in the
 past.
-P_tmpdir is defined in the include file <stdio.h>.
+.Dv P_tmpdir
+is defined in the include file
+.Aq Pa stdio.h .
 If the argument
-.I s
-is non-NULL, the file name is copied to the buffer it references.
+.Fa s
+is
+.Pf non- Dv NULL ,
+the file name is copied to the buffer it references.
 Otherwise, the file name is copied to a static buffer.
 In either case,
-.I tmpnam
+.Fn tmpnam
 returns a pointer to the file name.
-.PP
+.Pp
 The buffer referenced by 
-.I s
-is expected to be at least ``L_tmpnam'' bytes in length.
-L_tmpnam is defined in the include file <stdio.h>.
-.PP
-.I Tempnam
+.Fa s
+is expected to be at least
+.Dv L_tmpnam
+bytes in length.
+.Dv L_tmpnam
+is defined in the include file
+.Aq Pa stdio.h .
+.Pp
+The
+.Fn tempnam
+function
 is similar to
-.I tmpnam,
+.Fn tmpnam ,
 but provides the ability to specify the directory which will
 contain the temporary file and the file name prefix.
-.PP
-The environmental variable ``TMPDIR'' (if set), the argument
-.I dir
-(if non-NULL), the directory P_tmpdir, and the directory ``/tmp''
+.Pp
+The environment variable
+.Ev TMPDIR
+(if set), the argument
+.Fa dir
+(if
+.Pf non- Dv NULL ) ,
+the directory
+.Dv P_tmpdir ,
+and the directory
+.Pa /tmp
 are tried, in the listed order, as directories in which to store the
 temporary file.
-.PP
+.Pp
 The argument
-.IR prefix ,
-if non-NULL, is used to specify a file name prefix, which will be the
+.Fa prefix ,
+if
+.Pf non- Dv NULL ,
+is used to specify a file name prefix, which will be the
 first part of the created file name.
-.I Tempnam
+.Fn Tempnam
 allocates memory in which to store the file name; the returned pointer
 may be used as a subsequent argument to
-.IR free (3).
-.SH "RETURN VALUES"
-.I Tmpfile
-returns a pointer to an open file stream on success, and a NULL pointer
-on error.
-.PP
-.I Tmpnam
-and
-.I tempfile
-return a pointer to a file name on success, and a NULL pointer
-on error.
-.SH ERRORS
-.I Tmpfile
-may fail and set
-.I errno
-for any of the errors specified for the library functions
-.IR fdopen (3)
-or
-.IR mkstemp (3).
-.PP
-.I Tmpnam
-may fail and set
-.I errno
-for any of the errors specified for the library function
-.IR mktemp (3).
-.PP
-.I Tempnam
-may fail and set
-.I errno
-for any of the errors specified for the library functions
-.IR malloc (3)
-or
-.IR mktemp (3).
-.SH BUGS
-These interfaces are provided for System V and ANSI compatibility only.
+.Xr free 3 .
+.Sh RETURN VALUES
 The
-.IR mkstemp (3)
+.Fn tmpfile
+function
+returns a pointer to an open file stream on success, and a
+.Dv NULL
+pointer
+on error.
+.Pp
+The
+.Fn tmpnam
+and
+.Fn tempfile
+functions
+return a pointer to a file name on success, and a
+.Dv NULL
+pointer
+on error.
+.Sh ERRORS
+The
+.Fn tmpfile
+function
+may fail and set the global variable
+.Va errno
+for any of the errors specified for the library functions
+.Xr fdopen 3
+or
+.Xr mkstemp 3 .
+.Pp
+The
+.Fn tmpnam
+function
+may fail and set
+.Va errno
+for any of the errors specified for the library function
+.Xr mktemp 3 .
+.Pp
+The
+.Fn tempnam
+function
+may fail and set
+.Va errno
+for any of the errors specified for the library functions
+.Xr malloc 3
+or
+.Xr mktemp 3 .
+.Sh SEE ALSO
+.Xr mkstemp 3 ,
+.Xr mktemp 3
+.Sh STANDARDS
+The
+.Fn tmpfile
+and
+.Fn tmpnam
+functions
+conform to
+.St -ansiC .
+.Sh BUGS
+These interfaces are provided for System V and
+.Tn ANSI
+compatibility only.
+The
+.Xr mkstemp 3
 interface is strongly preferred.
-.PP
+.Pp
 There are four important problems with these interfaces (as well as
 with the historic
-.IR mktemp (3)
+.Xr mktemp 3
 interface).
 First, there is an obvious race between file name selection and file
 creation and deletion.
@@ -121,26 +171,19 @@ Second, most historic implementations provide only a limited number
 of possible temporary file names (usually 26) before file names will
 start being recycled.
 Third, the System V implementations of these functions (and of
-.IR mktemp )
+.Xr mktemp )
 use the
-.IR access (2)
+.Xr access 2
 function to determine whether or not the temporary file may be created.
 This has obvious ramifications for setuid or setgid programs, complicating
 the portable use of these interfaces in such programs.
 Finally, there is no specification of the permissions with which the
 temporary files are created.
-.PP
+.Pp
 This implementation does not have these flaws, but portable software
 cannot depend on that.
 In particular, the
-.I tmpfile
+.Fn tmpfile
 interface should not be used in software expected to be used on other systems
 if there is any possibility that the user does not wish the temporary file to
 be publicly readable and writable.
-.SH STANDARDS
-.I Tmpfile
-and
-.I tmpnam
-conform to ANSI X3.159-1989 (``ANSI C'').
-.SH SEE ALSO
-mkstemp(3), mktemp(3)

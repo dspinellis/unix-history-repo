@@ -1,68 +1,79 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Chris Torek.
-.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)fputs.3	6.3 (Berkeley) %G%
+.\"     @(#)fputs.3	6.5 (Berkeley) %G%
 .\"
-.TH FPUTS 3 ""
-.UC 7
-.SH NAME
-fputs, puts \- put a line to a stream
-.SH SYNOPSIS
-.nf
-.ft B
-#include <stdio.h>
-
-int
-fputs(char *str, FILE *stream);
-
-int
-puts(char *str);
-.ft R
-.fi
-.SH DESCRIPTION
-.I Fputs
+.Dd 
+.Dt FPUTS 3
+.Os
+.Sh NAME
+.Nm fputs ,
+.Nm puts
+.Nd output a line to a stream
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft int
+.Fn fputs "const char *str" "FILE *stream"
+.Ft int
+.Fn puts "const char *str"
+.Sh DESCRIPTION
+The function
+.Fn fputs
+writes the string pointed to by
+.Fa str
+to the stream pointed to by
+.Fa stream .
+.\" The terminating
+.\" .Dv NUL
+.\" character is not written.
+.Pp
+The function
+.Fn puts
 writes the string
-.I str
-to the given
-.IR stream .
-.PP
-.I Puts
-writes the string
-.I str
-to the standard output stream
-.BR stdout ,
-appending a newline character.
-.SH "RETURN VALUE"
-.I Fputs
-returns 0 on success,
-.B EOF
+.Fa str ,
+and a terminating newline character,
+to the stream
+.Em stdout .
+.Sh RETURN VALUES
+The
+.Fn fputs
+function
+returns 0 on success and
+.Dv EOF
 on error;
-.I puts
-returns a nonnegative integer on success,
-.B EOF
+.Fn puts
+returns a nonnegative integer on success and
+.Dv EOF
 on error.
-.SH "SEE ALSO"
-putc(3), ferror(3), stdio(3)
-.SH ERRORS
-.TP 15
-[EBADF]
-.I Stream
+.Sh ERRORS
+.Bl -tag -width [EBADF]
+.It Bq Er EBADF
+The
+.Fa stream
+supplied
 is not a writable stream.
-.PP
-.I Fputs
+.El
+.Pp
+The functions
+.Fn fputs
 and
-.I puts
+.Fn puts
 may also fail and set
-.I errno
+.Va errno
 for any of the errors specified for the routines
-.IR write (2).
-.SH STANDARDS
-.I Fputs
+.Xr write 2 .
+.Sh SEE ALSO
+.Xr putc 3 ,
+.Xr ferror 3 ,
+.Xr stdio 3
+.Sh STANDARDS
+The functions
+.Fn fputs
 and
-.I puts
-conform to ANSI X3.159-1989 (``ANSI C'').
+.Fn puts
+conform to
+.St -ansiC .

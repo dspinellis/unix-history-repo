@@ -1,40 +1,60 @@
-.\"	@(#)assert.3	6.2 (Berkeley) %G%
+.\" Copyright (c) 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.TH ASSERT 3 ""
-.AT 3
-.SH NAME
-assert \- program verification
-.SH SYNOPSIS
-.B #include <assert.h>
-.PP
-.B assert(expression)
-.SH DESCRIPTION
-.PP
-.I Assert
-is a macro that indicates
-.I expression
-is expected to be true at this point in the program.
-It causes an
-.IR exit (2)
-with a diagnostic comment on the standard output when
-.I expression
-is false (0).
-Compiling with the 
-.IR cc (1)
-option
-.SM
-.B \-DNDEBUG
-effectively deletes
-.I assert
-from the program.
-.SH DIAGNOSTICS
-`Assertion failed: file
-.I f
-line
-.I n.'
-.I F
-is the source file and
-.I n
-the source line number of the
-.I assert
-statement.
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)assert.3	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ASSERT 3
+.Os
+.Sh NAME
+.Nm assert
+.Nd expression verification macro
+.Sh SYNOPSIS
+.Fd #include <assert.h>
+.Fn assert expression
+.Sh DESCRIPTION
+The
+.Fn assert
+macro tests the given
+.Ar expression
+and if it is false,
+the calling process is terminated.
+A
+diagnostic message is written to the
+.Em stderr
+and the function
+.Xr _exit 2
+is called effectively terminating the program.
+.Pp
+If
+.Ar expression
+is true,
+the
+.Fn assert
+macro does nothing.
+.Pp
+The
+.Fn assert
+macro
+may be removed at compile time with
+the
+.Fl NDEBUG
+option, see
+.Xr cc 1 .
+.Sh DIAGNOSTICS
+The following diagnostic message is written to
+.Em stderr
+if
+.Ar expression
+is false:
+.Bd -literal -offset indent
+"assertion \e"%s\e" failed: file \e"%s\e", line %d\n", \e
+		    "expression", __FILE__, __LINE__);
+.Ed
+.Sh HISTORY
+The
+.Fn assert
+function is
+.Ud .

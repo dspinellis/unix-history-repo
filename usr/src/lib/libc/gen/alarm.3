@@ -1,37 +1,60 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)alarm.3	6.3 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH ALARM 3C  ""
-.UC 4
-.SH NAME
-alarm \- schedule signal after specified time
-.SH SYNOPSIS
-.nf
-.B alarm(seconds)
-.B unsigned seconds;
-.fi
-.SH DESCRIPTION
-.ft B
+.\"     @(#)alarm.3	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ALARM 3
+.Os BSD 4
+.Sh NAME
+.Nm alarm
+.Nd set signal timer alarm
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft u_int
+.Fn alarm "u_int seconds"
+.Sh DESCRIPTION
+.Bf -symbolic
 This interface is made obsolete by setitimer(2).
-.ft R
-.PP
-.I Alarm
-causes signal SIGALRM, see
-.IR sigvec (2),
-to be sent to the invoking process
-in a number of seconds given by the argument.
-Unless caught or ignored, the signal terminates the process.
-.PP
-Alarm requests are not stacked; successive calls reset the alarm clock.
-If the argument is 0, any alarm request is canceled.
-Because of scheduling delays,
-resumption of execution of when the signal is
-caught may be delayed an arbitrary amount.
-The longest specifiable delay time is 2147483647 seconds.
-.PP
-The return value is the amount of time previously remaining in the alarm clock.
-.SH "SEE ALSO"
-sigpause(2), sigvec(2), signal(3C), sleep(3), ualarm(3), usleep(3)
+.Ef
+.Pp
+The
+.Fn alarm
+function
+waits a count of
+.Ar seconds
+before asserting the terminating signal
+.Dv SIGALRM .
+When the signal has successfully been caught,
+.Fn alarm
+returns the amount of time left on the clock.
+The maximum mumber of
+.Ar seconds
+allowed
+is 2147483647.
+.Pp
+If an alarm has been set with
+.Fn alarm ,
+another call to
+.Fn alarm
+will superceed the prior call.
+The request
+.Fn alarm "0"
+voids the current
+alarm.
+.Sh SEE ALSO
+.Xr sigaction 2 ,
+.Xr setitimer 2 ,
+.Xr sigpause 2 ,
+.Xr sigvec 2 ,
+.Xr signal 3 ,
+.Xr sleep 3 ,
+.Xr ualarm 3 ,
+.Xr usleep 3
+.Sh HISTORY
+An
+.Fn alarm
+function appeared in 
+.At v7 .

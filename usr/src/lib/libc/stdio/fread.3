@@ -1,64 +1,73 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Chris Torek.
-.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)fread.3	6.4 (Berkeley) %G%
+.\"     @(#)fread.3	6.5 (Berkeley) %G%
 .\"
-.TH FREAD 3 ""
-.UC 7
-.SH NAME
-fread, fwrite \- stream binary input/output
-.SH SYNOPSIS
-.nf
-.ft B
-#include <stdio.h>
-
-int
-fread(void *ptr, size_t size, size_t count, FILE *stream);
-
-int
-fwrite(void *ptr, size_t size, size_t count, FILE *stream);
-.ft R
-.fi
-.SH DESCRIPTION
-.I Fread
+.Dd 
+.Dt FREAD 3
+.Os
+.Sh NAME
+.Nm fread ,
+.Nm fwrite
+.Nd binary stream input/output
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft int
+.Fn fread "void *ptr" "size_t size" "size_t nmemb" "FILE *stream"
+.Ft int
+.Fn fwrite "void *ptr" "size_t size" "size_t nmemb" "FILE *stream"
+.Sh DESCRIPTION
+The function
+.Fn fread
 reads
-.I count
-items of data, each
-.I size
-bytes long, from the given input
-.IR stream ,
+.Fa nmemb
+elements of data, each
+.Xr size
+bytes long, from the stream pointed to by
+.Fa stream ,
 storing them at the location given by
-.IR ptr .
-It returns the actual count of items read
-(which will be less than
-.I count
-in the event of an
-.B EOF
-or error).
-.PP
-Fread does not distinguish between end-of-file and error, and callers
-must use
-.IR feof (3)
-and
-.IR ferror (3)
-to determine which occurred.
-.PP
-.I Fwrite
+.Fa ptr .
+.Pp
+The function
+.Fn fwrite
 writes
-.I count
-items of data, each
-.I size
-bytes long, to the given output
-.I stream ,
+.Fa nmemb
+elements of data, each
+.Fa size
+bytes long, to the stream pointed to by
+.Fa stream ,
 obtaining them from the location given by
-.IR ptr .
-It returns the actual count of items written.
-.SH "RETURN VALUE"
-These functions return 0 (or a short count) upon end of file or error.
-.SH "SEE ALSO"
-read(2), write(2)
+.Fa ptr .
+.Sh RETURN VALUES
+The functions
+.Fn fread
+and
+.Fn fwrite
+advance the file position indicator for the stream
+by the number of characters successfully read or written and return
+that number.
+If an error occurs, or the end-of-file is reached,
+the return value is a short character count (or zero).
+.Pp
+The function
+.Fn fread
+does not distinguish between end-of-file and error, and callers
+must use
+.Xr feof 3
+and
+.Xr ferror 3
+to determine which occurred.
+.Sh SEE ALSO
+.Xr read 2 ,
+.Xr write 2
+.Sh STANDARDS
+The functions
+.Fn fread
+and
+.Fn fwrite
+conform to
+.St -ansiC .

@@ -1,49 +1,54 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)psignal.3	6.1 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH PSIGNAL 3 ""
-.UC 5
-.SH NAME
-psignal, sys_siglist \- system signal messages
-.SH SYNOPSIS
-.nf
-.B psignal(sig, s)
-.B unsigned sig;
-.B char *s;
-.PP
-.B char *sys_siglist[];
-.fi
-.SH DESCRIPTION
-.I Psignal
-produces a short message
-on the standard error file
-describing the indicated signal.
-First the argument string
-.I s
-is printed, then a colon, then the name of the signal
-and a new-line.
-Most usefully, the argument string is the name
-of the program which incurred the signal.
-The signal number should be from among those found
-in
-.IR <signal.h> .
-.PP
-To simplify variant formatting
-of signal names, the vector of message strings
-.I sys_siglist
-is provided;
-the signal number
-can be used as an index in this table to get the
-signal name without the newline.
-The define NSIG defined in
-.RI < signal.h >
-is the number of messages provided for in the table;
-it should be checked because new
-signals may be added to the system before
-they are added to the table.
-.SH "SEE ALSO"
-sigvec(2),
-perror(3)
+.\"     @(#)psignal.3	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PSIGNAL 3
+.Os BSD 4.2
+.Sh NAME
+.Nm psignal ,
+.Nm sys_siglist
+.Nd system signal messages
+.Sh SYNOPSIS
+.Fd #include <sys/signal.h>
+.Ft void
+.Fn psignal "unsigned sig" "const char *s"
+.Vt extern char *sys_siglist[];
+.Sh DESCRIPTION
+The
+.Fn psignal
+function locates the descriptive message
+string for the given signal
+.Fa sig
+number
+and writes it to the
+.Em stderr .
+.Pp
+If the argument
+.Fa s
+is
+.Pf non- Dv NULL
+it is written to the
+.Em stderr
+prior to the message string.
+The signal number should be from among those found in
+.Aq Pa signal.h .
+.Pp
+The message strings can be accessed directly
+using the external character array
+.Va sys_siglist .
+The defined variable
+.Dv NSIG
+contains a count of the messages in
+.Va sys_siglist .
+.Sh SEE ALSO
+.Xr sigaction 2 ,
+.Xr perror 3
+.Sh HISTORY
+The
+.Fn psignal
+function appeared in 
+.Bx 4.2 .

@@ -1,61 +1,39 @@
-.\" Copyright (c) 1985 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1985, 1991 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)floor.3	6.4 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH FLOOR 3M  ""
-.UC 4
-.SH NAME
-fabs, floor, ceil, rint \- absolute value, floor, ceiling, and
-round-to-nearest functions
-.SH SYNOPSIS
-.nf
-.B #include <math.h>
-.PP
-.B double floor(x)
-.B double x;
-.PP
-.B double ceil(x)
-.B double x;
-.PP
-.B double fabs(x)
-.B double x;
-.PP
-.B double rint(x)
-.B double x;
-.fi
-.SH DESCRIPTION
-Fabs returns the absolute value |\|x\||.
-.PP
-Floor returns the largest integer no greater than x.
-.PP
-Ceil returns the smallest integer no less than x.
-.PP
-Rint returns the integer (represented as a double precision number)
-nearest x in the direction of the prevailing rounding mode.
-.SH NOTES
-On a VAX, rint(x) is equivalent to adding half to the magnitude
-and then rounding towards zero.
-.PP
-In the default rounding mode, to nearest,
-on a machine that conforms to IEEE 754,
-rint(x) is the integer nearest x with the additional stipulation
-that if |rint(x)\-x|=1/2 then rint(x) is even.
-Other rounding modes can make rint act like floor, or like ceil,
-or round towards zero.
-.PP
-Another way to obtain an integer near x is to declare (in C)
-.RS
-double x;\0\0\0\0 int k;\0\0\0\0k\0=\0x;
-.RE
-Most C compilers round x towards 0 to get the integer k, but
-some do otherwise.
-If in doubt, use floor, ceil, or rint first, whichever you intend.
-Also note that, if x is larger than k can accommodate, the value of
-k and the presence or absence of an integer overflow are hard to
-predict.
-.SH SEE ALSO
-abs(3),
-ieee(3M),
-math(3M)
+.\"     @(#)floor.3	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FLOOR 3
+.Os
+.Sh NAME
+.Nm floor
+.Nd largest integral value not greater than x
+.Sh SYNOPSIS
+.Fd #include <math.h>
+.Ft double
+.Fn floor "double x"
+.Sh DESCRIPTION
+The
+.Fn floor
+function computes the largest integral value not greater than
+.Fa x .
+.Sh RETURN VALUES
+The
+.Fn floor
+function returns the largest integral value
+expressed as a double.
+.Sh SEE ALSO
+.Xr abs 3 ,
+.Xr ieee 3 ,
+.Xr fabs 3 ,
+.Xr floor 3 ,
+.Xr rint 3 ,
+.Xr math 3
+.Sh STANDARDS
+The
+.Fn floor
+function conforms to
+.St -ansiC .

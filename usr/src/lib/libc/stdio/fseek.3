@@ -1,125 +1,159 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Chris Torek.
-.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)fseek.3	6.8 (Berkeley) %G%
+.\"     @(#)fseek.3	6.9 (Berkeley) %G%
 .\"
-.TH FSEEK 3 ""
-.UC 7
-.SH NAME
-fgetpos, fseek, fsetpos, ftell, rewind \- reposition a stream
-.SH SYNOPSIS
-.nf
-.ft B
-#include <stdio.h>
-
-int
-fseek(FILE *stream, long offset, int whence);
-
-long
-ftell(FILE *stream);
-
-void
-rewind(FILE *stream);
-
-int
-fgetpos(FILE *stream, fpos_t *pos);
-
-int
-fsetpos(FILE *stream, fpos_t *pos);
-.ft R
-.fi
-.SH DESCRIPTION
-.I Fseek
-sets the position of the next input or output
-operation on the given
-.IR stream .
-The new position is at the signed distance
-.I offset
-bytes from a specified point in the file depending on the
-value of 
-.IR whence .
+.Dd 
+.Dt FSEEK 3
+.Os
+.Sh NAME
+.Nm fgetpos ,
+.Nm fseek ,
+.Nm fsetpos ,
+.Nm ftell ,
+.Nm rewind
+.Nd reposition a stream
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft int
+.Fn fseek "FILE *stream" "long offset" "int whence"
+.Ft long
+.Fn ftell "FILE *stream"
+.Ft void
+.Fn rewind "FILE *stream"
+.Ft int
+.Fn fgetpos "FILE *stream" "fpos_t *pos"
+.Ft int
+.Fn fsetpos "FILE *stream" "fpos_t *pos"
+.Sh DESCRIPTION
+The
+.Fn fseek
+function sets the file position indicator for the stream pointed
+to by
+.Fa stream .
+The new position, measured in bytes, is obtained by adding
+.Fa offset
+bytes to the position specified by
+.Fa whence .
 If 
-.I whence
-is set to SEEK_SET, SEEK_CUR, or SEEK_END, the offset is from the
-beginning, the current position, or the end of the file, respectively.
-.I Fseek
-undoes any effects of
-.IR ungetc .
-.PP
-.I Ftell
-returns the current value of the offset relative to the beginning
-of the file associated with the named
-.IR stream .
-.PP
-.IR Rewind
-is equivalent to ``fseek(stream, 0L, SEEK_SET)'', except the error
-indicator for the stream is cleared as well (see
-.IR clearerr (3)).
-.PP
-.I Fgetpos
+.Fa whence
+is set to
+.Dv SEEK_SET ,
+.Dv SEEK_CUR ,
+or
+.Dv SEEK_END ,
+the offset is relative to the
+start of the file, the current position indicator, or end-of-file,
+respectively.
+A successful call to the
+.Fn fseek
+function clears the end-of-file indicator for the stream and undoes
+any effects of the
+.Xr ungetc 3
+function on the same stream.
+.Pp
+The
+.Fn ftell
+function
+obtains the current value of the file position indicator for the
+stream pointed to by
+.Fa stream .
+.Pp
+The
+.Fn rewind
+function sets the file position indicator for the stream pointed
+to by
+.Fa stream
+to the beginning of the file.
+It is equivalent to:
+.Pp
+.Dl (void)fseek(stream, 0L, SEEK_SET)
+.Pp
+except that the error indicator for the stream is also cleared
+(see
+.Xr clearerr 3 ) .
+.Pp
+The
+.Fn fgetpos
 and
-.I fsetpos
+.Fn fsetpos
+functions
 are alternate interfaces equivalent to
-.I ftell
+.Fn ftell
 and
-.I fseek
-(with whence set to SEEK_SET), setting and storing the current value of
+.Fn fseek
+(with whence set to
+.Dv SEEK_SET
+), setting and storing the current value of
 the file offset into or from the object referenced by 
-.IR pos .
-On some (non-UNIX) systems an ``fpos_t'' object may be a complex object
+.Fa pos .
+On some
+.Pq (non- Ns Tn UNIX )
+systems an
+.Dq Fa fpos_t
+object may be a complex object
 and these routines may be the only way to portably reposition a text stream.
-.SH "SEE ALSO"
-lseek(2)
-.SH "RETURN VALUE"
-.I Rewind
+.Sh RETURN VALUES
+The
+.Fn rewind
+function
 returns no value.
 Upon successful completion,
-.IR fgetpos ,
-.IR fseek ,
+.Fn fgetpos ,
+.Fn fseek ,
+.Fn fsetpos ,
 and
-.I fsetpos
-return 0,
-and
-.I ftell
-returns the current offset.
+.Fn ftell
+return 0.
 Otherwise, \-1 is returned and the global variable errno is set to
 indicate the error.
-.SH ERRORS
-.TP 15
-[EBADF]
-.I Stream
-is not a seekable stream.
-.TP
-[EINVAL]
+.Sh ERRORS
+.Bl -tag -width [EINVAL]
+.It Bq Er EBADF
 The
-.I whence
+.Fa stream
+specified
+is not a seekable stream.
+.It Bq Er EINVAL
+The
+.Fa whence
 argument to 
-.I fseek
-was not SEEK_SET, SEEK_END, or SEEK_CUR.
-.PP
-.IR Fgetpos ,
-.IR fseek ,
-.IR fsetpos ,
+.Fn fseek
+was not
+.Dv SEEK_SET ,
+.Dv SEEK_END ,
+or
+.Dv SEEK_CUR .
+.El
+.Pp
+The function
+.Fn fgetpos ,
+.Fn fseek ,
+.Fn fsetpos ,
 and 
-.I ftell
+.Fn ftell
 may also fail and set
-.I errno
+.Va errno
 for any of the errors specified for the routines
-.IR fflush (3),
-.IR fstat (2),
-.IR lseek (2),
+.Xr fflush 3 ,
+.Xr fstat 2 ,
+.Xr lseek 2 ,
 and 
-.IR malloc (3).
-.SH STANDARDS
-.IR Fgetpos ,
-.IR fsetpos ,
-.IR fseek ,
-.IR ftell ,
+.Xr malloc 3 .
+.Sh SEE ALSO
+.Xr lseek 2
+.Sh STANDARDS
+The
+.Fn fgetpos ,
+.Fn fsetpos ,
+.Fn fseek ,
+.Fn ftell ,
 and
-.IR rewind
-conform to ANSI X3.159-1989 (``ANSI C'').
+.Fn rewind
+functions
+conform to
+.St -ansiC .

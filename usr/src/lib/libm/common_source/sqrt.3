@@ -1,41 +1,96 @@
-.\" Copyright (c) 1985 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1985, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)sqrt.3	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH SQRT 3M  ""
-.UC 6
-.ds up \fIulp\fR
-.SH NAME
-cbrt, sqrt \- cube root, square root
-.SH SYNOPSIS
-.nf
-.B #include <math.h>
-.PP
-.B double cbrt(x)
-.B double x;
-.PP
-.B double sqrt(x)
-.B double x;
-.fi
-.SH DESCRIPTION
-Cbrt(x) returns the cube root of x.
-.PP
-Sqrt(x) returns the square root of x.
-.SH DIAGNOSTICS
-On a VAX, sqrt(negative)
-returns the reserved operand and sets \fIerrno\fR to EDOM .
-.SH ERROR (due to Roundoff etc.)
-Cbrt is accurate to within 0.7 \*(ups.
-.br
-Sqrt on a VAX is accurate to within 0.501 \*(ups.
-.br
-Sqrt on a machine that conforms to IEEE 754 is correctly rounded
+.\"     @(#)sqrt.3	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SQRT 3
+.Os
+.Sh NAME
+.Nm cbrt ,
+.Nm sqrt
+.Nd cube root and square root functions
+.Sh SYNOPSIS
+.Fd #include <math.h>
+.Ft double
+.Fn cbrt "double x"
+.Ft double
+.Fn sqrt "double x"
+.Sh DESCRIPTION
+The
+.Fn cbrt
+function computes
+the cube root of
+.Ar x .
+.Pp
+The
+.Fn sqrt
+computes the
+non-negative square root of x.
+.Sh RETURN VALUES
+The
+.Fn cbrt
+function returns the requested cube root.
+The
+.Fn sqrt
+function returns the requested square root
+unless an error occurs.
+On the
+.Tn VAX
+or
+.Tn Tahoe
+processor an attempt to take the
+.Fn sqrt
+of negative
+.Fa x
+causes an error; in this event,
+the global variable
+.Va errno
+is set to
+.Dv EDOM
+and a reserved operand fault is generated.
+.Sh ERROR (due to Roundoff etc.)
+The
+.Fn cbrt
+function
+is accurate to within 0.7
+.Em ulps .
+.Pp
+The
+.Fn sqrt
+function on a
+.Tn VAX
+is accurate to within 0.501
+.Em ulps .
+Sqrt on a machine that conforms to
+.Tn IEEE
+754 is correctly rounded
 in accordance with the rounding mode in force; the error is less than
-half an \*(up in the default mode (round\-to\-nearest).
-An \*(up is one \fIU\fRnit in the \fIL\fRast \fIP\fRlace carried.
-.SH SEE ALSO
-math(3M), infnan(3M)
-.SH AUTHOR
-W. Kahan
+half an
+.Em ulp
+in the default mode (round\-to\-nearest).
+An
+.Em ulp
+is one
+.Em U Ns nit
+in the
+.Em L Ns ast
+.Em P Ns lace
+carried.
+.Sh SEE ALSO
+.Xr math 3 ,
+.Xr infnan 3
+.Sh AUTHOR
+.An W. Kahan
+.Sh STANDARDS
+The
+.Nm sqrt
+function conforms to
+.St -ansiC .
+.Sh HISTORY
+The
+.Nm cbrt
+function appeared in
+.Bx 4.3 .

@@ -1,99 +1,108 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Chris Torek.
-.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)getc.3	6.5 (Berkeley) %G%
+.\"     @(#)getc.3	6.7 (Berkeley) %G%
 .\"
-.TH GETC 3 ""
-.UC 7
-.SH NAME
-fgetc, getc, getchar, getw \- get a character or word from a stream
-.SH SYNOPSIS
-.nf
-.ft B
-#include <stdio.h>
-
-int
-fgetc(FILE *stream);
-
-int
-getc(FILE *stream);
-
-int
-getchar();
-
-int
-getw(FILE *stream);
-.ft R
-.fi
-.SH DESCRIPTION
-.I Fgetc
-returns the next input character from the given
-.IR stream ,
-or the next character pushed back via
-.IR ungetc .
-.PP
-.I Getc
+.Dd 
+.Dt GETC 3
+.Os
+.Sh NAME
+.Nm fgetc ,
+.Nm getc ,
+.Nm getchar ,
+.Nm getw
+.Nd get next character or word from input stream
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft int
+.Fn fgetc "FILE *stream"
+.Ft int
+.Fn getc "FILE *stream"
+.Ft int
+.Fn getchar 
+.Ft int
+.Fn getw "FILE *stream"
+.Sh DESCRIPTION
+The
+.Fn fgetc
+function
+obtains the next input character (if present) from the stream pointed at by
+.Fa stream ,
+or the next character pushed back on the stream via
+.Xr ungetc .
+.Pp
+The
+.Fn getc
+function
 acts essentially identically to
-.IR fgetc ,
+.Fn fgetc ,
 but is a macro that expands in-line.
-.PP
-.I Getchar
-is identical to ``getc(stdin)''.
-.PP
-.I Getw
-returns the next
-.B int
-from the named input
-.IR stream .
-.SH "RETURN VALUE"
-These functions return the integer constant
-.B EOF
-at end-of-file, upon read error, or if an attempt is made to read a
-write-only stream.
-Callers must use 
-.I feof 
+.Pp
+The
+.Fn getchar
+function
+is equivalent to:
+getc with the argument stdin.
+.Pp
+The
+.Fn getw
+function
+obtains the next
+.Em int
+(if present)
+from the stream pointed at by
+.Fa stream .
+.Sh RETURN VALUES
+If successful, these routines return the next requested object
+from the
+.Fa stream .
+If the stream is at end-of-file or a read error occurs,
+the routines return
+.Dv EOF .
+The routines
+.Xr feof 3
 and
-.I ferror
-to distinguish between end-of-file and error.
+.Xr ferror 3
+must be used to distinguish between end-of-file and error.
 If an error occurs, the global variable
-.I errno
+.Va errno
 is set to indicate the error.
 The end-of-file condition is remembered, even on a terminal, and all
 subsequent attempts to read will return
-.B EOF
+.Dv EOF
 until the condition is cleared with
-.IR clearerr .
-.SH "SEE ALSO"
-ferror(3), fread(3), fopen(3), putc(3), ungetc(3)
-.SH BUGS
+.Xr clearerr .
+.Sh SEE ALSO
+.Xr ferror 3 ,
+.Xr fread 3 ,
+.Xr fopen 3 ,
+.Xr putc 3 ,
+.Xr ungetc 3
+.Sh STANDARDS
+The
+.Fn fgetc ,
+.Fn getc
+and
+.Fn getchar
+functions
+conform to
+.St -ansiC .
+.Sh BUGS
 Since
-.B EOF
+.Dv EOF
 is a valid integer value,
-.I feof
+.Xr feof
 and
-.I ferror
+.Xr ferror
 must be used to check for failure after calling
-.IR getw .
+.Fn getw .
 The size and byte order of an
-.B int
+.Em int
 varies from one machine to another, and
-.I getw
+.Fn getw
 is not recommended for portable applications.
-.PP
-Because it is implemented as a macro,
-.I getc
-treats a
-.I stream
-argument with side effects incorrectly.
-In particular, ``getc(*f++);'' may not work sensibly.
-.SH STANDARDS
-.IR Fgetc ,
-.IR getc
-and
-.I getchar
-conform to ANSI X3.159-1989 (``ANSI C'').
+.Pp

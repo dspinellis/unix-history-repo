@@ -1,42 +1,101 @@
-.\" Copyright (c) 1985 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1985, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)j0.3	6.6 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH J0 3M  ""
-.UC 4
-.SH NAME
-j0, j1, jn, y0, y1, yn \- bessel functions
-.SH SYNOPSIS
-.nf
-.B #include <math.h>
-.PP
-.B double j0(x)
-.B double x;
-.PP
-.B double j1(x)
-.B double x;
-.PP
-.B double jn(n,x)
-.B int n;
-.B double x;
-.PP
-.B double y0(x)
-.B double x;
-.PP
-.B double y1(x)
-.B double x;
-.PP
-.B double yn(n,x)
-.B int n;
-.B double x;
-.fi
-.SH DESCRIPTION
-These functions calculate Bessel functions of the first
-and second kinds for real arguments and integer orders.
-.SH DIAGNOSTICS
-On a VAX, negative arguments cause y0, y1 and yn
-to return the reserved operand and set \fIerrno\fR to EDOM.
-.SH SEE ALSO
-math(3M), infnan(3M)
+.\"     @(#)j0.3	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt J0 3
+.Os BSD 4
+.Sh NAME
+.Nm j0 ,
+.Nm j1 ,
+.Nm jn ,
+.Nm y0 ,
+.Nm y1 ,
+.Nm yn
+.Nd bessel functions of first and second kind
+.Sh SYNOPSIS
+.Fd #include <math.h>
+.Ft double
+.Fn j0 "double x"
+.Ft double
+.Fn j1 "double x"
+.Ft double
+.Fn jn "int n" "double x"
+.Ft double
+.Fn y0 "double x"
+.Ft double
+.Fn y1 "double x"
+.Ft double
+.Fn yn "int n" "double x"
+.Sh DESCRIPTION
+The functions
+.Fn j0
+and
+.Fn j1
+compute the
+.Em Bessel function of the first kind of the order
+0 and the
+.Em order
+1, respectively,
+for the
+real value
+.Fa x ;
+the function
+.Fn jn
+computes the
+.Em Bessel function of the first kind of the integer order
+.Fa n
+for the real value
+.Fa x .
+.Pp
+The functions
+.Fn y0
+and
+.Fn y1
+compute the linearly independent
+.Em Bessel function of the second kind of the order
+0 and the
+.Em order
+1, respectively,
+for the
+postive
+.Em integer
+value
+.Fa x
+(expressed as a double);
+the function
+.Fn yn
+computes the
+.Em Bessel function of the second kind for the integer order
+.Fa n
+for the postive 
+.Em integer
+value
+.Fa x
+(expressed as a double).
+.Sh RETURN VALUES
+If these functions are successful,
+the computed value is returned. On the
+.Tn VAX
+and
+.Tn Tahoe
+architectures,
+a negative
+.Fa x
+value
+results in an error; the global
+variable
+.Va errno
+is set to
+.Er EDOM
+and a reserve operand fault is generated.
+.Sh SEE ALSO
+.Xr math 3 ,
+.Xr infnan 3
+.Sh HISTORY
+A set of these functions
+function appeared in
+.At v7 .

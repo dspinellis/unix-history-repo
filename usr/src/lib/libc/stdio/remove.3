@@ -1,47 +1,50 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Chris Torek.
-.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)remove.3	5.1 (Berkeley) %G%
+.\"     @(#)remove.3	5.3 (Berkeley) %G%
 .\"
-.TH REMOVE 3 ""
-.UC 7
-.SH NAME
-remove \- remove directory entry
-.SH SYNOPSIS
-.nf
-.ft B
-int
-remove(char *path);
-.ft R
-.fi
-.SH DESCRIPTION
-.I Remove
+.Dd 
+.Dt REMOVE 3
+.Os
+.Sh NAME
+.Nm remove
+.Nd remove directory entry
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft int
+.Fn remove "const char *path"
+.Sh DESCRIPTION
+The
+.Fn remove
+function
 is an alias for the 
-.IR unlink (2)
+.Xr unlink 2
 system call.
 It deletes the file referenced by
-.IR path .
-.SH "SEE ALSO"
-unlink(2)
-.SH "RETURN VALUE"
+.Fa path .
+.Sh RETURN VALUES
 Upon successful completion, 
-.I remove
+.Fn remove
 returns 0.
 Otherwise, \-1 is returned and the global variable
-.I errno
+.Va errno
 is set to indicate the error.
-.SH ERRORS
-.I Remove 
-may fail and set
-.I errno
-for any of the errors specified for the routine
-.IR unlink (2).
-.SH STANDARDS
+.Sh ERRORS
 The
-.I remove
-function conforms to ANSI X3.159-1989 (``ANSI C'').
+.Fn remove
+function
+may fail and set
+.Va errno
+for any of the errors specified for the routine
+.Xr unlink 2 .
+.Sh SEE ALSO
+.Xr unlink 2
+.Sh STANDARDS
+The
+.Fn remove
+function conforms to
+.St -ansiC .

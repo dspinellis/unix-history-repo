@@ -1,48 +1,53 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)exit.3	6.4 (Berkeley) %G%
+.\"     @(#)exit.3	6.5 (Berkeley) %G%
 .\"
-.TH EXIT 3 ""
-.UC 5
-.SH NAME
-exit \- perform normal program termination
-.SH SYNOPSIS
-.nf
-.ft B
-#include <stdlib.h>
-
-void
-exit(status)
-int status;
-.fi
-.SH DESCRIPTION
-.I Exit
+.Dd 
+.Dt EXIT 3
+.Os
+.Sh NAME
+.Nm exit
+.Nd perform normal program termination
+.Sh SYNOPSIS
+.Fd #include <stdlib.h>
+.Ft void
+.Fn exit "int status"
+.Sh DESCRIPTION
+.Fn Exit
 terminates a process.
-.PP
+.Pp
 Before termination it performs the following functions in the
 order listed:
-.RS
-.PP
+.Bl -enum -offset indent
+.It
 Call the functions registered with the
-.IR atexit (3)
+.Xr atexit 3
 function, in the reverse order of their registration.
-.PP
+.It
 Flush all open output streams.
-.PP
+.It
 Close all open streams.
-.PP
+.It
 Unlink all files created with the
-.IR tmpfile (3)
+.Xr tmpfile 3
 function.
-.RE
-.PP
-.I Exit
+.El
+.Sh RETURN VALUES
+The
+.Fn exit
+function
 never returns.
-.SH "SEE ALSO"
-exit(2), atexit(3), intro(3), tmpfile(3)
-.SH STANDARDS
-.B Exit
-conforms to ANSI X3.159-1989 (``ANSI C'').
+.Sh SEE ALSO
+.Xr _exit 2 ,
+.Xr atexit 3 ,
+.Xr intro 3 ,
+.Xr tmpfile 3
+.Sh STANDARDS
+The
+.Fn exit
+function
+conforms to
+.St -ansiC .

@@ -1,128 +1,170 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)crypt.3	6.2 (Berkeley) %G%
+.\"     @(#)crypt.3	6.3 (Berkeley) %G%
 .\"
-.TH CRYPT 3  ""
-.AT 3
-.SH NAME
-crypt, setkey, encrypt, des_setkey, des_cipher \- DES encryption
-.SH SYNOPSIS
-.nf
-.ft B
-char *crypt(char *key, char *setting);
-
-void setkey(char *key);
-void encrypt(char *block, int flag);
-
-void des_setkey(char *key);
-void des_cipher(char *in, char *out, unsigned long salt, int count);
-.ft R
-.fi
-.SH DESCRIPTION
-.I Crypt
-is the password encryption routine.
-It is based on the NBS Data Encryption Standard, with variations intended to
-frustrate key search attempts.
-.IR Crypt 's
-first argument is a NUL-terminated string (normally a user's typed
-password).
+.Dd 
+.Dt CRYPT 3
+.Os
+.Sh NAME
+.Nm crypt ,
+.Nm setkey ,
+.Nm encrypt ,
+.Nm des_setkey ,
+.Nm des_cipher
+.Nd DES encryption
+.Sh SYNOPSIS
+.Ft char
+.Fn *crypt "const char *key" "const char *setting"
+.Ft void
+.Fn setkey "char *key"
+.Ft void
+.Fn encrypt "char *block" "int flag"
+.Ft void
+.Fn des_setkey "const char *key"
+.Ft void
+.Fn des_cipher "const char *in" "char *out" "u_long salt" "int count"
+.Sh DESCRIPTION
+The
+.Xr crypt
+function
+performs password encryption.
+It is derived from the
+.Tn NBS
+Data Encryption Standard.
+Additional code has been added to deter
+key search attempts.
+The first argument to
+.Nm crypt
+is
+a
+.Dv NUL Ns -terminated
+string (normally a password typed by
+a user)
+first argument is a
+.Dv NUL Ns -terminated
+(normally a user's typed
 The second is a character array, 9 bytes in length, consisting of an
 underscore (``_'') followed by 4 bytes of iteration count and 4 bytes
 of salt.
 Both the iteration
-.I count
+.Fa count
 and the 
-.I salt 
+.Fa salt
 are encoded as follows: only 6 bits per character are used, with the least
 significant bits occurring first.
 The values 0 to 63 are encoded by the characters ``./0-9A-Za-z'',
 respectively.
 The
-.I salt
-is used to perturb the DES algorithm in one of 16777216 different ways
+.Fa salt
+is used to induce disorder in to the
+.Tn DES
+algorithm
+in one of 16777216
+possible ways
 (specifically, if bit
-.I N
+.Em N
 of the
-.I salt
+.Ar salt
 is set then bits
-.I N
+.Em N
 and
-.I N+24
-are swapped in the DES ``E'' box output).
+.Em N+24
+are swapped in the
+.Tn DES
+``E'' box output).
 Then the
-.I key
+.Ar key
 is used to perform
-.I count
+.Ar count
 cumulative encryptions of a 64-bit constant.
-.\" XXX need to describe what really happens with the key.
-The returned value is a character array, 20 bytes in length, consisting
+The value returned is a character array, 20 bytes in length, consisting
 of the
-.I setting
+.Ar setting
 followed by the encoded 64-bit encryption.
-.PP
+.Pp
 For compatibility with historical versions of
-.IR crypt (3),
+.Xr crypt 3 ,
 the
-.I setting
+.Ar setting
 may consist of 2 bytes of salt, encoded as above, in which case an
 iteration
-.I count
-of 25 is used, fewer perturbations of DES are available, at most 8
+.Ar count
+of 25 is used, fewer perturbations of
+.Tn DES
+are available, at most 8
 characters of
-.I key
+.Ar key
 are used, and the returned value is a character array 13 bytes in length.
-.PP
-The other four functions provide (rather primitive) access to the actual
-DES algorithm.
-The argument to
-.I setkey
-is a character array of length 64 containing only the characters
-with numerical value 0 and 1.
+.Pp
+The
+functions,
+.Fn encrypt ,
+.Fn setkey ,
+.Fn des_setkey
+and
+.Fn des_cipher
+allow limited access to the
+.Tn DES
+algorithm itself.
+The
+.Ar key
+argument to
+.Fn setkey
+is a 64 character array of
+.Tn ASCII
+binary values (0 or 1).
 A 56-bit key is derived from dividing this array by dividing the string
 into groups of 8 and ignoring the last bit in each group.
-.PP
-The argument to the
-.I encrypt
-entry is likewise a character array of length 64 containing 0's and 1's.
-The argument array is modified in place to a similar array representing
-the bits of the argument after having been subjected to the DES algorithm
-using the key set by
-.IR setkey .
-The
-flag is ignored;
-the argument can only be encrypted.
-.SH "SEE ALSO"
-login(1), passwd(1), getpass(3), passwd(5)
-.sp
-.IR "Mathematical Cryptology for Computer Scientists and Mathematicians" ,
-Wayne Patterson, 1987, ISBN 0-8476-7438-X.
-.sp
-.IR "Password Security: A Case History" ,
-R. Morris and Ken Thompson,
-Communications of the ACM, vol. 22, pp. 594-597, Nov. 1979.
-.sp
-.IR "DES will be Totally Insecure within Ten Years" ,
-M.E. Hellman, IEEE Spectrum, vol. 16, pp. 32-39, July 1979.
-.SH BUGS
+.Fa salt
+specifies perturbations to
+.Tn DES
+as described above.
+.Sh SEE ALSO
+.Xr login 1 ,
+.Xr passwd 1 ,
+.Xr getpass 3 ,
+.Xr passwd 5
+.Rs
+.%T "Mathematical Cryptology for Computer Scientists and Mathematicians"
+.%A Wayne Patterson
+.%D 1987
+.%N ISBN 0-8476-7438-X
+.Re
+.Rs
+.%T "Password Security: A Case History"
+.%A R. Morris
+.%A Ken Thompson
+.%J "Communications of the ACM"
+.%V vol. 22
+.%P pp. 594-597
+.%D Nov. 1979
+.Re
+.Rs
+.%T "DES will be Totally Insecure within Ten Years"
+.%A M.E. Hellman
+.%J "IEEE Spectrum"
+.%V vol. 16
+.%P pp. 32-39
+.%D July 1979
+.Re
+.Sh HISTORY
+A
+.Fn crypt
+function appeared in
+.At v6 .
+.Sh BUGS
 Dropping the
-.I least
+.Em least
 significant bit in each character of the argument to
-.I des_setkey
+.Fn des_setkey
 is ridiculous.
-.PP
-The return value of
-.I crypt
-points to static data whose content is overwritten by each call.
+.Pp
+The
+.Fn crypt
+function leaves its result in an internal static object and returns
+a pointer to that object. Subsequent calls to
+.Fn crypt
+will modify the same object.

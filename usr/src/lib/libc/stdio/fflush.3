@@ -1,75 +1,82 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Chris Torek.
-.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)fflush.3	5.1 (Berkeley) %G%
+.\"     @(#)fflush.3	5.3 (Berkeley) %G%
 .\"
-.TH FFLUSH 3 ""
-.UC 7
-.SH NAME
-fflush, fpurge \- flush a stream
-.SH SYNOPSIS
-.nf
-.ft B
-#include <stdio.h>
-
-int
-fflush(FILE *stream);
-
-int
-fpurge(FILE *stream);
-.ft R
-.fi
-.SH DESCRIPTION
-.I Fflush
-writes any buffered data for the given output
-.I stream
+.Dd 
+.Dt FFLUSH 3
+.Os
+.Sh NAME
+.Nm fflush ,
+.Nm fpurge
+.Nd flush a stream
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft int
+.Fn fflush "FILE *stream"
+.Ft int
+.Fn fpurge "FILE *stream"
+.Sh DESCRIPTION
+The function
+.Fn fflush
+forces a write of all buffered data for the given output or update
+.Fa stream
 via the stream's underlying write function.
-The stream remains open.
-.PP
+The open status of the stream is unaffected.
+.Pp
 If the
-.I stream
-argument is NULL,
-.I fflush
+.Fa stream
+argument is
+.Dv NULL ,
+.Fn fflush
 flushes
-.I all
+.Em all
 open output streams.
-.PP
-.I Fpurge
+.Pp
+The function
+.Fn fpurge
 erases any input or output buffered in the given
-.IR stream .
+.Fa stream .
 For output streams this discards any unwritten output.
 For input streams this discards any input read from the underlying object
 but not yet obtained via
-.IR getc ;
+.Xr getc 3 ;
 this includes any text pushed back via
-.IR ungetc .
-.SH "RETURN VALUE"
+.Xr ungetc .
+.Sh RETURN VALUES
 Upon successful completion 0 is returned.
 Otherwise,
-.B EOF
+.Dv EOF
 is returned and the global variable
-.I errno
+.Va errno
 is set to indicate the error.
-.SH ERRORS
-.TP 15
-[EBADF]
-.I Stream
+.Sh ERRORS
+.Bl -tag -width [EBADF]
+.It Bq Er EBADF
+.Fa Stream
 is not an open stream, or, in the case of
-.IR fflush ,
+.Fn fflush ,
 not a stream open for writing.
-.PP
-.I Fflush
+.El
+.Pp
+The function
+.Fn fflush
 may also fail and set
-.I errno
+.Va errno
 for any of the errors specified for the routine
-.IR write (2).
-.SH "SEE ALSO"
-write(2), fopen(3), fclose(3), setbuf(3)
-.SH STANDARDS
-.I Fflush
-conforms to ANSI X3.159-1989 (``ANSI C'').
+.Xr write 2 .
+.Sh SEE ALSO
+.Xr write 2 ,
+.Xr fopen 3 ,
+.Xr fclose 3 ,
+.Xr setbuf 3
+.Sh STANDARDS
+The
+.Fn fflush
+function
+conforms to
+.St -ansiC .

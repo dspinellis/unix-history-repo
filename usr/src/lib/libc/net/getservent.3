@@ -1,113 +1,128 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)getservent.3	6.5 (Berkeley) %G%
+.\"     @(#)getservent.3	6.6 (Berkeley) %G%
 .\"
-.TH GETSERVENT 3 ""
-.UC 5
-.SH NAME
-getservent, getservbyport, getservbyname, setservent,
-endservent \- get service entry
-.SH SYNOPSIS
-.nf
-.ft B
-#include <netdb.h>
-.PP
-.ft B
-struct servent *getservent()
-.PP
-.ft B
-struct servent *getservbyname(name, proto)
-char *name, *proto;
-.PP
-.ft B
-struct servent *getservbyport(port, proto)
-int port; char *proto;
-.PP
-.ft B
-setservent(stayopen)
-int stayopen
-.PP
-.ft B
-endservent()
-.fi
-.SH DESCRIPTION
-.IR Getservent ,
-.IR getservbyname ,
+.Dd 
+.Dt GETSERVENT 3
+.Os BSD 4.2
+.Sh NAME
+.Nm getservent ,
+.Nm getservbyport ,
+.Nm getservbyname ,
+.Nm setservent ,
+.Nm endservent
+.Nd get service entry
+.Sh SYNOPSIS
+.Fd #include <netdb.h>
+.Ft struct servent *
+.Fn getservent 
+.Ft struct servent *
+.Fn getservbyname "char *name" "char *proto"
+.Ft struct servent *
+.Fn getservbyport "int port" proto
+.Ft void
+.Fn setservent "int stayopen"
+.Ft void
+.Fn endservent void
+.Sh DESCRIPTION
+The
+.Fn getservent ,
+.Fn getservbyname ,
 and
-.I getservbyport
+.Fn getservbyport
+functions
 each return a pointer to an object with the
 following structure
 containing the broken-out
 fields of a line in the network services data base,
-.IR /etc/services .
-.RS
-.PP
-.nf
+.Pa /etc/services .
+.Bd -literal -offset indent
 struct	servent {
 	char	*s_name;	/* official name of service */
 	char	**s_aliases;	/* alias list */
 	int	s_port;		/* port service resides at */
 	char	*s_proto;	/* protocol to use */
 };
-.ft R
-.ad
-.fi
-.RE
-.PP
+.Ed
+.Pp
 The members of this structure are:
-.TP \w's_aliases'u+2n
-s_name
+.Bl -tag -width s_aliases
+.It Fa s_name
 The official name of the service.
-.TP \w's_aliases'u+2n
-s_aliases
+.It Fa s_aliases
 A zero terminated list of alternate names for the service.
-.TP \w's_aliases'u+2n
-s_port
+.It Fa s_port
 The port number at which the service resides.
 Port numbers are returned in network byte order.
-.TP \w's_aliases'u+2n
-s_proto
+.It Fa s_proto
 The name of the protocol to use when contacting the
 service.
-.PP
-.I Getservent
+.El
+.Pp
+The
+.Fn getservent
+function
 reads the next line of the file, opening the file if necessary.
-.PP
-.I Setservent
+.Pp
+The
+.Fn setservent
+function
 opens and rewinds the file.  If the
-.I stayopen
+.Fa stayopen
 flag is non-zero,
 the net data base will not be closed after each call to 
-.I getservbyname
-or .IR getservbyport .
-.PP
-.I Endservent
+.Fn getservbyname
+or
+.Fn getservbyport .
+.Pp
+The
+.Fn endservent
+function
 closes the file.
-.PP
-.I Getservbyname
+.Pp
+The
+.Fn getservbyname
 and
-.I getservbyport
+.Fn getservbyport
+functions
 sequentially search from the beginning
 of the file until a matching
 protocol name or
 port number is found,
-or until EOF is encountered.
-If a protocol name is also supplied (non-NULL),
+or until
+.Dv EOF
+is encountered.
+If a protocol name is also supplied (non-
+.Dv NULL ) , 
 searches must also match the protocol.
-.SH FILES
-/etc/services
-.SH "SEE ALSO"
-getprotoent(3), services(5)
-.SH DIAGNOSTICS
+.Sh FILES
+.Bl -tag -width /etc/services -compact
+.It Pa /etc/services
+.El
+.Sh DIAGNOSTICS
 Null pointer
-(0) returned on EOF or error.
-.SH BUGS
-All information
-is contained in a static area
-so it must be copied if it is
-to be saved.  Expecting port
-numbers to fit in a 32 bit
+(0) returned on
+.Dv EOF
+or error.
+.Sh SEE ALSO
+.Xr getprotoent 3 ,
+.Xr services 5
+.Sh HISTORY
+The
+.Fn getservent ,
+.Fn getservbyport ,
+.Fn getservbyname ,
+.Fn setservent ,
+and
+.Fn endservent
+functions appeared in 
+.Bx 4.2 .
+.Sh BUGS
+These functions use static data storage;
+if the data is needed for future use, it should be
+copied before any subsequent calls overwrite it.
+Expecting port numbers to fit in a 32 bit
 quantity is probably naive.

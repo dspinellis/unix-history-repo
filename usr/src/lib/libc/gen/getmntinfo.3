@@ -1,68 +1,82 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)getmntinfo.3	6.4 (Berkeley) %G%
+.\"     @(#)getmntinfo.3	6.5 (Berkeley) %G%
 .\"
-.TH GETMNTINFO 3 ""
-.UC 7
-.SH NAME
-getmntinfo - get information about mounted file systems
-.SH SYNOPSIS
-.nf
-.ft B
-#include <sys/types.h>
-#include <sys/mount.h>
-.LP
-.ft B
-int getmntinfo(mntbufp, flags)
-struct statfs **mntbufp;
-int flags
-.fi
-.ft R
-.SH DESCRIPTION
-.I Getmntinfo
+.Dd 
+.Dt GETMNTINFO 3
+.Os
+.Sh NAME
+.Nm getmntinfo
+.Nd get information about mounted file systems
+.Sh SYNOPSIS
+.Fd #include <sys/types.h>
+.Fd #include <sys/mount.h>
+.Ft int
+.Fn getmntinfo "int mntbufp" "int flags"
+.Sh DESCRIPTION
+The
+.Fn getmntinfo
+function
 returns an array of
-.I statfs
+.Xr statfs
 structures describing each currently mounted file system (see
-.IR statfs (2)).
-.PP
-.I Getmntinfo
+.Xr statfs 2 ) .
+.Pp
+The
+.Fn getmntinfo
+function
 passes its
-.I flags
+.Fa flags
 parameter transparently to
-.IR getfsstat (2).
-.SH "RETURN VALUE"
+.Xr getfsstat 2 .
+.Sh RETURN VALUES
 On successful completion,
-.I getmntinfo
+.Fn getmntinfo
 returns a count of the number of elements in the array.
 The pointer to the array is stored into
-.IR mntbufp .
-.PP
+.Fa mntbufp .
+.Pp
 If an error occurs, zero is returned and the external variable
-.I errno
+.Va errno
 is set to indicate the error.
 Although the pointer 
-.I mntbufp
+.Fa mntbufp
 will be unmodified, any information previously returned by 
-.I getmntinfo
+.Fn getmntinfo
 will be lost.
-.SH BUGS
-All information is contained in a static area,
-so it must be copied if it is to be saved.
-.PP
-The memory allocated by
-.I getmntinfo
-cannot be
-.IR free 'd
-by the application.
-.SH ERRORS
-.I Getmntinfo
+.Sh ERRORS
+The
+.Fn getmntinfo
+function
 may fail and set errno for any of the errors specified for the library 
 routines
-.IR getfsstat (2)
+.Xr getfsstat 2
 or 
-.IR malloc (3).
-.SH SEE ALSO
-getfsstat(2), statfs(2), mount(2), mount(8)
+.Xr malloc 3 .
+.Sh SEE ALSO
+.Xr getfsstat 2 ,
+.Xr statfs 2 ,
+.Xr mount 2 ,
+.Xr mount 8
+.Sh HISTORY
+The
+.Fn getmntinfo
+function is
+.Ud .
+.Sh BUGS
+The
+.Fn getmntinfo
+function writes the array of structures to an internal static object
+and returns
+a pointer to that object. Subsequent calls to
+.Fn getmntinfo
+will modify the same object.
+.Pp
+The memory allocated by
+.Fn getmntinfo
+cannot be
+.Xr free 2 Ns 'd
+by the application.

@@ -1,83 +1,101 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Chris Torek.
-.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)putc.3	6.4 (Berkeley) %G%
+.\"     @(#)putc.3	6.6 (Berkeley) %G%
 .\"
-.TH PUTC 3 ""
-.UC 7
-.SH NAME
-fputc, putc, putchar, putw \- put a character or word to a stream
-.SH SYNOPSIS
-.nf
-.ft B
-#include <stdio.h>
-
-int
-fputc(int c, FILE *stream);
-
-int
-putc(int c, FILE *stream);
-
-int
-putchar(int c);
-
-int
-putw(int w, FILE *stream);
-.ft R
-.fi
-.SH DESCRIPTION
-.I Fputc
+.Dd 
+.Dt PUTC 3
+.Os
+.Sh NAME
+.Nm fputc ,
+.Nm putc ,
+.Nm putchar ,
+.Nm putw
+.Nd output a character or word to a stream
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft int
+.Fn fputc "int c" "FILE *stream"
+.Ft int
+.Fn putc "int c" "FILE *stream"
+.Ft int
+.Fn putchar "int c"
+.Ft int
+.Fn putw "int w" "FILE *stream"
+.Sh DESCRIPTION
+The
+.Fn fputc
+function
 writes the character
-.I c
+.Fa c
 (converted to an ``unsigned char'')
-to the specified output
-.IR stream .
-.PP
-.I Putc
+to the output stream pointed to by
+.Fa stream .
+.Pp
+.Fn Putc
 acts essentially identically to
-.IR fputc ,
-but is a macro that expands in-line.
-.PP
-.I Putchar
+.Fn fputc ,
+but is a macro that expands in-line. It may evaluate
+.Fa stream
+more than once, so arguments given to
+.Fn putc
+should not be expressions with potential side effects.
+.Pp
+.Fn Putchar
 is identical to
-.I putc
+.Fn putc
 with an output stream of
-.BR stdout .
-.PP
-.I Putw
+.Em stdout .
+.Pp
+The
+.Fn putw
+function
 writes the specified
-.B int
+.Em int
 to the named output
-.IR stream .
-.SH "RETURN VALUE"
-These functions return the integer constant
-.SM
-.B EOF
-upon write error,
-or if an attempt is made to write a read-only stream.
-.I Putw
+.Fa stream .
+.Sh RETURN VALUES
+The functions,
+.Fn fputc ,
+.Fn putc
+and
+.Fn putchar
+return the character written.
+If an error occurs, the value
+.Dv EOF
+is returned.
+The
+.Fn putw
+function
 returns 0 on success;
-the other functions return the character printed.
-.SH "SEE ALSO"
-ferror(3), fopen(3), getc(3), stdio(3)
-.SH BUGS
+.Dv EOF
+is returned if
+a write error occurs,
+or if an attempt is made to write a read-only stream.
+.Sh SEE ALSO
+.Xr ferror 3 ,
+.Xr fopen 3 ,
+.Xr getc 3 ,
+.Xr stdio 3
+.Sh STANDARDS
+The functions
+.Fn fputc ,
+.Fn putc ,
+and
+.Fn putchar ,
+conform to
+.St -ansiC .
+A function
+.Fn putw
+function appeared in
+.At v6 .
+.Sh BUGS
 The size and byte order of an
-.B int
+.Em int
 varies from one machine to another, and
-.I putw
+.Fn putw
 is not recommended for portable applications.
-.PP
-Because it is implemented as a macro,
-.I putc
-treats a
-.I stream
-argument with side effects incorrectly.
-In particular, ``putc(c, *f++);'' may not work sensibly
-(although ``putc(*cp++, f);''
-.I does
-work correctly).

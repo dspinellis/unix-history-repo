@@ -1,36 +1,39 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)swab.3	6.3 (Berkeley) %G%
+.\"     @(#)swab.3	6.5 (Berkeley) %G%
 .\"
-.TH SWAB 3  ""
-.AT 3
-.nf
-.SH NAME
-swab \- swap bytes
-.SH SYNOPSIS
-.nf
-.ft B
-#include <string.h>
-
-void
-swab(const char *src, char *dst, size_t len);
-.ft R
-.fi
-.SH DESCRIPTION
+.Dd 
+.Dt SWAB 3
+.Os
+.Sh NAME
+.Nm swab
+.Nd swap adjacent bytes
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft void
+.Fn swab "const char *src" "char *dst" "size_t len"
+.Sh DESCRIPTION
 The function
-.I swab
+.Fn swab
 copies
-.I len
+.Fa len
 bytes from the location referenced by
-.I src
+.Fa src
 to the location referenced by
-.IR dst ,
+.Fa dst ,
 swapping adjacent bytes.
-.PP
-.I Len
-should be even.
-.SH SEE ALSO
-bzero(3), memset(3)
+.Pp
+The argument
+.Fa len
+must be even number.
+.Sh SEE ALSO
+.Xr bzero 3 ,
+.Xr memset 3
+.Sh HISTORY
+A
+.Fn swab
+function appeared in
+.At v7 .

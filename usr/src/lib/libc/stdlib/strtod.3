@@ -1,80 +1,88 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)strtod.3	5.1 (Berkeley) %G%
+.\"     @(#)strtod.3	5.2 (Berkeley) %G%
 .\"
-.TH STRTOD 3 ""
-.UC 7
-.SH NAME
-strtod \- convert ASCII string to double
-.SH SYNOPSIS
-.nf
-.ft B
-#include <stdlib.h>
-
-double
-strtod(const char *nptr, char **endptr);
-.ft R
-.fi
-.SH DESCRIPTION
+.Dd 
+.Dt STRTOD 3
+.Os
+.Sh NAME
+.Nm strtod
+.Nd convert
+.Tn ASCII
+string to double
+.Sh SYNOPSIS
+.Fd #include <stdlib.h>
+.Ft double
+.Fn strtod "const char *nptr" "char **endptr"
+.Sh DESCRIPTION
 The
-.I strtod
+.Fn strtod
 function converts the initial portion of the string 
 pointed to by
-.I nptr
+.Fa nptr
 to
-.I double
+.Em double
 representation.
-.PP
+.Pp
 The expected form of the string is an optional plus (``+'') or minus
-sign (``-''), followed by a sequence of digits optionally containing
+sign (``-'') followed by a sequence of digits optionally containing
 a decimal-point character, optionally followed by an exponent.
 An exponent consists of an ``E'' or ``e'', followed by an optional plus
 or minus sign, followed by a sequence of digits.
-.PP
+.Pp
 Leading white-space characters in the string (as defined by the
-.IR isspace (3)
+.Xr isspace 3
 function) are skipped.
-.PP
+.Sh RETURN VALUES
 The
-.I strtod
+.Fn strtod
 function returns the converted value, if any.
-.PP
+.Pp
 If
-.I endptr
-is not NULL, a pointer to the character after the last character used
+.Fa endptr
+is not
+.Dv NULL ,
+a pointer to the character after the last character used
 in the conversion is stored in the location referenced by
-.IR endptr .
-.PP
+.Fa endptr .
+.Pp
 If no conversion is performed, zero is returned and the value of
-.I nptr
+.Fa nptr
 is stored in the location referenced by
-.IR endptr .
-.PP
+.Fa endptr .
+.Pp
 If the correct value would cause overflow, plus or minus
-.I HUGE_VAL
+.Dv HUGE_VAL
 is returned (according to the sign of the value), and
-.I ERANGE
+.Dv ERANGE
 is stored in
-.IR errno .
+.Va errno .
 If the correct value would cause underflow, zero is
 returned and
-.I ERANGE
+.Dv ERANGE
 is stored in 
-.IR errno .
-.SH ERRORS
-.TP
-[ERANGE]
+.Va errno .
+.Sh ERRORS
+.Bl -tag -width [ERANGE]
+.It Bq Er ERANGE
 Overflow or underflow occurred.
-.SH "SEE ALSO"
-atof(3), atoi(3), atol(3), strtol(3), strtoul(3)
-.SH STANDARDS
-.B Strtod
-conforms to ANSI X3.159-1989 (``ANSI C'').
-.SH BUGS
+.Sh SEE ALSO
+.Xr atof 3 ,
+.Xr atoi 3 ,
+.Xr atol 3 ,
+.Xr strtol 3 ,
+.Xr strtoul 3
+.Sh STANDARDS
+The
+.Fn strtod
+function
+conforms to
+.St -ansiC .
+.Sh BUGS
 This manual page represents intent instead of actual practice.
 The
-.IR strtod (3)
+.Fn strtod
 function is not currently available.

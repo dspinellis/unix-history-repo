@@ -1,35 +1,48 @@
-.\" Copyright (c) 1985 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1991 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)sinh.3	6.5 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH SINH 3M  ""
-.UC 4
-.SH NAME
-sinh, cosh, tanh \- hyperbolic functions
-.SH SYNOPSIS
-.nf
-.B #include <math.h>
-.PP
-.B double sinh(x)
-.B double x;
-.PP
-.B double cosh(x)
-.B double x;
-.PP
-.B double tanh(x)
-.B double x;
-.fi
-.SH DESCRIPTION
-These functions compute the designated hyperbolic functions for real arguments.
-.SH ERROR (due to Roundoff etc.)
-Below 2.4 \fIulp\fRs; an \fIulp\fR is one \fIU\fRnit in the \fIL\fRast
-\fIP\fRlace.
-.SH DIAGNOSTICS
-Sinh and cosh return the reserved operand on a VAX if
-the correct value would overflow.
-.SH SEE ALSO
-math(3M), infnan(3M)
-.SH AUTHOR
-W. Kahan, Kwok\-Choi Ng
+.\"	@(#)sinh.3	6.6 (Berkeley) %G%
+.Dd 
+.Dt SINH 3
+.Os
+.Sh NAME
+.Nm sinh
+.Nd hyperbolic sine function
+.Sh SYNOPSIS
+.Fd #include <math.h>
+.Ft double
+.Fn sinh "double  x"
+.Sh DESCRIPTION
+The
+.Fn sinh
+function computes the hyperbolic sine of
+.Fa x .
+.Sh RETURN VALUES
+The
+.Fn sinh
+function returns the hyperbolic sine value unless
+the  magnitude 
+of
+.Fa x
+is too large; in this event, the global variable
+.Va errno
+is set to
+.Er ERANGE .
+.Sh SEE ALSO
+.Xr acos 3 ,
+.Xr asin 3 ,
+.Xr atan 3 ,
+.Xr atan2 3 ,
+.Xr cos 3 ,
+.Xr cosh 3 ,
+.Xr sin 3 ,
+.Xr tan 3 ,
+.Xr tanh 3 ,
+.Xr math 3 ,
+.Sh STANDARDS
+The
+.Fn sinh
+function conforms to
+.St -ansiC .

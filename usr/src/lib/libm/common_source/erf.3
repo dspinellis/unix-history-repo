@@ -1,38 +1,59 @@
 From Prof. Kahan at UC at Berkeley
-.\" Copyright (c) 1985 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1985, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)erf.3	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH ERF 3M  ""
-.UC 6
-.SH NAME
-erf, erfc \- error functions
-.SH SYNOPSIS
-.nf
-.B #include <math.h>
-.PP
-.B double erf(x)
-.B double x;
-.PP
-.B double erfc(x)
-.B double x;
-.fi
-.SH DESCRIPTION
-Erf\|(x) returns the error function of x; where
+.\"     @(#)erf.3	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ERF 3
+.Os BSD 4.3
+.Sh NAME
+.Nm erf ,
+.Nm erfc
+.Nd error function operators
+.Sh SYNOPSIS
+.Fd #include <math.h>
+.Ft double
+.Fn erf "double x"
+.Ft double
+.Fn erfc "double x"
+.Sh DESCRIPTION
+These functions calculate the error function of
+.Fa x .
+.Pp
+The
+.Fn erf
+calculates the error function of x; where
+.Bd -filled -offset indent
 .if n \{\
-.PP
 erf(x) = 2/sqrt(pi)\(**\|integral from 0 to x of exp(\-t\(**t) dt. \}
 .if t \{\
 erf\|(x) := 
 (2/\(sr\(*p)\|\(is\d\s8\z0\s10\u\u\s8x\s10\d\|exp(\-t\u\s82\s10\d)\|dt. \}
-.PP
-Erfc\|(x) returns 1.0\-erf\|(x).
-.PP
-The entry for erfc is provided because of the extreme loss
-of relative accuracy if erf\|(x) is called for large x
-and the result subtracted from 1.
-(e.g. for x = 10, 12 places are lost).
-.SH SEE ALSO
-math(3M)
+.Ed
+.Pp
+The
+.Fn erfc
+function calculates the complementary error function of
+.Fa x ;
+that is
+.Fn erfc
+subtracts the result of
+the error function
+.Fn erf x
+from 1.0.
+This is useful, since for large
+.Fa x ,
+such as x = 10, 12 places disappear.
+.Sh SEE ALSO
+.Xr math 3
+.Sh HISTORY
+The
+.Fn erf
+and
+.Fn erfc
+functions
+appeared in
+.Bx 4.3 .

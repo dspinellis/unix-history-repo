@@ -1,37 +1,47 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)raise.3	5.1 (Berkeley) %G%
+.\"     @(#)raise.3	5.2 (Berkeley) %G%
 .\"
-.TH RAISE 3 ""
-.UC 7
-.SH NAME
-raise \- send a signal to the current process
-.SH SYNOPSIS
-int raise(int sig);
-.SH DESCRIPTION
+.Dd 
+.Dt RAISE 3
+.Os
+.Sh NAME
+.Nm raise
+.Nd send a signal to the current process
+.Sh SYNOPSIS
+.Fd #include <signal.h>
+.Ft int
+.Fn raise "int sig"
+.Sh DESCRIPTION
 The
-.I raise
+.Fn raise
 function sends the signal
-.I sig
+.Fa sig
 to the current process.
-.SH RETURNS
+.Sh RETURN VALUES
 Upon successful completion, a value of 0 is returned.
-Otherwise, a value of -1 is returned and
-.I errno
+Otherwise, a value of \-1 is returned and the global variable
+.Va errno
 is set to indicate the error.
-.SH ERRORS
-.I Raise
+.Sh ERRORS
+The
+.Fn raise
+function
 may fail and set
-.I errno
-for any of the errors specified for the library function
-.IR getpid(2)
+.Va errno
+for any of the errors specified for the
+library functions
+.Xr getpid 2
 and
-.IR kill(2).
-.SH SEE ALSO
-kill(2)
-.SH STANDARDS
-.I Raise
-conforms to ANSI X3.159-1989 (``ANSI C'').
+.Xr kill 2 .
+.Sh SEE ALSO
+.Xr kill 2
+.Sh STANDARDS
+The
+.Fn raise
+function
+conforms to
+.St -ansiC .

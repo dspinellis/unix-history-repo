@@ -1,87 +1,123 @@
-.\" Copyright (c) 1985 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1985, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)infnan.3	6.4 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH INFNAN 3M  ""
-.UC 6
-.ds nn \fINaN\fR
-.SH NAME
-infnan \- signals invalid floating-point operations on a VAX (temporary)
-.SH SYNOPSIS
-.nf
-.B #include <math.h>
-.PP
-.B double infnan(iarg)
-.B int iarg;
-.SH DESCRIPTION
+.\"     @(#)infnan.3	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt INFNAN 3
+.Os BSD 4.3
+.Sh NAME
+.Nm infnan
+.Nd signals invalid floating\-point operations on a
+.Tn VAX
+(temporary)
+.Sh SYNOPSIS
+.Fd #include <math.h>
+.Ft double 
+.Fn infnan "int iarg"
+.Sh DESCRIPTION
 At some time in the future, some of the useful properties of
-the Infinities and \*(nns in the IEEE standard 754 for Binary
-Floating\-Point Arithmetic will be simulated in UNIX on the
-DEC VAX by using its Reserved Operands.  Meanwhile, the
+the Infinities and \*(Nas in the
+.Tn IEEE
+standard 754 for Binary
+Floating\-Point Arithmetic will be simulated in
+.Tn UNIX
+on the
+.Tn DEC VAX
+by using its Reserved Operands.  Meanwhile, the
 Invalid, Overflow and Divide\-by\-Zero exceptions of the
-IEEE standard are being approximated on a VAX by calls to a
-procedure \fIinfnan\fR in appropriate places in \fIlibm\fR.  When
-better exception\-handling is implemented in UNIX, only
-\fIinfnan\fR among the codes in \fIlibm\fR will have to be changed.
-And users of \fIlibm\fR can design their own \fIinfnan\fR now to
+.Tn IEEE
+standard are being approximated on a
+.Tn VAX
+by calls to a
+procedure
+.Fn infnan
+in appropriate places in
+.Xr libm 3 .
+When
+better exception\-handling is implemented in
+.Tn UNIX , 
+only
+.Fn infnan
+among the codes in
+.Xr libm
+will have to be changed.
+And users of
+.Xr libm
+can design their own
+.Fn infnan
+now to
 insulate themselves from future changes.
-.PP
-Whenever an elementary function code in \fIlibm\fR has to
-simulate one of the aforementioned IEEE exceptions, it calls
-infnan(iarg) with an appropriate value of \fIiarg\fR.  Then a
-reserved operand fault stops computation.  But \fIinfnan\fR could
+.Pp
+Whenever an elementary function code in
+.Xr libm
+has to
+simulate one of the aforementioned
+.Tn IEEE
+exceptions, it calls
+.Fn infnan iarg
+with an appropriate value of
+.Fa iarg .
+Then a
+reserved operand fault stops computation.  But
+.Fn infnan
+could
 be replaced by a function with the same name that returns
 some plausible value, assigns an apt value to the global
-variable \fIerrno\fR, and allows computation to resume.
+variable
+.Va errno ,
+and allows computation to resume.
 Alternatively, the Reserved Operand Fault Handler could be
 changed to respond by returning that plausible value, etc.
 instead of aborting.
-.PP
+.Pp
 In the table below, the first two columns show various
-exceptions signaled by the IEEE standard, and the default
+exceptions signaled by the
+.Tn IEEE
+standard, and the default
 result it prescribes.  The third column shows what value is
-given to \fIiarg\fR by functions in \fIlibm\fR when they
-invoke infnan(iarg) under analogous circumstances on a VAX.
-Currently \fIinfnan\fR stops computation under all those
+given to
+.Fa iarg
+by functions in
+.Xr libm
+when they
+invoke
+.Fn infnan iarg
+under analogous circumstances on a
+.Tn VAX . 
+Currently
+.Fn infnan
+stops computation under all those
 circumstances.  The last two columns offer an alternative;
-they suggest a setting for \fIerrno\fR and a value for a
-revised \fIinfnan\fR to return.  And a C program to
+they suggest a setting for
+.Va errno
+and a value for a
+revised
+.Fn infnan
+to return.  And a C program to
 implement that suggestion follows. 
 .sp 0.5
-.RS
-.nf
-.ta \w'Div\-by\-0'u+2n +\w'+Infinity'u+1n +\w'+ERANGE'u+1n +\w'ERANGE or EDOM'u+4n +\w'+HUGE'u+1n
-IEEE	IEEE
-Signal	Default	\fIiarg\fR	\fIerrno\fR	\fIinfnan\fR
-.if t \{\
-.sp -0.5
-.ta \w'Div\-by\-0'u+2n+\w'+Infinity'u+1n+\w'+ERANGE'u+1n+\w'ERANGE or EDOM'u+4n+\w'+HUGE'u+1n
-.tc \(ru
-	
-.ta \w'Div\-by\-0'u+2n +\w'+Infinity'u+1n +\w'+ERANGE'u+1n +\w'ERANGE or EDOM'u+4n +\w'+HUGE'u+1n
-.tc \}
-.if n \
-\l'5i'
-Invalid	\*(nn	EDOM	EDOM	0
-.if n \{\
-Overflow	\(+-Infinity	ERANGE	ERANGE	HUGE
-Div\-by\-0	\(+-Infinity	\(+-ERANGE	ERANGE or EDOM	\(+-HUGE \}
-.if t \{\
-Overflow	\(+-\(if	ERANGE	ERANGE	HUGE
-Div\-by\-0	\(+-\(if	\(+-ERANGE	ERANGE or EDOM	\(+-HUGE \}
-.sp 0.5
-	(HUGE = 1.7e38 ... nearly  2.0**127)
-.ta
-.fi
-.RE
-.sp 0.5
-.PP
-.nf
-.ta \w'\fBextern int\fR'u+1n +\w'\fBdefault:\fR'u+1n +\w'\fB\-ERANGE:\fR'u+1n +\w'\fBerrno = ERANGE;\fR'u+1n
-ALTERNATIVE  \fIinfnan\fR:\fB
-.sp 0.5
+.Bd -filled -offset indent
+.Bl -column "IEEE Signal" "IEEE Default" XXERANGE ERANGEXXorXXEDOM
+.It IEEE Signal	IEEE Default Ta
+.Fa iarg Ta
+.Va errno Ta
+.Fn infnan
+.It Invalid	\*(Na Ta
+.Dv EDOM	EDOM	0
+.It Overflow	\(+-\*(If Ta
+.Dv ERANGE	ERANGE	HUGE
+.It Div\-by\-0	\(+-Infinity Ta
+.Dv \(+-ERANGE	ERANGE or EDOM	\(+-HUGE
+.It 	( Ns Dv HUGE No "= 1.7e38 ... nearly  2.0**127)"
+.El
+.Ed
+.Pp
+ALTERNATIVE
+.Fn infnan :
+.Bd -literal -offset indent
 #include	<math.h>
 #include	<errno.h>
 extern int	errno ;
@@ -89,15 +125,30 @@ double	infnan(iarg)
 int	iarg ;
 {
 	switch(iarg) {
-	case	\0ERANGE:	errno = ERANGE;	return(HUGE);
+	case	\0ERANGE:	errno = ERANGE; return(HUGE);
 	case	\-ERANGE:	errno = EDOM;	return(\-HUGE);
 	default:		errno = EDOM;	return(0);
 	}
-}\fR
-.ta
-.fi
-.SH SEE ALSO
-math(3M), intro(2), signal(3).
-.PP
-ERANGE and EDOM are defined in <errno.h>.  See intro(2)
-for explanation of EDOM and ERANGE.
+}
+.Ed
+.Sh SEE ALSO
+.Xr math 3 ,
+.Xr intro 2 ,
+.Xr signal 3 .
+.Pp
+.Dv ERANGE
+and
+.Dv EDOM
+are defined in
+.Aq Pa errno.h .
+(See
+.Xr intro 2
+for explanation of
+.Dv EDOM
+and
+.Dv ERANGE . )
+.Sh HISTORY
+The
+.Fn infnan
+function appeared in 
+.Bx 4.3 .

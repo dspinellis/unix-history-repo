@@ -1,107 +1,123 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Chris Torek.
-.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)fgets.3	6.7 (Berkeley) %G%
+.\"     @(#)fgets.3	6.8 (Berkeley) %G%
 .\"
-.TH FGETS 3 ""
-.UC 7
-.SH NAME
-fgets, gets \- get a line from a stream
-.SH SYNOPSIS
-.nf
-.ft B
-#include <stdio.h>
-
-char *
-fgets(char *str, size_t size, FILE *stream);
-
-char *
-gets(char *str);
-.ft R
-.fi
-.SH DESCRIPTION
-.I Fgets
+.Dd 
+.Dt FGETS 3
+.Os
+.Sh NAME
+.Nm fgets ,
+.Nm gets
+.Nd get a line from a stream
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft char *
+.Fn fgets "char *str" "size_t size" "FILE *stream"
+.Ft char *
+.Fn gets "char *str"
+.Sh DESCRIPTION
+The
+.Fn fgets
+function
 reads at most one less than the number of characters specified by
-.IR size
+.Xr size
 from the given
-.I stream
-into the string
-.IR str .
+.Fa stream
+and stores them in the string
+.Fa str .
 Reading stops when a newline character is found,
 at end-of-file or error.
 The newline, if any, is retained.
-In any case a '\e0' character is appended to end the string.
-.PP
-.I Gets
+In any case a
+.Ql \e0
+character is appended to end the string.
+.Pp
+The
+.Fn gets
+function
 is equivalent to
-.I fgets
+.Fn fgets
 with an infinite
-.I size
+.Xr size
 and a
-.I stream
+.Fa stream
 of
-.BR stdin ,
+.Em stdin ,
 except that the newline character (if any) is not stored in the string.
 It is the caller's responsibility to ensure that the input line,
 if any, is sufficiently short to fit in the string.
-.SH "RETURN VALUE"
-.PP
+.Sh RETURN VALUES
+.Pp
 Upon successful completion,
-.I fgets
+.Fn fgets
 and 
-.I gets
+.Fn gets
 return
-.IR s .
+a pointer to the string.
 If end-of-file or an error occurs before any characters are read, 
-they return NULL.
-.I Fgets
+they return
+.Dv NULL.
+The
+.Fn fgets
 and
-.I gets
+functions
+.Fn gets
 do not distinguish between end-of-file and error, and callers must use
-.IR feof (3)
+.Xr feof 3
 and
-.I ferror (3)
+.Xr ferror 3
 to determine which occurred.
-.SH ERRORS
-.TP 15
-[EBADF]
-.I Stream
+.Sh ERRORS
+.Bl -tag -width [EBADF]
+.It Bq Er EBADF
+The given
+.Fa stream
 is not a readable stream.
-.PP
-.I Fgets
+.El
+.Pp
+The function
+.Fn fgets
 may also fail and set
-.I errno
+.Va errno
 for any of the errors specified for the routines
-.IR fflush (3),
-.IR fstat (2),
-.IR read (2),
+.Xr fflush 3 ,
+.Xr fstat 2 ,
+.Xr read 2 ,
 or
-.IR malloc (3).
-.PP
-.I Gets
+.Xr malloc 3 .
+.Pp
+The function
+.Fn gets
 may also fail and set
-.I errno
+.Va errno
 for any of the errors specified for the routine
-.IR getchar (3).
-.SH "SEE ALSO"
-feof(3), ferror(3), fgetline(3)
-.SH STANDARDS
-.I Fgets
+.Xr getchar 3 .
+.Sh SEE ALSO
+.Xr feof 3 ,
+.Xr ferror 3 ,
+.Xr fgetline 3
+.Sh STANDARDS
+The functions
+.Fn fgets
 and
-.I gets
-conform to ANSI X3.159-1989 (``ANSI C'').
-.SH BUGS
+.Fn gets
+conform to
+.St -ansiC .
+.Sh BUGS
 Since it is usually impossible to ensure that the next input line
 is less than some arbitrary length, and because overflowing the
 input buffer is almost invariably a security violation, programs
 should
-.B NEVER
+.Em NEVER
 use
-.IR gets .
-.I Gets
-exists purely to conform to ANSI X3.159-1989.
+.Fn gets .
+The
+.Fn gets
+function
+exists purely to conform to
+.St -ansiC .

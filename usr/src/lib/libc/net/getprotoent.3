@@ -1,105 +1,118 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)getprotoent.3	6.5 (Berkeley) %G%
+.\"     @(#)getprotoent.3	6.6 (Berkeley) %G%
 .\"
-.TH GETPROTOENT 3 ""
-.UC 5
-.SH NAME
-getprotoent, getprotobynumber, getprotobyname, setprotoent,
-endprotoent \- get protocol entry
-.SH SYNOPSIS
-.nf
-.ft B
-.B #include <netdb.h>
-.PP
-.ft B
-struct protoent *getprotoent()
-.PP
-.ft B
-struct protoent *getprotobyname(name)
-char *name;
-.PP
-.ft B
-struct protoent *getprotobynumber(proto)
-int proto;
-.PP
-.ft B
-setprotoent(stayopen)
-int stayopen
-.PP
-.ft B
-endprotoent()
-.fi
-.SH DESCRIPTION
-.IR Getprotoent ,
-.IR getprotobyname ,
+.Dd 
+.Dt GETPROTOENT 3
+.Os BSD 4.2
+.Sh NAME
+.Nm getprotoent ,
+.Nm getprotobynumber ,
+.Nm getprotobyname ,
+.Nm setprotoent ,
+.Nm endprotoent
+.Nd get protocol entry
+.Sh SYNOPSIS
+.Fd #include <netdb.h>
+.Ft struct protoent *
+.Fn getprotoent 
+.Ft struct protoent *
+.Fn getprotobyname "char *name"
+.Ft struct protoent *
+.Fn getprotobynumber "int proto"
+.Fn setprotoent "int stayopen"
+.Fn endprotoent 
+.Sh DESCRIPTION
+The
+.Fn getprotoent ,
+.Fn getprotobyname ,
 and
-.I getprotobynumber
+.Fn getprotobynumber
+functions
 each return a pointer to an object with the
 following structure
 containing the broken-out
 fields of a line in the network protocol data base,
-.IR /etc/protocols .
-.RS
-.PP
-.nf
+.Pa /etc/protocols .
+.Bd -literal -offset indent
+.Pp
 struct	protoent {
 	char	*p_name;	/* official name of protocol */
 	char	**p_aliases;	/* alias list */
 	int	p_proto;	/* protocol number */
 };
-.ft R
-.ad
-.fi
-.RE
-.PP
+.Ed
+.Pp
 The members of this structure are:
-.TP \w'p_aliases'u+2n
-p_name
+.Bl -tag -width p_aliases
+.It Fa p_name
 The official name of the protocol.
-.TP \w'p_aliases'u+2n
-p_aliases
+.It Fa p_aliases
 A zero terminated list of alternate names for the protocol.
-.TP \w'p_aliases'u+2n
-p_proto
+.It Fa p_proto
 The protocol number.
-.PP
-.I Getprotoent
+.El
+.Pp
+The
+.Fn getprotoent
+function
 reads the next line of the file, opening the file if necessary.
-.PP
-.I Setprotoent
+.Pp
+The
+.Fn setprotoent
+function
 opens and rewinds the file.  If the
-.I stayopen
+.Fa stayopen
 flag is non-zero,
 the net data base will not be closed after each call to 
-.I getprotobyname
+.Fn getprotobyname
 or
-.IR getprotobynumber .
-.PP
-.I Endprotoent
+.Fn getprotobynumber .
+.Pp
+The
+.Fn endprotoent
+function
 closes the file.
-.PP
-.I Getprotobyname
+.Pp
+The
+.Fn getprotobyname
+function
 and
-.I getprotobynumber
+.Fn getprotobynumber
 sequentially search from the beginning
 of the file until a matching
 protocol name or
 protocol number is found,
-or until EOF is encountered.
-.SH FILES
-/etc/protocols
-.SH "SEE ALSO"
-protocols(5)
-.SH DIAGNOSTICS
+or until
+.Dv EOF
+is encountered.
+.Sh RETURN VALUES
 Null pointer
-(0) returned on EOF or error.
-.SH BUGS
-All information
-is contained in a static area
-so it must be copied if it is
-to be saved.  Only the Internet
+(0) returned on
+.Dv EOF
+or error.
+.Sh FILES
+.Bl -tag -width /etc/protocols -compact
+.It Pa /etc/protocols
+.El
+.Sh SEE ALSO
+.Xr protocols 5
+.Sh HISTORY
+The
+.Fn getprotoent ,
+.Fn getprotobynumber ,
+.Fn getprotobyname ,
+.Fn setprotoent ,
+and
+.Fn endprotoent
+functions appeared in 
+.Bx 4.2 .
+.Sh BUGS
+These functions use a static data space;
+if the data is needed for future use, it should be
+copied before any subsequent calls overwrite it.
+Only the Internet
 protocols are currently understood.

@@ -1,120 +1,230 @@
-.\" Copyright (c) 1985 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1985, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)exp.3	6.9 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH EXP 3M  ""
-.UC 4
-.ds nn \fINaN\fR
-.ds up \fIulp\fR
-.SH NAME
-exp, expm1, log, log10, log1p, pow \- exponential, logarithm, power
-.SH SYNOPSIS
-.nf
-.B #include <math.h>
-.PP
-.B double exp(x)
-.B double x;
-.PP
-.B double expm1(x)
-.B double x;
-.PP
-.B double log(x)
-.B double x;
-.PP
-.B double log10(x)
-.B double x;
-.PP
-.B double log1p(x)
-.B double x;
-.PP
-.B double pow(x,y)
-.B double x,y;
-.fi
-.SH DESCRIPTION
-.PP
-Exp returns the exponential function of x.
-.PP
-Expm1 returns exp(x)\-1 accurately even for tiny x.
-.PP
-Log returns the natural logarithm of x.
-.PP
-Log10 returns the logarithm of x to base 10.
-.PP
-Log1p returns log(1+x) accurately even for tiny x.
-.PP
-Pow(x,y) returns
-.if n \
-x**y.
-.if t \
-x\u\s8y\s10\d.
-.SH ERROR (due to Roundoff etc.)
+.\"     @(#)exp.3	6.10 (Berkeley) %G%
+.\"
+.Dd 
+.Dt EXP 3
+.Os BSD 4
+.Sh NAME
+.Nm exp ,
+.Nm expm1 ,
+.Nm log ,
+.Nm log10 ,
+.Nm log1p ,
+.Nm pow
+.Nd exponential, logarithm, power functions
+.Sh SYNOPSIS
+.Fd #include <math.h>
+.Ft double
+.Fn exp "double x"
+.Ft double
+.Fn expm1 "double x"
+.Ft double
+.Fn log "double x"
+.Ft double
+.Fn log10 "double x"
+.Ft double
+.Fn log1p "double x"
+.Ft double
+.Fn pow "double x" "double y"
+.Sh DESCRIPTION
+The
+.Fn exp
+function computes the exponential value of the given argument
+.Fa x .
+.Pp
+The
+.Fn expm1
+function computes the value exp(x)\-1 accurately even for tiny argument
+.Fa x .
+.Pp
+The
+.Fn log
+function computes the value for the natural logarithm of
+the argument x.
+.Pp
+The
+.Fn log10
+function computes the value for the logarithm of
+argument
+.Fa x
+to base 10.
+.Pp
+The
+.Fn log1p
+function computes
+the value of log(1+x) accurately even for tiny argument
+.Fa x .
+.Pp
+The
+.Fn pow
+computes the value
+of
+.Ar x
+to the exponent
+.Ar y .
+.Sh ERROR (due to Roundoff etc.)
 exp(x), log(x), expm1(x) and log1p(x) are accurate to within 
-an \*(up, and log10(x) to within about 2 \*(ups;
-an \*(up is one \fIU\fRnit in the \fIL\fRast \fIP\fRlace.
-The error in pow(x,y) is below about 2 \*(ups when its
-magnitude is moderate, but increases as pow(x,y) approaches
+an
+.Em up ,
+and log10(x) to within about 2
+.Em ups ;
+an
+.Em up
+is one
+.Em Unit
+in the
+.Em Last
+.Em Place .
+The error in
+.Fn pow x y
+is below about 2
+.Em ups
+when its
+magnitude is moderate, but increases as
+.Fn pow x y
+approaches
 the over/underflow thresholds until almost as many bits could be
 lost as are occupied by the floating\-point format's exponent
-field; that is 8 bits for VAX D and 11 bits for IEEE 754 Double.
+field; that is 8 bits for
+.Tn "VAX D"
+and 11 bits for IEEE 754 Double.
 No such drastic loss has been exposed by testing; the worst
-errors observed have been below 20 \*(ups for VAX D,
-300 \*(ups for IEEE 754 Double.
-Moderate values of pow are accurate enough that pow(integer,integer)
-is exact until it is bigger than 2**56 on a VAX, 2**53 for IEEE 754.
-.SH DIAGNOSTICS
-Exp, expm1 and pow return the reserved operand on a VAX when the correct
-value would overflow, and they set \fIerrno\fR to ERANGE.
-Pow(x,y) returns the reserved operand on a VAX and sets \fIerrno\fR
-to EDOM when x < 0 and y is not an integer.
-.PP
-On a VAX, \fIerrno\fR is set to EDOM and the reserved operand is returned
-by log unless x > 0, by log1p unless x > \-1.
-.SH NOTES
-The functions exp(x)\-1 and log(1+x) are called expm1
-and logp1 in BASIC on the Hewlett\-Packard HP\-71B and APPLE
-Macintosh, EXP1 and LN1 in Pascal, exp1 and log1 in C
-on APPLE Macintoshes, where they have been provided to make
+errors observed have been below 20
+.Em ups
+for
+.Tn "VAX D" ,
+300
+.Em ups
+for
+.Tn IEEE
+754 Double.
+Moderate values of
+.Fn pow
+are accurate enough that
+.Fn pow integer integer
+is exact until it is bigger than 2**56 on a
+.Tn VAX ,
+2**53 for
+.Tn IEEE
+754.
+.Sh RETURN VALUES
+These functions will return the approprate computation unless an error
+occurs or an argument is out of range.
+The functions
+.Fn exp ,
+.Fn expm1
+and
+.Fn pow
+detect if the computed value will overflow,
+set the global variable
+.Va errno to
+.Er RANGE
+and cause a reserved operand fault on a
+.Tn VAX
+or
+.Tn Tahoe .
+The function
+.Fn pow x y
+checks to see if
+.Fa x
+< 0 and
+.Fa y
+is not an integer, in the event this is true,
+the global variable
+.Va errno
+is set to
+.Er EDOM
+and on the
+.Tn VAX
+and
+.Tn Tahoe
+generate a reserved operand fault.
+On a
+.Tn VAX
+and
+.Tn Tahoe ,
+.Va errno
+is set to
+.Er EDOM
+and the reserved operand is returned
+by log unless
+.Fa x
+> 0, by
+.Fn log1p
+unless
+.Fa x
+> \-1.
+.Sh NOTES
+The functions exp(x)\-1 and log(1+x) are called
+expm1 and logp1 in
+.Tn BASIC
+on the Hewlett\-Packard
+.Tn HP Ns \-71B
+and
+.Tn APPLE
+Macintosh,
+.Tn EXP1
+and
+.Tn LN1
+in Pascal, exp1 and log1 in C
+on
+.Tn APPLE
+Macintoshes, where they have been provided to make
 sure financial calculations of ((1+x)**n\-1)/x, namely
 expm1(n\(**log1p(x))/x, will be accurate when x is tiny.
 They also provide accurate inverse hyperbolic functions.
-.PP
-Pow(x,0) returns x**0 = 1 for all x including x = 0,
+.Pp
+The function
+.Fn pow x 0
+returns x**0 = 1 for all x including x = 0,
 .if n \
 Infinity
 .if t \
 \(if
-(not found on a VAX), and \*(nn (the reserved
-operand on a VAX).  Previous implementations of pow may
+(not found on a
+.Tn VAX ) ,
+and
+.Em NaN
+(the reserved
+operand on a
+.Tn VAX ) .  Previous implementations of pow may
 have defined x**0 to be undefined in some or all of these
 cases.  Here are reasons for returning x**0 = 1 always:
-.IP (1) \w'\0\0\0\0'u
+.Bl -enum -width indent
+.It
 Any program that already tests whether x is zero (or
 infinite or \*(nn) before computing x**0 cannot care
 whether 0**0 = 1 or not. Any program that depends
 upon 0**0 to be invalid is dubious anyway since that
 expression's meaning and, if invalid, its consequences 
 vary from one computer system to another.
-.IP (2) \w'\0\0\0\0'u
+.It
 Some Algebra texts (e.g. Sigler's) define x**0 = 1 for 
 all x, including x = 0.
 This is compatible with the convention that accepts a[0]
 as the value of polynomial
-.ce
+.Bd -literal -offset indent
 p(x) = a[0]\(**x**0 + a[1]\(**x**1 + a[2]\(**x**2 +...+ a[n]\(**x**n
-.IP
+.Ed
+.Pp
 at x = 0 rather than reject a[0]\(**0**0 as invalid.
-.IP (3) \w'\0\0\0\0'u
+.It
 Analysts will accept 0**0 = 1 despite that x**y can
 approach anything or nothing as x and y approach 0
 independently.
 The reason for setting 0**0 = 1 anyway is this:
-.IP
-If x(z) and y(z) are \fIany\fR functions analytic (expandable
+.Bd -filled -offset indent
+If x(z) and y(z) are
+.Em any
+functions analytic (expandable
 in power series) in z around z = 0, and if there 
 x(0) = y(0) = 0, then x(z)**y(z) \(-> 1 as z \(-> 0.
-.IP (4) \w'\0\0\0\0'u
+.Ed
+.It
 If 0**0 = 1, then
 .if n \
 infinity**0 = 1/0**0 = 1 too; and
@@ -122,7 +232,29 @@ infinity**0 = 1/0**0 = 1 too; and
 \(if**0 = 1/0**0 = 1 too; and
 then \*(nn**0 = 1 too because x**0 = 1 for all finite
 and infinite x, i.e., independently of x.
-.SH SEE ALSO
-math(3M), infnan(3M)
-.SH AUTHOR
+.El
+.Sh SEE ALSO
+.Xr math 3 ,
+.Xr infnan 3
+.Sh AUTHOR
 Kwok\-Choi Ng, W. Kahan
+.Sh HISTORY
+A
+.Fn exp ,
+.Fn log
+and
+.Fn pow
+function
+appeared in
+.At v6 .
+A
+.Fn log10
+function
+appeared in
+.At v7 .
+The
+.Fn log1p
+and
+.Fn expm1
+functions appeared in
+.Bx 4.3 .

@@ -1,114 +1,171 @@
-.\" Copyright (c) 1985 The Regents of the University of California.
+.\" Copyright (c) 1985, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)curses.3	6.5 (Berkeley) %G%
+.\"     @(#)curses.3	6.6 (Berkeley) %G%
 .\"
-.TH CURSES 3 ""
-.UC 4
-.SH NAME
-curses \- screen functions with ``optimal'' cursor motion
-.SH SYNOPSIS
-.B cc
-[ flags ] files
-.B \-lcurses \-ltermcap
-[ libraries ]
-.SH DESCRIPTION
+.Dd 
+.Dt CURSES 3
+.Os BSD 4
+.Sh NAME
+.Nm curses
+.Nd screen functions with ``optimal'' cursor motion
+.Sh SYNOPSIS
+.Nm cc
+.Op Ar flags
+.Ar files
+.Fl lcurses ltermcap
+.Op Ar libraries
+.Sh DESCRIPTION
 These routines give the user a method of updating screens with reasonable
 optimization.  They keep an image of the current screen,
 and the user sets up an image of a new one.  Then the
-.I refresh()
+.Fn refresh
 tells the routines to make the current screen look like the new one.
 In order to initialize the routines, the routine
-.I initscr()
+.Fn initscr
 must be called before any of the other routines that deal with windows and
 screens are used.  The routine
-.I endwin()
+.Fn endwin
 should be called before exiting.
-.SH SEE ALSO
-.I "Screen Updating and Cursor Movement Optimization: A Library Package,"
-Ken Arnold,
-.br
-ioctl(2),
-getenv(3),
-tty(4),
-termcap(5)
-.SH AUTHOR
-Ken Arnold
-.SH FUNCTIONS
-.nf
-.ds w \fIwin\fP
-.ds s \fIstdscr\fP
-.ta 3i
-addch(ch)	add a character to \*s
-addstr(str)	add a string to \*s
-box(win,vert,hor)	draw a box around a window
-cbreak()	set cbreak mode
-clear()	clear \*s
-clearok(scr,boolf)	set clear flag for \fIscr\fP
-clrtobot()	clear to bottom on \*s
-clrtoeol()	clear to end of line on \*s
-delch()	delete a character
-deleteln()	delete a line
-delwin(win)	delete \*w
-echo()	set echo mode
-endwin()	end window modes
-erase()	erase \*s
-flusok(win,boolf)	set flush-on-refresh flag for \fIwin\fP
-getch()	get a char through \*s
-getcap(name)	get terminal capability \fIname\fP
-getstr(str)	get a string through \*s
-gettmode()	get tty modes
-getyx(win,y,x)	get (y,x) co-ordinates
-inch()	get char at current (y,x) co-ordinates
-initscr()	initialize screens
-insch(c)	insert a char
-insertln()	insert a line
-leaveok(win,boolf)	set leave flag for \*w
-longname(termbuf,name)	get long name from \fItermbuf\fP
-move(y,x)	move to (y,x) on \*s
-mvcur(lasty,lastx,newy,newx)	actually move cursor
-newwin(lines,cols,begin_y,begin_x)\ 	create a new window
-nl()	set newline mapping
-nocbreak()	unset cbreak mode
-noecho()	unset echo mode
-nonl()	unset newline mapping
-noraw()	unset raw mode
-overlay(win1,win2)	overlay win1 on win2
-overwrite(win1,win2)	overwrite win1 on top of win2
-printw(fmt,arg1,arg2,...)	printf on \*s
-raw()	set raw mode
-refresh()	make current screen look like \*s
-resetty()	reset tty flags to stored value
-savetty()	stored current tty flags
-scanw(fmt,arg1,arg2,...)	scanf through \*s
-scroll(win)	scroll \*w one line
-scrollok(win,boolf)	set scroll flag
-setterm(name)	set term variables for name
-standend()	end standout mode
-standout()	start standout mode
-subwin(win,lines,cols,begin_y,begin_x)\ 	create a subwindow
-touchline(win,y,sx,ex)	mark line \fIy\fP \fIsx\fP through \fIsy\fP as changed
-touchoverlap(win1,win2)	mark overlap of \fIwin1\fP on \fIwin2\fP as changed
-touchwin(win)	\*(lqchange\*(rq all of \*w
-unctrl(ch)	printable version of \fIch\fP
-waddch(win,ch)	add char to \*w
-waddstr(win,str)	add string to \*w
-wclear(win)	clear \*w
-wclrtobot(win)	clear to bottom of \*w
-wclrtoeol(win)	clear to end of line on \*w
-wdelch(win,c)	delete char from \*w
-wdeleteln(win)	delete line from \*w
-werase(win)	erase \*w
-wgetch(win)	get a char through \*w
-wgetstr(win,str)	get a string through \*w
-winch(win)	get char at current (y,x) in \*w
-winsch(win,c)	insert char into \*w
-winsertln(win)	insert line into \*w
-wmove(win,y,x)	set current (y,x) co-ordinates on \*w
-wprintw(win,fmt,arg1,arg2,...)\ 	printf on \*w
-wrefresh(win)	make screen look like \*w
-wscanw(win,fmt,arg1,arg2,...)\ 	scanf through \*w
-wstandend(win)	end standout mode on \*w
-wstandout(win)	start standout mode on \*w
+.Sh SEE ALSO
+.Xr ioctl 2 ,
+.Xr getenv 3 ,
+.Xr tty 4 ,
+.Xr termcap 5
+.Rs
+.%T Screen Updating and Cursor Movement Optimization: A Library Package
+.%A Ken Arnold
+.Re
+.Sh AUTHOR
+.An Ken Arnold
+.Sh FUNCTIONS
+.Bl -column "subwin(win,lines,cols,begin_y,begin_x)   "
+.It addch(ch)	add a character to
+.Em stdscr
+.It addstr(str)	add a string to
+.Em stdscr
+.It box(win,vert,hor)	draw a box around a window
+.It cbreak()	set cbreak mode
+.It clear()	clear
+.Em stdscr
+.It clearok(scr,boolf)	set clear flag for
+.Em scr
+.It clrtobot()	clear to bottom on
+.Em stdscr
+.It clrtoeol()	clear to end of line on
+.Em stdscr
+.It delch()	delete a character
+.It deleteln()	delete a line
+.It delwin(win)	delete
+.Em stdscr
+.It echo()	set echo mode
+.It endwin()	end window modes
+.It erase()	erase
+.Em stdscr
+.It flusok(win,boolf)	set flush-on-refresh flag for
+.Em win
+.It getch()	get a char through
+.Em stdscr
+.It getcap(name)	get terminal capability
+.Em name
+.It getstr(str)	get a string through
+.Em stdscr
+.It gettmode()	get tty modes
+.It getyx(win,y,x)	get (y,x) co-ordinates
+.It inch()	get char at current (y,x) co-ordinates
+.It initscr()	initialize screens
+.It insch(c)	insert a char
+.It insertln()	insert a line
+.It leaveok(win,boolf)	set leave flag for
+.Em stdscr
+.It longname(termbuf,name)	get long name from
+.Em termbuf
+.It move(y,x)	move to (y,x) on
+.Em stdscr
+.It mvcur(lasty,lastx,newy,newx)	actually move cursor
+.It newwin(lines,cols,begin_y,begin_x)\ 	create a new window
+.It nl()	set newline mapping
+.It nocbreak()	unset cbreak mode
+.It noecho()	unset echo mode
+.It nonl()	unset newline mapping
+.It noraw()	unset raw mode
+.It overlay(win1,win2)	overlay win1 on win2
+.It overwrite(win1,win2)	overwrite win1 on top of win2
+.It printw(fmt,arg1,arg2,...)	printf on
+.Em stdscr
+.It raw()	set raw mode
+.It refresh()	make current screen look like
+.Em stdscr
+.It resetty()	reset tty flags to stored value
+.It savetty()	stored current tty flags
+.It scanw(fmt,arg1,arg2,...)	scanf through
+.Em stdscr
+.It scroll(win)	scroll
+.Em win
+one line
+.It scrollok(win,boolf)	set scroll flag
+.It setterm(name)	set term variables for name
+.It standend()	end standout mode
+.It standout()	start standout mode
+.It subwin(win,lines,cols,begin_y,begin_x)\ 	create a subwindow
+.It touchline(win,y,sx,ex)	mark line
+.Em y
+.Em sx
+through
+.Em sy
+as changed
+.It touchoverlap(win1,win2)	mark overlap of
+.Em win1
+on
+.Em win2
+as changed
+.It touchwin(win)	\*(lqchange\*(rq all of
+.Em win
+.It unctrl(ch)	printable version of
+.Em ch
+.It waddch(win,ch)	add char to
+.Em win
+.It waddstr(win,str)	add string to
+.Em win
+.It wclear(win)	clear
+.Em win
+.It wclrtobot(win)	clear to bottom of
+.Em win
+.It wclrtoeol(win)	clear to end of line on
+.Em win
+.It wdelch(win,c)	delete char from
+.Em win
+.It wdeleteln(win)	delete line from
+.Em win
+.It werase(win)	erase
+.Em win
+.It wgetch(win)	get a char through
+.Em win
+.It wgetstr(win,str)	get a string through
+.Em win
+.It winch(win)	get char at current (y,x) in
+.Em win
+.It winsch(win,c)	insert char into
+.Em win
+.It winsertln(win)	insert line into
+.Em win
+.It wmove(win,y,x)	set current (y,x) co-ordinates on
+.Em win
+.It wprintw(win,fmt,arg1,arg2,...)\ 	printf on
+.Em win
+.It wrefresh(win)	make screen look like
+.Em win
+.It wscanw(win,fmt,arg1,arg2,...)\ 	scanf through
+.Em win
+.It wstandend(win)	end standout mode on
+.Em win
+.It wstandout(win)	start standout mode on
+.Em win
+.El
+.Sh HISTORY
+The
+.Nm
+package appeared in 
+.Bx 4.0 .

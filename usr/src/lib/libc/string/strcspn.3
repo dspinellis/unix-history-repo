@@ -1,45 +1,56 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Chris Torek.
-.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)strcspn.3	5.1 (Berkeley) %G%
+.\"     @(#)strcspn.3	5.2 (Berkeley) %G%
 .\"
-.TH STRCSPN 3 ""
-.UC 7
-.SH NAME
-strcspn \- span the complement of a string
-.SH SYNOPSIS
-.nf
-.ft B
-#include <string.h>
-
-size_t
-strcspn(const char *s, const char *charset);
-.ft R
-.fi
-.SH DESCRIPTION
-.B Strcspn
+.Dd 
+.Dt STRCSPN 3
+.Os
+.Sh NAME
+.Nm strcspn
+.Nd span the complement of a string
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft size_t
+.Fn strcspn "const char *s" "const char *charset"
+.Sh DESCRIPTION
+The
+.Fn strcspn
+function
 spans the initial part of the null-terminated string
-.I s
+.Fa s
 as long as the characters from
-.I s
+.Fa s
 do not occur in string
-.I charset
-(i.e.,
-.I strcspn
+.Fa charset
+(it
 spans the
-.I complement
+.Em complement
 of
-.IR charset ).
-.B Strcspn
+.Fa charset ) .
+.Sh RETURN VALUES
+The
+.Fn strcspn
+function
 returns the number of characters spanned.
-.SH SEE ALSO
-index(3), memchr(3), rindex(3), strchr(3), strpbrk(3), strrchr(3),
-strsep(3), strspn(3), strstr(3), strtok(3)
-.SH STANDARDS
-.B Strcspn
-conforms to ANSI X3.159-1989 (``ANSI C'').
+.Sh SEE ALSO
+.Xr index 3 ,
+.Xr memchr 3 ,
+.Xr rindex 3 ,
+.Xr strchr 3 ,
+.Xr strpbrk 3 ,
+.Xr strrchr 3 ,
+.Xr strsep 3 ,
+.Xr strspn 3 ,
+.Xr strstr 3 ,
+.Xr strtok 3
+.Sh STANDARDS
+The
+.Fn strcspn
+function
+conforms to
+.St -ansiC .

@@ -1,43 +1,50 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)byteorder.3	6.6 (Berkeley) %G%
+.\"     @(#)byteorder.3	6.7 (Berkeley) %G%
 .\"
-.TH BYTEORDER 3 ""
-.UC 5
-.SH NAME
-htonl, htons, ntohl, ntohs \- convert values between host and network byte order
-.SH SYNOPSIS
-.nf
-.B #include <sys/param.h>
-.PP
-.B netlong = htonl(hostlong);
-.B u_long netlong, hostlong;
-.PP
-.B netshort = htons(hostshort);
-.B u_short netshort, hostshort;
-.PP
-.B hostlong = ntohl(netlong);
-.B u_long hostlong, netlong;
-.PP
-.B hostshort = ntohs(netshort);
-.B u_short hostshort, netshort;
-.fi
-.SH DESCRIPTION
+.Dd 
+.Dt BYTEORDER 3
+.Os BSD 4.2
+.Sh NAME
+.Nm htonl ,
+.Nm htons ,
+.Nm ntohl ,
+.Nm ntohs
+.Nd convert values between host and network byte order
+.Sh SYNOPSIS
+.Fd #include <sys/param.h>
+.Ft u_long
+.Fn htonl "u_long hostlong"
+.Ft u_short
+.Fn htons "u_short hostshort"
+.Ft u_long
+.Fn ntohl "u_long netlong"
+.Ft u_short
+.Fn ntohs "u_short netshort"
+.Sh DESCRIPTION
 These routines convert 16 and 32 bit quantities between network
 byte order and host byte order.
 On machines which have a byte order which is the same as the network
 order, routines are defined as null macros.
-.PP
+.Pp
 These routines are most often used in conjunction with Internet
 addresses and ports as returned by
-.IR gethostbyname (3)
+.Xr gethostbyname 3
 and
-.IR getservent (3).
-.SH "SEE ALSO"
-gethostbyname(3), getservent(3)
-.SH BUGS
-The VAX handles bytes backwards from most everyone else in
+.Xr getservent 3 .
+.Sh SEE ALSO
+.Xr gethostbyname 3 ,
+.Xr getservent 3
+.Sh HISTORY
+The
+.Nm byteorder
+functions appeared in 
+.Bx 4.2 .
+.Sh BUGS
+On the
+.Tn VAX
+bytes are handled backwards from most everyone else in
 the world.  This is not expected to be fixed in the near future.

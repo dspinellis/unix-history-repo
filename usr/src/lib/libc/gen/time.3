@@ -1,46 +1,55 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)time.3	5.2 (Berkeley) %G%
+.\"     @(#)time.3	5.3 (Berkeley) %G%
 .\"
-.TH TIME 3 ""
-.UC 4
-.SH NAME
-time \- get time of day
-.SH SYNOPSIS
-.nf
-.B #include <sys/types.h>
-
-.B time_t time(tloc)
-.B time_t *tloc;
-.fi
-.SH DESCRIPTION
-.PP
-.I Time
+.Dd 
+.Dt TIME 3
+.Os BSD 4
+.Sh NAME
+.Nm time
+.Nd get time of day
+.Sh SYNOPSIS
+.Fd #include <sys/types.h>
+.Ft time_t
+.Fn time "time_t *tloc"
+.Sh DESCRIPTION
+The
+.Fn time
+function
 returns the value of time in seconds since 0 hours, 0 minutes,
 0 seconds, January 1, 1970, Coordinated Universal Time.
-.PP
-The argument
-.I tloc
-points to an area where the return value is also stored.
+.Pp
+A copy of the time value may be saved to the area indicated by the
+pointer
+.Fa tloc .
 If
-.I tloc
+.Fa tloc
 is a NULL pointer, no value is stored.
-.PP
+.Pp
 Upon successful completion,
-.IR time ()
+.Fn time
 returns the value of time.
-Otherwise a value of ((\fItime_t\fR) -1)
-is returned and
-.I errno
+Otherwise a value of
+.Po
+.Po Fa time_t Pc \-1
+.Pc
+is returned and the global variable
+.Va errno
 is set to indicate the error.
-.SH "ERRORS
+.Sh ERRORS
 The following error codes may be set in
-.IR errno :
-.TP 15
-[EFAULT]
+.Va errno :
+.Bl -tag -width [EFAULT]
+.It Bq Er EFAULT
 An argument address referenced invalid memory.
-.SH "SEE ALSO"
-gettimeofday(2), ctime(3)
+.Sh SEE ALSO
+.Xr gettimeofday 2 ,
+.Xr ctime 3
+.Sh HISTORY
+A
+.Fn time
+function appeared in
+.At v6 .

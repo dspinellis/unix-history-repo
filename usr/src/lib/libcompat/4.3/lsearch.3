@@ -1,75 +1,77 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)lsearch.3	5.4 (Berkeley) %G%
+.\"     @(#)lsearch.3	5.5 (Berkeley) %G%
 .\"
-.TH LSEARCH 3 ""
-.UC 7
-.SH NAME
-lsearch, lfind, \- linear searching routines
-.SH SYNOPSIS
-.ft B
-.nf
-char *
-lsearch(const void *key, const void *base,
-size_t *nelp, size_t width, 
-int (*compar) (void *, void *));
-.sp
-char *
-lfind(const void *key, const void *base,
-size_t *nelp, size_t width,
-int (*compar) (void *, void *));
-.ft R
-.SH DESCRIPTION
-.ft B
+.Dd 
+.Dt LSEARCH 3
+.Os
+.Sh NAME
+.Nm lsearch ,
+.Nm lfind,
+.Nd linear searching routines
+.Sh SYNOPSIS
+.Ft char *
+.Fn lsearch "const void *key" "const void *base" "size_t *nelp" "size_t width" "int (*compar)(void *, void *)"
+.Ft char *
+.Fn lfind "const void *key" "const void *base" "size_t *nelp" "size_t width" "int (*compar)(void *, void *)"
+.Sh DESCRIPTION
+.Bf -symbolic
 This interface was obsolete before it was written.
 It is available from the compatibility library, libcompat.
-.ft R
-.PP
+.Ef
+.Pp
 The functions
-.IR lsearch ,
+.Fn lsearch ,
 and
-.IR lfind
+.Fn lfind
 provide basic linear searching functionality.
-.PP
-.I Base
+.Pp
+.Fa Base
 is the pointer to the beginning of an array.
-.I Nelp
+The argument
+.Fa nelp
 is the current number of elements in the array, where each element
 is
-.I width
+.Fa width
 bytes long.
-.I Compar
+The
+.Fa compar
+function
 is a comparison routine which is used to compare two elements.
-It is called with two arguments that point to the 
-.I key
+It takes two arguments which point to the
+.Fa key
 object and to an array member, in that order, and must return an integer
-less than, equal to, or greater than zero if the 
-.I key
+less than, equivalent to, or greater than zero if the 
+.Fa key
 object is considered, respectively, to be less than, equal to, or greater
 than the array member.
-.PP
-.I Lsearch
+.Pp
+The
+.Fn lsearch
 and
-.I lfind
+.Fn lfind
+functions
 return a pointer into the array referenced by
-.I base
+.Fa base
 where
-.I key
+.Fa key
 is located.
 If
-.I key
+.Fa key
 does not exist,
-.I lfind
-will return a NULL pointer and
-.I lsearch
+.Fn lfind
+will return a null pointer and
+.Fn lsearch
 will add it to the array.
 When an element is added to the array by
-.I lsearch
+.Fn lsearch
 the location referenced by the argument
-.I nelp
+.Fa nelp
 is incremented by one.
-.SH "SEE ALSO"
-bsearch(3), db(3)
+.Sh SEE ALSO
+.Xr bsearch 3 ,
+.Xr hsearch 3 ,
+.\" .Xr tsearch 3

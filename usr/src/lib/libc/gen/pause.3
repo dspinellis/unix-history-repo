@@ -1,39 +1,58 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)pause.3	6.3 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH PAUSE 3 ""
-.UC 4
-.SH NAME
-pause \- stop until signal
-.SH SYNOPSIS
-.B pause()
-.SH DESCRIPTION
-.ft B
+.\"     @(#)pause.3	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PAUSE 3
+.Os BSD 4
+.Sh NAME
+.Nm pause
+.Nd stop until signal
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft int
+.Fn pause void
+.Sh DESCRIPTION
+.Bf -symbolic
 Pause is made obsolete by sigpause(3).
-.ft R
-.PP
-.I Pause
-never returns normally.
-It is used to give up control while waiting for
-a signal from
-.IR kill (2)
-or an interval timer, see
-.IR setitimer (2).
+.Ef
+.Pp
+The
+.Fn pause
+function
+forces a process to pause until
+a signal is received from either the
+.Xr kill 2
+function
+or an interval timer.
+(See
+.Xr setitimer 2 . )
 Upon termination of a signal handler started during a
-.I pause,
+.Fn pause ,
 the
-.I pause
+.Fn pause
 call will return.
-.SH "RETURN VALUE
+.Sh RETURN VALUES
 Always returns \-1.
-.SH ERRORS
-.I Pause
+.Sh ERRORS
+The
+.Fn pause
+function
 always returns:
-.TP 15
-[EINTR]
+.Bl -tag -width [EINTR]
+.It Bq Er EINTR
 The call was interrupted.
-.SH "SEE ALSO
-kill(2), select(2), sigpause(2)
+.El
+.Sh SEE ALSO
+.Xr kill 2 ,
+.Xr select 2 ,
+.Xr sigpause 2
+.Sh HISTORY
+A
+.Fn pause
+syscall
+appeared in 
+.At v6 .

@@ -1,51 +1,60 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Chris Torek.
-.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)strstr.3	5.1 (Berkeley) %G%
+.\"     @(#)strstr.3	5.2 (Berkeley) %G%
 .\"
-.TH STRSTR 3 ""
-.UC 7
-.SH NAME
-strstr \- locate a substring in a string
-.SH SYNOPSIS
-.nf
-.ft B
-#include <string.h>
-
-char *
-strstr(const char *big, const char *little);
-.ft R
-.fi
-.SH DESCRIPTION
-.B Strstr
+.Dd 
+.Dt STRSTR 3
+.Os
+.Sh NAME
+.Nm strstr
+.Nd locate a substring in a string
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft char *
+.Fn strstr "const char *big" "const char *little"
+.Sh DESCRIPTION
+The
+.Fn strstr
+function
 locates the first occurrence of the null-terminated string
-.I little
+.Fa little
 in the null-terminated string
-.IR big .
+.Fa big .
 If
-.I little
+.Fa little
 is the empty string,
-.B strstr
+.Fn strstr
 returns
-.IR big ;
+.Fa big ;
 if
-.I little
+.Fa little
 occurs nowhere in
-.IR big ,
-.B strstr
+.Fa big ,
+.Fn strstr
 returns NULL;
 otherwise
-.B strstr
+.Fn strstr
 returns a pointer to the first character of the first occurrence of
-.IR little .
-.SH SEE ALSO
-index(3), memchr(3), rindex(3), strchr(3), strcspn(3), strpbrk(3), strrchr(3),
-strsep(3), strspn(3), strtok(3)
-.SH STANDARDS
-.B Strstr
-conforms to ANSI X3.159-1989 (``ANSI C'').
+.Fa little .
+.Sh SEE ALSO
+.Xr index 3 ,
+.Xr memchr 3 ,
+.Xr rindex 3 ,
+.Xr strchr 3 ,
+.Xr strcspn 3 ,
+.Xr strpbrk 3 ,
+.Xr strrchr 3 ,
+.Xr strsep 3 ,
+.Xr strspn 3 ,
+.Xr strtok 3
+.Sh STANDARDS
+The
+.Fn strstr
+function
+conforms to
+.St -ansiC .
