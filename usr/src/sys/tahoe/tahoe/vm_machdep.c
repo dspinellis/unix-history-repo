@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vm_machdep.c	7.3 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -26,7 +26,6 @@
 #include "proc.h"
 #include "cmap.h"
 #include "mount.h"
-#include "../ufs/ufsmount.h"
 #include "vm.h"
 #include "text.h"
 #include "kernel.h"
@@ -116,9 +115,8 @@ chgprot(addr, tprot)
 	pte = tptopte(u.u_procp, tp);
 	if (pte->pg_fod == 0 && pte->pg_pfnum) {
 		c = &cmap[pgtocm(pte->pg_pfnum)];
-		if (c->c_blkno && c->c_mdev != MSWAPX)
-			munhash(mounttab[c->c_mdev].um_devvp,
-			    (daddr_t)(u_long)c->c_blkno);
+		if (c->c_blkno)
+			munhash(c->c_vp, (daddr_t)(u_long)c->c_blkno);
 	}
 	*(int *)pte &= ~PG_PROT;
 	*(int *)pte |= tprot;
