@@ -13,7 +13,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lexi.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)lexi.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -122,7 +122,7 @@ char        chartype[128] =
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
-    0, 3, 0, 0, 0, 3, 3, 0,
+    0, 3, 0, 0, 1, 3, 3, 0,
     0, 0, 3, 3, 0, 3, 3, 3,
     1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 0, 0, 3, 3, 3, 3,
