@@ -1,5 +1,5 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.12 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.13 (Berkeley) %G%";
 # endif
 
 # include "pass2.h"
@@ -308,6 +308,42 @@ zzzcode( p, c ) register NODE *p; {
 			l->in.type = (ISUNSIGNED(l->in.type) ? UNSIGNED : INT);
 			}
 
+		if ((r->in.type == UNSIGNED || r->in.type == ULONG) &&
+		    mixtypes(l, r)) {
+			int label1, label2;
+
+			label1 = getlab();
+			label2 = getlab();
+
+			putstr("movl\t");
+			adrput(r);
+			putchar(',');
+			adrput(l);
+			putstr("\n\tbbsc\t$31,");
+			adrput(l);
+			printf(",L%d\n\tcvtl", label1);
+			prtype(l);
+			putchar('\t');
+			adrput(l);
+			putchar(',');
+			adrput(l);
+			printf("\n\tjbr\tL%d\nL%d:\n\tcvtl", label2, label1);
+			prtype(l);
+			putchar('\t');
+			adrput(l);
+			putchar(',');
+			adrput(l);
+			putstr("\n\tadd");
+			prtype(l);
+			putstr("2\t$0");
+			prtype(l);
+			putstr("2.147483648e9,");
+			adrput(l);
+			printf("\nL%d:", label2);
+
+			return;
+			}
+
 		if (!mixtypes(l,r)) {
 			if (tlen(l) == tlen(r)) {
 				putstr("mov");
@@ -341,6 +377,39 @@ zzzcode( p, c ) register NODE *p; {
 		adrput(r);
 		putchar(',');
 		adrput(l);
+		return;
+		}
+
+	case 'G':	/* i *= f; asgops with int lhs and float rhs */
+		{
+		register NODE *l, *r, *s;
+		int rt;
+
+		l = p->in.left;
+		r = p->in.right;
+		s = talloc();
+		rt = r->in.type;
+
+		s->in.op = SCONV;
+		s->in.left = l;
+		s->in.type = rt;
+		zzzcode(s, 'A');
+		putstr("\n\t");
+
+		hopcode(rt == FLOAT ? 'F' : 'D', p->in.op);
+		putstr("2\t");
+		adrput(r);
+		putchar(',');
+		adrput(resc);
+		putstr("\n\t");
+
+		s->in.op = ASSIGN;
+		s->in.left = l;
+		s->in.right = resc;
+		s->in.type = l->in.type;
+		zzzcode(s, 'A');
+
+		s->in.op = FREE;
 		return;
 		}
 
@@ -1077,6 +1146,9 @@ optim2( p ) register NODE *p; {
 #else
 		if( mixtypes(p, l) ) return;
 #endif
+		if( l->in.op == PCONV )
+			return;
+
 		/* Only trust it to get it right if the size is the same */
 		if( tlen(p) != tlen(l) )
 			return;
