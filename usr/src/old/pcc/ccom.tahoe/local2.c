@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local2.c	1.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)local2.c	1.16 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -1262,6 +1262,7 @@ optim2( p ) register NODE *p; {
 		l = p->in.left;
 		/* clobber conversions w/o side effects */
 		if (!anyfloat(p, l) && l->in.op != PCONV &&
+		    l->in.op != CALL && l->in.op != UNARY CALL &&
 		    tlen(p) == tlen(l)) {
 			if (l->in.op != FLD)
 				l->in.type = p->in.type;
