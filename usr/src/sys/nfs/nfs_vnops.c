@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.3 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -1018,8 +1018,8 @@ nfs_statfs(mp, sbp)
 	sbp->f_blocks = fxdr_unsigned(long, *p++);
 	sbp->f_bfree = fxdr_unsigned(long, *p++);
 	sbp->f_bavail = fxdr_unsigned(long, *p);
-	sbp->f_files = 0x7fffffff;
-	sbp->f_ffree = 0x7fffffff;
+	sbp->f_files = 0;
+	sbp->f_ffree = 0;
 	sbp->f_fsid.val[0] = mp->m_fsid.val[0];
 	sbp->f_fsid.val[1] = mp->m_fsid.val[1];
 	bcopy(nmp->nm_path, sbp->f_mntonname, MNAMELEN);
