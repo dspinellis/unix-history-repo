@@ -12,4 +12,4 @@
 #define	_PATH_HELP		"/usr/share/games/larn/larn.help"
 #define	_PATH_LEVELS		"/usr/share/games/larn/larnmaze"
 #define	_PATH_FORTS		"/usr/share/games/larn/lfortune"
-#define	_PATH_PLAYERIDS		"/usr/share/games/larn/playerids"
+#define	_PATH_PLAYERIDS		"/var/games/larn/playerids"
