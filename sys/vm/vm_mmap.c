@@ -130,6 +130,7 @@ smmap(p, uap, retval)
 	vm_prot_t prot;
 	caddr_t handle;
 	int mtype, error;
+	int flags = uap->flags;
 
 #ifdef DEBUG
 	if (mmapdebug & MDB_FOLLOW)
@@ -140,7 +141,7 @@ smmap(p, uap, retval)
 	/*
 	 * Make sure one of the sharing types is specified
 	 */
-	mtype = uap->flags & MAP_TYPE;
+	mtype = flags & MAP_TYPE;
 	switch (mtype) {
 	case MAP_FILE:
 	case MAP_ANON:
@@ -153,7 +154,7 @@ smmap(p, uap, retval)
 	 * Size is implicitly rounded to a page boundary.
 	 */
 	addr = (vm_offset_t) uap->addr;
-	if ((uap->flags & MAP_FIXED) && (addr & page_mask) || uap->len < 0)
+	if ((flags & MAP_FIXED) && (addr & page_mask) || uap->len < 0)
 		return(EINVAL);
 	size = (vm_size_t) round_page(uap->len);
 	if ((uap->flags & MAP_FIXED) && (addr + size > VM_MAXUSER_ADDRESS))
@@ -165,7 +166,7 @@ smmap(p, uap, retval)
 	 * There should really be a pmap call to determine a reasonable
 	 * location.
 	 */
-	if (addr == 0 && (uap->flags & MAP_FIXED) == 0)
+	if (addr == 0 && (flags & MAP_FIXED) == 0)
 		addr = round_page(p->p_vmspace->vm_daddr + MAXDSIZ);
 	/*
 	 * Mapping file or named anonymous, get fp for validation
@@ -194,9 +195,11 @@ smmap(p, uap, retval)
 		 * if mapping is shared.
 		 */
 		if ((uap->prot & PROT_READ) && (fp->f_flag & FREAD) == 0 ||
-		    ((uap->flags & MAP_SHARED) &&
+		    ((flags & MAP_SHARED) &&
 		     (uap->prot & PROT_WRITE) && (fp->f_flag & FWRITE) == 0))
 			return(EACCES);
+		if ((flags & MAP_SHARED) && (fp->f_flag & FWRITE) == 0)
+			flags = (flags & ~MAP_SHARED) | MAP_PRIVATE;
 		handle = (caddr_t)vp;
 	} else if (uap->fd != -1)
 		handle = (caddr_t)fp;
@@ -214,7 +217,7 @@ smmap(p, uap, retval)
 		prot |= VM_PROT_EXECUTE;
 
 	error = vm_mmap(&p->p_vmspace->vm_map, &addr, size, prot,
-			uap->flags, handle, (vm_offset_t)uap->pos);
+			flags, handle, (vm_offset_t)uap->pos);
 	if (error == 0)
 		*retval = (int) addr;
 	return(error);
@@ -484,6 +487,13 @@ vm_mmap(map, addr, size, prot, flags, handle, foff)
 				vm_object_deallocate(object);
 			goto out;
 		}
+		/*
+		 * The object of unnamed anonymous regions was just created
+		 * find it for pager_cache.
+		 */
+		if (handle == NULL)
+			object = vm_object_lookup(pager);
+
 		/*
 		 * The object of unnamed anonymous regions was just created
 		 * find it for pager_cache.
