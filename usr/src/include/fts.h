@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fts.h	5.15 (Berkeley) %G%
+ *	@(#)fts.h	5.16 (Berkeley) %G%
  */
 
 #ifndef	_FTS_H_
@@ -17,7 +17,6 @@ typedef struct {
 	struct _ftsent **fts_array;	/* sort array */
 	dev_t rdev;			/* starting device # */
 	char *fts_path;			/* path for this descent */
-	int fts_dfd;			/* fd for directories */
 	int fts_rfd;			/* fd for root */
 	int fts_pathlen;		/* sizeof(path) */
 	int fts_nitems;			/* elements in the sort array */
