@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)init_main.c	7.44 (Berkeley) %G%
+ *	@(#)init_main.c	7.45 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -239,30 +239,33 @@ main()
 	 * make init process
 	 */
 	siginit(p);
-	if (fork(p, (void *) NULL, rval))
+	if (fork(p, NULL, rval))
 		panic("fork init");
 	if (rval[1]) {
-		static char initflags[] = "-sf";
-		char *ip = initflags + 1;
-		vm_offset_t addr = 0;
 		extern int icode[];		/* user init code */
 		extern int szicode;		/* size of icode */
+		static char initflags[] = "-sf";
+		vm_offset_t addr;
+		char *ip;
 
 		/*
-		 * Now in process 1.  Set init flags into icode,
-		 * get a minimal address space, copy out "icode",
-		 * and return to it to do an exec of init.
+		 * Now in process 1.  Set init flags into icode, get a minimal
+		 * address space, copy out "icode", and return to it to do an
+		 * exec of init.
 		 */
-		p = curproc;
-		initproc = p;
+		ip = initflags + 1;
 		if (boothowto&RB_SINGLE)
 			*ip++ = 's';
 #ifdef notyet
 		if (boothowto&RB_FASTBOOT)
 			*ip++ = 'f';
 #endif
+		if (ip == initflags + 1)
+			*ip++ = '-';
 		*ip++ = '\0';
 
+		addr = 0;
+		initproc = p = curproc;
 		if (vm_allocate(&p->p_vmspace->vm_map, &addr,
 		    round_page(szicode + sizeof(initflags)), FALSE) != 0 ||
 		    addr != 0)
@@ -274,15 +277,15 @@ main()
 		    PAGE_SIZE, FALSE) != KERN_SUCCESS)
 			panic("vm_allocate init stack");
 		p->p_vmspace->vm_maxsaddr = (caddr_t)addr;
-		(void) copyout((caddr_t)icode, (caddr_t)0, (unsigned)szicode);
-		(void) copyout(initflags, (caddr_t)szicode, sizeof(initflags));
+		(void)copyout((caddr_t)icode, (caddr_t)0, (u_int)szicode);
+		(void)copyout(initflags, (caddr_t)szicode, sizeof(initflags));
 		return;			/* returns to icode */
 	}
 
 	/*
 	 * Start up pageout daemon (process 2).
 	 */
-	if (fork(p, (void *) NULL, rval))
+	if (fork(p, NULL, rval))
 		panic("fork pager");
 	if (rval[1]) {
 		/*
