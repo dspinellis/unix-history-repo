@@ -1,4 +1,4 @@
-/*	ut.c	6.2	84/08/29	*/
+/*	ut.c	6.3	84/11/27	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -237,6 +237,7 @@ utstrategy(bp)
 	 */
 	dp = &tjutab[tjunit];
 	bp->av_forw = NULL;
+	um = tjdinfo[tjunit]->ui_mi;
 	(void) spl5();
 	if (dp->b_actf == NULL) {
 		dp->b_actf = bp;
@@ -245,7 +246,6 @@ utstrategy(bp)
 		 * put at end of controller queue
 		 */
 		dp->b_forw = NULL;
-		um = tjdinfo[tjunit]->ui_mi;
 		if (um->um_tab.b_actf == NULL)
 			um->um_tab.b_actf = dp;
 		else
