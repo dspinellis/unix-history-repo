@@ -1,7 +1,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)lextab.l	4.3	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lextab.l	4.4	(Berkeley)	%G%";
 #endif not lint
 
 #include "y.tab.h"
@@ -20,7 +20,6 @@ static char sccsid[] = "@(#)lextab.l	4.3	(Berkeley)	%G%";
 		}			\
 	}
 
-extern char *malloc();
 extern int yylval;
 #define xxbpmax	1700
 char xxbuf[xxbpmax + 2];

@@ -15,13 +15,12 @@
 
 %{
 #ifndef lint
-static char sccsid[] = "@(#)beauty.y	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)beauty.y	4.3	(Berkeley)	%G%";
 #endif not lint
 
 #include "b.h"
 #include <stdio.h>
 
-extern char *malloc();
 extern struct node *checkneg(), *addroot();
 %}
 
