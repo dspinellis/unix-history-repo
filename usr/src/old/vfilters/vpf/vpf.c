@@ -94,25 +94,21 @@ send()
 {
 	lineno = 0;
 	while (getline()) {
-		if (varian && lineno >= length) {
+		if (varian && !literal && lineno >= length) {
 			putline(1);
 			lineno = 0;
-		} else {
+		} else
 			putline(0);
-			if (literal)	/* Don't make page breaks if -l. */
-				lineno = 1;
-			else
-				lineno++;
-		}
 	}
-	if (varian && lineno)
+	if (varian && lineno) {
 		putchar('\f');	/* be sure to end on a page boundary */
+		npages++;
+	}
 	/*
 	 * Put out an extra null to ensure varian will get an even
 	 * number of good characters.
 	 */
 	putchar('\0');
-	npages += (lineno + length - 1) / length;
 }
 
 getline()
@@ -189,11 +185,13 @@ getline()
 
 	case '\f':
 		/* Fall through, treating a ff as a line break, too... */
-		lineno = length;
+		lineno = length - 1;
 	case '\n':
 		if (maxcol > width)
 			maxcol = width;
 		linebuf[maxcol] = '\0';
+		if (++lineno % length == 0)
+			npages++;
 		return(1);
 
 	case '\b':
@@ -226,10 +224,9 @@ int ff;
 		fflush(stdout);
 		ioctl(1, VSETSTATE, prtmode);
 	}
-	if (ff) {
+	if (ff)
 		putchar('\f');
-		npages++;
-	} else if (ov == 0)
+	else if (ov == 0)
 		putchar('\n');
 	if (ferror(stdout))
 		exit(1);
