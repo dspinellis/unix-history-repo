@@ -1,15 +1,12 @@
-/*	if_imp.c	4.25	82/04/11	*/
+/*	if_imp.c	4.26	82/04/24	*/
 
 #include "imp.h"
 #if NIMP > 0
 /*
- * ARPAnet IMP interface driver.
+ * ARPANET IMP interface driver.
  *
  * The IMP-host protocol is handled here, leaving
  * hardware specifics to the lower level interface driver.
- *
- * TODO:
- *	pass more error indications up to protocol modules
  */
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -204,10 +201,10 @@ COUNT(IMPINPUT);
 		 */
 		if (sc->imp_state != IMPS_INIT) {
 			impmsg(sc, "leader error");
-			hostreset(sc->imp_if.if_net);	/* XXX */
+			hostreset(sc->imp_if.if_net);
 			impnoops(sc);
 		}
-		goto rawlinkin;
+		goto drop;
 
 	/*
 	 * IMP going down.  Print message, and if not immediate,
@@ -221,7 +218,7 @@ COUNT(IMPINPUT);
 		}
 		impmsg(sc, "going down %s",
 			(u_int)impmessage[ip->il_link&IMP_DMASK]);
-		goto rawlinkin;
+		goto drop;
 
 	/*
 	 * A NOP usually seen during the initialization sequence.
@@ -251,34 +248,24 @@ COUNT(IMPINPUT);
 		goto drop;
 
 	/*
-	 * RFNM or INCOMPLETE message, record in
-	 * host table and prime output routine.
-	 *
-	 * SHOULD NOTIFY PROTOCOL ABOUT INCOMPLETES.
+	 * RFNM or INCOMPLETE message, send next
+	 * message on the q.  We could pass incomplete's
+	 * up to the next level, but this currently isn't
+	 * needed.
 	 */
 	case IMPTYPE_RFNM:
 	case IMPTYPE_INCOMPLETE:
-		if (hp && hp->h_rfnm)
-			if (next = hostdeque(hp))
-				(void) impsnd(&sc->imp_if, next);
+		if (hp && hp->h_rfnm && (next = hostdeque(hp)))
+			(void) impsnd(&sc->imp_if, next);
 		goto drop;
 
 	/*
 	 * Host or IMP can't be reached.  Flush any packets
 	 * awaiting transmission and release the host structure.
-	 *
-	 * TODO: NOTIFY THE PROTOCOL
 	 */
 	case IMPTYPE_HOSTDEAD:
-		impmsg(sc, "host dead");	/* XXX */
-		goto common;			/* XXX */
-
-	/* SHOULD SIGNAL ROUTING DAEMON */
 	case IMPTYPE_HOSTUNREACH:
-		impmsg(sc, "host unreachable");	/* XXX */
-	common:
-		if (hp)
-			hostfree(hp);		/* won't work right */
+		impnotify(ip->il_mtype, ip, hp);
 		goto rawlinkin;
 
 	/*
@@ -290,7 +277,7 @@ COUNT(IMPINPUT);
 		if (hp)
 			hp->h_rfnm = 0;
 		impnoops(sc);
-		goto rawlinkin;
+		goto drop;
 
 	/*
 	 * Interface reset.
@@ -298,11 +285,11 @@ COUNT(IMPINPUT);
 	case IMPTYPE_RESET:
 		impmsg(sc, "interface reset");
 		impnoops(sc);
-		goto rawlinkin;
+		goto drop;
 
 	default:
 		sc->imp_if.if_collisions++;		/* XXX */
-		goto rawlinkin;
+		goto drop;
 	}
 
 	/*
@@ -353,9 +340,8 @@ impdown(sc)
 {
 
 	sc->imp_state = IMPS_DOWN;
-	sc->imp_if.if_flags &= ~IFF_UP;
 	impmsg(sc, "marked down");
-	/* notify protocols with messages waiting? */
+	if_down(&sc->imp_if);
 }
 
 /*VARARGS*/
@@ -368,6 +354,32 @@ impmsg(sc, fmt, a1, a2)
 	printf("imp%d: ", sc->imp_if.if_unit);
 	printf(fmt, a1, a2);
 	printf("\n");
+}
+
+/*
+ * Process an IMP "error" message, passing this
+ * up to the higher level protocol.
+ */
+impnotify(what, cp, hp)
+	int what;
+	struct control_leader *cp;
+	struct host *hp;
+{
+	struct in_addr in;
+
+#ifdef notdef
+	in.s_net = cp->dl_network;
+#else
+	in.s_net = 10;
+#endif
+	in.s_host = cp->dl_host;
+	in.s_imp = cp->dl_imp;
+	if (cp->dl_link != IMPLINK_IP)
+		raw_ctlinput(what, (caddr_t)&in);
+	else
+		ip_ctlinput(what, (caddr_t)&in);
+	if (hp)
+		hostfree(hp);
 }
 
 /*
@@ -451,10 +463,6 @@ COUNT(IMPOUTPUT);
 	imp->il_flags = imp->il_htype = imp->il_subtype = 0;
 
 leaderexists:
-	/*
-	 * Hand message to impsnd to perform RFNM counting
-	 * and eventual transmission.
-	 */
 	return (impsnd(ifp, m));
 drop:
 	m_freem(m0);
@@ -561,42 +569,4 @@ COUNT(IMPNOOPS);
 	if (sc->imp_cb.ic_oactive == 0)
 		(*sc->imp_cb.ic_start)(sc->imp_if.if_unit);
 }
-
-#ifdef IMPLEADERS
-printleader(routine, ip)
-	char *routine;
-	register struct imp_leader *ip;
-{
-	printf("%s: ", routine);
-	printbyte((char *)ip, 12);
-	printf("<fmt=%x,net=%x,flags=%x,mtype=", ip->il_format, ip->il_network,
-		ip->il_flags);
-	if (ip->il_mtype <= IMPTYPE_READY)
-		printf("%s,", impleaders[ip->il_mtype]);
-	else
-		printf("%x,", ip->il_mtype);
-	printf("htype=%x,host=%x,imp=%x,link=", ip->il_htype, ip->il_host,
-		ntohs(ip->il_imp));
-	if (ip->il_link == IMPLINK_IP)
-		printf("ip,");
-	else
-		printf("%x,", ip->il_link);
-	printf("subtype=%x,len=%x>\n",ip->il_subtype,ntohs(ip->il_length)>>3);
-}
-
-printbyte(cp, n)
-	register char *cp;
-	int n;
-{
-	register i, j, c;
-
-	for (i=0; i<n; i++) {
-		c = *cp++;
-		for (j=0; j<2; j++)
-			putchar("0123456789abcdef"[(c>>((1-j)*4))&0xf]);
-		putchar(' ');
-	}
-	putchar('\n');
-}
-#endif
 #endif

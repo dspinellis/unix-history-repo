@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.23	82/04/04	*/
+/*	tcp_subr.c	4.24	82/04/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -192,6 +192,12 @@ COUNT(TCP_DROP);
 	tcp_close(tp);
 }
 
+tcp_abort(inp)
+	struct inpcb *inp;
+{
+	tcp_close(inp->inp_ppcb);
+}
+
 /*
  * Close a TCP control block:
  *	discard all space held by the tcp
@@ -227,10 +233,9 @@ tcp_drain()
 COUNT(TCP_DRAIN);
 }
 
-tcp_ctlinput(m)
-	struct mbuf *m;
+tcp_ctlinput(cmd, arg)
+	int cmd;
+	caddr_t arg;
 {
-
 COUNT(TCP_CTLINPUT);
-	m_freem(m);
 }

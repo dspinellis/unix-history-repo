@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.25	82/04/10	*/
+/*	in_pcb.c	4.26	82/04/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -86,7 +86,7 @@ COUNT(IN_PCBATTACH);
 #endif
 			/* GROSS */
 			if (aport < IPPORT_RESERVED && u.u_uid != 0)
-				return (EPERM);
+				return (EACCES);
 			if ((so->so_proto->pr_flags & PR_CONNREQUIRED) == 0 ||
 			    (so->so_options & SO_ACCEPTCONN) == 0)
 				wild = INPLOOKUP_WILDCARD;
@@ -146,9 +146,15 @@ COUNT(IN_PCBCONNECT);
 	if (inp->inp_laddr.s_addr == 0) {
 		ifp = if_ifonnetof(sin->sin_addr.s_net);
 		if (ifp == 0) {
+			/*
+			 * We should select the interface based on
+			 * the route to be used, but for udp this would
+			 * result in two calls to rtalloc for each packet
+			 * sent; hardly worthwhile...
+			 */
 			ifp = if_ifwithaf(AF_INET);
 			if (ifp == 0)
-				return (EADDRNOTAVAIL);		/* XXX */
+				return (EADDRNOTAVAIL);
 		}
 		ifaddr = (struct sockaddr_in *)&ifp->if_addr;
 	}
@@ -182,6 +188,7 @@ in_pcbdetach(inp)
 {
 	struct socket *so = inp->inp_socket;
 
+COUNT(IN_PCBDETACH);
 	so->so_pcb = 0;
 	sofree(so);
 	if (inp->inp_route.ro_rt)
@@ -194,12 +201,44 @@ in_setsockaddr(sin, inp)
 	register struct sockaddr_in *sin;
 	register struct inpcb *inp;
 {
+COUNT(IN_SETSOCKADDR);
 	if (sin == 0 || inp == 0)
 		panic("setsockaddr_in");
 	bzero((caddr_t)sin, sizeof (*sin));
 	sin->sin_family = AF_INET;
 	sin->sin_port = inp->inp_lport;
 	sin->sin_addr = inp->inp_laddr;
+}
+
+/*
+ * Pass an error to all internet connections
+ * associated with address sin.  Call the
+ * protocol specific routine to clean up the
+ * mess afterwards.
+ */
+in_pcbnotify(head, dst, errno, abort)
+	struct inpcb *head;
+	register struct in_addr *dst;
+	int errno, (*abort)();
+{
+	register struct inpcb *inp, *oinp;
+	int s = splimp();
+
+COUNT(INP_PCBNOTIFY);
+	for (inp = head->inp_next; inp != head;) {
+		if (inp->inp_faddr.s_addr != dst->s_addr) {
+	next:
+			inp = inp->inp_next;
+			continue;
+		}
+		if (inp->inp_socket == 0)
+			goto next;
+		inp->inp_socket->so_error = errno;
+		oinp = inp;
+		inp = inp->inp_next;
+		(*abort)(oinp);
+	}
+	splx(s);
 }
 
 /*

@@ -1,8 +1,9 @@
-/*	if.c	4.13	82/03/30	*/
+/*	if.c	4.14	82/04/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/socket.h"
+#include "../h/protosw.h"
 #include "../net/in.h"
 #include "../net/in_systm.h"
 #include "../net/if.h"
@@ -132,6 +133,17 @@ if_ifwithaf(af)
 		if (ifp->if_addr.sa_family == af)
 			break;
 	return (ifp);
+}
+
+/*
+ * Mark an interface down and notify protocols of
+ * the transition.
+ */
+if_down(ifp)
+	register struct ifnet *ifp;
+{
+	ifp->if_flags &= ~IFF_UP;
+	pfctlinput(PRC_IFDOWN, (caddr_t)&ifp->if_addr);
 }
 
 /*
