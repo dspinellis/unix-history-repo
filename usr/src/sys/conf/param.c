@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)param.c	7.10 (Berkeley) %G%
+ *	@(#)param.c	7.11 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -84,3 +84,28 @@ struct	cblock *cfree;
 struct	buf *buf, *swbuf;
 char	*buffers;
 struct	cmap *cmap, *ecmap;
+
+/*
+ * Proc/pgrp hashing.
+ * Here so that hash table sizes can depend on MAXUSERS/NPROC.
+ * Hash size must be a power of two.
+ * NOW omission of this file will cause loader errors!
+ */
+
+#if NPROC > 1024
+#define	PIDHSZ		512
+#else
+#if NPROC > 512
+#define	PIDHSZ		256
+#else
+#if NPROC > 256
+#define	PIDHSZ		128
+#else
+#define	PIDHSZ		64
+#endif
+#endif
+#endif
+
+struct	proc *pidhash[PIDHSZ];
+struct	pgrp *pgrphash[PIDHSZ];
+int	pidhashmask = PIDHSZ - 1;
