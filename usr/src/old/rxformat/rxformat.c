@@ -1,14 +1,14 @@
-/*	rxformat.c	4.3	83/05/08	*/
+/*	rxformat.c	4.4	83/06/02	*/
 
 #include <stdio.h>
 #include <sys/file.h>
 #include <errno.h>
-#include "/sys/vaxuba/rxreg.h"
+#include <vaxuba/rxreg.h>
 
 char devname[] = "/dev/rrx?a";
 
 /*
- * format floppy disks on RX02
+ * Format RX02 floppy disks.
  */
 
 main(argc, argv)
@@ -26,7 +26,7 @@ main(argc, argv)
 		filarg++;
 	}
 	devname[8] = argv[filarg][7];
-	if ((fd = open(devname, FRDWR, 0600)) < NULL) {
+	if ((fd = open(devname, O_RDWR)) < NULL) {
 		perror(devname);
 		exit (0);
 	}
@@ -38,8 +38,8 @@ main(argc, argv)
 	if (getchar() != 'y')
 		exit (0);
 	/* 
-	 * change the ioctl command when dkio.h has
-	 * been finished
+	 * Change the ioctl command when dkio.h has
+	 * been finished.
 	 */
 	if (ioctl(fd, RXIOC_FORMAT, &idens) != NULL)
 		perror(devname);
