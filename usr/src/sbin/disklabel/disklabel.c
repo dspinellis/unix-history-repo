@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)disklabel.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.9 (Berkeley) %G%";
 /* from static char sccsid[] = "@(#)disklabel.c	1.2 (Symmetric) 11/28/85"; */
 #endif
 
@@ -52,20 +52,21 @@ static char sccsid[] = "@(#)disklabel.c	5.8 (Berkeley) %G%";
 #define	DEFEDITOR	"/usr/ucb/vi"
 #define	streq(a,b)	(strcmp(a,b) == 0)
 
-char	*dkname;
 #ifdef BOOT
 char	*xxboot;
 char	*bootxx;
 #endif
+
+char	*dkname;
 char	*specname;
 char	tmpfil[] = "/tmp/EdDk.aXXXXXX";
 char	*sprintf();
 
 extern	int errno;
 char	namebuf[BBSIZE], *np = namebuf;
-char	bootarea[BBSIZE];
 struct	disklabel lab;
-struct	disklabel *readlabel(), *getbootarea();
+struct	disklabel *readlabel(), *makebootarea();
+char	bootarea[BBSIZE];
 
 enum	{ READ, WRITE, EDIT, RESTORE } op = READ;
 
@@ -124,14 +125,14 @@ main(argc, argv)
 	case EDIT:
 		if (argc != 1)
 			usage();
-		lp = readlabel(f, bootarea);
+		lp = readlabel(f, rflag);
 		if (edit(lp))
 			writelabel(f, bootarea, lp);
 		break;
 	case READ:
 		if (argc != 1)
 			usage();
-		lp = readlabel(f, (char *)0);
+		lp = readlabel(f, 0);
 		display(stdout, lp);
 		(void) checklabel(lp);
 		break;
@@ -140,15 +141,13 @@ main(argc, argv)
 		if (argc == 4) {
 			xxboot = argv[2];
 			bootxx = argv[3];
-		}
-		else
-#else
+		} else
+#endif
 		if (argc != 2)
 			usage();
-#endif
 		lab.d_secsize = DEV_BSIZE;			/* XXX */
 		lab.d_bbsize = BBSIZE;				/* XXX */
-		lp = getbootarea(bootarea, &lab);
+		lp = makebootarea(bootarea, &lab);
 		if (!(t = fopen(argv[1],"r")))
 			Perror(argv[1]);
 #ifdef BOOT
@@ -173,7 +172,7 @@ main(argc, argv)
 		if (argc > 2)
 			name = argv[--argc];
 		makelabel(type, name, &lab);
-		lp = getbootarea(bootarea, &lab);
+		lp = makebootarea(bootarea, &lab);
 		*lp = lab;
 #ifdef BOOT
 		rflag = 1;		/* force bootstrap to be written */
@@ -213,8 +212,8 @@ writelabel(f, boot, lp)
 	lp->d_magic2 = DISKMAGIC;
 	lp->d_checksum = 0;
 	lp->d_checksum = dkcksum(lp);
-	(void)lseek(f, (off_t)0, L_SET);
 	if (rflag) {
+		(void)lseek(f, (off_t)0, L_SET);
 		if (write(f, boot, lp->d_bbsize) < lp->d_bbsize)
 			Perror("write");
 		if (ioctl(f, DIOCSDINFO, lp) < 0)
@@ -240,38 +239,33 @@ writelabel(f, boot, lp)
 }
 
 /*
- * Read disklabel from disk.
- * If boot is given, need bootstrap too.
- * If boot not needed, use ioctl to get label
- * unless -r flag is given.
+ * Fetch disklabel for disk.
+ * If needboot is given, need bootstrap too.
+ * Use ioctl to get label unless -r flag is given.
  */
 struct disklabel *
-readlabel(f, boot)
-	int f;
-	char *boot;
+readlabel(f, needboot)
+	int f, needboot;
 {
 	register struct disklabel *lp;
-	register char *buf;
 
-	if (boot)
-		buf = boot;
-	else
-		buf = bootarea;
-	lp = (struct disklabel *)(buf + LABELOFFSET);
-	if (boot || rflag)
-		if (read(f, buf, BBSIZE) < BBSIZE)
+	if (needboot || rflag) {
+		lp = (struct disklabel *)(bootarea + LABELOFFSET);
+		if (read(f, bootarea, BBSIZE) < BBSIZE)
 			Perror(specname);
+	} else
+		lp = &lab;
 	if (rflag == 0) {
 		if (ioctl(f, DIOCGDINFO, lp) < 0)
 			Perror("ioctl DIOCGDINFO");
 	} else {
-		for (lp = (struct disklabel *)buf;
-		    lp <= (struct disklabel *)(buf + BBSIZE - sizeof(*lp));
+		for (lp = (struct disklabel *)bootarea;
+		    lp <= (struct disklabel *)(bootarea + BBSIZE - sizeof(*lp));
 		    lp = (struct disklabel *)((char *)lp + 16))
 			if (lp->d_magic == DISKMAGIC &&
 			    lp->d_magic2 == DISKMAGIC)
 				break;
-		if (lp > (struct disklabel *)(buf + BBSIZE - sizeof(*lp)) ||
+		if (lp > (struct disklabel *)(bootarea+BBSIZE-sizeof(*lp)) ||
 		    lp->d_magic != DISKMAGIC || lp->d_magic2 != DISKMAGIC ||
 		    dkcksum(lp) != 0) {
 			fprintf(stderr,
@@ -283,14 +277,13 @@ readlabel(f, boot)
 }
 
 struct disklabel *
-getbootarea(boot, dp)
+makebootarea(boot, dp)
 	char *boot;
 	register struct disklabel *dp;
 {
 	struct disklabel *lp;
 	register char *p;
 	int b;
-
 #ifdef BOOT
 	char	*dkbasename;
 
@@ -925,7 +918,7 @@ Perror(str)
 usage()
 {
 #ifdef BOOT
-	fprintf(stderr, "%-64s%s\n%-64s%s\n%-64s%s\n%-64s%s\n",
+	fprintf(stderr, "%-62s%s\n%-62s%s\n%-62s%s\n%-62s%s\n",
 "usage: disklabel [-r] disk", "(to read label)",
 "or disklabel -w [-r] disk type [ packid ] [ xxboot bootxx ]", "(to write label)",
 "or disklabel -e [-r] disk", "(to edit label)",
