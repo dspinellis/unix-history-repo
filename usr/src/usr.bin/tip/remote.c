@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)remote.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)remote.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 # include "tip.h"
@@ -37,6 +37,17 @@ getremcap(host)
 	register char **p, ***q;
 
 	if ((stat = rgetent(tbuf, host)) <= 0) {
+		if (DV ||
+		    host[0] == '/' && access(DV = host, R_OK | W_OK) == 0) {
+			CU = DV;
+			HO = host;
+			HW = 1;
+			DU = 0;
+			if (!BR)
+				BR = DEFBR;
+			FS = DEFFS;
+			return;
+		}
 		fprintf(stderr, stat == 0 ?
 			"tip: unknown host %s\n" :
 			"tip: can't open host description file\n", host);
