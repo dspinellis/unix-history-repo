@@ -1,35 +1,42 @@
-/*
- * Copyright (c) 1988 Regents of the University of California.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * This code is derived from software contributed to Berkeley by
+ * Chris Torek.
+ *
+ * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strncpy.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)strncpy.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
+#include <string.h>
+#include <sys/stdc.h>
+
+/*
+ * Copy src to dst, truncating or null-padding to always copy n bytes.
+ * Return dst.
+ */
 char *
-strncpy(to, from, cnt)
-	register char *to, *from;
-	register int cnt;
+strncpy(dst, src, n)
+	char *dst;
+	const char *src;
+	register size_t n;
 {
-	char *save = to;
+	if (n != 0) {
+		register char *d = dst;
+		register const char *s = src;
 
-	for (; cnt && (*to = *from); --cnt, ++from, ++to)
-		;
-	if (cnt)
-		bzero(to, cnt);
-
-	return (save);
+		do {
+			if ((*d++ = *s++) == 0) {
+				/* NUL pad the remaining n-1 bytes */
+				while (--n != 0)
+					*d++ = 0;
+				break;
+			}
+		} while (--n != 0);
+	}
+	return (dst);
 }
