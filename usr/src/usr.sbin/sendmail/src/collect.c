@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.59		%G%);
+SCCSID(@(#)collect.c	3.60		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -151,15 +151,6 @@ maketemp(from)
 		/* check for transparent dot */
 		if (OpMode == MD_SMTP && !IgnrDot && bp[0] == '.' && bp[1] == '.')
 			bp++;
-
-# ifndef NOTUNIX
-		/* Hide UNIX-like From lines */
-		if (strncmp(bp, "From ", 5) == 0)
-		{
-			fputs(">", tf);
-			CurEnv->e_msgsize++;
-		}
-# endif NOTUNIX
 
 		/*
 		**  Figure message length, output the line to the temp
