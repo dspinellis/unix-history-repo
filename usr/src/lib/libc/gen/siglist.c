@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)siglist.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)siglist.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <signal.h>
@@ -28,7 +28,7 @@ char	*sys_siglist[NSIG] = {
 	"Quit",				/* SIGQUIT */
 	"Illegal instruction",		/* SIGILL */
 	"Trace/BPT trap",		/* SIGTRAP */
-	"IOT trap",			/* SIGIOT */
+	"Abort trap",			/* SIGABRT */
 	"EMT trap",			/* SIGEMT */
 	"Floating point exception",	/* SIGFPE */
 	"Killed",			/* SIGKILL */
@@ -51,7 +51,7 @@ char	*sys_siglist[NSIG] = {
 	"Virtual timer expired",	/* SIGVTALRM */
 	"Profiling timer expired",	/* SIGPROF */
 	"Window size changes",		/* SIGWINCH */
-	"Signal 29",
+	"Information request",		/* SIGINFO */
 	"User defined signal 1",	/* SIGUSR1 */
 	"User defined signal 2"		/* SIGUSR2 */
 };
