@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_delete.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_delete.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -17,7 +17,7 @@ static char sccsid[] = "@(#)rec_delete.c	5.1 (Berkeley) %G%";
 #include <db.h>
 #include <stdio.h>
 #include <string.h>
-#include "../btree/btree.h"
+#include "recno.h"
 
 static int rec_rdelete __P((BTREE *, recno_t));
 
@@ -42,19 +42,26 @@ __rec_delete(dbp, key, flags)
 	recno_t nrec;
 	int status;
 
-	if ((nrec = *(recno_t *)key->data) == 0) {
-		errno = EINVAL;
-		return (RET_ERROR);
-	}
-	--nrec;
-
 	t = dbp->internal;
 	switch(flags) {
 	case 0:
+		if ((nrec = *(recno_t *)key->data) == 0) {
+			errno = EINVAL;
+			return (RET_ERROR);
+		}
+		if (nrec > t->bt_nrecs)
+			return (RET_SPECIAL);
+		--nrec;
 		status = rec_rdelete(t, nrec);
 		break;
 	case R_CURSOR:
-		status = rec_rdelete(t, t->bt_rcursor);
+		if (ISSET(t, BTF_DELCRSR))
+			return (RET_SPECIAL);
+		status = rec_rdelete(t, t->bt_rcursor - 1);
+		if (status == RET_SUCCESS) {
+			--t->bt_rcursor;
+			SET(t, BTF_DELCRSR);
+		}
 		break;
 	default:
 		errno = EINVAL;
@@ -84,34 +91,23 @@ rec_rdelete(t, nrec)
 	recno_t nrec;
 {
 	EPG *e;
-	EPGNO *parent;
 	PAGE *h;
-	int exact, status;
+	int status;
 
-	/* Find any matching record; __rec_search pins the page. */
-	e = __rec_search(t, nrec, &exact);
-	if (e == NULL || !exact) {
+	/* Find the record; __rec_search pins the page. */
+	if ((e = __rec_search(t, nrec, SDELETE)) == NULL) {
 		mpool_put(t->bt_mp, e->page, 0);
-		return (e == NULL ? RET_ERROR : RET_SPECIAL);
+		return (RET_ERROR);
 	}
 
 	/* Delete the record. */
 	h = e->page;
 	status = __rec_dleaf(t, h, e->index);
-	if (status == RET_SUCCESS)
-		mpool_put(t->bt_mp, h, MPOOL_DIRTY);
-	else {
+	if (status != RET_SUCCESS) {
 		mpool_put(t->bt_mp, h, 0);
 		return (status);
 	}
-
-	/* Decrement the count on all parent pages. */
-	while  ((parent = BT_POP(t)) != NULL) {
-		if ((h = mpool_get(t->bt_mp, parent->pgno, 0)) == NULL)
-			return (RET_ERROR);
-		--GETRINTERNAL(h, parent->index)->nrecs;
-		mpool_put(t->bt_mp, h, MPOOL_DIRTY);
-	}
+	mpool_put(t->bt_mp, h, MPOOL_DIRTY);
 	return (RET_SUCCESS);
 }
 
