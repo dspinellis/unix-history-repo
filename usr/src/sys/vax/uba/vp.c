@@ -1,4 +1,4 @@
-/*	vp.c	4.24	83/03/10	*/
+/*	vp.c	4.25	83/03/31	*/
 
 #include "vp.h"
 #if NVP > 0
@@ -246,10 +246,10 @@ vpstart(dev)
 }
 
 /*ARGSUSED*/
-vpioctl(dev, cmd, addr, flag)
+vpioctl(dev, cmd, data, flag)
 	dev_t dev;
 	int cmd;
-	register caddr_t addr;
+	register caddr_t data;
 	int flag;
 {
 	register int m;
@@ -260,15 +260,13 @@ vpioctl(dev, cmd, addr, flag)
 	switch (cmd) {
 
 	case VGETSTATE:
-		(void) suword(addr, sc->sc_state);
+		*(int *)data = sc->sc_state;
 		break;
 
 	case VSETSTATE:
-		m = fuword(addr);
-		if (m == -1)
-			return (EFAULT);
 		sc->sc_state =
-		    (sc->sc_state & ~VPSC_MODE) | (m&(VPSC_MODE|VPSC_CMNDS));
+		    (sc->sc_state & ~VPSC_MODE) |
+		    ((*(int *)data) & (VPSC_MODE|VPSC_CMNDS));
 		break;
 
 	default:
