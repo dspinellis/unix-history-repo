@@ -1,0 +1,77 @@
+#
+#  Aliases in this file will NOT be expanded in the header from
+#  Mail, but WILL be visible over networks or from /bin/mail.
+#
+#	>>>>>>>>>>	The program "newaliases" must be run after
+#	>> NOTE >>	this file is updated for any changes to
+#	>>>>>>>>>>	show through to sendmail.
+#
+
+# Basic system aliases -- these MUST be present
+MAILER-DAEMON:postmaster
+postmaster:root,eric
+
+# Aliases to handle mail to msgs and news
+msgs: "|/usr/ucb/msgs -s"
+
+bsd-bugs: root
+bsd-ideas: root
+wnj:wnj@UCBARPA
+layer:layer@UCBKIM
+termcap:/usr/src/etc/termcap/termcap.requests,layer,leres
+termcap-news: layer,leres,sam@UCBARPA,mckusick@UCBARPA
+ozalp:ozalp@UCBERNIE
+schmidt:schmidt@UCBERNIE
+sklower:sklower@UCBKIM
+aps:decvax!aps
+shannon:decvax!shannon
+tbl:vax135!tbl
+jfr:vax135!jfr
+dmr:research!dmr
+ken:research!ken
+mark:mark@UCBERNIE
+allmsgs:allmsgs@ucbvax
+csmsgs:csmsgs@ucbvax
+trouble:y:trouble,\trouble
+schmidt:schmidt@UCBERNIE
+presotto:presotto@UCBERNIE
+bart:bart@UCBERNIE
+fortune:arnold
+mark:mark@UCBERNIE
+feldman-test: "|/ra/csr/feldman/=mailer/qmail"
+rnews:"|/usr/local/uurec"
+laura:laura@UCBERNIE
+jkf:jkf@UCBKIM
+jfk:jkf@UCBKIM
+alonso:alonso@UCBERNIE
+dmu:dmu@UCBERNIE
+croft:croft@sri-unix
+jek:jekulp@mit-mc
+fateman:fateman@UCBERNIE
+glickman: glickman@UCBARPA
+mckusick: mckusick@UCBERNIE,\mckusick
+henry: rrh
+rrh: rrh@UCBERNIE,\rrh
+garrison: garrison@UCBERNIE, \garrison
+sam: sam@UCBARPA
+clemc: clemc@UCBCAD
+arnold: arnold@UCBINGRES
+peter: peter@UCBERNIE
+edward: edward@UCBARPA
+aigrain: aigrain@UCBERNIE
+pelegri: pelegri@UCBERNIE
+baden: baden@UCBKIM
+cggs: graham,rrh,peter,mckusick,aigrain,pelegri
+comay:comay@arpa
+graham: graham@UCBERNIE
+leres: leres@UCBARPA
+eric: eric@UCBARPA, \eric
+dlw: dlw@UCBJADE, \dlw
+pjw: pjw@UCBARPA
+kalash: kalash@UCBINGRES
+leres: leres@ucbarpa
+
+# aliases for sendmail testing.....
+tempfail: |/usr/src/usr.lib/sendmail/test/tempfail
+fail1: |/usr/src/usr.lib/sendmail/test/fail1
+fail2: |/usr/src/usr.lib/sendmail/test/fail2
