@@ -1,0 +1,51 @@
+From G:dlw  Fri May  8 10:07:35 1981
+To: e:dlw o:asa r:sklower v:ucsfcgl!tef
+Subject: libI77 error reporting bug fix
+
+There is a bug in the routine that displays external data on read errors.
+The essential fix is to move a ) on line 111.
+I've also caused such output to treat non-graphic chars in the traditional
+fashion (^I) since a very common error is for data files to include
+imbedded TABs.
+The following diff is for my current rev.
+	David
+
+-----
+May  8 09:57 1981  s.err.c: -r1.5 vs. -r1.6 Page 1
+
+
+108c108
+< 		while(i--) fputc(fgetc(curunit->ufd),stderr);
+---
+> 		while(i--) ffputc(fgetc(curunit->ufd),stderr);
+111c111
+< 	for(i=0;i<5 && (ch=fgetc(curunit->ufd)!=EOF);i++) fputc(ch,stderr);
+---
+> 	for(i=0;i<5 && (ch=fgetc(curunit->ufd))!=EOF;i++) ffputc(ch,stderr);
+119c119
+< 	while (ep<icptr) fputc(*ep++,stderr);
+---
+> 	while (ep<icptr) ffputc(*ep++,stderr);
+121c121
+< 	while (ep<(icptr+5) && ep<icend) fputc(*ep++,stderr);
+---
+> 	while (ep<(icptr+5) && ep<icend) ffputc(*ep++,stderr);
+139c139
+< 	{	fputc((*ep==GLITCH)?'"':*ep,stderr);
+---
+> 	{	ffputc((*ep==GLITCH)?'"':*ep,stderr);
+145a146,158
+> ffputc(c, f)
+> int	c;
+> FILE	*f;
+> {
+> 	c &= 0177;
+> 	if (c < ' ' || c == 0177)
+> 	{
+> 		fputc('^', f);
+> 		c ^= 0100;
+> 	}
+> 	fputc(c, f);
+> }
+> 
+
