@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.83 (Berkeley) %G%
+#	@(#)READ_ME	8.84 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -849,6 +849,20 @@ BIND 4.9.2 and Ultrix
 
 	during the link stage.
 
+strtoul
+	Some compilers (notably gcc) claim to be ANSI C but do not
+	include the ANSI-required routine "strtoul".  If your compiler
+	has this problem, you will get an error in srvrsmtp.c on the
+	code:
+
+	  # ifdef defined(__STDC__) && !defined(BROKEN_ANSI_LIBRARY)
+			e->e_msgsize = strtoul(vp, (char **) NULL, 10);
+	  # else
+			e->e_msgsize = strtol(vp, (char **) NULL, 10);
+	  # endif
+
+	You can use -DBROKEN_ANSI_LIBRARY to get around this problem.
+
 
 +--------------+
 | MANUAL PAGES |
@@ -949,4 +963,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.83, last update %G% 09:56:37)
+(Version 8.84, last update %G% 09:05:49)
