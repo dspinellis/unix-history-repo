@@ -1,11 +1,11 @@
-.\"	@(#)tt04	5.1 (Berkeley) %G%
+.\"	@(#)tt04	6.1 (Berkeley) %G%
 .\"
 .NH
 Indents and Line Lengths
 .PP
 .UL troff
 starts with a line length of 6.5 inches,
-too wide for 8\(12\(mu11 paper.
+which some people think is too wide for 8\(12\(mu11 paper.
 To reset the line length,
 use
 the
