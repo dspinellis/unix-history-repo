@@ -1,5 +1,5 @@
 # Makefile for f77 system lib, libU77.a
-#	@(#)makefile	1.12	%G%
+#	@(#)makefile	1.13	%G%
 
 DESTDIR =
 LIB = libU77.a
@@ -42,6 +42,7 @@ SOURCES = \
 	getpid_.c \
 	getuid_.c \
 	gmtime_.c \
+	hostnm_.c \
 	iargc_.c \
 	idate_.c \
 	ierrno_.c \
@@ -90,6 +91,7 @@ OBJECTS = \
 	getpid_.o \
 	getuid_.o \
 	gmtime_.o \
+	hostnm_.o \
 	iargc_.o \
 	idate_.o \
 	ierrno_.o \
