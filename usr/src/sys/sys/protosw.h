@@ -1,4 +1,4 @@
-/*	protosw.h	4.5	81/11/18	*/
+/*	protosw.h	4.6	81/11/26	*/
 
 /*
  * Protocol switch table.
@@ -45,10 +45,11 @@ struct protosw {
 /* utility hooks */
 	int	(*pr_init)();		/* initialization hook */
 	int	(*pr_fasttimo)();	/* fast timeout (100ms) */
-	int	(*pr_slowtimo)();	/* slow timeout (1 sec) */
+	int	(*pr_slowtimo)();	/* slow timeout (500ms) */
 	int	(*pr_drain)();		/* flush any excess space possible */
 };
 
+#define	PR_SLOWHZ	2		/* 2 slow timeouts per second */
 /*
  * Values for pr_flags
  */

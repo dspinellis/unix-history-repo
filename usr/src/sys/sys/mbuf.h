@@ -1,9 +1,8 @@
-/* mbuf.h 4.5 81/11/18 */
+/* mbuf.h 4.6 81/11/26 */
 
 /*
  * Constants related to memory allocator.
  */
-#define	PGSIZE		1024
 #define	MSIZE		128			/* size of an mbuf */
 #define	MMINOFF		12			/* mbuf header length */
 #define	MTAIL		4
@@ -17,13 +16,14 @@
  * CONSTANTS HERE ARE A CROCK
  */
 
-/* network page map number to virtual address, and back */
-#define	pftom(x) ((struct mbuf *)((x << 10) + (int)mbutl))
-#define	mtopf(x) ((((int)x & ~0x3ff) - (int)mbutl) >> 10)
+/* network cluster number to virtual address, and back */
+#define	cltom(x) ((struct mbuf *)((int)mbutl + ((x) << CLSHIFT)))
+#define	mtocl(x) (((int)x - (int)mbutl) >> CLSHIFT)
 
 /* address in mbuf to mbuf head */
-#define	dtom(x)		((struct mbuf *)((int)x & ~0x7f))
-#define	mtoff(x) 	(((int)x & 0x3ff) >> 7)
+#define	dtom(x)		((struct mbuf *)((int)x & ~(MSIZE-1)))
+
+/* mbuf head, to typed data */
 #define	mtod(x,t)	((t)((int)(x) + (x)->m_off))
 
 struct mbuf {
@@ -44,22 +44,21 @@ struct mbuf {
 	  else \
 		(m) = m_more(i); \
 	  splx(ms); }
-#define	MPGET(m, i) \
+#define	MCLGET(m, i) \
 	{ int ms = splimp(); \
-	  if ((m)=mpfree) \
-	      { ++mprefcnt[mtopf(m)]; nmpfree--; mpfree = (m)->m_next; } \
+	  if ((m)=mclfree) \
+	      { ++mclrefcnt[mtocl(m)]; nmclfree--; mclfree = (m)->m_next; } \
 	  splx(ms); }
 #define	MFREE(m, n) \
 	{ int ms = splimp(); \
 	  if ((m)->m_off > MSIZE) { \
 		(n) = (struct mbuf *)(mtod(m, int)&~0x3ff); \
-		if (--mprefcnt[mtopf(n)] == 0) \
-		    { (n)->m_next = mpfree; mpfree = (n); nmpfree++; } \
+		if (--mclrefcnt[mtocl(n)] == 0) \
+		    { (n)->m_next = mclfree; mclfree = (n); nmclfree++; } \
 	  } \
 	  (n) = (m)->m_next; (m)->m_next = mfree; \
 	  (m)->m_off = 0; (m)->m_act = 0; mfree = (m); mbstat.m_bufs++; \
 	  splx(ms); }
-#define	NMBPG (PGSIZE/MSIZE)		/* mbufs/page */
 
 struct mbstat {
 	short	m_bufs;			/* # free msg buffers */
@@ -74,8 +73,8 @@ extern	struct mbuf mbutl[];		/* virtual address of net free mem */
 extern	struct pte Mbmap[];		/* page tables to map Netutl */
 struct	mbstat mbstat;
 int	nmbpages;
-struct	mbuf *mfree, *mpfree;
-int	nmpfree;
-char	mprefcnt[NMBPAGES];
+struct	mbuf *mfree, *mclfree;
+int	nmclfree;
+char	mclrefcnt[NMBPAGES];
 struct	mbuf *m_get(), *m_getclr(), *m_free(), *m_more(), *m_copy();
 #endif

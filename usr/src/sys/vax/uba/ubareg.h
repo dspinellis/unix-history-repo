@@ -1,4 +1,4 @@
-/*	ubareg.h	4.23	81/10/29	*/
+/*	ubareg.h	4.24	81/11/26	*/
 
 /*
  * VAX UNIBUS adapter registers
@@ -89,6 +89,38 @@ struct uba_regs
     ((uba)->uba_dpr[bdp] |= (UBADPR_PURGE|UBADPR_NXM|UBADPR_UCE))
 #endif VAX750
  
+/*
+ * Macros for fast buffered data path purging in time-critical routines.
+ *
+ * Too bad C pre-processor doesn't have the power of LISP in macro
+ * expansion...
+ */
+#if defined(VAX780) && defined(VAX750)
+#define	UBAPURGE(uba, bdp) { \
+	switch (cpu) { \
+	case VAX_780: UBA_PURGE780(uba, bdp); break; \
+	case VAX_750: UBA_PURGE750(uba, bdp); break; \
+	} \
+}
+#endif
+#if defined(VAX780) && !defined(VAX750)
+#define	UBAPURGE(uba, bdp) { \
+	if (cpu==VAX_780) {
+		UBA_PURGE780(uba, bdp); break; \
+	} \
+}
+#endif
+#if !defined(VAX780) && defined(VAX750)
+#define	UBAPURGE(uba, bdp) { \
+	if (cpu==VAX_750) {
+		UBA_PURGE750(uba, bdp); break; \
+	} \
+}
+#endif
+#if !defined(VAX780) && !defined(VAX750)
+#define	IF_UBAPURGE(uba, bdp)
+#endif
+
 /* uba_mr[] */
 #define	UBAMR_MRV	0x80000000	/* map register valid */
 #define	UBAMR_BO	0x02000000	/* byte offset bit */

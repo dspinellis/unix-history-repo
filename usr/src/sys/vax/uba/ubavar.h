@@ -1,4 +1,4 @@
-/*	ubavar.h	4.22	81/11/20	*/
+/*	ubavar.h	4.23	81/11/26	*/
 
 /*
  * This file contains definitions related to the kernel structures
@@ -141,6 +141,14 @@ struct uba_driver {
 #define	UBA_CANTWAIT	0x02		/* don't block me */
 #define	UBA_NEED16	0x04		/* need 16 bit addresses only */
 #define	UBA_HAVEBDP	0x08		/* use bdp specified in high bits */
+
+/*
+ * Macros to bust return word from map allocation routines.
+ */
+#define	UBAI_BDP(i)	((int)(((unsigned)(i))>>28))
+#define	UBAI_NMR(i)	((int)((i)>>18)&0x3ff)
+#define	UBAI_MR(i)	((int)((i)>>9)&0x1ff)
+#define	UBAI_BOFF(i)	((int)((i)&0x1ff))
 
 #ifndef LOCORE
 #ifdef KERNEL

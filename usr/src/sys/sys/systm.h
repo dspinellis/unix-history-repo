@@ -1,4 +1,4 @@
-/*	systm.h	4.21	81/11/20	*/
+/*	systm.h	4.22	81/11/26	*/
 
 /*
  * Random set of variables
@@ -90,3 +90,5 @@ int	selwait;
 /* casts to keep lint happy */
 #define	insque(q,p)	_insque((caddr_t)q,(caddr_t)p)
 #define	remque(q)	_remque((caddr_t)q)
+#define	queue(q,p)	_queue((caddr_t)q,(caddr_t)p)
+#define	dequeue(q)	_dequeue((caddr_t)q)
