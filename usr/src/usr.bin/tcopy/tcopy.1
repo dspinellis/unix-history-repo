@@ -1,0 +1,29 @@
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)tcopy.1	6.1 (Berkeley) %G%
+.\"
+.TH TCOPY 1 ""
+.UC 6
+.SH NAME
+tcopy \- copy a mag tape
+.SH SYNOPSIS
+.B tcopy src
+[
+.B dest
+]
+.br
+.SH DESCRIPTION
+.I Tcopy
+is designed to copy magnetic tapes.  The only assumption made about
+the tape is that there are two tape marks at the end.
+.I Tcopy
+with only a source tape specified will print information about the
+sizes of records and tape files.  If a destination is specified,
+then, a copy will be made of the source tape.  The blocking on the
+destination tape will be identical to that used on the source tape.
+Copying a tape will yield the same output as if just printing the
+sizes.
+.SH "SEE ALSO"
+mtio(4)
