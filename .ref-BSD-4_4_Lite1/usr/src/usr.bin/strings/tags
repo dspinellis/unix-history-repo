@@ -1,5 +1,0 @@
-DO_EVERYTHING	strings.c	/^#define DO_EVERYTHING()		{read_len = -1; head_len /
-ISSTR	strings.c	/^#define ISSTR(ch)	(isascii(ch) && (isprint(ch) || /
-Mstrings	strings.c	/^main(argc, argv)$/
-getch	strings.c	/^getch()$/
-usage	strings.c	/^usage()$/

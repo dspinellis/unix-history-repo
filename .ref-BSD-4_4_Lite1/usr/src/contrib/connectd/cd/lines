@@ -1,5 +1,0 @@
-
-tty3	areacode#415 prefixareacode#1 baudrates="300,1200,2400" device=hayes
-	
-# ttyd1	areacode#415 within#642 outside#9 prefixareacode#1 device=courier \
-	tieline1="415666|8"

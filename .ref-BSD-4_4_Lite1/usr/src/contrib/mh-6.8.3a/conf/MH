@@ -1,9 +1,0 @@
-# @(#)$Id: MH,v 1.7 1990/04/06 09:44:31 sources Exp $
-# a 4.2BSD VAX system running SendMail
-bin	/usr/local
-bboards	on
-etc	/usr/local/lib/mh
-mail	/usr/spool/mail
-manuals	local
-mts	sendmail
-options	BSD42
