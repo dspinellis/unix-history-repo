@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.129 (Berkeley) %G%
+ *	@(#)conf.h	8.130 (Berkeley) %G%
  */
 
 /*
@@ -171,7 +171,9 @@ extern int	syslog(int, char *, ...);
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
 # define FORK		fork	/* no vfork primitive available */
-# define WAITUNION	1	/* use "union wait" as wait argument type */
+# ifndef IRIX6			/* IRIX 6.0 */
+#  define WAITUNION	1	/* use "union wait" as wait argument type */
+# endif
 # define setpgid	BSDsetpgrp
 # define GIDSET_T	gid_t
 # define SFS_TYPE	SFS_4ARGS	/* four argument statfs() call */
