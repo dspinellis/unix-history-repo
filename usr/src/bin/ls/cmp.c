@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmp.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmp.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -31,35 +31,35 @@ revnamecmp(a, b)
 modcmp(a, b)
 	LS *a, *b;
 {
-	return(a->lstat.st_mtime < b->lstat.st_mtime);
+	return(a->lstat.st_mtime - b->lstat.st_mtime);
 }
 
 revmodcmp(a, b)
 	LS *a, *b;
 {
-	return(b->lstat.st_mtime < a->lstat.st_mtime);
+	return(b->lstat.st_mtime - a->lstat.st_mtime);
 }
 
 acccmp(a, b)
 	LS *a, *b;
 {
-	return(a->lstat.st_atime < b->lstat.st_atime);
+	return(a->lstat.st_atime - b->lstat.st_atime);
 }
 
 revacccmp(a, b)
 	LS *a, *b;
 {
-	return(b->lstat.st_atime < a->lstat.st_atime);
+	return(b->lstat.st_atime - a->lstat.st_atime);
 }
 
 statcmp(a, b)
 	LS *a, *b;
 {
-	return(a->lstat.st_ctime < b->lstat.st_ctime);
+	return(a->lstat.st_ctime - b->lstat.st_ctime);
 }
 
 revstatcmp(a, b)
 	LS *a, *b;
 {
-	return(b->lstat.st_ctime < a->lstat.st_ctime);
+	return(b->lstat.st_ctime - a->lstat.st_ctime);
 }
