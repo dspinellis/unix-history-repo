@@ -1,4 +1,4 @@
-#	@(#)Makefile	1.18 (Berkeley) %G%
+#	@(#)Makefile	1.19 (Berkeley) %G%
 #
 # curses package
 #
@@ -18,6 +18,7 @@ OBJS=	addch.o addstr.o box.o clear.o clrtobot.o clrtoeol.o cr_put.o \
 CTAGS=	ctags
 DEFS=
 CFLAGS=	-O $(DEFS)
+TAGSFILE=tags
 
 .c.o:
 	${CC} -c -pg ${CFLAGS} $*.c
@@ -41,8 +42,15 @@ install: libcurses libcurses_p
 	install -m 644 libcurses_p ${DESTDIR}/usr/lib/libcurses_p.a
 	ranlib ${DESTDIR}/usr/lib/libcurses_p.a
 
+tags:
+	cwd=`pwd`; \
+	for i in ${CFILES}; do \
+		ctags -a -f ${TAGSFILE} $$cwd/$$i; \
+	done
+
 clean:
-	rm -f ${OBJS} profiled/*.o a.out core test errs libcurses libcurses_p
+	rm -f ${OBJS} profiled/*.o a.out core test errs \
+	    libcurses libcurses_p tags
 
 ctags:
 	${CTAGS} ${CFILES} curses.h

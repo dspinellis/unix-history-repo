@@ -3,14 +3,16 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 #	crt0	Normal C run time startoff
 #	mcrt0	C run time start off for profiling, ``prof'' conventions
 #	gcrt0	C run time start off for profiling, ``gprof'' conventions
 #
 DESTDIR=
+SRCS=	crt0.c mon.c gmon.c
 OBJS=	crt0.o mcrt0.o gcrt0.o mon.o gmon.o
+TAGSFILE=tags
 
 all: ${OBJS}
 
@@ -53,8 +55,14 @@ gmon.o: gmon.c gmon.h gmon.ex
 	ld -x -r -o gmon.o x.o
 	rm -f x.o gmon.s
 
+tags:	
+	cwd=`pwd`; \
+	for i in ${SRCS}; do \
+		ctags -a -f ${TAGSFILE} $$cwd/$$i; \
+	done
+
 clean:
-	rm -f ${OBJS} *.o *.s core errs
+	rm -f ${OBJS} *.o *.s core errs tags
 
 lint:	crt0.c
 	lint crt0.c -DMCRT0

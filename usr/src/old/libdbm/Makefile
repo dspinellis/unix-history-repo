@@ -1,6 +1,7 @@
-#	Makefile	4.4	83/12/02
+#	Makefile	4.5	85/05/30
 #
 CFLAGS=-O
+TAGSFILE=tags
 
 libdbm.a: dbm.c
 	${CC} -c ${CFLAGS} dbm.c
@@ -8,6 +9,9 @@ libdbm.a: dbm.c
 
 install:
 	install -m 644 libdbm.a $(DESTDIR)/usr/lib
+
+tags:
+	ctags -a -f ${TAGSFILE} `pwd`/dbm.c
 
 clean:
 	rm -f libdbm.a errs a.out core
