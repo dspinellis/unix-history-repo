@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)xxflush.c	3.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)xxflush.c	3.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -28,8 +28,6 @@ xxflush(intr)
 {
 	register struct xx *xp, *xq;
 
-	if (tt.tt_ntoken > 0)
-		xcscan(xxbuf, xxbufp - xxbuf);	/* XXX, starting point */
 	for (xp = xx_head; xp != 0 && !(intr && wwinterrupt()); xp = xq) {
 		switch (xp->cmd) {
 		case xc_move:
@@ -66,10 +64,7 @@ xxflush(intr)
 		case xc_write:
 			(*tt.tt_move)(xp->arg0, xp->arg1);
 			tt.tt_nmodes = xp->arg3;
-			if (tt.tt_ntoken > 0)
-				xcwrite(xp->buf, xp->arg2, xp->buf - xxbuf);
-			else
-				(*tt.tt_write)(xp->buf, xp->arg2);
+			(*tt.tt_write)(xp->buf, xp->arg2);
 			break;
 		}
 		xq = xp->link;
@@ -79,7 +74,7 @@ xxflush(intr)
 		xx_tail = 0;
 		xxbufp = xxbuf;
 	}
-	ttflush();
+	(*tt.tt_flush)();
 }
 
 xxflush_scroll(xp)

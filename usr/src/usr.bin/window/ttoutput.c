@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttoutput.c	3.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttoutput.c	3.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -74,20 +74,20 @@ ttwrite(s, n)
 		break;
 	case 2:
 		if (tt_obe - tt_obp < 2)
-			ttflush();
+			(*tt.tt_flush)();
 		*tt_obp++ = *s++;
 		*tt_obp++ = *s;
 		break;
 	case 3:
 		if (tt_obe - tt_obp < 3)
-			ttflush();
+			(*tt.tt_flush)();
 		*tt_obp++ = *s++;
 		*tt_obp++ = *s++;
 		*tt_obp++ = *s;
 		break;
 	case 4:
 		if (tt_obe - tt_obp < 4)
-			ttflush();
+			(*tt.tt_flush)();
 		*tt_obp++ = *s++;
 		*tt_obp++ = *s++;
 		*tt_obp++ = *s++;
@@ -95,7 +95,7 @@ ttwrite(s, n)
 		break;
 	case 5:
 		if (tt_obe - tt_obp < 5)
-			ttflush();
+			(*tt.tt_flush)();
 		*tt_obp++ = *s++;
 		*tt_obp++ = *s++;
 		*tt_obp++ = *s++;
@@ -107,7 +107,7 @@ ttwrite(s, n)
 			register m;
 
 			while ((m = tt_obe - tt_obp) == 0)
-				ttflush();
+				(*tt.tt_flush)();
 			if ((m = tt_obe - tt_obp) > n)
 				m = n;
 			bcopy(s, tt_obp, m);

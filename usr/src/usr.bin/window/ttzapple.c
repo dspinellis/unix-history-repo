@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttzapple.c	3.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttzapple.c	3.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -100,6 +100,7 @@ zz_move(row, col)
 	register x;
 
 	if (tt.tt_row == row) {
+same_row:
 		if ((x = col - tt.tt_col) == 0)
 			return;
 		if (col == 0) {
@@ -158,8 +159,12 @@ home:
 			goto out;
 		}
 		if (row == tt.tt_row + 1) {
-			ttctrl('m');
+			/*
+			 * Do newline first to match the sequence
+			 * for scroll down and return
+			 */
 			ttctrl('j');
+			ttctrl('m');
 			goto out;
 		}
 		if (row == NROW - 1) {
@@ -167,6 +172,15 @@ ll:
 			ttesc('1');
 			goto out;
 		}
+	}
+	/* favor local motion for better compression */
+	if (row == tt.tt_row + 1) {
+		ttctrl('j');
+		goto same_row;
+	}
+	if (row == tt.tt_row - 1) {
+		ttctrl('k');
+		goto same_row;
 	}
 	ttesc('=');
 	ttputc(' ' + row);
@@ -278,9 +292,6 @@ zz_set_token(t, s, n)
 	s[n - 1] |= 0x80;
 	ttwrite(s, n);
 	s[n - 1] &= ~0x80;
-	tt.tt_col += n;
-	if (tt.tt_col == NCOL)
-		tt.tt_col = 0, tt.tt_row++;
 }
 
 /*ARGSUSED*/
@@ -297,9 +308,6 @@ zz_put_token(t, s, n)
 		tt.tt_col += 3;
 	}
 	ttputc(t + 0x81);
-	tt.tt_col += n;
-	if (tt.tt_col == NCOL)
-		tt.tt_col = 0, tt.tt_row++;
 }
 
 tt_zapple()
@@ -326,6 +334,7 @@ tt_zapple()
 	tt.tt_clear = zz_clear;
 	tt.tt_setmodes = zz_setmodes;
 	tt.tt_frame = gen_frame;
+	tt.tt_padc = TT_PADC_NONE;
 	tt.tt_ntoken = 127;
 	tt.tt_set_token = zz_set_token;
 	tt.tt_put_token = zz_put_token;

@@ -16,40 +16,44 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compress.c	3.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)compress.c	3.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
-#include "xx.h"
 #include "tt.h"
+
+	/* special */
+#include <stdio.h>
+int cc_trace = 0;
+FILE *cc_trace_fp;
 
 	/* tunable parameters */
 
-int xc_reverse = 1;
-int xc_sort = 0;
-int xc_chop = 0;
+int cc_reverse = 1;
+int cc_sort = 0;
+int cc_chop = 0;
 
-int xc_token_max = 8;		/* <= TOKEN_MAX */
-int xc_token_min = 2;		/* > tt.tt_put_token_cost */
-int xc_npass0 = 1;
-int xc_npass1 = 1;
+int cc_token_max = 8;		/* <= TOKEN_MAX */
+int cc_token_min = 2;		/* > tt.tt_put_token_cost */
+int cc_npass0 = 1;
+int cc_npass1 = 1;
 
-int xc_bufsize = 1024 * 3;	/* XXX, or 80 * 24 * 2 */
+int cc_bufsize = 1024 * 3;	/* XXX, or 80 * 24 * 2 */
 
-int xc_ntoken = 8192;
+int cc_ntoken = 8192;
 
-#define xc_weight XXX
-#ifndef xc_weight
-int xc_weight = 0;
+#define cc_weight XXX
+#ifndef cc_weight
+int cc_weight = 0;
 #endif
 
 #define TOKEN_MAX 16
 
-struct xc {
+struct cc {
 	char string[TOKEN_MAX];
 	char length;
 	char flag;
-#ifndef xc_weight
+#ifndef cc_weight
 	short weight;
 #endif
 	long time;		/* time last seen */
@@ -57,31 +61,31 @@ struct xc {
 	short ccount;		/* count in compression */
 	short places;		/* places in the buffer */
 	short code;		/* token code */
-	struct xc *qforw, *qback;
-	struct xc *hforw, **hback;
+	struct cc *qforw, *qback;
+	struct cc *hforw, **hback;
 };
 
-short xc_thresholds[TOKEN_MAX + 1];
-#define thresh(length) (xc_thresholds[length])
+short cc_thresholds[TOKEN_MAX + 1];
+#define thresh(length) (cc_thresholds[length])
 #define threshp(code, count, length) \
-	((code) >= 0 || (short) (count) >= xc_thresholds[length])
+	((code) >= 0 || (short) (count) >= cc_thresholds[length])
 
-#ifndef xc_weight
-short xc_wthresholds[TOKEN_MAX + 1];
-#define wthresh(length) (xc_wthresholds[length])
-#define wthreshp(weight, length) ((short) (weight) >= xc_wthresholds[length])
+#ifndef cc_weight
+short cc_wthresholds[TOKEN_MAX + 1];
+#define wthresh(length) (cc_wthresholds[length])
+#define wthreshp(weight, length) ((short) (weight) >= cc_wthresholds[length])
 #else
 #define wthreshp(weight, length) (0)
 #endif
 
-#ifndef xc_weight
-short xc_wlimits[TOKEN_MAX + 1];
-#define wlimit(length) (xc_wlimits[length])
+#ifndef cc_weight
+short cc_wlimits[TOKEN_MAX + 1];
+#define wlimit(length) (cc_wlimits[length])
 #endif
 
 #define put_token_score(length) ((length) - tt.tt_put_token_cost)
 
-int xc_score_adjustments[TOKEN_MAX + 1][8]; /* XXX, 8 > max of xc_thresholds */
+int cc_score_adjustments[TOKEN_MAX + 1][8]; /* XXX, 8 > max of cc_thresholds */
 #define score_adjust(score, p) \
 	do { \
 		int length = (p)->length; \
@@ -90,86 +94,86 @@ int xc_score_adjustments[TOKEN_MAX + 1][8]; /* XXX, 8 > max of xc_thresholds */
 		    wthreshp((p)->weight, length)) /* XXX */ \
 			(score) -= length - tt.tt_put_token_cost; \
 		else \
-			(score) += xc_score_adjustments[length][ccount]; \
+			(score) += cc_score_adjustments[length][ccount]; \
 	} while (0)
 
-int xc_initial_scores[TOKEN_MAX + 1][8]; /* XXX, 8 > max of xc_thresholds */
+int cc_initial_scores[TOKEN_MAX + 1][8]; /* XXX, 8 > max of cc_thresholds */
 
-struct xc xc_q0a, xc_q0b, xc_q1a, xc_q1b;
+struct cc cc_q0a, cc_q0b, cc_q1a, cc_q1b;
 
-#define qinsert(x1, x2) \
+#define qinsert(p1, p2) \
 	do { \
-		register struct xc *forw = (x1)->qforw; \
-		register struct xc *back = (x1)->qback; \
+		register struct cc *forw = (p1)->qforw; \
+		register struct cc *back = (p1)->qback; \
 		back->qforw = forw; \
 		forw->qback = back; \
-		forw = (x2)->qforw; \
-		(x1)->qforw = forw; \
-		forw->qback = (x1); \
-		(x2)->qforw = (x1); \
-		(x1)->qback = (x2); \
+		forw = (p2)->qforw; \
+		(p1)->qforw = forw; \
+		forw->qback = (p1); \
+		(p2)->qforw = (p1); \
+		(p1)->qback = (p2); \
 	} while (0)
 
-#define qinsertq(q, x) \
+#define qinsertq(q, p) \
 	((q)->qforw == (q) ? 0 : \
-	 ((q)->qback->qforw = (x)->qforw, \
-	  (x)->qforw->qback = (q)->qback, \
-	  (q)->qforw->qback = (x), \
-	  (x)->qforw = (q)->qforw, \
+	 ((q)->qback->qforw = (p)->qforw, \
+	  (p)->qforw->qback = (q)->qback, \
+	  (q)->qforw->qback = (p), \
+	  (p)->qforw = (q)->qforw, \
 	  (q)->qforw = (q), \
 	  (q)->qback = (q)))
 
 #define H		(14)
 #define HSIZE		(1 << H)
-#define hash(h, c)	((((h) >> H - 8 | (h) << 8) ^ (unsigned char)(c)) & \
-				HSIZE - 1)
+#define hash(h, c)	((((h) >> H - 8 | (h) << 8) ^ (c)) & HSIZE - 1)
 
-struct xc **xc_output;			/* the output array */
-short *xc_places[TOKEN_MAX + 1];
-short *xc_hashcodes;			/* for computing hashcodes */
-struct xc **xc_htab;			/* the hash table */
-struct xc **xc_tokens;			/* holds all the active tokens */
-struct xc_undo {
-	struct xc **pos;
-	struct xc *val;
-} *xc_undo;
+char *cc_buffer;
+struct cc **cc_output;			/* the output array */
+short *cc_places[TOKEN_MAX + 1];
+short *cc_hashcodes;			/* for computing hashcodes */
+struct cc **cc_htab;			/* the hash table */
+struct cc **cc_tokens;			/* holds all the active tokens */
+struct cc_undo {
+	struct cc **pos;
+	struct cc *val;
+} *cc_undo;
 
-long xc_time, xc_time0;
+long cc_time, cc_time0;
 
-xcinit()
+char *cc_tt_ob, *cc_tt_obe;
+
+ccinit()
 {
 	register i, j;
-	register struct xc *p;
+	register struct cc *p;
 
-	if (tt.tt_token_max > xc_token_max)
-		tt.tt_token_max = xc_token_max;
-	if (tt.tt_token_min < xc_token_min)
-		tt.tt_token_min = xc_token_min;
+	if (tt.tt_token_max > cc_token_max)
+		tt.tt_token_max = cc_token_max;
+	if (tt.tt_token_min < cc_token_min)
+		tt.tt_token_min = cc_token_min;
 	if (tt.tt_token_min > tt.tt_token_max) {
 		tt.tt_ntoken = 0;
 		return 0;
 	}
-	if (tt.tt_ntoken > xc_ntoken / 2)	/* not likely */
-		tt.tt_ntoken = xc_ntoken / 2;
-	if (xxbufsize > xc_bufsize)
-		xxbufsize = xc_bufsize;		/* XXX */
+	if (tt.tt_ntoken > cc_ntoken / 2)	/* not likely */
+		tt.tt_ntoken = cc_ntoken / 2;
 #define C(x) (sizeof (x) / sizeof *(x))
-	for (i = 0; i < C(xc_thresholds); i++) {
+	for (i = 0; i < C(cc_thresholds); i++) {
 		int h = i - tt.tt_put_token_cost;
 		if (h > 0)
-			xc_thresholds[i] =
+			cc_thresholds[i] =
 				(tt.tt_set_token_cost + 1 + h - 1) / h + 1;
 		else
-			xc_thresholds[i] = 0;
+			cc_thresholds[i] = 0;
 	}
-	for (i = 0; i < C(xc_score_adjustments); i++) {
-		int t = xc_thresholds[i];
-		for (j = 0; j < C(*xc_score_adjustments); j++) {
+	for (i = 0; i < C(cc_score_adjustments); i++) {
+		int t = cc_thresholds[i];
+		for (j = 0; j < C(*cc_score_adjustments); j++) {
 			if (j >= t)
-				xc_score_adjustments[i][j] =
+				cc_score_adjustments[i][j] =
 					- (i - tt.tt_put_token_cost);
 			else if (j < t - 1)
-				xc_score_adjustments[i][j] = 0;
+				cc_score_adjustments[i][j] = 0;
 			else
 				/*
 				 * cost now is
@@ -179,139 +183,169 @@ xcinit()
 				 *		ccount * put-token-cost	b
 				 * the score adjustment is (b - a)
 				 */
-				xc_score_adjustments[i][j] =
+				cc_score_adjustments[i][j] =
 					tt.tt_set_token_cost + i +
 						j * tt.tt_put_token_cost -
 							i * (j + 1);
 			if (j >= t)
-				xc_initial_scores[i][j] = 0;
+				cc_initial_scores[i][j] = 0;
 			else
 				/*
 				 * - (set-token-cost +
 				 *	(length - put-token-cost) -
 				 *	(length - put-token-cost) * ccount)
 				 */
-				xc_initial_scores[i][j] =
+				cc_initial_scores[i][j] =
 					- (tt.tt_set_token_cost +
 					   (i - tt.tt_put_token_cost) -
 					   (i - tt.tt_put_token_cost) * j);
 		}
 	}
-#ifndef xc_weight
-	for (i = 1; i < C(xc_wthresholds); i++) {
-		xc_wthresholds[i] =
+#ifndef cc_weight
+	for (i = 1; i < C(cc_wthresholds); i++) {
+		cc_wthresholds[i] =
 			((tt.tt_set_token_cost + tt.tt_put_token_cost) / i +
 				i / 5 + 1) *
-				xc_weight + 1;
-		xc_wlimits[i] = xc_wthresholds[i] + xc_weight;
+				cc_weight + 1;
+		cc_wlimits[i] = cc_wthresholds[i] + cc_weight;
 	}
 #endif
 #undef C
-	if ((xc_output = (struct xc **)
-	     malloc((unsigned) xxbufsize * sizeof *xc_output)) == 0)
+	if ((cc_output = (struct cc **)
+	     malloc((unsigned) cc_bufsize * sizeof *cc_output)) == 0)
 		goto nomem;
-	if ((xc_hashcodes = (short *)
-	     malloc((unsigned) xxbufsize * sizeof *xc_hashcodes)) == 0)
+	if ((cc_hashcodes = (short *)
+	     malloc((unsigned) cc_bufsize * sizeof *cc_hashcodes)) == 0)
 		goto nomem;
-	if ((xc_htab = (struct xc **) malloc(HSIZE * sizeof *xc_htab)) == 0)
+	if ((cc_htab = (struct cc **) malloc(HSIZE * sizeof *cc_htab)) == 0)
 		goto nomem;
-	if ((xc_tokens = (struct xc **)
+	if ((cc_tokens = (struct cc **)
 	     malloc((unsigned)
-	            (xc_ntoken + tt.tt_token_max - tt.tt_token_min + 1) *
-		    sizeof *xc_tokens)) == 0)
+	            (cc_ntoken + tt.tt_token_max - tt.tt_token_min + 1) *
+		    sizeof *cc_tokens)) == 0)
 		goto nomem;
-	if ((xc_undo = (struct xc_undo *)
-	     malloc((unsigned) xxbufsize * sizeof *xc_undo)) == 0)
+	if ((cc_undo = (struct cc_undo *)
+	     malloc((unsigned) cc_bufsize * sizeof *cc_undo)) == 0)
 		goto nomem;
 	for (i = tt.tt_token_min; i <= tt.tt_token_max; i++)
-		if ((xc_places[i] = (short *)
-		     malloc((unsigned) xxbufsize * sizeof **xc_places)) == 0)
+		if ((cc_places[i] = (short *)
+		     malloc((unsigned) cc_bufsize * sizeof **cc_places)) == 0)
 			goto nomem;
-	xc_q0a.qforw = xc_q0a.qback = &xc_q0a;
-	xc_q0b.qforw = xc_q0b.qback = &xc_q0b;
-	xc_q1a.qforw = xc_q1a.qback = &xc_q1a;
-	xc_q1b.qforw = xc_q1b.qback = &xc_q1b;
-	if ((p = (struct xc *) malloc((unsigned) xc_ntoken * sizeof *p)) == 0)
+	cc_q0a.qforw = cc_q0a.qback = &cc_q0a;
+	cc_q0b.qforw = cc_q0b.qback = &cc_q0b;
+	cc_q1a.qforw = cc_q1a.qback = &cc_q1a;
+	cc_q1b.qforw = cc_q1b.qback = &cc_q1b;
+	if ((p = (struct cc *) malloc((unsigned) cc_ntoken * sizeof *p)) == 0)
 		goto nomem;
 	for (i = 0; i < tt.tt_ntoken; i++) {
 		p->code = i;
 		p->time = -1;
-		p->qback = xc_q0a.qback;
-		p->qforw = &xc_q0a;
+		p->qback = cc_q0a.qback;
+		p->qforw = &cc_q0a;
 		p->qback->qforw = p;
-		xc_q0a.qback = p;
+		cc_q0a.qback = p;
 		p++;
 	}
-	for (; i < xc_ntoken; i++) {
+	for (; i < cc_ntoken; i++) {
 		p->code = -1;
 		p->time = -1;
-		p->qback = xc_q1a.qback;
-		p->qforw = &xc_q1a;
+		p->qback = cc_q1a.qback;
+		p->qforw = &cc_q1a;
 		p->qback->qforw = p;
-		xc_q1a.qback = p;
+		cc_q1a.qback = p;
 		p++;
 	}
+	cc_tt_ob = tt_ob;
+	cc_tt_obe = tt_obe;
+	if ((cc_buffer = malloc((unsigned) cc_bufsize)) == 0)
+		goto nomem;
 	return 0;
 nomem:
 	wwerrno = WWE_NOMEM;
 	return -1;
 }
 
-xcstart()
+ccstart()
 {
-	register struct xc *p;
+	register struct cc *p;
+	int ccflush();
 
-	bzero((char *) xc_htab, HSIZE * sizeof *xc_htab);
-	for (p = xc_q0a.qforw; p != &xc_q0a; p = p->qforw)
+	(*tt.tt_flush)();
+	tt_obp = tt_ob = cc_buffer;
+	tt_obe = tt_ob + cc_bufsize;
+	tt.tt_flush = ccflush;
+	bzero((char *) cc_htab, HSIZE * sizeof *cc_htab);
+	for (p = cc_q0a.qforw; p != &cc_q0a; p = p->qforw)
 		p->hback = 0;
-	for (p = xc_q1a.qforw; p != &xc_q1a; p = p->qforw)
+	for (p = cc_q1a.qforw; p != &cc_q1a; p = p->qforw)
 		p->hback = 0;
+	if (cc_trace)
+		cc_trace_fp = fopen("window-trace", "a");
 }
 
-xcscan(buffer, bufsize)
-	char *buffer;
+ccend()
 {
-	int n;
+	int ttflush();
 
-	if (bufsize <= tt.tt_token_min)		/* one more for char_sep */
-		return;
-	xc_time0 = xc_time;
-	xc_time += bufsize;
-#ifdef STATS
-	if (verbose >= 0)
-		time_begin();
-#endif
-	n = xc_sweep_phase(buffer, bufsize, xc_tokens);
-#ifdef STATS
-	if (verbose >= 0) {
-		time_end();
-		time_begin();
+	(*tt.tt_flush)();
+	tt_obp = tt_ob = cc_tt_ob;
+	tt_obe = cc_tt_obe;
+	tt.tt_flush = ttflush;
+	if (cc_trace_fp != NULL) {
+		(void) fclose(cc_trace_fp);
+		cc_trace_fp = NULL;
 	}
-#endif
-	xc_compress_phase(xc_output, bufsize, xc_tokens, n);
-#ifdef STATS
-	if (verbose >= 0)
-		time_end();
-#endif
 }
 
-xc_sweep_phase(buffer, bufsize, tokens)
-	char *buffer;
-	struct xc **tokens;
+ccflush()
 {
-	register struct xc **pp = tokens;
+	int bufsize = tt_obp - tt_ob;
+	int n;
+	int ttflush();
+
+	if (tt_ob != cc_buffer)
+		abort();
+	if (cc_trace_fp != NULL) {
+		(void) fwrite(tt_ob, 1, bufsize, cc_trace_fp);
+		putc(-1, cc_trace_fp);
+	}
+	if (bufsize < tt.tt_token_min) {
+		ttflush();
+		return;
+	}
+	tt_obp = tt_ob = cc_tt_ob;
+	tt_obe = cc_tt_obe;
+	tt.tt_flush = ttflush;
+	cc_time0 = cc_time;
+	cc_time += bufsize;
+	n = cc_sweep_phase(cc_buffer, bufsize, cc_tokens);
+	cc_compress_phase(cc_output, bufsize, cc_tokens, n);
+	cc_output_phase(cc_buffer, cc_output, bufsize);
+	ttflush();
+	tt_obp = tt_ob = cc_buffer;
+	tt_obe = cc_buffer + cc_bufsize;
+	tt.tt_flush = ccflush;
+}
+
+cc_sweep_phase(buffer, bufsize, tokens)
+	char *buffer;
+	struct cc **tokens;
+{
+	register struct cc **pp = tokens;
 	register i, n;
 #ifdef STATS
 	int nn, ii;
 #endif
 
 #ifdef STATS
+	if (verbose >= 0)
+		time_begin();
 	if (verbose > 0)
 		printf("Sweep:");
 #endif
-	xc_sweep0(buffer, bufsize, tt.tt_token_min - 1);
+	cc_sweep0(buffer, bufsize, tt.tt_token_min - 1);
 #ifdef STATS
-	xc_ntoken_stat = 0;
+	ntoken_stat = 0;
 	nn = 0;
 	ii = 0;
 #endif
@@ -327,7 +361,7 @@ xc_sweep_phase(buffer, bufsize, tokens)
 			(void) fflush(stdout);
 		}
 #endif
-		n = xc_sweep(buffer, bufsize, pp, i);
+		n = cc_sweep(buffer, bufsize, pp, i);
 		pp += n;
 #ifdef STATS
 		if (verbose > 0) {
@@ -339,97 +373,85 @@ xc_sweep_phase(buffer, bufsize, tokens)
 		}
 #endif
 	}
-	qinsertq(&xc_q1b, &xc_q1a);
+	qinsertq(&cc_q1b, &cc_q1a);
 #ifdef STATS
 	if (verbose > 0)
 		printf("\n       %d tokens, %d candidates\n",
-			xc_ntoken_stat, nn);
+			ntoken_stat, nn);
+	if (verbose >= 0)
+		time_end();
 #endif
 	return pp - tokens;
 }
 
-xc_sweep0(buffer, n, length)
+cc_sweep0(buffer, n, length)
 	char *buffer;
-	register n;
-	register length;
 {
+	register char *p;
+	register short *hc;
 	register i;
-	register char *p = buffer;
-	register short *hc = xc_hashcodes;
-	register h;
+	register short c;
+	register short pc = tt.tt_padc;
 
-	if (--length == 0)
-		do {
-#ifdef char_sep
-			if ((*hc++ = *p++) == char_sep)
-				hc[-1] = -1;
-#else
-			*hc++ = *p++;
-#endif
-		} while (--n);
-	else
-		for (n -= length; --n >= 0;) {
-#ifdef char_sep
-			if (*p == char_sep) {
-				*hc++ = -1;
-				p++;
-				continue;
-			}
-#endif
-			h = *p++;
-			for (i = length; --i >= 0;) {
-#ifdef char_sep
-				if (*p == char_sep) {
-					h = -1;
-					p += i + 1;
-					break;
-				}
-#endif
-				h = hash(h, *p++);
-			}
-			*hc++ = h;
-			p -= length;
+	/* n and length are at least 1 */
+	p = buffer++;
+	hc = cc_hashcodes;
+	i = n;
+	do {
+		if ((*hc++ = *p++) == pc)
+			hc[-1] = -1;
+	} while (--i);
+	while (--length) {
+		p = buffer++;
+		hc = cc_hashcodes;
+		for (i = n--; --i;) {
+			if ((c = *p++) == pc || *hc < 0)
+				c = -1;
+			else
+				c = hash(*hc, c);
+			*hc++ = c;
 		}
+	}
 }
 
-xc_sweep(buffer, bufsize, tokens, length)
+cc_sweep(buffer, bufsize, tokens, length)
 	char *buffer;
-	struct xc **tokens;
+	struct cc **tokens;
 	register length;
 {
-	register struct xc *p;
+	register struct cc *p;
 	register char *cp;
 	register i;
 	short *hc;
-	short *places = xc_places[length];
-	struct xc **pp = tokens;
+	short *places = cc_places[length];
+	struct cc **pp = tokens;
 	short threshold = thresh(length);
-#ifndef xc_weight
+#ifndef cc_weight
 	short wthreshold = wthresh(length);
 	short limit = wlimit(length);
 #endif
 	int time;
+	short pc = tt.tt_padc;
 
 	i = length - 1;
 	bufsize -= i;
 	cp = buffer + i;
-	hc = xc_hashcodes;
-	time = xc_time0;
+	hc = cc_hashcodes;
+	time = cc_time0;
 	for (i = 0; i < bufsize; i++, time++) {
-		struct xc **h;
+		struct cc **h;
 
 		{
 			register short *hc1 = hc;
-#ifdef char_sep
-			if (*hc1 < 0 || *cp == char_sep) {
+			register short c = *cp++;
+			register short hh;
+			if ((hh = *hc1) < 0 || c == pc) {
 				*hc1++ = -1;
 				hc = hc1;
-				cp++;
 				continue;
 			}
-#endif
-			h = xc_htab + (*hc1 = hash(*hc1, *cp++));
-			hc = hc1 + 1;
+			h = cc_htab + (*hc1++ = hash(hh, c));
+			hc = hc1;
 		}
 		for (p = *h; p != 0; p = p->hforw)
 			if (p->length == (char) length) {
@@ -444,9 +466,9 @@ xc_sweep(buffer, bufsize, tokens, length)
 			fail:;
 			}
 		if (p == 0) {
-			p = xc_q1a.qback;
-			if (p == &xc_q1a ||
-			    p->time >= xc_time0 && p->length == (char) length)
+			p = cc_q1a.qback;
+			if (p == &cc_q1a ||
+			    p->time >= cc_time0 && p->length == (char) length)
 				continue;
 			if (p->hback != 0)
 				if ((*p->hback = p->hforw) != 0)
@@ -460,8 +482,8 @@ xc_sweep(buffer, bufsize, tokens, length)
 				while (--n);
 			}
 			p->length = length;
-#ifndef xc_weight
-			p->weight = xc_weight;
+#ifndef cc_weight
+			p->weight = cc_weight;
 #endif
 			p->time = time;
 			p->bcount = 1;
@@ -471,17 +493,17 @@ xc_sweep(buffer, bufsize, tokens, length)
 				p->hforw->hback = &p->hforw;
 			*h = p;
 			p->hback = h;
-			qinsert(p, &xc_q1a);
+			qinsert(p, &cc_q1a);
 			places[i] = -1;
 			p->places = i;
 #ifdef STATS
-			xc_ntoken_stat++;
+			ntoken_stat++;
 #endif
-		} else if (p->time < xc_time0) {
-#ifndef xc_weight
+		} else if (p->time < cc_time0) {
+#ifndef cc_weight
 			if ((p->weight += p->time - time) < 0)
-				p->weight = xc_weight;
-			else if ((p->weight += xc_weight) > limit)
+				p->weight = cc_weight;
+			else if ((p->weight += cc_weight) > limit)
 				p->weight = limit;
 #endif
 			p->time = time;
@@ -491,21 +513,21 @@ xc_sweep(buffer, bufsize, tokens, length)
 				p->flag = 1;
 				*pp++ = p;
 			} else
-#ifndef xc_weight
+#ifndef cc_weight
 			if (p->weight >= wthreshold) {
 				p->flag = 1;
 				*pp++ = p;
-				qinsert(p, &xc_q1b);
+				qinsert(p, &cc_q1b);
 			} else
 #endif
 			{
 				p->flag = 0;
-				qinsert(p, &xc_q1a);
+				qinsert(p, &cc_q1a);
 			}
 			places[i] = -1;
 			p->places = i;
 #ifdef STATS
-			xc_ntoken_stat++;
+			ntoken_stat++;
 #endif
 		} else if (p->time + length > time) {
 			/*
@@ -513,23 +535,23 @@ xc_sweep(buffer, bufsize, tokens, length)
 			 * don't update time, but do adjust weight to offset
 			 * the difference
 			 */
-#ifndef xc_weight
-			if (xc_weight != 0) {	/* XXX */
+#ifndef cc_weight
+			if (cc_weight != 0) {	/* XXX */
 				p->weight += time - p->time;
 				if (!p->flag && p->weight >= wthreshold) {
 					p->flag = 1;
 					*pp++ = p;
-					qinsert(p, &xc_q1b);
+					qinsert(p, &cc_q1b);
 				}
 			}
 #endif
 			places[i] = p->places;
 			p->places = i;
 		} else {
-#ifndef xc_weight
+#ifndef cc_weight
 			if ((p->weight += p->time - time) < 0)
-				p->weight = xc_weight;
-			else if ((p->weight += xc_weight) > limit)
+				p->weight = cc_weight;
+			else if ((p->weight += cc_weight) > limit)
 				p->weight = limit;
 #endif
 			p->time = time;
@@ -537,13 +559,13 @@ xc_sweep(buffer, bufsize, tokens, length)
 			if (!p->flag &&
 			    /* code must be < 0 if flag false here */
 			    (p->bcount >= threshold
-#ifndef xc_weight
+#ifndef cc_weight
 			     || p->weight >= wthreshold
 #endif
 			     )) {
 				p->flag = 1;
 				*pp++ = p;
-				qinsert(p, &xc_q1b);
+				qinsert(p, &cc_q1b);
 			}
 			places[i] = p->places;
 			p->places = i;
@@ -551,15 +573,15 @@ xc_sweep(buffer, bufsize, tokens, length)
 	}
 	if ((i = pp - tokens) > 0) {
 		*pp = 0;
-		if (xc_reverse)
-			xc_sweep_reverse(tokens, places);
-		if (xc_sort && i > 1) {
-			int xc_token_compare();
+		if (cc_reverse)
+			cc_sweep_reverse(tokens, places);
+		if (cc_sort && i > 1) {
+			int cc_token_compare();
 			qsort((char *) tokens, i, sizeof *tokens,
-			      xc_token_compare);
+			      cc_token_compare);
 		}
-		if (xc_chop) {
-			if ((i = i * xc_chop / 100) == 0)
+		if (cc_chop) {
+			if ((i = i * cc_chop / 100) == 0)
 				i = 1;
 			tokens[i] = 0;
 		}
@@ -568,11 +590,11 @@ xc_sweep(buffer, bufsize, tokens, length)
 	return i;
 }
 
-xc_sweep_reverse(pp, places)
-	register struct xc **pp;
+cc_sweep_reverse(pp, places)
+	register struct cc **pp;
 	register short *places;
 {
-	register struct xc *p;
+	register struct cc *p;
 	register short front, back, t;
 
 	while ((p = *pp++) != 0) {
@@ -588,28 +610,33 @@ xc_sweep_reverse(pp, places)
 	}
 }
 
-xc_compress_phase(output, bufsize, tokens, ntoken)
-	struct xc **output;
-	struct xc **tokens;
+cc_compress_phase(output, bufsize, tokens, ntoken)
+	struct cc **output;
+	struct cc **tokens;
 {
 	register i;
 
 	bzero((char *) output, bufsize * sizeof *output);
-	for (i = 0; i < xc_npass0; i++)
-		xc_compress_phase1(output, tokens, ntoken, 0);
-	for (i = 0; i < xc_npass1; i++)
-		xc_compress_phase1(output, tokens, ntoken, 1);
-	xc_compress_cleanup(output, bufsize);
+	for (i = 0; i < cc_npass0; i++)
+		cc_compress_phase1(output, tokens, ntoken, 0);
+	for (i = 0; i < cc_npass1; i++)
+		cc_compress_phase1(output, tokens, ntoken, 1);
+	cc_compress_cleanup(output, bufsize);
 }
 
-xc_compress_phase1(output, tokens, ntoken, flag)
-	register struct xc **output;
-	struct xc **tokens;
+cc_compress_phase1(output, tokens, ntoken, flag)
+	register struct cc **output;
+	struct cc **tokens;
 {
 	register int i = 0;
-	register struct xc **pp;
+	register struct cc **pp;
+#ifdef STATS
+	int nt = 0, cc = 0, nc = 0;
+#endif
 
 #ifdef STATS
+	if (verbose >= 0)
+		time_begin();
 	if (verbose > 0)
 		printf("Compress:");
 #endif
@@ -617,9 +644,9 @@ xc_compress_phase1(output, tokens, ntoken, flag)
 	while (pp < tokens + ntoken) {
 #ifdef STATS
 		if (verbose > 0) {
-			xc_ntoken_stat = 0;
-			xc_ccount_stat = 0;
-			xc_ncover_stat = 0;
+			ntoken_stat = 0;
+			ccount_stat = 0;
+			ncover_stat = 0;
 			if (i > 2) {
 				printf("\n         ");
 				i = 0;
@@ -629,28 +656,34 @@ xc_compress_phase1(output, tokens, ntoken, flag)
 			(void) fflush(stdout);
 		}
 #endif
-		pp += xc_compress(output, pp, flag);
+		pp += cc_compress(output, pp, flag);
 #ifdef STATS
-		if (verbose > 0)
-			printf(" %dt %du %dc)", xc_ntoken_stat, xc_ccount_stat,
-			       xc_ncover_stat);
+		if (verbose > 0) {
+			printf(" %dt %du %dc)", ntoken_stat, ccount_stat,
+			       ncover_stat);
+			nt += ntoken_stat;
+			cc += ccount_stat;
+			nc += ncover_stat;
+		}
 #endif
 	}
 #ifdef STATS
 	if (verbose > 0)
-		printf("\n");
+		printf("\n   total: (%dt %du %dc)\n", nt, cc, nc);
+	if (verbose >= 0)
+		time_end();
 #endif
 }
 
-xc_compress_cleanup(output, bufsize)
-	register struct xc **output;
+cc_compress_cleanup(output, bufsize)
+	register struct cc **output;
 {
-	register struct xc **end;
+	register struct cc **end;
 
 	/* the previous output phase may have been interrupted */
-	qinsertq(&xc_q0b, &xc_q0a);
+	qinsertq(&cc_q0b, &cc_q0a);
 	for (end = output + bufsize; output < end;) {
-		register struct xc *p;
+		register struct cc *p;
 		register length;
 		if ((p = *output) == 0) {
 			output++;
@@ -659,12 +692,12 @@ xc_compress_cleanup(output, bufsize)
 		length = p->length;
 		if (!p->flag) {
 		} else if (p->code >= 0) {
-			qinsert(p, &xc_q0b);
+			qinsert(p, &cc_q0b);
 			p->flag = 0;
 		} else if (p->ccount == 0) {
 			*output = 0;
 		} else if (p->ccount >= thresh(length)
-#ifndef xc_weight
+#ifndef cc_weight
 			   || wthreshp(p->weight, length)
 #endif
 			   ) {
@@ -677,25 +710,25 @@ xc_compress_cleanup(output, bufsize)
 	}
 }
 
-xc_compress(output, tokens, flag)
-	struct xc **output;
-	struct xc **tokens;
+cc_compress(output, tokens, flag)
+	struct cc **output;
+	struct cc **tokens;
 	char flag;
 {
-	struct xc **pp = tokens;
-	register struct xc *p = *pp++;
+	struct cc **pp = tokens;
+	register struct cc *p = *pp++;
 	int length = p->length;
 	int threshold = thresh(length);
-#ifndef xc_weight
+#ifndef cc_weight
 	short wthreshold = wthresh(length);
 #endif
-	short *places = xc_places[length];
-	int *initial_scores = xc_initial_scores[length];
+	short *places = cc_places[length];
+	int *initial_scores = cc_initial_scores[length];
 	int initial_score0 = put_token_score(length);
 
 	do {
 		int score;
-		register struct xc_undo *undop;
+		register struct cc_undo *undop;
 		int ccount;
 #ifdef STATS
 		int ncover;
@@ -707,7 +740,7 @@ xc_compress(output, tokens, flag)
 			continue;
 		if (p->code >= 0 || ccount >= threshold)
 			score = 0;
-#ifndef xc_weight
+#ifndef cc_weight
 		else if (p->weight >= wthreshold)
 			/* allow one fewer match than normal */
 			/* XXX, should adjust for ccount */
@@ -715,17 +748,17 @@ xc_compress(output, tokens, flag)
 #endif
 		else
 			score = initial_scores[ccount];
-		undop = xc_undo;
+		undop = cc_undo;
 #ifdef STATS
 		ncover = 0;
 #endif
 		for (i = p->places; i >= 0; i = places[i]) {
-			register struct xc **jp;
-			register struct xc *x;
-			register struct xc **ip = output + i;
+			register struct cc **jp;
+			register struct cc *x;
+			register struct cc **ip = output + i;
 			register score0 = initial_score0;
-			struct xc **iip = ip + length;
-			struct xc_undo *undop1 = undop;
+			struct cc **iip = ip + length;
+			struct cc_undo *undop1 = undop;
 
 			if ((x = *(jp = ip)) != 0)
 				goto z;
@@ -772,15 +805,15 @@ xc_compress(output, tokens, flag)
 		}
 		if (score > 0) {
 #ifdef STATS
-			xc_ccount_stat += ccount - p->ccount;
-			xc_ntoken_stat++;
-			xc_ncover_stat += ncover;
+			ccount_stat += ccount - p->ccount;
+			ntoken_stat++;
+			ncover_stat += ncover;
 #endif
 			p->ccount = ccount;
 		} else {
-			register struct xc_undo *u = xc_undo;
+			register struct cc_undo *u = cc_undo;
 			while (--undop >= u) {
-				register struct xc *x;
+				register struct cc *x;
 				if (*undop->pos = x = undop->val)
 					x->ccount++;
 			}
@@ -789,53 +822,49 @@ xc_compress(output, tokens, flag)
 	return pp - tokens;
 }
 
-xcwrite(s, n, x)
-	register char *s;
-	register n;
+cc_output_phase(buffer, output, bufsize)
+	register char *buffer;
+	register struct cc **output;
+	register bufsize;
 {
 	register i;
-	register struct xc *p, *p1;
-	register struct xc **output = xc_output + x;
+	register struct cc *p, *p1;
 
-	if (n < tt.tt_token_min) {
-		(*tt.tt_write)(s, n);
-		return;
-	}
-	for (i = 0; i < n;) {
+	for (i = 0; i < bufsize;) {
 		if ((p = output[i]) == 0) {
-			(*tt.tt_putc)(s[i]);
+			ttputc(buffer[i]);
 			i++;
 		} else if (p->code >= 0) {
 			if (--p->ccount == 0)
-				qinsert(p, &xc_q0a);
+				qinsert(p, &cc_q0a);
 			(*tt.tt_put_token)(p->code, p->string, p->length);
 			wwntokuse++;
 			wwntoksave += put_token_score(p->length);
 			i += p->length;
-		} else if ((p1 = xc_q0a.qback) != &xc_q0a) {
+		} else if ((p1 = cc_q0a.qback) != &cc_q0a) {
 			p->code = p1->code;
 			p1->code = -1;
-			qinsert(p1, &xc_q1a);
+			qinsert(p1, &cc_q1a);
 			if (--p->ccount == 0)
-				qinsert(p, &xc_q0a);
+				qinsert(p, &cc_q0a);
 			else
-				qinsert(p, &xc_q0b);
+				qinsert(p, &cc_q0b);
 			(*tt.tt_set_token)(p->code, p->string, p->length);
 			wwntokdef++;
 			wwntoksave -= tt.tt_set_token_cost;
 			i += p->length;
 		} else {
 			p->ccount--;
-			(*tt.tt_write)(p->string, p->length);
+			ttwrite(p->string, p->length);
 			wwntokbad++;
 			i += p->length;
 		}
 	}
-	wwntokc += n;
+	wwntokc += bufsize;
 }
 
-xc_token_compare(p1, p2)
-	struct xc **p1, **p2;
+cc_token_compare(p1, p2)
+	struct cc **p1, **p2;
 {
 	return (*p2)->bcount - (*p1)->bcount;
 }

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttinit.c	3.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttinit.c	3.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -47,18 +47,25 @@ struct tt_tab tt_tab[] = {
 
 ttinit()
 {
+	int i;
 	register struct tt_tab *tp;
 	register char *p, *q;
 	register char *t;
 	struct winsize winsize;
+	int ttflush();
 
 	tt_strp = tt_strings;
 
 	/*
 	 * Set output buffer size to about 1 second of output time.
 	 */
+	i = MIN(wwbaud/10, 512);
+	if ((tt_ob = malloc((unsigned) i)) == 0) {
+		wwerrno = WWE_NOMEM;
+		return -1;
+	}
 	tt_obp = tt_ob;
-	tt_obe = tt_ob + MIN(wwbaud/10, sizeof tt_ob);
+	tt_obe = tt_ob + i;
 
 	/*
 	 * Use the standard name of the terminal (i.e. the second
@@ -94,5 +101,6 @@ ttinit()
 		tt.tt_nrow = winsize.ws_row;
 		tt.tt_ncol = winsize.ws_col;
 	}
+	tt.tt_flush = ttflush;
 	return 0;
 }
