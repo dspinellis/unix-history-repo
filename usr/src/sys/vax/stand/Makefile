@@ -3,13 +3,13 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.4 (Berkeley) %G%
+#	@(#)Makefile	7.5 (Berkeley) %G%
 #
 DESTDIR=/
 INCPATH=-I. -I../h
-CFLAGS=	-O ${INCPATH} -DSTANDALONE ${COPTS} 
-COPTS=	-DCOMPAT_42 -DVAX780 -DVAX750 -DVAX730 -DVAX8600
-730OPTS=-O ${INCPATH} -DSTANDALONE -DVAX730
+CFLAGS=	-O ${COPTS} 
+COPTS=	${INCPATH} -DSTANDALONE -DCOMPAT_42 -DVAX780 -DVAX750 -DVAX730 -DVAX8600
+730OPTS=-O ${INCPATH} -DSTANDALONE -DCOMPAT_42 -DVAX730
 RELOC=	70000
 
 SRCS=	boot.c bootxx.c format.c copy.c drtest.c \
@@ -38,7 +38,7 @@ ${LIBSA}: sys.o conf.o ${DRIVERS} prf.o machdep.o dkbad.o
 	ranlib ${LIBSA}
 
 ${DRIVERS}: savax.h
-	cc -c -S ${CFLAGS} $*.c
+	cc -c -S ${COPTS} $*.c
 	/lib/c2 -i $*.s | as -o $*.o
 	rm -f $*.s
 
