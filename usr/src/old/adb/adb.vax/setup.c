@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)setup.c	4.8 (Berkeley) 84/08/05";
+static	char sccsid[] = "@(#)setup.c	4.9 (Berkeley) 85/04/26";
 /*
  * adb - routines to read a.out+core at startup
  */
@@ -110,7 +110,7 @@ setcor()
 		sbr = cursym->n_value;
 		lookup("_Syssize");
 		slr = cursym->n_value;
-		printf("sbr %X slr %X\n", sbr, slr);
+		printf("sbr %x slr %x\n", sbr, slr);
 		lookup("_masterpaddr");
 		physrw(fcor, cursym->n_value&~0x80000000, &masterpcbb, 1);
 		masterpcbb = (masterpcbb&PG_PFNUM)*512;
@@ -155,7 +155,7 @@ getpcb()
 	lseek(fcor, masterpcbb&~0x80000000, L_SET);
 	read(fcor, &pcb, sizeof (struct pcb));
 	pcb.pcb_p0lr &= ~AST_CLR;
-	printf("p0br %X p0lr %X p1br %X p1lr %X\n",
+	printf("p0br %x p0lr %x p1br %x p1lr %x\n",
 	    pcb.pcb_p0br, pcb.pcb_p0lr, pcb.pcb_p1br, pcb.pcb_p1lr);
 }
 
