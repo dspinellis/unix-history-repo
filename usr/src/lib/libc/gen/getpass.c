@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getpass.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpass.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/ioctl.h>
@@ -33,7 +33,7 @@ getpass(prompt)
 	FILE *fp, *outfp;
 	long omask;
 	int svflagval;
-#define	PASSWD_LEN	8
+#define	PASSWD_LEN	128
 	static char buf[PASSWD_LEN + 1];
 
 	/*
@@ -51,7 +51,7 @@ getpass(prompt)
 	omask = sigblock(sigmask(SIGINT));
 	(void)ioctl(fileno(fp), TIOCSETP, &ttyb);
 
-	fputs(prompt, outfp);
+	(void)fputs(prompt, outfp);
 	rewind(outfp);			/* implied flush */
 	for (p = buf; (ch = getc(fp)) != EOF && ch != '\n';)
 		if (p < buf + PASSWD_LEN)
