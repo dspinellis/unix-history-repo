@@ -60,10 +60,6 @@
 	((p)->p_sig && ((p)->p_flag&STRC || \
 	 ((p)->p_sig &~ ((p)->p_sigignore | (p)->p_sigmask))) && issig())
 
-/*
- * Fundamental constants of the implementation.
- */
-#define	NBBY	8		/* number of bits in a byte */
 #define	NBPW	sizeof(int)	/* number of bytes in an integer */
 
 #define	NULL	0
@@ -101,6 +97,14 @@
 
 #define	CBSIZE	28		/* number of chars in a clist block */
 #define	CROUND	0x1F		/* clist rounding; sizeof(int *) + CBSIZE -1*/
+
+#ifndef KERNEL
+#include	<sys/types.h>
+#else
+#ifndef LOCORE
+#include	"types.h"
+#endif
+#endif
 
 /*
  * File system parameters and macros.
@@ -171,18 +175,12 @@
 /*
  * Macros for counting and rounding.
  */
+#ifndef howmany
 #define	howmany(x, y)	(((x)+((y)-1))/(y))
+#endif
 #define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))
 
 /*
  * Maximum size of hostname recognized and stored in the kernel.
  */
 #define MAXHOSTNAMELEN	64
-
-#ifndef KERNEL
-#include	<sys/types.h>
-#else
-#ifndef LOCORE
-#include	"types.h"
-#endif
-#endif
