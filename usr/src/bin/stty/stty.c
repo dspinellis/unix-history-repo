@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)stty.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)stty.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -30,7 +30,7 @@ char *usage = "usage: stty: [-a|-e|-g] [-f file] [options]";
 
 main(argc, argv) 
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	struct info i;
 	enum FMT fmt;
@@ -40,7 +40,8 @@ main(argc, argv)
 	i.fd = STDIN_FILENO;
 
 	opterr = 0;
-	while (strspn(argv[optind], "-aefg") == strlen(argv[optind]) &&
+	while (optind < argc &&
+	    strspn(argv[optind], "-aefg") == strlen(argv[optind]) &&
 	    (ch = getopt(argc, argv, "aef:g")) != EOF)
 		switch(ch) {
 		case 'a':		/* undocumented: POSIX compatibility */
