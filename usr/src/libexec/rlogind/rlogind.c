@@ -1,9 +1,3 @@
-
-/*
- *	$Source: /mit/kerberos/ucb/mit/rlogind/RCS/rlogind.c,v $
- *	$Header: rlogind.c,v 5.0 89/06/26 18:31:01 kfall Locked $
- */
-
 /*
  * Copyright (c) 1983, 1988 The Regents of the University of California.
  * All rights reserved.
@@ -28,9 +22,16 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.35 (Berkeley) 4/2/89";
+static char sccsid[] = "@(#)rlogind.c	5.37 (Berkeley) %G%";
 #endif /* not lint */
 
+#ifdef KERBEROS
+/* From:
+ *	$Source: /mit/kerberos/ucb/mit/rlogind/RCS/rlogind.c,v $
+ *	$Header: rlogind.c,v 5.0 89/06/26 18:31:01 kfall Locked $
+ */
+
+#endif
 /*
  * remote login server:
  *	\0
@@ -72,6 +73,7 @@ char	lusername[NMAX+1], rusername[NMAX+1];
 static	char term[64] = "TERM=";
 #define	ENVSIZE	(sizeof("TERM=")-1)	/* skip null for concatenation */
 int	keepalive = 1;
+int	check_all = 0;
 
 #define	SUPERUSER(pwd)	((pwd)->pw_uid == 0)
 
@@ -85,9 +87,7 @@ main(argc, argv)
 	char **argv;
 {
 	extern int opterr, optind;
-#if	BSD > 43
 	extern int _check_rhosts_file;
-#endif
 	int ch;
 	int on = 1, fromlen;
 	struct sockaddr_in from;
@@ -97,11 +97,12 @@ main(argc, argv)
 	opterr = 0;
 	while ((ch = getopt(argc, argv, ARGSTR)) != EOF)
 		switch (ch) {
-#if	BSD > 43
+		case 'a':
+			check_all = 1;
+			break;
 		case 'l':
 			_check_rhosts_file = 0;
 			break;
-#endif
 		case 'n':
 			keepalive = 0;
 			break;
