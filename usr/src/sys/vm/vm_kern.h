@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_kern.h	7.3 (Berkeley) %G%
+ *	@(#)vm_kern.h	7.4 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -48,7 +48,7 @@ vm_map_t	kmem_suballoc __P((vm_map_t, vm_offset_t *, vm_offset_t *,
 				   vm_size_t, boolean_t));
 
 vm_offset_t	vm_move __P((vm_map_t, vm_offset_t, vm_map_t, vm_offset_t,
-			     vm_size_t, boolean_t));
+			     boolean_t));
 
 vm_offset_t	kmem_alloc_wait __P((vm_map_t, vm_size_t));
 void		kmem_free_wakeup __P((vm_map_t, vm_offset_t, vm_size_t));
