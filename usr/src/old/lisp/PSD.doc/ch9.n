@@ -1,0 +1,218 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)ch9.n	4.1 (Berkeley) %G%
+.\"
+." @(#)ch9.n	34.1 1/29/81
+.Lc Arrays 9
+.pp
+Arrays in 
+.Fr
+provide a programmable data structure access mechanism.
+One possible use for 
+.Fr
+arrays is to implement Maclisp style arrays which are simple vectors
+of fixnums, flonums or general lispvalues.
+This is described in more detail in \(sc9.3 but first
+we will describe how array references are handled by
+the lisp system.
+.pp
+The structure of an array object is given in \(sc1.3.9 and reproduced here
+for your convenience.
+.sp 1v
+.TS
+box center ;
+c | c | c | c .
+Subpart name	Get value	Set value	Type
+
+=
+access function	getaccess	putaccess	binary, list
+			or symbol
+_
+auxiliary	getaux	putaux	lispval
+_
+data	arrayref	replace	block of contiguous
+		set	lispval
+_
+length	getlength	putlength	fixnum
+_
+delta	getdelta	putdelta	fixnum
+.TE
+.sh 2 "general arrays" \n(ch 1
+Suppose the evaluator is told to evaluate \fI(foo\ a\ b)\fP
+and the function cell of the symbol foo contains an array object
+(which we will call foo_arr_obj).
+First the evaluator will evaluate and stack the values of 
+.i a 
+and 
+.i b .
+Next it will stack the array object foo_arr_obj.
+Finally it will call the access function of foo_arr_obj.
+The access function should be a lexpr\*[\(dg\*]
+or a symbol whose 
+function cell contains a lexpr.
+.(f
+\*[\(dg\*]A lexpr is a function which accepts any number of arguments
+which are evaluated before the function is called.
+.)f
+The access function is responsible for locating and returning 
+a value from the array.
+The array access function is free to interpret the arguments as it wishes.
+The Maclisp compatible array access function which is provided 
+in the standard
+.Fr
+system interprets the arguments as subscripts in the same way as 
+languages like Fortran and Pascal.
+.pp
+The array access function will also be called up to store elements in 
+the array.
+For example, \fI(store\ (foo\ a\ b)\ c)\fP
+will automatically expand to (foo c a b) and when the evaluator is called
+to evaluate this, it will evaluate the arguments 
+.i c , 
+.i b 
+and
+.i a .
+Then it will
+stack the array object (which is stored 
+in the function cell of foo) and call the array access function
+with (now) four arguments.
+The array access function must be able to tell this is a store operation
+which it can by checking the number of arguments it has been
+given (a lexpr can do this very easily).
+.sh 2 "subparts of an array object"
+When an array is created a raw array object is allocated with
+.i marray
+and the user is responsible for filling in the parts.
+Certain lisp functions interpret the values of the subparts 
+of the array object in special
+ways as described in the following text.
+Placing illegal values in these subparts may cause
+the lisp system to fail.
+.sh 3 "access function"
+The function of the access function has been described above.
+The contents of the access function should be a lexpr, 
+either a binary (compiled function) or a list (interpreted function).
+It may also be a symbol whose function cell contains a function 
+definition.
+This subpart 
+is used by 
+.i eval , 
+.i funcall , 
+and 
+.i apply
+when evaluating array references.
+.sh 3 auxiliary
+This can be used for any purpose. If it is a list and the first element
+of that list is the symbol unmarked_array then the data subpart will
+not be marked by the garbage collector (this is used in the Maclisp
+compatible array package and has the potential for causing strange errors
+if used incorrectly).
+.sh 3 data
+This is either nil or points to a block of data space allocated by 
+.i segment 
+or 
+.i small-segment.
+.sh 3 length
+This is a fixnum whose value is the number of elements in the
+data block.  This is used by the garbage collector and by 
+.i arrayref
+to determine if your index is in bounds.
+.sh 3 delta
+This is a fixnum whose value is the number of bytes in each element of 
+the data block.
+This will be four for an array of fixnums or value cells, and eight
+for an array of flonums.
+This is used by the garbage collector and 
+.i arrayref
+as well.
+.sh 2 "The Maclisp compatible array package"
+.pp
+A Maclisp style array is similar to what are know as arrays in other
+languages: a block of homogeneous data elements which
+is indexed by one or more integers called subscripts.
+The data elements can be all fixnums, flonums or general lisp objects.
+An array is created by a call to the function 
+.i array 
+or *array .
+The only difference is that 
+.i *array
+evaluates its arguments.
+This call: 
+.i "(array foo t 3 5)"
+sets up an array called foo of dimensions 3 by 5.
+The subscripts are zero based. 
+The first element is \fI(foo\ 0\ 0)\fP, the next is \fI(foo\ 0\ 1)\fP
+and so on up to \fI(foo\ 2\ 4)\fP.
+The t indicates a general lisp object array which means each element of
+foo can be any type.
+Each element can be any type since all that is stored in the array is
+a pointer to a lisp object, not the object itself.
+.i Array 
+does this by allocating an array object
+with
+.i marray
+and then allocating a segment of 15 consecutive value cells with
+.i small-segment
+and storing a pointer to that segment in the data subpart of the array
+object.
+The length and delta subpart of the array object are filled in (with 15
+and 4 respectively) and the access function subpart is set to point to 
+the appropriate  array access function.
+In this case there is a special access function for two dimensional
+value cell arrays called arrac-twoD, and this access function is used.
+The auxiliary subpart is set to (t\ 3\ 5) which describes the type of array
+and the bounds of the subscripts.  
+Finally this array object is placed in the function cell of the symbol foo.
+Now when 
+.i "(foo 1 3)"
+is evaluated, the array access function is invoked with three arguments:
+1, 3 and the array object.  From the auxiliary field of the
+array object it gets a description of the particular array.
+It then determines which element \fI(foo\ 1\ 3)\fP refers to  and 
+uses arrayref to extract that element.
+Since this is an array of value cells, what arrayref returns is a
+value cell whose value what we want, so we evaluate the value cell
+and return it as the value of \fI(foo\ 1\ 3)\fP.
+.pp
+In Maclisp the call \fI(array\ foo\ fixnum\ 25)\fP
+returns an array whose data object is a block of 25 memory words.
+When fixnums are stored in this array, the actual numbers are be 
+stored instead of pointers to the numbers as are done in general lisp
+object arrays.
+This is efficient under Maclisp but inefficient in
+.Fr
+since every time a value was referenced from an array it had to be copied
+and a pointer to the copy returned to prevent aliasing\*[\(dg\*].
+.(f
+\*[\(dg\*]Aliasing is when two variables are share the same storage location.
+For example if the copying mentioned weren't done then after 
+\fI(setq\ x\ (foo\ 2))\fP was done, the value of x and 
+(foo\ 2) would share the same 
+location.
+Then should the value of (foo\ 2) change, x's value would change as well.
+This is considered dangerous and as a result pointers are never returned
+into the data space of arrays.
+.)f
+Thus t, fixnum and flonum arrays are all implemented in the same 
+manner.
+This should not affect the compatibility of Maclisp
+and 
+.Fr .
+If there is an application where a block of fixnums or flonums is required,
+then the exact same effect of fixnum and flonum arrays in Maclisp
+can be achieved by using fixnum-block and flonum-block arrays.
+Such arrays are required if you want to pass a large number of arguments to a 
+Fortran or C coded function and then get answers back.
+.pp
+The Maclisp compatible array package is 
+just one example of how a general array scheme can be implemented.
+Another type of array you could implement would be hashed arrays.
+The subscript could be anything, not just a number.
+The access function would hash the subscript and use the result to
+select an array element.
+With the generality of arrays also comes extra cost; if you just
+want a simple vector of (less than 128) general lisp objects
+you would be wise to look into using hunks.
+
