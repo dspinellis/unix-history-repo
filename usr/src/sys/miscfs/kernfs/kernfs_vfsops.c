@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vfsops.c	8.4 (Berkeley) %G%
+ *	@(#)kernfs_vfsops.c	8.5 (Berkeley) %G%
  */
 
 /*
@@ -27,60 +27,34 @@
 #include <miscfs/specfs/specdev.h>
 #include <miscfs/kernfs/kernfs.h>
 
-struct vnode *rrootvp;
-
-/*
- * Create a vnode for a character device.
- */
-int
-cdevvp(dev, vpp)
-	dev_t dev;
-	struct vnode **vpp;
-{
-	register struct vnode *vp;
-	struct vnode *nvp;
-	int error;
-
-	if (dev == NODEV)
-		return (0);
-	error = getnewvnode(VT_NON, (struct mount *)0, spec_vnodeop_p, &nvp);
-	if (error) {
-		*vpp = 0;
-		return (error);
-	}
-	vp = nvp;
-	vp->v_type = VCHR;
-	if (nvp = checkalias(vp, dev, (struct mount *)0)) {
-		vput(vp);
-		vp = nvp;
-	}
-	*vpp = vp;
-	return (0);
-}
+dev_t rrootdev = NODEV;
 
 kernfs_init()
 {
+
+}
+
+void
+kernfs_get_rrootdev()
+{
+	static int tried = 0;
 	int cmaj;
-	int bmaj = major(rootdev);
-	int error = ENXIO;
 
-#ifdef KERNFS_DIAGNOSTIC
-	printf("kernfs_init\n");		/* printed during system boot */
-#endif
+	if (tried) {
+		/* Already did it once. */
+		return;
+	}
+	tried = 1;
 
+	if (rootdev == NODEV)
+		return;
 	for (cmaj = 0; cmaj < nchrdev; cmaj++) {
-		if (cdevsw[cmaj].d_open == bdevsw[bmaj].d_open) {
-			dev_t cdev = makedev(cmaj, minor(rootdev));
-			error = cdevvp(cdev, &rrootvp);
-			if (error == 0)
-				break;
-		}
+		rrootdev = makedev(cmaj, minor(rootdev));
+		if (chrtoblk(rrootdev) == rootdev)
+			return;
 	}
-
-	if (error) {
-		printf("kernfs: no raw boot device\n");
-		rrootvp = 0;
-	}
+	rrootdev = NODEV;
+	printf("kernfs_get_rrootdev: no raw root device\n");
 }
 
 /*
@@ -131,6 +105,8 @@ kernfs_mount(mp, path, data, ndp, p)
 #ifdef KERNFS_DIAGNOSTIC
 	printf("kernfs_mount: at %s\n", mp->mnt_stat.f_mntonname);
 #endif
+
+	kernfs_get_rrootdev();
 	return (0);
 }
 
