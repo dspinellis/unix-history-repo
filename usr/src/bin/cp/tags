@@ -1,0 +1,15 @@
+Mcp	cp.c	/^main(argc, argv)$/
+STRIP_TRAILING_SLASH	path.c	/^#define	STRIP_TRAILING_SLASH(p) { \\$/
+copy	cp.c	/^copy()$/
+copy_dir	cp.c	/^copy_dir()$/
+copy_fifo	cp.c	/^copy_fifo(from_stat, exists)$/
+copy_file	cp.c	/^copy_file(fs, dne)$/
+copy_link	cp.c	/^copy_link(exists)$/
+copy_special	cp.c	/^copy_special(from_stat, exists)$/
+error	cp.c	/^error(s)$/
+path_append	path.c	/^path_append(p, name, len)$/
+path_basename	path.c	/^path_basename(p)$/
+path_restore	path.c	/^path_restore(p, old)$/
+path_set	path.c	/^path_set(p, string)$/
+setfile	cp.c	/^setfile(fs, fd)$/
+usage	cp.c	/^usage()$/

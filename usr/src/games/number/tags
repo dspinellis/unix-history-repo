@@ -1,0 +1,6 @@
+Mnumber	number.c	/^main(argc,argv)$/
+convert	number.c	/^convert(line)$/
+number	number.c	/^number(C,len)$/
+pfract	number.c	/^pfract(len)$/
+unit	number.c	/^unit(len,C)$/
+usage	number.c	/^usage(toobig)$/
