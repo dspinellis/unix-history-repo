@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	5.24 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.25 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	5.24 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.25 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -532,12 +532,17 @@ reply(m, mci, e)
 */
 
 /*VARARGS1*/
-smtpmessage(f, m, mci, a, b, c)
+smtpmessage(f, m, mci VA_ARG_FORMAL)
 	char *f;
 	MAILER *m;
 	MCI *mci;
+	VA_ARG_DECL
 {
-	(void) sprintf(SmtpMsgBuffer, f, a, b, c);
+	VA_LOCAL_DECL
+
+	VA_START(f);
+	(void) vsprintf(SmtpMsgBuffer, f, ap);
+	VA_END;
 	if (tTd(18, 1) || (Verbose && !HoldErrs))
 		nmessage(Arpa_Info, ">>> %s", SmtpMsgBuffer);
 	if (mci->mci_out != NULL)

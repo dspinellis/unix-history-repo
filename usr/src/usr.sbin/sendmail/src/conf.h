@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	5.29 (Berkeley) %G%
+ *	@(#)conf.h	5.30 (Berkeley) %G%
  */
 
 /*
@@ -82,4 +82,30 @@
 
 # ifndef EX_CONFIG
 # define EX_CONFIG	78	/* configuration error */
+# endif
+
+/*
+**  Arrange to use either varargs or stdargs
+*/
+
+# ifdef __STDC__
+
+# include <stdarg.h>
+
+# define VA_ARG_FORMAL
+# define VA_ARG_DECL
+# define VA_LOCAL_DECL	va_list ap;
+# define VA_START(f)	va_start(ap, f)
+# define VA_END		va_end(ap)
+
+# else
+
+# include <varargs.h>
+
+# define VA_ARG_FORMAL	,va_alist
+# define VA_ARG_DECL	va_dcl
+# define VA_LOCAL_DECL	va_list ap;
+# define VA_START(f)	va_start(ap)
+# define VA_END		va_end(ap)
+
 # endif
