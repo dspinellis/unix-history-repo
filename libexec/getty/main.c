@@ -140,7 +140,6 @@ main(argc, argv)
 {
 	extern	char **environ;
 	char *tname;
-	long allflags;
 	int repcnt = 0;
 
 	signal(SIGINT, SIG_IGN);
@@ -191,16 +190,18 @@ main(argc, argv)
 	if (argc > 1)
 		tname = argv[1];
 	for (;;) {
-		int ldisp = OTTYDISC;
 		int off = 0;
+		int flushboth = 0;
+		struct sgttyb fake;
 
 		gettable(tname, tabent, tabstrs);
 		if (OPset || EPset || APset)
 			APset++, OPset++, EPset++;
 		setdefaults();
-		ioctl(0, TIOCFLUSH, 0);		/* clear out the crap */
+		ioctl(0, TIOCFLUSH, &flushboth);         /* clear out the crap */
 		ioctl(0, FIONBIO, &off);	/* turn off non-blocking mode */
 		ioctl(0, FIOASYNC, &off);	/* ditto for async mode */
+		ioctl(0, TIOCGETP, &fake);      /* initialize kernel termios */
 		if (IS)
 			tmode.sg_ispeed = speed(IS);
 		else if (SP)
@@ -209,8 +210,7 @@ main(argc, argv)
 			tmode.sg_ospeed = speed(OS);
 		else if (SP)
 			tmode.sg_ospeed = speed(SP);
-		tmode.sg_flags = setflags(0);
-		ioctl(0, TIOCSETP, &tmode);
+		set_tmode(0);
 		setchars();
 		ioctl(0, TIOCSETC, &tc);
 		if (HC)
@@ -251,28 +251,13 @@ main(argc, argv)
 			}
 			if (!(upper || lower || digit))
 				continue;
-			allflags = setflags(2);
-			tmode.sg_flags = allflags & 0xffff;
-			allflags >>= 16;
-			if (crmod || NL)
-				tmode.sg_flags |= CRMOD;
-			if (upper || UC)
-				tmode.sg_flags |= LCASE;
-			if (lower || LC)
-				tmode.sg_flags &= ~LCASE;
-			ioctl(0, TIOCSETP, &tmode);
+			set_tmode(2);
 			ioctl(0, TIOCSLTC, &ltc);
-			ioctl(0, TIOCLSET, &allflags);
 			signal(SIGINT, SIG_DFL);
 			for (i = 0; environ[i] != (char *)0; i++)
 				env[i] = environ[i];
 			makeenv(&env[i]);
 
-			/* 
-			 * this is what login was doing anyway.
-			 * soon we rewrite getty completely.
-			 */
-			set_ttydefaults(0);
 			execle(LO, "login", "-p", name, (char *) 0, env);
 			syslog(LOG_ERR, "%s: %m", LO);
 			exit(1);
@@ -290,6 +275,7 @@ getname()
 	register int c;
 	register char *np;
 	char cs;
+	int flushin = 1 /*FREAD*/;
 
 	/*
 	 * Interrupt may happen if we use CBREAK mode
@@ -299,16 +285,14 @@ getname()
 		return (0);
 	}
 	signal(SIGINT, interrupt);
-	tmode.sg_flags = setflags(0);
-	ioctl(0, TIOCSETP, &tmode);
-	tmode.sg_flags = setflags(1);
+	ioctl(0, TIOCFLUSH, &flushin);         /* purge any input */
 	prompt();
+	oflush();
 	if (PF > 0) {
-		oflush();
 		sleep(PF);
 		PF = 0;
 	}
-	ioctl(0, TIOCSETP, &tmode);
+	set_tmode(1);
 	crmod = digit = lower = upper = 0;
 	np = name;
 	for (;;) {
@@ -317,7 +301,7 @@ getname()
 			exit(0);
 		if ((c = cs&0177) == 0)
 			return (0);
-		if (c == EOT)
+		if (c == EOT || c == 4 /*^D*/)
 			exit(1);
 		if (c == '\r' || c == '\n' || np >= &name[sizeof name]) {
 			putf("\r\n");
@@ -327,7 +311,7 @@ getname()
 			lower = 1;
 		else if (isupper(c))
 			upper = 1;
-		else if (c == ERASE || c == '#' || c == '\b') {
+		else if (c == ERASE || c == '\b' || c == 0177) {
 			if (np > name) {
 				np--;
 				if (tmode.sg_ospeed >= B1200)
@@ -336,8 +320,7 @@ getname()
 					putchr(cs);
 			}
 			continue;
-		} else if (c == KILL || c == '@') {
-			putchr(cs);
+		} else if (c == KILL || c == 025 /*^U*/) {
 			putchr('\r');
 			if (tmode.sg_ospeed < B1200)
 				putchr('\n');
@@ -496,4 +479,30 @@ putf(cp)
 		}
 		cp++;
 	}
+}
+
+/*
+ * The conversions from sgttyb to termios make LITOUT and PASS8 affect
+ * the parity.  So every TIOCSETP ioctl has to be paired with a TIOCLSET
+ * ioctl (at least if LITOUT or PASS8 has changed, and PASS8 may vary
+ * with 'n').
+ */
+set_tmode(n)
+	int n;
+{
+	long allflags;
+
+	allflags = setflags(n);
+	tmode.sg_flags = allflags & 0xffff;
+	allflags >>= 16;
+	if (n == 2) {
+		if (crmod || NL)
+			tmode.sg_flags |= CRMOD;
+		if (upper || UC)
+			tmode.sg_flags |= LCASE;
+		if (lower || LC)
+			tmode.sg_flags &= ~LCASE;
+	}
+	ioctl(0, TIOCSETP, &tmode);
+	ioctl(0, TIOCLSET, &allflags);
 }
