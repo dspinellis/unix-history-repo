@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.62 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.63 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -915,7 +915,8 @@ deliver(e, firstto)
 	*/
 
 	/*XXX this seems a bit wierd */
-	if (ctladdr == NULL && bitset(QGOODUID, e->e_from.q_flags))
+	if (ctladdr == NULL && m != ProgMailer &&
+	    bitset(QGOODUID, e->e_from.q_flags))
 		ctladdr = &e->e_from;
 
 #ifdef NAMED_BIND
