@@ -2,7 +2,7 @@
 # include <pwd.h>
 # include "dlvrmail.h"
 
-static char	SccsId[] = "@(#)savemail.c	1.3	%G%";
+static char	SccsId[] = "@(#)savemail.c	1.4	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -24,37 +24,6 @@ static char	SccsId[] = "@(#)savemail.c	1.3	%G%";
 **		directory.
 **
 **		WARNING: the user id is reset to the original user.
-**
-**	Requires:
-**		fopen (sys)
-**		bmove
-**		parse
-**		deliver
-**		strcpy (sys)
-**		strcat (sys)
-**		fclose (sys)
-**		fgets (sys)
-**		fputs (sys)
-**		setpwent (sys)
-**		getuid (sys)
-**		setuid (sys)
-**		getgid (sys)
-**		setgid (sys)
-**		getpwnam (sys)
-**		fprintf (sys)
-**		ttypath
-**		freopen (sys)
-**		printf (sys)
-**		syserr
-**		rewind (sys)
-**		time (sys)
-**		ferror (sys)
-**
-**	Called By:
-**		finis
-**
-**	History:
-**		12/30/79 -- written.
 */
 
 # define MY_NAME	"~MAILER~DAEMON~"
@@ -246,22 +215,8 @@ savemail()
 **		input from xfile
 **		output to fp
 **
-**	Requires:
-**		read (sys)
-**		write (sys)
-**		open (sys)
-**		close (sys)
-**		syserr
-**		rewind (sys)
-**		fflush (sys)
-**		fprintf (sys)
-**		fileno (sys)
-**
 **	Called By:
 **		deliver
-**
-**	History:
-**		12/28/79 -- written.
 */
 
 

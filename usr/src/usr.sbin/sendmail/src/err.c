@@ -4,7 +4,7 @@
 # include <log.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)err.c	1.2	%G%";
+static char	SccsId[] = "@(#)err.c	1.3	%G%";
 
 /*
 **  ERR -- Print error message.
@@ -22,14 +22,6 @@ static char	SccsId[] = "@(#)err.c	1.2	%G%";
 **	Side Effects:
 **		Sets Error.
 **		Sets ExitStat.
-**
-**	Requires:
-**		sprintf (sys)
-**		printf (sys)
-**		logmsg
-**
-**	History:
-**		12/29/79 -- written.
 */
 
 /*VARARGS1*/
@@ -82,12 +74,6 @@ syserr(fmt, a, b, c, d, e)
 **
 **	Side Effects:
 **		sets Error.
-**
-**	Requires:
-**		printf (sys)
-**
-**	History:
-**		1/1/80 -- written.
 */
 
 /*VARARGS1*/

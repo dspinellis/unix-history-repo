@@ -1,7 +1,10 @@
 # include <sysexits.h>
 
-static char	SccsId[] = "@(#)sysexits.c	1.2	%G%";
+static char	SccsId[] = "@(#)sysexits.c	1.3	%G%";
 
+/*
+**  SYSEXITS.C -- error messages corresponding to sysexits.h
+*/
 
 char	*SysExMsg[] =
 {

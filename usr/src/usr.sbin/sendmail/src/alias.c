@@ -3,7 +3,7 @@
 # include <pwd.h>
 # include "dlvrmail.h"
 
-static char SccsId[] = "@(#)alias.c	1.2	%G%";
+static char SccsId[] = "@(#)alias.c	1.3	%G%";
 
 /*
 **  ALIAS -- Compute aliases.
@@ -27,26 +27,16 @@ static char SccsId[] = "@(#)alias.c	1.2	%G%";
 **		MAXRCRSN -- the maximum recursion depth.
 **		ALIASFILE -- the pathname of the alias file.
 **
-**	Requires:
-**		fopen (stdio)
-**		fgets (stdio)
-**		rewind (stdio)
-**		isspace (sys)
-**		printf (sys)
-**		sendto
-**		syserr
-**		parse
-**		nxtinq
-**		sameaddr
-**		tkoffq
-**		putonq
-**		fclose (sys)
-**
 **	Called By:
 **		main
 **
 **	Files:
-**		/usr/lib/mailaliases -- the mail aliases.
+**		ALIASFILE -- the mail aliases.  The format is
+**			a series of lines of the form:
+**				alias:name1,name2,name3,...
+**			where 'alias' expands to all of
+**			'name[i]'.  Continuations begin with
+**			space or tab.
 **
 **	Notes:
 **		If NoAlias (the "-n" flag) is set, no aliasing is
@@ -56,11 +46,6 @@ static char SccsId[] = "@(#)alias.c	1.2	%G%";
 **		It should complain about names that are aliased to
 **			nothing.
 **		It is unsophisticated about line overflows.
-**
-**	History:
-**		3/5/80 -- extensive mods to change internal address
-**			format.
-**		12/27/79 -- written.
 */
 
 
@@ -217,15 +202,8 @@ alias()
 **	Side Effects:
 **		New names are added to SendQ.
 **
-**	Requires:
-**		none
-**
 **	Called By:
 **		recipient
-**
-**	History:
-**		3/5/80 -- return value changed.
-**		1/23/80 -- null version written.
 */
 
 bool

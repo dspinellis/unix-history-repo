@@ -6,7 +6,7 @@
 # include <log.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	1.3	%G%";
+static char SccsId[] = "@(#)deliver.c	1.4	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -41,45 +41,13 @@ static char SccsId[] = "@(#)deliver.c	1.3	%G%";
 **		parent waits for the child to finish before forking
 **		another child.
 **
-**	Requires:
-**		buildargv
-**		giveresponse
-**		fork (sys)
-**		rewind (sys)
-**		execv (sys)
-**		exit (sys)
-**		wait (sys)
-**		syserr
-**		getpwnam (sys)
-**		endpwent (sys)
-**		initlog
-**		flagset
-**		usrerr
-**		pipe (sys)
-**		close (sys)
-**		dup (sys)
-**		setuid (sys)
-**		getuid (sys)
-**		signal (sys)
-**		fdopen (sys[v7] or conf.c[v6])
-**		fclose (sys)
-**		printf (sys)
-**		stripquotes
-**		mailfile
-**		index (sys)
-**
 **	Called By:
 **		main
 **		savemail
 **
 **	Files:
-**		standard input -- must be openned to the message to
+**		standard input -- must be opened to the message to
 **			deliver.
-**
-**	History:
-**		3/5/80 -- modified rather extensively to change the
-**			internal form of addresses.
-**		12/26/79 -- written.
 */
 
 deliver(to, editfcn)
@@ -305,17 +273,8 @@ deliver(to, editfcn)
 **		Error may be set.
 **		ExitStat may be set.
 **
-**	Requires:
-**		usrerr
-**		syserr
-**		flagset
-**		logmsg (sys)
-**
 **	Called By:
 **		deliver
-**
-**	History:
-**		2/18/80 -- broken from deliver.
 */
 
 giveresponse(stat, force, m)
@@ -389,21 +348,8 @@ giveresponse(stat, force, m)
 **		Puts a "From" line in UNIX format, and then
 **			outputs the rest of the message.
 **
-**	Requires:
-**		fprintf (sys)
-**		fgets (sys)
-**		fputs (sys)
-**		time (sys)
-**		ctime (sys)
-**		ferror (sys)
-**		syserr
-**		setstat
-**
 **	Called By:
 **		deliver
-**
-**	History:
-**		1/8/80 -- written.
 */
 
 putheader(fp)
@@ -436,12 +382,6 @@ putheader(fp)
 **
 **	Side Effects:
 **		logs an error message.
-**
-**	Requires:
-**		syserr
-**
-**	History:
-**		1/17/80 -- written.
 */
 
 pipesig()
@@ -464,16 +404,9 @@ pipesig()
 **	Side Effects:
 **		none.
 **
-**	Requires:
-**		parse
-**		recipient
-**
 **	Called By:
 **		main
 **		alias
-**
-**	History:
-**		1/11/80 -- written.
 */
 
 sendto(list, copyf)
@@ -530,23 +463,9 @@ sendto(list, copyf)
 **	Side Effects:
 **		none.
 **
-**	Requires:
-**		sameaddr
-**		parse
-**		forward
-**		printf (sys)
-**		strcmp (sys)
-**		nxtinq
-**		putonq
-**
 **	Called By:
 **		sendto
 **		main
-**
-**	History:
-**		3/5/80 -- modified to know about new internal form
-**			for addresses.
-**		12/31/79 -- written.
 */
 
 recipient(a, targetq)
@@ -670,17 +589,8 @@ recipient(a, targetq)
 **		Since the argv is staticly allocated, any subsequent
 **		calls will clobber the old argv.
 **
-**	Requires:
-**		printf (sys)
-**		sprintf (sys)
-**		flagset
-**		syserr
-**
 **	Called By:
 **		deliver
-**
-**	History:
-**		12/26/79 -- written.
 */
 
 char **
@@ -813,22 +723,8 @@ buildargv(tmplt, flags, host, user, from)
 **	Side Effects:
 **		none.
 **
-**	Requires:
-**		fgets (sys)
-**		fputs (sys)
-**		fprintf (sys)
-**		fopen (sys)
-**		fclose (sys)
-**		ferror (sys)
-**		time (sys)
-**		ctime (sys)
-**		rewind (sys)
-**
 **	Called By:
 **		deliver
-**
-**	History:
-**		3/5/80 -- written.
 */
 
 mailfile(filename)
