@@ -1,6 +1,6 @@
-.\"	@(#)fseek.3	4.1 (Berkeley) %G%
+.\"	@(#)fseek.3	5.1 (Berkeley) %G%
 .\"
-.TH FSEEK 3S 
+.TH FSEEK 3S  "19 January 1983"
 .AT 3
 .SH NAME
 fseek, ftell, rewind \- reposition a stream
@@ -37,7 +37,7 @@ has the value 0, 1, or 2.
 .PP
 .I Fseek
 undoes any effects of
-.IR  ungetc (3).
+.IR  ungetc (3S).
 .PP
 .I Ftell
 returns the current value of the offset relative to the beginning
@@ -50,12 +50,13 @@ and the only foolproof way to obtain an
 for
 .IR fseek .
 .PP
-.I Rewind(stream)
+.IR Rewind ( stream )
 is equivalent to
-.I "fseek(stream, 0L, 0)."
+.IR fseek ( stream ,
+0L, 0).
 .SH "SEE ALSO"
 lseek(2),
-fopen(3)
+fopen(3S)
 .SH DIAGNOSTICS
 .I Fseek
 returns \-1 for improper seeks.
