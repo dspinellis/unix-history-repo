@@ -97,7 +97,7 @@ remove( a, d, n )
 	for( i = 0; i < n; i++ )  {
 	    if(  !eq( a, d[i] )  )  d[j++] = d[i];
 	}
-	if(  j < n  )  d[j].suit = d[j].rank = -1;
+	if(  j < n  )  d[j].suit = d[j].rank = EMPTY;
 }
 
 

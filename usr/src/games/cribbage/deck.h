@@ -32,12 +32,15 @@
 #define		JACK		10
 #define		QUEEN		11
 #define		KING		12
+#define		EMPTY		13
 
 #define		VAL(c)		( (c) < 9 ? (c)+1 : 10 )    /* val of rank */
 
 
-#define		TRUE		1
-#define		FALSE		0
+#ifndef TRUE
+#	define		TRUE		1
+#	define		FALSE		0
+#endif
 
 typedef		struct  {
 			int		rank;

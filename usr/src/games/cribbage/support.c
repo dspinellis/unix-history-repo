@@ -1,7 +1,7 @@
-
-#include	<stdio.h>
+#include	<curses.h>
 #include	"deck.h"
 #include	"cribbage.h"
+#include	"cribcur.h"
 
 
 #define		NTV		10		/* number scores to test */
@@ -72,80 +72,106 @@ cchose( h, n, s )
 
 
 /*
- * evaluate and score a player hand or crib
+ * plyrhand:
+ *	Evaluate and score a player hand or crib
  */
-
-plyrhand( hand, s )
-
-    CARD		hand[];
-    char		*s;
+plyrhand(hand, s)
+CARD		hand[];
+char		*s;
 {
-	register  int		i, j;
+	register int		i, j;
 	BOOLEAN			win;
 
-	printf( "Your %s is: ", s );
-	prhand( hand, CINHAND, TRUE );
-	printf( "  [" );
-	printcard( turnover, TRUE );
-	printf( "].   How many points? " );
-	i = scorehand( hand, turnover, CINHAND, FALSE );	/* count */
-	if(  ( j = number(0, 29) )  ==  19  )  j = 0;
-	if(  i != j  )  {
-	    if( i < j )  {
-		win = chkscr( &pscore, i );
-		printf( "It's really only %d points, I get %d.\n", i, 2 );
-		if( !win )  win = chkscr( &cscore, 2 );
+	prhand(hand, CINHAND, Playwin);
+	msg("Your %s scores ", s);
+	i = scorehand(hand, turnover, CINHAND, FALSE);	/* count */
+	if ((j = number(0, 29)) == 19)
+	    j = 0;
+	if (i != j) {
+	    if (i < j) {
+		win = chkscr(&pscore, i);
+		msg("It's really only %d points, I get %d.", i, 2);
+		if (!win)
+		    win = chkscr(&cscore, 2);
 	    }
-	    else  {
-		win = chkscr( &pscore, j );
-		printf( "You should have taken %d, not %d!\n", i, j );
+	    else {
+		win = chkscr(&pscore, j);
+		msg("You should have taken %d, not %d!", i, j);
 	    }
-	    if( explain )  {
-		printf( "Explanation: %s\n", expl );
-	    }
+	    if (explain)
+		msg("Explanation: %s", expl);
 	}
-	else  {
-	    win = chkscr( &pscore, i );
-	}
-	return(  win  );
+	else
+	    win = chkscr(&pscore, i);
+	return win;
 }
-
-
 
 /*
- * handle scoring and displaying the computers hand
+ * comphand:
+ *	Handle scoring and displaying the computers hand
  */
-
-comphand( h, s )
-
-    CARD		h[];
-    char		*s;
+comphand(h, s)
+CARD		h[];
+char		*s;
 {
-	register  int		j;
+	register int		j;
 
-	j = scorehand( h, turnover, CINHAND, FALSE );
-	printf( "My %s ( ", s );
-	prhand( h, CINHAND, TRUE );
-	printf( "  [" );
-	printcard( turnover, TRUE );
-	printf( "] ) scores %d.\n", (j == 0 ? 19 : j) );
-	return(  chkscr( &cscore, j )  );
+	j = scorehand(h, turnover, CINHAND, FALSE);
+	prhand(h, CINHAND, Compwin);
+	Hasread = FALSE;
+	msg("My %s scores %d", s, (j == 0 ? 19 : j));
+	return chkscr(&cscore, j);
 }
-
-
 
 /*
- * add inc to scr and test for > glimit
+ * chkscr:
+ *	Add inc to scr and test for > glimit, printing on the scoring
+ *	board while we're at it.
  */
 
-chkscr( scr, inc )
+int	Lastscore[2] = {0, 0};
 
-    int			*scr, inc;
+chkscr(scr, inc)
+int		*scr, inc;
 {
-	return(  ( (*scr += inc) >= glimit ? TRUE : FALSE )  );
+	BOOLEAN		myturn;
+
+	myturn = (scr == &cscore);
+	if (inc != 0) {
+		prpeg(Lastscore[myturn], '.', myturn);
+		Lastscore[myturn] = *scr;
+	}
+	*scr += inc;
+	prpeg(*scr, PEG, myturn);
+	return (*scr > glimit);
 }
 
+/*
+ * prpeg:
+ *	put out the peg character on the score board
+ */
+prpeg(score, peg, myturn)
+register int	score;
+char		peg;
+BOOLEAN		myturn;
+{
+	register int	y, x;
 
+	if (score == 0 || score > glimit)
+		return;
+	if (!myturn)
+		y = SCORE_Y + 2;
+	else
+		y = SCORE_Y + 5;
+	x = (score - 1) % 30;
+	if (score > 90 || (score > 30 && score <= 60)) {
+		y++;
+		x = 29 - x;
+	}
+	x += x / 5;
+	x += SCORE_X + 3;
+	mvaddch(y, x, peg);
+}
 
 /*
  * cdiscard -- the computer figures out what is the best discard for

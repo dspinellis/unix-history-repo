@@ -1,4 +1,3 @@
-
 extern  CARD		deck[ CARDS ];		/* a deck */
 extern  CARD		phand[ FULLHAND ];	/* player's hand */
 extern  CARD		chand[ FULLHAND ];	/* computer's hand */
@@ -15,11 +14,14 @@ extern  int		glimit;			/* points to win game */
 extern  int		pgames;			/* player's games won */
 extern  int		cgames;			/* comp's games won */
 extern  int		gamecount;		/* # games played */
+extern	int		Lastscore[2];		/* previous score for each */
 
 extern  BOOLEAN		iwon;			/* if comp won last */
 extern  BOOLEAN		explain;		/* player mistakes explained */
 extern  BOOLEAN		rflag;			/* if all cuts random */
 extern  BOOLEAN		quiet;			/* if suppress random mess */
+extern  BOOLEAN		Hasread;		/* has had chance to read msg */
+extern	BOOLEAN		playing;		/* currently playing game */
 
 extern  char		expl[];			/* string for explanation */
 
