@@ -1,5 +1,5 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.15 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.16 (Berkeley) %G%";
 # endif
 
 # include "pass2.h"
@@ -833,7 +833,7 @@ insput( p ) register NODE *p; {
 	cerror( "insput" );
 	}
 
-upput( p, off ) register NODE *p; int off; {
+upput( p ) register NODE *p; {
 	cerror( "upput" );
 	}
 
@@ -1171,6 +1171,7 @@ optim2( p ) register NODE *p; {
 		l = p->in.left;
 		if ( r->in.op == SCONV &&
 		     !mixtypes(l, r) &&
+		     l->in.op != FLD &&
 		     tlen(l) == tlen(r) ) {
 				p->in.right = r->in.left;
 				r->in.op = FREE;
