@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	7.79 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.80 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -185,10 +185,12 @@ struct vnodeopv_desc ffs_fifoop_opv_desc =
  * Vnode op for reading.
  */
 /* ARGSUSED */
-ffs_read (ap)
+ffs_read(ap)
 	struct vop_read_args *ap;
 {
-	register struct inode *ip = VTOI(ap->a_vp);
+	register struct vnode *vp = ap->a_vp;
+	register struct inode *ip = VTOI(vp);
+	register struct uio *uio = ap->a_uio;
 	register struct fs *fs;
 	struct buf *bp;
 	daddr_t lbn, bn, rablock;
@@ -198,62 +200,64 @@ ffs_read (ap)
 
 #ifdef DIAGNOSTIC
 	int type;
-	if (ap->a_uio->uio_rw != UIO_READ)
+	if (uio->uio_rw != UIO_READ)
 		panic("ffs_read mode");
 	type = ip->i_mode & IFMT;
 	if (type != IFDIR && type != IFREG && type != IFLNK)
 		panic("ffs_read type");
 #endif
-	if (ap->a_uio->uio_resid == 0)
+	if (uio->uio_resid == 0)
 		return (0);
-	if (ap->a_uio->uio_offset < 0)
+	fs = ip->i_fs;
+	if (uio->uio_offset < 0)
 		return (EINVAL);
 	ip->i_flag |= IACC;
-	fs = ip->i_fs;
 	do {
-		lbn = lblkno(fs, ap->a_uio->uio_offset);
-		on = blkoff(fs, ap->a_uio->uio_offset);
-		n = MIN((unsigned)(fs->fs_bsize - on), ap->a_uio->uio_resid);
-		diff = ip->i_size - ap->a_uio->uio_offset;
+		lbn = lblkno(fs, uio->uio_offset);
+		on = blkoff(fs, uio->uio_offset);
+		n = MIN((unsigned)(fs->fs_bsize - on), uio->uio_resid);
+		diff = ip->i_size - uio->uio_offset;
 		if (diff <= 0)
 			return (0);
 		if (diff < n)
 			n = diff;
 		size = blksize(fs, ip, lbn);
 		rablock = lbn + 1;
-		if (ap->a_vp->v_lastr + 1 == lbn &&
+		if (vp->v_lastr + 1 == lbn &&
 		    lblktosize(fs, rablock) < ip->i_size) {
 			rasize = blksize(fs, ip, rablock);
-			error = breadn(ap->a_vp, lbn, size, &rablock,
+			error = breadn(vp, lbn, size, &rablock,
 				&rasize, 1, NOCRED, &bp);
 		} else
-			error = bread(ap->a_vp, lbn, size, NOCRED, &bp);
-		ap->a_vp->v_lastr = lbn;
+			error = bread(vp, lbn, size, NOCRED, &bp);
+		vp->v_lastr = lbn;
 		n = MIN(n, size - bp->b_resid);
 		if (error) {
 			brelse(bp);
 			return (error);
 		}
-		error = uiomove(bp->b_un.b_addr + on, (int)n, ap->a_uio);
-		if (n + on == fs->fs_bsize || ap->a_uio->uio_offset == ip->i_size)
+		error = uiomove(bp->b_un.b_addr + on, (int)n, uio);
+		if (n + on == fs->fs_bsize || uio->uio_offset == ip->i_size)
 			bp->b_flags |= B_AGE;
 		brelse(bp);
-	} while (error == 0 && ap->a_uio->uio_resid > 0 && n != 0);
+	} while (error == 0 && uio->uio_resid > 0 && n != 0);
 	return (error);
 }
 
 /*
  * Vnode op for writing.
  */
-ffs_write (ap)
+ffs_write(ap)
 	struct vop_write_args *ap;
 {
 	USES_VOP_TRUNCATE;
 	USES_VOP_UPDATE;
 	register struct vnode *vp = ap->a_vp;
-	struct proc *p = ap->a_uio->uio_procp;
+	register struct uio *uio = ap->a_uio;
 	register struct inode *ip = VTOI(vp);
 	register struct fs *fs;
+	struct proc *p = uio->uio_procp;
+	int ioflag = ap->a_ioflag;
 	struct buf *bp;
 	daddr_t lbn, bn;
 	off_t osize;
@@ -261,49 +265,49 @@ ffs_write (ap)
 	int size, resid, error = 0;
 
 #ifdef DIAGNOSTIC
-	if (ap->a_uio->uio_rw != UIO_WRITE)
+	if (uio->uio_rw != UIO_WRITE)
 		panic("ffs_write mode");
 #endif
 	switch (vp->v_type) {
 	case VREG:
-		if (ap->a_ioflag & IO_APPEND)
-			ap->a_uio->uio_offset = ip->i_size;
+		if (ioflag & IO_APPEND)
+			uio->uio_offset = ip->i_size;
 		/* fall through */
 	case VLNK:
 		break;
 
 	case VDIR:
-		if ((ap->a_ioflag & IO_SYNC) == 0)
+		if ((ioflag & IO_SYNC) == 0)
 			panic("ffs_write nonsync dir write");
 		break;
 
 	default:
 		panic("ffs_write type");
 	}
-	if (ap->a_uio->uio_offset < 0)
+	if (uio->uio_offset < 0)
 		return (EINVAL);
-	if (ap->a_uio->uio_resid == 0)
+	if (uio->uio_resid == 0)
 		return (0);
 	/*
 	 * Maybe this should be above the vnode op call, but so long as
 	 * file servers have no limits, i don't think it matters
 	 */
 	if (vp->v_type == VREG && p &&
-	    ap->a_uio->uio_offset + ap->a_uio->uio_resid >
+	    uio->uio_offset + uio->uio_resid >
 	      p->p_rlimit[RLIMIT_FSIZE].rlim_cur) {
 		psignal(p, SIGXFSZ);
 		return (EFBIG);
 	}
-	resid = ap->a_uio->uio_resid;
+	resid = uio->uio_resid;
 	osize = ip->i_size;
 	fs = ip->i_fs;
 	flags = 0;
-	if (ap->a_ioflag & IO_SYNC)
+	if (ioflag & IO_SYNC)
 		flags = B_SYNC;
 	do {
-		lbn = lblkno(fs, ap->a_uio->uio_offset);
-		on = blkoff(fs, ap->a_uio->uio_offset);
-		n = MIN((unsigned)(fs->fs_bsize - on), ap->a_uio->uio_resid);
+		lbn = lblkno(fs, uio->uio_offset);
+		on = blkoff(fs, uio->uio_offset);
+		n = MIN((unsigned)(fs->fs_bsize - on), uio->uio_resid);
 		if (n < fs->fs_bsize)
 			flags |= B_CLRBUF;
 		else
@@ -311,15 +315,15 @@ ffs_write (ap)
 		if (error = ffs_balloc(ip, lbn, on + n, ap->a_cred, &bp, flags))
 			break;
 		bn = bp->b_blkno;
-		if (ap->a_uio->uio_offset + n > ip->i_size) {
-			ip->i_size = ap->a_uio->uio_offset + n;
+		if (uio->uio_offset + n > ip->i_size) {
+			ip->i_size = uio->uio_offset + n;
 			vnode_pager_setsize(vp, (u_long)ip->i_size);
 		}
 		size = blksize(fs, ip, lbn);
 		(void) vnode_pager_uncache(vp);
 		n = MIN(n, size - bp->b_resid);
-		error = uiomove(bp->b_un.b_addr + on, n, ap->a_uio);
-		if (ap->a_ioflag & IO_SYNC)
+		error = uiomove(bp->b_un.b_addr + on, n, uio);
+		if (ioflag & IO_SYNC)
 			(void) bwrite(bp);
 		else if (n + on == fs->fs_bsize) {
 			bp->b_flags |= B_AGE;
@@ -329,13 +333,13 @@ ffs_write (ap)
 		ip->i_flag |= IUPD|ICHG;
 		if (ap->a_cred->cr_uid != 0)
 			ip->i_mode &= ~(ISUID|ISGID);
-	} while (error == 0 && ap->a_uio->uio_resid > 0 && n != 0);
-	if (error && (ap->a_ioflag & IO_UNIT)) {
-		(void)VOP_TRUNCATE(vp, osize, ap->a_ioflag & IO_SYNC, ap->a_cred);
-		ap->a_uio->uio_offset -= resid - ap->a_uio->uio_resid;
-		ap->a_uio->uio_resid = resid;
+	} while (error == 0 && uio->uio_resid > 0 && n != 0);
+	if (error && (ioflag & IO_UNIT)) {
+		(void)VOP_TRUNCATE(vp, osize, ioflag & IO_SYNC, ap->a_cred);
+		uio->uio_offset -= resid - uio->uio_resid;
+		uio->uio_resid = resid;
 	}
-	if (!error && (ap->a_ioflag & IO_SYNC))
+	if (!error && (ioflag & IO_SYNC))
 		error = VOP_UPDATE(vp, &time, &time, 1);
 	return (error);
 }
@@ -345,7 +349,7 @@ ffs_write (ap)
  */
 /* ARGSUSED */
 int
-ffs_fsync (ap)
+ffs_fsync(ap)
 	struct vop_fsync_args *ap;
 {
 	USES_VOP_UPDATE;
@@ -362,50 +366,50 @@ ffs_fsync (ap)
  * truncate and deallocate the file.
  */
 int
-ffs_inactive (ap)
+ffs_inactive(ap)
 	struct vop_inactive_args *ap;
 {
 	USES_VOP_TRUNCATE;
 	USES_VOP_UPDATE;
 	USES_VOP_VFREE;
-	register struct inode *ip;
+	register struct vnode *vp = ap->a_vp;
+	register struct inode *ip = VTOI(vp);
 	int mode, error;
 	extern int prtactive;
 
-	if (prtactive && ap->a_vp->v_usecount != 0)
-		vprint("ffs_inactive: pushing active", ap->a_vp);
+	if (prtactive && vp->v_usecount != 0)
+		vprint("ffs_inactive: pushing active", vp);
 
 	/* Get rid of inodes related to stale file handles. */
-	ip = VTOI(ap->a_vp);
 	if (ip->i_mode == 0) {
-		if ((ap->a_vp->v_flag & VXLOCK) == 0)
-			vgone(ap->a_vp);
+		if ((vp->v_flag & VXLOCK) == 0)
+			vgone(vp);
 		return (0);
 	}
 
 	error = 0;
 	ILOCK(ip);
-	if (ip->i_nlink <= 0 && (ap->a_vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
+	if (ip->i_nlink <= 0 && (vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
 #ifdef QUOTA
 		if (!getinoquota(ip))
 			(void)chkiq(ip, -1, NOCRED, 0);
 #endif
-		error = VOP_TRUNCATE(ap->a_vp, (off_t)0, 0, NOCRED);
+		error = VOP_TRUNCATE(vp, (off_t)0, 0, NOCRED);
 		mode = ip->i_mode;
 		ip->i_mode = 0;
 		ip->i_rdev = 0;
 		ip->i_flag |= IUPD|ICHG;
-		VOP_VFREE(ap->a_vp, ip->i_number, mode);
+		VOP_VFREE(vp, ip->i_number, mode);
 	}
 	if (ip->i_flag&(IUPD|IACC|ICHG|IMOD))
-		VOP_UPDATE(ap->a_vp, &time, &time, 0);
+		VOP_UPDATE(vp, &time, &time, 0);
 	IUNLOCK(ip);
 	ip->i_flag = 0;
 	/*
 	 * If we are done with the inode, reclaim it
 	 * so that it can be reused immediately.
 	 */
-	if (ap->a_vp->v_usecount == 0 && ip->i_mode == 0)
-		vgone(ap->a_vp);
+	if (vp->v_usecount == 0 && ip->i_mode == 0)
+		vgone(vp);
 	return (error);
 }
