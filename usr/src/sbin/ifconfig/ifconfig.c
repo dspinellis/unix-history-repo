@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	4.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)ifconfig.c	4.14 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -339,7 +339,6 @@ in_status()
 xns_status()
 {
 	struct sockaddr_ns *sns;
-	char *xns_ntoa();
 
 	close(s);
 	s = socket(AF_NS, SOCK_DGRAM, 0);
@@ -356,7 +355,18 @@ xns_status()
 	}
 	strncpy(ifr.ifr_name, name, sizeof ifr.ifr_name);
 	sns = (struct sockaddr_ns *)&ifr.ifr_addr;
-	printf("%s: xns %s ", name, xns_ntoa(sns));
+	printf("%s: ns:%s ", name, ns_ntoa(sns->sns_addr));
+	if (flags & IFF_POINTOPOINT) { /* by W. Nesheim@Cornell */
+		if (ioctl(s, SIOCGIFDSTADDR, (caddr_t)&ifr) < 0) {
+			if (errno == EADDRNOTAVAIL)
+			    bzero((char *)&ifr.ifr_addr, sizeof(ifr.ifr_addr));
+			else
+			    Perror("ioctl (SIOCGIFDSTADDR)");
+		}
+		strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
+		sns = (struct sockaddr_ns *)&ifr.ifr_dstaddr;
+		printf("--> %s ", ns_ntoa(sns->sns_addr));
+	}
 	printb("flags", flags, IFFBITS);
 	putchar('\n');
 }
@@ -449,61 +459,12 @@ printb(s, v, bits)
 	}
 }
 
-#define setxnnet(a,b) {a = * (union ns_net *) &(b);}
-
 xns_getaddr(addr, saddr)
 char *addr;
 struct sockaddr *saddr;
 {
-	register struct sockaddr_ns *sns = (struct sockaddr_ns *)saddr;
-	u_long netnum;
-	char *index();
-	register char *s = index(addr, ':');
-	register int i;
-
-	if (s!=NULL) *s = 0;
-	netnum = atoi(addr);
-	netnum = htonl(netnum);
-	setxnnet(sns->sns_addr.x_net, netnum);
+	struct sockaddr_ns *sns = (struct sockaddr_ns *)saddr;
+	struct ns_addr ns_addr();
 	sns->sns_family = AF_NS;
-
-	for (i = 0; i < 6; i++) {
-		if (s == NULL || *++s == 0) 
-			break;
-		sns->sns_addr.x_host.c_host[i] = xtoi(s);
-		s = index(s, '.');
-	}
-
-}
-
-char *
-xns_ntoa(sns)
-register struct sockaddr_ns *sns;
-{
-	static char buf[30];
-
-	sprintf (buf, "%d:%x.%x.%x.%x.%x.%x",
-	    ntohl(ns_netof(sns->sns_addr)),
-	    sns->sns_addr.x_host.c_host[0], sns->sns_addr.x_host.c_host[1],
-	    sns->sns_addr.x_host.c_host[2], sns->sns_addr.x_host.c_host[3],
-	    sns->sns_addr.x_host.c_host[4], sns->sns_addr.x_host.c_host[5]);
-	return (buf);
-}
-
-int xtoi(s)
-register char *s;
-{
-	register int res = 0, delta;
-	register char *cp;
-	static char base[] = "0123456789ABCDEFabcdef";
-
-	for(; *s; s++) {
-		cp = index(base, *s);	
-		if (cp==NULL)
-			break;
-		if ((delta = cp - base) > 15)
-			delta -= 6;
-		res = (res << 4) + delta;
-	}
-	return(res);
+	sns->sns_addr = ns_addr(addr);
 }
