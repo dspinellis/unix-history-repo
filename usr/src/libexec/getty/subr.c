@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)subr.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)subr.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -188,6 +188,9 @@ setflags(n)
 
 	if (XC)
 		f |= CTLECH;
+
+	if (DX)
+		f |= DECCTQ;
 
 	return (f);
 }
