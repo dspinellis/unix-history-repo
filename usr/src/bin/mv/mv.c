@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)mv.c	4.11 (Berkeley) 83/01/31";
+static	char *sccsid = "@(#)mv.c	4.12 (Berkeley) 83/03/21";
 #endif
 
 /*
@@ -101,6 +101,7 @@ movewithshortname(src, dest)
 move(source, target)
 	char *source, *target;
 {
+	int targetexists;
 
 	if (lstat(source, &s1) < 0) {
 		error("cannot access %s", source);
@@ -112,7 +113,8 @@ move(source, target)
 	 * the move is on a nondirectory and not across
 	 * file systems.
 	 */
-	if (lstat(target, &s2) >= 0) {
+	targetexists = lstat(target, &s2) >= 0;
+	if (targetexists) {
 		if (iflag && !fflag && query("remove %s? ", target) == 0)
 			return (1);
 		if (s1.st_dev == s2.st_dev && s1.st_ino == s2.st_ino) {
@@ -124,27 +126,20 @@ move(source, target)
 			  s2.st_mode & MODEBITS, target) == 0)
 				return (1);
 		}
-		if (rename(source, target) >= 0)
-			return (0);
-		if (errno != EXDEV) {
-			Perror2(source, "rename");
-			return (1);
-		}
-		if (ISDIR(s1)) {
-			error("can't mv directories across file systems");
-			return (1);
-		}
-		if (unlink(target) < 0) {
-			error("cannot unlink %s", target);
-			return (1);
-		}
-	} else {
-		if (rename(source, target) >= 0)
-			return (0);
-		if (ISDIR(s1)) {
-			Perror2(source, "rename");
-			return (1);
-		}
+	}
+	if (rename(source, target) >= 0)
+		return (0);
+	if (errno != EXDEV) {
+		Perror2(source, "rename");
+		return (1);
+	}
+	if (ISDIR(s1)) {
+		error("can't mv directories across file systems");
+		return (1);
+	}
+	if (targetexists && unlink(target) < 0) {
+		error("cannot unlink %s", target);
+		return (1);
 	}
 	/*
 	 * File can't be renamed, try to recreate the symbolic
