@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.7	(Berkeley)	%G%
+#	@(#)Makefile	4.8	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -68,7 +68,7 @@ atrun: atrun.c
 atrun: /usr/include/stdio.h
 atrun: /usr/include/sys/param.h
 atrun: /usr/include/sys/dir.h
-atrun: /usr/include/time.h
+atrun: /usr/include/sys/time.h
 atrun: /usr/include/sys/stat.h
 getNAME: getNAME.c
 getNAME: /usr/include/stdio.h

@@ -1,11 +1,13 @@
-static char *sccsid = "@(#)atrun.c	4.3 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid = "@(#)atrun.c	4.4 (Berkeley) %G%";
+#endif
 /*
  * Run programs submitted by at.
  */
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/dir.h>
-#include <time.h>
+#include <sys/time.h>
 #include <sys/stat.h>
 
 # define ATDIR "/usr/spool/at"
