@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.31 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -601,9 +601,11 @@ main(argc, argv, envp)
 	if (warn_C_flag)
 		auth_warning(CurEnv, "Processed by %s with -C %s",
 			RealUserName, ConfFile);
+/*
 	if (warn_f_flag != '\0')
 		auth_warning(CurEnv, "%s set sender to %s using -%c",
 			RealUserName, from, warn_f_flag);
+*/
 	if (Warn_Q_option)
 		auth_warning(CurEnv, "Processed from queue %s", QueueDir);
 
