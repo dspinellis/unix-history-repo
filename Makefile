@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.7 1993/08/27 09:16:31 rgrimes Exp $
+#	$Id: Makefile,v 1.8 1993/09/01 10:35:48 rgrimes Exp $
 #
 
 SUBDIR=	bin contrib games gnu include lib libexec sbin share usr.bin usr.sbin
@@ -23,7 +23,7 @@ world:	cleandist mk includes libraries tools mdec
 	@echo "--------------------------------------------------------------"
 	@echo
 	make depend all install
-	cd usr.sbin/sendmail/src;	make install
+	cd ${.CURDIR}/usr.sbin/sendmail/src;	make install
 
 cleandist:
 .if !defined(NOCLEANDIR)
@@ -45,7 +45,7 @@ mk:
 	# DONT DO THIS!! mkdir ${DESTDIR}/usr/share/mk
 	chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/share/mk
 	chmod 755 ${DESTDIR}/usr/share/mk
-	cd share/mk;			make install;
+	cd ${.CURDIR}/share/mk;			make install;
 
 includes:
 	@echo "--------------------------------------------------------------"
@@ -56,11 +56,11 @@ includes:
 	mkdir ${DESTDIR}/usr/include
 	chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include
 	chmod 755 ${DESTDIR}/usr/include
-	cd include;			make install
-	cd gnu/libg++;			make beforeinstall
-	cd gnu/libregex;		make beforeinstall
-	cd lib/libcurses;		make beforeinstall
-	cd lib/librpc/rpc;		make beforeinstall
+	cd ${.CURDIR}/include;			make install
+	cd ${.CURDIR}/gnu/libg++;		make beforeinstall
+	cd ${.CURIDR}/gnu/libregex;		make beforeinstall
+	cd ${.CURDIR}/lib/libcurses;		make beforeinstall
+	cd ${.CURDIR}/lib/librpc/rpc;		make beforeinstall
 
 libraries:
 	# setenv NOPROFILED if you do not want profiled libraries
@@ -72,18 +72,18 @@ libraries:
 	mkdir ${DESTDIR}/usr/lib
 	chown -R bin.bin ${DESTDIR}/usr/lib
 	chmod 755 ${DESTDIR}/usr/lib
-	cd lib;				make depend all install ${CLEANDIR} obj
-	cd gnu/gcc2/libgcc;		make depend all install ${CLEANDIR} obj
-	cd usr.bin/lex;			make depend all install ${CLEANDIR} obj
-	cd gnu/libregex;		make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/lib;				make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/gcc2/libgcc;		make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/usr.bin/lex;			make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/libregex;		make depend all install ${CLEANDIR} obj
 
 tools:
 	@echo "--------------------------------------------------------------"
 	@echo " Rebuilding ${DESTDIR} Compiler and Make"
 	@echo "--------------------------------------------------------------"
 	@echo
-	cd gnu/gcc2;			make depend all install ${CLEANDIR} obj
-	cd usr.bin/make;		make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/gcc2;			make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/usr.bin/make;		make depend all install ${CLEANDIR} obj
 
 mdec:
 	@echo "--------------------------------------------------------------"
@@ -91,7 +91,7 @@ mdec:
 	@echo "--------------------------------------------------------------"
 	@echo
 .if ${MACHINE} == "i386"
-	cd sys/i386/boot;	make depend all install ${CLEANDIR}
+	cd ${.CURDIR}/sys/i386/boot;	make depend all install ${CLEANDIR}
 .if defined (DESTDIR)
 	cd /usr/mdec; find . | cpio -pdamuv ${DESTDIR}/usr/mdec
 .endif
