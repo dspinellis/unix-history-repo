@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)cc.c 3.4 %G%";
+static	char sccsid[] = "@(#)cc.c 3.5 %G%";
 /*
  * cc - front end for C compiler
  */
@@ -8,12 +8,12 @@ static	char sccsid[] = "@(#)cc.c 3.4 %G%";
 #include <signal.h>
 #include <dir.h>
 
-char	*cpp = "/usr/new/cpp";
-char	*ccom = "/usr/new/ccom";
-char	*c2 = "/usr/new/c2";
-char	*as = "/usr/new/as";
-char	*ld = "/usr/new/ld";
-char	*crt0 = "/usr/new/crt0.o";
+char	*cpp = "/lib/cpp";
+char	*ccom = "/lib/ccom";
+char	*c2 = "/lib/c2";
+char	*as = "/bin/as";
+char	*ld = "/bin/ld";
+char	*crt0 = "/lib/crt0.o";
 
 char	tmp0[30];		/* big enough for /tmp/ctm%05.5d */
 char	*tmp1, *tmp2, *tmp3, *tmp4, *tmp5;
@@ -133,7 +133,7 @@ main(argc, argv)
 	if (npassname && chpass ==0)
 		chpass = "012p";
 	if (chpass && npassname==0)
-		npassname = "/usr/new/new";
+		npassname = "/usr/new";
 	if (chpass)
 	for (t=chpass; *t; t++) {
 		switch (*t) {
@@ -150,7 +150,7 @@ main(argc, argv)
 		}
 	}
 	if (proflag)
-		crt0 = "/usr/new/mcrt0.o";
+		crt0 = "/lib/mcrt0.o";
 	if (nc==0)
 		goto nocom;
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
