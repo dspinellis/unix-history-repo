@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.7 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -161,4 +161,188 @@ ndrele(ndp)
 	if (ndp->ni_rdir)
 		vrele(ndp->ni_rdir);
 	crfree(ndp->ni_cred);
+}
+
+/*
+ * Routines having to do with the management of the vnode table.
+ */
+struct vnode *vfreeh, **vfreet;
+extern struct vnodeops dead_vnodeops;
+
+/*
+ * Build vnode free list.
+ */
+vhinit()
+{
+	register struct vnode *vp = vnode;
+
+	vfreeh = vp;
+	vfreet = &vp->v_freef;
+	vp->v_freeb = &vfreeh;
+	vp->v_op = &dead_vnodeops;
+	for (vp++; vp < vnodeNVNODE; vp++) {
+		*vfreet = vp;
+		vp->v_freeb = vfreet;
+		vfreet = &vp->v_freef;
+		vp->v_op = &dead_vnodeops;
+	}
+	vp--;
+	vp->v_freef = NULL;
+}
+
+/*
+ * Return the next vnode from the free list.
+ */
+getnewvnode(tag, mp, vops, vpp)
+	enum vtagtype tag;
+	struct mount *mp;
+	struct vnodeops *vops;
+	struct vnode **vpp;
+{
+	register struct vnode *vp, *vq;
+
+	if ((vp = vfreeh) == NULL) {
+		tablefull("vnode");
+		*vpp = 0;
+		return (ENFILE);
+	}
+	if (vp->v_count || VOP_RECLAIM(vp))
+		panic("free vnode isn't");
+	if (vq = vp->v_freef)
+		vq->v_freeb = &vfreeh;
+	vfreeh = vq;
+	vp->v_freef = NULL;
+	vp->v_freeb = NULL;
+	vp->v_type = VNON;
+	vp->v_flag = 0;
+	vp->v_shlockc = 0;
+	vp->v_exlockc = 0;
+	vp->v_socket = 0;
+	vp->v_op = vops;
+	cache_purge(vp);
+	vp->v_tag = tag;
+	vp->v_mount = mp;
+	insmntque(vp, mp);
+	VREF(vp);
+	*vpp = vp;
+	return (0);
+}
+
+/*
+ * Move a vnode from one mount queue to another.
+ */
+insmntque(vp, mp)
+	register struct vnode *vp;
+	register struct mount *mp;
+{
+	struct vnode *vq;
+
+	/*
+	 * Delete from old mount point vnode list, if on one.
+	 */
+	if (vp->v_mountb) {
+		if (vq = vp->v_mountf)
+			vq->v_mountb = vp->v_mountb;
+		*vp->v_mountb = vq;
+	}
+	/*
+	 * Insert into list of vnodes for the new mount point, if available.
+	 */
+	if (mp == NULL) {
+		vp->v_mountf = NULL;
+		vp->v_mountb = NULL;
+		return;
+	}
+	if (mp->m_mounth) {
+		vp->v_mountf = mp->m_mounth;
+		vp->v_mountb = &mp->m_mounth;
+		mp->m_mounth->v_mountb = &vp->v_mountf;
+		mp->m_mounth = vp;
+	} else {
+		mp->m_mounth = vp;
+		vp->v_mountb = &mp->m_mounth;
+		vp->v_mountf = NULL;
+	}
+}
+
+/*
+ * Grab a particular vnode from the free list.
+ */
+vget(vp)
+	register struct vnode *vp;
+{
+	register struct vnode *vq;
+
+	if (vq = vp->v_freef)
+		vq->v_freeb = vp->v_freeb;
+	else
+		vfreet = vp->v_freeb;
+	*vp->v_freeb = vq;
+	vp->v_freef = NULL;
+	vp->v_freeb = NULL;
+	VREF(vp);
+}
+
+/*
+ * Vnode reference, just increment the count
+ */
+void vref(vp)
+	struct vnode *vp;
+{
+
+	vp->v_count++;
+}
+
+/*
+ * vput(), just unlock and vrele()
+ */
+void vput(vp)
+	register struct vnode *vp;
+{
+	VOP_UNLOCK(vp);
+	vrele(vp);
+}
+
+/*
+ * Vnode release.
+ * If count drops to zero, call inactive routine and return to freelist.
+ */
+void vrele(vp)
+	register struct vnode *vp;
+{
+
+	if (vp == NULL)
+		return;
+	vp->v_count--;
+	if (vp->v_count < 0)
+		printf("vnode bad ref count %d, type %d, tag %d\n",
+			vp->v_count, vp->v_type, vp->v_tag);
+	if (vp->v_count > 0)
+		return;
+	VOP_INACTIVE(vp);
+	if (vfreeh == (struct vnode *)0) {
+		/*
+		 * insert into empty list
+		 */
+		vfreeh = vp;
+		vp->v_freeb = &vfreeh;
+		vp->v_freef = NULL;
+		vfreet = &vp->v_freef;
+	} else if (vp->v_type == VNON) {
+		/*
+		 * insert at head of list
+		 */
+		vp->v_freef = vfreeh;
+		vp->v_freeb = &vfreeh;
+		vfreeh->v_freeb = &vp->v_freef;
+		vfreeh = vp;
+	} else {
+		/*
+		 * insert at tail of list
+		 */
+		*vfreet = vp;
+		vp->v_freeb = vfreet;
+		vp->v_freef = NULL;
+		vfreet = &vp->v_freef;
+	}
 }
