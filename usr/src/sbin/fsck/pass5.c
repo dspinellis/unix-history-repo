@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass5.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass5.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -92,6 +92,12 @@ pass5()
 				newcg->cg_cs.cs_nifree--;
 				setbit(newcg->cg_iused, i);
 				break;
+
+			default:
+				if (j < ROOTINO)
+					break;
+				errexit("BAD STATE %d FOR INODE I=%d",
+				    statemap[j], j);
 			}
 		}
 		if (c == 0)
