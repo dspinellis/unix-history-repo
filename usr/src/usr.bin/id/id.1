@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)id.1	5.3 (Berkeley) %G%
+.\"	@(#)id.1	5.4 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt ID 1
@@ -23,6 +23,8 @@
 .Nm id
 .Fl g Op Fl nr
 .Op Ar user
+.Nm id
+.Fl p
 .Nm id
 .Fl u Op Fl nr
 .Op Ar user
@@ -56,6 +58,22 @@ and
 options instead of the number.
 If any of the ID numbers cannot be mapped into names, the number will be
 displayed as usual.
+.It Fl p
+Make the output human-readable.
+If the user name returned by
+.Xr getlogin 2
+is different from the login name referenced by the user ID, the name
+returned by
+.Xr getlogin 2
+is displayed, preceded by the keyword ``login''.
+The user ID as a name is displayed, preceded by the keyword ``uid''.
+If the effective user ID is different from the real user ID, the real user
+ID is displayed as a name, preceded by the keyword ``euid''.
+If the effective group ID is different from the real group ID, the real group
+ID is displayed as a name, preceded by the keyword ``rgid''.
+The list of groups to which the user belongs is then displayed as names,
+preceded by the keyword ``groups''.
+Each display is on a separate line.
 .It Fl r
 Display the real ID for the
 .Fl g
@@ -70,9 +88,7 @@ The
 .Nm id
 utility exits 0 on success, and >0 if an error occurs.
 .Sh SEE ALSO
-.Xr groups 1 ,
-.Xr who 1 ,
-.Xr whoami 1
+.Xr who 1
 .Sh STANDARDS
 The
 .Nm id
@@ -82,8 +98,14 @@ function is expected to conform to
 The
 historic
 .Xr groups 1
-command is equivalent to:
-.Nm id Fl Gn Op Ar user .
+command is equivalent to
+.Dq Nm id Fl Gn Op Ar user .
+.Pp
+The
+historic
+.Xr whoami 1
+command is equivalent to
+.Dq Nm id Fl un .
 .Pp
 The
 .Nm
