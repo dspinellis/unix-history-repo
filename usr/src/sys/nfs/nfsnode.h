@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsnode.h	8.1 (Berkeley) %G%
+ *	@(#)nfsnode.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -38,7 +38,7 @@ struct nfsnode {
 	struct	vattr n_vattr;		/* Vnode attribute cache */
 	time_t	n_attrstamp;		/* Time stamp for cached attributes */
 	struct	sillyrename *n_sillyrename; /* Ptr to silly rename struct */
-	off_t	n_size;			/* Current size of file */
+	u_quad_t n_size;		/* Current size of file */
 	int	n_error;		/* Save write error value */
 	u_long	n_direofoffset;		/* Dir. EOF offset cache */
 	time_t	n_mtime;		 /* Prev modify time. */
