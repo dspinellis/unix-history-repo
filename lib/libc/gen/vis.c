@@ -32,10 +32,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vis.c	5.4 (Berkeley) 2/23/91";
+static char sccsid[] = "@(#)vis.c	5.6 (Berkeley) 2/5/92";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
+#include <limits.h>
 #include <ctype.h>
 #include <vis.h>
 
@@ -45,16 +46,12 @@ static char sccsid[] = "@(#)vis.c	5.4 (Berkeley) 2/23/91";
  * vis - visually encode characters
  */
 char *
-#if __STDC__
-vis(register char *dst, register char c, register int flag, char nextc)
-#else
 vis(dst, c, flag, nextc)
-	register char *dst, c;
-	char nextc;
+	register char *dst;
+	int c, nextc;
 	register int flag;
-#endif
 {
-	if (isascii(c) && isgraph(c) ||
+	if ((u_int)c <= UCHAR_MAX && isgraph(c) ||
 	   ((flag & VIS_SP) == 0 && c == ' ') ||
 	   ((flag & VIS_TAB) == 0 && c == '\t') ||
 	   ((flag & VIS_NL) == 0 && c == '\n') ||
@@ -159,11 +156,11 @@ strvis(dst, src, flag)
 	int flag;
 {
 	register char c;
-	char *start = dst;
+	char *start;
 
-	for (;c = *src; src++)
-		dst = vis(dst, c, flag, *(src+1));
-
+	for (start = dst; c = *src;)
+		dst = vis(dst, c, flag, *++src);
+	*dst = '\0';
 	return (dst - start);
 }
 
