@@ -30,10 +30,16 @@ if (-r index) then
 		echo "/ $i /d" >> nindex
 	end
 	sed -f nindex index >xindex
-	$b/vfontedpr $*:q | \
-		/bin/sh -c "vtroff $t $wide -rx1 $o -i -mvgrind 2>> xindex"
+	if (f == "-f") then
+	    $b/vfontedpr $*:q | \
+		    /bin/sh -c "vtroff $t $wide -rx1 $o -i -mvgrind 2>> xindex"
+	else
+	    $b/vfontedpr $*:q
 	sort -df +0 -2 xindex >index
 	rm nindex xindex
 else
-	$b/vfontedpr $*:q | vtroff $t $wide -i $o -mvgrind
+	if (f == "-f") then
+	    $b/vfontedpr $*:q | vtroff $t $wide -i $o -mvgrind
+	else
+	    $b/vfontedpr $*:q
 endif
