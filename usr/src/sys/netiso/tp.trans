@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp.trans	7.16 (Berkeley) %G%
+ *	@(#)tp.trans	7.17 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -59,7 +59,7 @@ SOFTWARE.
 
 *INCLUDE
 {
-/* @(#)tp.trans	7.16 (Berkeley) %G% */
+/* @(#)tp.trans	7.17 (Berkeley) %G% */
 #include "param.h"
 #include "socket.h"
 #include "socketvar.h"
@@ -1214,6 +1214,13 @@ SAME			<==		TP_OPEN 								TM_sendack
 		ENDTRACE
 		IncPStat($P, tps_n_TMsendack);
 		(void) tp_emit(AK_TPDU_type, $P, $P.tp_rcvnxt, 0, MNULL);
+		if ($P.tp_fcredit == 0) {
+			if ($P.tp_rxtshift < TP_MAXRXTSHIFT)
+				$P.tp_rxtshift++;
+			timo = ($P.tp_dt_ticks) << $P.tp_rxtshift;
+		} else
+			timo = $P.tp_sendack_ticks;
+		tp_ctimeout($P, TM_sendack, timo);
 	}
 ;
 
