@@ -14,7 +14,7 @@
 #include "user.h"
 #include "ioctl.h"
 #include "tty.h"
-#include "inode.h"
+#include "vnode.h"
 #include "file.h"
 #include "systm.h"
 #include "proc.h"
@@ -66,7 +66,7 @@ register caddr_t data;
 	register struct	dkdev	*tp;
 	register chanstat ;
 	int	chan, sp_chan;
-	int	s;
+	int	s, error = 0;
 	register short	*pp ;
 	struct dkdev *tsp;
 	extern dkidone() ;
@@ -155,11 +155,11 @@ register caddr_t data;
 
 	/* splice chan to file descriptor */
 	case DKIOCSPL:
-		u.u_error = copyin(*(caddr_t *)data, (caddr_t) tp->d_param,
+		error = copyin(*(caddr_t *)data, (caddr_t) tp->d_param,
 		    3*sizeof (short));
-		if (u.u_error) return u.u_error;
-		if ((sp_chan = dkgetdev(tp->d_param[0])) <= 0)
-			return u.u_error ;
+		if (error) return error;
+		if ((error = dkgetdev(tp->d_param[0], &sp_chan)) <= 0)
+			return error ;
 		if (sp_chan == chan)
 			return EINVAL ;
 		tsp = &dkdev[sp_chan] ;
@@ -181,9 +181,9 @@ register caddr_t data;
 			return EIO ;
 		if (tp->d_error || tsp->d_error) 
 			return EIO ;
-		u.u_error = copyout((caddr_t) tp->d_param, *(caddr_t *)data,
+		error = copyout((caddr_t) tp->d_param, *(caddr_t *)data,
 		    3*sizeof (short));
-		if (u.u_error) return u.u_error;
+		if (error) return error;
 		break ;
 
 	case DIOCSWAIT:
@@ -195,19 +195,19 @@ register caddr_t data;
 			return ENOTTY ;
 		}
 		if (cmd == DKIODIAL) {
-			u.u_error = copyin(*(caddr_t *)data, (caddr_t) &dialreq,
+			error = copyin(*(caddr_t *)data, (caddr_t) &dialreq,
 			    sizeof (struct diocdial));
-			if (u.u_error) return u.u_error;
-			if (u.u_error = dkiodial(chan, dialreq.dialstring))
-				return u.u_error;
+			if (error) return error;
+			if (error = dkiodial(chan, dialreq.dialstring))
+				return error;
 			tp->dc_state |= DKSETUP ;
 			chanstat = dk_setup(minor(dev), (int) DKIOCREQ, 0,
 			0, 0, (int) u.u_uid, dkidone, (caddr_t)tp) ;
 		}
 		else {
-			u.u_error = copyin(*(caddr_t *)data, (caddr_t) tp->d_param,
+			error = copyin(*(caddr_t *)data, (caddr_t) tp->d_param,
 			    3*sizeof (short));
-			if (u.u_error) return u.u_error;
+			if (error) return error;
 			tp->dc_state |= DKSETUP ;
 			chanstat = dk_setup(minor(dev), cmd, 0, 0, 0,
 				(int) u.u_uid, dkidone, (caddr_t)tp) ;
@@ -220,16 +220,16 @@ register caddr_t data;
 		while (tp->dc_state & DKSETUP)
 			sleep((caddr_t)(tp), TTOPRI) ;
 		splx(s) ;
-		u.u_error = copyout((caddr_t) tp->d_param, *(caddr_t *)data,
+		error = copyout((caddr_t) tp->d_param, *(caddr_t *)data,
 		    3*sizeof (short));
-		if (u.u_error) return u.u_error;
+		if (error) return error;
 		if (dk_status(minor(dev)) & DK_RESET)
 			return ENETRESET ;
 		if (tp->d_error)
 			return EIO ;
 		break ;
 	}
-	return 0;
+	return error;
 }
 
 #define DS_SIZE 64
@@ -295,7 +295,6 @@ dkopen(dev, flag)
 	register struct	dkdev	*tp;
 	register chan;
 	register struct nameidata *ndp = &u.u_nd;
-	struct	inode *ip;
 	struct	file *fp;
 	int	 m;
 
@@ -336,30 +335,29 @@ dkopen(dev, flag)
 		tp = &dkdev[chan] ;
 		tp->dc_state = 0 ;
 		/*
-		 * throw away inode for dk0. (/dev/dk/dial)
+		 * throw away vnode for dk0. (/dev/dk/dial)
 		 * Build standard name of new one, and ask namei for it.
 		 */
 		fp = u.u_ofile[u.u_r.r_val1];
 
 		dksnamer(dname, chan);
 		/* log(LOG_ERR, "dname=%s chan=%d\n", dname, chan); */
-		u.u_error = 0;
-		ndp->ni_nameiop = FOLLOW | LOOKUP;
+		ndp->ni_nameiop = FOLLOW | LOOKUP | LOCKLEAF;
 		ndp->ni_segflg = UIO_SYSSPACE;
 		ndp->ni_dirp = dname;
-		ip = namei(ndp);
-
-		if (ip == NULL) {
+		if (error = namei(ndp)) {
 			(void) dk_close(chan) ;
-			return ENOENT ;
+			return (error);
 		}
 
 		/* Give back old one */
-		ilock((struct inode *) fp->f_data);
-		iput((struct inode *) fp->f_data);
+		vp = (struct vnode *) fp->f_data;
+		VOP_LOCK(vp);
+		vput(vp);
 
-		fp->f_data = (caddr_t) ip;
-		iunlock(ip);
+		vp = ndp->ni_vp;
+		fp->f_data = (caddr_t) vp;
+		VOP_UNLOCK(vp);
 	}
 	if ((tp->d_state & DKOPEN) == 0) {
 		tp->d_state |= DKOPEN ;
