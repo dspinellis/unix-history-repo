@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.33 (Berkeley) %G%
+.\"	@(#)op.me	6.34 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.33
+Version 6.34
 .sp
-For Sendmail Version 6.47
+For Sendmail Version 6.51
 .)l
 .sp 2
 .pp
@@ -2571,7 +2571,7 @@ v	The version number of sendmail
 w	The hostname of this site
 x	The full name of the sender
 z	The home directory of the recipient
-<	The return-path (sender in envelope) relative to recipient
+_	The validated sender address
 .)b
 .pp
 There are three types of dates that can be used.
@@ -2700,6 +2700,11 @@ and
 .b $s
 fields are set to the protocol used to communicate with sendmail
 and the sending hostname.
+The
+.b $_
+is set to a validated sender host name.
+If the sender is running an RFC 1413 compliant IDENT server,
+it will include the user name on that host.
 .sh 3 "C and F \*- define classes"
 .pp
 Classes of phrases may be defined
@@ -2795,6 +2800,7 @@ Argv	An argument vector to pass to this mailer
 Eol	The end-of-line string for this mailer
 Maxsize	The maximum message length to this mailer
 Linelimit	The maximum line length in the message body
+Directory	The working directory for the mailer
 .)b
 Only the first character of the field name is checked.
 .pp
@@ -3016,6 +3022,23 @@ or may be two integers separated by a slash;
 if so, the first rewriting set is applied to envelope
 addresses
 and the second is applied to headers.
+.pp
+The Directory
+is actually a colon-separated path of directories to try.
+For example, the definition
+.q D=$z:/
+first tries to execute in the recipient's home directory;
+if that is not available,
+it tries to execute in the root of the filesystem.
+This is intended to be used only on the
+.q prog
+mailer,
+since some shells (such as
+.i csh )
+refuse to execute if they cannot read the home directory.
+Since the queue directory is not normally readable by normal users
+.i csh
+scripts as recipients can fail.
 .sh 3 "H \*- define header"
 .pp
 The format of the header lines that sendmail inserts into the message
@@ -5912,7 +5935,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.33
+.\"Version 6.34
 .\".ce 0
 .pn 2
 .bp
