@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
 PROG=	pc0
 SRCDIR=	${.CURDIR}/../src
