@@ -1,4 +1,4 @@
-/*	vlimit.h	3.1	%G%	*/
+/*	vlimit.h	3.2	%G%	*/
 
 /*
  * Limits for u.u_limit[i], per process, inherited.
@@ -9,3 +9,5 @@
 #define	LIM_DATA	3	/* max growth of data space */
 #define	LIM_STACK	4	/* max growth of stack */
 #define	LIM_CORE	5	/* max size of ``core'' file */
+
+#define	INFINITY	0x7fffffff
