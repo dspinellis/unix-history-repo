@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exec.c	7.31 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.32 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -391,7 +391,7 @@ execve(p, uap, retval)
 			cp += len;
 			nc += len;
 			cc -= len;
-		} while (error == ENOENT);
+		} while (error == ENAMETOOLONG);
 		if (error) {
 			if (bp)
 				brelse(bp);
@@ -476,7 +476,7 @@ badarg:
 			cp += len;
 			nc += len;
 			cc -= len;
-		} while (error == ENOENT);
+		} while (error == ENAMETOOLONG);
 		if (error == EFAULT)
 			panic("exec: EFAULT");
 	}

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.14 (Berkeley) %G%
+ *	@(#)locore.s	7.15 (Berkeley) %G%
  */
 
 #include "../tahoe/mtpr.h"
@@ -1104,7 +1104,7 @@ ENTRY(copyinstr, 0)
 	movl	$(NBPG*CLSIZE),r2	# check next page
 	tstl	r5			# run out of space?
 	jneq	1b
-	movl	$ENOENT,r0		# set error code and return
+	movl	$ENAMETOOLONG,r0	# set error code and return
 	jbr	6f
 3:
 	tstl	16(fp)			# return length?
@@ -1181,7 +1181,7 @@ ENTRY(copyoutstr, 0)
 	movl	$(NBPG*CLSIZE),r2	# check next page
 	tstl	r5			# run out of space?
 	jneq	1b
-	movl	$ENOENT,r0		# set error code and return
+	movl	$ENAMETOOLONG,r0	# set error code and return
 	jbr	6b
 5:
 	clrl	*$0		# this should never execute, if it does
@@ -1215,7 +1215,7 @@ ENTRY(copystr, 0)
 	movl	r4,r1
 	movl	r3,r2
 	movblk				# copy next piece
-	movl	$ENOENT,r0		# set error code and return
+	movl	$ENAMETOOLONG,r0	# set error code and return
 	jbr	6b
 
 /*
