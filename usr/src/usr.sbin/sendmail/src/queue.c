@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.24 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.25 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.24 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.25 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -1052,16 +1052,30 @@ printqueue()
 	**  Check for permission to print the queue
 	*/
 
-	if (bitset(PRIV_RESTRMAILQ, PrivacyFlags))
+	if (bitset(PRIV_RESTRMAILQ, PrivacyFlags) && getuid() != 0)
 	{
 		struct stat st;
+# ifdef NGROUPS
+		int n;
+		int gidset[NGROUPS];
+# endif
 
 		if (stat(QueueDir, &st) < 0)
 		{
 			syserr("Cannot stat %s", QueueDir);
 			return;
 		}
+# ifdef NGROUPS
+		n = getgroups(NGROUPS, gidset);
+		while (--n >= 0)
+		{
+			if (gidset[n] == st.st_gid)
+				break;
+		}
+		if (n < 0)
+# else
 		if (getgid() != st.st_gid)
+# endif
 		{
 			usrerr("510 You are not permitted to see the queue");
 			setstat(EX_NOPERM);
