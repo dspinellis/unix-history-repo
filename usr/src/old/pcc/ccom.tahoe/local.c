@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local.c	1.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)local.c	1.10 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -103,10 +103,6 @@ clocal(p) register NODE *p; {
 				p->in.op = p->in.left->in.op = FREE;
 				return(p->in.left->in.left);
 				}
-#ifndef SPRECC
-			if(m == DOUBLE && ml == FLOAT)
-				goto clobber;
-#endif
 			/* see makety() for constant conversions */
 			break;
 			}
@@ -419,22 +415,6 @@ prtdcon(p)
 	p->in.type = (o == DCON ? DOUBLE : FLOAT);
 	p->in.op = NAME;
 }
-
-isitfloat( s ) char *s; {
-	union cvt {
-		double	d;
-		int	n[2];
-	} cvt;
-	double atof();
-
-	/* avoid floating point exception for double -> float conversions */
-	dcon = cvt.d = atof(s);
-	if( cvt.n[1] == 0 ){
-		fcon = dcon;
-		return( FCON );
-		}
-	return( DCON );
-	}
 
 ecode( p ) NODE *p; {
 
