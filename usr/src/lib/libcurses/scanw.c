@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)scanw.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)scanw.c	5.11 (Berkeley) %G%";
 #endif	/* not lint */
 
 /*
@@ -20,8 +20,6 @@ static char sccsid[] = "@(#)scanw.c	5.10 (Berkeley) %G%";
 #else
 #include <varargs.h>
 #endif
-
-static int __sscans __P((WINDOW *, const char *, va_list));
 
 /*
  * scanw --
@@ -44,7 +42,7 @@ scanw(fmt, va_alist)
 #else
 	va_start(ap);
 #endif
-	ret = __sscans(stdscr, fmt, ap);
+	ret = vwscanw(stdscr, fmt, ap);
 	va_end(ap);
 	return (ret);
 }
@@ -71,7 +69,7 @@ wscanw(win, fmt, va_alist)
 #else
 	va_start(ap);
 #endif
-	ret = __sscans(win, fmt, ap);
+	ret = vwscanw(win, fmt, ap);
 	va_end(ap);
 	return (ret);
 }
@@ -101,7 +99,7 @@ mvscanw(y, x, fmt, va_alist)
 #else
 	va_start(ap);
 #endif
-	ret = __sscans(stdscr, fmt, ap);
+	ret = vwscanw(stdscr, fmt, ap);
 	va_end(ap);
 	return (ret);
 }
@@ -128,18 +126,17 @@ mvwscanw(win, y, x, fmt, va_alist)
 #else
 	va_start(ap);
 #endif
-	ret = __sscans(win, fmt, ap);
+	ret = vwscanw(win, fmt, ap);
 	va_end(ap);
 	return (ret);
 }
 
 /*
- * __sscans --
+ * vwscanw --
  *	This routine actually executes the scanf from the window.
- *	THIS SHOULD BE RENAMED vwscanw AND EXPORTED
  */
 static int
-__sscans(win, fmt, ap)
+vwscanw(win, fmt, ap)
 	WINDOW *win;
 	const char *fmt;
 	va_list ap;
