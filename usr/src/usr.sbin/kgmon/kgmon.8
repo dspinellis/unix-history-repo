@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)kgmon.8	6.4 (Berkeley) %G%
+.\"     @(#)kgmon.8	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt KGMON 8
@@ -13,12 +13,9 @@
 .Nd generate a dump of the operating system's profile buffers
 .Sh SYNOPSIS
 .Nm kgmon
-.Op Fl b
-.Op Fl h
-.Op Fl r
-.Op Fl p
-.Op Ar system
-.Op Ar memory
+.Op Fl bhpr
+.Op Fl M core
+.Op Fl N system
 .Sh DESCRIPTION
 .Nm Kgmon
 is a tool used when profiling the operating system.
@@ -37,7 +34,7 @@ extracts profile data from the operating system and produces a
 file suitable for later analysis by
 .Xr gprof 1 .
 .Pp
-The following options may be specified:
+The options are as follows:
 .Bl -tag -width Ds
 .It Fl b
 Resume the collection of profile data.
@@ -54,6 +51,12 @@ If the
 flag is also specified, the
 .Pa gmon.out
 file is generated before the buffers are reset.
+.It Fl M
+Extract values associated with the name list from the specified core
+instead of the default ``/dev/kmem''.
+.It Fl N
+Extract the name list from the specified system instead of the
+default ``/vmunix''.
 .El
 .Pp
 If neither 
