@@ -1,6 +1,6 @@
-/*	math.h	4.1	83/05/03	*/
+/*	math.h	4.2	84/03/08	*/
 
-extern double fabs(), floor(), ceil(), fmod(), ldexp(), frexp();
+extern double fabs(), floor(), ceil(), modf(), ldexp(), frexp();
 extern double sqrt(), hypot(), atof();
 extern double sin(), cos(), tan(), asin(), acos(), atan(), atan2();
 extern double exp(), log(), log10(), pow();
