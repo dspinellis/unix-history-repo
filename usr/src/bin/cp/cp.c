@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cp.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cp.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -70,7 +70,7 @@ typedef struct {
 char *path_append(), *path_basename();
 void path_restore();
 
-int exit_val, my_umask;
+int exit_val, symfollow, my_umask;
 int interactive_flag, preserve_flag, recursive_flag;
 char *buf;				/* I/O; malloc for best alignment. */
 char from_buf[MAXPATHLEN + 1],		/* Source path buffer. */
@@ -87,8 +87,11 @@ main(argc, argv)
 	register int c, r;
 	char *old_to, *malloc();
 
-	while ((c = getopt(argc, argv, "Ripr")) != EOF) {
+	while ((c = getopt(argc, argv, "Rhipr")) != EOF) {
 	switch ((char) c) {
+		case 'h':
+			symfollow = 1;
+			break;
 		case 'i':
 			interactive_flag = isatty(fileno(stdin));
 			break;
@@ -106,8 +109,8 @@ main(argc, argv)
 			break;
 		}
 	}
-	argc -= optind;		/* argc is count of remaining arguments. */
-	argv += optind;		/* argv[0] is first remaining argument. */
+	argc -= optind;
+	argv += optind;
 
 	if (argc < 2)
 		usage();
@@ -117,7 +120,7 @@ main(argc, argv)
 
 	buf = (char *)malloc(MAXBSIZE);
 	if (!buf) {
-		fprintf(stderr, "cp: out of space.\n");
+		(void)fprintf(stderr, "cp: out of space.\n");
 		exit(1);
 	}
 
@@ -181,26 +184,33 @@ main(argc, argv)
 copy()
 {
 	struct stat from_stat, to_stat;
-	int new_target_dir = 0;
+	int new_target_dir, statval;
 
-	if (stat(from.p_path, &from_stat) == -1) {
+	statval = symfollow || !recursive_flag ?
+	    stat(from.p_path, &from_stat) : lstat(from.p_path, &from_stat);
+	if (statval == -1) {
 		error(from.p_path);
 		return;
 	}
-	/*
-	 * This is not an error, but we need to remember that it happened.
-	 */
+
+	/* not an error, but need to remember it happened */
 	if (stat(to.p_path, &to_stat) == -1)
 		to_stat.st_ino = -1;
 	else if (to_stat.st_dev == from_stat.st_dev &&
 	    to_stat.st_ino == from_stat.st_ino) {
-		fprintf(stderr,
+		(void)fprintf(stderr,
 		    "cp: %s and %s are identical (not copied).\n",
 		    to.p_path, from.p_path);
 		exit_val = 1;
 		return;
 	}
 
+	if ((from_stat.st_mode & S_IFMT) == S_IFLNK) {
+		copy_link(to_stat.st_ino != -1);
+		return;
+	}
+
+	new_target_dir = 0;
 	if ((from_stat.st_mode & S_IFMT) != S_IFDIR) {
 		if (!copy_file(from_stat.st_mode))
 			return;
@@ -260,8 +270,8 @@ copy_file(mode)
 	 * the file exists, verify with the user.
 	 */
 	to_fd = open(to.p_path,
-	     (interactive_flag ? O_EXCL : 0) | O_WRONLY | O_CREAT | O_TRUNC,
-		 mode);
+	    (interactive_flag ? O_EXCL : 0) | O_WRONLY | O_CREAT | O_TRUNC,
+	    mode);
 
 	if (to_fd == -1 && errno == EEXIST && interactive_flag) {
 		int checkch, ch;
@@ -368,6 +378,25 @@ copy_dir()
 		path_restore(&to, old_to);
 	}
 	free((char *)dir_list);
+}
+
+copy_link(exists)
+	int exists;
+{
+	char link[MAXPATHLEN];
+
+	if (readlink(from.p_path, link, sizeof(link)) == -1) {
+		error(from.p_path);
+		return;
+	}
+	if (exists && unlink(to.p_path)) {
+		error(to.p_path);
+		return;
+	}
+	if (symlink(link, to.p_path)) {
+		error(link);
+		return;
+	}
 }
 
 error(s)
