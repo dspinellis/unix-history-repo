@@ -1,4 +1,4 @@
-/*	vfs_cluster.c	3.5	%H%	*/
+/*	vfs_cluster.c	3.6	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -387,8 +387,7 @@ done:
 struct buf *
 geteblk()
 {
-	register struct buf *bp, *dp, *ep;
-	register int i, x;
+	register struct buf *bp, *dp;
 
 loop:
 	(void) spl6();
