@@ -1,4 +1,4 @@
-/*	routed.h	82/06/09	4.6	*/
+/*	routed.h	82/06/10	4.7	*/
 /*
  * Routing Information Protocol
  *
@@ -49,4 +49,4 @@ char *ripcmds[RIPCMD_MAX] =
 #define	SUPPLY_INTERVAL		30	/* time to supply tables */
 
 #define	EXPIRE_TIME		180	/* time to mark entry invalid */
-#define	GARBAGE_TIME		210	/* time to garbage collect */
+#define	GARBAGE_TIME		240	/* time to garbage collect */
