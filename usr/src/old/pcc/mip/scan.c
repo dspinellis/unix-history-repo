@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)scan.c	2.14 (Berkeley) %G%";
+static char *sccsid ="@(#)scan.c	2.15 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -508,6 +508,8 @@ lxcom(){
 	}
 
 yylex(){
+	double atof();
+
 	if (lxmatch != 0) {
 		/* recover from a syntax error that consumes a STRING token */
 		strflg = 1;
@@ -626,7 +628,13 @@ yylex(){
 				else {  /* no exponent */
 					ungetc( lxchar ,stdin);
 					}
-				return( isitfloat( yytext ) );
+				dcon = atof( yytext );
+				if( (lxchar = getchar()) == 'F' || lxchar == 'f' ){
+					fcon = dcon;
+					return( FCON );
+					}
+				else ungetc( lxchar ,stdin);
+				return( DCON );
 
 			default:
 				ungetc( lxchar ,stdin);
