@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.19		%G%);
+SCCSID(@(#)headers.c	3.20		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -99,6 +99,10 @@ chompheader(line, def)
 	/* don't put timestamps in every queue run */
 	if (QueueRun && h != NULL && bitset(H_FORCE, h->h_flags))
 		return (h->h_flags);
+
+	/* count Mail-From: lines to avoid loops (simulate hop counts) */
+	if (strcmp(fname, "mail-from") == 0)
+		HopCount++;
 
 	/* create/fill in a new node */
 	if (h == NULL || bitset(H_FORCE, h->h_flags))

@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.40		%G%);
+SCCSID(@(#)collect.c	3.41		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -272,6 +272,10 @@ maketemp(from)
 		define('d', newstr(arpatounix(p)));
 		.... so we will ignore the problem for the time being */
 	}
+
+	/* check for hop count overflow */
+	if (HopCount > MAXHOP)
+		syserr("Too many hops (%d max); probably forwarding loop", MAXHOP);
 
 	if ((TempFile = fopen(CurEnv->e_df, "r")) == NULL)
 		syserr("Cannot reopen %s", CurEnv->e_df);
