@@ -1,17 +1,18 @@
 #	from: @(#)bsd.man.mk	5.2 (Berkeley) 5/11/90
-#	$Id$
+#	$Id: bsd.man.mk,v 1.4 1994/01/31 06:10:33 rgrimes Exp $
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
 .endif
 
+INSTALL?=	install
 MANGRP?=	bin
 MANOWN?=	bin
 MANMODE?=	444
 
 MANDIR?=	/usr/share/man/man
 MANSRC?=	${.CURDIR}
-MINSTALL=	install ${COPY} -o ${MANOWN} -g ${MANGRP} -m ${MANMODE}
+MINSTALL=	${INSTALL}  ${COPY} -o ${MANOWN} -g ${MANGRP} -m ${MANMODE}
 
 maninstall:
 .if defined(MAN1) && !empty(MAN1)

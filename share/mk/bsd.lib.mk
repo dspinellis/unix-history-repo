@@ -1,5 +1,5 @@
 #	from: @(#)bsd.lib.mk	5.26 (Berkeley) 5/2/91
-#	$Id: bsd.lib.mk,v 1.30 1994/02/09 16:23:21 ache Exp $
+#	$Id: bsd.lib.mk,v 1.31 1994/02/27 20:24:25 wollman Exp $
 #
 
 .if exists(${.CURDIR}/../Makefile.inc)
@@ -14,7 +14,7 @@ SHLIB_MINOR != . ${.CURDIR}/shlib_version ; echo $$minor
 .if defined(DESTDIR)
 CFLAGS+= -I${DESTDIR}/usr/include
 .endif
-
+INSTALL?=	install
 LIBDIR?=	/usr/lib
 LINTLIBDIR?=	/usr/libdata/lint
 LIBGRP?=	bin
@@ -201,21 +201,21 @@ beforeinstall:
 .endif
 
 realinstall: beforeinstall
-	install ${COPY} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} lib${LIB}.a \
+	${INSTALL} ${COPY} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} lib${LIB}.a \
 	    ${DESTDIR}${LIBDIR}
 	${RANLIB} -t ${DESTDIR}${LIBDIR}/lib${LIB}.a
 .if !defined(NOPROFILE)
-	install ${COPY} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
+	${INSTALL} ${COPY} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
 	    lib${LIB}_p.a ${DESTDIR}${LIBDIR}
 	${RANLIB} -t ${DESTDIR}${LIBDIR}/lib${LIB}_p.a
 .endif
 .if !defined(NOPIC)
 .if defined(SHLIB_MAJOR) && defined(SHLIB_MINOR)
-	install ${COPY} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
+	${INSTALL} ${COPY} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
 	    lib${LIB}.so.${SHLIB_MAJOR}.${SHLIB_MINOR} ${DESTDIR}${LIBDIR}
 .endif
 .if defined(INSTALL_PIC_ARCHIVE)
-	install ${COPY} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
+	${INSTALL} ${COPY} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
 	    lib${LIB}_pic.a ${DESTDIR}${LIBDIR}
 	${RANLIB} -t ${DESTDIR}${LIBDIR}/lib${LIB}_pic.a
 .endif

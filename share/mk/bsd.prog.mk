@@ -1,5 +1,5 @@
 #	from: @(#)bsd.prog.mk	5.26 (Berkeley) 6/25/91
-#	$Id: bsd.prog.mk,v 1.19 1994/02/25 21:50:29 phk Exp $
+#	$Id: bsd.prog.mk,v 1.20 1994/02/27 20:24:27 wollman Exp $
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -18,6 +18,7 @@ BINGRP?=	bin
 BINOWN?=	bin
 BINMODE?=	555
 
+INSTALL?=	install
 .if !defined(DESTDIR)
 LIBCRT0?=	/usr/lib/crt0.o
 LIBC?=		/usr/lib/libc.a
@@ -160,7 +161,7 @@ afterinstall:
 
 realinstall: _PROGSUBDIR
 .if defined(PROG)
-	install ${COPY} ${STRIP} -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
+	${INSTALL} ${COPY} ${STRIP} -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
 	    ${PROG} ${DESTDIR}${BINDIR}
 .endif
 .if defined(HIDEGAME)
