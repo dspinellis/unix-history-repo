@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)wait3.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)wait3.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -30,5 +30,5 @@ wait3(pstat, options, rup)
 	struct rusage *rup;
 {
 
-	return (wait4(WAIT_ANY, pstat, options, rup));
+	return (wait4(WAIT_ANY, pstat, options | WSIGRESTART, rup));
 }
