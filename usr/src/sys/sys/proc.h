@@ -1,4 +1,4 @@
-/*	proc.h	4.3	81/02/19	*/
+/*	proc.h	4.4	81/02/26	*/
 
 /*
  * One structure allocated per active
@@ -7,8 +7,6 @@
  * process may be swapped out.
  * Other per process data (user.h)
  * is swapped with the process.
- *
- * NB: OFFSETS HERE ARE ALSO DEFINED IN proc.m
  */
 struct	proc
 {
@@ -64,16 +62,12 @@ struct	proc *pfind();
 #ifdef	KERNEL
 extern	struct proc proc[];	/* the proc table itself */
 
-#ifdef FASTVAX
 #define	NQS	32		/* 32 run queues */
 struct	prochd {
 	struct	proc *ph_link;	/* linked list of running processes */
 	struct	proc *ph_rlink;
 } qs[NQS];
 int	whichqs;		/* bit mask summarizing non-empty qs's */
-#else
-struct	proc *runq;
-#endif
 #endif
 
 /* stat codes */

@@ -1,4 +1,4 @@
-/*	ubavar.h	4.12	81/02/23	*/
+/*	ubavar.h	4.13	81/02/26	*/
 
 /*
  * UNIBUS adaptor
@@ -139,8 +139,6 @@ struct uba_dinfo {
 
 /*
  * This structure exists per-uba.
- *
- * N.B.: THE SIZE AND SHAPE OF THIS STRUCTURE IS KNOWN IN uba.m.
  */
 struct	uba_hd {
 	struct	uba_regs *uh_uba;	/* virt addr of uba */

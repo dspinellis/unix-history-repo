@@ -1,11 +1,7 @@
-/*	pcb.h	4.3	81/02/19	*/
+/*	pcb.h	4.4	81/02/26	*/
 
 /*
  * VAX process control block
- *
- * THE SIZE OF THE pcb, AS INFLUENCED BY THE SIZE OF THE SOFTWARE
- * EXTENSION, IS KNOWN IN THE #ifdef FASTVAX'ed DEFINITIONS OF THE
- * OFFSETS OF U_ARG and U_QSAV IN THE FILE user.h.
  */
 
 struct pcb
