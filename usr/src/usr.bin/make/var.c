@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)var.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)var.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -169,30 +169,41 @@ VarFind (name, ctxt, flags)
     LstNode         	var;
     Var		  	*v;
 
-    /*
-     * If the variable name begins with a '.' and an upper-case letter,
-     * it could very well be one of the local ones. We check the name
-     * against all the local variables and substitute the short version in for
-     * 'name' if it matches one of them.
-     */
-    if (*name == '.' && isupper (name[1])) {
-	if (strcmp (name, ".TARGET") == 0) {
-	    name = TARGET;
-	} else if (strcmp (name, ".IMPSRC") == 0) {
-	    name = IMPSRC;
-	} else if (strcmp (name, ".PREFIX") == 0) {
-	    name = PREFIX;
-	} else if (strcmp (name, ".ALLSRC") == 0) {
-	    name = ALLSRC;
-	} else if (strcmp (name, ".OODATE") == 0) {
-	    name = OODATE;
-	} else if (strcmp (name, ".ARCHIVE") == 0) {
-	    name = ARCHIVE;
-	} else if (strcmp (name, ".MEMBER") == 0) {
-	    name = MEMBER;
-	}	    
-    }
-
+	/*
+	 * If the variable name begins with a '.', it could very well be one of
+	 * the local ones.  We check the name against all the local variables
+	 * and substitute the short version in for 'name' if it matches one of
+	 * them.
+	 */
+	if (*name == '.' && isupper(name[1]))
+		switch (name[1]) {
+		case 'A':
+			if (!strcmp(name, ".ALLSRC"))
+				name = ALLSRC;
+			if (!strcmp(name, ".ARCHIVE"))
+				name = ARCHIVE;
+			break;
+		case 'I':
+			if (!strcmp(name, ".IMPSRC"))
+				name = IMPSRC;
+			break;
+		case 'M':
+			if (!strcmp(name, ".MEMBER"))
+				name = MEMBER;
+			break;
+		case 'O':
+			if (!strcmp(name, ".OODATE"))
+				name = OODATE;
+			break;
+		case 'P':
+			if (!strcmp(name, ".PREFIX"))
+				name = PREFIX;
+			break;
+		case 'T':
+			if (!strcmp(name, ".TARGET"))
+				name = TARGET;
+			break;
+		}
     /*
      * First look for the variable in the given context. If it's not there,
      * look for it in VAR_CMD, VAR_GLOBAL and the environment, in that order,
