@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.5.t	8.5 (Berkeley) %G%
+.\"	@(#)1.5.t	8.6 (Berkeley) %G%
 .\"
 .Sh 2 Descriptors
 .Sh 3 "The reference table
@@ -34,7 +34,7 @@ The maximum number of descriptors is a resource limit (see section
 .Xr 1.6.3 ).
 The entries in the descriptor reference
 table are referred to by small integers; for example if there
-are 20 slots they are numbered 0 to 19.
+are 64 slots they are numbered 0 to 63.
 .Sh 3 "Descriptor properties
 .PP
 Each descriptor has a logical set of properties maintained
@@ -175,6 +175,7 @@ result int dopt; int d, cmd, arg;
 l s
 l l.
 /* command values */
+
 F_DUPFD	/* return a new descriptor */
 F_GETFD	/* get file descriptor flags */
 F_SETFD	/* set file descriptor flags */
@@ -187,6 +188,9 @@ F_SETLK	/* set or clear lock */
 F_SETLKW	/* set lock with wait */
 .TE
 .DE
+The F_DUPFD \fIcmd\fP provides identical functionality to
+.Fn dup2 ;
+it is provided solely for POSIX compatibility.
 The F_SETFD \fIcmd\fP can be used to set the close-on-exec
 flag for a file descriptor.
 The F_SETFL \fIcmd\fP may be used to set a descriptor in 
@@ -213,7 +217,7 @@ they will serialize against each other properly.
 .PP
 Operations on non-blocking descriptors will
 either complete immediately,
-note an error EWOULDBLOCK,
+return the error EWOULDBLOCK,
 partially complete an input or output operation returning a partial count,
 or return an error EINPROGRESS noting that the requested operation is
 in progress.

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.2.t	8.8 (Berkeley) %G%
+.\"	@(#)1.2.t	8.9 (Berkeley) %G%
 .\"
 .Sh 2 "Memory management
 .Sh 3 "Text, data, and stack
@@ -134,7 +134,7 @@ Possible types include MAP_SHARED or MAP_PRIVATE that
 map a regular file or character-special device memory,
 and MAP_ANON, which maps memory not associated with any specific file.
 The file descriptor used when creating MAP_ANON regions is not used
-and should be -1.
+and should be \-1.
 The MAP_INHERIT flag allows a region to be inherited after an
 .Fn execve .
 The MAP_HASSEMAPHORE flag allows special handling for

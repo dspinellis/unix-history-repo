@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.3.t	8.4 (Berkeley) %G%
+.\"	@(#)2.3.t	8.5 (Berkeley) %G%
 .\"
 .Sh 2 "Interprocess communications
 .Sh 3 "Interprocess communication primitives
@@ -312,7 +312,7 @@ struct cmsghdr {
 	u_int	cmsg_len;	/* data byte count, including hdr */
 	int	cmsg_level;	/* originating protocol */
 	int	cmsg_type;	/* protocol-specific type */
-	u_char	cmsg_data[];	/* variable length type specific data */
+	u_char	cmsg_data[\|];	/* variable length type specific data */
 };
 .TE
 .DE

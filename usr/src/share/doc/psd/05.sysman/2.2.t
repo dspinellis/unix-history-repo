@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.2.t	8.6 (Berkeley) %G%
+.\"	@(#)2.2.t	8.7 (Berkeley) %G%
 .\"
 .Sh 2 "Filesystem
 .Sh 3 "Overview
@@ -289,8 +289,12 @@ Unlike hard links,
 symbolic links can refernce directories and span filesystems boundaries.
 An
 .Fn lstat
+(see section
+.Xr 2.2.4 )
 call on a hard link will return the information about the
-file (or directory) that the link references.
+file (or directory) that the link references while an
+.Fn lstat
+call on a symbolic link will return information about the link itself.
 A symbolic link does not have an owner,
 group, permissions, access and modification times, etc.
 The only attributes returned from an
