@@ -1,4 +1,4 @@
-/*	ts.c	4.16	81/05/10	*/
+/*	ts.c	4.17	81/07/09	*/
 
 #include "ts.h"
 #include "te.h"
@@ -140,6 +140,7 @@ tsprobe(reg)
 	   JUST TO FIND ITS VECTOR */
 	cvec = 0224;
 	br = 0x15;
+	return (1);
 }
 
 /*
