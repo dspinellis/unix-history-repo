@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)swap_pager.h	7.1 (Berkeley) %G%
+ *	@(#)swap_pager.h	7.2 (Berkeley) %G%
  */
 
 #ifndef	_SWAP_PAGER_
@@ -60,27 +60,5 @@ typedef struct swpager	*sw_pager_t;
 
 #define	SW_WANTED	0x01
 #define SW_NAMED	0x02
-
-#ifdef KERNEL
-
-void		swap_pager_init();
-vm_pager_t	swap_pager_alloc();
-void		swap_pager_dealloc();
-boolean_t	swap_pager_getpage(), swap_pager_putpage();
-boolean_t	swap_pager_haspage();
-
-struct pagerops swappagerops = {
-	swap_pager_init,
-	swap_pager_alloc,
-	swap_pager_dealloc,
-	swap_pager_getpage,
-	swap_pager_putpage,
-	swap_pager_haspage
-};
-
-int		swap_pager_iodone();
-boolean_t	swap_pager_clean();
-
-#endif
 
 #endif	/* _SWAP_PAGER_ */
