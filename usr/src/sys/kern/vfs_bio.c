@@ -1,4 +1,4 @@
-/*	vfs_bio.c	6.1	83/07/29	*/
+/*	vfs_bio.c	6.2	84/01/03	*/
 
 #include "../machine/pte.h"
 
@@ -28,14 +28,14 @@ bread(dev, blkno, size)
 		panic("bread: size 0");
 	bp = getblk(dev, blkno, size);
 	if (bp->b_flags&B_DONE) {
-		trace(TR_BREADHIT, dev, blkno);
+		trace(TR_BREADHIT, pack(dev, size), blkno);
 		return(bp);
 	}
 	bp->b_flags |= B_READ;
 	if (bp->b_bcount > bp->b_bufsize)
 		panic("bread");
 	(*bdevsw[major(dev)].d_strategy)(bp);
-	trace(TR_BREADMISS, dev, blkno);
+	trace(TR_BREADMISS, pack(dev, size), blkno);
 	u.u_ru.ru_inblock++;		/* pay for read */
 	biowait(bp);
 	return(bp);
@@ -66,10 +66,10 @@ breada(dev, blkno, size, rablkno, rabsize)
 			if (bp->b_bcount > bp->b_bufsize)
 				panic("breada");
 			(*bdevsw[major(dev)].d_strategy)(bp);
-			trace(TR_BREADMISS, dev, blkno);
+			trace(TR_BREADMISS, pack(dev, size), blkno);
 			u.u_ru.ru_inblock++;		/* pay for read */
 		} else
-			trace(TR_BREADHIT, dev, blkno);
+			trace(TR_BREADHIT, pack(dev, size), blkno);
 	}
 
 	/*
@@ -80,13 +80,13 @@ breada(dev, blkno, size, rablkno, rabsize)
 		rabp = getblk(dev, rablkno, rabsize);
 		if (rabp->b_flags & B_DONE) {
 			brelse(rabp);
-			trace(TR_BREADHITRA, dev, blkno);
+			trace(TR_BREADHITRA, pack(dev, rabsize), blkno);
 		} else {
 			rabp->b_flags |= B_READ|B_ASYNC;
 			if (rabp->b_bcount > rabp->b_bufsize)
 				panic("breadrabp");
 			(*bdevsw[major(dev)].d_strategy)(rabp);
-			trace(TR_BREADMISSRA, dev, rablock);
+			trace(TR_BREADMISSRA, pack(dev, rabsize), rablock);
 			u.u_ru.ru_inblock++;		/* pay in advance */
 		}
 	}
@@ -115,7 +115,7 @@ bwrite(bp)
 	bp->b_flags &= ~(B_READ | B_DONE | B_ERROR | B_DELWRI);
 	if ((flag&B_DELWRI) == 0)
 		u.u_ru.ru_oublock++;		/* noone paid yet */
-	trace(TR_BWRITE, bp->b_dev, bp->b_blkno);
+	trace(TR_BWRITE, pack(bp->b_dev, bp->b_bcount), bp->b_blkno);
 	if (bp->b_bcount > bp->b_bufsize)
 		panic("bwrite");
 	(*bdevsw[major(bp->b_dev)].d_strategy)(bp);
@@ -176,6 +176,7 @@ brelse(bp)
 	register struct buf *flist;
 	register s;
 
+	trace(TR_BRELSE, pack(bp->b_dev, bp->b_bufsize), bp->b_blkno);
 	/*
 	 * If someone's waiting for the buffer, or
 	 * is waiting for a buffer wake 'em up.
@@ -363,6 +364,7 @@ brealloc(bp, size)
 	if (bp->b_dev == NODEV)
 		return (allocbuf(bp, size));
 
+	trace(TR_BREALLOC, pack(bp->b_dev, size), bp->b_blkno);
 	/*
 	 * Search cache for any buffers that overlap the one that we
 	 * are trying to allocate. Overlapping buffers must be marked
@@ -431,7 +433,7 @@ loop:
 		bwrite(bp);
 		goto loop;
 	}
-	trace(TR_BRELSE, bp->b_dev, bp->b_blkno);
+	trace(TR_BRELSE, pack(bp->b_dev, bp->b_bufsize), bp->b_blkno);
 	bp->b_flags = B_BUSY;
 	return (bp);
 }
