@@ -1,4 +1,4 @@
-/*	uda.c	6.1	83/07/29	*/
+/*	uda.c	6.2	84/10/04	*/
 
 /*
  * UDA50/RAxx disk device driver
@@ -46,39 +46,49 @@ raopen(io)
 	register struct iob *io;
 {
 	register struct mscp *mp;
+	static int udainit;
 	int i;
 
 	if (udaddr == 0)
 		udaddr = (struct udadevice *)ubamem(io->i_unit, udastd[0]);
 	if (ud_ubaddr == 0) {
+		/*
+		 * Initialise cudbuf.i_unit so that controllers
+		 * on UNIBUSes other than 0 can be used.
+		 */
+		cudbuf.i_unit = io->i_unit;
 		cudbuf.i_ma = (caddr_t)&uda;
 		cudbuf.i_cc = sizeof(uda);
 		ud_ubaddr = (struct uda *)ubasetup(&cudbuf, 2);
 	}
-	udaddr->udaip = 0;
-	while ((udaddr->udasa & UDA_STEP1) == 0)
-		;
-	udaddr->udasa = UDA_ERR;
-	while ((udaddr->udasa & UDA_STEP2) == 0)
-		;
-	udaddr->udasa = (short)&ud_ubaddr->uda_ca.ca_ringbase;
-	while ((udaddr->udasa & UDA_STEP3) == 0)
-		;
-	udaddr->udasa = (short)(((int)&ud_ubaddr->uda_ca.ca_ringbase) >> 16);
-	while ((udaddr->udasa & UDA_STEP4) == 0)
-		;
-	udaddr->udasa = UDA_GO;
-	uda.uda_ca.ca_rspdsc[0] = (long)&ud_ubaddr->uda_rsp.mscp_cmdref;
-	uda.uda_ca.ca_cmddsc[0] = (long)&ud_ubaddr->uda_cmd.mscp_cmdref;
-	uda.uda_cmd.mscp_cntflgs = 0;
-	if (udcmd(M_OP_STCON) == 0) {
-		_stop("ra: open error, STCON");
-		return;
-	}
-	uda.uda_cmd.mscp_unit = io->i_unit&7;
-	if (udcmd(M_OP_ONLIN) == 0) {
-		_stop("ra: open error, ONLIN");
-		return;
+	if (udainit == 0) {
+		udaddr->udaip = 0;
+		while ((udaddr->udasa & UDA_STEP1) == 0)
+			;
+		udaddr->udasa = UDA_ERR;
+		while ((udaddr->udasa & UDA_STEP2) == 0)
+			;
+		udaddr->udasa = (short)&ud_ubaddr->uda_ca.ca_ringbase;
+		while ((udaddr->udasa & UDA_STEP3) == 0)
+			;
+		udaddr->udasa =
+			(short)(((int)&ud_ubaddr->uda_ca.ca_ringbase) >> 16);
+		while ((udaddr->udasa & UDA_STEP4) == 0)
+			;
+		udaddr->udasa = UDA_GO;
+		uda.uda_ca.ca_rspdsc[0] = (long)&ud_ubaddr->uda_rsp.mscp_cmdref;
+		uda.uda_ca.ca_cmddsc[0] = (long)&ud_ubaddr->uda_cmd.mscp_cmdref;
+		uda.uda_cmd.mscp_cntflgs = 0;
+		if (udcmd(M_OP_STCON) == 0) {
+			_stop("ra: open error, STCON");
+			return;
+		}
+		uda.uda_cmd.mscp_unit = io->i_unit&7;
+		if (udcmd(M_OP_ONLIN) == 0) {
+			_stop("ra: open error, ONLIN");
+			return;
+		}
+		udainit = 1;
 	}
 	if (io->i_boff < 0 || io->i_boff > 7 || uda_off[io->i_boff] == -1)
 		_stop("ra: bad unit");
