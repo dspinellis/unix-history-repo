@@ -1,0 +1,1 @@
+int     glbtype =   -1;
