@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* notdef */
 
 #ifdef notdef
-static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -48,7 +48,7 @@ main(argc, argv)
 	register char *ef, opt;
 	register int i;
 	struct name *to, *cc, *bcc, *smopts;
-	int  mustsend, hdrstop(), (*prevint)(), f;
+	int mustsend, hdrstop(), (*prevint)(), f;
 	extern int getopt(), optind, opterr;
 	extern char *optarg;
 
@@ -145,7 +145,7 @@ main(argc, argv)
 			 * User is specifying file to "edit" with Mail,
 			 * as opposed to reading system mailbox.
 			 * If no argument is given after -f, we read his
-			 * mbox file in his home directory.
+			 * mbox file.
 			 *
 			 * getopt() can't handle optional arguments, so here
 			 * is an ugly hack to get around it.
@@ -153,7 +153,7 @@ main(argc, argv)
 			if ((argv[optind]) && (argv[optind][0] != '-'))
 				ef = argv[optind++];
 			else
-				ef = mbox;
+				ef = "&";
 			break;
 		case 'n':
 			/*
@@ -244,22 +244,15 @@ Usage: mail [-iInv] [-s subject] [-c cc-addr] [-b bcc-addr] to-addr ...\n\
 	 * Decide whether we are editing a mailbox or reading
 	 * the system mailbox, and open up the right stuff.
 	 */
-
-	if (ef != NOSTR) {
-		char *ename;
-
+	if (ef != NOSTR)
 		edit++;
-		ename = expand(ef);
-		if (ename != ef) {
-			ef = malloc((unsigned) strlen(ename) + 1);
-			strcpy(ef, ename);
-		}
-		editfile = ef;
-		strcpy(mailname, ef);
-	}
-	if (setfile(mailname, edit) < 0) {
+	else
+		ef = "%";
+	if ((ef = expand(ef)) == NOSTR)
+		exit(1);		/* error already reported */
+	if (setfile(ef, edit) < 0) {
 		if (edit)
-			perror(mailname);
+			perror(ef);
 		else
 			fprintf(stderr, "No mail for %s\n", myname);
 		exit(1);

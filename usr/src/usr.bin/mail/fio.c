@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)fio.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	5.7 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -260,7 +260,7 @@ edstop()
 	if (!gotcha || Tflag != NOSTR)
 		goto done;
 	ibuf = NULL;
-	if (stat(editfile, &statb) >= 0 && statb.st_size > mailsize) {
+	if (stat(mailname, &statb) >= 0 && statb.st_size > mailsize) {
 		strcpy(tempname, "/tmp/mboxXXXXXX");
 		mktemp(tempname);
 		if ((obuf = fopen(tempname, "w")) == NULL) {
@@ -268,8 +268,8 @@ edstop()
 			relsesigs();
 			reset(0);
 		}
-		if ((ibuf = fopen(editfile, "r")) == NULL) {
-			perror(editfile);
+		if ((ibuf = fopen(mailname, "r")) == NULL) {
+			perror(mailname);
 			fclose(obuf);
 			remove(tempname);
 			relsesigs();
@@ -288,10 +288,10 @@ edstop()
 		}
 		remove(tempname);
 	}
-	printf("\"%s\" ", editfile);
+	printf("\"%s\" ", mailname);
 	fflush(stdout);
-	if ((obuf = fopen(editfile, "r+")) == NULL) {
-		perror(editfile);
+	if ((obuf = fopen(mailname, "r+")) == NULL) {
+		perror(mailname);
 		relsesigs();
 		reset(0);
 	}
@@ -302,7 +302,7 @@ edstop()
 			continue;
 		c++;
 		if (send(mp, obuf, 0) < 0) {
-			perror(editfile);
+			perror(mailname);
 			relsesigs();
 			reset(0);
 		}
@@ -315,16 +315,15 @@ edstop()
 	}
 	fflush(obuf);
 	if (ferror(obuf)) {
-		perror(editfile);
+		perror(mailname);
 		relsesigs();
 		reset(0);
 	}
 	fclose(obuf);
 	if (gotcha) {
-		remove(editfile);
+		remove(mailname);
 		printf("removed\n");
-	}
-	else
+	} else
 		printf("complete\n");
 	fflush(stdout);
 
@@ -385,8 +384,14 @@ fsize(iob)
 }
 
 /*
- * Take a file name, possibly with shell meta characters
- * in it and expand it by using "sh -c echo filename"
+ * Evaluate the string given as a new mailbox name.
+ * Supported meta characters:
+ *	%	for my system mail box
+ *	%user	for user's system mail box
+ *	#	for previous file
+ *	&	invoker's mbox file
+ *	+file	file in folder directory
+ *	any shell meta character
  * Return the file name as a dynamic string.
  */
 char *
@@ -401,9 +406,28 @@ expand(name)
 	struct stat sbuf;
 	union wait s;
 
+	switch (*name) {
+	case '%':
+		return cp = savestr(findmail(name[1] ? name + 1 : myname));
+	case '#':
+		if (name[1] != 0)
+			break;
+		if (prevfile[0] == 0) {
+			printf("No previous file\n");
+			return NOSTR;
+		}
+		cp = savestr(prevfile);
+		return cp;
+	case '&':
+		if (name[1] == 0 && (name = value("mbox")) == NOSTR) {
+			sprintf(xname, "%s/mbox", homedir);
+			name = savestr(xname);
+		}
+		/* fall through */
+	}
 	if (name[0] == '+' && getfold(cmdbuf) >= 0) {
 		sprintf(xname, "%s/%s", cmdbuf, name + 1);
-		return(expand(savestr(xname)));
+		name = savestr(xname);
 	}
 	if (!anyof(name, "~{[*?$`'\"\\"))
 		return(name);

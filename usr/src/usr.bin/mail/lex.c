@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)lex.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.12 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -40,7 +40,6 @@ setfile(name, isedit)
 	int i;
 	struct stat stb;
 	static int shudclob;
-	static char efile[128];
 	extern char tempMesg[];
 	extern int errno;
 
@@ -103,8 +102,6 @@ setfile(name, isedit)
 	}
 	shudclob = 1;
 	edit = isedit;
-	strncpy(efile, name, 128);
-	editfile = efile;
 	if (name != mailname)
 		strcpy(mailname, name);
 	mailsize = fsize(ibuf);

@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)temp.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)temp.c	5.5 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -66,14 +66,10 @@ tinit()
 	if ((cp = value("HOME")) == NOSTR)
 		cp = ".";
 	strcpy(homedir, cp);
-	findmail();
-	strcpy(copy(homedir, mbox), "/mbox");
 	strcpy(copy(homedir, mailrc), "/.mailrc");
 	strcpy(copy(homedir, deadletter), "/dead.letter");
 	if (debug) {
-		printf("uid = %d, user = %s, mailname = %s\n",
-		    uid, myname, mailname);
-		printf("deadletter = %s, mailrc = %s, mbox = %s\n",
-		    deadletter, mailrc, mbox);
+		printf("uid = %d, user = %s\n", uid, myname);
+		printf("deadletter = %s, mailrc = %s\n", deadletter, mailrc);
 	}
 }

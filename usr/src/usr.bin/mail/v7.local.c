@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)v7.local.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)v7.local.c	5.5 (Berkeley) %G%";
 #endif /* notdef */
 
 /*
@@ -26,17 +26,16 @@ static char sccsid[] = "@(#)v7.local.c	5.4 (Berkeley) %G%";
 
 /*
  * Locate the user's mailbox file (ie, the place where new, unread
- * mail is queued).  In Version 7, it is in /usr/spool/mail/name.
+ * mail is queued).
  */
-
-findmail()
+char *
+findmail(user)
+	char *user;
 {
+	static char buf[PATHSIZE];
 
-	strcpy(copy("/usr/spool/mail/", mailname), myname);
-	if (isdir(mailname)) {
-		stradd(mailname, '/');
-		strcat(mailname, myname);
-	}
+	strcpy(copy("/usr/spool/mail/", buf), user);
+	return buf;
 }
 
 /*

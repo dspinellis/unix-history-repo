@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)glob.h	5.7 (Berkeley) %G%
+ *	@(#)glob.h	5.8 (Berkeley) %G%
  */
 
 /*
@@ -38,10 +38,9 @@ FILE	*otf;				/* Output temp file buffer */
 FILE	*pipef;				/* Pipe file we have opened */
 int	image;				/* File descriptor for image of msg */
 FILE	*input;				/* Current command input file */
-char	*editfile;			/* Name of file being edited */
 char	*sflag;				/* Subject given from non tty */
-char	mbox[PATHSIZE];			/* Name of mailbox file */
-char	mailname[PATHSIZE];		/* Name of system mailbox */
+char	mailname[PATHSIZE];		/* Name of current file */
+char	prevfile[PATHSIZE];		/* Name of previous file */
 int	uid;				/* The invoker's user id */
 char	mailrc[PATHSIZE];		/* Name of startup file */
 char	deadletter[PATHSIZE];		/* Name of #/dead.letter */
