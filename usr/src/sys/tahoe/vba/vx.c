@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vx.c	7.2 (Berkeley) %G%
+ *	@(#)vx.c	7.3 (Berkeley) %G%
  */
 
 #include "vx.h"
@@ -111,6 +111,27 @@ struct	vx_softc {
 	struct	vcmds vs_cmds;
 } vx_softc[NVX];
 
+struct speedtab vxspeedtab[] = {
+	EXTA,	V19200,
+	EXTB,	V19200,
+	19200,	V19200,
+	9600,	13,
+	4800,	12,
+	2400,	11,
+	1800,	10,
+	1200,	9,
+	600,	8,
+	300,	7,
+	200,	6,
+	150,	5,
+	134,	4,
+	110,	3,
+	75,	2,
+	50,	1,
+	0,	0,
+	-1,	-1,
+};
+
 vxprobe(reg, vi)
 	caddr_t reg;
 	struct vba_device *vi;
@@ -168,6 +189,7 @@ vxopen(dev, flag)
 	register struct vx_softc *vs;
 	register struct vba_device *vi;
 	int unit, vx, s, error;
+	int vxparam();
 
 	unit = minor(dev);
 	vx = VXUNIT(unit);
@@ -182,20 +204,25 @@ vxopen(dev, flag)
 		return (ENXIO);
 	tp->t_addr = (caddr_t)vs;
 	tp->t_oproc = vxstart;
+	tp->t_param = vxparam;
 	tp->t_dev = dev;
 	s = spl8();
 	tp->t_state |= TS_WOPEN;
 	if ((tp->t_state&TS_ISOPEN) == 0) {
 		ttychars(tp);
 		if (tp->t_ispeed == 0) {
-			tp->t_ispeed = SSPEED;
-			tp->t_ospeed = SSPEED;
-			tp->t_flags |= ODDP|EVENP|ECHO;
+			tp->t_iflag = TTYDEF_IFLAG;
+			tp->t_oflag = TTYDEF_OFLAG;
+			tp->t_lflag = TTYDEF_LFLAG;
+			tp->t_cflag = TTYDEF_CFLAG;
+			tp->t_ispeed = tp->t_ospeed = TTYDEF_SPEED;
 		}
-		vxparam(dev);
+		vxparam(tp, &tp->t_termios);
+		ttsetwater(tp);
 	}
 	vcmodem(dev, VMOD_ON);
-	while ((tp->t_state&TS_CARR_ON) == 0)
+	while (!(flag&O_NONBLOCK) && !(tp->t_cflag&CLOCAL) && 
+	      (tp->t_state&TS_CARR_ON) == 0)
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
 	error = (*linesw[tp->t_line].l_open)(dev,tp);
 	splx(s);
@@ -217,7 +244,7 @@ vxclose(dev, flag)
 	tp = &vx_tty[unit];
 	s = spl8();
 	(*linesw[tp->t_line].l_close)(tp);
-	if (tp->t_state & TS_HUPCLS || (tp->t_state & TS_ISOPEN) == 0)
+	if (tp->t_cflag & HUPCL || (tp->t_state & TS_ISOPEN) == 0)
 		vcmodem(dev, VMOD_OFF);
 	/* wait for the last response */
 	while (tp->t_state&TS_FLUSH)
@@ -229,25 +256,25 @@ vxclose(dev, flag)
 /*
  * Read from a VX line.
  */
-vxread(dev, uio)
+vxread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
 	struct tty *tp = &vx_tty[minor(dev)];
 
-	return ((*linesw[tp->t_line].l_read)(tp, uio));
+	return ((*linesw[tp->t_line].l_read)(tp, uio, flag));
 }
 
 /*
  * write on a VX line
  */
-vxwrite(dev, uio)
+vxwrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
 	register struct tty *tp = &vx_tty[minor(dev)];
 
-	return ((*linesw[tp->t_line].l_write)(tp, uio));
+	return ((*linesw[tp->t_line].l_write)(tp, uio, flag));
 }
 
 /*
@@ -311,29 +338,16 @@ vxrint(vx)
 			wakeup((caddr_t)&tp->t_rawq);
 			continue;
 		}
-		c = sp->data;
+		c = sp->data&((tp->t_cflag&CSIZE)==CS8 ? 0xff : 0x7f);
 		if ((sp->port&VX_RO) == VX_RO && !overrun) {
 			log(LOG_ERR, "vx%d: receiver overrun\n", vi->ui_unit);
 			overrun = 1;
 			continue;
 		}
 		if (sp->port&VX_PE)
-			if ((tp->t_flags&(EVENP|ODDP)) == EVENP ||
-			    (tp->t_flags&(EVENP|ODDP)) == ODDP)
-				continue;
-		if ((tp->t_flags & (RAW | PASS8)) == 0)
-			c &= 0177;
-		if (sp->port&VX_FE) {
-			/*
-			 * At framing error (break) generate
-			 * a null (in raw mode, for getty), or a
-			 * interrupt (in cooked/cbreak mode).
-			 */
-			if (tp->t_flags&RAW)
-				c = 0;
-			else
-				c = tp->t_intrc;
-		}
+			c |= TTY_PE;
+		if (sp->port&VX_FE) 
+			c |= TTY_FE;
 		(*linesw[tp->t_line].l_rint)(c, tp);
 	}
 	*osp = 0;
@@ -351,44 +365,39 @@ vxioctl(dev, cmd, data, flag)
 
 	tp = &vx_tty[minor(dev)];
 	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
-	if (error == 0)
+	if (error >= 0)
 		return (error);
 	error = ttioctl(tp, cmd, data, flag);
-	if (error >= 0) {
-		if (cmd == TIOCSETP || cmd == TIOCSETN || cmd == TIOCLBIS ||
-		    cmd == TIOCLBIC || cmd == TIOCLSET)
-			vxparam(dev);
+	if (error >= 0) 
 		return (error);
-	}
 	return (ENOTTY);
 }
 
-vxparam(dev)
-	dev_t dev;
+vxparam(tp, t)
+	struct tty *tp;
+	struct termios *t;
 {
 
-	vxcparam(dev, 1);
+	return (vxcparam(tp, t, 1));
 }
 
 /*
  * Set parameters from open or stty into the VX hardware
  * registers.
  */
-vxcparam(dev, wait)
-	dev_t dev;
+vxcparam(tp, t, wait)
+	struct tty *tp;
+	struct termios *t;
 	int wait;
 {
-	register struct tty *tp;
 	register struct vx_softc *vs;
 	register struct vxcmd *cp;
+	dev_t dev = tp->t_dev;
 	int s, unit = minor(dev);
+	int speedcode = ttspeedtab(t->c_ospeed, vxspeedtab);
 
-	tp = &vx_tty[unit];
-	if ((tp->t_ispeed)==0) {
-		tp->t_state |= TS_HUPCLS;
-		vcmodem(dev, VMOD_OFF);
-		return;
-	}
+	if (speedcode < 0 || (t->c_ispeed != t->c_ospeed && t->c_ispeed))
+		return(EINVAL);
 	vs = (struct vx_softc *)tp->t_addr;
 	cp = vobtain(vs);
 	s = spl8();
@@ -399,10 +408,23 @@ vxcparam(dev, wait)
 	 */
 	cp->cmd = VXC_LPARAX;
 	cp->par[1] = VXPORT(unit);
-	cp->par[2] = (tp->t_flags&RAW) ? 0 : tp->t_startc;
-	cp->par[3] = (tp->t_flags&RAW) ? 0 : tp->t_stopc;
+	/*
+	 * note: if the hardware does flow control, ^V doesn't work
+	 * to escape ^S
+	 */
+	if (t->c_iflag&IXON) {
+		if (t->c_cc[VSTART] == _POSIX_VDISABLE)
+			cp->par[2] = 0;
+		else
+			cp->par[2] = t->c_cc[VSTART];
+		if (t->c_cc[VSTOP] == _POSIX_VDISABLE)
+			cp->par[3] = 0;
+		else
+			cp->par[3] = t->c_cc[VSTOP];
+	} else 
+		cp->par[2] = cp->par[3] = 0;
 #ifdef notnow
-	if (tp->t_flags & (RAW|LITOUT|PASS8)) {
+	if (tp->t_flags & (RAW|LITOUT|PASS8)) {	/* XXX */
 #endif
 		cp->par[4] = BITS8;		/* 8 bits of data */
 		cp->par[7] = VNOPARITY;		/* no parity */
@@ -415,17 +437,16 @@ vxcparam(dev, wait)
 			cp->par[7] = VEVENP;	/* even parity */
 	}
 #endif
-	if (tp->t_ospeed == B110)
-		cp->par[5] = VSTOP2;		/* 2 stop bits */
-	else
-		cp->par[5] = VSTOP1;		/* 1 stop bit */
-	if (tp->t_ospeed == EXTA || tp->t_ospeed == EXTB)
-		cp->par[6] = V19200;
-	else
-		cp->par[6] = tp->t_ospeed;
+	cp->par[5] = (t->c_cflag&CSTOPB) ? VSTOP2 : VSTOP1;
+	cp->par[6] = speedcode;
 	if (vcmd((int)vs->vs_nbr, (caddr_t)&cp->cmd) && wait)
 		sleep((caddr_t)cp,TTIPRI);
+	if ((t->c_ospeed)==0) {
+		tp->t_cflag |= HUPCL;
+		vcmodem(dev, VMOD_OFF);
+	}
 	splx(s);
+	return 0;
 }
 
 /*
@@ -524,7 +545,7 @@ vxstart(tp)
 	port = minor(tp->t_dev) & 017;
 	vs = (struct vx_softc *)tp->t_addr;
 	if ((tp->t_state&(TS_TIMEOUT|TS_BUSY|TS_TTSTOP)) == 0) {
-		if (tp->t_outq.c_cc <= TTLOWAT(tp)) {
+		if (tp->t_outq.c_cc <= tp->t_lowat) {
 			if (tp->t_state&TS_ASLEEP) {
 				tp->t_state &= ~TS_ASLEEP;
 				wakeup((caddr_t)&tp->t_outq);
@@ -540,7 +561,7 @@ vxstart(tp)
 			return;
 		}
 		scope_out(3);
-		if (tp->t_flags & (RAW|LITOUT))
+		if (1 || !(tp->t_oflag&OPOST))	/* XXX */
 			n = ndqb(&tp->t_outq, 0);
 		else {
 			n = ndqb(&tp->t_outq, 0200);
@@ -1205,7 +1226,7 @@ vxrestart(vx)
 				vxstart(tp);	/* restart pending output */
 		} else {
 			if (tp->t_state&(TS_WOPEN|TS_ISOPEN))
-				vxcparam(tp->t_dev, 0);
+				vxcparam(tp, &tp->t_termios, 0);
 		}
 	}
 	if (count == 0) {
@@ -1329,8 +1350,7 @@ vcmintr(vx)
 			}
 		}
 	} else if ((kp->v_ustat&BRK_CHR) && (tp->t_state&TS_ISOPEN)) {
-		(*linesw[tp->t_line].l_rint)((tp->t_flags & RAW) ?
-		    0 : tp->t_intrc, tp);
+		(*linesw[tp->t_line].l_rint)(TTY_FE, tp);
 		return;
 	}
 }
