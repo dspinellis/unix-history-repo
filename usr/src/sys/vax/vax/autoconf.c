@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	6.18 (Berkeley) %G%
+ *	@(#)autoconf.c	6.19 (Berkeley) %G%
  */
 
 /*
@@ -933,8 +933,6 @@ setroot()
 	mindev = (mindev << PARTITIONSHIFT) + part;
 	orootdev = rootdev;
 	rootdev = makedev(majdev, mindev);
-
-#ifdef DOSWAP
 	/*
 	 * If the original rootdev is the same as the one
 	 * just calculated, don't need to adjust the swap configuration.
@@ -942,6 +940,10 @@ setroot()
 	if (rootdev == orootdev)
 		return;
 
+	printf("Changing root device to %c%c(%d, %d)\n",
+		devname[majdev][0], devname[majdev][1], majdev, mindev);
+
+#ifdef DOSWAP
 	mindev &= ~PARTITIONMASK;
 	for (swp = swdevt; swp->sw_dev; swp++) {
 		if (majdev == major(swp->sw_dev) &&
