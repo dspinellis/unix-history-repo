@@ -21,7 +21,7 @@ Berkeley, California  94720
 .(f
 This is
 .if \n(DR draft
-version 3.10,
+version 3.11,
 last modified on %G%.
 .if \n(DR Please do not distribute this version without permission
 .if \n(DR of the author.
@@ -940,6 +940,10 @@ R\&$+u	$#local$:$+u	resolve local mail
 S\&1
 R\&ing70:$+u@$-h	$+u@$+h	arpanet mail is automatic
 R\&CSVAX:$-h!$+u	$+h!$+u	uucp mail is automatic
+.sp \n(psu
+### rewriting rules for translated sender
+S\&2
+R\&$-x:$-h:$+u	$+h:$+u	delete multiple berknet hosts
 .sz
 .sp
 .ce
@@ -1319,9 +1323,14 @@ flags).
 .i N
 .)b
 .pp
-There are two sets of rewriting rules.
+There are three sets of rewriting rules.
 Set zero is used to rewrite recipient addresses.
 Set one is used to rewrite sender addresses.
+Set two is applied after evaluating the
+.q $g
+macro,
+i.e., after determining the from address for a particular mailer.
+.pp
 Set one can be used to eliminate implicit links.
 For example,
 if there exists a site on on the BerkNet called
@@ -1344,6 +1353,21 @@ From: auser@ahost
 since
 .q Ing70
 will be implied.
+.pp
+Set two is used to eliminate anomalies resulting from
+forwarding.
+For example,
+a message received at Ing70 from mckusick on the CSVAX will
+appear as:
+.(b
+From CSVAX:mckusick
+.)b
+If this is then forwarded to IngVAX,
+sendmail on Ing70 will rewrite the from address as:
+.(b
+From Ing70:CSVAX:mckusick
+.)b
+The extra host reference can be eliminated by ruleset two on Ing70.
 .pp
 When you change to a new set,
 the previous content of that set is cleared.
