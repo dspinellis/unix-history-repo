@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.3.t	8.3 (Berkeley) %G%
+.\"	@(#)1.3.t	8.4 (Berkeley) %G%
 .\"
 .Sh 2 "Signals
 .PP
@@ -130,8 +130,8 @@ result sigset_t *set; int signo;
 \fISa_flags\fP specifies whether pending system calls should be
 restarted if the signal handler returns (SA_RESTART) and
 whether the handler should operate on the normal run-time
-stack or a special signal stack (SA_ONSTACK; see below).  If \fIosv\fP
-is non-zero, the previous signal vector is returned.
+stack or a special signal stack (SA_ONSTACK; see below).
+If \fIosa\fP is non-zero, the previous signal handler information is returned.
 .PP
 When a signal condition arises for a process, the signal
 is added to a set of signals pending for the process.
@@ -161,7 +161,7 @@ of the form:
 int signo; long code; struct sigcontext *scp;
 .DE
 The \fIsigno\fP gives the number of the signal that occurred, and
-the \fIcode\fP, a word of information supplied by the hardware.
+the \fIcode\fP, a word of signal-specific information supplied by the hardware.
 The \fIscp\fP parameter is a pointer to a machine-dependent
 structure containing the information for restoring the
 context before the signal.
