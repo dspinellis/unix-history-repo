@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.32 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -37,8 +37,9 @@ static u_short	 fts_stat __P((FTS *, FTSENT *, int));
 #define	FCHDIR(sp, fd)	(!ISSET(FTS_NOCHDIR) && fchdir(fd))
 
 /* fts_build flags */
-#define	BCHILD		1		/* from fts_children */
-#define	BREAD		2		/* from fts_read */
+#define	BCHILD		1		/* fts_children */
+#define	BNAMES		2		/* fts_children, names only */
+#define	BREAD		3		/* fts_read */
 
 FTS *
 fts_open(argv, options, compar)
@@ -51,6 +52,12 @@ fts_open(argv, options, compar)
 	register int nitems, maxlen;
 	FTSENT *parent, *tmp;
 	int len;
+
+	/* Options check. */
+	if (options & ~FTS_OPTIONMASK) {
+		errno = EINVAL;
+		return (NULL);
+	}
 
 	/* Allocate/initialize the stream */
 	if ((sp = malloc((u_int)sizeof(FTS))) == NULL)
@@ -281,6 +288,13 @@ fts_read(sp)
 			return (p);
 		} 
 
+		/* Rebuild if only got the names and now traversing. */
+		if (sp->fts_child && sp->fts_options & FTS_NAMEONLY) {
+			sp->fts_options &= ~FTS_NAMEONLY;
+			fts_lfree(sp->fts_child);
+			sp->fts_child = NULL;
+		}
+
 		/*
 		 * Cd to the subdirectory, reading it if haven't already.  If
 		 * the read fails for any reason, or the directory is empty,
@@ -412,16 +426,27 @@ fts_set(sp, p, instr)
 	FTSENT *p;
 	int instr;
 {
+	if (instr && instr != FTS_AGAIN && instr != FTS_FOLLOW &&
+	    instr != FTS_NOINSTR && instr != FTS_SKIP) {
+		errno = EINVAL;
+		return (1);
+	}
 	p->fts_instr = instr;
 	return (0);
 }
 
 FTSENT *
-fts_children(sp)
+fts_children(sp, instr)
 	register FTS *sp;
+	int instr;
 {
 	register FTSENT *p;
 	int fd;
+
+	if (instr && instr != FTS_NAMEONLY) {
+		errno = EINVAL;
+		return (NULL);
+	}
 
 	/* Set current node pointer. */
 	p = sp->fts_cur;
@@ -452,6 +477,12 @@ fts_children(sp)
 	if (sp->fts_child)
 		fts_lfree(sp->fts_child);
 
+	if (instr == FTS_NAMEONLY) {
+		sp->fts_options |= FTS_NAMEONLY;
+		instr = BNAMES;
+	} else 
+		instr = BCHILD;
+
 	/*
 	 * If using chdir on a relative path and called BEFORE fts_read does
 	 * its chdir to the root of a traversal, we can lose -- we need to
@@ -461,11 +492,11 @@ fts_children(sp)
 	 */
 	if (p->fts_level != FTS_ROOTLEVEL || p->fts_accpath[0] == '/' ||
 	    ISSET(FTS_NOCHDIR))
-		return (sp->fts_child = fts_build(sp, BCHILD));
+		return (sp->fts_child = fts_build(sp, instr));
 
 	if ((fd = open(".", O_RDONLY, 0)) < 0)
 		return (NULL);
-	sp->fts_child = fts_build(sp, BCHILD);
+	sp->fts_child = fts_build(sp, instr);
 	if (fchdir(fd))
 		return (NULL);
 	(void)close(fd);
@@ -518,8 +549,12 @@ fts_build(sp, type)
 	 * directory if we're cheating on stat calls, 0 if we're not doing
 	 * any stat calls at all, -1 if we're doing stats on everything.
 	 */
-	nlinks = ISSET(FTS_NOSTAT) && ISSET(FTS_PHYSICAL) ?
-	    cur->fts_nlink - (ISSET(FTS_SEEDOT) ? 0 : 2) : -1;
+	if (type == BNAMES)
+		nlinks = 0;
+	else if (ISSET(FTS_NOSTAT) && ISSET(FTS_PHYSICAL))
+		nlinks = cur->fts_nlink - (ISSET(FTS_SEEDOT) ? 0 : 2);
+	else
+		nlinks = -1;
 
 #ifdef notdef
 	(void)printf("nlinks == %d (cur: %d)\n", nlinks, cur->fts_nlink);
