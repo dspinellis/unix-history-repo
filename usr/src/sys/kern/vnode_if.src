@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)vnode_if.src	8.8 (Berkeley) %G%
+#	@(#)vnode_if.src	8.9 (Berkeley) %G%
 #
 
 #
@@ -173,6 +173,14 @@ vop_select {
 	IN int fflags;
 	IN struct ucred *cred;
 	IN struct proc *p;
+};
+
+#
+#% revoke	vp	U U U
+#
+vop_revoke {
+	IN struct vnode *vp;
+	IN int flags;
 };
 
 #
