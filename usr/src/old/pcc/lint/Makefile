@@ -6,13 +6,16 @@ P=/usr/src/lib/pcc
 CFLAGS=-O
 LINTLIBS=llib-port.ln llib-lc.ln llib-lcurses.ln llib-ldbm.ln llib-lm.ln \
 	llib-lmp.ln llib-lplot.ln llib-ltermcap.ln
+SRCS=	$M/cgram.y $M/common.c $M/optim.c $M/pftn.c $M/scan.c $M/trees.c \
+	$M/xdefs.c lint.c hash.c $M/pass1.h $M/manifest.h macdefs.h \
+	lpass2.c
 
 all:	lpass1 lpass2 ${LINTLIBS}
 
 lpass1: cgram.o rodata.o comm1.o optim.o pftn.o scan.o trees.o xdefs.o \
 	lint.o hash.o
-	${CC} cgram.o rodata.o comm1.o optim.o pftn.o scan.o trees.o xdefs.o \
-		lint.o hash.o -o lpass1
+	${CC} ${CFLAGS} cgram.o rodata.o comm1.o optim.o pftn.o scan.o \
+		trees.o xdefs.o lint.o hash.o -o lpass1
 
 cgram.o: $M/manifest.h $M/pass1.h pcclocal.h macdefs.h cgram.c
 	$(CC) -c $(CFLAGS) -I$M -I. cgram.c
@@ -85,7 +88,7 @@ llib-lcurses.ln: llib-lcurses lpass1
 	-(/lib/cpp -C -Dlint llib-lcurses | ./lpass1 -v > llib-lcurses.ln )
 
 lpass2: lpass2.o hash.o
-	${CC} lpass2.o hash.o -o lpass2
+	${CC} ${CFLAGS} lpass2.o hash.o -o lpass2
 
 lpass2.o: $M/manifest.h lmanifest.h pcclocal.h macdefs.h
 	${CC} ${CFLAGS} -c -I$M -I. lpass2.c
@@ -99,12 +102,15 @@ install: all SHELL
 	install -s lpass2 ${DESTDIR}/usr/lib/lint/lint2
 	for i in llib-*; do install -c -m 644 $$i ${DESTDIR}/usr/lib/lint; done
 	-rm -f ${DESTDIR}/usr/lib/lint/llib-ltermlib*
-	ln -s /usr/lib/lint/llib-ltermcap ${DESTDIR}/usr/lib/lint/llib-ltermlib
-	ln -s /usr/lib/lint/llib-ltermcap.ln ${DESTDIR}/usr/lib/lint/llib-ltermlib.ln
+	ln -s llib-ltermcap ${DESTDIR}/usr/lib/lint/llib-ltermlib
+	ln -s llib-ltermcap.ln ${DESTDIR}/usr/lib/lint/llib-ltermlib.ln
 	install -c SHELL ${DESTDIR}/usr/bin/lint
 
 shrink:
 	rm -f *.o errs rodata.c pcctokens pcclocal.h
 
 clean: shrink
-	rm -f lpass1 lpass2 cgram.c gram.in ${LINTLIBS}
+	rm -f lpass1 lpass2 cgram.c gram.in tags ${LINTLIBS}
+
+tags:	${SRCS}
+	ctags -w ${SRCS}
