@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rexecd.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rexecd.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/ioctl.h>
@@ -187,8 +187,8 @@ doit(f, fromp)
 	if (f > 2)
 		(void) close(f);
 	initgroups(pwd->pw_name, pwd->pw_gid);
-	(void) setuid(pwd->pw_uid);
 	(void) setgid(pwd->pw_gid);
+	(void) setuid(pwd->pw_uid);
 	environ = envinit;
 	strncat(homedir, pwd->pw_dir, sizeof(homedir)-6);
 	strncat(shell, pwd->pw_shell, sizeof(shell)-7);
