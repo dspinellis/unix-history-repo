@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)gprof.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)gprof.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "gprof.h"
@@ -24,7 +24,7 @@ char	*whoami = "gprof";
      */
 char	*defaultEs[] = { "mcount" , "__mcleanup" , 0 };
 
-static struct phdr	h;
+static struct gmonhdr	gmonhdr;
 
 main(argc, argv)
     int argc;
@@ -60,6 +60,7 @@ main(argc, argv)
 	    break;
 	case 'd':
 	    dflag = TRUE;
+	    setlinebuf(stdout);
 	    debug |= atoi( *++argv );
 	    debug |= ANYDEBUG;
 #	    ifdef DEBUG
@@ -221,9 +222,9 @@ getstrtab(nfile)
 		whoami , a_outname );
 	done();
     }
-    strtab = (char *)calloc(ssiz, 1);
+    strtab = calloc(ssiz, 1);
     if (strtab == NULL) {
-	fprintf(stderr, "%s: %s: no room for %d bytes of string table",
+	fprintf(stderr, "%s: %s: no room for %d bytes of string table\n",
 		whoami , a_outname , ssiz);
 	done();
     }
@@ -301,8 +302,7 @@ getsymtab(nfile)
 gettextspace( nfile )
     FILE	*nfile;
 {
-    char	*malloc();
-    
+
     if ( cflag == 0 ) {
 	return;
     }
@@ -359,7 +359,7 @@ FILE *
 openpfile(filename)
     char *filename;
 {
-    struct phdr		tmp;
+    struct gmonhdr	tmp;
     FILE		*pfile;
     int			size;
     int			rate;
@@ -368,22 +368,21 @@ openpfile(filename)
 	perror(filename);
 	done();
     }
-    fread(&tmp, sizeof(struct phdr), 1, pfile);
-    if ( s_highpc != 0 && ( tmp.lpc != h.lpc ||
-	 tmp.hpc != h.hpc || tmp.ncnt != h.ncnt ) ) {
+    fread(&tmp, sizeof(struct gmonhdr), 1, pfile);
+    if ( s_highpc != 0 && ( tmp.lpc != gmonhdr.lpc ||
+	 tmp.hpc != gmonhdr.hpc || tmp.ncnt != gmonhdr.ncnt ) ) {
 	fprintf(stderr, "%s: incompatible with first gmon file\n", filename);
 	done();
     }
-    h = tmp;
-    if ( h.version == GMONVERSION ) {
-	size = sizeof(struct phdr);
-	rate = h.profrate;
-
+    gmonhdr = tmp;
+    if ( gmonhdr.version == GMONVERSION ) {
+	rate = gmonhdr.profrate;
+	size = sizeof(struct gmonhdr);
     } else {
+	fseek(pfile, sizeof(struct ophdr), SEEK_SET);
 	size = sizeof(struct ophdr);
-	fseek(pfile, size, SEEK_SET);
-	h.profrate = rate = hertz();
-	h.version = GMONVERSION;
+	gmonhdr.profrate = rate = hertz();
+	gmonhdr.version = GMONVERSION;
     }
     if (hz == 0) {
 	hz = rate;
@@ -393,16 +392,16 @@ openpfile(filename)
 	    filename, rate, "incompatible with clock rate", hz);
 	done();
     }
-    s_lowpc = (unsigned long) h.lpc;
-    s_highpc = (unsigned long) h.hpc;
-    lowpc = (unsigned long)h.lpc / sizeof(UNIT);
-    highpc = (unsigned long)h.hpc / sizeof(UNIT);
-    sampbytes = h.ncnt - size;
+    s_lowpc = (unsigned long) gmonhdr.lpc;
+    s_highpc = (unsigned long) gmonhdr.hpc;
+    lowpc = (unsigned long)gmonhdr.lpc / sizeof(UNIT);
+    highpc = (unsigned long)gmonhdr.hpc / sizeof(UNIT);
+    sampbytes = gmonhdr.ncnt - size;
     nsamples = sampbytes / sizeof (UNIT);
 #   ifdef DEBUG
 	if ( debug & SAMPLEDEBUG ) {
 	    printf( "[openpfile] hdr.lpc 0x%x hdr.hpc 0x%x hdr.ncnt %d\n",
-		h.lpc , h.hpc , h.ncnt );
+		gmonhdr.lpc , gmonhdr.hpc , gmonhdr.ncnt );
 	    printf( "[openpfile]   s_lowpc 0x%x   s_highpc 0x%x\n" ,
 		s_lowpc , s_highpc );
 	    printf( "[openpfile]     lowpc 0x%x     highpc 0x%x\n" ,
@@ -458,7 +457,7 @@ dumpsum( sumfile )
     /*
      * dump the header; use the last header read in
      */
-    if ( fwrite( &h , sizeof h , 1 , sfile ) != 1 ) {
+    if ( fwrite( &gmonhdr , sizeof gmonhdr , 1 , sfile ) != 1 ) {
 	perror( sumfile );
 	done();
     }
@@ -681,7 +680,7 @@ funcsymbol( nlistp )
 {
     extern char	*strtab;	/* string table from a.out */
     extern int	aflag;		/* if static functions aren't desired */
-    char	*name;
+    char	*name, c;
 
 	/*
 	 *	must be a text symbol,
@@ -695,9 +694,22 @@ funcsymbol( nlistp )
 	 *	can't have any `funny' characters in name,
 	 *	where `funny' includes	`.', .o file names
 	 *			and	`$', pascal labels.
+	 *	need to make an exception for sparc .mul & co.
+	 *	perhaps we should just drop this code entirely...
 	 */
-    for ( name = strtab + nlistp -> n_un.n_strx ; *name ; name += 1 ) {
-	if ( *name == '.' || *name == '$' ) {
+    name = strtab + nlistp -> n_un.n_strx;
+#ifdef sparc
+    if ( *name == '.' ) {
+	char *p = name + 1;
+	if ( *p == 'u' )
+	    p++;
+	if ( strcmp ( p, "mul" ) == 0 || strcmp ( p, "div" ) == 0 ||
+	     strcmp ( p, "rem" ) == 0 )
+		return TRUE;
+    }
+#endif
+    while ( c = *name++ ) {
+	if ( c == '.' || c == '$' ) {
 	    return FALSE;
 	}
     }
