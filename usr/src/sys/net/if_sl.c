@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_sl.c	7.6.1.2 (Berkeley) %G%
+ *	@(#)if_sl.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -388,10 +388,11 @@ sl_btom(sc, len, ifp)
 	cp = sc->sc_buf + sizeof(struct ifnet *);
 	mp = &top;
 	while (len > 0) {
-		if (top == NULL)
+		if (top == NULL) {
 			MGETHDR(m, M_DONTWAIT, MT_DATA);
-		else
+		} else {
 			MGET(m, M_DONTWAIT, MT_DATA);
+		}
 		if ((*mp = m) == NULL) {
 			m_freem(top);
 			return (NULL);
@@ -399,7 +400,7 @@ sl_btom(sc, len, ifp)
 		if (top == NULL) {
 			m->m_pkthdr.rcvif = ifp;
 			m->m_pkthdr.len = len;
-			m->m_len = MPLEN;
+			m->m_len = MHLEN;
 		} else
 			m->m_len = MLEN;
 		/*
@@ -517,14 +518,14 @@ slioctl(ifp, cmd, data)
 	switch (cmd) {
 
 	case SIOCSIFADDR:
-		if (ifa->ifa_addr.sa_family == AF_INET)
+		if (ifa->ifa_addr->sa_family == AF_INET)
 			ifp->if_flags |= IFF_UP;
 		else
 			error = EAFNOSUPPORT;
 		break;
 
 	case SIOCSIFDSTADDR:
-		if (ifa->ifa_addr.sa_family != AF_INET)
+		if (ifa->ifa_addr->sa_family != AF_INET)
 			error = EAFNOSUPPORT;
 		break;
 

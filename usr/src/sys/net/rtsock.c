@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)rtsock.c	7.1 (Berkeley) %G%
+ *	@(#)rtsock.c	7.2 (Berkeley) %G%
  */
 
 #ifndef RTF_UP
@@ -36,6 +36,10 @@
 #include "../machine/mtpr.h"
 #endif
 
+struct sockaddr route_dst = { 0, PF_ROUTE, };
+struct sockaddr route_src = { 0, PF_ROUTE, };
+struct sockproto route_proto = { PF_ROUTE, };
+
 /*ARGSUSED*/
 route_usrreq(so, req, m, nam, rights, control)
 	register struct socket *so;
@@ -44,31 +48,37 @@ route_usrreq(so, req, m, nam, rights, control)
 {
 	register int error = 0;
 	register struct rawcb *rp = sotorawcb(so);
+	if (req == PRU_ATTACH) {
+		MALLOC(rp, struct rawcb *, sizeof(*rp), M_PCB, M_WAITOK);
+		if (so->so_pcb = (caddr_t)rp)
+			bzero(so->so_pcb, sizeof(*rp));
+
+	}
 	if (req == PRU_DETACH && rp) {
 		int af = rp->rcb_proto.sp_protocol;
 		if (af == AF_INET)
 			route_cb.ip_count--;
 		else if (af == AF_NS)
 			route_cb.ns_count--;
-#ifdef ISO
 		else if (af == AF_ISO)
 			route_cb.iso_count--;
-#endif
 		route_cb.any_count--;
 	}
 	error = raw_usrreq(so, req, m, nam, rights, control);
 	rp = sotorawcb(so);
-	if (error == 0 && req == PRU_ATTACH && rp) {
+	if (req == PRU_ATTACH && rp) {
 		int af = rp->rcb_proto.sp_protocol;
+		if (error) {
+			free((caddr_t)rp, M_PCB);
+			return (error);
+		}
 		if (af == AF_INET)
 			route_cb.ip_count++;
 		else if (af == AF_NS)
 			route_cb.ns_count++;
-#ifdef ISO
 		else if (af == AF_ISO)
 			route_cb.iso_count++;
-#endif
-		rp->rcb_flags |= RAW_FADDR;
+		rp->rcb_faddr = &route_src;
 		route_cb.any_count++;
 		soisconnected(so);
 	}
@@ -76,10 +86,7 @@ route_usrreq(so, req, m, nam, rights, control)
 }
 #define ROUNDUP(a) (1 + (((a) - 1) | (sizeof(long) - 1)))
 
-struct sockaddr route_dst = { 0, PF_ROUTE, };
-struct sockaddr route_src = { 0, PF_ROUTE, };
-struct sockproto route_proto = { PF_ROUTE, };
-
+/*ARGSUSED*/
 route_output(m, so)
 	register struct mbuf *m;
 	struct socket *so;
@@ -90,10 +97,8 @@ route_output(m, so)
 	struct rtentry *saved_nrt;
 	struct sockaddr *dst = 0, *gate = 0, *netmask = 0, *author;
 	struct rt_metrics *rmm = 0;
-	struct radix_node_head *rnh;
-	struct radix_node *rn;
 	caddr_t cp = 0;
-	int len, error = 0, s;
+	int len, error = 0;
 
 #define FLUSH(e) { error = e; goto flush;}
 	if (m == 0 || (m = m_pullup(m, sizeof(long))) == 0)
@@ -130,7 +135,11 @@ route_output(m, so)
 	}
 	if (rtm->rtm_count > 2)  {
 		netmask = (struct sockaddr *)cp;
-		cp += ROUNDUP(netmask->sa_len);
+		if (*cp)
+			cp += ROUNDUP(netmask->sa_len);
+		else
+			cp += sizeof(long);
+
 	}
 	if (rtm->rtm_count > 3)  {
 		author = (struct sockaddr *)cp;
@@ -144,7 +153,7 @@ route_output(m, so)
 
 	case RTM_DELETE:
 		error = rtrequest(RTM_DELETE, dst, gate, netmask,
-					rtm->rtm_flags, 0);
+				rtm->rtm_flags, (struct rtentry **)0);
 		break;
 
 	case RTM_GET:
@@ -161,7 +170,7 @@ route_output(m, so)
 			len = sizeof(*rtm) + ROUNDUP(rt_key(rt)->sa_len)
 					+ ROUNDUP(rt->rt_gateway->sa_len);
 			if (netmask)
-				len + netmask->sa_len;
+				len += netmask->sa_len;
 			if (len > rtm->rtm_msglen) {
 				struct rt_msghdr *new_rtm;
 				R_Malloc(new_rtm, struct rt_msghdr *, len);
@@ -270,7 +279,7 @@ m_copyback(m0, off, len, cp)
 	}
 	while (len > 0) {
 		mlen = min (m->m_len - off, len);
-		bcopy(cp, off + mtod(m, caddr_t), mlen);
+		bcopy(cp, off + mtod(m, caddr_t), (unsigned)mlen);
 		cp += mlen;
 		len -= mlen;
 		mlen += off;
@@ -295,7 +304,7 @@ out:	if (((m = m0)->m_flags & M_PKTHDR) && (m->m_pkthdr.len < totlen))
  * The miss message and losing message are very similar.
  */
 
-rt_missmsg(type, dst, gate, mask, src, flags)
+rt_missmsg(type, dst, gate, mask, src, flags, error)
 register struct sockaddr *dst;
 struct sockaddr *gate, *mask, *src;
 {
@@ -303,7 +312,6 @@ struct sockaddr *gate, *mask, *src;
 	register struct mbuf *m;
 	int dlen = ROUNDUP(dst->sa_len);
 	int len = dlen + sizeof(*rtm);
-	caddr_t cp = (caddr_t)dst;
 
 	if (route_cb.any_count == 0)
 		return;
@@ -320,12 +328,7 @@ struct sockaddr *gate, *mask, *src;
 	rtm->rtm_type = type;
 	rtm->rtm_count = 1;
 	if (type == RTM_OLDADD || type == RTM_OLDDEL) {
-		int error = (int) src;
-		src = (struct sockaddr *)0; /* XXXXXXX -- I admit. (KLS) */
 		rtm->rtm_pid = u.u_procp->p_pid;
-		rtm->rtm_errno = error;
-		if (error)
-			rtm->rtm_flags &= ~RTF_DONE;
 	}
 	m_copyback(m, sizeof (*rtm), dlen, (caddr_t)dst);
 	if (gate) {
@@ -335,7 +338,10 @@ struct sockaddr *gate, *mask, *src;
 		rtm->rtm_count++;
 	}
 	if (mask) {
-		dlen = ROUNDUP(mask->sa_len);
+		if (mask->sa_len)
+			dlen = ROUNDUP(mask->sa_len);
+		else
+			dlen = sizeof(long);
 		m_copyback(m, len ,  dlen, (caddr_t)mask);
 		len += dlen;
 		rtm->rtm_count++;
@@ -350,6 +356,7 @@ struct sockaddr *gate, *mask, *src;
 		m_freem(m);
 		return;
 	}
+	rtm->rtm_errno = error;
 	rtm->rtm_msglen = len;
 	route_proto.sp_protocol = dst->sa_family;
 	raw_input(m, &route_proto, &route_src, &route_dst);

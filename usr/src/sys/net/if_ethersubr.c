@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ethersubr.c	7.1 (Berkeley) %G%
+ *	@(#)if_ethersubr.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -45,6 +45,12 @@
 #include "../netns/ns_if.h"
 #endif
 
+#ifdef ISO
+#include "../netiso/argo_debug.h"
+#include "../netiso/iso.h"
+#include "../netiso/iso_var.h"
+#endif
+
 u_char	etherbroadcastaddr[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 extern	struct ifnet loif;
 
@@ -55,7 +61,7 @@ extern	struct ifnet loif;
  * packet leaves a multiple of 512 bytes of data in remainder.
  * Assumes that ifp is actually pointer to arpcom structure.
  */
-enoutput(ifp, m0, dst)
+ether_output(ifp, m0, dst)
 	register struct ifnet *ifp;
 	struct mbuf *m0;
 	struct sockaddr *dst;
@@ -74,6 +80,9 @@ enoutput(ifp, m0, dst)
 		error = ENETDOWN;
 		goto bad;
 	}
+	if (ifp->if_flags & IFF_SIMPLEX && dst->sa_family != AF_UNSPEC &&
+	    !bcmp((caddr_t)edst, (caddr_t)etherbroadcastaddr, sizeof (edst)))
+		mcopy = m_copy(m, 0, (int)M_COPYALL);
 	switch (dst->sa_family) {
 
 #ifdef INET
@@ -81,6 +90,8 @@ enoutput(ifp, m0, dst)
 		idst = ((struct sockaddr_in *)dst)->sin_addr;
  		if (!arpresolve(ac, m, &idst, edst, &usetrailers))
 			return (0);	/* if not yet resolved */
+		if ((ifp->if_flags & IFF_SIMPLEX) && (*edst & 1))
+		    mcopy = m_copy(m, 0, (int)M_COPYALL);
 		off = m->m_pkthdr.len - m->m_len;
 		if (usetrailers && off > 0 && (off & 0x1ff) == 0 &&
 		    (m->m_flags & M_EXT) == 0 &&
@@ -102,27 +113,27 @@ enoutput(ifp, m0, dst)
 			return(looutput(&loif, m, dst));
  		bcopy((caddr_t)&(((struct sockaddr_ns *)dst)->sns_addr.x_host),
 		    (caddr_t)edst, sizeof (edst));
+		if ((ifp->if_flags & IFF_SIMPLEX) && (*edst & 1))
+		    mcopy = m_copy(m, 0, (int)M_COPYALL);
 		goto gottype;
 #endif
 #ifdef	ISO
 	case AF_ISO: {
+		int	len;
 		int	ret;
-		ret = clnp_arpresolve(&us->us_ac.ac_if, m, dst, edst);
-		struct llc *l;
-		if (ret <= 0) {
-			if (ret == -1) {
-			/* not resolved */
-				IFDEBUG(D_ETHER)
-					printf("unoutput: clnp packet dropped\n");
-				ENDDEBUG
-			}
-			return(0);
+		struct	llc *l;
+
+		if ((ret = iso_tryloopback(m, (struct sockaddr_iso *)dst)) >= 0)
+			return (ret);
+		ret = iso_snparesolve(ifp, (struct sockaddr_iso *)dst,
+					(char *)edst, &len);
+		if (ret > 0) {
+			m_freem(m); /* Not Resolved */
+			return(ret);
 		}
 		M_PREPEND(m, 3, M_DONTWAIT);
-		if (m == NULL) {
-			m_freem(mm);
+		if (m == NULL)
 			return(0);
-		}
 		type = m->m_pkthdr.len;
 		l = mtod(m, struct llc *);
 		l->llc_dsap = l->llc_ssap = LLC_ISO_LSAP;
@@ -136,7 +147,6 @@ enoutput(ifp, m0, dst)
 		ENDDEBUG
 		} goto gottype;
 #endif	ISO
-
 	case AF_UNSPEC:
 		eh = (struct ether_header *)dst->sa_data;
  		bcopy((caddr_t)eh->ether_dhost, (caddr_t)edst, sizeof (edst));
@@ -178,10 +188,6 @@ gottype:
  	bcopy((caddr_t)edst, (caddr_t)eh->ether_dhost, sizeof (edst));
  	bcopy((caddr_t)ac->ac_enaddr, (caddr_t)eh->ether_shost,
 	    sizeof(eh->ether_shost));
-	if (ifp->if_flags & IFF_SIMPLEX && dst->sa_family != AF_UNSPEC &&
-	    !bcmp((caddr_t)edst, (caddr_t)etherbroadcastaddr, sizeof (edst)))
-		mcopy = m_copy(m, 0, (int)M_COPYALL);
-
 	/*
 	 * Queue message on interface, and start output if interface
 	 * not yet active.
@@ -214,7 +220,7 @@ bad:
  * has trailing header; we still have to drop
  * the type and length which are at the front of any trailer data.
  */
-en_doproto(ifp, eh, m)
+ether_input(ifp, eh, m)
 	struct ifnet *ifp;
 	register struct ether_header *eh;
 	struct mbuf *m;
@@ -248,7 +254,7 @@ en_doproto(ifp, eh, m)
 
 #endif
 	default:
-		if (eh->ether_type > 1500)
+		if (eh->ether_type > ETHERMTU)
 			goto dropanyway;
 		l = mtod(m, struct llc *);
 		switch (l->llc_control) {
@@ -258,20 +264,26 @@ en_doproto(ifp, eh, m)
 			(l->llc_ssap == LLC_ISO_LSAP)) {
 #ifdef	ISO
 				/* LSAP for ISO */
-			m->m_data += 3;
-			m->m_len -= 3;
-			if (m->m_flags & M_PKTHDR)
-				m->m_pkthdr.len -= 3;
-			DEBUGF(undebug & 0x2, printf("clnp packet\n");)
-			schednetisr(NETISR_CLNP);
+			M_PREPEND(m, sizeof *eh, M_DONTWAIT);
+			if (m == 0)
+				return;
+			*mtod(m, struct ether_header *) = *eh;
+			IFDEBUG(D_ETHER)
+			    printf("clnp packet");
+			ENDDEBUG
+			schednetisr(NETISR_ISO);
 			inq = &clnlintrq;
 			if (IF_QFULL(inq)){
-				DEBUGF(undebug & 0x2, printf(" qfull\n");)
+				IFDEBUG(D_ETHER)
+				    printf(" qfull\n");
+				ENDDEBUG
 				IF_DROP(inq);
 				m_freem(m);
 			} else {
 				IF_ENQUEUE(inq, m);
-				DEBUGF(undebug & 0x2, printf(" queued\n");)
+				IFDEBUG(D_ETHER)
+				    printf(" queued\n");
+				ENDDEBUG
 			}
 			return;
 #endif	ISO
@@ -295,7 +307,11 @@ en_doproto(ifp, eh, m)
 		    u_char c = l->llc_dsap;
 		    l->llc_dsap = l->llc_ssap;
 		    l->llc_ssap = c;
+		    if (m->m_flags & (M_BCAST | M_MCAST))
+			bcopy((caddr_t)ac->ac_enaddr,
+			      (caddr_t)eh->ether_dhost, 6);
 		    sa.sa_family = AF_UNSPEC;
+		    sa.sa_len = sizeof(sa);
 		    eh2 = (struct ether_header *)sa.sa_data;
 		    for (i = 0; i < 6; i++) {
 			eh2->ether_shost[i] = c = eh->ether_dhost[i];
@@ -325,6 +341,7 @@ en_doproto(ifp, eh, m)
 /*
  * Convert Ethernet address to printable (loggable) representation.
  */
+static char digits[] = "0123456789abcdef";
 char *
 ether_sprintf(ap)
 	register u_char *ap;
@@ -332,7 +349,6 @@ ether_sprintf(ap)
 	register i;
 	static char etherbuf[18];
 	register char *cp = etherbuf;
-	static char digits[] = "0123456789abcdef";
 
 	for (i = 0; i < 6; i++) {
 		*cp++ = digits[*ap >> 4];

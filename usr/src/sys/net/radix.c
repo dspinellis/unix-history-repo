@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1988 Regents of the University of California.
+ * Copyright (c) 1988, 1989  Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)radix.c	7.2 (Berkeley) %G%
+ *	@(#)radix.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -73,6 +73,25 @@ rn_search(v, head)
 	return x;
 };
 
+#ifdef notdef
+struct radix_node *
+rn_search_m(v, head, m)
+	struct radix_node *head;
+	register caddr_t v, m;
+{
+	register struct radix_node *x;
+
+	for (x = head; x->rn_b >= 0;) {
+		if ((x->rn_bmask & m[x->rn_off]) &&
+		    (x->rn_bmask & v[x->rn_off]))
+			x = x->rn_r;
+		else
+			x = x->rn_l;
+	}
+	return x;
+};
+#endif
+
 
 static int gotOddMasks;
 static char maskedKey[MAXKEYLEN];
@@ -105,6 +124,12 @@ rn_match(v, head)
 	for (; cp < cplim; cp++, cp2++)
 		if (*cp != *cp2)
 			goto on1;
+	/*
+	 * This extra grot is in case we are explicitly asked
+	 * to look up the default.  Ugh!
+	 */
+	if ((t->rn_flags & RNF_ROOT) && t->rn_dupedkey)
+		t = t->rn_dupedkey;
 	return t;
 on1:
 	matched_off = cp - v;
@@ -130,6 +155,12 @@ on1:
 		register struct radix_mask *m;
 		t = t->rn_p;
 		if (m = t->rn_mklist) {
+			/*
+			 * After doing measurements here, it may
+			 * turn out to be faster to open code
+			 * rn_search_m here instead of always
+			 * copying and masking.
+			 */
 			off = min(t->rn_off, matched_off);
 			mstart = maskedKey + off;
 			do {
@@ -310,7 +341,7 @@ rn_addroute(v, netmask, head, treenodes)
 			return (0);
 		Bzero(x, MAXKEYLEN + 2 * sizeof (*x));
 		cp = (caddr_t)(x + 2);
-		bcopy(netmask, cp, mlen);
+		Bcopy(netmask, cp, mlen);
 		netmask = cp;
 		x = rn_insert(netmask, rn_maskhead, &maskduplicated, x);
 		/*
