@@ -1,0 +1,55 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)tm.4	4.1 (Berkeley) %G%
+.\"
+.TH TM 4 5/10/81
+.UC 4
+.SH NAME
+tm \- TM-11/TE-10 magtape interface
+.SH SYNOPSIS
+controller tm0 at uba? csr 0172520 vector tmintr
+.br
+tape te0 at tm0 drive 0
+.SH DESCRIPTION
+The tm-11/te-10 combination provides a standard tape drive
+interface as described in
+.IR mt (4).
+Hardware implementing this on the VAX is typified by the Emulex TC-11
+controller operating with a Kennedy model 9300 tape transport,
+providing 800 and 1600 bpi operation at 125 ips.
+.SH "SEE ALSO"
+mt(1), tar(1), tp(1), ht(4), mt(4), ts(4)
+.SH DIAGNOSTICS
+\fBte%d: no write ring\fR.  An attempt was made to write on the tape drive
+when no write ring was present; this message is written on the terminal of
+the user who tried to access the tape.
+.PP
+\fBte%d: not online\fR.  An attempt was made to access the tape while it
+was offline; this message is written on the terminal of the user
+who tried to access the tape.
+.PP
+\fBte%d: can't switch density in mid-tape\fR.  An attempt was made to write
+on a tape at a different density than is already recorded on the tape.
+This message is written on the terminal of the user who tried to switch
+the density.
+.PP
+\fBte%d: hard error bn%d er=%b\fR.   A tape error occurred
+at block \fIbn\fR; the tm error register is
+printed in octal with the bits symbolically decoded.  Any error is
+fatal on non-raw tape; when possible the driver will have retried
+the operation which failed several times before reporting the error.
+.PP
+\fBte%d: lost interrupt\fR.  A tape operation did not complete
+within a reasonable time, most likely because the tape was taken
+off-line during rewind or lost vacuum.  The controller should, but does not,
+give an interrupt in these cases.  The device will be made available
+again after this message, but any current open reference to the device
+will return an error as the operation in progress aborts.
+.SH BUGS
+If any non-data error is encountered on non-raw tape, it refuses to do anything
+more until closed.
+.PP
+The system should remember which controlling terminal has the tape drive
+open and write error messages to that terminal rather than on the console.
