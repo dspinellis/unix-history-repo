@@ -7,7 +7,7 @@
  * ~ escapes.
  */
 
-static char *SccsId = "@(#)collect.c	2.12 %G%";
+static char *SccsId = "@(#)collect.c	2.13 %G%";
 
 #include "rcv.h"
 #include <sys/stat.h>
@@ -317,7 +317,7 @@ collect(hp)
 
 		case '?':
 			if ((fbuf = fopen(THELPFILE, "r")) == NULL) {
-				printf("No help just now.\n");
+				perror(THELPFILE);
 				break;
 			}
 			t = getc(fbuf);
