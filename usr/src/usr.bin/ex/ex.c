@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex.c	7.1	%G%";
+static char *sccsid = "@(#)ex.c	7.2	%G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -148,17 +148,6 @@ main(ac, av)
 		signal(SIGEMT, onemt);
 
 	/*
-	 * Initialize end of core pointers.
-	 * Normally we avoid breaking back to fendcore after each
-	 * file since this can be expensive (much core-core copying).
-	 * If your system can scatter load processes you could do
-	 * this as ed does, saving a little core, but it will probably
-	 * not often make much difference.
-	 */
-	fendcore = (line *) sbrk(0);
-	endcore = fendcore - 2;
-
-	/*
 	 * Process flag arguments.
 	 */
 	ac--, av++;
@@ -240,6 +229,17 @@ main(ac, av)
 		}
 		ac--, av++;
 	}
+
+	/*
+	 * Initialize end of core pointers.
+	 * Normally we avoid breaking back to fendcore after each
+	 * file since this can be expensive (much core-core copying).
+	 * If your system can scatter load processes you could do
+	 * this as ed does, saving a little core, but it will probably
+	 * not often make much difference.
+	 */
+	fendcore = (line *) sbrk(0);
+	endcore = fendcore - 2;
 
 #ifdef SIGTSTP
 	if (!hush && signal(SIGTSTP, SIG_IGN) == SIG_DFL)
