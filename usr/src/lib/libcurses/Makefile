@@ -1,7 +1,7 @@
 #
 # cursor package maker
 #
-# @(#)Makefile	1.2 (Berkeley) %G%
+# @(#)Makefile	1.3 (Berkeley) %G%
 #
 HEADERS=curses.h unctrl.h cr_ex.h
 CFILES=	box.c clear.c initscr.c endwin.c mvprintw.c mvscanw.c mvwin.c \
@@ -31,6 +31,7 @@ RM=	rm
 LN=	ln
 CFL=	
 CFLAGS=	-O ${CFL}
+LDFLAGS=-n
 .SUFFIXES: .p
 
 .c.p:
@@ -49,10 +50,7 @@ pcrlib: ${POBJS}
 	ranlib pcrlib
 
 test:	crlib test.o
-	${CC} ${CFLAGS} -o test test.o crlib -ltermlib
-
-a.out:	crlib cat.o
-	${CC} ${CFLAGS} cat.o crlib -ltermlib
+	${CC} ${LDFLAGS} ${CFLAGS} -o test test.o crlib -ltermlib
 
 cat.o:	curses.h
 	${CC} -c ${CFLAGS} cat.c
