@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)chmod.1	8.1 (Berkeley) %G%
+.\"	@(#)chmod.1	6.19 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHMOD 1
@@ -42,11 +42,11 @@ by the mode of the directory itself.
 When encountering a symbolic link anywhere in the traversal, follow it.
 .El
 .Pp
-The mode of a symbolic link is immutable, so that unless the
+The mode of a symbolic link is immutable, so unless the
 .Fl h
 or
 .Fl H
-flags are set,
+flag is set,
 .Nm chmod
 on a symbolic link is a no-op.
 .Pp
@@ -92,7 +92,7 @@ action       ::= op [perm ...]
 last_action  ::= op [perm ...]
 who          ::= a | u | g | o
 op           ::= + | \- | =
-perm         ::= r | s | t | w | X | x | u | g | o
+perm         ::= r | s | t | w | x | X
 .Ed
 .Pp
 The
@@ -103,6 +103,7 @@ The
 .Ar who
 symbol ``a'' is equivalent to ``ugo''.
 .Pp
+.ne 1i
 The
 .Ar perm
 symbols represent the portions of the mode bits as follows:
@@ -125,7 +126,7 @@ Operations with the
 .Ar perm
 symbol ``X'' are only meaningful in conjunction with the
 .Ar op
-symbol ``+'', and it is ignored in all other cases.
+symbol ``+'', and are ignored in all other cases.
 .El
 .Pp
 The
@@ -232,10 +233,8 @@ option for the naughty bits.
 .Sh STANDARDS
 The
 .Nm chmod
-utility is expected to be
-.St -p1003.2
-compatible with the exception
-of the
+utility is expected to be POSIX 1003.2
+compatible with the exception of the
 .Ar perm
 symbols
 .Dq t
