@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	4.38	83/05/18	*/
+/*	ufs_lookup.c	4.39	83/05/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -769,4 +769,60 @@ dirempty(ip)
 		return (0);
 	}
 	return (1);
+}
+
+/*
+ * Check if source directory is in the path of the target directory.
+ * Target is supplied locked, source is unlocked.
+ * The target is always iput() before returning.
+ */
+checkpath(source, target)
+	struct inode *source, *target;
+{
+	struct dirtemplate dirbuf;
+	register struct inode *ip;
+	int error = 0;
+
+	ip = target;
+	if (ip->i_number == source->i_number) {
+		error = EEXIST;
+		goto out;
+	}
+	if (ip->i_number == ROOTINO)
+		goto out;
+
+	for (;;) {
+		if ((ip->i_mode&IFMT) != IFDIR) {
+			error = ENOTDIR;
+			break;
+		}
+		error = rdwri(UIO_READ, ip, (caddr_t)&dirbuf,
+			sizeof (struct dirtemplate), (off_t)0, 1, (int *)0);
+		if (error != 0)
+			break;
+		if (dirbuf.dotdot_namlen != 2 ||
+		    bcmp(dirbuf.dotdot_name, "..", 3) != 0) {
+			error = ENOTDIR;
+			break;
+		}
+		if (dirbuf.dotdot_ino == source->i_number) {
+			error = EINVAL;
+			break;
+		}
+		if (dirbuf.dotdot_ino == ROOTINO)
+			break;
+		iput(ip);
+		ip = iget(ip->i_dev, ip->i_fs, dirbuf.dotdot_ino);
+		if (ip == NULL) {
+			error = u.u_error;
+			break;
+		}
+	}
+
+out:
+	if (error == ENOTDIR)
+		printf("checkpath: .. not a directory\n");
+	if (ip != NULL)
+		iput(ip);
+	return (error);
 }
