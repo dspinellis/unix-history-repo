@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	6.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	6.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -520,6 +520,7 @@ single_user()
 				password = getpass("Password:");
 				if (password == 0 || *password == '\0')
 					_exit(0);
+				password = crypt(password, pp->pw_passwd);
 				if (strcmp(password, pp->pw_passwd) == 0)
 					break;
 			}
@@ -1076,15 +1077,18 @@ clean_ttys()
 	register session_t *sp, *sprev;
 	register struct ttyent *typ;
 	register int session_index = 0;
+	register int devlen;
 
 	if (! sessions)
 		return (state_func_t) multi_user;
 
+	devlen = strlen(_PATH_DEV);
 	while (typ = getttyent()) {
 		++session_index;
 
 		for (sp = sessions; sp; sprev = sp, sp = sp->se_next)
-			if (strcmp(typ->ty_name, sp->se_device) == 0)
+			if (strcmp(typ->ty_name, 
+			    (char *)(sp->se_device + devlen)) == 0)
 				break;
 
 		if (sp) {
