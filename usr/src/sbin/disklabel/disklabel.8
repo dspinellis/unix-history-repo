@@ -3,7 +3,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)disklabel.8	6.3 (Berkeley) %G%
+.\"	@(#)disklabel.8	6.4 (Berkeley) %G%
 .\"
 .TH DISKLABEL 8 ""
 .UC 5
@@ -62,6 +62,9 @@ Each form has an additional option,
 which causes the label to be read from or written to the disk directly,
 rather than going through the system's in-core copy of the label.
 When writing, the in-core copy is also updated if possible.
+This option may allow a label to be installed on a disk
+without kernel support for a label, such as when labels are first installed
+on a system.
 .PP
 The first form of the command is used to examine the label on the named
 disk drive (e.g. hp0 or /dev/rhp0c).
@@ -69,7 +72,7 @@ It will display all of the parameters associated with the drive
 and its partition layout.
 The kernel's in-core label is displayed;
 if the disk has no label, or the partition types on the disk are incorrect,
-the kernel may have modified the label.
+the kernel may have constructed or modified the label.
 If the
 .B \-r
 flag is given, the label from the raw disk will be displayed rather
@@ -94,19 +97,22 @@ If the
 .B \-r
 flag is given, the disk sectors containing the label and bootstrap
 will be written directly,
-otherwise only the label will be modified.
-In either case, the kernel's in-core label is replaced.
-On machines that require a block-0 bootstrap,
-the
+otherwise the existing label will be modified in place without modifying
+the bootstrap.
+If the disk does not already have a label, the
 .B \-r
-flag is assumed with
-.BR \-w .
-An alternate version of the bootstrap may be specified
+flag must be used.
+In either case, the kernel's in-core label is replaced.
+.PP
+Alternate versions of the bootstrap files may be specified
 after the pack identifier.
 If an alternate bootstrap is not specified, the standard bootstrap will be used.
 The bootstrap programs are located in
-.IR /usr/mdec ,
-with names of the form
+.IR /usr/mdec .
+The names of the bootstrap programs may be specified in
+.IR disktab (5);
+if not specified
+with default names of the form
 .IR disktype boot
 for the primary (block 0) bootstrap, and
 .RI boot disktype
@@ -128,15 +134,20 @@ When the editor terminates, the formatted label is reread
 and used to rewrite the disk label.
 .PP
 Finally,
+with the 
+.B \-R
+flag,
 .I disklabel
 is capable of restoring a disk label that was formatted
-in a prior operation and saved in an ascii file by the use
-of the 
-.B \-R
-flag.
-The prototype file used to create the label is exactly that
-produced when reading or editing a label.
-A block-0 bootstrap is also installed on machines that use one.
+in a prior operation and saved in an ascii file.
+The prototype file used to create the label is in exactly the same format
+that is produced when reading or editing a label.
+If the
+.B \-r
+option is also given,
+a block-0 bootstrap is installed on machines that use one;
+either the disktype or the names of the bootstrap files must be specified
+on such machines.
 .SH FILES
 /etc/disktab
 .br
