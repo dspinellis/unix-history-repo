@@ -1,5 +1,5 @@
 /*
- *	@(#)lmanifest.h	1.1	(Berkeley)	%G%
+ *	@(#)lmanifest.h	1.2	(Berkeley)	%G%
  */
 /*	the key:
 	LDI	defined and initialized: storage set aside
@@ -10,17 +10,19 @@
 	LUV	function used in a value context
 	LUE	function used in effects context
 	LUM	mentioned somewhere other than at the declaration
+	LST	defined as a static
 	*/
-# define LDI 01
-# define LIB 02
-# define LDC 04
-# define LDX 010
-# define LRV 020
-# define LUV 040
+# define LDI 0001
+# define LIB 0002
+# define LDC 0004
+# define LDX 0010
+# define LRV 0020
+# define LUV 0040
 # define LUE 0100
 # define LUM 0200
+# define LST 0400
 
-# define LFN 0400  /* filename record */
+# define LFN 01000  /* filename record */
 
 	/* number of chars in NAME, and filename */
 #ifndef FLEXNAMES
@@ -31,7 +33,10 @@
 typedef struct ty {
 	TWORD aty;
 	short extra;
+	short extra1;
 	} ATYPE;
+
+#define X_NONAME 0x8000		/* for extra1, if structure has no name */
 
 typedef struct line {
 	short decflag;

@@ -1,6 +1,6 @@
 
 #ifndef lint
-static char sccsid[] = "@(#)lpass2.c	1.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lpass2.c	1.3	(Berkeley)	%G%";
 #endif lint
 
 # include "manifest"
@@ -62,6 +62,8 @@ int pflag = 0;
 int xflag = 0;
 int uflag = 1;
 int ddddd = 0;
+int zflag = 0;
+int Pflag = 0;
 
 int cfno;  /* current file number */
 
@@ -95,6 +97,14 @@ main( argc, argv ) char *argv[]; {
 				uflag = 0;
 				break;
 
+			case 'z':
+				zflag = 1;
+				break;
+
+			case 'P':
+				Pflag = 1;
+				break;
+
 				}
 			}
 		}
@@ -103,8 +113,11 @@ main( argc, argv ) char *argv[]; {
 		error( "cannot open intermediate file" );
 		exit( 1 );
 		}
-
-	mloop( LDI|LIB );
+	if( Pflag ){
+		pfile();
+		return( 0 );
+		}
+	mloop( LDI|LIB|LST );
 	rewind( stdin );
 	mloop( LDC|LDX );
 	rewind( stdin );
@@ -135,19 +148,17 @@ lread(m){ /* read a line into r.l */
 #ifdef FLEXNAMES
 			r.f.fn = getstr();
 #endif
+			if( Pflag ) return( 1 );
 			setfno( r.f.fn );
 			continue;
 			}
 #ifdef FLEXNAMES
 		r.l.name = getstr();
 #endif
-
 		n = r.l.nargs;
 		if( n<0 ) n = -n;
-		if( n ){
-			if( n>=NTY ) error( "more than %d args?", n );
-			fread( (char *)atyp, sizeof(ATYPE), n, stdin );
-			}
+		if( n>=NTY ) error( "more than %d args?", n );
+		fread( (char *)atyp, sizeof(ATYPE), n, stdin );
 		if( ( r.l.decflag & m ) ) return( 1 );
 		}
 	}
@@ -160,10 +171,11 @@ setfno( s ) char *s; {
 	/* now look up s */
 	for( i=0; i<ffree; ++i ){
 #ifndef FLEXNAMES
-		if( !strncmp( s, fnm[i], LFNM ) ){
+		if( !strncmp( s, fnm[i], LFNM ) )
 #else
-		if (fnm[i] == s){
+		if (fnm[i] == s)
 #endif
+			{
 			cfno = i;
 			return;
 			}
@@ -193,28 +205,21 @@ error( s, a ) char *s; {
 
 STAB *
 find(){
-	/* for this to work, NSZ should be a power of 2 */
 	register h=0;
 #ifndef FLEXNAMES
-	{	register char *p, *q;
-		for( h=0,p=r.l.name,q=p+LCHNM; *p&&p<q; ++p) {
-			h = (h<<1)+ *p;
-			if( h>=NSZ ){
-				h = (h+1)&(NSZ-1);
-				}
-			}
-		}
+	h = hashstr(r.l.name, LCHNM) % NSZ;
 #else
-		h = ((int)r.l.name)%NSZ;
+	h = (int)r.l.name % NSZ;
 #endif
 	{	register STAB *p, *q;
 		for( p=q= &stab[h]; q->decflag; ){
-			/* this call to strncmp should be taken out... */
 #ifndef FLEXNAMES
-			if( !strncmp( r.l.name, q->name, LCHNM)) return(q);
+			if( !strncmp( r.l.name, q->name, LCHNM))
 #else
-			if (r.l.name == q->name) return (q);
+			if (r.l.name == q->name)
 #endif
+				if( ((q->decflag|r.l.decflag)&LST)==0 || q->fno==cfno )
+					return(q);
 			if( ++q >= &stab[NSZ] ) q = stab;
 			if( q == p ) error( "too many names defined" );
 			}
@@ -244,7 +249,7 @@ chkcompat(q) STAB *q; {
 
 	/* argument check */
 
-	if( q->decflag & (LDI|LIB|LUV|LUE) ){
+	if( q->decflag & (LDI|LIB|LUV|LUE|LST) ){
 		if( r.l.decflag & (LUV|LIB|LUE) ){
 			if( q->nargs != r.l.nargs ){
 				if( !(q->use&VARARGS) ){
@@ -256,7 +261,7 @@ chkcompat(q) STAB *q; {
 					viceversa(q);
 					}
 				if( r.l.nargs > q->nargs ) r.l.nargs = q->nargs;
-				if( !(q->decflag & (LDI|LIB) ) ) {
+				if( !(q->decflag & (LDI|LIB|LST) ) ) {
 					q->nargs = r.l.nargs;
 					q->use |= VARARGS;
 					}
@@ -275,7 +280,7 @@ chkcompat(q) STAB *q; {
 			}
 		}
 
-	if( (q->decflag&(LDI|LIB|LUV)) && r.l.decflag==LUV ){
+	if( (q->decflag&(LDI|LIB|LUV|LST)) && r.l.decflag==LUV ){
 		if( chktype( &r.l.type, &q->symty.t ) ){
 #ifndef FLEXNAMES
 			printf( "%.8s value used inconsistently", q->name );
@@ -288,7 +293,7 @@ chkcompat(q) STAB *q; {
 
 	/* check for multiple declaration */
 
-	if( (q->decflag&LDI) && (r.l.decflag&(LDI|LIB)) ){
+	if( (q->decflag&(LDI|LST)) && (r.l.decflag&(LDI|LIB|LST)) ){
 #ifndef FLEXNAMES
 		printf( "%.8s multiply declared", q->name );
 #else
@@ -299,7 +304,7 @@ chkcompat(q) STAB *q; {
 
 	/* do a bit of checking of definitions and uses... */
 
-	if( (q->decflag & (LDI|LIB|LDX|LDC|LUM)) && (r.l.decflag & (LDX|LDC|LUM)) && q->symty.t.aty != r.l.type.aty ){
+	if( (q->decflag & (LDI|LIB|LDX|LDC|LUM|LST)) && (r.l.decflag & (LDX|LDC|LUM)) && q->symty.t.aty != r.l.type.aty ){
 #ifndef FLEXNAMES
 		printf( "%.8s value declared inconsistently", q->name );
 #else
@@ -310,7 +315,7 @@ chkcompat(q) STAB *q; {
 
 	/* better not call functions which are declared to be structure or union returning */
 
-	if( (q->decflag & (LDI|LIB|LDX|LDC)) && (r.l.decflag & LUE) && q->symty.t.aty != r.l.type.aty ){
+	if( (q->decflag & (LDI|LIB|LDX|LDC|LST)) && (r.l.decflag & LUE) && q->symty.t.aty != r.l.type.aty ){
 		/* only matters if the function returns union or structure */
 		TWORD ty;
 		ty = q->symty.t.aty;
@@ -391,27 +396,42 @@ lastone(q) STAB *q; {
 			nd = 1;
 			}
 		}
-	if( uflag && ( nu || nd ) ) printf( mess[nu][nd],
+	if( uflag && ( nu || nd ) )
 #ifndef FLEXNAMES
-		 q->name, LFNM, fnm[q->fno], q->fline );
+		printf( mess[nu][nd], q->name, LFNM, fnm[q->fno], q->fline );
 #else
-		 q->name, fnm[q->fno], q->fline );
+		printf( mess[nu][nd], q->name, fnm[q->fno], q->fline );
 #endif
 
 	if( (uses&(RVAL+EUSED)) == (RVAL+EUSED) ){
+		/* if functions is static, then print the file name too */
+		if( q->decflag & LST )
 #ifndef FLEXNAMES
-		printf( "%.8s returns value which is %s ignored\n", q->name,
+			printf( "%.*s(%d):", LFNM, fnm[q->fno], q->fline );
 #else
-		printf( "%s returns value which is %s ignored\n", q->name,
+			printf( "%s(%d):", fnm[q->fno], q->fline );
 #endif
-			uses&VUSED ? "sometimes" : "always" );
+#ifndef FLEXNAMES
+		printf( "%.*s returns value which is %s ignored\n",
+			LCHNM, q->name, uses&VUSED ? "sometimes" : "always" );
+#else
+		printf( "%s returns value which is %s ignored\n",
+			q->name, uses&VUSED ? "sometimes" : "always" );
+#endif
 		}
 
-	if( (uses&(RVAL+VUSED)) == (VUSED) && (q->decflag&(LDI|LIB)) ){
+	if( (uses&(RVAL+VUSED)) == (VUSED) && (q->decflag&(LDI|LIB|LST)) ){
+		if( q->decflag & LST )
 #ifndef FLEXNAMES
-		printf( "%.8s value is used, but none returned\n", q->name );
+			printf( "%.*s(%d):", LFNM, fnm[q->fno], q->fline );
 #else
-		printf( "%s value is used, but none returned\n", q->name );
+			printf( "%s(%d):", fnm[q->fno], q->fline );
+#endif
+#ifndef FLEXNAMES
+		printf( "%.*s value is used, but none returned\n",
+			LCHNM, q->name);
+#else
+		printf( "%s value is used, but none returned\n", q->name);
 #endif
 		}
 	}
@@ -477,8 +497,12 @@ chktype( pt1, pt2 ) register ATYPE *pt1, *pt2; {
 	if( pt2->aty == ENUMTY ) pt2->aty = INT;
 
 	if( (t=BTYPE(pt1->aty)==STRTY) || t==UNIONTY ){
-		return( pt1->aty!=pt2->aty || (
-			pt1->extra!=pt2->extra ) );
+		if( pt1->aty != pt2->aty || pt1->extra1 != pt2->extra1 )
+			return 1;
+		/* if -z then don't worry about undefined structures,
+		   as long as the names match */
+		if( zflag && (pt1->extra == 0 || pt2->extra == 0) ) return 0;
+		return pt1->extra != pt2->extra;
 		}
 
 	if( pt2->extra ){ /* constant passed in */
@@ -494,6 +518,28 @@ chktype( pt1, pt2 ) register ATYPE *pt1, *pt2; {
 	}
 
 struct tb { int m; char * nm };
+
+struct tb dfs[] = {
+	LDI, "LDI",
+	LIB, "LIB",
+	LDC, "LDC",
+	LDX, "LDX",
+	LRV, "LRV",
+	LUV, "LUV",
+	LUE, "LUE",
+	LUM, "LUM",
+	LST, "LST",
+	LFN, "LFN",
+	0, "" };
+
+struct tb us[] = {
+	USED, "USED",
+	VUSED, "VUSED",
+	EUSED, "EUSED",
+	RVAL, "RVAL",
+	VARARGS, "VARARGS",
+	0, "" };
+
 ptb( v, tp ) struct tb *tp; {
 	/* print a value from the table */
 	int flag;
@@ -508,25 +554,6 @@ ptb( v, tp ) struct tb *tp; {
 
 pst( q ) STAB *q; {
 	/* give a debugging output for q */
-	static struct tb dfs[] = {
-		LDI, "LDI",
-		LIB, "LIB",
-		LDC, "LDC",
-		LDX, "LDX",
-		LRV, "LRV",
-		LUV, "LUV",
-		LUE, "LUE",
-		LUM, "LUM",
-		0, "" };
-
-	static struct tb us[] = {
-		USED, "USED",
-		VUSED, "VUSED",
-		EUSED, "EUSED",
-		RVAL, "RVAL",
-		VARARGS, "VARARGS",
-		0,	0,
-		};
 
 #ifndef FLEXNAMES
 	printf( "%.8s (", q->name );
@@ -537,6 +564,106 @@ pst( q ) STAB *q; {
 	printf( "), use= " );
 	ptb( q->use, us );
 	printf( ", line %d, nargs=%d\n", q->fline, q->nargs );
+	}
+
+pfile() {
+	/* print the input file in readable form */
+	while( lread( LDI|LIB|LDC|LDX|LRV|LUV|LUE|LUM|LST|LFN ) )
+		prc();
+	}
+
+prc() {
+	/* print out 'r' for debugging */
+	register i, j, k;
+
+	printf( "decflag\t" );
+	ptb( r.l.decflag, dfs );
+	putchar( '\n' );
+	if( r.l.decflag & LFN ){
+#ifdef FLEXNAMES
+		printf( "fn\t\t%s\n", r.f.fn );
+#else
+		printf( "fn\t%\t.*s\n", LFNM, r.f.fn );
+#endif
+		}
+	else {
+#ifdef FLEXNAMES
+		printf( "name\t%s\n", r.l.name );
+#else
+		printf( "name\t%.*s\n", LCHNM, r.l.name );
+#endif
+		printf( "nargs\t%d\n", r.l.nargs );
+		printf( "fline\t%d\n", r.l.fline );
+		printf( "type.aty\t0%o (", r.l.type.aty );
+		pty( r.l.type.aty, r.l.name );
+		printf( ")\ntype.extra\t%d\n", r.l.type.extra );
+		j = r.l.type.extra1;
+		printf( "type.extra1\t0x%x (%d,%d)\n",
+			j, j & X_NONAME ? 1 : 0, j & ~X_NONAME );
+		k = r.l.nargs;
+		if( k < 0 ) k = -k;
+		for( i = 0; i < k; i++ ){
+			printf( "atyp[%d].aty\t0%o (", i, atyp[i].aty );
+			pty( atyp[i].aty, "" );
+			printf( ")\natyp[%d].extra\t%d\n", i, atyp[i].extra);
+			j = atyp[i].extra1;
+			printf( "atyp[%d].extra1\t0x%x (%d,%d)\n",
+				i, j, j & X_NONAME ? 1 : 0, j & ~X_NONAME );
+			}
+		}
+		putchar( '\n' );
+	}
+
+pty( t, name )  TWORD t; {
+	static char * tnames[] = {
+		"void", "farg", "char", "short",
+		"int", "long", "float", "double",
+		"struct xxx", "union %s", "enum", "moety",
+		"unsigned char", "unsigned short", "unsigned", "unsigned long",
+		"?", "?"
+		};
+
+	printf( "%s ", tnames[BTYPE(t)] );
+	pty1( t, name, (8 * sizeof (int) - BTSHIFT) / TSHIFT );
+	}
+
+pty1( t, name, level ) TWORD t; {
+	register TWORD u;
+
+	if( level < 0 ){
+		printf( "%s", name );
+		return;
+		}
+	u = t >> level * TSHIFT;
+	if( ISPTR(u) ){
+		printf( "*" );
+		pty1( t, name, level-1 );
+		}
+	else if( ISFTN(u) ){
+		if( level > 0 && ISPTR(u << TSHIFT) ){
+			printf( "(" );
+			pty1( t, name, level-1 );
+			printf( ")()" );
+			}
+		else {
+			pty1( t, name, level-1 );
+			printf( "()" );
+			}
+		}
+	else if( ISARY(u) ){
+		if( level > 0 && ISPTR(u << TSHIFT) ){
+			printf( "(" );
+			pty1( t, name, level-1 );
+			printf( ")[]" );
+			}
+		else {
+			pty1( t, name, level-1 );
+			printf( "[]" );
+			}
+		}
+	else {
+		pty1( t, name, level-1 );
+		}
 	}
 
 #ifdef FLEXNAMES
@@ -552,7 +679,7 @@ getstr()
 	while ((c = getchar()) > 0)
 		*cp++ = c;
 	if (c < 0) {
-		fprintf(stderr, "pass 2 error: intermediate file format error (getstr)");
+		error("intermediate file format error (getstr)");
 		exit(1);
 	}
 	*cp++ = 0;
@@ -576,7 +703,7 @@ savestr(cp)
 			saveleft = len;
 		savetab = (char *)malloc(saveleft);
 		if (savetab == 0) {
-			fprintf(stderr, "pass 2 error: ran out of memory (savestr)");
+			error("ran out of memory (savestr)");
 			exit(1);
 		}
 	}
@@ -608,17 +735,7 @@ hash(s)
 	struct ht *htp;
 	int sh;
 
-	/*
-	 * The hash function is a modular hash of
-	 * the sum of the characters with the sum
-	 * doubled before each successive character
-	 * is added.
-	 */
-	cp = s;
-	i = 0;
-	while (*cp)
-		i = i*2 + *cp++;
-	sh = (i&077777) % HASHINC;
+	sh = hashstr(s) % HASHINC;
 	cp = s;
 	/*
 	 * There are as many as MAXHASH active
@@ -632,7 +749,7 @@ hash(s)
 			register char **hp =
 			    (char **) calloc(sizeof (char **), HASHINC);
 			if (hp == 0) {
-				fprintf(stderr, "pass 2 error: ran out of memory (hash)");
+				error("ran out of memory (hash)");
 				exit(1);
 			}
 			htp->ht_low = hp;
@@ -661,7 +778,7 @@ hash(s)
 				h -= HASHINC;
 		} while (i < HASHINC);
 	}
-	fprintf(stderr, "pass 2 error: ran out of hash tables");
+	error("ran out of hash tables");
 	exit(1);
 }
 char	*tstrbuf[1];
