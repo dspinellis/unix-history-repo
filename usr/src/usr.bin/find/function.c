@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)function.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)function.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -613,6 +613,7 @@ c_perm(perm)
 	char *perm;
 {
 	PLAN *new;
+	mode_t *set;
 
 	ftsoptions &= ~FTS_NOSTAT;
 
@@ -623,10 +624,10 @@ c_perm(perm)
 		++perm;
 	}
 
-	if (setmode(perm))
+	if ((set = setmode(perm)) == NULL)
 		bad_arg("-perm", "illegal mode string");
 
-	new->m_data = getmode(0);
+	new->m_data = getmode(set, 0);
 	return(new);
 }
  
@@ -733,7 +734,7 @@ f_type(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	return(entry->fts_statb.st_mode & plan->m_data);
+	return((entry->fts_statb.st_mode & S_IFMT) == plan->m_data);
 }
  
 PLAN *
