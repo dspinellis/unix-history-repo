@@ -1,0 +1,71 @@
+h59505
+s 00011/00006/00031
+d D 5.2 88/06/18 14:55:06 bostic 2 1
+c install approved copyright notice
+e
+s 00037/00000/00000
+d D 5.1 88/01/02 20:53:31 bostic 1 0
+c date and time created 88/01/02 20:53:31 by bostic
+e
+u
+U
+t
+T
+I 1
+/*
+D 2
+ * Copyright (c) 1987 Regents of the University of California.
+E 2
+I 2
+ * Copyright (c) 1980 Regents of the University of California.
+E 2
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+D 2
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+E 2
+I 2
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+E 2
+ *
+ *	%W% (Berkeley) %G%
+ */
+
+/* morg	monop	square	houses	mon_desc	rent	*/
+{0,	0,	1,	0,	&mon[0],	{ 2, 10, 30,  90, 160, 250} },
+{0,	0,	3,	0,	&mon[0],	{ 4, 20, 60, 180, 320, 450} },
+{0,	0,	6,	0,	&mon[1],	{ 6, 30, 90, 270, 400, 550} },
+{0,	0,	7,	0,	&mon[1],	{ 6, 30, 90, 270, 400, 550} },
+{0,	0,	9,	0,	&mon[1],	{ 8, 40,100, 300, 450, 600} },
+{0,	0,	11,	0,	&mon[2],	{10, 50,150, 450, 625, 750} },
+{0,	0,	13,	0,	&mon[2],	{10, 50,150, 450, 625, 750} },
+{0,	0,	14,	0,	&mon[2],	{12, 60,180, 500, 700, 900} },
+{0,	0,	16,	0,	&mon[3],	{14, 70,200, 550, 750, 950} },
+{0,	0,	17,	0,	&mon[3],	{14, 70,200, 550, 750, 950} },
+{0,	0,	19,	0,	&mon[3],	{16, 80,220, 600, 800,1000} },
+{0,	0,	21,	0,	&mon[4],	{18, 90,250, 700, 875,1050} },
+{0,	0,	23,	0,	&mon[4],	{18, 90,250, 700, 875,1050} },
+{0,	0,	24,	0,	&mon[4],	{20,100,300, 750, 925,1100} },
+{0,	0,	26,	0,	&mon[5],	{22,110,330, 800, 975,1150} },
+{0,	0,	27,	0,	&mon[5],	{22,110,330, 800, 975,1150} },
+{0,	0,	29,	0,	&mon[5],	{24,120,360, 850,1025,1200} },
+{0,	0,	31,	0,	&mon[6],	{26,130,390, 900,1100,1275} },
+{0,	0,	32,	0,	&mon[6],	{26,130,390, 900,1100,1275} },
+{0,	0,	34,	0,	&mon[6],	{28,150,450,1000,1200,1400} },
+{0,	0,	37,	0,	&mon[7],	{35,175,500,1100,1300,1500} },
+{0,	0,	39,	0,	&mon[7],	{50,200,600,1400,1700,2000} }
+E 1
