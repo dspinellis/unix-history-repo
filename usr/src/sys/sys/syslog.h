@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)syslog.h	4.10 (Berkeley) %G%
+ *	@(#)syslog.h	4.11 (Berkeley) %G%
  */
 
 /*
@@ -57,7 +57,8 @@
  *	LOG_ODELAY no longer does anything; LOG_NDELAY is the
  *	inverse of what it used to be.
  */
-#define	LOG_PID		01	/* log the pid with each message */
-#define	LOG_CONS	02	/* log on the console if errors in sending */
-#define	LOG_ODELAY	04	/* delay open until syslog() is called */
-#define LOG_NDELAY	010	/* don't delay open */
+#define	LOG_PID		0x01	/* log the pid with each message */
+#define	LOG_CONS	0x02	/* log on the console if errors in sending */
+#define	LOG_ODELAY	0x04	/* delay open until syslog() is called */
+#define LOG_NDELAY	0x08	/* don't delay open */
+#define LOG_NOWAIT	0x10	/* if forking to log on console, don't wait() */
