@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.17.1.1 (Berkeley) %G%
+ *	@(#)machdep.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -336,16 +336,19 @@ setregs(entry)
  * pointer, and the argument pointer, it returns
  * to the user specified pc, psl.
  */
-sendsig(p, sig, mask)
-	int (*p)(), sig, mask;
+sendsig(catcher, sig, mask, code)
+	sig_t catcher;
+	int sig, mask;
+	unsigned code;
 {
 	register struct sigcontext *scp;
+	register struct proc *p = u.u_procp;
 	register int *regs;
 	register struct sigframe {
 		int	sf_signum;
 		int	sf_code;
 		struct	sigcontext *sf_scp;
-		int	(*sf_handler)();
+		sig_t	sf_handler;
 		int	sf_argcount;
 		struct	sigcontext *sf_scpcopy;
 	} *fp;
@@ -373,25 +376,21 @@ sendsig(p, sig, mask)
 		 * Process has trashed its stack; give it an illegal
 		 * instruction to halt it in its tracks.
 		 */
-		u.u_signal[SIGILL] = SIG_DFL;
+		SIGACTION(p, SIGILL) = SIG_DFL;
 		sig = sigmask(SIGILL);
-		u.u_procp->p_sigignore &= ~sig;
-		u.u_procp->p_sigcatch &= ~sig;
-		u.u_procp->p_sigmask &= ~sig;
-		psignal(u.u_procp, SIGILL);
+		p->p_sigignore &= ~sig;
+		p->p_sigcatch &= ~sig;
+		p->p_sigmask &= ~sig;
+		psignal(p, SIGILL);
 		return;
 	}
 	/* 
 	 * Build the argument list for the signal handler.
 	 */
 	fp->sf_signum = sig;
-	if (sig == SIGILL || sig == SIGFPE) {
-		fp->sf_code = u.u_code;
-		u.u_code = 0;
-	} else
-		fp->sf_code = 0;
+	fp->sf_code = code;
 	fp->sf_scp = scp;
-	fp->sf_handler = p;
+	fp->sf_handler = catcher;
 	/*
 	 * Build the calls argument frame to be used to call sigreturn
 	 */
@@ -443,8 +442,7 @@ sigreturn()
 	}
 	u.u_eosys = JUSTRETURN;
 	u.u_onstack = scp->sc_onstack & 01;
-	u.u_procp->p_sigmask = scp->sc_mask &~
-	    (sigmask(SIGKILL)|sigmask(SIGCONT)|sigmask(SIGSTOP));
+	u.u_procp->p_sigmask = scp->sc_mask &~ sigcantmask;
 	regs[FP] = scp->sc_fp;
 	regs[AP] = scp->sc_ap;
 	regs[SP] = scp->sc_sp;
@@ -452,6 +450,7 @@ sigreturn()
 	regs[PS] = scp->sc_ps;
 }
 
+#ifdef COMPAT_43
 /* XXX - BEGIN 4.2 COMPATIBILITY */
 /*
  * Compatibility with 4.2 chmk $139 used by longjmp()
@@ -467,47 +466,8 @@ osigcleanup()
 	if (useracc((caddr_t)scp, 3 * sizeof (int), B_WRITE) == 0)
 		return;
 	u.u_onstack = scp->sc_onstack & 01;
-	u.u_procp->p_sigmask = scp->sc_mask &~
-	    (sigmask(SIGKILL)|sigmask(SIGCONT)|sigmask(SIGSTOP));
+	u.u_procp->p_sigmask = scp->sc_mask &~ sigcantmask;
 	regs[SP] = scp->sc_sp;
-}
-/* XXX - END 4.2 COMPATIBILITY */
-
-#ifdef notdef
-dorti()
-{
-	struct frame frame;
-	register int sp;
-	register int reg, mask;
-	extern int ipcreg[];
-
-	(void) copyin((caddr_t)u.u_ar0[FP], (caddr_t)&frame, sizeof (frame));
-	sp = u.u_ar0[FP] + sizeof (frame);
-	u.u_ar0[PC] = frame.fr_savpc;
-	u.u_ar0[FP] = frame.fr_savfp;
-	u.u_ar0[AP] = frame.fr_savap;
-	mask = frame.fr_mask;
-	for (reg = 0; reg <= 11; reg++) {
-		if (mask&1) {
-			u.u_ar0[ipcreg[reg]] = fuword((caddr_t)sp);
-			sp += 4;
-		}
-		mask >>= 1;
-	}
-	sp += frame.fr_spa;
-	u.u_ar0[PS] = (u.u_ar0[PS] & 0xffff0000) | frame.fr_psw;
-	if (frame.fr_s)
-		sp += 4 + 4 * (fuword((caddr_t)sp) & 0xff);
-	/* phew, now the rei */
-	u.u_ar0[PC] = fuword((caddr_t)sp);
-	sp += 4;
-	u.u_ar0[PS] = fuword((caddr_t)sp);
-	sp += 4;
-	u.u_ar0[PS] |= PSL_USERSET;
-	u.u_ar0[PS] &= ~PSL_USERCLR;
-	if (u.u_ar0[PS] & PSL_CM)
-		u.u_ar0[PS] &= ~PSL_CM_CLR;
-	u.u_ar0[SP] = (int)sp;
 }
 #endif
 
