@@ -1,4 +1,4 @@
-/*	@(#)kdb_machdep.c	7.4 (Berkeley) %G%	*/
+/*	@(#)kdb_machdep.c	7.5 (Berkeley) %G%	*/
 
 #include "param.h"
 #include "conf.h"
@@ -170,9 +170,9 @@ kdb_trap(apsl)
 	 * Mark debugger active and initiate input
 	 * polling in the console device driver.
 	 */
-	cnpoll(kdbactive = 1);
+	(*v_poll)(kdbactive = 1);
 	retval = kdb(type, code, noproc ? (struct proc *)0 : u.u_procp);
-	cnpoll(kdbactive = 0);
+	(*v_poll)(kdbactive = 0);
 	setpcb(locr0);
 	return (retval);
 }
@@ -222,7 +222,7 @@ kdbreadc(cp)
 	char *cp;
 {
 
-	*cp = cngetc();
+	*cp = (*v_getc)();
 	return (1);
 }
 
@@ -235,7 +235,7 @@ kdbwrite(cp, len)
 {
 
 	while (len-- > 0)
-		cnputc(*cp++);
+		(*v_putc)(*cp++);
 }
 
 /*
