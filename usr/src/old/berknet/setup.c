@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)setup.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)setup.c	4.2	(Berkeley)	%G%";
 
 /*
 	setup.c
@@ -138,8 +138,13 @@ setup(str)
 		exit(EX_OSERR);
 		}
 	/* set exclusive use for line */
-	if(ioctl(netd.dp_linefd,TIOCEXCL,&stt) != 0 ||
-		gtty(netd.dp_linefd,&stt) < 0){
+#ifdef TIOCEXCL
+#ifdef VAX
+	(void)
+#endif
+	ioctl(netd.dp_linefd,TIOCEXCL,&stt);
+#endif
+	if(gtty(netd.dp_linefd,&stt) < 0){
 		perror(str);
 		exit(EX_OSERR);
 		}
