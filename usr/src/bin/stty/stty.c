@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)stty.c	4.7 (Berkeley) %G%";
+static char *sccsid ="@(#)stty.c	4.8 (Berkeley) %G%";
 /*
  * set teletype modes
  */
@@ -107,8 +107,6 @@ struct
 	"-nohang",	0, 0, 0, LNOHANG,
 	"etxack",	0, 0, LETXACK, 0,
 	"-etxack",	0, 0, 0, LETXACK,
-	"intrup",	0, 0, LINTRUP, 0,
-	"-intrup",	0, 0, 0, LINTRUP,
 	"ctlecho",	0, 0, LCTLECH, 0,
 	"-ctlecho",	0, 0, 0, LCTLECH,
 	"pendin",	0, 0, LPENDIN, 0,
@@ -378,7 +376,6 @@ prmodes(all)
 			lpit(LPRTERA, "-prterase ");
 		}
 		lpit(LTOSTOP, "-tostop ");
-		lpit(LINTRUP, "-intrup ");
 		if (all==2) {
 			fprintf(stderr, "\n");
 			any = 0;
