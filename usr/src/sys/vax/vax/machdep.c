@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.4 (Berkeley) %G%
+ *	@(#)machdep.c	7.5 (Berkeley) %G%
  */
 
 #include "reg.h"
@@ -765,12 +765,11 @@ boot(arghowto)
 	register int howto;		/* r11 == how to boot */
 	register int devtype;		/* r10 == major of root dev */
 
-#ifdef lint
-	howto = 0; devtype = 0;
-	printf("howto %d, devtype %d\n", arghowto, devtype);
-#endif
 	howto = arghowto;
 	if ((howto&RB_NOSYNC)==0 && waittime < 0 && bfreelist[0].b_forw) {
+		register struct buf *bp;
+		int iter, nbusy;
+
 		waittime = 0;
 		(void) splnet();
 		printf("syncing disks... ");
@@ -779,10 +778,8 @@ boot(arghowto)
 		 */
 		xumount(NODEV);
 		update();
-		{ register struct buf *bp;
-		  int iter, nbusy;
 
-		  for (iter = 0; iter < 20; iter++) {
+		for (iter = 0; iter < 20; iter++) {
 			nbusy = 0;
 			for (bp = &buf[nbuf]; --bp >= buf; )
 				if ((bp->b_flags & (B_BUSY|B_INVAL)) == B_BUSY)
@@ -791,9 +788,11 @@ boot(arghowto)
 				break;
 			printf("%d ", nbusy);
 			DELAY(40000 * iter);
-		  }
 		}
-		printf("done\n");
+		if (nbusy)
+			printf("giving up\n");
+		else
+			printf("done\n");
 		/*
 		 * If we've been adjusting the clock, the todr
 		 * will be out of synch; adjust it now.
@@ -820,6 +819,9 @@ boot(arghowto)
 #endif
 	for (;;)
 		asm("halt");
+#ifdef lint
+	printf("howto %d, devtype %d\n", arghowto, devtype);
+#endif
 	/*NOTREACHED*/
 }
 
