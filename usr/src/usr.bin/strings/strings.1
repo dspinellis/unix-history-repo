@@ -2,42 +2,30 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)strings.1	6.2 (Berkeley) %G%
+.\"	@(#)strings.1	6.3 (Berkeley) %G%
 .\"
 .TH STRINGS 1 ""
 .UC
 .SH NAME
-strings \- find the printable strings in a object, or other binary, file
+strings \- find the printable strings in a file
 .SH SYNOPSIS
 .B strings
 [
-.B \-
-] [
-.B \-o
+.B \-ao
 ] [
 \fB\-\fInumber\fR
-] file ...
+] [ file ... ]
 .SH DESCRIPTION
-.I Strings
-looks for ascii strings in a binary file.
-A string is any sequence of 4 or more printing characters ending with
-a newline or a null.
-Unless the
-.B \-
-flag is given,
-.I strings
-only looks in the initialized data space of object files.
-If the
-.B \-o
-flag is given, then each string is preceded by its offset in the
-file (in octal).
-If the
-\fB\-\fInumber\fR
-flag is given then number is used as the minimum string length
-rather than 4.
+\fIStrings\fP looks for ascii strings in each of the specified files,
+or from the standard input.  A string is any sequence of 4 or more printing
+characters.  Unless the \fB-a\fP flag is given, \fIstrings\fP only looks
+in the initialized data space of object files.  If the \fB-o\fP flag is
+given, then each string is preceded by its offset in the file (in
+octal).  If the \fB-\fInumber\fR flag is given, then \fInumber\fP is
+used as the minimum string length rather than 4.
 .PP
-.I Strings
-is useful for identifying random object files and many other things.
+\fIStrings\fP is useful for identifying random object files and
+many other things.
 .SH "SEE ALSO"
 od(1)
 .SH BUGS
