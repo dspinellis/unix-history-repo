@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dz.c	7.10 (Berkeley) %G%
+ *	@(#)dz.c	7.11 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -419,23 +419,23 @@ dzparam(tp, t)
 	else
 		dzaddr->dzcsr = DZ_IEN;
 	dzact |= (1<<(unit>>3));
-	if (ospeed == 0) {
+	if (ospeed == 0)
 		(void) dzmctl(unit, DZ_OFF, DMSET);	/* hang up line */
-		return;
+	else {
+		lpr = (ospeed<<8) | (unit & 07);
+		if ((cflag&CSIZE) == CS7)
+			lpr |= BITS7;
+		else
+			lpr |= BITS8;
+		if (cflag&PARENB)
+			lpr |= PENABLE;
+		if (cflag&PARODD)
+			lpr |= OPAR;
+		if (cflag&CSTOPB)
+			lpr |= TWOSB;
+		dzaddr->dzlpr = lpr;
 	}
-	lpr = (ospeed<<8) | (unit & 07);
-	if ((cflag&CSIZE) == CS7)
-		lpr |= BITS7;
-	else
-		lpr |= BITS8;
-	if (cflag&PARENB)
-		lpr |= PENABLE;
-	if (cflag&PARODD)
-		lpr |= OPAR;
-	if (cflag&CSTOPB)
-		lpr |= TWOSB;
-	dzaddr->dzlpr = lpr;
-	return 0;
+	return(0);
 }
  
 dzxint(tp)
