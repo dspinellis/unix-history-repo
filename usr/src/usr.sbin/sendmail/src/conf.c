@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.66 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.67 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1804,6 +1804,57 @@ lockfile(fd, filename, ext, type)
 	if (tTd(55, 60))
 		printf("FAIL\n");
 	return FALSE;
+}
+/*
+**  CHOWNSAFE -- tell if chown is "safe" (executable only by root)
+**
+**	Parameters:
+**		fd -- the file descriptor to check.
+**
+**	Returns:
+**		TRUE -- if only root can chown the file to an arbitrary
+**			user.
+**		FALSE -- if an arbitrary user can give away a file.
+*/
+
+bool
+chownsafe(fd)
+	int fd;
+{
+#ifdef __hpux__
+	char *s;
+	int tfd;
+	uid_t o_uid, o_euid;
+	gid_t o_gid, o_egid;
+	bool rval;
+	struct stat stbuf;
+
+	o_uid = getuid();
+	o_euid = geteuid();
+	o_gid = getgid();
+	o_egid = getegid();
+	fstat(fildes, &stbuf);
+	setresuid(stbuf.st_uid, stbuf.st_uid, -1);
+	setresgid(stbuf.st_gid, stbuf.st_gid, -1);
+	s = tmpnam(NULL);
+	tfd = open(s, O_RDONLY|O_CREAT, 0600);
+	rval = fchown(tfd, DefUid, DefGid) == 0;
+	close(tfd);
+	unlink(s);
+	setreuid(o_uid, o_euid);
+	setresgid(o_gid, o_egid, -1);
+	return rval;
+#else
+# ifdef _PC_CHOWN_RESTRICTED
+	return fpathconf(fd, _PC_CHOWN_RESTRICTED) > 0;
+# else
+#  ifdef BSD
+	return TRUE;
+#  else
+	return FALSE;
+#  endif
+# endif
+#endif
 }
 /*
 **  GETCFNAME -- return the name of the .cf file.

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.42 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -816,10 +816,25 @@ include(fname, forwarding, ctladdr, sendq, e)
 	int rval = 0;
 	int sfflags = forwarding ? SFF_MUSTOWN : SFF_ANYFILE;
 	struct stat st;
-#ifdef _POSIX_CHOWN_RESTRICTED
-	bool safechown;
-#endif
 	char buf[MAXLINE];
+#ifdef _POSIX_CHOWN_RESTRICTED
+# if _POSIX_CHOWN_RESTRICTED == -1
+#  define safechown	FALSE
+# else
+#  define safechown	TRUE
+# endif
+#else
+# ifdef _PC_CHOWN_RESTRICTED
+	bool safechown;
+# else
+#  ifdef BSD
+#   define safechown	TRUE
+#  else
+#   define safechown	FALSE
+#  endif
+# endif
+#endif
+	extern bool chownsafe();
 
 	if (tTd(27, 2))
 		printf("include(%s)\n", fname);
@@ -928,15 +943,15 @@ resetuid:
 		return rval;
 	}
 
-#ifdef _POSIX_CHOWN_RESTRICTED
-	safechown = fpathconf(fileno(fp), _PC_CHOWN_RESTRICTED) != -1;
+#ifndef safechown
+	safechown = chownsafe(fileno(fp));
+#endif
 	if (ca == NULL && safechown)
 	{
 		ctladdr->q_uid = st.st_uid;
 		ctladdr->q_gid = st.st_gid;
 		ctladdr->q_flags |= QGOODUID;
 	}
-#endif
 	if (ca != NULL && ca->q_uid == st.st_uid)
 	{
 		/* optimization -- avoid getpwuid if we already have info */
@@ -953,20 +968,16 @@ resetuid:
 		if (pw != NULL)
 		{
 			ctladdr->q_ruser = newstr(pw->pw_name);
-#ifdef _POSIX_CHOWN_RESTRICTED
 			if (safechown)
 				sh = pw->pw_shell;
-#endif
 		}
 		if (pw == NULL)
 			ctladdr->q_flags |= QBOGUSSHELL;
 		else if(!usershellok(sh))
 		{
-#ifdef _POSIX_CHOWN_RESTRICTED
 			if (safechown)
 				ctladdr->q_flags |= QBOGUSSHELL;
 			else
-#endif
 				ctladdr->q_flags |= QUNSAFEADDR;
 		}
 	}
