@@ -1,3 +1,7 @@
+/*	@(#)as.c	6.2 (Berkeley) %G%
+
+Modified for Berkeley Unix by Donn Seeley, donn@okeeffe.berkeley.edu  */
+
 /* as.c - GAS main program.
    Copyright (C) 1987 Free Software Foundation, Inc.
 
@@ -187,6 +191,14 @@ char	**argv;
 
 			case 'W':
 				/* -W means don't warn about things */
+				break;
+
+			case 'g':
+				/*
+				 * -g asks gas to produce gdb/dbx line number
+				 * and file name stabs so that an assembly
+				 * file can be handled by a source debugger.
+				 */
 				break;
 
 			default:
