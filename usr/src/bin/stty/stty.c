@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)stty.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)stty.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -246,7 +246,7 @@ tty:			tmp = TTYDISC;
 ccfound:		if (!*++argv)
 				err("option requires an argument -- %s",
 				    cp->name);
-			if (CHK("undef") || CHK("disable"))
+			if (CHK("undef") || CHK("<undef>"))
 				t.c_cc[cp->sub] = _POSIX_VDISABLE;
 			else if (**argv == '^')
 				t.c_cc[cp->sub] = 
