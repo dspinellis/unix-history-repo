@@ -3,14 +3,14 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)basename.1	6.4 (Berkeley) %G%
+.\"     @(#)basename.1	6.5 (Berkeley) %G%
 .\"
-.Dt BASENAME 1
 .Dd 
+.Dt BASENAME 1
 .Os BSD 4.4
 .Sh NAME
 .Nm basename , dirname
-.Nd return filename or directory portion of pathname
+.Nd return file or directory portion of pathname
 .Sh SYNOPSIS
 .Nm basename
 .Ar string
@@ -19,50 +19,88 @@
 .Ar string
 .Sh DESCRIPTION
 .Nm Basename
-deletes any prefix ending with the last slash
+displays the file name portion of a path, as determined by the following
+rules.
+It first deletes any trailing slash
 .Sq Li \&/
-character present in
+characters from
 .Ar string ,
-and a
+then any path prefix ending in a slash, and then
 .Ar suffix ,
-if given.
-The resulting filename is written to the standard output.
+if specified.
+The resulting string, and a terminating newline, is written to the
+standard output.
+.Pp
+If the string resulting from the first two steps is the same as
+.Ar suffix ,
+the third step is skipped and the suffix doesn't change the resulting
+string.
+.Pp
 If
 .Ar string
-ends in the slash character,
-.Sq Li / ,
-or is the same as the
-.Ar suffix
-argument,
-a newline is output.
-A non-existant suffix is ignored.
+consists entirely of slash characters, the resulting string is a single
+slash character.
 .Pp
 .Nm Dirname
-deletes the filename portion, beginning
-with the last slash
-.Sq Li \&/
-character to the end of
-.Ar string , 
-and writes the result to the standard output.
-.Sh EXAMPLES 
-The following line sets the shell variable
-.Ev FOO
-to
-.Pa /usr/bin .
+displays the directory portion of a path, as determined by the following
+rules.
+It first deletes any trailing slash characters from
+.Ar string ,
+then any trailing non-slash characters, then any trailing slash characters.
+The resulting string, and a terminating newline, is written to the standard
+output.
 .Pp
-.Dl FOO=`dirname /usr/bin/trail`
+If the string resulting from the first step has no slash characters,
+the resulting string is a single
+.Sq Li \&. .
 .Pp
-Both the
-.Nm basename
+If
+.Ar string
+consists entirely of slash characters, the resulting string is a single
+slash character.
+.Pp
+.Nm Basename
 and
 .Nm dirname
 exit 0 on success, and >0 if an error occurs.
+.Sh EXAMPLES 
+The following line sets the shell variable
+.Ev DIR
+to
+.Pa /usr/bin ,
+and the variable
+.Ev FILE
+to 
+.Pa file .
+.Pp
+.Dl DIR=`dirname /usr/bin/file.c`
+.Dl FILE=`basename /usr/bin/file .c`
 .Sh SEE ALSO
-.Xr csh 1
-.Xr sh 1
+.Xr sed 1
+.Sh COMPATIBILITY
+The
+.Nm basename
+implementation described here is different from historical System V
+and BSD implementations of the command.
+The following table enumerates the differences from the traditional
+BSD implementation.
+.Ds I
+.Cw "basename foo foo" Historic
+.Cl .Em Command	Historic	Current
+.Cl basename	\en	ERROR
+.Cl basename //	\en		/\en
+.Cl basename /a/b/	\en		b\en
+.Cl basename foo foo	\en		foo\en
+.Cw
+.De
+.Pp
+The
+.Nm dirname
+implementation described here is different from the historical System V
+implementation.
 .Sh STANDARDS
 The
 .Nm basename
 and
 .Nm dirname
-functions are expected to be POSIX 1003.2 compatible.
+functions are expected to be POSIX 1003.2 compliant.
