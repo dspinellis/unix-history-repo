@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_delete.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_delete.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -88,7 +88,7 @@ bt_bdelete(t, key)
 	PAGE *h;
 	pgno_t cpgno, pg;
 	index_t cindex;
-	int deleted, exact;
+	int deleted, dirty1, dirty2, exact;
 
 	/* Find any matching record; __bt_search pins the page. */
 	if ((e = __bt_search(t, key, &exact)) == NULL)
@@ -101,8 +101,12 @@ bt_bdelete(t, key)
 	/*
 	 * Delete forward, then delete backward, from the found key.  The
 	 * ordering is so that the deletions don't mess up the page refs.
-	 * The first loop deletes the found key, the second unpins the found
-	 * page.
+	 * The first loop deletes the key from the original page, the second
+	 * unpins the original page.  In the first loop, dirty1 is set if
+	 * the original page is modified, and dirty2 is set if any subsequent
+	 * pages are modified.  In the second loop, dirty1 starts off set if
+	 * the original page has been modified, and is set if any subsequent
+	 * pages are modified.
 	 *
 	 * If find the key referenced by the cursor, don't delete it, just
 	 * flag it for future deletion.  The cursor page number is P_INVALID
@@ -113,13 +117,15 @@ bt_bdelete(t, key)
 	 *
 	 * Cycle in place in the current page until the current record doesn't
 	 * match the key or the page is empty.  If the latter, walk forward,
-	 * skipping empty pages and repeating until an record doesn't match
+	 * skipping empty pages and repeating until a record doesn't match
 	 * the key or the end of the tree is reached.
 	 */
 	cpgno = t->bt_bcursor.pgno;
 	cindex = t->bt_bcursor.index;
 	save = *e;
+	dirty1 = 0;
 	for (h = e->page, deleted = 0;;) {
+		dirty2 = 0;
 		do {
 			if (h->pgno == cpgno && e->index == cindex) {
 				if (NOTSET(t, BTF_DELCRSR)) {
@@ -128,18 +134,24 @@ bt_bdelete(t, key)
 				}
 				++e->index;
 			} else {
-				if (__bt_dleaf(t, h, e->index))
-					goto err;
-				mpool_put(t->bt_mp, h, MPOOL_DIRTY);
+				if (__bt_dleaf(t, h, e->index)) {
+					if (h->pgno != save.page->pgno)
+						mpool_put(t->bt_mp, h, dirty2);
+					mpool_put(t->bt_mp, save.page, dirty1);
+					return (RET_ERROR);
+				}
+				if (h->pgno == save.page->pgno)
+					dirty1 = MPOOL_DIRTY;
+				else
+					dirty2 = MPOOL_DIRTY;
 				deleted = 1;
 			}
 		} while (e->index < NEXTINDEX(h) && __bt_cmp(t, key, e) == 0);
 
 		/*
 		 * Quit if didn't find a match, no next page, or first key on
-		 * the next page doesn't match.  Make a special effort not to
-		 * unpin the page the original match was on, but also make sure
-		 * it's unpinned if an error occurs.
+		 * the next page doesn't match.  Don't unpin the original page
+		 * unless an error occurs.
 		 */
 		if (e->index < NEXTINDEX(h))
 			break;
@@ -147,10 +159,9 @@ bt_bdelete(t, key)
 			if ((pg = h->nextpg) == P_INVALID)
 				goto done1;
 			if (h->pgno != save.page->pgno)
-				mpool_put(t->bt_mp, h, 0);
+				mpool_put(t->bt_mp, h, dirty2);
 			if ((h = mpool_get(t->bt_mp, pg, 0)) == NULL) {
-				if (h->pgno == save.page->pgno)
-					mpool_put(t->bt_mp, save.page, 0);
+				mpool_put(t->bt_mp, save.page, dirty1);
 				return (RET_ERROR);
 			}
 			if (NEXTINDEX(h) != 0) {
@@ -165,17 +176,16 @@ bt_bdelete(t, key)
 	}
 
 	/*
-	 * Reach here with the last page that was looked at pinned, and it may
-	 * or may not be the same as the page with the original match.  If it's
-	 * not, release it.
+	 * Reach here with the original page and the last page referenced
+	 * pinned (they may be the same).  Release it if not the original.
 	 */
 done1:	if (h->pgno != save.page->pgno)
-		mpool_put(t->bt_mp, h, 0);
+		mpool_put(t->bt_mp, h, dirty2);
 
 	/*
 	 * Walk backwards from the record previous to the record returned by
-	 * __bt_search, skipping empty pages, until a current record doesn't
-	 * match the key or reach the beginning of the tree.
+	 * __bt_search, skipping empty pages, until a record doesn't match
+	 * the key or reach the beginning of the tree.
 	 */
 	*e = save;
 	for (;;) {
@@ -190,16 +200,20 @@ done1:	if (h->pgno != save.page->pgno)
 					deleted = 1;
 				}
 			} else {
-				if (__bt_dleaf(t, h, e->index) == RET_ERROR)
-					goto err;
-				mpool_put(t->bt_mp, h, MPOOL_DIRTY);
+				if (__bt_dleaf(t, h, e->index) == RET_ERROR) {
+					mpool_put(t->bt_mp, h, dirty1);
+					return (RET_ERROR);
+				}
+				if (h->pgno == save.page->pgno)
+					dirty1 = MPOOL_DIRTY;
 				deleted = 1;
 			}
 		}
 
 		if ((pg = h->prevpg) == P_INVALID)
 			goto done2;
-		mpool_put(t->bt_mp, h, 0);
+		mpool_put(t->bt_mp, h, dirty1);
+		dirty1 = 0;
 		if ((e->page = mpool_get(t->bt_mp, pg, 0)) == NULL)
 			return (RET_ERROR);
 		e->index = NEXTINDEX(h);
@@ -209,11 +223,8 @@ done1:	if (h->pgno != save.page->pgno)
 	 * Reach here with the last page that was looked at pinned.  Release
 	 * it.
 	 */
-done2:	mpool_put(t->bt_mp, h, 0);
+done2:	mpool_put(t->bt_mp, h, dirty1);
 	return (deleted ? RET_SUCCESS : RET_SPECIAL);
-
-err:	mpool_put(t->bt_mp, h, 0);
-	return (RET_ERROR);
 }
 
 /*
@@ -266,10 +277,10 @@ __bt_dleaf(t, h, index)
 	h->upper += nbytes;
 
 	offset = h->linp[index];
-	for (cnt = &h->linp[index] - (ip = &h->linp[0]); cnt--; ++ip)
+	for (cnt = index, ip = &h->linp[0]; cnt--; ++ip)
 		if (ip[0] < offset)
 			ip[0] += nbytes;
-	for (cnt = &h->linp[NEXTINDEX(h)] - ip; --cnt; ++ip)
+	for (cnt = NEXTINDEX(h) - index; --cnt; ++ip)
 		ip[0] = ip[1] < offset ? ip[1] + nbytes : ip[1];
 	h->lower -= sizeof(index_t);
 	return (RET_SUCCESS);
