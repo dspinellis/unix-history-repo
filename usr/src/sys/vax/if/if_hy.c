@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_hy.c	6.7 (Berkeley) %G%
+ *	@(#)if_hy.c	6.8 (Berkeley) %G%
  */
 
 /*
@@ -563,9 +563,6 @@ hyoutput(ifp, m0, dst)
 	register struct hym_hdr *hym;
 	register struct mbuf *m;
 	register char *mp;
-#ifdef HYROUTE
-	register struct hy_route *r = &hy_route[ifp->if_unit];
-#endif
 	int dlen;	/* packet size, incl hardware header, but not sw header */
 	int error = 0;
 	int s;
@@ -1329,14 +1326,15 @@ hylog(code, len, ptr)
 		hy_log.hyl_enable = HYL_DISABLED;
 		hy_log.hyl_count = hy_log.hyl_icount;
 	}
+	p += len;
 	if (hy_log.hyl_wait != 0) {		/* wakeup HYGETLOG if wanted */
-		hy_log.hyl_wait -= (p - hy_log.hyl_ptr) + len;
-		if (hy_log.hyl_wait <= 0) {
+		if (hy_log.hyl_wait <= p - hy_log.hyl_ptr) {
 			wakeup((caddr_t)&hy_log);
 			hy_log.hyl_wait = 0;
-		}
+		} else
+			hy_log.hyl_wait -= p - hy_log.hyl_ptr;
 	}
-	hy_log.hyl_ptr = p + len;
+	hy_log.hyl_ptr = p;
 out:
 	splx(s);
 }
