@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)as.h 4.19 %G%
+ *	@(#)as.h 4.20 %G%
  */
 #define	reg	register
 
@@ -181,7 +181,7 @@ struct symtab{
 		u_char	s_jxoveralign;	/* if a JXXX, jumped over align */
 		short	s_index;	/* which segment */
 		struct	symtab *s_dest;	/* if JXXX, where going to */
-#ifdef DJXXX
+#ifdef DEBUG
 		short	s_jxline;	/* source line of the jump from */
 #endif
 };

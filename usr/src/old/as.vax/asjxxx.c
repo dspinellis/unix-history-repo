@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asjxxx.c 4.7 %G%";
+static char sccsid[] = "@(#)asjxxx.c 4.8 %G%";
 #endif not lint
 
 #include	<stdio.h>
@@ -76,9 +76,13 @@ ijxout(opcode, ap, nact)
 		jumpfrom->s_dest = lastnam;
 		jumpfrom->s_type = dotp->e_xtype;	/*only TEXT or DATA*/
 		jumpfrom->s_index = dotp-usedot;
+#ifdef DEBUG
+		jumpfrom->s_name = ITABFETCH(opcode)->i_name;
+		jumpfrom->s_jxline = lineno;
+#endif
 		/*
 		 *	value ALWAYS (ALWAYS!!!) indexes the next instruction
-		 *	after the jump, even in the jump must be exploded
+		 *	after the jump, even if the jump must be exploded
 		 *	(bumped)
 		 */
 		jumpfrom->s_value = dotp->e_xvalue;
@@ -131,6 +135,9 @@ jalign(xp, sp)
 	register struct symtab *sp;
 {
 	register	int	mask;
+#ifdef DEBUG
+	static struct strdesc noname;
+#endif
 	/*
 	 *	Problem with .align
 	 *
@@ -171,6 +178,10 @@ jalign(xp, sp)
 		sp->s_jxfear = (1 << xp->e_xvalue) - 1;
 		sp->s_type = dotp->e_xtype;
 		sp->s_index = dotp-usedot;
+#ifdef DEBUG
+		sp->s_name = (char *)&noname;
+		sp->s_jxline = lineno;
+#endif
 		/*
 		 *	We guess that the align will take up at least one
 		 *	byte in the code output.  We will correct for this
@@ -302,7 +313,7 @@ jxxxfix()
 						if(debug)
 						printf("Tunnel from %s from line %d\n",
 							FETCHNAME(jumpfrom),
-							lineno);
+							jumpfrom->s_jxline);
 #endif
 						continue;
 				} else {	/*tunneling not possible*/
@@ -324,7 +335,7 @@ jxxxfix()
 			if (displ >= 0) {
 				SEGITERATE(segno, cojumpfrom + 1,0,cointdest,
 						intdest, ubintdest, ++){
-					if (intdest->s_value > dest->s_value) 
+					if (intdest->s_value >= dest->s_value) 
 						break; /* beyond destination */
 					if (intdest->s_tag <= JXQUESTIONABLE)
 						continue;	/*frozen solid*/
@@ -477,9 +488,10 @@ jxxxbump(segno, starthint)
 			if (debug){
 			if (sp->s_dest != 0)
 				printf("Explode jump to %s on line %d\n",
-					FETCHNAME(sp->s_dest), lineno);
+					FETCHNAME(sp->s_dest), sp->s_jxline);
 			else
-				printf("Explode an align!\n");
+				printf("Explode an align! on line %d\n",
+					sp->s_jxline);
 			}
 #endif
 			sp->s_tag = JXINACTIVE;

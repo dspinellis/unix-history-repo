@@ -1,4 +1,4 @@
-#	Makefile	4.7	83/08/14
+#	Makefile	4.8	83/10/14
 #
 #	as.h		Definitions for data structures
 #	asnumber.h	Definitions for all numbers: byte .. G format float
@@ -37,7 +37,8 @@
 #	instrs		included in pseudo.c; instructions and semantic info
 #				for each instructions
 #
-HDRS = astoks.H astokfix.awk as.h asscan.h assyms.h asexpr.h 
+HDRS = astoks.H astokfix.awk as.h asexpr.h asnumber.h asscan.h asscanl.h \
+	assyms.h instrs.h
 
 SRCS = asscan1.c asscan2.c asscan3.c asscan4.c \
 	bignum1.c bignum2.c natof.c floattab.c \
@@ -91,34 +92,34 @@ AS = /bin/as
 LD = /bin/ld
 
 DFLAGS= -DAS
-CFLAGS = -O $(DFLAGS)
+CFLAGS = -O ${DFLAGS}
 
 LDFLAGS = -O
 
-as:	$(OBJS)
-	$(CC) $(LDFLAGS) $(OBJS) -o as
+as:	${OBJS}
+	${CC} ${LDFLAGS} ${OBJS} -o as
 
-.c.o:	astoks.h
-	$(CC) $(CFLAGS) -c $*.c
+.c.o:	astoks.h ${HDRS}
+	${CC} ${CFLAGS} -c $*.c
 
 astoks.h: astoks.H astokfix.awk
 	awk -f astokfix.awk < astoks.H > astoks.h
 
 aspseudo.o:	as.h astoks.h aspseudo.c instrs.h instrs.as
-	$(CC) -c -R $(DFLAGS) aspseudo.c
+	${CC} -c -R ${DFLAGS} aspseudo.c
 
 instrs.as: instrs
 	(echo FLAVOR AS ; cat instrs) | awk -f instrs > instrs.as
 
 lint:
-	lint $(DFLAGS) $(SRCS)
+	lint ${DFLAGS} ${SRCS}
 clean:
-	rm -f $(OBJS) as
+	rm -f ${OBJS} as
 install:
 	install -s as ${DESTDIR}/bin
 
 print:
-	pr Makefile $(HDRS) $(SRCS)
+	pr Makefile ${HDRS} ${SRCS}
 
 sources: ${SRCS} ${HDRS}
 ${SRCS} ${HDRS}:
