@@ -1,0 +1,153 @@
+.SH
+Section 2: Actions
+.PP
+To each grammar rule, the user may associate an action to be performed each time
+the rule is recognized in the input process.
+This action may return a value, and may obtain the values returned by previous
+actions in the grammar rule.
+In addition, the lexical analyzer can return values
+for tokens, if desired.
+.PP
+When invoking Yacc, the user specifies a programming language; currently, Ratfor and C are supported.
+An action is an arbitrary statement in this language, and as such can do
+input and output, call subprograms, and alter
+external vectors and variables (recall that a ``statement'' in both C and Ratfor can be compound
+and do many distinct tasks).
+An action is specified by an equal sign ``=''
+at the end of a grammar rule, followed by
+one or more statements, enclosed in curly braces ``{'' and ``}''.
+For example,
+.DS
+A: \'(\' B \')\' = { hello( 1, "abc" );  }
+.DE
+and
+.DS
+XXX: YYY ZZZ =
+	{
+		printf("a message\en");
+		flag = 25;
+	}
+.DE
+are grammar rules with actions in C.
+A grammar rule with an action need not end with a semicolon; in fact, it is an error to have a semicolon
+before the equal sign.
+.PP
+To facilitate easy communication between the actions and the parser, the action statements are altered
+slightly.
+The symbol ``dollar sign'' ``$'' is used as a signal to Yacc in this context.
+.PP
+To return a value, the action normally sets the
+pseudo-variable ``$$'' to some integer value.
+For example, an action which does nothing but return the value 1 is
+.DS
+= { $$ = 1; }
+.DE
+.PP
+To obtain the values returned by previous actions and the lexical analyzer, the
+action may use the (integer) pseudo-variables $1, $2, . . .,
+which refer to the values returned by the
+components of the right side of a rule, reading from left to right.
+Thus, if the rule is
+.DS
+A: B C D ;
+.DE
+for example, then $2 has the value returned by C, and $3 the value returned by D.
+.PP
+As a more concrete example, we might have the rule
+.DS
+expression: \'(\' expression \')\' ;
+.DE
+We wish the value returned by this rule to be the value of the expression in parentheses.
+Then we write
+.DS
+expression: \'(\' expression \')\'    = { $$ = $2 ; }
+.DE
+.PP
+As a default, the value of a rule is the value of the first element in it ($1).
+This is true even if there is no explicit action given for the rule.
+Thus, grammar rules of the form
+.DS
+A: B ;
+.DE
+frequently need not have an explict action.
+.PP
+Notice that, although the values of actions are integers, these integers may in fact
+contain pointers (in C) or indices into an array (in Ratfor); in this way,
+actions can return and reference more complex data structures.
+.PP
+Sometimes, we wish to get control before a rule is fully parsed, as well as at the
+end of the rule.
+There is no explicit mechanism in Yacc to allow this; the same effect can be obtained, however,
+by introducing a new symbol which matches the empty string, and inserting an action for this symbol.
+For example, we might have a rule describing an ``if'' statement:
+.DS
+statement: IF \'(\' expr \')\' THEN statement
+.DE
+Suppose that we wish to get control after seeing the right parenthesis
+in order to output some code.
+We might accomplish this by the rules:
+.DS
+statement:  IF \'(\' expr \')\' actn THEN statement 
+	= { call action1 }
+
+actn:   /* matches the empty string */
+	= { call action2 }
+.DE
+.PP
+Thus, the new nonterminal symbol actn matches no input, but serves only to call action2 after the
+right parenthesis is seen.
+.PP
+Frequently, it is more natural in such cases to break the rule into
+parts where the action is needed.
+Thus, the above example might also have been written
+.DS
+statement:  ifpart THEN statement
+	= { call action1 }
+
+ifpart:      IF \'(\' expr \')\'
+	= { call action2 }
+.DE
+.PP
+In many applications, output is not done directly by the actions;
+rather, a data structure, such as a parse tree, is constructed in memory,
+and transformations are applied to it before output is generated.
+Parse trees are particularly easy to
+construct, given routines which build and maintain the tree
+structure desired.
+For example, suppose we have a C function
+``node'', written so that the call
+.DS
+node( L, n1, n2 )
+.DE
+creates a node with label L, and descendants n1 and n2, and returns a pointer
+to the newly created node.
+Then we can cause a parse tree to be built by supplying actions such as:
+.DS
+expr: expr \'+\' expr 
+	= { $$ = node( \'+\', $1, $3 ); }
+.DE
+in our specification.
+.PP
+The user may define other variables to be used by the actions.
+Declarations and definitions can appear in two places in the
+Yacc specification: in the declarations section, and at the head of the rules sections, before the
+first grammar rule.
+In each case, the declarations and definitions are enclosed in the marks ``%{'' and ``%}''.
+Declarations and definitions placed in the declarations section have global scope, 
+and are thus known to the action statements and the lexical analyzer.
+Declarations and definitions placed at the head of the rules section have scope local to
+the action statements.
+Thus, in the above example, we might have included
+.DS
+%{ int variable 0; %}
+.DE
+in the declarations section, or, perhaps,
+.DS
+%{ static int variable; %}
+.DE
+at the head of the rules section.
+If we were writing Ratfor actions, we might want to include some
+COMMON statements at the beginning of the rules section, to allow for
+easy communication between the actions and other routines.
+For both C and Ratfor, Yacc has used only external names beginning in ``yy'';
+the user should avoid such names.
