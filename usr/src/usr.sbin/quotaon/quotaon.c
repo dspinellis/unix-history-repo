@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quotaon.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)quotaon.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -99,7 +99,7 @@ main(argc, argv)
 				errs += quotaonoff(fs, offmode, USRQUOTA);
 			continue;
 		}
-		if ((argnum = oneof(fs->fs_file, argv, argc) >= 0) ||
+		if ((argnum = oneof(fs->fs_file, argv, argc)) >= 0 ||
 		    (argnum = oneof(fs->fs_spec, argv, argc)) >= 0) {
 			done |= 1 << argnum;
 			if (gflag && hasquota(fs->fs_mntops, GRPQUOTA))
