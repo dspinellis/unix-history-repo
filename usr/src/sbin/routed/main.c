@@ -1,11 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.1 %G%";
+static char sccsid[] = "@(#)main.c	4.2 %G%";
 #endif
 
 /*
  * Routing Table Management Daemon
  */
-#include "router.h"
+#include "defs.h"
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <errno.h>
@@ -23,6 +23,10 @@ main(argc, argv)
 {
 	int cc;
 	struct sockaddr from;
+	u_char retry;
+#ifdef COMPAT
+	int snoroute;
+#endif
 	
 	argv0 = argv;
 #ifndef DEBUG
@@ -40,43 +44,24 @@ main(argc, argv)
 	  }
 	}
 #endif
-	if (tracing)
-		traceon("/etc/routerlog");
-
-	/*
-	 * We use two sockets.  One for which outgoing
-	 * packets are routed and for which they're not.
-	 * The latter allows us to delete routing table
-	 * entries in the kernel for network interfaces
-	 * attached to our host which we believe are down
-	 * while still polling it to see when/if it comes
-	 * back up.  With the new ipc interface we'll be
-	 * able to specify ``don't route'' as an option
-	 * to send, but until then we utilize a second port.
-	 */
 	sp = getservbyname("router", "udp");
-	if (sp == 0) {
-		fprintf(stderr, "routed: udp/router: unknown service\n");
+	if (sp == NULL) {
+		fprintf(stderr, "routed: router/udp: unknown service\n");
 		exit(1);
 	}
-	routingaddr.sin_family = AF_INET;
-	routingaddr.sin_port = htons(sp->s_port);
-	noroutingaddr.sin_family = AF_INET;
-	noroutingaddr.sin_port = htons(sp->s_port + 1);
-again:
-	s = socket(SOCK_DGRAM, 0, &routingaddr, 0);
-	if (s < 0) {
-		perror("socket");
-		sleep(30);
-		goto again;
-	}
-again2:
-	snoroute = socket(SOCK_DGRAM, 0, &noroutingaddr, SO_DONTROUTE);
-	if (snoroute < 0) {
-		perror("socket");
-		sleep(30);
-		goto again2;
-	}
+	addr.sin_family = AF_INET;
+	addr.sin_port = sp->s_port;
+	s = getsocket(AF_INET, SOCK_DGRAM, &addr);
+	if (s < 0)
+		exit(1);
+#ifdef COMPAT
+	bzero(&addr, sizeof (addr));
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(ntohs(sp->s_port) + 1);
+	snoroute = getsocket(AF_INET, SOCK_DGRAM, &addr);
+	if (snoroute < 0)
+		exit(1);
+#endif
 	argv++, argc--;
 	while (argc > 0 && **argv == '-') {
 		if (!strcmp(*argv, "-s") == 0) {
@@ -89,13 +74,15 @@ again2:
 			argv++, argc--;
 			continue;
 		}
-		goto usage;
-	}
-	if (argc > 0) {
-usage:
 		fprintf(stderr, "usage: routed [ -s ] [ -q ]\n");
 		exit(1);
 	}
+	/*
+	 * Any extra argument is considered
+	 * a tracing log file.
+	 */
+	if (argc > 0)
+		traceon(*argv);
 	/*
 	 * Collect an initial view of the world by
 	 * snooping in the kernel and the gateway kludge
@@ -115,35 +102,66 @@ usage:
 	sigset(SIGALRM, timer);
 	timer();
 
-#define	INFINITY	1000000
 	for (;;) {
 		int ibits;
 		register int n;
 
-		ibits = (1 << s) | (1 << snoroute);
-		n = select(32, &ibits, 0, INFINITY);
+		ibits = 1 << s;
+#ifdef COMPAT
+		ibits |= 1 << snoroute;
+#endif
+		n = select(20, &ibits, 0, 0, 0);
 		if (n < 0)
 			continue;
 		if (ibits & (1 << s))
 			process(s);
+#ifdef COMPAT
 		if (ibits & (1 << snoroute))
 			process(snoroute);
+#endif
+		/* handle ICMP redirects */
 	}
 }
 
 process(fd)
 	int fd;
 {
-	register int cc;
 	struct sockaddr from;
+	int fromlen = sizeof (from), cc;
 
-	cc = receive(fd, &from, packet, sizeof (packet));
+	cc = recvfrom(fd, packet, sizeof (packet), 0, &from, &fromlen);
 	if (cc <= 0) {
 		if (cc < 0 && errno != EINTR)
-			perror("receive");
+			perror("recvfrom");
 		return;
 	}
+	if (fromlen != sizeof (struct sockaddr_in))
+		return;
 	sighold(SIGALRM);
 	rip_input(&from, cc);
 	sigrelse(SIGALRM);
+}
+
+getsocket(domain, type, sin)
+	int domain, type;
+	struct sockaddr_in *sin;
+{
+	int retry, s;
+
+	retry = 1;
+	while ((s = socket(domain, type, 0, 0)) < 0 && retry) {
+		perror("socket");
+		sleep(5 * retry);
+		retry <<= 1;
+	}
+	if (retry == 0)
+		return (-1);
+	while (bind(s, sin, sizeof (*sin), 0) < 0 && retry) {
+		perror("bind");
+		sleep(5 * retry);
+		retry <<= 1;
+	}
+	if (retry == 0)
+		return (-1);
+	return (s);
 }

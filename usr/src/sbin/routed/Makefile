@@ -11,9 +11,6 @@ all:	${ALL}
 routed: ${OBJS}
 	${CC} -o routed ${LDFLAGS} ${OBJS} -ljobs
 
-${ALL}:	rip.h
-${ALL}:	router.h
-
 install: routed
 	install -s routed ${DESTDIR}/etc
 

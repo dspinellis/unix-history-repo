@@ -1,11 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)output.c	4.1 %G%";
+static char sccsid[] = "@(#)output.c	4.2 %G%";
 #endif
 
 /*
  * Routing Table Management Daemon
  */
-#include "router.h"
+#include "defs.h"
 
 /*
  * Apply the function "f" to all non-passive
@@ -18,6 +18,7 @@ toall(f)
 {
 	register struct interface *ifp;
 	register struct sockaddr *dst;
+	register int flags;
 	extern struct interface *ifnet;
 
 	for (ifp = ifnet; ifp; ifp = ifp->int_next) {
@@ -26,7 +27,8 @@ toall(f)
 		dst = ifp->int_flags & IFF_BROADCAST ? &ifp->int_broadaddr :
 		      ifp->int_flags & IFF_POINTOPOINT ? &ifp->int_dstaddr :
 		      &ifp->int_addr;
-		(*f)(dst, ifp->int_flags & IFF_INTERFACE, ifp);
+		flags = ifp->int_flags & IFF_INTERFACE ? SOF_DONTROUTE : 0;
+		(*f)(dst, flags, ifp);
 	}
 }
 
@@ -34,13 +36,13 @@ toall(f)
  * Output a preformed packet.
  */
 /*ARGSUSED*/
-sendmsg(dst, dontroute, ifp)
+sendmsg(dst, flags, ifp)
 	struct sockaddr *dst;
-	int dontroute;
+	int flags;
 	struct interface *ifp;
 {
 
-	(*afswitch[dst->sa_family].af_output)(dontroute ? snoroute : s,
+	(*afswitch[dst->sa_family].af_output)(s, flags,
 		dst, sizeof (struct rip));
 	TRACE_OUTPUT(ifp, dst, sizeof (struct rip));
 }
@@ -49,8 +51,9 @@ sendmsg(dst, dontroute, ifp)
  * Supply dst with the contents of the routing tables.
  * If this won't fit in one packet, chop it up into several.
  */
-supply(dst, dontroute, ifp)
+supply(dst, flags, ifp)
 	struct sockaddr *dst;
+	int flags;
 	struct interface *ifp;
 {
 	register struct rt_entry *rt;
@@ -59,7 +62,6 @@ supply(dst, dontroute, ifp)
 	struct rthash *base = hosthash;
 	int doinghost = 1, size;
 	int (*output)() = afswitch[dst->sa_family].af_output;
-	int sto = dontroute ? snoroute : s;
 
 	msg->rip_cmd = RIPCMD_RESPONSE;
 again:
@@ -67,7 +69,7 @@ again:
 	for (rt = rh->rt_forw; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
 		size = (char *)n - packet;
 		if (size > MAXPACKETSIZE - sizeof (struct netinfo)) {
-			(*output)(sto, dst, size);
+			(*output)(s, flags, dst, size);
 			TRACE_OUTPUT(ifp, dst, size);
 			n = msg->rip_nets;
 		}
@@ -82,7 +84,7 @@ again:
 	}
 	if (n != msg->rip_nets) {
 		size = (char *)n - packet;
-		(*output)(sto, dst, size);
+		(*output)(s, flags, dst, size);
 		TRACE_OUTPUT(ifp, dst, size);
 	}
 }
