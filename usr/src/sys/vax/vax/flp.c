@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)flp.c	6.3 (Berkeley) %G%
+ *	@(#)flp.c	6.4 (Berkeley) %G%
  */
 
 #if VAX780
@@ -86,8 +86,10 @@ floperation(rw, uio)
 	error = 0;
 	while ((i = imin(RXBYSEC, uio->uio_resid)) > 0) {
 		bp->b_blkno = uio->uio_offset>>7;
-		if (bp->b_blkno >= MAXSEC || (uio->uio_offset & 0177) != 0)
-			return (ENXIO);
+		if (bp->b_blkno >= MAXSEC || (uio->uio_offset & 0177) != 0) {
+			error = ENXIO;
+			break;
+		}
 		if (rw == UIO_WRITE) {
 			error = uiomove(bp->b_un.b_addr, i, UIO_WRITE, uio);
 			if (error)
