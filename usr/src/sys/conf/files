@@ -86,7 +86,7 @@ sys/tty_tty.c		standard
 sys/ufs_alloc.c		standard
 sys/ufs_bio.c		standard
 sys/ufs_bmap.c		standard
-sys/ufs_dsort.c		standard
+sys/ufs_disksubr.c	standard
 sys/ufs_fio.c		standard
 sys/ufs_inode.c		standard
 sys/ufs_mount.c		standard
