@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	@(#)lint.sh	1.7	(Berkeley)	%G%
+#	@(#)lint.sh	1.8	(Berkeley)	%G%
 #
 L=/usr/lib/lint/lint T=/tmp/lint.$$ PATH=/bin:/usr/bin O="-C -Dlint"
 X= P=unix LL=/usr/lib/lint
@@ -15,7 +15,8 @@ do
 		C=`echo $A | sed -e s/-C/llib-l/`
 		X="$X -L -C$C" ;;
 	-[IDU]*)O="$O $A" ;;
-	-O)	;;
+	-[ORpg]*)
+		;;
 	-X)	LL=/usr/src/usr.bin/lint
 		L=/usr/src/usr.bin/lint/lpass ;;
 	-*)	X="$X $A"
