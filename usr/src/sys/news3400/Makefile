@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.2 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 # Makefile for news3400 tags file
 
