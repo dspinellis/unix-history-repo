@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -244,7 +244,7 @@ p_rtnode()
 			rm, -1 - rmask.rm_b, rmask.rm_refs ? nbuf : " ");
 		if (rmask.rm_flags & RNF_NORMAL) {
 			struct radix_node rnode_aux;
-			printf(nbuf, " <normal>, ");
+			printf(" <normal>, ");
 			kget(rmask.rm_leaf, rnode_aux);
 			p_sockaddr(
 			 kgetsa((struct sockaddr *)rnode_aux.rn_mask), 0, -1);
