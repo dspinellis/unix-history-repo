@@ -1,4 +1,4 @@
-/*	if_en.c	4.26	81/12/22	*/
+/*	if_en.c	4.27	81/12/22	*/
 
 #define ENKLUDGE
 #include "en.h"
