@@ -1,0 +1,55 @@
+
+Welcome to version 4.8 of bind.
+
+There have been several changes to the named boot file (/etc/named.boot)
+of which you should be aware.  The "domain" line for each zone is no longer
+needed, but one such line may still be used to specify a default domain
+to be used for queries containing names with only a single component.
+The term "suffixes", which was added in version 4.7alpha, has been removed.
+
+The manual page on named (named.8) has been updated to reflect all
+these changes.  Please read this and look at the example files
+before installation.  You should also note the changes in the
+resolver code to support non-fully-qualified addresses and per-user
+host aliases.  See hostname(7) for an overview.  Two new routines
+have been added to the resolver library since the last test release:
+res_query formulates a query, sends it, waits for a response and does
+preliminary error checking; res_search implements the search rules
+of gethostbyname using res_query.
+
+The MX lookup routine in sendmail has been modified to use res_search.  
+Also, dn_skip takes an additional parameter and has been renamed
+to dn_skipname.  While old sendmail binaries will work with the new
+version of bind, because of these changes, it is desirable to install
+new sendmail sources and recompile sendmail.  Do not rebuild sendmail 
+from old sources.   The new sendmail is on ucbarpa.Berkeley.EDU for
+anonymous FTP from pub/4.3/sendmail.MX.tar and pub/4.3/sendmail.MX.tar.Z.
+
+There have been numerous changes to named, fixing most of the known
+bugs that can be fixed without major structural changes in the server.
+Several server configurations that failed before should now work.
+Certain robustness problems have been fixed, in particular bounds-
+checking when processing incoming packets.  Two changes have been made
+in preparation for negative caching: SOA records are sent in the authority
+section in negative responses with NXDOMAIN set, and a bug was fixed that
+caused confusion and repeated requests if a response had no error, no answer
+and an SOA in the authority section.  As such responses are already sent
+by other servers, and will be sent by the next release of BIND, it is
+important that all sites upgrade to this version as quickly as possible.
+
+The root "hint" cache and cache file remain the largest problem area,
+along with named's naivete in accepting bogus server's data.
+These will be addressed in the next release, along with asynchronous
+zone transfers, intelligent reloading of zone files, faster startup,
+and caching of negative responses.
+
+This version (4.8) will replace the last officially released version (4.5).
+Version 4.5 has a serious bug that causes the generation of a continuous
+stream of bogons to the root domain servers (bogus queries with the query
+response bit set and possibly garbage for nsid and rcode).  It is imperative
+that these versions of named be replaced as fast as possible.  We urge you to
+field 4.8 quickly, for the sake of the root domain servers.
+
+	Mike Karels
+	Jean Wood
+	bind@ucbarpa.Berkeley.EDU
