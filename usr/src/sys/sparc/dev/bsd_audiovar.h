@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bsd_audiovar.h	7.2 (Berkeley) %G%
+ *	@(#)bsd_audiovar.h	7.3 (Berkeley) %G%
  *
- * from: $Header: bsd_audiovar.h,v 1.4 92/07/03 23:23:12 mccanne Exp $ (LBL)
+ * from: $Header: bsd_audiovar.h,v 1.6 92/11/21 20:46:49 van Exp $ (LBL)
  */
 
 #define AUCB_SIZE 4096
@@ -50,6 +50,9 @@ struct aucb {
 #if !defined(__STDC__) && !defined(volatile)
 #define volatile
 #endif
+#if !defined(__STDC__) && !defined(const)
+#define const
+#endif
 
 struct auio {
 	volatile struct amd7930 *au_amd;/* chip registers */
@@ -57,6 +60,7 @@ struct auio {
 	int	au_lowat;		/* xmit low water mark (for wakeup) */
 	int	au_hiwat;		/* xmit high water mark (for wakeup) */
 	int	au_blksize;		/* recv block (chunk) size */
+	int	au_backlog;		/* # samples of xmit backlog to gen. */
 	struct	aucb au_rb;		/* read (recv) buffer */
 	struct	aucb au_wb;		/* write (xmit) buffer */
 };
