@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)function.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)function.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -22,6 +22,7 @@ static char sccsid[] = "@(#)function.c	5.1 (Berkeley) %G%";
 #include <unistd.h>
 #include <tzfile.h>
 #include <stdio.h>
+#include <strings.h>
 #include "find.h"
 
 #define	FIND_EQUAL	0
