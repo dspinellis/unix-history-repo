@@ -1,6 +1,6 @@
 %{
 #ifndef lint
-static	char *sccsid = "@(#)gram.y	4.11 (Berkeley) 84/06/28";
+static	char *sccsid = "@(#)gram.y	4.12 (Berkeley) 85/02/04";
 #endif
 
 #include "defs.h"
@@ -300,7 +300,7 @@ again:
 		c = NOTIFY;
 	else if (!strcmp(yytext, "except"))
 		c = EXCEPT;
-	else if (!strcmp(yytext, "exp_pat"))
+	else if (!strcmp(yytext, "except_pat"))
 		c = PATTERN;
 	else if (!strcmp(yytext, "special"))
 		c = SPECIAL;
