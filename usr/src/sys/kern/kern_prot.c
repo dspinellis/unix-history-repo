@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_prot.c	7.11 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -24,7 +24,7 @@
 #include "param.h"
 #include "acct.h"
 #include "systm.h"
-#include "syscontext.h"
+#include "user.h"
 #include "proc.h"
 #include "timeb.h"
 #include "times.h"
@@ -41,7 +41,7 @@ getpid(p, uap, retval)
 #ifdef COMPAT_43
 	retval[1] = p->p_ppid;
 #endif
-	RETURN (0);
+	return (0);
 }
 
 /* ARGSUSED */
@@ -52,7 +52,7 @@ getppid(p, uap, retval)
 {
 
 	*retval = p->p_ppid;
-	RETURN (0);
+	return (0);
 }
 
 getpgrp(p, uap, retval)
@@ -64,9 +64,9 @@ getpgrp(p, uap, retval)
 {
 
 	if (uap->pid != 0 && (p = pfind(uap->pid)) == 0)
-		RETURN (ESRCH);
+		return (ESRCH);
 	*retval = p->p_pgrp->pg_id;
-	RETURN (0);
+	return (0);
 }
 
 /* ARGSUSED */
@@ -80,7 +80,7 @@ getuid(p, uap, retval)
 #ifdef COMPAT_43
 	retval[1] = u.u_cred->cr_uid;
 #endif
-	RETURN (0);
+	return (0);
 }
 
 /* ARGSUSED */
@@ -91,7 +91,7 @@ geteuid(p, uap, retval)
 {
 
 	*retval = u.u_cred->cr_uid;
-	RETURN (0);
+	return (0);
 }
 
 /* ARGSUSED */
@@ -105,7 +105,7 @@ getgid(p, uap, retval)
 #ifdef COMPAT_43
 	retval[1] = u.u_cred->cr_groups[0];
 #endif
-	RETURN (0);
+	return (0);
 }
 
 /*
@@ -122,7 +122,7 @@ getegid(p, uap, retval)
 {
 
 	*retval = u.u_cred->cr_groups[0];
-	RETURN (0);
+	return (0);
 }
 
 getgroups(p, uap, retval)
@@ -140,19 +140,19 @@ getgroups(p, uap, retval)
 
 	if (uap->gidsetsize == 0) {
 		*retval = u.u_cred->cr_ngroups;
-		RETURN (0);
+		return (0);
 	}
 	if (uap->gidsetsize < u.u_cred->cr_ngroups)
-		RETURN (EINVAL);
+		return (EINVAL);
 	uap->gidsetsize = u.u_cred->cr_ngroups;
 	gp = u.u_cred->cr_groups;
 	for (lp = groups; lp < &groups[uap->gidsetsize]; )
 		*lp++ = *gp++;
 	if (error = copyout((caddr_t)groups, (caddr_t)uap->gidset,
 	    uap->gidsetsize * sizeof (groups[0])))
-		RETURN (error);
+		return (error);
 	*retval = uap->gidsetsize;
-	RETURN (0);
+	return (0);
 }
 
 /* ARGSUSED */
@@ -163,11 +163,11 @@ setsid(p, uap, retval)
 {
 
 	if (p->p_pgid == p->p_pid || pgfind(p->p_pid)) {
-		RETURN (EPERM);
+		return (EPERM);
 	} else {
 		pgmv(p, p->p_pid, 1);
 		*retval = p->p_pid;
-		RETURN (0);
+		return (0);
 	}
 }
 
@@ -198,27 +198,27 @@ setpgrp(cp, uap, retval)
 
 	if (uap->pid != 0) {
 		if ((p = pfind(uap->pid)) == 0 || !inferior(p))
-			RETURN (ESRCH);
+			return (ESRCH);
 		if (p->p_session != cp->p_session)
-			RETURN (EPERM);
+			return (EPERM);
 		if (p->p_flag&SEXEC)
-			RETURN (EACCES);
+			return (EACCES);
 	} else
 		p = cp;
 	if (SESS_LEADER(p))
-		RETURN (EPERM);
+		return (EPERM);
 	if (uap->pgid == 0)
 		uap->pgid = p->p_pid;
 	else if ((uap->pgid != p->p_pid) &&
 		(((pgrp = pgfind(uap->pgid)) == 0) || 
 		   pgrp->pg_mem == NULL ||
 	           pgrp->pg_session != u.u_procp->p_session))
-		RETURN (EPERM);
+		return (EPERM);
 	/*
 	 * done checking, now do it
 	 */
 	pgmv(p, uap->pgid, 0);
-	RETURN (0);
+	return (0);
 }
 
 /* ARGSUSED */
@@ -234,7 +234,7 @@ setuid(p, uap, retval)
 
 	uid = uap->uid;
 	if (uid != p->p_ruid && (error = suser(u.u_cred, &u.u_acflag)))
-		RETURN (error);
+		return (error);
 	/*
 	 * Everything's okay, do it.
 	 * Copy credentials so other references do not
@@ -246,7 +246,7 @@ setuid(p, uap, retval)
 	p->p_uid = uid;
 	p->p_ruid = uid;
 	p->p_svuid = uid;
-	RETURN (0);
+	return (0);
 }
 
 /* ARGSUSED */
@@ -263,7 +263,7 @@ seteuid(p, uap, retval)
 	euid = uap->euid;
 	if (euid != p->p_ruid && euid != p->p_svuid &&
 	    (error = suser(u.u_cred, &u.u_acflag)))
-		RETURN (error);
+		return (error);
 	/*
 	 * Everything's okay, do it.
 	 * Copy credentials so other references do not
@@ -273,7 +273,7 @@ seteuid(p, uap, retval)
 		u.u_cred = crcopy(u.u_cred);
 	u.u_cred->cr_uid = euid;
 	p->p_uid = euid;
-	RETURN (0);
+	return (0);
 }
 
 /* ARGSUSED */
@@ -289,13 +289,13 @@ setgid(p, uap, retval)
 
 	gid = uap->gid;
 	if (gid != p->p_rgid && (error = suser(u.u_cred, &u.u_acflag)))
-		RETURN (error);
+		return (error);
 	if (u.u_cred->cr_ref > 1)
 		u.u_cred = crcopy(u.u_cred);
 	p->p_rgid = gid;
 	u.u_cred->cr_groups[0] = gid;
 	p->p_svgid = gid;		/* ??? */
-	RETURN (0);
+	return (0);
 }
 
 /* ARGSUSED */
@@ -312,11 +312,11 @@ setegid(p, uap, retval)
 	egid = uap->egid;
 	if (egid != p->p_rgid && egid != p->p_svgid &&
 	    (error = suser(u.u_cred, &u.u_acflag)))
-		RETURN (error);
+		return (error);
 	if (u.u_cred->cr_ref > 1)
 		u.u_cred = crcopy(u.u_cred);
 	u.u_cred->cr_groups[0] = egid;
-	RETURN (0);
+	return (0);
 }
 
 #ifdef COMPAT_43
@@ -334,10 +334,10 @@ osetreuid(p, uap, retval)
 
 	if (uap->ruid == -1)
 	    (error = suser(u.u_cred, &u.u_acflag)))
-		RETURN (error);
+		return (error);
 	if (uap->euid == -1)
 	    euid != p->p_svuid && (error = suser(u.u_cred, &u.u_acflag)))
-		RETURN (error);
+		return (error);
 	/*
 	 * Everything's okay, do it.
 	 * Copy credentials so other references do not
@@ -348,7 +348,7 @@ osetreuid(p, uap, retval)
 	u.u_cred->cr_uid = euid;
 	p->p_uid = euid;
 	p->p_ruid = ruid;
-	RETURN (0);
+	return (0);
 }
 
 /* ARGSUSED */
@@ -365,15 +365,15 @@ osetregid(p, uap, retval)
 
 	if (uap->rgid == -1)
 	    (error = suser(u.u_cred, &u.u_acflag)))
-		RETURN (error);
+		return (error);
 	if (uap->egid == -1)
 	    egid != p->p_svgid && (error = suser(u.u_cred, &u.u_acflag)))
-		RETURN (error);
+		return (error);
 	if (u.u_cred->cr_ref > 1)
 		u.u_cred = crcopy(u.u_cred);
 	p->p_rgid = rgid;
 	u.u_cred->cr_groups[0] = egid;
-	RETURN (0);
+	return (0);
 }
 #endif
 
@@ -391,19 +391,19 @@ setgroups(p, uap, retval)
 	int error, ngrp, groups[NGROUPS];
 
 	if (error = suser(u.u_cred, &u.u_acflag))
-		RETURN (error);
+		return (error);
 	ngrp = uap->gidsetsize;
 	if (ngrp > NGROUPS)
-		RETURN (EINVAL);
+		return (EINVAL);
 	error = copyin((caddr_t)uap->gidset, (caddr_t)groups,
 	    uap->gidsetsize * sizeof (groups[0]));
 	if (error)
-		RETURN (error);
+		return (error);
 	gp = u.u_cred->cr_groups;
 	for (lp = groups; lp < &groups[uap->gidsetsize]; )
 		*gp++ = *lp++;
 	u.u_cred->cr_ngroups = ngrp;
-	RETURN (0);
+	return (0);
 }
 
 /*
@@ -516,7 +516,7 @@ getlogin(p, uap, retval)
 
 	if (uap->namelen > sizeof (p->p_logname))
 		uap->namelen = sizeof (p->p_logname);
-	RETURN (copyout((caddr_t)p->p_logname, (caddr_t)uap->namebuf,
+	return (copyout((caddr_t)p->p_logname, (caddr_t)uap->namebuf,
 	    uap->namelen));
 }
 
@@ -534,10 +534,10 @@ setlogin(p, uap, retval)
 	int error;
 
 	if (error = suser(u.u_cred, &u.u_acflag))
-		RETURN (error);
+		return (error);
 	error = copyinstr((caddr_t)uap->namebuf, (caddr_t)p->p_logname,
 	    sizeof (p->p_logname) - 1, (int *) 0);
 	if (error == ENOENT)		/* name too long */
 		error = EINVAL;
-	RETURN (error);
+	return (error);
 }

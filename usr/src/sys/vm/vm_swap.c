@@ -14,14 +14,14 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vm_swap.c	7.12 (Berkeley) %G%
+ *	@(#)vm_swap.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "buf.h"
 #include "conf.h"
-#include "syscontext.h"
+#include "user.h"
 #include "vnode.h"
 #include "specdev.h"
 #include "map.h"
@@ -98,33 +98,33 @@ swapon(p, uap, retval)
 	int error;
 
 	if (error = suser(u.u_cred, &u.u_acflag))
-		RETURN (error);
+		return (error);
 	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->name;
 	if (error = namei(ndp))
-		RETURN (error);
+		return (error);
 	vp = ndp->ni_vp;
 	if (vp->v_type != VBLK) {
 		vrele(vp);
-		RETURN (ENOTBLK);
+		return (ENOTBLK);
 	}
 	dev = (dev_t)vp->v_rdev;
 	if (major(dev) >= nblkdev) {
 		vrele(vp);
-		RETURN (ENXIO);
+		return (ENXIO);
 	}
 	for (sp = &swdevt[0]; sp->sw_dev; sp++)
 		if (sp->sw_dev == dev) {
 			if (sp->sw_freed) {
 				vrele(vp);
-				RETURN (EBUSY);
+				return (EBUSY);
 			}
 			u.u_error = swfree(sp - swdevt);
-			RETURN (0);
+			return (0);
 		}
 	vrele(vp);
-	RETURN (EINVAL);
+	return (EINVAL);
 }
 
 #ifdef SECSIZE

@@ -14,12 +14,12 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)sys_generic.c	7.20 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "syscontext.h"
+#include "user.h"
 #include "ioctl.h"
 #include "file.h"
 #include "proc.h"
@@ -54,7 +54,7 @@ read(p, uap, retval)
 	if (((unsigned)uap->fdes) >= NOFILE ||
 	    (fp = u.u_ofile[uap->fdes]) == NULL ||
 	    (fp->f_flag & FREAD) == 0)
-		RETURN (EBADF);
+		return (EBADF);
 	aiov.iov_base = (caddr_t)uap->cbuf;
 	aiov.iov_len = uap->count;
 	auio.uio_iov = &aiov;
@@ -80,7 +80,7 @@ read(p, uap, retval)
 		ktrgenio(p->p_tracep, uap->fdes, UIO_READ, &ktriov, cnt, error);
 #endif
 	*retval = cnt;
-	RETURN (error);
+	return (error);
 }
 
 /*
@@ -107,10 +107,10 @@ readv(p, uap, retval)
 	if (((unsigned)uap->fdes) >= NOFILE ||
 	    (fp = u.u_ofile[uap->fdes]) == NULL ||
 	    (fp->f_flag & FREAD) == 0)
-		RETURN (EBADF);
+		return (EBADF);
 	if (uap->iovcnt > UIO_SMALLIOV) {
 		if (uap->iovcnt > UIO_MAXIOV)
-			RETURN (EINVAL);
+			return (EINVAL);
 		MALLOC(iov, struct iovec *, 
 		      sizeof(struct iovec) * uap->iovcnt, M_IOV, M_WAITOK);
 	} else
@@ -164,7 +164,7 @@ readv(p, uap, retval)
 done:
 	if (uap->iovcnt > UIO_SMALLIOV)
 		FREE(iov, M_IOV);
-	RETURN (error);
+	return (error);
 }
 
 /*
@@ -190,7 +190,7 @@ write(p, uap, retval)
 	if (((unsigned)uap->fdes) >= NOFILE ||
 	    (fp = u.u_ofile[uap->fdes]) == NULL ||
 	    (fp->f_flag & FWRITE) == 0)
-		RETURN (EBADF);
+		return (EBADF);
 	aiov.iov_base = (caddr_t)uap->cbuf;
 	aiov.iov_len = uap->count;
 	auio.uio_iov = &aiov;
@@ -220,7 +220,7 @@ write(p, uap, retval)
 		    &ktriov, cnt, error);
 #endif
 	*retval = cnt;
-	RETURN (error);
+	return (error);
 }
 
 /*
@@ -247,10 +247,10 @@ writev(p, uap, retval)
 	if (((unsigned)uap->fdes) >= NOFILE ||
 	    (fp = u.u_ofile[uap->fdes]) == NULL ||
 	    (fp->f_flag & FWRITE) == 0)
-		RETURN (EBADF);
+		return (EBADF);
 	if (uap->iovcnt > UIO_SMALLIOV) {
 		if (uap->iovcnt > UIO_MAXIOV)
-			RETURN (EINVAL);
+			return (EINVAL);
 		MALLOC(iov, struct iovec *, 
 		      sizeof(struct iovec) * uap->iovcnt, M_IOV, M_WAITOK);
 	} else
@@ -307,7 +307,7 @@ writev(p, uap, retval)
 done:
 	if (uap->iovcnt > UIO_SMALLIOV)
 		FREE(iov, M_IOV);
-	RETURN (error);
+	return (error);
 }
 
 /*
@@ -333,18 +333,18 @@ ioctl(p, uap, retval)
 
 	if ((unsigned)uap->fdes >= NOFILE ||
 	    (fp = u.u_ofile[uap->fdes]) == NULL)
-		RETURN (EBADF);
+		return (EBADF);
 	if ((fp->f_flag & (FREAD|FWRITE)) == 0)
-		RETURN (EBADF);
+		return (EBADF);
 	com = uap->cmd;
 
 	if (com == FIOCLEX) {
 		u.u_pofile[uap->fdes] |= UF_EXCLOSE;
-		RETURN (0);
+		return (0);
 	}
 	if (com == FIONCLEX) {
 		u.u_pofile[uap->fdes] &= ~UF_EXCLOSE;
-		RETURN (0);
+		return (0);
 	}
 
 	/*
@@ -354,7 +354,7 @@ ioctl(p, uap, retval)
 	 */
 	size = IOCPARM_LEN(com);
 	if (size > IOCPARM_MAX)
-		RETURN (ENOTTY);
+		return (ENOTTY);
 	if (size > sizeof (stkbuf)) {
 		memp = (caddr_t)malloc((u_long)size, M_IOCTLOPS, M_WAITOK);
 		data = memp;
@@ -365,7 +365,7 @@ ioctl(p, uap, retval)
 			if (error) {
 				if (memp)
 					free(memp, M_IOCTLOPS);
-				RETURN (error);
+				return (error);
 			}
 		} else
 			*(caddr_t *)data = uap->cmarg;
@@ -407,7 +407,7 @@ ioctl(p, uap, retval)
 	}
 	if (memp)
 		free(memp, M_IOCTLOPS);
-	RETURN (error);
+	return (error);
 }
 
 int	nselcoll;
@@ -501,7 +501,7 @@ done:
 		putbits(ex, 2);
 #undef putbits
 	}
-	RETURN (error);
+	return (error);
 }
 
 selscan(ibits, obits, nfd, retval)

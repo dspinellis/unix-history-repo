@@ -14,11 +14,11 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_time.c	7.11 (Berkeley) %G%
+ *	@(#)kern_time.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "syscontext.h"
+#include "user.h"
 #include "kernel.h"
 #include "proc.h"
 
@@ -49,12 +49,12 @@ gettimeofday(p, uap, retval)
 		microtime(&atv);
 		if (error = copyout((caddr_t)&atv, (caddr_t)uap->tp,
 		    sizeof (atv)))
-			RETURN (error);
+			return (error);
 	}
 	if (uap->tzp)
 		error = copyout((caddr_t)&tz, (caddr_t)uap->tzp,
 		    sizeof (tz));
-	RETURN (error);
+	return (error);
 }
 
 settimeofday(p, uap, retval)
@@ -70,11 +70,11 @@ settimeofday(p, uap, retval)
 	int error, s;
 
 	if (error = suser(u.u_cred, &u.u_acflag))
-		RETURN (error);
+		return (error);
 	if (uap->tv) {
 		if (error = copyin((caddr_t)uap->tv, (caddr_t)&atv,
 		    sizeof (struct timeval)))
-			RETURN (error);
+			return (error);
 		/* WHAT DO WE DO ABOUT PENDING REAL-TIME TIMEOUTS??? */
 		boottime.tv_sec += atv.tv_sec - time.tv_sec;
 		s = splhigh(); time = atv; splx(s);
@@ -83,7 +83,7 @@ settimeofday(p, uap, retval)
 	if (uap->tzp && (error = copyin((caddr_t)uap->tzp, (caddr_t)&atz,
 	    sizeof (atz))) == 0)
 		tz = atz;
-	RETURN (error);
+	return (error);
 }
 
 extern	int tickadj;			/* "standard" clock skew, us./tick */
@@ -105,10 +105,10 @@ adjtime(p, uap, retval)
 	int s, error;
 
 	if (error = suser(u.u_cred, &u.u_acflag))
-		RETURN (error);
+		return (error);
 	if (error =
 	    copyin((caddr_t)uap->delta, (caddr_t)&atv, sizeof (struct timeval)))
-		RETURN (error);
+		return (error);
 	ndelta = atv.tv_sec * 1000000 + atv.tv_usec;
 	if (timedelta == 0)
 		if (ndelta > bigadj)
@@ -129,7 +129,7 @@ adjtime(p, uap, retval)
 	if (uap->olddelta)
 		(void) copyout((caddr_t)&oatv, (caddr_t)uap->olddelta,
 			sizeof (struct timeval));
-	RETURN (0);
+	return (0);
 }
 
 /*
@@ -166,7 +166,7 @@ getitimer(p, uap, retval)
 	int s;
 
 	if (uap->which > ITIMER_PROF)
-		RETURN (EINVAL);
+		return (EINVAL);
 	s = splclock();
 	if (uap->which == ITIMER_REAL) {
 		/*
@@ -184,7 +184,7 @@ getitimer(p, uap, retval)
 	} else
 		aitv = u.u_timer[uap->which];
 	splx(s);
-	RETURN (copyout((caddr_t)&aitv, (caddr_t)uap->itv,
+	return (copyout((caddr_t)&aitv, (caddr_t)uap->itv,
 	    sizeof (struct itimerval)));
 }
 
@@ -202,17 +202,17 @@ setitimer(p, uap, retval)
 	int s, error;
 
 	if (uap->which > ITIMER_PROF)
-		RETURN (EINVAL);
+		return (EINVAL);
 	itvp = uap->itv;
 	if (itvp && (error = copyin((caddr_t)itvp, (caddr_t)&aitv,
 	    sizeof(struct itimerval))))
-		RETURN (error);
+		return (error);
 	if ((uap->itv = uap->oitv) && (error = getitimer(p, uap, retval)))
-		RETURN (error);
+		return (error);
 	if (itvp == 0)
 		return (0);
 	if (itimerfix(&aitv.it_value) || itimerfix(&aitv.it_interval))
-		RETURN (EINVAL);
+		return (EINVAL);
 	s = splclock();
 	if (uap->which == ITIMER_REAL) {
 		untimeout(realitexpire, (caddr_t)p);
@@ -224,7 +224,7 @@ setitimer(p, uap, retval)
 	} else
 		u.u_timer[uap->which] = aitv;
 	splx(s);
-	RETURN (0);
+	return (0);
 }
 
 /*

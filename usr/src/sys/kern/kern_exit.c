@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exit.c	7.24 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -22,8 +22,7 @@
 #include "map.h"
 #include "ioctl.h"
 #include "tty.h"
-#undef RETURN
-#include "syscontext.h"
+#include "user.h"
 #include "kernel.h"
 #include "proc.h"
 #include "buf.h"
@@ -51,7 +50,7 @@ rexit(p, uap, retval)
 	int *retval;
 {
 
-	RETURN (exit(p, W_EXITCODE(uap->rval, 0)));
+	return (exit(p, W_EXITCODE(uap->rval, 0)));
 }
 
 /*
@@ -246,7 +245,7 @@ owait(p, uap, retval)
 	uap->pid = WAIT_ANY;
 	uap->status = 0;
 	uap->compat = 1;
-	RETURN (wait1(p, uap, retval));
+	return (wait1(p, uap, retval));
 }
 
 wait4(p, uap, retval)
@@ -262,7 +261,7 @@ wait4(p, uap, retval)
 {
 
 	uap->compat = 0;
-	RETURN (wait1(p, uap, retval));
+	return (wait1(p, uap, retval));
 }
 #else
 #define	wait1	wait4
@@ -296,7 +295,7 @@ wait1(q, uap, retval)
 		uap->pid = -q->p_pgid;
 #ifdef notyet
 	if (uap->options &~ (WUNTRACED|WNOHANG))
-		RETURN (EINVAL);
+		return (EINVAL);
 #endif
 loop:
 	f = 0;
@@ -316,11 +315,11 @@ loop:
 				status = p->p_xstat;	/* convert to int */
 				if (error = copyout((caddr_t)&status,
 				    (caddr_t)uap->status, sizeof(status)))
-					RETURN (error);
+					return (error);
 			}
 			if (uap->rusage && (error = copyout((caddr_t)p->p_ru,
 			    (caddr_t)uap->rusage, sizeof (struct rusage))))
-				RETURN (error);
+				return (error);
 			pgrm(p);			/* off pgrp */
 			p->p_xstat = 0;
 			ruadd(&u.u_cru, p->p_ru);
@@ -350,7 +349,7 @@ loop:
 			/*p->p_pgrp = 0;*/
 			p->p_flag = 0;
 			p->p_wchan = 0;
-			RETURN (0);
+			return (0);
 		}
 		if (p->p_stat == SSTOP && (p->p_flag & SWTED) == 0 &&
 		    (p->p_flag & STRC || uap->options & WUNTRACED)) {
@@ -368,16 +367,16 @@ loop:
 				    (caddr_t)uap->status, sizeof(status));
 			} else
 				error = 0;
-			RETURN (error);
+			return (error);
 		}
 	}
 	if (f == 0)
-		RETURN (ECHILD);
+		return (ECHILD);
 	if (uap->options & WNOHANG) {
 		retval[0] = 0;
-		RETURN (0);
+		return (0);
 	}
 	if (error = tsleep((caddr_t)q, PWAIT | PCATCH, "wait", 0))
-		RETURN (error);
+		return (error);
 	goto loop;
 }

@@ -14,12 +14,12 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_sig.c	7.21 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "syscontext.h"	/* XXX */
+#include "user.h"
 #include "vnode.h"
 #include "proc.h"
 #include "timeb.h"
@@ -71,7 +71,7 @@ sigaction(p, uap, retval)
 
 	sig = uap->signo;
 	if (sig <= 0 || sig >= NSIG || sig == SIGKILL || sig == SIGSTOP)
-		RETURN (EINVAL);
+		return (EINVAL);
 	sa = &vec;
 	if (uap->osa) {
 		sa->sa_handler = u.u_signal[sig];
@@ -86,15 +86,15 @@ sigaction(p, uap, retval)
 			sa->sa_flags |= SA_NOCLDSTOP;
 		if (error = copyout((caddr_t)sa, (caddr_t)uap->osa,
 		    sizeof (vec)))
-			RETURN (error);
+			return (error);
 	}
 	if (uap->nsa) {
 		if (error = copyin((caddr_t)uap->nsa, (caddr_t)sa,
 		    sizeof (vec)))
-			RETURN (error);
+			return (error);
 		setsigvec(p, sig, sa);
 	}
-	RETURN (0);
+	return (0);
 }
 
 setsigvec(p, sig, sa)
@@ -228,7 +228,7 @@ sigprocmask(p, uap, retval)
 		break;
 	}
 	(void) spl0();
-	RETURN (error);
+	return (error);
 }
 
 /* ARGSUSED */
@@ -239,7 +239,7 @@ sigpending(p, uap, retval)
 {
 
 	*retval = p->p_sig;
-	RETURN (0);
+	return (0);
 }
 
 #ifdef COMPAT_43
@@ -263,7 +263,7 @@ osigvec(p, uap, retval)
 
 	sig = uap->signo;
 	if (sig <= 0 || sig >= NSIG || sig == SIGKILL || sig == SIGSTOP)
-		RETURN (EINVAL);
+		return (EINVAL);
 	sv = &vec;
 	if (uap->osv) {
 		*(sig_t *)&sv->sv_handler = u.u_signal[sig];
@@ -278,16 +278,16 @@ osigvec(p, uap, retval)
 			sv->sv_flags |= SA_NOCLDSTOP;
 		if (error = copyout((caddr_t)sv, (caddr_t)uap->osv,
 		    sizeof (vec)))
-			RETURN (error);
+			return (error);
 	}
 	if (uap->nsv) {
 		if (error = copyin((caddr_t)uap->nsv, (caddr_t)sv,
 		    sizeof (vec)))
-			RETURN (error);
+			return (error);
 		sv->sv_flags ^= SA_RESTART;	/* opposite of SV_INTERRUPT */
 		setsigvec(p, sig, (struct sigaction *)sv);
 	}
-	RETURN (0);
+	return (0);
 }
 
 osigblock(p, uap, retval)
@@ -302,7 +302,7 @@ osigblock(p, uap, retval)
 	*retval = p->p_sigmask;
 	p->p_sigmask |= uap->mask &~ sigcantmask;
 	(void) spl0();
-	RETURN (0);
+	return (0);
 }
 
 osigsetmask(p, uap, retval)
@@ -317,7 +317,7 @@ osigsetmask(p, uap, retval)
 	*retval = p->p_sigmask;
 	p->p_sigmask = uap->mask &~ sigcantmask;
 	(void) spl0();
-	RETURN (0);
+	return (0);
 }
 #endif
 
@@ -347,7 +347,7 @@ sigsuspend(p, uap, retval)
 	p->p_sigmask = uap->mask &~ sigcantmask;
 	(void) tsleep((caddr_t)&u, PPAUSE | PCATCH, "pause", 0);
 	/* always return EINTR rather than ERESTART... */
-	RETURN (EINTR);
+	return (EINTR);
 }
 
 /* ARGSUSED */
@@ -364,11 +364,11 @@ sigstack(p, uap, retval)
 
 	if (uap->oss && (error = copyout((caddr_t)&u.u_sigstack,
 	    (caddr_t)uap->oss, sizeof (struct sigstack))))
-		RETURN (error);
+		return (error);
 	if (uap->nss && (error = copyin((caddr_t)uap->nss, (caddr_t)&ss,
 	    sizeof (ss))) == 0)
 		u.u_sigstack = ss;
-	RETURN (error);
+	return (error);
 }
 
 /* ARGSUSED */
@@ -383,25 +383,25 @@ kill(cp, uap, retval)
 	register struct proc *p;
 
 	if ((unsigned) uap->signo >= NSIG)
-		RETURN (EINVAL);
+		return (EINVAL);
 	if (uap->pid > 0) {
 		/* kill single process */
 		p = pfind(uap->pid);
 		if (p == 0)
-			RETURN (ESRCH);
+			return (ESRCH);
 		if (!CANSIGNAL(cp, p, uap->signo))
-			RETURN (EPERM);
+			return (EPERM);
 		if (uap->signo)
 			psignal(p, uap->signo);
-		RETURN (0);
+		return (0);
 	}
 	switch (uap->pid) {
 	case -1:		/* broadcast signal */
-		RETURN (killpg1(cp, uap->signo, 0, 1));
+		return (killpg1(cp, uap->signo, 0, 1));
 	case 0:			/* signal own process group */
-		RETURN (killpg1(cp, uap->signo, 0, 0));
+		return (killpg1(cp, uap->signo, 0, 0));
 	default:		/* negative explicit process group */
-		RETURN (killpg1(cp, uap->signo, -uap->pid, 0));
+		return (killpg1(cp, uap->signo, -uap->pid, 0));
 	}
 	/* NOTREACHED */
 }
@@ -418,8 +418,8 @@ okillpg(p, uap, retval)
 {
 
 	if ((unsigned) uap->signo >= NSIG)
-		RETURN (EINVAL);
-	RETURN (killpg1(p, uap->signo, uap->pgid, 0));
+		return (EINVAL);
+	return (killpg1(p, uap->signo, uap->pgid, 0));
 }
 #endif
 
@@ -1040,5 +1040,5 @@ nosys(p, args, retval)
 {
 
 	psignal(p, SIGSYS);
-	RETURN (EINVAL);
+	return (EINVAL);
 }

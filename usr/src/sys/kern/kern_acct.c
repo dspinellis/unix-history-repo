@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_acct.c	7.11 (Berkeley) %G%
+ *	@(#)kern_acct.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -13,8 +13,7 @@
 #include "ioctl.h"
 #include "termios.h"
 #include "tty.h"
-#undef RETURN
-#include "syscontext.h"
+#include "user.h"
 #include "vnode.h"
 #include "mount.h"
 #include "kernel.h"
@@ -53,7 +52,7 @@ sysacct(p, uap, retval)
 	int error;
 
 	if (error = suser(u.u_cred, &u.u_acflag))
-		RETURN (error);
+		return (error);
 	if (savacctp) {
 		acctp = savacctp;
 		savacctp = NULL;
@@ -64,28 +63,28 @@ sysacct(p, uap, retval)
 			vrele(vp);
 			untimeout(acctwatch, (caddr_t)&chk);
 		}
-		RETURN (0);
+		return (0);
 	}
 	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
 	if (error = namei(ndp))
-		RETURN (error);
+		return (error);
 	vp = ndp->ni_vp;
 	if (vp->v_type != VREG) {
 		vrele(vp);
-		RETURN (EACCES);
+		return (EACCES);
 	}
 	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
 		vrele(vp);
-		RETURN (EROFS);
+		return (EROFS);
 	}
 	oacctp = acctp;
 	acctp = vp;
 	if (oacctp)
 		vrele(oacctp);
 	acctwatch(&chk);
-	RETURN (0);
+	return (0);
 }
 
 /*

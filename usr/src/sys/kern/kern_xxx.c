@@ -14,12 +14,12 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_xxx.c	7.12 (Berkeley) %G%
+ *	@(#)kern_xxx.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "syscontext.h"
+#include "user.h"
 #include "kernel.h"
 #include "proc.h"
 #include "reboot.h"
@@ -32,7 +32,7 @@ gethostid(p, uap, retval)
 {
 
 	*retval = hostid;
-	RETURN (0);
+	return (0);
 }
 
 sethostid(p, uap, retval)
@@ -58,7 +58,7 @@ gethostname(p, uap, retval)
 
 	if (uap->len > hostnamelen + 1)
 		uap->len = hostnamelen + 1;
-	RETURN (copyout((caddr_t)hostname, (caddr_t)uap->hostname, uap->len));
+	return (copyout((caddr_t)hostname, (caddr_t)uap->hostname, uap->len));
 }
 
 /* ARGSUSED */
@@ -73,13 +73,13 @@ sethostname(p, uap, retval)
 	int error;
 
 	if (error = suser(u.u_cred, &u.u_acflag))
-		RETURN (error);
+		return (error);
 	if (uap->len > sizeof (hostname) - 1)
-		RETURN (EINVAL);
+		return (EINVAL);
 	hostnamelen = uap->len;
 	error = copyin((caddr_t)uap->hostname, hostname, uap->len);
 	hostname[hostnamelen] = 0;
-	RETURN (error);
+	return (error);
 }
 
 /* ARGSUSED */
@@ -97,11 +97,11 @@ reboot(p, uap, retval)
 ovhangup()
 {
 
-	RETURN (EINVAL);
+	return (EINVAL);
 }
 
 oldquota()
 {
 
-	RETURN (EINVAL);
+	return (EINVAL);
 }

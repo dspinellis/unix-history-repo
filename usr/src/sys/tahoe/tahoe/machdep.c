@@ -3,13 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.12 (Berkeley) %G%
+ *	@(#)machdep.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-/* #include "user.h" */
-#include "syscontext.h"
+#include "user.h"
 #include "kernel.h"
 #include "map.h"
 #include "vm.h"
@@ -392,17 +391,17 @@ sigreturn(p, uap, retval)
 
 	scp = uap->sigcntxp;
 	if (useracc((caddr_t)scp, sizeof (*scp), 0) == 0)
-		RETURN (EINVAL);
+		return (EINVAL);
 	if ((scp->sc_ps & (PSL_MBZ|PSL_IPL|PSL_IS)) != 0 ||
 	    (scp->sc_ps & (PSL_PRVMOD|PSL_CURMOD)) != (PSL_PRVMOD|PSL_CURMOD))
-		RETURN (EINVAL);
+		return (EINVAL);
 	u.u_onstack = scp->sc_onstack & 01;
 	p->p_sigmask = scp->sc_mask &~ sigcantmask;
 	regs[FP] = scp->sc_fp;
 	regs[SP] = scp->sc_sp;
 	regs[PC] = scp->sc_pc;
 	regs[PS] = scp->sc_ps;
-	RETURN (EJUSTRETURN);
+	return (EJUSTRETURN);
 }
 
 int	waittime = -1;

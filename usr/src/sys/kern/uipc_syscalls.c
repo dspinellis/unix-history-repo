@@ -12,12 +12,11 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_syscalls.c	7.17 (Berkeley) %G%
+ *	@(#)uipc_syscalls.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
-/* #include "user.h" */
-#include "syscontext.h" /* XXX */
+#include "user.h"
 #include "proc.h"
 #include "file.h"
 #include "buf.h"
@@ -52,7 +51,7 @@ socket(p, uap, retval)
 	int fd, error;
 
 	if (error = falloc(&fp, &fd))
-		RETURN (error);
+		return (error);
 	fp->f_flag = FREAD|FWRITE;
 	fp->f_type = DTYPE_SOCKET;
 	fp->f_ops = &socketops;
@@ -64,7 +63,7 @@ socket(p, uap, retval)
 		fp->f_data = (caddr_t)so;
 		*retval = fd;
 	}
-	RETURN (error);
+	return (error);
 }
 
 /* ARGSUSED */
@@ -83,12 +82,12 @@ bind(p, uap, retval)
 
 	fp = getsock(uap->s, &error);
 	if (fp == 0)
-		RETURN (error);
+		return (error);
 	if (error = sockargs(&nam, uap->name, uap->namelen, MT_SONAME))
-		RETURN (error);
+		return (error);
 	error = sobind((struct socket *)fp->f_data, nam);
 	m_freem(nam);
-	RETURN (error);
+	return (error);
 }
 
 /* ARGSUSED */
@@ -105,8 +104,8 @@ listen(p, uap, retval)
 
 	fp = getsock(uap->s, &error);
 	if (fp == 0)
-		RETURN (error);
-	RETURN (solisten((struct socket *)fp->f_data, uap->backlog));
+		return (error);
+	return (solisten((struct socket *)fp->f_data, uap->backlog));
 }
 
 #ifdef COMPAT_43
@@ -122,7 +121,7 @@ accept(p, uap, retval)
 {
 
 	uap->compat_43 = 0;
-	RETURN (accept1(p, uap, retval));
+	return (accept1(p, uap, retval));
 }
 
 oaccept(p, uap, retval)
@@ -137,7 +136,7 @@ oaccept(p, uap, retval)
 {
 
 	uap->compat_43 = 1;
-	RETURN (accept1(p, uap, retval));
+	return (accept1(p, uap, retval));
 }
 #else /* COMPAT_43 */
 
@@ -164,19 +163,19 @@ accept1(p, uap, retval)
 
 	if (uap->name && (error = copyin((caddr_t)uap->anamelen,
 	    (caddr_t)&namelen, sizeof (namelen))))
-		RETURN (error);
+		return (error);
 	fp = getsock(uap->s, &error);
 	if (fp == 0)
-		RETURN (error);
+		return (error);
 	s = splnet();
 	so = (struct socket *)fp->f_data;
 	if ((so->so_options & SO_ACCEPTCONN) == 0) {
 		splx(s);
-		RETURN (EINVAL);
+		return (EINVAL);
 	}
 	if ((so->so_state & SS_NBIO) && so->so_qlen == 0) {
 		splx(s);
-		RETURN (EWOULDBLOCK);
+		return (EWOULDBLOCK);
 	}
 	while (so->so_qlen == 0 && so->so_error == 0) {
 		if (so->so_state & SS_CANTRCVMORE) {
@@ -186,18 +185,18 @@ accept1(p, uap, retval)
 		if (error = tsleep((caddr_t)&so->so_timeo, PSOCK | PCATCH,
 		    netcon, 0)) {
 			splx(s);
-			RETURN (error);
+			return (error);
 		}
 	}
 	if (so->so_error) {
 		error = so->so_error;
 		so->so_error = 0;
 		splx(s);
-		RETURN (error);
+		return (error);
 	}
 	if (error = falloc(&fp, retval)) {
 		splx(s);
-		RETURN (error);
+		return (error);
 	}
 	{ struct socket *aso = so->so_q;
 	  if (soqremque(aso, 1) == 0)
@@ -226,7 +225,7 @@ accept1(p, uap, retval)
 	}
 	m_freem(nam);
 	splx(s);
-	RETURN (error);
+	return (error);
 }
 
 /* ARGSUSED */
@@ -246,18 +245,18 @@ connect(p, uap, retval)
 
 	fp = getsock(uap->s, &error);
 	if (fp == 0)
-		RETURN (error);
+		return (error);
 	so = (struct socket *)fp->f_data;
 	if ((so->so_state & SS_NBIO) && (so->so_state & SS_ISCONNECTING))
-		RETURN (EALREADY);
+		return (EALREADY);
 	if (error = sockargs(&nam, uap->name, uap->namelen, MT_SONAME))
-		RETURN (error);
+		return (error);
 	error = soconnect(so, nam);
 	if (error)
 		goto bad;
 	if ((so->so_state & SS_NBIO) && (so->so_state & SS_ISCONNECTING)) {
 		m_freem(nam);
-		RETURN (EINPROGRESS);
+		return (EINPROGRESS);
 	}
 	s = splnet();
 	while ((so->so_state & SS_ISCONNECTING) && so->so_error == 0)
@@ -274,7 +273,7 @@ bad:
 	m_freem(nam);
 	if (error == ERESTART)
 		error = EINTR;
-	RETURN (error);
+	return (error);
 }
 
 /* ARGSUSED */
@@ -293,7 +292,7 @@ socketpair(p, uap, retval)
 	int fd, error, sv[2];
 
 	if (error = socreate(uap->domain, &so1, uap->type, uap->protocol))
-		RETURN (error);
+		return (error);
 	if (error = socreate(uap->domain, &so2, uap->type, uap->protocol))
 		goto free1;
 	if (error = falloc(&fp1, &fd))
@@ -322,7 +321,7 @@ socketpair(p, uap, retval)
 	error = copyout((caddr_t)sv, (caddr_t)uap->rsv, 2 * sizeof (int));
 	retval[0] = sv[0];		/* XXX ??? */
 	retval[1] = sv[1];		/* XXX ??? */
-	RETURN (error);
+	return (error);
 free4:
 	crfree(fp2->f_cred);
 	fp2->f_count = 0;
@@ -335,7 +334,7 @@ free2:
 	(void)soclose(so2);
 free1:
 	(void)soclose(so1);
-	RETURN (error);
+	return (error);
 }
 
 /* ARGSUSED */
@@ -364,7 +363,7 @@ sendto(p, uap, retval)
 #endif
 	aiov.iov_base = uap->buf;
 	aiov.iov_len = uap->len;
-	RETURN (sendit(uap->s, &msg, uap->flags, retval));
+	return (sendit(uap->s, &msg, uap->flags, retval));
 }
 
 #ifdef COMPAT_43
@@ -390,7 +389,7 @@ osend(p, uap, retval)
 	aiov.iov_len = uap->len;
 	msg.msg_control = 0;
 	msg.msg_flags = 0;
-	RETURN (sendit(uap->s, &msg, uap->flags, retval));
+	return (sendit(uap->s, &msg, uap->flags, retval));
 }
 
 #define MSG_COMPAT	0x8000
@@ -409,10 +408,10 @@ osendmsg(p, uap, retval)
 	int error;
 
 	if (error = copyin(uap->msg, (caddr_t)&msg, sizeof (struct omsghdr)))
-		RETURN (error);
+		return (error);
 	if ((u_int)msg.msg_iovlen >= UIO_SMALLIOV) {
 		if ((u_int)msg.msg_iovlen >= UIO_MAXIOV)
-			RETURN (EMSGSIZE);
+			return (EMSGSIZE);
 		MALLOC(iov, struct iovec *,
 		      sizeof(struct iovec) * (u_int)msg.msg_iovlen, M_IOV, 
 		      M_WAITOK);
@@ -427,7 +426,7 @@ osendmsg(p, uap, retval)
 done:
 	if (iov != aiov)
 		FREE(iov, M_IOV);
-	RETURN (error);
+	return (error);
 }
 #endif
 
@@ -446,10 +445,10 @@ sendmsg(p, uap, retval)
 	int error;
 
 	if (error = copyin(uap->msg, (caddr_t)&msg, sizeof (msg)))
-		RETURN (error);
+		return (error);
 	if ((u_int)msg.msg_iovlen >= UIO_SMALLIOV) {
 		if ((u_int)msg.msg_iovlen >= UIO_MAXIOV)
-			RETURN (EMSGSIZE);
+			return (EMSGSIZE);
 		MALLOC(iov, struct iovec *,
 		       sizeof(struct iovec) * (u_int)msg.msg_iovlen, M_IOV,
 		       M_WAITOK);
@@ -467,7 +466,7 @@ sendmsg(p, uap, retval)
 done:
 	if (iov != aiov)
 		FREE(iov, M_IOV);
-	RETURN (error);
+	return (error);
 }
 
 sendit(s, mp, flags, retsize)
@@ -585,7 +584,7 @@ orecvfrom(p, uap, retval)
 {
 
 	uap->flags |= MSG_COMPAT;
-	RETURN (recvfrom(p, uap, retval));
+	return (recvfrom(p, uap, retval));
 }
 #endif
 
@@ -609,7 +608,7 @@ recvfrom(p, uap, retval)
 	if (uap->fromlenaddr) {
 		if (error = copyin((caddr_t)uap->fromlenaddr,
 		    (caddr_t)&msg.msg_namelen, sizeof (msg.msg_namelen)))
-			RETURN (error);
+			return (error);
 	} else
 		msg.msg_namelen = 0;
 	msg.msg_name = uap->from;
@@ -619,7 +618,7 @@ recvfrom(p, uap, retval)
 	aiov.iov_len = uap->len;
 	msg.msg_control = 0;
 	msg.msg_flags = uap->flags;
-	RETURN (recvit(uap->s, &msg, (caddr_t)uap->fromlenaddr, retval));
+	return (recvit(uap->s, &msg, (caddr_t)uap->fromlenaddr, retval));
 }
 
 #ifdef COMPAT_43
@@ -645,7 +644,7 @@ orecv(p, uap, retval)
 	aiov.iov_len = uap->len;
 	msg.msg_control = 0;
 	msg.msg_flags = uap->flags;
-	RETURN (recvit(uap->s, &msg, (caddr_t)0, retval));
+	return (recvit(uap->s, &msg, (caddr_t)0, retval));
 }
 
 /*
@@ -669,10 +668,10 @@ orecvmsg(p, uap, retval)
 
 	if (error = copyin((caddr_t)uap->msg, (caddr_t)&msg,
 	    sizeof (struct omsghdr)))
-		RETURN (error);
+		return (error);
 	if ((u_int)msg.msg_iovlen >= UIO_SMALLIOV) {
 		if ((u_int)msg.msg_iovlen >= UIO_MAXIOV)
-			RETURN (EMSGSIZE);
+			return (EMSGSIZE);
 		MALLOC(iov, struct iovec *,
 		      sizeof(struct iovec) * (u_int)msg.msg_iovlen, M_IOV,
 		      M_WAITOK);
@@ -691,7 +690,7 @@ orecvmsg(p, uap, retval)
 done:
 	if (iov != aiov)
 		FREE(iov, M_IOV);
-	RETURN (error);
+	return (error);
 }
 #endif
 
@@ -710,10 +709,10 @@ recvmsg(p, uap, retval)
 	register int error;
 
 	if (error = copyin((caddr_t)uap->msg, (caddr_t)&msg, sizeof (msg)))
-		RETURN (error);
+		return (error);
 	if ((u_int)msg.msg_iovlen >= UIO_SMALLIOV) {
 		if ((u_int)msg.msg_iovlen >= UIO_MAXIOV)
-			RETURN (EMSGSIZE);
+			return (EMSGSIZE);
 		MALLOC(iov, struct iovec *,
 		       sizeof(struct iovec) * (u_int)msg.msg_iovlen, M_IOV,
 		       M_WAITOK);
@@ -736,7 +735,7 @@ recvmsg(p, uap, retval)
 done:
 	if (iov != aiov)
 		FREE(iov, M_IOV);
-	RETURN (error);
+	return (error);
 }
 
 recvit(s, mp, namelenp, retsize)
@@ -881,8 +880,8 @@ shutdown(p, uap, retval)
 
 	fp = getsock(uap->s, &error);
 	if (fp == 0)
-		RETURN (error);
-	RETURN (soshutdown((struct socket *)fp->f_data, uap->how));
+		return (error);
+	return (soshutdown((struct socket *)fp->f_data, uap->how));
 }
 
 /* ARGSUSED */
@@ -903,21 +902,21 @@ setsockopt(p, uap, retval)
 
 	fp = getsock(uap->s, &error);
 	if (fp == 0)
-		RETURN (error);
+		return (error);
 	if (uap->valsize > MLEN)
-		RETURN (EINVAL);
+		return (EINVAL);
 	if (uap->val) {
 		m = m_get(M_WAIT, MT_SOOPTS);
 		if (m == NULL)
-			RETURN (ENOBUFS);
+			return (ENOBUFS);
 		if (error = copyin(uap->val, mtod(m, caddr_t),
 		    (u_int)uap->valsize)) {
 			(void) m_free(m);
-			RETURN (error);
+			return (error);
 		}
 		m->m_len = uap->valsize;
 	}
-	RETURN (sosetopt((struct socket *)fp->f_data, uap->level,
+	return (sosetopt((struct socket *)fp->f_data, uap->level,
 	    uap->name, m));
 }
 
@@ -939,11 +938,11 @@ getsockopt(p, uap, retval)
 
 	fp = getsock(uap->s, &error);
 	if (fp == 0)
-		RETURN (error);
+		return (error);
 	if (uap->val) {
 		if (error = copyin((caddr_t)uap->avalsize, (caddr_t)&valsize,
 		    sizeof (valsize)))
-			RETURN (error);
+			return (error);
 	} else
 		valsize = 0;
 	if ((error = sogetopt((struct socket *)fp->f_data, uap->level,
@@ -957,7 +956,7 @@ getsockopt(p, uap, retval)
 	}
 	if (m != NULL)
 		(void) m_free(m);
-	RETURN (error);
+	return (error);
 }
 
 /* ARGSUSED */
@@ -971,7 +970,7 @@ pipe(p, uap, retval)
 	int fd, error;
 
 	if (error = socreate(AF_UNIX, &rso, SOCK_STREAM, 0))
-		RETURN (error);
+		return (error);
 	if (error = socreate(AF_UNIX, &wso, SOCK_STREAM, 0))
 		goto free1;
 	if (error = falloc(&rf, &fd))
@@ -990,7 +989,7 @@ pipe(p, uap, retval)
 	retval[1] = fd;
 	if (error = unp_connect2(wso, rso))
 		goto free4;
-	RETURN (0);
+	return (0);
 free4:
 	wf->f_count = 0;
 	u.u_ofile[retval[1]] = 0;
@@ -1001,7 +1000,7 @@ free2:
 	(void)soclose(wso);
 free1:
 	(void)soclose(rso);
-	RETURN (error);
+	return (error);
 }
 
 /*
@@ -1020,7 +1019,7 @@ getsockname(p, uap, retval)
 {
 
 	uap->compat_43 = 0;
-	RETURN (getsockname1(p, uap, retval));
+	return (getsockname1(p, uap, retval));
 }
 
 ogetsockname(p, uap, retval)
@@ -1035,7 +1034,7 @@ ogetsockname(p, uap, retval)
 {
 
 	uap->compat_43 = 1;
-	RETURN (getsockname1(p, uap, retval));
+	return (getsockname1(p, uap, retval));
 }
 #else /* COMPAT_43 */
 
@@ -1062,13 +1061,13 @@ getsockname1(p, uap, retval)
 
 	fp = getsock(uap->fdes, &error);
 	if (fp == 0)
-		RETURN (error);
+		return (error);
 	if (error = copyin((caddr_t)uap->alen, (caddr_t)&len, sizeof (len)))
-		RETURN (error);
+		return (error);
 	so = (struct socket *)fp->f_data;
 	m = m_getclr(M_WAIT, MT_SONAME);
 	if (m == NULL)
-		RETURN (ENOBUFS);
+		return (ENOBUFS);
 	if (error = (*so->so_proto->pr_usrreq)(so, PRU_SOCKADDR, 0, m, 0))
 		goto bad;
 	if (len > m->m_len)
@@ -1084,7 +1083,7 @@ getsockname1(p, uap, retval)
 		    sizeof (len));
 bad:
 	m_freem(m);
-	RETURN (error);
+	return (error);
 }
 
 /*
@@ -1103,7 +1102,7 @@ getpeername(p, uap, retval)
 {
 
 	uap->compat_43 = 0;
-	RETURN (getpeername1(p, uap, retval));
+	return (getpeername1(p, uap, retval));
 }
 
 ogetpeername(p, uap, retval)
@@ -1118,7 +1117,7 @@ ogetpeername(p, uap, retval)
 {
 
 	uap->compat_43 = 1;
-	RETURN (getpeername1(p, uap, retval));
+	return (getpeername1(p, uap, retval));
 }
 #else /* COMPAT_43 */
 
@@ -1145,15 +1144,15 @@ getpeername1(p, uap, retval)
 
 	fp = getsock(uap->fdes, &error);
 	if (fp == 0)
-		RETURN (error);
+		return (error);
 	so = (struct socket *)fp->f_data;
 	if ((so->so_state & (SS_ISCONNECTED|SS_ISCONFIRMING)) == 0)
-		RETURN (ENOTCONN);
+		return (ENOTCONN);
 	m = m_getclr(M_WAIT, MT_SONAME);
 	if (m == NULL)
-		RETURN (ENOBUFS);
+		return (ENOBUFS);
 	if (error = copyin((caddr_t)uap->alen, (caddr_t)&len, sizeof (len)))
-		RETURN (error);
+		return (error);
 	if (error = (*so->so_proto->pr_usrreq)(so, PRU_PEERADDR, 0, m, 0))
 		goto bad;
 	if (len > m->m_len)
@@ -1168,7 +1167,7 @@ getpeername1(p, uap, retval)
 	error = copyout((caddr_t)&len, (caddr_t)uap->alen, sizeof (len));
 bad:
 	m_freem(m);
-	RETURN (error);
+	return (error);
 }
 
 sockargs(mp, buf, buflen, type)

@@ -3,11 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_resource.c	7.8 (Berkeley) %G%
+ *	@(#)kern_resource.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "syscontext.h"
+#include "user.h"
 #include "proc.h"
 
 /*
@@ -62,12 +62,12 @@ getpriority(curp, uap, retval)
 		break;
 
 	default:
-		RETURN (EINVAL);
+		return (EINVAL);
 	}
 	if (low == PRIO_MAX + 1)
-		RETURN (ESRCH);
+		return (ESRCH);
 	*retval = low;
-	RETURN (0);
+	return (0);
 }
 
 /* ARGSUSED */
@@ -121,11 +121,11 @@ setpriority(curp, uap, retval)
 		break;
 
 	default:
-		RETURN (EINVAL);
+		return (EINVAL);
 	}
 	if (found == 0)
-		RETURN (ESRCH);
-	RETURN (0);
+		return (ESRCH);
+	return (0);
 }
 
 donice(curp, chgp, n)
@@ -162,14 +162,14 @@ setrlimit(p, uap, retval)
 	int error;
 
 	if (uap->which >= RLIM_NLIMITS)
-		RETURN (EINVAL);
+		return (EINVAL);
 	alimp = &u.u_rlimit[uap->which];
 	if (error =
 	    copyin((caddr_t)uap->lim, (caddr_t)&alim, sizeof (struct rlimit)))
-		RETURN (error);
+		return (error);
 	if (alim.rlim_cur > alimp->rlim_max || alim.rlim_max > alimp->rlim_max)
 		if (error = suser(u.u_cred, &u.u_acflag))
-			RETURN (error);
+			return (error);
 	switch (uap->which) {
 
 	case RLIMIT_DATA:
@@ -189,7 +189,7 @@ setrlimit(p, uap, retval)
 	*alimp = alim;
 	if (uap->which == RLIMIT_RSS)
 		p->p_maxrss = alim.rlim_cur/NBPG;
-	RETURN (0);
+	return (0);
 }
 
 /* ARGSUSED */
@@ -203,8 +203,8 @@ getrlimit(p, uap, retval)
 {
 
 	if (uap->which >= RLIM_NLIMITS)
-		RETURN (EINVAL);
-	RETURN (copyout((caddr_t)&u.u_rlimit[uap->which], (caddr_t)uap->rlp,
+		return (EINVAL);
+	return (copyout((caddr_t)&u.u_rlimit[uap->which], (caddr_t)uap->rlp,
 	    sizeof (struct rlimit)));
 }
 
@@ -237,9 +237,9 @@ getrusage(p, uap, retval)
 		break;
 
 	default:
-		RETURN (EINVAL);
+		return (EINVAL);
 	}
-	RETURN (copyout((caddr_t)rup, (caddr_t)uap->rusage,
+	return (copyout((caddr_t)rup, (caddr_t)uap->rusage,
 	    sizeof (struct rusage)));
 }
 

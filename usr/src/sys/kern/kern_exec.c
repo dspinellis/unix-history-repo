@@ -14,13 +14,13 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exec.c	7.27 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.28 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "map.h"
-#include "syscontext.h"
+#include "user.h"
 #include "kernel.h"
 #include "proc.h"
 #include "mount.h"
@@ -59,7 +59,7 @@ execv(p, uap, retval)
 {
 
 	uap->envp = NULL;
-	RETURN (execve(p, uap, retval));
+	return (execve(p, uap, retval));
 }
 
 /* ARGSUSED */
@@ -107,7 +107,7 @@ execve(p, uap, retval)
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
 	if (error = namei(ndp))
-		RETURN (error);
+		return (error);
 	vp = ndp->ni_vp;
 	bno = 0;
 	bp = 0;
@@ -282,7 +282,7 @@ execve(p, uap, retval)
 		ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
 		ndp->ni_segflg = UIO_SYSSPACE;
 		if (error = namei(ndp))
-			RETURN (error);
+			return (error);
 		vp = ndp->ni_vp;
 		if (error = VOP_GETATTR(vp, &vattr, cred))
 			goto bad;
@@ -528,7 +528,7 @@ bad:
 #endif SECSIZE
 	if (vp)
 		vput(vp);
-	RETURN (error);
+	return (error);
 }
 
 /*

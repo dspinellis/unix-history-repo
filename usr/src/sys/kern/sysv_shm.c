@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: uipc_shm.c 1.9 89/08/14$
  *
- *	@(#)sysv_shm.c	7.8 (Berkeley) %G%
+ *	@(#)sysv_shm.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -26,7 +26,7 @@
 
 #include "param.h"
 #include "systm.h"
-#include "syscontext.h"
+#include "user.h"
 #include "kernel.h"
 #include "proc.h"
 #include "vm.h"
@@ -69,8 +69,8 @@ shmsys(p, uap, retval)
 {
 
 	if (uap->which >= sizeof(shmcalls)/sizeof(shmcalls[0]))
-		RETURN (EINVAL);
-	RETURN ((*shmcalls[uap->which])(p, &uap[1], retval));
+		return (EINVAL);
+	return ((*shmcalls[uap->which])(p, &uap[1], retval));
 }
 
 /*
