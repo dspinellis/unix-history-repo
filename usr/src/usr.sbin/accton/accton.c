@@ -12,22 +12,58 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)accton.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)accton.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/types.h>
+#include <errno.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
+void usage __P((void));
+
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	if (argc > 2) {
-		fputs("usage: accton [file]\n", stderr);
-		exit(1);
-	}
-	if (acct(argc == 2 ? argv[1] : (char *)NULL)) {
-		perror("accton");
-		exit(1);
+	int ch;
+
+	while ((ch = getopt(argc, argv, "")) != EOF)
+		switch(ch) {
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
+
+	switch(argc) {
+	case 1: 
+		if (acct(NULL)) {
+			(void)fprintf(stderr,
+			    "accton: %s\n", strerror(errno));
+			exit(1);
+		}
+		break;
+	case 2:
+		if (acct(*++argv)) {
+			(void)fprintf(stderr,
+			    "accton: %s: %s\n", *argv, strerror(errno));
+			exit(1);
+		}
+		break;
+	default:
+		usage();
 	}
 	exit(0);
+}
+
+void
+usage()
+{
+	(void)fprintf(stderr, "usage: accton [file]\n");
+	exit(1);
 }
