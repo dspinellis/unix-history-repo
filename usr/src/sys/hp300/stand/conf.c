@@ -4,91 +4,33 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	7.2 (Berkeley) %G%
+ *	@(#)conf.c	7.3 (Berkeley) %G%
  */
 
+#include <sys/param.h>
 #include "saio.h"
 
-devread(io)
-	register struct iob *io;
-{
-	int cc;
+extern int	nullsys(), nodev(), noioctl();
 
-	/* check for interrupt */
-	(void) peekchar();
-
-	io->i_flgs |= F_RDDATA;
-	io->i_error = 0;
-	cc = (*devsw[io->i_dev].dv_strategy)(io, READ);
-	io->i_flgs &= ~F_TYPEMASK;
-	return (cc);
-}
-
-devwrite(io)
-	register struct iob *io;
-{
-	int cc;
-
-	io->i_flgs |= F_WRDATA;
-	io->i_error = 0;
-	cc = (*devsw[io->i_dev].dv_strategy)(io, WRITE);
-	io->i_flgs &= ~F_TYPEMASK;
-	return (cc);
-}
-
-devopen(io)
-	register struct iob *io;
-{
-
-	(*devsw[io->i_dev].dv_open)(io);
-}
-
-devclose(io)
-	register struct iob *io;
-{
-
-	(*devsw[io->i_dev].dv_close)(io);
-}
-
-devioctl(io, cmd, arg)
-	register struct iob *io;
-	int cmd;
-	caddr_t arg;
-{
-
-	return ((*devsw[io->i_dev].dv_ioctl)(io, cmd, arg));
-}
-
-/*ARGSUSED*/
-nullsys(io)
-	struct iob *io;
-{
-
-	;
-}
-
-/*ARGSUSED*/
-nullioctl(io, cmd, arg)
-	struct iob *io;
-	int cmd;
-	caddr_t arg;
-{
-
-	return (ECMD);
-}
-
-int	nullsys(), nullioctl();
-int	rdstrategy(), rdopen(), rdioctl();
-int	sdstrategy(), sdopen(), sdioctl();
 #ifndef BOOT
 int	ctstrategy(), ctopen(), ctclose();
+#define	ctioctl	noioctl
 #endif
 
+int	rdstrategy(), rdopen();
+#define	rdioctl	noioctl
+
+int	sdstrategy(), sdopen();
+#define	sdioctl	noioctl
+
+
 struct devsw devsw[] = {
-	{ "rd",	rdstrategy,	rdopen,		nullsys,	nullioctl },
-	{ "sd",	sdstrategy,	sdopen,		nullsys,	nullioctl },
+	{ "rd",	rdstrategy,	rdopen,	nullsys, noioctl },	/* 0 = rd */
+	{ "sd",	sdstrategy,	sdopen,	nullsys, noioctl },	/* 1 = sd */
 #ifndef BOOT
-	{ "ct",	ctstrategy,	ctopen,		ctclose,	nullioctl },
+	{ "ct",	ctstrategy,	ctopen,	ctclose, noioctl },	/* 2 = ct */
 #endif
-	{ 0, 0, 0, 0, 0 },
+	{ NULL },
 };
+
+int	ndevs = (sizeof(devsw)/sizeof(devsw[0]));
