@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tftp.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)tftp.c	4.9 (Berkeley) %G%";
 #endif
 
 /*
@@ -330,6 +330,10 @@ tpacket(s, sin, tp, n)
 
 	case ERROR:
 		printf("<code=%d, msg=%s>\n", ntohs(tp->th_code), tp->th_msg);
+		break;
+
+	default:
+		putchar('\n');
 		break;
 	}
 }
