@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asparse.c 4.10 %G%";
+static char sccsid[] = "@(#)asparse.c 4.11 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -87,7 +87,9 @@ yyparse()
 		ptrall	stabstart;	/*where the stab starts in the buffer*/
 		int	reloc_how;	/* how to relocate expressions */
 		int	toconv;		/* how to convert bignums */
+		int	incasetable;	/* set if in a case table */
 
+	incasetable = 0;
 	xp = explist;
 	ap = arglist;
 
@@ -384,6 +386,19 @@ restlab:
 				outrel(locxp, reloc_how);
 			}
 		} else {
+			/*
+			 *	
+			 *	See if we are doing a case instruction.
+			 *	If so, then see if the branch distance,
+			 *	stored as a word,
+			 *	is going to loose sig bits.
+			 */
+			if (passno == 2 && incasetable){
+				if (  (locxp->e_xvalue < -32768)
+				    ||(locxp->e_xvalue > 32767)){
+					yyerror("Case will branch too far");
+				}
+			}
 			field_value = locxp->e_xvalue & ( (1L << field_width)-1);
 			bitfield |= field_value << bitoff;
 			bitoff += field_width;
@@ -779,6 +794,7 @@ restlab:
 	break;
 
    case INST0: 		/* instructions w/o arguments*/
+	incasetable = 0;
 	insout(yyopcode, (struct arg *)0, 0);
 	shift;	
 	break;
@@ -934,6 +950,24 @@ restlab:
 	if (argcnt > 6){
 		yyerror("More than 6 arguments");
 		goto errorfix;
+	}
+
+	/*
+	 *	See if this is a case instruction,
+	 *	so we can set up tests on the following
+	 *	vector of branch displacements
+	 */
+	if (yyopcode.Op_eopcode == CORE){
+		switch(yyopcode.Op_popcode){
+		case 0x8f:	/* caseb */
+		case 0xaf:	/* casew */
+		case 0xcf:	/* casel */
+			incasetable++;
+			break;
+		default:
+			incasetable = 0;
+			break;
+		}
 	}
 
 	insout(yyopcode, arglist,
