@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2023,4 +2023,119 @@ maplocaluser(a, sendq, e)
 	a1->q_alias = a;
 	allocaddr(a1, 1, NULL, delimptr);
 	(void) recipient(a1, sendq, e);
+}
+/*
+**  DEQUOTE_INIT -- initialize dequote map
+**
+**	This is a no-op.
+**
+**	Parameters:
+**		map -- the internal map structure.
+**		mapname -- the name of the mapl.
+**		args -- arguments.
+**
+**	Returns:
+**		TRUE.
+*/
+
+bool
+dequote_init(map, mapname, args)
+	MAP *map;
+	char *mapname;
+	char *args;
+{
+	return TRUE;
+}
+/*
+**  DEQUOTE_MAP -- unquote an address
+**
+**	Parameters:
+**		map -- the internal map structure (ignored).
+**		buf -- the buffer to dequote.
+**		bufsiz -- the size of that buffer.
+**		av -- arguments (ignored).
+**
+**	Returns:
+**		NULL -- if there were no quotes, or if the resulting
+**			unquoted buffer would not be acceptable to prescan.
+**		else -- The dequoted buffer.
+*/
+
+char *
+dequote_map(map, buf, bufsiz, av)
+	MAP *map;
+	char buf[];
+	int bufsiz;
+	char **av;
+{
+	register char *p;
+	register char *q;
+	register char c;
+	int anglecnt;
+	int cmntcnt;
+	int quotecnt;
+	bool quotemode;
+	bool bslashmode;
+
+	anglecnt = 0;
+	cmntcnt = 0;
+	quotecnt = 0;
+	quotemode = FALSE;
+	bslashmode = FALSE;
+
+	for (p = q = buf; (c = *p++) != '\0'; )
+	{
+		if (bslashmode)
+		{
+			bslashmode = FALSE;
+			*q++ = c;
+			continue;
+		}
+
+		switch (c)
+		{
+		  case '\\':
+			bslashmode = TRUE;
+			break;
+
+		  case '(':
+			cmntcnt++;
+			break;
+
+		  case ')':
+			if (cmntcnt-- <= 0)
+				return NULL;
+			break;
+		}
+
+		if (cmntcnt > 0)
+		{
+			*q++ = c;
+			continue;
+		}
+
+		switch (c)
+		{
+		  case '"':
+			quotemode = !quotemode;
+			quotecnt++;
+			continue;
+
+		  case '<':
+			anglecnt++;
+			break;
+
+		  case '>':
+			if (anglecnt-- <= 0)
+				return NULL;
+			break;
+		}
+		*q++ = c;
+	}
+
+	if (anglecnt != 0 || cmntcnt != 0 || bslashmode ||
+	    quotemode || quotecnt <= 0)
+		return NULL;
+	*q++ = '\0';
+	return buf;
 }
