@@ -1,4 +1,4 @@
-/*	init_main.c	4.7	%G%	*/
+/*	init_main.c	4.8	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -237,4 +237,27 @@ bswinit()
 	for (i=0; i<NSWBUF-1; i++)
 		swbuf[i].av_forw = &swbuf[i+1];
 	swbuf[NSWBUF-1].av_forw = NULL;
+}
+
+/*
+ * Initialize clist by freeing all character blocks, then count
+ * number of character devices. (Once-only routine)
+ */
+cinit()
+{
+	register int ccp;
+	register struct cblock *cp;
+	register struct cdevsw *cdp;
+
+	ccp = (int)cfree;
+	ccp = (ccp+CROUND) & ~CROUND;
+	for(cp=(struct cblock *)ccp; cp < &cfree[nclist-1]; cp++) {
+		cp->c_next = cfreelist;
+		cfreelist = cp;
+		cfreecount += CBSIZE;
+	}
+	ccp = 0;
+	for(cdp = cdevsw; cdp->d_open; cdp++)
+		ccp++;
+	nchrdev = ccp;
 }
