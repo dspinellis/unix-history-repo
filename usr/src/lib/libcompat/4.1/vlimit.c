@@ -1,9 +1,11 @@
-/*	vlimit.c	4.1	83/06/20	*/
+/*	vlimit.c	4.2	83/06/20	*/
 
 /*
  * (Almost) backwards compatible vlimit.
  */
+#include <sys/time.h>
 #include <sys/resource.h>
+#include <errno.h>
 
 /* LIM_NORAISE is not emulated */
 #define	LIM_NORAISE	0	/* if <> 0, can't raise limits */
