@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -581,7 +581,7 @@ setsender(from, e, delimptr, internal)
 	rewrite(pvp, 3);
 	rewrite(pvp, 1);
 	rewrite(pvp, 4);
-	cataddr(pvp, buf, sizeof buf, '\0');
+	cataddr(pvp, NULL, buf, sizeof buf, '\0');
 	e->e_sender = newstr(buf);
 	define('f', e->e_sender, e);
 

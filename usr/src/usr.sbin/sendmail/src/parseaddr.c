@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.32 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -883,7 +883,7 @@ _rewrite(pvp, ruleset)
 					/* match any single token not in a class */
 					s = stab(ap, ST_CLASS, ST_FIND);
 					if (s != NULL && bitnset(rp[1], s->s_class))
-						goto backup;
+						goto extendclass;
 					break;
 				}
 
@@ -1263,7 +1263,7 @@ backup:
 
 				if (xpvp != NULL)
 				{
-					cataddr(xpvp, replac,
+					cataddr(xpvp, NULL, replac,
 						&pvpbuf[sizeof pvpbuf] - replac,
 						'\0');
 					*++arg_rvp = replac;
@@ -1285,7 +1285,7 @@ backup:
 				*rvp++ = NULL;
 			if (xpvp != NULL)
 			{
-				cataddr(xpvp, replac,
+				cataddr(xpvp, NULL, replac,
 					&pvpbuf[sizeof pvpbuf] - replac, 
 					'\0');
 				*++arg_rvp = replac;
@@ -1511,7 +1511,7 @@ buildaddr(tv, a)
 		}
 		if ((**tv & 0377) != CANONUSER)
 			syserr("554 buildaddr: error: no user");
-		cataddr(++tv, buf, sizeof buf, ' ');
+		cataddr(++tv, NULL, buf, sizeof buf, ' ');
 		stripquotes(buf);
 #ifdef LOG
 		if (LogLevel > 8)
@@ -1573,7 +1573,7 @@ buildaddr(tv, a)
 		else if (*p == ':')
 		{
 			/* may be :include: */
-			cataddr(tv, buf, sizeof buf, '\0');
+			cataddr(tv, NULL, buf, sizeof buf, '\0');
 			stripquotes(buf);
 			if (strncasecmp(buf, ":include:", 9) == 0)
 			{
@@ -1596,7 +1596,7 @@ buildaddr(tv, a)
 	rewrite(tv, 4);
 
 	/* save the result for the command line/RCPT argument */
-	cataddr(tv, buf, sizeof buf, '\0');
+	cataddr(tv, NULL, buf, sizeof buf, '\0');
 	a->q_user = buf;
 
 	/*
@@ -1615,6 +1615,8 @@ buildaddr(tv, a)
 **
 **	Parameters:
 **		pvp -- parameter vector to rebuild.
+**		evp -- last parameter to include.  Can be NULL to
+**			use entire pvp.
 **		buf -- buffer to build the string into.
 **		sz -- size of buf.
 **		spacesub -- the space separator character; if null,
@@ -1628,8 +1630,9 @@ buildaddr(tv, a)
 */
 
 void
-cataddr(pvp, buf, sz, spacesub)
+cataddr(pvp, evp, buf, sz, spacesub)
 	char **pvp;
+	char **evp;
 	char *buf;
 	register int sz;
 	char spacesub;
@@ -1658,7 +1661,8 @@ cataddr(pvp, buf, sz, spacesub)
 		oatomtok = natomtok;
 		p += i;
 		sz -= i + 1;
-		pvp++;
+		if (pvp++ == evp)
+			break;
 	}
 	*p = '\0';
 }
