@@ -1,10 +1,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.18		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.19		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.18		%G%);
+SCCSID(@(#)srvrsmtp.c	3.19		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -41,6 +41,7 @@ struct cmd
 # define CMDDBGSHOWQ	12	/* _showq -- show send queue (DEBUG) */
 # define CMDDBGDEBUG	13	/* _debug -- set debug mode */
 # define CMDDBGVERBOSE	14	/* _verbose -- go into verbose mode */
+# define CMDDBGKILL	15	/* _kill -- kill sendmail */
 
 static struct cmd	CmdTab[] =
 {
@@ -60,6 +61,7 @@ static struct cmd	CmdTab[] =
 	"_showq",	CMDDBGSHOWQ,
 	"_debug",	CMDDBGDEBUG,
 	"_verbose",	CMDDBGVERBOSE,
+	"_kill",	CMDDBGKILL,
 # endif DEBUG
 	NULL,		CMDERROR,
 };
@@ -261,6 +263,13 @@ smtp()
 		  case CMDDBGVERBOSE:	/* set verbose mode */
 			Verbose = TRUE;
 			message("200", "Verbose mode");
+			break;
+
+		  case CMDDBGKILL:	/* kill the parent */
+			if (kill(MotherPid, SIGTERM) >= 0)
+				message("200", "Mother is dead");
+			else
+				message("500", "Can't kill Mom");
 			break;
 # endif DEBUG
 
