@@ -9,16 +9,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)m.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)m.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef DBI
+#include <db.h>
+#endif
 
 #include "ed.h"
 #include "extern.h"
@@ -32,7 +35,7 @@ m(inputt, errnum)
 	FILE *inputt;
 	int *errnum;
 {
-	LINE *l_dest, *l_old_top, *l_old_bottom;
+	LINE *l_dest=NULL, *l_old_top, *l_old_bottom;
 
 	/* Set l_dest here. */
 	if (((ss = getc(inputt)) != '\n') && (ss != EOF)) {
@@ -46,8 +49,6 @@ m(inputt, errnum)
 		l_dest = address_conv(NULL, inputt, errnum);
 	} else
 		(ungetc(ss, inputt), *errnum = -1);
-	if (sigint_flag)
-		SIGINT_ACTION;
 	if (*errnum < 0) {
 		strcpy(help_msg, "bad destination address");
 		return;
@@ -62,13 +63,11 @@ m(inputt, errnum)
 		if (start_default)
 			start = End;
 	if (start == NULL) {
-		strcpy(help_msg, "bad address");
+		strcpy(help_msg, "buffer empty");
 		*errnum = -1;
 		return;
 	}
 	start_default = End_default = 0;
-	if (sigint_flag)
-		SIGINT_ACTION;
 
 	/* Do some address checking. */
 	if ((l_dest) && ((l_dest == start) ||
@@ -87,15 +86,19 @@ m(inputt, errnum)
 	 * Some more address checking. These are "legal" command constructions
 	 * but are kind-a useless since the buffer doesn't change.
 	 */
+	*errnum = 1;
 	if ((start == l_dest) || (End == l_dest))
 		return;
 	if ((start == top) && (End == bottom))
 		return;
 	if ((start == top) && (l_dest == NULL))
 		return;
+	*errnum = 0;
 
 	l_old_top = top;
 	l_old_bottom = bottom;
+
+	sigspecial++;
 
 	if (start == top) {
 		top = End->below;
@@ -144,6 +147,8 @@ m(inputt, errnum)
 	if (l_dest)
 		l_dest->below = start;
 	current = start;
+
+	sigspecial--;
 
 	*errnum = 1;
 }

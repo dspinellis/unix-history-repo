@@ -9,17 +9,20 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)u.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)u.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef DBI
+#include <db.h>
+#endif
 
 #include "ed.h"
 #include "extern.h"
@@ -55,6 +58,7 @@ undo()
 	LINE *l_current, *l_bottom, *l_top;
 	struct u_layer *l_old_u_stk, *l_temp;
 
+	sigspecial++;
 	/* This is done because undo can be undone. */
 	l_current = u_current;
 	l_top = u_top;
@@ -78,6 +82,9 @@ undo()
 	current = l_current;
 	top = l_top;
 	bottom = l_bottom;
+	sigspecial--;
+	if (sigint_flag && (!sigspecial))
+		SIGINT_ACTION;
 }
 
 /*
@@ -97,6 +104,7 @@ u_clr_stk()
 	u_top = top;
 	u_bottom = bottom;
 
+	sigspecial++;
 	/* Only if there is something to delete in the buffer. */
 	if ((u_stk) && (d_stk))
 		d_do();
@@ -107,6 +115,9 @@ u_clr_stk()
 		free(l_temp);
 	}
 	u_stk = NULL;		/* Just to sure. */
+	sigspecial--;
+	if (sigint_flag && (!sigspecial))
+		SIGINT_ACTION;
 }
 
 /*
@@ -128,6 +139,7 @@ u_add_stk(in)
 		strcpy(help_msg, "undo: out of memory error");
 		return;
 	}
+	sigspecial++;
 	if (u_stk == NULL)
 		(l_now->below) = NULL;
 	else
@@ -135,4 +147,7 @@ u_add_stk(in)
 	u_stk = l_now;
 	(u_stk->cell) = in;
 	(u_stk->val) = (*(u_stk->cell));
+	sigspecial--;
+	if (sigint_flag && (!sigspecial))
+		SIGINT_ACTION;
 }

@@ -9,16 +9,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)i.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)i.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef DBI
+#include <db.h>
+#endif
 
 #include "ed.h" 
 #include "extern.h"
@@ -51,8 +54,6 @@ i(inputt, errnum)
 	l_address = End;
 #endif
 
-	if (sigint_flag)
-		SIGINT_ACTION;
 	/*
 	 * 'i' is just a variation on 'a': completely true with BSD; with
 	 * POSIX we have to fake the location of "current" in a special case.

@@ -7,20 +7,32 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ed.h	5.2 (Berkeley) %G%
+ *	@(#)ed.h	5.3 (Berkeley) %G%
  */
 
-#define	FILENAME_LEN	1023
+#define	FILENAME_LEN	PATH_MAX
 #define	JMP_SET		(int)0
 #define	INTERUPT	(int)1
 #define	HANGUP		(int)2
-#define	SIGINT_ACTION	longjmp(ctrl_position, INTERUPT); fflush(stdin)
+#define	SIGINT_ACTION	longjmp(ctrl_position, INTERUPT)
+#define SIGINT_ILACTION	longjmp(ctrl_position2, INTERUPT)
 #define	SIGHUP_ACTION	longjmp(ctrl_position, HANGUP)
 #define	NN_MAX_START	510
+#ifndef STDOUT_FILENO
+#define STDOUT_FILENO 1
+#endif
 
 typedef struct A {
 	struct A *above, *below;
+#ifdef STDIO
+	long handle;
+#endif
+#ifdef DBI
 	recno_t handle;
+#endif
+#ifdef MEMORY
+	char *handle;
+#endif
 	size_t len;
 } LINE;
 
@@ -51,20 +63,28 @@ extern char *filename_current, *buf;
 extern int zsnum;  /* z sticky number */
 extern LINE *top, *bottom; /* ...of the buffer */
 extern int ss, explain_flag, name_set;
-extern int filename_flag, add_flag;
+extern int filename_flag, add_flag, join_flag;
 extern long change_flag;
 extern int pat_err, flag, g_flag, GV_flag, printsfx;
 
+#ifdef STDIO
+extern FILE *fhtmp;
+extern int file_seek;
+extern char *template;
+#endif
+
+#ifdef DBI
 extern DB *dbhtmp;
 extern char *template;
+#endif
 
 extern struct u_layer *u_stk;
 extern LINE *u_current, *u_top, *u_bottom;
 extern int u_set, line_length;
 extern struct d_layer *d_stk;
 
-extern int sigint_flag, sighup_flag;
-extern jmp_buf ctrl_position;
+extern int sigint_flag, sighup_flag, sigspecial, sigspecial2;
+extern jmp_buf ctrl_position, ctrl_position2;
 
 #define RE_SEC 10
 extern regex_t RE_comp;

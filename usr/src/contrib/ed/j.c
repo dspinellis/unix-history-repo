@@ -9,17 +9,20 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)j.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)j.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef DBI
+#include <db.h>
+#endif
 
 #include "ed.h" 
 #include "extern.h"
@@ -41,8 +44,13 @@ j(inputt, errnum)
 	if (start_default && End_default) {
 		start = current;
 		*errnum = 1;
-		if ((start->below) != NULL)
-			End = start->below;
+		if (start == NULL) {
+			strcpy(help_msg, "buffer empty");
+			*errnum = -1;
+			return;
+		} else
+			if ((start->below) != NULL)
+				End = start->below;
 		else
 			return;
 	} else
@@ -66,15 +74,14 @@ j(inputt, errnum)
 			}
 			return;
 		}
+
 	if (start == NULL) {
-		strcpy(help_msg, "bad address");
+		strcpy(help_msg, "buffer empty");
 		*errnum = -1;
-		ungetc('\n', inputt);
 		return;
 	}
+
 	start_default = End_default = 0;
-	if (sigint_flag)
-		SIGINT_ACTION;
 
 	if (rol(inputt, errnum))
 		return;
@@ -92,19 +99,19 @@ j(inputt, errnum)
 		 * The new line is bigger than any so far, so make more
 		 * space.
 		 */
+		sigspecial++;
 		free(text);
 		nn_max = l_ttl;
 		text = calloc(l_ttl + 2, sizeof(char));
+		sigspecial--;
 		if (text == NULL) {
 			*errnum = -1;
 			strcpy(help_msg, "out of memory error");
 			return;
 		}
 	}
-	if (sigint_flag)
-		SIGINT_ACTION;
 	l_temp1 = calloc(l_ttl + 2, sizeof(char));
-	if (text == NULL) {
+	if (l_temp1 == NULL) {
 		*errnum = -1;
 		strcpy(help_msg, "out of memory error");
 		return;
@@ -112,11 +119,13 @@ j(inputt, errnum)
 	l_temp1[0] = '\0';
 
 	l_ptr = start;
+
+	sigspecial++;
 	for (;;) {
 		/* Get each line and catenate. */
-		if (sigint_flag)
-			goto point;
 		get_line(l_ptr->handle, l_ptr->len);
+		if (sigint_flag && (!sigspecial))
+			goto point;
 		strcat(l_temp1, text);
 		l_ptr = l_ptr->below;
 		if (l_ptr == End->below)
@@ -124,7 +133,7 @@ j(inputt, errnum)
 	}
 
 	l_temp_line = malloc(sizeof(LINE));
-	if (text == NULL) {
+	if (l_temp_line == NULL) {
 		*errnum = -1;
 		strcpy(help_msg, "out of memory error");
 		return;
@@ -144,12 +153,18 @@ j(inputt, errnum)
 	u_add_stk(&(start->above));
 	(start->above) = l_temp_line;
 
+	sigspecial--;
+	if (sigint_flag && (!sigspecial))
+		goto mk;
 	ungetc(ss, inputt);
 	/* Delete the lines used to make the joined line. */
+	join_flag = 1;
 	d(inputt, errnum);
+	join_flag = 0;
 	if (*errnum < 0)
 		return;
 	*errnum = 0;
+mk:
 	current = l_temp_line;
 
 	*errnum = 1;

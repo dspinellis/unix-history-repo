@@ -9,12 +9,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)d.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)d.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
+#ifdef DBI
 #include <db.h>
+#endif
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
@@ -46,14 +48,18 @@ d(inputt, errnum)
 		if (start_default)
 			start = End;
 	if (start == NULL) {
-		strcpy(help_msg, "bad address");
+		strcpy(help_msg, "buffer empty");
 		*errnum = -1;
 		return;
 	}
 	start_default = End_default = 0;
 
-	if (rol(inputt, errnum))
-		return;
+	if (join_flag == 0) {
+		if (rol(inputt, errnum))
+			return;
+	}
+	else
+		ss = getc(inputt); /* fed back from join */
 
 	if ((u_set == 0) && (g_flag == 0))
 		u_clr_stk();	/* for undo */
@@ -62,15 +68,14 @@ d(inputt, errnum)
 		*errnum = 1;
 		return;
 	}
-	if (sigint_flag)
-		SIGINT_ACTION;
 
 	d_add(start, End);	/* for buffer clearing later(!) */
 
 	/*
-	 * Now change preserve the pointers in case of undo and then adjust
+	 * Now change & preserve the pointers in case of undo and then adjust
 	 * them.
 	 */
+	sigspecial++;
 	if (start == top) {
 		top = End->below;
 		if (top != NULL) {
@@ -97,14 +102,10 @@ d(inputt, errnum)
 	ku_chk(start, End, NULL);
 	change_flag = 1L;
 
-	if (sigint_flag)	/* next stable spot */
-		SIGINT_ACTION;
-
-	if (start == End) {
-		*errnum = 1;
-		return;
-	}
 	*errnum = 1;
+	sigspecial--;
+	if (sigint_flag && (!sigspecial))	/* next stable spot */
+		SIGINT_ACTION;
 }
 
 
@@ -135,23 +136,30 @@ void
 d_do()
 {
 	struct d_layer *l_temp;
+#ifdef DBI
 	DBT l_db_key;
+#endif
 	LINE *l_temp2, *l_temp3;
 	int l_flag;
 
 	l_temp = d_stk;
+	sigspecial++;
 	do {
 		l_flag = 0;
 		l_temp2 = l_temp->begin;
 		do {
 			l_temp3 = l_temp2;
-			/*
-			 * We do it, but db(3) says it doesn't really do it
-			 * yet.
-			 */
+#ifdef STDIO
+			/* no garbage collection done currently */
+#endif
+#ifdef DBI
 			l_db_key.size = sizeof(recno_t);
 			l_db_key.data = &(l_temp2->handle);
 			(dbhtmp->del) (dbhtmp, &l_db_key, (u_int) 0);
+#endif
+#ifdef MEMORY
+			free(l_temp2->handle);
+#endif
 			if ((l_temp->end) == l_temp2)
 				l_flag = 1;
 			l_temp2 = l_temp3->below;
@@ -164,4 +172,7 @@ d_do()
 	} while (d_stk);
 
 	d_stk = NULL;		/* just to be sure */
+	sigspecial--;
+	if (sigint_flag && (!sigspecial))
+		SIGINT_ACTION;
 }

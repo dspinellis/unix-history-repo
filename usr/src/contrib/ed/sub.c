@@ -9,17 +9,20 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sub.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)sub.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef DBI
+#include <db.h>
+#endif
 
 #include "ed.h"
 #include "extern.h"
@@ -58,8 +61,7 @@ s(inputt, errnum)
 	if (l_first_pass_flag == 0)
 		l_match = l_repl = NULL;
 	l_match2 = get_pattern(l_sl, inputt, errnum, 0);
-	if (sigint_flag)
-		SIGINT_ACTION;
+
 	if (*errnum < 0) {
 		if ((*errnum == -2) && (l_sl != '\n'))
 			return;
@@ -106,7 +108,7 @@ s(inputt, errnum)
 	l_match = l_match2;
 	*errnum = 0;
 	l_repl = get_pattern(ss, inputt, errnum, 1);
-	if (sigint_flag)
+	if (sigint_flag && (!sigspecial))
 		SIGINT_ACTION;
 	l_global = l_print = 0;
 	if (*errnum < 0)
@@ -151,9 +153,14 @@ bcg1:
 		return;
 	} else
 		if ((l_sr_flag == 0) && (l_match[1] || (RE_patt == NULL))) {
+			int l_m_len = 2 + strlen(l_match);
+			sigspecial++;
 			free(RE_patt);
-			RE_patt = malloc(sizeof(char) * (2 + strlen(l_match)));
-			bcopy(l_match, RE_patt, strlen(l_match + 1));
+			RE_patt = malloc(sizeof(char) * (l_m_len));
+			bcopy(l_match, RE_patt, l_m_len);
+			sigspecial--;
+			if (sigint_flag && (!sigspecial))
+				SIGINT_ACTION;
 		}
 	RE_sol = (l_match[1] == '^') ? 1 : 0;
 	if ((l_match[1]) &&
@@ -165,16 +172,16 @@ bcg1:
 		return;
 	}
 	RE_flag = 1;
-	if (sigint_flag)
+	if (sigint_flag && (!sigspecial))
 		SIGINT_ACTION;
 bcg2:
 	current = start;
 	l_s_flag = 0;
 	do {
-		if (sigint_flag)
-			SIGINT_ACTION;
 		RE_match[0].rm_eo = 0;
 		get_line(current->handle, current->len);
+		if (sigint_flag && (!sigspecial))
+			SIGINT_ACTION;
 		l_count = l_count2;
 		l_local = text;
 #ifndef REG_STARTEND
@@ -233,6 +240,7 @@ bcg2:
 		l_temp_line = current->above;
 		l_temp_line2 = current->below;
 		l_local_temp = l_local;
+		sigspecial++;
 		for (;;) {
 			/*
 			 * Make the new string the one for this line.  Check if
@@ -280,6 +288,9 @@ bcg2:
 			u_add_stk(&(l_temp_line2->above));
 			(l_temp_line2->above) = current;
 		}
+		sigspecial--;
+		if (sigint_flag && (!sigspecial))
+			SIGINT_ACTION;
 		if (l_local_temp != text)
 			free(l_local_temp);
 		current = current->below;

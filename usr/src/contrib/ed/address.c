@@ -9,16 +9,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)address.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)address.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef DBI
+#include <db.h>
+#endif
 
 #include "ed.h"
 #include "extern.h"
@@ -97,7 +100,7 @@ num_to_address(num, errnum)
  * 3 and 5 are dropped as cmd_loop rolls through here the extra times).  Hence,
  * the code may look a little wierder than it should.  The variable l_order is
  * used to control for legally constructed addresses as described in ed(1).  So,
- * "$-21" and "/RE/++++" are leagal but /RE/-$ is not.
+ * "$-21" and "/RE/++++" are legal but /RE/-$ is not.
  */
 LINE *
 address_conv(tempp, inputt, errnum)
@@ -176,7 +179,7 @@ address_conv(tempp, inputt, errnum)
 			l_order = 4;
 			switch (ss) {
 			case '\'':
-				l_dot = get_mark(errnum);
+				l_dot = get_mark(inputt, errnum);
 				break;
 			case '$':
 				l_dot = bottom;	/* set to bottom */

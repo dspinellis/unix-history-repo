@@ -9,20 +9,25 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)filename.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)filename.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
+#include <limits.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef DBI
+#include <db.h>
+#endif
+
 #include "ed.h" 
 #include "extern.h"
+
 
 /*
  * A central function for any command that has to deal with a filename
@@ -77,10 +82,12 @@ filename(inputt, errnum)
 			if ((ss == '!') && (l_esc == 0))
 				l_bang_flag = 1;
 			else
-				if (ss != ' ')
+				if ((ss != ' ') || (l_bang_flag))
 					l_fname[l_cnt++] = ss;
-				else
-					continue;
+				else {
+					*errnum = -1;
+					return;
+				}
 
 		if (l_cnt >= FILENAME_LEN) {
 			strcpy(help_msg, "filename+path length too long");
@@ -104,6 +111,7 @@ filename(inputt, errnum)
 			*errnum = -1;
 			if (namestream != NULL)
 				pclose(namestream);
+			ungetc('\n', inputt);
 			return (NULL);
 		}
 		l_len = strlen(l_fname) - 1;
@@ -111,9 +119,13 @@ filename(inputt, errnum)
 			l_fname[l_len] = '\0';
 		pclose(namestream);
 	} else
-		if (l_fname[0] == '\0')
+		if (l_fname[0] == '\0') {
+			sigspecial++;
 			strcpy(l_fname, filename_current);
-		else
-			*errnum = 1;
+			sigspecial--;
+			if (sigint_flag && (!sigspecial))
+				SIGINT_ACTION;
+		}
+	*errnum = 1;
 	return (l_fname);
 }

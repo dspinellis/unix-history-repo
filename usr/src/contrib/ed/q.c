@@ -9,18 +9,21 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)q.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)q.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#ifdef DBI
+#include <db.h>
+#endif
 
 #include "ed.h"
 #include "extern.h"
@@ -37,6 +40,9 @@ q(inputt, errnum)
 {
 	register int l_ss = ss;
 	int l_which;			/* Which is it? 'q' or 'Q'. */
+
+	sigspecial = 1; /* yes, 1, because we want to ensure it's on */
+	sigspecial2 = 0;
 
 	l_which = ss;
 	for (;;) {
@@ -69,7 +75,14 @@ q(inputt, errnum)
 	u_clr_stk();
 	free(text);
 	free(filename_current);
+#ifdef STDIO
+	fclose(fhtmp);
+#endif
+#ifdef DBI
 	(dbhtmp->close) (dbhtmp);	/* Overhead as the cache is flushed. */
+#endif
+#ifndef MEMORY
 	unlink(template);
+#endif
 	exit(0);
 }

@@ -9,12 +9,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)g.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)g.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
+#include <limits.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
@@ -22,6 +22,10 @@ static char sccsid[] = "@(#)g.c	5.2 (Berkeley) %G%";
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#ifdef DBI
+#include <db.h>
+#endif
 
 #include "ed.h"
 #include "extern.h"
@@ -34,7 +38,7 @@ static void	w_cmd_l_file __P((FILE *, FILE *, int *));
  * buffer (it may have disappeared because of the commands in the
  * command list).
  */
-int
+static int
 find_line(dot)
 	LINE *dot;
 {
@@ -55,7 +59,7 @@ find_line(dot)
  * This allows us to use cmd_loop to run the command list because
  * we "trick" cmd_loop into reading a STDIO file instead of stdin.
  */
-void
+static void
 w_cmd_l_file(fp, inputt, errnum)
 	FILE *fp, *inputt;
 	int *errnum;
@@ -111,16 +115,18 @@ g(inputt, errnum)
 		if (start_default)
 			start = End;
 	if (start == NULL) {
-		strcpy(help_msg, "bad address");
+		strcpy(help_msg, "buffer empty");
 		*errnum = -1;
 		return;
 	}
-	if (sigint_flag)
-		SIGINT_ACTION;
 
 	if (l_template_flag == 0) {
+		sigspecial++;
 		l_template_flag = 1;
 		l_template_g = calloc(FILENAME_LEN, sizeof(char));
+		sigspecial--;
+		if (sigint_flag && (!sigspecial))
+			SIGINT_ACTION;
 		if (l_template_g == NULL) {
 			*errnum = -1;
 			strcpy(help_msg, "out of memory error");
@@ -144,9 +150,13 @@ g(inputt, errnum)
 		GV_flag = 1;
 		l_fp = stdin;
 	} else {
+		sigspecial++;
 		if ((l_fp = fopen(l_template_g, "w+")) == NULL) {
-			perror("ed: file I/O error");
-			exit(1);
+			perror("ed: file I/O error, save buffer in ed.hup");
+			do_hup(); /* does not return */
+		sigspecial--;
+		if (sigint_flag && (!sigspecial))
+			goto point;
 		}
 	}
 
@@ -154,8 +164,7 @@ g(inputt, errnum)
 
 	/* Get the RE for the global command. */
 	l_patt = get_pattern(ss, inputt, errnum, 0);
-	if (sigint_flag)
-		SIGINT_ACTION;
+
 	/* Instead of: if ((*errnum == -1) && (ss == '\n'))... */
 	if (*errnum < -1)
 		return;
@@ -166,8 +175,12 @@ g(inputt, errnum)
 		return;
 	} else
 		if (l_patt[1] || (RE_patt == NULL)) {
+			sigspecial++;
 			free(RE_patt);
 			RE_patt = l_patt;
+			sigspecial--;
+			if (sigint_flag && (!sigspecial))
+				goto point;
 		}
 	RE_sol = (RE_patt[1] == '^') ? 1 : 0;
 	if ((RE_patt[1]) &&
@@ -179,21 +192,27 @@ g(inputt, errnum)
 		return;
 	}
 	RE_flag = 1;
-	if (sigint_flag)
-		SIGINT_ACTION;
+
+	if (GV_flag)
+		ss = getc(inputt);
+
 #ifdef POSIX
 	l_posix_cur = current;
 #endif
 	current = start;
+
+	sigspecial++;
 
 	for (;;) {
 		/*
 		 * Find the lines in the buffer that the global command wants
 		 * to work with.
 		 */
-		if (sigint_flag)
+		if (sigint_flag && (!sigspecial))
 			goto point;
 		get_line(current->handle, current->len);
+		if (sigint_flag && (!sigspecial))
+			goto point;
 		l_re_success =
 		    regexec(&RE_comp, text, (size_t) RE_SEC, RE_match, 0);
 		/* l_re_success=0 => success */
@@ -229,6 +248,9 @@ g(inputt, errnum)
 			break;
 		current = current->below;
 	}
+	sigspecial--;
+	if (sigint_flag && (!sigspecial))
+		goto point;
 
 	if (l_Head == NULL) {
 		strcpy(help_msg, "no matches found");
@@ -239,30 +261,40 @@ g(inputt, errnum)
 		return;
 	}
 	/* if non-interactive, get the command list */
-	if (GV_flag == 0)
+	if (GV_flag == 0) {
+		sigspecial++;
 		w_cmd_l_file(l_fp, inputt, errnum);
+		sigspecial--;
+		if (sigint_flag && (!sigspecial))
+			goto point;
+	}
 	l_gut = l_Head;
 
 	if (g_flag == 0)
 		u_clr_stk();
 
+	sigspecial++;
 	for (;;) {
 		/*
 		 * Execute the command list on the lines that still exist that
 		 * we indicated earlier that global wants to work with.
 		 */
-		if (sigint_flag)
+		if (sigint_flag && (!sigspecial))
 			goto point;
 		if (GV_flag == 0)
 			fseek(l_fp, (off_t)0, 0);
 		if (find_line(l_gut->cell)) {
 			current = (l_gut->cell);
 			get_line(current->handle, current->len);
+			if (sigint_flag && (!sigspecial))
+				goto point;
 			if (GV_flag == 1)
 				printf("%s\n", text);
 			g_flag++;
 			explain_flag--;
+			sigspecial--;
 			cmd_loop(l_fp, errnum);
+			sigspecial++;
 			explain_flag++;
 			g_flag--;
 			if ((GV_flag == 1) && (*errnum < 0)) {
@@ -281,6 +313,9 @@ point:
 		fclose(l_fp);
 		unlink(l_template_g);
 	}
+	else {
+		ungetc("\n", inputt);
+	}
 	GV_flag = 0;
 clean:
 	/* clean up */
@@ -295,4 +330,7 @@ clean:
 #ifdef POSIX
 	current = l_posix_cur;
 #endif
+	sigspecial--;
+	if (sigint_flag && (!sigspecial))
+		SIGINT_ACTION;
 }

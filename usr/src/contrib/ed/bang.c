@@ -9,17 +9,21 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)bang.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)bang.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
+#include <limits.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef DBI
+#include <db.h>
+#endif
 
 #include "ed.h"
 #include "extern.h"
@@ -39,8 +43,6 @@ bang(inputt, errnum)
 	int l_cnt = 0, l_esc = 0;
 
 	for (;;) {
-		if (sigint_flag)
-			SIGINT_ACTION;
 		ss = getchar();
 		if ((ss == '\\') && (l_esc == 0)) {
 			ss = getchar();
@@ -62,9 +64,13 @@ bang(inputt, errnum)
 			else
 				if ((ss == '%') && (l_esc == 0)) {
 					l_shellcmd[l_cnt] = '\0';
-					strcat(l_shellcmd, filename_current);
-					l_cnt =
-					    l_cnt + strlen(filename_current);
+					if (filename_current) {
+						strcat(l_shellcmd,
+						    filename_current);
+						l_cnt =
+						    l_cnt +
+						    strlen(filename_current);
+					}
 				} else
 					l_shellcmd[l_cnt++] = ss;
 		if (l_cnt >= FILENAME_LEN) {

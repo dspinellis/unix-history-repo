@@ -9,18 +9,23 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
+#include <sys/ioctl.h>
 
-#include <db.h>
+#include <limits.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef DBI
+#include <db.h>
+#endif
 
 #include "ed.h"
 #include "extern.h"
@@ -31,10 +36,16 @@ static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
  */
 
 int nn_max, nn_max_flag, start_default, End_default, address_flag;
-int zsnum, filename_flag, add_flag=0;
+int zsnum, filename_flag, add_flag=0, join_flag=0;
 int help_flag=0;
+#ifdef STDIO
+FILE *fhtmp;
+int file_seek;
+#endif
 
+#ifdef DBI
 DB *dbhtmp;
+#endif
 
 LINE *nn_max_start, *nn_max_end;
 
@@ -59,8 +70,8 @@ int ss; /* for the getc() */
 int explain_flag=1, g_flag=0, GV_flag=0, printsfx=0;
 long change_flag=0L;
 int line_length;
-jmp_buf ctrl_position; 		/* For SIGnal handling. */
-int sigint_flag, sighup_flag, sigspecial;
+jmp_buf ctrl_position, ctrl_position2; /* For SIGnal handling. */
+int sigint_flag, sighup_flag, sigspecial=0, sigspecial2=0;
 
 static void sigint_handler __P((int));
 static void sighup_handler __P((int));
@@ -76,16 +87,16 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int l_num, l_ret, errnum = 0, l_err = 0;
-	char *l_fnametmp, l_bp[1024], *l_term;
+	int l_num, errnum = 0, l_err = 0;
+	char *l_fnametmp, *l_col;
+	struct winsize win;
 
-	l_term = getenv("TERM");
-	l_ret = tgetent(l_bp, l_term);
-	if (l_ret < 1)
-		line_length = 78;	/* Reasonable number for all term's. */
-	else
-		if ((line_length = tgetnum("co") - 1) < 2)
-			line_length = 78;
+	line_length = ((l_col = getenv("COLUMNS")) == NULL ? 0 : atoi(l_col));
+	if (line_length == 0 && isatty(STDOUT_FILENO) &&
+		ioctl(STDOUT_FILENO, TIOCGWINSZ, &win) != -1)
+		line_length = win.ws_col;
+	if (line_length == 0)
+		line_length = 78;
 
 	start = End = NULL;
 	top = bottom = NULL;
@@ -172,7 +183,7 @@ cmd_loop(inputt, errnum)
 	LINE *l_tempp;
 	int l_last, l_jmp_flag;
 
-	l_last = 0;
+	l_last = 0; /* value in l_last may be clobbered (reset to = 0) by longjump, but that's okay */
 
 	if (g_flag == 0) {	/* big, BIG trouble if we don't check! think. */
 		/* set the jump point for the signals */
@@ -187,7 +198,7 @@ cmd_loop(inputt, errnum)
 			sigint_flag = 0;
 			GV_flag = 0;	/* safest place to do these flags */
 			g_flag = 0;
-			printf("?\n");
+			printf("\n?\n");
 			break;
 		case HANGUP:		/* shouldn't get here. */
 			break;
@@ -204,9 +215,7 @@ cmd_loop(inputt, errnum)
 	for (;;) {
 		if (prompt_str_flg == 1)
 			(void)printf("%s", prompt_string);
-		sigspecial = 1;	/* see the SIGINT function above */
 		ss = getc(inputt);
-		sigspecial = 0;
 		*errnum = 0;
 		l_tempp = start = End = NULL;
 		start_default = End_default = 1;
@@ -470,13 +479,13 @@ cmd_loop(inputt, errnum)
 			else if (*errnum < 0) {
 errmsg:				while (((ss = getc(inputt)) != '\n') &&
 				    (ss != EOF));
-					if (help_flag == 1)
-						printf("%?: %s\n", help_msg);
-					else
-						printf("?\n");
-					if (g_flag > 0)
-						return;
-					break;
+				if (help_flag == 1)
+					printf("%?: %s\n", help_msg);
+				else
+					printf("?\n");
+				if (g_flag > 0)
+					return;
+				break;
 			}
 			l_last = ss;
 			ss = getc(inputt);
@@ -505,6 +514,9 @@ ed_exit(err)
           case 4:
 		(void)fprintf(stderr, "ed: out of memory error\n");
 		break;
+	  case 5:
+		(void)fprintf(stderr, "ed: unable to create buffer\n");
+		break;
           default:
 		(void)fprintf(stderr, "ed: command line error\n");
 		break;
@@ -526,8 +538,14 @@ sigint_handler(signo)
 	int signo;
 {
 	sigint_flag = 1;
-	if (sigspecial)  /* Unstick when SIGINT on read(stdin). */
-		SIGINT_ACTION;
+	if (sigspecial2) {
+		sigspecial2 = 0;
+		SIGINT_ILACTION;
+	}
+	else
+		if (sigspecial);
+		else
+			SIGINT_ACTION;
 }
 
 static void

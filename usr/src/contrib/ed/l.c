@@ -9,16 +9,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)l.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)l.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef DBI
+#include <db.h>
+#endif
 
 #include "ed.h"
 #include "extern.h"
@@ -41,7 +44,7 @@ l(inputt, errnum)
 			start = End;
 
 	if (start == NULL) {
-		strcpy(help_msg, "bad address");
+		strcpy(help_msg, "empty buffer");
 		*errnum = -1;
 		return;
 	}
@@ -56,11 +59,11 @@ l(inputt, errnum)
 		 * Print out the line character-by-character and split the
 		 * line when line length is at line_length.
 		 */
-		if (sigint_flag)
-			SIGINT_ACTION;
 		if (current == NULL)
 			break;
 		get_line(current->handle, current->len);
+		if (sigint_flag && (!sigspecial))
+			SIGINT_ACTION;
 		for (l_cnt = 0; l_cnt < current->len; l_cnt++, l_len += 2) {
 			/* Check if line needs to be broken first. */
 			if ((l_len) % line_length == 0)

@@ -9,17 +9,20 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input_lines.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)input_lines.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef DBI
+#include <db.h>
+#endif
 
 #include "ed.h"
 #include "extern.h"
@@ -39,7 +42,7 @@ input_lines(fp, errnum)
 	register char *l_text = text;
 	LINE *l_temp_line, *l_temp1;
 	long l_ttl = 0;
-	int l_nn_max = nn_max;
+	int l_nn_max = nn_max, l_jmp_flag;
 	char *l_text2;
 
 	if (End_default)
@@ -48,6 +51,7 @@ input_lines(fp, errnum)
 		start = End;
 	start_default = End_default = 0;
 
+	sigspecial++;
 	/* start == NULL means line 0 which is legal for this function only. */
 	nn_max_end = l_temp_line = start;
 	if (start == NULL) {
@@ -57,20 +61,34 @@ input_lines(fp, errnum)
 		u_add_stk(&(start->below));
 		l_temp1 = start->below;
 	}
+	sigspecial--;
+	if (sigint_flag && (!sigspecial))
+		SIGINT_ACTION;
+
+	sigspecial++;
 
 	for (;;) {
+		if (sigint_flag && (!sigspecial))
+			goto point;
 		/* If NULL or bit-8 high not text; chuck. */
-		if ((l_ss = getc(fp)) == EOF)
+		l_ss = getc(fp);
+		if (l_ss == EOF) {
+			if (add_flag) {
+				l_text[l_nn++] = '\0';
+				goto eof_mk;
+			}
 			break;
+		}
 		if ((!l_ss) || (l_ss > 127))
 			continue;
-		if (sigint_flag)
-			goto point;
-		l_text[l_nn++] = (char) l_ss;
+		l_text[l_nn++] = (char)l_ss;
 		if (l_ss == '\n') {
+			if (sigint_flag && (!sigspecial))
+				goto point;
 			l_text[l_nn - 1] = '\0';
 			if ((l_nn == 2) && (l_text[0] == '.') && add_flag)
 				break;
+eof_mk:
 			nn_max_end = malloc(sizeof(LINE));
 			if (nn_max_end == NULL) {
 				*errnum = -1;
@@ -89,6 +107,8 @@ input_lines(fp, errnum)
 
 			l_ttl += l_nn;
 			l_nn = 0;
+			if (l_ss == EOF)
+				break;
 		} else
 			if (l_nn > l_nn_max) {
 				l_nn_max += 512;
@@ -118,7 +138,11 @@ point:	current = nn_max_end;
 			(l_temp1->above) = nn_max_end;
 		}
 	change_flag = 1;
+	sigspecial--;
+	if (sigint_flag && (!sigspecial))
+		SIGINT_ACTION;
 	*errnum = 1;
 	ss = l_ss;
+	sigspecial = 0;
 	return (l_ttl);
 }
