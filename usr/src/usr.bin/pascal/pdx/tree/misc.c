@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)misc.c 1.3 %G%";
+static char sccsid[] = "@(#)misc.c 1.4 %G%";
 
 /*
  * Miscellaneous commands "edit" and "help".
@@ -63,7 +63,7 @@ char *filename;
 
 gripe()
 {
-	char *maintainer = "csvax:linton";
+	char *maintainer = "linton@ucbvax";
 
 	puts("Type control-D to end your message.  Be sure to include");
 	puts("your name and the name of the file you are debugging.");
