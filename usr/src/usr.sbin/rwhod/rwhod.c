@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.5 82/11/14";
+static char sccsid[] = "@(#)rwhod.c	4.6 82/11/15";
 #endif
 
 #include <sys/types.h>
@@ -99,7 +99,7 @@ main()
 	}
 	sin.sin_port = sp->s_port;
 	getkmem();
-	if ((s = socket(0, SOCK_DGRAM, 0, 0)) < 0) {
+	if ((s = socket(AF_INET, SOCK_DGRAM, 0, 0)) < 0) {
 		perror("rwhod: socket");
 		exit(1);
 	}

@@ -1,4 +1,4 @@
-/*	main.c	4.3	82/11/14	*/
+/*	main.c	4.4	82/11/15	*/
 
 /*
  * TFTP User Program -- Command Interface.
@@ -76,7 +76,7 @@ main(argc, argv)
 		fprintf(stderr, "tftp: udp/tftp: unknown service\n");
 		exit(1);
 	}
-	f = socket(0, SOCK_DGRAM, 0, 0);
+	f = socket(AF_INET, SOCK_DGRAM, 0, 0);
 	if (f < 0) {
 		perror("socket");
 		exit(3);
