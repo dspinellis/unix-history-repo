@@ -1,4 +1,4 @@
-#	@(#)Makefile.hp300	7.9 (Berkeley) %G%
+#	@(#)Makefile.hp300	7.10 (Berkeley) %G%
 #
 # Makefile for 4.4 BSD
 #
@@ -17,25 +17,71 @@
 #
 # -DTRACE	compile in kernel tracing hooks
 # -DQUOTA	compile in file system quotas
-#
-AS=	as ${PROF}
-CC=	cc ${PROF}
+
+
+# DEBUG is set to -g by config if debugging is requested (config -g).
+# PROF is set to -pg by config if profiling is requested (config -p).
+AS=	as ${DEBUG}
+CC=	cc ${DEBUG}
 CPP=	cpp
 LD=	ld
 TOUCH=	touch -f -c
+GPROF.EX=/usr/src/usr.lib/libc/csu/hp300/gmon.ex
 
+# source tree is located via $S relative to the compilation directory
 S=	../..
-HP300=	../../hp300
+HP300=	$S/hp300
 
 INCLUDES= -I. -I$S -I$S/sys
 COPTS=	${INCLUDES} ${IDENT} -DKERNEL -Dmc68020 -Dhp300 -DFPCOPROC -DREFBIT
 CFLAGS=	-O ${COPTS}
 
+# compile rules: rules are named ${TYPE}_${SUFFIX}${CONFIG_DEP}
+# where TYPE is NORMAL, DRIVER, or PROFILE}; SUFFIX is the file suffix,
+# capitalized (e.g. C for a .c file), and CONFIG_DEP is _C if the file
+# is marked as config-dependent.
+
+NORMAL_C=	${CC} -c ${CFLAGS} ${PROF} $<
+NORMAL_C_C=	${CC} -c ${CFLAGS} ${PROF} ${PARAM} $<
+
+DRIVER_C=	${CC} -c ${CFLAGS} ${PROF} $<
+DRIVER_C_C=	${CC} -c ${CFLAGS} ${PROF} ${PARAM} $<
+
+PROFILE_C=	${CC} -S -c ${COPTS} $<; \
+		ex - $*.s < ${GPROF.EX}; \
+		${AS} -o $@ $*.s; \
+		rm -f $*.s
+
+NORMAL_S=	${CPP} ${COPTS} $< | ${AS} -o $@
+NORMAL_S_C=	${CPP} ${COPTS} ${PARAM} $< | ${AS} -o $@
+
 %OBJS
 
 %CFILES
 
+# load lines for config "xxx" will be emitted as:
+# xxx: ${SYSTEM_DEP} swapxxx.o
+#	${SYSTEM_LD_HEAD}
+#	${SYSTEM_LD} swapxxx.o
+#	${SYSTEM_LD_TAIL}
+SYSTEM_OBJ=	locore.o ${OBJS} param.o ioconf.o
+#SYSTEM_DEP=	Makefile symbols.sort ${SYSTEM_OBJ}
+SYSTEM_DEP=	Makefile ${SYSTEM_OBJ}
+SYSTEM_LD_HEAD=	@echo loading $@; rm -f $@
+SYSTEM_LD=	@strip=-x; [ X${DEBUG} = X-g ] && strip=-X; \
+		${LD} $$strip -n -o $@ -e start ${SYSTEM_OBJ} vers.o
+#SYSTEM_LD_TAIL= @echo rearranging symbols;\
+#		symorder symbols.sort $@;\
+SYSTEM_LD_TAIL=	@size $@; chmod 755 $@; \
+		[ X${DEBUG} = X-g ] && { \
+		echo cp $@ $@.gdb; rm -f $@.gdb; cp $@ $@.gdb; \
+		echo strip -d $@; strip -d $@; } || true
+
 %LOAD
+
+newvers:
+	sh $S/conf/newvers.sh
+	${CC} $(CFLAGS) -c vers.c
 
 clean:
 	rm -f eddep *vmunix tags *.o locore.i [a-z]*.s \
