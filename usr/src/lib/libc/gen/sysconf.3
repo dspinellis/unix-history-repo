@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)sysconf.3	8.1 (Berkeley) %G%
+.\"	@(#)sysconf.3	5.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SYSCONF 3
@@ -16,9 +16,11 @@
 .Ft long
 .Fn sysconf "int name"
 .Sh DESCRIPTION
-.Bf -symbolic
-This interface is obsoleted by sysctl(3).
-.Ef
+.Pp
+This interface is defined by
+.St -p1003.1-88 .
+A far more complete interface is available using
+.Xr sysctl 3 .
 .Pp
 The
 .Fn sysconf
@@ -141,11 +143,16 @@ The value of the
 argument is invalid.
 .Sh SEE ALSO
 .Xr sysctl 3
-.Sh HISTORY
-The
-.Nm sysconf
-function first appeared in 4.4BSD.
 .Sh BUGS
 The value for _SC_STREAM_MAX is a minimum maximum, and required to be
 the same as ANSI C's FOPEN_MAX, so the returned value is a ridiculously
 small and misleading number.
+.Sh STANDARDS
+The
+.Fn sysconf
+function conforms to
+.St -p1003.1-88 .
+.Sh HISTORY
+The
+.Nm sysconf
+function first appeared in 4.4BSD.
