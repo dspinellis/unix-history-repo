@@ -1,4 +1,4 @@
-/*	trap.c	4.15	82/07/24	*/
+/*	trap.c	4.16	82/09/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -50,9 +50,7 @@ unsigned code;
 	register int *locr0 = ((int *)&psl)-PS;
 	register int i;
 	register struct proc *p;
-	time_t syst;
 
-	syst = u.u_vm.vm_stime;
 	if (USERMODE(locr0[PS])) {
 		type |= USER;
 		u.u_ar0 = locr0;
@@ -77,12 +75,8 @@ unsigned code;
 		i = SIGILL;
 		break;
 
-	case ASTFLT + USER:	/* Allow process switch */
+	case ASTFLT + USER:
 		astoff();
-		if ((u.u_procp->p_flag & SOWEUPC) && u.u_prof.pr_scale) {
-			addupc(pc, &u.u_prof, 1);
-			u.u_procp->p_flag &= ~SOWEUPC;
-		}
 		goto out;
 
 	case ARITHTRAP + USER:
@@ -146,10 +140,9 @@ out:
 		 */
 		(void) spl6();
 		setrq(p);
+		u.u_ru.ru_nivcsw++;
 		swtch();
 	}
-	if (u.u_prof.pr_scale && (syst -= u.u_vm.vm_stime))
-		addupc(locr0[PC], &u.u_prof, (int)-syst);
 	curpri = p->p_pri;
 }
 
@@ -165,10 +158,8 @@ syscall(sp, type, code, pc, psl)
 	register int i;				/* known to be r9 below */
 	register struct sysent *callp;
 	register struct proc *p;
-	time_t syst;
 	int opc;
 
-	syst = u.u_vm.vm_stime;
 	if (!USERMODE(locr0[PS]))
 		panic("syscall");
 	u.u_ar0 = locr0;
@@ -230,10 +221,9 @@ bad:
 		 */
 		(void) spl6();
 		setrq(p);
+		u.u_ru.ru_nivcsw++;
 		swtch();
 	}
-	if (u.u_prof.pr_scale && (syst -= u.u_vm.vm_stime))
-		addupc(locr0[PC], &u.u_prof, (int)-syst);
 	curpri = p->p_pri;
 }
 
