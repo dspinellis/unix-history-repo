@@ -7,102 +7,23 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	7.2 (Berkeley) %G%
+ *	@(#)conf.c	7.3 (Berkeley) %G%
  */
 
-#include "param.h"
+#include "sys/param.h"
+#include "stand/saio.h"
 
-#include "saio.h"
-#ifdef BOOT
-extern exception;
-extern int debugflag;
-#endif
+extern int	nullsys(), nodev(), noioctl();
 
-devread(io)
-	register struct iob *io;
-{
-	int cc;
-	char c;
+int	wdstrategy(), wdopen();
+#define	wdioctl	noioctl
 
-	io->i_flgs |= F_RDDATA;
-	io->i_error = 0;
-	cc = (*devsw[io->i_dev].dv_strategy)(io, READ);
-	io->i_flgs &= ~F_TYPEMASK;
-
-#ifdef BOOT
-if(/*io->i_error || */(c=scankbd()))
-	_longjmp(&exception,1);
-#endif
-	return (cc);
-}
-
-devwrite(io)
-	register struct iob *io;
-{
-	int cc;
-	char c;
-
-	io->i_flgs |= F_WRDATA;
-	io->i_error = 0;
-	cc = (*devsw[io->i_dev].dv_strategy)(io, WRITE);
-	io->i_flgs &= ~F_TYPEMASK;
-#ifdef BOOT
-if(/* io->i_error || */ (c=scankbd()))
-	_longjmp(&exception,1);
-#endif
-	return (cc);
-}
-
-devopen(io)
-	register struct iob *io;
-{
-
-	(*devsw[io->i_dev].dv_open)(io);
-}
-
-devclose(io)
-	register struct iob *io;
-{
-
-	(*devsw[io->i_dev].dv_close)(io);
-}
-
-devioctl(io, cmd, arg)
-	register struct iob *io;
-	int cmd;
-	caddr_t arg;
-{
-
-	return ((*devsw[io->i_dev].dv_ioctl)(io, cmd, arg));
-}
-
-/*ARGSUSED*/
-nullsys(io)
-	struct iob *io;
-{
-
-	;
-}
-
-/*ARGSUSED*/
-nullioctl(io, cmd, arg)
-	struct iob *io;
-	int cmd;
-	caddr_t arg;
-{
-
-	return (ECMD);
-}
-
-int	nullsys(), nullioctl();
-int	wdstrategy(), wdopen()/*, wdioctl()*/;
-int	fdstrategy(), fdopen()/*, fdioctl()*/;
+int	fdstrategy(), fdopen();
+#define	fdioctl noioctl
 
 struct devsw devsw[] = {
-	/*{ "xx",	xxstrategy,	xxopen,		nullsys, nullioctl },*/
-	{ "wd",	wdstrategy,	wdopen,		nullsys,/*wdioctl*/ nullioctl },
-	{ "", 0, 0, 0, 0 }, /* swapdev place holder */
-	{ "fd",	fdstrategy,	fdopen,		nullsys,/*fdioctl*/ nullioctl },
-	{ 0, 0, 0, 0, 0 },
+	{ "wd",	wdstrategy,	wdopen,	nullsys, wdioctl },	/* 0 = wd */
+	{ NULL },				/* swapdev place holder */
+	{ "fd",	fdstrategy,	fdopen,	nullsys, fdioctl },	/* 2 = fd */
 };
-int ndevs = 3 ;
+int	ndevs = (sizeof(devsw)/sizeof(devsw[0]));
