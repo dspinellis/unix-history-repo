@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.13	82/09/06	*/
+/*	sys_generic.c	5.14	82/09/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -143,7 +143,7 @@ rwuio(uio, rw)
 		}
 	}
 	count = uio->uio_resid;
-	if ((u.u_procp->p_flag&SNUSIG) && setjmp(u.u_qsav)) {
+	if ((u.u_procp->p_flag&SNUSIG) && setjmp(&u.u_qsave)) {
 		if (uio->uio_resid == count)
 			u.u_eosys = RESTARTSYS;
 	} else if (fp->f_type == DTYPE_SOCKET) {
@@ -536,7 +536,7 @@ ioctl()
 		}
 		dev = ip->i_rdev;
 		u.u_r.r_val1 = 0;
-		if ((u.u_procp->p_flag&SNUSIG) && setjmp(u.u_qsav)) {
+		if ((u.u_procp->p_flag&SNUSIG) && setjmp(&u.u_qsave)) {
 			u.u_eosys = RESTARTSYS;
 			return;
 		}
