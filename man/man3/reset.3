@@ -1,0 +1,42 @@
+.th RESET III 5/10/73
+.sh NAME
+reset \*- execute non-local goto
+.sh SYNOPSIS
+.ft B
+setexit( )
+.s3
+reset( )
+.ft R
+.sh DESCRIPTION
+These routines are useful
+for dealing with errors
+discovered in a low-level subroutine
+of a program.
+.s3
+.it Setexit
+is typically called just at the start of
+the main loop of a processing program.
+It stores certain parameters such as the call point and the stack
+level.
+.s3
+.it Reset
+is typically called after diagnosing an error
+in some subprocedure called from the main loop.
+When
+.it reset
+is called,
+it pops the stack appropriately
+and generates a non-local return from
+the last call to
+.it setexit.
+.s3
+It is erroneous, and generally
+disastrous,
+to call
+.it reset
+unless
+.it setexit
+has been called in a routine which is
+an ancestor of
+.it reset.
+.sh BUGS
