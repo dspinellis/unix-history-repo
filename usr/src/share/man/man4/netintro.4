@@ -1,19 +1,9 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)netintro.4	6.6 (Berkeley) %G%
+.\"	@(#)netintro.4	6.7 (Berkeley) %G%
 .\"
 .TH NETINTRO 4 ""
 .UC 5
@@ -38,8 +28,19 @@ networking \- introduction to networking facilities
 .\" 3.5i went to 3.8i
 .if n .ta .7i 1.75i 3.8i
 ..
-This section briefly describes the networking facilities
+This section is a general introduction to the networking facilities
 available in the system.
+Documentation in this part of section
+4 is broken up into three areas:
+.I "protocol families
+(domains),
+.IR protocols ,
+and
+.IR "network interfaces" .
+Entries describing a protocol family are marked ``4F,''
+while entries describing protocol use are marked ``4P.''
+Hardware support for network interfaces are found
+among the standard ``4'' entries.
 .PP
 All network protocols are associated with a specific
 .IR "protocol family" .
@@ -93,7 +94,8 @@ and/or in the system error log,
 due to errors in device operation.
 .SH PROTOCOLS
 The system currently supports the DARPA Internet
-protocols and the Xerox Network Systems(tm) protocols.
+protocols, the Xerox Network Systems(tm) protocols,
+and some of the ISO OSI protocols.
 Raw socket interfaces are provided to the IP protocol
 layer of the DARPA Internet, to the IMP link layer (1822), and to
 the IDP protocol of Xerox NS.
@@ -101,8 +103,27 @@ Consult the appropriate manual pages in this section for more
 information regarding the support for each protocol family.
 .SH ADDRESSING
 Associated with each protocol family is an address
-format.  The following address formats are used by the system (and additional
-formats are defined for possible future implementation):
+format.  All network address adhere to a general structure,
+called a sockaddr, described below. However, each protocol
+imposes finer and more specific structure, generally renaming
+the variant, which is discussed in the protocol family manual
+page alluded to above.
+.nf
+._f
+struct sockaddr {
+	u_char	sa_len;
+	u_char	sa_family;
+	char	sa_data[14];
+};
+.sp 1
+.fi
+The field sa_len contains the total length of the of the structure,
+which may exceed 16 bytes.
+The following address values for
+The following address values for
+.I sa_family
+are known to the system
+(and additional formats are defined for possible future implementation):
 .sp 1
 .nf
 ._d
@@ -112,99 +133,25 @@ formats are defined for possible future implementation):
 #define	AF_PUP	4	/* pup protocols: e.g. BSP */
 #define	AF_NS	6	/* Xerox NS protocols */
 #define	AF_HYLINK	15	/* NSC Hyperchannel */
+#define	AF_ISO	18	/* ISO protocols */
 .fi
 .SH ROUTING
-The network facilities provided limited packet routing.
-A simple set of data structures comprise a ``routing table''
-used in selecting the appropriate network interface when
-transmitting packets.  This table contains a single entry for
-each route to a specific network or host.  A user process,
-the routing daemon, maintains this data base with the aid
-of two socket-specific 
-.IR ioctl (2)
-commands, SIOCADDRT and SIOCDELRT.  The commands allow
-the addition and deletion of a single routing
-table entry, respectively.  Routing table manipulations may
-only be carried out by super-user.
 .PP
-A routing table entry has the following form, as defined
-in
-.RI < net/route.h >;
-.sp 1
-._f
-.nf
-struct rtentry {
-	u_long	rt_hash;
-	struct	sockaddr rt_dst;
-	struct	sockaddr rt_gateway;
-	short	rt_flags;
-	short	rt_refcnt;
-	u_long	rt_use;
-	struct	ifnet *rt_ifp;
-};
-.sp 1
-.fi
-with
-.I rt_flags
-defined from,
-.sp 1
-.nf
-._d
-#define	RTF_UP	0x1		/* route usable */
-#define	RTF_GATEWAY	0x2		/* destination is a gateway */
-#define	RTF_HOST	0x4		/* host entry (net otherwise) */
-#define	RTF_DYNAMIC	0x10		/* created dynamically (by redirect) */
-.fi
+.UX
+provides some packet routing facilities.
+The kernel maintains a routing information database, which
+is used in selecting the appropriate network interface when
+transmitting packets.
 .PP
-Routing table entries come in three flavors: for a specific
-host, for all hosts on a specific network, for any destination
-not matched by entries of the first two types (a wildcard route). 
-When the system is booted and addresses are assigned
-to the network interfaces, each protocol family
-installs a routing table entry for each interface when it is ready for traffic.
-Normally the protocol specifies the route
-through each interface as a ``direct'' connection to the destination host
-or network.  If the route is direct, the transport layer of
-a protocol family usually requests the packet be sent to the
-same host specified in the packet.  Otherwise, the interface
-is requested to address the packet to the gateway listed in the routing entry
-(i.e. the packet is forwarded).
+A user process (or possibly multiple co-operating processes)
+maintains this database by sending messages over a special kind
+of socket.
+This supplants fixed size
+.IR ioctl 's
+used in earlier releases.
 .PP
-Routing table entries installed by a user process may not specify
-the hash, reference count, use, or interface fields; these are filled
-in by the routing routines.  If
-a route is in use when it is deleted
-.RI ( rt_refcnt
-is non-zero),
-the routing entry will be marked down and removed from the routing table,
-but the resources associated with it will not
-be reclaimed until all references to it are released. 
-The routing code returns EEXIST if
-requested to duplicate an existing entry, ESRCH if
-requested to delete a non-existent entry,
-or ENOBUFS if insufficient resources were available
-to install a new route.
-User processes read the routing tables through the
-.I /dev/kmem 
-device.
-The
-.I rt_use
-field contains the number of packets sent along the route.
-.PP
-When routing a packet,
-the kernel will first attempt to find a route to the destination host.
-Failing that, a search is made for a route to the network of the destination.
-Finally, any route to a default (``wildcard'') gateway is chosen.
-If multiple routes are present in the table,
-the first route found will be used.
-If no entry is found, the destination is declared to be unreachable.
-.PP
-A wildcard routing entry is specified with a zero
-destination address value.  Wildcard routes are used
-only when the system fails to find a route to the
-destination host and network.  The combination of wildcard
-routes and routing redirects can provide an economical
-mechanism for routing traffic.
+This facility is described in
+.IR route (4).
 .SH INTERFACES
 Each network interface in a system corresponds to a
 path through which messages may be sent and received.  A network
@@ -220,11 +167,13 @@ The
 .I ioctl
 is made on a socket (typically of type SOCK_DGRAM)
 in the desired domain.
-Unless specified otherwise, the request takes an
-.I ifrequest
+Most of the requests supported in earlier releases 
+take an
+.I ifreq
 structure as its parameter.  This structure has the form
 .PP
 .nf
+._d
 .DT
 struct	ifreq {
 #define	IFNAMSIZ	16
@@ -245,23 +194,31 @@ struct	ifreq {
 #define	ifr_data	ifr_ifru.ifru_data	/* for use by interface */
 };
 .fi
+Calls which are now deprecated are:
 .TP
 SIOCSIFADDR
 Set interface address for protocol family.  Following the address
 assignment, the ``initialization'' routine for
 the interface is called.
 .TP
-SIOCGIFADDR
-Get interface address for protocol family.
-.TP
 SIOCSIFDSTADDR
 Set point to point address for protocol family and interface.
 .TP
-SIOCGIFDSTADDR
-Get point to point address for protocol family and interface.
-.TP
 SIOCSIFBRDADDR
 Set broadcast address for protocol family and interface.
+.LP
+.I Ioctls
+requests to obtain addresses and requests both to set and
+retreive other data are still fully supported
+and use the
+.I ifreq
+structure:
+.TP
+SIOCGIFADDR
+Get interface address for protocol family.
+.TP
+SIOCGIFDSTADDR
+Get point to point address for protocol family and interface.
 .TP
 SIOCGIFBRDADDR
 Get broadcast address for protocol family and interface.
@@ -282,6 +239,45 @@ The metric is used only by user-level routers.
 .TP
 SIOCGIFMETRIC
 Get interface metric.
+.LP
+There are two requests that make use of a new structure:
+.TP
+SIOCAIFADDR
+An interface may have more than one address associated with it
+in some protocols.  This request provides a means to
+add additional addresses (or modify characteristics of the
+primary address if the default address for the address family
+is specified).  Rather than making separate calls to
+set destination or broadcast addresses, or network masks
+(now an integral feature of multiple protocols)
+a separate structure is used to specify all three facets simultaneously:
+.nf
+
+.ta \w'struct  'u +\w'struct  'u +\w'sockaddr  'u +\w'ifra_broaddadr   'u
+struct ifaliasreq {
+	char	ifra_name[IFNAMSIZ];		/* if name, e.g. "en0" */
+	struct	sockaddr	ifra_addr;
+	struct	sockaddr	ifra_broadaddr;
+	struct	sockaddr	ifra_mask;
+};
+.fi
+One would use a slightly tailored version of this struct specific
+to each family (replacing each sockaddr by one
+of the family-specific type).
+Where the sockaddr itself is larger than the
+default size, one needs to modify the
+.I ioctl
+identifier itself to include the total size, as described in
+.IR ioctl (2).
+.TP
+SIOCDIFADDR
+This requests deletes the specified address from the list
+associated with an interface.  It also uses the if_aliasreq
+structure to allow for the possibility of protocols allowing
+multiple masks or destination addresses, and also adopts the
+convention that specification of the default address means
+to delete the first address for the interface belonging to
+the address family in which the original socket was opened.
 .TP
 SIOCGIFCONF
 Get interface configuration list.  This request takes an
@@ -294,6 +290,7 @@ pointed to by
 On return it will contain the length, in bytes, of the
 configuration list.
 .PP
+._d
 .nf
 .DT
 /*
@@ -313,4 +310,4 @@ struct	ifconf {
 };
 .fi
 .SH SEE ALSO
-socket(2), ioctl(2), intro(4), config(8), routed(8)
+socket(2), ioctl(2), intro(4), config(8), routed(8C)
