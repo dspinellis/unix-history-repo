@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: grf.c 1.28 89/08/14$
  *
- *	@(#)grf.c	7.2 (Berkeley) %G%
+ *	@(#)grf.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -295,13 +295,14 @@ grflock(gp, block)
 	register struct grf_softc *gp;
 	int block;
 {
+	struct proc *p = u.u_procp;		/* XXX */
 	int error;
 	extern char devioc[];
 
 #ifdef DEBUG
 	if (grfdebug & GDB_LOCK)
 		printf("grflock(%d): dev %x flags %x lockpid %x\n",
-		       u.u_procp->p_pid, gp-grf_softc, gp->g_flags,
+		       p->p_pid, gp-grf_softc, gp->g_flags,
 		       gp->g_lockp ? gp->g_lockp->p_pid : -1);
 #endif
 #ifdef HPUXCOMPAT
@@ -320,7 +321,7 @@ grflock(gp, block)
 	}
 #endif
 	if (gp->g_lockp) {
-		if (gp->g_lockp == u.u_procp)
+		if (gp->g_lockp == p)
 			return(EBUSY);
 		if (!block)
 			return(EAGAIN);
@@ -334,7 +335,7 @@ grflock(gp, block)
 
 		} while (gp->g_lockp);
 	}
-	gp->g_lockp = u.u_procp;
+	gp->g_lockp = p;
 #ifdef HPUXCOMPAT
 	if (gp->g_pid) {
 		int slot = grffindpid(gp);
@@ -582,20 +583,20 @@ grfmmap(dev, addrp)
 	dev_t dev;
 	caddr_t *addrp;
 {
+	struct proc *p = u.u_procp;		/* XXX */
 	struct grf_softc *gp = &grf_softc[GRFUNIT(dev)];
-	register struct mapmem *mp;
+	struct mapmem *mp;
 	int len, grfmapin();
 
 #ifdef DEBUG
 	if (grfdebug & GDB_MMAP)
-		printf("grfmmap(%d): addr %x\n", u.u_procp->p_pid, *addrp);
+		printf("grfmmap(%d): addr %x\n", p->p_pid, *addrp);
 #endif
 	len = gp->g_display.gd_regsize + gp->g_display.gd_fbsize;
-	mp = mmalloc(minor(dev), addrp, len, MM_RW|MM_CI|MM_NOCORE, &grfops);
-	if (mp == MMNIL)
+	if (u.u_error = mmalloc(p, minor(dev), addrp, len, MM_RW|MM_CI|MM_NOCORE, &grfops, &mp))
 		return(u.u_error);
-	if (!mmmapin(mp, grfmapin)) {
-		mmfree(mp);
+	if (!mmmapin(p, mp, grfmapin)) {
+		mmfree(p, mp);
 		return(u.u_error);
 	}
 	return(0);
@@ -634,19 +635,20 @@ grfunmmap(dev, addr)
 grfexit(mp)
 	struct mapmem *mp;
 {
+	struct proc *p = u.u_procp;		/* XXX */
 	struct grf_softc *gp = &grf_softc[GRFUNIT(mp->mm_id)];
 
 #ifdef DEBUG
 	if (grfdebug & GDB_MMAP)
 		printf("grfexit(%d): id %d %x@%x\n",
-		       u.u_procp->p_pid, mp->mm_id, mp->mm_size, mp->mm_uva);
+		       p->p_pid, mp->mm_id, mp->mm_size, mp->mm_uva);
 #endif
 	(void) grfunlock(gp);
 #ifdef HPUXCOMPAT
 	grfrmpid(gp);
 #endif
-	mmmapout(mp);
-	mmfree(mp);
+	mmmapout(p, mp);
+	mmfree(p, mp);
 }
 
 #ifdef HPUXCOMPAT
@@ -654,20 +656,20 @@ iommap(dev, addrp)
 	dev_t dev;
 	caddr_t *addrp;
 {
+	struct proc *p = u.u_procp;		/* XXX */
 	struct grf_softc *gp = &grf_softc[GRFUNIT(dev)];
-	register struct mapmem *mp;
+	struct mapmem *mp;
 	int len, grfmapin();
 
 #ifdef DEBUG
 	if (grfdebug & (GDB_MMAP|GDB_IOMAP))
-		printf("iommap(%d): addr %x\n", u.u_procp->p_pid, *addrp);
+		printf("iommap(%d): addr %x\n", p->p_pid, *addrp);
 #endif
 	len = gp->g_display.gd_regsize;
-	mp = mmalloc(minor(dev), addrp, len, MM_RW|MM_CI|MM_NOCORE, &grfiomops);
-	if (mp == MMNIL)
+	if (u.u_error = mmalloc(p, minor(dev), addrp, len, MM_RW|MM_CI|MM_NOCORE, &grfiomops, &mp))
 		return(u.u_error);
-	if (!mmmapin(mp, grfmapin)) {
-		mmfree(mp);
+	if (!mmmapin(p, mp, grfmapin)) {
+		mmfree(p, mp);
 		return(u.u_error);
 	}
 	return(0);
@@ -797,25 +799,25 @@ grflckmmap(dev, addrp)
 	dev_t dev;
 	caddr_t *addrp;
 {
+	struct proc *p = u.u_procp;		/* XXX */
 	struct grf_softc *gp = &grf_softc[GRFUNIT(dev)];
-	register struct mapmem *mp;
+	struct mapmem *mp;
 	int grflckmapin();
 
 #ifdef DEBUG
 	if (grfdebug & (GDB_MMAP|GDB_LOCK))
 		printf("grflckmmap(%d): addr %x\n",
-		       u.u_procp->p_pid, *addrp);
+		       p->p_pid, *addrp);
 #endif
 	if (gp->g_locks == NULL) {
 		gp->g_locks = (u_char *) cialloc(NBPG);
 		if (gp->g_locks == NULL)
 			return(ENOMEM);
 	}
-	mp = mmalloc(minor(dev), addrp, NBPG, MM_RW|MM_CI, &grflckops);
-	if (mp == MMNIL)
+	if (u.u_error = mmalloc(p, minor(dev), addrp, NBPG, MM_RW|MM_CI, &grflckops, &mp))
 		return(u.u_error);
-	if (!mmmapin(mp, grflckmapin)) {
-		mmfree(mp);
+	if (!mmmapin(p, mp, grflckmapin)) {
+		mmfree(p, mp);
 		return(u.u_error);
 	}
 	return(0);
