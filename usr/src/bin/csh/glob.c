@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)glob.c	5.10 (Berkeley) %G%";
+static char *sccsid = "@(#)glob.c	5.11 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -255,16 +255,6 @@ globexpand(v)
 	return(vl);
 }
 
-int
-globcheck(str)
-	char *str;
-{
-	for (; *str; str++)
-		if(isglob(*str))
-			return(1);
-	return(0);
-}
-
 char * 
 globone(str)
 	char *str;
@@ -364,24 +354,19 @@ globall(v)
 		globv.gl_pathv = 0;
 		gargc = 0;
 		do {
-			if (nonomatch) 
-				glob(*vl, GLOB_NOCHECK | gappend, 0, &globv);
-			else if (globcheck(*vl)) {
-				glob(*vl, gappend, 0, &globv);
-				if (globv.gl_pathc == gargc) {
-					if (gflag & G_CSH)
-						blkfree(vo);
-					globfree(&globv);
-					gargc = 0;
-					return(gargv = (char **) 0);
-				}
+			glob(*vl, gappend | GLOB_NOCHECK, 0, &globv);
+			if (!nonomatch && (globv.gl_matchc == 0) && 
+			    (globv.gl_flags & GLOB_MAGCHAR)) {
+				if (gflag & G_CSH)
+					blkfree(vo);
+				globfree(&globv);
+				gargc = 0;
+				return(gargv = (char **) 0);
 			}
-			else 
-				glob(*vl, GLOB_NOCHECK | gappend, 0, &globv);
 			gappend = GLOB_APPEND;
-			gargc = globv.gl_pathc;
 		}
 		while (*++vl);
+
 		if (gflag & G_CSH)
 			blkfree(vo);
 		if (globv.gl_pathc)
