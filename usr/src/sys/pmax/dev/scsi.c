@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsi.c	7.1 (Berkeley) %G%
+ *	@(#)scsi.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -115,6 +115,12 @@ scsiPrintSense(sp, len)
 			printf("sense class 7 error 0x%x", sp->key);
 		else
 			printf("%s", Class7Errors[sp->key]);
+		if (sp->fileMark)
+			printf(", file mark seen");
+		if (sp->endOfMedia)
+			printf(", end of media seen");
+		if (sp->badBlockLen)
+			printf(", block length mis-match");
 		if (sp->valid)
 			printf(", blk %d", (sp->info1 << 24) |
 				(sp->info2 << 16) | (sp->info3 << 8) |
