@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)sa.c	4.7 (Berkeley) 84/07/15";
+static	char *sccsid = "@(#)sa.c	4.8 (Berkeley) 84/07/18";
 #endif
 
 /*
@@ -583,7 +583,7 @@ col(n, a, m, cp)
 
 	if(jflg)
 		printf("%11.2f%s", a/(n*64.), cp); else
-		printf("%11.2f%s", a/60*64., cp);
+		printf("%11.2f%s", a/(60*64.), cp);
 	if(cflg) {
 		if(a == m)
 			printf("%9s", ""); else
@@ -628,7 +628,7 @@ char *f;
 			*cp++ = '?';
 		if (fbuf.ac_flag&AFORK) {
 			if (cp >= &fbuf.ac_comm[NC])
-				cp = &fbuf.ac_comm[NC];
+				cp = &fbuf.ac_comm[NC-1];
 			*cp++ = '*';
 		}
 		if (cp < &fbuf.ac_comm[NC])
