@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.3 83/08/18";
+static	char *sccsid = "@(#)cmd.c	3.4 83/08/19";
 #endif
 
 #include "defs.h"
@@ -13,10 +13,8 @@ docmd()
 
 	if (!terse)
 		wwadd(cmdwin, &wwhead);
-	/*
 	if (selwin != 0)
-		Woncursor(selwin->ww_win, 1);
-	*/
+		wwcursor(selwin, 1);
 top:
 	while ((c = bgetc()) >= 0) {
 		if (!terse)
@@ -184,10 +182,8 @@ out:
 			reframe();
 		}
 	}
-	/*
 	if (selwin != 0)
-		Woncursor(selwin->ww_win, 0);
-	*/
+		wwcursor(selwin, 0);
 }
 
 struct ww *
@@ -228,15 +224,7 @@ register struct ww *w;
 		 * or behind everbody else.
 		 */
 		wwadd(w, (oldselwin ? oldselwin : &wwhead)->ww_back);
-		/*
-		Woncursor(w->ww_win, 1);
-		*/
 	}
-	/*
-	if (oldselwin) {
-		Woncursor(oldselwin->ww_win, 0);
-	}
-	*/
 	reframe();
 }
 

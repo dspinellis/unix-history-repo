@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.8 83/08/18	
+ *	@(#)ww.h	3.9 83/08/19	
  */
 
 #include <stdio.h>
@@ -28,6 +28,7 @@ struct ww {
 	char ww_insert :1;	/* insert mode, for printing */
 	char ww_mapnl :1;	/* map \n to \r\n */
 	char ww_haspty :1;	/* has pty */
+	char ww_hascursor :1;	/* has fake cursor */
 	char ww_index;		/* the index, for wwindex[] */
 	char ww_order;		/* the overlapping order */
 	struct ww_dim ww_w;	/* window dimemsions */
@@ -116,6 +117,7 @@ char wwkeys[512];		/* termcap fields for the function keys */
 
 int wwnrow, wwncol;		/* the screen size */
 char wwavailmodes;		/* actually supported modes */
+char wwcursormodes;		/* the modes for the fake cursor */
 char wwwrap;			/* terminal has auto wrap around */
 int wwdtablesize;		/* result of getdtablesize() call */
 char **wwsmap;			/* the screen map */
