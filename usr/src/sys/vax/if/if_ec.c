@@ -1,4 +1,4 @@
-/*	if_ec.c	4.37	83/06/13	*/
+/*	if_ec.c	4.38	83/07/19	*/
 
 #include "ec.h"
 
@@ -464,7 +464,7 @@ ecread(unit)
 
 	case ETHERPUP_ARPTYPE:
 		arpinput(&es->es_ac, m);
-		return;
+		goto setup;
 #endif
 	default:
 		m_freem(m);
