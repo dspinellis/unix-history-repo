@@ -1,6 +1,6 @@
-/*	rk.c	4.1	%G%	*/
+/*	rk.c	4.2	%G%	*/
 
-#include "../conf/rk.h"
+#include "rk.h"
 #if NRK > 0
 /*
  * RK disk driver

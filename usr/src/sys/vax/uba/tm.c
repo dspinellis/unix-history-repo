@@ -1,6 +1,6 @@
-/*	tm.c	4.2	%G%	*/
+/*	tm.c	4.3	%G%	*/
 
-#include "../conf/tm.h"
+#include "tm.h"
 #if NTM > 0
 /*
  * TM tape driver

@@ -1,6 +1,6 @@
-/*	dz.c	4.4	%G%	*/
+/*	dz.c	4.5	%G%	*/
 
-#include "../conf/dz.h"
+#include "dz.h"
 #if NDZ11 > 0
 /*
  *  DZ-11 Driver
