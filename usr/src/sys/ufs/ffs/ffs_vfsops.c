@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.9 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -253,6 +253,7 @@ ffs_reload(mountp, cred, p)
 	if (fs->fs_sbsize < SBSIZE)
 		bp->b_flags |= B_INVAL;
 	brelse(bp);
+	mountp->mnt_maxsymlinklen = fs->fs_maxsymlinklen;
 	ffs_oldfscompat(fs);
 	/*
 	 * Step 3: re-read summary information from disk.
