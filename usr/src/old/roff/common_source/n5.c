@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)n5.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)n5.c	4.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "tdef.h"
@@ -53,7 +53,7 @@ extern int ll;
 extern int ll1;
 extern int lt;
 extern int lt1;
-extern int nlist[NTRAP];
+extern int nlistx[NTRAP];
 extern int mlist[NTRAP];
 extern int lgf;
 extern int pl;
@@ -306,7 +306,7 @@ casewh(){
 		return;
 	}
 	mlist[k] = j;
-	nlist[k] = i;
+	nlistx[k] = i;
 }
 casech(){
 	register i, j, k;
@@ -319,7 +319,7 @@ casech(){
 	skip();
 	i = vnumb((int *)0);
 	if(nonumb)mlist[k] = 0;
-	nlist[k] = i;
+	nlistx[k] = i;
 }
 findn(i)
 int i;
@@ -327,7 +327,7 @@ int i;
 	register k;
 
 	for(k=0; k<NTRAP; k++)
-		if((nlist[k] == i) && (mlist[k] != 0))break;
+		if((nlistx[k] == i) && (mlist[k] != 0))break;
 	return(k);
 }
 casepn(){

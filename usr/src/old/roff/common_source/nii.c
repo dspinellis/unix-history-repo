@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)nii.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)nii.c	4.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "tdef.h"
@@ -124,7 +124,7 @@ int evi;
 int vflag;
 int noscale;
 int po1;
-int nlist[NTRAP];
+int nlistx[NTRAP];		/* "x" added to avoid libc collisions */
 int mlist[NTRAP];
 int evlist[EVLSZ];
 int ev;
