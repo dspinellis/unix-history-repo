@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	8.5 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -184,7 +184,7 @@ lfs_mountfs(devvp, mp, p)
 		return (error);
 	if (vcount(devvp) > 1 && devvp != rootvp)
 		return (EBUSY);
-	if (error = vinvalbuf(devvp, 1, p->p_ucred, p, 0, 0))
+	if (error = vinvalbuf(devvp, V_SAVE, p->p_ucred, p, 0, 0))
 		return (error);
 
 	ronly = (mp->mnt_flag & MNT_RDONLY) != 0;
