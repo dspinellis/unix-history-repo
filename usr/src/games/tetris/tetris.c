@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tetris.c	5.2 (Berkeley) %G%
+ *	@(#)tetris.c	5.3 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -22,6 +22,7 @@ char copyright[] =
 
 #include <sys/time.h>
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,11 +33,13 @@ char copyright[] =
 #include "screen.h"
 #include "tetris.h"
 
+void onintr __P((int));
+void usage __P((void));
+
 /*
- * Set up the initial board.
- * The bottom display row is completely set,
- * along with another (hidden) row underneath that.
- * Also, the left and right edges are set.
+ * Set up the initial board.  The bottom display row is completely set,
+ * along with another (hidden) row underneath that.  Also, the left and
+ * right edges are set.
  */
 static void
 setup_board()
@@ -84,44 +87,45 @@ elide()
 int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	register int pos, c;
 	register struct shape *curshape;
 	register char *keys;
 	register int level = 2;
 	char key_write[6][10];
-	int i, j;
+	int ch, i, j;
 
 	keys = "jkl pq";
 
-	if (argc > 3)
-		goto usage;
-
-	while (argc-- >= 2)
-		switch (argv[argc][0]) {
-
-		case '-':
-			keys = argv[argc];
-			keys++;
-			if (strlen(keys) < 6) {
-	usage:
+	while ((ch = getopt(argc, argv, "k:l:s")) != EOF)
+		switch(ch) {
+		case 'k':
+			if (strlen(keys = optarg) != 6)
+				usage();
+			break;
+		case 'l':
+			level = atoi(optarg);
+			if (level < MINLEVEL || level > MAXLEVEL) {
 				(void)fprintf(stderr,
-				    "usage: %s [level] [-keys]\n",
-				    argv[0]);
+				    "tetris: level must be from %d to %d",
+				    MINLEVEL, MAXLEVEL);
 				exit(1);
 			}
 			break;
-
+		case 's':
+			showscores(0);
+			exit(0);
+		case '?':
 		default:
-			level = atoi(argv[argc]);
-			if (level < MINLEVEL) {
-				showscores(level);
-				exit(0);
-			}
-			if (level > MAXLEVEL)
-				level = MAXLEVEL;
+			usage();
 		}
+
+	argc -= optind;
+	argv += optind;
+
+	if (argc)
+		usage();
 
 	fallrate = 1000000 / level;
 
@@ -147,6 +151,7 @@ main(argc, argv)
 		key_write[0], key_write[1], key_write[2], key_write[3],
 		key_write[4], key_write[5]);
 
+	(void)signal(SIGINT, onintr);
 	scr_init();
 	setup_board();
 
@@ -262,4 +267,20 @@ main(argc, argv)
 	showscores(level);
 
 	exit(0);
+}
+
+void
+onintr(signo)
+	int signo;
+{
+	scr_clear();
+	scr_end();
+	exit(0);
+}
+
+void
+usage()
+{
+	(void)fprintf(stderr, "usage: tetris [-s] [-l level] [-keys]\n");
+	exit(1);
 }
