@@ -1,4 +1,4 @@
-/*	kern_xxx.c	4.4	83/06/09	*/
+/*	kern_xxx.c	4.5	83/06/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -66,7 +66,7 @@ reboot()
 		boot(RB_BOOT, ((struct a *)u.u_ap)->opt);
 }
 
-#ifndef NOCOMPAT
+#ifdef COMPAT
 #include "../h/quota.h"
 
 osetuid()
@@ -310,17 +310,6 @@ ovlimit()
 {
 
 	u.u_error = EACCES;
-}
-
-okill()
-{
-	register struct a {
-		int	pid;
-		int	signo;
-	} *uap = (struct a *)u.u_ap;
-
-	u.u_error = kill1(uap->signo < 0,
-		uap->signo < 0 ? -uap->signo : uap->signo, uap->pid);
 }
 
 ossig()

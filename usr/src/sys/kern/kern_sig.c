@@ -1,4 +1,4 @@
-/*	kern_sig.c	5.21	83/06/10	*/
+/*	kern_sig.c	5.22	83/06/21	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -171,6 +171,8 @@ sigstack()
 	}
 }
 
+/* KILL SHOULD BE UPDATED */
+
 kill()
 {
 	register struct a {
@@ -178,7 +180,8 @@ kill()
 		int	signo;
 	} *uap = (struct a *)u.u_ap;
 
-	u.u_error = kill1(0, uap->signo, uap->pid);
+	u.u_error = kill1(uap->signo < 0,
+		uap->signo < 0 ? -uap->signo : uap->signo, uap->pid);
 }
 
 killpg()

@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.40	83/06/12	*/
+/*	sys_generic.c	5.41	83/06/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -162,7 +162,7 @@ ioctl()
 	}
 	com = uap->cmd;
 
-#if defined(vax) && !defined(NOCOMPAT)
+#if defined(vax) && defined(COMPAT)
 	/*
 	 * Map old style ioctl's into new for the
 	 * sake of backwards compatibility (sigh).

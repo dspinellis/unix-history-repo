@@ -1,4 +1,4 @@
-/*	vfs_xxx.c	4.6	83/05/31	*/
+/*	vfs_xxx.c	4.7	83/06/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -35,7 +35,7 @@ uchar()
 	return (c);
 }
 
-#ifndef NOCOMPAT
+#ifdef COMPAT
 #include "../h/file.h"
 #include "../h/nami.h"
 #include "../h/kernel.h"
