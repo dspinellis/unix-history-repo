@@ -1,0 +1,20 @@
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ Pod - Attribute Value Menu
+
+ The attribute value menu gives access to two
+ "per  value"  operations:   "undo  changes" and 
+ "delete value".
+
+ The "undo changes" operation undoes all changes
+ since the last succesful submission of modifications,
+ or else restores the original attribute value.
+
+ The "delete value" operation deletes the associated
+ attribute value.
+
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
