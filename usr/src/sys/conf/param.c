@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)param.c	7.18 (Berkeley) %G%
+ *	@(#)param.c	7.19 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -45,7 +45,7 @@ int	maxproc = NPROC;
 #define NTEXT 100			/* actually the object cache */
 #define NVNODE (NPROC + NTEXT + 300)
 long	desiredvnodes = NVNODE;
-int	nfile = 16 * (NPROC + 16 + MAXUSERS) / 10 + 32;
+int	maxfiles = 3 * (NPROC + 16 + MAXUSERS) + 32;
 int	ncallout = 16 + NPROC;
 int	nclist = 60 + 12 * MAXUSERS;
 int     nmbclusters = NMBCLUSTERS;
