@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)sigvec.2	6.7 (Berkeley) %G%
+.\"     @(#)sigvec.2	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SIGVEC 2
@@ -251,20 +251,20 @@ or
 .Dv SIGSTOP .
 .El
 .Sh SEE ALSO
-.Xr sigaction 2 ,
 .Xr kill 1 ,
-.Xr ptrace 2 ,
 .Xr kill 2 ,
-.Xr sigprocmask 2 ,
-.Xr sigsuspend 2 ,
+.Xr ptrace 2 ,
+.Xr sigaction 2 ,
 .Xr sigblock 2 ,
-.Xr sigsetmask 2 ,
 .Xr sigpause 2 ,
+.Xr sigprocmask 2 ,
+.Xr sigsetmask 2 ,
 .Xr sigstack 2 ,
-.Xr sigvec 2 ,
-.Xr sigsetops 3 ,
+.Xr sigsuspend 2 ,
 .Xr setjmp 3 ,
 .Xr siginterrupt 3 ,
+.Xr signal 3,
+.Xr sigsetops 3 ,
 .Xr tty 4
 .Sh EXAMPLE
 On the
