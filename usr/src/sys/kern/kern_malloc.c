@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_malloc.c	7.16 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -261,6 +261,6 @@ kmeminit()
 		bucket[indx].kb_highwat = 5 * bucket[indx].kb_elmpercl;
 	}
 	for (indx = 0; indx < M_LAST; indx++)
-		kmemstats[indx].ks_limit = npg * CLBYTES * 8 / 10;
+		kmemstats[indx].ks_limit = npg * NBPG * 6 / 10;
 #endif
 }
