@@ -287,6 +287,7 @@ typedef struct {
 
 struct highlow {
     unsigned char
+#if	defined(vax)
 	al,
 	ah,
 	bl,
@@ -295,6 +296,17 @@ struct highlow {
 	ch,
 	dl,
 	dh;
+#endif	/* defined(vax) */
+#if	defined(sun) || defined(tahoe)
+	ah,
+	al,
+	bh,
+	bl,
+	ch,
+	cl,
+	dh,
+	dl;
+#endif	/* defined(sun) || defined(tahoe) */
 };
 
 struct words {
