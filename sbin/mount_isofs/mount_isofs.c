@@ -44,10 +44,10 @@ char **argv;
 	dir = argv[1];
 
 	args.fspec = dev;
-	args.exflags = MNT_EXRDONLY | opts;
+	args.exflags = MNT_EXRDONLY;
 	args.exroot = 0;
 
-	if (mount (MOUNT_ISOFS, dir, MNT_RDONLY, &args) < 0) {
+	if (mount (MOUNT_ISOFS, dir, opts, &args) < 0) {
 		perror ("mount");
 		exit (1);
 	}
