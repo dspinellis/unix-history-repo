@@ -1,4 +1,4 @@
-/*	vpf.c	4.2	83/03/17	*/
+/*	vpf.c	4.3	83/03/30	*/
 /*
  * Varian/Versatec printer filter
  */
@@ -92,17 +92,9 @@ main(argc, argv)
 
 send()
 {
-	register nskipped;
-
 	lineno = 0;
-	nskipped = 0;
 	while (getline()) {
-		if (!literal && varian && lineno==0 && linebuf[0]==0 && nskipped<3) {
-			nskipped++;
-			continue;
-		}
 		if (varian && lineno >= length) {
-			nskipped = 0;
 			putline(1);
 			lineno = 0;
 		} else {
