@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dev_mkdb.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)dev_mkdb.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -20,6 +20,7 @@ static char sccsid[] = "@(#)dev_mkdb.c	5.6 (Berkeley) %G%";
 #include <fcntl.h>
 #undef DIRBLKSIZ
 #include <dirent.h>
+struct nlist;	/* XXX bletch */
 #include <kvm.h>
 #include <db.h>
 #include <errno.h>
@@ -83,6 +84,7 @@ main(argc, argv)
 			key.size = sizeof(sb.st_rdev) + 1;
 		else
 			continue;
+		bcopy(&sb.st_rdev, bkeybuf, sizeof(sb.st_rdev));
 		/* 
 		 * Nul terminate the name so caller doesn't have to. 
 		 */
