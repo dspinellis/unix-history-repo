@@ -1,6 +1,6 @@
 # Makefile for the f77 math & startup lib - libF77.a
 
-#	@(#)makefile	1.6	%G%
+#	@(#)makefile	1.7	%G%
 
 LIB = libF77.a
 
@@ -14,7 +14,7 @@ TAPE = /dev/rnmt0.1600
 
 # compile, then strip unnecessary symbols
 .c.o :
-	cc -O -c -DVAX $*.c
+	cc -O -c -DVAX -DUCBVAX $*.c
 	-ld -r -x $*.o
 	mv a.out $*.o
 
