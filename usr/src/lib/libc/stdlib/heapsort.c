@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)heapsort.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)heapsort.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -53,12 +53,12 @@ static char sccsid[] = "@(#)heapsort.c	5.7 (Berkeley) %G%";
 #define CREATE(initval, nmemb, par_i, child_i, par, child, size, count, tmp) { \
 	for (par_i = initval; (child_i = par_i * 2) <= nmemb; \
 	    par_i = child_i) { \
-		child = (char *)bot + child_i * size; \
+		child = base + child_i * size; \
 		if (child_i < nmemb && compar(child, child + size) < 0) { \
 			child += size; \
 			++child_i; \
 		} \
-		par = (char *)bot + par_i * size; \
+		par = base + par_i * size; \
 		if (compar(child, par) <= 0) \
 			break; \
 		SWAP(par, child, count, size, tmp); \
@@ -79,23 +79,24 @@ static char sccsid[] = "@(#)heapsort.c	5.7 (Berkeley) %G%";
  *
  * The time savings from this optimization are on the order of 15-20% for the
  * average case. See Knuth, Vol. 3, page 158, problem 18.
+ *
+ * XXX Don't break the #define SELECT line, below.  Reiser cpp gets upset.
  */
-#define SELECT(par_i, child_i, nmemb, par, child, size, k, count, tmp1, \
-    tmp2) { \
+#define SELECT(par_i, child_i, nmemb, par, child, size, k, count, tmp1, tmp2) { \
 	for (par_i = 1; (child_i = par_i * 2) <= nmemb; par_i = child_i) { \
-		child = (char *)bot + child_i * size; \
+		child = base + child_i * size; \
 		if (child_i < nmemb && compar(child, child + size) < 0) { \
 			child += size; \
 			++child_i; \
 		} \
-		par = (char *)bot + par_i * size; \
+		par = base + par_i * size; \
 		COPY(par, child, count, size, tmp1, tmp2); \
 	} \
 	for (;;) { \
 		child_i = par_i; \
 		par_i = child_i / 2; \
-		child = (char *)bot + child_i * size; \
-		par = (char *)bot + par_i * size; \
+		child = base + child_i * size; \
+		par = base + par_i * size; \
 		if (child_i == 1 || compar(k, par) < 0) { \
 			COPY(child, k, count, size, tmp1, tmp2); \
 			break; \
@@ -112,14 +113,14 @@ static char sccsid[] = "@(#)heapsort.c	5.7 (Berkeley) %G%";
  * only advantage over quicksort is that it requires little additional memory.
  */
 int
-heapsort(bot, nmemb, size, compar)
-	void *bot;
+heapsort(vbase, nmemb, size, compar)
+	void *vbase;
 	size_t nmemb, size;
 	int (*compar) __P((const void *, const void *));
 {
 	register int cnt, i, j, l;
 	register char tmp, *tmp1, *tmp2;
-	char *k, *p, *t;
+	char *base, *k, *p, *t;
 
 	if (nmemb <= 1)
 		return (0);
@@ -136,7 +137,7 @@ heapsort(bot, nmemb, size, compar)
 	 * Items are numbered from 1 to nmemb, so offset from size bytes
 	 * below the starting address.
 	 */
-	bot -= size;
+	base = (char *)vbase - size;
 
 	for (l = nmemb / 2 + 1; --l;)
 		CREATE(l, nmemb, i, j, t, p, size, cnt, tmp);
@@ -147,9 +148,8 @@ heapsort(bot, nmemb, size, compar)
 	 * heap.
 	 */
 	while (nmemb > 1) {
-		COPY(k, (char *)bot + nmemb * size, cnt, size, tmp1, tmp2);
-		COPY((char *)bot + nmemb * size, (char *)bot + size,
-		    cnt, size, tmp1, tmp2);
+		COPY(k, base + nmemb * size, cnt, size, tmp1, tmp2);
+		COPY(base + nmemb * size, base + size, cnt, size, tmp1, tmp2);
 		--nmemb;
 		SELECT(i, j, nmemb, t, p, size, k, cnt, tmp1, tmp2);
 	}
