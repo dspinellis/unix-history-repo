@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.4	(Berkeley)	83/06/22
+#	@(#)Makefile	4.5	(Berkeley)	84/06/05
 #
 DESTDIR=
 CFLAGS = -O
@@ -26,7 +26,7 @@ refer5.o: refer..c
 refer: glue1.o refer1.o refer2.o refer4.o refer5.o refer6.o mkey3.o
 refer: refer7.o refer8.o hunt2.o hunt3.o deliv2.o hunt5.o hunt6.o hunt8.o
 refer: glue3.o hunt7.o hunt9.o glue2.o glue4.o glue5.o refer0.o shell.o
-	cc -i glue?.o refer[01245678].o hunt[2356789].o mkey3.o shell.o deliv2.o -o refer
+	cc glue?.o refer[01245678].o hunt[2356789].o mkey3.o shell.o deliv2.o -o refer
 
 addbib: addbib.o
 	cc addbib.o -o addbib
