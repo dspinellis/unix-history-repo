@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_v.c	7.5 %G%";
+static char *sccsid = "@(#)ex_v.c	7.6 %G%";
 #include "ex.h"
 #include "ex_re.h"
 #include "ex_tty.h"
@@ -418,5 +418,6 @@ vsetsiz(size)
 winch()
 {
 	vsave();
+	setty(normf);
 	longjmp(venv, 1);
 }
