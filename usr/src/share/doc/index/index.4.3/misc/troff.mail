@@ -1,0 +1,47 @@
+From edmoy@opal.Berkeley.Edu Mon Jul 28 15:26:02 1986
+Received: by monet.Berkeley.EDU (5.54/1.14)
+	id AA25164; Mon, 28 Jul 86 15:25:54 PDT
+Received: by opal.Berkeley.Edu (4.20/5.6)
+	id AA05370; Mon, 28 Jul 86 15:25:50 pdt
+Date: Mon, 28 Jul 86 15:25:50 pdt
+From: edmoy@opal.Berkeley.Edu
+Message-Id: <8607282225.AA05370@opal.Berkeley.Edu>
+To: mis@monet.Berkeley.EDU
+Subject: ditroff
+Status: R
+
+.       \" In the newest ditroff, number register .! is read-only and
+.       \" returns the exit status of the .sy command.  Thus try to
+.       \" set .! to 99 and if it is the same, it is the old version.
+.       nr .! 99
+.       ie \\n(.!=99 \{\
+.               if "\\*(.T"aps" \{\
+.                       nr MA 100
+.                       nr EB 5
+.               \}
+.       \}
+.       \" This is the new version of ditroff
+.       el \{\
+
+From edmoy@opal.Berkeley.Edu Mon Jul 28 15:45:10 1986
+Received: by monet.Berkeley.EDU (5.54/1.14)
+	id AA25248; Mon, 28 Jul 86 15:45:05 PDT
+Received: by opal.Berkeley.Edu (4.20/5.6)
+	id AA05702; Mon, 28 Jul 86 15:45:04 pdt
+Date: Mon, 28 Jul 86 15:45:04 pdt
+From: edmoy@opal.Berkeley.Edu
+Message-Id: <8607282245.AA05702@opal.Berkeley.Edu>
+To: mis@monet.Berkeley.EDU
+Subject: Stop the presses!
+Status: R
+
+Fixing troff to alias even those special characters seemed like something
+I'd do (for completeness).  And this is how you do it:
+
+	.al \\' mumble
+
+(you need two backslashes).  Now when you invoke \' you get mumble (the
+same for \`).  That should save you a lot of work!
+
+Ed
+
