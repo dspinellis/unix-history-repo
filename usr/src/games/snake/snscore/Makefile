@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 PROG=	snscore
-CFLAGS+=-I${.CURDIR}/..
+CFLAGS+=-I${.CURDIR}/../snake
 NOMAN=	noman
 HIDEGAME=hidegame
 
