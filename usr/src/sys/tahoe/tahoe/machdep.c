@@ -1,4 +1,4 @@
-/*	machdep.c	1.9	86/12/15	*/
+/*	machdep.c	1.10	87/02/16	*/
 
 #include "param.h"
 #include "systm.h"
@@ -230,6 +230,12 @@ startup(firstaddr)
 	intenable = 1;		/* Enable interrupts from now on */
 
 	/*
+	 * Set up buffers, so they can be used to read disk labels.
+	 */
+	bhinit();
+	binit();
+
+	/*
 	 * Configure the system.
 	 */
 	configure();
@@ -452,6 +458,7 @@ boot(paniced, arghowto)
 			doadump();		/* TXDB_BOOT's itsself */
 			/*NOTREACHED*/
 		}
+		*(int *)CPBFLG = howto;
 		tocons(CPBOOT);
 	}
 	for (;;)
@@ -459,7 +466,6 @@ boot(paniced, arghowto)
 	/*NOTREACHED*/
 }
 
-struct	cphdr *lasthdr;		/* defined in cons.c */
 struct	cpdcb_o cpcontrol;
 
 /*
@@ -469,7 +475,7 @@ struct	cpdcb_o cpcontrol;
  */
 tocons(c)
 {
-	int timeout;
+	register timeout;
 
 	cpcontrol.cp_hdr.cp_unit = CPUNIT;
 	cpcontrol.cp_hdr.cp_comm =  (char)c;
@@ -480,8 +486,8 @@ tocons(c)
 		*(int *)cpcontrol.cp_buf = 0;	/* r11 value for reboot */
 	}
 	timeout = 100000;				/* Delay loop */
-	while (timeout-- && (lasthdr->cp_unit&CPDONE) == 0)
-		uncache(&lasthdr->cp_unit);
+	while (timeout-- && (cnlast->cp_unit&CPDONE) == 0)
+		uncache(&cnlast->cp_unit);
 	/* give up, force it to listen */
 	mtpr(CPMDCB, vtoph((struct proc *)0, (unsigned)&cpcontrol));
 }
