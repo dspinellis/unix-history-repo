@@ -1,0 +1,7 @@
+width=80,overflowoffset=10
+leftadjust,compress,compwidth=9
+Date:formatfield="%<error%text%|%tws%>"
+From:
+Subject:
+:
+body:nocomponent,overflowoffset=0,noleftadjust,nocompress
