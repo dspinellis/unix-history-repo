@@ -25,12 +25,10 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)disklabel.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.15 (Berkeley) %G%";
 /* from static char sccsid[] = "@(#)disklabel.c	1.2 (Symmetric) 11/28/85"; */
 #endif /* not lint */
 
-#include <stdio.h>
-#include <ctype.h>
 #include <sys/param.h>
 #include <sys/signal.h>
 #include <sys/errno.h>
@@ -40,6 +38,9 @@ static char sccsid[] = "@(#)disklabel.c	5.14 (Berkeley) %G%";
 #include <strings.h>
 #define DKTYPENAMES
 #include <sys/disklabel.h>
+#include <stdio.h>
+#include <ctype.h>
+#include "pathnames.h"
 
 /*
  * Disklabel: read and write disklabels.
@@ -62,14 +63,14 @@ static char sccsid[] = "@(#)disklabel.c	5.14 (Berkeley) %G%";
 
 #ifdef vax
 #define	BOOT				/* also have bootstrap in "boot area" */
-#define	BOOTDIR	"/usr/mdec"		/* source of boot binaries */
+#define	BOOTDIR	_PATH_BOOTDIR		/* source of boot binaries */
 #else
 #ifdef lint
 #define	BOOT
 #endif
 #endif
 
-#define	DEFEDITOR	"/usr/ucb/vi"
+#define	DEFEDITOR	_PATH_EDITOR
 #define	streq(a,b)	(strcmp(a,b) == 0)
 
 #ifdef BOOT
