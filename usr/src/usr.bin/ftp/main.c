@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	4.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -32,6 +32,8 @@ main(argc, argv)
 		fprintf(stderr, "ftp: ftp/tcp: unknown service\n");
 		exit(1);
 	}
+	doglob = 1;
+	autologin = 1;
 	argc--, argv++;
 	while (argc > 0 && **argv == '-') {
 		for (cp = *argv + 1; *cp; cp++)
@@ -56,6 +58,10 @@ main(argc, argv)
 
 			case 'n':
 				autologin = 0;
+				break;
+
+			case 'g':
+				doglob = 0;
 				break;
 
 			default:
