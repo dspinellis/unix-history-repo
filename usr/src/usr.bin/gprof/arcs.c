@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)arcs.c	1.4 (Berkeley) %G%";
+    static	char *sccsid = "@(#)arcs.c	1.5 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -58,32 +58,6 @@ topcmp( npp1 , npp2 )
     return (*npp1) -> toporder - (*npp2) -> toporder;
 }
 
-    /*
-     *	sort by decreasing total time (time+childtime)
-     *	if times are equal, but one is a cycle header,
-     *	say that's first (e.g. less)
-     */
-int
-totalcmp( npp1 , npp2 )
-    nltype	**npp1;
-    nltype	**npp2;
-{
-    register nltype	*np1 = *npp1;
-    register nltype	*np2 = *npp2;
-    double		diff;
-
-    diff =    ( np1 -> time + np1 -> childtime )
-	    - ( np2 -> time + np2 -> childtime );
-    if ( diff < 0.0 )
-	    return 1;
-    if ( diff > 0.0 )
-	    return -1;
-    if ( np1 -> name == 0 && np1 -> cycleno != 0 ) 
-	return -1;
-    if ( np2 -> name == 0 && np1 -> cycleno != 0 )
-	return 1;
-    return 0;
-}
 
 doarcs()
 {

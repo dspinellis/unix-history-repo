@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)printgprof.c	1.5 (Berkeley) %G%";
+    static	char *sccsid = "@(#)printgprof.c	1.6 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -35,12 +35,18 @@ printprof()
 timecmp( npp1 , npp2 )
     nltype **npp1, **npp2;
 {
-    double d;
+    double	timediff;
+    long	calldiff;
 
-    d = (*npp2) -> time - (*npp1) -> time;
-    if ( d > 0.0 )
+    timediff = (*npp2) -> time - (*npp1) -> time;
+    if ( timediff > 0.0 )
 	return 1 ;
-    if ( d < 0.0 )
+    if ( timediff < 0.0 )
+	return -1;
+    calldiff = (*npp2) -> ncall - (*npp1) -> ncall;
+    if ( calldiff > 0 )
+	return 1;
+    if ( calldiff < 0 )
 	return -1;
     return( strcmp( (*npp1) -> name , (*npp2) -> name ) );
 }
@@ -171,6 +177,44 @@ printgprof()
 	printf( "-----------------------------------------------\n" );
 	printf( "\n" );
     }
+}
+
+    /*
+     *	sort by decreasing total time (time+childtime)
+     *	if times are equal, but one is a cycle header,
+     *		say that's first (e.g. less, i.e. -1).
+     *	if one's name doesn't have an underscore and the other does,
+     *		say the one is first.
+     *	all else being equal, sort by names.
+     */
+int
+totalcmp( npp1 , npp2 )
+    nltype	**npp1;
+    nltype	**npp2;
+{
+    register nltype	*np1 = *npp1;
+    register nltype	*np2 = *npp2;
+    double		diff;
+
+    diff =    ( np1 -> time + np1 -> childtime )
+	    - ( np2 -> time + np2 -> childtime );
+    if ( diff < 0.0 )
+	    return 1;
+    if ( diff > 0.0 )
+	    return -1;
+    if ( np1 -> name == 0 && np1 -> cycleno != 0 ) 
+	return -1;
+    if ( np2 -> name == 0 && np2 -> cycleno != 0 )
+	return 1;
+    if ( np1 -> name == 0 )
+	return -1;
+    if ( np2 -> name == 0 )
+	return 1;
+    if ( *(np1 -> name) != '_' && *(np2 -> name) == '_' )
+	return -1;
+    if ( *(np1 -> name) == '_' && *(np2 -> name) != '_' )
+	return 1;
+    return strcmp( np1 -> name , np2 -> name );
 }
 
 printparents( childp )
