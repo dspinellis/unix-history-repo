@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)exec.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)exec.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -115,7 +115,7 @@ doexec(t)
 	 * We must do this AFTER any possible forking (like `foo`
 	 * in glob) so that this shell can still do subprocesses.
 	 */
-	(void) sigsetmask(0);
+	(void) sigsetmask(0L);
 
 	/*
 	 * If no path, no words in path, or a / in the filename
@@ -275,8 +275,7 @@ xechoit(t)
 }
 
 /*VARARGS0*//*ARGSUSED*/
-dohash(v)
-	char **v;
+dohash()
 {
 	struct stat stb;
 	DIR *dirp;

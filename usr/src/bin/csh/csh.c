@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)csh.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)csh.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -455,7 +455,8 @@ srcunit(unit, onlyown, hflg)
 
 	/* The (few) real local variables */
 	jmp_buf oldexit;
-	int reenter, omask;
+	int reenter;
+	long omask;
 
 	if (unit < 0)
 		return;
@@ -626,9 +627,9 @@ pintr1(wantnl)
 	bool wantnl;
 {
 	register char **v;
-	int omask;
+	long omask;
 
-	omask = sigblock(0);
+	omask = sigblock(0L);
 	if (setintr) {
 		(void) sigsetmask(omask & ~sigmask(SIGINT));
 		if (pjobs) {
@@ -692,7 +693,7 @@ process(catch)
 		 * Interruptible during interactive reads
 		 */
 		if (setintr)
-			(void) sigsetmask(sigblock(0) & ~sigmask(SIGINT));
+			(void) sigsetmask(sigblock(0L) & ~sigmask(SIGINT));
 
 		/*
 		 * For the sake of reset()
