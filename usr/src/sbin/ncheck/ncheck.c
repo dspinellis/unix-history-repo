@@ -1,12 +1,12 @@
 #ifndef lint
-static	char *sccsid = "@(#)ncheck.c	2.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)ncheck.c	2.4 (Berkeley) %G%";
 #endif
 /*
  * ncheck -- obtain file names from reading filesystem
  */
 
 #define	NB		500
-#define	HSIZE		2503
+#define	HSIZE		5651
 #define	MAXNINDIR	(MAXBSIZE / sizeof (daddr_t))
 
 #include <sys/param.h>
