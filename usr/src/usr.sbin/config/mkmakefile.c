@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -97,6 +97,8 @@ static	struct users {
 	{ 4, 2, 128 },			/* MACHINE_TAHOE */
 	{ 8, 2, 64 },			/* MACHINE_HP300 */
 	{ 8, 2, 64 },			/* MACHINE_I386 */
+	{ 8, 2, 64 },			/* MACHINE_MIPS */
+	{ 8, 2, 64 },			/* MACHINE_PMAX */
 };
 #define	NUSERS	(sizeof (users) / sizeof (users[0]))
 
@@ -556,7 +558,7 @@ do_systemspec(f, fl, first)
 	fprintf(f, "\t${SYSTEM_LD} swap%s.o\n", fl->f_fn);
 	fprintf(f, "\t${SYSTEM_LD_TAIL}\n\n");
 	do_swapspec(f, fl->f_fn);
-	for (fl = fl->f_next; fl->f_type == SWAPSPEC; fl = fl->f_next)
+	for (fl = fl->f_next; fl && fl->f_type == SWAPSPEC; fl = fl->f_next)
 		;
 	return (fl);
 }
@@ -569,8 +571,8 @@ do_swapspec(f, name)
 	if (!eq(name, "generic"))
 		fprintf(f, "swap%s.o: swap%s.c\n", name, name);
 	else
-		fprintf(f, "swapgeneric.o: ../%s/swapgeneric.c\n",
-			machinename);
+		fprintf(f, "swapgeneric.o: $S/%s/%s/swapgeneric.c\n",
+			machinename, machinename);
 	fprintf(f, "\t${NORMAL_C}\n\n");
 }
 
