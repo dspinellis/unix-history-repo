@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_imp.c	7.9 (Berkeley) %G%
+ *	@(#)if_imp.c	7.10 (Berkeley) %G%
  */
 
 #include "imp.h"
@@ -448,8 +448,8 @@ impmsg(sc, fmt, a1)
 }
 
 struct sockproto impproto = { PF_IMPLINK };
-struct sockaddr_in impdst = { AF_IMPLINK };
-struct sockaddr_in impsrc = { AF_IMPLINK };
+struct sockaddr_in impdst = { sizeof (impdst), AF_IMPLINK };
+struct sockaddr_in impsrc = { sizeof (impsrc), AF_IMPLINK };
 
 /*
  * Pick up the IMP "error" messages enqueued earlier,

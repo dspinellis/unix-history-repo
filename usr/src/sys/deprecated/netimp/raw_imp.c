@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)raw_imp.c	7.4 (Berkeley) %G%
+ *	@(#)raw_imp.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -31,6 +31,7 @@
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
 #include "../netinet/in_var.h"
+#include "../netinet/in_pcb.h"
 #include "if_imp.h"
 
 /*
@@ -52,7 +53,7 @@ rimp_output(m, so)
 	int len, error = 0;
 	register struct imp_leader *ip;
 	register struct sockaddr_in *sin;
-	register struct rawcb *rp = sotorawcb(so);
+	register struct raw_inpcb *rp = sotorawinpcb(so);
 	struct in_ifaddr *ia;
 	struct control_leader *cp;
 
@@ -60,7 +61,7 @@ rimp_output(m, so)
 	 * Verify user has supplied necessary space
 	 * for the leader and check parameters in it.
 	 */
-	if ((m->m_off > MMAXOFF || m->m_len < sizeof(struct control_leader)) &&
+	if ((m->m_len < sizeof(struct control_leader)) &&
 	    (m = m_pullup(m, sizeof(struct control_leader))) == 0) {
 		error = EMSGSIZE;	/* XXX */
 		goto bad;
@@ -93,7 +94,7 @@ rimp_output(m, so)
 	for (len = 0, n = m; n; n = n->m_next)
 		len += n->m_len;
 	ip->il_length = htons((u_short)(len << 3));
-	sin = (struct sockaddr_in *)&rp->rcb_faddr;
+	sin = (struct sockaddr_in *)rp->rinp_rcb.rcb_faddr;
 	imp_addr_to_leader((struct control_leader *)ip, sin->sin_addr.s_addr);
 	/* no routing here */
 	ia = in_iaonnetof(in_netof(sin->sin_addr));
