@@ -1,0 +1,144 @@
+
+#
+#	load_diags is a shell script designed to automatically
+#	load ("tar" in) diagnostic products from tape.
+#
+
+2> /dev/null
+> /etc/test_permission
+if [ -r /etc/test_permission ]	# test if user is root
+then
+	rm -f /etc/test_permission
+else
+	echo "\n\n\n   *******************************\c"
+	echo "*************************************"
+	echo "   * You must be logged in as root\c"
+	echo " to run the load_diags shell script *"
+	echo "   *******************************\c"
+	echo "*************************************\n\n\n"
+	echo ""
+	exit 1
+fi
+
+
+class2=true			# initialize load flags for 
+class4=true			# the diagnostic classes.
+
+if [ -d /usr/d ]
+then
+	echo "\n   \c"
+	echo "The standalone diagnostic directory ( /usr/d ) already exists."
+	echo "   \c"
+	echo "Do you want to RELOAD the \"/usr/d\" directory ? (y/n) \c"
+	read answer
+	if [ x$answer != xy -a x$answer != xY ]
+	then
+		class2=false 
+	else
+		echo "   \c"
+		echo "Removing all files under /usr/d..."
+		rm -f /usr/d/* 2>/dev/null >/dev/null
+	fi
+fi
+
+if [ -d /usr/d/system ]
+then
+	echo "\n   \c"
+	echo "The system level test directory ( /usr/d/system ) already exists."
+	echo "   \c"
+	echo "Do you want to RELOAD the \"/usr/d/system\" directory ? (y/n) \c"
+	read answer
+	if [ x$answer != xy -a x$answer != xY ]
+	then
+		class4=false 
+	else
+		echo "   \c"
+		echo "Removing all files under /usr/d/system..."
+		rm -rf /usr/d/system
+	fi
+fi
+
+cd /				# change directory to root 
+
+if [ $class2 = true -a $class4 = true ]
+then
+      echo "\n   \c"
+      echo "  Loading Class 2 Diagnostic Products, Preliminary Release 2-2.0E\c"
+      echo "\n   \c"
+      echo "  and     Class 4 Diagnostic Products, Preliminary Release 4-2.0G"
+	TAR="/usr/bin/tar xvb 18 usr/d"
+
+elif [ $class2 = true ]
+then
+      echo "\n   \c"
+      echo "  Loading Class 2 Diagnostic Products, Preliminary Release 2-2.0E"
+	TAR="/usr/bin/tar xvb 18 all_s demand dmp1 dmp2 dmp3 dual_all_s dual_fall_s ether ether217 event fall_s fpdmp fpevent fpmacro hdc210 hmtc221 hvioc218 ioboth lister macro memtst mmtest pits poc_er_codes rtclk vioc231"
+
+elif [ $class4 = true ] 
+then 
+     echo "  Loading Class 4 Diagnostic Products, Preliminary Release 4-2.0G"
+	TAR="/usr/bin/tar xvb 18 usr/d/system" 
+else 
+	echo "\nNO FILES LOADED" 
+	exit 1
+fi  
+
+echo "\n   \c"
+echo "  Load the DIAGNOSTIC PRODUCTS TAPE, Product #9814050 (tar format)\c"
+echo "\n   \c"
+echo "             and put the tape drive on-line please. "
+echo "\n   \c"
+echo "*****************  Hit <RETURN> key when ready    ******************\c"
+echo "\c"
+read return
+
+tar_err=true
+
+while [ $tar_err = true ]
+do
+
+if [ $class2 = true -a $class4 = false ]
+then
+	echo "\n   \c"
+	echo "Tar searching forward on tape for class2 diags..."
+fi
+$TAR
+
+if [ $? -eq 0 ]
+then
+	break
+fi
+
+echo "\n   \c"
+echo "********************************************************************"
+echo "   \c"
+echo "*                                                                  *"
+echo "   \c"
+echo "* ERROR generated while attempting to \"tar\" in diagnostic products.*"
+echo "   \c"
+echo "*                                                                  *"
+echo "   \c"
+echo "* Load the DIAGNOSTIC PRODUCTS TAPE, Product #9814050 (tar format) *"
+echo "   \c"
+echo "*            and put the tape drive on-line please.                *"
+echo "   \c"
+echo "*                                                                  *"
+echo "   \c"
+echo "**********  Hit <RETURN> key when ready, or enter Q to quit ********\c"
+echo "\c"
+	read return
+
+	if [ X$return = XQ -o X$return = Xq ] 
+	then
+		exit 0
+	fi
+done
+
+if [ $class2 = true ]
+then
+	if [ ! -d /d ]
+	then 
+		mkdir /d
+	fi
+	cp /usr/d/poc_er_codes /d/poc_er_codes
+fi
