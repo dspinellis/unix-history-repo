@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kvm.h	5.5 (Berkeley) %G%
+ *	@(#)kvm.h	5.6 (Berkeley) %G%
  */
 
 #ifndef _KVM_H_
@@ -27,7 +27,7 @@ struct user	*kvm_getu __P((const struct proc *));
 struct proc	*kvm_nextproc __P((void));
 int		 kvm_nlist __P((struct nlist *));
 int		 kvm_openfiles __P((const char *, const char *, const char *));
-int		 kvm_read __P((off_t, void *, int));
+int		 kvm_read __P((void *, void *, int));
 __END_DECLS
 
 #endif /* !_KVM_H_ */
