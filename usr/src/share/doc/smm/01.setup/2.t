@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)2.t	1.4 (Berkeley) %G%
+.\"	@(#)2.t	1.5 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -453,8 +453,8 @@ lw(2i) l.
 is the partition; this takes a few minutes)
 \fB#\fP \fImount /dev/dk#c /usr\fP	(mount the usr file system)
 \fB#\fP \fIcd /usr\fP	(make /usr the current directory)
-\fB#\fP \fImt fsf\fP	(space to end of previous tape file)
-\fB#\fP \fItar xpf /dev/rmt12\fP	(extract all of usr except usr/src)
+\fB#\fP \fImt -t /dev/rmt12 fsf\fP	(space to end of previous tape file)
+\fB#\fP \fItar xbpf 40 /dev/rmt12\fP	(extract all of usr except usr/src)
 (this takes about 15-20 minutes)
 .TE
 .DE
@@ -464,27 +464,24 @@ using one of the names in /etc/disktab.
 If the tape had been rewound or positioned incorrectly before the \fItar\fP,
 it may be repositioned by the following commands.
 .DS
-\fB#\fP \fImt rew\fP
-\fB#\fP \fImt fsf 3\fP
+\fB#\fP \fImt -t /dev/rmt12 rew\fP
+\fB#\fP \fImt -t /dev/rmt12 fsf 3\fP
 .DE
 The data on the fourth tape file has now been extracted.
-If you are using 1600bpi tapes,
-the first reel of the distribution is no longer needed;
-the remainder of the installation procedure uses the second
-reel of tape which should now be mounted in place of the first.
-The first instruction below should be ignored if using 1600bpi tapes.
-The installation procedure continues from this point on the 6250bpi tape.
+If you are using 1600bpi tapes, the first reel of the
+distribution is no longer needed; you should now mount the second
+reel instead.  The installation procedure continues from this
+point on the 6250bpi tape.
 .DS
 .TS
 lw(2i) l.
-\fB#\fP \fImt fsf\fP		(6250bpi tapes only)
 \fB#\fP \fImkdir src\fP	(make directory for source)
-\fB#\fP \fImkdir src/sys\fP	(make directory for system source)
-\fB#\fP \fIcd src/sys\fP	(make /usr/src/sys the current directory)
-\fB#\fP \fItar xpbf 20 /dev/rmt12\fP 	(extract the system source)
+\fB#\fP \fIcd src\fP	(make source directory the current directory)
+\fB#\fP \fImt -t /dev/rmt12 fsf\fP	(space to end of previous tape file)
+\fB#\fP \fItar xpbf 40 /dev/rmt12\fP 	(extract the system source)
 (this takes about 5-10 minutes)
-\fB#\fP \fIcd /\fP	(back to root)
-\fB#\fP \fIchmod 755  /  /usr  /usr/src /usr/src/sys\fP
+\fB#\fP \fIcd /\fP	(change directory, back to the root)
+\fB#\fP \fIchmod 755  /usr/src\fP
 \fB#\fP \fIumount /dev/dk#c\fP	(unmount /usr)
 .TE
 .DE
@@ -517,40 +514,33 @@ To use the /usr file system, you should now remount it with:
 .DS
 \fB#\fP \fI/etc/mount /dev/dk#c /usr\fP
 .DE
-You can then extract the source code for the commands:
+.PP
+If you are using 1600bpi tapes, the second reel of the
+distribution is no longer needed; you should now mount the third
+reel instead.  The installation procedure continues from this
+point on the 6250bpi tape.
 .DS
-\fB#\fP \fIcd /usr/src\fP
-\fB#\fP \fImt fsf\fP
-\fB#\fP \fItar xpb 20\fP
+\fB#\fP \fImkdir /usr/src/sys\fP
+\fB#\fP \fIchmod 755 /usr/src/sys\fP
+\fB#\fP \fIcd /usr/src/sys\fP
+\fB#\fP \fImt -t /dev/rmt12 fsf\fP
+\fB#\fP \fItar xpbf 40 /dev/rmt12\fP
 .DE
-If you get an error at this point, most likely it was
-a problem with tape positioning.
-You can reposition the tape by rewinding it and
-then skipping over the files already read (see \fImt\fP\|(1)).
-.NH 3
-Additional software
 .PP
 There is one additional tape file on the distribution tape(s)
-which has not been installed to this point;
-it contains user contributed software in \fItar\fP\|(1) format.
-On the 1600bpi tape set, this file is the sole file on the third tape.
-It can be installed by positioning the tape 
-using \fImt\fP\|(1) and reading
-in the files as was done for /usr/src above.
-As distributed, the user contributed software should be placed in /usr/src/new.
-It may be extracted by mounting the appropriate tape (if not already mounted),
-positioning the tape at the beginning of this file (for 6250bpi),
-and extracting with
-.IR tar :
+which has not been installed to this point; it contains user
+contributed software in \fItar\fP\|(1) format.  As distributed,
+the user contributed software should be placed in /usr/src/new.
 .DS
-\fB#\fP \fIcd /usr/src\fP
-\fB#\fP \fImkdir new\fP
-\fB#\fP \fIchmod 755 new\fP
-\fB#\fP \fIcd new\fP
-\fB#\fP \fItar xpb 20\fP
+\fB#\fP \fImkdir /usr/src/new\fP
+\fB#\fP \fIchmod 755 /usr/src/new\fP
+\fB#\fP \fIcd /usr/src/new\fP
+\fB#\fP \fImt -t /dev/rmt12 fsf\fP
+\fB#\fP \fItar xpbf 40 /dev/rmt12\fP
 .DE
 Several of the directories for large contributed software subsystems
-have been placed in a single archive file and compressed to allow
+have been placed in a single archive file and compressed due to space
+constraints within the distribution.
 .NH 2
 Additional conversion information
 .PP
@@ -573,3 +563,7 @@ If \fItar\fP images were written instead of doing a dump, you should
 be sure to use its `-p' option when reading the files back.  No matter
 how you restore a file system, be sure to unmount it and and check its
 integrity with \fIfsck\fP(8) when the job is complete.
+
+
+
+
