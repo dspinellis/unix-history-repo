@@ -60,7 +60,10 @@ static char sccsid[] = "@(#)ifconfig.c	5.1 (Berkeley) 2/28/91";
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#ifdef notdef
+/*#ifdef notdef
+This is OK now because we have these headers available, and someone might
+actually want to use these.
+*/
 #define	NSIP
 #include <netns/ns.h>
 #include <netns/ns_if.h>
@@ -68,7 +71,7 @@ static char sccsid[] = "@(#)ifconfig.c	5.1 (Berkeley) 2/28/91";
 #define EON
 #include <netiso/iso.h>
 #include <netiso/iso_var.h>
-#endif
+/*#endif*/
 #include <netdb.h>
 #include <sys/protosw.h>
 
@@ -104,6 +107,9 @@ int	setifmetric(), setifbroadaddr(), setifipdst();
 int	notealias(), setsnpaoffset(), setnsellength();
 
 #define	NEXTARG		0xffffff
+#ifndef IFF_ALTPHYS
+#  define IFF_ALTPHYS IFF_LLC0 /* grrr... */
+#endif
 
 struct	cmd {
 	char	*c_name;
@@ -118,8 +124,8 @@ struct	cmd {
 	{ "-arp",	IFF_NOARP,	setifflags },
 	{ "debug",	IFF_DEBUG,	setifflags },
 	{ "-debug",	-IFF_DEBUG,	setifflags },
-	{ "aui",	IFF_LLC0,	setifflags },	/* 06 Sep 92*/
-	{ "bnc",	-IFF_LLC0,	setifflags },
+	{ "aui",	IFF_ALTPHYS,	setifflags },	/* 06 Sep 92*/
+	{ "bnc",	-IFF_ALTPHYS,	setifflags },
 	{ "llc0",	IFF_LLC0,	setifflags },	/* 10 Mar 93 */
 	{ "-llc0",	-IFF_LLC0,	setifflags },
 	{ "llc1",	IFF_LLC1,	setifflags },
@@ -596,8 +602,8 @@ in_getaddr(s, which)
 	if (which != MASK)
 		sin->sin_family = AF_INET;
 
-	if ((val = inet_addr(s)) != -1)
-		sin->sin_addr.s_addr = val;
+	if (inet_aton(s, &sin->sin_addr) != 0)
+		; /* work done by inet_aton */
 	else if (hp = gethostbyname(s))
 		bcopy(hp->h_addr, (char *)&sin->sin_addr, hp->h_length);
 	else if (np = getnetbyname(s))
@@ -698,7 +704,7 @@ setnsellength(val)
 	}
 }
 
-#ifdef notdef
+#ifdef EON
 fixnsel(s)
 register struct sockaddr_iso *s;
 {
@@ -710,7 +716,7 @@ register struct sockaddr_iso *s;
 
 adjust_nsellength()
 {
-#ifdef notdef
+#ifdef EON
 	fixnsel(sisotab[RIDADDR]);
 	fixnsel(sisotab[ADDR]);
 	fixnsel(sisotab[DSTADDR]);
