@@ -1,0 +1,191 @@
+.pa 1
+.he 'NROFF (I)'1/15/73'NROFF (I)'
+.ti 0
+NAME		nroff  --  format text
+.sp
+.ti 0
+.nf
+SYNOPSIS	nroff_____ [+_N] [-s__] [-h__] [-q__] [-i__] files
+.fi
+.sp
+.ti 0
+DESCRIPTION	nroff_____
+formats text according to control lines embedded
+in the text files.
+The non-file option arguments are interpreted as follows:
+
+.in +6
+.ti -3
++N Output will commence at the first page whose page
+number is N (independent of whether or not the
+page number is being printed).
+
+.ti -3
+-s Stop between pages. Printing will halt prior to
+each page (including the first) to permit paper
+loading and changing. Printing is restarted by
+typing either a "newline" or "delete" character.
+
+.ti -3
+-h High-speed output. During output, strings of
+space characters are replaced where possible with
+tab characters to speed up output. Futhermore, if
+the output is directed into a file or a pipe,
+this mode effectively reduces the total number of
+characters in the file or pipe; this is especially
+important in multi-column output where the
+temporary file(s) or pipe(s) would otherwise contain
+a large number of space characters.
+
+.ti -3
+-q The prompt names for insertions are not printed
+and the bell character is sent instead; in
+addition, the insertion is not echoed. This mode
+permits insertions during the actual output printing
+
+.ti -3
+-i Index mode. NROFF creates a file called "index"
+containing every word output together with the
+line and page number. The format is word, tab,
+page, tab, line, newline, etc. Invoking this mode
+slows down the execution of NROFF considerably.
+.sp
+.in -6
+Nroff is more completely described
+in [1].
+A condensed Request Summary is included here.
+.sp
+.ti 0
+FILES		/etc/suftab	suffix hyphenation tables
+.br
+/tmp/rtm?	temporary
+.br
+.sp
+.ti 0
+SEE ALSO	[1] NROFF User's Manual (available as MM-73-1271-2).
+.sp
+.ti 0
+DIAGNOSTICS	none
+.sp
+.ti 0
+BUGS		-
+.in 0
+.bp
+.cc %
+%nf
+%ce
+REQUEST REFERENCE AND INDEX
+
+Request  Initial  If no    Cause
+Form____     Value_____    Argument________ Break_____ Explanation___________
+
+I.  Page____ Control_______
+
+.pl +_N   N=66     N=66     no    P_age L_ength.
+.bp +_N   N=1      -        yes   B_egin P_age.
+.pn +_N   N=1      ignored  no    P_age N_umber.
+.po +_N   N=0      N=prev   no    P_age O_ffset.
+.ne N    -        N=1      no    NE__ed N lines.
+
+II.  Text____ Filling_______, Adjusting_________, and___ Centering_________
+
+.br      -        -        yes   BR__eak.
+.fi      fill     -        yes   FI__ll output lines.
+.nf      fill     -        yes   N_oF_ill.
+.ad c    adj,norm adjust   no    AD__just mode on.
+.na      adjust   -        no    N_oA_djust.
+.ce N    off      N=1      yes   CE__nter N input text lines.
+
+III.  Line____ Spacing_______ and___ Blank_____ Lines_____
+
+.ls +_N   N=1      N=prev   no    L_ine S_pacing.
+.sp N    -        N=1      yes   SP__ace N lines
+.lv N    -        N=1      no    OR-
+.sv N    -        N=1      no    S_aV_e N lines.
+.os      -        -        no    O_utput S_aved lines.
+.ns      space    -        no    N_o-S_pace mode on.
+.rs      -        -        no    R_estore S_pacing.
+.xh      off      -        no    EX_tra-H_alf-line mode on.
+
+IV.  Line____ Length______ and___ Indenting_________
+
+.ll +_N   N=65     N=prev   no    L_ine L_ength.
+.in +_N   N=0      N=prev   yes   IN__dent.
+.ti +_N   -        N=1      yes   T_emporary I_ndent.
+
+V.  Macros______, Diversion_________, and___ Line____ Traps_____
+
+.de xx   -        ignored  no    DE__fine or redefine a macro.
+.rm xx   -        -        no    R_eM_ove macro name.
+.di xx   -        end      no    DI__vert output to macro "xx".
+.wh -_N xx         -        no    WH__en; set a line trap.
+.ch -_N -_M         -        no    OR-
+.ch xx -_M         -        no    OR-
+.ch -_N y          -        no    OR-
+.ch xx y          -        no    CH__ange trap line.
+
+VI.  Number______ Registers_________
+
+.nr a +_N -_M       -        no    OR-
+.nr ab +_N -_M      -        no    N_umber R_egister.
+.nc c    \\n       \\n       no    N_umber C_haracter.
+.ar      arabic   -        no    Arabic numbers.
+.ro      arabic   -        no    Roman numbers.
+.RO      arabic   -        no    ROMAN numbers.
+
+VII.  Input_____ and___ Output______ Conventions___________ and___ Character_________ Translations____________
+
+.ta N,M,...       none     no    PseudoTA__bs setting.
+.tc c    space    space    no    T_ab replacement C_haracter.
+.lc c    .        .        no    L_eader replacement C_haracter.
+.ul N    -        N=1      no    UN__derline input text lines.
+.cc c    .        .        no    Basic C_ontrol C_haracter.
+.c2 c    '        '        no    Nobreak control character.
+.li N    -        N=1      no    Accept input lines LI__terally.
+.tr abcd....      -        no    TR__anslate on output.
+
+VIII.  Hyphenation___________.
+
+.nh      on       -        no    N_o H_yphen.
+.hy      on       -        no    HY__phenate.
+.hc c    none     none     no    H_yphenation indicator C_haracter.
+
+IX.  Three_____ Part____ Titles______.
+
+.tl 'left'center'right'    no    T_itL_e.
+.lt N    N=65     N=prev   no    L_ength of T_itle.
+
+X.  Output______ Line____ Numbering_________.
+
+.nm +_N M S I      off      no    N_umber M_ode on or off, set parameters.
+.np M S I         reset    no    N_umber P_arameters set or reset.
+
+XI.  Conditional___________ Input_____ Line____ Acceptance__________
+
+.if c anything    -        no    OR-
+.if !c anything   -        no    OR-
+.if N anything    -        no    OR-
+.if !N anything   -        no    IF__ true accept line of "anything".
+
+XII.  Environment___________ Switching_________.
+
+.ev N    N=0      N=prev   no    E_nV_ironment switched.
+
+XIII.  Insertions__________ from____ the___ Standard________ Input_____ Stream______
+
+.rd prompt        bell     no    R_eaD_ insert.
+.ex      -        -        no    EX__it.
+
+XIV.  Input_____ File____ Switching _________
+
+.so filename      -        no    Switch SO__urce file (push down).
+.nx filename      -        no    N_eX_t file.
+.sp
+XV.  Miscellaneous_____________
+
+.ig      -        -        no    IG__nore.
+.fl      -        -        no    FL__ush output buffer.
+.ab      -        -        no    AB__ort.
+%cc .
+.fi
+.in 16
