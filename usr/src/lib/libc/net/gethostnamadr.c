@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.27 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/param.h>
@@ -249,11 +249,21 @@ gethostbyname(name)
 
 	if (!(_res.options & RES_INIT) && res_init() == -1)
 		return (NULL);
-	if (isdigit(name[0])) {
-		h_errno = HOST_NOT_FOUND;
-		return (NULL);
-	
-	}
+	/*
+	 * disallow names consisting only of digits/dots, unless
+	 * they end in a dot.
+	 */
+	if (isdigit(name[0]))
+		for (cp = name;; ++cp) {
+			if (!*cp) {
+				if (*--cp == '.')
+					break;
+				h_errno = HOST_NOT_FOUND;
+				return (NULL);
+			}
+			if (!isdigit(*cp) && *cp != '.') 
+				break;
+		}
 	errno = 0;
 	for (cp = name, n = 0; *cp; cp++)
 		if (*cp == '.')
@@ -263,9 +273,9 @@ gethostbyname(name)
 
 		_res.options &= ~RES_DEFNAMES;			/* XXX */
 		if (n && *cp == '.')
-			*cp = 0;
+			*cp = '\0';
 		hp = gethostdomain(name, (char *)NULL);
-		if (n && *cp == 0)
+		if (n && *cp == '\0')
 			*cp = '.';
 		if (defflag)
 			_res.options |= RES_DEFNAMES;
