@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_subr.c	7.9 (Berkeley) %G%
+ *	@(#)tp_subr.c	7.10 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -643,8 +643,6 @@ tp_stash( tpcb, e )
 	register int		ack_reason= tpcb->tp_ack_strat & ACK_STRAT_EACH;
 									/* 0--> delay acks until full window */
 									/* 1--> ack each tpdu */
-	int		newrec = 0;
-
 #ifndef lint
 #define E e->ATTR(DT_TPDU)
 #else lint
@@ -682,9 +680,6 @@ tp_stash( tpcb, e )
 		ENDTRACE
 
 		sbappend(&tpcb->tp_sock->so_rcv, E.e_data);
-
-		if (newrec = E.e_eot ) /* ASSIGNMENT */
-			ack_reason |= ACK_EOT;
 
 		SEQ_INC( tpcb, tpcb->tp_rcvnxt );
 		/* 
