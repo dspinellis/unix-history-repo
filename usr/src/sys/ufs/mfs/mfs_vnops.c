@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vnops.c	7.7 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -235,8 +235,8 @@ mfs_close(vp, flag, cred)
 	 * we must invalidate any in core blocks, so that
 	 * we can, free up its vnode.
 	 */
-	bflush(vp->v_mount);
-	if (binval(vp->v_mount))
+	bflush(vp->v_mounton);
+	if (binval(vp->v_mounton))
 		return (0);
 	/*
 	 * There should be no way to have any more uses of this
