@@ -14,9 +14,6 @@ MAN5=	bootptab.5
 MAN8=	bootpd.8
 CLEANFILES+=version.c
 
-# if this not in /usr/src/libexec
-BINDIR=/usr/libexec
-
 version.c:
 	sh ${.CURDIR}/newvers.sh ${.CURDIR}/Version.c
 
