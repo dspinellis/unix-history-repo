@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_extern.h	7.14 (Berkeley) %G%
+ *	@(#)ufs_extern.h	7.15 (Berkeley) %G%
  */
 
 struct buf;
@@ -35,7 +35,6 @@ int	 writedisklabel __P((dev_t, int (*)(), struct disklabel *));
 int	 ufs_abortop __P((struct vop_abortop_args *));
 int	 ufs_access __P((struct vop_access_args *));
 int	 ufs_advlock __P((struct vop_advlock_args *));
-void	 ufs_bufstats __P((void));
 int	 ufs_check_export __P((struct mount *, struct ufid *, struct mbuf *,
 		struct vnode **, int *exflagsp, struct ucred **));
 int	 ufs_checkpath __P((struct inode *, struct inode *, struct ucred *));
