@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -501,7 +501,18 @@ sendrequest(cmd, local, remote, printnames)
 
 	if (restart_point &&
 	    (strcmp(cmd, "STOR") == 0 || strcmp(cmd, "APPE") == 0)) {
-		if (fseek(fin, (long) restart_point, 0) < 0) {
+		int rc;
+
+		switch (curtype) {
+		case TYPE_A:
+			rc = fseek(fin, (long) restart_point, SEEK_SET);
+			break;
+		case TYPE_I:
+		case TYPE_L:
+			rc = lseek(fileno(fin), restart_point, SEEK_SET);
+			break;
+		}
+		if (rc < 0) {
 			warn("local: %s", local);
 			restart_point = 0;
 			if (closefunc != NULL)
@@ -808,7 +819,7 @@ recvrequest(cmd, local, remote, lmode, printnames)
 	case TYPE_I:
 	case TYPE_L:
 		if (restart_point &&
-		    lseek(fileno(fout), restart_point, L_SET) < 0) {
+		    lseek(fileno(fout), restart_point, SEEK_SET) < 0) {
 			warn("local: %s", local);
 			if (closefunc != NULL)
 				(*closefunc)(fout);
@@ -850,7 +861,7 @@ recvrequest(cmd, local, remote, lmode, printnames)
 		if (restart_point) {
 			int i, n, ch;
 
-			if (fseek(fout, 0L, L_SET) < 0)
+			if (fseek(fout, 0L, SEEK_SET) < 0)
 				goto done;
 			n = restart_point;
 			for (i = 0; i++ < n;) {
@@ -859,7 +870,7 @@ recvrequest(cmd, local, remote, lmode, printnames)
 				if (ch == '\n')
 					i++;
 			}
-			if (fseek(fout, 0L, L_INCR) < 0) {
+			if (fseek(fout, 0L, SEEK_CUR) < 0) {
 done:
 				warn("local: %s", local);
 				if (closefunc != NULL)
