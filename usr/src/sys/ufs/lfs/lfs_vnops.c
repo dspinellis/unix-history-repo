@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.71 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.72 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -180,7 +180,9 @@ lfs_read(vp, uio, ioflag, cred)
 	int size, diff, error = 0;
 	long n, on, type;
 
-printf("lfs_read: ino %d\n", ip->i_number);
+#ifdef VERBOSE
+	printf("lfs_read: ino %d\n", ip->i_number);
+#endif
 #ifdef DIAGNOSTIC
 	if (uio->uio_rw != UIO_READ)
 		panic("ufs_read mode");
@@ -244,7 +246,9 @@ lfs_write(vp, uio, ioflag, cred)
 	int n, on, flags;
 	int size, resid, error = 0;
 
-printf("lfs_write ino %d\n", ip->i_number);
+#ifdef VERBOSE
+	printf("lfs_write ino %d\n", ip->i_number);
+#endif
 #ifdef DIAGNOSTIC
 	if (uio->uio_rw != UIO_WRITE)
 		panic("ufs_write mode");
@@ -349,8 +353,12 @@ lfs_fsync(vp, fflags, cred, waitfor, p)
 	int waitfor;
 	struct proc *p;
 {
-	struct inode *ip = VTOI(vp);
+	struct inode *ip;
 
+#ifdef VERBOSE
+	printf("lfs_fsync\n");
+#endif
+	ip = VTOI(vp);
 	if (fflags & FWRITE)
 		ip->i_flag |= ICHG;
 	/*
@@ -371,10 +379,13 @@ lfs_inactive(vp, p)
 	struct vnode *vp;
 	struct proc *p;
 {
+	extern int prtactive;
 	register struct inode *ip;
 	int mode, error;
-	extern int prtactive;
 
+#ifdef VERBOSE
+	printf("lfs_inactive\n");
+#endif
 	if (prtactive && vp->v_usecount != 0)
 		vprint("lfs_inactive: pushing active", vp);
 
