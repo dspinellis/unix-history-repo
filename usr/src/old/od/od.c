@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)od.c	5.5 (Berkeley) %G%";
+static char *sccsid = "@(#)od.c	5.6 (Berkeley) %G%";
 /*
  * od -- octal, hex, decimal, character dump of data in a file.
  *
@@ -616,41 +616,47 @@ static char	*str_ptr;
 static long	str_addr;
 static long	str_label;
 
-st_put(c, d)
-register char	*c;
+st_put(cc, d)
+char	*cc;
 struct dfmt	*d;
 {
-	if (c == 0)
+	register int	c;
+
+	if (cc == 0)
 	{
 		pr_sbuf(d, YES);
+		return(1);
 	}
-	else if (str_mode & S_FILL)
+
+	c = (*cc & 0377);
+
+	if (str_mode & S_FILL)
 	{
-		if (isascii(*c))
-			put_sbuf(*c, d);
+		if (isascii(c))
+			put_sbuf(c, d);
 		else
 		{
 			*str_ptr = CNULL;
-			if (*c == CNULL)
+			if (c == NULL)
 				pr_sbuf(d, YES);
 			str_mode = S_EMPTY;
 		}
 	}
-	else if (isascii(*c))
+	else if (isascii(c))
 	{
 		str_mode = S_FILL;
-		str_addr = addr + (c - dbuf);	/* ugly */
+		str_addr = addr + (cc - dbuf);	  /* ugly */
 		if ((str_label = label) >= 0)
-			str_label += (c - dbuf);/*  ''  */
+			str_label += (cc - dbuf); /*  ''  */
 		str_ptr = str_buf;
-		put_sbuf(*c, d);
+		put_sbuf(c, d);
 	}
 
 	return(1);
 }
 
 put_sbuf(c, d)
-char	c;
+int	c;
 struct dfmt	*d;
 {
 	*str_ptr++ = c;
