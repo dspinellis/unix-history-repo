@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)compact.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)compact.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
@@ -136,7 +136,7 @@ compact(file)
 		csize = cfstatus.st_size;
 		ucsize = ucfstatus.st_size;
 		if (csize >= ucsize) {
-			fprintf("%s: ", infname);
+			printf("%s: ", infname);
 			(void) unlink(fname);
 			printf("Not compacted, does not save bytes.\n");
 			goto done;
