@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.16	81/03/17	*/
+/*	subr_prf.c	4.17	81/05/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -126,6 +126,10 @@ number:
 		s = (char *)*adx;
 		while (c = *s++)
 			putchar(c, touser);
+		break;
+
+	case '%':
+		putchar('%', touser);
 		break;
 	}
 	adx++;
