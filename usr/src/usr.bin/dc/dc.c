@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)dc.c	4.3	(Berkeley)	%G%";
+static char sccsid[] = "@(#)dc.c	4.4	(Berkeley)	%G%";
 #endif not lint
 
 #include <stdio.h>
@@ -591,7 +591,8 @@ struct blk *ddivd,*ddivr;
 	p = salloc(0);
 	if(length(ddivr) == 0){
 		pushp(ddivr);
-		errorrt("divide by 0\n");
+		printf("divide by 0\n");
+		return((struct blk *)1);
 	}
 	divsign = remsign = 0;
 	divr = ddivr;
