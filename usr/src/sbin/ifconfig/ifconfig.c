@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	4.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)ifconfig.c	4.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -36,8 +36,11 @@ static char sccsid[] = "@(#)ifconfig.c	4.23 (Berkeley) %G%";
 #include <netns/ns.h>
 #include <netns/ns_if.h>
 
+#define EON
 #include <netiso/iso.h>
 #include <netiso/iso_var.h>
+#include <sys/protosw.h>
+#include <netiso/eonvar.h>
 
 #include <stdio.h>
 #include <errno.h>
@@ -57,7 +60,7 @@ int	metric;
 int	setaddr;
 int	setipdst;
 int	doalias;
-int	clearaddr = 1;
+int	clearaddr;
 int	newaddr = 1;
 int	s;
 extern	int errno;
@@ -206,16 +209,6 @@ main(argc, argv)
 		}
 		argc--, argv++;
 	}
-	if (clearaddr) {
-		int ret;
-		strncpy(rafp->af_ridreq, name, sizeof ifr.ifr_name);
-		if ((ret = ioctl(s, rafp->af_difaddr, rafp->af_ridreq)) < 0) {
-			if (errno == EADDRNOTAVAIL && (doalias >= 0)) {
-				/* means no previous address for interface */
-			} else
-				Perror("ioctl (SIOCDIFADDR)");
-		}
-	}
 	if (setipdst && af==AF_NS) {
 		struct nsip_req rq;
 		int size = sizeof(rq);
@@ -225,7 +218,25 @@ main(argc, argv)
 
 		if (setsockopt(s, 0, SO_NSIP_ROUTE, &rq, size) < 0)
 			Perror("Encapsulation Routing");
-		newaddr = 0;
+	}
+	if (setipdst && af == AF_ISO) {
+		iso_ridreq.ifr_Addr = iso_addreq.ifra_addr;
+		iso_ridreq.ifr_Addr.siso_ssuffixlen =
+			((struct sockaddr_in *)&addreq.ifra_dstaddr)->
+				sin_addr.s_addr;
+		strncpy(rafp->af_ridreq, name, sizeof ifr.ifr_name);
+		if (ioctl(s, SIOCSEONCORE, &iso_ridreq) < 0)
+			Perror("Iso Encapsulation Routing");
+	}
+	if (clearaddr) {
+		int ret;
+		strncpy(rafp->af_ridreq, name, sizeof ifr.ifr_name);
+		if ((ret = ioctl(s, rafp->af_difaddr, rafp->af_ridreq)) < 0) {
+			if (errno == EADDRNOTAVAIL && (doalias >= 0)) {
+				/* means no previous address for interface */
+			} else
+				Perror("ioctl (SIOCDIFADDR)");
+		}
 	}
 	if (newaddr) {
 		strncpy(rafp->af_addreq, name, sizeof ifr.ifr_name);
@@ -250,6 +261,8 @@ setifaddr(addr, param)
 	 * and the flags may change when the address is set.
 	 */
 	setaddr++;
+	if (doalias = 0)
+		clearaddr = 1;
 	(*afp->af_getaddr)(addr, (doalias >= 0 ? ADDR : RIDADDR));
 }
 
@@ -270,17 +283,24 @@ setifipdst(addr)
 {
 	in_getaddr(addr, DSTADDR);
 	setipdst++;
+	clearaddr = 0;
+	newaddr = 0;
 }
-
+#define rqtosa(x) (&(((struct ifreq *)(afp->x))->ifr_addr))
 /*ARGSUSED*/
 notealias(addr, param)
 	char *addr;
 {
+	if (setaddr && doalias == 0 && param < 0)
+		bcopy((caddr_t)rqtosa(af_addreq),
+		      (caddr_t)rqtosa(af_ridreq),
+		      rqtosa(af_addreq)->sa_len);
 	doalias = param;
-	if (param > 0)
-		clearaddr = 0;
-	else
+	if (param < 0) {
+		clearaddr = 1;
 		newaddr = 0;
+	} else
+		clearaddr = 0;
 }
 
 /*ARGSUSED*/
@@ -288,7 +308,6 @@ setifdstaddr(addr, param)
 	char *addr;
 	int param;
 {
-
 	(*afp->af_getaddr)(addr, DSTADDR);
 }
 
