@@ -1,4 +1,4 @@
-/*	if_vv.c	6.3	83/12/22	*/
+/*	if_vv.c	6.4	84/01/03	*/
 
 #include "vv.h"
 
@@ -19,27 +19,22 @@
 #include "../h/socket.h"
 #include "../h/vmmac.h"
 #include "../h/errno.h"
-#include "../h/time.h"
-#include "../h/kernel.h"
 #include "../h/ioctl.h"
 
 #include "../net/if.h"
 #include "../net/netisr.h"
 #include "../net/route.h"
-
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 
-#include "../vax/mtpr.h"
 #include "../vax/cpu.h"
-
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
-
+#include "../vax/mtpr.h"
 #include "../vaxif/if_vv.h"
 #include "../vaxif/if_uba.h"
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/ubavar.h"
 
 /*
  * N.B. - if WIRECENTER is defined wrong, it can well break
@@ -61,7 +56,7 @@ int vv_tracehdr = 0,		/* 1 => trace headers (slowly!!) */
 
 #define vvtracehdr	if (vv_tracehdr) vvprt_hdr
 
-int	vvprobe(), vvattach(), vvrint(), vvxint();
+int	vvprobe(), vvattach(), vvrint(), vvxint(), vvwatchdog();
 struct	uba_device *vvinfo[NVV];
 u_short vvstd[] = { 0 };
 struct	uba_driver vvdriver =
@@ -86,10 +81,12 @@ struct	vv_softc {
 	struct	ifuba vs_ifuba;		/* UNIBUS resources */
 	short	vs_oactive;		/* is output active */
 	short	vs_olen;		/* length of last output */
-	u_short	vs_lastx;		/* last destination address */
+	u_short	vs_lastx;		/* address of last packet sent */
+	u_short	vs_lastr;		/* address of last packet received */
 	short	vs_tries;		/* transmit current retry count */
 	short	vs_init;		/* number of ring inits */
 	short	vs_nottaken;		/* number of packets refused */
+	short	vs_timeouts;		/* number of transmit timeouts */
 } vv_softc[NVV];
 
 vvprobe(reg)
@@ -136,6 +133,8 @@ vvattach(ui)
 	vs->vs_if.if_ioctl = vvioctl;
 	vs->vs_if.if_output = vvoutput;
 	vs->vs_if.if_reset = vvreset;
+	vs->vs_if.if_timer = 0;
+	vs->vs_if.if_watchdog = vvwatchdog;
 	vs->vs_ifuba.ifu_flags = UBA_CANTWAIT | UBA_NEEDBDP | UBA_NEED16;
 #if defined(VAX750)
 	/* don't chew up 750 bdp's */
@@ -186,7 +185,7 @@ vvinit(unit)
 	addr = (struct vvreg *)ui->ui_addr;
 	if (if_ubainit(&vs->vs_ifuba, ui->ui_ubanum,
 	    sizeof (struct vv_header), (int)btoc(VVMTU)) == 0) {
-		printf("vv%d: can't initialize\n", unit);
+		printf("vv%d: can't initialize, if_ubainit() failed\n", unit);
 		vs->vs_if.if_flags &= ~IFF_UP;
 		return;
 	}
@@ -194,7 +193,10 @@ vvinit(unit)
 	 * Now that the uba is set up, figure out our address and
 	 * update complete our host address.
 	 */
-	vs->vs_if.if_host[0] = vvidentify(unit);
+	if ((vs->vs_if.if_host[0] = vvidentify(unit)) == 0) {
+		vs->vs_if.if_flags &= ~IFF_UP;
+		return;
+	}
 	printf("vv%d: host %d\n", unit, vs->vs_if.if_host[0]);
 	sin->sin_addr = if_makeaddr(vs->vs_if.if_net, vs->vs_if.if_host[0]);
 	/*
@@ -205,6 +207,9 @@ vvinit(unit)
 	DELAY(500000);				/* let contacts settle */
 	vs->vs_init = 0;
 	vs->vs_nottaken = 0;
+	vs->vs_timeouts = 0;
+	vs->vs_lastx = 256;			/* an invalid address */
+	vs->vs_lastr = 256;			/* an invalid address */
 	/*
 	 * Hang a receive and start any
 	 * pending writes by faking a transmit complete.
@@ -243,8 +248,10 @@ vvidentify(unit)
 	addr = (struct vvreg *)ui->ui_addr;
 	attempts = 0;		/* total attempts, including bad msg type */
 	m = m_get(M_DONTWAIT, MT_HEADER);
-	if (m == NULL)
+	if (m == NULL) {
+		printf("vv%d: can't initialize, m_get() failed\n", unit);
 		return (0);
+	}
 	m->m_next = 0;
 	m->m_off = MMINOFF;
 	m->m_len = sizeof(struct vv_header);
@@ -281,7 +288,7 @@ retry:
 	addr->vvocsr = VV_CPB | VV_DEN | VV_INR | VV_ENB;
 	/*
 	 * Wait for receive side to finish.
-	 * Extract source address (which will our own),
+	 * Extract source address (which will be our own),
 	 * and post to interface structure.
 	 */
 	DELAY(10000);
@@ -290,19 +297,20 @@ retry:
 			DELAY(1000);
 			continue;
 		}
-		if (attempts++ >= 10) {
-			printf("vv%d: can't initialize\n", unit);
-			printf("vvinit loopwait: icsr = %b\n",
-				0xffff&(addr->vvicsr), VV_IBITS);
-			vs->vs_if.if_flags &= ~IFF_UP;
-			return (0);
-		}
-		goto retry;
+		if (attempts++ < VVIDENTRETRY)
+			goto retry;
 	}
-	if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
-		UBAPURGE(vs->vs_ifuba.ifu_uba, vs->vs_ifuba.ifu_w.ifrw_bdp);
-	if (vs->vs_ifuba.ifu_xtofree)
+	/* deallocate mbuf used for send packet */
+	if (vs->vs_ifuba.ifu_xtofree) {
 		m_freem(vs->vs_ifuba.ifu_xtofree);
+		vs->vs_ifuba.ifu_xtofree = 0;
+	}
+	if (attempts >= VVIDENTRETRY) {
+		printf("vv%d: can't initialize after %d tries, icsr = %b\n",
+		    unit, VVIDENTRETRY, 0xffff&(addr->vvicsr), VV_IBITS);
+		return (0);
+	}
+	/* Purge BDP before looking at packet we just received */
 	if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(vs->vs_ifuba.ifu_uba, vs->vs_ifuba.ifu_r.ifrw_bdp);
 	m = if_rubaget(&vs->vs_ifuba, sizeof(struct vv_header), 0);
@@ -333,8 +341,7 @@ vvstart(dev)
 	register struct vv_softc *vs;
 	register struct vvreg *addr;
 	struct mbuf *m;
-	int ubainfo;
-	int dest;
+	int ubainfo, dest, s;
 
 	ui = vvinfo[unit];
 	vs = &vv_softc[unit];
@@ -345,7 +352,9 @@ vvstart(dev)
 	 * and map it to the UNIBUS.  If no more requests,
 	 * just return.
 	 */
+	s = splimp();
 	IF_DEQUEUE(&vs->vs_if.if_snd, m);
+	splx(s);
 	if (m == NULL) {
 		vs->vs_oactive = 0;
 		return;
@@ -356,11 +365,9 @@ vvstart(dev)
 restart:
 	/*
 	 * Have request mapped to UNIBUS for transmission.
-	 * Purge any stale data from this BDP, and start the otput.
-	 */
-	/*
-	 * The following test is questionable and isn't done in
-	 * the en driver...
+	 * Purge any stale data from this BDP, and start the output.
+	 *
+	 * Make sure this packet will fit in the interface.
 	 */
 	if (vs->vs_olen > VVMTU + sizeof (struct vv_header)) {
 		printf("vv%d vs_olen: %d > VVMTU\n", unit, vs->vs_olen);
@@ -374,6 +381,7 @@ restart:
 	addr->vvoea = (u_short) (ubainfo >> 16);
 	addr->vvowc = -((vs->vs_olen + 1) >> 1);
 	addr->vvocsr = VV_IEN | VV_CPB | VV_DEN | VV_INR | VV_ENB;
+	vs->vs_if.if_timer = VVTIMEOUT;
 	vs->vs_oactive = 1;
 }
 
@@ -391,6 +399,7 @@ vvxint(unit)
 
 	ui = vvinfo[unit];
 	vs = &vv_softc[unit];
+	vs->vs_if.if_timer = 0;
 	addr = (struct vvreg *)ui->ui_addr;
 	oc = 0xffff & (addr->vvocsr);
 	if (vs->vs_oactive == 0) {
@@ -423,11 +432,27 @@ vvxint(unit)
 		m_freem(vs->vs_ifuba.ifu_xtofree);
 		vs->vs_ifuba.ifu_xtofree = 0;
 	}
-	if (vs->vs_if.if_snd.ifq_head == 0) {
-		vs->vs_lastx = 256;		/* an invalid address */
-		return;
-	}
 	vvstart(unit);
+}
+
+/*
+ * Transmit watchdog timer routine.
+ * This routine gets called when we lose a transmit interrupt.
+ * The best we can do is try to restart output.
+ */
+vvwatchdog(unit)
+	int unit;
+{
+	register struct vv_softc *vs;
+	register int s;
+
+	vs = &vv_softc[unit];
+	if (vs->vs_if.if_flags & IFF_DEBUG)
+		printf("vv%d: lost a transmit interrupt.\n", unit);
+	vs->vs_timeouts++;
+	s = splimp();
+	vvstart(unit);
+	splx(s);
 }
 
 /*
@@ -447,7 +472,7 @@ vvrint(unit)
 	register struct vv_header *vv;
 	register struct ifqueue *inq;
 	struct mbuf *m;
-	int ubainfo, len, off;
+	int ubainfo, len, off, s;
 	short resid;
 
 	vs = &vv_softc[unit];
@@ -459,8 +484,8 @@ vvrint(unit)
 	if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(vs->vs_ifuba.ifu_uba, vs->vs_ifuba.ifu_r.ifrw_bdp);
 	if (addr->vvicsr & VVRERR) {
-		if (vs->vs_if.if_flags & IFF_DEBUG && vv_logreaderrors)
-			printf("vv%d: error vvicsr = %b\n", unit,
+		if (vv_logreaderrors && vs->vs_if.if_flags & IFF_DEBUG)
+			printf("vv%d: VVRERR, vvicsr = %b\n", unit,
 			    0xffff&(addr->vvicsr), VV_IBITS);
 		goto dropit;
 	}
@@ -483,31 +508,55 @@ vvrint(unit)
 		resid |= 0176000;		/* ugly!!!! */
 	len = (((sizeof (struct vv_header) + VVMRU) >> 1) + resid) << 1;
 	len -= sizeof(struct vv_header);
-	if (len > VVMRU || len <= 0)
+	if (len > VVMRU || len <= 0) {
+		if (vv_logreaderrors && vs->vs_if.if_flags & IFF_DEBUG)
+			printf("vv%d: len too big, len = %d, vvicsr = %b\n",
+			    unit, len, 0xffff&(addr->vvicsr), VV_IBITS);
 		goto dropit;
+	}
 #define	vvdataaddr(vv, off, type)	((type)(((caddr_t)((vv)+1)+(off))))
 	if (vv->vh_type >= RING_IPTrailer &&
 	     vv->vh_type < RING_IPTrailer+RING_IPNTrailer) {
 		off = (vv->vh_type - RING_IPTrailer) * 512;
-		if (off > VVMTU)
+		if (off > VVMTU) {
+			if (vv_logreaderrors && vs->vs_if.if_flags & IFF_DEBUG)
+				printf("vv%d: VVMTU, off = %d, vvicsr = %b\n",
+				    unit, off, 0xffff&(addr->vvicsr), VV_IBITS);
 			goto dropit;
+		}
 		vv->vh_type = *vvdataaddr(vv, off, u_short *);
 		resid = *(vvdataaddr(vv, off+2, u_short *));
-		if (off + resid > len)
+		if (off + resid > len) {
+			if (vv_logreaderrors && vs->vs_if.if_flags & IFF_DEBUG)
+				printf(
+				    "vv%d: off = %d, resid = %d, vvicsr = %b\n",
+				    unit, off, resid,
+				    0xffff&(addr->vvicsr), VV_IBITS);
 			goto dropit;
+		}
 		len = off + resid;
 	} else
 		off = 0;
-	if (len == 0)
+	if (len == 0) {
+		if (vv_logreaderrors && vs->vs_if.if_flags & IFF_DEBUG)
+			printf("vv%d: len is zero, vvicsr = %b\n", unit,
+			    0xffff&(addr->vvicsr), VV_IBITS);
 		goto dropit;
+	}
 	m = if_rubaget(&vs->vs_ifuba, len, off);
-	if (m == NULL)
+	if (m == NULL) {
+		if (vv_logreaderrors && vs->vs_if.if_flags & IFF_DEBUG)
+			printf("vv%d: if_rubaget failed, vvicsr = %b\n", unit,
+			    0xffff&(addr->vvicsr), VV_IBITS);
 		goto dropit;
+	}
 	if (off) {
 		m->m_off += 2 * sizeof(u_short);
 		m->m_len -= 2 * sizeof(u_short);
 	}
 
+	/* Keep track of source address of this packet */
+	vs->vs_lastr = vv->vh_shost;
 	/*
 	 * Demultiplex on packet type
 	 */
@@ -524,12 +573,14 @@ vvrint(unit)
 		m_freem(m);
 		goto setup;
 	}
+	s = splimp();
 	if (IF_QFULL(inq)) {
 		IF_DROP(inq);
 		m_freem(m);
 	} else
 		IF_ENQUEUE(inq, m);
 
+	splx(s);
 	/*
 	 * Reset for the next packet.
 	 */
@@ -547,9 +598,6 @@ setup:
 	 */
 dropit:
 	vs->vs_if.if_ierrors++;
-	if (vs->vs_if.if_flags & IFF_DEBUG && vv_logreaderrors)
-		printf("vv%d: error vvicsr = %b\n", unit,
-		    0xffff&(addr->vvicsr), VV_IBITS);
 	goto setup;
 }
 
@@ -681,7 +729,7 @@ vvioctl(ifp, cmd, data)
 	switch (cmd) {
 
 	case SIOCSIFADDR:
-		/* too difficult to change addr while running */
+		/* too difficult to change address while running */
 		if ((ifp->if_flags & IFF_RUNNING) == 0) {
 			vvsetaddr(ifp, (struct sockaddr_in *)&ifr->ifr_addr);
 			vvinit(ifp->if_unit);
@@ -698,8 +746,8 @@ vvioctl(ifp, cmd, data)
 
 /*
  * Set up the address for this interface. We use the network number
- * from the passed address and an invalid host number because vvinit()
- * is smart enough to figure out the host number out.
+ * from the passed address and an invalid host number; vvinit() will
+ * figure out the host number and insert it later.
  */
 vvsetaddr(ifp, sin)
 	register struct ifnet *ifp;
