@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.21 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -20,10 +20,11 @@ static char sccsid[] = "@(#)passwd.c	4.20 (Berkeley) %G%";
  * This program should be suid with an owner
  * with write permission on /etc/passwd.
  */
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/file.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/stat.h>
 
 #include <stdio.h>
 #include <signal.h>
@@ -35,11 +36,14 @@ static char sccsid[] = "@(#)passwd.c	4.20 (Berkeley) %G%";
 
 char	temp[] = "/etc/ptmp";
 char	passwd[] = "/etc/passwd";
+char	shells[] = "/etc/shells";
 char	*getpass();
 char	*getlogin();
 char	*getfingerinfo();
 char	*getloginshell();
 char	*getnewpasswd();
+char	*malloc();
+char	*calloc();
 extern	int errno;
 
 main(argc, argv)
@@ -47,7 +51,7 @@ main(argc, argv)
 {
 	struct passwd *pwd;
 	char *cp, *uname, *progname;
-	int fd, i, u, dochfn, dochsh, err;
+	int fd, u, dochfn, dochsh, err;
 	FILE *tf;
 	DBM *dp;
 
@@ -110,15 +114,15 @@ main(argc, argv)
 		exit(1);
 	}
 	if (dochfn)
-		cp = getfingerinfo(pwd, u);
+		cp = getfingerinfo(pwd);
 	else if (dochsh)
 		cp = getloginshell(pwd, u, *argv);
 	else
 		cp = getnewpasswd(pwd, u);
-	signal(SIGHUP, SIG_IGN);
-	signal(SIGINT, SIG_IGN);
-	signal(SIGQUIT, SIG_IGN);
-	signal(SIGTSTP, SIG_IGN);
+	(void) signal(SIGHUP, SIG_IGN);
+	(void) signal(SIGINT, SIG_IGN);
+	(void) signal(SIGQUIT, SIG_IGN);
+	(void) signal(SIGTSTP, SIG_IGN);
 	(void) umask(0);
 	fd = open(temp, O_WRONLY|O_CREAT|O_EXCL, 0644);
 	if (fd < 0) {
@@ -181,7 +185,7 @@ main(argc, argv)
 	endpwent();
 	if (dp != NULL && dbm_error(dp))
 		fprintf(stderr, "Warning: dbm_store failed\n");
-	fflush(tf);
+	(void) fflush(tf);
 	if (ferror(tf)) {
 		fprintf(stderr, "Warning: %s write error, %s not updated\n",
 		    temp, passwd);
@@ -193,7 +197,7 @@ main(argc, argv)
 	if (rename(temp, passwd) < 0) {
 		perror("passwd: rename");
 	out:
-		unlink(temp);
+		(void) unlink(temp);
 		exit(1);
 	}
 	exit(0);
@@ -251,14 +255,15 @@ getnewpasswd(pwd, u)
 	int u;
 {
 	char saltc[2];
-	time_t salt;
+	long salt;
 	int i, insist = 0, ok, flags;
 	int c, pwlen;
 	static char pwbuf[10];
+	long time();
 	char *crypt(), *pw, *p;
 
 	if (pwd->pw_passwd[0] && u != 0) {
-		strcpy(pwbuf, getpass("Old password:"));
+		(void) strcpy(pwbuf, getpass("Old password:"));
 		pw = crypt(pwbuf, pwd->pw_passwd);
 		if (strcmp(pw, pwd->pw_passwd) != 0) {
 			printf("Sorry.\n");
@@ -266,7 +271,7 @@ getnewpasswd(pwd, u)
 		}
 	}
 tryagain:
-	strcpy(pwbuf, getpass("New password:"));
+	(void) strcpy(pwbuf, getpass("New password:"));
 	pwlen = strlen(pwbuf);
 	if (pwlen == 0) {
 		printf("Password unchanged.\n");
@@ -308,7 +313,7 @@ tryagain:
 		printf("Mismatch - password unchanged.\n");
 		exit(1);
 	}
-	time(&salt);
+	(void) time(&salt);
 	salt = 9 * getpid();
 	saltc[0] = salt & 077;
 	saltc[1] = (salt>>6) & 077;
@@ -324,8 +329,11 @@ tryagain:
 }
 
 #define	DEFSHELL	okshells[0]
+/*
+ * Do not add local shells here.  They should be added in /etc/shells
+ */
 char *okshells[] =
-    { "/bin/sh", "/bin/csh", "/bin/oldcsh", "/bin/newcsh", "/usr/new/csh", 0 };
+    { "/bin/sh", "/bin/csh", 0 };
 
 char *
 getloginshell(pwd, u, arg)
@@ -336,15 +344,17 @@ getloginshell(pwd, u, arg)
 	static char newshell[256];
 	register char **cpp;
 	char *cp;
+	char **sp;
+	char **getlist();
 
 	if (pwd->pw_shell == 0 || *pwd->pw_shell == '\0')
 		pwd->pw_shell = DEFSHELL;
 	if (arg != 0) {
-		strncpy(newshell, arg, sizeof newshell - 1);
+		(void) strncpy(newshell, arg, sizeof newshell - 1);
 		newshell[sizeof newshell - 1] = 0;
 	} else {
 		printf("Old shell: %s\nNew shell: ", pwd->pw_shell);
-		fgets(newshell, sizeof (newshell) - 1, stdin);
+		(void)fgets(newshell, sizeof (newshell) - 1, stdin);
 		cp = index(newshell, '\n');
 		if (cp)
 			*cp = '\0';
@@ -353,11 +363,12 @@ getloginshell(pwd, u, arg)
 		printf("Login shell unchanged.\n");
 		exit(1);
 	}
+	sp = getlist(okshells, shells);	/* get list of acceptable shells */
 	/*
 	 * Allow user to give shell name w/o preceding pathname.
 	 */
 	if (*cp != '/' && u != 0) {
-		for (cpp = okshells; *cpp; cpp++) {
+		for (cpp = sp; *cpp; cpp++) {
 			cp = rindex(*cpp, '/');
 			if (cp == 0)
 				continue;
@@ -365,10 +376,10 @@ getloginshell(pwd, u, arg)
 				break;
 		}
 		if (*cpp)
-			strcpy(newshell, *cpp);
+			(void) strcpy(newshell, *cpp);
 	}
 	if (u != 0) {
-		for (cpp = okshells; *cpp; cpp++)
+		for (cpp = sp; *cpp; cpp++)
 			if (strcmp(*cpp, newshell) == 0)
 				break;
 		if (*cpp == 0) {
@@ -385,6 +396,49 @@ getloginshell(pwd, u, arg)
 		newshell[0] = '\0';
 	return (newshell);
 }
+/*
+ * Get a list of shells from SHELLS, if it exists.
+ */
+char **
+getlist (list, file)
+	char	**list;
+	char	*file;
+{
+	register char **sp, *cp;
+	char **shells;
+	FILE *fp;
+	struct stat statb;
+
+	if ((fp = fopen(file, "r")) == (FILE *)0)
+		return(list);
+	if (fstat(fileno(fp), &statb) == -1) {
+		(void)fclose(fp);
+		return(list);
+	}
+	if ((cp = malloc((unsigned)statb.st_size)) == NULL) {
+		(void)fclose(fp);
+		return(list);
+	}
+	shells = (char **)calloc((unsigned)statb.st_size / 3, sizeof (char *));
+	if (shells == NULL) {
+		(void)fclose(fp);
+		return(list);
+	}
+	sp = shells;
+	while (fgets(cp, MAXPATHLEN + 1, fp) != NULL) {
+		while (*cp != '/' && *cp != '\0')
+			cp++;
+		if (*cp == '\0')
+			continue;
+		*sp++ = cp;
+		while (!isspace(*cp) && *cp != '#' && *cp != '\0')
+			cp++;
+		*cp++ = '\0';
+	}
+	*sp = (char *)0;
+	(void)fclose(fp);
+	return(shells);
+}
 
 struct default_values {
 	char *name;
@@ -397,9 +451,8 @@ struct default_values {
  * Get name, room number, school phone, and home phone.
  */
 char *
-getfingerinfo(pwd, u)
+getfingerinfo(pwd)
 	struct passwd *pwd;
-	int u;
 {
 	char in_str[BUFSIZ];
 	struct default_values *defaults, *get_defaults();
@@ -589,7 +642,6 @@ get_defaults(str)
 	char *str;
 {
 	struct default_values *answer;
-	char *malloc();
 
 	answer = (struct default_values *)
 		malloc((unsigned)sizeof(struct default_values));
