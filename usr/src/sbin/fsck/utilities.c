@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -163,19 +163,19 @@ bread(fcp, buf, blk, size)
 	char *cp;
 	int i, errs;
 
-	if (lseek(fcp->rfdes, (long)dbtob(blk), 0) < 0)
+	if (lseek(fcp->rfdes, blk * dev_bsize, 0) < 0)
 		rwerr("SEEK", blk);
 	else if (read(fcp->rfdes, buf, (int)size) == size)
 		return (0);
 	rwerr("READ", blk);
-	if (lseek(fcp->rfdes, (long)dbtob(blk), 0) < 0)
+	if (lseek(fcp->rfdes, blk * dev_bsize, 0) < 0)
 		rwerr("SEEK", blk);
 	errs = 0;
 	bzero(buf, size);
 	pfatal("THE FOLLOWING SECTORS COULD NOT BE READ:");
 	for (cp = buf, i = 0; i < size; i += dev_bsize, cp += dev_bsize) {
 		if (read(fcp->rfdes, cp, dev_bsize) < 0) {
-			lseek(fcp->rfdes, (long)dbtob(blk) + i + dev_bsize, 0);
+			lseek(fcp->rfdes, blk * dev_bsize + i + dev_bsize, 0);
 			printf(" %d,", blk + i / dev_bsize);
 			errs++;
 		}
@@ -195,19 +195,19 @@ bwrite(fcp, buf, blk, size)
 
 	if (fcp->wfdes < 0)
 		return;
-	if (lseek(fcp->wfdes, (long)dbtob(blk), 0) < 0)
+	if (lseek(fcp->wfdes, blk * dev_bsize, 0) < 0)
 		rwerr("SEEK", blk);
 	else if (write(fcp->wfdes, buf, (int)size) == size) {
 		fcp->mod = 1;
 		return;
 	}
 	rwerr("WRITE", blk);
-	if (lseek(fcp->wfdes, (long)dbtob(blk), 0) < 0)
+	if (lseek(fcp->wfdes, blk * dev_bsize, 0) < 0)
 		rwerr("SEEK", blk);
 	pfatal("THE FOLLOWING SECTORS COULD NOT BE WRITTEN:");
 	for (cp = buf, i = 0; i < size; i += dev_bsize, cp += dev_bsize)
 		if (write(fcp->wfdes, cp, dev_bsize) < 0) {
-			lseek(fcp->rfdes, (long)dbtob(blk) + i + dev_bsize, 0);
+			lseek(fcp->rfdes, blk * dev_bsize + i + dev_bsize, 0);
 			printf(" %d,", blk + i / dev_bsize);
 		}
 	printf("\n");
