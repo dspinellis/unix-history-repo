@@ -31,6 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ns_error.c	7.8 (Berkeley) 6/28/90
+ *	$Id$
  */
 
 #include "param.h"
