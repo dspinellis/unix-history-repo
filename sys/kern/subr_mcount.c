@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)subr_mcount.c	7.10 (Berkeley) 5/7/91
- *	$Id$
+ *	$Id: subr_mcount.c,v 1.3 1993/10/16 15:24:41 rgrimes Exp $
  */
 
 #ifdef GPROF
@@ -167,9 +167,6 @@ mcount()
 	asm("	movl (sp), r11");	/* selfpc = ... (jsb frame) */
 	asm("	movl 16(fp), r10");	/* frompcindex =     (calls frame) */
 #endif
-#if defined(i386)
-	Fix Me!!
-#endif /* i386 */
 #if defined(tahoe)
 	asm("	movl -8(fp),r12");	/* selfpc = callf frame */
 	asm("	movl (fp),r11");
@@ -189,7 +186,11 @@ mcount()
 	asm("movw	sr,%0" : "=g" (s));
 	asm("movw	#0x2700,sr");
 #else
+#if defined(i386)
+	asm("cli");
+#else
 	s = splhigh();
+#endif
 #endif
 	/*
 	 * Check that frompcindex is a reasonable pc value.
@@ -271,7 +272,11 @@ done:
 #if defined(hp300)
 	asm("movw	%0,sr" : : "g" (s));
 #else
+#if defined(i386)
+	asm("sti");
+#else
 	splx(s);
+#endif
 #endif
 	/* and fall through */
 out:

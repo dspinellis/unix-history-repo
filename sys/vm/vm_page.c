@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_page.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_page.c,v 1.2 1993/10/16 16:20:44 rgrimes Exp $
+ *	$Id: vm_page.c,v 1.3 1993/11/25 01:39:12 wollman Exp $
  */
 
 /*
@@ -486,50 +486,33 @@ void vm_page_rename(mem, new_object, new_offset)
 	vm_page_unlock_queues();
 }
 
-void		vm_page_init(mem, object, offset)
+void
+vm_page_init(mem, object, offset)
 	vm_page_t	mem;
 	vm_object_t	object;
 	vm_offset_t	offset;
 {
+		mem->busy = TRUE;
+		mem->tabled = FALSE;
+		vm_page_insert(mem, object, offset);
+		mem->absent = FALSE;
+		mem->fictitious = FALSE;
+#ifdef PAGER_PAGE_LOCKING
+		mem->page_lock = VM_PROT_NONE;
+		mem->unlock_request = VM_PROT_NONE;
+#endif
+		mem->laundry = FALSE;
+		mem->active = FALSE;
+		mem->inactive = FALSE;
+		mem->wire_count = 0;
+		mem->clean = TRUE;
+		mem->copy_on_write = FALSE;
+		mem->fake = TRUE;
 #ifdef DEBUG
-#define	vm_page_init(mem, object, offset)  {\
-		(mem)->busy = TRUE; \
-		(mem)->tabled = FALSE; \
-		vm_page_insert((mem), (object), (offset)); \
-		(mem)->absent = FALSE; \
-		(mem)->fictitious = FALSE; \
-		(mem)->page_lock = VM_PROT_NONE; \
-		(mem)->unlock_request = VM_PROT_NONE; \
-		(mem)->laundry = FALSE; \
-		(mem)->active = FALSE; \
-		(mem)->inactive = FALSE; \
-		(mem)->wire_count = 0; \
-		(mem)->clean = TRUE; \
-		(mem)->copy_on_write = FALSE; \
-		(mem)->fake = TRUE; \
-		(mem)->pagerowned = FALSE; \
-		(mem)->ptpage = FALSE; \
-	}
-#else
-#define	vm_page_init(mem, object, offset)  {\
-		(mem)->busy = TRUE; \
-		(mem)->tabled = FALSE; \
-		vm_page_insert((mem), (object), (offset)); \
-		(mem)->absent = FALSE; \
-		(mem)->fictitious = FALSE; \
-		(mem)->page_lock = VM_PROT_NONE; \
-		(mem)->unlock_request = VM_PROT_NONE; \
-		(mem)->laundry = FALSE; \
-		(mem)->active = FALSE; \
-		(mem)->inactive = FALSE; \
-		(mem)->wire_count = 0; \
-		(mem)->clean = TRUE; \
-		(mem)->copy_on_write = FALSE; \
-		(mem)->fake = TRUE; \
-	}
+		mem->pagerowned = FALSE;
+		mem->ptpage = FALSE;
 #endif
 
-	vm_page_init(mem, object, offset);
 }
 
 /*

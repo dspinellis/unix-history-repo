@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_vnops.c	7.33 (Berkeley) 6/27/91
- *	$Id: vfs_vnops.c,v 1.2 1993/10/16 15:25:29 rgrimes Exp $
+ *	$Id: vfs_vnops.c,v 1.3 1993/11/25 01:33:45 wollman Exp $
  */
 
 #include "param.h"
@@ -307,6 +307,7 @@ vn_stat(vp, sb, p)
 	mode = vap->va_mode;
 	switch (vp->v_type) {
 	case VREG:
+	case VPROC:
 		mode |= S_IFREG;
 		break;
 	case VDIR:

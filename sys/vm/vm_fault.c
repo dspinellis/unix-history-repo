@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_fault.c	7.6 (Berkeley) 5/7/91
- *	$Id: vm_fault.c,v 1.6 1993/11/07 17:54:09 wollman Exp $
+ *	$Id: vm_fault.c,v 1.7 1993/11/25 01:38:59 wollman Exp $
  */
 
 /*
@@ -273,6 +273,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 			 *	been locked out, request that it be unlocked.
 			 */
 
+#ifdef PAGER_PAGE_LOCKING
 			if (fault_type & m->page_lock) {
 #ifdef DOTHREADS
 				int	wait_result;
@@ -300,6 +301,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 				goto RetryFault;
 #endif
 			}
+#endif
 
 			/*
 			 *	Remove the page from the pageout daemon's
@@ -866,8 +868,12 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	 *	that the page-out daemon won't find us (yet).
 	 */
 
+#ifdef PAGER_PAGE_LOCKING
 	pmap_enter(map->pmap, vaddr, VM_PAGE_TO_PHYS(m), 
 			prot & ~(m->page_lock), wired);
+#else
+	pmap_enter(map->pmap, vaddr, VM_PAGE_TO_PHYS(m), prot, wired);
+#endif
 
 	/*
 	 *	If the page is not wired down, then put it where the

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vnode.h	7.39 (Berkeley) 6/27/91
- *	$Id: vnode.h,v 1.4 1993/11/07 17:53:23 wollman Exp $
+ *	$Id: vnode.h,v 1.5 1993/11/25 01:38:11 wollman Exp $
  */
 
 #ifndef _SYS_VNODE_H_
@@ -50,14 +50,14 @@
 /*
  * vnode types. VNON means no type.
  */
-enum vtype 	{ VNON, VREG, VDIR, VBLK, VCHR, VLNK, VSOCK, VFIFO, VBAD };
+enum vtype 	{ VNON, VREG, VDIR, VBLK, VCHR, VLNK, VSOCK, VFIFO, VPROC, VBAD };
 
 /*
  * Vnode tag types.
  * These are for the benefit of external programs only (e.g., pstat)
  * and should NEVER be inspected inside the kernel.
  */
-enum vtagtype	{ VT_NON, VT_UFS, VT_NFS, VT_MFS, VT_PCFS, VT_ISOFS };
+enum vtagtype	{ VT_NON, VT_UFS, VT_NFS, VT_MFS, VT_PCFS, VT_ISOFS, VT_PROCFS };
 
 /*
  * This defines the maximum size of the private data area

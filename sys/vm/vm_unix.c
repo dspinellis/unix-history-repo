@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: vm_unix.c 1.1 89/11/07$
  *	from: @(#)vm_unix.c	7.2 (Berkeley) 4/20/91
- *	$Id: vm_unix.c,v 1.3 1993/10/16 16:20:58 rgrimes Exp $
+ *	$Id: vm_unix.c,v 1.4 1993/11/25 01:39:17 wollman Exp $
  */
 
 /*
@@ -89,38 +89,6 @@ obreak(p, uap, retval)
 		vm->vm_dsize -= btoc(diff);
 	}
 	return(0);
-}
-
-/*
- * Enlarge the "stack segment" to include the specified
- * stack pointer for the process.
- */
-int
-grow(p, sp)
-	struct proc *p;
-	unsigned sp;
-{
-	register struct vmspace *vm = p->p_vmspace;
-	register int si;
-
-	/*
-	 * For user defined stacks (from sendsig).
-	 */
-	if (sp < (unsigned)vm->vm_maxsaddr)
-		return (0);
-	/*
-	 * For common case of already allocated (from trap).
-	 */
-	if (sp >= (unsigned)vm->vm_maxsaddr + MAXSSIZ - ctob(vm->vm_ssize))
-		return (1);
-	/*
-	 * Really need to check vs limit and increment stack size if ok.
-	 */
-	si = clrnd(btoc(vm->vm_maxsaddr + MAXSSIZ - sp) - vm->vm_ssize);
-	if (vm->vm_ssize + si > btoc(p->p_rlimit[RLIMIT_STACK].rlim_cur))
-		return (0);
-	vm->vm_ssize += si;
-	return (1);
 }
 
 struct ovadvise_args {

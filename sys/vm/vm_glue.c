@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_glue.c	7.8 (Berkeley) 5/15/91
- *	$Id: vm_glue.c,v 1.11 1993/11/07 21:48:36 wollman Exp $
+ *	$Id: vm_glue.c,v 1.12 1993/11/25 01:39:01 wollman Exp $
  */
 
 /*
@@ -217,6 +217,8 @@ vm_fork(p1, p2, isvfork)
 	vm_map_pageable(kernel_map, addr, addr + ctob(UPAGES), FALSE);
 #else
 	addr = kmem_alloc(kernel_map, ctob(UPAGES));
+	if (!addr)
+		panic("vm_fork: failed to allocate UPAGES");
 #endif
 	up = (struct user *)addr;
 	p2->p_addr = up;

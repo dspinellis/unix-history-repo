@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_page.h	7.3 (Berkeley) 4/21/91
- *	$Id: vm_page.h,v 1.2 1993/10/16 16:20:46 rgrimes Exp $
+ *	$Id: vm_page.h,v 1.3 1993/11/07 17:54:21 wollman Exp $
  */
 
 /*
@@ -107,20 +107,11 @@ struct vm_page {
 
 	unsigned int	wire_count:16,	/* how many wired down maps use me?
 					   (P) */
-	/* boolean_t */	inactive:1,	/* page is in inactive list (P) */
+			inactive:1,	/* page is in inactive list (P) */
 			active:1,	/* page is in active list (P) */
 			laundry:1,	/* page is being cleaned now (P)*/
-#ifdef DEBUG
-			pagerowned:1,	/* async paging op in progress */
-			ptpage:1,	/* is a user page table page */
-#endif
-			:0;		/* (force to 'long' boundary) */
-#ifdef	ns32000
-	int		pad;		/* extra space for ns32000 bit ops */
-#endif /* ns32000 */
-	boolean_t	clean;		/* page has not been modified */
-	unsigned int
-	/* boolean_t */	busy:1,		/* page is in transit (O) */
+			clean:1,	/* page has not been modified */
+			busy:1,		/* page is in transit (O) */
 			wanted:1,	/* someone is waiting for page (O) */
 			tabled:1,	/* page is in VP table (O) */
 			copy_on_write:1,/* page must be copied before being
@@ -129,11 +120,21 @@ struct vm_page {
 			absent:1,	/* virtual page doesn't exist (O) */
 			fake:1,		/* page is a placeholder for page-in
 					   (O) */
-			:0;
+#ifdef DEBUG
+			pagerowned:1,	/* async paging op in progress */
+			ptpage:1,	/* is a user page table page */
+#endif
+			:0;		/* (force to 'long' boundary) */
+#ifdef	ns32000
+	int		pad;		/* extra space for ns32000 bit ops */
+#endif /* ns32000 */
 
 	vm_offset_t	phys_addr;	/* physical address of page */
+
+#ifdef PAGER_PAGE_LOCKING
 	vm_prot_t	page_lock;	/* Uses prohibited by data manager */
 	vm_prot_t	unlock_request;	/* Outstanding unlock request */
+#endif
 };
 
 typedef struct vm_page	*vm_page_t;
