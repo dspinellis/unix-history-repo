@@ -1,9 +1,9 @@
 #
-# Copyright (c) 1980 Regents of the University of California.
+# Copyright (c) 1985 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 ALL=	ftp
 DESTDIR=
@@ -11,8 +11,8 @@ CFLAGS=	-O
 
 all:	${ALL}
 
-ftp:	cmds.o cmdtab.o ftp.o getpass.o glob.o main.o
-	${CC} cmds.o cmdtab.o ftp.o getpass.o glob.o main.o -o ftp 
+ftp:	cmds.o cmdtab.o ftp.o getpass.o glob.o main.o pclose.o ruserpass.o              domacro.o
+	${CC} cmds.o cmdtab.o ftp.o getpass.o glob.o main.o pclose.o ruserpass.o         domacro.o -o ftp 
 
 ftp.o:	/usr/include/arpa/ftp.h ftp_var.h
 cmds.o:	/usr/include/arpa/ftp.h ftp_var.h

@@ -1,23 +1,23 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
+"@(#) Copyright (c) 1985 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
  * FTP User Program -- Command Interface.
  */
-#include <sys/param.h>
+#include "ftp_var.h"
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 
@@ -30,7 +30,6 @@ static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
 #include <netdb.h>
 #include <pwd.h>
 
-#include "ftp_var.h"
 
 int	intr();
 int	lostpeer();
@@ -101,12 +100,16 @@ main(argc, argv)
 	strcpy(bytename, "8"), bytesize = 8;
 	if (fromatty)
 		verbose++;
+	cpend = 0;           /* no pending replies */
+	proxy = 0;	/* proxy not active */
+	crflag = 1;    /* strip c.r. on ascii gets */
 	/*
 	 * Set up the home directory in case we're globbing.
 	 */
 	cp = getlogin();
-	if (cp != NULL)
+	if (cp != NULL) {
 		pw = getpwnam(cp);
+	}
 	if (pw == NULL)
 		pw = getpwuid(getuid());
 	if (pw != NULL) {
@@ -155,7 +158,17 @@ lostpeer()
 		}
 		connected = 0;
 	}
-	longjmp(toplevel, 1);
+	pswitch(1);
+	if (connected) {
+		if (cout != NULL) {
+			shutdown(fileno(cout), 1+1);
+			fclose(cout);
+			cout = NULL;
+		}
+		connected = 0;
+	}
+	proxflag = 0;
+	pswitch(0);
 }
 
 char *
@@ -194,15 +207,20 @@ cmdscanner(top)
 			fflush(stdout);
 		}
 		if (gets(line) == 0) {
-			if (feof(stdin))
-				quit();
+			if (feof(stdin)) {
+				if (!fromatty)
+					quit();
+				clearerr(stdin);
+				putchar('\n');
+			}
 			break;
 		}
 		if (line[0] == 0)
 			break;
 		makeargv();
-		if (margc == 0)
+		if (margc == 0) {
 			continue;
+		}
 		c = getcmd(margv[0]);
 		if (c == (struct cmd *)-1) {
 			printf("?Ambiguous command\n");
@@ -222,6 +240,8 @@ cmdscanner(top)
 		if (c->c_handler != help)
 			break;
 	}
+	signal(SIGINT, intr);
+	signal(SIGPIPE, lostpeer);
 }
 
 struct cmd *
@@ -256,6 +276,9 @@ getcmd(name)
 /*
  * Slice a string up into argc/argv.
  */
+
+int slrflag;
+
 makeargv()
 {
 	char **argp;
@@ -265,23 +288,9 @@ makeargv()
 	argp = margv;
 	stringbase = line;		/* scan from first of buffer */
 	argbase = argbuf;		/* store from first of buffer */
-	while (*stringbase == ' ' || *stringbase == '\t')
-		stringbase++;		/* skip initial white space */
-	if (*stringbase == '!') {	/* handle shell escapes specially */
-		stringbase++;
-		*argp++ = "!";		/* command name is "!" */
+	slrflag = 0;
+	while (*argp++ = slurpstring())
 		margc++;
-		while (*stringbase == ' ' || *stringbase == '\t')
-			stringbase++;		/* skip white space */
-		if (*stringbase != '\0') {
-			*argp++ = stringbase;	/* argument is entire command string */
-			margc++;
-		}
-		*argp++ = NULL;
-	} else {
-		while (*argp++ = slurpstring())
-			margc++;
-	}
 }
 
 /*
@@ -297,6 +306,22 @@ slurpstring()
 	register char *ap = argbase;
 	char *tmp = argbase;		/* will return this if token found */
 
+	if (*sb == '!' || *sb == '$') {	/* recognize ! as a token for shell */
+		switch (slrflag) {	/* and $ as token for macro invoke */
+			case 0:
+				slrflag++;
+				stringbase++;
+				return ((*sb == '!') ? "!" : "$");
+				break;
+			case 1:
+				slrflag++;
+				altarg = stringbase;
+				break;
+			default:
+				break;
+		}
+	}
+
 S0:
 	switch (*sb) {
 
@@ -308,6 +333,17 @@ S0:
 		sb++; goto S0;
 
 	default:
+		switch (slrflag) {
+			case 0:
+				slrflag++;
+				break;
+			case 1:
+				slrflag++;
+				altarg = sb;
+				break;
+			default:
+				break;
+		}
 		goto S1;
 	}
 
@@ -363,8 +399,20 @@ OUT:
 		*ap++ = '\0';
 	argbase = ap;			/* update storage pointer */
 	stringbase = sb;		/* update scan pointer */
-	if (got_one)
+	if (got_one) {
 		return(tmp);
+	}
+	switch (slrflag) {
+		case 0:
+			slrflag++;
+			break;
+		case 1:
+			slrflag++;
+			altarg = (char *) 0;
+			break;
+		default:
+			break;
+	}
 	return((char *)0);
 }
 
@@ -381,7 +429,7 @@ help(argc, argv)
 	register struct cmd *c;
 
 	if (argc == 1) {
-		register int i, j, w;
+		register int i, j, w, k;
 		int columns, width = 0, lines;
 		extern int NCMDS;
 
@@ -400,8 +448,14 @@ help(argc, argv)
 		for (i = 0; i < lines; i++) {
 			for (j = 0; j < columns; j++) {
 				c = cmdtab + j * lines + i;
-				if (c->c_name)
+				if (c->c_name && (!proxy || c->c_proxy)) {
 					printf("%s", c->c_name);
+				}
+				else if (c->c_name) {
+					for (k=0; k < strlen(c->c_name); k++) {
+						putchar(' ');
+					}
+				}
 				if (c + lines >= &cmdtab[NCMDS]) {
 					printf("\n");
 					break;
