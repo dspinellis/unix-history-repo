@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)more.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)more.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -34,17 +34,17 @@ static char sccsid[] = "@(#)more.c	5.22 (Berkeley) %G%";
 **	modified by John Foderaro, UCB to add -c and MORE environment variable
 */
 
-#include <stdio.h>
 #include <sys/param.h>
-#include <ctype.h>
+#include <sys/stat.h>
+#include <sys/file.h>
 #include <signal.h>
 #include <errno.h>
 #include <sgtty.h>
 #include <setjmp.h>
-#include <sys/stat.h>
-#include <sys/file.h>
 #include <a.out.h>
 #include <varargs.h>
+#include <stdio.h>
+#include <ctype.h>
 #include "pathnames.h"
 
 #define Fopen(s,m)	(Currline = 0,file_pos=0,fopen(s,m))
@@ -1361,7 +1361,7 @@ register int n;
     }
     if (feof (file)) {
 	if (!no_intty) {
-	    file->_flag &= ~_IOEOF; /* why doesn't fseek do this ??!!??! */
+	/*    file->_flag &= ~_IOEOF; /* why doesn't fseek do this ??!!??! */
 	    Currline = saveln;
 	    Fseek (file, startline);
 	}
