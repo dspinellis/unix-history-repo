@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.53 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.54 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -84,6 +84,7 @@ execve(p, uap, retval)
 	struct hpux_exec hhead;
 #endif
 	struct nameidata nd;
+	struct ps_strings ps;
 
 	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF | SAVENAME, UIO_USERSPACE,
 		uap->fname, p);
@@ -372,8 +373,11 @@ execve(p, uap, retval)
 	 * and character strings.  `nc' is currently just the number
 	 * of characters of arg and env strings.
 	 *
-	 * nc = size of signal code + 4 bytes of NULL pointer + nc,
-	 *	rounded to nearest integer;
+	 * nc = size of ps_strings structure +
+	 *	size of signal code +
+	 *	4 bytes of NULL pointer +
+	 *	nc,
+	 * rounded to nearest integer;
 	 * ucp = USRSTACK - nc;		[user characters pointer]
 	 * apsize = padding (if any) +
 	 *	4 bytes of NULL pointer +
@@ -385,7 +389,7 @@ execve(p, uap, retval)
 	 * ap = ucp - apsize;	[user address of argc]
 	 * ssize = ssize + nc + machine-dependent space;
 	 */
-	nc = (szsigcode + 4 + nc + NBPW-1) & ~(NBPW - 1);
+	nc = (sizeof(ps) + szsigcode + 4 + nc + NBPW-1) & ~(NBPW - 1);
 #ifdef sparc
 	ucp = USRSTACK;
 	ssize = (nc + (na + 3) * NBPW + 7) & ~7;
@@ -422,11 +426,15 @@ execve(p, uap, retval)
 	nc = 0;
 	cp = (char *) execargs;
 	cc = NCARGS;
+	ps.ps_argvstr = (char *)ucp;	/* first argv string */
+	ps.ps_nargvstr = na - ne;	/* argc */
 	for (;;) {
 		ap += NBPW;
 		if (na == ne) {
 			(void) suword((caddr_t)ap, 0);
 			ap += NBPW;
+			ps.ps_envstr = (char *)ucp;
+			ps.ps_nenvstr = ne;
 		}
 		if (--na < 0)
 			break;
@@ -443,6 +451,7 @@ execve(p, uap, retval)
 			panic("exec: EFAULT");
 	}
 	(void) suword((caddr_t)ap, 0);
+	(void) copyout((caddr_t)&ps, (caddr_t)PS_STRINGS, sizeof(ps));
 
 	execsigs(p);
 
@@ -467,7 +476,7 @@ execve(p, uap, retval)
 	/*
 	 * Install sigcode at top of user stack.
 	 */
-	copyout((caddr_t)sigcode, (caddr_t)(USRSTACK - szsigcode), szsigcode);
+	copyout((caddr_t)sigcode, (caddr_t)PS_STRINGS - szsigcode, szsigcode);
 #endif
 	/*
 	 * Remember file name for accounting.
