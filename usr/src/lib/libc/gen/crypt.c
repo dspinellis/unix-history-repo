@@ -1,5 +1,5 @@
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)crypt.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)crypt.c	5.2.1.1 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 /*
@@ -255,12 +255,9 @@ char *block;
 	 */
 	for (ii=0; ii<16; ii++) {
 		/*
-		 * Set direction
+		 * Only encrypt for now.
 		 */
-		if (edflag)
-			i = 15-ii;
-		else
-			i = ii;
+		i = ii;
 		/*
 		 * Save the R array,
 		 * which will be the new L.
