@@ -1,4 +1,4 @@
-#	@(#)bsd.prog.mk	5.26 (Berkeley) %G%
+#	@(#)bsd.prog.mk	5.27 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -68,6 +68,7 @@ MAN1=	${PROG}.0
 .endif
 .endif
 MANALL=	${MAN1} ${MAN2} ${MAN3} ${MAN4} ${MAN5} ${MAN6} ${MAN7} ${MAN8}
+manpages: ${MANALL}
 
 _PROGSUBDIR: .USE
 .if defined(SUBDIR) && !empty(SUBDIR)
@@ -135,8 +136,7 @@ realinstall: _PROGSUBDIR
 	done; true
 .endif
 
-install: maninstall
-maninstall: afterinstall
+install: afterinstall maninstall
 afterinstall: realinstall
 realinstall: beforeinstall
 .endif
@@ -156,6 +156,21 @@ obj: _PROGSUBDIR
 	@cd ${.CURDIR}; rm -rf obj; \
 	here=`pwd`; dest=/usr/obj/`echo $$here | sed 's,/usr/src/,,'`; \
 	echo "$$here -> $$dest"; ln -s $$dest obj; \
+	if test -d /usr/obj -a ! -d $$dest; then \
+		mkdir -p $$dest; \
+	else \
+		true; \
+	fi;
+.endif
+.endif
+
+.if !target(objdir)
+.if defined(NOOBJ)
+objdir: _PROGSUBDIR
+.else
+objdir: _PROGSUBDIR
+	@cd ${.CURDIR}; \
+	here=`pwd`; dest=/usr/obj/`echo $$here | sed 's,/usr/src/,,'`; \
 	if test -d /usr/obj -a ! -d $$dest; then \
 		mkdir -p $$dest; \
 	else \
