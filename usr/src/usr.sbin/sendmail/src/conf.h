@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.19 (Berkeley) %G%
+ *	@(#)conf.h	8.20 (Berkeley) %G%
  */
 
 /*
@@ -137,6 +137,8 @@
 #  define SYSTEM5	1	/* use System V definitions */
 #  define setreuid(r, e)	seteuid(e)
 #  include <sys/time.h>
+#  define gethostbyname	__switch_gethostbyname	/* get working version */
+#  define gethostbyaddr	__switch_gethostbyaddr	/* get working version */
 #  define _PATH_UNIX	"/kernel/unix"
 #  ifndef _PATH_SENDMAILCF
 #   define _PATH_SENDMAILCF	"/etc/mail/sendmail.cf"
@@ -191,6 +193,7 @@
 #ifdef NeXT
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASFLOCK	1	/* has flock(2) call */
+# define NEEDGETOPT	1	/* need a replacement for getopt(3) */
 # define sleep		sleepX
 # define LA_TYPE	LA_ZERO
 typedef int		pid_t;
