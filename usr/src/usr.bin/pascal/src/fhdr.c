@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fhdr.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)fhdr.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "whoami.h"
@@ -202,9 +202,9 @@ funchdr(r)
 				 */
 
 			    cp = defnl(r->p_dec.id_ptr, FVAR, p->type,
-				(int)-leven(roundup(
+				(int)-roundup(roundup(
 			            (int)(DPOFF1+lwidth(p->type)),
-				    (long)align(p->type))));
+				    (long)align(p->type))), (long) A_STACK);
 			    cp -> extra_flags |= NLOCAL;
 #			endif PC
 			cp->chain = p;
@@ -371,7 +371,7 @@ params(p, formalist)
 				    }
 #				    ifdef OBJ
 					w = lwidth(p);
-					o -= even(w);
+					o -= roundup(w, (long) A_STACK);
 #					ifdef DEC11
 					    dp = defnl((char *) idlist->list_node.list,
 								VAR, p, o);
@@ -453,7 +453,7 @@ params(p, formalist)
 		}
 		if (typ != TR_NIL && typ->tag == T_TYCARY) {
 #		    ifdef OBJ
-			w = -even(lwidth(p->chain));
+			w = -roundup(lwidth(p->chain), (long) A_STACK);
 #			ifndef DEC11
 			    w = (w > -2)? w + 1 : w;
 #			endif

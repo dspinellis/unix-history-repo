@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)var.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)var.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "whoami.h"
@@ -184,27 +184,6 @@ varend()
 	send(REVVEND);
 #endif
 }
-
-/*
- * Evening
- */
-long
-leven(w)
-	register long w;
-{
-	if (w < 0)
-		return (w & 0xfffffffe);
-	return ((w+1) & 0xfffffffe);
-}
-
-#ifndef PC
-int
-even(w)
-	register int w;
-{
-	return leven((long)w);
-}
-#endif
 
 /*
  * Find the width of a type in bytes.

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)call.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)call.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "whoami.h"
@@ -13,6 +13,7 @@ static char sccsid[] = "@(#)call.c	5.2 (Berkeley) %G%";
 #include "tree.h"
 #include "opcode.h"
 #include "objfmt.h"
+#include "align.h"
 #ifdef PC
 #   include "pc.h"
 #   include <pcc.h>
@@ -99,7 +100,8 @@ call(p, argv_node, porf, psbn)
 		     * Push some space
 		     * for the function return type
 		     */
-		    (void) put(2, O_PUSH, leven(-lwidth(p->type)));
+		    (void) put(2, O_PUSH,
+			-roundup(lwidth(p->type), (long) A_STACK));
 	    }
 #	endif OBJ
 #	ifdef PC
@@ -447,7 +449,7 @@ conf_err:			    if (p1->chain->type->class == CRANGE) {
  		(void) put(2, O_LV | cbn << 8 + INDX ,
  			(int) savedispnp -> value[ NL_OFFS ] );
 		(void) put(1, O_FCALL);
-		(void) put(2, O_FRTN, even(width(p->type)));
+		(void) put(2, O_FRTN, roundup(width(p->type), (long) A_STACK));
 	    } else {
 		(void) put(2, O_CALL | psbn << 8, (long)p->value[NL_ENTLOC]);
 	    }
