@@ -1,4 +1,4 @@
-/* tcp_timer.c 4.16 82/03/15 */
+/* tcp_timer.c 4.17 82/03/19 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -167,10 +167,20 @@ printf("rexmt set to %d\n", tp->t_timer[TCPT_REXMT]);
 			tcp_drop(tp, ETIMEDOUT);
 			return;
 		}
-		if (tp->t_inpcb->inp_socket->so_options & SO_KEEPALIVE)
+		if (tp->t_inpcb->inp_socket->so_options & SO_KEEPALIVE) {
+			/*
+			 * Saying tp->rcv_nxt-1 lies about what
+			 * we have received, and by the protocol spec
+			 * requires the correspondent TCP to respond.
+			 * Saying tp->snd_una-1 causes the transmitted
+			 * byte to lie outside the receive window; this
+			 * is important because we don't necessarily
+			 * have a byte in the window to send (consider
+			 * a one-way stream!)
+			 */
 			tcp_respond(tp,
-			    tp->t_template, tp->rcv_nxt, tp->snd_una-1, 0);
-		else
+			    tp->t_template, tp->rcv_nxt-1, tp->snd_una-1, 0);
+		} else
 			tp->t_idle = 0;
 		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
 		return;
