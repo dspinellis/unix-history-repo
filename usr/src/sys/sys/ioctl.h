@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ioctl.h	7.18 (Berkeley) %G%
+ *	@(#)ioctl.h	7.19 (Berkeley) %G%
  */
 
 #ifndef	_IOCTL_H_
@@ -129,19 +129,6 @@ struct ttysize {
 #define	TABLDISC	3		/* tablet discipline */
 #define	SLIPDISC	4		/* serial IP discipline */
 
-/*
- * Compatability with old terminal driver
- *
- * Source level -> #define USE_OLD_TTY
- * Kernel level -> options COMPAT_43
- */
-#if defined(USE_OLD_TTY) || defined(COMPAT_43)
-#ifdef KERNEL
-#include "ioctl_compat.h"
-#else
-#include <sys/ioctl_compat.h>
-#endif
-#endif
 
 #define	FIOCLEX		_IO('f', 1)		/* set close on exec on fd */
 #define	FIONCLEX	_IO('f', 2)		/* remove close on exec */
@@ -200,3 +187,17 @@ __END_DECLS
 #endif /* !KERNEL */
 
 #endif /* !_IOCTL_H_ */
+
+/* - note: keep outside _IOCTL_H_
+ * Compatability with old terminal driver
+ *
+ * Source level -> #define USE_OLD_TTY
+ * Kernel level -> options COMPAT_43
+ */
+#if defined(USE_OLD_TTY) || defined(COMPAT_43)
+#ifdef KERNEL
+#include "ioctl_compat.h"
+#else
+#include <sys/ioctl_compat.h>
+#endif
+#endif
