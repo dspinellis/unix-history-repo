@@ -54,7 +54,7 @@
 #include <ctype.h>
 #include "rst.h"
 
-char 	sccsid[] = "@(#)makeifont.c	1.4	(Berkeley)	%G%";
+char 	sccsid[] = "@(#)makeifont.c	1.5	(Berkeley)	%G%";
 
 #define PCNTUP		62	/* percent of maximum height for an ascender */
 #define PCNTDOWN	73	/* percent of maximum droop for a descender */
