@@ -1,4 +1,4 @@
-/*	ioctl.h	6.1	83/07/29	*/
+/*	ioctl.h	6.2	84/03/20	*/
 /*
  * Ioctl definitions
  */
@@ -205,4 +205,8 @@ struct ltchars {
 #define	SIOCSIFFLAGS	_IOW(i, 16, struct ifreq)	/* set ifnet flags */
 #define	SIOCGIFFLAGS	_IOWR(i,17, struct ifreq)	/* get ifnet flags */
 #define	SIOCGIFCONF	_IOWR(i,20, struct ifconf)	/* get ifnet list */
+
+#define	SIOCSARP	_IOW(i, 30, struct arpreq)	/* set arp entry */
+#define	SIOCGARP	_IOWR(i, 31, struct arpreq)	/* get arp entry */
+#define	SIOCDARP	_IOW(i, 32, struct arpreq)	/* delete arp entry */
 #endif
