@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)fseek.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fseek.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -10,13 +10,12 @@ static char sccsid[] = "@(#)fseek.c	5.1 (Berkeley) %G%";
 
 long lseek();
 
-long
 fseek(iop, offset, ptrname)
 	register FILE *iop;
 	long offset;
 {
 	register resync, c;
-	long p, curpos = -1;
+	long p = -1;			/* can't happen? */
 
 	iop->_flag &= ~_IOEOF;
 	if (iop->_flag&_IOREAD) {
@@ -25,7 +24,7 @@ fseek(iop, offset, ptrname)
 			c = iop->_cnt;
 			p = offset;
 			if (ptrname==0) {
-				curpos = lseek(fileno(iop), 0L, 1);
+				long curpos = lseek(fileno(iop), 0L, 1);
 				if (curpos == -1)
 					return (-1);
 				p += c - curpos;
@@ -35,9 +34,7 @@ fseek(iop, offset, ptrname)
 			    && p>=iop->_base-iop->_ptr){
 				iop->_ptr += (int)p;
 				iop->_cnt -= (int)p;
-				if (curpos == -1)
-					curpos = lseek(fileno(iop), 0L, 1);
-				return (curpos == -1? -1: curpos - iop->_cnt);
+				return(0);
 			}
 			resync = offset&01;
 		} else 
@@ -49,17 +46,19 @@ fseek(iop, offset, ptrname)
 		}
 		p = lseek(fileno(iop), offset-resync, ptrname);
 		iop->_cnt = 0;
-		if (resync && getc(iop) != EOF && p != -1)
-			p++;
+		if (resync && p != -1)
+			if (getc(iop) == EOF)
+				p = -1;
 	}
 	else if (iop->_flag & (_IOWRT|_IORW)) {
-		fflush(iop);
+		p = fflush(iop);
 		if (iop->_flag & _IORW) {
 			iop->_cnt = 0;
 			iop->_flag &= ~_IOWRT;
 			iop->_ptr = iop->_base;
 		}
-		p = lseek(fileno(iop), offset, ptrname);
+		return(lseek(fileno(iop), offset, ptrname) == -1 || p == EOF ?
+		    -1 : 0);
 	}
-	return(p);
+	return(p==-1?-1:0);
 }
