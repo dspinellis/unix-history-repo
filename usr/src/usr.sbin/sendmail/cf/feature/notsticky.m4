@@ -8,9 +8,9 @@ divert(-1)
 #
 
 divert(0)
-VERSIONID(`@(#)notsticky.m4	8.2 (Berkeley) %G%')
+VERSIONID(`@(#)notsticky.m4	8.3 (Berkeley) %G%')
 #
-#  This is now the default.  Use FEATURE(stickydomain) if you want
+#  This is now the default.  Use ``FEATURE(stickyhost)'' if you want
 #  the old default behaviour.
 #
 divert(-1)
