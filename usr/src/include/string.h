@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)string.h	5.3 (Berkeley) %G%
+ *	@(#)string.h	5.4 (Berkeley) %G%
  */
 
 #ifndef _STRING_H_
@@ -20,8 +20,7 @@ typedef	_SIZE_T_	size_t;
 #define	NULL	0
 #endif
 
-/* ANSI C standard routines */
-#ifdef __STDC__
+#if __STDC__ || c_plusplus
 
 void	*memchr(const void *, int, size_t);
 int	 memcmp(const void *, const void *, size_t);
@@ -46,7 +45,7 @@ char	*strstr(const char *, const char *);
 char	*strtok(char *, const char *);
 size_t	 strxfrm(char *, const char *, size_t);
 
-#else /* !__STDC__ */
+#else
 
 void	*memchr();
 int	 memcmp();
@@ -71,11 +70,11 @@ char	*strstr();
 char	*strtok();
 size_t	 strxfrm();
 
-#endif /* __STDC__ */
+#endif
 
 /* Nonstandard routines */
 #ifndef _ANSI_SOURCE
-#ifdef __STDC__ */
+#if __STDC__ || c_plusplus
 
 int	 bcmp(const char *, const char *, size_t);
 void	 bcopy(const char *, char *, size_t);
@@ -91,7 +90,7 @@ int	 strncasecmp(const char *, const char *, size_t);
 char	*strsep(char *, const char *);
 void	 swab(const char *, char *, size_t);
 
-#else /* !__STDC__ */
+#else
 
 int	 bcmp();
 void	 bcopy();
@@ -107,6 +106,6 @@ int	 strncasecmp();
 char	*strsep();
 void	 swab();
 
-#endif /* __STDC__ */
-#endif /* _ANSI_SOURCE */
+#endif
+#endif 
 #endif /* _STRING_H_ */

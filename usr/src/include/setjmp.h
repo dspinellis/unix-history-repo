@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)setjmp.h	5.1 (Berkeley) %G%
+ *	@(#)setjmp.h	5.2 (Berkeley) %G%
  */
 
 #ifndef _SETJMP_
@@ -36,7 +36,7 @@ typedef int sigjmp_buf[_JBLEN + 1];
 typedef int jmp_buf[_JBLEN];
 #endif
 
-#ifdef __STDC__
+#if __STDC__ || c_plusplus
 int sigsetjmp(sigjmp_buf, int);
 void siglongjmp(sigjmp_buf, int);
 #ifndef _POSIX_SOURCE

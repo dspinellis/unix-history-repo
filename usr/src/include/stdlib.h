@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdlib.h	5.2 (Berkeley) %G%
+ *	@(#)stdlib.h	5.3 (Berkeley) %G%
  */
 
 #ifndef _STDLIB_H_
@@ -37,7 +37,7 @@ typedef struct {
 
 #define	MB_CUR_MAX	1	/* XXX */
 
-#ifdef __STDC__
+#if __STDC__ || c_plusplus
 
 void	 abort(void);
 int	 abs(int);
@@ -65,7 +65,7 @@ unsigned long
 	 strtoul(const char *_nptr, char **_endptr, int _base);
 int	 system(const char *_string);
 
-#ifndef __STDC__
+#ifndef _ANSI_SOURCE
 void	 cfree(void *_ptr);
 int	putenv(const char *_string);
 int	setenv(const char *_string, const char *_value, int _overwrite);
@@ -80,7 +80,7 @@ double	strtod(const char *_nptr, char **_endptr);
 size_t	wcstombs(char *_s, const wchar_t *_pwcs, size_t _n);
 #endif
 
-#else /* !__STDC__ */
+#else
 
 void	 abort();
 int	 abs();
@@ -106,7 +106,7 @@ unsigned long
 	 strtoul();
 int	 system();
 
-#ifndef __STDC__
+#ifndef _ANSI_SOURCE
 void	 cfree();
 int	putenv();
 int	setenv();
@@ -121,6 +121,6 @@ double	strtod();
 size_t	wcstombs();
 #endif
 
-#endif /* __STDC__ */
+#endif
 
 #endif /* _STDLIB_H_ */

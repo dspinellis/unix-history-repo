@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)fstab.h	5.8 (Berkeley) %G%
+ *	@(#)fstab.h	5.9 (Berkeley) %G%
  */
 
 /*
@@ -47,7 +47,7 @@ struct fstab {
 	int	fs_passno;		/* pass number on parallel dump */
 };
 
-#ifdef __STDC__
+#if __STDC__ || c_plusplus
 extern struct fstab *getfsent(void);
 extern struct fstab *getfsspec(const char *);
 extern struct fstab *getfsfile(const char *);
