@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip.h	7.10 (Berkeley) %G%
+ *	@(#)ip.h	7.11 (Berkeley) %G%
  */
 #ifndef BYTE_ORDER
 /*
@@ -50,6 +50,7 @@ struct ip {
 	short	ip_off;			/* fragment offset field */
 #define	IP_DF 0x4000			/* dont fragment flag */
 #define	IP_MF 0x2000			/* more fragments flag */
+#define	IP_OFFMASK 0x1fff		/* mask for fragmenting bits */
 	u_char	ip_ttl;			/* time to live */
 	u_char	ip_p;			/* protocol */
 	u_short	ip_sum;			/* checksum */
