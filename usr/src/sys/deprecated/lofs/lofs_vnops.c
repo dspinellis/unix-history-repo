@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lofs_vnops.c	8.2 (Berkeley) %G%
+ *	@(#)lofs_vnops.c	8.3 (Berkeley) %G%
  *
  * $Id: lofs_vnops.c,v 1.11 1992/05/30 10:05:43 jsp Exp jsp $
  */
@@ -798,6 +798,14 @@ lofs_islocked(ap)
 }
 
 int
+lofs_pathconf(ap)
+	struct vop_pathconf_args *ap;
+{
+
+	return (VOP_PATHCONF(LOFSVP(ap->a_vp), ap->a_name, ap->a_retval));
+}
+
+int
 lofs_advlock(ap)
 	struct vop_advlock_args /* {
 		struct vnode *a_vp;
@@ -921,20 +929,20 @@ struct vnodeopv_entry_desc lofs_vnodeop_entries[] = {
 	{ &vop_lookup_desc, lofs_lookup },		/* lookup */
 	{ &vop_create_desc, lofs_create },		/* create */
 	{ &vop_mknod_desc, lofs_mknod },		/* mknod */
-	{ &vop_open_desc, lofs_open },		/* open */
+	{ &vop_open_desc, lofs_open },			/* open */
 	{ &vop_close_desc, lofs_close },		/* close */
 	{ &vop_access_desc, lofs_access },		/* access */
 	{ &vop_getattr_desc, lofs_getattr },		/* getattr */
 	{ &vop_setattr_desc, lofs_setattr },		/* setattr */
-	{ &vop_read_desc, lofs_read },		/* read */
+	{ &vop_read_desc, lofs_read },			/* read */
 	{ &vop_write_desc, lofs_write },		/* write */
 	{ &vop_ioctl_desc, lofs_ioctl },		/* ioctl */
 	{ &vop_select_desc, lofs_select },		/* select */
-	{ &vop_mmap_desc, lofs_mmap },		/* mmap */
+	{ &vop_mmap_desc, lofs_mmap },			/* mmap */
 	{ &vop_fsync_desc, lofs_fsync },		/* fsync */
-	{ &vop_seek_desc, lofs_seek },		/* seek */
+	{ &vop_seek_desc, lofs_seek },			/* seek */
 	{ &vop_remove_desc, lofs_remove },		/* remove */
-	{ &vop_link_desc, lofs_link },		/* link */
+	{ &vop_link_desc, lofs_link },			/* link */
 	{ &vop_rename_desc, lofs_rename },		/* rename */
 	{ &vop_mkdir_desc, lofs_mkdir },		/* mkdir */
 	{ &vop_rmdir_desc, lofs_rmdir },		/* rmdir */
@@ -944,12 +952,13 @@ struct vnodeopv_entry_desc lofs_vnodeop_entries[] = {
 	{ &vop_abortop_desc, lofs_abortop },		/* abortop */
 	{ &vop_inactive_desc, lofs_inactive },		/* inactive */
 	{ &vop_reclaim_desc, lofs_reclaim },		/* reclaim */
-	{ &vop_lock_desc, lofs_lock },		/* lock */
+	{ &vop_lock_desc, lofs_lock },			/* lock */
 	{ &vop_unlock_desc, lofs_unlock },		/* unlock */
-	{ &vop_bmap_desc, lofs_bmap },		/* bmap */
+	{ &vop_bmap_desc, lofs_bmap },			/* bmap */
 	{ &vop_strategy_desc, lofs_strategy },		/* strategy */
 	{ &vop_print_desc, lofs_print },		/* print */
 	{ &vop_islocked_desc, lofs_islocked },		/* islocked */
+	{ &vop_pathconf_desc, lofs_pathconf },		/* pathconf */
 	{ &vop_advlock_desc, lofs_advlock },		/* advlock */
 	{ &vop_blkatoff_desc, lofs_blkatoff },		/* blkatoff */
 	{ &vop_valloc_desc, lofs_valloc },		/* valloc */
