@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)MAKEDEV	5.12 (Berkeley) %G%
+#	@(#)MAKEDEV	5.13 (Berkeley) %G%
 #
 
 # Device "make" file.  Valid arguments:
@@ -46,6 +46,7 @@ std)
 	mknod kmem	c 3 1	; chmod 640 kmem ; chgrp kmem kmem
 	mknod null	c 3 2	; chmod 666 null
 	mknod vmem 	c 3 3	; chmod 640 vmem ; chgrp kmem vmem
+	mknod zero      c 3 12  ; chmod 666 zero
 	mknod tty	c 2 0	; chmod 666 tty
 	mknod klog	c 15 0	; chmod 400 klog
 	mknod stdin	c 21 0	; chmod 666 stdin
