@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)telnet.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	4.7 (Berkeley) %G%";
 /*
  * User telnet program.
  */
@@ -736,8 +736,16 @@ netflush(fd)
 
 	if ((n = nfrontp - nbackp) > 0)
 		n = write(fd, nbackp, n);
-	if (n < 0 && errno == EWOULDBLOCK)
+	if (n < 0) {
+		if (errno != ENOBUFS && errno != EWOULDBLOCK) {
+			mode(0);
+			perror(host_name);
+			close(fd);
+			longjmp(peerdied, -1);
+			/*NOTREACHED*/
+		}
 		n = 0;
+	}
 	nbackp += n;
 	if (nbackp == nfrontp)
 		nbackp = nfrontp = netobuf;
