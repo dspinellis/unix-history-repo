@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)externs.h	5.4 (Berkeley) %G%
+ *	@(#)externs.h	5.5 (Berkeley) %G%
  */
 
 #ifndef	BSD
@@ -226,6 +226,12 @@ extern void
     upcase P((char *)),
     willoption P((int)),
     wontoption P((int));
+
+extern void
+    send_do P((int, int)),
+    send_dont P((int, int)),
+    send_will P((int, int)),
+    send_wont P((int, int));
 
 extern void
     lm_will P((unsigned char *, int)),

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_bsd.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_bsd.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -36,6 +36,10 @@ static char sccsid[] = "@(#)sys_bsd.c	5.3 (Berkeley) %G%";
 #else
 #define	SIG_FUNC_RET	int
 #endif
+
+#ifdef	SIGINFO
+extern SIG_FUNC_RET ayt_status();
+#endif	SIGINFO
 
 int
 	tout,			/* Output file descriptor */
@@ -148,12 +152,12 @@ extern int kludgelinemode;
  *	1	Do add this character
  */
 
+extern void xmitAO(), xmitEL(), xmitEC(), intp(), sendbrk();
+
     int
 TerminalSpecialChars(c)
     int	c;
 {
-    void xmitAO(), xmitEL(), xmitEC(), intp(), sendbrk();
-
     if (c == termIntChar) {
 	intp();
 	return 0;
@@ -633,8 +637,6 @@ TerminalNewMode(f)
 #endif
     } else {
 #ifdef	SIGINFO
-	SIG_FUNC_RET ayt_status();
-
 	(void) signal(SIGINFO, ayt_status);
 #endif	SIGINFO
 #ifdef	SIGTSTP

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	TELOPTS
@@ -735,16 +735,27 @@ printsub(direction, pointer, length)
 	    env_common:
 		{
 		    register int noquote = 2;
+#ifdef	ENV_HACK
+		    extern int env_var, env_value;
+#endif
 		    for (i = 2; i < length; i++ ) {
 			switch (pointer[i]) {
 			case ENV_VAR:
-			    if (pointer[1] == TELQUAL_SEND)
-				goto def_case;
+#ifdef	ENV_HACK
+			    if (env_var == ENV_VALUE)
+				fprintf(NetTrace, "\" (VALUE) " + noquote);
+			    else
+#endif
 			    fprintf(NetTrace, "\" VAR " + noquote);
 			    noquote = 2;
 			    break;
 
 			case ENV_VALUE:
+#ifdef	ENV_HACK
+			    if (env_value == ENV_VAR)
+				fprintf(NetTrace, "\" (VAR) " + noquote);
+			    else
+#endif
 			    fprintf(NetTrace, "\" VALUE " + noquote);
 			    noquote = 2;
 			    break;
@@ -755,8 +766,6 @@ printsub(direction, pointer, length)
 			    break;
 
 			case ENV_USERVAR:
-			    if (pointer[1] == TELQUAL_SEND)
-				goto def_case;
 			    fprintf(NetTrace, "\" USERVAR " + noquote);
 			    noquote = 2;
 			    break;
