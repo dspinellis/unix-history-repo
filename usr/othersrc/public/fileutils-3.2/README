@@ -1,0 +1,23 @@
+To install everything, you might use:
+cd /usr/local/bin; ln -s /usr/src/public/fileutils-3.2/bin/* .
+cd /usr/local/man/cat1; ln -s /usr/src/public/fileutils-3.2/man/cat1/* .
+
+To recompile, cd to the fileutils-3.2 directory and type 'make'.  Gcc
+should not report any errors or warnings.
+
+To reconfigure, type 'sh configure' (or 'bash configure' if you have
+bash since it works better with configure than ash does).
+
+The install directories is set to
+/usr/src/public/fileutils-3.2/{bin,man}, though there are no paths
+compiled into the executables.  The preformatted manpages are in
+man/cat1.  To regenerate the preformatted manual pages, cd to man and
+type 'sh catman'.
+
+The unmodified sources are available via anonymous ftp from
+prep.ai.mit.edu in directory /pub/gnu and file fileutils-3.2.tar.Z.
+
+Rich Murphey                   409-772-3399
+Physiology & Biophysics F-41   Fax 409-772-3381
+Univ. of Texas Medical Branch  rich@rice.edu
+Galveston, Texas 77555-0641    rich@rice.UUCP
