@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 1992 The Regents of the University of California
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * John Heidemann of the UCLA Ficus project.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null_vnops.c	7.1 (Berkeley) %G%
+ *	@(#)null_vnops.c	8.1 (Berkeley) %G%
  *
  * Ancestors:
  *	@(#)lofs_vnops.c	1.2 (Berkeley) 6/18/92
