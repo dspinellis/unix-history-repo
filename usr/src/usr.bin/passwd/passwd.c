@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.29 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -446,14 +446,16 @@ getfingerinfo(pwd)
 }
 
 /*
- * Prints an error message if a ':' or a newline is found in the string.
- * A message is also printed if the input string is too long.
- * The password file uses :'s as seperators, and are not allowed in the "gcos"
- * field.  Newlines serve as delimiters between users in the password file,
- * and so, those too, are checked for.  (I don't think that it is possible to
+ * Prints an error message if a ':', ',' or a newline is found in the string.
+ * A message is also printed if the input string is too long.  The password
+ * file uses :'s as separators, and are not allowed in the "gcos" field;
+ * commas are used as separators in the gcos field, so are disallowed.
+ * Newlines serve as delimiters between users in the password file, and so,
+ * those too, are checked for.  (I don't think that it is possible to
  * type them in, but better safe than sorry)
  *
- * Returns '1' if a colon or newline is found or the input line is too long.
+ * Returns '1' if a colon, comma or newline is found or the input line is
+ * too long.
  */
 illegal_input(input_str)
 	char *input_str;
@@ -462,8 +464,8 @@ illegal_input(input_str)
 	int error_flag = 0;
 	int length = strlen(input_str);
 
-	if (index(input_str, ':')) {
-		puts("':' is not allowed.");
+	if (strpbrk(input_str, ",:")) {
+		puts("':' and ',' are not allowed.");
 		error_flag = 1;
 	}
 	if (input_str[length-1] != '\n') {
