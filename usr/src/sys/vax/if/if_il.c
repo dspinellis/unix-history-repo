@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_il.c	6.10 (Berkeley) %G%
+ *	@(#)if_il.c	6.11 (Berkeley) %G%
  */
 
 #include "il.h"
@@ -37,10 +37,6 @@
 #include "../netinet/in_var.h"
 #include "../netinet/ip.h"
 #include "../netinet/if_ether.h"
-#endif
-
-#ifdef PUP
-#include "../netpup/pup.h"
 #endif
 
 #ifdef NS
@@ -85,6 +81,7 @@ struct	il_softc {
 #define	ILF_OACTIVE	0x1		/* output is active */
 #define	ILF_RCVPENDING	0x2		/* start rcv in ilcint */
 #define	ILF_STATPENDING	0x4		/* stat cmd pending */
+#define	ILF_RUNNING	0x8		/* board is running */
 	short	is_lastcmd;		/* can't read csr, so must save it */
 	short	is_scaninterval;	/* interval of stat collection */
 #define	ILWATCHINTERVAL	60		/* once every 60 seconds */
@@ -187,6 +184,8 @@ ilreset(unit, uban)
 	    ui->ui_ubanum != uban)
 		return;
 	printf(" il%d", unit);
+	il_softc[unit].is_if.if_flags &= ~IFF_RUNNING;
+	il_softc[unit].is_flags &= ~ILF_RUNNING;
 	ilinit(unit);
 }
 
@@ -206,17 +205,19 @@ ilinit(unit)
 	/* not yet, if address still unknown */
 	if (ifp->if_addrlist == (struct ifaddr *)0)
 		return;
+	if (is->is_flags & ILF_RUNNING)
+		return;
 
-	if (ifp->if_flags & IFF_RUNNING)
-		return;
-	if (if_ubainit(&is->is_ifuba, ui->ui_ubanum,
-	    sizeof (struct il_rheader), (int)btoc(ETHERMTU)) == 0) { 
-		printf("il%d: can't initialize\n", unit);
-		is->is_if.if_flags &= ~IFF_UP;
-		return;
+	if ((ifp->if_flags & IFF_RUNNING) == 0) {
+		if (if_ubainit(&is->is_ifuba, ui->ui_ubanum,
+		    sizeof (struct il_rheader), (int)btoc(ETHERMTU)) == 0) { 
+			printf("il%d: can't initialize\n", unit);
+			is->is_if.if_flags &= ~IFF_UP;
+			return;
+		}
+		is->is_ubaddr = uballoc(ui->ui_ubanum, (caddr_t)&is->is_stats,
+		    sizeof (struct il_stats), 0);
 	}
-	is->is_ubaddr = uballoc(ui->ui_ubanum, (caddr_t)&is->is_stats,
-	    sizeof (struct il_stats), 0);
 	ifp->if_watchdog = ilwatch;
 	is->is_scaninterval = ILWATCHINTERVAL;
 	ifp->if_timer = is->is_scaninterval;
@@ -229,9 +230,16 @@ ilinit(unit)
 	 * first.
 	 */
 	s = splimp();
-	addr->il_csr = ILC_OFFLINE;
+	addr->il_csr = ILC_RESET;
 	while ((addr->il_csr & IL_CDONE) == 0)
 		;
+ 	if (addr->il_csr & IL_STATUS) {
+ 		printf("il%d failed hardware diag 0x%X\n", unit,
+ 		   addr->il_csr & 0xffff);
+ 		is->is_if.if_flags &= ~IFF_UP;
+ 		splx(s);
+ 		return;
+ 	}
 	addr->il_csr = ILC_CISA;
 	while ((addr->il_csr & IL_CDONE) == 0)
 		;
@@ -239,7 +247,7 @@ ilinit(unit)
 	 * Set board online.
 	 * Hang receive buffer and start any pending
 	 * writes by faking a transmit complete.
-	 * Receive bcr is not a muliple of 4 so buffer
+	 * Receive bcr is not a multiple of 8 so buffer
 	 * chaining can't happen.
 	 */
 	addr->il_csr = ILC_ONLINE;
@@ -253,6 +261,7 @@ ilinit(unit)
 		;
 	is->is_flags = ILF_OACTIVE;
 	is->is_if.if_flags |= IFF_RUNNING;
+	is->is_flags |= ILF_RUNNING;
 	is->is_lastcmd = 0;
 	ilcint(unit);
 	splx(s);
@@ -330,12 +339,16 @@ ilcint(unit)
 	 * be done earlier (in ilrint).
 	 */
 	if (is->is_flags & ILF_RCVPENDING) {
+		int s;
+
 		addr->il_bar = is->is_ifuba.ifu_r.ifrw_info & 0xffff;
 		addr->il_bcr = sizeof(struct il_rheader) + ETHERMTU + 6;
 		addr->il_csr =
 		  ((is->is_ifuba.ifu_r.ifrw_info >> 2) & IL_EUA)|ILC_RCV|IL_RIE;
+		s = splhigh();
 		while ((addr->il_csr & IL_CDONE) == 0)
 			;
+		splx(s);
 		is->is_flags &= ~ILF_RCVPENDING;
 	}
 	is->is_flags &= ~ILF_OACTIVE;
@@ -479,8 +492,10 @@ setup:
 	addr->il_bcr = sizeof(struct il_rheader) + ETHERMTU + 6;
 	addr->il_csr =
 		((is->is_ifuba.ifu_r.ifrw_info >> 2) & IL_EUA)|ILC_RCV|IL_RIE;
+	s = splhigh();
 	while ((addr->il_csr & IL_CDONE) == 0)
 		;
+	splx(s);
 }
 
 /*
@@ -502,6 +517,10 @@ iloutput(ifp, m0, dst)
 	register struct ether_header *il;
 	register int off;
 
+	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
+		error = ENETDOWN;
+		goto bad;
+	}
 	switch (dst->sa_family) {
 
 #ifdef INET
@@ -653,6 +672,7 @@ ilioctl(ifp, cmd, data)
 	caddr_t data;
 {
 	register struct ifaddr *ifa = (struct ifaddr *)data;
+	register struct il_softc *is = &il_softc[ifp->if_unit];
 	int s = splimp(), error = 0;
 
 	switch (cmd) {
@@ -673,10 +693,21 @@ ilioctl(ifp, cmd, data)
 		case AF_NS:
 			IA_SNS(ifa)->sns_addr.x_host =
 				* (union ns_host *) 
-				     (il_softc[ifp->if_unit].is_addr);
+				     (is->is_addr);
 			break;
 #endif
 		}
+		break;
+
+	case SIOCSIFFLAGS:
+		if ((ifp->if_flags & IFF_UP) == 0 &&
+		    is->is_flags & ILF_RUNNING) {
+			((struct ildevice *)
+			   (ilinfo[ifp->if_unit]->ui_addr))->il_csr = ILC_RESET;
+			is->is_flags &= ~ILF_RUNNING;
+		} else if (ifp->if_flags & IFF_UP &&
+		    (is->is_flags & ILF_RUNNING) == 0)
+			ilinit(ifp->if_unit);
 		break;
 
 	default:

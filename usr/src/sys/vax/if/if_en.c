@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_en.c	6.10 (Berkeley) %G%
+ *	@(#)if_en.c	6.11 (Berkeley) %G%
  */
 
 #include "en.h"
@@ -505,6 +505,10 @@ enoutput(ifp, m0, dst)
 	register struct en_header *en;
 	register int off;
 
+	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
+		error = ENETDOWN;
+		goto bad;
+	}
 	switch (dst->sa_family) {
 
 #ifdef INET

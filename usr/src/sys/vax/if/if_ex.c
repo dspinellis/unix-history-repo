@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ex.c	6.6 (Berkeley) %G%
+ *	@(#)if_ex.c	6.7 (Berkeley) %G%
  */
 
 
@@ -42,10 +42,6 @@
 #include "../netinet/in_var.h"
 #include "../netinet/ip.h"
 #include "../netinet/if_ether.h"
-#endif
-
-#ifdef PUP
-#include "../netpup/pup.h"
 #endif
 
 #ifdef NS
@@ -97,6 +93,7 @@ struct	ex_softc {
 	int	xs_flags;		/* private flags */
 #define	EX_XPENDING	1		/* xmit rqst pending on EXOS */
 #define	EX_STATPENDING	(1<<1)		/* stats rqst pending on EXOS */
+#define	EX_RUNNING	(1<<2)		/* board is running */
 	struct	ex_msg *xs_h2xnext;	/* host pointer to request queue */
 	struct	ex_msg *xs_x2hnext;	/* host pointer to reply queue */
 	u_long	xs_ubaddr;		/* map info for structs below */
@@ -238,6 +235,7 @@ exreset(unit, uban)
 		return;
 	printf(" ex%d", unit);
 	ex_softc[unit].xs_if.if_flags &= ~IFF_RUNNING;
+	ex_softc[unit].xs_flags &= ~EX_RUNNING;
 	exinit(unit);
 }
 
@@ -260,17 +258,20 @@ exinit(unit)
 	/* not yet, if address still unknown */
 	if (ifp->if_addrlist == (struct ifaddr *)0)
 		return;
+	if (xs->xs_flags & EX_RUNNING)
+		return;
 
-	if (ifp->if_flags & IFF_RUNNING)
-		return;
-	if (if_ubainit(&xs->xs_ifuba, ui->ui_ubanum,
-	    sizeof (struct ether_header),
-	    (int)btoc(EXMAXRBUF-sizeof(struct ether_header))) == 0) { 
-		printf("ex%d: can't initialize\n", unit);
-		xs->xs_if.if_flags &= ~IFF_UP;
-		return;
+	if ((ifp->if_flags & IFF_RUNNING) == 0) {
+		if (if_ubainit(&xs->xs_ifuba, ui->ui_ubanum,
+		    sizeof (struct ether_header),
+		    (int)btoc(EXMAXRBUF-sizeof(struct ether_header))) == 0) { 
+			printf("ex%d: can't initialize\n", unit);
+			xs->xs_if.if_flags &= ~IFF_UP;
+			return;
+		}
+		xs->xs_ubaddr = uballoc(ui->ui_ubanum, INCORE_BASE(xs),
+			INCORE_SIZE, 0);
 	}
-	xs->xs_ubaddr = uballoc(ui->ui_ubanum, INCORE_BASE(xs), INCORE_SIZE, 0);
 	exconfig(ui, 4);		/* with vectored interrupts*/
 	/*
 	 * Put EXOS on the Ethernet, using NET_MODE command
@@ -296,6 +297,7 @@ exinit(unit)
 	exhangrcv(unit);			/* hang receive request */
 	exstart(unit);				/* start transmits */
 	xs->xs_if.if_flags |= IFF_RUNNING;
+	xs->xs_flags |= EX_RUNNING;
 	splx(s);
 }
 
@@ -673,6 +675,10 @@ exoutput(ifp, m0, dst)
 	register struct ether_header *eh;
 	register int off;
 
+	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
+		error = ENETDOWN;
+		goto bad;
+	}
 	switch (dst->sa_family) {
 
 #ifdef INET
@@ -826,6 +832,7 @@ exioctl(ifp, cmd, data)
 	caddr_t data;
 {
 	register struct ifaddr *ifa = (struct ifaddr *)data;
+	register struct ex_softc *xs = &ex_softc[ifp->if_unit];
 	int s = splimp(), error = 0;
 
 	switch (cmd) {
@@ -845,11 +852,21 @@ exioctl(ifp, cmd, data)
 #ifdef NS
 		case AF_NS:
 			IA_SNS(ifa)->sns_addr.x_host =
-				* (union ns_host *) 
-				     (ex_softc[ifp->if_unit].xs_addr);
+				*(union ns_host *)(xs->xs_addr);
 			break;
 #endif
 		}
+		break;
+
+	case SIOCSIFFLAGS:
+		if ((ifp->if_flags & IFF_UP) == 0 &&
+		    xs->xs_flags & EX_RUNNING) {
+			((struct exdevice *)
+			  (exinfo[ifp->if_unit]->ui_addr))->xd_porta = EX_RESET;
+			xs->xs_flags &= ~EX_RUNNING;
+		} else if (ifp->if_flags & IFF_UP &&
+		    (xs->xs_flags & EX_RUNNING) == 0)
+			exinit(ifp->if_unit);
 		break;
 
 	default:
