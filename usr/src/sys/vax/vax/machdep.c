@@ -1,4 +1,4 @@
-/*	machdep.c	4.1	%G%	*/
+/*	machdep.c	4.2	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -16,7 +16,7 @@
 #include "../h/cons.h"
 #include "../h/reboot.h"
 
-char	version[] = "VM/UNIX (Berkeley Version 4.1) %G% \n";
+char	version[] = "VM/UNIX (Berkeley Version 4.2) %G% \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init.vm",0]; pushab */
@@ -394,11 +394,13 @@ boot(panic, arghowto)
 	}
 	splx(0x1f);			/* extreme priority */
 	devtype = major(rootdev);
-	if ((howto&RB_HALT))
+	if ((howto&RB_HALT)) {
+		tocons(0xf01);
 		tocons(TXDB_WSI);
-	else if (panic == RB_PANIC)
+	} else if (panic == RB_PANIC)
 		;			/* sent TXDB_CWSI at boot */
 	else {
+		tocons(0xf01);
 		tocons(TXDB_WSI);
 		tocons(TXDB_BOOT);	/* defboo.cmd, not restar.cmd */
 	}
