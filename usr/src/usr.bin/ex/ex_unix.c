@@ -1,5 +1,5 @@
 /* Copyright (c) 1979 Regents of the University of California */
-static char *sccsid = "@(#)ex_unix.c	7.2	%G%";
+static char *sccsid = "@(#)ex_unix.c	7.3	%G%";
 #include "ex.h"
 #include "ex_temp.h"
 #include "ex_tty.h"
@@ -234,6 +234,7 @@ filter(mode)
 	static int pvec[2];
 	ttymode f;	/* mjm: was register */
 	register int lines = lineDOL();
+	struct stat statb;
 
 	mode++;
 	if (mode & 2) {
@@ -266,6 +267,13 @@ filter(mode)
 	if (mode & 1) {
 		if(FIXUNDO)
 			undap1 = undap2 = addr2+1;
+		if (fstat(io, &statb) < 0)
+			bsize = LBSIZE;
+		else {
+			bsize = statb.st_blksize;
+			if (bsize <= 0)
+				bsize = LBSIZE;
+		}
 		ignore(append(getfile, addr2));
 #ifdef TRACE
 		if (trace)
