@@ -1,16 +1,28 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)kern_sig.c	7.5 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)kern_sig.c	7.3.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "dir.h"
+#include "ucred.h"
 #include "user.h"
-#include "inode.h"
+#include "vnode.h"
 #include "proc.h"
 #include "timeb.h"
 #include "times.h"
@@ -21,6 +33,7 @@
 #include "vm.h"
 #include "acct.h"
 #include "uio.h"
+#include "file.h"
 #include "kernel.h"
 
 #include "machine/reg.h"
@@ -752,7 +765,7 @@ psig()
 	case SIGSEGV:
 	case SIGSYS:
 		u.u_arg[0] = sig;
-		if (core())
+		if (core() == 0)
 			sig += 0200;
 	}
 	exit(sig);
@@ -770,32 +783,32 @@ psig()
  */
 core()
 {
-	register struct inode *ip;
+	register struct vnode *vp, *dvp;
 	register struct nameidata *ndp = &u.u_nd;
+	struct vattr vattr;
+	int error;
 
 	if (u.u_uid != u.u_ruid || u.u_gid != u.u_rgid)
-		return (0);
-	if (ctob(UPAGES+u.u_dsize+u.u_ssize) >=
+		return (EFAULT);
+	if (ctob(UPAGES + u.u_dsize + u.u_ssize) >=
 	    u.u_rlimit[RLIMIT_CORE].rlim_cur)
-		return (0);
-	if (u.u_procp->p_textp && access(u.u_procp->p_textp->x_iptr, IREAD))
-		return (0);
-	u.u_error = 0;
-	ndp->ni_nameiop = CREATE | FOLLOW;
+		return (EFAULT);
+	if (u.u_procp->p_textp) {
+		vop_lock(u.u_procp->p_textp->x_vptr);
+		error = vn_access(u.u_procp->p_textp->x_vptr, VREAD, u.u_cred);
+		vop_unlock(u.u_procp->p_textp->x_vptr);
+		if (error)
+			return (EFAULT);
+	}
 	ndp->ni_segflg = UIO_SYSSPACE;
 	ndp->ni_dirp = "core";
-	ip = namei(ndp);
-	if (ip == NULL) {
-		if (u.u_error)
-			return (0);
-		ip = maknode(0644, ndp);
-		if (ip==NULL)
-			return (0);
-	}
-	if (access(ip, IWRITE) ||
-	   (ip->i_mode&IFMT) != IFREG ||
-	   ip->i_nlink != 1) {
-		u.u_error = EFAULT;
+	if (error = vn_open(ndp, FCREAT|FWRITE, 0644))
+		return (error);
+	vp = ndp->ni_vp;
+	if (vp->v_type != VREG ||
+	    vop_getattr(vp, &vattr, u.u_cred) ||
+	    vattr.va_nlink != 1) {
+		error = EFAULT;
 		goto out;
 	}
 #ifdef MMAP
@@ -806,23 +819,25 @@ core()
 			munmapfd(fd);
 	}
 #endif
-	itrunc(ip, (u_long)0);
+	vattr_null(&vattr);
+	vattr.va_size = 0;
+	vop_setattr(vp, &vattr, u.u_cred);
 	u.u_acflag |= ACORE;
-	u.u_error = rdwri(UIO_WRITE, ip,
-	    (caddr_t)&u,
-	    ctob(UPAGES),
-	    (off_t)0, 1, (int *)0);
-	if (u.u_error == 0)
-		u.u_error = rdwri(UIO_WRITE, ip,
+	error = vn_rdwr(UIO_WRITE, vp, (caddr_t)&u, ctob(UPAGES), (off_t)0,
+	    UIO_SYSSPACE, IO_UNIT, (int *)0);
+	if (error == 0)
+		error = vn_rdwr(UIO_WRITE, vp,
 		    (caddr_t)ctob(dptov(u.u_procp, 0)),
-		    (int)ctob(u.u_dsize),
-		    (off_t)ctob(UPAGES), 0, (int *)0);
-	if (u.u_error == 0)
-		u.u_error = rdwri(UIO_WRITE, ip,
+		    (int)ctob(u.u_dsize), (off_t)ctob(UPAGES),
+		    UIO_USERSPACE, IO_UNIT, (int *)0);
+	if (error == 0)
+		error = vn_rdwr(UIO_WRITE, vp,
 		    (caddr_t)ctob(sptov(u.u_procp, u.u_ssize - 1)),
 		    (int)ctob(u.u_ssize),
-		    (off_t)ctob(UPAGES)+ctob(u.u_dsize), 0, (int *)0);
+		    (off_t)ctob(UPAGES) + ctob(u.u_dsize),
+		    UIO_USERSPACE, IO_UNIT, (int *)0);
 out:
-	iput(ip);
-	return (u.u_error == 0);
+	if (vp)
+		vrele(vp);
+	return (error);
 }
