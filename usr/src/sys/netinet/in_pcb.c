@@ -1,4 +1,4 @@
-/*	in_pcb.c	6.6	85/03/18	*/
+/*	in_pcb.c	6.7	85/04/16	*/
 
 #include "param.h"
 #include "systm.h"
