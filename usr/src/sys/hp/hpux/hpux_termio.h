@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hpux.h 1.15 89/09/25$
+ * from: Utah $Hdr: hpux_termio.h 1.1 90/07/09$
  *
- *	@(#)hpux_termio.h	7.2 (Berkeley) %G%
+ *	@(#)hpux_termio.h	7.3 (Berkeley) %G%
  */
 
 /* HP-UX termio stuff */
