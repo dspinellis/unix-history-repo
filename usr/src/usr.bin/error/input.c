@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)input.c	1.4 (Berkeley) 82/01/22";
+static	char *sccsid = "@(#)input.c	1.5 (Berkeley) 82/05/04";
 #include <stdio.h>
 #include <ctype.h>
 #include "error.h"
@@ -210,15 +210,9 @@ Errorclass pccccom()
 		clob_last(wordv[3], '\0');	/* drop : on line number */
 		wordv[2] = wordv[1];	/* overwrite "line" */
 		wordv++;		/*compensate*/
-		if (language == INAS){
-			if (strcmp(currentfilename, "???") != 0)
-				wordv[1] = currentfilename;
-			return(C_NULLED);
-		} else {
-			currentfilename = wordv[1];
-			language = INCC;
-			return(C_TRUE);
-		}
+		currentfilename = wordv[1];
+		language = INCC;
+		return(C_TRUE);
 	}
 	return(C_UNKNOWN);
 }	/* end of ccom */
