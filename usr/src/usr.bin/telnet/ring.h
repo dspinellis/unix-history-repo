@@ -43,7 +43,8 @@ extern void
 extern void
 	ring_added(Ring *ring, int count),
 	ring_sent(Ring *ring, int count),
-	ring_acked(Ring *ring, int count);
+	ring_acked(Ring *ring, int count),
+	ring_sent_acked(Ring *ring, int count);
 
 /* Buffer state query routines */
 extern int
