@@ -1,5 +1,5 @@
 /*
-char id_f_errno[] = "@(#)f_errno.h	1.3";
+char id_f_errno[] = "@(#)f_errno.h	1.4";
  *
  * f77 I/O error definitions
  */
@@ -35,4 +35,4 @@ extern int f_nerr;
 #define F_ERARG		121	/* illegal argument */
 #define F_ERNREP	122	/* negative repeat count */
 
-#define F_MAXERR	(f_nerr - F_ER)
+#define F_MAXERR	(f_nerr + F_ER)
