@@ -1,0 +1,30 @@
+#print
+You can also use the "=" command to find out what
+the 'current' line is.  Since the
+current line is referred to as '.', do you see that
+  .=
+is the appropriate command to print the current line
+number?  So if you go through a sequence like
+  3p
+  .=
+the second command will print '3'.  That's not very
+exciting, so why don't you edit file 'roger',
+print the next to last line, and then use '.='
+to find out what it is.  Don't forget to exit
+from the editor with w, and then q.  Then
+finish by typing "answer N" where
+N is what you found, as usual.
+#create roger
+this is a short
+file containing five lines
+of which 
+this line is next to last
+indeed
+#copyin
+#user
+#uncopyin
+#match 4
+#log
+#next
+15.1a 10
+15.2a 5

@@ -1,0 +1,49 @@
+#print
+By default, "tail" prints the last 10 lines of its input.
+You can change this default amount by specifying a different
+amount as an optional argument.  For example,
+  tail -5 file
+prints the last 5 lines of "file". 
+Collect the last line of the file "Ref" in a new file
+called "last".  Type "ready" when you have finished.
+(By the way, there is a limit to how big the number can be,
+but it's usually at least 60 or 70 lines of normal text.)
+#create Ref
+   About a hundred and fifty years after the pilgrims settled in
+   Columbus discovered America in 1492.  Later, other explorers
+   He found wild country.  There were no settlers, no roads.  Indians
+   His name was Daniel Boone.
+   Many settlers, besides the Pilgrims, had come to the shores of
+   Now Abraham Lincoln was master of the White House.  But he was
+   The leader, Captain John Smith, taught the men to build houses
+America.  But they had stayed on the safe land between the sea and
+But here was rich, free land -- miles and miles of it.
+House was crowded with people seeking his help.
+President of only part of the United States.  For the Southern
+States has taken down the Star-Spangled Banner and raised the flag
+beginning.  In 1607, three ships brought men from England to what
+death during the hard winters.  Others lived to build settlements
+furs, and fish they found.  Many Europeans decided to settle in
+his shoulder and followed a buffalo trail across the mountains into
+how to get the Southern States back into the Union.  He needed
+hunted in the woods for food.  The country was beautiful and dangerous.
+is now Jamestown, Virginia.  They were looking for gold.
+mud.
+of stakes and branches.  They plastered the walls of the houses with
+of the Confederacy in its stead.  Sad and silent, Lincoln gazed
+or colonies for their mother countries.  Colonial America was
+quiet to think what to do.  But from morning till night the White
+the mountains.
+this country, a young hunter picked up his gun.  He tossed it onto
+this wonderful land.  But some of the first settlers starved to
+through his spyglass at the Confederate flag that fluttered in the
+visited the new land.  They told people in Europe of the forests,
+what is now Kentucky.
+wind on the other side of the Potomac River in Virginia.  He pondered
+#create X1
+wind on the other side of the Potomac River in Virginia.  He pondered
+#user
+#cmp X1 last
+#log
+#next
+5.1a 10

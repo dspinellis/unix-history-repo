@@ -1,0 +1,18 @@
+#print
+You can of course put several lines between the 'a' and the '.'
+to type in lots of text at one time.  Here is a set
+of lines: type them in and name the file "fruit".
+Type "ready" when done.  Input is ...
+#create Ref
+apple
+peach
+pear
+plum
+nectarine
+orange
+#print Ref
+#user
+#cmp Ref fruit
+#log
+#next
+16.1a 10

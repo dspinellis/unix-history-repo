@@ -1,0 +1,36 @@
+#print
+The notation ">" can be used by most programs to capture
+output on a file.  For example, 
+
+   cat henry >james
+
+makes a copy of "henry" in the file "james"; in fact this is
+essentially identical to
+
+   cp henry james
+
+"cat" is a bit more flexible, though, since you can concatenate
+several files onto one output.  Remember that
+
+   cat tom dick harry
+
+copies all three files onto the terminal?
+In this directory is a file named "john".
+Make a file called "mary" that contains ___two copies of "john".
+Type "ready" when you're done.
+#create john
+Now is the time for all good
+men to come to the aid of their
+party
+#create X1
+Now is the time for all good
+men to come to the aid of their
+party
+Now is the time for all good
+men to come to the aid of their
+party
+#user
+#cmp X1 mary
+#log
+#next
+3.1b 10
