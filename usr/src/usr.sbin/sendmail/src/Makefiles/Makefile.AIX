@@ -7,7 +7,7 @@
 #
 #  This has been tested on AIX 3.1.5 and 3.2.3e.
 #
-#	@(#)Makefile.AIX	8.7 (Berkeley) %G%
+#	@(#)Makefile.AIX	8.8 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -37,8 +37,8 @@ ENVDEF=	-D_AIX3
 # library directories
 #LIBDIRS=-L/usr/sww/lib
 
-# libraries required on your system
-LIBS=	-ldbm -ldb -ls
+# libraries required on your system -- add -ls if you define USEGETCONFATTR
+LIBS=	-ldbm -ldb
 #
 #  If you did not install the NEWDB on your AIX platform, use:
 #LIBS=	-ldbm
