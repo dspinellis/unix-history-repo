@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -206,9 +206,9 @@ makech(win, wy)
 		}
 	}
 	while (wx <= lch) {
-		if (!force && bcmp(nsp, csp, sizeof(__LDATA)) == 0) {
+		if (!force && memcmp(nsp, csp, sizeof(__LDATA)) == 0) {
 			if (wx <= lch) {
-				while (bcmp(nsp, csp, sizeof(__LDATA)) == 0 &&
+				while (memcmp(nsp, csp, sizeof(__LDATA)) == 0 &&
 			            wx <= lch) {
 					    nsp++;
 					    if (!curwin)
@@ -227,7 +227,7 @@ makech(win, wy)
 #endif
 		ly = y;
 		lx = wx + win->begx;
-		while ((force || bcmp(nsp, csp, sizeof(__LDATA)) != 0) 
+		while ((force || memcmp(nsp, csp, sizeof(__LDATA)) != 0) 
 		    && wx <= lch) {
 #ifdef notdef
 			/* XXX
@@ -420,7 +420,7 @@ quickch(win)
 					    __FORCEPAINT ||
 					    (win->lines[curw]->hash !=
 					    curscr->lines[curs]->hash ||
-				            bcmp(win->lines[curw]->line, 
+				            memcmp(win->lines[curw]->line, 
 					    curscr->lines[curs]->line, 
 					    win->maxx * __LDATASIZE) != 0))
 						break;
@@ -439,7 +439,7 @@ quickch(win)
 		for (top = 0; top < win->maxy; top++)
 			if (win->lines[top]->flags & __FORCEPAINT ||
 			    win->lines[top]->hash != curscr->lines[top]->hash 
-			    || bcmp(win->lines[top]->line, 
+			    || memcmp(win->lines[top]->line, 
 			    curscr->lines[top]->line, 
 			    win->maxx * __LDATASIZE) != 0)
 				break;
@@ -453,7 +453,7 @@ quickch(win)
 		for (bot = win->maxy - 1; bot >= 0; bot--)
 			if (win->lines[bot]->flags & __FORCEPAINT ||
 			    win->lines[bot]->hash != curscr->lines[bot]->hash 
-			    || bcmp(win->lines[bot]->line, 
+			    || memcmp(win->lines[bot]->line, 
 			    curscr->lines[bot]->line, 
 			    win->maxx * __LDATASIZE) != 0)
 				break;
@@ -566,7 +566,7 @@ quickch(win)
 			win->lines[target]->flags &= ~__ISDIRTY;
 		} else if ((n > 0 && target >= top && target < top + n) ||
 		           (n < 0 && target <= bot && target > bot + n)) {
-			if (clp->hash != blank_hash ||  bcmp(clp->line, 
+			if (clp->hash != blank_hash ||  memcmp(clp->line, 
 			    buf, win->maxx * __LDATASIZE) !=0) {
 				(void)bcopy(buf, clp->line,  
 				    win->maxx * __LDATASIZE);
