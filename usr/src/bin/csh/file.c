@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)file.c 1.4 (Berkeley from Hp Labs) %G%";
+static	char *sccsid = "@(#)file.c 1.5 (Berkeley from Hp Labs) %G%";
 #endif
 
 /*
@@ -339,7 +339,7 @@ free_items(items)
 
 #define FREE_ITEMS(items) { \
 	int omask;\
-
+\
 	omask = sigblock(sigmask(SIGINT));\
 	free_items(items);\
 	items = NULL;\
@@ -358,7 +358,7 @@ search(word, command, max_word_length)
 	register DIR *dir_fd;
 	register numitems, name_length, looking_for_lognames;
 	char tilded_dir[FILSIZ + 1], dir[FILSIZ + 1];
-	char name[MAXNAMLEN + 1], extended_name[MAXNAMLEN+1],
+	char name[MAXNAMLEN + 1], extended_name[MAXNAMLEN+1];
 	char *entry;
 #define MAXITEMS 1024
 
