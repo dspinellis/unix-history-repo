@@ -13,37 +13,36 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_mbuf.c	7.4.1.3 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	7.11 (Berkeley) %G%
  */
-
-#include "../machine/pte.h"
 
 #include "param.h"
 #include "dir.h"
 #include "user.h"
 #include "proc.h"
 #include "cmap.h"
+#include "malloc.h"
 #include "map.h"
+#define MBTYPES
 #include "mbuf.h"
 #include "vm.h"
 #include "kernel.h"
 #include "syslog.h"
 #include "domain.h"
 #include "protosw.h"
+#include "machine/pte.h"
 
 mbinit()
 {
 	int s;
 
-#if CLBYTES < 4096
-#define NCL_INIT	(4096/CLBYTES)
+#if MCLBYTES < 4096
+#define NCL_INIT	(4096/MCLBYTES)
 #else
 #define NCL_INIT	1
 #endif
 	s = splimp();
-	if (m_clalloc(NCL_INIT, MPG_MBUFS, M_DONTWAIT) == 0)
-		goto bad;
-	if (m_clalloc(NCL_INIT, MPG_CLUSTERS, M_DONTWAIT) == 0)
+	if (m_clalloc(NCL_INIT, M_DONTWAIT) == 0)
 		goto bad;
 	splx(s);
 	return;
@@ -52,16 +51,16 @@ bad:
 }
 
 /*
+ * Allocate some number of mbuf clusters
+ * and place on cluster free list.
  * Must be called at splimp.
  */
 /* ARGSUSED */
-caddr_t
-m_clalloc(ncl, how, canwait)
+m_clalloc(ncl, canwait)
 	register int ncl;
-	int how;
 {
 	int npg, mbx;
-	register struct mbuf *m;
+	register caddr_t p;
 	register int i;
 	static int logged;
 
@@ -74,67 +73,69 @@ m_clalloc(ncl, how, canwait)
 		}
 		return (0);
 	}
-	m = cltom(mbx * NBPG / MCLBYTES);
+	p = cltom(mbx * NBPG / MCLBYTES);
 	if (memall(&Mbmap[mbx], npg, proc, CSYS) == 0) {
 		rmfree(mbmap, (long)npg, (long)mbx);
 		return (0);
 	}
-	vmaccess(&Mbmap[mbx], (caddr_t)m, npg);
-	switch (how) {
-
-	case MPG_CLUSTERS:
-		ncl = ncl * CLBYTES / MCLBYTES;
-		for (i = 0; i < ncl; i++) {
-			m->m_off = 0;
-			m->m_next = mclfree;
-			mclfree = m;
-			m += MCLBYTES / sizeof (*m);
-			mbstat.m_clfree++;
-		}
-		mbstat.m_clusters += ncl;
-		break;
-
-	case MPG_MBUFS:
-		for (i = ncl * CLBYTES / sizeof (*m); i > 0; i--) {
-			m->m_off = 0;
-			m->m_type = MT_DATA;
-			mbstat.m_mtypes[MT_DATA]++;
-			mbstat.m_mbufs++;
-			(void) m_free(m);
-			m++;
-		}
-		break;
+	vmaccess(&Mbmap[mbx], p, npg);
+	ncl = ncl * CLBYTES / MCLBYTES;
+	for (i = 0; i < ncl; i++) {
+		((union mcluster *)p)->mcl_next = mclfree;
+		mclfree = (union mcluster *)p;
+		p += MCLBYTES;
+		mbstat.m_clfree++;
 	}
-	return ((caddr_t)m);
+	mbstat.m_clusters += ncl;
+	return (1);
 }
 
 /*
- * Must be called at splimp.
+ * When MGET failes, ask protocols to free space when short of memory,
+ * then re-attempt to allocate an mbuf.
  */
-m_expand(canwait)
-	int canwait;
+struct mbuf *
+m_retry(i, t)
+	int i, t;
+{
+	register struct mbuf *m;
+
+	m_reclaim();
+#define m_retry(i, t)	(struct mbuf *)0
+	MGET(m, i, t);
+#undef m_retry
+	return (m);
+}
+
+/*
+ * As above; retry an MGETHDR.
+ */
+struct mbuf *
+m_retryhdr(i, t)
+	int i, t;
+{
+	register struct mbuf *m;
+
+	m_reclaim();
+#define m_retryhdr(i, t) (struct mbuf *)0
+	MGETHDR(m, i, t);
+#undef m_retryhdr
+	return (m);
+}
+
+m_reclaim()
 {
 	register struct domain *dp;
 	register struct protosw *pr;
-	int tries;
+	int s = splimp();
 
-	for (tries = 0;; ) {
-		if (m_clalloc(1, MPG_MBUFS, canwait))
-			return (1);
-		if (canwait == 0 || tries++)
-			return (0);
-
-		/* ask protocols to free space */
-		for (dp = domains; dp; dp = dp->dom_next)
-			for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW;
-			    pr++)
-				if (pr->pr_drain)
-					(*pr->pr_drain)();
-		mbstat.m_drain++;
-	}
+	for (dp = domains; dp; dp = dp->dom_next)
+		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
+			if (pr->pr_drain)
+				(*pr->pr_drain)();
+	splx(s);
+	mbstat.m_drain++;
 }
-
-/* NEED SOME WAY TO RELEASE SPACE */
 
 /*
  * Space allocation routines.
@@ -148,6 +149,16 @@ m_get(canwait, type)
 	register struct mbuf *m;
 
 	MGET(m, canwait, type);
+	return (m);
+}
+
+struct mbuf *
+m_gethdr(canwait, type)
+	int canwait, type;
+{
+	register struct mbuf *m;
+
+	MGETHDR(m, canwait, type);
 	return (m);
 }
 
@@ -174,48 +185,16 @@ m_free(m)
 	return (n);
 }
 
-/*
- * Get more mbufs; called from MGET macro if mfree list is empty.
- * Must be called at splimp.
- */
-/*ARGSUSED*/
-struct mbuf *
-m_more(canwait, type)
-	int canwait, type;
-{
-	register struct mbuf *m;
-
-	while (m_expand(canwait) == 0) {
-		if (canwait == M_WAIT) {
-			mbstat.m_wait++;
-			m_want++;
-			sleep((caddr_t)&mfree, PZERO - 1);
-			if (mfree)
-				break;
-		} else {
-			mbstat.m_drops++;
-			return (NULL);
-		}
-	}
-#define m_more(x,y) (panic("m_more"), (struct mbuf *)0)
-	MGET(m, canwait, type);
-#undef m_more
-	return (m);
-}
-
 m_freem(m)
 	register struct mbuf *m;
 {
 	register struct mbuf *n;
-	register int s;
 
 	if (m == NULL)
 		return;
-	s = splimp();
 	do {
 		MFREE(m, n);
 	} while (m = n);
-	splx(s);
 }
 
 /*
@@ -223,27 +202,58 @@ m_freem(m)
  */
 
 /*
-/*
- * Make a copy of an mbuf chain starting "off" bytes from the beginning,
- * continuing for "len" bytes.  If len is M_COPYALL, copy to end of mbuf.
- * Should get M_WAIT/M_DONTWAIT from caller.
+ * Lesser-used path for M_PREPEND:
+ * allocate new mbuf to prepend to chain,
+ * copy junk along.
  */
 struct mbuf *
-m_copy(m, off, len)
+m_prepend(m, len, how)
 	register struct mbuf *m;
-	int off;
+	int len, how;
+{
+	struct mbuf *mn;
+
+	MGET(mn, how, m->m_type);
+	if (mn == (struct mbuf *)NULL) {
+		m_freem(m);
+		return ((struct mbuf *)NULL);
+	}
+	if (m->m_flags & M_PKTHDR) {
+		M_COPY_PKTHDR(mn, m);
+		m->m_flags &= ~M_PKTHDR;
+	}
+	mn->m_next = m;
+	m = mn;
+	if (len < MHLEN)
+		MH_ALIGN(m, len);
+	m->m_len = len;
+	return (m);
+}
+
+/*
+/*
+ * Make a copy of an mbuf chain starting "off0" bytes from the beginning,
+ * continuing for "len" bytes.  If len is M_COPYALL, copy to end of mbuf.
+ * The wait parameter is a choice of M_WAIT/M_DONTWAIT from caller.
+ */
+struct mbuf *
+m_copym(m, off0, len, wait)
+	register struct mbuf *m;
+	int off0, wait;
 	register int len;
 {
 	register struct mbuf *n, **np;
-	struct mbuf *top, *p;
+	register int off = off0;
+	struct mbuf *top;
+	int copyhdr = 0;
 
-	if (len == 0)
-		return (0);
 	if (off < 0 || len < 0)
-		panic("m_copy");
+		panic("m_copym");
+	if (off == 0 && m->m_flags & M_PKTHDR)
+		copyhdr = 1;
 	while (off > 0) {
 		if (m == 0)
-			panic("m_copy");
+			panic("m_copym");
 		if (off < m->m_len)
 			break;
 		off -= m->m_len;
@@ -254,18 +264,27 @@ m_copy(m, off, len)
 	while (len > 0) {
 		if (m == 0) {
 			if (len != M_COPYALL)
-				panic("m_copy");
+				panic("m_copym");
 			break;
 		}
-		MGET(n, M_DONTWAIT, m->m_type);
+		MGET(n, wait, m->m_type);
 		*np = n;
 		if (n == 0)
 			goto nospace;
+		if (copyhdr) {
+			M_COPY_PKTHDR(n, m);
+			if (len == M_COPYALL)
+				n->m_pkthdr.len -= off0;
+			else
+				n->m_pkthdr.len = len;
+			copyhdr = 0;
+		}
 		n->m_len = MIN(len, m->m_len - off);
-		if (m->m_off > MMAXOFF) {
-			p = mtod(m, struct mbuf *);
-			n->m_off = ((int)p - (int)n) + off;
-			mclrefcnt[mtocl(p)]++;
+		if (m->m_flags & M_EXT) {
+			n->m_data = m->m_data + off;
+			mclrefcnt[mtocl(m->m_ext.ext_buf)]++;
+			n->m_ext = m->m_ext;
+			n->m_flags |= M_EXT;
 		} else
 			bcopy(mtod(m, caddr_t)+off, mtod(n, caddr_t),
 			    (unsigned)n->m_len);
@@ -315,14 +334,19 @@ m_copydata(m, off, len, cp)
 	}
 }
 
+/*
+ * Concatenate mbuf chain n to m.
+ * Both chains must be of the same type (e.g. MT_DATA).
+ * Any m_pkthdr is not updated.
+ */
 m_cat(m, n)
 	register struct mbuf *m, *n;
 {
 	while (m->m_next)
 		m = m->m_next;
 	while (n) {
-		if (m->m_off >= MMAXOFF ||
-		    m->m_off + m->m_len + n->m_len > MMAXOFF) {
+		if (m->m_flags & M_EXT ||
+		    m->m_data + m->m_len + n->m_len >= &m->m_dat[MLEN]) {
 			/* just join the two chains */
 			m->m_next = n;
 			return;
@@ -335,16 +359,19 @@ m_cat(m, n)
 	}
 }
 
-m_adj(mp, len)
+m_adj(mp, req_len)
 	struct mbuf *mp;
-	register int len;
 {
+	register int len = req_len;
 	register struct mbuf *m;
 	register count;
 
 	if ((m = mp) == NULL)
 		return;
 	if (len >= 0) {
+		/*
+		 * Trim from head.
+		 */
 		while (m != NULL && len > 0) {
 			if (m->m_len <= len) {
 				len -= m->m_len;
@@ -352,10 +379,13 @@ m_adj(mp, len)
 				m = m->m_next;
 			} else {
 				m->m_len -= len;
-				m->m_off += len;
-				break;
+				m->m_data += len;
+				len = 0;
 			}
 		}
+		m = mp;
+		if (mp->m_flags & M_PKTHDR)
+			m->m_pkthdr.len -= (req_len - len);
 	} else {
 		/*
 		 * Trim from tail.  Scan the mbuf chain,
@@ -377,12 +407,17 @@ m_adj(mp, len)
 			return;
 		}
 		count -= len;
+		if (count < 0)
+			count = 0;
 		/*
 		 * Correct length for chain is "count".
 		 * Find the mbuf with last data, adjust its length,
 		 * and toss data from remaining mbufs on chain.
 		 */
-		for (m = mp; m; m = m->m_next) {
+		m = mp;
+		if (m->m_flags & M_PKTHDR)
+			m->m_pkthdr.len = count;
+		for (; m; m = m->m_next) {
 			if (m->m_len >= count) {
 				m->m_len = count;
 				break;
@@ -399,7 +434,7 @@ m_adj(mp, len)
  * and in the data area of an mbuf (so that mtod and dtom
  * will work for a structure of size len).  Returns the resulting
  * mbuf chain on success, frees it and returns null on failure.
- * If there is room, it will add up to MPULL_EXTRA bytes to the
+ * If there is room, it will add up to max_protohdr-len extra bytes to the
  * contiguous region in an attempt to avoid being called next time.
  */
 struct mbuf *
@@ -411,28 +446,39 @@ m_pullup(n, len)
 	register int count;
 	int space;
 
-	if (n->m_off + len <= MMAXOFF && n->m_next) {
+	/*
+	 * If first mbuf has no cluster, and has room for len bytes
+	 * without shifting current data, pullup into it,
+	 * otherwise allocate a new mbuf to prepend to the chain.
+	 */
+	if ((n->m_flags & M_EXT) == 0 &&
+	    n->m_data + len < &n->m_dat[MLEN] && n->m_next) {
+		if (n->m_len >= len)
+			return (n);
 		m = n;
 		n = n->m_next;
 		len -= m->m_len;
 	} else {
-		if (len > MLEN)
+		if (len > MHLEN)
 			goto bad;
 		MGET(m, M_DONTWAIT, n->m_type);
 		if (m == 0)
 			goto bad;
 		m->m_len = 0;
+		if (n->m_flags & M_PKTHDR)
+			M_COPY_PKTHDR(m, n);
 	}
-	space = MMAXOFF - m->m_off;
+	space = &m->m_dat[MLEN] - (m->m_data + m->m_len);
 	do {
-		count = MIN(MIN(space - m->m_len, len + MPULL_EXTRA), n->m_len);
-		bcopy(mtod(n, caddr_t), mtod(m, caddr_t)+m->m_len,
+		count = min(min(max(len, max_protohdr), space), n->m_len);
+		bcopy(mtod(n, caddr_t), mtod(m, caddr_t) + m->m_len,
 		  (unsigned)count);
 		len -= count;
 		m->m_len += count;
 		n->m_len -= count;
+		space -= count;
 		if (n->m_len)
-			n->m_off += count;
+			n->m_data += count;
 		else
 			n = m_free(n);
 	} while (len > 0 && n);
