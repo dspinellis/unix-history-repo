@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getnetent.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)getnetent.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -27,7 +27,6 @@ static char sccsid[] = "@(#)getnetent.c	5.5 (Berkeley) %G%";
 
 #define	MAXALIASES	35
 
-static char NETDB[] = "/etc/networks";
 static FILE *netf = NULL;
 static char line[BUFSIZ+1];
 static struct netent net;
@@ -39,7 +38,7 @@ setnetent(f)
 	int f;
 {
 	if (netf == NULL)
-		netf = fopen(NETDB, "r" );
+		netf = fopen(_PATH_NETWORKS, "r" );
 	else
 		rewind(netf);
 	_net_stayopen |= f;
@@ -60,7 +59,7 @@ getnetent()
 	char *p;
 	register char *cp, **q;
 
-	if (netf == NULL && (netf = fopen(NETDB, "r" )) == NULL)
+	if (netf == NULL && (netf = fopen(_PATH_NETWORKS, "r" )) == NULL)
 		return (NULL);
 again:
 	p = fgets(line, BUFSIZ, netf);

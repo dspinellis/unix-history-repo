@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getservent.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)getservent.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -28,7 +28,6 @@ static char sccsid[] = "@(#)getservent.c	5.6 (Berkeley) %G%";
 
 #define	MAXALIASES	35
 
-static char SERVDB[] = "/etc/services";
 static FILE *servf = NULL;
 static char line[BUFSIZ+1];
 static struct servent serv;
@@ -40,7 +39,7 @@ setservent(f)
 	int f;
 {
 	if (servf == NULL)
-		servf = fopen(SERVDB, "r" );
+		servf = fopen(_PATH_SERVICES, "r" );
 	else
 		rewind(servf);
 	_serv_stayopen |= f;
@@ -61,7 +60,7 @@ getservent()
 	char *p;
 	register char *cp, **q;
 
-	if (servf == NULL && (servf = fopen(SERVDB, "r" )) == NULL)
+	if (servf == NULL && (servf = fopen(_PATH_SERVICES, "r" )) == NULL)
 		return (NULL);
 again:
 	if ((p = fgets(line, BUFSIZ, servf)) == NULL)

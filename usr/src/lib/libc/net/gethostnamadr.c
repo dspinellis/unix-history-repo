@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.40 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -39,7 +39,6 @@ static struct hostent host;
 static char *host_aliases[MAXALIASES];
 static char hostbuf[BUFSIZ+1];
 static struct in_addr host_addr;
-static char HOSTDB[] = "/etc/hosts";
 static FILE *hostf = NULL;
 static char hostaddr[MAXADDRS];
 static char *host_addrs[2];
@@ -315,7 +314,7 @@ _sethtent(f)
 	int f;
 {
 	if (hostf == NULL)
-		hostf = fopen(HOSTDB, "r" );
+		hostf = fopen(_PATH_HOSTS, "r" );
 	else
 		rewind(hostf);
 	stayopen |= f;
@@ -335,7 +334,7 @@ _gethtent()
 	char *p;
 	register char *cp, **q;
 
-	if (hostf == NULL && (hostf = fopen(HOSTDB, "r" )) == NULL)
+	if (hostf == NULL && (hostf = fopen(_PATH_HOSTS, "r" )) == NULL)
 		return (NULL);
 again:
 	if ((p = fgets(hostbuf, BUFSIZ, hostf)) == NULL)
