@@ -1,7 +1,7 @@
 #
 # cursor package maker
 #
-# @(#)Makefile	1.7 (Berkeley) %G%
+# @(#)Makefile	1.8 (Berkeley) %G%
 #
 HEADERS=curses.h unctrl.h cr_ex.h
 CFILES=	box.c clear.c initscr.c endwin.c mvprintw.c mvscanw.c mvwin.c \
@@ -9,21 +9,21 @@ CFILES=	box.c clear.c initscr.c endwin.c mvprintw.c mvscanw.c mvwin.c \
 	touchwin.c erase.c clrtobot.c clrtoeol.c cr_put.c cr_tty.c \
 	longname.c delwin.c insertln.c deleteln.c scroll.c getstr.c \
 	getch.c addstr.c addch.c move.c curses.c unctrl.c standout.c \
-	tstp.c
+	tstp.c insch.c
 
 OBJS=	box.o clear.o initscr.o endwin.o mvprintw.o mvscanw.o mvwin.o \
 	newwin.o overlay.o overwrite.o printw.o scanw.o refresh.o \
 	touchwin.o erase.o clrtobot.o clrtoeol.o cr_put.o cr_tty.o \
 	longname.o delwin.o insertln.o deleteln.o scroll.o getstr.o \
 	getch.o addstr.o addch.o move.o curses.o unctrl.o standout.o \
-	tstp.o
+	tstp.o insch.o
 
 POBJS=	box.p clear.p initscr.p endwin.p mvprintw.p mvscanw.p mvwin.p \
 	newwin.p overlay.p overwrite.p printw.p scanw.p refresh.p \
 	touchwin.p erase.p clrtobot.p clrtoeol.p cr_put.p cr_tty.p \
 	longname.p delwin.p insertln.p deleteln.p scroll.p getstr.p \
 	getch.p addstr.p addch.p move.p curses.p unctrl.p standout.p \
-	tstp.p
+	tstp.p insch.p
 
 
 CTAGS=	ctags
@@ -93,6 +93,8 @@ install:
 	install -c crlib ${DESTDIR}/usr/lib/libcurses.a
 	ranlib ${DESTDIR}/usr/lib/libcurses.a
 
+source: ${HEADERS} ${CFILES}
+
 addch.c: SCCS/s.addch.c ; sccs get addch.c
 addstr.c: SCCS/s.addstr.c ; sccs get addstr.c
 box.c: SCCS/s.box.c ; sccs get box.c
@@ -111,6 +113,7 @@ erase.c: SCCS/s.erase.c ; sccs get erase.c
 getch.c: SCCS/s.getch.c ; sccs get getch.c
 getstr.c: SCCS/s.getstr.c ; sccs get getstr.c
 initscr.c: SCCS/s.initscr.c ; sccs get initscr.c
+insch.c: SCCS/s.insch.c ; sccs get insch.c
 insertln.c: SCCS/s.insertln.c ; sccs get insertln.c
 llib-lcurses: SCCS/s.llib-lcurses ; sccs get llib-lcurses
 longname.c: SCCS/s.longname.c ; sccs get longname.c
