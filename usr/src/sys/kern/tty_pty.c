@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_pty.c	7.3.1.1 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -24,7 +24,6 @@
 #include "proc.h"
 #include "uio.h"
 #include "kernel.h"
-#include "tsleep.h"
 
 #if NPTY == 1
 #undef NPTY
@@ -43,23 +42,17 @@ struct	pt_ioctl {
 	struct	proc *pt_selr, *pt_selw;
 	u_char	pt_send;
 	u_char	pt_ucntl;
-	struct	clist pt_ioc;
 } pt_ioctl[NPTY];
 int	npty = NPTY;		/* for pstat -t */
 
-#define	PF_RCOLL	0x0001
-#define	PF_WCOLL	0x0002
-#define	PF_NBIO		0x0004
-#define	PF_PKT		0x0008		/* packet mode */
-#define	PF_STOPPED	0x0010		/* user told stopped */
-#define	PF_REMOTE	0x0020		/* remote and flow controlled input */
-#define	PF_NOSTOP	0x0040
-#define	PF_UCNTL	0x0080		/* user control mode */
-#define	PF_TIOC		0x0100		/* transparent control mode */
-#define	PF_LIOC		0x0200		/* transparent control locked */
-#define	PF_WIOC		0x0400		/* waiting for PF_LIOC to clear */
-#define	PF_BLOCK	0x0800		/* block writes to slave */
-#define	PF_OWAIT	0x1000		/* waiting for PF_BLOCK to clear */
+#define	PF_RCOLL	0x01
+#define	PF_WCOLL	0x02
+#define	PF_NBIO		0x04
+#define	PF_PKT		0x08		/* packet mode */
+#define	PF_STOPPED	0x10		/* user told stopped */
+#define	PF_REMOTE	0x20		/* remote and flow controlled input */
+#define	PF_NOSTOP	0x40
+#define PF_UCNTL	0x80		/* user control mode */
 
 /*ARGSUSED*/
 ptsopen(dev, flag)
@@ -76,8 +69,12 @@ ptsopen(dev, flag)
 	tp = &pt_tty[minor(dev)];
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		ttychars(tp);		/* Set up default chars */
-		tp->t_ispeed = tp->t_ospeed = EXTB;
-		tp->t_flags = 0;	/* No features (nor raw mode) */
+		tp->t_iflag = TTYDEF_IFLAG;
+		tp->t_oflag = TTYDEF_OFLAG;
+		tp->t_lflag = TTYDEF_LFLAG;
+		tp->t_cflag = TTYDEF_CFLAG;
+		tp->t_ispeed = tp->t_ospeed = TTYDEF_SPEED;
+		ttsetwater(tp);		/* would be done in xxparam() */
 	} else if (tp->t_state&TS_XCLUDE && u.u_uid != 0)
 		return (EBUSY);
 	if (tp->t_oproc)			/* Ctrlr still around. */
@@ -100,7 +97,6 @@ ptsclose(dev)
 	(*linesw[tp->t_line].l_close)(tp);
 	ttyclose(tp);
 	ptcwakeup(tp, FREAD|FWRITE);
-	return (0);
 }
 
 ptsread(dev, uio)
@@ -113,12 +109,14 @@ ptsread(dev, uio)
 
 again:
 	if (pti->pt_flags & PF_REMOTE) {
-		while (tp == u.u_ttyp && u.u_procp->p_pgrp != tp->t_pgrp) {
+		while (tp == u.u_ttyp && 
+		       u.u_procp->p_pgrp->pg_id != tp->t_pgid){
 			if ((u.u_procp->p_sigignore & sigmask(SIGTTIN)) ||
 			    (u.u_procp->p_sigmask & sigmask(SIGTTIN)) ||
+			    !u.u_procp->p_pgrp->pg_jobc ||
 			    u.u_procp->p_flag&SVFORK)
 				return (EIO);
-			gsignal(u.u_procp->p_pgrp, SIGTTIN);
+			pgsignal(u.u_procp->p_pgrp, SIGTTIN);
 			sleep((caddr_t)&lbolt, TTIPRI);
 		}
 		if (tp->t_canq.c_cc == 0) {
@@ -152,17 +150,11 @@ ptswrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	register struct tty *tp = &pt_tty[minor(dev)];
-	register struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
+	register struct tty *tp;
 
+	tp = &pt_tty[minor(dev)];
 	if (tp->t_oproc == 0)
 		return (EIO);
-
-	while (pti->pt_flags & PF_BLOCK) {
-		pti->pt_flags |= PF_OWAIT;
-		sleep((caddr_t)pti + 1, TTOPRI);
-	}
-
 	return ((*linesw[tp->t_line].l_write)(tp, uio));
 }
 
@@ -238,7 +230,6 @@ ptcclose(dev)
 	(void)(*linesw[tp->t_line].l_modem)(tp, 0);
 	tp->t_state &= ~TS_CARR_ON;
 	tp->t_oproc = 0;		/* mark closed */
-	return (0);
 }
 
 ptcread(dev, uio)
@@ -272,19 +263,6 @@ ptcread(dev, uio)
 				pti->pt_ucntl = 0;
 				return (0);
 			}
-			if (pti->pt_flags&PF_TIOC && pti->pt_ioc.c_cc) {
-				if (uio->uio_resid < pti->pt_ioc.c_cc + 1)
-					return (E2BIG);
-				error = ureadc(TIOCPKT_TIOC, uio);
-				while (error == 0 && pti->pt_ioc.c_cc > 0) {
-					cc = q_to_b(&pti->pt_ioc, buf,
-					    MIN(pti->pt_ioc.c_cc, BUFSIZ));
-					if (cc <= 0)	/* impossible? */
-						break;
-					error = uiomove(buf, cc, UIO_READ, uio);
-				}
-				return (error);
-			}
 			if (tp->t_outq.c_cc && (tp->t_state&TS_TTSTOP) == 0)
 				break;
 		}
@@ -294,7 +272,7 @@ ptcread(dev, uio)
 			return (EWOULDBLOCK);
 		sleep((caddr_t)&tp->t_outq.c_cf, TTIPRI);
 	}
-	if (pti->pt_flags & (PF_PKT|PF_UCNTL|PF_TIOC))
+	if (pti->pt_flags & (PF_PKT|PF_UCNTL))
 		error = ureadc(0, uio);
 	while (uio->uio_resid > 0 && error == 0) {
 		cc = q_to_b(&tp->t_outq, buf, MIN(uio->uio_resid, BUFSIZ));
@@ -302,23 +280,18 @@ ptcread(dev, uio)
 			break;
 		error = uiomove(buf, cc, UIO_READ, uio);
 	}
-	if (tp->t_outq.c_cc <= TTLOWAT(tp) && !(pti->pt_flags & PF_BLOCK))
-		ptswake(tp);
+	if (tp->t_outq.c_cc <= tp->t_lowat) {
+		if (tp->t_state&TS_ASLEEP) {
+			tp->t_state &= ~TS_ASLEEP;
+			wakeup((caddr_t)&tp->t_outq);
+		}
+		if (tp->t_wsel) {
+			selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
+			tp->t_wsel = 0;
+			tp->t_state &= ~TS_WCOLL;
+		}
+	}
 	return (error);
-}
-
-ptswake(tp)
-	register struct tty *tp;
-{
-	if (tp->t_state&TS_ASLEEP) {
-		tp->t_state &= ~TS_ASLEEP;
-		wakeup((caddr_t)&tp->t_outq);
-	}
-	if (tp->t_wsel) {
-		selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
-		tp->t_wsel = 0;
-		tp->t_state &= ~TS_WCOLL;
-	}
 }
 
 ptsstop(tp, flush)
@@ -373,7 +346,6 @@ ptcselect(dev, rw)
 	case 0:					/* exceptional */
 		if ((tp->t_state&TS_ISOPEN) &&
 		    (pti->pt_flags&PF_PKT && pti->pt_send ||
-		     pti->pt_flags&PF_TIOC && pti->pt_ioc.c_cc ||
 		     pti->pt_flags&PF_UCNTL && pti->pt_ucntl))
 			return (1);
 		if ((p = pti->pt_selr) && p->p_wchan == (caddr_t)&selwait)
@@ -391,8 +363,7 @@ ptcselect(dev, rw)
 			} else {
 			    if (tp->t_rawq.c_cc + tp->t_canq.c_cc < TTYHOG-2)
 				    return (1);
-			    if (tp->t_canq.c_cc == 0 &&
-			        (tp->t_flags & (RAW|CBREAK)) == 0)
+			    if (tp->t_canq.c_cc == 0 && (tp->t_iflag&ICANON))
 				    return (1);
 			}
 		}
@@ -471,8 +442,7 @@ again:
 		}
 		while (cc > 0) {
 			if ((tp->t_rawq.c_cc + tp->t_canq.c_cc) >= TTYHOG - 2 &&
-			   (tp->t_canq.c_cc > 0 ||
-			      tp->t_flags & (RAW|CBREAK))) {
+			   (tp->t_canq.c_cc > 0 || !(tp->t_iflag&ICANON))) {
 				wakeup((caddr_t)&tp->t_rawq);
 				goto block;
 			}
@@ -510,6 +480,7 @@ ptyioctl(dev, cmd, data, flag)
 {
 	register struct tty *tp = &pt_tty[minor(dev)];
 	register struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
+	register u_char *cc = tp->t_cc;
 	int stop, error;
 	extern ttyinput();
 
@@ -517,14 +488,7 @@ ptyioctl(dev, cmd, data, flag)
 	 * IF CONTROLLER STTY THEN MUST FLUSH TO PREVENT A HANG.
 	 * ttywflush(tp) will hang if there are characters in the outq.
 	 */
-	if (cdevsw[major(dev)].d_open == ptcopen) {
-		if ((cmd & 0xffff) == (TIOCIOANS(0) & 0xffff)) {
-			if (!(pti->pt_flags & PF_LIOC) || pti->pt_ioc.c_cc)
-				return (EINVAL);
-			(void) b_to_q(data, IOCPARM_LEN(cmd), &pti->pt_ioc);
-			wakeup((caddr_t)&pti->pt_ioc);
-			return (0);
-		}
+	if (cdevsw[major(dev)].d_open == ptcopen)
 		switch (cmd) {
 
 		case TIOCPKT:
@@ -545,30 +509,6 @@ ptyioctl(dev, cmd, data, flag)
 				pti->pt_flags &= ~PF_UCNTL;
 			return (0);
 
-		case TIOCTIOC:
-			if (*(int *)data) {
-				if (pti->pt_flags & PF_UCNTL)
-					return (EINVAL);
-				pti->pt_flags |= PF_TIOC;
-			} else {
-				pti->pt_flags &= ~(PF_TIOC|PF_LIOC|PF_WIOC);
-				while (pti->pt_ioc.c_cc)
-					(void) getc(&pti->pt_ioc);
-				wakeup((caddr_t)&pti->pt_ioc);
-			}
-			return (0);
-
-		case TIOCBLK:
-			if (*(int *)data)
-				pti->pt_flags |= PF_BLOCK;
-			else {
-				if (pti->pt_flags & PF_OWAIT)
-					wakeup((caddr_t)pti + 1);
-				pti->pt_flags &= ~(PF_BLOCK|PF_OWAIT);
-				ptswake(tp);
-			}
-			return (0);
-
 		case TIOCREMOTE:
 			if (*(int *)data)
 				pti->pt_flags |= PF_REMOTE;
@@ -584,94 +524,27 @@ ptyioctl(dev, cmd, data, flag)
 				pti->pt_flags &= ~PF_NBIO;
 			return (0);
 
-		case FIONREAD:
-			*(int *)data = tp->t_outq.c_cc;
-			return (0);
-
-		case TIOCSETP:
+		case TIOCSETP:		
 		case TIOCSETN:
 		case TIOCSETD:
+		case TIOCSETA:
+		case TIOCSETAW:
+		case TIOCSETAF:
+		case TIOCSETAS:
+		case TIOCSETAWS:
+		case TIOCSETAFS:
 			while (getc(&tp->t_outq) >= 0)
 				;
 			break;
 		}
-	} else if (pti->pt_flags & PF_TIOC) {
-		while (pti->pt_flags & PF_LIOC) {
-			pti->pt_flags |= PF_WIOC;
-			switch (tsleep((caddr_t)&pti->pt_flags,TTIPRI-1,5*hz)) {
-			case TS_OK:
-				continue;
-			case TS_SIG:
-			case TS_TIME:
-				return (EBUSY);
-			}
-		}
-		pti->pt_flags |= PF_LIOC | PF_BLOCK;
-		while (pti->pt_ioc.c_cc)
-			(void) getc(&pti->pt_ioc);
-		(void) b_to_q(&cmd, sizeof cmd, &pti->pt_ioc);
-		if (cmd & IOC_IN)
-			(void) b_to_q(data, IOCPARM_LEN(cmd), &pti->pt_ioc);
-		ptcwakeup(tp, FREAD);
-		switch (tsleep((caddr_t)&pti->pt_ioc, TTIPRI-1, 5*hz)) {
-		case TS_SIG:
-		case TS_TIME:
-			while (pti->pt_ioc.c_cc)
-				(void) getc(&pti->pt_ioc);
-			if (pti->pt_flags & PF_WIOC)
-				wakeup((caddr_t)&pti->pt_flags);
-			if (pti->pt_flags & PF_OWAIT)
-				wakeup((caddr_t)pti + 1);
-			pti->pt_flags &= ~(PF_LIOC|PF_WIOC|PF_BLOCK|PF_OWAIT);
-			ptswake(tp);
-			return (EBUSY);
-		case TS_OK:
-			break;
-		}
-		if (pti->pt_ioc.c_cc == 0) {
-			if (pti->pt_flags & PF_WIOC)
-				wakeup((caddr_t)&pti->pt_flags);
-			if (pti->pt_flags & PF_OWAIT)
-				wakeup((caddr_t)pti + 1);
-			pti->pt_flags &= ~(PF_LIOC|PF_WIOC|PF_BLOCK|PF_OWAIT);
-			ptswake(tp);
-			goto doioctl;
-		}
-		if (q_to_b(&pti->pt_ioc, &error, sizeof error) != sizeof error)
-			error = EINVAL;
-		if (error == 0 && cmd & IOC_OUT) {
-			if (IOCPARM_LEN(cmd) != pti->pt_ioc.c_cc)
-				error = EINVAL;
-			else
-				(void) q_to_b(&pti->pt_ioc, data,
-				    pti->pt_ioc.c_cc);
-		}
-		while (pti->pt_ioc.c_cc)
-			(void) getc(&pti->pt_ioc);
-		if (pti->pt_flags & PF_WIOC)
-			wakeup((caddr_t)&pti->pt_flags);
-		if (pti->pt_flags & PF_OWAIT)
-			wakeup((caddr_t)pti + 1);
-		pti->pt_flags &= ~(PF_LIOC|PF_WIOC|PF_BLOCK|PF_OWAIT);
-		ptswake(tp);
-		return (error);
-	}
-
- doioctl:
-	error = ttioctl(tp, cmd, data, flag);
+	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
+	if (error < 0)
+		 error = ttioctl(tp, cmd, data, flag);
 	/*
 	 * Since we use the tty queues internally,
 	 * pty's can't be switched to disciplines which overwrite
 	 * the queues.  We can't tell anything about the discipline
 	 * from here...
-	 *
-	 * Nb: this is not really good enough, the line disc open routine
-	 * may have done anything at all, no guarantees that close
-	 * will fix it.  This also has the effect of losing the
-	 * previous discipline, which an error on a TIOCSETD shouldn't
-	 * do...  Sometime it should be done via an explicit check
-	 * for TIOCSETD, then check to see what linesw[new_number].l_rint
-	 * really is.
 	 */
 	if (linesw[tp->t_line].l_rint != ttyinput) {
 		(*linesw[tp->t_line].l_close)(tp);
@@ -679,7 +552,6 @@ ptyioctl(dev, cmd, data, flag)
 		(void)(*linesw[tp->t_line].l_open)(dev, tp);
 		error = ENOTTY;
 	}
-
 	if (error < 0) {
 		if (pti->pt_flags & PF_UCNTL &&
 		    (cmd & ~0xff) == UIOCCMD(0)) {
@@ -691,8 +563,8 @@ ptyioctl(dev, cmd, data, flag)
 		}
 		error = ENOTTY;
 	}
-	stop = (tp->t_flags & RAW) == 0 &&
-	    tp->t_stopc == CTRL('s') && tp->t_startc == CTRL('q');
+	stop = (tp->t_iflag & IXON) && CCEQ(cc[VSTOP], CTRL('s')) 
+		&& CCEQ(cc[VSTART], CTRL('q'));
 	if (pti->pt_flags & PF_NOSTOP) {
 		if (stop) {
 			pti->pt_send &= ~TIOCPKT_NOSTOP;
