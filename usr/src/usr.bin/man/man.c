@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -104,12 +104,12 @@ main(argc, argv)
 	if (p_path || (p_path = getenv("MANPATH"))) {
 		char buf[MAXPATHLEN], **av;
 
-		tmp = strtok(p_path, ":"); 
+		tmp = strtok(p_path, ":");
 		while (tmp) {
 			(void)snprintf(buf, sizeof(buf), "%s/", tmp);
 			for (av = arorder; *av; ++av)
-                		cadd(buf, strlen(buf), *av);
-			tmp = strtok(NULL, ":"); 
+				cadd(buf, strlen(buf), *av);
+			tmp = strtok(NULL, ":");
 		}
 		p_path = pathbuf;
 	} else if (!(p_path = getpath(section)) && !p_augment) {
@@ -143,22 +143,24 @@ manual(path, name)
 	char *path, *name;
 {
 	register int res;
-	register char *end;
+	register char *cp;
 	char fname[MAXPATHLEN + 1];
 
-	for (res = 0;; path = end + 1) {
-		if (!*path)				/* foo: */
-			break;
-		if (end = index(path, ':')) {
-			if (end == path + 1)		/* foo::bar */
+	for (res = 0; path != NULL && *path != '\0'; path = cp) {
+		if (cp = strchr(path, ':')) {
+			if (cp == path + 1) {		/* foo::bar */
+				++cp;
 				continue;
-			*end = '\0';
+			}
+			*cp = '\0';
 		}
 		(void)sprintf(fname, "%s/%s.0", path, name);
 		if (access(fname, R_OK)) {
 			(void)sprintf(fname, "%s/%s/%s.0", path, machine, name);
-			if (access(fname, R_OK))
+			if (access(fname, R_OK)) {
+				++cp;
 				continue;
+			}
 		}
 
 		if (f_where)
@@ -172,9 +174,8 @@ manual(path, name)
 		if (!f_all)
 			return(1);
 		res = 1;
-		if (!end)
-			break;
-		*end = ':';
+		if (cp)
+			*cp++ = ':';
 	}
 	return(res);
 }
