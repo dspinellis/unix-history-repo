@@ -1,4 +1,4 @@
-#	@(#)README	5.4 (Berkeley) %G%
+#	@(#)README	8.1 (Berkeley) %G%
 
 This package implements a superset of the hsearch and dbm/ndbm libraries.
 
