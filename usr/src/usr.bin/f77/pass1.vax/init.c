@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static	char *sccsid = "@(#)init.c	5.1 (Berkeley) 85/06/07";
+static	char *sccsid = "@(#)init.c	5.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -15,8 +15,14 @@ static	char *sccsid = "@(#)init.c	5.1 (Berkeley) 85/06/07";
  *
  * University of Utah CS Dept modification history:
  *
- * $Header: init.c,v 2.1 84/07/19 12:03:26 donn Exp $
+ * $Header: init.c,v 5.2 85/08/10 04:30:57 donn Exp $
  * $Log:	init.c,v $
+ * Revision 5.2  85/08/10  04:30:57  donn
+ * Jerry Berkman's changes to ifdef 66 code and handle -r8/double flag.
+ * 
+ * Revision 5.1  85/08/10  03:47:33  donn
+ * 4.3 alpha
+ * 
  * Revision 2.1  84/07/19  12:03:26  donn
  * Changed comment headers for UofU.
  * 
@@ -47,8 +53,11 @@ int needkwd;
 struct Labelblock *thislabel	= NULL;
 flag nowarnflag	= NO;
 flag ftn66flag	= NO;
+#ifdef ONLY66
 flag no66flag	= NO;
 flag noextflag	= NO;
+#endif
+flag dblflag	= NO;
 flag profileflag	= NO;
 flag optimflag	= NO;
 flag shiftcase	= YES;
@@ -331,7 +340,7 @@ if(undeftype)
 	setimpl(TYUNKNOWN, (ftnint) 0, 'a', 'z');
 else
 	{
-	setimpl(TYREAL, (ftnint) 0, 'a', 'z');
+	setimpl(dblflag ? TYDREAL : TYREAL, (ftnint) 0, 'a', 'z');
 	setimpl(tyint,  (ftnint) 0, 'i', 'n');
 	}
 setimpl(-STGBSS, (ftnint) 0, 'a', 'z');	/* set class */
