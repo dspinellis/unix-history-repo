@@ -1,4 +1,4 @@
-.\"	@(#)g4	5.1 (Berkeley) %G%
+.\"	@(#)g4	6.1 (Berkeley) %G%
 .\"
 .SC "A Large Example"
 .PP
@@ -220,12 +220,6 @@ This causes very strange troubles.
 The program
 .ul
 checkeq
-(on
-.UC GCOS ,
-use
-.ul
-\&./checkeq
-instead)
 checks for misplaced or missing dollar signs
 and similar troubles.
 .PP
