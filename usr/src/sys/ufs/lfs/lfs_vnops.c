@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986, 1989, 1991 Regents of the University of California.
+ * Copyright (c) 1986, 1989, 1991 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.69 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.70 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -23,13 +23,13 @@
 #include <sys/fifo.h>
 #include <sys/malloc.h>
 
-#include <ufs/quota.h>
-#include <ufs/inode.h>
-#include <ufs/dir.h>
-#include <ufs/ufs_extern.h>
+#include <ufs/ufs/quota.h>
+#include <ufs/ufs/inode.h>
+#include <ufs/ufs/dir.h>
+#include <ufs/ufs/ufs_extern.h>
 
-#include <lfs/lfs.h>
-#include <lfs/lfs_extern.h>
+#include <ufs/lfs/lfs.h>
+#include <ufs/lfs/lfs_extern.h>
 
 /* Global vfs data structures for lfs. */
 struct vnodeops lfs_vnodeops = {
@@ -79,7 +79,7 @@ lfs_read(vp, uio, ioflag, cred)
 	struct ucred *cred;
 {
 	register struct inode *ip = VTOI(vp);
-	register LFS *fs;					/* LFS */
+	register struct lfs *fs;				/* LFS */
 	struct buf *bp;
 	daddr_t lbn, bn, rablock;
 	int size, diff, error = 0;
@@ -142,7 +142,7 @@ lfs_write(vp, uio, ioflag, cred)
 {
 	struct proc *p = uio->uio_procp;
 	register struct inode *ip = VTOI(vp);
-	register LFS *fs;					/* LFS */
+	register struct lfs *fs;				/* LFS */
 	struct buf *bp;
 	daddr_t lbn, bn;
 	u_long osize;
