@@ -1,4 +1,4 @@
-/*	types.h	4.9	82/11/13	*/
+/*	types.h	4.10	83/05/18	*/
 
 /*
  * Basic system types and major/minor device constructing/busting macros.
@@ -17,6 +17,7 @@ typedef	unsigned char	u_char;
 typedef	unsigned short	u_short;
 typedef	unsigned int	u_int;
 typedef	unsigned long	u_long;
+typedef	unsigned short	ushort;		/* sys III compat */
 
 #ifdef vax
 typedef	struct	_physadr { int r[1]; } *physadr;

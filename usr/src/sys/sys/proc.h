@@ -1,4 +1,4 @@
-/*	proc.h	4.20	83/01/20	*/
+/*	proc.h	4.21	83/05/18	*/
 
 /*
  * One structure allocated per active
@@ -53,6 +53,9 @@ struct	proc {
 	struct	proc *p_osptr;	/* pointer to older sibling processes */
 	struct	proc *p_ysptr;	/* pointer to younger siblings */
 	struct	itimerval p_realtimer;
+#ifdef sun
+	struct	context *p_ctx;	/* pointer to current context */
+#endif
 #ifdef QUOTA
 	struct	quota *p_quota;	/* quotas for this process (MUSH) */
 #endif

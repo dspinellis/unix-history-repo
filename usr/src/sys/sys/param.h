@@ -1,7 +1,7 @@
-/*	param.h	4.31	83/03/31	*/
+/*	param.h	4.32	83/05/18	*/
 
 /*
- * Macine type dependent parameters.
+ * Machine type dependent parameters.
  */
 #ifdef KERNEL
 #include "../machine/param.h"

@@ -1,14 +1,10 @@
-/*	ttydev.h	4.2	82/12/05	*/
+/*	ttydev.h	4.3	83/05/18	*/
 
 /*
  * Terminal definitions related to underlying hardware.
  */
 #ifndef _TTYDEV_
 #define	_TTYDEV_
-
-/* hardware bits */
-#define	DONE	0200
-#define	IENABLE	0100
 
 /*
  * Speeds
@@ -31,6 +27,13 @@
 #define EXTB	15
 
 #ifdef KERNEL
+/*
+ * Hardware bits.
+ * SHOULD NOT BE HERE.
+ */
+#define	DONE	0200
+#define	IENABLE	0100
+
 /*
  * Modem control commands.
  */

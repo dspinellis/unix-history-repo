@@ -1,4 +1,4 @@
-/*	ioctl.h	4.30	83/03/19	*/
+/*	ioctl.h	4.31	83/05/18	*/
 /*
  * Ioctl definitions
  */
@@ -32,6 +32,7 @@ struct ltchars {
 };
 #endif
 
+#ifndef _IO
 /*
  * Ioctl's have the command encoded in the lower word,
  * and the size of any in or out parameters in the upper
@@ -50,6 +51,7 @@ struct ltchars {
 #define	_IOW(x,y,t)	(IOC_IN|((sizeof(t)&IOCPARM_MASK)<<16)|('x'<<8)|y)
 /* this should be _IORW, but stdio got there first */
 #define	_IOWR(x,y,t)	(IOC_INOUT|((sizeof(t)&IOCPARM_MASK)<<16)|('x'<<8)|y)
+#endif
 
 /*
  * tty ioctl commands
