@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_page.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_page.c	5.24 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -30,7 +30,6 @@ static char sccsid[] = "@(#)hash_page.c	5.23 (Berkeley) %G%";
 
 #include <sys/types.h>
 
-#include <db.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -42,6 +41,7 @@ static char sccsid[] = "@(#)hash_page.c	5.23 (Berkeley) %G%";
 #include <assert.h>
 #endif
 
+#include <db.h>
 #include "hash.h"
 #include "page.h"
 #include "extern.h"

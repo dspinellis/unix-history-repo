@@ -9,16 +9,16 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_delete.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_delete.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
 
+#include <db.h>
 #include "recno.h"
 
 static int rec_rdelete __P((BTREE *, recno_t));

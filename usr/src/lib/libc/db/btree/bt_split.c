@@ -9,18 +9,18 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_split.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_split.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 
 #define	__DBINTERFACE_PRIVATE
-#include <db.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include <db.h>
 #include "btree.h"
 
 static int	 bt_broot __P((BTREE *, PAGE *, PAGE *, PAGE *));

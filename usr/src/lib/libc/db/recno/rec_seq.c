@@ -6,17 +6,17 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)rec_seq.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_seq.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
-#include <db.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
 #include <strings.h>
 
+#include <db.h>
 #include "recno.h"
 
 /*
