@@ -10,6 +10,10 @@
 #include "api.h"
 #include "../general.h"
 
+#include "../ctlr/screen.h"
+#include "../system/globals.h"
+
+int ApiDisableInput = 0;
 
 /*
  * Supervisor Services.
@@ -62,14 +66,14 @@ struct SREGS *sregs;
     } else if (parms.data_code != 0x45) {
 	regs->h.cl = 0x0b;
     } else {
-	NameArrayList list;
+	NameArray list;
 	NameArrayElement element;
 
 	movetous((char *)&list, FP_SEG(parms.name_array),
 			    FP_OFFSET(parms.name_array), sizeof list);
-	if (list.length < 14) || (list.length > 170)) {
+	if ((list.length < 14) || (list.length > 170)) {
 	    parms.rc = 0x12;
-	    regs.h.cl = 0x12;
+	    regs->h.cl = 0x12;
 	} else {
 	    list.number_matching_session = 1;
 	    list.name_array_element.short_name = parms.data_code;
@@ -83,7 +87,7 @@ struct SREGS *sregs;
 	    regs->h.cl = 0;
 	}
     }
-    parms.function_code = 0x6d;
+    parms.function_id = 0x6d;
     movetothem(sregs->es, regs->x.di, (char *)&parms, sizeof parms);
 }
 
@@ -96,14 +100,14 @@ struct SREGS *sregs;
 
     movetous((char *)&parms, sregs->es, regs->x.di, sizeof parms);
 
-    if (parms.rc[0] !=0) || (parms.function_id != 0)) {
+    if ((parms.rc !=0) || (parms.function_id != 0)) {
 	regs->h.cl = 0x0c;
 	return;
     }
     if (parms.session_id != 23) {
-	regs.h.cl = parms.rc = 0x02;
+	regs->h.cl = parms.rc = 0x02;
     } else {
-	regs.h.cl = parms.rc = 0;
+	regs->h.cl = parms.rc = 0;
 	parms.function_id = 0x6b;
 	parms.session_type = TYPE_DFT;
 	parms.session_characteristics = 0;	/* Neither EAB nor PSS */
@@ -111,7 +115,7 @@ struct SREGS *sregs;
 	parms.columns = MaxNumberColumns;
 	parms.presentation_space = 0;
     }
-    movetothem(sregs->es, regs.x.di, (char *)&parms, sizeof parms);
+    movetothem(sregs->es, regs->x.di, (char *)&parms, sizeof parms);
 }
 
 static void
@@ -359,8 +363,9 @@ struct SREGS *sregs;
 	    break;
 	default:
 	    break;
+	}
     }
-    parms->function_id = 0x6d;
+    parms.function_id = 0x6d;
     movetothem(sregs->es, regs->x.di, (char *)&parms, sizeof parms);
 }
 
@@ -380,18 +385,36 @@ struct SREGS *sregs;
 {
     if (regs->h.ah == NAME_RESOLUTION) {
 	name_resolution(regs, sregs);
+    } else if (regs->h.ah != 0x09) {
+	regs->h.ch = 0x12;
+	regs->h.cl = 0x0f;		/* XXX Invalid environmental access */
+    } else if (regs->x.bx != 0x8020) {
+	regs->h.ch = 0x12;
+	regs->h.cl = 0x08;		/* XXX Invalid wait specified */
+    } else if (regs->h.ch != 0) {
+	regs->h.ch = 0x12;
+	regs->h.cl = 0x07;		/* XXX Invalid reply specified */
     } else {
 	switch (regs->x.dx) {
 	case GATE_SESSMGR:
 	    switch (regs->h.al) {
 	    case QUERY_SESSION_ID:
-		query_session_id(regs, sregs);
+		if (regs->h.cl != 0) {
+		} else {
+		    query_session_id(regs, sregs);
+		}
 		break;
 	    case QUERY_SESSION_PARMS:
-		query_session_parms(regs, sregs);
+		if (regs->h.cl != 0) {
+		} else {
+		    query_session_parms(regs, sregs);
+		}
 		break;
 	    case QUERY_SESSION_CURSOR:
-		query_session_cursor(regs, sregs);
+		if (regs->h.cl != 0xff) {
+		} else {
+		    query_session_cursor(regs, sregs);
+		}
 		break;
 	    default:
 		unknown_op(regs, sregs);
@@ -399,49 +422,59 @@ struct SREGS *sregs;
 	    }
 	    break;
 	case GATE_KEYBOARD:
-	    switch (regs->h.al) {
-	    case CONNECT_TO_KEYBOARD:
-		connect_to_keyboard(regs, sregs);
-		break;
-	    case DISABLE_INPUT:
-		disable_input(regs, sregs);
-		break;
-	    case WRITE_KEYSTROKE:
-		write_keystroke(regs, sregs);
-		break;
-	    case ENABLE_INPUT:
-		enable_input(regs, sregs);
-		break;
-	    case DISCONNECT_FROM_KEYBOARD:
-		disconnect_from_keyboard(regs, sregs);
-		break;
-	    default:
-		unknown_op(regs, sregs);
-		break;
+	    if (regs->h.cl != 00) {
+	    } else {
+		switch (regs->h.al) {
+		case CONNECT_TO_KEYBOARD:
+		    connect_to_keyboard(regs, sregs);
+		    break;
+		case DISABLE_INPUT:
+		    disable_input(regs, sregs);
+		    break;
+		case WRITE_KEYSTROKE:
+		    write_keystroke(regs, sregs);
+		    break;
+		case ENABLE_INPUT:
+		    enable_input(regs, sregs);
+		    break;
+		case DISCONNECT_FROM_KEYBOARD:
+		    disconnect_from_keyboard(regs, sregs);
+		    break;
+		default:
+		    unknown_op(regs, sregs);
+		    break;
+		}
 	    }
 	    break;
 	case GATE_COPY:
-	    switch (regs->h.al) {
-	    case COPY_STRING:
-		copy_string(regs, sregs);
-		break;
-	    default:
-		unknown_op(regs, sregs);
-		break;
+	    if (regs->h.cl != 0xff) {
+	    } else {
+		switch (regs->h.al) {
+		case COPY_STRING:
+		    copy_string(regs, sregs);
+		    break;
+		default:
+		    unknown_op(regs, sregs);
+		    break;
+		}
 	    }
 	    break;
 	case GATE_OIAM:
-	    switch (regs->h.al) {
-	    case READ_OIA_GROUP:
-		read_oia_group(regs, sregs);
-		break;
-	    default:
-		unknown_op(regs, sregs);
-		break;
+	    if (regs->h.cl != 0xff) {
+	    } else {
+		switch (regs->h.al) {
+		case READ_OIA_GROUP:
+		    read_oia_group(regs, sregs);
+		    break;
+		default:
+		    unknown_op(regs, sregs);
+		    break;
+		}
 	    }
 	    break;
 	default:
-	    unknown_op(regs, sregs);
+	    regs->h.ch = 0x12;
+	    regs->h.cl = 0x34;		/* Invalid GATE entry */
 	    break;
 	}
     }
@@ -461,7 +494,7 @@ int	argc;
 char	*argv[];
 {
     Spint spinted;
-    static char command[256];
+    char command[256];
 
     ClearElement(spinted);
     spinted.int_no = API_INTERRUPT_NUMBER;
