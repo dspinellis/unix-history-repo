@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pwd_mkdb.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pwd_mkdb.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -214,9 +214,9 @@ main(argc, argv)
 	(void)fclose(fp);
 
 	/* Install as the real password files. */
-	(void)sprintf(buf, "%s.tmp", _PATH_MP_DB);
+	(void)sprintf(buf, "%s.tmp.%s", _PATH_MP_DB, DBM_SUFFIX);
 	mv(buf, _PATH_MP_DB);
-	(void)sprintf(buf, "%s.tmp", _PATH_SMP_DB);
+	(void)sprintf(buf, "%s.tmp.%s", _PATH_SMP_DB, DBM_SUFFIX);
 	mv(buf, _PATH_SMP_DB);
 	if (makeold) {
 		(void)sprintf(buf, "%s.orig", pname);
