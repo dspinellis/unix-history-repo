@@ -1,29 +1,34 @@
 .\" Copyright (c) 1985 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" All rights reserved.
 .\"
-.\"	@(#)tcopy.1	6.1 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that this notice is preserved and that due credit is given
+.\" to the University of California at Berkeley. The name of the University
+.\" may not be used to endorse or promote products derived from this
+.\" software without specific prior written permission. This software
+.\" is provided ``as is'' without express or implied warranty.
+.\"
+.\"	@(#)tcopy.1	6.2 (Berkeley) %G%
 .\"
 .TH TCOPY 1 ""
 .UC 6
 .SH NAME
-tcopy \- copy a mag tape
+tcopy \- copy and/or verify mag tapes
 .SH SYNOPSIS
-.B tcopy src
-[
-.B dest
-]
+.B tcopy
+[ -cv ] [ -s maxblk ] [src [ dest ]]
 .br
 .SH DESCRIPTION
-.I Tcopy
-is designed to copy magnetic tapes.  The only assumption made about
-the tape is that there are two tape marks at the end.
-.I Tcopy
-with only a source tape specified will print information about the
-sizes of records and tape files.  If a destination is specified,
-then, a copy will be made of the source tape.  The blocking on the
-destination tape will be identical to that used on the source tape.
-Copying a tape will yield the same output as if just printing the
-sizes.
+\fITcopy\fP is designed to copy magnetic tapes.  The only assumption made
+about the tape is that there are two tape marks at the end.  \fITcopy\fP
+with only a source tape (\fBrmt0\fP by default) specified will print
+information about the sizes of records and tape files.  If a destination
+is specified a copy will be made of the source tape.  The blocking on the
+destination tape will be identical to that used on the source tape.  Copying
+a tape will yield the same output as if just printing the sizes.
+.PP
+The \fB-s\fP option allows you to specify a maximum block size.  The \fB-v\fP
+option verifies that two tapes are identical.  The \fB-c\fP option does
+the copy and then verifies that the two tapes are identical.
 .SH "SEE ALSO"
 mtio(4)
