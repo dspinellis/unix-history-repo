@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	3.18	(Berkeley)	85/01/18";
+static char sccsid[] = "@(#)dirs.c	3.19	(Berkeley)	85/02/13";
 #endif
 
 /* Copyright (c) 1983 Regents of the University of California */
@@ -99,8 +99,7 @@ extractdirs(genmode)
 		curfile.name = "<directory file - name unknown>";
 		curfile.action = USING;
 		ip = curfile.dip;
-		i = ip->di_mode & IFMT;
-		if (i != IFDIR) {
+		if (ip == NULL || (ip->di_mode & IFMT) != IFDIR) {
 			(void) fclose(df);
 			dirp = opendir(dirfile);
 			if (dirp == NULL)
