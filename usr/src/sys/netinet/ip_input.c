@@ -1,4 +1,4 @@
-/* ip_input.c 1.22 81/12/03 */
+/* ip_input.c 1.23 81/12/09 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -51,11 +51,12 @@ ipintr()
 {
 	register struct ip *ip;
 	register struct mbuf *m;
-	struct mbuf *m0;
+	struct mbuf *m0, *mopt;
 	register int i;
 	register struct ipq *fp;
 	int hlen, s;
 
+printf("ipintr\n");
 COUNT(IPINTR);
 next:
 	/*
@@ -65,30 +66,39 @@ next:
 	s = splimp();
 	IF_DEQUEUE(&ipintrq, m);
 	splx(s);
-	if (m == 0)
+	if (m == 0) {
+printf("ipintr returns\n");
 		return;
+	}
+printf("ipintr dequeued %x\n", m);
 	if (m->m_len < sizeof (struct ip) &&
-	    m_pullup(m, sizeof (struct ip)) == 0)
+	    m_pullup(m, sizeof (struct ip)) == 0) {
+printf("ipintr pullup drop\n");
 		goto bad;
+	}
 	ip = mtod(m, struct ip *);
+printf("ipintr ip->ip_hl %d\n", ip->ip_hl);
 	if ((hlen = ip->ip_hl << 2) > m->m_len) {
 		if (m_pullup(m, hlen) == 0)
 			goto bad;
 		ip = mtod(m, struct ip *);
 	}
 	if (ipcksum)
-		if ((ip->ip_sum = in_cksum(m, hlen)) != 0xffff) {
+		if (ip->ip_sum = in_cksum(m, hlen)) {
 			printf("ip_sum %x\n", ip->ip_sum);	/* XXX */
 			ipstat.ips_badsum++;
 			goto bad;
 		}
+printf("cksum passed\n");
 
+#if vax
 	/*
 	 * Convert fields to host representation.
 	 */
 	ip->ip_len = ntohs((u_short)ip->ip_len);
 	ip->ip_id = ntohs(ip->ip_id);
 	ip->ip_off = ntohs((u_short)ip->ip_off);
+#endif
 
 	/*
 	 * Check that the amount of data in the buffers
@@ -101,6 +111,7 @@ next:
 	for (; m != NULL; m = m->m_next)
 		i += m->m_len;
 	m = m0;
+printf("ip->ip_len %d, i %d\n", ip->ip_len , i);
 	if (i != ip->ip_len) {
 		if (i < ip->ip_len) {
 			ipstat.ips_tooshort++;
@@ -113,6 +124,7 @@ next:
 	 * Process options and, if not destined for us,
 	 * ship it on.
 	 */
+printf("ipintr at option code\n");
 	if (hlen > sizeof (struct ip))
 		ip_dooptions(ip);
 	if (ifnet && ip->ip_dst.s_addr != ifnet->if_addr.s_addr &&
@@ -121,7 +133,11 @@ next:
 			icmp_error(ip, ICMP_TIMXCEED, 0);
 			goto next;
 		}
-		(void) ip_output(dtom(ip), (struct mbuf *)0);
+		mopt = m_get(M_DONTWAIT);
+		if (mopt == 0)
+			goto bad;
+		ip_stripoptions(ip, mopt);
+		(void) ip_output(m0, mopt);
 		goto next;
 	}
 
@@ -167,6 +183,7 @@ found:
 	/*
 	 * Switch out to protocol's input routine.
 	 */
+printf("ipintr switching out to protocol %d\n", ip->ip_p);
 	(*protosw[ip_protox[ip->ip_p]].pr_input)(m);
 	goto next;
 bad:
@@ -491,9 +508,9 @@ bad:
  * Second argument is buffer to which options
  * will be moved, and return value is their length.
  */
-ip_stripoptions(ip, cp)
+ip_stripoptions(ip, mopt)
 	struct ip *ip;
-	char *cp;
+	struct mbuf *mopt;
 {
 	register int i;
 	register struct mbuf *m;
@@ -503,8 +520,11 @@ COUNT(IP_STRIPOPTIONS);
 	olen = (ip->ip_hl<<2) - sizeof (struct ip);
 	m = dtom(ip);
 	ip++;
-	if (cp)
-		bcopy((caddr_t)ip, cp, (unsigned)olen);
+	if (mopt) {
+		mopt->m_len = olen;
+		mopt->m_off = MMINOFF;
+		bcopy((caddr_t)ip, mtod(m, caddr_t), (unsigned)olen);
+	}
 	i = m->m_len - (sizeof (struct ip) + olen);
 	bcopy((caddr_t)ip+olen, (caddr_t)ip, (unsigned)i);
 	m->m_len -= i;
