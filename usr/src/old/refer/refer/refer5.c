@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)refer5.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)refer5.c	4.3 (Berkeley) %G%";
 #endif
 
 #include "refer..c"
@@ -232,7 +232,7 @@ keylet(t, nref)
 char *t;
 {
 	int i;
-	int x = -1;
+	int x = 'a' - 1;
 
 	for(i = 1; i < nref; i++) {
 		if (strcmp(labtab[i], t) == 0)
