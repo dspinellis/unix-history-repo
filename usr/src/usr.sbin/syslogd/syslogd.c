@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #define COMPAT		/* include 4.3 Alpha compatibility */
@@ -53,6 +53,7 @@ static char sccsid[] = "@(#)syslogd.c	5.5 (Berkeley) %G%";
 #include <strings.h>
 
 #include <sys/types.h>
+#include <sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
