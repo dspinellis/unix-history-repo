@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static	char sccsid[] = "@(#)f77.c	5.1 (Berkeley) %G%";
+static	char sccsid[] = "@(#)f77.c	5.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -16,6 +16,12 @@ static	char sccsid[] = "@(#)f77.c	5.1 (Berkeley) %G%";
  * University of Utah CS Dept modification history:
  *
  * $Log:	f77.c,v $
+ * Revision 5.2  85/08/10  05:16:14  donn
+ * Ifdeffed 66 code, added -r8 flag.  From Jerry Berkman.
+ * 
+ * Revision 5.1  85/08/10  03:32:12  donn
+ * 4.3 alpha
+ * 
  * Revision 1.14  85/03/01  00:07:57  donn
  * Portability fix from Ralph Campbell.
  * 
@@ -223,6 +229,7 @@ while(argc>0 && argv[0][0]=='-' && argv[0][1]!='\0')
 				}
 			break;
 
+#ifdef ONLY66
 		case '6':
 			if(s[1]=='6')
 				{
@@ -233,6 +240,7 @@ while(argc>0 && argv[0][0]=='-' && argv[0][1]!='\0')
 				fprintf(diagfile, "invalid flag 6%c\n", s[1]);
 				done(1);
 				}
+#endif
 
 		case 'w':
 			if(s[1]=='6' && s[2]=='6')
@@ -381,6 +389,18 @@ while(argc>0 && argv[0][0]=='-' && argv[0][1]!='\0')
 				}
 			fprintf(diagfile, "invalid flag -i%c\n", s[1]);
 			done(1);
+
+		case 'r':	/* -r8 - double the precision */
+			if(s[1] == '8' && s[2] == '\0')
+				{
+				s++;
+				goto copyfflag;
+				}
+			else
+				{
+				*loadp++ = "-r";
+				break;
+				}
 
 		case 'l':	/* letter ell--library */
 			s[-1] = '-';
