@@ -1,4 +1,4 @@
-.\" @(#)License	1.4 (CSRG - distribution) %G%
+.\" @(#)License	1.5 (CSRG - distribution) %G%
 .ND
 .po +0.34375i
 .nr PO +0.34375i
@@ -43,18 +43,18 @@ UNIX System III (hereinafter ``SYSTEM-III''), and
 UNIX System V (hereinafter ``SYSTEM-V'');
 and
 .PP
-\fI WHEREAS, \fR The Regents of the University of California is the
+\fI WHEREAS, \fR THE REGENTS is the
 proprietor and owner of enhancements and additions to UNIX/32V, which
 together with parts of UNIX/32V comprise computer programs and
 documentation entitled ``Fourth Berkeley Software Distribution;'' and
 .PP
 \fI WHEREAS, \fR the Fourth Berkeley Software Distribution includes
 some material contributed by persons other than agents, officers,
-and employees of The Regents of the University of California
+and employees of THE REGENTS
 (hereinafter ``Other Contributors'') and these Other Contributors are identified
 within the Fourth Berkeley Software Distribution; and
 .PP
-\fI WHEREAS, \fR The Regents of the University of California has been
+\fI WHEREAS, \fR THE REGENTS has been
 authorized by AT&T to distribute the Fourth Berkeley Software
 Distribution to licensees who are also AT&T's licensees for
 UNIX/32V, SYSTEM-III, or SYSTEM-V; and
@@ -71,7 +71,7 @@ Distribution;
 .PP
 \fI NOW, \fR THEREFORE, in consideration of the mutual covenants,
 conditions and terms hereinafter set forth, and for other good and
-valuable consideration, The Regents of the University of California
+valuable consideration, THE REGENTS
 hereby grants to LICENSEE the nonexclusive right to use and to
 sublicense the Fourth Berkeley Software Distribution, the components of
 which are described on the attached Schedule A, subject to the terms
@@ -88,7 +88,7 @@ Either THE REGENTS or LICENSEE may terminate this Agreement upon thirty
 This license shall terminate thirty (30) days after notice from The
 Regents of the University of California to LICENSEE that LICENSEE
 is in breach of this Agreement unless within that time LICENSEE gives
-notice satisfactory to The Regents of the University of California
+notice satisfactory to THE REGENTS
 that such breach has been corrected.
 Upon termination, LICENSEE shall immediately destroy the
 Fourth Berkeley Software Distribution and all copies thereof including
@@ -106,7 +106,7 @@ distribution fee determined by The Regents of the University of
 California.  Distribution fees are due and payable in advance.
 Distribution fees do not include local, state or federal taxes, and LICENSEE
 hereby agrees to pay all such taxes as may be imposed upon LICENSEE or
-The Regents of the University of California
+THE REGENTS
 with respect to the distribution, possession, use, or sublicensing
 of the Fourth Berkeley Software Distribution pursuant to this Agreement.
 .PP
@@ -123,7 +123,7 @@ licensed by AT&T as UNIX/32V.  LICENSEE represents and warrants that it
 has obtained and currently holds a valid license from AT&T to use
 UNIX/32V, SYSTEM-III, and/or SYSTEM-V
 and has provided a copy of this license to
-The Regents of the University of California attached as Schedule B.
+THE REGENTS attached as Schedule B.
 LICENSEE agrees to treat AT&T's proprietary software included in the
 Fourth Berkeley Software Distribution in the same manner as if such
 included proprietary software had been received directly pursuant to
@@ -168,7 +168,7 @@ LICENSEE.  LICENSEE may, but need not, charge a fee for such licenses.
 \07.\ \ \fBProper Credit and Recognition. \fR
 In the use of any part of the Fourth Berkeley Software Distribution,
 LICENSEE will give
-appropriate credit to The Regents of the University of California
+appropriate credit to THE REGENTS
 and the Electrical Engineering and Computer Sciences Department
 at the Berkeley Campus of the University of California
 and to the Other Contributors for their roles in its development.
@@ -191,14 +191,14 @@ used by LICENSEE].''
 The Fourth Berkeley Software Distribution is provided by The Regents
 of the University of California and the Other Contributors
 on an ``As Is'' basis.
-Neither The Regents of the University of California nor the Other Contributors
+Neither THE REGENTS nor the Other Contributors
 warrant that the
 functions contained in the Fourth Berkeley Software Distribution will
 meet LICENSEE's requirements or will operate in the combinations which
 may be selected for use by the LICENSEE, or that the operation of the
 Fourth Berkeley Software Distribution will be uninterrupted or error
 free.
-NEITHER THE REGENTS OF THE UNIVERSITY OF CALIFORNIA NOR THE OTHER CONTRIBUTORS
+NEITHER THE REGENTS NOR THE OTHER CONTRIBUTORS
 MAKE
 ANY WARRANTIES, EITHER EXPRESS OR IMPLIED, AS TO ANY MATTER
 WHATSOEVER, INCLUDING WITHOUT LIMITATION, THE CONDITION OF THE
@@ -214,14 +214,14 @@ DISTRIBUTION, OR ANY PORTION THEREOF, INFRINGES ANOTHER'S PATENT, COPYRIGHT,
 TRADE SECRET, OR OTHER PROPRIETARY OR CONTRACTUAL RIGHT.
 .PP
 10.\ \ \fBLack of Maintenance Services. \fR LICENSEE understands
-and agrees that The Regents of the University of California and the
+and agrees that THE REGENTS and the
 Other Contributors are
 under no obligation to provide either maintenance services,
 update services, notices of latent defects, or correction
 of defects for the Fourth Berkeley Software Distribution.
 .PP
 11.\ \ \fBPatent, Trade Secret and Copyright Infringement.  \fRIf 
-The Regents of the University of California gives formal written
+THE REGENTS gives formal written
 notice to LICENSEE that there has been a claim, or is likely to
 be a claim, that the Fourth Berkeley Software Distribution infringes
 a patent, copyright, trade secret, or other contractual or proprietary right,
@@ -238,9 +238,9 @@ continued right to use and sublicense that part of the Fourth
 Berkeley Software Distribution which is, or is likely to become,
 subject to the claim of infringement; or
 .IP (c)
-procure from The Regents of the University of California,
+procure from THE REGENTS,
 which procurement shall be granted at the sole discretion of
-The Regents of the University of California,
+THE REGENTS,
 the continued right to use and sublicense that part of the Fourth
 Berkeley Software Distribution which is, or is likely to become,
 subject to the claim of infringement.
@@ -262,7 +262,7 @@ sublicensing, performance or use of the Fourth Berkeley Software
 Distribution in connection with this Agreement.
 LICENSEE's obligations under this paragraph include, but are not
 limited to, its obligation to indemnify, defend, and hold
-The Regents of the University of California and the Other Contributors,
+THE REGENTS and the Other Contributors,
 their agents, officers, and employees harmless in the
 case of any claim of patent, copyright, trade secret, or other contractual
 or proprietary rights infringement based in any manner on LICENSEE's use or 
@@ -316,11 +316,11 @@ of the Fourth Berkeley Software Distribution and
 updates thereto which comprise release 4.3 and 4.4.
 .sp 2
 .PP
-IN WITNESS WHEREOF, The Regents of the University of California 
+IN WITNESS WHEREOF, THE REGENTS 
 and LICENSEE have executed this Agreement
 on the dates specified below.  The
 effective date of this Agreement shall be the date of execution by
-The Regents of the University of California.
+THE REGENTS.
 .sp 3
 .in +18
 .vs 12
