@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fsck.h	5.17 (Berkeley) %G%
+ *	@(#)fsck.h	5.18 (Berkeley) %G%
  */
 
 #define	MAXDUP		10	/* limit on dup blks (per inode) */
@@ -73,7 +73,7 @@ struct inodesc {
 	ino_t id_parent;	/* for DATA nodes, their parent */
 	daddr_t id_blkno;	/* current block number being examined */
 	int id_numfrags;	/* number of frags contained in block */
-	long id_filesize;	/* for DATA nodes, the size of the directory */
+	quad_t id_filesize;	/* for DATA nodes, the size of the directory */
 	int id_loc;		/* for DATA nodes, current location in dir */
 	int id_entryno;		/* for DATA nodes, current entry number */
 	struct direct *id_dirp;	/* for DATA nodes, ptr to current entry */
