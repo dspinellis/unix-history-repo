@@ -15,7 +15,7 @@ static char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	8.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	8.15 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -1568,7 +1568,8 @@ do_mount(ep, grp, exflags, anoncrp, dirp, dirplen, fsb)
 				return (1);
 			}
 			if (opt_flags & OP_ALLDIRS) {
-				syslog(LOG_ERR, "Not root dir");
+				syslog(LOG_ERR, "Could not remount %s: %m",
+					dirp);
 				return (1);
 			}
 			/* back up over the last component */
