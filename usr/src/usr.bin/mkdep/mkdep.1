@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)mkdep.1	5.10 (Berkeley) %G%
+.\"     @(#)mkdep.1	5.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MKDEP 1
@@ -14,22 +14,18 @@
 .Sh SYNOPSIS
 .Nm mkdep
 .Op Fl ap
-.Op Fl f Ar depend_file
+.Op Fl f Ar file
 .Op Ar flags
 .Ar file ...
 .Sh DESCRIPTION
 .Nm Mkdep
 takes a set of flags for the C compiler and a list
 of C source files as arguments and constructs a set of include
-file dependencies which are written into the file
-.Ar depend_file  ,
-or
-.Pa \&.depend
-by default.  An example of its use in a Makefile
-might be:
+file dependencies which are written into the file ``.depend''.
+An example of its use in a Makefile might be:
 .Pp
 .Ds I
-CFLAGS= -O -DDEBUG -I../include -I.
+CFLAGS= -O -I../include
 SRCS= file1.c file2.c
 
 depend:
@@ -39,29 +35,43 @@ depend:
 where the macro SRCS is the list of C source files and the macro
 CFLAGS is the list of flags for the C compiler.
 .Pp
-Options:
+The options are as follows:
 .Tw Ds
-.Tp Fl p
-.Nm mkdep
-produces dependencies of the form
-.Dq Li program: program.c
-so that subsequent makes will produce
-.Ar program
-directly from its C module rather than using an intermediate
-.Pa \&.o
-module.  This is useful in directories that
-contain many programs, each of whose source is contained in a single
-C module.
 .Tp Fl a
 Append to the output file,
 so that multiple
 .Sf Nm mkdep \&'s
 may be run from a single Makefile.
+.Tp Fl f
+Write the include file dependencies to 
+.Ar file ,
+instead of the default ``.depend''.
+.Tp Fl p
+Cause
+.Nm mkdep
+to produce dependencies of the form:
+.Pp
+.Ds I
+program: program.c
+.De
+.Pp
+so that subsequent makes will produce
+.Ar program
+directly from its C module rather than using an intermediate
+.Pa \&.o
+module.
+This is useful for programs whose source is contained in a single
+module.
 .Tp
 .Sh SEE ALSO
 .Xr cc 1 ,
 .Xr cpp 1 ,
 .Xr make 1
+.Sh FILES
+.Dw .depend
+.Di L
+.Dp .depend
+list of dependencies
 .Sh HISTORY
 .Nm Mkdep
 appeared in the 4.3 Tahoe BSD release.
