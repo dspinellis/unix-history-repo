@@ -28,13 +28,13 @@
 
 #include <stdio.h>
 #include <signal.h>
-#include "opcodes.h"
-#include "operand.h"
 #include "../libI77/fiodefs.h"
 
 #define	SIG_VAL		int (*)()
 
-#if	vax		/* only works on VAXen */
+#ifdef vax
+#include "opcodes.h"
+#include "operand.h"
 
 struct arglist {		/* what AP points to */
 	long	al_numarg;	/* only true in CALLS format */
@@ -506,27 +506,269 @@ cant_fix:
 	}
 	signal(SIGFPE, on_fpe);
 }
-#endif	vax
 
 trpfpe_ (count, rval)
 	long	*count;	/* how many to announce */
 	double	*rval;	/* dummy return value */
 {
-#if	vax
 	max_messages = *count;
 	retval.rv_double = *rval;
 	sigfpe_dfl = signal(SIGFPE, on_fpe);
 	fpe_count = 0;
-#endif
 }
 
 long
 fpecnt_ ()
 {
-#if	vax
 	return (fpe_count);
-#else
-	return (0L);
-#endif
+}
+#endif vax
+
+#ifdef tahoe
+/*
+ *	This handler just prints a message. It cannot fix anything
+ * 	on Power6 because of its fpp architecture. In any case, there
+ * 	are no arithmetic faults (only traps) around, so that no instruction
+ *	is interrupted befor it completes, and PC points to the next floating
+ *	point instruction (not necessarily next executable instr after the one
+ *	that got the exception).
+ */
+
+struct arglist {		/* what AP points to */
+	long	al_arg[256];
+};
+
+struct reg0_1 {
+	long	reg[2];
+};
+struct reg2_12 {
+	long	reg[11];
+};
+#include <sys/types.h>
+#include <frame.h>
+#include "sigframe.h"
+
+/*
+ * bits in the PSL
+ */
+#include <machine/psl.h>
+
+/*
+ * where the registers are stored as we see them in the handler
+ */
+
+
+#define	iR0	reg0_1->reg[1]
+#define	iR1	reg0_1->reg[0]
+
+#define	iR2	reg2_12->reg[0]
+#define	iR3	reg2_12->reg[1]
+#define	iR4	reg2_12->reg[2]
+#define	iR5	reg2_12->reg[3]
+#define	iR6	reg2_12->reg[4]
+#define	iR7	reg2_12->reg[5]
+#define	iR8	reg2_12->reg[6]
+#define	iR9	reg2_12->reg[7]
+#define	iR10	reg2_12->reg[8]
+#define	iR11	reg2_12->reg[9]
+#define	iR12	reg2_12->reg[10]
+
+union objects {		/* for load/store */
+	char	ua_byte;
+	short	ua_word;
+	long	ua_long;
+	float	ua_float;
+	double	ua_double;
+	union objects	*ua_anything;
+};
+
+typedef union objects	anything;
+enum object_type { BYTE, WORD, LONG, FLOAT, QUAD, DOUBLE, UNKNOWN };
+
+
+/*
+ * assembly language assist
+ * There are some things you just can't do in C
+ */
+asm(".text");
+
+long *myfp();
+asm("_myfp: .word 0");
+	asm("movl (fp),r0");
+	asm("ret");
+
+struct frame *framep(p)
+long *p;
+{
+	return((struct frame *)(p-2));
 }
 
+struct arglist	*argp(p) 
+long *p;
+{
+	return((struct arglist *)(p+1));
+}
+
+char	*mysp();
+asm("_mysp: .word 0");
+	asm("addl3 $4,fp,r0");
+	asm("ret");
+
+char	*mypc();
+asm("_mypc: .word 0");
+	asm("movl -8(fp),r0");
+	asm("ret");
+
+asm(".data");
+
+
+/*
+ * Where interrupted objects are
+ */
+static struct frame	*ifp;	/* addr of saved FP */
+static struct arglist	*iap;	/* addr of saved AP */
+static char		 *isp;	/* value of interrupted SP */
+static char		**ipc;	/* addr of saved PC */
+static struct reg0_1	*reg0_1;/* registers 0-1 are saved on the exception */
+static struct reg2_12	*reg2_12;/* we save 2-12 by our entry mask */
+static anything		*result_addr;	/* where the dummy result goes */
+static enum object_type	 result_type;	/* what kind of object it is */
+
+/*
+ * some globals
+ */
+static union {
+	long	rv_long[2];
+	float	rv_float;
+	double	rv_double;
+			} retval; /* the user specified dummy result */
+static int	max_messages	= 1;		/* the user can tell us */
+static int	fpe_count	= 0;		/* how bad is it ? */
+       long	fpeflt_		= 0;	/* fortran "common /fpeflt/ flag" */
+static int	(*sigfpe_dfl)()	= SIG_DFL;	/* if we can't fix it ... */
+
+/*
+ * The fortran unit control table
+ */
+extern unit units[];
+
+/*
+ * Fortran message table is in main
+ */
+struct msgtbl {
+	char	*mesg;
+	int	dummy;
+};
+extern struct msgtbl	act_fpe[];
+
+
+/* VALID ONLY ON VAX !!!
+ *
+ * Get the address of the (saved) next operand & update saved PC.
+ * The major purpose of this is to determine where to store the result.
+ * There is one case we can't deal with: -(SP) or (SP)+
+ * since we can't change the size of the stack.
+ * Let's just hope compilers don't generate that for results.
+ */
+
+
+/*
+ * Trap & repair floating exceptions so that a program may proceed.
+ * There is no notion of "correctness" here; just the ability to continue.
+ *
+ * The on_fpe() routine first checks the type code to see if the
+ * exception is repairable. If so, it checks the opcode to see if
+ * it is one that it knows. If this is true, it then simulates the
+ * VAX cpu in retrieving operands in order to increment iPC correctly.
+ * It notes where the result of the operation would have been stored
+ * and substitutes a previously supplied value.
+ *  DOES NOT REPAIR ON TAHOE !!!
+ */
+
+on_fpe(signo, code, sc)
+	int signo, code;
+	struct sigcontext *sc;
+{
+	/*
+	 * There must be at least 11 register variables here
+	 * so our entry mask will save R12-R2.
+	 */
+	register long	*stk;
+	register long	*sp, *rfp;
+	register struct arglist	*ap;
+	register struct frame	*fp;
+	register FILE	*ef;
+	register struct sigframe *sfp;
+	register long dmy1, dmy2, dmy3, dmy4;
+
+	dmy1 = dmy2 = dmy3 = dmy4 = 0;
+
+	ef = units[STDERR].ufd;		/* fortran error stream */
+
+	switch (code)
+	{
+		case FPE_INTOVF_TRAP:	/* integer overflow */
+		case FPE_INTDIV_TRAP:	/* integer divide by zero */
+		case FPE_FLTOVF_TRAP:	/* floating overflow */
+		case FPE_FLTDIV_TRAP:	/* floating divide by zero */
+		case FPE_FLTUND_TRAP:	/* floating underflow */
+		default:
+cant_fix:
+			if (sigfpe_dfl > (SIG_VAL)7)	/* user specified */
+				return((*sigfpe_dfl)(signo, code, sc));
+			else
+			if (++fpe_count <= max_messages) {
+				fprintf(ef, "trpfpe: %s",
+					act_fpe[code-1].mesg);
+				if (fpe_count == max_messages)
+					fprintf(ef, ": No more messages will be printed.\n");
+				else
+					fputc('\n', ef);
+			}
+			fpeflt_ = -1;
+			break;
+	}
+
+/*
+ * Find all the registers just in case something better can be done.
+ */
+
+	rfp = myfp();			/* contents of fp register */
+	ap = argp(rfp);			/* my arglist pointer */
+	fp = framep(rfp);		/* my frame pointer */
+	ifp = framep(*rfp);		/* user's stored in next frame back */
+	iap = argp(*rfp);
+
+	sfp = (struct sigframe *)ap;	/* sigframe contains at its bottom the
+					   signal handler arguments */
+
+	reg0_1 = (struct reg0_1 *)&sfp->r1;
+	reg2_12 = (struct reg2_12 *)((char *)fp - sizeof (struct reg2_12));
+
+	ipc = (char **)&sc->sc_pc;
+	isp = (char *)sc + sizeof (struct sigcontext);
+	sc->sc_ps &= ~(PSL_V|PSL_FU);
+
+	fprintf(ef, "Current PC = %X \n", sc->sc_pc);
+
+	signal(SIGFPE, on_fpe);
+	sigdie(signo, code, sc);
+}
+
+trpfpe_ (count, rval)
+	long	*count;	/* how many to announce */
+	double	*rval;	/* dummy return value */
+{
+	max_messages = *count;
+	retval.rv_double = *rval;
+	sigfpe_dfl = signal(SIGFPE, on_fpe);
+	fpe_count = 0;
+}
+
+long
+fpecnt_ ()
+{
+	return (fpe_count);
+}
+
+#endif tahoe
