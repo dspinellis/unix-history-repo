@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mv.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mv.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -20,6 +20,7 @@ static char sccsid[] = "@(#)mv.c	5.5 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/file.h>
 
 #include <stdio.h>
 #include <sys/dir.h>
@@ -131,14 +132,15 @@ move(source, target)
 			error("%s and %s are identical", source, target);
 			return (1);
 		}
-		if (iflag && !fflag && isatty(fileno(stdin)) &&
-		    query("remove %s? ", target) == 0)
-			return (1);
-		if (access(target, 2) < 0 && !fflag && isatty(fileno(stdin))) {
-			if (query("override protection %o for %s? ",
-			  s2.st_mode & MODEBITS, target) == 0)
+		if (!fflag && isatty(fileno(stdin)))
+			if (iflag) {
+				if (!query("remove %s? ", target))
+					return (1);
+			}
+			else if (access(target, W_OK) < 0 &&
+			    !query("override protection %o for %s? ",
+			    s2.st_mode & MODEBITS, target))
 				return (1);
-		}
 	}
 	if (rename(source, target) >= 0)
 		return (0);
