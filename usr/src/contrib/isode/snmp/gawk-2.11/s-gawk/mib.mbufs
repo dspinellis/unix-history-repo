@@ -1,0 +1,52 @@
+BEGIN {
+	MSIZE = 128; MCLBYTES = 1024;
+	keys[0]  = "free";
+	keys[1]  = "data";
+	keys[2]  = "packet headers";
+	keys[3]  = "socket structures";
+	keys[4]  = "protocol control blocks";
+	keys[5]  = "routing tables";
+	keys[6]  = "IMP host tables";
+	keys[7]  = "address resolution tables";
+	keys[8]  = "socket names";
+	keys[9]  = "zombie process status";
+	keys[10] = "socket options";
+	keys[11] = "fragment reassembly headers";
+
+	total = 0; inuse = 0;
+
+	didany = 0;
+	for (i in mbufS) {
+	    didany = 1;
+
+	    i = mbufS; j = mbufFrees;
+	    if (i == 0) { printf "no mbufS!?!\n"; exit(1); }
+	    printf "%d/%d mbufs in use:\n", i - j, i;
+	    total += i * MSIZE; inuse += (i - j) * MSIZE;
+
+	    didone = 0;
+	    for (i in mbufType) {
+		didone = 1;
+
+		if (mbufAllocates) {
+		    printf "\t%d mbufs allocated to ", mbufAllocates;
+		    if (k = keys[mbufType])
+			printf "%s\n", k;
+		    else
+			printf "mbuf type %d\n", mbufType;
+		}
+	    }
+	    if (!didone && DIAGNOSTIC)
+		printf "mbufTable: %s\n", DIAGNOSTIC;
+
+	    i = mbufClusters; j = mbufFreeClusters
+	    printf "%d/%d mapped pages in use\n", i - j, i;
+	    total += i * MCLBYTES; inuse += (i - j) * MCLBYTES;
+
+	    printf "%d Kbytes allocated to network (%d%% in use) ESTIMATE\n",
+		total / 1024, (inuse * 100) / total;
+	    printf "%d requests for memory denied\n", mbufDrops;
+	}
+	if (!didany && DIAGNOSTIC)
+	    printf "mbuf group: %s\n", DIAGNOSTIC;
+      }

@@ -1,0 +1,65 @@
+.TH UNIXD 8C "17 Feb 1990"
+.\" $Header: /f/osi/snmp/RCS/unixd.8c,v 7.4 91/02/22 09:44:54 mrose Interim $
+.\"
+.\" Contributed by NYSERNet Inc.  This work was partially supported by the
+.\" U.S. Defense Advanced Research Projects Agency and the Rome Air Development
+.\" Center of the U.S. Air Force Systems Command under contract number
+.\" F30602-88-C-0016.
+.\"
+.\"
+.\" $Log:	unixd.8c,v $
+.\" Revision 7.4  91/02/22  09:44:54  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.3  90/10/18  11:34:10  mrose
+.\" psi
+.\" 
+.\" Revision 7.2  90/08/29  15:04:17  mrose
+.\" doc
+.\" 
+.\" Revision 7.1  90/02/17  17:19:00  mrose
+.\" touch-up
+.\" 
+.\" Revision 7.0  90/02/17  14:40:54  mrose
+.\" *** empty log message ***
+.\" 
+.SH NAME
+unixd \- daemon for UNIX MIB
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+.B \*(SDsmux.unixd
+\%[-d]
+.in -.5i
+(under /etc/rc.local)
+.SH DESCRIPTION
+The \fIunixd\fR daemon is a SMUX peer to the SNMP agent, \fIsnmpd\fR\0(8c).
+At present,
+it implements the \fImbuf\fR subtree of the UNIX MIB.
+.SH FILES
+.nf
+.ta \w'\*(EDunixd.log  'u
+\*(EDunixd.defs	MIB definitions
+.re
+.fi
+.SH "NOTE WELL"
+The names of the various in \fBunixd.defs\fR are case sensitive.
+This was necessary to improve the efficiency of the hashing algorithm
+used for object lookup.
+.SH "SEE ALSO"
+snmpd(8c)
+.SH AUTHOR
+Marshall T. Rose,
+Performance Systems International
+.PP
+This work was partially supported by the
+U.S. Defense Advanced Research Projects Agency and the Rome Air Development
+Center of the U.S. Air Force Systems Command under contract number
+F30602-88-C-0016.
+.PP
+Although this package is distributed with the ISODE,
+it is not an OSI program, per se.
+Inasmuch as the continued survival of the Internet hinges on all nodes
+becoming network manageable,
+this package was developed using the ISODE and is being freely
+distributed with releases of Berkeley UNIX.

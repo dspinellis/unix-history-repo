@@ -1,0 +1,69 @@
+###############################################################################
+#
+# isotailor - ISODE tailoring file
+#
+#	This file is purposely not installed; it is an example only!
+#
+#
+# $Header: /f/osi/support/RCS/isotailor,v 7.1 91/02/22 09:46:47 mrose Interim $
+#
+#
+# $Log:	isotailor,v $
+# Revision 7.1  91/02/22  09:46:47  mrose
+# Interim 6.8
+# 
+# Revision 7.0  89/11/23  22:27:36  mrose
+# Release 6.0
+# 
+###############################################################################
+
+
+###############################################################################
+#
+# Syntax:
+#
+#	<variable> : <value>
+#
+#	Arbitrary whitespace separates the two items
+#
+#	For the xsaplevels, <value> consists of any of the following
+#	(seperated by whitespace):
+#
+#		none		- does nothing
+#
+#		fatal		- fatal errors
+#
+#		exceptions	- exceptional events
+#
+#		notice		- informational notices
+#
+#				  remaining levels available under -DDEBUG
+#
+#		pdus		- PDU printing
+#
+#		trace		- program tracing
+#
+#		debug		- full debugging
+#
+#		all		- all of the above
+#
+###############################################################################
+
+compatlevel:	exceptions
+compatfile:	-
+addrlevel:	exceptions
+addrfile:	-
+tsaplevel:	exceptions
+tsapfile:	-
+ssaplevel:	exceptions
+ssapfile:	-
+psaplevel:	exceptions
+psapfile:	-
+psap2level:	exceptions
+psap2file:	-
+acsaplevel:	exceptions
+acsapfile:	-
+rtsaplevel:	exceptions
+rtsapfile:	-
+rosaplevel:	exceptions
+rosapfile:	-
