@@ -1,0 +1,58 @@
+.\"	@(MHWARNING)
+.\" @(#)$Id: anno.rf,v 2.4 90/04/05 15:08:00 sources Exp $
+.SC ANNO 1
+.NA
+anno \- annotate messages
+.SY
+anno
+\%[+folder] \%[msgs]
+\%[\-component\ field]
+\%[\-inplace] \%[\-noinplace]
+\%[\-date] \%[\-nodate]
+\%[\-text\ body]
+\%[\-help]
+.DE
+\fIAnno\fR annotates the specified messages in the named folder using
+the field and body.
+Annotation is optionally performed by \fIdist\fR, \fIforw\fR, and
+\fIrepl\fR,
+to keep track of your distribution of, forwarding of, and replies to a
+message.
+By using \fIanno\fR,
+you can perform arbitrary annotations of your own.
+Each message selected will be annotated with the lines
+
+    field:\ date
+    field:\ body
+
+The `\-nodate' switch inhibits the date annotation,
+leaving only the body annotation.
+The `\-inplace' switch causes annotation to be done in place in order
+to preserve links to the annotated message.
+
+The field specified should be a valid 822-style message field name,
+which means that it should consist of alphanumerics (or dashes) only.
+The body specified is arbitrary text.
+
+If a `\-component\ field' is not specified when \fIanno\fR is invoked,
+\fIanno\fR will prompt the user for the name of field for the annotation.
+.Fi
+^$HOME/\&.mh\(ruprofile~^The user profile
+.Pr
+^Path:~^To determine the user's MH directory
+.Ps
+^Current\-Folder:~^To find the default current folder
+.Sa
+dist (1), forw (1), repl (1)
+.De
+`+folder' defaults to the current folder
+.Ds
+`msgs' defaults to cur
+.Ds
+`\-noinplace'
+.Ds
+`\-date'
+.Co
+If a folder is given, it will become the current folder.
+The first message annotated will become the current message.
+.En

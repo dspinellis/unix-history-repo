@@ -1,0 +1,73 @@
+#!/bin/sh
+# @(#) updatehosts 1.9 92/08/31 @(#)
+#
+# update the host tables and DNS files
+#
+# arguments are the files to edit
+#
+# Copyright (c) 1992 by Texas Internet Consulting
+# This code may be freely copied and used so long as this
+# copyright notice is attached.  This code may not be sold
+# without the express written permission of Texas Internet Consulting.
+# Texas Internet Consulting makes no warranty as to the correctness
+# nor the applicability of this code for any purpose.
+
+EDITOR=${EDITOR-vi}
+DNS_PARAMETERS=${DNS_PARAMETERS-dns_parameters}
+NAMED_DIR=${NAMED_DIR-/etc/named}
+cd ${NAMED_DIR}
+
+# if no arguments display options
+if [ $# -eq 0 ]; then
+	echo "Usage: -u | file..."
+	exit 1
+fi
+
+# shift off the update option and proceed
+if [ "$1" = "-u" ]; then
+	shift
+fi
+
+# set umask to group read and write
+umask 2
+# check if the files exist and are under SCCS control and are readable
+okay=1
+for i do
+	if [ ! -f SCCS/s.$i ]; then
+		echo "file $i is not under SCCS control"
+		okay=0
+	elif [ ! -r SCCS/s.$i ]; then
+		echo "file $i is not readable by you"
+		okay=0
+	elif [ -f SCCS/p.$i ]; then
+		echo "file $i is already checked out under SCCS"
+		okay=0
+	elif [ -f $i ]; then
+		rm -f $i
+	fi
+done
+if [ $okay -eq 0 ]; then
+	exit 1
+fi
+
+# checkout and edit the files
+for i do
+	sccs edit $i
+	$EDITOR $i
+	sccs delget $i
+done
+
+# update the serial file
+sccs edit serial >/dev/null 2>&1
+sccs delget -s -y "" serial
+
+# generate the static tables
+echo "generating static hosts table..."
+genstatic
+
+# generate the dns map
+echo "generating the DNS database..."
+gendns
+poke_ns reload
+
+

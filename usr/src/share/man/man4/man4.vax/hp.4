@@ -1,0 +1,379 @@
+.\" Copyright (c) 1991, 1993, 19801988
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)hp.4	8.1 (Berkeley) 6/5/93
+.\"
+.Dd June 5, 1993
+.Dt HP 4 vax
+.Os BSD 4
+.Sh NAME
+.Nm hp
+.Nd
+.Tn MASSBUS
+disk interface
+.Sh SYNOPSIS
+.Cd "disk hp0 at mba0 drive 0"
+.Sh DESCRIPTION
+The
+.Nm hp
+driver
+is a generic Massbus disk driver which handles both the standard
+.Tn DEC
+controllers and the Emulex
+.Tn SC750
+and
+.Tn SC780
+controllers.
+It is typical of a block-device disk driver; block
+.Tn I/O
+is
+described in
+.Xr physio 4 .
+.Pp
+The script
+.Xr MAKEDEV 8
+should be used to create the special files; if a special file
+needs to be created by hand consult
+.Xr mknod 8 .
+It is recommended as a security precaution to not create special files
+for devices which may never be installed.
+.Pp
+The first sector of each disk contains both a first-stage bootstrap program
+and a disk label containing geometry information and partition layouts (see
+.Xr disklabel 5 .
+This sector is normally write-protected, and disk-to-disk copies should
+avoid copying this sector.
+The label may be updated with
+.Xr disklabel 8 ,
+which can also be used to write-enable and write-disable the sector.
+The next 15 sectors contain a second-stage bootstrap program.
+.Sh DISK SUPPORT
+This driver handles both standard
+.Tn DEC
+controllers and Emulex
+.Tn SC750
+and
+.Tn SC780
+controllers.
+During autoconfiguration or whenever a drive comes on line for the first time,
+or when a drive is opened after all partitions are closed,
+the first sector of the drive is examined for a disk label.
+If a label is found, the geometry of the drive and the partition tables
+are taken from it.
+If no label is found,
+standard
+.Tn DEC
+drive types are
+recognized according to the
+.Tn MASSBUS
+drive type register,
+and default partitions are used.
+For the Emulex controller the drive type register should be configured
+to indicate the drive is an
+.Tn RM02 .
+When this is encountered,
+the driver checks the holding register to find out
+the disk geometry and, based on this information, decides what
+the drive type is.
+.Pp
+Special file names begin with
+.Sq Li hp
+and
+.Sq Li rhp
+for the block and character files respectively. The second
+component of the name, a drive unit number in the range of zero to
+seven, is represented by a
+.Sq Li ?
+in the disk layouts below.
+The last component is the file system partition
+designated
+by a letter from
+.Sq Li a
+to
+.Sq Li h
+and also corresponds to a minor device number set: zero to seven,
+eight to 15, 16 to 23 and so forth for drive zero, drive two and drive
+three respectively.
+The following disks are supported:
+.Tn RM03 ,
+.Tn RM05 ,
+.Tn RP06 ,
+.Tn RM80 ,
+.Tn RP05 ,
+.Tn RP07 ,
+.Tn ML11A ,
+.Tn ML11B ,
+.Tn CDC 9775 ,
+.Tn CDC 9730 ,
+.Tn AMPEX
+Capricorn (32 sectors/track),
+.Tn FUJITSU
+Eagle (48 sectors/track),
+.Tn FUJITSU 2361, 
+and
+.Tn AMPEX
+9300.  The default layout and size (in sectors) of the
+partitions for these drives:
+.Bl -column header diskx undefined length
+.Tn RM03 No partitions
+.Sy	disk	start	length	cyls
+	hp?a	0	15884	0-99
+	hp?b	16000	33440	100-309
+	hp?c	0	131680	0-822
+	hp?d	49600	15884	309-408
+	hp?e	65440	55936	409-758
+	hp?f	121440	10080	759-822
+	hp?g	49600	82080	309-822
+
+.Tn RM05 No partitions
+.Sy	disk	start	length	cyls
+	hp?a	0	15884	0-26
+	hp?b	16416	33440	27-81
+	hp?c	0	500384	0-822
+	hp?d	341696	15884	562-588
+	hp?e	358112	55936	589-680
+	hp?f	414048	86176	681-822
+	hp?g	341696	158528	562-822
+	hp?h	49856	291346	82-561
+
+.Tn RP06 No partitions
+.Sy	disk	start	length	cyls
+	hp?a	0	15884	0-37
+	hp?b	15884	33440	38-117
+	hp?c	0	340670	0-814
+	hp?d	49324	15884	118-155
+	hp?e	65208	55936	156-289
+	hp?f	121220	219296	290-814
+	hp?g	49324	291192	118-814	
+
+.Tn RM80 No partitions
+.Sy	disk	start	length	cyls
+	hp?a	0	15884	0-36
+	hp?b	16058	33440	37-114
+	hp?c	0	242606	0-558
+	hp?d	49910	15884	115-151
+	hp?e	68096	55936	152-280
+	hp?f	125888	120466	281-558
+	hp?g	49910	192510	115-558
+
+.Tn RP05 No partitions
+.Sy	disk	start	length	cyls
+	hp?a	0	15884	0-37
+	hp?b	15884	33440	38-117
+	hp?c	0	171798	0-410
+	hp?d	2242	15884	118-155
+	hp?e	65208	55936	156-289
+	hp?f	121220	50424	290-410
+	hp?g	2242	122320	118-410
+
+.Tn RP07 No partitions
+.Sy	disk	start	length	cyls
+	hp?a	0	15884	0-9
+	hp?b	16000	66880	10-51
+	hp?c	0	1008000	0-629
+	hp?d	376000	15884	235-244
+	hp?e	392000	307200	245-436
+	hp?f	699200	308600	437-629
+	hp?g	376000	631800	235-629
+	hp?h	83200	291346	52-234
+
+.Tn CDC No 9775 partitions
+.Sy	disk	start	length	cyls
+	hp?a	0	15884	0-12
+	hp?b	16640	66880	13-65
+	hp?c	0	1077760	0-841
+	hp?d	376320	15884	294-306
+	hp?e	392960	307200	307-546
+	hp?f	700160	377440	547-841
+	hp?g	376320	701280	294-841
+	hp?h	84480	291346	66-293
+
+.Tn CDC No 9730 partitions
+.Sy	disk	start	length	cyls
+	hp?a	0	15884	0-49
+	hp?b	16000	33440	50-154
+	hp?c	0	263360	0-822
+	hp?d	49600	15884	155-204
+	hp?e	65600	55936	205-379
+	hp?f	121600	141600	380-822
+	hp?g	49600	213600	155-822
+
+.Tn AMPEX No Capricorn partitions
+.Sy	disk	start	length	cyls
+	hp?a	0	15884	0-31
+	hp?b	16384	33440	32-97
+	hp?c	0	524288	0-1023
+	hp?d	342016	15884	668-699
+	hp?e	358400	55936	700-809
+	hp?f	414720	109408	810-1023
+	hp?g	342016	182112	668-1023
+	hp?h	50176	291346	98-667
+
+.Tn FUJITSU No Eagle partitions
+.Sy	disk	start	length	cyls
+	hp?a	0	15884	0-16
+	hp?b	16320	66880	17-86
+	hp?c	0	808320	0-841
+	hp?d	375360	15884	391-407
+	hp?e	391680	55936	408-727
+	hp?f	698880	109248	728-841
+	hp?g	375360	432768	391-841
+	hp?h	83520	291346	87-390
+
+.Tn FUJITSU No 2361 partitions
+.Sy	disk	start	length	cyls
+	hp?a	0	15884	0-12
+	hp?b	16640	66880	13-65
+	hp?c	0	1077760	0-841
+	hp?d	376320	15884	294-306
+	hp?e	392960	307200	307-546
+	hp?f	700160	377408	547-841
+	hp?g	363520	701248	294-841
+	hp?h	84480	291346	66-293
+
+.Tn AMPEX No 9300 partitions
+.Sy	disk	start	length	cyl
+	hp?a	0	15884	0-26
+	hp?b	16416	33440	27-81
+	hp?c	0	495520	0-814
+	hp?d	341696	15884	562-588
+	hp?e	358112	55936	589-680
+	hp?f	414048	81312	681-814
+	hp?g	341696	153664	562-814
+	hp?h	49856	291346	82-561
+.El
+.Pp
+The hp?a partition is normally used for the root file system,
+the hp?b partition as a paging area,
+and the hp?c partition for pack-pack copying (it maps the entire disk).
+On disks larger than about 205 Megabytes, the hp?h partition
+is inserted prior to the hp?d or hp?g partition;
+the hp?g partition then maps the remainder of the pack.
+All disk partition tables are calculated using the
+.Xr diskpart 8
+program.
+.Pp
+.Sh FILES
+.Bl -tag -width /dev/rhp[0-7][a-h] -compact
+.It Pa /dev/hp[0-7][a-h]
+block files
+.It Pa /dev/rhp[0-7][a-h]
+raw files
+.El
+.Sh DIAGNOSTICS
+.Bl -diag
+.It "hp%d%c: hard error %sing fsbn %d [of %d-%d] (hp%d bn %d cn %d tn %d sn %d) mbsr=%b er1=%b er2=%b."
+An unrecoverable error occurred during transfer of the specified
+filesystem block number,
+which is a logical block number on the indicated partition.
+If the transfer involved multiple blocks, the block range is printed as well.
+The parenthesized fields list the actual disk sector number
+relative to the beginning of the drive,
+as well as the cylinder, track and sector number of the block.
+The
+.Tn MASSBUS
+status register is printed in hexadecimal and
+with the error bits decoded if any error bits other than
+.Tn MBEXC
+and
+.Tn DTABT
+are set.  In any case the contents of the two error registers are also printed
+in octal and symbolically with bits decoded.
+(Note that er2 is what old
+.Tn RP06
+manuals would call
+.Tn RPER3 ;
+the terminology
+is that of the
+.Tn RM
+disks).
+The error was either unrecoverable, or a large number of retry attempts
+(including offset positioning and drive recalibration) could not
+recover the error.
+.Pp
+.It hp%d: write locked.
+The write protect switch was set on the drive
+when a write was attempted.  The write operation is not recoverable.
+.Pp
+.It hp%d: not ready .
+The drive was spun down or off line when it was
+accessed.  The
+.Tn I/O
+operation is not recoverable.
+.Pp
+.It "hp%d%c: soft ecc reading fsbn %d [of %d-%d] (hp%d bn %d cn %d tn %d sn %d)."
+A recoverable
+.Tn ECC
+error occurred on the
+specified sector of the specified disk partition. 
+If the transfer involved multiple blocks, the block range is printed as well.
+The parenthesized fields list the actual disk sector number
+relative to the beginning of the drive,
+as well as the cylinder, track and sector number of the block.
+This happens normally
+a few times a week.  If it happens more frequently than
+this the sectors where the errors are occurring should be checked to see
+if certain cylinders on the pack, spots on the carriage of the drive
+or heads are indicated.
+.Pp
+.It hp%d: 9775 (direct).
+.It hp%d: 9730 (direct).
+.It hp%d: 9300.
+.It hp%d: 9762.
+.It hp%d: capricorn.
+.It hp%d: eagle.
+.It hp%d: 2361.
+.It hp%d: ntracks %d, nsectors %d: unknown device.
+During autoconfiguration one of the above messages may appear
+on the console indicating the appropriate drive type was recognized.
+The last message indicates the drive is of a unknown type.
+In this case, the correct geometry is set, and one partition is created
+that contains the entire drive.
+.Pp
+.El
+.Sh SEE ALSO
+.Xr physio 4 ,
+.Xr up 4 ,
+.Xr disklabel 5 ,
+.Xr MAKEDEV 8
+.Xr disklabel 8
+.Xr mknod 8
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.0 .
+.Sh BUGS
+.Tn DEC Ns -standard
+error logging should be supported.
+.Pp
+A program to analyze the logged error information (even in its
+present reduced form) is needed.

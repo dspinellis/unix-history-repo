@@ -1,0 +1,38 @@
+.\"	@(#)index	6.1 (Berkeley) 5/23/86
+.\"
+.bp 1
+.SH
+.nr LL 7i
+.MC 3.25i .5i
+.ds LF
+.nh
+.na
+.ps 10
+.vs 12p
+.in .4i
+.de X
+.if \\*(LF .ds LF \\$1  \" first entry on page for footer
+.ds RF \\$1  \" last entry on page
+.ti -.5i
+\\fB\\$1\\fP  \\$2
+.br
+..
+.	\" BT - bottom title
+.de BT
+.nr PF \\n(.f
+.nr PX \\n(.s
+.ft 1
+.ps \\n(PS
+.lt \\n(LTu
+.po \\n(POu
+.if \\n(TM .if \\n(CT \{\
+.	tl ''\\n(PN''
+.	nr CT 0
+.\}
+.if \\n% .if !\\n(EF .if !\\n(OF .tl \\*(LF\\*(CF\\*(RF
+.if \\n% .if \\n(OF .if o .tl \\*(O3
+.if \\n% .if \\n(EF .if e .tl \\*(E4
+.ft \\n(PF
+.ps \\n(PX
+.ds LF  \" undefine it
+..

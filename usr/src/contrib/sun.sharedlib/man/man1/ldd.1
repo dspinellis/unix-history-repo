@@ -1,0 +1,85 @@
+.\" This source code is a product of Sun Microsystems, Inc. and is provided
+.\" for unrestricted use provided that this legend is included on all tape
+.\" media and as a part of the software program in whole or part.  Users
+.\" may copy or modify this source code without charge, but are not authorized
+.\" to license or distribute it to anyone else except as part of a product or
+.\" program developed by the user.
+.\"
+.\" THIS PROGRAM CONTAINS SOURCE CODE COPYRIGHTED BY SUN MICROSYSTEMS, INC.
+.\" SUN MICROSYSTEMS, INC., MAKES NO REPRESENTATIONS ABOUT THE SUITABLITY
+.\" OF SUCH SOURCE CODE FOR ANY PURPOSE.  IT IS PROVIDED "AS IS" WITHOUT
+.\" EXPRESS OR IMPLIED WARRANTY OF ANY KIND.  SUN MICROSYSTEMS, INC. DISCLAIMS
+.\" ALL WARRANTIES WITH REGARD TO SUCH SOURCE CODE, INCLUDING ALL IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  IN
+.\" NO EVENT SHALL SUN MICROSYSTEMS, INC. BE LIABLE FOR ANY SPECIAL, INDIRECT,
+.\" INCIDENTAL, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING
+.\" FROM USE OF SUCH SOURCE CODE, REGARDLESS OF THE THEORY OF LIABILITY.
+.\" 
+.\" This source code is provided with no support and without any obligation on
+.\" the part of Sun Microsystems, Inc. to assist in its use, correction, 
+.\" modification or enhancement.
+.\"
+.\" SUN MICROSYSTEMS, INC. SHALL HAVE NO LIABILITY WITH RESPECT TO THE
+.\" INFRINGEMENT OF COPYRIGHTS, TRADE SECRETS OR ANY PATENTS BY THIS
+.\" SOURCE CODE OR ANY PART THEREOF.
+.\"
+.\" Sun Microsystems, Inc.
+.\" 2550 Garcia Avenue
+.\" Mountain View, California 94043
+.\"
+.\" Copyright (c) 1991 Sun Microsystems, Inc.
+.\"
+.\" @(#)ldd.1 1.5 88/02/26
+.TH LDD 1 "12 November 1987"
+.SH NAME
+ldd \- list dynamic dependencies
+.SH SYNOPSIS
+.B ldd
+.I filename
+.B .\|.\|.
+.SH DESCRIPTION
+.IX "ldd command" "" "\fLldd\fP \(em list dynamic dependencies"
+.IX "ldd command" "" "\fLldd\fP \(em list shared libraries"
+.IX display "dynamic dependencies \(em \fLldd\fP"
+.IX "shared libraries" "display users of \(em \fLldd\fP"
+For each
+.I filename ,
+.B ldd
+lists the dynamically loaded objects on which that 
+.I filename
+depends, if any.  If the dynamic dependency is a ``library'' (a so-called 
+``shared library''), then both the canonical form of the library name and
+version and the actual pathname used to access the library are listed.
+For example, if a given
+.I filename
+uses a shared C library version 4, which has the name
+.B /usr/lib/libc.so.4.9
+(where 9 is the most recent revision to interface version number 4)
+then
+.B ldd
+.I filename
+will report:
+.sp 1
+.nf
+.ft B
+filename:
+	-lc.4 => /usr/lib/libc.so.4.9
+.ft P
+.fi
+.sp 1
+For each
+.I filename
+which is 
+not an executable program, or else does not require any dynamic objects
+for its execution, 
+.B ldd
+will issue an appropriate diagnostic.
+.LP
+It should be noted that although all
+dynamically linked programs depend on the
+file
+.B /usr/lib/ld.so ,
+.B ldd
+will never report this dependency.
+.SH "SEE ALSO"
+.BR ld (1)

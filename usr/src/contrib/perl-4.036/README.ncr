@@ -1,0 +1,151 @@
+From: lreed@ncratl.AtlantaGA.NCR.COM (Len Reed)
+Newsgroups: comp.lang.perl
+Subject: Fixes for Perl 4.019 on NCR Tower V.3
+Date: 17 Feb 92 16:41:30 GMT
+Organization: Holos Software, Inc.
+
+Here are the fixes needed to make perl 4.019 on the NCR Tower V.3 system.
+I have bundled this as a shar file: feed everything below the CUT line
+to /bin/sh.
+
+The file hints/ncr_tower.sh fixes several problems.  It replaces the
+standard copy thereof.  Note that I use perl's malloc.  Note also
+that I have turned the optimizer completely off (-O0).  Optimizing
+at -O1 or -O2 produces some errors that the test suite doesn't catch.
+(Problems with alloca() and setjmp/longjmp, I think.)  It should be
+possible to optimize some modules but I haven't experimented with this.
+
+[NOTE: this hints file is already installed--lwall]
+
+I'm don't know if mkdir(2) works: I've left it undef'ed.  It is certainly
+broken in V.2.  If you need fast mkdir's you may want to experiment with
+this.
+
+The file patch.twg fixes a stupidity in /usr/netinclude/sys/time.h.
+You'll need this if you have WIN-TCP; you can't use it if you don't
+have WIN-TCP.  If needed, apply this patch *before* running Configure.
+
+Make sure you tell Configure that any config.sh it finds is to be ignored.
+
+After running Configure and make depend, edit config.h so that
+the CPPSTDIN definition has DEFAULT_CPP=/dev/null prepended.  It should
+look this this:
+
+#define CPPSTDIN "DEFAULT_CPP=/dev/null cc -E"
+
+This must be done by hand after running "make depend" and before running
+make.  I was unable to encode this into the hints file.
+
+This resulting perl should pass all tests.
+
+-Len Reed
+Holos Software, Inc.
+holos0!lbr@gatech.edu                (my main account)
+lreed@ncratl.atlantaga.ncr.com       (this account--on a customer's machine)
+
+-----CUT HERE----
+#!/bin/sh
+# This is a shell archive (shar 3.32)
+# made 02/17/1992 16:36 UTC by lreed@ncratl
+# Source directory /usr/acct/lreed/,q
+#
+# existing files WILL be overwritten
+#
+# This shar contains:
+# length  mode       name
+# ------ ---------- ------------------------------------------
+#   1593 -rw-rw-rw- patch.twg
+#    176 -rw-r--r-- hints/ncr_tower.sh
+#
+if touch 2>&1 | fgrep 'amc' > /dev/null
+ then TOUCH=touch
+ else TOUCH=true
+fi
+# ============= patch.twg ==============
+echo "x - extracting patch.twg (Text)"
+sed 's/^X//' << 'SHAR_EOF' > patch.twg &&
+XThe following patch fixes /usr/netinclude/sys/time.h on the Tower V.3.
+XPulling in <sys/time.h> with -I/usr/inetinclude makes a mess unless
+Xthe <sys/twg_config.h> file is pulled in, too.  It's stupid that an
+Xapplication (e.g., perl) should have to do this.  Thus, I fixed
+Xthe system header file.  The alternative is to make each application
+Xget the header file itself.  (The #if allows the application to do
+Xit, though, for compatibility with existing applications.)
+X
+XTo apply this patch, chdir to /usr/netinclude/sys and run
+X	patch <this_file
+X
+XIf the patch fails, fix the file by hand.  All I've done is put
+X#ifndef HDEF
+X	/* Len Reed 5/6/91 -- pulling in <sys/time.h> shouldn't cause
+X	   HDEF to blow up the compile--auto pull in its defining file.
+X	*/
+X# include <sys/twg_config.h>
+X#endif
+X
+Xbefore HDEF is used.
+X
+X-----The patch starts below this line
+X
+X*** time.h.old	Fri Feb 14 12:06:46 1992
+X--- time.h	Fri Feb 14 12:04:32 1992
+X***************
+X*** 4,12 ****
+X  /*	time.h	6.1	83/07/29	*/
+X  /* " @(#)time.h (TWG) 2.2 88/05/17 " */
+X  
+X! /*
+X  HDEF( "@(#)$RCSfile: README.ncr,v $$Revision: 4.0.1.1 $$Date: 92/06/08 11:41:41 $" )
+X- */
+X  
+X  /*
+X   * Structure returned by gettimeofday(2) system call,
+X--- 4,17 ----
+X  /*	time.h	6.1	83/07/29	*/
+X  /* " @(#)time.h (TWG) 2.2 88/05/17 " */
+X  
+X! #ifndef HDEF
+X! 	/* Len Reed 5/6/91 -- pulling in <sys/time.h> shouldn't cause
+X! 	   HDEF to blow up the compile--auto pull in its defining file.
+X! 	*/
+X! # include <sys/twg_config.h>
+X! #endif
+X! 
+X  HDEF( "@(#)$RCSfile: README.ncr,v $$Revision: 4.0.1.1 $$Date: 92/06/08 11:41:41 $" )
+X  
+X  /*
+X   * Structure returned by gettimeofday(2) system call,
+SHAR_EOF
+$TOUCH -am 0217113592 patch.twg &&
+chmod 0666 patch.twg ||
+echo "restore of patch.twg failed"
+set `wc -c patch.twg`;Wc_c=$1
+if test "$Wc_c" != "1593"; then
+	echo original size 1593, current size $Wc_c
+fi
+# ============= hints/ncr_tower.sh ==============
+if test ! -d 'hints'; then
+    echo "x - creating directory hints"
+    mkdir 'hints'
+fi
+echo "x - extracting hints/ncr_tower.sh (Text)"
+sed 's/^X//' << 'SHAR_EOF' > hints/ncr_tower.sh &&
+Xoptimize='-O0'
+Xccflags="$ccflags -W2,-Sl,2000"
+Xeval_cflags='large="-W0,-XL"'
+Xteval_cflags=$eval_cflags
+Xd_mkdir=$undef
+Xusemymalloc='y'
+Xmallocsrc='malloc.c'
+Xmallocobj='malloc.o'
+SHAR_EOF
+$TOUCH -am 0214073692 hints/ncr_tower.sh &&
+chmod 0644 hints/ncr_tower.sh ||
+echo "restore of hints/ncr_tower.sh failed"
+set `wc -c hints/ncr_tower.sh`;Wc_c=$1
+if test "$Wc_c" != "176"; then
+	echo original size 176, current size $Wc_c
+fi
+exit 0
+
+

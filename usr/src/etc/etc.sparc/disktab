@@ -1,0 +1,39 @@
+#
+#	@(#)disktab	8.1 (Berkeley) 7/23/93
+#
+# Disk geometry and partition layout tables. 
+# Key:
+#	ty	type of disk
+#	ns	#sectors/track
+#	nt	#tracks/cylinder
+#	nc	#cylinders/disk
+#	rm	rpm, 3600 default
+#	se	sector size, 512 default
+#	sf	supports bad144-style bad sector forwarding
+#	so	partition offsets in sectors
+#	p[a-h]	partition sizes in sectors
+#	b[a-h]	partition block sizes in bytes
+#	f[a-h]	partition fragment sizes in bytes
+#
+# All partition sizes contain space
+# for bad sector tables unless the
+# device drivers fail to support this.
+#
+# Entries may also be used for other compatible drives
+# with the same geometry.
+
+wrenv|wren5|WrenV:ty=winchester:dt=scsi:\
+	:ns#60:nt#8:nc#2447:\
+	:oa#0:pa#65520:ba#4096:fa#512:\
+	:ob#65520:pb#65520:tb=swap:\
+	:of#131040:pf#1043520:bf#8192:ff#1024:
+q105|Quantum P105SS:ty=winchester:dt=scsi:\
+	:ns#35:nt#6:nc#974:\
+	:oa#0:pa#32760:ba#4096:fa#512:\
+	:ob#32760:pb#32760:tb=swap:\
+	:of#65520:pf#139020:bf#8192:ff#1024:
+1480|Seagate ST1480N:ty=winchester:dt=scsi:\
+	:ns#80:nt#9:nc#1151:\
+	:oa#0:pa#65520:ba#4096:fa#512:\
+	:ob#65520:pb#82080:tb=swap:\
+	:of#147600:pf#681120:bf#8192:ff#1024:

@@ -1,0 +1,149 @@
+.\" This source code is a product of Sun Microsystems, Inc. and is provided
+.\" for unrestricted use provided that this legend is included on all tape
+.\" media and as a part of the software program in whole or part.  Users
+.\" may copy or modify this source code without charge, but are not authorized
+.\" to license or distribute it to anyone else except as part of a product or
+.\" program developed by the user.
+.\"
+.\" THIS PROGRAM CONTAINS SOURCE CODE COPYRIGHTED BY SUN MICROSYSTEMS, INC.
+.\" SUN MICROSYSTEMS, INC., MAKES NO REPRESENTATIONS ABOUT THE SUITABLITY
+.\" OF SUCH SOURCE CODE FOR ANY PURPOSE.  IT IS PROVIDED "AS IS" WITHOUT
+.\" EXPRESS OR IMPLIED WARRANTY OF ANY KIND.  SUN MICROSYSTEMS, INC. DISCLAIMS
+.\" ALL WARRANTIES WITH REGARD TO SUCH SOURCE CODE, INCLUDING ALL IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  IN
+.\" NO EVENT SHALL SUN MICROSYSTEMS, INC. BE LIABLE FOR ANY SPECIAL, INDIRECT,
+.\" INCIDENTAL, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING
+.\" FROM USE OF SUCH SOURCE CODE, REGARDLESS OF THE THEORY OF LIABILITY.
+.\" 
+.\" This source code is provided with no support and without any obligation on
+.\" the part of Sun Microsystems, Inc. to assist in its use, correction, 
+.\" modification or enhancement.
+.\"
+.\" SUN MICROSYSTEMS, INC. SHALL HAVE NO LIABILITY WITH RESPECT TO THE
+.\" INFRINGEMENT OF COPYRIGHTS, TRADE SECRETS OR ANY PATENTS BY THIS
+.\" SOURCE CODE OR ANY PART THEREOF.
+.\"
+.\" Sun Microsystems, Inc.
+.\" 2550 Garcia Avenue
+.\" Mountain View, California 94043
+.\"
+.\" Copyright (c) 1991 Sun Microsystems, Inc.
+.\"
+.\" @(#)link.5 1.6 90/01/04 SMI
+.TH LINK 5 "17 February 1988"
+.SH NAME
+link \- link editor interfaces
+.SH SYNOPSIS
+.B #include <link.h>
+.SH DESCRIPTION
+.IX "link editor" "" "link editor data structures"
+.LP
+Dynamically linked executables created by
+.BR ld (1)
+contain data structures used by the dynamic link editor
+to finish link-editing the program during program execution.
+These data
+structures are described with a 
+.B link_dynamic 
+structure, as defined in the
+.B link.h
+file.  
+.B ld
+always identifies the location of this structure in the executable file with
+the symbol
+.BR _\^_DYNAMIC .
+This symbol is 
+.BR ld -defined
+and if referenced in an executable that does not require dynamic linking 
+will have the value zero.
+.LP
+The program stub linked with ``main'' programs by compiler drivers such as
+.BR cc (1V)
+(called 
+.BR crt0 )
+tests the definition of
+.B _\^_DYNAMIC
+to determine whether or not the dynamic link editor should be invoked.
+Programs supplying a substitute for 
+.B crt0
+must either duplicate this functionality or else require that the programs with
+which they are linked be linked 
+.IR statically .
+Otherwise, such replacement
+.BR crt0 's
+must open and map in the executable
+.B /usr/lib/ld.so
+using 
+.BR mmap (2).
+Care should be taken to ensure that the expected mapping relationship between
+the ``text'' and ``data'' segments of the executable is maintained in the
+same manner that the 
+.BR execve (2V)
+system call does.
+The first location following the
+.B a.out
+header of this executable is the entry point to a function that begins the
+dynamic link-editing process.  This function must be called and supplied
+with two
+arguments.  The first argument is an integer representing the revision level
+of the argument list, and should have the value ``1''.  The second should be a
+pointer to an argument list structure of the form:
+.LP
+.RS
+.nf
+.ta .75i 1.25i 2.75i
+.ft B
+struct {
+	int	crt_ba;			/* base address of ld.so */
+	int	crt_dzfd;		/* open fd to /dev/zero */
+	int	crt_ldfd;		/* open fd to ld.so */
+	struct	link_dynamic *crt_dp;	/* pointer to program's _\^_DYNAMIC */
+	char	**crt_ep;		/* environment strings */
+	caddr_t	crt_bp;			/* debugger hook */
+}
+.ft R
+.fi
+.DT
+.RE
+.LP
+The members of the structure are:
+.TP 15
+.B crt_ba
+The address at which 
+.B /usr/lib/ld.so
+has been mapped.
+.TP 
+.B crt_dzfd
+An open file descriptor for 
+.BR /dev/zero .
+.B ld.so
+will close this file descriptor before returning.
+.TP 
+.B crt_ldfd
+The file descriptor used to map 
+.BR /usr/lib/ld.so .
+.B ld.so
+will close this file descriptor before returning.
+.TP 
+.B crt_dp
+A pointer to the label
+.B _\^_DYNAMIC
+in the executable which is calling 
+.BR ld.so .
+.TP 
+.B crt_ep
+A pointer to the environment strings provided to the program.
+.TP 
+.B crt_bp
+A location in the executable which contains an instruction that will
+be executed after the call to
+.B ld.so
+returns.  This location is used as a breakpoint in programs that are
+being executed under the control of a debugger such as
+.BR adb (1).
+.SH "SEE ALSO"
+.BR ld (1),
+.BR mmap (2),
+.BR a.out (5)
+.SH "BUGS"
+These interfaces are under development and are subject to rapid change.

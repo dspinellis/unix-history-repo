@@ -1,0 +1,315 @@
+##############################################################################
+#	Instructions to Make, for POP support processes
+#
+#	@(MHWARNING)
+# @(#)$Id: pop,v 2.26 1992/11/25 04:18:59 jromine Exp $
+##############################################################################
+
+# The following entries were inserted during MH configuration
+BINDIR	=	$(DESTDIR)@(MHBINPATH)
+ETCDIR	=	$(DESTDIR)@(MHPOPDPATH)
+LIBDIR	=	$(DESTDIR)@(MHETCPATH)
+OPTIONS	=	@(MHOPTIONS) @(POPUUMBOX) -I..
+LDOPTIONS=	@(LDOPTIONS)
+LDOPTLIB=	@(LDOPTLIB)
+@BEGIN: MPOP
+LDCURSES=	@(LDCURSES)
+@END: MPOP
+PGMPROT	=	0711
+REMOVE	=	@(MHREMOVE)
+CHOWN	=	@(MHCHOWNPATH)
+POPUID	=	pop
+@BEGIN: APOP
+Apop	=	popauth
+IApop	=	inst-popauth
+Lpop	=	l-popauth
+Tpop	=	xpopauth
+@END: APOP
+@BEGIN: POP
+ALL	=	popd popaka $(Apop) popwrd
+INST-ALL=	inst-popd inst-popaka $(IApop) inst-popwrd
+LALL	=	l-popd l-popaka $(Lpop) l-popwrd
+TALL	=	xpopd xpopaka $(Tpop) xpopwrd
+@END: POP
+
+CP      =       @(CP)
+CC      =	@(MHCOMPILER)
+@BEGIN: STDLIB
+LD	=	@(MHCOMPILER)
+@END: STDLIB
+@BEGIN: SHAREDLIB
+LD	=	LD_LIBRARY_PATH=../../sbr @(MHCOMPILER)
+@END: SHAREDLIB
+@BEGIN: OPTIM
+CFLAGS  =	$(OPTIONS)
+@END: OPTIM
+@BEGIN: DEBUG
+CFLAGS  =	      $(OPTIONS)
+@END: DEBUG
+LDFLAGS	=	$(LDOPTIONS)
+LIBES1	=	../../zotnet/libzot.a ../../mts/libmts.a
+@BEGIN: STDLIB
+LIBES2	=	../../config/config.o ../../sbr/libmh.a $(LIBES1)
+LDLIBS1	=	$(LIBES1) $(LDOPTLIB)
+LDLIBS2	=	$(LIBES2) ../../config/version.o $(LDOPTLIB)
+@END: STDLIB
+@BEGIN: SUN4SHLIB
+SLIBVER	=	.@(SLIBVER)
+@END: SUN4SHLIB
+@BEGIN: SHAREDLIB
+LIBES2	=	../../config/config.o ../../sbr/libmh.so $(LIBES1)
+LDLIBS1	=	$(LIBES1) $(LDOPTLIB)
+LDLIBS2	=	../../config/config.o ../../config/version.o \
+		-Bdynamic @(SLDFLAG) -lmh$(SLIBVER) $(LIBES1) $(LDOPTLIB)
+@END: SHAREDLIB
+
+LINT	=	lint
+LFLAGS	=	-bhu $(OPTIONS)
+LLIBS1	=	../../zotnet/llib-lzotnet
+LLIBS2	=	../../sbr/llib-lmh $(LLIBS1)
+
+.c:;		echo $@
+
+################################################################
+# Here it is...
+################################################################
+
+all:		$(ALL)
+
+lint:		$(LALL)
+
+install:	inst-all clean
+
+inst-all:	$(INST-ALL)
+
+tar:		$(ALL)
+@BEGIN: POP
+		@touch $(TALL)
+		@make -n inst-all > MAKEPOP
+		@chmod +x MAKEPOP
+		tar $(TFLAGS) MAKEPOP $(TALL)
+		@rm -f MAKEPOP
+@END: POP
+
+uninstall:;	-cd $(ETCDIR); rm -f popd
+		-cd $(LIBDIR); rm -f popaka popwrd
+		-cd $(BINDIR); rm -f popauth
+
+
+################################################################
+# popd
+################################################################
+
+inst-popd:	$(ETCDIR)/popd
+
+$(ETCDIR)/popd:	xpopd
+		-$(REMOVE) $@ zpopd
+		-rm -f $@
+		$(CP) xpopd $@
+		-chmod 700 $@
+		-@ls -l $@
+		-@echo ""
+
+popd:		xpopd
+
+xpopd:		popd.o popser.o syslog.o \
+			../../uip/dropsbr.o \
+@BEGIN: MPOP
+			../../uip/scansbr.o \
+@END: MPOP
+			$(LIBES2)
+		$(LD) $(LDFLAGS) -o $@ popd.o popser.o syslog.o \
+			../../uip/dropsbr.o \
+@BEGIN: MPOP
+			../../uip/scansbr.o \
+@END: MPOP
+			$(LDLIBS2) $(LDCURSES)
+
+l-popd:;	$(LINT) $(LFLAGS) popd.c popser.c \
+			../../uip/dropsbr.c \
+@BEGIN: MPOP
+			../../uip/scansbr.c \
+@END: MPOP
+			$(LLIBS2)
+
+
+################################################################
+# popaka
+################################################################
+
+inst-popaka:	$(LIBDIR)/popaka
+
+$(LIBDIR)/popaka:	xpopaka
+		-$(REMOVE) $@ zpopaka
+		$(CP) xpopaka $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+popaka:		xpopaka
+
+xpopaka:	popaka.o $(LIBES1)
+		$(LD) $(LDFLAGS) -o $@ popaka.o $(LDLIBS1)
+
+l-popaka:;	$(LINT) $(LFLAGS) popaka.c $(LLIBS1)
+
+
+################################################################
+# popauth
+################################################################
+
+inst-popauth:	$(BINDIR)/popauth
+
+$(BINDIR)/popauth:	xpopauth
+		-$(REMOVE) $@ zpopauth
+		cp xpopauth $@
+		-@chmod $(PGMPROT) $@
+		-$(CHOWN) $(POPUID) $@
+		chmod u+s $@
+		-@ls -l $@
+		-@echo ""
+
+popauth:	xpopauth
+
+xpopauth:	popauth.o $(LIBES1)
+		$(LD) $(LDFLAGS) -o $@ popauth.o $(LDLIBS2)
+
+l-popauth:;	$(LINT) $(LFLAGS) popauth.c $(LLIBS2)
+
+
+################################################################
+# popwrd
+################################################################
+
+inst-popwrd:	$(LIBDIR)/popwrd
+
+$(LIBDIR)/popwrd:	xpopwrd
+		-$(REMOVE) $@ zpopwrd
+		-chmod u-s zpopwrd
+		$(CP) xpopwrd $@
+		-chmod $(PGMPROT) $@
+		-$(CHOWN) $(POPUID) $@
+		chmod u+s $@
+		-@ls -l $@
+		-@echo ""
+
+popwrd:		xpopwrd
+
+xpopwrd:	popwrd.o $(LIBES1)
+		$(LD) $(LDFLAGS) -o $@ popwrd.o $(LDLIBS1)
+
+l-popwrd:;	$(LINT) $(LFLAGS) popwrd.c $(LLIBS1)
+
+
+################################################################
+# smtpd
+################################################################
+
+inst-smtpd:	$(ETCDIR)/smtpd
+
+$(ETCDIR)/smtpd:	xsmtpd
+		-$(REMOVE) $@ zsmtpd
+		$(CP) xsmtpd $@
+		-chmod 700 $@
+		-@ls -l $@
+		-@echo ""
+
+smtpd:		xsmtpd
+
+xsmtpd:		smtpd.o syslog.o
+		$(LD) $(LDFLAGS) -o $@ smtpd.o syslog.o
+
+l-smtpd:;	$(LINT) $(LFLAGS) smtpd.c
+
+
+##############################################################################
+#	Miscellaneous tasks
+##############################################################################
+
+unconfig:	distribution
+		-rm -f mmdfII/pop/lock.c
+		-rm -f Makefile
+
+distribution:   clean
+
+clean:		unclean
+		-rm -f x* *.o
+
+unclean:;	-rm -f z* _* :* core eddep makedep MAKEPOP
+
+
+##############################################################################
+#	Dependencies
+##############################################################################
+
+MODULES	=	popd popser popaka popauth popwrd
+
+depend:;	for m in $(MODULES); do ( \
+		    i=`basename $$m .c`; \
+		    echo $$i.o: $$i.c >> makedep; \
+		    grep '^#[ 	]*include' $$i.c | \
+			sed -e 's,[^"]*"/\([^"]*\)".*,'$$i'.o: /\1,' \
+			    -e 's,[^"]*"\([^"]*\)".*,'$$i'.o: \1,' \
+			    -e 's,[^<]*<\(.*\)>.*,#'$$i'.o: /usr/include/\1,' \
+			>> makedep \
+		); done
+		echo '/^# DO NOT DELETE THIS LINE/+2,$$d' > eddep
+		echo '$$r makedep' >> eddep
+		echo 'w' >> eddep
+		$(CP) Makefile _Makefile
+		ed - Makefile < eddep
+		rm eddep makedep
+		echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
+		echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
+
+# DO NOT DELETE THIS LINE
+# DEPENDENCIES START HERE
+popd.o: popd.c
+#popd.o: /usr/include/errno.h
+#popd.o: /usr/include/signal.h
+#popd.o: /usr/include/stdio.h
+#popd.o: /usr/include/strings.h
+#popd.o: /usr/include/syslog.h
+#popd.o: /usr/include/sys/types.h
+#popd.o: /usr/include/sys/file.h
+#popd.o: /usr/include/sys/ioctl.h
+#popd.o: /usr/include/sys/socket.h
+#popd.o: /usr/include/sys/time.h
+#popd.o: /usr/include/sys/resource.h
+#popd.o: /usr/include/sys/wait.h
+#popd.o: /usr/include/netinet/in.h
+#popd.o: /usr/include/netdb.h
+#popd.o: /usr/include/arpa/inet.h
+popser.o: popser.c
+popser.o: ../../h/mh.h
+popser.o: ../../h/dropsbr.h
+popser.o: ../../zotnet/bboards.h
+#popser.o: /usr/include/stdio.h
+popser.o: ../../zotnet/mts.h
+#popser.o: /usr/include/ctype.h
+#popser.o: /usr/include/errno.h
+#popser.o: /usr/include/pwd.h
+#popser.o: /usr/include/signal.h
+#popser.o: /usr/include/syslog.h
+#popser.o: /usr/include/sys/types.h
+#popser.o: /usr/include/sys/stat.h
+popser.o: popauth.h
+popaka.o: popaka.c
+#popaka.o: /usr/include/stdio.h
+popaka.o: ../../zotnet/bboards.h
+popauth.o: popauth.c
+popauth.o: ../../h/mh.h
+popauth.o: popauth.h
+popauth.o: ../../zotnet/bboards.h
+popauth.o: ../../zotnet/mts.h
+popwrd.o: popwrd.c
+popwrd.o: ../../h/strings.h
+popwrd.o: ../../zotnet/bboards.h
+#popwrd.o: /usr/include/errno.h
+#popwrd.o: /usr/include/pwd.h
+#popwrd.o: /usr/include/signal.h
+#popwrd.o: /usr/include/stdio.h
+#popwrd.o: /usr/include/sys/types.h
+#popwrd.o: /usr/include/sys/file.h
+# DEPENDENCIES MUST END AT END OF FILE
+# IF YOU PUT STUFF HERE IT WILL GO AWAY

@@ -1,0 +1,9 @@
+/dev/xfd0a:/: /	ufs	xx 1 1
+# The previous is for the brain-dead console processor on the
+# Tahoe machines.  Make sure it's the first line, just in case.
+
+#	@(#)fstab.example	8.1 (Berkeley) 6/9/93
+
+/dev/dk0a /			ufs	rw 1 1
+/dev/dk0b none			swap	sw 0 0
+/dev/dk0c /usr			ufs	rw 1 2

@@ -1,0 +1,1475 @@
+.\" Copyright (c) 1986, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"	@(#)jove.4	8.1 (Berkeley) 6/8/93
+.\"
+.bp
+.NH 1
+Alphabetical List of Commands and Variables
+.dc "Prefix-1" "Escape"
+This reads the next character and runs a command based on the character
+typed.  If you wait for more than a second or so before typing the next
+character, the message "ESC" will be printed on the message line to
+remind you that \s-2JOVE\s0 is waiting for another character.
+.dc "Prefix-2" "C-X"
+This reads the next character and runs a command based on the character
+typed.  If you wait for more than a second or so before typing another
+character, the message "C-X" will be printed on the message line to
+remind you that \s-2JOVE\s0 is waiting for another character.
+.dc "Prefix-3" "Not Bound"
+This reads the next character and runs a command based on the character
+typed.  If you wait for more than a second or so before typing the next
+character, the character that invoked Prefix-3 will be printed on the
+message line to remind you that \s-2JOVE\s0 is waiting for another one.
+.dc "allow-^S-and-^Q" "(variable)"
+This variable, when set, tells \s-2JOVE\s0 that your terminal does not need
+to use the characters C-S and C-Q for flow control, and that it is
+okay to bind things to them.  This variable should be set depending
+upon what kind of terminal you have.
+.dc "allow-bad-filenames" "(variable)"
+If set, this variable permits filenames to contain "bad" characters
+such as those from the set *&%!"`[]{}.  These files are harder to deal
+with, because the characters mean something to the shell.  The default
+value is "off".
+.dc "append-region" "Not Bound"
+This appends the region to a specified file.  If the file does not
+already exist it is created.
+.dc "apropos" "Not Bound"
+This types out all the commands, variables and macros with the specific
+keyword in their names.  For each command and macro that contains the
+string, the key sequence that can be used to execute the command or macro is
+printed; with variables, the current value is printed.  So, to find all the
+commands that are related to windows, you type
+.DS
+ESC X apropos window<Return>
+.DE
+.dc "auto-case-abbrev" "(variable)"
+When this variable is on (the default), word abbreviations are adjusted for
+case automatically.  For example, if "jove" were the abbreviation for
+"jonathan's own version of emacs", then typing "jove" would give you
+"jonathan's own version of emacs", typing "Jove" would give you "Jonathan's
+own version of emacs", and typing "JOVE" would give you "Jonathan's Own
+Version of Emacs".  When this variable is "off", upper and lower case are
+distinguished when looking for the abbreviation, i.e., in the example above,
+"JOVE" and "Jove" would not be expanded unless they were defined separately.
+.dc "auto-execute-command" "Not Bound"
+This tells \s-2JOVE\s0 to execute a command automatically when a file whose
+name matches a specified pattern is visited.  The first argument is the
+command you want executed and the second is a regular expression
+pattern that specifies the files that apply.  For example, if you want
+to be in show-match-mode when you edit C source files (that is, files
+that end with ".c" or ".h") you can type
+.ID
+ESC X auto-execute-command show-match-mode .*\.[ch]$
+.DE
+.dc "auto-execute-macro" "Not Bound"
+This is like
+.IQ auto-execute-command
+except you use it to execute macros
+automatically instead of built-in commands.
+.dc "auto-fill-mode" "Not Bound"
+This turns on Auto Fill mode (or off if it's currently on) in the
+selected buffer.  When \s-2JOVE\s0 is in Auto Fill mode it automatically
+breaks lines for you when you reach the right margin so you don't have
+to remember to hit Return.  \s-2JOVE\s0 uses 78 as the right margin but you
+can change that by setting the variable
+.IQ right-margin
+to another
+value.  See the
+.IQ set
+command to learn how to do this.
+.dc "auto-indent-mode" "Not Bound"
+This turns on Auto Indent mode (or off if it's currently on) in the
+selected buffer.  When \s-2JOVE\s0 is in Auto Indent mode, Return indents the
+new line to the same position as the line you were just on.  This is
+useful for lining up C code (or any other language (but what else is
+there besides C?)).  This is out of date because of the new command
+called
+.IQ newline-and-indent
+but it remains because of several
+"requests" on the part of, uh, enthusiastic and excitable users, that
+it be left as it is.
+.dc "backward-character" "C-B"
+This moves point backward over a single character.  If point is at the
+beginning of the line it moves to the end of the previous line.
+.dc "backward-paragraph" "ESC ["
+This moves point backward to the beginning of the current or previous
+paragraph.  Paragraphs are bounded by lines that begin with a Period or
+Tab, or by blank lines; a change in indentation may also signal a break
+between paragraphs, except that \s-2JOVE\s0 allows the first line of a paragraph
+to be indented differently from the other lines.
+.dc "backward-s-expression" "ESC C-B"
+This moves point backward over a s-expression.  It is just like
+.IQ forward-s-expression
+with a negative argument.
+.dc "backward-sentence" "ESC A"
+This moves point backward to the beginning of the current or previous
+sentence.  \s-2JOVE\s0 considers the end of a sentence to be the characters
+".", "!" or "?" followed by a Return or by one or more spaces.
+.dc "backward-word" "ESC B"
+This moves point backward to the beginning of the current or previous
+word.
+.dc "bad-filename-extensions" "(variable)"
+This contains a list of words separated by spaces which are to be
+considered bad filename extensions, and so will not be counted in
+filename completion.  The default is ".o" so if you have jove.c and
+jove.o in the same directory, the filename completion will
+.IQ not
+complain
+of an ambiguity because it will ignore jove.o.
+.dc "beginning-of-file" "ESC <"
+This moves point backward to the beginning of the buffer.  This
+sometimes prints the "Point Pushed" message.  If the top of the buffer
+isn't on the screen \s-2JOVE\s0 will set the mark so you can go back to where
+you were if you want.
+.dc "beginning-of-line" "C-A"
+This moves point to the beginning of the current line.
+.dc "beginning-of-window" "ESC ,"
+This moves point to the beginning of the current window.  The sequence
+"ESC ," is the same as "ESC <" (beginning of file) except without the shift
+key on the "<", and can thus can easily be remembered.
+.dc "bind-to-key" "Not Bound"
+This attaches a key to an internal \s-2JOVE\s0 command so that future hits on
+that key invoke that command.  For example, to make "C-W" erase the
+previous word, you type "ESC X bind-to-key kill-previous-word C-W".
+.dc "bind-macro-to-key" "Not Bound"
+This is like
+.IQ bind-to-key
+except you use it to attach keys to
+named macros.
+.dc "bind-macro-to-word-abbrev" "Not Bound"
+This command allows you to bind a macro to a previously defined word
+abbreviation.  Whenever you type the abbreviation, it will first be expanded
+as an abbreviation, and then the macro will be executed.  Note that if the
+macro moves around, you should set the mark first (C-@) and then exchange
+the point and mark last (C-X C-X).
+.dc "buffer-position" "Not Bound"
+This displays the current file name, current line number, total number
+of lines, percentage of the way through the file, and the position of
+the cursor in the current line.
+.dc "c-mode" "Not Bound"
+This turns on C mode in the currently selected buffer.  This is one of
+currently four possible major modes:  Fundamental, Text, C, Lisp.
+When in C or Lisp mode, Tab, "}", and ")" behave a little differently
+from usual: They are indented to the "right" place for C (or Lisp)
+programs.  In \s-2JOVE\s0, the "right" place is simply the way the author
+likes it (but I've got good taste).
+.dc "case-character-capitalize" "Not Bound"
+This capitalizes the character after point, i.e., the character undo
+the cursor.  If a negative argument is supplied that many characters
+.IQ before
+point are upper cased.
+.dc "case-ignore-search" "(variable)"
+This variable, when set, tells \s-2JOVE\s0 to treat upper and lower case as
+the same when searching.  Thus "jove" and "JOVE" would match, and
+"JoVe" would match either.  The default value of this variable is "off".
+.dc "case-region-lower" "Not Bound"
+This changes all the upper case letters in the region to their lower
+case equivalent.
+.dc "case-region-upper" "Not Bound"
+This changes all the lower case letters in the region to their upper
+case equivalent.
+.dc "case-word-capitalize" "ESC C"
+This capitalizes the current word by making the current letter upper
+case and making the rest of the word lower case.  Point is moved to
+the end of the word.  If point is not positioned on a word it is first
+moved forward to the beginning of the next word.  If a negative
+argument is supplied that many words
+.IQ before
+point are capitalized.
+This is useful for correcting the word just typed without having to
+move point to the beginning of the word yourself.
+.dc "case-word-lower" "ESC L"
+This lower-cases the current word and leaves point at the end of it.
+If point is in the middle of a word the rest of the word is
+converted.  If point is not in a word it is first moved forward to the
+beginning of the next word.  If a negative argument is supplied that
+many words
+.IQ before
+point are converted to lower case.  This is useful
+for correcting the word just typed without having to move point to the
+beginning of the word yourself.
+.dc "case-word-upper" "ESC U"
+This upper-cases the current word and leaves point at the end of it.
+If point is in the middle of a word the rest of the word is
+converted.  If point is not in a word it is first moved forward to the
+beginning of the next word.  If a negative argument is supplied that
+many words
+.IQ before
+point are converted to upper case.  This is useful
+for correcting the word just typed without having to move point to the
+beginning of the word yourself.
+.dc "character-to-octal-insert" "Not Bound"
+This inserts a Back-slash followed by the ascii value of the next
+character typed.  For example, "C-G" inserts the string "\\007".
+.dc "cd" "Not Bound"
+This changes the current directory.
+.dc "clear-and-redraw" "ESC C-L"
+This clears the entire screen and redraws all the windows.  Use this
+when \s-2JOVE\s0 gets confused about what's on the screen, or when the screen
+gets filled with garbage characters or output from another program.
+.dc "comment-format" "(variable)"
+This variable tells \s-2JOVE\s0 how to format your comments when you run the
+command
+.IQ fill-comment.
+Its format is this:
+.ID
+<open pattern>%!<line header>%c<line trailer>%!<close pattern>
+.DE
+The %!, %c, and %! must appear in the format; everything else is optional.
+A newline (represented by %n) may appear in the open or close patterns.  %%
+is the representation for %.  The default comment format is for C comments.
+See
+.IQ fill-comment
+for more.
+.dc "compile-it" "C-X C-E"
+This compiles your program by running the UNIX command "make" into a buffer,
+and automatically parsing the error messages that are created (if any).  See
+the
+.IQ parse-errors
+and
+.IQ parse-special-errors
+commands.  To compile
+a C program without "make", use "C-U C-X C-E" and \s-2JOVE\s0 will prompt
+for a command to run instead of make.  (And then the command you type will
+become the default command.)  You can use this to parse the output from the
+C compiler or the "grep" or "lint" programs.
+.dc "continue-process" "Not Bound"
+This sends SIGCONT to the current interactive process,
+.IQ if
+the process
+is currently stopped.
+.dc "copy-region" "ESC W"
+This takes all the text in the region and copies it onto the kill ring
+buffer.  This is just like running
+.IQ kill-region
+followed by the
+.IQ yank
+command.  See the
+.IQ kill-region
+and
+.IQ yank
+commands.
+.dc "current-error" "Not Bound"
+This moves to the current error in the list of parsed errors.  See the
+.IQ next-error
+and
+.IQ previous-error
+commands for more detailed
+information.
+.dc "date" "Not Bound"
+This prints the date on the message line.
+.dc "define-mode-word-abbrev" "Not Bound"
+This defines a mode-specific abbreviation.
+.dc "define-global-word-abbrev" "Not Bound"
+This defines a global abbreviation.
+.dc "delete-blank-lines" "C-X C-O"
+This deletes all the blank lines around point.  This is useful when you
+previously opened many lines with "C-O" and now wish to delete the
+unused ones.
+.dc "delete-buffer" "C-X K"
+This deletes a buffer and frees up all the memory associated with it.
+Be careful!  Once a buffer has been deleted it is gone forever.  \s-2JOVE\s0
+will ask you to confirm if you try to delete a buffer that needs
+saving.  This command is useful for when \s-2JOVE\s0 runs out of space to
+store new buffers.
+.dc "delete-macro" "Not Bound"
+This deletes a macro from the list of named macros.  It is an error to
+delete the keyboard-macro.  Once the macro is deleted it is gone forever.
+If you are about to save macros to a file and decide you don't want to save
+a particular one, delete it.
+.dc "delete-next-character" "C-D"
+This deletes the character that's just after point (that is, the
+character under the cursor).  If point is at the end of a line, the
+line separator is deleted and the next line is joined with the current
+one.
+.dc "delete-other-windows" "C-X 1"
+This deletes all the other windows except the current one.  This can be
+thought of as going back into One Window mode.
+.dc "delete-previous-character" "Rubout"
+This deletes the character that's just before point (that is, the
+character before the cursor).  If point is at the beginning of the
+line, the line separator is deleted and that line is joined with the
+previous one.
+.dc "delete-white-space" "ESC \\\\"
+This deletes all the Tabs and Spaces around point.
+.dc "delete-current-window" "C-X D"
+This deletes the current window and moves point into one of the
+remaining ones.  It is an error to try to delete the only remaining
+window.
+.dc "describe-bindings" "Not Bound"
+This types out a list containing each bound key and the command that gets
+invoked every time that key is typed.  To make a wall chart of \s-2JOVE\s0
+commands, set
+.IQ send-typeout-to-buffer
+to "on" and \s-2JOVE\s0 will
+store the key bindings in a buffer which you can save to a file and then
+print.
+.dc "describe-command" "Not Bound"
+This prints some info on a specified command.
+.dc "describe-key" "Not Bound"
+This waits for you to type a key and then tells the name of the
+command that gets invoked every time that key is hit.  Once you have
+the name of the command you can use the
+.IQ describe-command
+command
+to find out exactly what it does.
+.dc "describe-variable" "Not Bound"
+This prints some info on a specified variable.
+.dc "digit" "ESC [0-9]"
+This reads a numeric argument.  When you type "ESC" followed by a
+number, "digit" keeps reading numbers until you type some other
+command.  Then that command is executes with the numeric argument you
+specified.
+.dc "digit-1" "Not Bound"
+This pretends you typed "ESC 1".  This is useful for terminals that
+have keypads that send special sequences for numbers typed on the
+keypad as opposed to numbers typed from the keyboard.  This can save
+having type "ESC" when you want to specify an argument.
+.dc "digit-2" "Not Bound"
+This pretends you typed "ESC 2".  This is useful for terminals that
+have keypads that send special sequences for numbers typed on the
+keypad as opposed to numbers typed from the keyboard.  This can save
+having type "ESC" when you want to specify an argument.
+.dc "digit-3" "Not Bound"
+This pretends you typed "ESC 3".  This is useful for terminals that
+have keypads that send special sequences for numbers typed on the
+keypad as opposed to numbers typed from the keyboard.  This can save
+having type "ESC" when you want to specify an argument.
+.dc "digit-4" "Not Bound"
+This pretends you typed "ESC 4".  This is useful for terminals that
+have keypads that send special sequences for numbers typed on the
+keypad as opposed to numbers typed from the keyboard.  This can save
+having type "ESC" when you want to specify an argument.
+.dc "digit-5" "Not Bound"
+This pretends you typed "ESC 5".  This is useful for terminals that
+have keypads that send special sequences for numbers typed on the
+keypad as opposed to numbers typed from the keyboard.  This can save
+having type "ESC" when you want to specify an argument.
+.dc "digit-6" "Not Bound"
+This pretends you typed "ESC 6".  This is useful for terminals that
+have keypads that send special sequences for numbers typed on the
+keypad as opposed to numbers typed from the keyboard.  This can save
+having type "ESC" when you want to specify an argument.
+.dc "digit-7" "Not Bound"
+This pretends you typed "ESC 7".  This is useful for terminals that
+have keypads that send special sequences for numbers typed on the
+keypad as opposed to numbers typed from the keyboard.  This can save
+having type "ESC" when you want to specify an argument.
+.dc "digit-8" "Not Bound"
+This pretends you typed "ESC 8".  This is useful for terminals that
+have keypads that send special sequences for numbers typed on the
+keypad as opposed to numbers typed from the keyboard.  This can save
+having type "ESC" when you want to specify an argument.
+.dc "digit-9" "Not Bound"
+This pretends you typed "ESC 9".  This is useful for terminals that
+have keypads that send special sequences for numbers typed on the
+keypad as opposed to numbers typed from the keyboard.  This can save
+having type "ESC" when you want to specify an argument.
+.dc "digit-0" "Not Bound"
+This pretends you typed "ESC 0".  This is useful for terminals that
+have keypads that send special sequences for numbers typed on the
+keypad as opposed to numbers typed from the keyboard.  This can save
+having type "ESC" when you want to specify an argument.
+.dc "dirs" "Not Bound"
+This prints out the directory stack.  See the "cd", "pushd", "popd"
+commands for more info.
+.dc "disable-biff" "(variable)"
+When this is set, \s-2JOVE\s0 disables biff when you're editing and enables it
+again when you get out of \s-2JOVE\s0, or when you pause to the parent shell
+or push to a new shell. (This means arrival of new mail will not be
+immediately apparent but will not cause indiscriminate writing on the
+display). The default is "off".
+.dc "dstop-process" "Not Bound"
+Send the "dsusp" character to the current process.  This is the
+character that suspends a process on the next read from the
+terminal.  Most people have it set to C-Y.  This only works if
+you have the interactive process feature, and if you are in a
+buffer bound to a process.
+.dc "edit-word-abbrevs" "Not Bound"
+This creates a buffer with a list of each abbreviation and the phrase
+it expands into, and enters a recursive edit to let you change the
+abbreviations or add some more.  The format of this list is
+"abbreviation:phrase" so if you add some more you should follow that
+format.  It's probably simplest just to copy some already existing
+abbreviations and edit them.  When you are done you type "C-X C-C" to
+exit the recursive edit.
+.dc "end-of-file" "ESC >"
+This moves point forward to the end of the buffer.  This sometimes
+prints the "Point Pushed" message.  If the end of the buffer isn't on
+the screen \s-2JOVE\s0 will set the mark so you can go back to where you were
+if you want.
+.dc "end-of-line" "C-E"
+This moves point to the end of the current line.  If the line is too
+long to fit on the screen \s-2JOVE\s0 will scroll the line to the left to
+make the end of the line visible.  The line will slide back to its
+normal position when you move backward past the leftmost visible character
+or when you move off the line altogether.
+.dc "end-of-window" "ESC ."
+This moves point to the last character in the window.
+.dc "eof-process" "Not Bound"
+Sends EOF to the current interactive process.  This only works on
+versions of \s-2JOVE\s0 which run under 4.2-3 BSD VAX UNIX.  You can't send
+EOF to processes on the 2.9 BSD PDP-11 UNIX.
+.dc "erase-buffer" "Not Bound"
+This erases the contents of the specified buffer.  This is like
+.IQ delete-buffer
+except it only erases the contents of the buffer, not
+the buffer itself.  If you try to erase a buffer that needs saving you
+will be asked to confirm it.
+.dc "error-window-size" "(variable)"
+This is the percentage of the screen to use for the error-window on the
+screen.  When you execute
+.IQ compile-it,
+.IQ error-window-size
+percent of the screen will go to the error window.  If the window already
+exists and is a different size, it is made to be this size.  The default
+value is 20%.
+.dc "exchange-point-and-mark" "C-X C-X"
+This moves point to mark and makes mark the old point.  This is for
+quickly moving from one end of the region to another.
+.dc "execute-named-command" "ESC X"
+This is the way to execute a command that isn't bound to any key.
+When you are prompted with ": " you can type the name of the
+command.  You don't have to type the entire name.  Once the command
+is unambiguous you can type Space and \s-2JOVE\s0 will fill in the rest for
+you.
+If you are not sure of the name of the command, type "?" and \s-2JOVE\s0
+will print a list of all the commands that you could possibly match
+given what you've already typed.  If you don't have any idea what the
+command's name is but you know it has something to do with windows
+(for example), you can do "ESC X apropos window" and \s-2JOVE\s0 will print a
+list of all the commands that are related to windows.
+If you find yourself constantly executing the same commands this way
+you probably want to bind them to keys so that you can execute them
+more quickly.  See the
+.IQ bind-to-key
+command.
+.dc "execute-keyboard-macro" "C-X E"
+This executes the keyboard macro.  If you supply a numeric argument the
+macro is executed that many times.
+.dc "execute-macro" "Not Bound"
+This executes a specified macro.  If you supply a numeric argument the
+macro is executed that many times.
+.dc "exit-jove" "C-X C-C"
+This exits \s-2JOVE\s0.  If any buffers need saving \s-2JOVE\s0 will print a warning
+message and ask for confirmation.  If you leave without saving your
+buffers all your work will be lost.  If you made a mistake and really
+do want to exit then you can.  If you are in a recursive editing level
+.IQ exit-jove
+will return you from that.
+.dc "file-creation-mode" "(variable)"
+This variable has an octal value.
+It contains the mode (see
+.IQ chmod(1)
+) with which files should be created.  This mode gets modified by your
+current umask setting (see
+.IQ umask(1)
+).  The default value is usually
+.IQ 0666
+or
+.IQ 0644.
+.dc "files-should-end-with-newline" "(variable)"
+This variable indicates that all files should always have a newline
+at the end.  This is often necessary for line printers and the like.
+When set, if \s-2JOVE\s0 is writing a file whose last character is not a
+newline, it will add one automatically.
+.dc "fill-comment" "Not Bound"
+This command fills in your C comments to make them pretty and readable.
+This filling is done according the variable
+.IQ comment-format.
+.DS L
+/*
+ * the default format makes comments like this.
+ */
+.DE
+This can be changed by changing the format variable.  Other languages
+may be supported by changing the format variable appropriately.  The
+formatter looks backwards from dot for an open comment symbol.  If 
+found, all indentation is done relative the position of the first character
+of the open symbol.  If there is a matching close symbol, the entire 
+comment is formatted.  If not, the region between dot and the open symbol
+is reformatted.
+.dc "fill-paragraph" "ESC J"
+This rearranges words between lines so that all the lines in the current
+paragraph extend as close to the right margin as possible, ensuring that
+none of the lines will be greater than the right margin.  The default value
+for
+.IQ right-margin
+is 78, but can be changed with the
+.IQ set
+and
+.IQ right-margin-here
+commands.  \s-2JOVE\s0 has a complicated algorithm
+for determining the beginning and end of the paragraph.  In the normal case
+\s-2JOVE\s0 will give all the lines the same indent as they currently have,
+but if you wish to force a new indent you can supply a numeric argument to
+.IQ fill-paragraph
+(e.g., by typing C-U ESC J)
+and \s-2JOVE\s0 will indent each line to the column
+specified by the
+.IQ left-margin
+variable.  See also the
+.IQ left-margin
+variable and
+.IQ left-margin-here
+command.
+.dc "fill-region" "Not Bound"
+This is like
+.IQ fill-paragraph,
+except it operates on a region instead of
+just a paragraph.
+.dc "filter-region" "Not Bound"
+This sends the text in the region to a UNIX command, and replaces the
+region with the output from that command.  For example, if you are
+lazy and don't like to take the time to write properly indented C
+code, you can put the region around your C file and
+.IQ filter-region
+it
+through
+.IQ cb,
+the UNIX C beautifier.  If you have a file that contains
+a bunch of lines that need to be sorted you can do that from inside
+\s-2JOVE\s0 too, by filtering the region through the
+.IQ sort
+UNIX command.
+Before output from the command replaces the region \s-2JOVE\s0 stores the old
+text in the kill ring, so if you are unhappy with the results you can
+easily get back the old text with "C-Y".
+.dc "find-file" "C-X C-F"
+This visits a file into its own buffer and then selects that buffer.
+If you've already visited this file in another buffer, that buffer is
+selected.  If the file doesn't yet exist, \s-2JOVE\s0 will print "(New file)"
+so that you know.
+.dc "find-tag" "C-X T"
+This finds the file that contains the specified tag.  \s-2JOVE\s0 looks up
+tags by default in the "tags" file in the current directory.  You can change
+the default tag name by setting the
+.IQ tag-file
+variable to another
+name.  If you specify a numeric argument to this command, you will be
+prompted for a tag file.  This is a good way to specify another tag file
+without changing the default.  If the tag cannot be found the error is
+reported and point stays where it is.
+.dc "find-tag-at-point" "Not Bound"
+This finds the file that contains the tag that point is currently on.
+See
+.IQ find-tag.
+.dc "first-non-blank" "ESC M"
+This moves point back to the indent of the current line.
+.dc "forward-character" "C-F"
+This moves forward over a single character.  If point is at the end of
+the line it moves to the beginning of the next one.
+.dc "forward-paragraph" "ESC ]"
+This moves point forward to the end of the current or next paragraph.
+Paragraphs are bounded by lines that begin with a Period or Tab, or by blank
+lines; a change in indentation may also signal a break between paragraphs,
+except that \s-2JOVE\s0 allows the first line of a paragraph to be indented
+differently from the other lines.
+.dc "forward-s-expression" "ESC C-F"
+This moves point forward over a s-expression.  If the first significant
+character after point is "(", this moves past the matching ")".  If the
+character begins an identifier, this moves just past it.  This is mode
+dependent, so this will move over atoms in LISP mode and C identifiers in C
+mode.  \s-2JOVE\s0 also matches "{".
+.dc "forward-sentence" "ESC E"
+This moves point forward to the end of the current or next sentence.
+\s-2JOVE\s0 considers the end of a sentence to be the characters ".", "!" or
+"?" followed by a Return, or one or more spaces.
+.dc "forward-word" "ESC F"
+This moves point forward to the end of the current or next word.
+.dc "fundamental-mode" "Not Bound"
+This sets the major mode to Fundamental.  This affects what \s-2JOVE\s0
+considers as characters that make up words.  For instance,
+Single-quote is not part of a word in Fundamental mode, but is in Text
+mode.
+.dc "goto-line" "ESC G"
+If a numeric argument is supplied point moves to the beginning of that
+line.  If no argument is supplied, point remains where it is.  This is
+so you don't lose your place unintentionally, by accidentally hitting
+the "G" instead of "F".
+.dc "grind-s-expr" "Not Bound"
+When point is positioned on a "(", this re-indents that LISP expression.
+.dc "grow-window" "C-X ^"
+This makes the current window one line bigger.  This only works when
+there is more than one window and provided there is room to change the
+size.
+.dc "paren-flash" ") } ]"
+This handles the C mode curly brace indentation, the Lisp mode paren
+indentation, and the Show Match mode paren/curly brace/square bracket
+flashing.
+.dc "handle-tab" "Tab"
+This handles indenting to the "right" place in C and Lisp mode, and
+just inserts itself in Text mode.
+.dc "i-search-forward" "Not Bound"
+Incremental search.  Like search-forward except that instead of prompting
+for a string and searching for that string all at once, it accepts the string
+one character at a time.  After each character you type as part of the search
+string, it searches for the entire string so far.  When you like what it
+found, type the Return key to finish the search.  You can take back a
+character with Rubout and the search will back up to the position before
+that character was typed.  C-G aborts the search.
+.dc "i-search-reverse" "Not Bound"
+Incremental search.  Like search-reverse except that instead of prompting
+for a string and searching for that string all at once, it accepts the string
+one character at a time.  After each character you type as part of the search
+string, it searches for the entire string so far.  When you like what it
+found, type the Return key to finish the search.  You can take back a
+character with Rubout and the search will back up to the position before
+that character was typed.  C-G aborts the search.
+.dc "insert-file" "C-X C-I"
+This inserts a specified file into the current buffer at point.  Point
+is positioned at the beginning of the inserted file.
+.dc "internal-tabstop" "(variable)"
+The number of spaces \s-2JOVE\s0 should print when it displays a tab character.
+The default value is 8.
+.dc "interrupt-process" "Not Bound"
+This sends the interrupt character (usually C-C) to the interactive process
+in the current buffer.  This is only for versions of \s-2JOVE\s0 that have the
+interactive processes feature.  This only works when you are inside a buffer
+that's attached to a process.
+.dc "i-shell" "Not Bound"
+This starts up an interactive shell in a window.  \s-2JOVE\s0 uses "shell-1"
+as the name of the buffer in which the interacting takes place.  See
+the manual for information on how to use interactive processes.
+.dc "i-shell-command" "Not Bound"
+This is like
+.IQ shell-command
+except it lets you continue with your
+editing while the command is running.  This is really useful for long
+running commands with sporadic output.  See the manual for information
+on how to use interactive processes.
+.dc "kill-next-word" "ESC D"
+This kills the text from point to the end of the current or next word.
+.dc "kill-previous-word" "ESC Rubout"
+This kills the text from point to the beginning of the current or
+previous word.
+.dc "kill-process" "Not Bound"
+This command prompts for a buffer name or buffer number (just as
+select-buffer does) and then sends the process in that buffer a
+kill signal (9).
+.dc "kill-region" "C-W"
+This deletes the text in the region and saves it on the kill ring.
+Commands that delete text but save it on the kill ring all have the
+word "kill" in their names.  Type "C-Y" to yank back the most recent
+kill.
+.dc "kill-s-expression" "ESC C-K"
+This kills the text from point to the end of the current or next
+s-expression.
+.dc "kill-some-buffers" "Not Bound"
+This goes through all the existing buffers and asks whether or not to kill
+them.  If you decide to kill a buffer, and it turns out that the buffer is
+modified, \s-2JOVE\s0 will offer to save it first.  This is useful for when \s-2JOVE\s0
+runs out of memory to store lines (this only happens on PDP-11's) and you
+have lots of buffers that you are no longer using.
+.dc "kill-to-beginning-of-sentence" "C-X Rubout"
+This kills from point to the beginning of the current or previous
+sentence.
+.dc "kill-to-end-of-line" "C-K"
+This kills from point to the end of the current line.  When point is
+at the end of the line the line separator is deleted and the next line
+is joined with current one.  If a numeric argument is supplied that
+many lines are killed; if the argument is negative that many lines
+.IQ before
+point are killed; if the argument is zero the text from point
+to the beginning of the line is killed.
+.dc "kill-to-end-of-sentence" "ESC K"
+This kills from point to the end of the current or next sentence.  If a
+negative numeric argument is supplied it kills from point to the
+beginning of the current or previous sentence.
+.dc "left-margin" "(variable)"
+This is how far lines should be indented when auto-indent mode is on,
+or when the
+.IQ newline-and-indent
+command is run (usually by typing
+LineFeed).  It is also used by fill-paragraph and auto-fill mode.
+If the value is zero (the default) then the left margin is determined
+from the surrounding lines.
+.dc "left-margin-here" "Not Bound"
+This sets the
+.IQ left-margin
+variable to the current position of
+point.  This is an easy way to say, "Make the left margin begin here,"
+without having to count the number of spaces over it actually is.
+.dc "lisp-mode" "Not Bound"
+This turns on Lisp mode.  Lisp mode is one of four mutually exclusive major
+modes: Fundamental, Text, C, and Lisp.  In Lisp mode, the characters Tab
+and ) are treated specially, similar to the way they are treated in C mode.
+Also, Auto Indent mode is affected, and handled specially.
+.dc "list-buffers" "C-X C-B"
+This types out a list containing various information about each buffer.
+Right now that list looks like this:
+.DS
+.ta \w'NO111'u +\w'Lines1'u +\w'Scratch111'u +\w'*1'u +\w'commands.doc111'u
+\ (* means the buffer needs saving)
+\ NO	Lines	Type		Name	File
+\ --	-----	----		----	----
+\ 1	1	File		Main	[No file]
+\ 2	1	Scratch	*	Minibuf	[No file]
+\ 3	519	File	*	commands.doc	commands.doc
+.DE
+The first column lists the buffer's number.  When \s-2JOVE\s0 prompts for a
+buffer name you can either type in the full name, or you can simply
+type the buffer's number.  The second column is the number of lines in
+the buffer.  The third says what type of buffer.  There are four
+types: "File", "Scratch", "Process", "I-Process".  "File" is simply a
+buffer that holds a file; "Scratch" is for buffers that \s-2JOVE\s0 uses
+internally; "Process" is one that holds the output from a UNIX
+command; "I-Process" is one that has an interactive process attached to
+it.  The next column contains the name of the buffer.  And the last
+column is the name of the file that's attached to the buffer.  In this
+case, both Minibuf and commands.doc have been changed but not yet
+saved.  In fact Minibuf won't be saved since it's an internal \s-2JOVE\s0
+buffer that I don't even care about.
+.dc "list-processes" "Not Bound"
+This makes a list somewhat like "list-buffers" does, except its
+list consists of the current interactive processes.  Right now the list
+looks like this:
+.DS
+.ta \w'shell-111111111111'u +\w'Running1111111111'u
+\ Buffer	Status	Command name
+\ ------	------	------- ----
+\ shell-1	Running	i-shell
+\ fgrep 	Done	fgrep -n Buffer *.c
+.DE
+The first column has the name of the buffer to which the process is
+attached.  The second has the status of the process; if a process has
+exited normally the status is "Done" as in fgrep; if the process
+exited with an error the status is "Exit N" where N is the value of
+the exit code; if the process was killed by some signal the status is
+the name of the signal that was used; otherwise the process is
+running.  The last column is the name of the command that is being run.
+.dc "mailbox" "(variable)"
+Set this to the full pathname of your mailbox.  \s-2JOVE\s0 will look here to
+decide whether or not you have any unread mail.  This defaults to
+/usr/spool/mail/$USER, where $USER is set to your login name.
+.dc "mail-check-frequency" "(variable)"
+This is how often (in seconds) \s-2JOVE\s0 should check your mailbox for
+incoming mail.  See also the
+.IQ mailbox
+and
+.IQ disable-biff
+variables.
+.dc "make-backup-files" "(variable)"
+If this variable is set, then whenever \s-2JOVE\s0 writes out a file, it will
+move the previous version of the file (if there was one) to "#filename".
+This is often convenient if you save a file by accident.  The default
+value of this variable is "off".
+.IQ Note:
+this is an optional part of
+\s-2JOVE\s0, and your guru may not have it enabled, so it may not work.
+.dc "make-buffer-unmodified" "ESC ~"
+This makes \s-2JOVE\s0 think the selected buffer hasn't been changed even if
+it has.  Use this when you accidentally change the buffer but don't
+want it considered changed.  Watch the mode line to see the * disappear
+when you use this command.  
+.dc "make-macro-interactive" "Not Bound"
+This command is meaningful only while you are defining a keyboard macro.
+Ordinarily, when a command in a macro definition requires a trailing
+text argument (file name, search string, etc.), the argument you
+supply becomes part of the macro definition.  If you want to be able
+to supply a different argument each time the macro is used, then while
+you are defining it, you should give the make-macro-interactive
+command just before typing the argument which will be used during the
+definition process.  Note: you must bind this command to a key in
+order to use it; you can't say ESC X make-macro-interactive.
+.dc "mark-threshold" "(variable)"
+This variable contains the number of lines point may move by before
+the mark is set.  If, in a search or something, point moves by more
+than this many lines, the mark is set so that you may return easily.
+The default value of this variable is 22 (one screenful, on most
+terminals).
+.dc "marks-should-float" "(variable)"
+When this variable is "off", the position of a mark is remembered as a line
+number within the buffer and a character number within the line.  If you add
+or delete text before the mark, it will no longer point to the text you
+marked originally because that text is no longer at the same line and
+character number.  When this variable is "on", the position of a mark is
+adjusted to compensate for each insertion and deletion.  This makes marks
+much more sensible to use, at the cost of slowing down insertion and
+deletion somewhat.  The default value is "on".
+.dc "match-regular-expressions" "(variable)"
+When set, \s-2JOVE\s0 will match regular expressions in search patterns.
+This makes special the characters ., *, [, ], ^, and $, and the two-character
+sequences \e<, \e>, \e\|{, \e\|} and \e\||.
+See the
+.IQ ed(1)
+manual page, the tutorial "Advanced Editing in 
+.UX
+", and the section above "Searching with Regular Expressions"
+for more information.
+.dc "meta-key" "(variable)"
+You should set this variable to "on" if your terminal has a real Meta
+key.
+If your terminal has such a key, then a key sequence like ESC Y can
+be entered by holding down Meta and typing Y.
+.dc "mode-line" "(variable)"
+The format of the mode line can be determined by setting this variable.
+The items in the line are specified using a printf(3) format, with the
+special things being marked as "%x".  Digits may be used between the
+'%' and the 'x' to mean repeat that many times.
+\&'x' may be:
+.DS I
+.ta .5i 1i 1.5i
+	C	check for new mail, and displays "[New mail]" if there
+		is any (see also the mail-check-interval and disable-biff
+		variables)
+	F	the current file name, with leading path stripped
+	M	the current list of major and minor modes
+	b	the current buffer name
+	c	the fill character (-)
+	d	the current directory
+	e	end of string--this must be the last item in the string
+	f	the current file name
+	l	the current load average (updated automatically)
+	m	the buffer-modified symbol (*)
+	n	the current buffer number
+	s	space, but only if previous character is not a space
+	t	the current time (updated automatically)
+	[ ]	the square brackets printed when in a recursive edit
+	( )	items enclosed in %( ... %) will only be printed on
+		the bottom mode line, rather than copied when the
+		window is split
+.DE
+In addition, any other character is simply copied into the mode line.
+Characters may be escaped with a backslash.  To get a feel for all
+this, try typing "ESC X print mode-line" and compare the result with
+your current mode line.
+.dc "mode-line-should-standout" "(variable)"
+If set, the mode line will be printed in reverse video, if your
+terminal supports it.  The default for this variable is "off".
+.dc "name-keyboard-macro" "Not Bound"
+This copies the keyboard macro and gives it a name freeing up the
+keyboard macro so you can define some more.  Keyboard macros with
+their own names can be bound to keys just like built in commands
+can.  See the
+.IQ read-macros-file-file
+and
+.IQ write-macros-to-file
+commands.
+.dc "newline" "Return"
+This divides the current line at point moving all the text to the
+right of point down onto the newly created line.  Point moves down to
+the beginning of the new line.
+.dc "newline-and-backup" "C-O"
+This divides the current line at point moving all the text to the
+right of point down onto the newly created line.  The difference
+between this and "newline" is that point does not move down to the
+beginning of the new line.
+.dc "newline-and-indent" "LineFeed"
+This behaves the same was as Return does when in Auto Indent mode.
+This makes Auto Indent mode obsolete but it remains in the name of
+backward compatibility.
+.dc "next-error" "C-X C-N"
+This moves to the next error in the list of errors that were parsed
+with
+.IQ parse-errors
+or
+.IQ parse-special-errors.
+In one window the list
+of errors is shown with the current one always at the top.  In another
+window is the file that contains the error.  Point is positioned in
+this window on the line where the error occurred.
+.dc "next-line" "C-N"
+This moves down to the next line.
+.dc "next-page" "C-V"
+This displays the next page of the buffer by taking the bottom line of
+the window and redrawing the window with it at the top.  If there isn't
+another page in the buffer \s-2JOVE\s0 rings the bell.  If a numeric argument
+is supplied the screen is scrolled up that many lines; if the argument
+is negative the screen is scrolled down.
+.dc "next-window" "C-X N"
+This moves into the next window.  Windows live in a circular list so
+when you're in the bottom window and you try to move to the next one
+you are moved to the top window.  It is an error to use this command
+with only one window.
+.dc "number-lines-in-window" "Not Bound"
+This displays the line numbers for each line in the buffer being
+displayed.  The number isn't actually part of the text; it's just
+printed before the actual buffer line is.  To turn this off you run
+the command again; it toggles.
+.dc "over-write-mode" "Not Bound"
+This turns Over Write mode on (or off if it's currently on) in the selected
+buffer.  When on, this mode changes the way the self-inserting characters
+work.  Instead of inserting themselves and pushing the rest of the line over
+to the right, they replace or over-write the existing character.  Also,
+Rubout replaces the character before point with a space instead of deleting
+it.  When Over Write mode is on "OvrWt" is displayed on the mode line.
+.dc "page-next-window" "ESC C-V"
+This displays the next page in the next window.  This is exactly the
+same as "C-X N C-V C-X P".
+.dc "paren-flash-delay" "(variable)"
+How long, in tenths of seconds, \s-2JOVE\s0 should pause on a matching
+parenthesis in
+.IQ Show Match
+mode.  The default is 5.
+.dc "parse-errors" "Not Bound"
+This takes the list of C compilation errors (or output from another program
+in the same format) in the current buffer and parses them for use with the
+.IQ next-error
+and
+.IQ previous-error
+and
+.IQ current-error
+commands.
+This is a very useful tool and helps with compiling C programs and when used
+in conjunction with the "grep" UNIX command very helpful in making changes
+to a bunch of files.  This command understands errors produced by cc, cpp,
+and lint; plus any other program with the same format (e.g., "grep -n").
+\s-2JOVE\s0 visits each file that has an error and remembers each line that
+contains an error.  It doesn't matter if later you insert or delete
+some lines in the buffers containing errors; \s-2JOVE\s0 remembers where
+they are regardless.
+.IQ next-error
+is automatically executed after one
+of the parse commands, so you end up at the first error.
+.dc "parse-special-errors" "Not Bound"
+This parses errors in an unknown format.  Error parsing works with
+regular expression search strings with \\('s around the the file name
+and the line number.  So, you can use
+.IQ parse-special-errors
+to parse
+lines that are in a slightly different format by typing in your own
+search string.  If you don't know how to use regular expressions you
+can't use this command.
+.dc "parse-spelling-errors-in-buffer" "Not Bound"
+This parses a list of words in the current buffer and looks them up in
+another buffer that you specify.  This will probably go away soon.
+.dc "pause-jove" "ESC S"
+This stops \s-2JOVE\s0 and returns control to the parent shell.  This
+only works for users using the C-shell, and on systems that have the
+job control facility.  To return to \s-2JOVE\s0 you type "fg" to the C-shell.
+.dc "physical-tabstop" "(variable)"
+How many spaces your terminal prints when it prints a tab character.
+.dc "pop-mark" "Not Bound"
+This gets executed when you run
+.IQ set-mark
+with a numeric argument.
+\s-2JOVE\s0 remembers the last 16 marks and you use
+.IQ pop-mark
+to go
+backward through the ring of marks.  If you execute "
+.IQ pop-mark
+enough
+times you will eventually get back to where you started.
+.dc "popd" "Not Bound"
+This pops one entry off the directory stack.  Entries are pushed with
+the
+.IQ pushd
+command.  The names were stolen from the C-shell and the
+behavior is the same.
+.dc "previous-error" "C-X C-P"
+This is the same as
+.IQ next-error
+except it goes to the previous error.
+See
+.IQ next-error
+for documentation.
+.dc "previous-line" "C-P"
+This moves up to the previous line.
+.dc "previous-page" "ESC V"
+This displays the previous page of the current buffer by taking the top
+line and redrawing the window with it at the bottom.  If a numeric
+argument is supplied the screen is scrolled down that many lines; if
+the argument is negative the screen is scrolled up.
+.dc "previous-window" "C-X P and C-X O"
+This moves into the next window.  Windows live in a circular list so
+when you're in the top window and you try to move to the previous one
+you are moved to the bottom window.  It is an error to use this command
+with only one window.
+.dc "print" "Not Bound"
+This prints the value of a \s-2JOVE\s0 variable.
+.dc "print-message" "Not Bound"
+This command prompts for a message, and then prints it on the bottom
+line where \s-2JOVE\s0 messages are printed.
+.dc "process-bind-to-key" "Not Bound"
+This command is identical to bind-to-key, except that it only affects
+your bindings when you are in a buffer attached to a process.  When
+you enter the process buffer, any keys bound with this command will
+automatically take their new values.  When you switch to a non-process
+buffer, the old bindings for those keys will be restored.  For example,
+you might want to execute
+.DS I
+process-bind-to-key stop-process ^Z
+process-bind-to-key interrupt-process ^C
+.DE
+Then, when you start up an interactive process and switch into that
+buffer, C-Z will execute stop-process and C-C will execute interrupt-
+process.  When you switch back to a non-process buffer, C-Z will go
+back to executing scroll-up (or whatever you have it bound to).
+.dc "process-newline" "Return"
+This this only gets executed when in a buffer that is attached to an
+interactive-process.  \s-2JOVE\s0 does two different things depending on where
+you are when you hit Return.  When you're at the end of the I-Process
+buffer this does what Return normally does, except it also makes the
+line available to the process.  When point is positioned at some other
+position that line is copied to the end of the buffer (with the prompt
+stripped) and point is moved there with it, so you can then edit that
+line before sending it to the process.  This command
+.IQ must
+be bound
+to the key you usually use to enter shell commands (Return), or else
+you won't be able to enter any.
+.dc "process-prompt" (variable)
+What a prompt looks like from the i-shell and i-shell-command
+processes.  The default is "% ", the default C-shell prompt.  This is
+actually a regular expression search string.  So you can set it to be
+more than one thing at once using the \\| operator.  For instance, for
+LISP hackers, the prompt can be
+.DS
+"% \\|-> \\|<[0-9]>: ".
+.DE
+.dc "push-shell" "Not Bound"
+This spawns a child shell and relinquishes control to it.  This works
+on any version of UNIX, but this isn't as good as
+.IQ pause-jove
+because
+it takes time to start up the new shell and you get a brand new
+environment every time.  To return to \s-2JOVE\s0 you type "C-D".
+.dc "pushd" "Not Bound"
+This pushes a directory onto the directory stack and cd's into it.  It
+asks for the directory name but if you don't specify one it switches
+the top two entries no the stack.  It purposely behaves the same as
+C-shell's
+.IQ pushd.
+.dc "pwd" "Not Bound"
+This prints the working directory.
+.dc "quadruple-numeric-argument" "C-U"
+This multiplies the numeric argument by 4.  So, "C-U C-F" means
+forward 4 characters and "C-U C-U C-N" means down 16 lines.
+.dc "query-replace-string" "ESC Q"
+This replaces the occurrences of a specified string with a specified
+replacement string.  When an occurrence is found point is moved to it
+and then \s-2JOVE\s0 asks what to do.  The options are:
+.DS I
+.ta \w'Rubout111'u
+Space	to replace this occurrence and go on to the next one.
+Period	to replace this occurrence and then stop.
+Rubout	to skip this occurrence and go on to the next one.
+C-R	to enter a recursive edit.  This lets you temporarily
+	suspend the replace, do some editing, and then return
+	to continue where you left off.  To continue with the
+	Query Replace type "C-X C-C" as if you were trying to
+	exit \s-2JOVE\s0.  Normally you would but when you are in a
+	recursive edit all it does is exit that recursive
+	editing level.
+C-W	to delete the matched string and then enter a recursive
+	edit.
+U	to undo the last replacement.
+P or !	to go ahead and replace the remaining occurrences without
+	asking.
+Return	to stop the Query Replace.
+.DE
+The search for occurrences starts at point and goes to the end of the
+buffer, so to replace in the entire buffer you must first go to the
+beginning.
+.dc "quit-process" "Not Bound"
+This is the same as typing "C-\\" (the Quit character) to a normal UNIX
+process, except it sends it to the current process in \s-2JOVE\s0.  This is
+only for versions of \s-2JOVE\s0 that have the interactive processes feature.
+This only works when you are inside a buffer that's attached to a
+process.
+.dc "quoted-insert" "C-Q"
+This lets you insert characters that normally would be executed as
+other \s-2JOVE\s0 commands.  For example, to insert "C-F" you type "C-Q C-F".
+.dc "read-word-abbrev-file" "Not Bound"
+This reads a specified file that contains a bunch of abbreviation
+definitions, and makes those abbreviations available.  If the selected
+buffer is not already in Word Abbrev mode this command puts it in
+that mode.
+.dc "read-macros-from-file" "Not Bound"
+This reads the specified file that contains a bunch of macro
+definitions, and defines all the macros that were currently defined
+when the file was created.  See
+.IQ write-macros-to-file
+to see how to
+save macros.
+.dc "redraw-display" "C-L"
+This centers the line containing point in the window.  If that line is
+already in the middle the window is first cleared and then redrawn.
+If a numeric argument is supplied, the line is positioned at that
+offset from the top of the window.  For example, "ESC 0 C-L" positions
+the line containing point at the top of the window.
+.dc "recursive-edit" "Not Bound"
+This enters a recursive editing level.  This isn't really very
+useful.  I don't know why it's available for public use.  I think I'll
+delete it some day.
+.dc "rename-buffer" "Not Bound"
+This lets you rename the current buffer.
+.dc "replace-in-region" "Not Bound"
+This is the same as
+.IQ replace-string
+except that it is restricted
+to occurrences between Point and Mark.
+.dc "replace-string" "ESC R"
+This replaces all occurrences of a specified string with a specified
+replacement string.  This is just like
+.IQ query-replace-string
+except
+it replaces without asking.
+.dc "right-margin" "(variable)"
+Where the right margin is for
+.IQ "Auto Fill"
+mode and the
+.IQ justify-paragraph
+and
+.IQ justify-region
+commands.  The default is 78.
+.dc "right-margin-here" "Not Bound"
+This sets the
+.IQ right-margin
+variable to the current position of
+point.  This is an easy way to say, "Make the right margin begin here,"
+without having to count the number of spaces over it actually is.
+.dc "save-file" "C-X C-S"
+This saves the current buffer to the associated file.  This makes your
+changes permanent so you should be sure you really want to.  If the
+buffer has not been modified
+.IQ save-file
+refuses to do the save.  If
+you really do want to write the file you can use "C-X C-W" which
+executes
+.IQ write-file.
+.dc "scroll-down" "ESC Z"
+This scrolls the screen one line down.  If the line containing point
+moves past the bottom of the window point is moved up to the center of
+the window.  If a numeric argument is supplied that many lines are
+scrolled; if the argument is negative the screen is scrolled up
+instead.
+.dc "scroll-step" "(variable)"
+How many lines should be scrolled if the
+.IQ previous-line
+or
+.IQ next-line
+commands move you off the top or bottom of the screen.  You
+may wish to decrease this variable if you are on a slow terminal.
+.dc "scroll-up" "C-Z"
+This scrolls the screen one line up.  If the line containing point
+moves past the top of the window point is moved down to the center of
+the window.  If a numeric argument is supplied that many lines are
+scrolled; if the argument is negative the screen is scrolled down
+instead.
+.dc "search-exit-char" "(variable)"
+Set this to the character you want to use to exit incremental search.
+The default is Newline, which makes i-search compatible with normal
+string search.
+.dc "search-forward" "C-S"
+This searches forward for a specified search string and positions
+point at the end of the string if it's found.  If the string is not
+found point remains unchanged.  This searches from point to the end of
+the buffer, so any matches before point will be missed.
+.dc "search-reverse" "C-R"
+This searches backward for a specified search string and positions
+point at the beginning if the string if it's found.  If the string is
+not found point remains unchanged.  This searches from point to the
+beginning of the buffer, so any matches after point will be missed.
+.dc "select-buffer" "C-X B"
+This selects a new or already existing buffer making it the current
+one.  You can type either the buffer name or number.  If you type in
+the name you need only type the name until it is unambiguous, at which
+point typing Escape or Space will complete it for you.  If you want to
+create a new buffer you can type Return instead of Space, and a new
+empty buffer will be created.
+.dc "self-insert" "Most Printing Characters"
+This inserts the character that invoked it into the buffer at point.
+Initially all but a few of the printing characters are bound to
+.IQ self-insert.
+.dc "send-typeout-to-buffer" "(variable)"
+When this is set \s-2JOVE\s0 will send output that normally overwrites the
+screen (temporarily) to a buffer instead.  This affects commands like
+.IQ list-buffers,
+.IQ list-processes,
+and other commands that use command
+completion.  The default value is "off".
+.dc "set" "Not Bound"
+This gives a specified variable a new value.  Occasionally you'll see
+lines like "set this variable to that value to do this".  Well, you
+use the
+.IQ set
+command to do that.
+.dc "set-mark" "C-@"
+This sets the mark at the current position in the buffer.  It prints
+the message "Point pushed" on the message line.  It says that instead
+of "Mark set" because when you set the mark the previous mark is still
+remembered on a ring of 16 marks.  So "Point pushed" means point is
+pushed onto the ring of marks and becomes the value of "the mark".
+To go through the ring of marks you type "C-U C-@", or execute the
+.IQ pop-mark
+command.  If you type this enough times you will get back
+to where you started.
+.dc "shell" "(variable)"
+The shell to be used with all the shell commands command.  If your SHELL
+environment variable is set, it is used as the value of
+.IQ shell;
+otherwise "/bin/csh" is the default.
+.dc "shell-command" "C-X !"
+This runs a UNIX command and places the output from that command in a
+buffer.  \s-2JOVE\s0 creates a buffer that matches the name of the command
+you specify and then attaches that buffer to a window.  So, when you
+have only one window running this command will cause \s-2JOVE\s0 to split the
+window and attach the new buffer to that window.  Otherwise, \s-2JOVE\s0
+finds the most convenient of the available windows and uses that one
+instead.  If the buffer already exists it is first emptied, except that if
+it's holding a file, not some output from a previous command, \s-2JOVE\s0
+prints an error message and refuses to execute the command.  If you
+really want to execute the command you should delete that buffer
+(saving it first, if you like) or use
+.IQ shell-command-to-buffer,
+and
+try again.
+.dc "shell-command-to-buffer" "Not Bound"
+This is just like
+.IQ shell-command
+except it lets you specify the
+buffer to use instead of \s-2JOVE\s0.
+.dc "shell-flags" "(variable)"
+This defines the flags that are passed to shell commands.  The default is
+"-c".  See the
+.IQ shell
+variable to change the default shell.
+.dc "show-match-mode" "Not Bound"
+This turns on Show Match mode (or off if it's currently on) in the
+selected buffer.  This changes "}" and ")" so that when they are typed
+the are inserted as usual, and then the cursor flashes back to the
+matching "{" or "(" (depending on what was typed) for about half a
+second, and then goes back to just after the "}" or ")" that invoked
+the command.  This is useful for typing in complicated expressions in
+a program.  You can change how long the cursor sits on the matching
+paren by setting the "paren-flash-delay" variable in tenths of a
+second.  If the matching "{" or "(" isn't visible nothing happens.
+.dc "shrink-window" "Not Bound"
+This makes the current window one line shorter, if possible.  Windows
+must be at least 2 lines high, one for the text and the other for the
+mode line.
+.dc "source" "Not Bound"
+This reads a bunch of \s-2JOVE\s0 commands from a file.  The format of the
+file is the same as that in your initialization file (your ".joverc")
+in your main directory.  There should be one command per line and it
+should be as though you typed "ESC X" while in \s-2JOVE\s0.  For example,
+here's part of my initialization file:
+.DS I
+bind-to-key i-search-reverse ^R
+bind-to-key i-search-forward ^S
+bind-to-key pause-jove ^[S
+.DE
+What they do is make "C-R" call the
+.IQ i-search-reverse
+command and
+"C-S" call
+.IQ i-search-forward
+and "ESC S" call
+.IQ pause-jove.
+.dc "spell-buffer" "Not Bound"
+This runs the current buffer through the UNIX
+.IQ spell
+program and places
+the output in buffer "Spell".  Then \s-2JOVE\s0 lets you edit the list of
+words, expecting you to delete the ones that you don't care about, i.e., the
+ones you know are spelled correctly.  Then the
+.IQ parse-spelling-errors-in-buffer
+command comes along and finds all the
+misspelled words and sets things up so the error commands work.
+.dc "split-current-window" "C-X 2"
+This splits the current window into two equal parts (providing the
+resulting windows would be big enough) and displays the selected
+buffer in both windows.  Use "C-X 1" to go back to 1 window mode.
+.dc "start-remembering" "C-X ("
+This starts remembering your key strokes in the Keyboard macro.  To
+stop remembering you type "C-X )".  Because of a bug in \s-2JOVE\s0 you can't
+stop remembering by typing "ESC X stop-remembering";
+.IQ stop-remembering
+must be bound to "C-X )" in order to make things work correctly.  To
+execute the remembered key strokes you type "C-X E" which runs the
+.IQ execute-keyboard-macro
+command.
+Sometimes you may want a macro to accept different input each time it runs.
+To see how to do this, see the
+.IQ make-macro-interactive
+command.
+.dc "stop-process" "Not Bound"
+This sends a stop signal (C-Z, for most people) to the current process.
+It only works if you have the interactive process feature, and you are
+in a buffer attached to a process.
+.dc "stop-remembering" "C-X )"
+This stop the definition of the keyboard macro.  Because of a bug in
+\s-2JOVE\s0, this must be bound to "C-X )".  Anything else will not work
+properly.
+.dc "string-length" "Not Bound"
+This prints the number of characters in the string that point sits in.
+Strings are surrounded by double quotes.  \s-2JOVE\s0 knows that "\\007" is
+considered a single character, namely "C-G", and also knows about
+other common ones, like "\\r" (Return) and "\\n" (LineFeed).  This is
+mostly useful only for C programmers.
+.dc "suspend-jove" "ESC S"
+This is a synonym for
+.IQ pause-jove.
+.dc "sync-frequency" "(variable)"
+The temporary files used by \s-2JOVE\s0 are forced out to disk every
+.IQ sync-frequency
+modifications.  The default is 50, which really makes
+good sense.  Unless your system is very unstable, you probably
+shouldn't fool with this.
+.dc "tag-file" "(variable)"
+This the name of the file in which \s-2JOVE\s0 should look up tag
+definitions.  The default value is "./tags".
+.dc "text-mode" "Not Bound"
+This sets the major mode to Text.  Currently the other modes are
+Fundamental, C and Lisp mode.
+.dc "transpose-characters" "C-T"
+This switches the character before point with the one after point, and
+then moves forward one.  This doesn't work at the beginning of the
+line, and at the end of the line it switches the two characters before
+point.  Since point is moved forward, so that the character that was
+before point is still before point, you can use "C-T" to drag a
+character down the length of a line.  This command pretty quickly
+becomes very useful.
+.dc "transpose-lines" "C-X C-T"
+This switches the current line with the one above it, and then moves
+down one so that the line that was above point is still above point.
+This, like
+.IQ transpose-characters,
+can be used to drag a line down a page.
+.dc "unbind-key" "Not Bound"
+Use this to unbind
+.IQ any
+key sequence.  You can use this to unbind even a
+prefix command, since this command does not use "key-map completion".  For
+example, "ESC X unbind-key ESC [" unbinds the sequence "ESC [".  This is
+useful for "turning off" something set in the system-wide ".joverc" file.
+.dc "update-time-frequency" "(variable)"
+How often the mode line is updated (and thus the time and load
+average, if you display them).  The default is 30 seconds.
+.dc "use-i/d-char" "(variable)"
+If your terminal has insert/delete character capability you can tell \s-2JOVE\s0
+not to use it by setting this to "off".  In my opinion it is only worth using
+insert/delete character at low baud rates.  WARNING: if you set this to
+"on" when your terminal doesn't have insert/delete character capability,
+you will get weird (perhaps fatal) results.
+.dc "version" "Not Bound"
+Displays the version number of this \s-2JOVE\s0.
+.dc "visible-bell" "(variable)"
+Use the terminal's visible bell instead of beeping.  This is set
+automatically if your terminal has the capability.
+.dc "visible-spaces-in-window" "Not Bound"
+This displays an underscore character instead of each space in the
+window and displays a greater-than followed by spaces for each tab
+in the window.  The actual text in the buffer is not changed; only
+the screen display is affected.  To turn this off you run the command
+again; it toggles.
+.dc "visit-file" "C-X C-V"
+This reads a specified file into the current buffer replacing the old
+text.  If the buffer needs saving \s-2JOVE\s0 will offer to save it for you.
+Sometimes you use this to start over, say if you make lots of changes
+and then change your mind.  If that's the case you don't want \s-2JOVE\s0 to
+save your buffer and you answer "NO" to the question.
+.dc "window-find" "C-X 4"
+This lets you select another buffer in another window three
+different ways.  This waits for another character which can be one of
+the following:
+.DS I
+.ta .5i 1i 1.5i
+T	Finds a tag in the other window.
+F	Finds a file in the other window.
+B	Selects a buffer in the other window.
+.DE
+This is just a convenient short hand for "C-X 2" (or "C-X O" if there are
+already two windows) followed by the appropriate sequence for invoking each
+command.  With this, though, there isn't the extra overhead of having to
+redisplay.  In addition, you don't have to decide whether to type "C-X 2" or
+"C-X O" since "C-X 4" does the right thing.
+.dc "word-abbrev-mode" "Not Bound"
+This turns on Word Abbrev mode (or off if it's currently on) in the
+selected buffer.  Word Abbrev mode lets you specify a word (an
+abbreviation) and a phrase with which \s-2JOVE\s0 should substitute the
+abbreviation.  You can use this to define words to expand into long
+phrases, e.g., "jove" can expand into "Jonathan's Own Version of
+Emacs"; another common use is defining words that you often misspell
+in the same way, e.g., "thier" => "their" or "teh" => "the".  See
+the information on the
+.IQ auto-case-abbrev
+variable.
+.sp 1
+There are two kinds of abbreviations: mode specific and global.  If
+you define a Mode specific abbreviation in C mode, it will expand only
+in buffers that are in C mode.  This is so you can have the same
+abbreviation expand to different things depending on your context.
+Global abbreviations expand regardless of the major mode of the
+buffer.  The way it works is this: \s-2JOVE\s0 looks first in the mode
+specific table, and then in the global table.  Whichever it finds it
+in first is the one that's used in the expansion.  If it doesn't find
+the word it is left untouched.
+\s-2JOVE\s0 tries to expand words as they are typed, when you type a
+punctuation character or Space or Return.  If you are in Auto Fill
+mode the expansion will be filled as if you typed it yourself.
+.dc "wrap-search" "(variable)"
+If set, searches will "wrap around" the ends of the buffer instead
+of stopping at the bottom or top.  The default is "off".
+.dc "write-files-on-make" "(variable)"
+When set, all modified files will be written out before calling
+make when the
+.IQ compile-it
+command is executed.  The default is "on".
+.dc "write-word-abbrev-file" "Not Bound"
+This writes the currently defined abbreviations to a specified file.
+They can be read back in and automatically defined with
+.IQ read-word-abbrev-file.
+.dc "write-file" "C-X C-W"
+This saves the current buffer to a specified file, and then makes that
+file the default file name for this buffer.  If you specify a file
+that already exists you are asked to confirm over-writing it.
+.dc "write-macros-to-file" "Not Bound"
+This writes the currently defined macros to a specified file.  The
+macros can be read back in with
+.IQ read-macros-from-file
+so you can
+define macros and still use them in other instantiations of \s-2JOVE\s0.
+.dc "write-modified-files" "C-X C-M"
+This saves all the buffers that need saving.  If you supply a numeric
+argument it asks for each buffer whether you really want to save it.
+.dc "write-region" "Not Bound"
+This writes the text in the region to a specified file.  If the file
+already exists you are asked to confirm over-writing it.
+.dc "yank" "C-Y"
+This undoes the last kill command.  That is, it inserts the killed
+text at point.  When you do multiple kill commands in a row, they are
+merged so that yanking them back with "C\-Y" yanks back all of them.
+.dc "yank-pop" "ESC Y"
+This yanks back previous killed text.  \s-2JOVE\s0 has a kill ring on which
+the last 10 kills are stored.
+.IQ Yank
+yanks a copy of the text at the
+front of the ring.  If you want one of the last ten kills you use "ESC
+Y" which rotates the ring so another different entry is now at the
+front.  You can use "ESC Y" only immediately following a "C-Y" or
+another "ESC Y".  If you supply a negative numeric argument the ring
+is rotated the other way.  If you use this command enough times in a
+row you will eventually get back to where you started.  Experiment
+with this.  It's extremely useful.

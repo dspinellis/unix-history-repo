@@ -1,0 +1,307 @@
+.\" Copyright (c) 1993
+.\"     The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)mh.1	5.1 (Berkeley) 6/14/93
+.\"
+.\"	This file is hand tuned from mh.me for 4.4BSD
+.\"
+.Dd June 14, 1993
+.Dt MH 1
+.Os
+.Sh NAME
+.Nm mh
+.Nd Message Handler
+.Sh DESCRIPTION
+.Nm Mh
+is the name of a powerful message handling system.
+Rather then being a single comprehensive program,
+.Nm mh
+consists of a collection of fairly simple 
+single-purpose programs to send, receive, save, 
+and retrieve messages.  The user should refer
+to the \fIUNIX User's Supplementary Documents\fR, document 8 (USD:8).
+.Pp
+Unlike 
+.Xr mail ,
+the standard UNIX mail user interface program,
+.Nm mh
+is not a closed system which must be explicitly run,
+then exited when you wish to return to the shell.
+You may freely intersperse
+.Nm mh
+commands with other shell commands,
+allowing you to read and answer your mail while you have (for example)
+a compilation running,
+or search for a file or run programs as needed to find the answer to
+someone's question before answering their mail.
+.Pp
+The rest of this manual entry is a quick tutorial which will teach you the
+basics of
+.Nm mh .
+You should read the manual entries for the individual programs for complete
+documentation.
+.Pp
+To get started using 
+.Nm mh ,
+put the directory
+.Pa /usr/contrib/mh-6.8/bin
+in your
+.Ev $PATH .
+This is best done in one of the files:
+.Pa \&.profile ,
+.Pa \&.login ,
+or
+.Pa \&.cshrc
+in your home directory.
+(Check the manual entry for the shell you use,
+in case you don't know how to do this.)
+Run the
+.Nm inc
+command.
+If you've never used
+.Nm mh
+before,
+it will create the necessary default files and directories after
+asking you if you wish it to do so.
+.Pp
+.Nm Inc
+moves mail from your system maildrop into your
+.Nm mh
+`+inbox' folder,
+breaking it up into separate files and converting it to
+.Nm mh
+format as it goes.
+It prints one line for each message it processes,
+containing the from field, the subject field
+and as much of the first line of the message as will fit.
+It leaves the first message it processes as your current message.
+You'll need to run
+.Nm inc
+each time you wish to incorporate new mail into your 
+.Nm mh
+file.
+.Pp
+.Nm scan
+prints a list of the messages in your current folder.
+.Pp
+The commands:
+.Nm show ,
+.Nm next ,
+and
+.Nm prev
+are used to read specific messages from the current folder.
+.Nm Show
+displays the current message,
+or a specific message, which may be specified by its number,
+which you pass as an argument to
+.Nm show ,
+.Nm next ,
+and
+.Nm prev
+display, respectively,
+the message numerically after or before the current message.
+In all cases, the message displayed becomes the current message.
+If there is no current message,
+.Nm show
+may be called with an argument, or
+.Nm next
+may be used to advance to the first message.
+.Pp
+.Nm Rmm
+(remove message) deletes the current message.
+It may be called with message numbers passed as arguments,
+to delete specific messages.
+.Pp
+.Nm repl
+is used to respond to the current message (by default).
+It places you in the editor with a prototype response form.
+While you're in the editor,
+you may peruse the item you're responding to by reading the file
+.Va @ .
+After completing your response, type
+.Nm l
+to review it, or
+.Nm s
+to send it.
+.Pp
+.Nm Comp
+allows you to compose a message by putting you in the editor on
+a prototype message form,
+and then lets you send it.
+.Pp
+All the
+.Nm mh
+commands may be run with the single argument: `\-help',
+which causes them to print a list of the arguments they may be invoked with.
+.Pp
+Commands which take a message number as an argument
+.Nm ( scan , show , repl ,
+\&...) also take one of the words:
+.Nm first , prev , cur , next ,
+or
+.Nm last
+to indicate (respectively) the first, previous, current, next, or last
+message in the current folder (assuming they are defined).
+.Pp
+Commands which take a range of message numbers
+.Nm ( rmm , scan , show ,
+\&...)
+also take any of the abbreviations:
+.Bl -tag -width "<num1>\-<num2>XXX"
+.It \fI<num1>\-<num2>\fP
+Indicates all messages in the range <num1>
+to <num2>, inclusive. The range must be nonempty.
+.It \fI<num>:+N\fP
+Up to \fIN\fP messages beginning with message \fInum\fP.
+\fINum\fP may be any of the pre-defined symbols:
+.Nm first , prev , cur , next ,
+or
+.Nm last .
+.It \fI<num>:-N\fP
+Up to \fIN\fP messages ending with) message \fInum\fP.
+\fINum\fP may be any of the pre-defined symbols:
+.Nm first , prev , cur , next ,
+or
+.Nm last .
+.It \fIfirst:N\fP
+The first \fIN\fP messages, if they exist.
+.It \fIprev:N\fP
+The previous \fIN\fP messages, if they exist.
+.It \fInext:N\fP
+The next \fIN\fP messages, if they exist.
+.It \fIlast:N\fP
+The last \fIN\fP messages, if they exist.
+.El
+.Pp
+There are many other possibilities such as creating multiple folders for
+different topics, and automatically refiling messages according to subject,
+source, destination, or content.
+These are beyond the scope of this manual entry.
+.Pp
+Following is a list of all the \fIMH\fR commands:
+.Bl -column mh\-sequenceXXXXXX -offset indent
+.It Xr ali 1 \&	list mail aliases
+.It Xr anno 1 \&	annotate messages
+.It Xr bbc 1 \&	check on BBoards
+.It Xr bboards 1 \&	the UCI BBoards facility
+.It Xr burst 1 \&	explode digests into messages
+.It Xr comp 1 \&	compose a message 
+.It Xr dist 1 \&	redistribute a message to additional addresses
+.It Xr folder 1 \&	set/list current folder/message
+.It Xr folders 1 \&	list all folders
+.It Xr forw 1 \&	forward messages
+.It Xr inc 1 \&	incorporate new mail
+.It Xr mark 1 \&	mark messages
+.It Xr mhl 1 \&	produce formatted listings of MH messages
+.It Xr mhmail 1 \&	send or read mail
+.It Xr mhook 1 \&	MH receive\-mail hooks
+.It Xr mhparam 1 \&	print MH profile components
+.It Xr mhpath 1 \&	print full pathnames of MH messages and folders
+.It Xr msgchk 1 \&	check for messages
+.It Xr msh 1 \&	MH shell (and BBoard reader)
+.It Xr next 1 \&	show the next message
+.It Xr packf 1 \&	compress a folder into a single file
+.It Xr pick 1 \&	select messages by content
+.It Xr prev 1 \&	show the previous message
+.It Xr prompter 1 \&	prompting editor front end
+.It Xr rcvstore 1 \&	incorporate new mail asynchronously
+.It Xr refile 1 \&	file messages in other folders
+.It Xr repl 1 \&	reply to a message
+.It Xr rmf 1 \&	remove folder
+.It Xr rmm 1 \&	remove messages
+.It Xr scan 1 \&	produce a one line per message scan listing
+.It Xr send 1 \&	send a message
+.It Xr show 1 \&	show (list) messages
+.It Xr slocal 1 \&	special local mail delivery
+.It Xr sortm 1 \&	sort messages
+.It Xr vmh 1 \&	visual front\-end to MH
+.It Xr whatnow 1 \&	prompting front\-end for send
+.It Xr whom 1 \&	report to whom a message would go
+.sp 1
+.It Xr mh\-alias 5 \&	alias file for MH message system
+.It Xr mh\-format 5 \&	format file for MH message system
+.It Xr mh\-mail 5 \&	message format for MH message system
+.It Xr mh\-profile 5 \&	user customization for MH message system
+.It Xr mh\-sequence 5 \&	sequence specification for MH message system
+.It Xr ap 8 \&	parse addresses 822\-style
+.It Xr conflict 8 \&	search for alias/password conflicts
+.It Xr dp 8 \&	parse dates 822\-style
+.It Xr fmtdump 8 \&	decode MH format files
+.It Xr install\-mh 8 \&	initialize the MH environment
+.It Xr post 8 \&	deliver a message
+.El
+.Pp
+If problems are encountered with an
+.Nm mh
+program, the problems should be reported to the local maintainers of
+.Nm mh .
+When doing this,
+the name of the program should be reported,
+along with the version information for the program.
+To find out what version of an
+.Nm mh
+program is being run,
+invoke the program with the `\-help' switch.
+In addition to listing the syntax of the command,
+the program will list information pertaining to its version.
+This information includes the version of
+.Nm mh ,
+the host it was generated on,
+and the date the program was loaded.
+A second line of information,
+found on versions of
+.Nm mh
+after #5.380 include
+.Nm mh
+configuration options.
+For example,
+.Bd -literal -offset indent -compact
+version: MH 6.8.1a #8[UCI] (vangogh.CS.Berkeley.EDU)
+	of Sun Jun 13 02:55:52 PDT 1993
+options: [BIND] [BPOP] [BSD42] [BSD43] [BSD44] [DBMPWD] [MHE] [MHRC]
+	[MIME] [MORE='"/usr/bin/more"'] [NNTP] [NTOHLSWAP] [OVERHEAD]
+	[POP] [POP2] [POPSERVICE='"pop3"'] [POSIX] [RPOP] [SENDMTS]
+	[SMTP] [SPRINTFTYPE=int] [SYS5DIR] [TYPESIG=void] [UNISTD]
+	[VSPRINTF] [WAITINT] [WHATNOW] [ZONEINFO]
+.Ed
+The `6.8.1a #8[UCI]' indicates that the program is from the UCI
+.Nm mh
+6.8.1a version of
+.Nm mh .
+The program was generated on the host `vangogh.CS.Berkeley.EDU' on
+`Sun Jun 13 02:55:52 PDT 1993'.
+It's usually a good idea to send the output of the `\-help' switch along
+with your report.
+.Pp
+If there is no local
+.Nm mk
+maintainer, try the address \fBBug-MH\fR.
+If that fails, use the Internet mailbox \fBBug-MH@ICS.UCI.EDU\fR.

@@ -1,0 +1,116 @@
+.\" Copyright (c) 1986, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)ace.4	8.1 (Berkeley) 6/5/93
+.\"
+.Dd June 5, 1993
+.Dt ACE 4 tahoe
+.Os BSD 4.2
+.Sh NAME
+.Nm ace
+.Nd
+.Tn ACC
+10 Mb/s Ethernet interface
+.Sh SYNOPSIS
+.Cd "device ace0 at vba? csr 0xffff0000 flags 0xfff80000 vector acecint acerint"
+.Sh DESCRIPTION
+The
+.Nm ace
+interface provides access to a 10 Mb/s Ethernet network through
+an
+.Tn ACC
+controller.
+.Pp
+The hardware has 32 kilobytes of dual-ported memory on the
+.Tn VERSAbus . 
+This memory
+is used for internal buffering by the board, and the interface code reads
+the buffer contents directly through the
+.Tn VERSAbus .
+The address of this memory is given in the
+.Ar flags
+field
+in the configuration file.
+.Pp
+Each of the host's network addresses
+is specified at boot time with an
+.Dv SIOCSIFADDR
+.Xr ioctl 2 .
+The
+.Nm ace
+interface employs the address resolution protocol described in
+.Xr arp 4
+to dynamically map between Internet and Ethernet addresses on the local
+network.
+.Pp
+The interface normally tries to use a
+.Dq trailer
+encapsulation
+to minimize copying data on input and output.
+The use of trailers is negotiated with
+.Tn ARP .
+This negotiation may be disabled, on a per-interface basis,
+by setting the
+.Dv IFF_NOTRAILERS
+flag with an
+.Dv SIOCSIFFLAGS
+.Xr ioctl .
+.Pp
+The device implements an exponential backoff algorithm
+when notified of a collision on the cable.  This algorithm utilizes
+a table of random numbers setup by the system at boot time.
+The delay is done in the controller.
+.Sh DIAGNOSTICS
+.Bl -diag
+.It "ace%d: stray xmit interrupt, xnct %d."
+An unexpected transmission complete interrupt was received;
+the interrupt is ignored.
+.It "ace%d: can't handle af%d."
+The interface was handed
+a message with addresses formatted in an unsuitable address
+family; the packet was dropped.
+.El
+.Sh SEE ALSO
+.Xr intro 4 ,
+.Xr inet 4 ,
+.Xr arp 4
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.3 tahoe .
+.Sh BUGS
+The hardware is not capable of talking to itself.  The software
+implements local sending and broadcast by sending such packets to the
+loop interface.  This is a kludge.
+.Pp
+The device doesn't autoconfigure its interrupt vector; it is set
+at 0x90 + eight times the unit number.

@@ -1,0 +1,24 @@
+#!/bin/sh -
+#
+# The following files must be copied into the /usr directory
+# on the root filesystem before making the bootstrap root
+# directory for the 4.4BSD distribution. These binaries are
+# needed in configuring the system before the /usr filesystem
+# has been extracted and is available.
+#
+#	@(#)FILESTOCOPY	8.1 (Berkeley) 7/20/93
+#
+DESTDIR=/nbsd
+
+mkdir -p ${DESTDIR}/Busr/bin ${DESTDIR}/Busr/sbin
+cp -p ${DESTDIR}/usr/bin/chgrp ${DESTDIR}/Busr/bin
+cp -p ${DESTDIR}/usr/bin/mt ${DESTDIR}/Busr/bin
+cp -p ${DESTDIR}/usr/bin/passwd ${DESTDIR}/Busr/bin
+cp -p ${DESTDIR}/usr/bin/rsh ${DESTDIR}/Busr/bin
+cp -p ${DESTDIR}/usr/old/bin/tar ${DESTDIR}/Busr/bin
+cp -p ${DESTDIR}/usr/sbin/pwd_mkdb ${DESTDIR}/Busr/sbin
+cd ${DESTDIR}/.
+umount ${DESTDIR}/usr
+rmdir ${DESTDIR}/usr
+mv ${DESTDIR}/Busr ${DESTDIR}/usr
+mount ${DESTDIR}/usr

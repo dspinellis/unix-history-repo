@@ -1,0 +1,41 @@
+#
+#	"@(#)bibinc.publishers	2.5	5/27/93";
+#
+#
+#  publishers
+#
+D NYC New York, N\&Y
+D ACPRESS Academic Press\
+%C NYC
+D ACADEMIC ACPRESS
+D ADDISON Addison Wesley\
+%C Reading, M\&A
+D ANSI American National Standards Institute
+D FREEMAN W. H. Freeman and Company\
+%C San Francisco, CA
+D CSPRESS Computer Science Press\
+%C Woodland Hills, CA
+D DIGITAL Digital Press
+D ELSEVIER American Elsevier
+D ERLBAUM Lawrence Erlbaum Associates\
+%C Hillsdale, NJ
+D IEEEP IEEE Press\
+%C Montvale, NJ
+D GPO U. S. Government Printing Office
+D HOLT Holt, Rinehart, and Winston
+D MGHILL McGraw-Hill\
+%C NYC
+D MCGRAW McGraw-Hill
+D MITP MIT Press\
+%C Cambridge, M\&A
+D NHOLL North-Holland\
+%C NYC
+D PRHALL Prentice Hall\
+%C Englewood Cliffs, NJ
+D PRENTICE PRHALL
+D WILEY John Wiley & Sons\
+%C NYC
+D SPRINGER Springer Verlag
+D SRA Science Research Associates
+D WINTH Winthrop Publishers
+#

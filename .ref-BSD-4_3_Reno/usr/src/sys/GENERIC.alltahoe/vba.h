@@ -1,1 +1,0 @@
-#define NVBA 1

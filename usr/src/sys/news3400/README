@@ -1,0 +1,40 @@
+#	@(#)README	8.1 (Berkeley) 6/10/93
+
+------------------------------------------------------------------------------
+
+This Sony MIPS R3000 based workstation support is done as an activity of
+WIDE research project.  Sony Corporation contributed most device drivers
+and gave us great technical supports.  Kazumasa Utashiro worked mainly
+4.4BSD implementation but that work was based on 4.3BSD-Reno port helped by
+other project members, especially Tadamichi Matsuyama and Hidetoshi Unno.
+
+This version is just a snapshot of developing system and has many
+unimplemented features and bugs.  Please contact utashiro@sra.co.jp if you
+have any comments about this code.  Bugfix will be greatly appreciated.
+
+------------------------------------------------------------------------------
+
+I've been using NWS-3200 laptop machine and NWS-3400 for development.
+3200's LCD display and NWB-253 display board are supported now.
+
+------------------------------------------------------------------------------
+
+Currently GCC is used as a compiler which uses as and ld come with NEWS-OS.
+They should soon be replaced by the latest GAS because it supports BSD
+a.out format for MIPS.
+
+------------------------------------------------------------------------------
+
+Known bugs:
+	- Display driver is slow.
+	- Serial line driver is slow.
+	- Console doesn't accept ^S.
+	- Some problem probably in VM.
+
+------------------------------------------------------------------------------
+
+			Kazumasa Utashiro <utashiro@sra.co.jp>
+			Software Research Associates, Inc.
+			1-1-1 Hirakawa-cho, Chiyoda-ku, Tokyo 102, Japan
+			and
+			WIDE Project

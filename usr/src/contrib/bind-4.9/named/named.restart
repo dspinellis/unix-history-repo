@@ -1,0 +1,7 @@
+#!/bin/sh -
+#
+#	@(#)named.restart	5.2 (Berkeley) 2/5/89
+#	$Id: named.restart,v 4.9.1.1 1993/05/03 00:02:54 vixie Rel $
+#
+kill -9 `cat /etc/named.pid`
+/etc/named 

@@ -1,0 +1,108 @@
+##############################################################################
+#    Instructions to Make, for compilation of ZOT UIP/utility processes
+#
+#	@(MHWARNING)
+# @(#)$Id: zotnetM,v 2.7 1992/10/29 16:25:20 jromine Exp $
+##############################################################################
+
+# The following entries were inserted during MH configuration
+OPTIONS	=	@(MHOPTIONS)
+
+CC	=	@(MHCOMPILER)
+@BEGIN: OPTIM
+CFLAGS	=	$(OPTIONS) -I.
+@END: OPTIM
+@BEGIN: DEBUG
+CFLAGS	=	     $(OPTIONS) -I.
+@END: DEBUG
+LFLAGS	=	-bhu $(OPTIONS) -I.
+
+LIB	=	libzot.a
+LLIB	=	llib-lzotnet
+
+OFILES	=	mts/mts.o mts/lock.o mts/client.o mf/mf.o \
+@BEGIN: MHMTS
+		mf/mmuu.o mf/uumm.o \
+@END: MHMTS
+		bboards/getbbent.o \
+		tws/dtime.o tws/dtimep.o tws/lexstring.o
+
+MAKE	=	make DESTDIR=$(DESTDIR) $(MFLAGS)
+SHELL	=	/bin/sh
+
+DIRS	=	mts bboards tws mf
+
+
+@BEGIN: OPTIM
+##############################################################################
+#	Generation Rules
+##############################################################################
+
+.c.o:;		$(CC) $(CFLAGS) -c $*.c
+@BEGIN: NEWLOAD
+		-ld -x -r $@
+		mv a.out $@
+@END: NEWLOAD
+@BEGIN: OLDLOAD
+		cc -s -o $@
+@END: OLDLOAD
+
+
+@END: OPTIM
+
+.c:;		echo $@
+
+##############################################################################
+#	Generate ZOTnet subroutine library
+##############################################################################
+
+all:		allaux $(LIB)
+
+$(LIB):		$(OFILES)
+		-mv $@ z$@
+@BEGIN: RANLIB
+		ar r $@ $(OFILES); ranlib $@
+@END: RANLIB
+@BEGIN: LORDER
+		ar r $@ `lorder $(OFILES) | tsort`
+@END: LORDER
+		-@ls -l $@
+		-@echo "ZOTnet library built normally"
+
+allaux:;	for d in $(DIRS); do (cd $$d; $(MAKE) all); done
+
+depend:;	for d in $(DIRS); do (cd $$d; $(MAKE) depend); done
+
+lint:;		for d in $(DIRS); do (cd $$d; $(MAKE) lint); done
+
+
+##############################################################################
+#	Installation
+##############################################################################
+
+install:	inst-all clean
+
+inst-all:;	for d in $(DIRS); do (cd $$d; $(MAKE) inst-all); done
+
+tar:;		@for d in $(DIRS); \
+		    do (cd $$d; $(MAKE) TFLAGS="$(TFLAGS)" tar); done
+
+uninstall:;	for d in $(DIRS); do (cd $$d; $(MAKE) uninstall); done
+
+
+##############################################################################
+#	Miscellaneous tasks
+##############################################################################
+
+unconfig:;	-rm -f $(LIB) z$(LIB) _* :* *.o core
+		for d in $(DIRS); do (cd $$d; $(MAKE) unconfig); done
+		-rm -f Makefile
+
+distribution:;	-rm -f $(LIB) z$(LIB) _* :*
+		for d in $(DIRS); do (cd $$d; $(MAKE) distribution); done
+
+clean:;		-rm -f $(LIB) z$(LIB) _* :* *.o core
+		for d in $(DIRS); do (cd $$d; $(MAKE) clean); done
+
+unclean:;	-rm -f z$(LIB) _* :* core
+		for d in $(DIRS); do (cd $$d; $(MAKE) unclean); done

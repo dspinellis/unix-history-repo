@@ -1,0 +1,16 @@
+#
+#	"@(#)bib.hnf	2.3	5/27/93";
+#
+#  Hanson Normal Form
+#
+SAD-2
+CA3lD-2
+AA
+EA
+I bibinc.shortnames
+.so \*(l]/bmac.std
+.de s[   \" start reference
+.nh
+.IP [\\*([F] 2m
+.br
+..

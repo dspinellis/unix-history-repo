@@ -1,0 +1,129 @@
+#	@(#)README	8.1 (Berkeley) 6/9/93
+
+This is the README for version 0.4 of nex/nvi, a freely redistributable
+replacement for the vi/ex text editors.  Please note that this is ALPHA
+software at the time of its release with 4.4BSD, and that it is not yet
+ready for prime time!
+
+New versions of this software will be available by anonymous ftp from
+ftp.cs.berkeley.edu, in the file ucb/4bsd/nvi.tar.Z, or from ftp.uu.net.
+
+This software is derived from software contributed to UC Berkeley by
+Steve Kirkendall, the author of the vi clone elvis.  Without his work,
+this work would have been far more difficult.
+
+Email questions may be addressed to Keith Bostic at bostic@cs.berkeley.edu.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
++ Comments:
+
+This software is alpha software, at best.  I believe that almost all of
+the necessary functionality for ex/vi is in it, but it's definitely not
+ready for prime time.  Code fixes are, of course, very much appreciated,
+but if you don't have time, please send me as much information as you can
+as to how to reproduce the bug, and I'll fix it here.  In particular, the
+screen routines are nasty stuff, and you probably don't want to mess with
+them.
+
+Nvi is mostly 8-bit clean.  This isn't difficult to fix, and was left in
+during initial development to make things easier.  Wide character support
+will be integrated at the same time it is made fully 8-bit clean.
+
++ Major known bugs:
+
+	o Characters input using the 'R' command cannot be erased.
+	o Several options have not been implemented: wrapmargin,
+	  showmatch, remap, and a few others.
+	o Word search (\<\> patterns aren't right).
+	o Nvi uses POSIX 1003.2 basic and extended RE's.  The historic
+	  hacks will be put in soon.
+
+	And, frankly, fairly random other stuff.
+
++ Some of the cool stuff:
+
+	o Split screens; try :split, and ^W to move around.
+	o Practically infinite lines/files; try nvi /vmunix.
+	o Tag stacks; try ^T to return from tagged positions.
+
++ Porting information:
+
+The directory PORT has a old-style Makefile which builds the entire nvi
+distribution.  See it and the file PORT/README for more information.
+
++ A quick tour:
+
+The main directory, nvi, contains some source files for various pieces
+of code that are shared by both ex and vi, mostly logging code or code
+translating line numbers into requests to the dbopen(3) database code.
+It also has the code for adding, deleting, and changing "records" in
+the underlying database.
+
+The nvi/ex directory is the ex source code.  Lots of this code is used by
+vi, however.  Generally, if the functionality is shared by both ex and
+vi, it's in nvi/ex, if it's vi only, it's in nvi/vi.  Files are generally
+named by the command(s) they support, but occasionally with a name that
+describes their functionality.
+
+The nvi/vi directory is the vi source code.
+
+There are a small set of functions that comprise the interface between
+the editor (ex and/or vi) and their screens.  This is intended to make
+it easy to add new screens in the future.  The nvi/sex directory is the
+screen code for ex.  The nvi/svi directory is the curses screen code for
+vi.
+
++ Data structures:
+
+There are three basic data structures in this editor.  The first is a
+single global structure (GS) which contains information common to all
+files and screens.  It's really pretty tiny, and functions more as a
+single place to hang things than anything else.
+
+The second and third structures are the file structures (EXF) and the
+screen structures (SCR).  They contain information theoretically unique
+to a screen or file, respectively.  The GS structure contains linked
+lists of EXF and SCR structures.  The structures can also be classed by
+persistence.  The GS structure never goes away and the SCR structure
+persists over instances of files.
+
+In general, we pass an SCR structure and an EXF structure around to editor
+functions.  The SCR structure is necessary for any routine that wishes to
+talk to the screen, the EXF structure is necessary for any routine that
+wants to modify the file.  The relationship between an SCR structure and
+its underlying EXF structure is not fixed, and although you can translate
+from an SCR to the underlying EXF, it is discouraged.  If this becomes
+too onerous, I suspect I'll just stop passing around the EXF in the future.
+
+The naming is consistent across the program.  (Macros even depend on it,
+so don't try and change it!)  The global structure is "gp", the screen
+structure is "sp", and the file structure is "ep".
+
+A few others data structures:
+
+TEXT	In nvi/cut.h.  This structure describes a portion of a line,
+	and is used by the input routines and as the "line" part of a
+	cut buffer.
+
+CB	In nvi/cut.h.	A cut buffer.  A cut buffer is a place to
+	hang a list of TEXT structures.
+
+MARK	In nvi/mark.h.  A cursor position, consisting of a line number
+	and a column number.
+
+MSG	In nvi/msg.h.  A chain of messages for the user.
+
+SEQ	In nvi/seq.h.  An abbreviation or a map entry.
+
+EXCMDARG
+	In nvi/ex/excmd.h.stub.  The structure that gets passed around
+	to the functions that implement the ex commands.  (The main
+	ex command loop (see nvi/ex/ex.c) builds this up and then passes
+	it to the ex functions.)
+
+VICMDARG
+	In nvi/vi/vcmd.h.  The structure that gets passed around to the
+	functions that implement the vi commands.  (The main vi command
+	loop (see nvi/vi/vi.c) builds this up and then passes it to the
+	vi functions.)

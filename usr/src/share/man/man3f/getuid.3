@@ -1,0 +1,25 @@
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This module is believed to contain source code proprietary to AT&T.
+.\" Use and redistribution is subject to the Berkeley Software License
+.\" Agreement and your Software Agreement with AT&T (Western Electric).
+.\"
+.\"	@(#)getuid.3	8.1 (Berkeley) 6/5/93
+.\"
+.TH GETUID 3F "June 5, 1993"
+.UC 5
+.SH NAME
+getuid, getgid \- get user or group ID of the caller
+.SH SYNOPSIS
+.B integer function getuid()
+.sp 1
+.B integer function getgid()
+.SH DESCRIPTION
+These functions return the real user or group ID of the user
+of the process.
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+getuid(2)

@@ -1,0 +1,165 @@
+.\" Copyright (c) 1980, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)tu.4	8.1 (Berkeley) 6/5/93
+.\"
+.Dd June 5, 1993
+.Dt TU 4 vax
+.Os BSD 4
+.Sh NAME
+.Nm tu
+.Nd
+.Tn VAX-11/730
+and
+.Tn VAX-11/750
+.Tn TU58
+console cassette interface
+.Sh SYNOPSIS
+.Cd "options MRSP"
+(for
+.Tn VAX-11/750 Ns 's
+with an
+.Tn MRSP
+prom)
+.Sh DESCRIPTION
+The
+.Nm tu
+interface provides access to the
+.Tn VAX
+11/730 and 11/750
+.Tn TU58
+console
+cassette drive(s).  
+.Pp
+The interface supports only block
+.Tn I/O
+to the
+.Tn TU58
+cassettes.
+The devices are normally manipulated with the 
+.Xr arff 8
+program using the ``f'' and ``m'' options.
+.Pp
+The device driver is automatically included when a
+system is configured to run on an 11/730 or 11/750.
+.Pp
+The
+.Tn TU58
+on an 11/750 uses the Radial Serial Protocol
+.Pq Tn RSP
+to communicate with the cpu over a serial line.  This 
+protocol is inherently unreliable as it has no flow
+control measures built in.  On an 11/730 the Modified
+Radial Serial Protocol is used.  This protocol incorporates
+flow control measures which insure reliable data transfer
+between the cpu and the device.  Certain 11/750's have
+been modified to use the
+.Tn MRSP
+prom used in the 11/730.
+To reliably use the console
+.Tn TU58
+on an 11/750 under
+.Tn UNIX ,
+the
+.Tn MRSP
+prom is required.  For those 11/750's without
+an
+.Tn MRSP
+prom, an unreliable but often
+useable interface has been developed.
+This interface uses an assembly language ``pseudo-dma'' routine
+to minimize the receiver interrupt service latency.
+To include this code in
+the system, the configuration must
+.Em not
+specify the
+system will run on an 11/730 or use an
+.Tn MRSP
+prom.
+This unfortunately makes it impossible to configure a
+single system which will properly handle
+.Tn TU58 Ns 's
+on both an 11/750
+and an 11/730 (unless both machines have
+.Tn MRSP
+proms).
+.Sh FILES
+.Bl -tag -width /dev/tu0xx -compact
+.It Pa /dev/tu0
+.It Pa /dev/tu1
+(only on a
+.Tn VAX Ns \-11/730)
+.El
+.Sh DIAGNOSTICS
+.Bl -diag
+.It tu%d: no bp, active %d.
+A transmission complete interrupt was received with no outstanding
+.Tn I/O
+request.  This indicates a hardware problem.
+.Pp
+.It "tu%d protocol error, state=%s, op=%x, cnt=%d, block=%d."
+The driver entered an illegal state.  The information printed
+indicates the illegal state, operation currently being executed,
+the
+.Tn I/O
+count, and the block number on the cassette.
+.Pp
+.It "tu%d receive state error, state=%s, byte=%x."
+The driver entered an illegal state in the receiver finite
+state machine.  The state is shown along with the control
+byte of the received packet.
+.Pp
+.It tu%d: read stalled.
+A timer watching the controller detected no interrupt for
+an extended period while an operation was outstanding.
+This usually indicates that one or more receiver interrupts
+were lost and the transfer is restarted (11/750 only).
+.Pp
+.It tu%d: hard error bn%d, pk_mod %o.
+The device returned a status code indicating a hard error. The
+actual error code is shown in octal. No retries are attempted
+by the driver.
+.El
+.Sh SEE ALSO
+.Xr arff 8
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.1 .
+.Sh BUGS
+The
+.Tn VAX Ns \-11/750
+console interface without
+.Tn MRSP
+prom is unuseable
+while the system is multi-user; it should be used only with
+the system running single-user and, even then, with caution.

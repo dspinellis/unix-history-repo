@@ -1,0 +1,87 @@
+.\"	@(MHWARNING)
+.\" @(#)$Id: rcvstore.rf,v 1.7 1992/11/20 00:40:37 jromine Exp $
+.SC RCVSTORE 1
+.NA
+rcvstore \- incorporate new mail asynchronously
+.SY
+@(MHETCPATH)/rcvstore
+\%[+folder]
+\%[\-create] \%[\-nocreate]
+\%[\-sequence\ name\ ...]
+\%[\-public] \%[\-nopublic]
+\%[\-zero] \%[\-nozero]
+\%[\-help]
+.DE
+\fIRcvstore\fR incorporates a message from the standard input
+into an \fIMH\fR folder.
+If `+folder' isn't specified,
+a folder in the user's \fIMH\fR directory will be used, either that
+specified by the \*(lqInbox:\*(rq entry in the user's profile, or
+the folder named \*(lqinbox\*(rq.
+The new message being incorporated is assigned the next highest
+number in the folder.
+If the specified (or default) folder doesn't exist,
+then it will be created if the `\-create' option is specified,
+otherwise \fIrcvstore\fP will exit.
+
+If the user's profile contains a \*(lqMsg\-Protect: nnn\*(rq entry, it
+will be used as the protection on the newly created messages,
+otherwise the \fIMH\fR default of 0644 will be used.
+During all operations on messages,
+this initially assigned protection will
+be preserved for each message, so \fIchmod\fR(1) may be used to set a
+protection on an individual message, and its protection will be
+preserved thereafter.
+
+\fIRcvstore\fR will incorporate anything except zero length messages
+into the user's MH folder.
+
+If the profile entry \*(lqUnseen\-Sequence\*(rq is present and non\-empty,
+then \fIrcvstore\fR will add the newly incorporated message to each
+sequence named by the profile entry.
+This is similar to the \*(lqPrevious\-Sequence\*(rq profile entry supported
+by all \fIMH\fR commands which take `msgs' or `msg' arguments.
+Note that \fIrcvstore\fR will not zero each sequence prior to adding messages.
+
+Furthermore,
+the incoming messages may be added to user-defined sequences as
+they arrive by appropriate use of the `\-sequence' option.
+As with \fIpick\fP,
+use of the `\-zero' and `\-nozero' switches can also be used to zero
+old sequences or not.
+Similarly,
+use of the `\-public' and `\-nopublic switches
+may be used to force additions to public and private sequences.
+.Fi
+^$HOME/\&.mh\(ruprofile~^The user profile
+.Pr
+^Path:~^To determine the user's MH directory
+.Ps
+^Folder\-Protect:~^To set mode when creating a new folder
+.Ps
+^Inbox:~^To find the default inbox
+.Ps
+^Msg\-Protect:~^To set mode when creating a new message
+.Ps
+^Unseen\-Sequence:~^To name sequences denoting unseen messages
+.Sa
+inc(1), pick(1), mh\-mail(5)
+.De
+`+folder' defaults to \*(lqinbox\*(rq
+.Ds
+`\-create'
+.Ds
+`\-nopublic' if the folder is read\-only, `\-public' otherwise
+.Ds
+`\-nozero'
+.Co
+No context changes will be attempted,
+with the exception of sequence manipulation.
+.Bu
+If you use the \*(lqUnseen\-Sequence\*(rq profile entry,
+\fIrcvstore\fP could try to update the context while another
+\fIMH\fP process is also trying to do so.
+This can cause the context to become corrupted.
+To avoid this, do not use \fIrcvstore\fP
+if you use the \*(lqUnseen\-Sequence\*(rq profile entry.
+.En

@@ -1,0 +1,235 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"	@(#)MAKEDEV.8	8.1 (Berkeley) 6/5/93
+.\"
+.TH MAKEDEV 8 "June 5, 1993"
+.UC 7
+.SH NAME
+MAKEDEV \- create system and device special files
+.SH SYNOPSIS
+MAKEDEV name ...
+.SH DESCRIPTION
+The shell script
+.IR MAKEDEV ,
+found in the ``/dev'' directory, is used to create the common special
+files.
+See
+.IR special (8)
+for a more complete discussion of special files.
+.PP
+.I MAKEDEV
+takes any number of device names as arguments, where the names are
+the common abbreviation for the device.
+There are two special devices, ``std'' and ``local''.
+The former creates the standard devices for the architecture.
+The latter is for devices specific to the local site, and
+executes the shell file ``MAKEDEV.local''.
+.PP
+The VAX supports the following devices.
+Where a device name is followed by a hash sign (``#''), the hash sign
+must be replaced by a unit number.
+.TP 10
+std
+the standard devices (console, crl, csa1, csa2, drum, fd/*, floppy,
+kUmem, klog, kmem, mem, null, stderr, stdin, stdout, tty, tu0, tu1)
+.br
+.ns
+.TP 10
+local
+configuration specific devices
+.br
+.ns
+.TP 10
+ad#
+unibus interface to data translation a/d converter
+.br
+.ns
+.TP 10
+ct#
+unibus parallel interface to CAT typesetter
+.br
+.ns
+.TP 10
+dh#
+unibus dh11 and emulations (e.g. Able dmax, Emulex cs-11)
+.br
+.ns
+.TP 10
+dhu#
+unibus dhu11
+.br
+.ns
+.TP 10
+dmf#
+unibus dmf32
+.br
+.ns
+.TP 10
+dmz#
+unibus dmz32
+.br
+.ns
+.TP 10
+dn#
+unibus dn11 and emulations (e.g. Able Quadracall)
+.br
+.ns
+.TP 10
+dz#
+unibus dz11 and dz32
+.br
+.ns
+.TP 10
+hk#
+unibus rk06 and rk07
+.br
+.ns
+.TP 10
+hp#
+massbus rm??
+.br
+.ns
+.TP 10
+ht#
+massbus tm03 & tu??
+.br
+.ns
+.TP 10
+ik#
+unibus interface to ikonas frame buffer
+.br
+.ns
+.TP 10
+kra#
+bi kdb50 w/ ra??
+.br
+.ns
+.TP 10
+lp#
+unibus lp11 parallel interface
+.br
+.ns
+.TP 10
+mt#
+massbus tu78
+.br
+.ns
+.TP 10
+np#
+unibus ethernet co-processor interface, for downloading.
+.br
+.ns
+.TP 10
+ps#
+unibus interface to e&s picture system 2
+.br
+.ns
+.TP 10
+pty#
+set of 16 master and slave pseudo terminals
+.br
+.ns
+.TP 10
+qv#
+qvss (microvax) display
+.br
+.ns
+.TP 10
+ra#
+unibus uda50 w/ ra??
+.br
+.ns
+.TP 10
+rb#
+730 idc w/ rb80 and/or rb02
+.br
+.ns
+.TP 10
+rl#
+unibus rl02
+.br
+.ns
+.TP 10
+rx#
+unibus rx211 floppy disk 
+.br
+.ns
+.TP 10
+tm#
+unibus tm11 & te10 emulations (e.g. Emulex tc-11)
+.br
+.ns
+.TP
+tms#
+unibus/qbus TMSCP (e.g. TU81, TK50)
+.br
+.ns
+.TP 10
+ts#
+unibus ts11
+.br
+.ns
+.TP 10
+ttyv0
+qvss (microvax) display reserved pty
+.br
+.ns
+.TP 10
+up#
+other unibus devices (e.g. on Emulex sc-21v controller)
+.br
+.ns
+.TP 10
+ut#
+unibus tu45 emulations (e.g.si 9700)
+.br
+.ns
+.TP 10
+uu#
+tu58 cassettes on dl11 controller
+.br
+.ns
+.TP 10
+va#
+unibus varian parallel interface
+.br
+.ns
+.TP 10
+vp#
+unibus versatec parallel interface
+.SH FILES
+/dev		The special file directory.
+.SH SEE ALSO
+.IR mknod (1), 
+.IR intro (4),
+.IR config (8),
+.IR special (8)

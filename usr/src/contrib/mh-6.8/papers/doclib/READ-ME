@@ -1,0 +1,39 @@
+@(#)$Id: READ-ME,v 1.2 1992/02/13 18:26:08 jromine Exp $
+
+This directory contains the TeX style and macro files necessary to
+typset the following documents:
+
+mh4		Changes to The Rand MH Message Handling System: MH.4
+mh5		Changes to The Rand MH Message Handling System: MH.5
+realwork	MH.5: How to process 200 messages a day ...
+bboards		The Rand MH Message Handling System: The UCI BBoards Facility
+tutorial	The Rand MH Message Handling System: Tutorial
+multifarious	MH: A Multifarious User Agent
+trusted		Design of the TTI Prototype Trusted Mail Agent
+
+These documents were originally designed to be typset with the AM font
+family using UCI PhDTeX, which was AmSTeX with the UCI diss.sty style
+preloaded.  Since (not surprisingly) few sites had UCI PhDTeX, diss.sty
+was included with the documents.
+
+In the intervening years, AmSTeX has evolved and few sites are still
+using the AM font family.  Although some of these documents are
+now outdated, some sites may still want to generate and print them.
+For this reason, this directory contains all files necessary to typeset
+these documents using plain TeX (as of Version 2.991).
+
+The following newer documents are typset using LaTeX; the needed style
+and macro files are present in each directory:
+
+beginners	MH for Beginners
+mh4mm		MH for MM Users
+mh6		Changes to The Rand MH Message Handling System: MH.6
+mh6.5		Changes to The Rand MH 
+			Message Handling System: MH #6.5 for 4.3BSD UNIX
+mznet		MZnet:  Mail Service for Personal Micro-Computer Systems
+
+Updating the older documents to use LaTeX would be possible but tedious,
+especially considering how outdated most of the documents are.
+
+
+					John Romine	1/31/90

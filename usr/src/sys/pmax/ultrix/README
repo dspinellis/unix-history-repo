@@ -1,0 +1,7 @@
+#	@(#)README	8.1 (Berkeley) 6/10/93
+
+This directory contains files that were used to provide binary
+compatibility with ULTRIX. They were used to bootstrap the
+system before the gcc tools were fully ported to mips. They
+haven't been used since so the code likely to not work as is.
+This is just a starting point if you need ULTRIX compatibility.

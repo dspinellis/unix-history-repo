@@ -1,0 +1,138 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)diskless_setup.8	5.2 (Berkeley) 01/21/92
+.\"
+.TH DISKLESS_SETUP 8 "January 21, 1992"
+.UC 7
+.SH NAME
+diskless_setup \- set up a server for diskless/dataless clients
+.SH SYNOPSIS
+.B /sbin/diskless_setup
+.B \-l
+interface_name
+.B \-r
+client_rootdir
+[
+.B \-o
+]
+[
+.B \-s
+swapfile_size
+]
+[
+.B \-h
+client_addr
+]
+[
+.B \-m
+client_netmask
+]
+[
+.B \-a
+server_addr
+]
+[
+.B \-g
+gateway
+]
+[
+.B \-x
+vmunix_name:offset
+]
+.SH DESCRIPTION
+.I Diskless_setup
+sets up files on a server to handle a diskless or dataless client workstation.
+Based on the arguments, it fills in all the fields of an nfs_diskless structure
+for that client and saves it in either a separate file or in the "vmunix"
+executable image for that client at the appropriate byte offset.
+See
+.IR diskless (8)
+for an overview of running diskless or dataless clients.
+.IP "\-l"
+The name of the network interface to be configured on the client at boot time
+so that it can communicate with this server. (eg. le0)
+.IP "\-r"
+The pathname of the root directory of the root file system for this client.
+.IP "\-o"
+Write the nfs_diskless structure to standard out so it can be piped to another
+process in a shell script.
+.IP "\-s"
+This client is to run diskless (ie. swapping to this server), so create a
+swapfile of \fIsize\fR 512 byte blocks for this client.
+.IP "\-h"
+The internet address for the client's net interface specified with \-l.
+(The default is the first address returned by
+.IR gethostbyname (3)
+for this client host.)
+.IP "\-m"
+The subnet mask for the client's net interface specified with \-l.
+(The default value is determined by the interface's address class.)
+.IP "\-a"
+The internet address of this server.
+(The default is the first address returned by
+.IR gethostbyname (3)
+for this server.)
+.IP "\-g"
+The default gateway for the client to use to get to this server. This should
+only be specified if the client is not on the same LAN as the server.
+(For performance reasons, this should be avoided whereever possible.)
+.IP "\-x"
+Write the nfs_diskless data structure into the "vmunix" file specified at the
+specified byte offset instead of a separate file. The executable file and byte
+offset are specified separated by a colon. (eg. vmunix.pmax:654322)
+.SH
+Examples
+.sp
+diskless_setup -l le0 -r /diskless/pmax_root blondie
+.sp
+Setup the client "blondie" as a dataless workstation (ie. swapping locally)
+communicating with this server via. "le0" and using the root file system
+at /diskless/pmax_root. Blondie is attached to the same LAN as this server
+and the first internet addresses returned by
+.IR gethostbyname (3)
+are appropriate for both the client and server addresses.
+.sp
+diskless_setup -l wd0 -r /diskless/i386_root -h 131.104.48.77 -m 255.255.255.0
+.br
+	-x vmunix.freddy:345672 freddy
+.sp
+Setup the client "freddy" as a dataless workstation communicating with the
+server via. "wd0" and using the root file system at /diskless/i386_root.
+Freddy's internet address for "wd0" is 131.104.48.77 with a subnet mask
+of 255.255.255.0. The filled in nfs_diskless structure is to be written
+into freddy's executable kernel called "vmunix.freddy" at byte offset
+345672. (the byte offset is normally found using
+.IR diskless_offset (8)
+)
+.sp
+diskless_setup -l qe0 -r /diskless/uvax_root -s 20000 -a 131.104.48.8 bob
+.sp
+Setup the client "bob" as a diskless (ie. swapping to the server)
+workstation ccommunicating with this server via. "qe0" and using a root
+file system at /diskless/uvax_root.
+The swap file on this server is 10Mbytes and the address w.r.t. "bob"
+of this server is 131.104.48.8.
+.SH FILES
+/var/diskless/setup.<client_hostname>
+/var/diskless/swapfiles/swap
+.SH SEE ALSO
+.IR diskless (8)
+.IR diskless_offset (8)
+.IR diskless_boot (3)
+.IR diskless_boot (5)
+.SH BUGS
+There is no capability of setting up diskless clients with remote swapping
+on a separate server than the root file system.

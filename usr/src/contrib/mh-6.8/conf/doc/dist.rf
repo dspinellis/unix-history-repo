@@ -1,0 +1,147 @@
+.\"	@(MHWARNING)
+.\" @(#)$Id: dist.rf,v 1.5 90/04/05 15:12:30 sources Exp $
+.SC DIST 1
+.NA
+dist \- redistribute a message to additional addresses
+.SY
+dist
+\%[+folder] \%[msg] 
+\%[\-annotate] \%[\-noannotate] 
+\%[\-draftfolder\ +folder] \%[\-draftmessage\ msg] \%[\-nodraftfolder]
+\%[\-editor\ editor] \%[\-noedit]
+\%[\-form\ formfile] 
+\%[\-inplace] \%[\-noinplace] 
+\%[\-whatnowproc\ program] \%[\-nowhatnowproc]
+\%[\-help]
+.DE
+\fIDist\fR is similar to \fIforw\fR.
+It prepares the specified
+message for redistribution to addresses that (presumably) are
+not on the original address list.
+
+The default message form contains the following elements:
+
+.nf
+.in +.5i
+.ne 10
+.eo
+.so @(MHETCPATH)/distcomps
+.ec
+.in -.5i
+.fi
+
+If the file named \*(lqdistcomps\*(rq exists in the user's MH directory,
+it will be used instead of this form.
+In either case, the file specified by `\-form\ formfile' will be
+used if given.
+The form used will be prepended to the message being resent.
+
+If the draft already exists,
+\fIdist\fR will ask you as to the disposition of the draft.
+A reply of \fBquit\fR will abort \fIdist\fR, leaving the draft intact;
+\fBreplace\fR will replace the existing draft with a blank skeleton;
+and \fBlist\fR will display the draft.
+
+Only those addresses in \*(lqResent\-To:\*(rq, \*(lqResent\-cc:\*(rq, and
+\*(lqResent\-Bcc:\*(rq will be sent.
+Also, a \*(lqResent\-Fcc:\ folder\*(rq will be honored (see \fIsend\fR\0(1)).
+Note that with \fIdist\fR, the draft should contain only 
+\*(lqResent\-xxx:\*(rq fields and no body.
+The headers and the body of the original message are copied to the draft when
+the message is sent.
+Use care in constructing the headers for the redistribution.
+
+If the `\-annotate' switch is given, the  message being
+distributed will be annotated with the lines:
+
+     Resent:\ date
+     Resent:\ addrs
+
+where each address list contains as many lines as required.
+This annotation
+will be done only if the message is sent directly from \fIdist\fR.
+If the message is not sent immediately from \fIdist\fR,
+\*(lqcomp \-use\*(rq may be used to re\-edit and send the constructed message,
+but the annotations won't take place.
+The '\-inplace' switch causes annotation to
+be done in place in order to preserve links to the annotated message.
+
+See \fIcomp\fR\0(1) for a description of the `\-editor' and `\-noedit'
+switches.
+Note that while in the editor,
+the message being resent is available through a link named \*(lq@\*(rq
+(assuming the default \fIwhatnowproc\fR\0).
+In addition, the actual pathname of the message is stored in the envariable
+\fB$editalt\fR,
+and the pathname of the folder containing the message is stored in the
+envariable \fB$mhfolder\fR.
+
+The `\-draftfolder\ +folder' and `\-draftmessage\ msg' switches invoke the
+\fIMH\fR draft folder facility.
+This is an advanced (and highly useful) feature.
+Consult the \fBAdvanced Features\fR section of the \fIMH\fR manual for more
+information.
+
+Upon exiting from the editor,
+\fIdist\fR will invoke the \fIwhatnow\fR program.
+See \fIwhatnow\fR\0(1) for a discussion of available options.
+The invocation of this program can be inhibited by using the `\-nowhatnowproc'
+switch.
+(In truth of fact,
+it is the \fIwhatnow\fR program which starts the initial edit.
+Hence, `\-nowhatnowproc' will prevent any edit from occurring.)
+.Fi
+^@(MHETCPATH)/distcomps~^The message skeleton
+^or <mh\-dir>/distcomps~^Rather than the standard skeleton
+^$HOME/\&.mh\(ruprofile~^The user profile
+^<mh\-dir>/draft~^The draft file
+.Pr
+^Path:~^To determine the user's MH directory
+.Ps
+^Current\-Folder:~^To find the default current folder
+.Ps
+^Draft\-Folder:~^To find the default draft\-folder
+.Ps
+^Editor:~^To override the default editor
+.Ps
+^fileproc:~^Program to refile the message
+.Ps
+^whatnowproc:~^Program to ask the \*(lqWhat now?\*(rq questions
+.Sa
+comp(1), forw(1), repl(1), send(1), whatnow(1)
+.De
+`+folder' defaults to the current folder
+.Ds
+`msg' defaults to cur
+.Ds
+`\-noannotate'
+.Ds
+`\-nodraftfolder'
+.Ds
+`\-noinplace'
+.Co
+If a folder is given, it will become the current folder.
+The message distributed will become the current message.
+.Hi
+\fIDist\fR originally used headers of the form \*(lqDistribute\-xxx:\*(rq
+instead of \*(lqResent\-xxx:\*(rq.  In order to conform with the
+ARPA Internet standard, RFC\-822,
+the \*(lqResent\-xxx:\*(rq form is now used.
+\fIDist\fR will recognize \*(lqDistribute\-xxx:\*(rq type headers and 
+automatically convert them to \*(lqResent\-xxx:\*(rq.
+.Bu
+\fIDist\fR does not \fIrigorously\fR check the message being
+distributed for adherence to the transport standard,
+but \fIpost\fR called by \fIsend\fR does.
+The \fIpost\fR program will balk (and rightly so) at poorly formatted messages,
+and \fIdist\fR won't correct things for you.
+
+If \fIwhatnowproc\fR is \fIwhatnow\fR,
+then \fIdist\fR uses a built\-in \fIwhatnow\fR,
+it does not actually run the \fIwhatnow\fR program.
+Hence, if you define your own \fIwhatnowproc\fR,
+don't call it \fIwhatnow\fR since \fIdist\fR won't run it.
+
+If your current working directory is not writable,
+the link named \*(lq@\*(rq is not available.
+.En

@@ -1,0 +1,243 @@
+.\" Copyright (c) 1986, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)vd.4	8.1 (Berkeley) 6/5/93
+.\"
+.Dd June 5, 1993
+.Dt VD 4 tahoe
+.Os
+.Sh NAME
+.Nm vd
+.Nd
+.Tn VERSAbus
+storage module controller/drives
+.Sh SYNOPSIS
+.Cd "controller vd0 at vba? csr 0xffff2000 vector vdintr"
+.Cd "disk dk0 at vd0 drive 0"
+.Sh DESCRIPTION
+This is a generic
+.Tn VERSAbus
+storage module disk driver for the
+Computer Consoles
+.Tn SMD
+.Pq Tn VDDC
+and
+.Tn SMD-E
+disk controllers.
+.Pp
+The
+.Nm vd
+driver is a fairly typical block
+.Tn I/O
+device, except
+raw block
+.Tn I/O
+counts must be a multiple of 1024 bytes,
+whether the actual sector size is 512 or 1024 bytes.
+Likewise,
+.Xr seek
+calls should specify a multiple of 1024 bytes.
+See
+.Xr physio 4 .
+.Pp
+The first sector of each disk contains a disk label
+containing geometry information and partition layouts (see
+.Xr disklabel 5 ) .
+This sector is normally write-protected, and disk-to-disk copies should
+avoid copying this sector.
+The label may be updated with
+.Xr disklabel 8 ,
+which can also be used to write-enable and write-disable the sector.
+.Sh DISK SUPPORT
+During autoconfiguration,
+as well as when a drive is opened after all partitions are closed,
+the first sector of the drive is examined for a disk label.
+If a label is found, the geometry of the drive and the partition tables
+are taken from it.
+If no label is found,
+The driver checks for a disk label on sector 0 of each drive
+during autoconfiguration.
+If no label is found,
+the driver tries to access the last track on each drive
+to determine the type of drive attached.
+The driver has default partition tables for
+seven different drives:
+.Tn CDC FSD
+(160
+.Tn MB ) ,
+.Tn CDC
+9766 (300
+.Tn MB ) ,
+.Tn CDC XFSD
+(340
+.Tn MB ) ,
+.Tn CDC
+515
+.Tn MB ,
+Fujitsu 360
+.Tn MB ,
+Fujitsu Eagle (440
+.Tn MB ) ,
+and Maxtor 340
+.Tn MB .
+If the drive is not recognized, a single small partition is created
+to allow a label to be written.
+.Pp
+The partition tables in the disk label and the
+.Pa disktab
+file specify partition offsets and sizes in sectors, which are 512 bytes
+on
+.Tn SMD
+drives and 1024 bytes on 5 1/4"
+.Tn ESDI
+drives.
+By convention,
+the ?a partition is normally used for the root file system or other small
+file system,
+and the ?b partition is used as a paging area.
+The ?c partition maps the rest of the pack,
+except the last 5 cylinders which are reserved for bad sector forwarding,
+and diagnostic use.
+.Sh FILES
+.Bl -tag -width /dev/dk[0-7][a-f]xx -compact
+.It Pa /dev/dk[0-7][a-f]
+dk block files
+.It Pa /dev/rdk[0-7][a-f]
+dk raw files
+.El
+.Sh DIAGNOSTICS
+.Bl -diag
+.It vd%d: %s controller.
+This message is printed during autoconfiguration to identify
+the type of controller, either
+.Tn VDDC
+or
+.Tn SMDE .
+.Pp
+.It vd%d: init error.
+During autoconfiguration the controller failed to respond to
+an initialize command.
+.Pp
+.It vd%d: diagnostic error.
+During autoconfiguration the controller failed  to respond to
+a diagnostic command.
+.Pp
+.It dk%d: unknown drive type.
+The system was unable to identify the specified drive as
+one of the drives described above; the drive will not be
+configured.
+.Pp
+.It vd%d: drive %d: config error.
+The system encountered a hard error when it tried to configure
+a drive during autoconfiguration.
+.Pp
+.It vd%d: starting drives, wait ... .
+This message indicates the system is about to tell the
+controller to ``start'' the drives attached to  it.
+.Pp
+.It dk%d: %s <ntrak %d, ncyl %d, nsec %d>.
+For each drive recognized during autoconfiguration the system
+prints a message of this form.  The drive type is displayed
+as well as the geometry: tracks/cylinder, cylinders, and sectors/track.
+.Pp
+.It vd%d: lost interrupt.
+The system failed to receive an interrupt from the controller after
+submitting a request.
+The system attempts to abort the current request and simulate an
+interrupt to unwedge the controller.
+During processing of the simulated interrupt, a controller error
+will be reported as described below.
+.Pp
+.It vd%d: stray interrupt.
+The system received an unexpected interrupt; it is ignored.
+.Pp
+.It dk%d%c: write locked.
+An attempt was made to write to a drive that is physically write-protected.
+.Pp
+.It "dk%d%c: controller err %sing fsbn %d [of %d-%d] (dk%d bn %d cn %d tn %d sn %d) status %b ecode %x; resetting controller... retrying."
+.br
+.It "dk%d%c: drive err %sing fsbn %d [of %d-%d] (dk%d bn %d cn %d tn %d sn %d) status %b ecode %x; resetting drive... retrying."
+An attempted transfer resulted in a controller or drive error.
+The controller or drive is reset, and the transfer is attempted
+a second time.
+.Pp
+.It "dk%d%c: hard error %sing fsbn %d [of %d-%d] (dk%d bn %d cn %d tn %d sn %d) status %b ecode %x."
+An unrecoverable error was encountered.  The filesystem block number reported
+is a logical sector number on the indicated partition;
+it is expressed using 1024-byte sectors.
+If the transfer involved multiple blocks, the block range is printed as well.
+The parenthesized fields list the actual disk sector number
+relative to the beginning of the drive
+(in 512- or 1024-byte blocks, as appropriate),
+as well as the cylinder, track and sector number of the block.
+The error status field of the device control
+block is printed in hexadecimal followed by a symbolic description.
+If this is an
+.Tn SMDE
+controller, the error code is also displayed.
+.Pp
+.It "dk%d%c: soft error %sing fsbn %d [of %d-%d] (dk%d bn %d cn %d tn %d sn %d) status %b ecode %x."
+A recoverable error was detected by the controller.
+The fields are interpreted in the same way as those for hard errors.
+.Pp
+.It "dk%d%c: soft ecc %sing fsbn %d [of %d-%d] (dk%d bn %d cn %d tn %d sn %d)."
+A recoverable
+.Tn ECC
+error was detected and corrected by the controller
+during the indicated transfer.
+.Pp
+.It vd%d: drive %d: couldn't reset.
+The system was unable to reconfigure a drive during a controller reset.
+.Pp
+.It vd%d: controller timeout.
+The controller failed to complete an operation within a reasonable
+time.  This message is usually followed by another message indicating
+what operation timed out; e.g. ``during config'' for a configuration
+command.
+.El
+.Sh SEE ALSO
+.Xr disklabel 5 ,
+.Xr disklabel 8
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.3 tahoe .
+.Sh BUGS
+Writes
+scribble on the tail of incomplete blocks.
+.Pp
+The system should use real disk sector numbers internally,
+instead of assuming 1024-byte sectors;
+errors should report filesystem block numbers using the actual sector size.
+Raw
+.Tn I/O
+should be permitted on any sector boundary.

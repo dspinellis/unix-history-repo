@@ -1,0 +1,46 @@
+.\"	@(MHWARNING)
+.\" @(#)$Id: bboards8.rf,v 1.5 90/04/05 15:11:57 sources Exp $
+.SC BBOARDS 8
+.NA
+bboards \- BBoards channel/mailer
+.SY
+/usr/mmdf/chans/bboards
+fd1 fd2 \%[y]
+
+.ti .5i
+@(MHETCPATH)/sbboards 
+bboard\ ...
+
+.ti .5i
+@(MHETCPATH)/sbboards 
+file maildrop directory bboards.bboard
+.DE
+For \fIMMDF\fR, the BBoards channel delivers mail to the BBoards system.
+For \fISendMail\fR and stand\-alone \fIMH\fR, the SBBoards mailer performs
+this task.
+
+For each address given,
+these programs consult the \fIbboards\fR\0(5) file to ascertain information
+about the BBoard named by the address.
+The programs then perform local delivery, if appropriate.
+After that, 
+with the exception of \fIsbboards\fR running under stand\-alone \fIMH\fR,
+the programs perform redistribution, if appropriate.
+
+For redistribution,
+the return address is set to be the request address at the local host,
+so bad addresses down the line return to the nearest point of authority.
+If any failures occur during redistribution,
+a mail message is sent to the local request address.
+.Fi
+^@(MHETCPATH)/mtstailor~^tailor file
+^@(BBHOME)/BBoards~^BBoards database
+.Pr
+None
+.Sa
+bboards(5), bbaka(8)
+.De
+None
+.Co
+None
+.En

@@ -1,0 +1,96 @@
+.\"	@(MHWARNING)
+.\" @(#)$Id: mhook.rf,v 1.15 1992/10/29 22:03:44 jromine Exp $
+.SC MHOOK 1
+.NA
+mhook, rcvdist, rcvpack, rcvtty  \- MH receive-mail hooks
+.SY
+.na
+.ti .5i
+@(MHETCPATH)/rcvdist
+\%[\-form\ formfile]
+\%[switches\ for\ \fIpostproc\fR]
+address\ ...
+\%[\-help]
+
+.ti .5i
+@(MHETCPATH)/rcvpack
+file
+\%[\-help]
+
+.ti .5i
+@(MHETCPATH)/rcvtty
+\%[command]
+\%[\-form\ formatfile]
+\%[\-format\ string]
+\%[\-bell] \%[\-nobell]
+\%[\-newline] \%[\-nonewline]
+\%[\-biff]
+\%[\-help]
+.ad
+.DE
+A receive\-mail hook is a program that is run whenever you receive a
+mail message.
+You do \fBNOT\fR invoke the hook yourself,
+rather the hook is invoked on your behalf by your
+system's Message Transport Agent.  See \fIslocal\fP\0(1)
+for details on how to activate receive\-mail hooks on your system.
+
+Four programs are currently available as part of \fIMH\fP,
+\fIrcvdist\fR (redistribute incoming messages to additional recipients),
+\fIrcvpack\fR (save incoming messages in a \fIpackf\fR'd file),
+and \fIrcvtty\fR (notify user of incoming messages).
+The fourth program,
+\fIrcvstore\fR\0(1) is described separately.
+They all reside in the \fI@(MHETCPATH)/\fR directory.
+
+The \fIrcvdist\fR program will resend a copy of the message to all of the
+addresses listed on its command line.
+It uses the format string facility described in \fImh\-format\fR\0(5).
+
+The \fIrcvpack\fR program will append a copy of the message to the file listed
+on its command line.
+Its use is obsoleted by the \*(lqfile\*(rq action of \fIslocal\fR.
+
+The \fIrcvtty\fR program executes the named file with the message as its
+standard input,
+and writes the resulting output 
+on your terminal.
+
+If no file is specified, or is bogus, etc.,
+then \fIrcvtty\fR will instead write a one\-line scan listing.
+Either the `\-form\ formatfile' or `\-format\ string' option may be used 
+to override the default output format (see \fImh\-format\fP\0(5)).
+A newline is output before the 
+message output, and the terminal bell is rung
+after the output.  The `\-nonewline' and `\-nobell' options
+will inhibit these functions.
+
+In addition to the standard \fImh\-format\fR\0(5) escapes,
+\fIrcvtty\fR also recognizes the following additional \fIcomponent\fR escapes:
+.sp 1
+.ne 5
+.nf
+.ta \w'Dtimenow  'u +\w'Returns  'u
+\fIEscape\fR	\fIReturns\fR	\fIDescription\fR
+body	string	the (compressed) first part of the body
+dtimenow	date	the current date
+folder	string	the name of the current folder
+.re
+.fi
+
+Normally, \fIrcvtty\fP obeys
+write permission as granted by \fImesg\fP\0(1).
+With the `\-biff' option, \fIrcvtty\fP will obey the notification
+status set by \fIbiff\fP\0(1) instead.
+If the terminal access daemon (TTYD) is available on your system,
+then \fIrcvtty\fR will give its output to the daemon for output
+instead of writing on the user's terminal.
+.Fi
+^@(MHETCPATH)/mtstailor~^tailor file
+^$HOME/\&.maildelivery~^The file controlling local delivery
+^@(MHETCPATH)/maildelivery~^Rather than the standard file
+.Sa
+rcvstore (1), mh\-format(5), slocal(1)
+.Bu
+Only two return codes are meaningful, others should be.
+.En

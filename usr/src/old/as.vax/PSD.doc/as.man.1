@@ -1,0 +1,126 @@
+.\" Copyright (c) 1982 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"	@(#)as.man.1	5.1 (Berkeley) 4/17/91
+.\"
+.TH AS 1 "April 17, 1991"
+.UC 4
+.SH NAME
+as \- VAX-11 assembler
+.SH SYNOPSIS
+.B as
+[
+.B \-d124
+] [
+.B \-L
+] [
+.B \-W
+] [
+.B \-V
+] [
+.B \-J
+] [
+.B \-R
+] [
+.B \-t
+directory
+] [
+.B \-o
+objfile ] [ name ... ]
+.SH DESCRIPTION
+.I As
+assembles the named files, or the standard input if no file name is specified.
+The available flags are:
+.TP
+.B \-d
+Specifies the number of bytes to be assembled for offsets
+which involve forward or external references, and which have sizes unspecified
+in the assembly language.
+The default is 
+.B \-d4.
+.TP
+.B \-L
+Save defined labels beginning with a `L', which are normally discarded
+to save space in the resultant symbol table.
+The compilers generate such temporary labels.
+.TP
+.B \-V
+Use virtual memory for some intermediate storage,
+rather than a temporary file.
+.TP
+.B \-W
+Do not complain about errors.
+.TP
+.B \-J
+Use long branches to resolve jumps when byte-displacement branches are
+insufficient.  This must be used when a compiler-generated assembly contains
+branches of more than 32k bytes.
+.TP
+.B \-R
+Make initialized data segments read-only, by concatenating them to
+the text segments.
+This obviates the need to run editor scripts on assembly
+code to make initialized data read-only and shared.
+.TP
+.B \-t
+Specifies a directory to receive the temporary file, other than
+the default /tmp.
+.PP
+All undefined symbols in the assembly
+are treated as global.
+.PP
+The output of the assembly is left on the file
+.I objfile;
+if that is omitted,
+.I a.out
+is used.
+.SH FILES
+.ta 1.5i
+/tmp/as\(**	default temporary files
+.br
+a.out		default resultant object file
+.SH "SEE ALSO"
+ld(1),
+nm(1),
+adb(1),
+dbx(1),
+a.out(5)
+.br
+Auxiliary documentation
+.I Assembler Reference Manual.
+.SH AUTHORS
+John F. Reiser
+.br
+Robert R. Henry
+.SH BUGS
+.B \-J
+should be eliminated; the assembler should automatically choose among
+byte, word and long branches.

@@ -1,0 +1,88 @@
+.\"	@(MHWARNING)
+.\" @(#)$Id: wmh.rf,v 1.5 90/04/05 15:15:38 sources Exp $
+.SC WMH 1
+.NA
+wmh \- window front\-end to MH
+.SY
+wmh
+\%[\-prompt\ string]
+\%[\-vmhproc\ program] \%[\-novmhproc]
+\%[switches\ for\ \fIvmhproc\fR]
+\%[\-help]
+.DE
+\fIwmh\fR is a program which implements the server side of
+the \fIMH\fR window management protocol
+and uses the Integrated Solutions Graphics Workstation desktop to maintain a
+multiple window interface to
+any program which implements the client side of the protocol.
+This latter program, called the \fIvmhproc\fR,
+is specified using the `\-vmhproc\ program' switch.
+
+The upshot of all this is that one can run \fImsh\fR on an IS desktop
+and get a nice window interface.
+To do this, for example, just add the line
+
+.ti +.5i
+mshproc: wmh
+
+to your \&.mh\(ruprofile.
+(This takes advantage of the fact that
+\fImsh\fR is the default \fIvmhproc\fR for \fIwmh\fR.)
+
+In order to facilitate things,
+if the `\-novmhproc' switch is given,
+and \fIwmh\fR can't run on the user's terminal
+(i.e., the terminal is not a desktop),
+the \fIvmhproc\fR is run directly without the window management protocol.
+
+After initializing the protocol,
+\fIwmh\fR prompts the user for a command to be given to the client.
+Usually, this results in output being sent to one or more windows.
+If output to a window would cause it to scroll,
+\fIwmh\fR uses an elevator bar to scroll through the window.
+If click left is used inside the elevator bar,
+the user can direct \fIwmh\fR as to what portion of the output should be
+displayed;
+if click middle is used,
+the \*(lqpaging\*(rq menu is displayed;
+and,
+if click right is used,
+the window scrolls to the next page
+(or, the user explicitly moved to the end, the previous page).
+
+The mouse can also be used while in the command window:
+click left does nothing;
+click middle brings up the \*(lqwmh\*(rq menu;
+and,
+click right shows the next message (a moby hack for timesavings).
+To abnormally terminate \fIwmh\fR (without core dump),
+use <QUIT> (usually CTRL\-\\).
+For instance,
+this does the \*(lqright\*(rq thing with \fIbbc\fR and \fImsh\fR.
+.Fi
+^$HOME/\&.mh\(ruprofile~^The user profile
+.Pr
+^Path:~^To determine the user's MH directory
+.Sa
+msh(1)
+.De
+`\-prompt\ (wmh)\ '
+.Ds
+`\-vmhproc\ msh'
+.Co
+None
+.Bu
+The argument to the `\-prompt' switch must be interpreted as a single token
+by the shell that invokes \fIwmh\fR.
+Therefore,
+one must usually place the argument to this switch inside double\-quotes.
+
+At present,
+there is no way to pass signals (e.g., interrupt, quit) to the client.
+However,
+generating QUIT when \fIwmh\fR is reading a command from the terminal is
+sufficient to tell the client to go away quickly.
+
+Acts strangely (loses peer or botches window management protocol with peer)
+on random occasions.
+.En

@@ -1,0 +1,14 @@
+#
+#	"@(#)bib.stdn	2.3	5/27/93";
+#
+#  standard numeric format
+#
+I bibinc.shortnames
+H
+AA
+EA
+.so \*(l]/bmac.std
+.de s[   \" start reference
+.nh
+.IP \\*([F. 5n
+..
