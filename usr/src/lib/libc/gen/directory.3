@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)directory.3	6.8 (Berkeley) %G%
+.\"     @(#)directory.3	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DIRECTORY 3
@@ -22,7 +22,7 @@
 .Fd #include <dirent.h>
 .Ft DIR *
 .Fn opendir "const char *filename"
-.Ft struct direct
+.Ft struct dirent *
 .Fn readdir "DIR *dirp"
 .Ft long
 .Fn telldir "const DIR *dirp"
