@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  *
- *	@(#)clock.c	7.11 (Berkeley) %G%
+ *	@(#)clock.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -292,35 +292,11 @@ char profon    = 0;		/* Is profiling clock on? */
 #define	PRF_USER	0x01
 #define	PRF_KERNEL	0x80
 
-initprofclock()
+initprofclock(profprocs)
+	int profprocs;
 {
-#if NCLOCK > 0
-	struct proc *p = curproc;		/* XXX */
+	register struct clkreg *clk = (struct clkreg *)clkstd[0];
 
-	/*
-	 * If the high-res timer is running, force profiling off.
-	 * Unfortunately, this gets reflected back to the user not as
-	 * an error but as a lack of results.
-	 */
-	if (clockon) {
-		p->p_stats->p_prof.pr_scale = 0;
-		return;
-	}
-	/*
-	 * Keep track of the number of user processes that are profiling
-	 * by checking the scale value.
-	 *
-	 * XXX: this all assumes that the profiling code is well behaved;
-	 * i.e. profil() is called once per process with pcscale non-zero
-	 * to turn it on, and once with pcscale zero to turn it off.
-	 * Also assumes you don't do any forks or execs.  Oh well, there
-	 * is always adb...
-	 */
-	if (p->p_stats->p_prof.pr_scale)
-		profprocs++;
-	else
-		profprocs--;
-#endif
 	/*
 	 * The profile interrupt interval must be an even divisor
 	 * of the CLK_INTERVAL so that scaling from a system clock
@@ -330,25 +306,27 @@ initprofclock()
 		profint = CLK_INTERVAL;
 	profscale = CLK_INTERVAL / profint;
 	profhz = hz * profscale;
-}
-
-startprofclock()
-{
-	register struct clkreg *clk = (struct clkreg *)clkstd[0];
-
-	clk->clk_msb3 = (profint-1) >> 8 & 0xFF;
-	clk->clk_lsb3 = (profint-1) & 0xFF;
-
-	clk->clk_cr2 = CLK_CR3;
-	clk->clk_cr3 = CLK_IENAB;
-}
-
-stopprofclock()
-{
-	register struct clkreg *clk = (struct clkreg *)clkstd[0];
-
-	clk->clk_cr2 = CLK_CR3;
-	clk->clk_cr3 = 0;
+	/*
+	 * If a process maps the clock, we fail silently.
+	 * Unfortunately, this gets reflected back to the user not as
+	 * an error but as a lack of results.
+	 */
+	if (clockon)
+		return;
+	switch (profprocs) {
+	case 1:
+		/* start clock */
+		clk->clk_msb3 = (profint-1) >> 8 & 0xFF;
+		clk->clk_lsb3 = (profint-1) & 0xFF;
+		clk->clk_cr2 = CLK_CR3;
+		clk->clk_cr3 = CLK_IENAB;
+		break;
+	case 0:
+		/* stop clock */
+		clk->clk_cr2 = CLK_CR3;
+		clk->clk_cr3 = 0;
+		break;
+	}
 }
 
 #ifdef GPROF
