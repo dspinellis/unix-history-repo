@@ -8,12 +8,8 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bmc.c	7.6 (Berkeley) %G%
+ *	@(#)bmc.c	7.7 (Berkeley) %G%
  */
-
-#define	BMC_NOCONSOLE
-
-#define	BMC_CNPORT	1
 
 #include "bmc.h"
 #if NBMC > 0
@@ -28,9 +24,11 @@
 #include <sys/uio.h>
 #include <sys/kernel.h>
 #include <sys/syslog.h>
+#include <machine/stinger.h>
 #include <luna68k/dev/device.h>
 #include <luna68k/dev/sioreg.h>
 #include <luna68k/dev/siovar.h>
+#include <luna68k/luna68k/cons.h>
 
 extern	struct sio_portc *sio_port_assign();
 
@@ -53,7 +51,7 @@ struct	bmc_softc bmc_softc[NBMC];
 
 struct	tty bmc_tty[NBMC];
 
-int	bmc_config_done = 0;
+int	bmc_active;
 int	bmcconsole = -1;
 int	bmcdefaultrate = B9600;				/* speed of console line is fixed */
 int	bmcmajor = 13;
@@ -277,42 +275,40 @@ bmc_decode(code)
 bmcprobe(hd)
 	register struct hp_device *hd;
 {
-}
+	int unit = hd->hp_unit;
+	register struct bmc_softc *sc = &bmc_softc[unit];
+	register struct sio_portc *pc;
 
-bmcinit(port)
-	register int port;
-{
-	register struct bmc_softc *sc = &bmc_softc[0];
-
-	/*
-	 * if BMC is already configured, should be skipped.
-         */
-	if (bmc_config_done)
+	if (sc->sc_pc != 0) {
+		pc = sc->sc_pc;
+		printf("bmc%d: port %d, address 0x%x, intr 0x%x (console)\n",
+		       pc->pc_unit, pc->pc_port, pc->pc_addr, pc->pc_intr);
 		return(0);
+	}
 
 	/*
 	 * Check out bitmap Interface board
 	 */
 
-	/* port checking (for keyboard) */
-	if (port != 1)
+	if (KernInter.plane == 0) {
 		return(0);
+	}
 
 	/* locate the major number */
 	for (bmcmajor = 0; bmcmajor < nchrdev; bmcmajor++)
 		if (cdevsw[bmcmajor].d_open == bmcopen)
 			break;
 
-	sc->sc_pc = sio_port_assign(port, bmcmajor, 0, bmcintr);
+	sc->sc_pc = pc = sio_port_assign(BMC_PORT, bmcmajor, unit, bmcintr);
 
-	printf("bmc%d: port %d, address 0x%x\n", sc->sc_pc->pc_unit, port, sc->sc_pc->pc_addr);
+	printf("bmc%d: port %d, address 0x%x, intr 0x%x\n",
+	       pc->pc_unit, pc->pc_port, pc->pc_addr, pc->pc_intr);
 
 	bmdinit();
 
-	bmc_config_done = 1;
+	bmc_active |= 1 << unit;
 	return(1);
 }
-
 
 /*
  *  entry routines
@@ -333,8 +329,12 @@ bmcopen(dev, flag, mode, p)
 	int error = 0;
 
 	unit = bmcunit(dev);
+
 	if (unit >= NBMC)
 		return (ENXIO);
+	if ((bmc_active & (1 << unit)) == 0)
+		return (ENXIO);
+
 	tp = &bmc_tty[unit];
 	tp->t_oproc = bmcstart;
 	tp->t_param = bmcparam;
@@ -577,30 +577,25 @@ bmcintr(unit)
 /*
  * Following are all routines needed for SIO to act as console
  */
-#include "../luna68k/cons.h"
 
 bmccnprobe(cp)
 	register struct consdev *cp;
 {
-#ifdef BMC_NOCONSOLE
-	cp->cn_pri = CN_DEAD;
-	return;
-#else
-	/* check DIP-SW setup */
-	/* check bitmap interface board */
+
+	if ((KernInter.dipsw & KIFF_DIPSW_NOBM) || (KernInter.plane == 0)) {
+		cp->cn_pri = CN_DEAD;
+		return;
+	}
 
 	/* locate the major number */
 	for (bmcmajor = 0; bmcmajor < nchrdev; bmcmajor++)
 		if (cdevsw[bmcmajor].d_open == bmcopen)
 			break;
-
+	
 	/* initialize required fields */
 	cp->cn_dev = makedev(bmcmajor, 0);
 	cp->cn_tp  = &bmc_tty[0];
 	cp->cn_pri = CN_INTERNAL;
-
-	bmc_config_done = 1;
-#endif
 }
 
 bmccninit(cp)
@@ -610,12 +605,14 @@ bmccninit(cp)
 	register struct bmc_softc *sc = &bmc_softc[0];
 
 	sioinit((struct siodevice *) SIO_HARDADDR, bmcdefaultrate);
+
 	bmdinit();
 
 	/* port assign */
-	sc->sc_pc = sio_port_assign(BMC_CNPORT, bmcmajor, 0, bmcintr);
+	sc->sc_pc = sio_port_assign(BMC_PORT, bmcmajor, 0, bmcintr);
 
 	bmcconsole = unit;
+	bmc_active |= 1 << unit;
 }
 
 bmccngetc(dev)
