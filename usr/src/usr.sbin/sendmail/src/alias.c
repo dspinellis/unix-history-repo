@@ -10,7 +10,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.37 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -441,7 +441,7 @@ rebuildaliases(map, automatic)
 			if (tTd(27, 1))
 				printf("Can't open %s: %s\n",
 					map->map_file, errstring(saveerr));
-			if (!automatic)
+			if (!automatic && !bitset(MF_OPTIONAL, map->map_mflags))
 				message("newaliases: cannot open %s: %s",
 					map->map_file, errstring(saveerr));
 			errno = 0;
