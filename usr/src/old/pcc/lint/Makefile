@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	1.9	(Berkeley)	%G%
+#	@(#)Makefile	1.10	(Berkeley)	%G%
 #
 M=/usr/src/lib/mip
 P=/usr/src/lib/pcc
@@ -91,7 +91,7 @@ install: all SHELL
 	install -c SHELL ${DESTDIR}/usr/bin/lint
 
 shrink:
-	rm -f *.o errs
+	rm -f *.o errs rodata.c pcctokens pcclocal.h
 
 clean: shrink
 	rm -f lpass1 lpass2 cgram.c gram.in ${LINTLIBS}
