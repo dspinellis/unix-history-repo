@@ -783,15 +783,17 @@ int
 DoTerminalOutput()
 {
 	/* called just before a select to conserve IO to terminal */
-    if (Initialized &&
-	    ((Lowest <= Highest) || needToRing ||
-			(terminalCursorAddress != CorrectTerminalCursor()))) {
+    if (!Initialized) {
+	return 1;		/* No output if not initialized */
+    }
+    if ((Lowest <= Highest) || needToRing ||
+			(terminalCursorAddress != CorrectTerminalCursor())) {
 	(*TryToSend)();
     }
     if (Lowest > Highest) {
-	return(1);		/* no more output now */
+	return 1;		/* no more output now */
     } else {
-	return(0);		/* more output for future */
+	return 0;		/* more output for future */
     }
 }
 
