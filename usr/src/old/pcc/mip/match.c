@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)match.c	4.5 (Berkeley) %G%";
+static char *sccsid ="@(#)match.c	4.6 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -59,19 +59,29 @@ tshape( p, shape ) NODE *p; {
 	if( shape & SPECIAL ){
 
 		switch( shape ){
-
 		case SZERO:
 		case SONE:
 		case SMONE:
 		case SSCON:
 		case SCCON:
+		case SMCON:
 			if( o != ICON || p->in.name[0] ) return(0);
-			if( p->tn.lval == 0 && shape == SZERO ) return(1);
-			else if( p->tn.lval == 1 && shape == SONE ) return(1);
-			else if( p->tn.lval == -1 && shape == SMONE ) return(1);
-			else if( p->tn.lval > -129 && p->tn.lval < 128 && shape == SCCON ) return(1);
-			else if( p->tn.lval > -32769 && p->tn.lval < 32768 && shape == SSCON ) return(1);
-			else return(0);
+			}
+
+		switch( shape ){
+
+		case SZERO:
+			return( p->tn.lval == 0 );
+		case SONE:
+			return( p->tn.lval == 1 );
+		case SMONE:
+			return( p->tn.lval == -1 );
+		case SSCON:
+			return( p->tn.lval > -32769 && p->tn.lval < 32768 );
+		case SCCON:
+			return( p->tn.lval > -129 && p->tn.lval < 128 );
+		case SMCON:
+			return( p->tn.lval < 0 );
 
 		case SSOREG:	/* non-indexed OREG */
 			if( o == OREG && !R2TEST(p->tn.rval) ) return(1);
