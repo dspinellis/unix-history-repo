@@ -1,4 +1,4 @@
-/*	kern_synch.c	6.8	85/06/02	*/
+/*	kern_synch.c	6.9	85/06/07	*/
 
 #include "../machine/pte.h"
 
@@ -252,11 +252,11 @@ restart:
 			*q = p->p_link;
 			if (qp->sq_tailp == &p->p_link)
 				qp->sq_tailp = q;
-			p->p_slptime = 0;
 			if (p->p_stat == SSLEEP) {
 				/* OPTIMIZED INLINE EXPANSION OF setrun(p) */
 				if (p->p_slptime > 1)
 					updatepri(p);
+				p->p_slptime = 0;
 				p->p_stat = SRUN;
 				if (p->p_flag & SLOAD)
 					setrq(p);
@@ -276,6 +276,7 @@ restart:
 				/* END INLINE EXPANSION */
 				goto restart;
 			}
+			p->p_slptime = 0;
 		} else
 			q = &p->p_link;
 	}
