@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.47 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.48 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -158,7 +158,7 @@ main(argc, argv)
 int	child;
 int	cleanup();
 int	netf;
-char	*line;
+char	line[MAXPATHLEN];
 int	confirmed;
 extern	char	*inet_ntoa();
 
@@ -169,7 +169,7 @@ doit(f, fromp)
 	int f;
 	struct sockaddr_in *fromp;
 {
-	int i, p, t, pid, on = 1;
+	int i, master, pid, on = 1;
 #ifndef OLD_LOGIN
 	int authenticated = 0, hostok = 0;
 #endif
@@ -251,41 +251,6 @@ doit(f, fromp)
 	    if (do_rlogin(hp->h_name) == 0 && hostok)
 		    authenticated++;
 	}
-
-	for (c = 'p'; c <= 's'; c++) {
-		struct stat stb;
-		line = "/dev/ptyXX";
-		line[strlen("/dev/pty")] = c;
-		line[strlen("/dev/ptyp")] = '0';
-		if (stat(line, &stb) < 0)
-			break;
-		for (i = 0; i < 16; i++) {
-			line[sizeof("/dev/ptyp") - 1] = "0123456789abcdef"[i];
-			p = open(line, O_RDWR);
-			if (p > 0)
-				goto gotpty;
-		}
-	}
-	fatal(f, "Out of ptys", 0);
-	/*NOTREACHED*/
-gotpty:
-	(void) ioctl(p, TIOCSWINSZ, &win);
-	netf = f;
-	line[sizeof(_PATH_DEV) - 1] = 't';
-	t = open(line, O_RDWR);
-	if (t < 0)
-		fatal(f, line, 1);
-	if (fchmod(t, 0))
-		fatal(f, line, 1);
-	(void)signal(SIGHUP, SIG_IGN);
-#ifdef	notdef
-vhangup();
-#endif
-	(void)signal(SIGHUP, SIG_DFL);
-	t = open(line, O_RDWR);
-	if (t < 0)
-		fatal(f, line, 1);
-	setup_term(t);
 	if (confirmed == 0) {
 		write(f, "", 1);
 		confirmed = 1;		/* we sent the null! */
@@ -300,24 +265,19 @@ vhangup();
 		write(f, "rlogind: Host address mismatch.\r\n",
 		    sizeof("rlogind: Host address mismatch.\r\n") - 1);
 
-	pid = fork();
-	if (pid < 0)
-		fatal(f, "", 1);
-	if (pid == 0) {
-#if BSD > 43
-		if (setsid() < 0)
-			fatalperror(f, "setsid");
-		if (ioctl(t, TIOCSCTTY, 0) < 0)
-			fatalperror(f, "ioctl(sctty)");
-#endif
-			fatal(f, "ioctl(sctty)", 1);
-		(void)close(f);
-		(void)close(p);
-		dup2(t, STDIN_FILENO);
-		dup2(t, STDOUT_FILENO);
-		dup2(t, STDERR_FILENO);
-		(void)close(t);
+	netf = f;
 
+	pid = forkpty(&master, line, NULL, &win);
+	if (pid < 0) {
+		if (errno == ENOENT)
+			fatal(f, "Out of ptys", 0);
+		else
+			fatal(f, "Forkpty", 1);
+	}
+	if (pid == 0) {
+		if (f > 2)	/* f should always be 0, but... */ 
+			(void) close(f);
+		setup_term(0);
 #ifdef OLD_LOGIN
 		execl("/bin/login", "login", "-r", hp->h_name, 0);
 #else /* OLD_LOGIN */
@@ -339,13 +299,11 @@ vhangup();
 		fatal(STDERR_FILENO, _PATH_LOGIN, 1);
 		/*NOTREACHED*/
 	}
-	close(t);
-
 	ioctl(f, FIONBIO, &on);
-	ioctl(p, FIONBIO, &on);
-	ioctl(p, TIOCPKT, &on);
+	ioctl(master, FIONBIO, &on);
+	ioctl(master, TIOCPKT, &on);
 	signal(SIGCHLD, cleanup);
-	protocol(f, p);
+	protocol(f, master);
 	signal(SIGCHLD, SIG_IGN);
 	cleanup();
 }
