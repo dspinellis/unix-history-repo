@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rvmacs.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rvmacs.c	4.3 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"
@@ -40,13 +40,16 @@ struct Devices *dev;
 {
 	register int va, i, child;
 	register char *p;
-	char *q;
 	char c, acu[20], com[20];
 	int baudrate;
 	int timelim;
 	int pid, status;
 	int zero = 0;
+#ifdef MULTISPEED
+	char *pp;
+#else !MULTISPEED
 	struct sgttyb sg;
+#endif MULTISPEED
 
 	child = -1;
 	sprintf(com, "/dev/%s", dev->D_line);
