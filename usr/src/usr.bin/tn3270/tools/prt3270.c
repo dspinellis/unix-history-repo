@@ -8,15 +8,15 @@ static	char	sccsid[] = "@(#)prt3270.c	3.1  10/29/86";
 #include <stdio.h>
 #include <ctype.h>
 
-#include "../general.h"
+#include "../general/general.h"
 
 #include "../ascii/ascebc.h"
 #include "../ctlr/hostctlr.h"
 #include "../ctlr/screen.h"
 #define	DEFINEAIDS
 #define	LETS_SEE_ASCII
-#include "../keyboard/m4.out"
-#include "../system/globals.h"
+#include "../ascii/m4.out"
+#include "../general/globals.h"
 
 
 int NumberColumns = 80;

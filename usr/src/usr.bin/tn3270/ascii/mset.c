@@ -36,12 +36,12 @@ static	char	sccsid[] = "@(#)mset.c	3.1  10/29/86";
 #else	/* defined(unix) */
 #include <string.h>
 #endif	/* defined(unix) */
-#include "keyboard/state.h"
+#include "state.h"
 #define LETS_SEE_ASCII
-#include "keyboard/m4.out"
+#include "m4.out"
 
-#include "../system/globals.h"
-#include "keyboard/map3270.ext"
+#include "../general/globals.h"
+#include "map3270.ext"
 
 struct regstate {
 	char *result;

@@ -24,9 +24,9 @@
 #endif	/* defined(unix) */
 #include <ctype.h>
 
-#include "../general.h"
+#include "../general/general.h"
 #define	LETS_SEE_ASCII
-#include "../keyboard/m4.out"
+#include "../ascii/m4.out"
 #undef	LETS_SEE_ASCII
 
 #include "../ascii/ascebc.h"

@@ -27,8 +27,8 @@ tools:
 all:	mkastosc mkhits mkastods mkdstoas mkdctype prt3270
 	@echo done.
 
-prt3270:	prt3270.o ../system/globals.o ../ascii/ebctab.o
-	${CC} ${CFLAGS} -o prt3270 prt3270.o ../system/globals.o \
+prt3270:	prt3270.o ../general/globals.o ../ascii/ebctab.o
+	${CC} ${CFLAGS} -o prt3270 prt3270.o ../general/globals.o \
 							../ascii/ebctab.o
 
 mkastosc:	mkastosc.o dohits.o ../ascii/asctab.o ../ctlr/ebc_disp.o
@@ -59,11 +59,11 @@ mkdctype:	mkdctype.o ../ctlr/ebc_disp.o ectype.o
 ../ascii/asctab.o:
 	(cd ../ascii; make asctab.o)
 
-../keyboard/m4.out:
-	(cd ../keyboard; make m4.out)
+../ascii/m4.out:
+	(cd ../ascii; make m4.out)
 
-../system/globals.o:
-	(cd ../system; make globals.o)
+../general/globals.o:
+	(cd ../general; make globals.o)
 
 print:
 	${PRINT} ${ALLH} ${ALLC}
@@ -103,12 +103,14 @@ depend:
 
 # DO NOT DELETE THIS LINE
 
-dohits.o: ../ascii/ascebc.h ../ctlr/ebc_disp.h ../ctlr/function.h dohits.h
+dohits.o: ../general/general.h ../ascii/ascebc.h ../ctlr/ebc_disp.h
+dohits.o: ../ctlr/function.h dohits.h
 ectype.o: ectype.h
-mkastosc.o: ../keyboard/m4.out ../ascii/ascebc.h ../ctlr/ebc_disp.h
-mkastosc.o: ../ctlr/function.h dohits.h
+mkastosc.o: ../general/general.h ../ascii/m4.out ../ascii/ascebc.h
+mkastosc.o: ../ctlr/ebc_disp.h ../ctlr/function.h dohits.h
 mkdctype.o: ../ctlr/ebc_disp.h ectype.h
+mkastods.o: ../ascii/ascebc.h ../ctlr/ebc_disp.h
 mkdstoas.o: ../ascii/ascebc.h ../ctlr/ebc_disp.h
 mkhits.o: ../ascii/ascebc.h ../ctlr/ebc_disp.h ../ctlr/function.h dohits.h
-prt3270.o: ../ascii/ascebc.h ../ctlr/hostctlr.h ../ctlr/screen.h
-prt3270.o: ../keyboard/m4.out ../system/globals.h
+prt3270.o: ../general/general.h ../ascii/ascebc.h ../ctlr/hostctlr.h
+prt3270.o: ../ctlr/screen.h ../ascii/m4.out ../general/globals.h
