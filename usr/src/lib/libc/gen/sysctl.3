@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)sysctl.3	6.9 (Berkeley) %G%
+.\"	@(#)sysctl.3	6.10 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt SYSCTL 3
@@ -210,8 +210,6 @@ information.
 .It KERN\_LINK\_MAX	integer	no
 .It KERN\_MAXFILES	integer	yes
 .It KERN\_MAXPROC	integer	yes
-.It KERN\_MAXUFILES	integer	yes
-.It KERN\_MAXUPROC	integer	yes
 .It KERN\_MAXVNODES	integer	yes
 .It KERN\_MAX\_CANON	integer	no
 .It KERN\_MAX\_INPUT	integer	no
@@ -271,10 +269,6 @@ The maximum file link count.
 The maximum number of open files that may be open in the system.
 .It Li KERN_MAXPROC
 The maximum number of simultaneous processes the system will allow.
-.It Li KERN_MAXUFILES
-The maximum number of open files per user id.
-.It Li KERN_MAXUPROC
-The maximum number of simultaneous processes per user id.
 .It Li KERN_MAXVNODES
 The maximum number of vnodes available on the system.
 .It Li KERN_MAX_CANON
