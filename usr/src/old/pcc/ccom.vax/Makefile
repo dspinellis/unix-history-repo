@@ -1,4 +1,4 @@
-#	Makefile	1.7	85/01/18
+#	Makefile	1.8	85/01/24
 #
 TESTDIR = .
 FRC =
@@ -87,7 +87,7 @@ stable.o: $M/manifest $M/mfile2 mac2defs macdefs table.c
 	sh ./:rofix table.s
 	$(AS) -o stable.o table.s
 	rm -f table.s
-fort: comp fort.o freader.o fallo.o fmatch.o ftable.o forder.o flocal2.o \
+fort: fort.o freader.o fallo.o fmatch.o ftable.o forder.o flocal2.o \
 	fcomm2.o
 	$(CC) -z $(CFLAGS) fort.o freader.o fallo.o fmatch.o ftable.o \
 		forder.o flocal2.o fcomm2.o -o $(TESTDIR)/fort
