@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)pstat.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)pstat.c	4.6 (Berkeley) %G%";
 /*
  * Print system stuff
  */
@@ -514,7 +514,7 @@ dousr()
 	for (i=0; i<NSIG; i++)
 		printf("%.1x ", U.u_signal[i]);
 	printf("\n");
-	printf("cfcode\t%.1x\n", U.u_cfcode);
+	printf("code\t%.1x\n", U.u_code);
 	printf("ar0\t%.1x\n", U.u_ar0);
 	printf("prof\t%X %X %X %X\n", U.u_prof.pr_base, U.u_prof.pr_size,
 	    U.u_prof.pr_off, U.u_prof.pr_scale);
@@ -612,7 +612,7 @@ doswap()
 	int nswapmap;
 	register struct proc *pp;
 	int nswap, used, tused, free;
-	register struct map *mp;
+	register struct mapent *me;
 	register struct text *xp;
 
 	nproc = getw(nl[SNPROC].n_value);
@@ -625,8 +625,9 @@ doswap()
 	read(fc, swapmap, nswapmap * sizeof (struct map));
 	nswap = getw(nl[SNSWAP].n_value);
 	free = 0;
-	for (mp = swapmap; mp < &swapmap[nswapmap]; mp++)
-		free += mp->m_size;
+	for (me = (struct mapent *)(swapmap+1);
+	    me < (struct mapent *)&swapmap[nswapmap]; me++)
+		free += me->m_size;
 	ntext = getw(nl[SNTEXT].n_value);
 	xtext = (struct text *)calloc(ntext, sizeof (struct text));
 	lseek(fc, getw(nl[STEXT].n_value), 0);
@@ -645,13 +646,13 @@ doswap()
 		if ((pp->p_flag&SLOAD) == 0)
 			used += vusize(pp);
 	}
-	/* a DMMAX block goes to argmap */
+	/* a DMMAX/2 block goes to argmap */
 	if (totflg) {
 		printf("%3d/%3d 00k swap\n", used/2/100, (used+free)/2/100);
 		return;
 	}
 	printf("%d used (%d text), %d free, %d missing\n",
-	    used/2, tused/2, free/2, (nswap - DMMAX - (used + free))/2);
+	    used/2, tused/2, free/2, (nswap - DMMAX/2 - (used + free))/2);
 }
 
 up(size)

@@ -103,7 +103,7 @@ char *rel(op, r1, r2) register char *r1, *r2; {
 	case GT: i = i>0; break;
 	case GEQ: i = i>=0; break;
 	case LT: i = i<0; break;
-	case LEQ: i = i>=0; break;
+	case LEQ: i = i<=0; break;
 	case NEQ: i = i!=0; break;
 	}
 	return i? "1": "0";
@@ -661,7 +661,7 @@ register	count;
 	return(1);
 }
 
-static char *sccsid = "@(#)expr.y	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)expr.y	4.2 (Berkeley) %G%";
 yyerror(s)
 
 {
