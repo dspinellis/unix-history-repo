@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)nm.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)nm.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -35,16 +35,18 @@ int print_only_external_symbols;
 int print_only_undefined_symbols;
 int print_all_symbols;
 int print_file_each_line;
-int cmp_value(), cmp_name();
-int (*sort_func)() = cmp_name;
-
-enum { FORWARD, BACKWARD } sort_direction = FORWARD;
 int fcount;
+
+int rev;
+int fname(), rname(), value();
+int (*sfunc)() = fname;
 
 /* some macros for symbol type (nlist.n_type) handling */
 #define	IS_DEBUGGER_SYMBOL(x)	((x) & N_STAB)
 #define	IS_EXTERNAL(x)		((x) & N_EXT)
 #define	SYMBOL_TYPE(x)		((x) & (N_TYPE | N_STAB))
+
+void *emalloc();
 
 /*
  * main()
@@ -67,16 +69,16 @@ main(argc, argv)
 			print_only_external_symbols = 1;
 			break;
 		case 'n':
-			sort_func = cmp_value;
+			sfunc = value;
 			break;
 		case 'o':
 			print_file_each_line = 1;
 			break;
 		case 'p':
-			sort_func = NULL;
+			sfunc = NULL;
 			break;
 		case 'r':
-			sort_direction = BACKWARD;
+			rev = 1;
 			break;
 		case 'u':
 			print_only_undefined_symbols = 1;
@@ -91,6 +93,9 @@ main(argc, argv)
 	}
 	fcount = argc - optind;
 	argv += optind;
+
+	if (rev && sfunc == fname)
+		sfunc = rname;
 
 	if (!fcount)
 		errors = process_file("a.out");
@@ -163,8 +168,7 @@ show_archive(fname, fp)
 	struct exec exec_head;
 	int i, rval;
 	long last_ar_off;
-	char *p, *name, *emalloc();
-	long atol();
+	char *p, *name;
 
 	name = emalloc(sizeof(ar_head.ar_name) + strlen(fname) + 3);
 
@@ -253,7 +257,7 @@ show_objfile(objname, fp)
 	register int i, nnames, nrawnames;
 	struct exec head;
 	long stabsize;
-	char *stab, *emalloc();
+	char *stab;
 
 	/* read a.out header */
 	if (fread((char *)&head, sizeof(head), (size_t)1, fp) != 1) {
@@ -293,7 +297,7 @@ show_objfile(objname, fp)
 	}
 
 	/* get memory for the symbol table */
-	names = (struct nlist *)emalloc((size_t)head.a_syms);
+	names = emalloc((size_t)head.a_syms);
 	nrawnames = head.a_syms / sizeof(*names);
 	if (fread((char *)names, (size_t)head.a_syms, (size_t)1, fp) != 1) {
 		(void)fprintf(stderr,
@@ -362,8 +366,8 @@ show_objfile(objname, fp)
 	}
 
 	/* sort the symbol table if applicable */
-	if (sort_func)
-		qsort((char *)names, (size_t)nnames, sizeof(*names), sort_func);
+	if (sfunc)
+		qsort((char *)names, (size_t)nnames, sizeof(*names), sfunc);
 
 	/* print out symbols */
 	for (np = names, i = 0; i < nnames; np++, i++)
@@ -495,25 +499,23 @@ typeletter(type)
 	return('?');
 }
 
-/*
- * cmp_name()
- *	compare two symbols by their names
- */
-cmp_name(a0, b0)
+fname(a0, b0)
 	void *a0, *b0;
 {
 	struct nlist *a = a0, *b = b0;
 
-	return(sort_direction == FORWARD ?
-	    strcmp(a->n_un.n_name, b->n_un.n_name) :
-	    strcmp(b->n_un.n_name, a->n_un.n_name));
+	return(strcmp(a->n_un.n_name, b->n_un.n_name));
 }
 
-/*
- * cmp_value()
- *	compare two symbols by their values
- */
-cmp_value(a0, b0)
+rname(a0, b0)
+	void *a0, *b0;
+{
+	struct nlist *a = a0, *b = b0;
+
+	return(strcmp(b->n_un.n_name, a->n_un.n_name));
+}
+
+value(a0, b0)
 	void *a0, *b0;
 {
 	register struct nlist *a = a0, *b = b0;
@@ -525,24 +527,28 @@ cmp_value(a0, b0)
 			return(-1);
 	else if (SYMBOL_TYPE(b->n_type) == N_UNDF)
 		return(1);
-	if (a->n_value == b->n_value)
-		return(cmp_name((void *)a, (void *)b));
-	return(sort_direction == FORWARD ? a->n_value > b->n_value :
-	    a->n_value < b->n_value);
+	if (rev) {
+		if (a->n_value == b->n_value)
+			return(rname(a0, b0));
+		return(b->n_value > a->n_value ? 1 : -1);
+	} else {
+		if (a->n_value == b->n_value)
+			return(fname(a0, b0));
+		return(a->n_value > b->n_value ? 1 : -1);
+	}
 }
 
-char *
+void *
 emalloc(size)
 	size_t size;
 {
 	char *p;
 
 	/* NOSTRICT */
-	if (!(p = malloc(size))) {
-		(void)fprintf(stderr, "nm: no more memory.\n");
-		exit(1);
-	}
-	return(p);
+	if (p = malloc(size))
+		return(p);
+	(void)fprintf(stderr, "nm: %s\n", strerror(errno));
+	exit(1);
 }
 
 usage()
