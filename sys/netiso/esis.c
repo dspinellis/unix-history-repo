@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)esis.c	7.19 (Berkeley) 6/27/91
- *	$Id: esis.c,v 1.2 1993/10/16 21:05:06 rgrimes Exp $
+ *	$Id: esis.c,v 1.3 1993/11/07 17:49:33 wollman Exp $
  */
 
 /***********************************************************
@@ -487,7 +487,6 @@ int							nsellen;
 #define ESIS_NEXT_OPTION(b)	{ b += (2 + b[1]); \
 	    if (b > buflim) {esis_stat.es_toosmall++; goto bad;}}
 int ESHonly = 0;
-/*
  
 /*
  * FUNCTION:		esis_eshinput

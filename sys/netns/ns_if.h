@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ns_if.h	7.6 (Berkeley) 6/28/90
- *	$Id: ns_if.h,v 1.2 1993/10/16 19:54:22 rgrimes Exp $
+ *	$Id: ns_if.h,v 1.3 1993/11/07 17:50:28 wollman Exp $
  */
 
 #ifndef _NETNS_NS_IF_H_
@@ -48,7 +48,7 @@ struct ns_ifaddr {
 	struct	ifaddr ia_ifa;		/* protocol-independent info */
 #define	ia_ifp		ia_ifa.ifa_ifp
 #define	ia_flags	ia_ifa.ifa_flags
-/*	union	ns_net	ia_net;		/* network number of interface */
+/*	union	ns_net	ia_net;*/		/* network number of interface */
 #define ia_net		ia_addr.sns_addr.x_net
 	struct	ns_ifaddr *ia_next;	/* next in list of xerox addresses */
 	struct	sockaddr_ns ia_addr;	/* reserve space for my address */

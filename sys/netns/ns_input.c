@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ns_input.c	7.8 (Berkeley) 6/27/91
- *	$Id$
+ *	$Id: ns_input.c,v 1.2 1993/10/16 19:54:23 rgrimes Exp $
  */
 
 #include "param.h"
@@ -236,11 +236,35 @@ bad:
 }
 
 u_char nsctlerrmap[PRC_NCMDS] = {
-	ECONNABORTED,	ECONNABORTED,	0,		0,
-	0,		0,		EHOSTDOWN,	EHOSTUNREACH,
-	ENETUNREACH,	EHOSTUNREACH,	ECONNREFUSED,	ECONNREFUSED,
-	EMSGSIZE,	0,		0,		0,
-	0,		0,		0,		0
+	ECONNABORTED,		/* ifdown */
+	ECONNABORTED,		/* routedead */
+	0,			/* #2 */
+	0,			/* quench2 */
+	0,			/* quench */
+	EMSGSIZE,		/* msgsize */
+	EHOSTDOWN,		/* hostdead */
+	EHOSTUNREACH,		/* hostunreach */
+	ENETUNREACH,		/* unreachnet */
+	EHOSTUNREACH,		/* unreachhost */
+	ECONNREFUSED,		/* unreachproto */
+	ECONNREFUSED,		/* unreachport */
+	EMSGSIZE,		/* old needfrag */
+	0,			/* srcfail */
+	0,			/* netunknown */
+	0,			/* hostunknown */
+	0,			/* isolated */
+	0,			/* net admin. prohibited */
+	0,			/* host admin. prohibited */
+	0,			/* tos net unreach */
+	0,			/* tos host unreach */
+	0,			/* redirect net */
+	0,			/* redirect host */
+	0,			/* redirect tosnet */
+	0,			/* redirect toshost */
+	0,			/* time exceeded */
+	0,			/* reassembly timeout */
+	0,			/* parameter problem */
+	0			/* required option missing */
 };
 
 int idp_donosocks = 1;

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tp_pcb.h	7.9 (Berkeley) 5/6/91
- *	$Id: tp_pcb.h,v 1.2 1993/10/16 21:05:56 rgrimes Exp $
+ *	$Id: tp_pcb.h,v 1.3 1993/11/07 17:49:56 wollman Exp $
  */
 
 /***********************************************************
@@ -303,7 +303,7 @@ struct tp_pcb {
 	u_char 				tp_peer_acktime; /* used to compute DT retrans time */
 
 	struct sockbuf		tp_Xsnd;		/* for expedited data */
-/*	struct sockbuf		tp_Xrcv;		/* for expedited data */
+/*	struct sockbuf		tp_Xrcv;*/		/* for expedited data */
 #define tp_Xrcv tp_sock->so_rcv
 	SeqNum				tp_Xsndnxt;	/* next XPD seq # to send */
 	SeqNum				tp_Xuna;		/* seq # of unacked XPD */
