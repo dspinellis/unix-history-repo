@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)tmps.c 1.8 %G%";
+static char sccsid[] = "@(#)tmps.c 1.9 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -8,6 +8,7 @@ static char sccsid[] = "@(#)tmps.c 1.8 %G%";
 #ifdef PC
 #   include "pc.h"
 #endif PC
+#include "align.h"
 #include "tmps.h"
 
 /*
@@ -81,6 +82,7 @@ tmpalloc(size, type, mode)
 	register struct om	*op = &sizes[ cbn ];
 	register int		offset;
 	register struct nl	*nlp;
+	long			alignment;
 
 #	ifdef PC
 #	    ifdef vax
@@ -99,8 +101,13 @@ tmpalloc(size, type, mode)
 		}
 #	    endif vax
 #	endif PC
+	if (type == NIL) {
+	    alignment = A_STACK;
+	} else {
+	    alignment = align(type);
+	}
         op->curtmps.om_off =
-	    roundup((int)(op->curtmps.om_off - size), (long)align(type));
+	    roundup((int)(op->curtmps.om_off - size), alignment);
 	offset = op->curtmps.om_off;
 	if ( offset < op->om_max ) {
 	        op->om_max = offset;
