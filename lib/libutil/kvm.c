@@ -159,11 +159,8 @@ static struct nlist nl[] = {
 	{ "" },
 };
 
-static off_t Vtophys();
-static void klseek(), seterr(), setsyserr(), vstodb();
+static void seterr(), setsyserr(), vstodb();
 static int getkvars(), kvm_doprocs(), kvm_init();
-static int vatosw();
-static int findpage();
 
 /*
  * returns 	0 if files were opened now,
@@ -630,132 +627,13 @@ kvm_getu(p)
 		return (NULL);
 	}
 
-	if( proc_getmem(p, user.upages, sizeof user.upages, USRSTACK)) {
+	if (proc_getmem(p, user.upages, sizeof user.upages, USRSTACK)) {
 		kp->kp_eproc.e_vm.vm_rssize =
 		    kp->kp_eproc.e_vm.vm_pmap.pm_stats.resident_count; /* XXX */
 		return &user.user;
 	}
 
-	argaddr0 = argaddr1 = swaddr = 0;
-	if ((p->p_flag & SLOAD) == 0) {
-		vm_offset_t	maddr;
-
-		if (swap < 0) {
-			seterr("no swap");
-			return (NULL);
-		}
-		/*
-		 * Costly operation, better set enable_swap to zero
-		 * in vm/vm_glue.c, since paging of user pages isn't
-		 * done yet anyway.
-		 */
-		if (vatosw(p, USRSTACK + i * NBPG, &maddr, &swb) == 0)
-			return NULL;
-#if 0
-		for (i = 0; i < UPAGES; i++) {
-		if (vatosw(p, nl[X_KSTACK].n_value + i * NBPG, &maddr, &swb) == 0) {
-#if DEBUG
-			fprintf(stderr,"failure getting upages (vatosw error) \n");
-#endif
-			return NULL;
-		}
-#endif
-
-		if (maddr == 0 && swb.size < UPAGES * NBPG) {
-#if DEBUG
-			fprintf(stderr,"failure getting upages not maddr and no swap space\n");
-#endif
-			return NULL;
-		}
-
-		for (i = 0; i < UPAGES; i++) {
-			if (maddr) {
-				(void) lseek(mem, maddr + i * NBPG, 0);
-				if (read(mem,
-				    (char *)user.upages[i], NBPG) != NBPG) {
-					seterr(
-					    "can't read u for pid %d from %s",
-					    p->p_pid, swapf);
-					return NULL;
-				}
-			} else {
-				(void) lseek(swap, swb.offset + i * NBPG, 0);
-				if (read(swap,
-				    (char *)user.upages[i], NBPG) != NBPG) {
-					seterr(
-					    "can't read u for pid %d from %s",
-					    p->p_pid, swapf);
-					return NULL;
-				}
-			}
-		}
-#if 0
-		goto cont;
-#endif
-		return(&user.user);
-	}
-	/*
-	 * Read u-area one page at a time for the benefit of post-mortems
-	 */
-	up = (char *) p->p_addr;
-	for (i = 0; i < UPAGES; i++) {
-		klseek(kmem, (long)up, 0);
-		if (read(kmem, user.upages[i], CLBYTES) != CLBYTES) {
-			seterr("cant read page %x of u of pid %d from %s",
-			    up, p->p_pid, kmemf);
-			return(NULL);
-		}
-		up += CLBYTES;
-	}
-cont:
-	pcbpf = (int) btop(p->p_addr);	/* what should this be really? */
-	/*
-	 * Conjure up a physical address for the arguments.
-	 */
-	kp->kp_eproc.e_vm.vm_rssize =
-	    kp->kp_eproc.e_vm.vm_pmap.pm_stats.resident_count; /* XXX */
-
-	vaddr = (u_int)kp->kp_eproc.e_vm.vm_minsaddr;
-	arg_size = USRSTACK - vaddr;
-
-	if (kp->kp_eproc.e_vm.vm_pmap.pm_pdir) {
-		struct pde pde;
-
-		klseek(kmem,
-		(long)(&kp->kp_eproc.e_vm.vm_pmap.pm_pdir[pdei(vaddr)]), 0);
-
-		if (read(kmem, (char *)&pde, sizeof pde) == sizeof pde
-				&& pde.pd_v) {
-
-			struct pte pte;
-
-			if (lseek(mem, (long)ctob(pde.pd_pfnum) +
-					(ptei(vaddr) * sizeof pte), 0) == -1)
-				seterr("kvm_getu: lseek");
-			if (read(mem, (char *)&pte, sizeof pte) == sizeof pte) {
-				if (pte.pg_v) {
-					argaddr1 = (pte.pg_pfnum << PGSHIFT) |
-						((u_long)vaddr & (NBPG-1));
-				} else {
-					goto hard;
-				}
-			} else {
-				seterr("kvm_getu: read");
-			}
-		} else {
-			goto hard;
-		}
-	}
-
-hard:
-#if 0	/* locks up SCSI code in kvm_getargs -DLG  03-DEC-93 */
-	if (vatosw(p, vaddr, &argaddr1, &swb)) {
-		if (argaddr1 == 0 && swb.size >= arg_size)
-			swaddr = swb.offset;
-	}
-#endif
-
-	return(&user.user);
+	return (NULL);
 }
 
 char *
@@ -800,19 +678,8 @@ printf("failed to mmap %s error=%s\n", procfile, strerror(errno));
 	}
 #endif
 
-	if(!proc_getmem(p, argc, arg_size, vaddr)) {
-		if ((p->p_flag & SLOAD) == 0 || argaddr1 == 0) {
-			if (swaddr == 0)
-				goto bad;  /* XXX for now */
-			(void) lseek(swap, swaddr, 0);
-			if (read(swap, argc, arg_size) != arg_size)
-				goto bad;
-		} else {
-			lseek(mem, (long)argaddr1, 0);
-			if (read(mem, argc, arg_size) != arg_size)
-				goto bad;
-		}
-	}
+	if (!proc_getmem(p, argc, arg_size, vaddr))
+		goto bad;
 
 	argv = (int *)argc;
 
@@ -863,30 +730,11 @@ bad:
 	return (cmdbuf);
 }
 
-
 static
 getkvars()
 {
 	if (kvm_nlist(nl) == -1)
 		return (-1);
-	if (deadkernel) {
-		/* We must do the sys map first because klseek uses it */
-		long	addr;
-
-		PTD = (struct pde *) malloc(NBPG);
-		if (PTD == NULL) {
-			seterr("out of space for PTD");
-			return (-1);
-		}
-		addr = (long) nl[X_IdlePTD].n_value;
-		(void) lseek(kmem, addr, 0);
-		read(kmem, (char *)&addr, sizeof(addr));
-		(void) lseek(kmem, (long)addr, 0);
-		if (read(kmem, (char *) PTD, NBPG) != NBPG) {
-			seterr("can't read PTD");
-			return (-1);
-		}
-	}
 	if (kvm_read((void *) nl[X_NSWAP].n_value, &nswap, sizeof (long)) !=
 	    sizeof (long)) {
 		seterr("can't read nswap");
@@ -912,7 +760,7 @@ kvm_read(loc, buf, len)
 	if (kvmfilesopen == 0 && kvm_openfiles(NULL, NULL, NULL) == -1)
 		return (-1);
 	if (iskva(loc)) {
-		klseek(kmem, (off_t) loc, 0);
+		lseek(kmem, (off_t) loc, 0);
 		if (read(kmem, buf, len) != len) {
 			seterr("error reading kmem at %x", loc);
 			return (-1);
@@ -925,243 +773,6 @@ kvm_read(loc, buf, len)
 		}
 	}
 	return (len);
-}
-
-static void
-klseek(fd, loc, off)
-	int fd;
-	off_t loc;
-	int off;
-{
-
-	if (deadkernel) {
-		if ((loc = Vtophys(loc)) == -1)
-			return;
-	}
-	(void) lseek(fd, (off_t)loc, off);
-}
-
-static off_t
-Vtophys(loc)
-	u_long	loc;
-{
-	off_t newloc = (off_t) -1;
-	struct pde pde;
-	struct pte pte;
-	int p;
-
-	pde = PTD[loc >> PD_SHIFT];
-	if (pde.pd_v == 0) {
-		seterr("vtophys: page directory entry not valid");
-		return((off_t) -1);
-	}
-	p = btop(loc & PT_MASK);
-	newloc = pde.pd_pfnum + (p * sizeof(struct pte));
-	(void) lseek(kmem, (long)newloc, 0);
-	if (read(kmem, (char *)&pte, sizeof pte) != sizeof pte) {
-		seterr("vtophys: cannot obtain desired pte");
-		return((off_t) -1);
-	}
-	newloc = pte.pg_pfnum;
-	if (pte.pg_v == 0) {
-		seterr("vtophys: page table entry not valid");
-		return((off_t) -1);
-	}
-	newloc += (loc & PGOFSET);
-	return((off_t) newloc);
-}
-
-/*
- * locate address of unwired or swapped page
- */
-
-
-#define KREAD(off, addr, len) \
-	(kvm_read((void *)(off), (char *)(addr), (len)) == (len))
-
-
-static int
-vatosw(p, vaddr, maddr, swb)
-struct proc	*p ;
-vm_offset_t	vaddr;
-vm_offset_t	*maddr;
-struct swapblk	*swb;
-{
-	register struct kinfo_proc *kp = (struct kinfo_proc *)p;
-	vm_map_t		mp = &kp->kp_eproc.e_vm.vm_map;
-	struct	vm_map		kernel_map;
-	struct vm_object	vm_object;
-	struct vm_object	*kernel_object_ptr;
-	struct vm_map_entry	vm_entry;
-	struct pager_struct	pager;
-	struct swpager		swpager;
-	struct swblock		swblock;
-	long			addr, off;
-	int			i;
-	int			pass;
-	int 		ix;
-
-	if (p && (p->p_pid == 0 || p->p_pid == 2))
-		return 0;
-
-#if DEBUG
-	fprintf(stderr,"vaddr: %lx\n", vaddr);
-	fprintf(stderr,"mp->nentries: %d\n", mp->nentries);
-#endif
-	addr = (long)mp->header.next;
-	for (i = 0; i < mp->nentries; i++) {
-		/* Weed through map entries until vaddr in range */
-		if (!KREAD(addr, &vm_entry, sizeof(vm_entry))) {
-			setsyserr("vatosw: read vm_map_entry");
-			return 0;
-		}
-/*		fprintf(stderr,"checking entry: %lx to %lx\n", vm_entry.start, vm_entry.end);  */
-		if ((vaddr >= vm_entry.start) && (vaddr <= vm_entry.end) &&
-				(vm_entry.object.vm_object != 0))
-			break;
-
-		addr = (long)vm_entry.next;
-	}
-	if (i == mp->nentries) {
-		seterr("%u: map not found\n", p->p_pid);
-		return 0;
-	}
-
-	if (vm_entry.is_a_map || vm_entry.is_sub_map) {
-		seterr("%u: Is a map\n", p->p_pid);
-		return 0;
-	}
-
-	/* Locate memory object */
-	off = (vaddr - vm_entry.start) + vm_entry.offset;
-	addr = (long)vm_entry.object.vm_object;
-newpass:
-	while (1) {
-		if (!KREAD(addr, &vm_object, sizeof vm_object)) {
-			setsyserr("vatosw: read vm_object");
-			return 0;
-		}
-
-#if DEBUG
-		fprintf(stderr, "%u: find page: object %#x offset %x\n",
-				p->p_pid, addr, off);
-#endif
-
-		/* Lookup in page queue */
-		if (findpage(addr, off, maddr))
-			return 1;
-
-		if (vm_object.shadow == 0)
-			break;
-
-#if DEBUG
-		fprintf(stderr, "%u: shadow obj at %x: offset %x+%x\n",
-				p->p_pid, addr, off, vm_object.shadow_offset);
-#endif
-
-		addr = (long)vm_object.shadow;
-		off += vm_object.shadow_offset;
-	}
-
-	if (!vm_object.pager) {
-		seterr("%u: no pager\n", p->p_pid);
-		return 0;
-	}
-
-	/* Find address in swap space */
-	if (!KREAD(vm_object.pager, &pager, sizeof pager)) {
-		setsyserr("vatosw: read pager");
-		return 0;
-	}
-	if (pager.pg_type != PG_SWAP) {
-		seterr("%u: weird pager\n", p->p_pid);
-		return 0;
-	}
-
-	/* Get swap pager data */
-	if (!KREAD(pager.pg_data, &swpager, sizeof swpager)) {
-		setsyserr("vatosw: read swpager");
-		return 0;
-	}
-
-	off += vm_object.paging_offset;
-
-	/* Read swap block array */
-	if (!KREAD((long)swpager.sw_blocks +
-			(off/dbtob(swpager.sw_bsize)) * sizeof swblock,
-			&swblock, sizeof swblock)) {
-		setsyserr("vatosw: read swblock");
-		return 0;
-	}
-	if( swblock.swb_block)
-		ix = btop( off % dbtob( swpager.sw_bsize));
-	if( swblock.swb_block == 0 || (swblock.swb_mask & (1LL << ix)) == 0) {
-		addr = (long)vm_object.shadow;
-		if( addr) {
-			off -= vm_object.paging_offset;
-			off += vm_object.shadow_offset;
-			goto newpass;
-		}
-	}
-		
-	swb->offset = dbtob(swblock.swb_block)+ (off % dbtob(swpager.sw_bsize));
-	swb->size = dbtob(swpager.sw_bsize) - (off % dbtob(swpager.sw_bsize));
-	return 1;
-}
-
-
-#define atop(x)		(((unsigned)(x)) >> page_shift)
-#define vm_page_hash(object, offset) \
-        (((unsigned)object+(unsigned)atop(offset))&vm_page_hash_mask)
-
-static int
-findpage(object, offset, maddr)
-long			object;
-long			offset;
-vm_offset_t		*maddr;
-{
-static	long		vm_page_hash_mask;
-static	long		vm_page_buckets;
-static	long		page_shift;
-	queue_head_t	bucket;
-	struct vm_page	mem;
-	long		addr, baddr;
-
-	if (vm_page_hash_mask == 0 && !KREAD(nl[X_VM_PAGE_HASH_MASK].n_value,
-			&vm_page_hash_mask, sizeof (long))) {
-		seterr("can't read vm_page_hash_mask");
-		return 0;
-	}
-	if (page_shift == 0 && !KREAD(nl[X_PAGE_SHIFT].n_value,
-			&page_shift, sizeof (long))) {
-		seterr("can't read page_shift");
-		return 0;
-	}
-	if (vm_page_buckets == 0 && !KREAD(nl[X_VM_PAGE_BUCKETS].n_value,
-			&vm_page_buckets, sizeof (long))) {
-		seterr("can't read vm_page_buckets");
-		return 0;
-	}
-
-	baddr = vm_page_buckets + vm_page_hash(object,offset) * sizeof(queue_head_t);
-	if (!KREAD(baddr, &bucket, sizeof (bucket))) {
-		seterr("can't read vm_page_bucket");
-		return 0;
-	}
-
-	addr = (long)bucket.next;
-	while (addr != baddr) {
-		if (!KREAD(addr, &mem, sizeof (mem))) {
-			seterr("can't read vm_page");
-			return 0;
-		}
-		if ((long)mem.object == object && mem.offset == offset) {
-			*maddr = (long)mem.phys_addr;
-			return 1;
-		}
-		addr = (long)mem.hashq.next;
-	}
-	return 0;
 }
 
 #include <varargs.h>
