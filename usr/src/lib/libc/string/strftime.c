@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strftime.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)strftime.c	5.12 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -32,7 +32,10 @@ static char *Bfmt[] = {
 
 static size_t gsize;
 static char *pt;
-static int _add(), _conv(), _secs();
+static int _add __P((char *));
+static int _conv __P((int, int, char));
+static int _secs __P((const struct tm *));
+static size_t _fmt __P((const char *, const struct tm *));
 
 size_t
 strftime(s, maxsize, format, t)
@@ -41,7 +44,6 @@ strftime(s, maxsize, format, t)
 	const char *format;
 	const struct tm *t;
 {
-	static size_t _fmt();
 
 	pt = s;
 	if ((gsize = maxsize) < 1)
@@ -55,8 +57,8 @@ strftime(s, maxsize, format, t)
 
 static size_t
 _fmt(format, t)
-	register char *format;
-	struct tm *t;
+	register const char *format;
+	const struct tm *t;
 {
 	for (; *format; ++format) {
 		if (*format == '%')
@@ -220,9 +222,9 @@ _fmt(format, t)
 	return(gsize);
 }
 
-static
+static int
 _secs(t)
-	struct tm *t;
+	const struct tm *t;
 {
 	static char buf[15];
 	register time_t s;
@@ -237,7 +239,7 @@ _secs(t)
 	return(_add(++p));
 }
 
-static
+static int
 _conv(n, digits, pad)
 	int n, digits;
 	char pad;
@@ -252,7 +254,7 @@ _conv(n, digits, pad)
 	return(_add(++p));
 }
 
-static
+static int
 _add(str)
 	register char *str;
 {
