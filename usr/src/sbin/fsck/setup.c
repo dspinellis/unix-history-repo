@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.17 (Berkeley) %G%";
 #endif not lint
 
 #define DKTYPENAMES
@@ -16,9 +16,12 @@ static char sccsid[] = "@(#)setup.c	5.16 (Berkeley) %G%";
 #include <sys/ioctl.h>
 #include <sys/disklabel.h>
 #include <sys/file.h>
+#include <machine/endian.h>
 #include <ctype.h>
 #include "fsck.h"
 
+BUFAREA asblk;
+#define altsblock asblk.b_un.b_fs
 #define POWEROF2(num)	(((num) & ((num) - 1)) == 0)
 
 char	*calloc();
@@ -74,12 +77,11 @@ setup(dev)
 	initbarea(&fileblk);
 	initbarea(&inoblk);
 	initbarea(&cgblk);
+	initbarea(&asblk);
 	if (lp = getdisklabel((char *)NULL, dfile.rfdes))
 		dev_bsize = secsize = lp->d_secsize;
-	else {
-		dev_bsize = DEV_BSIZE;
-		secsize = 0;			/* guess later */
-	}
+	else
+		dev_bsize = secsize = DEV_BSIZE;
 	/*
 	 * Read in the superblock, looking for alternates if necessary
 	 */
@@ -129,11 +131,62 @@ setup(dev)
 			sblock.fs_interleave);
 		sblock.fs_interleave = 1;
 			sbdirty();
+			dirty(&asblk);
+		}
 	}
 	if (sblock.fs_npsect < sblock.fs_nsect) {
 			sblock.fs_npsect);
 		sblock.fs_npsect = sblock.fs_nsect;
 			sbdirty();
+			dirty(&asblk);
+		}
+	}
+	if (sblock.fs_postblformat == FS_42POSTBLFMT) {
+		pwarn("OLD FILE SYSTEM FORMAT\n");
+		if (!preen && reply("CONVERT TO NEW FILE SYSTEM FORMAT") == 1) {
+			cvtflag++;
+			sblock.fs_postblformat = FS_DYNAMICPOSTBLFMT;
+			sblock.fs_nrpos = 8;
+			sblock.fs_postbloff =
+			    (char *)(&sblock.fs_opostbl[0][0]) -
+			    (char *)(&sblock.fs_link);
+			sblock.fs_rotbloff = &sblock.fs_space[0] -
+			    (u_char *)(&sblock.fs_link);
+			/*
+			 * Planning now for future expansion.
+			 */
+#			if (BYTE_ORDER == BIG_ENDIAN)
+				sblock.fs_qbmask.val[0] = 0;
+				sblock.fs_qbmask.val[1] = ~sblock.fs_bmask;
+				sblock.fs_qfmask.val[0] = 0;
+				sblock.fs_qfmask.val[1] = ~sblock.fs_fmask;
+#			endif /* BIG_ENDIAN */
+#			if (BYTE_ORDER == LITTLE_ENDIAN)
+				sblock.fs_qbmask.val[0] = ~sblock.fs_bmask;
+				sblock.fs_qbmask.val[1] = 0;
+				sblock.fs_qfmask.val[0] = ~sblock.fs_fmask;
+				sblock.fs_qfmask.val[1] = 0;
+#			endif /* LITTLE_ENDIAN */
+			sbdirty();
+			dirty(&asblk);
+		}
+	} else if (cvtflag) {
+		/*
+		 * Requested to convert from new format to old format
+		 */
+		if (sblock.fs_nrpos != 8 || sblock.fs_ipg > 2048 ||
+		    sblock.fs_cpg > 32) {
+			printf("PARAMETERS OF CURRENT FILE SYSTEM DO NOT\n\t");
+			errexit("ALLOW CONVERSION TO OLD FILE SYSTEM FORMAT\n");
+		}
+		pwarn("CONVERTING TO OLD FILE SYSTEM FORMAT\n");
+		sblock.fs_postblformat = FS_42POSTBLFMT;
+		sbdirty();
+		dirty(&asblk);
+	}
+	if (asblk.b_dirty) {
+		bcopy((char *)&sblock, (char *)&altsblock, sblock.fs_sbsize);
+		flush(&dfile, &asblk);
 	}
 	/*
 	 * read in the summary info.
@@ -186,12 +239,9 @@ badsb:
 readsb(listerr)
 	int listerr;
 {
-	BUFAREA asblk;
-#	define altsblock asblk.b_un.b_fs
 	off_t sboff;
 	daddr_t super = bflag ? bflag : SBOFF / dev_bsize;
 
-	initbarea(&asblk);
 	if (bread(&dfile, (char *)&sblock, super, (long)SBSIZE) != 0)
 		return (0);
 	sblk.b_bno = super;
@@ -203,7 +253,7 @@ readsb(listerr)
 		{ badsb(listerr, "MAGIC NUMBER WRONG"); return (0); }
 	if (sblock.fs_ncg < 1)
 		{ badsb(listerr, "NCG OUT OF RANGE"); return (0); }
-	if (sblock.fs_cpg < 1 || sblock.fs_cpg > MAXCPG)
+	if (sblock.fs_cpg < 1)
 		{ badsb(listerr, "CPG OUT OF RANGE"); return (0); }
 	if (sblock.fs_ncg * sblock.fs_cpg < sblock.fs_ncyl ||
 	    (sblock.fs_ncg - 1) * sblock.fs_cpg >= sblock.fs_ncyl)
@@ -215,8 +265,6 @@ readsb(listerr)
 	 * according to fsbtodb, and adjust superblock block number
 	 * so we can tell if this is an alternate later.
 	 */
-	if (sblock.fs_dbsize && secsize == 0)
-		secsize = sblock.fs_dbsize;
 	super *= dev_bsize;
 	dev_bsize = sblock.fs_fsize / fsbtodb(&sblock, 1);
 	sblk.b_bno = super / dev_bsize;
@@ -225,15 +273,13 @@ readsb(listerr)
 	 * of whole super block against an alternate super block.
 	 * When an alternate super-block is specified this check is skipped.
 	 */
+	getblk(&asblk, cgsblock(&sblock, sblock.fs_ncg - 1), sblock.fs_sbsize);
+	if (asblk.b_errs != NULL)
+		return (0);
 	if (bflag) {
 		havesb = 1;
 		return (1);
 	}
-	getblk(&asblk, cgsblock(&sblock, sblock.fs_ncg - 1), sblock.fs_sbsize);
-	if (asblk.b_errs != NULL)
-		return (0);
-	altsblock.fs_fsbtodb = sblock.fs_fsbtodb;
-	altsblock.fs_dbsize = sblock.fs_dbsize;
 	altsblock.fs_link = sblock.fs_link;
 	altsblock.fs_rlink = sblock.fs_rlink;
 	altsblock.fs_time = sblock.fs_time;
@@ -248,14 +294,19 @@ readsb(listerr)
 	altsblock.fs_optim = sblock.fs_optim;
 	altsblock.fs_rotdelay = sblock.fs_rotdelay;
 	altsblock.fs_maxbpg = sblock.fs_maxbpg;
-	altsblock.fs_npsect = sblock.fs_npsect;
-	altsblock.fs_interleave = sblock.fs_interleave;
 	bcopy((char *)sblock.fs_csp, (char *)altsblock.fs_csp,
 		sizeof sblock.fs_csp);
 	bcopy((char *)sblock.fs_fsmnt, (char *)altsblock.fs_fsmnt,
 		sizeof sblock.fs_fsmnt);
 	bcopy((char *)sblock.fs_sparecon, (char *)altsblock.fs_sparecon,
 		sizeof sblock.fs_sparecon);
+	/*
+	 * The following should not have to be copied.
+	 */
+	altsblock.fs_fsbtodb = sblock.fs_fsbtodb;
+	altsblock.fs_interleave = sblock.fs_interleave;
+	altsblock.fs_npsect = sblock.fs_npsect;
+	altsblock.fs_nrpos = sblock.fs_nrpos;
 	if (bcmp((char *)&sblock, (char *)&altsblock, (int)sblock.fs_sbsize)) {
 		badsb(listerr,
 		"VALUES IN SUPER BLOCK DISAGREE WITH THOSE IN FIRST ALTERNATE");
@@ -263,7 +314,6 @@ readsb(listerr)
 	}
 	havesb = 1;
 	return (1);
-#	undef altsblock
 }
 
 badsb(listerr, s)
