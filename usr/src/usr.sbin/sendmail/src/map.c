@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.58 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.59 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2428,6 +2428,86 @@ bestmx_map_lookup(map, name, av, statp)
 }
 
 #endif
+/*
+**  Program map type.
+**
+**	This provides access to arbitrary programs.  It should be used
+**	only very sparingly, since there is no way to bound the cost
+**	of invoking an arbitrary program.
+*/
+
+char *
+prog_map_lookup(map, name, av, statp)
+	MAP *map;
+	char *name;
+	char **av;
+	int *statp;
+{
+	int i;
+	register char *p;
+	int fd;
+	auto pid_t pid;
+	char *argv[MAXPV + 1];
+	char buf[MAXLINE];
+
+	if (tTd(38, 20))
+		printf("prog_map_lookup(%s, %s) %s\n",
+			map->map_mname, name, map->map_file);
+
+	i = 0;
+	argv[i++] = map->map_file;
+	strcpy(buf, map->map_rebuild);
+	for (p = strtok(buf, " \t"); p != NULL; p = strtok(NULL, " \t"))
+	{
+		if (i >= MAXPV - 1)
+			break;
+		argv[i++] = p;
+	}
+	argv[i++] = name;
+	argv[i] = NULL;
+	pid = prog_open(argv, &fd, CurEnv);
+	if (pid < 0)
+	{
+		if (tTd(38, 9))
+			printf("prog_map_lookup(%s) failed (%s) -- closing",
+				map->map_mname, errstring(errno));
+		map->map_mflags &= ~(MF_VALID|MF_OPEN);
+		return NULL;
+	}
+	i = read(fd, buf, sizeof buf - 1);
+	if (i <= 0 && tTd(38, 2))
+		printf("prog_map_lookup(%s): read error %s\n",
+			map->map_mname, strerror(errno));
+	if (i > 0)
+	{
+		char *rval;
+
+		buf[i] = '\0';
+		p = strchr(buf, '\n');
+		if (p != NULL)
+			*p = '\0';
+
+		/* collect the return value */
+		if (bitset(MF_MATCHONLY, map->map_mflags))
+			rval = map_rewrite(map, name, strlen(name), NULL);
+		else
+			rval = map_rewrite(map, buf, strlen(buf), NULL);
+
+		/* now flush any additional output */
+		while ((i = read(fd, buf, sizeof buf)) > 0)
+			continue;
+		close(fd);
+
+		/* and wait for the process to terminate */
+		*statp = waitfor(pid);
+
+		return rval;
+	}
+
+	close(fd);
+	*statp = waitfor(pid);
+	return NULL;
+}
 /*
 **  Sequenced map type.
 **
