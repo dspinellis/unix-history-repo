@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -291,7 +291,7 @@ substitute(cp)
 	SPACE tspace;
 	regex_t *re;
 	size_t re_off, slen;
-	int n;
+	int lastempty, n;
 	char *s;
 
 	s = ps;
@@ -306,27 +306,44 @@ substitute(cp)
 	if (!regexec_e(re, s, 0, 0, psl))
 		return (0);
 
-	SS.len = 0;				/* Clean substitute space. */
-	slen = psl;
-	n = cp->u.s->n;
-	switch (n) {
-	case 0:					/* Global */
-		do {
-			/* Locate start of replaced string. */
-			re_off = match[0].rm_so;
-			/* Copy leading retained string. */
-			cspace(&SS, s, re_off, APPEND);
-			/* Add in regular expression. */
-			regsub(&SS, s, cp->u.s->new);
-			/* Move past this match. */
-			s += match[0].rm_eo;
-			slen -= match[0].rm_eo;
-		} while(match[0].rm_so != match[0].rm_eo &&
-		    regexec_e(re, s, REG_NOTBOL, 0, slen));
+  	SS.len = 0;				/* Clean substitute space. */
+  	slen = psl;
+  	n = cp->u.s->n;
+	lastempty = 1;
 
+  	switch (n) {
+  	case 0:					/* Global */
+  		do {
+			if (lastempty || match[0].rm_so != match[0].rm_eo) {
+				/* Locate start of replaced string. */
+				re_off = match[0].rm_so;
+				/* Copy leading retained string. */
+				cspace(&SS, s, re_off, APPEND);
+				/* Add in regular expression. */
+				regsub(&SS, s, cp->u.s->new);
+			}
+
+  			/* Move past this match. */
+			if (match[0].rm_so != match[0].rm_eo) {
+				s += match[0].rm_eo;
+				slen -= match[0].rm_eo;
+				lastempty = 0;
+			} else {
+				if (match[0].rm_so == 0)
+					cspace(&SS,
+					    s, match[0].rm_so + 1, APPEND);
+				else
+					cspace(&SS,
+					    s + match[0].rm_so, 1, APPEND);
+				s += match[0].rm_so + 1;
+				slen -= match[0].rm_so + 1;
+				lastempty = 1;
+			}
+		} while (slen > 0 && regexec_e(re, s, REG_NOTBOL, 0, slen));
 		/* Copy trailing retained string. */
-		cspace(&SS, s, slen, APPEND);
-		break;
+		if (slen > 0)
+			cspace(&SS, s, slen, APPEND);
+  		break;
 	default:				/* Nth occurrence */
 		while (--n) {
 			s += match[0].rm_eo;
