@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)process.c 1.9 %G%";
+static char sccsid[] = "@(#)process.c 1.10 %G%";
 
 /*
  * Process management.
@@ -78,7 +78,7 @@ typedef enum { TEXTSEG, DATASEG } PioSeg;
 
 private struct Process pbuf;
 
-#define MAXNCMDARGS 10         /* maximum number of arguments to RUN */
+#define MAXNCMDARGS 100         /* maximum number of arguments to RUN */
 
 private Boolean just_started;
 private int argc;
