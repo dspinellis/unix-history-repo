@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)itime.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)itime.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef sunos
@@ -214,13 +214,13 @@ getrecord(df, ddatep)
 	FILE *df;
 	struct dumpdates *ddatep;
 {
-	char buf[BUFSIZ];
+	char tbuf[BUFSIZ];
 
 	recno = 0;
-	if ( (fgets(buf, BUFSIZ, df)) != buf)
+	if ( (fgets(tbuf, BUFSIZ, df)) != tbuf)
 		return(-1);
 	recno++;
-	if (makedumpdate(ddatep, buf) < 0)
+	if (makedumpdate(ddatep, tbuf) < 0)
 		msg("Unknown intermediate format in %s, line %d\n",
 			dumpdates, recno);
 
@@ -234,13 +234,13 @@ getrecord(df, ddatep)
 time_t	unctime();
 
 int
-makedumpdate(ddp, buf)
+makedumpdate(ddp, tbuf)
 	struct dumpdates *ddp;
-	char *buf;
+	char *tbuf;
 {
 	char un_buf[128];
 
-	sscanf(buf, DUMPINFMT, ddp->dd_name, &ddp->dd_level, un_buf);
+	sscanf(tbuf, DUMPINFMT, ddp->dd_name, &ddp->dd_level, un_buf);
 	ddp->dd_ddate = unctime(un_buf);
 	if (ddp->dd_ddate < 0)
 		return(-1);
