@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)gmon.c	4.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)gmon.c	4.4 (Berkeley) %G%";
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -48,14 +48,15 @@ start()
 	/*
 	 *	ALL REGISTER VARIABLES!!!
 	 */
-    register struct kframe	*kfp;		/* r11 */
+    register int		r11;		/* init needs r11 */
+    register struct kframe	*kfp;		/* r10 */
     register char		**targv;
     register char		**argv;
 
 #ifdef lint
     kfp = 0;
 #else not lint
-    asm( "	movl	sp,r11" );		/* catch it quick */
+    asm( "	movl	sp,r10" );		/* catch it quick */
 #endif not lint
     for ( argv = targv = &kfp -> kargv[0] ; *targv++ ; /* void */ )
 	/* VOID */ ;
