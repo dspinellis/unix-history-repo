@@ -1,4 +1,4 @@
-/*	kern_proc.c	3.25	%G%	*/
+/*	kern_proc.c	3.26	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -460,6 +460,8 @@ exit(rv)
 			}
 		panic("exit");
 	}
+	if (p->p_pid == 1)
+		panic("init died");
 done:
 	((struct xproc *)p)->xp_xstat = rv;		/* overlay */
 	((struct xproc *)p)->xp_vm = u.u_vm;		/* overlay */
