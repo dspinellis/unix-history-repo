@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ht.c	7.4 (Berkeley) %G%
+ *	@(#)ht.c	7.5 (Berkeley) %G%
  */
 
 #include "tu.h"
