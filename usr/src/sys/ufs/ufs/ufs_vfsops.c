@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_vfsops.c	7.6 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -58,35 +58,55 @@ smount()
 		return;
 	}
 	fs = mountfs(dev, uap->ronly, ip);
-	if (fs == 0)
+	if (fs == 0) {
+		iput(ip);
 		return;
+	}
 	(void) copyinstr(uap->freg, fs->fs_fsmnt, sizeof(fs->fs_fsmnt)-1, &len);
 	bzero(fs->fs_fsmnt + len, sizeof (fs->fs_fsmnt) - len);
 }
 
-/* this routine has races if running twice */
 struct fs *
 mountfs(dev, ronly, ip)
 	dev_t dev;
 	int ronly;
 	struct inode *ip;
 {
-	register struct mount *mp = 0;
-	struct buf *tp = 0;
-	register struct buf *bp = 0;
+	register struct mount *mp;
+	struct mount *fmp = NULL;
+	struct buf *tp = NULL;
+	register struct buf *bp = NULL;
 	register struct fs *fs;
 	struct partinfo dpart;
 	int havepart = 0, blks;
-	caddr_t space;
+	caddr_t base, space;
 	int i, size;
 	register error;
 	int needclose = 0;
 
+	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++) {
+		if (mp->m_fs == NULL) {
+			if (fmp == NULL)
+				fmp = mp;
+		} else if (dev == mp->m_dev) {
+			u.u_error = EBUSY;		/* XXX */
+			return ((struct fs *) NULL);
+		}
+	}
+	if ((mp = fmp) == NULL) {
+		u.u_error = EMFILE;		/* needs translation      XXX */
+		return ((struct fs *) NULL);
+	}
+	mp->m_fs = (struct fs *)1;	/* just to reserve this slot */
+	mp->m_dev = dev;
 	error =
 	    (*bdevsw[major(dev)].d_open)(dev, ronly ? FREAD : FREAD|FWRITE,
 	        S_IFBLK);
-	if (error)
-		goto out;
+	if (error) {
+		u.u_error = error;
+		mp->m_fs = NULL;
+		return ((struct fs *) NULL);
+	}
 	needclose = 1;
 	if ((*bdevsw[major(dev)].d_ioctl)(dev, DIOCGPART,
 	    (caddr_t)&dpart, FREAD) == 0) {
@@ -117,24 +137,11 @@ mountfs(dev, ronly, ip)
 #else SECSIZE
 	tp = bread(dev, SBLOCK, SBSIZE);
 #endif SECSIZE
-	if (tp->b_flags & B_ERROR)
+	if (tp->b_flags & B_ERROR) {
+		mp->m_fs = NULL;
 		goto out;
-	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
-		if (mp->m_fs != NULL && dev == mp->m_dev) {
-			mp = 0;
-			error = EBUSY;
-			goto out;
-		}
-	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
-		if (mp->m_fs == NULL)
-			goto found;
-	mp = 0;
-	error = EMFILE;		/* needs translation */
-	goto out;
-found:
-	mp->m_fs = tp->b_un.b_fs;	/* just to reserve this slot */
-	mp->m_dev = NODEV;
-	fs = mp->m_fs;
+	}
+	fs = tp->b_un.b_fs;
 	if (fs->fs_magic != FS_MAGIC || fs->fs_bsize > MAXBSIZE ||
 	    fs->fs_bsize < sizeof(struct fs)) {
 		error = EINVAL;		/* also needs translation */
@@ -144,7 +151,7 @@ found:
 	bcopy((caddr_t)tp->b_un.b_addr, (caddr_t)mp->m_fs,
 	   (u_int)fs->fs_sbsize);
 	brelse(tp);
-	tp = 0;
+	tp = NULL;
 	fs = mp->m_fs;
 	fs->fs_ronly = (ronly != 0);
 	if (ronly == 0)
@@ -182,8 +189,8 @@ found:
 		fs->fs_dbsize = size;
 	}
 	blks = howmany(fs->fs_cssize, fs->fs_fsize);
-	space = (caddr_t)malloc(fs->fs_cssize, M_SUPERBLK, M_WAITOK);
-	if (space == 0) {
+	base = space = (caddr_t)malloc(fs->fs_cssize, M_SUPERBLK, M_WAITOK);
+	if (space == NULL) {
 		error = ENOMEM;
 		goto out;
 	}
@@ -198,17 +205,16 @@ found:
 		tp = bread(dev, fsbtodb(fs, fs->fs_csaddr + i), size);
 #endif SECSIZE
 		if (tp->b_flags&B_ERROR) {
-			free(space, M_SUPERBLK);
+			free(base, M_SUPERBLK);
 			goto out;
 		}
 		bcopy((caddr_t)tp->b_un.b_addr, space, (u_int)size);
 		fs->fs_csp[fragstoblks(fs, i)] = (struct csum *)space;
 		space += size;
 		brelse(tp);
-		tp = 0;
+		tp = NULL;
 	}
 	mp->m_inodp = ip;
-	mp->m_dev = dev;
 	if (ip) {
 		ip->i_flag |= IMOUNT;
 		cacheinval(ip);
@@ -221,22 +227,16 @@ found:
 
 	return (fs);
 out:
-	if (error == 0)
-		error = EIO;
-	if (needclose && ip)
-		(void) closei((dev_t)ip->i_rdev, IFBLK,
-		    ronly? FREAD : FREAD|FWRITE);
 	if (needclose)
-		(void) closei((dev_t)ip->i_rdev, IFBLK,
-		    ronly? FREAD : FREAD|FWRITE);
-	if (ip)
-		iput(ip);
-	if (mp && mp->m_fs)
+		(void) closei(dev, IFBLK, ronly? FREAD : FREAD|FWRITE);
+	if (mp->m_fs) {
 		free((caddr_t)mp->m_fs, M_SUPERBLK);
+		mp->m_fs = NULL;
+	}
 	if (tp)
 		brelse(tp);
-	u.u_error = error;
-	return (0);
+	u.u_error = error ? error : EIO;			/* XXX */
+	return ((struct fs *) NULL);
 }
 
 umount()
@@ -290,8 +290,8 @@ found:
 	fs = mp->m_fs;
 	free((caddr_t)fs->fs_csp[0], M_SUPERBLK);
 	free((caddr_t)mp->m_fs, M_SUPERBLK);
-	mp->m_fs = 0;
-	mp->m_dev = 0;
+	mp->m_fs = NULL;
+	mp->m_dev = NODEV;
 	mpurge(mp - &mount[0]);
 	error = closei(dev, IFBLK, fs->fs_ronly? FREAD : FREAD|FWRITE);
 	irele(ip);
