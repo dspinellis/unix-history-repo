@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.137		%G%);
+SCCSID(@(#)main.c	3.138		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -354,7 +354,7 @@ main(argc, argv)
 
 	if (pass <= 1)
 	{
-		if (!safecf || OpMode == MD_FREEZE || !thaw())
+		if (!safecf || OpMode == MD_FREEZE || !thaw(FreezeFile))
 			readcf(ConfFile, safecf);
 		else
 			goto crackargs;
@@ -362,7 +362,7 @@ main(argc, argv)
 	switch (OpMode)
 	{
 	  case MD_FREEZE:
-		freeze();
+		freeze(FreezeFile);
 		exit(EX_OK);
 
 	  case MD_INITALIAS:
@@ -1250,26 +1250,42 @@ queuename(e, type)
 	char type;
 {
 	static char buf[MAXNAME];
+	/* these must go in initialized data space for freeze/thaw in smtp */
+	static int pid = -1;
+	static char c1 = 'A';
+	static char c2 = 'A';
 
 	if (e->e_id == NULL)
 	{
-		char counter = 'A' - 1;
 		char qf[20];
 		char lf[20];
 		char nf[20];
 
 		/* find a unique id */
-		(void) sprintf(qf, "qf_%05d", getpid());
+		if (pid != getpid())
+		{
+			/* new process -- start back at "AA" */
+			pid = getpid();
+			c1 = 'A';
+			c2 = 'A' - 1;
+		}
+		(void) sprintf(qf, "qfAA%05d", pid);
 		strcpy(lf, qf);
 		lf[0] = 'l';
 		strcpy(nf, qf);
 		nf[0] = 'n';
 
-		while (counter < '~')
+		while (c1 < '~' || c2 < 'Z')
 		{
 			int i;
 
-			qf[2] = lf[2] = nf[2] = ++counter;
+			if (c2 >= 'Z')
+			{
+				c1++;
+				c2 = 'A' - 1;
+			}
+			qf[2] = lf[2] = nf[2] = c1;
+			qf[3] = lf[3] = nf[3] = ++c2;
 # ifdef DEBUG
 			if (tTd(7, 20))
 				printf("queuename: trying \"%s\"\n", nf);
@@ -1292,7 +1308,7 @@ queuename(e, type)
 				break;
 			(void) unlink(lf);
 		}
-		if (counter >= '~')
+		if (c1 >= '~' && c2 >= 'Z')
 		{
 			syserr("queuename: Cannot create \"%s\" in \"%s\"",
 				lf, QueueDir);
@@ -1322,13 +1338,13 @@ queuename(e, type)
 **	This will be used to efficiently load the configuration file.
 **
 **	Parameters:
-**		none.
+**		freezefile -- the name of the file to freeze to.
 **
 **	Returns:
 **		none.
 **
 **	Side Effects:
-**		Writes BSS and malloc'ed memory to FreezeFile
+**		Writes BSS and malloc'ed memory to freezefile
 */
 
 struct frz
@@ -1338,18 +1354,19 @@ struct frz
 	char	frzver[252];		/* sendmail version */
 };
 
-freeze()
+freeze(freezefile)
+	char *freezefile;
 {
 	int f;
 	struct frz fhdr;
 	extern char edata;
 	extern char *sbrk();
 
-	if (FreezeFile == NULL)
+	if (freezefile == NULL)
 		return;
 
 	/* try to open the freeze file */
-	f = open(FreezeFile, 1);
+	f = creat(freezefile, FileMode);
 	if (f < 0)
 	{
 		syserr("Cannot freeze");
@@ -1374,27 +1391,28 @@ freeze()
 **  THAW -- read in the frozen configuration file.
 **
 **	Parameters:
-**		none.
+**		freezefile -- the name of the file to thaw from.
 **
 **	Returns:
 **		TRUE if it successfully read the freeze file.
 **		FALSE otherwise.
 **
 **	Side Effects:
-**		reads FreezeFile in to BSS area.
+**		reads freezefile in to BSS area.
 */
 
-thaw()
+thaw(freezefile)
+	char *freezefile;
 {
 	int f;
 	struct frz fhdr;
 	extern char edata;
 
-	if (FreezeFile == NULL)
+	if (freezefile == NULL)
 		return (FALSE);
 
 	/* open the freeze file */
-	f = open(FreezeFile, 0);
+	f = open(freezefile, 0);
 	if (f < 0)
 	{
 		errno = 0;

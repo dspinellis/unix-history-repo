@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.25		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.26		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.25		%G%);
+SCCSID(@(#)usersmtp.c	3.26		%G%);
 
 /*
 **  SMTPINIT -- initialize SMTP.
@@ -83,6 +83,26 @@ smtpinit(m, pvp, ctladdr)
 		return (EX_UNAVAILABLE);
 	else if (REPLYTYPE(r) != 2)
 		return (EX_TEMPFAIL);
+
+	/*
+	**  If this is expected to be another sendmail, send some internal
+	**  commands.
+	*/
+
+	if (bitset(M_INTERNAL, m->m_flags))
+	{
+		/* tell it to be verbose */
+		smtpmessage("VERB");
+		r = reply();
+		if (r < 0)
+			return (EX_TEMPFAIL);
+
+		/* tell it we will be sending one transaction only */
+		smtpmessage("ONEX");
+		r = reply();
+		if (r < 0)
+			return (EX_TEMPFAIL);
+	}
 
 	/*
 	**  Send the HOPS command.
