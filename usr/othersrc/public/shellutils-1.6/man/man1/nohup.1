@@ -1,0 +1,30 @@
+.TH NOHUP 1L \" -*- nroff -*-
+.SH NAME
+nohup \- run a command immume to hangups, with output to a non-tty
+.SH SYNOPSIS
+.B nohup
+command [arg...]
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR nohup .
+.B nohup
+runs the given
+.I command
+with hangup signals ignored and the scheduling priority increased by
+5, so that the command can continue running in the background after
+you log out.  If the standard output is a tty, it and the standard
+error are redirected so that they are appended to the file
+`nohup.out'; if that cannot be written to, they are appended to the
+file `$HOME/nohup.out'.  If that cannot be written to, the command is
+not run.
+.PP
+If
+.B nohup
+creates the file `nohup.out' or `$HOME/nohup.out', it creates it with
+no access permissions for group or other.  It does not change the
+permissions of those files if they already existed.
+.PP
+.B nohup
+does not automatically put the command it runs in the background; you
+must do that explicitly, by ending the command line with an `&'.

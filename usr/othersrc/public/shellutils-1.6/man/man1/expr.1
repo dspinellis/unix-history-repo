@@ -1,0 +1,74 @@
+.TH EXPR 1L \" -*- nroff -*-
+.SH NAME
+expr \- evaluate expressions
+.SH SYNOPSIS
+.B expr
+expression...
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR expr .
+.B expr
+evaluates an expression and writes the result on its standard output.
+Each token of the expression must be a separate argument.  Operands
+are either numbers or strings.  Strings are not quoted for \fBexpr\fP,
+though you may need to quote them to protect them from the shell.
+.B expr
+coerces anything appearing in an operand position to an integer or a
+string depending on the operation being applied to it.
+.PP
+The operators (in order of increasing precedence) are:
+.IP "\fI|\fP"
+yields its first argument if it is neither null nor 0, otherwise its
+second argument.  This is the usual `or' operation.
+.IP "\fI&\fP"
+yields its first argument if neither argument is null or 0,
+otherwise 0.
+.IP "\fI<\fP \fI<=\fP \fI=\fP \fI!=\fP \fI>=\fP \fI>\fP"
+compare their arguments and return `1' if the relation is true, 0
+otherwise.  \fBexpr\fP tries to coerce both arguments to numbers and
+do a numeric comparison; if it fails when trying to coerce either
+argument it then does a lexicographic comparison.
+.IP "\fI+\fP \fI-\fP"
+perform arithmetic operations.  Both arguments are coerced to numbers;
+an error occurs if this cannot be done.
+.IP "\fI*\fP \fI/\fP \fI%\fP"
+perform arithmetic operations (`%' is the remainder operation, as in
+C).  Both arguments are coerced to numbers; an error occurs if this
+cannot be done.
+.IP "\fI:\fP"
+performs pattern matching.  Its arguments are coerced to strings and
+the second one is considered to be a regular expression, with a `^'
+implicitly added at the beginning.  The first argument is then matched
+against this regular expression.  If the match succeeds and part of
+the string is enclosed in `\e(' and `\e)', that part is the value of
+the \fI:\fP expression; otherwise an integer whose value is the number
+of characters matched is returned.  If the match fails, the \fI:\fP
+operator returns the null string if `\e(' and `\e)' are used,
+otherwise 0.  Only one `\e(' and `\e)' pair can be used.
+.TP
+Parentheses are used for grouping in the usual manner.
+.PP
+Examples:
+.PP
+To add 1 to the shell variable
+.IR a :
+.IP
+a=\`expr $a + 1\`
+.PP
+To find the filename part of the pathname stored in variable
+.IR a ,
+which may or may not contain `/':
+.IP
+expr $a : \'.*/\e(\^.*\e)\' \'\^|\' $a
+.LP
+Note the quoted shell metacharacters.
+.PP
+.B expr
+returns the following exit status:
+.PP
+0 if the expression is neither null nor 0,
+.br
+1 if the expression is null or 0,
+.br
+2 for invalid expressions.
