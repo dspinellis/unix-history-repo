@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: ite.c 1.28 92/12/20$
  *
- *	@(#)ite.c	7.15 (Berkeley) %G%
+ *	@(#)ite.c	7.16 (Berkeley) %G%
  */
 
 /*
@@ -159,15 +159,15 @@ iteoff(dev, flag)
 {
 	register struct ite_softc *ip = &ite_softc[UNIT(dev)];
 
-	if (flag & 2)
+	if (flag & 2) {
 		ip->flags |= ITE_INGRF;
+		ip->flags &= ~ITE_CURSORON;
+	}
 	if ((ip->flags & ITE_ACTIVE) == 0)
 		return;
 	if ((flag & 1) ||
-	    (ip->flags & (ITE_INGRF|ITE_ISCONS|ITE_INITED)) == ITE_INITED) {
+	    (ip->flags & (ITE_INGRF|ITE_ISCONS|ITE_INITED)) == ITE_INITED)
 		(*ip->isw->ite_deinit)(ip);
-		ip->flags &= ~ITE_CURSORON;
-	}
 	if ((flag & 2) == 0)
 		ip->flags &= ~ITE_ACTIVE;
 }
@@ -290,7 +290,7 @@ itestart(tp)
 	register struct tty *tp;
 {
 	register int cc, s;
-	int hiwat = 0;
+	int hiwat = 0, hadcursor = 0;
 	struct ite_softc *ip;
 
 	/*
@@ -331,12 +331,17 @@ itestart(tp)
 		 * Saves a lot of expensive window move operations.
 		 */
 		ip = &ite_softc[UNIT(tp->t_dev)];
-		ite_erasecursor(ip, ip->isw);
-		ip->flags &= ~ITE_CURSORON;
+		if (ip->flags & ITE_CURSORON) {
+			ite_erasecursor(ip, ip->isw);
+			ip->flags &= ~ITE_CURSORON;
+			hadcursor = 1;
+		}
 		while (--cc >= 0)
 			iteputchar(getc(&tp->t_outq), tp->t_dev);
-		ip->flags |= ITE_CURSORON;
-		ite_drawcursor(ip, ip->isw);
+		if (hadcursor) {
+			ip->flags |= ITE_CURSORON;
+			ite_drawcursor(ip, ip->isw);
+		}
 		if (hiwat) {
 			tp->t_state |= TS_TIMEOUT;
 			timeout(iterestart, tp, 1);
