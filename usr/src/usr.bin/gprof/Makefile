@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.12 (Berkeley) %G%
+#	@(#)Makefile	5.13 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -23,6 +23,7 @@ SRCS=	gprof.c arcs.c dfn.c lookup.c ${MACHINE}.c hertz.c \
 	printgprof.c printlist.c
 OBJS=	gprof.o arcs.o dfn.o lookup.o ${MACHINE}.o hertz.o \
 	printgprof.o printlist.o
+MAN=	gprof.0
 
 all: gprof
 
@@ -38,49 +39,23 @@ gcrt0.h: FRC
 		cp ../../lib/libc/${MACHINE}/csu/gmon.h gcrt0.h; \
 	fi
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core gprof
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 gprof ${DESTDIR}/usr/ucb/gprof
 	install -c -o bin -g bin -m 444 gprof.flat ${DESTDIR}/usr/lib
 	install -c -o bin -g bin -m 444 gprof.callg ${DESTDIR}/usr/lib
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-gprof.o: gprof.c gprof.h /usr/include/stdio.h /usr/include/sys/types.h
-gprof.o: /usr/include/sys/stat.h /usr/include/a.out.h /usr/include/sys/exec.h
-gprof.o: gcrt0.h tahoe.h
-arcs.o: arcs.c gprof.h /usr/include/stdio.h /usr/include/sys/types.h
-arcs.o: /usr/include/sys/stat.h /usr/include/a.out.h /usr/include/sys/exec.h
-arcs.o: gcrt0.h tahoe.h
-dfn.o: dfn.c /usr/include/stdio.h gprof.h /usr/include/stdio.h
-dfn.o: /usr/include/sys/types.h /usr/include/sys/stat.h /usr/include/a.out.h
-dfn.o: /usr/include/sys/exec.h gcrt0.h tahoe.h
-lookup.o: lookup.c gprof.h /usr/include/stdio.h /usr/include/sys/types.h
-lookup.o: /usr/include/sys/stat.h /usr/include/a.out.h /usr/include/sys/exec.h
-lookup.o: gcrt0.h tahoe.h
-tahoe.o: tahoe.c gprof.h /usr/include/stdio.h /usr/include/sys/types.h
-tahoe.o: /usr/include/sys/stat.h /usr/include/a.out.h /usr/include/sys/exec.h
-tahoe.o: gcrt0.h tahoe.h
-hertz.o: hertz.c /usr/include/sys/time.h /usr/include/time.h
-printgprof.o: printgprof.c gprof.h /usr/include/stdio.h
-printgprof.o: /usr/include/sys/types.h /usr/include/sys/stat.h
-printgprof.o: /usr/include/a.out.h /usr/include/sys/exec.h gcrt0.h tahoe.h
-printlist.o: printlist.c gprof.h /usr/include/stdio.h /usr/include/sys/types.h
-printlist.o: /usr/include/sys/stat.h /usr/include/a.out.h
-printlist.o: /usr/include/sys/exec.h gcrt0.h tahoe.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
