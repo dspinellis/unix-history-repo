@@ -1,4 +1,0 @@
-cp sdb sdb.temp
-install -s sdb /usr/bin
-chmod: can't change /usr/bin/sdb
-mv sdb.temp sdb

@@ -1,0 +1,46 @@
+#
+# remake options -- this isn't necessary unless you add/delete options
+#
+onintr ifintr
+cp ex_data.c /tmp/$$.c
+ex - /tmp/$$.c <<'%'
+	g/^#include/d
+	w
+	q
+'%'
+cc -E $* /tmp/$$.c >/tmp/foo.c
+ex - /tmp/foo.c <<'X'
+	" delete all preprocessor output (# line, etc)
+	g/^# /d
+	set sh=/bin/csh
+	" delete junk (all but data lines)
+	g/^[ 	]*$/d
+	1,/option options/d
+	/}/-1,$d
+	" get rid of all of line but option name
+	1,$s/	"//
+	1,$s/".*//
+	1m$	" kludge since options start at 0 but num at 1
+	%!num
+	$t0	" unkludge
+	1s/......../     0  /	" unkludge
+	" make #define lines
+	1,$s/\(......\)\(.*\)/#define	\U\2\L	\1/
+	" get rid of extra blanks, turning into (single) tabs.
+	1,$s/	 */	/g
+	g/  */s//	/g
+	" filter through expand to make it line up nice
+	%!expand -8\,24
+	" blank line and number of options.
+	$i
+
+.
+	$s/e[ 	].*[ 	]/e	NOPTS	/
+	0a
+	/*  sccs id   @(#)  ex_vars.h  @(#)makeoptions	6.1 10/19/80  */
+.
+	w! ex_vars.h
+	q
+'X'
+ifintr:
+rm /tmp/foo.c

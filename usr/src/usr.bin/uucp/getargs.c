@@ -1,0 +1,89 @@
+static char sccsid[] = "@(#)getargs.c	4.1	(Berkeley)	9/11/82";
+
+#include <stdio.h>
+
+
+/*******
+ *	getargs(s, arps)
+ *	char *s, *arps[];
+ *
+ *	getargs  -  this routine will generate a vector of
+ *	pointers (arps) to the substrings in string "s".
+ *	Each substring is separated by blanks and/or tabs.
+ *	Strings containing blanks may be specified by quoting,
+ *	in a manner similar to using the shell.
+ *	Control characters are entered by ^X where X is any
+ *	character; ^? gets you a rubout and ^^ is a real ^.
+ *
+ *	return - the number of subfields.
+ */
+
+getargs(s, arps)
+register char *s;
+char *arps[];
+{
+	int i;
+	register char *sp;
+	register char qchar;
+
+	i = 0;
+#if 0			/* old code - just for reference */
+	while (1) {
+		arps[i] = NULL;
+		while (*s == ' ' || *s == '\t')
+			*s++ = '\0';
+		if (*s == '\n')
+			*s = '\0';
+		if (*s == '\0')
+			break;
+		arps[i++] = s++;
+		while (*s != '\0' && *s != ' '
+			&& *s != '\t' && *s != '\n')
+				s++;
+	}
+#else
+	for (;;) {
+		while (*s == ' ' || *s == '\t')
+			++s;
+		if (*s == '\n' || *s == '\0')
+			break;
+		arps[i++] = sp = s;
+		qchar = 0;
+		while(*s != '\0'  &&  *s != '\n') {
+			if (qchar == 0 && (*s == ' ' || *s == '\t')) {
+				++s;
+				break;
+			}
+			switch(*s) {
+			default:
+				*sp++ = *s++;
+				break;
+			case '^':
+				if(*++s == '^')
+					*sp++ = '^';
+				else if(*s == '?')
+					*sp++ = 0177;
+				else
+					*sp++ = *s & 037;
+				s++;
+				break;
+			case '"':
+			case '\'':
+				if(qchar == *s) {
+					qchar = 0;
+					++s;
+					break;
+				}
+				if(qchar)
+					*sp++ = *s++;
+				else
+					qchar = *s++;
+				break;
+			}
+		}
+		*sp++ = 0;
+	}
+	arps[i] = NULL;
+	return(i);
+#endif
+}
