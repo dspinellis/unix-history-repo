@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.87 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.88 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.87 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.88 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -797,7 +797,7 @@ host_map_lookup(map, name, av, statp)
 			       name,
 			       s->s_namecanon.nc_cname == NULL
 					? "NULL"
-					: s->s_namecanon.nc_name);
+					: s->s_namecanon.nc_cname);
 		errno = s->s_namecanon.nc_errno;
 #if NAMED_BIND
 		h_errno = s->s_namecanon.nc_herrno;
