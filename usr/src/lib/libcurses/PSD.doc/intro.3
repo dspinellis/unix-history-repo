@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)intro.3	6.7 (Berkeley) %G%
+.\"	@(#)intro.3	6.8 (Berkeley) %G%
 .\"
 .sh 1 Usage
 .pp
@@ -187,7 +187,7 @@ when
 .Fn initscr
 was first called.
 The terminal state module uses the variable 
-.Vn origtermio
+.Vn curses_termios
 to save the original terminal state which is then restored upon a call to 
 .Fn endwin .
 Thus,

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)intro.5	6.8 (Berkeley) %G%
+.\"	@(#)intro.5	6.9 (Berkeley) %G%
 .\"
 .sh 1 "Character Output and Scrolling"
 .pp
@@ -32,7 +32,7 @@ character output conventions.
 .sh 1 "Terminal State Handling"
 .pp
 The variable
-.Vn origtermio
+.Vn curses_termios
 contains the terminal state of the terminal.  Certain historical routines 
 return information:
 .Fn baudrate , 
@@ -42,7 +42,7 @@ and
 .Fn ospeed .
 These routines are obsolete and exist only for backward compatibility.  If
 you wish to use the information in the 
-.Vn origtermio
+.Vn curses_termios
 structure, you should use the
 \fItsetattr\fP(3) 
 routines.
