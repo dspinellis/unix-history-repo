@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1984 Regents of the University of California.
+ * Copyright (c) 1984, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)inline.h	1.6 (Berkeley) %G%
+ *	@(#)inline.h	7.1 (Berkeley) %G%
  */
 
 /*

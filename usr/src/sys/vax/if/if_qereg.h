@@ -1,4 +1,4 @@
-/*	@(#)if_qereg.h	6.1 (Berkeley) %G% */
+/*	@(#)if_qereg.h	7.1 (Berkeley) %G% */
 
 /* @(#)if_qereg.h	1.2 (ULTRIX) 1/3/85 */
  

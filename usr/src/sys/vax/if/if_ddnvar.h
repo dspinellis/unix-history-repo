@@ -1,4 +1,4 @@
-/*	@(#)if_ddnvar.h	6.2 (Berkeley) %G% */
+/*	@(#)if_ddnvar.h	7.1 (Berkeley) %G% */
 
 
 

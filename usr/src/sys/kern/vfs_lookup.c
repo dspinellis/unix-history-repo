@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982 Regents of the University of California.
+ * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vfs_lookup.c	6.30 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.1 (Berkeley) %G%
  */
 
 #include "param.h"
