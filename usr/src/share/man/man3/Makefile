@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 MDIR=	/usr/man/cat3
 SRCS=	abort.3 abs.3 alarm.3 asinh.3 assert.3 atof.3 \
@@ -23,7 +23,7 @@ SRCS=	abort.3 abs.3 alarm.3 asinh.3 assert.3 atof.3 \
 	j0.3 lgamma.3 lib2648.3 malloc.3 math.3 mktemp.3 monitor.3 \
 	mp.3 ndbm.3 nice.3 nlist.3 ns.3 pause.3 perror.3 plot.3 popen.3 \
 	printf.3 psignal.3 putc.3 puts.3 qsort.3 rand.3 random.3 rcmd.3 \
-	regex.3 resolver.3 rexec.3 scandir.3 scanf.3 setbuf.3 \
+	regex.3 regexp.3 resolver.3 rexec.3 scandir.3 scanf.3 setbuf.3 \
 	setjmp.3 \
 	setuid.3 siginterrupt.3 signal.3 sin.3 sinh.3 sleep.3 sqrt.3 \
 	stdio.3 string.3 stty.3 swab.3 syslog.3 system.3 termcap.3 time.3 \
@@ -40,7 +40,7 @@ OBJS=	abort.0 abs.0 alarm.0 asinh.0 assert.0 atof.0 \
 	j0.0 lgamma.0 lib2648.0 malloc.0 math.0 mktemp.0 monitor.0 \
 	mp.0 ndbm.0 nice.0 nlist.0 ns.0 pause.0 perror.0 plot.0 popen.0 \
 	printf.0 psignal.0 putc.0 puts.0 qsort.0 rand.0 random.0 rcmd.0 \
-	regex.0 resolver.0 rexec.0 scandir.0 scanf.0 setbuf.0 \
+	regex.0 regexp.0 resolver.0 rexec.0 scandir.0 scanf.0 setbuf.0 \
 	setjmp.0 \
 	setuid.0 siginterrupt.0 signal.0 sin.0 sinh.0 sleep.0 sqrt.0 \
 	stdio.0 string.0 stty.0 swab.0 syslog.0 system.0 termcap.0 time.0 \
@@ -201,10 +201,10 @@ install: FRC
 	ln ${DESTDIR}${MDIR}/putc.0 ${DESTDIR}${MDIR}/putw.0
 	ln ${DESTDIR}${MDIR}/regex.0 ${DESTDIR}${MDIR}/re_comp.0
 	ln ${DESTDIR}${MDIR}/regex.0 ${DESTDIR}${MDIR}/re_exec.0
-	ln ${DESTDIR}${MDIR}/regex.0 ${DESTDIR}${MDIR}/regcomp.0
-	ln ${DESTDIR}${MDIR}/regex.0 ${DESTDIR}${MDIR}/regexec.0
-	ln ${DESTDIR}${MDIR}/regex.0 ${DESTDIR}${MDIR}/regsub.0
-	ln ${DESTDIR}${MDIR}/regex.0 ${DESTDIR}${MDIR}/regerror.0
+	ln ${DESTDIR}${MDIR}/regexp.0 ${DESTDIR}${MDIR}/regcomp.0
+	ln ${DESTDIR}${MDIR}/regexp.0 ${DESTDIR}${MDIR}/regexec.0
+	ln ${DESTDIR}${MDIR}/regexp.0 ${DESTDIR}${MDIR}/regsub.0
+	ln ${DESTDIR}${MDIR}/regexp.0 ${DESTDIR}${MDIR}/regerror.0
 	ln ${DESTDIR}${MDIR}/ieee.0 ${DESTDIR}${MDIR}/scalb.0
 	ln ${DESTDIR}${MDIR}/crypt.0 ${DESTDIR}${MDIR}/setkey.0
 	ln ${DESTDIR}${MDIR}/plot.0 ${DESTDIR}${MDIR}/space.0
