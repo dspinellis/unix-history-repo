@@ -1,4 +1,4 @@
-/*	systm.h	3.3	%G%	*/
+/*	systm.h	3.4	%G%	*/
 
 /*
  * Random set of variables
@@ -30,6 +30,7 @@ int	nblkdev;
  */
 int	nchrdev;
 
+int	nswdev;			/* number of swap devices */
 int	mpid;			/* generic for unique process id's */
 char	runin;			/* scheduling flag */
 char	runout;			/* scheduling flag */
@@ -40,7 +41,6 @@ char	curpri;			/* more scheduling */
 int	maxmem;			/* actual max memory per process */
 int	physmem;		/* physical memory on this CPU */
 
-daddr_t	swplo;			/* block number of swap space */
 int	nswap;			/* size of swap space */
 int	updlock;		/* lock for sync */
 daddr_t	rablock;		/* block to be read ahead */
@@ -48,6 +48,7 @@ char	msgbuf[MSGBUFS];	/* saved "printf" characters */
 int	intstack[512];		/* stack for interrupts */
 dev_t	rootdev;		/* device of the root */
 dev_t	swapdev;		/* swapping device */
+dev_t	argdev;
 dev_t	pipedev;		/* pipe device */
 
 extern	int icode[];		/* user init code */
@@ -64,15 +65,6 @@ int	memall();
 int	uchar();
 int	vmemall();
 swblk_t	vtod();
-/*
- * Instrumentation
- */
-int	dk_busy;
-long	dk_time[32];
-long	dk_numb[3];
-long	dk_wds[3];
-long	tk_nin;
-long	tk_nout;
 
 /*
  * Structure of the system-entry table
