@@ -1,4 +1,3 @@
-netinet/in_cksum.c	optional inet
 vax/autoconf.c		standard device-driver
 vax/clock.c		standard
 vax/conf.c		standard
@@ -6,6 +5,7 @@ vax/cons.c		standard
 vax/cpudata.c		standard
 vax/dkbad.c		standard
 vax/flp.c		standard
+vax/in_cksum.c		optional inet
 vax/machdep.c		standard
 vax/mem.c		standard
 vax/trap.c		standard
