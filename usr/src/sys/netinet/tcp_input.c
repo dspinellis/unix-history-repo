@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	7.10 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -32,6 +32,7 @@
 
 int	tcpprintfs = 0;
 int	tcpcksum = 1;
+int	tcprexmtthresh = 3;
 struct	tcpiphdr tcp_saveti;
 extern	tcpnodelack;
 
@@ -278,12 +279,16 @@ findpcb:
 	/*
 	 * If the state is CLOSED (i.e., TCB does not exist) then
 	 * all data in the incoming segment is discarded.
+	 * If the TCB exists but is in CLOSED state, it is embryonic,
+	 * but should either do a listen or a connect soon.
 	 */
 	if (inp == 0)
 		goto dropwithreset;
 	tp = intotcpcb(inp);
 	if (tp == 0)
 		goto dropwithreset;
+	if (tp->t_state == TCPS_CLOSED)
+		goto drop;
 	so = inp->inp_socket;
 	if (so->so_options & SO_DEBUG) {
 		ostate = tp->t_state;
@@ -443,21 +448,6 @@ findpcb:
 				tp->snd_nxt = tp->snd_una;
 		}
 		tp->t_timer[TCPT_REXMT] = 0;
-		/*
-		 * If we didn't have to retransmit,
-		 * set the initial estimate of srtt.
-		 * Set the variance to half the rtt
-		 * (so our first retransmit happens at 2*rtt).
-		 */
-		if (tp->t_rtt) {
-			tp->t_srtt = tp->t_rtt << 3;
-			tp->t_rttvar = tp->t_rtt << 1;
-			tp->t_rtt = 0;
-			tp->t_rxtshift = 0;
-			TCPT_RANGESET(tp->t_rxtcur, 
-			    ((tp->t_srtt >> 2) + tp->t_rttvar) >> 1,
-			    TCPTV_MIN, TCPTV_REXMTMAX);
-		}
 		tp->irs = ti->ti_seq;
 		tcp_rcvseqinit(tp);
 		tp->t_flags |= TF_ACKNOW;
@@ -467,6 +457,18 @@ findpcb:
 			tp->t_state = TCPS_ESTABLISHED;
 			tp->t_maxseg = MIN(tp->t_maxseg, tcp_mss(tp));
 			(void) tcp_reass(tp, (struct tcpiphdr *)0);
+			/*
+			 * if we didn't have to retransmit the SYN,
+			 * use its rtt as our initial srtt & rtt var.
+			 */
+			if (tp->t_rtt) {
+				tp->t_srtt = tp->t_rtt << 3;
+				tp->t_rttvar = tp->t_rtt << 1;
+				TCPT_RANGESET(tp->t_rxtcur, 
+				    ((tp->t_srtt >> 2) + tp->t_rttvar) >> 1,
+				    TCPTV_MIN, TCPTV_REXMTMAX);
+				tp->t_rtt = 0;
+			}
 		} else
 			tp->t_state = TCPS_SYN_RECEIVED;
 
@@ -519,6 +521,7 @@ trimthenstep6:
 			tcpstat.tcps_rcvduppack++;
 			tcpstat.tcps_rcvdupbyte += ti->ti_len;
 			todrop = ti->ti_len;
+			tiflags &= ~TH_FIN;
 			tp->t_flags |= TF_ACKNOW;
 		} else {
 			tcpstat.tcps_rcvpartduppack++;
@@ -690,10 +693,50 @@ do_rst:
 	case TCPS_TIME_WAIT:
 
 		if (SEQ_LEQ(ti->ti_ack, tp->snd_una)) {
-			if (ti->ti_len == 0)
+			if (ti->ti_len == 0 && ti->ti_win == tp->snd_wnd) {
 				tcpstat.tcps_rcvdupack++;
+				/*
+				 * If we have outstanding data (not a
+				 * window probe), this is a completely
+				 * duplicate ack (ie, window info didn't
+				 * change), the ack is the biggest we've
+				 * seen and we've seen exactly our rexmt
+				 * threshhold of them, assume a packet
+				 * has been dropped and retransmit it.
+				 * Kludge snd_nxt & the congestion
+				 * window so we send only this one
+				 * packet.  Close the congestion
+				 * window to half its current size
+				 * to prevent a restart burst if this
+				 * packet fills all the holes in the
+				 * receiver's sequence space and she
+				 * advertises a fully open window on
+				 * the next real ack.
+				 */
+				if (tp->t_timer[TCPT_REXMT] == 0 ||
+				    ti->ti_ack != tp->snd_una)
+					tp->t_dupacks = 0;
+				else if (++tp->t_dupacks == tcprexmtthresh) {
+					tcp_seq onxt = tp->snd_nxt;
+					u_short cwnd = tp->snd_cwnd;
+
+					tp->t_timer[TCPT_REXMT] = 0;
+					tp->t_rtt = 0;
+					tp->snd_nxt = ti->ti_ack;
+					tp->snd_cwnd = tp->t_maxseg;
+					(void) tcp_output(tp);
+
+					if (cwnd >= 4 * tp->t_maxseg)
+						tp->snd_cwnd = cwnd / 2;
+					if (SEQ_GT(onxt, tp->snd_nxt))
+						tp->snd_nxt = onxt;
+					goto drop;
+				}
+			} else
+				tp->t_dupacks = 0;
 			break;
 		}
+		tp->t_dupacks = 0;
 		if (SEQ_GT(ti->ti_ack, tp->snd_max)) {
 			tcpstat.tcps_rcvacktoomuch++;
 			goto dropafterack;
@@ -721,7 +764,9 @@ do_rst:
 				 * to the smoothing algorithm in rfc793
 				 * with an alpha of .875
 				 * (srtt = rtt/8 + srtt*7/8 in fixed point).
+				 * Adjust t_rtt to origin 0.
 				 */
+				tp->t_rtt--;
 				delta = tp->t_rtt - (tp->t_srtt >> 3);
 				if ((tp->t_srtt += delta) <= 0)
 					tp->t_srtt = 1;
@@ -730,7 +775,7 @@ do_rst:
 				 * (actually, a smoothed mean difference),
 				 * then set the retransmit timer to smoothed
 				 * rtt + 2 times the smoothed variance.
-				 * rttvar is strored as fixed point
+				 * rttvar is stored as fixed point
 				 * with 2 bits after the binary point
 				 * (scaled by 4).  The following is equivalent
 				 * to rfc793 smoothing with an alpha of .75
@@ -771,10 +816,20 @@ do_rst:
 		} else if (tp->t_timer[TCPT_PERSIST] == 0)
 			tp->t_timer[TCPT_REXMT] = tp->t_rxtcur;
 		/*
-		 * When new data is acked, open the congestion window
-		 * by one max-sized segment.
+		 * When new data is acked, open the congestion window.
+		 * If the window gives us less than ssthresh packets
+		 * in flight, open exponentially (maxseg per packet).
+		 * Otherwise open linearly (maxseg per window,
+		 * or maxseg^2 / cwnd per packet).
 		 */
-		tp->snd_cwnd = MIN(tp->snd_cwnd + tp->t_maxseg, 65535);
+		{
+		u_int incr = tp->t_maxseg;
+
+		if (tp->snd_cwnd > tp->snd_ssthresh)
+			incr = MAX(incr * incr / tp->snd_cwnd, 1);
+
+		tp->snd_cwnd = MIN(tp->snd_cwnd + incr, 65535); /* XXX */
+		}
 		if (acked > so->so_snd.sb_cc) {
 			tp->snd_wnd -= so->so_snd.sb_cc;
 			sbdrop(&so->so_snd, (int)so->so_snd.sb_cc);
@@ -864,10 +919,8 @@ step6:
 	     tp->snd_wl2 == ti->ti_ack && ti->ti_win > tp->snd_wnd))) {
 		/* keep track of pure window updates */
 		if (ti->ti_len == 0 &&
-		    tp->snd_wl2 == ti->ti_ack && ti->ti_win > tp->snd_wnd) {
+		    tp->snd_wl2 == ti->ti_ack && ti->ti_win > tp->snd_wnd)
 			tcpstat.tcps_rcvwinupd++;
-			tcpstat.tcps_rcvdupack--;
-		}
 		tp->snd_wnd = ti->ti_win;
 		tp->snd_wl1 = ti->ti_seq;
 		tp->snd_wl2 = ti->ti_ack;
@@ -954,7 +1007,7 @@ dodata:							/* XXX */
 		 * our window, in order to estimate the sender's
 		 * buffer size.
 		 */
-		len = tp->rcv_nxt - tp->rcv_adv;
+		len = so->so_rcv.sb_hiwat - (tp->rcv_adv - tp->rcv_nxt);
 		if (len > tp->max_rcvd)
 			tp->max_rcvd = len;
 	} else {
@@ -1195,6 +1248,7 @@ tcp_mss(tp)
 #endif
 	if (in_localaddr(inp->inp_faddr))
 		return (mss);
+
 	mss = MIN(mss, TCP_MSS);
 	tp->snd_cwnd = mss;
 	return (mss);
