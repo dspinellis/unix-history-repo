@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)nm.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)nm.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -193,20 +193,18 @@ show_archive(fname, fp)
 		}
 
 		/*
-		 * construct a name of the form "archive.a(obj.o)" for the
+		 * construct a name of the form "archive.a:obj.o:" for the
 		 * current archive entry if the object name is to be printed
 		 * on each output line
 		 */
 		if (print_file_each_line) {
-			(void)sprintf(name, "%s(", fname);
+			(void)sprintf(name, "%s:", fname);
 			p = name + strlen(name);
 		} else
 			p = name;
 		for (i = 0; i < sizeof(ar_head.ar_name); ++i)
 			if (ar_head.ar_name[i] && ar_head.ar_name[i] != ' ')
 				*p++ = ar_head.ar_name[i];
-		if (print_file_each_line)
-			*p++ = ')';
 		*p++ = '\0';
 
 		/* remember start position of current archive object */
@@ -332,7 +330,7 @@ show_objfile(objname, fp)
 	 * read the string table offset by 4 - all indices into the string
 	 * table include the size specification.
 	 */
-	stabsize -=4;		/* we already have the size */
+	stabsize -= 4;		/* we already have the size */
 	if (fread(stab + 4, 1, (int)stabsize, fp) != stabsize) {
 		(void)fprintf(stderr,
 		    "nm: %s: stab truncated..\n", objname);
@@ -401,7 +399,7 @@ print_symbol(objname, sym)
 	char *typestring(), typeletter();
 
 	if (print_file_each_line)
-		printf("%s: ", objname);
+		printf("%s:", objname);
 
 	/*
 	 * handle undefined-only format seperately (no space is
