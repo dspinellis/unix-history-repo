@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)mkdep.1	5.7 (Berkeley) %G%
+.\"	@(#)mkdep.1	5.8 (Berkeley) %G%
 .\"
 .TH MKDEP 1 ""
 .UC 5
@@ -22,15 +22,16 @@ mkdep \- construct Makefile dependency list
 .SH SYNOPSIS
 .B mkdep
 [
-.B \-f depend_file
+.B \-ap
 ] [
-.B \-p
+.B \-f depend_file
 ] [ flags ] file ...
 .SH DESCRIPTION
 \fIMkdep\fP takes a set of flags for the C compiler and a list
 of C source files as arguments and constructs a set of include
-file dependencies which are written into the file \fI.depend\fP.
-An example of its use in a Makefile might be:
+file dependencies which are written into the file \fIdepend_file\fP,
+or ``.depend'' by default.  An example of its use in a Makefile
+might be:
 .nf
 .RS
 
@@ -42,13 +43,14 @@ depend:
 .RE
 .PP
 where the macro SRCS is the list of C source files and the macro
-CFLAGS is the list of flags for the C compiler.  The \fB-f\fP option
-provides \fImkdep\fP with a name other than ``Makefile'' to be edited.
+CFLAGS is the list of flags for the C compiler.
+.PP
 If the \fB-p\fP option is provided, \fImkdep\fP produces dependencies
 of the form ``program: program.c'' so that subsequent makes will
 produce \fIprogram\fP directly from its C module rather than using an
 intermediate \fI.o\fP module.  This is useful in directories that
 contain many programs, each of whose source is contained in a single
-C module.
+C module.  The \fB-a\fP option causes appending to the output file,
+so that multiple \fImkdep\fP's may be run from a single Makefile.
 .SH "SEE ALSO"
 cc(1), cpp(1), make(1)
