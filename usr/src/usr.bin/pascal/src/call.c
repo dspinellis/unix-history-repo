@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)call.c 1.10 %G%";
+static	char sccsid[] = "@(#)call.c 1.11 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -11,9 +11,6 @@ static	char sccsid[] = "@(#)call.c 1.10 %G%";
 #   include "pc.h"
 #   include "pcops.h"
 #endif PC
-
-short	slenline = 0;
-short	floatline = 0;
 
 /*
  * Call generates code for calls to
@@ -65,6 +62,8 @@ call(p, argv, porf, psbn)
 	    long	temptype;	/* type of the temporary */
 	    long	p_type_width;
 	    long	p_type_align;
+	    char	extname[ BUFSIZ ];
+
 #	endif PC
 
 #	ifdef OBJ
@@ -117,25 +116,8 @@ call(p, argv, porf, psbn)
 			/*
 			 *	... p( ...
 			 */
-		    {
-			char	extname[ BUFSIZ ];
-			char	*starthere;
-			int	funcbn;
-			int	i;
-
-			starthere = &extname[0];
-			funcbn = p -> nl_block & 037;
-			for ( i = 1 ; i < funcbn ; i++ ) {
-			    sprintf( starthere , EXTFORMAT , enclosing[ i ] );
-			    starthere += strlen( enclosing[ i ] ) + 1;
-			}
-			sprintf( starthere , EXTFORMAT , p -> symbol );
-			starthere += strlen( p -> symbol ) + 1;
-			if ( starthere >= &extname[ BUFSIZ ] ) {
-			    panic( "call namelength" );
-			}
-			putleaf( P2ICON , 0 , 0 , p2type( p ) , extname );
-		    }
+		    sextname( extname , p -> symbol , p -> nl_block & 037 );
+		    putleaf( P2ICON , 0 , 0 , p2type( p ) , extname );
 		    break;
 		case FFUNC:
 		case FPROC:

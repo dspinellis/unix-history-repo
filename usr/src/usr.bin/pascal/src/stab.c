@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)stab.c 1.5 %G%";
+static	char sccsid[] = "@(#)stab.c 1.6 %G%";
 
     /*
      *	procedures to put out sdb symbol table information.
@@ -160,6 +160,7 @@ stabfunc( name , class , line , level )
     {
 	int	type;
 	long	i;
+	char	extname[ BUFSIZ ];
 
 	    /*
 	     *	for separate compilation
@@ -181,11 +182,8 @@ stabfunc( name , class , line , level )
 	}
 	putprintf( "	.stabs	\"" , 1 );
 	putprintf( NAMEFORMAT , 1 , name );
-	putprintf( "\",0x%x,0,0x%x," , 1 , N_FUN , line );
-	for ( i = 1 ; i < level ; i++ ) {
-	    putprintf( EXTFORMAT , 1 , enclosing[ i ] );
-	}
-	putprintf( EXTFORMAT , 0 , name );
+	sextname( extname , name , level );
+	putprintf( "\",0x%x,0,0x%x,%s" , 0 , N_FUN , line , extname );
     }
 
     /*

@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static char sccsid[] = "@(#)flvalue.c 1.7 %G%";
+static char sccsid[] = "@(#)flvalue.c 1.8 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -34,6 +34,9 @@ flvalue( r , formalp )
 	struct nl	*p;
 	long		tempoff;
 	char		*typename;
+#ifdef PC
+	char		extname[ BUFSIZ ];
+#endif PC
 
 	if ( r == NIL ) {
 	    return NIL;
@@ -95,23 +98,8 @@ flvalue( r , formalp )
 			putleaf( P2ICON , 0 , 0 ,
 			    ADDTYPE( P2PTR , ADDTYPE( P2FTN , P2PTR|P2STRTY ) ) ,
 			    "_FSAV" );
-			{
-			    char	extname[ BUFSIZ ];
-			    char	*starthere;
-			    int		i;
-
-			    starthere = &extname[0];
-			    for ( i = 1 ; i < bn ; i++ ) {
-				sprintf( starthere , EXTFORMAT , enclosing[ i ] );
-				starthere += strlen( enclosing[ i ] ) + 1;
-			    }
-			    sprintf( starthere , EXTFORMAT , p -> symbol );
-			    starthere += strlen( p -> symbol ) + 1;
-			    if ( starthere >= &extname[ BUFSIZ ] ) {
-				panic( "flvalue namelength" );
-			    }
-			    putleaf( P2ICON , 0 , 0 , p2type( p ) , extname );
-			}
+			sextname( extname , p -> symbol , bn );
+			putleaf( P2ICON , 0 , 0 , p2type( p ) , extname );
 			putleaf( P2ICON , bn , 0 , P2INT , 0 );
 			putop( P2LISTOP , P2INT );
 			putLV( 0 , cbn , tempoff , P2STRTY );
