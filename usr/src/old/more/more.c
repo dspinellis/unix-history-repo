@@ -111,6 +111,9 @@ char *argv[];
     nfiles = argc;
     fnames = argv;
     initterm ();
+    nscroll = Lpp/2 - 1;
+    if (nscroll <= 0)
+	nscroll = 1;
     if(s = getenv("MORE")) argscan(s);
     while (--nfiles > 0) {
 	if ((ch = (*++fnames)[0]) == '-') {
