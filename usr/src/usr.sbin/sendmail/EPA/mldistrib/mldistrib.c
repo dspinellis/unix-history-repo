@@ -69,8 +69,8 @@ main(argc, argv)
 	/* output the Resent-xxx: fields */
 	fprintf(mailfp, "Resent-To:	%s\n", ml_name);
 	fprintf(mailfp, "Resent-From:	%s\n", ml_owner);
+	fprintf(mailfp, "Sender:	%s\n", ml_owner);
 
-sleep(120);
 	/*
 	**  Consume header
 	**
@@ -108,8 +108,16 @@ sleep(120);
 		  case 'r':
 		  case 'R':
 			if (sameword(p, "return-path", 12) ||
+#ifdef notyet
 			    sameword(p, "received", 9) ||
+#endif
 			    sameword(p, "resent-", 7))
+				mode = DISCARD;
+			break;
+
+		  case 's':
+		  case 'S':
+			if sameword(p, "sender", 7))
 				mode = DISCARD;
 			break;
 
@@ -167,7 +175,7 @@ openmailer(from, opt, argv)
 	extern int strlen();
 
 	bp = buf;
-	(void) sprintf(bp, "%s -f %s", _PATH_SENDMAIL, from);
+	(void) sprintf(bp, "%s -f %s -oi", _PATH_SENDMAIL, from);
 	bp += strlen(bp);
 
 	while (*opt != CHARNULL)
