@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso.c	7.18 (Berkeley) %G%
+ *	@(#)iso.c	7.19 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -40,8 +40,8 @@ SOFTWARE.
  * iso.c: miscellaneous routines to support the iso address family
  */
 
-#include "types.h"
 #include "param.h"
+#include "systm.h"
 #include "ioctl.h"
 #include "mbuf.h"
 #include "domain.h"

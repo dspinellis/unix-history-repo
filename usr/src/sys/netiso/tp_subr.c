@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_subr.c	7.18 (Berkeley) %G%
+ *	@(#)tp_subr.c	7.19 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -49,6 +49,7 @@ SOFTWARE.
  */
 
 #include "param.h"
+#include "systm.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "socketvar.h"

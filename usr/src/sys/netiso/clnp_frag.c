@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clnp_frag.c	7.12 (Berkeley) %G%
+ *	@(#)clnp_frag.c	7.13 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -37,6 +37,7 @@ SOFTWARE.
 /* $Source: /var/src/sys/netiso/RCS/clnp_frag.c,v $ */
 
 #include "param.h"
+#include "systm.h"
 #include "mbuf.h"
 #include "domain.h"
 #include "protosw.h"
