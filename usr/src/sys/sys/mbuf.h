@@ -1,4 +1,4 @@
-/* mbuf.h 4.2 81/10/29 */
+/* mbuf.h 4.3 81/11/08 */
 
 /*
  * Constants related to memory allocator.
@@ -9,7 +9,7 @@
 #define	MTAIL		4
 #define	MMAXOFF		(MSIZE-MTAIL)		/* offset where data ends */
 #define	MLEN		(MSIZE-MMINOFF-MTAIL)	/* mbuf data length */
-#define	NMPAGES		256
+#define	NMBPAGES	256
 
 /*
  * Macros for type conversion
@@ -18,8 +18,8 @@
  */
 
 /* network page map number to virtual address, and back */
-#define	pftom(x) ((struct mbuf *)((x << 10) + (int)netutl))
-#define	mtopf(x) ((((int)x & ~0x3ff) - (int)netutl) >> 10)
+#define	pftom(x) ((struct mbuf *)((x << 10) + (int)mbutl))
+#define	mtopf(x) ((((int)x & ~0x3ff) - (int)mbutl) >> 10)
 
 /* address in mbuf to mbuf head */
 #define	dtom(x)		((struct mbuf *)((int)x & ~0x7f))
@@ -34,10 +34,8 @@ struct mbuf {
 	u_char	m_dat[MLEN];		/* data storage */
 	struct	mbuf *m_act;		/* link in higher-level mbuf list */
 };
-struct	mbuf *mfree, *mpfree;
-int	nmpfree;
-char	mprefcnt[NMPAGES];
-struct	mbuf *m_get(), *m_free(), *m_more();
+
+#define	M_WAIT	1
 
 #define	MGET(m, i) \
 	{ int ms = splimp(); \
@@ -64,14 +62,20 @@ struct	mbuf *m_get(), *m_free(), *m_more();
 #define	NMBPG (PGSIZE/MSIZE)		/* mbufs/page */
 
 struct mbstat {
-	short	m_bufs;				/* # free msg buffers */
-	short	m_hiwat;			/* # free mbufs allocated */
-	short	m_lowat;			/* min. # free mbufs */
-	short	m_pages;			/* # pages owned by network */
+	short	m_bufs;			/* # free msg buffers */
+	short	m_hiwat;		/* # free mbufs allocated */
+	short	m_lowat;		/* min. # free mbufs */
+	short	m_pages;		/* # pages owned by network */
+	short	m_drops;		/* times failed to find space */
 };
 
 #ifdef	KERNEL
-extern	struct mbuf netutl[];		/* virtual address of net free mem */
-extern	struct pte Netmap[];		/* page tables to map Netutl */
+extern	struct mbuf mbutl[];		/* virtual address of net free mem */
+extern	struct pte Mbmap[];		/* page tables to map Netutl */
 struct	mbstat mbstat;
+int	nmbpages;
+struct	mbuf *mfree, *mpfree;
+int	nmpfree;
+char	mprefcnt[NMBPAGES];
+struct	mbuf *m_get(), *m_free(), *m_more();
 #endif

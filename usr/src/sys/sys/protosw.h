@@ -1,4 +1,4 @@
-/*	protosw.h	4.1	81/11/07	*/
+/*	protosw.h	4.2	81/11/08	*/
 
 /*
  * Protocol switch table.
@@ -32,6 +32,7 @@ struct protosw {
 	short	pr_family;		/* protocol family */
 	short	pr_protocol;		/* protocol number */
 	int	pr_flags;		/* see below */
+	int	(*pr_init)();		/* initialization hook */
 	int	(*pr_input)();		/* input to protocol (from below) */
 	int	(*pr_output)();		/* output to protocol (from above) */
 	int	(*pr_advise)();		/* advise about error condition */
@@ -63,18 +64,19 @@ struct protosw {
 #define	PRU_DETACH	1	/* detach protocol to up */
 #define	PRU_CONNECT	2	/* establish connection to peer */
 #define	PRU_DISCONNECT	3	/* disconnect from peer */
-/* for ISCONN and ISDISCONN a 0 return means yes */
 #define	PRU_ISCONN	4	/* is connection to peer complete? */
 #define	PRU_ISDISCONN	5	/* is disconnection from peer complete? */
-#define	PRU_RCVD	6	/* have taken data; more room now */
-#define	PRU_SEND	7	/* send this data */
-#define	PRU_ABORT	8	/* abort (fast DISCONNECT, DETATCH) */
-#define	PRU_CLEAR	9	/* network went down: clean up */
-#define	PRU_CONTROL	10	/* control operations on protocol */
-#define	PRU_FASTTIMO	11	/* for protocol's use only: fast timeout */
-#define	PRU_SLOWTIMO	12	/* for protocol's use only: slow timeout */
+#define	PRU_SHUTDOWN	6	/* won't send any more data */
+#define	PRU_RCVD	7	/* have taken data; more room now */
+#define	PRU_SEND	8	/* send this data */
+#define	PRU_ABORT	9	/* abort (fast DISCONNECT, DETATCH) */
+#define	PRU_CLEAR	10	/* network went down: clean up */
+#define	PRU_CONTROL	11	/* control operations on protocol */
+#define	PRU_FASTTIMO	12	/* for protocol's use only: fast timeout */
+#define	PRU_SLOWTIMO	13	/* for protocol's use only: slow timeout */
 /* need some stuff for splice */
 
 #ifdef KERNEL
 struct protosw protosw[];
+extern	struct protosw *pf_findproto(), *pf_findtype();
 #endif
