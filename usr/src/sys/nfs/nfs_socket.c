@@ -7,46 +7,36 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_socket.c	7.31 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.32 (Berkeley) %G%
  */
 
 /*
  * Socket operations for use by nfs
  */
 
-#include "types.h"
-#include "param.h"
-#include "uio.h"
-#include "proc.h"
-#include "signal.h"
-#include "mount.h"
-#include "kernel.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "vnode.h"
-#include "domain.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "syslog.h"
-#include "tprintf.h"
-#include "machine/endian.h"
-#include "netinet/in.h"
-#include "netinet/tcp.h"
-#ifdef ISO
-#include "netiso/iso.h"
-#endif
-#include "ufs/ufs/quota.h"
-#include "ufs/ufs/ufsmount.h"
-#include "rpcv2.h"
-#include "nfsv2.h"
-#include "nfs.h"
-#include "xdr_subs.h"
-#include "nfsm_subs.h"
-#include "nfsmount.h"
-#include "nfsnode.h"
-#include "nfsrtt.h"
-#include "nqnfs.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/mount.h>
+#include <sys/kernel.h>
+#include <sys/mbuf.h>
+#include <sys/vnode.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/syslog.h>
+#include <sys/tprintf.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <nfs/rpcv2.h>
+#include <nfs/nfsv2.h>
+#include <nfs/nfs.h>
+#include <nfs/xdr_subs.h>
+#include <nfs/nfsm_subs.h>
+#include <nfs/nfsmount.h>
+#include <nfs/nfsnode.h>
+#include <nfs/nfsrtt.h>
+#include <nfs/nqnfs.h>
 
 #define	TRUE	1
 #define	FALSE	0
@@ -1420,220 +1410,6 @@ nfs_rcvunlock(flagp)
 		*flagp &= ~NFSMNT_WANTRCV;
 		wakeup((caddr_t)flagp);
 	}
-}
-
-/*
- * This function compares two net addresses by family and returns TRUE
- * if they are the same host.
- * If there is any doubt, return FALSE.
- * The AF_INET family is handled as a special case so that address mbufs
- * don't need to be saved to store "struct in_addr", which is only 4 bytes.
- */
-nfs_netaddr_match(family, haddr, hmask, nam)
-	int family;
-	union nethostaddr *haddr;
-	union nethostaddr *hmask;
-	struct mbuf *nam;
-{
-	register struct sockaddr_in *inetaddr;
-#ifdef ISO
-	register struct sockaddr_iso *isoaddr1, *isoaddr2;
-#endif
-
-
-	switch (family) {
-	case AF_INET:
-		inetaddr = mtod(nam, struct sockaddr_in *);
-		if (inetaddr->sin_family != AF_INET)
-			return (0);
-		if (hmask) {
-			if ((inetaddr->sin_addr.s_addr & hmask->had_inetaddr) ==
-			    (haddr->had_inetaddr & hmask->had_inetaddr))
-				return (1);
-		} else if (inetaddr->sin_addr.s_addr == haddr->had_inetaddr)
-			return (1);
-		break;
-#ifdef ISO
-	case AF_ISO:
-		isoaddr1 = mtod(nam, struct sockaddr_iso *);
-		if (isoaddr1->siso_family != AF_ISO)
-			return (0);
-		isoaddr2 = mtod(haddr->had_nam, struct sockaddr_iso *);
-		if (isoaddr1->siso_nlen > 0 &&
-		    isoaddr1->siso_nlen == isoaddr2->siso_nlen &&
-		    SAME_ISOADDR(isoaddr1, isoaddr2))
-			return (1);
-		break;
-#endif	/* ISO */
-	default:
-		break;
-	};
-	return (0);
-}
-
-/*
- * Build hash lists of net addresses and hang them off the mount point.
- * Called by ufs_mount() to set up the lists of export addresses.
- */
-hang_addrlist(mp, argp)
-	struct mount *mp;
-	struct ufs_args *argp;
-{
-	register struct netaddrhash *np, **hnp;
-	register int i;
-	struct ufsmount *ump;
-	struct sockaddr *saddr;
-	struct mbuf *nam, *msk = (struct mbuf *)0;
-	union nethostaddr netmsk;
-	int error;
-
-	if (error = sockargs(&nam, (caddr_t)argp->saddr, argp->slen,
-	    MT_SONAME))
-	    return (error);
-	saddr = mtod(nam, struct sockaddr *);
-	ump = VFSTOUFS(mp);
-	if (saddr->sa_family == AF_INET &&
-	    ((struct sockaddr_in *)saddr)->sin_addr.s_addr == INADDR_ANY) {
-	    m_freem(nam);
-	    if (mp->mnt_flag & MNT_DEFEXPORTED)
-		return (EPERM);
-	    np = &ump->um_defexported;
-	    np->neth_exflags = argp->exflags;
-	    np->neth_anon = argp->anon;
-	    np->neth_anon.cr_ref = 1;
-	    mp->mnt_flag |= MNT_DEFEXPORTED;
-	    return (0);
-	}
-	if (argp->msklen > 0) {
-	    if (error = sockargs(&msk, (caddr_t)argp->smask, argp->msklen,
-		MT_SONAME)) {
-		m_freem(nam);
-		return (error);
-	    }
-
-	    /*
-	     * Scan all the hash lists to check against duplications.
-	     * For the net list, try both masks to catch a subnet
-	     * of another network.
-	     */
-	    hnp = &ump->um_netaddr[NETMASK_HASH];
-	    np = *hnp;
-	    if (saddr->sa_family == AF_INET)
-		netmsk.had_inetaddr =
-		    mtod(msk, struct sockaddr_in *)->sin_addr.s_addr;
-	    else
-		netmsk.had_nam = msk;
-	    while (np) {
-		if (nfs_netaddr_match(np->neth_family, &np->neth_haddr,
-		    &np->neth_hmask, nam) ||
-		    nfs_netaddr_match(np->neth_family, &np->neth_haddr,
-		    &netmsk, nam)) {
-			m_freem(nam);
-			m_freem(msk);
-			return (EPERM);
-		}
-		np = np->neth_next;
-	    }
-	    for (i = 0; i < NETHASHSZ; i++) {
-		np = ump->um_netaddr[i];
-		while (np) {
-		    if (nfs_netaddr_match(np->neth_family, &np->neth_haddr,
-			&netmsk, nam)) {
-			m_freem(nam);
-			m_freem(msk);
-			return (EPERM);
-		    }
-		    np = np->neth_next;
-		}
-	    }
-	} else {
-	    hnp = &ump->um_netaddr[NETADDRHASH(saddr)];
-	    np = ump->um_netaddr[NETMASK_HASH];
-	    while (np) {
-		if (nfs_netaddr_match(np->neth_family, &np->neth_haddr,
-		    &np->neth_hmask, nam)) {
-		    m_freem(nam);
-		    return (EPERM);
-		}
-		np = np->neth_next;
-	    }
-	    np = *hnp;
-	    while (np) {
-		if (nfs_netaddr_match(np->neth_family, &np->neth_haddr,
-		    (union nethostaddr *)0, nam)) {
-		    m_freem(nam);
-		    return (EPERM);
-		}
-		np = np->neth_next;
-	    }
-	}
-	np = (struct netaddrhash *) malloc(sizeof(struct netaddrhash), M_NETADDR,
-	    M_WAITOK);
-	np->neth_family = saddr->sa_family;
-	if (saddr->sa_family == AF_INET) {
-		np->neth_inetaddr = ((struct sockaddr_in *)saddr)->sin_addr.s_addr;
-		m_freem(nam);
-		if (msk) {
-			np->neth_inetmask = netmsk.had_inetaddr;
-			m_freem(msk);
-			if (np->neth_inetaddr &~ np->neth_inetmask)
-				return (EPERM);
-		} else
-			np->neth_inetmask = 0xffffffff;
-	} else {
-		np->neth_nam = nam;
-		np->neth_msk = msk;
-	}
-	np->neth_exflags = argp->exflags;
-	np->neth_anon = argp->anon;
-	np->neth_anon.cr_ref = 1;
-	np->neth_next = *hnp;
-	*hnp = np;
-	return (0);
-}
-
-/*
- * Free the net address hash lists that are hanging off the mount points.
- */
-free_addrlist(ump)
-	struct ufsmount *ump;
-{
-	register struct netaddrhash *np, *onp;
-	register int i;
-
-	for (i = 0; i <= NETHASHSZ; i++) {
-		np = ump->um_netaddr[i];
-		ump->um_netaddr[i] = (struct netaddrhash *)0;
-		while (np) {
-			onp = np;
-			np = np->neth_next;
-			if (onp->neth_family != AF_INET) {
-				m_freem(onp->neth_nam);
-				m_freem(onp->neth_msk);
-			}
-			free((caddr_t)onp, M_NETADDR);
-		}
-	}
-}
-
-/*
- * Generate a hash code for an iso host address. Used by NETADDRHASH() for
- * iso addresses.
- */
-iso_addrhash(saddr)
-	struct sockaddr *saddr;
-{
-#ifdef ISO
-	register struct sockaddr_iso *siso;
-	register int i, sum;
-
-	sum = 0;
-	for (i = 0; i < siso->siso_nlen; i++)
-		sum += siso->siso_data[i];
-	return (sum & (NETHASHSZ - 1));
-#else
-	return (0);
-#endif	/* ISO */
 }
 
 /*
