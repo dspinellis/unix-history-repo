@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)rune.3	8.1 (Berkeley) %G%
+.\"	@(#)rune.3	5.3 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt RUNE 3
@@ -28,6 +28,14 @@
 .Fn sgetrune "const char *string" "size_t n" "char const **result"
 .Ft int
 .Fn sputrune "rune_t rune" "char *string" "size_t n" "char **result"
+.sp
+.Fd #include <stdio.h>
+.Ft long
+.Fn fgetrune "FILE *stream"
+.Ft int
+.Fn fungetrune "rune_t rune" "FILE *stream"
+.Ft int
+.Fn fputrune "rune_t rune" "FILE *stream"
 .Sh DESCRIPTION
 The
 .Fn setrunelocale
@@ -125,6 +133,50 @@ In all cases,
 will return the number of bytes which would be needed to store
 .Fa rune
 as a multibyte character.
+.Pp
+The
+.Fn fgetrune
+function operates the same as
+.Fn sgetrune
+with the exception that it attempts to read enough bytes from 
+.Fa stream
+to decode a single rune.  It returns either
+.Ev EOF
+on end of file,
+.Ev _INVALID_RUNE
+on an encoding error, or the rune decoded if all went well.
+.Pp
+The
+.Fn fungetrune
+function function pushes the multibyte encoding, as provided by
+.Fn sputrune ,
+of
+.Fa rune
+onto
+.Fa stream 
+such that the next
+.Fn fgetrune
+call will return
+.Fa rune .
+It returns
+.Ev EOF
+if it fails and
+.Dv 0
+on success.
+.Pp
+The
+.Fn fputrune
+function writes the multibyte encoding of
+.Fa rune ,
+as provided by
+.Fn sputrune ,
+onto
+.Fa stream .
+It returns
+.Ev EOF
+on failure and
+.Dv 0
+on success.
 .Sh RETURN VALUES
 The
 .Fn setrunelocale
