@@ -1,4 +1,4 @@
-/*	ubareg.h	4.28	82/04/11	*/
+/*	ubareg.h	4.29	82/05/19	*/
 
 /*
  * VAX UNIBUS adapter registers
@@ -154,8 +154,7 @@ struct uba_regs
 #endif
 
 /*
- * Formulas for locations of the last 8k of UNIBUS memory
- * for each possible uba.
+ * Symbolic addresses of UNIBUS memory for UBAs.
  */
 #if VAX7ZZ
 #define	UMEM7ZZ		((u_short *)(0xfc0000))
@@ -166,3 +165,9 @@ struct uba_regs
 #if VAX780
 #define	UMEM780(i)	((u_short *)(0x20100000+(i)*0x40000))
 #endif
+
+/*
+ * Macro to offset a UNIBUS device address, often expressed as
+ * something like 0172520 by forcing it into the last 8K of UNIBUS space.
+ */
+#define	ubdevreg(addr)	(0760000|((addr)&017777))
