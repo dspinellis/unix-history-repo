@@ -12,18 +12,19 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dmesg.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)dmesg.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/cdefs.h>
 #include <sys/msgbuf.h>
+
 #include <fcntl.h>
-#include <limits.h>
-#include <time.h>
-#include <nlist.h>
 #include <kvm.h>
-#include <stdlib.h>
+#include <limits.h>
+#include <nlist.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 #include <unistd.h>
 #include <vis.h>
 
@@ -33,7 +34,6 @@ struct nlist nl[] = {
 	{ NULL },
 };
 
-void err __P((const char *, ...));
 void usage __P((void));
 
 #define	KREAD(addr, var) \
@@ -78,16 +78,16 @@ main(argc, argv)
 	buf[0] = 0;
 	kd = kvm_open(nlistf, memf, NULL, O_RDONLY, buf);
 	if (kd == NULL)
-		err("kvm_open: %s", buf);
+		errx(1, "kvm_open: %s", buf);
 	if (kvm_nlist(kd, nl) == -1)
-		err("kvm_nlist: %s", kvm_geterr(kd));
+		errx(1, "kvm_nlist: %s", kvm_geterr(kd));
 	if (nl[X_MSGBUF].n_type == 0)
-		err("%s: msgbufp not found", nlistf ? nlistf : "namelist");
+		errx(1, "%s: msgbufp not found", nlistf ? nlistf : "namelist");
 	if (KREAD(nl[X_MSGBUF].n_value, bufp) || KREAD((long)bufp, cur))
-		err("kvm_read: %s", kvm_geterr(kd));
+		errx(1, "kvm_read: %s", kvm_geterr(kd));
 	kvm_close(kd);
 	if (cur.msg_magic != MSG_MAGIC)
-		err("magic number incorrect");
+		errx(1, "magic number incorrect");
 	if (cur.msg_bufx >= MSG_BSIZE)
 		cur.msg_bufx = 0;
 
@@ -114,44 +114,15 @@ main(argc, argv)
 		if (ch == '\0')
 			continue;
 		newl = ch == '\n';
-		(void) vis(buf, ch, 0, 0);
+		(void)vis(buf, ch, 0, 0);
 		if (buf[1] == 0)
-			(void) putchar(buf[0]);
+			(void)putchar(buf[0]);
 		else
-			(void) fputs(buf, stdout);
+			(void)printf("%s", buf);
 	}
 	if (!newl)
 		(void)putchar('\n');
 	exit(0);
-}
-
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-void
-#if __STDC__
-err(const char *fmt, ...)
-#else
-err(fmt, va_alist)
-	char *fmt;
-        va_dcl
-#endif
-{
-	va_list ap;
-#if __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	(void)fprintf(stderr, "dmesg: ");
-	(void)vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	(void)fprintf(stderr, "\n");
-	exit(1);
-	/* NOTREACHED */
 }
 
 void
