@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vpltdmp.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)vpltdmp.c	4.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -16,7 +16,7 @@ static char sccsid[] = "@(#)vpltdmp.c	4.5 (Berkeley) %G%";
 #define IN	0
 #define OUT	1
 
-static	char *Sid = "@(#)vpltdmp.c	4.5\t%G%";
+static	char *Sid = "@(#)vpltdmp.c	4.6\t%G%";
 
 int	plotmd[] = { VPLOT };
 int	prtmd[]  = { VPRINT };
@@ -113,7 +113,7 @@ account(who, from, acctfile)
 	 * Varian accounting is done by 8.5 inch pages;
 	 * Versatec accounting is by the (12 inch) foot.
 	 */
-	fprintf(a, "t%6.2f\t", (lines / 200.0) / PAGE_LINES);
+	fprintf(a, "t%6.2f\t", (double)lines / (double)PAGE_LINES);
 	if (from != NULL)
 		fprintf(a, "%s:", from);
 	fprintf(a, "%s\n", who);
