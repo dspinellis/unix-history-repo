@@ -1,15 +1,15 @@
-#	@(#)Makefile.inc	5.7 (Berkeley) %G%
+#	@(#)Makefile.inc	5.8 (Berkeley) %G%
 
 # sys sources
 .PATH: ${.CURDIR}/${MACHINE}/sys ${.CURDIR}/sys
 
 # modules with non-default implementations on at least one architecture:
-SRCS+=	Ovfork.s _exit.s _getlogin.s brk.s cerror.s exect.s \
-	fork.s pipe.s ptrace.s reboot.s sbrk.s setlogin.s \
-	sigpending.s sigprocmask.s sigreturn.s sigsuspend.s syscall.s
+SRCS+=	Ovfork.s brk.s cerror.s exect.s fork.s pipe.s ptrace.s reboot.s \
+	sbrk.s setlogin.s sigpending.s sigprocmask.s sigreturn.s \
+	sigsuspend.s syscall.s
 
 # modules with default implementations on all architectures:
-BLDASM=	accept.o access.o acct.o adjtime.o async_daemon.o bind.o chdir.o \
+ASM=	accept.o access.o acct.o adjtime.o async_daemon.o bind.o chdir.o \
 	chflags.o chmod.o chown.o chroot.o close.o connect.o dup.o dup2.o \
 	execve.o fchdir.o fchflags.o fchmod.o fchown.o fcntl.o flock.o \
 	fstat.o fstatfs.o fsync.o ftruncate.o getdirentries.o getdtablesize.o \
@@ -27,17 +27,30 @@ BLDASM=	accept.o access.o acct.o adjtime.o async_daemon.o bind.o chdir.o \
 	socketpair.o stat.o statfs.o swapon.o symlink.o sync.o truncate.o \
 	umask.o unlink.o unmount.o utimes.o vadvise.o wait4.o write.o writev.o
 
-OBJS+=	${BLDASM}
-POBJS+=	${BLDASM:.o=.po}
-CLEANFILES+=${BLDASM} ${BLDASM:.o=.po}
+PSEUDO=	_exit.o _getlogin.o
 
-${BLDASM}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
+OBJS+=	${ASM} ${PSEUDO}
+POBJS+=	${ASM:.o=.po} ${PSEUDO:.o=.po}
+CLEANFILES+=${ASM} ${PSEUDO} ${POBJS} 
+
+${ASM}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
 	@echo creating ${.PREFIX}.o ${.PREFIX}.po
 	@printf '#include "SYS.h"\nSYSCALL(${.PREFIX})\n' | \
 	    ${CPP} ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.o
 	@${LD} -x -r ${.PREFIX}.o
 	@mv a.out ${.PREFIX}.o
 	@printf '#include "SYS.h"\nSYSCALL(${.PREFIX})\n' | \
+	    ${CPP} -DPROF ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.po
+	@${LD} -x -r ${.PREFIX}.po
+	@mv a.out ${.PREFIX}.po
+
+${PSEUDO}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
+	@echo creating ${.PREFIX}.o ${.PREFIX}.po
+	@printf '#include "SYS.h"\nPSEUDO(${.PREFIX},${.PREFIX:S/_//})\n' | \
+	    ${CPP} ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.o
+	@${LD} -x -r ${.PREFIX}.o
+	@mv a.out ${.PREFIX}.o
+	@printf '#include "SYS.h"\nPSEUDO(${.PREFIX},${.PREFIX:S/_//})\n' | \
 	    ${CPP} -DPROF ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.po
 	@${LD} -x -r ${.PREFIX}.po
 	@mv a.out ${.PREFIX}.po
