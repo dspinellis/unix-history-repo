@@ -1,0 +1,17 @@
+#	@(#)Makefile.xdit.12	6.1 (Berkeley) 3/3/91
+
+DEVICE=		$(BASE)-12
+FONTMAP=	$(.CURDIR)/../dev$(BASE)/FontMap
+DESC=		$(.CURDIR)/../dev$(BASE)/DESC
+EQNCHAR=	$(.CURDIR)/../dev$(BASE)/eqnchar
+
+DESC:		$(DESC)
+	sed -e 's/unitwidth 10/unitwidth 12/' $(DESC) > DESC
+
+FontMap:	$(FONTMAP)
+	sed -e 's/100-100-100/120-100-100/' $(FONTMAP) > FontMap
+
+eqnchar:	$(EQNCHAR)
+	cp $(EQNCHAR) $@
+
+.include "../Makefile.xdit"
