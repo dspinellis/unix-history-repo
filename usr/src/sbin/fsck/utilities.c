@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -92,6 +92,7 @@ bufinit()
 	long bufcnt, i;
 	char *bufp;
 
+	pbp = pdirbp = (struct bufarea *)0;
 	bufp = malloc((unsigned int)sblock.fs_bsize);
 	if (bufp == 0)
 		errexit("cannot allocate buffer pool\n");
@@ -230,6 +231,7 @@ ckfini()
 	}
 	if (bufhead.b_size != cnt)
 		errexit("Panic: lost %d buffers\n", bufhead.b_size - cnt);
+	pbp = pdirbp = (struct bufarea *)0;
 	if (debug)
 		printf("cache missed %d of %d (%d%%)\n", diskreads,
 		    totalreads, diskreads * 100 / totalreads);
