@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_apx.c	7.6 (Berkeley) %G%
+ *	@(#)if_apx.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -33,6 +33,12 @@
 #ifdef CCITT
 #include "netccitt/x25.h"
 int x25_rtrequest(), x25_ifoutput();
+struct mbuf_cache {
+	int	mbc_size;
+	int	mbc_num;
+	int	mbc_oldsize;
+	struct	mbuf **mbc_cache;
+} apx_cache = { 20 };
 #endif
 
 #include "if_apxreg.h"
@@ -40,6 +46,7 @@ int x25_rtrequest(), x25_ifoutput();
 int	apxprobe(), apxattach(), apxstart(), apx_uprim(), apx_meminit();
 int	apxinit(), apxoutput(), apxioctl(), apxreset(), apxdebug = 1;
 void	apx_ifattach(), apxtest(), apxinput(), apxintr(), apxtint(), apxrint();
+int	apxipdebug = 1;
 
 struct apx_softc {
 	struct	ifnet apx_if;
@@ -53,6 +60,9 @@ struct apx_softc {
 	int	apx_rxnum;		/* Last receiver dx we looked at */
 	int	apx_txnum;		/* Last tranmistter dx we stomped on */
 	int	apx_txcnt;		/* Number of packets queued for tx*/
+	u_int	apx_msize;
+	u_short	apx_csr0;
+	u_short	apx_csr1;
 	struct	sgae apx_csr23;		/* 24 bit init addr, as seen by chip */
 	u_short	apx_csr4;		/* byte gender, set in mach dep code */
 	struct	apc_modes apx_modes;	/* Parameters, as amended by ioctls */
@@ -69,6 +79,7 @@ struct apxstat {
 	int	anyint;			/* note all interrupts */
 	int	queued;			/* got through apxinput */
 	int	nxpctd;			/* received while if was down */
+	int	rstfld;			/* reset didn't work */
 } apxstat;
 
 /* default operating paramters for devices */
@@ -111,14 +122,14 @@ struct	isa_driver apxdriver = {
 apxprobe(id)
 	register struct	isa_device *id;
 {
-	int	moffset, subunit, unit = id->id_unit << 1;
+	int	moffset = 0, subunit, unit = id->id_unit << 1;
 	struct	apc_reg *reg = (struct apc_reg *)id->id_iobase;
 	register struct	apx_softc *apx = apx_softc + unit;
 
 	for (subunit = 0; subunit < 2; subunit++) {
-		moffset = subunit ? id->id_msize >> 1 : 0;
+		apx->apx_msize	= id->id_msize >> 1;
 		apx->apx_hmem	= (struct apc_mem *) (id->id_maddr + moffset);
-		apx->apx_dmem	= (struct apc_mem *) (moffset);
+		apx->apx_dmem	= (struct apc_mem *) moffset;
 		apx->apx_device = (caddr_t) id;
 		apx->apx_reg	= reg;
 		apx->apx_sgcp	= reg->axr_sgcp + subunit;
@@ -126,6 +137,7 @@ apxprobe(id)
 		apx->apx_modes	= apx_default_modes;
 		apx->apx_if.if_unit = unit++;
 		apxtest(apx++);
+		moffset = apx->apx_msize;
 	}
 	return 1;
 }
@@ -241,8 +253,10 @@ apxreset(unit)
 	SG_WCSR(apx, 3, apx->apx_csr23.lo);
 	if (apx_uprim(apx, SG_INIT, "init request") ||
 	    apx_uprim(apx, SG_STAT, "status request") ||
-	    apx_uprim(apx, SG_TRANS, "transparent mode"))
+	    apx_uprim(apx, SG_TRANS, "transparent mode")) {
+		apxstat.rstfld++;
 		return 0;
+	}
 	SG_WCSR(apx, 0, SG_INEA);
 	return 1;
 }
@@ -264,9 +278,12 @@ if (request == SG_INIT) { if (apx_doinit) apx_didinit = 1; else return 0;}
 
 	if ((reply = SG_RCSR(apx, 1)) & 0x8040)
 		SG_WCSR(apx, 1, 0x8040); /* Magic! */
+	apx->apx_csr0 = SG_RCSR(apx, 0);
+	if (request == SG_STOP && (apx->apx_csr0 & SG_STOPPED))
+		return 0;
 	SG_WCSR(apx, 1, request | SG_UAV);
 	do {
-		reply = SG_RCSR(apx, 1);
+		apx->apx_csr1 = reply = SG_RCSR(apx, 1);
 		if (timo++ >= TIMO || (reply & 0x8000)) {
 			if (request != SG_STOP || apxdebug)
 				apxerror(apx, ident, reply);
@@ -274,6 +291,7 @@ if (request == SG_INIT) { if (apx_doinit) apx_didinit = 1; else return 0;}
 				return 1;
 		}
 	} while (reply & SG_UAV);
+	apx->apx_csr0 = SG_RCSR(apx, 0);
 	return 0;
 }
 
@@ -290,19 +308,21 @@ apx_meminit(apc, apx)
 	{SET_SGAE((d).sgdx_ae, f, a); (d).sgdx_mcnt = (d).sgdx_bcnt = (b);}
 
 	apx->apx_txnum = apx->apx_rxnum = apx->apx_txcnt = 0;
-	bzero((caddr_t)apc, ((caddr_t)(&apc->apc_rxmd[0])) - (caddr_t)apc);
-	apc->apc_mode = 0x0008;	/* 2 flag spacing, trans mode, 16bit FCS */
+	bzero((caddr_t)apc, apx->apx_msize);
+	/*bzero((caddr_t)apc, ((caddr_t)(&apc->apc_rxmd[0])) - (caddr_t)apc);*/
+	apc->apc_mode = 0x0108;	/* 2 flag spacing, leave addr&ctl, do CRC16 */
 	apc->apc_sgop = apx->apx_modes.apm_sgop;
 	SET_SGAE(apx->apx_csr23, SG_UIE | SG_PROM, apc_mode);
 	SET_SGAE(apc->apc_rxdd, SG_RLEN, apc_rxmd[0]);
-	SET_SGAE(apc->apc_txdd, SG_TLEN|apx->apx_modes.apm_txwin, apc_txmd[0]);
+	i = SG_TLEN | ((apx->apx_modes.apm_txwin)<< 8);
+	SET_SGAE(apc->apc_txdd, i, apc_txmd[0]);
 	SET_SGAE(apc->apc_stdd, 0, apc_sgsb);
 	SET_SGDX(apc->apc_rxtid, SG_OWN, apc_rxidbuf[0], -SGMTU);
 	SET_SGDX(apc->apc_txtid, 0, apc_txidbuf[0], 0);
 	for (i = 0; i < SGRBUF; i++)
 		 SET_SGDX(apc->apc_rxmd[i], SG_OWN, apc_rbuf[i][0], -SGMTU)
 	for (i = 0; i < SGTBUF; i++)
-		 SET_SGDX(apc->apc_txmd[i], SG_TUI, apc_tbuf[i][0], 0)
+		 SET_SGDX(apc->apc_txmd[i], 0, apc_tbuf[i][0], 0)
 }
 
 /*
@@ -334,6 +354,9 @@ apxstart(ifp)
 		dx->sgdx_flags = (SG_OWN|SG_TUI|SG_SLF|SG_ELF) |
 			(0xff & dx->sgdx_flags);
 		SG_WCSR(apx, 0, SG_INEA | SG_TDMD);
+		DELAY(20);
+		apx->apx_csr1 = SG_RCSR(apx, 1);
+		apx->apx_csr0 = SG_RCSR(apx, 0);
 		if (++apx->apx_txnum >= SGTBUF)
 			apx->apx_txnum = 0;
 	} while (++apx->apx_txcnt < SGTBUF);
@@ -352,7 +375,8 @@ apxintr()
 	for (apx = apx_softc + NAPX + NAPX; --apx >= apx_softc;) {
 		if (apx->apx_flags & APXF_CHIPHERE)
 		    /* Try to turn off interrupt cause */
-		    while ((reply = SG_RCSR(apx, 0)) & 0xff) {
+		    while ((apx->apx_csr0 = SG_RCSR(apx, 0)) & 0xff) {
+			reply = apx->apx_csr0;
 			SG_WCSR(apx, 0, SG_INEA | 0xfe);
 			if (reply & (SG_MERR|SG_TUR|SG_ROR)) {
 				apxerror(apx, "mem, rx, or tx error", reply);
@@ -483,6 +507,10 @@ apxinput(ifp, buffer, len)
 	m = m_devget(buffer, len, 0, ifp, (void (*)())0);
 	if (m == 0)
 		return;
+#ifdef CCITT
+	if (apxipdebug)
+		mbuf_cache(&apx_cache, m);
+#endif
 	if(IF_QFULL(inq)) {
 		IF_DROP(inq);
 		m_freem(m);
@@ -509,7 +537,11 @@ apxioctl(ifp, cmd, data)
 
 	case SIOCSIFADDR:
 #ifdef CCITT
-		ifa->ifa_rtrequest = x25_rtrequest;
+		if (apxipdebug) {
+			ifp->if_flags |= IFF_UP;
+			apxinit(ifp->if_unit);
+		} else 
+			ifa->ifa_rtrequest = x25_rtrequest;
 		break;
 
 	case SIOCSIFCONF_X25:
