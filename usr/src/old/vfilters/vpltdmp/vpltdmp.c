@@ -1,6 +1,12 @@
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)vpltdmp.c	4.6 (Berkeley) %G%";
-#endif
+static char sccsid[] = "@(#)vpltdmp.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 /*
  * Copyright (C) 1981, Regents of the University of California
@@ -16,7 +22,7 @@ static char sccsid[] = "@(#)vpltdmp.c	4.6 (Berkeley) %G%";
 #define IN	0
 #define OUT	1
 
-static	char *Sid = "@(#)vpltdmp.c	4.6\t%G%";
+static	char *Sid = "@(#)vpltdmp.c	5.1\t%G%";
 
 int	plotmd[] = { VPLOT };
 int	prtmd[]  = { VPRINT };
