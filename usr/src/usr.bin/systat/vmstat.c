@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.14 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -17,7 +17,8 @@ static char sccsid[] = "@(#)vmstat.c	5.13 (Berkeley) %G%";
 #include <ctype.h>
 #include <utmp.h>
 
-#include <sys/vm.h>
+#include <vm/vm.h>
+#include <sys/vmmeter.h>
 #include <sys/buf.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -54,71 +55,60 @@ closekre(w)
 float	cputime();
 struct	utmp utmp;
 
-static struct nlist name[] = {
-	{ "_cp_time" },
+static struct nlist nlst[] = {
 #define X_CPTIME	0
-	{ "_rate" },
-#define X_RATE		1
-	{ "_total" },
+	{ "_cp_time" },
+#define X_CNT		1
+	{ "_cnt" },
 #define X_TOTAL		2
-	{ "_proc" },
-#define X_PROC		3
-	{ "_nproc" },
-#define X_NPROC		4
-	{ "_sum" },
-#define X_SUM		5
+	{ "_total" },
+#define X_VMSTAT	3
+	{ "_vm_stat" },
+#define	X_DK_BUSY	4
 	{ "_dk_busy" },
-#define	X_DK_BUSY	6
+#define	X_DK_TIME	5
 	{ "_dk_time" },
-#define	X_DK_TIME	7
+#define	X_DK_XFER	6
 	{ "_dk_xfer" },
-#define	X_DK_XFER	8
+#define	X_DK_WDS	7
 	{ "_dk_wds" },
-#define	X_DK_WDS	9
-	{ "_tk_nin" },
-#define	X_TK_NIN	10
-	{ "_tk_nout" },
-#define	X_TK_NOUT	11
+#define	X_DK_SEEK	8
 	{ "_dk_seek" },
-#define	X_DK_SEEK	12
+#define	X_NCHSTATS	9
 	{ "_nchstats" },
-#define	X_NCHSTATS	13
+#define	X_INTRNAMES	10
 	{ "_intrnames" },
-#define	X_INTRNAMES	14
+#define	X_EINTRNAMES	11
 	{ "_eintrnames" },
-#define	X_EINTRNAMES	15
+#define	X_INTRCNT	12
 	{ "_intrcnt" },
-#define	X_INTRCNT	16
+#define	X_EINTRCNT	13
 	{ "_eintrcnt" },
-#define	X_EINTRCNT	17
 	{ "" },
 };
 
 static struct Info {
 	long	time[CPUSTATES];
-	struct	vmmeter Rate;
+	struct	vmmeter Cnt;
 	struct	vmtotal Total;
-	struct	vmmeter Sum;
-	struct	forkstat Forkstat;
+	struct	vm_statistics Vmstat;
 	long	*dk_time;
 	long	*dk_wds;
 	long	*dk_seek;
 	long	*dk_xfer;
 	int	dk_busy;
-	long	tk_nin;
-	long	tk_nout;
 	struct	nchstats nchstats;
 	long	nchcount;
 	long	*intrcnt;
 } s, s1, s2, z;
 
-#define total s.Total
-#define sum s.Sum
-#define sumold s1.Sum
-#define rate s.Rate
+#define	cnt s.Cnt
+#define oldcnt s1.Cnt
+#define	total s.Total
+#define	vmstat s.Vmstat
+#define	oldvmstat s1.Vmstat
 #define	nchtotal s.nchstats
 #define	oldnchtotal s1.nchstats
-#define oldrate s1.Rate
 
 static	char buf[26];
 static	time_t t;
@@ -175,9 +165,9 @@ initkre()
 	int i;
 	static int once = 0;
 
-	if (name[0].n_type == 0) {
-		nlist(_PATH_UNIX,name);
-		if (name[0].n_type == 0) {
+	if (nlst[0].n_type == 0) {
+		kvm_nlist(nlst);
+		if (nlst[0].n_type == 0) {
 			error("No namelist");
 			return(0);
 		}
@@ -199,12 +189,12 @@ initkre()
 #undef allocate
 	}
 	if (nintr == 0) {
-		nintr = (name[X_EINTRCNT].n_value -
-			name[X_INTRCNT].n_value) / sizeof (long);
+		nintr = (nlst[X_EINTRCNT].n_value -
+			nlst[X_INTRCNT].n_value) / sizeof (long);
 		intrloc = (long *) calloc(nintr, sizeof (long));
 		intrname = (char **) calloc(nintr, sizeof (long));
-		intrnamebuf = malloc(name[X_EINTRNAMES].n_value -
-			name[X_INTRNAMES].n_value);
+		intrnamebuf = malloc(nlst[X_EINTRNAMES].n_value -
+			nlst[X_INTRNAMES].n_value);
 		if (intrnamebuf == 0 || intrname == 0 || intrloc == 0) {
 			error("Out of memory\n");
 			if (intrnamebuf)
@@ -216,9 +206,8 @@ initkre()
 			nintr = 0;
 			return(0);
 		}
-		lseek(kmem, (long)name[X_INTRNAMES].n_value, L_SET);
-		read(kmem, intrnamebuf, name[X_EINTRNAMES].n_value -
-			name[X_INTRNAMES].n_value);
+		NREAD(X_INTRNAMES, intrnamebuf, NVAL(X_EINTRNAMES) -
+			NVAL(X_INTRNAMES));
 		for (cp = intrnamebuf, i = 0; i < nintr; i++) {
 			intrname[i] = cp;
 			cp += strlen(cp) + 1;
@@ -272,10 +261,9 @@ labelkre()
 	mvprintw(GENSTATROW + 4, GENSTATCOL + 8, "Pdm");
 	mvprintw(GENSTATROW + 5, GENSTATCOL + 8, "Sof");
 	mvprintw(GENSTATROW + 6, GENSTATCOL + 8, "Flt");
-	mvprintw(GENSTATROW + 7, GENSTATCOL + 8, "Scn");
-	mvprintw(GENSTATROW + 8, GENSTATCOL + 8, "Rev");
+	mvprintw(GENSTATROW + 7, GENSTATCOL + 8, "Cow");
 
-	mvprintw(VMSTATROW, VMSTATCOL, "Rec It F/S F/F RFL Fre SFr");
+	mvprintw(VMSTATROW, VMSTATCOL, "Rec    F/S F/F RFL Fre SFr");
 
 	mvprintw(FILLSTATROW, FILLSTATCOL + 7, " zf");
 	mvprintw(FILLSTATROW + 1, FILLSTATCOL + 7, "nzf");
@@ -331,7 +319,6 @@ showkre()
 	for (i = 0; i < dk_ndrive; i++) {
 		X(dk_xfer); X(dk_seek); X(dk_wds); X(dk_time);
 	}
-	Y(tk_nin); Y(tk_nout);
 	etime = 0;
 	for(i = 0; i < CPUSTATES; i++) {
 		X(time);
@@ -414,71 +401,70 @@ showkre()
 	putint(total.t_dw, PROCSROW + 1, PROCSCOL + 11, 3);
 	putint(total.t_sl, PROCSROW + 1, PROCSCOL + 14, 3);
 	putint(total.t_sw, PROCSROW + 1, PROCSCOL + 17, 3);
-	putrate(rate.v_swtch, oldrate.v_swtch, 
+	putrate(cnt.v_swtch, oldcnt.v_swtch, 
 		GENSTATROW, GENSTATCOL, 7);
-	putrate(rate.v_trap, oldrate.v_trap, 
+	putrate(cnt.v_trap, oldcnt.v_trap, 
 		GENSTATROW + 1, GENSTATCOL, 7);
-	putrate(rate.v_syscall, oldrate.v_syscall, 
+	putrate(cnt.v_syscall, oldcnt.v_syscall, 
 		GENSTATROW + 2, GENSTATCOL, 7);
-	putrate(rate.v_intr, oldrate.v_intr, 
+	putrate(cnt.v_intr, oldcnt.v_intr, 
 		GENSTATROW + 3, GENSTATCOL, 7);
-	putrate(rate.v_pdma, oldrate.v_pdma, 
+	putrate(cnt.v_pdma, oldcnt.v_pdma, 
 		GENSTATROW + 4, GENSTATCOL, 7);
-	putrate(rate.v_soft, oldrate.v_soft, 
+	putrate(cnt.v_soft, oldcnt.v_soft, 
 		GENSTATROW + 5, GENSTATCOL, 7);
-	putrate(rate.v_faults, oldrate.v_faults, 
+	putrate(vmstat.faults, oldvmstat.faults, 
 		GENSTATROW + 6, GENSTATCOL, 7);
-	putrate(rate.v_scan, oldrate.v_scan, 
+	putrate(vmstat.cow_faults, oldvmstat.cow_faults, 
 		GENSTATROW + 7, GENSTATCOL, 7);
-	putrate(rate.v_rev, oldrate.v_rev, 
-		GENSTATROW + 8, GENSTATCOL, 7);
-	putrate(rate.v_pgin, oldrate.v_pgin, PAGEROW + 2,
+	putrate(vmstat.pageins, oldvmstat.pageins, PAGEROW + 2,
 		PAGECOL + 5, 5);
-	putrate(rate.v_pgout, oldrate.v_pgout, PAGEROW + 2,
+	putrate(vmstat.pageouts, oldvmstat.pageouts, PAGEROW + 2,
 		PAGECOL + 10, 5);
-	putrate(rate.v_swpin, oldrate.v_swpin, PAGEROW + 2,
+	putrate(cnt.v_swpin, oldcnt.v_swpin, PAGEROW + 2,	/* - */
 		PAGECOL + 15, 5);
-	putrate(rate.v_swpout, oldrate.v_swpout, PAGEROW + 2,
+	putrate(cnt.v_swpout, oldcnt.v_swpout, PAGEROW + 2,	/* - */
 		PAGECOL + 20, 5);
-	putrate(rate.v_pgpgin, oldrate.v_pgpgin, PAGEROW + 3,
+	putrate(cnt.v_pgpgin, oldcnt.v_pgpgin, PAGEROW + 3,	/* ? */
 		PAGECOL + 5, 5);
-	putrate(rate.v_pgpgout, oldrate.v_pgpgout, PAGEROW + 3,
+	putrate(cnt.v_pgpgout, oldcnt.v_pgpgout, PAGEROW + 3,	/* ? */
 		PAGECOL + 10, 5);
-	putrate(rate.v_pswpin, oldrate.v_pswpin, PAGEROW + 3,
+	putrate(cnt.v_pswpin, oldcnt.v_pswpin, PAGEROW + 3,	/* - */
 		PAGECOL + 15, 5);
-	putrate(rate.v_pswpout, oldrate.v_pswpout, PAGEROW + 3,
+	putrate(cnt.v_pswpout, oldcnt.v_pswpout, PAGEROW + 3,	/* - */
 		PAGECOL + 20, 5);
 
-	putrate(rate.v_pgrec, oldrate.v_pgrec, VMSTATROW + 1, VMSTATCOL, 3);
-	putrate(rate.v_intrans, oldrate.v_intrans, VMSTATROW + 1,
-		VMSTATCOL + 4, 2);
-	putrate(rate.v_xsfrec, oldrate.v_xsfrec, VMSTATROW + 1,
+	putrate(vmstat.reactivations, oldvmstat.reactivations,
+		VMSTATROW + 1, VMSTATCOL, 3);
+	putrate(cnt.v_xsfrec, oldcnt.v_xsfrec, VMSTATROW + 1,
 		VMSTATCOL + 7, 3);
-	putrate(rate.v_xifrec, oldrate.v_xifrec, VMSTATROW + 1,
+	putrate(cnt.v_xifrec, oldcnt.v_xifrec, VMSTATROW + 1,
 		VMSTATCOL + 11, 3);
-	putrate(rate.v_pgfrec, oldrate.v_pgfrec, VMSTATROW + 1,
+	putrate(cnt.v_pgfrec, oldcnt.v_pgfrec, VMSTATROW + 1,
 		VMSTATCOL + 15, 3);
-	putrate(rate.v_dfree, oldrate.v_dfree, VMSTATROW + 1,
+	putrate(cnt.v_dfree, oldcnt.v_dfree, VMSTATROW + 1,
 		VMSTATCOL + 19, 3);
-	putrate(rate.v_seqfree, oldrate.v_seqfree, VMSTATROW + 1,
+	putrate(cnt.v_seqfree, oldcnt.v_seqfree, VMSTATROW + 1,
 		VMSTATCOL + 23, 3);
 
-	putrate(rate.v_zfod, oldrate.v_zfod, FILLSTATROW, FILLSTATCOL, 6);
-	putrate(rate.v_nzfod, oldrate.v_nzfod, FILLSTATROW + 1, FILLSTATCOL, 6);
-	putrate(rate.v_exfod, oldrate.v_exfod, FILLSTATROW + 3,
+	putrate(vmstat.zero_fill_count, oldvmstat.zero_fill_count,
+		FILLSTATROW, FILLSTATCOL, 6);
+	/******* begin XXX
+	putrate(cnt.v_nzfod, oldcnt.v_nzfod, FILLSTATROW + 1, FILLSTATCOL, 6);
+	putrate(cnt.v_exfod, oldcnt.v_exfod, FILLSTATROW + 3,
 		FILLSTATCOL, 6);
-	putrate(rate.v_nexfod, oldrate.v_nexfod, FILLSTATROW + 4,
+	putrate(cnt.v_nexfod, oldcnt.v_nexfod, FILLSTATROW + 4,
 		FILLSTATCOL, 6);
 	putfloat (
-		rate.v_nzfod == 0 ?
+		cnt.v_nzfod == 0 ?
 			0.0
 		: state != RUN ?
-			( 100.0 * rate.v_zfod / rate.v_nzfod )
-		: rate.v_nzfod == oldrate.v_nzfod ?
+			( 100.0 * cnt.v_zfod / cnt.v_nzfod )
+		: cnt.v_nzfod == oldcnt.v_nzfod ?
 			0.0
 		:
-			( 100.0 * (rate.v_zfod-oldrate.v_zfod)
-			/ (rate.v_nzfod-oldrate.v_nzfod) )
+			( 100.0 * (cnt.v_zfod-oldcnt.v_zfod)
+			/ (cnt.v_nzfod-oldcnt.v_nzfod) )
 		, FILLSTATROW + 2
 		, FILLSTATCOL
 		, 6
@@ -486,21 +472,22 @@ showkre()
 		, 1
 	);
 	putfloat (
-		rate.v_nexfod == 0 ?
+		cnt.v_nexfod == 0 ?
 			0.0
 		: state != RUN ?
-			( 100.0 * rate.v_exfod / rate.v_nexfod )
-		: rate.v_nexfod == oldrate.v_nexfod ?
+			( 100.0 * cnt.v_exfod / cnt.v_nexfod )
+		: cnt.v_nexfod == oldcnt.v_nexfod ?
 			0.0
 		:
-			( 100.0 * (rate.v_exfod-oldrate.v_exfod)
-			/ (rate.v_nexfod-oldrate.v_nexfod) )
+			( 100.0 * (cnt.v_exfod-oldcnt.v_exfod)
+			/ (cnt.v_nexfod-oldcnt.v_nexfod) )
 		, FILLSTATROW + 5
 		, FILLSTATCOL
 		, 6
 		, 2
 		, 1
 	);
+	******* end XXX */
 
 	mvprintw(DISKROW,DISKCOL+5,"                              ");
 	for (i = 0, c = 0; i < dk_ndrive && c < MAXDRIVES; i++)
@@ -582,12 +569,9 @@ putrate(r, or, l, c, w)
 	int r, or, l, c, w;
 {
 
-	if (state != TIME) {
-		if (state == RUN)
-			r -= or;
-		putint((int)((float)r/etime + 0.5), l, c, w);
-	} else
-		putint(r, l, c, w);
+	if (state == RUN || state == TIME)
+		r -= or;
+	putint((int)((float)r/etime + 0.5), l, c, w);
 }
 
 static void
@@ -639,32 +623,17 @@ getinfo(s, st)
 	enum state st;
 {
 
-	lseek(kmem, (long)name[X_CPTIME].n_value,L_SET);
-	read(kmem, s->time, sizeof s->time);
-	if (st != TIME) {
-		lseek(kmem, (long)name[X_SUM].n_value, L_SET);
-		read(kmem, &s->Rate, sizeof s->Rate);
-	} else {
-		lseek(kmem, (long)name[X_RATE].n_value,L_SET);
-		read(kmem, &s->Rate, sizeof s->Rate);
-	}
-	lseek(kmem, (long)name[X_TOTAL].n_value, L_SET);
-	read(kmem, &s->Total, sizeof s->Total);
-	s->dk_busy = getword(name[X_DK_BUSY].n_value);
- 	lseek(kmem, (long)name[X_DK_TIME].n_value,  L_SET);
- 	read(kmem, s->dk_time, dk_ndrive * sizeof (long));
- 	lseek(kmem, (long)name[X_DK_XFER].n_value,  L_SET);
- 	read(kmem, s->dk_xfer, dk_ndrive * sizeof (long));
- 	lseek(kmem, (long)name[X_DK_WDS].n_value,  L_SET);
- 	read(kmem, s->dk_wds, dk_ndrive * sizeof (long));
-	lseek(kmem, (long)name[X_DK_SEEK].n_value,  L_SET);
-	read(kmem, s->dk_seek, dk_ndrive * sizeof (long));
-	s->tk_nin = getword(name[X_TK_NIN].n_value);
-	s->tk_nout = getword(name[X_TK_NOUT].n_value);
-	lseek(kmem, (long)name[X_NCHSTATS].n_value,  L_SET);
-	read(kmem, &s->nchstats, sizeof s->nchstats);
-	lseek(kmem, (long)name[X_INTRCNT].n_value,  L_SET);
-	read(kmem, s->intrcnt, nintr * sizeof (long));
+	NREAD(X_CPTIME, s->time, sizeof s->time);
+	NREAD(X_CNT, &s->Cnt, sizeof s->Cnt);
+	NREAD(X_TOTAL, &s->Total, sizeof s->Total);
+	NREAD(X_VMSTAT, &s->Vmstat, sizeof s->Vmstat);
+	NREAD(X_DK_BUSY, &s->dk_busy, LONG);
+	NREAD(X_DK_TIME, s->dk_time, dk_ndrive * LONG);
+	NREAD(X_DK_XFER, s->dk_xfer, dk_ndrive * LONG);
+	NREAD(X_DK_WDS, s->dk_wds, dk_ndrive * LONG);
+	NREAD(X_DK_SEEK, s->dk_seek, dk_ndrive * LONG);
+	NREAD(X_NCHSTATS, &s->nchstats, sizeof s->nchstats);
+	NREAD(X_INTRCNT, s->intrcnt, nintr * LONG);
 }
 
 static void
@@ -686,6 +655,11 @@ copyinfo(from, to)
 	long *time, *wds, *seek, *xfer;
 	long *intrcnt;
 
+	/*
+	 * time, wds, seek, and xfer are malloc'd so we have to
+	 * save the pointers before the structure copy and then 
+	 * copy by hand.
+	 */
 	time = to->dk_time; wds = to->dk_wds; seek = to->dk_seek;
 	xfer = to->dk_xfer; intrcnt = to->intrcnt;
 	*to = *from;

@@ -11,28 +11,21 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
 #include <varargs.h>
-#include <paths.h>
 
 static struct nlist nlst[] = {
-#define X_CCPU          0
-	{ "_ccpu" },
-#define X_FSCALE	1
-	{ "_fscale" },
-#define	X_HZ		2
+#define X_FIRST		0
+#define	X_HZ		0
 	{ "_hz" },
-#define	X_PHZ		3
+#define	X_PHZ		1
 	{ "_phz" },
 	{ "" }
 };
 
-int     kmem = -1;
-int     mem = -1;
-int     swap = -1;
 int	naptime = 5;
 
 void	die(), display(), suspend();
@@ -42,11 +35,12 @@ int     dellave;
 
 static	WINDOW *wload;			/* one line window for load average */
 
+int     verbose = 1;                    /* to report kvm read errs */
+
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	fixpt_t	ccpu;
 
 	argc--, argv++;
 	while (argc > 0) {
@@ -67,27 +61,9 @@ main(argc, argv)
 		}
 		argc--, argv++;
 	}
-	nlist(_PATH_UNIX, nlst);
-	if (nlst[X_CCPU].n_type == 0) {
-		fprintf(stderr, "Couldn't namelist %s.\n", _PATH_UNIX);
-		exit(1);
-	}
-	kmemf = _PATH_KMEM;
-	kmem = open(kmemf, O_RDONLY);
-	if (kmem < 0) {
-		perror(kmemf);
-		exit(1);
-	}
-	memf = _PATH_MEM;
-	mem = open(memf, O_RDONLY);
-	if (mem < 0) {
-		perror(memf);
-		exit(1);
-	}
-	swapf = _PATH_DRUM;
-	swap = open(swapf, O_RDONLY);
-	if (swap < 0) {
-		perror(swapf);
+	kvm_nlist(nlst);
+	if (nlst[X_FIRST].n_type == 0) {
+		fprintf(stderr, "Couldn't namelist.\n");
 		exit(1);
 	}
 	signal(SIGINT, die);
@@ -112,23 +88,13 @@ main(argc, argv)
 		fprintf(stderr, "Couldn't set up load average window.\n");
 		die();
 	}
-
 	gethostname(hostname, sizeof (hostname));
-	ccpu = getword(nlst[X_CCPU].n_value);
-	fscale = getword(nlst[X_FSCALE].n_value);
-	lccpu = log((double) ccpu / fscale);
-	hz = getword(nlst[X_HZ].n_value);
-	phz = getword(nlst[X_PHZ].n_value);
+	NREAD(X_HZ, &hz, LONG);
+	NREAD(X_PHZ, &phz, LONG);
 	(*curcmd->c_init)();
 	curcmd->c_flags |= CF_INIT;
 	labels();
 
-	known[0].k_uid = -1;
-	known[0].k_name[0] = '\0';
-	numknown = 1;
-	procs[0].pid = -1;
-	strcpy(procs[0].cmd, "<idle>");
-	numprocs = 1;
 	dellave = 0.0;
 
 	signal(SIGALRM, display);
@@ -191,7 +157,6 @@ display()
 
 load()
 {
-	double	avenrun[3];
 
 	(void) getloadavg(avenrun, sizeof(avenrun)/sizeof(avenrun[0]));
 	mvprintw(CMDLINE, 0, "%4.1f %4.1f %4.1f",

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)disks.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)disks.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
@@ -44,21 +44,20 @@ dkinit()
 
 	if (once)
 		return(1);
-	nlist(_PATH_UNIX, nlst);
+	kvm_nlist(nlst);
 	if (nlst[X_DK_NDRIVE].n_value == 0) {
 		error("dk_ndrive undefined in kernel");
 		return(0);
 	}
-	dk_ndrive = getword(nlst[X_DK_NDRIVE].n_value);
+	NREAD(X_DK_NDRIVE, &dk_ndrive, LONG);
 	if (dk_ndrive <= 0) {
 		error("dk_ndrive=%d according to %s", dk_ndrive, _PATH_UNIX);
 		return(0);
 	}
 	dk_mspw = (float *)calloc(dk_ndrive, sizeof (float));
-	lseek(kmem, nlst[X_DK_WPMS].n_value, L_SET);
 	{
 		long *wpms = (long *)calloc(dk_ndrive, sizeof(long));
-		read(kmem, wpms, dk_ndrive * sizeof (long));
+		KREAD(NPTR(X_DK_WPMS), wpms, dk_ndrive * sizeof (long));
 		for (i = 0; i < dk_ndrive; i++)
 			*(dk_mspw + i) = (*(wpms + i) == 0)? 0.0:
 			                 (float) 1.0 / *(wpms + i);
@@ -107,7 +106,7 @@ dkcmd(cmd, args)
 }
 
 #define steal(where, var) \
-	lseek(kmem, where, L_SET); read(kmem, &var, sizeof var);
+	KREAD(where, &var, sizeof var)
 
 #ifdef vax
 #include <vax/uba/ubavar.h>

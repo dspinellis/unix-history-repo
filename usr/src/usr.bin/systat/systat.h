@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)systat.h	5.5 (Berkeley) %G%
+ *	@(#)systat.h	5.6 (Berkeley) %G%
  */
 
 #include <netdb.h>
@@ -13,34 +13,11 @@
 #include <math.h>
 
 #include <sys/param.h>
-#include <sys/types.h>
 #include <sys/file.h>
 #include <sys/dkstat.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
-struct p_times {
-        short   pt_pid;
-        float   pt_pctcpu;
-        int     pt_uid;
-        int     pt_paddr;
-        struct  proc *pt_pp;
-} *pt;
-long    nproc, procp;
-struct	proc *kprocp;
-
-struct procs {
-        int     pid;
-        char    cmd[16];
-} procs[200];
-int     numprocs;
-
-struct users {
-        int     k_uid;
-        char    k_name[16];
-} known[30];
-int     numknown;
 
 struct  cmdtab {
         char    *c_name;		/* command name */
@@ -61,17 +38,13 @@ struct	cmdtab *curcmd;
 struct	cmdtab cmdtab[];
 struct	cmdtab *lookup();
 
-int     kmem, mem, swap;
 int     naptime, col;
 
 long	ntext, textp;
 struct	text *xtext;
 
-int	fscale;
-double  lccpu;
 double	avenrun[3];
 
-char    *kmemf, *memf, *swapf;
 int	hz, phz;
 char	**dr_name;
 int	dk_ndrive;
@@ -85,11 +58,13 @@ int	protos;
 #define	TCP	0x1
 #define	UDP	0x2
 
-struct  pte *usrpt;
-struct  pte *Usrptma;
-
 WINDOW  *wnd;
 int	CMDLINE;
 
 char    *malloc(), *calloc(), *strncpy();
-long    getword();
+
+#define KREAD(addr, buf, len)  kvm_ckread((addr), (buf), (len))
+#define NVAL(indx)  nlst[(indx)].n_value
+#define NPTR(indx)  (void *)NVAL((indx))
+#define NREAD(indx, buf, len) kvm_ckread(NPTR((indx)), (buf), (len))
+#define LONG	(sizeof (long))
