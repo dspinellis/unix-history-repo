@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.72 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.73 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -167,7 +167,7 @@ main(argc, argv)
 			if (!uid)
 				syslog(LOG_ERR, "invalid flag %c", ch);
 			(void)fprintf(stderr,
-			    "usage: login [-fp] [username]\n");
+			    "usage: login [-fp] [-h hostname] [username]\n");
 			exit(1);
 		}
 	argc -= optind;
@@ -306,11 +306,11 @@ main(argc, argv)
 	endpwent();
 
 	/* if user not super-user, check for disabled logins */
-	if (!(rootlogin))
+	if (!rootlogin)
 		checknologin();
 
 	if (chdir(pwd->pw_dir) < 0) {
-		(void)printf("No directory %s!\n", pwd->pw_dir);
+		(void)printf("No home directory %s!\n", pwd->pw_dir);
 		if (chdir("/"))
 			exit(0);
 		pwd->pw_dir = "/";
@@ -446,8 +446,8 @@ main(argc, argv)
 		(void) setuid(pwd->pw_uid);
 
 	execlp(pwd->pw_shell, tbuf, 0);
-	(void)fprintf(stderr, "login: no shell: %s.\n", strerror(errno));
-	exit(0);
+	(void)fprintf(stderr, "%s: %s\n", pwd->pw_shell, strerror(errno));
+	exit(1);
 }
 
 #ifdef	KERBEROS
