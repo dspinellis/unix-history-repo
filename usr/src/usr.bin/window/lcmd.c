@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd.c	3.3 83/08/12";
+static	char *sccsid = "@(#)lcmd.c	3.4 83/08/22";
 #endif
 
 #include "defs.h"
@@ -23,7 +23,7 @@ struct lcmd {
 };
 static struct lcmd lcmd[] = {
 	"%",		1, 1, 0,  0, l_select,
-	"close",	1, 0, 1, -1, l_close,
+	"close",	1, 0, 0, -1, l_close,
 	"escape",	1, 0, 1,  1, l_escape,
 	"label",	1, 0, 2,  2, l_label,
 	"source",	1, 0, 1,  1, l_source,

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd1.c	3.3 83/08/12";
+static	char *sccsid = "@(#)lcmd1.c	3.4 83/08/22";
 #endif
 
 #include "defs.h"
@@ -106,6 +106,10 @@ l_close()
 	register struct ww *w;
 	char didit = 0;
 
+	if (argc < 2) {
+		c_close((struct ww *)0);
+		return;
+	}
 	for (i = 1; i < argc; i++) {
 		if ((w = idtowin(argv[i])) == 0)
 			continue;
