@@ -1,3 +1,17 @@
+/*
+**  Sendmail
+**  Copyright (c) 1983  Eric P. Allman
+**  Berkeley, California
+**
+**  Copyright (c) 1983 Regents of the University of California.
+**  All rights reserved.  The Berkeley software License Agreement
+**  specifies the terms and conditions for redistribution.
+*/
+
+#ifndef lint
+static char	SccsId[] = "@(#)queue.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 # include "sendmail.h"
 # include <sys/stat.h>
 # include <sys/dir.h>
@@ -5,10 +19,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	4.5		%G%	(no queueing));
+SCCSID(@(#)queue.c	5.1		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	4.5		%G%);
+SCCSID(@(#)queue.c	5.1		%G%);
 
 /*
 **  Work queue.

@@ -1,9 +1,23 @@
+/*
+**  Sendmail
+**  Copyright (c) 1983  Eric P. Allman
+**  Berkeley, California
+**
+**  Copyright (c) 1983 Regents of the University of California.
+**  All rights reserved.  The Berkeley software License Agreement
+**  specifies the terms and conditions for redistribution.
+*/
+
+#ifndef lint
+static char	SccsId[] = "@(#)envelope.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 #include <pwd.h>
 #include <sys/time.h>
 #include "sendmail.h"
 #include <sys/stat.h>
 
-SCCSID(@(#)envelope.c	4.10		%G%);
+SCCSID(@(#)envelope.c	5.1		%G%);
 
 /*
 **  NEWENVELOPE -- allocate a new envelope
