@@ -1,5 +1,5 @@
 #
-#	Makefile	1.10	85/04/08
+#	Makefile	1.11	85/04/18
 #
 # Makefile for PCC
 #
@@ -21,7 +21,7 @@ CFLAGS = $(O) -I. -I$(M) $(CONFIG)
 COPTS = -DONEPASS $(CFLAGS)
 SCOPTS = -DONEPASS -DSPRECC $(CFLAGS)
 FOPTS = -DFORT $(CFLAGS)
-LDFLAGS = -g
+LDFLAGS =
 
 RM=	/bin/rm -f
 
@@ -156,10 +156,10 @@ fcomm2.o: $M/manifest.h $M/pass2.h pcclocal.h $M/common.c mac2defs.h macdefs.h
 	$(CC) -c $(FOPTS) -I$M -I. -DPASS2COMMON fcomm2.c
 	$(RM) fcomm2.c
 
-install:	all
-	install comp ${DESTDIR}/lib/ccom
-	install scomp ${DESTDIR}/lib/sccom
-	install fort ${DESTDIR}/lib/f1
+install: all
+	install -s comp ${DESTDIR}/lib/ccom
+	install -s scomp ${DESTDIR}/lib/sccom
+	install -s fort ${DESTDIR}/lib/f1
 
 GREP=	egrep
 
