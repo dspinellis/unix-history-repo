@@ -1,4 +1,4 @@
-/*	pup.c	4.4	82/10/17	*/
+/*	pup.c	4.5	83/05/30	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -14,14 +14,14 @@ pup_hash(spup, hp)
 	struct afhash *hp;
 {
 
-	hp->afh_nethash = spup->spup_addr.pp_net;
-	hp->afh_hosthash = spup->spup_addr.pp_host;
+	hp->afh_nethash = spup->spup_net;
+	hp->afh_hosthash = spup->spup_host;
 }
 
 pup_netmatch(spup1, spup2)
 	struct sockaddr_pup *spup1, *spup2;
 {
 
-	return (spup1->spup_addr.pp_net == spup2->spup_addr.pp_net);
+	return (spup1->spup_net == spup2->spup_net);
 }
 #endif

@@ -1,4 +1,4 @@
-/*	raw_pup.c	4.16	83/02/10	*/
+/*	raw_pup.c	4.17	83/05/30	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -27,9 +27,10 @@ rpup_output(m, so)
 	register struct rawcb *rp = sotorawcb(so);
 	register struct pup_header *pup;
 	int len, error = 0;
-	struct mbuf *n;
+	register struct mbuf *n, *last;
 	struct sockaddr_pup *dst;
 	struct ifnet *ifp;
+	u_short *pchecksum;
 
 	/*
 	 * Verify user has supplied necessary space
@@ -37,42 +38,49 @@ rpup_output(m, so)
 	 */
 	if ((m->m_off > MMAXOFF || m->m_len < sizeof(struct pup_header)) &&
 	    (m = m_pullup(m, sizeof(struct pup_header))) == 0) {
-		error = EMSGSIZE;	/* XXX */
+		error = EINVAL;
 		goto bad;
 	}
 	pup = mtod(m, struct pup_header *);
-	if (pup->pup_type == 0) {
-		error = EPERM;		/* XXX */
+	if (pup->pup_type == 0 || (pup->pup_tcontrol &~ PUP_TRACE)) {
+		error = EINVAL;
 		goto bad;
 	}
-	if (pup->pup_tcontrol && (pup->pup_tcontrol & ~PUP_TRACE)) {
-		error = EPERM;		/* XXX */
-		goto bad;
-	}
-	for (len = 0, n = m; n; n = n->m_next)
+	for (len = 0, n = last = m; n; last = n, n = n->m_next)
 		len += n->m_len;
-	pup->pup_length = len;
-#if vax || pdp11 || ns16032
-	pup->pup_length = htons(pup->pup_length);
-#endif
-	/* assume user generates PUP checksum. */
-	dst = (struct sockaddr_pup *)&rp->rcb_faddr;
-	pup->pup_dport = dst->spup_addr;
-	ifp = if_ifonnetof((int)pup->pup_dnet);
-	if (ifp) {
-		if (rp->rcb_flags & RAW_LADDR) {
-			register struct sockaddr_pup *src;
-
-			src = (struct sockaddr_pup *)&rp->rcb_laddr;
-			pup->pup_sport = src->spup_addr;
-		} else {
-			pup->pup_snet = ifp->if_net;
-			pup->pup_shost = ifp->if_host[0];
-			/* socket is specified by user */
-		}
-		return ((*ifp->if_output)(ifp, m, (struct sockaddr *)dst));
+	/* assume user leaves space for checksum */
+	if ((len & 1) || len < MINPUPSIZ || len > MAXPUPSIZ) {
+		error = EMSGSIZE;
+		goto bad;
 	}
-	error = ENETUNREACH;
+	pup->pup_length = htons(len);
+	dst = (struct sockaddr_pup *)&rp->rcb_faddr;
+	bcopy((caddr_t)dst->spup_net, (caddr_t)pup->pup_dnet,
+	    sizeof (struct pupport));
+	ifp = if_ifonnetof((u_int)pup->pup_dnet);
+	if (ifp == 0) {
+		error = ENETUNREACH;
+		goto bad;
+	}
+	if (rp->rcb_flags & RAW_LADDR) {
+		register struct sockaddr_pup *src;
+
+		src = (struct sockaddr_pup *)&rp->rcb_laddr;
+		bcopy((caddr_t)src->spup_net, (caddr_t)pup->pup_snet,
+		    sizeof (struct pupport));
+	} else {
+		pup->pup_snet = ifp->if_net;
+		pup->pup_shost = ifp->if_host[0];
+		/* socket is specified by user */
+	}
+	/*
+	 * Fill in checksum unless user indicates none should be specified.
+	 */
+	pchecksum =
+	    (u_short *)(mtod(last, caddr_t) + last->m_len - sizeof (short));
+	if (*pchecksum != PUP_NOCKSUM)
+		*pchecksum = pup_cksum(m, len - sizeof (short));
+	return ((*ifp->if_output)(ifp, m, (struct sockaddr *)dst));
 bad:
 	m_freem(m);
 	return (error);
