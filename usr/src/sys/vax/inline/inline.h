@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)inline.h	1.3 (Berkeley) %G%
+ *	@(#)inline.h	1.4 (Berkeley) %G%
  */
 
 /*
@@ -52,6 +52,7 @@ char line[QUEUESIZE][MAXLINELEN];
  * These tables specify the substitutions that are to be done.
  */
 struct pats {
+	int	args;
 	char	*name;
 	char	*replace;
 	struct	pats *next;
