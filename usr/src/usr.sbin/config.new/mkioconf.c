@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mkioconf.c	5.3 (Berkeley) %G%
+ *	@(#)mkioconf.c	5.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -286,7 +286,7 @@ emitpseudo(fp)
 	register struct devi *i;
 	register struct devbase *d;
 
-	if (fputs("\n#ifdef notyet\n", fp) < 0)
+	if (fputs("\n/* pseudo-devices */\n", fp) < 0)
 		return (1);
 	for (i = allpseudo; i != NULL; i = i->i_next)
 		if (fprintf(fp, "extern void %sattach __P((int));\n",
@@ -300,7 +300,7 @@ emitpseudo(fp)
 		    d->d_name, d->d_umax) < 0)
 			return (1);
 	}
-	return (fputs("\t{ 0, 0 }\n};\n#endif\n", fp) < 0);
+	return (fputs("\t{ 0, 0 }\n};\n", fp) < 0);
 }
 
 /*
