@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)lseek.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)lseek.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -22,7 +22,7 @@ lseek(fd, offset, whence)
 	off_t	offset;
 	int	whence;
 {
-	extern off_t __indir();
+	extern off_t __syscall();
 
-	return(__indir((quad_t)SYS_lseek, fd, 0, offset, whence));
+	return(__syscall((quad_t)SYS_lseek, fd, 0, offset, whence));
 }
