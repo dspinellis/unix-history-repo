@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ether.h	7.6 (Berkeley) %G%
+ *	@(#)if_ether.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -96,9 +96,16 @@ struct sockaddr_inarp {
 
 #ifdef	KERNEL
 u_char	etherbroadcastaddr[6];
-struct	llinfo_arp *arptnew();
+struct	llinfo_arp *arptnew __P((struct in_addr *));
 struct	llinfo_arp llinfo_arp;		/* head of the llinfo queue */
-int	ether_output(), ether_input(), arp_rtrequest();
-char	*ether_sprintf();
+int	ether_output __P((struct ifnet *, struct mbuf *, struct sockaddr *,
+			  struct rtentry *));
+int	ether_input __P((struct ifnet *, struct ether_header *, struct mbuf *));
+char	*ether_sprintf __P((u_char *));
+int	arp_rtrequest __P((int, struct rtentry *, struct sockaddr *));
 struct	ifqueue arpintrq;
+
+/* XXX These probably belong elsewhere */
+void	in_arpinput __P((struct mbuf *));
+void	arpwhohas __P((struct arpcom *, struct in_addr *));
 #endif

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ether.c	7.16 (Berkeley) %G%
+ *	@(#)if_ether.c	7.17 (Berkeley) %G%
  */
 
 /*
@@ -333,6 +333,7 @@ arpintr()
  * We reply to requests for ETHERTYPE_TRAIL protocol as well,
  * but don't normally send requests.
  */
+void
 in_arpinput(m)
 	struct mbuf *m;
 {
