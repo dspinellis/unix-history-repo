@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ansi.h	7.1 (Berkeley) %G%
+ *	@(#)ansi.h	7.2 (Berkeley) %G%
  */
 
 #ifndef	_ANSI_H_
@@ -24,6 +24,7 @@
 #define	_CLOCK_T_	unsigned long		/* clock() */
 #define	_PTRDIFF_T_	int			/* ptr1 - ptr2 */
 #define	_SIZE_T_	unsigned int		/* sizeof() */
+#define	_SSIZE_T_	int			/* byte count or error */
 #define	_TIME_T_	long			/* time() */
 #define	_VA_LIST_	char *			/* va_list */
 #define	_WCHAR_T_	unsigned short		/* wchar_t */
