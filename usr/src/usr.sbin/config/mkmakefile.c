@@ -1,5 +1,5 @@
 /*
- * mkmakefile.c	1.11	81/10/08
+ * mkmakefile.c	1.12	81/10/12
  *	Functions in this file build the makefile from the files list
  *	and the information in the config table
  */
@@ -185,7 +185,8 @@ read_files()
 			break;
 		}
 		nreqs++;
-		/* tp->f_needs = ns(wd); */
+		if (tp->f_needs == NULL)
+			tp->f_needs = ns(wd);
 		for (dp = dtab ; dp != NULL; dp = dp->d_next)
 		{
 		    if (eq(dp->d_name, wd))
