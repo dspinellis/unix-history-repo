@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.21 (Berkeley) %G%)
+VERSIONID(@(#)proto.m4	2.22 (Berkeley) %G%)
 
 MAILER(local)dnl
 
@@ -236,23 +236,26 @@ undivert(4)dnl
 
 # resolve remotely connected UUCP links
 ifdef(`_CLASS_V_',
-`R$* < @ $=V . UUCP > $*		$#smtp $@ $V $: $1<@$2.UUCP>$3', `dnl')
+`R$* < @ $=V . UUCP > $*		$#smtp $@ $V $: <@ $V> : $1 @ $2.UUCP $3',
+	`dnl')
 ifdef(`_CLASS_W_',
-`R$* < @ $=W . UUCP > $*		$#smtp $@ $W $: $1<@$2.UUCP>$3', `dnl')
+`R$* < @ $=W . UUCP > $*		$#smtp $@ $W $: <@ $W> : $1 @ $2.UUCP $3',
+	`dnl')
 ifdef(`_CLASS_X_',
-`R$* < @ $=X . UUCP > $*		$#smtp $@ $X $: $1<@$2.UUCP>$3', `dnl')
+`R$* < @ $=X . UUCP > $*		$#smtp $@ $X $: <@ $X> : $1 @ $2.UUCP $3',
+	`dnl')
 
 # resolve fake top level domains by forwarding to other hosts
 ifdef(`BITNET_RELAY',
-`R$*<@$+.BITNET>$*	$#smtp$@$B$:$1<@$2.BITNET>$3		user@host.BITNET',
+`R$*<@$+.BITNET>$*	$#smtp $@ $B $: $1 <@$2.BITNET> $3	user@host.BITNET',
 	`dnl')
 ifdef(`CSNET_RELAY',
-`R$*<@$+.CSNET>$*	$#smtp$@$C$:$1<@$2.CSNET>$3		user@host.CSNET',
+`R$*<@$+.CSNET>$*	$#smtp $@ $C $: $1 <@$2.CSNET> $3	user@host.CSNET',
 	`dnl')
 
 ifdef(`UUCP_RELAY',
 `# forward non-local UUCP traffic to our UUCP relay
-R$*<@$*.UUCP>$*		$#smtp$@$Y$:$1<@$2.UUCP>		uucp mail',
+R$*<@$*.UUCP>$*		$#smtp $@ $Y $: <@ $Y> : $1 @ $2.UUCP $3	uucp mail',
 `ifdef(`_UUCP_LINKED_',
 `# forward other UUCP traffic straight to UUCP
 R< @ $+ .UUCP > : $+	$#uucp $@ $1 $: $1:$2			@host.UUCP:...
@@ -267,7 +270,7 @@ ifdef(`_OLD_SENDMAIL_',
 R$=L			$#local $: $1			special local names
 R$+			$: $1 < @ $R >			append relay
 R$+ < @ >		$#local $: $1			if no relay, local
-R$+ < @ $+ >		$#smtp $@ $2 $: $1',		deliver to relay
+R$+ < @ $+ >		$#smtp $@ $2 $: $1		deliver to relay',
 `# handle locally delivered names
 R$=L			$#local $: @ $1			special local names
 R$+			$#local $: $1			regular local names
