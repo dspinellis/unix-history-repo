@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_clock.c	7.21 (Berkeley) %G%
+ *	@(#)kern_clock.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -18,7 +18,8 @@
 #include "machine/cpu.h"
 
 #ifdef GPROF
-#include "gprof.h"
+#include "gmon.h"
+extern u_short *kcount;
 #endif
 
 #define ADJTIME		/* For now... */
@@ -28,21 +29,29 @@ int	adjtimedelta;
 /*
  * Clock handling routines.
  *
- * This code is written to operate with two timers which run
- * independently of each other. The main clock, running at hz
- * times per second, is used to do scheduling and timeout calculations.
- * The second timer does resource utilization estimation statistically
- * based on the state of the machine stathz times a second. Both functions
- * can be performed by a single clock (ie hz == stathz), however the 
- * statistics will be much more prone to errors. Ideally a machine
- * would have separate clocks measuring time spent in user state, system
- * state, interrupt state, and idle state. These clocks would allow a non-
- * approximate measure of resource utilization.
+ * This code is written to operate with two timers that run independently of
+ * each other.  The main clock, running hz times per second, is used to keep
+ * track of real time.  The second timer handles kernel and user profiling,
+ * and does resource use estimation.  If the second timer is programmable,
+ * it is randomized to avoid aliasing between the two clocks.  For example,
+ * the randomization prevents an adversary from always giving up the cpu
+ * just before its quantum expires.  Otherwise, it would never accumulate
+ * cpu ticks.  The mean frequency of the second timer is stathz.
+ *
+ * If no second timer exists, stathz will be zero; in this case we drive
+ * profiling and statistics off the main clock.  This WILL NOT be accurate;
+ * do not do it unless absolutely necessary.
+ *
+ * The statistics clock may (or may not) be run at a higher rate while
+ * profiling.  This profile clock runs at profhz.  We require that profhz
+ * be an integral multiple of stathz.
+ *
+ * If the statistics clock is running fast, it must be divided by the ratio
+ * profhz/stathz for statistics.  (For profiling, every tick counts.)
  */
 
 /*
  * TODO:
- *	time of day, system/user timing, timeouts, profiling on separate timers
  *	allocate more timeout table slots when table overflows.
  */
 
@@ -50,34 +59,56 @@ int	adjtimedelta;
  * Bump a timeval by a small number of usec's.
  */
 #define BUMPTIME(t, usec) { \
-	register struct timeval *tp = (t); \
+	register volatile struct timeval *tp = (t); \
+	register long us; \
  \
-	tp->tv_usec += (usec); \
-	if (tp->tv_usec >= 1000000) { \
-		tp->tv_usec -= 1000000; \
+	tp->tv_usec = us = tp->tv_usec + (usec); \
+	if (us >= 1000000) { \
+		tp->tv_usec = us - 1000000; \
 		tp->tv_sec++; \
 	} \
 }
 
-int	ticks;
 int	stathz;
 int	profhz;
 int	profprocs;
-struct	timeval time;
-struct	timeval mono_time;
+static int psratio, psdiv, pscnt;	/* prof => stat divider */
+
+volatile struct	timeval time;
+volatile struct	timeval mono_time;
+
 /*
- * The hz hardware interval timer.
- * We update the events relating to real time.
- * If this timer is also being used to gather statistics,
- * we run through the statistics gathering routine as well.
+ * Initialize clock frequencies and start both clocks running.
  */
+void
+initclocks()
+{
+	register int i;
+
+	/*
+	 * Set divisors to 1 (normal case) and let the machine-specific
+	 * code do its bit.
+	 */
+	psdiv = pscnt = 1;
+	cpu_initclocks();
+
+	/*
+	 * Compute profhz/stathz, and fix profhz if needed.
+	 */
+	i = stathz ? stathz : hz;
+	if (profhz == 0)
+		profhz = i;
+	psratio = profhz / i;
+}
+
+/*
+ * The real-time timer, interrupting hz times per second.
+ */
+void
 hardclock(frame)
-	clockframe frame;
+	register struct clockframe *frame;
 {
 	register struct callout *p1;
-	register struct proc *p = curproc;
-	register struct pstats *pstats;
-	register int s;
 
 	/*
 	 * Update real-time timeout queue.
@@ -89,105 +120,35 @@ hardclock(frame)
 	 * Decrementing just the first of these serves to decrement the time
 	 * to all events.
 	 */
-	p1 = calltodo.c_next;
-	while (p1) {
+	needsoft = 0;
+	for (p1 = calltodo.c_next; p1 != NULL; p1 = p1->c_next) {
 		if (--p1->c_time > 0)
 			break;
 		if (p1->c_time == 0)
 			break;
-		p1 = p1->c_next;
 	}
 
-	/*
-	 * Curproc (now in p) is null if no process is running.
-	 * We assume that curproc is set in user mode!
-	 */
-	if (p)
-		pstats = p->p_stats;
-	/*
-	 * Charge the time out based on the mode the cpu is in.
-	 * Here again we fudge for the lack of proper interval timers
-	 * assuming that the current state has been around at least
-	 * one tick.
-	 */
 		/*
-		 * CPU was in user state.  Increment
-		 * user time counter, and process process-virtual time
-		 * interval timer. 
+		 * Run current process's virtual and profile time, as needed.
 		 */
-		BUMPTIME(&p->p_utime, tick);
-		if (timerisset(&pstats->p_timer[ITIMER_VIRTUAL].it_value) &&
+		pstats = p->p_stats;
+		if (CLKF_USERMODE(frame) &&
+		    timerisset(&pstats->p_timer[ITIMER_VIRTUAL].it_value) &&
 		    itimerdecr(&pstats->p_timer[ITIMER_VIRTUAL], tick) == 0)
 			psignal(p, SIGVTALRM);
-	} else {
-		/*
-		 * CPU was in system state.
-		 */
-		if (p)
-			BUMPTIME(&p->p_stime, tick);
-	}
-
-	/*
-	 * If the cpu is currently scheduled to a process, then
-	 * charge it with resource utilization for a tick, updating
-	 * statistics which run in (user+system) virtual time,
-	 * such as the cpu time limit and profiling timers.
-	 * This assumes that the current process has been running
-	 * the entire last tick.
-	 */
-	if (p) {
-		secs = p->p_utime.tv_sec + p->p_stime.tv_sec + 1;
-		if (secs > p->p_rlimit[RLIMIT_CPU].rlim_cur) {
-			if (secs > p->p_rlimit[RLIMIT_CPU].rlim_max)
-				psignal(p, SIGKILL);
-			else {
-				psignal(p, SIGXCPU);
-				if (p->p_rlimit[RLIMIT_CPU].rlim_cur <
-				    p->p_rlimit[RLIMIT_CPU].rlim_max)
-					p->p_rlimit[RLIMIT_CPU].rlim_cur += 5;
-			}
-		}
 		if (timerisset(&pstats->p_timer[ITIMER_PROF].it_value) &&
 		    itimerdecr(&pstats->p_timer[ITIMER_PROF], tick) == 0)
 			psignal(p, SIGPROF);
-
-		/*
-		 * We adjust the priority of the current process.
-		 * The priority of a process gets worse as it accumulates
-		 * CPU time.  The cpu usage estimator (p_cpu) is increased here
-		 * and the formula for computing priorities (in kern_synch.c)
-		 * will compute a different value each time the p_cpu increases
-		 * by 4.  The cpu usage estimator ramps up quite quickly when
-		 * the process is running (linearly), and decays away
-		 * exponentially, * at a rate which is proportionally slower
-		 * when the system is busy.  The basic principal is that the
-		 * system will 90% forget that a process used a lot of CPU
-		 * time in 5*loadav seconds.  This causes the system to favor
-		 * processes which haven't run much recently, and to
-		 * round-robin among other processes.
-		 */
-		p->p_cpticks++;
-		if (++p->p_cpu == 0)
-			p->p_cpu--;
-		if ((p->p_cpu&3) == 0) {
-			setpri(p);
-			if (p->p_pri >= PUSER)
-				p->p_pri = p->p_usrpri;
-		}
 	}
 
 	/*
-	 * If the alternate clock has not made itself known then
-	 * we must gather the statistics.
+	 * If no separate statistics clock is available, run it from here.
 	 */
 	if (stathz == 0)
-		gatherstats(&frame);
+		statclock(frame);
 
 	/*
-	 * Increment the time-of-day, and schedule
-	 * processing of the callouts at a very low cpu priority,
-	 * so we don't keep the relatively high clock interrupt
-	 * priority any longer than necessary.
+	 * Increment the time-of-day.
 	 */
 #ifdef ADJTIME
 	if (adjtimedelta == 0)
@@ -202,12 +163,11 @@ hardclock(frame)
 		}
 	}
 #else
-	ticks++;
 	if (timedelta == 0) {
-		BUMPTIME(&time, tick)
-		BUMPTIME(&mono_time, tick)
+		BUMPTIME(&time, tick);
+		BUMPTIME(&mono_time, tick);
 	} else {
-		register delta;
+		register int delta;
 
 		if (timedelta < 0) {
 			delta = tick - tickdelta;
@@ -217,167 +177,57 @@ hardclock(frame)
 			timedelta -= tickdelta;
 		}
 		BUMPTIME(&time, delta);
-		BUMPTIME(&mono_time, delta)
+		BUMPTIME(&mono_time, delta);
 	}
+
+	/*
+	 * Process callouts at a very low cpu priority, so we don't keep the
+	 * relatively high clock interrupt priority any longer than necessary.
+	 */
 #endif
 	setsoftclock();
 }
 
-int	dk_ndrive = DK_NDRIVE;
 /*
- * Gather statistics on resource utilization.
- *
- * We make a gross assumption: that the system has been in the
- * state it is in (user state, kernel state, interrupt state,
- * or idle state) for the entire last time interval, and
- * update statistics accordingly.
- */
-gatherstats(framep)
-	clockframe *framep;
-{
-	register int cpstate, s;
-
-	/*
-	 * Determine what state the cpu is in.
-	 */
-	if (CLKF_USERMODE(framep)) {
-		/*
-		 * CPU was in user state.
-		 */
-		if (curproc->p_nice > NZERO)
-			cpstate = CP_NICE;
-		else
-			cpstate = CP_USER;
-	} else {
-		/*
-		 * CPU was in system state.  If profiling kernel
-		 * increment a counter.  If no process is running
-		 * then this is a system tick if we were running
-		 * at a non-zero IPL (in a driver).  If a process is running,
-		 * then we charge it with system time even if we were
-		 * at a non-zero IPL, since the system often runs
-		 * this way during processing of system calls.
-		 * This is approximate, but the lack of true interval
-		 * timers makes doing anything else difficult.
-		 */
-		cpstate = CP_SYS;
-		if (curproc == NULL && CLKF_BASEPRI(framep))
-			cpstate = CP_IDLE;
-#ifdef GPROF
-		s = CLKF_PC(framep) - s_lowpc;
-		if (profiling < 2 && s < s_textsize)
-			kcount[s / (HISTFRACTION * sizeof (*kcount))]++;
-#endif
-	}
-	/*
-	 * We maintain statistics shown by user-level statistics
-	 * programs:  the amount of time in each cpu state, and
-	 * the amount of time each of DK_NDRIVE ``drives'' is busy.
-	 */
-	cp_time[cpstate]++;
-	for (s = 0; s < DK_NDRIVE; s++)
-		if (dk_busy&(1<<s))
-			dk_time[s]++;
-}
-
-/*
- * Software priority level clock interrupt.
+ * Software (low priority) clock interrupt.
  * Run periodic events from timeout queue.
  */
 /*ARGSUSED*/
-softclock(frame)
-	clockframe frame;
+void
+softclock()
 {
+	register struct callout *c;
+	register void *arg;
+	register void (*func) __P((void *));
+	register int s;
 
-	for (;;) {
-		register struct callout *p1;
-		register caddr_t arg;
-		register int (*func)();
-		register int a, s;
-
-		s = splhigh();
-		if ((p1 = calltodo.c_next) == 0 || p1->c_time > 0) {
-			splx(s);
-			break;
-		}
-		arg = p1->c_arg; func = p1->c_func; a = p1->c_time;
-		calltodo.c_next = p1->c_next;
-		p1->c_next = callfree;
-		callfree = p1;
+	s = splhigh();
+	while ((c = calltodo.c_next) != NULL && c->c_time <= 0) {
+		func = c->c_func;
+		arg = c->c_arg;
+		calltodo.c_next = c->c_next;
+		c->c_next = callfree;
+		callfree = c;
 		splx(s);
-		(*func)(arg, a);
+		(*func)(arg);
+		(void) splhigh();
 	}
-	/*
-	 * If trapped user-mode and profiling, give it
-	 * a profiling tick.
-	 */
-	if (CLKF_USERMODE(&frame)) {
-		register struct proc *p = curproc;
-
-		if (p->p_stats->p_prof.pr_scale)
-			profile_tick(p, &frame);
-		/*
-		 * Check to see if process has accumulated
-		 * more than 10 minutes of user time.  If so
-		 * reduce priority to give others a chance.
-		 */
-		if (p->p_ucred->cr_uid && p->p_nice == NZERO &&
-		    p->p_utime.tv_sec > 10 * 60) {
-			p->p_nice = NZERO + 4;
-			setpri(p);
-			p->p_pri = p->p_usrpri;
-		}
-	}
-}
-
-/*
- * Notification of start of profiling clock
- *
- * Kernel profiling passes proc0 which never exits and hence
- * keeps the profile clock running constantly.
- */
-startprofclock(p)
-	struct proc *p;
-{
-
-	if (p->p_flag & SPROFIL)
-		return;
-	profprocs++;
-	p->p_flag |= SPROFIL;
-#ifdef PROFTIMER
-	initprofclock(profprocs);
-#else
-	profhz = hz;
-#endif
-}
-
-/*
- * Notification of stopping of profile clock
- */
-stopprofclock(p)
-	struct proc *p;
-{
-
-	if ((p->p_flag & SPROFIL) == 0)
-		return;
-	profprocs--;
-	p->p_flag &= ~SPROFIL;
-#ifdef PROFTIMER
-	initprofclock(profprocs);
-#endif
+	splx(s);
 }
 
 /*
  * Arrange that (*func)(arg) is called in t/hz seconds.
  */
+void
 timeout(func, arg, t)
-	int (*func)();
-	caddr_t arg;
+	void (*func) __P((void *));
+	void *arg;
 	register int t;
 {
 	register struct callout *p1, *p2, *pnew;
-	register int s = splhigh();
+	register int s;
 
+	s = splhigh();
 	if (t <= 0)
 		t = 1;
 	pnew = callfree;
@@ -401,15 +251,16 @@ timeout(func, arg, t)
  * untimeout is called to remove a function timeout call
  * from the callout structure.
  */
+void
 untimeout(func, arg)
-	int (*func)();
-	caddr_t arg;
+	void (*func) __P((void *));
+	void *arg;
 {
 	register struct callout *p1, *p2;
 	register int s;
 
 	s = splhigh();
-	for (p1 = &calltodo; (p2 = p1->c_next) != 0; p1 = p2) {
+	for (p1 = &calltodo; (p2 = p1->c_next) != NULL; p1 = p2) {
 		if (p2->c_func == func && p2->c_arg == arg) {
 			if (p2->c_next && p2->c_time > 0)
 				p2->c_next->c_time += p2->c_time;
@@ -427,12 +278,12 @@ untimeout(func, arg)
  * Used to compute third argument to timeout() from an
  * absolute time.
  */
+int
 hzto(tv)
 	struct timeval *tv;
 {
-	register long ticks;
-	register long sec;
-	int s = splhigh();
+	register long ticks, sec;
+	int s;
 
 	/*
 	 * If number of milliseconds will fit in 32 bit arithmetic,
@@ -443,6 +294,7 @@ hzto(tv)
 	 * Delta times less than 25 days can be computed ``exactly''.
 	 * Maximum value for any timeout in 10ms ticks is 250 days.
 	 */
+	s = splhigh();
 	sec = tv->tv_sec - time.tv_sec;
 	if (sec <= 0x7fffffff / 1000 - 1000)
 		ticks = ((tv->tv_sec - time.tv_sec) * 1000 +
@@ -453,6 +305,158 @@ hzto(tv)
 		ticks = 0x7fffffff;
 	splx(s);
 	return (ticks);
+}
+
+/*
+ * Start profiling on a process.
+ *
+ * Kernel profiling passes proc0 which never exits and hence
+ * keeps the profile clock running constantly.
+ */
+void
+startprofclock(p)
+	register struct proc *p;
+{
+	int s;
+
+	if ((p->p_flag & SPROFIL) == 0) {
+		p->p_flag |= SPROFIL;
+		if (++profprocs == 1 && stathz != 0) {
+			s = splstatclock();
+			psdiv = pscnt = psratio;
+			setstatclockrate(profhz);
+			splx(s);
+		}
+	}
+}
+
+/*
+ * Stop profiling on a process.
+ */
+void
+stopprofclock(p)
+	register struct proc *p;
+{
+	int s;
+
+	if (p->p_flag & SPROFIL) {
+		p->p_flag &= ~SPROFIL;
+		if (--profprocs == 0 && stathz != 0) {
+			s = splstatclock();
+			psdiv = pscnt = 1;
+			setstatclockrate(stathz);
+			splx(s);
+		}
+	}
+}
+
+int	dk_ndrive = DK_NDRIVE;
+
+/*
+ * Statistics clock.  Grab profile sample, and if divider reaches 0,
+ * do process and kernel statistics.
+ */
+void
+statclock(frame)
+	register struct clockframe *frame;
+{
+#ifdef GPROF
+	register struct gmonparam *g;
+#endif
+	register struct proc *p;
+	register int i;
+
+	if (CLKF_USERMODE(frame)) {
+		p = curproc;
+		if (p->p_flag & SPROFIL)
+			addupc_intr(p, CLKF_PC(frame), 1);
+		if (--pscnt > 0)
+			return;
+		/*
+		 * Came from user mode; CPU was in user state.
+		 * If this process is being profiled record the tick.
+		 */
+		p->p_uticks++;
+		if (p->p_nice > NZERO)
+			cp_time[CP_NICE]++;
+		else
+			cp_time[CP_USER]++;
+	} else {
+#ifdef GPROF
+		/*
+		 * Kernel statistics are just like addupc_intr, only easier.
+		 */
+		g = &_gmonparam;
+		if (g->state == GMON_PROF_ON) {
+			i = CLKF_PC(frame) - g->lowpc;
+			if (i < g->textsize)
+				kcount[s / (HISTFRACTION * sizeof(*kcount))]++;
+		}
+#endif
+		if (--pscnt > 0)
+			return;
+		/*
+		 * Came from kernel mode, so we were:
+		 * - handling an interrupt,
+		 * - doing syscall or trap work on behalf of the current
+		 *   user process, or
+		 * - spinning in the idle loop.
+		 * Whichever it is, charge the time as appropriate.
+		 * Note that we charge interrupts to the current process,
+		 * regardless of whether they are ``for'' that process,
+		 * so that we know how much of its real time was spent
+		 * in ``non-process'' (i.e., interrupt) work.
+		 */
+		p = curproc;
+		if (CLKF_INTR(frame)) {
+			if (p != NULL)
+				p->p_iticks++;
+			cp_time[CP_INTR]++;
+		} else if (p != NULL) {
+			p->p_sticks++;
+			cp_time[CP_SYS]++;
+		} else
+			cp_time[CP_IDLE]++;
+	}
+	pscnt = psdiv;
+
+	/*
+	 * We maintain statistics shown by user-level statistics
+	 * programs:  the amount of time in each cpu state, and
+	 * the amount of time each of DK_NDRIVE ``drives'' is busy.
+	 *
+	 * XXX	should either run linked list of drives, or (better)
+	 *	grab timestamps in the start & done code.
+	 */
+	for (i = 0; i < DK_NDRIVE; i++)
+		if (dk_busy & (1 << i))
+			dk_time[i]++;
+
+	/*
+	 * We adjust the priority of the current process.
+	 * The priority of a process gets worse as it accumulates
+	 * CPU time.  The cpu usage estimator (p_cpu) is increased here
+	 * and the formula for computing priorities (in kern_synch.c)
+	 * will compute a different value each time the p_cpu increases
+	 * by 4.  The cpu usage estimator ramps up quite quickly when
+	 * the process is running (linearly), and decays away
+	 * exponentially, at a rate which is proportionally slower
+	 * when the system is busy.  The basic principal is that the
+	 * system will 90% forget that a process used a lot of CPU
+	 * time in 5*loadav seconds.  This causes the system to favor
+	 * processes which haven't run much recently, and to
+	 * round-robin among other processes.
+	 */
+	if (p != NULL) {
+		p->p_cpticks++;
+		if (++p->p_cpu == 0)
+			p->p_cpu--;
+		if ((p->p_cpu & 3) == 0) {
+			setpri(p);
+			if (p->p_pri >= PUSER)
+				p->p_pri = p->p_usrpri;
+		}
+	}
 }
 
 /*
@@ -482,14 +486,9 @@ kinfo_clockrate(op, where, acopysize, arg, aneeded)
 	 * Copyout clockinfo structure.
 	 */
 	clockinfo.hz = hz;
-	clockinfo.stathz = stathz;
 	clockinfo.tick = tick;
-#ifdef PROFTIMER
-	initprofclock(2);
-#else
-	profhz = hz;
-#endif
 	clockinfo.profhz = profhz;
+	clockinfo.stathz = stathz ? stathz : hz;
 	if (error = copyout((caddr_t)&clockinfo, where, sizeof(clockinfo)))
 		return (error);
 	*acopysize = sizeof(clockinfo);
