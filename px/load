@@ -1,0 +1,5 @@
+if -r ../nofloat goto nofloatload
+ld -X -i ../assubs/pcrt0.o *.o -lc -l
+exit
+: nofloatload
+ld -X -i ../assubs/pcrt0.o *.o ../fpterp/fp.o -lc -l
