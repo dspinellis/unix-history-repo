@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.34 (Berkeley) %G%
+#	@(#)Makefile	5.35 (Berkeley) %G%
 #
 # Doing a make install builds /usr/include
 #
@@ -35,7 +35,7 @@ SHARED=	symlinks
 install: ${SHARED}
 	@echo installing ${STD}
 	@-for i in ${STD}; do \
-		cmp -s $$i ${DESTDIR}/usr/Xinclude/$$i || \
+		cmp -s $$i ${DESTDIR}/usr/include/$$i || \
 		    install -c -o ${BINOWN} -g ${BINGRP} -m 444 $$i \
 		    ${DESTDIR}/usr/include/$$i; \
 	done
@@ -48,7 +48,7 @@ install: ${SHARED}
 		chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include/$$i; \
 		chmod 755 ${DESTDIR}/usr/include/$$i; \
 		(cd $$i; for j in *.[ih]; do \
-			cmp -s $$j ${DESTDIR}/usr/Xinclude/$$i/$$j || \
+			cmp -s $$j ${DESTDIR}/usr/include/$$i/$$j || \
 			install -c -o ${BINOWN} -g ${BINGRP} -m 444 $$j \
 			    ${DESTDIR}/usr/include/$$i/$$j; \
 		done); \
