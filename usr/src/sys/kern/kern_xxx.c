@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_xxx.c	7.9 (Berkeley) %G%
+ *	@(#)kern_xxx.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -69,6 +69,12 @@ reboot()
 }
 
 ovhangup()
+{
+
+	RETURN (EINVAL);
+}
+
+oldquota()
 {
 
 	RETURN (EINVAL);
