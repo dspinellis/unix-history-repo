@@ -1,4 +1,4 @@
-/*	ht.c	4.19	81/08/31	*/
+/*	ht.c	4.20	81/11/07	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -87,10 +87,16 @@ htslave(mi, ms)
 	struct mba_slave *ms;
 {
 	register struct tu_softc *sc = &tu_softc[ms->ms_unit];
+	register struct htdevice *htaddr = (struct htdevice *)mi->mi_drv;
 
-	sc->sc_mi = mi;
-	sc->sc_slave = ms->ms_slave;
-	tutoht[ms->ms_unit] = mi->mi_unit;
+	htaddr->httc = ms->ms_slave;
+	if (htaddr->htdt & HTDT_SPR) {
+		sc->sc_mi = mi;
+		sc->sc_slave = ms->ms_slave;
+		tutoht[ms->ms_unit] = mi->mi_unit;
+		return (1);
+	} else
+		return (0);
 }
 
 htopen(dev, flag)

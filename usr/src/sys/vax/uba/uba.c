@@ -1,4 +1,4 @@
-/*	uba.c	4.35	81/07/22	*/
+/*	uba.c	4.36	81/11/07	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -139,7 +139,8 @@ ubasetup(uban, bp, flags)
 			sleep((caddr_t)uh->uh_map, PSWP);
 		}
 		uh->uh_bdpfree &= ~(1 << (bdp-1));
-	}
+	} else if (flags & UBA_HAVEBDP)
+		bdp = (flags >> 28) & 0xf;
 	splx(a);
 	reg--;
 	ubinfo = (bdp << 28) | (npf << 18) | (reg << 9) | o;
