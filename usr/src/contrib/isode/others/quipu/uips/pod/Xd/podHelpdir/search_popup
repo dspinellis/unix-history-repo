@@ -1,0 +1,46 @@
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ Pod - Search, querying the database
+
+ To construct a search for an entry in the 
+ directory database, proceed as follows.
+
+ 1) Set the <Type> of the entry that you wish
+    to search for by selecting from the popup
+    menu associated with the <Change Type>
+    button.
+
+ 2) Enter a value  into  the  <Search> dialog 
+    box that  describes  the  target entry in
+    some way.
+
+ 3) Press  <Return>  whilst  in  the <Search> 
+    dialog  box  or  click   on   the  <Okay>
+    button to the activate the search.
+
+ A typical search  is  illustrated below. The
+ entry  being   searched   for   is  that  of 
+ 'Professor   Polonius    Plum   of   Parkway
+ Polytechnic. '
+
+ 1) Move to the entry for Parkway Polytechnic
+
+ 2) Make  sure  that  the   <Type>  field  is
+     set to 'Person'.
+
+ 3) Enter a value  into  the  <Search> dialog
+    box. For  this  example this  value might
+    simply be 'Plum' or 'Polonius'.
+
+ 4) Start  the  search  by  clicking  on  the 
+    <Search> button. 
+
+ The results of  the  query, in the form of a
+ list of closely matching  entries should now
+ appear.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
