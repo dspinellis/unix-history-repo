@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vnops.c	8.7 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -43,6 +43,7 @@ struct vnodeopv_entry_desc mfs_vnodeop_entries[] = {
 	{ &vop_write_desc, mfs_write },			/* write */
 	{ &vop_ioctl_desc, mfs_ioctl },			/* ioctl */
 	{ &vop_select_desc, mfs_select },		/* select */
+	{ &vop_revoke_desc, mfs_revoke },		/* revoke */
 	{ &vop_mmap_desc, mfs_mmap },			/* mmap */
 	{ &vop_fsync_desc, spec_fsync },		/* fsync */
 	{ &vop_seek_desc, mfs_seek },			/* seek */
