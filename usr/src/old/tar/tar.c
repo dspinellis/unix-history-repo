@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tar.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tar.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -666,7 +666,14 @@ gotit:
 			continue;
 		}
 		if (dblock.dbuf.linkflag == '2') {	/* symlink */
-			unlink(dblock.dbuf.name);
+			/*
+			 * only unlink non directories or empty
+			 * directories
+			 */
+			if (rmdir(dblock.dbuf.name) < 0) {
+				if (errno == ENOTDIR)
+					unlink(dblock.dbuf.name);
+			}
 			if (symlink(dblock.dbuf.linkname, dblock.dbuf.name)<0) {
 				fprintf(stderr, "tar: %s: symbolic link failed\n",
 				    dblock.dbuf.name);
@@ -686,7 +693,14 @@ gotit:
 			continue;
 		}
 		if (dblock.dbuf.linkflag == '1') {	/* regular link */
-			unlink(dblock.dbuf.name);
+			/*
+			 * only unlink non directories or empty
+			 * directories
+			 */
+			if (rmdir(dblock.dbuf.name) < 0) {
+				if (errno == ENOTDIR)
+					unlink(dblock.dbuf.name);
+			}
 			if (link(dblock.dbuf.linkname, dblock.dbuf.name) < 0) {
 				fprintf(stderr, "tar: %s: cannot link\n",
 				    dblock.dbuf.name);
