@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)locate.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)locate.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -109,7 +109,7 @@ fastfind(pathpart)
 				if (*p == NULL) {	/* fast match success */
 					found = 1;
 					if (!globflag ||
-					    fnmatch(pathpart, path, FNM_QUOTE))
+					    !fnmatch(pathpart, path, 0))
 						(void)printf("%s\n", path);
 					break;
 				}
