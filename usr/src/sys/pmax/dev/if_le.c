@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	7.1 (Berkeley) %G%
+ *	@(#)if_le.c	7.2 (Berkeley) %G%
  */
 
 #include "le.h"
@@ -65,14 +65,12 @@
 #endif
 
 int	leprobe();
+void	leintr();
 struct	driver ledriver = {
-	"le", leprobe,
+	"le", leprobe, 0, 0, leintr,
 };
 
 int	ledebug = 1;		/* console error messages */
-
-int	leintr(), leinit(), leioctl(), lestart(), ether_output();
-struct	mbuf *leget();
 
 /*
  * Ethernet software status per interface.
@@ -109,11 +107,25 @@ struct	le_softc {
 #endif
 } le_softc[NLE];
 
+#ifdef DS3100
 /* access LANCE registers */
 #define	LERDWR(cntl, src, dst)	{ (dst) = (src); DELAY(10); }
 
 #define CPU_TO_CHIP_ADDR(cpu) \
 	(((unsigned)(&(((struct lereg2 *)0)->cpu))) >> 1)
+#endif
+
+#ifdef DS5000
+/* access LANCE registers */
+#define	LERDWR(cntl, src, dst)	(dst) = (src);
+
+#define CPU_TO_CHIP_ADDR(cpu) \
+	((unsigned)(&(((struct lereg2 *)0)->cpu)))
+
+#define LE_OFFSET_RAM		0x0
+#define LE_OFFSET_LANCE		0x100000
+#define LE_OFFSET_ROM		0x1c0000
+#endif
 
 /*
  * Test to see if device is present.
@@ -130,7 +142,9 @@ leprobe(dp)
 	struct ifnet *ifp = &le->sc_if;
 	u_char *cp;
 	int i;
+	extern int leinit(), leioctl(), lestart(), ether_output();
 
+#ifdef DS3100
 	le->sc_r1 = ler1 = (volatile struct lereg1 *)dp->pmax_addr;
 	le->sc_r2 = (volatile struct lereg2 *)MACH_NETWORK_BUFFER_ADDR;
 
@@ -143,6 +157,21 @@ leprobe(dp)
 		le->sc_addr[i] = *cp;
 		cp += 4;
 	}
+#endif
+#ifdef DS5000
+	le->sc_r1 = ler1 = (volatile struct lereg1 *)
+		(dp->pmax_addr + LE_OFFSET_LANCE);
+	le->sc_r2 = (volatile struct lereg2 *)(dp->pmax_addr + LE_OFFSET_RAM);
+
+	/*
+	 * Read the ethernet address.
+	 */
+	cp = (u_char *)(dp->pmax_addr + LE_OFFSET_ROM + 2);
+	for (i = 0; i < sizeof(le->sc_addr); i++) {
+		le->sc_addr[i] = *cp;
+		cp += 4;
+	}
+#endif
 
 	/* make sure the chip is stopped */
 	LERDWR(ler0, LE_CSR0, ler1->ler1_rap);
@@ -161,8 +190,9 @@ leprobe(dp)
 #endif
 	if_attach(ifp);
 
-	printf("le%d at nexus0 csr 0x%x ethernet address %s\n", dp->pmax_unit,
-		dp->pmax_addr, ether_sprintf(le->sc_addr));
+	printf("le%d at nexus0 csr 0x%x priority %d ethernet address %s\n",
+		dp->pmax_unit, dp->pmax_addr, dp->pmax_pri,
+		ether_sprintf(le->sc_addr));
 	return (1);
 }
 
@@ -334,14 +364,14 @@ lestart(ifp)
 /*
  * Process interrupts from the 7990 chip.
  */
-leintr()
+void
+leintr(unit)
+	int unit;
 {
 	register struct le_softc *le;
 	register volatile struct lereg1 *ler1;
-	register int unit, stat;
+	register int stat;
 
-	/* only one unit right now; should be a loop. */
-	unit = 0;
 	le = &le_softc[unit];
 	ler1 = le->sc_r1;
 	stat = ler1->ler1_rdp;
@@ -513,17 +543,25 @@ lerint(unit)
  */
 leread(unit, buf, len)
 	int unit;
-	volatile u_short *buf;
+	le_buf_t *buf;
 	int len;
 {
 	register struct le_softc *le = &le_softc[unit];
 	struct ether_header et;
     	struct mbuf *m;
 	int off, resid;
+#ifdef DS3100
 	u_short sbuf[2];
+#endif
+	extern struct mbuf *leget();
 
 	le->sc_if.if_ipackets++;
+#ifdef DS3100
 	CopyFromBuffer(buf, (char *)&et, sizeof(et));
+#endif
+#ifdef DS5000
+	bcopy(buf, (char *)&et, sizeof(et));
+#endif
 	et.ether_type = ntohs(et.ether_type);
 	/* adjust input length to account for header and CRC */
 	len = len - sizeof(struct ether_header) - 4;
@@ -553,10 +591,16 @@ leread(unit, buf, len)
 		off = (et.ether_type - ETHERTYPE_TRAIL) * 512;
 		if (off >= ETHERMTU)
 			return;		/* sanity */
+#ifdef DS3100
 		CopyFromBuffer(buf + (sizeof(et) + off),
 			(char *)sbuf, sizeof(sbuf));
 		et.ether_type = ntohs(sbuf[0]);
 		resid = ntohs(sbuf[1]);
+#endif
+#ifdef DS5000
+		et.ether_type = ntohs((u_short *)(buf + (sizeof(et) + off))[0]);
+		resid = ntohs((u_short *)(buf + (sizeof(et) + off))[1]);
+#endif
 		if (off + resid > len)
 			return;		/* sanity */
 		len = off + resid;
@@ -641,21 +685,25 @@ leread(unit, buf, len)
 /*
  * Routine to copy from mbuf chain to transmit buffer in
  * network buffer memory.
- * NOTE: network memory can only be written one short at every other address.
+ * NOTE: On the DS3100, network memory can only be written one short at
+ *	every other address.
  */
 leput(lebuf, m)
-	volatile register u_short *lebuf;
+	register le_buf_t *lebuf;
 	register struct mbuf *m;
 {
 	register struct mbuf *mp;
-	register int len, tlen = 0, xfer;
+	register int len, tlen = 0;
+#ifdef DS3100
 	register char *cp;
-	int tmp;
+	int tmp, xfer;
+#endif
 
 	for (mp = m; mp; mp = mp->m_next) {
 		len = mp->m_len;
 		if (len == 0)
 			continue;
+#ifdef DS3100
 		/* copy data for this mbuf */
 		cp = mtod(mp, char *);
 		if (tlen & 1) {
@@ -684,30 +732,50 @@ leput(lebuf, m)
 		}
 		if (len == 1)
 			tmp = *cp;
+#endif
+#ifdef DS5000
+		tlen += len;
+		bcopy(mtod(mp, char *), lebuf, len);
+		lebuf += len;
+#endif
 	}
 	m_freem(m);
+#ifdef DS3100
 	/* handle odd length from previous mbuf */
 	if (tlen & 1)
 		*lebuf = tmp;
-	if (tlen < LEMINSIZE)
+#endif
+	if (tlen < LEMINSIZE) {
+#ifdef DS3100
+		tlen = (tlen + 1) & ~1;
+		while (tlen < LEMINSIZE) {
+			*lebuf++ = 0;
+			tlen += 2;
+		}
+#endif
+#ifdef DS5000
+		bzero(lebuf, LEMINSIZE - tlen);
+#endif
 		tlen = LEMINSIZE;
+	}
 	return(tlen);
 }
 
 /*
  * Routine to copy from network buffer memory into mbufs.
- * NOTE: network memory can only be read one short at every other address.
+ * NOTE: On the DS3100, network memory can only be written one short at
+ *	every other address.
  */
 struct mbuf *
 leget(lebuf, totlen, off, ifp)
-	volatile u_short *lebuf;
+	le_buf_t *lebuf;
 	int totlen, off;
 	struct ifnet *ifp;
 {
 	register struct mbuf *m;
 	struct mbuf *top = 0, **mp = &top;
 	register int len, resid;
-	register volatile u_short *sp;
+	register le_buf_t *sp;
 
 	/* NOTE: sizeof(struct ether_header) should be even */
 	lebuf += sizeof(struct ether_header);
@@ -750,6 +818,7 @@ leget(lebuf, totlen, off, ifp)
 			m->m_len = resid;
 		}
 		len = m->m_len;
+#ifdef DS3100
 		if ((unsigned)sp & 2) {
 			/*
 			 * Previous len was odd. Copy the single byte specially.
@@ -760,6 +829,10 @@ leget(lebuf, totlen, off, ifp)
 			CopyFromBuffer(sp + 1, mtod(m, char *) + 1, len - 1);
 		} else
 			CopyFromBuffer(sp, mtod(m, char *), len);
+#endif
+#ifdef DS5000
+		bcopy(sp, mtod(m, char *), len);
+#endif
 		sp += len;
 		*mp = m;
 		mp = &m->m_next;
