@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	8.13 (Berkeley) %G%
+ *	@(#)vnode.h	8.14 (Berkeley) %G%
  */
 
 #include <sys/queue.h>
