@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)config.c	1.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)config.c	1.9 (Berkeley) %G%";
 #endif
 
 /*
@@ -24,36 +24,7 @@ char	*metanet = "!^:%@.";
  * not all accessible hosts need be here (fortunately).
  */
 struct netmach netmach[] = {
-	"berkeley",	'7',		AN|SN,
-	"a",		'a',		SN,
-	"b",		'b',		SN,
-	"c",		'c',		SN,
-	"d",		'd',		SN,
-	"e",		'e',		SN,
-	"f",		'f',		SN,
-	"g",		'g',		SN,
-	"ingres",	'i',		SN,
-	"ing70",	'i',		SN,
-	"ingvax",	'j',		SN|BN,
-	"virus",	'k',		SN,
-	"vlsi",		'l',		SN,
-	"image",	'm',		SN,
-	"esvax",	'o',		SN,
-	"sesm",		'o',		SN,
-	"ucbcad",	'p',		SN|BN,
-	"q",		'q',		SN,
-	"kim",		'n',		SN,
-	"research",	'R',		BN,
-	"arpavax",	'r',		SN|BN,
-	"src",		's',		SN,
-	"mathstat",	't',		SN,
-	"vax",		'v',		BN|SN,
-	"ucb",		'v',		BN|SN,
-	"ucbvax",	'v',		BN|SN,
-	"onyx",		'x',		SN,
-	"cory",		'y',		SN,
-	"eecs40",	'z',		SN,
-	EMPTY,		EMPTYID,	SN,	/* Filled in dynamically */
+	EMPTY,		EMPTYID,	AN,	/* Filled in dynamically */
 	0,		0,		0
 };
 
