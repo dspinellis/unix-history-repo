@@ -1,4 +1,4 @@
-/*	vfs_cluster.c	4.33	82/06/07	*/
+/*	vfs_cluster.c	4.34	82/06/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -11,6 +11,8 @@
 #include "../h/pte.h"
 #include "../h/vm.h"
 #include "../h/trace.h"
+
+int bioprintfs = 0;
 
 /*
  * Read in (if necessary) the block and return a buffer pointer.
@@ -107,6 +109,8 @@ bwrite(bp)
 	if ((flag&B_DELWRI) == 0)
 		u.u_vm.vm_oublk++;		/* noone paid yet */
 	trace(TR_BWRITE, bp->b_dev, bp->b_blkno);
+if (bioprintfs)
+printf("write %x blk %d count %d\n", bp->b_dev, bp->b_blkno, bp->b_bcount);
 	(*bdevsw[major(bp->b_dev)].d_strategy)(bp);
 
 	/*
@@ -277,7 +281,8 @@ loop:
 		}
 		splx(s);
 		notavail(bp);
-		brealloc(bp, size);
+		if (brealloc(bp, size) == 0)
+			goto loop;
 		bp->b_flags |= B_CACHE;
 		return(bp);
 	}
@@ -312,7 +317,8 @@ loop:
 	binshash(bp, dp);
 	bp->b_dev = dev;
 	bp->b_blkno = blkno;
-	brealloc(bp, size);
+	if (brealloc(bp, size) == 0)
+		goto loop;
 	return(bp);
 }
 
@@ -351,7 +357,8 @@ loop:
 	bremhash(bp);
 	binshash(bp, dp);
 	bp->b_dev = (dev_t)NODEV;
-	brealloc(bp, size);
+	if (brealloc(bp, size) == 0)
+		goto loop;
 	return(bp);
 }
 
@@ -372,23 +379,44 @@ brealloc(bp, size)
 	 * is dispatched with.
 	 */
 	if (size == bp->b_bcount)
-		return;
-	if (size < bp->b_bcount || bp->b_dev == NODEV)
+		return (1);
+	if (size < bp->b_bcount) { 
+		if (bp->b_flags & B_DELWRI) {
+			bwrite(bp);
+			return (0);
+		}
+		if (bp->b_flags & B_LOCKED)
+			panic("brealloc");
+		goto allocit;
+	}
+	bp->b_flags &= ~B_DONE;
+	if (bp->b_dev == NODEV)
 		goto allocit;
 
-	start = bp->b_blkno + (bp->b_bcount / DEV_BSIZE);
-	last = bp->b_blkno + (size / DEV_BSIZE) - 1;
-	if (bp->b_bcount == 0) {
-		start++;
-		if (start == last)
-			goto allocit;
-	}
+	/*
+	 * Search cache for any buffers that overlap the one that we
+	 * are trying to allocate. Overlapping buffers must be marked
+	 * invalid, after being written out if they are dirty. (indicated
+	 * by B_DELWRI) A disk block must be mapped by at most one buffer
+	 * at any point in time. Care must be taken to avoid deadlocking
+	 * when two buffer are trying to get the same set of disk blocks.
+	 */
+	start = bp->b_blkno;
+	last = start + (size / DEV_BSIZE) - 1;
 	dp = BUFHASH(bp->b_dev, bp->b_blkno);
 loop:
 	for (ep = dp->b_forw; ep != dp; ep = ep->b_forw) {
-		if (ep->b_blkno < start || ep->b_blkno > last ||
-		    ep->b_dev != bp->b_dev || ep->b_flags&B_INVAL)
+		if (ep == bp || ep->b_dev != bp->b_dev || (ep->b_flags&B_INVAL))
 			continue;
+		/* look for overlap */
+		if (ep->b_bcount == 0 || ep->b_blkno > last ||
+		    ep->b_blkno + (ep->b_bcount / DEV_BSIZE) <= start)
+			continue;
+if (bioprintfs)
+if (ep->b_flags&B_BUSY)
+printf("sleeping on:dev 0x%x, blks %d-%d, flg 0%o allocing dev 0x%x, blks %d-%d, flg 0%o\n",
+ep->b_dev, ep->b_blkno, ep->b_blkno + (ep->b_bcount / DEV_BSIZE) - 1,
+ep->b_flags, bp->b_dev, start, last, bp->b_flags);
 		s = spl6();
 		if (ep->b_flags&B_BUSY) {
 			ep->b_flags |= B_WANTED;
@@ -397,18 +425,17 @@ loop:
 			goto loop;
 		}
 		(void) splx(s);
-		/*
-		 * What we would really like to do is kill this
-		 * I/O since it is now useless. We cannot do that
-		 * so we force it to complete, so that it cannot
-		 * over-write our useful data later.
-		 */
+		notavail(ep);
 		if (ep->b_flags & B_DELWRI) {
-			notavail(ep);
-			ep->b_flags |= B_ASYNC;
+if (bioprintfs)
+printf("DELWRI:dev 0x%x, blks %d-%d, flg 0%o allocing dev 0x%x, blks %d-%d, flg 0%o\n",
+ep->b_dev, ep->b_blkno, ep->b_blkno + (ep->b_bcount / DEV_BSIZE) - 1,
+ep->b_flags, bp->b_dev, start, last, bp->b_flags);
 			bwrite(ep);
 			goto loop;
 		}
+		ep->b_flags |= B_INVAL;
+		brelse(ep);
 	}
 allocit:
 	/*
@@ -417,6 +444,7 @@ allocit:
 	 * management scheme will be implemented.
 	 */
 	bp->b_bcount = size;
+	return (1);
 }
 
 /*

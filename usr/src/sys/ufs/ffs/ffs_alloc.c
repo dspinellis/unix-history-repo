@@ -1,4 +1,4 @@
-/*	ffs_alloc.c	2.6	82/06/07	*/
+/*	ffs_alloc.c	2.7	82/06/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -119,12 +119,14 @@ realloccg(ip, bprev, bpref, osize, nsize)
 	cg = dtog(fs, bprev);
 	bno = fragextend(ip, cg, (long)bprev, osize, nsize);
 	if (bno != 0) {
-		bp = bread(ip->i_dev, fsbtodb(fs, bno), osize);
-		if (bp->b_flags & B_ERROR) {
-			brelse(bp);
-			return (NULL);
-		}
-		brealloc(bp, nsize);
+		do {
+			bp = bread(ip->i_dev, fsbtodb(fs, bno), osize);
+			if (bp->b_flags & B_ERROR) {
+				brelse(bp);
+				return (NULL);
+			}
+		} while (brealloc(bp, nsize) == 0);
+		bp->b_flags |= B_DONE;
 		blkclr(bp->b_un.b_addr + osize, nsize - osize);
 		return (bp);
 	}
@@ -489,10 +491,14 @@ alloccgblk(fs, cgp, bpref)
 	/*
 	 * if the requested block is available, use it
 	 */
+/*
+ * disallow sequential layout.
+ *
 	if (isblock(fs, cgp->cg_free, bpref/fs->fs_frag)) {
 		bno = bpref;
 		goto gotit;
 	}
+ */
 	/*
 	 * check for a block available on the same cylinder
 	 */
@@ -1002,27 +1008,13 @@ update(flag)
 		fs = mp->m_bufp->b_un.b_fs;
 		if (fs->fs_fmod == 0)
 			continue;
-		if (fs->fs_ronly != 0) {
+		if (fs->fs_ronly != 0) {		/* ### */
 			printf("fs = %s\n", fs->fs_fsmnt);
 			panic("update: rofs mod");
 		}
-		bp = getblk(mp->m_dev, SBLOCK, SBSIZE);
-		if (bp->b_un.b_fs != fs || fs->fs_magic != FS_MAGIC) {
-			printf("fs = %s\n", fs->fs_fsmnt);
-			panic("update: bad b_fs");
-		}
 		fs->fs_fmod = 0;
 		fs->fs_time = time;
-		bwrite(bp);
-		blks = howmany(fs->fs_cssize, fs->fs_fsize);
-		for (i = 0; i < blks; i += fs->fs_frag) {
-			bp = getblk(mp->m_dev,
-			    fsbtodb(fs, fs->fs_csaddr + i),
-			    blks - i < fs->fs_frag ? 
-				(blks - i) * fs->fs_fsize :
-				fs->fs_bsize);
-			bwrite(bp);
-		}
+		sbupdate(mp);
 	}
 	/*
 	 * Write back each (modified) inode.

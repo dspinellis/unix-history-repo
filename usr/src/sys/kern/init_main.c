@@ -1,4 +1,4 @@
-/*	init_main.c	4.30	82/05/31	*/
+/*	init_main.c	4.31	82/06/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -45,7 +45,7 @@ main(firstaddr)
 {
 	register int i;
 	register struct proc *p;
-	struct fs *fsp;
+	struct fs *fs;
 
 	rqinit();
 #include "loop.h"
@@ -96,12 +96,19 @@ main(firstaddr)
 	bhinit();
 	binit();
 	bswinit();
-	iinit();
-	fsp = getfs(rootdev);
-	rootdir = iget(rootdev, fsp, (ino_t)ROOTINO);
-	rootdir->i_flag &= ~ILOCK;
-	u.u_cdir = iget(rootdev, fsp, (ino_t)ROOTINO);
-	u.u_cdir->i_flag &= ~ILOCK;
+
+	fs = mountfs(rootdev, 0, 0);
+	if (fs == 0)
+		panic("iinit");
+	bcopy("/", fs->fs_fsmnt, 2);
+	clkinit(fs->fs_time);
+	bootime = time;
+
+	rootdir = iget(rootdev, fs, (ino_t)ROOTINO);
+	iunlock(rootdir);
+	u.u_cdir = iget(rootdev, fs, (ino_t)ROOTINO);
+	iunlock(u.u_cdir);
+
 	u.u_rdir = NULL;
 	u.u_dmap = zdmap;
 	u.u_smap = zdmap;
@@ -146,56 +153,6 @@ main(firstaddr)
 	}
 	proc[0].p_szpt = 1;
 	sched();
-}
-
-/*
- * iinit is called once (from main)
- * very early in initialization.
- * It reads the root's super block
- * and initializes the current date
- * from the last modified date.
- *
- * panic: iinit -- cannot read the super
- * block. Usually because of an IO error.
- */
-iinit()
-{
-	register struct buf *bp;
-	register struct fs *fp;
-	register int i;
-	int blks;
-
-	(*bdevsw[major(rootdev)].d_open)(rootdev, 1);
-	bp = bread(rootdev, SBLOCK, SBSIZE);
-	if(u.u_error)
-		panic("iinit");
-	bp->b_flags |= B_LOCKED;		/* block can never be re-used */
-	brelse(bp);
-	mount[0].m_dev = rootdev;
-	mount[0].m_bufp = bp;
-	fp = bp->b_un.b_fs;
-	if (fp->fs_magic != FS_MAGIC)
-		panic("root bad magic number");
-	if (fp->fs_bsize > MAXBSIZE)
-		panic("root fs_bsize too big");
-	fp->fs_ronly = 0;
-	fp->fs_fsmnt[0] = '/';
-	for (i = 1; i < sizeof(fp->fs_fsmnt); i++)
-		fp->fs_fsmnt[i] = 0;
-	blks = howmany(fp->fs_cssize, fp->fs_fsize);
-	for (i = 0; i < blks; i += fp->fs_frag) {
-		bp = bread(rootdev, fsbtodb(fp, fp->fs_csaddr + i),
-		    blks - i < fp->fs_frag ?
-			(blks - i) * fp->fs_fsize :
-			fp->fs_bsize);
-		if (u.u_error)
-			panic("root can't read csum");
-		fp->fs_csp[i / fp->fs_frag] = bp->b_un.b_cs;
-		bp->b_flags |= B_LOCKED;
-		brelse(bp);
-	}
-	clkinit(fp->fs_time);
-	bootime = time;
 }
 
 /*
