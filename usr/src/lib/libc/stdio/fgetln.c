@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fgetln.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fgetln.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -44,13 +44,13 @@ __slbexpand(fp, newsize)
 
 /*
  * Get an input line.  The returned pointer often (but not always)
- * points into a stdio buffer.  Fgetline does not alter the text of
+ * points into a stdio buffer.  Fgetln does not alter the text of
  * the returned line (which is thus not a C string because it will
  * not necessarily end with '\0'), but does allow callers to modify
  * it if they wish.  Thus, we set __SMOD in case the caller does.
  */
 char *
-fgetline(fp, lenp)
+fgetln(fp, lenp)
 	register FILE *fp;
 	size_t *lenp;
 {
