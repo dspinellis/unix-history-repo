@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -105,13 +105,20 @@ bad:		return(1);
 	return(0);
 }
 
+/*
+ * print --
+ *	print out the file for the user to edit; strange side-effect:
+ *	return if the user is allowed to modify their shell.
+ */
 print(fp, pw)
 	FILE *fp;
 	struct passwd *pw;
 {
 	register char *p;
+	int shellval;
 	char *getusershell(), *ok_shell(), *ttoa();
 
+	shellval = 1;
 	(void)fprintf(fp, "#Changing user database information for %s.\n",
 	    pw->pw_name);
 	if (!uid) {
@@ -132,6 +139,8 @@ print(fp, pw)
 	else if (ok_shell(pw->pw_shell))
 		(void)fprintf(fp, "Shell: %s\n",
 		    *pw->pw_shell ? pw->pw_shell : _PATH_BSHELL);
+	else
+		shellval = 0;
 	p = strsep(pw->pw_gecos, ",");
 	(void)fprintf(fp, "Full Name: %s\n", p ? p : "");
 	p = strsep((char *)NULL, ",");
@@ -140,6 +149,7 @@ print(fp, pw)
 	(void)fprintf(fp, "Office Phone: %s\n", p ? p : "");
 	p = strsep((char *)NULL, ",");
 	(void)fprintf(fp, "Home Phone: %s\n", p ? p : "");
+	return(shellval);
 }
 
 char *
