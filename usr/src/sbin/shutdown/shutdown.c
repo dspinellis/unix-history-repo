@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)shutdown.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)shutdown.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -48,6 +48,7 @@ char	hostname[MAXHOSTNAMELEN];
 
 int	timeout();
 time_t	getsdt();
+void	finish();
 
 extern	char *ctime();
 extern	struct tm *localtime();
@@ -397,6 +398,7 @@ nolog(sdt)
 	}
 }
 
+void
 finish()
 {
 	(void) signal(SIGTERM, SIG_IGN);
