@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)icheck.c	1.14 (Berkeley) %G%";
+static	char *sccsid = "@(#)icheck.c	1.15 (Berkeley) %G%";
 
 /*
  * icheck
@@ -171,15 +171,15 @@ check(file)
 		for (i=0; i<(unsigned)n; i++)
 			bmap[i] = 0;
 		for (c=0; c < sblock.fs_ncg; c++) {
-			cgd = cgtod(c, &sblock);
-			for (d = cgbase(c, &sblock); d < cgd; d += sblock.fs_frag)
+			cgd = cgtod(&sblock, c);
+			for (d = cgbase(&sblock, c); d < cgd; d += sblock.fs_frag)
 				chk(d, "badcg", sblock.fs_bsize);
-			d = cgimin(c, &sblock);
+			d = cgimin(&sblock, c);
 			while (cgd < d) {
 				chk(cgd, "cg", sblock.fs_bsize);
 				cgd += sblock.fs_frag;
 			}
-			d = cgdmin(c, &sblock);
+			d = cgdmin(&sblock, c);
 			for (; cgd < d; cgd += sblock.fs_frag)
 				chk(cgd, "inode", sblock.fs_bsize);
 			if (c == 0) {
@@ -192,7 +192,7 @@ check(file)
 	}
 	cginit = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		bread(fsbtodb(&sblock, cgimin(c,&sblock)), (char *)itab,
+		bread(fsbtodb(&sblock, cgimin(&sblock, c)), (char *)itab,
 		    sblock.fs_ipg * sizeof (struct dinode));
 		for (j=0; j < sblock.fs_ipg; j++) {
 			pass1(&itab[j]);
@@ -215,8 +215,8 @@ check(file)
 	nffree = 0;
 	nbfree = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		cbase = cgbase(c,&sblock);
-		bread(fsbtodb(&sblock, cgtod(c,&sblock)), (char *)&cgrp,
+		cbase = cgbase(&sblock, c);
+		bread(fsbtodb(&sblock, cgtod(&sblock, c)), (char *)&cgrp,
 			sblock.fs_cgsize);
 		for (b = 0; b < sblock.fs_fpg; b += sblock.fs_frag) {
 			if (isblock(&sblock, cgrp.cg_free,
@@ -358,9 +358,9 @@ chk(bno, s, size)
 {
 	register n, cg;
 
-	cg = dtog(bno, &sblock);
+	cg = dtog(&sblock, bno);
 	if (cginit==0 &&
-	    bno<cgdmin(cg,&sblock) || bno >= sblock.fs_frag * sblock.fs_size) {
+	    bno<cgdmin(&sblock, cg) || bno >= sblock.fs_frag * sblock.fs_size) {
 		printf("%ld bad; inode=%u, class=%s\n", bno, ino, s);
 		return(1);
 	}
@@ -420,11 +420,11 @@ makecg()
 	sblock.fs_cstotal.cs_nifree = 0;
 	sblock.fs_cstotal.cs_ndir = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		dbase = cgbase(c, &sblock);
+		dbase = cgbase(&sblock, c);
 		dmax = dbase + sblock.fs_fpg;
 		if (dmax > sblock.fs_size)
 			dmax = sblock.fs_size;
-		dmin = cgdmin(c, &sblock) - dbase;
+		dmin = cgdmin(&sblock, c) - dbase;
 		cs = &sblock.fs_cs(&sblock, c);
 		cgrp.cg_time = time(0);
 		cgrp.cg_magic = CG_MAGIC;
@@ -441,7 +441,7 @@ makecg()
 		cgrp.cg_irotor = 0;
 		for (i = 0; i < sblock.fs_frag; i++)
 			cgrp.cg_frsum[i] = 0;
-		bread(fsbtodb(&sblock, cgimin(c, &sblock)), (char *)itab,
+		bread(fsbtodb(&sblock, cgimin(&sblock, c)), (char *)itab,
 		      sblock.fs_ipg * sizeof(struct dinode));
 		for (i = 0; i < sblock.fs_ipg; i++) {
 			dp = &itab[i];
@@ -516,7 +516,7 @@ makecg()
 		sblock.fs_cstotal.cs_nifree += cgrp.cg_cs.cs_nifree;
 		sblock.fs_cstotal.cs_ndir += cgrp.cg_cs.cs_ndir;
 		*cs = cgrp.cg_cs;
-		bwrite(fsbtodb(&sblock, cgtod(c, &sblock)), &cgrp,
+		bwrite(fsbtodb(&sblock, cgtod(&sblock, c)), &cgrp,
 			sblock.fs_cgsize);
 	}
 	for (i = 0; i < howmany(sblock.fs_cssize, sblock.fs_bsize); i++) {

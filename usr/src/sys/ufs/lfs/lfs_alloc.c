@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-static char vers[] = "@(#)lfs_alloc.c 1.14 %G%";
+static char vers[] = "@(#)lfs_alloc.c 1.15 %G%";
 
 /*	alloc.c	4.8	81/03/08	*/
 
@@ -67,9 +67,9 @@ alloc(dev, ip, bpref, size)
 	if (bpref >= fs->fs_size)
 		bpref = 0;
 	if (bpref == 0)
-		cg = itog(ip->i_number, fs);
+		cg = itog(fs, ip->i_number);
 	else
-		cg = dtog(bpref, fs);
+		cg = dtog(fs, bpref);
 	bno = (daddr_t)hashalloc(dev, fs, cg, (long)bpref, size, alloccg);
 	if (bno == 0)
 		goto nospace;
@@ -112,7 +112,7 @@ realloccg(dev, bprev, bpref, osize, nsize)
 	      fs->fs_dsize * fs->fs_minfree / 100)
 		goto nospace;
 	if (bprev != 0)
-		cg = dtog(bprev, fs);
+		cg = dtog(fs, bprev);
 	else
 		panic("realloccg: bad bprev");
 	bno = fragextend(dev, fs, cg, (long)bprev, osize, nsize);
@@ -185,7 +185,7 @@ ialloc(dev, ipref, mode)
 		goto noinodes;
 	if (ipref >= fs->fs_ncg * fs->fs_ipg)
 		ipref = 0;
-	cg = itog(ipref, fs);
+	cg = itog(fs, ipref);
 	ino = (ino_t)hashalloc(dev, fs, cg, (long)ipref, mode, ialloccg);
 	if (ino == 0)
 		goto noinodes;
@@ -339,11 +339,11 @@ fragextend(dev, fs, cg, bprev, osize, nsize)
 		/* cannot extend across a block boundry */
 		return (0);
 	}
-	bp = bread(dev, fsbtodb(fs, cgtod(cg, fs)), fs->fs_bsize);
+	bp = bread(dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
 	if (bp->b_flags & B_ERROR)
 		return (0);
 	cgp = bp->b_un.b_cg;
-	bno = dtogd(bprev, fs);
+	bno = dtogd(fs, bprev);
 	for (i = osize / fs->fs_fsize; i < frags; i++)
 		if (isclr(cgp->cg_free, bno + i)) {
 			brelse(bp);
@@ -394,7 +394,7 @@ alloccg(dev, fs, cg, bpref, size)
 
 	if (fs->fs_cs(fs, cg).cs_nbfree == 0 && size == fs->fs_bsize)
 		return (0);
-	bp = bread(dev, fsbtodb(fs, cgtod(cg, fs)), fs->fs_bsize);
+	bp = bread(dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
 	if (bp->b_flags & B_ERROR)
 		return (0);
 	cgp = bp->b_un.b_cg;
@@ -422,7 +422,7 @@ alloccg(dev, fs, cg, bpref, size)
 			return (0);
 		}
 		bno = alloccgblk(fs, cgp, bpref);
-		bpref = dtogd(bno, fs);
+		bpref = dtogd(fs, bno);
 		for (i = frags; i < fs->fs_frag; i++)
 			setbit(cgp->cg_free, bpref + i);
 		i = fs->fs_frag - frags;
@@ -475,7 +475,7 @@ alloccgblk(fs, cgp, bpref)
 		goto norot;
 	}
 	bpref &= ~(fs->fs_frag - 1);
-	bpref = dtogd(bpref, fs);
+	bpref = dtogd(fs, bpref);
 	/*
 	 * if the requested block is available, use it
 	 */
@@ -590,7 +590,7 @@ ialloccg(dev, fs, cg, ipref, mode)
 
 	if (fs->fs_cs(fs, cg).cs_nifree == 0)
 		return (0);
-	bp = bread(dev, fsbtodb(fs, cgtod(cg, fs)), fs->fs_bsize);
+	bp = bread(dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
 	if (bp->b_flags & B_ERROR)
 		return (0);
 	cgp = bp->b_un.b_cg;
@@ -647,14 +647,14 @@ fre(dev, bno, size)
 	fs = getfs(dev);
 	if ((unsigned)size > fs->fs_bsize || size % fs->fs_fsize != 0)
 		panic("free: bad size");
-	cg = dtog(bno, fs);
+	cg = dtog(fs, bno);
 	if (badblock(fs, bno))
 		return;
-	bp = bread(dev, fsbtodb(fs, cgtod(cg, fs)), fs->fs_bsize);
+	bp = bread(dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
 	if (bp->b_flags & B_ERROR)
 		return;
 	cgp = bp->b_un.b_cg;
-	bno = dtogd(bno, fs);
+	bno = dtogd(fs, bno);
 	if (size == fs->fs_bsize) {
 		if (isblock(fs, cgp->cg_free, bno/fs->fs_frag))
 			panic("free: freeing free block");
@@ -728,8 +728,8 @@ ifree(dev, ino, mode)
 	fs = getfs(dev);
 	if ((unsigned)ino >= fs->fs_ipg*fs->fs_ncg)
 		panic("ifree: range");
-	cg = itog(ino, fs);
-	bp = bread(dev, fsbtodb(fs, cgtod(cg, fs)), fs->fs_bsize);
+	cg = itog(fs, ino);
+	bp = bread(dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
 	if (bp->b_flags & B_ERROR)
 		return;
 	cgp = bp->b_un.b_cg;
@@ -771,7 +771,7 @@ mapsearch(fs, cgp, bpref, allocsiz)
 	 * map for an appropriate bit pattern
 	 */
 	if (bpref)
-		start = dtogd(bpref, fs) / NBBY;
+		start = dtogd(fs, bpref) / NBBY;
 	else
 		start = cgp->cg_frotor / NBBY;
 	len = roundup(fs->fs_fpg - 1, NBBY) / NBBY - start;
@@ -853,7 +853,7 @@ badblock(fs, bn)
 	daddr_t bn;
 {
 
-	if ((unsigned)bn >= fs->fs_size || bn < cgdmin(dtog(bn, fs), fs)) {
+	if ((unsigned)bn >= fs->fs_size || bn < cgdmin(fs, dtog(fs, bn))) {
 		fserr(fs, "bad block");
 		return (1);
 	}

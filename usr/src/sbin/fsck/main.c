@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.18 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.19 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -92,6 +92,7 @@ char	rawflg;
 char	nflag;			/* assume a no response */
 char	yflag;			/* assume a yes response */
 int	bflag;			/* location of alternate super block */
+int	debug;			/* output debugging info */
 char	preen;			/* just fix normal inconsistencies */
 char	rplyflag;		/* any questions asked? */
 char	hotroot;		/* checking root device */
@@ -197,6 +198,10 @@ main(argc, argv)
 		case 'b':
 			bflag = atoi(argv[0]+1);
 			printf("Alternate super block location: %d\n", bflag);
+			break;
+
+		case 'd':
+			debug++;
 			break;
 
 		case 'n':	/* default no answer flag */
@@ -375,7 +380,7 @@ check(dev)
 	inum = 0;
 	n_blks += howmany(sblock.fs_cssize, sblock.fs_bsize) * sblock.fs_frag;
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		if (getblk(&cgblk, cgtod(c, &sblock), sblock.fs_cgsize) == 0)
+		if (getblk(&cgblk, cgtod(&sblock, c), sblock.fs_cgsize) == 0)
 			continue;
 		n = 0;
 		for (i = 0; i < sblock.fs_ipg; i++, inum++) {
@@ -384,9 +389,9 @@ check(dev)
 				continue;
 			if (ALLOC) {
 				if (!isset(cgrp.cg_iused, i)) {
-					/*
-					printf("%d bad, not used\n", inum);
-					*/
+					if (debug)
+						printf("%d bad, not used\n",
+						    inum);
 					inosumbad++;
 					n++;
 				}
@@ -422,9 +427,9 @@ check(dev)
 			} else {
 				n++;
 				if (isset(cgrp.cg_iused, i)) {
-					/*
-					printf("%d bad, marked used\n", inum);
-					*/
+					if (debug)
+						printf("%d bad, marked used\n",
+						    inum);
 					inosumbad++;
 					n--;
 				}
@@ -439,8 +444,9 @@ check(dev)
 			}
 		}
 		if (n != cgrp.cg_cs.cs_nifree) {
-			printf("cg[%d].cg_cs.cs_nifree is %d not %d\n",
-			    c, cgrp.cg_cs.cs_nifree, n);
+			if (debug)
+				printf("cg[%d].cg_cs.cs_nifree is %d not %d\n",
+				    c, cgrp.cg_cs.cs_nifree, n);
 			inosumbad++;
 		}
 	}
@@ -570,9 +576,9 @@ out1b:
 		printf("** Phase 5 - Check Cyl groups\n");
 	copy(blkmap, freemap, (unsigned)bmapsz);
 	dupblk = 0;
-	n_index = sblock.fs_ncg * (cgdmin(0, &sblock) - cgtod(0, &sblock));
+	n_index = sblock.fs_ncg * (cgdmin(&sblock, 0) - cgtod(&sblock, 0));
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		daddr_t cbase = cgbase(c,&sblock);
+		daddr_t cbase = cgbase(&sblock, c);
 		short bo[MAXCPG][NRPOS];
 		long botot[MAXCPG];
 		long frsum[MAXFRAG];
@@ -590,8 +596,8 @@ out1b:
 		 * need to account for the spare boot and super blocks
 		 * which appear (inaccurately) bad
 		 */
-		n_bad += cgtod(c, &sblock) - cbase;
-		if (getblk(&cgblk, cgtod(c, &sblock), sblock.fs_cgsize) == 0)
+		n_bad += cgtod(&sblock, c) - cbase;
+		if (getblk(&cgblk, cgtod(&sblock, c), sblock.fs_cgsize) == 0)
 			continue;
 		for (b = 0; b < sblock.fs_fpg; b += sblock.fs_frag) {
 			if (isblock(&sblock, cgrp.cg_free, b/sblock.fs_frag)) {
@@ -616,21 +622,25 @@ out1b:
 		}
 		for (i = 0; i < sblock.fs_frag; i++) {
 			if (cgrp.cg_frsum[i] != frsum[i]) {
-				printf("cg[%d].cg_frsum[%d] have %d calc %d\n",
-					c, i, cgrp.cg_frsum[i], frsum[i]);
+				if (debug)
+					printf("cg[%d].cg_frsum[%d] have %d calc %d\n",
+					    c, i, cgrp.cg_frsum[i], frsum[i]);
 				frsumbad++;
 			}
 		}
 		for (n = 0; n < sblock.fs_cpg; n++) {
 			if (botot[n] != cgrp.cg_btot[n]) {
-				printf("cg[%d].cg_btot[%d] have %d calc %d\n",
-				    c, n, cgrp.cg_btot[n], botot[n]);
+				if (debug)
+					printf("cg[%d].cg_btot[%d] have %d calc %d\n",
+					    c, n, cgrp.cg_btot[n], botot[n]);
 				offsumbad++;
 			}
 			for (i = 0; i < NRPOS; i++)
 				if (bo[n][i] != cgrp.cg_b[n][i]) {
-					printf("cg[%d].cg_b[%d][%d] have %d calc %d\n",
-					    c, n, i, cgrp.cg_b[n][i], bo[n][i]);
+					if (debug)
+						printf("cg[%d].cg_b[%d][%d] have %d calc %d\n",
+						    c, n, i, cgrp.cg_b[n][i],
+						    bo[n][i]);
 					offsumbad++;
 				}
 		}
@@ -1004,8 +1014,8 @@ outrange(blk)
 {
 	register int c;
 
-	c = dtog(blk, &sblock);
-	if (blk >= fmax || blk < cgdmin(c, &sblock)) {
+	c = dtog(&sblock, blk);
+	if (blk >= fmax || blk < cgdmin(&sblock, c)) {
 		return (1);
 	}
 	return (0);
@@ -1223,7 +1233,7 @@ setup(dev)
 		{ badsb("SPC DOES NOT JIVE w/NTRAK*NSECT"); return (0); }
 	if (sblock.fs_ipg % INOPB(&sblock))
 		{ badsb("INODES NOT MULTIPLE OF A BLOCK"); return (0); }
-	if (cgdmin(0, &sblock) >= sblock.fs_cpg * sblock.fs_spc / NSPF(&sblock))
+	if (cgdmin(&sblock, 0) >= sblock.fs_cpg * sblock.fs_spc / NSPF(&sblock))
 		{ badsb("IMPLIES MORE INODE THAN DATA BLOCKS"); return (0); }
 	if (sblock.fs_ncg * sblock.fs_cpg < sblock.fs_ncyl ||
 	    (sblock.fs_ncg - 1) * sblock.fs_cpg >= sblock.fs_ncyl)
@@ -1290,7 +1300,7 @@ ginode()
 	if (inum < ROOTINO || inum > imax)
 		return (NULL);
 	if (inum < startinum || inum >= startinum + INOPB(&sblock)) {
-		iblk = itod(inum, &sblock);
+		iblk = itod(&sblock, inum);
 		if (getblk(&inoblk, iblk, sblock.fs_bsize) == NULL) {
 			return (NULL);
 		}
@@ -1476,11 +1486,11 @@ makecg()
 		    sblock.fs_csaddr + (i * sblock.fs_frag), sblock.fs_bsize);
 	}
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		dbase = cgbase(c, &sblock);
+		dbase = cgbase(&sblock, c);
 		dmax = dbase + sblock.fs_fpg;
 		if (dmax > sblock.fs_size)
 			dmax = sblock.fs_size;
-		dmin = cgdmin(c, &sblock) - dbase;
+		dmin = cgdmin(&sblock, c) - dbase;
 		cs = &sblock.fs_cs(&sblock, c);
 		cgrp.cg_time = time(0);
 		cgrp.cg_magic = CG_MAGIC;
@@ -1565,7 +1575,7 @@ makecg()
 		sblock.fs_cstotal.cs_nifree += cgrp.cg_cs.cs_nifree;
 		sblock.fs_cstotal.cs_ndir += cgrp.cg_cs.cs_ndir;
 		*cs = cgrp.cg_cs;
-		bwrite(&dfile, &cgrp, fsbtodb(&sblock, cgtod(c, &sblock)),
+		bwrite(&dfile, &cgrp, fsbtodb(&sblock, cgtod(&sblock, c)),
 			roundup(sblock.fs_cgsize, DEV_BSIZE));
 	}
 	for (i = 0; i < howmany(sblock.fs_cssize, sblock.fs_bsize); i++) {
@@ -1802,7 +1812,7 @@ isblock(fs, cp, h)
 		mask = 0x01 << (h & 0x7);
 		return ((cp[h >> 3] & mask) == mask);
 	default:
-		fprintf(stderr, "isblock bad fs_frag %d\n", fs->fs_frag);
-		return;
+		error("isblock bad fs_frag %d\n", fs->fs_frag);
+		return (0);
 	}
 }

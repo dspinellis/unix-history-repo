@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)ncheck.c	1.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)ncheck.c	1.6 (Berkeley) %G%";
 /*
  * ncheck -- obtain file names from reading filesystem
  */
@@ -109,7 +109,7 @@ check(file)
 	}
 	ino = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		bread(fsbtodb(&sblock, cgimin(c, &sblock)), (char *)itab,
+		bread(fsbtodb(&sblock, cgimin(&sblock, c)), (char *)itab,
 		    sblock.fs_ipg * sizeof (struct dinode));
 		for(j=0; j<sblock.fs_ipg; j++) {
 			pass1(&itab[j]);
@@ -119,7 +119,7 @@ check(file)
 	ilist[nxfile+1] = 0;
 	ino = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		bread(fsbtodb(&sblock, cgimin(c, &sblock)), (char *)itab,
+		bread(fsbtodb(&sblock, cgimin(&sblock, c)), (char *)itab,
 		    sblock.fs_ipg * sizeof (struct dinode));
 		for(j=0; j<sblock.fs_ipg; j++) {
 			pass2(&itab[j]);
@@ -128,7 +128,7 @@ check(file)
 	}
 	ino = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		bread(fsbtodb(&sblock, cgimin(c, &sblock)), (char *)itab,
+		bread(fsbtodb(&sblock, cgimin(&sblock, c)), (char *)itab,
 		    sblock.fs_ipg * sizeof (struct dinode));
 		for(j=0; j<sblock.fs_ipg; j++) {
 			pass3(&itab[j]);

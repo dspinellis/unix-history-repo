@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	1.14 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	1.15 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -285,9 +285,9 @@ next:
 	if (sblock.fs_ipg > MAXIPG)
 		sblock.fs_ipg = MAXIPG;
 	sblock.fs_dblkno = sblock.fs_iblkno + sblock.fs_ipg / INOPF(&sblock);
-	if (cgdmin(0,&sblock) >= sblock.fs_fpg) {
+	if (cgdmin(&sblock, 0) >= sblock.fs_fpg) {
 		printf("inode blocks/cyl group (%d) >= data blocks (%d)\n",
-		    cgdmin(0,&sblock) / sblock.fs_frag,
+		    cgdmin(&sblock, 0) / sblock.fs_frag,
 		    sblock.fs_fpg / sblock.fs_frag);
 		printf("number of cylinder per cylinder group must be increased\n");
 		exit(1);
@@ -295,7 +295,7 @@ next:
 	/*
 	 * fill in remaining fields of the super block
 	 */
-	sblock.fs_csaddr = cgdmin(0, &sblock);
+	sblock.fs_csaddr = cgdmin(&sblock, 0);
 	sblock.fs_cssize = sblock.fs_ncg * sizeof(struct csum);
 	fscs = (struct csum *)
 	    calloc(1, roundup(sblock.fs_cssize, sblock.fs_bsize));
@@ -330,8 +330,8 @@ next:
 		printf("Warning: no super-block backups with only one cylinder group\n");
 	else
 		printf("\tsuper-block backups (for fsck -b#) at %d+k*%d (%d .. %d)\n",
-		    SBLOCK, cgsblock(1, &sblock) - SBLOCK, cgsblock(1, &sblock),
-		    cgsblock(sblock.fs_ncg - 1, &sblock));
+		    SBLOCK, cgsblock(&sblock, 1) - SBLOCK, cgsblock(&sblock, 1),
+		    cgsblock(&sblock, sblock.fs_ncg - 1));
 	/*
 	 * Now construct the initial file system,
 	 * then write out the super-block.
@@ -346,7 +346,7 @@ next:
 	 * Write out the duplicate super blocks
 	 */
 	for (cylno = 1; cylno < sblock.fs_ncg; cylno++)
-		wtfs(cgsblock(cylno, &sblock), SBSIZE, (char *)&sblock);
+		wtfs(cgsblock(&sblock, cylno), SBSIZE, (char *)&sblock);
 #ifndef STANDALONE
 	exit(0);
 #endif
@@ -367,7 +367,7 @@ initcg(cylno)
 	 * Allow space for super block summary information in first
 	 * cylinder group.
 	 */
-	cbase = cgbase(cylno,&sblock);
+	cbase = cgbase(&sblock, cylno);
 	dmax = cbase + sblock.fs_fpg;
 	if (dmax > sblock.fs_size)
 		dmax = sblock.fs_size;
@@ -406,7 +406,7 @@ initcg(cylno)
 		clrbit(acg.cg_iused, i);
 		i++;
 	}
-	lseek(fso, fsbtodb(&sblock, cgimin(cylno,&sblock)) * DEV_BSIZE, 0);
+	lseek(fso, fsbtodb(&sblock, cgimin(&sblock, cylno)) * DEV_BSIZE, 0);
 	if (write(fso, (char *)zino, sblock.fs_ipg * sizeof (struct dinode)) !=
 	    sblock.fs_ipg * sizeof (struct dinode))
 		printf("write error %D\n", tell(fso) / sblock.fs_bsize);
@@ -442,7 +442,7 @@ initcg(cylno)
 	sblock.fs_cstotal.cs_nbfree += acg.cg_cs.cs_nbfree;
 	sblock.fs_cstotal.cs_nifree += acg.cg_cs.cs_nifree;
 	*cs = acg.cg_cs;
-	wtfs(fsbtodb(&sblock, cgtod(cylno, &sblock)),
+	wtfs(fsbtodb(&sblock, cgtod(&sblock, cylno)),
 		sblock.fs_bsize, (char *)&acg);
 }
 
@@ -502,7 +502,7 @@ alloc(size, mode)
 	int i, frag;
 	daddr_t d;
 
-	rdfs(fsbtodb(&sblock, cgtod(0,&sblock)),
+	rdfs(fsbtodb(&sblock, cgtod(&sblock, 0)),
 		roundup(sblock.fs_cgsize, DEV_BSIZE), (char *)&acg);
 	if (acg.cg_cs.cs_nbfree == 0) {
 		printf("first cylinder group ran out of space\n");
@@ -534,7 +534,7 @@ goth:
 		for (i = frag; i < sblock.fs_frag; i++)
 			setbit(acg.cg_free, d+i);
 	}
-	wtfs(fsbtodb(&sblock, cgtod(0,&sblock)),
+	wtfs(fsbtodb(&sblock, cgtod(&sblock, 0)),
 		roundup(sblock.fs_cgsize, DEV_BSIZE), (char *)&acg);
 	return (d);
 }
@@ -549,12 +549,12 @@ iput(ip)
 	daddr_t d;
 	int c;
 
-	c = itog(ip->i_number, &sblock);
-	rdfs(fsbtodb(&sblock, cgtod(c,&sblock)),
+	c = itog(&sblock, ip->i_number);
+	rdfs(fsbtodb(&sblock, cgtod(&sblock, c)),
 		roundup(sblock.fs_cgsize, DEV_BSIZE), (char *)&acg);
 	acg.cg_cs.cs_nifree--;
 	setbit(acg.cg_iused, ip->i_number);
-	wtfs(fsbtodb(&sblock, cgtod(c,&sblock)),
+	wtfs(fsbtodb(&sblock, cgtod(&sblock, c)),
 		roundup(sblock.fs_cgsize, DEV_BSIZE), (char *)&acg);
 	sblock.fs_cstotal.cs_nifree--;
 	fscs[0].cs_nifree--;
@@ -563,9 +563,9 @@ iput(ip)
 		    ip->i_number);
 		exit(1);
 	}
-	d = fsbtodb(&sblock, itod(ip->i_number, &sblock));
+	d = fsbtodb(&sblock, itod(&sblock, ip->i_number));
 	rdfs(d, sblock.fs_bsize, buf);
-	buf[itoo(ip->i_number, &sblock)].di_ic = ip->i_ic;
+	buf[itoo(&sblock, ip->i_number)].di_ic = ip->i_ic;
 	wtfs(d, sblock.fs_bsize, buf);
 }
 
