@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.31 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2044,6 +2044,28 @@ dequote_init(map, mapname, args)
 	char *mapname;
 	char *args;
 {
+	register char *p = args;
+
+	for (;;)
+	{
+		while (isascii(*p) && isspace(*p))
+			p++;
+		if (*p != '-')
+			break;
+		switch (*++p)
+		{
+		  case 'a':
+			map->map_app = ++p;
+			break;
+		}
+		while (*p != '\0' && !(isascii(*p) && isspace(*p)))
+			p++;
+		if (*p != '\0')
+			*p = '\0';
+	}
+	if (map->map_app != NULL)
+		map->map_app = newstr(map->map_app);
+
 	return TRUE;
 }
 /*
