@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xinstall.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)xinstall.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -42,12 +42,10 @@ static char sccsid[] = "@(#)xinstall.c	5.12 (Berkeley) %G%";
 	perror(msg); \
 }
 
-static struct passwd	*pp;
-static struct group	*gp;
-static int	docopy, dostrip,
-		mode = 0755;
-static char	*group, *owner,
-		pathbuf[MAXPATHLEN];
+static struct passwd *pp;
+static struct group *gp;
+static int docopy, dostrip, mode = 0755;
+static char *group, *owner, pathbuf[MAXPATHLEN];
 
 main(argc, argv)
 	int argc;
@@ -130,7 +128,6 @@ main(argc, argv)
  * install --
  *	build a path name and install the file
  */
-static
 install(from_name, to_name, isdir)
 	char *from_name, *to_name;
 	int isdir;
@@ -198,7 +195,6 @@ install(from_name, to_name, isdir)
  * strip --
  *	copy file, strip(1)'ing it at the same time
  */
-static
 strip(from_fd, from_name, to_fd, to_name)
 	register int from_fd, to_fd;
 	char *from_name, *to_name;
@@ -250,7 +246,6 @@ strip(from_fd, from_name, to_fd, to_name)
  * copy --
  *	copy from one file to another
  */
-static
 copy(from_fd, from_name, to_fd, to_name)
 	register int from_fd, to_fd;
 	char *from_name, *to_name;
@@ -273,7 +268,6 @@ copy(from_fd, from_name, to_fd, to_name)
  * atoo --
  *	octal string to int
  */
-static
 atoo(str)
 	register char *str;
 {
@@ -288,7 +282,6 @@ atoo(str)
  * bad --
  *	remove created target and die
  */
-static
 bad()
 {
 	(void)unlink(pathbuf);
@@ -299,7 +292,6 @@ bad()
  * usage --
  *	print a usage message and die
  */
-static
 usage()
 {
 	fputs("usage: install [-cs] [-g group] [-m mode] [-o owner] file1 file2;\n\tor file1 ... fileN directory\n", stderr);
