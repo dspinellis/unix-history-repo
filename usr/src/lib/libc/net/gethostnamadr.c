@@ -1,9 +1,12 @@
-/*	gethostnamadr.c	4.8	85/02/18	*/
+/*	gethostnamadr.c	4.9	85/03/25	*/
 
-#include <stdio.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <netdb.h>
-#include <sys/file.h>
-#include <ndbm.h>
+#include <stdio.h>
+#include <nameser.h>
+#include <resolv.h>
 
 #define	MAXALIASES	35
 
@@ -11,107 +14,125 @@ static struct hostent host;
 static char *host_aliases[MAXALIASES];
 static char hostbuf[BUFSIZ+1];
 
-/*
- * The following is shared with gethostent.c
- */
-extern	char *_host_file;
-DBM	*_host_db = (DBM *)NULL;
-int	_host_stayopen;	/* set by sethostent(), cleared by endhostent() */
-
 static struct hostent *
-fetchhost(key)
-	datum key;
+getanswer(msg, msglen, iquery)
+	char *msg;
+	int msglen, iquery;
 {
-        register char *cp, *tp, **ap;
-	int naliases;
+	register HEADER *hp;
+	register char *cp;
+	register int n;
+	char answer[PACKETSZ];
+	char *eom, *bp, **ap;
+	int type, class, ancount, buflen;
 
-        if (key.dptr == 0)
-                return ((struct hostent *)NULL);
-	key = dbm_fetch(_host_db, key);
-	if (key.dptr == 0)
-                return ((struct hostent *)NULL);
-        cp = key.dptr;
-	tp = hostbuf;
-	host.h_name = tp;
-	while (*tp++ = *cp++)
-		;
-	bcopy(cp, (char *)&naliases, sizeof(int)); cp += sizeof (int);
-	for (ap = host_aliases; naliases > 0; naliases--) {
-		*ap++ = tp;
-		while (*tp++ = *cp++)
-			;
+	n = sendquery(msg, msglen, answer, sizeof(answer));
+	if (n < 0) {
+		if (_res.options & RES_DEBUG)
+			printf("sendquery failed\n");
+		return (NULL);
 	}
-	*ap = (char *)NULL;
-	host.h_aliases = host_aliases;
-	bcopy(cp, (char *)&host.h_addrtype, sizeof (int));
-	cp += sizeof (int);
-	bcopy(cp, (char *)&host.h_length, sizeof (int));
-	cp += sizeof (int);
-	host.h_addr = tp;
-	bcopy(cp, tp, host.h_length);
-        return (&host);
-}
-
-struct hostent *
-gethostbyname(nam)
-	register char *nam;
-{
-	register struct hostent *hp;
-	register char **cp;
-        datum key;
-
-	if ((_host_db == (DBM *)NULL)
-	  && ((_host_db = dbm_open(_host_file, O_RDONLY)) == (DBM *)NULL)) {
-		sethostent(_host_stayopen);
-		while (hp = gethostent()) {
-			if (strcmp(hp->h_name, nam) == 0)
-				break;
-			for (cp = hp->h_aliases; cp != 0 && *cp != 0; cp++)
-				if (strcmp(*cp, nam) == 0)
-					goto found;
+	eom = answer + n;
+	/*
+	 * find first satisfactory answer
+	 */
+	hp = (HEADER *) answer;
+	ancount = ntohs(hp->ancount);
+	if (hp->rcode != NOERROR || ancount == 0) {
+		if (_res.options & RES_DEBUG)
+			printf("rcode = %d, ancount=%d\n", hp->rcode, ancount);
+		return (NULL);
+	}
+	bp = hostbuf;
+	buflen = sizeof(hostbuf);
+	ap = host_aliases;
+	cp = answer + sizeof(HEADER);
+	if (hp->qdcount) {
+		if (iquery) {
+			if ((n = dn_expand(answer, cp, bp, buflen)) < 0)
+				return (NULL);
+			cp += n + QFIXEDSZ;
+			host.h_name = bp;
+			n = strlen(bp) + 1;
+			bp += n;
+			buflen -= n;
+		} else
+			cp += dn_skip(cp) + QFIXEDSZ;
+	} else if (iquery)
+		return (NULL);
+	while (--ancount >= 0 && cp < eom) {
+		if ((n = dn_expand(answer, cp, bp, buflen)) < 0)
+			return (NULL);
+		cp += n;
+		type = getshort(cp);
+ 		cp += sizeof(u_short);
+		class = getshort(cp);
+ 		cp += sizeof(u_short) + sizeof(u_long);
+		n = getshort(cp);
+		cp += sizeof(u_short);
+		if (type == T_CNAME) {
+			cp += n;
+			if (ap >= &host_aliases[MAXALIASES-1])
+				continue;
+			*ap++ = bp;
+			n = strlen(bp) + 1;
+			bp += n;
+			buflen -= n;
+			continue;
 		}
-	found:
-		if (!_host_stayopen)
-			endhostent();
-		return (hp);
+		if (type != T_A || n != 4) {
+			if (_res.options & RES_DEBUG)
+				printf("unexpected answer type %d, size %d\n",
+					type, n);
+			continue;
+		}
+		if (!iquery) {
+			host.h_name = bp;
+			bp += strlen(bp) + 1;
+		}
+		*ap = NULL;
+		host.h_aliases = host_aliases;
+		host.h_addrtype = class == C_IN ? AF_INET : AF_UNSPEC;
+		if (bp + n >= &hostbuf[sizeof(hostbuf)]) {
+			if (_res.options & RES_DEBUG)
+				printf("size (%d) too big\n", n);
+			return (NULL);
+		}
+		bcopy(cp, host.h_addr = bp, host.h_length = n);
+		return (&host);
 	}
-        key.dptr = nam;
-        key.dsize = strlen(nam);
-	hp = fetchhost(key);
-	if (!_host_stayopen) {
-		dbm_close(_host_db);
-		_host_db = (DBM *)NULL;
-	}
-        return (hp);
+	return (NULL);
 }
 
 struct hostent *
-gethostbyaddr(addr, length, type)
+gethostbyname(name)
+	char *name;
+{
+	int n;
+
+	n = mkquery(QUERY, name, C_ANY, T_A, NULL, 0, NULL, hostbuf, sizeof(hostbuf));
+	if (n < 0) {
+		if (_res.options & RES_DEBUG)
+			printf("mkquery failed\n");
+		return (NULL);
+	}
+	return (getanswer(hostbuf, n, 0));
+}
+
+struct hostent *
+gethostbyaddr(addr, len, type)
 	char *addr;
-	register int length;
-	register int type;
+	int len, type;
 {
-	register struct hostent *hp;
-        datum key;
+	int n;
 
-	if ((_host_db == (DBM *)NULL)
-	  && ((_host_db = dbm_open(_host_file, O_RDONLY)) == (DBM *)NULL)) {
-		sethostent(_host_stayopen);
-		while (hp = gethostent()) {
-			if (hp->h_addrtype == type && hp->h_length == length
-			    && bcmp(hp->h_addr, addr, length) == 0)
-				break;
-		}
-		if (!_host_stayopen)
-			endhostent();
-		return (hp);
+	if (type != AF_INET)
+		return (NULL);
+	n = mkquery(IQUERY, NULL, C_IN, T_A, addr, len, NULL, hostbuf, sizeof(hostbuf));
+	if (n < 0) {
+		if (_res.options & RES_DEBUG)
+			printf("mkquery failed\n");
+		return (NULL);
 	}
-        key.dptr = addr;
-        key.dsize = length;
-	hp = fetchhost(key);
-	if (!_host_stayopen) {
-		dbm_close(_host_db);
-		_host_db = (DBM *)NULL;
-	}
-        return (hp);
+	return (getanswer(hostbuf, n, 1));
 }
