@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)appen.A	6.6 (Berkeley) %G%
+.\"	@(#)appen.A	6.7 (Berkeley) %G%
 .\"
 .ie t .oh '\*(Ln Appendix A''PS1:18-%'
 .eh 'PS1:18-%''\*(Ln Appendix A'
@@ -24,7 +24,9 @@ of the source tree and in various utilities that use the screen such as
 .pp
 The following examples are intended to demonstrate
 the basic structure of a program
-using the basic functions of the package.
+using the package.  An additional, more comprehensive, program can be found in
+the source code in the 
+\fIexamples\fP subdirectory.
 .sh 2 "Simple Character Output"
 .pp
 This program demonstrates how to set up a window and output characters to it.
@@ -33,15 +35,6 @@ you run this program, you will get a demonstration of the character output
 chracteristics discussed in the above Character Output section.
 .(l I
 .so ex1.gr
-.)l
-.sh 2 "A Small Screen Manipulator"
-.pp
-The next example follows the lines of the previous one but extends then to 
-demonstrate the various othe uses of the package.  Make sure you understand 
-how this program works as it encompasses most of anything you will
-need to do with the package.
-.(l I
-.so ex2.gr
 .)l
 .sh 2 "Twinkle"
 .pp
