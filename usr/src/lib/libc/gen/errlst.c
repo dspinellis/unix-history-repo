@@ -1,4 +1,4 @@
-/* @(#)errlst.c	4.4 (Berkeley) 82/04/01 */
+/* @(#)errlst.c	4.5 (Berkeley) 82/05/02 */
 char	*sys_errlist[] = {
 	"Error 0",
 	"Not owner",				/* 1 - EPERM */
@@ -75,5 +75,7 @@ char	*sys_errlist[] = {
 	"Connection refused",			/* 61 - EREFUSED */
 	"Too many levels of symbolic links",	/* 62 - ELOOP */
 	"File name too long",			/* 63 - ENAMETOOLONG */
+	"Host is down",				/* 64 - EHOSTDOWN */
+	"Host is unreachable",			/* 65 - EHOSTUNREACH */
 };
 int	sys_nerr = { sizeof sys_errlist/sizeof sys_errlist[0] };
