@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)startup.c	3.10 84/04/08";
+static	char *sccsid = "@(#)startup.c	3.11 84/04/09";
 #endif
 
 #include "defs.h"
@@ -14,11 +14,13 @@ doconfig()
 {
 	char buf[100];
 	char *home;
+	static char runcom[] = ".windrc";
 
 	if ((home = getenv("HOME")) == 0)
-		home = "";
-	sprintf(buf, "%s/.windowrc", home);
-	return dosource(buf);
+		home = ".";
+	return dosource(sprintf(buf, "%.*s/.windrc",
+		(sizeof buf - sizeof runcom) / sizeof (char) - 1,
+		home, runcom));
 }
 
 /*
