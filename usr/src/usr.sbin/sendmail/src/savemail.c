@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.20.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -477,12 +477,16 @@ returntosender(msg, returnq, sendbody, e)
 
 # ifdef LOG
 	if (LogLevel > 5)
-		syslog(LOG_INFO, "%s: %s: return to sender: %s",
+		syslog(LOG_INFO, "%s: %s: returntosender: %s",
 			e->e_id, ee->e_id, msg);
 # endif
 
-	(void) sprintf(buf, "Returned mail: %s", msg);
-	addheader("Subject", buf, ee);
+	if (strncasecmp(msg, "warning:", 8) != 0)
+	{
+		(void) sprintf(buf, "Returned mail: %s", msg);
+		msg = buf;
+	}
+	addheader("Subject", msg, ee);
 	if (SendMIMEErrors)
 	{
 		addheader("MIME-Version", "1.0", ee);
