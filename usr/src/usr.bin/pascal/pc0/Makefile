@@ -1,6 +1,6 @@
-SCCSID = "@(#)Makefile 1.19 %G%"
-WHOAMI = pc
+SCCSID = "@(#)Makefile 1.20 %G%"
 INSTALLNAME = $(DESTDIR)/usr/lib/pc0
+WHOAMI = pc
 VERSION = 2.0
 
 MKSTR = /usr/ucb/mkstr
@@ -34,7 +34,7 @@ SRCS =	ato.c \
 HDRS =	0.h OPnames.h align.h iorec.h objfmt.h send.h tree.h yy.h \
 	pc.h pcops.h
 
-OTHERS = pas.y opc.c version.c gram pic.c
+OTHERS = pas.y opc.c CONFIG.c gram pic.c
 
 OBJS =	ato.o \
 	call.o case.o clas.o const.o conv.o cset.o \
@@ -50,10 +50,8 @@ OBJS =	ato.o \
 	yycosts.o yyerror.o yyget.o yyid.o yylex.o yymain.o yyoptions.o \
 	yypanic.o yyparse.o yyprint.o yyput.o yyrecover.o yyseman.o yytree.o
 
-a.out: ${OBJS} version
-	${RM} Version.[oc]
-	./version > Version.c
-	${CC} ${CFLAGS} ${LDFLAGS} ${OBJS} Version.c
+a.out: ${OBJS} config.c
+	${CC} ${CFLAGS} ${LDFLAGS} ${OBJS} config.c
 
 sources: whoami.h ${SRCS} ${HDRS} ${OTHERS}
 	
@@ -86,14 +84,17 @@ opcode.h: OPnames.h opc.c
 pTree.h:
 	echo "/* this is not pTree.h */" > pTree.h
 
-version: version.c
-	${CC} version.c -o version
+config.c: CONFIG.c makefile
+	  sed "s?VERSION?${VERSION}?g" < CONFIG.c \
+	| sed "s?LIBDIR?${LIBDIR}?g" \
+	| sed "s?ERRORSTRINGS?${ERRORSTRINGS}?g" \
+	| sed "s?HOWFILE?${HOWFILE}?g" > config.c
 
 clean:
 	${RM} *.o ${TMPDIR}/*.c
 	${RM} whoami.h y.tab.h y.tab.c y.tab.out
 	${RM} ${ERRORSTRINGS}
-	${RM} version Version.c
+	${RM} config.c
 	${RM} a.out core *.list *.bak
 	${RM} opc pic tags
 
@@ -109,6 +110,8 @@ print:	sources
 	@pr yy.h yy*.c
 
 install: a.out
+	sccs edit CONFIG.c ; sccs delget CONFIG.c
+	make a.out
 	cp ${ERRORSTRINGS} ${LIBDIR}/${ERRORSTRINGS}
 	cp ${INSTALLDIR}/pi ${INSTALLDIR}/pi.bak
 	cp a.out ${INSTALLDIR}/pi
@@ -247,6 +250,7 @@ main.o: whoami.h
 main.o: 0.h
 main.o: yy.h
 main.o: objfmt.h
+main.o: config.h
 nl.o: whoami.h
 nl.o: 0.h
 nl.o: opcode.h
@@ -275,6 +279,14 @@ rval.o: opcode.h
 rval.o: objfmt.h
 rval.o: pc.h
 rval.o: pcops.h
+savenl.o: whoami.h
+savenl.o: 0.h
+savenl.o: objfmt.h
+savenl.o: defs.h
+savenl.o: object.h
+savenl.o: object/objsym.rep
+savenl.o: mappings.h
+savenl.o: mappings/filetab.h
 stat.o: whoami.h
 stat.o: 0.h
 stat.o: tree.h
