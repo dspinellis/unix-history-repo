@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)vars.h 1.2 %G%"; */
+/* static char sccsid[] = "@(#)vars.h 1.3 %G%"; */
 
 #include <stdio.h>
 
@@ -193,10 +193,12 @@ extern struct disp	*_dp;		/* ptr to active frame */
 extern long		_lino;		/* current line number */
 extern int		_argc;		/* number of passed args */
 extern char		**_argv;	/* values of passed args */
-extern long		_nodump;	/* 1 => no post mortum dump */
+extern long		_nodump;	/* TRUE => no post mortum dump */
+extern long		_runtst;	/* TRUE => runtime tests */
 extern long		_mode;		/* execl by PX, PIPE, or PIX */
 extern long		_stlim;		/* statement limit */
 extern long		_stcnt;		/* statement count */
+extern long		_seed;		/* random number seed */
 extern char		*_maxptr;	/* maximum valid pointer */
 extern char		*_minptr;	/* minimum valid pointer */
 extern long		*_pcpcount;	/* pointer to pxp buffer */
