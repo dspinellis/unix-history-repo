@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.13	81/12/03	*/
+/*	uipc_socket2.c	4.14	81/12/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -41,6 +41,7 @@ soisconnecting(so)
 	struct socket *so;
 {
 
+printf("soisconnecting %x\n", so);
 	so->so_state &= ~(SS_ISCONNECTED|SS_ISDISCONNECTING);
 	so->so_state |= SS_ISCONNECTING;
 	wakeup((caddr_t)&so->so_timeo);
@@ -50,6 +51,7 @@ soisconnected(so)
 	struct socket *so;
 {
 
+printf("soisconnected %x\n", so);
 	so->so_state &= ~(SS_ISCONNECTING|SS_ISDISCONNECTING);
 	so->so_state |= SS_ISCONNECTED;
 	wakeup((caddr_t)&so->so_timeo);
@@ -59,7 +61,8 @@ soisdisconnecting(so)
 	struct socket *so;
 {
 
-	so->so_state &= ~(SS_ISCONNECTED|SS_ISCONNECTING);
+printf("soisdisconnecting %x\n", so);
+	so->so_state &= ~SS_ISCONNECTING;
 	so->so_state |= (SS_ISDISCONNECTING|SS_CANTRCVMORE|SS_CANTSENDMORE);
 	wakeup((caddr_t)&so->so_timeo);
 	sowwakeup(so);
@@ -70,6 +73,7 @@ soisdisconnected(so)
 	struct socket *so;
 {
 
+printf("soisdisconnected %x\n", so);
 	so->so_state &= ~(SS_ISCONNECTING|SS_ISCONNECTED|SS_ISDISCONNECTING);
 	so->so_state |= (SS_CANTRCVMORE|SS_CANTSENDMORE);
 	wakeup((caddr_t)&so->so_timeo);

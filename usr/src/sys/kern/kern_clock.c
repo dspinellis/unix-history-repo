@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.27	81/11/20	*/
+/*	kern_clock.c	4.28	81/12/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -17,6 +17,7 @@
 #include "../h/mtpr.h"
 #include "../h/clock.h"
 #include "../h/cpu.h"
+#include "../h/protosw.h"
 
 #include "bk.h"
 #include "dh.h"
@@ -48,6 +49,15 @@
 #ifdef KPROF
 int	kcounts[20000];
 #endif
+
+/*
+ * Protoslow is like lbolt, but for slow protocol timeouts, counting
+ * up to (hz/PR_SLOWHZ), then causing a pfslowtimo().
+ * Protofast is like lbolt, but for fast protocol timeouts, counting
+ * up to (hz/PR_FASTHZ), then causing a pffasttimo().
+ */
+int	protoslow;
+int	protofast;
 
 /*ARGSUSED*/
 hardclock(pc, ps)
@@ -133,6 +143,12 @@ hardclock(pc, ps)
 	 * Time moves on.
 	 */
 	++lbolt;
+
+	/*
+	 * Time moves on for protocols.
+	 */
+	++protoslow; ++protofast;
+
 #if VAX780
 	/*
 	 * On 780's, impelement a fast UBA watcher,
@@ -243,6 +259,14 @@ softclock(pc, ps)
 		runrun++;
 		aston();
 	}
+
+	/*
+	 * Run network slow and fast timeouts.
+	 */
+	if (protofast >= hz / PR_FASTHZ)
+		pffasttimo();
+	if (protofast >= hz / PR_SLOWHZ)
+		pfslowtimo();
 
 	/*
 	 * Lightning bolt every second:
