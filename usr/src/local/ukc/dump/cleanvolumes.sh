@@ -1,5 +1,5 @@
 #!/bin/sh
-#	cleanvolumes.sh	1.2	%G%
+#	cleanvolumes.sh	1.3	%G%
 #	shell script to clean dumplog file
 #
 PATH=:/etc/:/bin:/usr/bin:
@@ -8,6 +8,8 @@ DL=/etc/dumplog
 #	Name of tmp files
 DT=/tmp/dumpclean$$
 DE=/tmp/dumpedit$$
+export DT
+export DE
 trap "rm -f $DT $DE" 1 2 3 15
 sed -e 's/:.*$//' $DL |
 	sort |
@@ -24,6 +26,6 @@ then
 	echo "w" >> $DE
 	echo "q" >> $DE
 	ed $DT < $DE > /dev/null
+	mv $DT $DL
 fi
-mv $DT $DL
-rm $DE
+rm -f $DE
