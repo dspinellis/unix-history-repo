@@ -31,6 +31,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)fdreg.h	7.1 (Berkeley) 5/9/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00153
+ * --------------------         -----   ----------------------
+ *
+ * 20 Apr 93	Julian Elischer		Heavily re worked, see notes below
  */
 
 /*
@@ -42,11 +49,13 @@
 
 /* registers */
 #define	fdout	2	/* Digital Output Register (W) */
-#define	FDO_FDSEL	0x01	/*  floppy device select */
+#define	FDO_FDSEL	0x03	/*  floppy device select */
 #define	FDO_FRST	0x04	/*  floppy controller reset */
 #define	FDO_FDMAEN	0x08	/*  enable floppy DMA and Interrupt */
 #define	FDO_MOEN0	0x10	/*  motor enable drive 0 */
 #define	FDO_MOEN1	0x20	/*  motor enable drive 1 */
+#define	FDO_MOEN2	0x30	/*  motor enable drive 2 */
+#define	FDO_MOEN3	0x40	/*  motor enable drive 3 */
 
 #define	fdsts	4	/* NEC 765 Main Status Register (R) */
 #define	fddata	5	/* NEC 765 Data Register (R/W) */
