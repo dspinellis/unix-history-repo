@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	5.19 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.20 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	5.19 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.20 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -238,7 +238,7 @@ smtprcpt(to, m)
 	register int r;
 	extern char *remotename();
 
-	smtpmessage("RCPT To:<%s>", m, remotename(to->q_user, m, FALSE, TRUE));
+	smtpmessage("RCPT To:<%s>", m, to->q_user);
 
 	r = reply(m);
 	if (r < 0 || REPLYTYPE(r) == 4)

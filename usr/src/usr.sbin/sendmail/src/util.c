@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -698,6 +698,8 @@ fgetfolded(buf, n, f)
 		}
 		if (--n > 0)
 			*p++ = i;
+		else if (n == 0)
+			nmessage(Arpa_Info, "warning: line truncated");
 		if (i == '\n')
 		{
 			LineNumber++;
@@ -705,20 +707,20 @@ fgetfolded(buf, n, f)
 			if (i != EOF)
 				(void) ungetc(i, f);
 			if (i != ' ' && i != '\t')
-			{
-				*--p = '\0';
-				if (!EightBit)
-				{
-					/* headers always have to be 7-bit */
-					for (p = buf; (i = *p) != '\0'; *p++)
-						if (bitset(0200, i))
-							*p = i & ~0200;
-				}
-				return (buf);
-			}
+				break;
 		}
 	}
-	return (NULL);
+	if (p == buf)
+		return (NULL);
+	*--p = '\0';
+	if (!EightBit)
+	{
+		/* headers always have to be 7-bit */
+		for (p = buf; (i = *p) != '\0'; *p++)
+			if (bitset(0200, i))
+				*p = i & ~0200;
+	}
+	return (buf);
 }
 /*
 **  CURTIME -- return current time.
