@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.108 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.109 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -632,6 +632,12 @@ init_md(argc, argv)
 {
 #ifdef _AUX_SOURCE
 	setcompat(getcompat() | COMPAT_BSDPROT);
+#endif
+
+#ifdef VENDOR_DEFAULT
+	VendorCode = VENDOR_DEFAULT;
+#else
+	VendorCode = VENDOR_BERKELEY;
 #endif
 }
 /*
@@ -2172,9 +2178,20 @@ setvendor(vendor)
 	char *vendor;
 {
 	if (strcasecmp(vendor, "Berkeley") == 0)
+	{
+		VendorCode = VENDOR_BERKELEY;
 		return TRUE;
+	}
 
 	/* add vendor extensions here */
+
+#ifdef SUN_EXTENSIONS
+	if (strcasecmp(vendor, "Sun") == 0)
+	{
+		VendorCode = VENDOR_SUN;
+		return TRUE;
+	}
+#endif
 
 	return FALSE;
 }
