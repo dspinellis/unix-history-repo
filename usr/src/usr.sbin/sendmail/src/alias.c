@@ -29,15 +29,15 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 #ifndef lint
 #ifdef NEWDB
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.8 (Berkeley) %G% (with NEWDB and NDBM)";
+static char sccsid[] = "@(#)alias.c	6.9 (Berkeley) %G% (with NEWDB and NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.8 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	6.9 (Berkeley) %G% (with NEWDB)";
 #endif
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.8 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	6.9 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.8 (Berkeley) %G% (without NEWDB or NDBM)";
+static char sccsid[] = "@(#)alias.c	6.9 (Berkeley) %G% (without NEWDB or NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -352,7 +352,8 @@ initaliases(aliasfile, init, e)
 			AliasDBMptr = dbm_open(aliasfile, O_RDONLY, DBMMODE);
 			if (AliasDBMptr == NULL)
 			{
-				syserr("initaliases: cannot open %s", buf);
+				syserr("initaliases: cannot open DBM database %s.{pag,dir}",
+					aliasfile);
 				NoAlias = TRUE;
 				return;
 			}

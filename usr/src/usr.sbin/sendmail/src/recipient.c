@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.8 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -357,8 +357,8 @@ recipient(a, sendq, e)
 		}
 		else
 		{
-			message(Arpa_Info, "including file %s", &a->q_user[9]);
-			(void) include(&a->q_user[9], FALSE, a, sendq, e);
+			message(Arpa_Info, "including file %s", a->q_user);
+			(void) include(a->q_user, FALSE, a, sendq, e);
 		}
 	}
 	else if (m == FileMailer)
@@ -731,7 +731,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 			*p = '\0';
 		if (buf[0] == '#' || buf[0] == '\0')
 			continue;
-		e->e_to = oldto;
+		e->e_to = NULL;
 		message(Arpa_Info, "%s to %s",
 			forwarding ? "forwarding" : "sending", buf);
 #ifdef LOG
