@@ -1,9 +1,12 @@
-static char *sccsid = "@(#)size.c	4.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)size.c	4.2 (Berkeley) %G%";
 /*
  * size
  */
+
 #include	<stdio.h>
 #include 	<a.out.h>
+
+int	header;
 
 main(argc, argv)
 char **argv;
@@ -26,16 +29,21 @@ char **argv;
 			continue;
 		}
 		fread((char *)&buf, sizeof(buf), 1, f);
-		if (N_BADMAG(buf)) {
+		if(N_BADMAG(buf)) {
 			printf("size: %s not an object file\n", *argv);
 			fclose(f);
 			continue;
 		}
-		if (gorp>2)
-			printf("%s: ", *argv);
-		printf("%u+%u+%u = ", buf.a_text,buf.a_data,buf.a_bss);
+		if (header == 0) {
+			printf("text\tdata\tbss\tdec\thex\n");
+			header = 1;
+		}
+		printf("%u\t%u\t%u\t", buf.a_text,buf.a_data,buf.a_bss);
 		sum = (long) buf.a_text + (long) buf.a_data + (long) buf.a_bss;
-		printf("%Db = 0x%Xb\n", sum, sum);
+		printf("%ld\t%lx", sum, sum);
+		if (gorp>2)
+			printf("\t%s", *argv);
+		printf("\n");
 		fclose(f);
 	}
 }
