@@ -1002,6 +1002,10 @@ yylex()
     Return(EOF, 0);
 }
 
+#ifndef lint
+static char sccsid[] = "@(#)mkmake.y	1.17 (Berkeley) %G%";
+#endif	/* not lint */
+
 main()
 {
 #define	YYDEBUG
