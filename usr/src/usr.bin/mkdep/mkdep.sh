@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	@(#)mkdep.sh	5.1	(Berkeley)	%G%
+#	@(#)mkdep.sh	5.2	(Berkeley)	%G%
 #
 
 CC="/bin/cc -M"
