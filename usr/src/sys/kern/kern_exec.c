@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.49 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.50 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -61,7 +61,6 @@ execve(p, uap, retval)
 	int *retval;
 {
 	register struct ucred *cred = p->p_ucred;
-	register struct nameidata *ndp;
 	register struct filedesc *fdp = p->p_fd;
 	int na, ne, ucp, ap, cc;
 	register char *cp;
@@ -89,13 +88,11 @@ execve(p, uap, retval)
 	extern long argdbsize;			/* XXX */
 #endif SECSIZE
 
-	ndp = &nd;
-	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF | SAVENAME;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF | SAVENAME, UIO_USERSPACE,
+		uap->fname, p);
+	if (error = namei(&nd))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	indir = 0;
 	uid = cred->cr_uid;
 	gid = cred->cr_gid;
@@ -265,7 +262,7 @@ execve(p, uap, retval)
 		cp = &exdata.ex_shell[2];
 		while (*cp == ' ')
 			cp++;
-		ndp->ni_dirp = cp;
+		nd.ni_dirp = cp;
 		while (*cp && *cp != ' ')
 			cp++;
 		cfarg[0] = '\0';
@@ -278,10 +275,10 @@ execve(p, uap, retval)
 		}
 		indir = 1;
 		vput(vp);
-		ndp->ni_segflg = UIO_SYSSPACE;
-		if (error = namei(ndp, p))
+		nd.ni_segflg = UIO_SYSSPACE;
+		if (error = namei(&nd))
 			return (error);
-		vp = ndp->ni_vp;
+		vp = nd.ni_vp;
 		if (error = VOP_GETATTR(vp, &vattr, cred, p))
 			goto bad;
 		uid = cred->cr_uid;	/* shell scripts can't be setuid */
@@ -309,7 +306,7 @@ execve(p, uap, retval)
 		ap = NULL;
 		sharg = NULL;
 		if (indir && na == 0) {
-			sharg = ndp->ni_ptr;
+			sharg = nd.ni_cnd.cn_nameptr;
 			ap = (int)sharg;
 			uap->argp++;		/* ignore argv[0] */
 		} else if (indir && (na == 1 && cfarg[0])) {
@@ -432,14 +429,14 @@ execve(p, uap, retval)
 	 * Remember file name for accounting.
 	 */
 	p->p_acflag &= ~AFORK;
-	if (ndp->ni_namelen > MAXCOMLEN)
-		ndp->ni_namelen = MAXCOMLEN;
-	bcopy((caddr_t)ndp->ni_ptr, (caddr_t)p->p_comm,
-	    (unsigned)(ndp->ni_namelen));
-	p->p_comm[ndp->ni_namelen] = '\0';
+	if (nd.ni_cnd.cn_namelen > MAXCOMLEN)
+		nd.ni_cnd.cn_namelen = MAXCOMLEN;
+	bcopy((caddr_t)nd.ni_cnd.cn_nameptr, (caddr_t)p->p_comm,
+	    (unsigned)(nd.ni_cnd.cn_namelen));
+	p->p_comm[nd.ni_cnd.cn_namelen] = '\0';
 	cpu_exec(p);
 bad:
-	FREE(ndp->ni_pnbuf, M_NAMEI);
+	FREE(nd.ni_cnd.cn_pnbuf, M_NAMEI);
 	if (execargs)
 		kmem_free_wakeup(exec_map, execargs, NCARGS);
 #endif SECSIZE
