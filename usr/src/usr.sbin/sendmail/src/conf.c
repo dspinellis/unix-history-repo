@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.133 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.134 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -69,8 +69,8 @@ struct hdrinfo	HdrInfo[] =
 	"resent-to",			H_RCPT|H_RESENT,
 	"cc",				H_RCPT,
 	"resent-cc",			H_RCPT|H_RESENT,
-	"bcc",				H_RCPT|H_ACHECK,
-	"resent-bcc",			H_RCPT|H_ACHECK|H_RESENT,
+	"bcc",				H_RCPT|H_STRIPVAL,
+	"resent-bcc",			H_RCPT|H_STRIPVAL|H_RESENT,
 	"apparently-to",		H_RCPT,
 
 		/* message identification and control */

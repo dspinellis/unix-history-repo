@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.46 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.47 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -1014,7 +1014,13 @@ putheader(mci, h, e)
 		if (tTd(34, 11))
 			printf("\n");
 
-		if (bitset(H_FROM|H_RCPT, h->h_flags))
+		if (bitset(H_STRIPVAL, h->h_flags))
+		{
+			/* empty field */
+			(void) sprintf(obuf, "%s:", h->h_field);
+			putline(obuf, mci);
+		}
+		else if (bitset(H_FROM|H_RCPT, h->h_flags))
 		{
 			/* address field */
 			bool oldstyle = bitset(EF_OLDSTYLE, e->e_flags);
