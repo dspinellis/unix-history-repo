@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vmstat.8	5.1 (Berkeley) %G%
+.\"	@(#)vmstat.8	6.1 (Berkeley) %G%
 .\"
-.TH VMSTAT 1 "26 April 1981"
+.TH VMSTAT 1 ""
 .UC 4
 .de s1
 .if n .sp
@@ -19,8 +19,9 @@ vmstat \- report virtual memory statistics
 .SH SYNOPSIS
 .B vmstat
 [
-.B \-fs
+.B \-fsi
 ]
+[ drives ]
 [ interval [ count ] ]
 .SH DESCRIPTION
 .I Vmstat
@@ -41,6 +42,11 @@ of the
 .I sum
 structure, giving the total number of several kinds of paging related
 events which have occurred since boot.
+If given a
+.B \-i
+argument, it instead reports on the number of
+.I interrupts
+taken by each device since system startup.
 .PP
 If none of these options are given,
 .I vmstat
@@ -89,6 +95,7 @@ These are averaged each five seconds, and given in units per second.
 .t1
 .nf
 re	page reclaims (simulating reference bits)
+at	pages attached (found in free list)
 pi	pages paged in
 po	pages paged out
 fr	pages freed per second
@@ -96,7 +103,7 @@ de	anticipated short term memory shortfall
 sr	pages scanned by clock algorithm, per-second
 .fi
 .s1
-up/hp/rk: Disk operations per second (this field is system dependent).
+up/hp/rk/ra: Disk operations per second (this field is system dependent).
 Typically paging will be split across several of the available drives.
 The number under each of these is the unit number.
 .s1
@@ -115,17 +122,24 @@ Cpu: breakdown of percentage usage of CPU time
 us	user time for normal and low priority processes
 sy	system time
 id	cpu idle
+.PP
+If more than 4 disk drives are configured in the system,
+.I vmstat
+displays only the first 4 drives, with priority given
+to Massbus disk drives (i.e. if both Unibus and Massbus
+drives are present and the total number of drives exceeds
+4, then some number of Unibus drives will not be displayed
+in favor of the Massbus drives).  To force
+.I vmstat
+to display specific drives, their names may be supplied on
+the command line.
 .SH FILES
 /dev/kmem, /vmunix
 .SH SEE ALSO
+.IR systat (1),
+.IR vsta (1)
+.PP
 The sections starting with ``Interpreting system activity'' in
 .IR "Installing and Operating 4.2bsd" .
 .SH AUTHORS
 William Joy and Ozalp Babaoglu
-.SH BUGS
-There should be a screen oriented program which combines
-.I vmstat
-and
-.IR ps (1)
-in real time
-as well as reporting on other system activity.
