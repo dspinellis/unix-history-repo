@@ -1,4 +1,5 @@
 # include "conf.h"
+# include "conf.h"
 # include <time.h>
 # ifndef V6
 # include <sys/types.h>
@@ -6,7 +7,7 @@
 # endif
 # include "useful.h"
 
-SCCSID(@(#)arpadate.c	3.9		%G%);
+SCCSID(@(#)arpadate.c	3.10		%G%);
 
 /*
 **  ARPADATE -- Create date in ARPANET format
