@@ -6,8 +6,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setterm.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)setterm.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
+
+#include <sys/ioctl.h>		/* TIOCGWINSZ on old systems. */
 
 #include <stdlib.h>
 #include <string.h>
