@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fend.c 1.17 %G%";
+static char sccsid[] = "@(#)fend.c 1.18 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -52,11 +52,7 @@ funcend(fp, bundle, endline)
 	char *cp;
 	extern int cntstat;
 #	ifdef PC
-	    int		savlabel = getlab();
-	    int		toplabel = getlab();
-	    int		proflabel = getlab();
-	    int		skip = getlab();
-	    char	extname[ BUFSIZ ];
+	    struct entry_exit_cookie	eecookie;
 #	endif PC
 
 	cntstat = 0;
@@ -114,6 +110,7 @@ funcend(fp, bundle, endline)
 	/*
 	 * put out the procedure entry code
 	 */
+	eecookie.nlp = fp;
 	if ( fp -> class == PROG ) {
 		/*
 		 *	If there is a label declaration in the main routine
@@ -125,36 +122,13 @@ funcend(fp, bundle, endline)
 	    if ( parts[ cbn ] & LPRT ) {
 		parts[ cbn ] |= ( NONLOCALVAR | NONLOCALGOTO );
 	    }
-	    putprintf( "	.text" , 0 );
-	    putprintf( "	.align	1" , 0 );
-	    putprintf( "	.globl	_main" , 0 );
-	    putprintf( "_main:" , 0 );
-	    putprintf( "	.word	0" , 0 );
-	    if ( opt ( 't' ) ) {
-	        putprintf( "	pushl	$1" , 0 );
-	    } else {
-	        putprintf( "	pushl	$0" , 0 );
-	    }
-	    putprintf( "	calls	$1,_PCSTART" , 0 );
-	    putprintf( "	movl	4(ap),__argc" , 0 );
-	    putprintf( "	movl	8(ap),__argv" , 0 );
-	    putprintf( "	calls	$0,_program" , 0 );
-	    putprintf( "	pushl	$0" , 0 );
-	    putprintf( "	calls	$1,_PCEXIT" , 0 );
+	    codeformain();
 	    ftnno = fp -> value[NL_ENTLOC];
-	    putprintf( "	.text" , 0 );
-	    putprintf( "	.align	1" , 0 );
-	    putprintf( "	.globl	_program" , 0 );
-	    putprintf( "_program:" , 0 );
+	    prog_prologue(&eecookie);
 	    stabfunc( "program" , fp -> class , bundle[1] , 0 );
 	} else {
 	    ftnno = fp -> value[NL_ENTLOC];
-	    putprintf( "	.text" , 0 );
-	    putprintf( "	.align	1" , 0 );
-	    sextname( extname , fp -> symbol , cbn - 1 );
-	    putprintf( "	.globl	%s%s" , 0 , FORMALPREFIX , extname );
-	    putprintf( "	.globl	%s" , 0 , extname );
-	    putprintf( "%s:" , 0 , extname );
+	    fp_prologue(&eecookie);
 	    stabfunc( fp -> symbol , fp -> class , bundle[1] , cbn - 1 );
 	    for ( p = fp -> chain ; p != NIL ; p = p -> chain ) {
 		stabparam( p -> symbol , p2type( p -> type )
@@ -192,88 +166,10 @@ funcend(fp, bundle, endline)
 	}
 	stablbrac( cbn );
 	    /*
-	     *	register save mask
-	     */
-	putprintf( "	.word	" , 1 );
-        putprintf( PREFIXFORMAT , 0 , LABELPREFIX , savlabel );
-	putlab( toplabel );
-	putprintf( "	subl2	$LF%d,sp" , 0 , ftnno );
-	if ( profflag ) {
-		/*
-		 *	call mcount for profiling
-		 */
-	    putprintf( "	moval	" , 1 );
-	    putprintf( PREFIXFORMAT , 1 , LABELPREFIX , proflabel );
-	    putprintf( ",r0" , 0 );
-	    putprintf( "	jsb	mcount" , 0 );
-	    putprintf( "	.data" , 0 );
-	    putprintf( "	.align	2" , 0 );
-	    putlab( proflabel );
-	    putprintf( "	.long	0" , 0 );
-	    putprintf( "	.text" , 0 );
-	}
-	    /*
-	     *	if there are nested procedures that access our variables
-	     *	we must save the display.
-	     */
-	if ( parts[ cbn ] & NONLOCALVAR ) {
-		/*
-		 *	save old display 
-		 */
-	    putprintf( "	movq	%s+%d,%d(%s)" , 0
-		    , DISPLAYNAME , cbn * sizeof(struct dispsave)
-		    , DSAVEOFFSET , P2FPNAME );
-		/*
-		 *	set up new display by saving AP and FP in appropriate
-		 *	slot in display structure.
-		 */
-	    putprintf( "	movq	%s,%s+%d" , 0
-		    , P2APNAME , DISPLAYNAME , cbn * sizeof(struct dispsave) );
-	}
-	    /*
-	     *	set underflow checking if runtime tests
-	     */
-	if ( opt( 't' ) ) {
-	    putprintf( "	bispsw	$0xe0" , 0 );
-	}
-	    /*
 	     *	ask second pass to allocate known locals
 	     */
 	putlbracket( ftnno , -sizes[ cbn ].om_max );
-	    /*
-	     *	and zero them if checking is on
-	     *	by calling blkclr( bytes of locals , starting local address );
-	     */
-	if ( opt( 't' ) && ( -sizes[ cbn ].om_max ) > DPOFF1 ) {
-	    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
-		    , "_blkclr" );
-	    putLV( 0 , cbn , sizes[ cbn ].om_max , NLOCAL , P2CHAR );
-	    putleaf( P2ICON ,  ( -sizes[ cbn ].om_max ) - DPOFF1
-		    , 0 , P2INT , 0 );
-	    putop( P2LISTOP , P2INT );
-	    putop( P2CALL , P2INT );
-	    putdot( filename , line );
-	}
-	    /*
-	     *  set up goto vector if non-local goto to this frame
-	     */
-	if ( parts[ cbn ] & NONLOCALGOTO ) {
-	    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
-		    , "_setjmp" );
-	    putLV( 0 , cbn , GOTOENVOFFSET , NLOCAL , P2PTR|P2STRTY );
-	    putop( P2CALL , P2INT );
-	    putleaf( P2ICON , 0 , 0 , P2INT , 0 );
-	    putop( P2NE , P2INT );
-	    putleaf( P2ICON , skip , 0 , P2INT , 0 );
-	    putop( P2CBRANCH , P2INT );
-	    putdot( filename , line );
-		/*
-		 *	on non-local goto, setjmp returns with address to
-		 *	be branched to.
-		 */
-	    putprintf( "	jmp	(r0)" , 0 );
-	    putlab(skip);
-	}
+	fp_entrycode(&eecookie);
 #endif PC
 	if ( monflg ) {
 		if ( fp -> value[ NL_CNTR ] != 0 ) {
@@ -503,111 +399,19 @@ funcend(fp, bundle, endline)
 	    put(1, O_END);
 #	endif OBJ
 #	ifdef PC
-		/*
-		 *	if there were file variables declared at this level
-		 *	call PCLOSE( ap ) to clean them up.
-		 */
-	    if ( dfiles[ cbn ] ) {
-		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
-			, "_PCLOSE" );
-		putleaf( P2REG , 0 , P2AP , ADDTYPE( P2CHAR , P2PTR ) , 0 );
-		putop( P2CALL , P2INT );
-		putdot( filename , line );
-	    }
-		/*
-		 *	if this is a function,
-		 *	the function variable is the return value.
-		 *	if it's a scalar valued function, return scalar,
-		 *	else, return a pointer to the structure value.
-		 */
-	    if ( fp -> class == FUNC ) {
-		struct nl	*fvar = fp -> ptr[ NL_FVAR ];
-		long		fvartype = p2type( fvar -> type );
-		long		label;
-		char		labelname[ BUFSIZ ];
-
-		switch ( classify( fvar -> type ) ) {
-		    case TBOOL:
-		    case TCHAR:
-		    case TINT:
-		    case TSCAL:
-		    case TDOUBLE:
-		    case TPTR:
-			putRV( fvar -> symbol , ( fvar -> nl_block ) & 037 ,
-				fvar -> value[ NL_OFFS ] ,
-				fvar -> extra_flags ,
-				fvartype );
-			break;
-		    default:
-			label = getlab();
-			sprintf( labelname , PREFIXFORMAT ,
-				LABELPREFIX , label );
-			putprintf( "	.data" , 0 );
-			putprintf( "	.lcomm	%s,%d" , 0 ,
-				    labelname , lwidth( fvar -> type ) );
-			putprintf( "	.text" , 0 );
-			putleaf( P2NAME , 0 , 0 , fvartype , labelname );
-			putLV( fvar -> symbol , ( fvar -> nl_block ) & 037 ,
-				fvar -> value[ NL_OFFS ] ,
-				fvar -> extra_flags ,
-				fvartype );
-			putstrop( P2STASG , fvartype , lwidth( fvar -> type ) ,
-				align( fvar -> type ) );
-			putdot( filename , line );
-			putleaf( P2ICON , 0 , 0 , fvartype , labelname );
-			break;
-		}
-		putop( P2FORCE , fvartype );
-		putdot( filename , line );
-	    }
-		/*
-		 *	if there are nested procedures we must save the display.
-		 */
-	    if ( parts[ cbn ] & NONLOCALVAR ) {
-		    /*
-		     *	restore old display entry from save area
-		     */
-		putprintf( "	movq	%d(%s),%s+%d" , 0
-		    , DSAVEOFFSET , P2FPNAME
-		    , DISPLAYNAME , cbn * sizeof(struct dispsave) );
-	    }
-	    stabrbrac( cbn );
-	    putprintf( "	ret" , 0 );
-		/*
-		 *	let the second pass allocate locals
-		 * 	and registers
-		 */
-	    putprintf( "	.set	" , 1 );	
-	    putprintf( PREFIXFORMAT , 1 , LABELPREFIX , savlabel );
-	    putprintf( ", 0x%x" , 0 , savmask() );
-	    putrbracket( ftnno );
-		/*
-		 *  put down the entry point for formal calls
-		 *  the arguments for FCALL have been passed to us
-		 *  as hidden parameters after the regular arguments.
-		 */
-	    if ( fp -> class != PROG ) {
-		putprintf( "%s%s:" , 0 , FORMALPREFIX , extname );
-		putprintf( "	.word	" , 1 );
-		putprintf( PREFIXFORMAT , 0 , LABELPREFIX , savlabel );
-		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) ,
-			"_FCALL" );
-		putRV( 0 , cbn ,
-		    fp -> value[ NL_OFFS ] + sizeof( struct formalrtn * ) ,
-		    NPARAM ,
-		    P2PTR | P2STRTY );
-		putRV( 0 , cbn , fp -> value[ NL_OFFS ] ,
-			NPARAM , P2PTR|P2STRTY );
-		putop( P2LISTOP , P2INT );
-		putop( P2CALL , P2INT );
-		putdot( filename , line );
-		putjbr( toplabel );
+	    fp_exitcode(&eecookie);
+	    stabrbrac(cbn);
+	    putrbracket(ftnno);
+	    fp_epilogue(&eecookie);
+	    if (fp -> class != PROG) {
+		fp_formalentry(&eecookie);
 	    }
 		/*
 		 *	declare pcp counters, if any
 		 */
 	    if ( monflg && fp -> class == PROG ) {
 		putprintf( "	.data" , 0 );
+		aligndot(P2INT);
 		putprintf( "	.comm	" , 1 );
 		putprintf( PCPCOUNT , 1 );
 		putprintf( ",%d" , 0 , ( cnts + 1 ) * sizeof (long) );
@@ -645,7 +449,7 @@ funcend(fp, bundle, endline)
 	if (Fp == NIL)
 		elineon();
 #	ifdef OBJ
-	    patchfil(var, (long)(-sizes[cbn].om_max), 2);
+	    patchfil(var, leven(-sizes[cbn].om_max), 2);
 #	endif OBJ
 	cbn--;
 	if (inpflist(fp->symbol)) {
@@ -677,4 +481,485 @@ sextname( buffer , name , level )
 	panic( "sextname" );
     }
 }
+
+    /*
+     *	code for main()
+     */
+#ifdef vax
+
+codeformain()
+{
+    putprintf("	.text" , 0 );
+    putprintf("	.align	1" , 0 );
+    putprintf("	.globl	_main" , 0 );
+    putprintf("_main:" , 0 );
+    putprintf("	.word	0" , 0 );
+    if ( opt ( 't' ) ) {
+	putprintf("	pushl	$1" , 0 );
+    } else {
+	putprintf("	pushl	$0" , 0 );
+    }
+    putprintf("	calls	$1,_PCSTART" , 0 );
+    putprintf("	movl	4(ap),__argc" , 0 );
+    putprintf("	movl	8(ap),__argv" , 0 );
+    putprintf("	calls	$0,_program" , 0 );
+    putprintf("	pushl	$0" , 0 );
+    putprintf("	calls	$1,_PCEXIT" , 0 );
+}
+
+    /*
+     *	prologue for the program.
+     *	different because it
+     *		doesn't have formal entry point
+     */
+prog_prologue(eecookiep)
+    struct entry_exit_cookie	*eecookiep;
+{
+    putprintf("	.text" , 0 );
+    putprintf("	.align	1" , 0 );
+    putprintf("	.globl	_program" , 0 );
+    putprintf("_program:" , 0 );
+}
+
+fp_prologue(eecookiep)
+    struct entry_exit_cookie	*eecookiep;
+{
+    int		ftnno = eecookiep -> nlp -> value[NL_ENTLOC];
+
+    sextname( eecookiep -> extname, eecookiep -> nlp -> symbol , cbn - 1 );
+    putprintf( "	.text" , 0 );
+    putprintf( "	.align	1" , 0 );
+    putprintf( "	.globl	%s%s", 0, FORMALPREFIX, eecookiep -> extname );
+    putprintf( "	.globl	%s" , 0 , eecookiep -> extname );
+    putprintf( "%s:" , 0 , eecookiep -> extname );
+	/*
+	 *	register save mask
+	 */
+    eecookiep -> savlabel = getlab();
+    putprintf("	.word	%s%d", 0, SAVE_MASK_LABEL , eecookiep -> savlabel );
+}
+
+    /*
+     *	code before any user code.
+     *	or code that is machine dependent.
+     */
+fp_entrycode(eecookiep)
+    struct entry_exit_cookie	*eecookiep;
+{
+    int	ftnno = eecookiep -> nlp -> nl_value[ENTLOC];
+    int	proflabel = getlab();
+    int	setjmp0 = getlab();
+
+	/*
+	 *	top of code;  destination of jump from formal entry code.
+	 */
+    eecookiep -> toplabel = getlab();
+    putlab( eecookiep -> toplabel );
+    putprintf("	subl2	$%s%d,sp" , 0 , FRAME_SIZE_LABEL, ftnno );
+    if ( profflag ) {
+	    /*
+	     *	call mcount for profiling
+	     */
+	putprintf( "	moval	" , 1 );
+	putprintf( PREFIXFORMAT , 1 , LABELPREFIX , proflabel );
+	putprintf( ",r0" , 0 );
+	putprintf( "	jsb	mcount" , 0 );
+	putprintf( "	.data" , 0 );
+	putprintf( "	.align	2" , 0 );
+	putlab( proflabel );
+	putprintf( "	.long	0" , 0 );
+	putprintf( "	.text" , 0 );
+    }
+	/*
+	 *	if there are nested procedures that access our variables
+	 *	we must save the display.
+	 */
+    if ( parts[ cbn ] & NONLOCALVAR ) {
+	    /*
+	     *	save old display 
+	     */
+	putprintf( "	movq	%s+%d,%d(%s)" , 0
+		, DISPLAYNAME , cbn * sizeof(struct dispsave)
+		, DSAVEOFFSET , P2FPNAME );
+	    /*
+	     *	set up new display by saving AP and FP in appropriate
+	     *	slot in display structure.
+	     */
+	putprintf( "	movq	%s,%s+%d" , 0
+		, P2APNAME , DISPLAYNAME , cbn * sizeof(struct dispsave) );
+    }
+	/*
+	 *	set underflow checking if runtime tests
+	 */
+    if ( opt( 't' ) ) {
+	putprintf( "	bispsw	$0xe0" , 0 );
+    }
+	/*
+	 *	zero local variables if checking is on
+	 *	by calling blkclr( bytes of locals , starting local address );
+	 */
+    if ( opt( 't' ) && ( -sizes[ cbn ].om_max ) > DPOFF1 ) {
+	putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+		, "_blkclr" );
+	putLV( 0 , cbn , sizes[ cbn ].om_max , NLOCAL , P2CHAR );
+	putleaf( P2ICON ,  ( -sizes[ cbn ].om_max ) - DPOFF1
+		, 0 , P2INT , 0 );
+	putop( P2LISTOP , P2INT );
+	putop( P2CALL , P2INT );
+	putdot( filename , line );
+    }
+	/*
+	 *  set up goto vector if non-local goto to this frame
+	 */
+    if ( parts[ cbn ] & NONLOCALGOTO ) {
+	putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+		, "_setjmp" );
+	putLV( 0 , cbn , GOTOENVOFFSET , NLOCAL , P2PTR|P2STRTY );
+	putop( P2CALL , P2INT );
+	putleaf( P2ICON , 0 , 0 , P2INT , 0 );
+	putop( P2NE , P2INT );
+	putleaf( P2ICON , setjmp0 , 0 , P2INT , 0 );
+	putop( P2CBRANCH , P2INT );
+	putdot( filename , line );
+	    /*
+	     *	on non-local goto, setjmp returns with address to
+	     *	be branched to.
+	     */
+	putprintf( "	jmp	(r0)" , 0 );
+	putlab(setjmp0);
+    }
+}
+
+fp_exitcode(eecookiep)
+    struct entry_exit_cookie	*eecookiep;
+{
+	/*
+	 *	if there were file variables declared at this level
+	 *	call PCLOSE( ap ) to clean them up.
+	 */
+    if ( dfiles[ cbn ] ) {
+	putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+		, "_PCLOSE" );
+	putleaf( P2REG , 0 , P2AP , ADDTYPE( P2CHAR , P2PTR ) , 0 );
+	putop( P2CALL , P2INT );
+	putdot( filename , line );
+    }
+	/*
+	 *	if this is a function,
+	 *	the function variable is the return value.
+	 *	if it's a scalar valued function, return scalar,
+	 *	else, return a pointer to the structure value.
+	 */
+    if ( eecookiep-> nlp -> class == FUNC ) {
+	struct nl	*fvar = eecookiep-> nlp -> ptr[ NL_FVAR ];
+	long		fvartype = p2type( fvar -> type );
+	long		label;
+	char		labelname[ BUFSIZ ];
+
+	switch ( classify( fvar -> type ) ) {
+	    case TBOOL:
+	    case TCHAR:
+	    case TINT:
+	    case TSCAL:
+	    case TDOUBLE:
+	    case TPTR:
+		putRV( fvar -> symbol , ( fvar -> nl_block ) & 037 ,
+			fvar -> value[ NL_OFFS ] ,
+			fvar -> extra_flags ,
+			fvartype );
+		break;
+	    default:
+		label = getlab();
+		sprintf( labelname , PREFIXFORMAT , LABELPREFIX , label );
+		putprintf( "	.data" , 0 );
+		aligndot(A_STRUCT);
+		putprintf( "	.lcomm	%s,%d" , 0 ,
+			    labelname , lwidth( fvar -> type ) );
+		putprintf( "	.text" , 0 );
+		putleaf( P2NAME , 0 , 0 , fvartype , labelname );
+		putLV( fvar -> symbol , ( fvar -> nl_block ) & 037 ,
+			fvar -> value[ NL_OFFS ] ,
+			fvar -> extra_flags ,
+			fvartype );
+		putstrop( P2STASG , fvartype , lwidth( fvar -> type ) ,
+			align( fvar -> type ) );
+		putdot( filename , line );
+		putleaf( P2ICON , 0 , 0 , fvartype , labelname );
+		break;
+	}
+	putop( P2FORCE , fvartype );
+	putdot( filename , line );
+    }
+	/*
+	 *	if there are nested procedures we must save the display.
+	 */
+    if ( parts[ cbn ] & NONLOCALVAR ) {
+	    /*
+	     *	restore old display entry from save area
+	     */
+	putprintf( "	movq	%d(%s),%s+%d" , 0
+	    , DSAVEOFFSET , P2FPNAME
+	    , DISPLAYNAME , cbn * sizeof(struct dispsave) );
+    }
+}
+
+fp_epilogue(eecookiep)
+    struct entry_exit_cookie	*eecookiep;
+{
+    putprintf("	ret" , 0 );
+	/*
+	 *	set the register save mask.
+	 */
+    putprintf("	.set	%s%d,0x%x", 0,
+		SAVE_MASK_LABEL, eecookiep -> savlabel, savmask());
+}
+
+fp_formalentry(eecookiep)
+    struct entry_exit_cookie	*eecookiep;
+{
+
+    putprintf("%s%s:" , 0 , FORMALPREFIX , eecookiep -> extname );
+    putprintf("	.word	%s%d", 0, SAVE_MASK_LABEL, eecookiep -> savlabel );
+    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_FCALL" );
+    putRV( 0 , cbn ,
+	eecookiep -> nlp -> value[ NL_OFFS ] + sizeof( struct formalrtn * ) ,
+	NPARAM , P2PTR | P2STRTY );
+    putRV(0, cbn, eecookiep -> nlp -> value[NL_OFFS], NPARAM, P2PTR|P2STRTY);
+    putop( P2LISTOP , P2INT );
+    putop( P2CALL , P2INT );
+    putdot( filename , line );
+    putjbr( eecookiep -> toplabel );
+}
+#endif vax
+
+#ifdef mc68000
+
+codeformain()
+{
+    putprintf("	.text", 0);
+    putprintf("	.globl	_main", 0);
+    putprintf("_main:", 0);
+    putprintf("	link	%s,#0", 0, P2FPNAME);
+    if (opt('t')) {
+	putprintf("	pea	1", 0);
+    } else {
+	putprintf("	pea	0", 0);
+    }
+    putprintf("	jbsr	_PCSTART", 0);
+    putprintf("	addql	#4,sp", 0);
+    putprintf("	movl	%s@(8),__argc", 0, P2FPNAME);
+    putprintf("	movl	%s@(12),__argv", 0, P2FPNAME);
+    putprintf("	jbsr	_program", 0);
+    putprintf("	pea	0", 0);
+    putprintf("	jbsr	_PCEXIT", 0);
+}
+
+prog_prologue(eecookiep)
+    struct entry_exit_cookie	*eecookiep;
+{
+    int	ftnno = eecookiep -> nlp -> value[NL_ENTLOC];
+
+    putprintf("	.text", 0);
+    putprintf("	.globl	_program", 0);
+    putprintf("_program:", 0);
+    putprintf("	link	%s,#0", 0, P2FPNAME);
+    putprintf("	addl	#-%s%d,sp", 0, FRAME_SIZE_LABEL, ftnno);
+	/* touch new end of stack, to break more stack space */
+    putprintf("	tstb	sp@(-%s%d)", 0, PAGE_BREAK_LABEL, ftnno);
+    putprintf("	moveml	#%s%d,sp@", 0, SAVE_MASK_LABEL, ftnno);
+}
+
+fp_prologue(eecookiep)
+    struct entry_exit_cookie	*eecookiep;
+{
+    int		ftnno = eecookiep -> nlp -> value[NL_ENTLOC];
+
+    sextname(eecookiep -> extname, eecookiep -> nlp -> symbol, cbn - 1);
+    putprintf("	.text", 0);
+    putprintf("	.globl	%s%s", 0, FORMALPREFIX, eecookiep -> extname);
+    putprintf("	.globl	%s", 0, eecookiep -> extname);
+    putprintf("%s:", 0, eecookiep -> extname);
+    putprintf("	link	%s,#0", 0, P2FPNAME);
+    putprintf("	addl	#-%s%d,sp", 0, FRAME_SIZE_LABEL, ftnno);
+	/* touch new end of stack, to break more stack space */
+    putprintf("	tstb	sp@(-%s%d)", 0, PAGE_BREAK_LABEL, ftnno);
+    putprintf("	moveml	#%s%d,sp@", 0, SAVE_MASK_LABEL, ftnno);
+}
+
+fp_entrycode(eecookiep)
+    struct entry_exit_cookie	*eecookiep;
+{
+    int	proflabel = getlab();
+    int	setjmp0 = getlab();
+
+	/*
+	 *	fill in the label cookie
+	 */
+    eecookiep -> toplabel = getlab();
+    putlab(eecookiep -> toplabel);
+	/*
+	 *	call mcount if we are profiling.
+	 */
+    if ( profflag ) {
+	putprintf("	movl	#%s%d,a0", 0, LABELPREFIX,  proflabel);
+	putprintf("	jsr	mcount", 0);
+	putprintf("	.data", 0);
+	putprintf("	.even", 0);
+	putlab(proflabel);
+	putprintf("	.long	0", 0);
+	putprintf("	.text", 0);
+    }
+	/*
+	 *	if there are nested procedures that access our variables
+	 *	we must save the display
+	 */
+    if (parts[cbn] & NONLOCALVAR) {
+	    /*
+	     *	save the old display
+	     */
+	putprintf("	movl	%s+%d,%s@(%d)", 0,
+		    DISPLAYNAME, cbn * sizeof(struct dispsave),
+		    P2FPNAME, DSAVEOFFSET);
+	    /*
+	     *	set up the new display by saving the framepointer
+	     *	in the display structure.
+	     */
+	putprintf("	movl	%s,%s+%d", 0,
+		    P2FPNAME, DISPLAYNAME, cbn * sizeof(struct dispsave));
+    }
+	/*
+	 *	zero local variables if checking is on
+	 *	by calling blkclr( bytes of locals , starting local address );
+	 */
+    if ( opt( 't' ) && ( -sizes[ cbn ].om_max ) > DPOFF1 ) {
+	putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+		, "_blkclr" );
+	putLV( 0 , cbn , sizes[ cbn ].om_max , NLOCAL , P2CHAR );
+	putleaf( P2ICON ,  ( -sizes[ cbn ].om_max ) - DPOFF1
+		, 0 , P2INT , 0 );
+	putop( P2LISTOP , P2INT );
+	putop( P2CALL , P2INT );
+	putdot( filename , line );
+    }
+	/*
+	 *  set up goto vector if non-local goto to this frame
+	 */
+    if ( parts[ cbn ] & NONLOCALGOTO ) {
+	putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+		, "_setjmp" );
+	putLV( 0 , cbn , GOTOENVOFFSET , NLOCAL , P2PTR|P2STRTY );
+	putop( P2CALL , P2INT );
+	putleaf( P2ICON , 0 , 0 , P2INT , 0 );
+	putop( P2NE , P2INT );
+	putleaf( P2ICON , setjmp0 , 0 , P2INT , 0 );
+	putop( P2CBRANCH , P2INT );
+	putdot( filename , line );
+	    /*
+	     *	on non-local goto, setjmp returns with address to
+	     *	be branched to.
+	     */
+	putprintf("	movl	d0,a0", 0);
+	putprintf("	jmp	a0@", 0);
+	putlab(setjmp0);
+    }
+}
+
+fp_exitcode(eecookiep)
+    struct entry_exit_cookie	*eecookiep;
+{
+	/*
+	 *	if there were file variables declared at this level
+	 *	call PCLOSE( ap ) to clean them up.
+	 */
+    if ( dfiles[ cbn ] ) {
+	putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+		, "_PCLOSE" );
+	putleaf( P2REG , 0 , P2AP , ADDTYPE( P2CHAR , P2PTR ) , 0 );
+	putop( P2CALL , P2INT );
+	putdot( filename , line );
+    }
+	/*
+	 *	if this is a function,
+	 *	the function variable is the return value.
+	 *	if it's a scalar valued function, return scalar,
+	 *	else, return a pointer to the structure value.
+	 */
+    if ( eecookiep -> nlp -> class == FUNC ) {
+	struct nl	*fvar = eecookiep -> nlp -> ptr[ NL_FVAR ];
+	long		fvartype = p2type( fvar -> type );
+	long		label;
+	char		labelname[ BUFSIZ ];
+
+	switch ( classify( fvar -> type ) ) {
+	    case TBOOL:
+	    case TCHAR:
+	    case TINT:
+	    case TSCAL:
+	    case TDOUBLE:
+	    case TPTR:
+		putRV( fvar -> symbol , ( fvar -> nl_block ) & 037 ,
+			fvar -> value[ NL_OFFS ] ,
+			fvar -> extra_flags ,
+			fvartype );
+		break;
+	    default:
+		label = getlab();
+		sprintf( labelname , PREFIXFORMAT , LABELPREFIX , label );
+		putprintf("	.lcomm	%s,%d", 0,
+			labelname, lwidth(fvar -> type));
+		putleaf( P2NAME , 0 , 0 , fvartype , labelname );
+		putLV( fvar -> symbol , ( fvar -> nl_block ) & 037 ,
+			fvar -> value[ NL_OFFS ] ,
+			fvar -> extra_flags ,
+			fvartype );
+		putstrop( P2STASG , fvartype , lwidth( fvar -> type ) ,
+			align( fvar -> type ) );
+		putdot( filename , line );
+		putleaf( P2ICON , 0 , 0 , fvartype , labelname );
+		break;
+	}
+	putop( P2FORCE , fvartype );
+	putdot( filename , line );
+    }
+	/*
+	 *	if we saved a display, we must restore it.
+	 */
+    if ( parts[ cbn ] & NONLOCALVAR ) {
+	    /*
+	     *	restore old display entry from save area
+	     */
+	putprintf("	movl	%s@(%d),%s+%d", 0,
+		    P2FPNAME, DSAVEOFFSET,
+		    DISPLAYNAME, cbn * sizeof(struct dispsave));
+    }
+}
+
+fp_epilogue(eecookiep)
+    struct entry_exit_cookie	*eecookiep;
+{
+    /*
+     *	all done by the second pass.
+     */
+}
+
+fp_formalentry(eecookiep)
+    struct entry_exit_cookie	*eecookiep;
+{
+    putprintf( "%s%s:" , 0 , FORMALPREFIX , eecookiep -> extname );
+    putprintf("	link	%s,#0", 0, P2FPNAME);
+    putprintf("	addl	#-%s%d,sp", 0, FRAME_SIZE_LABEL, ftnno);
+	/* touch new end of stack, to break more stack space */
+    putprintf("	tstb	sp@(-%s%d)", 0, PAGE_BREAK_LABEL, ftnno);
+    putprintf("	moveml	#%s%d,sp@", 0, SAVE_MASK_LABEL, ftnno);
+    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_FCALL" );
+    putRV( 0 , cbn ,
+	eecookiep -> nlp -> value[ NL_OFFS ] + sizeof( struct formalrtn * ) ,
+	NPARAM , P2PTR | P2STRTY );
+    putRV(0, cbn, eecookiep -> nlp -> value[NL_OFFS], NPARAM, P2PTR|P2STRTY);
+    putop( P2LISTOP , P2INT );
+    putop( P2CALL , P2INT );
+    putdot( filename , line );
+    putjbr( eecookiep -> toplabel );
+}
+#endif mc68000
 #endif PC
