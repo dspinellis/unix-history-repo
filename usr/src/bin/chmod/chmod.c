@@ -1,12 +1,18 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
+ * Copyright (c) 1980, 1988 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)chmod.c	5.6 (Berkeley) %G%";
-#endif
+char copyright[] =
+"@(#) Copyright (c) 1980, 1988 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)chmod.c	5.7 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * chmod options mode files
@@ -19,168 +25,106 @@ static char sccsid[] = "@(#)chmod.c	5.6 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <sys/dir.h>
 
-char	*modestring, *ms;
-int	um;
-int	status;
-int	fflag;
-int	rflag;
+static int	fflag, rflag, retval, um;
+static char	*modestring, *ms;
 
 main(argc, argv)
-	char *argv[];
+	int argc;
+	char **argv;
 {
-	register char *p, *flags;
-	register int i;
-	struct stat st;
+	extern char *optarg;
+	extern int optind, opterr;
+	int ch;
 
-	if (argc < 3) {
-		fprintf(stderr,
-		    "Usage: chmod [-Rf] [ugoa][+-=][rwxXstugo] file ...\n");
-		exit(-1);
-	}
-	argv++, --argc;
-	while (argc > 0 && argv[0][0] == '-') {
-		for (p = &argv[0][1]; *p; p++) switch (*p) {
-
+	/*
+	 * since "-[rwx]" etc. are valid file modes, we don't let getopt(3)
+	 * print error messages, and we mess around with optind as necessary.
+	 */
+	opterr = 0;
+	while ((ch = getopt(argc, argv, "Rf")) != EOF)
+		switch((char)ch) {
 		case 'R':
 			rflag++;
 			break;
-
 		case 'f':
 			fflag++;
 			break;
-
+		case '?':
 		default:
+			--optind;
 			goto done;
 		}
-		argc--, argv++;
+done:	argv += optind;
+	argc -= optind;
+
+	if (argc < 2) {
+		fputs("usage: chmod [-Rf] [ugoa][+-=][rwxXstugo] file ...\n",
+		    stderr);
+		exit(-1);
 	}
-done:
-	modestring = argv[0];
+
+	modestring = *argv;
 	um = umask(0);
-	(void) newmode(0);
-	for (i = 1; i < argc; i++) {
-		p = argv[i];
-		/* do stat for directory arguments */
-		if (lstat(p, &st) < 0) {
-			status += Perror(p);
-			continue;
-		}
-		if (rflag && (st.st_mode&S_IFMT) == S_IFDIR) {
-			status += chmodr(p, newmode(st.st_mode));
-			continue;
-		}
-		if ((st.st_mode&S_IFMT) == S_IFLNK && stat(p, &st) < 0) {
-			status += Perror(p);
-			continue;
-		}
-		if (chmod(p, newmode(st.st_mode)) < 0) {
-			status += Perror(p);
-			continue;
-		}
-	}
-	exit(status);
+	(void)newmode((u_short)0);
+
+	while (*++argv)
+		change(*argv);
+	exit(retval);
 }
 
-chmodr(dir, mode)
-	char *dir;
+change(file)
+	char *file;
 {
 	register DIR *dirp;
 	register struct direct *dp;
-	struct stat st;
-	char savedir[1024];
-	int ecode;
+	struct stat buf;
 
-	if (getwd(savedir) == 0)
-		fatal(255, "%s", savedir);
-	/*
-	 * Change what we are given before doing it's contents
-	 */
-	if (chmod(dir, newmode(mode)) < 0 && Perror(dir))
-		return (1);
-	if (chdir(dir) < 0) {
-		Perror(dir);
-		return (1);
+	if (lstat(file, &buf) || chmod(file, newmode(buf.st_mode))) {
+		err(file);
+		return;
 	}
-	if ((dirp = opendir(".")) == NULL) {
-		Perror(dir);
-		return (1);
-	}
-	dp = readdir(dirp);
-	dp = readdir(dirp); /* read "." and ".." */
-	ecode = 0;
-	for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp)) {
-		if (lstat(dp->d_name, &st) < 0) {
-			ecode = Perror(dp->d_name);
-			if (ecode)
-				break;
-			continue;
+	if (rflag && ((buf.st_mode & S_IFMT) == S_IFDIR)) {
+		if (chdir(file) < 0 || !(dirp = opendir("."))) {
+			err(file);
+			return;
 		}
-		if ((st.st_mode&S_IFMT) == S_IFDIR) {
-			ecode = chmodr(dp->d_name, newmode(st.st_mode));
-			if (ecode)
-				break;
-			continue;
+		for (dp = readdir(dirp); dp; dp = readdir(dirp)) {
+			if (dp->d_name[0] == '.' && (!dp->d_name[1] ||
+			    dp->d_name[1] == '.' && !dp->d_name[2]))
+				continue;
+			change(dp->d_name);
 		}
-		if ((st.st_mode&S_IFMT) == S_IFLNK)
-			continue;
-		if (chmod(dp->d_name, newmode(st.st_mode)) < 0 &&
-		    (ecode = Perror(dp->d_name)))
-			break;
+		closedir(dirp);
+		if (chdir("..")) {
+			err("..");
+			exit(fflag ? 0 : -1);
+		}
 	}
-	closedir(dirp);
-	if (chdir(savedir) < 0)
-		fatal(255, "can't change back to %s", savedir);
-	return (ecode);
 }
 
-error(fmt, a)
-	char *fmt, *a;
-{
-
-	if (!fflag) {
-		fprintf(stderr, "chmod: ");
-		fprintf(stderr, fmt, a);
-		putc('\n', stderr);
-	}
-	return (!fflag);
-}
-
-fatal(status, fmt, a)
-	int status;
-	char *fmt, *a;
-{
-
-	fflag = 0;
-	(void) error(fmt, a);
-	exit(status);
-}
-
-Perror(s)
+err(s)
 	char *s;
 {
-
-	if (!fflag) {
-		fprintf(stderr, "chmod: ");
-		perror(s);
-	}
-	return (!fflag);
+	if (fflag)
+		return;
+	fputs("chmod: ", stderr);
+	perror(s);
+	retval = -1;
 }
 
 newmode(nm)
-	unsigned nm;
+	u_short nm;
 {
-	register o, m, b;
-	int savem;
+	register int o, m, b;
 
 	ms = modestring;
-	savem = nm;
 	m = abs();
 	if (*ms == '\0')
 		return (m);
 	do {
 		m = who();
 		while (o = what()) {
-			b = where(nm);
+			b = where((int)nm);
 			switch (o) {
 			case '+':
 				nm |= b & m;
@@ -195,14 +139,16 @@ newmode(nm)
 			}
 		}
 	} while (*ms++ == ',');
-	if (*--ms)
-		fatal(255, "invalid mode");
-	return (nm);
+	if (*--ms) {
+		fputs("chmod: invalid mode.\n", stderr);
+		exit(-1);
+	}
+	return ((int)nm);
 }
 
 abs()
 {
-	register c, i;
+	register int c, i;
 
 	i = 0;
 	while ((c = *ms++) >= '0' && c <= '7')
@@ -224,7 +170,7 @@ abs()
 
 who()
 {
-	register m;
+	register int m;
 
 	m = 0;
 	for (;;) switch (*ms++) {
@@ -250,7 +196,6 @@ who()
 
 what()
 {
-
 	switch (*ms) {
 	case '+':
 	case '-':
@@ -261,9 +206,9 @@ what()
 }
 
 where(om)
-	register om;
+	register int om;
 {
-	register m;
+	register int m;
 
  	m = 0;
 	switch (*ms) {
