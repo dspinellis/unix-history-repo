@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)process.c	1.14 (Berkeley) %G%";
+static	char sccsid[] = "@(#)process.c	1.15 (Berkeley) %G%";
 
 /*
  * Process management.
@@ -69,6 +69,7 @@ struct Process {
     Word oreg[NREG];		/* registers when process last stopped */
     short status;		/* either STOPPED or FINISHED */
     short signo;		/* signal that stopped process */
+    short sigcode;		/* auxiliary signal info code */
     int exitval;		/* return value from exit() */
     long sigset;		/* bit array of traced signals */
     CacheWord word[CSIZE];	/* text segment cache */
@@ -618,6 +619,12 @@ Process p;
     return p->signo;
 }
 
+public Integer errcode(p)
+Process p;
+{
+    return p->sigcode;
+}
+
 /*
  * Return the termination code of the process.
  */
@@ -1005,6 +1012,7 @@ register int status;
     } else {
 	p->status = p->signo;
 	p->signo = p->exitval;
+	p->sigcode = ptrace(UREAD, p->pid, &((struct user *)0)->u_code, 0);
 	p->exitval = 0;
 	p->mask = ptrace(UREAD, p->pid, regloc(PS), 0);
 	for (i = 0; i < NREG; i++) {
@@ -1322,6 +1330,8 @@ String s;
 {
 	register String *p;
 
+	if (strneq(s, "SIG", 3))
+	    s += 3;
 	for (p = signames; p < &signames[NSIG]; p++)
 		if (*p && streq(*p, s))
 			return (p - signames);
@@ -1333,41 +1343,37 @@ String s;
  * debugger.  These signals are auotmatically
  * passed on to the debugged process.
  */
-public printsigsignored(vec)
-long vec;
+public printsigsignored(p)
+Process p;
 {
-	register Integer s;
-	String sep = "";
 
-	for (s = 1; s < NSIG; s++)
-		if ((vec & bit(s)) && signames[s]) {
-			printf("%s%s", sep, signames[s]);
-			sep = " ";
-		}
-	if (*sep != '\0') {
-		putchar('\n');
-		fflush(stdout);
-	}
+    printsigs(~p->sigset);
 }
 
 /*
  * Print all signals being intercepted by
  * the debugger for the specified process.
  */
-public printsigscaught(vec)
-long vec;
+public printsigscaught(p)
+Process p;
 {
-	register Integer s;
-	String sep = "";
 
-	for (s = 1; s < NSIG; s++)
-		if ((vec & bit(s)) == 0 && signames[s]) {
-			printf("%s%s", sep, signames[s]);
-			sep = " ";
-		}
-	if (*sep != '\0') {
-		putchar('\n');
-		fflush(stdout);
-	}
+    printsigs(p->sigset);
 }
 
+private printsigs(vec)
+register Integer vec;
+{
+    register Integer s;
+    String sep = "";
+
+    for (s = 1; s < NSIG; s++)
+	if (vec & bit(s) && signames[s]) {
+	    printf("%s%s", sep, signames[s]);
+	    sep = " ";
+	}
+    if (*sep != '\0') {
+	putchar('\n');
+	fflush(stdout);
+    }
+}
