@@ -7,7 +7,7 @@
 #  All rights reserved.  The Berkeley software License Agreement
 #  specifies the terms and conditions for redistribution.
 #
-#	@(#)READ_ME	4.2 (Berkeley) %G%
+#	@(#)READ_ME	4.3 (Berkeley) %G%
 #
 This directory contains the source files for sendmail.
 
@@ -27,10 +27,6 @@ Version.c	The version number and information about this
 		modified on every change.
 alias.c		Does name aliasing in all forms.
 arpadate.c	A subroutine which creates ARPANET standard dates.
-bmove.c		A core-to-core move.  This is in a separate file
-		because it can easily be replaced by a blindingly
-		efficient version on Vaxes.
-bmove.*.s	Versions of bmove optimized for specific processors.
 clock.c		Routines to implement real-time oriented functions
 		in sendmail -- e.g., timeouts.
 collect.c	The routine that actually reads the mail into a temp
@@ -74,4 +70,4 @@ version.c	A master file for Version.c -- it may not exist in
 
 Eric Allman
 
-(Version 4.2, last update %G% 21:34:51)
+(Version 4.3, last update %G% 16:58:23)
