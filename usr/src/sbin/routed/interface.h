@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)interface.h	5.1 (Berkeley) %G%
+ *	@(#)interface.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -49,7 +49,7 @@ struct interface {
 #define	IFF_UP		0x1		/* interface is up */
 #define	IFF_BROADCAST	0x2		/* broadcast address valid */
 #define	IFF_DEBUG	0x4		/* turn on debugging */
-#define	IFF_ROUTE	0x8		/* routing entry installed */
+#define	IFF_LOOPBACK	0x8		/* software loopback net */
 #define	IFF_POINTOPOINT	0x10		/* interface is point-to-point link */
 
 #define	IFF_PASSIVE	0x2000		/* can't tell if up/down */
