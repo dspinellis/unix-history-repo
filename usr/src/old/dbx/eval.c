@@ -216,14 +216,7 @@ register Node p;
 	 * the stack is just dropped by the appropriate amount.
 	 */
 	case O_TYPERENAME:
-	    len = size(p->nodetype) - size(p->value.arg[0]->nodetype);
-	    if (len > 0) {
-		for (n = 0; n < len; n++) {
-		    *sp++ = '\0';
-		}
-	    } else if (len < 0) {
-		sp += len;
-	    }
+	    typerename(size(p->value.arg[0]->nodetype), size(p->nodetype));
 	    break;
 
 	case O_COMMA:
