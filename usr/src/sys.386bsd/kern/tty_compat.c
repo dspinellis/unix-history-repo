@@ -34,10 +34,16 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00150
+ * CURRENT PATCH LEVEL:         2       00163
  * --------------------         -----   ----------------------
  *
  * 22 Apr 93	David Greenman		support for 57600 and 115200 baud
+ * 27 May 93	Andrew A. Chernov	Make more compatible with POSIX
+ * 27 May 93	Bruce Evans		The work David did above was replaced
+ *					by Bruces work plus some more stuff.
+ *					(Chernov's fixes from the net edited
+ *					by Bruce)
+ *		Guido van Rooij		Fix a bug caused by Bruces patches.
  *
  */
 
@@ -84,7 +90,7 @@ static struct speedtab compatspeeds[] = {
 };
 static int compatspcodes[] = { 
 	0, 50, 75, 110, 134, 150, 200, 300, 600, 1200,
-	1800, 2400, 4800, 9600, 19200, 38400, 57600, 115200
+	1800, 2400, 4800, 9600, 19200, 38400, 57600, 115200,
 };
 
 /*ARGSUSED*/
@@ -109,7 +115,7 @@ ttcompat(tp, com, data, flag)
 		}
 		sg->sg_erase = cc[VERASE];
 		sg->sg_kill = cc[VKILL];
-		sg->sg_flags = ttcompatgetflags(tp);
+		sg->sg_flags = tp->t_flags = ttcompatgetflags(tp);
 		break;
 	}
 
@@ -206,7 +212,9 @@ ttcompat(tp, com, data, flag)
 		return (ttioctl(tp, TIOCSETA, (caddr_t)&term, flag));
 	}
 	case TIOCLGET:
-		*(int *)data = ttcompatgetflags(tp)>>16;
+		tp->t_flags =
+		 (ttcompatgetflags(tp)&0xffff0000)|(tp->t_flags&0xffff);
+		*(int *)data = tp->t_flags>>16;
 		if (ttydebug)
 			printf("CLGET: returning %x\n", *(int *)data);
 		break;
@@ -245,28 +253,32 @@ ttcompatgetflags(tp)
 		flags |= TANDEM;
 	if (iflag&ICRNL || oflag&ONLCR)
 		flags |= CRMOD;
-	if (cflag&PARENB) {
+	if ((cflag&CSIZE) == CS8) {
+		flags |= PASS8;
+		if (iflag&ISTRIP)
+			flags |= ANYP;
+	}
+	else if (cflag&PARENB) {
 		if (iflag&INPCK) {
 			if (cflag&PARODD)
 				flags |= ODDP;
 			else
 				flags |= EVENP;
-		} else
+		}
+		else
 			flags |= EVENP | ODDP;
-	} else {
-		if ((tp->t_flags&LITOUT) && !(oflag&OPOST))
-			flags |= LITOUT;
-		if (tp->t_flags&PASS8)
-			flags |= PASS8;
 	}
 	
 	if ((lflag&ICANON) == 0) {	
 		/* fudge */
-		if (iflag&IXON || lflag&ISIG || lflag&IEXTEN || cflag&PARENB)
+		if (iflag&(INPCK|ISTRIP|IXON) || lflag&(IEXTEN|ISIG)
+		    || cflag&(CSIZE|PARENB) != CS8)
 			flags |= CBREAK;
 		else
 			flags |= RAW;
 	}
+	if (!(flags&RAW) && !(oflag&OPOST) && cflag&(CSIZE|PARENB) == CS8)
+		flags |= LITOUT;
 	if (oflag&OXTABS)
 		flags |= XTABS;
 	if (lflag&ECHOE)
@@ -296,12 +308,10 @@ ttcompatsetflags(tp, t)
 	register long cflag = t->c_cflag;
 
 	if (flags & RAW) {
-		iflag &= IXOFF;
-		oflag &= ~OPOST;
+		iflag &= IXOFF|IXANY;
 		lflag &= ~(ECHOCTL|ISIG|ICANON|IEXTEN);
 	} else {
 		iflag |= BRKINT|IXON|IMAXBEL;
-		oflag |= OPOST;
 		lflag |= ISIG|IEXTEN|ECHOCTL;	/* XXX was echoctl on ? */
 		if (flags & XTABS)
 			oflag |= OXTABS;
@@ -324,17 +334,22 @@ ttcompatsetflags(tp, t)
 	else
 		lflag &= ~ECHO;
 		
+	cflag &= ~(CSIZE|PARENB);
 	if (flags&(RAW|LITOUT|PASS8)) {
-		cflag &= ~(CSIZE|PARENB);
 		cflag |= CS8;
-		if ((flags&(RAW|PASS8)) == 0)
+		if (!(flags&(RAW|PASS8))
+		    || (flags&(RAW|PASS8|ANYP)) == (PASS8|ANYP))
 			iflag |= ISTRIP;
 		else
 			iflag &= ~ISTRIP;
+		if (flags&(RAW|LITOUT))
+			oflag &= ~OPOST;
+		else
+			oflag |= OPOST;
 	} else {
-		cflag &= ~CSIZE;
 		cflag |= CS7|PARENB;
 		iflag |= ISTRIP;
+		oflag |= OPOST;
 	}
 	if ((flags&(EVENP|ODDP)) == EVENP) {
 		iflag |= INPCK;
@@ -344,8 +359,6 @@ ttcompatsetflags(tp, t)
 		cflag |= PARODD;
 	} else 
 		iflag &= ~INPCK;
-	if (flags&LITOUT)
-		oflag &= ~OPOST;	/* move earlier ? */
 	if (flags&TANDEM)
 		iflag |= IXOFF;
 	else
@@ -388,17 +401,30 @@ ttcompatsetlflags(tp, t)
 		lflag &= ~IXANY;
 	lflag &= ~(MDMBUF|TOSTOP|FLUSHO|NOHANG|PENDIN|NOFLSH);
 	lflag |= flags&(MDMBUF|TOSTOP|FLUSHO|NOHANG|PENDIN|NOFLSH);
-	if (flags&(LITOUT|PASS8)) {
-		iflag &= ~ISTRIP;
-		cflag &= ~(CSIZE|PARENB);
+
+	cflag &= ~(CSIZE|PARENB);
+	/*
+	 * The next if-else statement is copied from above so don't bother
+	 * checking it separately.  We could avoid fiddlling with the
+	 * character size if the mode is already RAW or if neither the
+	 * LITOUT bit or the PASS8 bit is being changed, but the delta of
+	 * the change is not available here and skipping the RAW case would
+	 * make the code different from above.
+	 */
+	if (flags&(RAW|LITOUT|PASS8)) {
 		cflag |= CS8;
-		if (flags&LITOUT)
-			oflag &= ~OPOST;
-		if ((flags&(PASS8|RAW)) == 0)
+		if (!(flags&(RAW|PASS8))
+		    || (flags&(RAW|PASS8|ANYP)) == (PASS8|ANYP))
 			iflag |= ISTRIP;
-	} else if ((flags&RAW) == 0) {
-		cflag &= ~CSIZE;
+		else
+			iflag &= ~ISTRIP;
+		if (flags&(RAW|LITOUT))
+			oflag &= ~OPOST;
+		else
+			oflag |= OPOST;
+	} else {
 		cflag |= CS7|PARENB;
+		iflag |= ISTRIP;
 		oflag |= OPOST;
 	}
 	t->c_iflag = iflag;

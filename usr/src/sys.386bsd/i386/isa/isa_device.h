@@ -34,13 +34,14 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00091
+ * CURRENT PATCH LEVEL:         2       00163
  * --------------------         -----   ----------------------
  *
  * 27 Feb 93    Chris Demetriou		Add proper flag handling.
  * 10 Mar 93	Rodney W. Grimes	Fixed isa_device->id_irq to be
  *					the u_short instead of short. This
  *					enables us to use irq15!
+ * 27 May 93	Guido van Rooij		Add prototype find_isadev()
  *
  */
 
@@ -80,3 +81,5 @@ struct isa_driver {
 
 extern struct isa_device isa_devtab_bio[], isa_devtab_tty[], isa_devtab_net[],
 		isa_devtab_null[];
+
+extern struct isa_device *find_isadev(/* table, driver, unit*/);

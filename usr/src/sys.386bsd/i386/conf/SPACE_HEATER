@@ -1,0 +1,101 @@
+#
+# This config file is purely fictional. Any correspondance to
+# real config files is purely coincidental.
+#
+# Modified on May 31, 1993 by Rodney W. Grimes to use new sio driver name
+#
+machine		"i386"
+cpu		"i386"
+ident		SPACE_HEATER
+timezone	8 dst
+maxusers	10
+options		INET,NFS
+options		"COMPAT_43"
+options		"TCP_COMPAT_42"
+options		UCONSOLE, XSERVER
+
+# comment this out if you don't want to enable multiport board handling.
+# also effects the way incoming chars are checked for, and i'd leave it
+# uncommented-out.
+#
+options 	COM_MULTIPORT
+
+# enable the ability to use the bidirectional port features of
+# the serial drivers.  to actually use the ports bidirectionally,
+# you have to say "/sbin/comcontrol <dev name> bidir"
+# commenting it out won't hurt, if you're sure you don't want the
+# bidir. capabilities
+#
+options 	COM_BIDIR
+
+config		"386bsd"	root on sd0 swap on sd0
+
+controller	isa0
+controller	fd0	at isa? port "IO_FD1" bio irq 6 drq 2 vector fdintr
+disk		fd0	at fd0 drive 0
+disk		fd1	at fd0 drive 1
+
+device		pc0	at isa? port "IO_KBD" tty irq 1 vector pcrint
+device		npx0	at isa? port "IO_NPX" irq 13 vector npxintr
+
+#
+# the "com" devices follow; start numbering of "active" ports at 0...
+#
+
+# this is for the standard COM1 port, but can't be used, because there's
+# a card which does interrupt sharing on irq 4, which this wants...
+#
+#device          sio0    at isa? port "IO_COM1" tty irq 4 vector siointr
+
+# this is for the standard COM2 port -- it's my mouse
+#
+device		sio0	at isa? port "IO_COM2" tty irq 3 vector siointr
+
+# these 4 devices are on a type 1 multiport board (see README).
+#
+# Note:
+# flags = (minor number of "master" multiport serial port << 8) + 1
+#  where the "master" port is the serial port with the highest "port"
+#  address.
+
+device		sio1	at isa? port 0x2a0 tty irq 4 flags 0x0401 vector siointr
+device		sio2	at isa? port 0x2a8 tty irq 4 flags 0x0401 vector siointr
+device		sio3	at isa? port 0x2b0 tty irq 4 flags 0x0401 vector siointr
+device		sio4	at isa? port 0x2b8 tty irq 4 flags 0x0401 vector siointr
+
+# these 4 devices are on a type 2 multiport board (see README).
+#
+# Note: Here no flags are defined!
+
+device		sio5	at isa? port 0x1a0 tty irq 4 vector siointr
+device		sio6	at isa? port 0x1a8 tty irq 4 vector siointr
+device		sio7	at isa? port 0x1b0 tty irq 4 vector siointr
+device		sio8	at isa? port 0x1b8 tty irq 4 vector siointr
+
+controller	ahb0	at isa? bio irq 11 drq 5 vector ahbintr
+controller	scbus0
+
+device		sd0
+device		sd1
+device		sd2
+device		sd3
+
+device		st0
+device		st1
+device		st2
+device		st3
+
+device		cd0
+device		cd1
+
+device		we0 at isa? port 0x300 net irq 5 iomem 0xca000 iosiz 8192 vector weintr
+
+pseudo-device	loop
+pseudo-device	ether
+pseudo-device	sl
+pseudo-device	log
+pseudo-device	pty
+
+pseudo-device	swappager
+pseudo-device	vnodepager
+pseudo-device	devpager

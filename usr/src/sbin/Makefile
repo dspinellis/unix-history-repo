@@ -2,14 +2,16 @@
 #
 # PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
 # --------------------         -----   ----------------------
-# CURRENT PATCH LEVEL:         1       00111
+# CURRENT PATCH LEVEL:         2       00163
 # --------------------         -----   ----------------------
 #
 # 04 Apr 93	Rodney W. Grimes	Add fdisk, mount_pcfs, quotacheck
 #					Comments about not ported and missing
+# 27 May 93	Guido van Rooij		Added comcontrol
 #
 
-SUBDIR=	badsect clri disklabel dmesg dump dumpfs fastboot fdisk fsck \
+SUBDIR=	badsect comcontrol clri disklabel dmesg dump dumpfs \
+	fastboot fdisk fsck \
 	halt ifconfig init mknod mount mount_isofs mount_pcfs mountd newfs \
 	nfsd nfsiod ping quotacheck reboot restore route routed savecore \
 	shutdown slattach swapon tunefs umount
