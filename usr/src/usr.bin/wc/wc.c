@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)wc.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)wc.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /* wc line, word and char count */
@@ -38,14 +38,15 @@ static char sccsid[] = "@(#)wc.c	5.4 (Berkeley) %G%";
 #define TAB	011			/* tab char */
 
 static long	tlinect, twordct, tcharct;
-static int	doline,	doword, dochar;
+static int	doline, doword, dochar;
 
-main(argc,argv)
+main(argc, argv)
 	int argc;
 	char **argv;
 {
 	extern int optind;
 	register int ch;
+	int total;
 
 	/*
 	 * wc is unusual in that its flags are on by default, so,
@@ -53,7 +54,7 @@ main(argc,argv)
 	 * all on.
 	 */
 	if (argc > 1 && argv[1][0] == '-' && argv[1][1]) {
-		while ((ch = getopt(argc,argv,"lwc")) != EOF)
+		while ((ch = getopt(argc, argv, "lwc")) != EOF)
 			switch((char)ch) {
 			case 'l':
 				doline = 1;
@@ -66,7 +67,7 @@ main(argc,argv)
 				break;
 			case '?':
 			default:
-				fputs("usage: wc [-lwc] [files]\n",stderr);
+				fputs("usage: wc [-lwc] [files]\n", stderr);
 				exit(1);
 			}
 		argv += optind;
@@ -78,42 +79,26 @@ main(argc,argv)
 		doline = doword = dochar = 1;
 	}
 
-	/* should print "stdin" as the file name, here */
-	if (argc <= 1) {
-		if (!*argv || !strcmp(*argv, "-")) {
-			cnt((char *)NULL);
-			putchar('\n');
-		}
-		else {
-			cnt(*argv);
-			printf(" %s\n", *argv);
-		}
-		exit(0);
+	total = 0;
+	if (!*argv) {
+		cnt((char *)NULL);
+		putchar('\n');
 	}
-
-	/*
-	 * cat allows "-" as stdin anywhere in the arg list,
-	 * might as well here, too.  Again, should use "stdin"
-	 * as the file name.
-	 */
-	do {
-		if (!strcmp(*argv, "-")) {
-			cnt((char *)NULL);
-			putchar('\n');
-		}
-		else {
-			cnt(*argv);
-			printf(" %s\n", *argv);
-		}
+	else do {
+		cnt(*argv);
+		printf(" %s\n", *argv);
+		++total;
 	} while(*++argv);
 
-	if (doline)
-		printf(" %7ld", tlinect);
-	if (doword)
-		printf(" %7ld", twordct);
-	if (dochar)
-		printf(" %7ld", tcharct);
-	puts(" total");
+	if (total > 1) {
+		if (doline)
+			printf(" %7ld", tlinect);
+		if (doword)
+			printf(" %7ld", twordct);
+		if (dochar)
+			printf(" %7ld", tcharct);
+		puts(" total");
+	}
 	exit(0);
 }
 
@@ -124,7 +109,7 @@ cnt(file)
 	register u_char *C;
 	register short gotsp;
 	register int len;
-	register long linect, wordct,charct;	
+	register long linect, wordct, charct;
 	struct stat sbuf;
 	int fd;
 	u_char buf[MAXBSIZE];
@@ -156,7 +141,7 @@ cnt(file)
 				printf(" %7ld", linect);
 				if (dochar) {
 					tcharct += charct;
-					printf(" %7ld", sbuf.st_size);
+					printf(" %7ld", charct);
 				}
 				close(fd);
 				return;
