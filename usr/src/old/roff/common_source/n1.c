@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)n1.c	4.2 %G%";
+static char sccsid[] = "@(#)n1.c	4.3 %G%";
 #endif lint
 
 #include "tdef.h"
@@ -251,6 +251,12 @@ char *local = "/usr/local/lib/tmac/tmac.\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
 		case 'g':
 			stop = ptid = gflag = 1;
 			dpn = 0;
+			continue;
+		case 'F':
+			{
+			  extern char *fontfile;
+			  fontfile = &argv[0][2];
+			}
 			continue;
 #endif
 		default:
