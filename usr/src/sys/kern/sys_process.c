@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_process.c	7.18 (Berkeley) %G%
+ *	@(#)sys_process.c	7.19 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -84,8 +84,8 @@ ptrace(curp, uap, retval)
 	return (0);
 }
 
-#define	PHYSOFF(p, o) \
-	((physadr)(p)+((o)/sizeof(((physadr)0)->r[0])))
+#define	PHYSOFF(p, o) ((caddr_t)(p) + (o))
+
 #if defined(i386)
 #undef        PC
 #undef        SP
@@ -109,6 +109,7 @@ procxmt(p)
 	register struct proc *p;
 {
 	register int i, *poff;
+	extern char kstack[];
 
 	if (ipc.ip_lock != p->p_pid)
 		return (0);
@@ -137,7 +138,7 @@ procxmt(p)
 		else
 #endif
 		i = (int)ipc.ip_addr;
-		if (i<0 || i > ctob(UPAGES)-sizeof(int))
+		if ((u_int) i > ctob(UPAGES)-sizeof(int) || (i & 1) != 0)
 			goto error;
 		ipc.ip_data = *(int *)PHYSOFF(p->p_addr, i);
 		break;
@@ -175,7 +176,7 @@ procxmt(p)
 		else
 #endif
 		i = (int)ipc.ip_addr;
-		poff = (int *)PHYSOFF(p->p_addr, i);
+		poff = (int *)PHYSOFF(kstack, i);
 		for (i=0; i<NIPCREG; i++)
 			if (poff == &p->p_regs[ipcreg[i]])
 				goto ok;
@@ -190,8 +191,8 @@ procxmt(p)
 		}
 #if defined(hp300)
 #ifdef FPCOPROC
-		if (poff >= (int *)p->p_addr->u_pcb.pcb_fpregs.fpf_regs &&
-		    poff <= (int *)&p->p_addr->u_pcb.pcb_fpregs.fpf_fpiar)
+		if (poff >= (int *)&((struct user *)kstack)->u_pcb.pcb_fpregs.fpf_regs &&
+		    poff <= (int *)&((struct user *)kstack)->u_pcb.pcb_fpregs.fpf_fpiar)
 			goto ok;
 #endif
 #endif
