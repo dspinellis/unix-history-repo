@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -98,7 +98,7 @@ struct nlist nl[] = {
 	{ "_dhu_tty" },
 #define	SNDHU	26
 	{ "_ndhu" },
-#define	SYSMAP	25
+#define	SYSMAP	27
 	{ "_Sysmap" },
 	{ "" }
 };
