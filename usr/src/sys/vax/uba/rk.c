@@ -1,4 +1,4 @@
-/*	rk.c	4.37	81/11/18	*/
+/*	rk.c	4.38	82/01/17	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -174,6 +174,7 @@ rkstrategy(bp)
 	register struct buf *dp;
 	int xunit = minor(bp->b_dev) & 07;
 	long bn, sz;
+	int s;
 
 	sz = (bp->b_bcount+511) >> 9;
 	unit = dkunit(bp);
@@ -187,7 +188,7 @@ rkstrategy(bp)
 	    (bn = dkblock(bp))+sz > st->sizes[xunit].nblocks)
 		goto bad;
 	bp->b_cylin = bn/st->nspc + st->sizes[xunit].cyloff;
-	(void) spl5();
+	s = spl5();
 	dp = &rkutab[ui->ui_unit];
 	disksort(dp, bp);
 	if (dp->b_active == 0) {
@@ -196,7 +197,7 @@ rkstrategy(bp)
 		if (bp->b_actf && bp->b_active == 0)
 			(void) rkstart(ui->ui_mi);
 	}
-	(void) spl0();
+	splx(s);
 	return;
 
 bad:

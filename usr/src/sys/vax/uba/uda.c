@@ -1,4 +1,4 @@
-/*	uda.c	4.1	81/11/04	*/
+/*	uda.c	4.2	82/01/17	*/
 
 #include "ra.h"
 #if NUDA > 0
@@ -154,6 +154,7 @@ udopen(dev, flag)
 	register int unit;
 	register struct uba_device *ui;
 	register struct uda_softc *sc;
+	int s;
 
 	unit = minor(dev) >> 3;
 	if (unit >= NRA || (ui = uddinfo[unit]) == 0 || ui->ui_alive == 0) {
@@ -161,7 +162,7 @@ udopen(dev, flag)
 		return;
 	}
 	sc = &uda_softc[ui->ui_ctlr];
-	(void) spl5();
+	s = spl5();
 	if (sc->sc_state != S_RUN) {
 		if (sc->sc_state == S_IDLE)
 			udinit(ui->ui_ctlr);
@@ -171,7 +172,7 @@ udopen(dev, flag)
 			return;
 		}
 	}
-	(void) spl0();
+	splx(s);
 	/* SHOULD PROBABLY FORCE AN ONLINE ATTEMPT
 	   TO SEE IF DISK IS REALLY THERE */
 }
@@ -229,6 +230,7 @@ udstrategy(bp)
 	register int unit;
 	int xunit = minor(bp->b_dev) & 07;
 	daddr_t sz, maxsz;
+	int s;
 
 	sz = (bp->b_bcount+511) >> 9;
 	unit = dkunit(bp);
@@ -243,7 +245,7 @@ udstrategy(bp)
 	if (bp->b_blkno < 0 || bp->b_blkno+sz > maxsz ||
 	    ra_sizes[xunit].blkoff >= radsize[unit])
 		goto bad;
-	(void) spl5();
+	s = spl5();
 	/*
 	 * Link the buffer onto the drive queue
 	 */
@@ -278,7 +280,7 @@ udstrategy(bp)
 #endif
 		(void) udstart(um);
 	}
-	(void) spl0();
+	splx(s);
 	return;
 
 bad:

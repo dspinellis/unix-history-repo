@@ -1,4 +1,4 @@
-/*	hp.c	4.42	81/11/18	*/
+/*	hp.c	4.43	82/01/17	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -172,6 +172,7 @@ hpstrategy(bp)
 	register int unit;
 	long sz, bn;
 	int xunit = minor(bp->b_dev) & 07;
+	int s;
 
 	sz = bp->b_bcount;
 	sz = (sz+511) >> 9;
@@ -186,11 +187,11 @@ hpstrategy(bp)
 	    (bn = dkblock(bp))+sz > st->sizes[xunit].nblocks)
 		goto bad;
 	bp->b_cylin = bn/st->nspc + st->sizes[xunit].cyloff;
-	(void) spl5();
+	s = spl5();
 	disksort(&mi->mi_tab, bp);
 	if (mi->mi_tab.b_active == 0)
 		mbustart(mi);
-	(void) spl0();
+	splx(s);
 	return;
 
 bad:

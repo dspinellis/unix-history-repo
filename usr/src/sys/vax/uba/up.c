@@ -1,4 +1,4 @@
-/*	up.c	4.40	81/11/18	*/
+/*	up.c	4.41	82/01/17	*/
 
 #include "up.h"
 #if NSC > 0
@@ -188,6 +188,7 @@ upstrategy(bp)
 	register struct buf *dp;
 	int xunit = minor(bp->b_dev) & 07;
 	long bn, sz;
+	int s;
 
 	sz = (bp->b_bcount+511) >> 9;
 	unit = dkunit(bp);
@@ -201,7 +202,7 @@ upstrategy(bp)
 	    (bn = dkblock(bp))+sz > st->sizes[xunit].nblocks)
 		goto bad;
 	bp->b_cylin = bn/st->nspc + st->sizes[xunit].cyloff;
-	(void) spl5();
+	s = spl5();
 	dp = &uputab[ui->ui_unit];
 	disksort(dp, bp);
 	if (dp->b_active == 0) {
@@ -210,7 +211,7 @@ upstrategy(bp)
 		if (bp->b_actf && bp->b_active == 0)
 			(void) upstart(ui->ui_mi);
 	}
-	(void) spl0();
+	splx(s);
 	return;
 
 bad:
