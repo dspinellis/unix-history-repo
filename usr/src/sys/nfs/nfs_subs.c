@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.29 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.30 (Berkeley) %G%
  */
 
 /*
@@ -33,6 +33,7 @@
 #include "nfsiom.h"
 #include "xdr_subs.h"
 #include "nfsm_subs.h"
+#include "nfscompress.h"
 
 #define TRUE	1
 #define	FALSE	0
@@ -877,4 +878,204 @@ nfsrv_fhtovp(fhp, lockflag, vpp, cred)
 	if (!lockflag)
 		VOP_UNLOCK(*vpp);
 	return (0);
+}
+
+/*
+ * These two functions implement nfs rpc compression.
+ * The algorithm is a trivial run length encoding of '\0' bytes. The high
+ * order nibble of hex "e" is or'd with the number of zeroes - 2 in four
+ * bits. (2 - 17 zeros) Any data byte with a high order nibble of hex "e"
+ * is byte stuffed.
+ * The compressed data is padded with 0x0 bytes to an even multiple of
+ * 4 bytes in length to avoid any weird long pointer alignments.
+ * If compression/uncompression is unsuccessful, the original mbuf list
+ * is returned.
+ * The first four bytes (the XID) are left uncompressed and the fifth
+ * byte is set to 0x1 for request and 0x2 for reply.
+ * An uncompressed RPC will always have the fifth byte == 0x0.
+ */
+struct mbuf *
+nfs_compress(m0)
+	struct mbuf *m0;
+{
+	register u_char ch, nextch;
+	register int i, rlelast;
+	register u_char *ip, *op;
+	register int ileft, oleft, noteof;
+	register struct mbuf *m, *om;
+	struct mbuf **mp, *retm;
+	int olen, clget;
+
+	i = rlelast = 0;
+	noteof = 1;
+	m = m0;
+	if (m->m_len < 12)
+		return (m0);
+	if (m->m_pkthdr.len >= MINCLSIZE)
+		clget = 1;
+	else
+		clget = 0;
+	ileft = m->m_len - 9;
+	ip = mtod(m, u_char *);
+	MGETHDR(om, MT_DATA, M_WAIT);
+	if (clget)
+		MCLGET(om, M_WAIT);
+	retm = om;
+	mp = &om->m_next;
+	olen = om->m_len = 5;
+	oleft = M_TRAILINGSPACE(om);
+	op = mtod(om, u_char *);
+	*((u_long *)op) = *((u_long *)ip);
+	ip += 7;
+	op += 4;
+	*op++ = *ip++ + 1;
+	nextch = *ip++;
+	while (noteof) {
+		ch = nextch;
+		if (ileft == 0) {
+			do {
+				m = m->m_next;
+			} while (m && m->m_len == 0);
+			if (m) {
+				ileft = m->m_len;
+				ip = mtod(m, u_char *);
+			} else {
+				noteof = 0;
+				nextch = 0x1;
+				goto doit;
+			}
+		}
+		nextch = *ip++;
+		ileft--;
+doit:
+		if (ch == '\0') {
+			if (++i == NFSC_MAX || nextch != '\0') {
+				if (i < 2) {
+					nfscput('\0');
+				} else {
+					if (rlelast == i) {
+						nfscput('\0');
+						i--;
+					}
+					if (NFSCRLE(i) == (nextch & 0xff)) {
+						i--;
+						if (i < 2) {
+							nfscput('\0');
+						} else {
+							nfscput(NFSCRLE(i));
+						}
+						nfscput('\0');
+						rlelast = 0;
+					} else {
+						nfscput(NFSCRLE(i));
+						rlelast = i;
+					}
+				}
+				i = 0;
+			}
+		} else {
+			if ((ch & NFSCRL) == NFSCRL) {
+				nfscput(ch);
+			}
+			nfscput(ch);
+			i = rlelast = 0;
+		}
+	}
+	if (olen < m0->m_pkthdr.len) {
+		m_freem(m0);
+		if (i = (olen & 0x3)) {
+			i = 4 - i;
+			while (i-- > 0)
+				nfscput('\0');
+		}
+		retm->m_pkthdr.len = olen;
+		return (retm);
+	} else {
+		m_freem(retm);
+		return (m0);
+	}
+}
+
+struct mbuf *
+nfs_uncompress(m0)
+	struct mbuf *m0;
+{
+	register u_char cp, nextcp, *ip, *op;
+	register struct mbuf *m, *om;
+	struct mbuf *retm, **mp;
+	int i, j, noteof, clget, ileft, oleft, olen;
+
+	m = m0;
+	if (m->m_pkthdr.len < 6)
+		return (m0);
+	if (m->m_pkthdr.len >= MINCLSIZE)
+		clget = 1;
+	else
+		clget = 0;
+	MGETHDR(om, MT_DATA, M_WAIT);
+	if (clget)
+		MCLGET(om, M_WAIT);
+	olen = om->m_len = 8;
+	oleft = M_TRAILINGSPACE(om);
+	op = mtod(om, u_char *);
+	retm = om;
+	mp = &om->m_next;
+	if (m->m_len >= 6) {
+		ileft = m->m_len - 6;
+		ip = mtod(m, u_char *);
+		*((u_long *)op) = *((u_long *)ip);
+		bzero(op + 4, 3);
+		ip += 4;
+		op += 7;
+		if (*ip == '\0') {
+			m_freem(om);
+			return (m0);
+		}
+		*op++ = *ip++ - 1;
+		cp = *ip++;
+	} else {
+		ileft = m->m_len;
+		ip = mtod(m, u_char *);
+		nfscget(*op++);
+		nfscget(*op++);
+		nfscget(*op++);
+		nfscget(*op++);
+		bzero(op, 3);
+		op += 3;
+		nfscget(*op);
+		if (*op == '\0') {
+			m_freem(om);
+			return (m0);
+		}
+		(*op)--;
+		op++;
+		nfscget(cp);
+	}
+	noteof = 1;
+	while (noteof) {
+		if ((cp & NFSCRL) == NFSCRL) {
+			nfscget(nextcp);
+			if (cp == nextcp) {
+				nfscput(cp);
+				goto readit;
+			} else {
+				i = (cp & 0xf) + 2;
+				for (j = 0; j < i; j++) {
+					nfscput('\0');
+				}
+				cp = nextcp;
+			}
+		} else {
+			nfscput(cp);
+readit:
+			nfscget(cp);
+		}
+	}
+	m_freem(m0);
+	if (i = (olen & 0x3)) {
+		olen -= i;
+		om->m_len -= i;
+	}
+	retm->m_pkthdr.len = olen;
+	return (retm);
 }

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_syscalls.c	7.18 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -41,10 +41,31 @@ extern int nfs_asyncdaemons;
 extern struct proc *nfs_iodwant[NFS_MAXASYNCDAEMON];
 extern int nfs_tcpnodelay;
 struct file *getsock();
+struct mbuf *nfs_compress();
 
 #define	TRUE	1
 #define	FALSE	0
 
+static int compressreply[NFS_NPROCS] = {
+	FALSE,
+	TRUE,
+	TRUE,
+	FALSE,
+	TRUE,
+	TRUE,
+	FALSE,
+	FALSE,
+	TRUE,
+	TRUE,
+	TRUE,
+	TRUE,
+	TRUE,
+	TRUE,
+	TRUE,
+	TRUE,
+	TRUE,
+	TRUE,
+};
 /*
  * NFS server system calls
  * getfh() lives here too, but maybe should move to kern/vfs_syscalls.c
@@ -112,7 +133,7 @@ nfssvc(p, uap, retval)
 	struct mbuf msk, mtch;
 	struct socket *so;
 	caddr_t dpos;
-	int procid, repstat, error, cacherep;
+	int procid, repstat, error, cacherep, wascomp;
 	u_long retxid;
 
 	/*
@@ -174,7 +195,7 @@ nfssvc(p, uap, retval)
 	for (;;) {
 		if (error = nfs_getreq(so, nfs_prog, nfs_vers, NFS_NPROCS-1,
 		   &nam, &mrep, &md, &dpos, &retxid, &procid, cr,
-		   &msk, &mtch)) {
+		   &msk, &mtch, &wascomp)) {
 			if (nam)
 				m_freem(nam);
 			if (error == EPIPE || error == EINTR ||
@@ -220,6 +241,10 @@ nfssvc(p, uap, retval)
 			}
 			mreq->m_pkthdr.len = siz;
 			mreq->m_pkthdr.rcvif = (struct ifnet *)0;
+			if (wascomp && compressreply[procid]) {
+				m = nfs_compress(m);
+				siz = m->m_pkthdr.len;
+			}
 			/*
 			 * For non-atomic protocols, prepend a Sun RPC
 			 * Record Mark.
