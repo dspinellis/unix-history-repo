@@ -37,7 +37,7 @@ static int wdtest = 0;
  * SUCH DAMAGE.
  *
  *	from: @(#)wd.c	7.2 (Berkeley) 5/9/91
- *	$Id: wd.c,v 1.38 1994/04/20 07:06:44 davidg Exp $
+ *	$Id: wd.c,v 1.39 1994/06/07 01:36:39 phk Exp $
  */
 
 /* TODO:
@@ -1278,8 +1278,10 @@ wdioctl(dev_t dev, int cmd, caddr_t addr, int flag)
 	case DIOCSBAD:
 		if ((flag & FWRITE) == 0)
 			error = EBADF;
-		else
+		else {
 			du->dk_bad = *(struct dkbad *)addr;
+			bad144intern(du);
+		}
 		break;
 
 	case DIOCGDINFO:
