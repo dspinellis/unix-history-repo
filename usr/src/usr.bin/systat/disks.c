@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)disks.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)disks.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
@@ -218,6 +218,10 @@ read_names()
 		     cp[0], cp[1], udev.ui_unit);
 	}
 }
+#endif
+
+#ifdef hp300
+read_names() {}
 #endif
 
 dkselect(args, truefalse, selections)
