@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -44,7 +44,8 @@ main(argc, argv)
 	char *subject;
 	char *ef;
 	char nosrc = 0;
-	int hdrstop(), (*prevint)();
+	int hdrstop();
+	sig_t prevint;
 	int sigchild();
 	extern int getopt(), optind, opterr;
 	extern char *optarg;
