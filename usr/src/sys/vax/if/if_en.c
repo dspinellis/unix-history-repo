@@ -585,7 +585,7 @@ enlhinit(esifp, addr)
 	int addr;
 {
 	register struct ifnet *ifp = &enlhif;
-	register struct sockaddr_in *sin;
+	struct sockaddr_in *sin;
 
 COUNT(ENLHINIT);
 	ifp->if_name = "lh";
@@ -593,9 +593,10 @@ COUNT(ENLHINIT);
 	sin = (struct sockaddr_in *)&ifp->if_addr;
 	sin->sin_family = AF_INET;
 	sin->sin_addr.s_addr = addr;
+	sin->sin_addr.s_lh = esifp->if_host[0];
 	ifp->if_net = sin->sin_addr.s_net;
 	ifp->if_flags = IFF_UP|IFF_POINTOPOINT;
-	ifp->if_dstaddr = esifp->if_addr;
+	ifp->if_dstaddr = ifp->if_addr;
 	ifp->if_output = looutput;
 	if_attach(ifp);
 	rtinit(&ifp->if_addr, &ifp->if_addr, RTF_UP|RTF_DIRECT|RTF_HOST);
