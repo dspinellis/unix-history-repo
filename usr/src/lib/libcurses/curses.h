@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)curses.h	5.10 (Berkeley) %G%
+ *	@(#)curses.h	5.11 (Berkeley) %G%
  */
 
 #ifndef WINDOW
