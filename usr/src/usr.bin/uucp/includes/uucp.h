@@ -1,4 +1,4 @@
-/*	uucp.h	5.11	86/02/12	*/
+/*	@(#)uucp.h	5.12	%G%	*/
 
 #include <stdio.h>
 
@@ -216,6 +216,12 @@
  */
 /*#define LOGBYSITE	"/usr/spool/uucp/LOG" /**/
 
+/*
+ * If you are doing rebilling and need connect accounting,
+ * define DO_CONNECT_ACCOUNTING
+ */
+/*#define DO_CONNECT_ACCOUNTING	/**/
+
 #define XQTDIR		"/usr/spool/uucp/XTMP"
 #define SQFILE		"/usr/lib/uucp/SQFILE"
 #define SQTMP		"/usr/lib/uucp/SQTMP"
@@ -249,7 +255,7 @@
 #define SQTIME		60
 #define TRYCALLS	2	/* number of tries to dial call */
 
-#define LLEN	50
+#define LLEN	150
 #define MAXRQST	250
 
 #define DEBUG(l, f, s) if (Debug >= l) fprintf(stderr, f, s); else
