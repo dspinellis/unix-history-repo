@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_meter.c	7.21 (Berkeley) %G%
+ *	@(#)vm_meter.c	7.22 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -65,10 +65,6 @@ loadav(avg)
 	for (i = 0; i < 3; i++)
 		avg->ldavg[i] = (cexp[i] * avg->ldavg[i] +
 			nrun * FSCALE * (FSCALE - cexp[i])) >> FSHIFT;
-#if defined(COMPAT_43) && (defined(vax) || defined(tahoe))
-	for (i = 0; i < 3; i++)
-		avenrun[i] = (double) avg->ldavg[i] / FSCALE;
-#endif /* COMPAT_43 */
 }
 
 /*
