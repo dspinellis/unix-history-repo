@@ -1,4 +1,4 @@
-#	Makefile	4.18	82/12/30
+#	Makefile	4.19	83/01/11
 
 DESTDIR=/
 CFLAGS=	-O -DSTANDALONE ${COPTS} 
