@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.35 (Berkeley) %G%
+ *	@(#)vnode.h	7.36 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -118,8 +118,10 @@ struct vattr {
 /*
  * Operations on vnodes.
  */
+#ifdef __STDC__
 struct flock;
 struct nameidata;
+#endif
 
 struct vnodeops {
 	int	(*vn_lookup)	__P((struct vnode *vp, struct nameidata *ndp,
@@ -135,8 +137,7 @@ struct vnodeops {
 	int	(*vn_access)	__P((struct vnode *vp, int mode,
 				    struct ucred *cred, struct proc *p));
 	int	(*vn_getattr)	__P((struct vnode *vp, struct vattr *vap,
-				    struct ucred *cred,
-				    struct proc *p));
+				    struct ucred *cred, struct proc *p));
 	int	(*vn_setattr)	__P((struct vnode *vp, struct vattr *vap,
 				    struct ucred *cred, struct proc *p));
 	int	(*vn_read)	__P((struct vnode *vp, struct uio *uio,
