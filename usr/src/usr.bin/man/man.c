@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -77,14 +77,14 @@ main(argc, argv)
 		case 'M':
 		case 'P':		/* backward compatibility */
 			if ((*argv)[2])
-				manpath = *argv + 2;
+				defpath = *argv + 2;
 			else {
 				if (argc < 2) {
 					fprintf(stderr, "%s: missing path\n", *argv);
 					exit(1);
 				}
 				--argc;
-				manpath = *++argv;
+				defpath = *++argv;
 			}
 			break;
 		/*
@@ -152,7 +152,7 @@ main(argc, argv)
 	/* Gentlemen... start your kludges! */
 	for (; *argv; ++argv) {
 		section = NO_SECTION;
-		manpath = DEF_PATH;
+		manpath = defpath;
 		dirlist = stanlist;
 		switch(**argv) {
 		/*
