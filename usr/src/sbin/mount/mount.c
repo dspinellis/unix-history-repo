@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	8.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	8.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -125,9 +125,8 @@ main(argc, argv)
 	if (argc == 0) {
 		if (verbose || debug || type)
 			usage();
-		if ((mntsize = getmntinfo(&mntbuf, MNT_NOWAIT)) == 0) {
-			errx(1, "cannot get mount information");
-		}
+		if ((mntsize = getmntinfo(&mntbuf, MNT_NOWAIT)) == 0)
+			err(1, "getmntinfo");
 		for (i = 0; i < mntsize; i++) {
 			if (badvfstype(mntbuf[i].f_type, vfslist))
 				continue;
@@ -170,7 +169,7 @@ main(argc, argv)
 			 */
 			i = strlen(fs->fs_mntops) + strlen(options) + 2;
 			if ((cp = malloc((size_t)i)) == NULL)
-				errx(1, "-u malloc failed");
+				err(1, NULL);
 			(void)snprintf(cp, i, "%s,%s", fs->fs_mntops, options);
 			options = cp;
 		}
@@ -180,9 +179,9 @@ main(argc, argv)
 		if ((fs = getfsfile(*argv)) == NULL &&
 		    (fs = getfsspec(*argv)) == NULL)
 			errx(1,
-			    "unknown special file or file system %s.\n", *argv);
+			    "unknown special file or file system %s.", *argv);
 		if (BADTYPE(fs->fs_type))
-			errx(1, "%s has unknown file system type.\n", *argv);
+			errx(1, "%s has unknown file system type.", *argv);
 		mnttype = getmnttype(fs->fs_vfstype);
 		ret = mountfs(fs->fs_spec,
 		    fs->fs_file, updateflg, type, options, fs->fs_mntops);
@@ -306,7 +305,7 @@ mountfs(spec, name, flags, type, options, mntopts)
 		(void)fprintf(stderr, "%s on %s: ", spec, name);
 		switch (errno) {
 		case EMFILE:
-			(void)fprintf(stderr, "Mount table full\n");
+			(void)fprintf(stderr, "Mount table full.\n");
 			break;
 		case EINVAL:
 			if (flags & MNT_UPDATE)
