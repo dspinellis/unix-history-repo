@@ -38,7 +38,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_lookup.c	7.32 (Berkeley) 5/21/91
- *	$Id: vfs_lookup.c,v 1.7 1994/05/22 23:04:14 ache Exp $
+ *	$Id: vfs_lookup.c,v 1.8 1994/05/26 04:40:05 ache Exp $
  */
 
 #include "param.h"
@@ -106,13 +106,13 @@ namei(ndp, p)
 	else
 		error = copyinstr(ndp->ni_dirp, ndp->ni_pnbuf,
 			    MAXPATHLEN, (u_int *)&ndp->ni_pathlen);
-
+#if 0
 	/*
 	 * Don't allow empty pathname.
 	 */
 	if (!error && *ndp->ni_pnbuf == '\0')
 		error = ENOENT;
-
+#endif
 	if (error) {
 		free(ndp->ni_pnbuf, M_NAMEI);
 		ndp->ni_vp = NULL;
