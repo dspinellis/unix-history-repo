@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	7.12 (Berkeley) %G%
+ *	@(#)conf.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -113,13 +113,13 @@ int	udaioctl(),udareset(),udadump(),udasize();
 #endif
 
 #include "kra.h"
-#if NKDA > 0
-int	kdaopen(),kdastrategy(),kdadump(),kdasize();
+#if NKDB > 0
+int	kdbopen(),kdbstrategy(),kdbdump(),kdbsize();
 #else
-#define	kdaopen		nodev
-#define	kdastrategy	nodev
-#define	kdadump		nodev
-#define	kdasize		0
+#define	kdbopen		nodev
+#define	kdbstrategy	nodev
+#define	kdbdump		nodev
+#define	kdbsize		0
 #endif
 
 #include "up.h"
@@ -246,8 +246,8 @@ struct bdevsw	bdevsw[] =
 	  rldump,	rlsize,		0 },
 	{ tmscpopen,	tmscpclose,	tmscpstrategy,	tmscpioctl,	/*15*/
 	  tmscpdump,	0,		B_TAPE },
-	{ kdaopen,	nulldev,	kdastrategy,	nodev,		/*16*/
-	  kdadump,	kdasize,	0 },
+	{ kdbopen,	nulldev,	kdbstrategy,	nodev,		/*16*/
+	  kdbdump,	kdbsize,	0 },
 };
 int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 
@@ -745,9 +745,9 @@ struct cdevsw	cdevsw[] =
  	nodev,		nodev,		nulldev,	0,
  	seltrue,	nodev,		NULL,
 /* kdb50 ra */
-	kdaopen,	nulldev/*XXX*/,	rawread,	rawwrite,	/*52*/
+	kdbopen,	nulldev/*XXX*/,	rawread,	rawwrite,	/*52*/
 	nodev,		nodev,		nulldev,	0,
-	seltrue,	nodev,		kdastrategy,
+	seltrue,	nodev,		kdbstrategy,
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
