@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)fts.h	5.2 (Berkeley) %G%
+ *	@(#)fts.h	5.3 (Berkeley) %G%
  */
 
 typedef struct fts {
@@ -22,6 +22,7 @@ typedef struct fts {
 	struct ftsent *fts_child;	/* linked list of children */
 	struct ftsent *fts_savelink;	/* saved link if node had a cycle */
 	struct ftsent **fts_array;	/* sort array */
+	dev_t sdev;			/* starting device # */
 	char *fts_path;			/* path for this descent */
 	char *fts_wd;			/* starting directory */
 	int fts_pathlen;		/* sizeof(path) */
@@ -34,6 +35,7 @@ typedef struct fts {
 #define	FTS_NOSTAT	0x010		/* user: don't require stat info */
 #define	FTS_PHYSICAL	0x020		/* user: use lstat(2) */
 #define	FTS_SEEDOT	0x040		/* user: return dot and dot-dot */
+#define	FTS_XDEV	0x080		/* user: don't cross devices */
 	int fts_options;		/* openfts() options */
 } FTS;
 
