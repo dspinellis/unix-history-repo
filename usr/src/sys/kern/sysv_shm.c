@@ -24,7 +24,7 @@
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
+#include "syscontext.h"
 #include "kernel.h"
 #include "proc.h"
 #include "vm.h"
@@ -55,33 +55,38 @@ shminit()
 	}
 }
 
-/* entry point for all SHM calls */
-shmsys()
-{
-	struct a {
+/*
+ * Entry point for all SHM calls
+ */
+shmsys(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int which;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 
-	if (uap->which >= sizeof(shmcalls)/sizeof(shmcalls[0])) {
-		u.u_error = EINVAL;
-		return;
-	}
-	(*shmcalls[uap->which])(u.u_ap+1);
+	if (uap->which >= sizeof(shmcalls)/sizeof(shmcalls[0]))
+		RETURN (EINVAL);
+	RETURN ((*shmcalls[uap->which])(p, &uap[1], retval));
 }
 
-/* get a shared memory segment */
-shmget(ap)
-	int *ap;
-{
-	register struct a {
+/*
+ * Get a shared memory segment
+ */
+shmget(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		key_t key;
 		int size;
 		int shmflg;
-	} *uap = (struct a *)ap;
-	struct proc *p = u.u_procp;
+	} *uap;
+	int *retval;
+{
 	register struct shmid_ds *shp;
+	register struct ucred *cred = u.u_cred;
 	register int i;
-	int rval = 0, size;
+	int error, size, rval = 0;
 	caddr_t kva;
 
 	/* look up the specified shm_id */
@@ -97,28 +102,20 @@ shmget(ap)
 
 	/* create a new shared segment if necessary */
 	if (i == shminfo.shmmni) {
-		if ((uap->shmflg & IPC_CREAT) == 0) {
-			u.u_error = ENOENT;
-			return;
-		}
-		if (uap->size < shminfo.shmmin || uap->size > shminfo.shmmax) {
-			u.u_error = EINVAL;
-			return;
-		}
+		if ((uap->shmflg & IPC_CREAT) == 0)
+			return (ENOENT);
+		if (uap->size < shminfo.shmmin || uap->size > shminfo.shmmax)
+			return (EINVAL);
 		for (i = 0; i < shminfo.shmmni; i++)
 			if ((shmsegs[i].shm_perm.mode & SHM_ALLOC) == 0) {
 				rval = i;
 				break;
 			}
-		if (i == shminfo.shmmni) {
-			u.u_error = ENOSPC;
-			return;
-		}
+		if (i == shminfo.shmmni)
+			return (ENOSPC);
 		size = clrnd(btoc(uap->size));
-		if (shmtot + size > shminfo.shmall) {
-			u.u_error = ENOMEM;
-			return;
-		}
+		if (shmtot + size > shminfo.shmall)
+			return (ENOMEM);
 		shp = &shmsegs[rval];
 		/*
 		 * We need to do a couple of things to ensure consistency
@@ -133,15 +130,14 @@ shmget(ap)
 		kva = (caddr_t) malloc((u_long)ctob(size), M_SHM, M_WAITOK);
 		if (kva == NULL) {
 			shp->shm_perm.mode = 0;
-			u.u_error = ENOMEM;
-			return;
+			return (ENOMEM);
 		}
 		if (!claligned(kva))
 			panic("shmget: non-aligned memory");
 		bzero(kva, (u_int)ctob(size));
 		shmtot += size;
-		shp->shm_perm.cuid = shp->shm_perm.uid = u.u_uid;
-		shp->shm_perm.cgid = shp->shm_perm.gid = u.u_gid;
+		shp->shm_perm.cuid = shp->shm_perm.uid = cred->cr_uid;
+		shp->shm_perm.cgid = shp->shm_perm.gid = cred->cr_gid;
 		shp->shm_perm.mode = SHM_ALLOC | (uap->shmflg&0777);
 		shp->shm_handle = (void *) kvtopte(kva);
 		shp->shm_segsz = uap->size;
@@ -152,69 +148,62 @@ shmget(ap)
 	} else {
 		shp = &shmsegs[rval];
 		/* XXX: probably not the right thing to do */
-		if (shp->shm_perm.mode & SHM_DEST) {
-			u.u_error = EBUSY;
-			return;
-		}
-		if (!ipcaccess(&shp->shm_perm, uap->shmflg&0777))
-			return;
-		if (uap->size && uap->size > shp->shm_segsz) {
-			u.u_error = EINVAL;
-			return;
-		}
-		if ((uap->shmflg&IPC_CREAT) && (uap->shmflg&IPC_EXCL)) {
-			u.u_error = EEXIST;
-			return;
-		}
+		if (shp->shm_perm.mode & SHM_DEST)
+			return (EBUSY);
+		if (error = ipcaccess(cred, &shp->shm_perm, uap->shmflg&0777))
+			return (error);
+		if (uap->size && uap->size > shp->shm_segsz)
+			return (EINVAL);
+		if ((uap->shmflg&IPC_CREAT) && (uap->shmflg&IPC_EXCL))
+			return (EEXIST);
 	}
-	u.u_r.r_val1 = shp->shm_perm.seq * SHMMMNI + rval;
+	*retval = shp->shm_perm.seq * SHMMMNI + rval;
 }
 
-/* shared memory control */
-shmctl(ap)
-	int *ap;
-{
-	register struct a {
+/*
+ * Shared memory control
+ */
+/* ARGSUSED */
+shmctl(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int shmid;
 		int cmd;
 		caddr_t buf;
-	} *uap = (struct a *)ap;
-	struct proc *p = u.u_procp;
+	} *uap;
+	int *retval;
+{
 	register struct shmid_ds *shp;
+	register struct ucred *cred = u.u_cred;
 	struct shmid_ds sbuf;
+	int error;
 
-	if (!shmvalid(uap->shmid))
-		return;
+	if (error = shmvalid(uap->shmid))
+		return (error);
 	shp = &shmsegs[uap->shmid % SHMMMNI];
 	switch (uap->cmd) {
 	case IPC_STAT:
-		if (ipcaccess(&shp->shm_perm, IPC_R))
-			u.u_error =
-				copyout((caddr_t)shp, uap->buf, sizeof(*shp));
-		break;
+		if (error = ipcaccess(cred, &shp->shm_perm, IPC_R))
+			return (error);
+		return (copyout((caddr_t)shp, uap->buf, sizeof(*shp)));
 
 	case IPC_SET:
-		if (u.u_uid && u.u_uid != shp->shm_perm.uid &&
-		    u.u_uid != shp->shm_perm.cuid) {
-			u.u_error = EPERM;
-			break;
-		}
-		u.u_error = copyin(uap->buf, (caddr_t)&sbuf, sizeof sbuf);
-		if (!u.u_error) {
-			shp->shm_perm.uid = sbuf.shm_perm.uid;
-			shp->shm_perm.gid = sbuf.shm_perm.gid;
-			shp->shm_perm.mode = (shp->shm_perm.mode & ~0777)
-				| (sbuf.shm_perm.mode & 0777);
-			shp->shm_ctime = time.tv_sec;
-		}
+		if (cred->cr_uid && cred->cr_uid != shp->shm_perm.uid &&
+		    cred->cr_uid != shp->shm_perm.cuid)
+			return (EPERM);
+		if (error = copyin(uap->buf, (caddr_t)&sbuf, sizeof sbuf))
+			return (error);
+		shp->shm_perm.uid = sbuf.shm_perm.uid;
+		shp->shm_perm.gid = sbuf.shm_perm.gid;
+		shp->shm_perm.mode = (shp->shm_perm.mode & ~0777)
+			| (sbuf.shm_perm.mode & 0777);
+		shp->shm_ctime = time.tv_sec;
 		break;
 
 	case IPC_RMID:
-		if (u.u_uid && u.u_uid != shp->shm_perm.uid &&
-		    u.u_uid != shp->shm_perm.cuid) {
-			u.u_error = EPERM;
-			break;
-		}
+		if (cred->cr_uid && cred->cr_uid != shp->shm_perm.uid &&
+		    cred->cr_uid != shp->shm_perm.cuid)
+			return (EPERM);
 		/* set ctime? */
 		shp->shm_perm.key = IPC_PRIVATE;
 		shp->shm_perm.mode |= SHM_DEST;
@@ -227,50 +216,51 @@ shmctl(ap)
 	case SHM_UNLOCK:
 		/* don't really do anything, but make them think we did */
 		if ((p->p_flag & SHPUX) == 0)
-			u.u_error = EINVAL;
-		else if (u.u_uid && u.u_uid != shp->shm_perm.uid &&
-			 u.u_uid != shp->shm_perm.cuid)
-			u.u_error = EPERM;
+			return (EINVAL);
+		if (cred->cr_uid && cred->cr_uid != shp->shm_perm.uid &&
+		    cred->cr_uid != shp->shm_perm.cuid)
+			return (EPERM);
 		break;
 #endif
 
 	default:
-		u.u_error = EINVAL;
-		break;
+		return (EINVAL);
 	}
+	return (0);
 }
 
-shmat(ap)
-	int *ap;
-{
-	struct a {
+/*
+ * Attach to shared memory segment.
+ */
+shmat(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int	shmid;
 		caddr_t	shmaddr;
 		int	shmflg;
-	} *uap = (struct a *)ap;
-	struct proc *p = u.u_procp;
+	} *uap;
+	int *retval;
+{
 	register struct shmid_ds *shp;
 	register int size;
 	struct mapmem *mp;
 	caddr_t uva;
-	int error, prot, shmmapin();
+	int error, error1, prot, shmmapin();
 
-	if (!shmvalid(uap->shmid))
-		return;
+	if (error = shmvalid(uap->shmid))
+		return (error);
 	shp = &shmsegs[uap->shmid % SHMMMNI];
 	if (shp->shm_handle == NULL)
 		panic("shmat NULL handle");
-	if (!ipcaccess(&shp->shm_perm,
+	if (error = ipcaccess(u.u_cred, &shp->shm_perm,
 		      (uap->shmflg&SHM_RDONLY) ? IPC_R : IPC_R|IPC_W))
-		return;
+		return (error);
 	uva = uap->shmaddr;
 	if (uva && ((int)uva & (SHMLBA-1))) {
 		if (uap->shmflg & SHM_RND)
 			uva = (caddr_t) ((int)uva & ~(SHMLBA-1));
-		else {
-			u.u_error = EINVAL;
-			return;
-		}
+		else
+			return (EINVAL);
 	}
 	/*
 	 * Make sure user doesn't use more than their fair share
@@ -279,10 +269,8 @@ shmat(ap)
 	for (mp = u.u_mmap; mp; mp = mp->mm_next)
 		if (mp->mm_ops == &shmops)
 			size++;
-	if (size >= shminfo.shmseg) {
-		u.u_error = EMFILE;
-		return;
-	}
+	if (size >= shminfo.shmseg)
+		return (EMFILE);
 	/*
 	 * Allocate a mapped memory region descriptor and
 	 * attempt to expand the user page table to allow for region
@@ -293,14 +281,12 @@ shmat(ap)
 #endif
 	size = ctob(clrnd(btoc(shp->shm_segsz)));
 	error = mmalloc(p, uap->shmid, &uva, (segsz_t)size, prot, &shmops, &mp);
-	if (error) {
-		u.u_error = error;
-		return;
-	}
-	if (u.u_error = mmmapin(p, mp, shmmapin)) {
-		if (error = mmfree(p, mp))
-			u.u_error = error;
-		return;
+	if (error)
+		return (error);
+	if (error = mmmapin(p, mp, shmmapin)) {
+		if (error1 = mmfree(p, mp))
+			return (error1);
+		return (error);
 	}
 	/*
 	 * Fill in the remaining fields
@@ -308,27 +294,29 @@ shmat(ap)
 	shp->shm_lpid = p->p_pid;
 	shp->shm_atime = time.tv_sec;
 	shp->shm_nattch++;
-	u.u_r.r_val1 = (int) uva;
+	*retval = (int) uva;
 }
 
-shmdt(ap)
-	int *ap;
-{
-	register struct a {
+/*
+ * Detach from shared memory segment.
+ */
+/* ARGSUSED */
+shmdt(p, uap, retval)
+	struct proc *p;
+	struct args {
 		caddr_t	shmaddr;
-	} *uap = (struct a *)ap;
-	struct proc *p = u.u_procp;
+	} *uap;
+	int *retval;
+{
 	register struct mapmem *mp;
 
 	for (mp = u.u_mmap; mp; mp = mp->mm_next)
 		if (mp->mm_ops == &shmops && mp->mm_uva == uap->shmaddr)
 			break;
-	if (mp == MMNIL) {
-		u.u_error = EINVAL;
-		return;
-	}
+	if (mp == MMNIL)
+		return (EINVAL);
 	shmsegs[mp->mm_id % SHMMMNI].shm_lpid = p->p_pid;
-	u.u_error = shmufree(p, mp);
+	return (shmufree(p, mp));
 }
 
 shmmapin(mp, off)
@@ -360,7 +348,7 @@ shmexit(mp)
 {
 	struct proc *p = u.u_procp;		/* XXX */
 
-	u.u_error = shmufree(p, mp);
+	return (shmufree(p, mp));
 }
 
 shmvalid(id)
@@ -369,13 +357,12 @@ shmvalid(id)
 	register struct shmid_ds *shp;
 
 	if (id < 0 || (id % SHMMMNI) >= shminfo.shmmni)
-		return(0);
+		return(EINVAL);
 	shp = &shmsegs[id % SHMMMNI];
 	if (shp->shm_perm.seq == (id / SHMMMNI) &&
 	    (shp->shm_perm.mode & (SHM_ALLOC|SHM_DEST)) == SHM_ALLOC)
-		return(1);
-	u.u_error = EINVAL;
-	return(0);
+		return(0);
+	return(EINVAL);
 }
 
 /*
@@ -427,12 +414,14 @@ shmfree(shp)
  * XXX This routine would be common to all sysV style IPC
  *     (if the others were implemented).
  */
-ipcaccess(ipc, mode)
+ipcaccess(ipc, mode, cred)
 	register struct ipc_perm *ipc;
+	int mode;
+	register struct ucred *cred;
 {
 	register int m;
 
-	if (u.u_uid == 0)
+	if (cred->cr_uid == 0)
 		return(0);
 	/*
 	 * Access check is based on only one of owner, group, public.
@@ -441,16 +430,15 @@ ipcaccess(ipc, mode)
 	 */
 	mode &= 0700;
 	m = ipc->mode;
-	if (u.u_uid != ipc->uid && u.u_uid != ipc->cuid) {
+	if (cred->cr_uid != ipc->uid && cred->cr_uid != ipc->cuid) {
 		m <<= 3;
-		if (!groupmember(ipc->gid, u.u_cred) &&
-		    !groupmember(ipc->cgid, u.u_cred))
+		if (!groupmember(ipc->gid, cred) &&
+		    !groupmember(ipc->cgid, cred))
 			m <<= 3;
 	}
 	if ((mode&m) == mode)
-		return (1);
-	u.u_error = EACCES;
-	return (0);
+		return (0);
+	return (EACCES);
 }
 
 #endif /* SYSVSHM */
