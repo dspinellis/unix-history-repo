@@ -1,0 +1,18 @@
+This is the Xerox Webster Research Center Interpress tools distribution for
+4.3bsd Unix.  See manual pages for specifics.
+
+Distribution is currently done by:
+	Xerox Corporation
+	2100 Geng Road
+	Palo Alto, CA  94303
+
+	Attn: Dennis Frahmann
+
+Bugs and fixes should be sent to:
+	Imaging System Research Area
+	Webster Research Center
+	Mailstop 128-29E
+	800 Phillips Road
+	Rochester, NY  14580
+
+The installation and user's manual is in the doc subdirectory.
