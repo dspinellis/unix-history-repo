@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -87,7 +87,8 @@ ftsopen(argv, options, compar)
 			p->fts_link = root;
 			root = p;
 			p->fts_accpath = p->fts_name;
-			p->fts_info = fts_stat(p, 0);
+			if (!(options & FTS_NOSTAT))
+				p->fts_info = fts_stat(p, 0);
 		} else {
 			p->fts_link = NULL;
 			if (!root)
