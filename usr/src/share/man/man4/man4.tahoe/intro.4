@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.4	6.1 (Berkeley) %G%
+.\"	@(#)intro.4	6.2 (Berkeley) %G%
 .\"
 .TH INTRO 4 ""
 .UC 7
@@ -33,10 +33,10 @@ A hardware device is identified to the system at configuration time
 and the appropriate device or network interface driver is then compiled
 into the system.  When the resultant system is booted, the
 autoconfiguration facilities in the system probe for the device
-on the VERSABUS and, if found, enable the software
-support for it.  If a VERSABUS device does not respond at autoconfiguration
+on the VERSAbus and, if found, enable the software
+support for it.  If a VERSAbus device does not respond at autoconfiguration
 time it is not accessible at any time afterwards.  To
-enable a VERSABUS device which did not autoconfigure, the system will have to
+enable a VERSAbus device which did not autoconfigure, the system will have to
 be rebooted.
 .PP
 The autoconfiguration system is described in
@@ -54,7 +54,11 @@ ONLY with the hardware indicated on the appropriate manual page.\fP)
 .sp
 .ta 1.0i
 .nf
-cons	CPU-2 console interface
-cy	CYPHER tape drive interface
-vd	VD mass storage disk controller
-vioc	VIOC-X terminal multiplexor
+ace	ACC 10 Mb/s Ethernet controller
+cons	Tahoe console interface
+cy	Cypher tape drive interface
+dr	Ikon DR-11W controller
+enp	3Com 10 Mb/s Ethernet controller
+ik	Evans and Sutherland PS300 interface through an Ikon DR-11W controller
+vd	CCI vd mass storage disk controller
+vx	CCI vioc terminal multiplexor

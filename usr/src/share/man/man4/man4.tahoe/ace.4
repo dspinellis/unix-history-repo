@@ -2,14 +2,14 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ace.4	6.1 (Berkeley) %G%
+.\"	@(#)ace.4	6.2 (Berkeley) %G%
 .\"
 .TH ACE 4 "May 16, 1986"
 .UC 5
 .SH NAME
 ace \- ACC 10 Mb/s Ethernet interface
 .SH SYNOPSIS
-.B "device ace0 at vba? csr 0xff0000 flags 0xfff80000 vector acecint acerint"
+.B "device ace0 at vba? csr 0xffff0000 flags 0xfff80000 vector acecint acerint"
 .SH DESCRIPTION
 The
 .I ace

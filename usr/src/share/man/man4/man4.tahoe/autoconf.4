@@ -2,12 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)autoconf.4	6.1 (Berkeley) %G%
+.\"	@(#)autoconf.4	6.2 (Berkeley) %G%
 .\"
 .TH AUTOCONF 4 ""
 .UC 7
 .SH NAME
-autoconf \- diagnostics from autoconfiguartion code
+autoconf \- diagnostics from autoconfiguration code
 .SH DESCRIPTION
 When UNIX bootstraps it probes the innards of the machine it is running
 on and locates controllers, drives, and other devices, printing out
@@ -16,7 +16,7 @@ configuration table which is processed by
 .IR config (8)
 and compiled into each kernel.
 .PP
-VERSABUS devices are located by probing to see if their control-status
+VERSAbus devices are located by probing to see if their control-status
 registers respond.  If not, they are silently ignored.  If the control
 status register responds but the device cannot be made to interrupt,
 a diagnostic warning will be printed on the console and the device
@@ -31,17 +31,39 @@ time, and any available device may be used.
 .SH SEE ALSO
 config(8)
 .SH DIAGNOSTICS
+\fBvba%d at %x\fR.  A VERSAbus adapter was found and mapped into the
+address space of the operating system starting at virtual address %x.
+UNIX will call it vba%d.
 .PP
-\fB%s%d at vba address %o vec %o\fR.  The device %s%d, e.g. fsd0
-was found on the bus at control-status register address %o and with
-device vector %o.
+\fB%s%d at vba%d drive %d\fR.  A tape formatter or a disk was found
+on the VERSAbus; for disks %s%d will look like ``dk0'', for tape formatters
+like ``yc1''.  The drive number comes from the unit plug on the drive
+or in the tape formatter (\fBnot\fR on the tape drive; see below).
 .PP
-\fB%s%d at vba address %o didn't interrupt\fR.  The device did not interrupt,
+\fB%s%d at %s%d slave %d\fR. 
+Which would look like ``yc0 at cy0 slave 0'',
+where \fByc0\fR is the name for the tape device and \fBcy0\fR is the name
+for the formatter.  A tape slave was found on the tape formatter at the
+indicated drive number (on the front of the tape drive).
+UNIX will call the device, e.g., \fBcy0\fR.
+.PP
+\fB%s%d at vba%d csr %x vec %x ipl %x\fR.  The device %s%d, e.g. vd0
+was found on vba%d at control-status register address %x and with
+device vector %x.  The device interrupted at priority level %x.
+.PP
+\fB%s%d at vba%d csr %x no interrupts\fR.  The device was found
+on vba%d at control-status register address %x; no
+interrupts were configured for the device.
+.PP
+\fB%s%d at vba%d csr %x didn't interrupt\fR.  The device did not interrupt,
 likely because it is broken, hung, or not the kind of device it is advertised
-to be.
+to be.  The csr address is interpreted as described above.
 .PP
 \fB%s%d at %s%d slave %d\fR.
-Which would look like ``smd0 at vd0 slave 0'',
-where \fBsmd0\fR is the name of a disk drive and \fBvd0\fR is the name
-of the controller.
+Which would look like ``dk0 at vd0 slave 0'',
+where \fBdk0\fR is the name of a disk drive and \fBvd0\fR is the name
+of the controller. 
 .SH BUGS
+Very few devices actually figure out their interrupt vector
+by forcing the device to interrupt.  Only the upper megabyte of the
+VERSAbus address space is mapped into the system's virtual address space.
