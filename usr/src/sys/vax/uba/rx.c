@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rx.c	7.1 (Berkeley) %G%
+ *	@(#)rx.c	7.2 (Berkeley) %G%
  */
 
 #include "rx.h"
@@ -143,12 +143,11 @@ rxprobe (reg)
 	return (sizeof (*rxaddr));
 }
 
+/*ARGSUSED*/
 rxslave(ui, reg)
 	struct uba_device *ui;
 	caddr_t reg;
 {
-
-	ui->ui_dk = 1;
 	return (ui->ui_slave == 0 || ui->ui_slave == 1);
 }
 
@@ -731,8 +730,11 @@ rxreset(uban)
 		if ((um = rxminfo[ctlr]) == 0 || um->um_ubanum != uban ||
 		    um->um_alive == 0)
 			continue;
-		if (um->um_ubinfo)
+		printf(" fx%d", ctlr);
+		if (um->um_ubinfo) {
+			printf("<%d>", UBAI_BDP(um->um_ubinfo));
 			um->um_ubinfo = 0;
+		}
 		rx_ctlr[ctlr].rxc_state = RXS_IDLE;
 		rxaddr = (struct rxdevice *)um->um_addr;
 		rxaddr->rxcs = RX_INIT;
@@ -836,7 +838,7 @@ rxformat(dev)
 	int unit = RXUNIT(dev);
 	struct buf *bp;
 	struct rx_softc *sc = &rx_softc[unit];
-	int s, error = 0;
+	int error = 0;
 
 	bp = &rrxbuf[unit];
 	bp->b_flags = B_BUSY | B_CTRL;
