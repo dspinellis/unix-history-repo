@@ -1,0 +1,7 @@
+cc -O -DDEBUG -c bind.c
+rm -f libcr.a
+ar r libcr.a client.o bind.o server.o misc.o
+ar: creating libcr.a
+ranlib libcr.a
+install -m 644 libcr.a /usr/lib
+/usr/lib/libcr.a: Not owner
