@@ -1,4 +1,4 @@
-/*	kern_synch.c	3.8	%H%	*/
+/*	kern_synch.c	3.9	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -30,28 +30,30 @@ struct proc *slpque[SQSIZE];
 sleep(chan, pri)
 caddr_t chan;
 {
-	register struct proc *rp;
+	register struct proc *rp, **hp;
 	register s, h;
 
 	rp = u.u_procp;
 	s = spl6();
 	if (chan==0 || rp->p_stat != SRUN || rp->p_rlink)
 		panic("sleep");
-	rp->p_stat = SSLEEP;
 	rp->p_wchan = chan;
 	rp->p_slptime = 0;
 	rp->p_pri = pri;
-	h = HASH(chan);
-	rp->p_link = slpque[h];
-	slpque[h] = rp;
+	hp = &slpque[HASH(chan)];
+	rp->p_link = *hp;
+	*hp = rp;
 	if(pri > PZERO) {
 		if(ISSIG(rp)) {
-			rp->p_wchan = 0;
+			if (rp->p_wchan)
+				unsleep(rp);
 			rp->p_stat = SRUN;
-			slpque[h] = rp->p_link;
 			(void) spl0();
 			goto psig;
 		}
+		if (rp->p_wchan == 0)
+			goto out;
+		rp->p_stat = SSLEEP;
 		(void) spl0();
 		if(runin != 0) {
 			runin = 0;
@@ -64,6 +66,7 @@ caddr_t chan;
 		(void) spl0();
 		swtch();
 	}
+out:
 	splx(s);
 	return;
 
@@ -151,24 +154,18 @@ register struct proc *p;
 wakeup(chan)
 register caddr_t chan;
 {
-	register struct proc *p, *q;
-	register i;
+	register struct proc *p, **q, **h;
 	int s;
 
 	s = spl6();
-	i = HASH(chan);
+	h = &slpque[HASH(chan)];
 restart:
-	p = slpque[i];
-	q = NULL;
-	while(p != NULL) {
+	for (q = h; p = *q; ) {
 		if (p->p_rlink || p->p_stat != SSLEEP && p->p_stat != SSTOP)
 			panic("wakeup");
 		if (p->p_wchan==chan && p->p_stat!=SZOMB) {
-			if (q == NULL)
-				slpque[i] = p->p_link;
-			else
-				q->p_link = p->p_link;
 			p->p_wchan = 0;
+			*q = p->p_link;
 			p->p_slptime = 0;
 			if (p->p_stat == SSLEEP) {
 				/* OPTIMIZED INLINE EXPANSION OF setrun(p) */
@@ -188,11 +185,10 @@ restart:
 					wakeup((caddr_t)&runout);
 				}
 				/* END INLINE EXPANSION */
+				goto restart;
 			}
-			goto restart;
-		}
-		q = p;
-		p = p->p_link;
+		} else
+			q = &p->p_link;
 	}
 	splx(s);
 }
