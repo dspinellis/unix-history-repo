@@ -9,7 +9,7 @@
  * Startup -- interface with user.
  */
 
-static char *SccsId = "@(#)main.c	2.1 %G%";
+static char *SccsId = "@(#)main.c	2.2 %G%";
 
 /*
  * Find out who the user is, copy his mail file (if exists) into
@@ -87,6 +87,19 @@ main(argc, argv)
 			}
 			mustsend++;
 			rflag = argv[i+1];
+			i++;
+			break;
+
+		case 'T':
+			/*
+			 * Next argument is temp file to write which
+			 * articles have been read/deleted for netnews.
+			 */
+			if (i >= argc - 1) {
+				fprintf(stderr, "Name required after -T\n");
+				exit(1);
+			}
+			Tflag = argv[i+1];
 			i++;
 			break;
 
