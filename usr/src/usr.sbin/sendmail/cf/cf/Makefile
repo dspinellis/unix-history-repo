@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.8 (Berkeley) %G%
+#	@(#)Makefile	8.9 (Berkeley) %G%
 
 M4=	m4
 #M4=	/usr/src/usr.bin/m4/obj/m4
@@ -43,13 +43,13 @@ M4FILES=\
 	../feature/always_add_domain.m4 \
 	../feature/bitdomain.m4 \
 	../feature/domaintable.m4 \
+	../feature/local_procmail.m4 \
 	../feature/mailertable.m4 \
 	../feature/nocanonify.m4 \
 	../feature/nodns.m4 \
 	../feature/notsticky.m4 \
 	../feature/nouucp.m4 \
 	../feature/nullclient.m4 \
-	../feature/procmail.m4 \
 	../feature/redirect.m4 \
 	../feature/stickyhost.m4 \
 	../feature/use_cw_file.m4 \
@@ -61,6 +61,7 @@ M4FILES=\
 	../m4/version.m4 \
 	../mailer/fax.m4 \
 	../mailer/local.m4 \
+	../mailer/procmail.m4 \
 	../mailer/smtp.m4 \
 	../mailer/usenet.m4 \
 	../mailer/uucp.m4 \

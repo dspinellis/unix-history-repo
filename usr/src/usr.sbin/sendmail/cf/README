@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.39 (Berkeley) %G%
+		@(#)README	8.40 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -195,6 +195,10 @@ POP_MAILER_PATH		[/usr/lib/mh/spop] The pathname of the POP mailer.
 POP_MAILER_FLAGS	[Penu] Flags added to POP mailer.  Flags "lsDFM"
 			are always added.
 POP_MAILER_ARGS		[pop $u] The arguments passed to the POP mailer.
+PROCMAIL_MAILER_FLAGS	[Shu] Flags added to Procmail mailer.  Flags
+			``DFMmn'' are always set.
+PROCMAIL_MAILER_ARGS	[procmail -m $h $f $u] The arguments passed to
+			the Procmail mailer.
 
 +---------+
 | DOMAINS |
@@ -292,9 +296,28 @@ fax		Facsimile transmission.  This is experimental and based
 
 pop		Post Office Protocol.
 
+procmail	An interface to procmail (does not come with sendmail).
+		This is designed to be used in mailertables.  For example,
+		a common question is "how do I forward all mail for a given
+		domain to a single person?".  If you have this mailer
+		defined, you could set up a mailertable reading:
+
+			host.com	procmail:/etc/procmailrcs/host.com
+
+		with the file /etc/procmailrcs/host.com reading:
+
+			:0	# forward mail for host.com
+			! -oi -f $1 person@other.host
+
+		This would arrange for (anything)@host.com to be sent
+		to person@other.host.  Within the procmail script, $1 is
+		the name of the sender and $2 is the name of the recipient.
+		If you use this with FEATURE(local_procmail), the FEATURE
+		should be listed first.
+
 The local mailer accepts addresses of the form "user+detail", where
 the "+detail" is not used for mailbox matching but is available
-to certain local mail programs (in particular, see FEATURE(procmail)).
+to certain local mail programs (in particular, see FEATURE(local_procmail)).
 For example, "eric", "eric+sendmail", and "eric+sww" all indicate
 the same user, but additional arguments <null>, "sendmail", and "sww"
 may be provided for use in sorting mail.
@@ -426,7 +449,7 @@ nullclient	This is a special case -- it creates a stripped down
 		defaults to the name of the hub machine).  No mailers
 		should be defined.  No aliasing or forwarding is done.
 
-procmail	Use procmail as the local mailer.  This mailer can
+local_procmail	Use procmail as the local mailer.  This mailer can
 		make use of the "user+indicator@local.host" syntax;
 		normally the +indicator is just tossed, but by default
 		it is passed as the -a argument to procmail.  The
