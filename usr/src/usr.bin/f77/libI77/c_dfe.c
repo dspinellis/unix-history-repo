@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)c_dfe.c	5.1	%G%
+ *	@(#)c_dfe.c	5.2	%G%
  */
 
 /*
@@ -15,7 +15,8 @@
 c_dfe(a,flag,str) cilist *a; char *str;
 {	int n;
 	sequential = NO;
-	external = formatted = FORMATTED;
+	external = YES;
+	formatted = FORMATTED;
 	lfname = NULL;
 	elist = NO;
 	cursor=scale=recpos=reclen=0;

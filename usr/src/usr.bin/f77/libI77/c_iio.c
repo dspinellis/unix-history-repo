@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)c_iio.c	5.1	%G%
+ *	@(#)c_iio.c	5.2	%G%
  */
 
 /*
@@ -150,7 +150,8 @@ z_tab()
 c_li(a) icilist *a;
 {
 	fmtbuf="int list io";
-	sequential = formatted = LISTDIRECTED;
+	sequential = YES;
+	formatted = LISTDIRECTED;
 	external = NO;
 	elist = YES;
 	svic = a;
