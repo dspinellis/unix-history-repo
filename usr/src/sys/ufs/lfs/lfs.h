@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	7.22 (Berkeley) %G%
+ *	@(#)lfs.h	7.23 (Berkeley) %G%
  */
 
 #define	LFS_LABELPAD	8192		/* LFS label size */
@@ -61,8 +61,8 @@ struct lfs {
 
 	u_long	lfs_size;		/* number of blocks in fs */
 	u_long	lfs_ssize;		/* number of blocks per segment */
-	u_long	lfs_dsize;		/* number of data blocks in fs */
-	u_long	lfs_bsize;		/* size of basic blocks in fs */
+	u_long	lfs_dsize;		/* number of disk blocks in fs */
+	u_long	lfs_bsize;		/* file system block size */
 	u_long	lfs_fsize;		/* size of frag blocks in fs */
 	u_long	lfs_frag;		/* number of frags in a block in fs */
 
@@ -308,3 +308,14 @@ struct segment {
 #define	SEGM_CLEAN	0x02		/* cleaner call; don't sort */
 	u_long	seg_flags;		/* run-time flags for this segment */
 };
+
+#define ISSPACE(F, BB, C) \
+	(((C)->cr_uid == 0 && (F)->lfs_bfree >= (BB)) || \
+	((C)->cr_uid != 0 && IS_FREESPACE(F, BB)))
+
+#define IS_FREESPACE(F, BB) \
+	((F)->lfs_bfree > ((F)->lfs_dsize * (F)->lfs_minfree / 100 + (BB)))
+
+#define ISSPACE_XXX(F, BB) \
+	((F)->lfs_bfree >= (BB))
+
