@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include "restore.h"
@@ -884,6 +884,7 @@ accthdr(header)
 
 	if (header->c_type == TS_TAPE) {
 		fprintf(stderr, "Volume header\n");
+		previno = 0x7fffffff;
 		return;
 	}
 	if (previno == 0x7fffffff)
@@ -930,6 +931,8 @@ findinode(header, complain)
 	int complain;
 {
 	static long skipcnt = 0;
+	long i;
+	char buf[TP_BSIZE];
 
 	curfile.name = "<name unknown>";
 	curfile.action = UNKNOWN;
@@ -937,10 +940,20 @@ findinode(header, complain)
 	curfile.ino = 0;
 	if (ishead(header) == FAIL) {
 		skipcnt++;
-		while (gethead(header) == FAIL)
+		while (gethead(header) == FAIL || header->c_ddate != dumptime)
 			skipcnt++;
 	}
 	for (;;) {
+		if (checktype(header, TS_ADDR) == GOOD) {
+			/*
+			 * Skip up to the beginning of the next record
+			 */
+			for (i = 0; i < header->c_count; i++)
+				if (header->c_addr[i])
+					readtape(buf);
+			(void) gethead(header);
+			continue;
+		}
 		if (checktype(header, TS_INODE) == GOOD) {
 			curfile.dip = &header->c_dinode;
 			curfile.ino = header->c_inumber;
