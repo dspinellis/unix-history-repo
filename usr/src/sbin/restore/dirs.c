@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirs.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -523,13 +523,15 @@ setdirmodes()
 		   	    reply("set owner/mode for '.'") == FAIL)
 				continue;
 		}
-		if (ep == NIL)
+		if (ep == NIL) {
 			panic("cannot find directory inode %d\n", node.ino);
-		cp = myname(ep);
-		(void) chown(cp, node.uid, node.gid);
-		(void) chmod(cp, node.mode);
-		utimes(cp, node.timep);
-		ep->e_flags &= ~NEW;
+		} else {
+			cp = myname(ep);
+			(void) chown(cp, node.uid, node.gid);
+			(void) chmod(cp, node.mode);
+			utimes(cp, node.timep);
+			ep->e_flags &= ~NEW;
+		}
 	}
 	if (ferror(mf))
 		panic("error setting directory modes\n");
