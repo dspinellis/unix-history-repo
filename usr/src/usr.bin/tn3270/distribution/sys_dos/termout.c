@@ -319,8 +319,8 @@ InitTerminal()
 {
     InitMapping();		/* Go do mapping file (MAP3270) first */
     if (!screenInitd) { 	/* not initialized */
-	NumberLines = 24;	/* XXX */
-	NumberColumns = 80;	/* XXX */
+	MaxNumberLines = 24;	/* XXX */
+	MaxNumberColumns = 80;	/* XXX */
 	scrini();
 	scrsave(saveScreen);	/* Save the screen buffer away */
 	ClearArray(Screen);
