@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.44 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -571,7 +571,9 @@ rlsesigs()
 # include	<compat.h>
 #endif
 
-init_md()
+init_md(argc, argv)
+	int argc;
+	char **argv;
 {
 #ifdef _AUX_SOURCE
 	setcompat(getcompat() | COMPAT_BSDPROT);
