@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)glue3.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)glue3.c	4.2 (Berkeley) %G%";
 #endif
 
 #include "refer..c"
@@ -56,12 +56,13 @@ char *in, *out, *arg;
 	argv[2] = in;
 	argv[3] = "-t";
 	argv[4] = out;
-	argv[5] = outlen;
+	argv[5] = (char *)outlen;	/* Horrid kludge, see option parsing
+					   in huntmain() in glue1.c. */
 	argv[6] = "-T";
 	argv[7] = "-F1";
 	argv[8] = "-o";
 	argv[9] = one;
-	argv[10] = onelen;
+	argv[10] = (char *)onelen;		/* Horrid kludge again */
 	argv[11] = abuff; 
 	strcpy (abuff,arg);
 	if (strlen(abuff) > ALEN)

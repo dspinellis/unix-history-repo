@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)inv5.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)inv5.c	4.3 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -12,7 +12,6 @@ FILE *ft, *fb, *fa;
 	long getl();
 	int getw();
 	int *hpt_s;
-	int (*getfun)();
 	long *hpt_l;
 	long k, lp;
 	if (fa==NULL)
@@ -35,19 +34,19 @@ FILE *ft, *fb, *fa;
 	if (n!= nhash)
 		fprintf(stderr, "Changing hash value to old %d\n",n);
 	fclose(fa);
-	if (iflong)
-		getfun = getl;
-	else
-		getfun = getw;
 	for(i=0; i<n; i++)
 	{
-		if (iflong)
+		if (iflong) {
 			lp = hpt_l[i];
-		else
+			fseek(fb, lp, 0);
+			while ( (k= getl(fb) ) != -1)
+				fprintf(ft, "%04d %06ld\n",i,k);
+		} else {
 			lp = hpt_s[i];
-		fseek(fb, lp, 0);
-		while ( (k= (*getfun)(fb) ) != -1)
-			fprintf(ft, "%04d %06ld\n",i,k);
+			fseek(fb, lp, 0);
+			while ( (k= getw(fb) ) != -1)
+				fprintf(ft, "%04d %06ld\n",i,k);
+		}
 	}
 	fclose(fb);
 	return(n);
