@@ -1,0 +1,4 @@
+: run this script through /bin/sh
+make distribution
+(cd conf; make; mhconfig examples/nrtc-gremlin)
+make
