@@ -1,0 +1,88 @@
+.TH BIT 3F "19 January 1983"
+.SH NAME
+bis, bic, setbit, bit \- bit set, clear, test routines
+.PP
+and, or, xor, not \- bitwise functions
+.PP
+rshift, lshift \- bit shifting functions
+.SH SYNOPSIS
+.B subroutine bis (bitnum, word)
+.br
+.B integer bitnum, word
+.sp 1
+.B subroutine bic (bitnum, word)
+.br
+.B integer bitnum, word
+.sp 1
+.B subroutine setbit (bitnum, word, state)
+.br
+.B integer bitnum, state
+.br
+.B logical state
+.sp 1
+.B logical function bit (bitnum, word)
+.br
+.B integer bitnum, word
+.sp 1
+.B (intrinsic) function and (word1, word2)
+.sp 1
+.B (intrinsic) function or (word1, word2)
+.sp 1
+.B (intrinsic) function xor (word1, word2)
+.sp 1
+.B (intrinsic) function not (word)
+.sp 1
+.B (intrinsic) function rshift (word, nbits)
+.sp 1
+.B (intrinsic) function lshift (word, nbits)
+.SH DESCRIPTION
+The bit set and clear functions make practical the use of
+single bit logical entities.
+.I Bis
+and
+.I bic
+respectively sets or clears bit
+.I bitnum
+in
+.I word.
+.I Setbit
+sets
+.I bitnum
+in
+.I word
+to '1' if
+.I state
+is
+.B .true.
+.I Bit
+tests
+.I bitnum
+and returns logical
+.B .true.
+if it is set.
+Bits zero is the lowest order bit.
+.PP
+The other bitwise functions are built into the compiler and return
+the data type of their argument(s).
+It is recommended that their arguments be
+.B integer
+values;
+inappropriate manipulation of
+.B real
+objects may cause unexpected results.
+.I Lshift
+or
+.I rshift
+with a negative
+.I nbits
+is a logical left shift with no end around carry.
+.I Rshift
+or
+.I lshift
+with a negative
+.I nbits
+is an arithmatic right shift with sign extension.
+No test is made for a reasonable value of
+.I nbits.
+.SH FILES
+/usr/ucb/lib/libF77.a
