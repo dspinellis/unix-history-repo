@@ -6,7 +6,7 @@
 # include <ctype.h>
 # include "sendmail.h"
 
-SCCSID(@(#)util.c	3.20		%G%);
+SCCSID(@(#)util.c	3.21		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -546,4 +546,33 @@ putline(l, fp, fullsmtp)
 	fputs(l, fp);
 	fputs("\r\n", fp);
 	*p = '\n';
+}
+/*
+**  XUNLINK -- unlink a file, doing logging as appropriate.
+**
+**	Parameters:
+**		f -- name of file to unlink.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		f is unlinked.
+*/
+
+xunlink(f)
+	char *f;
+{
+	register int i;
+
+# ifdef LOG
+	if (LogLevel > 20)
+		syslog(LOG_DEBUG, "%s: unlink %s\n", MsgId, f);
+# endif LOG
+
+	i = unlink(f);
+# ifdef LOG
+	if (i < 0 && LogLevel > 21)
+		syslog(LOG_DEBUG, "%s: unlink-fail %e");
+# endif LOG
 }

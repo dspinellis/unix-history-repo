@@ -4,9 +4,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-SCCSID(@(#)alias.c	3.35		%G%	(with DBM));
+SCCSID(@(#)alias.c	3.36		%G%	(with DBM));
 # else DBM
-SCCSID(@(#)alias.c	3.35		%G%	(without DBM));
+SCCSID(@(#)alias.c	3.36		%G%	(without DBM));
 # endif DBM
 
 /*
@@ -68,7 +68,7 @@ alias(a, sendq)
 	if (NoAlias)
 		return;
 # ifdef DEBUG
-	if (Debug)
+	if (tTd(27, 1))
 		printf("alias(%s)\n", a->q_paddr);
 # endif
 
@@ -92,7 +92,7 @@ alias(a, sendq)
 	*/
 
 # ifdef DEBUG
-	if (Debug)
+	if (tTd(27, 1))
 		printf("%s (%s, %s) aliased to %s\n",
 		    a->q_paddr, a->q_host, a->q_user, p);
 # endif
@@ -277,7 +277,7 @@ readaliases(aliasfile, init)
 	if ((af = fopen(aliasfile, "r")) == NULL)
 	{
 # ifdef DEBUG
-		if (Debug)
+		if (tTd(27, 1))
 			printf("Can't open %s\n", aliasfile);
 # endif
 		errno = 0;
@@ -459,7 +459,7 @@ forward(user, sendq)
 	extern bool safefile();
 
 # ifdef DEBUG
-	if (Debug)
+	if (tTd(27, 1))
 		printf("forward(%s)\n", user->q_paddr);
 # endif DEBUG
 

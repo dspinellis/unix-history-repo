@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)macro.c	3.13		%G%);
+SCCSID(@(#)macro.c	3.14		%G%);
 
 char	*Macro[128];
 
@@ -33,7 +33,7 @@ expand(s, buf, buflim)
 	bool gotone = FALSE;	/* set if any expansion done */
 
 # ifdef DEBUG
-	if (Debug > 3)
+	if (tTd(35, 4))
 	{
 		printf("expand(");
 		xputs(s);
@@ -98,7 +98,7 @@ expand(s, buf, buflim)
 	*xp = '\0';
 
 # ifdef DEBUG
-	if (Debug > 3)
+	if (tTd(35, 4))
 	{
 		printf("expand ==> '");
 		xputs(xbuf);
@@ -178,7 +178,7 @@ define(n, v)
 	char *v;
 {
 # ifdef DEBUG
-	if (Debug > 3)
+	if (tTd(35, 3))
 	{
 		printf("define(%c as ", n);
 		xputs(v);

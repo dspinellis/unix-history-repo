@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)clock.c	3.1		%G%);
+SCCSID(@(#)clock.c	3.2		%G%);
 
 /*
 **  TICK -- take a clock tick
@@ -20,7 +20,7 @@ SCCSID(@(#)clock.c	3.1		%G%);
 tick()
 {
 # ifdef DEBUG
-	if (Debug > 0)
+	if (tTd(5, 1))
 		printf("tick\n");
 # endif DEBUG
 	longjmp(TickFrame, 1);
