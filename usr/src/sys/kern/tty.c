@@ -1,4 +1,4 @@
-/*	tty.c	4.8	81/07/05	*/
+/*	tty.c	4.9	81/07/06	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -380,6 +380,7 @@ caddr_t addr;
 		}
 		flushtty(tp, flags);
 		break;
+	}
 
 	/*
 	 * Set and fetch special characters
