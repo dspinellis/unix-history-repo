@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)show.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)show.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -213,6 +213,11 @@ indent(amount, pfx, fp)
 
 FILE *tracefile;
 
+#if DEBUG == 2
+int debug = 1;
+#else
+int debug = 0;
+#endif
 
 
 trputc(c) {
@@ -319,13 +324,19 @@ opentrace() {
 	int flags;
 
 #ifdef DEBUG
-	if ((p = getenv("HOME")) == NULL)
-		p = "/tmp";
+	if (!debug)
+		return;
+	if ((p = getenv("HOME")) == NULL) {
+		if (getuid() == 0)
+			p = "/";
+		else
+			p = "/tmp";
+	}
 	scopy(p, s);
 	strcat(s, "/trace");
 	if ((tracefile = fopen(s, "a")) == NULL) {
 		fprintf(stderr, "Can't open %s\n", s);
-		exit(2);
+		return;
 	}
 #ifdef O_APPEND
 	if ((flags = fcntl(fileno(tracefile), F_GETFL, 0)) >= 0)
