@@ -1,17 +1,18 @@
 #ifndef lint
-static char *sccsid = "@(#)quot.c	4.15 (Berkeley) 89/03/05";
+static char *sccsid = "@(#)quot.c	4.16 (Berkeley) 89/05/15";
 #endif
 
 /*
  * quot
  */
 
-#include <stdio.h>
-#include <ctype.h>
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
 #include <sys/file.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <paths.h>
 
 #define	ISIZ	(MAXBSIZE/sizeof(struct dinode))
 union {
@@ -110,7 +111,7 @@ quotall()
 		cp = rindex(fs->fs_spec, '/');
 		if (cp == 0)
 			continue;
-		(void)sprintf(dev, "/dev/r%s", cp + 1);
+		(void)sprintf(dev, "%s/r%s", _PATH_DEV, cp + 1);
 		if (check(dev, fs->fs_file) == 0)
 			report();
 	}
