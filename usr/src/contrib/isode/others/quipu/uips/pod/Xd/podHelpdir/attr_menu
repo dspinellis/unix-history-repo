@@ -1,0 +1,21 @@
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ Pod - Attribute Menu
+
+ The attribute  menu gives access  to two "per
+ attribute"   operations:   "undo  changes" and 
+ "add value field".
+
+ The "undo changes" operation undoes all changes
+ since the last succesful submission of modifications,
+ or else restores all original attribute values.
+
+ The "add value field" operation adds a new empty 
+ text edit field, enabling addition of an attribute
+ value.
+
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
