@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)finger.1	6.1 (Berkeley) %G%
+.\"	@(#)finger.1	6.2 (Berkeley) %G%
 .\"
 .TH FINGER 1 ""
 .UC 4
@@ -74,6 +74,8 @@ file is printed.
 .PP
 The encoding of the gcos field is UCB dependent \- it knows that an office
 `197MC' is `197M Cory Hall', and that `529BE' is `529B Evans Hall'.
+It also knows that a four digit office phone number should have a ``x2-''
+prepended.
 .PP
 A user information data base is in the works and will radically alter
 the way the information that
