@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)autoconf.c	5.5 (Berkeley) %G%
+ *	@(#)autoconf.c	5.6 (Berkeley) %G%
  */
 
 /*
@@ -36,7 +36,7 @@
  * the machine.
  */
 int	dkn;		/* number of iostat dk numbers assigned so far */
-int	cold;		/* cold start flag initialized in locore.s */
+extern int	cold;		/* cold start flag initialized in locore.s */
 
 /*
  * Determine i/o configuration for a machine.
@@ -90,7 +90,7 @@ swapconf()
 }
 
 #define	DOSWAP			/* change swdevt, argdev, and dumpdev too */
-u_long	bootdev;		/* should be dev_t, but not until 32 bits */
+u_long	bootdev = 0;		/* should be dev_t, but not until 32 bits */
 
 static	char devname[][2] = {
 	'w','d',	/* 0 = wd */
