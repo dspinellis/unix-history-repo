@@ -1,4 +1,4 @@
-/*	inet_addr.c	4.3	82/10/07	*/
+/*	inet_addr.c	4.4	82/10/07	*/
 
 #include <sys/types.h>
 #include <ctype.h>
@@ -11,7 +11,7 @@
  * which are expected to be an address.
  * The value returned is in network order.
  */
-struct in_addr
+u_long
 inet_addr(cp)
 	register char *cp;
 {
