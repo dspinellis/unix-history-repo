@@ -1,3 +1,19 @@
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * the University of Utah, and William Jolitz.
+ *
+ * %sccs.include.386.c%
+ *
+ *	@(#)trap.c	5.3 (Berkeley) %G%
+ */
+
+/*
+ * Copyright (c) 1989, 1990 William F. Jolitz
+ */
+
 /*
  * 386 Trap and System call handleing
  */
@@ -21,7 +37,7 @@
 
 #include "../i386/trap.h"
 
-#define	USER	040		/* user-mode flag added to type */
+#define	USER	0x100		/* user-mode flag added to type */
 
 struct	sysent sysent[];
 int	nsysent;
@@ -63,7 +79,11 @@ if(nofault && frame.tf_trapno != 0xc)
 	{ locr0[tEIP] = nofault; return;}
 
 	syst = u.u_ru.ru_stime;
-	if (ISPL(locr0[tCS]) == SEL_UPL) {
+	if (ISPL(locr0[tCS]) == SEL_UPL /*&& cpl == 0*/) {
+#ifdef DEBUG
+if(cpl) pg("user cpl %x trap %d", cpl, frame.tf_trapno);
+if(((unsigned)frame.tf_eip) >= 0xfe000000) pg("user eip %x", frame.tf_eip);
+#endif
 		type |= USER;
 		u.u_ar0 = locr0;
 	}
@@ -75,6 +95,7 @@ bit_sucker:
 		if (kdb_trap(&psl))
 			return;
 #endif
+splhigh();
 		printf("trap type %d, code = %x, pc = %x cs = %x, eflags = %x\n", type, code, pc, frame.tf_cs, frame.tf_eflags);
 		type &= ~USER;
 		panic("trap");
@@ -250,6 +271,7 @@ out:
 		setrq(p);
 		u.u_ru.ru_nivcsw++;
 		swtch();
+		(void)spl0();
 	}
 	if (u.u_prof.pr_scale) {
 		int ticks;
@@ -298,6 +320,9 @@ printf("edx %x ecx %x eax %x\n", frame.sf_edx, frame.sf_ecx, frame.sf_eax);
 printf("cr0 %x cr2 %x cpl %x \n", rcr0(), rcr2(), cpl);
 		panic("syscall");
 }
+#ifdef DEBUG
+if(cpl) pg("User cpl %x", cpl);
+#endif
 	u.u_ar0 = locr0;
 	params = (caddr_t)locr0[sESP] + NBPW ;
 	u.u_error = 0;
@@ -311,7 +336,7 @@ printf("cr0 %x cr2 %x cpl %x \n", rcr0(), rcr2(), cpl);
 		params += NBPW;
 		callp = (code >= nsysent) ? &sysent[63] : &sysent[code];
 	}
-/*dprintf(DALLSYSC,"%d. call %d\n", u.u_procp->p_pid, code);*/
+dprintf(DALLSYSC,"%d. call %d\n", u.u_procp->p_pid, code);
 	if ((i = callp->sy_narg * sizeof (int)) &&
 	    (u.u_error = copyin(params, (caddr_t)u.u_arg, (u_int)i)) != 0) {
 		locr0[sEAX] = u.u_error;
@@ -359,6 +384,7 @@ done:
 		setrq(p);
 		u.u_ru.ru_nivcsw++;
 		swtch();
+		(void)spl0();
 	}
 	if (u.u_prof.pr_scale) {
 		int ticks;
@@ -370,6 +396,14 @@ done:
 			addupc(opc, &u.u_prof, ticks);
 	}
 	curpri = p->p_pri;
+dprintf(DALLSYSC,"%d. rtn to %x %x\n",
+	u.u_procp->p_pid, frame.sf_eip, frame.sf_cs);
+#ifdef DEBUG
+if(cpl) {
+ printf("uSer cpl %x syscall %d\n", cpl, callp - sysent);
+ spl0();
+}
+#endif
 }
 
 /*
