@@ -1,21 +1,13 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
+ * Copyright (c) 1982, 1987, 1990 The Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * William Jolitz and the University of Utah.
+ * William Jolitz.
  *
  * %sccs.include.386.c%
  *
- *	@(#)machdep.c	5.2 (Berkeley) %G%
- */
-
-/*
- * Copyright (c) 1982,1987 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
- *
- *	@(#)machdep.c	1.16.1.1 (Berkeley) 11/24/87
+ *	@(#)machdep.c	5.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -45,6 +37,7 @@
 #include "../i386/segments.h"
 #include "../i386/pte.h"
 #include "../i386/psl.h"
+#include "../i386/isa/rtc.h"
 
 /*
  * Declare these as initialized data so we can patch them.
@@ -67,6 +60,23 @@ int kernmem;
  */
 extern char Sysbase;
 caddr_t sbase = { &Sysbase };
+/* extern struct pte	EMCmap[];
+extern char		EMCbase[]; */
+int boothowto = 0, Maxmem = 0;
+extern int bootdev;
+#ifdef SMALL
+extern int forcemaxmem;
+#endif
+int biosmem;
+
+extern cyloffset;
+
+caddr_t bypasshole(b,t) caddr_t b,t; {
+
+	if (b <= sbase + 0xa0000 && t > sbase + 0xa0000)
+		return(sbase + 0x100000);
+	return(b);
+}
 
 startup(firstaddr)
 	int firstaddr;
@@ -78,12 +88,40 @@ startup(firstaddr)
 	register caddr_t v;
 	int maxbufs, base, residual;
 	extern struct map *useriomap;
-int cmaxmem;
 
 	/*
 	 * Initialize the console before we print anything out.
 	 */
 	/*cninit();*/
+
+	/*
+	 * Bounds check memory size information against bios values
+	 * use the lesser of the two
+	 */
+	biosmem = rtcin(RTC_BASELO)+ (rtcin(RTC_BASEHI)<<8);
+printf("Maxmem %x howto %x bootdev %x cyloff %x firstaddr %x bios %d %d\n",
+		Maxmem, boothowto, bootdev, cyloffset, firstaddr,
+biosmem, 
+rtcin(RTC_EXTLO) + (rtcin(RTC_EXTHI)<<8)
+);
+	maxmem = Maxmem-1;
+
+#ifdef notdef
+	if(biosmem != 640)
+		panic("does not have 640K of base memory");
+
+	biosmem = 1024;
+	biosmem += rtcin(RTC_EXTLO) + (rtcin(RTC_EXTHI)<<8);
+	biosmem = biosmem/4 - 1 ;
+	if (biosmem < maxmem) maxmem=biosmem;
+
+#ifdef SMALL
+if(forcemaxmem && maxmem > forcemaxmem)
+	maxmem = forcemaxmem-1;
+#endif
+#endif
+/*
+maxmem = 0xA00;*/
 
 	/*
 	 * Initialize error message buffer (at end of core).
@@ -103,21 +141,20 @@ write a routine than allocs only phys pages in the 0xa0000-0x100000
 hole?
 
 */
-	kernmem = 640/4;
-	kernmem -= btoc(sizeof (struct msgbuf));
+	maxmem -= btoc(sizeof (struct msgbuf));
 	pte = msgbufmap;
 	for (i = 0; i < btoc(sizeof (struct msgbuf)); i++)
-		*(int *)pte++ = PG_V | PG_KW | ctob(kernmem + i);
-/*XXX*/	maxmem = freemem = physmem = 2048/4+kernmem;
-	cmaxmem = 2048/4;
+		*(int *)pte++ = PG_V | PG_KW | ctob(maxmem + i);
 
-/* unmap particular region being written into, so we can find offending ptr */
-/*{ extern char b_uregion[], e_uregion[];
-#define	ptidx(s)	((s - sbase)/NBPG)
-	pte = Sysmap + ptidx(b_uregion) + 1 ;
-	for (i = ptidx(b_uregion) + 1 ; i < ptidx (e_uregion) ; i++)
-		*(int *)pte++ = 0 ;
-}*/
+#ifdef notdef
+	/* XXX EMC */
+	pte = EMCmap;
+	*(int *)pte = PG_V | PG_UW | 0xc0000000;
+	printf("EMC at %x\n", EMCbase);
+#endif
+
+	freemem = physmem = maxmem;
+
 	load_cr3(_cr3());
 
 #ifdef KDB
@@ -142,8 +179,10 @@ hole?
 	v = (caddr_t)(sbase + (firstaddr * NBPG));
 	/*v = sbase + (firstaddr * NBPG);*/
 #define	valloc(name, type, num) \
+		v = bypasshole (v, v + (int) ((name)+(num))) ; \
 	    (name) = (type *)v; v = (caddr_t)((name)+(num))
 #define	valloclim(name, type, num, lim) \
+		v = bypasshole (v, v + (int) ((name)+(num))) ; \
 	    (name) = (type *)v; v = (caddr_t)((lim) = ((name)+(num)))
 	valloclim(inode, struct inode, ninode, inodeNINODE);
 	valloclim(file, struct file, nfile, fileNFILE);
@@ -189,7 +228,7 @@ hole?
 	 * Now the amount of virtual memory remaining for buffers
 	 * can be calculated, estimating needs for the cmap.
 	 */
-	ncmap = (maxmem*NBPG /* - ((int)(v - sbase))*/) /
+	ncmap = (maxmem*NBPG  - ((int)(v - sbase))) /
 		(CLBYTES + sizeof(struct cmap)) + 2;
 	maxbufs = ((SYSPTSIZE * NBPG) -
 		((int)(v - sbase + ncmap * sizeof(struct cmap)))) /
@@ -214,7 +253,7 @@ hole?
 	 * Add 2: 1 because the 0th entry is unused, 1 for rounding.
 	 */
 	/*ncmap = (maxmem*NBPG - ((int)((v - sbase) + bufpages*CLBYTES))) /*/
-	ncmap = (maxmem*NBPG - ((int)(/*(v - sbase)*/ + bufpages*CLBYTES))) /
+	ncmap = (maxmem*NBPG - ((int)((v - sbase) + bufpages*CLBYTES))) /
 		(CLBYTES + sizeof(struct cmap)) + 2;
 	valloclim(cmap, struct cmap, ncmap, ecmap);
 
@@ -222,7 +261,6 @@ hole?
 	 * Clear space allocated thus far, and make r/w entries
 	 * for the space in the kernel map.
 	 */
-	/*unixsize = btoc((int)(v - sbase));*/
 	unixsize = btoc((int)(v - sbase));
 	while (firstaddr < unixsize) {
 		*(int *)(&Sysmap[firstaddr]) = PG_V | PG_KW | ctob(firstaddr);
@@ -234,11 +272,13 @@ hole?
 	 * Now allocate buffers proper.  They are different than the above
 	 * in that they usually occupy more virtual memory than physical.
 	 */
+	v = bypasshole (v, (caddr_t) ((int)(v + PGOFSET) &~ PGOFSET +
+		MAXBSIZE*nbuf));
 	v = (caddr_t) ((int)(v + PGOFSET) &~ PGOFSET);
 	valloc(buffers, char, MAXBSIZE * nbuf);
 	base = bufpages / nbuf;
 	residual = bufpages % nbuf;
-	mapaddr = firstaddr;
+	mapaddr = firstaddr = btoc((unsigned) buffers - (unsigned)sbase);
 	for (i = 0; i < residual; i++) {
 		for (j = 0; j < (base + 1) * CLSIZE; j++) {
 			*(int *)(&Sysmap[mapaddr+j]) = PG_V | PG_KW | ctob(firstaddr);
@@ -259,8 +299,6 @@ hole?
 	unixsize = btoc((int)(v - sbase));
 	if (firstaddr >= physmem - 8*UPAGES)
 		panic("no memory");
-	if (firstaddr >= (640/4))
-		panic("allocated AT hole!");
 
 	/*
 	 * Initialize callouts
@@ -276,7 +314,17 @@ hole?
 	 * THE USER PAGE TABLE MAP IS CALLED ``kernelmap''
 	 * WHICH IS A VERY UNDESCRIPTIVE AND INCONSISTENT NAME.
 	 */
-firstaddr = 0x100; maxmem = 0x300;		/*XXX*/
+
+	/*
+	 *  cmap must not allocate the hole, so toss memory
+	 */
+	if(firstaddr < 640/4 && maxmem > 1024/4){
+		printf("[not using %dK due to hole]\n", 4*(640/4 - firstaddr));
+		firstaddr = 0x100;
+	}
+	if(maxmem < 2048/4-10)
+	  printf("WARNING: NOT ENOUGH RAM MEMORY - RUNNING IN DEGRADED MODE\n");
+
 	meminit(firstaddr, maxmem);
 	maxmem = freemem;
 	printf("avail mem = %d\n", ctob(maxmem));
@@ -288,8 +336,6 @@ firstaddr = 0x100; maxmem = 0x300;		/*XXX*/
  * PTEs for mapping user space into kernel for phyio operations.
  * One page is enough to handle 4Mb of simultaneous raw IO operations.
  */
-#undef USRIOSIZE
-#define USRIOSIZE 30
 	rminit(useriomap, (long)USRIOSIZE, (long)1, "usrio", nproc);
 	rminit(mbmap, (long)(nmbclusters * CLSIZE), (long)CLSIZE,
 	    "mbclusters", nmbclusters/4);
@@ -359,6 +405,9 @@ sendsig(p, sig, mask, frmtrp)
 	register struct sigframe *fp;
 	int oonstack;
 
+#include "dbg.h"
+dprintf(DSIGNAL,"sendsig %d code %d to pid %d frmtrp %d to locn %x\n",
+	sig, u.u_code, u.u_procp->p_pid, frmtrp, p);
 	regs = u.u_ar0;
 	oonstack = u.u_onstack;
 	/*
@@ -385,7 +434,7 @@ sendsig(p, sig, mask, frmtrp)
 		 * Process has trashed its stack; give it an illegal
 		 * instruction to halt it in its tracks.
 		 */
-printf("sendsig: failed to grow stack %x\n", fp);
+printf("sendsig: failed to grow stack down to %x\n", fp);
 		u.u_signal[SIGILL] = SIG_DFL;
 		sig = sigmask(SIGILL);
 		u.u_procp->p_sigignore &= ~sig;
@@ -541,6 +590,7 @@ boot(arghowto)
 	devtype = major(rootdev);
 	if (howto&RB_HALT) {
 		printf("halting (in tight loop); hit reset\n\n");
+reset_cpu();
 		for (;;)
 			;
 	} else {
@@ -553,8 +603,9 @@ boot(arghowto)
 	dummy = 0; dummy = dummy;
 	printf("howto %d, devtype %d\n", arghowto, devtype);
 #endif
+reset_cpu();
 	for (;;)
-		asm("hlt");
+		/*asm("hlt")*/;
 	/*NOTREACHED*/
 }
 
@@ -885,7 +936,7 @@ IDTVEC(syscall);
 int lcr0(), lcr3(), rcr0(), rcr2();
 int _udatasel, _ucodesel, _gsel_tss;
 
-init386() { extern ssdtosd(), lgdt(), lidt(), lldt(), etext; 
+init386(first) { extern ssdtosd(), lgdt(), lidt(), lldt(), etext; 
 	int x, *pi;
 	struct gate_descriptor *gdp;
 
@@ -894,7 +945,8 @@ init386() { extern ssdtosd(), lgdt(), lidt(), lldt(), etext;
 	for (x=0; x < 6; x++) ssdtosd(gdt_segs+x, gdt+x);
 	/* make ldt memory segments */
 	ldt_segs[LUCODE_SEL].ssd_limit = btoc((int) &Sysbase);
-	ldt_segs[LUDATA_SEL].ssd_limit = btoc((int) &Sysbase);
+	/*ldt_segs[LUDATA_SEL].ssd_limit = btoc((int) &Sysbase); */
+	ldt_segs[LUDATA_SEL].ssd_limit = btoc(0xfffff000);
 	for (x=0; x < 5; x++) ssdtosd(ldt_segs+x, ldt+x);
 /* Note. eventually want private ldts per process */
 
@@ -1021,8 +1073,9 @@ copyseg(frm, n) {
 }
 
 strayintr(d) {
+static x;
 	/* for some reason, get bursts of intr #7, though not enabled! */
-	/*pg("strayintr %x", d);*/
+	pg("%d strayintr %x", x++,d);
 }
 
 aston() {
@@ -1137,4 +1190,9 @@ ovbcopy(from, to, bytes)
 		while (bytes-- > 0)
 			*to-- = *from--;
 	}
+}
+
+redstack() { int i;
+
+	if ((u_int)&u+sizeof(u)+100 >= (u_int)&i) pg("redstack");
 }
