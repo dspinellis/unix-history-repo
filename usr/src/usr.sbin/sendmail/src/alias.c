@@ -9,7 +9,7 @@
 # include "sendmail.h"
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.43 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -352,6 +352,7 @@ aliaswait(map, ext, isopen)
 					sleeptime);
 
 			map->map_class->map_close(map);
+			map->map_mflags &= ~(MF_OPEN|MF_WRITABLE);
 			sleep(sleeptime);
 			sleeptime *= 2;
 			if (sleeptime > 60)
@@ -504,7 +505,10 @@ rebuildaliases(map, automatic)
 
 	/* add distinguished entries and close the database */
 	if (bitset(MF_OPEN, map->map_mflags))
+	{
 		map->map_class->map_close(map);
+		map->map_mflags &= ~(MF_OPEN|MF_WRITABLE);
+	}
 
 	/* restore the old signals */
 	(void) setsignal(SIGINT, oldsigint);
