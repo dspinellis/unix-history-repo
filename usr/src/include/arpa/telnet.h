@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)telnet.h	5.14 (Berkeley) %G%
+ *	@(#)telnet.h	5.15 (Berkeley) %G%
  */
 
 #ifndef _TELNET_H_
@@ -122,6 +122,11 @@ char *telopts[NTELOPTS+1] = {
 #define	TELQUAL_REPLY	2	/* AUTHENTICATION: client version of IS */
 #define	TELQUAL_NAME	3	/* AUTHENTICATION: client version of IS */
 
+#define	LFLOW_OFF		0	/* Disable remote flow control */
+#define	LFLOW_ON		1	/* Enable remote flow control */
+#define	LFLOW_RESTART_ANY	2	/* Restart output on any char */
+#define	LFLOW_RESTART_XON	3	/* Restart output only on XON */
+
 /*
  * LINEMODE suboptions
  */
@@ -182,7 +187,7 @@ extern char *slc_names[];
 #define	SLC_NAMES SLC_NAMELIST
 #endif
 
-#define	SLC_NAME_OK(x)	((x) >= 0 && (x) < NSLC)
+#define	SLC_NAME_OK(x)	((x) >= 0 && (x) <= NSLC)
 #define SLC_NAME(x)	slc_names[x]
 
 #define	SLC_NOSUPPORT	0
@@ -202,6 +207,7 @@ extern char *slc_names[];
 #define	ENV_VALUE	0
 #define	ENV_VAR		1
 #define	ENV_ESC		2
+#define ENV_USERVAR	3
 
 /*
  * AUTHENTICATION suboptions
