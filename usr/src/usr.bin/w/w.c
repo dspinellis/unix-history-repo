@@ -31,6 +31,7 @@ static char sccsid[] = "@(#)w.c	5.37 (Berkeley) %G%";
 #include <sys/socket.h>
 #include <sys/tty.h>
 
+#include <machine/cpu.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
@@ -78,17 +79,7 @@ struct	entry {
 	char	*args;		/* arg list of interesting process */
 } *ep, *ehead = NULL, **nextp = &ehead;
 
-struct nlist nl[] = {
-	{ "_boottime" },
-#define X_BOOTTIME	0
-#if defined(hp300) || defined(i386)
-	{ "_cn_tty" },
-#define X_CNTTY		1
-#endif
-	{ "" },
-};
-
-static void	 pr_header __P((kvm_t *, time_t *, int));
+static void	 pr_header __P((time_t *, int));
 static struct stat
 		*ttystat __P((char *));
 static void	 usage __P((int));
@@ -133,6 +124,7 @@ main(argc, argv)
 			sortidle = 1;
 			break;
 		case 'M':
+			header = 0;
 			memf = optarg;
 			break;
 		case 'N':
@@ -153,8 +145,6 @@ main(argc, argv)
 
 	if ((kd = kvm_openfiles(nlistf, memf, NULL, O_RDONLY, errbuf)) == NULL)
 		err(1, "%s", errbuf);
-	if (header && kvm_nlist(kd, nl) != 0)
-		err(1, "can't read namelist");
 
 	(void)time(&now);
 	if ((ut = fopen(_PATH_UTMP, "r")) == NULL)
@@ -177,27 +167,18 @@ main(argc, argv)
 		bcopy(&utmp, &(ep->utmp), sizeof (struct utmp));
 		stp = ttystat(ep->utmp.ut_line);
 		ep->tdev = stp->st_rdev;
-#if defined(hp300) || defined(i386)
+#ifdef CPU_CONSDEV
 		/*
-		 * XXX
 		 * If this is the console device, attempt to ascertain
 		 * the true console device dev_t.
 		 */
 		if (ep->tdev == 0) {
-			static dev_t cn_dev;
+			int mib[2], size;
 
-			if (nl[X_CNTTY].n_value) {
-				struct tty cn_tty, *cn_ttyp;
-				
-				if (kvm_read(kd, (u_long)nl[X_CNTTY].n_value,
-				    (char *)&cn_ttyp, sizeof(cn_ttyp)) > 0) {
-					(void)kvm_read(kd, (u_long)cn_ttyp,
-					    (char *)&cn_tty, sizeof (cn_tty));
-					cn_dev = cn_tty.t_dev;
-				}
-				nl[X_CNTTY].n_value = 0;
-			}
-			ep->tdev = cn_dev;
+			mib[0] = CTL_MACHDEP;
+			mib[1] = CPU_CONSDEV;
+			size = sizeof(dev_t);
+			(void) sysctl(mib, 2, &ep->tdev, &size, NULL, 0);
 		}
 #endif
 		if ((ep->idle = now - stp->st_atime) < 0)
@@ -206,7 +187,7 @@ main(argc, argv)
 	(void)fclose(ut);
 
 	if (header || wcmd == 0) {
-		pr_header(kd, &now, nusers);
+		pr_header(&now, nusers);
 		if (wcmd == 0)
 			exit (0);
 	}
@@ -313,14 +294,14 @@ main(argc, argv)
 }
 
 static void
-pr_header(kd, nowp, nusers)
-	kvm_t *kd;
+pr_header(nowp, nusers)
 	time_t *nowp;
 	int nusers;
 {
 	double avenrun[3];
 	time_t uptime;
 	int days, hrs, i, mins;
+	int mib[2], size;
 	char buf[256], fmt[10];
 
 	/*
@@ -336,11 +317,13 @@ pr_header(kd, nowp, nusers)
 
 	/*
 	 * Print how long system has been up.
-	 * (Found by looking for "boottime" in kernel)
+	 * (Found by looking getting "boottime" from the kernel)
 	 */
-	if ((kvm_read(kd, (u_long)nl[X_BOOTTIME].n_value,
-	    &boottime, sizeof(boottime))) != sizeof(boottime))
-		err(1, "can't read kernel bootime variable");
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_BOOTTIME;
+	size = sizeof(boottime);
+	if (sysctl(mib, 2, &boottime, &size, NULL, 0) == -1)
+		err(1, "cannot get kernel bootime");
 
 	uptime = now - boottime.tv_sec;
 	uptime += 30;
@@ -369,8 +352,7 @@ pr_header(kd, nowp, nusers)
 	/*
 	 * Print 1, 5, and 15 minute load averages.
 	 */
-	if (kvm_getloadavg(kd,
-	    avenrun, sizeof(avenrun) / sizeof(avenrun[0])) == -1)
+	if (getloadavg(avenrun, sizeof(avenrun) / sizeof(avenrun[0])) == -1)
 		(void)printf(", no load average information available\n");
 	else {
 		(void)printf(", load averages:");
