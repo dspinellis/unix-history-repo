@@ -1,10 +1,10 @@
-.\" Copyright (c) 1980 Regents of the University of California.
+.\" Copyright (c) 1990 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)stdio.3	6.2 (Berkeley) %G%
+.\"	@(#)stdio.3	6.3 (Berkeley) %G%
 .\"
-.TH STDIO 3S ""
+.TH STDIO 3 ""
 .UC 4
 .SH NAME
 stdio \- standard buffered input/output package
@@ -23,22 +23,14 @@ stdio \- standard buffered input/output package
 .B FILE
 .B *stderr;
 .SH DESCRIPTION
-The functions described in section 3S constitute a user-level buffering
-scheme.  The in-line macros
-.I getc
+The functions described here constitute a user-level buffering scheme.
+The in-line macros
+.IR getc (3)
 and
-.IR  putc (3S)
-handle characters quickly.  The higher level routines
-.IR gets ,
-.IR fgets ,
-.IR scanf ,
-.IR fscanf ,
-.IR fread ,
-.IR puts ,
-.IR fputs ,
-.IR printf ,
-.IR fprintf ,
-.IR fwrite
+.IR putc (3)
+handle characters quickly.
+The higher level routines in
+.I stdio
 all use
 .I getc
 and
@@ -50,9 +42,11 @@ A file with associated buffering is called a
 and is declared to be a pointer to a defined type
 .SM
 .BR FILE .
-.IR  Fopen (3S)
-creates certain descriptive data for a stream
-and returns a pointer to designate the stream in all further transactions.
+.IR Fopen (3)
+and
+.IR funopen (3)
+create certain descriptive data for a stream
+and return a pointer to designate the stream in all further transactions.
 There are three normally open streams with constant pointers declared in
 the include file and associated with the standard open files:
 .TP 10n
@@ -83,22 +77,63 @@ deal with streams.
 .PP
 Any routine that uses the standard input/output package
 must include the header file
-.RI < stdio.h >
-of pertinent macro definitions.
-The functions and constants mentioned in sections labeled 3S
+.RI < stdio.h > .
+The constants and functions listed here
 are declared in the include file and need no further declaration.
-The constants, and the following `functions' are
-implemented as macros; redeclaration of these names is perilous:
+The following are implemented as macros;
+these names may not be reused
+without first removing their current definitions with
+.BR #undef :
+.IR NULL ,
+.IR BUFSIZ ,
+.IR EOF ,
+.IR FOPEN_MAX ,
+.IR FILENAME_MAX ,
+.IR L_tmpnam ,
+.IR SEEK_SET ,
+.IR SEE_CUR ,
+.IR SEEK_END ,
+.IR TMP_MAX ,
+.IR stdin ,
+.IR stdout ,
+.IR stderr ,
+.IR fropen ,
+.IR fwopen ,
+.IR feof ,
+.IR ferror ,
+.IR clearerr ,
+.IR fileno ,
 .IR getc ,
 .IR getchar ,
 .IR putc ,
 .IR putchar ,
+.IR L_cuserid .
+Function versions of the macro functions
 .IR feof ,
 .IR ferror ,
-.IR fileno .
+.IR clearerr ,
+.IR fileno ,
+.IR getc ,
+.IR getchar ,
+.IR putc ,
+and
+.I putchar
+exist and will be used if the macros definitions are explicitly removed.
+.PP
+Output streams that refer to terminal devices
+are always line buffered by default;
+pending output to such streams is written automatically
+whenever an input stream that refers to a terminal device is read.
+In cases where a large amount of computation is done after printing
+part of a line on an output terminal, it is necessary to
+.IR fflush (3)
+the standard output before going off and computing so that the output
+will appear.
 .SH "SEE ALSO"
-open(2), close(2), read(2), write(2), fread(3S), fseek(3S), f*(3S)
-.SH DIAGNOSTICS
+open(2), close(2), read(2), write(2)
+.br
+all of the manuals listed below
+.SH "RETURN VALUE"
 The value
 .SM
 .B EOF
@@ -114,66 +149,85 @@ pointer designates corrupt or otherwise unintelligible
 .SM
 .B FILE
 data.
-.PP
-For purposes of efficiency, this implementation of the standard library
-has been changed to line buffer output to a terminal by default and attempts
-to do this transparently by flushing the output whenever a 
-.IR read (2)
-from the standard input is necessary.  This is almost always transparent,
-but may cause confusion or malfunctioning of programs which use
-standard i/o routines but use
-.IR read (2)
-themselves to read from the standard input.
-.PP
-In cases where a large amount of computation is done after printing
-part of a line on an output terminal, it is necessary to
-.IR fflush (3S)
-the standard output before going off and computing so that the output
-will appear.
 .SH BUGS
 The standard buffered functions do not interact well with certain other
 library and system functions, especially \fIvfork\fP and \fIabort\fP.
 .SH "LIST OF FUNCTIONS"
 .sp 2
 .nf
-.ta \w'setlinebuf'u+2n +\w'setbuf.3s'u+10n
+.ta \w'setlinebuf'u+2n +\w'setvbuf.3'u+10n
 \fIName\fP	\fIAppears on Page\fP	\fIDescription\fP
-.ta \w'setlinebuf'u+4n +\w'setbuf.3s'u+4n
+.ta \w'setlinebuf'u+4n +\w'setvbuf.3'u+4n
 .sp 5p
-clearerr	ferror.3s	stream status inquiries
-fclose	fclose.3s	close or flush a stream
-fdopen	fopen.3s	open a stream
-feof	ferror.3s	stream status inquiries
-ferror	ferror.3s	stream status inquiries
-fflush	fclose.3s	close or flush a stream
-fgetc	getc.3s	get character or word from stream
-fgets	gets.3s	get a string from a stream
-fileno	ferror.3s	stream status inquiries
-fopen	fopen.3s	open a stream
-fprintf	printf.3s	formatted output conversion
-fputc	putc.3s	put character or word on a stream
-fputs	puts.3s	put a string on a stream
-fread	fread.3s	buffered binary input/output
-freopen	fopen.3s	open a stream
-fscanf	scanf.3s	formatted input conversion
-fseek	fseek.3s	reposition a stream
-ftell	fseek.3s	reposition a stream
-fwrite	fread.3s	buffered binary input/output
-getc	getc.3s	get character or word from stream
-getchar	getc.3s	get character or word from stream
-gets	gets.3s	get a string from a stream
-getw	getc.3s	get character or word from stream
-printf	printf.3s	formatted output conversion
-putc	putc.3s	put character or word on a stream
-putchar	putc.3s	put character or word on a stream
-puts	puts.3s	put a string on a stream
-putw	putc.3s	put character or word on a stream
-rewind	fseek.3s	reposition a stream
-scanf	scanf.3s	formatted input conversion
-setbuf	setbuf.3s	assign buffering to a stream
-setbuffer	setbuf.3s	assign buffering to a stream
-setlinebuf	setbuf.3s	assign buffering to a stream
-sprintf	printf.3s	formatted output conversion
-sscanf	scanf.3s	formatted input conversion
-ungetc	ungetc.3s	push character back into input stream
+clearerr	ferror.3	stream status inquiries
+fclose	fclose.3	close a stream
+fdopen	fopen.3	open a stream
+feof	ferror.3	stream status inquiries
+ferror	ferror.3	stream status inquiries
+fflush	fflush.3	flush a stream
+fgetc	getc.3	get a character or word from a stream
+fgetline	fgetline.3	get a line from a stream
+fgetpos	fseek.3	reposition a stream
+fgets	fgets.3	get a line from a stream
+fileno	ferror.3	stream status inquiries
+fmemopen	fmemopen.3	open a block of memory as a stream
+fopen	fopen.3	open a stream
+fprintf	printf.3	formatted output conversion
+fpurge	fpurge.3	discard buffered stream data
+fputc	putc.3	put a character or word to a stream
+fputs	fputs.3	put a line to a stream
+fread	fread.3	stream binary input/output
+freopen	fopen.3	open a stream
+fscanf	scanf.3	formatted input conversion
+fseek	fseek.3	reposition a stream
+fsetpos	fseek.3	reposition a stream
+ftell	fseek.3	reposition a stream
+funopen	fopen.3	open a stream
+fwrite	fread.3	stream binary input/output
+getc	getc.3	get a character or word from a stream
+getchar	getc.3	get a character or word from a stream
+gets	fgets.3	get a line from a stream
+getw	getc.3	get a character or word from a stream
+printf	printf.3	formatted output conversion
+putc	putc.3	put a character or word to a stream
+putchar	putc.3	put a character or word to a stream
+puts	fputs.3	put a line to a stream
+putw	putc.3	put a character or word to a stream
+remove	remove.3	remove a file	xxx
+rewind	fseek.3	reposition a stream
+scanf	scanf.3	formatted input conversion
+setbuf	setvbuf.3	assign buffering to a stream
+setbuffer	setvbuf.3	assign buffering to a stream
+setlinebuf	setvbuf.3	assign buffering to a stream
+setvbuf	setvbuf.3	assign buffering to a stream
+.\" smprintf	printf.3	formatted output conversion
+snprintf	printf.3	formatted output conversion
+sprintf	printf.3	formatted output conversion
+tmpfile	xxx.3	xxx
+tmpnam	xxx.3	xxx
+ungetc	ungetc.3	push character back into input stream
+vfprintf	printf.3	formatted output conversion
+vprintf	printf.3	formatted output conversion
+.\" vsmprintf	printf.3	formatted output conversion
+vsnprintf	printf.3	formatted output conversion
+vsprintf	printf.3	formatted output conversion
+.fi
+.sp 2
+Although these have nothing to do with `standard I/O',
+the following declarations also appear in
+.RI < stdio.h >
+as required by ANSI X3.159-1989 and IEEE 1003.2 standards:
+.sp
+.nf
+.ta \w'setlinebuf'u+2n +\w'setvbuf.3'u+10n
+\fIName\fP	\fIAppears on Page\fP	\fIDescription\fP
+.ta \w'setlinebuf'u+4n +\w'setvbuf.3'u+4n
+.sp 5p
+cuserid	cuserid.3	xxx
+getlogin	getlogin.3	get login name
+pclose	popen.3	initiate I/O to/from a process
+perror	strerror.3	xxx
+popen	popen.3	initiate I/O to/from a process
+remove	remove.3	xxx
+rename	rename.2	xxx
 .fi

@@ -9,16 +9,22 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setbuf.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)rget.c	5.1 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
-#include "local.h"
 
-void
-setbuf(fp, buf)
-	FILE *fp;
-	char *buf;
+/*
+ * Handle getc() when the buffer ran out:
+ * Refill, then return the first character
+ * in the newly-filled buffer.
+ */
+__srget(fp)
+	register FILE *fp;
 {
-	(void) setvbuf(fp, buf, buf ? _IOFBF : _IONBF, BUFSIZ);
+	if (__srefill(fp) == 0) {
+		fp->_r--;
+		return (*fp->_p++);
+	}
+	return (EOF);
 }

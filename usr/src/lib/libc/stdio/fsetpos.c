@@ -9,16 +9,17 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setbuf.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)fsetpos.c	5.1 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
-#include "local.h"
 
-void
-setbuf(fp, buf)
-	FILE *fp;
-	char *buf;
+/*
+ * fsetpos: like fseek.
+ */
+fsetpos(iop, pos)
+	FILE *iop;
+	fpos_t *pos;
 {
-	(void) setvbuf(fp, buf, buf ? _IOFBF : _IONBF, BUFSIZ);
+	return (fseek(iop, (long)*pos, SEEK_SET));
 }

@@ -9,22 +9,33 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)sprintf.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)sscanf.c	5.1 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
+#include <string.h>
 #if __STDC__
 #include <stdarg.h>
 #else
 #include <varargs.h>
 #endif
-#include <limits.h>
 #include "local.h"
 
+/* ARGSUSED */
+static int
+eofread(cookie, buf, len)
+	void *cookie;
+	char *buf;
+	int len;
+{
+
+	return (0);
+}
+
 #if __STDC__
-sprintf(char *str, char const *fmt, ...)
+sscanf(char *str, char const *fmt, ...)
 #else
-sprintf(str, fmt, va_alist)
+sscanf(str, fmt, va_alist)
 	char *str;
 	char *fmt;
 	va_dcl
@@ -34,16 +45,18 @@ sprintf(str, fmt, va_alist)
 	va_list ap;
 	FILE f;
 
-	f._flags = __SWR | __SSTR;
+	f._flags = __SRD;
 	f._bf._base = f._p = (unsigned char *)str;
-	f._bf._size = f._w = INT_MAX;
+	f._bf._size = f._r = strlen(str);
+	f._read = eofread;
+	f._ub._base = NULL;
+	f._lb._base = NULL;
 #if __STDC__
 	va_start(ap, fmt);
 #else
 	va_start(ap);
 #endif
-	ret = vfprintf(&f, fmt, ap);
+	ret = __svfscanf(&f, fmt, ap);
 	va_end(ap);
-	*f._p = 0;
 	return (ret);
 }
