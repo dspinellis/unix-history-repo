@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.2.t	8.7 (Berkeley) %G%
+.\"	@(#)1.2.t	8.8 (Berkeley) %G%
 .\"
 .Sh 2 "Memory management
 .Sh 3 "Text, data, and stack
@@ -113,11 +113,10 @@ unless the MAP_FIXED flag is given,
 in which case the exact address will be used or the call will fail.
 The \fIaddr\fP parameter
 must be a multiple of the pagesize (if MAP_FIXED is given).
-The \fIpos\fP parameter must specify a file offset that is
-a multiple of the pagesize.
-If \fIlen\fP is not a multiple of pagesize,
-it will be rounded up to a multiple of pagesize by the system;
-the rounding may cause the mapped region to extend past the specified range.
+If \fIpos\fP and \fIlen\fP are not a multiple of pagesize,
+they will be rounded (down and up respectively)
+to a page boundary by the system;
+the rounding will cause the mapped region to extend past the specified range.
 A successful
 .Fn mmap
 will delete any previous mapping
