@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)rshd.8	6.11 (Berkeley) %G%
+.\"     @(#)rshd.8	6.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RSHD 8
@@ -13,7 +13,7 @@
 .Nd remote shell server
 .Sh SYNOPSIS
 .Nm rshd
-.Op Fl aln
+.Op Fl alnL
 .Sh DESCRIPTION
 The
 .Nm rshd
@@ -102,26 +102,39 @@ option prevents
 from doing any validation based on the user's ``.rhosts'' file,
 unless the user is the superuser.
 .It
+If the file 
+.Pa /etc/nologin
+exists and the user is not the superuser,
+the connection is closed.
+.It
 A null byte is returned on the initial socket
 and the command line is passed to the normal login
 shell of the user.  The
 shell inherits the network connections established
 by
 .Nm rshd .
+.El
 .Pp
 Transport-level keepalive messages are enabled unless the
 .Fl n
 option is present.
 The use of keepalive messages allows sessions to be timed out
 if the client crashes or becomes unreachable.
-.El
+.Pp
+The
+.Fl L
+option causes all successful accesses to be logged to
+.Xr syslogd 8
+as
+.Li auth.info
+messages.
 .Sh DIAGNOSTICS
 Except for the last one listed below,
 all diagnostic messages
 are returned on the initial socket,
 after which any network connections are closed.
 An error is indicated by a leading byte with a value of
-1 (0 is returned in step 9 above upon successful completion
+1 (0 is returned in step 10 above upon successful completion
 of all the steps prior to the execution of the login shell).
 .Bl -tag -width indent
 .It Sy Locuser too long.
