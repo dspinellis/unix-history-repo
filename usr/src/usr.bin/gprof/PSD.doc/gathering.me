@@ -1,4 +1,4 @@
-\"	@(#)gathering.me	1.2 %G%
+\"	@(#)gathering.me	1.3 %G%
 .sh 1 "Gathering Profile Data"
 .pp
 Routine calls or statement executions can be measured by having a
@@ -7,10 +7,10 @@ The additions can be inline increments to counters [Knuth71]
 [Satterthwaite72] [Joy79] or calls to
 monitoring routines [Unix].
 The counter increment overhead is low, and is suitable for
-statement level profiling.
+profiling statements.
 A call of the monitoring routine has an overhead comparable with a
 call of a regular routine, and is therefore only suited
-to routine level profiling.
+to profiling on a routine by routine basis.
 However, the monitoring routine solution has certain advantages.
 Whatever counters are needed by the monitoring routine can be
 managed by the monitoring routine itself, rather than being
@@ -33,12 +33,7 @@ graph for this execution of the program and propagate times along
 the edges of this graph to attribute times for routines to the
 routines that invoke them.
 .pp
-We make the simplifying assumption that all calls to a specific
-routine require the same amount of time to execute.
-This assumption may disguise the fact that some calls (or worse, some call
-sites) always invoke a routine such that its execution is
-faster (or slower) than the average time for that routine.
-However, gathering of the profiling information should not greatly
+Gathering of the profiling information should not greatly
 interfere with the running of the program.
 Thus, the monitoring routine must not produce trace output each
 time it is invoked.
@@ -69,8 +64,8 @@ to a file as the program terminates.
 The monitoring routine is discussed in detail in the following sections.
 .sh 2 "Execution Counts"
 .pp
-Our monitoring routine counts the number of times each profiled
-routine is called.
+The \fBgprof\fP monitoring routine counts the number of times
+each profiled routine is called.
 The monitoring routine also records the arc in the call graph
 that activated the profiled routine.
 In fact, the count is associated with the arc in the call graph
@@ -80,10 +75,10 @@ on arcs directed into that routine.
 In a machine-dependent fashion, the monitoring routine notes its
 own return address.
 This address is in the prologue of some profiled routine that is
-at the head of an arc in the dynamic call graph.
+the destination of an arc in the dynamic call graph.
 The monitoring routine also discovers the return address for that
-routine, thus identifying the call site, or tail of the arc.
-The tail of the arc is in the \fIcaller\fP, and the head is in
+routine, thus identifying the call site, or source of the arc.
+The source of the arc is in the \fIcaller\fP, and the destination is in
 the \fIcallee\fP.
 For example, if a routine A calls a routine B, A is the caller, 
 and B is the callee.
@@ -145,12 +140,12 @@ ways.
 One method measures the execution time of a routine by measuring
 the elapsed time from routine entry to routine exit.
 Unfortunately, time measurement is complicated on time-sharing
-systems by the interruptions of program.
+systems by the time-slicing of the program.
 A second method records the value of the program counter at some
 interval, and infers execution time from the distribution of the
 samples within the program.
 This technique is particularly suited to time-sharing systems,
-where the interruptions of program can serve as the basis for sampling
+where the time-slicing can serve as the basis for sampling
 the program counter.
 Notice that, whereas the first method could provide exact timings,
 the second is inherently a statistical approximation.
@@ -177,6 +172,12 @@ The histogram is assembled in memory as the program runs.
 This facility is enabled by our monitoring routine.
 We have adjusted the granularity of the histogram so that
 program counter values map one-to-one onto the histogram.
+We make the simplifying assumption that all calls to a specific
+routine require the same amount of time to execute.
+This assumption may disguise the fact that some calls
+(or worse, some call sites) always invoke a routine
+such that its execution is faster (or slower)
+than the average time for that routine.
 .pp
 As the profiled program terminates, 
 the arc table and the histogram of
