@@ -1,9 +1,9 @@
-/*	getservbyname.c	4.1	82/08/25	*/
+/*	getservbyname.c	4.2	82/10/05	*/
 
 #include <netdb.h>
 
 struct servent *
-getservname(name, proto)
+getservbyname(name, proto)
 	char *name, *proto;
 {
 	register struct servent *p;

@@ -1,4 +1,4 @@
-/*	getservent.c	4.1	82/08/25	*/
+/*	getservent.c	4.2	82/10/05	*/
 
 #include <stdio.h>
 #include <sys/socket.h>
@@ -13,7 +13,6 @@ static char line[BUFSIZ+1];
 static struct servent serv;
 static char *serv_aliases[MAXALIASES];
 static int stayopen = 0;
-static unsigned long value();
 static char *any();
 
 setservent(f)

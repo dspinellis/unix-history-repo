@@ -1,4 +1,8 @@
-/*	inet_addr.c	4.1	82/10/05	*/
+/*	inet_addr.c	4.2	82/10/05	*/
+
+#include <sys/types.h>
+#include <ctype.h>
+
 /*
  * Internet address interpretation routine.
  * All the network library routines call this

@@ -1,9 +1,9 @@
-/*	getproto.c	4.1	82/08/25	*/
+/*	getproto.c	4.2	82/10/05	*/
 
 #include <netdb.h>
 
 struct protoent *
-getproto(proto)
+getprotobynumber(proto)
 	register int proto;
 {
 	register struct protoent *p;

@@ -1,9 +1,9 @@
-/*	getnetbyname.c	4.1	82/08/25	*/
+/*	getnetbyname.c	4.2	82/10/05	*/
 
 #include <netdb.h>
 
 struct netent *
-getnetname(name)
+getnetbyname(name)
 	register char *name;
 {
 	register struct netent *p;

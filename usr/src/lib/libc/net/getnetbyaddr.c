@@ -1,9 +1,9 @@
-/*	getnetbyaddr.c	4.1	82/08/25	*/
+/*	getnetbyaddr.c	4.2	82/10/05	*/
 
 #include <netdb.h>
 
 struct netent *
-getnetaddr(net)
+getnetbyaddr(net)
 	register int net;
 {
 	register struct netent *p;
