@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.49 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.50 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -486,11 +486,20 @@ returntosender(msg, returnq, sendbody, e)
 		if (bitset(QBADADDR, q->q_flags))
 			continue;
 
+		if (!DontPruneRoutes && pruneroute(q->q_paddr))
+		{
+			register ADDRESS *p;
+
+			parseaddr(q->q_paddr, q, RF_COPYPARSE, '\0', NULL, e);
+			for (p = returnq; p != NULL; p = p->q_next)
+			{
+				if (p != q && sameaddr(p, q))
+					q->q_flags |= QDONTSEND;
+			}
+		}
+
 		if (!bitset(QDONTSEND, q->q_flags))
 			ee->e_nrcpts++;
-
-		if (!DontPruneRoutes && pruneroute(q->q_paddr))
-			parseaddr(q->q_paddr, q, RF_COPYPARSE, '\0', NULL, e);
 
 		if (q->q_alias == NULL)
 			addheader("To", q->q_paddr, &ee->e_header);
