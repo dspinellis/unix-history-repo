@@ -1,4 +1,4 @@
-/*	locore.s	4.32	81/03/02	*/
+/*	locore.s	4.33	81/03/06	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -237,7 +237,7 @@ SCBVEC(ustray):
 	subl3	$_catcher+8,(sp)+,r0
 	ashl	$-1,r0,-(sp)
 	mfpr	$IPL,-(sp)
-	PRINTF(2, "STRAY UNIBUS INTR IPL %x VEC %o\n")
+	PRINTF(2, "uba?: stray intr ipl %x vec %o\n")
 	POPR
 	rei
 
