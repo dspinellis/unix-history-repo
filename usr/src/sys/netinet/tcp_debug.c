@@ -1,4 +1,4 @@
-/*	tcp_debug.c	4.1	81/12/22	*/
+/*	tcp_debug.c	4.2	82/03/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -37,7 +37,6 @@ tcp_trace(act, ostate, tp, ti, req)
 {
 	tcp_seq seq, ack;
 	int len, flags;
-	char *cp;
 	struct tcp_debug *td = &tcp_debug[tcp_debx++];
 
 	if (tcp_debx == TCP_NDEBUG)
@@ -73,7 +72,7 @@ tcp_trace(act, ostate, tp, ti, req)
 		if (act == TA_OUTPUT) {
 			seq = ntohl(seq);
 			ack = ntohl(ack);
-			len = ntohs(len);
+			len = ntohs((u_short)len);
 		}
 #endif
 		if (act == TA_OUTPUT)
@@ -85,9 +84,11 @@ tcp_trace(act, ostate, tp, ti, req)
 		printf("@%x", ack);
 		flags = ti->ti_flags;
 		if (flags) {
+#ifndef lint
 			char *cp = "<";
 #define pf(f) { if (ti->ti_flags&TH_/**/f) { printf("%s%s", cp, "f"); cp = ","; } }
 			pf(SYN); pf(ACK); pf(FIN); pf(RST);
+#endif
 			printf(">");
 		}
 		break;

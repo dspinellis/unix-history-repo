@@ -1,4 +1,4 @@
-/*	if_imp.c	4.13	82/03/12	*/
+/*	if_imp.c	4.14	82/03/13	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -224,9 +224,10 @@ COUNT(IMPINPUT);
 	case IMPTYPE_DOWN:
 		if ((ip->il_link & IMP_DMASK) == 0) {
 			sc->imp_state = IMPS_GOINGDOWN;
-			timeout(impdown, sc, 30 * hz);
+			timeout(impdown, (caddr_t)sc, 30 * hz);
 		}
-		impmsg(sc, "going down %s", impmessage[ip->il_link&IMP_DMASK]);
+		impmsg(sc, "going down %s",
+			(u_int)impmessage[ip->il_link&IMP_DMASK]);
 		goto rawlinkin;
 
 	/*
@@ -247,7 +248,7 @@ COUNT(IMPINPUT);
 		sin = &sc->imp_if.if_addr;
 		sc->imp_if.if_host[0] = sin->s_host = ip->il_host;
 		sin->s_imp = ip->il_imp;
-		impmsg(sc, "reset (host %d/imp %d)", ip->il_host,
+		impmsg(sc, "reset (host %d/imp %d)", (u_int)ip->il_host,
 			ntohs(ip->il_imp));
 		/* restart output in case something was q'd */
 		(*sc->imp_cb.ic_start)(sc->imp_if.if_unit);
@@ -264,7 +265,7 @@ COUNT(IMPINPUT);
 	case IMPTYPE_INCOMPLETE:
 		if (hp && hp->h_rfnm)
 			if (next = hostdeque(hp))
-				(void) impsnd(sc, next);
+				(void) impsnd(&sc->imp_if, next);
 		goto rawlinkin;
 
 	/*
@@ -330,7 +331,8 @@ COUNT(IMPINPUT);
 		impsrc.sin_addr.s_net = ip->il_network;
 		impsrc.sin_addr.s_host = ip->il_host;
 		impsrc.sin_addr.s_imp = ip->il_imp;
-		raw_input(m, &impproto, &impdst, &impsrc);
+		raw_input(m, &impproto, (struct sockaddr *)&impdst,
+		  (struct sockaddr *)&impsrc);
 		return;
 	}
 	IF_ENQUEUE(inq, m);
@@ -355,6 +357,7 @@ impdown(sc)
 impmsg(sc, fmt, a1, a2)
 	struct imp_softc *sc;
 	char *fmt;
+	u_int a1;
 {
 	printf("imp%d: ", sc->imp_if.if_unit);
 	printf(fmt, a1, a2);
@@ -392,7 +395,7 @@ COUNT(IMPOUTPUT);
 		dhost = ip->ip_dst.s_host;
 		dimp = ip->ip_dst.s_imp;
 		dlink = IMPLINK_IP;
-		len = ntohs(ip->ip_len);
+		len = ntohs((u_short)ip->ip_len);
 		break;
 	}
 #endif
@@ -427,7 +430,8 @@ COUNT(IMPOUTPUT);
 	imp->il_network = 0;
 	imp->il_host = dhost;
 	imp->il_imp = dimp;
-	imp->il_length = htons((len + sizeof(struct imp_leader)) << 3);
+	imp->il_length =
+		htons((u_short)(len + sizeof(struct imp_leader)) << 3);
 	imp->il_link = dlink;
 	imp->il_flags = imp->il_htype = imp->il_subtype = 0;
 

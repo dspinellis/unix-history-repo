@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.59	82/03/11	*/
+/*	tcp_input.c	1.60	82/03/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -21,7 +21,9 @@
 #include "../net/tcp_debug.h"
 #include "../errno.h"
 
+#ifdef notdef
 int	tcpprintfs = 0;
+#endif
 int	tcpcksum = 1;
 struct	sockaddr_in tcp_in = { AF_INET };
 struct	tcpiphdr tcp_saveti;
@@ -74,7 +76,7 @@ COUNT(TCP_INPUT);
 		ti->ti_x1 = 0;
 		ti->ti_len = (u_short)tlen;
 #if vax
-		ti->ti_len = htons(ti->ti_len);
+		ti->ti_len = htons((u_short)ti->ti_len);
 #endif
 		if (ti->ti_sum = in_cksum(m, len)) {
 			tcpstat.tcps_badsum++;
@@ -105,9 +107,10 @@ COUNT(TCP_INPUT);
 		om->m_off = MMINOFF;
 		om->m_len = off - sizeof (struct tcphdr);
 		{ caddr_t op = mtod(m, caddr_t) + sizeof (struct tcpiphdr);
-		  bcopy(op, mtod(om, caddr_t), om->m_len);
+		  bcopy(op, mtod(om, caddr_t), (unsigned)om->m_len);
 		  m->m_len -= om->m_len;
-		  bcopy(op+om->m_len, op, m->m_len-sizeof (struct tcpiphdr));
+		  bcopy(op+om->m_len, op,
+		   (unsigned)(m->m_len-sizeof (struct tcpiphdr)));
 		}
 	}
 	tiflags = ti->ti_flags;
@@ -201,7 +204,7 @@ COUNT(TCP_INPUT);
 		laddr = inp->inp_laddr;
 		if (inp->inp_laddr.s_addr == 0)
 			inp->inp_laddr = ti->ti_dst;
-		if (in_pcbconnect(inp, (struct sockaddr *)&tcp_in)) {
+		if (in_pcbconnect(inp, (struct sockaddr_in *)&tcp_in)) {
 			inp->inp_laddr = laddr;
 			goto drop;
 		}
@@ -483,7 +486,7 @@ trimthenstep6:
 			sbdrop(&so->so_snd, so->so_snd.sb_cc);
 			tp->snd_wnd -= so->so_snd.sb_cc;
 		} else {
-			sbdrop(&so->so_snd.sb_cc, acked);
+			sbdrop(&so->so_snd, acked);
 			tp->snd_wnd -= acked;
 			acked = 0;
 		}
@@ -673,7 +676,7 @@ step6:
 	/*
 	 * Return any desired output.
 	 */
-	tcp_output(tp);
+	(void) tcp_output(tp);
 	return;
 
 dropafterack:
@@ -688,7 +691,7 @@ dropafterack:
 
 dropwithreset:
 	if (om)
-		m_free(om);
+		(void) m_free(om);
 	/*
 	 * Generate a RST, dropping incoming segment.
 	 * Make ACK acceptable to originator of segment.
@@ -739,7 +742,7 @@ tcp_dooptions(tp, om)
 				continue;
 			tp->t_maxseg = *(u_short *)(cp + 2);
 #if vax
-			tp->t_maxseg = ntohs(tp->t_maxseg);
+			tp->t_maxseg = ntohs((u_short)tp->t_maxseg);
 #endif
 			break;
 			
@@ -796,7 +799,7 @@ printf("take oob ack %x and cancel rexmt\n", cp[2]);
 #endif TCPTRUEOOB
 		}
 	}
-	m_free(om);
+	(void) m_free(om);
 }
 
 /*
@@ -820,7 +823,7 @@ tcp_pulloutofband(so, ti)
 
 			tp->t_iobc = *cp;
 			tp->t_oobflags |= TCPOOB_HAVEDATA;
-			bcopy(cp+1, cp, m->m_len - cnt - 1);
+			bcopy(cp+1, cp, (unsigned)(m->m_len - cnt - 1));
 			m->m_len--;
 			return;
 		}
@@ -926,7 +929,7 @@ present:
 		m = dtom(ti);
 		ti = (struct tcpiphdr *)ti->ti_next;
 		if (so->so_state & SS_CANTRCVMORE)
-			(void) m_freem(m);
+			m_freem(m);
 		else
 			sbappend(&so->so_rcv, m);
 	} while (ti != (struct tcpiphdr *)tp && ti->ti_seq == tp->rcv_nxt);

@@ -1,4 +1,4 @@
-/*	raw_pup.c	4.7	82/03/10	*/
+/*	raw_pup.c	4.8	82/03/13	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -36,6 +36,7 @@ rpup_output(m, so)
 	int len;
 	struct mbuf *n;
 	struct sockaddr_pup *spup;
+	struct in_addr in;
 	struct ifnet *ifp;
 
 COUNT(RPUP_OUTPUT);
@@ -54,23 +55,17 @@ COUNT(RPUP_OUTPUT);
 	for (len = 0, n = m; n; n = n->m_next)
 		len += n->m_len;
 	pup->pup_length = len;
-	spup = (struct sockaddr_pup *)&rp->rcb_addr;
-	pup->pup_dport = spup->spup_addr;
-
-	/*
-	 * Insure proper source address is included.
-	 */
 	spup = (struct sockaddr_pup *)&(rp->rcb_socket->so_addr);
 	pup->pup_sport = spup->spup_addr;
 	/* for now, assume user generates PUP checksum. */
+	spup = (struct sockaddr_pup *)&rp->rcb_addr;
+	pup->pup_dport = spup->spup_addr;
 
-	ifp = if_ifonnetof(&rp->rcb_addr);
-	if (ifp == 0) {
-		ifp = if_gatewayfor(&rp->rcb_addr);
-		if (ifp == 0)
-			goto bad;
-	}
-	return (enoutput((struct ifnet *)rp->rcb_pcb, m, PF_PUP));
+	in.s_net = spup->spup_addr.pp_net;
+	ifp = if_ifonnetof(in);
+	if (ifp == 0)
+		goto bad;
+	return (enoutput(ifp, m, PF_PUP));
 
 bad:
 	m_freem(m);

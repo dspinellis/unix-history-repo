@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.19	82/03/11	*/
+/*	in_pcb.c	4.20	82/03/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -69,7 +69,7 @@ COUNT(IN_PCBATTACH);
 		if (sin->sin_family != AF_INET)
 			return (EAFNOSUPPORT);
 		if (sin->sin_addr.s_addr &&
-		    if_ifwithaddr(sin->sin_addr.s_addr) == 0)
+		    if_ifwithaddr(sin->sin_addr) == 0)
 			return (EADDRNOTAVAIL);
 		lport = sin->sin_port;
 		if (lport) {
@@ -138,7 +138,7 @@ COUNT(IN_PCBCONNECT);
 	if (sin->sin_addr.s_addr == 0 || sin->sin_port == 0)
 		return (EADDRNOTAVAIL);
 	if (inp->inp_laddr.s_addr == 0) {
-		ifp = if_ifonnetof(sin->sin_addr.s_addr);
+		ifp = if_ifonnetof(sin->sin_addr);
 		if (ifp == 0)
 			ifp = ifnet;
 	}

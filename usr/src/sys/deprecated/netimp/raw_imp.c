@@ -1,4 +1,4 @@
-/*	raw_imp.c	4.7	82/03/05	*/
+/*	raw_imp.c	4.8	82/03/13	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -71,7 +71,7 @@ COUNT(RIMP_OUTPUT);
 	 */
 	for (len = 0, n = m; n; n = n->m_next)
 		len += n->m_len;
-	ip->il_length = htons(len << 3);
+	ip->il_length = htons((u_short)(len << 3));
 	sin = (struct sockaddr_in *)&rp->rcb_addr;
 	ip->il_network = sin->sin_addr.s_net;
 	ip->il_host = sin->sin_addr.s_host;

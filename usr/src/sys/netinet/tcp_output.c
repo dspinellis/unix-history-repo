@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.32	82/03/12	*/
+/*	tcp_output.c	4.33	82/03/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -166,7 +166,7 @@ send:
 		m0 = m->m_next;
 		m0->m_off = MMINOFF;
 		m0->m_len = optlen;
-		bcopy(opt, mtod(m0, caddr_t), optlen);
+		bcopy((caddr_t)opt, mtod(m0, caddr_t), optlen);
 		opt = (u_char *)(mtod(m0, caddr_t) + optlen);
 #ifdef TCPTRUEOOB
 		if (tp->t_oobflags&TCPOOB_OWEACK) {
@@ -231,7 +231,7 @@ noopt:
 		ti->ti_len = htons((u_short)ti->ti_len);
 #endif
 	}
-	ti->ti_sum = in_cksum(m, sizeof (struct tcpiphdr) + optlen + len);
+	ti->ti_sum = in_cksum(m, sizeof (struct tcpiphdr) + (int)optlen + len);
 
 	/*
 	 * Advance snd_nxt over sequence space of this segment

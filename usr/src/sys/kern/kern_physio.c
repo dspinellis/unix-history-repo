@@ -1,4 +1,4 @@
-/*	kern_physio.c	4.25	82/01/17	*/
+/*	kern_physio.c	4.26	82/03/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -85,11 +85,11 @@ int	*swpf;
 #ifndef	UNFAST
 #define	notavail(bp) \
 { \
-	int s = spl6(); \
+	int x = spl6(); \
 	(bp)->av_back->av_forw = (bp)->av_forw; \
 	(bp)->av_forw->av_back = (bp)->av_back; \
 	(bp)->b_flags |= B_BUSY; \
-	splx(s); \
+	splx(x); \
 }
 #endif
 

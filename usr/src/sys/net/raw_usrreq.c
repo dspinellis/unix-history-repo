@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.8	82/03/05	*/
+/*	raw_usrreq.c	4.9	82/03/13	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -128,7 +128,7 @@ next:
 		if (last) {
 			struct mbuf *n;
 
-			if (n = m_copy(m->m_next, 0, M_COPYALL))
+			if (n = m_copy(m->m_next, 0, (int)M_COPYALL))
 				goto nospace;
 			if (sbappendaddr(&last->so_rcv, &rawp->raw_src, n) == 0) {
 				/*
