@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)trap.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)trap.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "shell.h"
@@ -38,6 +38,7 @@ static char sccsid[] = "@(#)trap.c	5.2 (Berkeley) %G%";
 #define S_CATCH 2		/* signal is caught */
 #define S_IGN 3			/* signal is ignored (SIG_IGN) */
 #define S_HARD_IGN 4		/* signal is ignored permenantly */
+#define S_RESET 5		/* temporary - to reset a hard ignored sig */
 
 
 extern char nullstr[1];		/* null string */
@@ -120,6 +121,7 @@ setsignal(signo) {
 	sig_t sigact;
 	char *t;
 	extern void onsig();
+	extern sig_t getsigaction();
 
 	if ((t = trap[signo]) == NULL)
 		action = S_DFL;
@@ -157,17 +159,19 @@ setsignal(signo) {
 		}
 	}
 	t = &sigmode[signo - 1];
-	if (*t == 0) {	/* current setting unknown */
-		/*
-		 * There is a race condition here if action is not S_IGN.
-		 * A signal can be ignored that shouldn't be.
+	if (*t == 0) {	
+		/* 
+		 * current setting unknown 
 		 */
-		if ((int)(sigact = signal(signo, SIG_IGN)) == -1)
-			error("Signal system call failed");
+		sigact = getsigaction(signo);
 		if (sigact == SIG_IGN) {
-			*t = S_HARD_IGN;
+			if (jflag && (signo == SIGTSTP || 
+			     signo == SIGTTIN || signo == SIGTTOU)) {
+				*t = S_IGN;	/* don't hard ignore these */
+			} else
+				*t = S_HARD_IGN;
 		} else {
-			*t = S_IGN;
+			*t = S_RESET;	/* force to be set */
 		}
 	}
 	if (*t == S_HARD_IGN || *t == action)
@@ -181,6 +185,18 @@ setsignal(signo) {
 	return (int)signal(signo, sigact);
 }
 
+/*
+ * Return the current setting for sig w/o changing it.
+ */
+sig_t
+getsigaction(signo) {
+	struct sigaction sa;
+
+	if (sigaction(signo, (struct sigaction *)0, &sa) == -1)
+		error("Sigaction system call failed");
+
+	return sa.sa_handler;
+}
 
 /*
  * Ignore a signal.
