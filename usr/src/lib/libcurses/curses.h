@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)curses.h	5.14 (Berkeley) %G%
+ *	@(#)curses.h	5.15 (Berkeley) %G%
  */
 
 #ifndef _CURSES_H_
@@ -62,6 +62,7 @@ typedef struct __line {
 	u_int flags;
 	u_int hash;			/* Hash value for the line. */
 	size_t firstch, lastch;		/* First and last changed columns. */
+	char *standout;			/* standout character markers */
 /* 
  * XXX
  * _STANDOUT is the 8th bit, characters themselves are encoded.
