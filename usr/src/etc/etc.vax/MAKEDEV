@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)MAKEDEV	4.4	%G%
+#	@(#)MAKEDEV	4.5	%G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices (for 730 must be followed by tu0 & tu1)
@@ -23,8 +23,10 @@
 #	dmf*	unibus dmf32
 # Pseudo terminals:
 #	pty*	set of 16 master and slave pseudo terminals
-# Line printers:
+# Printers:
 #	lp*	unibus lp11 parallel interface
+#	va*	unibus varian parallel interface
+#	vp*	unibus versatec parallel interface
 # Call units:
 #	dn*	unibus dn11 and emulations (e.g. Able Quadracall)
 umask 77
@@ -153,15 +155,20 @@ dh*|dmf*)
 	esac
 	;;
 
-lp*)
-	unit=`expr $i : 'lp\(.*\)'`
+lp*|va*|vp*)
+	case $i in
+	lp*) name=lp; major=15;;
+	va*) name=va; major=10;;
+	vp*) name=vp; major=6;;
+	esac
+	unit=`expr $i : "$name\(.*\)"`
 	case $unit in
 	0|1|2|3|4|5|6|7)
-		/etc/mknod $i c 15 $unit;
+		/etc/mknod $i c $major $unit;
 		chmod 666 $i
 		;;
 	*)
-		echo bad unit for lp in: $i
+		echo bad unit for $name in: $i
 		;;
 	esac
 	;;
