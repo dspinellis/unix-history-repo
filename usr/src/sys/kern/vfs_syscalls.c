@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.109 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.110 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1599,7 +1599,7 @@ struct truncate_args {
 	long	length;
 };
 /* ARGSUSED */
-truncate(p, uap, retval)
+otruncate(p, uap, retval)
 	struct proc *p;
 	register struct truncate_args *uap;
 	int *retval;
@@ -1619,7 +1619,7 @@ struct ftruncate_args {
 	long	length;
 };
 /* ARGSUSED */
-ftruncate(p, uap, retval)
+oftruncate(p, uap, retval)
 	struct proc *p;
 	register struct ftruncate_args *uap;
 	int *retval;
