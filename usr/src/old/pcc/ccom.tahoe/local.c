@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)local.c	1.3 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -417,8 +417,7 @@ commdec( id ){ /* make a common declaration for id, if reasonable */
 	q = &stab[id];
 	printf( "	.comm	%s,", exname( q->sname ) );
 	off = tsize( q->stype, q->dimoff, q->sizoff );
-	printf( "%d" /*CONFMT*/, off/SZCHAR );
-	printf( "\n" );
+	printf( "%d\n" /*CONFMT*/, off/SZCHAR );
 	}
 
 prtdcon(p)
