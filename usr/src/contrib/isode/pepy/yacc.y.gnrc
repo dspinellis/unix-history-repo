@@ -1,0 +1,1401 @@
+/* yacc.y - yacc ASN.1 parser */
+/* %WARNING% */
+
+%{
+#ifndef	lint
+static char *rcsid = "$Header: /f/osi/pepy/RCS/yacc.y.gnrc,v 7.6 91/03/09 11:55:13 mrose Exp $";
+#endif
+
+/* 
+ * $Header: /f/osi/pepy/RCS/yacc.y.gnrc,v 7.6 91/03/09 11:55:13 mrose Exp $
+ *
+ *
+ * $Log:	yacc.y.gnrc,v $
+ * Revision 7.6  91/03/09  11:55:13  mrose
+ * update
+ * 
+ * Revision 7.5  91/02/22  09:35:23  mrose
+ * Interim 6.8
+ * 
+ * Revision 7.4  90/12/23  18:42:25  mrose
+ * update
+ * 
+ * Revision 7.3  90/11/21  11:32:27  mrose
+ * sun
+ * 
+ * Revision 7.2  90/11/20  15:31:37  mrose
+ * update
+ * 
+ * Revision 7.1  90/09/07  17:34:35  mrose
+ * new-macros
+ * 
+ * Revision 7.0  90/07/01  19:54:39  mrose
+ * *** empty log message ***
+ * 
+ * Revision 7.1  90/05/21  17:08:28  mrose
+ * yyporting
+ * 
+ * Revision 7.0  89/11/23  22:12:10  mrose
+ * Release 6.0
+ * 
+ */
+
+/*
+ *				  NOTICE
+ *
+ *    Acquisition, use, and distribution of this module and related
+ *    materials are subject to the restrictions of a license agreement.
+ *    Consult the Preface in the User's Manual for the full terms of
+ *    this agreement.
+ *
+ */
+
+
+#include <stdio.h>
+#include <ctype.h>
+%BEGIN(PEPSY)%
+#include "pepsydefs.h"
+%END(PEPSY)%
+%BEGIN(PEPY)%
+#include "pepy.h"
+%END(PEPY)%
+%BEGIN(ROSY)%
+#include "rosy-defs.h"
+%END(ROSY)%
+%BEGIN(MOSY)%
+#include "mosy-defs.h"
+%END(MOSY)%
+
+#define	YYSTYPE	YYSTKTYPE
+
+
+#define	YYDEBUG	1
+
+extern int pepydebug;
+extern int doexternals;
+
+int	tagcontrol = TAG_UNKNOWN;
+static int	tagdefault;
+static int	listtype;
+static OID	modid;
+
+static int	yyporting = 0;
+
+typedef struct ypa {
+    char   *ya_text;
+    int	    ya_lineno;
+}		ypa, *YA;
+#define	NULLYA	((YA) 0)
+extern double pow ();
+
+static YA  new_action (text, lineno)
+char   *text;
+int	lineno;
+{
+    register YA	    ya;
+
+    if ((ya = (YA) calloc (1, sizeof *ya)) == NULLYA)
+	yyerror ("out of memory");
+
+    ya -> ya_text = text;
+    ya -> ya_lineno = lineno;
+
+    return ya;
+}
+#define	free_action(ya)	(void) free ((char *) (ya))
+
+typedef struct	{
+    char *ys_structname;
+    char *ys_ptrname;
+} ysa, *YS;
+#define NULLYS ((YS) 0)
+
+static YS new_ys (str)
+char	*str;
+{
+    register YS	ys;
+    register char *p, *q;
+    char c;
+
+    if((ys = (YS) malloc (sizeof *ys)) == NULLYS)
+	yyerror ("out of memory");
+    q = str;
+    while (isspace ((u_char)*q)) q++;
+    for (p = q; isalnum((u_char)*p) || *p == '_'; p++)
+	continue;
+    if (*p != '\0') {
+	c = *p;
+	*p = '\0';
+	ys -> ys_structname = new_string (q);
+	*p = c;
+    }
+    else {
+	ys -> ys_structname = new_string (q);
+	ys -> ys_ptrname = NULLCP;
+	free (str);
+	return ys;
+    }
+    for (q = p; *q != '$'; q++)
+	if (! *q) {
+	    free (str);
+	    ys -> ys_ptrname = NULLCP;
+	    return ys;
+	}
+    q++;
+    while (isspace ((u_char)*q)) q++;
+    for (p = q; isalnum((u_char)*p) || *p == '_'; p++)
+	continue;
+    *p = '\0';
+    ys -> ys_ptrname = new_string (q);
+    free (str);
+    return ys;
+}
+#define	free_ys(ys) (void) free ((char *) (ys))
+
+static int  final_actions = 0;
+%}
+
+%start	ModuleDefinition
+
+
+%union	{
+    int	    yy_number;
+    char   *yy_string;
+    YP	    yy_type;
+    YV	    yy_value;
+    YT	    yy_tag;
+    YA	    yy_action;
+    OID	    yy_oid;
+    YS	    yy_sctrl;
+    double  yy_real;
+}
+
+
+%token	ABSENT ACTION ANY APPLICATION BAR BGIN BIT BITSTRING BOOLEAN
+	BY CCE CHOICE COMMA COMPONENT COMPONENTS COMPONENTSOF CONTROL
+	DECODER DEFAULT DEFINED DEFINITIONS DOT DOTDOT DOTDOTDOT
+	ENCODER ENCRYPTED END ENUMERATED EXPORTS EXPLICIT FALSE FROM
+	ID IDENTIFIER IMPLICIT IMPORTS INCLUDES INTEGER LANGLE LBRACE
+	LBRACKET LITNUMBER LITSTRING LPAREN MIN MAX NAME NIL OBJECT
+	OCTET OCTETSTRING OF OPTIONAL PARAMETERTYPE PREFIXES PRESENT
+	PRINTER PRIVATE RBRACE RBRACKET REAL RPAREN SECTIONS SEMICOLON
+	SEQUENCE SEQUENCEOF SET SETOF SIZE STRING TAGS TRUE UNIVERSAL
+	VALA VALB VALI VALS VALP VALO VALOID VALR VALQ VALX VLENGTH
+	WITH SCTRL PLUSINFINITY MINUSINFINITY
+%BEGIN(ROSY)%
+        OPERATION ARGUMENT RESULT ERRORS LINKED ERROR PARAMETER
+/* new stuff */
+	ABSTRACT OPERATIONS CONSUMER SUPPLIER INVOKES PORT PORTS
+	OBJECTCONSUMER OBJECTSUPPLIER REFINE AS RECURRING VISIBLE
+	PAIRED BIND UNBIND
+/* end new stuff */
+%END(ROSY)%
+%BEGIN(MOSY)%
+	OBJECTYPE SYNTAX ACCESS STATUS DESCRIPTION REFERENCE INDEX DEFVAL
+	TRAPTYPE ENTERPRISE VARIABLES
+%END(MOSY)%
+
+%type	<yy_number>	LITNUMBER
+%type	<yy_real>	RealValue NumericRealValue SpecialRealValue
+%type	<yy_string>	ID NAME LITSTRING VALA VALB VALI VALS VALP VALQ
+			VALR VALO VALX VLENGTH VALOID CONTROL PARAMETERTYPE
+			ParameterType Control ValParameter String
+			PassInt PassBool PassOid PassAny PassReal
+			ModuleIdentifier Symbol SymbolList
+			SCTRL
+%BEGIN(MOSY)%
+			DescrPart ReferPart
+%END(MOSY)%
+%type	<yy_type>	Type BuiltinType DefinedType PassValue PassBit
+			PassString NullPass ElementTypes OptionalTypeList
+			OptionalType NamedType ComponentsOf AlternativeTypeList
+			MemberTypes SubType
+%BEGIN(ROSY)%
+			Argument Result Parameter
+%END(ROSY)%
+%type	<yy_value>	NamedNumberList NamedNumber NumericValue
+			Value BuiltinValue DefinedValue IdentifierList
+			Values NamedValueList NamedValue NNlist
+%BEGIN(ROSY)%
+			Errors ErrorNames
+                        LinkedOperations LinkedOperationNames
+%END(ROSY)%
+%BEGIN(MOSY)%
+			ObjectID ObjectIDComponentList ObjectSubID
+			IndexPart IndexTypes IndexType
+			DefValPart
+			VarPart VarTypes VarType
+%END(MOSY)%
+%type	<yy_tag>	Tag Class
+%type	<yy_action>	ACTION Action
+%type   <yy_oid>	ObjIdComponentList ObjectIdentifierValue
+			ObjIdComponent NumberForm NameAndNumberForm
+%type	<yy_sctrl>	Sctrl
+%%
+
+ModuleDefinition:	ModuleIdentifier DEFINITIONS TagDefault CCE
+				{
+    				    mymodule = $1;
+				    mymoduleid = modid;
+				    pass1 ();
+				}
+			ModuleActions ModulePrefixes
+			BGIN ModuleBody END { pass2 (); final_actions++; }
+			ModuleActions
+	;
+
+TagDefault:		EXPLICIT TAGS { 
+			    tagdefault = 0;
+			    tagcontrol = TAG_EXPLICIT;
+			}
+	|		IMPLICIT TAGS {
+			    tagdefault = YP_IMPLICIT;
+			    tagcontrol = TAG_IMPLICIT;
+			}
+	|		empty {
+			    tagdefault = 0;
+			    tagcontrol = TAG_UNKNOWN;
+			}
+	;
+
+ModuleIdentifier:	ID AssignedIdentifier { $$ = $1; }
+	;
+
+AssignedIdentifier:	ObjectIdentifierValue { modid = $1; }
+	|		empty
+	;
+
+ModuleActions:		ACTION {
+%BEGIN(PEPSY)%
+			    if (bflag) {
+				if (final_actions) 
+				    init_new_file ();
+				else {
+				    module_actions = $1 -> ya_text;
+				    free_action ($1);
+				    break;
+				}
+			    }
+%END(PEPSY)%
+%BEGIN(PEPY)%
+			    if (bflag) {
+				if (final_actions) 
+				    init_new_file ();
+				else {
+				    module_actions = $1 -> ya_text;
+				    free_action ($1);
+				    break;
+				}
+			    }
+%END(PEPY)%
+			    if (!dflag) {
+				if (Cflag > 0) {
+				    if (!Pflag && *sysin)
+					printf ("# line %d \"%s\"\n",
+						$1 -> ya_lineno, sysin);
+				    fputs ($1 -> ya_text, stdout);
+				}
+				else {
+				    printf ("%%{\n#include \"%s-types.h\"\n",
+					    mymodule);
+				    printf ("%s%%}\n", $1 -> ya_text);
+				    Cflag = -1;
+				}
+			    }
+			    free_action ($1);
+%BEGIN(PEPSY)%
+			    if (bflag)
+				end_file ();
+%END(PEPSY)%
+%BEGIN(PEPY)%
+			    if (bflag)
+				end_file ();
+%END(PEPY)%
+			}
+	|		empty
+	;
+ModulePrefixes:
+			PREFIXES String String String
+			{
+			    yyencdflt = $2;
+			    yydecdflt = $3;
+			    yyprfdflt = $4;
+			}
+	|		empty
+	;
+ModuleBody:		Exports Imports AssignmentList
+	;
+
+Exports:		EXPORTS  { listtype = TBL_EXPORT; doexternals = 0;
+				   yyporting = 1; }
+				 SymbolsExported SEMICOLON {
+			    yyporting = 0;
+			    if (mymoduleid == NULLOID)
+				warning ("EXPORTS but no ModuleIdentifier");
+				
+			}
+	|		empty
+	;
+
+SymbolsExported:	SymbolList
+	|		empty
+	;
+
+Imports:		IMPORTS  { listtype = TBL_IMPORT; yyporting = 1; }
+				 SymbolsImported SEMICOLON {
+			    yyporting = 0;
+			    if (mymoduleid == NULLOID)
+				warning ("IMPORTS but no ModuleIdentifier");
+			}
+
+	|		empty
+	;
+
+SymbolsImported:	SymbolsFromModuleList
+	|		empty
+	;
+
+SymbolsFromModuleList:	SymbolsFromModuleList SymbolsFromModule
+	|		SymbolsFromModule
+	;
+
+SymbolsFromModule:	SymbolList FROM ModuleIdentifier
+				{
+				    addtableref ($3, modid, listtype);
+				}
+	;
+
+SymbolList:		SymbolList COMMA Symbol { addtable($3, listtype); }
+	|		Symbol { addtable ($1, listtype); }
+	;
+
+Symbol:			ID
+	|		NAME
+	;
+
+AssignmentList:		AssignmentList Section Assignment
+	|		empty
+	;
+
+Section:		ENCODER String
+			{ yysection = YP_ENCODER; yyencpref = $2;
+			  yyprint (NULLCP, 0, 1); }
+	|		DECODER String
+			{ yysection = YP_DECODER; yydecpref = $2;
+			  yyprint (NULLCP, 0, 1); }
+	|		PRINTER String
+			{ yysection = YP_PRINTER; yyprfpref = $2;
+			  yyprint (NULLCP, 0, 1); }
+	|		SECTIONS String String String
+			{
+			    yysection = NULL;
+			    if (strcmp (yyencpref = $2, "none"))
+				yysection |= YP_ENCODER;
+			    if (strcmp (yydecpref = $3, "none"))
+				yysection |= YP_DECODER;
+			    if (strcmp (yyprfpref = $4, "none"))
+				yysection |= YP_PRINTER;
+			    yyprint (NULLCP, 0, 1); 
+			}
+	|		empty
+	;
+
+String:			ID { $$ = $1; }
+	|		NAME { $$ = $1; }
+	;
+
+Assignment:		Typeassignment
+%BEGIN(ROSY)%
+	|		OperationDefinition
+	|		ErrorDefinition
+/* new stuff */
+	|		PortDefinition
+	|		ObjectDefinition
+/*	|		RefineDefinition	-- impossible!!!! (JPO) */
+/*	|		BindDefinition		-- lacking defs... */
+/*	|		UnBindDefinition	-- ditto */
+/* end new stuff */
+%END(ROSY)%
+%BEGIN(MOSY)%
+	|		ObjectTypeDefinition
+	|		TrapTypeDefinition
+	|		ObjectIDefinition
+%END(MOSY)%
+	|		Valueassignment
+	;
+
+%BEGIN(ROSY)%
+OperationDefinition:	NAME OPERATION Argument Result Errors LinkedOperations
+			CCE LITNUMBER {
+			    pass1_op (mymodule, $1, $3, $4, $5, $6, $8);
+			}
+	;
+
+Argument:		ARGUMENT NamedType { $$ = $2; }
+	|		empty { $$ = NULLYP; }
+	;
+
+Result:			RESULT NamedType { $$ = $2; }
+	|		empty { $$ = NULLYP; }
+	;
+
+Errors:			ERRORS LBRACE ErrorNames RBRACE { $$ = $3; }
+	|		empty { $$ = NULLYV; }
+
+LinkedOperations:	LINKED LBRACE LinkedOperationNames RBRACE { $$ = $3; }
+	|		empty { $$ = NULLYV; }
+    
+
+ErrorNames:		NamedValueList {
+			    $$ = new_value (YV_VALIST);
+			    $$ -> yv_idlist = $1;
+			}
+	|		empty { $$ = NULLYV; }
+
+
+LinkedOperationNames:	NamedValueList {
+			    $$ = new_value (YV_VALIST);
+			    $$ -> yv_idlist = $1;
+			}
+	|		empty { $$ = NULLYV; }
+
+
+ErrorDefinition:	NAME ERROR Parameter CCE LITNUMBER {
+			    pass1_err (mymodule, $1, $3, $5);
+			}
+	;
+
+Parameter:		PARAMETER NamedType { $$ = $2; }
+	|		empty { $$ = NULLYP; }
+	;
+
+/* new stuff start */
+PortDefinition:		NAME PORT PortOperations CCE PortValue
+	;
+
+PortValue:		ObjectIdentifierValue
+	|		NAME
+	;
+
+PortOperations:		PortSymmetrical
+	|		PortAsymetrical
+	|		empty
+
+PortSymmetrical:	ABSTRACT OPERATIONS LBRACE PortOperationList RBRACE
+	;
+
+PortAsymetrical:	PortOneSided
+	|		PortTwoSided
+	;
+
+PortOneSided:		PortConsumer
+	|		PortSupplier
+	;
+
+PortTwoSided:		PortConsumer PortSupplier
+	|		PortSupplier PortConsumer
+	;
+
+PortConsumer:		CONSUMER INVOKES LBRACE PortOperationList RBRACE
+	;
+
+PortSupplier:		SUPPLIER INVOKES LBRACE PortOperationList RBRACE
+	;
+
+PortOperationList:	OperationValue
+	|		OperationValue COMMA PortOperationList
+	;
+
+OperationValue:		NAME
+	|		ID
+	|		LITNUMBER
+	|		ObjectIdentifierValue
+	;
+
+ObjectDefinition:	NAME OBJECT ObjectType CCE PortValue
+	;
+
+ObjectType:		PORTS LBRACE ObjectPortList RBRACE
+	|		empty
+	;
+
+ObjectPortList:		ObjectPort COMMA ObjectPortList
+	|		ObjectPort
+	;
+
+ObjectPort:		PortValue ObjectPortType
+	;
+
+ObjectPortType:		ObjectSymetric
+	|		ObjectAsymetric
+	;
+
+ObjectSymetric:		empty
+	;
+
+ObjectAsymetric:	OBJECTCONSUMER
+	|		OBJECTSUPPLIER
+	;
+
+/* New stuff end */
+%END(ROSY)%
+
+%BEGIN(MOSY)%
+ObjectTypeDefinition:	NAME OBJECTYPE SYNTAX NamedType ACCESS NAME
+			STATUS NAME DescrPart ReferPart IndexPart DefValPart
+			CCE ObjectID {
+			    pass1_obj (mymodule, $1, $4, $14, $6, $8,
+				       $9, $10, $11, $12);
+			}
+	;
+
+ObjectIDefinition:	NAME OBJECT IDENTIFIER CCE ObjectID {
+			    pass1_oid (mymodule, $1, $5);
+			}
+	;
+
+ObjectID:		NAME {
+			    $$ = new_value (YV_OIDLIST);
+			    $$ -> yv_idlist = new_value (YV_IDEFINED);
+			    $$ -> yv_idlist -> yv_identifier = $1;
+			    $$ -> yv_idlist -> yv_flags |= YV_BOUND;
+			}
+	|		LBRACE ObjectIDComponentList RBRACE {
+			    $$ = new_value (YV_OIDLIST);
+			    $$ -> yv_idlist = $2;
+			}
+	;
+ObjectIDComponentList:	ObjectSubID { $$ = $1; }
+	|		ObjectIDComponentList ObjectSubID {
+			    $$ = add_value ($1, $2);
+			}
+	;
+ObjectSubID:		LITNUMBER {
+			    $$ = new_value (YV_NUMBER);
+			    $$ -> yv_number = $1;
+			}
+	|		NAME {
+			    $$ = new_value (YV_IDEFINED);
+			    $$ -> yv_identifier = $1;
+			    $$ -> yv_flags |= YV_BOUND;
+			}
+	|		NAME LPAREN LITNUMBER RPAREN {
+			    $$ = new_value (YV_NUMBER);
+			    $$ -> yv_number = $3;
+			    $$ -> yv_named = $1;
+			    $$ -> yv_flags |= YV_NAMED;
+			}
+	;
+
+DescrPart:		DESCRIPTION LITSTRING { $$ = $2; }
+	|		empty { $$ = NULL; }
+	;
+
+ReferPart:		REFERENCE LITSTRING { $$ = $2; }
+	|		empty { $$ = NULL; }
+	;
+
+IndexPart:		INDEX LBRACE IndexTypes RBRACE {
+			    $$ = new_value (YV_VALIST);
+			    $$ -> yv_idlist = $3;
+			}
+	|		empty { $$ = NULLYV; }
+	;
+IndexTypes:		IndexType { $$ = $1; }
+	|		IndexTypes COMMA IndexType {
+			    $$ = add_value ($1, $3);
+			}
+	;
+IndexType:		ObjectID { $$ = $1; }
+	|		INTEGER { $$ = new_value (YV_NUMBER); }
+	|		Octetstring { $$ = new_value (YV_STRING); }
+	|		OBJECT IDENTIFIER { $$ = new_value (YV_OIDLIST); }
+	|		ID { 
+			    $$ = new_value (YV_IDEFINED);
+			    $$ -> yv_identifier = $1;
+			}
+	;
+
+DefValPart:		DEFVAL LBRACE Value RBRACE { $$ = $3; }
+	|		empty { $$ = NULLYV; }
+	;
+
+TrapTypeDefinition:	NAME TRAPTYPE ENTERPRISE ObjectID VarPart DescrPart
+			ReferPart CCE LITNUMBER {
+			    pass1_trap (mymodule, $1, $4, $9, $5, $6, $7);
+			}
+	;
+
+VarPart:		VARIABLES LBRACE VarTypes RBRACE {
+			    $$ = new_value (YV_VALIST);
+			    $$ -> yv_idlist = $3;
+			}
+	|		empty { $$ = NULLYV; }
+	;
+VarTypes:		VarType { $$ = $1; }
+	|		VarTypes COMMA VarType {
+			    $$ = add_value ($1, $3);
+			}
+	;
+VarType:		NAME {
+			    $$ = new_value (YV_IDEFINED);
+			    $$ -> yv_identifier = $1;
+			}
+	;
+%END(MOSY)%
+
+Typeassignment:		ID ParameterType Action CCE Action Type {
+			    if ($2)
+			        $6 -> yp_param_type = $2;
+			    if ($3) {
+				$6 -> yp_action0 = $3 -> ya_text;
+				$6 -> yp_act0_lineno= $3 -> ya_lineno;
+				free_action ($3);
+			    }
+			    if ($5) {
+				if ($6 -> yp_action05 == NULLCP) {
+				    $6 -> yp_action05 = $5 -> ya_text;
+				    $6 -> yp_act05_lineno= $5 -> ya_lineno;
+				    free_action ($5);
+				}
+				else
+				    yyerror("too many preliminary actions associated with type");
+			    }
+			    pass1_type (yyencpref, yydecpref, yyprfpref,
+				    mymodule, $1, $6);
+			} ;
+
+Type:			BuiltinType Action {
+			    $$ = $1;
+			    $$ -> yp_direction = yysection;
+			    if ($2) {
+				$$ -> yp_action2 = $2 -> ya_text;
+				$$ -> yp_act2_lineno= $2 -> ya_lineno;
+				free_action ($2);
+			    }
+			}
+	|		DefinedType Action {
+			    $$ = $1;
+			    $$ -> yp_direction = yysection;
+			    if ($2) {
+				$$ -> yp_action2 = $2 -> ya_text;
+				$$ -> yp_act2_lineno= $2 -> ya_lineno;
+				free_action ($2);
+			    }
+			}
+	|		SubType Action {
+			    $$ = $1;
+			    $$ -> yp_direction = yysection;
+			    if ($2) {
+			    	$$ -> yp_action2 = $2 -> ya_text;
+				$$ -> yp_act2_lineno = $2 -> ya_lineno;
+				free_action ($2);
+			    }
+			}
+	;
+
+Action:			ACTION
+	|		empty { $$ = NULLYA; }
+	;
+
+Control:		CONTROL
+	|		empty { $$ = NULLCP; }
+	;
+
+ParameterType:		PARAMETERTYPE
+	|		empty { $$ = NULLCP; }
+	;
+
+BuiltinType:		BOOLEAN PassBool {
+			    $$ = new_type (YP_BOOL);
+			    $$ -> yp_intexp = $2;
+			}
+	|		INTEGER PassInt NNlist {
+			    $$ = new_type ($3 ? YP_INTLIST : YP_INT);
+			    $$ -> yp_intexp = $2;
+			    if ($3)
+				    $$ -> yp_value = $3;
+	    		}
+	|		ENUMERATED PassInt LBRACE NamedNumberList RBRACE {
+			    $$ = new_type (YP_ENUMLIST);
+			    $$ -> yp_intexp = $2;
+			    $$ -> yp_value = $4;
+			}
+
+	|		Bitstring PassBit NNlist {
+			    $$ = $2;
+	    		    $$ -> yp_code = $3 ? YP_BITLIST: YP_BIT;
+			    if ($3)
+				$$ -> yp_value = $3;
+			}
+	|		Octetstring PassString {
+			    $$ = $2;
+			    $$ -> yp_code = YP_OCT;
+			}
+	|		NIL { $$ = new_type (YP_NULL); }
+	|		SEQUENCE Sctrl PassAny {
+			    $$ = new_type (YP_SEQ);
+			    $$ -> yp_strexp = $3;
+			}
+	|		SequenceOf Sctrl Action Control Type {
+			    $$ = new_type (YP_SEQTYPE);
+			    $$ -> yp_type = $5;
+			    if ($2) {
+				$$ -> yp_structname = $2 -> ys_structname;
+				$$ -> yp_ptrname = $2 -> ys_ptrname;
+				free_ys ($2);
+			    }
+			    if ($4) {
+				$$ -> yp_control = $4;
+				$$ -> yp_flags |= YP_CONTROLLED;
+			    }
+			    if ($3) {
+				$$ -> yp_action3 = $3 -> ya_text;
+				$$ -> yp_act3_lineno = $3 -> ya_lineno;
+				free_action ($3);
+			    }
+			}
+	|		SEQUENCE Sctrl Action LBRACE ElementTypes RBRACE {
+			    $$ = new_type (YP_SEQLIST);
+			    $$ -> yp_type = $5;
+			    if ($2) {
+				$$ -> yp_structname = $2 -> ys_structname;
+				$$ -> yp_ptrname = $2 -> ys_ptrname;
+				free_ys ($2);
+			    }
+			    if ($3 && $$ -> yp_action1 == NULLCP) {
+				$$ -> yp_action1 = $3 -> ya_text;
+                                $$ -> yp_act1_lineno = $3 -> ya_lineno;
+                                free_action ($3);
+                            }
+                            else if ($3)
+                                yyerror("too many actions associated with SEQUENCE");
+	    		}
+	|		SET Sctrl PassAny {
+			    $$ = new_type (YP_SET);
+			    $$ -> yp_strexp = $3;
+			}
+	|		SetOf Sctrl Action Control Type {
+			    $$ = new_type (YP_SETTYPE);
+			    $$ -> yp_type = $5;
+			    if ($2) {
+				$$ -> yp_structname = $2 -> ys_structname;
+				$$ -> yp_ptrname = $2 -> ys_ptrname;
+				free_ys ($2);
+			    }
+			    if ($4) {
+				$$ -> yp_control = $4;
+				$$ -> yp_flags |= YP_CONTROLLED;
+			    }
+			    if ($3) {
+				$$ -> yp_action3 = $3 -> ya_text;
+				$$ -> yp_act3_lineno = $3 -> ya_lineno;
+				free_action ($3);
+			    }
+			}
+
+	|		SET Sctrl Action LBRACE MemberTypes RBRACE {
+			    $$ = new_type (YP_SETLIST);
+			    $$ -> yp_type = $5;
+			    if ($2) {
+				$$ -> yp_structname = $2 -> ys_structname;
+				$$ -> yp_ptrname = $2 -> ys_ptrname;
+				free_ys ($2);
+			    }
+			    if ($3 && $$ -> yp_action1 == NULLCP) {
+                                $$ -> yp_action1 = $3 -> ya_text;
+                                $$ -> yp_act1_lineno = $3 -> ya_lineno;
+                                free_action ($3);
+                            }
+                            else if ($3)
+                                yyerror("too many actions associated with SET");
+	    		}
+	|		Tag Action IMPLICIT Type {
+			    $$ = $4;
+			    $$ -> yp_tag = $1;
+			    if ($2 && $$ -> yp_action1 == NULLCP) {
+				$$ -> yp_action1 = $2 -> ya_text;
+				$$ -> yp_act1_lineno= $2 -> ya_lineno;
+				free_action ($2);
+			    }
+			    else if ($2)
+				yyerror("too many actions associated with tagged type");
+			    $$ -> yp_flags |= YP_IMPLICIT | YP_TAG;
+			}
+	|		Tag Action EXPLICIT Type {
+			    $$ = $4;
+			    $$ -> yp_tag = $1;
+			    if ($2 && $$ -> yp_action1 == NULLCP) {
+				$$ -> yp_action1 = $2 -> ya_text;
+				$$ -> yp_act1_lineno= $2 -> ya_lineno;
+				free_action ($2);
+			    }
+			    else if ($2)
+				yyerror("too many actions associated with tagged type");
+			    $$ -> yp_flags |= YP_TAG;
+			}
+	|		Tag Action Type {
+			    $$ = $3;
+			    $$ -> yp_tag = $1;
+			    if ($2 && $$ -> yp_action1 == NULLCP) {
+				$$ -> yp_action1 = $2 -> ya_text;
+				$$ -> yp_act1_lineno= $2 -> ya_lineno;
+				free_action ($2);
+			    }
+			    else if ($2)
+				yyerror("too many actions associated with tagged type");
+			    $$ -> yp_flags |= (YP_TAG | tagdefault);
+			}
+	|		CHOICE Sctrl Action Control LBRACE 
+					AlternativeTypeList RBRACE {
+			    $$ = new_type (YP_CHOICE);
+			    $$ -> yp_type = $6;
+			    if ($2) {
+				$$ -> yp_structname = $2 -> ys_structname;
+				$$ -> yp_ptrname = $2 -> ys_ptrname;
+				free_ys ($2);
+			    }
+			    if ($4) {
+				$$ -> yp_control = $4;
+				$$ -> yp_flags |= YP_CONTROLLED;
+			    }
+			    if ($$ -> yp_action1 == NULLCP && $3) {
+				$$ -> yp_action1 = $3 -> ya_text;
+				$$ -> yp_act1_lineno = $3 -> ya_lineno;
+				free_action ($3);
+			    }
+			    else if ($3)
+				yyerror("too many actions associated with CHOICE");
+			}
+	|		NAME LANGLE Type {
+			    $$ = $3;
+			    $$ -> yp_bound = $1;
+			    $$ -> yp_flags |= YP_BOUND;
+			}
+	|		AnyType PassAny {
+			    $$ = new_type (YP_ANY);
+			    $$ -> yp_strexp = $2;
+			}
+	|		OBJECT IDENTIFIER PassOid {
+			    $$ = new_type (YP_OID);
+			    $$ -> yp_strexp = $3;
+			}
+	|		ENCRYPTED Type {
+			    $$ = $2;
+			    $$ -> yp_tag = new_tag (PE_CLASS_UNIV);
+			    $$ -> yp_tag -> yt_value = new_value(YV_NUMBER);
+			    $$ -> yp_tag -> yt_value -> yv_number = PE_PRIM_ENCR;
+			    $$ -> yp_flags |=
+			    	(YP_ENCRYPTED | YP_TAG | YP_IMPLICIT);
+			}
+	|		REAL PassReal {
+			    $$ = new_type(YP_REAL);
+			    $$ -> yp_strexp = $2;
+			}
+	;
+
+NNlist:			LBRACE NamedNumberList RBRACE { $$ = $2; }
+	|		empty {	$$ = NULL; }
+	;
+DefinedType:		ID PassValue ValParameter {
+			    $$ = $2;
+			    $$ -> yp_code = YP_IDEFINED;
+			    $$ -> yp_identifier = $1;
+			    if ($3) {
+				$$ -> yp_parm = $3;
+				$$ -> yp_flags |= YP_PARMVAL;
+			    }
+%BEGIN(ROSY)%
+#ifndef	lint
+%END(ROSY)%
+			    check_impexp ($$);
+%BEGIN(ROSY)%
+#endif
+%END(ROSY)%
+			}
+	|		ID DOT ID PassValue ValParameter {
+			    $$ = $4;
+			    $$ -> yp_code = YP_IDEFINED;
+			    $$ -> yp_identifier = $3;
+			    $$ -> yp_module = $1;
+			    if ($5) {
+				$$ -> yp_parm = $5;
+				$$ -> yp_flags |= YP_PARMVAL;
+			    }
+			}
+	;
+
+PassValue:		VALA {
+			    $$ = new_type (YP_UNDF);
+			    $$ -> yp_intexp = NULLCP;
+			    $$ -> yp_strexp = $1;
+			    $$ -> yp_prfexp = 'a';
+			}
+	|		VALB {
+			    $$ = new_type (YP_UNDF);
+			    $$ -> yp_intexp = $1;
+			    $$ -> yp_strexp = NULLCP;
+			    $$ -> yp_prfexp = 'b';
+			}
+	|		VALI {
+			    $$ = new_type (YP_UNDF);
+			    $$ -> yp_intexp = $1;
+			    $$ -> yp_strexp = NULLCP;
+			    $$ -> yp_prfexp = 'i';
+			}
+	|		VALX VLENGTH {
+			    $$ = new_type (YP_UNDF);
+			    $$ -> yp_intexp = $2;
+			    $$ -> yp_strexp = $1;
+			    $$ -> yp_prfexp = 'x';
+			}
+	|		VALOID {
+			    $$ = new_type (YP_UNDF);
+			    $$ -> yp_intexp = NULLCP;
+			    $$ -> yp_strexp = $1;
+			    $$ -> yp_prfexp = 'O';
+			}
+	|		PassString
+	;
+
+AnyType:		ANY
+	|		ANY DEFINED BY NAME
+	;
+			
+PassOid:		VALOID
+	|		empty { $$ = NULLCP; }
+	;
+
+PassAny:		VALA
+	|		empty { $$ = NULLCP; }
+	;
+
+PassBool:		VALB
+	|		empty { $$ = NULLCP; }
+	;
+
+PassInt:		VALI
+	|		empty { $$ = NULLCP; }
+	;
+
+PassBit:		VALX VLENGTH {
+			    $$ = new_type (YP_UNDF);
+			    $$ -> yp_intexp = $2;
+			    $$ -> yp_strexp = $1;
+			}
+	|		NullPass
+	;
+
+PassString:		VALS {
+			    $$ = new_type (YP_UNDF);
+			    $$ -> yp_intexp = NULLCP;
+			    $$ -> yp_strexp = $1;
+			    $$ -> yp_prfexp = 's';
+			}
+	|		VALO VLENGTH {
+			    $$ = new_type (YP_UNDF);
+			    $$ -> yp_intexp = $2;
+			    $$ -> yp_strexp = $1;
+			    $$ -> yp_prfexp = 'o';
+			}
+	|		VALQ {
+			    $$ = new_type (YP_UNDF);
+			    $$ -> yp_intexp = NULLCP;
+			    $$ -> yp_strexp = $1;
+			    $$ -> yp_prfexp = 'q';
+			}
+	|		NullPass
+	;
+
+PassReal:		VALR 
+	|		empty { $$ = NULLCP; }
+	;
+
+NullPass:		empty {
+			    $$ = new_type (YP_UNDF);
+			    $$ -> yp_intexp = NULLCP;
+			    $$ -> yp_strexp = NULLCP;
+			}
+	;
+
+ValParameter:		VALP
+	|		empty { $$ = NULLCP; }
+	;
+
+NamedNumberList:	NamedNumber { $$ = $1; }
+	|		NamedNumberList COMMA NamedNumber {
+			    $$ = add_value ($1, $3);
+			}
+	;
+NamedNumber:		NAME LPAREN NumericValue RPAREN Action {
+			    $$ = $3;
+			    $$ -> yv_named = $1;
+			    $$ -> yv_flags |= YV_NAMED;
+			    if ($5) {
+				$$ -> yv_action = $5 -> ya_text;
+				$$ -> yv_act_lineno = $5 -> ya_lineno;
+				free_action ($5);
+			    }
+			}
+	;
+NumericValue:		LITNUMBER {
+			    $$ = new_value (YV_NUMBER);
+			    $$ -> yv_number = $1;
+			}
+	|		DefinedValue
+	;
+
+ElementTypes:		OptionalTypeList { $$ = $1; }
+	|		empty { $$ = NULLYP; }
+	;
+MemberTypes:		OptionalTypeList { $$ = $1; }
+
+	|		empty { $$ = NULLYP; }
+	;
+OptionalTypeList:	OptionalType { $$ = $1; }
+	|		OptionalTypeList COMMA OptionalType {
+			    $$ = add_type ($1, $3);
+			}
+	;
+OptionalType:		NamedType { $$ = $1; }
+	|		NamedType OPTIONAL Control {
+			    $$ = $1;
+			    $$ -> yp_flags |= YP_OPTIONAL;
+			    if ($3) {
+				$$ -> yp_optcontrol = $3;
+				$$ -> yp_flags |= YP_OPTCONTROL;
+			    }
+			}
+	|		NamedType DEFAULT Value Control {
+			    $$ = $1;
+			    $$ -> yp_default = $3;
+			    $$ -> yp_flags |= YP_DEFAULT;
+			    if ($4) {
+				$$ -> yp_optcontrol = $4;
+				$$ -> yp_flags |= YP_OPTCONTROL;
+			    }
+			}
+	|		ComponentsOf { $$ = $1; }
+	|		NAME ComponentsOf { $$ = $2; $$->yp_id = $1; }
+	;
+NamedType:		NAME Action Type {
+			    $$ = $3;
+			    $$ -> yp_id = $1;
+			    if ($$ -> yp_action1 == NULLCP && $2) {
+				$$ -> yp_action1 = $2 -> ya_text;
+				$$ -> yp_act1_lineno = $2 -> ya_lineno;
+				free_action ($2);
+			    }
+			    $$ -> yp_flags |= YP_ID;
+			}
+	|		Type { $$ = $1; }
+	;
+ComponentsOf:		Components Type {
+			    $$ = $2;
+			    $$ -> yp_flags |= YP_COMPONENTS;
+			}
+	;
+AlternativeTypeList:	NamedType { $$ = $1; }
+	|		AlternativeTypeList COMMA NamedType {
+			    $$ = add_type ($1, $3);
+			}
+	;
+
+Tag:			LBRACKET Class NumericValue RBRACKET {
+			    $$ = $2;
+			    $$ -> yt_value = $3;
+			}
+	;
+Class:			UNIVERSAL { $$ = new_tag (PE_CLASS_UNIV); }
+	| 		APPLICATION { $$ = new_tag (PE_CLASS_APPL); }
+	|		PRIVATE { $$ = new_tag (PE_CLASS_PRIV); }
+	|		empty { $$ = new_tag (PE_CLASS_CONT); }
+	;
+
+
+Valueassignment:	NAME Type CCE Value
+	;
+
+Value:			BuiltinValue
+	|		DefinedValue
+	;
+BuiltinValue:		TRUE {
+			    $$ = new_value (YV_BOOL);
+			    $$ -> yv_number = 1;
+			}
+	|		FALSE {
+			    $$ = new_value (YV_BOOL);
+			    $$ -> yv_number = 0;
+			}
+	|		LITNUMBER {
+			    $$ = new_value (YV_NUMBER);
+			    $$ -> yv_number = $1;
+			}
+	|		LBRACE ID IdentifierList RBRACE {
+			    $$ = new_value (YV_IDLIST);
+			    $$ -> yv_idlist = new_value (YV_IDEFINED);
+			    $$ -> yv_idlist -> yv_identifier = $2;
+			    if ($3)
+			        $$ = add_value ($$, $3);
+			}
+	|		LITSTRING {
+			    $$ = new_value (YV_STRING);
+			    $$ -> yv_string = $1;
+			}
+	|		NIL { $$ = new_value (YV_NULL); }
+	|		LBRACE Values RBRACE {
+			    $$ = new_value (YV_VALIST);
+			    $$ -> yv_idlist = $2;
+			}
+	|		NAME Value {
+			    $$ = $2;
+			    $$ -> yv_id = $1;
+			    $$ -> yv_flags |= YV_ID;
+			}
+	|		Type Value {
+			    $$ = $2;
+			    $$ -> yv_type = $1;
+			    $$ -> yv_flags |= YV_TYPE;
+			}
+	|		RealValue {
+			    $$ = new_value (YV_REAL);
+			    $$ -> yv_real = $1;
+			}
+	;
+
+RealValue: 		NumericRealValue
+	|		SpecialRealValue
+	;
+
+SpecialRealValue:	PLUSINFINITY { $$ = PE_REAL_INFINITY;} 
+	|		MINUSINFINITY { $$ = - PE_REAL_INFINITY; }
+	;
+
+NumericRealValue:	LBRACE LITNUMBER COMMA LITNUMBER COMMA
+				 LITNUMBER RBRACE {
+				if ($4 != 2 && $4 != 10)
+					myyerror ("Illegal base value %d", $4);
+				$$ = $2 * pow ((double)$4, (double)$6);
+			}
+	;
+
+DefinedValue:		ID {
+			    $$ = new_value (YV_IDEFINED);
+			    $$ -> yv_identifier = $1;
+			}
+	|		NAME {	/* XXX */
+			    $$ = new_value (YV_IDEFINED);
+			    $$ -> yv_identifier = $1;
+			    $$ -> yv_flags |= YV_BOUND;
+			}
+	|		ID DOT ID {
+			    $$ = new_value (YV_IDEFINED);
+			    $$ -> yv_identifier = $3;
+			    $$ -> yv_module = $1;
+			}
+	;
+
+IdentifierList:		IdentifierList COMMA ID {
+			    $$ = new_value (YV_IDEFINED);
+			    $$ -> yv_identifier = $3;
+			    if ($1)
+			        $$ = add_value ($1, $$);
+			}
+	|		empty { $$ = NULLYV; }
+	;
+
+Values:			NamedValueList { $$ = $1; }
+	|		empty { $$ = NULLYV; }
+	;
+NamedValueList:		NamedValue { $$ = $1; }
+	|		NamedValueList COMMA NamedValue {
+			    $$ = add_value ($1, $3);
+			}
+	;
+NamedValue:		Value { $$ = $1; }
+	;
+
+empty:	;
+
+Octetstring:		OCTET STRING
+	|		OCTETSTRING
+	;
+
+Bitstring:		BITSTRING
+	|		BIT STRING
+	;
+
+SequenceOf:		SEQUENCEOF
+	|		SEQUENCE OF
+	;
+SetOf:			SETOF
+	|		SET OF
+	;
+Components:		COMPONENTSOF
+	|		COMPONENTS OF
+	;
+
+ObjectIdentifierValue:	LBRACE ObjIdComponentList RBRACE
+			{ $$ = $2; }
+	;
+
+ObjIdComponentList:	ObjIdComponent
+	|		ObjIdComponentList ObjIdComponent
+			{
+				$$ = addoid($1, $2);
+				oid_free ($1);
+				oid_free ($2);
+			}
+	;
+
+ObjIdComponent:		NumberForm
+	|		NameAndNumberForm
+	;
+
+NumberForm:		LITNUMBER { $$ = int2oid ($1); }
+	|		DefinedValue {
+				$$ = oidlookup($1->yv_identifier);
+				free((char *)$1);
+			}
+	;
+
+NameAndNumberForm:	NAME LPAREN NumberForm RPAREN {
+				free ($1);
+				$$ = $3;
+			}
+	;
+
+SubType:		Type SubtypeSpec
+	|		SET SizeConstraint OF Sctrl Action Control Type {
+			    $$ = new_type (YP_SETTYPE);
+			    $$ -> yp_type = $7;
+			    if ($4) {
+				$$ -> yp_structname = $4 -> ys_structname;
+				$$ -> yp_ptrname = $4 -> ys_ptrname;
+				free_ys ($4);
+			    }
+			    if ($6) {
+			    	$$ -> yp_control = $6;
+				$$ -> yp_flags |= YP_CONTROLLED;
+			    }
+			    if ($5) {
+			    	$$ -> yp_action3 = $5 -> ya_text;
+				$$ -> yp_act2_lineno = $5 -> ya_lineno;
+				free_action ($5);
+			    }                  
+	    		}
+
+	|		SEQUENCE SizeConstraint OF Sctrl Action Control Type {
+			    $$ = new_type (YP_SEQTYPE);
+			    $$ -> yp_type = $7;
+			    if ($4) {
+				$$ -> yp_structname = $4 -> ys_structname;
+				$$ -> yp_ptrname = $4 -> ys_ptrname;
+				free_ys ($4);
+			    }
+			    if ($6) {
+				$$ -> yp_control = $6;
+				$$ -> yp_flags |= YP_CONTROLLED;
+			    }
+			    if ($5) {
+				$$ -> yp_action3 = $5 -> ya_text;
+				$$ -> yp_act3_lineno = $5 -> ya_lineno;
+				free_action ($5);
+			    }
+			}
+	;
+
+SubtypeSpec:		LPAREN SubtypeAlternative SubtypeAlternativeList RPAREN
+	;
+
+SubtypeAlternative:	SubtypeValueSet
+	|		SubtypeConstraint
+	;
+
+SubtypeAlternativeList:	BAR SubtypeAlternative SubtypeAlternativeList
+	|		empty
+	;
+
+SubtypeValueSet:	Value
+	|		ContainedSubType
+	|		ValueRange
+	|		PermittedAlphabet
+	;
+
+SubtypeConstraint:	SizeConstraint
+	|		InnerTypeConstraint
+	;
+
+ContainedSubType:	INCLUDES Type	;
+
+ValueRange:		LowerEndPoint DOTDOT UpperEndpoint
+	;
+
+LowerEndPoint:		LowerEndValue
+	|		LowerEndValue LANGLE
+	;
+
+UpperEndpoint:		UpperEndValue
+	|		LANGLE UpperEndValue
+	;
+
+LowerEndValue:		Value
+	|		MIN
+	;
+
+UpperEndValue:		Value
+	|		MAX
+	;
+
+SizeConstraint:		SIZE SubtypeSpec
+	;
+
+PermittedAlphabet:	FROM SubtypeSpec
+	;
+
+InnerTypeConstraint:	WITH COMPONENT SingleTypeConstraint
+	|		WITH COMPONENTS MultipleTypeConstraints
+	;
+
+SingleTypeConstraint:	SubtypeSpec
+	;
+
+MultipleTypeConstraints:FullSpecification
+	|		PartialSpecification
+	;
+
+FullSpecification:	LBRACE TypeConstraints RBRACE
+	;
+
+PartialSpecification:	LBRACE DOTDOTDOT COMMA TypeConstraints RBRACE
+	;
+
+TypeConstraints:	NamedConstraint
+	|		NamedConstraint COMMA TypeConstraints
+	;
+
+NamedConstraint:	NAME Constraint
+	|		Constraint
+	;
+
+Constraint:		ValueConstraint
+	|		PresenceConstraint
+	|		empty
+	;
+
+ValueConstraint:	SubtypeSpec
+	;
+
+PresenceConstraint:	PRESENT
+	|		ABSENT
+	;
+
+Sctrl:			SCTRL { $$ = new_ys ($1); }
+	|		empty { $$ = NULLYS; }
+	;
+%%
+
+#ifdef	HPUX
+#define	uchar	Uchar
+#endif
+#include "lex.c"
