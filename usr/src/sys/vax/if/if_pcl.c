@@ -1,11 +1,11 @@
-/*	if_pcl.c	4.3	83/06/13	*/
+/*	if_pcl.c	4.4	83/07/06	*/
 
 #include "pcl.h"
 #if NPCL > 0
 /*
  * DEC CSS PCL-11B Parallel Communications Interface
  *
- * Written by Mike Muuss.
+ * Written by Mike Muuss and Jeff Schwab.
  */
 #include "../machine/pte.h"
 
@@ -35,7 +35,8 @@
 #include "../vaxuba/ubavar.h"
 
 /* The MTU has been carefully selected to prevent fragmentation <-> ArpaNet */
-#define	PCLMTU	(1006)		/* Max transmission unit (bytes) */
+#define	PCLMTU		(1006)	/* Max transmission unit (bytes) */
+#define	PCLMAXTDM	7	/* Max unit number on TDM bus */
 
 int	pclprobe(), pclattach(), pclrint(), pclxint();
 int	pclinit(), pclioctl(), pcloutput(), pclreset();
@@ -65,6 +66,7 @@ struct	pcl_softc {
 	short	sc_olen;		/* length of last output */
 	short	sc_lastdest;		/* previous destination */
 	short	sc_odest;		/* current xmit destination */
+	short	sc_bdest;		/* buffer's stated destination */
 	short	sc_pattern;		/* identification pattern */
 } pcl_softc[NPCL];
 
@@ -199,9 +201,11 @@ pcloutput(ifp, m, dst)
 
 #ifdef INET
 	case AF_INET:
-		dest = ((struct sockaddr_in *)dst)->sin_addr.s_addr;
-		dest = ntohl((u_long)dest);	/* ??? */
-		dest = dest & 0xff;
+		dest = in_lnaof(((struct sockaddr_in *)dst)->sin_addr);
+		if (dest > PCLMAXTDM) {
+			error = EHOSTUNREACH;
+			goto bad;
+		}
 		break;
 #endif
 	default:
@@ -293,7 +297,8 @@ pclstart(dev)
 	 * Note that if_wubaput calls m_bcopy, which is prepared for
 	 * m_len to be 0 in the first mbuf in the chain.
 	 */
-	sc->sc_odest = mtod(m, struct pcl_header *)->pcl_dest;
+	sc->sc_bdest = mtod(m, struct pcl_header *)->pcl_dest;
+	sc->sc_odest = sc->sc_bdest? sc->sc_bdest: 1;
 	m->m_off += sizeof (struct pcl_header);
 	m->m_len -= sizeof (struct pcl_header);
 
@@ -303,7 +308,7 @@ pclstart(dev)
 restart:
 	/*
 	 * Have request mapped to UNIBUS for transmission.
-	 * Purge any stale data from this BDP, and start the otput.
+	 * Purge any stale data from this BDP, and start the output.
 	 */
 	if (sc->sc_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(sc->sc_ifuba.ifu_uba, sc->sc_ifuba.ifu_w.ifrw_bdp);
@@ -353,7 +358,13 @@ pclxint(unit)
 			printf("pcl%d: master\n", unit );
 			return;
 		}
-		if (addr->pcl_tsr & PCL_RESPB) {
+#ifndef PCL_TESTING
+		if ((addr->pcl_tsr & (PCL_ERR|PCL_RESPB)) == (PCL_ERR|0))  {
+			;	/* Receiver Offline -- not exactly an error */
+		}  else  {
+#else
+		{
+#endif
 			/* Log as an error */
 			printf("pcl%d: send error, tcr=%b tsr=%b\n",
 				unit, addr->pcl_tcr, PCL_TCSRBITS,
@@ -362,10 +373,14 @@ pclxint(unit)
 		}
 	} else
 		sc->sc_if.if_opackets++;
-	sc->sc_oactive = 0;
-	if (sc->sc_ifuba.ifu_xtofree) {
-		m_freem(sc->sc_ifuba.ifu_xtofree);
-		sc->sc_ifuba.ifu_xtofree = 0;
+	if (sc->sc_bdest == 0 && sc->sc_odest < PCLMAXTDM) {
+		sc->sc_odest++;		/* do next host (broadcast) */
+	} else {
+		sc->sc_oactive = 0;
+		if (sc->sc_ifuba.ifu_xtofree) {
+			m_freem(sc->sc_ifuba.ifu_xtofree);
+			sc->sc_ifuba.ifu_xtofree = 0;
+		}
 	}
 	pclstart(unit);
 }
@@ -456,6 +471,10 @@ pclioctl(ifp, cmd, data)
 		ifp->if_addr = *(struct sockaddr *)sin;
 		ifp->if_net = in_netof(sin->sin_addr);
 		ifp->if_host[0] = in_lnaof(sin->sin_addr);
+		ifp->if_broadaddr = *(struct sockaddr *)sin;
+		sin = (struct sockaddr_in *)&ifp->if_broadaddr;
+		sin->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
+		ifp->if_flags |= IFF_BROADCAST;
 		if (ifp->if_flags & IFF_RUNNING)
 			if_rtinit(ifp, RTF_UP);
 		else
