@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)srt0.c	7.4 (Berkeley) %G%
+ *	@(#)srt0.c	7.5 (Berkeley) %G%
  */
 
 #include "../vax/mtpr.h"
@@ -33,10 +33,12 @@ entry:	.globl	entry
 	mtpr	$HIGH,$IPL		# just in case
 
 #ifdef REL
-	# we need to do special stuff on microvax II
+	# we need to do special stuff on microvaxen
 	mfpr	$SID,r0
 	cmpzv	$24,$8,r0,$VAX_630
-	bneq	1f
+	beql	1f
+	cmpzv	$24,$8,r0,$VAX_650
+	bneq	2f
 
 	/*
 	 * Were we booted by VMB?  If so, r11 is not boothowto,
@@ -44,14 +46,15 @@ entry:	.globl	entry
 	 * User's Manual, pp 3-21).  These tests were devised by
 	 * richl@tektronix, 11/10/87.
 	 */
+1:
 	cmpl	(r11),r11		# if boothowto, r11 will be small
-	bneq	1f			# and these will not fault
+	bneq	2f			# and these will not fault
 	cmpl	4(r11),$0
-	bneq	1f
+	bneq	2f
 	cmpl	8(r11),$-1
-	bneq	1f
+	bneq	2f
 	tstl	0xc(r11)
-	bneq	1f
+	bneq	2f
 
 	/*
 	 * Booted by VMB: get flags from extended rpb.
@@ -59,7 +62,7 @@ entry:	.globl	entry
 	 */
 	movl	0x30(r11),r11
 	movl	$9,r10			# device = ra(0,0)
-1:
+2:
 	movl	$RELOC,sp
 #else
 	movl	$RELOC-0x2400,sp
@@ -152,6 +155,8 @@ _badaddr:
 	.word	1f-0b		# 6 is 8800
 	.word	1f-0b		# 7 is 610
 	.word	5f-0b		# 8 is 630
+	.word	1f-0b		# 9 is ???
+	.word	5f-0b		# 10 is 650
 5:
 	mtpr	$0xf,$MCESR
 	brb	1f

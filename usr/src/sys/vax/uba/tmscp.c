@@ -1,4 +1,4 @@
-/*	@(#)tmscp.c	7.4 (Berkeley) %G% */
+/*	@(#)tmscp.c	7.5 (Berkeley) %G% */
 
 #ifndef lint
 static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
@@ -323,8 +323,8 @@ tmscpprobe(reg, ctlr)
 	if (count == DELAYTEN)
 		return(0);
 
-#ifdef VAX630
-	if (cpu == VAX_630)
+#ifdef QBA
+	if (cpu == VAX_630 || cpu == VAX_650)
 		br = 0x15;	/* screwy interrupt structure */
 #endif
 	return(sizeof (struct tmscpdevice));
