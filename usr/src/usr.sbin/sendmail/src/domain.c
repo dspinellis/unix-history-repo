@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.4 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.5 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.4 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.5 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -85,6 +85,7 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 	char *fallbackMX = FallBackMX;
 	static bool firsttime = TRUE;
 	STAB *st;
+	bool trycanon = FALSE;
 	u_short prefer[MAXMXHOSTS];
 	int weight[MAXMXHOSTS];
 	extern bool getcanonname();
@@ -117,6 +118,9 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 		switch (h_errno)
 		{
 		  case NO_DATA:
+			trycanon = TRUE;
+			/* fall through */
+
 		  case NO_RECOVERY:
 			/* no MX data on this host */
 			goto punt;
@@ -246,7 +250,7 @@ punt:
 			return -1;
 		}
 		mxhosts[0] = strcpy(MXHostBuf, host);
-		if (getcanonname(MXHostBuf, sizeof MXHostBuf - 1, FALSE))
+		if (trycanon && getcanonname(MXHostBuf, sizeof MXHostBuf - 1, FALSE))
 		{
 			bp = &MXHostBuf[strlen(MXHostBuf)];
 			if (bp[-1] != '.')
@@ -500,7 +504,7 @@ cnameloop:
 			{
 			  case T_MX:
 				gotmx = TRUE;
-				if (**dp != '\0')
+				if (trymx && **dp != '\0')
 				{
 					/* got a match -- save that info */
 					if (mxmatch == NULL)
