@@ -1,5 +1,5 @@
 /*
-char id_rdfmt[] = "@(#)rdfmt.c	1.5";
+char id_rdfmt[] = "@(#)rdfmt.c	1.6";
  *
  * formatted read routines
  */
@@ -9,6 +9,8 @@ char id_rdfmt[] = "@(#)rdfmt.c	1.5";
 
 #define isdigit(c)	(c>='0' && c<='9')
 #define isalpha(c)	(c>='a' && c<='z')
+
+extern char *s_init;
 
 rd_ed(p,ptr,len) char *ptr; struct syl *p; ftnlen len;
 {	int n;
@@ -23,7 +25,8 @@ rd_ed(p,ptr,len) char *ptr; struct syl *p; ftnlen len;
 		n = (rd_L(ptr,p->p1));
 		break;
 	case A:
-		p->p1 = len;	/* cheap trick */
+		n = (rd_AW(ptr,len,len));
+		break;
 	case AW:
 		n = (rd_AW(ptr,p->p1,len));
 		break;
@@ -54,9 +57,9 @@ rd_ned(p,ptr) char *ptr; struct syl *p;
 	{
 #ifndef	KOSHER
 	case APOS:					/* NOT STANDARD F77 */
-		return(rd_POS((char *)p->p1));
+		return(rd_POS(&s_init[p->p1]));
 	case H:						/* NOT STANDARD F77 */
-		return(rd_H(p->p1,(char *)p->p2));
+		return(rd_H(p->p1,&s_init[p->p2]));
 #endif
 	case SLASH:
 		return((*donewrec)());

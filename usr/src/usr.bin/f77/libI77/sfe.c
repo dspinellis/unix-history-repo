@@ -1,5 +1,5 @@
 /*
-char id_sfe[] = "@(#)sfe.c	1.8";
+char id_sfe[] = "@(#)sfe.c	1.9";
  *
  * sequential formatted external routines
  */
@@ -26,7 +26,7 @@ s_rsfe(a) cilist *a; /* start */
 	doned= rd_ned;
 	donewrec = dorevert = doend = x_rnew;
 	dotab = x_tab;
-	if(pars_f(fmtbuf)) err(errflag,F_ERFMT,rsfe)
+	if(pars_f()) err(errflag,F_ERFMT,rsfe)
 	fmt_bg();
 	return(OK);
 }
@@ -115,7 +115,7 @@ s_wsfe(a) cilist *a;	/*start*/
 	doend = x_wend;
 	dorevert = donewrec = x_wnew;
 	dotab = x_tab;
-	if(pars_f(fmtbuf)) err(errflag,F_ERFMT,wsfe)
+	if(pars_f()) err(errflag,F_ERFMT,wsfe)
 	fmt_bg();
 	return(OK);
 }

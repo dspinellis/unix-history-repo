@@ -1,5 +1,5 @@
 /*
-char id_fmt[] = "@(#)fmt.c	1.6";
+char id_fmt[] = "@(#)fmt.c	1.7";
  *
  * fortran format parser
  */
@@ -23,14 +23,34 @@ char id_fmt[] = "@(#)fmt.c	1.6";
 #define SYLMX 300
 #endif
 
-struct syl syl[SYLMX];
-int parenlvl,pc,revloc;
+struct syl syl_vec[SYLMX];
+struct syl *syl_ptr;
+int parenlvl,revloc;
+short pc;
 char *f_s(), *f_list(), *i_tem(), *gt_num(), *ap_end();
+char *s_init;
 
-pars_f(s) char *s;
+pars_f()
 {
+	short *s_ptr;
+	long  *l_ptr;
+
 	parenlvl=revloc=pc=0;
-	return((f_s(s,0)==FMTERR)? ERROR : OK);
+	s_ptr = (short *) fmtbuf;
+	if( *s_ptr == FMT_COMP ) {
+		/* already compiled - copy value of pc */
+		pc = *(s_ptr+1);
+		/* get address of the format */
+		l_ptr = (long *) fmtbuf;
+		fmtbuf = s_init = (char *) *(l_ptr+1);
+		/* point syl_ptr to the compiled format */
+		syl_ptr = (struct syl *) (l_ptr + 2);
+		return(OK);
+	} else {
+		syl_ptr = syl_vec;
+		s_init = fmtbuf;
+		return((f_s(fmtbuf,0)==FMTERR)? ERROR : OK);
+	}
 }
 
 char *f_s(s,curloc) char *s;
@@ -137,7 +157,7 @@ ne_d(s,p) char *s,**p;
 		case 't': op_gen(T,0,n,0,s); break;	/* NOT STANDARD FORT */
 #endif
 		case 'x': op_gen(X,n,0,0,s); break;
-		case 'h': op_gen(H,n,(int)(s+1),0,s);
+		case 'h': op_gen(H,n,(s+1)-s_init,0,s);
 			s+=n;
 			break;
 		default: fmtptr = s; return(FMTUNKN);
@@ -145,7 +165,7 @@ ne_d(s,p) char *s,**p;
 		break;
 	case GLITCH:
 	case '"':
-	case '\'': op_gen(APOS,(int)s,0,0,s);
+	case '\'': op_gen(APOS,s-s_init,0,0,s);
 		*p = ap_end(s);
 		return(FMTOK);
 	case 't':
@@ -177,12 +197,11 @@ ne_d(s,p) char *s,**p;
 }
 
 e_d(s,p) char *s,**p;
-{	int n,w,d,e,x=0;
+{	int n,w,d,e,x=0, rep_count;
 	char *sv=s;
 	char c;
-	s=gt_num(s,&n);
-	if (n == 0) goto ed_err;
-	op_gen(STACK,n,0,0,s);
+	s=gt_num(s,&rep_count);
+	if (rep_count == 0) goto ed_err;
 	c = lcase(*s); s++;
 	switch(c)
 	{
@@ -203,19 +222,20 @@ e_d(s,p) char *s,**p;
 		)
 		{	s++;
 			s=gt_num(s,&e);
+			if (e==0 || e>127 || d>127 ) goto ed_err;
 			if(c=='e') n=EE; else if(c=='d') n=DE; else n=GE;
+			op_gen(n,w,d + (e<<8),rep_count,s);
 		}
 		else
-		{	e=2;
+		{
 			if(c=='e') n=E; else if(c=='d') n=D; else n=G;
+			op_gen(n,w,d,rep_count,s);
 		}
-		if (e==0) goto ed_err;
-		op_gen(n,w,d,e,s);
 		break;
 	case 'l':
 		s = gt_num(s, &w);
 		if (w==0) goto ed_err;
-		op_gen(L,w,0,0,s);
+		op_gen(L,w,0,rep_count,s);
 		break;
 	case 'a':
 		skip(s);
@@ -224,13 +244,13 @@ e_d(s,p) char *s,**p;
 #ifdef	KOSHER
 			if (w==0) goto ed_err;
 #else
-			if (w==0) op_gen(A,0,0,0,s);
+			if (w==0) op_gen(A,0,0,rep_count,s);
 			else
 #endif
-			op_gen(AW,w,0,0,s);
+			op_gen(AW,w,0,rep_count,s);
 			break;
 		}
-		op_gen(A,0,0,0,s);
+		op_gen(A,0,0,rep_count,s);
 		break;
 	case 'f':
 		s = gt_num(s, &w);
@@ -240,7 +260,7 @@ e_d(s,p) char *s,**p;
 			s=gt_num(s,&d);
 		}
 		else d=0;
-		op_gen(F,w,d,0,s);
+		op_gen(F,w,d,rep_count,s);
 		break;
 #ifndef	KOSHER
 	case 'o':	/*** octal format - NOT STANDARD FORTRAN ***/
@@ -261,18 +281,17 @@ e_d(s,p) char *s,**p;
 		}
 #ifndef KOSHER
 		if (c == 'o')
-			op_gen(R,8,1,0,s);
+			op_gen(R,8,1,rep_count,s);
 		else if (c == 'z')
-			op_gen(R,16,1,0,s);
+			op_gen(R,16,1,rep_count,s);
 #endif
-		op_gen(x,w,d,0,s);
+		op_gen(x,w,d,rep_count,s);
 #ifndef KOSHER
 		if (c == 'o' || c == 'z')
-			op_gen(R,10,1,0,s);
+			op_gen(R,10,1,rep_count,s);
 #endif
 		break;
 	default:
-		pc--;	/* unSTACK */
 		*p = sv;
 		fmtptr = s;
 		return(FMTUNKN);
@@ -284,20 +303,24 @@ ed_err:
 	return(FMTERR);
 }
 
-op_gen(a,b,c,d,s) char *s;
-{	struct syl *p= &syl[pc];
+op_gen(a,b,c,rep,s) char *s;
+{	struct syl *p= &syl_ptr[pc];
 	if(pc>=SYLMX)
 	{	fmtptr = s;
 		fatal(F_ERFMT,"format too complex");
 	}
+	if( b>32767 || c>32767 || rep>32767 )
+	{	fmtptr = s;
+		fatal("field width or repeat count too large");
+	}
 #ifdef DEBUG
 	fprintf(stderr,"%3d opgen: %d %d %d %d %c\n",
-		pc,a,b,c,d,*s==GLITCH?'"':*s); /* for debug */
+		pc,a,b,c,rep,*s==GLITCH?'"':*s); /* for debug */
 #endif
 	p->op=a;
 	p->p1=b;
 	p->p2=c;
-	p->p3=d;
+	p->rpcnt=rep;
 	return(pc++);
 }
 

@@ -1,5 +1,5 @@
 /*
-char id_dofio[] = "@(#)dofio.c	1.4";
+char id_dofio[] = "@(#)dofio.c	1.5";
  *
  * fortran format executer
  */
@@ -17,32 +17,35 @@ en_fio()
 	return(do_fio(&one,NULL,0L));
 }
 
+static int rep_count, in_mid;
+
 do_fio(number,ptr,len) ftnint *number; ftnlen len; char *ptr;
 {	struct syl *p;
 	int n,i,more;
 	more = *number;
 	for(;;)
-	switch(type_f((p= &syl[pc])->op))
+	switch(type_f((p= &syl_ptr[pc])->op))
 	{
 	case NED:
 		DO((*doned)(p,ptr))
 		pc++;
 		break;
 	case ED:
-		if(ptr==NULL)
-		{	DO((*doend)('\n'))
+		if(in_mid == NO) rep_count = p->rpcnt;
+		in_mid = YES;
+		while (rep_count > 0 ) {
+		    if(ptr==NULL)
+		    {	DO((*doend)('\n'))
 			return(OK);
+		    }
+		    if(!more) return(OK);
+		    DO((*doed)(p,ptr,len))
+		    ptr += len;
+		    more--;
+		    rep_count--;
 		}
-		if(cnt[cp]<=0)
-		{	cp--;
-			pc++;
-			break;
-		}
-		if(!more) return(OK);
-		DO((*doed)(p,ptr,len))
-		cnt[cp]--;
-		ptr += len;
-		more--;
+		pc++;
+		in_mid = NO;
 		break;
 	case STACK:		/* repeat count */
 		if(++cp==STKSZ) err(errflag,F_ERFMT,"too many nested ()")
@@ -118,6 +121,7 @@ do_fio(number,ptr,len) ftnint *number; ftnlen len; char *ptr;
 
 fmt_bg()
 {
+	in_mid = NO;
 	cp=rp=pc=cursor=0;
 	cnt[0]=ret[0]=0;
 }

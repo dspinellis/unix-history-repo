@@ -1,12 +1,12 @@
 /*
-char id_format[] = "@(#)format.h	1.3";
+char id_format[] = "@(#)format.h	1.4";
  *
  * format parser definitions
  */
 
 struct syl
 {
-	int op,p1,p2,p3;
+	short op,p1,p2,rpcnt;
 };
 
 #define RET	1
@@ -49,5 +49,8 @@ struct syl
 #define FMTOK	1
 #define FMTERR	0
 
-extern struct syl syl[];
-extern int pc,parenlvl,revloc;
+#define FMT_COMP 0x101		/* indicates pre-compiled formats */
+
+extern struct syl *syl_ptr;
+extern int parenlvl,revloc;
+extern short pc;
