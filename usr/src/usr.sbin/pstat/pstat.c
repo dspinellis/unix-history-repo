@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -417,13 +417,13 @@ doproc()
 		return;
 	}
 	printf("%d/%d processes\n", np, nproc);
-	printf("   LOC    S    F POIP PRI      SIG  UID SLP TIM  CPU  NI   PGRP    PID   PPID    ADDR   RSS SRSS SIZE    WCHAN    LINK   TEXTP\n");
+	printf("   LOC    S        F POIP PRI      SIG  UID SLP TIM  CPU  NI    PID   PPID    ADDR   RSS SRSS SIZE    WCHAN    LINK   TEXTP\n");
 	for (pp=xproc; pp<&xproc[nproc]; pp++) {
 		if (pp->p_stat==0 && allflg==0)
 			continue;
 		printf("%8x", aproc + (pp - xproc));
 		printf(" %2d", pp->p_stat);
-		printf(" %4x", pp->p_flag & 0xffff);
+		printf(" %8x", pp->p_flag);
 		printf(" %4d", pp->p_poip);
 		printf(" %3d", pp->p_pri);
 		printf(" %8x", pp->p_sig);
@@ -432,7 +432,6 @@ doproc()
 		printf(" %3d", pp->p_time);
 		printf(" %4d", pp->p_cpu&0377);
 		printf(" %3d", pp->p_nice);
-		printf(" %6d", pp->p_pgrp);
 		printf(" %6d", pp->p_pid);
 		printf(" %6d", pp->p_ppid);
 		if (kflg)
