@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm.c	5.21 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -611,13 +611,6 @@ kvm_getu(p)
 	if (p->p_stat == SZOMB) {
 		seterr("zombie process");
 		return (NULL);
-	}
-	/*
-	 * Reading from swap is too complicated right now.
-	 */
-	if ((p->p_flag & SLOAD) == 0) {
-		seterr("can't read from swap yet");
-		return(NULL);
 	}
 	/*
 	 * Read u-area one page at a time for the benefit of post-mortems
