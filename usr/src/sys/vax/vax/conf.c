@@ -1,4 +1,4 @@
-/*	conf.c	4.23	%G%	*/
+/*	conf.c	4.24	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,7 +13,6 @@
 #include "../h/inode.h"
 #include "../h/acct.h"
 #include "../h/pte.h"
-#include "../h/mba.h"
 
 int	nulldev();
 int	nodev();
@@ -29,7 +28,7 @@ int	hpstrategy(),hpread(),hpwrite(),hpintr(),hpdump();
 #define	hpdump		nodev
 #endif
  
-#include "ht.h"
+#include "tu.h"
 #if NHT > 0
 int	htopen(),htclose(),htstrategy(),htread(),htwrite(),htdump();
 #else
