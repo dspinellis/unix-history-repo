@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.22 %G%";
+static char sccsid[] = "@(#)interp.c 1.23 %G%";
 
 #include <math.h>
 #include "whoami.h"
@@ -1189,8 +1189,8 @@ interpreter(base)
 			continue;
 		case O_ASRT:
 			pc.cp++;
-			ts = pop2();
-			ASRT(ts, "");
+			ASRT();
+			popsp((long)(sizeof(long)+sizeof(char *)));
 			continue;
 		case O_FOR1U:
 			/*
