@@ -1,4 +1,4 @@
-/*	up.c	4.45.1.1	82/10/10	*/
+/*	up.c	4.61	82/11/26	*/
 .f
 
 #include "up.h"
@@ -904,7 +904,7 @@ upreset(uban)
 		up_softc[sc21].sc_wticks = 0;
 		if (um->um_ubinfo) {
 			printf("<%d>", (um->um_ubinfo>>28)&0xf);
-			ubadone(um);
+			um->um_ubinfo = 0;
 		}
 		((struct updevice *)(um->um_addr))->upcs2 = UPCS2_CLR;
 		for (unit = 0; unit < NUP; unit++) {

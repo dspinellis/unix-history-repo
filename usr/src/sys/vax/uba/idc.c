@@ -1,4 +1,4 @@
-/*	idc.c	4.9	82/10/20	*/
+/*	idc.c	4.10	82/11/26	*/
 
 #include "rb.h"
 #if NIDC > 0
@@ -725,7 +725,7 @@ idcreset(uban)
 	um->um_tab.b_actf = um->um_tab.b_actl = 0;
 	if (um->um_ubinfo) {
 		printf("<%d>", (um->um_ubinfo>>28)&0xf);
-		ubadone(um);
+		um->um_ubinfo = 0;
 	}
 	for (unit = 0; unit < NRB; unit++) {
 		if ((ui = idcdinfo[unit]) == 0 || ui->ui_alive == 0)

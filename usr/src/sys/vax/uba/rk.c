@@ -1,4 +1,4 @@
-/*	rk.c	4.49	82/10/17	*/
+/*	rk.c	4.50	82/11/26	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -676,7 +676,7 @@ rkreset(uban)
 		rk_softc[um->um_ctlr].sc_wticks = 0;
 		if (um->um_ubinfo) {
 			printf("<%d>", (um->um_ubinfo>>28)&0xf);
-			ubadone(um);
+			um->um_ubinfo = 0;
 		}
 		for (unit = 0; unit < NRK; unit++) {
 			if ((ui = rkdinfo[unit]) == 0)

@@ -1,4 +1,4 @@
-/*	tm.c	4.58	82/10/17	*/
+/*	tm.c	4.59	82/11/26	*/
 
 #include "te.h"
 #include "ts.h"
@@ -803,7 +803,7 @@ tmreset(uban)
 		um->um_tab.b_actf = um->um_tab.b_actl = 0;
 		if (um->um_ubinfo) {
 			printf("<%d>", (um->um_ubinfo>>28)&0xf);
-			ubadone(um);
+			um->um_ubinfo = 0;
 		}
 		((struct tmdevice *)(um->um_addr))->tmcs = TM_DCLR;
 		for (teunit = 0; teunit < NTE; teunit++) {
