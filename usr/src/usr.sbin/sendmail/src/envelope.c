@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.54 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.55 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -82,9 +82,12 @@ dropenvelope(e)
 
 	if (tTd(50, 1))
 	{
+		extern void printenvflags();
+
 		printf("dropenvelope %x: id=", e);
 		xputs(e->e_id);
-		printf(", flags=0x%x\n", e->e_flags);
+		printf(", flags=");
+		printenvflags(e);
 		if (tTd(50, 10))
 		{
 			printf("sendq=");
@@ -279,8 +282,13 @@ dropenvelope(e)
 	    bitset(EF_CLRQUEUE, e->e_flags))
 	{
 		if (tTd(50, 1))
-			printf("\n===== Dropping [dq]f%s (queueit=%d, e_flags=%x) =====\n\n",
-				e->e_id, queueit, e->e_flags);
+		{
+			extern void printenvflags();
+
+			printf("\n===== Dropping [dq]f%s... queueit=%d, e_flags=",
+				e->e_id, queueit);
+			printenvflags(e);
+		}
 		xunlink(queuename(e, 'd'));
 		xunlink(queuename(e, 'q'));
 
@@ -805,4 +813,68 @@ setsender(from, e, delimptr, internal)
 		if (*pvp != NULL)
 			e->e_fromdomain = copyplist(pvp, TRUE);
 	}
+}
+/*
+**  PRINTENVFLAGS -- print envelope flags for debugging
+**
+**	Parameters:
+**		e -- the envelope with the flags to be printed.
+**
+**	Returns:
+**		none.
+*/
+
+struct eflags
+{
+	char	*ef_name;
+	u_long	ef_bit;
+};
+
+struct eflags	EnvelopeFlags[] =
+{
+	"OLDSTYLE",	EF_OLDSTYLE,
+	"INQUEUE",	EF_INQUEUE,
+	"NO_BODY_RETN",	EF_NO_BODY_RETN,
+	"CLRQUEUE",	EF_CLRQUEUE,
+	"SENDRECEIPT",	EF_SENDRECEIPT,
+	"FATALERRS",	EF_FATALERRS,
+	"KEEPQUEUE",	EF_KEEPQUEUE,
+	"RESPONSE",	EF_RESPONSE,
+	"RESENT",	EF_RESENT,
+	"VRFYONLY",	EF_VRFYONLY,
+	"WARNING",	EF_WARNING,
+	"QUEUERUN",	EF_QUEUERUN,
+	"GLOBALERRS",	EF_GLOBALERRS,
+	"PM_NOTIFY",	EF_PM_NOTIFY,
+	"METOO",	EF_METOO,
+	"LOGSENDER",	EF_LOGSENDER,
+	"NORECEIPT",	EF_NORECEIPT,
+	"HAS8BIT",	EF_HAS8BIT,
+	"NL_NOT_EOL",	EF_NL_NOT_EOL,
+	"CRLF_NOT_EOL",	EF_CRLF_NOT_EOL,
+	"RET_PARAM",	EF_RET_PARAM,
+	"HAS_DF",	EF_HAS_DF,
+	NULL
+};
+
+void
+printenvflags(e)
+	register ENVELOPE *e;
+{
+	register struct eflags *ef;
+	bool first = TRUE;
+
+	printf("%lx", e->e_flags);
+	for (ef = EnvelopeFlags; ef->ef_name != NULL; ef++)
+	{
+		if (!bitset(ef->ef_bit, e->e_flags))
+			continue;
+		if (first)
+			printf("<%s", ef->ef_name);
+		else
+			printf(",%s", ef->ef_name);
+		first = FALSE;
+	}
+	if (!first)
+		printf(">\n");
 }
