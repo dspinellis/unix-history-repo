@@ -1,4 +1,4 @@
-/*	if_vv.c	6.2	83/12/22	*/
+/*	if_vv.c	6.3	83/12/22	*/
 
 #include "vv.h"
 
@@ -55,8 +55,6 @@
 
 #define	VVMTU	(1024+512)
 #define VVMRU	(1024+512+16)	/* space for trailer */
-
-extern struct ifnet loif;	/* loopback */
 
 int vv_tracehdr = 0,		/* 1 => trace headers (slowly!!) */
     vv_logreaderrors = 1;	/* 1 => log all read errors */
@@ -576,11 +574,6 @@ vvoutput(ifp, m0, dst)
 #ifdef INET
 	case AF_INET:
 		dest = ((struct sockaddr_in *)dst)->sin_addr.s_addr;
-		/* Check if the loopback can be used */
-		if ((dest ==
-		   ((struct sockaddr_in *)&ifp->if_addr)->sin_addr.s_addr) &&
-		   ((loif.if_flags & IFF_UP) != 0))
-		    return(looutput(&loif, m0, dst));
 		if ((dest = in_lnaof(*((struct in_addr *)&dest))) >= 0x100) {
 			error = EPERM;
 			goto bad;
