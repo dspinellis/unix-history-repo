@@ -1,5 +1,5 @@
 #
-#	"@(#)bibinc.fullnames	2.6	%G%";
+#	"@(#)bibinc.fullnames	2.7	%G%";
 # full journal names, and other names
 #
 # journals
@@ -64,6 +64,14 @@ D PLISS83 PROC ACM SI\&GPLAN 1983 SYMP on Programming Language Issues in Softwar
 %V 18\
 %N 6
 D POPL ACM SYMP on Principles of Programming Languages
+D POPL1 CONF Record of the First POPL\
+%D JAN 1974
+D POPL2 CONF Record of the Second POPL\
+%D JAN 1975
+D POPL3 CONF Record of the Third POPL\
+%D JAN 1976
+D POPL4 CONF Record of the Fourth POPL\
+%D JAN 1977
 D POPL5 CONF Record of the Fifth POPL\
 %C Tucson, AZ\
 %D JAN 1978
