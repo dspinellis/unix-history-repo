@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)remcap.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)remcap.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -14,7 +14,8 @@ static char sccsid[] = "@(#)remcap.c	5.4 (Berkeley) %G%";
  *
  * derived from termcap
  */
-#include <sys/file.h>
+#include <sys/types.h>
+#include <fcntl.h>
 #include <ctype.h>
 #include "pathnames.h"
 
