@@ -1,5 +1,15 @@
 /*
- *	@(#)disklabel.h	7.6 (Berkeley) %G%
+ * Copyright (c) 1987 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *	@(#)disklabel.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -216,17 +226,17 @@ struct partinfo {
  * Disk-specific ioctls.
  */
 		/* get and set disklabel; last form used internally */
-#define DIOCGDINFO	_IOR(d, 101, struct disklabel)	/* get */
-#define DIOCSDINFO	_IOW(d, 102, struct disklabel)	/* set */
-#define DIOCWDINFO	_IOW(d, 103, struct disklabel)	/* set and write back */
-#define DIOCGPART	_IOW(d, 104, struct partinfo)	/* get partition */
+#define DIOCGDINFO	_IOR('d', 101, struct disklabel)/* get */
+#define DIOCSDINFO	_IOW('d', 102, struct disklabel)/* set */
+#define DIOCWDINFO	_IOW('d', 103, struct disklabel)/* set and write back */
+#define DIOCGPART	_IOW('d', 104, struct partinfo)	/* get partition */
 
 /* do format operation, read or write */
-#define DIOCRFORMAT	_IOWR(d, 105, struct format_op)
-#define DIOCWFORMAT	_IOWR(d, 106, struct format_op)
+#define DIOCRFORMAT	_IOWR('d', 105, struct format_op)
+#define DIOCWFORMAT	_IOWR('d', 106, struct format_op)
 
-#define DIOCSSTEP	_IOW(d, 107, int)	/* set step rate */
-#define DIOCSRETRIES	_IOW(d, 108, int)	/* set # of retries */
+#define DIOCSSTEP	_IOW('d', 107, int)	/* set step rate */
+#define DIOCSRETRIES	_IOW('d', 108, int)	/* set # of retries */
 
 #endif LOCORE
 
