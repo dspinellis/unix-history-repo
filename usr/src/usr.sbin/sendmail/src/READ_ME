@@ -83,6 +83,15 @@ stores statistics and may be safely removed.
 
 DESCRIPTION OF FILES
 
+AUX		A directory of "other stuff" (which may or may
+		not be interesting).  This stuff is UNSUPPORTED
+		and given only for examples sake.  Many of these
+		programs have not run in some time and may not
+		even have reasonable sendmail calling conventions.
+AUX/arpa.c	An old (v6 NCP) queueing program, formerly called
+		by sendmail on an ARPANET gateway.
+AUX/mail-dm.c	An old (v6 NCP) incoming FTP mail server module,
+		which called sendmail one time long ago.
 FILES		A list of "interesting" files.
 READ_ME		This file.
 TODO		New features to be put in (maybe) at some time.
@@ -91,10 +100,11 @@ Version.c	The version number and information about this
 		modified on every change.
 alias.c		Does name aliasing in all forms.
 aliases.5	Documentation for the alias file used by sendmail.
-arpa-mailer.8	Documentation for arpa.c.
-arpa.c		The auxiliary mailer for the ARPANET.
-arpadate.c	A subroutine used by sendmail & arpa.c which
+arpadate.c	A subroutine used by sendmail & AUX/arpa.c which
 		creates ARPANET standard dates.
+asm.sed		A script to post-process the assembly language
+		output from the C compiler; this implements some
+		efficiency hacks.
 bmove.c		A core-to-core move.  This is in a separate file
 		because it can easily be replaced by a blindingly
 		efficient version on Vaxes.
@@ -156,24 +166,14 @@ userdbm.h	A header file for the -ldbm stuff.  This should be
 		in /usr/include.
 usersmtp.c	Routines to implement user SMTP.
 util.c		Some general purpose routines used by sendmail.
-v6-mail.c	Local mailer under version 6.  This is included to
-		permit you to see the sorts of modifications that
-		had to take place.
 vacation.1	Documentation for the vacation program.
 vacation.c	A program that lets you automatically send a message
 		to people saying "I am on vacation."
-vax-mail.c	Local mailer under VM/UNIX (similar for V7).  This
-		is also included as an example.  This is more complex
-		than v6-mail.c because it has to be able to deal with
-		UUCP mail also.  Beware of local hacks that will not
-		apply to your installation.
 version.c	A master file for Version.c -- it may not exist in
 		your distribution.
 whoami.m4	An m4 file describing who we are.  This is driven by
 		the file /usr/include/whoami, which should contain a
 		single word giving your system name.
-
-[This list was current as of 9/9/81]
 
 CHANGES TO OTHER PROGRAMS
 
@@ -218,4 +218,4 @@ it to.  It does some neat stuff if you do, but it is not necessary.
 
 Eric Allman
 
-(Version 3.1, last update %G% 22:09:48)
+(Version 3.2, last update %G% 10:43:01)
