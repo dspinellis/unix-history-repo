@@ -170,10 +170,10 @@ main(argc, argv)
 		tty++;
 	openlog("login", LOG_ODELAY, LOG_AUTH);
 	t = 0;
+	invalid = FALSE;
 	do {
 		ldisc = 0;
 		ioctl(0, TIOCSETD, &ldisc);
-		invalid = FALSE;
 		SCPYN(utmp.ut_name, "");
 		/*
 		 * Name specified, take it.
@@ -186,10 +186,11 @@ main(argc, argv)
 		 * If remote login take given name,
 		 * otherwise prompt user for something.
 		 */
-		if (rflag)
+		if (rflag && !invalid)
 			SCPYN(utmp.ut_name, lusername);
 		else
 			getloginname(&utmp);
+		invalid = FALSE;
 		if (!strcmp(pwd->pw_shell, "/bin/csh")) {
 			ldisc = NTTYDISC;
 			ioctl(0, TIOCSETD, &ldisc);
