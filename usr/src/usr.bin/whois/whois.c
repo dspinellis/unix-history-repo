@@ -22,31 +22,29 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)whois.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)whois.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/socket.h>
-
 #include <netinet/in.h>
-
-#include <stdio.h>
 #include <netdb.h>
+#include <stdio.h>
 
-#define	NICHOST	"sri-nic.arpa"
+#define	NICHOST	"nic.ddn.mil"
 
 main(argc, argv)
 	int argc;
-	char *argv[];
+	char **argv;
 {
 	extern char *optarg;
 	extern int optind;
 	register FILE *sfi, *sfo;
-	register int c;
+	register int ch;
 	struct sockaddr_in sin;
 	struct hostent *hp;
 	struct servent *sp;
-	int ch, s;
+	int s;
 	char *host;
 
 	host = NICHOST;
@@ -67,7 +65,7 @@ main(argc, argv)
 
 	hp = gethostbyname(host);
 	if (hp == NULL) {
-		fprintf(stderr, "whois: %s: ", host);
+		(void)fprintf(stderr, "whois: %s: ", host);
 		herror((char *)NULL);
 		exit(1);
 	}
@@ -86,7 +84,7 @@ main(argc, argv)
 	bcopy(hp->h_addr, &sin.sin_addr, hp->h_length);
 	sp = getservbyname("whois", "tcp");
 	if (sp == NULL) {
-		fprintf(stderr, "whois: whois/tcp: unknown service\n");
+		(void)fprintf(stderr, "whois: whois/tcp: unknown service\n");
 		exit(4);
 	}
 	sin.sin_port = sp->s_port;
@@ -97,19 +95,19 @@ main(argc, argv)
 	sfi = fdopen(s, "r");
 	sfo = fdopen(s, "w");
 	if (sfi == NULL || sfo == NULL) {
-		perror("fdopen");
-		close(s);
+		perror("whois: fdopen");
+		(void)close(s);
 		exit(1);
 	}
-	fprintf(sfo, "%s\r\n", *argv);
+	(void)fprintf(sfo, "%s\r\n", *argv);
 	(void)fflush(sfo);
-	while ((c = getc(sfi)) != EOF)
-		putchar(c);
+	while ((ch = getc(sfi)) != EOF)
+		putchar(ch);
 }
 
 static
 usage()
 {
-	fprintf(stderr, "usage: whois [-h host] name\n");
+	(void)fprintf(stderr, "usage: whois [-h host] name\n");
 	exit(1);
 }
