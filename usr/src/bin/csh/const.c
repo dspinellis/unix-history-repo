@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)const.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)const.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -80,6 +80,8 @@ Char STRml[]		= { '-', 'l', '\0' };
 Char STRmn[]		= { '-', 'n', '\0' };
 Char STRmquestion[]     = { '?' | QUOTE, ' ', '\0' };
 Char STRnice[]		= { 'n', 'i', 'c', 'e', '\0' };
+Char STRnoambiguous[]	= { 'n', 'o', 'a', 'm', 'b', 'i', 'g', 'u', 'o', 'u', 
+			    's', '\0' };
 Char STRnobeep[]	= { 'n', 'o', 'b', 'e', 'e', 'p', '\0' };
 Char STRnoclobber[]	= { 'n', 'o', 'c', 'l', 'o', 'b', 'b', 'e', 'r', '\0' };
 Char STRnoglob[]	= { 'n', 'o', 'g', 'l', 'o', 'b', '\0' };
