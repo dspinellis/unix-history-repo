@@ -1,5 +1,5 @@
 %{
-/*	lang.l	1.13	83/05/18	*/
+/*	lang.l	1.14	83/05/18	*/
 
 #include <ctype.h>
 #include "y.tab.h"
@@ -77,7 +77,7 @@ WORD	[A-Za-z_][-A-Za-z_]*
 			tprintf("#O:%o ", yylval.val);
 			return NUMBER;
 		}
-0x[0-9a-f]+	{
+0x[0-9a-fA-F]+	{
 			yylval.val = hex(yytext);
 			tprintf("#X:%x ", yylval.val);
 			return NUMBER;
