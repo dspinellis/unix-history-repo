@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vnops.c	7.7 (Berkeley) %G%
+ *	@(#)fdesc_vnops.c	7.8 (Berkeley) %G%
  *
  * $Id: fdesc_vnops.c,v 1.12 1993/04/06 16:17:17 jsp Exp $
  */
@@ -312,6 +312,7 @@ fdesc_attr(fd, vap, cred, p)
 {
 	struct filedesc *fdp = p->p_fd;
 	struct file *fp;
+	struct stat stb;
 	int error;
 
 #ifdef FDESC_DIAGNOSTIC
@@ -324,11 +325,6 @@ fdesc_attr(fd, vap, cred, p)
 		return (EBADF);
 	}
 
-	/*
-	 * Can stat the underlying vnode, but not sockets because
-	 * they don't use struct vattrs.  Well, we could convert from
-	 * a struct stat back to a struct vattr, later...
-	 */
 	switch (fp->f_type) {
 	case DTYPE_VNODE:
 		error = VOP_GETATTR((struct vnode *) fp->f_data, vap, cred, p);
@@ -342,7 +338,26 @@ fdesc_attr(fd, vap, cred, p)
 		break;
 
 	case DTYPE_SOCKET:
-		error = EOPNOTSUPP;
+		error = soo_stat((struct socket *)fp->f_data, &stb);
+		if (error == 0) {
+			vattr_null(vap);
+			vap->va_type = VSOCK;
+			vap->va_mode = stb.st_mode;
+			vap->va_nlink = stb.st_nlink;
+			vap->va_uid = stb.st_uid;
+			vap->va_gid = stb.st_gid;
+			vap->va_fsid = stb.st_dev;
+			vap->va_fileid = stb.st_ino;
+			vap->va_size = stb.st_size;
+			vap->va_blocksize = stb.st_blksize;
+			vap->va_atime = stb.st_atimespec;
+			vap->va_mtime = stb.st_mtimespec;
+			vap->va_ctime = stb.st_ctimespec;
+			vap->va_gen = stb.st_gen;
+			vap->va_flags = stb.st_flags;
+			vap->va_rdev = stb.st_rdev;
+			vap->va_bytes = stb.st_blocks * stb.st_blksize;
+		}
 		break;
 
 	default:
