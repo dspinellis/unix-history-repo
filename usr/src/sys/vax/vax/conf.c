@@ -1,4 +1,4 @@
-/*	conf.c	4.50	82/05/04	*/
+/*	conf.c	4.51	82/05/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -135,7 +135,7 @@ int	utreset(),utdump();
 #define	utdump		nodev
 #endif
 
-#if defined(VAX750) || defined(VAX7ZZ)
+#if defined(VAX750) || defined(VAX730)
 int	tuopen(),tuclose(),tustrategy();
 #else
 #define	tuopen		nodev

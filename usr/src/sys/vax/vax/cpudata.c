@@ -1,4 +1,4 @@
-/*	cpudata.c	4.5	81/04/13	*/
+/*	cpudata.c	4.6	82/05/26	*/
 
 #include "../h/param.h"
 #include "../h/pte.h"
@@ -26,9 +26,9 @@ caddr_t	umaddr750[2] = {
 	(caddr_t) UMEM750(0), (caddr_t) UMEM750(1),
 };
 #endif
-#if VAX7ZZ
-caddr_t	umaddr7ZZ[1] = {
-	(caddr_t) UMEM7ZZ
+#if VAX730
+caddr_t	umaddr730[1] = {
+	(caddr_t) UMEM730
 };
 #endif
 
@@ -44,8 +44,8 @@ short	nexty750[NNEX750] = {
 	NEX_ANY,	NEX_ANY,	NEX_ANY,	NEX_ANY
 };
 #endif
-#if VAX7ZZ
-short	nexty7ZZ[NNEX7ZZ] = {
+#if VAX730
+short	nexty730[NNEX730] = {
 	NEX_MEM16,	NEX_ANY,	NEX_ANY,	NEX_ANY,
 	NEX_ANY,	NEX_ANY,	NEX_ANY,	NEX_ANY,
 };
@@ -58,8 +58,8 @@ struct percpu percpu[] = {
 #if VAX750
 	VAX_750, NNEX750, NEX750, umaddr750, NBDP750, 0, nexty750,
 #endif
-#if VAX7ZZ
-	VAX_7ZZ, NNEX7ZZ, NEX7ZZ, umaddr7ZZ, NBDP7ZZ, 0, nexty7ZZ,
+#if VAX730
+	VAX_730, NNEX730, NEX730, umaddr730, NBDP730, 0, nexty730,
 #endif
 	0,
 };

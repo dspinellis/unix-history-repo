@@ -1,4 +1,4 @@
-/*	uda.c	4.3	82/03/14	*/
+/*	uda.c	4.4	82/05/26	*/
 
 #include "ra.h"
 #if NUDA > 0
@@ -374,7 +374,7 @@ loop:
 		i = um->um_ubinfo|UBA_HAVEBDP|UBA_CANTWAIT;
 		break;
 
-	case VAX_7ZZ:
+	case VAX_730:
 		i = UBA_CANTWAIT;
 		break;
 	}
