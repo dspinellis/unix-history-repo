@@ -1,4 +1,6 @@
-static char *sccsid = "@(#)checknr.c	4.5 (Berkeley) %G%";
+#ifndef lint
+static char sccsid[] = "@(#)checknr.c	4.6 (Berkeley) %G%";
+#endif
 /*
  * checknr: check an nroff/troff input file for matching macro calls.
  * we also attempt to match size and font changes, but only the embedded
@@ -51,6 +53,7 @@ struct brstr {
 	"VL",	"LE",
 	/* the -ms package */
 	"AB",	"AE",
+	"BD",	"DE",
 	"CD",	"DE",
 	"DS",	"DE",
 	"FS",	"FE",
@@ -62,6 +65,8 @@ struct brstr {
 	"QS",	"QE",
 	"RS",	"RE",
 	"SM",	"NL",
+	"XA",	"XE",
+	"XS",	"XE",
 	/* The -me package */
 	"(b",	")b",
 	"(c",	")c",
@@ -88,31 +93,32 @@ char *knowncmds[MAXCMDS] = {
 "(x", "(z", ")b", ")c", ")d", ")f", ")l", ")q", ")t", ")x", ")z", "++",
 "+c", "1C", "1c", "2C", "2c", "@(", "@)", "@C", "@D", "@F", "@I", "@M",
 "@c", "@e", "@f", "@h", "@m", "@n", "@o", "@p", "@r", "@t", "@z", "AB",
-"AE", "AF", "AI", "AL", "AS", "AT", "AU", "AX", "B",  "B1", "B2", "BD",
-"BE", "BG", "BL", "BS", "BT", "BX", "C1", "C2", "CD", "CM", "CT", "D", 
-"DA", "DE", "DF", "DL", "DS", "DT", "EC", "EF", "EG", "EH", "EM", "EN", "EQ",
-"EX", "FA", "FD", "FE", "FG", "FJ", "FK", "FL", "FN", "FO", "FQ", "FS",
-"FV", "FX", "H",  "HC", "HM", "HO", "HU", "I",  "ID", "IE", "IH", "IM",
-"IP", "IZ", "KD", "KE", "KF", "KQ", "KS", "LB", "LC", "LD", "LE", "LG",
-"LI", "LP", "MC", "ME", "MF", "MH", "ML", "MR", "MT", "ND", "NE", "NH",
-"NL", "NP", "NS", "OF", "OH", "OK", "OP", "P",  "PF", "PH", "PP", "PT",
-"PY", "QE", "QP", "QS", "R",  "RA", "RC", "RE", "RL", "RP", "RQ", "RS",
-"RT", "S",  "S0", "S2", "S3", "SA", "SG", "SH", "SK", "SM", "SP", "SY",
-"TA", "TB", "TC", "TD", "TE", "TH", "TL", "TM", "TP", "TQ", "TR", "TS",
-"TX", "UL", "US", "UX", "VL", "WC", "WH", "XD", "XF", "XK", "XP", "[",  "[-",
-"[0", "[1", "[2", "[3", "[4", "[5", "[<", "[>", "[]", "]",  "]-", "]<", "]>",
-"][", "ab", "ac", "ad", "af", "am", "ar", "as", "b",  "ba", "bc", "bd",
-"bi", "bl", "bp", "br", "bx", "c.", "c2", "cc", "ce", "cf", "ch", "cs",
-"ct", "cu", "da", "de", "di", "dl", "dn", "ds", "dt", "dw", "dy", "ec",
-"ef", "eh", "el", "em", "eo", "ep", "ev", "ex", "fc", "fi", "fl", "fo",
-"fp", "ft", "fz", "hc", "he", "hl", "hp", "ht", "hw", "hx", "hy", "i", 
-"ie", "if", "ig", "in", "ip", "it", "ix", "lc", "lg", "li", "ll", "ln",
-"lo", "lp", "ls", "lt", "m1", "m2", "m3", "m4", "mc", "mk", "mo", "n1",
-"n2", "na", "ne", "nf", "nh", "nl", "nm", "nn", "np", "nr", "ns", "nx",
-"of", "oh", "os", "pa", "pc", "pi", "pl", "pm", "pn", "po", "pp", "ps",
-"q",  "r",  "rb", "rd", "re", "rm", "rn", "ro", "rr", "rs", "rt", "sb",
-"sc", "sh", "sk", "so", "sp", "ss", "st", "sv", "sz", "ta", "tc", "th",
-"ti", "tl", "tm", "tp", "tr", "u",  "uf", "uh", "ul", "vs", "wh", "xp", "yr",
+"AE", "AF", "AI", "AL", "AM", "AS", "AT", "AU", "AX", "B",  "B1", "B2",
+"BD", "BE", "BG", "BL", "BS", "BT", "BX", "C1", "C2", "CD", "CM", "CT",
+"D",  "DA", "DE", "DF", "DL", "DS", "DT", "EC", "EF", "EG", "EH", "EM",
+"EN", "EQ", "EX", "FA", "FD", "FE", "FG", "FJ", "FK", "FL", "FN", "FO",
+"FQ", "FS", "FV", "FX", "H",  "HC", "HD", "HM", "HO", "HU", "I",  "ID",
+"IE", "IH", "IM", "IP", "IX", "IZ", "KD", "KE", "KF", "KQ", "KS", "LB",
+"LC", "LD", "LE", "LG", "LI", "LP", "MC", "ME", "MF", "MH", "ML", "MR",
+"MT", "ND", "NE", "NH", "NL", "NP", "NS", "OF", "OH", "OK", "OP", "P",
+"P1", "PF", "PH", "PP", "PT", "PX", "PY", "QE", "QP", "QS", "R",  "RA",
+"RC", "RE", "RL", "RP", "RQ", "RS", "RT", "S",  "S0", "S2", "S3", "SA",
+"SG", "SH", "SK", "SM", "SP", "SY", "TA", "TB", "TC", "TD", "TE", "TH",
+"TL", "TM", "TP", "TQ", "TR", "TS", "TX", "UL", "US", "UX", "VL", "WC",
+"WH", "XA", "XD", "XE", "XF", "XK", "XP", "XS", "[",  "[-", "[0", "[1",
+"[2", "[3", "[4", "[5", "[<", "[>", "[]", "]",  "]-", "]<", "]>", "][",
+"ab", "ac", "ad", "af", "am", "ar", "as", "b",  "ba", "bc", "bd", "bi",
+"bl", "bp", "br", "bx", "c.", "c2", "cc", "ce", "cf", "ch", "cs", "ct",
+"cu", "da", "de", "di", "dl", "dn", "ds", "dt", "dw", "dy", "ec", "ef",
+"eh", "el", "em", "eo", "ep", "ev", "ex", "fc", "fi", "fl", "fo", "fp",
+"ft", "fz", "hc", "he", "hl", "hp", "ht", "hw", "hx", "hy", "i",  "ie",
+"if", "ig", "in", "ip", "it", "ix", "lc", "lg", "li", "ll", "ln", "lo",
+"lp", "ls", "lt", "m1", "m2", "m3", "m4", "mc", "mk", "mo", "n1", "n2",
+"na", "ne", "nf", "nh", "nl", "nm", "nn", "np", "nr", "ns", "nx", "of",
+"oh", "os", "pa", "pc", "pi", "pl", "pm", "pn", "po", "pp", "ps", "q",
+"r",  "rb", "rd", "re", "rm", "rn", "ro", "rr", "rs", "rt", "sb", "sc",
+"sh", "sk", "so", "sp", "ss", "st", "sv", "sz", "ta", "tc", "th", "ti",
+"tl", "tm", "tp", "tr", "u",  "uf", "uh", "ul", "vs", "wh", "xp", "yr",
 0
 };
 
@@ -533,5 +539,3 @@ char *mac;
 	slot = bot;	/* place it would have gone */
 	return -1;
 }
-
-
