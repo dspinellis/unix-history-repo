@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.102 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.103 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1442,11 +1442,16 @@ utimes(p, uap, retval)
 	register struct vnode *vp;
 	struct timeval tv[2];
 	struct vattr vattr;
-	int error;
+	int s, error;
 	struct nameidata nd;
 
-	if (error = copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof (tv)))
-		return (error);
+	VATTR_NULL(&vattr);
+	if (uap->tptr == NULL) {
+		microtime(&tv[0]);
+		tv[1] = tv[0];
+		vattr.va_cflags |= VA_UTIMES_NULL;
+	} else if (error = copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof (tv)))
+  		return (error);
 	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
 	if (error = namei(&nd))
 		return (error);
@@ -1455,7 +1460,6 @@ utimes(p, uap, retval)
 		error = EROFS;
 		goto out;
 	}
-	VATTR_NULL(&vattr);
 	vattr.va_atime.ts_sec = tv[0].tv_sec;
 	vattr.va_atime.ts_nsec = tv[0].tv_usec * 1000;
 	vattr.va_mtime.ts_sec = tv[1].tv_sec;
