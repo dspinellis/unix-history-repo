@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: uipc_shm.c 1.11 92/04/23$
  *
- *	@(#)sysv_shm.c	8.4 (Berkeley) %G%
+ *	@(#)sysv_shm.c	8.5 (Berkeley) %G%
  */
 
 /*
@@ -65,7 +65,7 @@ shminit()
 	vm_offset_t whocares1, whocares2;
 
 	shm_map = kmem_suballoc(kernel_map, &whocares1, &whocares2,
-				shminfo.shmall * NBPG, FALSE);
+				shminfo.shmall * NBPG, TRUE);
 	if (shminfo.shmmni > SHMMMNI)
 		shminfo.shmmni = SHMMMNI;
 	for (i = 0; i < shminfo.shmmni; i++) {
