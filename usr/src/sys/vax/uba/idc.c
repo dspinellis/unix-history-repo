@@ -1,4 +1,4 @@
-/*	idc.c	4.4	82/08/22	*/
+/*	idc.c	4.5	82/09/12	*/
 
 #include "rb.h"
 #if NIDC > 0
@@ -635,9 +635,8 @@ idcread(dev, uio)
 	register int unit = minor(dev) >> 3;
 
 	if (unit >= NRB)
-		u.u_error = ENXIO;
-	else
-		physio(idcstrategy, &ridcbuf[unit], dev, B_READ, minphys, uio);
+		return (ENXIO);
+	return (physio(idcstrategy, &ridcbuf[unit], dev, B_READ, minphys, uio));
 }
 
 idcwrite(dev, uio)
@@ -647,9 +646,8 @@ idcwrite(dev, uio)
 	register int unit = minor(dev) >> 3;
 
 	if (unit >= NRB)
-		u.u_error = ENXIO;
-	else
-		physio(idcstrategy, &ridcbuf[unit], dev, B_WRITE, minphys, uio);
+		return (ENXIO);
+	return (physio(idcstrategy, &ridcbuf[unit], dev, B_WRITE, minphys, uio));
 }
 
 idcecc(ui)

@@ -1,4 +1,4 @@
-/*	dh.c	4.49	82/08/22	*/
+/*	dh.c	4.50	82/09/12	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -683,9 +683,11 @@ dhreset(uban)
 dhtimer()
 {
 	register int dh;
+	register int s = spl5();
 
 	for (dh = 0; dh < NDH; dh++)
 		dhrint(dh);
+	splx(s);
 }
 
 /*
