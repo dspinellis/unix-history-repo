@@ -1,4 +1,4 @@
-/*	vm_meter.c	3.5	%G%	*/
+/*	vm_meter.c	3.6	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -67,7 +67,7 @@ sched()
 {
 	register struct proc *rp, *p, *inp;
 	int outpri, inpri, rppri;
-	int sleeper, desparate, deservin, needs, divisor;
+	int sleeper, desperate, deservin, needs, divisor;
 	register struct bigp *bp, *nbp;
 	int biggot, gives;
 
@@ -87,12 +87,12 @@ loop:
 	p = 0;
 	if (kmapwnt || (multprog > 1 && avefree < desfree &&
 	    (rate.v_pgin + rate.v_pgout > maxpgio || avefree < minfree))) {
-		desparate = 1;
+		desperate = 1;
 		goto hardswap;
 	}
-	desparate = 0;
+	desperate = 0;
 	/*
-	 * Not desparate for core,
+	 * Not desperate for core,
 	 * look for someone who deserves to be brought in.
 	 */
 	outpri = -20000;
@@ -229,17 +229,17 @@ hardswap:
 		}
 	}
 	/*
-	 * If we found a long-time sleeper, or we are desparate and
+	 * If we found a long-time sleeper, or we are desperate and
 	 * found anyone to swap out, or if someone deserves to come
 	 * in and we didn't find a sleeper, but found someone who
 	 * has been in core for a reasonable length of time, then
 	 * we kick the poor luser out.
 	 */
-	if (sleeper || desparate && p || deservin && inpri > maxslp) {
+	if (sleeper || desperate && p || deservin && inpri > maxslp) {
 		p->p_flag &= ~SLOAD;
 		if (p->p_stat == SRUN)
 			remrq(p);
-		if (desparate) {
+		if (desperate) {
 			/*
 			 * Want to give this space to the rest of
 			 * the processes in core so give them a chance
