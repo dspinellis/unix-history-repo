@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)queue.h	7.3 (Berkeley) %G%
+ *	@(#)queue.h	7.4 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -36,72 +36,140 @@
  * rights to redistribute these changes.
  */
 
-/*
- *	Type definitions for generic queues.
- */
-
 #ifndef	_QUEUE_H_
 #define	_QUEUE_H_
 
+/*
+ * This file defines two types of data structures, lists and queues.
+ *
+ * A list is headed by a single forward pointer (or an array of forward
+ * pointers for a hash table header). The elements are doubly linked
+ * so that an arbitrary element can be removed without a need to
+ * traverse the list. New elements can be added to the list after
+ * an existing element or at the head of the list.
+ *
+ * A queue is headed by a pair of pointers, one to the head of the list
+ * and the other to the tail of the list. The elements are doubly linked
+ * so that an arbitrary element can be removed without a need to
+ * traverse the list. New elements can be added to the list after
+ * an existing element, at the head of the list, or at the end of
+ * the list.
+ *
+ * Note that the implementation used here avoids the need to special
+ * case inserting into an empty list, deleting the last element from
+ * a list, or inserting at the beginning or end of a list. The drawback
+ * to this method is that it is not possible to traverse a list or
+ * queue backwards.
+ */
+
 struct queue_entry {
-	struct queue_entry	*next;		/* next element */
-	struct queue_entry	*prev;		/* previous element */
+	void	*next;		/* next element */
+	void	**prev;		/* address of previous next element */
 };
 
+struct list_entry {
+	void	*next;		/* next element */
+};
+
+/*
+ * Value for pointers on removed entries.
+ */
+#define	NOLIST	(void *)0xdead
+
+/*
+ * Queue functions.
+ */
+#define	queue_init(head)	((head)->next = 0, (head)->prev = &(head)->next)
+
+#define queue_enter_tail(head, elm, type, field) { \
+	(elm)->field.next = 0; \
+	(elm)->field.prev = (head)->prev; \
+	*(head)->prev = (elm); \
+	(head)->prev = &(elm)->field.next; \
+}
+
+#define queue_enter_head(head, elm, type, field) { \
+	type queue_ptr; \
+	if (queue_ptr = (head)->next) \
+		queue_ptr->field.prev = &(elm)->field.next; \
+	else \
+		(head)->prev = &(elm)->field.next; \
+	(head)->next = (elm); \
+	(elm)->field.next = queue_ptr; \
+	(elm)->field.prev = &(head)->next; \
+}
+
+#define queue_insert_after(head, listelm, elm, type, field) { \
+	type queue_ptr; \
+	if (queue_ptr = (listelm)->next) \
+		queue_ptr->field.prev = &(elm)->field.next; \
+	else \
+		(head)->prev = &(elm)->field.next; \
+	(listelm)->next = (elm); \
+	(elm)->field.next = queue_ptr; \
+	(elm)->field.prev = &(listelm)->next; \
+}
+
+#define queue_remove(head, elm, type, field) { \
+	type queue_ptr; \
+	if (queue_ptr = (elm)->field.next) \
+		queue_ptr->field.prev = (elm)->field.prev; \
+	else \
+		(head)->prev = (elm)->field.prev; \
+	*(elm)->field.prev = queue_ptr; \
+	(elm)->field.next = NOLIST; \
+	(elm)->field.prev = NOLIST; \
+}
+
+/*
+ * List functions.
+ */
+#define list_enter_head(head, elm, type, field) { \
+	type queue_ptr; \
+	if (queue_ptr = (head)->next) \
+		queue_ptr->field.prev = &(elm)->field.next; \
+	(head)->next = (elm); \
+	(elm)->field.next = queue_ptr; \
+	(elm)->field.prev = &(head)->next; \
+}
+
+#define list_insert_after(listelm, elm, type, field) { \
+	type queue_ptr; \
+	if (queue_ptr = (listelm)->next) \
+		queue_ptr->field.prev = &(elm)->field.next; \
+	(listelm)->next = (elm); \
+	(elm)->field.next = queue_ptr; \
+	(elm)->field.prev = &(listelm)->next; \
+}
+
+#define list_remove(elm, type, field) { \
+	type queue_ptr; \
+	if (queue_ptr = (elm)->field.next) \
+		queue_ptr->field.prev = (elm)->field.prev; \
+	*(elm)->field.prev = queue_ptr; \
+	(elm)->field.next = NOLIST; \
+	(elm)->field.prev = NOLIST; \
+}
+
+/*
+ * Compatibility with old MACH VM code.
+ */
 typedef struct queue_entry	*queue_t;
 typedef	struct queue_entry	queue_head_t;
 typedef	struct queue_entry	queue_chain_t;
 typedef	struct queue_entry	*queue_entry_t;
 
-#define round_queue(size)	(((size)+7) & (~7))
+#define	queue_first(head)	((head)->next)
+#define	queue_next(elm)		((elm)->next)
+#define	queue_empty(head)	((head)->next == 0)
+#define	queue_end(elm, head)	((elm) == 0)
 
-#define enqueue(queue,elt)	enqueue_tail(queue, elt)
-#define	dequeue(queue)		dequeue_head(queue)
+#define queue_enter(head, elt, type, field) \
+	queue_enter_tail(head, elt, type, field)
 
-#define	enqueue_head(queue,elt)	insque(elt,queue)
-#define	enqueue_tail(queue,elt)	insque(elt,(queue)->prev)
-#define	remqueue(queue,elt)	remque(elt)
-
-#define	queue_init(q)		((q)->next = (q)->prev = q)
-#define	queue_first(q)		((q)->next)
-#define	queue_next(qc)		((qc)->next)
-#define	queue_end(q, qe)	((q) == (qe))
-#define	queue_empty(q)		queue_end((q), queue_first(q))
-
-#define queue_enter(head, elt, type, field) {			\
-	if (queue_empty((head))) {				\
-		(head)->next = (queue_entry_t) elt;		\
-		(head)->prev = (queue_entry_t) elt;		\
-		(elt)->field.next = head;			\
-		(elt)->field.prev = head;			\
-	} else {						\
-		register queue_entry_t prev = (head)->prev;	\
-		(elt)->field.prev = prev;			\
-		(elt)->field.next = head;			\
-		(head)->prev = (queue_entry_t)(elt);		\
-		((type)prev)->field.next = (queue_entry_t)(elt);\
-	}							\
-}
-
-#define	queue_field(head, thing, type, field)			\
-		(((head) == (thing)) ? (head) : &((type)(thing))->field)
-
-#define	queue_remove(head, elt, type, field) {			\
-	register queue_entry_t next = (elt)->field.next;	\
-	register queue_entry_t prev = (elt)->field.prev;	\
-	queue_field((head), next, type, field)->prev = prev;	\
-	queue_field((head), prev, type, field)->next = next;	\
-}
-
-#define	queue_assign(to, from, type, field) {			\
-	((type)((from)->prev))->field.next = (to);		\
-	((type)((from)->next))->field.prev = (to);		\
-	*to = *from;						\
-}
-
-#define	queue_remove_first(h, e, t, f) {			\
-	e = (t) queue_first((h));				\
-	queue_remove((h), (e), t, f);				\
+#define queue_remove_first(head, elt, type, field) { \
+	elt = queue_first(head); \
+	queue_remove(head, elt, type, field) \
 }
 
 #endif	/* !_QUEUE_H_ */
