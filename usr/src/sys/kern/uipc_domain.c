@@ -14,13 +14,14 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_domain.c	7.3 (Berkeley) %G%
+ *	@(#)uipc_domain.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "socket.h"
 #include "protosw.h"
 #include "domain.h"
+#include "mbuf.h"
 #include "time.h"
 #include "kernel.h"
 
@@ -37,11 +38,15 @@ domaininit()
 
 #ifndef lint
 	ADDDOMAIN(unix);
+	ADDDOMAIN(route);
 #ifdef INET
 	ADDDOMAIN(inet);
 #endif
 #ifdef NS
 	ADDDOMAIN(ns);
+#endif
+#ifdef ISO
+	ADDDOMAIN(iso);
 #endif
 #include "imp.h"
 #if NIMP > 0
@@ -56,7 +61,11 @@ domaininit()
 			if (pr->pr_init)
 				(*pr->pr_init)();
 	}
-	null_init();
+
+if (max_linkhdr < 16)		/* XXX */
+max_linkhdr = 16;
+	max_hdr = max_linkhdr + max_protohdr;
+	max_datalen = MHLEN - max_hdr;
 	pffasttimo();
 	pfslowtimo();
 }
