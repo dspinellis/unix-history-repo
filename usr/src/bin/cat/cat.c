@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cat.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cat.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -114,6 +114,8 @@ char **argv;
 			retval |= fastcat(fileno(fi));	/* no flags specified */
 		if (fi!=stdin)
 			fclose(fi);
+		else
+			clearerr(fi);		/* reset sticky eof */
 		if (ferror(stdout)) {
 			fprintf(stderr, "cat: output write error\n");
 			retval = 1;
