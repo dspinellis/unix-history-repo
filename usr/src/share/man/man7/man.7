@@ -1,9 +1,9 @@
-.\"	@(#)man.7	6.4 (Berkeley) %G%
+.\"	@(#)man.7	6.4 (Berkeley) 8/10/87
 .\"
-.TH MAN 7 ""
+.TH MAN 7 "August 10, 1987"
 .AT 3
 .SH NAME
-man \- macros to typeset manual
+man \- (deprecated) macros to typeset manual
 .SH SYNOPSIS
 .B
 nroff  \-man\ 
@@ -13,8 +13,11 @@ file ...
 troff  \-man\ 
 file ...
 .SH DESCRIPTION
-These macros are used to lay out pages of this manual.  A skeleton page may
-be found in the file /usr/man/man.template.
+These macros were used in the past to lay out pages of this manual.
+A skeleton page may
+be found in the file /usr/share/misc/man.template.
+The new macros are in
+.Xr mdoc 7 .
 .PP
 Any text argument
 .I t
@@ -55,7 +58,7 @@ These strings are predefined by
 .IP \e*S
 Change to default type size.
 .SH FILES
-/usr/lib/tmac/tmac.an
+/usr/share/tmac/tmac.an
 .br
 /usr/man/man.template
 .SH SEE ALSO

@@ -1,21 +1,10 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1989, 1990 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"     @(#)man.1	6.10 (Berkeley) %G%
 .\"
-.\"	@(#)man.1	6.9 (Berkeley) %G%
-.\"
-.TH MAN 1 ""
+.TH MAN 1 "%Q"
 .UC 4
 .SH NAME
 man \- display the on-line manual pages
@@ -53,7 +42,7 @@ searches for manual pages.
 The supplied
 .I path
 must be a colon (``:'') separated list of directories.
-This search path may also be set using the environmental variable
+This search path may also be set using the environment variable
 .IR MANPATH .
 .TP
 m
@@ -68,7 +57,7 @@ the directories specified using the
 .I M
 option or the
 .I MANPATH
-environmental variable.
+environment variable.
 .TP
 .I w
 List the pathnames of the manual pages which
@@ -95,7 +84,7 @@ If only a single argument is specified or if the first argument is
 not a valid section,
 .I man
 assumes that the argument is the name of a manual page to be displayed.
-.SH "ENVIRONMENTAL VARIABLES"
+.SH ENVIRONMENT
 .TP
 MACHINE
 As some manual pages are intended only for use on certain architectures,
@@ -103,24 +92,24 @@ As some manual pages are intended only for use on certain architectures,
 searches certain directories applicable to the current machine.
 .I Man's
 determination of the current machine type may be overridden by setting
-the environmental variable MACHINE to the name of an architecture (see
+the environment variable MACHINE to the name of an architecture (see
 .IR machine (1)).
 Machine specific areas are checked before general areas.
 .TP
 MANPATH
 The standard search path used by
 .I man
-may be overridden by specifying a path in the MANPATH environmental
+may be overridden by specifying a path in the MANPATH environment
 variable.
 The format of the path is a colon (``:'') separated list of directories.
 .TP
 PAGER
-Any value of the environmental variable
+Any value of the environment variable
 .I PAGER
 will be used instead of the standard pagination program
 .IR more (1).
 .SH FILES
-/etc/man.config	man configuration file
+/etc/man.conf	man configuration file
 .SH "SEE ALSO"
 apropos(1), machine(1), whatis(1), whereis(1), man.conf(5)
 .SH BUGS

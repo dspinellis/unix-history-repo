@@ -1,6 +1,10 @@
-.\"	@(#)refer.1	6.2 (Berkeley) %G%
+.\" Copyright (c) 1990 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
 .\"
-.TH REFER 1 ""
+.\"     @(#)refer.1	6.3 (Berkeley) %G%
+.\"
+.TH REFER 1 "%Q"
 .AT 3
 .SH NAME
 refer \- find and insert literature references in documents
@@ -132,7 +136,7 @@ is omitted the entire name or date respectively is used.
 .ns
 .TP
 .B \-n
-Do not search the default file /usr/dict/papers/Ind.
+Do not search the default file /usr/share/dict/papers/Ind.
 If there is a REFER environment variable,
 the specified file will be searched instead of the default file;
 in this case the
@@ -251,8 +255,8 @@ entry is given below.
 %D	1978
 .fi
 .SH FILES
-.ta \w'/usr/dict/papers\0\0'u
-/usr/dict/papers	directory of default publication lists
+.ta \w'/usr/dict/share/papers\0\0'u
+/usr/share/dict/papers	directory of default publication lists
 .br
 /usr/lib/refer  	directory of companion programs
 .SH SEE ALSO

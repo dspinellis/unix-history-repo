@@ -1,44 +1,42 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)operator.7	5.1 (Berkeley) %G%
+.\"     @(#)operator.7	5.2 (Berkeley) %G%
 .\"
-.TH OPERATOR 7 ""
-.UC 7
-.SH NAME
-operator \- C operator precedence and order of evaluation
-.SH DESCRIPTION
-.nf
-.ta \w'! ~ ++ -- - (type) * & sizeof     'u
-Operator			Associativity
------------------------------------------------
-() [] -> .			left to right
-! ~ ++ -- - (type) * & sizeof	right to left
-* / %				left to right
-+ -				left to right
-<< >>				left to right
-< <= > >=			left to right
-== !=				left to right
-&				left to right
-^				left to right
-|				left to right
-&&				left to right
-||				left to right
-?:				right to left
-= += -= etc.			right to left
-,				left to right
-.fi
-.SH FILES
-/usr/share/misc/operator
+.Dd 
+.Dt OPERATOR 7
+.Os BSD 4.4
+.Sh NAME
+.Nm operator
+.Nd C operator precedence and order of evaluation
+.Sh DESCRIPTION
+.Ds I
+.Cw xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+.Cl Operator	Associativity
+.Cl --------	-------------
+.Cl \&() [] -> .	left to right
+.Cl \&! ~ ++ -- - (type) * & sizeof	right to left
+.Cl \&* / %	left to right
+.Cl \&+ -	left to right
+.Cl \&<< >>	left to right
+.Cl \&< <= > >=	left to right
+.Cl \&== !=	left to right
+.Cl \&&	left to right
+.Cl \&^	left to right
+.Cl \&left to right
+.Cl \&&&	left to right
+.Cl \&left to right
+.Cl \&?:	right to left
+.Cl \&= += -= etc.	right to left
+.Cl \&,	left to right
+.Cw
+.De
+.Sh FILES
+.Dw /usr/share/misc/operator
+.Di L
+.Dp Pa /usr/share/misc/operator
+.Dp
+.Sh HISTORY
+4.4 BSD.

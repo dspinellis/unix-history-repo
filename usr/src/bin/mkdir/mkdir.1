@@ -1,11 +1,11 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)mkdir.1	6.4 (Berkeley) %G%
+.\"     @(#)mkdir.1	6.5 (Berkeley) %G%
 .\"
-.TH MKDIR 1 ""
+.TH MKDIR 1 "%Q""
 .AT 3
 .SH NAME
 mkdir \- make directories
@@ -23,8 +23,7 @@ The options are as follows:
 Create intermediate directories as required.  If this option is not
 specified, the full path prefix of each operand must already exist.
 .PP
-.I Mkdir
-requires write permission in the parent directory.
+The parent directory must be writable by the user.
 .PP
 .I Mkdir
 exits 0 if successful, and >0 if an error occurred.
