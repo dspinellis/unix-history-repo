@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -192,6 +192,7 @@ cmdscanner(top)
 	int top;
 {
 	register struct cmd *c;
+	register int l;
 	struct cmd *getcmd();
 	extern int help();
 
@@ -202,13 +203,21 @@ cmdscanner(top)
 			printf("ftp> ");
 			(void) fflush(stdout);
 		}
-		if (gets(line) == 0) {
-			if (feof(stdin) || ferror(stdin))
-				quit();
+		if (fgets(line, sizeof line, stdin) == NULL)
+			quit();
+		l = strlen(line);
+		if (l == 0)
 			break;
-		}
-		if (line[0] == 0)
+		if (line[--l] == '\n') {
+			if (l == 0)
+				break;
+			line[l] = '\0';
+		} else if (l == sizeof(line) - 2) {
+			printf("sorry, input line too long\n");
+			while ((l = getchar()) != '\n' && l != EOF)
+				/* void */;
 			break;
+		} /* else it was a line without a newline */
 		makeargv();
 		if (margc == 0) {
 			continue;
@@ -223,7 +232,7 @@ cmdscanner(top)
 			continue;
 		}
 		if (c->c_conn && !connected) {
-			printf ("Not connected.\n");
+			printf("Not connected.\n");
 			continue;
 		}
 		(*c->c_handler)(margc, margv);

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)domacro.c	1.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)domacro.c	1.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ftp_var.h"
@@ -29,15 +29,7 @@ domacro(argc, argv)
 	struct cmd *getcmd(), *c;
 	extern struct cmd cmdtab[];
 
-	if (argc < 2) {
-		(void) strcat(line, " ");
-		printf("(macro name) ");
-		(void) gets(&line[strlen(line)]);
-		makeargv();
-		argc = margc;
-		argv = margv;
-	}
-	if (argc < 2) {
+	if (argc < 2 && !another(&argc, &argv, "macro name")) {
 		printf("Usage: %s macro_name.\n", argv[0]);
 		code = -1;
 		return;
