@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char *sccsid = "@(#)tee.c	5.1 (Berkeley) %G%";
+static char *sccsid = "@(#)tee.c	5.2 (Berkeley) %G%";
 #endif
 /*
  * tee-- pipe fitting
@@ -47,7 +47,7 @@ main(argc,argv)
 		fprintf(stderr, "tee: Out of memory.\n");
 		exit(-1);
 	}
-	*lastf = stdout;	/* default */
+	*lastf++ = stdout;	/* default */
 	for (; argc > 0; argc--, argv++) {
 		*lastf = fopen(argv[0], aflag ? "a" : "w");
 		if (*lastf == NULL)
