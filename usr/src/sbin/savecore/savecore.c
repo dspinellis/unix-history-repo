@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1980, 1986 The Regents of the University of California.
+ * Copyright (c) 1980, 1986, 1989 The Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -17,12 +17,12 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980, 1986 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1980, 1986, 1989 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)savecore.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)savecore.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -85,6 +85,7 @@ struct nlist dump_nl[] = {	/* name list for dumped system */
 char	*system;
 char	*dirname;			/* directory to save dumps in */
 char	*ddname;			/* name of dump device */
+int	dumpfd;				/* read/write descriptor on block dev */
 char	*find_dev();
 dev_t	dumpdev;			/* dump device */
 time_t	dumptime;			/* time the dump was taken */
@@ -121,6 +122,7 @@ main(argc, argv)
 			break;
 
 		case 'v':
+		case 'd':
 			Verbose++;
 			break;
 
@@ -131,7 +133,7 @@ main(argc, argv)
 		default:
 		usage:
 			fprintf(stderr,
-			    "usage: savecore [-f] [-v] dirname [ system ]\n");
+			    "usage: savecore [-f] [-v] [-c] dirname [ system ]\n");
 			exit(1);
 		}
 		argc--, argv++;
@@ -151,29 +153,23 @@ main(argc, argv)
 
 dump_exists()
 {
-	register int dumpfd;
 	int word;
 
-	dumpfd = Open(ddname, O_RDONLY);
 	Lseek(dumpfd, (off_t)(dumplo + ok(dump_nl[X_DUMPMAG].n_value)), L_SET);
 	Read(dumpfd, (char *)&word, sizeof (word));
-	close(dumpfd);
-	if (Verbose && word != dumpmag) {
-		printf("dumplo = %d (%d bytes)\n", dumplo/DEV_BSIZE, dumplo);
+	if (Verbose)
+		printf("dumplo = %d (%d * 512)\n", dumplo, dumplo/512);
+	if (Verbose && word != dumpmag)
 		printf("magic number mismatch: %x != %x\n", word, dumpmag);
-	}
 	return (word == dumpmag);
 }
 
 clear_dump()
 {
-	register int dumpfd;
 	int zero = 0;
 
-	dumpfd = Open(ddname, O_WRONLY);
 	Lseek(dumpfd, (off_t)(dumplo + ok(dump_nl[X_DUMPMAG].n_value)), L_SET);
 	Write(dumpfd, (char *)&zero, sizeof (zero));
-	close(dumpfd);
 }
 
 char *
@@ -200,6 +196,21 @@ find_dev(dev, type)
 	log(LOG_ERR, "Can't find device %d/%d\n", major(dev), minor(dev));
 	exit(1);
 	/*NOTREACHED*/
+}
+
+char *
+rawname(s)
+	char *s;
+{
+	static char name[MAXPATHLEN];
+	char *sl, *rindex();
+
+	if ((sl = rindex(s, '/')) == NULL || sl[1] == '0') {
+		log(LOG_ERR, "can't make raw dump device name from %s?\n", s);
+		return (s);
+	}
+	sprintf(name, "%.*s/r%s", sl - s, s, sl + 1);
+	return (name);
 }
 
 int	cursyms[] =
@@ -245,6 +256,7 @@ read_kmem()
 	Read(kmem, (char *)&dumpmag, sizeof (dumpmag));
 	dumplo *= DEV_BSIZE;
 	ddname = find_dev(dumpdev, S_IFBLK);
+	dumpfd = Open(ddname, O_RDWR);
 	fp = fdopen(kmem, "r");
 	if (fp == NULL) {
 		log(LOG_ERR, "Couldn't fdopen kmem\n");
@@ -262,20 +274,18 @@ check_kmem()
 	FILE *fp;
 	register char *cp;
 
-	fp = fopen(ddname, "r");
+	fp = fdopen(dumpfd, "r");
 	if (fp == NULL) {
-		Perror(LOG_ERR, "%s: %m", ddname);
+		log(LOG_ERR, "Can't fdopen dumpfd");
 		exit(1);
 	}
 	fseek(fp, (off_t)(dumplo+ok(dump_nl[X_VERSION].n_value)), L_SET);
 	fgets(core_vers, sizeof (core_vers), fp);
-	fclose(fp);
 	if (!eq(vers, core_vers) && system == 0) {
 		log(LOG_WARNING, "Warning: %s version mismatch:\n", _PATH_UNIX);
 		log(LOG_WARNING, "\t%s\n", vers);
 		log(LOG_WARNING, "and\t%s\n", core_vers);
 	}
-	fp = fopen(ddname, "r");
 	fseek(fp, (off_t)(dumplo + ok(dump_nl[X_PANICSTR].n_value)), L_SET);
 	fread((char *)&panicstr, sizeof (panicstr), 1, fp);
 	if (panicstr) {
@@ -283,20 +293,17 @@ check_kmem()
 		cp = panic_mesg;
 		do
 			*cp = getc(fp);
-		while (*cp++);
+		while (*cp++ && cp < &panic_mesg[sizeof(panic_mesg)]);
 	}
-	fclose(fp);
+	/* don't fclose(fp); we want the file descriptor */
 }
 
 get_crashtime()
 {
-	int dumpfd;
 	time_t clobber = (time_t)0;
 
-	dumpfd = Open(ddname, O_RDONLY);
 	Lseek(dumpfd, (off_t)(dumplo + ok(dump_nl[X_TIME].n_value)), L_SET);
 	Read(dumpfd, (char *)&dumptime, sizeof dumptime);
-	close(dumpfd);
 	if (dumptime == 0) {
 		if (Verbose)
 			printf("Dump time is zero.\n");
@@ -366,27 +373,32 @@ read_number(fn)
 	return (atoi(lin));
 }
 
-#define	BUFSIZE	(256*1024)		/* 1/4 Mb */
+#define	BUFPAGES	(256*1024/NBPG)		/* 1/4 Mb */
 
 save_core()
 {
 	register int n;
 	register char *cp;
 	register int ifd, ofd, bounds;
+	char *bfile;
 	register FILE *fp;
 
-	cp = malloc(BUFSIZE);
+	cp = malloc(BUFPAGES*NBPG);
 	if (cp == 0) {
-		fprintf(stderr, "savecore: Can't allocate i/o buffer.\n");
+		log(LOG_ERR, "savecore: Can't allocate i/o buffer.\n");
 		return;
 	}
 	bounds = read_number("bounds");
 	ifd = Open(system ? system : _PATH_UNIX, O_RDONLY);
-	while((n = Read(ifd, cp, BUFSIZE)) > 0)
+	while((n = Read(ifd, cp, BUFPAGES*NBPG)) > 0)
 		Write(ofd, cp, n);
 	close(ifd);
 	close(ofd);
-	ifd = Open(ddname, O_RDONLY);
+	if ((ifd = open(rawname(ddname), O_RDONLY)) == -1) {
+		log(LOG_WARNING, "Can't open %s (%m); using block device",
+			rawname(ddname));
+		ifd = dumpfd;
+	}
 	Lseek(ifd, (off_t)(dumplo + ok(dump_nl[X_DUMPSIZE].n_value)), L_SET);
 	Read(ifd, (char *)&dumpsize, sizeof (dumpsize));
 	(void)sprintf(cp, "vmcore.%d", bounds);
@@ -406,9 +418,13 @@ save_core()
 	}
 	close(ifd);
 	close(ofd);
-	fp = fopen(path("bounds"), "w");
-	fprintf(fp, "%d\n", bounds+1);
-	fclose(fp);
+	bfile = path("bounds");
+	fp = fopen(bfile, "w");
+	if (fp) {
+		fprintf(fp, "%d\n", bounds+1);
+		fclose(fp);
+	} else
+		Perror(LOG_ERR, "Can't create bounds file %s: %m", bfile);
 	free(cp);
 }
 
@@ -437,7 +453,7 @@ Read(fd, buff, size)
 
 	ret = read(fd, buff, size);
 	if (ret < 0) {
-		Perror(LOG_ERR, "read: %m");
+		Perror(LOG_ERR, "read: %m", "read");
 		exit(1);
 	}
 	return (ret);
@@ -452,7 +468,7 @@ Lseek(fd, off, flag)
 
 	ret = lseek(fd, off, flag);
 	if (ret == -1) {
-		Perror(LOG_ERR, "lseek: %m");
+		Perror(LOG_ERR, "lseek: %m", "lseek");
 		exit(1);
 	}
 	return (ret);
@@ -478,11 +494,12 @@ Write(fd, buf, size)
 {
 
 	if (write(fd, buf, size) < size) {
-		Perror(LOG_ERR, "write: %m");
+		Perror(LOG_ERR, "write: %m", "write");
 		exit(1);
 	}
 }
 
+/* VARARGS2 */
 log(level, msg, a1, a2)
 	int level;
 	char *msg;
