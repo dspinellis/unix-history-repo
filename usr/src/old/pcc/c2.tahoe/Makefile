@@ -1,17 +1,21 @@
-#	Makefile	1.3	87/05/30
+#
+# Copyright (c) 1987 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	1.3	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
-LDFLAGS=
+SRCS=	c20.c c21.c c22.c c23.c
+OBJS=	c20.o c21.o c22.o c23.o
 
-c2:	c20.o c21.o c22.o c23.o
-	$(CC) $(LDFLAGS) -o c2 c2?.o
+all: c2
+c2: ${OBJS} ${LIBC}
+	${CC} -o $@ ${OBJS}
 
-c20.o:	c20.c c2.h
-c21.o:	c21.c c2.h
-c22.o:  c22.c c2.h
-c23.o:  c23.c c2.h
-	$(CC) $(CFLAGS) -R -c c23.c
+c23.o:  c23.c
+	${CC} ${CFLAGS} -R -c c23.c
 
 c2.h:	tokens
 	grep -n '^' tokens>toks
@@ -23,8 +27,33 @@ c2.h:	tokens
 	) | ed - c2.h
 	rm toks
 
-clean:
-	rm -f *.o *.s 
+clean: FRC
+	rm -f *.o *.s c2
 
-install: c2
-	install -s c2 ${DESTDIR}/lib/c2
+install: FRC
+	install -s -o bin -g bin -m 755 c2 ${DESTDIR}/lib/c2
+
+tags: FRC
+	ctags ${SRCS}
+
+depend: FRC
+	mkdep ${CFLAGS} ${SRCS}
+
+FRC:
+
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+c20.o: c20.c
+c20.o:c2.h
+c20.o: /usr/include/stdio.h /usr/include/ctype.h
+c21.o: c21.c
+c21.o:c2.h
+c21.o: /usr/include/stdio.h /usr/include/ctype.h
+c22.o: c22.c
+c22.o:c2.h
+c22.o: /usr/include/stdio.h /usr/include/ctype.h
+c23.o: c23.c
+c23.o:c2.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
