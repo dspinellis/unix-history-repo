@@ -1,0 +1,27 @@
+.th CRYPT I 10/23/71
+.sh NAME
+crypt \*- encode/decode
+.sh SYNOPSIS
+.bd crypt
+[ password ]
+.sh DESCRIPTION
+.it crypt
+is an exact implementation of Boris Hagelin's
+cryptographic machine called the M-209 by the U. S. Army [1].
+.s3
+.it crypt
+reads from the standard input file and writes
+on the standard output.
+It is thus suitable for use as a filter.
+For a given password, the encryption
+process is idempotent;
+that is,
+.s3
+.bd "	crypt znorkle <clear >cypher"
+.br
+.bd "	crypt znorkle <cypher"
+.s3
+will print the clear.
+.sh "SEE ALSO"
+[1] U. S. Patent 2,089,603.
+.sh BUGS
