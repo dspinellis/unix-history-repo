@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null_subr.c	8.4 (Berkeley) %G%
+ *	@(#)null_subr.c	8.5 (Berkeley) %G%
  *
  * $Id: lofs_subr.c,v 1.11 1992/05/30 10:05:43 jsp Exp jsp $
  */
@@ -201,9 +201,8 @@ null_node_create(mp, lowervp, newvpp)
 #ifdef DIAGNOSTIC
 	if (lowervp->v_usecount < 1) {
 		/* Should never happen... */
-		vprint ("null_node_create: alias ");
-		vprint ("null_node_create: lower ");
-		printf ("null_node_create: lower has 0 usecount.\n");
+		vprint ("null_node_create: alias ", aliasvp);
+		vprint ("null_node_create: lower ", lowervp);
 		panic ("null_node_create: lower has 0 usecount.");
 	};
 #endif
