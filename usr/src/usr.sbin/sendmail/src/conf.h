@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	5.25 (Berkeley) %G%
+ *	@(#)conf.h	5.26 (Berkeley) %G%
  */
 
 /*
@@ -45,9 +45,6 @@
 # define SYSTEM5	1
 # endif
 
-/* # define DBM		1	/* use DBM library (requires -ldbm) */
-/* # define NDBM	1	/* new DBM library available (requires DBM) */
-# define NEWDB		1	/* use new 4.4bsd database package db(3) */
 # define LOG		1	/* enable logging */
 # define SMTP		1	/* enable user and server SMTP */
 # define QUEUE		1	/* enable queueing */
@@ -59,7 +56,13 @@
 # define MATCHGECOS	1	/* match user names from gecos field */
 
 # ifdef SYSTEM5
+
 # define LOCKF		1	/* use System V lockf instead of flock */
+# define SYS5TZ		1	/* use System V style timezones */
+
+# define index		strchr
+# define rindex		strrchr
+
 # endif
 
 /*

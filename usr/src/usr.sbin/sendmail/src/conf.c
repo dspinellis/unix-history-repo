@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.41 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -715,3 +715,44 @@ reapchild()
 		continue;
 # endif WNOHANG
 }
+/*
+**  UNSETENV -- remove a variable from the environment
+**
+**	Not needed on newer systems.
+**
+**	Parameters:
+**		name -- the string name of the environment variable to be
+**			deleted from the current environment.
+**
+**	Returns:
+**		none.
+**
+**	Globals:
+**		environ -- a pointer to the current environment.
+**
+**	Side Effects:
+**		Modifies environ.
+*/
+
+#ifdef UNSETENV
+
+void
+unsetenv(name)
+	char *name;
+{
+	extern char **environ;
+	register char **pp;
+	int len = strlen(name);
+
+	for (pp = environ; *pp != NULL; pp++)
+	{
+		if (strncmp(name, *pp, len) == 0 &&
+		    ((*pp)[len] == '=' || (*pp)[len] == '\0'))
+			break;
+	}
+
+	for (; *pp != NULL; pp++)
+		*pp = pp[1];
+}
+
+#endif /* UNSETENV */

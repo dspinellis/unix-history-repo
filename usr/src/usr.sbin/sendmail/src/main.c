@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.54 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.55 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -149,7 +149,7 @@ main(argc, argv, envp)
 	extern ADDRESS *recipient();
 	bool canrename;
 
-#ifndef SYSTEM5
+#ifndef SYS5TZ
 	/* enforce use of kernel-supplied time zone information */
 	unsetenv("TZ");
 #endif
@@ -502,7 +502,7 @@ main(argc, argv, envp)
 	if (OpMode == MD_FREEZE || readconfig)
 		readcf(ConfFile, safecf, CurEnv);
 
-#ifdef SYSTEM5
+#ifdef SYS5TZ
 	/* Enforce use of local time (null string overrides this) */
 	if (TimeZoneSpec == NULL)
 		unsetenv("TZ");
