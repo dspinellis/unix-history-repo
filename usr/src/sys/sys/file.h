@@ -14,16 +14,21 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)file.h	7.4 (Berkeley) %G%
+ *	@(#)file.h	7.5 (Berkeley) %G%
  */
 
 #ifdef KERNEL
+#include "fcntl.h"
+#include "unistd.h"
+
 /*
  * Descriptor table entry.
  * One for each kernel object.
  */
-struct	file {
+struct file {
 	int	f_flag;		/* see below */
+#define	DTYPE_VNODE	1	/* file */
+#define	DTYPE_SOCKET	2	/* communications endpoint */
 	short	f_type;		/* descriptor type */
 	short	f_count;	/* reference count */
 	short	f_msgcount;	/* references from message queue */
@@ -39,89 +44,36 @@ struct	file {
 	off_t	f_offset;
 };
 
-struct	file *file, *fileNFILE;
-int	nfile;
-#endif
+struct file *file, *fileNFILE;
+int nfile;
 
-/*
- * flags- also for fcntl call.
- */
+/* convert O_RDONLY/O_WRONLY/O_RDWR to FREAD/FWRITE */
 #define	FOPEN		(-1)
-#define	FREAD		00001		/* descriptor read/receive'able */
-#define	FWRITE		00002		/* descriptor write/send'able */
-#ifndef	F_DUPFD
-#define	FNDELAY		00004		/* no delay */
-#define	FAPPEND		00010		/* append on each write */
-#endif
-#define	FMARK		00020		/* mark during gc() */
-#define	FDEFER		00040		/* defer for next gc pass */
-#ifndef	F_DUPFD
-#define	FASYNC		00100		/* signal pgrp when data ready */
-#endif
-#define	FSHLOCK		00200		/* shared lock present */
-#define	FEXLOCK		00400		/* exclusive lock present */
+#define	FREAD		1
+#define	FWRITE		2
+
+/* kernel only versions -- deprecated, should be removed */
+#define	FCREAT		O_CREAT
+#define	FDEFER		O_DEFER
+#define	FEXCL		O_EXCL
+#define	FEXLOCK		O_EXLOCK
+#define	FMARK		O_MARK
+#define	FSHLOCK		O_SHLOCK
+#define	FTRUNC		O_TRUNC
 
 /* bits to save after open */
-#define	FMASK		(FASYNC|FAPPEND|FNDELAY|FWRITE|FREAD)
-#define	FCNTLCANT	(FREAD|FWRITE|FMARK|FDEFER|FSHLOCK|FEXLOCK)
+#define	FMASK		(FREAD|FWRITE|O_APPEND|O_ASYNC|O_NONBLOCK)
+/* bits not settable by fcntl(F_SETFL, ...) */
+#define	FCNTLCANT	(FREAD|FWRITE|O_DEFER|O_EXLOCK|O_MARK|O_SHLOCK)
 
-/* open only modes */
-#define	FCREAT		01000		/* create if nonexistant */
-#define	FTRUNC		02000		/* truncate to zero length */
-#define	FEXCL		04000		/* error if already created */
+#else
 
-#ifndef	F_DUPFD
-/* fcntl(2) requests--from <fcntl.h> */
-#define	F_DUPFD	0	/* Duplicate fildes */
-#define	F_GETFD	1	/* Get fildes flags */
-#define	F_SETFD	2	/* Set fildes flags */
-#define	F_GETFL	3	/* Get file flags */
-#define	F_SETFL	4	/* Set file flags */
-#define	F_GETOWN 5	/* Get owner */
-#define F_SETOWN 6	/* Set owner */
+#include <sys/fcntl.h>
+#include <sys/unistd.h>
+
 #endif
 
-/*
- * User definitions.
- */
-
-/*
- * Open call.
- */
-#define	O_RDONLY	000		/* open for reading */
-#define	O_WRONLY	001		/* open for writing */
-#define	O_RDWR		002		/* open for read & write */
-#define	O_NDELAY	FNDELAY		/* non-blocking open on file */
-#define O_NONBLOCK	FNDELAY		/* ditto */
-#define	O_APPEND	FAPPEND		/* append on each write */
-#define	O_CREAT		FCREAT		/* open with file create */
-#define	O_TRUNC		FTRUNC		/* open with truncation */
-#define	O_EXCL		FEXCL		/* error on create if file exists */
-
-/*
- * Flock call.
- */
-#define	LOCK_SH		1	/* shared lock */
-#define	LOCK_EX		2	/* exclusive lock */
-#define	LOCK_NB		4	/* don't block when locking */
-#define	LOCK_UN		8	/* unlock */
-
-/*
- * Access call.
- */
-#define	F_OK		0	/* does file exist */
-#define	X_OK		1	/* is it executable by caller */
-#define	W_OK		2	/* writable by caller */
-#define	R_OK		4	/* readable by caller */
-
-/*
- * Lseek call.
- */
-#define	L_SET		0	/* absolute offset */
-#define	L_INCR		1	/* relative to current offset */
-#define	L_XTND		2	/* relative to end of file */
-
-#ifdef KERNEL
-#define	DTYPE_VNODE	1	/* file */
-#define	DTYPE_SOCKET	2	/* communications endpoint */
-#endif
+/* operation for lseek(2); renamed by POSIX 1003.1 to unistd.h */
+#define	L_SET		0	/* set file offset to offset */
+#define	L_INCR		1	/* set file offset to current plus offset */
+#define	L_XTND		2	/* set file offset to EOF plus offset */
