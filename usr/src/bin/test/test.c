@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)test.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)test.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -84,15 +84,15 @@ main(argc, argv)
 	char  c, **ap, *opname, *p;
 	int binary, nest, op, pri, ret_val, skipping;
 
-	if (argv[0] == NULL) {
+	if ((p = argv[0]) == NULL) {
 		err("test: argc is zero.\n");
 		exit(2);
 	}
 
-	if (**argv == '[') {
-		if (strcmp(argv[argc - 1], "]"))
+	if (*p != '\0' && p[strlen(p) - 1] == '[') {
+		if (strcmp(argv[--argc], "]"))
 			err("missing ]");
-		argv[argc - 1] = NULL;
+		argv[argc] = NULL;
 	}
 	ap = argv + 1;
 	fs.name = NULL;
