@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	6.29 (Berkeley) %G%
+ *	@(#)locore.s	6.30 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -156,7 +156,7 @@ SCBVEC(mba0int):
 	rei
 #endif
 
-#if VAX780
+#if defined(VAX780) || defined(VAX8600)
 /*
  * Registers for the uba handling code
  */
@@ -232,6 +232,7 @@ SCBVEC(softclock):
 	POPR; 
 	incl	_cnt+V_SOFT
 	rei
+
 #include "../net/netisr.h"
 	.globl	_netisr
 SCBVEC(netintr):
@@ -241,7 +242,6 @@ SCBVEC(netintr):
 	bbcc	$NETISR_IMP,_netisr,1f; calls $0,_impintr; 1:
 #endif
 #ifdef INET
-#include "../netinet/in_systm.h"
 	bbcc	$NETISR_IP,_netisr,1f; calls $0,_ipintr; 1:
 #endif
 #ifdef NS
@@ -251,6 +251,7 @@ SCBVEC(netintr):
 	POPR
 	incl	_cnt+V_SOFT
 	rei
+
 #if defined(VAX750) || defined(VAX730) || defined(VAX8600)
 SCBVEC(consdin):
 	PUSHR;
@@ -598,23 +599,19 @@ SCBVEC(syscall):
 
 /*
  * System page table
+ * Mbmap and Usrptmap are enlarged by CLSIZE entries
+ * as they are managed by resource maps starting with index 1 or CLSIZE.
  */ 
 #define	vaddr(x)	((((x)-_Sysmap)/4)*NBPG+0x80000000)
 #define	SYSMAP(mname, vname, npte)			\
 _/**/mname:	.globl	_/**/mname;		\
-	.space	npte*4;				\
+	.space	(npte)*4;				\
 	.globl	_/**/vname;			\
 	.set	_/**/vname,vaddr(_/**/mname)
 
 	.data
 	.align	2
 	SYSMAP(Sysmap	,Sysbase	,SYSPTSIZE	)
-	SYSMAP(UMBAbeg	,umbabeg	,0		)
-	SYSMAP(Nexmap	,nexus		,16*MAXNNEXUS	)
-	SYSMAP(UMEMmap	,umem		,UBAPAGES*NUBA	)
-	SYSMAP(Ioamap	,ioa		,MAXNIOA*IOAMAPSIZ/NBPG	)
-	SYSMAP(UMBAend	,umbaend	,0		)
-	SYSMAP(Usrptmap	,usrpt		,USRPTSIZE	)
 	SYSMAP(Forkmap	,forkutl	,UPAGES		)
 	SYSMAP(Xswapmap	,xswaputl	,UPAGES		)
 	SYSMAP(Xswap2map,xswap2utl	,UPAGES		)
@@ -623,15 +620,23 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(Vfmap	,vfutl		,UPAGES		)
 	SYSMAP(CMAP1	,CADDR1		,1		)
 	SYSMAP(CMAP2	,CADDR2		,1		)
-	SYSMAP(mcrmap	,mcr		,1		)
 	SYSMAP(mmap	,vmmap		,1		)
+	SYSMAP(alignmap	,alignutl	,1		)	/* XXX */
 	SYSMAP(msgbufmap,msgbuf		,MSGBUFPTECNT	)
+	SYSMAP(Mbmap	,mbutl		,NMBCLUSTERS*CLSIZE+CLSIZE )
 	SYSMAP(camap	,cabase		,16*CLSIZE	)
 #ifdef	GPROF
 	SYSMAP(profmap	,profbase	,600*CLSIZE	)
 #endif
 	SYSMAP(ecamap	,calimit	,0		)
-	SYSMAP(Mbmap	,mbutl		,NMBCLUSTERS*CLSIZE)
+
+	SYSMAP(UMBAbeg	,umbabeg	,0		)
+	SYSMAP(Nexmap	,nexus		,16*MAXNNEXUS	)
+	SYSMAP(UMEMmap	,umem		,UBAPAGES*NUBA	)
+	SYSMAP(Ioamap	,ioa		,MAXNIOA*IOAMAPSIZ/NBPG	)
+	SYSMAP(UMBAend	,umbaend	,0		)
+
+	SYSMAP(Usrptmap	,usrpt		,USRPTSIZE+CLSIZE )
 
 eSysmap:
 	.globl	_Syssize
