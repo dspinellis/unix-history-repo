@@ -1,16 +1,15 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)m0a	8.1 (Berkeley) %G%
+.\"	@(#)m0a	6.4 (Berkeley) %G%
 .\"
-.pn3
 .br
 .tr |
 .ce
-.ftB
+.ft B
 SUMMARY OF REQUESTS AND OUTLINE OF THIS MANUAL
-.ftR
+.ft R
 .de mx
-.ev2
+.ev 2
 .nf
 .h1
 .in
@@ -22,9 +21,9 @@ SUMMARY OF REQUESTS AND OUTLINE OF THIS MANUAL
 .xx
 .h1 \s-1#\s+1 *
 .fn
-.sp.3
+.sp .3
 *Values separated by "\fB;\fR" are for \*(NR and \*(TR respectively.
-.sp.2
+.sp .2
 \s-1#\s+1Notes are explained at the end of this Summary and Index
 .ef
 .mh
@@ -49,7 +48,7 @@ mode (font \fIF\^\fR\^).\(dg
 .b1
 \fB&bd|S|\fIF|N\fR	off	-	P	Embolden Special Font when current font is \fIF\fR.\(dg
 .fn
-.sp.2
+.sp .2
 \(dgNo effect in \*(NR.
 .ef
 .b1
@@ -66,7 +65,7 @@ Page Control
 \fB&bp|\fI\(+-N\fR	\fIN\(eq\fR1	-	B\(dd,\fBv\fR	\
 Eject current page; next page number \fIN\fR.
 .fn
-.sp.2
+.sp .2
 \(ddThe use of "\ \fB\'\fR\ " as control character (instead of "\fB.\fR")
 suppresses the break function.
 .ef
@@ -85,7 +84,7 @@ Text Filling, Adjusting, and Centering
 .bt
 \fB&br\fR	-	-	B	Break.
 .b1
-.lg0
+.lg 0
 \fB&fi\fR	\(fill	-	B,E	Fill output lines.
 .lg
 .b1
@@ -273,7 +272,7 @@ Miscellaneous
 .b1
 \fB&ab\fI|string\fR	-	-	-	Print a message and abort.
 .b1
-.lg0
+.lg 0
 \fB&fl\fR	-	-	B	Flush output buffer.
 .lg
 .mh
@@ -281,14 +280,14 @@ Output and Error Messages
 .xx
 .nf
 .rm mx
-.ftR
+.ft R
 \l'\n(.lu'
-.ftB
+.ft B
 .xx
 .ta .3iC .6i
 	Notes-
 .xx
-.ftR
+.ft R
 	B	Request normally causes a break.
 	D	Mode or relevant parameters associated with current diversion level.
 	E	Relevant parameters are a part of the current environment.
@@ -395,12 +394,12 @@ vs	5
 wh	7
 .di
 .nr aa \n(dn/\n(zz
-.ne \\n(aau+10p
+.ne \n(aau+10p
 .sp
-.ftB
+.ft B
 Alphabetical Request and Section Number Cross Reference
 .ft
-.sp.3
+.sp .3
 .wh \n(nlu+\n(aau cl
 .nr qq \n(nlu+\n(aau
 .ps
@@ -413,19 +412,19 @@ Alphabetical Request and Section Number Cross Reference
 .sp
 .bp
 .nf
-.ftB
+.ft B
 Escape Sequences for Characters, Indicators, and Functions
-.ftR
+.ft R
 .xx
 .TS
 c2l
 c2l2l
 n2l2l.
-.ftI
+.ft I
 .bd I 3
 Section	Escape
 Reference	Sequence	Meaning
-.ftR
+.ft R
 .bd I
 .xx
 10.1	\fB\e\e\fR	\e (to prevent or delay the interpretation of \e\|)
@@ -488,7 +487,7 @@ The escape sequences
 and
 \fB\e\fR(newline) are interpreted in \fIcopy mode\fR (\(sc7.2).
 .bp
-.ftB
+.ft B
 .nf
 Predefined General Number Registers
 .ft
@@ -496,11 +495,11 @@ Predefined General Number Registers
 c2l
 c2l2l
 n2l2l.
-.ftI
+.ft I
 .bd I 3
 Section	Register
 Reference	Name	Description
-.ftR
+.ft R
 .bd I
 .xx
 3	\fB%\fR	Current page number.
@@ -519,18 +518,18 @@ Reference	Name	Description
 -	\fByr\fR	Last two digits of current year.
 .TE
 .sp
-.ftB
+.ft B
 Predefined Read-Only Number Registers
-.ftR
+.ft R
 .TS
 c2l
 c2l2l
 n2l2l.
-.ftI
+.ft I
 .bd I 3
 Section	Register
 Reference	Name	Description
-.ftR
+.ft R
 .bd I
 .xx
 7.3	\fB&$\fR	Number of arguments available at the current macro level.
@@ -562,5 +561,9 @@ using \fB\ex\fI\'N\|\'\fR.
 -	\fB&y\fR	Reserved version-dependent register.
 7.4	\fB&z\fR	Name of current diversion.
 .TE
-.in0
+.in 0
 .fi
+.ps 10
+.vs 12
+.ft R
+.bp
