@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -45,6 +45,7 @@ int	data = -1;
 int	abrtflag = 0;
 int	ptflag = 0;
 int	connected;
+int	allbinary;
 struct	sockaddr_in myctladdr;
 uid_t	getuid();
 
@@ -168,7 +169,7 @@ login(host)
 		code = -1;
 		return(0);
 	}
-	if (user == NULL) {
+	while (user == NULL) {
 		char *myname = getlogin();
 
 		if (myname == NULL) {
@@ -177,7 +178,10 @@ login(host)
 			if (pp != NULL)
 				myname = pp->pw_name;
 		}
-		printf("Name (%s:%s): ", host, myname);
+		if (myname)
+			printf("Name (%s:%s): ", host, myname);
+		else
+			printf("Name (%s): ", host);
 		(void) fgets(tmp, sizeof(tmp) - 1, stdin);
 		tmp[strlen(tmp) - 1] = '\0';
 		if (*tmp == '\0')
@@ -709,7 +713,7 @@ recvrequest(cmd, local, remote, mode, printnames)
 	if (setjmp(recvabort))
 		goto abort;
 	if (!is_retr) {
-		if (type != TYPE_A) {
+		if (type != TYPE_A && (allbinary == 0 || type != TYPE_I)) {
 			oldtype = type;
 			oldverbose = verbose;
 			if (!debug)
