@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vad.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)vad.c	4.2 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"
@@ -67,16 +67,18 @@ struct Devices *dev;
 	DEBUG(4, "%s\n", telno);
 	for(i = 0; i < 5; ++i) {	/* make 5 tries */
 		/* wake up Vadic */
-		write(dh, "\005\r", 2);
+		write(dh, "\005", 1);
+		sleep(1);
+		write(dh, "\r", 1);
 		DEBUG(4, "wanted * ", CNULL);
-		ok = expect("*", dh);
+		ok = expect("*~5", dh);
 		DEBUG(4, "got %s\n", ok ? "?" : "that");
 		if (ok != 0)
 			continue;
 
 		write(dh, "D\r", 2); /* "D" (enter number) command */
 		DEBUG(4, "wanted NUMBER?\\r\\n ", CNULL);
-		ok = expect("NUMBER?\r\n", dh);
+		ok = expect("NUMBER?\r\n~5", dh);
 		DEBUG(4, "got %s\n", ok ? "?" : "that");
 		if (ok != 0)
 			continue;
@@ -119,8 +121,8 @@ struct Devices *dev;
 	return dh;
 }
 
-vadcls(fd) {
-
+vadcls(fd)
+{
 	if (fd > 0) {
 		close(fd);
 		sleep(5);
