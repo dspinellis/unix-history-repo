@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley Software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 # C Shell with process control; VM/UNIX VAX Makefile
 # Bill Joy UC Berkeley; Jim Kulp IIASA, Austria
@@ -21,10 +21,15 @@ CTAGS=	/usr/ucb/ctags
 LIBES=
 SCCS=	sccs
 
-OBJS=	alloc.o doprnt.o printf.o sh.o sh.char.o sh.dir.o sh.dol.o sh.err.o \
+#ifdef vax
+#MACHOBJS=doprnt.o
+#else
+MACHOBJS=
+#endif
+OBJS=	alloc.o printf.o sh.o sh.char.o sh.dir.o sh.dol.o sh.err.o \
 	sh.exec.o sh.exp.o sh.file.o sh.func.o sh.glob.o sh.hist.o sh.init.o \
 	sh.lex.o sh.misc.o sh.parse.o sh.print.o sh.proc.o sh.sem.o sh.set.o \
-	sh.time.o
+	sh.time.o ${MACHOBJS}
 
 # Special massaging of C files for sharing of strings
 .c.o:
