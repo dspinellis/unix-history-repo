@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)0.h 1.8 %G%"; */
+/* static char sccsid[] = "@(#)0.h 1.9 %G%"; */
 
 #define DEBUG
 #define CONSETS
@@ -431,6 +431,8 @@ char	**clnames;
 /*
  * NOCON and SAWCON are flags in the tree telling whether
  * a constant set is part of an expression.
+ *	these are no longer used,
+ *	since we now do constant sets at compile time.
  */
 #define NOCON	0
 #define SAWCON	1
@@ -673,6 +675,7 @@ struct	udinfo {
 
 #define	codeon()	cgenflg++
 #define	codeoff()	--cgenflg
+#define	CGENNING	( cgenflg >= 0 )
 
 /*
  * Codeline is the last lino output in the code generator.
