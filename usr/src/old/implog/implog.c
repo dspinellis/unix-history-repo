@@ -1,4 +1,6 @@
-/*	implog.c	4.1	82/04/04	*/
+#ifndef lint
+static char sccsid[] = "@(#)implog.c	4.3 (Berkeley) %G%";
+#endif
 
 #include <stdio.h>
 #include <time.h>
