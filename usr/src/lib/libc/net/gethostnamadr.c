@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.10 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/param.h>
@@ -16,6 +16,7 @@ static char sccsid[] = "@(#)gethostnamadr.c	6.9 (Berkeley) %G%";
 #include <netdb.h>
 #include <stdio.h>
 #include <errno.h>
+#include <arpa/inet.h>
 #include <arpa/nameser.h>
 #include <resolv.h>
 
@@ -60,8 +61,8 @@ getanswer(msg, msglen, iquery)
 	register int n;
 	querybuf answer;
 	char *eom, *bp, **ap;
-	int type, class, ancount, qdcount, buflen;
-	int haveanswer, getclass;
+	int type, class, buflen, ancount, qdcount;
+	int haveanswer, getclass = C_ANY;
 	char **hap;
 
 	n = res_send(msg, msglen, (char *)&answer, sizeof(answer));
@@ -161,8 +162,8 @@ getanswer(msg, msglen, iquery)
 			continue;
 		}
 		if (type == T_PTR) {
-			if ((n = dn_expand((char *)&answer, eom, cp, bp, buflen)) < 
-0) {
+			if ((n = dn_expand((char *)&answer, eom,
+			    cp, bp, buflen)) < 0) {
 				cp += n;
 				continue;
 			}
@@ -264,7 +265,7 @@ gethostbyaddr(addr, len, type)
 		((unsigned)addr[2] & 0xff),
 		((unsigned)addr[1] & 0xff),
 		((unsigned)addr[0] & 0xff));
-	n = res_mkquery(QUERY, qbuf, C_IN, T_PTR, NULL, 0, NULL,
+	n = res_mkquery(QUERY, qbuf, C_IN, T_PTR, (char *)NULL, 0, NULL,
 		(char *)&buf, sizeof(buf));
 	if (n < 0) {
 #ifdef DEBUG
@@ -300,7 +301,7 @@ _sethtent(f)
 _endhtent()
 {
 	if (hostf && !stayopen) {
-		fclose(hostf);
+		(void) fclose(hostf);
 		hostf = NULL;
 	}
 }
