@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.14 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -44,16 +44,17 @@ static char sccsid[] = "@(#)rlogind.c	5.13 (Berkeley) %G%";
 # define TIOCPKT_WINDOW 0x80
 # endif TIOCPKT_WINDOW
 
-extern	errno;
+extern	int errno;
 int	reapchild();
 struct	passwd *getpwnam();
 char	*malloc();
 
+/*ARGSUSED*/
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	int on = 1, options = 0, fromlen;
+	int on = 1, fromlen;
 	struct sockaddr_in from;
 
 	openlog("rlogind", LOG_PID | LOG_AUTH, LOG_AUTH);
@@ -72,7 +73,6 @@ main(argc, argv)
 int	child;
 int	cleanup();
 int	netf;
-extern	errno;
 char	*line;
 extern	char	*inet_ntoa();
 
@@ -116,8 +116,8 @@ doit(f, fromp)
 		if (stat(line, &stb) < 0)
 			break;
 		for (i = 0; i < 16; i++) {
-			line[strlen("/dev/ptyp")] = "0123456789abcdef"[i];
-			p = open(line, 2);
+			line[sizeof("/dev/ptyp") - 1] = "0123456789abcdef"[i];
+			p = open(line, O_RDWR);
 			if (p > 0)
 				goto gotpty;
 		}
@@ -128,29 +128,42 @@ gotpty:
 	(void) ioctl(p, TIOCSWINSZ, &win);
 	netf = f;
 	line[strlen("/dev/")] = 't';
+	t = open(line, O_RDWR);
+	if (t < 0)
+		fatalperror(f, line);
+	if (fchmod(t, 0))
+		fatalperror(f, line);
+	(void)signal(SIGHUP, SIG_IGN);
+	vhangup();
+	(void)signal(SIGHUP, SIG_DFL);
+	t = open(line, O_RDWR);
+	if (t < 0)
+		fatalperror(f, line);
+	{
+		struct sgttyb b;
+
+		(void)ioctl(t, TIOCGETP, &b);
+		b.sg_flags = RAW|ANYP;
+		(void)ioctl(t, TIOCSETP, &b);
+	}
 #ifdef DEBUG
-	{ int tt = open("/dev/tty", 2);
-	  if (tt > 0) {
-		ioctl(tt, TIOCNOTTY, 0);
-		close(tt);
-	  }
+	{
+		int tt = open("/dev/tty", O_RDWR);
+		if (tt > 0) {
+			(void)ioctl(tt, TIOCNOTTY, 0);
+			(void)close(tt);
+		}
 	}
 #endif
-	t = open(line, 2);
-	if (t < 0)
-		fatalperror(f, line, errno);
-	{ struct sgttyb b;
-	  gtty(t, &b); b.sg_flags = RAW|ANYP; stty(t, &b);
-	}
 	pid = fork();
 	if (pid < 0)
-		fatalperror(f, "", errno);
+		fatalperror(f, "");
 	if (pid == 0) {
 		close(f), close(p);
 		dup2(t, 0), dup2(t, 1), dup2(t, 2);
 		close(t);
 		execl("/bin/login", "login", "-r", hp->h_name, 0);
-		fatalperror(2, "/bin/login", errno);
+		fatalperror(2, "/bin/login");
 		/*NOTREACHED*/
 	}
 	close(t);
@@ -228,7 +241,7 @@ protocol(f, p)
 		if (select(16, &ibits, &obits, &ebits, 0) < 0) {
 			if (errno == EINTR)
 				continue;
-			fatalperror(f, "select", errno);
+			fatalperror(f, "select");
 		}
 		if (ibits == 0 && obits == 0 && ebits == 0) {
 			/* shouldn't happen... */
@@ -337,10 +350,9 @@ fatal(f, msg)
 	exit(1);
 }
 
-fatalperror(f, msg, errno)
+fatalperror(f, msg)
 	int f;
 	char *msg;
-	int errno;
 {
 	char buf[BUFSIZ];
 	extern int sys_nerr;
