@@ -1,70 +1,72 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1989 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	1.6	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	1.7 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-SFLAGS=	-r
-TDEV=	-Pver
-TROFF=	ditroff ${TDEV}
-SRCS=	fortune.c rnd.c strfile.c unstr.c
+SRCS=	fortune.c strfile.c unstr.c
+OBJS=
 MAN=	fortune.0
 
-all: fortune strfile unstr fortunes.dat
+all: fortune strfile # unstr
 
-fortune: fortune.o rnd.o ${LIBC}
-	${CC} ${CFLAGS} -o $@ fortune.o rnd.o
+fortune: ${LIBC}
+	${CC} ${CFLAGS} -o $@ $@.c
 
-strfile: strfile.o rnd.o ${LIBC}
-	${CC} ${CFLAGS} -o $@ strfile.o rnd.o
+strfile: ${LIBC}
+	${CC} ${CFLAGS} -o $@ $@.c
 
-unstr: unstr.o ${LIBC}
-	${CC} ${CFLAGS} -o $@ unstr.o
-
-fortunes.dat: fortunes strfile
-	./strfile ${SFLAGS} fortunes
-
-fortunes: scene obscene
-	(cat scene; echo "%-"; cat obscene) > fortunes
+unstr: ${LIBC}
+	${CC} ${CFLAGS} -o $@ $@.c
 
 clean:
-	rm -f fortune fortunes fortunes.dat strfile unstr core *.o
-	rm -f Oscene Oobscene
+	rm -f fortune strfile unstr core *.dat
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
 
 depend: ${SRCS}
-	mkdep ${CFLAGS} ${SRCS}
+	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
 	install -s -o games -g bin -m 4755 fortune ${DESTDIR}/usr/games
-	install -o games -g bin -m 600 fortunes.dat ${DESTDIR}/usr/games/lib
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat6
+	install -c -o bin -g bin -m 444 fortune.0 ${DESTDIR}/usr/man/cat6
+	./strfile -rs fortunes
+	./strfile -rs startrek
+	./strfile -rs zippy
+	install -c -o bin -g bin -m 444 fortunes startrek zippy \
+	    ${DESTDIR}/usr/share/games/fortune
+	install -o bin -g bin -m 444 fortunes.dat startrek.dat zippy.dat \
+	    ${DESTDIR}/usr/share/games/fortune
+	./strfile -rsx noobscene
+	install -c -o bin -g bin -m 444 noobscene \
+	    ${DESTDIR}/usr/share/games/fortune/fortunes-o
+	install -o bin -g bin -m 444 noobscene.dat \
+	    ${DESTDIR}/usr/share/games/fortune/fortunes-o.dat
+#	./strfile -rsx fortunes-o.rot
+#	install -c -o bin -g bin -m 444 fortunes-o.rot \
+#	    ${DESTDIR}/usr/share/games/fortune/fortunes-o
+#	install -o bin -g bin -m 444 fortunes-o.rot.dat \
+#	    ${DESTDIR}/usr/share/games/fortune/fortunes-o.dat
 
 lint: ${SRCS}
-	lint ${CFLAGS} fortune.c rnd.c
-	lint ${CFLAGS} strfile.c rnd.c
+	lint ${CFLAGS} fortune.c
+	lint ${CFLAGS} strfile.c
 	lint ${CFLAGS} unstr.c
 
 tags: ${SRCS}
 	ctags ${SRCS}
-
-troff:
-	./Do_troff scene ${TROFF}
-	./Do_troff obscene ${TROFF}
-
-sort: sort.scene sort.obscene
-
-sort.scene: strfile unstr
-	strfile -oi scene
-	mv scene Oscene
-	unstr -o scene
-
-sort.obscene: strfile unstr
-	strfile -oi obscene
-	mv obscene Oobscene
-	unstr -o obscene
