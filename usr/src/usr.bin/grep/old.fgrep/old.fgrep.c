@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)old.fgrep.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)old.fgrep.c	4.3 (Berkeley) %G%";
 /*
  * fgrep -- print all lines containing any of a set of keywords
  *
@@ -10,7 +10,10 @@ static char *sccsid = "@(#)old.fgrep.c	4.2 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
+#include <sys/param.h>
+#include <sys/stat.h>
 
+#define BLKSIZE 8192
 #define	MAXSIZ 6000
 #define QSIZE 400
 struct words {
@@ -125,7 +128,9 @@ char *file;
 	register ccount;
 	register char ch;
 	register char *p;
-	char buf[2*BUFSIZ];
+	static char *buf;
+	static int blksize;
+	struct stat stb;
 	int f;
 	int failed;
 	char *nlp;
@@ -137,6 +142,18 @@ char *file;
 		}
 	}
 	else f = 0;
+	if (buf == NULL) {
+		if (fstat(f, &stb) > 0 && stb.st_blksize > 0)
+			blksize = stb.st_blksize;
+		else
+			blksize = BLKSIZE;
+		buf = (char *)malloc(2*blksize);
+		if (buf == NULL) {
+			fprintf(stderr, "egrep: no memory for %s\n", file);
+			retcode = 2;
+			return;
+		}
+	}
 	ccount = 0;
 	failed = 0;
 	lnum = 1;
@@ -147,11 +164,11 @@ char *file;
 	c = w;
 	for (;;) {
 		if (--ccount <= 0) {
-			if (p == &buf[2*BUFSIZ]) p = buf;
-			if (p > &buf[BUFSIZ]) {
-				if ((ccount = read(f, p, &buf[2*BUFSIZ] - p)) <= 0) break;
+			if (p == &buf[2*blksize]) p = buf;
+			if (p > &buf[blksize]) {
+				if ((ccount = read(f, p, &buf[2*blksize] - p)) <= 0) break;
 			}
-			else if ((ccount = read(f, p, BUFSIZ)) <= 0) break;
+			else if ((ccount = read(f, p, blksize)) <= 0) break;
 			blkno += ccount;
 		}
 		nstate:
@@ -181,11 +198,11 @@ char *file;
 		if (c->out) {
 			while (*p++ != '\n') {
 				if (--ccount <= 0) {
-					if (p == &buf[2*BUFSIZ]) p = buf;
-					if (p > &buf[BUFSIZ]) {
-						if ((ccount = read(f, p, &buf[2&BUFSIZ] - p)) <= 0) break;
+					if (p == &buf[2*blksize]) p = buf;
+					if (p > &buf[blksize]) {
+						if ((ccount = read(f, p, &buf[2*blksize] - p)) <= 0) break;
 					}
-					else if ((ccount = read(f, p, BUFSIZ)) <= 0) break;
+					else if ((ccount = read(f, p, blksize)) <= 0) break;
 					blkno += ccount;
 				}
 			}
@@ -202,10 +219,10 @@ char *file;
 			}
 			else {
 				if (nfile > 1 && hflag) printf("%s:", file);
-				if (bflag) printf("%ld:", (blkno-ccount-1)/BUFSIZ);
+				if (bflag) printf("%ld:", (blkno-ccount-1)/DEV_BSIZE);
 				if (nflag) printf("%ld:", lnum);
 				if (p <= nlp) {
-					while (nlp < &buf[2*BUFSIZ]) putchar(*nlp++);
+					while (nlp < &buf[2*blksize]) putchar(*nlp++);
 					nlp = buf;
 				}
 				while (nlp < p) putchar(*nlp++);
