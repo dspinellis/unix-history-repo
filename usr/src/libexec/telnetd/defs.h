@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)defs.h	5.6 (Berkeley) %G%
+ *	@(#)defs.h	5.7 (Berkeley) %G%
  */
 
 /*
@@ -42,6 +42,8 @@
 #include <sys/ioctl.h>
 
 #include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
 
 #include <arpa/telnet.h>
 

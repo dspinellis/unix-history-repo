@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.44 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -36,36 +36,16 @@ int	lowpty = 0, highpty;	/* low, high pty numbers */
 int debug = 0;
 char *progname;
 
-#if	defined(IP_TOS) && defined(NEED_GETTOS)
-struct tosent {
-	char	*t_name;	/* name */
-	char	**t_aliases;	/* alias list */
-	char	*t_proto;	/* protocol */
-	int	t_tos;		/* Type Of Service bits */
-};
-
-struct tosent *
-gettosbyname(name, proto)
-char *name, *proto;
-{
-	static struct tosent te;
-	static char *aliasp = 0;
-
-	te.t_name = name;
-	te.t_aliases = &aliasp;
-	te.t_proto = proto;
-	te.t_tos = 020;	/* Low Delay bit */
-	return(&te);
-}
-#endif
-
 main(argc, argv)
 	char *argv[];
 {
 	struct sockaddr_in from;
 	int on = 1, fromlen;
 #ifdef IP_TOS
+	int tos;
+#ifdef CRAY
 	struct tosent *tp;
+#endif
 #endif /* IP_TOS */
 
 	pfrontp = pbackp = ptyobuf;
@@ -214,8 +194,13 @@ top:
 	}
 
 #ifdef IP_TOS
-	if ((tp = gettosbyname("telnet", "tcp")) &&
-	    (setsockopt(0, IPPROTO_IP, IP_TOS, &tp->t_tos, sizeof(int)) < 0))
+#ifdef CRAY
+	if (tp = gettosbyname("telnet", "tcp"))
+		tos = tp->t_tos;
+	else
+#endif /* CRAY */
+	tos = IPTOS_LOWDELAY;
+	if (setsockopt(0, IPPROTO_IP, IP_TOS, &tos, sizeof(int)) < 0)
 		syslog(LOG_WARNING, "setsockopt (IP_TOS): %m");
 #endif /* IP_TOS */
 	net = 0;
