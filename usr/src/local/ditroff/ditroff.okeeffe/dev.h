@@ -5,30 +5,30 @@
 struct dev {
 	unsigned short	filesize;	/* number of bytes in file, */
 				/* excluding dev part */
-	short	res;		/* basic resolution in goobies/inch */
-	short	hor;		/* goobies horizontally */
-	short	vert;
-	short	unitwidth;	/* size at which widths are given, in effect */
-	short	nfonts;		/* number of fonts physically available */
-	short	nsizes;		/* number of sizes it has */
-	short	sizescale;	/* scaling for fractional point sizes */
-	short	paperwidth;	/* max line length in units */
-	short	paperlength;	/* max paper length in units */
-	short	nchtab;		/* number of funny names in chtab */
-	short	lchname;	/* length of chname table */
-	short	spare1;		/* #chars in largest ever font */
-	short	spare2;		/* in case of expansion */
+	unsigned short	res;		/* basic resolution in goobies/inch */
+	unsigned short	hor;		/* goobies horizontally */
+	unsigned short	vert;
+	unsigned short	unitwidth;	/* size at which widths are given, in effect */
+	unsigned short	nfonts;		/* number of fonts physically available */
+	unsigned short	nsizes;		/* number of sizes it has */
+	unsigned short	sizescale;	/* scaling for fractional point sizes */
+	unsigned short	paperwidth;	/* max line length in units */
+	unsigned short	paperlength;	/* max paper length in units */
+	unsigned short	nchtab;		/* number of funny names in chtab */
+	unsigned short	lchname;	/* length of chname table */
+	unsigned short	spare1;		/* #chars in largest ever font */
+	unsigned short	spare2;		/* in case of expansion */
 };
 
 struct Font {		/* characteristics of a font */
-	char	nwfont;		/* number of width entries for this font */
-	char	specfont;	/* 1 == special font */
-	char	ligfont;	/* 1 == ligatures exist on this font */
-	char	spare1;		/* unused for now */
-	char	fonttab;	/* 1 == use extra table for fontnumbers */
-	char	slant;		/* if set, slant font by slant degrees */
-	char	namefont[10];	/* name of this font (e.g., "R" */
-	char	intname[10];	/* internal name (=number) on device, in ascii */
+	unsigned char	nwfont;		/* number of width entries for this font */
+	unsigned char	specfont;	/* 1 == special font */
+	unsigned char	ligfont;	/* 1 == ligatures exist on this font */
+	unsigned char	spare1;		/* unused for now */
+	unsigned char	fonttab;	/* 1 == use extra table for fontnumbers */
+	unsigned char	slant;		/* if set, slant font by slant degrees */
+	unsigned char	namefont[10];	/* name of this font (e.g., "R" */
+	unsigned char	intname[10];	/* internal name (=number) on device, in ascii */
 };
 
 /* ligatures, ORed into ligfont */
@@ -44,7 +44,7 @@ struct Font {		/* characteristics of a font */
  *
  * spare1 int struct dev is also known as biggestfont
  *
- * in Font struvture is added:
+ * in Font structure is added:
  *	fonttab: if set to 1, the Font.out has an extra
  *		  table of shorts which gives the physical font
  *		  on which the chracter lives. Allows mapping of
