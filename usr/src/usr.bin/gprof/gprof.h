@@ -1,4 +1,4 @@
-    /* sccsid:  @(#)gprof.h	1.11 (Berkeley) %G% */
+    /* sccsid:  @(#)gprof.h	1.12 (Berkeley) %G% */
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -11,6 +11,18 @@
      *	who am i, for error messages.
      */
 char	*whoami;
+
+    /*
+     * booleans
+     */
+typedef int	bool;
+#define	FALSE	0
+#define	TRUE	1
+
+    /*
+     *	opcode of the `calls' instruction
+     */
+#define	CALLS	0xfb
 
     /*
      *	ticks per second
@@ -61,6 +73,7 @@ struct nl {
     double		childtime;	/* cumulative ticks in children */
     long		ncall;		/* how many times called */
     long		selfcalls;	/* how many calls to self */
+    bool		printflag;	/* should this be printed? */
     int			index;		/* index in the graph list */
     int			toporder;	/* graph call chain top-sort order */
     int			cycleno;	/* internal number of cycle on */
@@ -118,6 +131,7 @@ unsigned sampbytes;		/* number of bytes of samples */
 int	nsamples;		/* number of samples */
 double	actime;			/* accumulated time thus far for putprofline */
 double	totime;			/* total time for all routines */
+double	printtime;		/* total of time being printed */
 double	scale;			/* scale factor converting samples to pc
 				   values: each sample covers scale bytes */
 char	*strtab;		/* string table in core */
@@ -128,23 +142,14 @@ unsigned char	*textspace;		/* text space of a.out in core */
     /*
      *	option flags, from a to z.
      */
-int	aflag;				/* static functions, too */
-int	bflag;				/* blurbs, too */
-int	cflag;				/* discovered call graph, too */
-int	sflag;				/* sum multiple gmon.out files */
-int	zflag;				/* zero time/called functions, too */
-
-    /*
-     * booleans
-     */
-typedef int	bool;
-#define	FALSE	0
-#define	TRUE	1
-
-    /*
-     *	opcode of the `calls' instruction
-     */
-#define	CALLS	0xfb
+bool	aflag;				/* suppress static functions */
+bool	bflag;				/* blurbs, too */
+bool	cflag;				/* discovered call graph, too */
+bool	dflag;				/* debugging options */
+bool	eflag;				/* specific functions excluded */
+bool	fflag;				/* specific functions requested */
+bool	sflag;				/* sum multiple gmon.out files */
+bool	zflag;				/* zero time/called functions, too */
 
     /*
      *	register for pc relative addressing

@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)printgprof.c	1.8 (Berkeley) %G%";
+    static	char *sccsid = "@(#)printgprof.c	1.9 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -10,7 +10,8 @@ printprof()
     nltype		**sortednlp;
     int			index;
 
-    printf( "\ngranularity: each sample hit covers %d byte(s)" , (long) scale );
+    printf( "\ngranularity: each sample hit covers %d byte(s)" ,
+	    (long) scale * sizeof(UNIT) );
     printf( " for %.2f%% of %.2f seconds\n\n" , 100.0/totime , totime / HZ );
     actime = 0.0;
     flatprofheader();
@@ -88,6 +89,10 @@ gprofheader()
     if ( bflag ) {
 	printblurb( "callg.blurb" );
     }
+    printf( "\ngranularity: each sample hit covers %d byte(s)" ,
+	    (long) scale * sizeof(UNIT) );
+    printf( " for %.2f%% of %.2f seconds\n\n" ,
+	    100.0/printtime , printtime / HZ );
     printf( "%6.6s %5.5s %7.7s %11.11s %7.7s/%-7.7s     %-8.8s\n" ,
 	"" , "" , "" , "" , "called" , "total" , "parents" , "" );
     printf( "%-6.6s %5.5s %7.7s %11.11s %7.7s+%-7.7s %-8.8s\t%5.5s\n" ,
@@ -106,7 +111,7 @@ gprofline( np )
     sprintf( kirkbuffer , "[%d]" , np -> index );
     printf( "%-6.6s %5.1f %7.2f %11.2f" ,
 	    kirkbuffer ,
-	    100 * ( np -> time + np -> childtime ) / totime ,
+	    100 * ( np -> time + np -> childtime ) / printtime ,
 	    np -> time / HZ ,
 	    np -> childtime / HZ );
     if ( ( np -> ncall + np -> selfcalls ) != 0 ) {
@@ -160,6 +165,9 @@ printgprof()
 	     parentp -> selfcalls == 0 &&
 	     parentp -> time == 0 &&
 	     parentp -> childtime == 0 ) {
+	    continue;
+	}
+	if ( ! parentp -> printflag ) {
 	    continue;
 	}
 	if ( parentp -> name == 0 && parentp -> cycleno != 0 ) {
@@ -310,7 +318,11 @@ printname( selfp )
 	printf( "\t<cycle %d>" , selfp -> cycleno );
     }
     if ( selfp -> index != 0 ) {
-	printf( " [%d]" , selfp -> index );
+	if ( selfp -> printflag ) {
+	    printf( " [%d]" , selfp -> index );
+	} else {
+	    printf( " (%d)" , selfp -> index );
+	}
     }
 }
 
@@ -405,7 +417,7 @@ printcycle( cyclep )
     sprintf( kirkbuffer , "[%d]" , cyclep -> index );
     printf( "%-6.6s %5.1f %7.2f %11.2f %7d" ,
 	    kirkbuffer ,
-	    100 * ( cyclep -> time + cyclep -> childtime ) / totime ,
+	    100 * ( cyclep -> time + cyclep -> childtime ) / printtime ,
 	    cyclep -> time / HZ ,
 	    cyclep -> childtime / HZ ,
 	    cyclep -> ncall );
