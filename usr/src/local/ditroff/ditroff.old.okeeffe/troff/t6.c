@@ -1,4 +1,4 @@
-/*	t6.c	1.2	(Berkeley)	83/08/15	*/
+/*	t6.c	1.3	(Berkeley)	83/09/23	*/
 #include "tdef.h"
 extern
 #include "d.h"
@@ -84,24 +84,22 @@ register int	i;
 		/* and default is 12 */
 		goto g1;
 	}
-	if ((j = fitab[xfont][i] & BMASK) == 0) {	/* it's not on current font */
+	if ((j = fitab[xfont][i] & BMASK) == 0) {	/* NOT current font */
 		/* search through search list of xfont
 		/* to see what font it ought to be on.
-		/* for now, searches S, then remaining fonts in wraparound order.
-		*/
-		if (smnt) {
-			int	ii, jj;
-			for (ii=smnt, jj=0; jj < nfonts; jj++, ii=ii % nfonts + 1) {
-				j = fitab[ii][i] & BMASK;
-				if (j != 0) {
-					p = fontab[ii];
-					k = *(p + j);
-					if (xfont == sbold)
-						bd = bdtab[ii];
-					if (setwdf)
-						v.ct |= kerntab[ii][j];
-					goto g1;
-				}
+		/* for now, searches from current font in wraparound order. */
+
+		int	ii, jj;
+		for (ii=xfont, jj=0; jj < nfonts; jj++, ii=ii % nfonts + 1) {
+			j = fitab[ii][i] & BMASK;
+			if (j != 0) {
+				p = fontab[ii];
+				k = *(p + j);
+				if (xfont == sbold)
+					bd = bdtab[ii];
+				if (setwdf)
+					v.ct |= kerntab[ii][j];
+				goto g1;
 			}
 		}
 		code = 0;
