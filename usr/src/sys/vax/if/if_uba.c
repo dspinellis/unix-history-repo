@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_uba.c	7.11 (Berkeley) %G%
+ *	@(#)if_uba.c	7.5.1.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -70,8 +70,6 @@ if_ubaminit(ifu, uban, hlen, nmr, ifr, nr, ifw, nw)
 	if (ifr[0].ifrw_addr)
 		cp = ifr[0].ifrw_addr - off;
 	else {
-		cp = (caddr_t)malloc((u_long)((nr + nw) * nclbytes), M_DEVBUF,
-		    M_NOWAIT);
 		if (cp == 0)
 			return (0);
 		p = cp;
