@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.2	%G%	*/
+/*	tty_pty.c	4.3	%G%	*/
 
 /*
  * Pseudo-teletype Driver
@@ -11,6 +11,9 @@
 #include "../h/user.h"
 #include "../h/conf.h"
 #include "../h/buf.h"
+#include "../pty.h"
+
+#if WANTPTY > 0
 
 #define NPTY 16                 /* Number of pseudo-teletypes */
 #define BUFSIZ 100              /* Chunk size iomoved from user */
@@ -224,3 +227,4 @@ dev_t dev;
 	} else
 		u.u_error = ENOTTY;
 }
+#endif
