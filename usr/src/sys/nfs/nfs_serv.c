@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.52 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.53 (Berkeley) %G%
  */
 
 /*
@@ -36,11 +36,9 @@
 #include <sys/mount.h>
 #include <sys/mbuf.h>
 #include <sys/dirent.h>
+#include <sys/stat.h>
 
 #include <vm/vm.h>
-
-#include <ufs/ufs/quota.h>	/* XXX - for ufid */
-#include <ufs/ufs/inode.h>	/* XXX - for ufid */
 
 #include <nfs/nfsv2.h>
 #include <nfs/rpcv2.h>
@@ -1321,13 +1319,17 @@ again:
 	io.uio_segflg = UIO_SYSSPACE;
 	io.uio_rw = UIO_READ;
 	io.uio_procp = (struct proc *)0;
-	error = VOP_READDIR(vp, &io, cred, &eofflag);
+	error = VOP_READDIR(vp, &io, cred);
 	off = io.uio_offset;
 	if (error) {
 		vrele(vp);
 		free((caddr_t)rbuf, M_TEMP);
 		nfsm_reply(0);
 	}
+	if (io.uio_resid < fullsiz)
+		eofflag = 0;
+	else
+		eofflag = 1;
 	if (io.uio_resid) {
 		siz -= io.uio_resid;
 
@@ -1452,6 +1454,7 @@ nqnfsrv_readdirlook(nfsd, mrep, md, dpos, cred, nam, mrq)
 	struct ucred *cred;
 	struct mbuf *nam, **mrq;
 {
+	USES_VOP_VGET;
 	USES_VOP_GETATTR;
 	USES_VOP_READDIR;
 	USES_VOP_UNLOCK;
@@ -1466,8 +1469,6 @@ nqnfsrv_readdirlook(nfsd, mrep, md, dpos, cred, nam, mrq)
 	char *cpos, *cend, *cp2, *rbuf;
 	struct vnode *vp, *nvp;
 	struct flrep fl;
-	struct ufid *ufp = (struct ufid *)&fl.fl_nfh.fh_generic.fh_fid;
-	struct mount *mntp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
 	struct uio io;
@@ -1511,13 +1512,17 @@ again:
 	io.uio_segflg = UIO_SYSSPACE;
 	io.uio_rw = UIO_READ;
 	io.uio_procp = (struct proc *)0;
-	error = VOP_READDIR(vp, &io, cred, &eofflag);
+	error = VOP_READDIR(vp, &io, cred);
 	off = io.uio_offset;
 	if (error) {
 		vrele(vp);
 		free((caddr_t)rbuf, M_TEMP);
 		nfsm_reply(0);
 	}
+	if (io.uio_resid < fullsiz)
+		eofflag = 0;
+	else
+		eofflag = 1;
 	if (io.uio_resid) {
 		siz -= io.uio_resid;
 
@@ -1562,7 +1567,6 @@ again:
 	mp = mp2 = mb;
 	bp = bpos;
 	be = bp + M_TRAILINGSPACE(mp);
-	mntp = vp->v_mount;
 
 	/* Loop through the records and build reply */
 	while (cpos < cend) {
@@ -1574,14 +1578,11 @@ again:
 			 * For readdir_and_lookup get the vnode using
 			 * the file number.
 			 */
-			bzero((caddr_t)&fl.fl_nfh, sizeof (nfsv2fh_t));
-			ufp->ufid_len = sizeof (struct ufid);
-			ufp->ufid_ino = dp->d_fileno;
-			fl.fl_nfh.fh_generic.fh_fsid = mntp->mnt_stat.f_fsid;
-			if (VFS_FHTOVP(mntp, (struct fid *)ufp, 1, &nvp))
+			if (VOP_VGET(vp, dp->d_fileno, &nvp))
 				goto invalid;
 			(void) nqsrv_getlease(nvp, &duration2, NQL_READ, nfsd,
 				nam, &cache2, &frev2, cred);
+			bzero((caddr_t)&fl.fl_nfh, sizeof (nfsv2fh_t));
 			fl.fl_duration = txdr_unsigned(duration2);
 			fl.fl_cachable = txdr_unsigned(cache2);
 			txdr_hyper(&frev2, &fl.fl_frev);
