@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id$
+ *	$Id: kvm.c,v 1.8 1994/02/23 09:56:45 rgrimes Exp $
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
@@ -513,7 +513,7 @@ again:
 		} else
 			eproc.e_tdev = NODEV;
 		if (proc.p_wmesg)
-			kvm_read(proc.p_wmesg, eproc.e_wmesg, WMESGLEN);
+			kvm_read((char *)proc.p_wmesg, eproc.e_wmesg, WMESGLEN);
 		(void) kvm_read(proc.p_vmspace, &eproc.e_vm,
 		    sizeof (struct vmspace));
 		eproc.e_xsize = eproc.e_xrssize =
