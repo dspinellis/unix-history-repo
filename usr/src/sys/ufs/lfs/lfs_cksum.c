@@ -4,13 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_cksum.c	5.3 (Berkeley) %G%
+ *	@(#)lfs_cksum.c	7.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 
-#include <lfs/lfs.h>
-#include <lfs/lfs_extern.h>
+#include <ufs/lfs/lfs.h>
+#include <ufs/lfs/lfs_extern.h>
 
 /*
  * Simple, general purpose, fast checksum.  Data must be short-aligned.
