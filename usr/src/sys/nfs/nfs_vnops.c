@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.15 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.16 (Berkeley) %G%
  */
 
 /*
@@ -133,36 +133,36 @@ int	spec_lookup(),
 	spec_nullop();
 
 struct vnodeops spec_nfsv2nodeops = {
-	spec_lookup,
-	spec_badop,
-	spec_badop,
-	spec_open,
-	spec_close,
-	nfs_access,
-	nfs_getattr,
-	nfs_setattr,
-	spec_read,
-	spec_write,
-	spec_ioctl,
-	spec_select,
-	spec_badop,
-	spec_nullop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	nfs_inactive,
-	nfs_reclaim,
-	nfs_lock,
-	nfs_unlock,
-	spec_badop,
-	spec_strategy,
+	spec_lookup,		/* lookup */
+	spec_badop,		/* create */
+	spec_badop,		/* mknod */
+	spec_open,		/* open */
+	spec_close,		/* close */
+	nfs_access,		/* access */
+	nfs_getattr,		/* getattr */
+	nfs_setattr,		/* setattr */
+	spec_read,		/* read */
+	spec_write,		/* write */
+	spec_ioctl,		/* ioctl */
+	spec_select,		/* select */
+	spec_badop,		/* mmap */
+	spec_nullop,		/* fsync */
+	spec_badop,		/* seek */
+	spec_badop,		/* remove */
+	spec_badop,		/* link */
+	spec_badop,		/* rename */
+	spec_badop,		/* mkdir */
+	spec_badop,		/* rmdir */
+	spec_badop,		/* symlink */
+	spec_badop,		/* readdir */
+	spec_badop,		/* readlink */
+	spec_badop,		/* abortop */
+	nfs_inactive,		/* inactive */
+	nfs_reclaim,		/* reclaim */
+	nfs_lock,		/* lock */
+	nfs_unlock,		/* unlock */
+	spec_badop,		/* bmap */
+	spec_strategy,		/* strategy */
 };
 
 extern u_long nfs_procids[NFS_NPROCS];
