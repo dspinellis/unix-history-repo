@@ -21,7 +21,7 @@ Berkeley, California  94720
 .(f
 This is
 .if \n(DR draft
-version 3.4,
+version 3.5,
 last modified on %G%.
 .if \n(DR Please do not distribute this version without permission
 .if \n(DR of the author.
@@ -74,7 +74,7 @@ Berkeley
 .i Mail
 [Schoens79],
 BerkNet mail
-[Schmidt99],
+[Schmidt79],
 and hopefully UUCP mail
 [Nowitz78a, Nowitz78b].
 ARPANET mail
@@ -1042,7 +1042,7 @@ it is possible to add customized header lines.
 For example,
 the .mailcf consisting of:
 .(b
-H\&Phone: (415) 888-9990
+H\&Phone: (415) 888-7770
 .)b
 will add that line to every outgoing message.
 .sh 3 "M \*- define mailer"
@@ -1507,7 +1507,7 @@ and with multiple users listed.
 .sh 3 "Rewriting rules for recipient addresses"
 .(b
 .sz -2
-.ta \w'[99]  'u +\w'R\&CSVAX:$-h!$+u  'u +\w'$#berk$@ing70$:$+u@$+h  'u
+.ta \w'[88]  'u +\w'R\&CSVAX:$-h!$+u  'u +\w'$#berk$@ing70$:$+u@$+h  'u
 [1]	R\&$-h.$+u	$+h:$+u	change "." to ":"
 [2]	R\&$=C:$+u@$-h	$+u@$+h	delete ing70: on arpanet addresses
 [3]	R\&$+u@$=A	ing70:$+u	delete local arpa hosts
@@ -1747,7 +1747,7 @@ has knowledge of a few difficult environments
 built in.
 It generates ARPANET FTP compatible error messages
 (prepended with three-digit numbers
-[Neigus78, FTP2])
+[Neigus73, Postel74])
 as necessary,
 optionally generates UNIX-style
 .q From
@@ -1933,7 +1933,7 @@ when I was myself afraid to take the risk;
 how a person can continue to be so enthusiastic
 in the face of so much bitter reality is beyond me.
 .pp
-Kurt, Bill, and Kirk McKusick
+Kurt and Kirk McKusick
 read early copies of this paper,
 giving considerable useful advice.
 .pp
@@ -1992,10 +1992,6 @@ Network Information Center,
 SRI International,
 Menlo Park, California.
 1978.
-.ip [FTP2]
-Revised FTP Reply Codes.
-RFC xxxx.
-In [Feinler78].
 .ip [MH99]
 MH.
 .ip [NBS80]
@@ -2004,13 +2000,13 @@ National Bureau of Standards,
 Specification of a Draft Message Format Standard.
 Report No. ICST/CBOS 80-2.
 October 1980.
-.ip [Neigus78]
+.ip [Neigus73]
 Neigus, N.,
 .ul
 File Transfer Protocol for the ARPA Network.
-RFC xxxx.
+RFC 542, NIC 17759.
 In [Feinler78].
-1978.
+August, 1973.
 .ip [Nowitz78a]
 Nowitz, D. A.,
 and
@@ -2031,6 +2027,14 @@ In
 UNIX Programmer's Manual, Seventh Edition,
 Volume 2.
 October, 1978.
+.ip [Postel74]
+Postel, J.,
+and
+Neigus, N.,
+Revised FTP Reply Codes.
+RFC 640, NIC 30843.
+In [Feinler78].
+June, 1974.
 .ip [Postel77]
 Postel, J.,
 .ul
@@ -2052,11 +2056,12 @@ March 1979.
 Postel, J. B.,
 .ul
 An Internetwork Message Structure.
-IEN xxxx.
-Network Information Center,
-SRI International,
-Menlo Park, California.
-1979.
+In
+.ul
+Proceedings of the Sixth Data Communications Symposium,
+IEEE.
+New York.
+November 1979.
 .ip [Postel80]
 Postel, J. B.,
 .ul
@@ -2066,12 +2071,12 @@ Network Information Center,
 SRI International,
 Menlo Park, California.
 August 1980.
-.ip [Schmidt99]
+.ip [Schmidt79]
 Schmidt, E.,
 .ul
-The Berkeley Network.
+An Introduction to the Berkeley Network.
 University of California, Berkeley California.
-1999.
+1979.
 .ip [Schoens79]
 Schoens, K.,
 .ul
@@ -2187,7 +2192,7 @@ ARPANET
 style messages
 (preceded by three digit reply codes for compatibility with
 the FTP protocol
-[Neigus78, FTP2, Postel77]),
+[Neigus73, Postel74, Postel77]),
 and ending lines of error messages with <CRLF>.
 .ip \-a\&f
 Same as
@@ -2285,12 +2290,12 @@ for internal system errors.
 If set, the ARPANET reply codes for
 .q "Revised New FTP"
 are used
-[FTP2].
+[Postel74].
 If not set,
 reply codes for the old, unrevised
 .q "New FTP"
 are used
-[Neigus78].
+[Neigus73].
 If you want to use reply codes for the Mail Transfer Protocol
 [Sluizer81]
 you may find it necessary to make some code modifications.
@@ -2505,7 +2510,7 @@ also contains the specification of ARPANET reply codes.
 There are six classifications these fall into:
 .(b
 .sz -2
-.ta \w'char  'u +\w'Arpa_Usrerr[] =  'u +\w'"999";  'u
+.ta \w'char  'u +\w'Arpa_Usrerr[] =  'u +\w'"888";  'u
 char	Arpa_Info[] =	"050";	/* arbitrary info */
 char	Arpa_Enter[] =	"350";	/* start mail input */
 char	Arpa_Mmsg[] =	"256";	/* mail successful (MAIL cmd) */
