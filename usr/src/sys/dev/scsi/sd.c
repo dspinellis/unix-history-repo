@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	5.6 (Berkeley) %G%
+ *	@(#)sd.c	5.7 (Berkeley) %G%
  *
- * from: $Header: sd.c,v 1.26 93/04/20 02:52:59 leres Exp $
+ * from: $Header: sd.c,v 1.27 93/04/29 01:22:19 torek Exp $
  */
 
 /*
@@ -331,8 +331,7 @@ sdopen(dev_t dev, int flags, int ifmt, struct proc *p)
 
 	if (unit >= sdcd.cd_ndevs || (sc = sdcd.cd_devs[unit]) == NULL)
 		return (ENXIO);
-	if ((sc->sc_flags & SDF_ALIVE) == 0 &&
-	    !suser(p->p_ucred, &p->p_acflag))
+	if ((sc->sc_flags & SDF_ALIVE) == 0 && suser(p->p_ucred, &p->p_acflag))
 		return (ENXIO);
 	return (0);
 }
@@ -747,7 +746,7 @@ sdioctl(dev_t dev, int cmd, register caddr_t data, int flag, struct proc *p)
 
 	case SDIOCSFORMAT:
 		/* take this device into or out of "format" mode */
-		if (!suser(p->p_ucred, &p->p_acflag))
+		if (suser(p->p_ucred, &p->p_acflag))
 			return (EPERM);
 		if (*(int *)data) {
 			if (sc->sc_format_pid)
