@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk.h	7.2 (Berkeley) %G%
+ *	@(#)pk.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -89,7 +89,7 @@ typedef u_char octet;
 struct x25_calladdr {
 	octet ORDER2(called_addrlen:4, calling_addrlen:4);
 	octet address_field[MAXADDRLN];
-}
+};
 
 struct x25_packet {
 	octet ORDER3(lc_group_number:4, fmt_identifier:3, q_bit:1);

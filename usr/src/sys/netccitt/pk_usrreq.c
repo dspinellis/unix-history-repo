@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_usrreq.c	7.6 (Berkeley) %G%
+ *	@(#)pk_usrreq.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -69,8 +69,6 @@ struct mbuf *control;
 		req, (struct x25_packet *)0);
 */
 
-		return (EINVAL);
-
 	switch (req) {
 	/* 
 	 *  X.25 attaches to socket via PRU_ATTACH and allocates a logical
@@ -83,7 +81,9 @@ struct mbuf *control;
 			/* Socket already connected. */
 			break;
 		}
-		error = pk_attach (so);
+		lcp = pk_attach (so);
+		if (lcp == 0)
+			error = ENOBUFS;
 		break;
 
 	/* 
@@ -263,7 +263,7 @@ register struct pklcd *lcp;
 {
 	extern int pk_send();
 
-	lcp -> lcp_send = pk_send;
+	lcp -> lcd_send = pk_send;
 	return (pk_output(lcp));
 }
 
@@ -294,13 +294,12 @@ register struct ifnet *ifp;
 	case SIOCGIFCONF_X25:
 		if (ifa == 0)
 			return (EADDRNOTAVAIL);
-		ifr->ifr_xc = *(struct sockaddr *)ia->ia_xc;
+		ifr->ifr_xc = ia->ia_xc;
 		return (0);
 
 	case SIOCSIFCONF_X25:
-		if (!suser())
-			return (u.u_error);
-
+		if (error = suser(u.u_cred, &u.u_acflag))
+			return (error);
 		if (ifp == 0)
 			panic("pk_control");
 		if (ifa == (struct ifaddr *)0) {
@@ -318,15 +317,15 @@ register struct ifnet *ifp;
 				ifp->if_addrlist = &ia->ia_ifa;
 			ifa = &ia->ia_ifa;
 			ifa->ifa_netmask = (struct sockaddr *)&ia->ia_sockmask;
-			ifa->ifa_addr = (struct sockaddr *)&ia->ia_addr;
+			ifa->ifa_addr = (struct sockaddr *)&ia->ia_xc.xc_addr;
 			ia->ia_ifp = ifp;
 			ia->ia_pkcb.pk_ia = ia;
 			ia->ia_pkcb.pk_next = pkcbhead;
 			pkcbhead = &ia->ia_pkcb;
 		}
 		ia->ia_xcp = &(ifr->ifr_xc);
-		if (ia->ia_chan && (ia->ia_maxlcn != ia->xcp->xc_maxlcn)) {
-			pk_restart(&ia->ia_pkp, X25_RESTART_NETWORK_CONGESTION);
+		if (ia->ia_chan && (ia->ia_maxlcn != ia->ia_xcp->xc_maxlcn)) {
+			pk_restart(&ia->ia_pkcb, X25_RESTART_NETWORK_CONGESTION);
 			dev_lcp = ia->ia_chan[0];
 			free((caddr_t)ia->ia_chan, M_IFADDR);
 			ia->ia_chan = 0;
@@ -338,7 +337,7 @@ register struct ifnet *ifp;
 				bzero((caddr_t)ia->ia_chan, n);
 				if (dev_lcp == 0)
 					dev_lcp = pk_attach((struct socket *)0);
-				ia->ia_chan = dev_lcp;
+				ia->ia_chan[0] = dev_lcp;
 			} else {
 				if (dev_lcp)
 					pk_close(dev_lcp);
@@ -352,13 +351,10 @@ register struct ifnet *ifp;
 		 */
 		s = splimp();
 		if (ifp->if_ioctl)
-			error = (*ifp->if_ioctl)(ifp, SIOCSIFCONF_X25, ifa)));
+			error = (*ifp->if_ioctl)(ifp, SIOCSIFCONF_X25, ifa);
 		splx(s);
 		if (error == 0) {
 			ia->ia_xc = *ia->ia_xcp;
-#ifndef WATERLOO
-			(void) pk_accton ();
-#endif
 		}
 		ia->ia_xcp = &ia->ia_xc;
 		return (error);
@@ -368,6 +364,34 @@ register struct ifnet *ifp;
 			return (EOPNOTSUPP);
 		return ((*ifp->if_ioctl)(ifp, cmd, data));
 	}
+}
+
+pk_ctloutput(cmd, so, level, optname, mp)
+struct socket *so;
+struct mbuf **mp;
+int cmd, level, optname;
+{
+	register struct mbuf *m = *mp;
+	int error;
+
+	if (cmd == PRCO_SETOPT) switch (optname) {
+	case PK_ACCTFILE:
+		if (m == 0)
+			return (EINVAL);
+		if (m->m_len)
+			error = pk_accton(mtod(m, char *));
+		else
+			error = pk_accton((char *)0);
+		(void) m_freem(m);
+		*mp = 0;
+		return (error);
+	}
+	if (*mp) {
+		(void) m_freem(*mp);
+		*mp = 0;
+	}
+	return (EOPNOTSUPP);
+
 }
 
 /*

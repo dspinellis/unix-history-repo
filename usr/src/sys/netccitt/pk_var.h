@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_var.h	7.5 (Berkeley) %G%
+ *	@(#)pk_var.h	7.6 (Berkeley) %G%
  */
 
 
@@ -52,8 +52,8 @@ struct pklcd {
 	short   lcd_intrcnt;		/* Interrupt packet transmit count */
 	struct	pklcd *lcd_listen;	/* Next lcd on listen queue */
 	struct	pkcb *lcd_pkp;		/* Network this lcd is attached to */
-	struct	sockaddr_x25 lcd_faddr	/* Remote Address (Calling) */
-	struct	sockaddr_x25 lcd_laddr	/* Local Address (Called) */
+	struct	sockaddr_x25 lcd_faddr;	/* Remote Address (Calling) */
+	struct	sockaddr_x25 lcd_laddr;	/* Local Address (Called) */
 	struct	sockbuf lcd_sb;		/* alternate for datagram service */
 };
 
@@ -91,7 +91,8 @@ struct x25_ifaddr {
 	struct	pkcb	ia_pkcb;	/* per network information */
 #define ia_maxlcn	ia_pkcb.pk_maxlcn
 #define ia_chan		ia_pkcb.pk_chan
-#define	ia_addr		ia_pkcb.pk_xc.xc_addr
+#define ia_xc		ia_pkcb.pk_xc
+#define ia_xcp		ia_pkcb.pk_xcp
 	struct	sockaddr_x25 ia_sockmask; /* reserve space for netmask */
 };
 
@@ -99,26 +100,26 @@ struct x25_ifaddr {
  * ``Link-Level'' extension to Routing Entry for upper level
  * packet switching via X.25 virtual circuits.
  */
-struct rtextension_x25 {
-	struct	pklcd *rtx_lcd;		/* local connection block */
-	struct	rtentry *rtx_rt;	/* back pointer to route */
-	struct	x25_ifaddr *rtx_ia;	/* may not be same as rt_ifa */
-	int	rtx_state;		/* can't trust lcd->lcd_state */
-	int	rtx_flags;
-	int	rtx_timer;		/* for idle timeout */
+struct llinfo_x25 {
+	struct	pklcd *lx_lcd;		/* local connection block */
+	struct	rtentry *lx_rt;		/* back pointer to route */
+	struct	x25_ifaddr *lx_ia;	/* may not be same as rt_ifa */
+	int	lx_state;		/* can't trust lcd->lcd_state */
+	int	lx_flags;
+	int	lx_timer;		/* for idle timeout */
 };
 
-/* States for rtx_state */
-#define XRS_NEWBORN		0
-#define XRS_RESOLVING		1
-#define XRS_FREE		2
-#define XRS_CONNECTED		3
-#define XRS_CONNECTING		4
-#define XRS_DISCONNECTING 	5
+/* States for lx_state */
+#define LXS_NEWBORN		0
+#define LXS_RESOLVING		1
+#define LXS_FREE		2
+#define LXS_CONNECTED		3
+#define LXS_CONNECTING		4
+#define LXS_DISCONNECTING 	5
 
 /* flags */
-#define XRF_VALID	0x1		/* Circuit is live, etc. */
-#define XRF_RTHELD	0x2		/* this lcb references rtentry */
+#define LXF_VALID	0x1		/* Circuit is live, etc. */
+#define LXF_RTHELD	0x2		/* this lcb references rtentry */
 
 #ifdef KERNEL
 struct	pkcb *pkcbhead;		/* head of linked list of networks */

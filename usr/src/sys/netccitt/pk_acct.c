@@ -9,44 +9,31 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_acct.c	7.2 (Berkeley) %G%
+ *	@(#)pk_acct.c	7.3 (Berkeley) %G%
  */
 
-#include "../h/param.h"
-#ifdef NFS
+#include "param.h
 #include "systm.h"
-#include "dir.h"
+#include "time.h"
+#include "proc.h"
 #include "user.h"
 #include "vnode.h"
-#include "vfs.h"
 #include "kernel.h"
+#include "file.h"
+#include "acct.h"
 #include "uio.h"
-#else
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/inode.h"
-#include "../h/kernel.h"
-#ifdef BSD4_3
-#include "../h/namei.h"
-#else
-#include "../h/nami.h"
-#endif
-#include "../h/uio.h"
-#endif
+#include "socket.h"
+#include "socketvar.h"
 
-#include "../netccitt/pk.h"
-#include "../netccitt/pk_var.h"
-#include "../netccitt/x25.h"
-#include "../netccitt/x25acct.h"
+#include "../net/if.h"
+
+#include "x25.h"
+#include "pk.h"
+#include "pk_var.h"
+#include "x25acct.h"
 
 
-#ifdef NFS
 struct	vnode *pkacctp;
-#else
-struct	inode *pkacctp;
-#endif
-
 /* 
  *  Turn on packet accounting
  */
@@ -54,53 +41,23 @@ struct	inode *pkacctp;
 pk_accton (path)
 	char *path;
 {
-#ifdef NFS
-	register int error;
-	struct vnode *vp;
-#else
-#ifdef BSD4_3
-	struct nameidata *ndp = &u.u_nd;
-#endif
-	register struct inode *ip;
-#endif
+	register struct vnode *vp = NULL;
+	register struct nameidata *ndp = &u.u_nd;
+	struct vnode *oacctp = pkacctp;
+	int error;
 
-#ifdef NFS
-	if (error = lookupname(path, UIO_USERSPACE, FOLLOW_LINK,
-		(struct vnode **)0, &vp))
+	ndp -> ni_segflg = UIO_USERSPACE;
+	ndp -> ni_dirp = path;
+	if (error = vn_open (ndp, FREAD|FWRITE, 0))
 		return (error);
-	if (vp->v_type != VREG) {
-		VN_RELE(vp);
+	vp = ndp -> ni_vp;
+	if (vp -> v_type != VREG) {
+		vrele (vp);
 		return (EACCES);
-	}
-	if (vp->v_vfsp->vfs_flag & VFS_RDONLY) {
-		VN_RELE(vp);
-		return (EROFS);
 	}
 	pkacctp = vp;
-#else
-#ifdef BSD4_3
-	ndp->ni_nameiop = LOOKUP | FOLLOW;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = path;
-	ip = namei(ndp);
-#else
-	u.u_dirp = path;
-	ip = namei (schar, LOOKUP, 1);
-#endif
-	if (ip == NULL)
-		return (u.u_error);
-
-	if ((ip -> i_mode & IFMT) != IFREG) {
-		iput (ip);
-		return (EACCES);
-	}
-	if (pkacctp)
-		if (pkacctp->i_number != ip->i_number ||
-		    pkacctp->i_dev != ip->i_dev)
-			irele(pkacctp);
-	pkacctp = ip;
-	iunlock (ip);
-#endif
+	if (oacctp)
+		vrele (oacctp);
 	return (0);
 }
 
@@ -111,11 +68,7 @@ pk_accton (path)
 pk_acctoff ()
 {
 	if (pkacctp) {
-#ifdef NFS
-		VN_RELE(pkacctp);
-#else
-		irele (pkacctp);
-#endif
+		vrele (pkacctp);
 		pkacctp = 0;
 	}
 }
@@ -127,27 +80,15 @@ pk_acctoff ()
 pk_acct (lcp)
 register struct pklcd *lcp;
 {
-#ifdef NFS
 	register struct vnode *vp;
-#else
-	register struct inode *ip;
-	off_t siz;
-#endif
 	register struct sockaddr_x25 *sa;
 	register char *src, *dst;
 	register int len;
-#ifndef WATERLOO
 	register long etime;
-#endif
 	static struct x25acct acbuf;
 
-#ifdef NFS
 	if ((vp = pkacctp) == 0)
-#else
-	if ((ip = pkacctp) == 0)
-#endif
 		return;
-
 	bzero ((caddr_t)&acbuf, sizeof (acbuf));
 	if (lcp -> lcd_ceaddr != 0)
 		sa = lcp -> lcd_ceaddr;
@@ -160,12 +101,7 @@ register struct pklcd *lcp;
 	if (sa -> x25_opts.op_flags & X25_REVERSE_CHARGE)
 		acbuf.x25acct_revcharge = 1;
 	acbuf.x25acct_stime = lcp -> lcd_stime;
-#ifdef WATERLOO
 	acbuf.x25acct_etime = time.tv_sec - acbuf.x25acct_stime;
-#else
-	etime = time.tv_sec - acbuf.x25acct_stime;
-	acbuf.x25acct_etime = etime > 0xffff ? 0xffff : etime;
-#endif
 	acbuf.x25acct_uid = u.u_uid;
 	acbuf.x25acct_psize = sa -> x25_opts.op_psize;
 	acbuf.x25acct_net = sa -> x25_net;
@@ -186,15 +122,6 @@ register struct pklcd *lcp;
 	acbuf.x25acct_txcnt = lcp -> lcd_txcnt;
 	acbuf.x25acct_rxcnt = lcp -> lcd_rxcnt;
 
-#ifdef NFS
 	(void) vn_rdwr(UIO_WRITE, vp, (caddr_t)&acbuf, sizeof (acbuf),
-		(off_t)0, UIO_SYSSPACE, IO_UNIT|IO_APPEND, (int *)0);
-#else
-	ilock (ip);
-	siz = ip -> i_size;
-	if (rdwri (UIO_WRITE, ip, (caddr_t)&acbuf, sizeof (acbuf),
-	    siz, 1, (int *) 0))
-		itrunc (ip, (u_long) siz);
-	iunlock (ip);
-#endif
+		(off_t)0, UIO_SYSSPACE, IO_UNIT|IO_APPEND, u.u_cred, (int *)0);
 }

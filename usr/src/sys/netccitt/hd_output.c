@@ -9,23 +9,24 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hd_output.c	7.3 (Berkeley) %G%
+ *	@(#)hd_output.c	7.4 (Berkeley) %G%
  */
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mbuf.h"
-#include "../h/domain.h"
-#include "../h/socket.h"
-#include "../h/protosw.h"
-#include "../h/errno.h"
-#include "../h/time.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "domain.h"
+#include "socket.h"
+#include "protosw.h"
+#include "errno.h"
+#include "time.h"
+#include "kernel.h"
+
 #include "../net/if.h"
 
-#include "../netccitt/hdlc.h"
-#include "../netccitt/hd_var.h"
-#include "../netccitt/x25.h"
+#include "hdlc.h"
+#include "hd_var.h"
+#include "x25.h"
 
 /*
  *      HDLC OUTPUT INTERFACE
@@ -112,7 +113,6 @@ int poll_bit;
 {
 	register struct Hdlc_iframe *iframe;
 	struct mbuf *m;
-	int s
 
 	KILL_TIMER (hdp);
 
@@ -165,7 +165,7 @@ register struct mbuf *m;
 	 * Queue message on interface, and start output if interface
 	 * not yet active.
 	 */
-	register struct ifnet *ifp = hdp->hdp_ifp;
+	register struct ifnet *ifp = hdp->hd_ifp;
 	int s = splimp();
 	if (IF_QFULL(&ifp->if_snd)) {
 		IF_DROP(&ifp->if_snd);

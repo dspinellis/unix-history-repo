@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_subr.c	7.5 (Berkeley) %G%
+ *	@(#)pk_subr.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -59,7 +59,7 @@ struct socket *so;
 			else
 				lcp -> lcd_state = READY;
 		} else
-			sbreserve (&lcp -> lcd_sb, pk_sendpace);
+			sbreserve (&lcp -> lcd_sb, pk_sendspace);
 	}
 	if (so) {
 		so -> so_pcb = (caddr_t) lcp;
@@ -261,7 +261,7 @@ struct mbuf *nam;
 		for (pkp = pkcbhead; ; pkp = pkp -> pk_next) {
 			if (pkp == 0)
 				return (ENETUNREACH);
-			if (pkp -> pk_xcp -> xc_net == sa -> x25_net)
+			if (pkp -> pk_xcp -> xc_addr.x25_net == sa -> x25_net)
 				break;
 		}
 
@@ -302,7 +302,7 @@ register struct sockaddr_x25 *sa;
 		lcp -> lcd_windowsize = sa -> x25_opts.op_wsize;
 	else
 		sa -> x25_opts.op_wsize = lcp -> lcd_windowsize;
-	sa -> x25_net = pkp -> pk_xcp -> xc_net;
+	sa -> x25_net = pkp -> pk_xcp -> xc_addr.x25_net;
 	lcp -> lcd_flags = sa -> x25_opts.op_flags;
 	lcp -> lcd_stime = time.tv_sec;
 }
@@ -333,7 +333,7 @@ struct mbuf *nam;
 		 */
 		if (sa -> x25_net == 0 && pkp -> pk_next == 0)
 			break;
-		if (sa -> x25_net == pkp -> pk_xcp -> xc_net)
+		if (sa -> x25_net == pkp -> pk_xcp -> xc_addr.x25_net)
 			break;
 	}
 
@@ -344,7 +344,7 @@ struct mbuf *nam;
 	lcp -> lcd_faddr = *sa;
 	lcp -> lcd_ceaddr = & lcp->lcd_faddr;
 	pk_assoc (pkp, lcp, lcp -> lcd_ceaddr);
-	if (lcp -> so)
+	if (lcp -> lcd_so)
 		soisconnecting (lcp -> lcd_so);
 	lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_CALL);
 	pk_callrequest (lcp, lcp -> lcd_ceaddr, pkp -> pk_xcp);
@@ -365,16 +365,13 @@ register struct x25config *xcp;
 	register struct mbuf *m = dtom (lcp -> lcd_template);
 	unsigned posn = 0;
 	octet *cp;
-	char addr[sizeof (xcp -> xc_ntn) * 2];
 
 	a = (struct x25_calladdr *) &lcp -> lcd_template -> packet_data;
-	a -> calling_addrlen = xcp -> xc_ntnlen;
-	cp = (octet *) xcp -> xc_ntn;
-	from_bcd (addr, &cp, xcp -> xc_ntnlen);
+	a -> calling_addrlen = strlen (xcp -> xc_addr.x25_addr);
 	a -> called_addrlen = strlen (sa -> x25_addr);
 	cp = (octet *) a -> address_field;
 	to_bcd (&cp, (int)a -> called_addrlen, sa -> x25_addr, &posn);
-	to_bcd (&cp, (int)a -> calling_addrlen, addr, &posn);
+	to_bcd (&cp, (int)a -> calling_addrlen, xcp -> xc_addr.x25_addr, &posn);
 	if (posn & 0x01)
 		*cp++ &= 0xf0;
 
@@ -764,21 +761,8 @@ char *
 format_ntn (xcp)
 register struct x25config *xcp;
 {
-	register int i;
-	register char *src, *dest;
-	static char ntn[12];
 
-	src = xcp->xc_ntn;
-	dest = ntn;
-	for (i = 0; i < xcp->xc_ntnlen / 2; i++) {
-		*dest++ = ((*src & 0xf0) >> 4) + '0';
-		*dest++ = (*src++ & 0xf) + '0';
-	}
-	if (xcp->xc_ntnlen & 01)
-		dest[-1] = 0;
-	else
-		*dest = 0;
-	return (ntn);
+	return (xcp -> xc_addr.x25_addr);
 }
 
 /* VARARGS1 */

@@ -9,14 +9,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ccitt_proto.c	7.4 (Berkeley) %G%
+ *	@(#)ccitt_proto.c	7.5 (Berkeley) %G%
  */
+#define HDLC
+#include "param.h"
+#include "socket.h"
+#include "protosw.h"
+#include "domain.h"
 
-#include "../h/param.h"
-#include "../h/socket.h"
-#include "../h/protosw.h"
-#include "../h/domain.h"
-#include "../netccitt/x25.h"
+#include "x25.h"
 
 /*
  *	Definitions of protocols supported in the CCITT domain.
@@ -35,7 +36,7 @@ int	xe_output (), xe_ctlinput (), xe_init(), xe_timer();
 #ifdef HDLC
 int	hd_output (), hd_ctlinput (), hd_init (), hd_timer ();
 #endif
-int	pk_usrreq (), pk_timer (), pk_init ();
+int	pk_usrreq (), pk_timer (), pk_init (), pk_ctloutput ();
 
 struct protosw ccittsw[] = {
 #ifdef XE
@@ -53,7 +54,7 @@ struct protosw ccittsw[] = {
  },
 #endif
  {	SOCK_STREAM,	DOMAIN,		CCITTPROTO_X25,	PR_CONNREQUIRED|PR_ATOMIC|PR_WANTRCVD,
-	0,		0,		0,		0,
+	0,		0,		0,		pk_ctloutput,
 	pk_usrreq,
 	pk_init,	0,		pk_timer,	0,
  }

@@ -29,6 +29,9 @@
 #define HDLCPROTO_UNSET		3
 #define HDLCPROTO_LAPD		4
 
+/* socket options */
+#define PK_ACCTFILE		1	/* use level = CCITTPROTO_X25 */
+
 /*
  *  X.25 Socket address structure.  It contains the  X.121 or variation of
  *  X.121, facilities information, higher level protocol value (first four
@@ -100,7 +103,7 @@ struct	x25config {
 		xc_ptrace:1,	/* packet level tracing flag */
 		xc_rsvd2:5;
 	u_short	xc_maxlcn;	/* max logical channels */
-	u_short	xc_dg_idletimo;	/* timeout for idle datagram circuits.
+	u_short	xc_dg_idletimo;	/* timeout for idle datagram circuits. */
 };
 
 #ifdef IFNAMSIZ

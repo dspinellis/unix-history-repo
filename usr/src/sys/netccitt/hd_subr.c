@@ -9,24 +9,24 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hd_subr.c	7.3 (Berkeley) %G%
+ *	@(#)hd_subr.c	7.4 (Berkeley) %G%
  */
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mbuf.h"
-#include "../h/domain.h"
-#include "../h/socket.h"
-#include "../h/protosw.h"
-#include "../h/errno.h"
-#include "../h/time.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "domain.h"
+#include "socket.h"
+#include "protosw.h"
+#include "errno.h"
+#include "time.h"
+#include "kernel.h"
 
 #include "../net/if.h"
 
-#include "../netccitt/hdlc.h"
-#include "../netccitt/hd_var.h"
-#include "../netccitt/x25.h"
+#include "hdlc.h"
+#include "hd_var.h"
+#include "x25.h"
 
 hd_init ()
 {
@@ -42,12 +42,12 @@ caddr_t addr;
 	register struct hdcb *hdp;
 	register struct ifaddr *ifa;
 
-	if (xcp->xc_family != AF_CCITT)
+	if (xcp->xc_addr.x25_family != AF_CCITT)
 		return (EAFNOSUPPORT);
 	if (xcp->xc_lptype != HDLCPROTO_LAPB)
 		return (EPROTONOSUPPORT);
 	for (ifa = ifa_ifwithaddr ((struct sockaddr *)xcp); ifa; ifa = ifa->ifa_next)
-		if (ifa->ifa_addr.sa_family == AF_CCITT)
+		if (ifa->ifa_addr->sa_family == AF_CCITT)
 			break;
 	if (ifa == 0 || (ifp = ifa->ifa_ifp) == 0)
 		panic ("hd_ctlinput");
