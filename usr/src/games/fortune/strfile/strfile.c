@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)strfile.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)strfile.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	<sys/param.h>
@@ -421,6 +421,8 @@ randomize()
 	register off_t	tmp;
 	register off_t	*sp;
 	extern time_t	time();
+
+	srandom((int)(time((time_t *) NULL) + getpid()));
 
 	Tbl.str_flags |= STR_RANDOM;
 	cnt = Tbl.str_numstr;
