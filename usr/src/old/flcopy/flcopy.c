@@ -12,10 +12,11 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)flcopy.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)flcopy.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/file.h>
+#include <stdio.h>
 #include "pathnames.h"
 
 int	floppydes;
@@ -27,59 +28,47 @@ int	rflag;
 main(argc, argv)
 	register char **argv;
 {
+	extern char *optarg;
+	extern int optind;
 	static char buff[512];
 	register long count;
 	register startad = -26 * 128;
 	register int n, file;
 	register char *cp;
+	int ch;
 
-	while ((cp = *++argv), --argc > 0) {
-		while (*cp) {
-			switch(*cp++) {
-
-			case '-':
-				continue;
-
-			case 'h':
-				hflag++;
-				printf("Halftime!\n");
-				if ((file = open("floppy", 0)) < 0) {
-					printf("can't open \"floppy\"\n");
-					exit(1);
-				}
-				continue;
-
-			case 'f':
-				if (argc < 1) {
-					printf(
-					    "flcopy: -f: missing file name\n");
-					exit(1);
-				}
-				flopname = *++argv;
-				argc--;
-				break;
-
-			case 't':
-				if (*cp >= '0' && *cp <= '9')
-					dsize = atoi(cp);
-				else if (argc > 1) {
-					dsize = atoi(*++argv);
-					argc--;
-				} else
-					dsize = 77;
-				if (dsize <= 0 || dsize > 77) {
-					printf("Bad number of tracks\n");
-					exit(2);
-				}
-				dsize *= 26 * 128;
-				continue;
-
-			case 'r':
-				rflag++;
+	while ((ch = getopt(argc, argv, "f:hrt:")) != EOF)
+		switch(ch) {
+		case 'f':
+			flopname = optarg;
+			break;
+		case 'h':
+			hflag = 1;
+			printf("Halftime!\n");
+			if ((file = open("floppy", 0)) < 0) {
+				printf("can't open \"floppy\"\n");
+				exit(1);
 			}
 			break;
+		case 'r':
+			rflag = 1;
+			break;
+		case 't':
+			dsize = atoi(optarg);
+			if (dsize <= 0 || dsize > 77) {
+				(void)fprintf(stderr,
+				    "flcopy: bad number of tracks (0 - 77).\n");
+				exit(2);
+			}
+			dsize *= 26 * 128;
+			break;
+		case '?':
+		default:
+			usage();
 		}
-	}
+	argc -= optind;
+	argv += optind;
+
 	if (!hflag) {
 		file = open("floppy", O_RDWR|O_CREAT|O_TRUNC, 0666);
 		if (file < 0) {
@@ -177,4 +166,10 @@ lwrite(startad, count, obuff)
 		obuff += 128;
 		startad += 128;
 	}
+}
+
+usage()
+{
+	(void)fprintf(stderr, "usage: flcopy [-hr] [-f file] [-t ntracks]\n");
+	exit(1);
 }
