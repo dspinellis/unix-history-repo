@@ -1,4 +1,4 @@
-/*	up.c	4.50	82/05/19	*/
+/*	up.c	4.51	82/05/19	*/
 
 #include "up.h"
 #if NSC > 0
@@ -72,7 +72,7 @@ struct	size
 #else
 	213760,	155,
 #endif
-}, am_sizes[8] = {
+}, upam_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 31 */
 	33440,	32,		/* B=cyl 32 thru 97 */
 	524288,	0,		/* C=cyl 0 thru 1023 */
@@ -115,7 +115,7 @@ struct	upst {
 	32,	19,	32*19,	823,	up_sizes,	/* 9300/cdc */
 /* 9300 actually has 815 cylinders... */
 	32,	10,	32*10,	823,	fj_sizes,	/* fujitsu 160m */
-	32,	16,	32*16,	1024,	am_sizes,	/* ampex capricorn */
+	32,	16,	32*16,	1024,	upam_sizes,	/* ampex capricorn */
 };
 
 u_char	up_offset[16] = {
