@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)date.1	6.11 (Berkeley) %G%
+.\"     @(#)date.1	6.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DATE 1
@@ -15,6 +15,7 @@
 .Nm date
 .Op Fl nu
 .Op Fl d Ar dst
+.Op Fl r Ar seconds
 .Op Fl t Ar minutes_west
 .Op +format
 .Op [yy[mm[dd[hh]]]]mm[\&.ss]
@@ -25,7 +26,7 @@ Providing arguments will format the date and time in a user-defined
 way or set the date.
 Only the superuser may set the date.
 .Pp
-Options are:
+The options are as follows:
 .Pp
 .Tw Ds
 .Tp Fl d
@@ -51,6 +52,10 @@ The
 option stops
 .Nm date
 from setting the time for other than the current machine.
+.Tp Fl r
+Print out the date and time for
+.Ar seconds
+from the Epoch.
 .Tp Fl t
 Set the kernel's values for minutes west of GMT.
 .Ar Minutes_west
