@@ -124,7 +124,7 @@ main(argc, argv)
     }
     if (rflag) {
 	printf("Kerberos realm: ");
-	fgets(realm, REALM_SZ);
+	getstr(realm, REALM_SZ);
 	if (!k_isrealm(realm)) {
 	    fprintf(stderr, "%s: bad Kerberos realm format\n",
 		    progname);
