@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.44 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -631,8 +631,16 @@ quickch(win)
 			__CTRACE("\n");
 		}
 #endif
-	if (n != 0)
+	if (n != 0) {
+		WINDOW *wp;
 		scrolln(win, starts, startw, curs, bot, top);
+		/*
+		 * Need to repoint any subwindow lines to the rotated
+		 * line structured. 
+		 */
+		for (wp = win->nextp; wp != win; wp = wp->nextp)
+			__set_subwin(win, wp);
+	}
 }
 
 /*
