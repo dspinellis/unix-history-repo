@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.8 (Berkeley) %G%
+#	@(#)Makefile	4.9 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -22,16 +22,15 @@ SRCS=	done.c init.c io.c main.c save.c subr.c vocab.c wizard.c
 OBJS=	done.o init.o io.o main.o save.o subr.o vocab.o wizard.o
 MAN=	adventure.0
 
-advent: ${OBJS} ${LIBC}
+adventure: ${OBJS} ${LIBC}
 	${CC} -n ${CFLAGS} ${OBJS}
-	rm -f $@
-	echo y | ./a.out
+	./a.out
 
 save.o: save.c			# vax C optimizer bug - infinite loop
 	${CC} -c save.c
 
 clean:
-	rm -f ${OBJS} core advent a.out
+	rm -f ${OBJS} core adventure a.out
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
@@ -40,8 +39,10 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o games -g bin -m 700 advent ${DESTDIR}/usr/games/hide/adventure
-	(cd ${DESTDIR}/usr/games; rm -f adventure; ln -s dm adventure; chown games.bin adventure)
+	install -s -o games -g bin -m 4700 adventure \
+		${DESTDIR}/usr/games/hide/adventure
+	(cd ${DESTDIR}/usr/games; rm -f adventure; ln -s dm adventure; \
+		chown games.bin adventure)
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat6
 
 lint: ${SRCS}
