@@ -1,0 +1,1 @@
+#define NTPIP 0

@@ -1,0 +1,1 @@
+#define NAD 0
