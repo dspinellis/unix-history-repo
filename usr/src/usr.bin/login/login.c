@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.17 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -58,7 +58,7 @@ struct	passwd nouser = {"", "nope", -1, -1, -1, "", "", "", "" };
 struct	sgttyb ttyb;
 struct	utmp utmp;
 char	minusnam[16] = "-";
-char	*envinit[] = { 0 };		/* now set by setenv calls */
+char	*envinit[1];			/* now set by setenv calls */
 /*
  * This bounds the time given to login.  We initialize it here
  * so it can be patched on machines where it's too small.
@@ -68,13 +68,12 @@ int	timeout = 60;
 char	term[64];
 
 struct	passwd *pwd;
-char	*strcat(), *rindex(), *index(), *malloc(), *realloc();
+char	*strcat(), *rindex(), *index();
 int	timedout();
 char	*ttyname();
 char	*crypt();
 char	*getpass();
 char	*stypeof();
-extern	char **environ;
 extern	int errno;
 
 struct	tchars tc = {
@@ -97,13 +96,13 @@ char	*rhost;
 main(argc, argv)
 	char *argv[];
 {
+	extern	char **environ;
 	register char *namep;
 	int pflag = 0, hflag = 0, t, f, c;
 	int invalid, quietlog;
 	FILE *nlfd;
 	char *ttyn, *tty;
 	int ldisc = 0, zero = 0, i;
-	char **envnew;
 	char *p, *domain, *index();
 
 	signal(SIGALRM, timedout);
@@ -346,27 +345,17 @@ main(argc, argv)
 	initgroups(name, pwd->pw_gid);
 	quota(Q_DOWARN, pwd->pw_uid, (dev_t)-1, 0);
 	setuid(pwd->pw_uid);
+
 	/* destroy environment unless user has asked to preserve it */
 	if (!pflag)
 		environ = envinit;
-
-	/* set up environment, this time without destruction */
-	/* copy the environment before setenving */
-	i = 0;
-	while (environ[i] != NULL)
-		i++;
-	envnew = (char **) malloc(sizeof (char *) * (i + 1));
-	for (; i >= 0; i--)
-		envnew[i] = environ[i];
-	environ = envnew;
-
-	setenv("HOME=", pwd->pw_dir, 1);
-	setenv("SHELL=", pwd->pw_shell, 1);
+	setenv("HOME", pwd->pw_dir, 1);
+	setenv("SHELL", pwd->pw_shell, 1);
 	if (term[0] == '\0')
 		strncpy(term, stypeof(tty), sizeof(term));
-	setenv("TERM=", term, 0);
-	setenv("USER=", pwd->pw_name, 1);
-	setenv("PATH=", ":/usr/ucb:/bin:/usr/bin", 0);
+	setenv("TERM", term, 0);
+	setenv("USER", pwd->pw_name, 1);
+	setenv("PATH", ":/usr/ucb:/bin:/usr/bin", 0);
 
 	if ((namep = rindex(pwd->pw_shell, '/')) == NULL)
 		namep = pwd->pw_shell;
@@ -540,43 +529,6 @@ doremoteterm(term, tp)
 			}
 	}
 	tp->sg_flags = ECHO|CRMOD|ANYP|XTABS;
-}
-
-/*
- * Set the value of var to be arg in the Unix 4.2 BSD environment env.
- * Var should end with '='.
- * (bindings are of the form "var=value")
- * This procedure assumes the memory for the first level of environ
- * was allocated using malloc.
- */
-setenv(var, value, clobber)
-	char *var, *value;
-{
-	extern char **environ;
-	int index = 0;
-	int varlen = strlen(var);
-	int vallen = strlen(value);
-
-	for (index = 0; environ[index] != NULL; index++) {
-		if (strncmp(environ[index], var, varlen) == 0) {
-			/* found it */
-			if (!clobber)
-				return;
-			environ[index] = malloc(varlen + vallen + 1);
-			strcpy(environ[index], var);
-			strcat(environ[index], value);
-			return;
-		}
-	}
-	environ = (char **) realloc(environ, sizeof (char *) * (index + 2));
-	if (environ == NULL) {
-		fprintf(stderr, "login: malloc out of memory\n");
-		exit(1);
-	}
-	environ[index] = malloc(varlen + vallen + 1);
-	strcpy(environ[index], var);
-	strcat(environ[index], value);
-	environ[++index] = NULL;
 }
 
 tty_gid(default_gid)
