@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)gprof.h	5.1 (Berkeley) %G%
+ *	@(#)gprof.h	5.2 (Berkeley) %G%
  */
 
 #include <stdio.h>
@@ -16,7 +16,10 @@
 #   include "vax.h"
 #endif
 #if sun
-#    include "sun.h"
+#   include "sun.h"
+#endif
+#if tahoe
+#   include "tahoe.h"
 #endif
 
 
@@ -246,7 +249,7 @@ int		totalcmp();
 #define	TIMEDEBUG	16
 #define	SAMPLEDEBUG	32
 #define	AOUTDEBUG	64
-#define	CALLSDEBUG	128
+#define	CALLDEBUG	128
 #define	LOOKUPDEBUG	256
 #define	PROPDEBUG	512
 #define	ANYDEBUG	1024
