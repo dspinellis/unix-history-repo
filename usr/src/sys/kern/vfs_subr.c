@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.52 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.53 (Berkeley) %G%
  */
 
 /*
@@ -613,7 +613,7 @@ void vclean(vp, flags)
 	(*(origops->vn_unlock))(vp);
 	if (active) {
 		if (flags & DOCLOSE)
-			(*(origops->vn_close))(vp, 0, NOCRED, p);
+			(*(origops->vn_close))(vp, IO_NDELAY, NOCRED, p);
 		(*(origops->vn_inactive))(vp, p);
 	}
 	/*
