@@ -6,7 +6,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	4.10 83/06/12";
+static char sccsid[] = "@(#)ftpcmd.y	4.11 83/06/22";
 #endif
 
 #include <sys/types.h>
@@ -260,7 +260,7 @@ cmd:		USER SP username CRLF
 	|	QUIT CRLF
 		= {
 			reply(221, "Goodbye.");
-			exit(0);
+			dologout(0);
 		}
 	|	error CRLF
 		= {
@@ -555,7 +555,7 @@ toolong()
 			(pw ? pw -> pw_name : "unknown"), timeout, ctime(&now));
 		fflush(stderr);
 	}
-	exit(1);
+	dologout(1);
 }
 
 yylex()
@@ -575,7 +575,7 @@ yylex()
 			alarm(timeout);
 			if (getline(cbuf, sizeof(cbuf)-1, stdin) == NULL) {
 				reply(221, "You could at least say goodbye.");
-				exit(0);
+				dologout(0);
 			}
 			alarm(0);
 			if (index(cbuf, '\r')) {
