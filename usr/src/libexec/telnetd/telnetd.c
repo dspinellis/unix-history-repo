@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	4.5 82/03/23";
+static char sccsid[] = "@(#)telnetd.c	4.6 82/03/31";
 #endif
 
 /*
@@ -32,9 +32,7 @@ char	wont[] = { IAC, WONT, '%', 'c', 0 };
 char	ptyibuf[BUFSIZ], *ptyip = ptyibuf;
 char	ptyobuf[BUFSIZ], *pfrontp = ptyobuf, *pbackp = ptyobuf;
 char	netibuf[BUFSIZ], *netip = netibuf;
-char	netobuf[BUFSIZ] =
-	{ IAC, DO, TELOPT_ECHO, '\r', '\n' },
-	*nfrontp = netobuf + 5, *nbackp = netobuf;
+char	netobuf[BUFSIZ], *nfrontp = netobuf, *nbackp = netobuf;
 int	pcc, ncc;
 
 int	pty, net;
@@ -116,8 +114,11 @@ gotpty:
 		exit(1);
 	}
 	ioctl(t, TIOCGETP, &b);
-	b.sg_flags = ECHO|CRMOD|XTABS|ANYP;
+	b.sg_flags = CRMOD|XTABS|ANYP;
 	ioctl(t, TIOCSETP, &b);
+	ioctl(p, TIOCGETP, &b);
+	b.sg_flags &= ~ECHO;		/* not until remote says to */
+	ioctl(p, TIOCSETP, &b);
 	if ((i = fork()) < 0) {
 		dup2(f, 2);
 		perror("fork");
