@@ -1,4 +1,4 @@
-/*	kern_synch.c	4.10	81/03/09	*/
+/*	kern_synch.c	4.11	81/04/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -334,6 +334,7 @@ retry:
 		forkstat.sizfork += rip->p_dsize + rip->p_ssize;
 	}
 	rpp->p_rssize = 0;
+	rpp->p_maxrss = rip->p_maxrss;
 	rpp->p_wchan = 0;
 	rpp->p_slptime = 0;
 	rpp->p_pctcpu = 0;
