@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)acct.h	7.1 (Berkeley) %G%
+ *	@(#)acct.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -42,6 +42,5 @@ struct	acct
 #define AHZ 64
 
 #ifdef KERNEL
-struct	acct	acctbuf;
-struct	inode	*acctp;
+struct	vnode	*acctp;
 #endif

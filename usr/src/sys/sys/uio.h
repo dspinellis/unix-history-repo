@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uio.h	7.3 (Berkeley) %G%
+ *	@(#)uio.h	7.4 (Berkeley) %G%
  */
 
 #ifndef _UIO_
@@ -25,22 +25,25 @@ struct iovec {
 	int	iov_len;
 };
 
+enum	uio_rw { UIO_READ, UIO_WRITE };
+
+/*
+ * Segment flag values.
+ */
+enum	uio_seg {
+	UIO_USERSPACE,		/* from user data space */
+	UIO_SYSSPACE,		/* from system space */
+	UIO_USERISPACE		/* from user I space */
+};
+
 struct uio {
 	struct	iovec *uio_iov;
 	int	uio_iovcnt;
 	off_t	uio_offset;
-	int	uio_segflg;
 	int	uio_resid;
+	enum	uio_seg uio_segflg;
+	enum	uio_rw uio_rw;
 };
-
-enum	uio_rw { UIO_READ, UIO_WRITE };
-
-/*
- * Segment flag values (should be enum).
- */
-#define UIO_USERSPACE	0		/* from user data space */
-#define UIO_SYSSPACE	1		/* from system space */
-#define UIO_USERISPACE	2		/* from user I space */
 
  /*
   * Limits
