@@ -21,7 +21,7 @@ Berkeley, California  94720
 .(f
 This is
 .if \n(DR draft
-version 3.15,
+version 3.16,
 last modified on %G%.
 .if \n(DR Please do not distribute this version without permission
 .if \n(DR of the author.
@@ -939,6 +939,8 @@ D\&n\&MAILER-DAEMON
 D\&l\&From $g  $d
 # delimiter (operator) characters
 D\&o\&.:@!^
+# address writing style
+D\&q\&$g$?x ($x)$.
 .sp \n(psu
 ### format of headers:
 H\&Date: $a
@@ -959,16 +961,12 @@ C\&U\&ucbvax ernie
 .sp \n(psu
 .ta \w'M\&local  'u +\w'/usr/net/bin/sendberkmail  'u +\w'rlsAmn  'u +\w'$f@$A  'u
 ###  mailers
-# local mail -- must be zero
 M\&local	/bin/mail	rlsAmn	$f	...local\&mail -d $u
-# program mail -- must be one
 M\&prog	/bin/csh	lA	$f	...prog\&mail -fc $u
-# berkeley net mail
 M\&berk	/usr/net/bin/sendberkmail	fxs	$B:$f	...berk\&mail -m $h -h $c -t $u
-# arpanet mail
 M\&arpa	/usr/lib/mailers/arpa	sAu	$f@$A	...arpa\&mail $f $h $u
-# uucp mail
 M\&uucp	/usr/bin/uux	rsDxmU	$U!$f	...uucp\&mail - $h!rmail ($u)
+M\&xlate	/	A	$f	/
 .sp \n(psu
 ### rewriting rules
 .ta \w'R\&CSVAX:$-h!$+u  'u +\w'$#berk$@ing70$:$+u@$+h  'u
@@ -1030,6 +1028,7 @@ These are:
 $l	UNIX-style \*(lqFrom\*(rq line.
 $n	My address in error messages.
 $o	\*(lqOperators\*(rq in addresses.
+$q	How to write addresses in headers.
 .)b
 The
 .b $l
@@ -1067,6 +1066,16 @@ Ing70, :, ZRM, @, MIT-MC, SRI-KL
 .)b
 assuming that colon and at-sign are operators
 (but hyphen is not).
+The
+.b $q
+macro gives the format for addresses
+as they should appear in headers.
+This will normally be something like:
+.(b
+$g$?x ($x)$.
+.)b
+Which will give the translated from address
+followed by the full name if known.
 .pp
 A number of macros are defined by
 .i sendmail
@@ -1364,6 +1373,9 @@ header line.
 Upper case should be preserved in user names.
 .ip h
 Upper case should be preserved in host names.
+.ip e
+This mailer is expensive,
+and it may be desirable to limit usage.
 .ip A
 This mailer wants an ARPANET standard header
 (equivalent to the
@@ -1570,6 +1582,7 @@ DUucbvax
 DnMAILER-DAEMON
 DlFrom $g  $d
 Do.:@!^
+Dq$g$?x ($x)$.
 .)b
 The first three macros are for convenience only,
 and are used to define the local host names
@@ -1688,10 +1701,11 @@ M\&prog	/bin/csh	lA	$f	...progmail -fc $u
 M\&berk	/usr/net/bin/sendberkmail	fxs	$B:$f	...berkmail -m $h -h $c -t $u
 M\&arpa	/usr/lib/mailers/arpa	sAu	$f@$A	...arpamail $f $h $u
 M\&uucp	/usr/bin/uux	rsDxmU	$U!$f	...uucpmail - $h!rmail ($u)
+M\&xlate	/	A	$f	/
 .if n .in
 .if t .sz
 .)b
-Five mailers are known in the configuration file.
+Six mailers are known in the configuration file.
 There
 .i must
 be entries for local and program mail.
@@ -1789,6 +1803,16 @@ line,
 and with multiple users listed.
 Since UUCP is a relic of the (not so) distant past,
 it requires ugly header lines.
+.pp
+The final entry is a dummy entry to declare the pseudo-mailer
+.i xlate .
+When this mailer is found
+it causes a table lookup to be done in the alias file
+using the host name as a key.
+A
+.q %s
+in the value part is replaced by the user name.
+The entire parsing mechanism is restarted when this is encountered.
 .pp
 If
 .q $u
@@ -2458,6 +2482,11 @@ Normally
 .i sendmail
 suppresses the sender
 if in a group being sent to.
+.ip \-o
+Assume that header lines containing recepient names in the message
+will have addresses separated by spaces
+rather than by commas.
+Headers are always output with commas between the names.
 .ip \-i
 Don't take a dot to end a message.
 .ip \-t
@@ -2485,7 +2514,7 @@ style messages
 the FTP protocol
 [Neigus73, Postel74, Postel77]),
 and ending lines of error messages with <CRLF>.
-.ip \-a\&p
+.ip \-a\&s
 Take input over an SMTP connection on standard input and output.
 This does everything the \-a flag does also.
 .ip \-s
@@ -2503,6 +2532,12 @@ maintainer;
 for example,
 aliases are printed as expanded
 and mailer functions are printed as they run.
+.ip \-c
+If this mailer is marked as being expensive,
+don't connect immediately.
+This requires that queueing be compiled in,
+since it will depend on a sender process to
+actually send the mail.
 .ip \-q
 Try to execute the queued up mail.
 .ip \-p
@@ -2680,13 +2715,17 @@ will not add another header line if a header line
 of this name already existed.
 This would normally be used to stamp the message
 by everyone who handled it.
-.ip H_ADDR
+.ip H_RCPT
 If set,
 this field contains recipient addresses.
 This is used by the
 .b \-t
 flag to determine who to send to
 when it is collecting recipients from the message.
+.ip H_ADDR
+This flag indicates that this field
+contains addresses that should be rewritten
+to include commas, etc.
 .nr ii 5n
 .lp
 Let's look at a sample

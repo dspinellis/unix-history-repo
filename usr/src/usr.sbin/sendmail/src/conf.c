@@ -36,7 +36,7 @@
 
 
 
-SCCSID(@(#)conf.c	3.42		%G%);
+SCCSID(@(#)conf.c	3.43		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -50,13 +50,13 @@ SCCSID(@(#)conf.c	3.42		%G%);
 struct hdrinfo	HdrInfo[] =
 {
 	"date",			H_CHECK,		M_NEEDDATE,
-	"from",			H_CHECK,		M_NEEDFROM,
+	"from",			H_ADDR|H_CHECK,		M_NEEDFROM,
 	"original-from",	0,			0,
-	"sender",		0,			0,
+	"sender",		H_ADDR,			0,
 	"full-name",		H_ACHECK,		M_FULLNAME,
-	"to",			H_ADDR,			0,
-	"cc",			H_ADDR,			0,
-	"bcc",			H_ADDR|H_ACHECK,	0,
+	"to",			H_ADDR|H_RCPT,		0,
+	"cc",			H_ADDR|H_RCPT,		0,
+	"bcc",			H_ADDR|H_ACHECK|H_RCPT,	0,
 	"message-id",		H_CHECK,		M_MSGID,
 	"message",		H_EOH,			0,
 	"text",			H_EOH,			0,

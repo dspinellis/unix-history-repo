@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.32		%G%);
+SCCSID(@(#)collect.c	3.33		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -234,7 +234,7 @@ maketemp(from)
 		define('x', p);
 	else
 	{
-		register char *q;
+		extern char *getxpart();
 
 		/*
 		**  Try to extract the full name from a general From:
@@ -249,40 +249,9 @@ maketemp(from)
 		p = hvalue("original-from");
 		if (p == NULL)
 			p = OrigFrom;
-		q = index(p, '(');
-		if (q != NULL)
-		{
-			int parenlev = 0;
-
-			for (p = q; *p != '\0'; p++)
-			{
-				if (*p == '(')
-					parenlev++;
-				else if (*p == ')' && --parenlev <= 0)
-					break;
-			}
-			if (*p == ')')
-			{
-				*p = '\0';
-				if (*++q != '\0')
-					define('x', newstr(q));
-				*p = ')';
-			}
-		}
-		else if ((q = index(p, '<')) != NULL)
-		{
-			char savec;
-
-			while (*--q == ' ')
-				continue;
-			while (isspace(*p))
-				p++;
-			savec = *++q;
-			*q = '\0';
-			if (*p != '\0')
-				define('x', newstr(p));
-			*q = savec;
-		}
+		p = getxpart(p);
+		if (p != NULL)
+			define('x', newstr(p));
 	}
 
 	/* date message originated */

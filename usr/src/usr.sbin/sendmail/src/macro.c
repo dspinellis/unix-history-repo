@@ -1,7 +1,7 @@
 # include "useful.h"
 # include "conf.h"
 
-SCCSID(@(#)macro.c	3.9		%G%);
+SCCSID(@(#)macro.c	3.10		%G%);
 
 char	*Macro[128];
 extern int	Debug;
@@ -131,6 +131,8 @@ expand(s, buf, buflim)
 **		     net typically)+
 **		$o   delimiters ("operators") for address tokens+
 **		$p   my process id in decimal
+**		$q   the string that becomes an address -- this is
+**		     normally used to combine $g & $x.
 **		$r   protocol used to talk to sender
 **		$s   sender's host name
 **		$t   the current time in seconds since 1/1/1970

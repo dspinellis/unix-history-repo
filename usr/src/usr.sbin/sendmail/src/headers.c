@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.14.1.1		%G%);
+SCCSID(@(#)headers.c	3.15		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -189,4 +189,70 @@ isheader(s)
 	while (isspace(*s))
 		s++;
 	return (*s == ':');
+}
+/*
+**  GETXPART -- extract the "signature" part of an address line.
+**
+**	Try to extract the full name from a general address
+**	field.  We take anything which is a comment as a
+**	first choice.  Failing in that, we see if there is
+**	a "machine readable" name (in <angle brackets>); if
+**	so we take anything preceeding that clause.
+**
+**	If we blow it here it's not all that serious.
+**
+**	Parameters:
+**		p -- line to crack.
+**
+**	Returns:
+**		signature part.
+**		NULL if no signature part.
+**
+**	Side Effects:
+**		none.
+*/
+
+char *
+getxpart(p)
+	register char *p;
+{
+	register char *q;
+	register char *rval = NULL;
+
+	q = index(p, '(');
+	if (q != NULL)
+	{
+		int parenlev = 0;
+
+		for (p = q; *p != '\0'; p++)
+		{
+			if (*p == '(')
+				parenlev++;
+			else if (*p == ')' && --parenlev <= 0)
+				break;
+		}
+		if (*p == ')')
+		{
+			*p = '\0';
+			if (*++q != '\0')
+				rval = newstr(q);
+			*p = ')';
+		}
+	}
+	else if ((q = index(p, '<')) != NULL)
+	{
+		char savec;
+
+		while (*--q == ' ')
+			continue;
+		while (isspace(*p))
+			p++;
+		savec = *++q;
+		*q = '\0';
+		if (*p != '\0')
+			rval = newstr(p);
+		*q = savec;
+	}
+
+	return (rval);
 }

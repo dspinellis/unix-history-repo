@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.66		%G%);
+SCCSID(@(#)deliver.c	3.67		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -941,7 +941,7 @@ putmessage(fp, m, xdot)
 				*p = '\0';
 
 				/* translate the name to be relative */
-				name = remotename(name);
+				name = remotename(name, m);
 				if (*name == '\0')
 					continue;
 
@@ -952,7 +952,7 @@ putmessage(fp, m, xdot)
 				if (opos > 78 && !firstone)
 				{
 					fprintf(fp, ",\n        ");
-					opos = 8;
+					opos = 8 + strlen(name);
 				}
 				else if (!firstone)
 					fprintf(fp, ", ");
@@ -1046,21 +1046,26 @@ putmessage(fp, m, xdot)
 */
 
 char *
-remotename(name)
+remotename(name, m)
 	char *name;
+	struct mailer *m;
 {
 	static char buf[MAXNAME];
 	char lbuf[MAXNAME];
 	extern char *macvalue();
 	char *oldf = macvalue('f');
+	char *oldx = macvalue('x');
+	char *oldg = macvalue('g');
 	extern char **prescan();
 	register char **pvp;
+	extern char *getxpart();
 
 	/*
 	**  Do general rewriting of name.
 	**	This will also take care of doing global name translation.
 	*/
 
+	define('x', getxpart(name));
 	pvp = prescan(name, '\0');
 	for (;;)
 	{
@@ -1089,14 +1094,20 @@ remotename(name)
 
 	/* make the name relative to the receiving mailer */
 	define('f', lbuf);
-	(void) expand(From.q_mailer->m_from, buf, &buf[sizeof buf - 1]);
+	(void) expand(m->m_from, buf, &buf[sizeof buf - 1]);
 
 	/* rewrite to get rid of garbage we added in the expand above */
 	pvp = prescan(buf, '\0');
 	rewrite(pvp, 2);
-	cataddr(pvp, buf, sizeof buf);
+	cataddr(pvp, lbuf, sizeof lbuf);
+
+	/* now add any comment info we had before back */
+	define('g', lbuf);
+	(void) expand("$q", buf, &buf[sizeof buf - 1]);
 
 	define('f', oldf);
+	define('g', oldg);
+	define('x', oldx);
 
 # ifdef DEBUG
 	if (Debug > 0)
