@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)locate.bigram.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)locate.bigram.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
 /*
@@ -13,37 +13,31 @@ static char sccsid[] = "@(#)locate.bigram.c	4.2	(Berkeley)	%G%";
 
 #define MAXPATH	1024		/* maximum pathname length */
 
-char path[MAXPATH];
-char oldpath[MAXPATH] = " ";	
+char buf1[MAXPATH] = " ";	
+char buf2[MAXPATH];
 
 main ( )
 {
-  	register int count, j;
+  	register char *cp;
+	register char *oldpath = buf1, *path = buf2;
 
      	while ( gets ( path ) != NULL ) {
 
-		count = prefix_length ( oldpath, path );
+		/* skip longest common prefix */
+		for ( cp = path; *cp == *oldpath; cp++, oldpath++ )
+			if ( *oldpath == NULL )
+				break;
 		/*
 		   output post-residue bigrams only
 		*/
-		for ( j = count; path[j] != NULL; j += 2 ) {
-			if ( path[j + 1] == NULL ) 
-				break;
-			putchar ( path[j] );
-			putchar ( path[j + 1] );
+		while ( *cp != NULL && *(cp + 1) != NULL ) {
+			putchar ( *cp++ );
+			putchar ( *cp++ );
 			putchar ( '\n' );
 		}
-		strcpy ( oldpath, path );
+		if ( path == buf1 )		/* swap pointers */
+			path = buf2, oldpath = buf1;
+		else
+			path = buf1, oldpath = buf2;
    	}
-}
-
-prefix_length ( s1, s2 )	/* return length of longest common prefix */
-	char *s1, *s2;		/* ... of strings s1 and s2 */
-{
-	register char *start;
-
-    	for ( start = s1; *s1 == *s2; s1++, s2++ )	
-		if ( *s1 == NULL )		
-	    		break;
-    	return ( s1 - start );
 }
