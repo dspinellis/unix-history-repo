@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.43 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.44 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.43 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.44 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -825,7 +825,7 @@ dowork(id, forkflag, requeueflag, e)
 		}
 
 		e->e_flags |= EF_INQUEUE;
-		eatheader(e);
+		eatheader(e, requeueflag);
 
 		if (requeueflag)
 			queueup(e, TRUE, FALSE);

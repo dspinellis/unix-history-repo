@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.50 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.51 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -930,7 +930,7 @@ main(argc, argv, envp)
 
 		/* collect body for UUCP return */
 		if (OpMode != MD_VERIFY)
-			collect(FALSE, CurEnv);
+			collect(FALSE, FALSE, CurEnv);
 		finis();
 	}
 	if (OpMode == MD_VERIFY)
@@ -952,7 +952,7 @@ main(argc, argv, envp)
 
 	CurEnv->e_to = NULL;
 	if (OpMode != MD_VERIFY || GrabTo)
-		collect(FALSE, CurEnv);
+		collect(FALSE, FALSE, CurEnv);
 	errno = 0;
 
 	/* collect statistics */

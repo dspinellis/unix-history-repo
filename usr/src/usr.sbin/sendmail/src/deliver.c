@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.58 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.59 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -47,6 +47,7 @@ sendall(e, mode)
 	int otherowners;
 	register ENVELOPE *ee;
 	ENVELOPE *splitenv = NULL;
+	bool announcequeueup;
 	int pid;
 #ifdef LOCKF
 	struct flock lfd;
@@ -61,7 +62,10 @@ sendall(e, mode)
 		if (mode != SM_VERIFY &&
 		    shouldqueue(e->e_msgpriority, e->e_ctime))
 			mode = SM_QUEUE;
+		announcequeueup = mode == SM_QUEUE;
 	}
+	else
+		announcequeueup = FALSE;
 
 	if (tTd(13, 1))
 	{
