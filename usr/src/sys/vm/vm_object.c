@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_object.c	7.7 (Berkeley) %G%
+ *	@(#)vm_object.c	7.8 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -275,83 +275,41 @@ void vm_object_terminate(object)
 	}
 
 	/*
-	 *	Wait until the pageout daemon is through
-	 *	with the object.
+	 * Wait until the pageout daemon is through with the object.
 	 */
-
-	while (object->paging_in_progress != 0) {
+	while (object->paging_in_progress) {
 		vm_object_sleep((int)object, object, FALSE);
 		vm_object_lock(object);
 	}
 
-
 	/*
-	 *	While the paging system is locked,
-	 *	pull the object's pages off the active
-	 *	and inactive queues.  This keeps the
-	 *	pageout daemon from playing with them
-	 *	during vm_pager_deallocate.
-	 *
-	 *	We can't free the pages yet, because the
-	 *	object's pager may have to write them out
-	 *	before deallocating the paging space.
+	 * If not an internal object clean all the pages, removing them
+	 * from paging queues as we go.
 	 */
-
-	p = (vm_page_t) queue_first(&object->memq);
-	while (!queue_end(&object->memq, (queue_entry_t) p)) {
-		VM_PAGE_CHECK(p);
-
-		vm_page_lock_queues();
-		if (p->active) {
-			queue_remove(&vm_page_queue_active, p, vm_page_t,
-						pageq);
-			p->active = FALSE;
-			cnt.v_active_count--;
-		}
-
-		if (p->inactive) {
-			queue_remove(&vm_page_queue_inactive, p, vm_page_t,
-						pageq);
-			p->inactive = FALSE;
-			cnt.v_inactive_count--;
-		}
-		vm_page_unlock_queues();
-		p = (vm_page_t) queue_next(&p->listq);
-	}
-				
-	vm_object_unlock(object);
-
-	if (object->paging_in_progress != 0)
-		panic("vm_object_deallocate: pageout in progress");
-
-	/*
-	 *	Clean and free the pages, as appropriate.
-	 *	All references to the object are gone,
-	 *	so we don't need to lock it.
-	 */
-
 	if ((object->flags & OBJ_INTERNAL) == 0) {
-		vm_object_lock(object);
-		vm_object_page_clean(object, 0, 0);
+		vm_object_page_clean(object, 0, 0, TRUE);
 		vm_object_unlock(object);
 	}
+
+	/*
+	 * Now free the pages.
+	 * For internal objects, this also removes them from paging queues.
+	 */
 	while (!queue_empty(&object->memq)) {
 		p = (vm_page_t) queue_first(&object->memq);
-
 		VM_PAGE_CHECK(p);
-
 		vm_page_lock_queues();
 		vm_page_free(p);
 		vm_page_unlock_queues();
 	}
+	if ((object->flags & OBJ_INTERNAL) == 0)
+		vm_object_unlock(object);
 
 	/*
-	 *	Let the pager know object is dead.
+	 * Let the pager know object is dead.
 	 */
-
 	if (object->pager != NULL)
 		vm_pager_deallocate(object->pager);
-
 
 	simple_lock(&vm_object_list_lock);
 	queue_remove(&vm_object_list, object, vm_object_t, object_list);
@@ -359,9 +317,8 @@ void vm_object_terminate(object)
 	simple_unlock(&vm_object_list_lock);
 
 	/*
-	 *	Free the space for the object.
+	 * Free the space for the object.
 	 */
-
 	free((caddr_t)object, M_VMOBJ);
 }
 
@@ -369,29 +326,76 @@ void vm_object_terminate(object)
  *	vm_object_page_clean
  *
  *	Clean all dirty pages in the specified range of object.
- *	Leaves page on whatever queue it is currently on.
+ *	If dequeue is TRUE, pages are removed from any paging queue
+ *	they were on, otherwise they are left on whatever queue they
+ *	were on before the cleaning operation began.
  *
  *	Odd semantics: if start == end, we clean everything.
  *
  *	The object must be locked.
  */
-vm_object_page_clean(object, start, end)
+vm_object_page_clean(object, start, end, dequeue)
 	register vm_object_t	object;
 	register vm_offset_t	start;
 	register vm_offset_t	end;
+	boolean_t		dequeue;
 {
 	register vm_page_t	p;
+	int onqueue;
 
 	if (object->pager == NULL)
 		return;
 
 again:
+	/*
+	 * Wait until the pageout daemon is through with the object.
+	 */
+	while (object->paging_in_progress) {
+		vm_object_sleep((int)object, object, FALSE);
+		vm_object_lock(object);
+	}
+	/*
+	 * Loop through the object page list cleaning as necessary.
+	 */
 	p = (vm_page_t) queue_first(&object->memq);
 	while (!queue_end(&object->memq, (queue_entry_t) p)) {
 		if (start == end ||
 		    p->offset >= start && p->offset < end) {
 			if (p->clean && pmap_is_modified(VM_PAGE_TO_PHYS(p)))
 				p->clean = FALSE;
+			/*
+			 * Remove the page from any paging queue.
+			 * This needs to be done if either we have been
+			 * explicitly asked to do so or it is about to
+			 * be cleaned (see comment below).
+			 */
+			if (dequeue || !p->clean) {
+				vm_page_lock_queues();
+				if (p->active) {
+					queue_remove(&vm_page_queue_active,
+						     p, vm_page_t, pageq);
+					p->active = FALSE;
+					cnt.v_active_count--;
+					onqueue = 1;
+				} else if (p->inactive) {
+					queue_remove(&vm_page_queue_inactive,
+						     p, vm_page_t, pageq);
+					p->inactive = FALSE;
+					cnt.v_inactive_count--;
+					onqueue = -1;
+				} else
+					onqueue = 0;
+				vm_page_unlock_queues();
+			}
+			/*
+			 * To ensure the state of the page doesn't change
+			 * during the clean operation we do two things.
+			 * First we set the busy bit and invalidate all
+			 * mappings to ensure that thread accesses to the
+			 * page block (in vm_fault).  Second, we remove
+			 * the page from any paging queue to foil the
+			 * pageout daemon (vm_pageout_scan).
+			 */
 			pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_NONE);
 			if (!p->clean) {
 				p->busy = TRUE;
@@ -400,6 +404,14 @@ again:
 				(void) vm_pager_put(object->pager, p, TRUE);
 				vm_object_lock(object);
 				object->paging_in_progress--;
+				if (!dequeue && onqueue) {
+					vm_page_lock_queues();
+					if (onqueue > 0)
+						vm_page_activate(p);
+					else
+						vm_page_deactivate(p);
+					vm_page_unlock_queues();
+				}
 				p->busy = FALSE;
 				PAGE_WAKEUP(p);
 				goto again;
