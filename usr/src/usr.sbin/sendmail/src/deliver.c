@@ -7,11 +7,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
-#include <signal.h>
 #include <netdb.h>
 #include <errno.h>
 #ifdef NAMED_BIND
@@ -296,7 +295,7 @@ sendenvelope(e, mode)
 	bool oldverbose;
 	int pid;
 	register ADDRESS *q;
-#ifdef LOCKF
+#ifndef HASFLOCK
 	struct flock lfd;
 #endif
 
@@ -329,10 +328,10 @@ sendenvelope(e, mode)
 		if (e->e_xfp != NULL)
 			(void) fflush(e->e_xfp);
 
-# ifdef LOCKF
+# ifndef HASFLOCK
 		/*
-		**  Since lockf has the interesting semantic that the
-		**  lock is lost when we fork, we have to risk losing
+		**  Since fcntl lockin has the interesting semantic that
+		**  the lock is lost when we fork, we have to risk losing
 		**  the lock here by closing before the fork, and then
 		**  trying to get it back in the child.
 		*/
@@ -342,7 +341,7 @@ sendenvelope(e, mode)
 			(void) xfclose(e->e_lockfp, "sendenvelope", "lockfp");
 			e->e_lockfp = NULL;
 		}
-# endif /* LOCKF */
+# endif /* HASFLOCK */
 
 		pid = fork();
 		if (pid < 0)
@@ -353,7 +352,7 @@ sendenvelope(e, mode)
 		{
 			/* be sure we leave the temp files to our child */
 			e->e_id = e->e_df = NULL;
-# ifndef LOCKF
+# ifdef HASFLOCK
 			if (e->e_lockfp != NULL)
 			{
 				(void) xfclose(e->e_lockfp, "sendenvelope", "lockfp");
@@ -382,7 +381,7 @@ sendenvelope(e, mode)
 		/* be sure we are immune from the terminal */
 		disconnect(1, e);
 
-# ifdef LOCKF
+# ifndef HASFLOCK
 		/*
 		**  Now try to get our lock back.
 		*/
@@ -405,7 +404,7 @@ sendenvelope(e, mode)
 # endif /* LOG */
 			exit(EX_OK);
 		}
-# endif /* LOCKF */
+# endif /* HASFLOCK */
 
 		/*
 		**  Close any cached connections.
@@ -1031,7 +1030,7 @@ tryhost:
 			(void) fflush(e->e_xfp);		/* for debugging */
 		(void) fflush(stdout);
 # ifdef SIGCHLD
-		(void) signal(SIGCHLD, SIG_DFL);
+		(void) setsignal(SIGCHLD, SIG_DFL);
 # endif /* SIGCHLD */
 		DOFORK(FORK);
 		/* pid is set by DOFORK */
@@ -1063,9 +1062,9 @@ tryhost:
 
 			/* child -- set up input & exec mailer */
 			/* make diagnostic output be standard output */
-			(void) signal(SIGINT, SIG_IGN);
-			(void) signal(SIGHUP, SIG_IGN);
-			(void) signal(SIGTERM, SIG_DFL);
+			(void) setsignal(SIGINT, SIG_IGN);
+			(void) setsignal(SIGHUP, SIG_IGN);
+			(void) setsignal(SIGTERM, SIG_DFL);
 
 			/* close any other cached connections */
 			mci_flush(FALSE, mci);
@@ -1665,9 +1664,9 @@ mailfile(filename, ctladdr, e)
 		/* child -- actually write to file */
 		struct stat stb;
 
-		(void) signal(SIGINT, SIG_DFL);
-		(void) signal(SIGHUP, SIG_DFL);
-		(void) signal(SIGTERM, SIG_DFL);
+		(void) setsignal(SIGINT, SIG_DFL);
+		(void) setsignal(SIGHUP, SIG_DFL);
+		(void) setsignal(SIGTERM, SIG_DFL);
 		(void) umask(OldUmask);
 
 		if (stat(filename, &stb) < 0)

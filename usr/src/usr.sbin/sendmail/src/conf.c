@@ -7,14 +7,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.12 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
 # include "pathnames.h"
 # include <sys/ioctl.h>
 # include <sys/param.h>
-# include <signal.h>
 
 /*
 **  CONF.C -- Sendmail Configuration Tables.
@@ -416,6 +415,29 @@ checkcompat(to, e)
 	}
 # endif /* EXAMPLE_CODE */
 	return (EX_OK);
+}
+/*
+**  SETSIGNAL -- set a signal handler
+**
+**	This is essentially old BSD "signal(3)".
+*/
+
+setsig_t
+setsignal(sig, handler)
+	int sig;
+	setsig_t handler;
+{
+#ifdef SYS5SIGNALS
+	return signal(sig, handler);
+#else
+	struct sigaction n, o;
+
+	bzero(&n, sizeof n);
+	n.sa_handler = handler;
+	if (sigaction(sig, &n, &o) < 0)
+		return SIG_ERR;
+	return o.sa_handler;
+#endif
 }
 /*
 **  HOLDSIGS -- arrange to hold all signals

@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.9 (Berkeley) %G%
+#	@(#)READ_ME	8.10 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -27,6 +27,11 @@ some are for the new Berkeley make, and some are for the old make.
 I provide them for information only.  Still, they may help you get
 started.  They have names like "Makefile.HPUX".
 
+
++---------------+
+| COMPILE FLAGS |
++---------------+
+
 Whereever possible, I try to make sendmail pull in the correct
 compilation options needed to compile on various environments based on
 automatically defined symbols.  Some machines don't seem to have useful
@@ -45,10 +50,17 @@ have to tweak the following compilation flags in conf.h in order to
 get it to compile and link properly:
 
 SYSTEM5		Adjust for System V.
-LOCKF		Set this if you do not have the flock system call -- it
-		will revert to System V file locking.  There are some
-		semantic gotchas, so flock is preferred.  Implied by
-		SYSTEM5.
+SYS5SIGNALS	Use System V signal semantics -- the signal handler
+		is automatically dropped when the signal is caught.
+		If this is not set, use POSIX/BSD semantics, where the
+		signal handler stays in force until an exec or an
+		explicit delete.  Implied by SYSTEM5.
+HASFLOCK	Set this if you prefer to use the flock(2) system call
+		rather than using fcntl-based locking.  Fcntl locking
+		has some semantic gotchas, but many vendor systems
+		also interface it to lockd(8) to do NFS-style locking.
+		For this reason, this should not be set unless you
+		don't have an alternative.
 HASUNAME	Set if you have the "uname" system call.  Implied by
 		SYSTEM5.
 HASSETENV	Define this if your system library has the "setenv"
@@ -110,6 +122,11 @@ ERRLIST_PREDEFINED
 		This may be needed if you get type conflicts on this
 		variable -- otherwise don't worry about it.
 
+
++-----------------------+
+| COMPILE-TIME FEATURES |
++-----------------------+
+
 There are a bunch of features that you can decide to compile in, such
 as selecting various database packages and special protocol support.
 Several are assumed based on other compilation flags -- if you want to
@@ -158,14 +175,24 @@ SETPROCTITLE	Try to set the string printed by "ps" to something
 		informative about what sendmail is doing.  Defined by
 		default in conf.h.
 
+
++-------------------------------------+
+| OPERATING SYSTEM AND COMPILE QUIRKS |
++-------------------------------------+
+
 If you are compiling on SunOS and want to use frozen configuration
 files, you must use -Bstatic -- if you do not, frozen configuration
 files fail in bizarre ways and you will open up several security holes.
 
+You may have to use -lresolv on SunOS.
+
 If you are compiling on OSF/1 (DEC Alpha), you must use -lmld.
 
 If you are compiling on NeXT, you will have to create an empty file
-"unistd.h".
+"unistd.h" and create a file "dirent.h" containing:
+
+	#include <sys/dir.h>
+	#define direct	dirent
 
 If you use both -DNDBM and -DNEWDB, you must delete the module ndbm.o
 from libdb.a and delete the file "ndbm.h" from the files that get
@@ -173,8 +200,10 @@ installed (that is, use the OLD ndbm.h, not the new ndbm.h).  This
 compatibility module maps ndbm calls into DB calls, and breaks things
 rather badly.
 
-You probably want to look over the compilation options in conf.h
-before you compile.  These are intended to be per-site information.
+
++-----------------------------+
+| DESCRIPTION OF SOURCE FILES |
++-----------------------------+
 
 The following list describes the files in this directory:
 
@@ -235,4 +264,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.9, last update %G% 12:17:36)
+(Version 8.10, last update %G% 09:21:53)
