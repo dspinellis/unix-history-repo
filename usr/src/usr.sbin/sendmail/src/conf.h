@@ -5,11 +5,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.167 (Berkeley) %G%
+ *	@(#)conf.h	8.168 (Berkeley) %G%
  */
 
 /*
 **  CONF.H -- All user-configurable parameters for sendmail
+**
+**	Send updates to sendmail@CS.Berkeley.EDU so they will be
+**	included in the next release.
 */
 
 struct rusage;	/* forward declaration to get gcc to shut up in wait.h */
@@ -110,17 +113,12 @@ struct rusage;	/* forward declaration to get gcc to shut up in wait.h */
 #ifdef __STDC__
 # define HASSETVBUF	1	/* we have setvbuf(3) in libc */
 #endif
-
-/**********************************************************************
+/**********************************************************************
 **  Operating system configuration.
 **
 **	Unless you are porting to a new OS, you shouldn't have to
 **	change these.
 **********************************************************************/
-
-/*
-**  Per-Operating System defines
-*/
 
 
 /*
@@ -136,6 +134,7 @@ struct rusage;	/* forward declaration to get gcc to shut up in wait.h */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define USESETEUID	1	/* has useable seteuid(2) call */
 # define seteuid(e)	setresuid(-1, e, -1)
+# define IP_SRCROUTE	1	/* can check IP source routing */
 # define LA_TYPE	LA_HPUX
 # define SPT_TYPE	SPT_PSTAT
 # define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
@@ -183,9 +182,7 @@ extern int	syslog(int, char *, ...);
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
-# ifndef IP_SRCROUTE
-#  define IP_SRCROUTE	0	/* Something is broken with getsockopt() */
-# endif
+# define IP_SRCROUTE	0	/* Something is broken with getsockopt() */
 # define FORK		fork	/* no vfork primitive available */
 # define GIDSET_T	gid_t
 # define SFS_TYPE	SFS_STATFS	/* use <sys/statfs.h> statfs() impl */
@@ -215,6 +212,7 @@ extern int	syslog(int, char *, ...);
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
+# define IP_SRCROUTE	1	/* can check IP source routing */
 # define FORK		fork	/* no vfork primitive available */
 # if !defined(IRIX64) && !defined(IRIX5)
 #  define WAITUNION	1	/* use "union wait" as wait argument type */
@@ -245,6 +243,7 @@ extern int	syslog(int, char *, ...);
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASGETUSERSHELL 1	/* DOES have getusershell(3) call in libc */
+# define IP_SRCROUTE	1	/* can check IP source routing */
 # define LA_TYPE	LA_INT
 
 # ifdef SOLARIS_2_3
@@ -399,6 +398,7 @@ extern long	dgux_inet_addr();
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define USESETEUID	1	/* has useable seteuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
+# define IP_SRCROUTE	1	/* can check IP source routing */
 # ifndef HASFLOCK
 #  define HASFLOCK	1	/* has flock(2) call */
 # endif
@@ -692,6 +692,7 @@ typedef short		pid_t;
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASSETSID	1	/* has POSIX setsid(2) call */
 # define NEEDGETOPT	1	/* need replacement for getopt(3) */
+# define IP_SRCROUTE	0	/* Something is broken with getsockopt() */
 # define LA_TYPE	LA_FLOAT
 # define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
 # ifndef _PATH_SENDMAILCF
@@ -707,9 +708,6 @@ typedef short		pid_t;
 # endif
 # ifndef IDENTPROTO
 #  define IDENTPROTO	0	/* TCP/IP implementation is broken */
-# endif
-# ifndef IP_SRCROUTE
-#  define IP_SRCROUTE	0	/* Something is broken with getsockopt() */
 # endif
 #endif
 
@@ -1047,6 +1045,7 @@ typedef int		pid_t;
 
 #ifdef NCR3000
 # define __svr4__
+# define IP_SRCROUTE	0	/* Something is broken with getsockopt() */
 # undef BSD
 # define LA_AVENRUN	"avenrun"
 #endif
@@ -1283,6 +1282,9 @@ extern int	errno;
 # define HASGETDTABLESIZE 1	/* has getdtablesize(2) call */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
+# ifndef IP_SRCROUTE
+#  define IP_SRCROUTE	1	/* can check IP source routing */
+# endif
 # ifndef HASSETRLIMIT
 #  define HASSETRLIMIT	1	/* has setrlimit(2) call */
 # endif
@@ -1459,9 +1461,7 @@ extern int	errno;
 #ifndef ARGV_T
 # define ARGV_T		char **
 #endif
-
-
-/**********************************************************************
+/**********************************************************************
 **  Remaining definitions should never have to be changed.  They are
 **  primarily to provide back compatibility for older systems -- for
 **  example, it includes some POSIX compatibility definitions
