@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.43 (Berkeley) %G%
+.\"	@(#)op.me	6.44 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.43
+Version 6.44
 .sp
-For Sendmail Version 6.56
+For Sendmail Version 6.57
 .)l
 .sp 2
 .pp
@@ -212,8 +212,7 @@ if you do,
 old databases are read,
 but when a new database is created it will be in NEWDB format.
 As a nasty hack,
-if you have both NEWDB and one of the DB formats defined,
-and you also define YPCOMPAT,
+if you have NEWDB, NDBM, and YPCOMPAT defined,
 and if the file
 .i /var/yp/Makefile
 exists and is readable,
@@ -950,9 +949,23 @@ This is the form that
 .i sendmail
 actually uses to resolve aliases.
 This technique is used to improve performance.
+.pp
+You can also use
+.sm NIS -based
+alias files.
+For example, the specification:
+.(b
+OA/etc/aliases
+OAnis:mail.aliases@my.nis.domain
+.)b
+will first search the /etc/aliases file
+and then the map named
+.q mail.aliases
+in
+.q my.nis.domain .
 .sh 3 "Rebuilding the alias database"
 .pp
-The DBM version of the database
+The DB or DBM version of the database
 may be rebuilt explicitly by executing the command
 .(b
 newaliases
@@ -980,6 +993,12 @@ if it might take more than five minutes
 to rebuild the database,
 there is a chance that several processes will start the rebuild process
 simultaneously.
+.pp
+If you have multiple aliases databases specified,
+the
+.b \-bi
+flag rebuilds all the database types it understands
+(for example, it can rebuild dbm databases but not nis databases).
 .sh 3 "Potential problems"
 .pp
 There are a number of problems that can occur
@@ -2020,6 +2039,27 @@ The
 .q restrictmailq
 option restricts printing the queue to the group that owns the queue directory.
 It is absurd to set this if you don't also protect the logs.
+.sh 2 "Send to Me Too"
+.pp
+Normally,
+.i sendmail
+deletes the (envelope) sender from any list expansions.
+For example, if
+.q matt
+sends to a list that contains
+.q matt
+as one of the members he won't get a copy of the message.
+If the
+.b \-m
+(me too)
+command line flag, or if the
+.b m
+option is set in the configuration file,
+this behaviour is supressed.
+Some sites like to run the
+.sm SMTP
+daemon with
+.b \-m .
 .sh 1 "THE WHOLE SCOOP ON THE CONFIGURATION FILE"
 .pp
 This section describes the configuration file
@@ -3248,14 +3288,46 @@ rebuild the database
 .b D
 option is also set)
 or issue a warning.
-.ip A\fIfile\fP
-Use the named
-.i file
-as the alias file.
-If no file is specified,
-use
-.i aliases
-in the current directory.
+.ip A\fIspec, spec, ...\fP
+Specify possible alias file(s).
+Each
+.i spec
+should be in the format
+``\c
+.i class \c
+.b :
+.i file ''
+where
+.i class \c
+.b :
+is optional and defaults to ``implicit''.
+Depending on how
+.b sendmail
+is compiled, valid classes are
+.q implicit
+(search through a compiled-in list of alias file types,
+for back compatibility),
+.q hash
+(if
+.sm NEWDB
+is specified),
+.q dbm
+(if
+.sm NDBM
+is specified),
+.q stab
+(internal symbol table \*- not normally used
+unless you have no other database lookup),
+or
+.q nis
+(if
+.sm NIS
+is specified).
+If a list of
+.i spec s
+are provided,
+.i sendmail
+searches them in order.
 .ip b\fIN\fP/\fIM\fP
 Insist on at least
 .i N
@@ -3398,6 +3470,9 @@ if the name server is not available.
 Thus, you should
 .i never
 set this option if you do not run the name server.
+.ip j
+If set, send error messages in MIME format
+(see RFC1341 and RFC1344 for details).
 .ip J\fIpath\fP
 Set the path for searching for users' .forward files.
 The default is
@@ -4667,6 +4742,13 @@ there should be an appropriate
 record for that name to allow return mail.
 See also
 .i :default:mailname .
+.ip mailsender
+Changes any mail sent to this address to have the indicated envelope sender.
+This is intended for mailing lists,
+and will normally be the name of an appropriate -request address.
+It is very similar to the owner-\c
+.i list
+syntax in the alias file.
 .ip fullname
 The full name of the user.
 .ip office-address
@@ -5588,6 +5670,8 @@ Default error message.
 Enable GECOS matching.
 .ip h
 Maximum hop count.
+.ip j
+Send errors in MIME-encapsulated format.
 .ip J
 Forward file path.
 .ip k
@@ -5598,8 +5682,8 @@ Connection cache lifetime.
 Privacy options.
 .ip U
 User database spec.
-.ip 8
-Run eight bit clean.
+.ip 7
+Do not run eight bit clean.
 .sh 2 "Extended Options"
 .pp
 The
@@ -5946,9 +6030,15 @@ These use the same syntax
 as header definitions in the configuration file.
 .ip C
 The controlling address.
+The syntax is
+.q localuser:aliasname .
 Recipient addresses following this line
-will be flagged as having resulted from an alias of this name.
-This affect the actual UNIX user id used for delivery.
+will be flagged so that deliveries will be run as the
+.i localuser
+(a user name from the /etc/passwd file);
+.i aliasname
+is the name of the alias that expanded to this address
+(used for printing messages).
 .ip R
 A recipient address.
 This will normally be completely aliased,
@@ -6024,9 +6114,8 @@ P835771
 T404261372
 DdfAAA13557
 Seric
-Cdaemon
 Eowner-sendmail@vangogh.CS.Berkeley.EDU
-Ceric
+Ceric:sendmail@vangogh.CS.Berkeley.EDU
 Reric@mammoth.Berkeley.EDU
 Rbostic@okeeffe.CS.Berkeley.EDU
 H?P?return-path: <owner-sendmail@vangogh.CS.Berkeley.EDU>
@@ -6130,7 +6219,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.43
+.\"Version 6.44
 .\".ce 0
 .pn 2
 .bp
