@@ -9,25 +9,48 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)tmpfile.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tmpfile.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/param.h>
-#include <stdio.h>
+#include <sys/types.h>
+#include <signal.h>
 #include <errno.h>
+#include <stdio.h>
+#include <paths.h>
 
 FILE *
 tmpfile()
 {
+	sigset_t set, oset;
 	FILE *fp;
-	int e;
-	char *f, buf[MAXPATHLEN];
+	int fd, sverrno;
+#define	TRAILER	"tmp.XXXXXX"
+	char buf[sizeof(_PATH_TMP) + sizeof(TRAILER)];
 
-	if ((f = tmpnam(buf)) == NULL)
-		return (NULL);
-	fp = fopen(f, "w+");
-	e = errno;
-	(void) unlink(f);
-	errno = e;
-	return (fp);
+	bcopy(_PATH_TMP, buf, sizeof(_PATH_TMP) - 1);
+	bcopy(TRAILER, buf + sizeof(_PATH_TMP) - 1, sizeof(TRAILER));
+
+	sigemptyset(&set);
+	sigaddset(&set, SIGHUP);
+	sigaddset(&set, SIGINT);
+	sigaddset(&set, SIGQUIT);
+	sigaddset(&set, SIGTERM);
+	(void)sigprocmask(SIG_BLOCK, &set, &oset);
+
+	fd = mkstemp(buf);
+	if (fd != -1)
+		(void)unlink(buf);
+
+	(void)sigprocmask(SIG_SETMASK, &oset, (sigset_t *)NULL);
+
+	if (fd == -1)
+		return(NULL);
+
+	if (!(fp = fdopen(fd, "w+"))) {
+		sverrno = errno;
+		(void)close(fd);
+		errno = sverrno;
+		return(NULL);
+	}
+	return(fp);
 }
