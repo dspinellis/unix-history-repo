@@ -69,19 +69,33 @@ vm/vm_user.c		standard
 vm/device_pager.c	optional devpager
 vm/swap_pager.c		optional swappager
 vm/vnode_pager.c	optional vnodepager
-ufs/ufs_alloc.c		standard
-ufs/ufs_bmap.c		standard
-ufs/ufs_disksubr.c	standard
-ufs/ufs_inode.c		standard
-ufs/ufs_lockf.c		standard
-ufs/ufs_lookup.c	standard
-ufs/ufs_subr.c		standard
-ufs/ufs_tables.c	standard
-ufs/ufs_vfsops.c	standard
-ufs/ufs_vnops.c		standard
-ufs/ufs_quota.c		optional quota
-ufs/mfs_vnops.c		optional mfs
-ufs/mfs_vfsops.c	optional mfs
+ufs/ffs/ffs_alloc.c	optional ffs
+ufs/ffs/ffs_bmap.c	optional ffs
+ufs/ffs/ffs_inode.c	optional ffs
+ufs/ffs/ffs_subr.c	optional ffs
+ufs/ffs/ffs_tables.c	optional ffs
+ufs/ffs/ffs_vfsops.c	optional ffs
+ufs/ffs/ffs_vnops.c	optional ffs
+ufs/lfs/lfs_alloc.c	optional lfs
+ufs/lfs/lfs_bio.c	optional lfs
+ufs/lfs/lfs_bmap.c	optional lfs
+ufs/lfs/lfs_cksum.c	optional lfs
+ufs/lfs/lfs_debug.c	optional lfs
+ufs/lfs/lfs_inode.c	optional lfs
+ufs/lfs/lfs_segment.c	optional lfs
+ufs/lfs/lfs_subr.c	optional lfs
+ufs/lfs/lfs_vfsops.c	optional lfs
+ufs/lfs/lfs_vnops.c	optional lfs
+ufs/mfs/mfs_vfsops.c	optional mfs
+ufs/mfs/mfs_vnops.c	optional mfs
+ufs/ufs/ufs_disksubr.c	standard
+ufs/ufs/ufs_ihash.c	standard
+ufs/ufs/ufs_inode.c	standard
+ufs/ufs/ufs_lockf.c	standard
+ufs/ufs/ufs_lookup.c	standard
+ufs/ufs/ufs_quota.c	standard
+ufs/ufs/ufs_vfsops.c	standard
+ufs/ufs/ufs_vnops.c	standard
 nfs/nfs_bio.c		optional nfs
 nfs/nfs_node.c		optional nfs
 nfs/nfs_serv.c		optional nfs
