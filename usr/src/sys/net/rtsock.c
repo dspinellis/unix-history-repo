@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	7.34 (Berkeley) %G%
+ *	@(#)rtsock.c	7.35 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -109,9 +109,8 @@ route_output(m, so)
 	struct ifaddr *ifaof_ifpforaddr(), *ifa_ifwithroute();
 
 #define senderr(e) { error = e; goto flush;}
-	if (m == 0 || m->m_len < sizeof(long))
-		return (ENOBUFS);
-	if ((m = m_pullup(m, sizeof(long))) == 0)
+	if (m == 0 || ((m->m_len < sizeof(long)) &&
+		       (m = m_pullup(m, sizeof(long))) == 0))
 		return (ENOBUFS);
 	if ((m->m_flags & M_PKTHDR) == 0)
 		panic("route_output");
