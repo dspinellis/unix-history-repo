@@ -1,4 +1,4 @@
-/*	uba.c	4.38	81/11/20	*/
+/*	uba.c	4.39	81/12/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -310,6 +310,9 @@ ubareset(uban)
 	ubainit(uh->uh_uba);
 	for (cdp = cdevsw; cdp->d_open; cdp++)
 		(*cdp->d_reset)(uban);
+#ifdef INET
+	ifubareset(uban);
+#endif
 	printf("\n");
 	splx(s);
 }
