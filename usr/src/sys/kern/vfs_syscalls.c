@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.51 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.52 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1641,7 +1641,6 @@ revoke(p, uap, retval)
 	register struct proc *p;
 	register struct args {
 		char	*fname;
-		int	flags;
 	} *uap;
 	int *retval;
 {
