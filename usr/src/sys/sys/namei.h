@@ -1,20 +1,42 @@
-/*	namei.h	6.4	84/06/27	*/
+/*	namei.h	6.5	84/07/08	*/
 
-struct namidata {
-	int	ni_offset;
-	int	ni_count;
-	struct	inode *ni_pdir;
-	struct	direct ni_dent;
+#ifndef _NAMEI_
+#define	_NAMEI_
+
+#ifdef KERNEL
+#include "../h/uio.h"
+#else
+#include <sys/uio.h>
+#endif
+
+struct nameidata {
+	caddr_t	ni_dirp;		/* pathname pointer */
+	struct	inode *ni_pdir;		/* inode of parent directory of dirp */
+	struct	iovec ni_iovec;
+	struct	uio ni_uio;
+	struct	direct ni_dent;		/* current directory entry */
+	short	ni_error;		/* error return if any */
+	short	ni_nameiop;		/* see below */
 };
 
-enum nami_op { NAMI_LOOKUP, NAMI_CREATE, NAMI_DELETE };
+#define	ni_base		ni_iovec.iov_base
+#define	ni_count	ni_iovec.iov_len
+#define	ni_iov		ni_uio.uio_iov
+#define	ni_iovcnt	ni_uio.uio_iovcnt
+#define	ni_offset	ni_uio.uio_offset
+#define	ni_segflg	ni_uio.uio_segflg
+#define	ni_resid	ni_uio.uio_resid
 
-/* this is temporary until the namei interface changes */
+/*
+ * namei opertions
+ */
 #define	LOOKUP		0	/* perform name lookup only */
 #define	CREATE		1	/* setup for file creation */
 #define	DELETE		2	/* setup for file deletion */
 #define	LOCKPARENT	0x10	/* see the top of namei */
 #define NOCACHE		0x20	/* name must not be left in cache */
+#define FOLLOW		0x40	/* follow symbolic links */
+#define	NOFOLLOW	0x0	/* don't follow symbolic links (pseudo) */
 
 /*
  * This structure describes the elements in the cache of recent
@@ -47,3 +69,4 @@ struct	nchstats {
 	long	ncs_pass2;		/* names found with passes == 2 */
 	long	ncs_2passes;		/* number of times we attempt it */
 };
+#endif
