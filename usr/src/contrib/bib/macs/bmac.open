@@ -1,4 +1,4 @@
-.\"	"@(#)bmac.open	2.2	%G%";
+.\"	"@(#)bmac.open	2.3	%G%";
 .\" open format troff macros
 .\" citation formatting strings
 .ds [[ [
@@ -173,4 +173,3 @@ in \\fI\\*([B\\fP\c
 .rm [V [W
 .rm ]A ]T
 ..
-
