@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.23		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.24		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.23		%G%);
+SCCSID(@(#)queue.c	3.24		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -149,6 +149,9 @@ queueup(e, queueall)
 		syserr("cannot link(%s, %s), df=%s", cf, buf, e->e_df);
 	else
 		(void) unlink(cf);
+
+	/* disconnect this temp file from the job */
+	e->e_df = NULL;
 }
 /*
 **  RUNQUEUE -- run the jobs in the queue.

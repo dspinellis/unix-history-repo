@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.86		%G%);
+SCCSID(@(#)main.c	3.87		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -792,7 +792,7 @@ finis()
 
 	if (Transcript != NULL)
 		(void) unlink(Transcript);
-	if (!CurEnv->e_queueup)
+	if (CurEnv->e_df != NULL)
 		(void) unlink(CurEnv->e_df);
 	if (ControlFile != NULL)
 		(void) unlink(ControlFile);
