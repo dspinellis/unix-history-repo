@@ -1,7 +1,7 @@
-/*	misc.c	1.1	85/07/21	*/
+/*	misc.c	1.2	85/07/29	*/
 
 #include "../h/types.h"
-#include "../machine/mtpr.h"
+#include "../tahoe/mtpr.h"
 
 /*
  * make sure addr is not in cache
@@ -10,5 +10,5 @@
 uncache(addr)
 	char *addr;
 {
-	mtpr(addr, PDCS);
+	mtpr(PDCS, addr);
 }
