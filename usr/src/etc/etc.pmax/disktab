@@ -1,5 +1,5 @@
 #
-#	@(#)disktab	5.5 (Berkeley) %G%
+#	@(#)disktab	5.6 (Berkeley) %G%
 #
 
 # Disk geometry and partition layout tables. 
@@ -55,24 +55,23 @@ rz23|RZ23|DEC RZ23 Winchester:\
 
 rz23l|RZ23L|DEC RZ23L Winchester:\
 	:dt=SCSI:ty=winchester:ns#39:nt#4:nc#1524:\
-	:pa#32768:ba#8192:fa#1024:\
-	:pb#66690:bb#4096:fb#1024:tb=swap\
-	:pc#237588:bc#8192:fc#1024:\
-	:pd#35135:bd#8192:fd#1024:\
-	:pe#35135:be#8192:fe#1024:\
-	:pf#67860:bf#8192:ff#1024:\
-	:pg#138130:bg#8192:fg#1024:\
-	:ph#102995:bh#8192:fh#1024:
+	:pa#32768:oa#0:ba#8192:fa#1024:\
+	:pb#66690:ob#32768:bb#4096:fb#1024:tb=swap\
+	:pc#237588:oc#0:bc#8192:fc#1024:\
+	:pd#35135:od#99458:bd#8192:fd#1024:\
+	:pe#35135:oe#134593:be#8192:fe#1024:\
+	:pf#67860:of#169728:bf#8192:ff#1024:\
+	:pg#138130:og#99458:bg#8192:fg#1024:
 
 rz24|RZ24|DEC RZ24 Winchester:\
 	:dt=SCSI:ty=winchester:ns#38:nt#8:nc#1348:\
-	:pa#32768:ba#8192:fa#1024:\
-	:pb#131072:bb#4096:fb#1024:tb=swap:\
-	:pc#409792:bc#8192:fc#1024:\
-	:pd#81984:bd#8192:fd#1024:\
-	:pe#81984:be#8192:fe#1024:\
-	:pf#81984:bf#8192:ff#1024:\
-	:pg#245952:bg#8192:fg#1024:
+	:pa#32768:oa#0:ba#8192:fa#1024:\
+	:pb#131072:ob#32768:bb#4096:fb#1024:tb=swap:\
+	:pc#409792:oc#0:bc#8192:fc#1024:\
+	:pd#81984:od#163840:bd#8192:fd#1024:\
+	:pe#81984:oe#245824:be#8192:fe#1024:\
+	:pf#81984:of#327808:bf#8192:ff#1024:\
+	:pg#245952:og#163840:bg#8192:fg#1024:
 
 #
 # The RZ24L uses ZBR, so (pc = #_logical_blocks) > ns * nt * nc.
@@ -80,83 +79,55 @@ rz24|RZ24|DEC RZ24 Winchester:\
 #
 rz24l|RZ24L|DEC RZ24L Winchester:\
 	:dt=SCSI:ty=winchester:ns#65:nt#4:nc#1818:\
-	:pa#32768:ba#8192:fa#1024:\
-	:pb#131072:bb#4096:fb#1024:tb=swap:\
-	:pc#479350:bc#8192:fc#1024:\
-	:pd#105170:bd#8192:fd#1024:\
-	:pe#105170:be#8192:fe#1024:\
-	:pf#105170:bf#8192:ff#1024:\
-	:pg#315510:bg#8192:fg#1024:\
-	:ph#0:bh#8192:fh#1024:
-
-#
-# The RZ24L uses ZBR, so (pc = #_logical_blocks) > ns * nt * nc.
-# #_logical_blocks was obtained from the 'scu' "show pages" command.
-#
-rz24l|RZ24L|DEC RZ24L Winchester:\
-	:dt=SCSI:ty=winchester:ns#65:nt#4:nc#1818:\
-	:pa#32768:ba#8192:fa#1024:\
-	:pb#131072:bb#4096:fb#1024:tb=swap:\
-	:pc#479350:bc#8192:fc#1024:\
-	:pd#105170:bd#8192:fd#1024:\
-	:pe#105170:be#8192:fe#1024:\
-	:pf#105170:bf#8192:ff#1024:\
-	:pg#315510:bg#8192:fg#1024:\
-	:ph#0:bh#8192:fh#1024:
+	:pa#32768:oa#0:ba#8192:fa#1024:\
+	:pb#131072:ob#32768:bb#4096:fb#1024:tb=swap:\
+	:pc#479350:oc#0:bc#8192:fc#1024:\
+	:pd#105170:od#163840:bd#8192:fd#1024:\
+	:pe#105170:oe#269010:be#8192:fe#1024:\
+	:pf#105170:of#374180:bf#8192:ff#1024:\
+	:pg#315510:og#163840:bg#8192:fg#1024:
 
 rz25|RZ25|DEC RZ25 Winchester:\
 	:dt=SCSI:ty=winchester:ns#62:nt#9:nc#1476:\
-	:pa#32768:ba#8192:fa#1024:\
-	:pb#131072:bb#8192:fb#1024:tb=swap:\
-	:pc#832527:bc#8192:fc#1024:\
-	:pd#222896:bd#8192:fd#1024:\
-	:pe#222896:be#8192:fe#1024:\
-	:pf#222895:bf#8192:ff#1024:\
-	:pg#668687:bg#8192:fg#1024:\
-	:ph#0:bh#8192:fh#1024:
+	:pa#32768:oa#0:ba#8192:fa#1024:\
+	:pb#131072:ob#32768:bb#8192:fb#1024:tb=swap:\
+	:pc#832527:oc#0:bc#8192:fc#1024:\
+	:pd#222896:od#163840:bd#8192:fd#1024:\
+	:pe#222896:oe#386736:be#8192:fe#1024:\
+	:pf#222895:of#609632:bf#8192:ff#1024:\
+	:pg#668687:og#163840:bg#8192:fg#1024:
 
 rz26|RZ26|DEC RZ26 Winchester:\
 	:dt=SCSI:ty=winchester:ns#57:nt#14:nc#2570:\
-	:pa#32768:ba#8192:fa#1024:\
-	:pb#131072:bb#8192:fb#1024:tb=swap:\
-	:pc#2050860:bc#8192:fc#1024:\
-	:pd#629006:bd#8192:fd#1024:\
-	:pe#629006:be#8192:fe#1024:\
-	:pf#629008:bf#8192:ff#1024:\
-	:pg#819200:bg#8192:fg#1024:\
-	:ph#1067820:bh#8192:fh#1024:
-
-rz26|RZ26|DEC RZ26 Winchester:\
-	:dt=SCSI:ty=winchester:ns#57:nt#14:nc#2570:\
-	:pa#32768:ba#8192:fa#1024:\
-	:pb#131072:bb#8192:fb#1024:tb=swap:\
-	:pc#2050860:bc#8192:fc#1024:\
-	:pd#629006:bd#8192:fd#1024:\
-	:pe#629006:be#8192:fe#1024:\
-	:pf#629008:bf#8192:ff#1024:\
-	:pg#819200:bg#8192:fg#1024:\
-	:ph#1067820:bh#8192:fh#1024:
+	:pa#32768:oa#0:ba#8192:fa#1024:\
+	:pb#131072:ob#32768:bb#8192:fb#1024:tb=swap:\
+	:pc#2050860:oc#0:bc#8192:fc#1024:\
+	:pd#629006:od#163840:bd#8192:fd#1024:\
+	:pe#629006:oe#792846:be#8192:fe#1024:\
+	:pf#629008:of#1421852:bf#8192:ff#1024:\
+	:pg#819200:og#163840:bg#8192:fg#1024:\
+	:ph#1067820:oh#983040:bh#8192:fh#1024:
 
 rz55|RZ55|DEC RZ55 Winchester:\
 	:dt=SCSI:ty=winchester:ns#36:nt#15:nc#1224:\
-	:pa#32768:ba#8192:fa#1024:\
-	:pb#131072:bb#8192:fb#1024:tb=swap:\
-	:pc#649040:bc#8192:fc#1024:\
-	:pd#152446:bd#8192:fd#1024:\
-	:pe#152446:be#8192:fe#1024:\
-	:pf#180308:bf#8192:ff#1024:\
-	:pg#485200:bg#8192:fg#1024:
+	:pa#32768:oa#0:ba#8192:fa#1024:\
+	:pb#131072:ob#32768:bb#8192:fb#1024:tb=swap:\
+	:pc#649040:oc#0:bc#8192:fc#1024:\
+	:pd#152446:od#163840:bd#8192:fd#1024:\
+	:pe#152446:oe#316286:be#8192:fe#1024:\
+	:pf#180308:of#468732:bf#8192:ff#1024:\
+	:pg#485200:og#163840:bg#8192:fg#1024:
 
 rz56|RZ56|DEC RZ56 Winchester:\
 	:dt=SCSI:ty=winchester:ns#54:nt#15:nc#1632:\
-	:pa#32768:ba#8192:fa#1024:\
-	:pb#131072:bb#4096:fb#1024:tb=swap:\
-	:pc#1299174:bc#8192:fc#1024:\
-	:pd#292530:bd#8192:fd#1024:\
-	:pe#292530:be#8192:fe#1024:\
-	:pf#550274:bf#8192:ff#1024:\
-	:pg#567666:bg#8192:fg#1024:\
-	:ph#567668:bh#8192:fh#1024:
+	:pa#32768:oa#0:ba#8192:fa#1024:\
+	:pb#131072:ob#32768:bb#4096:fb#1024:tb=swap:\
+	:pc#1299174:oc#0:bc#8192:fc#1024:\
+	:pd#292530:od#163840:bd#8192:fd#1024:\
+	:pe#292530:oe#456370:be#8192:fe#1024:\
+	:pf#550274:of#748900:bf#8192:ff#1024:\
+	:pg#567666:og#163840:bg#8192:fg#1024:\
+	:ph#567668:oh#731506:bh#8192:fh#1024:
 
 #rz57|RZ57|DEC RZ57 Winchester:\
 #	:dt=SCSI:ty=winchester:ns#71:nt#15:nc#1854:\
@@ -194,14 +165,14 @@ rz57|RZ57|DEC RZ57 Winchester:\
 
 rz58|RZ58|DEC RZ58 Winchester:\
 	:ty=winchester:ns#85:nt#15:nc#2112:\
-	:pa#32768:ba#8192:fa#1024:\
-	:pb#131072:bb#4096:fb#1024:tb=swap:\
-	:pc#2698061:bc#8192:fc#1024:\
-	:pd#844800:bd#8192:fd#1024:\
-	:pe#844800:be#8192:fe#1024:\
-	:pf#844620:bf#8192:ff#1024:\
-	:pg#819200:bg#8192:fg#1024:\
-	:ph#1715019:bh#8192:fh#1024:
+	:pa#32768:oa#0:ba#8192:fa#1024:\
+	:pb#131072:ob#32768:bb#4096:fb#1024:tb=swap:\
+	:pc#2698061:oc#0:bc#8192:fc#1024:\
+	:pd#844800:od#163840:bd#8192:fd#1024:\
+	:pe#844800:oe#1008640:be#8192:fe#1024:\
+	:pf#844620:of#1853440:bf#8192:ff#1024:\
+	:pg#819200:og#163840:bg#8192:fg#1024:\
+	:ph#1715019:oh#983040:bh#8192:fh#1024:
 
 xt8760|XT8760|Maxtor XT8760 Winchester:\
 	:dt=SCSI:ty=winchester:ns#54:nt#15:nc#1616:\
