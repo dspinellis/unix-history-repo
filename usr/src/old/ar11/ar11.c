@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)ar11.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)ar11.c	4.5 (Berkeley) %G%";
 /* ar11 - archiver for PDP-11 formatted archives */
 
 #include <signal.h>
@@ -256,11 +256,12 @@ pcmd()
 
 mcmd()
 {
+	static char name2[] = "/tmp/v2XXXXX";
 
 	init();
 	if(getaf())
 		noar();
-	tf2nam = mktemp("/tmp/v2XXXXX");
+	tf2nam = mktemp(name2);
 	close(creat(tf2nam, 0600));
 	tf2 = open(tf2nam, 2);
 	if(tf2 < 0) {
@@ -297,9 +298,10 @@ tcmd()
 
 init()
 {
+	static char name0[] = "/tmp/vXXXXX";
 	static short mbuf = fixshort(ARMAG);
 
-	tfnam = mktemp("/tmp/vXXXXX");
+	tfnam = mktemp(name0);
 	close(creat(tfnam, 0600));
 	tf = open(tfnam, 2);
 	if(tf < 0) {
@@ -535,6 +537,7 @@ match()
 
 bamatch()
 {
+	static char name1[] = "/tmp/v1XXXXX";
 	register f;
 
 	switch(bastate) {
@@ -548,7 +551,7 @@ bamatch()
 
 	case 2:
 		bastate = 0;
-		tf1nam = mktemp("/tmp/v1XXXXX");
+		tf1nam = mktemp(name1);
 		close(creat(tf1nam, 0600));
 		f = open(tf1nam, 2);
 		if(f < 0) {
