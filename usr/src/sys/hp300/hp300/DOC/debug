@@ -1,0 +1,225 @@
+NOTE: this description applies to the hp300 system with the old BSD
+virtual memory system.  It has not been updated to reflect the new,
+Mach-derived VM system, but should still be useful.
+The new system has no fixed-address "u.", but has a fixed mapping
+for the kernel stack at 0xfff00000.
+
+--------------------------------------------------------------------------
+
+Some quick notes on the HPBSD VM layout and kernel debugging.
+
+Physical memory:
+
+Physical memory always ends at the top of the 32 bit address space; i.e. the
+last addressible byte is at 0xFFFFFFFF.  Hence, the start of physical memory
+varies depending on how much memory is installed.  The kernel variable "lowram"
+contains the starting locatation of memory as provided by the ROM.
+
+The low 128k (I think) of the physical address space is occupied by the ROM.
+This is accessible via /dev/mem *only* if the kernel is compiled with DEBUG.
+[ Maybe it should always be accessible? ]
+
+Virtual address spaces:
+
+The hardware page size is 4096 bytes.  The hardware uses a two-level lookup.
+At the highest level is a one page segment table which maps a page table which
+maps the address space.  Each 4 byte segment table entry (described in
+hp300/pte.h) contains the page number of a single page of 4 byte page table
+entries.  Each PTE maps a single page of address space.  Hence, each STE maps
+4Mb of address space and one page containing 1024 STEs is adequate to map the
+entire 4Gb address space.
+
+Both page and segment table entries look similar.  Both have the page frame
+in the upper part and control bits in the lower.  This is the opposite of
+the VAX.  It is easy to convert the page frame number in an STE/PTE to a
+physical address, simply mentally mask out the low 12 bits.  For example
+if a PTE contains 0xFF880019, the physical memory location mapped starts at
+0xFF880000.
+
+Kernel address space:
+
+The kernel resides in its own virtual address space independent of all user
+processes.  When the processor is in supervisor mode (i.e. interrupt or 
+exception handling) it uses the kernel virtual mapping.  The kernel segment
+table is called Sysseg and is allocated statically in hp300/locore.s.  The
+kernel page table is called Systab is also allocated statically in
+hp300/locore.s and consists of the usual assortment of SYSMAPs.
+The size of Systab (Syssize) depends on the configured size of the various
+maps but as currently configured is 9216 PTEs.  Both segment and page tables
+are initialized at bootup in hp300/locore.s.  The segment table never changes
+(except for bits maintained by the hardware).  Portions of the page table
+change as needed.  The kernel is mapped into the address space starting at 0.
+
+Theoretically, any address in the range 0 to Syssize * 4096 (0x2400000 as
+currently configured) is valid.  However, certain addresses are more common
+in dumps than others.  Those are (for the current configuration):
+
+	0         - 0x800000	kernel text and permanent data structures
+	0x917000  - 0x91a000	u-area; 1st page is user struct, last k-stack
+	0x1b1b000 - 0x2400000	user page tables, also kmem_alloc()ed data
+
+User address space:
+
+The user text and data are loaded starting at VA 0.  The user's stack starts
+at 0xFFF00000 and grows toward lower addresses.  The pages above the user
+stack are used by the kernel.  From 0xFFF00000 to 0xFFF03000 is the u-area.
+The 3 PTEs for this range map (read-only) the same memory as does 0x917000
+to 0x91a000 in the kernel address space.  This address range is never used
+by the kernel, but exists for utilities that assume that the u-area sits
+above the user stack.  The pages from FFF03000 up are not used.  They
+exist so that the user stack is in the same location as in HPUX.
+
+The user segment table is allocated along with the page tables from Usrptmap.
+They are contiguous in kernel VA space with the page tables coming before
+the segment table.  Hence, a process has p_szpt+1 pages allocated starting
+at kernel VA p_p0br.
+
+The user segment table is typically very sparse since each entry maps 4Mb.
+There are usually only two valid STEs, one at the start mapping the text/data
+potion of the page table, and one at the end mapping the stack/u-area.  For
+example if the segment table was at 0xFFFFA000 there would be valid entries
+at 0xFFFFA000 and 0xFFFFAFFC.
+
+Random notes:
+
+An important thing to note is that there are no hardware length registers
+on the HP.  This implies that we cannot "pack" data and stack PTEs into the
+same page table page.  Hence, every user page table has at least 2 pages
+(3 if you count the segment table).
+
+The HP maintains the p0br/p0lr and p1br/p1lr PCB fields the same as the
+VAX even though they have no meaning to the hardware.  This also keeps many
+utilities happy.
+
+There is no seperate interrupt stack (right now) on the HPs.  Interrupt
+processing is handled on the kernel stack of the "current" process.
+
+Following is a list of things you might want to be able to do with a kernel
+core dump.  One thing you should always have is a ps listing from the core
+file.  Just do:
+
+	ps klaw vmunix.? vmcore.?
+
+Exception related panics (i.e. those detected in hp300/trap.c) will dump
+out various useful information before panicing.  If available, you should
+get this out of the /usr/adm/messages file.  Finally, you should be in adb:
+
+	adb -k vmunix.? vmcore.?
+
+Adb -k will allow you to examine the kernel address space more easily.
+It automatically maps kernel VAs in the range 0 to 0x2400000 to physical
+addresses.  Since the kernel and user address spaces overlap (i.e. both
+start at 0), adb can't let you examine the address space of the "current"
+process as it does on the VAX.
+--------
+
+1. Find out what the current process was at the time of the crash:
+
+If you have the dump info from /usr/adm/messages, it should contain the
+PID of the active process.  If you don't have this info you can just look
+at location "Umap".  This is the PTE for the first page of the u-area; i.e.
+the user structure.  Forget about the last 3 hex digits and compare the top
+5 to the ADDR column in the ps listing.
+
+2. Locating a process' user structure:
+
+Get the ADDR field of the desired process from the ps listing.  This is the
+page frame number of the process' user structure.  Tack 3 zeros on to the
+end to get the physical address.  Note that this doesn't give you the kernel
+stack since it is in a different page than the user-structure and pages of
+the u-area are not physically contiguous.
+
+3. Locating a process' proc structure:
+
+First find the process' user structure as described above.  Find the u_procp
+field at offset 0x200 from the beginning.  This gives you the kernel VA of
+the proc structure.
+
+4. Locating a process' page table:
+
+First find the process' user structure as described above.  The first part
+of the user structure is the PCB.  The second longword (third field) of the
+PCB is pcb_ustp, a pointer to the user segment table.  This pointer is
+actually the page frame number.  Again adding 3 zeros yields the physical
+address.  You can now use the values in the segment table to locate the
+page tables.  For example, to locate the first page of the text/data part
+of the page table, use the first STE (longword) in the segment table.
+
+5. Locating a process' kernel stack:
+
+First find the process' page table as described above.  The kernel stack
+is near the end of the user address space.  So, locate the last entry in the
+user segment table (base+0xFFC) and use that entry to find the last page of
+the user page table.  Look at the last 256 entries of this page
+(pagebase+0xFE0)  The first is the PTE for the user-structure.  The second
+was intended to be a read-only page to protect the user structure from the
+kernel stack.  Currently it is read/write and actually allocated.  Hence
+it can wind up being a second page for the kernel stack.  The third is the
+kernel stack.  The last 253 should be zero.  Hence, indirecing through the
+third of these last 256 PTEs will give you the kernel stack page.
+
+An alternate way to do this is to use the p_addr field of the proc structure
+which is found as described above.  The p_addr field is at offset 0x10 in the
+proc structure and points to the first of the PTEs mentioned above (i.e. the
+user structure PTE).
+
+6. Interpreting the info in a "trap type N..." panic:
+
+As mentioned, when the kernel crashes out of hp300/trap.c it will dump some
+useful information.  This dates back to the days when I was debugging the
+exception handling code and had no kernel adb or even kernel crash dump code.
+"trap type" (decimal) is as defined in hp300/trap.h, it doesn't really
+correlate with anything useful.  "code" (hex) is only useful for MMU
+(trap type 8) errors.  It is the concatination of the MMU status register
+(see hp300/cpu.h) in the high 16 bits and the 68020 special status word
+(see the 020 manual page 6-17) in the low 16.  "v" (hex) is the virtual
+address which caused the fault.  "pid" (decimal) is the ID of the process
+running at the time of the exception.  Note that if we panic in an interrupt
+routine, this process may not be related to the panic.  "ps" (hex) is the
+value of the 68020 status register (see page 1-4 of 020 manual) at the time
+of the crash.  If the 0x2000 bit is on, we were in supervisor (kernel) mode
+at the time, otherwise we were in user mode.  "pc" (hex) is the value of the
+PC saved on the hardware exception frame.  It may *not* be the PC of the
+instruction causing the fault (see the 020 manual for details).  The 0x2000
+bit of "ps" dictates whether this is a kernel or user VA.  "sfc" and "dfc"
+are the 68020 source/destination function codes.  They should always be one.
+"p0" and "p1" are the VAX-like region registers.  They are of the form:
+
+	<length> '@' <kernel VA>
+
+where both are in hex.  Following these values are a dump of the processor
+registers (hex).  Check the address registers for values close to "v", the
+fault address.  Most faults are causes by dereferences of bogus pointers.
+Most such dereferences are the result of 020 instructions using the:
+
+	<address-register> '@' '(' offset ')'
+
+addressing mode.  This can help you track down the faulting instruction (since
+the PC may not point to it).  Note that the value of a7 (the stack pointer) is
+ALWAYS the user SP.  This is brain-dead I know.  Finally, is a dump of the
+stack (user/kernel) at the time of the offense.  Before kernel crash dumps,
+this was very useful.
+
+7. Converting kernel virtual address to a physical address.
+
+Adb -k already does this for you, but sometimes you want to know what the
+resulting physical address is rather than what is there.  Doing this is
+simply a matter of indexing into the kernel page table.  In theory we would
+first have to do a lookup in the kernel segment table, but we know that the
+kernel page table is physically contiguous so this isn't necessary.  The
+base of the system page table is "Sysmap", so to convert an address V just
+divide the address by 4096 to get the page number, multiply that by 4 (the
+size of a PTE in bytes) to get a byte offset, and add that to "Sysmap".
+This gives you the address of the PTE mapping V.  You can then get the
+physical address by masking out the low 12 bits of the contents of that PTE.
+To wit:
+
+	*(Sysmap+(VA%1000*4))&fffff000
+
+where VA is the virtual address in question.
+
+This technique should also work for user virtual addresses if you replace
+"Sysmap" with the value of the appropriate processes' P0BR.  This works
+because a user's page table is *virtually* contiguous in the kernel
+starting at P0BR, and adb will handle translating the kernel virtual addresses
+for you.
