@@ -4,7 +4,7 @@
 .ls 4
 .ce 2
 .ps 14
-.B "4.4BSD-COMPLETE"
+.B "4.4BSD-ENCUMBERED"    
 .ps 10
 .B "EXHIBIT A"
 .nf
