@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_loop.c	7.10 (Berkeley) %G%
+ *	@(#)if_loop.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -62,12 +62,11 @@ loattach()
 	if_attach(ifp);
 }
 
-struct mbuf *Loop_Sanity;
-
-looutput(ifp, m, dst)
+looutput(ifp, m, dst, rt)
 	struct ifnet *ifp;
 	register struct mbuf *m;
 	struct sockaddr *dst;
+	register struct rtentry *rt;
 {
 	int s;
 	register struct ifqueue *ifq;
@@ -76,17 +75,10 @@ looutput(ifp, m, dst)
 		panic("looutput no HDR");
 	m->m_pkthdr.rcvif = ifp;
 
-{struct mbuf *mm; int mlen = 0;
-for (mm = m; m; m = m->m_next) /* XXX debugging code -- sklower */
-    mlen += m->m_len;
-m = mm;
-if (mlen != m->m_pkthdr.len) {
-	if (Loop_Sanity)
-		m_freem(Loop_Sanity);
-	Loop_Sanity = m_copy(m, 0, (int)M_COPYALL);
-}
-}
-
+	if (rt && rt->rt_flags & RTF_REJECT) {
+		m_freem(m);
+		return (rt->rt_flags & RTF_HOST ? EHOSTUNREACH : ENETUNREACH);
+	}
 	s = splimp();
 	ifp->if_opackets++;
 	ifp->if_obytes += m->m_pkthdr.len;
