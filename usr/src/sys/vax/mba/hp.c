@@ -1,4 +1,4 @@
-/*	hp.c	4.13	81/02/25	*/
+/*	hp.c	4.14	81/02/25	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -217,16 +217,16 @@ hpstart(mi)
 	hpaddr->hpda = (tn << 8) + sn;
 }
 
-hpdtint(mi, mbastat)
+hpdtint(mi, mbasr)
 	register struct mba_info *mi;
-	int mbastat;
+	int mbasr;
 {
 	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
 
 	while ((hpaddr->hpds & HP_DRY) == 0)	/* shouldn't happen */
 		printf("hp dry not set\n");
-	if (hpaddr->hpds & HP_ERR || mbastat & MBAEBITS)
+	if (hpaddr->hpds & HP_ERR || mbasr & MBAEBITS)
 		if (++mi->mi_tab.b_errcnt < 28 && (hpaddr->hper1&HP_WLE) == 0) {
 			if ((hpaddr->hper1&0xffff) != HP_DCK) {
 				hpaddr->hpcs1 = HP_DCLR|HP_GO;
@@ -243,7 +243,12 @@ hpdtint(mi, mbastat)
 			if (hpaddr->hper1&HP_WLE)	
 				printf("hp%d is write locked\n", dkunit(bp));
 			else
-				deverror(bp, mbastat, hpaddr->hper1);
+		harderr(bp);
+		printf("hp%d mbasr %b er1 %b er2 %b\n",
+				    dkunit(bp), mbasr, mbasr_bits,
+				    hpaddr->hper1, HPER1_BITS,
+				    hpaddr->hper2, HPER2_BITS);
+			hpaddr->hpcs1 = HP_DCLR|HP_GO;
 			bp->b_flags |= B_ERROR;
 		}
 	bp->b_resid = -(mi->mi_mba->mba_bcr) & 0xffff;

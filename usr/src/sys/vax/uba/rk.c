@@ -1,4 +1,4 @@
-/*	rk.c	4.10	%G%	*/
+/*	rk.c	4.11	%G%	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -327,12 +327,14 @@ hkintr(rk11)
 			if (ds & RKDS_HARD)
 				printf("rk%d is down\n", dkunit(bp));
 			if (++um->um_tab.b_errcnt > 28 ||
-			    ds&RKDS_HARD || er&RKER_HARD || cs2&RKCS2_HARD)
+			    ds&RKDS_HARD || er&RKER_HARD || cs2&RKCS2_HARD) {
 				bp->b_flags |= B_ERROR;
-			else
+				harderr(bp);
+				printf("rk%d cs2 %b ds %b er %b\n",
+				    dkunit(bp), cs2, RKCS2_BITS, ds, 
+				    RKDS_BITS, er, RKER_BITS);
+			} else
 				um->um_tab.b_active = 0;
-			if (um->um_tab.b_errcnt > 27)
-				deverror(bp, cs2, (ds<<16)|er);
 			if (cs2&RK_MDS) {
 				rkaddr->rkcs2 = RK_SCLR;
 				goto retry;
