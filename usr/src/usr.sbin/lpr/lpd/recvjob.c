@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recvjob.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)recvjob.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -46,6 +46,12 @@ recvjob()
 		SD = DEFSPOOL;
 	if ((LO = pgetstr("lo", &bp)) == NULL)
 		LO = DEFLOCK;
+
+	(void) close(2);			/* set up log file */
+	if (open(LF, O_WRONLY|O_APPEND, 0664) < 0) {
+		syslog(LOG_ERR, "%s: %m", LF);
+		(void) open("/dev/null", O_WRONLY);
+	}
 
 	if (chdir(SD) < 0)
 		frecverr("%s: %s: %m", printer, SD);
