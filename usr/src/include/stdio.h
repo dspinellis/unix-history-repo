@@ -28,11 +28,11 @@ extern	struct	_iobuf {
 #define	stdin	(&_iob[0])
 #define	stdout	(&_iob[1])
 #define	stderr	(&_iob[2])
-#define	getc(p)	(--(p)->_cnt >= 0 ? *(unsigned char *)(p)->_ptr++ : _filbuf(p))
+#define	getc(p)		(--(p)->_cnt>=0? *(p)->_ptr++&0377:_filbuf(p))
 #define	getchar()	getc(stdin)
-#define putc(x, p)	(--(p)->_cnt >= 0 ? (*(p)->_ptr++ = (x)) :\
-	((p)->_flag&_IOLBF && -(p)->_cnt <= (p)->_bufsiz && (x)!='\n' ?\
-		*(p)->_ptr++ = (x) : _flsbuf(x, p)))
+#define putc(x, p)	(--(p)->_cnt >= 0 || ((p)->_flag & _IOLBF) &&\
+		-(p)->_cnt <= (p)->_bufsiz && (x) != '\n' ?\
+		(int)(*(p)->_ptr++ = (unsigned)(x)) : _flsbuf((unsigned)(x), p))
 #define	putchar(x)	putc(x,stdout)
 #define	feof(p)		(((p)->_flag&_IOEOF)!=0)
 #define	ferror(p)	(((p)->_flag&_IOERR)!=0)
