@@ -1,4 +1,4 @@
-/*	vm_meter.c	4.6	81/04/23	*/
+/*	vm_meter.c	4.7	81/04/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -89,7 +89,7 @@ setupclock()
 	if (fastscan == 0) {
 		nclust = LOOPPAGES / CLSIZE;
 		nkb = (LOOPPAGES * NBPG) / 1024;
-		if (nswdev == 1 && nkb >= 2*1024)
+		if (nswdev == 1 && physmem*NBPG > 2*1024*(1024-16))
 			printf("WARNING: should run interleaved swap with >= 2Mb\n");
 		if (nswdev == 1 || nkb < 2*1024)
 			fastscan = nclust / 400;
@@ -111,7 +111,7 @@ setupclock()
 		slowscan = 3 * fastscan;
 	if (slowscan > maxslp)
 		slowscan = maxslp;
-#ifdef defined(BERT) || defined(ERNIE)
+#if defined(BERT) || defined(ERNIE)
 	printf("slowscan %d, fastscan %d, maxpgio %d\n",
 	    slowscan, fastscan, maxpgio);
 	printf("lotsfree %d, desfree %d, minfree %d\n",
