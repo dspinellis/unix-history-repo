@@ -1,4 +1,4 @@
-/*	buf.h	6.2	84/08/03	*/
+/*	buf.h	6.3	84/12/03	*/
 
 /*
  * The header for buffers in the buffer pool and otherwise used
@@ -176,4 +176,19 @@ unsigned minphys();
 #define	clrbuf(bp) { \
 	blkclr(bp->b_un.b_addr, bp->b_bcount); \
 	bp->b_resid = 0; \
+}
+
+/*
+ * Swap two buffer's data areas
+ */
+#define swapbuf(bp1, bp2) { \
+	long bcount = (bp1)->b_bcount; \
+	long bufsize = (bp1)->b_bufsize; \
+	caddr_t addr = (bp1)->b_un.b_addr; \
+	(bp1)->b_bcount = (bp2)->b_bcount; \
+	(bp1)->b_bufsize = (bp2)->b_bufsize; \
+	(bp1)->b_un.b_addr = (bp2)->b_un.b_addr; \
+	(bp2)->b_bcount = bcount; \
+	(bp2)->b_bufsize = bufsize; \
+	(bp2)->b_un.b_addr = addr; \
 }
