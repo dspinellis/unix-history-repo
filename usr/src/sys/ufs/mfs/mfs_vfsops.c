@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vfsops.c	7.18 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -57,11 +57,12 @@ struct vfsops mfs_vfsops = {
  * mount system call
  */
 /* ARGSUSED */
-mfs_mount(mp, path, data, ndp)
+mfs_mount(mp, path, data, ndp, p)
 	register struct mount *mp;
 	char *path;
 	caddr_t data;
 	struct nameidata *ndp;
+	struct proc *p;
 {
 	struct vnode *devvp;
 	struct mfs_args args;
@@ -91,7 +92,7 @@ mfs_mount(mp, path, data, ndp)
 	mfsp->mfs_baseoff = args.base;
 	mfsp->mfs_size = args.size;
 	mfsp->mfs_vnode = devvp;
-	mfsp->mfs_pid = curproc->p_pid;
+	mfsp->mfs_pid = p->p_pid;
 	mfsp->mfs_buflist = (struct buf *)0;
 	if (error = mountfs(devvp, mp)) {
 		mfsp->mfs_buflist = (struct buf *)-1;
@@ -122,15 +123,15 @@ int	mfs_pri = PWAIT | PCATCH;		/* XXX prob. temp */
  * address space.
  */
 /* ARGSUSED */
-mfs_start(mp, flags)
+mfs_start(mp, flags, p)
 	struct mount *mp;
 	int flags;
+	struct proc *p;
 {
 	register struct vnode *vp = VFSTOUFS(mp)->um_devvp;
 	register struct mfsnode *mfsp = VTOMFS(vp);
 	register struct buf *bp;
 	register caddr_t base;
-	struct proc *p = curproc;
 	int error = 0;
 
 	base = mfsp->mfs_baseoff;
@@ -147,7 +148,7 @@ mfs_start(mp, flags)
 		 * EINTR/ERESTART.
 		 */
 		if (error = tsleep((caddr_t)vp, mfs_pri, "mfsidl", 0))
-			if (dounmount(mp, MNT_NOFORCE) != 0)
+			if (dounmount(mp, MNT_NOFORCE, p) != 0)
 				CLRSIG(p, CURSIG(p));
 	}
 	return (error);
@@ -156,13 +157,14 @@ mfs_start(mp, flags)
 /*
  * Get file system statistics.
  */
-mfs_statfs(mp, sbp)
+mfs_statfs(mp, sbp, p)
 	struct mount *mp;
 	struct statfs *sbp;
+	struct proc *p;
 {
 	int error;
 
-	error = ufs_statfs(mp, sbp);
+	error = ufs_statfs(mp, sbp, p);
 	sbp->f_type = MOUNT_MFS;
 	return (error);
 }
