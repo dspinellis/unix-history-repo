@@ -1,4 +1,4 @@
-/* @(#)filbuf.c	4.7 (Berkeley) %G% */
+/* @(#)filbuf.c	4.8 (Berkeley) %G% */
 #include	<stdio.h>
 #include	<sys/types.h>
 #include	<sys/stat.h>
@@ -10,7 +10,6 @@ register FILE *iop;
 	int size;
 	struct stat stbuf;
 	static char smallbuf[_NFILE];
-	extern char _sibuf[];
 
 	if (iop->_flag & _IORW)
 		iop->_flag |= _IOREAD;
@@ -29,15 +28,11 @@ tryagain:
 			size = BUFSIZ;
 		else
 			size = stbuf.st_blksize;
-		if (iop == stdin)
-			iop->_base = _sibuf;
-		else {
-			if ((iop->_base = malloc(size)) == NULL) {
-				iop->_flag |= _IONBF;
-				goto tryagain;
-			}
-			iop->_flag |= _IOMYBUF;
+		if ((iop->_base = malloc(size)) == NULL) {
+			iop->_flag |= _IONBF;
+			goto tryagain;
 		}
+		iop->_flag |= _IOMYBUF;
 		iop->_bufsiz = size;
 	}
 	if (iop == stdin) {
