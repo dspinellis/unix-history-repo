@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.13 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -17,10 +17,13 @@ static char sccsid[] = "@(#)fts.c	5.12 (Berkeley) %G%";
 #include <fts.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
-FTSENT *fts_alloc(), *fts_build(), *fts_cycle(), *fts_root(), *fts_sort();
-void fts_lfree(), fts_load();
-u_short fts_stat();
+static FTSENT *fts_alloc(), *fts_build(), *fts_cycle(), *fts_root(),
+	*fts_sort();
+static void fts_lfree(), fts_load();
+static u_short fts_stat();
+static char *fts_path();
 
 /*
  * Special case a root of "/" so that slashes aren't appended causing
@@ -46,15 +49,14 @@ u_short fts_stat();
 
 FTS *
 fts_open(argv, options, compar)
-	char *argv[];
+	char * const *argv;
 	register int options;
-	int (*compar)();
+	int (*compar) __P((const FTSENT *, const FTSENT *));
 {
 	register FTS *sp;
 	register FTSENT *p, *root;
 	register int nitems, maxlen;
 	FTSENT *parent, *tmp;
-	char *fts_path();
 
 	/* Allocate/initialize the stream */
 	if (!(sp = (FTS *)malloc((u_int)sizeof(FTS))))
@@ -160,6 +162,7 @@ fts_load(sp, p)
 	p->fts_accpath = p->fts_path = sp->fts_path;
 }
 
+int
 fts_close(sp)
 	FTS *sp;
 {
@@ -356,6 +359,7 @@ next:	tmp = p;
  * reasons.
  */
 /* ARGSUSED */
+int
 fts_set(sp, p, instr)
 	FTS *sp;
 	FTSENT *p;
@@ -411,7 +415,7 @@ fts_children(sp)
 
 #define	ISDOT(a)	(a[0] == '.' && (!a[1] || a[1] == '.' && !a[2]))
 
-FTSENT *
+static FTSENT *
 fts_build(sp, type)
 	register FTS *sp;
 	int type;
@@ -708,7 +712,8 @@ fts_path(sp, size)
 	int size;
 {
 	sp->fts_pathlen += size + 128;
-	return(sp->fts_path = R(char, sp->fts_pathlen, sp->fts_path)); }
+	return(sp->fts_path = R(char, sp->fts_pathlen, sp->fts_path));
+}
 
 static FTSENT *
 fts_root(sp, name)
@@ -728,7 +733,9 @@ fts_root(sp, name)
 		errno = ENOENT;
 		return(NULL);
 	}
+#ifdef notdef
 	while (--cp > name && *cp == '/');
 	*++cp = '\0';
-	return(fts_alloc(sp, name, cp - name));
+#endif
+	return(fts_alloc(sp, name, cp - name + 1));
 }
