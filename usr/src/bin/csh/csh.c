@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)csh.c	4.22 (Berkeley) %G%";
+static	char *sccsid = "@(#)csh.c	4.23 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -200,7 +200,7 @@ main(c, av)
 		prompt = 0;
 		c--, v++;
 	}
-	if (!batch && uid != geteuid()) {
+	if (!batch && (uid != geteuid() || getgid() != getegid())) {
 		errno = EACCES;
 		child++;			/* So this ... */
 		Perror("csh");			/* ... doesn't return */
