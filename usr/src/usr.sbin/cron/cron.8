@@ -1,4 +1,4 @@
-.\"	@(#)cron.8	6.1 (Berkeley) %G%
+.\"	@(#)cron.8	6.2 (Berkeley) %G%
 .\"
 .TH CRON 8 ""
 .AT 3
@@ -9,8 +9,9 @@ cron \- clock daemon
 .SH DESCRIPTION
 .I Cron
 executes commands at specified dates and times
-according to the instructions in the file
-/usr/lib/crontab.
+according to the instructions in the files
+/usr/lib/crontab and /usr/lib/crontab.local.
+None, either one, or both of these files may be present.
 Since
 .I cron
 never exits,
@@ -23,8 +24,9 @@ process through the file
 see
 .IR init (8).
 .PP
-Crontab
-consists of lines of six fields each.
+The
+crontab files
+consist of lines of seven fields each.
 The fields are separated by spaces or tabs.
 The first five are integer patterns to
 specify the
@@ -41,7 +43,9 @@ meaning a range inclusive;
 a list of numbers separated by
 commas meaning any of the numbers;
 or an asterisk meaning all legal values.
-The sixth field is a string
+The sixth field is a user name: the
+command will be run ``as'' that user.
+The seventh field is a string
 that is executed by the Shell at the
 specified times.
 A percent character
@@ -52,8 +56,11 @@ of the command field is executed by the Shell.
 The other lines are made available to the
 command as standard input.
 .PP
-Crontab is examined by
+Both
+crontab files are checked by
 .I cron
-every minute.
+every minute, on the minute.
 .SH FILES
 /usr/lib/crontab
+.br
+/usr/lib/crontab.local
