@@ -3,7 +3,7 @@
 .TH GETGRENT 3  ""
 .AT 3
 .SH NAME
-getgrent, getgrgid, getgrnam, setgrent, endgrent \- get group file entry
+getgrent, getgrgid, getgrnam, setgrent, endgrent setgrfile \- get group file entry
 .SH SYNOPSIS
 .nf
 .B #include <grp.h>
@@ -19,6 +19,9 @@ getgrent, getgrgid, getgrnam, setgrent, endgrent \- get group file entry
 .B setgrent()
 .PP
 .B endgrent()
+.PP
+.B setgrfile(name)
+.B char *name;
 .fi
 .SH DESCRIPTION
 .I Getgrent,
@@ -86,6 +89,11 @@ repeated searches.
 may be called to
 close the group file
 when processing is complete.
+.PP
+\fISetgrfile\fP changes the default group file to \fIname\fP thus allowing
+alternate grioup files to be used.  Note that it does \fInot\fP close the
+previous file.  If this is desired, \fIendgrent\fP should be called prior
+to it.
 .SH FILES
 /etc/group
 .SH "SEE ALSO"
@@ -94,7 +102,5 @@ getlogin(3), getpwent(3), group(5)
 A null pointer
 (0) is returned on EOF or error.
 .SH BUGS
-All information
-is contained in a static area
-so it must be copied if it is
+All information is contained in a static area so it must be copied if it is
 to be saved.
