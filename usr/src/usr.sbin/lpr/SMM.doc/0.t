@@ -2,13 +2,13 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	5.1 (Berkeley) %G%
+.\"	@(#)0.t	6.1 (Berkeley) %G%
 .\"
 .if n .ND
 .TL
 4.2BSD Line Printer Spooler Manual
 .sp
-Revised July 27, 1983
+Revised 
 .AU
 Ralph Campbell
 .AI
