@@ -19,18 +19,16 @@ SRCS+=	auth_none.c auth_unix.c  authunix_prot.c bindresvport.c \
 # Paul.
 #
 
-MAN1+= rstat.1  
-MAN3+= bindresvport.3 getrpcent.3 getrpcport.3 rpc.3 xdr.3
-MAN5+= rpc.5
-MAN8+= rstat_svc.8
+MAN1+= rpc/rstat.1  
+MAN3+= rpc/bindresvport.3 rpc/getrpcent.3 rpc/getrpcport.3 rpc/rpc.3 rpc/xdr.3
+MAN5+= rpc/rpc.5
+MAN8+= rpc/rstat_svc.8
 
 
 UNSUPPORTED+=	xdr_float.c 
 
 HDRS+=	auth.h auth_unix.h clnt.h pmap_clnt.h \
 	pmap_prot.h pmap_rmt.h rpc.h rpc_msg.h svc.h svc_auth.h types.h xdr.h
-
-all: librpc.a
 
 beforeinstall: ${HDRS}
 	@-if [ ! -d ${DESTDIR}/usr/include/rpc ]; then \
