@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdlib.h>
@@ -139,7 +139,7 @@ lookup(name)
 				nmatches++;
 		}
 	}
-	if (nmatches > 1)
+	if (nmatches != 1)
 		return ((struct cmdtab *)-1);
 	return (found);
 }
