@@ -1,8 +1,6 @@
-/* umask.s 4.1 82/12/04 */
+/* umask.s 4.2 83/06/30 */
 
 #include "SYS.h"
-
-#define	SYS_umask	60
 
 SYSCALL(umask)
 	ret

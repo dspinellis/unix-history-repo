@@ -1,8 +1,6 @@
-/* ptrace.s 4.1 82/12/04 */
+/* ptrace.s 4.2 83/06/30 */
 
 #include "SYS.h"
-
-#define	SYS_ptrace	26
 
 ENTRY(ptrace)
 	clrl	_errno
