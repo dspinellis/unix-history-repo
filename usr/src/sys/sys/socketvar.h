@@ -1,4 +1,4 @@
-/* socketvar.h 4.3 81/11/14 */
+/* socketvar.h 4.4 81/11/16 */
 
 /*
  * Kernel structure per socket.
@@ -61,6 +61,10 @@ struct socket {
 #define	soreadable(so) \
     ((so)->so_rcv.sb_cc || ((so)->so_state & (SS_CANTRCVMORE|SS_CONNAWAITING)))
 
+/* can we write something to so? */
+#define	sowriteable(so) \
+    (sbspace(&(so)->so_snd) > 0 || ((so)->so_state & SS_CANTSENDMORE))
+
 /* adjust counters in sb reflecting allocation of m */
 #define	sballoc(sb, m) { \
 	(sb)->sb_cc += (m)->m_len; \
@@ -99,5 +103,5 @@ struct socket {
 #define	sowwakeup(so)	sbwakeup(&(so)->so_snd)
 
 #ifdef KERNEL
-struct	mbuf *sb_copy();
+struct	mbuf *sbcopy();
 #endif
