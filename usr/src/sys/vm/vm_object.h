@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_object.h	8.3 (Berkeley) %G%
+ *	@(#)vm_object.h	8.4 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -82,7 +82,7 @@ TAILQ_HEAD(vm_object_hash_head, vm_object_hash_entry);
 
 struct vm_object_hash_entry {
 	TAILQ_ENTRY(vm_object_hash_entry)  hash_links;	/* hash chain links */
-	vm_object_t			   object;	/* object represened */
+	vm_object_t			   object;	/* object represented */
 };
 
 typedef struct vm_object_hash_entry	*vm_object_hash_entry_t;
@@ -111,7 +111,7 @@ vm_object_t	kmem_object;
 #define	vm_object_unlock(object)	simple_unlock(&(object)->Lock)
 #define	vm_object_lock_try(object)	simple_lock_try(&(object)->Lock)
 #define	vm_object_sleep(event, object, interruptible) \
-					thread_sleep((event), &(object)->Lock, (interruptible))
+			thread_sleep((event), &(object)->Lock, (interruptible))
 
 #ifdef KERNEL
 vm_object_t	 vm_object_allocate __P((vm_size_t));
