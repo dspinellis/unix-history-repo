@@ -1,4 +1,12 @@
 /*
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)ccitt_addr.c	5.2 (Berkeley) %G%
+ */
+/*
  * parse CCITT addresses
  *
  * Addresses must have the format: [hpr],x121address[,userdata][,protocol]
@@ -30,6 +38,7 @@ register struct sockaddr_x25 *xp;
 
 	bzero ((char *)xp, sizeof (*xp));
 	xp->x25_family = AF_CCITT;
+	xp->x25_len = sizeof(*xp);
 	xp->x25_udlen = 4;
 	p = addr;
 
