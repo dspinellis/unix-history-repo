@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.51		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.52		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.51		%G%);
+SCCSID(@(#)queue.c	3.52		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -66,18 +66,6 @@ queueup(df)
 
 	/* output message priority */
 	fprintf(f, "P%ld\n", CurEnv->e_msgpriority);
-
-	/* output macro definitions */
-	/* I don't think this is needed any more.....
-	for (i = 0; i < 128; i++)
-	{
-		extern char *Macro[128];
-		register char *p = Macro[i];
-
-		if (p != NULL && i != (int) 'b')
-			fprintf(f, "M%c%s\n", i, p);
-	}
-	.....  */
 
 	/* output list of recipient addresses */
 	for (q = CurEnv->e_sendqueue; q != NULL; q = q->q_next)
@@ -389,10 +377,9 @@ dowork(w)
 
 		/* set basic modes, etc. */
 		(void) alarm(0);
-		FatalErrors = FALSE;
+		CurEnv->e_flags &= ~EF_FATALERRS;
 		QueueRun = TRUE;
 		MailBack = TRUE;
-		CurEnv->e_qf = w->w_name;
 		CurEnv->e_id = &w->w_name[2];
 # ifdef LOG
 		if (LogLevel > 11)
@@ -408,15 +395,15 @@ dowork(w)
 		openxscrpt();
 		initsys();
 		readqf(w->w_name);
-		if (!FatalErrors)
+		if (!bitset(EF_FATALERRS, CurEnv->e_flags))
 			sendall(CurEnv, SM_DELIVER);
 # ifdef DEBUG
 		if (tTd(40, 3))
 			printf("curtime=%ld, TimeOut=%ld\n", curtime(),
 					     CurEnv->e_ctime + TimeOut);
 # endif DEBUG
-		if (CurEnv->e_queueup && curtime() > CurEnv->e_ctime + TimeOut)
-			timeout(w);
+		if (curtime() > CurEnv->e_ctime + TimeOut)
+			CurEnv->e_flags |= EF_TIMEOUT;
 		(void) unlink(w->w_name);
 		finis();
 	}
@@ -523,7 +510,7 @@ readqf(cf)
 **  TIMEOUT -- process timeout on queue file.
 **
 **	Parameters:
-**		w -- pointer to work request that timed out.
+**		e -- the envelope that timed out.
 **
 **	Returns:
 **		none.
@@ -533,23 +520,24 @@ readqf(cf)
 **		message has timed out.
 */
 
-timeout(w)
-	register WORK *w;
+timeout(e)
+	register ENVELOPE *e;
 {
 	char buf[MAXLINE];
 	extern char *pintvl();
 
 # ifdef DEBUG
 	if (tTd(40, 3))
-		printf("timeout(%s)\n", w->w_name);
+		printf("timeout(%s)\n", e->e_id);
 # endif DEBUG
+	e->e_to = NULL;
 	message(Arpa_Info, "Message has timed out");
 
 	/* return message to sender */
 	(void) returntosender("Cannot send mail for three days");
 
 	/* arrange to remove files from queue */
-	CurEnv->e_dontqueue = TRUE;
+	e->e_flags |= EF_CLRQUEUE;
 }
 
 # endif QUEUE

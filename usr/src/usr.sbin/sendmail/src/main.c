@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.138		%G%);
+SCCSID(@(#)main.c	3.139		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -165,7 +165,7 @@ main(argc, argv)
 # ifdef LOG
 	openlog("sendmail", 0);
 # endif LOG
-	Xscript = stderr;
+	Xscript = NULL;
 	errno = 0;
 	from = NULL;
 	initmacros();
@@ -425,7 +425,7 @@ main(argc, argv)
 	*/
 
 	CurEnv = newenvelope(&MainEnvelope);
-	MainEnvelope.e_oldstyle = BlankEnvelope.e_oldstyle;
+	MainEnvelope.e_flags = BlankEnvelope.e_flags;
 
 	/*
 	**  If test mode, read addresses from stdin and process.
@@ -527,14 +527,11 @@ main(argc, argv)
 		/* at this point we are in a child: reset state */
 		OpMode = MD_SMTP;
 		dropenvelope(CurEnv);
-		CurEnv->e_id = CurEnv->e_qf = CurEnv->e_df = NULL;
-		FatalErrors = FALSE;
+		CurEnv->e_id = CurEnv->e_df = NULL;
+		CurEnv->e_flags &= ~EF_FATALERRS;
 		openxscrpt();
 	}
 #endif DAEMON
-
-	/* do basic system initialization */
-	initsys();
 	
 # ifdef SMTP
 	/*
@@ -547,9 +544,10 @@ main(argc, argv)
 # endif SMTP
 
 	/*
-	**  Set the sender
+	**  Do basic system initialization and set the sender
 	*/
 
+	initsys();
 	setsender(from);
 
 	if (OpMode != MD_DAEMON && ac <= 0 && !GrabTo)
@@ -791,37 +789,18 @@ finis()
 
 # ifdef DEBUG
 	if (tTd(2, 1))
-	{
-		printf("\n====finis: stat %d sendreceipt %d FatalErrors %d\n",
-		     ExitStat, CurEnv->e_sendreceipt, FatalErrors);
-	}
+		printf("\n====finis: stat %d e_flags %o\n", ExitStat, CurEnv->e_flags);
 # endif DEBUG
 
 	/*
-	**  Send back return receipts as requested.
+	**  Clean up temp files.
 	*/
 
-
-		sendto(CurEnv->e_receiptto, (ADDRESS *) NULL, &rlist);
-		(void) returntosender("Return receipt", rlist, FALSE);
-	}
 
 	/*
-	**  Arrange to return errors or queue up as appropriate.
-	**	If we are running a queue file and exiting abnormally,
-	**		be sure we save the queue file.
-	**	This clause will arrange to return error messages.
+	**  And exit.
 	*/
 
-	checkerrors(CurEnv);
-
-	/*
-	**  Now clean up temp files and exit.
-	*/
-
-	if (Transcript != NULL)
-		xunlink(Transcript);
-	dropenvelope(CurEnv);
 # ifdef LOG
 	if (LogLevel > 11)
 		syslog(LOG_DEBUG, "finis, pid=%d", getpid());
@@ -845,7 +824,7 @@ finis()
 
 intsig()
 {
-	CurEnv->e_df = CurEnv->e_qf = NULL;
+	CurEnv->e_df = NULL;
 	finis();
 }
 /*
@@ -871,12 +850,9 @@ openxscrpt()
 	p = queuename(CurEnv, 'x');
 	Xscript = fopen(p, "w");
 	if (Xscript == NULL)
-	{
-		Xscript = stdout;
 		syserr("Can't create %s", p);
-	}
-	(void) chmod(p, 0644);
-	Transcript = newstr(p);
+	else
+		(void) chmod(p, 0644);
 }
 /*
 **  SETSENDER -- set sendmail's idea of the sender.

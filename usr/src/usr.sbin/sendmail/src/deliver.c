@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.130		%G%);
+SCCSID(@(#)deliver.c	3.131		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -536,8 +536,8 @@ sendoff(m, pvp, editfcn, ctladdr)
 	/* arrange a return receipt if requested */
 	if (CurEnv->e_receiptto != NULL && bitset(M_LOCAL, m->m_flags))
 	{
-		CurEnv->e_sendreceipt = TRUE;
-		if (ExitStat == EX_OK)
+		CurEnv->e_flags |= EF_SENDRECEIPT;
+		if (ExitStat == EX_OK && Xscript != NULL)
 			fprintf(Xscript, "%s... successfully delivered\n",
 				CurEnv->e_to);
 		/* do we want to send back more info? */
@@ -697,7 +697,8 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 	**	DOFORK is clever about retrying.
 	*/
 
-	(void) fflush(Xscript);				/* for debugging */
+	if (Xscript != NULL)
+		(void) fflush(Xscript);			/* for debugging */
 	DOFORK(XFORK);
 	/* pid is set by DOFORK */
 	if (pid < 0)
@@ -862,7 +863,7 @@ giveresponse(stat, force, m)
 	else
 	{
 		Errors++;
-		FatalErrors = TRUE;
+		CurEnv->e_flags |= EF_FATALERRS;
 		if (statmsg == NULL && m->m_badstat != 0)
 		{
 			stat = m->m_badstat;
@@ -878,7 +879,7 @@ giveresponse(stat, force, m)
 			usrerr("unknown mailer response %d", stat);
 		else if (force || !bitset(M_QUIET, m->m_flags) || Verbose)
 			usrerr(statmsg);
-		else
+		else if (Xscript != NULL)
 			fprintf(Xscript, "%s\n", &statmsg[4]);
 	}
 
@@ -1066,7 +1067,7 @@ putheader(fp, m)
 		if (bitset(H_FROM|H_RCPT, h->h_flags))
 		{
 			/* address field */
-			bool oldstyle = e->e_oldstyle;
+			bool oldstyle = bitset(EF_OLDSTYLE, e->e_flags);
 
 			if (bitset(H_FROM, h->h_flags))
 				oldstyle = FALSE;
@@ -1461,8 +1462,9 @@ sendall(e, mode)
 			e->e_to = NULL;
 		}
 	}
-	if (mode == SM_QUEUE || mode == SM_FORK ||
-	    (mode != SM_VERIFY && SuperSafe))
+	if ((mode == SM_QUEUE || mode == SM_FORK ||
+	     (mode != SM_VERIFY && SuperSafe)) &&
+	    !bitset(EF_INQUEUE, e->e_flags))
 		queueup(e, TRUE);
 #endif QUEUE
 
@@ -1474,13 +1476,12 @@ sendall(e, mode)
 		break;
 
 	  case SM_QUEUE:
-		e->e_df = e->e_qf = NULL;
-		e->e_dontqueue = TRUE;
-		finis();
+		e->e_flags |= EF_INQUEUE|EF_KEEPQUEUE;
 		return;
 
 	  case SM_FORK:
-		(void) fflush(Xscript);
+		if (Xscript != NULL)
+			(void) fflush(Xscript);
 		pid = fork();
 		if (pid < 0)
 		{
@@ -1490,9 +1491,7 @@ sendall(e, mode)
 		else if (pid > 0)
 		{
 			/* be sure we leave the temp files to our child */
-			e->e_id = e->e_df = e->e_qf = NULL;
-			e->e_dontqueue = TRUE;
-			Transcript = NULL;
+			e->e_id = e->e_df = NULL;
 			return;
 		}
 
@@ -1520,5 +1519,6 @@ sendall(e, mode)
 		}
 		else
 			(void) deliver(q, (fnptr) NULL);
-	}
+	if (bitset(EF_FATALERRS, e->e_flags))
+		savemail(e);
 }
