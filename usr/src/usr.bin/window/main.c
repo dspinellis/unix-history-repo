@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.10 83/09/02";
+static	char *sccsid = "@(#)main.c	3.11 83/09/14";
 #endif
 
 #include "defs.h"
@@ -13,7 +13,6 @@ int nbufline = 48;			/* compatible */
 main(argc, argv)
 char **argv;
 {
-	register n;
 	register char *p;
 	char fflag = 0;
 	char dflag = 0;
