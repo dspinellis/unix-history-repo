@@ -1,12 +1,10 @@
-/*	slcompress.c	7.2	89/06/29	*/
-
 /*
+ *	@(#)slcompress.c	7.3 (Berkeley) %G%
+ *
  *			THIS CODE IS NOT FOR DISTRIBUTION!
  *	KEEP YOUR GRUBBY HANDS OFF UNLESS AUTHORIZED BY VAN JACOBSON TO COPY!
  *			ASK SAM, MIKE, OR BILL ABOUT IT.
- */
-
-/*
+ *
  * Routines to compress and uncompess tcp packets (for transmission
  * over low speed serial lines.
  *
@@ -14,8 +12,10 @@
  * All rights reserved.
  */
 
+#include "sl.h"
+#if NSL > 0
 #ifndef lint
-static char rcsid[] = "$Header: slcompress.c,v 1.7 89/03/19 18:10:19 van Locked $";
+static char rcsid[] = "$Header: slcompress.c,v 1.10 89/06/05 08:28:52 van Exp $";
 #endif
 
 #include <sys/types.h>
@@ -28,26 +28,15 @@ static char rcsid[] = "$Header: slcompress.c,v 1.7 89/03/19 18:10:19 van Locked 
 
 #include "slcompress.h"
 
-int sls_packets;
-int sls_searches;
-int sls_misses;
-int sls_compressed;
-int sls_ipin;
-int sls_uncompressedin;
-int sls_compressedin;
+#ifndef NO_SL_STATS
+#define INCR(counter) ++comp->counter;
+#else
+#define INCR(counter)
+#endif
 
 #define BCMP(p1, p2, n) bcmp((char *)(p1), (char *)(p2), (int)(n))
 #define BCOPY(p1, p2, n) bcopy((char *)(p1), (char *)(p2), (int)(n))
 
-#ifndef KERNEL
-extern struct mbuf *m_get();
-#undef MGET
-#define MGET(m, w, t) ((m) = m_get((w), (t)))
-#endif
-
-#if BSD>=198810
-#define m_off m_data
-#endif
 
 void
 sl_compress_init(comp)
@@ -133,8 +122,6 @@ sl_compress_tcp(m, ip, comp)
 	 * a complete ip & tcp header in the first mbuf.  Otherwise,
 	 * check flags to see if this is a packet we might compress 
 	 * and, if so, try to locate the connection state.
-	 * since slip links tend to be end nodes, check the tcp ports
-	 * first since the inet addresses won't usually change.
 	 * special case the most recently used connection since
 	 * it's most likely to be used again & we don't have to
 	 * do any reordering if it's used.
@@ -146,10 +133,10 @@ sl_compress_tcp(m, ip, comp)
 	if ((th->th_flags & (TH_SYN|TH_FIN|TH_RST|TH_ACK)) != TH_ACK)
 		return (TYPE_IP);
 
-	++sls_packets;
-	if (*(int *)th != ((int *)&cs->cs_ip)[cs->cs_ip.ip_hl] ||
-	    ip->ip_src.s_addr != cs->cs_ip.ip_src.s_addr ||
-	    ip->ip_dst.s_addr != cs->cs_ip.ip_dst.s_addr) {
+	INCR(sls_packets)
+	if (ip->ip_src.s_addr != cs->cs_ip.ip_src.s_addr ||
+	    ip->ip_dst.s_addr != cs->cs_ip.ip_dst.s_addr ||
+	    *(int *)th != ((int *)&cs->cs_ip)[cs->cs_ip.ip_hl]) {
 		/*
 		 * Wasn't the first -- search for it.
 		 *
@@ -166,13 +153,13 @@ sl_compress_tcp(m, ip, comp)
 
 		do {
 			lcs = cs; cs = cs->cs_next;
-			++sls_searches;
+			INCR(sls_searches)
 			if (*(int *)th == ((int *)&cs->cs_ip)[cs->cs_ip.ip_hl]
 			    && ip->ip_src.s_addr == cs->cs_ip.ip_src.s_addr
 			    && ip->ip_dst.s_addr == cs->cs_ip.ip_dst.s_addr)
 				goto found;
 		} while (cs != comp->last_cs);
-		++sls_misses;
+		INCR(sls_misses)
 
 		/*
 		 * Didn't find it -- re-use oldest cstate.
@@ -323,18 +310,22 @@ sl_compress_tcp(m, ip, comp)
 	if (comp->last_xmit != cs->cs_id) {
 		comp->last_xmit = cs->cs_id;
 		hlen -= deltaS + 4;
-		cp += hlen; m->m_len -= hlen; m->m_off += hlen;
-		*cp++ = TYPE_COMPRESSED_TCP | changes | NEW_C;
+		cp += hlen;
+		m->m_len -= hlen;
+		m->m_data += hlen;
+		*cp++ = changes | NEW_C;
 		*cp++ = cs->cs_id;
 	} else {
 		hlen -= deltaS + 3;
-		cp += hlen; m->m_len -= hlen; m->m_off += hlen;
-		*cp++ = TYPE_COMPRESSED_TCP | changes;
+		cp += hlen;
+		m->m_len -= hlen;
+		m->m_data += hlen;
+		*cp++ = changes;
 	}
 	*cp++ = deltaA >> 8;
 	*cp++ = deltaA;
 	BCOPY(new_seq, cp, deltaS);
-	++sls_compressed;
+	INCR(sls_compressed)
 	return (TYPE_COMPRESSED_TCP);
 
 	/*
@@ -346,16 +337,15 @@ uncompressed:
 	BCOPY(ip, &cs->cs_ip, hlen);
 	ip->ip_p = cs->cs_id;
 	comp->last_xmit = cs->cs_id;
-	ip->ip_v = (TYPE_UNCOMPRESSED_TCP>>4);
 	return (TYPE_UNCOMPRESSED_TCP);
 }
 
-int uncdeb ;
 
-struct mbuf *
-sl_uncompress_tcp(m, type, comp)
-	register struct mbuf *m;
-	u_char type;
+int
+sl_uncompress_tcp(bufp, len, type, comp)
+	u_char **bufp;
+	int len;
+	u_int type;
 	struct slcompress *comp;
 {
 	register u_char *cp;
@@ -363,16 +353,15 @@ sl_uncompress_tcp(m, type, comp)
 	register struct tcphdr *th;
 	register struct cstate *cs;
 	register struct ip *ip;
-	register struct mbuf *m0;
 
 	switch (type) {
 
 	case TYPE_UNCOMPRESSED_TCP:
-		ip = mtod(m, struct ip *);
-		if (ip->ip_p >= MAX_STATES)
-			goto bad;
-		ip->ip_v = 4;
-
+		ip = (struct ip *) *bufp;
+		if (ip->ip_p >= MAX_STATES) {
+			INCR(sls_errorin)
+			return (0);
+		}
 		cs = &comp->rstate[comp->last_recv = ip->ip_p];
 		comp->flags &=~ SLF_TOSS;
 		ip->ip_p = IPPROTO_TCP;
@@ -382,40 +371,39 @@ sl_uncompress_tcp(m, type, comp)
 		BCOPY(ip, &cs->cs_ip, hlen);
 		cs->cs_ip.ip_sum = 0;
 		cs->cs_hlen = hlen;
-		++sls_uncompressedin;
-		return (m);
-
-	default:
-	if(type&TYPE_COMPRESSED_TCP) goto compre;
-		++sls_ipin;
-		return (m);
+		INCR(sls_uncompressedin)
+		return (len);
 
 	case TYPE_ERROR:
 		comp->flags |= SLF_TOSS;
-		return (m);
+	default:
+		INCR(sls_errorin)
+		return (0);
 
 	case TYPE_COMPRESSED_TCP:
-compre:
 		break;
 	}
 	/* We've got a compressed packet. */
-	++sls_compressedin;
-	cp = mtod(m, u_char *);
+	INCR(sls_compressedin)
+	cp = *bufp;
 	changes = *cp++;
 	if (changes & NEW_C) {
 		/* Make sure the state index is in range, then grab the state.
 		 * If we have a good state index, clear the 'discard' flag. */
-		if (*cp >= MAX_STATES)
-			goto bad;
-
+		if (*cp >= MAX_STATES) {
+			INCR(sls_errorin)
+			return (0);
+		}
 		comp->flags &=~ SLF_TOSS;
 		comp->last_recv = *cp++;
 	} else {
 		/* this packet has an implicit state index.  If we've
 		 * had a line error since the last time we got an
 		 * explicit state index, we have to toss the packet. */
-		if (comp->flags & SLF_TOSS)
-			goto bad;
+		if (comp->flags & SLF_TOSS) {
+			INCR(sls_tossed)
+			return (0);
+		}
 	}
 	cs = &comp->rstate[comp->last_recv];
 	hlen = cs->cs_ip.ip_hl << 2;
@@ -462,36 +450,39 @@ compre:
 
 	/*
 	 * At this point, cp points to the first byte of data in the
-	 * packet (if any).  Toss the compressed header from the
-	 * original packet, allocatate a new mbuf for the uncompressed
-	 * header (to make sure it's aligned correctly), then chain it
-	 * in front of the original.  Set up the ip length & ip checksum then
-	 * return the rebuilt packet.
+	 * packet.  If we're not aligned on a 4-byte boundary, copy the
+	 * data down so the ip & tcp headers will be aligned.  Then back up
+	 * cp by the tcp/ip header length to make room for the reconstructed
+	 * header (we assume the packet we were handed has enough space to
+	 * prepend 128 bytes of header).  Adjust the lenth to account for
+	 * the new header & fill in the IP total length.
 	 */
-	changes = cp - mtod(m, u_char *);
-	m->m_off += changes; m->m_len -= changes;
-	changes = cs->cs_hlen;
-	for (m0 = m; m0; m0 = m0->m_next)
-		changes += m0->m_len;
-	cs->cs_ip.ip_len = htons(changes);
+	len -= (cp - *bufp);
+	if (len < 0) {
+		/* we must have dropped some characters (crc should detect
+		 * this but the old slip framing won't) */
+		INCR(sls_errorin)
+		return (0);
+	}
+	if (len && ((int)cp & ~3) != (int)cp) {
+		(void) bcopy((caddr_t)cp, (caddr_t)((int)cp &~ 3), len);
+		cp = (u_char *)((int)cp &~ 3);
+	}
+	cp -= cs->cs_hlen;
+	len += cs->cs_hlen;
+	cs->cs_ip.ip_len = htons(len);
+	BCOPY(&cs->cs_ip, cp, cs->cs_hlen);
+	*bufp = cp;
 
-	/*MGET(m0, M_DONTWAIT, MT_DATA);*/
-	MGETHDR(m0, M_DONTWAIT, MT_DATA);		/* XXX! */
-	if (! m0)
-		goto bad;
-
-	m0->m_next = m;
-	m0->m_pkthdr.rcvif = m->m_pkthdr.rcvif ;	/* XXX! */
-	m0->m_pkthdr.len = m->m_pkthdr.len;		/* XXX! */
-	m = m0;
-	m->m_len = cs->cs_hlen;
-	ip = mtod(m, struct ip *);
-	BCOPY(&cs->cs_ip, ip, cs->cs_hlen);
-
-	ip->ip_sum = in_cksum(m, hlen);
-	return (m);
-
-bad:
-	m_freem(m);
-	return ((struct mbuf *)0);
+	/* recompute the ip header checksum */
+	{
+		register u_short *bp = (u_short *)cp;
+		for (changes = 0; hlen > 0; hlen -= 2)
+			changes += *bp++;
+		changes = (changes & 0xffff) + (changes >> 16);
+		changes = (changes & 0xffff) + (changes >> 16);
+		((struct ip *)cp)->ip_sum = ~ changes;
+	}
+	return (len);
 }
+#endif
