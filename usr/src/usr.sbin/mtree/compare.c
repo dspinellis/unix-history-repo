@@ -6,29 +6,47 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compare.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)compare.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <fts.h>
 #include <errno.h>
 #include <stdio.h>
 #include <time.h>
+#include <unistd.h>
 #include "mtree.h"
+#include "extern.h"
 
+extern int uflag;
+
+static char *ftype __P((u_int));
+
+#define	INDENTNAMELEN	8
 #define	LABEL \
-	if (!label++) \
-		(void)printf("%s: ", RP(p)); \
+	if (!label++) { \
+		len = printf("%s: ", RP(p)); \
+		if (len > INDENTNAMELEN) { \
+			tab = "\t"; \
+			(void)printf("\n"); \
+		} else { \
+			tab = ""; \
+			(void)printf("%*s", INDENTNAMELEN - len, ""); \
+		} \
+	}
 
+int
 compare(name, s, p)
 	char *name;
 	register NODE *s;
 	register FTSENT *p;
 {
-	extern int exitval, uflag;
-	int label;
-	char *ftype(), *inotype(), *rlink();
+	extern int uflag;
+	u_long len, val;
+	int fd, label;
+	char *cp, *tab;
 
 	label = 0;
 	switch(s->type) {
@@ -57,121 +75,149 @@ compare(name, s, p)
 			goto typeerr;
 		break;
 	case F_SOCK:
-		if (!S_ISFIFO(p->fts_statb.st_mode)) {
+		if (!S_ISSOCK(p->fts_statb.st_mode)) {
 typeerr:		LABEL;
-			(void)printf("\n\ttype (%s, %s)",
+			(void)printf("\ttype (%s, %s)\n",
 			    ftype(s->type), inotype(p->fts_statb.st_mode));
 		}
 		break;
 	}
-	if (s->flags & F_MODE && s->st_mode != (p->fts_statb.st_mode & MBITS)) {
+	/* Set the uid/gid first, then set the mode. */
+	if (s->flags & (F_UID | F_UNAME) && s->st_uid != p->fts_statb.st_uid) {
 		LABEL;
-		(void)printf("\n\tpermissions (%#o, %#o%s",
-		    s->st_mode, p->fts_statb.st_mode & MBITS, uflag ? "" : ")");
-		if (uflag)
-			if (chmod(p->fts_accpath, s->st_mode))
-				(void)printf(", not modified: %s)",
-				    strerror(errno));
-			else
-				(void)printf(", modified)");
-	}
-	if (s->flags & F_OWNER && s->st_uid != p->fts_statb.st_uid) {
-		LABEL;
-		(void)printf("\n\towner (%u, %u%s",
-		    s->st_uid, p->fts_statb.st_uid, uflag ? "" : ")");
+		(void)printf("%suser (%u, %u",
+		    tab, s->st_uid, p->fts_statb.st_uid);
 		if (uflag)
 			if (chown(p->fts_accpath, s->st_uid, -1))
-				(void)printf(", not modified: %s)",
+				(void)printf(", not modified: %s)\n",
 				    strerror(errno));
 			else
-				(void)printf(", modified)");
+				(void)printf(", modified)\n");
+		else
+			(void)printf(")\n");
+		tab = "\t";
 	}
-	if (s->flags & F_GROUP && s->st_gid != p->fts_statb.st_gid) {
+	if (s->flags & (F_GID | F_GNAME) && s->st_gid != p->fts_statb.st_gid) {
 		LABEL;
-		(void)printf("\n\tgroup (%u, %u%s",
-		    s->st_gid, p->fts_statb.st_gid, uflag ? "" : ")");
+		(void)printf("%sgid (%u, %u", s->st_gid, p->fts_statb.st_gid);
 		if (uflag)
 			if (chown(p->fts_accpath, -1, s->st_gid))
 				(void)printf(", not modified: %s)",
 				    strerror(errno));
 			else
 				(void)printf(", modified)");
+		else
+			(void)printf(")\n");
+		tab = "\t";
+	}
+	if (s->flags & F_MODE && s->st_mode != (p->fts_statb.st_mode & MBITS)) {
+		LABEL;
+		(void)printf("%spermissions (%#o, %#o",
+		    tab, s->st_mode, p->fts_statb.st_mode & MBITS);
+		if (uflag)
+			if (chmod(p->fts_accpath, s->st_mode))
+				(void)printf(", not modified: %s)",
+				    strerror(errno));
+			else
+				(void)printf(", modified)");
+		else
+			(void)printf(")\n");
+		tab = "\t";
 	}
 	if (s->flags & F_NLINK && s->type != F_DIR &&
 	    s->st_nlink != p->fts_statb.st_nlink) {
 		LABEL;
-		(void)printf("\n\tlink count (%u, %u)",
-		    s->st_nlink, p->fts_statb.st_nlink);
+		(void)printf("%slink count (%u, %u)\n",
+		    tab, s->st_nlink, p->fts_statb.st_nlink);
+		tab = "\t";
 	}
 	if (s->flags & F_SIZE && s->st_size != p->fts_statb.st_size) {
 		LABEL;
-		(void)printf("\n\tsize (%ld, %ld)",
-		    s->st_size, p->fts_statb.st_size);
-	}
-	if (s->flags & F_SLINK) {
-		char *cp;
-
-		if (strcmp(cp = rlink(name), s->slink)) {
-			LABEL;
-			(void)printf("\n\tlink ref (%s, %s)", cp, s->slink);
-		}
+		(void)printf("%ssize (%ld, %ld)\n",
+		    tab, s->st_size, p->fts_statb.st_size);
+		tab = "\t";
 	}
 	if (s->flags & F_TIME && s->st_mtime != p->fts_statb.st_mtime) {
 		LABEL;
-		(void)printf("\n\tmodification time (%.24s, ",
-		    ctime(&s->st_mtime));
-		(void)printf("%.24s)", ctime(&p->fts_statb.st_mtime));
+		(void)printf("%smodification time (%.24s, ",
+		    tab, ctime(&s->st_mtime));
+		(void)printf("%.24s)\n", ctime(&p->fts_statb.st_mtime));
+		tab = "\t";
 	}
-	if (label) {
-		exitval = 2;
-		putchar('\n');
+	if (s->flags & F_CKSUM)
+		if ((fd = open(p->fts_accpath, O_RDONLY, 0)) < 0) {
+			LABEL;
+			(void)printf("%scksum: %s: %s\n",
+			    tab, p->fts_accpath, strerror(errno));
+			tab = "\t";
+		} else if (crc(fd, &val, &len)) {
+			(void)close(fd);
+			LABEL;
+			(void)printf("%scksum: %s: %s\n",
+			    tab, p->fts_accpath, strerror(errno));
+			tab = "\t";
+		} else {
+			(void)close(fd);
+			if (s->cksum != val) {
+				LABEL;
+				(void)printf("%scksum (%lu, %lu)\n", 
+				    tab, s->cksum, val);
+			}
+			tab = "\t";
+		}
+	if (s->flags & F_SLINK && strcmp(cp = rlink(name), s->slink)) {
+		LABEL;
+		(void)printf("%slink ref (%s, %s)\n", tab, cp, s->slink);
 	}
+	return (label);
 }
 
 char *
 inotype(type)
-	mode_t type;
+	u_int type;
 {
 	switch(type & S_IFMT) {
 	case S_IFBLK:
-		return("block");
+		return ("block");
 	case S_IFCHR:
-		return("char");
+		return ("char");
 	case S_IFDIR:
-		return("dir");
+		return ("dir");
+	case S_IFIFO:
+		return ("fifo");
 	case S_IFREG:
-		return("file");
+		return ("file");
 	case S_IFLNK:
-		return("link");
+		return ("link");
 	case S_IFSOCK:
-		return("socket");
+		return ("socket");
 	default:
-		return("unknown");
+		return ("unknown");
 	}
 	/* NOTREACHED */
 }
 
-char *
+static char *
 ftype(type)
 	u_int type;
 {
 	switch(type) {
 	case F_BLOCK:
-		return("block");
+		return ("block");
 	case F_CHAR:
-		return("char");
+		return ("char");
 	case F_DIR:
-		return("dir");
+		return ("dir");
 	case F_FIFO:
-		return("fifo");
+		return ("fifo");
 	case F_FILE:
-		return("file");
+		return ("file");
 	case F_LINK:
-		return("link");
+		return ("link");
 	case F_SOCK:
-		return("socket");
+		return ("socket");
 	default:
-		return("unknown");
+		return ("unknown");
 	}
 	/* NOTREACHED */
 }
@@ -180,15 +226,11 @@ char *
 rlink(name)
 	char *name;
 {
-	register int len;
 	static char lbuf[MAXPATHLEN];
+	register int len;
 
-	len = readlink(name, lbuf, sizeof(lbuf));
-	if (len == -1) {
-		(void)fprintf(stderr, "mtree: %s: %s.\n",
-		    name, strerror(errno));
-		exit(1);
-	}
+	if ((len = readlink(name, lbuf, sizeof(lbuf))) == -1)
+		err("%s: %s", name, strerror(errno));
 	lbuf[len] = '\0';
-	return(lbuf);
+	return (lbuf);
 }
