@@ -1,16 +1,17 @@
 #
 #	Makefile for sendmail base directory
 #
-#		@(#)Makefile	3.3		%G%
+#		@(#)Makefile	3.4		%G%
 #
 
 ALL=	src/sendmail aux/syslog
 DIRS=	$(DESTDIR)/usr/spool/mqueue
 SRCDIR=	$(DESTDIR)/usr/src/usr.lib/sendmail
 ALLDIRS=include adm src aux md cf lib doc adb test
-MACH=	calder
+BACKUP=	calder
 SENDMAIL=$(DESTDIR)/usr/lib/sendmail
 SYSLOG=	/usr/spool/mqueue/syslog
+HOST=	`hostname | sed s/ucb//`
 
 LN=	ln -s
 CP=	cp
@@ -37,7 +38,7 @@ install: $(ALL) $(DIRS)
 	$(CP)	/dev/null	$(SENDMAIL).st
 	chmod	666		$(SENDMAIL).st
 	$(CP)	/dev/null	$(SENDMAIL).fc
-	$(CP)	cf/default.cf	$(SENDMAIL).cf
+	$(CP)	cf/$(HOST).cf	$(SENDMAIL).cf
 	$(LN)	$(SENDMAIL)	$(DESTDIR)/usr/ucb/newaliases
 	$(LN)	$(SENDMAIL)	$(DESTDIR)/usr/ucb/mailq
 
@@ -61,9 +62,9 @@ dirs:
 	cd $(SRCROOT); mkdir $(ALLDIRS)
 
 rcp:
-	rsh $(MACH) mkdir sendmail
-	rsh $(MACH) 'cd sendmail; mkdir $(ALLDIRS)'
-	for i in `cat FILES`; do rcp $$i $(MACH):sendmail/$$i; done
+	rsh $(BACKUP) mkdir sendmail
+	rsh $(BACKUP) 'cd sendmail; mkdir $(ALLDIRS)'
+	for i in `cat FILES`; do rcp $$i $(BACKUP):sendmail/$$i; done
 
 srcinstall:
 	for i in `cat FILES`; do rm -f $(SRCDIR)/$$i; cp $$i $(SRCDIR)/$$i; done
