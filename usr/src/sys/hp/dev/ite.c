@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: ite.c 1.1 90/07/09$
  *
- *	@(#)ite.c	7.8 (Berkeley) %G%
+ *	@(#)ite.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -260,14 +260,17 @@ itewrite(dev, uio, flag)
 	return ((*linesw[tp->t_line].l_write)(tp, uio, flag));
 }
 
-iteioctl(dev, cmd, addr, flag)
+iteioctl(dev, cmd, addr, flag, p)
 	dev_t dev;
+	int cmd;
 	caddr_t addr;
+	int flag;
+	struct proc *p;
 {
 	register struct tty *tp = &ite_tty[UNIT(dev)];
 	int error;
 
-	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr, flag);
+	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr, flag, p);
 	if (error >= 0)
 		return (error);
 	error = ttioctl(tp, cmd, addr, flag);
