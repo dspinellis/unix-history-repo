@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.18 (Berkeley) %G%
+#	@(#)READ_ME	8.19 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -218,6 +218,17 @@ SETPROCTITLE	Try to set the string printed by "ps" to something
 SunOS
 	You may have to use -lresolv on SunOS.
 
+Solaris
+	From a correspondent:
+
+	   For solaris 2.2, I have 
+
+		hosts:      files dns
+
+	   in /etc/nsswitch.conf and /etc/hosts has to have the fully
+	   qualified host name. I think "files" has to be before "dns"
+	   in /etc/nsswitch.conf during bootup.
+
 OSF/1
 	If you are compiling on OSF/1 (DEC Alpha), you must use -lmld.
 
@@ -230,9 +241,31 @@ NeXT
 
 	(The Makefile.NeXT should try to do both of these for you.)
 
+	Apparently, there is a bug in getservbyname on Nextstep 3.0
+	that causes it to fail under some circumstances with the
+	message "SYSERR: service "smtp" unknown" logged.  You should
+	be able to work around this by including the line:
+
+		OPort=25
+
+	in your .cf file.
+
 BSDI (BSD/386)
 	I have reports that the "m4" from BSDI won't handle the config
 	files properly.  I haven't had a chance to test this myself.
+
+4.3BSD
+	If you are running a "virgin" version of 4.3BSD, you'll have
+	a very old resolver and be missing some header files.  The
+	header files are simple -- create empty versions and everything
+	will work fine.  For the resolver you should really port a new
+	version (4.8.3 or later) of the resolver; 4.9 is available on
+	gatekeeper.DEC.COM in pub/BSD/bind/4.9.  If you are really
+	determined to continue to use your old, buggy version (or as
+	a shortcut to get sendmail working -- I'm sure you have the
+	best intentions to port a modern version of BIND), you can
+	copy ../contrib/oldbind.compat.c into src and add
+	oldbind.compat.o to OBJADD in the Makefile.
 
 Both NEWDB and NDBM
 	If you use both -DNDBM and -DNEWDB, you must delete the module
@@ -305,4 +338,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.18, last update %G% 11:51:54)
+(Version 8.19, last update %G% 11:22:15)
