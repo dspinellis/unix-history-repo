@@ -1,4 +1,4 @@
-#	Makefile	7.9	84/04/17
+#	Makefile	7.10	85/05/31
 VERSION=3.7
 #
 # Ex skeletal makefile for VAX VM/Unix 4.2BSD
@@ -29,7 +29,7 @@ XSTR=	${BINDIR}/xstr
 DEBUGFLAGS=	-DTRACE -g
 NONDEBUGFLAGS=	-O
 DEB=	${NONDEBUGFLAGS}	# or ${DEBUGFLAGS} to to debug
-OPTIONS= -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO
+OPTIONS= -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DFASTTAG
 CFLAGS=	-DTABS=8 ${OPTIONS} ${DEB}
 LDFLAGS=	-z		# or -i or -n
 TERMLIB=	-ltermcap
@@ -39,14 +39,14 @@ INCLUDE=/usr/include
 PR=	pr
 OBJS=	ex.o ex_addr.o ex_cmds.o ex_cmds2.o ex_cmdsub.o \
 	ex_data.o ex_extern.o ex_get.o ex_io.o ex_put.o ex_re.o \
-	ex_set.o ex_subr.o ex_temp.o ex_tty.o ex_unix.o \
+	ex_set.o ex_subr.o ex_tagio.o ex_temp.o ex_tty.o ex_unix.o \
 	ex_v.o ex_vadj.o ex_vget.o ex_vmain.o ex_voper.o \
 	ex_vops.o ex_vops2.o ex_vops3.o ex_vput.o ex_vwind.o \
 	printf.o bcopy.o strings.o
 HDRS=	ex.h ex_argv.h ex_re.h ex_temp.h ex_tty.h ex_tune.h ex_vars.h ex_vis.h
 SRC1=	ex.c ex_addr.c ex_cmds.c ex_cmds2.c ex_cmdsub.c
 SRC2=	ex_data.c ex_get.c ex_io.c ex_put.c ex_re.c
-SRC3=	ex_set.c ex_subr.c ex_temp.c ex_tty.c ex_unix.c
+SRC3=	ex_set.c ex_subr.c ex_tagio.c ex_temp.c ex_tty.c ex_unix.c
 SRC4=	ex_v.c ex_vadj.c ex_vget.c ex_vmain.c ex_voper.c
 SRC5=	ex_vops.c ex_vops2.c ex_vops3.c ex_vput.c ex_vwind.c
 SRC6=	printf.c bcopy.c expreserve.c exrecover.c
