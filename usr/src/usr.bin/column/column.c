@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)column.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)column.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -44,7 +44,7 @@ main(argc, argv)
 	extern int errno, optind;
 	struct winsize win;
 	FILE *fp;
-	int ch, xflag;
+	int ch, eval, xflag;
 	char *p, *getenv();
 
 	if (ioctl(1, TIOCGWINSZ, &win) == -1 || !win.ws_col) {
@@ -69,22 +69,21 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
-	fp = stdin;
-	do {
-		if (*argv)
-			if (!(fp = fopen(*argv, "r"))) {
-				(void)fprintf(stderr, "column: %s: %s\n",
-				    *argv, strerror(errno));
-				continue;
-			} else
-				++argv;
-		input(fp);
-		if (fp != stdin)
+	eval = 0;
+	if (!*argv)
+		input(stdin);
+	else for (; *argv; ++argv)
+		if (fp = fopen(*argv, "r")) {
+			input(fp);
 			(void)fclose(fp);
-	} while (*argv);
+		} else {
+			(void)fprintf(stderr, "column: %s: %s\n", *argv,
+			    strerror(errno));
+			eval = 1;
+		}
 
 	if (!entries)
-		exit(0);
+		exit(eval);
 
 	if (maxlength >= termwidth)
 		print();
@@ -92,7 +91,7 @@ main(argc, argv)
 		c_columnate();
 	else
 		r_columnate();
-	exit(0);
+	exit(eval);
 }
 
 #define	TAB	8
