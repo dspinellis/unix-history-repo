@@ -1,4 +1,10 @@
-/*	gprof.h	1.21	84/08/09	*/
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)gprof.h	5.1 (Berkeley) %G%
+ */
 
 #include <stdio.h>
 #include <sys/types.h>
