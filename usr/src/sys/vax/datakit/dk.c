@@ -316,7 +316,7 @@ dkopen(dev, flag)
 	tp = &dkdev[chan];
 	if ((tp->d_state & DKOPEN) == 0)
 		tp->dc_state = 0 ;
-	if (tp->d_state&DKXCLUDE && u.u_ruid!=0) {
+	if (tp->d_state&DKXCLUDE && u.u_procp->p_ruid!=0) {
 		return EBUSY;
 	}
 
