@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -110,7 +110,7 @@ main(argc, argv, envp)
 #endif
 
 	/* in 4.4BSD, the table can be huge; impose a reasonable limit */
-	DtableSize = getdtablesize();
+	DtableSize = getdtsize();
 	if (DtableSize > 256)
 		DtableSize = 256;
 
@@ -164,6 +164,9 @@ main(argc, argv, envp)
 	else
 		(void) sprintf(RealUserName, "Unknown UID %d", RealUid);
 
+	/* our real uid will have to be root -- we will trash this later */
+	setuid((uid_t) 0);
+
 	/*
 	**  Do a quick prescan of the argument list.
 	**	We do this to find out if we can potentially thaw the
@@ -185,8 +188,8 @@ main(argc, argv, envp)
 			ConfFile = &p[2];
 			if (ConfFile[0] == '\0')
 				ConfFile = "sendmail.cf";
-			(void) setgid(getrgid());
-			(void) setuid(getruid());
+			(void) setgid(RealGid);
+			(void) setuid(RealUid);
 			safecf = FALSE;
 			nothaw = TRUE;
 		}
@@ -333,7 +336,7 @@ main(argc, argv, envp)
 			{
 			  case MD_DAEMON:
 # ifdef DAEMON
-				if (getuid() != 0) {
+				if (RealUid != 0) {
 					usrerr("Permission denied");
 					exit (EX_USAGE);
 				}
@@ -379,7 +382,7 @@ main(argc, argv, envp)
 			break;
 
 		  case 'C':	/* select configuration file (already done) */
-			if (getuid() != 0)
+			if (RealUid != 0)
 				auth_warning(CurEnv,
 					"Processed by %s with -C %s",
 					RealUserName, optarg);
@@ -481,7 +484,7 @@ main(argc, argv, envp)
 			break;
 
 		  case 'X':	/* traffic log file */
-			setuid(getuid());
+			setuid(RealUid);
 			TrafficLogFile = fopen(optarg, "a");
 			if (TrafficLogFile == NULL)
 			{
@@ -547,14 +550,14 @@ main(argc, argv, envp)
 
 
 # ifdef QUEUE
-	if (queuemode && getuid() != 0)
+	if (queuemode && RealUid != 0)
 	{
 		struct stat stbuf;
 
 		/* check to see if we own the queue directory */
 		if (stat(QueueDir, &stbuf) < 0)
 			syserr("main: cannot stat %s", QueueDir);
-		if (stbuf.st_uid != getuid())
+		if (stbuf.st_uid != RealUid)
 		{
 			/* nope, really a botch */
 			usrerr("Permission denied");
@@ -568,8 +571,8 @@ main(argc, argv, envp)
 # ifdef FROZENCONFIG
 	  case MD_FREEZE:
 		/* this is critical to avoid forgeries of the frozen config */
-		(void) setgid(getgid());
-		(void) setuid(getuid());
+		(void) setgid(RealGid);
+		(void) setuid(RealUid);
 
 		/* freeze the configuration */
 		freeze(FreezeFile);
@@ -648,7 +651,10 @@ main(argc, argv, envp)
 
 	/* if we've had errors so far, exit now */
 	if (ExitStat != EX_OK && OpMode != MD_TEST)
+	{
+		setuid(RealUid);
 		exit(ExitStat);
+	}
 
 	/*
 	**  Do operation-mode-dependent initialization.
@@ -661,6 +667,7 @@ main(argc, argv, envp)
 #ifdef QUEUE
 		dropenvelope(CurEnv);
 		printqueue();
+		setuid(RealUid);
 		exit(EX_OK);
 #else /* QUEUE */
 		usrerr("No queue to print");
@@ -670,6 +677,7 @@ main(argc, argv, envp)
 	  case MD_INITALIAS:
 		/* initialize alias database */
 		initmaps(TRUE, CurEnv);
+		setuid(RealUid);
 		exit(EX_OK);
 
 	  case MD_DAEMON:
@@ -992,6 +1000,10 @@ finis()
 # endif /* LOG */
 	if (ExitStat == EX_TEMPFAIL)
 		ExitStat = EX_OK;
+
+	/* reset uid for process accounting */
+	setuid(RealUid);
+
 	exit(ExitStat);
 }
 /*
@@ -1018,6 +1030,10 @@ intsig()
 #ifdef XLA
 	xla_all_end();
 #endif
+
+	/* reset uid for process accounting */
+	setuid(RealUid);
+
 	exit(EX_OK);
 }
 /*

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.3 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.4 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.3 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.4 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -411,7 +411,6 @@ smtpfinish(m, editfcn)
 	register int r;
 	register EVENT *ev;
 	time_t timeout;
-	time_t mintimeout;
 	static int datatimeout();
 
 	/*
@@ -463,10 +462,10 @@ smtpfinish(m, editfcn)
 		return EX_TEMPFAIL;
 	}
 
-	timeout = e->e_msgsize / 64;
-	mintimeout = e->e_nrcpts * 90 + 60;
-	if (timeout < mintimeout)
-		timeout = mintimeout;
+	timeout = e->e_msgsize / 16;
+	if (timeout < (time_t) 60)
+		timeout = (time_t) 60;
+	timeout += e->e_nrcpts * 90;
 	ev = setevent(timeout, datatimeout, 0);
 
 	/* now output the actual message */
