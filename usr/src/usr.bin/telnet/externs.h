@@ -15,8 +15,6 @@ extern int
 	donelclchars,		/* the user has set "localchars" */
 	showoptions,
 	net,
-	tin,
-	tout,
 	crlf,		/* Should '\r' be mapped to <CR><LF> (or <CR><NUL>)? */
 	autoflush,		/* flush output when interrupting? */
 	autosynch,		/* send interrupt characters with SYNCH? */
@@ -36,7 +34,6 @@ extern char
 	wont[],
 	hisopts[],
 	myopts[],
-	subbuffer[SUBBUFSIZE],
 	*hostname,		/* Who are we connected to? */
 	*prompt;		/* Prompt for command. */
 
@@ -48,9 +45,6 @@ extern jmp_buf
 	toplevel;		/* For error conditions. */
 
 extern void
-	intr(),
-	intr2(),
-	deadpeer(),
 	dosynch(),
 	setconnmode(),
 	setcommandmode();

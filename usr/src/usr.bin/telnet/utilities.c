@@ -140,7 +140,7 @@ int	length;			/* length of suboption data */
 	    switch (pointer[1]) {
 	    case TELQUAL_IS:
 		{
-		    char tmpbuf[sizeof subbuffer];
+		    char tmpbuf[SUBBUFSIZE];
 		    int minlen = min(length, sizeof tmpbuf);
 
 		    memcpy(tmpbuf, pointer+2, minlen);

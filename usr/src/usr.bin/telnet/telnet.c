@@ -64,7 +64,7 @@ int
 	crlf,		/* Should '\r' be mapped to <CR><LF> (or <CR><NUL>)? */
 	noasynch = 0,	/* User specified "-noasynch" on command line */
 	askedSGA = 0,	/* We have talked about suppress go ahead */
-	telnetport = 1,
+	telnetport,
 	SYNCHing,	/* we are in TELNET SYNCH mode */
 	flushout,	/* flush output */
 	autoflush = 0,	/* flush output when interrupting? */
@@ -126,13 +126,11 @@ Modelist modelist[] = {
 
 init_telnet()
 {
-    /* Don't change telnetport */
     SB_CLEAR();
     ClearArray(hisopts);
     ClearArray(myopts);
 
     connected = In3270 = ISend = donebinarytoggle = 0;
-    telnetport = 0;
 
 #if	defined(unix) && defined(TN3270)
     HaveInput = 0;
