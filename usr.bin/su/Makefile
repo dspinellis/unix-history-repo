@@ -1,14 +1,14 @@
 #	@(#)Makefile	5.5 (Berkeley) 5/11/90
 
-PROG=	su
-CFLAGS+=-DDES
-BINOWN=	root
-BINMODE=4555
 
 .if exists(/usr/lib/libcrypt.a)
 #CFLAGS+=-DKERBEROS
-DPADD+= ${LIBCRYPT}
-LDADD+= -lcrypt
+DPADD+= ${LIBCRYPT} #${LIBKRB}
+LDADD+= -lcrypt #-lkrb
 .endif
+
+PROG=	su
+BINOWN=	root
+BINMODE=4555
 
 .include <bsd.prog.mk>

@@ -92,12 +92,8 @@ getnewpasswd(pw)
 	(void)printf("Changing local password for %s.\n", pw->pw_name);
 
 	if (uid && pw->pw_passwd &&
-#ifdef DES
 	    strcmp(crypt(getpass("Old password:"), pw->pw_passwd),
 	    pw->pw_passwd)) {
-#else
-	    strcmp(getpass("Old password:"), pw->pw_passwd)) {
-#endif
 		errno = EACCES;
 		pw_error(NULL, 1, 1);
 	}
@@ -131,11 +127,7 @@ getnewpasswd(pw)
 #else
 	to64(&salt[0], random(), 2);
 #endif
-#ifdef DES
 	return(crypt(buf, salt));
-#else
-	return(buf);
-#endif
 }
 
 static unsigned char itoa64[] =		/* 0 ... 63 => ascii - 64 */
