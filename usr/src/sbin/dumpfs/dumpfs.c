@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dumpfs.c	1.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumpfs.c	1.3 (Berkeley) %G%";
 #include "../h/param.h"
 #include "../h/fs.h"
 #include "../h/inode.h"
@@ -80,9 +80,13 @@ dumpcg(c)
 	printf("magic\t%x\ntime\t%s", acg.cg_magic, ctime(&acg.cg_time));
 	printf("cgx\t%d\nncyl\t%d\nniblk\t%d\nndblk\t%d\n",
 	    acg.cg_cgx, acg.cg_ncyl, acg.cg_niblk, acg.cg_ndblk);
-	printf("nifree\t%d\nndir\t%d\nnffree\t%d\nnbfree\t%d\n",
+	printf("nifree\t%d\nndir\t%d\nnffree\t%d\nnbfree\t%d\nfrsum",
 	    acg.cg_nifree, acg.cg_ndir, acg.cg_nffree, acg.cg_nbfree);
-	printf("iused:\t");
+	for (i = 1, j = 0; i < FRAG; i++) {
+		printf("\t%d", acg.cg_frsum[i]);
+		j += i * acg.cg_frsum[i];
+	}
+	printf("\nsum of frsum: %d\niused:\t", j);
 	pbits(acg.cg_iused, afs.fs_ipg);
 	printf("free:\t");
 	pbits(acg.cg_free, afs.fs_fpg);
@@ -94,8 +98,6 @@ dumpcg(c)
 		printf("\n");
 	}
 };
-
-#define	isset(cp,i)	(cp)[(i)/NBBY]&(1<<((i)%NBBY))
 
 pbits(cp, max)
 	register char *cp;

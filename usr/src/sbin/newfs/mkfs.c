@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	1.6 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	1.7 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -320,6 +320,7 @@ initcg(c)
 	dmax = cbase + sblock.fs_fpg;
 	if (dmax > sblock.fs_size)
 		dmax = sblock.fs_size;
+	dmin = cgdmin(c,&sblock) - cbase;
 	d = cbase;
 	cs = fscs+c;
 	cs->cs_ndir = 0;
@@ -333,17 +334,18 @@ initcg(c)
 	acg.cg_nffree = 0;
 	acg.cg_nbfree = 0;
 	acg.cg_nifree = 0;
-	acg.cg_rotor = 0;
+	acg.cg_rotor = dmin;
+	acg.cg_frotor = dmin;
 	acg.cg_irotor = 0;
-	i = 0;
-	d = cgimin(c,&sblock);
-	while (i < sblock.fs_ipg) {
+	for (i = 0; i < FRAG; i++) {
+		acg.cg_frsum[i] = 0;
+	}
+	for (i = 0; i < sblock.fs_ipg; ) {
 		for (j = INOPB; j > 0; j--) {
 			clrbit(acg.cg_iused, i);
 			i++;
 		}
 		acg.cg_nifree += INOPB;
-		d++;
 	}
 	while (i < MAXIPG) {
 		clrbit(acg.cg_iused, i);
@@ -356,7 +358,6 @@ initcg(c)
 	for (i = 0; i < MAXCPG; i++)
 		for (j = 0; j < NRPOS; j++)
 			acg.cg_b[i][j] = 0;
-	dmin = cgdmin(c,&sblock) - cbase;
 	if (c == 0) {
 		dmin += howmany(cssize(&sblock), BSIZE) * FRAG;
 	}
@@ -631,6 +632,7 @@ goth:
 	if (size != BSIZE) {
 		frag = howmany(size, FSIZE);
 		acg.cg_nffree += FRAG - frag;
+		acg.cg_frsum[FRAG - frag]++;
 		sblock.fs_nffree += FRAG - frag;
 		for (i = frag; i < FRAG; i++)
 			setbit(acg.cg_free, d+i);

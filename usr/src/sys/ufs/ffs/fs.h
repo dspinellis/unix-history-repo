@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/*	fs.h	1.1	%G%	*/
+/*	fs.h	1.2	%G%	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -201,6 +201,8 @@ struct	cg {
 	short	cg_nbfree;		/* free blocks */
 	short	cg_rotor;		/* position of last used block */
 	short	cg_irotor;		/* position of last used inode */
+	short	cg_frotor;		/* position of last used frag */
+	short	cg_frsum[FRAG];		/* counts of available frags */
 	short	cg_b[MAXCPG][NRPOS];	/* positions of free blocks */
 	char	cg_iused[MAXIPG/NBBY];	/* used inode map */
 	char	cg_free[1];		/* free block map */
@@ -210,4 +212,6 @@ struct	cg {
 
 #ifdef KERNEL
 struct	fs *getfs();
+int inside[], around[];
+char fragtbl[];
 #endif
