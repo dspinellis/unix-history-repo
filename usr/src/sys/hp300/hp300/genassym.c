@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	7.5 (Berkeley) %G%
+ *	@(#)genassym.c	7.6 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -12,8 +12,6 @@
 #include "sys/param.h"
 #include "sys/buf.h"
 #include "sys/vmmeter.h"
-#include "sys/user.h"
-#include "sys/cmap.h"
 #include "sys/map.h"
 #include "sys/proc.h"
 #include "sys/mbuf.h"
@@ -24,9 +22,9 @@
 #include "../include/reg.h"
 #include "clockreg.h"
 #include "sys/syscall.h"
-#include "vm/vm_param.h"
-#include "vm/vm_map.h"
-#include "../include/pmap.h"
+#include "vm/vm.h"
+#include "sys/user.h"
+#include "pte.h"
 
 main()
 {
@@ -34,15 +32,15 @@ main()
 	register struct vmmeter *vm = (struct vmmeter *)0;
 	register struct user *up = (struct user *)0;
 	register struct rusage *rup = (struct rusage *)0;
-	vm_map_t map = (vm_map_t)0;
+	struct vmspace *vms = (struct vmspace *)0;
 	pmap_t pmap = (pmap_t)0;
 	struct pcb *pcb = (struct pcb *)0;
 	register unsigned i;
 
 	printf("#define\tP_LINK %d\n", &p->p_link);
 	printf("#define\tP_RLINK %d\n", &p->p_rlink);
-	printf("#define\tP_MAP %d\n", &p->p_map);
-	printf("#define\tPMAP %d\n", &map->pmap);
+	printf("#define\tP_VMSPACE %d\n", &p->p_vmspace);
+	printf("#define\tPMAP %d\n", &vms->vm_map.pmap);
 	printf("#define\tPM_STCHG %d\n", &pmap->pm_stchanged);
 	printf("#define\tP_ADDR %d\n", &p->p_addr);
 	printf("#define\tP_PRI %d\n", &p->p_pri);
@@ -78,10 +76,8 @@ main()
 	printf("#define\tNMBCLUSTERS %d\n", NMBCLUSTERS);
 	printf("#define\tMCLBYTES %d\n", MCLBYTES);
 	printf("#define\tNKMEMCLUSTERS %d\n", NKMEMCLUSTERS);
-	printf("#define\tU_PROCP %d\n", &up->u_procp);
-	printf("#define\tU_RU %d\n", &up->u_ru);
-	printf("#define\tU_PROF %d\n", &up->u_prof);
-	printf("#define\tU_PROFSCALE %d\n", &up->u_prof.pr_scale);
+	printf("#define\tU_PROF %d\n", &up->u_stats.p_prof);
+	printf("#define\tU_PROFSCALE %d\n", &up->u_stats.p_prof.pr_scale);
 	printf("#define\tRU_MINFLT %d\n", &rup->ru_minflt);
 	printf("#define\tT_BUSERR %d\n", T_BUSERR);
 	printf("#define\tT_ADDRERR %d\n", T_ADDRERR);
@@ -167,7 +163,7 @@ main()
 	printf("#define\tCLKMSB2 %d\n", CLKMSB2);
 	printf("#define\tCLKMSB3 %d\n", CLKMSB3);
 	printf("#define\tSYS_exit %d\n", SYS_exit);
-	printf("#define\tSYS_execv %d\n", SYS_execv);
+	printf("#define\tSYS_execve %d\n", SYS_execve);
 	printf("#define\tSYS_sigreturn %d\n", SYS_sigreturn);
 	for (i = 0; i < 32; i++) {
 		if ((1 << i) & SPTECHG)
