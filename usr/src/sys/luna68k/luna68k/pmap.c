@@ -13,7 +13,7 @@
  *
  * from: hp300/hp300/pmap.c	7.11 (Berkeley) 7/12/92
  *
- *	@(#)pmap.c	7.3 (Berkeley) %G%
+ *	@(#)pmap.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -1925,7 +1925,7 @@ pmap_enter_ptpage(pmap, va)
 			panic("pmap_enter: vm_fault failed");
 #endif
 		ptpa = pmap_extract(kernel_pmap, va);
-#ifdef DEBUG
+#ifdef notdef
 		PHYS_TO_VM_PAGE(ptpa)->ptpage = TRUE;
 #endif
 	}
