@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)vars.h 1.11 %G%"; */
+/* static char sccsid[] = "@(#)vars.h 1.12 %G%"; */
 
 #include <stdio.h>
 
@@ -38,7 +38,6 @@
 #define	BITSPERBYTE	8
 #define	BITSPERLONG	(BITSPERBYTE * sizeof(long))
 #define HZ		100
-#define	MAXLVL		20
 #define NAMSIZ		76
 #define MAXFILES	32
 #define PREDEF		2
@@ -157,53 +156,15 @@ union progcntr {
  */
 
 /*
- * runtime display structure
- */
-struct disp {
-	char *locvars;		/* pointer to local variables */
-	struct stack *stp;	/* pointer to local stack frame */
-};
-
-struct stack {
-	char *tos;		/* pointer to top of stack frame */
-	struct iorec *file;	/* pointer to active file name */
-	struct hdr {
-		long framesze;	/* number of bytes of local vars */
-		long nargs;	/* number of bytes of arguments */
-		bool tests;	/* TRUE => perform runtime tests */
-		short offset;	/* offset of procedure in source file */
-		char name[1];	/* name of active procedure */
-	} *entry;
-	struct disp odisp;	/* previous display value for this level */
-	struct disp *dp;	/* pointer to active display entry */
-	union progcntr pc;	/* previous location counter */
-	long lino;		/* previous line number */
-};
-
-union disply {
-	struct disp frame[MAXLVL];
-	char *raw[2*MAXLVL];
-};
-
-/*
- * formal routine structure
- */
-struct formalrtn {
-	char		*fentryaddr;		/* formal entry point */
-	long		fbn;			/* block number of function */
-	struct disp	fdisp[ MAXLVL ];	/* saved at first passing */
-};
-
-/*
  * program variables
  */
-extern union disply	_display;	/* runtime display */
-extern struct disp	*_dp;		/* ptr to active frame */
+extern union display	_display;	/* runtime display */
+extern struct dispsave	*_dp;		/* ptr to active frame */
 extern long		_lino;		/* current line number */
 extern int		_argc;		/* number of passed args */
 extern char		**_argv;	/* values of passed args */
 extern bool		_nodump;	/* TRUE => no post mortum dump */
-extern bool		_runtst;	/* TRUE => runtime tests */
+extern long		_runtst;	/* TRUE => runtime tests */
 extern long		_mode;		/* execl by PX, PIPE, or PIX */
 extern long		_stlim;		/* statement limit */
 extern long		_stcnt;		/* statement count */
