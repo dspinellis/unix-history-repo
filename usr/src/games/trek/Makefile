@@ -1,15 +1,8 @@
-#	@(#)Makefile	4.4	(Berkeley)	83/05/27
+#	Makefile	4.5	83/07/04
 #
 DESTDIR=
-CFLAGS=	# -O
+CFLAGS=	-O
 LFLAGS=	
-
-# The program itself
-#
-PROG=	trek
-
-# Sources
-#
 SRCS=	abandon.c attack.c autover.c capture.c check_out.c checkcond.c \
 	compkl.c computer.c damage.c damaged.c dcrept.c destruct.c \
 	dock.c dumpgame.c dumpme.c dumpssradio.c events.c externs.c \
@@ -18,9 +11,6 @@ SRCS=	abandon.c attack.c autover.c capture.c check_out.c checkcond.c \
 	ranf.c rest.c schedule.c score.c setup.c setwarp.c shell.c \
 	shield.c snova.c srscan.c systemname.c torped.c utility.c \
 	visual.c warp.c win.c cgetc.c
-
-# Objects
-#
 OBJS=	abandon.o attack.o autover.o capture.o check_out.o checkcond.o \
 	compkl.o computer.o damage.o damaged.o dcrept.o destruct.o \
 	dock.o dumpgame.o dumpme.o dumpssradio.o events.o externs.o \
@@ -29,25 +19,22 @@ OBJS=	abandon.o attack.o autover.o capture.o check_out.o checkcond.o \
 	ranf.o rest.o schedule.o score.o setup.o setwarp.o shell.o \
 	shield.o snova.o srscan.o systemname.o torped.o utility.o \
 	visual.o warp.o win.o cgetc.o
-
-# Header files
-#
 HDRS=	getpar.h trek.h
 
-${PROG}: ${OBJS} ${HDRS}
-	cc ${LFLAGS} -o ${PROG} ${OBJS} -lm
+trek: 	${OBJS} ${HDRS}
+	cc ${LFLAGS} -o trek ${OBJS} -lm
 
 ${OBJS}:
-	cc ${CFLAGS} -c $*.c
+	${CC} ${CFLAGS} -c $*.c
 
 tags:	tags $(SRCS)
 	ctags $(SRCS)
 
-install: ${PROG}
-	install ${PROG} ${DESTDIR}/usr/local/${PROG}
+install: trek
+	install -s trek ${DESTDIR}/usr/games/trek
 
 clean:
-	rm -f a.out core ${OBJS} ${PROG}
+	rm -f a.out core ${OBJS} trek
 
 depend:
 	cat </dev/null >x.c
