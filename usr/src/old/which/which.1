@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)which.1	4.1 (Berkeley) %G%
+.\"	@(#)which.1	5.1 (Berkeley) %G%
 .\"
-.TH WHICH 1 10/10/79
+.TH WHICH 1 "10 October 1979"
 .UC
 .SH NAME
 which \- locate a program file including aliases and paths (\fIcsh\fR only)
@@ -26,6 +26,4 @@ A diagnostic is given for names which are aliased to more than a single
 word,
 or if an executable file with the argument name was not found in the path.
 .SH BUGS
-Only aliases and paths from ~/\&.cshrc are used, importing from the current
-environment is not attempted.
 Must be executed by a csh, since only csh's know about aliases.
