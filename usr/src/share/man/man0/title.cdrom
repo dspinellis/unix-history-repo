@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)title.cdrom	8.2 (Berkeley) %G%
+.\"	@(#)title.cdrom	8.3 (Berkeley) %G%
 .\"
 .nr LL 6.5i
 .EH ''''
@@ -110,7 +110,9 @@ Sebastopol, CA 94572
 .nr VS 11
 .LP
 First Printing, 1994
-.sp 2
+.br
+Second Printing, 1995
+.sp 1
 .LP
 Copyright 1979, 1980, 1983, 1986, 1993, 1994
 The Regents of the University of California.  All rights reserved.
@@ -149,7 +151,7 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.\s+1\fP
-.sp 2
+.sp 1.5
 .LP
 The Institute of Electrical and Electronics Engineers and the American
 National Standards Committee X3, on Information Processing Systems have
@@ -176,13 +178,17 @@ Standards Committee X3, on Information Processing Systems.  Computer and
 Business Equipment Manufacturers Association (CBEMA), 311 First St., NW,
 Suite 500, Washington, DC 20001-2178.  The developmental work of
 Programming Language C was completed by the X3J11 Technical Committee.''
-.sp 2
+.sp 1.5
 .LP
 The views and conclusions contained in this manual are those of the
 authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of the University of California.
-.sp 2
+.sp 1.5
 .LP
+The 4.4BSD Daemon used on the cover is
+copyright 1994 by Marshall Kirk McKusick
+and is reproduced with permission.
+.br
 This book was printed and bound in the United States of America.
 .br
 Distributed by O'Reilly & Associates, Inc.
