@@ -50,3 +50,13 @@ struct hostent	*gethostbyname(), *gethostbyaddr(), *gethostent();
 struct netent	*getnetbyname(), *getnetbyaddr(), *getnetent();
 struct servent	*getservbyname(), *getservbyport(), *getservent();
 struct protoent	*getprotobyname(), *getprotobynumber(), *getprotoent();
+
+/*
+ * Error return codes from gethostbyname() and gethostbyaddr()
+ */
+
+extern  int h_errno;	
+
+#define	HOST_NOT_FOUND	1 /* Authoritive Answer Host not found */
+#define	TRY_AGAIN	2 /* Non-Authoritive Host not found, or SERVERFAIL */
+#define	NO_RECOVERY	3 /* Non recoverable errors, FORMERR, REFUSED, NOTIMP */
