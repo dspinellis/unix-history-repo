@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -34,7 +34,8 @@ wrefresh(win)
 	register __LINE *wlp;
 	register int retval;
 	register short wy;
-
+	int dnum;
+	
 	/* Initialize loop parameters. */
 	ly = curscr->cury;
 	lx = curscr->curx;
@@ -77,8 +78,17 @@ wrefresh(win)
 #endif
 
 #ifndef NOQCH
-	if (!__noqch && (win->flags & __FULLWIN) && !curwin)
-    		quickch(win);
+	if ((win->flags & __FULLWIN) && !curwin) {
+		/*
+		 * Invoke quickch() only if more than a quarter of the lines
+		 * in the window are dirty.
+		 */
+		for (wy = 0, dnum = 0; wy < win->maxy; wy++)
+			if (win->lines[wy]->flags & (__ISDIRTY | __FORCEPAINT))
+				dnum++;
+		if (!__noqch && dnum > (int) win->maxy / 4)
+			quickch(win);
+	}
 #endif
 	for (wy = 0; wy < win->maxy; wy++) {
 #ifdef DEBUG
@@ -87,8 +97,7 @@ wrefresh(win)
 #endif
 		if (!curwin)
 			curscr->lines[wy]->hash = win->lines[wy]->hash;
-		if (win->lines[wy]->flags & __ISDIRTY ||
-		    win->lines[wy]->flags & __FORCEPAINT)
+		if (win->lines[wy]->flags & (__ISDIRTY | __FORCEPAINT))
 			if (makech(win, wy) == ERR)
 				return (ERR);
 			else {
@@ -391,13 +400,35 @@ static void
 quickch(win)
 	WINDOW *win;
 {
-#define THRESH		win->maxy / 4
+#define THRESH		(int) win->maxy / 4
 
 	register __LINE *clp, *tmp1, *tmp2;
 	register int bsize, curs, curw, starts, startw, i, j;
 	int n, target, cur_period, bot, top, sc_region;
 	__LDATA buf[1024];
 	u_int blank_hash;
+
+	/* 
+	 * Find how many lines from the top of the screen are unchanged.
+	 */
+	for (top = 0; top < win->maxy; top++)
+		if (win->lines[top]->flags & __FORCEPAINT ||
+		    win->lines[top]->hash != curscr->lines[top]->hash 
+		    || memcmp(win->lines[top]->line, 
+		    curscr->lines[top]->line, 
+		    win->maxx * __LDATASIZE) != 0)
+			break;
+	
+       /*
+	* Find how many lines from bottom of screen are unchanged. 
+	*/
+	for (bot = win->maxy - 1; bot >= 0; bot--)
+		if (win->lines[bot]->flags & __FORCEPAINT ||
+		    win->lines[bot]->hash != curscr->lines[bot]->hash 
+		    || memcmp(win->lines[bot]->line, 
+		    curscr->lines[bot]->line, 
+		    win->maxx * __LDATASIZE) != 0)
+			break;
 
 	/*
 	 * Search for the largest block of text not changed.
@@ -410,9 +441,9 @@ quickch(win)
 	 *   curscr.
 	 * - bsize is the current size of the examined block.
          */
-	for (bsize = win->maxy; bsize >= THRESH; bsize--)
-		for (startw = 0; startw <= win->maxy - bsize; startw++)
-			for (starts = 0; starts <= win->maxy - bsize; 
+	for (bsize = bot - top; bsize >= THRESH; bsize--) {
+		for (startw = top; startw <= bot - bsize; startw++)
+			for (starts = top; starts <= bot - bsize; 
 			     starts++) {
 				for (curw = startw, curs = starts;
 				     curs < starts + bsize; curw++, curs++)
@@ -427,38 +458,12 @@ quickch(win)
 				if (curs == starts + bsize)
 					goto done;
 			}
+	}
  done:
 	/* Did not find anything */
 	if (bsize < THRESH)	
 		return;
 
-	/* 
-	 * Find how many lines from the top of the screen are unchanged.
-	 */
-	if (starts != 0) {
-		for (top = 0; top < win->maxy; top++)
-			if (win->lines[top]->flags & __FORCEPAINT ||
-			    win->lines[top]->hash != curscr->lines[top]->hash 
-			    || memcmp(win->lines[top]->line, 
-			    curscr->lines[top]->line, 
-			    win->maxx * __LDATASIZE) != 0)
-				break;
-	} else
-		top = 0;
-	
-       /*
-	* Find how many lines from bottom of screen are unchanged. 
-	*/
-	if (curs != win->maxy) {
-		for (bot = win->maxy - 1; bot >= 0; bot--)
-			if (win->lines[bot]->flags & __FORCEPAINT ||
-			    win->lines[bot]->hash != curscr->lines[bot]->hash 
-			    || memcmp(win->lines[bot]->line, 
-			    curscr->lines[bot]->line, 
-			    win->maxx * __LDATASIZE) != 0)
-				break;
-	} else
-		bot = win->maxy - 1;
 #ifdef DEBUG
 	__TRACE("quickch:bsize=%d,starts=%d,startw=%d,curw=%d,curs=%d,top=%d,bot=%d\n", 
 		bsize, starts, startw, curw, curs, top, bot);
@@ -503,8 +508,7 @@ quickch(win)
 #endif 
 	if (n != 0)
 		scrolln(win, starts, startw, curs, bot, top);
-
-
+	
 	/* So we don't have to call __hash() each time */
 	for (i = 0; i < win->maxx; i++) {
 		buf[i].ch = ' ';
@@ -643,7 +647,7 @@ scrolln(win, starts, startw, curs, bot, top)
 		 * Push down the bottom region.
 		 */
 		mvcur(top, 0, bot - n + 1, 0);
-		if (AL)
+		if (AL) 
 			tputs(__tscroll(AL, n), 0, __cputchar);
 		else
 			for(i = 0; i < n; i++)
@@ -660,7 +664,7 @@ scrolln(win, starts, startw, curs, bot, top)
 		mvcur(bot + n + 1, 0, top, 0);
 
 		/* Scroll the block down */
-		if (AL)
+		if (AL) 
 			tputs(__tscroll(AL, -n), 0, __cputchar);
 		else
 			for(i = n; i < 0; i++)
