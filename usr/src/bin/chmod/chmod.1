@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)chmod.1	6.15 (Berkeley) %G%
+.\"	@(#)chmod.1	6.16 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHMOD 1
@@ -16,7 +16,7 @@
 .Nd change file modes
 .Sh SYNOPSIS
 .Nm chmod
-.Op Fl R
+.Op Fl HRh
 .Ar mode
 .Ar file ...
 .Sh DESCRIPTION
@@ -29,15 +29,26 @@ operand.
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
+.It Fl H
+When encountering a symbolic link on the command line, follow it.  All other
+symbolic links encountered in the traversal are not followed.
 .It Fl R
 Traverse a file hierarchy.
 For each file that is of type directory,
 .Nm chmod
 changes the mode of all files in the file hierarchy below it followed
 by the mode of the directory itself.
+.It Fl h
+When encountering a symbolic link anywhere in the traversal, follow it.
 .El
 .Pp
-Symbolic links are not indirected through, nor are their modes altered.
+The mode of a symbolic link is immutable, so that unless the
+.Fl h
+or
+.Fl H
+flags are set,
+.Nm chmod
+on a symbolic link is a no-op.
 .Pp
 Only the owner of a file or the super-user is permitted to change
 the mode of a file.
@@ -48,7 +59,7 @@ utility exits 0 on success, and >0 if an error occurs.
 .Sh MODES
 Modes may be absolute or symbolic.
 An absolute mode is an octal number constructed by
-.Ar or Ap ing
+.Ar or-ing
 the following values:
 .Pp
 .Bl -tag -width 6n -compact -offset indent
