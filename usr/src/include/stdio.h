@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdio.h	5.9 (Berkeley) %G%
+ *	@(#)stdio.h	5.10 (Berkeley) %G%
  */
 
 #ifndef	_STDIO_H_
@@ -216,6 +216,7 @@ __END_DECLS
 #define	L_ctermid	1024	/* size for ctermid(); PATH_MAX */
 
 __BEGIN_DECLS
+char	*ctermid __P((char *));
 FILE	*fdopen __P((int, const char *));
 int	 fileno __P((FILE *));
 __END_DECLS
