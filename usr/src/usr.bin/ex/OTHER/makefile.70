@@ -1,4 +1,4 @@
-VERSION=3.5
+VERSION=3.6
 #
 # Ex skeletal makefile for version 7, USGS Overlay 11/70 system
 #
@@ -9,7 +9,9 @@ VERSION=3.5
 # space include LISPCODE (-l flag, showmatch and lisp options), UCVISUAL
 # (visual \ nonsense on upper case only terminals), CHDIR (the undocumented
 # chdir command.)  CRYPT includes code to handle the -x option to allow
-# encrypted files.  VMUNIX makes ex considerably larger, raising many limits
+# encrypted files.  Defining CRYPT drags in most of stdio (from the call
+# to getpass) and makes vi about 4k text and 4k data bigger).
+# VMUNIX makes ex considerably larger, raising many limits
 # and improving speed and simplicity of maintenance.  It is suitable only
 # for a VAX or other large machine, and then probably only in a paged system.
 #
