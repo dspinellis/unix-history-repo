@@ -16,7 +16,8 @@ main(argc, argv)
 	register struct hostent *hp;
 	datum key, content;
 	register char *cp, *tp, **sp;
-	register int naliases, *nap;
+	register int *nap;
+	int naliases;
 	int verbose = 0, entries = 0, maxlen = 0, error = 0;
 	char tempname[BUFSIZ], newname[BUFSIZ];
 
@@ -57,7 +58,7 @@ main(argc, argv)
 				;
 			naliases++;
 		}
-		*nap = naliases;
+		bcopy((char *)&naliases, (char *)nap, sizeof(int));
 		bcopy((char *)&hp->h_addrtype, cp, sizeof (int));
 		cp += sizeof (int);
 		bcopy((char *)&hp->h_length, cp, sizeof (int));
