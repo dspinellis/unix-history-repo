@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.54 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.55 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -434,7 +434,7 @@ returntosender(msg, returnq, sendbody, e)
 	bool sendbody;
 	register ENVELOPE *e;
 {
-	char buf[MAXNAME];
+	char buf[MAXNAME + 1];
 	extern putheader(), errbody();
 	register ENVELOPE *ee;
 	ENVELOPE *oldcur = CurEnv;

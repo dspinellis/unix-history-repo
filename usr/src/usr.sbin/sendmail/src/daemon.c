@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.72 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.73 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.72 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.73 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -769,7 +769,7 @@ host_map_lookup(map, name, av, statp)
 	struct in_addr in_addr;
 	char *cp;
 	register STAB *s;
-	char hbuf[MAXNAME];
+	char hbuf[MAXNAME + 1];
 	extern struct hostent *gethostbyaddr();
 #if NAMED_BIND
 	extern int h_errno;
@@ -814,7 +814,13 @@ host_map_lookup(map, name, av, statp)
 		if (tTd(9, 1))
 			printf("host_map_lookup(%s) => ", name);
 		s->s_namecanon.nc_flags |= NCF_VALID;		/* will be soon */
-		(void) strcpy(hbuf, name);
+		if (strlen(name) < sizeof hbuf)
+			(void) strcpy(hbuf, name);
+		else
+		{
+			bcopy(name, hbuf, sizeof hbuf - 1);
+			hbuf[sizeof hbuf - 1] = '\0';
+		}
 		if (getcanonname(hbuf, sizeof hbuf - 1, TRUE))
 		{
 			if (tTd(9, 1))

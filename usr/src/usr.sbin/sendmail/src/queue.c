@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.66 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.67 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.66 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.67 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -686,7 +686,7 @@ orderq(doall)
 	{
 		FILE *cf;
 		register char *p;
-		char lbuf[MAXNAME];
+		char lbuf[MAXNAME + 1];
 		extern bool strcontainedin();
 
 		/* is this an interesting entry? */
@@ -726,8 +726,8 @@ orderq(doall)
 				syslog(LOG_CRIT, "orderq: bogus qf name %s",
 					d->d_name);
 #endif
-			if (strlen(d->d_name) >= MAXNAME)
-				d->d_name[MAXNAME - 1] = '\0';
+			if (strlen(d->d_name) > MAXNAME)
+				d->d_name[MAXNAME] = '\0';
 			strcpy(lbuf, d->d_name);
 			lbuf[0] = 'Q';
 			(void) rename(d->d_name, lbuf);
@@ -1499,7 +1499,7 @@ printqueue()
 		int flags = 0;
 		int qfver;
 		char message[MAXLINE];
-		char bodytype[MAXNAME];
+		char bodytype[MAXNAME + 1];
 
 		printf("%8s", w->w_name + 2);
 		f = fopen(w->w_name, "r");
@@ -1646,7 +1646,7 @@ queuename(e, type)
 	static char c2;
 	time_t now;
 	struct tm *tm;
-	static char buf[MAXNAME];
+	static char buf[MAXNAME + 1];
 
 	if (e->e_id == NULL)
 	{

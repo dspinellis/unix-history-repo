@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)macro.c	8.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)macro.c	8.9 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -24,7 +24,7 @@ int	NextMacroId = 0240;	/* codes for long named macros */
 **		s -- the string to expand.
 **		buf -- the place to put the expansion.
 **		buflim -- the buffer limit, i.e., the address
-**			of the last usable position in buf.
+**			of the first byte after buf.
 **		e -- envelope in which to work.
 **
 **	Returns:

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.128 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.129 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -636,8 +636,8 @@ deliver(e, firstto)
 	int rpvect[2];
 	char *pv[MAXPV+1];
 	char tobuf[TOBUFSIZE];		/* text line of to people */
-	char buf[MAXNAME];
-	char rpathbuf[MAXNAME];		/* translated return path */
+	char buf[MAXNAME + 1];
+	char rpathbuf[MAXNAME + 1];	/* translated return path */
 	extern int checkcompat();
 
 	errno = 0;
@@ -752,7 +752,7 @@ deliver(e, firstto)
 			break;
 
 		/* this entry is safe -- go ahead and process it */
-		expand(*mvp, buf, &buf[sizeof buf - 1], e);
+		expand(*mvp, buf, &buf[sizeof buf], e);
 		*pvp++ = newstr(buf);
 		if (pvp >= &pv[MAXPV - 3])
 		{
@@ -938,7 +938,7 @@ deliver(e, firstto)
 
 		if (!clever)
 		{
-			expand(*mvp, buf, &buf[sizeof buf - 1], e);
+			expand(*mvp, buf, &buf[sizeof buf], e);
 			*pvp++ = newstr(buf);
 			if (pvp >= &pv[MAXPV - 2])
 			{
@@ -964,7 +964,7 @@ deliver(e, firstto)
 
 	while (!clever && *++mvp != NULL)
 	{
-		expand(*mvp, buf, &buf[sizeof buf - 1], e);
+		expand(*mvp, buf, &buf[sizeof buf], e);
 		*pvp++ = newstr(buf);
 		if (pvp >= &pv[MAXPV])
 			syserr("554 deliver: pv overflow after $u for %s", pv[0]);
@@ -1080,7 +1080,7 @@ tryhost:
 		while (*curhost != '\0')
 		{
 			register char *p;
-			static char hostbuf[MAXNAME];
+			static char hostbuf[MAXNAME + 1];
 
 			/* pull the next host from the signature */
 			p = strchr(curhost, ':');
@@ -1293,14 +1293,14 @@ tryhost:
 			if (m->m_execdir != NULL)
 			{
 				char *p, *q;
-				char buf[MAXLINE];
+				char buf[MAXLINE + 1];
 
 				for (p = m->m_execdir; p != NULL; p = q)
 				{
 					q = strchr(p, ':');
 					if (q != NULL)
 						*q = '\0';
-					expand(p, buf, &buf[sizeof buf] - 1, e);
+					expand(p, buf, &buf[sizeof buf], e);
 					if (q != NULL)
 						*q++ = ':';
 					if (tTd(11, 20))

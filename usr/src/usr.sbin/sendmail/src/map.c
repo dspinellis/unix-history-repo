@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.49 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.50 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -701,7 +701,7 @@ bt_map_open(map, mode)
 	int omode;
 	int fd;
 	struct stat st;
-	char buf[MAXNAME];
+	char buf[MAXNAME + 1];
 
 	if (tTd(38, 2))
 		printf("bt_map_open(%s, %s, %d)\n",
@@ -788,7 +788,7 @@ hash_map_open(map, mode)
 	int omode;
 	int fd;
 	struct stat st;
-	char buf[MAXNAME];
+	char buf[MAXNAME + 1];
 
 	if (tTd(38, 2))
 		printf("hash_map_open(%s, %s, %d)\n",
@@ -1433,7 +1433,7 @@ nisplus_map_lookup(map, name, av, statp)
 char *
 nisplus_default_domain()
 {
-	static char default_domain[MAXNAME] = "";
+	static char default_domain[MAXNAME + 1] = "";
 	char *p;
 
 	if (default_domain[0] != '\0')
@@ -1681,7 +1681,7 @@ text_map_lookup(map, name, av, statp)
 	char search_key[MAXNAME + 1];
 	char linebuf[MAXLINE];
 	FILE *f;
-	char buf[MAXNAME+1];
+	char buf[MAXNAME + 1];
 	char delim;
 	int key_idx;
 	bool found_it;
