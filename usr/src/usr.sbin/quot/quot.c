@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)quot.c	4.10 (Berkeley) 85/05/27";
+static char *sccsid = "@(#)quot.c	4.11 (Berkeley) 85/09/09";
 #endif
 
 /*
@@ -85,7 +85,7 @@ main(argc, argv)
 	if (argc == 0)
 		quotall();
 	while (argc-- > 0)
-		if (check(*argv++) == 0)
+		if (check(*argv++, (char *)NULL) == 0)
 			report();
 	exit (0);
 }
@@ -111,14 +111,15 @@ quotall()
 		if (cp == 0)
 			continue;
 		sprintf(dev, "/dev/r%s", cp + 1);
-		if (check(dev) == 0)
+		if (check(dev, fs->fs_file) == 0)
 			report();
 	}
 	endfsent();
 }
 
-check(file)
+check(file, fsdir)
 	char *file;
+	char *fsdir;
 {
 	register int i, j, nfiles;
 	register struct du **dp;
@@ -142,7 +143,15 @@ check(file)
 		perror(file);
 		return (-1);
 	}
-	printf("%s:\n", file);
+	printf("%s", file);
+	if (fsdir == NULL) {
+		register struct fstab *fs = getfsspec(file);
+		if (fs != NULL)
+			fsdir = fs->fs_file;
+	}
+	if (fsdir != NULL && *fsdir != '\0')
+		printf(" (%s)", fsdir);
+	printf(":\n");
 	sync();
 	bread(fd, SBLOCK, (char *)&sblock, SBSIZE);
 	if (nflg) {
@@ -162,6 +171,7 @@ check(file)
 		}
 	}
 	close(fd);
+	return (0);
 }
 
 acct(ip)
@@ -170,7 +180,7 @@ acct(ip)
 	register struct du *dp;
 	struct du **hp;
 	long blks, frags, size;
-	char n;
+	int n;
 	static fino;
 
 	if ((ip->di_mode & IFMT) == 0)
