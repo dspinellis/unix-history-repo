@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1989 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)register_proto.h	5.1 (Berkeley) %G%
+ *	@(#)register_proto.h	8.1 (Berkeley) %G%
  */
 
 #define	APPEND_DB	0x01
