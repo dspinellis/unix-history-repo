@@ -44,6 +44,21 @@ mkhits:	mkhits.o dohits.o ../ascii/asctab.o ../ctlr/ebc_disp.o
 mkdctype:	mkdctype.o ../ctlr/ebc_disp.o ectype.o
 	$(CC) $(CFLAGS) -o mkdctype mkdctype.o ../ctlr/ebc_disp.o ectype.o
 
+../ascii/ebctab.o:
+	(cd ../ascii; make ebctab.o)
+
+../ctlr/ebc_disp.o:
+	(cd ../ctlr; make ebc_disp.o)
+
+../ascii/asctab.o:
+	(cd ../ascii; make asctab.o)
+
+../keyboard/m4.out:
+	(cd ../keyboard; make m4.out)
+
+../system/globals.o:
+	(cd ../system; make globals.o)
+
 print:
 	${PRINT} ${ALLH} ${ALLC}
 
