@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)keywords.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)keywords.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: keywords.c,v 1.5 84/12/26 10:39:45 linton Exp $";
@@ -283,6 +283,7 @@ String *str;
     } else {
 	*pl = k->value.alias.paramlist;
 	*str = k->value.alias.expansion;
+	b = true;
     }
     return b;
 }
