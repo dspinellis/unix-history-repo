@@ -296,7 +296,7 @@ vm_init_limits(p)
         p->p_rlimit[RLIMIT_STACK].rlim_max = MAXSSIZ;
         p->p_rlimit[RLIMIT_DATA].rlim_cur = DFLDSIZ;
         p->p_rlimit[RLIMIT_DATA].rlim_max = MAXDSIZ;
-	/* limit the limit to no less than 128K */
+	/* limit the limit to no less than 128K */ 
 	rss_limit = max(vm_page_free_count / 2, 32);
 	p->p_rlimit[RLIMIT_RSS].rlim_cur = ptoa(rss_limit);
 	p->p_rlimit[RLIMIT_RSS].rlim_max = RLIM_INFINITY;
