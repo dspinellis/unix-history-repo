@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.22 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -20,11 +20,10 @@ static char sccsid[] = "@(#)passwd.c	4.21 (Berkeley) %G%";
  * This program should be suid with an owner
  * with write permission on /etc/passwd.
  */
-#include <sys/param.h>
+#include <sys/types.h>
 #include <sys/file.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-#include <sys/stat.h>
 
 #include <stdio.h>
 #include <signal.h>
@@ -34,16 +33,21 @@ static char sccsid[] = "@(#)passwd.c	4.21 (Berkeley) %G%";
 #include <strings.h>
 #include <ctype.h>
 
+/*
+ * This should be the first thing returned from a getloginshells()
+ * but too many programs know that it is /bin/sh.
+ */
+#define DEFSHELL "/bin/sh"
+
 char	temp[] = "/etc/ptmp";
 char	passwd[] = "/etc/passwd";
-char	shells[] = "/etc/shells";
 char	*getpass();
 char	*getlogin();
 char	*getfingerinfo();
 char	*getloginshell();
 char	*getnewpasswd();
 char	*malloc();
-char	*calloc();
+char	*getusershell();
 extern	int errno;
 
 main(argc, argv)
@@ -328,24 +332,14 @@ tryagain:
 	return (crypt(pwbuf, saltc));
 }
 
-#define	DEFSHELL	okshells[0]
-/*
- * Do not add local shells here.  They should be added in /etc/shells
- */
-char *okshells[] =
-    { "/bin/sh", "/bin/csh", 0 };
-
 char *
 getloginshell(pwd, u, arg)
 	struct passwd *pwd;
 	int u;
 	char *arg;
 {
-	static char newshell[256];
-	register char **cpp;
-	char *cp;
-	char **sp;
-	char **getlist();
+	static char newshell[BUFSIZ];
+	char *cp, *valid, *getusershell();
 
 	if (pwd->pw_shell == 0 || *pwd->pw_shell == '\0')
 		pwd->pw_shell = DEFSHELL;
@@ -363,81 +357,38 @@ getloginshell(pwd, u, arg)
 		printf("Login shell unchanged.\n");
 		exit(1);
 	}
-	sp = getlist(okshells, shells);	/* get list of acceptable shells */
 	/*
 	 * Allow user to give shell name w/o preceding pathname.
 	 */
-	if (*cp != '/' && u != 0) {
-		for (cpp = sp; *cpp; cpp++) {
-			cp = rindex(*cpp, '/');
-			if (cp == 0)
-				continue;
-			if (strcmp(cp+1, newshell) == 0)
+	if (u == 0) {
+		valid = newshell;
+	} else {
+		for (valid = getusershell(); valid; valid = getusershell()) {
+			if (newshell[0] == '/') {
+				cp = valid;
+			} else {
+				cp = rindex(valid, '/');
+				if (cp == 0)
+					cp = valid;
+				else
+					cp++;
+			}
+			if (strcmp(newshell, cp) == 0)
 				break;
 		}
-		if (*cpp)
-			(void) strcpy(newshell, *cpp);
 	}
-	if (u != 0) {
-		for (cpp = sp; *cpp; cpp++)
-			if (strcmp(*cpp, newshell) == 0)
-				break;
-		if (*cpp == 0) {
-			printf("%s is unacceptable as a new shell.\n",
-			    newshell);
-			exit(1);
-		}
-	}
-	if (access(newshell, X_OK) < 0) {
-		printf("%s is unavailable.\n", newshell);
+	if (valid == 0) {
+		printf("%s is unacceptable as a new shell.\n",
+		    newshell);
 		exit(1);
 	}
-	if (strcmp(newshell, DEFSHELL) == 0)
-		newshell[0] = '\0';
-	return (newshell);
-}
-/*
- * Get a list of shells from SHELLS, if it exists.
- */
-char **
-getlist (list, file)
-	char	**list;
-	char	*file;
-{
-	register char **sp, *cp;
-	char **shells;
-	FILE *fp;
-	struct stat statb;
-
-	if ((fp = fopen(file, "r")) == (FILE *)0)
-		return(list);
-	if (fstat(fileno(fp), &statb) == -1) {
-		(void)fclose(fp);
-		return(list);
+	if (access(valid, X_OK) < 0) {
+		printf("%s is unavailable.\n", valid);
+		exit(1);
 	}
-	if ((cp = malloc((unsigned)statb.st_size)) == NULL) {
-		(void)fclose(fp);
-		return(list);
-	}
-	shells = (char **)calloc((unsigned)statb.st_size / 3, sizeof (char *));
-	if (shells == NULL) {
-		(void)fclose(fp);
-		return(list);
-	}
-	sp = shells;
-	while (fgets(cp, MAXPATHLEN + 1, fp) != NULL) {
-		while (*cp != '/' && *cp != '\0')
-			cp++;
-		if (*cp == '\0')
-			continue;
-		*sp++ = cp;
-		while (!isspace(*cp) && *cp != '#' && *cp != '\0')
-			cp++;
-		*cp++ = '\0';
-	}
-	*sp = (char *)0;
-	(void)fclose(fp);
-	return(shells);
+	if (strcmp(valid, DEFSHELL) == 0)
+		valid[0] = '\0';
+	return (valid);
 }
 
 struct default_values {
