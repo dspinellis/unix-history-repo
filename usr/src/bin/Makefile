@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.20 (Berkeley) %G%
+#	@(#)Makefile	5.21 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -86,6 +86,7 @@ clean:
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
 
 depend: expr.c
+	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} depend); done
 	for i in ${BINS}; do \
 	    cc -M ${INCPATH} $$i.c | sed 's/\.o//' | \
 	    awk ' { if ($$1 != prev) \
@@ -133,11 +134,13 @@ cmp: /usr/include/sys/file.h /usr/include/sys/stat.h /usr/include/stdio.h
 cmp: /usr/include/ctype.h
 date: date.c /usr/include/sys/param.h /usr/include/sys/types.h
 date: /usr/include/signal.h /usr/include/machine/machparam.h
-date: /usr/include/stdio.h /usr/include/sys/time.h /usr/include/time.h
-date: /usr/include/sys/file.h /usr/include/errno.h /usr/include/syslog.h
-date: /usr/include/utmp.h /usr/include/sys/socket.h /usr/include/netinet/in.h
-date: /usr/include/netdb.h /usr/include/protocols/timed.h
-dd: dd.c /usr/include/stdio.h /usr/include/signal.h
+date: /usr/include/sys/time.h /usr/include/time.h /usr/include/sys/file.h
+date: /usr/include/errno.h /usr/include/syslog.h /usr/include/utmp.h
+date: /usr/include/tzfile.h /usr/include/stdio.h /usr/include/ctype.h
+date: /usr/include/strings.h /usr/include/sys/socket.h
+date: /usr/include/netinet/in.h /usr/include/netdb.h
+date: /usr/include/protocols/timed.h
+dd: dd.c /usr/include/sys/file.h /usr/include/stdio.h /usr/include/signal.h
 du: du.c /usr/include/stdio.h /usr/include/sys/param.h /usr/include/sys/types.h
 du: /usr/include/signal.h /usr/include/machine/machparam.h
 du: /usr/include/sys/stat.h /usr/include/sys/dir.h
@@ -162,7 +165,8 @@ ls: /usr/include/sys/stat.h /usr/include/sys/dir.h /usr/include/stdio.h
 ls: /usr/include/sgtty.h /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
 ls: /usr/include/sys/ttydev.h /usr/include/pwd.h /usr/include/grp.h
 ls: /usr/include/utmp.h
-machine: machine.c
+machine: machine.c /usr/include/sys/param.h /usr/include/sys/types.h
+machine: /usr/include/signal.h /usr/include/machine/machparam.h
 mkdir: mkdir.c /usr/include/stdio.h
 mt: mt.c /usr/include/stdio.h /usr/include/ctype.h /usr/include/sys/types.h
 mt: /usr/include/sys/mtio.h /usr/include/sys/ioctl.h
@@ -170,9 +174,9 @@ mt: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
 mt: /usr/include/tahoevba/cyreg.h
 nice: nice.c /usr/include/stdio.h /usr/include/sys/time.h /usr/include/time.h
 nice: /usr/include/sys/resource.h
-nm: nm.c /usr/include/sys/types.h /usr/include/ar.h /usr/include/stdio.h
-nm: /usr/include/ctype.h /usr/include/a.out.h /usr/include/sys/exec.h
-nm: /usr/include/stab.h /usr/include/sys/stat.h
+nm: nm.c /usr/include/sys/types.h /usr/include/sys/file.h /usr/include/ar.h
+nm: /usr/include/stdio.h /usr/include/ctype.h /usr/include/a.out.h
+nm: /usr/include/sys/exec.h /usr/include/stab.h /usr/include/ranlib.h
 od: od.c /usr/include/stdio.h /usr/include/sys/types.h /usr/include/sys/stat.h
 pagesize: pagesize.c
 pr: pr.c /usr/include/stdio.h /usr/include/signal.h /usr/include/sys/types.h
@@ -203,9 +207,7 @@ test: /usr/include/sys/stat.h
 time: time.c /usr/include/stdio.h /usr/include/signal.h
 time: /usr/include/sys/types.h /usr/include/sys/time.h /usr/include/time.h
 time: /usr/include/sys/resource.h
-who: who.c /usr/include/sys/param.h /usr/include/sys/types.h
-who: /usr/include/signal.h /usr/include/machine/machparam.h /usr/include/utmp.h
-who: /usr/include/pwd.h /usr/include/stdio.h /usr/include/strings.h
+who: who.c /usr/include/stdio.h /usr/include/utmp.h /usr/include/pwd.h
 who: /usr/include/ctype.h
 expr: expr.c /usr/include/stdio.h
 login: login.c /usr/include/sys/param.h /usr/include/sys/types.h
