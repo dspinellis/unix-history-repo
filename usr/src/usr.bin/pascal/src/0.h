@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)0.h 1.23 %G%"; */
+/* static char sccsid[] = "@(#)0.h 1.24 %G%"; */
 
 #define DEBUG
 #define CONSETS
@@ -749,12 +749,14 @@ struct nl	*defvnt();
 struct nl	*tyrec1();
 struct nl	*reclook();
 struct nl	*asgnop1();
+struct nl	*pcasgconf();
 struct nl	*gtype();
 struct nl	*call();
 struct nl	*lvalue();
 struct nl	*pclvalue();
 struct nl	*rvalue();
 struct nl	*cset();
+struct nl	*tycrang();
 struct tnode	*newlist();
 struct tnode	*addlist();
 struct tnode	*fixlist();
