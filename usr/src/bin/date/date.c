@@ -1,18 +1,29 @@
 /*
- * Copyright (c) 1985 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1985, 1987, 1988 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1985 Regents of the University of California.\n\
+"@(#) Copyright (c) 1985, 1987, 1988 The Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char *sccsid = "@(#)date.c	4.22 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)date.c	4.23 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * Date - print and set date
@@ -29,7 +40,6 @@ static char *sccsid = "@(#)date.c	4.22 (Berkeley) %G%";
 #include <ctype.h>
 #include <strings.h>
 
-#define	WTMP		"/usr/adm/wtmp"
 #define	ATOI2(ar)	(ar[0] - '0') * 10 + (ar[1] - '0'); ar += 2;
 
 static struct timeval	tv;
@@ -38,42 +48,33 @@ static int	retval;
 static int	dmsize[] =
 	{ -1, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
-static struct utmp	wtmp[2] = {
-	{ "|", "", "", 0 },
-	{ "{", "", "", 0 }
-};
-
-main(argc,argv)
-	int	argc;
-	char	**argv;
+main(argc, argv)
+	int argc;
+	char **argv;
 {
-	extern int	optind;
-	extern char	*optarg;
-	struct timezone	tz;
-	char	*ap,			/* time string */
-		*tzn;			/* time zone */
-	int	ch,			/* getopts char */
-		uflag,			/* do it in GMT */
-		nflag,			/* only set time locally */
-		wf;			/* wtmp file descriptor */
-	long	time();
-	uid_t	getuid();
-	char	*username, *getlogin();
+	extern int optind;
+	extern char *optarg;
+	struct timezone tz;
+	char *ap, *tzn;
+	int ch, uflag, nflag;
+	char *username, *getlogin();
+	time_t time();
 
 	nflag = uflag = 0;
 	tz.tz_dsttime = tz.tz_minuteswest = 0;
-	while ((ch = getopt(argc,argv,"d:nut:")) != EOF)
+	while ((ch = getopt(argc, argv, "d:nut:")) != EOF)
 		switch((char)ch) {
-		case 'd':
+		case 'd':		/* daylight savings time */
 			tz.tz_dsttime = atoi(optarg) ? 1 : 0;
 			break;
-		case 'n':
+		case 'n':		/* don't set network */
 			nflag = 1;
 			break;
-		case 'u':
+		case 'u':		/* do it in GMT */
 			uflag = 1;
 			break;
-		case 't':	/* error check; we can't allow "PST" */
+		case 't':		/* minutes west of GMT */
+					/* error check; we can't allow "PST" */
 			if (isdigit(*optarg)) {
 				tz.tz_minuteswest = atoi(optarg);
 				break;
@@ -92,13 +93,13 @@ main(argc,argv)
 	}
 
 	if ((tz.tz_minuteswest || tz.tz_dsttime) &&
-	    settimeofday((struct timeval *)NULL,&tz)) {
+	    settimeofday((struct timeval *)NULL, &tz)) {
 		perror("settimeofday");
 		retval = 1;
 		goto display;
 	}
 
-	if (gettimeofday(&tv,&tz)) {
+	if (gettimeofday(&tv, &tz)) {
 		perror("gettimeofday");
 		exit(1);
 	}
@@ -106,7 +107,6 @@ main(argc,argv)
 	if (!argc)
 		goto display;
 
-	wtmp[0].ut_time = tv.tv_sec;
 	if (gtime(*argv)) {
 		usage();
 		retval = 1;
@@ -120,28 +120,22 @@ main(argc,argv)
 			tv.tv_sec -= SECS_PER_HOUR;
 	}
 	if (nflag || !netsettime(tv)) {
-		if (settimeofday(&tv,(struct timezone *)0)) {
+		logwtmp("|", "date", "");
+		if (settimeofday(&tv, (struct timezone *)NULL)) {
 			perror("settimeofday");
 			retval = 1;
 			goto display;
 		}
-		if ((wf = open(WTMP,O_WRONLY|O_APPEND)) < 0)
-			fputs("date: can't write wtmp file.\n",stderr);
-		else {
-			(void)time((time_t *)&wtmp[1].ut_time);
-			/*NOSTRICT*/
-			(void)write(wf,(char *)wtmp,sizeof(wtmp));
-			(void)close(wf);
-		}
+		logwtmp("{", "date", "");
 	}
 
 	username = getlogin();
 	if (!username || *username == '\0')	/* single-user or no tty */
 		username = "root";
-	syslog(LOG_AUTH | LOG_NOTICE,"date set by %s",username);
+	syslog(LOG_AUTH | LOG_NOTICE, "date set by %s", username);
 
 display:
-	if (gettimeofday(&tv,(struct timezone *)0)) {
+	if (gettimeofday(&tv, (struct timezone *)NULL)) {
 		perror("gettimeofday");
 		exit(1);
 	}
@@ -150,13 +144,13 @@ display:
 		tzn = "GMT";
 	}
 	else {
-		struct tm	*tp;
+		struct tm *tp;
 
 		tp = localtime((time_t *)&tv.tv_sec);
 		ap = asctime(tp);
 		tzn = tp->tm_zone;
 	}
-	printf("%.20s%s%s",ap,tzn,ap + 19);
+	printf("%.20s%s%s", ap, tzn, ap + 19);
 	exit(retval);
 }
 
@@ -166,14 +160,14 @@ display:
  */
 static
 gtime(ap)
-	register char	*ap;		/* user argument */
+	register char *ap;
 {
-	register int	year, month;
-	register char	*C;		/* pointer into time argument */
-	struct tm	*L;
-	int	day, hour, mins, secs;
+	register int year, month;
+	register char *C;
+	struct tm *L;
+	int day, hour, mins, secs;
 
-	for (secs = 0, C = ap;*C;++C) {
+	for (secs = 0, C = ap; *C; ++C) {
 		if (*C == '.') {		/* seconds provided */
 			if (strlen(C) != 3)
 				return(1);
@@ -236,8 +230,8 @@ gtime(ap)
 #define TSPTYPES
 #include <protocols/timed.h>
 
-#define WAITACK		2	/* seconds */
-#define WAITDATEACK	5	/* seconds */
+#define	WAITACK		2	/* seconds */
+#define	WAITDATEACK	5	/* seconds */
 
 extern	int errno;
 /*
@@ -248,7 +242,6 @@ extern	int errno;
  * notifies the master that a correction is needed.
  * Returns 1 on success, 0 on failure.
  */
-static
 netsettime(ntv)
 	struct timeval ntv;
 {
@@ -263,7 +256,7 @@ netsettime(ntv)
 
 	sp = getservbyname("timed", "udp");
 	if (sp == 0) {
-		fputs("udp/timed: unknown service\n",stderr);
+		fputs("udp/timed: unknown service\n", stderr);
 		retval = 2;
 		return (0);
 	}
@@ -289,7 +282,7 @@ netsettime(ntv)
 		}
 	}
 	if (port == IPPORT_RESERVED / 2) {
-		fputs("date: All ports in use\n",stderr);
+		fputs("date: All ports in use\n", stderr);
 		goto bad;
 	}
 	msg.tsp_type = TSP_SETDATE;
@@ -369,5 +362,5 @@ bad:
 
 usage()
 {
-	fputs("usage: date [-nu] [-d dst] [-t minutes_west] [yymmddhhmm[.ss]]\n",stderr);
+	fputs("usage: date [-nu] [-d dst] [-t minutes_west] [yymmddhhmm[.ss]]\n", stderr);
 }
