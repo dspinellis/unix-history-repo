@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.74 92/12/20$
  *
- *	@(#)machdep.c	8.14 (Berkeley) %G%
+ *	@(#)machdep.c	8.15 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1616,8 +1616,6 @@ badkstack(oflow, fr)
 /*
  * print a primitive backtrace for the requested process.
  */
-#define MAXARGS 4
-
 backtrace(p)
 	struct proc *p;
 {
@@ -1645,15 +1643,11 @@ backtrace(p)
 	printf("Process %s\n", p->p_comm);
 	while (fp > kstack) {
 		fp += fix;
-		printf("Function: 0x%x(", pc);
+		if (kernacc(fp, 6 * sizeof(*lfp), B_READ) == 0)
+			return;
 		lfp = (long *)fp;
-		fmt = ", ";
-		for (i = 0; i < MAXARGS; i++) {
-			arg = lfp[i + 2];
-			if (i == MAXARGS - 1)
-				fmt = ")\n";
-			printf("0x%x%s", arg, fmt);
-		}
+		printf("Function: 0x%x(0x%x, 0x%x, 0x%x, 0x%x)\n",
+		    pc, lfp[2], lfp[3], lfp[4], lfp[5]);
 		pc = lfp[1];
 		fp = (caddr_t)lfp[0];
 	}
