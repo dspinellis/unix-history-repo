@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	5.20 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	5.21 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	5.20 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	5.21 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -116,8 +116,8 @@ udbexpand(a, sendq, e)
 	bool breakout;
 	register struct udbent *up;
 	int keylen;
-	char keybuf[128];
-	char buf[8192];
+	char keybuf[MAXKEY];
+	char buf[BUFSIZ];
 
 	if (tTd(28, 1))
 		printf("expand(%s)\n", a->q_paddr);
@@ -265,7 +265,7 @@ udbsender(sender)
 	int i;
 	int keylen;
 	DBT key, info;
-	char keybuf[128];
+	char keybuf[MAXKEY];
 
 	if (tTd(28, 1))
 		printf("udbsender(%s)\n", sender);
@@ -407,7 +407,7 @@ _udbx_init()
 	register char *p;
 	int i;
 	register struct udbent *up;
-	char buf[8192];
+	char buf[BUFSIZ];
 
 	if (UdbInitialized)
 		return EX_OK;
