@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mount.h	7.14 (Berkeley) %G%
+ *	@(#)mount.h	7.15 (Berkeley) %G%
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -221,6 +221,7 @@ struct nfs_args {
 #define	NFSMNT_NOCONN	0x0080	/* Don't Connect the socket */
 #define	NFSMNT_SCKLOCK	0x0100	/* Lock socket against others */
 #define	NFSMNT_WANTSCK	0x0200	/* Want a socket lock */
+#define	NFSMNT_SPONGY	0x0400	/* spongy mount (soft for stat and lookup) */
 #define	NFSMNT_LOCKBITS	(NFSMNT_SCKLOCK | NFSMNT_WANTSCK)
 #endif NFS
 
