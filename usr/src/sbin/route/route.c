@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)route.c	4.13 (Berkeley) 84/10/31";
+static char sccsid[] = "@(#)route.c	4.14 (Berkeley) 85/06/03";
 #endif
 
 #include <sys/types.h>
@@ -16,8 +16,8 @@ static char sccsid[] = "@(#)route.c	4.13 (Berkeley) 84/10/31";
 #include <netdb.h>
 
 struct	rtentry route;
-int	options;
 int	s;
+int	forcehost, forcenet;
 struct	sockaddr_in sin = { AF_INET };
 struct	in_addr inet_makeaddr();
 
@@ -27,16 +27,31 @@ main(argc, argv)
 {
 
 	if (argc < 2)
-		printf("usage: route [ -f ] [ cmd args ]\n"), exit(1);
+		printf("usage: route [ -f ] [ [ -h ] [ -n ] cmd args ]\n"),
+		exit(1);
 	s = socket(AF_INET, SOCK_RAW, 0);
 	if (s < 0) {
 		perror("route: socket");
 		exit(1);
 	}
 	argc--, argv++;
-	if (strcmp(*argv, "-f") == 0) {
-		argc--, argv++;
-		flushroutes();
+	for (; argc >  0 && argv[0][0] == '-'; argc--, argv++) {
+		for (argv[0]++; *argv[0]; argv[0]++)
+			switch (*argv[0]) {
+			case 'f':
+				flushroutes();
+				break;
+			case 'h':
+				forcehost++;
+				break;
+			case 'n':
+				forcenet++;
+				break;
+			}
+	}
+	if (forcehost && forcenet) {
+		fprintf(stderr, "-n and -h are incompatible\n");
+		exit(1);
 	}
 	if (argc > 0) {
 		if (strcmp(*argv, "add") == 0)
@@ -142,28 +157,18 @@ routename(in)
 	static char line[50];
 	struct hostent *hp;
 	struct netent *np;
-	int lna, net, subnet;
+	int lna, net;
 
 	net = inet_netof(in);
-	subnet = inet_subnetof(in);
 	lna = inet_lnaof(in);
-	if (lna == INADDR_ANY) {
+	if (in.s_addr == INADDR_ANY)
+		cp = "default";
+	if (cp == 0 && (lna == INADDR_ANY || forcenet)) {
 		np = getnetbyaddr(net, AF_INET);
 		if (np)
 			cp = np->n_name;
-		else if (net == 0)
-			cp = "default";
-	} else if ((subnet != net) && ((lna & 0xff) == 0) &&
-	    (np = getnetbyaddr(subnet, AF_INET))) {
-		struct in_addr subnaddr, inet_makeaddr();
-
-		subnaddr = inet_makeaddr(subnet, INADDR_ANY);
-		if (bcmp(&in, &subnaddr, sizeof(in)) == 0)
-			cp = np->n_name;
-		else
-			goto host;
-	} else {
-host:
+	}
+	if (cp == 0) {
 		hp = gethostbyaddr(&in, sizeof (struct in_addr), AF_INET);
 		if (hp)
 			cp = hp->h_name;
@@ -204,6 +209,10 @@ newroute(argc, argv)
 		}
 	}
 	ishost = getaddr(argv[1], &route.rt_dst);
+	if (forcehost)
+		ishost = 1;
+	if (forcenet)
+		ishost = 0;
 	(void) getaddr(argv[2], &route.rt_gateway);
 	sin = (struct sockaddr_in *)&route.rt_dst;
 	route.rt_flags = RTF_UP;
@@ -282,32 +291,4 @@ getaddr(s, sin)
 	}
 	fprintf(stderr, "%s: bad value\n", s);
 	exit(1);
-}
-
-/*
- * Return the possible subnetwork number from an internet address.
- * If the address is of the form of a subnet address (most significant
- * bit of the host part is set), believe the subnet exists.
- * Otherwise, return the network number.
- * SHOULD FIND OUT WHETHER THIS IS A LOCAL NETWORK BEFORE LOOKING
- * INSIDE OF THE HOST PART.  We can only believe this if we have other
- * information (e.g., we can find a name for this number).
- */
-inet_subnetof(in)
-	struct in_addr in;
-{
-	register u_long i = ntohl(in.s_addr);
-
-	if (IN_CLASSA(i)) {
-		if (IN_SUBNETA(i))
-			return ((i & IN_CLASSA_SUBNET) >> IN_CLASSA_SUBNSHIFT);
-		else
-			return ((i & IN_CLASSA_NET) >> IN_CLASSA_NSHIFT);
-	} else if (IN_CLASSB(i)) {
-		if (IN_SUBNETB(i))
-			return ((i & IN_CLASSB_SUBNET) >> IN_CLASSB_SUBNSHIFT);
-		else
-			return ((i & IN_CLASSB_NET) >> IN_CLASSB_NSHIFT);
-	} else
-		return ((i & IN_CLASSC_NET) >> IN_CLASSC_NSHIFT);
 }
