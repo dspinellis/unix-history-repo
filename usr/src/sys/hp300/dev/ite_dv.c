@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: ite_dv.c 1.9 92/12/20$
+ * from: Utah $Hdr: ite_dv.c 1.10 93/06/25$
  *
- *	@(#)ite_dv.c	8.1 (Berkeley) %G%
+ *	@(#)ite_dv.c	7.9 (Berkeley) %G%
  */
 
 #include "ite.h"
@@ -52,6 +52,17 @@ dvbox_init(ip)
 		ip->fbheight = gp->g_display.gd_fbheight;
 		ip->dwidth = gp->g_display.gd_dwidth;
 		ip->dheight = gp->g_display.gd_dheight;
+		/*
+		 * XXX some displays (e.g. the davinci) appear
+		 * to return a display height greater than the
+		 * returned FB height.  Guess we should go back
+		 * to getting the display dimensions from the
+		 * fontrom...
+		 */
+		if (ip->dwidth > ip->fbwidth)
+			ip->dwidth = ip->fbwidth;
+		if (ip->dheight > ip->fbheight)
+			ip->dheight = ip->fbheight;
 	}
 
 	dv_reset(ip->regbase);
