@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)getfsent.3	6.6 (Berkeley) %G%
+.\"	@(#)getfsent.3	6.7 (Berkeley) %G%
 .\"
 .TH GETFSENT 3  ""
 .UC 4
@@ -47,12 +47,15 @@ description file,
 .RS
 .PP
 .nf
+.ta \w'#define 'u +\w'char\ \ 'u +\w'*fs_vfstype;\ \ 'u
 struct fstab {
-	char	*fs_spec;
-	char	*fs_file;
-	char	*fs_type;
-	int	fs_freq;
-	int	fs_passno;
+	char	*fs_spec;	/* block special device name */
+	char	*fs_file;	/* file system path prefix */
+	char	*fs_vfstype;	/* type of file system */
+	char	*fs_mntops;	/* comma separated mount options */
+	char	*fs_type;	/* rw, ro, sw, or xx */
+	int	fs_freq;	/* dump frequency, in days */
+	int	fs_passno;	/* pass number on parallel dump */
 };
 .ft R
 .ad
