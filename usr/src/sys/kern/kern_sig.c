@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	7.43 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.44 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -187,9 +187,10 @@ execsigs(p)
 	 * Reset stack state to the user stack.
 	 * Clear set of signals caught on the signal stack.
 	 */
-	ps->ps_onstack = 0;
-	ps->ps_sigsp = 0;
-	ps->ps_sigonstack = 0;
+	ps->ps_sigstk.ss_flags = SA_DISABLE;
+	ps->ps_sigstk.ss_size = 0;
+	ps->ps_sigstk.ss_base = 0;
+	ps->ps_flags = 0;
 }
 
 /*
@@ -358,15 +359,16 @@ sigsuspend(p, uap, retval)
 	 * to indicate this.
 	 */
 	ps->ps_oldmask = p->p_sigmask;
-	ps->ps_flags |= SA_OLDMASK;
+	ps->ps_flags |= SAS_OLDMASK;
 	p->p_sigmask = uap->mask &~ sigcantmask;
 	(void) tsleep((caddr_t) ps, PPAUSE|PCATCH, "pause", 0);
 	/* always return EINTR rather than ERESTART... */
 	return (EINTR);
 }
 
+#ifdef COMPAT_43
 /* ARGSUSED */
-sigstack(p, uap, retval)
+osigstack(p, uap, retval)
 	struct proc *p;
 	register struct args {
 		struct	sigstack *nss;
@@ -375,15 +377,60 @@ sigstack(p, uap, retval)
 	int *retval;
 {
 	struct sigstack ss;
+	struct sigacts *psp;
 	int error = 0;
 
-	if (uap->oss && (error = copyout((caddr_t)&p->p_sigacts->ps_sigstack,
-	    (caddr_t)uap->oss, sizeof (struct sigstack))))
+	psp = p->p_sigacts;
+	ss.ss_sp = psp->ps_sigstk.ss_base;
+	ss.ss_onstack = psp->ps_sigstk.ss_flags & SA_ONSTACK;
+	if (uap->oss && (error = copyout((caddr_t)&ss, (caddr_t)uap->oss,
+	    sizeof (struct sigstack))))
 		return (error);
 	if (uap->nss && (error = copyin((caddr_t)uap->nss, (caddr_t)&ss,
-	    sizeof (ss))) == 0)
-		p->p_sigacts->ps_sigstack = ss;
+	    sizeof (ss))) == 0) {
+		psp->ps_sigstk.ss_base = ss.ss_sp;
+		psp->ps_sigstk.ss_size = 0;
+		psp->ps_sigstk.ss_flags |= ss.ss_onstack & SA_ONSTACK;
+		psp->ps_flags |= SAS_ALTSTACK;
+	}
 	return (error);
+}
+#endif /* COMPAT_43 */
+
+/* ARGSUSED */
+sigaltstack(p, uap, retval)
+	struct proc *p;
+	register struct args {
+		struct	sigaltstack *nss;
+		struct	sigaltstack *oss;
+	} *uap;
+	int *retval;
+{
+	struct sigacts *psp;
+	struct sigaltstack ss;
+	int error;
+
+	psp = p->p_sigacts;
+	if ((psp->ps_flags & SAS_ALTSTACK) == 0)
+		psp->ps_sigstk.ss_flags |= SA_DISABLE;
+	if (uap->oss && (error = copyout((caddr_t)&psp->ps_sigstk,
+	    (caddr_t)uap->oss, sizeof (struct sigaltstack))))
+		return (error);
+	if (uap->nss && (error = copyin((caddr_t)uap->nss, (caddr_t)&ss,
+	    sizeof (ss))))
+		return (error);
+	if (ss.ss_flags & SA_DISABLE) {
+		if (psp->ps_sigstk.ss_flags & SA_ONSTACK)
+			return (EINVAL);
+		psp->ps_flags &= ~SAS_ALTSTACK;
+		psp->ps_sigstk.ss_flags = ss.ss_flags;
+		return (0);
+	}
+	if (ss.ss_size < MINSIGSTKSZ)
+		return (ENOMEM);
+	psp->ps_flags |= SAS_ALTSTACK;
+	psp->ps_sigstk= ss;
+	return (0);
 }
 
 /* ARGSUSED */
@@ -935,7 +982,7 @@ psig(sig)
 	action = ps->ps_sigact[sig];
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_PSIG))
-		ktrpsig(p->p_tracep, sig, action, ps->ps_flags & SA_OLDMASK ?
+		ktrpsig(p->p_tracep, sig, action, ps->ps_flags & SAS_OLDMASK ?
 		    ps->ps_oldmask : p->p_sigmask, 0);
 #endif
 	if (action == SIG_DFL) {
@@ -963,9 +1010,9 @@ psig(sig)
 		 * restored after the signal processing is completed.
 		 */
 		(void) splhigh();
-		if (ps->ps_flags & SA_OLDMASK) {
+		if (ps->ps_flags & SAS_OLDMASK) {
 			returnmask = ps->ps_oldmask;
-			ps->ps_flags &= ~SA_OLDMASK;
+			ps->ps_flags &= ~SAS_OLDMASK;
 		} else
 			returnmask = p->p_sigmask;
 		p->p_sigmask |= ps->ps_catchmask[sig] | mask;
