@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)bugfiler.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
@@ -704,6 +704,7 @@ reply(to, file1, file2)
 	 * Output the proper header information.
 	 */
 	fprintf(fout, "Reply-To: %s%s\n", BUGS_NAME, BUGS_HOME);
+	fprintf(fout, "From: %s%s (Bugs Bunny)\n", BUGS_NAME, BUGS_HOME);
 	if (RETURNPATH_I != NULL)
 		to = RETURNPATH_I;
 	if (REPLYTO_I != NULL)
