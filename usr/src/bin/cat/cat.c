@@ -15,19 +15,25 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cat.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)cat.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/file.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 
-extern int errno;
 int bflag, eflag, nflag, sflag, tflag, vflag;
 int rval;
 char *filename;
+
+void cook_args(), cook_buf(), raw_args(), raw_cat();
+void err __P((int, const char *, ...));
 
 main(argc, argv)
 	int argc;
@@ -35,7 +41,6 @@ main(argc, argv)
 {
 	extern int optind;
 	int ch;
-	char *strerror();
 
 	while ((ch = getopt(argc, argv, "benstuv")) != EOF)
 		switch (ch) {
@@ -74,6 +79,7 @@ main(argc, argv)
 	exit(rval);
 }
 
+void
 cook_args(argv)
 	char **argv;
 {
@@ -86,9 +92,7 @@ cook_args(argv)
 			if (!strcmp(*argv, "-"))
 				fp = stdin;
 			else if (!(fp = fopen(*argv, "r"))) {
-				(void)fprintf(stderr, 
-				    "cat: %s: %s\n", *argv, strerror(errno));
-				rval = 1;
+				err(0, "%s: %s", *argv, strerror(errno));
 				++argv;
 				continue;
 			}
@@ -100,6 +104,7 @@ cook_args(argv)
 	} while (*argv);
 }
 
+void
 cook_buf(fp)
 	register FILE *fp;
 {
@@ -155,16 +160,14 @@ cook_buf(fp)
 			break;
 	}
 	if (ferror(fp)) {
-		(void)fprintf(stderr, "cat: %s: read error\n", filename);
-		rval = 1;
+		err(0, "%s: %s", strerror(errno));
+		clearerr(fp);
 	}
-	if (ferror(stdout)) {
-		clearerr(stdout);
-		(void)fprintf(stderr, "cat: stdout: write error\n");
-		rval = 1;
-	}
+	if (ferror(stdout))
+		err(1, "stdout: %s", strerror(errno));
 }
 
+void
 raw_args(argv)
 	char **argv;
 {
@@ -177,52 +180,70 @@ raw_args(argv)
 			if (!strcmp(*argv, "-"))
 				fd = fileno(stdin);
 			else if ((fd = open(*argv, O_RDONLY, 0)) < 0) {
-				(void)fprintf(stderr, "cat: %s: %s\n",
-				    *argv, strerror(errno));
-				rval = 1;
+				err(0, "%s: %s", *argv, strerror(errno));
 				++argv;
 				continue;
 			}
 			filename = *argv++;
 		}
-		rval |= raw_cat(fd);
+		raw_cat(fd);
 		if (fd != fileno(stdin))
 			(void)close(fd);
 	} while (*argv);
 }
 
-raw_cat(fd)
-	register int fd;
+void
+raw_cat(rfd)
+	register int rfd;
 {
-	register int nr, nw, off;
+	register int nr, nw, off, wfd;
 	static int bsize;
 	static char *buf;
 	struct stat sbuf;
-	char *malloc(), *strerror();
 
+	wfd = fileno(stdout);
 	if (!buf) {
-		if (fstat(fileno(stdout), &sbuf)) {
-			(void)fprintf(stderr, "cat: %s: %s\n", filename,
-			    strerror(errno));
-			return(1);
-		}
+		if (fstat(wfd, &sbuf))
+			err(1, "%s: %s", filename, strerror(errno));
 		bsize = MAX(sbuf.st_blksize, 1024);
-		if (!(buf = malloc((u_int)bsize))) {
-			(void)fprintf(stderr, "cat: %s: no memory.\n",
-			    filename);
-			return(1);
-		}
+		if (!(buf = malloc((u_int)bsize)))
+			err(1, "%s", strerror(errno));
 	}
-	while ((nr = read(fd, buf, bsize)) > 0)
+	while ((nr = read(rfd, buf, bsize)) > 0)
 		for (off = 0; off < nr; nr -= nw, off += nw)
-			if ((nw = write(fileno(stdout), buf + off, nr)) < 0) {
-				perror("cat: stdout");
-				return(1);
-			}
-	if (nr < 0) {
-		(void)fprintf(stderr, "cat: %s: %s\n", filename,
-		    strerror(errno));
-		return(1);
-	}
-	return(0);
+			if ((nw = write(wfd, buf + off, nr)) < 0)
+				err(1, "stdout");
+	if (nr < 0)
+		err(0, "%s: %s", filename, strerror(errno));
+}
+
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(int ex, const char *fmt, ...)
+#else
+err(ex, fmt, va_alist)
+	int ex;
+	char *fmt;
+        va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "cat: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	if (ex)
+		exit(1);
+	rval = 1;
 }
