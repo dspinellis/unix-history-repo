@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.33.1.1 (Berkeley) %G%
+#	@(#)Makefile	5.34 (Berkeley) %G%
 
 # Missing: adb dd ed expr tar test
 
