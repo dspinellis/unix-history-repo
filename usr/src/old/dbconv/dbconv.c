@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dbconv.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)dbconv.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -45,8 +45,7 @@ main(argc, argv)
 	dbm = dbm_open(*argv, O_RDONLY, 0);
 	if (!dbm)
 		error(*argv);
-	db = hash_open(*++argv, O_CREAT|O_WRONLY, DEFFILEMODE,
-	    (HASHINFO *)NULL);
+	db = dbopen(*++argv, O_CREAT|O_WRONLY, DEFFILEMODE, DB_HASH, NULL);
 	if (!db)
 		error(*argv);
 
