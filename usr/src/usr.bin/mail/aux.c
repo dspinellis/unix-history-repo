@@ -11,7 +11,7 @@
  * Auxiliary functions.
  */
 
-static char *SccsId = "@(#)aux.c	1.2 %G%";
+static char *SccsId = "@(#)aux.c	1.3 %G%";
 
 /*
  * Return a pointer to a dynamic copy of the argument.
@@ -380,7 +380,10 @@ icequal(s1, s2)
  */
 
 static	int	ssp = -1;		/* Top of file stack */
-static	FILE	*sstack[_NFILE];	/* Saved input files */
+struct sstack {
+	FILE	*s_file;		/* File we were in. */
+	int	s_cond;			/* Saved state of conditionals */
+} sstack[_NFILE];
 
 /*
  * Pushdown current input file and switch to a new one.
@@ -402,7 +405,9 @@ source(name)
 		fclose(fi);
 		return(1);
 	}
-	sstack[++ssp] = input;
+	sstack[++ssp].s_file = input;
+	sstack[ssp].s_cond = cond;
+	cond = CANY;
 	input = fi;
 	sourcing++;
 	return(0);
@@ -436,7 +441,10 @@ unstack()
 		return(1);
 	}
 	fclose(input);
-	input = sstack[ssp--];
+	if (cond != CANY)
+		printf("Unmatched \"if\"\n");
+	cond = sstack[ssp].s_cond;
+	input = sstack[ssp--].s_file;
 	if (ssp < 0)
 		sourcing = 0;
 	return(0);
