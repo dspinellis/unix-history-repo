@@ -1,0 +1,2 @@
+Mbasename	basename.c	/^main(argc, argv)$/
+usage	basename.c	/^usage()$/
