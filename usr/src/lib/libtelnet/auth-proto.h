@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)auth-proto.h	5.1 (Berkeley) %G%
+ *	@(#)auth-proto.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -49,13 +49,6 @@ void auth_finished P((Authenticator *, int));
 int auth_wait P((char *));
 void auth_disable_name P((char *));
 void auth_gen_printsub P((unsigned char *, int, unsigned char *, int));
-
-#ifdef	SIMPLE_AUTH
-int simple_auth_init P((Authenticator *, int));
-int simple_auth_send P((Authenticator *));
-void simple_auth_is_reply P((Authenticator *, unsigned char *, int));
-void simple_auth_printsub P((unsigned char *, int, unsigned char *, int));
-#endif
 
 #ifdef	KRB4
 int kerberos4_init P((Authenticator *, int));

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)externs.h	5.2 (Berkeley) %G%
+ *	@(#)externs.h	5.3 (Berkeley) %G%
  */
 
 #ifndef	BSD
@@ -70,6 +70,7 @@ extern int errno;		/* outside this world */
 
 extern int
     autologin,		/* Autologin enabled */
+    skiprc,		/* Don't process the ~/.telnetrc file */
     eight,		/* use eight bit mode (binary in and/or out */
     flushout,		/* flush output */
     connected,		/* Are we connected to the other side? */

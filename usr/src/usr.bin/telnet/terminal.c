@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)terminal.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)terminal.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <arpa/telnet.h>
@@ -192,7 +192,7 @@ setconnmode(force)
     if ((newmode & (MODE_ECHO|MODE_EDIT)) == MODE_EDIT) {
 	if (my_want_state_is_will(TELOPT_ENCRYPT)
 				&& (enc_passwd == 0) && !encrypt_output) {
-	    encrypt_request_start();
+	    encrypt_request_start(0, 0);
 	    enc_passwd = 1;
 	}
     } else {

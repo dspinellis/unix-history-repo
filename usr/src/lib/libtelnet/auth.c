@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)auth.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)auth.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -58,7 +58,6 @@ static	int	Server = 0;
 static	Authenticator	*authenticated = 0;
 static	int	authenticating = 0;
 static	int	validuser = 0;
-static	char	valid_name[256];
 static	unsigned char	_auth_send_data[256];
 static	unsigned char	*auth_send_data;
 static	int	auth_send_cnt = 0;
@@ -69,6 +68,13 @@ static	int	auth_send_cnt = 0;
  */
 Authenticator authenticators[] = {
 #ifdef	KRB5
+	{ AUTHTYPE_KERBEROS_V5, AUTH_WHO_CLIENT|AUTH_HOW_MUTUAL,
+				kerberos5_init,
+				kerberos5_send,
+				kerberos5_is,
+				kerberos5_reply,
+				kerberos5_status,
+				kerberos5_printsub },
 	{ AUTHTYPE_KERBEROS_V5, AUTH_WHO_CLIENT|AUTH_HOW_ONE_WAY,
 				kerberos5_init,
 				kerberos5_send,
@@ -78,6 +84,13 @@ Authenticator authenticators[] = {
 				kerberos5_printsub },
 #endif
 #ifdef	KRB4
+	{ AUTHTYPE_KERBEROS_V4, AUTH_WHO_CLIENT|AUTH_HOW_MUTUAL,
+				kerberos4_init,
+				kerberos4_send,
+				kerberos4_is,
+				kerberos4_reply,
+				kerberos4_status,
+				kerberos4_printsub },
 	{ AUTHTYPE_KERBEROS_V4, AUTH_WHO_CLIENT|AUTH_HOW_ONE_WAY,
 				kerberos4_init,
 				kerberos4_send,
@@ -85,15 +98,6 @@ Authenticator authenticators[] = {
 				kerberos4_reply,
 				kerberos4_status,
 				kerberos4_printsub },
-#endif
-#ifdef	SIMPLE_AUTH
-	{ AUTHTYPE_TEST,	AUTH_WHO_CLIENT|AUTH_HOW_ONE_WAY,
-				simple_auth_init,
-				simple_auth_send,
-				simple_auth_is_reply,
-				simple_auth_is_reply,
-				0,
-				simple_auth_printsub },
 #endif
 	{ 0, },
 };
@@ -132,9 +136,9 @@ auth_init(name, server)
 		if (!ap->init || (*ap->init)(ap, server)) {
 			i_support |= typemask(ap->type);
 			if (auth_debug_mode)
-				printf(">>>%s: I support auth type %d\r\n",
+				printf(">>>%s: I support auth type %d %d\r\n",
 					Name,
-					ap->type);
+					ap->type, ap->way);
 		}
 		++ap;
 	}
@@ -218,9 +222,13 @@ auth_onoff(type, on)
 }
 
 	int
-auth_togdebug()
+auth_togdebug(on)
+	int on;
 {
-	auth_debug_mode ^= 1;
+	if (on < 0)
+		auth_debug_mode ^= 1;
+	else
+		auth_debug_mode = on;
 	printf("auth debugging %s\n", auth_debug_mode ? "enabled" : "disabled");
 	return(1);
 }
@@ -260,8 +268,8 @@ auth_request()
 		while (ap->type) {
 			if (i_support & ~i_wont_support & typemask(ap->type)) {
 				if (auth_debug_mode) {
-					printf(">>>%s: Sending type %d\r\n",
-						Name, ap->type);
+					printf(">>>%s: Sending type %d %d\r\n",
+						Name, ap->type, ap->way);
 				}
 				*e++ = ap->type;
 				*e++ = ap->way;
@@ -336,8 +344,9 @@ auth_send(data, cnt)
 				printf("Internal state error: cannot find authentication type %d a second time\r\n", *auth_send_data);
 			} else if (ap->send) {
 				if (auth_debug_mode)
-					printf(">>>%s: Trying %d\r\n",
-						Name, *auth_send_data);
+					printf(">>>%s: Trying %d %d\r\n",
+						Name, auth_send_data[0],
+							auth_send_data[1]);
 				if ((*ap->send)(ap)) {
 					/*
 					 * Okay, we found one we like
@@ -414,6 +423,55 @@ auth_reply(data, cnt)
 	} else if (auth_debug_mode)
 		printf(">>>%s: Invalid authentication in SEND: %d\r\n",
 			Name, *data);
+}
+
+	void
+auth_name(data, cnt)
+	unsigned char *data;
+	int cnt;
+{
+	Authenticator *ap;
+	unsigned char savename[256];
+
+	if (cnt < 1) {
+		if (auth_debug_mode)
+			printf(">>>%s: Empty name in NAME\r\n", Name);
+		return;
+	}
+	if (cnt > sizeof(savename) - 1) {
+		if (auth_debug_mode)
+			printf(">>>%s: Name in NAME (%d) exceeds %d length\r\n",
+					Name, cnt, sizeof(savename)-1);
+		return;
+	}
+	bcopy((void *)data, (void *)savename, cnt);
+	savename[cnt] = '\0';	/* Null terminate */
+	if (auth_debug_mode)
+		printf(">>>%s: Got NAME [%s]\r\n", Name, savename);
+	auth_encrypt_user(savename);
+}
+
+	int
+auth_sendname(cp, len)
+	unsigned char *cp;
+	int len;
+{
+	static unsigned char str_request[256+6]
+			= { IAC, SB, TELOPT_AUTHENTICATION, TELQUAL_NAME, };
+	register unsigned char *e = str_request + 4;
+	register unsigned char *ee = &str_request[sizeof(str_request)-2];
+
+	while (--len >= 0) {
+		if ((*e++ = *cp++) == IAC)
+			*e++ = IAC;
+		if (e >= ee)
+			return(0);
+	}
+	*e++ = IAC;
+	*e++ = SE;
+	net_write(str_request, e - str_request);
+	printsub('>', &str_request[2], e - &str_request[2]);
+	return(1);
 }
 
 	void

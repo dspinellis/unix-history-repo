@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utility.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)utility.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #define PRINTOPTIONS
@@ -485,7 +485,7 @@ printsub(direction, pointer, length)
     int			length;		/* length of suboption data */
 {
     register int i;
-    char buf[256];
+    char buf[512];
 
         if (!(diagnostic & TD_OPTIONS))
 		return;
@@ -942,9 +942,9 @@ printsub(direction, pointer, length)
 		    break;
 		}
 		sprintf(nfrontp, "%s|%s",
-			(pointer[3] & AUTH_WHO_MASK == AUTH_WHO_CLIENT) ?
+			((pointer[3] & AUTH_WHO_MASK) == AUTH_WHO_CLIENT) ?
 			"CLIENT" : "SERVER",
-			(pointer[3] & AUTH_HOW_MASK == AUTH_HOW_MUTUAL) ?
+			((pointer[3] & AUTH_HOW_MASK) == AUTH_HOW_MUTUAL) ?
 			"MUTUAL" : "ONE-WAY");
 		nfrontp += strlen(nfrontp);
 
@@ -969,13 +969,22 @@ printsub(direction, pointer, length)
 			break;
 		    }
 		    sprintf(nfrontp, "%s|%s ",
-			(pointer[i] & AUTH_WHO_MASK == AUTH_WHO_CLIENT) ?
+			((pointer[i] & AUTH_WHO_MASK) == AUTH_WHO_CLIENT) ?
 							"CLIENT" : "SERVER",
-			(pointer[i] & AUTH_HOW_MASK == AUTH_HOW_MUTUAL) ?
+			((pointer[i] & AUTH_HOW_MASK) == AUTH_HOW_MUTUAL) ?
 							"MUTUAL" : "ONE-WAY");
 		    nfrontp += strlen(nfrontp);
 		    ++i;
 		}
+		break;
+
+	    case TELQUAL_NAME:
+		i = 2;
+		sprintf(nfrontp, " NAME \"");
+		nfrontp += strlen(nfrontp);
+		while (i < length)
+		    *nfrontp += pointer[i++];
+		*nfrontp += '"';
 		break;
 
 	    default:
@@ -1053,9 +1062,20 @@ printsub(direction, pointer, length)
 		}
 		break;
 
-	    default:
-		sprintf(nfrontp, "%d (unknown)", pointer[1]);
+	    case ENCRYPT_ENC_KEYID:
+		sprintf(nfrontp, " ENC_KEYID", pointer[1]);
 		nfrontp += strlen(nfrontp);
+		goto encommon;
+
+	    case ENCRYPT_DEC_KEYID:
+		sprintf(nfrontp, " DEC_KEYID", pointer[1]);
+		nfrontp += strlen(nfrontp);
+		goto encommon;
+
+	    default:
+		sprintf(nfrontp, " %d (unknown)", pointer[1]);
+		nfrontp += strlen(nfrontp);
+	    encommon:
 		for (i = 2; i < length; i++) {
 		    sprintf(nfrontp, " %d", pointer[i]);
 		    nfrontp += strlen(nfrontp);

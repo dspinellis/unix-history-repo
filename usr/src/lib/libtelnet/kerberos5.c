@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)kerberos5.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)kerberos5.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -58,12 +58,14 @@ char *malloc();
 
 static unsigned char str_data[1024] = { IAC, SB, TELOPT_AUTHENTICATION, 0,
 			  		AUTHTYPE_KERBEROS_V5, };
+static unsigned char str_name[1024] = { IAC, SB, TELOPT_AUTHENTICATION,
+					TELQUAL_NAME, };
 
 #define	KRB_AUTH	0		/* Authentication data follows */
 #define	KRB_REJECT	1		/* Rejected (reason might follow) */
-#define	KRB_ACCEPT	2		/* Accepted (name might follow) */
-#define	KRB_NEWKEY	3		/* New key to use */
-#define KRB_NAME        4               /* Name to authenticate for */
+#define	KRB_ACCEPT	2		/* Accepted */
+#define	KRB_CHALLANGE	3		/* Challange for mutual auth. */
+#define	KRB_RESPONSE	4		/* Response for mutual auth. */
 
 static	krb5_data auth;
 	/* telnetd gets session key from here */
@@ -72,18 +74,21 @@ static	krb5_tkt_authent *authdat = NULL;
 #if	defined(ENCRYPT)
 Block	session_key;
 #endif
+static Schedule sched;
+static Block	challange;
 
 	static int
-Data(type, d, c)
+Data(ap, type, d, c)
+	Authenticator *ap;
 	int type;
 	void *d;
 	int c;
 {
-        unsigned char *p = str_data + 6;
+        unsigned char *p = str_data + 4;
 	unsigned char *cd = (unsigned char *)d;
 
 	if (c == -1)
-		c = strlen(d);
+		c = strlen((char *)cd);
 
         if (auth_debug_mode) {
                 printf("%s:%d: [%d] (%d)",
@@ -93,6 +98,8 @@ Data(type, d, c)
                 printd(d, c);
                 printf("\r\n");
         }
+	*p++ = ap->type;
+	*p++ = ap->way;
 	*p++ = type;
         while (c-- > 0) {
                 if ((*p++ = *cd++) == IAC)
@@ -114,8 +121,6 @@ kerberos5_init(ap, server)
 		str_data[3] = TELQUAL_REPLY;
 	else
 		str_data[3] = TELQUAL_IS;
-	str_data[4] = ap->type;
-	str_data[5] = ap->way;
         krb5_init_ets();
 	return(1);
 }
@@ -224,28 +229,42 @@ kerberos5_send(ap)
 		return(0);
 	}
 
-        if (!Data(KRB_NAME, (void *)UserNameRequested, -1)) {
+        if (!auth_sendname(UserNameRequested, strlen(UserNameRequested))) {
                 if (auth_debug_mode)
                         printf("Not enough room for user name\r\n");
                 return(0);
         }
-	if (!Data(KRB_AUTH, auth.data, auth.length)) {
+	if (!Data(ap, KRB_AUTH, auth.data, auth.length)) {
 		if (auth_debug_mode)
 			printf("Not enough room for authentication data\r\n");
 		return(0);
 	}
-#if     defined(ENCRYPT)
-	if (creds.keyblock.keytype == KEYTYPE_DES) {
-		Schedule krb_sched;
-		Block enckey;
+	/*
+	 * If we are doing mutual authentication, get set up to send
+	 * the challange, and verify it when the response comes back.
+	 */
+	if (((ap->way & AUTH_HOW_MASK) == AUTH_HOW_MUTUAL)
+	    && (creds.keyblock.keytype == KEYTYPE_DES)) {
+		register int i;
 
-		des_key_sched(creds.keyblock.contents, krb_sched);
+		des_key_sched(creds.keyblock.contents, sched);
 		des_set_random_generator_seed(creds.keyblock.contents);
-		des_new_random_key(session_key);
-		des_ecb_encrypt(session_key, enckey, krb_sched, 1);
-		Data(KRB_NEWKEY, (void *)enckey, sizeof(enckey));
+		des_new_random_key(challange);
+		des_ecb_encrypt(challange, session_key, sched, 1);
+		/*
+		 * Increment the challange by 1, and encrypt it for
+		 * later comparison.
+		 */
+		for (i = 7; i >= 0; --i) {
+			register int x;
+			x = (unsigned int)challange[i] + 1;
+			challange[i] = x;	/* ignore overflow */
+			if (x < 256)		/* if no overflow, all done */
+				break;
+		}
+		des_ecb_encrypt(challange, challange, sched, 1);
 	}
-#endif
+	
 	if (auth_debug_mode) {
 		printf("Sent Kerberos V5 credentials to server\r\n");
 	}
@@ -264,7 +283,6 @@ kerberos5_is(ap, data, cnt)
 	static char *realm = NULL;
 	krb5_data *server[4];
 	krb5_data srvdata[3];
-        Schedule sched;
         Session_Key skey;
 	char *name;
 	char *getenv();
@@ -272,16 +290,6 @@ kerberos5_is(ap, data, cnt)
 	if (cnt-- < 1)
 		return;
 	switch (*data++) {
-        case KRB_NAME: {
-                char user[256];
-
-                if (cnt > 255)
-                        cnt = 255;
-                strncpy(user, data, cnt);
-                user[cnt] = 0;
-                auth_encrypt_user(user);
-                return;
-            }
 	case KRB_AUTH:
 		auth.data = (char *)data;
 		auth.length = cnt;
@@ -289,7 +297,7 @@ kerberos5_is(ap, data, cnt)
 		if (!(hp = gethostbyname(LocalHostName))) {
 			if (auth_debug_mode)
 				printf("Cannot resolve local host name\r\n");
-			Data(KRB_REJECT, "Unknown local hostname.", -1);
+			Data(ap, KRB_REJECT, "Unknown local hostname.", -1);
 			auth_finished(ap, AUTH_REJECT);
 			return;
 		}
@@ -297,7 +305,7 @@ kerberos5_is(ap, data, cnt)
 		if (!realm && (krb5_get_default_realm(&realm))) {
 			if (auth_debug_mode)
 				printf("Could not get defualt realm\r\n");
-			Data(KRB_REJECT, "Could not get default realm.", -1);
+			Data(ap, KRB_REJECT, "Could not get default realm.", -1);
 			auth_finished(ap, AUTH_REJECT);
 			return;
 		}
@@ -305,7 +313,7 @@ kerberos5_is(ap, data, cnt)
 		if ((name = malloc(strlen(hp->h_name)+1)) == NULL) {
 			if (auth_debug_mode)
 				printf("Out of memory for hostname in Kerberos V5\r\n");
-			Data(KRB_REJECT, "Out of memory.", -1);
+			Data(ap, KRB_REJECT, "Out of memory.", -1);
 			auth_finished(ap, AUTH_REJECT);
 			return;
 		}
@@ -339,7 +347,7 @@ kerberos5_is(ap, data, cnt)
 			authdat = 0;
 			(void) strcpy(errbuf, "Read req failed: ");
 			(void) strcat(errbuf, error_message(r));
-			Data(KRB_REJECT, errbuf, -1);
+			Data(ap, KRB_REJECT, errbuf, -1);
 			if (auth_debug_mode)
 				printf("%s\r\n", errbuf);
 			return;
@@ -348,33 +356,62 @@ kerberos5_is(ap, data, cnt)
 		if (krb5_unparse_name(authdat->ticket->enc_part2 ->client,
 				      					&name))
 			name = 0;
-		Data(KRB_ACCEPT, name, name ? -1 : 0);
+		Data(ap, KRB_ACCEPT, name, name ? -1 : 0);
 		if (auth_debug_mode) {
 			printf("Kerberos5 accepting him as ``%s''\r\n",
 							name ? name : "");
 		}
                 auth_finished(ap, AUTH_USER);
-                return;
-        case KRB_NEWKEY:
-#if     defined(ENCRYPT)
-		if (authdat && authdat->ticket->enc_part2->session->keytype
-				== KEYTYPE_DES)
-		{
-			des_key_sched(authdat->ticket->enc_part2->session
-							->contents, sched);
-			des_ecb_encrypt(data, session_key, sched, 0);
-			skey.type = SK_DES;
-			skey.length = 8;
-			skey.data = session_key;
-			encrypt_session_key(&skey, 1);
+		if (authdat->ticket->enc_part2->session->keytype != KEYTYPE_DES)
+			break;
+		bcopy((void *)authdat->ticket->enc_part2->session->contents,
+		      (void *)session_key, sizeof(Block));
+		break;
+
+	case KRB_CHALLANGE:
+		if (!VALIDKEY(session_key)) {
+			/*
+			 * We don't have a valid session key, so just
+			 * send back a response with an empty session
+			 * key.
+			 */
+			Data(ap, KRB_RESPONSE, (void *)0, 0);
+			break;
 		}
-#endif
-                return;
+
+		des_key_sched(session_key, sched);
+		bcopy((void *)data, (void *)datablock, sizeof(Block));
+		/*
+		 * Take the received encrypted challange, and encrypt
+		 * it again to get a unique session_key for the
+		 * ENCRYPT option.
+		 */
+		des_ecb_encrypt(datablock, session_key, sched, 1);
+		skey.type = SK_DES;
+		skey.length = 8;
+		skey.data = session_key;
+		encrypt_session_key(&skey, 1);
+		/*
+		 * Now decrypt the received encrypted challange,
+		 * increment by one, re-encrypt it and send it back.
+		 */
+		des_ecb_encrypt(datablock, challange, sched, 0);
+		for (r = 7; r >= 0; r++) {
+			register int t;
+			t = (unsigned int)challange[r] + 1;
+			challange[r] = t;	/* ignore overflow */
+			if (t < 256)		/* if no overflow, all done */
+				break;
+		}
+		des_ecb_encrypt(challange, challange, sched, 1);
+		Data(ap, KRB_RESPONSE, (void *)challange, sizeof(challange));
+		break;
+
 	default:
 		if (auth_debug_mode)
 			printf("Unknown Kerberos option %d\r\n", data[-1]);
-		Data(KRB_REJECT, 0, 0);
-		return;
+		Data(ap, KRB_REJECT, 0, 0);
+		break;
 	}
 }
 
@@ -398,18 +435,39 @@ kerberos5_reply(ap, data, cnt)
 		auth_send_retry();
 		return;
 	case KRB_ACCEPT:
-		if (cnt > 0) {
-			printf("[ Kerberos V5 accepts you as %.*s ]\n", cnt, data);
-		} else
-			printf("[ Kerberos V5 accepts you ]\n", cnt, data);
+		printf("[ Kerberos V5 accepts you ]\n", cnt, data);
+		if ((ap->way & AUTH_HOW_MASK) == AUTH_HOW_MUTUAL) {
+			/*
+			 * Send over the encrypted challange.
+		 	 */
+			Data(ap, KRB_CHALLANGE, (void *)session_key,
+						sizeof(session_key));
 #if	defined(ENCRYPT)
-                skey.type = SK_DES;
-                skey.length = 8;
-                skey.data = session_key;
-                encrypt_session_key(&skey, 0);
+			des_ecb_encrypt(session_key, session_key, sched, 1);
+			skey.type = SK_DES;
+			skey.length = 8;
+			skey.data = session_key;
+			encrypt_session_key(&skey, 0);
 #endif
-                auth_finished(ap, AUTH_USER);
+			return;
+		}
+		auth_finished(ap, AUTH_USER);
 		return;
+	case KRB_RESPONSE:
+		/*
+		 * Verify that the response to the challange is correct.
+		 */
+		if ((cnt != sizeof(Block)) ||
+		    (0 != memcmp((void *)data, (void *)challange,
+						sizeof(challange))))
+		{
+			printf("[ Kerberos V5 challange failed!!! ]\r\n");
+			auth_send_retry();
+			return;
+		}
+		printf("[ Kerberos V5 challange successful ]\r\n");
+		auth_finished(ap, AUTH_USER);
+		break;
 	default:
 		if (auth_debug_mode)
 			printf("Unknown Kerberos option %d\r\n", data[-1]);
@@ -450,16 +508,12 @@ kerberos5_printsub(data, cnt, buf, buflen)
 	buflen -= 1;
 
 	switch(data[3]) {
-	case KRB_NAME:			/* Name to authenticate for */
-		strncpy(buf, " NAME ", buflen);
-		goto common;
-
 	case KRB_REJECT:		/* Rejected (reason might follow) */
-		strncpy(buf, " REJECT ", buflen);
+		strncpy((char *)buf, " REJECT ", buflen);
 		goto common;
 
 	case KRB_ACCEPT:		/* Accepted (name might follow) */
-		strncpy(buf, " ACCEPT ", buflen);
+		strncpy((char *)buf, " ACCEPT ", buflen);
 	common:
 		BUMP(buf, buflen);
 		if (cnt <= 4)
@@ -472,21 +526,25 @@ kerberos5_printsub(data, cnt, buf, buflen)
 		break;
 
 	case KRB_AUTH:			/* Authentication data follows */
-		strncpy(buf, " AUTH", buflen);
+		strncpy((char *)buf, " AUTH", buflen);
 		goto common2;
 
-	case KRB_NEWKEY:		/* A new session key follows */
-		strncpy(buf, " NEWKEY", buflen);
+	case KRB_CHALLANGE:
+		strncpy((char *)buf, " CHALLANGE", buflen);
+		goto common2;
+
+	case KRB_RESPONSE:
+		strncpy((char *)buf, " RESPONSE", buflen);
 		goto common2;
 
 	default:
 		sprintf(lbuf, " %d (unknown)", data[3]);
-		strncpy(buf, lbuf, buflen);
+		strncpy((char *)buf, lbuf, buflen);
 	common2:
 		BUMP(buf, buflen);
 		for (i = 4; i < cnt; i++) {
 			sprintf(lbuf, " %d", data[i]);
-			strncpy(buf, lbuf, buflen);
+			strncpy((char *)buf, lbuf, buflen);
 			BUMP(buf, buflen);
 		}
 		break;

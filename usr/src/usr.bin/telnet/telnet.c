@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.52 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.53 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -53,6 +53,7 @@ char	will_wont_resp[256];
 int
 	eight = 0,
 	autologin = 0,	/* Autologin anyone? */
+	skiprc = 0,
 	connected,
 	showoptions,
 	In3270,		/* Are we in 3270 mode? */
@@ -926,6 +927,11 @@ suboption()
 				return;
 			auth_reply(subpointer, SB_LEN());
 			break;
+		case TELQUAL_NAME:
+			if (my_want_state_is_dont(TELOPT_AUTHENTICATION))
+				return;
+			auth_name(subpointer, SB_LEN());
+			break;
 		}
 	}
 	break;
@@ -938,7 +944,7 @@ suboption()
 		case ENCRYPT_START:
 			if (my_want_state_is_dont(TELOPT_ENCRYPT))
 				return;
-			encrypt_start();
+			encrypt_start(subpointer, SB_LEN());
 			break;
 		case ENCRYPT_END:
 			if (my_want_state_is_dont(TELOPT_ENCRYPT))
@@ -953,7 +959,7 @@ suboption()
 		case ENCRYPT_REQSTART:
 			if (my_want_state_is_wont(TELOPT_ENCRYPT))
 				return;
-			encrypt_request_start();
+			encrypt_request_start(subpointer, SB_LEN());
 			break;
 		case ENCRYPT_REQEND:
 			if (my_want_state_is_wont(TELOPT_ENCRYPT))
@@ -975,6 +981,16 @@ suboption()
 			if (my_want_state_is_wont(TELOPT_ENCRYPT))
 				return;
 			encrypt_reply(subpointer, SB_LEN());
+			break;
+		case ENCRYPT_ENC_KEYID:
+			if (my_want_state_is_dont(TELOPT_ENCRYPT))
+				return;
+			encrypt_enc_keyid(subpointer, SB_LEN());
+			break;
+		case ENCRYPT_DEC_KEYID:
+			if (my_want_state_is_wont(TELOPT_ENCRYPT))
+				return;
+			encrypt_dec_keyid(subpointer, SB_LEN());
 			break;
 		default:
 			break;
