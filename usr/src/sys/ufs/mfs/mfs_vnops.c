@@ -4,23 +4,24 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vnops.c	7.23 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.24 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "time.h"
-#include "kernel.h"
-#include "proc.h"
-#include "buf.h"
-#include "map.h"
-#include "vnode.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/time.h>
+#include <sys/kernel.h>
+#include <sys/proc.h>
+#include <sys/buf.h>
+#include <sys/map.h>
+#include <sys/vnode.h>
 
-#include "mfsnode.h"
-#include "mfsiom.h"
+#include <machine/vmparam.h>
+#include <machine/mtpr.h>
 
-#include "machine/vmparam.h"
-#include "machine/mtpr.h"
+#include <ufs/mfs/mfsnode.h>
+#include <ufs/mfs/mfsiom.h>
+#include <ufs/mfs/mfs_extern.h>
 
 #if !defined(hp300) && !defined(i386) && !defined(mips)
 static int mfsmap_want;		/* 1 => need kernel I/O resources */
@@ -75,6 +76,7 @@ struct vnodeops mfs_vnodeops = {
  * so we can tell when we are doing I/O to ourself.
  */
 /* ARGSUSED */
+int
 mfs_open(vp, mode, cred, p)
 	register struct vnode *vp;
 	int mode;
@@ -93,6 +95,7 @@ mfs_open(vp, mode, cred, p)
  * Ioctl operation.
  */
 /* ARGSUSED */
+int
 mfs_ioctl(vp, com, data, fflag, cred, p)
 	struct vnode *vp;
 	int com;
@@ -108,6 +111,7 @@ mfs_ioctl(vp, com, data, fflag, cred, p)
 /*
  * Pass I/O requests to the memory filesystem process.
  */
+int
 mfs_strategy(bp)
 	register struct buf *bp;
 {
@@ -137,6 +141,7 @@ mfs_strategy(bp)
  * (i.e. pagein), we must map the I/O through the kernel virtual
  * address space.
  */
+void
 mfs_doio(bp, base)
 	register struct buf *bp;
 	caddr_t base;
@@ -211,6 +216,7 @@ mfs_doio(bp, base)
  *
  * Trivial on the HP since buffer has already been mapping into KVA space.
  */
+void
 mfs_doio(bp, base)
 	register struct buf *bp;
 	caddr_t base;
@@ -229,6 +235,7 @@ mfs_doio(bp, base)
 /*
  * This is a noop, simply returning what one has been given.
  */
+int
 mfs_bmap(vp, bn, vpp, bnp)
 	struct vnode *vp;
 	daddr_t bn;
@@ -247,6 +254,7 @@ mfs_bmap(vp, bn, vpp, bnp)
  * Memory filesystem close routine
  */
 /* ARGSUSED */
+int
 mfs_close(vp, flag, cred, p)
 	register struct vnode *vp;
 	int flag;
@@ -292,6 +300,7 @@ mfs_close(vp, flag, cred, p)
  * Memory filesystem inactive routine
  */
 /* ARGSUSED */
+int
 mfs_inactive(vp, p)
 	struct vnode *vp;
 	struct proc *p;
@@ -305,6 +314,7 @@ mfs_inactive(vp, p)
 /*
  * Print out the contents of an mfsnode.
  */
+int
 mfs_print(vp)
 	struct vnode *vp;
 {
@@ -312,11 +322,13 @@ mfs_print(vp)
 
 	printf("tag VT_MFS, pid %d, base %d, size %d\n", mfsp->mfs_pid,
 		mfsp->mfs_baseoff, mfsp->mfs_size);
+	return (0);
 }
 
 /*
  * Block device bad operation
  */
+int
 mfs_badop()
 {
 
