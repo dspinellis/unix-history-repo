@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.12 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.13 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.12 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.13 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -115,8 +115,10 @@ smtpinit(m, mci, e)
 	SmtpPhase = mci->mci_phase = "client greeting";
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
 	r = reply(m, mci, e, TimeOuts.to_initial, esmtp_check);
-	if (r < 0 || REPLYTYPE(r) != 2)
+	if (r < 0 || REPLYTYPE(r) == 4)
 		goto tempfail1;
+	if (REPLYTYPE(r) != 2)
+		goto unavailable;
 
 	/*
 	**  Send the HELO command.
