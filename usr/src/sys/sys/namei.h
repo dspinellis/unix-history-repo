@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)namei.h	7.7 (Berkeley) %G%
+ *	@(#)namei.h	7.8 (Berkeley) %G%
  */
 
 #ifndef _NAMEI_
@@ -98,10 +98,12 @@ struct nameidata {
 
 /*
  * This structure describes the elements in the cache of recent
- * names looked up by namei.
+ * names looked up by namei. NCHNAMLEN is sized to make structure
+ * size a power of two to optimize malloc's. Minimum reasonable
+ * size is 15.
  */
 
-#define	NCHNAMLEN	15	/* maximum name segment length we bother with */
+#define	NCHNAMLEN	31	/* maximum name segment length we bother with */
 
 struct	namecache {
 	struct	namecache *nc_forw;	/* hash chain, MUST BE FIRST */
@@ -117,8 +119,6 @@ struct	namecache {
 };
 
 #ifdef KERNEL
-struct	namecache *namecache;
-int	nchsize;
 u_long	nextvnodeid;
 #endif
 
