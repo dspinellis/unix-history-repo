@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)externs.h	1.22 (Berkeley) %G%
+ *	@(#)externs.h	1.23 (Berkeley) %G%
  */
 
 #ifndef	BSD
@@ -240,10 +240,10 @@ extern char termSuspChar;
 # else
 #  define termSuspChar		new_tc.c_cc[VSUSP]
 # endif
-# ifndef	VFLUSHO
+# ifndef	VDISCARD
 extern char termFlushChar;
 # else
-#  define termFlushChar		new_tc.c_cc[VFLUSHO]
+#  define termFlushChar		new_tc.c_cc[VDISCARD]
 # endif
 # ifndef VWERASE
 extern char termWerasChar;

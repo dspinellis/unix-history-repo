@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_term.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_term.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -271,8 +271,8 @@ cc_t **valpp;
 		defval(0);
 #endif
 	case SLC_AO:
-#ifdef	VFLUSHO
-		setval(VFLUSHO, SLC_VARIABLE|SLC_FLUSHOUT);
+#ifdef	VDISCARD
+		setval(VDISCARD, SLC_VARIABLE|SLC_FLUSHOUT);
 #else
 		defval(0);
 #endif
