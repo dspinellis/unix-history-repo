@@ -1,5 +1,5 @@
 /*
- *	@(#)uda.c	6.13 (Berkeley) %G%
+ *	@(#)uda.c	6.14 (Berkeley) %G%
  */
 
 /************************************************************************
@@ -358,6 +358,7 @@ udopen(dev, flag)
 		if (sc->sc_state == S_IDLE)
 			if(!udinit(ui->ui_ctlr)){
 				printf("uda: Controller failed to init\n");
+				(void) splx(s);
 				return(ENXIO);
 			}
 		/* wait for initialization to complete */
