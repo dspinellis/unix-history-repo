@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)sort.c	4.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)sort.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
@@ -177,10 +177,7 @@ char **argv;
 	char *arg;
 	struct field *p, *q;
 	int i;
-	unsigned pid;
-	extern char _sobuf[];
 
-	setbuf(stdout, _sobuf);
 	copyproto();
 	eargv = argv;
 	while (--argc > 0) {
@@ -263,11 +260,14 @@ char **argv;
 		exit(1);
 	}
 	close(a);
-	signal(SIGHUP, term);
+	unlink(file);
+	if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
+		signal(SIGHUP, term);
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		signal(SIGINT, term);
 	signal(SIGPIPE,term);
-	signal(SIGTERM,term);
+	if (signal(SIGTERM, SIG_IGN) != SIG_IGN)
+		signal(SIGTERM,term);
 	nfiles = eargc;
 	if(!mflg && !cflg) {
 		sort();
@@ -563,7 +563,7 @@ term()
 	for(i=eargc; i<=nfiles; i++) {	/*<= in case of interrupt*/
 		unlink(setfil(i));	/*with nfiles not updated*/
 	}
-	exit(error);
+	_exit(error);
 }
 
 cmp(i, j)
@@ -594,6 +594,12 @@ char *i, *j;
 			lb = eol(pb);
 		}
 		if(fp->nflg) {
+			if(tabchar) {
+				if(pa<la&&*pa==tabchar)
+					pa++;
+				if(pb<lb&&*pb==tabchar)
+					pb++;
+			}
 			while(blank(*pa))
 				pa++;
 			while(blank(*pb))
@@ -695,7 +701,8 @@ char *pp;
 				if(*p != '\n')
 					p++;
 				else goto ret;
-			p++;
+			if(i>0||j==0)
+				p++;
 		} else {
 			while(blank(*p))
 				p++;
@@ -705,7 +712,7 @@ char *pp;
 				else goto ret;
 		}
 	}
-	if(fp->bflg[j])
+	if(tabchar==0&&fp->bflg[j])
 		while(blank(*p))
 			p++;
 	i = fp->n[j];
