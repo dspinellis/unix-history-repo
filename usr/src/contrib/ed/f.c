@@ -9,11 +9,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)f.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)f.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
+#include <limits.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <stdio.h>
@@ -40,6 +41,30 @@ f(inputt, errnum)
 	l_temp = filename(inputt, errnum);
 	if (*errnum == 1) {
 		sigspecial++;
+			/* user wants the name from a sh command */
+		if (l_temp && l_temp[FILENAME_LEN+1]) {
+			FILE   *namestream, *popen();
+			int l_len;
+
+			if (l_temp[0] == '\0') {
+				strcpy(help_msg, "no command given");
+				*errnum = -1;
+				return;
+			}
+			if (((namestream = popen(l_temp, "r")) == NULL) ||
+			    ((fgets(l_temp, FILENAME_LEN - 1, namestream)) == NULL)) {
+				strcpy(help_msg, "error executing command");
+				*errnum = -1;
+				if (namestream != NULL)
+					pclose(namestream);
+				ungetc('\n', inputt);
+				return;
+			}
+			l_len = strlen(l_temp) - 1;
+			if (l_temp[l_len] == '\n')
+				l_temp[l_len] = '\0';
+			pclose(namestream);
+		}
 		free(filename_current);
 		filename_current = l_temp;
 		sigspecial--;

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)re.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)re.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -51,7 +51,7 @@ regexec_n(reprecomp, strg, num_subexp, reprematch, flags, n, offset, pass)
 #endif
 	int pass; /* if pass == 0 .rm_so user set, else set default */
 {
-	int l_cnt;
+	int l_cnt, l_flag=0;
 #ifndef REG_STARTEND
 	char *l_offset = strg;
 #endif
@@ -63,8 +63,12 @@ regexec_n(reprecomp, strg, num_subexp, reprematch, flags, n, offset, pass)
 	if (pass)
 		reprematch[0].rm_so = 0;
 	reprematch[0].rm_eo = len;
+	if (!reprematch[0].rm_so)
+		l_flag = 1;
 #else
 	strg = &strg[offset];
+	if (!offset)
+		l_flag = 1;
 #endif
 	for (l_cnt = 0;;) {
 		if (regexec(reprecomp,
@@ -72,6 +76,15 @@ regexec_n(reprecomp, strg, num_subexp, reprematch, flags, n, offset, pass)
 			l_cnt++;
 		else
 			return (REG_NOMATCH);
+		/* to skip over null RE matchings */
+		if (l_flag)
+			l_flag = 0;
+		else
+			if (reprematch[0].rm_so == reprematch[0].rm_eo) {
+				l_cnt--;
+				if ((++reprematch[0].rm_eo) > len)
+					return (REG_NOMATCH);
+			}
 		if (l_cnt >= n)
 			break;
 #ifdef REG_STARTEND

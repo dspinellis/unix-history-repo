@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sub.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)sub.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -40,7 +40,7 @@ s(inputt, errnum)
 	static char *l_match = NULL, *l_repl = NULL;
 	LINE *l_s_ret, *l_temp_line, *l_temp_line2, *l_kval, *l_last;
 	int l_s_flag, l_count, l_matched, l_nflag, l_cnt, yy, l_sr_flag = 0;
-	int l_err, l_sl;
+	int l_err, l_sl, l_rep_flag, l_u_reuse_flag=0;
 	char *l_match2 = NULL, *l_local = NULL, *l_local_temp = NULL;
 #ifndef REG_STARTEND
 	size_t l_offset = 0;
@@ -184,6 +184,7 @@ bcg2:
 			SIGINT_ACTION;
 		l_count = l_count2;
 		l_local = text;
+		l_rep_flag = 1;
 #ifndef REG_STARTEND
 		l_offset = 0;
 #endif
@@ -202,6 +203,7 @@ bcg2:
 				if ((l_s_flag == 0) && (g_flag == 0))
 					u_clr_stk();
 				l_count = l_s_flag = 1;
+				l_rep_flag = 0;
 				/*
 				 * The l_local passed into re_replace is not
 				 * freed in re_replace because it is "text",
@@ -223,6 +225,7 @@ bcg2:
 #ifdef REG_STARTEND
 				l_local = re_replace(l_local,
 				    (size_t)(RE_SEC - 1), RE_match, &l_repl[1]);
+				(current->len) = strlen(l_local);
 #else
 				l_local = re_replace(l_local,
 				    (size_t)(RE_SEC - 1), RE_match, &l_repl[1],
@@ -235,6 +238,8 @@ bcg2:
 				break;
 		} while (!l_matched);
 
+		if (l_rep_flag)
+			goto next;
 		l_cnt = l_nflag = 0;
 		l_kval = current;
 		l_temp_line = current->above;
@@ -263,7 +268,13 @@ bcg2:
 				if (l_temp_line == NULL)
 					top = l_s_ret;
 				else {
-					u_add_stk(&(l_temp_line->below));
+					if ((current != Start) &&
+						((&(current->above)) == u_stk->cell))
+						l_u_reuse_flag = 1;
+					else {
+						u_add_stk(&(l_temp_line->below));
+						l_u_reuse_flag = 0;
+					}
 					(l_temp_line->below) = l_s_ret;
 				}
 				l_temp_line = l_s_ret;
@@ -285,7 +296,10 @@ bcg2:
 		if (l_temp_line2 == NULL)
 			bottom = l_s_ret;
 		else {
-			u_add_stk(&(l_temp_line2->above));
+			if (l_u_reuse_flag)
+				u_pop_n_swap(&(l_temp_line2->above));
+			else
+				u_add_stk(&(l_temp_line2->above));
 			(l_temp_line2->above) = current;
 		}
 		sigspecial--;
@@ -293,6 +307,7 @@ bcg2:
 			SIGINT_ACTION;
 		if (l_local_temp != text)
 			free(l_local_temp);
+next:
 		current = current->below;
 	} while (current != (End->below));
 
@@ -307,7 +322,7 @@ bcg2:
 	current = l_last;
 
 	if (l_print > 0) {
-		Start = End = current;
+		Start = End = l_s_ret; /*current;*/
 		ungetc(ss, inputt);
 		if (l_print == (l_print | (int) 1))
 			p(inputt, errnum, 0);

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)u.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)u.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -41,17 +41,16 @@ u(inputt, errnum)
 {
 	if (rol(inputt, errnum))
 		return;
-
-	if (u_stk == NULL) {
-		*errnum = 1;
-		return;
-	}
-	undo();
+	undo(); /* call even when u_stk==nil */
 	*errnum = 1;
 }
 
 
-/* This function does the "real work" of the undo. */
+/* This function does the "real work" of the undo.
+ * It is separated out from u() so that the SIGHUP handling
+ * routine can call it without dealing with rol(), in turn so that
+ * the buffer is in a "good" state when saved to the 'ed.hup' file.
+ */
 void
 undo()
 {
@@ -86,6 +85,7 @@ undo()
 	if (sigint_flag && (!sigspecial))
 		SIGINT_ACTION;
 }
+
 
 /*
  * This function should be called before u_add_stk is in each command
@@ -145,6 +145,28 @@ u_add_stk(in)
 	else
 		(l_now->below) = u_stk;
 	u_stk = l_now;
+	(u_stk->cell) = in;
+	(u_stk->val) = (*(u_stk->cell));
+	sigspecial--;
+	if (sigint_flag && (!sigspecial))
+		SIGINT_ACTION;
+}
+
+
+/* This 'u' function is just for when 's' notices that a series
+ * of adjacent lines are changing. It reduces the undo stack height
+ * and lowers the number of (costly) malloc's with reuse. For
+ * the environmentally aware the third 'R' is with the 'g' code.
+ */
+
+void
+u_pop_n_swap(in)
+	LINE **in;
+{
+	sigspecial++;
+	/* put the old value back */
+	(*(u_stk->cell)) = (u_stk->val);
+	/* put the new values */
 	(u_stk->cell) = in;
 	(u_stk->val) = (*(u_stk->cell));
 	sigspecial--;

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)g.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)g.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -59,32 +59,74 @@ find_line(dot)
  * This allows us to use cmd_loop to run the command list because
  * we "trick" cmd_loop into reading a STDIO file instead of stdin.
  */
+
 static void
 w_cmd_l_file(fp, inputt, errnum)
 	FILE *fp, *inputt;
 	int *errnum;
 {
-	int l_esc = 0, l_cnt = 0;
+	int sl=0, jmp_flag, l_cnt=0;
+
+	if (jmp_flag = setjmp(ctrl_position3))
+		return;
 
 	for (;;) {
+		sigspecial3 = 1;
 		ss = getc(inputt);
-		if (ss == '\\') {
-			l_esc = 1;
-			ss = getc(inputt);
+		sigspecial3 = 0;
+skip1:
+		if (ss == EOF)
+			goto skip2;
+		else if (ss == '\n') {
+			if (sl != '\\') {
+skip2:
+				if (l_cnt == 0)
+					fputc('p', fp);
+				else
+					fputc(sl, fp);
+				break;
+			}
 		}
-		if (((ss == '\n') && (l_esc == 0)) || (ss == EOF)) {
-			/* if no command list default command list to 'p' */
-			if (l_cnt == 0)
-				fputc('p', fp);
-			break;
+		else if ((ss == '\\') && (sl == '\\')) {
+			sigspecial3 = 1;
+			sl = getc(inputt);
+			sigspecial3 = 0;
+			if (sl == '\\') {
+				sigspecial3 = 1;
+				sl = getc(inputt);
+				sigspecial3 = 0;
+				if (sl == EOF)
+					goto skip2;
+				if (sl == '\n') {
+					fputc('\\', fp);
+					ss = sl;
+				}
+				else {
+					fputc('\\', fp);
+					fputc('\\', fp);
+					ss = sl;
+					sl = '\\';
+					goto skip1;
+				}
+			}
+			else {
+				fputc('\\', fp);
+				fputc('\\', fp);
+				if ((sl == '\n') || (sl == EOF))
+					goto skip2;
+				else
+					ss = sl;
+			}
 		}
-		l_esc = 0;
-		fputc(ss, fp);
+		else if (l_cnt)
+			fputc(sl, fp);
+		sl = ss;
 		l_cnt++;
 	}
 	if (ss == EOF)
 		clearerr(inputt);
 }
+
 
 /*
  * The global function. All global commands (g, G, v, and V) are handled
@@ -98,11 +140,12 @@ g(inputt, errnum)
 	FILE *inputt;
 	int *errnum;
 {
-	struct g_list *l_Head, *l_Foot, *l_gut, *l_old;
 	static char *l_template_g;
 	char *l_patt;
 	static int l_template_flag = 0;
-	int l_re_success, l_flag_v = 0, l_err;
+	int l_re_success, l_flag_v = 0, l_err, l_num;
+	register l_gut_cnt, a;
+	register LINE **l_gut=gut;
 	FILE *l_fp;
 #ifdef POSIX
 	LINE *l_posix_cur;
@@ -136,8 +179,6 @@ g(inputt, errnum)
 	/* set up the STDIO command list file */
 	bcopy("/tmp/_4.4bsd_ed_g_XXXXXX\0", l_template_g, 24);
 	mktemp(l_template_g);
-
-	l_Head = l_Foot = l_gut = l_old = NULL;
 
 	if ((ss == 'v') || (ss == 'V'))
 		l_flag_v = 1;
@@ -203,46 +244,37 @@ g(inputt, errnum)
 
 	sigspecial++;
 
+	if ((l_num = line_number(bottom)) > gut_num) {
+		sigspecial++;
+		gut_num = l_num + 512;
+		free(l_gut);
+		l_gut = malloc(sizeof(LINE **) * gut_num);
+		sigspecial--;
+		if (l_gut == NULL) {
+			*errnum = -1;
+			strcpy(help_msg, "out of memory error");
+#ifdef POSIX
+			current = l_posix_cur;
+#endif
+			return;
+		}
+	}
+	l_gut_cnt = 0;
+
 	for (;;) {
 		/*
 		 * Find the lines in the buffer that the global command wants
 		 * to work with.
 		 */
-		if (sigint_flag && (!sigspecial))
-			goto point;
 		get_line(current->handle, current->len);
 		if (sigint_flag && (!sigspecial))
 			goto point;
 		l_re_success =
 		    regexec(&RE_comp, text, (size_t) RE_SEC, RE_match, 0);
 		/* l_re_success=0 => success */
-		if ((l_re_success != 0 && l_flag_v == 1) ||
-		    (l_re_success == 0 && l_flag_v == 0)) {
-			if (l_Head == NULL) {
-				l_gut = malloc(sizeof(struct g_list));
-				if (l_gut == NULL) {
-					*errnum = -1;
-					strcpy(help_msg, "out of memory error");
-#ifdef POSIX
-					current = l_posix_cur;
-#endif
-					return;
-				}
-				(l_gut->next) = NULL;
-				(l_gut->cell) = current;
-				l_Foot = l_Head = l_gut;
-			} else {
-				(l_gut->next) = malloc(sizeof(struct g_list));
-				if ((l_gut->next) == NULL) {
-					*errnum = -1;
-					strcpy(help_msg, "out of memory error");
-					goto clean;
-				}
-				l_gut = l_gut->next;
-				(l_gut->cell) = current;
-				(l_gut->next) = NULL;
-				l_Foot = l_gut;
-			}
+		if ( (l_re_success == 0 && l_flag_v == 0) ||
+			(l_re_success && l_flag_v)) {
+				l_gut[l_gut_cnt++] = current;
 		}
 		if (End == current)
 			break;
@@ -252,9 +284,8 @@ g(inputt, errnum)
 	if (sigint_flag && (!sigspecial))
 		goto point;
 
-	if (l_Head == NULL) {
+	if (l_gut_cnt == 0) {
 		strcpy(help_msg, "no matches found");
-		*errnum = -1;
 #ifdef POSIX
 		current = l_posix_cur;
 #endif
@@ -265,28 +296,27 @@ g(inputt, errnum)
 		sigspecial++;
 		w_cmd_l_file(l_fp, inputt, errnum);
 		sigspecial--;
-		if (sigint_flag && (!sigspecial))
+		if (sigint_flag)
 			goto point;
 	}
-	l_gut = l_Head;
 
 	if (g_flag == 0)
 		u_clr_stk();
 
 	sigspecial++;
-	for (;;) {
+	for (a=0; a<l_gut_cnt; a++) {
 		/*
 		 * Execute the command list on the lines that still exist that
 		 * we indicated earlier that global wants to work with.
 		 */
-		if (sigint_flag && (!sigspecial))
+		if (sigint_flag)
 			goto point;
 		if (GV_flag == 0)
 			fseek(l_fp, (off_t)0, 0);
-		if (find_line(l_gut->cell)) {
-			current = (l_gut->cell);
+		if (find_line(l_gut[a])) {
+			current = (l_gut[a]);
 			get_line(current->handle, current->len);
-			if (sigint_flag && (!sigspecial))
+			if (sigint_flag)
 				goto point;
 			if (GV_flag == 1)
 				printf("%s\n", text);
@@ -302,9 +332,6 @@ g(inputt, errnum)
 				break;
 			}
 			*errnum = 0;
-			if (l_gut == l_Foot)
-				break;
-			l_gut = l_gut->next;
 		}
 	}
 
@@ -317,20 +344,11 @@ point:
 		ungetc('\n', inputt);
 
 	GV_flag = 0;
-clean:
-	/* clean up */
-	l_gut = l_Head;
-	while (1) {
-		if (l_gut == NULL)
-			break;
-		l_old = l_gut;
-		l_gut = l_gut->next;
-		free(l_old);
-	}
+
 #ifdef POSIX
 	current = l_posix_cur;
 #endif
 	sigspecial--;
-	if (sigint_flag && (!sigspecial))
+	if (sigint_flag)
 		SIGINT_ACTION;
 }
