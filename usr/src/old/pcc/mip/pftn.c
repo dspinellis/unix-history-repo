@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)pftn.c	1.26 (Berkeley) %G%";
+static char *sccsid ="@(#)pftn.c	1.27 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -1925,7 +1925,7 @@ clearst( lev ) register int lev; {
 	/* step 2: fix any mishashed entries */
 	p = clist;
 	while( p ){
-		register struct symtab *r, *next, *t;
+		register struct symtab *next, **t, *r;
 
 		q = p;
 		next = p->snext;
@@ -1934,18 +1934,13 @@ clearst( lev ) register int lev; {
 			if( q == p || q->stype == TNULL )break;
 			if( (r = relook(q)) != q ) {
 				/* move q in schain list */
-				if( !(t = schain[q->slevel]) )
+				t = &schain[q->slevel];
+				while( *t && *t != q )
+					t = &(*t)->snext;
+				if( *t )
+					*t = r;
+				else
 					cerror("schain botch 2");
-				if( t == q )
-					schain[q->slevel] = r;
-				else {
-					while( t->snext && t->snext != q )
-						t = t->snext;
-					if( !t->snext )
-						cerror("schain botch 3");
-					t->snext = r;
-					}
-				/* are we guaranteed r isn't in clist too? */
 				*r = *q;
 				q->stype = TNULL;
 				}
