@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fstab.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstab.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <fstab.h>
@@ -40,6 +40,8 @@ fstabscan()
 		if (!(cp = fgets(line, sizeof(line), _fs_fp)))
 			return(0);
 		_fs_fstab.fs_spec = strtok(cp, " \t\n");
+		if (!_fs_fstab.fs_spec || *_fs_fstab.fs_spec == '#')
+			continue;
 		_fs_fstab.fs_file = strtok((char *)NULL, " \t\n");
 		_fs_fstab.fs_vfstype = strtok((char *)NULL, " \t\n");
 		_fs_fstab.fs_mntops = strtok((char *)NULL, " \t\n");
