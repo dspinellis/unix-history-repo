@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttzapple.c	3.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttzapple.c	3.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -109,7 +109,7 @@ same_row:
 			ttctrl('h');
 			goto out;
 		}
-		if (col & 7 == 0 && x > 0 && x <= 16) {
+		if ((col & 7) == 0 && x > 0 && x <= 16) {
 			ttctrl('i');
 			if (x > 8)
 				ttctrl('i');
