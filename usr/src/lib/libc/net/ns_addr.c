@@ -8,7 +8,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ns_addr.c	6.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ns_addr.c	6.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
@@ -20,15 +20,13 @@ struct ns_addr
 ns_addr(name)
 	char *name;
 {
-	u_long net;
-	u_short socket;
 	char separator = '.';
 	char *hostname, *socketname, *cp;
 	char buf[50];
 	extern char *index();
 
 	addr = zero_addr;
-	strncpy(buf, name, 49);
+	(void)strncpy(buf, name, 49);
 
 	/*
 	 * First, figure out what he intends as a field separtor.
@@ -55,7 +53,7 @@ ns_addr(name)
 	socketname = index(hostname, separator);
 	if (socketname) {
 		*socketname++ = 0;
-		Field(socketname, &addr.x_port, 2);
+		Field(socketname, (u_char *)&addr.x_port, 2);
 	}
 
 	Field(hostname, addr.x_host.c_host, 6);
@@ -80,7 +78,7 @@ int len;
 	if ((*buf != '-') &&
 	    (1 < (i = sscanf(buf, "%d-%d-%d-%d-%d",
 			&hb[0], &hb[1], &hb[2], &hb[3], &hb[4])))) {
-		cvtbase(1000, 256, hb, i, out, len);
+		cvtbase(1000L, 256, hb, i, out, len);
 		return;
 	}
 	/*
@@ -88,7 +86,7 @@ int len;
 	 */
 	if (1 < (i = sscanf(buf,"%x.%x.%x.%x.%x.%x",
 			&hb[0], &hb[1], &hb[2], &hb[3], &hb[4], &hb[5]))) {
-		cvtbase(256, 256, hb, i, out, len);
+		cvtbase(256L, 256, hb, i, out, len);
 		return;
 	}
 	/*
@@ -96,7 +94,7 @@ int len;
 	 */
 	if (1 < (i = sscanf(buf,"%x:%x:%x:%x:%x:%x",
 			&hb[0], &hb[1], &hb[2], &hb[3], &hb[4], &hb[5]))) {
-		cvtbase(256, 256, hb, i, out, len);
+		cvtbase(256L, 256, hb, i, out, len);
 		return;
 	}
 	/*
@@ -107,7 +105,7 @@ int len;
 			&hb[0], &hb[1], &hb[2]))) {
 		hb[0] = htons(hb[0]); hb[1] = htons(hb[1]);
 		hb[2] = htons(hb[2]);
-		cvtbase(65536, 256, hb, i, out, len);
+		cvtbase(65536L, 256, hb, i, out, len);
 		return;
 	}
 
@@ -158,18 +156,19 @@ int len;
 	hp = hb + i - 1;
 
 	while (hp > hb) {
-		sscanf(bp, fmt, hp);
+		(void)sscanf(bp, fmt, hp);
 		bp[0] = 0;
 		hp--;
 		bp -= 3;
 	}
-	sscanf(buf, fmt, hp);
-	cvtbase(ibase, 256, hb, i, out, len);
+	(void)sscanf(buf, fmt, hp);
+	cvtbase((long)ibase, 256, hb, i, out, len);
 }
 
 static
 cvtbase(oldbase,newbase,input,inlen,result,reslen)
-	int oldbase, newbase;
+	long oldbase;
+	int newbase;
 	int input[];
 	int inlen;
 	unsigned char result[];
