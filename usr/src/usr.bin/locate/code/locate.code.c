@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)locate.code.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)locate.code.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -113,7 +113,7 @@ main(argc, argv)
 		for (cp = path; *cp != NULL; cp++) {
 			if ((u_char)*cp >= PARITY)
 				*cp &= PARITY-1;
-			else if (*cp <= SWITCH)
+			if (*cp <= SWITCH)
 				*cp = '?';
 		}
 
