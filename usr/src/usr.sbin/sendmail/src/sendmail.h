@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.45 (Berkeley) %G%
+ *	@(#)sendmail.h	6.46 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.45		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.46		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -278,6 +278,7 @@ struct envelope
 	int		(*e_putbody)();	/* function to put body of message */
 	struct envelope	*e_parent;	/* the message this one encloses */
 	struct envelope *e_sibling;	/* the next envelope of interest */
+	char		*e_bodytype;	/* type of message body */
 	char		*e_df;		/* location of temp file */
 	FILE		*e_dfp;		/* temporary file */
 	char		*e_id;		/* code for this entry in queue */
