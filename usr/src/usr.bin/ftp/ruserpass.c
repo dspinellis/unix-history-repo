@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ruserpass.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ruserpass.c	1.2 (Berkeley) %G%";
 #endif not lint
 
 
@@ -74,7 +74,7 @@ rnetrc(host, aname, apass, aacct)
 	hdir = getenv("HOME");
 	if (hdir == NULL)
 		hdir = ".";
-	sprintf(buf, "%s/.ftprc", hdir);
+	sprintf(buf, "%s/.netrc", hdir);
 	cfile = fopen(buf, "r");
 	if (cfile == NULL) {
 		if (errno != ENOENT)
@@ -106,7 +106,7 @@ next:
 		case PASSWD:
 			if (fstat(fileno(cfile), &stb) >= 0
 			    && (stb.st_mode & 077) != 0) {
-	fprintf(stderr, "Error - .ftprc file not correct mode.\n");
+	fprintf(stderr, "Error - .netrc file not correct mode.\n");
 	fprintf(stderr, "Remove password or correct mode.\n");
 				return(-1);
 			}
@@ -118,7 +118,7 @@ next:
 		case ACCOUNT:
 			if (fstat(fileno(cfile), &stb) >= 0
 			    && (stb.st_mode & 077) != 0) {
-	fprintf(stderr, "Error - .ftprc file not correct mode.\n");
+	fprintf(stderr, "Error - .netrc file not correct mode.\n");
 	fprintf(stderr, "Remove account or correct mode.\n");
 				return(-1);
 			}
@@ -186,7 +186,7 @@ next:
 			}
 			break;
 		default:
-	fprintf(stderr, "Unknown .ftprc keyword %s\n", tokval);
+	fprintf(stderr, "Unknown .netrc keyword %s\n", tokval);
 			break;
 		}
 		goto done;
