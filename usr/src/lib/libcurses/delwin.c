@@ -1,9 +1,18 @@
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)delwin.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 # include	"curses.ext"
 
 /*
  *	This routine deletes a window and releases it back to the system.
  *
- * @(#)delwin.c	1.6 (Berkeley) %G%
  */
 delwin(win)
 reg WINDOW	*win; {

@@ -1,10 +1,19 @@
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)id_subwins.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 # include	"curses.ext"
 
 /*
  * _id_subwins:
  *	Re-sync the pointers to _y for all the subwindows.
  *
- * @(#)id_subwins.c	1.1 (Berkeley) %G%
  */
 _id_subwins(orig)
 register WINDOW	*orig;
