@@ -1,5 +1,6 @@
-.TH SQRT 3M  "8 May 1985"
+.TH SQRT 3M  "7 August 1985"
 .UC 4
+.ds up \fIulp\fR
 .SH NAME
 cbrt, sqrt \- cube root, square root
 .SH SYNOPSIS
@@ -13,21 +14,22 @@ cbrt, sqrt \- cube root, square root
 .B double x;
 .fi
 .SH DESCRIPTION
-.I Cbrt
-returns the cube root of
-.I x.
+Cbrt(x) returns the cube root of x.
 .PP
-.I Sqrt
-returns the square root of 
-.I x.
+Sqrt(x) returns the square root of x.
 .SH SEE ALSO
-intro(3M)
+intro(3M), infnan(3M)
 .SH DIAGNOSTICS
-.I Sqrt
-returns the reserved operand on the VAX when 
-.I x
-is negative;
-.I errno
-is set to EDOM.
+On a VAX, sqrt(negative)
+returns the reserved operand and sets \fIerrno\fR to EDOM .
+.SH ERROR (due to Roundoff etc.)
+Cbrt is accurate to within 0.7 \*(ups.
+.br
+Sqrt on a VAX is accurate to within 0.501 \*(ups.
+.br
+Sqrt on a machine that conforms to IEEE 754 is correctly rounded
+in accordance with the rounding mode in force; the error is less than
+half an \*(up in the default mode (round\-to\-nearest).
+An \*(up is one \fIU\fRnit in the \fIL\fRast \fIP\fRlace carried.
 .SH AUTHOR
 W. Kahan

@@ -1,7 +1,15 @@
-.TH SIN 3M  "8 May 1985"
+.TH SIN 3M  "6 August 1985"
 .UC 4
+.de Pi		\" PI stuff sign
+.if n \\
+\\$2pi\\$1
+.if t \\
+\\$2\\(*p\\$1
+..
+.ds up \fIulp\fR
 .SH NAME
 sin, cos, tan, asin, acos, atan, atan2 \- trigonometric functions
+and their inverses
 .SH SYNOPSIS
 .nf
 .B #include <math.h>
@@ -24,198 +32,159 @@ sin, cos, tan, asin, acos, atan, atan2 \- trigonometric functions
 .B double atan(x)
 .B double x;
 .PP
-.B double atan2(y, x)
-.B double y, x;
+.B double atan2(y,x)
+.B double y,x;
 .fi
 .SH DESCRIPTION
-.I Sin, cos
-and
-.I tan
-return trigonometric functions of radian arguments.
+Sin, cos and tan
+return trigonometric functions of radian arguments x.
 .PP
-.I Asin
-returns the arc sin in the range \-\(*p/2 to \(*p/2.
+Asin returns the arc sine in the range 
+.Pi /2 \-
+to
+.Pi /2.
 .PP
-.I Acos
-returns the arc cosine in the range 0 to \(*p.
+Acos returns the arc cosine in the range 0 to
+.Pi.
 .PP
-.I Atan
-returns the arc tangent of
-.I x
-in the range \-\(*p/2 to \(*p/2.
+Atan returns the arc tangent in the range
+.Pi /2 \-
+to
+.Pi /2.
 .PP
-.I Atan2
-returns
-.I atan(y/x)
-if
-.I x
-> 0,
-.br
-.I sign(y)*(\(*p \- atan(|y/x|))
-if
-.I x
-< 0,
-.br
-.I zero
-if
-.I x
-= 
-.I y
-= 0 and
-.br
-.I sign(y)*\(*p/2
-if
-.I x
-= 0 but
-.I y
-not equal to 0.
+On a VAX,
+.nf
+.if n \{\
+.ta \w'atan2(y,x) := 'u+2n +\w'sign(y)\(**(pi \- atan(|y/x|))'u+2n
+atan2(y,x) := 	atan(y/x)	if x > 0,
+	sign(y)\(**(pi \- atan(|y/x|))	if x < 0,
+	0	if x = y = 0, or
+	sign(y)\(**pi/2	if x = 0 != y.  \}
+.if t \{\
+.ta \w'atan2(y,x) := 'u+2n +\w'sign(y)\(**(\(*p \- atan(|y/x|))'u+2n
+atan2(y,x) := 	atan(y/x)	if x > 0,
+	sign(y)\(**(\(*p \- atan(|y/x|))	if x < 0,
+	0	if x = y = 0, or
+	sign(y)\(**\(*p/2	if x = 0 \(!= y.  \}
+.ta
+.fi
 .SH SEE ALSO
-intro(3M), hypot(3M), sqrt(3M)
+intro(3M), hypot(3M), sqrt(3M), infnan(3M)
 .SH DIAGNOSTICS
-Arguments of magnitude greater than 1 cause
-.I asin
-and
-.I acos
-to return the reserved operand on the VAX;
-.I errno
-is set to EDOM.
+On a VAX, if |x| > 1 then asin(x) and acos(x)
+will return reserved operands and \fIerrno\fR will be set to EDOM.
 .SH NOTES
-.I Atan2
-defines
-.I atan2(0,0)
-=
-.I 0
-on the VAX despite that previously
-.I atan2(0,0)
-may have generated an error message.
-The reasons for assigning a value to
-.I atan2(0,0)
-are these:
-.IP (1)
-Any program that already tests whether
-.I y
-=
-.I x
-=
-.I 0
-before computing
-.I atan2(y,x)
-will be indifferent to whether
-.I atan2(0,0)
-=
-.I 0
-or not.
-Any program that expects
-.I atan2(0,0)
-to be invalid is dubious because the consequence of that
-invalidity will vary from one computer system to another.
-.IP (2)
-The principal use for
-.I atan2
-is conversion between rectangular (\fIx, y\fR) and polar
-(\fIr\fR,
+Atan2 defines atan2(0,0) = 0 on a VAX despite that previously
+atan2(0,0) may have generated an error message.
+The reasons for assigning a value to atan2(0,0) are these:
+.IP (1) \w'\0\0\0\0'u
+Programs that test arguments to avoid computing
+atan2(0,0) must be indifferent to its value.
+Programs that require it to be invalid are vulnerable
+to diverse reactions to that invalidity on diverse computer systems. 
+.IP (2) \w'\0\0\0\0'u
+Atan2 is used mostly to convert from rectangular (x,y)
+to polar
 .if n\
-\fItheta\fR)
+(r,theta)
 .if t\
-\fI\(*h\fR)
-coordinates that must satisfy
-.br
-.I x
-=
-.I r
-\(**
-.I cos
+(r,\(*h)
+coordinates that must satisfy x =
 .if n\
-.I theta
+r\(**cos theta
 .if t\
-\(*h
-and
-.I y
-=
-.I r
-\(**
-.I sin
+r\(**cos\(*h
+and y =
 .if n\
-.I theta.
+r\(**sin theta.
 .if t\
-\(*h.
-Then mapping (\fIx\fR = \fI0\fR, \fIy\fR = \fI0\fR) to
-(\fIr\fR = \fI0\fR,
-.if n\
-.I theta
-.if t\
-.I \(*h
-= \fI0\fR)
-without fuss saves a programmer from nuisance tests.
-In general, given
-.I x
-and
-.I y
-the conversion should be effected by computing
+r\(**sin\(*h.
+These equations are satisfied when (x=0,y=0)
+is mapped to 
+.if n \
+(r=0,theta=0)
+.if t \
+(r=0,\(*h=0)
+on a VAX.  In general, conversions to polar coordinates
+should be computed thus:
+.nf
+.ta 1iR +1n +\w' := hypot(x,y);'u+0.5i
+.if n \{\
+	r	:= hypot(x,y);	... := sqrt(x\(**x+y\(**y)
+	theta	:= atan2(y,x).
+.ta \}
+.if t \{\
+	r	:= hypot(x,y);	... := \(sr(x\u\s82\s10\d+y\u\s82\s10\d)
+	\(*h	:= atan2(y,x).
+.ta \}
+.fi
+.IP (3) \w'\0\0\0\0'u
+The foregoing formulas need not be altered to cope in a
+reasonable way with signed zeros and infinities
+on a machine that conforms to IEEE 754;
+the versions of hypot and atan2 provided for
+such a machine are designed to handle all cases.
+That is why atan2(\(+-0,\-0) =
+.Pi , \(+-
+for instance.
+In general the formulas above are equivalent to these:
 .RS
-.I r
-=
-\fIhypot\fR(\fIx\fR,\fIy\fR)			... :=
-.if n\
-\fIsqrt\fR(\fIx**2\fR+\fIy**2\fR)
-.if t\
-\fIsqrt\fR(\fIx\u\s82\s10\d\fR+\fIy\u\s82\s10\d\fR)
+.nf
+.if n \
+r := sqrt(x\(**x+y\(**y); if r = 0 then x := copysign(1,x);
+.if t \
+r := \(sr(x\(**x+y\(**y);\0\0if r = 0 then x := copysign(1,x);
 .br
-.if n\
-.I theta
-.if t\
-\(*h
-=
-.I atan2(y,x).
+.if n \
+.ta 1i
+.if t \
+.ta \w'if x > 0'u+2n +\w'then'u+2n
+.if n \
+if x > 0	then theta := 2\(**atan(y/(r+x))
+.if t \
+if x > 0	then	\(*h := 2\(**atan(y/(r+x))
+.if n \
+	else theta := 2\(**atan((r\-x)/y);
+.if t \
+	else	\(*h := 2\(**atan((r\-x)/y);
+.fi
 .RE
-.IP (3)
-On a machine that conforms to IEEE
-.I 754,
-the foregoing conversion has to cope with signed
-.I zeroes
-and
-.I infinities.
-For that purpose the formula above is compatible
-with the following:
-.br
-if
-.I x
-\(>=
-.I 0
-then
-.if n\
-.I theta
-.if t\
-\(*h
-=
-.I 2\(**atan(y/(r\fR+\fIx))
-else
-.if n\
-I theta
-.if t\
-\(*h
-=
-.I 2\(**atan((r\-x)/y)
-.br
-except if
-.I r
-=
-.I 0
-then replace
-.I x
-by
-.I copysign(1,x)
-here, and if
-.I r
-is infinite take limits to get a multiple of
-.if n\
-.I pi/4
-.if t\
-\(*p/4
-for
-.if n\
-.I theta.
-.if t\
-\(*h.
+except if r is infinite then atan2 will yield an
+appropriate multiple of
+.Pi /4
+that would otherwise have to be obtained by taking limits.
+.SH ERROR (due to Roundoff etc.)
+Let P stand for the number stored in the computer in place of
+.Pi " = 3.14159 26535 89793 23846 26433 ... ."
+Let "trig" stand for one of "sin", "cos" or "tan".  Then
+the expression "trig(x)" in a program actually produces an
+approximation to
+.Pi /P), trig(x\(**
+and "atrig(x)" approximates
+.Pi )\(**atrig(x). (P/
+The approximations are close,  within 0.9 \*(ups for sin,
+cos and atan, within 2.2 \*(ups for tan, asin,
+acos and atan2 on a VAX.  Moreover,
+.Pi \& "P = "
+in the codes that run on a VAX.
+
+In the codes that run on other machines, P differs from
+.Pi
+by a fraction of an \*(up; the difference matters only if the argument
+x is huge, and even then the difference is likely to be swamped by
+the uncertainty in x.  Besides, every trigonometric identity that
+does not involve
+.Pi
+explicitly is satisfied equally well regardless of whether
+.Pi . "P = "
+For instance,
+.if n \
+sin(x)**2+cos(x)**2\0=\01
+.if t \
+sin\u\s62\s10\d(x)+cos\u\s62\s10\d(x)\0=\01
+and sin(2x)\0=\02\|sin(x)cos(x) to within a few \*(ups no matter how big
+x may be.  Therefore scientific and engineering calculations
+are most unlikely to be affected by the difference between P and
+.Pi .
 .SH AUTHOR
-Robert P. Corbett, W. Kahan, Stuart McDonald, Kwok\-Choi Ng
+Robert P. Corbett, W. Kahan, Stuart I. McDonald, Kwok\-Choi\0Ng

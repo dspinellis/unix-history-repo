@@ -11,7 +11,7 @@ j0, j1, jn, y0, y1, yn \- bessel functions
 .B double j1(x)
 .B double x;
 .PP
-.B double jn(n, x)
+.B double jn(n,x)
 .B int n;
 .B double x;
 .PP
@@ -21,7 +21,7 @@ j0, j1, jn, y0, y1, yn \- bessel functions
 .B double y1(x)
 .B double x;
 .PP
-.B double yn(n, x)
+.B double yn(n,x)
 .B int n;
 .B double x;
 .fi
@@ -29,12 +29,7 @@ j0, j1, jn, y0, y1, yn \- bessel functions
 These functions calculate Bessel functions of the first
 and second kinds for real arguments and integer orders.
 .SH SEE ALSO
-intro(3M)
+intro(3M), infnan(3M)
 .SH DIAGNOSTICS
-Negative arguments cause
-.I y0, y1,
-and
-.I yn
-to return a huge negative value and set
-.I errno
-to EDOM.
+On a VAX, negative arguments cause y0, y1 and yn
+to return the reserved operand and set \fIerrno\fR to EDOM.
