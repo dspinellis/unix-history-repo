@@ -1,5 +1,5 @@
 #ifndef lint
-static	char	*sccsid = "@(#)uda.c	6.3	(Berkeley) %G%";
+static	char	*sccsid = "@(#)uda.c	6.4	(Berkeley) %G%";
 #endif lint
 
 /************************************************************************
@@ -26,7 +26,7 @@ static	char	*sccsid = "@(#)uda.c	6.3	(Berkeley) %G%";
 #define	DEBUG
 #define	UDADEVNUM	(9)		/* entry in bdevsw */
 #include "ra.h"
-#if NUDA > 0 || defined(BINARY)
+#if NUDA > 0
 /*
  * UDA50/RAxx disk device driver
  *
@@ -63,53 +63,6 @@ static	char	*sccsid = "@(#)uda.c	6.3	(Berkeley) %G%";
 #include "../vaxuba/udareg.h"
 #include "../vax/mscp.h"
 
-#ifdef	BINARY
-
-extern	struct uda_softc {
-	short   sc_state;       /* state of controller */
-	short   sc_mapped;      /* Unibus map allocated for uda struct? */
-	int     sc_ubainfo;     /* Unibus mapping info */
-	struct uda *sc_uda;     /* Unibus address of uda struct */
-	int     sc_ivec;        /* interrupt vector address */
-	short   sc_credits;     /* transfer credits */
-	short   sc_lastcmd;     /* pointer into command ring */
-	short   sc_lastrsp;     /* pointer into response ring */
-} uda_softc[];
-struct uda {
-	struct udaca    uda_ca;         /* communications area */
-	struct mscp     uda_rsp[NRSP];  /* response packets */
-	struct mscp     uda_cmd[NCMD];  /* command packets */
-} uda[];
-
-/* THIS SHOULD BE READ OFF THE PACK, PER DRIVE */
-extern struct size {
-	daddr_t nblocks;
-	daddr_t blkoff;
-}  ra25_sizes[], ra60_sizes[], ra80_sizes[], ra81_sizes[];
-
-
-/* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
-
-struct	ra_info {
-	struct  size    *ra_sizes;	/* Partion tables for drive */
-	daddr_t		radsize;	/* Max user size form online pkt */
-	unsigned	ratype;		/* Drive type int field  */
-	unsigned	rastatus;	/* Command status from */
-					/* last onlin or GTUNT */
-} ra_info[];
-
-extern struct  uba_ctlr *udminfo[];
-extern	struct  uba_device *uddinfo[];
-extern struct  uba_device *udip[][8];      /* 8 == max number of drives */
-extern	struct  buf rudbuf[];
-extern	struct  buf udutab[];		/* Drive queue */
-extern struct  buf udwtab[];               /* I/O wait queue, per controller */
-extern int     udamicro[];         /* to store microcode level */
-
-extern	int     nNRA;
-extern int     nNUDA;
-
-#else
 
 struct uda_softc {
 	short   sc_state;       /* state of controller */
@@ -145,18 +98,18 @@ struct size {
 	33440,	15884,		/* B=blk 15884 thru 49323 */
 	-1,	0,		/* C=blk 0 thru end */
 	15884,	242606,		/* D=blk 242606 thru 258489 */
-	307200,	258490,		/* E=blk 258490 thru 565689 */
-	-1,	565690,		/* F=blk 565690 thru end */
+	-1,	258490,		/* E=blk 258490 thru end */
+	0,	0,		/* F=unused */
 	-1,	242606,		/* G=blk 242606 thru end */
 	193282,	49324,		/* H=blk 49324 thru 242605 */
 }, ra80_sizes[8] = {
 	15884,	0,		/* A=blk 0 thru 15883 */
 	33440,	15884,		/* B=blk 15884 thru 49323 */
 	-1,	0,		/* C=blk 0 thru end */
-	15884,	242606,		/* D=blk 242606 thru 258489 */
-	307200,	258490,		/* E=blk 258490 thru 565689 */
-	-1,	565690,		/* F=blk 565690 thru end */
-	-1,	242606,		/* G=blk 242606 thru end */
+	0,	0,		/* D=unused */
+	0,	0,		/* E=unused */
+	0,	0,		/* F=unused */
+	0,	0,		/* G=unused */
 	193282,	49324,		/* H=blk 49324 thru 242605 */
 }, ra81_sizes[8] ={
 	15884,	0,		/* A=blk 0 thru 15883 */
@@ -191,8 +144,6 @@ int     nNRA = NRA;
 int     nNUDA = NUDA;
 int     udamicro[NUDA];         /* to store microcode level */
 
-
-#endif
 
 /*
  * Controller states
