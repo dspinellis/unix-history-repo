@@ -1,4 +1,10 @@
-/*	vba.c	1.10	87/11/24	*/
+/*
+ * Copyright (c) 1987 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)vba.c	1.11 (Berkeley) %G%
+ */
 
 /*
  * Tahoe VERSAbus adapator support routines.
