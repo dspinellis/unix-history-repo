@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.15 (Berkeley) %G%";
 #endif not lint
 
 #include "ftp_var.h"
@@ -1434,7 +1434,7 @@ reset()
 	int nfnd = 1;
 
 	FD_ZERO(&mask);
-	while (nfnd) {
+	while (nfnd > 0) {
 		FD_SET(fileno(cin), &mask);
 		if ((nfnd = empty(&mask,0)) < 0) {
 			perror("reset");
