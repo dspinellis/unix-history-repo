@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 #	as.h		Definitions for data structures
 #	asnumber.h	Definitions for all numbers: byte .. G format float
@@ -78,11 +78,10 @@ GRIND = astoks.h as.h asscan.h assyms.h asexpr.h instrs.h asnumber.h \
 #			strings, null terminated, and can be no more
 #			than BUFSIZ long.
 #			
-AS=	/bin/as
 DFLAGS=	-DAS
 CFLAGS=	-O ${DFLAGS}
 
-as: ${OBJS} ${LIBC}
+all as: ${OBJS} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${OBJS}
 
 .c.o:	astoks.h ${HDRS}
@@ -106,11 +105,11 @@ clean:
 cleandir: clean
 	rm -f ${MAN} tags .depend
 
-depend: instrs.as
+depend: ${SRCS} instrs.as
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 as ${DESTDIR}/bin/as
+	install -s -o bin -g bin -m 755 as ${DESTDIR}/usr/bin
 
 tags: ${SRCS}
 	ctags ${SRCS}

@@ -13,6 +13,7 @@ static char sccsid[] = "@(#)asmain.c 4.13 6/30/83";
 #include "assyms.h"
 #include "asscan.h"
 #include "asexpr.h"
+#include <paths.h>
 
 #define	unix_lang_name "VAX/UNIX Assembler V6/30/83 4.13"
 /*
@@ -162,7 +163,7 @@ BFILE	*relocfile;			/* concatnated relocation info */
  *
  *	We use relfil to output the symbol table information.
  */
-char	*tmpdirprefix = "/tmp/";
+char	*tmpdirprefix = _PATH_TMP;
 int delexit();
 
 main(argc, argv)
