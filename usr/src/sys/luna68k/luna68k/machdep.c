@@ -13,7 +13,7 @@
  * from: Utah $Hdr: machdep.c 1.63 91/04/24$
  * from: hp300/hp300/machdep.c	7.35 (Berkeley) 12/28/92
  *
- *	@(#)machdep.c	7.6 (Berkeley) %G%
+ *	@(#)machdep.c	7.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -41,7 +41,6 @@
 #include <machine/cpu.h>
 #include <machine/reg.h>
 #include <machine/psl.h>
-#include <hp300/hp300/isr.h>
 #include <luna68k/luna68k/pte.h>
 #include <net/netisr.h>
 
