@@ -1,5 +1,6 @@
+#! /bin/sh
 #
-#	@(#)struct.sh	4.1	(Berkeley)	83/02/11
+#	@(#)struct.sh	4.2	(Berkeley)	83/12/19
 #
 trap "rm -f /tmp/struct*$$" 0 1 2 3 13 15
 files=no
