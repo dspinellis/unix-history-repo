@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_extern.h	8.3 (Berkeley) %G%
+ *	@(#)ufs_extern.h	8.4 (Berkeley) %G%
  */
 
 struct buf;
@@ -73,7 +73,7 @@ int	 ufs_pathconf __P((struct vop_pathconf_args *));
 int	 ufs_print __P((struct vop_print_args *));
 int	 ufs_readdir __P((struct vop_readdir_args *));
 int	 ufs_readlink __P((struct vop_readlink_args *));
-int	 ufs_reclaim __P((struct vop_reclaim_args *));
+int	 ufs_reclaim __P((struct vnode *));
 int	 ufs_remove __P((struct vop_remove_args *));
 int	 ufs_rename __P((struct vop_rename_args *));
 int	 ufs_rmdir __P((struct vop_rmdir_args *));

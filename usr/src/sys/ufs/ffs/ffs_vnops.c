@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	8.7 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -63,7 +63,7 @@ struct vnodeopv_entry_desc ffs_vnodeop_entries[] = {
 	{ &vop_readlink_desc, ufs_readlink },		/* readlink */
 	{ &vop_abortop_desc, ufs_abortop },		/* abortop */
 	{ &vop_inactive_desc, ufs_inactive },		/* inactive */
-	{ &vop_reclaim_desc, ufs_reclaim },		/* reclaim */
+	{ &vop_reclaim_desc, ffs_reclaim },		/* reclaim */
 	{ &vop_lock_desc, ufs_lock },			/* lock */
 	{ &vop_unlock_desc, ufs_unlock },		/* unlock */
 	{ &vop_bmap_desc, ufs_bmap },			/* bmap */
@@ -112,7 +112,7 @@ struct vnodeopv_entry_desc ffs_specop_entries[] = {
 	{ &vop_readlink_desc, spec_readlink },		/* readlink */
 	{ &vop_abortop_desc, spec_abortop },		/* abortop */
 	{ &vop_inactive_desc, ufs_inactive },		/* inactive */
-	{ &vop_reclaim_desc, ufs_reclaim },		/* reclaim */
+	{ &vop_reclaim_desc, ffs_reclaim },		/* reclaim */
 	{ &vop_lock_desc, ufs_lock },			/* lock */
 	{ &vop_unlock_desc, ufs_unlock },		/* unlock */
 	{ &vop_bmap_desc, spec_bmap },			/* bmap */
@@ -162,7 +162,7 @@ struct vnodeopv_entry_desc ffs_fifoop_entries[] = {
 	{ &vop_readlink_desc, fifo_readlink },		/* readlink */
 	{ &vop_abortop_desc, fifo_abortop },		/* abortop */
 	{ &vop_inactive_desc, ufs_inactive },		/* inactive */
-	{ &vop_reclaim_desc, ufs_reclaim },		/* reclaim */
+	{ &vop_reclaim_desc, ffs_reclaim },		/* reclaim */
 	{ &vop_lock_desc, ufs_lock },			/* lock */
 	{ &vop_unlock_desc, ufs_unlock },		/* unlock */
 	{ &vop_bmap_desc, fifo_bmap },			/* bmap */
@@ -259,4 +259,23 @@ loop:
 	splx(s);
 	tv = time;
 	return (VOP_UPDATE(ap->a_vp, &tv, &tv, ap->a_waitfor == MNT_WAIT));
+}
+
+/*
+ * Reclaim an inode so that it can be used for other purposes.
+ */
+int
+ffs_reclaim(ap)
+	struct vop_reclaim_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
+{
+	register struct vnode *vp = ap->a_vp;
+	int error;
+
+	if (error = ufs_reclaim(vp))
+		return (error);
+	FREE(vp->v_data, M_FFSNODE);
+	vp->v_data = NULL;
+	return (0);
 }

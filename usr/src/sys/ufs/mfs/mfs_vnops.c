@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vnops.c	8.3 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -361,9 +361,10 @@ mfs_reclaim(ap)
 		struct vnode *a_vp;
 	} */ *ap;
 {
+	register struct vnode *vp = ap->a_vp;
 
-	FREE(ap->a_vp->v_data, M_MFSNODE);
-	ap->a_vp->v_data = NULL;
+	FREE(vp->v_data, M_MFSNODE);
+	vp->v_data = NULL;
 	return (0);
 }
 

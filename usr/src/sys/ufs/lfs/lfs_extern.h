@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_extern.h	8.2 (Berkeley) %G%
+ *	@(#)lfs_extern.h	8.3 (Berkeley) %G%
  */
 
 struct fid;
@@ -44,6 +44,7 @@ int	 lfs_mountroot __P((void));
 struct buf *
 	 lfs_newbuf __P((struct vnode *, daddr_t, size_t));
 int	 lfs_read __P((struct vop_read_args *));
+int	 lfs_reclaim __P((struct vop_reclaim_args *));
 int	 lfs_remove __P((struct vop_remove_args *));
 int	 lfs_rmdir __P((struct vop_rmdir_args *));
 int	 lfs_rename __P((struct vop_rename_args *));
