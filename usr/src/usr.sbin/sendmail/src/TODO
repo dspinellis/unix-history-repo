@@ -1,4 +1,4 @@
-(Version 8.8 of %G%)
+(Version 8.9 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -15,6 +15,8 @@ X ****	Add M_NOLOOPBACKCHK (k) mailer flag to turn off check of name in
 
 X ****	Merge Sun changes.  [8.7]
 
+X ****	Macro giving size of the message in bytes.
+
 X ****	Provide a way to turn off all DNS lookup in the I option, e.g.,
 	``OIoff''.  [8.7]
 
@@ -30,6 +32,8 @@ X ****	Should have new mailer flags to override LocalMailer stuff:
 	  should also be split apart.
 	[8.8]
 
+X ****	Mailer flag to override MX lookups.
+
 E ****	Fix parseaddr to return a dummy mailer with QBADADDR set for
 	all cases except null input; change calls to be more sceptical
 	about the return value, checking this bit instead of just
@@ -38,7 +42,21 @@ E ****	Fix parseaddr to return a dummy mailer with QBADADDR set for
 X ****	Run time configurable locking -- e.g., compile in HASFLOCK and
 	HASLOCKF, and then choose at runtime between these.
 
+E ****	Move delivery forking from sendenvelope to sendall so that
+	the connection cache works between split envelopes, and to
+	avoid a flurry of processes should you be sending to lots of
+	sub-lists.
+
+X ****	Add uucp-bang mailer that strips off any domain name from
+	the envelope recipient address first; this is for use in
+	mailer table entries.
+
+X ***	Create a macro that has message size.
+	Peter Wemm <peter@DIALix.oz.au>
+
 E ***	Dynamically allocate MAXNAME buffers for headers.
+
+E ***	Dynamically allocate "line" buffer in readaliases().
 
 X ***	Add ability to disable Return-Receipt-To: on a privacy flag. [8.8]
 
@@ -59,6 +77,21 @@ E ***	Have daemons that start up check the alias database for
 E ***	Eliminate E qf line and e_errorqueue; use e_errorsto a la
 	e_receiptto.  This simplifies and gives symmetry.  (Eric
 	Wassenaar)
+
+B ***	Fix syslog buffer overflow problems.
+
+B **	Commas in NAME envariable cause problems (Peter Wan
+	<peter@cc.gatech.edu>).  Merge with suggestions to use
+	MIME-format for 8-bit characters?
+
+E **	Save address information that comes back as the "additional
+	records" part of an MX lookup, to avoid additional name server
+	attempts.  If there is an MX record without an additional A
+	record, delete it (this avoids a problem with misconfigured
+	DNS situations).
+
+X **	Allow a way to extend the $Z macro with local configuration
+	information.
 
 X **	Allow $x in -bt mode to expand macro "x".  (BCX)  [8.8]
 
@@ -111,6 +144,21 @@ B **	Restore `T' line to eliminate X-Authentication-Warning: at
 	  predefined class.
 	- Eliminate "<user> set sender to <address>" message entirely?
 	  (this is the workaround)
+
+B **	Return-Path: header should have <> added if not already there.
+
+X **	Add heuristic to determine if other end is a sendmail; use
+	that to decide whether or not to honor F=I mailer flag.
+	[der Mouse <mouse@collatz.mcrcim.mcgill.edu>]
+
+X **	Automatically drop into MIME mode if you have a full name
+	with 8-bit characters.  See envelope.c 8.19.1.1 and util.c
+	8.17.1.1.  From Anders Ellefsrud <anders@ifi.uio.no>.
+
+X **	-b? flag to read a header and show you what it will look like
+	after all rewriting for an indicated address.
+
+X *	Allow $> anywhere in RHS.  John Boeske <jboeske@ualberta.ca>.
 
 X *	-V flag to print state of all (?) compilation flags.
 
