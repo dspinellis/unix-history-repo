@@ -21,11 +21,11 @@ for more details.
 For a list of contributors, please see the file "CONTRIB.FreeBSD",
 which should be bundled with your distribution.
 
-The core of FreeBSD does not contain DES code so that it can be
-exported outside the United States.  There is an add on package to
-the core distribution for use only in the United States that contains
-the programs that normally use DES.  The auxilliary packages are
-provided separately for use by anyone.
+The core of FreeBSD does not contain DES code that would inhibit its being
+exported outside the United States.  There is an add-on package to
+the core distribution, for use only in the United States, that contains
+the programs that normally use DES.  The auxilliary packages
+provided separately can be used by anyone.
 
 2. Supported Configurations
 ---------------------------
@@ -107,7 +107,7 @@ resort!
 FreeBSD may be ordered on CD from Walnut Creek CDROM, 4041 Pike Lane,
 Suite E, Concord, Ca. 94520.  1-800-786-9907 or 1-510-674-0783.
 
-Cost is $39.95 + $5 S&H in the U.S. and Canada, $10.00 overseas.
+Cost is $39.95 + $5 S&H in the U.S. and Canada or $10.00 overseas.
 California residents please add sales tax.
 
 Should you be dissatisfied for any reason, the CD comes with an
@@ -184,7 +184,7 @@ name is not mentioned, please be assured that its omission is entirely
 accidental.
 
 
-The Computer Systems Research Group (CSGR), U.C. Berkeley.
+The Computer Systems Research Group (CSRG), U.C. Berkeley.
 
 Bill Jolitz, for his extensive work with 386BSD.
 
@@ -236,4 +236,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.3 1993/08/30 07:37:46 rgrimes Exp $
+$Id: RELNOTES.FreeBSD,v 1.4 1993/09/03 07:35:38 rgrimes Exp $
