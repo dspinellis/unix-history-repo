@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)if.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)if.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -26,6 +26,7 @@ static char sccsid[] = "@(#)if.c	5.9 (Berkeley) %G%";
 #include <netinet/in.h>
 #include <netinet/in_var.h>
 #include <netns/ns.h>
+#include <netns/ns_if.h>
 
 #include <stdio.h>
 #include <signal.h>
@@ -40,7 +41,6 @@ extern	int nflag;
 extern	char *interface;
 extern	int unit;
 extern	char *routename(), *netname(), *ns_phost();
-extern	char *index();
 
 /*
  * Print a description of the network interfaces.
@@ -53,8 +53,10 @@ intpr(interval, ifnetaddr)
 	union {
 		struct ifaddr ifa;
 		struct in_ifaddr in;
+		struct ns_ifaddr ns;
 	} ifaddr;
 	off_t ifaddraddr;
+	struct sockaddr *sa;
 	char name[16];
 
 	if (ifnetaddr == 0) {
@@ -81,6 +83,8 @@ intpr(interval, ifnetaddr)
 		struct sockaddr_in *sin;
 		register char *cp;
 		int n;
+		char *index();
+		struct in_addr inet_makeaddr();
 
 		if (ifaddraddr == 0) {
 			klseek(kmem, ifnetaddr, 0);
@@ -106,16 +110,17 @@ intpr(interval, ifnetaddr)
 		} else {
 			klseek(kmem, ifaddraddr, 0);
 			read(kmem, (char *)&ifaddr, sizeof ifaddr);
-			ifaddraddr = (off_t)ifaddr.ifa.ifa_next;
-			switch (ifaddr.ifa.ifa_addr.sa_family) {
+#define CP(x) ((char *)(x))
+			cp = (CP(ifaddr.ifa.ifa_addr) - CP(ifaddraddr)) +
+				CP(&ifaddr); sa = (struct sockaddr *)cp;
+			switch (sa->sa_family) {
 			case AF_UNSPEC:
 				printf("%-11.11s ", "none");
 				printf("%-15.15s ", "none");
 				break;
 			case AF_INET:
-				sin = (struct sockaddr_in *)&ifaddr.in.ia_addr;
+				sin = (struct sockaddr_in *)sa;
 #ifdef notdef
-extern struct in_addr inet_makeaddr();
 				/* can't use inet_makeaddr because kernel
 				 * keeps nets unshifted.
 				 */
@@ -132,27 +137,26 @@ extern struct in_addr inet_makeaddr();
 			case AF_NS:
 				{
 				struct sockaddr_ns *sns =
-				(struct sockaddr_ns *)&ifaddr.in.ia_addr;
+					(struct sockaddr_ns *)sa;
 				u_long net;
 				char netnum[8];
 				char *ns_phost();
 
 				*(union ns_net *) &net = sns->sns_addr.x_net;
-				sprintf(netnum, "%lxH", ntohl(net));
+		sprintf(netnum, "%lxH", ntohl(net));
 				upHex(netnum);
 				printf("ns:%-8s ", netnum);
 				printf("%-15s ", ns_phost(sns));
 				}
 				break;
 			default:
-				printf("af%2d: ", ifaddr.ifa.ifa_addr.sa_family);
-				for (cp = (char *)&ifaddr.ifa.ifa_addr +
-				    sizeof(struct sockaddr) - 1;
-				    cp >= ifaddr.ifa.ifa_addr.sa_data; --cp)
+				printf("af%2d: ", sa->sa_family);
+				for (cp = sa->sa_data + sa->sa_len;
+						    cp >= sa->sa_data; --cp)
 					if (*cp != 0)
 						break;
-				n = cp - (char *)ifaddr.ifa.ifa_addr.sa_data + 1;
-				cp = (char *)ifaddr.ifa.ifa_addr.sa_data;
+				n = cp - sa->sa_data + 1;
+				cp = sa->sa_data;
 				if (n <= 7)
 					while (--n)
 						printf("%02d.", *cp++ & 0xff);
@@ -162,6 +166,7 @@ extern struct in_addr inet_makeaddr();
 				printf("%02d ", *cp & 0xff);
 				break;
 			}
+			ifaddraddr = (off_t)ifaddr.ifa.ifa_next;
 		}
 		printf("%8d %5d %8d %5d %5d",
 		    ifnet.if_ipackets, ifnet.if_ierrors,
