@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.13 (Berkeley) %G%
+.\"	@(#)contrib	5.14 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -29,13 +29,13 @@ large subsystem.
 .sp
 .TS
 l l.
-386/486 port	William Jolitz
+386/486 port	Telemuse
 ANSI C library	Chris Torek
 ANSI C prototypes	Donn Seeley, John Kohl
 Autoconfiguration	Robert Elz
 C library documentation	American National Standards Committee X3
 CCI 6/32 port	Computer Consoles Inc.
-Disklables	Symmetric Computer Systems
+Disklabels	Symmetric Computer Systems
 Documentation	Cynthia Livingston and The USENIX Assoc.
 GCC, GDB	The Free Software Foundation
 Groff	James Clark (The FSF)
@@ -110,7 +110,7 @@ db(3) (hashing support)	Margo Seltzer
 dd(1)	Keith Muller and Lance Visser
 des(1)	Phil Karn, Jim Gillogly
 	 and Richard Outerbridge
-disklable(8)	Symmetric Computer Systems
+disklabel(8)	Symmetric Computer Systems
 du(1)	Chris Newcomb
 emacs(1)	Richard Stallman
 factor(6)	Landon Curt Noll
