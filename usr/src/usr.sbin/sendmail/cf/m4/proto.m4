@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.8 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.9 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -300,13 +300,10 @@ undivert(6)dnl
 ###########################################
 S3
 
-# handle "from:<>" special case
-R$* < > $*		$@ <@>				turn into magic token
-
 # basic textual canonicalization -- note RFC733 heuristic here
 R$*<$*>$*<$*>$*		<$2>$3$4$5			strip multiple <> <>
-R$*<$*<$*<$+>$*>$*>$*	$4				3-level <> nesting
-R$*<$*<$+>$*>$*		$3				2-level <> nesting
+R$*<$*<$+>$*>$*		<$3>$5				2-level <> nesting
+R$*<>$*			$@ $<@>				MAIL FROM:<> case
 R$*<$+>$*		$2				basic RFC821/822 parsing
 
 # make sure <@a,@b,@c:user@d> syntax is easy to parse -- undone later
