@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.17 (Berkeley) 87/05/12
+#	@(#)Makefile	5.18 (Berkeley) 87/05/28
 #
 # Doing a make install builds /usr/include
 #
