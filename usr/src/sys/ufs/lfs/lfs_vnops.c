@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.94 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.95 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -67,7 +67,7 @@ struct vnodeopv_entry_desc lfs_vnodeop_entries[] = {
 	{ &vop_reclaim_desc, ufs_reclaim },		/* reclaim */
 	{ &vop_lock_desc, ufs_lock },			/* lock */
 	{ &vop_unlock_desc, ufs_unlock },		/* unlock */
-	{ &vop_bmap_desc, lfs_bmap },			/* bmap */
+	{ &vop_bmap_desc, ufs_bmap },			/* bmap */
 	{ &vop_strategy_desc, ufs_strategy },		/* strategy */
 	{ &vop_print_desc, ufs_print },			/* print */
 	{ &vop_islocked_desc, ufs_islocked },		/* islocked */
@@ -198,7 +198,7 @@ lfs_read(ap)
 	struct buf *bp1, *bp2;
 	daddr_t lbn, bn, rablock;
 	off_t diff;
-	int error = 0, size;
+	int error = 0, lock_on_enter, size;
 	long n, on;
 
 #ifdef DIAGNOSTIC
@@ -219,7 +219,8 @@ lfs_read(ap)
 		return (EFBIG);
 	ip->i_flag |= IACC;
 	bp1 = bp2 = NULL;
-	IUNLOCK(ip);
+	if (lock_on_enter = ip->i_flag & ILOCKED)
+		IUNLOCK(ip);
 	do {
 		lbn = lblkno(fs, uio->uio_offset);
 		on = blkoff(fs, uio->uio_offset);
@@ -230,14 +231,18 @@ lfs_read(ap)
 		if (diff < n)
 			n = diff;
 		size = blksize(fs);
-		rablock = lbn + 1;
 		lfs_check(vp, lbn);
+/* */
+		rablock = lbn + 1;
 		if (vp->v_lastr + 1 == lbn &&
 		    lblktosize(fs, rablock) < ip->i_size)
 			error = breadn(ITOV(ip), lbn, size, &rablock,
 				&size, 1, NOCRED, &bp1);
 		else
 			error = bread(ITOV(ip), lbn, size, NOCRED, &bp1);
+/*
+		error = ufs_breada(vp, lbn, size, NOCRED, &bp1);
+*/
 		if (bp2)
 			brelse(bp2);
 		bp2 = bp1;
@@ -251,7 +256,8 @@ lfs_read(ap)
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
 	if (bp2)
 		brelse(bp2);
-	ILOCK(ip);
+	if (lock_on_enter)
+		ILOCK(ip);
 	return (error);
 }
 
