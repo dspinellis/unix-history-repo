@@ -1,9 +1,15 @@
 #
 # Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# All rights reserved.
 #
-#	@(#)Makefile	5.4	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that this notice is preserved and that due credit is given
+# to the University of California at Berkeley. The name of the University
+# may not be used to endorse or promote products derived from this
+# software without specific prior written permission. This software
+# is provided ``as is'' without express or implied warranty.
+#
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -49,13 +55,12 @@ FRC:
 snake.o: snake.c snake.h /usr/include/stdio.h /usr/include/assert.h
 snake.o: /usr/include/sys/types.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
 snake.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-snake.o: /usr/include/signal.h /usr/include/math.h /usr/include/pwd.h
+snake.o: /usr/include/signal.h /usr/include/machine/trap.h /usr/include/math.h
+snake.o: /usr/include/pwd.h
 move.o: move.c snake.h /usr/include/stdio.h /usr/include/assert.h
 move.o: /usr/include/sys/types.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
 move.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-move.o: /usr/include/signal.h /usr/include/math.h
+move.o: /usr/include/signal.h /usr/include/machine/trap.h /usr/include/math.h
 snscore.o: snscore.c /usr/include/stdio.h /usr/include/pwd.h
-busy.o: busy.c /usr/include/stdio.h /usr/include/sys/types.h
-busy.o: /usr/include/a.out.h /usr/include/sys/exec.h
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
