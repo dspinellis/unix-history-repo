@@ -1,4 +1,4 @@
-/*	ioctl.h	4.15	82/01/24	*/
+/*	ioctl.h	4.16	82/02/08	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -49,6 +49,19 @@ struct ltchars {
 #define	LSTYPEN	020		/* retyping suspended input (LPENDIN) */
 #define	LSCNTTB	040		/* counting width of tab; leave LFLUSHO alone */
 
+/* modem control */
+#define	MLE	0001		/* line enable */
+#define	MDTR	0002		/* data terminal ready */
+#define	MRTS	0004		/* request to send */
+#define	MST	0010		/* secondary transmit */
+#define	MSR	0020		/* secondary receive */
+#define	MCTS	0040		/* clear to send */
+#define	MCAR	0100		/* carrier detect */
+#define	MCD	MCAR
+#define	MRNG	0200		/* ring */
+#define	MRI	MRNG
+#define	MDSR	0400		/* data set ready */
+
 /*
  * tty ioctl commands
  */
@@ -92,6 +105,10 @@ struct ltchars {
 #define		TIOCPKT_START		8	/* start output */
 #define	TIOCSTOP	(('t'<<8)|111)	/* stop output, like ^S */
 #define	TIOCSTART	(('t'<<8)|110)	/* start output, like ^Q */
+#define	TIOCMSET	(('t'<<8)|109)	/* set all modem bits */
+#define	TIOCMBIS	(('t'<<8)|108)	/* bis modem bits */
+#define	TIOCMBIC	(('t'<<8)|107)	/* bic modem bits */
+#define	TIOCMGET	(('t'<<8)|106)	/* get all modem bits */
 
 #define	OTTYDISC	0		/* old, v7 std tty driver */
 #define	NETLDISC	1		/* line discip for berk net */
