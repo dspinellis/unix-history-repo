@@ -1,4 +1,4 @@
-/*	socketvar.h	4.15	82/03/15	*/
+/*	socketvar.h	4.16	82/04/10	*/
 
 /*
  * Kernel structure per socket.
@@ -31,7 +31,6 @@ struct socket {
 #define	SB_COLL		0x10		/* collision selecting */
 	short	so_timeo;		/* connection timeout */
 	u_short	so_error;		/* error affecting connection */
-	struct	sockaddr so_addr;	/* socket address */
 	short	so_oobmark;		/* chars to oob mark */
 	short	so_pgrp;		/* pgrp for signals */
 };

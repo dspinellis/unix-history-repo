@@ -1,4 +1,4 @@
-/*	protosw.h	4.9	81/12/21	*/
+/*	protosw.h	4.10	82/04/10	*/
 
 /*
  * Protocol switch table.
@@ -75,21 +75,21 @@ struct protosw {
 #define	PRU_SENSE		10	/* return status into m */
 #define	PRU_RCVOOB		11	/* retrieve out of band data */
 #define	PRU_SENDOOB		12	/* send out of band data */
+#define	PRU_SOCKADDR		13	/* fetch socket's address */
 /* begin for protocols internal use */
-#define	PRU_FASTTIMO		13	/* 200ms timeout */
-#define	PRU_SLOWTIMO		14	/* 500ms timeout */
-#define	PRU_PROTORCV		15	/* receive from below */
-#define	PRU_PROTOSEND		16	/* send to below */
-/* need some stuff for splice */
+#define	PRU_FASTTIMO		14	/* 200ms timeout */
+#define	PRU_SLOWTIMO		15	/* 500ms timeout */
+#define	PRU_PROTORCV		16	/* receive from below */
+#define	PRU_PROTOSEND		17	/* send to below */
 
-#define	PRU_NREQ		17
+#define	PRU_NREQ		18
 
 #ifdef PRUREQUESTS
 char *prurequests[] = {
 	"ATTACH",	"DETACH",	"CONNECT",	"ACCEPT",
 	"DISCONNECT",	"SHUTDOWN",	"RCVD",		"SEND",	
 	"ABORT",	"CONTROL",	"SENSE",	"RCVOOB",
-	"SENDOOB",	"FASTTIMO",	"SLOWTIMO",
+	"SENDOOB",	"SOCKADDR",	"FASTTIMO",	"SLOWTIMO",
 	"PROTORCV",	"PROTOSEND",
 };
 #endif
