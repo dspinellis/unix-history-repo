@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.73 (Berkeley) %G%
+#	@(#)termcap.src	5.74 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -3137,6 +3137,19 @@ zu|go140|graphon go-140:\
 zv|go140w|graphon go-140 in 132 column mode:\
 	:co#132:is=\E<\E=\E[?3h\E[?7h\E(B\E[J\E7\E[;r\E8\E[m\E[q:\
 	:tc=go140:
+#From edm@nwnexus.WA.COM.  Hacked up vt200 termcap to handle GO-225/VT220
+zH|go225|go-225|Graphon 225:\
+	:im=\E[4h:ei=\E[4l:mi:dc=\E[P:al=\E[L:dl=\E[M:\
+	:cs=\E[%i%d;%dr:sf=\ED:sr=\EM:\
+	:ce=\E[K:cl=\E[H\E[J:cd=\E[J:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
+	:so=\E[7m:se=\E[27m:us=\E[4m:ue=\E[24m:\
+	:md=\E[1m:mr=\E[7m:mb=\E[5m:me=\E[m:\
+	:is=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h:\
+	:rs=\E[!p\E[?7h\E[2;1;1#w:rf=/usr/lib/tabset/vt100:\
+	:do=^J:co#80:li#25:le=^H:bs:am:ks=\E=:ke=\E>:\
+	:ku=\E[A:kd=\E[B:kr=\E[C:kl=\E[D:kb=^H:kh=\E[H:\
+	:ho=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:vt#3:xn:\
+	:sc=\E7:rc=\E8:ti=\E[2;0#w\E[1;25r:te=\E[!p\E[?7h\E[2;1;1#w:
 zw|sanyo55|sanyo|sanyo mbc-55x pc compatible:\
 	:co#80:li#25:am:cl=\E[H\E[J:bs:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:
