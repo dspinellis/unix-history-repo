@@ -1,4 +1,4 @@
-/*	dver.c	1.16	85/04/29
+/*	dver.c	1.17	85/08/05
  *
  * VAX Versatec driver for the new troff
  *
@@ -89,7 +89,7 @@ x ..\n	device control functions:
 #define  vmot(n)	vgoto(vpos + (n))
 
 
-char	SccsId[]= "dver.c	1.16	85/04/29";
+char	SccsId[]= "dver.c	1.17	85/08/05";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
@@ -1313,7 +1313,15 @@ clear(lp, nbytes)
 char *lp;
 int nbytes;
 {
+#ifdef vax
 	asm("movc5 $0,(sp),$0,8(ap),*4(ap)");
+#else
+	register int i = nbytes;
+	register char *cp = lp;
+
+	while(i-- > 0)
+		*(cp++) = 0;
+#endif
 }
 
 char *
