@@ -13,7 +13,7 @@ POPDIVERT
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	6.10 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	6.11 (Berkeley) %G%')
 
 Msuucp,		P=UUCP_MAILER_PATH, F=mDFMhuU, S=12, R=22, M=100000,
 		A=uux - -r -z -a$f -gC $h!rmail ($u)
@@ -49,8 +49,8 @@ R$* < @ $+ >			$2 ! $1			convert to UUCP format
 
 PUSHDIVERT(4)
 # resolve locally connected UUCP links
-R< @ $=Y . UUCP > : $+		$#suucp $@ $1 $: $1:$2	@host.UUCP: ...
-R< @ $=U . UUCP > : $+		$#uucp $@ $1 $: $1:$2	@host.UUCP: ...
+R< @ $=Y . UUCP > : $+		$#suucp $@ $1 $: $2	@host.UUCP: ...
+R< @ $=U . UUCP > : $+		$#uucp $@ $1 $: $2	@host.UUCP: ...
 R$+ < @ $=Y . UUCP >		$#suucp $@ $2 $: $1	user@host.UUCP
 R$+ < @ $=U . UUCP >		$#uucp $@ $2 $: $1	user@host.UUCP
 POPDIVERT
