@@ -24,6 +24,7 @@ The following C program might be used to calculate \(*G:
 		y = \-y;
 .fi
 .SH DIAGNOSTICS
-A huge value is returned for negative integer arguments.
+The reserved operand is returned on a VAX for negative integer
+arguments, \fIerrno\fR is set to ERANGE.
 .SH BUGS
 There should be a positive indication of error.
