@@ -1,0 +1,19 @@
+.th SUM I 3/15/72
+.sh NAME
+sum  \*-  sum file
+.sh SYNOPSIS
+.bd sum
+name ...
+.sh DESCRIPTION
+.it Sum
+sums the contents of the bytes (mod 2^16) of
+one or more files and prints the answer in octal.
+A separate sum is printed for each file specified,
+along with the number of whole or partial
+512-byte blocks read.
+.s3
+In practice,
+.it sum
+is often used to verify that
+all of a special file can be read without error.
+.sh BUGS

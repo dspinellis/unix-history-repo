@@ -1,0 +1,26 @@
+.pa 1
+.he 'QUIT (II)'3/15/72'QUIT (II)'
+.ti 0
+NAME		quit  --  turn off quit signal
+.s3
+.ti 0
+SYNOPSIS	sys quit; flag  / quit = 26.
+.s3
+quit(flag)
+.s3
+.ti 0
+DESCRIPTION	When flag____ is 0, this call disables
+quit signals from the typewriter (ASCII FS).
+When flag____ is non-zero, quits are re-enabled,
+and cause execution to cease and a core image to be produced.
+.s3
+Quits should be turned off only with due consideration.
+.s3
+.ti 0
+SEE ALSO	intr(II)
+.s3
+.ti 0
+DIAGNOSTICS	--
+.s3
+.ti 0
+BUGS		--

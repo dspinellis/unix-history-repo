@@ -1,0 +1,90 @@
+if $2x != x goto both
+goto $1x
+: allx
+sh $0 1 I
+sh $0 2 II
+sh $0 3 III
+sh $0 4 IV
+sh $0 5 V
+sh $0 6 VI
+sh $0 7 VII
+sh $0 8 VIII
+cat tocx? >gorp
+ptx -t gorp ptxx
+rm gorp
+ed - tocx1
+1,$s/([IV]*) /" "/
+1,$s/.*/.xx "&"/
+w
+e tocx2
+1,$s/([IV]*) /" "/
+1,$s/.*/.xx "&"/
+w
+e tocx3
+1,$s/([IV]*) /" "/
+1,$s/.*/.xx "&"/
+w
+e tocx4
+1,$s/([IV]*) /" "/
+1,$s/.*/.xx "&"/
+w
+e tocx5
+1,$s/([IV]*) /" "/
+1,$s/.*/.xx "&"/
+w
+e tocx6
+1,$s/([IV]*) /" "/
+1,$s/.*/.xx "&"/
+w
+e tocx7
+1,$s/([IV]*) /" "/
+1,$s/.*/.xx "&"/
+w
+e tocx8
+1,$s/([IV]*) /" "/
+1,$s/.*/.xx "&"/
+w
+q
+exit
+: 1x
+sh $0 1 I
+exit
+: 2x
+sh $0 2 II
+exit
+: 3x
+sh $0 3 III
+exit
+: 4x
+sh $0 4 IV
+exit
+: 5x
+sh $0 5 V
+exit
+: 6x
+sh $0 6 VI
+exit
+: 7x
+sh $0 7 VII
+exit
+: 8x
+sh $0 8 VIII
+exit
+: x
+echo usage: sh tocrc "[12345678]"
+exit
+: both
+chdir /usr/man/man$1
+ls >xa
+ed - xa
+v/\.[12345678]$/d
+g/^/s//e /\
+.a\
+/NAME/1p
+w
+q
+ed - <xa >xb
+echo "1,$s/ *\\\*- */("$2") /" >xa
+echo w /usr/man/man0/tocx$1 >>xa
+ed - xb <xa
+rm xa xb

@@ -1,0 +1,43 @@
+.th MOUNT II 8/5/73
+.sh NAME
+mount \*- mount file system
+.sh SYNOPSIS
+(mount = 21.)
+.br
+.ft B
+sys  mount; special; name
+.ft R
+.sh DESCRIPTION
+.it Mount
+announces to the system that a removable file system has
+been mounted on
+the block-structured special file
+.it special;
+from now on, references to file
+.it name
+will refer to
+the root file on the newly mounted file system.
+.it Special
+and
+.it name
+are pointers to null-terminated strings
+containing the appropriate path names.
+.s3
+.it Name
+must exist already. 
+Its old contents
+are inaccessible while the file system
+is mounted.
+.sh "SEE ALSO"
+mount(I), umount(II)
+.sh DIAGNOSTICS
+Error bit
+(c-bit) set if:
+.it special
+is inaccessible or not an appropriate file;
+.it name
+does not exist;
+.it special
+is already mounted;
+there are already too many
+file systems mounted.

@@ -1,0 +1,38 @@
+.th WHO I 3/15/72
+.sh NAME
+who  \*-  who is on the system
+.sh SYNOPSIS
+.bd who
+[ who-file ]
+.sh DESCRIPTION
+.it Who,
+without an argument,
+lists the name, typewriter channel, and login time
+for each current UNIX user.
+.s3
+Without an argument,
+.it who
+examines the /tmp/utmp
+file to obtain its information.
+If a file is given, that file is examined.
+Typically the given file will be /tmp/wtmp,
+which contains a record of all the logins since it
+was created.
+Then
+.it who
+will list
+logins, logouts, and crashes since the creation of
+the wtmp file.
+.s3
+Each login is listed with user name,
+typewriter name (with `/dev/'
+suppressed),
+and date and time.
+When an argument is given, logouts produce a similar line without a user name.
+Reboots produce a line with `x' in the place of the device name,
+and a fossil time indicative of when the system went down.
+.sh FILES
+/tmp/utmp
+.sh "SEE ALSO"
+login(I), init(VII)
+.sh BUGS

@@ -1,0 +1,39 @@
+.th DN IV 8/24/73
+.sh NAME
+dn \*- dn11 ACU interface
+.sh DESCRIPTION
+The
+.it dn?
+files
+are write-only.
+The permissible codes are:
+.s3
+.lp +8 4
+0-9	dial 0-9
+.lp +8 4
+:	dial *
+.lp +8 4
+;	dial #
+.lp +8 4
+=	end-of-number
+.s3
+.i0
+The entire telephone number must be
+presented in a single
+.it write
+system call.
+.s3
+It is recommended that an end-of-number
+code be given even though only one of the
+ACU's (113C) actually requires it.
+.dt
+.sh FILES
+/dev/dn0	connected to 801 with dp0
+.br
+/dev/dn1	connected to 113C with ttyc
+.br
+/dev/dn2	not currently connected
+.sh "SEE ALSO"
+dp(IV), dc(IV), write(II)
+.sh BUGS
+It needs a delay character to handle second dial tone.

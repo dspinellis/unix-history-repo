@@ -1,0 +1,69 @@
+.th CC I 3/15/72
+.sh NAME
+cc \*- C compiler
+.sh SYNOPSIS
+.bd cc
+[
+.bd \*-c
+] [
+.bd \*-p
+] file ...
+.sh DESCRIPTION
+.it Cc
+is the UNIX C compiler.
+It accepts three types of arguments:
+.s3
+Arguments whose names end with `.c' are assumed to be
+C source programs; they are compiled, and
+the object program is left on the file
+whose name is that of the source with `.o' substituted
+for `.c'.
+.s3
+Other arguments (except for
+\fB\*-c\fR)
+are assumed
+to be either loader flag arguments, or C-compatible
+object programs, typically produced by an earlier
+.it cc
+run,
+or perhaps libraries of C-compatible routines.
+These programs, together with the results of any
+compilations specified, are loaded (in the order
+given) to produce an executable program with name
+.bd a.out.
+.s3
+The
+.bd \*-c
+argument suppresses the loading phase, as does
+any syntax error in any of the routines being compiled.
+.s3
+If the
+.bd \*-p
+flag is used,
+only the macro prepass is run on
+all files whose name
+ends in \fB.c\fR.
+The expanded source is left on the file
+whose name is that of the source
+with \fB.i\fR
+substituted for \fB.c\fR.
+.sh FILES
+file.c		input file
+.br
+file.o		object file
+.br
+a.out		loaded output
+.br
+/tmp/ctm?	temporary
+.br
+/lib/c[01]	compiler
+.br
+/lib/crt0.o	runtime startoff
+.br
+/lib/libc.a	builtin functions, etc.
+.br
+/lib/liba.a	system library
+.sh "SEE ALSO"
+`C reference manual', cdb(I),
+ld(I) for other flag arguments.
+.sh BUGS

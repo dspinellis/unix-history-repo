@@ -1,0 +1,39 @@
+.th RP IV 10/15/73
+.sh NAME
+rp \*- RP-11/RP03 moving-head disk
+.sh DESCRIPTION
+The files
+.it "rp0 ... rp7"
+refer to sections of RP disk drive 0.
+The files
+.it "rp8 ... rp15"
+refer to drive 1 etc.
+This is done since the size of
+a full RP drive is 81200 blocks and
+internally the system is only capable
+of addressing 65536
+blocks.
+Also since the disk is so large,
+this allows it to be broken up
+into more manageable pieces.
+.s3
+The origin and size of the pseudo-disks on each drive are
+as follows:
+.s3
+.br
+	disk	start	length
+.br
+	0	0	40600
+.br
+	1	40600	40600
+.br
+	2	0	3200
+.br
+	3	3200	39000
+.br
+	4	42200	39000
+.br
+	5-7	unassigned
+.sh FILES
+/dev/rp?
+.sh BUGS

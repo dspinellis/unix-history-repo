@@ -1,0 +1,56 @@
+.th GREP I 3/3/73
+.sh NAME
+grep \*- search a file for a pattern
+.sh SYNOPSIS
+.bd grep
+[
+.bd \*-v
+] [
+.bd \*-l
+] [
+.bd \*-n
+] expression [input] [output]
+.sh DESCRIPTION
+.it Grep
+will search the input file
+(standard input default)
+for each line containing the
+regular expression.
+Normally, each line found
+is printed on the output file
+(standard output default).
+If the
+.bd \*-v
+flag is used,
+all lines but those matching
+are printed.
+If the
+.bd \*-l
+flag is used,
+each line printed is
+preceded by its line number.
+If the
+.bd \*-n
+flag is used,
+no lines are printed,
+but the number of lines that would
+normally have been printed is reported.
+If interrupt is hit,
+the number of lines
+searched is printed.
+.s3
+For a complete description
+of the regular expression,
+see ed(I).
+Care should be taken when
+using the characters
+$ * [ ^ | ( ) and \\ in the regular
+expression as they are
+also meaningful to the shell.
+(Precede them by \\)
+.sh "SEE ALSO"
+ed(I), sh(I)
+.sh BUGS
+Lines
+are limited to 512 characters;
+longer lines are truncated.

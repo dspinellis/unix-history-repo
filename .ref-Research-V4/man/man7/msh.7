@@ -1,0 +1,21 @@
+.th MSH VII 6/15/72
+.sh NAME
+msh \*- mini-shell
+.sh SYNOPSIS
+.bd /etc/msh
+.sh DESCRIPTION
+.it Msh
+is a heavily simplified version of the Shell.
+It reads one line from the standard
+input file, interprets it as a command, and calls the command.
+.s3
+The mini-shell supports few of the advanced features
+of the Shell; none of the following characters is special:
+.s3
+     >  <  $  \\  ;  &   \*v  ^
+.s3
+However, ``*'', ``['', and ``?'' are recognized and \fIglob\fR is called.
+The main use of \fImsh\fR is to provide a command-executing
+facility for various interactive sub-systems.
+.sh "SEE ALSO"
+sh(I), glob(VII)

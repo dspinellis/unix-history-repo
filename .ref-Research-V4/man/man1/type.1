@@ -1,0 +1,31 @@
+.th TYPE I 6/12/72
+.sh NAME
+type \*- type on 2741
+.sh SYNOPSIS
+.bd type
+file ...
+.sh DESCRIPTION
+.it Type
+copies its input files
+to the fixed output port
+.bd ttyc
+converting to 2741 EBCDIC output code.
+Before each new page (66 lines) and before each new file,
+.it type
+stops and reads the 2741
+before continuing.
+This allows time for insertion of single
+sheet paper.
+To continue,
+push the ATTN key on the 2741.
+.sh FILES
+/dev/ttyc
+.sh BUGS
+Since it is impossible to
+second guess a 2741,
+quite often it is necessary to
+print a # to put this device
+in a state it might already be in.
+.br
+The value of padding out a page with up to 66
+carriage returns is doubtful.

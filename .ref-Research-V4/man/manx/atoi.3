@@ -1,0 +1,38 @@
+.th ATOI III 1/15/73
+.sh NAME
+atoi \*- ascii to integer
+.sh SYNOPSIS
+.ft B
+jsr    r5,atoi; subr
+.ft R
+.sh DESCRIPTION
+.it Atoi
+will convert an ascii stream to a binary
+number returned in r1.
+.s3
+The subroutine
+.it subr
+(supplied by the caller)
+is called on r5 for each character of the
+ascii stream.
+.it Subr
+should return the character in r0.
+The first character not used in the conversion
+is left in r0.
+.s3
+The numbers recognized are:  an optional minus sign
+followed by a string of digits.
+.s3
+The subroutine
+.it subr
+must not disturb any registers.
+.sh DIAGNOSTICS
+There are none;
+the routine charges on regardless of consequences.
+.sh BUGS
+It
+pays no attention to overflow; you get whatever the machine
+instructions \fimul\fR and \fIdiv\fR happen to leave in the low order half.
+In fact, the carry bit should be set and isn't.
+.s3
+The routine should accept initial \fB+\fR and initial blanks.

@@ -1,0 +1,36 @@
+.th KILL II 8/5/73
+.sh NAME
+kill \*- send signal to a process
+.sh SYNOPSIS
+(kill = 37.; not in assembler)
+.br
+(process number in r0)
+.br
+.ft B
+sys kill; sig
+.ft R
+.sh DESCRIPTION
+.it Kill
+sends the signal
+.it sig
+to the process specified by the
+process number in r0.
+See signal(II) for a list of signals.
+.s3
+The sending and receiving processes must
+have the same controlling typewriter, otherwise
+this call is restricted to the super-user.
+.sh "SEE ALSO"
+signal(II), kill(I)
+.sh DIAGNOSTICS
+The error bit (c-bit)
+is set if the process does not
+have the same controlling typewriter and the
+user is not super-user, or if the process
+does not exist.
+.sh BUGS
+Equality between the controlling
+typewriters of the sending and receiving process
+is neither a necessary nor sufficient
+condition for allowing the sending of a signal.
+The correct condition is equality of user IDs.

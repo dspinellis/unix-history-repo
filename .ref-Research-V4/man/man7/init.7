@@ -1,0 +1,73 @@
+.th INIT VII 6/15/72
+.sh NAME
+init  \*-  process control initialization
+.sh SYNOPSIS
+.bd /etc/init
+.sh DESCRIPTION
+.it Init
+is invoked inside UNIX as the last step in the boot procedure.
+Generally its role is to create a process for each
+typewriter on which a user may log in.
+.s3
+First,
+.it init
+checks
+to see if the console switches contain 173030.
+(This number is likely to vary between
+systems.)
+If so, the console typewriter \fItty\fR is opened for reading
+and writing and the shell is invoked immediately.
+This feature is used to bring up a single-user system.
+When the system is brought up in this way, the
+.it getty
+and
+.it login
+routines mentioned below and described elsewhere are not needed.
+.s3
+Otherwise, \fIinit\fR
+invokes a Shell, with input taken from the
+file
+.it /etc/rc.
+This command file
+performs housekeeping
+like removing temporary files,
+mounting file systems, and starting the data-phone
+daemon.
+.s3
+Then
+.it init
+forks several times to create a process
+for each typewriter mentioned in an internal table.
+Each of these processes opens the appropriate typewriter
+for reading and writing.  These channels thus
+receive file descriptors 0 and 1, the standard input and
+output.
+Opening the typewriter will usually involve a delay,
+since the \fIopen\fR is not completed until someone
+is dialled up and carrier established on the channel.
+Then the process executes the program
+.it /etc/getty
+(q.v.).
+.it Getty
+will read the user's name and invoke
+.it login
+(q.v.)
+to log in the user and execute the shell.
+.s3
+Ultimately the shell will terminate
+because of an end-of-file either
+typed explicitly or generated as a result of hanging up.
+The main path of \fIinit\fR, which has been waiting
+for such an event,
+wakes up and removes the appropriate entry from the
+file \fIutmp\fR, which records current users, and
+makes an entry in \fIwtmp\fR, which maintains a history
+of logins and logouts.
+Then the appropriate typewriter is reopened and
+.it getty
+is
+reinvoked.
+.sh FILES
+/dev/tty, /dev/tty?, /tmp/utmp, /tmp/wtmp,
+.sh "SEE ALSO"
+login(I), getty(VII), sh(I)

@@ -1,0 +1,21 @@
+.th OV VI 6/12/72
+.sh NAME
+ov \*- overlay pages
+.sh SYNOPSIS
+.bd ov
+[ file ]
+.sh DESCRIPTION
+.it Ov
+is a postprocessor for producing double column formatted
+text when using nroff(I).
+.it Ov
+literally overlays successive pairs of 66-line pages.
+.s3
+If the file argument is missing,
+the standard input is used.
+Thus
+.it ov
+may be used as a filter.
+.sh "SEE ALSO"
+nroff(I), pr(I)
+.sh BUGS

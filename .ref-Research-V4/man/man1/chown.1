@@ -1,0 +1,20 @@
+.th CHOWN I 3/15/72
+.sh NAME
+chown \*- change owner
+.sh SYNOPSIS
+.bd chown
+owner file ...
+.sh DESCRIPTION
+.it Owner
+becomes the new owner of the files.
+The owner may be either a decimal UID or
+a login name found in the password file.
+.s3
+Only the owner of a file (or the super-user) is allowed to change the owner.
+Unless it is done by the
+super-user or the real user ID of the new owner,
+the set-user-ID permission bit is
+turned off as the owner of a file is changed.
+.sh FILES
+/etc/passwd
+.sh BUGS

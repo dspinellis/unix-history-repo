@@ -1,0 +1,22 @@
+.th REW I 1/15/73
+.sh NAME
+rew  \*-  rewind tape
+.sh SYNOPSIS
+.bd rew
+[ [
+.bd m
+]digit ]
+.sh DESCRIPTION
+.it Rew
+rewinds DECtape or magtape drives.  The digit is the logical
+tape number, and should range from 0 to 7.
+if the digit is preceded by
+\fBm\fR,
+.it rew
+applies to magtape rather than DECtape.
+A missing digit indicates drive 0.
+.sh FILES
+/dev/tap?
+.br
+/dev/mt?
+.sh BUGS
