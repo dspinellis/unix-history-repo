@@ -1,4 +1,4 @@
-/*	machdep.c	4.30	81/04/03	*/
+/*	machdep.c	4.31	81/04/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -119,14 +119,14 @@ startup(firstaddr)
 	ncmap = (physmem*NBPG - ((int)v &~ 0x80000000)) /
 		    (NBPG*CLSIZE + sizeof (struct cmap));
 	valloclim(cmap, struct cmap, ncmap, ecmap);
-	if ((((int)ecmap)&~0x80000000) > SYSPTSIZE*NBPG)
+	if ((((int)(ecmap+1))&~0x80000000) > SYSPTSIZE*NBPG)
 		panic("sys pt too small");
 
 	/*
 	 * Clear allocated space, and make r/w entries
 	 * for the space in the kernel map.
 	 */
-	unixsize = btoc((int)ecmap &~ 0x80000000);
+	unixsize = btoc((int)(ecmap+1) &~ 0x80000000);
 	if (unixsize >= physmem - 8*UPAGES)
 		panic("no memory");
 	pte = &Sysmap[firstaddr];
