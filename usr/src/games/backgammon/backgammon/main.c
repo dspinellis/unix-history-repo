@@ -1,4 +1,4 @@
-static char sccsid[] = "	main.c	1.1	82/05/11	";
+static char sccsid[] = "	main.c	4.1	82/05/11	";
 
 #include <stdio.h>
 #include "back.h"

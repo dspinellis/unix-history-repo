@@ -1,5 +1,5 @@
 /*
- *	tutor.h	1.1	82/05/11
+ *	tutor.h	4.1	82/05/11
  */
 
 struct situatn  {
