@@ -1,4 +1,4 @@
-/*	machdep.c	4.34	81/04/28	*/
+/*	machdep.c	4.35	81/05/05	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -28,6 +28,7 @@
 #include "../h/cmap.h"
 #include <frame.h>
 #include "../h/port.h"
+#include "../h/rpb.h"
 
 int	icode[] =
 {
@@ -532,6 +533,7 @@ tocons(c)
 dumpsys()
 {
 
+	rpb.rp_flag = 1;
 	if ((minor(dumpdev)&07) != 1)
 		return;
 	printf("\ndumping to dev %x, offset %d\n", dumpdev, dumplo);
