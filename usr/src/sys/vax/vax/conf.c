@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	7.9 (Berkeley) %G%
+ *	@(#)conf.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -584,7 +584,7 @@ int	dktopen(),dktclose(),dktread(),dktwrite(),dktioctl(), dktstop();
 struct tty dkt[];
 #endif
 
-#if !defined(NKMC) || NKMC > 0
+#if NKMC > 0
 int kmcopen(), kmcclose(), kmcwrite(), kmcioctl(), kmcread();
 int kmcrint(), kmcload(), kmcset(), kmcdclr();
 #else
