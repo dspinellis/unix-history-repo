@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)e.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)e.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -72,10 +72,10 @@ e(inputt, errnum)
 		ungetc('\n', inputt);
 		return;
 	}
-	start = top;
+	Start = top;
 	End = bottom;
-	start_default = End_default = 0;
-	if (start == NULL && bottom == NULL);
+	Start_default = End_default = 0;
+	if (Start == NULL && bottom == NULL);
 	else {
 		ungetc(ss, inputt);
 		d(inputt, errnum);	/* delete the whole buffer */
@@ -152,7 +152,7 @@ e2(inputt, errnum)
 	}
 #endif
 	current = top;
-	start = top;
+	Start = top;
 	End = bottom;
 
 	sigspecial--;

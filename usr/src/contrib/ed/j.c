@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)j.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)j.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -41,20 +41,20 @@ j(inputt, errnum)
 	long l_ttl = 0;
 	char *l_temp1;
 
-	if (start_default && End_default) {
-		start = current;
+	if (Start_default && End_default) {
+		Start = current;
 		*errnum = 1;
-		if (start == NULL) {
+		if (Start == NULL) {
 			strcpy(help_msg, "buffer empty");
 			*errnum = -1;
 			return;
 		} else
-			if ((start->below) != NULL)
-				End = start->below;
+			if ((Start->below) != NULL)
+				End = Start->below;
 		else
 			return;
 	} else
-		if (start_default) {
+		if (Start_default) {
 			if (rol(inputt, errnum))
 				return;
 
@@ -67,21 +67,21 @@ j(inputt, errnum)
 				 * For BSD a 'j' with one address sets
 				 * "current" to that line
 				 */
-				if (start)
-					current = start;
+				if (Start)
+					current = Start;
 #endif
 				*errnum = 1;
 			}
 			return;
 		}
 
-	if (start == NULL) {
+	if (Start == NULL) {
 		strcpy(help_msg, "buffer empty");
 		*errnum = -1;
 		return;
 	}
 
-	start_default = End_default = 0;
+	Start_default = End_default = 0;
 
 	if (rol(inputt, errnum))
 		return;
@@ -91,7 +91,7 @@ j(inputt, errnum)
 	u_set = 1;		/* set for d */
 
 	/* Figure out what the length of the joined lines will be. */
-	for (l_ptr = start; l_ptr != (End->below); l_ptr = (l_ptr->below))
+	for (l_ptr = Start; l_ptr != (End->below); l_ptr = (l_ptr->below))
 		l_ttl = l_ptr->len + l_ttl;
 
 	if (l_ttl > nn_max) {
@@ -118,7 +118,7 @@ j(inputt, errnum)
 	}
 	l_temp1[0] = '\0';
 
-	l_ptr = start;
+	l_ptr = Start;
 
 	sigspecial++;
 	for (;;) {
@@ -141,17 +141,17 @@ j(inputt, errnum)
 	(l_temp_line->len) = l_ttl;
 	/* Add the new line to the buffer. */
 	(l_temp_line->handle) = add_line(l_temp1, l_ttl);
-	if (start == top) {
+	if (Start == top) {
 		top = l_temp_line;
 		(l_temp_line->above) = NULL;
 	} else {
-		(l_temp_line->above) = start->above;
+		(l_temp_line->above) = Start->above;
 		u_add_stk(&(l_temp_line->above->below));
 		(l_temp_line->above->below) = l_temp_line;
 	}
-	(l_temp_line->below) = start;
-	u_add_stk(&(start->above));
-	(start->above) = l_temp_line;
+	(l_temp_line->below) = Start;
+	u_add_stk(&(Start->above));
+	(Start->above) = l_temp_line;
 
 	sigspecial--;
 	if (sigint_flag && (!sigspecial))

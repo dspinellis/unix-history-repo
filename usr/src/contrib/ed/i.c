@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)i.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)i.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -40,7 +40,7 @@ i(inputt, errnum)
 #endif
 
 	if ((End_default == 1) && (current != NULL))
-		start = End = current->above;
+		Start = End = current->above;
 	else {
 		if (End == NULL) {
 			strcpy(help_msg, "illegal address for command i");
@@ -49,7 +49,7 @@ i(inputt, errnum)
 		} else
 			End = End->above;
 	}
-	start_default = End_default = 0;
+	Start_default = End_default = 0;
 #ifdef POSIX
 	l_address = End;
 #endif

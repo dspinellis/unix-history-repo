@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)g.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)g.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -108,13 +108,13 @@ g(inputt, errnum)
 	LINE *l_posix_cur;
 #endif
 
-	if (start_default && End_default) {
-		start = top;
+	if (Start_default && End_default) {
+		Start = top;
 		End = bottom;
 	} else
-		if (start_default)
-			start = End;
-	if (start == NULL) {
+		if (Start_default)
+			Start = End;
+	if (Start == NULL) {
 		strcpy(help_msg, "buffer empty");
 		*errnum = -1;
 		return;
@@ -199,7 +199,7 @@ g(inputt, errnum)
 #ifdef POSIX
 	l_posix_cur = current;
 #endif
-	current = start;
+	current = Start;
 
 	sigspecial++;
 

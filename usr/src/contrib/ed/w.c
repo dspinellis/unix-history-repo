@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -44,18 +44,18 @@ w(inputt, errnum)
 	int l_ttl = 0, l_q_flag = 0, l_sl;
 	char *filename_read=NULL, *temp;
 
-	if (start_default && End_default) {
-		start = top;
+	if (Start_default && End_default) {
+		Start = top;
 		End = bottom;
 	} else
-		if (start_default)
-			start = End;
-	if (start == NULL) {
+		if (Start_default)
+			Start = End;
+	if (Start == NULL) {
 		strcpy(help_msg, "buffer empty");
 		*errnum = -1;
 		return;
 	}
-	start_default = End_default = 0;
+	Start_default = End_default = 0;
 
 	l_sl = ss;
 	ss = getc(inputt);
@@ -103,7 +103,7 @@ w(inputt, errnum)
 		goto point;
 
 	/* Write it out and get a report on the number of bytes written. */
-	l_ttl = edwrite(fp, start, End);
+	l_ttl = edwrite(fp, Start, End);
 	if (explain_flag != 0)		/* For -s option. */
 		printf("%d\n", l_ttl);
 

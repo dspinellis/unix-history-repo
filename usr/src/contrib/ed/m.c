@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)m.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)m.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -57,21 +57,21 @@ m(inputt, errnum)
 	if (rol(inputt, errnum))
 		return;
 
-	if (start_default && End_default)
-		start = End = current;
+	if (Start_default && End_default)
+		Start = End = current;
 	else
-		if (start_default)
-			start = End;
-	if (start == NULL) {
+		if (Start_default)
+			Start = End;
+	if (Start == NULL) {
 		strcpy(help_msg, "buffer empty");
 		*errnum = -1;
 		return;
 	}
-	start_default = End_default = 0;
+	Start_default = End_default = 0;
 
 	/* Do some address checking. */
-	if ((l_dest) && ((l_dest == start) ||
-	    (address_check(l_dest, start) == -1)) &&
+	if ((l_dest) && ((l_dest == Start) ||
+	    (address_check(l_dest, Start) == -1)) &&
 	    (address_check(End, l_dest) == -1)) {
 		ungetc(ss, inputt);
 		*errnum = -1;
@@ -87,11 +87,11 @@ m(inputt, errnum)
 	 * but are kind-a useless since the buffer doesn't change.
 	 */
 	*errnum = 1;
-	if ((start == l_dest) || (End == l_dest))
+	if ((Start == l_dest) || (End == l_dest))
 		return;
-	if ((start == top) && (End == bottom))
+	if ((Start == top) && (End == bottom))
 		return;
-	if ((start == top) && (l_dest == NULL))
+	if ((Start == top) && (l_dest == NULL))
 		return;
 	*errnum = 0;
 
@@ -100,53 +100,53 @@ m(inputt, errnum)
 
 	sigspecial++;
 
-	if (start == top) {
+	if (Start == top) {
 		top = End->below;
 		u_add_stk(&(End->below->above));
 		top->above = NULL;
 	} else
 		if (End == bottom) {
-			bottom = start->above;
-			u_add_stk(&(start->above->below));
+			bottom = Start->above;
+			u_add_stk(&(Start->above->below));
 			bottom->below = NULL;
 		} else {
-			u_add_stk(&(start->above->below));
-			start->above->below = End->below;
+			u_add_stk(&(Start->above->below));
+			Start->above->below = End->below;
 			u_add_stk(&(End->below->above));
-			End->below->above = start->above;
+			End->below->above = Start->above;
 		}
 
 	if (l_dest == NULL) {
-		u_add_stk(&(start->above));
-		start->above = NULL;
+		u_add_stk(&(Start->above));
+		Start->above = NULL;
 		u_add_stk(&(End->below));
 		End->below = l_old_top;
 		u_add_stk(&(l_old_top->above));
 		l_old_top->above = End;
-		top = start;
+		top = Start;
 	} else
 		if (l_dest == l_old_bottom) {
 			u_add_stk(&(End->below));
 			End->below = NULL;
-			u_add_stk(&(start->above));
-			start->above = l_dest;
+			u_add_stk(&(Start->above));
+			Start->above = l_dest;
 			u_add_stk(&(l_dest->below));
-			l_dest->below = start;
+			l_dest->below = Start;
 			bottom = End;
 		} else {
-			u_add_stk(&(start->above));
-			start->above = l_dest;
+			u_add_stk(&(Start->above));
+			Start->above = l_dest;
 			u_add_stk(&(End->below));
 			End->below = l_dest->below;
 			u_add_stk(&(l_dest->below->above));
 			l_dest->below->above = End;
 			u_add_stk(&(l_dest->below));
-			l_dest->below = start;
+			l_dest->below = Start;
 		}
 
 	if (l_dest)
-		l_dest->below = start;
-	current = start;
+		l_dest->below = Start;
+	current = Start;
 
 	sigspecial--;
 

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)l.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)l.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -37,23 +37,23 @@ l(inputt, errnum)
 {
 	int l_cnt, l_len = 1;
 
-	if (start_default && End_default)
-		start = End = current;
+	if (Start_default && End_default)
+		Start = End = current;
 	else
-		if (start_default)
-			start = End;
+		if (Start_default)
+			Start = End;
 
-	if (start == NULL) {
+	if (Start == NULL) {
 		strcpy(help_msg, "empty buffer");
 		*errnum = -1;
 		return;
 	}
-	start_default = End_default = 0;
+	Start_default = End_default = 0;
 
 	if (rol(inputt, errnum))	/* For "command-suffix pairs". */
 		return;
 
-	current = start;
+	current = Start;
 	for (;;) {
 		/*
 		 * Print out the line character-by-character and split the

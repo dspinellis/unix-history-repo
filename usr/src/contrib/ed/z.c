@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)z.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)z.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -63,7 +63,7 @@ z(inputt, errnum)
 	}
 	if (End_default) {
 		if ((current->below) != NULL)
-			start = current->below;
+			Start = current->below;
 		else {
 			strcpy(help_msg, "at end of buffer");
 			*errnum = -1;
@@ -71,16 +71,16 @@ z(inputt, errnum)
 			return;
 		}
 	} else
-		start = End;
-	if (start == NULL) {
+		Start = End;
+	if (Start == NULL) {
 		strcpy(help_msg, "bad address");
 		*errnum = -1;
 		ungetc('\n', inputt);
 		return;
 	}
-	start_default = End_default = 0;
+	Start_default = End_default = 0;
 
-	current = start;
+	current = Start;
 	l_cnt = 1;		/* Yes, set to = 1. */
 	while (1) {
 		/* Scroll-out the next 'zsnum' of lines or until bottom. */

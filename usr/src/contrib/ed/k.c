@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)k.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)k.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -46,7 +46,7 @@ set_mark(inputt, errnum)
 		ungetc('\n', inputt);
 		return;
 	}
-	start_default = End_default = 0;
+	Start_default = End_default = 0;
 
 	/*
 	 * The marks have to be "a" to "z" (inclusive); that is, ye olde
