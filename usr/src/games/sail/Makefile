@@ -1,7 +1,7 @@
 #
 # Sail - Wooden Ships And Iron Men
 #
-# Makefile	@(#)Makefile	1.5 83/05/19
+# Makefile	@(#)Makefile	1.6 83/05/19
 #
 CC= cc
 CTAGS= ctags -w
@@ -47,7 +47,7 @@ sail.log: ${LOBJS} globals.o
 	cc -O ${LOBJS} globals.o -o sail.log
 
 sail.doc: sail.m
-	nroff -man sail.m > sail.doc
+#	nroff -man sail.m > sail.doc
 
 tags: ${CTAGFILES}
 	${CTAGS} ${CTAGFILES}
@@ -73,7 +73,7 @@ install: sail driver sail.log sail.doc ${TARGET}/${SHIPSLOG}
 	install -s -m 4711 -o ${SAILMASTER} sail ${TARGET}/${SAIL}
 	install -s -m 4711 -o ${SAILMASTER} driver ${TARGET}/${DRIVER}
 	install -s -m 711 sail.log ${TARGET}/${SAIL.LOG}
-	cp sail.doc ${TARGET}/${SAIL.DOC}
+#	cp sail.doc ${TARGET}/${SAIL.DOC}
 
 ${TARGET}/${SHIPSLOG}:
 	cp /dev/null ${TARGET}/${SHIPSLOG}
