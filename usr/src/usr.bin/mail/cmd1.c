@@ -8,7 +8,7 @@
  * User commands.
  */
 
-static char *SccsId = "@(#)cmd1.c	1.5 %G%";
+static char *SccsId = "@(#)cmd1.c	1.6 %G%";
 
 /*
  * Print the current active headings.
@@ -158,10 +158,10 @@ printhead(mesg)
 	*cp = '\0';
 	if (subjline != NOSTR)
 		printf("%c%c%3d %-8s %16.16s %s \"%s\"\n", curind, dispc, mesg,
-		    nameof(mp), hl.l_date, wcount, subjline);
+		    nameof(mp, 0), hl.l_date, wcount, subjline);
 	else
 		printf("%c%c%3d %-8s %16.16s %s\n", curind, dispc, mesg,
-		    nameof(mp), hl.l_date, wcount);
+		    nameof(mp, 0), hl.l_date, wcount);
 }
 
 /*
