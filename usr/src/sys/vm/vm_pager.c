@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_pager.c	7.7 (Berkeley) %G%
+ *	@(#)vm_pager.c	7.8 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -41,12 +41,13 @@
  *	for builtin pagers.
  */
 
-#include "param.h"
-#include "malloc.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
 
-#include "vm.h"
-#include "vm_page.h"
-#include "vm_kern.h"
+#include <vm/vm.h>
+#include <vm/vm_page.h>
+#include <vm/vm_kern.h>
 
 #include "swappager.h"
 #if NSWAPPAGER > 0
@@ -135,6 +136,7 @@ vm_pager_deallocate(pager)
 	VM_PAGER_DEALLOC(pager);
 }
 
+int
 vm_pager_get(pager, m, sync)
 	vm_pager_t	pager;
 	vm_page_t	m;
@@ -147,6 +149,7 @@ vm_pager_get(pager, m, sync)
 	return(VM_PAGER_GET(pager, m, sync));
 }
 
+int
 vm_pager_put(pager, m, sync)
 	vm_pager_t	pager;
 	vm_page_t	m;
@@ -241,6 +244,7 @@ vm_pager_lookup(list, handle)
  * This routine gains a reference to the object.
  * Explicit deallocation is necessary.
  */
+int
 pager_cache(object, should_cache)
 	vm_object_t	object;
 	boolean_t	should_cache;
