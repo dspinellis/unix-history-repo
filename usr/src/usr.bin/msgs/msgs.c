@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)msgs.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)msgs.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -44,6 +44,7 @@ static char sccsid[] = "@(#)msgs.c	5.6 (Berkeley) %G%";
 
 #include <sys/param.h>
 #include <signal.h>
+#include <string.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
 #include <ctype.h>
@@ -90,7 +91,6 @@ bool	mailing = NO;
 bool	quitit = NO;
 bool	sending = NO;
 bool	intrpflg = NO;
-bool	tstpflag = NO;
 int	uid;
 int	msg;
 int	prevmsg;
@@ -102,12 +102,15 @@ time_t	keep;
 struct	sgttyb	otty;
 
 char	*ctime();
+char	*getenv();
+char	*mktemp();
 char	*nxtfld();
-int	onintr();
-int	onsusp();
+void	onintr();
+void	onsusp();
 off_t	ftell();
 FILE	*popen();
 struct	passwd	*getpwuid();
+time_t	time();
 
 extern	int	errno;
 
@@ -115,9 +118,9 @@ extern	int	errno;
 bool	hdrs = NO;
 bool	qopt = NO;
 bool	hush = NO;
-bool	send = NO;
+bool	send_msg = NO;
 bool	locomode = NO;
-bool	pause = NO;
+bool	use_pager = NO;
 bool	clean = NO;
 bool	lastcmd = NO;
 jmp_buf	tstpbuf;
@@ -183,7 +186,7 @@ int argc; char *argv[];
 				break;
 
 			case 'p':		/* pipe thru 'more' during long msgs */
-				pause = YES;
+				use_pager = YES;
 				break;
 
 			case 'q':		/* query only */
@@ -191,7 +194,7 @@ int argc; char *argv[];
 				break;
 
 			case 's':		/* sending TO msgs */
-				send = YES;
+				send_msg = YES;
 				break;
 
 			default:
@@ -276,7 +279,7 @@ int argc; char *argv[];
 		else if (blast > lastmsg)
 			lastmsg = blast;
 
-		if (!send) {
+		if (!send_msg) {
 			bounds = fopen(fname, "w");
 			if (bounds == NULL) {
 				perror(fname);
@@ -288,7 +291,7 @@ int argc; char *argv[];
 		}
 	}
 
-	if (send) {
+	if (send_msg) {
 		/*
 		 * Send mode - place msgs in _PATH_MSGS
 		 */
@@ -354,7 +357,7 @@ int argc; char *argv[];
 	 * prepare to display messages
 	 */
 	totty = (isatty(fileno(stdout)) != 0);
-	pause = pause && totty;
+	use_pager = use_pager && totty;
 
 	sprintf(fname, "%s/%s", getenv("HOME"), MSGSRC);
 	msgsrc = fopen(fname, "r");
@@ -365,7 +368,7 @@ int argc; char *argv[];
 		if (nextmsg > lastmsg+1) {
 			printf("Warning: bounds have been reset (%d, %d)\n",
 				firstmsg, lastmsg);
-			truncate(fname, 0);
+			truncate(fname, (off_t)0);
 			newrc = YES;
 		}
 		else if (!rcfirst)
@@ -443,7 +446,6 @@ int argc; char *argv[];
 		/*
 		 * Print header
 		 */
-again:
 		if (totty)
 			signal(SIGTSTP, onsusp);
 		(void) setjmp(tstpbuf);
@@ -509,7 +511,7 @@ cmnd:
 
 			case 'p':
 			case 'P':
-				pause = (*in++ == 'p');
+				use_pager = (*in++ == 'p');
 				/* intentional fallthru */
 			case '\n':
 			case 'y':
@@ -570,10 +572,9 @@ cmnd:
 prmesg(length)
 int length;
 {
-	FILE *outf, *inf;
-	int c;
+	FILE *outf;
 
-	if (pause && length > Lpp) {
+	if (use_pager && length > Lpp) {
 		signal(SIGPIPE, SIG_IGN);
 		signal(SIGQUIT, SIG_IGN);
 		sprintf(cmdbuf, _PATH_PAGER, Lpp);
@@ -581,7 +582,7 @@ int length;
 		if (!outf)
 			outf = stdout;
 		else
-			setbuf(outf, NULL);
+			setbuf(outf, (char *)NULL);
 	}
 	else
 		outf = stdout;
@@ -610,6 +611,7 @@ int length;
 	stty(fileno(stdout), &otty);
 }
 
+void
 onintr()
 {
 	signal(SIGINT, onintr);
@@ -634,6 +636,7 @@ onintr()
 /*
  * We have just gotten a susp.  Suspend and prepare to resume.
  */
+void
 onsusp()
 {
 
@@ -642,7 +645,7 @@ onsusp()
 	kill(0, SIGTSTP);
 	signal(SIGTSTP, onsusp);
 	if (!mailing)
-		longjmp(tstpbuf);
+		longjmp(tstpbuf, 0);
 }
 
 linecnt(f)
