@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.53 1994/06/09 13:10:13 ache Exp $
+#	$Id: Makefile,v 1.54 1994/06/15 20:21:00 adam Exp $
 #
 
 SUBDIR=
@@ -224,14 +224,13 @@ tools:
 	cd ${CCDIR};			make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/usr.bin/make;	make depend all install ${CLEANDIR} obj
 
-MDEC_OPT?=
 mdec:
 	@echo "--------------------------------------------------------------"
 	@echo " Rebuilding ${DESTDIR}/usr/mdec"
 	@echo "--------------------------------------------------------------"
 	@echo
 .if ${MACHINE} == "i386"
-	cd ${.CURDIR}/sys/i386/boot;	make ${MDEC_OPT} depend all install ${CLEANDIR}
+	cd ${.CURDIR}/sys/i386/boot;	make depend all install ${CLEANDIR}
 .if defined (DESTDIR)
 	cd /usr/mdec; find . | cpio -pdamuv ${DESTDIR}/usr/mdec
 .endif
