@@ -47,7 +47,7 @@ eagle|egl|474 Mb Fujitsu Eagle:\
 	:ph#307120:oh#429440:bh#4096:fh#1024:
 
 xsd|Xsd|515 Mb FSD:\
- 	:ty=winchester:ns#24:nt#24:nc#711:rm#3600:se#512:\
+ 	:ty=winchester:ns#48:nt#24:nc#711:rm#3600:se#512:\
 	:dt=SMD:\
 	:d0#0:d1#30240:\
  	:pa#61056:oa#0:ba#8192:fa#1024:\
@@ -76,7 +76,7 @@ xfd|Xfd|XFD|340 Mb FSD:\
 	:ph#230400:oh#311808:bh#4096:fh#1024:
 
 fuj|Fujitsu|Fujitsu 330 Mb 20mhz:\
- 	:ty=winchester:ns#32:nt#10:nc#823:rm#3600:se#512:\
+ 	:ty=winchester:ns#64:nt#10:nc#823:rm#3600:se#512:\
 	:dt=SMD:\
 	:d0#0:d1#40960:\
  	:pa#38400:oa#0:ba#8192:fa#1024:\
@@ -89,7 +89,7 @@ fuj|Fujitsu|Fujitsu 330 Mb 20mhz:\
 	:ph#72320:oh#451200:bh#4096:fh#1024:
 
 smd|Smd|SMD|300 Mb SMD:\
-	:ty=removable:ns#16:nt#19:nc#823:rm#3600:se#512:\
+	:ty=removable:ns#32:nt#19:nc#823:rm#3600:se#512:\
 	:dt=SMD:\
 	:d0#0:d1#20160:\
 	:pa#40128:oa#0:ba#8192:fa#1024:\
