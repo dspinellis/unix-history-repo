@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	8.4 (Berkeley) %G%
+ *	@(#)vnode.h	8.5 (Berkeley) %G%
  */
 
 #include <sys/queue.h>
@@ -25,7 +25,10 @@ enum vtype	{ VNON, VREG, VDIR, VBLK, VCHR, VLNK, VSOCK, VFIFO, VBAD };
  * These are for the benefit of external programs only (e.g., pstat)
  * and should NEVER be inspected by the kernel.
  */
-enum vtagtype	{ VT_NON, VT_UFS, VT_NFS, VT_MFS, VT_LFS };
+enum vtagtype	{
+	VT_NON, VT_UFS, VT_NFS, VT_MFS, VT_PC, VT_LFS, VT_LOFS, VT_FDESC,
+	VT_PORTAL, VT_NULL, VT_UMAP, VT_KERNFS, VT_PROCFS, VT_AFS
+};
 
 /*
  * Each underlying filesystem allocates its own private area and hangs
