@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)stats.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)stats.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -69,12 +69,13 @@ poststats(sfile)
 	(void) time(&Stat.stat_itime);
 	Stat.stat_size = sizeof Stat;
 
-	fd = open(sfile, 2);
+	fd = open(sfile, O_RDWR);
 	if (fd < 0)
 	{
 		errno = 0;
 		return;
 	}
+	(void) lockfile(fd, sfile, NULL, LOCK_EX);
 	if (read(fd, (char *) &stat, sizeof stat) == sizeof stat &&
 	    stat.stat_size == sizeof stat)
 	{
