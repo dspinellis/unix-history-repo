@@ -13,7 +13,7 @@
  * from: Utah $Hdr: clockreg.h 1.14 91/01/18$
  * from: hp300/hp300/clockreg.h	7.4 (Berkeley) 12/27/92
  *
- *	@(#)clockreg.h	8.1 (Berkeley) %G%
+ *	@(#)clockreg.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -97,4 +97,7 @@ struct bbc2 {
     unsigned char    	cal_ctl_d;	/* calender control resistor */
     unsigned char    	nvram[50];	/* non-volatile RAM area */
 };
+
+#define	BBC2_A_UIP	0x80
+#define	BBC2_B_SET	0x80
 #endif
