@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.54	82/02/25	*/
+/*	tcp_input.c	1.55	82/02/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -122,10 +122,11 @@ COUNT(TCP_INPUT);
 #endif
 
 	/*
-	 * Locate pcb for segment.
+	 * Locate pcb for segment.  On match, update the local
+	 * address stored in the block to reflect anchoring.
 	 */
 	inp = in_pcblookup
-		(&tcb, ti->ti_src, ti->ti_sport, ti->ti_dst, ti->ti_dport);
+		(&tcb, ti->ti_src, ti->ti_sport, ti->ti_dst, ti->ti_dport, 1);
 
 	/*
 	 * If the state is CLOSED (i.e., TCB does not exist) then
