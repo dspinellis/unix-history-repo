@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)nl.c 1.7 %G%";
+static	char sccsid[] = "@(#)nl.c 1.8 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -139,6 +139,7 @@ char *in_funcs[] =
 	 */
 char *in_procs[] =
     {
+	"assert",
 	"date" ,
 	"dispose" ,
 	"flush" ,
@@ -213,6 +214,7 @@ int in_fops[] =
      */
 int in_pops[] =
     {
+	O_ASRT|NSTAND,
 	O_DATE|NSTAND,
 	O_DISPOSE,
 	O_FLUSH|NSTAND,

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)tree.h 1.1 %G%"; */
+/* static	char sccsid[] = "@(#)tree.h 1.2 %G%"; */
 
 #define T_MINUS 1
 #define T_MOD 2
@@ -63,7 +63,6 @@
 #define T_FORD 59
 #define T_GOTO 60
 #define T_IF 61
-#define T_ASRT 62
 #define T_CSET 63
 #define T_RANG 64
 #define T_VAR 65

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)proc.c 1.10 %G%";
+static char sccsid[] = "@(#)proc.c 1.11 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -1005,6 +1005,37 @@ proc(r)
 		put(1, op);
 		return;
 
+	case O_ASRT:
+		if (!opt('t'))
+			return;
+		if (argc == 0 || argc > 2) {
+			error("Assert expects one or two arguments");
+			return;
+		}
+		if (argc == 2) {
+			/*
+			 * Optional second argument is a string specifying
+			 * why the assertion failed.
+			 */
+			al = argv[2];
+			al = stkrval(al[1], NIL , RREQ );
+			if (al == NIL)
+				return;
+			if (classify(al) != TSTR) {
+				error("Second argument to assert must be a string, not %s", nameof(al));
+				return;
+			}
+		} else {
+			put(2, PTR_CON, NIL);
+		}
+		ap = stkrval(argv[1], NIL , RREQ );
+		if (ap == NIL)
+			return;
+		if (isnta(ap, "b"))
+			error("Assert expression must be Boolean, not %ss", nameof(ap));
+		put(1, O_ASRT);
+		return;
+
 	case O_PACK:
 		if (argc != 3) {
 			error("pack expects three arguments");
@@ -1088,7 +1119,7 @@ packunp:
 		put(1, op);
 		return;
 	case 0:
-		error("%s is an unimplemented 6400 extension", p->symbol);
+		error("%s is an unimplemented extension", p->symbol);
 		return;
 
 	default:

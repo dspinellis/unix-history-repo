@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)hash.c 1.2 %G%";
+static	char sccsid[] = "@(#)hash.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -23,7 +23,6 @@ struct ht {
 struct kwtab yykey[] = {
 	"and",		YAND,
 	"array",	YARRAY,
-	"assert",	YASSERT,
 	"begin",	YBEGIN,
 	"case",		YCASE,
 	"const",	YCONST,
