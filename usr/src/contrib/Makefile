@@ -1,4 +1,4 @@
-#	Makefile	4.20	86/06/06
+#	Makefile	4.21	86/06/07
 #
 DESTDIR=
 CFLAGS=	-O
@@ -15,7 +15,7 @@ STDINST=bib jove mh patch rcs
 # Special purpose software that requires custom installation,
 # or may not be needed by all sites
 #
-OPTDIR=	B dipress emacs enet mmdf news nnpt notes pathalias rn \
+OPTDIR=	B dipress emacs enet mmdf news nntp notes pathalias rn \
 	spms sumacc umodem xns X
 
 all:	${SUBDIR}
