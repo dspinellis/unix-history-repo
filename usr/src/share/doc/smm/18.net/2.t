@@ -1,11 +1,11 @@
-.\" Copyright (c) 1983 Regents of the University of California.
+.\" Copyright (c) 1983,1986 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)2.t	6.1 (Berkeley) %G%
+.\"	@(#)2.t	6.2 (Berkeley) %G%
 .\"
 .nr H2 1
-.ds RH Overview
+.\".ds RH Overview
 .NH
 \s+2Overview\s0
 .PP
@@ -54,5 +54,5 @@ these cases examples have been drawn from the Internet [Cerf78]
 protocol family.  Later sections cover routing issues,
 the design of the raw socket interface and other
 miscellaneous topics.
-.ds RH Goals
-.bp
+.\".ds RH Goals
+'ne 2i

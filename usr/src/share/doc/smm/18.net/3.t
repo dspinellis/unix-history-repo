@@ -1,11 +1,11 @@
-.\" Copyright (c) 1983 Regents of the University of California.
+.\" Copyright (c) 1983,1986 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)3.t	6.1 (Berkeley) %G%
+.\"	@(#)3.t	6.2 (Berkeley) %G%
 .\"
 .nr H2 1
-.ds RH Goals
+.\".ds RH Goals
 .NH
 \s+2Goals\s0
 .PP
@@ -28,5 +28,5 @@ create utility routines which hide many of the more
 complex and/or hardware dependent chores of networking.
 Later sections describe the utility routines and the underlying
 data structures they manipulate.
-.ds RH "Address representation
-.bp
+.\".ds RH "Address representation
+'ne 2i
