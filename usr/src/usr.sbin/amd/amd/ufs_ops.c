@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_ops.c	8.1 (Berkeley) %G%
+ *	@(#)ufs_ops.c	8.2 (Berkeley) %G%
  *
  * $Id: ufs_ops.c,v 5.2.2.1 1992/02/09 15:09:08 jsp beta $
  *
@@ -24,11 +24,11 @@
 typedef nfs_fh fhandle_t;
 #endif /* NFS_3 */
 
+#include <sys/mount.h>
+
 #ifdef UFS_HDR
 #include UFS_HDR
 #endif /* UFS_HDR */
-
-#include <sys/mount.h>
 
 /*
  * UN*X file system
