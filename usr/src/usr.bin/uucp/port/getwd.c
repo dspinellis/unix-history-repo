@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)getwd.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)getwd.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -21,7 +21,7 @@ register char *wkdir;
 	register char *c;
 
 	*wkdir = '\0';
-	if ((fp = rpopen("PATH=/bin:/usr/bin:/usr/ucb;pwd 2>&-", "r")) == NULL)
+	if ((fp = rpopen("PATH=/bin:/usr/bin;pwd 2>&-", "r")) == NULL)
 		return 0;
 	if (fgets(wkdir, 100, fp) == NULL) {
 		rpclose(fp);
