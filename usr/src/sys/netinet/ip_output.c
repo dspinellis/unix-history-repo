@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988, 1990 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ip_output.c	7.18 (Berkeley) %G%
+ *	@(#)ip_output.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -121,14 +121,12 @@ panic("ip_output no HDR");
 	} else {
 		if (ro->ro_rt == 0)
 			rtalloc(ro);
-		if (ro->ro_rt == 0 || (ifp = ro->ro_rt->rt_ifp) == 0) {
-			if (in_localaddr(ip->ip_dst))
-				error = EHOSTUNREACH;
-			else
-				error = ENETUNREACH;
+		if (ro->ro_rt == 0) {
+			error = EHOSTUNREACH;
 			goto bad;
 		}
 		ia = (struct in_ifaddr *)ro->ro_rt->rt_ifa;
+		ifp = ro->ro_rt->rt_ifp;
 		ro->ro_rt->rt_use++;
 		if (ro->ro_rt->rt_flags & RTF_GATEWAY)
 			dst = (struct sockaddr_in *)ro->ro_rt->rt_gateway;
@@ -348,14 +346,16 @@ ip_optcopy(ip, jp)
 /*
  * IP socket option processing.
  */
-ip_ctloutput(op, so, level, optname, m)
+ip_ctloutput(op, so, level, optname, mp)
 	int op;
 	struct socket *so;
 	int level, optname;
-	struct mbuf **m;
+	struct mbuf **mp;
 {
+	register struct inpcb *inp = sotoinpcb(so);
+	register struct mbuf *m = *mp;
+	register int optval;
 	int error = 0;
-	struct inpcb *inp = sotoinpcb(so);
 
 	if (level != IPPROTO_IP)
 		error = EINVAL;
@@ -364,33 +364,109 @@ ip_ctloutput(op, so, level, optname, m)
 	case PRCO_SETOPT:
 		switch (optname) {
 		case IP_OPTIONS:
-			return (ip_pcbopts(&inp->inp_options, *m));
+		case IP_RETOPTS:
+			return (ip_pcbopts(optname, &inp->inp_options, m));
+
+		case IP_TOS:
+		case IP_TTL:
+		case IP_RECVOPTS:
+		case IP_RECVRETOPTS:
+		case IP_RECVDSTADDR:
+			if (m->m_len != sizeof(int))
+				error = EINVAL;
+			else {
+				optval = *mtod(m, int *);
+				switch (op) {
+
+				case IP_TOS:
+					inp->inp_ip.ip_tos = optval;
+					break;
+
+				case IP_TTL:
+					inp->inp_ip.ip_tos = optval;
+					break;
+#define	OPTSET(bit) \
+	if (optval) \
+		inp->inp_flags |= bit; \
+	else \
+		inp->inp_flags &= ~bit;
+
+				case IP_RECVOPTS:
+					OPTSET(INP_RECVOPTS);
+					break;
+
+				case IP_RECVRETOPTS:
+					OPTSET(INP_RECVRETOPTS);
+					break;
+
+				case IP_RECVDSTADDR:
+					OPTSET(INP_RECVDSTADDR);
+					break;
+				}
+			}
+			break;
+#undef OPTSET
 
 		default:
 			error = EINVAL;
 			break;
 		}
+		if (m)
+			(void)m_free(m);
 		break;
 
 	case PRCO_GETOPT:
 		switch (optname) {
 		case IP_OPTIONS:
-			*m = m_get(M_WAIT, MT_SOOPTS);
+			*mp = m = m_get(M_WAIT, MT_SOOPTS);
 			if (inp->inp_options) {
-				(*m)->m_len = inp->inp_options->m_len;
+				m->m_len = inp->inp_options->m_len;
 				bcopy(mtod(inp->inp_options, caddr_t),
-				    mtod(*m, caddr_t), (unsigned)(*m)->m_len);
+				    mtod(m, caddr_t), (unsigned)m->m_len);
 			} else
-				(*m)->m_len = 0;
+				m->m_len = 0;
 			break;
+
+		case IP_TOS:
+		case IP_TTL:
+		case IP_RECVOPTS:
+		case IP_RECVRETOPTS:
+		case IP_RECVDSTADDR:
+			*mp = m = m_get(M_WAIT, MT_SOOPTS);
+			m->m_len = sizeof(int);
+			switch (op) {
+
+			case IP_TOS:
+				optval = inp->inp_ip.ip_tos;
+				break;
+
+			case IP_TTL:
+				optval = inp->inp_ip.ip_tos;
+				break;
+
+#define	OPTBIT(bit)	(inp->inp_flags & bit ? 1 : 0)
+
+			case IP_RECVOPTS:
+				optval = OPTBIT(INP_RECVOPTS);
+				break;
+
+			case IP_RECVRETOPTS:
+				optval = OPTBIT(INP_RECVRETOPTS);
+				break;
+
+			case IP_RECVDSTADDR:
+				optval = OPTBIT(INP_RECVDSTADDR);
+				break;
+			}
+			*mtod(m, int *) = optval;
+			break;
+
 		default:
 			error = EINVAL;
 			break;
 		}
 		break;
 	}
-	if (op == PRCO_SETOPT && *m)
-		(void)m_free(*m);
 	return (error);
 }
 
