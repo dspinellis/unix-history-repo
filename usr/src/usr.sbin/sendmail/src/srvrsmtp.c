@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.62 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.63 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.62 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.63 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -264,7 +264,7 @@ smtp(e)
 			else
 				message("250-SIZE");
 #ifdef DSN
-			message("250-X-DSN-3 (Unpublished draft of 12 Mar 1995)");
+			message("250-X-DSN-03 (Unpublished draft of 12 Mar 1995)");
 #endif
 			message("250 HELP");
 			break;
