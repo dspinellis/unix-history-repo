@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)put.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)put.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "whoami.h"
@@ -552,7 +552,7 @@ putspace(n)
 	if (opt('k'))
 		printf("%5d\t.=.+%d\n", lc - HEADER_BYTES, n);
 #endif
-	for (i = even(n); i > 0; i -= 2)
+	for (i = n; i > 0; i -= 2)
 		word(0);
 }
 
