@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -847,7 +847,10 @@ deliver(e, firstto)
 		(void) strcat(tobuf, ",");
 		(void) strcat(tobuf, to->q_paddr);
 		define('u', user, e);		/* to user */
-		define('z', to->q_home, e);	/* user's home */
+		p = to->q_home;
+		if (p == NULL && ctladdr != NULL)
+			p = ctladdr->q_home;
+		define('z', p, e);	/* user's home */
 
 		/*
 		**  Expand out this user into argument list.
