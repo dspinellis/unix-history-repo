@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso.h	8.5 (Berkeley) %G%
+ *	@(#)iso.h	8.6 (Berkeley) %G%
  */
 
 #define ISODCL(from, to) (to - from + 1)
@@ -120,7 +120,6 @@ struct iso_mnt {
 	int im_bmask;
 	
 	int volume_space_size;
-	char im_fsmnt[50];
 	struct netexport im_export;
 	
 	char root[ISODCL (157, 190)];
