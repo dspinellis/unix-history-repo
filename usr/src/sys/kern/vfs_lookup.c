@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	6.18	85/02/20	*/
+/*	vfs_lookup.c	6.19	85/02/20	*/
 
 #include "param.h"
 #include "systm.h"
@@ -1096,6 +1096,8 @@ dirempty(ip, parentino)
 #define	MINDIRSIZ (sizeof (struct dirtemplate) / 2)
 
 	for (off = 0; off < ip->i_size; off += dp->d_reclen) {
+		if (dp->d_reclen <= 0)
+			return (0);
 		error = rdwri(UIO_READ, ip, (caddr_t)dp, MINDIRSIZ,
 		    off, 1, &count);
 		/*
