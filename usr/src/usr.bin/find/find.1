@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)find.1	6.26 (Berkeley) %G%
+.\"     @(#)find.1	6.27 (Berkeley) %G%
 .\"
 .Vx
 .Dd 
@@ -134,12 +134,14 @@ was executed.
 .Cx
 True if the file is contained in a file system of type
 .Ar type .
-Currently supported types are ``local'', ``mfs'', ``nfs'', ``pc'' and
-``ufs''.
-The type ``local'' is not a specific file system type, but matches
-any file system physically mounted on the system where the
+Currently supported types are ``local'', ``mfs'', ``nfs'', ``pc'',
+``rdonly'' and ``ufs''.
+The types ``local'' and ``rdonly'' are not specific file system types.
+The former matches any file system physically mounted on the system where
+the
 .Nm find
-is being executed.
+is being executed and the latter matches any file system which is
+mounted read-only.
 .Tp Cx Ic -group
 .Cx \&\ \&
 .Ar gname
@@ -222,6 +224,19 @@ True if the current file has a more recent last modification time than
 True if the file belongs to an unknown user.
 .Tp Ic -nogroup
 True if the file belongs to an unknown group.
+.Tp Cx Ic -path
+.Cx \&\ \&
+.Ar pattern
+.Cx
+True if the pathname being examined matches
+.Ar pattern  .
+Special shell pattern matching characters (``['', ``]'', ``*'', and ``?'')
+may be used as part of
+.Ar pattern  .
+These characters may be matched explicitly by escaping them with a
+backslash (``\e'').
+Slashes (``/'') are treated as normal characters and do not have to be
+matched explicitly.
 .Tp Cx Ic -perm
 .Cx \&\ \&
 .Op Fl
