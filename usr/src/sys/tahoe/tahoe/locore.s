@@ -1,4 +1,4 @@
-/*	locore.s	1.9	86/07/20	*/
+/*	locore.s	1.10	86/11/09	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -495,9 +495,8 @@ SCBVEC(tracep):
 	pushl $0;
 	SAVE_FPSTAT(8)
 	TRAP(TRCTRAP)
-#include "align.h"
 SCBVEC(alignflt):
-#if NALIGN > 0
+#ifdef ALIGN
 	bitl	$PSL_CURMOD,4(sp)
 	jeql	align_excp		# Can't emulate for kernel mode !
 	jbr	non_aligned		# Only emulated for user mode.
@@ -524,11 +523,13 @@ segflt:
 	TRAP(SEGFLT)
 
 SCBVEC(fpm):			# Floating Point Emulation
+#ifdef FPE
 	CHECK_SFE(16)
 	SAVE_FPSTAT(16)
 	incl	_cnt+V_FPE	# count emulation traps
 	callf	$4,_fpemulate
 	REST_FPSTAT
+#endif
 	moval	8(sp),sp	# Pop operand
 	tstl	(sp)		# Stack= PSL, PC, return_code
 	jneq	_Xarithtrap	# If not OK, emulate F.P. exception
@@ -656,7 +657,9 @@ start:
 /* trap(), syscall(), and fpemulate() save r0-r12 in the entry mask */
 	orw2	$0x01fff,_trap
 	orw2	$0x01fff,_syscall
+#ifdef FPE
 	orw2	$0x01fff,_fpemulate
+#endif
 	orw2	$0x01ffc,_panic			# for debugging (no r0|r1)
 	callf	$4,_fixctlrmask			# setup for autoconfig
 /* initialize system page table: scb and int stack writeable */
@@ -1585,8 +1588,7 @@ ENTRY(locc, 0)
 	subl3	r0,r1,r0; ret		# return (end - cp);
 #endif
 
-#if NALIGN > 0
-
+#ifdef ALIGN
 #include "../tahoealign/align.h"
 
 	.globl	_alignment
