@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)rcp.1	6.15 (Berkeley) %G%
+.\"	@(#)rcp.1	6.16 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RCP 1
@@ -36,11 +36,16 @@ or a `/' before any `:'s).
 The
 .Fl K
 option turns off all Kerberos authentication.
-.It Fl r
-If any of the source files are directories,
+.It Fl k
+The
+.Fl k
+option requests
 .Nm rcp
-copies each subtree rooted at that name; in this case
-the destination must be a directory.
+to obtain tickets
+for the remote host in realm
+.Ar realm
+instead of the remote host's realm as determined by
+.Xr krb_realmofhost  3  .
 .It Fl p
 The
 .Fl p
@@ -55,16 +60,11 @@ are preserved if it already existed; otherwise the mode of the source file
 modified by the
 .Xr umask  2
 on the destination host is used.
-.It Fl k
-The
-.Fl k
-option requests
+.It Fl r
+If any of the source files are directories,
 .Nm rcp
-to obtain tickets
-for the remote host in realm
-.Ar realm
-instead of the remote host's realm as determined by
-.Xr krb_realmofhost  3  .
+copies each subtree rooted at that name; in this case
+the destination must be a directory.
 .El
 .Pp
 If
