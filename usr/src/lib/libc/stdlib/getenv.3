@@ -1,5 +1,21 @@
-.\"	@(#)getenv.3	6.4 (Berkeley) %G%
+.\" Copyright (c) 1988 The Regents of the University of California.
+.\" All rights reserved.
 .\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)getenv.3	6.5 (Berkeley) %G%
+.\"
+.TH <PROGNAME> <SECTION> ""
 .TH GETENV 3 ""
 .AT 3
 .SH NAME
@@ -45,3 +61,6 @@ All of these routines permit, but do not require, a trailing equals
 (``='') sign on \fIname\fP or a leading equals sign on \fIvalue\fP.
 .SH SEE ALSO
 csh(1), sh(1), execve(2), environ(7)
+.SH BUGS
+All information is part of the environment, so it must be copied
+if it is to be manipulated.
