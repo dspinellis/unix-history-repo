@@ -7,7 +7,7 @@
 
 #if defined(LIBC_SCCS) && !defined(lint)
 static char orig_sccsid[] = "@(#)opendir.c	8.2 (Berkeley) 2/12/94";
-static char sccsid[] = "@(#)libc.opendir.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)libc.opendir.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -140,10 +140,9 @@ opendir(name)
 				struct dirent *xp;
 
 				/*
-				 * If and when whiteouts happen,
-				 * this sort would need to be stable.
+				 * This sort must be stable.
 				 */
-				heapsort(dpv, n, sizeof(*dpv), alphasort);
+				mergesort(dpv, n, sizeof(*dpv), alphasort);
 
 				dpv[n] = NULL;
 				xp = NULL;
