@@ -1,4 +1,4 @@
-/*	conf.c	1.1	86/01/12	*/
+/*	conf.c	1.2	86/07/16	*/
 /*	conf.c	6.1	83/07/29	*/
 
 #include "../machine/pte.h"
@@ -6,7 +6,6 @@
 #include "param.h"
 #include "inode.h"
 #include "fs.h"
-
 
 #include "saio.h"
 
@@ -48,41 +47,22 @@ devclose(io)
 	(*devsw[io->i_ino.i_dev].dv_close)(io);
 }
 
-
 /*ARGSUSED*/
-nullsys(io)
-	struct iob *io;
-{
+nullsys(io) struct iob *io; {}
+nullopen(io) struct iob *io; { _stop("bad device type"); }
 
-	;
-}
-
-
-int	nullsys();
-
-
-#define wchstrategy 	nullsys	
-#define wchopen 	nullsys 
-#define ctstrategy 	nullsys	
-#define ctopen 		nullsys		
-#define ctclose 	nullsys
-
-int	udstrategy(),	udopen();
-int	vdstrategy(),	vdopen();
-int	cystrategy(),	cyopen(),	cyclose();
+int	udstrategy(), udopen();
+int	vdstrategy(), vdopen();
+int	cystrategy(), cyopen(), cyclose();
 
 struct devsw devsw[] = {
-	"fsd",  vdstrategy,	vdopen,		nullsys,
-	"smd",  vdstrategy,	vdopen,		nullsys,
-	"xfd",  vdstrategy,	vdopen,		nullsys,
-	"fuj",  vdstrategy,	vdopen,		nullsys,
-	"xsd",  vdstrategy,	vdopen,		nullsys,
-
-	"xmd",	udstrategy,	udopen,		nullsys,
-	"flp",	udstrategy,	udopen,		nullsys,
-	"cyp",	cystrategy,	cyopen,		cyclose,
-	"wch",	wchstrategy,	wchopen,	nullsys,
-	"ctp",	ctstrategy,	ctopen,		ctclose,
-	0,	0,		0,		0
+	{ "ud",	udstrategy,	udopen,		nullsys },
+	{ "dk",	vdstrategy,	vdopen,		nullsys },
+#ifdef notdef
+	{ "xp",	xpstrategy,	xpopen,		nullsys },
+#else
+	{ "xp",	nullopen,	nullsys,	nullsys },
+#endif
+	{ "cy",	cystrategy,	cyopen,		cyclose },
+	{ 0 }
 };
-
