@@ -3,7 +3,7 @@
 /*
  *	This routine scrolls the window up a line.
  *
- * %G% (Berkeley) @(#)scroll.c	1.4
+ * @(#)scroll.c	1.5 (Berkeley) %G%
  */
 scroll(win)
 reg WINDOW	*win; {
@@ -21,7 +21,7 @@ reg WINDOW	*win; {
 		*sp++ = ' ';
 	win->_y[win->_maxy - 1] = temp;
 	if (win == curscr) {
-		putchar('\n');
+		_putchar('\n');
 		if (!NONL)
 			win->_curx = 0;
 # ifdef DEBUG
