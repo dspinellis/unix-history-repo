@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ifconfig.8	6.3 (Berkeley) %G%
+.\"	@(#)ifconfig.8	6.4 (Berkeley) %G%
 .\"
 .TH IFCONFIG 8C ""
 .UC 5
@@ -32,16 +32,17 @@ network interface parameters.
 .I Ifconfig
 must be used at boot time to define the network address
 of each interface present on a machine; it may also be used at
-a later time to redefine an interface's address.  The
+a later time to redefine an interface's address
+or other operating parameters.  The
 .I interface
 parameter is a string of the form ``name unit'', e.g. ``en0''.
 .LP
 Since an interface may receive transmissions in differing protocols,
-each of which may required separate naming schemes, it is necessary
+each of which may require separate naming schemes, it is necessary
 to specify the
-.IR protocol_family ,
+.IR address_family ,
 which may change the interpretation of the remaining parameters.
-The address protocols current supported are ``inet'' and ``ns''.
+The address families currently supported are ``inet'' and ``ns''.
 .LP
 For the DARPA-Internet family,
 the address is either a host name present in the host name data
@@ -55,7 +56,14 @@ addresses are
 where
 .I net
 is the assigned network number (in decimal),
-and each of the six bytes are specified in hexadecimal.
+and each of the six bytes of the host number,
+.I a
+through
+.IR f ,
+are specified in hexadecimal.
+The host number may be omitted on 10Mb/s Ethernet interfaces,
+which use the hardware physical address,
+and on interfaces other than the first.
 .PP
 The following parameters may be set with 
 .IR ifconfig :
@@ -72,6 +80,7 @@ Mark an interface ``down''.  When an interface is
 marked ``down'', the system will not attempt to
 transmit messages through that interface. 
 If possible, the interface will be reset to disable reception as well.
+This action does not automatically disable routes using the interface.
 .TP 15
 .B trailers
 Request the use of a ``trailer'' link level encapsulation when
@@ -88,6 +97,7 @@ this flag indicates that the system should request that other
 systems use trailers when sending to this host.
 Similarly, trailer encapsulations will be sent to other
 hosts that have made such requests.
+Currently used by Internet protocols only.
 .TP 15
 .B \-trailers
 Disable the use of a ``trailer'' link level encapsulation.
@@ -120,16 +130,19 @@ Disable driver dependent debugging code.
 .TP 15
 .BI netmask " mask"
 (Inet only)
-Specify how much of the address you wish to reserve for subdividing
+Specify how much of the address to reserve for subdividing
 networks into sub-networks.
+The mask includes the network part of the local address
+and the subnet part, which is taken from the host field of the address.
 The mask can be specified as a single hexadecimal number
-with a leading 0x, in the style of a dot-notation Internet address,
-or as a pseudo-network name.
-The mask contains 1's for the positions in the 32-bit address
+with a leading 0x, with a dot-notation Internet address,
+or with a pseudo-network name listed in the network table
+.IR networks (5).
+The mask contains 1's for the bit positions in the 32-bit address
 which are to be used for the network and subnet parts,
 and 0's for the host part.
 The mask should contain at least the standard network portion,
-and the subnet field should normally be contiguous with the network
+and the subnet field should be contiguous with the network
 portion.
 .TP 15
 .B dstaddr
@@ -138,14 +151,16 @@ of a point to point link.
 .TP 15
 .B broadcast
 (Inet only)
-Specify the address you wish to use to represent broadcasts to the
+Specify the address to use to represent broadcasts to the
 network.
+The default broadcast address is the address with a host part of all 1's.
 .TP 15
 .B ipdst
-This is used to specify an internet host who is willing to receive
+(NS only)
+This is used to specify an Internet host who is willing to receive
 ip packets encapsulating NS packets bound for a remote network.
 In this case, an apparent point to point link is constructed, and
-the address you specify will be taken as the NS address and network
+the address specified will be taken as the NS address and network
 of the destinee.
 .PP
 .I Ifconfig
@@ -157,7 +172,7 @@ Ifconfig will report only the details specific to that protocol family.
 Only the super-user may modify the configuration of a network interface.
 .SH DIAGNOSTICS
 Messages indicating the specified interface does not exit, the
-requested address is unknown, the user is not privileged and
+requested address is unknown, or the user is not privileged and
 tried to alter an interface's configuration.
 .SH "SEE ALSO"
-rc(8), intro(4N), netstat(1)
+netstat(1), intro(4N), rc(8)
