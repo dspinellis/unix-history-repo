@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.10 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -716,9 +716,13 @@ refuseconnections()
 */
 
 /*VARARGS1*/
-setproctitle(fmt VA_ARG_FORMAL)
+#ifdef __STDC__
+setproctitle(char *fmt, ...)
+#else
+setproctitle(fmt, va_alist)
 	char *fmt;
-	VA_ARG_DECL
+	va_dcl
+#endif
 {
 # ifdef SETPROCTITLE
 	register char *p;

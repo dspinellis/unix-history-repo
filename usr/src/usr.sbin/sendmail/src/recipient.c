@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.3 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -296,7 +296,6 @@ recipient(a, sendq, e)
 	/* add address on list */
 	*pq = a;
 	a->q_next = NULL;
-	e->e_nrcpts++;
 
 	if (a->q_alias == NULL && RcptLogFile != NULL &&
 	    !bitset(QDONTSEND, a->q_flags))
@@ -355,10 +354,8 @@ recipient(a, sendq, e)
 			message(Arpa_Info, "including file %s", &a->q_user[9]);
 			(void) include(&a->q_user[9], FALSE, a, sendq, e);
 		}
-		return (a);
 	}
-
-	if (m == FileMailer)
+	else if (m == FileMailer)
 	{
 		struct stat stb;
 		extern bool writable();
@@ -376,11 +373,14 @@ recipient(a, sendq, e)
 			a->q_flags |= QBADADDR;
 			giveresponse(EX_CANTCREAT, m, e);
 		}
-		return (a);
 	}
 
 	if (m != LocalMailer)
+	{
+		if (!bitset(QDONTSEND, a->q_flags))
+			e->e_nrcpts++;
 		return (a);
+	}
 
 	/* try aliasing */
 	alias(a, sendq, e);
@@ -402,6 +402,7 @@ recipient(a, sendq, e)
 					e->e_id);
 # endif
 			message(Arpa_Info, "queued (user database error)");
+			e->e_nrcpts++;
 			return (a);
 		}
 	}
@@ -478,6 +479,8 @@ recipient(a, sendq, e)
 				forward(a, sendq, e);
 		}
 	}
+	if (!bitset(QDONTSEND, a->q_flags))
+		e->e_nrcpts++;
 	return (a);
 
 	return (a);

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	6.2 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -42,9 +42,13 @@ char	MsgBuf[BUFSIZ*2];	/* text of most recent message */
 static void fmtmsg();
 
 /*VARARGS1*/
-syserr(fmt VA_ARG_FORMAL)
+#ifdef __STDC__
+syserr(char *fmt, ...)
+#else
+syserr(fmt, va_alist)
 	char *fmt;
-	VA_ARG_DECL
+	va_dcl
+#endif
 {
 	register char *p;
 	int olderrno = errno;
@@ -98,9 +102,13 @@ syserr(fmt VA_ARG_FORMAL)
 */
 
 /*VARARGS1*/
-usrerr(fmt VA_ARG_FORMAL)
+#ifdef __STDC__
+usrerr(char *fmt, ...)
+#else
+usrerr(fmt, va_alist)
 	char *fmt;
-	VA_ARG_DECL
+	va_dcl
+#endif
 {
 	VA_LOCAL_DECL
 	extern char SuprErrs;
@@ -142,10 +150,14 @@ usrerr(fmt VA_ARG_FORMAL)
 */
 
 /*VARARGS2*/
-message(num, msg VA_ARG_FORMAL)
+#ifdef __STDC__
+message(char *num, char *msg, ...)
+#else
+message(num, msg, va_alist)
 	char *num;
 	char *msg;
-	VA_ARG_DECL
+	va_dcl
+#endif
 {
 	VA_LOCAL_DECL
 
@@ -174,10 +186,14 @@ message(num, msg VA_ARG_FORMAL)
 */
 
 /*VARARGS2*/
-nmessage(num, msg VA_ARG_FORMAL)
+#ifdef __STDC__
+nmessage(char *num, char *msg, ...)
+#else
+nmessage(num, msg, va_alist)
 	char *num;
 	char *msg;
-	VA_ARG_DECL
+	va_dcl
+#endif
 {
 	VA_LOCAL_DECL
 

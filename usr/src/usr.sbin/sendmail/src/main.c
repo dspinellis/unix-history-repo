@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -70,6 +70,8 @@ ENVELOPE	BlankEnvelope;	/* a "blank" envelope */
 ENVELOPE	MainEnvelope;	/* the envelope around the basic letter */
 ADDRESS		NullAddress =	/* a null address */
 		{ "", "", NULL, "" };
+char		*UserEnviron[MAXUSERENVIRON + 1];
+				/* saved user environment */
 
 /*
 **  Pointers for setproctitle.
@@ -139,6 +141,7 @@ main(argc, argv, envp)
 	extern char **myhostname();
 	extern char *arpadate();
 	extern char *optarg;
+	extern char **environ;
 
 	/*
 	**  Check to see if we reentered.
@@ -249,11 +252,25 @@ main(argc, argv, envp)
 
 # ifdef SETPROCTITLE
 	/*
+	**  Move the environment so setproctitle can use the space at
+	**  the top of memory.
+	*/
+
+	for (i = j = 0; j < MAXUSERENVIRON && (p = envp[i]) != NULL; i++)
+	{
+		if (strncmp(p, "FS=", 3) == 0 || strncmp(p, "LD_", 3) == 0)
+			continue;
+		UserEnviron[j++] = newstr(p);
+	}
+	UserEnviron[j] = NULL;
+	environ = UserEnviron;
+
+	/*
 	**  Save start and extent of argv for setproctitle.
 	*/
 
 	Argv = argv;
-	if (--i > 0)
+	if (i > 0)
 		LastArgv = envp[i - 1] + strlen(envp[i - 1]);
 	else
 		LastArgv = argv[argc - 1] + strlen(argv[argc - 1]);

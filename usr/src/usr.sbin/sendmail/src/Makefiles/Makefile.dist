@@ -7,7 +7,7 @@
 #
 #  This has been tested on Ultrix.
 #
-#	@(#)Makefile.dist	6.2 (Berkeley) %G%
+#	@(#)Makefile.dist	6.3 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -17,7 +17,11 @@ O=	-O
 #	-DNDBM -- use new DBM
 #	-DNEWDB -- use new Berkeley DB
 #	-DNDBM -DNEWDB -- use both new DBM and new Berkeley DB
+#	-DNDBM -DNEWDB -DYPCOMPAT -- use both plus YP compatility
 # The really old (V7) DBM library is no longer supported.
+# If YPCOMPAT is defined and /var/yp/Makefile exists, sendmail will build
+#   both the NEWDB and DBM libraries (the DBM just for YP).
+#
 DBMDEF=	-DNDBM -DNEWDB
 
 # define the load average calculation on your system: -DLA_TYPE=LA_INT,

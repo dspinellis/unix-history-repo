@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.2 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.3 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.2 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.3 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -108,16 +108,10 @@ smtp(e)
 		(void) dup(fileno(OutChannel));
 	}
 	settime(e);
-	if (RealHostName != NULL)
-	{
-		CurHostName = RealHostName;
-		setproctitle("srvrsmtp %s", CurHostName);
-	}
-	else
-	{
-		/* this must be us!! */
-		CurHostName = MyHostName;
-	}
+	if (RealHostName == NULL)
+		RealHostName = MyHostName;
+	CurHostName = RealHostName;
+	setproctitle("srvrsmtp %s", CurHostName);
 	expand("\001e", inp, &inp[sizeof inp], e);
 	message("220", "%s", inp);
 	SmtpPhase = "startup";

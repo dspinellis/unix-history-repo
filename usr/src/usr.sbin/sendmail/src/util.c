@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	6.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	6.4 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -256,7 +256,7 @@ xputs(s)
 			putchar('$');
 			continue;
 		}
-		for (mp = MetaMacros; mp->metaname != NULL; mp++)
+		for (mp = MetaMacros; mp->metaname != '\0'; mp++)
 		{
 			if (mp->metaval == c)
 			{
@@ -613,7 +613,7 @@ sfgets(buf, siz, fp, timeout)
 # ifdef LOG
 			syslog(LOG_NOTICE,
 			    "timeout waiting for input from %s\n",
-			    RealHostName? RealHostName: "local");
+			    CurHostName? CurHostName: "local");
 # endif
 			errno = 0;
 			usrerr("451 timeout waiting for input");

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	6.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	6.3 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -268,7 +268,7 @@ readerr:
 	**	Examples are who is the from person & the date.
 	*/
 
-	eatheader(e);
+	eatheader(e, QueueRun);
 
 	/*
 	**  Add an Apparently-To: line if we have no recipient lines.
