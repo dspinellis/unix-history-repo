@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernel.h	7.7 (Berkeley) %G%
+ *	@(#)kernel.h	7.8 (Berkeley) %G%
  */
 
 /* Global variables for the kernel. */
@@ -21,9 +21,9 @@ extern struct timeval boottime;
 extern struct timeval time;
 extern struct timezone tz;			/* XXX */
 
-extern int hz;				/* clock frequency */
-extern int phz;				/* alternate clock's frequency */
-extern int tick;			/* usec per tick */
+extern int tick;			/* usec per tick (1000000 / hz) */
+extern int hz;				/* system clock's frequency */
+extern int stathz;			/* statistics clock's frequency */
 extern int profhz;			/* profiling clock's frequency */
 extern int lbolt;			/* once a second sleep address */
 extern int realitexpire();
