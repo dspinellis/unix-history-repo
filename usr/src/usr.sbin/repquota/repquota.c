@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
+ * Copyright (c) 1980, 1990 Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -20,12 +20,12 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+"@(#) Copyright (c) 1980, 1990 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)repquota.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)repquota.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -67,7 +67,7 @@ main(argc, argv)
 	long i, argnum, done = 0;
 	extern char *optarg;
 	extern int optind;
-	char ch;
+	char ch, *qfnp;
 
 	while ((ch = getopt(argc, argv, "aguv")) != EOF) {
 		switch(ch) {
@@ -110,20 +110,22 @@ main(argc, argv)
 	}
 	setfsent();
 	while ((fs = getfsent()) != NULL) {
+		if (strcmp(fs->fs_vfstype, "ufs"))
+			continue;
 		if (aflag) {
-			if (gflag && hasquota(fs->fs_mntops, GRPQUOTA))
-				errs += repquota(fs, GRPQUOTA);
-			if (uflag && hasquota(fs->fs_mntops, USRQUOTA))
-				errs += repquota(fs, USRQUOTA);
+			if (gflag && hasquota(fs, GRPQUOTA, &qfnp))
+				errs += repquota(fs, GRPQUOTA, qfnp);
+			if (uflag && hasquota(fs, USRQUOTA, &qfnp))
+				errs += repquota(fs, USRQUOTA, qfnp);
 			continue;
 		}
 		if ((argnum = oneof(fs->fs_file, argv, argc)) >= 0 ||
 		    (argnum = oneof(fs->fs_spec, argv, argc)) >= 0) {
 			done |= 1 << argnum;
-			if (gflag && hasquota(fs->fs_mntops, GRPQUOTA))
-				errs += repquota(fs, GRPQUOTA);
-			if (uflag && hasquota(fs->fs_mntops, USRQUOTA))
-				errs += repquota(fs, USRQUOTA);
+			if (gflag && hasquota(fs, GRPQUOTA, &qfnp))
+				errs += repquota(fs, GRPQUOTA, qfnp);
+			if (uflag && hasquota(fs, USRQUOTA, &qfnp))
+				errs += repquota(fs, USRQUOTA, qfnp);
 		}
 	}
 	endfsent();
@@ -141,15 +143,16 @@ usage()
 	exit(1);
 }
 
-repquota(fs, type)
+repquota(fs, type, qfpathname)
 	register struct fstab *fs;
 	int type;
+	char *qfpathname;
 {
 	register struct fileusage *fup;
 	FILE *qf;
 	u_long id;
 	struct dqblk dqbuf;
-	char *timeprt(), quotafile[MAXPATHLEN + 1];
+	char *timeprt();
 	static struct dqblk zerodqblk;
 	static int warned = 0;
 	static int multiple = 0;
@@ -166,10 +169,8 @@ repquota(fs, type)
 	if (vflag)
 		fprintf(stdout, "*** Report for %s quotas on %s (%s)\n",
 		    qfextension[type], fs->fs_file, fs->fs_spec);
-	(void) sprintf(quotafile, "%s/%s.%s", fs->fs_file, qfname,
-	    qfextension[type]);
-	if ((qf = fopen(quotafile, "r")) == NULL) {
-		perror(quotafile);
+	if ((qf = fopen(qfpathname, "r")) == NULL) {
+		perror(qfpathname);
 		return (1);
 	}
 	for (id = 0; ; id++) {
@@ -238,28 +239,39 @@ oneof(target, list, cnt)
 /*
  * Check to see if a particular quota is to be enabled.
  */
-hasquota(options, type)
-	char *options;
+hasquota(fs, type, qfnamep)
+	register struct fstab *fs;
 	int type;
+	char **qfnamep;
 {
 	register char *opt;
-	char buf[BUFSIZ];
-	char *strtok();
+	char *cp, *index(), *strtok();
 	static char initname, usrname[100], grpname[100];
+	static char buf[BUFSIZ];
 
 	if (!initname) {
 		sprintf(usrname, "%s%s", qfextension[USRQUOTA], qfname);
 		sprintf(grpname, "%s%s", qfextension[GRPQUOTA], qfname);
 		initname = 1;
 	}
-	strcpy(buf, options);
+	strcpy(buf, fs->fs_mntops);
 	for (opt = strtok(buf, ","); opt; opt = strtok(NULL, ",")) {
+		if (cp = index(opt, '='))
+			*cp++ = '\0';
 		if (type == USRQUOTA && strcmp(opt, usrname) == 0)
-			return(1);
+			break;
 		if (type == GRPQUOTA && strcmp(opt, grpname) == 0)
-			return(1);
+			break;
 	}
-	return (0);
+	if (!opt)
+		return (0);
+	if (cp) {
+		*qfnamep = cp;
+		return (1);
+	}
+	(void) sprintf(buf, "%s/%s.%s", fs->fs_file, qfname, qfextension[type]);
+	*qfnamep = buf;
+	return (1);
 }
 
 /*
