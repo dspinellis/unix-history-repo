@@ -140,6 +140,7 @@ char **argv;
 			putchar('\n');
 		}
 	}
+	exit(0);
 }
 
 error(string)

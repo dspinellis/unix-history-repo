@@ -1,4 +1,4 @@
-static char sccsid[] = "ifontinfo.c	1.3	(Berkeley)	84/02/20";
+static char sccsid[] = "ifontinfo.c	1.4	(Berkeley)	85/02/04";
 
 /* Font Information for Imagen-style fonts (RST format)
  *      taken from vfontinfo, by Andy Hertzfeld  4/79
@@ -172,6 +172,7 @@ char **argv;
 			putchar('\n');
 		}
 	}
+	exit(0);
 }
 
 /*VARARGS1*/
