@@ -3,15 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)r_lg10.c	5.2	%G%
+ *	@(#)r_lg10.c	5.3	%G%
  */
-
-#define log10e 0.43429448190325182765
 
 float r_lg10(x)
 float *x;
 {
-double log();
+double log10();
 
-return( log10e * log(*x) );
+return( log10(*x) );
 }
