@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)query.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)query.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -18,7 +18,8 @@ static char sccsid[] = "@(#)query.c	5.5 (Berkeley) %G%";
 #include <netdb.h>
 #include <protocols/routed.h>
 
-#define	WTIME	5		/* Time to wait for responses */
+#define	WTIME	5		/* Time to wait for all responses */
+#define	STIME	500000		/* usec to wait for another response */
 
 int	s;
 int	timedout, timeout();
@@ -30,10 +31,10 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int cc, count, bits;
+	int cc, bits;
 	struct sockaddr from;
 	int fromlen = sizeof(from);
-	struct timeval notime;
+	struct timeval shorttime;
 	
 	if (argc < 2) {
 usage:
@@ -57,7 +58,6 @@ usage:
 		}
 		argc--, argv++;
 	}
-	count = argc;
 	while (argc > 0) {
 		query(*argv);
 		argv++, argc--;
@@ -68,11 +68,12 @@ usage:
 	 * may be more than one packet per host.
 	 */
 	bits = 1 << s;
-	bzero(&notime, sizeof(notime));
+	bzero(&shorttime, sizeof(shorttime));
+	shorttime.tv_usec = STIME;
 	signal(SIGALRM, timeout);
 	alarm(WTIME);
 	while ((count > 0 && !timedout) ||
-	    select(20, &bits, 0, 0, &notime) > 0) {
+	    select(20, &bits, 0, 0, &shorttime) > 0) {
 		cc = recvfrom(s, packet, sizeof (packet), 0,
 		  &from, &fromlen);
 		if (cc <= 0) {
