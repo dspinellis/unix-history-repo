@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)names.c	5.5 (Berkeley) %G%
+ *	@(#)names.c	5.6 (Berkeley) %G%
  */
 
 #if !defined(hp300) && !defined(tahoe) && !defined(vax)
@@ -26,7 +26,7 @@ read_names()
 	struct driver hdrv;
 	char name[10];
 
-	hp = nl[X_HPDINIT].n_value;
+	hp = namelist[X_HPDINIT].n_value;
 	if (hp == 0) {
 		(void)fprintf(stderr,
 		    "disk init info not in namelist\n");
@@ -63,7 +63,7 @@ read_names()
 	char name[10];
 	static char buf[BUFSIZ];
 
-	up = (struct vba_device *) nl[X_VBDINIT].n_value;
+	up = (struct vba_device *)namelist[X_VBDINIT].n_value;
 	if (up == 0) {
 		(void) fprintf(stderr,
 		    "disk init info not in namelist\n");
@@ -103,8 +103,8 @@ read_names()
 	char name[10];
 	static char buf[BUFSIZ];
 
-	mp = nl[X_MBDINIT].n_value;
-	up = nl[X_UBDINIT].n_value;
+	mp = namelist[X_MBDINIT].n_value;
+	up = namelist[X_UBDINIT].n_value;
 	if (mp == 0 && up == 0) {
 		(void)fprintf(stderr,
 		    "disk init info not in namelist\n");
@@ -152,7 +152,7 @@ read_names()
 	char *cp = (char *) &two_char;
 	register struct mb_device *mp;
 
-	mp = (struct mb_device *)nl[X_MBDINIT].n_value;
+	mp = (struct mb_device *)namelist[X_MBDINIT].n_value;
 	if (mp == 0) {
 		(void)fprintf(stderr,
 		    "disk init info not in namelist\n");
