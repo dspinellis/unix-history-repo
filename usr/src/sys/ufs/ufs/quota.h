@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)quota.h	8.2 (Berkeley) %G%
+ *	@(#)quota.h	8.3 (Berkeley) %G%
  */
 
 #ifndef _QUOTA_
@@ -88,8 +88,8 @@ struct dqblk {
  * used entries.
  */
 struct dquot {
-	struct	dquot *dq_forw, **dq_back;	/* hash list */
-	struct	dquot *dq_freef, **dq_freeb;	/* free list */
+	LIST_ENTRY(dquot) dq_hash;	/* hash list */
+	TAILQ_ENTRY(dquot) dq_freelist;	/* free list */
 	u_int16_t dq_flags;		/* flags, see below */
 	u_int16_t dq_cnt;		/* count of active references */
 	u_int16_t dq_spare;		/* unused spare padding */

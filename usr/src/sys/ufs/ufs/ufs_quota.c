@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_quota.c	8.2 (Berkeley) %G%
+ *	@(#)ufs_quota.c	8.3 (Berkeley) %G%
  */
 #include <sys/param.h>
 #include <sys/kernel.h>
@@ -631,14 +631,16 @@ again:
 /*
  * Code pertaining to management of the in-core dquot data structures.
  */
-struct dquot **dqhashtbl;
+#define DQHASH(dqvp, id) \
+	(&dqhashtbl[((((int)(dqvp)) >> 8) + id) & dqhash])
+LIST_HEAD(dqhash, dquot) *dqhashtbl;
 u_long dqhash;
 
 /*
  * Dquot free list.
  */
 #define	DQUOTINC	5	/* minimum free dquots desired */
-struct dquot *dqfreel, **dqback = &dqfreel;
+TAILQ_HEAD(dqfreelist, dquot) dqfreelist;
 long numdquot, desireddquot = DQUOTINC;
 
 /*
@@ -649,6 +651,7 @@ dqinit()
 {
 
 	dqhashtbl = hashinit(desiredvnodes, M_DQUOT, &dqhash);
+	TAILQ_INIT(&dqfreelist);
 }
 
 /*
@@ -663,7 +666,8 @@ dqget(vp, id, ump, type, dqp)
 	register int type;
 	struct dquot **dqp;
 {
-	register struct dquot *dq, *dp, **dpp;
+	register struct dquot *dq;
+	struct dqhash *dqh;
 	register struct vnode *dqvp;
 	struct iovec aiov;
 	struct uio auio;
@@ -677,8 +681,8 @@ dqget(vp, id, ump, type, dqp)
 	/*
 	 * Check the cache first.
 	 */
-	dpp = &dqhashtbl[((((int)(dqvp)) >> 8) + id) & dqhash];
-	for (dq = *dpp; dq; dq = dq->dq_forw) {
+	dqh = DQHASH(dqvp, id);
+	for (dq = dqh->lh_first; dq; dq = dq->dq_hash.le_next) {
 		if (dq->dq_id != id ||
 		    dq->dq_ump->um_quotas[dq->dq_type] != dqvp)
 			continue;
@@ -686,13 +690,8 @@ dqget(vp, id, ump, type, dqp)
 		 * Cache hit with no references.  Take
 		 * the structure off the free list.
 		 */
-		if (dq->dq_cnt == 0) {
-			if ((dp = dq->dq_freef) != NODQUOT)
-				dp->dq_freeb = dq->dq_freeb;
-			else
-				dqback = dq->dq_freeb;
-			*dq->dq_freeb = dp;
-		}
+		if (dq->dq_cnt == 0)
+			TAILQ_REMOVE(&dqfreelist, dq, dq_freelist);
 		DQREF(dq);
 		*dqp = dq;
 		return (0);
@@ -700,41 +699,30 @@ dqget(vp, id, ump, type, dqp)
 	/*
 	 * Not in cache, allocate a new one.
 	 */
-	if (dqfreel == NODQUOT && numdquot < MAXQUOTAS * desiredvnodes)
+	if (dqfreelist.tqh_first == NODQUOT &&
+	    numdquot < MAXQUOTAS * desiredvnodes)
 		desireddquot += DQUOTINC;
 	if (numdquot < desireddquot) {
 		dq = (struct dquot *)malloc(sizeof *dq, M_DQUOT, M_WAITOK);
 		bzero((char *)dq, sizeof *dq);
 		numdquot++;
 	} else {
-		if ((dq = dqfreel) == NULL) {
+		if ((dq = dqfreelist.tqh_first) == NULL) {
 			tablefull("dquot");
 			*dqp = NODQUOT;
 			return (EUSERS);
 		}
 		if (dq->dq_cnt || (dq->dq_flags & DQ_MOD))
 			panic("free dquot isn't");
-		if ((dp = dq->dq_freef) != NODQUOT)
-			dp->dq_freeb = &dqfreel;
-		else
-			dqback = &dqfreel;
-		dqfreel = dp;
-		dq->dq_freef = NULL;
-		dq->dq_freeb = NULL;
-		if (dp = dq->dq_forw)
-			dp->dq_back = dq->dq_back;
-		*dq->dq_back = dp;
+		TAILQ_REMOVE(&dqfreelist, dq, dq_freelist);
+		LIST_REMOVE(dq, dq_hash);
 	}
 	/*
 	 * Initialize the contents of the dquot structure.
 	 */
 	if (vp != dqvp)
 		VOP_LOCK(dqvp);
-	if (dp = *dpp)
-		dp->dq_back = &dq->dq_forw;
-	dq->dq_forw = dp;
-	dq->dq_back = dpp;
-	*dpp = dq;
+	LIST_INSERT_HEAD(dqh, dq, dq_hash);
 	DQREF(dq);
 	dq->dq_flags = DQ_LOCK;
 	dq->dq_id = id;
@@ -762,11 +750,7 @@ dqget(vp, id, ump, type, dqp)
 	 * quota structure and reflect problem to caller.
 	 */
 	if (error) {
-		if (dp = dq->dq_forw)
-			dp->dq_back = dq->dq_back;
-		*dq->dq_back = dp;
-		dq->dq_forw = NULL;
-		dq->dq_back = NULL;
+		LIST_REMOVE(dq, dq_hash);
 		dqrele(vp, dq);
 		*dqp = NODQUOT;
 		return (error);
@@ -818,15 +802,7 @@ dqrele(vp, dq)
 		(void) dqsync(vp, dq);
 	if (--dq->dq_cnt > 0)
 		return;
-	if (dqfreel != NODQUOT) {
-		*dqback = dq;
-		dq->dq_freeb = dqback;
-	} else {
-		dqfreel = dq;
-		dq->dq_freeb = &dqfreel;
-	}
-	dq->dq_freef = NODQUOT;
-	dqback = &dq->dq_freef;
+	TAILQ_INSERT_TAIL(&dqfreelist, dq, dq_freelist);
 }
 
 /*
@@ -887,25 +863,22 @@ void
 dqflush(vp)
 	register struct vnode *vp;
 {
-	register struct dquot *dq, *dp, **dpp, *nextdq;
+	register struct dquot *dq, *nextdq;
+	struct dqhash *dqh;
 
 	/*
 	 * Move all dquot's that used to refer to this quota
 	 * file off their hash chains (they will eventually
 	 * fall off the head of the free list and be re-used).
 	 */
-	for (dpp = &dqhashtbl[dqhash]; dpp >= dqhashtbl; dpp--) {
-		for (dq = *dpp; dq; dq = nextdq) {
-			nextdq = dq->dq_forw;
+	for (dqh = &dqhashtbl[dqhash]; dqh >= dqhashtbl; dqh--) {
+		for (dq = dqh->lh_first; dq; dq = nextdq) {
+			nextdq = dq->dq_hash.le_next;
 			if (dq->dq_ump->um_quotas[dq->dq_type] != vp)
 				continue;
 			if (dq->dq_cnt)
 				panic("dqflush: stray dquot");
-			if (dp = dq->dq_forw)
-				dp->dq_back = dq->dq_back;
-			*dq->dq_back = dp;
-			dq->dq_forw = NULL;
-			dq->dq_back = NULL;
+			LIST_REMOVE(dq, dq_hash);
 			dq->dq_ump = (struct ufsmount *)0;
 		}
 	}
