@@ -4,7 +4,7 @@
  * implement the mvprintw commands.  Due to the variable number of
  * arguments, they cannot be macros.  Sigh....
  *
- * %G% (Berkeley) @(#)mvprintw.c	1.1
+ * @(#)mvprintw.c	1.2 (Berkeley) %G%
  */
 
 mvprintw(y, x, fmt, args)
