@@ -1,5 +1,4 @@
-
-/* graphics.c -
+/* @(#)graphics1.c	1.2	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -21,6 +20,7 @@
 static char dbuf[BUFSIZ];	/* Used to buffer display characters */
 static struct sgttyb sgttyb;	/* Used to save terminal control bits */
 static int sgflags;		/* Used to save flags from sgttyb */
+static char sgispeed, sgospeed;	/* Used to save baud rates */
 static int localmode;		/* Used to save terminal local mode word */
 static curcharsize;		/* Current character size */
 static int wmask;		/* Current write mask value */
@@ -69,7 +69,7 @@ int rmask;                      /* read mask */
 
 static char hex[] = "0123456789ABCDEF";
 
-
+
 #ifndef FASTIO
 GRchex(val, string, nchars)
 int val;			/* Integer value to be converted. */
@@ -149,7 +149,7 @@ int color;
 
 }  /* end setcolor */
 
-
+
 GRoutxy20(x, y)
 int x,y;			/* The coordinates to be output */
 
@@ -209,7 +209,7 @@ int x, y;			/* Screen coordinates.
     GRoutxy20(x, y);
 }
 
-
+
 GRsetcharstyle(style)
 int style;			/* New font. */
 
@@ -255,7 +255,7 @@ int style;			/* New stipple pattern for lines. */
 #endif
 }
 
-
+
 GRsetcharsize(size)
 int size;			/* character size (1 - 4) */
 
@@ -335,7 +335,7 @@ int size;			/* character size (1 - 4) */
 #endif
 }
 
-
+
 GRInit(stream, invert)
 FILE *stream;			/* A pointer to the graphics display
 				 * file descriptor.  The file must have
@@ -364,14 +364,15 @@ int invert;			/* An integer whose low-order eight bits
 
 {
 #ifdef FASTIO
-	static int litout = LLITOUT;
+    static int litout = LLITOUT;
 #endif
     static int ldisc = NTTYDISC;
 
     /* First, grab up the display modes, then reset them to put it
      * into cooked mode.  Also, lock the terminal.  If doing fast I/O
      * then set the LLITOUT bit.  Note:  setting the LLITOUT bit only
-     * works if it happens before the stty.
+     * works if it happens before the stty.  Also forces the display to
+     * run at 9600 baud.
      */
 
     (void) ioctl(fileno(stream), TIOCSETD, (char *) &ldisc);
@@ -381,8 +382,12 @@ int invert;			/* An integer whose low-order eight bits
 #endif
     (void) gtty(fileno(stream), &sgttyb);
     sgflags = sgttyb.sg_flags;
+    sgispeed = sgttyb.sg_ispeed;
+    sgospeed = sgttyb.sg_ospeed;
     sgttyb.sg_flags = (sgttyb.sg_flags &
 	~(RAW | CBREAK | ECHO | LCASE)) | EVENP | ODDP;
+    sgttyb.sg_ispeed = B9600;
+    sgttyb.sg_ospeed = B9600;
     (void) stty(fileno(stream), &sgttyb);
     (void) ioctl(fileno(stream), TIOCEXCL, (char *) &sgttyb);
 
@@ -426,7 +431,7 @@ int invert;			/* An integer whose low-order eight bits
     (void) fflush(display);
 }
 
-
+
 GRClose()
 
 /*---------------------------------------------------------
@@ -447,7 +452,7 @@ GRClose()
     (void) ioctl(fileno(display), TIOCLSET, (char *) &localmode);
 }
 
-
+
 GRSetMap(pmap)
 char *pmap;			/* A pointer to 256*3 bytes containing the
 				 * new values for the color map.  The first
