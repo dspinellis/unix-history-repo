@@ -12,11 +12,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)nice.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)nice.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/types.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+
 #include <stdio.h>
 #include <ctype.h>
 
