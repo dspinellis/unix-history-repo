@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	1.12	(Berkeley)	%G%
+#	@(#)Makefile	1.13	(Berkeley)	%G%
 #
 M=/usr/src/lib/mip
 P=/usr/src/lib/pcc
@@ -67,19 +67,19 @@ llib-port.ln: llib-port lpass1
 	-(/lib/cpp -C -Dlint llib-port | ./lpass1 -puv > llib-port.ln )
 
 llib-ldbm.ln: llib-ldbm lpass1
-	-(/lib/cpp -C -Dlint llib-ldbm | ./lpass1 -puv > llib-ldbm.ln )
+	-(/lib/cpp -C -Dlint llib-ldbm | ./lpass1 -uv > llib-ldbm.ln )
 
 llib-lm.ln: llib-lm lpass1
-	-(/lib/cpp -C -Dlint llib-lm | ./lpass1 -puv > llib-lm.ln )
+	-(/lib/cpp -C -Dlint llib-lm | ./lpass1 -uv > llib-lm.ln )
 
 llib-lmp.ln: llib-lmp lpass1
-	-(/lib/cpp -C -Dlint llib-lmp | ./lpass1 -puv > llib-lmp.ln )
+	-(/lib/cpp -C -Dlint llib-lmp | ./lpass1 -uv > llib-lmp.ln )
 
 llib-lplot.ln: llib-lplot lpass1
-	-(/lib/cpp -C -Dlint llib-lplot | ./lpass1 -puv > llib-lplot.ln )
+	-(/lib/cpp -C -Dlint llib-lplot | ./lpass1 -uv > llib-lplot.ln )
 
 llib-ltermcap.ln: llib-ltermcap lpass1
-	-(/lib/cpp -C -Dlint llib-ltermcap | ./lpass1 -puv > llib-ltermcap.ln )
+	-(/lib/cpp -C -Dlint llib-ltermcap | ./lpass1 -uv > llib-ltermcap.ln )
 
 llib-lc.ln: llib-lc lpass1
 	-(/lib/cpp -C -Dlint llib-lc | ./lpass1 -v > llib-lc.ln )
