@@ -1,4 +1,4 @@
-(Version 8.33 of %G%)
+(Version 8.34 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -32,6 +32,11 @@ X ****	Add uucp-bang mailer that strips off any domain name from
 
 X ****	"quote" map (inverse of dequote).  Lets you turn node::user
 	into "node::user"@DECNET.gateway
+
+E ****	Change userdb code to use underlying maps, at least for
+	:mailname; this lets people use NIS to supply generics
+	information.  (Or should the generics code just be broken
+	out into the config file?)
 
 ? ****	Should $( [1.2.3.4] $) convert the address to a name?
 
@@ -85,6 +90,8 @@ E ***	Users in more than one list with different owners get duplicate
 	envelope or the other?
 
 E ***	Mailer flag to turn off MX lookups.
+
+X **	Rewriting rules based on incoming mailer.
 
 X **	Have a ruleset (6?) that gets both sender and recipient
 	addresses to check compatibility.  Can you do enough interesting
@@ -239,3 +246,7 @@ IDA Features that have been requested:
 * USERMAILER
 
 * LOCAL_MX_HANDLER
+
+* NIS_MAILHOST
+
+* GENERICFROM
