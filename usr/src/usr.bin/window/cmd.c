@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	1.4 83/07/22";
+static	char *sccsid = "@(#)cmd.c	1.5 83/07/22";
 #endif
 
 #include "defs.h"
@@ -69,6 +69,9 @@ top:
 			break;
 		case 'R':
 			selwin->ww_refresh = 1;
+			break;
+		case 's':
+			dostat();
 			break;
 		case 't':
 			dotime(RUSAGE_SELF);
