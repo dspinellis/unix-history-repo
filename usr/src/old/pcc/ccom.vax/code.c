@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)code.c	1.6 (Berkeley) %G%";
+static char *sccsid ="@(#)code.c	1.7 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -238,6 +238,7 @@ bccode(){ /* called just before the first executable statment */
 	reg_use = (reg_use > regvar ? regvar : reg_use);
 	}
 
+/*ARGSUSED*/
 ejobcode( flag ){
 	/* called just before final exit */
 	/* flag is 1 if errors, 0 if none */
@@ -250,6 +251,7 @@ aobeg(){
 #endif aobeg
 
 #ifndef aocode
+/*ARGSUSED*/
 aocode(p) struct symtab *p; {
 	/* called when automatic p removed from stab */
 	}
@@ -341,15 +343,18 @@ zecode( n ){
 	inoff += temp*SZINT;
 	}
 
+/*ARGSUSED*/
 fldal( t ) unsigned t; { /* return the alignment of field of type t */
 	uerror( "illegal field type" );
 	return( ALINT );
 	}
 
+/*ARGSUSED*/
 fldty( p ) struct symtab *p; { /* fix up type of field p */
 	;
 	}
 
+/*ARGSUSED*/
 where(c){ /* print location of error  */
 	/* c is either 'u', 'c', or 'w' */
 	/* GCOS version */
