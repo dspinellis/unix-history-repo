@@ -1,6 +1,6 @@
 Hello, Emacs, this is an -*- Indented-Text -*- file!
 
-$Id: Changes,v 1.18 1994/03/07 17:41:40 wollman Exp $
+$Id: Changes,v 1.19 1994/03/16 20:55:05 wollman Exp $
 
 This file is intended to keep track of important kernel and user
 changes in FreeBSD between releases.  Entries are in reverse
@@ -8,6 +8,9 @@ chronological order; userids can be decoded with the chart at the end
 of this file.
 
 Since 1.1 BETA:
+- Bounce buffers have been implemented for ISA devices which use
+  DMA (although not all devices can make use of it yet).  (davidg/dyson)
+
 - The set*id() functions have been changed (wollman):
   o A significant security hole involving the POSIX saved uid and gid
     has been plugged.
