@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)library.c 1.1 9/2/82"; */
+static char sccsid[] = "@(#)library.c 1.2 %G%";
 
 /*
  * General purpose routines.
@@ -219,32 +219,32 @@ private Pidlist *pidlist, *pfind();
 public pwait(pid, statusp)
 int pid, *statusp;
 {
-	Pidlist *p;
-	int pnum, status;
+    Pidlist *p;
+    int pnum, status;
 
+    p = pfind(pid);
+    if (p != nil(Pidlist *)) {
+	*statusp = p->status;
+	dispose(p);
+	return;
+    }
+    while ((pnum = wait(&status)) != pid && pnum >= 0) {
+	p = alloc(1, Pidlist);
+	p->pid = pnum;
+	p->status = status;
+	p->next = pidlist;
+	pidlist = p;
+    }
+    if (pnum < 0) {
 	p = pfind(pid);
-	if (p != nil(Pidlist *)) {
-	    *statusp = p->status;
-	    dispose(p);
-	    return;
+	if (p == nil(Pidlist *)) {
+	    panic("pwait: pid %d not found", pid);
 	}
-	while ((pnum = wait(&status)) != pid && pnum >= 0) {
-	    p = alloc(1, Pidlist);
-	    p->pid = pnum;
-	    p->status = status;
-	    p->next = pidlist;
-	    pidlist = p;
-	}
-	if (pnum < 0) {
-	    p = pfind(pid);
-	    if (p == nil(Pidlist *)) {
-		panic("pwait: pid %d not found", pid);
-	    }
-	    *statusp = p->status;
-	    dispose(p);
-	} else {
-		*statusp = status;
-	}
+	*statusp = p->status;
+	dispose(p);
+    } else {
+	*statusp = status;
+    }
 }
 
 /*
