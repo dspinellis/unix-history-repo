@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fclose.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fclose.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <errno.h>
@@ -26,7 +26,7 @@ fclose(fp)
 		errno = EBADF;
 		return (EOF);
 	}
-	r = fp->_flags & __SWR ? fflush(fp) : 0;
+	r = fp->_flags & __SWR ? __sflush(fp) : 0;
 	if (fp->_close != NULL && (*fp->_close)(fp->_cookie) < 0)
 		r = EOF;
 	if (fp->_flags & __SMBF)
