@@ -1,5 +1,5 @@
 #
-#	Makefile	1.8	82/12/09
+#	Makefile	1.9	83/03/28
 #
 CFILES=	y.tab.c main.c lex.yy.c mkioconf.c mkmakefile.c mkubglue.c mkheaders.c
 OBJS=	y.tab.o main.o lex.yy.o mkioconf.o mkmakefile.o mkubglue.o mkheaders.o
@@ -22,7 +22,7 @@ clean:
 	rm -f ${OBJS} lex.yy.c y.tab.c y.tab.h config
 
 install:
-	install config ${DESTDIR}/etc/config
+	install -s config ${DESTDIR}/etc/config
 
 lint: ${CFILES}
 	lint ${CFILES}
