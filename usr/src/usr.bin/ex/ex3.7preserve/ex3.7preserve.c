@@ -11,7 +11,7 @@ char *copyright =
 #endif not lint
 
 #ifndef lint
-static char *sccsid = "@(#)ex3.7preserve.c	7.12 (Berkeley) %G%";
+static char *sccsid = "@(#)ex3.7preserve.c	7.13 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -347,6 +347,7 @@ notify(uid, fname, flag, time)
 		? "the system went down"
 		: "the editor was killed");
 	if (fname[0] == 0) {
+		fname = "LOST";
 		fprintf(mf,
 "Subject: editor saved ``LOST''\n");
 		fprintf(mf,
