@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dcheck.c	1.7 (Berkeley) %G%";
+static	char *sccsid = "@(#)dcheck.c	1.8 (Berkeley) %G%";
 /*
  * dcheck - check directory consistency
  */
@@ -186,7 +186,7 @@ readdir(dirp)
 	for(;;) {
 		if (dirp->loc >= dirp->ip->di_size)
 			return NULL;
-		if ((lbn = dirp->loc / sblock.fs_bsize) == 0) {
+		if ((lbn = lblkno(&sblock, dirp->loc)) == 0) {
 			d = bmap(lbn);
 			if(d == 0)
 				return NULL;
@@ -194,7 +194,7 @@ readdir(dirp)
 			    dblksize(&sblock, dirp->ip, lbn));
 		}
 		dp = (struct direct *)
-		    (dirp->dbuf + dirp->loc % sblock.fs_bsize);
+		    (dirp->dbuf + blkoff(&sblock, dirp->loc));
 		dirp->loc += dp->d_reclen;
 		if (dp->d_ino == 0)
 			continue;

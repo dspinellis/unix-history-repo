@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)icheck.c	1.18 (Berkeley) %G%";
+static	char *sccsid = "@(#)icheck.c	1.19 (Berkeley) %G%";
 
 /*
  * icheck
@@ -357,6 +357,7 @@ chk(bno, s, size)
 	int size;
 {
 	register n, cg;
+	int frags;
 
 	cg = dtog(&sblock, bno);
 	if (cginit==0 &&
@@ -371,7 +372,8 @@ chk(bno, s, size)
 			ndup += sblock.fs_frag;
 		}
 	} else {
-		for (n = 0; n < size / sblock.fs_fsize; n++) {
+		frags = numfrags(&sblock, size);
+		for (n = 0; n < frags; n++) {
 			if (duped(bno + n, sblock.fs_fsize)) {
 				printf("%ld dup frag; inode=%u, class=%s\n",
 				    bno, ino, s);

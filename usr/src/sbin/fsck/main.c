@@ -1,13 +1,13 @@
-static	char *sccsid = "@(#)main.c	1.24 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.25 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
 #include "../h/param.h"
 #include "../h/fs.h"
-#include "../h/ndir.h"
 #include "../h/inode.h"
 #include "../h/stat.h"
 #include "../h/ostat.h"
+#include <ndir.h>
 #include <fstab.h>
 
 typedef	int	(*SIG_TYP)();
@@ -759,15 +759,15 @@ ckinode(dp, flg)
 {
 	register daddr_t *ap;
 	register ret;
-	int (*func)(), n, ndb, size;
+	int (*func)(), n, ndb, size, offset;
 
 	if (SPECIAL)
 		return (KEEPON);
 	func = (flg == ADDR) ? pfunc : dirscan;
 	ndb = howmany(dp->di_size, sblock.fs_bsize);
 	for (ap = &dp->di_db[0]; ap < &dp->di_db[NDADDR]; ap++) {
-		if (--ndb == 0 && (dp->di_size % sblock.fs_bsize))
-			size = howmany(dp->di_size % sblock.fs_bsize, sblock.fs_fsize);
+		if (--ndb == 0 && (offset = blkoff(&sblock, dp->di_size)) != 0)
+			size = numfrags(&sblock, fragroundup(&sblock, offset));
 		else
 			size = sblock.fs_frag;
 		if (*ap && (ret = (*func)(*ap, size)) & STOP)
@@ -804,7 +804,7 @@ iblock(blk, ilevel, flg, isize)
 		return (SKIP);
 	ilevel--;
 	if (ilevel == 0) {
-		nif = isize / sblock.fs_bsize + 1;
+		nif = lblkno(&sblock, isize) + 1;
 	} else /* ilevel == 1 */ {
 		nif = isize / (sblock.fs_bsize * NINDIR(&sblock)) + 1;
 	}
@@ -1269,9 +1269,8 @@ setup(dev)
 	if (sblock.fs_dblkno != 
 	    sblock.fs_iblkno + sblock.fs_ipg / INOPF(&sblock))
 		{ badsb("DBLKNO CORRUPTED"); return (0); }
-	if (sblock.fs_cgsize !=
-	    roundup(sizeof(struct cg) + howmany(sblock.fs_fpg, NBBY),
-	    sblock.fs_fsize))
+	if (sblock.fs_cgsize != fragroundup(&sblock,
+	    sizeof(struct cg) + howmany(sblock.fs_fpg, NBBY)))
 		{ badsb("CGSIZE INCORRECT"); return (0); }
 	if (sblock.fs_cssize != sblock.fs_ncg * sizeof(struct csum))
 		{ badsb("CSSIZE INCORRECT"); return (0); }
@@ -1599,7 +1598,7 @@ makecg()
 		sblock.fs_cstotal.cs_ndir += cgrp.cg_cs.cs_ndir;
 		*cs = cgrp.cg_cs;
 		bwrite(&dfile, &cgrp, fsbtodb(&sblock, cgtod(&sblock, c)),
-			roundup(sblock.fs_cgsize, DEV_BSIZE));
+		    sblock.fs_cgsize);
 	}
 	for (i = 0; i < howmany(sblock.fs_cssize, sblock.fs_bsize); i++) {
 		bwrite(&dfile, (char *)sblock.fs_csp[i],
@@ -1734,8 +1733,8 @@ linkup()
 		printf("\n\n");
 		return (0);
 	}
-	if (dp->di_size % sblock.fs_bsize) {
-		dp->di_size = roundup(dp->di_size, sblock.fs_bsize);
+	if (fragoff(&sblock, dp->di_size)) {
+		dp->di_size = fragroundup(&sblock, dp->di_size);
 		inodirty();
 	}
 	filsize = dp->di_size;
