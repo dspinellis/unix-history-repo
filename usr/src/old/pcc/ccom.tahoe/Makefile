@@ -1,5 +1,5 @@
 #
-#	Makefile	1.13	90/02/20
+#	Makefile	1.14	90/06/08
 #
 # Makefile for tahoe pcc
 #
@@ -35,6 +35,8 @@ FOBJS=	freader.o fallo.o fmatch.o ftable.o forder.o flocal2.o fcomm2.o ftable.o
 TESTDIR=.
 
 all:	ccom f1
+
+obj:
 
 #
 # 'ccom' is a one-pass C compiler.
