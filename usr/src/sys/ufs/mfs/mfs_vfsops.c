@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1989, 1990, 1993
+ * Copyright (c) 1989, 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vfsops.c	8.3 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -43,7 +43,7 @@ struct vfsops mfs_vfsops = {
 	mfs_mount,
 	mfs_start,
 	ffs_unmount,
-	ffs_root,
+	ufs_root,
 	ufs_quotactl,
 	mfs_statfs,
 	ffs_sync,

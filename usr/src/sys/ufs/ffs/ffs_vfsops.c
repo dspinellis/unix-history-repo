@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1989, 1991, 1993
+ * Copyright (c) 1989, 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.6 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -39,7 +39,7 @@ struct vfsops ufs_vfsops = {
 	ffs_mount,
 	ufs_start,
 	ffs_unmount,
-	ffs_root,
+	ufs_root,
 	ufs_quotactl,
 	ffs_statfs,
 	ffs_sync,
@@ -518,23 +518,6 @@ ffs_flushfiles(mp, flags, p)
 #endif
 	error = vflush(mp, NULLVP, flags);
 	return (error);
-}
-
-/*
- * Return root of a filesystem
- */
-int
-ffs_root(mp, vpp)
-	struct mount *mp;
-	struct vnode **vpp;
-{
-	struct vnode *nvp;
-	int error;
-
-	if (error = VFS_VGET(mp, (ino_t)ROOTINO, &nvp))
-		return (error);
-	*vpp = nvp;
-	return (0);
 }
 
 /*

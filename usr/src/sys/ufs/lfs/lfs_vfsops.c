@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1989, 1991, 1993
+ * Copyright (c) 1989, 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	8.6 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -39,7 +39,7 @@ struct vfsops lfs_vfsops = {
 	lfs_mount,
 	ufs_start,
 	lfs_unmount,
-	lfs_root,
+	ufs_root,
 	ufs_quotactl,
 	lfs_statfs,
 	lfs_sync,
@@ -340,23 +340,6 @@ lfs_unmount(mp, mntflags, p)
 	mp->mnt_data = (qaddr_t)0;
 	mp->mnt_flag &= ~MNT_LOCAL;
 	return (error);
-}
-
-/*
- * Return root of a filesystem
- */
-int
-lfs_root(mp, vpp)
-	struct mount *mp;
-	struct vnode **vpp;
-{
-	struct vnode *nvp;
-	int error;
-
-	if (error = VFS_VGET(mp, (ino_t)ROOTINO, &nvp))
-		return (error);
-	*vpp = nvp;
-	return (0);
 }
 
 /*
