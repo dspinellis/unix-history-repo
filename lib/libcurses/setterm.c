@@ -154,7 +154,7 @@ setterm(type)
 
 	PC = _PC ? _PC[0] : 0;
 
-	switch(baudrate()) {
+	switch(cfgetospeed(&__baset)) {
 		case B0: ospeed = 0; break;
 		case B50: ospeed = 1; break;
 		case B75: ospeed = 2; break;
