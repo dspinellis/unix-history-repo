@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] =	"@(#)srvrsmtp.c	3.9	%G%";
+static char	SccsId[] =	"@(#)srvrsmtp.c	3.10	%G%";
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -34,6 +34,7 @@ struct cmd
 # define CMDQUIT	9	/* quit -- close connection and die */
 # define CMDMRSQ	10	/* mrsq -- for old mtp compat only */
 # define CMDHELO	11	/* helo -- be polite */
+# define CMDDBGSHOWQ	12	/* showq -- show send queue (DEBUG) */
 
 static struct cmd	CmdTab[] =
 {
@@ -49,6 +50,9 @@ static struct cmd	CmdTab[] =
 	"quit",		CMDQUIT,
 	"mrsq",		CMDMRSQ,
 	"helo",		CMDHELO,
+# ifdef DEBUG
+	"showq",	CMDDBGSHOWQ,
+# endif DEBUG
 	NULL,		CMDERROR,
 };
 
@@ -230,6 +234,13 @@ smtp()
 				message("504", "Scheme unknown");
 			}
 			break;
+
+# ifdef DEBUG
+		  case CMDDBGSHOWQ:	/* show queues */
+			printf("SendQueue=");
+			printaddr(SendQueue, TRUE);
+			break;
+# endif DEBUG
 
 		  case CMDERROR:	/* unknown command */
 			message("500", "Command unrecognized");

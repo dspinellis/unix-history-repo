@@ -6,7 +6,7 @@
 
 # ifdef _DEFINE
 # define EXTERN
-static char SmailSccsId[] =	"@(#)sendmail.h	3.53	%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.54	%G%";
 # else  _DEFINE
 # define EXTERN extern
 # endif _DEFINE
@@ -96,13 +96,6 @@ typedef struct address ADDRESS;
 **	flags associated with it, and the argument vector to
 **	pass to it.  The flags are defined in conf.c
 **
-**	The host map is a list of lists of strings.  Within each
-**	list, any host is mapped to the last host in the list.
-**	This allows multiple names, as well as doing clever
-**	mail grouping in point-to-point networks.  Note: this
-**	is only used internally, so the apparent host is still
-**	kept around.
-**
 **	The argument vector is expanded before actual use.  All
 **	words except the first are passed through the macro
 **	processor.
@@ -117,7 +110,6 @@ struct mailer
 	short	m_mno;		/* mailer number internally */
 	char	*m_from;	/* pattern for From: header */
 	char	**m_argv;	/* template argument vector */
-	ADDRESS	*m_sendq;	/* list of addresses to send to */
 };
 
 typedef struct mailer	MAILER;
@@ -356,6 +348,7 @@ extern char	*ConfFile;	/* location of configuration file */
 extern char	*StatFile;	/* location of statistics summary */
 extern char	*QueueDir;	/* location of queue directory */
 EXTERN ADDRESS	From;		/* the person it is from */
+EXTERN ADDRESS	*SendQueue;	/* list of message recipients */
 EXTERN long	MsgSize;	/* size of the message in bytes */
 EXTERN time_t	CurTime;	/* time of this message */
 

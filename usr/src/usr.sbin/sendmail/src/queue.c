@@ -4,7 +4,7 @@
 # include <signal.h>
 # include <errno.h>
 
-static char	SccsId[] =	"@(#)queue.c	3.4.1.1	%G%";
+static char	SccsId[] =	"@(#)queue.c	3.5	%G%";
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -32,6 +32,7 @@ queueup(df)
 	register int i;
 	register HDR *h;
 	register char *p;
+	register ADDRESS *q;
 
 	/* create control file name from data file name */
 	strcpy(cf, df);
@@ -73,16 +74,11 @@ queueup(df)
 	fprintf(f, "P%d\n", MsgPriority);
 
 	/* output list of recipient addresses */
-	for (i = 0; Mailer[i] != NULL; i++)
+	for (q = SendQueue; q != NULL; q = q->q_next)
 	{
-		register ADDRESS *q;
-
-		for (q = Mailer[i]->m_sendq; q != NULL; q = q->q_next)
-		{
-			if (!bitset(QQUEUEUP, q->q_flags))
-				continue;
-			fprintf(f, "R%s\n", q->q_paddr);
-		}
+		if (!bitset(QQUEUEUP, q->q_flags))
+			continue;
+		fprintf(f, "R%s\n", q->q_paddr);
 	}
 
 	/* output headers for this message */

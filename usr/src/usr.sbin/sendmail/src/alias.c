@@ -4,9 +4,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-static char SccsId[] = "@(#)alias.c	3.26.1.1	%G%	(with DBM)";
+static char SccsId[] = "@(#)alias.c	3.27	%G%	(with DBM)";
 # else DBM
-static char SccsId[] = "@(#)alias.c	3.26.1.1	%G%	(without DBM)";
+static char SccsId[] = "@(#)alias.c	3.27	%G%	(without DBM)";
 # endif DBM
 
 /*
@@ -18,6 +18,8 @@ static char SccsId[] = "@(#)alias.c	3.26.1.1	%G%	(without DBM)";
 **
 **	Parameters:
 **		a -- address to alias.
+**		sendq -- a pointer to the head of the send queue
+**			to put the aliases in.
 **
 **	Returns:
 **		none
@@ -57,8 +59,9 @@ DATUM lhs, rhs;
 extern DATUM fetch();
 #endif DBM
 
-alias(a)
+alias(a, sendq)
 	register ADDRESS *a;
+	ADDRESS **sendq;
 {
 	register char *p;
 	extern ADDRESS *sendto();
@@ -416,6 +419,8 @@ readaliases(aliasfile, init)
 **			to forward to.  It must have been verified --
 **			i.e., the q_home field must have been filled
 **			in.
+**		sendq -- a pointer to the head of the send queue to
+**			put this user's aliases in.
 **
 **	Returns:
 **		none.
@@ -424,8 +429,9 @@ readaliases(aliasfile, init)
 **		New names are added to send queues.
 */
 
-forward(user)
+forward(user, sendq)
 	ADDRESS *user;
+	ADDRESS **sendq;
 {
 	char buf[60];
 	extern bool safefile();
@@ -449,5 +455,5 @@ forward(user)
 		return;
 
 	/* we do have an address to forward to -- do it */
-	include(buf, "forwarding", user);
+	include(buf, "forwarding", user, sendq);
 }

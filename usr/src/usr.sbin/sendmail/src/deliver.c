@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.54.1.1	%G%";
+static char SccsId[] = "@(#)deliver.c	3.55	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -163,7 +163,7 @@ deliver(firstto, editfcn)
 
 		/* if already sent or not for this host, don't send */
 		if ((!ForceMail && bitset(QDONTSEND|QPSEUDO, to->q_flags)) ||
-		    strcmp(to->q_host, host) != 0)
+		    strcmp(to->q_host, host) != 0 || to->q_mailer != firstto->q_mailer)
 			continue;
 
 		/* compute effective uid/gid when sending */
@@ -1072,28 +1072,24 @@ mailfile(filename, ctladdr)
 sendall(verifyonly)
 	bool verifyonly;
 {
-	register int i;
+	register ADDRESS *q;
 	typedef int (*fnptr)();
 
-	for (i = 0; Mailer[i] != NULL; i++)
-	{
-		ADDRESS *q;
 
-		for (q = Mailer[i]->m_sendq; q != NULL; q = q->q_next)
+	for (q = SendQueue; q != NULL; q = q->q_next)
+	{
+		if (verifyonly)
 		{
-			if (verifyonly)
+			To = q->q_paddr;
+			if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
 			{
-				To = q->q_paddr;
-				if (!bitset(QDONTSEND|QBADADDR|QPSEUDO, q->q_flags))
-				{
-					if (bitset(M_LOCAL, q->q_mailer->m_flags))
-						message(Arpa_Info, "deliverable");
-					else
-						message(Arpa_Info, "queueable");
-				}
+				if (bitset(M_LOCAL, q->q_mailer->m_flags))
+					message(Arpa_Info, "deliverable");
+				else
+					message(Arpa_Info, "queueable");
 			}
-			else
-				(void) deliver(q, (fnptr) NULL);
 		}
+		else
+			(void) deliver(q, (fnptr) NULL);
 	}
 }

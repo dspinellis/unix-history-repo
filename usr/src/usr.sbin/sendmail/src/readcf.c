@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)readcf.c	3.16	%G%";
+static char SccsId[] = "@(#)readcf.c	3.17	%G%";
 
 /*
 **  READCF -- read control file.
@@ -314,7 +314,6 @@ makemailer(line, safe)
 	m->m_flags = mopts;
 	m->m_from = newstr(mfrom);
 	m->m_badstat = EX_UNAVAILABLE;
-	m->m_sendq = NULL;
 	m->m_mno = NextMailer;
 	Mailer[NextMailer++] = m;
 
