@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwenviron.c	3.14 %G%";
+static char sccsid[] = "@(#)wwenviron.c	3.15 %G%";
 #endif
 
 /*
@@ -22,7 +22,7 @@ register struct ww *wp;
 
 	if ((i = open("/dev/tty", 0)) < 0)
 		goto bad;
-	if (ioctl(i, (int)TIOCNOTTY, (char *)0) < 0)
+	if (ioctl(i, TIOCNOTTY, (char *)0) < 0)
 		goto bad;
 	(void) close(i);
 	if ((i = wp->ww_socket) < 0 && (i = open(wp->ww_ttyname, 2)) < 0)
@@ -32,7 +32,7 @@ register struct ww *wp;
 	(void) dup2(i, 2);
 	for (i = wwdtablesize - 1; i > 2; i--)
 		(void) close(i);
-	(void) ioctl(0, (int)TIOCSPGRP, (char *)&pgrp);
+	(void) ioctl(0, TIOCSPGRP, (char *)&pgrp);
 	(void) setpgrp(pgrp, pgrp);
 	(void) signal(SIGPIPE, SIG_DFL);
 	(void) sprintf(wwwintermcap, "TERMCAP=%sco#%d:li#%d:%s%s%s%s%s%s%s",

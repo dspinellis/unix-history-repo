@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)win.c	3.15 %G%";
+static char sccsid[] = "@(#)win.c	3.16 %G%";
 #endif
 
 /*
@@ -233,7 +233,7 @@ stopwin(w)
 {
 	w->ww_stopped = 1;
 	if (w->ww_pty >= 0 && w->ww_ispty)
-		(void) ioctl(w->ww_pty, (int)TIOCSTOP, (char *)0);
+		(void) ioctl(w->ww_pty, TIOCSTOP, (char *)0);
 }
 
 startwin(w)
@@ -241,7 +241,7 @@ startwin(w)
 {
 	w->ww_stopped = 0;
 	if (w->ww_pty >= 0 && w->ww_ispty)
-		(void) ioctl(w->ww_pty, (int)TIOCSTART, (char *)0);
+		(void) ioctl(w->ww_pty, TIOCSTART, (char *)0);
 }
 
 sizewin(w, nrow, ncol)
