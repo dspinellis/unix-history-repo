@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkioconf.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkioconf.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -437,7 +437,7 @@ tahoe_ioconf()
 }
 #endif
 
-#if MACHINE_HP300
+#if MACHINE_HP300 || MACHINE_LUNA68K
 hp300_ioconf()
 {
 	register struct device *dp, *mp;
@@ -453,7 +453,10 @@ hp300_ioconf()
 	fprintf(fp, "#include \"sys/buf.h\"\n");
 	fprintf(fp, "#include \"sys/map.h\"\n");
 	fprintf(fp, "\n");
-	fprintf(fp, "#include \"hp/dev/device.h\"\n\n");
+	if (machine == MACHINE_HP300)
+		fprintf(fp, "#include \"hp/dev/device.h\"\n\n");
+	else
+		fprintf(fp, "#include \"luna68k/dev/device.h\"\n\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "#define C (caddr_t)\n");
 	fprintf(fp, "#define D (struct driver *)\n\n");

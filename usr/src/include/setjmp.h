@@ -4,13 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)setjmp.h	5.6 (Berkeley) %G%
+ *	@(#)setjmp.h	5.7 (Berkeley) %G%
  */
 
 #ifndef _SETJMP_H_
 #define _SETJMP_H_
 
-#if defined(hp300) || defined(__hp300__)
+#if defined(hp300) || defined(__hp300__) || defined(luna68k) || defined(__luna68k__)
 #define _JBLEN	17
 #endif
 

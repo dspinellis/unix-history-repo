@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -92,6 +92,7 @@ usage:		fputs("usage: config [-gp] sysname\n", stderr);
 		break;
 
 	case MACHINE_HP300:
+	case MACHINE_LUNA68K:
 		hp300_ioconf();
 		hpglue();
 		break;

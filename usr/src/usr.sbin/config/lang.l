@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lang.l	5.8 (Berkeley) %G%
+ *	@(#)lang.l	5.9 (Berkeley) %G%
  */
 
 #include <ctype.h>
@@ -66,7 +66,7 @@ struct kt {
 	{ "priority",	PRIORITY },
 	{ "pseudo-device",PSEUDO_DEVICE },
 	{ "root",	ROOT },
-#if MACHINE_HP300
+#if MACHINE_HP300 || MACHINE_LUNA68K
 	{ "scode",	NEXUS },
 #endif
 	{ "size",	SIZE },
