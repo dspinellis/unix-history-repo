@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	6.20	85/02/22	*/
+/*	vfs_lookup.c	6.21	85/02/22	*/
 
 #include "param.h"
 #include "systm.h"
