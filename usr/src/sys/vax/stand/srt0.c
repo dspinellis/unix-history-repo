@@ -1,4 +1,4 @@
-/*	srt0.c	4.3	%G%	*/
+/*	srt0.c	4.4	%G%	*/
 
 /*
  * Startup code for standalone system
@@ -15,9 +15,15 @@
 
 	.set	HIGH,31		# mask for total disable
 
+entry:	.globl	entry
 	.word	0x0
 	mtpr	$HIGH,$IPL		# just in case
-	movl	$RELOC-0x2000,sp
+	mtpr	$_Scbbase,$SCBB
+	movl	$RELOC-0x2400,sp
+	mtpr	$RELOC-0x2000,$ISP	/* space for interrupts
+					/* (in case we are not using that
+					/* stack already)
+					*/
 #if VAX==780
 	movl	$1,PHYSUBA+4		# init
 ubic:
@@ -25,12 +31,12 @@ ubic:
 	bitl	$0x10000,r0		# 	continue;
 	jeql	ubic
 #endif
+start:
 	movab	_edata,r0
 clr:
 	clrl	(r0)+
 	cmpl	r0,sp
 	jlss	clr
-start:
 	calls	$0,_main
 	jmp	start
 
