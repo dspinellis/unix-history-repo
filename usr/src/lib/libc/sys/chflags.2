@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)chflags.2	8.2 (Berkeley) %G%
+.\"	@(#)chflags.2	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHFLAGS 2
@@ -60,7 +60,9 @@ The
 and
 .Dq SF_APPEND
 flags may only be set or unset by the super-user.
-They may be set at any time, but normally may only be unset when
+Attempts by the non-super-user to set the super-user only flags
+are silently ignored.
+These flags may be set at any time, but normally may only be unset when
 the system is in single-user mode.
 (See
 .Xr init 8
