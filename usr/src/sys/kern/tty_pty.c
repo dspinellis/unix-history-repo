@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_pty.c	7.25 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.26 (Berkeley) %G%
  */
 
 /*
@@ -100,11 +100,13 @@ ptsclose(dev, flag, mode, p)
 	struct proc *p;
 {
 	register struct tty *tp;
+	int err;
 
 	tp = &pt_tty[minor(dev)];
-	(*linesw[tp->t_line].l_close)(tp, flag);
-	ttyclose(tp);
+	err = (*linesw[tp->t_line].l_close)(tp, flag);
+	err |= ttyclose(tp);
 	ptcwakeup(tp, FREAD|FWRITE);
+	return (err);
 }
 
 ptsread(dev, uio, flag)
@@ -248,6 +250,7 @@ ptcclose(dev)
 	tp->t_state &= ~TS_CARR_ON;
 	tp->t_oproc = 0;		/* mark closed */
 	tp->t_session = 0;
+	return (0);
 }
 
 ptcread(dev, uio, flag)
