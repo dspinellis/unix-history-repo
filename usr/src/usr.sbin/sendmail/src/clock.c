@@ -1,7 +1,7 @@
 # include "sendmail.h"
 # include <signal.h>
 
-SCCSID(@(#)clock.c	4.3		%G%);
+SCCSID(@(#)clock.c	4.4		%G%);
 
 /*
 **  SETEVENT -- set an event to happen at a specific time.
@@ -158,6 +158,11 @@ tick()
 
 		/* we must be careful in here because ev_func may not return */
 		(void) signal(SIGALRM, tick);
+#ifdef SIGVTALRM
+		/* reset 4.2bsd signal mask to allow future alarms */
+		(void) sigsetmask(sigblock(0) & ~sigmask(SIGALRM));
+#endif SIGVTALRM
+
 		f = ev->ev_func;
 		arg = ev->ev_arg;
 		pid = ev->ev_pid;
