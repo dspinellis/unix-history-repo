@@ -19,7 +19,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)bdes.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)bdes.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -69,18 +69,24 @@ static char sccsid[] = "@(#)bdes.c	5.4 (Berkeley) %G%";
 /* Hide the calls to the primitive encryption routines. */
 #define	FASTWAY
 #ifdef	FASTWAY
-#define	DES_KEY(buf)	des_setkey(buf)
-#define	DES_XFORM(buf)	des_cipher(buf, buf, 0L, (inverse ? -1 : 1))
+#define	DES_KEY(buf) \
+	if (des_setkey(buf)) \
+		err("des_setkey", 0);
+#define	DES_XFORM(buf) \
+	if (des_cipher(buf, buf, 0L, (inverse ? -1 : 1))) \
+		err("des_cipher", 0);
 #else
 #define	DES_KEY(buf)	{						\
 				char bits1[64];	/* bits of key */	\
 				expand(buf, bits1);			\
-				setkey(bits1);				\
+				if (setkey(bits1))			\
+					err("setkey", 0);		\
 			}
 #define	DES_XFORM(buf)	{						\
 				char bits1[64];	/* bits of message */	\
 				expand(buf, bits1);			\
-				encrypt(bits1, inverse);		\
+				if (encrypt(bits1, inverse))		\
+					err("encrypt", 0);		\
 				compress(bits1, buf);			\
 			}
 #endif
@@ -475,14 +481,8 @@ makekey(buf)
 				UCHAR(buf, i) = (UCHAR(buf, i)&0177)|0200;
 		}
 	}
-	/*
-	 * Make the key schedule.  If an error, the system probably does
-	 * not have the encryption routines available.
-	 */
-	errno = 0;
+
 	DES_KEY(UBUFFER(buf));
-	if (errno)
-		err(0, NULL);
 }
 
 /*
