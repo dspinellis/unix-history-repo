@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)bad144.c	4.3 (Berkeley) 83/02/20";
+static	char *sccsid = "@(#)bad144.c	4.4 (Berkeley) 83/02/23";
 
 /*
  * bad144
@@ -16,16 +16,22 @@ static	char *sccsid = "@(#)bad144.c	4.3 (Berkeley) 83/02/20";
  * It is preferable to write the bad information with a standard formatter,
  * but this program will do in a pinch, e.g. if the bad information is
  * accidentally wiped out this is a much faster way of restoring it than
- * reformatting.  To add a new bad sector the formatter must be used in
- * general since UNIX doesn't have on-line formatters to write the BSE
- * error in the header.  The
+ * reformatting. 
+ * 
+ * For the RP06 the -f flag may be used to mark a sector as bad by
+ * inverting the format bit in the header and writing the sector header.
+ * One should be able to do this on all drives ... as soon as someone
+ * puts the time into it.
  */
 #include <sys/types.h>
 #include <sys/dkbad.h>
+#include <sys/ioctl.h>
+#include <machine/dkio.h>
 
 #include <stdio.h>
 #include <disktab.h>
 
+int	fflag;
 struct	dkbad dkbad;
 
 main(argc, argv)
@@ -38,8 +44,13 @@ main(argc, argv)
 	int size, i, f, bad, oldbad, errs;
 
 	argc--, argv++;
+	if (argc > 0 && strcmp(*argv, "-f") == 0) {
+		argc--, argv++;
+		fflag++;
+	}
 	if (argc < 2) {
-		fprintf(stderr, "usage: bad144 type disk [ snum [ bn ... ] ]\n");
+		fprintf(stderr,
+		  "usage: bad144 [ -f ] type disk [ snum [ bn ... ] ]\n");
 		fprintf(stderr, "e.g.: bad144 rk07 hk0\n");
 		exit(1);
 	}
@@ -94,7 +105,7 @@ main(argc, argv)
 		}
 		exit (0);
 	}
-	f = open(name, 1);
+	f = open(name, 1 + fflag);
 	if (f < 0) {
 		perror(name);
 		exit(1);
@@ -140,5 +151,84 @@ main(argc, argv)
 		perror(name);
 		exit(1);
 	}
+	if (fflag)
+		for (i = 0, bt = dkbad.bt_bad; i < 128; i++, bt++) {
+			daddr_t bn;
+
+			bad = (bt->bt_cyl<<16) + bt->bt_trksec;
+			if (bad < 0)
+				break;
+			bn = (bt->bt_cyl * dp->d_ntracks +
+			    (bt->bt_trksec >> 8)) *
+			    dp->d_nsectors + (bt->bt_trksec & 0xff);
+			format(f, dp, bn);
+		}
 	exit(0);
+}
+
+struct rp06hdr {
+	short	h_cyl;
+	short	h_trksec;
+	short	h_key1;
+	short	h_key2;
+	char	h_data[512];
+#define	RP06_FMT	010000		/* 1 == 16 bit, 0 == 18 bit */
+};
+int	rp06fmt();
+
+struct	formats {
+	char	*f_name;		/* disk name */
+	int	f_bufsize;		/* size of sector + header */
+	int	(*f_routine)();		/* routine for special handling */
+} formats[] = {
+	{ "rp06",	sizeof (struct rp06hdr),	rp06fmt },
+	{ 0, 0, 0 }
+};
+
+format(fd, dp, blk)
+	int fd;
+	struct disktab *dp;
+	daddr_t blk;
+{
+	register struct formats *fp;
+	char *buf, *malloc();
+
+	for (fp = formats; fp->f_name; fp++)
+		if (strcmp(dp->d_name, fp->f_name) == 0)
+			break;
+	if (fp->f_name == 0) {
+		fprintf(stderr, "bad144: don't know how to format %s disks\n",
+			dp->d_name);
+		exit(2);
+	}
+	buf = malloc(fp->f_bufsize);
+	if (buf == NULL) {
+		fprintf(stderr, "bad144: can't allocate sector buffer\n");
+		exit(3);
+	}
+	/*
+	 * Here we do the actual formatting.  All we really
+	 * do is rewrite the sector header and flag the bad sector
+	 * according to the format table description.  If a special
+	 * purpose format routine is specified, we allow it to
+	 * process the sector as well.
+	 */
+	lseek(fd, (long)blk * 512, 0);
+	ioctl(fd, DKIOCHDR, 0);
+	read(fd, buf, fp->f_bufsize);
+	if (fp->f_routine)
+		(*fp->f_routine)(fp, dp, blk, buf);
+	lseek(fd, (long)blk * 512, 0);
+	ioctl(fd, DKIOCHDR, 0);
+	write(fd, buf, fp->f_bufsize);
+}
+
+rp06fmt(fp, dp, bn, hp)
+	struct format *fp;
+	struct disktab *dp;
+	daddr_t bn;
+	struct rp06hdr *hp;
+{
+
+	hp->h_cyl &= ~RP06_FMT;
 }
