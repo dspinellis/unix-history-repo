@@ -1,4 +1,4 @@
-/*	hp.c	4.4	%G%	*/
+/*	hp.c	4.5	%G%	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -18,6 +18,7 @@
 #include "../h/mba.h"
 #include "../h/mtpr.h"
 #include "../h/vm.h"
+#include "../h/cmap.h"
 
 struct	device
 {
@@ -72,7 +73,7 @@ struct	size
 	15884,	0,		/* A=cyl 0 thru 99 */
 	33440,	100,		/* B=cyl 100 thru 309 */
 	131680,	0,		/* C=cyl 0 thru 822 */
-	0,	0,
+	2720,	291,
 	0,	0,
 	0,	0,
 	82080,	310,		/* G=cyl 310 thru 822 */
@@ -536,5 +537,79 @@ register struct buf *bp;
 	mbp->mba_var = (int)ptob(reg+1) + o;
 	rp->hpcs1 = RCOM|GO;
 	return (1);
+}
+
+#define	DBSIZE	20
+
+hpdump(dev)
+	dev_t dev;
+{
+	struct device *hpaddr;
+	char *start;
+	int num, blk, unit, nsect, ntrak, nspc;
+	struct size *sizes;
+
+	num = maxfree;
+	start = 0;
+	unit = minor(dev) >> 3;
+	if (unit >= NHP) {
+		printf("bad unit\n");
+		return (-1);
+	}
+	HPPHYSMBA->mba_cr = MBAINIT;
+	hpaddr = mbadev(HPPHYSMBA, unit);
+	if (hp_type[unit] == 0)
+		hp_type[unit] = hpaddr->hpdt;
+	if((hpaddr->hpds & VV) == 0) {
+		hpaddr->hpcs1 = PRESET|GO;
+		hpaddr->hpof = FMT22;
+	}
+	switch (hp_type[unit]) {
+	case RM5:
+		nsect = NRMSECT; ntrak = NTRAC; sizes = rm5_sizes; break;
+	case RM:
+		nsect = NRMSECT; ntrak = NRMTRAC; sizes = rm_sizes; break;
+	case RP:
+		nsect = NSECT; ntrak = NTRAC; sizes = hp_sizes; break;
+	default:
+		printf("hp unknown type %x\n", hp_type[unit]);
+		return (-1);
+	}
+	if (dumplo < 0 || dumplo + num >= sizes[minor(dev)&07].nblocks) {
+		printf("dumplo+num, sizes %d %d\n", dumplo+num, sizes[minor(dev)&07].nblocks);
+		return (-1);
+	}
+	nspc = nsect * ntrak;
+	while (num > 0) {
+		register struct pte *hpte = HPPHYSMBA->mba_map;
+		register int i;
+		int cn, sn, tn;
+		daddr_t bn;
+
+		blk = num > DBSIZE ? DBSIZE : num;
+		bn = dumplo + btop(start);
+		cn = bn/nspc + sizes[minor(dev)&07].cyloff;
+		sn = bn%nspc;
+		tn = sn/nsect;
+		sn = sn%nsect;
+		hpaddr->hpdc = cn;
+		hpaddr->hpda = (tn << 8) + sn;
+		for (i = 0; i < blk; i++)
+			*(int *)hpte++ = (btop(start)+i) | PG_V;
+		((struct mba_regs *)HPPHYSMBA)->mba_sr = -1;
+		((struct mba_regs *)HPPHYSMBA)->mba_bcr = -(blk*NBPG);
+		((struct mba_regs *)HPPHYSMBA)->mba_var = 0;
+		hpaddr->hpcs1 = WCOM | GO;
+		while ((hpaddr->hpds & DRY) == 0)
+			;
+		if (hpaddr->hpds&ERR) {
+			printf("hp dump dsk err: (%d,%d,%d) ds=%X er=%X\n",
+			    cn, tn, sn, hpaddr->hpds, hpaddr->hper1);
+			return (-1);
+		}
+		start += blk*NBPG;
+		num -= blk;
+	}
+	return (0);
 }
 #endif
