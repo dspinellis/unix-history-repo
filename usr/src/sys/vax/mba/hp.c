@@ -1,4 +1,4 @@
-/*	hp.c	4.77	83/06/16	*/
+/*	hp.c	4.78	83/06/17	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -134,14 +134,14 @@ struct	size {
 	109296,	728,		/* F=cyl 728 thru 841 */
 	432816,	391,		/* G=cyl 391 thru 841 */
 	291346,	87,		/* H=cyl 87 thru 390 */
-}, cdc9300_sizes[8] = {
+}, 9300_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 26 */
 	33440,	27,		/* B=cyl 27 thru 81 */
-	500384,	0,		/* C=cyl 0 thru 822 */
+	495520,	0,		/* C=cyl 0 thru 814 */
 	15884,	562,		/* D=cyl 562 thru 588 */
 	55936,	589,		/* E=cyl 589 thru 680 */
-	86240,	681,		/* F=cyl 681 thru 822 */
-	158592,	562,		/* G=cyl 562 thru 822 */
+	81312,	681,		/* F=cyl 681 thru 814 */
+	153664,	562,		/* G=cyl 562 thru 814 */
 	291346,	82,		/* H=cyl 82 thru 561 */
 };
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
@@ -219,7 +219,7 @@ struct hpst {
 	{ 32,	10,	32*10,	823,	cdc9730_sizes,	3, 4 },	/* 9730 */
 	{ 32,	16,	32*16,	1024,	capricorn_sizes,7, 8 },	/* Capricorn */
 	{ 48,	20,	48*20,	842,	eagle_sizes,	7, 8 },	/* EAGLE */
-	{ 32,	19,	32*19,	815,	cdc9300_sizes,	3, 4 },	/* 9300 */
+	{ 32,	19,	32*19,	815,	9300_sizes,	3, 4 },	/* 9300 */
 };
 
 u_char	hp_offset[16] = {
