@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vnops.c	7.10 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -262,9 +262,9 @@ mfs_close(vp, flag, cred)
 	 * There should be no way to have any more uses of this
 	 * vnode, so if we find any other uses, it is a panic.
 	 */
-	if (vp->v_count > 1)
-		printf("mfs_close: ref count %d > 1\n", vp->v_count);
-	if (vp->v_count > 1 || mfsp->mfs_buflist)
+	if (vp->v_usecount > 1)
+		printf("mfs_close: ref count %d > 1\n", vp->v_usecount);
+	if (vp->v_usecount > 1 || mfsp->mfs_buflist)
 		panic("mfs_close");
 	/*
 	 * Send a request to the filesystem server to exit.
