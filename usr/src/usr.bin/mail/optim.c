@@ -10,7 +10,7 @@
 #include "configdefs.h"
 #include <ctype.h>
 
-static char *SccsId = "@(#)optim.c	2.5 %G%";
+static char *SccsId = "@(#)optim.c	2.6 %G%";
 
 /*
  * Map a name into the correct network "view" of the
@@ -702,6 +702,25 @@ best(src, dest)
 	while ((np->no_stat & stype & dtype) == 0)
 		np++;
 	return(np->no_char);
+}
+
+/*
+ * Initialize the network name of the current host.
+ */
+inithost()
+{
+	register struct netmach *np;
+	static char host[64];
+
+	gethostname(host, sizeof host);
+	for (np = netmach; np->nt_machine != 0; np++)
+		if (strcmp(np->nt_machine, EMPTY) == 0)
+			break;
+	if (np->nt_machine == 0) {
+		printf("Cannot find empty slot for dynamic host entry\n");
+		exit(1);
+	}
+	np->nt_machine = host;
 }
 
 /*
