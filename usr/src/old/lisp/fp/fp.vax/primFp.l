@@ -1,4 +1,4 @@
-(setq SCCS-primFp.l "@(#)primFp.l	1.1	%G%")
+(setq SCCS-primFp.l "@(#)primFp.l	1.2	%G%")
 ;  FP interpreter/compiler
 ;  Copyright (c) 1982  Scott B. Baden
 ;  Berkeley, California
@@ -6,7 +6,7 @@
 (include specials.l)
 (declare (special y_l z_l)
   (localf ok_pair ok_eqpair rpair$ lpair$ trnspz allNulls
-	  emptyHeader treeInsWithLen))
+	  allLists emptyHeader treeInsWithLen))
 
 ; fp addition
 
@@ -302,7 +302,7 @@
 
 
 (defun trans$fp (x)
-  (If (listp x)
+  (If (and (listp x) (allLists x))
       then (If (allNulls x)
 	       then
 	       (cond (DynTraceFlg
@@ -329,6 +329,11 @@
   (do ((a x (cdr a)))
       ((null a) t)
       (If (car a) then (return nil))))
+
+(defun allLists (x)
+  (do ((a x (cdr a)))
+      ((null a) t)
+      (If (not (dtpr (car a))) then (return nil))))
 
 
 (defun trnspz (l)
@@ -382,7 +387,7 @@
 (defun front$fp (x)
   (cond (DynTraceFlg (IncrSize 'front$fp (size x)) (IncrTimes 'front$fp)))
     (cond ((null x) (bottom))
-	  ((listp x) (nreverse (cdr (nreverse x))))
+	  ((listp x) (reverse (cdr (reverse x))))
 	  (t (bottom))))
 
 (defun pick$fp (sAndX)
@@ -427,16 +432,16 @@
 
 (defun pair$fp (x)
   (cond (DynTraceFlg (IncrSize 'pair$fp (size x)) (IncrTimes 'pair$fp)))
-    (cond ((not (listp x)) (bottom))
-	  ((null x) (bottom))
-	  (t (do ((count 0 (add count 2)) ; set local vars
-		  (max (length x))
-		  (ret nil))
-		 ((not (lessp count max)) (nreverse ret)) ; return ret at end
-		 (cond ((equal (diff max count) 1) ; if only one element left
-			(setq ret (cons (list (car x)) ret)))
-		       (t (setq ret (cons (list (car x) (cadr x)) ret))
-			  (setq x (cddr x))))))))
+  (cond ((not (listp x)) (bottom))
+	((null x) (bottom))
+	(t (do ((count 0 (add count 2)) ; set local vars
+		(max (length x))
+		(ret (ncons nil)))
+	       ((not (lessp count max)) (car ret)) ; return car of tconc struc
+	       (cond ((equal (diff max count) 1) ; if only one element left
+		      (tconc ret (list (car x))))
+		     (t (tconc ret (list (car x) (cadr x)))
+			(setq x (cddr x))))))))
     
 
 (defun split$fp (x)
