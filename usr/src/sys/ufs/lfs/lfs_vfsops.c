@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	8.17 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	8.18 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -130,13 +130,14 @@ lfs_mount(mp, path, data, ndp, p)
 			 * that user has necessary permissions on the device.
 			 */
 			if (p->p_ucred->cr_uid != 0) {
-				VOP_LOCK(ump->um_devvp);
+				vn_lock(ump->um_devvp, LK_EXCLUSIVE | LK_RETRY,
+				    p);
 				if (error = VOP_ACCESS(ump->um_devvp,
 				    VREAD | VWRITE, p->p_ucred, p)) {
-					VOP_UNLOCK(ump->um_devvp);
+					VOP_UNLOCK(ump->um_devvp, 0, p);
 					return (error);
 				}
-				VOP_UNLOCK(ump->um_devvp);
+				VOP_UNLOCK(ump->um_devvp, 0, p);
 			}
 			fs->lfs_ronly = 0;
 		}
@@ -171,12 +172,12 @@ lfs_mount(mp, path, data, ndp, p)
 		accessmode = VREAD;
 		if ((mp->mnt_flag & MNT_RDONLY) == 0)
 			accessmode |= VWRITE;
-		VOP_LOCK(devvp);
+		vn_lock(devvp, LK_EXCLUSIVE | LK_RETRY, p);
 		if (error = VOP_ACCESS(devvp, accessmode, p->p_ucred, p)) {
 			vput(devvp);
 			return (error);
 		}
-		VOP_UNLOCK(devvp);
+		VOP_UNLOCK(devvp, 0, p);
 	}
 	if ((mp->mnt_flag & MNT_UPDATE) == 0)
 		error = lfs_mountfs(devvp, mp, p);		/* LFS */

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	8.8 (Berkeley) %G%
+ *	@(#)lfs_segment.c	8.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -194,6 +194,7 @@ lfs_segwrite(mp, flags)
 	struct mount *mp;
 	int flags;			/* Do a checkpoint. */
 {
+	struct proc *p = curproc;	/* XXX */
 	struct buf *bp;
 	struct inode *ip;
 	struct lfs *fs;
@@ -269,7 +270,8 @@ lfs_segwrite(mp, flags)
 	if (do_ckp || fs->lfs_doifile) {
 redo:
 		vp = fs->lfs_ivnode;
-		while (vget(vp, 1));
+		while (vget(vp, LK_EXCLUSIVE, p))
+			continue;
 		ip = VTOI(vp);
 		if (vp->v_dirtyblkhd.lh_first != NULL)
 			lfs_writefile(fs, sp, vp);
@@ -1101,10 +1103,11 @@ lfs_shellsort(bp_array, lb_array, nmemb)
 lfs_vref(vp)
 	register struct vnode *vp;
 {
+	struct proc *p = curproc;	/* XXX */
 
-	if (vp->v_flag & VXLOCK)
+	if (vp->v_flag & VXLOCK)	/* XXX */
 		return(1);
-	return (vget(vp, 0));
+	return (vget(vp, 0, p));
 }
 
 void
