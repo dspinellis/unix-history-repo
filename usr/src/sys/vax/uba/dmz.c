@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmz.c	6.5 (Berkeley) %G%
+ *	@(#)dmz.c	6.6 (Berkeley) %G%
  */
 
 /*
@@ -30,6 +30,7 @@
 #include "conf.h"
 #include "dir.h"
 #include "user.h"
+#include "proc.h"
 #include "ioctl.h"
 #include "tty.h"
 #include "map.h"
@@ -112,7 +113,6 @@ int dmz_ubinfo[NUBA];		/* info about allocated unibus map */
 
 /* These flags are for debugging purposes only */
 int dmz_dma_on = 1;
-int dmz_debug_level;
 
 dmzprobe(reg)
 	caddr_t reg;
