@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)clock.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)clock.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <machine/machlimits.h>
@@ -31,12 +31,13 @@ clock()
 	clock_t val;
 
 	if (getrusage(RUSAGE_SELF, &rusage))
-		return((clock_t)-1);
-	val = rusage.ru_utime.tv_sec * CLK_TCK;
-	val += rusage.ru_stime.tv_sec * CLK_TCK;
-	val += rusage.ru_utime.tv_usec / (1000000/CLK_TCK);
-	val += rusage.ru_stime.tv_usec / (1000000/CLK_TCK);
-	val += (rusage.ru_utime.tv_usec % (1000000/CLK_TCK) +
-	    rusage.ru_utime.tv_usec % (1000000/CLK_TCK)) / (1000000/CLK_TCK);
-	return(val);
+		return ((clock_t) -1);
+	val = (rusage.ru_utime.tv_sec + rusage.ru_stime.tv_sec) * CLK_TCK;
+	/*
+	 * Convert usec to clock ticks; could do (usec * CLK_TCK) / 1000000,
+	 * but this would overflow if we switch to nanosec.
+	 */
+	val += (rusage.ru_utime.tv_usec + rusage.ru_stime.tv_usec) /
+		(1000000 / CLK_TCK);
+	return (val);
 }
