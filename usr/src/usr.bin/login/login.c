@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.74 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.75 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -240,6 +240,8 @@ main(argc, argv)
 		fflag = 0;
 		if (pwd && pwd->pw_uid == 0)
 			rootlogin = 1;
+		else
+			rootlogin = 0;
 
 		(void)setpriority(PRIO_PROCESS, 0, -4);
 
