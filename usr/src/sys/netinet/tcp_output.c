@@ -1,4 +1,4 @@
-/* tcp_output.c 4.14 81/11/18 */
+/*	tcp_output.c	4.15	81/11/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,7 +6,6 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../net/inet.h"
-#include "../net/inet_host.h"
 #include "../net/inet_pcb.h"
 #include "../net/inet_systm.h"
 #include "../net/imp.h"
@@ -120,7 +119,7 @@ COUNT(TCP_SEND);
 			forced = 1;
 		} else if (tp->snd_nxt >= tp->snd_lst && (tp->tc_flags&TC_SND_FIN) == 0)
 			return (0);
-		m = m_copy(&so->so_snd,
+		m = m_copy(so->so_snd.sb_mb,
 		      (int)(MAX(tp->iss+1,tp->snd_nxt) - tp->snd_off),
 		      (int)(tp->snd_lst - tp->snd_off));
 		if (tp->snd_end > tp->iss && tp->snd_end <= tp->snd_lst)
@@ -168,12 +167,10 @@ tcp_template(tp)
 	struct tcpcb *tp;
 {
 	register struct inpcb *inp = tp->t_inpcb;
-	register struct in_host *h = inp->inp_fhost;
 	register struct mbuf *m;
 	register struct tcpiphdr *n;
 
-	if (h == 0)
-		return (0);
+COUNT(TCP_TEMPLATE);
 	m = m_get(1);
 	if (m == 0)
 		return (0);
@@ -184,8 +181,8 @@ tcp_template(tp)
 	n->ti_x1 = 0;
 	n->ti_pr = IPPROTO_TCP;
 	n->ti_len = htons(sizeof (struct tcpiphdr) - sizeof (struct ip));
-	n->ti_src.s_addr = n_lhost.s_addr;
-	n->ti_dst.s_addr = h->h_addr.s_addr;
+	n->ti_src = inp->inp_laddr;
+	n->ti_dst = inp->inp_faddr;
 	n->ti_sport = htons(inp->inp_lport);
 	n->ti_dport = htons(inp->inp_fport);
 	n->ti_seq = 0;
@@ -209,7 +206,6 @@ tcp_output(tp, flags, len, dat)
 	register struct mbuf *m;
 	struct socket *so = tp->t_inpcb->inp_socket;
 	register struct ip *ip;
-	int i;
 #ifdef TCPDEBUG
 	struct tcp_debug tdb;
 #endif
@@ -275,4 +271,6 @@ COUNT(TCP_OUTPUT);
 tcp_fasttimo()
 {
 
+COUNT(TCP_FASTTIMO);
+	/* someday do delayed ack processing here */
 }

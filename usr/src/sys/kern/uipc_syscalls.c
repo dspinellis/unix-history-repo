@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.4	81/11/18	*/
+/*	uipc_syscalls.c	4.5	81/11/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -59,7 +59,6 @@ COUNT(SPIPE);
 	u.u_r.r_val1 = r;
 	if (piconnect(rso, wso) == 0)
 		goto free4;
-	rso->so_isfilerefd = wso->so_isfilerefd = 1;
 	return;
 free4:
 	wf->f_count = 0;
@@ -68,8 +67,10 @@ free3:
 	rf->f_count = 0;
 	u.u_ofile[r] = 0;
 free2:
+	wso->so_state |= SS_USERGONE;
 	sofree(wso);
 free:
+	rso->so_state |= SS_USERGONE;
 	sofree(rso);
 }
 
@@ -144,7 +145,6 @@ COUNT(SSOCKET);
 	if (u.u_error)
 		goto bad;
 	fp->f_socket = so;
-	so->so_isfilerefd = 1;
 	return;
 bad:
 	u.u_ofile[u.u_r.r_val1] = 0;

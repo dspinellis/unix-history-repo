@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.11	81/11/18	*/
+/*	uipc_mbuf.c	1.12	81/11/20	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -100,6 +100,7 @@ COUNT(M_FREEM);
 	splx(s);
 }
 
+/*ARGSUSED*/
 m_pullup(m, len)
 	struct mbuf *m;
 	int len;

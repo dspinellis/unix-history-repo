@@ -1,4 +1,4 @@
-/*	uipc_proto.c	4.5	81/11/18	*/
+/*	uipc_proto.c	4.6	81/11/20	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -31,8 +31,8 @@ int	udp_init();
 int	tcp_input(),tcp_ctlinput();
 int	tcp_usrreq(),tcp_sense();
 int	tcp_init(),tcp_fasttimo(),tcp_slowtimo(),tcp_drain();
-int	ri_input(),ri_ctlinput();
-int	ri_usrreq(),ri_sense();
+int	rip_input(),rip_ctlinput();
+int	rip_usrreq(),rip_sense();
 
 struct protosw protosw[] = {
 { SOCK_STREAM,	PF_LOCAL,	0,		PR_CONNREQUIRED,
@@ -76,8 +76,8 @@ struct protosw protosw[] = {
   tcp_init,	tcp_fasttimo,	tcp_slowtimo,	tcp_drain,
 },
 { SOCK_RAW,	PF_INET,	IPPROTO_RAW,	PR_ATOMIC|PR_ADDR,
-  ri_input,	0,		ri_ctlinput,	0,
-  ri_usrreq,	ri_sense,	MLEN,
+  rip_input,	0,		rip_ctlinput,	0,
+  rip_usrreq,	rip_sense,	MLEN,
   0,		0,		0,		0,
 }
 };

@@ -1,4 +1,4 @@
-/* ip_input.c 1.15 81/11/18 */
+/* ip_input.c 1.16 81/11/20 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -8,6 +8,7 @@
 #include "../h/socket.h"
 #include "../net/inet.h"
 #include "../net/inet_systm.h"
+#include "../net/if.h"
 #include "../net/imp.h"
 #include "../net/ip.h"			/* belongs before inet.h */
 #include "../net/ip_var.h"
@@ -24,6 +25,7 @@ ip_init()
 	register struct protosw *pr;
 	register int i;
 
+COUNT(IP_INIT);
 	pr = pffindproto(PF_INET, IPPROTO_RAW);
 	if (pr == 0)
 		panic("ip_init");
@@ -65,21 +67,21 @@ COUNT(IP_INPUT);
 	ip = mtod(m, struct ip *);
 	if ((hlen = ip->ip_hl << 2) > m->m_len) {
 		printf("ip hdr ovflo\n");
-		m_freem(m);
-		return;
+		goto bad;
 	}
-	ip->ip_sum = inet_cksum(m, hlen);
-	if (ip->ip_sum) {
-		printf("ip_sum %x\n", ip->ip_sum);
-		ipstat.ips_badsum++;
-		if (ipcksum) {
-			m_freem(m);
-			return;
+	if (ipcksum)
+		if (ip->ip_sum = inet_cksum(m, hlen)) {
+			printf("ip_sum %x\n", ip->ip_sum);
+			ipstat.ips_badsum++;
+			goto bad;
 		}
-	}
+
+	/*
+	 * Convert fields to host representation.
+	 */
 	ip->ip_len = ntohs((u_short)ip->ip_len);
 	ip->ip_id = ntohs(ip->ip_id);
-	ip->ip_off = ntohs(ip->ip_off);
+	ip->ip_off = ntohs((u_short)ip->ip_off);
 
 	/*
 	 * Check that the amount of data in the buffers
@@ -94,8 +96,7 @@ COUNT(IP_INPUT);
 	if (i != ip->ip_len) {
 		if (i < ip->ip_len) {
 			printf("ip_input: short packet\n");
-			m_freem(m);
-			return;
+			goto bad;
 		}
 		m_adj(m, ip->ip_len - i);
 	}
@@ -153,12 +154,19 @@ found:
 	} else
 		if (fp)
 			(void) ip_freef(fp);
+
+	/*
+	 * Switch out to protocol's input routine.
+	 */
 	(*protosw[ip_protox[ip->ip_p]].pr_input)(m);
+	return;
+bad:
+	m_freem(m);
 }
 
 /*
  * Take incoming datagram fragment and try to
- * reassamble it into whole datagram.  If a chain for
+ * reassemble it into whole datagram.  If a chain for
  * reassembly of this datagram already exists, then it
  * is given as fp; otherwise have to make a chain.
  */
@@ -172,6 +180,7 @@ ip_reass(ip, fp)
 	struct mbuf *t;
 	int hlen = ip->ip_hl << 2;
 	int i, next;
+COUNT(IP_REASS);
 
 	/*
 	 * Presence of header sizes in mbufs
@@ -293,6 +302,7 @@ ip_freef(fp)
 {
 	register struct ipasfrag *q;
 	struct mbuf *m;
+COUNT(IP_FREEF);
 
 	for (q = fp->ipq_next; q != (struct ipasfrag *)fp; q = q->ipf_next)
 		m_freem(dtom(q));
@@ -310,8 +320,8 @@ ip_freef(fp)
 ip_enq(p, prev)
 	register struct ipasfrag *p, *prev;
 {
-COUNT(IP_ENQ);
 
+COUNT(IP_ENQ);
 	p->ipf_prev = prev;
 	p->ipf_next = prev->ipf_next;
 	prev->ipf_next->ipf_prev = p;
@@ -324,8 +334,8 @@ COUNT(IP_ENQ);
 ip_deq(p)
 	register struct ipasfrag *p;
 {
-COUNT(IP_DEQ);
 
+COUNT(IP_DEQ);
 	p->ipf_prev->ipf_next = p->ipf_next;
 	p->ipf_next->ipf_prev = p->ipf_prev;
 }
@@ -339,8 +349,8 @@ ip_slowtimo()
 {
 	register struct ipq *fp;
 	int s = splnet();
-COUNT(IP_SLOWTIMO);
 
+COUNT(IP_SLOWTIMO);
 	for (fp = ipq.next; fp != &ipq; )
 		if (--fp->ipq_ttl == 0)
 			fp = ip_freef(fp);
@@ -349,9 +359,15 @@ COUNT(IP_SLOWTIMO);
 	splx(s);
 }
 
+/*
+ * Drain off all datagram fragments.
+ */
 ip_drain()
 {
 
+COUNT(IP_DRAIN);
+	while (ipq.next != &ipq)
+		(void) ip_freef(ipq.next);
 }
 
 /*
@@ -366,7 +382,10 @@ ip_dooptions(ip)
 	int opt, optlen, cnt;
 	struct in_addr *sin;
 	register struct ip_timestamp *ipt;
+	register struct ifnet *ifp;
+	struct in_addr t;
 
+COUNT(IP_DOOPTIONS);
 	cp = (u_char *)(ip + 1);
 	cnt = (ip->ip_hl << 2) - sizeof (struct ip);
 	for (; cnt > 0; cnt -= optlen, cp += optlen) {
@@ -382,19 +401,32 @@ ip_dooptions(ip)
 		default:
 			break;
 
+		/*
+		 * Source routing with record.
+		 * Find interface with current destination address.
+		 * If none on this machine then drop if strictly routed,
+		 * or do nothing if loosely routed.
+		 * Record interface address and bring up next address
+		 * component.  If strictly routed make sure next
+		 * address on directly accessible net.
+		 */
 		case IPOPT_LSRR:
-		case IPOPT_SSRR:
 			if (cp[2] < 4 || cp[2] > optlen - (sizeof (long) - 1))
 				break;
 			sin = (struct in_addr *)(cp + cp[2]);
-			if (n_lhost.s_addr == *(u_long *)sin) {
-				if (opt == IPOPT_SSRR) {
-					/* MAKE SURE *SP DIRECTLY ACCESSIBLE */
-				}
-				ip->ip_dst = *sin;
-				*sin = n_lhost;
-				cp[2] += 4;
+			ifp = if_ifwithaddr(*sin);
+			if (ifp == 0) {
+				if (opt == IPOPT_SSRR)
+					goto bad;
+				break;
 			}
+			t = ip->ip_dst; ip->ip_dst = *sin; *sin = t;
+			cp[2] += 4;
+			if (cp[2] > optlen - (sizeof (long) - 1))
+				break;
+			ip->ip_dst = sin[1];
+			if (opt == IPOPT_SSRR && if_ifonnetof(ip->ip_dst)==0)
+				goto bad;
 			break;
 
 		case IPOPT_TS:
@@ -415,12 +447,13 @@ ip_dooptions(ip)
 			case IPOPT_TS_TSANDADDR:
 				if (ipt->ipt_ptr + 8 > ipt->ipt_len)
 					goto bad;
-				*(struct in_addr *)sin++ = n_lhost;
+				/* stamp with ``first'' interface address */
+				*sin++ = ifnet->if_addr;
 				break;
 
 			case IPOPT_TS_PRESPEC:
-				if (*(u_long *)sin != n_lhost.s_addr)
-					break;
+				if (if_ifwithaddr(*sin) == 0)
+					continue;
 				if (ipt->ipt_ptr + 8 > ipt->ipt_len)
 					goto bad;
 				ipt->ipt_ptr += 4;
@@ -440,19 +473,25 @@ bad:
 }
 
 /*
- * Strip out IP options, e.g. before passing
- * to higher level protocol in the kernel.
+ * Strip out IP options, at higher
+ * level protocol in the kernel.
+ * Second argument is buffer to which options
+ * will be moved, and return value is their length.
  */
-ip_stripoptions(ip)
+ip_stripoptions(ip, cp)
 	struct ip *ip;
+	char *cp;
 {
 	register int i;
 	register struct mbuf *m;
 	int olen;
-COUNT(IP_OPT);
+COUNT(IP_STRIPOPTIONS);
 
 	olen = (ip->ip_hl<<2) - sizeof (struct ip);
-	m = dtom(++ip);
+	m = dtom(ip);
+	ip++;
+	if (cp)
+		bcopy((caddr_t)ip, cp, (unsigned)olen);
 	i = m->m_len - (sizeof (struct ip) + olen);
 	bcopy((caddr_t)ip+olen, (caddr_t)ip, (unsigned)i);
 	m->m_len -= i;
