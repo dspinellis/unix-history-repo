@@ -92,7 +92,6 @@ extern char CIABuffer[];
 EXTERN int UnLocked;		/* is the keyboard unlocked */
 EXTERN int AidByte;
 
-EXTERN int Initialized;	/* are we initialized? */
 #endif
 
 #if	defined(INCLUDED_STATE)
