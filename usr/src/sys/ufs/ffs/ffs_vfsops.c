@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.72 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.73 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -13,7 +13,6 @@
 #include <sys/proc.h>
 #include <sys/kernel.h>
 #include <sys/vnode.h>
-#include <sys/specdev.h>
 #include <sys/mount.h>
 #include <sys/buf.h>
 #include <sys/mbuf.h>
@@ -23,6 +22,8 @@
 #include <sys/errno.h>
 #include <sys/malloc.h>
 #include <sys/socket.h>
+
+#include <miscfs/specfs/specdev.h>
 #include "ioctl.h"
 #include "disklabel.h"
 #include "stat.h"
