@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lookup.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)lookup.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "gprof.h"
@@ -59,7 +59,7 @@ arclookup( parentp , childp )
     arctype	*arcp;
 
     if ( parentp == 0 || childp == 0 ) {
-	fprintf( "[arclookup] parentp == 0 || childp == 0\n" );
+	fprintf( stderr, "[arclookup] parentp == 0 || childp == 0\n" );
 	return 0;
     }
 #   ifdef DEBUG
