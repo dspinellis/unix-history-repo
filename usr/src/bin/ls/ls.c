@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -158,10 +158,10 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
-	/* -f turns off -l, -t, -s, -r, turns on -a */
+	/* -f turns off -F, -R, -l, -t, -s, -r, turns on -a */
 	if (f_specialdir) {
-		f_longform = f_timesort = f_size = f_reversesort =
-		f_recursive = f_type = 0;
+		f_longform = f_recursive = f_reversesort = f_size =
+		f_timesort = f_type = 0;
 		f_listdot = f_listalldot = 1;
 	}
 
@@ -201,11 +201,6 @@ main(argc, argv)
 	exit(0);
 }
 
-/**
- * curdir --
- *	no arguments, list the current directory; this is the
- *	most common case, so it must run labooh.
- */
 curdir()
 {
 	LS local, *stats;
@@ -220,12 +215,9 @@ curdir()
 		ls(stats, num);
 }
 
-/**
- * args --
- *	handle arguments; this is separated out since we want to do the
- *	files first, then the directories, plus we must return to the
- *	current directory each time.
- */
+static char path[MAXPATHLEN + 1];
+static char *endofpath = path;
+
 args(argc, argv)
 	int argc;
 	char **argv;
@@ -277,10 +269,15 @@ args(argc, argv)
 			(void)putchar('\n');
 	}
 	if (dircnt) {
+		register char *p;
+
 		if (dircnt > 1)
 			qsort((char *)dstats, dircnt, sizeof(LS), sortfcn);
-		for (cnt = 0; cnt < dircnt; ++cnt)
+		for (cnt = 0; cnt < dircnt; ++cnt) {
+			for (endofpath = path, p = dstats->name;
+			    *endofpath = *p++; ++endofpath);
 			ls_dir(dstats++, cnt, regcnt || dircnt > 1);
+		}
 	}
 #ifdef whybother
 	(void)free((char *)rstats);
@@ -292,7 +289,7 @@ ls(stats, num)
 	LS *stats;
 	register int num;
 {
-	register char *p;
+	register char *p, *savedpath;
 	LS *lp;
 
 	if (num > 1 && !f_specialdir)
@@ -300,33 +297,30 @@ ls(stats, num)
 
 	printdir(stats, num);
 
-	if (f_recursive)
+	if (f_recursive) {
+		savedpath = endofpath;
 		for (lp = stats; num--; ++lp) {
 			if (!S_ISDIR(lp->lstat.st_mode))
 				continue;
 			p = lp->name;
 			if (p[0] == '.' && (!p[1] || p[1] == '.' && !p[2]))
 				continue;
+			if (endofpath != path && endofpath[-1] != '/')
+				*endofpath++ = '/';
+			for (; *endofpath = *p++; ++endofpath);
 			ls_dir(lp, 1, 1);
+			*(endofpath = savedpath) = '\0';
 		}
+	}
 }
 
 ls_dir(lp, newline, tag)
 	LS *lp;
 	int newline, tag;
 {
-	static char path[MAXPATHLEN + 1];
-	register char *p;
 	LS *stats;
 	int num;
-	char *endofname, *names;
-
-	/* add current name to path */
-	p = index(path, '\0');
-	if (p != path && p[-1] != '/')
-		*p++ = '/';
-	(void)strcpy(p, lp->name);
-	endofname = p;
+	char *names;
 
 	if (newline)
 		(void)putchar('\n');
@@ -340,8 +334,6 @@ ls_dir(lp, newline, tag)
 	}
 	if (num = buildstats(lp, &stats, &names))
 		ls(stats, num);
-
-	*endofname = '\0';
 	(void)free((char *)stats);
 	(void)free((char *)names);
 	if (chdir("..")) {
@@ -399,5 +391,6 @@ buildstats(lp, s_stats, s_names)
 		*names++ = '\0';
 		++cnt;
 	}
+	closedir(dirp);
 	return(cnt);
 }
