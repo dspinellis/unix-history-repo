@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1990, 1993
+ * Copyright (c) 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,12 +7,12 @@
 
 #ifndef lint
 static char copyright[] =
-"@(#) Copyright (c) 1990, 1993\n\
+"@(#) Copyright (c) 1990, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rm.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)rm.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -113,16 +113,17 @@ rmtree(argv)
 	    needstat ? FTS_PHYSICAL : FTS_PHYSICAL|FTS_NOSTAT,
 	    (int (*)())NULL)))
 		err(1, NULL);
-	while (p = fts_read(fts)) {
+	while ((p = fts_read(fts)) != NULL) {
 		switch (p->fts_info) {
 		case FTS_DNR:
-			if (!fflag || errno != ENOENT) {
-				warn("%s", p->fts_path);
+			if (!fflag || p->fts_errno != ENOENT) {
+				warnx("%s: %s",
+				    p->fts_path, strerror(p->fts_errno));
 				eval = 1;
 			}
 			continue;
 		case FTS_ERR:
-			err(1, "%s", p->fts_path);
+			errx(1, "%s: %s", p->fts_path, strerror(p->fts_errno));
 		case FTS_NS:
 			/*
 			 * FTS_NS: assume that if can't stat the file, it
@@ -130,8 +131,9 @@ rmtree(argv)
 			 */
 			if (!needstat)
 				break;
-			if (!fflag || errno != ENOENT) {
-				warn("%s", p->fts_path);
+			if (!fflag || p->fts_errno != ENOENT) {
+				warnx("%s: %s",
+				    p->fts_path, strerror(p->fts_errno));
 				eval = 1;
 			}
 			continue;
@@ -171,6 +173,8 @@ rmtree(argv)
 		warn("%s", p->fts_path);
 		eval = 1;
 	}
+	if (errno)
+		err(1, "fts_read");
 }
 
 void
@@ -186,7 +190,7 @@ rmfile(argv)
 	 * Remove a file.  POSIX 1003.2 states that, by default, attempting
 	 * to remove a directory is an error, so must always stat the file.
 	 */
-	while (f = *argv++) {
+	while ((f = *argv++) != NULL) {
 		/* Assume if can't stat the file, can't unlink it. */
 		if (lstat(f, &sb)) {
 			if (!fflag || errno != ENOENT) {
@@ -254,7 +258,7 @@ checkdot(argv)
 
 	complained = 0;
 	for (t = argv; *t;) {
-		if (p = strrchr(*t, '/'))
+		if ((p = strrchr(*t, '/')) != NULL)
 			++p;
 		else
 			p = *t;
@@ -262,7 +266,7 @@ checkdot(argv)
 			if (!complained++)
 				warnx("\".\" and \"..\" may not be removed");
 			eval = 1;
-			for (save = t; t[0] = t[1]; ++t);
+			for (save = t; (t[0] = t[1]) != NULL; ++t);
 			t = save;
 		} else
 			++t;
