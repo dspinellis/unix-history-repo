@@ -5,12 +5,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)termcap.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)termcap.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #define	BUFSIZ		1024
 #define MAXHOP		32	/* max number of tc= indirections */
-#define	E_TERMCAP	"/etc/termcap"
+#define	PBUFSIZ		512	/* max length of filename path */
+#define	PVECSIZ		32	/* max number of names in path */
+#define DEF_PATH	".termcap /etc/termcap"
 
 #include <ctype.h>
 /*
@@ -29,27 +31,29 @@ static char sccsid[] = "@(#)termcap.c	5.1 (Berkeley) %G%";
 
 static	char *tbuf;
 static	int hopcount;	/* detect infinite loops in termcap, init 0 */
+static	char pathbuf[PBUFSIZ];		/* holds raw path of filenames */
+static	char *pathvec[PVECSIZ];		/* to point to names in pathbuf */
+static	char **pvec;			/* holds usable tail of path vector */
 char	*tskip();
 char	*tgetstr();
 char	*tdecode();
 char	*getenv();
 
 /*
- * Get an entry for terminal name in buffer bp,
- * from the termcap file.  Parse is very rudimentary;
- * we just notice escaped newlines.
+ * Get an entry for terminal name in buffer bp from the termcap file.
  */
 tgetent(bp, name)
 	char *bp, *name;
 {
+	register char *p;
 	register char *cp;
 	register int c;
-	register int i = 0, cnt = 0;
-	char ibuf[BUFSIZ];
-	int tf;
+	char *term, *home, *termpath;
+	char **fname = pathvec;
 
+	pvec = pathvec;
 	tbuf = bp;
-	tf = -1;
+	p = pathbuf;
 #ifndef V6
 	cp = getenv("TERMCAP");
 	/*
@@ -57,28 +61,83 @@ tgetent(bp, name)
 	 * name of a file to use instead of /etc/termcap. In this
 	 * case it better start with a "/". Or it can be an entry to
 	 * use so we don't have to read the file. In this case it
-	 * has to already have the newlines crunched out.
+	 * has to already have the newlines crunched out.  If TERMCAP
+	 * does not hold a file name then a path of names is searched
+	 * instead.  The path is found in the TERMPATH variable, or
+	 * becomes "$HOME/.termcap /etc/termcap" if no TERMPATH exists.
 	 */
-	if (cp && *cp) {
-		if (*cp == '/') {
-			tf = open(cp, 0);
-		} else {
-			tbuf = cp;
-			c = tnamatch(name);
-			tbuf = bp;
-			if (c) {
-				strcpy(bp,cp);
-				return(tnchktc());
-			}
+	if (!cp || *cp != '/') {	/* no TERMCAP or it holds an entry */
+		if (termpath = getenv("TERMPATH"))
+			strncpy(pathbuf, termpath, PBUFSIZ);
+		else {
+			if (home = getenv("HOME")) {	/* set up default */
+				p += strlen(home);	/* path, looking in */
+				strcpy(pathbuf, home);	/* $HOME first */
+				*p++ = '/';
+			}	/* if no $HOME look in current directory */
+			strncpy(p, DEF_PATH, PBUFSIZ - (p - pathbuf));
 		}
 	}
-	if (tf < 0)
-		tf = open(E_TERMCAP, 0);
+	else				/* user-defined name in TERMCAP */
+		strncpy(pathbuf, cp, PBUFSIZ);	/* still can be tokenized */
 #else
-	tf = open(E_TERMCAP, 0);
+	strncpy(pathbuf, "/etc/termcap", PBUFSIZ);
 #endif
-	if (tf < 0)
-		return (-1);
+	*fname++ = pathbuf;	/* tokenize path into vector of names */
+	while (*++p)
+		if (*p == ' ' || *p == ':') {
+			*p = '\0';
+			while (*++p)
+				if (*p != ' ' && *p != ':')
+					break;
+			if (*p == '\0')
+				break;
+			*fname++ = p;
+			if (fname >= pathvec + PVECSIZ) {
+				fname--;
+				break;
+			}
+		}
+	*fname = (char *) 0;			/* mark end of vector */
+	if (cp && *cp && *cp != '/') {
+		tbuf = cp;
+		c = tnamatch(name);
+		tbuf = bp;
+		if (c) {
+			strcpy(bp,cp);
+			return (tnchktc());
+		}
+	}
+	return (tfindent(bp, name));	/* find terminal entry in path */
+}
+
+/*
+ * tfindent - reads through the list of files in pathvec as if they were one
+ * continuous file searching for terminal entries along the way.  It will
+ * participate in indirect recursion if the call to tnchktc() finds a tc=
+ * field, which is only searched for in the current file and files ocurring
+ * after it in pathvec.  The usable part of this vector is kept in the global
+ * variable pvec.  Terminal entries may not be broken across files.  Parse is
+ * very rudimentary; we just notice escaped newlines.
+ */
+tfindent(bp, name)
+	char *bp, *name;
+{
+	register char *cp;
+	register int c;
+	register int i, cnt;
+	char ibuf[BUFSIZ];
+	int opencnt = 0;
+	int tf;
+
+	tbuf = bp;
+nextfile:
+	i = cnt = 0;
+	while (*pvec && (tf = open(*pvec, 0)) < 0)
+		pvec++;
+	if (!*pvec)
+		return (opencnt ? 0 : -1);
+	opencnt++;
 	for (;;) {
 		cp = bp;
 		for (;;) {
@@ -86,7 +145,8 @@ tgetent(bp, name)
 				cnt = read(tf, ibuf, BUFSIZ);
 				if (cnt <= 0) {
 					close(tf);
-					return (0);
+					pvec++;
+					goto nextfile;
 				}
 				i = 0;
 			}
@@ -150,7 +210,7 @@ tnchktc()
 		write(2, "Infinite tc= loop\n", 18);
 		return (0);
 	}
-	if (tgetent(tcbuf, tcname) != 1) {
+	if (tfindent(tcbuf, tcname) != 1) {
 		hopcount = 0;		/* unwind recursion */
 		return(0);
 	}
