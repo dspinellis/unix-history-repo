@@ -60,6 +60,7 @@ static char sccsid[] = "@(#)eval.c	5.4 (Berkeley) 4/16/92";
 #include "memalloc.h"
 #include "error.h"
 #include "mystring.h"
+#include "myhistedit.h"
 #include <signal.h>
 
 
@@ -193,8 +194,10 @@ evaltree(n, flags)
 	{
 	if (n == NULL) {
 		TRACE(("evaltree(NULL) called\n"));
-		return;
+		exitstatus = 0;
+		goto out;
 	}
+	displayhist = 1;	/* show history substitutions done with fc */
 	TRACE(("evaltree(0x%x: %d) called\n", (int)n, n->type));
 	switch (n->type) {
 	case NSEMI:
@@ -610,6 +613,7 @@ evalcommand(cmd, flags, backcmd)
 	for (sp = arglist.list ; sp ; sp = sp->next)
 		argc++;
 	argv = stalloc(sizeof (char *) * (argc + 1));
+
 	for (sp = arglist.list ; sp ; sp = sp->next) {
 		TRACE(("evalcommand arg: %s\n", sp->text));
 		*argv++ = sp->text;
@@ -779,6 +783,7 @@ cmddone:
 			if (e != EXERROR || cmdentry.u.index == BLTINCMD
 					       || cmdentry.u.index == DOTCMD
 					       || cmdentry.u.index == EVALCMD
+					       || cmdentry.u.index == HISTCMD
 					       || cmdentry.u.index == EXECCMD)
 				exraise(e);
 			FORCEINTON;
@@ -915,12 +920,8 @@ truecmd(argc, argv)  char **argv; {
 execcmd(argc, argv)  char **argv; {
 	if (argc > 1) {
 		iflag = 0;		/* exit on error */
-		setinteractive(0);
-		histedit();
-#if JOBS
-		jflag = 0;
-		setjobctl(0);
-#endif
+		mflag = 0;
+		optschanged();
 		shellexec(argv + 1, environment(), pathval(), 0);
 
 	}
