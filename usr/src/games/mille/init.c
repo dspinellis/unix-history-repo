@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"mille.h"
@@ -169,8 +169,8 @@ newscore() {
 		for (i = 0; i < SCORE_Y; i++)
 			mvaddch(i, 0, '|');
 		move(SCORE_Y - 1, 1);
-		while (addch('_') != ERR)
-			continue;
+		for (i = 0; i < SCORE_X; i++)
+			addch('_');
 		for (pp = Player; pp <= &Player[COMP]; pp++) {
 			pp->sh_hand_tot = -1;
 			pp->sh_total = -1;
