@@ -1,10 +1,11 @@
 #	From: @(#)Makefile	5.1 (Berkeley) 6/25/90
-#	$Id$
+#	$Id: Makefile,v 1.1.1.1 1994/02/25 01:14:11 wollman Exp $
 
 LIB=	krb
 CFLAGS+=-DKERBEROS -DDEBUG -I${.CURDIR}/../include
 SRCS=	cr_err_reply.c create_auth_reply.c create_ciph.c \
 	create_death_packet.c create_ticket.c debug_decl.c decomp_ticket.c \
+	des_rw.c \
 	dest_tkt.c extract_ticket.c fgetst.c get_ad_tkt.c get_admhst.c \
 	get_cred.c get_in_tkt.c get_krbhst.c get_krbrlm.c get_phost.c \
 	get_pw_tkt.c get_request.c get_svc_in_tkt.c get_tf_fullname.c \
