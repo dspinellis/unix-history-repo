@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)diffdir.c	4.11 (Berkeley) %G%";
+static	char *sccsid = "@(#)diffdir.c	4.12 (Berkeley) %G%";
 
 #include "diff.h"
 /*
@@ -175,7 +175,7 @@ struct dir *
 setupdir(cp)
 	char *cp;
 {
-	register struct dir *dp = 0, *ep;
+	register struct dir *dp, *ep;
 	register struct direct *rp;
 	register int nitems, n;
 	DIR *dirp;
