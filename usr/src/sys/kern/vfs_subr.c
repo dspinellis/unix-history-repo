@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.27 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.28 (Berkeley) %G%
  */
 
 /*
@@ -1054,7 +1054,7 @@ vclean(vp, flags, p)
 	 * Clean out any buffers associated with the vnode.
 	 */
 	if (flags & DOCLOSE)
-		vinvalbuf(vp, V_SAVE, NOCRED, NULL, 0, 0);
+		vinvalbuf(vp, V_SAVE, NOCRED, p, 0, 0);
 	/*
 	 * If purging an active vnode, it must be closed and
 	 * deactivated before being reclaimed. Note that the
