@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.8 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -151,7 +151,7 @@ union_lookup(ap)
 	 * then assume that something special is going
 	 * on and just return that vnode.
 	 */
-	if (upperdvp) {
+	if (upperdvp != NULLVP) {
 		FIXUP(dun);
 		uerror = union_lookup1(um->um_uppervp, &upperdvp,
 					&uppervp, cnp);
@@ -175,7 +175,7 @@ union_lookup(ap)
 	 * back from the upper layer and return the lower vnode
 	 * instead.
 	 */
-	if (lowerdvp) {
+	if (lowerdvp != NULLVP) {
 		int nameiop;
 
 		VOP_LOCK(lowerdvp);
@@ -200,7 +200,7 @@ union_lookup(ap)
 			VOP_UNLOCK(lowerdvp);
 
 		if (cnp->cn_consume != 0) {
-			if (uppervp) {
+			if (uppervp != NULLVP) {
 				if (uppervp == upperdvp)
 					vrele(uppervp);
 				else
@@ -260,7 +260,7 @@ union_lookup(ap)
 			dun->un_flags |= UN_ULOCK;
 
 			if (uerror) {
-				if (lowervp) {
+				if (lowervp != NULLVP) {
 					vput(lowervp);
 					lowervp = NULLVP;
 				}
@@ -269,16 +269,16 @@ union_lookup(ap)
 		}
 	}
 
-	if (lowervp)
+	if (lowervp != NULLVP)
 		VOP_UNLOCK(lowervp);
 
 	error = union_allocvp(ap->a_vpp, dvp->v_mount, dvp, upperdvp, cnp,
 			      uppervp, lowervp);
 
 	if (error) {
-		if (uppervp)
+		if (uppervp != NULLVP)
 			vput(uppervp);
-		if (lowervp)
+		if (lowervp != NULLVP)
 			vrele(lowervp);
 	} else {
 		if (*ap->a_vpp != dvp)
@@ -301,7 +301,7 @@ union_create(ap)
 	struct union_node *un = VTOUNION(ap->a_dvp);
 	struct vnode *dvp = un->un_uppervp;
 
-	if (dvp) {
+	if (dvp != NULLVP) {
 		int error;
 		struct vnode *vp;
 
@@ -343,7 +343,7 @@ union_mknod(ap)
 	struct union_node *un = VTOUNION(ap->a_dvp);
 	struct vnode *dvp = un->un_uppervp;
 
-	if (dvp) {
+	if (dvp != NULLVP) {
 		int error;
 		struct vnode *vp;
 
@@ -356,7 +356,7 @@ union_mknod(ap)
 		if (error)
 			return (error);
 
-		if (vp) {
+		if (vp != NULLVP) {
 			error = union_allocvp(
 					ap->a_vpp,
 					ap->a_dvp->v_mount,
@@ -510,7 +510,7 @@ union_close(ap)
 	struct union_node *un = VTOUNION(ap->a_vp);
 	struct vnode *vp;
 
-	if (un->un_uppervp) {
+	if (un->un_uppervp != NULLVP) {
 		vp = un->un_uppervp;
 	} else {
 #ifdef UNION_DIAGNOSTIC
@@ -546,12 +546,12 @@ union_access(ap)
 	int error = EACCES;
 	struct vnode *vp;
 
-	if (vp = un->un_uppervp) {
+	if ((vp = un->un_uppervp) != NULLVP) {
 		FIXUP(un);
 		return (VOP_ACCESS(vp, ap->a_mode, ap->a_cred, ap->a_p));
 	}
 
-	if (vp = un->un_lowervp) {
+	if ((vp = un->un_lowervp) != NULLVP) {
 		VOP_LOCK(vp);
 		error = VOP_ACCESS(vp, ap->a_mode, ap->a_cred, ap->a_p);
 		if (error == 0) {
@@ -797,7 +797,7 @@ union_fsync(ap)
 	int error = 0;
 	struct vnode *targetvp = OTHERVP(ap->a_vp);
 
-	if (targetvp) {
+	if (targetvp != NULLVP) {
 		int dolock = (targetvp == LOWERVP(ap->a_vp));
 
 		if (dolock)
@@ -838,7 +838,7 @@ union_remove(ap)
 	struct union_node *dun = VTOUNION(ap->a_dvp);
 	struct union_node *un = VTOUNION(ap->a_vp);
 
-	if (dun->un_uppervp && un->un_uppervp) {
+	if (dun->un_uppervp != NULLVP && un->un_uppervp != NULLVP) {
 		struct vnode *dvp = dun->un_uppervp;
 		struct vnode *vp = un->un_uppervp;
 
@@ -882,7 +882,7 @@ union_link(ap)
 	struct union_node *dun = VTOUNION(ap->a_vp);
 	struct union_node *un = VTOUNION(ap->a_tdvp);
 
-	if (dun->un_uppervp && un->un_uppervp) {
+	if (dun->un_uppervp != NULLVP && un->un_uppervp != NULLVP) {
 		struct vnode *dvp = dun->un_uppervp;
 		struct vnode *vp = un->un_uppervp;
 
@@ -897,7 +897,7 @@ union_link(ap)
 		error = VOP_LINK(dvp, vp, ap->a_cnp);
 	} else {
 		/*
-		 * XXX: need to copy to upper layer
+		 * XXX: perhaps could copy to upper layer
 		 * and do the link there.
 		 */
 		vput(ap->a_vp);
@@ -933,7 +933,6 @@ union_rename(ap)
 			goto bad;
 		}
 
-		FIXUP(un);
 		fdvp = un->un_uppervp;
 		VREF(fdvp);
 		vrele(ap->a_fdvp);
@@ -946,7 +945,6 @@ union_rename(ap)
 			goto bad;
 		}
 
-		FIXUP(un);
 		fvp = un->un_uppervp;
 		VREF(fvp);
 		vrele(ap->a_fvp);
@@ -955,6 +953,12 @@ union_rename(ap)
 	if (tdvp->v_op == union_vnodeop_p) {
 		struct union_node *un = VTOUNION(tdvp);
 		if (un->un_uppervp == NULLVP) {
+			/*
+			 * this should never happen in normal
+			 * operation but might if there was
+			 * a problem creating the top-level shadow
+			 * directory.
+			 */
 			error = EROFS;
 			goto bad;
 		}
@@ -965,16 +969,14 @@ union_rename(ap)
 		vput(ap->a_tdvp);
 	}
 
-	if (tvp && tvp->v_op == union_vnodeop_p) {
+	if (tvp != NULLVP && tvp->v_op == union_vnodeop_p) {
 		struct union_node *un = VTOUNION(tvp);
-		if (un->un_uppervp == NULLVP) {
-			error = EROFS;
-			goto bad;
-		}
 
 		tvp = un->un_uppervp;
-		VREF(tvp);
-		un->un_flags |= UN_KLOCK;
+		if (tvp != NULLVP) {
+			VREF(tvp);
+			un->un_flags |= UN_KLOCK;
+		}
 		vput(ap->a_tvp);
 	}
 
@@ -984,7 +986,7 @@ bad:
 	vrele(fdvp);
 	vrele(fvp);
 	vput(tdvp);
-	if (tvp)
+	if (tvp != NULLVP)
 		vput(tvp);
 
 	return (error);
@@ -1002,7 +1004,7 @@ union_mkdir(ap)
 	struct union_node *un = VTOUNION(ap->a_dvp);
 	struct vnode *dvp = un->un_uppervp;
 
-	if (dvp) {
+	if (dvp != NULLVP) {
 		int error;
 		struct vnode *vp;
 
@@ -1043,7 +1045,7 @@ union_rmdir(ap)
 	struct union_node *dun = VTOUNION(ap->a_dvp);
 	struct union_node *un = VTOUNION(ap->a_vp);
 
-	if (dun->un_uppervp && un->un_uppervp) {
+	if (dun->un_uppervp != NULLVP && un->un_uppervp != NULLVP) {
 		struct vnode *dvp = dun->un_uppervp;
 		struct vnode *vp = un->un_uppervp;
 
@@ -1088,7 +1090,7 @@ union_symlink(ap)
 	struct union_node *un = VTOUNION(ap->a_dvp);
 	struct vnode *dvp = un->un_uppervp;
 
-	if (dvp) {
+	if (dvp != NULLVP) {
 		int error;
 		struct vnode *vp;
 		struct mount *mp = ap->a_dvp->v_mount;
@@ -1126,7 +1128,7 @@ union_readdir(ap)
 	int error = 0;
 	struct union_node *un = VTOUNION(ap->a_vp);
 
-	if (un->un_uppervp) {
+	if (un->un_uppervp != NULLVP) {
 		FIXUP(un);
 		error = VOP_READDIR(un->un_uppervp, ap->a_uio, ap->a_cred);
 	}
@@ -1244,7 +1246,7 @@ start:
 
 	un = VTOUNION(vp);
 
-	if (un->un_uppervp) {
+	if (un->un_uppervp != NULLVP) {
 		if ((un->un_flags & UN_ULOCK) == 0) {
 			un->un_flags |= UN_ULOCK;
 			VOP_LOCK(un->un_uppervp);
