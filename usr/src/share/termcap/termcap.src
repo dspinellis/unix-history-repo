@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.13 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.14 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -524,33 +524,13 @@ Mu|sun|Sun Microsystems Workstation console:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:\
 	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
 	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
-	:al=\E[L:dl=\E[M:im=:ei=:ic=\E[@:dc=\E[P:
-Mu|sun-e|Sun Microsystems Workstation console hacked for emacs:\
-	:li#34:co#80:cl=^L:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
-	:am:bs:mi:ms:pt:\
-	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:\
-	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
-	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
-	:al=\E[L:dl=\E[M:dc=\E[P:\
+	:al=\E[L:dl=\E[M:im=:ei=:ic=\E[@:dc=\E[P:\
 	:AL=\E[%dL:DL=\E[%dM:
 # From john@ucbrenoir  Tue Sep 24 13:14:44 1985
 Mu|sun-s|Sun Microsystems Workstation window with status line:\
-	:li#34:co#80:cl=^L:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
-	:am:bs:mi:ms:pt:\
-	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:\
-	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
-	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
-	:al=\E[L:dl=\E[M:im=:ei=:ic=\E[@:dc=\E[P:\
-	:hs:ts=\E]l:fs=\E\\:ds=\E]l\E\\:
-Mu|sun-s-e|Sun Microsystems Workstation window with status hacked for emacs:\
-	:li#34:co#80:cl=^L:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
-	:am:bs:mi:ms:pt:\
-	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:\
-	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
-	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
-	:al=\E[L:dl=\E[M:dc=\E[P:\
-	:hs:ts=\E]l:fs=\E\\:ds=\E]l\E\\:\
-	:AL=\E[%dL:DL=\E[%dM:
+	:hs:ts=\E]l:fs=\E\\:ds=\E]l\E\\:tc=sun:
+Mu|sun-e-s|sun-s-e|Sun Microsystems Workstation with status hacked for emacs:\
+	:hs:ts=\E]l:fs=\E\\:ds=\E]l\E\\:tc=sun-e:
 M0|sun-48|Sun 48-line window:\
 	:li#48:co#80:tc=sun:
 M1|sun-34|Sun 34-line window:\
@@ -563,7 +543,7 @@ M4|sun-12|Sun 12-line window:\
 	:li#12:co#80:tc=sun:
 M5|sun-1|Sun 1-line window for sysline:\
 	:li#1:co#80:es:hs:ts=\r:fs=\E[K:ds=^L:tc=sun:
-M6|sun-nic|sune|Sun Microsystems Workstation console without insert character:\
+M6|sun-e|sun-nic|sune|Sun Microsystems Workstation without insert character:\
 	:ic@:im@:ei@:tc=sun:
 Mv|virtual|VIRTUAL|cb unix virtual terminal:\
 	:do=^J:co#80:li#24:am:cl=\E\112:le=^H:bs:cm=\E\107%r%.%.:nd=\E\103:\
