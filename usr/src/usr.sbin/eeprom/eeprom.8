@@ -1,0 +1,44 @@
+.\" Copyright 1992 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This software was developed by the Computer Systems Engineering group
+.\" at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
+.\" contributed to Berkeley.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)eeprom.8	5.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt EEPROM 8
+.Os BSD 4.4
+.Sh NAME
+.Nm eeprom
+.Nd openprom control utility
+.Sh SYNOPSIS
+.Nm eeprom
+.Op Ar name Ar ...
+.Op Ar name=value Ar ...
+.Sh DESCRIPTION
+The 
+.Nm
+utility
+is used to display
+and modify options fields in the SPARCstation openprom.
+.Pp
+When invoked with no arguments,
+.Nm
+display the values of all options.  Otherwise, fields are displayed or
+set (in the order specified on the command line).
+.Sh FILES
+.Bl -tag -width /dev/openprom -compact
+.It Pa /dev/openprom
+the openprom device
+.El
+.Sh SEE ALSO
+.Xr openprom 4
+.Sh HISTORY
+The
+.Nm
+command
+.Ud
