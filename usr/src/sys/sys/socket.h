@@ -1,4 +1,4 @@
-/*	socket.h	4.10	81/12/02	*/
+/*	socket.h	4.11	81/12/21	*/
 
 /*
  * Externally visible attributes of sockets.
@@ -23,6 +23,7 @@
 #define	SO_ACCEPTCONN	0x02		/* willing to accept connection */
 #define	SO_NBIO		0x04		/* don't block on this socket */
 #define	SO_INTNOTIFY	0x08		/* interrupt when data available */
+#define	SO_LETDATADRAIN	0x10		/* let data drain on close */
 
 /*
  * Generic socket protocol format.
