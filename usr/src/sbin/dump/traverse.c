@@ -20,6 +20,7 @@ static char sccsid[] = "@(#)traverse.c	5.17 (Berkeley) %G%";
 #include <ufs/fs.h>
 #else
 #include <sys/param.h>
+#include <sys/time.h>
 #include <ufs/ufs/dir.h>
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
@@ -99,8 +100,8 @@ mapfiles(maxino, tapesize)
 		SETINO(ino, usedinomap);
 		if (mode == IFDIR)
 			SETINO(ino, dumpdirmap);
-		if ((dp->di_mtime >= spcl.c_ddate ||
-		    dp->di_ctime >= spcl.c_ddate) &&
+		if ((dp->di_mtime.tv_sec >= spcl.c_ddate ||
+		    dp->di_ctime.tv_sec >= spcl.c_ddate) &&
 		    (dp->di_flags & NODUMP) != NODUMP) {
 			SETINO(ino, dumpinomap);
 			if (mode != IFREG && mode != IFDIR && mode != IFLNK) {
