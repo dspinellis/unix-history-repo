@@ -1,19 +1,19 @@
-#	@(#)README	5.1 (Berkeley) %G%
+#	@(#)README	5.2 (Berkeley) %G%
 
 4.4BSD-alpha 80386/80486 Status
 June 20, 1992
 Pace Willisson <pace@blitz.com> +1 508 533 6430
 
 I believe that the sources in the 4.4BSD-alpha release can be compiled
-into a fairly usable system on IBM-AT class machines, although it is still
-pretty hard to bootstrap from the sources.  In this file, I'll describe
-the kinds of testing I've done with this kernel, and I'll give some hints
-about how to compiled it.
+into a fairly usable system on IBM-AT class machines, although it is
+still pretty hard to bootstrap from the sources.  In this file, I'll
+describe the kinds of testing I've done with this kernel, and I'll
+give some hints about how to compiled it.
 
 I've been testing on a no-name motherboard with a 33 MHz 80486DX, 16
 Megabytes of RAM, an 80 Megabyte ST-506 MFM disk, a 500 Megabyte SCSI
 Wren 5 and a Western Digital 8003 Ethernet controller.  I've also run
-a predecessor to this kernel on a very old 16 MHz 80386 w/ 80387.
+a predecessor to this kernel on a very old 16 MHz 80386/80387.
 
 My main test is to run a loop of kernel compiles:
 
@@ -36,11 +36,8 @@ If you want to try to compile and run this kernel, here are some hints:
 
 First, if you received the "lite" distribution, then you will need to
 fill in the missing files.  The changes needed are almost exactly the
-same as those needed to fill out the NET/2 distribution.  I hope to
-make a version of my own NET/2 changes for 4.4BSD shortly after the
-4.4BSD-alpha tape is released - watch comp.unix.bsd for details.
-Alternatively, you could start with anyone's diffs that produced a
-running system from NET/2.
+same as those needed to fill out the NET/2 distribution, so a
+reasonable start would be to use the 386BSD diffs.
 
 Next, you have to run a Berkeley version of gcc.  Although it
 identifies itself as "gcc version 1.39", it has some changes from the
@@ -50,9 +47,7 @@ the kernel must be to compile the gcc from this tape (or the one from
 the NET/2 tape).  The compiler supplied with either the Jolitz or BSDI
 distributions should also be acceptable.  If you want to double check,
 make a test file that includes i386/include/segments.h, and make sure
-that sizeof (struct segment_descriptor) == 8.  I expect to remove the
-dependence on this compiler extension before the final release of
-4.4BSD.
+that sizeof (struct segment_descriptor) == 8.
 
 If your host is not a very modern BSD system, you will also need to
 make cross versions of "make" and perhaps other binary utilities.
@@ -68,7 +63,7 @@ if they don't explicitly take advantage of the new features.
 If you host is not a NET/2 based system, be sure to configure the
 cross compilation system to ignore the host's include files and
 libraries, and instead use the 4.4BSD versions.  Also, if your host
-is not little endian, then you have major work to do most of the
+is not little endian, then you have major work to do to most of the
 binary utilities.
 
 Now you need to configure the kernel - start with i386/conf/BLITZ.
@@ -96,24 +91,22 @@ kernel.  If you do this, you should check the device numbers first,
 and perhaps adjust the drivers or conf.c file.  4.4BSD is supposed to
 be binary compatible with these systems, so you should be able to use
 the existing programs in bin, usr/bin, etc.  Binaries from 4.3BSD 386
-systems may be compatible as well, but the the file system from a
-4.3BSD is definitely not compatible (see below).
+systems may be compatible as well.
 
 When you are ready to install the new libraries, you must install the
 new include files at the same time.  Programs compiled with the new
 libraries will not be compatible with the old kernel.
 
 If you don't have either the Jolitz or BSDI system, you can bootstrap
-using some other system that has the Berkeley file system.  This is
-complicated by the fact that the on-disk inode format changed between
-4.3BSD and NET/2.  The most significant change is that the field
-di_qsize in the dinode structure is now 8 bytes.  It's not too hard to
-patch 4.4BSD to accept old style file systems read-only (write to me
-for details).  If you do this, you can mount a floppy on your host and
-copy over the kernel, the boot programs, and cross compiled versions
-of critical utilities.  Then you can boot the floppy, make a hard disk
+using some other system that has a little endian the Berkeley file
+system.  If you do this, you can mount a floppy on your host and copy
+over the kernel, the boot programs, and cross compiled versions of
+critical utilities.  Then you can boot the floppy, make a hard disk
 file system, and copy the files over.  Now you can boot from the hard
-disk and load more files from floppy tar's or over the network.
+disk and load more files from floppy tar's or over the network.  (Note
+that although ESIX System 5.3.2 has a version of the Berkeley file
+system, it has a slightly different inode format, so it is not a good
+choice as a host.)
 
 If you compile the boot programs from this tape, you may need to
 change the RELOC value from 70000 to 90000.  Unfortunately, I cannot
@@ -121,7 +114,7 @@ test this before the 4.4BSD-alpha sources are frozen, but if you think
 your kernel is clobbering the boot program, then change 7 to 9 in
 these places:
 
-	cd /u/bsd44/i386/stand/
+	cd /sys/i386/stand/
 	grep -n 70 *
 	Makefile:13:RELOC=	70000
 	Makefile:14:RELOC2=	70200
@@ -129,19 +122,15 @@ these places:
 	fdbootblk.c:128:	movl	$0x70200,%edi
 	wdbootblk.c:56:#define start		0x70400
 
-This distribution is assumes that the main floppy is a 3.5 inch drive.
+This distribution assumes that the main floppy is a 3.5 inch drive.
 If you have a 5.25, you will have to do something creative.  The easy
 hack I've chosen is to reverse the first two lines of the array
-fd_types in i386/stand/fd.c and i386/isa/fd.c.  Surely we'll do better
-than this in the final release...
+fd_types in i386/stand/fd.c and i386/isa/fd.c.
 
 The Adaptech scsi driver will not be part of 4.4BSD-alpha (it has to
 wait until the grand scsi plan is implemented), but you should be able
 to add the driver that I posted to alt.sources without any trouble.
 
-If you need a kernel debugger, write and I'll send you my port of the
-MACH DDB debugger.
-
-If you are going to put a substantial amount of effort into using
-these sources, and especially if you successfully bootstrap them, I'd
-like to hear from you - please send mail to pace@blitz.com.
+Finally, I've done all of my testing of this kernel on my old NET/2
+file system.  This means that I have not checked out the configuration
+files (things like /etc/rc and /etc/ttys) that are on this tape.
