@@ -9,21 +9,18 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sbus.c	7.3 (Berkeley) %G%
+ *	@(#)sbus.c	7.4 (Berkeley) %G%
  *
- * from: $Header: sbus.c,v 1.8 92/06/17 06:59:43 torek Exp $ (LBL)
+ * from: $Header: sbus.c,v 1.10 92/11/26 02:28:13 torek Exp $ (LBL)
  */
 
 /*
  * Sbus stuff.
  */
-
-/* #include "sbus.h" */
-#define NSBUS 1	/* XXX */
 
 #include <sys/param.h>
 #include <sys/device.h>
@@ -71,6 +68,7 @@ sbus_attach(parent, self, aux)
 	register int base, node, slot;
 	register char *name;
 	struct sbus_attach_args sa;
+	register struct romaux *ra;
 
 	/*
 	 * XXX there is only one Sbus, for now -- do not know how to
@@ -85,9 +83,15 @@ sbus_attach(parent, self, aux)
 	 * Record clock frequency for synchronous SCSI.
 	 * IS THIS THE CORRECT DEFAULT??
 	 */
-	node = ((struct romaux *)aux)->ra_node;
+	ra = aux;
+	node = ra->ra_node;
 	sc->sc_clockfreq = getpropint(node, "clock-frequency", 25*1000*1000);
 	printf(": clock = %s MHz\n", clockfreq(sc->sc_clockfreq));
+
+	if (ra->ra_bp != NULL && strcmp(ra->ra_bp->name, "sbus") == 0)
+		sa.sa_ra.ra_bp = ra->ra_bp + 1;
+	else
+		sa.sa_ra.ra_bp = NULL;
 
 	/*
 	 * Loop through ROM children, fixing any relative addresses
