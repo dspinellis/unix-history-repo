@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.29 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.30 (Berkeley) %G%
  */
 
 /*
@@ -769,7 +769,7 @@ loop:
  * Print out a description of a vnode.
  */
 static char *typename[] =
-	{ "VNON", "VREG", "VDIR", "VBLK", "VCHR", "VLNK", "VSOCK", "VBAD" };
+   { "VNON", "VREG", "VDIR", "VBLK", "VCHR", "VLNK", "VSOCK", "VFIFO", "VBAD" };
 
 vprint(label, vp)
 	char *label;
