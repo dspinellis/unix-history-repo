@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)interactive.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)interactive.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -833,6 +833,7 @@ fmtentry(fp)
 /*
  * respond to interrupts
  */
+void
 onintr()
 {
 	if (command == 'i')
