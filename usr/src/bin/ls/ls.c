@@ -5,7 +5,7 @@
  * This code is derived from software contributed to Berkeley by
  * Michael Fischbein.
  *
-%sccs.include.redist.c%
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.39 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
