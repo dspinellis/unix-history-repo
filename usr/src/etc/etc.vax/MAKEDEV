@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)MAKEDEV	4.23 (Berkeley) %G%
+#	@(#)MAKEDEV	4.24 (Berkeley) %G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -43,6 +43,7 @@
 #	ik*	unibus interface to ikonas frame buffer
 #	ps*	unibus interface to e&s picture system 2
 #	ad*	unibus interface to data translation a/d converter
+#	np*	unibus ethernet co-processor interface, for downloading.
 umask 77
 for i
 do
@@ -263,6 +264,24 @@ pty*)
 					/etc/mknod pty%s%x c 21 %d; ", \
 					n, i, b+i, n, i, b+i); }'`
 		umask 77
+		;;
+	esac
+	;;
+
+np*)
+	class=`expr $i : 'np\(.*\)'`
+	case $class in
+	0) offset=0 name=0;;
+	1) offset=16 name=1;;
+	2) offset=32 name=2;;
+	*) echo bad unit for pty in: $i;;
+	esac
+	case $class in
+	0|1|2)
+		eval `echo $offset | awk ' { b=$1 } END {
+			for (i = 0; i < 4; i++)
+				printf("/etc/mknod np%02d c 39 %d;", \
+					b+i, b+i); }'`
 		;;
 	esac
 	;;
