@@ -12,7 +12,7 @@ POPDIVERT
 ###   Local and Program Mailer specification   ###
 ##################################################
 
-VERSIONID(@(#)local.m4	2.4 (Berkeley) %G%)
+VERSIONID(`@(#)local.m4	2.5 (Berkeley) %G%')
 
 ifdef(`LOCAL_MAILER_FLAGS',, `define(`LOCAL_MAILER_FLAGS', `rn')')dnl
 Mlocal,	P=ifdef(`LOCAL_MAILER', `LOCAL_MAILER', /bin/mail), F=CONCAT(`lsDFMm', LOCAL_MAILER_FLAGS), S=10, R=20, A=mail -d $u
