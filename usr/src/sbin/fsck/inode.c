@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inode.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)inode.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -404,7 +404,7 @@ pinode(ino)
 		printf("%s: ", devname);
 	printf("SIZE=%lu ", dp->di_size);
 	p = ctime(&dp->di_mtime);
-	printf("MTIME=%12.12s %4.4s ", p + 4, p + 20);
+	printf("MTIME=%12.12s %4.4s ", &p[4], &p[20]);
 }
 
 blkerror(ino, type, blk)
