@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_tty.c 1.14 93/08/05$
  *
- *	@(#)hpux_tty.c	8.2 (Berkeley) %G%
+ *	@(#)hpux_tty.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -40,7 +40,7 @@
  * Map BSD/POSIX style termios info to and from SYS5 style termio stuff.
  */
 hpuxtermio(fd, com, data, p)
-	int fd;
+	int fd, com;
 	caddr_t data;
 	struct proc *p;
 {

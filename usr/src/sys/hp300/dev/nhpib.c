@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nhpib.c	8.1 (Berkeley) %G%
+ *	@(#)nhpib.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -44,6 +44,7 @@ nhpibtype(hc)
 }
 
 nhpibreset(unit)
+	int unit;
 {
 	register struct hpib_softc *hs = &hpib_softc[unit];
 	register struct nhpibdevice *hd;
@@ -80,6 +81,7 @@ nhpibifc(hd)
 }
 
 nhpibsend(unit, slave, sec, addr, origcnt)
+	int unit, slave, sec, origcnt;
 	register char *addr;
 {
 	register struct hpib_softc *hs = &hpib_softc[unit];
@@ -131,6 +133,7 @@ senderror:
 }
 
 nhpibrecv(unit, slave, sec, addr, origcnt)
+	int unit, slave, sec, origcnt;
 	register char *addr;
 {
 	register struct hpib_softc *hs = &hpib_softc[unit];
@@ -175,6 +178,7 @@ recvbyteserror:
 
 nhpibgo(unit, slave, sec, addr, count, rw)
 	register int unit, slave;
+	int sec, count, rw;
 	char *addr;
 {
 	register struct hpib_softc *hs = &hpib_softc[unit];
@@ -297,6 +301,7 @@ nhpibppoll(unit)
 
 nhpibwait(hd, x)
 	register struct nhpibdevice *hd;
+	int x;
 {
 	register int timo = hpibtimeout;
 

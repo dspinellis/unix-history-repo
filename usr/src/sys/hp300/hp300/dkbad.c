@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dkbad.c	8.1 (Berkeley) %G%
+ *	@(#)dkbad.c	8.2 (Berkeley) %G%
  */
 
 #ifndef NOBADSECT
@@ -20,6 +20,7 @@
 
 isbad(bt, cyl, trk, sec)
 	register struct dkbad *bt;
+	int cyl, trk, sec;
 {
 	register int i;
 	register long blk, bblk;

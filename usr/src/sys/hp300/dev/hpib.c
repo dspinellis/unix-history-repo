@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hpib.c	8.1 (Berkeley) %G%
+ *	@(#)hpib.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -89,6 +89,7 @@ hpibfree(dq)
 }
 
 hpibid(unit, slave)
+	int unit, slave;
 {
 	short id;
 	int ohpibtimeout;
@@ -107,6 +108,7 @@ hpibid(unit, slave)
 
 hpibsend(unit, slave, sec, addr, cnt)
 	register int unit;
+	int slave, sec, addr, cnt;
 {
 	if (hpib_softc[unit].sc_type == HPIBC)
 		return(fhpibsend(unit, slave, sec, addr, cnt));
@@ -116,6 +118,7 @@ hpibsend(unit, slave, sec, addr, cnt)
 
 hpibrecv(unit, slave, sec, addr, cnt)
 	register int unit;
+	int slave, sec, addr, cnt;
 {
 	if (hpib_softc[unit].sc_type == HPIBC)
 		return(fhpibrecv(unit, slave, sec, addr, cnt));
@@ -125,6 +128,7 @@ hpibrecv(unit, slave, sec, addr, cnt)
 
 hpibpptest(unit, slave)
 	register int unit;
+	int slave;
 {
 	int (*ppoll)();
 
@@ -146,6 +150,7 @@ hpibawait(unit)
 
 hpibswait(unit, slave)
 	register int unit;
+	int slave;
 {
 	register int timo = hpibtimeout;
 	register int mask, (*ppoll)();
@@ -161,6 +166,7 @@ hpibswait(unit, slave)
 }
 
 hpibustart(unit)
+	int unit;
 {
 	register struct hpib_softc *hs = &hpib_softc[unit];
 
@@ -174,6 +180,7 @@ hpibustart(unit)
 }
 
 hpibstart(unit)
+	int unit;
 {
 	register struct devqueue *dq;
 	
@@ -183,6 +190,7 @@ hpibstart(unit)
 
 hpibgo(unit, slave, sec, addr, count, rw)
 	register int unit;
+	int slave, sec, addr, count, rw;
 {
 	if (hpib_softc[unit].sc_type == HPIBC)
 		fhpibgo(unit, slave, sec, addr, count, rw);

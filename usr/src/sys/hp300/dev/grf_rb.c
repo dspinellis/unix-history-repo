@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: grf_rb.c 1.15 93/08/13$
  *
- *	@(#)grf_rb.c	8.3 (Berkeley) %G%
+ *	@(#)grf_rb.c	8.4 (Berkeley) %G%
  */
 
 #include "grf.h"
@@ -85,6 +85,7 @@ rb_init(gp, addr)
  */
 rb_mode(gp, cmd, data)
 	register struct grf_softc *gp;
+	int cmd;
 	caddr_t data;
 {
 	register struct rboxfb *rbp;

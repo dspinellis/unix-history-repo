@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kgdb_stub.c	8.1 (Berkeley) %G%
+ *	@(#)kgdb_stub.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -266,7 +266,9 @@ kgdb_panic()
 #define GDB_PC 17
 
 static inline void
-kgdb_copy(register u_char *src, register u_char *dst, register u_int nbytes)
+kgdb_copy(src, dst, nbytes)
+	register u_char *src, *dst;
+	register u_int nbytes;
 {
 	register u_char *ep = src + nbytes;
 
@@ -281,14 +283,18 @@ kgdb_copy(register u_char *src, register u_char *dst, register u_int nbytes)
  * SR).  We must skip this when copying into and out of gdb.
  */
 static inline void
-regs_to_gdb(struct frame *fp, u_long *regs)
+regs_to_gdb(fp, regs)
+	struct frame *fp;
+	u_long *regs;
 {
 	kgdb_copy((u_char *)fp->f_regs, (u_char *)regs, 16*4);
 	kgdb_copy((u_char *)&fp->f_stackadj, (u_char *)&regs[GDB_SR], 2*4);
 }
 
 static inline void
-gdb_to_regs(struct frame *fp, u_long *regs)
+gdb_to_regs(fp, regs)
+	struct frame *fp;
+	u_long regs;
 {
 	kgdb_copy((u_char *)regs, (u_char *)fp->f_regs, 16*4);
 	kgdb_copy((u_char *)&regs[GDB_SR], (u_char *)&fp->f_stackadj, 2*4);
@@ -303,7 +309,9 @@ static u_char outbuffer[SL_RPCSIZE];
  * a remote gdb.
  */
 int 
-kgdb_trap(int type, struct frame *frame)
+kgdb_trap(type, frame)
+	int type;
+	struct frame *frame;
 {
 	register u_long len;
 	u_char *addr;
@@ -505,6 +513,7 @@ kgdb_trap(int type, struct frame *frame)
  */
 kgdb_acc(addr, len, rw)
 	caddr_t addr;
+	int len, rw;
 {
 	extern char proc0paddr[], kstack[];	/* XXX */
 	extern char *kernel_map;		/* XXX! */
@@ -516,4 +525,4 @@ kgdb_acc(addr, len, rw)
 		return (1);
 	return (0);
 }
-#endif
+#endif /* KGDB */
