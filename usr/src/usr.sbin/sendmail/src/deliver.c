@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.84.1.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.138 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -376,7 +376,7 @@ sendall(e, mode)
 			ee->e_header = copyheader(e->e_header);
 			ee->e_sendqueue = copyqueue(e->e_sendqueue);
 			ee->e_errorqueue = copyqueue(e->e_errorqueue);
-			ee->e_flags = e->e_flags & ~(EF_INQUEUE|EF_CLRQUEUE|EF_FATALERRS|EF_SENDRECEIPT);
+			ee->e_flags = e->e_flags & ~(EF_INQUEUE|EF_CLRQUEUE|EF_FATALERRS|EF_SENDRECEIPT|EF_RET_PARAM);
 			ee->e_flags |= EF_NORECEIPT;
 			setsender(owner, ee, NULL, TRUE);
 			if (tTd(13, 5))
@@ -390,17 +390,27 @@ sendall(e, mode)
 			ee->e_errormode = EM_MAIL;
 			
 			for (q = e->e_sendqueue; q != NULL; q = q->q_next)
+			{
 				if (q->q_owner == owner)
 				{
 					q->q_flags |= QDONTSEND;
 					q->q_flags &= ~QQUEUEUP;
 				}
+			}
 			for (q = ee->e_sendqueue; q != NULL; q = q->q_next)
+			{
 				if (q->q_owner != owner)
 				{
 					q->q_flags |= QDONTSEND;
 					q->q_flags &= ~QQUEUEUP;
 				}
+				else
+				{
+					/* clear DSN parameters */
+					q->q_flags &= ~(QHASNOTIFY|QPINGONSUCCESS);
+					q->q_flags |= QPINGONFAILURE|QPINGONDELAY;
+				}
+			}
 
 			if (mode != SM_VERIFY && bitset(EF_HAS_DF, e->e_flags))
 			{
