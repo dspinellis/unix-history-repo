@@ -112,7 +112,7 @@ extern struct direct *rst_readdir();
 /*
  * Other exported routines
  */
-extern ino_t psearch();
+extern ino_t pathsearch();
 extern ino_t dirlookup();
 extern long listfile();
 extern long deletefile();
@@ -140,11 +140,8 @@ extern long lseek();
 /*
  * Useful macros
  */
-#define	MWORD(m,i) (m[(unsigned)(i-1)/NBBY])
-#define	MBIT(i)	(1<<((unsigned)(i-1)%NBBY))
-#define	BIS(i,w)	(MWORD(w,i) |=  MBIT(i))
-#define	BIC(i,w)	(MWORD(w,i) &= ~MBIT(i))
-#define	BIT(i,w)	(MWORD(w,i) & MBIT(i))
+#define TSTINO(ino, map) \
+	(map[(u_int)((ino) - 1) / NBBY] &  (1 << ((u_int)((ino) - 1) % NBBY)))
 
 #define dprintf		if (dflag) fprintf
 #define vprintf		if (vflag) fprintf
