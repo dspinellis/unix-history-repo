@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utils.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)utils.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -86,6 +86,9 @@ copy_file(entp, dne)
 			err("%s: %s", entp->fts_path, strerror(errno));
 		if (write(to_fd, p, fs->st_size) != fs->st_size)
 			err("%s: %s", to.p_path, strerror(errno));
+		/* Some systems don't unmap on close(2). */
+		if (munmap(p, fs->st_size) < 0)
+			err("%s: %s", entp->fts_path, strerror(errno));
 	} else
 #endif
 	{
