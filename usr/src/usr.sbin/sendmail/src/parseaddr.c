@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -289,7 +289,7 @@ prescan(addr, delim, pvpbuf)
 	cmntcnt = 0;
 	anglecnt = 0;
 	avp = av;
-	state = OPR;
+	state = ATM;
 	c = NOCHAR;
 	p = addr;
 	if (tTd(22, 45))
@@ -324,7 +324,6 @@ prescan(addr, delim, pvpbuf)
 			c = *p++;
 			if (c == '\0')
 				break;
-			c &= ~0200;
 
 			if (tTd(22, 101))
 				printf("c=%c, s=%d; ", c, state);
@@ -335,12 +334,14 @@ prescan(addr, delim, pvpbuf)
 			{
 				c |= 0200;
 				bslashmode = FALSE;
+				continue;
 			}
 
 			if (c == '\\')
 			{
 				bslashmode = TRUE;
 				c = NOCHAR;
+				continue;
 			}
 			else if (state == QST)
 			{
