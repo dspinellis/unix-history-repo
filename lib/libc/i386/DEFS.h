@@ -35,28 +35,43 @@
  *
  *	from: @(#)DEFS.h	5.1 (Berkeley) 4/23/90
  *
- *	$Id$
+ *	$Id: DEFS.h,v 1.2 1993/10/09 08:30:43 davidg Exp $
  */
 
+#define _START_ENTRY	.align 2,0x90;
+#define _MID_ENTRY	.data; .align 2; 1:; .long 0;		\
+			.text; lea 1b,%eax;
+
 #ifdef PROF
-#define ALTENTRY(x)	.align 2,0x90; .globl _/**/x; _/**/x:;	\
-			.data; .align 2; 1:; .long 0;		\
-			.text; lea 1b,%eax; call mcount; jmp 2f
 
-#define	ENTRY(x)	.align 2,0x90; .globl _/**/x; _/**/x:;	\
-			.data; .align 2; 1:; .long 0;		\
-			.text; lea 1b,%eax ; call mcount; 2:
+#define ALTENTRY(x)	_START_ENTRY	\
+			.globl _/**/x; .type _/**/x,@function; _/**/x:; \
+			_MID_ENTRY	\
+			call mcount; jmp 2f
 
-#define	ALTASENTRY(x)	.align 2,0x90; .globl x; x:;			\
-			.data; .align 2; 1:; .long 0;		\
-			.text; lea 1b,%eax; call mcount; jmp 2f
+#define ENTRY(x)	_START_ENTRY \
+			.globl _/**/x; .type _/**/x,@function; _/**/x:; \
+			_MID_ENTRY	\
+			call mcount; 2:
 
-#define	ASENTRY(x)	.align 2,0x90; .globl x; x:;			\
-			.data; .align 2; 1:; .long 0;		\
-			.text; lea 1b,%eax; call mcount; 2:
-#else
-#define	ALTENTRY(x)	.align 2,0x90; .globl _/**/x; _/**/x:
-#define	ENTRY(x)	.align 2,0x90; .globl _/**/x; _/**/x:
-#define	ALTASENTRY(x)	.align 2,0x90; .globl x; x:
-#define	ASENTRY(x)	.align 2,0x90; .globl x; x:
+
+#define	ALTASENTRY(x)	_START_ENTRY	\
+			.globl x; .type x,@function; x:;	\
+			_MID_ENTRY	\
+			call mcount; jmp 2f
+
+#define	ASENTRY(x)	_START_ENTRY	\
+			.globl x; .type x,@function; x:;	\
+			_MID_ENTRY	\
+			call mcount; 2:
+
+#else	/* !PROF */
+
+#define	ENTRY(x)	_START_ENTRY .globl _/**/x; .type _/**/x,@function; \
+			_/**/x:
+#define	ALTENTRY(x)	ENTRY(x)
+
+#define	ASENTRY(x)	_START_ENTRY .globl x; .type x,@function; x:
+#define	ALTASENTRY(x)	ASENTRY(x)
+
 #endif
