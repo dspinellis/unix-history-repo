@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	4.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -127,8 +127,19 @@ rtadd(dst, gate, metric, state)
 		rt->rt_flags |= RTF_GATEWAY;
 	insque(rt, rh);
 	TRACE_ACTION(ADD, rt);
-	if (install && ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0)
+	/*
+	 * If the ioctl fails because the gateway is unreachable
+	 * from this host, discard the entry.  This should only
+	 * occur because of an incorrect entry in /etc/gateways.
+	 */
+	if (install && ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0) {
 		perror("SIOCADDRT");
+		if (errno == ENETUNREACH) {
+			TRACE_ACTION(DELETE, rt);
+			remque(rt);
+			free((char *)rt);
+		}
+	}
 }
 
 rtchange(rt, gate, metric)
@@ -164,6 +175,7 @@ rtchange(rt, gate, metric)
 rtdelete(rt)
 	struct rt_entry *rt;
 {
+
 	TRACE_ACTION(DELETE, rt);
 	if (install && ioctl(s, SIOCDELRT, (char *)&rt->rt_rt))
 		perror("SIOCDELRT");
