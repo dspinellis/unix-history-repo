@@ -1,8 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-#ifndef lint
-static char sccsid[] = "@(#)pccaseop.c 1.12.1.1 %G%";
-#endif
+static char sccsid[] = "@(#)pccaseop.c 1.14 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -15,7 +13,6 @@ static char sccsid[] = "@(#)pccaseop.c 1.12.1.1 %G%";
 #include "pcops.h"
 #include "pc.h"
 #include "tmps.h"
-#include "tree_ty.h"
 
     /*
      *	structure for a case: 
@@ -48,7 +45,7 @@ struct ct {
      *				[3]	statement
      */
 pccaseop( tcase )
-    WHI_CAS *tcase;
+    int	*tcase;
 {
     struct nl	*exprtype;
     struct nl	*exprnlp;
@@ -56,16 +53,17 @@ pccaseop( tcase )
     long	low;
     long	high;
     long	exprctype;
-    char 	*swlabel;
-    char	*endlabel;
-    char	*label;
-    int		count;
-    struct tnode *cstatlp;
-    struct tnode *cstatp;
-    struct tnode *casep;
+    long	swlabel;
+    long	endlabel;
+    long	label;
+    long	count;
+    long	*cstatlp;
+    long	*cstatp;
+    long	*casep;
     struct ct	*ctab;
     struct ct	*ctp;
-    bool	nr;
+    long	i;
+    long	nr;
     long	goc;
     int		casecmp();
     bool	dupcases;
@@ -75,45 +73,45 @@ pccaseop( tcase )
 	 *  find out the type of the case expression
 	 *  even if the expression has errors (exprtype == NIL), continue.
 	 */
-    line = tcase->line_no;
+    line = tcase[1];
     codeoff();
-    exprtype = rvalue( tcase->expr , NLNIL  , RREQ );
+    exprtype = rvalue( (int *) tcase[2] , NIL  , RREQ );
     codeon();
-    if ( exprtype != NLNIL ) {
+    if ( exprtype != NIL ) {
 	if ( isnta( exprtype , "bcsi" ) ) {
 	    error("Case selectors cannot be %ss" , nameof( exprtype ) );
-	    exprtype = NLNIL;
+	    exprtype = NIL;
 	} else {
 	    if ( exprtype -> class != RANGE ) {
 		rangetype = exprtype -> type;
 	    } else {
 		rangetype = exprtype;
 	    }
-	    if ( rangetype == NLNIL ) {
-		exprtype = NLNIL;
+	    if ( rangetype == NIL ) {
+		exprtype = NIL;
 	    } else {
 		low = rangetype -> range[0];
 		high = rangetype -> range[1];
 	    }
 	}
     }
-    if ( exprtype != NLNIL ) {
+    if ( exprtype != NIL ) {
 	    /*
 	     *	compute and save the case expression.
 	     *	also, put expression into a register
 	     *	save its c-type and jump to the code to do the switch.
 	     */
 	exprctype = p2type( exprtype );
-	exprnlp = tmpalloc( (long) (sizeof (long)), nl + T4INT , NOREG );
-	putRV((char *) 0 , cbn , exprnlp -> value[ NL_OFFS ] ,
+	exprnlp = tmpalloc( sizeof (long) , nl + T4INT , NOREG );
+	putRV( 0 , cbn , exprnlp -> value[ NL_OFFS ] ,
 			exprnlp -> extra_flags , P2INT );
-	(void) rvalue( tcase->expr , NLNIL , RREQ );
-	sconv((int) exprctype, (int) P2INT);
+	(void) rvalue( (int *) tcase[2] , NIL , RREQ );
+	sconv(exprctype, P2INT);
 	putop( P2ASSIGN , P2INT );
 	putop( P2FORCE , P2INT );
 	putdot( filename , line );
 	swlabel = getlab();
-	putjbr( (long) swlabel );
+	putjbr( swlabel );
     }
 	/*
 	 *  count the number of cases
@@ -121,14 +119,12 @@ pccaseop( tcase )
 	 *  default case goes in ctab[0].
 	 */
     count = 1;
-    for ( cstatlp = tcase->stmnt_list ; cstatlp != TR_NIL ;
-		cstatlp = cstatlp->list_node.next ) {
-	cstatp = cstatlp->list_node.list;
-	if ( cstatp == TR_NIL ) {
+    for ( cstatlp = tcase[3] ; cstatlp != NIL ; cstatlp = cstatlp[2] ) {
+	cstatp = cstatlp[1];
+	if ( cstatp == NIL ) {
 	    continue;
 	}
-	for ( casep = cstatp->c_stmnt.const_list ; casep != TR_NIL ;
-			casep = casep->list_node.next ) {
+	for ( casep = cstatp[2] ; casep != NIL ; casep = casep[2] ) {
 	    count++;
 	}
     }
@@ -142,30 +138,28 @@ pccaseop( tcase )
 	/*
 	 *  pick up default label and label for after case statement.
 	 */
-    ctab[0].clabel = (int) getlab();
+    ctab[0].clabel = getlab();
     endlabel = getlab();
 	/*
 	 *  generate code for each case
 	 *  filling in ctab for each.
 	 *  nr is for error if no case falls out bottom.
 	 */
-    nr = TRUE;;
+    nr = 1;
     count = 0;
-    for ( cstatlp = tcase->stmnt_list ; cstatlp != TR_NIL ;
-		cstatlp = cstatlp->list_node.next ) {
-	cstatp = cstatlp->list_node.list;
-	if ( cstatp == TR_NIL ) {
+    for ( cstatlp = tcase[3] ; cstatlp != NIL ; cstatlp = cstatlp[2] ) {
+	cstatp = cstatlp[1];
+	if ( cstatp == NIL ) {
 	    continue;
 	}
-	line = cstatp->c_stmnt.line_no;
+	line = cstatp[1];
 	label = getlab();
-	for ( casep = cstatp->c_stmnt.const_list ; casep != TR_NIL ;
-			casep = casep->list_node.next ) {
-	    gconst( casep->list_node.list );
-	    if( exprtype == NLNIL || con.ctype == NIL ) {
+	for ( casep = cstatp[2] ; casep != NIL ; casep = casep[2] ) {
+	    gconst( casep[1] );
+	    if( exprtype == NIL || con.ctype == NIL ) {
 		continue;
 	    }
-	    if ( incompat( con.ctype , exprtype , TR_NIL ) ) {
+	    if ( incompat( con.ctype , exprtype , NIL ) ) {
 		cerror("Case label type clashed with case selector expression type");
 		continue;
 	    }
@@ -176,30 +170,30 @@ pccaseop( tcase )
 	    count++;
 	    ctab[ count ].cconst = con.crval;
 	    ctab[ count ].cline = line;
-	    ctab[ count ].clabel = (int) label;
+	    ctab[ count ].clabel = label;
 	}
 	    /*
 	     *	put out the statement
 	     */
-	(void) putlab( label );
+	putlab( label );
 	putcnt();
 	level++;
-	statement( cstatp->c_stmnt.stmnt );
-	nr = (nr && noreach)?TRUE:FALSE;
-	noreach = FALSE;
+	statement( cstatp[3] );
+	nr = (nr && noreach);
+	noreach = 0;
 	level--;
 	if (gotos[cbn]) {
 		ungoto();
 	}
-	putjbr( (long) endlabel );
+	putjbr( endlabel );
     }
     noreach = nr;
 	/*
 	 *	default action is to call error
 	 */
-    (void) putlab( (char *) ctab[0].clabel );
+    putlab( ctab[0].clabel );
     putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_CASERNG" );
-    putRV((char *) 0 , cbn , exprnlp -> value[ NL_OFFS ] ,
+    putRV( 0 , cbn , exprnlp -> value[ NL_OFFS ] ,
 		    exprnlp -> extra_flags , P2INT );
     putop( P2CALL , P2INT );
     putdot( filename , line );
@@ -214,7 +208,7 @@ pccaseop( tcase )
     for ( ctp = &ctab[1] ; ctp < &ctab[ count ] ; ctp++ ) {
 	if ( ctp[0].cconst == ctp[1].cconst ) {
 	    error("Multiply defined label in case, lines %d and %d" ,
-		    (char *) ctp[0].cline , (char *) ctp[1].cline );
+		    ctp[0].cline , ctp[1].cline );
 	    dupcases = TRUE;
 	}
     }
@@ -227,7 +221,7 @@ pccaseop( tcase )
 	 *	binary switch	not direct switch and > 8 cases.
 	 *	ifthenelse	not direct or binary switch.
 	 */
-    (void) putlab( swlabel );
+    putlab( swlabel );
     if ( ctab[ count ].cconst - ctab[1].cconst < 3 * count && count >= 4 ) {
 	directsw( ctab , count );
     } else if ( count > 8 ) {
@@ -235,7 +229,7 @@ pccaseop( tcase )
     } else {
 	itesw( ctab , count );
     }
-    (void) putlab( endlabel );
+    putlab( endlabel );
     if ( goc != gocnt ) {
 	    putcnt();
     }
@@ -248,36 +242,36 @@ directsw( ctab , count )
     struct ct	*ctab;
     int		count;
 {
-    int		fromlabel = (int) getlab();
+    int		fromlabel = getlab();
     long	i;
     long	j;
 
     putprintf( "	casel	%s,$%d,$%d" , 0 , FORCENAME ,
 	    ctab[1].cconst , ctab[ count ].cconst - ctab[1].cconst );
-    (void) putlab( (char *) fromlabel );
+    putlab( fromlabel );
     i = 1;
     j = ctab[1].cconst;
     while ( i <= count ) {
 	if ( j == ctab[ i ].cconst ) {
 	    if (opt('J')) {
 		putprintf( "	.long	" , 1 );
-		putprintf( PREFIXFORMAT , 0 , (int) LABELPREFIX , ctab[ i ].clabel );
+		putprintf( PREFIXFORMAT , 0 , LABELPREFIX , ctab[ i ].clabel );
 	    } else {
 		putprintf( "	.word	" , 1 );
-		putprintf( PREFIXFORMAT , 1 , (int) LABELPREFIX , ctab[ i ].clabel );
+		putprintf( PREFIXFORMAT , 1 , LABELPREFIX , ctab[ i ].clabel );
 		putprintf( "-" , 1 );
-		putprintf( PREFIXFORMAT , 0 , (int) LABELPREFIX , fromlabel );
+		putprintf( PREFIXFORMAT , 0 , LABELPREFIX , fromlabel );
 	    }
 	    i++;
 	} else {
 	    if (opt('J')) {
 		putprintf( "	.long	" , 1 );
-		putprintf( PREFIXFORMAT , 0 , (int) LABELPREFIX , ctab[ 0 ].clabel );
+		putprintf( PREFIXFORMAT , 0 , LABELPREFIX , ctab[ 0 ].clabel );
 	    } else {
 		putprintf( "	.word	" , 1 );
-		putprintf( PREFIXFORMAT , 1 , (int) LABELPREFIX , ctab[ 0 ].clabel );
+		putprintf( PREFIXFORMAT , 1 , LABELPREFIX , ctab[ 0 ].clabel );
 		putprintf( "-" , 1 );
-		putprintf( PREFIXFORMAT , 0 , (int) LABELPREFIX , fromlabel );
+		putprintf( PREFIXFORMAT , 0 , LABELPREFIX , fromlabel );
 	    }
 	}
 	j++;
@@ -316,7 +310,7 @@ bsrecur( deflabel , ctab , count )
 	return;
     } else {
 	int	half = ( count + 1 ) / 2;
-	int	gtrlabel = (int) getlab();
+	int	gtrlabel = getlab();
 
 	putprintf( "	cmpl	%s,$%d" , 0 , FORCENAME , ctab[ half ].cconst );
 	putprintf( "	jgtr	L%d" , 0 , gtrlabel );
