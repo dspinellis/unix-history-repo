@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	1.17 %G%";
+static char *SccsId = "@(#)lex.c	1.18 %G%";
 
 /*
  * Set up editing on the given file name.
@@ -25,7 +25,6 @@ setfile(name, isedit)
 	static int shudclob;
 	static char efile[128];
 	extern char tempMesg[];
-	int (*sigs[3])();
 
 	if ((ibuf = fopen(name, "r")) == NULL) {
 		if (isedit)
@@ -37,12 +36,12 @@ setfile(name, isedit)
 
 	/*
 	 * Looks like all will be well.  We must now relinquish our
-	 * hold on the current set of stuff.  Must ignore signals
+	 * hold on the current set of stuff.  Must hold signals
 	 * while we are reading the new file, else we will ruin
 	 * the message[] data structure.
 	 */
 
-	sigsave(sigs, SIG_IGN);
+	holdsigs();
 	if (shudclob) {
 		if (edit)
 			edstop();
@@ -83,7 +82,7 @@ setfile(name, isedit)
 	setptr(ibuf);
 	setmsize(msgCount);
 	fclose(ibuf);
-	sigret(sigs);
+	relsesigs();
 	shudann = 1;
 	sawcom = 0;
 	return(0);
@@ -413,9 +412,8 @@ contin(s)
  */
 hangup()
 {
-	int (*sigs[3])();
 
-	sigsave(sigs);
+	holdsigs();
 	if (edit) {
 		if (setexit())
 			exit(0);
