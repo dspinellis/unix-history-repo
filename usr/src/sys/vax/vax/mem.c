@@ -1,4 +1,4 @@
-/*	mem.c	4.11	82/11/22	*/
+/*	mem.c	4.11	82/12/05	*/
 
 /*
  * Memory special file
@@ -61,7 +61,8 @@ mmrw(dev, uio, rw)
 			v = btop(uio->uio_offset);
 			if (v >= physmem)
 				goto fault;
-			*(int *)mmap = v | (PG_V | PG_KR);
+			*(int *)mmap = v | PG_V |
+				(rw == UIO_READ ? PG_KR : PG_KW);
 			mtpr(TBIS, vmmap);
 			o = (int)uio->uio_offset & PGOFSET;
 			c = min((u_int)(NBPG - o), (u_int)iov->iov_len);
