@@ -1,4 +1,4 @@
-/*	hp.c	4.60	83/01/01	*/
+/*	hp.c	4.61	83/01/01	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -71,7 +71,6 @@ struct	size {
 #endif
 	0,	0,
 }, rm5_sizes[8] = {
-#ifndef CAD
 	15884,	0,		/* A=cyl 0 thru 26 */
 	33440,	27,		/* B=cyl 27 thru 81 */
 	500384,	0,		/* C=cyl 0 thru 822 */
@@ -85,21 +84,6 @@ struct	size {
 	158688,	562,
 #endif
 	291346,	82,		/* H=cyl 82 thru 561 */
-#else
-	15884,	0,		/* A=cyl 0 thru 26 */
-	33440,	27,		/* B=cyl 27 thru 81 */
-	495520,	0,		/* C=cyl 0 thru 814 */
-	15884,	562,		/* D=cyl 562 thru 588 */
-	55936,	589,		/* E=cyl 589 thru 680 */
-#ifndef NOBADSECT
-	81376,	681,		/* F=cyl 681 thru 814 */
-	153728,	562,		/* G=cyl 562 thru 814 */
-#else
-	81472,	681,
-	153824,	562,
-#endif
-	291346,	82,		/* H=cyl 82 thru 561 */
-#endif
 }, rm80_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 36 */
 	33440,	37,		/* B=cyl 37 thru 114 */
@@ -292,7 +276,6 @@ hpattach(mi, slave)
 			mi->mi_type = HPDT_9730;
 			break;
 
-#ifdef CAD
 		/*
 		 * AMPEX 9300, SI Combination needs a have the drive cleared
 		 * before we start.  We do not know why, but tests show
@@ -309,7 +292,6 @@ hpattach(mi, slave)
 			printf("hp%d: 9762\n", mi->mi_unit);
 			mi->mi_type = HPDT_RM03;
 			break;
-#endif
 		}
 		break;
 		}
