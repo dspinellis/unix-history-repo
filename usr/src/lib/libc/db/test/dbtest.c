@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dbtest.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)dbtest.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -58,6 +58,8 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
+	extern int optind;
+	extern char *optarg;
 	enum S command, state;
 	DB *dbp;
 	DBT data, key, keydata;
