@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -21,7 +21,7 @@ static char sccsid[] = "@(#)vmstat.c	5.5 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/vm.h>
-#include <sys/dk.h>
+#include <sys/dkstat.h>
 #include <sys/buf.h>
 #include <sys/dir.h>
 #include <sys/inode.h>
@@ -77,10 +77,6 @@ struct nlist nl[] = {
 #define X_UBDINIT	(X_XSTATS+2)
 	{ "_ubdinit" },
 #endif
-#ifdef sun
-#define X_MBDINIT	(X_XSTATS+1)
-	{ "_mbdinit" },
-#endif
 #ifdef tahoe
 #define	X_VBDINIT	(X_XSTATS+1)
 	{ "_vbdinit" },
@@ -124,7 +120,6 @@ struct {
 #define	forkstat	s.Forkstat
 
 struct	vmmeter osum;
-int	zero;
 int	deficit;
 double	etime;
 int 	mf;
@@ -132,25 +127,26 @@ time_t	now, boottime;
 int	printhdr();
 int	lines = 1;
 
+#define	INTS(x)	((x) - (hz + phz))
+
 main(argc, argv)
 	int argc;
 	char **argv;
 {
 	extern char *ctime();
-	register i,j;
+	register i;
 	int iter, nintv, iflag = 0;
-	double f1, f2;
 	long t;
-	char *arg, **cp, name[6], buf[BUFSIZ];
+	char *arg, **cp, buf[BUFSIZ];
 
 	nlist("/vmunix", nl);
 	if(nl[0].n_type == 0) {
-		printf("no /vmunix namelist\n");
+		fprintf(stderr, "no /vmunix namelist\n");
 		exit(1);
 	}
 	mf = open("/dev/kmem", 0);
 	if(mf < 0) {
-		printf("cannot open /dev/kmem\n");
+		fprintf(stderr, "cannot open /dev/kmem\n");
 		exit(1);
 	}
 	iter = 0;
@@ -203,13 +199,13 @@ main(argc, argv)
 	}
 	HZ = phz ? phz : hz;
 	if (nl[DK_NDRIVE].n_value == 0) {
-		printf("dk_ndrive undefined in system\n");
+		fprintf(stderr, "dk_ndrive undefined in system\n");
 		exit(1);
 	}
 	lseek(mf, nl[X_DK_NDRIVE].n_value, L_SET);
 	read(mf, &dk_ndrive, sizeof (dk_ndrive));
 	if (dk_ndrive <= 0) {
-		printf("dk_ndrive %d\n", dk_ndrive);
+		fprintf(stderr, "dk_ndrive %d\n", dk_ndrive);
 		exit(1);
 	}
 	dr_select = (int *)calloc(dk_ndrive, sizeof (int));
@@ -227,7 +223,8 @@ main(argc, argv)
 	time(&now);
 	nintv = now - boottime;
 	if (nintv <= 0 || nintv > 60*60*24*365*10) {
-		printf("Time makes no sense... namelist must be wrong.\n");
+		fprintf(stderr,
+		    "Time makes no sense... namelist must be wrong.\n");
 		exit(1);
 	}
 	if (iflag) {
@@ -305,7 +302,7 @@ loop:
 		etime = 1.;
 	printf("%2d%2d%2d", total.t_rq, total.t_dw+total.t_pw, total.t_sw);
 #define pgtok(a) ((a)*NBPG/1024)
-	printf("%6d%5d", pgtok(total.t_avm), pgtok(total.t_free));
+	printf("%6d%6d", pgtok(total.t_avm), pgtok(total.t_free));
 	printf("%4d%3d", (rate.v_pgrec - (rate.v_xsfrec+rate.v_xifrec))/nintv,
 	    (rate.v_xsfrec+rate.v_xifrec)/nintv);
 	printf("%4d", pgtok(rate.v_pgpgin)/nintv);
@@ -315,7 +312,6 @@ loop:
 	for (i = 0; i < dk_ndrive; i++)
 		if (dr_select[i])
 			stats(i);
-#define	INTS(x)	((x) - (hz + phz))
 	printf("%4d%4d%4d", INTS(rate.v_intr/nintv), rate.v_syscall/nintv,
 	    rate.v_swtch/nintv);
 	for(i=0; i<CPUSTATES; i++) {
@@ -328,7 +324,6 @@ loop:
 	}
 	printf("\n");
 	fflush(stdout);
-contin:
 	nintv = 1;
 	if (--iter &&argc > 0) {
 		sleep(atoi(argv[0]));
@@ -340,7 +335,7 @@ printhdr()
 {
 	register int i, j;
 
-	printf(" procs    memory              page           ");
+	printf(" procs     memory              page           ");
 	i = (ndrives * 3 - 6) / 2;
 	if (i < 0)
 		i = 0;
@@ -351,7 +346,7 @@ printhdr()
 	for (j = 0; j < i; j++)
 		putchar(' ');
 	printf("               cpu\n");
-	printf(" r b w   avm  fre  re at  pi  po  fr  de  sr ");
+	printf(" r b w   avm   fre  re at  pi  po  fr  de  sr ");
 	for (i = 0; i < dk_ndrive; i++)
 		if (dr_select[i])
 			printf("%c%c ", dr_name[i][0], dr_name[i][2]);	
@@ -396,9 +391,8 @@ dosum()
 	printf("%9d pages paged in\n", sum.v_pgpgin);
 	printf("%9d pages paged out\n", sum.v_pgpgout);
 	printf("%9d sequential process pages freed\n", sum.v_seqfree);
-#define	nz(x)	((x) ? (x) : 1)
 	printf("%9d total reclaims (%d%% fast)\n", sum.v_pgrec,
-	    (sum.v_fastpgrec * 100) / nz(sum.v_pgrec));
+	    pct(sum.v_fastpgrec, sum.v_pgrec));
 	printf("%9d reclaims from free list\n", sum.v_pgfrec);
 	printf("%9d intransit blocking page faults\n", sum.v_intrans);
 	printf("%9d zero fill pages created\n", sum.v_nzfod / CLSIZE);
@@ -426,14 +420,14 @@ dosum()
 	    nchstats.ncs_falsehits + nchstats.ncs_miss + nchstats.ncs_long;
 	printf("%9d total name lookups", nchtotal);
 	printf(" (cache hits %d%% system %d%% per-process)\n",
-	    nchstats.ncs_goodhits * 100 / nz(nchtotal),
-	    nchstats.ncs_pass2 * 100 / nz(nchtotal));
+	    pct(nchstats.ncs_goodhits, nchtotal),
+	    pct(nchstats.ncs_pass2, nchtotal));
 	printf("%9s badhits %d, falsehits %d, toolong %d\n", "",
 	    nchstats.ncs_badhits, nchstats.ncs_falsehits, nchstats.ncs_long);
 	lseek(mf, (long)nl[X_XSTATS].n_value, 0);
 	read(mf, &xstats, sizeof xstats);
 	printf("%9d total calls to xalloc (cache hits %d%%)\n",
-	    xstats.alloc, xstats.alloc_cachehit * 100 / nz(xstats.alloc));
+	    xstats.alloc, pct(xstats.alloc_cachehit, xstats.alloc));
 	printf("%9s sticky %d flushed %d unused %d\n", "",
 	    xstats.alloc_inuse, xstats.alloc_cacheflush, xstats.alloc_unused);
 	printf("%9d total calls to xfree", xstats.free);
@@ -444,18 +438,18 @@ dosum()
 	read(mf, &keystats, sizeof keystats);
 	printf("%9d %s (free %d%% norefs %d%% taken %d%% shared %d%%)\n",
 	    keystats.ks_allocs, "code cache keys allocated",
-	    keystats.ks_free * 100 / nz(keystats.ks_allocs),
-	    keystats.ks_norefs * 100 / nz(keystats.ks_allocs),
-	    keystats.ks_taken * 100 / nz(keystats.ks_allocs),
-	    keystats.ks_shared * 100 / nz(keystats.ks_allocs));
+	    pct(keystats.ks_free, keystats.ks_allocs),
+	    pct(keystats.ks_norefs, keystats.ks_allocs),
+	    pct(keystats.ks_taken, keystats.ks_allocs),
+	    pct(keystats.ks_shared, keystats.ks_allocs));
 	lseek(mf, (long)nl[X_DKEYSTATS].n_value, 0);
 	read(mf, &keystats, sizeof keystats);
 	printf("%9d %s (free %d%% norefs %d%% taken %d%% shared %d%%)\n",
 	    keystats.ks_allocs, "data cache keys allocated",
-	    keystats.ks_free * 100 / nz(keystats.ks_allocs),
-	    keystats.ks_norefs * 100 / nz(keystats.ks_allocs),
-	    keystats.ks_taken * 100 / nz(keystats.ks_allocs),
-	    keystats.ks_shared * 100 / nz(keystats.ks_allocs));
+	    pct(keystats.ks_free, keystats.ks_allocs),
+	    pct(keystats.ks_norefs, keystats.ks_allocs),
+	    pct(keystats.ks_taken, keystats.ks_allocs),
+	    pct(keystats.ks_shared, keystats.ks_allocs));
 #endif
 }
 
@@ -580,36 +574,6 @@ read_names()
 		steal(udrv.ud_dname, two_char);
 		sprintf(dr_name[udev.ui_dk], "%c%c%d",
 		    cp[0], cp[1], udev.ui_unit);
-	}
-}
-#endif
-
-#ifdef sun
-#include <sundev/mbvar.h>
-
-read_names()
-{
-	struct mb_device mdev;
-	register struct mb_device *mp;
-	struct mb_driver mdrv;
-	short two_char;
-	char *cp = (char *) &two_char;
-
-	mp = (struct mb_device *) nl[X_MBDINIT].n_value;
-	if (mp == 0) {
-		fprintf(stderr, "vmstat: Disk init info not in namelist\n");
-		exit(1);
-	}
-	for (;;) {
-		steal(mp++, mdev);
-		if (mdev.md_driver == 0)
-			break;
-		if (mdev.md_dk < 0 || mdev.md_alive == 0)
-			continue;
-		steal(mdev.md_driver, mdrv);
-		steal(mdrv.mdr_dname, two_char);
-		sprintf(dr_name[mdev.md_dk], "%c%c%d",
-		     cp[0], cp[1], mdev.md_unit);
 	}
 }
 #endif
