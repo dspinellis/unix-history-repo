@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_pty.c	6.17 (Berkeley) %G%
+ *	@(#)tty_pty.c	6.18 (Berkeley) %G%
  */
 
 /*
@@ -39,7 +39,6 @@
 struct	tty pt_tty[NPTY];
 struct	pt_ioctl {
 	int	pt_flags;
-	int	pt_gensym;
 	struct	proc *pt_selr, *pt_selw;
 	u_char	pt_send;
 	u_char	pt_ucntl;
@@ -323,24 +322,26 @@ ptcselect(dev, rw)
 
 	if ((tp->t_state&TS_CARR_ON) == 0)
 		return (1);
-	s = spl5();
 	switch (rw) {
 
 	case FREAD:
+		/*
+		 * Need to block timeouts (ttrstart).
+		 */
+		s = spltty();
 		if ((tp->t_state&TS_ISOPEN) &&
 		     tp->t_outq.c_cc && (tp->t_state&TS_TTSTOP) == 0) {
 			splx(s);
 			return (1);
 		}
+		splx(s);
 		/* FALLTHROUGH */
 
 	case 0:					/* exceptional */
 		if ((tp->t_state&TS_ISOPEN) &&
 		    (pti->pt_flags&PF_PKT && pti->pt_send ||
-		     pti->pt_flags&PF_UCNTL && pti->pt_ucntl)) {
-			splx(s);
+		     pti->pt_flags&PF_UCNTL && pti->pt_ucntl))
 			return (1);
-		}
 		if ((p = pti->pt_selr) && p->p_wchan == (caddr_t)&selwait)
 			pti->pt_flags |= PF_RCOLL;
 		else
@@ -349,10 +350,17 @@ ptcselect(dev, rw)
 
 
 	case FWRITE:
-		if ((tp->t_state&TS_ISOPEN) &&
-		    ((pti->pt_flags&PF_REMOTE) == 0 || tp->t_canq.c_cc == 0)) {
-			splx(s);
-			return (1);
+		if (tp->t_state&TS_ISOPEN) {
+			if (pti->pt_flags & PF_REMOTE) {
+			    if (tp->t_canq.c_cc == 0)
+				return (1);
+			} else {
+			    if (tp->t_rawq.c_cc + tp->t_canq.c_cc < TTYHOG-2)
+				    return (1);
+			    if (tp->t_canq.c_cc == 0 &&
+			        tp->t_flags & (RAW|CBREAK) == 0)
+				    return (1);
+			}
 		}
 		if ((p = pti->pt_selw) && p->p_wchan == (caddr_t)&selwait)
 			pti->pt_flags |= PF_WCOLL;
@@ -361,7 +369,6 @@ ptcselect(dev, rw)
 		break;
 
 	}
-	splx(s);
 	return (0);
 }
 
@@ -430,7 +437,8 @@ again:
 		}
 		while (cc > 0) {
 			if ((tp->t_rawq.c_cc + tp->t_canq.c_cc) >= TTYHOG - 2 &&
-			    (tp->t_canq.c_cc > 0)) {
+			   (tp->t_canq.c_cc > 0 ||
+			      tp->t_flags & (RAW|CBREAK))) {
 				wakeup((caddr_t)&tp->t_rawq);
 				goto block;
 			}
