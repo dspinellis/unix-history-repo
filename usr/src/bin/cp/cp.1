@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)cp.1	6.5 (Berkeley) %G%
+.\"	@(#)cp.1	6.6 (Berkeley) %G%
 .\"
 .TH CP 1 ""
 .UC 4
@@ -43,9 +43,15 @@ detects an attempt to copy a file to itself, the copy will fail.
 For each destination file that already exists, its contents are
 overwritten if permissions allow, but its mode, user ID, and group
 ID are unchanged.
-Otherwise, the mode of the
-.I source_file
-is used as modified by the file mode creation mask.
+.PP
+If the destination file does not exist, the mode of the source file is
+used as modified by the file mode creation mask.
+However, if the source file has its set user ID bit on, that bit is
+removed unless both the source file and the destination file are owned
+by the same user.
+If the source file has its set group ID bit on, that bit is removed
+unless both the source file and the destination file are in the same
+group and the user is a member of that group.
 Appropriate permissions are required for file creation or overwriting.
 .PP
 The following options are available:
@@ -81,6 +87,9 @@ Causes
 to preserve in the copy as many of the modification time, access time,
 .\" and file mode as allowed by permissions.
 file mode, user ID, and group ID as allowed by permissions.
+If either the user ID or group ID are not settable for any reason,
+the set user ID and set group ID bits are removed from the copy's
+permissions.
 .TP
 .I -r
 If
