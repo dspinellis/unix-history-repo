@@ -92,7 +92,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.52.1.1 %G%";
+static char SccsId[] = "@(#)sccs.c	1.53 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -1378,6 +1378,8 @@ username()
 	}
 	return (pw->pw_name);
 # else
+	extern char *getlogin();
+
 	return (getlogin());
 # endif UIDUSER
 }
