@@ -31,8 +31,16 @@ install: gprof gprof.flat gprof.callg
 clean:
 	${RM} ${GPROFOBJS} errs gprof
 
-gcrt0.h:
-	cp /usr/src/libc/csu/gcrt0.h gcrt0.h
+gcrt0.h: FRC
+	-if [ -r gcrt0.h ] && \
+	   cmp -s gcrt0.h /usr/src/lib/libc/${MACHINE}/csu/gmon.h; then \
+	       :; \
+	else \
+	       rm -f gcrt0.h; \
+	       cp /usr/src/lib/libc/${MACHINE}/csu/gmon.h gcrt0.h; \
+	fi
+
+FRC:
 
 print:
 	@ ls -l | ${PR}
