@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.54 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.55 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1349,7 +1349,7 @@ vsprintf(s, fmt, ap)
 **	Grabbed from 4.4BSD source tree.
 */
 
-#ifdef NEEDGETUSERSHELL
+#if NEEDGETUSERSHELL
 
 /*
  * Copyright (c) 1985, 1993
