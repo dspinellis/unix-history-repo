@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)arpadate.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)arpadate.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -44,10 +44,10 @@ static char sccsid[] = "@(#)arpadate.c	8.2 (Berkeley) %G%";
 
 /* values for TZ_TYPE */
 #define TZ_NONE		0	/* no character timezone support */
-#define TZ_USE_TM_NAME	1	/* use tm->tm_name */
-#define TZ_USE_TM_ZONE	2	/* use tm->tm_zone */
-#define TZ_USE_TZNAME	3	/* use tzname[] */
-#define TZ_USE_TIMEZONE	4	/* use timezone() */
+#define TZ_TM_NAME	1	/* use tm->tm_name */
+#define TZ_TM_ZONE	2	/* use tm->tm_zone */
+#define TZ_TZNAME	3	/* use tzname[] */
+#define TZ_TIMEZONE	4	/* use timezone() */
 
 char *
 arpadate(ud)
@@ -142,20 +142,20 @@ arpadate(ud)
 	else
 	{
 		tz = NULL;
-#if TZ_TYPE == TZ_USE_TM_NAME
+#if TZ_TYPE == TZ_TM_NAME
 		tz = lt->tm_name;
 #endif
-#if TZ_TYPE == TZ_USE_TM_ZONE
+#if TZ_TYPE == TZ_TM_ZONE
 		tz = lt->tm_zone;
 #endif
-#if TZ_TYPE == TZ_USE_TZNAME
+#if TZ_TYPE == TZ_TZNAME
 		{
 			extern char *tzname[];
 
 			tz = tzname[lt->tm_isdst];
 		}
 #endif
-#if TZ_TYPE == TZ_USE_TIMEZONE
+#if TZ_TYPE == TZ_TIMEZONE
 		{
 			extern char *timezone();
 
