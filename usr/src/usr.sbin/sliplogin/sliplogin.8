@@ -1,0 +1,180 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)sliplogin.8	5.1 (Berkeley) %G%
+.\"
+.TH SLIPLOGIN 8 ""
+.UC 7
+.SH NAME
+sliplogin \- attach a serial line network interface
+.SH SYNOPSIS
+.B sliplogin
+[ {
+.I loginname
+|
+.I local
+.I remote
+[
+.I mask
+] } ]
+.SH DESCRIPTION
+.B sliplogin
+is used to turn the terminal line on the standard input of the process into
+a Serial Line IP link to a remote host.  In order to do this, the program
+needs to know the local interface address of the link, the remote interface
+address, and the applicable (sub)net mask.  There are three ways it may
+determine this information:
+.IP -
+If run by a non-root user id, the program will ignore any arguments and
+instead search a table (the
+.B /etc/hosts.slip
+file) for an entry matching that user id's login name, and set the parameters
+it needs from the contents of the matching entry.  This would be the typical
+usage when sliplogin is the shell for a remote site connecting via dialup
+SLIP.
+.IP -
+If run by root with a single argument, the described search procedure will
+be performed using the argument as a key.
+.IP -
+If run by root with two or three arguments, they are assumed to set the
+needed parameters explicitly.  A missing
+.I mask
+will cause the default network mask for that class network to be used.
+.PP
+The parameters may be specified either by name (which will be looked up
+using
+.BR gethostbyname (3N)
+and
+.BR getnetbyname (3N)),
+or as a dotted quad that the
+.BR inet_addr (3N)
+function can interpret.
+.PP
+The line speed is unchanged, but other terminal line parameters are
+initialized properly for the purpose.
+.PP
+Only the super-user may attach a network interface.  The interface is
+automatically detached when the
+.B sliplogin
+process dies.  If the kernel
+.B slip
+module has been configured for it, all routes through that interface will
+also disappear at the same time.
+.SH "TABLE FORMAT"
+The format of the
+.B /etc/hosts.slip
+file is as follows:
+.IP -
+blank lines and lines with a leading # are ignored.
+.IP -
+all other lines should have the form:
+.sp
+.br
+\fIname mode local-address remote-address netmask\fP
+.br
+.sp
+The
+.I name
+is usually the login name of a remote host that wishes to connect by
+dialup slip.  More generally it is any key you wish for the address
+and mask parameters specified on that line.  The
+.I mode
+is currently unused but must be specified.  Use
+.BR normal .
+The remaining parameters have been discussed.
+.SH "DIAGNOSTICS"
+.B sliplogin
+logs various information to the system log daemon,
+.BR syslogd (8),
+with a facility code of
+.BR daemon .
+The messages are listed here, grouped by severity level.
+.SS Err Severity
+.TP
+.BI "ioctl (TCGETS): " reason
+A
+.SB TCGETS
+.B ioctl
+to get the line parameters failed.
+.TP
+.BI "ioctl (TCSETS): " reason
+A
+.SB TCSETS
+.B ioctl
+to set the line parameters failed.
+.TP
+.BI "ioctl (I_PUSH): " reason
+A
+.SB I_PUSH
+.B ioctl
+to push the
+.B slip
+streams module onto the line failed.
+.TP
+.BI "ioctl (SLIOGUNIT): " reason
+A
+.SB SLIOGUNIT
+.B ioctl
+to get the interface unit number failed.
+.TP
+.BI "ioctl (SIOCSIFNETMASK): " reason
+A
+.SB SIOCSIFNETMASK
+.B ioctl
+to set the network mask for the SLIP interface failed.
+.TP
+.BI "ioctl (SIOCSIFDSTADDR): " reason
+A
+.SB SIOCSIFDSTADDR
+.B ioctl
+to set the destination address for the SLIP interface failed.
+.TP
+.BI "ioctl (SIOCSIFADDR): " reason
+A
+.SB SIOCSIFADDR
+.B ioctl
+to set the source address for the SLIP interface failed.
+.TP
+.BI "UID (" uid ") is unknown"
+An attempt was made to run
+.B sliplogin
+with an effective user
+.SM ID
+not in the password file.
+.TP
+.BI "/etc/hosts.slip: " reason
+The
+.B /etc/hosts.slip
+file could not be opened.
+.TP
+.BI "SLIP access denied for " user
+Access to SLIP logins was denied for the user
+.IR user .
+.TP
+.IB addr ": bad value"
+The address specification
+.I addr
+could not be converted to an Internet address.
+.SS Notice Severity
+.TP
+.BI "attaching slip" unit ": local " local " remote " remote " mask" mask
+SLIP unit
+.I unit
+was successfully attached, with a source address of
+.IR local ,
+a destination address of
+.IR remote ,
+and a netmask of
+.IR mask .
+.SH EXAMPLES
+.ta 8
+	sliplogin ip_utai < /dev/ttyb &
+.sp
+	sliplogin us-sl them-sl 255.255.255.0 < /dev/ttyb &
+.sp
+	sliplogin 192.12.174.1 192.12.174.2 < /dev/ttyb &
+.SH "SEE ALSO"
+.BR slip (4M),
+.BR syslogd (8)
