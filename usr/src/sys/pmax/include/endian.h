@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)endian.h	7.9 (Berkeley) %G%
+ *	@(#)endian.h	7.10 (Berkeley) %G%
  */
+
+#ifndef _ENDIAN_H_
+#define	_ENDIAN_H_
 
 /*
  * Define _NOQUAD if the compiler does NOT support 64-bit integers.
@@ -60,3 +63,4 @@ __END_DECLS
 #define	HTONS(x)	(x) = htons((u_short)x)
 #endif
 #endif /* ! _POSIX_SOURCE */
+#endif /* !_ENDIAN_H_ */
