@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 
 PROG=	ex3.7preserve
-CFLAGS+=-I${.CURDIR}/..
+CFLAGS+=-I${.CURDIR}/.. -DVMUNIX
 BINOWN=	root
 BINDIR=	/usr/libexec
 BINMODE=4555
