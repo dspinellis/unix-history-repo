@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_sysctl.c	7.5 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -42,12 +42,11 @@ getkerninfo()
 	} *uap = (struct a *)u.u_ap;
 
 	int	bufsize,	/* max size of users buffer */
-		copysize, 	/* size copied */
 		needed,	locked, (*server)(), error = 0;
 
 	if (error = copyin((caddr_t)uap->size,
 				(caddr_t)&bufsize, sizeof (bufsize)))
-		goto bad;
+		goto done;
 
 	switch (ki_type(uap->op)) {
 
@@ -61,7 +60,11 @@ getkerninfo()
 
 	default:
 		error = EINVAL;
-		goto bad;
+		goto done;
+	}
+	if (uap->where == NULL || uap->size == NULL) {
+		error = (*server)(uap->op, NULL, NULL, uap->arg, &needed);
+		goto done;
 	}
 	while (kinfo_lock.kl_lock) {
 		kinfo_lock.kl_want++;
@@ -71,31 +74,25 @@ getkerninfo()
 	}
 	kinfo_lock.kl_lock++;
 
-	if (error = (*server)(uap->op, NULL, NULL, uap->arg, &needed))
-		goto release;
-	if (uap->where == NULL || uap->size == NULL)
-		goto release;  /* only want estimate of bufsize */
-	locked = copysize = MIN(needed, bufsize);
-	if (!useracc(uap->where, copysize, B_WRITE))
+	if (!useracc(uap->where, bufsize, B_WRITE))
 		snderr(EFAULT);
 	/*
 	 * lock down target pages - NEED DEADLOCK AVOIDANCE
 	 */
-	if (copysize > ((int)ptob(freemem) - (20 * 1024))) 	/* XXX */
+	if (bufsize > ((int)ptob(freemem) - (20 * 1024))) 	/* XXX */
 		snderr(ENOMEM);
-	vslock(uap->where, copysize);
-	error = (*server)(uap->op, uap->where, &copysize, uap->arg, &needed);
+	vslock(uap->where, bufsize);
+	locked = bufsize;
+	error = (*server)(uap->op, uap->where, &bufsize, uap->arg, &needed);
 	vsunlock(uap->where, locked, B_WRITE);
-	if (error)
-		goto release;
-	error = copyout((caddr_t)&copysize,
-				(caddr_t)uap->size, sizeof (copysize));
-
+	if (error == 0)
+		error = copyout((caddr_t)&bufsize,
+				(caddr_t)uap->size, sizeof (bufsize));
 release:
 	kinfo_lock.kl_lock--;
 	if (kinfo_lock.kl_want)
 		wakeup(&kinfo_lock);
-bad:
+done:
 	if (error)
 		u.u_error = error;
 	else
@@ -106,9 +103,6 @@ bad:
  * try over estimating by 5 procs 
  */
 #define KINFO_PROCSLOP	(5 * sizeof (struct kinfo_proc))
-
-int kinfo_proc_userfailed;
-int kinfo_proc_wefailed;
 
 kinfo_doproc(op, where, acopysize, arg, aneeded)
 	char *where;
@@ -172,6 +166,9 @@ again:
 			    sizeof (struct proc)))
 				return (error);
 			dp += sizeof (struct proc);
+			/*
+			 *	XXX NEED ALLIGNMENT
+			 */
 			eproc.e_paddr = p;
 			eproc.e_sess = p->p_pgrp->pg_session;
 			eproc.e_pgid = p->p_pgrp->pg_id;
