@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)diffdir.c	4.8 (Berkeley) %G%";
+static	char *sccsid = "@(#)diffdir.c	4.9 (Berkeley) %G%";
 
 #include "diff.h"
 /*
@@ -354,8 +354,10 @@ calldiff(wantpr)
 		perror(diff);
 		done();
 	}
-	close(pv[0]);
-	close(pv[1]);
+	if (wantpr) {
+		close(pv[0]);
+		close(pv[1]);
+	}
 	while (wait(&status) != pid)
 		continue;
 	while (wait(&status2) != -1)
