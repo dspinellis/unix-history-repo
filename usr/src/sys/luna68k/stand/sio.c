@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sio.c	7.1 (Berkeley) %G%
+ *	@(#)sio.c	7.2 (Berkeley) %G%
  */
 
 /* sio.c   NOV-25-1991 */
@@ -57,12 +57,8 @@ siointr(unit)
 		if (unit == 1) {
 			register int c = kbd_decode(sio_addr[unit]->sio_data);
 
-			if ((c & KC_TYPE) == 0) {
-				if (isprint(c))
-					PUSH_RBUF(unit, c);
-				else
-					PUSH_RBUF(unit, ' ');
-			}
+			if ((c & KC_TYPE) == KC_CODE)
+				PUSH_RBUF(unit, c);
 		} else {
 			PUSH_RBUF(unit, sio_addr[unit]->sio_data);
 		}
