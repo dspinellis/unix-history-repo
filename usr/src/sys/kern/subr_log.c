@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_log.c	6.5 (Berkeley) %G%
+ *	@(#)subr_log.c	6.6 (Berkeley) %G%
  */
 
 /*
@@ -44,6 +44,7 @@ xprintf(fmt, x1)
 }
 #endif
 
+/*ARGSUSED*/
 logopen(dev)
 	dev_t dev;
 {
@@ -75,6 +76,7 @@ logopen(dev)
 	return (0);
 }
 
+/*ARGSUSED*/
 logclose(dev, flag)
 	dev_t dev;
 {
@@ -87,13 +89,13 @@ logclose(dev, flag)
 #endif
 }
 
+/*ARGSUSED*/
 logread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
 	register long l;
 	register u_int c;
-	register struct iovec *iov;
 	register int s;
 	int error = 0;
 
@@ -135,6 +137,7 @@ logread(dev, uio)
 	return (error);
 }
 
+/*ARGSUSED*/
 logselect(dev, rw)
 	dev_t dev;
 	int rw;
