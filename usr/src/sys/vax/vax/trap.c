@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trap.c	7.3 (Berkeley) %G%
+ *	@(#)trap.c	7.4 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -12,7 +12,6 @@
 
 #include "param.h"
 #include "systm.h"
-#include "dir.h"
 #include "user.h"
 #include "assym.s"
 #include "proc.h"
@@ -253,7 +252,7 @@ syscall(sp, type, code, pc, psl)
 			putchar('\n', 0);
 		}
 #endif
-		(*(callp->sy_call))();
+		(*(callp->sy_call))(&u);
 	}
 	if (u.u_eosys == NORMALRETURN) {
 		if (u.u_error) {
