@@ -1,35 +1,25 @@
 #ifndef lint
-static char sccsid[] = "@(#)start.c	4.5	(Berkeley)	%G%";
+static char sccsid[] = "@(#)start.c	4.6	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
 #include "lrnref.h"
 #include <sys/types.h>
-#ifndef DIR
-#include <sys/dir.h>
-#endif
+#include <dirent.h>
 
 start(lesson)
 char *lesson;
 {
-	struct direct dbuf;
-	register struct direct *ep = &dbuf;	/* directory entry pointer */
+	struct dirent dbuf;
+	register struct dirent *ep = &dbuf;	/* directory entry pointer */
 	int c, n;
 	char where [100];
-
-#ifdef BSD4_2
 	DIR *dp;
+
 #define OPENDIR(s)	((dp = opendir(s)) != NULL)
 #define DIRLOOP(s)	for (s = readdir(dp); s != NULL; s = readdir(dp))
 #define EPSTRLEN	ep->d_namlen
 #define CLOSEDIR	closedir(dp)
-#else
-	int f;
-#define OPENDIR(s)	((f = open(s, 0)) >= 0)
-#define DIRLOOP(s)	while (read(f, s, sizeof *s) == sizeof *s)
-#define EPSTRLEN	strlen(ep->d_name)
-#define CLOSEDIR	close(f)
-#endif
 
 	if (!OPENDIR(".")) {		/* clean up play directory */
 		perror("Start:  play directory");
