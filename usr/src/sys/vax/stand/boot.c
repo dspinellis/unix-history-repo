@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)boot.c	7.3 (Berkeley) %G%
+ *	@(#)boot.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -69,11 +69,13 @@ main()
 }
 
 /*ARGSUSED*/
-copyunix(howto, devtype, io)
-	register howto, devtype, io;	/* howto=r11, devtype=r10 */
+copyunix(howto, devtype, aio)
+	register howto, devtype;	/* howto=r11, devtype=r10 */
+	int aio;
 {
+	register int esym;		/* must be r9 */
 	struct exec x;
-	register int i;
+	register int io = aio, i;
 	char *addr;
 
 	i = read(io, (char *)&x, sizeof x);
