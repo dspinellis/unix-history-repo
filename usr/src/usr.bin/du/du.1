@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)du.1	6.10 (Berkeley) %G%
+.\"     @(#)du.1	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DU 1
@@ -44,10 +44,10 @@ Generate only the grand total.
 Don't traverse any mount points.
 .El
 .Pp
-Symbolic links are not followed unless they are specified as a command
-line
+If
 .Ar file
-argument.
+is a symbolic link referencing an existing file, the file referenced
+by the link is reported on instead of the link itself.
 .Pp
 Files having multiple hard links are counted (and displayed) a single
 time per
