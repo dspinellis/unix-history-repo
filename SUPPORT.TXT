@@ -91,5 +91,16 @@ Public Domain Copies:
 	From about 100DM per Cartridge for labour, media, postage.
 
 
+Sean Vickery
+2/449 Milton Road
+Auchenflower  Qld   4066
+Australia
+Telephone:  +61 (0)7 870 5241
+    Email:  seanv@cs.uq.edu.au
 
-$Id: SUPPORT.TXT,v 1.2 1994/04/21 19:05:04 rgrimes Exp $
+Sean offers support in most FreeBSD matters, including installation
+and configuration.  His rates are reasonable.  As well as on-site
+help, support is available over the phone and the net.
+
+
+$Id: SUPPORT.TXT,v 1.3 1994/06/02 15:10:29 jkh Exp $
