@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef sunos
@@ -27,7 +27,6 @@ static char sccsid[] = "@(#)main.c	5.18 (Berkeley) %G%";
 #include <ufs/inode.h>
 #else
 #include <sys/param.h>
-#include <ufs/dir.h>
 #include <ufs/dinode.h>
 #endif
 #include <ufs/fs.h>
