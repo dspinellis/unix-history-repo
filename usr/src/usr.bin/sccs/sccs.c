@@ -5,7 +5,7 @@
 # include <sysexits.h>
 # include <whoami.h>
 
-static char SccsId[] = "@(#)sccs.c	1.11 %G%";
+static char SccsId[] = "@(#)sccs.c	1.12 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -65,6 +65,7 @@ main(argc, argv)
 	char **argv;
 {
 	register char *p;
+	extern struct sccsprog *lookup();
 
 	/*
 	**  Detect and decode flags intended for this program.
@@ -77,28 +78,31 @@ main(argc, argv)
 	}
 	argv[argc] = NULL;
 
-	while ((p = *++argv) != NULL)
+	if (lookup(argv[0]) == NULL)
 	{
-		if (*p != '-')
-			break;
-		switch (*++p)
+		while ((p = *++argv) != NULL)
 		{
-		  case 'r':		/* run as real user */
-			setuid(getuid());
-			RealUser++;
-			break;
+			if (*p != '-')
+				break;
+			switch (*++p)
+			{
+			  case 'r':		/* run as real user */
+				setuid(getuid());
+				RealUser++;
+				break;
 
-		  case 'p':		/* path of sccs files */
-			SccsPath = ++p;
-			break;
+			  case 'p':		/* path of sccs files */
+				SccsPath = ++p;
+				break;
 
-		  default:
-			fprintf(stderr, "Sccs: unknown option -%s\n", p);
-			break;
+			  default:
+				fprintf(stderr, "Sccs: unknown option -%s\n", p);
+				break;
+			}
 		}
+		if (SccsPath[0] == '\0')
+			SccsPath = ".";
 	}
-	if (SccsPath[0] == '\0')
-		SccsPath = ".";
 
 	command(argv, FALSE);
 	exit(EX_OK);
@@ -112,6 +116,7 @@ command(argv, forkflag)
 	register char *p;
 	register char *q;
 	char buf[40];
+	extern struct sccsprog *lookup();
 
 	/*
 	**  Look up command.
@@ -119,12 +124,8 @@ command(argv, forkflag)
 	*/
 
 	p = *argv;
-	for (cmd = SccsProg; cmd->sccsname != NULL; cmd++)
-	{
-		if (strcmp(cmd->sccsname, p) == 0)
-			break;
-	}
-	if (cmd->sccsname == NULL)
+	cmd = lookup(p);
+	if (cmd == NULL)
 	{
 		fprintf(stderr, "Sccs: Unknown command \"%s\"\n", p);
 		exit(EX_USAGE);
@@ -172,6 +173,33 @@ command(argv, forkflag)
 		fprintf(stderr, "Sccs internal error: oper %d\n", cmd->sccsoper);
 		exit(EX_SOFTWARE);
 	}
+}
+/*
+**  LOOKUP -- look up an SCCS command name.
+**
+**	Parameters:
+**		name -- the name of the command to look up.
+**
+**	Returns:
+**		ptr to command descriptor for this command.
+**		NULL if no such entry.
+**
+**	Side Effects:
+**		none.
+*/
+
+struct sccsprog *
+lookup(name)
+	char *name;
+{
+	register struct sccsprog *cmd;
+
+	for (cmd = SccsProg; cmd->sccsname != NULL; cmd++)
+	{
+		if (strcmp(cmd->sccsname, name) == 0)
+			return (cmd);
+	}
+	return (NULL);
 }
 
 
