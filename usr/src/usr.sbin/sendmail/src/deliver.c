@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.46 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.47 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1862,7 +1862,7 @@ logdelivery(m, mci, stat, ctladdr, e)
 	{
 		register char *q = strchr(p + l, ',');
 
-		if (*q == NULL)
+		if (q == NULL)
 			break;
 		syslog(LOG_INFO, "%s: to=%.*s [more]%s",
 			e->e_id, ++q - p, p, buf);
