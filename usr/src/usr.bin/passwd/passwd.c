@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -51,8 +51,12 @@ main(argc, argv)
 	} else
 		uname = argv[1];
 	pwd = getpwnam(uname);
+	if (pwd == NULL) {
+		printf("%s: unknown user\n", uname);
+		exit(1);
+	}
 	u = getuid();
-	if (pwd == NULL || (u != 0 && u != pwd->pw_uid)) {
+	if (u != 0 && u != pwd->pw_uid) {
 		printf("Permission denied.\n");
 		exit(1);
 	}
