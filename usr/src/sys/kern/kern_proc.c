@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.54	82/12/21	*/
+/*	kern_proc.c	4.55	82/12/28	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -674,6 +674,22 @@ panic("exit: m_getclr");
 	swtch();
 }
 
+wait()
+{
+	struct rusage ru, *rup;
+
+	if ((u.u_ar0[PS] & PSL_ALLCC) != PSL_ALLCC) {
+		u.u_error = wait1(0, (struct rusage *)0);
+		return;
+	}
+	rup = (struct rusage *)u.u_ar0[R1];
+	u.u_error = wait1(u.u_ar0[R0], &ru);
+	if (u.u_error)
+		return;
+	(void) copyout((caddr_t)&ru, (caddr_t)rup, sizeof (struct rusage));
+}
+
+#ifndef NOCOMPAT
 #include "../h/vtimes.h"
 
 owait()
@@ -682,16 +698,17 @@ owait()
 	struct vtimes *vtp, avt;
 
 	if ((u.u_ar0[PS] & PSL_ALLCC) != PSL_ALLCC) {
-		wait1(0, (struct rusage *)0);
+		u.u_error = wait1(0, (struct rusage *)0);
 		return;
 	}
 	vtp = (struct vtimes *)u.u_ar0[R1];
-	wait1(u.u_ar0[R0], &ru);
+	u.u_error = wait1(u.u_ar0[R0], &ru);
 	if (u.u_error)
 		return;
 	getvtimes(&ru, &avt);
 	(void) copyout((caddr_t)&avt, (caddr_t)vtp, sizeof (struct vtimes));
 }
+#endif
 
 /*
  * Wait system call.
@@ -741,27 +758,26 @@ loop:
 			p->p_flag = 0;
 			p->p_wchan = 0;
 			p->p_cursig = 0;
-			return;
+			return (0);
 		}
 		if (p->p_stat == SSTOP && (p->p_flag&SWTED)==0 &&
 		    (p->p_flag&STRC || options&WUNTRACED)) {
 			p->p_flag |= SWTED;
 			u.u_r.r_val1 = p->p_pid;
 			u.u_r.r_val2 = (p->p_cursig<<8) | WSTOPPED;
-			return;
+			return (0);
 		}
 	}
-	if (f==0) {
-		u.u_error = ECHILD;
-		return;
+	if (f == 0) {
+		return (ECHILD);
 	}
 	if (options&WNOHANG) {
 		u.u_r.r_val1 = 0;
-		return;
+		return (0);
 	}
 	if ((u.u_procp->p_flag&SNUSIG) && setjmp(&u.u_qsave)) {
 		u.u_eosys = RESTARTSYS;
-		return;
+		return (0);
 	}
 	sleep((caddr_t)u.u_procp, PWAIT);
 	goto loop;
