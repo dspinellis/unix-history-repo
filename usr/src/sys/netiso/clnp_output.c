@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_output.c,v 5.0 89/02/08 12:00:15 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_output.c,v $ */
-/*	@(#)clnp_output.c	7.5 (Berkeley) %G% */
+/*	@(#)clnp_output.c	7.6 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_output.c,v 5.0 89/02/08 12:00:15 hagens Exp $";
@@ -186,6 +186,7 @@ int					flags;		/* flags */
 		(isop->isop_options == clcp->clc_options) && 	/* same options */
 		(iso_addrmatch1(dst, &clcp->clc_dst)) &&		/* dst still same */
 		(isop->isop_route.ro_rt != NULL) &&				/* route exists */
+		(isop->isop_route.ro_rt == clcp->clc_rt) &&		/* and is cached */
 		(isop->isop_route.ro_rt->rt_flags & RTF_UP) &&	/* route still up */
 		(flags == clcp->clc_flags) &&					/* same flags */
 		(clcp->clc_hdr != NULL)) {						/* hdr mbuf exists */
@@ -364,6 +365,7 @@ int					flags;		/* flags */
 			ENDDEBUG
 			goto bad;
 		}
+		clcp->clc_rt = isop->isop_route.ro_rt;	/* XXX */
 
 		IFDEBUG(D_OUTPUT)
 			printf("clnp_output: packet routed to %s\n", 
@@ -491,7 +493,7 @@ int					flags;		/* flags */
 		 * Too large for interface; fragment if possible.
 		 */
 		error = clnp_fragment(clcp->clc_ifa->ia_ifp, m, clcp->clc_firsthop,
-									total_len, clcp->clc_segoff, flags);
+							total_len, clcp->clc_segoff, flags, clcp->clc_rt);
 		goto done;
 	}
 bad:
