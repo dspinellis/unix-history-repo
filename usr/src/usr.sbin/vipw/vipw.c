@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vipw.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)vipw.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -163,7 +163,7 @@ check(tfp)
 	register int lcnt, root;
 	register char *p, *sh;
 	long atol();
-	char buf[1024], *getusershell();
+	char buf[1024], *bp, *getusershell();
 
 	for (lcnt = 1; fgets(buf, sizeof(buf), tfp); ++lcnt) {
 		/* skip lines that are too big */
@@ -172,11 +172,12 @@ check(tfp)
 			goto bad;
 		}
 		*p = '\0';
-		if (!(p = strsep(buf, ":")))		/* login */
+		bp = buf;
+		if (!(p = strsep(&bp, ":")))		/* login */
 			goto general;
 		root = !strcmp(p, "root");
-		(void)strsep((char *)NULL, ":");	/* passwd */
-		if (!(p = strsep((char *)NULL, ":")))	/* uid */
+		(void)strsep(&bp, ":");	/* passwd */
+		if (!(p = strsep(&bp, ":")))	/* uid */
 			goto general;
 		id = atol(p);
 		if (root && id) {
@@ -188,7 +189,7 @@ check(tfp)
 			    p, USHRT_MAX);
 			goto bad;
 		}
-		if (!(p = strsep((char *)NULL, ":")))	/* gid */
+		if (!(p = strsep(&bp, ":")))	/* gid */
 			goto general;
 		id = atol(p);
 		if (id > USHRT_MAX) {
@@ -196,12 +197,12 @@ check(tfp)
 			    p, USHRT_MAX);
 			goto bad;
 		}
-		(void)strsep((char *)NULL, ":");	/* class */
-		(void)strsep((char *)NULL, ":");	/* change */
-		(void)strsep((char *)NULL, ":");	/* expire */
-		(void)strsep((char *)NULL, ":");	/* gecos */
-		(void)strsep((char *)NULL, ":");	/* directory */
-		if (!(p = strsep((char *)NULL, ":")))	/* shell */
+		(void)strsep(&bp, ":");	/* class */
+		(void)strsep(&bp, ":");	/* change */
+		(void)strsep(&bp, ":");	/* expire */
+		(void)strsep(&bp, ":");	/* gecos */
+		(void)strsep(&bp, ":");	/* directory */
+		if (!(p = strsep(&bp, ":")))	/* shell */
 			goto general;
 		if (root && *p)				/* empty == /bin/sh */
 			for (setusershell();;)
@@ -212,7 +213,7 @@ check(tfp)
 				}
 				else if (!strcmp(p, sh))
 					break;
-		if (p = strsep((char *)NULL, ":")) {	/* too many */
+		if (p = strsep(&bp, ":")) {	/* too many */
 (void)fprintf(stderr, "got {%s}\n", p);
 general:		(void)fprintf(stderr, "vipw: corrupted entry");
 bad:			(void)fprintf(stderr, "; line #%d.\n", lcnt);
