@@ -1,4 +1,4 @@
-/*	vft2ch.c	(Berkeley)	1.2	85/04/29
+/*	vft2ch.c	(Berkeley)	1.3	85/07/03
  *
  * Font translation for vfont-style fonts to character format.
  *
@@ -88,7 +88,11 @@ char **argv;
 			read(FID, charbits, disptable[j].nbytes);
 			height = up + down;
 			width = left + right;
+#ifdef sun
+			bwidth = ((width + 15) / 16) * 2;
+#else
 			bwidth = (width + 7) / 8;
+#endif
 			for (k = up; k < 0; k++) {
 			    for (l = left; l < 0; l++)
 				pbit(l, k, l==left && k==up);
