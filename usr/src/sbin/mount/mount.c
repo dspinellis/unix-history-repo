@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "pathnames.h"
@@ -214,7 +214,6 @@ mountfs(spec, name, type, options, mntopts)
 		getstdopts(options, &flags);
 	if (mntopts)
 		getstdopts(mntopts, &flags);
-	argc = 1;
 	switch (mnttype) {
 	case MOUNT_UFS:
 		if (options)
@@ -238,23 +237,19 @@ mountfs(spec, name, type, options, mntopts)
 		return (1);
 #endif /* NFS */
 
-#ifdef MFS
 	case MOUNT_MFS:
-		mntname = "memfs";
-		if (options)
-			argc += getmfsopts(options, &argv[argc]);
-		if (mntopts)
-			argc += getmfsopts(mntopts, &argv[argc]);
-		/* fall through to */
-#endif /* MFS */
-
 	default:
 		argv[0] = mntname;
+		argc = 1;
 		if (flags) {
 			argv[argc++] = "-F";
 			sprintf(flagval, "%d", flags);
 			argv[argc++] = flagval;
 		}
+		if (options)
+			argc += getexecopts(options, &argv[argc]);
+		if (mntopts)
+			argc += getexecopts(mntopts, &argv[argc]);
 		argv[argc++] = spec;
 		argv[argc++] = name;
 		sprintf(execname, "%s/%s", _PATH_EXECDIR, mntname);
@@ -410,8 +405,7 @@ getufsopts(options, flagp)
 	return;
 }
 
-#ifdef MFS
-getmfsopts(options, argv)
+getexecopts(options, argv)
 	char *options;
 	char **argv;
 {
@@ -430,7 +424,6 @@ getmfsopts(options, argv)
 	}
 	return (argc);
 }
-#endif /* MFS */
 
 #ifdef NFS
 /*
