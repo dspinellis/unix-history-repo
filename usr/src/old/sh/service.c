@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)service.c	4.5 %G%";
+static char sccsid[] = "@(#)service.c	4.6 %G%";
 #endif
 
 #
@@ -12,6 +12,7 @@ static char sccsid[] = "@(#)service.c	4.5 %G%";
  */
 
 #include	"defs.h"
+#include	"errno.h"
 
 
 PROC VOID	gsort();
@@ -21,15 +22,6 @@ PROC VOID	gsort();
 INT		errno;
 STRING		sysmsg[];
 INT		num_sysmsg;
-
-/* fault handling */
-#define ENOMEM	12
-#define ENOEXEC 8
-#define E2BIG	7
-#define ENOENT	2
-#define ETXTBSY 26
-
-
 
 /* service routines for `execute' */
 
