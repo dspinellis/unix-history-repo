@@ -1,4 +1,4 @@
-	@(#)syscalls.master	7.2 (Berkeley) %G%
+	@(#)syscalls.master	7.3 (Berkeley) %G%
 ; System call name/number master file (or rather, slave, from SunOS).
 ; Processed to created sun_sysent.c, sun_syscalls.c and sun_syscall.h.
 
@@ -145,8 +145,8 @@
 123	STD	3 fchown
 124	STD	2 fchmod
 125	STD	6 orecvfrom
-126	STD	2 sun_setreuid
-127	STD	2 sun_setregid
+126	STD	2 osetreuid
+127	STD	2 osetregid
 128	STD	2 rename
 129	STD	2 truncate
 130	STD	2 ftruncate
