@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)yypanic.c 1.2 %G%";
+static	char sccsid[] = "@(#)yypanic.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -42,6 +42,18 @@ yyPerror(cp, kind)
 					yyOshifts = 0;
 				continue;
 			case YEOF:
+				if (kind == PDECL) {
+					/*
+					 * we have paniced to end of file
+					 * during declarations. Separately
+					 * compiled segments can syntactically
+					 * exit without any error message, so
+					 * we force one here.
+					 */
+					yerror(cp);
+					continuation();
+					yyunexeof();
+				}
 				goto quiet;
 			case ';':
 				if (kind == PPROG)
