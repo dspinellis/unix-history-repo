@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getrlimit.2	6.9 (Berkeley) %G%
+.\"     @(#)getrlimit.2	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETRLIMIT 2
@@ -13,6 +13,7 @@
 .Nm setrlimit
 .Nd control maximum system resource consumption
 .Sh SYNOPSIS
+.Fd #include <sys/types.h>
 .Fd #include <sys/time.h>
 .Fd #include <sys/resource.h>
 .Ft int
