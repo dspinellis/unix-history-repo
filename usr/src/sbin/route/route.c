@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -170,6 +170,7 @@ routename(in)
 	struct hostent *hp;
 	struct netent *np;
 	int lna, net;
+	static int bynumber;
 
 	net = inet_netof(in);
 	lna = inet_lnaof(in);
@@ -180,10 +181,12 @@ routename(in)
 		if (np)
 			cp = np->n_name;
 	}
-	if (cp == 0) {
+	if (cp == 0 && bynumber == 0) {
 		hp = gethostbyaddr(&in, sizeof (struct in_addr), AF_INET);
 		if (hp)
 			cp = hp->h_name;
+		else if (h_errno == TRY_AGAIN)
+			bynumber = 1;
 	}
 	if (cp)
 		strcpy(line, cp);
@@ -223,21 +226,13 @@ newroute(argc, argv)
 		}
 	}
 	sin = (struct sockaddr_in *)&route.rt_dst;
-	ishost = getaddr(argv[1], &route.rt_dst, &hp);
-	if (hp)
-		dest = hp->h_name;
-	else
-		dest = routename(sin->sin_addr);
+	ishost = getaddr(argv[1], &route.rt_dst, &hp, &dest);
 	if (forcehost)
 		ishost = 1;
 	if (forcenet)
 		ishost = 0;
 	sin = (struct sockaddr_in *)&route.rt_gateway;
-	(void) getaddr(argv[2], &route.rt_gateway, &hp);
-	if (hp)
-		gateway = hp->h_name;
-	else
-		gateway = routename(sin->sin_addr);
+	(void) getaddr(argv[2], &route.rt_gateway, &hp, &gateway);
 	route.rt_flags = RTF_UP;
 	if (ishost)
 		route.rt_flags |= RTF_HOST;
@@ -298,10 +293,11 @@ error(cmd)
  * Interpret an argument as a network address of some kind,
  * returning 1 if a host address, 0 if a network address.
  */
-getaddr(s, sin, hpp)
+getaddr(s, sin, hpp, name)
 	char *s;
 	struct sockaddr_in *sin;
 	struct hostent **hpp;
+	char **name;
 {
 	struct hostent *hp;
 	struct netent *np;
@@ -317,17 +313,20 @@ getaddr(s, sin, hpp)
 	val = inet_addr(s);
 	if (val != -1) {
 		sin->sin_addr.s_addr = val;
+		*name = s;
 		return(inet_lnaof(sin->sin_addr) != INADDR_ANY);
 	}
 	val = inet_network(s);
 	if (val != -1) {
 		sin->sin_addr = inet_makeaddr(val, INADDR_ANY);
+		*name = s;
 		return(0);
 	}
 	np = getnetbyname(s);
 	if (np) {
 		sin->sin_family = np->n_addrtype;
 		sin->sin_addr = inet_makeaddr(np->n_net, INADDR_ANY);
+		*name = np->n_name;
 		return(0);
 	}
 	hp = gethostbyname(s);
@@ -335,6 +334,7 @@ getaddr(s, sin, hpp)
 		*hpp = hp;
 		sin->sin_family = hp->h_addrtype;
 		bcopy(hp->h_addr, &sin->sin_addr, hp->h_length);
+		*name = hp->h_name;
 		return(1);
 	}
 	fprintf(stderr, "%s: bad value\n", s);
