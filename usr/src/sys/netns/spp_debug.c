@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *      @(#)spp_debug.c	7.3 (Berkeley) %G%
+ *      @(#)spp_debug.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -23,7 +23,6 @@
 #include "../net/route.h"
 #include "../net/if.h"
 #include "../netinet/tcp_fsm.h"
-#include "../netinet/tcp_timer.h"
 
 #include "ns.h"
 #include "ns_pcb.h"
@@ -31,6 +30,8 @@
 #include "idp_var.h"
 #include "sp.h"
 #include "spidp.h"
+#define SPPTIMERS
+#include "spp_timer.h"
 #include "spp_var.h"
 #define	SANAMES
 #include "spp_debug.h"
@@ -54,7 +55,7 @@ spp_trace(act, ostate, sp, si, req)
 	extern char *prurequests[];
 	extern char *sanames[];
 	extern char *tcpstates[];
-	extern char *tcptimers[];
+	extern char *spptimers[];
 
 	if (spp_debx == SPP_NDEBUG)
 		spp_debx = 0;
@@ -129,7 +130,7 @@ spp_trace(act, ostate, sp, si, req)
 	case SA_USER:
 		printf("%s", prurequests[req&0xff]);
 		if ((req & 0xff) == PRU_SLOWTIMO)
-			printf("<%s>", tcptimers[req>>8]);
+			printf("<%s>", spptimers[req>>8]);
 		break;
 	}
 	if (sp)
