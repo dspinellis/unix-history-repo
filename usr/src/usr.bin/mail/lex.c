@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	2.6 %G%";
+static char *SccsId = "@(#)lex.c	2.7 %G%";
 
 char	*prompt = "& ";
 
@@ -551,11 +551,11 @@ announce(pr)
  * Announce information about the file we are editing.
  * Return a likely place to set dot.
  */
-
 newfileinfo()
 {
 	register struct message *mp;
 	register int u, n, mdot;
+	char fname[BUFSIZ], zname[BUFSIZ], *ename;
 
 	for (mp = &message[0]; mp < &message[msgCount]; mp++)
 		if (mp->m_flag & MNEW)
@@ -574,7 +574,15 @@ newfileinfo()
 		if ((mp->m_flag & MREAD) == 0)
 			u++;
 	}
-	printf("\"%s\": ", mailname);
+	ename = mailname;
+	if (getfold(fname) >= 0) {
+		strcat(fname, "/");
+		if (strncmp(fname, mailname, strlen(fname)) == 0) {
+			sprintf(zname, "+%s", mailname + strlen(fname));
+			ename = zname;
+		}
+	}
+	printf("\"%s\": ", ename);
 	if (msgCount == 1)
 		printf("1 message");
 	else
