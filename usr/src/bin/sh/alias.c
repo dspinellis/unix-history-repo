@@ -198,25 +198,6 @@ unaliascmd(argc, argv)
 	return (i);
 }
 
-/*
- * XXX -- for playing with the builtin command routines -- REMOVE
- */
-foocmd(argc, argv)  
-	char **argv; 
-	{
-	char **ap;
-
-	out1fmt("argc: %d argv: %x argptr: %x\n", argc, argv, argptr);
-	out1fmt("ARGV:\n");
-	ap = argv;
-	while (*ap)
-		out1fmt("%s\n", *ap++);
-	out1fmt("ARGPTR:\n");
-	ap = argptr;
-	while (*ap)
-		out1fmt("%s\n", *ap++);
-}
-
 STATIC struct alias **
 hashalias(p)
 	register char *p;
