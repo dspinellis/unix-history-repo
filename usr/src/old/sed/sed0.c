@@ -1,4 +1,4 @@
-/*	sed0.c	4.2	85/06/19	*/
+/*	sed0.c	4.3	87/09/16	*/
 
 #include <stdio.h>
 #include "sed.h"
@@ -483,7 +483,7 @@ jtcommon:
 						fprintf(stderr, CGMES, linebuf);
 						exit(2);
 					}
-					if(nfiles >= 10) {
+					if(nfiles > 10) {
 						fprintf(stderr, "Too many files in w commands\n");
 						exit(2);
 					}
@@ -508,7 +508,7 @@ jtcommon:
 					fprintf(stderr, CGMES, linebuf);
 					exit(2);
 				}
-				if(nfiles >= 10){
+				if(nfiles > 10){
 					fprintf(stderr, "Too many files in w commands\n");
 					exit(2);
 				}
