@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.h	7.5 (Berkeley) %G%
+ *	@(#)pmap.h	7.6 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -60,26 +60,28 @@ typedef struct pmap_statistics	*pmap_statistics_t;
 
 #ifdef KERNEL
 void		pmap_bootstrap();
-void		pmap_init();
-void		pmap_pinit __P((struct pmap *pmap));
-void		pmap_release __P((struct pmap *pmap));
-vm_offset_t	pmap_map();
-pmap_t		pmap_create();
-void		pmap_destroy();
-void		pmap_reference();
-void		pmap_remove();
-void		pmap_page_protect();
-void		pmap_protect();
-void		pmap_enter();
-vm_offset_t	pmap_extract();
-void		pmap_update();
-void		pmap_collect();
-void		pmap_activate();
-void		pmap_deactivate();
-void		pmap_copy();
-void		pmap_statistics();
-void		pmap_clear_reference();
-boolean_t	pmap_is_referenced();
+void		pmap_init __P((vm_offset_t, vm_offset_t));
+void		pmap_pinit __P((pmap_t));
+void		pmap_release __P((pmap_t));
+vm_offset_t	pmap_map __P((vm_offset_t, vm_offset_t, vm_offset_t, int));
+pmap_t		pmap_create __P((vm_size_t));
+void		pmap_destroy __P((pmap_t));
+void		pmap_reference __P((pmap_t));
+void		pmap_remove __P((pmap_t, vm_offset_t, vm_offset_t));
+void		pmap_page_protect __P((vm_offset_t, vm_prot_t));
+void		pmap_protect __P((pmap_t, vm_offset_t, vm_offset_t, vm_prot_t));
+void		pmap_enter __P((pmap_t, vm_offset_t, vm_prot_t, boolean_t));
+void		pmap_change_wiring __P((pmap_t, vm_offset_t, boolean_t));
+vm_offset_t	pmap_extract __P((pmap_t, vm_offset_t));
+void		pmap_update __P((void));
+void		pmap_collect __P((pmap_t));
+void		pmap_copy __P((pmap_t, pmap_t, vm_offset_t, vm_size_t, vm_offset_t));
+void		pmap_zero_page __P((vm_offset_t));
+void		pmap_copy_page __P((vm_offset_t, vm_offset_t));
+void		pmap_clear_reference __P((vm_offset_t pa));
+void		pmap_clear_modify __P((vm_offset_t pa));
+boolean_t	pmap_is_referenced __P((vm_offset_t pa));
+boolean_t	pmap_is_modified __P((vm_offset_t pa));
 #ifndef pmap_kernel
 pmap_t		pmap_kernel();
 #endif
