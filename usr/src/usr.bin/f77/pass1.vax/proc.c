@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)proc.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)proc.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -16,6 +16,9 @@ static char sccsid[] = "@(#)proc.c	5.6 (Berkeley) %G%";
  * University of Utah CS Dept modification history:
  *
  * $Log:	proc.c,v $
+ * Revision 5.9  86/01/28  22:30:28  donn
+ * Let functions of type character have adjustable length.
+ * 
  * Revision 5.8  86/01/10  19:02:19  donn
  * More dbx hacking -- filter out incomplete declarations (with bogus types).
  * 
@@ -1324,8 +1327,12 @@ else if(v->vtype == TYUNKNOWN)
 		{
 		if(length >= 0)
 			v->vleng = ICON(length);
-		else if(v->vstg != STGARG)
-			dclerr("adjustable length character variable that is not a dummy argument", v);
+		else if(!(v->vstg == STGARG || v->vclass == CLENTRY ||
+			  (v->vclass == CLPROC && v->vprocclass == PTHISPROC)))
+			{
+			dclerr("illegal adjustable length character variable", v);
+			v->vleng = ICON(0);
+			}
 		}
 	}
 else if(v->vtype!=type || (type==TYCHAR && v->vleng->constblock.const.ci!=length) )
