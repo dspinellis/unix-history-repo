@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.64 (Berkeley) %G%
+ *	@(#)sendmail.h	6.65 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.64		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.65		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -870,11 +870,11 @@ extern const char	*errstring __P((int));
 
 /* ellipsis is a different case though */
 #ifdef __STDC__
-extern void		auth_warning(ENVELOPE *, char *, ...);
-extern void		syserr(char *, ...);
-extern void		usrerr(char *, ...);
-extern void		message(char *, ...);
-extern void		nmessage(char *, ...);
+extern void		auth_warning(ENVELOPE *, const char *, ...);
+extern void		syserr(const char *, ...);
+extern void		usrerr(const char *, ...);
+extern void		message(const char *, ...);
+extern void		nmessage(const char *, ...);
 #else
 extern void		auth_warning();
 extern void		syserr();
