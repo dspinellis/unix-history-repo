@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mtab_bsd.c	5.4 (Berkeley) %G%
+ *	@(#)mtab_bsd.c	5.5 (Berkeley) %G%
  *
  * $Id: mtab_bsd.c,v 5.2.2.1 1992/02/09 15:10:13 jsp beta $
  *
@@ -76,6 +76,11 @@ char *fs;
 		 */
 		mpp = &(*mpp)->mnext;
 	}
+
+	/*
+	 * Terminate the list
+	 */
+	*mpp = 0;
 
 	return mhp;
 }
