@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)system_.c	5.1	%G%
+ *	@(#)system_.c	5.2	%G%
  */
 
 /*
@@ -51,7 +51,7 @@ char	*rindex();
 system(s)
 char *s;
 {
-	register int (*istat)(), (*qstat)();
+	register sig_t istat, qstat;
 	int status, pid, w;
 	char	*shname, *shell;
 
@@ -73,7 +73,7 @@ char *s;
 		;
 	if (w == -1)
 		status = -1;
-	signal(SIGINT, istat);
-	signal(SIGQUIT, qstat);
+	(void)signal(SIGINT, istat);
+	(void)signal(SIGQUIT, qstat);
 	return(status);
 }
