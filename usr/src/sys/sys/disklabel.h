@@ -192,7 +192,7 @@ static char *dktypenames[] = {
 #define	FS_V8		6		/* Eighth Edition, 4K blocks */
 #define	FS_BSDFFS	7		/* 4.2BSD fast file system */
 #define	FS_MSDOS	8		/* MSDOS file system */
-#define	FS_LFS		9		/* 4.4BSD log-structured file system */
+#define	FS_BSDLFS	9		/* 4.4BSD log-structured file system */
 
 #ifdef	DKTYPENAMES
 static char *fstypenames[] = {
@@ -205,6 +205,7 @@ static char *fstypenames[] = {
 	"Eighth Edition",
 	"4.2BSD",
 	"MSDOS",
+	"4.4LFS",
 	0
 };
 #define FSMAXTYPES	(sizeof(fstypenames) / sizeof(fstypenames[0]) - 1)
