@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_syscalls.c	7.27 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.28 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -78,7 +78,6 @@ getfh(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp;
 	register struct vnode *vp;
 	fhandle_t fh;
 	int error;
@@ -89,13 +88,10 @@ getfh(p, uap, retval)
 	 */
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
-	ndp = &nd;
-	ndp->ni_nameiop = LOOKUP | LOCKLEAF | FOLLOW;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
+	if (error = namei(&nd))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	bzero((caddr_t)&fh, sizeof(fh));
 	fh.fh_fsid = vp->v_mount->mnt_stat.f_fsid;
 	error = VFS_VPTOFH(vp, &fh.fh_fid);
@@ -165,10 +161,9 @@ nfssvc(p, uap, retval)
 	else if (uap->flag & NFSSVC_MNTD) {
 		if (error = copyin(uap->argp, (caddr_t)&ncd, sizeof (ncd)))
 			return (error);
-		nd.ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
-		nd.ni_segflg = UIO_USERSPACE;
-		nd.ni_dirp = ncd.ncd_dirp;
-		if (error = namei(&nd, p))
+		NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE,
+			ncd.ncd_dirp, p);
+		if (error = namei(&nd))
 			return (error);
 		if ((nd.ni_vp->v_flag & VROOT) == 0)
 			error = EINVAL;
@@ -179,9 +174,11 @@ nfssvc(p, uap, retval)
 		else if (nmp->nm_flag & NFSMNT_MNTD)
 			return (0);
 		nmp->nm_flag |= NFSMNT_MNTD;
-		error = nqnfs_clientd(nmp, p->p_ucred, &ncd, uap->flag, uap->argp, p);
+		error = nqnfs_clientd(nmp, p->p_ucred, &ncd, uap->flag,
+			uap->argp, p);
 	} else if (uap->flag & NFSSVC_ADDSOCK) {
-		if (error = copyin(uap->argp, (caddr_t)&nfsdarg, sizeof (nfsdarg)))
+		if (error = copyin(uap->argp, (caddr_t)&nfsdarg,
+		    sizeof(nfsdarg)))
 			return (error);
 		if (error = getsock(p->p_fd, nfsdarg.sock, &fp))
 			return (error);
