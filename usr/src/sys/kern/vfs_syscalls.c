@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.97 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.98 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -267,6 +267,10 @@ dounmount(mp, flags, p)
  * Sync system call.
  * Sync each mounted filesystem.
  */
+#ifdef DIAGNOSTIC
+int syncprt = 0;
+#endif
+
 struct sync_args {
 	int	dummy;
 };
@@ -294,6 +298,10 @@ sync(p, uap, retval)
 		} else
 			mp = mp->mnt_next;
 	} while (mp != rootfs);
+#ifdef DIAGNOSTIC
+	if (syncprt)
+		vfs_bufstats();
+#endif /* DIAGNOSTIC */
 	return (0);
 }
 
