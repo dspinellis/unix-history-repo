@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ka650.h	7.1 (Berkeley) %G%
+ *	@(#)ka650.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -35,6 +35,20 @@
  */
 #define IS2_VCR		0x00008000	/* VAX Can't Restart flag */
 
+/*
+ * DMA System Error Register (merr_dser)
+ */
+#define DSER_QNXM	0x00000080	/* Q-22 Bus NXM */
+#define DSER_QPE	0x00000020	/* Q-22 Bus parity Error */
+#define DSER_MEM	0x00000010	/* Main mem err due to ext dev DMA */
+#define DSER_LOST	0x00000008	/* Lost error: DSER <7,5,4,0> set */
+#define DSER_NOGRANT	0x00000004	/* No Grant timeout on cpu demand R/W */
+#define DSER_DNXM	0x00000001	/* DMA NXM */
+#define DSER_CLEAR 	(DSER_QNXM | DSER_QPE | DSER_MEM |  \
+			 DSER_LOST | DSER_NOGRANT | DSER_DNXM)
+#define DMASER_BITS \
+"\20\20BHALT\17DCNEG\10QBNXM\6QBPE\5MEMERR\4LOSTERR\3NOGRANT\1DMANXM"
+
 #ifndef LOCORE
 /*
  * Local registers (in I/O space)
@@ -58,17 +72,6 @@ struct ka650_merr {
 };
 #define KA650_MERR	0x20080000
 
-/*
- * DMA System Error Register (merr_dser)
- */
-#define DSER_QNXM	0x00000080	/* Q-22 Bus NXM */
-#define DSER_QPE	0x00000020	/* Q-22 Bus parity Error */
-#define DSER_MEM	0x00000010	/* Main mem err due to ext dev DMA */
-#define DSER_LOST	0x00000008	/* Lost error: DSER <7,5,4,0> set */
-#define DSER_NOGRANT	0x00000004	/* No Grant timeout on cpu demand R/W */
-#define DSER_DNXM	0x00000001	/* DMA NXM */
-#define DSER_CLEAR 	(DSER_QNXM | DSER_QPE | DSER_MEM |  \
-			 DSER_LOST | DSER_NOGRANT | DSER_DNXM)
 /*
  * Main Memory Error Status Register (merr_errstat)
  */
