@@ -1,0 +1,12 @@
+cc enroll.o lib.o -lmp -o enroll
+ld:/usr/lib/libmp.a: warning: archive has no table of contents; add one using ranlib(1)
+cc -O -d2 -c xsend.c
+"/usr/include/sys/dir.h", line 32: warning: undeclared initializer name DEV_BSIZE
+"/usr/include/sys/dir.h", line 32: constant expected
+"xsend.c", line 24: warning: illegal combination of pointer and integer, op =
+"xsend.c", line 26: warning: struct/union or struct/union pointer required
+"xsend.c", line 27: warning: illegal combination of pointer and integer, op =
+"xsend.c", line 35: warning: struct/union or struct/union pointer required
+*** Error code 1
+
+Stop.
