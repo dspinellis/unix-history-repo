@@ -1,0 +1,250 @@
+''' $Id: uustat.1,v 1.2 1992/04/01 21:13:46 ian Rel $
+''' $Log: uustat.1,v $
+''' Revision 1.2  1992/04/01  21:13:46  ian
+''' Added RCS ID and log strings
+'''
+''' Revision 1.1  1992/04/01  21:10:46  ian
+''' Initial revision
+''' 
+.TH uustat 1 "Taylor UUCP 1.03"
+.SH NAME
+uustat \- UUCP status inquiry and control
+.SH SYNOPSIS
+.B uustat \-a
+.PP
+.B uustat
+[
+.B \-s
+system ] [
+.B \-u
+user ] [ 
+.B \-o
+hours ] [
+.B \-y
+hours ]
+.PP
+.B uustat
+[
+.B \-k
+jobid ] [
+.B \-r
+jobid ]
+.PP
+.B uustat \-q
+.PP
+.B uustat \-m
+.PP
+.B uustat \-p
+.SH DESCRIPTION
+The
+.I uustat
+command can display various types of status information about the UUCP
+system.  It can also be used to cancel or rejuvenate requests made by
+.I uucp
+(1) or
+.I uux
+(1).
+
+By default
+.I uustat
+displays all jobs queued up for the invoking user, as if given the
+.B \-u
+option with the appropriate argument.
+.SH OPTIONS
+The following options may be given to
+.I uustat.
+.TP 5
+.B \-a
+List all queued jobs.
+.TP 5
+.B \-s system
+List all jobs queued up for the named system.  This option may be
+specified multiple times, in which case all jobs for all the systems
+will be listed.  The
+.B \-u,
+.B \-o,
+and
+.B \-y
+options may be used to restrict which jobs are listed.
+.TP 5
+.B \-u user
+List all jobs queued up for the named user.  This option may be
+specified multiple times, in which case all jobs for all the users
+will be listed.  The
+.B \-s,
+.B \-o,
+and
+.B \-y
+options may be used to restrict which jobs are listed.
+.TP 5
+.B \-o hours
+List all queued jobs older than the given number of hours.  The
+.B \-s,
+.B \-u,
+and
+.B \-y
+options may be used to further restrict which jobs are listed.
+.TP 5
+.B \-y hours
+List all queued jobs younger than the given number of hours.  The
+.B \-s,
+.B \-u,
+and
+.B \-o
+options may be used to further restrict which jobs are listed.
+.TP 5
+.B \-k jobid
+Kill the named job.  The job id is shown by the
+.B \-s,
+.B \-u,
+.B \-o,
+or
+.B \-y
+options, as well as by the
+.B \-j
+option to
+.I uucp
+(1) or
+.I uux
+(1).  A job may only be killed by the user who created the job, or by
+the UUCP administrator or the superuser.  The
+.B \-k
+option may be used multiple times on the command line to kill several
+jobs.
+.TP 5
+.B \-r jobid
+Rejuvenate the named job.  This will mark it as having been invoked at
+the current time, affecting the output of the
+.B \-o
+or
+.B \-y
+options and preserving it from any automated cleanup daemon.  The job
+id is shown by the
+.B \-s,
+.B \-u,
+.B \-o,
+or
+.B \-y
+options, as well as by the
+.B \-j
+option to
+.I uucp
+(1) or
+.I uux
+(1).  A job may only be rejuvenated by the user who created the job,
+or by the UUCP administrator or the superuser.  The
+.B \-r
+option may be used multiple times on the command line to rejuvenate
+several jobs.
+.TP 5
+.B \-q
+Display the status of commands, executions and conversations for all
+remote systems for which commands or executions are queued.
+.TP 5
+.B \-m
+Display the status of conversations for all remote systems.
+.TP 5
+.B \-p
+Display the status of all processes holding UUCP locks on systems or
+ports.
+.TP 5
+.B \-x type
+Turn on particular debugging types.  The following types are
+recognized: abnormal, chat, handshake, uucp-proto, proto, port,
+config, spooldir, execute, incoming, outgoing.  Only abnormal, config,
+spooldir and execute are meaningful for
+.I uustat.
+
+Multiple types may be given, separated by commas, and the
+.B \-x
+option may appear multiple times.  A number may also be given, which
+will turn on that many types from the foregoing list; for example,
+.B \-x 2
+is equivalent to
+.B \-x abnormal,chat.
+.TP 5
+.B \-I file
+Set configuration file to use.  This option may not be available,
+depending upon how
+.I uustat
+was compiled.
+.SH EXAMPLES
+.EX
+uustat -a
+.EE
+Display status of all jobs.  A sample output line is as follows:
+.EX
+bugsA027h bugs ian 1992-04-01 13:50:04 Executing rmail ian@airs.com (sending 1283 bytes)
+.EE
+The format is
+.EX
+jobid system user queue-date command (size)
+.EE
+The jobid may be passed to the
+.B \-k
+or
+.B \-r
+options.
+The size indicates how much data is to be transferred to the remote
+system, and is absent for a file receive request.
+
+The
+.B \-s,
+.B \-u,
+.B \-o,
+and
+.B \-y
+options also produce output in the above format.
+
+.EX
+uustat -q
+.EE
+Display status for all systems with queued up commands.  A sample
+output line is as follows:
+.EX
+bugs 4C (1 hour) 0X (0 secs) 1992-04-01 14:45:47 Dial failed
+.EE
+This indicates the system, the number of queued commands, the age of
+the oldest queued command, the number of queued local executions, the
+age of the oldest queued execution, the date of the last conversation,
+and the status of that conversation.
+
+.EX
+uustat -m
+.EE
+Display conversation status for all remote systems.  A sample output
+line is as follows:
+.EX
+bugs 1992-04-01 15:51:30 Conversation complete
+.EE
+This indicates the system, the date of the last conversation, and the
+status of that conversation.  If the last conversation failed,
+.I uustat
+will indicate how many attempts have been made to call the system.  If
+the retry period is currently preventing calls to that system,
+.I uustat
+also displays the time when the next call will be permitted.
+
+.EX
+uustat -p
+.EE
+Display the status of all processes holding UUCP locks.  The output
+format is system dependent, as
+.I uustat
+simply invokes
+.I ps
+(1) on each process holding a lock.
+.SH FILES
+The file names may be changed at compilation time or by the
+configuration file, so these are only approximations.
+
+.br
+/usr/lib/uucp/config - Configuration file.
+.br
+/usr/spool/uucp -
+UUCP spool directory.
+.SH SEE ALSO
+ps(1), uucp(1), uux(1), uucico(8), uuxqt(8)
+.SH AUTHOR
+Ian Lance Taylor
+(ian@airs.com or uunet!airs!ian)
