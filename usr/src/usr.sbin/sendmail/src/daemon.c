@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.79 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.80 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.79 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.80 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -799,11 +799,10 @@ host_map_lookup(map, name, av, statp)
 		h_errno = s->s_namecanon.nc_herrno;
 #endif
 		*statp = s->s_namecanon.nc_stat;
-		if (CurEnv->e_message == NULL && *statp == EX_TEMPFAIL)
+		if (*statp == EX_TEMPFAIL)
 		{
-			sprintf(hbuf, "%s: Name server timeout",
+			usrerr("451 %s: Name server timeout",
 				shortenstring(name, 33));
-			CurEnv->e_message = newstr(hbuf);
 		}
 		return s->s_namecanon.nc_cname;
 	}
@@ -851,11 +850,8 @@ host_map_lookup(map, name, av, statp)
 			  case TRY_AGAIN:
 				if (UseNameServer)
 				{
-					sprintf(hbuf, "%s: Name server timeout",
+					usrerr("451 %s: Name server timeout",
 						shortenstring(name, 33));
-					message("%s", hbuf);
-					if (CurEnv->e_message == NULL)
-						CurEnv->e_message = newstr(hbuf);
 				}
 				*statp = EX_TEMPFAIL;
 				break;
