@@ -1,4 +1,4 @@
-/*	tftp.c	4.1	82/08/16	*/
+/*	tftp.c	4.2	82/08/17	*/
 
 /*
  * TFTP User Program -- Protocol Machines
@@ -46,6 +46,7 @@ sendfile(fd, name)
 	time_t start = time(0), delta;
 
 	size = makerequest(WRQ, name) - 4;
+	timeout = 0;
 	sigset(SIGALRM, timer);
 	do {
 		if (block != 0) {
@@ -116,6 +117,7 @@ recvfile(fd, name)
 	time_t start = time(0), delta;
 
 	size = makerequest(RRQ, name);
+	timeout = 0;
 	sigset(SIGALRM, timer);
 	alarm(TIMEOUT);
 	goto rexmt;
