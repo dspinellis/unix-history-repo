@@ -1,4 +1,4 @@
-#	@(#)pgrpdump	7.2 (Berkeley) %G%
+#	@(#)pgrpdump	8.1 (Berkeley) %G%
 
 define allpgrps
 	set $lim = pidhashmask + 1
