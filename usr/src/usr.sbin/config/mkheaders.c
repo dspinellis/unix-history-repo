@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkheaders.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkheaders.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -70,7 +70,7 @@ do_header(dev, hname, count)
 	int count;
 {
 	char *file, *name, *inw, *toheader(), *tomacro();
-	struct file_list *fl, *fl_head;
+	struct file_list *fl, *fl_head, *tflp;
 	FILE *inf, *outf;
 	int inc, oldcount;
 
@@ -88,7 +88,7 @@ do_header(dev, hname, count)
 		(void) fclose(outf);
 		return;
 	}
-	fl_head = 0;
+	fl_head = NULL;
 	for (;;) {
 		char *cp;
 		if ((inw = get_word(inf)) == 0 || inw == (char *)EOF)
@@ -116,8 +116,10 @@ do_header(dev, hname, count)
 	}
 	(void) fclose(inf);
 	if (count == oldcount) {
-		for (fl = fl_head; fl != 0; fl = fl->f_next)
-			free((char *)fl);
+		for (fl = fl_head; fl != NULL; fl = tflp) {
+			tflp = fl->f_next;
+			free(fl);
+		}
 		return;
 	}
 	if (oldcount == -1) {
@@ -133,10 +135,11 @@ do_header(dev, hname, count)
 		perror(file);
 		exit(1);
 	}
-	for (fl = fl_head; fl != 0; fl = fl->f_next) {
-		fprintf(outf, "#define %s %u\n",
-		    fl->f_fn, count ? fl->f_type : 0);
-		free((char *)fl);
+	for (fl = fl_head; fl != NULL; fl = tflp) {
+		fprintf(outf,
+		    "#define %s %u\n", fl->f_fn, count ? fl->f_type : 0);
+		tflp = fl->f_next;
+		free(fl);
 	}
 	(void) fclose(outf);
 }
