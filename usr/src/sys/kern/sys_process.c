@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)sys_process.c	7.38 (Berkeley) %G%
+ *	@(#)sys_process.c	7.39 (Berkeley) %G%
  */
 
 #define IPCREG
