@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_node.c	7.32 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.33 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -214,13 +214,21 @@ nfs_reclaim(vp)
 }
 
 /*
+ * In theory, NFS does not need locking, but we make provision
+ * for doing it just in case it is needed.
+ */
+int donfslocking = 0;
+/*
  * Lock an nfsnode
  */
+
 nfs_lock(vp)
 	struct vnode *vp;
 {
 	register struct nfsnode *np = VTONFS(vp);
 
+	if (!donfslocking)
+		return;
 	while (np->n_flag & NLOCKED) {
 		np->n_flag |= NWANT;
 		if (np->n_lockholder == curproc->p_pid)
@@ -241,8 +249,6 @@ nfs_unlock(vp)
 {
 	register struct nfsnode *np = VTONFS(vp);
 
-	if ((np->n_flag & NLOCKED) == 0)
-		vprint("nfs_unlock: unlocked nfsnode", vp);
 	np->n_lockholder = 0;
 	np->n_flag &= ~NLOCKED;
 	if (np->n_flag & NWANT) {
