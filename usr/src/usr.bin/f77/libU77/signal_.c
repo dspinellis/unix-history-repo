@@ -1,5 +1,5 @@
 /*
-char id_signal[] = "@(#)signal_.c	1.2";
+char id_signal[] = "@(#)signal_.c	1.3";
  *
  * change the action for a specified signal
  *
@@ -31,17 +31,26 @@ long signal_(sigp, procp, flag)
 long *sigp, *flag;
 int (*procp)();
 {
+	int (*oldsig)();
+	int (*oldispatch)();
+
+	oldispatch = dispatch[*sigp];
+
 	if (*sigp < 0 || *sigp > 16)
 		return(-((long)(errno=F_ERARG)));
 
 	if (*flag < 0)	/* function address passed */
 	{
 		dispatch[*sigp] = procp;
-		return((long)signal((int)*sigp, sig_trap) );
+		oldsig = signal((int)*sigp, sig_trap);
 	}
 
 	else		/* integer value passed */
-		return((long)signal((int)*sigp, (int)*flag) );
+		oldsig = signal((int)*sigp, (int)*flag);
+
+	if (oldsig == sig_trap)
+		return((long)oldispatch);
+	return((long)oldsig);
 }
 
 sig_trap(sn)
