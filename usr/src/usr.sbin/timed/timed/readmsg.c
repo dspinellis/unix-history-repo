@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readmsg.c	2.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)readmsg.c	2.8 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -67,7 +67,7 @@ struct netinfo *netfrom;
 
 	if (trace) {
 		fprintf(fd, "looking for %s from %s\n",
-			tsptype[type], machfrom);
+			tsptype[type], machfrom == NULL ? "ANY" : machfrom);
 		ptr = head->p;
 		fprintf(fd, "msgqueue:\n");
 		while (ptr != NULL) {
