@@ -175,7 +175,9 @@ again:
 #endif
 	rpp->p_stat = SIDL;
 	timerclear(&rpp->p_realtimer.it_value);
-	rpp->p_flag = SLOAD | (rip->p_flag & (SPAGV|SCTTY|SHPUX));
+	rpp->p_flag = SLOAD | (rip->p_flag & (SPAGV|SHPUX));
+	if (rip->p_session->s_ttyvp != NULL && rip->p_flag & SCTTY)
+		rpp->p_flag |= SCTTY;
 	if (isvfork) {
 		rpp->p_flag |= SVFORK;
 		rpp->p_ndx = rip->p_ndx;
