@@ -1,6 +1,7 @@
+
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)runtime.c 1.5 %G%";
+static char sccsid[] = "@(#)runtime.c 1.6 %G%";
 
 /*
  * Runtime organization dependent routines, mostly dealing with
@@ -18,6 +19,7 @@ static char sccsid[] = "@(#)runtime.c 1.5 %G%";
 #include "eval.h"
 #include "operators.h"
 #include "object.h"
+#include <sys/param.h>
 
 #ifndef public
 typedef struct Frame *Frame;
@@ -71,12 +73,45 @@ Frame frp;
     register Frame newfrp;
     struct Frame frame;
     register Integer i, j, mask;
+    Address prev_frame, callpc; 
+    private Integer ntramp=0;
 
     newfrp = frp;
-    dread(&frame, newfrp->save_fp, sizeof(struct Frame));
+    prev_frame = frp->save_fp;
+
+/*  The check for interrupt generated frames is taken from adb with only
+ *  partial understanding : say you're in sub and on a sigxxx siggsub
+ *  gets control and dies; the stack does NOT look like main, sub, sigsub.
+ *
+ *  As best I can make out it looks like:
+ *   main (machine check exception block + sub) sysframe  sigsub.
+ *  ie when the sig occurs push an exception block on the user stack
+ *  and a frame for the routine in which it occured then push another
+ *  frame corresponding to a call from the kernel to sigsub.
+ *
+ *  The addr in sub at which the exception occured is not in sub.save_pc
+ *  but in the machine check exception block. It can be referenced as
+ *  sub.save_reg[11].
+ *
+ *  The current approach ignores the sys_frame (what adb reports as sigtramp)
+ *  and takes the pc for sub from the exception block. This
+ *  allows where to report: main sub sigsub, which seems reasonable
+ */
+    nextf: dread(&frame, prev_frame , sizeof(struct Frame));
+    if(ntramp == 1 ) callpc = (Address) frame.save_reg[11];
+    else callpc=frame.save_pc;
+
     if (frame.save_fp == nil) {
 	newfrp = nil;
-    } else {
+    }
+      else if (callpc > 0x80000000 - 0x200 * UPAGES ) {
+	 ntramp++;
+	 prev_frame = frame.save_fp;
+	 goto nextf;
+	}
+      else {
+	frame.save_pc = callpc;
+        ntramp=0;
 	mask = ((frame.mask >> 16) & 0x0fff);
 	j = 0;
 	for (i = 0; i < NSAVEREG; i++) {
