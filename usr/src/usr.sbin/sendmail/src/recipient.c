@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.49 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.50 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -582,6 +582,7 @@ finduser(name, fuzzyp)
 
 	*fuzzyp = FALSE;
 
+#ifdef HESIOD
 	/* DEC Hesiod getpwnam accepts numeric strings -- short circuit it */
 	for (p = name; *p != '\0'; p++)
 		if (!isascii(*p) || !isdigit(*p))
@@ -592,6 +593,7 @@ finduser(name, fuzzyp)
 			printf("failed (numeric input)\n");
 		return NULL;
 	}
+#endif
 
 	/* look up this login name using fast path */
 	if ((pw = getpwnam(name)) != NULL)
