@@ -1,11 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.3 (Berkeley) %G%";
 #endif
 
 /*
- * enter a password in the password file
- * this program should be suid with owner
- * with an owner with write permission on /etc/passwd
+ * Enter a password in the password file.
+ * This program should be suid with an owner
+ * with write permission on /etc/passwd.
  */
 #include <sys/file.h>
 
@@ -125,17 +125,10 @@ tryagain:
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
-	/*
-	 * The mode here could be 644 except then old versions
-	 * of passwd that don't honor the advisory locks might
-	 * sneak in and mess things up.  If we could believe the
-	 * locking were honored, then we could also eliminate the
-	 * chmod below after the rename.
-	 */
-	fd = open(temp, FWRONLY|FCREATE|FEXLOCK|FNBLOCK, 0600);
+	fd = open(temp, O_WRONLY|O_CREAT|O_EXCL, 0644);
 	if (fd < 0) {
 		fprintf(stderr, "passwd: ");
-		if (errno == EBUSY)
+		if (errno == EEXIST)
 			fprintf(stderr, "password file busy - try again.\n");
 		else
 			perror(temp);
@@ -177,6 +170,5 @@ tryagain:
 		unlink(temp);
 		exit(1);
 	}
-	chmod(passwd, 0644);
 	fclose(tf);
 }
