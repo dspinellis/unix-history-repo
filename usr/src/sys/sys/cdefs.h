@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cdefs.h	8.4 (Berkeley) %G%
+ *	@(#)cdefs.h	8.5 (Berkeley) %G%
  */
 
 #ifndef	_CDEFS_H_
@@ -55,10 +55,12 @@
 #define	__signed
 #define	__volatile
 /*
- * In non-ANSI C environments, new programs will want ANSI C keywords
+ * In non-ANSI C environments, new programs will want ANSI-only C keywords
  * deleted from the program and old programs will want them left alone.
- * Programs using the ANSI C keywords const, inline etc. as variables
- * should define -DNO_ANSI_KEYWORDS.
+ * When using a compiler other than gcc, programs using the ANSI C keywords
+ * const, inline etc. as normal identifiers should define -DNO_ANSI_KEYWORDS.
+ * When using "gcc -traditional", we assume that this is the intent; if
+ * __GNUC__ is defined but __STDC__ is not, we leave the new keywords alone.
  */
 #ifndef	NO_ANSI_KEYWORDS
 #define	const				/* delete ANSI C keywords */
