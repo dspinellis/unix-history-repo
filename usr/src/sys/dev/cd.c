@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: cd.c 1.1 90/07/09$
+ * from: Utah $Hdr: cd.c 1.6 90/11/28$
  *
- *	@(#)cd.c	7.3 (Berkeley) %G%
+ *	@(#)cd.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -39,6 +39,7 @@ int cddebug = 0x00;
 
 struct	buf cdbuf[NCD];
 struct	buf *cdbuffer();
+char	*cddevtostr();
 int	cdiodone();
 
 #define	cdunit(x)	((minor(x) >> 3) & 0x7)	/* for consistency */
@@ -97,15 +98,18 @@ cdinit(cd)
 		 * if necessary.
 		 */
 		if (bdevsw[major(dev)].d_psize) {
-			size = (*bdevsw[major(dev)].d_psize)(dev);
-			if (size <= 0)
+			size = (size_t) (*bdevsw[major(dev)].d_psize)(dev);
+			if ((int)size < 0)
 				size = 0;
 		} else
 			size = 0;
 		if (cs->sc_ileave > 1)
 			size -= size % cs->sc_ileave;
-		if (size == 0)
+		if (size == 0) {
+			printf("cd%d: not configured (component %s missing)\n",
+			       cd->cd_unit, cddevtostr(ci->ci_dev));
 			return(0);
+		}
 		if (minsize == 0 || size < minsize)
 			minsize = size;
 		ci->ci_size = size;
@@ -129,14 +133,49 @@ cdinit(cd)
 		return(0);
 	if (cd->cd_dk >= 0)
 		dk_wpms[cd->cd_dk] = 32 * (60 * DEV_BSIZE / 2);	/* XXX */
-	printf("cd%d: %d components (%d blocks) concatenated",
-	       cd->cd_unit, cs->sc_ncdisks, cs->sc_size);
+	printf("cd%d: %d components ", cd->cd_unit, cs->sc_ncdisks);
+	for (ix = 0; ix < cs->sc_ncdisks; ix++)
+		printf("%c%s%c",
+		       ix == 0 ? '(' : ' ',
+		       cddevtostr(cs->sc_cinfo[ix].ci_dev),
+		       ix == cs->sc_ncdisks - 1 ? ')' : ',');
+	printf(", %d blocks ", cs->sc_size);
 	if (cs->sc_ileave)
-		printf(", %d block interleave\n", cs->sc_ileave);
+		printf("interleaved at %d blocks\n", cs->sc_ileave);
 	else
-		printf(" serially\n");
+		printf("concatenated\n");
 	cs->sc_flags = CDF_ALIVE | CDF_INITED;
 	return(1);
+}
+
+/*
+ * XXX not really cd specific.
+ */
+char *
+cddevtostr(dev)
+	dev_t dev;
+{
+	static char dbuf[5];
+
+	dbuf[1] = 'd';
+	switch (major(dev)) {
+	case 2:
+		dbuf[0] = 'r';
+		break;
+	case 4:
+		dbuf[0] = 's';
+		break;
+	case 5:
+		dbuf[0] = 'c';
+		break;
+	default:
+		dbuf[0] = dbuf[1] = '?';
+		break;
+	}
+	dbuf[2] = (minor(dev) >> 3) + '0';
+	dbuf[3] = (minor(dev) & 7) + 'a';
+	dbuf[4] = '\0';
+	return (dbuf);
 }
 
 cdinterleave(cs)
