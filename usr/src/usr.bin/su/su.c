@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)su.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)su.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -133,10 +133,9 @@ main(argc, argv)
 			p = getpass("Password:");
 			if (strcmp(pwd->pw_passwd, crypt(p, pwd->pw_passwd))) {
 				fprintf(stderr, "Sorry\n");
-				if (pwd->pw_uid == 0)
-					syslog(LOG_AUTH|LOG_CRIT,
-					    "BAD SU %s on %s", username,
-					    mytty());
+				syslog(LOG_AUTH|LOG_CRIT,
+					"BAD SU %s on %s to %s", username,
+					mytty(), user);
 				exit(1);
 			}
 		}
@@ -145,7 +144,8 @@ main(argc, argv)
 	if (asme) {
 		/* if asme and non-standard target shell, must be root */
 		if (!chshell(pwd->pw_shell) && ruid) {
-			(void)fprintf(stderr, "su: permission denied.\n");
+			(void)fprintf(stderr,
+				"su: permission denied (shell).\n");
 			exit(1);
 		}
 	} else if (pwd->pw_shell && *pwd->pw_shell) {
@@ -207,8 +207,7 @@ main(argc, argv)
 	/* csh strips the first character... */
 	*np = asthem ? "-su" : iscsh == YES ? "_su" : "su";
 
-	if (pwd->pw_uid == 0)
-		syslog(LOG_NOTICE|LOG_AUTH, "%s on %s", username, mytty());
+	syslog(LOG_NOTICE|LOG_AUTH, "%s on %s to %s", username, mytty(), user);
 
 	(void)setpriority(PRIO_PROCESS, 0, prio);
 
@@ -249,7 +248,7 @@ kerberos(username, user, uid)
 	register char *p;
 	int kerno;
 	u_long faddr;
-	char lrealm[REALM_SZ], krbtkfile[MAXPATHLEN], pw_buf[_PASSWORD_LEN];
+	char lrealm[REALM_SZ], krbtkfile[MAXPATHLEN];
 	char hostname[MAXHOSTNAMELEN], savehost[MAXHOSTNAMELEN];
 	char *mytty();
 
@@ -262,34 +261,38 @@ kerberos(username, user, uid)
 		return(1);
 	}
 	(void)sprintf(krbtkfile, "%s_%s_%d", TKT_ROOT, user, getuid());
-	/* setuid(uid); */
-
-	if (read_pw_string(pw_buf, sizeof(pw_buf) - 1,
-	    "Kerberos password: ", 0)) {
-		(void)fprintf(stderr, "su: error reading password.\n");
-		return(1);
-	}
 
 	(void)setenv("KRBTKFILE", krbtkfile, 1);
-	/* short lifetime for root tickets */
 	if (setuid(0) < 0) {
 		perror("su: setuid");
 		return(1);
 	}
 	(void)unlink(krbtkfile);
-	/* POLICY: short ticket lifetime for root */
-	kerno = krb_get_pw_in_tkt(username, (uid == 0 ? "root" : ""), lrealm,
-	    "krbtgt", lrealm, (uid == 0 ? 2 : DEFAULT_TKT_LIFE), pw_buf);
 
-	bzero(pw_buf, sizeof(pw_buf));
+	/*
+	 * Little trick here -- if we are su'ing to root,
+	 * we need to get a ticket for "xxx.root", where xxx represents
+	 * the name of the person su'ing.  Otherwise (non-root case),
+	 * we need to get a ticket for "yyy.", where yyy represents
+	 * the name of the person being su'd to, and the instance is null
+	 *
+	 * Also: POLICY: short ticket lifetime for root
+	 */
+	kerno = krb_get_pw_in_tkt((uid == 0 ? username : user),
+		(uid == 0 ? "root" : ""), lrealm,
+	    	"krbtgt", lrealm, (uid == 0 ? 2 : DEFAULT_TKT_LIFE), 0);
 
 	if (kerno != KSUCCESS) {
-		if (kerno == KDC_PR_UNKNOWN)
+		if (kerno == KDC_PR_UNKNOWN) {
+			fprintf(stderr, "principal unknown: %s.%s@%s\n",
+				(uid == 0 ? username : user),
+				(uid == 0 ? "root" : ""), lrealm);
 			return(1);
+		}
 		(void)printf("su: unable to su: %s\n", krb_err_txt[kerno]);
 		syslog(LOG_NOTICE|LOG_AUTH,
-		    "su: BAD Kerberos SU: %s on %s: %s", username, mytty(),
-		    krb_err_txt[kerno]);
+		    "su: BAD Kerberos SU: %s on %s to %s: %s",
+		    username, mytty(), user, krb_err_txt[kerno]);
 		return(1);
 	}
 
@@ -314,12 +317,13 @@ kerberos(username, user, uid)
 
 	if (kerno == KDC_PR_UNKNOWN) {
 		(void)printf("Warning: tgt not verified.\n");
-		syslog(LOG_NOTICE|LOG_AUTH, "su: %s on %s, tgt not verified",
-		    username, mytty());
+		syslog(LOG_NOTICE|LOG_AUTH,
+			"su: %s on %s to %s, TGT not verified",
+		    	username, mytty(), user);
 	} else if (kerno != KSUCCESS) {
-		(void)printf("Unable to use tgt: %s\n", krb_err_txt[kerno]);
-		syslog(LOG_NOTICE|LOG_AUTH, "su: failed su: %s on %s: %s",
-		    username, mytty(), krb_err_txt[kerno]);
+		(void)printf("Unable to use TGT: %s\n", krb_err_txt[kerno]);
+		syslog(LOG_NOTICE|LOG_AUTH, "su: failed su: %s on %s to %s: %s",
+		    username, mytty(), user, krb_err_txt[kerno]);
 		dest_tkt();
 		return(1);
 	} else {
@@ -335,8 +339,8 @@ kerberos(username, user, uid)
 			(void)printf("su: unable to verify rcmd ticket: %s\n",
 			    krb_err_txt[kerno]);
 			syslog(LOG_NOTICE|LOG_AUTH,
-			    "su: failed su: %s on %s: %s", username,
-			    mytty(), krb_err_txt[kerno]);
+			    "su: failed su: %s on %s to %s: %s", username,
+			    mytty(), user, krb_err_txt[kerno]);
 			dest_tkt();
 			return(1);
 		}
