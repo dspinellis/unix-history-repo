@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_subr.c	6.4 (Berkeley) %G%
+ *	@(#)kern_subr.c	6.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -102,7 +102,6 @@ again:
 	return (0);
 }
 
-#ifdef notdef
 /*
  * Get next character written in by user from uio.
  */
@@ -112,13 +111,16 @@ uwritec(uio)
 	register struct iovec *iov;
 	register int c;
 
+	if (uio->uio_resid <= 0)
+		return (-1);
 again:
-	if (uio->uio_iovcnt <= 0 || uio->uio_resid <= 0)
+	if (uio->uio_iovcnt <= 0)
 		panic("uwritec");
 	iov = uio->uio_iov;
 	if (iov->iov_len == 0) {
-		uio->uio_iovcnt--;
 		uio->uio_iov++;
+		if (--uio->uio_iovcnt == 0)
+			return (-1);
 		goto again;
 	}
 	switch (uio->uio_segflg) {
@@ -143,4 +145,3 @@ again:
 	uio->uio_offset++;
 	return (c & 0377);
 }
-#endif
