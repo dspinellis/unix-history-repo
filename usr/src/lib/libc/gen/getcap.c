@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getcap.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)getcap.c	5.14 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -32,6 +32,7 @@ static char sccsid[] = "@(#)getcap.c	5.13 (Berkeley) %G%";
 
 #define RECOK	(char)0
 #define TCERR	(char)1
+#define	SHADOW	(char)2
 
 static size_t	 topreclen;	/* toprec length */
 static char	*toprec;	/* Additional record specified by cgetset() */
@@ -508,38 +509,30 @@ cdbget(capdbp, bp, name)
 	int st;
 
 	key.data = name;
-	key.size = strlen(name) + 1;
+	key.size = strlen(name);
 
+	for (;;) {
+		/* Get the reference. */
+		switch(capdbp->get(capdbp, &key, &data, 0)) {
+		case -1:
+			return (-2);
+		case 1:
+			return (-1);
+		}
 
-	/* 
-	 * Get the reference.
-	 */
-	if ((st = capdbp->get(capdbp, &key, &data, 0)) < 0)
-		return(-2);
-	if (st == 1)
-		return(-1);
+		if (((char *)data.data)[0] != SHADOW)
+			break;
 
-	if ((buf = malloc(data.size - 1)) == NULL)
-		return(-2);
-	
-	strcpy(buf, (char *)(data.data));
-	
-	key.data = buf;
-	key.size = data.size;
-
-	/*
-	 * Get the record.
-	 */
-	if (capdbp->get(capdbp, &key, &data, 0) < 0) {
-		free(buf);
-		return(-2);
+		key.data = data.data + 1;
+		key.size = data.size - 1;
 	}
-	free(buf);
+	
 	*bp = &((char *)(data.data))[1];
+
 	if (((char *)(data.data))[0] == TCERR)
-		return 1;
+		return (1);
 	else
-		return 0;
+		return (0);
 }
 
 
@@ -648,12 +641,11 @@ cgetnext(bp, db_array)
 					(void)cgetclose();
 					return (-1);
 				} else {
-					dbp++;
-					if (*dbp == NULL) {
+					if (*++dbp == NULL) {
 						(void)cgetclose();
 						return (0);
-					} else if ((pfp = fopen(*dbp, "r")) ==
-					    NULL) {
+					} else if ((pfp =
+					    fopen(*dbp, "r")) == NULL) {
 						(void)cgetclose();
 						return (-1);
 					} else
@@ -661,15 +653,19 @@ cgetnext(bp, db_array)
 				}
 			} else
 				line[len - 1] = '\0';
-			if (isspace(*line) || *line == ':' || *line == '#' 
-			    || len == 0 || slash) {
-				if (len > 0 && line[len - 1] == '\\')
+			if (len == 1) {
+				slash = 0;
+				continue;
+			}
+			if (isspace(*line) ||
+			    *line == ':' || *line == '#' || slash) {
+				if (line[len - 2] == '\\')
 					slash = 1;
 				else
 					slash = 0;
 				continue;
 			}
-			if (len > 0 && line[len - 1] == '\\')
+			if (line[len - 2] == '\\')
 				slash = 1;
 			else
 				slash = 0;
