@@ -1,4 +1,6 @@
-/* Font scaling for character format fonts.
+/*	scalech.c	(Berkeley)	1.2	83/12/06
+ *
+ * Font scaling for character format fonts.
  *
  *	Use:	scalech  [ -s# ]  charfile1  > charfile2
  *
@@ -16,12 +18,19 @@
 #define SCALE		50
 
 
-int	width, length, refv, refh, code;
+int	width, length, vdest, hdest, code;
+int	refh, spot, start, Bduring, Wduring;
 
 int	scale = SCALE;
 FILE *	filep;
-char	ibuff[MAXLINE];
-char	ebuff[MAXLINE];
+char	ibuff[MAXLINE], ebuff[MAXLINE];
+
+unsigned char Black[MAXLINE];	/* arrays to figure new scaled line based */
+unsigned char BtoW[MAXLINE];	/* on various conditions of the changes in */
+unsigned char WtoB[MAXLINE];	/* pixels within lines */
+unsigned char WBW[MAXLINE];
+unsigned char BWB[MAXLINE];
+unsigned char White[MAXLINE];
 
 
 main(argc,argv)
@@ -77,46 +86,88 @@ char **argv;
 		error("unexpected end of input");
 	    width = strlen(ibuff) - 1;
 
-	    for (j = 0; j < MAXLINE; ebuff[j++] = '.');
-	    refv = 1;
+	    vdest = 1;
+	    refh = -1;
 	    for (length = 1; *(chp = ibuff) != '\n'; length++) {
+		hdest = 0;
+		start = 0;
+		Bduring = 0;
+		Wduring = 0;
 		for (j = 0; j < width; j++, chp++) {
-		    refh = (j * scale) / 100 + 0.1;
+		    if (hdest != (int) ((j * scale) / 100 + 0.1)) {
+			if (start && !Wduring) Black[hdest]++;
+			if (start && !spot) BtoW[hdest]++;
+			if ((!start) && spot) WtoB[hdest]++;
+			if ((!start) && Bduring && !spot) WBW[hdest]++;
+			if (start && Wduring && spot) BWB[hdest]++;
+			if ((!start) && !Bduring) White[hdest]++;
+
+			hdest = (j * scale) / 100 + 0.1;
+			start = spot;
+			Bduring = 0;
+			Wduring = 0;
+		    }
+		    spot = 0;
 		    switch (*chp) {
 			case '.':
 				break;
-			case 'x':
-				if (ebuff[refh] == '.')
-				    ebuff[refh] = 'x';
-				else
-				    ebuff[refh] = 'X';
-				break;
 			case 'X':
-				ebuff[refh] = 'X';
+				spot = 1;
+			case 'x':
+				if (refh >= 0)
+				    error ("glyph %d - two reference points",
+									code);
+				refh = hdest;
 				break;
 			case '@':
-			case 'a':
-				if (ebuff[refh] == 'x')
-				    ebuff[refh] = 'X';
-				else if (ebuff[refh] != 'X')
-				    ebuff[refh] = '@';
+			case '*':
+				spot = 1;
 				break;
 			default:
 				error("illegal character '%c' in map.", *chp);
 		    } /* switch */
+		    Bduring |= spot;
+		    Wduring |= !spot;
 		} /* for j */
+
+		if (start && !Wduring) Black[hdest]++;
+		if (start) BtoW[hdest]++;
+		if ((!start) && Bduring) WBW[hdest]++;
+		if ((!start) && !Bduring) White[hdest]++;
+
 		if (fgets(ibuff, MAXLINE, filep) == NULL)
 			error("unexpected end of input");
 
-		if (((int) ((length * scale) / 100 + 0.1)) == refv
+		if (((int) ((length * scale) / 100 + 0.1)) == vdest
 							|| ibuff[0] == '\n') {
-		    refh = (width * scale) / 100 + 0.1;
-		    for (j = 0; refh-- > 0; putchar(ebuff[j++]));
+		    i = (width * scale) / 100 + 0.1;
+		    for (j = 0; i-- > 0; j++) {
+			if (Black[j] || WBW[j]) spot = 1;
+			else if (BWB[j]) spot = 0;
+			else if (WtoB[j]) spot = 1;
+			else spot = 0;
+			if (spot)  {
+			    if (j != refh) putchar('@');
+			    else {
+				putchar('X');
+				refh = 2 * width;
+			    }
+			} else {
+			    if (j != refh) putchar('.');
+			    else {
+				putchar('x');
+				refh = 2 * width;
+			    }
+			}
+		    }
 		    putchar('\n');
-		    for (j = 0; j <= width; ebuff[j++] = '.');
-		    refv = (length * scale) / 100 + 1.1;
+		    for (j = 0; j <= width; j++)
+			Black[j] = BtoW[j] = WtoB[j] =
+				WBW[j] = BWB[j] = White[j] = 0;
+		    vdest = (length * scale) / 100 + 1.1;
 		}
 	    } /* for length */
+	    if (refh < 0) error("No position point in glyph %d", code);
 	    putchar('\n');
 	} /* else */
     } /* while */
