@@ -11,7 +11,7 @@ int		plodput();
  * as formatting of lines (printing of control characters,
  * line numbering and the like).
  *
- * %G% (Berkeley) @(#)cr_put.c	1.2
+ * %G% (Berkeley) @(#)cr_put.c	1.3
  */
 
 /*
@@ -229,8 +229,7 @@ plod(cnt)
 		if (!UP && destline < outline)
 			return (500);
 	if (GT)
-		i = destcol % HARDTABS
-		    + destcol / HARDTABS;
+		i = destcol % HARDTABS + destcol / HARDTABS;
 	else
 		i = destcol;
 /*
@@ -316,10 +315,10 @@ dontcr:
 			goto out;
 	}
 	if (GT && destcol - outcol > 1) {
-	for (;;) {
-		i = tabcol(outcol, HARDTABS);
-		if (i > destcol)
-			break;
+		for (;;) {
+			i = tabcol(outcol, HARDTABS);
+			if (i > destcol)
+				break;
 			if (TA)
 				tputs(TA, 0, plodput);
 			else
