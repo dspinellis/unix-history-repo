@@ -12,11 +12,15 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
+#if	defined(unix)
+#include <strings.h>
+#else	/* defined(unix) */
 #include <string.h>
+#endif	/* defined(unix) */
 
 #include "ring.h"
 #include "externs.h"
@@ -28,11 +32,17 @@ static char sccsid[] = "@(#)main.c	1.15 (Berkeley) %G%";
 void
 tninit()
 {
-	init_terminal();
-	init_network();
-	init_telnet();
-	init_sys();
-	init_3270();
+    init_terminal();
+
+    init_network();
+    
+    init_telnet();
+
+    init_sys();
+
+#if defined(TN3270)
+    init_3270();
+#endif
 }
 
 int	autologin;
@@ -40,6 +50,8 @@ int	autologin;
 /*
  * main.  Parse arguments, invoke the protocol or command parser.
  */
+
+
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -47,22 +59,23 @@ main(argc, argv)
 	extern char *optarg;
 	extern int optind;
 	int ch;
-	char *user;
+	char *user, *strrchr();
 
 	tninit();		/* Clear out things */
-#ifdef CRAY
+#if	defined(CRAY) && !defined(__STDC__)
 	_setlist_init();	/* Work around compiler bug */
 #endif
+
 	TerminalSaveState();
 
-	if (prompt = rindex(argv[0], '/'))
+	if (prompt = strrchr(argv[0], '/'))
 		++prompt;
 	else
 		prompt = argv[0];
 
 	user = NULL;
 	autologin = 0;
-	while ((ch = getopt(argc, argv, "ade:l:n:")) != EOF)
+	while ((ch = getopt(argc, argv, "ade:l:n:")) != EOF) {
 		switch(ch) {
 		case 'a':
 			autologin = 1;
@@ -87,9 +100,8 @@ main(argc, argv)
 					noasynchnet = 1;
 				} else if (!strcmp(optarg, "oasynchtty"))
 					noasynchtty = 1;
-				} else if (!strcmp(optarg, "oasynchnet"))
+				else if (!strcmp(optarg, "oasynchnet"))
 					noasynchnet = 1;
-				}
 			} else
 #endif	/* defined(TN3270) && defined(unix) */
 				SetNetTrace(optarg);
@@ -105,6 +117,7 @@ main(argc, argv)
 			usage();
 			/* NOTREACHED */
 		}
+	}
 	argc -= optind;
 	argv += optind;
 
@@ -131,13 +144,14 @@ main(argc, argv)
 			return (1);
 	}
 	(void)setjmp(toplevel);
-	for (;;)
+	for (;;) {
 #ifdef TN3270
 		if (shell_active)
 			shell_continue();
 		else
 #endif
 			command(1, 0, 0);
+	}
 }
 
 usage()
