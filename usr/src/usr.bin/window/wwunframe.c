@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwunframe.c	3.3 83/08/12";
+static	char *sccsid = "@(#)wwunframe.c	3.4 83/08/16";
 #endif
 
 #include "ww.h"
@@ -28,6 +28,7 @@ register struct ww *w;
 			if (wwsmap[i][j] == w->ww_index) {
 				wwsmap[i][j] = WWX_NOBODY;
 				wwns[i][j].c_w = ' ';
+				wwtouched[i] = 1;
 			}
 		}
 		w->ww_nvis[i] = 0;

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwredraw.c	3.3 83/08/15";
+static	char *sccsid = "@(#)wwredraw.c	3.4 83/08/16";
 #endif
 
 #include "ww.h"
@@ -12,6 +12,7 @@ wwredraw()
 
 	(*tt.tt_clear)();
 	for (i = 0; i < wwnrow; i++) {
+		wwtouched[i] = 1;
 		os = wwos[i];
 		for (j = wwncol; --j >= 0;)
 			(os++)->c_w = ' ';

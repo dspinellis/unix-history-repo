@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.3 83/08/15	
+ *	@(#)ww.h	3.4 83/08/16	
  */
 
 #include <stdio.h>
@@ -119,13 +119,14 @@ char **wwsmap;			/* the screen map */
 char **wwfmap;			/* the frame map */
 union ww_char **wwos;		/* the old (current) screen */
 union ww_char **wwns;		/* the new (desired) screen */
+char *wwtouched;		/* wwns changed flags */
 int wwbaudmap[];		/* maps stty() baud rate code into number */
 int wwbaud;			/* wwbaudmap[wwoldtty.ww_sgttyb.sg_ospeed] */
 int wwcursorrow, wwcursorcol;	/* where we want the cursor to be */
 
 	/* statistics */
-int wwnwrite;
-int wwnwritec;
+int wwnwrite, wwnwritec;
+int wwnupdate, wwntouched, wwnmiss;
 
 	/* quicky macros */
 #define wwcurrow(w)	((w)->ww_cur.r + (w)->ww_w.t)

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinit.c	3.3 83/08/15";
+static	char *sccsid = "@(#)wwinit.c	3.4 83/08/16";
 #endif
 
 #include "ww.h"
@@ -69,6 +69,12 @@ wwinit()
 		for (j = 0; j < wwncol; j++)
 			wwns[i][j].c_w = ' ';
 
+	wwtouched = malloc((unsigned) wwnrow);
+	if (wwtouched == 0)
+		goto bad;
+	for (i = 0; i < wwnrow; i++)
+		wwtouched[i] = 0;
+
 	wwindex[WWX_NOBODY] = &wwnobody;
 	wwnobody.ww_order = NWW;
 
@@ -94,6 +100,10 @@ wwinit()
 	}
 	return 0;
 bad:
+	/*
+	 * Don't bother to free storage.  We're supposed
+	 * to exit when wwinit fails anyway.
+	 */
 	(void) wwsettty(0, &wwoldtty);
 	return -1;
 }

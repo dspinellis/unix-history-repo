@@ -1,11 +1,8 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	3.1 83/08/11";
+static	char *sccsid = "@(#)wwwrite.c	3.2 83/08/16";
 #endif
 
 #include "ww.h"
-
-int wwnwrite;
-int wwnwritec;
 
 wwwrite(w, p, n)
 register struct ww *w;
@@ -37,6 +34,7 @@ register n;
 					i = wwcurrow(w);
 					j = wwcurcol(w);
 					if (wwsmap[i][j] == w->ww_index) {
+						wwtouched[i] = 1;
 						cc = wwns[i][j].c_w = cc
 							^ w->ww_win[w->ww_cur.r]
 							[w->ww_cur.c]

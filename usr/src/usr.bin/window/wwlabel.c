@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwlabel.c	3.2 83/08/12";
+static	char *sccsid = "@(#)wwlabel.c	3.3 83/08/16";
 #endif
 
 #include "ww.h"
@@ -21,6 +21,7 @@ char *l;
 	register union ww_char *buf;
 	register union ww_char *ns;
 	register char *fmap;
+	char *touched;
 
 	if ((i = w->ww_w.t - 1 - f->ww_w.t) < 0)
 		return -1;
@@ -31,6 +32,7 @@ char *l;
 	i += f->ww_w.t;
 	ns = &wwns[i][j];
 	fmap = &wwfmap[i][j];
+	touched = &wwtouched[i];
 	j = MIN(w->ww_w.r, f->ww_w.r) - j;
 
 	for (; j > 0 && *l;)
@@ -48,6 +50,7 @@ char *l;
 				ns++;
 				win++;
 			} else {
+				*touched = 1;
 				ns++->c_w = (buf++->c_w
 					= mode << WWC_MSHIFT | *p++)
 						^ *win++ << WWC_MSHIFT;
