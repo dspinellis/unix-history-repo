@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)initscr.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)initscr.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"curses.ext"
@@ -33,7 +33,6 @@ initscr() {
 
 	reg char	*sp;
 	int		tstp();
-	int 		nfd;
 
 # ifdef DEBUG
 	fprintf(outf, "INITSCR()\n");
@@ -41,9 +40,6 @@ initscr() {
 	if (My_term)
 		setterm(Def_term);
 	else {
-		for (_tty_ch = 0; _tty_ch < nfd; _tty_ch++)
-			if (isatty(_tty_ch))
-				break;
 		gettmode();
 		if ((sp = getenv("TERM")) == NULL)
 			sp = Def_term;
