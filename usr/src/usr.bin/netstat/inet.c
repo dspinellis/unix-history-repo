@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -56,7 +56,7 @@ void	inetprint __P((struct in_addr *, int, char *));
  */
 void
 protopr(off, name)
-	off_t off;
+	u_long off;
 	char *name;
 {
 	struct inpcb cb;
@@ -74,7 +74,7 @@ protopr(off, name)
 		return;
 	while (inpcb.inp_next != (struct inpcb *)off) {
 		next = inpcb.inp_next;
-		kread((off_t)next, (char *)&inpcb, sizeof (inpcb));
+		kread((u_long)next, (char *)&inpcb, sizeof (inpcb));
 		if (inpcb.inp_prev != prev) {
 			printf("???\n");
 			break;
@@ -84,9 +84,9 @@ protopr(off, name)
 			prev = next;
 			continue;
 		}
-		kread((off_t)inpcb.inp_socket, (char *)&sockb, sizeof (sockb));
+		kread((u_long)inpcb.inp_socket, (char *)&sockb, sizeof (sockb));
 		if (istcp) {
-			kread((off_t)inpcb.inp_ppcb,
+			kread((u_long)inpcb.inp_ppcb,
 			    (char *)&tcpcb, sizeof (tcpcb));
 		}
 		if (first) {
@@ -128,7 +128,7 @@ protopr(off, name)
  */
 void
 tcp_stats(off, name)
-	off_t off;
+	u_long off;
 	char *name;
 {
 	struct tcpstat tcpstat;
@@ -197,7 +197,7 @@ tcp_stats(off, name)
  */
 void
 udp_stats(off, name)
-	off_t off;
+	u_long off;
 	char *name;
 {
 	struct udpstat udpstat;
@@ -225,7 +225,7 @@ udp_stats(off, name)
  */
 void
 ip_stats(off, name)
-	off_t off;
+	u_long off;
 	char *name;
 {
 	struct ipstat ipstat;
@@ -281,7 +281,7 @@ static	char *icmpnames[] = {
  */
 void
 icmp_stats(off, name)
-	off_t off;
+	u_long off;
 	char *name;
 {
 	struct icmpstat icmpstat;

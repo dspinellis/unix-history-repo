@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -33,7 +33,7 @@ static char sccsid[] = "@(#)route.c	5.24 (Berkeley) %G%";
 #include <unistd.h>
 #include "netstat.h"
 
-#define kget(p, d) (kread((off_t)(p), (char *)&(d), sizeof (d)))
+#define kget(p, d) (kread((u_long)(p), (char *)&(d), sizeof (d)))
 
 /*
  * Definitions for showing gateway flags.
@@ -85,7 +85,7 @@ static void p_rtentry __P((struct rtentry *));
  */
 void
 routepr(rtree)
-	off_t rtree;
+	u_long rtree;
 {
 	struct radix_node_head *rnh, head;
 	int i;
@@ -178,7 +178,7 @@ kgetsa(dst)
 
 	kget(dst, pt_u.u_sa);
 	if (pt_u.u_sa.sa_len > sizeof (pt_u.u_sa))
-		kread((off_t)dst, (char *)pt_u.u_data, pt_u.u_sa.sa_len);
+		kread((u_long)dst, (char *)pt_u.u_data, pt_u.u_sa.sa_len);
 	return (&pt_u.u_sa);
 }
 
@@ -417,7 +417,7 @@ p_rtentry(rt)
 	if (rt->rt_ifp) {
 		if (rt->rt_ifp != lastif) {
 			kget(rt->rt_ifp, ifnet);
-			kread((off_t)ifnet.if_name, name, 16);
+			kread((u_long)ifnet.if_name, name, 16);
 			lastif = rt->rt_ifp;
 		}
 		printf(" %.15s%d%s", name, ifnet.if_unit,
@@ -529,7 +529,7 @@ netname(in, mask)
  */
 void
 rt_stats(off)
-	off_t off;
+	u_long off;
 {
 	struct rtstat rtstat;
 
