@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	8.7 (Berkeley) %G%
+ *	@(#)ffs_inode.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -135,9 +135,10 @@ ffs_truncate(ap)
 	int aflags, error, allerror;
 	off_t osize;
 
-	if (length < 0)
-		return (EINVAL);
 	oip = VTOI(ovp);
+	fs = oip->i_fs;
+	if (length < 0 || length > fs->fs_maxfilesize)
+		return (EINVAL);
 	tv = time;
 	if (ovp->v_type == VLNK &&
 	    oip->i_size < ovp->v_mount->mnt_maxsymlinklen) {
@@ -159,7 +160,6 @@ ffs_truncate(ap)
 		return (error);
 #endif
 	vnode_pager_setsize(ovp, (u_long)length);
-	fs = oip->i_fs;
 	osize = oip->i_size;
 	/*
 	 * Lengthen the size of the file. We must ensure that the
