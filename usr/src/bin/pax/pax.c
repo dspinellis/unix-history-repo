@@ -16,7 +16,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pax.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pax.c	1.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -34,7 +34,7 @@ static char sccsid[] = "@(#)pax.c	1.1 (Berkeley) %G%";
 static int gen_init __P((void));
 
 /*
- * BSD PAX main routines, general globals and some simple start up routines
+ * PAX main routines, general globals and some simple start up routines
  */
 
 /*
@@ -51,10 +51,12 @@ int	nflag;			/* select first archive member match */
 int	tflag;			/* restore access time after read */
 int	uflag;			/* ignore older modification time files */
 int	vflag;			/* produce verbose output */
+int	Dflag;			/* same as uflag except inode change time */
 int	Hflag;			/* follow command line symlinks (write only) */
 int	Lflag;			/* follow symlinks when writing archive */
 int	Xflag;			/* archive files with same device id only */
-int	Zflag;			/* move file time check to after name mode */
+int	Yflag;			/* same as Dflg except after name mode */
+int	Zflag;			/* same as uflg except after name mode */
 int	vfpart;			/* is partial verbose output in progress */
 int	patime = 1;		/* preserve file access time */
 int	pmtime = 1;		/* preserve file modification times */
@@ -83,7 +85,7 @@ sigset_t s_mask;		/* signal mask for cleanup critical sect */
  *
  * Summary of Extensions to the IEEE Standard:
  *
- * 1	Read enhancements
+ * 1	READ ENHANCEMENTS
  * 1.1	Operations which read archives will continue to operate even when
  *	processing archives which may be damaged, truncated, or fail to meet 
  *	format specs in several different ways. Damaged sections of archives
@@ -103,9 +105,9 @@ sigset_t s_mask;		/* signal mask for cleanup critical sect */
  *	archive devices 
  * 1.7	Rigidly restores all file attributes exactly as they are stored on the
  *	archive.
- * 1.8	Modification time ranges can be specified via multiple -T options.
- *	These allow a user to select files whose modification time lies within a
- *	specific time range.
+ * 1.8	Modification change time ranges can be specified via multiple -T
+ *	options. These allow a user to select files whose modification time
+ *	lies within a specific time range.
  * 1.9	Files can be selected based on owner (user name or uid) via one or more
  *	-U options.
  * 1.10	Files can be selected based on group (group name or gid) via one o
@@ -113,7 +115,7 @@ sigset_t s_mask;		/* signal mask for cleanup critical sect */
  * 1.11	File modification time can be checked against exisiting file after
  *	name modification (-Z)
  *
- * 2	Write enhancements
+ * 2	WRITE ENHANCEMENTS
  * 2.1	Write operation will stop instead of allowing a user to create a flawed
  *	flawed archive (due to any problem).
  * 2.2	Archives writtens by pax are forced to strictly conform to both the
@@ -137,9 +139,9 @@ sigset_t s_mask;		/* signal mask for cleanup critical sect */
  * 2.8	Access time reset with the -t applies to all file nodes (including
  *	directories).
  * 2.9	Symbolic links can be followed with -L (optional in the spec).
- * 2.10	Modification time ranges can be specified via multiple -T options. These
- *	allow a user to select files whose modification time lies within a
- *	specific time range.
+ * 2.10	Modification or inode change time ranges can be specified via
+ *	multiple -T options. These allow a user to select files whose
+ *	modification or inode change time lies within a specific time range.
  * 2.11	Files can be selected based on owner (user name or uid) via one or more
  *	-U options.
  * 2.12	Files can be selected based on group (group name or gid) via one o
@@ -147,7 +149,7 @@ sigset_t s_mask;		/* signal mask for cleanup critical sect */
  * 2.13	Symlinks which appear on the command line can be followed (without
  *	following other symlinks; -H flag)
  *
- * 3	Copy enhancements
+ * 3	COPY ENHANCEMENTS
  * 3.1	Sparse files (lseek holes) can be copied without expanding the holes
  *	into zero filled blocks. The file copy is created with holes which are
  *	appropriate for the target filesystem
@@ -156,23 +158,34 @@ sigset_t s_mask;		/* signal mask for cleanup critical sect */
  * 3.3	Access time reset with the -t applies to all file nodes (including
  *	directories).
  * 3.4	Symbolic links can be followed with -L (optional in the spec).
- * 3.5	Modification time ranges can be specified via multiple -T options. These
- *	allow a user to select files whose modification time lies within a
- *	specific time range.
+ * 3.5	Modification or inode change time ranges can be specified via
+ *	multiple -T options. These allow a user to select files whose
+ *	modification or inode change time lies within a specific time range.
  * 3.6	Files can be selected based on owner (user name or uid) via one or more
  *	-U options.
  * 3.7	Files can be selected based on group (group name or gid) via one o
  *	more -G options.
  * 3.8	Symlinks which appear on the command line can be followed (without
  *	following other symlinks; -H flag)
- * 3.9	File modification time can be checked against exisiting file after
+ * 3.9  File inode change time can be checked against exisiting file before
+ *	name modification (-D)
+ * 3.10 File inode change time can be checked against exisiting file after
+ *	name modification (-Y)
+ * 3.11	File modification time can be checked against exisiting file after
  *	name modification (-Z)
  *
- * 4	General enhancements
+ * 4	GENERAL ENHANCEMENTS
  * 4.1	Internal structure is designed to isolate format dependent and 
  *	independent functions. Formats are selected via a format driver table.
  *	This encourages the addition of new archive formats by only having to
  *	write those routines which id, read and write the archive header.
+ */
+
+/*
+ * main()
+ *	parse options, set up and operate as specified by the user.
+ *	any operational flaw will set exit_val to non-zero
+ * Return: 0 if ok, 1 otherwise
  */
 
 #if __STDC__
@@ -186,8 +199,7 @@ main(argc, argv)
 #endif
 {
 	/*
-	 * parse options, set up and operate as specified by the user.
-	 * any operational flaw will set exit_val to none zero
+	 * parse options, determine operational mode, general init
 	 */
 	options(argc, argv);
         if ((gen_init() < 0) || (tty_init() < 0))
@@ -218,43 +230,6 @@ main(argc, argv)
 }
 
 /*
- * usage()
- *	print the usage summary to the user
- */
-
-#if __STDC__
-void
-usage(void)
-#else
-void
-usage()
-#endif
-{
-	(void)fputs("usage: pax [-cdnv] [-E limit] [-f archive]", stderr);
-	(void)fputs(" [-s replstr] ... [-U user] ...", stderr);
-	(void)fputs("\n           [-G group] ... ", stderr);
-	(void)fputs("[-T [from_date][,to_date]] ...  [pattern ...]\n", stderr);
-	(void)fputs("       pax -r [-cdiknuvZ] [-E limit] ", stderr);
-	(void)fputs("[-f archive] [-o options] ... \n", stderr);
-	(void)fputs("           [-p string] ... [-s replstr] ... ", stderr);
-	(void)fputs(" [-U user] ... [-G group] ...", stderr);
-	(void)fputs("\n           [-T [from_date][,to_date]] ... ", stderr);
-	(void)fputs(" [pattern ...]\n", stderr);
-	(void)fputs("       pax -w [-dituvHLX] [-b blocksize] ", stderr);
-	(void)fputs("[ [-a] [-f archive] ] [-x format] \n", stderr);
-	(void)fputs("           [-B bytes] [-s replstr] ... ", stderr);
-	(void)fputs("[-o options] ... [-U user] ...", stderr);
-	(void)fputs("\n           [-G group] ... ", stderr);
-	(void)fputs("[-T [from_date][,to_date]] ... [file ...]\n", stderr);
-	(void)fputs("       pax -r -w [-diklntuvHLXZ]", stderr);
-	(void)fputs("[-p string] ... [-s replstr] ... [-U user] ...", stderr);
-	(void)fputs("\n           [-G group] ... ", stderr);
-	(void)fputs("[-T [from_date][,to_date]] ... ", stderr);
-	(void)fputs("[file ...] directory\n", stderr);
-	exit(1);
-}
-
-/*
  * sig_cleanup()
  *	when interrupted we try to do whatever delayed processing we can.
  *	This is not critical, but we really ought to limit our damage when we
@@ -274,13 +249,15 @@ sig_cleanup(which_sig)
 {
 	/*
 	 * restore modes and times for any dirs we may have created
-	 * or any dirs we may have read
+	 * or any dirs we may have read. Set vflag and vfpart so the user
+	 * will clearly see the message on a line by itself.
 	 */
-	vfpart = 1;
+	vflag = vfpart = 1;
 	if (which_sig == SIGXCPU)
 		warn(0, "Cpu time limit reached, cleaning up.");
 	else
 		warn(0, "Signal caught, cleaning up.");
+
 	ar_close();
 	proc_dir();
 	if (tflag)
@@ -350,9 +327,8 @@ gen_init()
 	/*
 	 * signal handling to reset stored directory times and modes. Since
 	 * we deal with broken pipes via failed writes we ignore it. We also
-	 * deal with exceeed file size limit with failed writes. Cpu time
-	 * limits is caught and a cleanup is forced. All other "user"
-	 * generated signals are handled.
+	 * deal with any file size limit thorugh failed writes. Cpu time
+	 * limits are caught and a cleanup is forced.
 	 */
 	if ((sigemptyset(&s_mask) < 0) || (sigaddset(&s_mask, SIGTERM) < 0) ||
 	    (sigaddset(&s_mask,SIGINT) < 0)||(sigaddset(&s_mask,SIGHUP) < 0) ||
@@ -399,4 +375,43 @@ gen_init()
     out:
 	syswarn(1, errno, "Unable to set up signal handler");
 	return(-1);
+}
+
+/*
+ * usage()
+ *	print the usage summary to the user
+ */
+
+#if __STDC__
+void
+usage(void)
+#else
+void
+usage()
+#endif
+{
+	(void)fputs("usage: pax [-cdnv] [-E limit] [-f archive] ", stderr);
+	(void)fputs("[-s replstr] ... [-U user] ...", stderr);
+	(void)fputs("\n           [-G group] ... ", stderr);
+	(void)fputs("[-T [from_date][,to_date]] ... ", stderr);
+	(void)fputs("[pattern ...]\n", stderr);
+	(void)fputs("       pax -r [-cdiknuvDYZ] [-E limit] ", stderr);
+	(void)fputs("[-f archive] [-o options] ... \n", stderr);
+	(void)fputs("           [-p string] ... [-s replstr] ... ", stderr);
+	(void)fputs("[-U user] ... [-G group] ...\n           ", stderr);
+	(void)fputs("[-T [from_date][,to_date]] ... ", stderr);
+	(void)fputs(" [pattern ...]\n", stderr);
+	(void)fputs("       pax -w [-dituvHLX] [-b blocksize] ", stderr);
+	(void)fputs("[ [-a] [-f archive] ] [-x format] \n", stderr);
+	(void)fputs("           [-B bytes] [-s replstr] ... ", stderr);
+	(void)fputs("[-o options] ... [-U user] ...", stderr);
+	(void)fputs("\n           [-G group] ... ", stderr);
+	(void)fputs("[-T [from_date][,to_date][/[c][m]]] ... ", stderr);
+	(void)fputs("[file ...]\n", stderr);
+	(void)fputs("       pax -r -w [-diklntuvDHLXYZ]", stderr);
+	(void)fputs("[-p string] ... [-s replstr] ... [-U user] ...", stderr);
+	(void)fputs("\n           [-G group] ... ", stderr);
+	(void)fputs("[-T [from_date][,to_date][/[c][m]]] ... ", stderr);
+	(void)fputs("[file ...]\n           directory\n", stderr);
+	exit(1);
 }
