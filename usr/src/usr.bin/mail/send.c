@@ -256,10 +256,6 @@ mail1(hp)
 	hp->h_seq = 1;
 	if (hp->h_subject == NOSTR)
 		hp->h_subject = sflag;
-	if (fsize(mtf) == 0 && hp->h_subject == NOSTR) {
-		printf("No message !?!\n");
-		goto out;
-	}
 	if (intty && value("askcc") != NOSTR)
 		grabh(hp, GCC);
 	else if (intty) {
@@ -312,6 +308,9 @@ topdog:
 	if (hp->h_seq > 0 && !remote) {
 		fixhead(hp, to);
 		if (fsize(mtf) == 0)
+		    if (hp->h_subject == NOSTR)
+			printf("No message, no subject; hope that's ok\n");
+		    else
 			printf("Null message body; hope that's ok\n");
 		if ((mtf = infix(hp, mtf)) == NULL) {
 			fprintf(stderr, ". . . message lost, sorry.\n");
