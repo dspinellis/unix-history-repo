@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -41,6 +41,8 @@ int lstat(), strlen();
 char *emalloc();
 
 int	qflg, Aflg, Cflg, Fflg, Lflg, Rflg, Sflg;
+
+int termwidth = 80;		/* default terminal width */
 
 /* flags */
 int f_accesstime;		/* use time of last access */
@@ -81,8 +83,10 @@ main(argc, argv)
 	if (isatty(1)) {
 		f_nonprint = 1;
 		(void)ioctl(1, TIOCGETP, &sgbuf);
-		if (ioctl(1, TIOCGWINSZ, &win) == -1 || !win.ws_col)
-			termwidth = (p = getenv("COLUMNS")) ? atoi(p) : 80;
+		if (ioctl(1, TIOCGWINSZ, &win) == -1 || !win.ws_col) {
+			if (p = getenv("COLUMNS"))
+				termwidth = atoi(p);
+		}
 		else
 			termwidth = win.ws_col;
 	} else
