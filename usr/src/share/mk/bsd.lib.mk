@@ -1,4 +1,12 @@
 #	@(#)bsd.lib.mk	5.26 (Berkeley) 5/2/91
+#
+# PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+# --------------------         -----   ----------------------
+# CURRENT PATCH LEVEL:         1       00157
+# --------------------         -----   ----------------------
+#
+# 27 Apr 93	Rodney W. Grimes	Break up cleandir so that we do not
+#					overflow shell args
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -83,9 +91,10 @@ clean:
 
 .if !target(cleandir)
 cleandir:
-	rm -f a.out Errs errs mklog core ${CLEANFILES} ${OBJS} ${POBJS} \
-	    profiled/*.o lib${LIB}.a lib${LIB}_p.a llib-l${LIB}.ln \
+	rm -f a.out Errs errs mklog core ${CLEANFILES} ${OBJS} \
+	    lib${LIB}.a llib-l${LIB}.ln \
 	    ${MANALL} ${.CURDIR}/tags .depend
+	rm -f ${POBJS} profiled/*.o lib${LIB}_p.a
 	cd ${.CURDIR}; rm -rf obj;
 .endif
 
