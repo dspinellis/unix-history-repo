@@ -5,7 +5,7 @@
 # include <sysexits.h>
 # include <whoami.h>
 
-static char SccsId[] = "@(#)sccs.c	1.20 %G%";
+static char SccsId[] = "@(#)sccs.c	1.21 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -217,6 +217,7 @@ command(argv, forkflag)
 	  case UNEDIT:
 		for (avp = &argv[1]; *avp != NULL; avp++)
 			unedit(*avp);
+		xcommand(&argv[1], FALSE, "get", NULL);
 		break;
 
 	  default:
