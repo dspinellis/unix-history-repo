@@ -1,4 +1,4 @@
-#	@(#)files.newconf	8.3 (Berkeley) %G%
+#	@(#)files.newconf	8.4 (Berkeley) %G%
 
 # generic attributes
 define	disk
@@ -98,6 +98,14 @@ file	miscfs/nullfs/null_vfsops.c	nullfs
 file	miscfs/nullfs/null_vnops.c	nullfs
 file	miscfs/portal/portal_vfsops.c	portal
 file	miscfs/portal/portal_vnops.c	portal
+file	miscfs/procfs/procfs_subr.c	procfs
+file	miscfs/procfs/procfs_vnops.c	procfs
+file	miscfs/procfs/procfs_vfsops.c	procfs
+file	miscfs/procfs/procfs_note.c	procfs
+file	miscfs/procfs/procfs_mem.c	procfs
+file	miscfs/procfs/procfs_ctl.c	procfs
+file	miscfs/procfs/procfs_status.c	procfs
+file	miscfs/procfs/procfs_regs.c	procfs
 file	miscfs/specfs/spec_vnops.c
 file	miscfs/umapfs/umap_subr.c	umapfs
 file	miscfs/umapfs/umap_vfsops.c	umapfs
