@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.3	6.1 (Berkeley) %G%
+.\"	@(#)intro.3	6.2 (Berkeley) %G%
 .\"
 .TH INTRO 3F ""
 .UC 5
@@ -10,11 +10,14 @@
 intro \- introduction to FORTRAN library functions
 .SH DESCRIPTION
 .PP
-This section describes those functions that are in the FORTRAN run time
+This section describes those functions that are in the Fortran run time
 library.  The functions listed here provide an interface from \fIf77\fP
 programs to the system in the same manner as the C library does for C
 programs.  They are automatically loaded as needed by the Fortran compiler
-.IR f77 (1).
+.IR f77 (1),
+except for the graphics interface routines.
+Those must be explicitly requested, see
+.IR plot (3f).
 .PP
 Most of these functions are in libU77.a. 
 Some are in libF77.a or libI77.a.
@@ -38,13 +41,18 @@ module.
 \fIName\fP	\fIAppears on Page\fP	\fIDescription\fP
 .ta \w'system'u+4n +\w'access.3f'u+4n
 .sp 5p
-abort	abort.3f	terminate abruptly with memory image
+abort	abort.3f	abnormal termination
 access	access.3f	determine accessability of a file
+arc	plot.3f	graphics interface
 alarm	alarm.3f	execute a subroutine after a specified time
 bessel	bessel.3f	of two kinds for integer orders
 bit	bit.3f	and, or, xor, not, rshift, lshift bitwise functions
+box	plot.3f	graphics interface
 chdir	chdir.3f	change default directory
 chmod	chmod.3f	change mode of a file
+circle	plot.3f	graphics interface
+clospl	plot.3f	graphics interface
+cont	plot.3f	graphics interface
 ctime	time.3f	return system time
 dffrac	flmin.3f	return extreme values
 dflmax	flmin.3f	return extreme values
@@ -52,6 +60,7 @@ dflmin	flmin.3f	return extreme values
 drand	rand.3f	return random values
 drandm	random.3f	better random number generator
 dtime	etime.3f	return elapsed execution time
+erase	plot.3f	graphics interface
 etime	etime.3f	return elapsed execution time
 exit	exit.3f	terminate process with status
 falloc	malloc.3f	memory allocator
@@ -91,7 +100,10 @@ irandm	random.3f	better random number generator
 isatty	ttynam.3f	find name of a terminal port
 itime	idate.3f	return date or time in numerical form
 kill	kill.3f	send a signal to a process
+label	plot.3f	graphics interface
 len	index.3f	tell about character objects
+line	plot.3f	graphics interface
+linemd	plot.3f	graphics interface
 link	link.3f	make a link to an existing file
 lnblnk	index.3f	tell about character objects
 loc	loc.3f	return the address of an object
@@ -99,7 +111,10 @@ long	long.3f	integer object conversion
 lstat	stat.3f	get file status
 ltime	time.3f	return system time
 malloc	malloc.3f	memory allocator
+move	plot.3f	graphics interface
+openpl	plot.3f	graphics interface
 perror	perror.3f	get system error messages
+point	plot.3f	graphics interface
 putc	putc.3f	write a character to a fortran logical unit
 qsort	qsort.3f	quick sort
 rand	rand.3f	return random values
@@ -109,6 +124,7 @@ rindex	index.3f	tell about character objects
 short	long.3f	integer object conversion
 signal	signal.3f	change the action for a signal
 sleep	sleep.3f	suspend execution for an interval
+space	plot.3f	graphics interface
 stat	stat.3f	get file status
 system	system.3f	execute a \s-2UNIX\s0 command
 tclose	topen.3f	f77 tape I/O
