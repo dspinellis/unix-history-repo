@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local.c	1.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)local.c	1.6 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -141,13 +141,14 @@ clocal(p) register NODE *p; {
 				break;
 				}
 			p->in.left->in.type = m;
-		} else if (tlen(p) == tlen(p->in.left))
+		}
+#ifdef notdef
+		else if (tlen(p) == tlen(p->in.left))
 			goto inherit;
-		else
-			break;
 		/* clobber conversion */
 		p->in.op = FREE;
 		return( p->in.left );  /* conversion gets clobbered */
+#endif
 		break;
 
 	case QUEST:	/* the right side should be COLON */
