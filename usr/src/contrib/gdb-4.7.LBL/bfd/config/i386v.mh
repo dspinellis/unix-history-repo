@@ -1,0 +1,3 @@
+RANLIB = /bin/true
+ALLOCA = alloca.o
+HDEFINES = -DUSG
