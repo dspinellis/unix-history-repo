@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umap_subr.c	8.5 (Berkeley) %G%
+ *	@(#)umap_subr.c	8.6 (Berkeley) %G%
  *
  * $Id: lofs_subr.c, v 1.11 1992/05/30 10:05:43 jsp Exp jsp $
  */
@@ -323,7 +323,8 @@ umap_mapids(v_mount, credp)
 	struct mount *v_mount;
 	struct ucred *credp;
 {
-	int i, unentries, gnentries, *groupmap, *usermap;
+	int i, unentries, gnentries;
+	u_long *groupmap, *usermap;
 	uid_t uid;
 	gid_t gid;
 
