@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)term.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)term.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -96,6 +96,11 @@ askuser(dflt)
 	static char answer[256];
 	char *p;
 
+	/* We can get recalled; if so, don't continue uselessly. */
+	if (feof(stdin) || ferror(stdin)) {
+		(void)fprintf(stderr, "\n");
+		exit(1);
+	}
 	for (;;) {
 		if (dflt)
 			(void)fprintf(stderr, "Terminal type? [%s] ", dflt);
@@ -103,8 +108,13 @@ askuser(dflt)
 			(void)fprintf(stderr, "Terminal type? ");
 		(void)fflush(stderr);
 
-		if (fgets(answer, sizeof(answer), stdin) == NULL)
+		if (fgets(answer, sizeof(answer), stdin) == NULL) {
+			if (dflt == NULL) {
+				(void)fprintf(stderr, "\n");
+				exit(1);
+			}
 			return (dflt);
+		}
 
 		if (p = index(answer, '\n'))
 			*p = '\0';
