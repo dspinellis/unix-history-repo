@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_bio.c	7.18 (Berkeley) %G%
+ *	@(#)lfs_bio.c	7.19 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -33,8 +33,12 @@ int	lfs_allclean_wakeup;		/* Cleaner wakeup address. */
 int	locked_queue_count;		/* XXX Count of locked-down buffers. */
 int	lfs_writing;			/* Set if already kicked off a writer
 					   because of buffer space */
+/*
 #define WRITE_THRESHHOLD	((nbuf >> 2) - 10)
 #define WAIT_THRESHHOLD		((nbuf >> 1) - 10)
+*/
+#define WAIT_THRESHHOLD         (nbuf - (nbuf >> 2) - 10)
+#define WRITE_THRESHHOLD        ((nbuf >> 1) - 10)
 #define LFS_BUFWAIT	2
 
 int
@@ -103,6 +107,9 @@ lfs_flush()
 {
 	register struct mount *mp;
 
+#ifdef DOSTATS
+	++lfs_stats.write_exceeded;
+#endif
 	if (lfs_writing)
 		return;
 	lfs_writing = 1;
@@ -119,6 +126,9 @@ lfs_flush()
 			 * get written, so we want the count to reflect these
 			 * new writes after the segwrite completes.
 			 */
+#ifdef DOSTATS
+			++lfs_stats.flush_invoked;
+#endif
 			lfs_segwrite(mp, 0);
 		}
 		mp = mp->mnt_next;
@@ -141,9 +151,13 @@ lfs_check(vp, blkno)
 		lfs_flush();
 
 	/* If out of buffers, wait on writer */
-	while (locked_queue_count > WAIT_THRESHHOLD)
+	while (locked_queue_count > WAIT_THRESHHOLD) {
+#ifdef DOSTATS
+	    ++lfs_stats.wait_exceeded;
+#endif
 	    error = tsleep(&locked_queue_count, PCATCH | PUSER, "buffers",
 	        hz * LFS_BUFWAIT);
+	}
 
 	return (error);
 }
