@@ -9,22 +9,25 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.38 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <fts.h>
-#include <time.h>
+
+#include <err.h>
 #include <errno.h>
+#include <fts.h>
 #include <grp.h>
 #include <pwd.h>
-#include <utmp.h>
-#include <unistd.h>
-#include <tzfile.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <tzfile.h>
+#include <unistd.h>
+#include <utmp.h>
+
 #include "ls.h"
 #include "extern.h"
 
@@ -121,7 +124,7 @@ printcol(dp)
 		lastentries = dp->entries;
 		if ((array =
 		    realloc(array, dp->entries * sizeof(FTSENT *))) == NULL) {
-			err(0, "%s", strerror(errno));
+			warn(NULL);
 			printscol(dp);
 		}
 	}
@@ -182,10 +185,10 @@ printaname(p, inodefield, sizefield)
 	sp = p->fts_statp;
 	chcnt = 0;
 	if (f_inode)
-		chcnt += printf("%*lu ", inodefield, sp->st_ino);
+		chcnt += printf("%*lu ", (int)inodefield, sp->st_ino);
 	if (f_size)
 		chcnt += printf("%*qd ",
-		    sizefield, howmany(sp->st_blocks, blocksize));
+		    (int)sizefield, howmany(sp->st_blocks, blocksize));
 	chcnt += printf("%s", p->fts_name);
 	if (f_type)
 		chcnt += printtype(sp->st_mode);
