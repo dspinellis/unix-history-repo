@@ -1,4 +1,4 @@
-/*	tm.c	4.27	81/03/09	*/
+/*	tm.c	4.28	81/03/10	*/
 
 #include "te.h"
 #if NTM > 0
@@ -205,10 +205,9 @@ get:
 	if ((minor(dev) & T_1600BPI) == 0)
 		dens |= TM_D800;
 	if ((sc->sc_erreg&(TMER_SELR|TMER_TUR)) != (TMER_SELR|TMER_TUR) ||
+	    (flag&FWRITE) && (sc->sc_erreg&TMER_WRL) ||
 	    (sc->sc_erreg&TMER_BOT) == 0 && (flag&FWRITE) &&
-		dens != sc->sc_dens ||
-	    (flag&(FREAD|FWRITE)) == FWRITE && sc->sc_erreg&TMER_WRL) {
-		printf("er %o dens %o sc->sc_dens %o flag %o\n", sc->sc_erreg, dens, sc->sc_dens, flag);
+		dens != sc->sc_dens) {
 		/*
 		 * Not online or density switch in mid-tape or write locked.
 		 */
