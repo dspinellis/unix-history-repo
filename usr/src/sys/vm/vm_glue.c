@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_glue.c	7.3 (Berkeley) %G%
+ *	@(#)vm_glue.c	7.4 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -74,7 +74,7 @@ useracc(addr, len, rw)
 
 #ifdef KGDB
 /*
- * Change protections on kernel pages from addr to addr+size
+ * Change protections on kernel pages from addr to addr+len
  * (presumably so debugger can plant a breakpoint).
  * All addresses are assumed to reside in the Sysmap,
  */
@@ -109,13 +109,23 @@ vsunlock(addr, len, dirtied)
 			round_page(addr+len-1), TRUE);
 }
 
+/*
+ * Implement fork's actions on an address space.
+ * Here we arrange for the address space to be copied or referenced,
+ * allocate a user struct (pcb and kernel stack), then call the
+ * machine-dependent layer to fill those in and make the new process
+ * ready to run.
+ * NOTE: the kernel stack may be at a different location in the child
+ * process, and thus addresses of automatic variables may be invalid
+ * after cpu_fork returns in the child process.  We do nothing here
+ * after cpu_fork returns.
+ */
 vm_fork(p1, p2, isvfork)
 	register struct proc *p1, *p2;
 	int isvfork;
 {
 	register struct user *up;
 	vm_offset_t addr;
-	vm_size_t size;
 
 	p2->p_vmspace = vmspace_fork(p1->p_vmspace);
 
@@ -125,49 +135,37 @@ vm_fork(p1, p2, isvfork)
 #endif
 
 	/*
-	 * Allocate a wired-down (for now) u-area for the process
+	 * Allocate a wired-down (for now) pcb and kernel stack for the process
 	 */
-	size = round_page(ctob(UPAGES));
-	addr = kmem_alloc_pageable(kernel_map, size);
-	vm_map_pageable(kernel_map, addr, addr + size, FALSE);
-	p2->p_addr = (caddr_t)addr;
+	addr = kmem_alloc_pageable(kernel_map, ctob(UPAGES));
+	vm_map_pageable(kernel_map, addr, addr + ctob(UPAGES), FALSE);
 	up = (struct user *)addr;
+	p2->p_addr = up;
 
-	/*
-	 * Update the current u-area and copy it to the new one
-	 * THIS SHOULD BE DONE DIFFERENTLY, probably with a single
-	 * machine-dependent call that copies and updates the pcb+stack,
-	 * replacing the resume and savectx.
-	 */
-	resume(pcbb(p1));
-	bcopy(p1->p_addr, p2->p_addr, size);
 	/*
 	 * p_stats and p_sigacts currently point at fields
 	 * in the user struct but not at &u, instead at p_addr.
+	 * Copy p_sigacts and parts of p_stats; zero the rest
+	 * of p_stats (statistics).
 	 */
-	p2->p_stats = &((struct user *)p2->p_addr)->u_stats;
-	p2->p_sigacts = &((struct user *)p2->p_addr)->u_sigacts;
+	p2->p_stats = &up->u_stats;
+	p2->p_sigacts = &up->u_sigacts;
+	up->u_sigacts = *p1->p_sigacts;
+	bzero(&up->u_stats.pstat_startzero,
+	    (unsigned) ((caddr_t)&up->u_stats.pstat_endzero -
+	    (caddr_t)&up->u_stats.pstat_startzero));
+	bcopy(&p1->p_stats->pstat_startcopy, &up->u_stats.pstat_startcopy,
+	    ((caddr_t)&up->u_stats.pstat_endcopy -
+	     (caddr_t)&up->u_stats.pstat_startcopy));
 
 	/*
-	 * Clear vm statistics of new process.
+	 * cpu_fork will copy and update the kernel stack and pcb,
+	 * and make the child ready to run.  It marks the child
+	 * so that it can return differently than the parent.
+	 * It returns twice, once in the parent process and
+	 * once in the child.
 	 */
-	bzero((caddr_t)&up->u_stats.p_ru, sizeof (struct rusage));
-	bzero((caddr_t)&up->u_stats.p_cru, sizeof (struct rusage));
-
-	PMAP_ACTIVATE(&p2->p_vmspace->vm_pmap, (struct pcb *)p2->p_addr, 0);
-
-	/*
-	 * Arrange for a non-local goto when the new process
-	 * is started, to resume here, returning nonzero from setjmp.
-	 */
-	up->u_pcb.pcb_sswap = (int *)&u.u_ssave;
-	if (savectx(&up->u_ssave)) {
-		/*
-		 * Return 1 in child.
-		 */
-		return (1);
-	}
-	return (0);
+	return (cpu_fork(p1, p2));
 }
 
 /*
