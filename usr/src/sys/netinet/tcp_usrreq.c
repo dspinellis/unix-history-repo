@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.35 81/11/25 */
+/* tcp_usrreq.c 1.36 81/11/26 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,16 +6,18 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../h/protosw.h"
-#include "../net/inet.h"
-#include "../net/inet_pcb.h"
-#include "../net/inet_systm.h"
+#include "../net/in.h"
+#include "../net/in_pcb.h"
+#include "../net/in_systm.h"
 #include "../net/if.h"
-#include "../net/imp.h"
 #include "../net/ip.h"
 #include "../net/ip_var.h"
 #include "../net/tcp.h"
 #include "../net/tcp_fsm.h"
+#include "../net/tcp_seq.h"
+#include "../net/tcp_timer.h"
 #include "../net/tcp_var.h"
+#include "../net/tcpip.h"
 #include "/usr/include/errno.h"
 
 struct	tcpcb *tcp_newtcpcb();
@@ -41,7 +43,7 @@ COUNT(TCP_USRREQ);
 	 * Make sure attached.  If not,
 	 * only PRU_ATTACH is valid.
 	 */
-	if (inp == 0 && req != PRU_ATTACH)
+	if (inp == 0 && req != PRU_ATTACH) {
 		splx(s);
 		return (EINVAL);
 	}
@@ -108,7 +110,7 @@ COUNT(TCP_USRREQ);
 		break;
 
 	case PRU_SHUTDOWN:
-		socantsndmore(so);
+		socantsendmore(so);
 		switch (tp->t_state) {
 
 		case TCPS_LISTEN:
@@ -116,8 +118,8 @@ COUNT(TCP_USRREQ);
 			tp->t_state = TCPS_CLOSED;
 			break;
 
-		case TCPS_SYN_RCVD:
-		case TCPS_ESTAB:
+		case TCPS_SYN_RECEIVED:
+		case TCPS_ESTABLISHED:
 			tp->t_state = TCPS_FIN_WAIT_1;
 			tcp_output(tp);
 			break;
@@ -130,28 +132,17 @@ COUNT(TCP_USRREQ);
 		break;
 
 	case PRU_RCVD:
-		if (tp->t_state < TCPS_ESTABLISHED) {
-			error = ENOTCONN;
-			break;
-		}
 		tcp_output(tp);
 		break;
 
 	case PRU_SEND:
-		if (tp->t_state < TCPS_ESTABLISHED) {
-			error = ENOTCONN;
-			break;
-		}
-		if (tp->t_state > TCPS_CLOSE_WAIT) {
-			error = EISDISCONN;
-			m_freem(m);
-			break;
-		}
 		sbappend(&so->so_snd, m);
-		if (tp->t_options & TO_EOL)
+/*
+		if (tp->t_flags & TF_PUSH)
 			tp->snd_end = tp->snd_una + so->so_snd.sb_cc;
-		if (tp->t_options & TO_URG)
-			tp->snd_urp = tp->snd_una + so->so_snd.sb_cc + 1;
+ */
+		if (tp->t_flags & TF_URG)
+			tp->snd_up = tp->snd_una + so->so_snd.sb_cc + 1;
 		tcp_output(tp);
 		break;
 
