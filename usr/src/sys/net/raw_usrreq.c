@@ -1,17 +1,17 @@
 /*	raw_usrreq.c	6.5	84/08/28	*/
 
-#include "../h/param.h"
-#include "../h/mbuf.h"
-#include "../h/domain.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
-#include "../h/errno.h"
+#include "param.h"
+#include "mbuf.h"
+#include "domain.h"
+#include "protosw.h"
+#include "socket.h"
+#include "socketvar.h"
+#include "errno.h"
 
-#include "../net/if.h"
-#include "../net/route.h"
-#include "../net/netisr.h"
-#include "../net/raw_cb.h"
+#include "if.h"
+#include "route.h"
+#include "netisr.h"
+#include "raw_cb.h"
 
 #include "../vax/mtpr.h"
 

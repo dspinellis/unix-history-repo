@@ -1,17 +1,17 @@
 /*	if.c	6.5	84/08/28	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/socket.h"
-#include "../h/protosw.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/kernel.h"
-#include "../h/ioctl.h"
-#include "../h/errno.h"
+#include "param.h"
+#include "systm.h"
+#include "socket.h"
+#include "protosw.h"
+#include "dir.h"
+#include "user.h"
+#include "kernel.h"
+#include "ioctl.h"
+#include "errno.h"
 
-#include "../net/if.h"
-#include "../net/af.h"
+#include "if.h"
+#include "af.h"
 
 #include "ether.h"
 
