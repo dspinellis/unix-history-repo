@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwmisc.c	3.5 83/12/02";
+static	char *sccsid = "@(#)wwmisc.c	3.6 84/04/08";
 #endif
 
 #include "ww.h"
@@ -21,60 +21,4 @@ register struct ww *w;
 	    && wwsmap[w->ww_cur.r][w->ww_cur.c] == w->ww_index)
 		nvis++;
 	return nvis == w->ww_i.nr * w->ww_i.nc;
-}
-
-struct ww *wwhead = 0;
-struct ww *curwin = 0;
-
-wwsetcurwin(wp)
-register struct ww *wp;
-{
-	curwin = wp;
-	Wfront(wp->ww_win);
-}
-
-wwhaschildren()
-{
-	register struct ww *wp;
-
-	for (wp = wwhead; wp; wp = wp->ww_next)
-		if (wp->ww_state == WW_HASPROC)
-			return 1;
-	return 0;
-}
-
-struct ww *
-wwfind(id)
-register id;
-{
-	register struct ww *w;
-
-	for (w = wwhead; w && w->ww_ident != id; w = w->ww_next)
-		;
-	return w;
-}
-
-char *
-unctrl(c)
-register c;
-{
-	static char buf[5];
-	register char *p = buf;
-
-	c = (unsigned)(unsigned char)c;
-	if (c == DEL) {
-		*p++ = '^';
-		*p++ = '?';
-	} else if (c < ' ') {
-		*p++ = '^';
-		*p++ = c + '@';
-	} else if (c > DEL) {
-		*p++ = '\\';
-		*p++ = (c >> 6 & 3) + '0';
-		*p++ = (c >> 3 & 7) + '0';
-		*p++ = (c & 7) + '0';
-	} else
-		*p++ = c;
-	*p = 0;
-	return buf;
 }

@@ -1,8 +1,9 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.22 84/03/23";
+static	char *sccsid = "@(#)cmd1.c	3.23 84/04/08";
 #endif
 
 #include "defs.h"
+#include "char.h"
 
 struct ww *doopen();
 
@@ -117,7 +118,7 @@ int maxrow, maxcol;
 		case 'K':
 			*row = minrow;
 			break;
-		case CTRL([):
+		case ctrl([):
 			if (!terse)
 				wwputs("\r\nCancelled.  ", cmdwin);
 			return 3;

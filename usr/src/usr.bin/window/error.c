@@ -1,10 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)error.c	3.7 84/03/03";
+static	char *sccsid = "@(#)error.c	3.8 84/04/08";
 #endif
 
 #include "defs.h"
 #include "value.h"
 #include "context.h"
+#include "char.h"
 
 struct ww *openwin();
 

@@ -1,10 +1,20 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	3.18 84/03/03";
+static	char *sccsid = "@(#)wwwrite.c	3.19 84/04/08";
 #endif
 
 #include "ww.h"
 #include "tt.h"
+#include "char.h"
 
+/*
+ * To support control character expansion, we save the old
+ * p and q values in r and s, and point p at the beginning
+ * of the expanded string, and q at some safe place beyond it
+ * (p + 10).  At strategic points in the loops, we check
+ * for (r && !*p) and restore the saved values back into
+ * p and q.  Essentially, we implement a stack of depth 2,
+ * to avoid recursion, which might be a better idea.
+ */
 wwwrite(w, p, n)
 register struct ww *w;
 register char *p;
@@ -30,10 +40,8 @@ int n;
 				break;
 			case '\b':
 			case '\r':
-			case CTRL(g):
-				Wputc(c, w->ww_win);
 				break;
-			case CTRL([):
+			case ctrl([):
 				w->ww_wstate = 1;
 				break;
 			}

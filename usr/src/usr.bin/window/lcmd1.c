@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd1.c	3.20 84/04/06";
+static	char *sccsid = "@(#)lcmd1.c	3.21 84/04/08";
 #endif
 
 #include "defs.h"
@@ -91,7 +91,11 @@ struct lcmd_arg arg_escape[] = {
 l_escape(v, a)
 register struct value *v, *a;
 {
-	if ((v->v_str = str_cpy(unctrl(escapec))) == 0) {
+	char buf[2];
+
+	buf[0] = escapec;
+	buf[1] = 0;
+	if ((v->v_str = str_cpy(buf)) == 0) {
 		error("Out of memory.");
 		return;
 	}

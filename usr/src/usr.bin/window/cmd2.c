@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.26 84/04/07";
+static	char *sccsid = "@(#)cmd2.c	3.27 84/04/08";
 #endif
 
 #include "defs.h"
@@ -62,7 +62,8 @@ dohelp()
 		return;
 	}
 	wwprintf(w, "The escape character is %s, which gets you into command mode.\r\n\n",
-		unctrl(escapec));
+	wwprintf(w, "The escape character is %c, which gets you into command mode.\n\n",
+		escapec);
 	wwprintf(w, "Short commands:\r\n\n");
 	wwprintf(w, "{1-9}   Select window {1-9} and return to conversation mode.\r\n");
 	wwprintf(w, "%%{1-9}  Select window {1-9}.\r\n");

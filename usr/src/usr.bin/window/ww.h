@@ -1,4 +1,4 @@
-/*	@(#)ww.h	3.27 84/03/23		*/
+/*	@(#)ww.h	3.28 84/04/08		*/
 
 #include <sgtty.h>
 #include <setjmp.h>
@@ -13,9 +13,7 @@ struct ww_dim {
 
 	/* a coordinate */
 struct ww {
-	char ww_state;		/* state of window creation */
-	char ww_mode;		/* mode used to open this window */
-	char ww_wstate;		/* state for printing charcters */
+		/* information for overlap */
 
 		/* sizes and positions */
 	struct ww_dim ww_w;	/* window size and pos */
@@ -133,6 +131,4 @@ extern int wwnrow, wwncol;		/* the screen size */
 
 	/* quicky macros */
 struct ww *wwopen();
-struct ww *wwfind();
 int wwchild();
-char *unctrl();
