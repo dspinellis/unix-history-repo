@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)hostname.7	6.3 (Berkeley) %G%
+.\"	@(#)hostname.7	6.4 (Berkeley) %G%
 .\"
 .TH HOSTNAME 7 ""
 .UC 5
@@ -32,7 +32,7 @@ Hostnames are often used with network client and server programs,
 which must generally translate the name to an address for use.
 (This function is generally performed by the library routine
 .IR gethostbyname (3).)
-Hostnames are resolved by the internet name resolver in the following
+Hostnames are resolved by the Internet name resolver in the following
 fashion.
 .PP
 If the name consists of a single component, i.e. contains no dot,
@@ -42,7 +42,7 @@ The file should consist of lines made up of two white-space separated strings,
 the first of which is the hostname alias,
 and the second of which is the complete hostname
 to be substituted for that alias.
-If a case-sensitive match is found between the hostname to be resolved
+If a case-insensitive match is found between the hostname to be resolved
 and the first field of a line in the file, the substituted name is looked
 up with no further processing.
 .PP
