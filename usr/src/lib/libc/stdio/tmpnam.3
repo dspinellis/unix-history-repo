@@ -8,14 +8,14 @@
 .\" software without specific prior written permission. This software
 .\" is provided ``as is'' without express or implied warranty.
 .\"
-.\"	@(#)tmpnam.3	5.1 (Berkeley) %G%
+.\"	@(#)tmpnam.3	5.2 (Berkeley) %G%
 .\"
 .TH COMPATS5 3 ""
 .UC 7
 .SH NAME
 memccpy, memchr, memcmp, memcpy, memset, strchr, 
-strcspn, strpbrk, strrchr, strspn, strtok, tmpnam \- System V
-compatibility routines
+strcspn, strpbrk, strrchr, strspn, strtok, tempnam,
+tmpfile, tmpnam \- System V compatibility routines
 .SH SYNOPSIS
 .nf
 .B char *memccpy(from, to, ch, count)
@@ -58,7 +58,25 @@ compatibility routines
 .B char *strtok(str, sep)
 .B char *str, *sep;
 .PP
+.B char *tempnam(tmpdir, prefix)
+.B char *tmpdir, *prefix;
+.PP
+.B char *tmpfile()
+.PP
 .B char *tmpnam(str)
 .B char *str;
+.PP
+.SH COMMENT
+The \fI#defines\fP \fIP_tmpdir\fP and \fIL_tmpnam\fP, used by the routines
+\fItempnam\fP, \fItmpfile\fP, and \fItmpnam\fP are not available in
+\fI<stdio.h>\fP.  If the code requires them, just use:
+.PP
+#include <sys/param.h>
+.br
+#define	P_tmpdir	"/usr/tmp"
+#define	L_tmpnam	MAXPATHLEN
+.PP
+Also, note that the caveat in the System V manual page that these functions
+can start recycling previously used names is untrue in this system.
 .SH DESCRIPTION
 The above routines are available and behave as in System V.
