@@ -9,11 +9,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)memset.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)memset.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
+#include <sys/cdefs.h>
 #include <string.h>
-#include <sys/stdc.h>
 
 void *
 memset(dst, c, n)

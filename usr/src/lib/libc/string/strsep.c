@@ -5,12 +5,12 @@
  * %sccs.include.redist.c%
  */
 
-#include <sys/stdc.h>
+#include <sys/cdefs.h>
 #include <string.h>
 #include <stdio.h>
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char sccsid[] = "@(#)strsep.c	5.3 (Berkeley) %G%";
+static const char sccsid[] = "@(#)strsep.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*

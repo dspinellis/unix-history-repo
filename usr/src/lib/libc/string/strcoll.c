@@ -9,11 +9,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strcoll.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)strcoll.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
+#include <sys/cdefs.h>
 #include <string.h>
-#include <sys/stdc.h>
 
 /*
  * Compare strings according to LC_COLLATE category of current locale.

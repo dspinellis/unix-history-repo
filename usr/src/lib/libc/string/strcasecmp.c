@@ -5,11 +5,11 @@
  * %sccs.include.redist.c%
  */
 
-#include <sys/stdc.h>
+#include <sys/cdefs.h>
 #include <string.h>
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char sccsid[] = "@(#)strcasecmp.c	5.9 (Berkeley) %G%";
+static const char sccsid[] = "@(#)strcasecmp.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 typedef unsigned char u_char;
