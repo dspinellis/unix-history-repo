@@ -1,7 +1,17 @@
 /*
-**  CONF.H -- All user-configurable parameters for sendmail
+**  Sendmail
+**  Copyright (c) 1983  Eric P. Allman
+**  Berkeley, California
 **
-**	@(#)conf.h	4.3		%G%
+**  Copyright (c) 1983 Regents of the University of California.
+**  All rights reserved.  The Berkeley software License Agreement
+**  specifies the terms and conditions for redistribution.
+**
+**	@(#)conf.h	5.1 (Berkeley) %G%
+*/
+
+/*
+**  CONF.H -- All user-configurable parameters for sendmail
 */
 
 
