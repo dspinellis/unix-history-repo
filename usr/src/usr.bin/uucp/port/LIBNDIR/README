@@ -2,7 +2,7 @@ The purpose of this library is to simulate the new flexible length
 directory names on top of the old directory structure. It allows
 programs to be converted to the new directory access interface, so
 that they need only be relinked when 4.2bsd becomes available.
-	ucbvax!mckusik
+	mckusick@cs.berkeley.edu
 
 CHANGE NOTICE:
 The include file is now called <ndir.h> rather than <dir.h>
