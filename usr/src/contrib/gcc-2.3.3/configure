@@ -855,6 +855,12 @@ for machine in $canon_build $canon_host $canon_target; do
 		tmake_file=t-decstatn
 		use_collect2=yes
 		;;
+	mips-dec-bsd*)			# Decstation running 4.4 BSD
+		tm_file=mips-dec-bsd.h
+		xmake_file=x-mipsbsd
+		tmake_file=t-mipsbsd
+		fixincludes=
+		;;
 	mips-sony-bsd* | mips-sony-newsos*)	# Sony NEWS 3600 or risc/news.
 		if [ x$stabs = xyes ]; then
 		    tm_file=mips-gnews.h
