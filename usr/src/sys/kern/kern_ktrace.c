@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_ktrace.c	7.6 (Berkeley) %G%
+ *	@(#)kern_ktrace.c	7.7 (Berkeley) %G%
  */
 
 #ifdef KTRACE
@@ -32,7 +32,7 @@
 extern int nsysent;
 extern char *syscallnames[];
 
-int ktrace_nocheck = 1;
+int ktrace_nocheck = 0;	/* set to 1 when security checks in place */
 
 struct ktr_header *
 ktrgetheader(type)
