@@ -1,4 +1,4 @@
-/*	inode.h	4.23	83/05/21	*/
+/*	inode.h	4.24	83/07/01	*/
 
 /*
  * The I node is the focus of all file activity in UNIX.
@@ -65,9 +65,6 @@ struct dinode {
 #ifdef vax
 #define	i_size		i_ic.ic_size.val[0]
 #endif
-#ifdef sun
-#define	i_size		i_ic.ic_size.val[1]
-#endif
 #define	i_db		i_ic.ic_db
 #define	i_ib		i_ic.ic_ib
 #define	i_atime		i_ic.ic_atime
@@ -89,9 +86,6 @@ struct dinode {
 #define	di_gid		di_ic.ic_gid
 #ifdef vax
 #define	di_size		di_ic.ic_size.val[0]
-#endif
-#ifdef sun
-#define	di_size		di_ic.ic_size.val[1]
 #endif
 #define	di_db		di_ic.ic_db
 #define	di_ib		di_ic.ic_ib

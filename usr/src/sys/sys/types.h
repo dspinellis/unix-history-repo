@@ -1,4 +1,4 @@
-/*	types.h	4.10	83/05/18	*/
+/*	types.h	4.11	83/07/01	*/
 
 /*
  * Basic system types and major/minor device constructing/busting macros.
@@ -23,12 +23,6 @@ typedef	unsigned short	ushort;		/* sys III compat */
 typedef	struct	_physadr { int r[1]; } *physadr;
 typedef	struct	label_t	{
 	int	val[14];
-} label_t;
-#endif
-#ifdef sun
-typedef	struct	_physadr { short r[1]; } *physadr;
-typedef	struct	label_t	{
-	int	val[13];
 } label_t;
 #endif
 typedef	struct	_quad { long val[2]; } quad;
