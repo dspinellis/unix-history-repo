@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)buf.h	7.15 (Berkeley) %G%
+ *	@(#)buf.h	7.16 (Berkeley) %G%
  */
 
 /*
@@ -34,12 +34,12 @@
  */
 struct bufhd
 {
-	long	b_flags;		/* see defines below */
+	volatile long	b_flags;	/* see defines below */
 	struct	buf *b_forw, *b_back;	/* fwd/bkwd pointer in chain */
 };
 struct buf
 {
-	long	b_flags;		/* too much goes here to describe */
+	volatile long	b_flags;	/* too much goes here to describe */
 	struct	buf *b_forw, *b_back;	/* hash chain (2 way street) */
 	struct	buf *av_forw, *av_back;	/* position on free list if not BUSY */
 	struct	buf *b_blockf, **b_blockb;/* associated vnode */
