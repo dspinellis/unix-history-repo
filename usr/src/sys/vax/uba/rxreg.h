@@ -1,4 +1,4 @@
-/*	rxreg.h	4.5	83/04/12	*/
+/*	rxreg.h	4.6	83/04/23	*/
 
 /*
  * RX02 registers
