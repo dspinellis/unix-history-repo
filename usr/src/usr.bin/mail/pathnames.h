@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)pathnames.h	5.1 (Berkeley) %G%
+ *	@(#)pathnames.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -28,7 +28,7 @@
 #define	MORE		"/usr/ucb/more"	/* Standard output pager */
 #define	HELPFILE	"/usr/lib/Mail.help"
 					/* Name of casual help file */
-#define	THELPFILE	"/usr/lib/Mail.help.~"
+#define	THELPFILE	"/usr/lib/Mail.tildehelp"
 #define	POSTAGE		"/usr/adm/maillog"
 					/* Where to audit mail sending */
 					/* Name of casual tilde help */
