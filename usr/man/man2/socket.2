@@ -1,0 +1,161 @@
+.TH SOCKET 2 2/13/83
+.SH NAME
+socket \- create an endpoint for communication
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/socket.h>
+.PP
+.ft B
+s = socket(af, type, protocol)
+int s, af, type, protocol;
+.fi
+.SH DESCRIPTION
+.I Socket
+creates an endpoint for communication and returns a descriptor.
+The socket has the indicated
+.I type
+which specifies the semantics of communication.  Currently
+defined types are:
+.PP
+.nf
+.in +0.5i
+SOCK_STREAM
+SOCK_DGRAM
+SOCK_RAW
+.in -0.5i
+.fi
+.PP
+A SOCK_STREAM type provides sequenced, reliable,
+two-way connection based byte streams with an out-of-band data
+transmission mechanism.
+A SOCK_DGRAM socket supports
+datagrams (connectionless, unreliable messages of
+a fixed (typically small) maximum length).
+SOCK_RAW sockets provide access to internal network interfaces.
+The types SOCK_RAW,
+which is available only to the super-user, and
+SOCK_PKTSTREAM, which is planned, but not yet implemented, are not
+described here.
+.PP
+The
+.I af
+parameter specifies an address format with which addrresses specified
+in later operations using the socket should be interpreted.  These
+formates are defined in the include file
+.IR <sys/socket.h> .
+The currently understood formats are
+.PP
+.nf
+.in +0.5i
+.ta 1.25i 1.75i
+AF_UNIX	(UNIX path names),
+AF_INET	(ARPA Internet addresses),
+AF_PUP	(Xerox PUP-I Internet addresses), and
+AF_IMPLINK	(IMP \*(lqhost at IMP\*(rq addresses).
+.in -0.5i
+.fi
+.PP
+The
+.I protocol
+specifies a particular protocol to be used with the socket.
+Normally only a single protocol exists to support a particular
+socket type using a given address format.  However, it is possible
+that many protocols may exist in which case a particular protocol
+must be specified in this manner.  The protocol number to use is
+particular to the \*(lqcommunication domain\*(rq in which communication
+is to take place; see
+.IR services (3N)
+and
+.IR protocols (3N).
+.PP
+Sockets of type SOCK_STREAM
+are full-duplex byte streams, similar
+to pipes.  A stream socket must be in a
+.I connected
+state before any data may be sent or received
+on it.  A connection to another socket is created with a
+.IR connect (2)
+call.  Once connected, data may be transferred using
+.IR read (2)
+and
+.IR write (2)
+calls or some variant of the 
+.IR send (2)
+and
+.IR recv (2)
+calls.  When a session has been completed a
+.IR close (2)
+may be performed.
+Out-of-band data may also be transmitted as described in
+.IR send (2)
+and received as described in
+.IR recv (2).
+.PP
+The communications protocols used to implement a
+SOCK_STREAM insure that data
+is not lost or duplicated.  If a piece of data for which the
+peer protocol has buffer space cannot be successfully transmitted
+within a reasonable length of time, then
+the connection is considered broken and calls
+will indicate an error with
+\-1 returns and with ETIMEDOUT as the specific code
+in the global variable errno.
+The protocols optionally keep sockets \*(lqwarm\*(rq by
+forcing transmissions
+roughly every minute in the absence of other activity.
+An error is then indicated if no response can be
+elicited on an otherwise
+idle connection for a extended period (e.g. 5 minutes).
+A SIGPIPE signal is raised if a process sends
+on a broken stream; this causes naive processes,
+which do not handle the signal, to exit.
+.PP
+SOCK_DGRAM and SOCK_RAW
+sockets allow sending of datagrams to correspondents
+named in
+.IR send (2)
+calls.  It is also possible to receive datagrams at
+such a socket with
+.IR recv (2).
+.PP
+A SIOCSPGRP ioctl can be used to specify a process group to receive
+a SIGURG signal when the out-of-band data arrives.  If the
+integer argument to SIOCSPGRP is negative, then it is taken to mean
+a single process rather than a process group, given by the absolute
+value of the argument.  The SIOCGPGRP ioctl returns the current
+value of a socket's process group.
+.SH "RETURN VALUE
+A \-1 is returned if an error occurs, otherwise the return
+value is a descriptor referencing the socket.
+.SH "ERRORS
+The \fIsocket\fP call fails if:
+.TP 20
+[EAFNOSUPPORT]
+The specified address family is not supported in this version
+of the system.
+.TP 20
+[ESOCKTNOSUPPORT]
+The specified socket type is not supported in this address family.
+.TP 20
+[EPROTONOSUPPORT]
+The specified protocol is not supported.
+.TP 20
+[EMFILE]
+The per-process descriptor table is full.
+.TP 20
+[ENOBUFS]
+No buffer space is available.  The socket cannot be created.
+.SH SEE ALSO
+accept(2), bind(2), connect(2), ioctl(2), listen(2), recv(2),
+select(2), send(2), shutdown(2), socketopt(2)
+.br
+``A 4.2bsd Interprocess Communication Primer''.
+.SH BUGS
+The use of keepalives is a questionable feature for this layer.
+.PP
+SIOCSPGRP should be replaced by
+.I setdopt
+and
+SIOCGPGRP by
+.IR getdopt .
