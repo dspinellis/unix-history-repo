@@ -6,7 +6,7 @@
 
 
 #ifndef lint
-static char sccsid[] = "@(#)ns.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ns.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -64,15 +64,15 @@ nsprotopr(off, name)
 	register struct nspcb *prev, *next;
 	int isspp;
 
-	if (off == 0) {
-		printf("%s control block: symbol not in namelist\n", name);
+	if (off == 0)
 		return;
-	}
 	isspp = strcmp(name, "spp") == 0;
 	klseek(kmem, off, 0);
 	read(kmem, &cb, sizeof (struct nspcb));
 	nspcb = cb;
 	prev = (struct nspcb *)off;
+	if (nspcb.nsp_next == (struct nspcb *)off)
+		return;
 	if (first) {
 		printf("Active connections");
 		if (aflag)
@@ -138,10 +138,8 @@ spp_stats(off, name)
 {
 	struct spp_istat spp_istat;
 
-	if (off == 0) {
-		printf("%sstat: symbol not in namelist\n", name);
+	if (off == 0)
 		return;
-	}
 	klseek(kmem, off, 0);
 	read(kmem, (char *)&spp_istat, sizeof (spp_istat));
 	printf("%s:\n", name);
@@ -165,10 +163,8 @@ idp_stats(off, name)
 {
 	struct idpstat idpstat;
 
-	if (off == 0) {
-		printf("%sstat: symbol not in namelist\n", name);
+	if (off == 0)
 		return;
-	}
 	klseek(kmem, off, 0);
 	read(kmem, (char *)&idpstat, sizeof (idpstat));
 	ANY(idpstat.idps_toosmall, "packet", " smaller than a header");
@@ -199,10 +195,8 @@ nserr_stats(off, name)
 	register int histoprint = 1;
 	int z;
 
-	if (off == 0) {
-		printf("%sstat: symbol not in namelist\n", name);
+	if (off == 0)
 		return;
-	}
 	klseek(kmem, off, 0);
 	read(kmem, (char *)&ns_errstat, sizeof (ns_errstat));
 	printf("NS error statistics:\n");
