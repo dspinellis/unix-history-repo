@@ -16,7 +16,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)join.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)join.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -266,7 +266,7 @@ slurp(F)
 
 			/* re-set lastlp in case it moved */
 			if (lastlp != NULL)
-				lastp = &F->set[F->setcnt - 1];
+				lastlp = &F->set[F->setcnt - 1];
 		}
 			
 		/*
