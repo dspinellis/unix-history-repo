@@ -45,6 +45,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00007
+ * --------------------         -----   ----------------------
+ *
+ * 20 Aug 92	David Greenman		Fix getnewbuf() 2xAllocation
  */
 static char rcsid[] = "$Header: /usr/bill/working/sys/kern/RCS/vfs__bio.c,v 1.2 92/01/21 21:30:08 william Exp $";
 
@@ -344,6 +350,7 @@ start:
 		bp->b_flags = B_BUSY | B_INVAL;
 		bremfree(bp);
 		bp->b_un.b_addr = addr;
+		bp->b_bufsize = sz;	/* 20 Aug 92*/
 		goto fillin;
 	}
 

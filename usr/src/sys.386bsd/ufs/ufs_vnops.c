@@ -31,6 +31,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)ufs_vnops.c	7.64 (Berkeley) 5/16/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00007
+ * --------------------         -----   ----------------------
+ *
+ * 20 Aug 92	David Greenman		Fixed incorrect setting of B_AGE after
+ *					each read to improve cache performance
  */
 
 #include "param.h"
@@ -497,8 +505,10 @@ ufs_read(vp, uio, ioflag, cred)
 			return (error);
 		}
 		error = uiomove(bp->b_un.b_addr + on, (int)n, uio);
+#if OMIT	/* 20 Aug 92*/
 		if (n + on == fs->fs_bsize || uio->uio_offset == ip->i_size)
 			bp->b_flags |= B_AGE;
+#endif	/* OMIT*/
 		brelse(bp);
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
 	return (error);

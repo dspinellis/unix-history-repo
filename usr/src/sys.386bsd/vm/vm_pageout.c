@@ -60,6 +60,14 @@
  *
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00007
+ * --------------------         -----   ----------------------
+ *
+ * 20 Aug 92	David Greenman		Removed un-necessary call to
+ *					swapout_thread
  */
 
 /*
@@ -99,7 +107,9 @@ vm_pageout_scan()
 	splx(s);
 
 	if (free < vm_page_free_target) {
+#ifdef OMIT
 		swapout_threads();
+#endif	/* OMIT*/
 
 		/*
 		 *	Be sure the pmap system is updated so

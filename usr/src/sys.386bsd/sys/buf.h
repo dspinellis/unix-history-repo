@@ -31,6 +31,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)buf.h	7.11 (Berkeley) 5/9/90
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00007
+ * --------------------         -----   ----------------------
+ *
+ * 20 Aug 92	David Greenman		Fixed buffer cache hash index
+ *					calculation
  */
 
 /*
@@ -110,12 +118,13 @@ struct buf
 #ifdef	KERNEL
 #define	BUFHSZ	512
 #define RND	(MAXBSIZE/DEV_BSIZE)
+/* 20 Aug 92	BUFHASH*/
 #if	((BUFHSZ&(BUFHSZ-1)) == 0)
 #define	BUFHASH(dvp, dblkno)	\
-	((struct buf *)&bufhash[((int)(dvp)+(((int)(dblkno))/RND))&(BUFHSZ-1)])
+	((struct buf *)&bufhash[((int)(dvp)/sizeof(struct vnode)+(int)(dblkno))&(BUFHSZ-1)])
 #else
 #define	BUFHASH(dvp, dblkno)	\
-	((struct buf *)&bufhash[((int)(dvp)+(((int)(dblkno))/RND)) % BUFHSZ])
+	((struct buf *)&bufhash[((int)(dvp)/sizeof(struct vnode)+(int)(dblkno)) % BUFHSZ])
 #endif
 
 struct	buf *buf;		/* the buffer pool itself */
