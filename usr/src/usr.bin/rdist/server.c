@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)server.c	4.18 (Berkeley) 84/06/28";
+static	char *sccsid = "@(#)server.c	4.19 (Berkeley) 84/07/02";
 #endif
 
 #include "defs.h"
@@ -295,6 +295,7 @@ sendf(rname, opts)
 		(void) sprintf(buf, "D%o %04o 0 0 %s %s %s\n", opts,
 			stb.st_mode & 07777, pw->pw_name, gr->gr_name, rname);
 		if (debug)
+			printf("buf = %s", buf);
 		(void) write(rem, buf, strlen(buf));
 		if (response() < 0) {
 			closedir(d);
@@ -505,9 +506,8 @@ update(rname, opts, stp)
 		return(0);
 
 	default:
-		printf("buf = ");
-		fwrite(buf, 1, cp - s, stdout);
-		error("update: unexpected response '%c'\n", buf[0]);
+		*--cp = '\0';
+		error("update: unexpected response '%s'\n", buf);
 		return(0);
 	}
 
@@ -734,14 +734,13 @@ recvf(cmd, type)
 
 			if ((i = readlink(target, tbuf, BUFSIZ)) < 0)
 				goto bad;
-			if (i != size || strncmp(buf, tbuf, size) != 0) {
-				if (opts & VERIFY)
-					goto differ;
-			} else {
+			if (i == size && strncmp(buf, tbuf, size) == 0) {
 				(void) unlink(new);
 				ack();
 				return;
 			}
+			if (opts & VERIFY)
+				goto differ;
 		}
 		goto fixup;
 	}
@@ -839,7 +838,7 @@ bad:
 	}
 	if (opts & COMPARE) {
 		buf[0] = '\0';
-		(void) sprintf(buf + 1, "updated %s:%s\n", host, target);
+		(void) sprintf(buf + 1, "%s: updated %s\n", host, target);
 		(void) write(rem, buf, strlen(buf + 1) + 1);
 	} else
 		ack();
@@ -1339,15 +1338,16 @@ fatal(fmt, a1, a2,a3)
 response()
 {
 	char *cp, *s;
+	char resp[BUFSIZ];
 
 	if (debug)
 		printf("response()\n");
 
-	cp = s = buf;
+	cp = s = resp;
 	do {
 		if (read(rem, cp, 1) != 1)
 			lostconn();
-	} while (*cp++ != '\n' && cp < &buf[BUFSIZ]);
+	} while (*cp++ != '\n' && cp < &resp[BUFSIZ]);
 
 	switch (*s++) {
 	case '\0':
@@ -1372,7 +1372,7 @@ response()
 			if (lfp != NULL)
 				(void) fwrite(s, 1, cp - s, lfp);
 		}
-		if (buf[0] == '\2')
+		if (resp[0] == '\2')
 			lostconn();
 		return(-1);
 	}
