@@ -1,11 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)tio.c	4.8	(Berkeley) %G%";
+static char sccsid[] = "@(#)tio.c	4.9	(Berkeley) %G%";
 #endif
 
 #include <signal.h>
 #include "uucp.h"
 #include <setjmp.h>
 #include <sys/stat.h>
+#include <machine/machparam.h>
 
 extern int pkfail();
 #define TPACKSIZE	512
