@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -185,7 +185,7 @@ doit(f, fromp)
 			(void) close(0); (void) close(1); (void) close(2);
 			(void) close(f); (void) close(pv[1]);
 			readfrom = (1<<s) | (1<<pv[0]);
-			ioctl(pv[1], FIONBIO, (char *)&one);
+			ioctl(pv[0], FIONBIO, (char *)&one);
 			/* should set s nbio! */
 			do {
 				ready = readfrom;
