@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_dp.c	7.5 (Berkeley) %G%
+ *	@(#)if_dp.c	7.6 (Berkeley) %G%
  */
 
 #include "dp.h"
