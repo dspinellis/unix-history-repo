@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ffs_subr.c	6.9 (Berkeley) %G%
+ *	@(#)ffs_subr.c	6.10 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -212,7 +212,7 @@ isblock(fs, cp, h)
 {
 	unsigned char mask;
 
-	switch (fs->fs_frag) {
+	switch ((int)fs->fs_frag) {
 	case 8:
 		return (cp[h] == 0xff);
 	case 4:
@@ -239,7 +239,7 @@ clrblock(fs, cp, h)
 	daddr_t h;
 {
 
-	switch ((fs)->fs_frag) {
+	switch ((int)fs->fs_frag) {
 	case 8:
 		cp[h] = 0;
 		return;
@@ -266,7 +266,7 @@ setblock(fs, cp, h)
 	daddr_t h;
 {
 
-	switch (fs->fs_frag) {
+	switch ((int)fs->fs_frag) {
 
 	case 8:
 		cp[h] = 0xff;
