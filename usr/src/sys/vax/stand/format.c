@@ -8,12 +8,11 @@
 char copyright[] =
 "@(#) Copyright (c) 1980, 1986 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)format.c	7.2 (Berkeley) %G%";
-#endif not lint
-
+static char sccsid[] = "@(#)format.c	7.3 (Berkeley) %G%";
+#endif /* not lint */
 
 /* 
  * Standalone program to do media checking
@@ -29,6 +28,10 @@ static char sccsid[] = "@(#)format.c	7.2 (Berkeley) %G%";
 #include "inode.h"
 #include "dkbad.h"
 #include "vmmac.h"
+#include "disklabel.h"
+
+#include "../vax/cpu.h"
+#include "../vax/mtpr.h"
 
 #include "saio.h"
 #include "savax.h"
@@ -105,16 +108,29 @@ extern	int end;
 
 main()
 {
-	register int sector, sn;
-	int lastsector, tracksize, rtracksize;
-	int unit, fd, resid, i, trk, cyl, debug;
-	struct st st;
+	register struct sector *hdr;
+	register int sector, sn, i;
+	struct disklabel dl;
 	struct sector *bp, *cbp;
-	char *rbp, *rcbp;
-	int pass;
-	char *cp;
+	int lastsector, tracksize, rtracksize;
+	int unit, fd, resid, trk, cyl, debug, pass;
+	char *cp, *rbp, *rcbp;
 
 	printf("Disk format/check utility\n\n");
+
+	/* enable the cache, as every little bit helps */
+	switch (cpu) {
+	case VAX_8600:
+		mtpr(CSWP, 3);
+		break;
+	case VAX_8200:
+	case VAX_750:
+		mtpr(CADR, 0);
+		break;
+	case VAX_780:
+		mtpr(SBIMT, 0x200000);
+		break;
+	}
 
 again:
 	nbads = 0;
@@ -125,17 +141,17 @@ again:
 	for (i = 0; i < NERRORS; i++)
 		errors[i] = 0;
 	fd = getdevice();
-	ioctl(fd, SAIODEVDATA, &st);
+	ioctl(fd, SAIODEVDATA, &dl);
 	printf("Device data: #cylinders=%d, #tracks=%d, #sectors=%d\n",
-	  st.ncyl, st.ntrak, st.nsect);
+	    dl.d_ncylinders, dl.d_ntracks, dl.d_nsectors);
 	ssdev = SSDEV(fd);
 	if (ssdev) {
 		ioctl(fd, SAIOSSI, (char *)0);	/* set skip sector inhibit */
-		st.nsect++;
-		st.nspc += st.ntrak;
+		dl.d_nsectors++;
+		dl.d_secpercyl += dl.d_ntracks;
 		printf("(not counting skip-sector replacement)\n");
 	}
-	getrange(&st);
+	getrange(&dl);
 	if (getpattern())
 		goto again;
 	printf("Start formatting...make sure the drive is online\n");
@@ -143,8 +159,8 @@ again:
 	ioctl(fd, SAIORETRIES, (char *)0);
 	ioctl(fd, SAIOECCLIM, (char *)maxeccbits);
 	ioctl(fd, SAIODEBUG, (char *)debug);
-	tracksize = sizeof (struct sector) * st.nsect;
-	rtracksize = SECTSIZ * st.nsect;
+	tracksize = sizeof (struct sector) * dl.d_nsectors;
+	rtracksize = SECTSIZ * dl.d_nsectors;
 	bp = (struct sector *)malloc(tracksize);
 	rbp = malloc(rtracksize);
 	pass = 0;
@@ -163,18 +179,18 @@ more:
 		 * 2) Read data.  Hardware checks header and data ECC.
 		 *    Read data (esp on Eagles) is much faster than write check.
 		 */
-		sector = ((startcyl * st.ntrak) + starttrack) * st.nsect;
-		lastsector = ((endcyl * st.ntrak) + endtrack) * st.nsect
-			+ st.nsect;
-		for ( ; sector < lastsector; sector += st.nsect) {
-			cyl = sector / st.nspc;
-			trk = (sector % st.nspc) / st.nsect;
-			for (i = 0; i < st.nsect; i++) {
-				bp[i].header1 =
-					(u_short) cyl | HDR1_FMT22 | HDR1_OKSCT;
-				bp[i].header2 = ((u_short)trk << 8) + i;
+		sector = ((startcyl * dl.d_ntracks) + starttrack) *
+			dl.d_nsectors;
+		lastsector = ((endcyl * dl.d_ntracks) + endtrack) *
+			dl.d_nsectors + dl.d_nsectors;
+		for ( ; sector < lastsector; sector += dl.d_nsectors) {
+			cyl = sector / dl.d_secpercyl;
+			trk = ((sector % dl.d_secpercyl) / dl.d_nsectors) << 8;
+			for (i = 0, hdr = bp; i < dl.d_nsectors; i++, hdr++) {
+				hdr->header1 = cyl | HDR1_FMT22 | HDR1_OKSCT;
+				hdr->header2 = trk + i;
 			}
-			if (sector && (sector % (st.nspc * 100)) == 0)
+			if (sector && (sector % (dl.d_secpercyl * 50)) == 0)
 				printf("cylinder %d\n", cyl);
 			/*
 			 * Try and write the headers and data patterns into
@@ -186,7 +202,7 @@ more:
 			 * the odd sector size (516 bytes)
 			 */
 			for (resid = tracksize, cbp = bp, sn = sector;;) {
-				int cc;
+				register int cc;
 
 				lseek(fd, sn * SECTSIZ, L_SET);
 				ioctl(fd, SAIOHDR, (char *)0);
@@ -211,7 +227,7 @@ more:
 			 * sector to verify.
 			 */
 			for (resid = rtracksize, rcbp = rbp, sn = sector;;) {
-				int cc, rsn;
+				register int cc, rsn;
 
 				lseek(fd, sn * SECTSIZ, L_SET);
 				cc = read(fd, rcbp, resid);
@@ -219,12 +235,12 @@ more:
 					break;
 				sn = iob[fd-3].i_errblk;
 				if (ssdev) {
-					rsn = sn - (sn / st.nsect);
+					rsn = sn - (sn / dl.d_nsectors);
 					printf("data ");
 				} else
 					rsn = sn;
 				printf("sector %d, read error\n\n", rsn);
-				if (recorderror(fd, sn, &st) < 0 && pass > 0)
+				if (recorderror(fd, sn, &dl) < 0 && pass > 0)
 					goto out;
 				/* advance past bad sector */
 				sn++;
@@ -255,13 +271,13 @@ out:
 		severe = 0;
 		errno = 0;
 		for (i = 0; i < nbads; i++)
-			recorderror(fd, bads[i], &st);
+			recorderror(fd, bads[i], &dl);
 		severe++;
 	}
 	if (errors[FE_TOTAL] || errors[FE_SSE]) {
 		/* change the headers of all the bad sectors */
-		writebb(fd, errors[FE_SSE], &sstab, &st, SSERR);
-		writebb(fd, errors[FE_TOTAL], &dkbad, &st, BSERR);
+		writebb(fd, errors[FE_SSE], &sstab, &dl, SSERR);
+		writebb(fd, errors[FE_TOTAL], &dkbad, &dl, BSERR);
 	}
 	if (errors[FE_TOTAL] || errors[FE_SSE]) {
 		printf("Errors:\n");
@@ -270,8 +286,8 @@ out:
 		printf("Total of %d hard errors revectored\n",
 			errors[FE_TOTAL] + errors[FE_SSE]);
 	}
-	if (endcyl == st.ncyl - 1 &&
-	    (startcyl < st.ncyl - 1 || starttrack == 0)) {
+	if (endcyl == dl.d_ncylinders - 1 &&
+	    (startcyl < dl.d_ncylinders - 1 || starttrack == 0)) {
 		while (errors[FE_TOTAL] < MAXBADDESC) {
 			int i = errors[FE_TOTAL]++;
 
@@ -279,10 +295,11 @@ out:
 			dkbad.bt_bad[i].bt_trksec = -1;
 		}
 		printf("\nWriting bad sector table at sector #%d\n",
-			st.ncyl * st.nspc - st.nsect);
+			dl.d_ncylinders * dl.d_secpercyl - dl.d_nsectors);
 		/* place on disk */
-		for (i = 0; i < 10 && i < st.nsect; i += 2) {
-			lseek(fd, SECTSIZ * (st.ncyl * st.nspc - st.nsect + i), L_SET);
+		for (i = 0; i < 10 && i < dl.d_nsectors; i += 2) {
+			lseek(fd, SECTSIZ * (dl.d_ncylinders *
+				dl.d_secpercyl - dl.d_nsectors + i), 0);
 			write(fd, &dkbad, sizeof (dkbad));
 		}
 	} else if (errors[FE_TOTAL]) {
@@ -291,7 +308,7 @@ out:
 		printf("New bad sectors (not added to table):\n");
 		bt = dkbad.bt_bad;
 		for (i = 0; i < errors[FE_TOTAL]; i++) {
-			printf("bn %d (cn=%d, tn=%d, sn=%d)\n", badsn(bt, &st),
+			printf("bn %d (cn=%d, tn=%d, sn=%d)\n", badsn(bt, &dl),
 			    bt->bt_cyl, bt->bt_trksec>>8, bt->bt_trksec&0xff);
 			bt++;
 		}
@@ -315,17 +332,14 @@ register daddr_t *l1, *l2;
 }
 
 daddr_t
-badsn(bt, st)
+badsn(bt, lp)
 	register struct bt_bad *bt;
-	register struct st *st;
+	register struct disklabel *lp;
 {
+	register int ssoff = ssdev ? 1 : 0;
 
-	if (ssdev)
-	    return ((bt->bt_cyl * st->ntrak + (bt->bt_trksec>>8)) *
-		(st->nsect - 1) + (bt->bt_trksec&0xff)) - 1;
-	else
-	    return ((bt->bt_cyl*st->ntrak + (bt->bt_trksec>>8)) * st->nsect
-		+ (bt->bt_trksec&0xff));
+	return ((bt->bt_cyl * lp->d_ntracks + (bt->bt_trksec >> 8)) *
+		(lp->d_nsectors - ssoff) + (bt->bt_trksec & 0xff) - ssoff);
 }
 
 /*
@@ -333,10 +347,10 @@ badsn(bt, st)
  * Bad sectors on skip-sector devices are assumed to be skipped also,
  * and must be done after the (earlier) first skipped sector.
  */
-writebb(fd, nsects, dbad, st, sw)
+writebb(fd, nsects, dbad, lp, sw)
 	int nsects, fd;
 	struct dkbad *dbad;
-	register struct st *st;
+	register struct disklabel *lp;
 {
 	struct sector bb_buf; /* buffer for one sector plus 4 byte header */
 	register int i;
@@ -353,8 +367,8 @@ writebb(fd, nsects, dbad, st, sw)
 			bb_buf.header1 =
 			       btp->bt_cyl | HDR1_FMT22 | HDR1_SSF | HDR1_OKSCT;
 		bb_buf.header2 = btp->bt_trksec;
-		bn = st->nspc * btp->bt_cyl +
-		     st->nsect * (btp->bt_trksec >> 8) +
+		bn = lp->d_secpercyl * btp->bt_cyl +
+		     lp->d_nsectors * (btp->bt_trksec >> 8) +
 		     (btp->bt_trksec & 0xff);
 		lseek(fd, bn * SECTSIZ, L_SET);
 		ioctl(fd, SAIOHDR, (char *)0);
@@ -365,7 +379,7 @@ writebb(fd, nsects, dbad, st, sw)
 		 */
 		if (sw == SSERR) {
 			for (j = (btp->bt_trksec & 0xff) + 1, bn++;
-			    j < st->nsect; j++, bn++) {
+			    j < lp->d_nsectors; j++, bn++) {
 				bb_buf.header2 = j | (btp->bt_trksec & 0xff00);
 				lseek(fd, bn * SECTSIZ, L_SET);
 				ioctl(fd, SAIOHDR, (char *)0);
@@ -382,14 +396,13 @@ writebb(fd, nsects, dbad, st, sw)
  * If severe burnin store block in a list after making sure
  * we have not already found it on a prev pass.
  */
-recorderror(fd, bn, st)
+recorderror(fd, bn, lp)
 	int fd, bn;
-	register struct st *st;
+	register struct disklabel *lp;
 {
 	int cn, tn, sn;
-	register i;
+	register int i;
 
-	
 	if (severe) {
 		for (i = 0; i < nbads; i++)
 			if (bads[i] == bn)
@@ -409,10 +422,10 @@ recorderror(fd, bn, st)
 		errno -= EBSE;
 		errors[errno]++;
 	}
-	cn = bn / st->nspc;
-	sn = bn % st->nspc;
-	tn = sn / st->nsect;
-	sn %= st->nsect;
+	cn = bn / lp->d_secpercyl;
+	sn = bn % lp->d_secpercyl;
+	tn = sn / lp->d_nsectors;
+	sn %= lp->d_nsectors;
 	if (ssdev) {		/* if drive has skip sector capability */
 		int ss = errors[FE_SSE];
 
@@ -429,7 +442,7 @@ recorderror(fd, bn, st)
 			 * Don't bother with skipping the extra sector
 			 * at the end of the track.
 			 */
-			if (sn == st->nsect - 1)
+			if (sn == lp->d_nsectors - 1)
 				return(0);
 			sstab.bt_bad[ss].bt_cyl = cn;
 			sstab.bt_bad[ss].bt_trksec = (tn<<8) + sn;
@@ -492,21 +505,24 @@ top:
 /*
  * Find range of tracks to format.
  */
-getrange(st)
-	struct st *st;
+getrange(lp)
+	register struct disklabel *lp;
 {
-	startcyl = getnum("Starting cylinder", 0, st->ncyl - 1, 0);
-	starttrack = getnum("Starting track", 0, st->ntrak - 1, 0);
-	endcyl = getnum("Ending cylinder", 0, st->ncyl - 1, st->ncyl - 1);
-	endtrack = getnum("Ending track", 0, st->ntrak - 1, st->ntrak - 1);
+	startcyl = getnum("Starting cylinder", 0, lp->d_ncylinders - 1, 0);
+	starttrack = getnum("Starting track", 0, lp->d_ntracks - 1, 0);
+	endcyl = getnum("Ending cylinder", 0, lp->d_ncylinders - 1,
+		lp->d_ncylinders - 1);
+	endtrack = getnum("Ending track", 0, lp->d_ntracks - 1,
+		lp->d_ntracks - 1);
 }
 
 getnum(s, low, high, dflt)
+	int s, low, high, dflt;
 {
 	char buf[132];
-	unsigned val;
+	u_int val;
 
-	while (1) {
+	for(;;) {
 		printf("%s (%d): ", s, dflt);
 		gets(buf);
 		if (buf[0] == 0)
