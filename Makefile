@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.22 1993/11/10 02:30:15 paul Exp $
+#	$Id: Makefile,v 1.23 1993/11/10 05:10:54 paul Exp $
 #
 
 SUBDIR=
@@ -117,9 +117,6 @@ bootstrapld:
 	cd ${.CURDIR}/gnu/gcc2; make -DNOPIC depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/gnu/ld; make -DNOPIC depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/gnu/gcc2/libgcc; make all install ${CLEANDIR} obj;
-	cd ${.CURDIR}/lib/libc; make depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/lib/csu.i386; make depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/gnu/ld/rtld; make depend all install ${CLEANDIR} obj
 .endif
 
 libraries:
