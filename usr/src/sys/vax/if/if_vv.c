@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_vv.c	6.15 (Berkeley) %G%
+ *	@(#)if_vv.c	6.16 (Berkeley) %G%
  */
 
 #include "vv.h"
