@@ -1,0 +1,1122 @@
+/* llib-lnet - lint library for QUIPU-net */
+
+/*
+ * $Header: /f/osi/dsap/net/RCS/llib-lnet,v 7.2 91/02/22 09:21:33 mrose Interim $
+ *
+ *
+ * $Log:	llib-lnet,v $
+# Revision 7.2  91/02/22  09:21:33  mrose
+# Interim 6.8
+# 
+# Revision 7.1  90/10/17  11:43:43  mrose
+# sync
+# 
+# Revision 7.0  90/07/26  14:46:06  mrose
+# *** empty log message ***
+# 
+ * Revision 7.3  90/07/09  14:35:37  mrose
+ * sync
+ * 
+ * Revision 7.2  89/12/19  16:19:37  mrose
+ * sync
+ * 
+ * Revision 7.1  89/11/24  16:21:47  mrose
+ * sync
+ * 
+ * Revision 7.0  89/11/23  21:48:21  mrose
+ * Release 6.0
+ * 
+ */
+
+/*
+ *                                NOTICE
+ *
+ *    Acquisition, use, and distribution of this module and related
+ *    materials are subject to the restrictions of a license agreement.
+ *    Consult the Preface in the User's Manual for the full terms of
+ *    this agreement.
+ *
+ */
+
+
+/* LINTLIBRARY */
+
+#include "quipu/util.h"
+#include "quipu/common.h"
+#include "quipu/dap2.h"
+#include "quipu/dsap.h"
+#include "tsap.h"
+
+/* DAP operations */
+
+ds_bind (arg, error, result) 
+struct ds_bind_arg *arg; 
+struct ds_bind_arg *result; 
+struct ds_bind_error *error; 
+{
+	return ds_bind (arg, error, result) ;
+} 
+
+secure_ds_bind (arg, error, result) 
+struct ds_bind_arg *arg; 
+struct ds_bind_arg *result; 
+struct ds_bind_error *error; 
+{
+	return secure_ds_bind (arg, error, result);
+} 
+
+dap_bind (ad, arg, error, result, addr) 
+int * ad; 
+struct ds_bind_arg *arg; 
+struct ds_bind_arg *result; 
+struct ds_bind_error *error; 
+struct PSAPaddr *addr; 
+{
+	return dap_bind (ad, arg, error, result, addr);
+} 
+
+int       DapAsynBindRequest (calledaddr, bindarg, dc, di, async)
+struct PSAPaddr         * calledaddr;
+struct ds_bind_arg      * bindarg;
+struct DAPconnect       * dc;
+struct DAPindication    * di;
+int                       async;
+{
+	return (DapAsynBindRequest (calledaddr, bindarg, dc, di, async));
+}
+
+int       DapAsynBindReqAux (callingtitle, calledtitle, callingaddr,
+                calledaddr, prequirements, srequirements, isn, settings,
+                sf, bindarg, qos, dc, di, async)
+AEI                       callingtitle;
+AEI                       calledtitle;
+struct PSAPaddr         * callingaddr;
+struct PSAPaddr         * calledaddr;
+int                       prequirements;
+int                       srequirements;
+long                      isn;
+int                       settings;
+struct SSAPref          * sf;
+struct ds_bind_arg      * bindarg;
+struct QOStype          * qos;
+struct DAPconnect       * dc;
+struct DAPindication    * di;
+int                       async;
+{
+        return ( DapAsynBindReqAux (callingtitle, calledtitle, callingaddr,
+                calledaddr, prequirements, srequirements, isn, settings,
+                sf, bindarg, qos, dc, di, async));
+}
+
+int       DapAsynBindRetry (sd, do_next_nsap, dc, di)
+int                       sd;
+int                       do_next_nsap;
+struct DAPconnect       * dc;
+struct DAPindication    * di;
+{
+	return (DapAsynBindRetry (sd, do_next_nsap, dc, di));
+}
+
+int       DapBindDecode (acc, dc)
+struct AcSAPconnect     * acc;
+struct DAPconnect       * dc;
+{
+	return (DapBindDecode (acc, dc));
+}
+
+ds_unbind () 
+{
+	return ds_unbind();
+} 
+
+dap_unbind (ad) 
+int ad; 
+{
+	return dap_unbind(ad);
+} 
+
+int	  DapUnBindRequest (sd, secs, dr, di)
+int			  sd;
+int			  secs;
+struct DAPrelease	* dr;
+struct DAPindication	* di;
+{
+	return (DapUnBindRequest (sd, secs, dr, di));
+}
+
+int	  DapUnBindRetry (sd, secs, dr, di)
+int			  sd;
+int			  secs;
+struct DAPrelease	* dr;
+struct DAPindication	* di;
+{
+	return (DapUnBindRetry (sd, secs, dr, di));
+}
+
+int       DapInitWaitRequest (sd, secs, di)
+int                       sd;
+int                       secs;
+struct DAPindication    * di;
+{
+	return (DapInitWaitRequest (sd, secs, di));
+}
+
+int       DapDecodeResult (sd, ror, di)
+int                       sd;
+struct RoSAPresult      * ror;
+struct DAPindication    * di;
+{
+	return (DapDecodeResult (sd, ror, di));
+}
+
+int       DapDecodeError (sd, roe, di)
+int                       sd;
+struct RoSAPerror       * roe;
+struct DAPindication    * di;
+{
+	return (DapDecodeError (sd, roe, di));
+}
+
+int       DapInvokeReqAux (sd, id, op, pe, di, asyn)
+int                       sd;
+int                       id;
+int                       op;
+PE                        pe;
+struct DAPindication    * di;
+int                       asyn;
+{
+	return (DapInvokeReqAux (sd, id, op, pe, di, asyn));
+}
+
+int       DapSyncInvokeRequest (sd, id, op, pe, di)
+int                       sd;
+int                       id;
+int                       op;
+PE                        pe;
+struct DAPindication    * di;
+{
+	return (DapSyncInvokeRequest (sd, id, op, pe, di));
+}
+
+int       DapIntrInvokeRequest (sd, id, op, pe, di)
+int                       sd;
+int                       id;
+int                       op;
+PE                        pe;
+struct DAPindication    * di;
+{
+	return (DapIntrInvokeRequest (sd, id, op, pe, di));
+}
+
+int       DapAsynInvokeRequest (sd, id, op, pe, di)
+int                       sd;
+int                       id;
+int                       op;
+PE                        pe;
+struct DAPindication    * di;
+{
+	return (DapAsynInvokeRequest (sd, id, op, pe, di));
+}
+
+int       DapInterrupt(sd, id, op, di)
+int                       sd;
+int                       id;
+int                       op;
+struct DAPindication    * di;
+{
+	return (DapInterrupt(sd, id, op, di));
+}
+
+pdu_dump_init (dir) 
+char * dir; 
+{
+	(void) pdu_dump_init(dir);
+} 
+
+pdu_dump (pe,type,op) 
+PE pe; 
+char * type; 
+int op; 
+{
+	(void) pdu_dump(pe,type,op);
+} 
+
+pdu_arg_log (pe,op)
+PE pe;
+int op;
+{
+	return (pdu_arg_log (pe,op));
+}
+
+pdu_res_log (pe,op)
+PE pe;
+int op;
+{
+	return (pdu_arg_log (pe,op));
+}
+
+dap_abandon (ad, id, arg, error) 
+int ad; 
+int * id; 
+struct ds_abandon_arg *arg; 
+struct DSError *error; 
+{
+	return dap_abandon (ad, id, arg, error);
+} 
+
+int       DapAbandon (ad, id, arg, di, asyn)
+int                       ad;
+int                       id;
+struct ds_abandon_arg   * arg;
+struct DAPindication    * di;
+int                       asyn;
+{
+	return (DapAbandon (ad, id, arg, di, asyn));
+}
+
+dap_addentry (ad, id, arg, error) 
+int ad; 
+int * id; 
+struct ds_addentry_arg *arg; 
+struct DSError *error; 
+{
+	return dap_addentry (ad, id, arg, error);
+} 
+
+int       DapAddEntry (ad, id, arg, di, asyn)
+int                       ad;
+int                       id;
+struct ds_addentry_arg  * arg;
+struct DAPindication    * di;
+int                       asyn;
+{
+	return (DapAddEntry (ad, id, arg, di, asyn));
+}
+
+dap_compare (ad, id, arg, error, result) 
+int ad; 
+int * id; 
+struct ds_compare_arg *arg; 
+struct ds_compare_result *result; 
+struct DSError *error; 
+{
+	return dap_compare (ad, id, arg, error, result);
+} 
+
+int       DapCompare (ad, id, arg, di, asyn)
+int                       ad;
+int                       id;
+struct ds_compare_arg   * arg;
+struct DAPindication    * di;
+int                       asyn;
+{
+	return (DapCompare (ad, id, arg, di, asyn));
+}
+
+dap_list (ad, id, arg, error, result) 
+int ad; 
+int * id; 
+struct ds_list_arg *arg; 
+struct ds_list_result *result; 
+struct DSError *error; 
+{
+	return dap_list (ad, id, arg, error, result) ;
+} 
+
+int       DapList (ad, id, arg, di, asyn)
+int                       ad;
+int                       id;
+struct ds_list_arg      * arg;
+struct DAPindication    * di;
+int                       asyn;
+{
+	return ( DapList (ad, id, arg, di, asyn));
+}
+
+dap_modifyentry (ad, id, arg, error) 
+int ad; 
+int * id; 
+struct ds_modifyentry_arg *arg; 
+struct DSError *error; 
+{
+	return dap_modifyentry (ad, id, arg, error) ;
+} 
+
+int       DapModifyEntry (ad, id, arg, di, asyn)
+int                       ad;
+int                       id;
+struct ds_modifyentry_arg       * arg;
+struct DAPindication    * di;
+int                       asyn;
+{
+	return (DapModifyEntry (ad, id, arg, di, asyn));
+}
+
+dap_modifyrdn (ad, id, arg, error) 
+int ad; 
+int * id; 
+struct ds_modifyrdn_arg *arg; 
+struct DSError *error; 
+{
+	return dap_modifyrdn (ad, id, arg, error) ;
+} 
+
+int       DapModifyRDN (ad, id, arg, di, asyn)
+int                       ad;
+int                       id;
+struct ds_modifyrdn_arg * arg;
+struct DAPindication    * di;
+int                       asyn;
+{
+	return (DapModifyRDN (ad, id, arg, di, asyn));
+}
+
+dap_read (ad, id, arg, error, result) 
+int ad; 
+int * id; 
+struct ds_read_arg *arg; 
+struct ds_read_result *result; 
+struct DSError *error; 
+{
+	return dap_read (ad, id, arg, error, result) ;
+} 
+
+int       DapRead (ad, id, arg, di, asyn)
+int                       ad;
+int                       id;
+struct ds_read_arg      * arg;
+struct DAPindication    * di;
+int                       asyn;
+{
+	return (DapRead (ad, id, arg, di, asyn));
+}
+
+dap_removeentry (ad, id, arg, error) 
+int ad; 
+int * id; 
+struct ds_removeentry_arg *arg; 
+struct DSError *error; 
+{
+	return dap_removeentry (ad, id, arg, error) ;
+} 
+
+int       DapRemoveEntry (ad, id, arg, di, asyn)
+int                       ad;
+int                       id;
+struct ds_removeentry_arg       * arg;
+struct DAPindication    * di;
+int                       asyn;
+{
+	return (DapRemoveEntry (ad, id, arg, di, asyn));
+}
+
+dap_search (ad, id, arg, error, result) 
+int ad; 
+int * id; 
+struct ds_search_arg *arg; 
+struct ds_search_result *result; 
+struct DSError *error; 
+{
+	return dap_search (ad, id, arg, error, result) ;
+} 
+
+int       DapSearch (ad, id, arg, di, asyn)
+int                       ad;
+int                       id;
+struct ds_search_arg    * arg;
+struct DAPindication    * di;
+int                       asyn;
+{
+	return ( DapSearch (ad, id, arg, di, asyn));
+}
+
+void ros_log(rop, event) 
+register struct RoSAPpreject *rop; 
+char *event; 
+{
+	ros_log(rop,event);
+} 
+
+void acs_log(aca, event) 
+register struct AcSAPabort *aca; 
+char *event; 
+{
+	acs_log(aca,event);
+} 
+
+td_log(td, event) 
+struct TSAPdisconnect *td; 
+char *event; 
+{
+	(void) td_log(td,event);
+} 
+
+int       DUAbortRequest (sd, di)
+int                       sd;
+struct DSAPindication   * di;
+{
+	return (DUAbortRequest (sd, di));
+}
+
+int       DspAsynBindReqAux (callingtitle, calledtitle, callingaddr,
+                calledaddr, prequirements, srequirements, isn, settings,
+                sf, bindarg, qos, dc, di, async)
+AEI                       callingtitle;
+AEI                       calledtitle;
+struct PSAPaddr         * callingaddr;
+struct PSAPaddr         * calledaddr;
+int                       prequirements;
+int                       srequirements;
+long                      isn;
+int                       settings;
+struct SSAPref          * sf;
+struct ds_bind_arg      * bindarg;
+struct QOStype          * qos;
+struct DSAPconnect      * dc;
+struct DSAPindication   * di;
+int                       async;
+{
+	return (DspAsynBindReqAux (callingtitle, calledtitle, callingaddr,
+                calledaddr, prequirements, srequirements, isn, settings,
+                sf, bindarg, qos, dc, di, async));
+}
+
+int       DspAsynBindRequest (calledaddr, bindarg, qos_maxtime, dc, di, async)
+struct PSAPaddr         * calledaddr;
+struct ds_bind_arg      * bindarg;
+int                       qos_maxtime;
+struct DSAPconnect      * dc;
+struct DSAPindication   * di;
+int                       async;
+{
+	return (DspAsynBindRequest (calledaddr, bindarg, qos_maxtime, dc, di, async));
+}
+
+int       QspAsynBindReqAux (callingtitle, calledtitle, callingaddr,
+                calledaddr, prequirements, srequirements, isn, settings,
+                sf, bindarg, qos, dc, di, async)
+AEI                       callingtitle;
+AEI                       calledtitle;
+struct PSAPaddr         * callingaddr;
+struct PSAPaddr         * calledaddr;
+int                       prequirements;
+int                       srequirements;
+long                      isn;
+int                       settings;
+struct SSAPref          * sf;
+struct ds_bind_arg      * bindarg;
+struct QOStype          * qos;
+struct DSAPconnect      * dc;
+struct DSAPindication   * di;
+int                       async;
+{
+	return (QspAsynBindReqAux (callingtitle, calledtitle, callingaddr,
+                calledaddr, prequirements, srequirements, isn, settings,
+                sf, bindarg, qos, dc, di, async));
+}
+
+int       QspAsynBindRequest (calledaddr, bindarg, qos_maxtime, dc, di, async)
+struct PSAPaddr         * calledaddr;
+struct ds_bind_arg      * bindarg;
+int                       qos_maxtime;
+struct DSAPconnect      * dc;
+struct DSAPindication   * di;
+int                       async;
+{
+	return (QspAsynBindRequest (calledaddr, bindarg, qos_maxtime, dc, di, async));
+}
+
+int       DspAsynBindRetry (sd, do_next_nsap, dc, di)
+int                       sd;
+int                       do_next_nsap;
+struct DSAPconnect      * dc;
+struct DSAPindication   * di;
+{
+	return (DspAsynBindRetry (sd, do_next_nsap, dc, di));
+}
+
+int       QspAsynBindRetry (sd, do_next_nsap, dc, di)
+int                       sd;
+int                       do_next_nsap;
+struct DSAPconnect      * dc;
+struct DSAPindication   * di;
+{
+	return (QspAsynBindRetry (sd, do_next_nsap, dc, di));
+}
+
+int       DBindDecode (acc, dc)
+struct AcSAPconnect     * acc;
+struct DSAPconnect      * dc;
+{
+	return (DBindDecode (acc, dc));
+}
+
+int       DBindInit (vecp, vec, ds, di)
+int                       vecp;
+char                    **vec;
+struct DSAPstart        * ds;
+struct DSAPindication   * di;
+{
+	return (DBindInit (vecp, vec, ds, di));
+}
+
+int       DBindResult (sd, context, respondtitle,
+                respondaddr, ctxlist, defctxresult, prequirements,
+                srequirements, isn, settings, ref, bind_res, pctx_id, di)
+int                       sd;
+OID                       context;
+AEI                       respondtitle;
+struct PSAPaddr         * respondaddr;
+struct PSAPctxlist      * ctxlist;
+int                       defctxresult;
+int                       prequirements;
+int                       srequirements;
+long                      isn;
+int                       settings;
+struct SSAPref          * ref;
+struct ds_bind_arg      * bind_res;
+int                       pctx_id;
+struct DSAPindication   * di;
+{
+	return (DBindResult (sd, context, respondtitle,
+                respondaddr, ctxlist, defctxresult, prequirements,
+                srequirements, isn, settings, ref, bind_res, pctx_id, di));
+}
+
+int       DBindError (sd, context, respondtitle, respondaddr, ctxlist,
+                defctxresult, prequirements, srequirements, isn, settings,
+                ref, bind_err, pctx_id, di)
+int                       sd;
+OID                       context;
+AEI                       respondtitle;
+struct PSAPaddr         * respondaddr;
+struct PSAPctxlist      * ctxlist;
+int                       defctxresult;
+int                       prequirements;
+int                       srequirements;
+long                      isn;
+int                       settings;
+struct SSAPref          * ref;
+struct ds_bind_error    * bind_err;
+int                       pctx_id;
+struct DSAPindication   * di;
+{
+	return (DBindError (sd, context, respondtitle, respondaddr, ctxlist,
+                defctxresult, prequirements, srequirements, isn, settings,
+                ref, bind_err, pctx_id, di));
+}
+
+int       DBindReject (ds, status, reason, di)
+struct DSAPstart        * ds;
+int                       status;
+int                       reason;
+struct DSAPindication   * di;
+{
+	return (DBindReject (ds, status, reason, di));
+}
+
+int       select_context (app_ctx)
+OID                       app_ctx;
+{
+	return (select_context (app_ctx));
+}
+
+int       judge_ctxlist(req_ctxlist, ok_ctxlist)
+struct PSAPctxlist      * req_ctxlist;
+struct PSAPctxlist      * ok_ctxlist;
+{
+	return (judge_ctxlist(req_ctxlist, ok_ctxlist));
+}
+
+int       find_ctx_id(pcdl, ctx_oid)
+struct PSAPctxlist      * pcdl;
+OID                       ctx_oid;
+{
+	return (find_ctx_id(pcdl, ctx_oid));
+}
+
+int       check_dap_ctxlist (ctxlist)
+struct PSAPctxlist      * ctxlist;
+{
+	return (check_dap_ctxlist (ctxlist));
+}
+
+int       check_dsp_ctxlist (ctxlist)
+struct PSAPctxlist      * ctxlist;
+{
+	return (check_dsp_ctxlist (ctxlist));
+}
+
+int       check_qsp_ctxlist (ctxlist)
+struct PSAPctxlist      * ctxlist;
+{
+	return (check_qsp_ctxlist (ctxlist));
+}
+
+int       DapErrorRequest (sd, id, err, di)
+int                       sd;
+int                       id;
+struct DSError          * err;
+struct DSAPindication   * di;
+{
+	return (DapErrorRequest (sd, id, err, di));
+}
+
+int       DspErrorRequest (sd, id, err, di)
+int                       sd;
+int                       id;
+struct DSError          * err;
+struct DSAPindication   * di;
+{
+	return (DspErrorRequest (sd, id, err, di));
+}
+
+int       QspErrorRequest (sd, id, err, di)
+int                       sd;
+int                       id;
+struct DSError          * err;
+struct DSAPindication   * di;
+{
+	return (QspErrorRequest (sd, id, err, di));
+}
+
+int             DEncodeError(pep, err)
+PE              *pep;
+struct DSError  *err;
+{
+	return (DEncodeError(pep, err));
+}
+
+int       DapInvokeRequest (sd, id, arg, di)
+int                       sd;
+int                       id;
+struct DSArgument       * arg;
+struct DSAPindication   * di;
+{
+	return (DapInvokeRequest (sd, id, arg, di));
+}
+
+int       DapEncodeInvoke (pep, arg)
+PE                      * pep;
+struct DSArgument       * arg;
+{
+	return (DapEncodeInvoke (pep, arg));
+}
+
+int       DspInvokeRequest (sd, id, arg, di)
+int       sd;
+int       id;
+struct ds_op_arg        * arg;
+struct DSAPindication   * di;
+{
+	return (DspInvokeRequest (sd, id, arg, di));
+}
+
+int       DspEncodeInvoke (pep, arg)
+PE                      * pep;
+struct ds_op_arg        * arg;
+{
+	return (DspEncodeInvoke (pep, arg));
+}
+
+int       QspInvokeRequest (sd, id, arg, di)
+int       sd;
+int       id;
+struct ds_op_arg        * arg;
+struct DSAPindication   * di;
+{
+	return (QspInvokeRequest (sd, id, arg, di));
+}
+
+int       QspEncodeInvoke (pep, arg)
+PE                      * pep;
+struct ds_op_arg        * arg;
+{
+	return (QspEncodeInvoke (pep, arg));
+}
+
+int     dsaplose (di, reason, what, fmt)
+struct DSAPindication *di;
+int     reason;
+char   *what,
+       *fmt;
+{
+    return dsaplose (di, reason, what, fmt);
+}
+
+int     dsapreject (di, reason, id, what, fmt)
+struct DSAPindication *di;
+int     reason;
+int     id;
+char   *what,
+       *fmt;
+{
+    return dsapreject (di, reason, id, what, fmt);
+}
+
+int       DRejectRequest (sd, reason, id)
+int       sd;
+int       reason;
+int       id;
+{
+	return (DRejectRequest (sd, reason, id));
+}
+
+int       DapResultRequest (sd, id, res, di)
+int                       sd;
+int                       id;
+struct DSResult         * res;
+struct DSAPindication   * di;
+{
+	return ( DapResultRequest (sd, id, res, di));
+}
+
+int       DapEncodeResult (pep, res)
+PE              * pep;
+struct DSResult * res;
+{
+	return (DapEncodeResult (pep, res));
+}
+
+int       DspResultRequest (sd, id, res, di)
+int                       sd;
+int                       id;
+struct ds_op_res        * res;
+struct DSAPindication   * di;
+{
+	return (DspResultRequest (sd, id, res, di));
+}
+
+int       DspEncodeResult (pep, res)
+PE                      * pep;
+struct ds_op_res        * res;
+{
+	return (DspEncodeResult (pep, res));
+}
+
+int       QspResultRequest (sd, id, res, di)
+int                       sd;
+int                       id;
+struct ds_op_res        * res;
+struct DSAPindication   * di;
+{
+	return (QspResultRequest (sd, id, res, di));
+}
+
+int       QspEncodeResult (pep, res)
+PE                      * pep;
+struct ds_op_res        * res;
+{
+	return ( QspEncodeResult (pep, res));
+}
+
+int       ronot2dsaplose (di, event, rni)
+struct DSAPindication   * di;
+char                    * event;
+struct RoNOTindication  * rni;
+{
+	return (ronot2dsaplose (di, event, rni));
+}
+
+int       ros2dsaplose (di, event, rop)
+struct DSAPindication   * di;
+char                    * event;
+struct RoSAPpreject     * rop;
+{
+	return (ros2dsaplose (di, event, rop));
+}
+
+int       ros2dsapreject (di, event, rou)
+struct DSAPindication   * di;
+char                    * event;
+struct RoSAPureject     * rou;
+{
+	return (ros2dsapreject (di, event, rou));
+}
+
+int       DUnBindRequest (sd, secs, dr, di)
+int                       sd;
+int                       secs;
+struct DSAPrelease      * dr;
+struct DSAPindication   * di;
+{
+	return (DUnBindRequest (sd, secs, dr, di));
+}
+
+int       DUnBindRetry (sd, secs, dr, di)
+int                       sd;
+int                       secs;
+struct DSAPrelease      * dr;
+struct DSAPindication   * di;
+{
+	return (DUnBindRetry (sd, secs, dr, di));
+}
+
+int       DUnBindAccept (sd, di)
+int                       sd;
+struct DSAPindication   * di;
+{
+	return (DUnBindAccept (sd, di));
+}
+
+int       DUnBindReject (sd, status, reason, di)
+int                       sd;
+int                       status;
+int                       reason;
+struct DSAPindication   * di;
+{
+	return (DUnBindReject (sd, status, reason, di));
+}
+
+int       DWaitRequest (ctx, sd, secs, di)
+int                       ctx;
+int                       sd;
+int                       secs;
+struct DSAPindication   * di;
+{
+	return (DWaitRequest (ctx, sd, secs, di));
+}
+
+int       DapRespWaitRequest (sd, secs, di)
+int                       sd;
+int                       secs;
+struct DSAPindication   * di;
+{
+	return (DapRespWaitRequest (sd, secs, di));
+}
+
+int       DspWaitRequest (sd, secs, di)
+int                       sd;
+int                       secs;
+struct DSAPindication   * di;
+{
+	return (DspWaitRequest (sd, secs, di));
+}
+
+int       QspWaitRequest (sd, secs, di)
+int                       sd;
+int                       secs;
+struct DSAPindication   * di;
+{
+	return (QspWaitRequest (sd, secs, di));
+}
+
+int       DapDecodeInvoke (sd, rox, di)
+int                       sd;
+struct RoSAPinvoke      * rox;
+struct DSAPindication   * di;
+{
+	return ( DapDecodeInvoke (sd, rox, di));
+}
+
+int       DDecodeUnbind (sd, acf, di)
+int                       sd;
+struct AcSAPfinish      * acf;
+struct DSAPindication   * di;
+{
+	return (DDecodeUnbind (sd, acf, di));
+}
+
+int       DspDecodeInvoke (sd, rox, di)
+int                       sd;
+struct RoSAPinvoke      * rox;
+struct DSAPindication   * di;
+{
+	return (DspDecodeInvoke (sd, rox, di));
+}
+
+int       DspDecodeResult (sd, ror, di)
+int                       sd;
+struct RoSAPresult      * ror;
+struct DSAPindication   * di;
+{
+	return (DspDecodeResult (sd, ror, di));
+}
+
+int       DspDecodeError (sd, roe, di)
+int       sd;
+struct RoSAPerror       * roe;
+struct DSAPindication   * di;
+{
+	return (DspDecodeError (sd, roe, di));
+}
+
+int       DspDecodeUnbind (sd, acf, di)
+int       sd;
+struct AcSAPfinish      * acf;
+struct DSAPindication   * di;
+{
+	return (DspDecodeUnbind (sd, acf, di));
+}
+
+int       QspDecodeInvoke (sd, rox, di)
+int                       sd;
+struct RoSAPinvoke      * rox;
+struct DSAPindication   * di;
+{
+	return (QspDecodeInvoke (sd, rox, di));
+}
+
+int       QspDecodeResult (sd, ror, di)
+int                       sd;
+struct RoSAPresult      * ror;
+struct DSAPindication   * di;
+{
+	return ( QspDecodeResult (sd, ror, di));
+}
+
+int       QspDecodeError (sd, roe, di)
+int       sd;
+struct RoSAPerror       * roe;
+struct DSAPindication   * di;
+{
+	return (QspDecodeError (sd, roe, di));
+}
+
+int       QspDecodeUnbind (sd, acf, di)
+int       sd;
+struct AcSAPfinish      * acf;
+struct DSAPindication   * di;
+{
+	return (QspDecodeUnbind (sd, acf, di));
+}
+
+/* Some types routines */
+
+bind_arg_free (arg)
+struct ds_bind_arg          *arg;
+{
+	(void) bind_arg_free (arg);
+}
+
+op_arg_free (arg)
+struct ds_op_arg * arg;
+{
+	(void) op_arg_free (arg);
+}
+
+ch_arg_free (arg)
+struct chain_arg * arg;
+{
+	(void) ch_arg_free (arg);
+}
+
+ds_arg_free (arg)
+struct DSArgument * arg;
+{
+	(void) ds_arg_free (arg);
+}
+
+read_arg_free (arg)
+struct ds_read_arg      * arg;
+{
+	(void) read_arg_free (arg);
+}
+
+compare_arg_free (arg)
+struct ds_compare_arg   * arg;
+{
+	(void) compare_arg_free (arg);
+}
+
+list_arg_free (arg)
+struct ds_list_arg      * arg;
+{
+	(void) list_arg_free (arg);
+}
+
+search_arg_free (arg)
+struct ds_search_arg    * arg;
+{
+	(void) search_arg_free (arg);
+}
+
+addentry_arg_free (arg)
+struct ds_addentry_arg  * arg;
+{
+	(void) addentry_arg_free (arg);
+}
+
+removeentry_arg_free (arg)
+struct ds_removeentry_arg       * arg;
+{
+	(void) removeentry_arg_free (arg);
+}
+
+modifyentry_arg_free (arg)
+struct ds_modifyentry_arg       * arg;
+{
+	(void) modifyentry_arg_free (arg);
+}
+
+modifyrdn_arg_free (arg)
+struct ds_modifyrdn_arg * arg;
+{
+	(void) modifyrdn_arg_free (arg);
+}
+
+getedb_arg_free (arg)
+struct getedb_arg       * arg;
+{
+	(void) getedb_arg_free (arg);
+}
+
+op_res_free (res)
+struct ds_op_res * res;
+{
+	(void) op_res_free (res);
+}
+
+ch_res_free (res)
+struct chain_res        * res;
+{
+	(void) ch_res_free (res);
+}
+
+ds_res_free (res)
+struct DSResult * res;
+{
+	(void) ds_res_free (res);
+}
+
+trace_info_free (ti)
+struct trace_info * ti;
+{
+	(void) trace_info_free (ti);
+}
+
+ca_free (ca)
+CommonArgs * ca;
+{
+	(void) ca_free (ca);
+}
+
+extension_free (ext)
+struct extension * ext;
+{
+	(void) extension_free (ext);
+}
+
+cross_refs_free (xref)
+struct cross_ref * xref;
+{
+	(void) cross_refs_free (xref);
+}
+
+watch_dog (where)
+char * where;
+{
+	(void) watch_dog (where);
+}
+
+watch_dog_aux (where,secs)
+char * where;
+unsigned secs;
+{
+	(void) watch_dog_aux (where,secs);
+}
+
+watch_dog_reset ()
+{
+	(void) watch_dog_reset ();
+}
