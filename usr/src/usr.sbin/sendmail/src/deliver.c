@@ -7,17 +7,22 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
 #include <netdb.h>
 #include <errno.h>
+#include <sys/wait.h>
 #ifdef NAMED_BIND
 #include <arpa/nameser.h>
 #include <resolv.h>
 
 extern int	h_errno;
+#endif
+
+#ifndef WEXITSTATUS
+# define WEXITSTATUS(st)	(((st) >> 8) & 0377)
 #endif
 
 /*
@@ -1484,29 +1489,28 @@ endmailer(mci, e, pv)
 		return (EX_SOFTWARE);
 	}
 
-	/* see if it died a horrid death */
-	if ((st & 0377) != 0)
+	if (WIFEXITED(st))
 	{
-		syserr("mailer %s died with signal %o", pv[0], st);
-
-		/* log the arguments */
-		if (e->e_xfp != NULL)
-		{
-			register char **av;
-
-			fprintf(e->e_xfp, "Arguments:");
-			for (av = pv; *av != NULL; av++)
-				fprintf(e->e_xfp, " %s", *av);
-			fprintf(e->e_xfp, "\n");
-		}
-
-		ExitStat = EX_TEMPFAIL;
-		return (EX_TEMPFAIL);
+		/* normal death -- return status */
+		return (WEXITSTATUS(st));
 	}
 
-	/* normal death -- return status */
-	st = (st >> 8) & 0377;
-	return (st);
+	/* it died a horrid death */
+	syserr("mailer %s died with signal %o", pv[0], st);
+
+	/* log the arguments */
+	if (e->e_xfp != NULL)
+	{
+		register char **av;
+
+		fprintf(e->e_xfp, "Arguments:");
+		for (av = pv; *av != NULL; av++)
+			fprintf(e->e_xfp, " %s", *av);
+		fprintf(e->e_xfp, "\n");
+	}
+
+	ExitStat = EX_TEMPFAIL;
+	return (EX_TEMPFAIL);
 }
 /*
 **  GIVERESPONSE -- Interpret an error response from a mailer
@@ -1990,10 +1994,10 @@ mailfile(filename, ctladdr, e)
 		int st;
 
 		st = waitfor(pid);
-		if ((st & 0377) != 0)
-			return (EX_UNAVAILABLE);
+		if (WIFEXITED(st))
+			return (WEXITSTATUS(st));
 		else
-			return ((st >> 8) & 0377);
+			return (EX_UNAVAILABLE);
 		/*NOTREACHED*/
 	}
 }
