@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.41 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -469,10 +469,8 @@ ndbm_map_open(map, mode)
 	dbm = dbm_open(map->map_file, mode, DBMMODE);
 	if (dbm == NULL)
 	{
-#ifdef MAYBENEXTRELEASE
 		if (aliaswait(map, ".pag", FALSE))
 			return TRUE;
-#endif
 		if (!bitset(MF_OPTIONAL, map->map_mflags))
 			syserr("Cannot open DBM database %s", map->map_file);
 		return FALSE;
@@ -1032,7 +1030,11 @@ nis_map_open(map, mode)
 		printf("nis_map_open: yp_match(%s, %s) => %s\n",
 			map->map_domain, map->map_file, yperr_string(yperr));
 	if (yperr == 0 || yperr == YPERR_KEY || yperr == YPERR_BUSY)
-		return TRUE;
+	{
+		if (!bitset(MF_ALIAS, map->map_mflags) ||
+		    aliaswait(map, NULL, TRUE))
+			return TRUE;
+	}
 
 	if (!bitset(MF_OPTIONAL, map->map_mflags))
 		syserr("421 Cannot bind to domain %s: %s", map->map_domain,
