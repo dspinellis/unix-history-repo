@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mtree.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mtree.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -191,25 +191,50 @@ miss(level, tail)
 		if (!(level->flags&F_VISIT))
 			(void)printf("missing: %s%s", path + 2,
 			    uflag ? "" : "\n");
-		if (level->info.type == F_DIR) {
-			create = 0;
-			if (uflag)
-				if (mkdir(path, 0777))
-					(void)printf(" (not created: %s)\n",
-					    strerror(errno));
-				else {
-					create = 1;
-					(void)printf(" (created)\n");
-				}
-			for (p = tail; *p; ++p);
-			miss(level->child, p);
-			if (create &&
-			   level->info.flags&(F_DMODE|F_FMODE|F_MODE)) {
-				*p = '\0';
-				if (chmod(path, level->info.st_mode))
-					(void)printf("%s: %s\n", path,
-					    strerror(errno));
+		if (level->info.type != F_DIR)
+			continue;
+		create = 0;
+		if (uflag)
+			if (mkdir(path, 0777))
+				(void)printf(" (not created: %s)\n",
+				    strerror(errno));
+			else {
+				create = 1;
+				(void)printf(" (created)\n");
 			}
+		for (p = tail; *p; ++p);
+		miss(level->child, p);
+		if (create) {
+			*p = '\0';
+			dirset(&level->info);
 		}
 	}
+}
+
+dirset(s1)
+	register INFO *s1;
+{
+	extern int errno;
+	register struct stat *s2;
+	struct stat sbuf;
+
+	if (stat(path, &sbuf)) {
+		(void)fprintf(stderr,
+		    "mtree: %s: %s\n", path, strerror(errno));
+		return;
+	}
+	s2 = &sbuf;
+
+	if (s1->flags&F_MODE && s1->st_mode != (s2->st_mode&07777) &&
+	    chmod(path, s1->st_mode))
+		(void)printf("%s: permissions not set: %s\n",
+		    path + 2, strerror(errno));
+	if (s1->flags&F_OWNER && s1->st_uid != s2->st_uid &&
+	    chown(path, s1->st_uid, -1))
+		(void)printf("%s: owner not modified: %s\n",
+		    path + 2, strerror(errno));
+	if (s1->flags&F_GROUP && s1->st_gid != s2->st_gid &&
+	    chown(path, -1, s1->st_gid))
+		(void)printf("%s: group not modified: %s\n",
+		    path + 2, strerror(errno));
 }
