@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)genassym.c	7.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)genassym.c	7.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "param.h"
@@ -78,6 +78,7 @@ main()
 	printf("#define\tV_SOFT %d\n", &vm->v_soft);
 	printf("#define\tV_FPE %d\n", &vm->v_fpe);
 	printf("#define\tV_ALIGN %d\n", &vm->v_align);
+	printf("#define\tMCLBYTES %d\n", MCLBYTES);
 	printf("#define\tNBPG %d\n", NBPG);
 	printf("#define\tPGSHIFT %d\n", PGSHIFT);
 	printf("#define\tUPAGES %d\n", UPAGES);
