@@ -1,0 +1,22 @@
+#!/bin/csh -fx
+#
+#Shell script for building and installing Emacs.
+
+set EMACS=/usr/new/lib/emacs
+set BIN=/usr/new
+
+(cd etc; make) || exit 1
+(cd src; make) || exit 1
+
+# you might want to change the next part if you don't want multiple copies
+# of these files on one system
+
+mkdir $EMACS/{etc,info,lisp}
+cp etc/* $EMACS/etc
+cp info/* $EMACS/info
+cp lisp/* $EMACS/lisp
+
+cp $EMACS/etc/{ctags,etags} $BIN
+mv $EMACS/src/xemacs $BIN/emacs
+rm $EMACS/src/temacs
+chmod 777 $BIN/{ctags,etags,emacs}
