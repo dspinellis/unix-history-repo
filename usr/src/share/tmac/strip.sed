@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)strip.sed	5.1 (Berkeley) %G%
+#	@(#)strip.sed	8.1 (Berkeley) %G%
 #
 
 /%beginstrip%/{
