@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)login.c	4.22 83/04/18";
+static	char *sccsid = "@(#)login.c	4.23 83/05/19";
 /*
  * login [ name ]
  * login -r
@@ -50,7 +50,6 @@ int	setpwent();
 char	*ttyname();
 char	*crypt();
 char	*getpass();
-char	*rindex();
 char	*stypeof();
 extern	char **environ;
 
@@ -107,11 +106,10 @@ char **argv;
 		        while (fgets(ahost, sizeof (ahost), hostf)) {
 				char *user;
 
-				if (index(ahost, '\n'))
-					*index(ahost, '\n') = 0;
-				user = index(ahost, ' ');
-				if (user)
-					*user++ = 0;
+				if ((user = index(ahost, '\n')) != 0)
+					*user++ = '\0';
+				if ((user = index(ahost, ' ')) != 0)
+					*user++ = '\0';
 				if (!strcmp(rhost, ahost) &&
 				    !strcmp(rusername, user ?
 				    user : lusername)) {
@@ -132,7 +130,6 @@ char **argv;
 				goto again;
 			if ((sbuf.st_mode & S_IFMT) == S_IFLNK) {
 				printf("login: .rhosts is a soft link.\r\n");
-			        fclose(hostf);
 				goto abnormal;
 			}
 			hostf = fopen(rhosts, "r");
@@ -356,8 +353,6 @@ rootterm(tty)
 	register FILE *fd;
 	char buf[100];
 
-	if (rflag)
-		return(1);
 	if ((fd = fopen(securetty, "r")) == NULL)
 		return(1);
 	while (fgets(buf, sizeof buf, fd) != NULL) {
