@@ -5,19 +5,17 @@
  * This code is derived from software contributed to Berkeley by
  * the University of Utah, and William Jolitz.
  *
- * %sccs.include.386.c%
+ * %sccs.include.redist.c%
  *
- *	@(#)trap.c	5.8 (Berkeley) %G%
+ *	@(#)trap.c	5.9 (Berkeley) %G%
  */
 
-
 /*
- * 386 Trap and System call handleing
+ * 386 Trap and System call handling
  */
 
 #include "machine/psl.h"
 #include "machine/reg.h"
-#include "machine/pte.h"
 #include "machine/segments.h"
 #include "machine/frame.h"
 
@@ -28,13 +26,17 @@
 #include "seg.h"
 #include "acct.h"
 #include "kernel.h"
-#include "vm.h"
-#include "cmap.h"
 #ifdef KTRACE
 #include "ktrace.h"
 #endif
 
+#include "vm/vm_param.h"
+#include "vm/pmap.h"
+#include "vm/vm_map.h"
+#include "sys/vmmeter.h"
+
 #include "machine/trap.h"
+#include "machine/dbg.h"
 
 #define	USER	0x40		/* user-mode flag added to type */
 #define	FRMTRAP	0x100		/* distinguish trap from syscall */
@@ -51,6 +53,7 @@ int	nsysent;
  */
 unsigned rcr2(), Sysbase;
 extern short cpl;
+int um;
 /*ARGSUSED*/
 trap(frame)
 	struct trapframe frame;
@@ -64,8 +67,8 @@ trap(frame)
 	struct timeval syst;
 	extern int nofault;
 	int ucode;
-	int oar0;
 
+#define DEBUG
 #ifdef DEBUG
 dprintf(DALLTRAPS, "\n%d. trap",u.u_procp->p_pid);
 dprintf(DALLTRAPS, " pc:%x cs:%x ds:%x eflags:%x isp %x\n",
@@ -76,19 +79,35 @@ dprintf(DALLTRAPS, "edi %x esi %x ebp %x ebx %x esp %x\n",
 		frame.tf_ebx, frame.tf_esp);
 dprintf(DALLTRAPS, "edx %x ecx %x eax %x\n",
 		frame.tf_edx, frame.tf_ecx, frame.tf_eax);
-p=u.u_procp;
+/*p=u.u_procp;
 dprintf(DALLTRAPS, "sig %x %x %x \n",
-		p->p_sigignore, p->p_sigcatch, p->p_sigmask);
+		p->p_sigignore, p->p_sigcatch, p->p_sigmask); */
 dprintf(DALLTRAPS, " ec %x type %x cpl %x ",
 		frame.tf_err&0xffff, frame.tf_trapno, cpl);
+/*pg("trap cr2 %x", rcr2());*/
 #endif
+
+/*if(um && frame.tf_trapno == 0xc && (rcr2()&0xfffff000) == 0){
+	if (ISPL(locr0[tCS]) != SEL_UPL) {
+		if(nofault) goto anyways;
+		locr0[tEFLAGS] |= PSL_T;
+		*(int *)PTmap |= 1; load_cr3(rcr3());
+		return;
+	}
+} else if (um) {
+printf("p %x ", *(int *) PTmap);
+*(int *)PTmap &= 0xfffffffe; load_cr3(rcr3());
+printf("p %x ", *(int *) PTmap);
+}
+anyways:
+
+if(pc == 0) um++;*/
 
 	locr0[tEFLAGS] &= ~PSL_NT;	/* clear nested trap XXX */
 if(nofault && frame.tf_trapno != 0xc)
 	{ locr0[tEIP] = nofault; return;}
 
 	syst = u.u_ru.ru_stime;
-oar0= u.u_ar0;
 	if (ISPL(locr0[tCS]) == SEL_UPL) {
 		type |= USER;
 		u.u_ar0 = locr0;
@@ -113,6 +132,7 @@ pg("panic");
 
 	case T_SEGNPFLT + USER:
 	case T_PROTFLT + USER:		/* protection fault */
+copyfault:
 		ucode = code + BUS_SEGM_FAULT ;
 		i = SIGBUS;
 		break;
@@ -166,53 +186,80 @@ pg("panic");
 		if (code & PGEX_P) goto bit_sucker;
 		/* fall into */
 	case T_PAGEFLT + USER:		/* page fault */
-		{	register u_int vp;
-			u_int ea;
+	    {
+		register vm_offset_t va;
+		register vm_map_t map;
+		int rv;
+		vm_prot_t ftype;
+		extern vm_map_t kernel_map;
+		unsigned nss,v;
 
+		/*
+		 * It is only a kernel address space fault iff:
+		 * 	1. (type & USER) == 0  and
+		 * 	2. nofault not set or
+		 *	3. nofault set but supervisor space data fault
+		 * The last can occur during an exec() copyin where the
+		 * argument space is lazy-allocated.
+		 */
+		if (type == T_PAGEFLT && (!nofault/*|| (code & PGEX_U) == 0*/))
+			map = kernel_map;
+		else
+			map = u.u_procp->p_map;
+		if (code & PGEX_W)
+			ftype = VM_PROT_READ | VM_PROT_WRITE;
+		else
+			ftype = VM_PROT_READ;
+		va = trunc_page((vm_offset_t)rcr2());
 #ifdef DEBUG
-dprintf(DPAGIN|DALLTRAPS, "pf code %x pc %x usp %x cr2 %x |",
-		code, frame.tf_eip, frame.tf_esp, rcr2());
+		if (map == kernel_map && va == 0) {
+			printf("trap: bad kernel access at %x\n", v);
+			goto bit_sucker;
+		}
 #endif
-			ea = (u_int)rcr2();
-
-			/* out of bounds reference */
-			if (ea >= (u_int)&Sysbase || code & PGEX_P) {
-				ucode = code + BUS_PAGE_FAULT;
-				i = SIGBUS;
-				break;
+		/*
+		 * XXX: rude hack to make stack limits "work"
+		 */
+#ifdef notyet
+		nss = 0;
+		if ((caddr_t)va >= u.u_maxsaddr && map != kernel_map) {
+			nss = clrnd(btoc(USRSTACK-(unsigned)va));
+			if (nss > btoc(u.u_rlimit[RLIMIT_STACK].rlim_cur)) {
+				rv = KERN_FAILURE;
+				goto nogo;
 			}
-
-			/* stack reference to the running process? */
-			vp = btop(ea);
-			if (vp >= dptov(u.u_procp, u.u_procp->p_dsize)
-			&& vp < sptov(u.u_procp, u.u_procp->p_ssize-1)){
-				/* attempt to grow stack */
-				if (grow((unsigned)locr0[tESP]) || grow(ea)) {
-					if (type == T_PAGEFLT)
-{
-u.u_ar0 = oar0;
-return;
-}
-					goto out;
-				} else	if (nofault) {
-u.u_ar0 = oar0;
-					locr0[tEIP] = nofault;
-					return;
-				}
-				i = SIGSEGV;
-				ucode = code + BUS_PAGE_FAULT;
-				break;
-			}
-
-			pagein(ea, 0, code);
-			if (type == T_PAGEFLT) return;
+		}
+#endif
+		rv = vm_fault(map, va, ftype, FALSE);
+		if (rv == KERN_SUCCESS) {
+			/*
+			 * XXX: continuation of rude stack hack
+			 */
+			if (nss > u.u_ssize)
+				u.u_ssize = nss;
+			if (type == T_PAGEFLT)
+				return;
 			goto out;
 		}
+nogo:
+		if (type == T_PAGEFLT) {
+			if (nofault)
+				goto copyfault;
+			printf("vm_fault(%x, %x, %x, 0) -> %x\n",
+			       map, va, ftype, rv);
+			printf("  type %x, code [mmu,,ssw]: %x\n",
+			       type, code);
+			goto bit_sucker;
+		}
+		i = (rv == KERN_PROTECTION_FAILURE) ? SIGBUS : SIGSEGV;
+		break;
+	    }
 
 	case T_TRCTRAP:	 /* trace trap -- someone single stepping lcall's */
 		locr0[tEFLAGS] &= ~PSL_T;
+if (um) {*(int *)PTmap &= 0xfffffffe; load_cr3(rcr3()); }
+
 			/* Q: how do we turn it on again? */
-u.u_ar0 = oar0;
 		return;
 	
 	case T_BPTFLT + USER:		/* bpt instruction fault */
@@ -229,12 +276,15 @@ u.u_ar0 = oar0;
 		else goto bit_sucker;
 #endif
 	}
+/*if(u.u_procp && (u.u_procp->p_pid == 1 || u.u_procp->p_pid == 3)) {
+	if( *(u_char *) 0xf7c != 0xc7) {
+		printf("%x!", *(u_char *) 0xf7c);
+		*(u_char *) 0xf7c = 0xc7;
+	}
+}*/
 	trapsignal(i, ucode|FRMTRAP);
 	if ((type & USER) == 0)
-{
-u.u_ar0 = oar0;
 		return;
-}
 out:
 	p = u.u_procp;
 	if (i = CURSIG(p))
@@ -266,7 +316,10 @@ out:
 			addupc(pc, &u.u_prof, ticks);
 	}
 	curpri = p->p_pri;
-u.u_ar0 = oar0;
+/*if(u.u_procp->p_pid == 3)
+		locr0[tEFLAGS] |= PSL_T;
+if(u.u_procp->p_pid == 1 && (pc == 0xec9 || pc == 0xebd))
+		locr0[tEFLAGS] |= PSL_T;*/
 #undef type
 #undef code
 #undef pc
@@ -280,7 +333,7 @@ u.u_ar0 = oar0;
 /*ARGSUSED*/
 syscall(frame)
 	struct syscframe frame;
-#define code frame.sf_eax	/* note: written over! */
+/*#define code frame.sf_eax	/* note: written over! */
 #define pc frame.sf_eip
 {
 	register int *locr0 = ((int *)&frame);
@@ -291,6 +344,7 @@ syscall(frame)
 	struct timeval syst;
 	int error, opc;
 	int args[8], rval[2];
+int code;
 
 #ifdef lint
 	r0 = 0; r0 = r0; r1 = 0; r1 = r1;
@@ -308,8 +362,16 @@ printf("edx %x ecx %x eax %x\n", frame.sf_edx, frame.sf_ecx, frame.sf_eax);
 printf("cr0 %x cr2 %x cpl %x \n", rcr0(), rcr2(), cpl);
 		panic("syscall");
 }
+if (um) {*(int *)PTmap &= 0xfffffffe; load_cr3(rcr3()); }
+/*if(u.u_procp && (u.u_procp->p_pid == 1 || u.u_procp->p_pid == 3)) {
+	if( *(u_char *) 0xf7c != 0xc7) {
+		printf("%x!", *(u_char *) 0xf7c);
+		*(u_char *) 0xf7c = 0xc7;
+	}
+}*/
 	u.u_ar0 = locr0;
 	params = (caddr_t)locr0[sESP] + NBPW ;
+code = frame.sf_eax;
 
 	/*
 	 * Reconstruct pc, assuming lcall $X,y is 7 bytes, as it is always.
@@ -321,18 +383,18 @@ printf("cr0 %x cr2 %x cpl %x \n", rcr0(), rcr2(), cpl);
 		params += NBPW;
 		callp = (code >= nsysent) ? &sysent[63] : &sysent[code];
 	}
-/*dprintf(DALLSYSC,"%d. call %d ", p->p_pid, code);*/
+dprintf(DALLSYSC,"%d. call %d ", p->p_pid, code);
 	if ((i = callp->sy_narg * sizeof (int)) &&
 	    (error = copyin(params, (caddr_t)args, (u_int)i))) {
-		locr0[sEAX] = (u_char) error;
+		locr0[sEAX] = /*(u_char)*/ error;
 		locr0[sEFLAGS] |= PSL_C;	/* carry bit */
-#ifdef KTRACE
+#ifdef KTRACEx
 		if (KTRPOINT(p, KTR_SYSCALL))
 			ktrsyscall(p->p_tracep, code, callp->sy_narg, &args);
 #endif
 		goto done;
 	}
-#ifdef KTRACE
+#ifdef KTRACEx
 	if (KTRPOINT(p, KTR_SYSCALL))
 		ktrsyscall(p->p_tracep, code, callp->sy_narg, &args);
 #endif
@@ -343,7 +405,7 @@ printf("cr0 %x cr2 %x cpl %x \n", rcr0(), rcr2(), cpl);
 		pc = opc;
 	else if (error != EJUSTRETURN) {
 		if (error) {
-			locr0[sEAX] = (u_char) error;
+			locr0[sEAX] = error;
 			locr0[sEFLAGS] |= PSL_C;	/* carry bit */
 		} else {
 			locr0[sEAX] = rval[0];
@@ -403,7 +465,7 @@ done:
 		}
 	}
 	curpri = p->p_pri;
-#ifdef KTRACE
+#ifdef KTRACEx
 	if (KTRPOINT(p, KTR_SYSRET))
 		ktrsysret(p->p_tracep, code, error, rval[0]);
 #endif
