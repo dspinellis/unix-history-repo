@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1980, 1991, 1993
+ * Copyright (c) 1980, 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,12 +7,12 @@
 
 #ifndef lint
 static char copyright[] =
-"@(#) Copyright (c) 1980, 1991, 1993\n\
+"@(#) Copyright (c) 1980, 1991, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -85,6 +85,10 @@ main(argc, argv)
 	if (TP_BSIZE / DEV_BSIZE == 0 || TP_BSIZE % DEV_BSIZE != 0)
 		quit("TP_BSIZE must be a multiple of DEV_BSIZE\n");
 	level = '0';
+	if (argc == 1) {
+		(void) fprintf(stderr, "Must specify a key.\n");
+		Exit(X_ABORT);
+	}
 	argv++;
 	argc -= 2;
 	for (cp = *argv++; *cp; cp++) {
