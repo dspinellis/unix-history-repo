@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.60 (Berkeley) %G%
+#	@(#)READ_ME	8.61 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -110,7 +110,7 @@ these just include the support they indicate.  [If you are using NEWDB,
 get the latest version from FTP.CS.Berkeley.EDU in /ucb/4bsd.  DO NOT
 use the version from the Net2 distribution!  However, if you are on
 BSD/386 or 386BSD-based systems, use the one that already exists
-on your system.  You may need to define OLD_NEWDB to do this.]
+on your system.  You may need to #define OLD_NEWDB 1 to do this.]
 
 [NOTE WELL: it is CRITICAL that you remove ndbm.o from libdb.a and
 ndbm.h from the appropriate include directories if you want to get
@@ -319,6 +319,10 @@ NDBM		Include support for "new" DBM library for aliases and maps.
 		Normally defined in the Makefile.
 NEWDB		Include support for Berkeley "db" package (hash & btree)
 		for aliases and maps.  Normally defined in the Makefile.
+OLD_NEWDB	If non-zero, the version of NEWDB you have is the old
+		one that does not include the "fd" call.  This call was
+		added in version 1.5 of the Berkeley DB code.  If you
+		use -DOLD_NEWDB=0 it forces you to use the new interface.
 NIS		Define this to get NIS (YP) support for aliases and maps.
 		Normally defined in the Makefile.
 USERDB		Include support for the User Information Database.  Implied
@@ -553,7 +557,7 @@ BSDI (BSD/386) 1.0, NetBSD 0.9, FreeBSD 1.0
 	other system files, such as /etc/passwd, unless you use the
 	new db format throughout your system.  You should normally just
 	use the version of db supplied in your release.  You may need
-	to use -DOLD_NEWDB to make this work -- this turns off some
+	to use -DOLD_NEWDB=1 to make this work -- this turns off some
 	new interface calls (for file locking) that are not in older
 	versions of db.  You'll get compile errors if you need this
 	flag and don't have it set.
@@ -839,4 +843,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.60, last update %G% 16:50:01)
+(Version 8.61, last update %G% 07:05:49)

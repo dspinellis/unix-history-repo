@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.103 (Berkeley) %G%
+ *	@(#)conf.h	8.104 (Berkeley) %G%
  */
 
 /*
@@ -374,15 +374,21 @@ typedef int		pid_t;
 #ifdef __bsdi__
 # define HASUNSETENV	1	/* has the unsetenv(3) call */
 # define HASSETSID	1	/* has the setsid(2) POSIX syscall */
-# define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
-# if defined(_BSDI_VERSION) && _BSDI_VERSION >= 199312
-#  define HASSETPROCTITLE 1	/* setproctitle is in libc */
-#  undef SETPROCTITLE		/* so don't redefine it in conf.c */
-# endif
 # include <sys/cdefs.h>
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
+# define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_SUBR
+# endif
+# if defined(_BSDI_VERSION) && _BSDI_VERSION >= 199312
+			/* version 1.1 or later */
+#  define HASSETPROCTITLE 1	/* setproctitle is in libc */
+#  undef SETPROCTITLE		/* so don't redefine it in conf.c */
+# else
+			/* version 1.0 or earlier */
+#  ifndef OLD_NEWDB
+#   define OLD_NEWDB	1	/* old version of newdb library */
+#  endif
 # endif
 #endif
 
@@ -969,6 +975,10 @@ typedef int		pid_t;
 
 #ifndef HASFLOCK
 # define HASFLOCK	0	/* assume no flock(2) support */
+#endif
+
+#ifndef OLD_NEWDB
+# define OLD_NEWDB	0	/* assume newer version of newdb */
 #endif
 
 
