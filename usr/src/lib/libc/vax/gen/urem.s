@@ -1,6 +1,6 @@
-#ifndef lint
-	.asciz	"@(#)urem.s	5.1 (Berkeley) %G%"
-#endif not lint
+#ifdef LIBC_SCCS
+	.asciz	"@(#)urem.s	5.2 (Berkeley) %G%"
+#endif LIBC_SCCS
 
 /*
  * urem - unsigned remainder for vax-11

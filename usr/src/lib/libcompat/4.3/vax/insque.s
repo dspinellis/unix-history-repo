@@ -4,9 +4,9 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef lint
-	.asciz	"@(#)insque.s	5.2 (Berkeley) %G%"
-#endif not lint
+#ifdef LIBC_SCCS
+	.asciz	"@(#)insque.s	5.3 (Berkeley) %G%"
+#endif LIBC_SCCS
 
 /* insque(new, pred) */
 

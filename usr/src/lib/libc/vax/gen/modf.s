@@ -1,6 +1,6 @@
-#ifndef lint
-	.asciz	"@(#)modf.s	5.1 (Berkeley) %G%"
-#endif not lint
+#ifdef LIBC_SCCS
+	.asciz	"@(#)modf.s	5.2 (Berkeley) %G%"
+#endif LIBC_SCCS
 
 /*
  * double modf (value, iptr)

@@ -1,6 +1,6 @@
-#ifndef lint
-static char sccsid[] = "@(#)strcat.c	5.1 (Berkeley) %G%";
-#endif not lint
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)strcat.c	5.2 (Berkeley) %G%";
+#endif LIBC_SCCS and not lint
 
 /*
  * Concatenate s2 on the end of s1.  S1's space must be large enough.
