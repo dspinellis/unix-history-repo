@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)su.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)su.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -117,22 +117,23 @@ main(argc, argv)
 		exit(1);
 	}
 
-	/* only allow those in group zero to su to root. */
-	if (pwd->pw_uid == 0 && (gr = getgrgid((gid_t)0)))
-		for (g = gr->gr_mem;; ++g) {
-			if (!*g) {
-				(void)fprintf(stderr,
-				    "su: you are not in the correct group to su %s.\n", user);
-				exit(1);
-			}
-			if (!strcmp(username, *g))
-				break;
-		}
-
 	if (ruid) {
 #ifdef KERBEROS
-		if (!use_kerberos || kerberos(username, user, pwd->pw_uid))
+	    if (!use_kerberos || kerberos(username, user, pwd->pw_uid))
 #endif
+	    {
+		/* only allow those in group zero to su to root. */
+		if (pwd->pw_uid == 0 && (gr = getgrgid((gid_t)0)))
+			for (g = gr->gr_mem;; ++g) {
+				if (!*g) {
+					(void)fprintf(stderr,
+			    "su: you are not in the correct group to su %s.\n",
+					    user);
+					exit(1);
+				}
+				if (!strcmp(username, *g))
+					break;
+		}
 		/* if target requires a password, verify it */
 		if (*pwd->pw_passwd) {
 			p = getpass("Password:");
@@ -144,6 +145,7 @@ main(argc, argv)
 				exit(1);
 			}
 		}
+	    }
 	}
 
 	if (asme) {
@@ -231,8 +233,8 @@ chshell(sh)
 
 	while ((cp = getusershell()) != NULL)
 		if (!strcmp(cp, sh))
-			return(1);
-	return(0);
+			return (1);
+	return (0);
 }
 
 char *
@@ -263,26 +265,24 @@ kerberos(username, user, uid)
 	char hostname[MAXHOSTNAMELEN], savehost[MAXHOSTNAMELEN];
 	char *ontty(), *krb_get_phost();
 
-	if (krb_get_lrealm(lrealm, 1) != KSUCCESS) {
-		(void)fprintf(stderr, "su: couldn't get local realm.\n");
-		return(1);
-	}
+	if (krb_get_lrealm(lrealm, 1) != KSUCCESS)
+		return (1);
 	if (koktologin(username, lrealm, user) && !uid) {
 		(void)fprintf(stderr, "kerberos su: not in %s's ACL.\n", user);
-		return(1);
+		return (1);
 	}
 	(void)sprintf(krbtkfile, "%s_%s_%d", TKT_ROOT, user, getuid());
 
 	(void)setenv("KRBTKFILE", krbtkfile, 1);
+	(void)krb_set_tkt_string(krbtkfile);
 	/*
 	 * Set real as well as effective ID to 0 for the moment,
 	 * to make the kerberos library do the right thing.
 	 */
 	if (setuid(0) < 0) {
 		perror("su: setuid");
-		return(1);
+		return (1);
 	}
-	(void)unlink(krbtkfile);
 
 	/*
 	 * Little trick here -- if we are su'ing to root,
@@ -303,27 +303,28 @@ kerberos(username, user, uid)
 			fprintf(stderr, "principal unknown: %s.%s@%s\n",
 				(uid == 0 ? username : user),
 				(uid == 0 ? "root" : ""), lrealm);
-			return(1);
+			return (1);
 		}
-		(void)printf("su: unable to su: %s\n", krb_err_txt[kerno]);
+		(void)fprintf(stderr, "su: unable to su: %s\n",
+		    krb_err_txt[kerno]);
 		syslog(LOG_NOTICE|LOG_AUTH,
-		    "su: BAD Kerberos SU: %s to %s%s: %s",
+		    "BAD Kerberos SU: %s to %s%s: %s",
 		    username, user, ontty(), krb_err_txt[kerno]);
-		return(1);
+		return (1);
 	}
 
 	if (chown(krbtkfile, uid, -1) < 0) {
 		perror("su: chown:");
 		(void)unlink(krbtkfile);
-		return(1);
+		return (1);
 	}
 
 	(void)setpriority(PRIO_PROCESS, 0, -2);
 
 	if (gethostname(hostname, sizeof(hostname)) == -1) {
-		perror("su: hostname");
+		perror("su: gethostname");
 		dest_tkt();
-		return(1);
+		return (1);
 	}
 
 	(void)strncpy(savehost, krb_get_phost(hostname), sizeof(savehost));
@@ -332,36 +333,40 @@ kerberos(username, user, uid)
 	kerno = krb_mk_req(&ticket, "rcmd", savehost, lrealm, 33);
 
 	if (kerno == KDC_PR_UNKNOWN) {
-		(void)printf("Warning: tgt not verified.\n");
+		(void)fprintf(stderr, "Warning: TGT not verified.\n");
 		syslog(LOG_NOTICE|LOG_AUTH,
-			"su: %s to %s%s, TGT not verified",
-		    	username, user, ontty());
+		    "%s to %s%s, TGT not verified (%s); %s.%s not registered?",
+		    username, user, ontty(), krb_err_txt[kerno],
+		    "rcmd", savehost);
 	} else if (kerno != KSUCCESS) {
-		(void)printf("Unable to use TGT: %s\n", krb_err_txt[kerno]);
-		syslog(LOG_NOTICE|LOG_AUTH, "su: failed su: %s to %s%s: %s",
+		(void)fprintf(stderr, "Unable to use TGT: %s\n",
+		    krb_err_txt[kerno]);
+		syslog(LOG_NOTICE|LOG_AUTH, "failed su: %s to %s%s: %s",
 		    username, user, ontty(), krb_err_txt[kerno]);
 		dest_tkt();
-		return(1);
+		return (1);
 	} else {
 		if (!(hp = gethostbyname(hostname))) {
-			(void)printf("su: can't get addr of %s\n", hostname);
+			(void)fprintf(stderr, "su: can't get addr of %s\n",
+			    hostname);
 			dest_tkt();
-			return(1);
+			return (1);
 		}
 		(void)bcopy((char *)hp->h_addr, (char *)&faddr, sizeof(faddr));
 
 		if ((kerno = krb_rd_req(&ticket, "rcmd", savehost, faddr,
 		    &authdata, "")) != KSUCCESS) {
-			(void)printf("su: unable to verify rcmd ticket: %s\n",
+			(void)fprintf(stderr,
+			    "su: unable to verify rcmd ticket: %s\n",
 			    krb_err_txt[kerno]);
 			syslog(LOG_NOTICE|LOG_AUTH,
-			    "su: failed su: %s to %s%s: %s", username,
-			    ontty(), user, krb_err_txt[kerno]);
+			    "failed su: %s to %s%s: %s", username,
+			     user, ontty(), krb_err_txt[kerno]);
 			dest_tkt();
-			return(1);
+			return (1);
 		}
 	}
-	return(0);
+	return (0);
 }
 
 koktologin(name, realm, toname)
@@ -376,6 +381,6 @@ koktologin(name, realm, toname)
 	(void)strcpy(kdata->pinst,
 	    ((strcmp(toname, "root") == 0) ? "root" : ""));
 	(void)strcpy(kdata->prealm, realm);
-	return(kuserok(kdata, toname));
+	return (kuserok(kdata, toname));
 }
 #endif
