@@ -7,7 +7,7 @@
 #
 #	This has been tested on Ultrix 4.2A and 4.3A.
 #
-#	@(#)Makefile.ULTRIX	8.4 (Berkeley) %G%
+#	@(#)Makefile.ULTRIX	8.5 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -23,7 +23,7 @@ O=	-O
 DBMDEF=	-DNDBM -DNEWDB -DNIS
 
 # environment definitions (e.g., -D_AIX3)
-ENVDEF=	-Olimit 800
+ENVDEF=	-Olimit 900
 
 # see also conf.h for additional compilation flags
 
