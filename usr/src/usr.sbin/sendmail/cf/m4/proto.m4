@@ -8,8 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.1 (Berkeley) %G%)
-
+VERSIONID(@(#)proto.m4	2.2 (Berkeley) %G%)
 
 
 ##################
