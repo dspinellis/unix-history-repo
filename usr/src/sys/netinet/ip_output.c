@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)ip_output.c	7.7 (Berkeley) %G%
+ *	@(#)ip_output.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -41,20 +41,24 @@ struct mbuf *ip_insertoptions();
  * The mbuf chain containing the packet will be freed.
  * The mbuf opt, if present, will not be freed.
  */
-ip_output(m, opt, ro, flags)
-	struct mbuf *m;
+ip_output(m0, opt, ro, flags)
+	struct mbuf *m0;
 	struct mbuf *opt;
 	struct route *ro;
 	int flags;
 {
-	register struct ip *ip;
+	register struct ip *ip, *mhip;
 	register struct ifnet *ifp;
-	int len, hlen = sizeof (struct ip), off, error = 0;
+	register struct mbuf *m = m0;
+	register int hlen = sizeof (struct ip);
+	int len, off, error = 0;
 	struct route iproute;
 	struct sockaddr_in *dst;
 
-	if (opt)
-		m = ip_insertoptions(m, opt, &hlen);
+	if (opt) {
+		m = ip_insertoptions(m, opt, &len);
+		hlen = len;
+	}
 	ip = mtod(m, struct ip *);
 	/*
 	 * Fill in IP header.
@@ -185,49 +189,48 @@ ip_output(m, opt, ro, flags)
 	 * Loop through length of segment, make a copy of each
 	 * part and output.
 	 */
-	m->m_len -= sizeof (struct ip);
-	m->m_off += sizeof (struct ip);
-	for (off = 0; off < ip->ip_len-hlen; off += len) {
-		struct mbuf *mh = m_get(M_DONTWAIT, MT_HEADER);
-		struct ip *mhip;
+	m->m_len -= hlen;
+	m->m_off += hlen;
+	m0 = m;
+	for (off = 0; off < ip->ip_len - hlen; off += len) {
+		int mhlen;
 
-		if (mh == 0) {
+		MGET(m, M_DONTWAIT, MT_HEADER);
+		if (m == 0) {
 			error = ENOBUFS;
 			goto bad;
 		}
-		mh->m_off = MMAXOFF - hlen;
-		mhip = mtod(mh, struct ip *);
+		m->m_off = MMAXOFF - hlen;
+		mhip = mtod(m, struct ip *);
 		*mhip = *ip;
 		if (hlen > sizeof (struct ip)) {
-			int olen = ip_optcopy(ip, mhip, off);
-			mh->m_len = sizeof (struct ip) + olen;
+			mhlen = ip_optcopy(ip, mhip, off) + sizeof (struct ip);
+			mhip->ip_hl = mhlen >> 2;
 		} else
-			mh->m_len = sizeof (struct ip);
+			mhlen = sizeof (struct ip);
+		m->m_len = mhlen;
 		mhip->ip_off = (off >> 3) + (ip->ip_off & ~IP_MF);
 		if (ip->ip_off & IP_MF)
 			mhip->ip_off |= IP_MF;
-		if (off + len >= ip->ip_len-hlen)
-			len = mhip->ip_len = ip->ip_len - hlen - off;
-		else {
-			mhip->ip_len = len;
+		if (off + len >= ip->ip_len - hlen)
+			len = ip->ip_len - hlen - off;
+		else
 			mhip->ip_off |= IP_MF;
-		}
-		mhip->ip_len += sizeof (struct ip);
-		mhip->ip_len = htons((u_short)mhip->ip_len);
-		mh->m_next = m_copy(m, off, len);
-		if (mh->m_next == 0) {
-			(void) m_free(mh);
+		mhip->ip_len = htons((u_short)(len + mhlen));
+		m->m_next = m_copy(m0, off, len);
+		if (m->m_next == 0) {
+			(void) m_free(m);
 			error = ENOBUFS;	/* ??? */
 			goto bad;
 		}
 		mhip->ip_off = htons((u_short)mhip->ip_off);
 		mhip->ip_sum = 0;
-		mhip->ip_sum = in_cksum(mh, hlen);
-		if (error = (*ifp->if_output)(ifp, mh, (struct sockaddr *)dst))
+		mhip->ip_sum = in_cksum(m, mhlen);
+		if (error = (*ifp->if_output)(ifp, m, (struct sockaddr *)dst))
 			break;
 	}
 bad:
-	m_freem(m);
+	m_freem(m0);
 done:
 	if (ro == &iproute && (flags & IP_ROUTETOIF) == 0 && ro->ro_rt)
 		RTFREE(ro->ro_rt);
