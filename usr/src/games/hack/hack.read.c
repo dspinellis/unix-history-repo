@@ -11,6 +11,7 @@ doread() {
 	register struct obj *scroll;
 	register boolean confused = (Confusion != 0);
 	register boolean known = FALSE;
+	extern struct obj *some_armor();
 
 	scroll = getobj("?", "read");
 	if(!scroll) return(0);
@@ -32,8 +33,7 @@ doread() {
 		break;
 #endif MAIL
 	case SCR_ENCHANT_ARMOR:
-	    {	extern struct obj *some_armor();
-		register struct obj *otmp = some_armor();
+	    {	register struct obj *otmp = some_armor();
 		if(!otmp) {
 			strange_feeling(scroll,"Your skin glows then fades.");
 			return(1);
