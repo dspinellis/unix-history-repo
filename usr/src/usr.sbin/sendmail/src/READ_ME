@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.52 (Berkeley) %G%
+#	@(#)READ_ME	8.53 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -445,7 +445,7 @@ Solaris 2.x (SunOS 5.x)
 
 		Solaris 2.1	100834
 		Solaris 2.2	100999
-		Solaris 2.3	100318
+		Solaris 2.3	101318
 
 	Be sure you have the appropriate patch installed or you won't
 	see system logging.
@@ -769,4 +769,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.52, last update %G% 09:30:14)
+(Version 8.53, last update %G% 09:44:04)
