@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	7.65 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.66 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -379,7 +379,7 @@ lfs_sync(mp, waitfor)
 	struct mount *mp;
 	int waitfor;
 {
-	extern int syncprt;
+	extern int crashandburn, syncprt;
 	static int sync_lock, sync_want;
 	int error;
 
@@ -387,6 +387,10 @@ lfs_sync(mp, waitfor)
 	printf("lfs_sync\n");
 #endif
 
+#ifdef DIAGNOSTIC
+	if (crashandburn)
+		return (0);
+#endif
 	/*
 	 * Meta data blocks are only marked dirty, not busy, so LFS syncs
 	 * must be single threaded.
