@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	4.11 85/03/02";
+static char sccsid[] = "@(#)rsh.c	4.12 85/04/24";
 #endif
 
 #include <sys/types.h>
@@ -74,9 +74,13 @@ another:
 		goto another;
 	}
 	/*
-	 * Ignore the -e and -8 flags to allow aliases with rlogin
+	 * Ignore the -w, -e and -8 flags to allow aliases with rlogin
 	 * to work
 	 */
+	if (argc > 0 && !strncmp(*argv, "-w", 2)) {
+		argv++, argc--;
+		goto another;
+	}
 	if (argc > 0 && !strncmp(*argv, "-e", 2)) {
 		argv++, argc--;
 		goto another;
