@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.124		%G%);
+SCCSID(@(#)main.c	3.125		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -309,6 +309,10 @@ main(argc, argv)
 		syslog(LOG_DEBUG, "entered, uid=%d, pid=%d", getuid(), getpid());
 # endif LOG
 	readcf(ConfFile, safecf);
+
+	/* do heuristic mode adjustment */
+	if (Verbose)
+		setoption('b', "a", TRUE, FALSE);
 
 	/* our name for SMTP codes */
 	(void) expand("$i", ibuf, &ibuf[sizeof ibuf - 1]);
