@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_v.c	7.2	%G%";
+static char *sccsid = "@(#)ex_v.c	7.3 %G%";
 #include "ex.h"
 #include "ex_re.h"
 #include "ex_tty.h"
@@ -359,12 +359,14 @@ vok(atube)
 #ifdef CBREAK
 vintr()
 {
+	extern jmp_buf readbuf;
 
 	signal(SIGINT, vintr);
 	if (vcatch)
 		onintr();
 	ungetkey(ATTN);
 	draino();
+	longjmp(readbuf, 1);
 }
 #endif
 
