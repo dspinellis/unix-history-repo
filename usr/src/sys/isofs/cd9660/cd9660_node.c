@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_node.c	8.5 (Berkeley) %G%
+ *	@(#)cd9660_node.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -25,6 +25,7 @@
 
 #include <isofs/cd9660/iso.h>
 #include <isofs/cd9660/cd9660_node.h>
+#include <isofs/cd9660/cd9660_mount.h>
 #include <isofs/cd9660/iso_rrip.h>
 
 /*
@@ -45,7 +46,8 @@ int prtactive;	/* 1 => print out reclaim of active vnodes */
 /*
  * Initialize hash links for inodes and dnodes.
  */
-cd9660_init()
+cd9660_init(vfsp)
+	struct vfsconf *vfsp;
 {
 
 	isohashtbl = hashinit(desiredvnodes, M_ISOFSMNT, &isohash);
