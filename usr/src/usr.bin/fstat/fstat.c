@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* !lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.8 (Berkeley) %G%";
 #endif /* !lint */
 
 /*
@@ -67,6 +67,7 @@ typedef struct devs {
 	struct devs	*next;
 	dev_t	dev;
 	int	inum;
+	char	*name;
 } DEVS;
 DEVS	*devs;
 
@@ -146,7 +147,12 @@ main(argc, argv)
 		getfname(*argv);
 	}
 
-	printf("USER\t CMD\t      PID    FD\tDEVICE\tINODE\t  SIZE\tTYPE\n");
+	printf("USER\t CMD\t      PID    FD\tDEVICE\tINODE\t  SIZE TYPE");
+	if (fflg)
+		printf(" NAME\n");
+	else
+		printf("\n");
+
 	openfiles();
 
 	if (nlist(N_UNIX, nl) == -1 || !nl[0].n_type) {
@@ -252,6 +258,7 @@ itrans(ftype, g, fno)
 	struct inode inode;
 	dev_t idev;
 	char *comm, *itype();
+	char *name = (char *)NULL;	/* set by devmatch() on a match */
 
 	if (g || fflg) {
 		(void)lseek(kmem, (off_t)g, L_SET);
@@ -260,7 +267,7 @@ itrans(ftype, g, fno)
 			return;
 		}
 		idev = inode.i_dev;
-		if (fflg && !devmatch(idev, inode.i_number))
+		if (fflg && !devmatch(idev, inode.i_number, &name))
 			return;
 	}
 	if (mproc->p_pid == 0)
@@ -287,10 +294,10 @@ itrans(ftype, g, fno)
 
 	switch(ftype) {
 	case DTYPE_INODE:
-		printf("\t%2d, %2d\t%5lu\t%6ld\t%3s\n", major(inode.i_dev),
+		printf("\t%2d, %2d\t%5lu\t%6ld\t%3s %s\n", major(inode.i_dev),
 		    minor(inode.i_dev), inode.i_number,
 		    inode.i_mode == IFSOCK ? 0 : inode.i_size,
-		    itype(inode.i_mode));
+		    itype(inode.i_mode), name ? name : "");
 		break;
 	case DTYPE_SOCKET:
 		socktrans((struct socket *)g);
@@ -511,15 +518,18 @@ readf()
 }
 
 static
-devmatch(idev, inum)
+devmatch(idev, inum, name)
 	dev_t idev;
 	ino_t inum;
+	char  **name;
 {
 	register DEVS *d;
 
 	for (d = devs; d; d = d->next)
-		if (d->dev == idev && (!d->inum || d->inum == inum))
+		if (d->dev == idev && (d->inum == 0 || d->inum == inum)) {
+			*name = d->name;
 			return(1);
+		}
 	return(0);
 }
 
@@ -551,6 +561,7 @@ getfname(filename)
 		cur->inum = 0;
 		cur->dev = statbuf.st_rdev;
 	}
+	cur->name = filename;
 }
 
 static
