@@ -119,7 +119,7 @@ action:	white_space command_list NL
     }
     | white_space for_statement do command_list semi_colon done NL
     {
-	$$ = $2;
+	$$ = do_command($2, $4);
     }
     ;
 
@@ -151,7 +151,7 @@ list: command
     {
 	$$ = $1;
     }
-    | list semi_colon white_space command
+    | list semi_colon maybe_white_space command
     {
 	$$ = same_cat($1, same_cat(same_char('\n'), $4));
     }
@@ -634,18 +634,24 @@ same_t *var_name;
 
 
 same_t *
-shell_variable(name)
-same_t *name;
+shell_variable(var_name)
+same_t *var_name;
 {
-    same_t *shell;
+    int length = strlen(var_name->string->string);
+    same_t *resolved;
+    char *newname;
 
-    if ((shell = same_search(shell_variables, name)) == 0) {
-	char buffer[100];
-	sprintf(buffer, "Unknown shell variable %s.", name->string->string);
-	yyerror(buffer);
+    if ((newname = malloc(length+1+2)) == 0) {
+	fprintf("Out of space for a variable name.\n");
 	exit(1);
     }
-    return same_copy(shell->shell_item);
+    newname[0] = '$';
+    newname[1] = '$';
+    strcpy(newname+2, var_name->string->string);
+    resolved = same_item(string_lookup(newname));
+    free(newname);
+
+    return resolved;
 }
 
 same_t *
@@ -655,10 +661,18 @@ same_t
     *variable,
     *list;
 {
-    shell_special = special;
+    variable->shell_item = special;
     variable->value_list = list;
-    shell_variables = variable;
-    return same_copy(null);
+    return variable;
+}
+
+same_t *
+do_command(forlist, commands)
+same_t
+    *forlist,
+    *commands;
+{
+    return same_cat(forlist, commands);
 }
 
 
