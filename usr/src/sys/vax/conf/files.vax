@@ -7,6 +7,7 @@ vax/crl.c		standard
 vax/dkbad.c		standard
 vax/flp.c		standard
 vax/in_cksum.c		optional inet
+vax/ka650.c		standard
 vax/ka630.c		standard
 vax/ka730.c		standard
 vax/ka750.c		standard
