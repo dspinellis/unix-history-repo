@@ -10,6 +10,7 @@
 #include "../h/fs.h"
 #include "../h/uio.h"
 #include "../h/vm.h"
+#include "../h/kernel.h"
 
 /*
  * Resource controls and accounting.
