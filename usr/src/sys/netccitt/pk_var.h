@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_var.h	7.10 (Berkeley) %G%
+ *	@(#)pk_var.h	7.11 (Berkeley) %G%
  */
 
 
@@ -73,15 +73,13 @@ struct pklcd {
 
 struct	pkcb {
 	struct	pkcb *pk_next;
-	struct	x25_ifaddr *pk_ia;	/* backpointer to ifaddr */
+	short	pk_state;		/* packet level status */
+	short	pk_maxlcn;		/* local copy of xc_maxlcn */
 	int	(*pk_lloutput) ();	/* link level output procedure */
 	caddr_t pk_llnext;		/* handle for next level down */
-	int	(*pk_start) ();		/* connect, confirm method */
 	struct	x25config *pk_xcp;	/* network specific configuration */
-	short	pk_state;		/* packet level status */
-	struct	x25config pk_xc;	/* network specific configuration */
+	struct	x25_ifaddr *pk_ia;	/* backpointer to ifaddr */
 	struct	pklcd **pk_chan;	/* actual size == xc_maxlcn+1 */
-#define	pk_maxlcn pk_xc.xc_maxlcn	/* local copy of xc_maxlcn */
 };
 /*
  *	Interface address, x25 version. Exactly one of these structures is 
@@ -92,14 +90,12 @@ struct	pkcb {
  */
 struct x25_ifaddr {
 	struct	ifaddr ia_ifa;		/* protocol-independent info */
-#define ia_ifp		ia_ifa.ifa_ifp
-#define	ia_flags	ia_ifa.ifa_flags
-	struct	pkcb	ia_pkcb;	/* per network information */
-#define ia_maxlcn	ia_pkcb.pk_maxlcn
-#define ia_chan		ia_pkcb.pk_chan
-#define ia_xc		ia_pkcb.pk_xc
-#define ia_xcp		ia_pkcb.pk_xcp
-	struct	sockaddr_x25 ia_sockmask; /* reserve space for netmask */
+#define ia_ifp	ia_ifa.ifa_ifp
+#define	ia_flags ia_ifa.ifa_flags
+	struct	x25config ia_xc;	/* network specific configuration */
+#define ia_maxlcn ia_xc.xc_maxlcn
+	int	(*ia_start) ();		/* connect, confirm method */
+	struct	sockaddr_x25 ia_dstaddr; /* reserve space for route dst */
 };
 
 /*
@@ -122,8 +118,8 @@ struct llinfo_x25 {
 #define LXS_NEWBORN		0
 #define LXS_RESOLVING		1
 #define LXS_FREE		2
-#define LXS_CONNECTED		3
-#define LXS_CONNECTING		4
+#define LXS_CONNECTING		3
+#define LXS_CONNECTED		4
 #define LXS_DISCONNECTING 	5
 #define LXS_LISTENING 		6
 
