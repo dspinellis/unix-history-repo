@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_vnops.c	7.10 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -317,7 +317,12 @@ vn_ioctl(fp, com, data)
 			u.u_eosys = RESTARTSYS;
 			return (0);
 		}
-		return (VOP_IOCTL(vp, com, data, fp->f_flag, u.u_cred));
+		error = VOP_IOCTL(vp, com, data, fp->f_flag, u.u_cred);
+		if (error == 0 && com == TIOCSCTTY) {
+			u.u_procp->p_session->s_ttyvp = vp;
+			VREF(vp);
+		}
+		return (error);
 	}
 }
 
@@ -482,47 +487,6 @@ vn_fhtovp(fhp, lockflag, vpp)
 	if (!lockflag)
 		VOP_UNLOCK(*vpp);
 	return (0);
-}
-
-/*
- * Revoke access the current tty by all processes.
- * Used only by the super-user in init
- * to give ``clean'' terminals at login.
- */
-vhangup()
-{
-
-	if (u.u_error = suser(u.u_cred, &u.u_acflag))
-		return;
-	if (u.u_ttyp == NULL)
-		return;
-	forceclose(u.u_ttyd);
-	if ((u.u_ttyp->t_state) & TS_ISOPEN)
-		gsignal(u.u_ttyp->t_pgid, SIGHUP);
-	u.u_ttyp->t_session = 0;
-	u.u_ttyp->t_pgid = 0;
-}
-
-forceclose(dev)
-	dev_t dev;
-{
-	register struct file *fp;
-	register struct vnode *vp;
-
-	for (fp = file; fp < fileNFILE; fp++) {
-		if (fp->f_count == 0)
-			continue;
-		if (fp->f_type != DTYPE_VNODE)
-			continue;
-		vp = (struct vnode *)fp->f_data;
-		if (vp == 0)
-			continue;
-		if (vp->v_type != VCHR)
-			continue;
-		if (vp->v_rdev != dev)
-			continue;
-		fp->f_flag &= ~(FREAD|FWRITE);
-	}
 }
 
 /*
