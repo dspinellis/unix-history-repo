@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uux.c	5.12	(Berkeley) %G%";
+static char sccsid[] = "@(#)uux.c	5.13	(Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -81,13 +81,10 @@ char **argv;
 #ifdef	VMS
 	arg_fix(argc, argv);
 #endif
-	while ((c = getopt(argc, argv, "prclCg:x:nzLa:")) != EOF ||
-		*argv[optind] == '-')
+	while ((c = getopt(argc, argv, "-prclCg:x:nzLa:")) != EOF)
 		switch (c) {
-		case EOF:
-			/* getopt doesn't like "-" as an argument... */
-			optind++;	
-			/* NO BREAK */
+		case '-':
+			/* FALLTHROUGH */
 		case 'p':
 			pipein = 1;
 			break;
@@ -132,7 +129,6 @@ char **argv;
 			break;
 		case '?':
 		default:
-			fprintf(stderr, "unknown flag %s\n", argv[optind-1]);
 			break;
 		}
 
