@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	8.6 (Berkeley) %G%
+ *	@(#)sd.c	8.7 (Berkeley) %G%
  */
 
 /*
@@ -39,7 +39,7 @@ static char rcsid[] = "$Header: /sys.lite/hp300/dev/RCS/sd.c,v 1.2 1994/01/10 18
 #endif
 
 #include <vm/vm_param.h>
-#include <vm/lock.h>
+#include <sys/lock.h>
 #include <vm/vm_prot.h>
 #include <vm/pmap.h>
 
