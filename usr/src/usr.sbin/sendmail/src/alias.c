@@ -5,9 +5,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-SCCSID(@(#)alias.c	3.40		%G%	(with DBM));
+SCCSID(@(#)alias.c	3.41		%G%	(with DBM));
 # else DBM
-SCCSID(@(#)alias.c	3.40		%G%	(without DBM));
+SCCSID(@(#)alias.c	3.41		%G%	(without DBM));
 # endif DBM
 
 /*
@@ -265,33 +265,6 @@ initaliases(aliasfile, init)
 # else DBM
 	readaliases(aliasfile, init);
 # endif DBM
-}
-/*
-**  DBMCLOSE -- close the dbm file.
-**
-**	This is highly implementation dependent.  It should be in the
-**	DBM library rather than here.  So why isn't it?
-**
-**	This is really only needed to save file descriptors.  It can be
-**	safely (??) replaced by the null routine.
-**
-**	Parameters:
-**		none.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		Closes the DBM file.
-*/
-
-dbmclose()
-{
-	/* hack attack!! -- see comment above */
-	extern int pagf, dirf;
-
-	(void) close(pagf);
-	(void) close(dirf);
 }
 /*
 **  READALIASES -- read and process the alias file.

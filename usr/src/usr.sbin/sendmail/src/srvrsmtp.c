@@ -2,10 +2,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.37		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.38		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.37		%G%);
+SCCSID(@(#)srvrsmtp.c	3.38		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -101,7 +101,7 @@ smtp()
 		(void) dup(fileno(OutChannel));
 	}
 	message("220", "%s Sendmail %s ready at %s", HostName,
-			Version, arpadate(NULL));
+			Version, arpadate((char *) NULL));
 	(void) setjmp(TopFrame);
 	QuickAbort = FALSE;
 	for (;;)
@@ -154,8 +154,6 @@ smtp()
 			break;
 
 		  case CMDMAIL:		/* mail -- designate sender */
-			firsttime = FALSE;
-
 			/* check for validity of this command */
 			if (hasmail)
 			{

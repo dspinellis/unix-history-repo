@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.38		%G%);
+SCCSID(@(#)headers.c	3.39		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -112,7 +112,7 @@ chompheader(line, def)
 	if (cond)
 		h->h_flags |= H_CHECK;
 	if (h->h_value != NULL)
-		free(h->h_value);
+		free((char *) h->h_value);
 		(void) sendto(h->h_value, 0, (ADDRESS *) NULL, 0);
 
 	/* hack to see if this is a new format message */
@@ -212,35 +212,6 @@ hvalue(field)
 	return (NULL);
 }
 /*
-**  HRVALUE -- return pointer to header descriptor.
-**
-**	Like hvalue except returns header descriptor block and isn't
-**	picky about "real" headers.
-**
-**	Parameters:
-**		field -- name of field we are interested in.
-**
-**	Returns:
-**		pointer to header descriptor.
-**
-**	Side Effects:
-**		none.
-*/
-
-HDR *
-hrvalue(field)
-	char *field;
-{
-	register HDR *h;
-
-	for (h = CurEnv->e_header; h != NULL; h = h->h_link)
-	{
-		if (strcmp(h->h_field, field) == 0)
-			return (h);
-	}
-	return (NULL);
-}
-/*
 **  ISHEADER -- predicate telling if argument is a header.
 **
 **	A line is a header if it has a single word followed by
@@ -270,72 +241,6 @@ isheader(s)
 	return (*s == ':');
 }
 /*
-**  GETXPART -- extract the "signature" part of an address line.
-**
-**	Try to extract the full name from a general address
-**	field.  We take anything which is a comment as a
-**	first choice.  Failing in that, we see if there is
-**	a "machine readable" name (in <angle brackets>); if
-**	so we take anything preceeding that clause.
-**
-**	If we blow it here it's not all that serious.
-**
-**	Parameters:
-**		p -- line to crack.
-**
-**	Returns:
-**		signature part.
-**		NULL if no signature part.
-**
-**	Side Effects:
-**		none.
-*/
-
-char *
-getxpart(p)
-	register char *p;
-{
-	register char *q;
-	register char *rval = NULL;
-
-	q = index(p, '(');
-	if (q != NULL)
-	{
-		int parenlev = 0;
-
-		for (p = q; *p != '\0'; p++)
-		{
-			if (*p == '(')
-				parenlev++;
-			else if (*p == ')' && --parenlev <= 0)
-				break;
-		}
-		if (*p == ')')
-		{
-			*p = '\0';
-			if (*++q != '\0')
-				rval = newstr(q);
-			*p = ')';
-		}
-	}
-	else if ((q = index(p, '<')) != NULL)
-	{
-		char savec;
-
-		while (*--q == ' ')
-			continue;
-		while (isspace(*p))
-			p++;
-		savec = *++q;
-		*q = '\0';
-		if (*p != '\0')
-			rval = newstr(p);
-		*q = savec;
-	}
-
-	return (rval);
-}
-/*
 **  EATHEADER -- run through the stored header and extract info.
 **
 **	Parameters:
@@ -353,7 +258,6 @@ eatheader()
 {
 	register HDR *h;
 	register char *p;
-	char buf[MAXLINE];
 
 # ifdef DEBUG
 	if (tTd(32, 2))

@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.131		%G%);
+SCCSID(@(#)deliver.c	3.132		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -992,9 +992,7 @@ putheader(fp, m, e)
 	register HDR *h;
 	extern char *arpadate();
 	extern char *capitalize();
-	extern bool samefrom();
 	char obuf[MAXLINE];
-	register char *obp;
 	bool fullsmtp = bitset(M_FULLSMTP, m->m_flags);
 
 	if (bitset(M_LOCAL, m->m_flags) && fullsmtp)
@@ -1258,60 +1256,6 @@ isatword(p)
 	    p[2] != '\0' && isspace(p[2]))
 		return (TRUE);
 	return (FALSE);
-}
-/*
-**  SAMEFROM -- tell if two text addresses represent the same from address.
-**
-**	Parameters:
-**		ifrom -- internally generated form of from address.
-**		efrom -- external form of from address.
-**
-**	Returns:
-**		TRUE -- if they convey the same info.
-**		FALSE -- if any information has been lost.
-**
-**	Side Effects:
-**		none.
-*/
-
-bool
-samefrom(ifrom, efrom)
-	char *ifrom;
-	char *efrom;
-{
-	register char *p;
-	char buf[MAXNAME + 4];
-
-# ifdef DEBUG
-	if (tTd(3, 8))
-		printf("samefrom(%s,%s)-->", ifrom, efrom);
-# endif DEBUG
-	if (strcmp(ifrom, efrom) == 0)
-		goto success;
-	p = index(ifrom, '@');
-	if (p == NULL)
-		goto failure;
-	*p = '\0';
-	(void) strcpy(buf, ifrom);
-	(void) strcat(buf, " at ");
-	*p++ = '@';
-	(void) strcat(buf, p);
-	if (strcmp(buf, efrom) == 0)
-		goto success;
-
-  failure:
-# ifdef DEBUG
-	if (tTd(3, 8))
-		printf("FALSE\n");
-# endif DEBUG
-	return (FALSE);
-
-  success:
-# ifdef DEBUG
-	if (tTd(3, 8))
-		printf("TRUE\n");
-# endif DEBUG
-	return (TRUE);
 }
 /*
 **  MAILFILE -- Send a message to a file.
@@ -1608,8 +1552,6 @@ sendall(e, mode)
 checkerrors(e)
 	register ENVELOPE *e;
 {
-	register ADDRESS *q;
-
 # ifdef DEBUG
 	if (tTd(4, 1))
 	{
