@@ -1,0 +1,38 @@
+
+
+# DO NOT DELETE THIS LINE -- g++dep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+eGetOpt.o : eGetOpt.cc \
+  eGetOpt.h \
+  $(srcdir)/../../$(IO_DIR)/stream.h \
+  $(srcdir)/../../$(IO_DIR)/iostream.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+ePlotFile.o : ePlotFile.cc \
+  ePlotFile.h \
+  $(srcdir)/../../$(IO_DIR)/PlotFile.h \
+  $(srcdir)/../../$(IO_DIR)/fstream.h \
+  $(srcdir)/../../$(IO_DIR)/iostream.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+graph.o : graph.cc \
+  read_data.h \
+  $(srcdir)/../../$(IO_DIR)/stream.h \
+  $(srcdir)/../../$(IO_DIR)/iostream.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h \
+  pXPlex.h \
+  eGetOpt.h \
+  ePlotFile.h \
+  $(srcdir)/../../$(IO_DIR)/PlotFile.h \
+  $(srcdir)/../../$(IO_DIR)/fstream.h \
+  tick_intrvl.h \
+  $(srcdir)/../../$(IO_DIR)/strstream.h
+read_data.o : read_data.cc \
+  read_data.h \
+  $(srcdir)/../../$(IO_DIR)/stream.h \
+  $(srcdir)/../../$(IO_DIR)/iostream.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h \
+  pXPlex.h
+tick_intrvl.o : tick_intrvl.cc \
+  tick_intrvl.h 
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
