@@ -46,7 +46,7 @@
  *					Avoid sleeping on lbolt, it slows down
  *					output unnecessarily.
  */
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/kern/tty.c,v 1.2 1993/09/08 01:49:20 rgrimes Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/kern/tty.c,v 1.3 1993/10/11 03:12:59 davidg Exp $";
 
 #include "param.h"
 #include "systm.h"
@@ -219,7 +219,7 @@ ttyflush(tp, rw)
 		flushq(&tp->t_raw);
 		tp->t_rocount = 0;
 		tp->t_rocol = 0;
-		tp->t_state &= ~TS_LOCAL;
+		tp->t_state &= ~(TS_LOCAL|TS_TBLOCK);	/* XXX - should be TS_RTSBLOCK */
 		ttwakeup(tp);
 	}
 	if (rw & FWRITE) {
@@ -250,19 +250,18 @@ ttyblock(tp)
 	x = rawcc + cancc;
 	if (rawcc > TTYHOG) {
 		ttyflush(tp, FREAD|FWRITE);
-		tp->t_state &= ~TS_TBLOCK;
 	}
 	/*
 	 * Block further input iff:
 	 * Current input > threshold AND input is available to user program
 	 */
 	if (x >= TTYHOG/2 && (tp->t_state & TS_TBLOCK) == 0 &&
-	    ((tp->t_lflag&ICANON) == 0) || (cancc > 0) &&
-	    tp->t_cc[VSTOP] != _POSIX_VDISABLE) {
-		if (putc(tp->t_cc[VSTOP], &tp->t_out) == 0) {
-			tp->t_state |= TS_TBLOCK;
-			ttstart(tp);
+	    ((tp->t_lflag&ICANON) == 0) || (cancc > 0)) {
+		if (tp->t_cc[VSTOP] != _POSIX_VDISABLE) {
+		    putc(tp->t_cc[VSTOP], &tp->t_out);
 		}
+		tp->t_state |= TS_TBLOCK;	/* XXX - should be TS_RTSBLOCK? */
+		ttstart(tp);
 	}
 }
 
