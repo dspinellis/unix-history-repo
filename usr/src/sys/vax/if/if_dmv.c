@@ -1,5 +1,5 @@
 /*
- * @(#)if_dmv.c	7.2 (Berkeley) %G%
+ * @(#)if_dmv.c	7.3 (Berkeley) %G%
  * DMV-11 Driver
  *
  * Qbus Sync DDCMP interface - DMV operated in full duplex, point to point mode
@@ -14,9 +14,6 @@
 #include "dmv.h"
 #if NDMV > 0
 
-
-#include "../machine/pte.h"
-
 #include "param.h"
 #include "systm.h"
 #include "mbuf.h"
@@ -28,6 +25,8 @@
 #include "syslog.h"
 #include "vmmac.h"
 #include "errno.h"
+#include "time.h"
+#include "kernel.h"
 
 #include "../net/if.h"
 #include "../net/netisr.h"
@@ -42,23 +41,19 @@
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
-#include "if_uba.h"
-#include "if_dmv.h"
+#include "../vax/pte.h"
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
+#include "if_uba.h"
+#include "if_dmv.h"
 
-#include "../h/time.h"
-#include "../h/kernel.h"
-
-int	dmvtimer;			/* timer started? */
 int	dmv_timeout = 8;		/* timeout value */
-int	dmvwatch();
 
 /*
  * Driver information for auto-configuration stuff.
  */
 int	dmvprobe(), dmvattach(), dmvinit(), dmvioctl();
-int	dmvoutput(), dmvreset();
+int	dmvoutput(), dmvreset(), dmvtimeout();
 struct	uba_device *dmvinfo[NDMV];
 u_short	dmvstd[] = { 0 };
 struct	uba_driver dmvdriver =
@@ -67,14 +62,18 @@ struct	uba_driver dmvdriver =
 /*
  * Don't really know how many buffers/commands can be queued to a DMV-11.
  * Manual doesn't say... Perhaps we can look at a DEC driver some day.
- * These numbers ame from DMV/DMR driver.
+ * These numbers ame from DMC/DMR driver.
  */
 #define NRCV 5
 #define NXMT 3 
 #define NCMDS	(NRCV+NXMT+4)	/* size of command queue */
 
-#define printd   if (sc->sc_if.if_flags & IFF_DEBUG) \
-	printf("DMVDEBUG: dmv%d: ", unit), printf
+#ifdef DEBUG
+#define printd(f)   if (sc->sc_if.if_flags & IFF_DEBUG) \
+	printf("DMVDEBUG: dmv%d: ", unit), printf(f)
+#else
+#define	printd(f)	/* nil */
+#endif
 
 /* error reporting intervals */
 
@@ -132,15 +131,9 @@ struct dmvbufs {
  */
 struct dmv_softc {
 	struct	ifnet sc_if;		/* network-visible interface */
-	struct	dmvbufs sc_rbufs[NRCV];	/* receive buffer info */
-	struct	dmvbufs sc_xbufs[NXMT];	/* transmit buffer info */
-	struct	ifubinfo sc_ifuba;	/* UNIBUS resources */
-	struct	ifrw sc_ifr[NRCV];	/* UNIBUS receive buffer maps */
-	struct	ifxmt sc_ifw[NXMT];	/* UNIBUS receive buffer maps */
 	short	sc_oused;		/* output buffers currently in use */
 	short	sc_iused;		/* input buffers given to DMV */
 	short	sc_flag;		/* flags */
-	int	sc_nticks;		/* seconds since last interrupt */
 	int	sc_ubinfo;		/* UBA mapping info for base table */
 	int	sc_errors[8];		/* error counters */
 #define	sc_rte	sc_errors[0]		/* receive threshhold error */
@@ -151,6 +144,11 @@ struct dmv_softc {
 #define	sc_qovf	sc_errors[5]		/* command/response queue overflow */
 #define	sc_cxrl	sc_errors[6]		/* carrier loss */
 #define sc_unknown sc_errors[7]		/* other errors - look in DMV manual */
+	struct	dmvbufs sc_rbufs[NRCV];	/* receive buffer info */
+	struct	dmvbufs sc_xbufs[NXMT];	/* transmit buffer info */
+	struct	ifubinfo sc_ifuba;	/* UNIBUS resources */
+	struct	ifrw sc_ifr[NRCV];	/* UNIBUS receive buffer maps */
+	struct	ifxmt sc_ifw[NXMT];	/* UNIBUS receive buffer maps */
 	/* command queue stuff */
 	struct	dmv_command sc_cmdbuf[NCMDS];
 	struct	dmv_command *sc_qhead;	/* head of command queue */
@@ -162,10 +160,9 @@ struct dmv_softc {
 } dmv_softc[NDMV];
 
 /* flags */
-#define DMV_ALLOC	0x01		/* unibus resources allocated */
-#define DMV_RESTART	0x04		/* software restart in progress */
-#define DMV_ACTIVE	0x08		/* device active */
-#define DMV_RUNNING	0x20		/* device initialized */
+#define DMV_RESTART	0x01		/* software restart in progress */
+#define DMV_ONLINE	0x02		/* device managed to transmit */
+#define DMV_RUNNING	0x04		/* device initialized */
 
 
 /* queue manipulation macros */
@@ -217,6 +214,7 @@ dmvprobe(reg)
 	addr->bsel1 = DMV_MCLR;
 	for (i = 100000; i && (addr->bsel1 & DMV_RUN) == 0; i--)
 		;
+	br = 0x15;		/* screwy interrupt structure */
 	return (1);
 }
 
@@ -237,13 +235,10 @@ dmvattach(ui)
 	sc->sc_if.if_output = dmvoutput;
 	sc->sc_if.if_ioctl = dmvioctl;
 	sc->sc_if.if_reset = dmvreset;
+	sc->sc_if.if_watchdog = dmvtimeout;
 	sc->sc_if.if_flags = IFF_POINTOPOINT;
 	sc->sc_ifuba.iff_flags = UBA_CANTWAIT;
 
-	if (dmvtimer == 0) {
-		dmvtimer = 1;
-		timeout(dmvwatch, (caddr_t) 0, hz);
-	}
 	if_attach(&sc->sc_if);
 }
 
@@ -301,7 +296,7 @@ dmvinit(unit)
 		ifp->if_flags &= ~IFF_UP;
 		return;
 	}
-	printd("dmvinit\n");
+	printd(("dmvinit\n"));
 	/* initialize UNIBUS resources */
 	sc->sc_iused = sc->sc_oused = 0;
 	if ((ifp->if_flags & IFF_RUNNING) == 0) {
@@ -321,6 +316,11 @@ dmvinit(unit)
 		}
 		ifp->if_flags |= IFF_RUNNING;
 	}
+	/*
+	 * Limit packets enqueued until we see if we're on the air.
+	 */
+	ifp->if_snd.ifq_maxlen = 3;
+
 
 	/* initialize buffer pool */
 	/* receives */
@@ -354,7 +354,7 @@ dmvinit(unit)
 		dmvload( sc, DMV_CNTRLI, (QP_TRIB|QP_SEL6), 1, 0, DMV_ESTTRIB,0);
 	dmvload( sc, DMV_CNTRLI, (QP_TRIB|QP_SEL6), 1, 0, DMV_REQSUS,0);
 	sc->sc_flag |= (DMV_RESTART|DMV_RUNNING);
-	sc->sc_flag &= ~DMV_ACTIVE;
+	sc->sc_flag &= ~DMV_ONLINE;
 	addr->bsel0 |= DMV_IEO;
 }
 
@@ -378,7 +378,7 @@ dmvstart(dev)
 	 * Dequeue up to NXMT requests and map them to the UNIBUS.
 	 * If no more requests, or no dmv buffers available, just return.
 	 */
-	printd("dmvstart\n");
+	printd(("dmvstart\n"));
 	n = 0;
 	for (rp = &sc->sc_xbufs[0]; rp < &sc->sc_xbufs[NXMT]; rp++ ) {
 		/* find an available buffer */
@@ -393,7 +393,8 @@ dmvstart(dev)
 			 * and start the output.
 			 */
 			rp->cc = if_ubaput(&sc->sc_ifuba, &sc->sc_ifw[n], m);
-			sc->sc_oused++;
+			if (++sc->sc_oused == 1)
+				sc->sc_if.if_timer = dmv_timeout;
 			dmvload(
 				sc,
 				DMV_BACCX,
@@ -421,14 +422,14 @@ dmvload(sc, cmd, mask, tributary, sel4, sel6, sel10)
 	register struct dmv_command *qp;
 
 	unit = sc - dmv_softc;
-	printd("dmvload: cmd=%x mask=%x trib=%x sel4=%x sel6=%x sel10=%x\n",
+	printd(("dmvload: cmd=%x mask=%x trib=%x sel4=%x sel6=%x sel10=%x\n",
 		(unsigned) cmd,
 		(unsigned) mask,
 		(unsigned) tributary,
 		(unsigned) sel4,
 		(unsigned) sel6,
 		(unsigned) sel10
-	);
+	));
 	addr = (struct dmvdevice *)dmvinfo[unit]->ui_addr;
 	sps = spl5();
 
@@ -472,7 +473,7 @@ dmvrint(unit)
 
 	addr = (struct dmvdevice *)dmvinfo[unit]->ui_addr;
 	sc = &dmv_softc[unit];
-	printd("dmvrint\n");
+	printd(("dmvrint\n"));
 	if ((qp = sc->sc_qactive) == (struct dmv_command *) 0) {
 		log(LOG_WARNING, "dmvrint: dmv%d no command\n", unit);
 		return;
@@ -532,7 +533,7 @@ dmvxint(unit)
 	register struct dmvbufs *rp;
 	register struct ifxmt *ifxp;
 	struct dmv_header *dh;
-	int off, resid, fatal;
+	int off, resid;
 
 	addr = (struct dmvdevice *)ui->ui_addr;
 	sc = &dmv_softc[unit];
@@ -548,13 +549,13 @@ dmvxint(unit)
 			sel10 = addr->wsel10;
 		addr->bsel2 &= ~DMV_RDO;
 		pkaddr =  sel4 | ((sel6 & 0x3f) << 16);
-		printd("dmvxint: sel2=%x sel4=%x sel6=%x sel10=%x pkaddr=%x\n",
+		printd(("dmvxint: sel2=%x sel4=%x sel6=%x sel10=%x pkaddr=%x\n",
 			(unsigned) sel2,
 			(unsigned) sel4,
 			(unsigned) sel6,
 			(unsigned) sel10,
 			(unsigned) pkaddr
-		);
+		));
 		if((sc->sc_flag & DMV_RUNNING)==0) {
 				log(LOG_WARNING, "dmvxint: dmv%d xint while down\n", unit);
 				return;
@@ -684,85 +685,90 @@ dmvxint(unit)
 				ifxp->ifw_xtofree = 0;
 			}
 			rp->flags &= ~DBUF_DMVS;
-			sc->sc_oused--;
-			sc->sc_nticks = 0;
-			sc->sc_flag |= DMV_ACTIVE;
+			if (--sc->sc_oused == 0)
+				sc->sc_if.if_timer = 0;
+			else
+				sc->sc_if.if_timer = dmv_timeout;
+			if ((sc->sc_flag & DMV_ONLINE) == 0) {
+				extern int ifqmaxlen;
+
+				/*
+				 * We're on the air.
+				 * Open the queue to the usual value.
+				 */
+				sc->sc_flag |= DMV_ONLINE;
+				ifp->if_snd.ifq_maxlen = ifqmaxlen;
+			}
 			break;
 
 		case DMV_CNTRLO:
 			/* ACCUMULATE STATISTICS */
-			fatal=0;
 			switch(sel6&DMV_EEC) {
 			case DMV_ORUN:
 				if(sc->sc_flag & DMV_RESTART) {
 					load_rec_bufs(sc);
 					sc->sc_flag &= ~DMV_RESTART;
 					log(LOG_INFO,
-					    "dmvxint: dmv%d far end on-line\n",
-					    unit
-					);
+					    "dmv%d: far end on-line\n", unit);
 				} else {
 					log(LOG_WARNING,
-					    "dmvxint: dmv%d far end restart\n",
-					    unit
-					);
-					goto fatal;
+					    "dmv%d: far end restart\n", unit);
+					goto restart;
 				}
 				break;
 			case DMV_RTE:
 				ifp->if_ierrors++;
 				if ((sc->sc_rte++ % DMV_RPRTE) == 0)
 					log(LOG_WARNING,
-				    "dmvxint: dmv%d receive threshold error\n",
+				    "dmv%d: receive threshold error\n",
 					    unit);
 				break;
 			case DMV_TTE:
 				ifp->if_oerrors++;
 				if ((sc->sc_xte++ % DMV_RPTTE) == 0)
 					log(LOG_WARNING,
-				    "dmvxint: dmv%d transmit threshold error\n",
+				    "dmv%d: transmit threshold error\n",
 					    unit);
 				break;
 			case DMV_STE:
 				if ((sc->sc_ste++ % DMV_RPSTE) == 0)
 					log(LOG_WARNING,
-				    "dmvxint: dmv%d select threshold error\n",
+				    "dmv%d: select threshold error\n",
 					    unit);
 				break;
 			case DMV_NXM:
 				if ((sc->sc_nxm++ % DMV_RPNXM) == 0)
 					log(LOG_WARNING,
-				    "dmvxint: dmv%d nonexistent memory error\n",
+				    "dmv%d: nonexistent memory error\n",
 					    unit);
 				break;
 			case DMV_MODD:
-				if ((sc->sc_modd++ % DMV_RPMODD) == 0)
+				if ((sc->sc_modd++ % DMV_RPMODD) == 0) {
 					log(LOG_WARNING,
-				    "dmvxint: dmv%d modem disconnected error\n",
+				    "dmv%d: modem disconnected error\n",
 					    unit);
+					goto restart;
+				}
 				break;
 			case DMV_CXRL:
 				if ((sc->sc_cxrl++ % DMV_RPCXRL) == 0)
 					log(LOG_WARNING,
-				    "dmvxint: dmv%d carrier loss error\n",
+				    "dmv%d: carrier loss error\n",
 					    unit);
 				break;
 			case DMV_QOVF:
 				log(LOG_WARNING,
-				    "dmvxint: dmv%d response queue overflow\n",
-				    unit
-				);
+				    "dmv%d: response queue overflow\n",
+				    unit);
 				sc->sc_qovf++;
-				goto fatal;
+				goto restart;
 
 			default:
 				log(LOG_WARNING,
-				    "dmvxint: dmv%d unknown error %o\n",
-				    unit,
-				    sel6&DMV_EEC
-				);
+				    "dmv%d: unknown error %o\n",
+				    unit, sel6&DMV_EEC);
 				if ((sc->sc_unknown++ % DMV_RPUNKNOWN) == 0)
-					goto fatal;
+					goto restart;
 				break;
 			}
 			break;
@@ -771,7 +777,7 @@ dmvxint(unit)
 		case DMV_BDXSN:
 		case DMV_BDXNS:
 			log(LOG_INFO,
-			   "dmvxint: dmv%d buffer disp for halted trib %o\n",
+			   "dmv%d: buffer disp for halted trib %o\n",
 			   unit, sel2&0x7
 		        );
 			break;
@@ -779,19 +785,18 @@ dmvxint(unit)
 		case DMV_MDEFO:
 			if((sel6&0x1f) == 020) {
 				log(LOG_INFO,
-			   		"dmvxint: dmv%d buffer return complete sel3=%x\n",
+			   		"dmv%d: buffer return complete sel3=%x\n",
 			   		unit, sel3);
 			} else {
 				log(LOG_INFO,
-			   	"dmvxint: dmv%d info resp sel3=%x sel4=%x sel6=%x\n",
+			   	"dmv%d: info resp sel3=%x sel4=%x sel6=%x\n",
 			   	unit, sel3, sel4, sel6
 		        	);
 			}
 			break;
 			
 		default:
-			log(LOG_WARNING,
-			   "dmvxint: dmv%d bad control %o\n",
+			log(LOG_WARNING, "dmv%d: bad control %o\n",
 			   unit, sel2&0x7
 		        );
 			break;
@@ -799,15 +804,10 @@ dmvxint(unit)
 	}
 	dmvstart(unit);
 	return;
-fatal:
-	log(
-	    LOG_ERR,
-	    "dmv%d: fatal error, output code ==%o\n",
-	    unit,
-	    sel6&DMV_EEC
-	);
+restart:
 	dmvrestart(unit);
 }
+
 load_rec_bufs(sc)
 register struct dmv_softc *sc;
 {
@@ -845,6 +845,11 @@ dmvoutput(ifp, m0, dst)
 	register struct dmv_header *dh;
 	register int off;
 
+	if ((ifp->if_flags & IFF_UP) == 0) {
+		error = ENETDOWN;
+		goto bad;
+	}
+
 	switch (dst->sa_family) {
 #ifdef	INET
 	case AF_INET:
@@ -870,8 +875,8 @@ dmvoutput(ifp, m0, dst)
 		goto gottype;
 
 	default:
-		log(LOG_ERR, "dmvoutput, dmv%d can't handle af%d\n", ifp->if_unit,
-			dst->sa_family);
+		log(LOG_ERR, "dmvoutput, dmv%d can't handle af%d\n",
+		    ifp->if_unit, dst->sa_family);
 		error = EAFNOSUPPORT;
 		goto bad;
 	}
@@ -960,18 +965,9 @@ dmvioctl(ifp, cmd, data)
 		
 	case SIOCSIFFLAGS:
 		if ((ifp->if_flags & IFF_UP) == 0 &&
-		    sc->sc_flag & DMV_RUNNING) {
-			((struct dmvdevice *)
-			   (dmvinfo[ifp->if_unit]->ui_addr))->bsel1 = DMV_MCLR;
-			for(;;) {
-				IF_DEQUEUE(&sc->sc_if.if_snd, m);
-        			if (m != NULL)
-            				m_freem(m);
-        			else
-            				break;
-    			}
-			sc->sc_flag &= ~DMV_RUNNING;
-		} else if (ifp->if_flags & IFF_UP &&
+		    sc->sc_flag & DMV_RUNNING)
+			dmvdown(ifp->if_unit);
+		else if (ifp->if_flags & IFF_UP &&
 		    (sc->sc_flag & DMV_RUNNING) == 0)
 			dmvrestart(ifp->if_unit);
 		break;
@@ -990,19 +986,15 @@ dmvioctl(ifp, cmd, data)
 dmvrestart(unit)
 	int unit;
 {
-	register struct dmv_softc *sc = &dmv_softc[unit];
-	register struct uba_device *ui = dmvinfo[unit];
 	register struct dmvdevice *addr;
-	register struct ifxmt *ifxp;
 	register int i;
-	
-#ifdef notdef
-	addr = (struct dmvdevice *)ui->ui_addr;
+
+	dmvdown(unit);
+
+	addr = (struct dmvdevice *)(dmvinfo[unit]->ui_addr);
 	/*
-	 * Let the DMR finish the MCLR.	 At 1 Mbit, it should do so
-	 * in about a max of 6.4 milliseconds with diagnostics enabled.
+	 * Let the DMV finish the MCLR.
 	 */
-	addr->bsel1 = DMV_MCLR;
 	for (i = 100000; i && (addr->bsel1 & DMV_RUN) == 0; i--)
 		;
 	if ((addr->bsel1 & DMV_RUN) == 0) {
@@ -1011,51 +1003,61 @@ dmvrestart(unit)
 	}
 	if ((addr->bsel4 != 033) || (addr->bsel6 != 0305))
 	{
-		log(LOG_ERR, "dmvrestart: device init failed, bsel4=%o, bsel6=%o\n",
-			addr->bsel4, addr->bsel6);
+		log(LOG_ERR, "dmv%d: device init failed, bsel4=%o, bsel6=%o\n",
+			unit, addr->bsel4, addr->bsel6);
 		return (0);
 	}
-#endif
+
+	/* restart DMV */
+	dmvinit(unit);
+	dmv_softc[unit].sc_if.if_collisions++;	/* why not? */
+}
+	
+/*
+ * Reset a device and mark down.
+ * Flush output queue and drop queue limit.
+ */
+dmvdown(unit)
+	int unit;
+{
+	struct dmv_softc *sc = &dmv_softc[unit];
+	register struct ifxmt *ifxp;
+
+	((struct dmvdevice *)(dmvinfo[unit]->ui_addr))->bsel1 = DMV_MCLR;
+	sc->sc_flag &= ~(DMV_RUNNING | DMV_ONLINE);
+
 	for (ifxp = sc->sc_ifw; ifxp < &sc->sc_ifw[NXMT]; ifxp++) {
 		if (ifxp->ifw_xtofree) {
 			(void) m_freem(ifxp->ifw_xtofree);
 			ifxp->ifw_xtofree = 0;
 		}
 	}
-	/* restart DMV */
-	dmvinit(unit);
-	sc->sc_if.if_collisions++;	/* why not? */
+	sc->sc_oused = 0;
+	if_qflush(&sc->sc_if.if_snd);
+
+	/*
+	 * Limit packets enqueued until we're back on the air.
+	 */
+	sc->sc_if.if_snd.ifq_maxlen = 3;
 }
 
 /*
- * Check to see that transmitted packets don't
- * lose interrupts.  The device has to be active.
+ * Watchdog timeout to see that transmitted packets don't
+ * lose interrupts.  The device has to be online.
  */
-dmvwatch()
+dmvtimeout(unit)
+	int unit;
 {
-	register struct uba_device *ui;
 	register struct dmv_softc *sc;
 	struct dmvdevice *addr;
-	register int i;
 
-	for (i = 0; i < NDMV; i++) {
-		sc = &dmv_softc[i];
-		if ((sc->sc_flag & DMV_ACTIVE) == 0)
-			continue;
-		if ((ui = dmvinfo[i]) == 0 || ui->ui_alive == 0)
-			continue;
-		if (sc->sc_oused) {
-			sc->sc_nticks++;
-			if (sc->sc_nticks > dmv_timeout) {
-				sc->sc_nticks = 0;
-				addr = (struct dmvdevice *)ui->ui_addr;
-				log(LOG_ERR, "dmv%d hung: bsel0=%b bsel2=%b\n",
-				    i, addr->bsel0 & 0xff, DMV0BITS,
-				    addr->bsel2 & 0xff, DMV2BITS);
-				dmvrestart(i);
-			}
-		}
+	sc = &dmv_softc[unit];
+	if (sc->sc_flag & DMV_ONLINE) {
+		addr = (struct dmvdevice *)(dmvinfo[unit]->ui_addr);
+		log(LOG_ERR, "dmv%d: output timeout, bsel0=%b bsel2=%b\n",
+		    unit, addr->bsel0 & 0xff, DMV0BITS,
+		    addr->bsel2 & 0xff, DMV2BITS);
+		dmvrestart(unit);
 	}
-	timeout(dmvwatch, (caddr_t) 0, hz);
 }
 #endif
