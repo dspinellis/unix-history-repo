@@ -1,4 +1,4 @@
-/*	locore.s	1.21.1.1	87/11/24	*/
+/*	locore.s	1.22	88/01/27	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -1444,8 +1444,8 @@ res1:					# longjmp to saved context
 	/*NOTREACHED*/
 1:					# sp ok, complete return
 	movl	r1,sp			# restore sp
-	movl	(r2),(sp)		# return address
-	movl	$PSL_PRVMOD,4(sp)	# kernel mode, ipl 0
+	pushl	$PSL_PRVMOD		# kernel mode, ipl 0
+	pushl	(r2)			# return address
 	rei
 2:	.asciz	"ldctx"
 
