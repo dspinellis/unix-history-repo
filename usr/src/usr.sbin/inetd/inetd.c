@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -652,7 +652,7 @@ again:
 	while (*cp == ' ' || *cp == '\t')
 		cp++;
 	if (*cp == '\0') {
-		char c;
+		int c;
 
 		c = getc(fconfig);
 		(void) ungetc(c, fconfig);
