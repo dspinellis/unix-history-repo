@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dumprestore.h	5.6 (Berkeley) %G%
+ *	@(#)dumprestore.h	5.7 (Berkeley) %G%
  */
 
 #ifndef _DUMPRESTORE_H_
@@ -53,6 +53,8 @@ union u_spcl {
 		char	c_dev[NAMELEN];	    /* name of dumpped device */
 		char	c_host[NAMELEN];    /* name of dumpped host */
 		long	c_flags;	    /* additional information */
+		long	c_firstrec;	    /* first record on volume */
+		long	c_spare[32];	    /* reserved for future uses */
 	} s_spcl;
 } u_spcl;
 #define spcl u_spcl.s_spcl
