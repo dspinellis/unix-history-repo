@@ -1,4 +1,4 @@
-/*	drtest.c	4.10	83/03/01	*/
+/*	drtest.c	4.11	83/03/02	*/
 
 /*
  * Standalone program to test a disk and driver
@@ -34,11 +34,12 @@ again:
 		st.ncyl, st.ntrak, st.nsect);
 	ioctl(fd, SAIODEBUG, &debug);
 	tracksize = st.nsect * SECTSIZ;
+	bp = malloc(tracksize);
 	printf("Reading in %d byte records\n", tracksize);
 	printf("Start ...make sure drive is on-line\n");
 	lseek(fd, 0, 0);
-	lastsector = st.ncyl * st.ntrak;
-	for (sector = 0; sector < lastsector; sector++) {
+	lastsector = st.ncyl * st.nspc;
+	for (sector = 0; sector < lastsector; sector += st.nsect) {
 		if (sector && (sector % (st.nspc * 10)) == 0)
 			printf("sector %d\n", sector);
 		read(fd, bp, tracksize);
