@@ -1,10 +1,12 @@
-/*	conf.c	4.12	82/07/15	*/
+/*	conf.c	4.13	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
 #include "../h/pte.h"
-#include "../h/mbareg.h"
 #include "../h/fs.h"
+
+#include "../vaxmba/mbareg.h"
+
 #include "saio.h"
 
 devread(io)

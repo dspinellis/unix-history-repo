@@ -1,12 +1,14 @@
-/*	autoconf.c	4.5	82/07/15	*/
+/*	autoconf.c	4.6	82/11/13	*/
 
 #include "../h/param.h"
-#include "../h/cpu.h"
-#include "../h/nexus.h"
 #include "../h/pte.h"
-#include "../h/ubareg.h"
-#include "../h/mbareg.h"
-#include "../h/mtpr.h"
+
+#include "../vax/cpu.h"
+#include "../vax/nexus.h"
+#include "../vaxuba/ubareg.h"
+#include "../vaxmba/mbareg.h"
+#include "../vax/mtpr.h"
+
 #include "savax.h"
 
 #define	UTR(i)	((struct uba_regs *)(NEX780+(i)))

@@ -1,4 +1,4 @@
-/*	uda.c	4.2	82/07/15	*/
+/*	uda.c	4.3	82/11/13	*/
 
 /*
  * UDA50/RAxx disk device driver
@@ -7,8 +7,8 @@
 #include "../h/param.h"
 #include "../h/inode.h"
 #include "../h/pte.h"
-#include "../h/ubareg.h"
 #include "../h/fs.h"
+
 #include "saio.h"
 #include "savax.h"
 
@@ -20,9 +20,9 @@
 #define	NRSP	(1<<NRSPL2)
 #define	NCMD	(1<<NCMDL2)
 
-#include "../h/udareg.h"
-#include "../h/mscp.h"
-
+#include "../vaxuba/udareg.h"
+#include "../vaxuba/ubareg.h"
+#include "../vax/mscp.h"
 
 u_short udastd[] = { 0777550 };
 

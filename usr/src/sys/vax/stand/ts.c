@@ -1,15 +1,17 @@
-/*	ts.c	4.5	82/07/15	*/
+/*	ts.c	4.6	82/11/13	*/
 
 /*
  * TS11 tape driver
  */
 
 #include "../h/param.h"
-#include "../h/tsreg.h"
 #include "../h/inode.h"
 #include "../h/pte.h"
-#include "../h/ubareg.h"
 #include "../h/fs.h"
+
+#include "../vaxuba/tsreg.h"
+#include "../vaxuba/ubareg.h"
+
 #include "saio.h"
 #include "savax.h"
 

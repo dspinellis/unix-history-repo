@@ -1,12 +1,14 @@
-/*	mba.c	4.4	82/07/15	*/
+/*	mba.c	4.5	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
 #include "../h/pte.h"
-#include "../h/mbareg.h"
 #include "../h/fs.h"
-#include "../h/mtpr.h"
 #include "../h/vm.h"
+
+#include "../vax/mtpr.h"
+#include "../vaxmba/mbareg.h"
+
 #include "saio.h"
 #include "savax.h"
 

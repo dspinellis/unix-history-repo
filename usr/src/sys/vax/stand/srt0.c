@@ -1,8 +1,8 @@
-/*	srt0.c	4.9	82/07/15	*/
+/*	srt0.c	4.10	82/11/13	*/
 
-#include "../h/mtpr.h"
+#include "../vax/mtpr.h"
 #define	LOCORE
-#include "../h/cpu.h"
+#include "../vax/cpu.h"
 
 /*
  * Startup code for standalone system

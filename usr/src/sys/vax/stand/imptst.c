@@ -1,12 +1,14 @@
 #include "../h/param.h"
 #include "../h/pte.h"
-#include "../h/ubareg.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
-#define	IMPLEADERS
-#include "../net/if_imp.h"
-#include "../net/if_acc.h"
 #include "../h/inode.h"
+
+#include "../vaxuba/ubareg.h"
+#include "../netinet/in.h"
+#include "../netinet/in_systm.h"
+#define	IMPLEADERS
+#include "../netimp/if_imp.h"
+#include "../vaxif/if_acc.h"
+
 #include "saio.h"
 #include "savax.h"
 

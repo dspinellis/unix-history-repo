@@ -1,4 +1,4 @@
-/*	tm.c	4.7	82/07/15	*/
+/*	tm.c	4.8	82/11/13	*/
 
 /*
  * TM11/TE??
@@ -7,12 +7,14 @@
 #include "../h/param.h"
 #include "../h/inode.h"
 #include "../h/pte.h"
-#include "../h/ubareg.h"
 #include "../h/fs.h"
+
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/tmreg.h"
+
 #include "saio.h"
 #include "savax.h"
 
-#include "../h/tmreg.h"
 
 u_short	tmstd[] = { 0172520 };
 

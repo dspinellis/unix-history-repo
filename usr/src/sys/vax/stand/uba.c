@@ -1,12 +1,14 @@
-/*	uba.c	4.6	82/07/15	*/
+/*	uba.c	4.7	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
-#include "../h/cpu.h"
 #include "../h/pte.h"
-#include "../h/ubareg.h"
 #include "../h/vm.h"
 #include "../h/fs.h"
+
+#include "../vax/cpu.h"
+#include "../vaxuba/ubareg.h"
+
 #include "saio.h"
 #include "savax.h"
 

@@ -1,4 +1,4 @@
-#	Makefile	4.15	82/08/01
+#	Makefile	4.16	82/11/13
 
 DESTDIR=/
 CFLAGS=	-O -DSTANDALONE ${COPTS} 
@@ -25,13 +25,13 @@ ${DRIVERS}: savax.h
 
 # startups
 
-srt0.o: srt0.c ../h/mtpr.h ../h/cpu.h
+srt0.o: srt0.c ../vax/mtpr.h ../vax/cpu.h
 	cc -E -DRELOC=0x${RELOC} ${COPTS} srt0.c | as -o srt0.o
 
-tpsrt0.o: srt0.c ../h/mtpr.h ../h/cpu.h
+tpsrt0.o: srt0.c ../vax/mtpr.h ../vax/cpu.h
 	cc -E -DRELOC=0x${RELOC} -DTP ${COPTS} srt0.c | as -o tpsrt0.o 
 
-relsrt0.o: srt0.c ../h/mtpr.h ../h/cpu.h
+relsrt0.o: srt0.c ../vax/mtpr.h ../vax/cpu.h
 	cc -E -DRELOC=0x${RELOC} -DREL ${COPTS} srt0.c | as -o relsrt0.o
 
 # bootable from tape
@@ -59,7 +59,7 @@ boot:	boot.o relsrt0.o bootconf.o /usr/lib/libsa.a
 	ld -N -T ${RELOC} -o boot relsrt0.o boot.o bootconf.o -lsa -lc
 
 bootconf.o: conf.c ../h/param.h ../h/inode.h ../h/pte.h
-bootconf.o: ../h/fs.h saio.h ../h/mbareg.h
+bootconf.o: ../h/fs.h saio.h ../vaxmba/mbareg.h
 	cp conf.c bootconf.c
 	cc -c ${COPTS} -DBOOT bootconf.c
 	rm bootconf.c

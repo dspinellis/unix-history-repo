@@ -1,7 +1,8 @@
-/*	machdep.c	4.2	81/03/15	*/
+/*	machdep.c	4.3	82/11/13	*/
 
 #include "../h/param.h"
-#include "../h/mtpr.h"
+
+#include "../vax/mtpr.h"
 
 /*ARGSUSED*/
 /*VARARGS1*/
