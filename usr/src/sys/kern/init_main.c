@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)init_main.c	7.10 (Berkeley) %G%
+ *	@(#)init_main.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -53,7 +53,6 @@ main(firstaddr)
 	register int i;
 	register struct proc *p;
 	register struct pgrp *pg;
-	struct fs *fs;
 	int s;
 
 	rqinit();
