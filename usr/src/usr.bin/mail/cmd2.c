@@ -16,11 +16,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd2.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd2.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
-#include <sys/stat.h>
 #include <sys/wait.h>
 
 /*
@@ -117,7 +116,7 @@ save(str)
 	char str[];
 {
 
-	return(save1(str, 1));
+	return save1(str, 1, "save", saveignore);
 }
 
 /*
@@ -127,25 +126,24 @@ copycmd(str)
 	char str[];
 {
 
-	return(save1(str, 0));
+	return save1(str, 0, "copy", saveignore);
 }
 
 /*
  * Save/copy the indicated messages at the end of the passed file name.
  * If mark is true, mark the message "saved."
  */
-save1(str, mark)
+save1(str, mark, cmd, ignore)
 	char str[];
+	char *cmd;
+	struct ignoretab *ignore;
 {
 	register int *ip, mesg;
 	register struct message *mp;
-	char *file, *disp, *cmd;
-	int f, *msgvec, lc, t;
-	long cc;
+	char *file, *disp;
+	int f, *msgvec;
 	FILE *obuf;
-	struct stat statb;
 
-	cmd = mark ? "save" : "copy";
 	msgvec = (int *) salloc((msgCount + 2) * sizeof *msgvec);
 	if ((file = snarf(str, &f)) == NOSTR)
 		return(1);
@@ -163,7 +161,7 @@ save1(str, mark)
 		return(1);
 	printf("\"%s\" ", file);
 	fflush(stdout);
-	if (stat(file, &statb) >= 0)
+	if (access(file, 0) >= 0)
 		disp = "[Appended]";
 	else
 		disp = "[New file]";
@@ -171,19 +169,15 @@ save1(str, mark)
 		perror(NOSTR);
 		return(1);
 	}
-	cc = 0L;
-	lc = 0;
 	for (ip = msgvec; *ip && ip-msgvec < msgCount; ip++) {
 		mesg = *ip;
 		touch(mesg);
 		mp = &message[mesg-1];
-		if ((t = send(mp, obuf, saveignore)) < 0) {
+		if (send(mp, obuf, ignore, NOSTR) < 0) {
 			perror(file);
 			fclose(obuf);
 			return(1);
 		}
-		lc += t;
-		cc += mp->m_size;
 		if (mark)
 			mp->m_flag |= MSAVED;
 	}
@@ -191,7 +185,7 @@ save1(str, mark)
 	if (ferror(obuf))
 		perror(file);
 	fclose(obuf);
-	printf("%s %d/%ld\n", disp, lc, cc);
+	printf("%s\n", disp);
 	return(0);
 }
 
@@ -203,65 +197,8 @@ save1(str, mark)
 swrite(str)
 	char str[];
 {
-	register int *ip, mesg;
-	register struct message *mp;
-	register char *file, *disp;
-	char linebuf[BUFSIZ];
-	int f, *msgvec, lc, cc, t;
-	FILE *obuf, *mesf;
-	struct stat statb;
 
-	msgvec = (int *) salloc((msgCount + 2) * sizeof *msgvec);
-	if ((file = snarf(str, &f)) == NOSTR)
-		return(1);
-	if ((file = expand(file)) == NOSTR)
-		return(1);
-	if (!f) {
-		*msgvec = first(0, MMNORM);
-		if (*msgvec == NULL) {
-			printf("No messages to write.\n");
-			return(1);
-		}
-		msgvec[1] = NULL;
-	}
-	if (f && getmsglist(str, msgvec, 0) < 0)
-		return(1);
-	printf("\"%s\" ", file);
-	fflush(stdout);
-	if (stat(file, &statb) >= 0)
-		disp = "[Appended]";
-	else
-		disp = "[New file]";
-	if ((obuf = fopen(file, "a")) == NULL) {
-		perror(NOSTR);
-		return(1);
-	}
-	cc = lc = 0;
-	for (ip = msgvec; *ip && ip-msgvec < msgCount; ip++) {
-		mesg = *ip;
-		touch(mesg);
-		mp = &message[mesg-1];
-		mesf = setinput(mp);
-		t = mp->m_lines - 1;
-		while (t-- > 0) {
-			readline(mesf, linebuf);
-			if (blankline(linebuf))
-				break;
-		}
-		while (t-- > 0) {
-			fgets(linebuf, BUFSIZ, mesf);
-			fputs(linebuf, obuf);
-			cc += strlen(linebuf);
-		}
-		lc += mp->m_lines - 2;
-		mp->m_flag |= MSAVED;
-	}
-	fflush(obuf);
-	if (ferror(obuf))
-		perror(file);
-	fclose(obuf);
-	printf("%s %d/%d\n", disp, lc, cc);
-	return(0);
+	return save1(str, 1, "write", ignoreall);
 }
 
 /*

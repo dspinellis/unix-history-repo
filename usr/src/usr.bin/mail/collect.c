@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -288,7 +288,9 @@ cont:
 			exwrite(cp, collf, 1);
 			break;
 		case 'm':
+		case 'M':
 		case 'f':
+		case 'F':
 			/*
 			 * Interpolate the named messages, if we
 			 * are in receiving mail mode.  Does the
@@ -487,6 +489,8 @@ forward(ms, fp, f)
 {
 	register int *msgvec, *ip;
 	extern char tempMail[];
+	struct ignoretab *ig;
+	char *tabst;
 
 	msgvec = (int *) salloc((msgCount+1) * sizeof *msgvec);
 	if (msgvec == (int *) NOSTR)
@@ -501,66 +505,22 @@ forward(ms, fp, f)
 		}
 		msgvec[1] = NULL;
 	}
+	if (f == 'f' || f == 'F')
+		tabst = NOSTR;
+	else if ((tabst = value("tabstr")) == NOSTR)
+		tabst = "\t";
+	ig = isupper(f) ? NULL : ignore;
 	printf("Interpolating:");
 	for (ip = msgvec; *ip != NULL; ip++) {
 		touch(*ip);
 		printf(" %d", *ip);
-		if (f == 'm') {
-			if (transmit(&message[*ip-1], fp) < 0L) {
-				perror(tempMail);
-				return(-1);
-			}
-		} else
-			if (send(&message[*ip-1], fp, 0) < 0) {
-				perror(tempMail);
-				return(-1);
-			}
+		if (send(&message[*ip-1], fp, ig, tabst) < 0) {
+			perror(tempMail);
+			return(-1);
+		}
 	}
 	printf("\n");
 	return(0);
-}
-
-/*
- * Send message described by the passed pointer to the
- * passed output buffer.  Insert a tab in front of each
- * line.  Return a count of the characters sent, or -1
- * on error.
- */
-long
-transmit(mailp, fp)
-	struct message *mailp;
-	FILE *fp;
-{
-	register struct message *mp;
-	register int ch;
-	long c, n;
-	int bol;
-	FILE *ibuf;
-	char *tabst;
-
-	mp = mailp;
-	ibuf = setinput(mp);
-	c = mp->m_size;
-	n = c;
-	bol = 1;
-	if ((tabst = value("tabstr")) == NOSTR)
-		tabst = "\t";
-	while (c-- > 0L) {
-		ch = getc(ibuf);
-		if (ch == '\n')
-			bol = 1;
-		else if (bol) {
-			bol = 0;
-			fputs(tabst, fp);
-			n++;
-		}
-		putc(ch, fp);
-		if (ferror(fp)) {
-			perror("/tmp");
-			return(-1L);
-		}
-	}
-	return(n);
 }
 
 /*

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)send.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)send.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -31,19 +31,21 @@ static char sccsid[] = "@(#)send.c	5.12 (Berkeley) %G%";
 
 /*
  * Send message described by the passed pointer to the
- * passed output buffer.  Return -1 on error, but normally
- * the number of lines written.  Adjust the status: field
- * if need be.  If doign is given, suppress ignored header fields.
+ * passed output buffer.  Return -1 on error.
+ * Adjust the status: field if need be.
+ * If doign is given, suppress ignored header fields.
+ * prefix is a string to prepend to each output line.
  */
-send(mp, obuf, doign)
+send(mp, obuf, doign, prefix)
 	register struct message *mp;
 	FILE *obuf;
 	struct ignoretab *doign;
+	char *prefix;
 {
 	long count;
 	register FILE *ibuf;
 	char line[LINESIZE];
-	int lc, ishead, infld, ignoring, dostat;
+	int ishead, infld, ignoring, dostat, firstline;
 	register char *cp, *cp2;
 	register int c;
 	int length;
@@ -53,7 +55,7 @@ send(mp, obuf, doign)
 	ishead = 1;
 	dostat = doign == 0 || !isign("status", doign);
 	infld = 0;
-	lc = 0;
+	firstline = 1;
 	/*
 	 * Process headers first
 	 */
@@ -61,12 +63,13 @@ send(mp, obuf, doign)
 		if (fgets(line, LINESIZE, ibuf) == NULL)
 			break;
 		count -= length = strlen(line);
-		if (lc == 0) {
+		if (firstline) {
 			/* 
 			 * First line is the From line, so no headers
 			 * there to worry about
 			 */
-			ignoring = 0;
+			firstline = 0;
+			ignoring = doign == ignoreall;
 		} else if (line[0] == '\n') {
 			/*
 			 * If line is blank, we've reached end of
@@ -75,11 +78,11 @@ send(mp, obuf, doign)
 			 * fields
 			 */
 			if (dostat) {
-				statusput(mp, obuf);
+				statusput(mp, obuf, prefix);
 				dostat = 0;
 			}
 			ishead = 0;
-			ignoring = 0;
+			ignoring = doign == ignoreall;
 		} else if (infld && (line[0] == ' ' || line[0] == '\t')) {
 			/*
 			 * If this line is a continuation (via space or tab)
@@ -103,11 +106,12 @@ send(mp, obuf, doign)
 				 * there are no headers at all.
 				 */
 				if (dostat) {
-					statusput(mp, obuf);
+					statusput(mp, obuf, prefix);
 					dostat = 0;
 				}
-				(void) putc('\n', obuf); /* add blank line */
-				lc++;
+				if (doign != ignoreall)
+					/* add blank line */
+					(void) putc('\n', obuf);
 				ishead = 0;
 				ignoring = 0;
 			} else {
@@ -125,7 +129,7 @@ send(mp, obuf, doign)
 					 * and print the real Status: field
 					 */
 					if (dostat) {
-						statusput(mp, obuf);
+						statusput(mp, obuf, prefix);
 						dostat = 0;
 					}
 					ignoring = 1;
@@ -137,39 +141,54 @@ send(mp, obuf, doign)
 			}
 		}
 		if (!ignoring) {
+			if (prefix != NOSTR && length > 1)
+				fputs(prefix, obuf);
 			(void) fwrite(line, sizeof *line, length, obuf);
 			if (ferror(obuf))
 				return -1;
-			lc++;
 		}
 	}
 	/*
 	 * Copy out message body
 	 */
-	while (count > 0) {
-		cp = line;
-		c = count < LINESIZE ? count : LINESIZE;
-		if ((c = fread(cp, sizeof *cp, c, ibuf)) <= 0)
-			break;
-		if (fwrite(cp, sizeof *cp, c, obuf) != c)
+	if (doign == ignoreall)
+		count--;		/* skip final blank line */
+	if (prefix != NOSTR)
+		while (count > 0) {
+			if (fgets(line, LINESIZE, ibuf) == NULL) {
+				c = 0;
+				break;
+			}
+			count -= c = strlen(line);
+			if (c > 1)
+				fputs(prefix, obuf);
+			(void) fwrite(line, sizeof *line, c, obuf);
+			if (ferror(obuf))
+				return -1;
+		}
+	else
+		while (count > 0) {
+			c = count < LINESIZE ? count : LINESIZE;
+			if ((c = fread(line, sizeof *line, c, ibuf)) <= 0)
+				break;
+			count -= c;
+			if (fwrite(line, sizeof *line, c, obuf) != c)
+				return -1;
+		}
+	if (doign == ignoreall && c > 0 && line[c - 1] != '\n')
+		/* no final blank line */
+		if ((c = getc(ibuf)) != EOF && putc(c, obuf) == EOF)
 			return -1;
-		count -= c;
-		while (--c >= 0)
-			if (*cp++ == '\n')
-				lc++;
-	}
-	if (ishead && (mp->m_flag & MSTATUS))
-		printf("failed to fix up status field\n");
-	return (lc);
+	return 0;
 }
 
 /*
  * Output a reasonable looking status field.
- * But if "status" is ignored and doign, forget it.
  */
-statusput(mp, obuf)
+statusput(mp, obuf, prefix)
 	register struct message *mp;
 	FILE *obuf;
+	char *prefix;
 {
 	char statout[3];
 	register char *cp = statout;
@@ -180,7 +199,8 @@ statusput(mp, obuf)
 		*cp++ = 'O';
 	*cp = 0;
 	if (statout[0])
-		fprintf(obuf, "Status: %s\n", statout);
+		fprintf(obuf, "%sStatus: %s\n",
+			prefix == NOSTR ? "" : prefix, statout);
 }
 
 /*
