@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lfs.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)lfs.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -501,8 +501,14 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	sp->ss_ninos = 0;
 	sp->ss_datasum = 0;
 
-	/* Now, write rest of segments containing superblocks */
+	/* Now write the summary block for the next partial so it's invalid */
 	lfsp->lfs_tstamp = 0;
+	off += lfsp->lfs_bsize;
+	sp->ss_sumsum =
+	    cksum(&sp->ss_datasum, LFS_SUMMARY_SIZE - sizeof(sp->ss_sumsum));
+	put(fd, off, sp, LFS_SUMMARY_SIZE);
+
+	/* Now, write rest of segments containing superblocks */
 	lfsp->lfs_cksum = 
 	    cksum(lfsp, sizeof(struct lfs) - sizeof(lfsp->lfs_cksum));
 	for (seg_addr = last_addr = lfsp->lfs_sboffs[0], j = 1, i = 1; 
@@ -573,8 +579,7 @@ make_dinode(ino, dip, nblocks, saddr, lfsp)
 	dip->di_nlink = 1;
 	dip->di_blocks = nblocks << lfsp->lfs_fsbtodb;
 
-	/* If we ever need something longer than 32 bits, this changes */
-	dip->di_size = (dip->di_blocks << lfsp->lfs_bshift);
+	dip->di_size = (nblocks << lfsp->lfs_bshift);
 	dip->di_atime.ts_sec = dip->di_mtime.ts_sec =
 	    dip->di_ctime.ts_sec = lfsp->lfs_tstamp;
 	dip->di_atime.ts_nsec = dip->di_mtime.ts_nsec =
