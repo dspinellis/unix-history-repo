@@ -1,4 +1,4 @@
-/* @(#)errlst.c	4.3 (Berkeley) 82/02/11 */
+/* @(#)errlst.c	4.4 (Berkeley) 82/04/01 */
 char	*sys_errlist[] = {
 	"Error 0",
 	"Not owner",				/* 1 - EPERM */
@@ -73,5 +73,7 @@ char	*sys_errlist[] = {
 	"Too many references: can't splice",	/* 59 - ETOOMANYREFS */
 	"Connection timed out",			/* 60 - ETIMEDOUT */
 	"Connection refused",			/* 61 - EREFUSED */
+	"Too many levels of symbolic links",	/* 62 - ELOOP */
+	"File name too long",			/* 63 - ENAMETOOLONG */
 };
 int	sys_nerr = { sizeof sys_errlist/sizeof sys_errlist[0] };
