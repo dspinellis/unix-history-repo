@@ -1,5 +1,5 @@
 /*
- *	@(#)ka630.c	7.2 (Berkeley) %G%
+ *	@(#)ka630.c	7.3 (Berkeley) %G%
  */
 #if defined(VAX630)
 /* ka630.c routines for the ka630 clock chip... */
@@ -22,6 +22,7 @@
 
 extern struct cldevice cldevice;
 extern struct ka630cpu ka630cpu;
+static int clkinit;
 
 short dayyr[12] = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, };
 /* Starts the tod clock. Called from clkstart... */
@@ -35,6 +36,7 @@ ka630tod(base)
 	/* Enable system page for registers */
 	ioaccess(0x200b8000, &Clockmap[0], sizeof(struct cldevice));
 	ioaccess(0x20080000, &Ka630map[0], sizeof(struct ka630cpu));
+	clkinit = 1;
 
 	/*
 	 * Clear restart and boot in progress flags in the CPMBX. This has
@@ -87,6 +89,8 @@ ka630stod()
 	register struct cldevice *claddr = &cldevice;
 	long tmp2, tmp4;
 
+	if (clkinit == 0)
+		return;
 	claddr->csr1 = KA630CLK_SET;
 	while ((claddr->csr0 & KA630CLK_UIP) != 0)
 		;
