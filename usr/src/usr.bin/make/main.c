@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -79,8 +79,7 @@ Boolean			allPrecious;	/* .PRECIOUS given on line by itself */
 
 static int		printGraph;	/* -p flag */
 static Boolean		noBuiltins;	/* -r flag */
-static Lst		makefiles;	/* List of makefiles to read (in
-					 * order) */
+static Lst		makefiles;	/* ordered list of makefiles to read */
 int			maxJobs;	/* -J argument */
 static int		maxLocal;	/* -L argument */
 Boolean			debug;		/* -d flag */
@@ -290,7 +289,7 @@ Main_ParseArgLine(line)
 		return;
 	for (; *line == ' '; ++line);
 
-	argv = Str_BreakString (line, " \t", "\n", &argc);
+	argv = Str_BreakString(line, " \t", "\n", &argc);
 	MainParseArgs(argc, argv);
 	Str_FreeVec(argc, argv);
 }
@@ -319,7 +318,7 @@ main(argc, argv)
 	Lst targs;	/* target nodes to create -- passed to Make_Init */
 	Boolean outOfDate; 	/* FALSE if all targets up to date */
 
-	create = Lst_Init (FALSE);
+	create = Lst_Init(FALSE);
 	makefiles = Lst_Init(FALSE);
 	beSilent = FALSE;		/* Print commands as executed */
 	ignoreErrors = FALSE;		/* Pay attention to non-zero returns */
@@ -407,19 +406,19 @@ main(argc, argv)
 	 * if it was (makefile != (char *) NULL), or the default Makefile and
 	 * makefile, in that order, if it wasn't.
 	 */
-	 if (!noBuiltins && !ReadMakefile (DEFSYSMK))
-		Fatal ("Could not open system rules (%s)", DEFSYSMK);
+	 if (!noBuiltins && !ReadMakefile(DEFSYSMK))
+		Fatal("make: no system rules (%s).", DEFSYSMK);
 
 	if (!Lst_IsEmpty(makefiles)) {
 		LstNode ln;
 
 		ln = Lst_Find(makefiles, (ClientData)NULL, ReadMakefile);
 		if (ln != NILLNODE)
-			Fatal ("Cannot open %s", (char *)Lst_Datum(ln));
+			Fatal("make: cannot open %s.", (char *)Lst_Datum(ln));
 	} else if (!ReadMakefile("makefile"))
 		(void)ReadMakefile("Makefile");
 
-	Var_Append ("MFLAGS", Var_Value(MAKEFLAGS, VAR_GLOBAL), VAR_GLOBAL);
+	Var_Append("MFLAGS", Var_Value(MAKEFLAGS, VAR_GLOBAL), VAR_GLOBAL);
 
 	/* Install all the flags into the PMAKE envariable. */
 #ifdef POSIX
@@ -434,7 +433,7 @@ main(argc, argv)
 	 * variable's value is in the same format as the PATH envariable, i.e.
 	 * <directory>:<directory>:<directory>...
 	 */
-	if (Var_Exists ("VPATH", VAR_CMD)) {
+	if (Var_Exists("VPATH", VAR_CMD)) {
 		char *vpath, *path, *cp, savec;
 		/*
 		 * GCC stores string constants in read-only memory, but
@@ -443,13 +442,11 @@ main(argc, argv)
 		 */
 		static char VPATH[] = "${VPATH}";
 
-		vpath = Var_Subst (VPATH, VAR_CMD, FALSE);
+		vpath = Var_Subst(VPATH, VAR_CMD, FALSE);
 		path = vpath;
 		do {
 			/* skip to end of directory */
-			for (cp = path; *cp != ':' && *cp != '\0'; cp++) {
-				continue;
-			}
+			for (cp = path; *cp != ':' && *cp != '\0'; cp++);
 			/* Save terminator character so know when to stop */
 			savec = *cp;
 			*cp = '\0';
@@ -479,7 +476,7 @@ main(argc, argv)
 	if (Lst_IsEmpty(create))
 		targs = Parse_MainName();
 	else
-		targs = Targ_FindList (create, TARG_CREATE);
+		targs = Targ_FindList(create, TARG_CREATE);
 
 /*
  * this was original amMake -- want to allow parallelism, so put this
@@ -495,7 +492,7 @@ main(argc, argv)
 		if (!queryFlag) {
 			if (maxLocal == -1)
 				maxLocal = maxJobs;
-			Job_Init (maxJobs, maxLocal);
+			Job_Init(maxJobs, maxLocal);
 			jobsRunning = TRUE;
 		}
 
@@ -513,7 +510,7 @@ main(argc, argv)
 		Targ_PrintGraph(2);
 
 	if (queryFlag && outOfDate)
-		exit (1);
+		exit(1);
 	else
 		exit(0);
 }
@@ -532,7 +529,7 @@ static Boolean
 ReadMakefile(fname)
 	char *fname;		/* makefile to read */
 {
-	if (!strcmp (fname, "-")) {
+	if (!strcmp(fname, "-")) {
 		Parse_File("(stdin)", stdin);
 		Var_Set("MAKEFILE", "", VAR_GLOBAL);
 	} else {
@@ -614,10 +611,18 @@ void
 Fatal(va_alist)
 	va_dcl
 {
+	va_list ap;
+	char *fmt;
+
 	if (jobsRunning)
 		Job_Wait();
-    
-	Error(va_alist);
+
+	va_start(ap);
+	fmt = va_arg(ap, char *);
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	(void)fflush(stderr);
 
 	if (printGraph & 2)
 		Targ_PrintGraph(2);
@@ -640,7 +645,16 @@ void
 Punt(va_alist)
 	va_dcl
 {
-	Error(va_alist);
+	va_list ap;
+	char *fmt;
+
+	va_start(ap);
+	fmt = va_arg(ap, char *);
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	(void)fflush(stderr);
+
 	DieHorribly();
 }
 
