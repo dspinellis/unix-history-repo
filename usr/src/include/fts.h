@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fts.h	5.9 (Berkeley) %G%
+ *	@(#)fts.h	5.10 (Berkeley) %G%
  */
 
 typedef struct {
@@ -63,14 +63,13 @@ typedef struct _ftsent {
 	char fts_name[1];		/* file name */
 } FTSENT;
 
-#if __STDC__ || c_plusplus
-extern FTS *fts_open(const char **, int, int (*)(const FTSENT *, const FTSENT *));
-extern FTSENT *fts_read(FTS *);
-extern FTSENT *fts_children(FTS *);
-extern int fts_set(FTS *, FTSENT *, int);
-extern int fts_close(FTS *);
-#else
-extern FTS *fts_open();
-extern FTSENT *fts_children(), *fts_read();
-extern int fts_close(), fts_set();
-#endif
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+FTSENT	*fts_children __P((FTS *));
+int	 fts_close __P((FTS *));
+FTS	*fts_open
+	    __P((const char **, int, int (*)(const FTSENT *, const FTSENT *)));
+FTSENT	*fts_read __P((FTS *));
+int	 fts_set __P((FTS *, FTSENT *, int));
+__END_DECLS
