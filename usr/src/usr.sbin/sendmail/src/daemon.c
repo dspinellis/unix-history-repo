@@ -13,9 +13,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.49 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.50 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.49 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.50 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -682,7 +682,7 @@ finish:
 **	Parameters:
 **		map -- a pointer to this map (unused).
 **		name -- the (presumably unqualified) hostname.
-**		avp -- unused -- for compatibility with other mapping
+**		av -- unused -- for compatibility with other mapping
 **			functions.
 **		statp -- an exit status (out parameter) -- set to
 **			EX_TEMPFAIL if the name server is unavailable.
@@ -698,10 +698,10 @@ finish:
 */
 
 char *
-host_map_lookup(map, name, avp, statp)
+host_map_lookup(map, name, av, statp)
 	MAP *map;
 	char *name;
-	char **avp;
+	char **av;
 	int *statp;
 {
 	register struct hostent *hp;
@@ -709,9 +709,10 @@ host_map_lookup(map, name, avp, statp)
 	char *cp;
 	int i;
 	register STAB *s;
-	static char hbuf[MAXNAME];
+	char hbuf[MAXNAME];
 	extern struct hostent *gethostbyaddr();
 	extern int h_errno;
+	extern char *map_rewrite();
 
 	/*
 	**  See if we have already looked up this name.  If so, just
@@ -749,8 +750,9 @@ host_map_lookup(map, name, avp, statp)
 		{
 			if (tTd(9, 1))
 				printf("%s\n", hbuf);
-			s->s_namecanon.nc_cname = newstr(hbuf);
-			return hbuf;
+			cp = map_rewrite(map, hbuf, strlen(hbuf), av);
+			s->s_namecanon.nc_cname = newstr(cp);
+			return cp;
 		}
 		else
 		{
@@ -803,8 +805,9 @@ host_map_lookup(map, name, avp, statp)
 			}
 
 			s->s_namecanon.nc_stat = *statp = EX_OK;
-			s->s_namecanon.nc_cname = newstr(hp->h_name);
-			return hp->h_name;
+			cp = map_rewrite(map, hp->h_name, strlen(hp->h_name), av);
+			s->s_namecanon.nc_cname = newstr(cp);
+			return cp;
 		}
 	}
 	if ((cp = strchr(name, ']')) == NULL)
@@ -817,9 +820,7 @@ host_map_lookup(map, name, avp, statp)
 	{
 		if (MyIpAddrs[i].s_addr == in_addr)
 		{
-			strncpy(hbuf, MyHostName, sizeof hbuf - 1);
-			hbuf[sizeof hbuf - 1] = '\0';
-			return hbuf;
+			return map_rewrite(map, MyHostName, strlen(MyHostName), av);
 		}
 	}
 
@@ -835,12 +836,10 @@ host_map_lookup(map, name, avp, statp)
 	}
 
 	/* found a match -- copy out */
-	s->s_namecanon.nc_cname = newstr(hp->h_name);
-	if (strlen(hp->h_name) > sizeof hbuf - 1)
-		hp->h_name[sizeof hbuf - 1] = '\0';
-	(void) strcpy(hbuf, hp->h_name);
+	cp = map_rewrite(map, hp->h_name, strlen(hp->h_name), av);
 	s->s_namecanon.nc_stat = *statp = EX_OK;
-	return hbuf;
+	s->s_namecanon.nc_cname = newstr(cp);
+	return cp;
 }
 /*
 **  ANYNET_NTOA -- convert a network address to printable form.
