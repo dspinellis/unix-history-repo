@@ -1,4 +1,4 @@
-/*	up.c	3.27	%G%	*/
+/*	up.c	3.28	%G%	*/
 
 #include "../conf/up.h"
 /*
@@ -95,8 +95,8 @@ int	upseek;
  * and in the driver then we take it as it is.  Otherwise we do a SEARCH
  * requesting an interrupt upSDIST sectors in advance.
  */
-#define	_upSDIST	3		/* 1.5 msec */
-#define	_upRDIST	6		/* 3.0 msec */
+#define	_upSDIST	2		/* 1.0 msec */
+#define	_upRDIST	4		/* 2.0 msec */
 
 int	upSDIST = _upSDIST;
 int	upRDIST = _upRDIST;

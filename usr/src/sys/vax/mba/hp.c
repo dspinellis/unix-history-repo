@@ -1,4 +1,4 @@
-/*	hp.c	3.17	%G%	*/
+/*	hp.c	3.18	%G%	*/
 
 #include "../conf/hp.h"
 #if NHP > 0
@@ -47,8 +47,8 @@ struct	device
 #define	NRMSECT	32
 #define	NRMTRAC	5
 
-#define	_hpSDIST	3
-#define	_hpRDIST	6
+#define	_hpSDIST	2
+#define	_hpRDIST	3
 
 int	hpSDIST = _hpSDIST;
 int	hpRDIST = _hpRDIST;
