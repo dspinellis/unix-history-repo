@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)send.2	5.1 (Berkeley) %G%
+.\"	@(#)send.2	6.1 (Berkeley) %G%
 .\"
-.TH SEND 2 "20 September 1983"
+.TH SEND 2 ""
 .UC 5
 .SH NAME
 send, sendto, sendmsg \- send a message from a socket
@@ -76,7 +76,7 @@ send more data.
 .PP
 The
 .I flags
-parameter may be set to SOF_OOB to send \*(lqout-of-band\*(rq
+parameter may be set to MSG_OOB to send \*(lqout-of-band\*(rq
 data on sockets which support this notion (e.g. SOCK_STREAM).
 .PP
 See 
