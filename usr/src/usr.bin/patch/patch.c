@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)patch.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)patch.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /* patch - a program to apply diffs to original files
@@ -12,6 +12,9 @@ static char sccsid[] = "@(#)patch.c	5.1 (Berkeley) %G%";
  * money off of it, or pretend that you wrote it.
  *
  * $Log:	patch.c,v $
+ * 85/08/15 van%ucbmonet@berkeley
+ * Changes for 4.3bsd diff -c.
+ *
  * Revision 1.3  85/03/26  15:07:43  lwall
  * Frozen.
  * 
@@ -155,6 +158,7 @@ bool canonicalize = FALSE;
 #define CONTEXT_DIFF 1
 #define NORMAL_DIFF 2
 #define ED_DIFF 3
+#define NEW_CONTEXT_DIFF 4
 int diff_type = 0;
 
 int do_defines = 0;			/* patch using ifdef, ifndef, etc. */
@@ -1164,6 +1168,7 @@ there_is_another_patch()
 	say("  %sooks like %s to me...\n",
 	    (p_base == 0L ? "L" : "The next patch l"),
 	    diff_type == CONTEXT_DIFF ? "a context diff" :
+	    diff_type == NEW_CONTEXT_DIFF ? "a new-style context diff" :
 	    diff_type == NORMAL_DIFF ? "a normal diff" :
 	    "an ed script" );
     if (p_indent && verbose)
@@ -1188,6 +1193,8 @@ intuit_diff_type()
     long first_command_line = -1;
     bool last_line_was_command = FALSE;
     bool this_line_is_command = FALSE;
+    bool last_line_was_stars = FALSE;
+    bool this_line_is_stars = FALSE;
     register int indent;
     register char *s, *t;
     char *oldname = Nullch;
@@ -1198,6 +1205,7 @@ intuit_diff_type()
     for (;;) {
 	previous_line = this_line;
 	last_line_was_command = this_line_is_command;
+	last_line_was_stars = this_line_is_stars;
 	this_line = ftell(pfp);
 	indent = 0;
 	if (fgets(buf,sizeof buf,pfp) == Nullch) {
@@ -1263,11 +1271,16 @@ intuit_diff_type()
 	    p_start = first_command_line;
 	    return ED_DIFF;
 	}
-	if ((!diff_type || diff_type == CONTEXT_DIFF) &&
-		 strnEQ(s,"********",8)) {
+	this_line_is_stars = strnEQ(s,"********",8);
+	if ((!diff_type || diff_type == CONTEXT_DIFF) && last_line_was_stars &&
+		 strnEQ(s,"*** ",4)) {
+	    /* if this is a new context diff the character just before */
+	    /* the newline is a '*'. */
+	    while (*s != '\n')
+		s++;
 	    p_indent = indent;
-	    p_start = this_line;
-	    return CONTEXT_DIFF;
+	    p_start = previous_line;
+	    return (*(s-1) == '*' ? NEW_CONTEXT_DIFF : CONTEXT_DIFF);
 	}
 	if ((!diff_type || diff_type == NORMAL_DIFF) && 
 	  last_line_was_command &&
@@ -1342,7 +1355,7 @@ another_hunk()
 {
     register char *s;
     char *ret;
-    int context = 0;
+    register int context = 0;
 
     while (p_end >= 0) {
 	free(p_line[p_end--]);
@@ -1431,6 +1444,120 @@ another_hunk()
 	}
 	if (p_end >=0 && !p_ptrn_lines)
 	    fatal("No --- found in patch at line %d\n", pch_hunk_beg());
+	p_repl_lines = p_end - repl_beginning;
+    }
+    else if (diff_type == NEW_CONTEXT_DIFF) {
+	long line_beginning = ftell(pfp);
+	LINENUM repl_beginning = 0;
+	LINENUM fillcnt = 0;
+	LINENUM fillsrc;
+	LINENUM filldst;
+
+	ret = pgets(buf,sizeof buf, pfp);
+	if (ret == Nullch || strnNE(buf,"********",8)) {
+	    next_intuit_at(line_beginning);
+	    return FALSE;
+	}
+	p_context = 0;
+	while (p_end < p_max) {
+	    ret = pgets(buf,sizeof buf, pfp);
+	    if (ret == Nullch) {
+		if (p_max - p_end < 4)
+		    Strcpy(buf,"  \n");	/* assume blank lines got chopped */
+		else
+		    fatal("Unexpected end of file in patch.\n");
+	    }
+	    p_input_line++;
+	    p_char[++p_end] = *buf;
+	    switch (*buf) {
+	    case '*':
+		if (strnEQ(buf,"********",8)) {
+		    if (p_end != repl_beginning + 1)
+			fatal("Unexpected end of hunk at line %d.\n",
+				p_input_line);
+		    /* redundant 'new' context lines were omitted - set up */
+		    /* to fill them in from the the old file's context */
+		    fillsrc = 1;
+		    filldst = p_end;
+		    fillcnt = p_max - p_end;
+		    p_end = p_max;
+		    break;
+		}
+		if (p_end != 0)
+		    fatal("Unexpected *** at line %d: %s", p_input_line, buf);
+		context = 0;
+		p_line[p_end] = savestr(buf);
+		for (s=buf; *s && !isdigit(*s); s++) ;
+		p_first = (LINENUM) atol(s);
+		while (isdigit(*s)) s++;
+		for (; *s && !isdigit(*s); s++) ;
+		p_ptrn_lines = ((LINENUM)atol(s)) - p_first + 1;
+		break;
+	    case '-':
+		if (buf[1] == '-') {
+		    if (p_end != p_ptrn_lines + 1) {
+			if (p_end == 1) {
+			    /* `old' lines were omitted - set up to fill them */
+			    /* in from 'new' context lines. */
+			    p_end = p_ptrn_lines + 1;
+			    fillsrc = p_end + 1;
+			    filldst = 1;
+			    fillcnt = p_ptrn_lines;
+			} else
+			    fatal("Unexpected --- at line %d: %s",
+				p_input_line,buf);
+		    }
+		    repl_beginning = p_end;
+		    p_line[p_end] = savestr(buf);
+		    p_char[p_end] = '=';
+		    for (s=buf; *s && !isdigit(*s); s++) ;
+		    p_newfirst = (LINENUM) atol(s);
+		    while (isdigit(*s)) s++;
+		    for (; *s && !isdigit(*s); s++) ;
+		    p_max = ((LINENUM)atol(s)) - p_newfirst + 1 + p_end;
+		    break;
+		}
+		/* FALL THROUGH */
+	    case '+': case '!':
+		if (context > 0 && p_context == 0) {
+		    p_context = context;
+		}
+		p_line[p_end] = savestr(buf+2);
+		break;
+	    case '\t': case '\n':	/* assume the 2 spaces got eaten */
+		p_line[p_end] = savestr(buf);
+		if (p_end != p_ptrn_lines + 1) {
+		    context++;
+		    p_char[p_end] = ' ';
+		}
+		break;
+	    case ' ':
+		context++;
+		p_line[p_end] = savestr(buf+2);
+		break;
+	    default:
+		fatal("Malformed patch at line %d: %s",p_input_line,buf);
+	    }
+	    p_len[p_end] = strlen(p_line[p_end]);
+					/* for strncmp() so we do not have */
+					/* to assume null termination */
+	}
+	if (p_end >=0 && !p_ptrn_lines)
+	    fatal("No --- found in patch at line %d\n", pch_hunk_beg());
+
+	/* if there were omitted context lines, fill them in */
+	if (fillcnt) {
+	    while (fillcnt-- > 0) {
+		while (p_char[fillsrc] != ' ')
+		    fillsrc++;
+		p_line[filldst] = p_line[fillsrc];
+		p_char[filldst] = p_char[fillsrc];
+		p_len[filldst] = p_len[fillsrc];
+		fillsrc++; filldst++;
+	    }
+	    assert(fillsrc==p_end+1 || fillsrc==repl_beginning);
+	    assert(filldst==p_end+1 || filldst==repl_beginning);
+	}
 	p_repl_lines = p_end - repl_beginning;
     }
     else {				/* normal diff--fake it up */
