@@ -1,4 +1,4 @@
-/*	if_loop.c	4.9	82/03/30	*/
+/*	if_loop.c	4.10	82/04/13	*/
 
 /*
  * Loopback interface driver for protocol testing and timing.
@@ -59,7 +59,7 @@ COUNT(LOOUTPUT);
 			IF_DROP(ifq);
 			m_freem(m0);
 			splx(s);
-			return (0);
+			return (ENOBUFS);
 		}
 		IF_ENQUEUE(ifq, m0);
 		schednetisr(NETISR_IP);
@@ -70,9 +70,9 @@ COUNT(LOOUTPUT);
 		printf("lo%d: can't handle af%d\n", ifp->if_unit,
 			dst->sa_family);
 		m_freem(m0);
-		return (0);
+		return (EAFNOSUPPORT);
 	}
 	ifp->if_ipackets++;
 	splx(s);
-	return (1);
+	return (0);
 }
