@@ -1,5 +1,5 @@
 /*-
- *	@(#)READ_ME	6.6 (Berkeley) %G%
+ *	@(#)READ_ME	6.7 (Berkeley) %G%
  */
 
 THIS IS AN ALPHA VERSION OF SENDMAIL.  DON'T EVEN THINK ABOUT USING IT
@@ -13,7 +13,7 @@ REPORT ANY BUGS to sendmail@CS.Berkeley.EDU.
 
 THIS IS COPYRIGHTED CODE.  BY COMPILING AND RUNNING THIS CODE YOU AGREE
 to upgrade to the production release when it comes out.  You understand
-that we hope this will be by March, but if there are serious problems
+that we hope this will be by June, but if there are serious problems
 it may be longer than that.
 
 PLEASE DO NOT MAKE THIS AVAILABLE ON PUBLIC FTP.  Since it is still an
@@ -49,11 +49,11 @@ Important RFCs for electronic mail are:
 	RFC974	MX routing
 	RFC976	UUCP mail format
 	RFC1123	Host requirements (modifies 821, 822, and 974)
+	RFC1413	Identification server
 
 Other standards that may be of interest (but which are less directly
 relevant to sendmail) are:
 
-	RFC931	Authentication server
 	RFC987	Mapping between RFC822 and X.400
 	RFC1049	Content-Type header field (extension to RFC822)
 
@@ -83,6 +83,9 @@ cf		Source for Berkeley configuration files.  These are
 		different than what you've seen before.  They are a
 		fairly dramatic rewrite, requiring the new sendmail
 		(since they use new features).
+contrib		Some contributed tools to help with sendmail.  THESE
+		ARE NOT SUPPORTED by Berkeley -- contact the original
+		authors if you have problems.
 doc		Documentation.  If you are getting source, read
 		op.me -- it's long, but worth it.
 mail.local	Source for mail.local(8), a local delivery program.
