@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)at.c	4.11	(Berkeley)	%G%";
+static char sccsid[] = "@(#)at.c	4.12	(Berkeley)	%G%";
 #endif not lint
 
 /*
@@ -19,6 +19,7 @@ static char sccsid[] = "@(#)at.c	4.11	(Berkeley)	%G%";
 #include <ctype.h>
 #include <signal.h>
 #include <pwd.h>
+#include <sys/param.h>
 #include <sys/time.h>
 #include <sys/file.h>
 
@@ -111,7 +112,7 @@ char	*getenv();			/* get info on user's environment */
 char	**environ;			/* user's environment */
 FILE	*spoolfile;			/* spool file */
 FILE	*inputfile;			/* input file ("stdin" or "filename") */
-FILE	*popen();			/* used to get current directory info */
+char	*getwd();			/* used to get current directory info */
 
 
 main(argc, argv)
@@ -133,11 +134,9 @@ char **argv;
 	int standardin = 0;		/* are we reading from stardard input */
 	char *tmp;			/* scratch pointer */
 	char line[100];			/* a line from input file */
-	char pwbuf[100];		/* the current working directory */
+	char pwbuf[MAXPATHLEN];		/* the current working directory */
 	char *jobfile = "stdin";	/* file containing job to be run */
 	char *getname();		/* get the login name of a user */
-	FILE *pwfil;			/* "pwd" process (used to get the
-					   current working directory */
 
 
 
@@ -351,13 +350,11 @@ char **argv;
 	 * Get the current working directory so we know what directory to 
 	 * run the job from.
 	 */
-	if ((pwfil = popen("pwd", "r")) == NULL) {
-		fprintf(stderr, "at: can't execute pwd\n");
+	if (getwd(pwbuf) == NULL) {
+		fprintf(stderr, "at: can't get working directory\n");
 		exit(1);
 	}
-	fgets(pwbuf, 100, pwfil);
-	fprintf(spoolfile, "cd %s\n",pwbuf);
-	pclose(pwfil);
+	fprintf(spoolfile, "cd %s\n", pwbuf);
 
 	/*
 	 * Copy the user's environment to the spoolfile.
