@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cat.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)cat.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -34,6 +34,7 @@ static char sccsid[] = "@(#)cat.c	5.9 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 
+extern int errno;
 int bflag, eflag, nflag, sflag, tflag, vflag;
 int rval;
 char *filename;
@@ -42,7 +43,7 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int errno, optind;
+	extern int optind;
 	int ch;
 	char *strerror();
 
@@ -203,7 +204,6 @@ raw_args(argv)
 raw_cat(fd)
 	register int fd;
 {
-	extern int errno;
 	register int nr, nw, off;
 	static int bsize;
 	static char *buf;
