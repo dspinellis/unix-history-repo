@@ -3,14 +3,13 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	6.1 (Berkeley) %G%
+#	@(#)Makefile	6.2 (Berkeley) %G%
 #
 SRCS=	tutor.me
 GSRCS=	gremlins
 MACROS=	-me
 PRINTER=Pdp
 SOELIM=	soelim
-GRIND=	vgrind -f
 TBL=	dtbl -${PRINTER}
 TROFF=	ditroff -${PRINTER}
 
@@ -19,8 +18,7 @@ paper:	paper.${PRINTER} pics.Pip
 	lpr -Pip -n pics.Pip
 
 paper.${PRINTER}: ${SRCS}
-	${SOELIM} ${SRCS} | ${GRIND} | ${TBL} | \
-	${TROFF} ${MACROS} -t > paper.${PRINTER}
+	${TBL} ${SRCS} | ${TROFF} ${MACROS} -t > paper.${PRINTER}
 
 pics.Pip: ${GSRCS}
 	grn -Pip ${GSRCS} | ditroff -Pip -t >pics.Pip
