@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_acct.c	8.1 (Berkeley) %G%
+ *	@(#)pk_acct.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -50,7 +50,7 @@ pk_accton (path)
 	if (error = vn_open (&nd, FWRITE, 0644))
 		return (error);
 	vp = nd.ni_vp;
-	VOP_UNLOCK(vp);
+	VOP_UNLOCK(vp, 0, p);
 	if (vp -> v_type != VREG) {
 		vrele (vp);
 		return (EACCES);

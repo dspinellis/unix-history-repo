@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_subr.c	8.18 (Berkeley) %G%
+ *	@(#)union_subr.c	8.19 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -315,7 +315,8 @@ loop:
 			    (un->un_uppervp == uppervp ||
 			     un->un_uppervp == NULLVP) &&
 			    (UNIONTOV(un)->v_mount == mp)) {
-				if (vget(UNIONTOV(un), 0)) {
+				if (vget(UNIONTOV(un), 0,
+				    cnp ? cnp->cn_proc : NULL)) {
 					union_list_unlock(hash);
 					goto loop;
 				}
@@ -553,12 +554,12 @@ union_copyfile(fvp, tvp, cred, p)
 	uio.uio_segflg = UIO_SYSSPACE;
 	uio.uio_offset = 0;
 
-	VOP_UNLOCK(fvp);				/* XXX */
+	VOP_UNLOCK(fvp, 0, p);				/* XXX */
 	VOP_LEASE(fvp, p, cred, LEASE_READ);
-	VOP_LOCK(fvp);					/* XXX */
-	VOP_UNLOCK(tvp);				/* XXX */
+	vn_lock(fvp, LK_EXCLUSIVE | LK_RETRY, p);	/* XXX */
+	VOP_UNLOCK(tvp, 0, p);				/* XXX */
 	VOP_LEASE(tvp, p, cred, LEASE_WRITE);
-	VOP_LOCK(tvp);					/* XXX */
+	vn_lock(tvp, LK_EXCLUSIVE | LK_RETRY, p);	/* XXX */
 
 	buf = malloc(MAXBSIZE, M_TEMP, M_WAITOK);
 
@@ -626,11 +627,11 @@ union_copyup(un, docopy, cred, p)
 		 * XX - should not ignore errors
 		 * from VOP_CLOSE
 		 */
-		VOP_LOCK(lvp);
+		vn_lock(lvp, LK_EXCLUSIVE | LK_RETRY, p);
 		error = VOP_OPEN(lvp, FREAD, cred, p);
 		if (error == 0) {
 			error = union_copyfile(lvp, uvp, cred, p);
-			VOP_UNLOCK(lvp);
+			VOP_UNLOCK(lvp, 0, p);
 			(void) VOP_CLOSE(lvp, FREAD, cred, p);
 		}
 #ifdef UNION_DIAGNOSTIC
@@ -640,9 +641,9 @@ union_copyup(un, docopy, cred, p)
 
 	}
 	un->un_flags &= ~UN_ULOCK;
-	VOP_UNLOCK(uvp);
+	VOP_UNLOCK(uvp, 0, p);
 	union_vn_close(uvp, FWRITE, cred, p);
-	VOP_LOCK(uvp);
+	vn_lock(uvp, LK_EXCLUSIVE | LK_RETRY, p);
 	un->un_flags |= UN_ULOCK;
 
 	/*
@@ -745,7 +746,7 @@ union_mkshadow(um, dvp, cnp, vpp)
 
 	if (*vpp) {
 		VOP_ABORTOP(dvp, &cn);
-		VOP_UNLOCK(dvp);
+		VOP_UNLOCK(dvp, 0, p);
 		vrele(*vpp);
 		*vpp = NULLVP;
 		return (EEXIST);
@@ -792,10 +793,10 @@ union_mkwhiteout(um, dvp, cnp, path)
 	struct vnode *wvp;
 	struct componentname cn;
 
-	VOP_UNLOCK(dvp);
+	VOP_UNLOCK(dvp, 0, p);
 	error = union_relookup(um, dvp, &wvp, cnp, &cn, path, strlen(path));
 	if (error) {
-		VOP_LOCK(dvp);
+		vn_lock(dvp, LK_EXCLUSIVE | LK_RETRY, p);
 		return (error);
 	}
 
@@ -923,6 +924,7 @@ void
 union_removed_upper(un)
 	struct union_node *un;
 {
+	struct proc *p = curproc;	/* XXX */
 
 	union_newupper(un, NULLVP);
 	if (un->un_flags & UN_CACHED) {
@@ -932,7 +934,7 @@ union_removed_upper(un)
 
 	if (un->un_flags & UN_ULOCK) {
 		un->un_flags &= ~UN_ULOCK;
-		VOP_UNLOCK(un->un_uppervp);
+		VOP_UNLOCK(un->un_uppervp, 0, p);
 	}
 }
 
@@ -1004,8 +1006,9 @@ union_dircache_r(vp, vppp, cntp)
 }
 
 struct vnode *
-union_dircache(vp)
+union_dircache(vp, p)
 	struct vnode *vp;
+	struct proc *p;
 {
 	int cnt;
 	struct vnode *nvp;
@@ -1036,7 +1039,7 @@ union_dircache(vp)
 	if (*vpp == NULLVP)
 		return (NULLVP);
 
-	VOP_LOCK(*vpp);
+	vn_lock(*vpp, LK_EXCLUSIVE | LK_RETRY, p);
 	VREF(*vpp);
 	error = union_allocvp(&nvp, vp->v_mount, NULLVP, NULLVP, 0, *vpp, NULLVP, 0);
 	if (error)

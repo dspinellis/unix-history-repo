@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vn.c 1.13 94/04/02$
  *
- *	@(#)vn.c	8.8 (Berkeley) %G%
+ *	@(#)vn.c	8.9 (Berkeley) %G%
  */
 
 /*
@@ -387,11 +387,11 @@ vnioctl(dev, cmd, data, flag, p)
 		if (error = vn_open(&nd, FREAD|FWRITE, 0))
 			return(error);
 		if (error = VOP_GETATTR(nd.ni_vp, &vattr, p->p_ucred, p)) {
-			VOP_UNLOCK(nd.ni_vp);
+			VOP_UNLOCK(nd.ni_vp, 0, p);
 			(void) vn_close(nd.ni_vp, FREAD|FWRITE, p->p_ucred, p);
 			return(error);
 		}
-		VOP_UNLOCK(nd.ni_vp);
+		VOP_UNLOCK(nd.ni_vp, 0, p);
 		vn->sc_vp = nd.ni_vp;
 		vn->sc_size = btodb(vattr.va_size);	/* note truncation */
 		if (error = vnsetcred(vn, p->p_ucred)) {
