@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	7.10 (Berkeley) %G%
+ *	@(#)if_le.c	7.11 (Berkeley) %G%
  */
 
 #include <le.h>
@@ -249,11 +249,11 @@ leprobe(dp)
  * Setup the logical address filter
  */
 void
-lesetladrf(sc)
-	register struct le_softc *sc;
+lesetladrf(le)
+	register struct le_softc *le;
 {
-	register volatile struct lereg2 *ler2 = sc->sc_r2;
-	register struct ifnet *ifp = &sc->sc_if;
+	register volatile struct lereg2 *ler2 = le->sc_r2;
+	register struct ifnet *ifp = &le->sc_if;
 	register struct ether_multi *enm;
 	register u_char *cp;
 	register u_long crc;
@@ -269,10 +269,10 @@ lesetladrf(sc)
 	 * rest of the bits select the bit within the word.
 	 */
 
-	ler2->ler2_ladrf[0] = 0;
-	ler2->ler2_ladrf[1] = 0;
+	LER2_ladrf0(ler2, 0);
+	LER2_ladrf1(ler2, 0);
 	ifp->if_flags &= ~IFF_ALLMULTI;
-	ETHER_FIRST_MULTI(step, &sc->sc_ac, enm);
+	ETHER_FIRST_MULTI(step, &le->sc_ac, enm);
 	while (enm != NULL) {
 		if (bcmp((caddr_t)&enm->enm_addrlo,
 		    (caddr_t)&enm->enm_addrhi, sizeof(enm->enm_addrlo)) == 0) {
@@ -315,7 +315,19 @@ lesetladrf(sc)
 		crc = crc >> 26;
 
 		/* Turn on the corresponding bit in the filter. */
-		ler2->ler2_ladrf[crc >> 5] |= 1 << (crc & 0x1f);
+		switch (crc >> 5) {
+		case 0:
+			LER2_ladrf0(ler2, 1 << (crc & 0x1f));
+			break;
+		case 1:
+			LER2_ladrf1(ler2, 1 << (crc & 0x1f));
+			break;
+		case 2:
+			LER2_ladrf2(ler2, 1 << (crc & 0x1f));
+			break;
+		case 3:
+			LER2_ladrf3(ler2, 1 << (crc & 0x1f));
+		}
 
 		ETHER_NEXT_MULTI(step, enm);
 	}
