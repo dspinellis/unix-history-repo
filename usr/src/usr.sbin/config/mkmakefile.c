@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -574,7 +574,8 @@ do_systemspec(f, fl, first)
 	fprintf(f, "%s: Makefile", fl->f_needs);
 	if (machine == MACHINE_VAX)
 		fprintf(f, " ${INLINECMD}", machinename);
-	fprintf(f, " locore.o ${OBJS} param.o ioconf.o swap%s.o\n", fl->f_fn);
+	fprintf(f, " locore.o emulate.o ${OBJS} param.o ioconf.o swap%s.o\n",
+	    fl->f_fn);
 	fprintf(f, "\t@echo loading %s\n\t@rm -f %s\n",
 	    fl->f_needs, fl->f_needs);
 	if (first) {
@@ -588,7 +589,7 @@ do_systemspec(f, fl, first)
 			fl->f_needs);
 		break;
 	}
-	fprintf(f, "locore.o ${OBJS} vers.o ioconf.o param.o ");
+	fprintf(f, "locore.o emulate.o ${OBJS} vers.o ioconf.o param.o ");
 	fprintf(f, "swap%s.o\n", fl->f_fn);
 	fprintf(f, "\t@echo rearranging symbols\n");
 	fprintf(f, "\t@-symorder ../%s/symbols.sort %s\n",
