@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcp.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -632,8 +632,6 @@ sink(argc, argv)
 				SCREWUP("lost connection");
 			*cp++ = ch;
 		} while (cp < &buf[BUFSIZ - 1] && ch != '\n');
-		if (ch == '\n')
-			*--cp;
 		*cp = 0;
 
 		if (buf[0] == '\01' || buf[0] == '\02') {
@@ -648,6 +646,9 @@ sink(argc, argv)
 			(void)write(rem, "", 1);
 			return;
 		}
+
+		if (ch == '\n')
+			--cp;
 
 #define getnum(t) (t) = 0; while (isdigit(*cp)) (t) = (t) * 10 + (*cp++ - '0');
 		cp = buf;
@@ -704,7 +705,7 @@ sink(argc, argv)
 			need = strlen(targ) + strlen(cp) + 250;
 			if (need > cursize) {
 				if (!(namebuf = malloc((u_int)need)))
-					error("out of memory");
+					error("out of memory\n");
 			}
 			(void)sprintf(namebuf, "%s%s%s", targ,
 			    *targ ? "/" : "", cp);
@@ -755,7 +756,7 @@ bad:			error("rcp: %s: %s\n", np, sys_errlist[errno]);
 			do {
 				j = read(rem, cp, amt);
 				if (j <= 0) {
-					error("rcp: %s",
+					error("rcp: %s\n",
 					    j ? sys_errlist[errno] :
 					    "dropped connection");
 					exit(1);
@@ -829,16 +830,16 @@ error(fmt, a1, a2, a3)
 	char *fmt;
 	int a1, a2, a3;
 {
-	int len;
-	char buf[BUFSIZ];
+	static FILE *fp;
 
 	++errs;
-	buf[0] = 0x01;
-	(void)sprintf(buf + 1, fmt, a1, a2, a3);
-	len = strlen(buf);
-	(void)write(rem, buf, len);
+	if (!fp && !(fp = fdopen(rem, "w")))
+		return;
+	(void)fprintf(fp, "%c", 0x01);
+	(void)fprintf(fp, fmt, a1, a2, a3);
+	(void)fflush(fp);
 	if (!iamremote)
-		(void)write(2, buf + 1, len - 1);
+		(void)fprintf(stderr, fmt, a1, a2, a3);
 }
 
 nospace()
