@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)stty.c	4.11 (Berkeley) %G%";
+static char *sccsid ="@(#)stty.c	4.12 (Berkeley) %G%";
 /*
  * set teletype modes
  */
@@ -447,8 +447,7 @@ erase  kill   werase rprnt  flush  lnext  susp   intr   quit   stop   eof\
 			if (sp->cp == &tc.tc_brkc && ldisc == 0)
 				break;
 		}
-		if (first == 0)
-			fprintf(stderr, "\n");
+		fprintf(stderr, "\n");
 	}
 }
 
