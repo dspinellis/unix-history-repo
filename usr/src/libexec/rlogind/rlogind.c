@@ -1,3 +1,9 @@
+
+/*
+ *	$Source: /mit/kerberos/ucb/mit/rlogind/RCS/rlogind.c,v $
+ *	$Header: rlogind.c,v 5.0 89/06/26 18:31:01 kfall Locked $
+ */
+
 /*
  * Copyright (c) 1983, 1988 The Regents of the University of California.
  * All rights reserved.
@@ -22,7 +28,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.35 (Berkeley) 4/2/89";
 #endif /* not lint */
 
 /*
@@ -78,7 +84,10 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int opterr, optind, _check_rhosts_file;
+	extern int opterr, optind;
+#if	BSD > 43
+	extern int _check_rhosts_file;
+#endif
 	int ch;
 	int on = 1, fromlen;
 	struct sockaddr_in from;
@@ -88,9 +97,11 @@ main(argc, argv)
 	opterr = 0;
 	while ((ch = getopt(argc, argv, ARGSTR)) != EOF)
 		switch (ch) {
+#if	BSD > 43
 		case 'l':
 			_check_rhosts_file = 0;
 			break;
+#endif
 		case 'n':
 			keepalive = 0;
 			break;
@@ -274,6 +285,7 @@ gotpty:
 		close(f), close(p);
 		dup2(t, 0), dup2(t, 1), dup2(t, 2);
 		close(t);
+
 #ifdef OLD_LOGIN
 		execl("/bin/login", "login", "-r", hp->h_name, 0);
 #else /* OLD_LOGIN */
