@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)runtime.c 1.3 %G%";
+static char sccsid[] = "@(#)runtime.c 1.4 %G%";
 
 /*
  * Runtime organization dependent routines, mostly dealing with
@@ -106,13 +106,27 @@ Symbol f;
 {
     register Frame frp;
     static struct Frame frame;
+    Symbol p;
+    Boolean done;
 
     frp = &frame;
     getcurframe(frp);
     if (f != nil) {
-	while (frp != nil and whatblock(frp->save_pc) != f) {
-	    frp = nextframe(frp);
-	}
+	done = false;
+	do {
+	    p = whatblock(frp->save_pc);
+	    if (p == f) {
+		done = true;
+	    } else if (p == program) {
+		done = true;
+		frp = nil;
+	    } else {
+		frp = nextframe(frp);
+		if (frp == nil) {
+		    done = true;
+		}
+	    }
+	} while (not done);
     }
     return frp;
 }
@@ -286,8 +300,6 @@ public dump()
  * about each active procedure.
  */
 
-#define lastfunc(f)     (f == program)
-
 private walkstack(dumpvariables)
 Boolean dumpvariables;
 {
@@ -323,7 +335,7 @@ Boolean dumpvariables;
 	    if (frp != nil) {
 		f = whatblock(frp->save_pc);
 	    }
-	} while (frp != nil and not lastfunc(f));
+	} while (frp != nil and f != program);
 	if (dumpvariables) {
 	    printf("in \"%s\":\n", symname(program));
 	    dumpvars(program, nil);
