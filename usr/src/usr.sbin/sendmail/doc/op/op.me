@@ -1,6 +1,6 @@
 .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 1.3'DRAFT'Last Mod %G%'
+.fo 'Version 1.4'DRAFT'Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -245,6 +245,34 @@ see the manual page for
 .i sendmail/doc
 on the distribution).
 .sh 1 "NORMAL OPERATIONS"
+.sh 2 "Quick Configuration Startup"
+.pp
+A fast version of the configuration file
+may be set up by using the
+.b \-Z
+flag:
+.(b
+/usr/lib/sendmail \-Z
+.)b
+This creates the file
+.i /usr/lib/sendmail.fc .
+This file is an image of
+.i sendmail 's
+data space after reading in the configuration file.
+If this file exists,
+it is used instead of
+.i /usr/lib/sendmail.cf
+and must be rebuilt every time
+.i sendmail.cf
+is changed.
+.pp
+This file will be ignored
+if a
+.b \-C
+flag is specified
+or if sendmail detects that it is out of date.
+However, the heuristics are not strong
+so this should not be trusted.
 .sh 2 "The System Log"
 .pp
 The system log is supported by the
@@ -309,9 +337,6 @@ and the
 .i x
 is a type.
 The types are:
-.ip q
-The queue control file.
-This file contains the information necessary to process the job.
 .ip d
 The data file.
 The message body (excluding the header) is kept in this file.
@@ -325,6 +350,15 @@ an extraneous
 .b lf
 file can cause a job to apparently disappear
 (it will not even time out!).
+.ip n
+This file is created when an id is being created.
+It is a separate file to insure that no mail can ever be destroyed
+due to a race condition.
+It should exist for no more than a few milliseconds
+at any given time.
+.ip q
+The queue control file.
+This file contains the information necessary to process the job.
 .ip t
 A temporary file.
 These are an image of the
@@ -334,11 +368,10 @@ It should be renamed to a
 .b qf
 file very quickly.
 .ip x
-This file is created when an id is being created.
-It is a separate file to insure that no mail can ever be destroyed
-due to a race condition.
-It should exist for no more than a few milliseconds
-at any given time.
+A transcript file,
+existing during the life of a session
+showing everything that happens
+during that session.
 .pp
 The
 .b qf
@@ -2389,6 +2422,9 @@ Set option
 to the specified
 .i value .
 These options are described in Appendix B.
+.ip \-Z
+Initialize the file
+.i /usr/lib/sendmail.fc.
 .pp
 There are a number of options that may be specified as
 primitive flags.
