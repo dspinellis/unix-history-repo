@@ -1,5 +1,5 @@
 /* STARTUP PROCEDURE FOR UNIX FORTRAN PROGRAMS */
-char id_libF77[] = "@(#)main.c	2.10	%G%";
+char id_libF77[] = "@(#)main.c	2.11	%G%";
 
 #include <stdio.h>
 #include <signal.h>
@@ -41,19 +41,19 @@ struct action {
 	{"Hangup", 0},			/* SIGHUP  */
 	{"Interrupt!", 0},		/* SIGINT  */
 	{"Quit!", 1},			/* SIGQUIT */
-#ifdef UCBVAX
+#ifdef	UCBVAX
 	{"Illegal ", 1},		/* SIGILL  */
-#else
+#else	UCBVAX
 	{"Illegal instruction", 1},	/* SIGILL  */
-#endif
+#endif	UCBVAX
 	{"Trace Trap", 1},		/* SIGTRAP */
 	{"IOT Trap", 1},		/* SIGIOT  */
 	{"EMT Trap", 1},		/* SIGEMT  */
-#ifdef UCBVAX
+#ifdef	UCBVAX
 	{"Arithmetic Exception", 1},	/* SIGFPE  */
-#else
+#else	UCBVAX
 	{"Floating Point Exception", 1},/* SIGFPE  */
-#endif
+#endif	UCBVAX
 	{ 0, 0},			/* SIGKILL */
 	{"Bus error", 1},		/* SIGBUS  */
 	{"Segmentation violation", 1},	/* SIGSEGV */
@@ -64,7 +64,7 @@ struct action {
 	{"Sig 16", 0},			/* unassigned */
 };
 
-#ifdef UCBVAX
+#ifdef	UCBVAX
 struct action act_fpe[] = {
 	{"Integer overflow", 1},
 	{"Integer divide by 0", 1},
@@ -83,7 +83,7 @@ struct action act_ill[] = {
 	{"instruction", 1},
 	{"operand", 0},
 };
-#endif
+#endif	UCBVAX
 
 sigdie(s, t, pc)
 int s; int t; long pc;
@@ -94,7 +94,7 @@ register struct action *act = &sig_act[s-1];
 
 if (act->mesg)
 	{
-#ifdef UCBVAX
+#ifdef	UCBVAX
 	fprintf(units[STDERR].ufd, "*** %s", act->mesg);
 	if (s == SIGFPE)
 		{
@@ -112,9 +112,9 @@ if (act->mesg)
 			fprintf(units[STDERR].ufd, "compat mode: Code=%d", t);
 		}
 	putc('\n', units[STDERR].ufd);
-#else
+#else	UCBVAX
 	fprintf(units[STDERR].ufd, "*** %s\n", act->mesg);
-#endif
+#endif	UCBVAX
 	}
 f_exit();
 _cleanup();
@@ -122,11 +122,11 @@ _cleanup();
 if(act->core)
 	{
 	/* now get a core */
-#ifdef VAX
+#if	vax
 	signal(SIGILL, SIG_DFL);
-#else
+#else	vax
 	signal(SIGIOT, SIG_DFL);
-#endif
+#endif	vax
 	abort();
 	}
 exit(s);
