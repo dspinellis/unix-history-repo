@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sconv.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)sconv.c	5.2 (Berkeley) %G%";
 #endif not lint
 
     /*
@@ -59,7 +59,7 @@ tuac(thistype, thattype, resulttypep, resultp2typep)
      *	this is code generator specific, rather than machine-specific.
      *	this routine takes p2types for arguments, not struct nl *'s.
      */
-#ifdef vax
+#if defined(vax) || defined(tahoe)
     /*
      *	the vax code genrator is very good, this routine is extremely boring.
      */
@@ -97,7 +97,7 @@ sconv(fromp2type, top2type)
 		return;
     }
 }
-#endif vax
+#endif vax || tahoe
 #ifdef mc68000
     /*
      *	i don't know how much to trust the mc68000 compiler,

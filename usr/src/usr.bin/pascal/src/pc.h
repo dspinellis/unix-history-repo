@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)pc.h	5.1 (Berkeley) %G%
+ *	@(#)pc.h	5.2 (Berkeley) %G%
  */
 
 #include <setjmp.h>
@@ -30,11 +30,31 @@
      *	at function entry, fp is set to point to the last field of the struct,
      *	thus the offsets of the fields are as indicated below.
      */
+#ifdef vax
 struct rtlocals {
     jmp_buf		gotoenv;
     struct iorec	*curfile;
     struct dispsave	dsave;
 } rtlocs;
+#endif vax
+
+#ifdef tahoe
+struct rtlocals {
+    jmp_buf		gotoenv;
+    struct iorec	*curfile;
+    struct dispsave	dsave;
+    long		savedregs[9];
+} rtlocs;
+#endif tahoe
+
+#ifdef mc68000
+struct rtlocals {
+    jmp_buf		gotoenv;
+    struct iorec	*curfile;
+    struct dispsave	dsave;
+} rtlocs;
+#endif mc68000
+
 #define	GOTOENVOFFSET	( -sizeof rtlocs )
 #define	CURFILEOFFSET	( GOTOENVOFFSET + sizeof rtlocs.gotoenv )
 #define	DSAVEOFFSET	( CURFILEOFFSET + sizeof rtlocs.curfile )
@@ -54,6 +74,17 @@ struct entry_exit_cookie {
 #define	FRAME_SIZE_LABEL	"LF"
 #define	SAVE_MASK_LABEL		"L"
 #endif vax
+
+#ifdef tahoe
+struct entry_exit_cookie {
+    struct nl	*nlp;
+    char	extname[BUFSIZ];
+    int		toplabel;
+    int		savlabel;
+};
+#define	FRAME_SIZE_LABEL	"LF"
+#define	SAVE_MASK_LABEL		"L"
+#endif tahoe
 
 #ifdef mc68000
 struct entry_exit_cookie {
@@ -125,6 +156,31 @@ char	*enclosing[ DSPLYSZ ];
      */
 #   define	BITSPERBYTE	8
 #endif vax
+
+#ifdef tahoe
+    /*
+     *	the runtime framepointer and argumentpointer registers
+     */
+#   define	P2FP		13
+#   define	P2FPNAME	"fp"
+#   define	P2AP		13
+#   define	P2APNAME	"fp"
+
+    /*
+     *	the register save mask for saving no registers
+     */
+#   define	RSAVEMASK	( 0 )
+
+    /*
+     *	divide check and integer overflow don't exist in the save mask
+     */
+#   define	RUNCHECK	( 0 )
+
+    /*
+     *	and of course ...
+     */
+#   define	BITSPERBYTE	8
+#endif tahoe
 
 #ifdef mc68000
     /*

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tmps.h	5.1 (Berkeley) %G%
+ *	@(#)tmps.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -31,6 +31,16 @@
 #define	NUMREGTYPES	1
 #define	REG_GENERAL	0
 #endif vax
+
+#ifdef tahoe
+    /*
+     *	the number of register types.
+     *	the details of how many of each kind of register there is
+     *	(and what they are for) is known in tmps.c
+     */
+#define	NUMREGTYPES	1
+#define	REG_GENERAL	0
+#endif tahoe
 
 #ifdef mc68000
     /*
