@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.46 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.47 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -221,11 +221,9 @@ gethostbyname(name)
 				/*
 				 * All-numeric, no dot at the end.
 				 * Fake up a hostent as if we'd actually
-				 * done a lookup.  What if someone types
-				 * 255.255.255.255?  The test below will
-				 * succeed spuriously... ???
+				 * done a lookup.
 				 */
-				if ((host_addr.s_addr = inet_addr(name)) == -1) {
+				if (!inet_aton(name, &host_addr)) {
 					h_errno = HOST_NOT_FOUND;
 					return((struct hostent *) NULL);
 				}
