@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)odsyntax.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)odsyntax.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -24,123 +24,71 @@ oldsyntax(argc, argvp)
 	extern FS *fshead;
 	extern char *optarg;
 	extern int length, optind;
-	int ch, first;
+	int ch;
 	char **argv;
+	static void odprecede();
 
 	deprecated = 1;
-	first = 0;
 	argv = *argvp;
 	while ((ch = getopt(argc, argv, "aBbcDdeFfHhIiLlOoPpswvXx")) != EOF)
 		switch (ch) {
 		case 'a':
-			if (!first++) {
-				add("\"%07.7_Ao\n\"");
-				add("\"%07.7_ao  \"");
-			} else
-				add("\"         \"");
+			odprecede();
 			add("16/1 \"%3_u \" \"\\n\"");
 			break;
 		case 'B':
 		case 'o':
-			if (!first++) {
-				add("\"%07.7_Ao\n\"");
-				add("\"%07.7_ao  \"");
-			} else
-				add("\"         \"");
+			odprecede();
 			add("8/2 \" %06o \" \"\\n\"");
 			break;
 		case 'b':
-			if (!first++) {
-				add("\"%07.7_Ao\n\"");
-				add("\"%07.7_ao  \"");
-			} else
-				add("\"         \"");
+			odprecede();
 			add("16/1 \"%03o \" \"\\n\"");
 			break;
 		case 'c':
-			if (!first++) {
-				add("\"%07.7_Ao\n\"");
-				add("\"%07.7_ao  \"");
-			} else
-				add("\"         \"");
+			odprecede();
 			add("16/1 \"%3_c \" \"\\n\"");
 			break;
 		case 'd':
-			if (!first++) {
-				add("\"%07.7_Ao\n\"");
-				add("\"%07.7_ao  \"");
-			} else
-				add("\"         \"");
+			odprecede();
 			add("8/2 \"  %05u \" \"\\n\"");
 			break;
 		case 'D':
-			if (!first++) {
-				add("\"%07.7_Ao\n\"");
-				add("\"%07.7_ao  \"");
-			} else
-				add("\"         \"");
+			odprecede();
 			add("4/4 \"     %010u \" \"\\n\"");
 			break;
 		case 'e':		/* undocumented in od */
 		case 'F':
-			if (!first++) {
-				add("\"%07.7_Ao\n\"");
-				add("\"%07.7_ao  \"");
-			} else
-				add("\"         \"");
+			odprecede();
 			add("2/8 \"          %21.14e \" \"\\n\"");
 			break;
 			
 		case 'f':
-			if (!first++) {
-				add("\"%07.7_Ao\n\"");
-				add("\"%07.7_ao  \"");
-			} else
-				add("\"         \"");
+			odprecede();
 			add("4/4 \" %14.7e \" \"\\n\"");
 			break;
 		case 'H':
 		case 'X':
-			if (!first++) {
-				add("\"%07.7_Ao\n\"");
-				add("\"%07.7_ao  \"");
-			} else
-				add("\"         \"");
+			odprecede();
 			add("4/4 \"       %08x \" \"\\n\"");
 			break;
 		case 'h':
 		case 'x':
-			if (!first++) {
-				add("\"%07.7_Ao\n\"");
-				add("\"%07.7_ao  \"");
-			} else
-				add("\"         \"");
+			odprecede();
 			add("8/2 \"   %04x \" \"\\n\"");
 			break;
 		case 'I':
 		case 'L':
 		case 'l':
-			if (!first++) {
-				add("\"%07.7_Ao\n\"");
-				add("\"%07.7_ao  \"");
-			} else
-				add("\"         \"");
+			odprecede();
 			add("4/4 \"    %11d \" \"\\n\"");
 			break;
 		case 'i':
-			if (!first++) {
-				add("\"%07.7_Ao\n\"");
-				add("\"%07.7_ao  \"");
-			} else
-				add("\"         \"");
+			odprecede();
 			add("8/2 \" %6d \" \"\\n\"");
 			break;
 		case 'O':
-			if (!first++) {
-				add("\"%07.7_Ao\n\"");
-				add("\"%07.7_ao  \"");
-			} else
-				add("\"         \"");
+			odprecede();
 			add("4/4 \"    %011o \" \"\\n\"");
 			break;
 		case 'v':
@@ -265,4 +213,17 @@ odoffset(argc, argvp)
 			}
 		}
 	}
+}
+
+static void
+odprecede()
+{
+	static int first = 1;
+
+	if (first) {
+		first = 0;
+		add("\"%07.7_Ao\n\"");
+		add("\"%07.7_ao  \"");
+	} else
+		add("\"         \"");
 }
