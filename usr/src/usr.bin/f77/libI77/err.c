@@ -1,5 +1,5 @@
 /*
-char id_err[] = "@(#)err.c	1.12";
+char id_err[] = "@(#)err.c	1.13";
  *
  * file i/o error and initialization routines
  */
@@ -171,5 +171,6 @@ f_init()
 	ini_std(STDERR, stderr, WRITE);
 	ini_std(STDIN, stdin, READ);
 	ini_std(STDOUT, stdout, WRITE);
+	setlinebuf(stderr);
 }
 
