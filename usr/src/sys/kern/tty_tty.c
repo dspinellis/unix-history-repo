@@ -1,4 +1,4 @@
-/*	tty_tty.c	4.5	82/01/13	*/
+/*	tty_tty.c	4.6	82/01/19	*/
 
 /*
  * Indirect driver for controlling tty.
@@ -17,7 +17,7 @@
 syopen(dev, flag)
 {
 
-	if(u.u_ttyp == NULL || (u.u_procp->p_flag&SDETACH)) {
+	if (u.u_ttyp == NULL) {
 		u.u_error = ENXIO;
 		return;
 	}
@@ -28,7 +28,7 @@ syopen(dev, flag)
 syread(dev)
 {
 
-	if (u.u_ttyp == NULL || (u.u_procp->p_flag&SDETACH)) {
+	if (u.u_ttyp == NULL) {
 		u.u_error = ENXIO;
 		return;
 	}
@@ -39,7 +39,7 @@ syread(dev)
 sywrite(dev)
 {
 
-	if (u.u_ttyp == NULL || (u.u_procp->p_flag&SDETACH)) {
+	if (u.u_ttyp == NULL) {
 		u.u_error = ENXIO;
 		return;
 	}
@@ -57,7 +57,7 @@ caddr_t addr;
 		u.u_procp->p_pgrp = 0;
 		return;
 	}
-	if (u.u_ttyp == NULL || (u.u_procp->p_flag&SDETACH)) {
+	if (u.u_ttyp == NULL) {
 		u.u_error = ENXIO;
 		return;
 	}
@@ -67,7 +67,7 @@ caddr_t addr;
 syselect(dev, flag)
 {
 
-	if (u.u_ttyp == NULL || (u.u_procp->p_flag&SDETACH)) {
+	if (u.u_ttyp == NULL) {
 		u.u_error = ENXIO;
 		return (0);
 	}
