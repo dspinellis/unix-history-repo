@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)predicates.c 1.3 %G%";
+static char sccsid[] = "@(#)predicates.c 1.4 %G%";
 
 /*
  * The basic tests on a symbol.
@@ -84,34 +84,43 @@ SYM *s;
 BOOLEAN compatible(t1, t2)
 register SYM *t1, *t2;
 {
+    register BOOLEAN b;
+
+    if (isvariable(t1)) {
+	t1 = t1->type;
+    }
+    if (isvariable(t2)) {
+	t2 = t2->type;
+    }
     if (t1 == t2) {
-	return(TRUE);
-    }
-    t1 = rtype(t1);
-    t2 = rtype(t2);
-    if (t1->type == t2->type) {
-	if (t1->class == RANGE && t2->class == RANGE) {
-	    return TRUE;
+	b = TRUE;
+    } else {
+	t1 = rtype(t1);
+	t2 = rtype(t2);
+	if (t1->type == t2->type) {
+	    if (t1->class == RANGE && t2->class == RANGE) {
+		b = TRUE;
+	    } else if ((t1->class == SCAL || t1->class == CONST) &&
+	      (t2->class == SCAL || t2->class == CONST)) {
+		b = TRUE;
+	    } else if (t1->type == t_char &&
+	      t1->class == ARRAY && t2->class == ARRAY) {
+		b = TRUE;
+	    } else {
+		b = FALSE;
+	    }
+    /*
+     * A kludge here for "nil".  Should be handled better.
+     * Opens a pandora's box for integer/pointer compatibility.
+     */
+	} else if ((t1->class == RANGE && t2->class == PTR) ||
+	  (t2->class == RANGE && t1->class == PTR)) {
+	    b = TRUE;
+	} else {
+	    b = FALSE;
 	}
-	if ((t1->class == SCAL || t1->class == CONST) &&
-	  (t2->class == SCAL || t2->class == CONST)) {
-	    return TRUE;
-	}
-	if (t1->type == t_char && t1->class == ARRAY && t2->class == ARRAY) {
-	    return TRUE;
-	}
     }
-/*
- * A kludge here for "nil".  Should be handled better.
- * Opens a pandora's box for integer/pointer compatibility.
- */
-    if (t1->class == RANGE && t2->class == PTR) {
-	return TRUE;
-    }
-    if (t2->class == RANGE && t1->class == PTR) {
-	return TRUE;
-    }
-    return(FALSE);
+    return b;
 }
 
 /*
