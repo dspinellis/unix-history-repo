@@ -13,15 +13,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bsd_audio.c	7.2 (Berkeley) %G%
+ *	@(#)bsd_audio.c	7.3 (Berkeley) %G%
  *
  * from: $Header: bsd_audio.c,v 1.14 92/07/03 23:21:23 mccanne Exp $ (LBL)
  */
 #include "bsdaudio.h"
 #if NBSDAUDIO > 0
 
-#include "sys/param.h"
-#include "sys/systm.h"
+#include <sys/param.h>
+#include <sys/systm.h>
 
 #if BSD < 199103
 #ifndef SUNOS
@@ -29,26 +29,26 @@
 #endif
 #endif
 
-#include "sys/errno.h"
-#include "sys/file.h"
-#include "sys/proc.h"
-#include "sys/user.h"
-#include "sys/vnode.h"
-#include "sys/ioctl.h"
-#include "sys/time.h"
+#include <sys/errno.h>
+#include <sys/file.h>
+#include <sys/proc.h>
+#include <sys/user.h>
+#include <sys/vnode.h>
+#include <sys/ioctl.h>
+#include <sys/time.h>
 #ifndef SUNOS
-#include "sys/tty.h"
+#include <sys/tty.h>
 #endif
-#include "sys/uio.h"
+#include <sys/uio.h>
 
 #ifdef SUNOS
 #include <sundev/mbvar.h>
 #include <sun4c/intreg.h>
 #else
-#include "sys/device.h"
-#include "machine/autoconf.h"
+#include <sys/device.h>
+#include <machine/autoconf.h>
 #endif
-#include "machine/cpu.h"
+#include <machine/cpu.h>
 
 /*
  * Avoid name clashes with SunOS so we can config either the bsd or sun
@@ -63,9 +63,9 @@ struct selinfo {
 	int si_coll;
 };
 #else
-#include "../dev/bsd_audioreg.h"
-#include "../dev/bsd_audiovar.h"
-#include "machine/bsd_audioio.h"
+#include <sparc/dev/bsd_audioreg.h>
+#include <sparc/dev/bsd_audiovar.h>
+#include <machine/bsd_audioio.h>
 #endif
 
 #ifdef SUNOS

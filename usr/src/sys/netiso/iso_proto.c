@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_proto.c	7.10 (Berkeley) %G%
+ *	@(#)iso_proto.c	7.11 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -43,15 +43,15 @@ SOFTWARE.
  */
 
 #ifdef	ISO
-#include "types.h"
-#include "param.h"
-#include "socket.h"
-#include "protosw.h"
-#include "domain.h"
-#include "mbuf.h"
-#include "net/radix.h"
+#include <sys/param.h>
+#include <sys/socket.h>
+#include <sys/protosw.h>
+#include <sys/domain.h>
+#include <sys/mbuf.h>
 
-#include "iso.h"
+#include <net/radix.h>
+
+#include <netiso/iso.h>
 
 int clnp_output(), clnp_init(),clnp_slowtimo(),clnp_drain();
 int rclnp_input(), rclnp_output(), rclnp_ctloutput(), raw_usrreq();

@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mem.c	7.3 (Berkeley) %G%
+ *	@(#)mem.c	7.4 (Berkeley) %G%
  *
  * from: $Header: mem.c,v 1.8 92/06/17 05:22:16 torek Exp $
  */
@@ -22,14 +22,14 @@
  * Memory special file
  */
 
-#include "param.h"
-#include "proc.h"
-#include "conf.h"
-#include "buf.h"
-#include "systm.h"
-#include "malloc.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/conf.h>
+#include <sys/buf.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
 
-#include "vm/vm.h"
+#include <vm/vm.h>
 
 /*ARGSUSED*/
 mmrw(dev, uio, flags)

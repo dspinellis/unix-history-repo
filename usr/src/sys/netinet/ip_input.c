@@ -4,30 +4,30 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_input.c	7.22 (Berkeley) %G%
+ *	@(#)ip_input.c	7.23 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "domain.h"
-#include "protosw.h"
-#include "socket.h"
-#include "errno.h"
-#include "time.h"
-#include "kernel.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/errno.h>
+#include <sys/time.h>
+#include <sys/kernel.h>
 
-#include "../net/if.h"
-#include "../net/route.h"
+#include <net/if.h>
+#include <net/route.h>
 
-#include "in.h"
-#include "in_systm.h"
-#include "ip.h"
-#include "in_pcb.h"
-#include "in_var.h"
-#include "ip_var.h"
-#include "ip_icmp.h"
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/in_pcb.h>
+#include <netinet/in_var.h>
+#include <netinet/ip_var.h>
+#include <netinet/ip_icmp.h>
 
 #ifndef	IPFORWARDING
 #ifdef GATEWAY

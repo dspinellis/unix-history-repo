@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)locore2.c	7.2 (Berkeley) %G%
+ *	@(#)locore2.c	7.3 (Berkeley) %G%
  *
  * from: $Header: locore2.c,v 1.7 92/06/20 08:47:28 mccanne Exp $ (LBL)
  */
@@ -23,9 +23,9 @@
  * but which have no reason to be assembly-coded on SPARC.
  */
 
-#include "param.h"
-#include "proc.h"
-#include "resourcevar.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/resourcevar.h>
 
 int	whichqs;
 

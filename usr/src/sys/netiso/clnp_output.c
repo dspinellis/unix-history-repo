@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clnp_output.c	7.11 (Berkeley) %G%
+ *	@(#)clnp_output.c	7.12 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -36,24 +36,24 @@ SOFTWARE.
 /* $Header: /var/src/sys/netiso/RCS/clnp_output.c,v 5.0 89/02/08 12:00:15 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_output.c,v $ */
 
-#include "param.h"
-#include "mbuf.h"
-#include "domain.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "errno.h"
-#include "time.h"
+#include <sys/param.h>
+#include <sys/mbuf.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/errno.h>
+#include <sys/time.h>
 
-#include "../net/if.h"
-#include "../net/route.h"
+#include <net/if.h>
+#include <net/route.h>
 
-#include "iso.h"
-#include "iso_var.h"
-#include "iso_pcb.h"
-#include "clnp.h"
-#include "clnp_stat.h"
-#include "argo_debug.h"
+#include <netiso/iso.h>
+#include <netiso/iso_var.h>
+#include <netiso/iso_pcb.h>
+#include <netiso/clnp.h>
+#include <netiso/clnp_stat.h>
+#include <netiso/argo_debug.h>
 
 static struct clnp_fixed dt_template = {
 	ISO8473_CLNP,	/* network identifier */

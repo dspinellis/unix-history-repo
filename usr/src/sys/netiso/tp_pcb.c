@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.c	7.24 (Berkeley) %G%
+ *	@(#)tp_pcb.c	7.25 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -52,26 +52,27 @@ SOFTWARE.
  *
  */
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "domain.h"
-#include "protosw.h"
-#include "errno.h"
-#include "time.h"
-#include "argo_debug.h"
-#include "tp_param.h"
-#include "tp_timer.h"
-#include "tp_ip.h"
-#include "tp_stat.h"
-#include "tp_pcb.h"
-#include "tp_tpdu.h"
-#include "tp_trace.h"
-#include "tp_meas.h"
-#include "tp_seq.h"
-#include "tp_clnp.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <sys/errno.h>
+#include <sys/time.h>
+
+#include <netiso/argo_debug.h>
+#include <netiso/tp_param.h>
+#include <netiso/tp_timer.h>
+#include <netiso/tp_ip.h>
+#include <netiso/tp_stat.h>
+#include <netiso/tp_pcb.h>
+#include <netiso/tp_tpdu.h>
+#include <netiso/tp_trace.h>
+#include <netiso/tp_meas.h>
+#include <netiso/tp_seq.h>
+#include <netiso/tp_clnp.h>
 
 /* ticks are in units of: 
  * 500 nano-fortnights ;-) or

@@ -4,21 +4,21 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)raw_usrreq.c	7.11 (Berkeley) %G%
+ *	@(#)raw_usrreq.c	7.12 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "mbuf.h"
-#include "domain.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "errno.h"
+#include <sys/param.h>
+#include <sys/mbuf.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/errno.h>
 
-#include "if.h"
-#include "route.h"
-#include "netisr.h"
-#include "raw_cb.h"
+#include <net/if.h>
+#include <net/route.h>
+#include <net/netisr.h>
+#include <net/raw_cb.h>
 
 /*
  * Initialize raw connection block q.

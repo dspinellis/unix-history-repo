@@ -13,18 +13,18 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sun_ioctl.c	7.2 (Berkeley) %G%
+ *	@(#)sun_ioctl.c	7.3 (Berkeley) %G%
  *
  * from: $Header: sun_ioctl.c,v 1.5 92/07/10 00:26:51 torek Exp $
  */
 
-#include "param.h"
-#include "proc.h"
-#include "file.h"
-#include "filedesc.h"
-#include "ioctl.h"
-#include "termios.h"
-#include "tty.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/file.h>
+#include <sys/filedesc.h>
+#include <sys/ioctl.h>
+#include <sys/termios.h>
+#include <sys/tty.h>
 
 /*
  * SunOS ioctl calls.

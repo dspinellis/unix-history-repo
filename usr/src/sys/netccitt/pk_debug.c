@@ -9,22 +9,22 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_debug.c	7.8 (Berkeley) %G%
+ *	@(#)pk_debug.c	7.9 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "protosw.h"
-#include "socketvar.h"
-#include "errno.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/protosw.h>
+#include <sys/socketvar.h>
+#include <sys/errno.h>
 
-#include "../net/if.h"
+#include <net/if.h>
 
-#include "x25.h"
-#include "pk.h"
-#include "pk_var.h"
+#include <netccitt/x25.h>
+#include <netccitt/pk.h>
+#include <netccitt/pk_var.h>
 
 char	*pk_state[] = {
 	"Listen",	"Ready",	"Received-Call",

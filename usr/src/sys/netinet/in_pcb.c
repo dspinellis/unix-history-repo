@@ -4,30 +4,30 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_pcb.c	7.22 (Berkeley) %G%
+ *	@(#)in_pcb.c	7.23 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "ioctl.h"
-#include "errno.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/ioctl.h>
+#include <sys/errno.h>
 
-#include "../net/if.h"
-#include "../net/route.h"
+#include <net/if.h>
+#include <net/route.h>
 
-#include "in.h"
-#include "in_systm.h"
-#include "ip.h"
-#include "in_pcb.h"
-#include "in_var.h"
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/in_pcb.h>
+#include <netinet/in_var.h>
 
 #ifdef MULTICAST
-#include "ip_var.h"
+#include <netinet/ip_var.h>
 #endif
 
 struct	in_addr zeroin_addr;

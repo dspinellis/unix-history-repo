@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_user.h	7.12 (Berkeley) %G%
+ *	@(#)tp_user.h	7.13 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -43,11 +43,7 @@ SOFTWARE.
  */
 
 #ifndef _TYPES_
-#ifdef KERNEL
-#include  "../sys/types.h"
-#else KERNEL
 #include  <sys/types.h>
-#endif KERNEL
 #endif
 
 #ifndef __TP_USER__

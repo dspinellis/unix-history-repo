@@ -4,19 +4,19 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_proto.c	7.7 (Berkeley) %G%
+ *	@(#)in_proto.c	7.8 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "socket.h"
-#include "protosw.h"
-#include "domain.h"
-#include "mbuf.h"
+#include <sys/param.h>
+#include <sys/socket.h>
+#include <sys/protosw.h>
+#include <sys/domain.h>
+#include <sys/mbuf.h>
 
-#include "in.h"
-#include "in_systm.h"
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
 
-#include "net/radix.h"
+#include <net/radix.h>
 
 /*
  * TCP/IP protocol family: IP, ICMP, UDP, TCP.

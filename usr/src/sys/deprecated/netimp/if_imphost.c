@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_imphost.c	7.10 (Berkeley) %G%
+ *	@(#)if_imphost.c	7.11 (Berkeley) %G%
  */
 
 #include "imp.h"
@@ -17,18 +17,18 @@
  * from the IMP protocol code (if_imp.c), or
  * interlocks with the code at splimp.
  */
-#include "param.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "syslog.h"
+#include <sys/param.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/syslog.h>
 
-#include "../net/if.h"
+#include <net/if.h>
 
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
 
-#include "if_imp.h"
-#include "if_imphost.h"
+#include <netimp/if_imp.h>
+#include <netimp/if_imphost.h>
 
 extern struct imp_softc imp_softc[];
 

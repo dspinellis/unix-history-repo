@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)event.c	7.2 (Berkeley) %G%
+ *	@(#)event.c	7.3 (Berkeley) %G%
  *
  * from: $Header: event.c,v 1.4 92/06/17 05:35:45 torek Exp $ (LBL)
  */
@@ -22,15 +22,15 @@
  * Internal `Firm_event' interface for the keyboard and mouse drivers.
  */
 
-#include "sys/param.h"
-#include "sys/fcntl.h"
-#include "sys/malloc.h"
-#include "sys/proc.h"
-#include "sys/systm.h"
-#include "sys/vnode.h"
+#include <sys/param.h>
+#include <sys/fcntl.h>
+#include <sys/malloc.h>
+#include <sys/proc.h>
+#include <sys/systm.h>
+#include <sys/vnode.h>
 
-#include "vuid_event.h"
-#include "event_var.h"
+#include <sparc/dev/vuid_event.h>
+#include <sparc/dev/event_var.h>
 
 /*
  * Initialize a firm_event queue.

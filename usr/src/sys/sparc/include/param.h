@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)param.h	7.2 (Berkeley) %G%
+ *	@(#)param.h	7.3 (Berkeley) %G%
  *
  * from: $Header: param.h,v 1.11 92/06/24 08:52:05 torek Exp $ (LBL)
  */
@@ -24,7 +24,7 @@
 #define	MACHINE	"sparc"
 
 #ifdef KERNEL				/* XXX */
-#include "machine/cpu.h"		/* XXX */
+#include <machine/cpu.h>		/* XXX */
 #endif					/* XXX */
 
 /*

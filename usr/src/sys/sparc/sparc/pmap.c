@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	7.2 (Berkeley) %G%
+ *	@(#)pmap.c	7.3 (Berkeley) %G%
  *
  * from: $Header: pmap.c,v 1.36 92/07/10 00:03:10 torek Exp $
  */
@@ -23,24 +23,24 @@
  * Does not function on multiprocessors (yet).
  */
 
-#include "param.h"
-#include "systm.h"
-#include "device.h"
-#include "proc.h"
-#include "malloc.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/device.h>
+#include <sys/proc.h>
+#include <sys/malloc.h>
 
-#include "../vm/vm.h"
-#include "../vm/vm_kern.h"
-#include "../vm/vm_prot.h"
-#include "../vm/vm_page.h"
+#include <vm/vm.h>
+#include <vm/vm_kern.h>
+#include <vm/vm_prot.h>
+#include <vm/vm_page.h>
 
-#include "machine/autoconf.h"
-#include "machine/bsd_openprom.h"
-#include "machine/cpu.h"
+#include <machine/autoconf.h>
+#include <machine/bsd_openprom.h>
+#include <machine/cpu.h>
 
-#include "asm.h"
-#include "cache.h"
-#include "ctlreg.h"
+#include <sparc/sparc/asm.h>
+#include <sparc/sparc/cache.h>
+#include <sparc/sparc/ctlreg.h>
 
 #ifdef DEBUG
 #define PTE_BITS "\20\40V\37W\36S\35NC\33IO\32U\31M"

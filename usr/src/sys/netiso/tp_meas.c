@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_meas.c	7.4 (Berkeley) %G%
+ *	@(#)tp_meas.c	7.5 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -41,10 +41,11 @@ SOFTWARE.
  * in the circular buffer tp_Meas[]
  */
 
-#include "types.h"
-#include "time.h"
-#include "argo_debug.h"
-#include "tp_meas.h"
+#include <sys/types.h>
+#include <sys/time.h>
+
+#include <netiso/argo_debug.h>
+#include <netiso/tp_meas.h>
 
 extern struct timeval time;
 

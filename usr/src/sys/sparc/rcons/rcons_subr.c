@@ -13,22 +13,22 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rcons_subr.c	7.2 (Berkeley) %G%
+ *	@(#)rcons_subr.c	7.3 (Berkeley) %G%
  *
  * from: $Header: rcons_subr.c,v 1.36 92/06/17 06:23:39 torek Exp $
  */
 
 #ifdef KERNEL
-#include "sys/param.h"
-#include "sys/fbio.h"
-#include "sys/device.h"
-#include "machine/fbvar.h"
+#include <sys/param.h>
+#include <sys/fbio.h>
+#include <sys/device.h>
+#include <machine/fbvar.h>
 #else
 #include <sys/types.h>
 #include "myfbdevice.h"
 #endif
 
-#include "raster.h"
+#include <sparc/rcons/raster.h>
 
 void rcons_text(struct fbdevice *, char *, int);
 void rcons_pctrl(struct fbdevice *, int);

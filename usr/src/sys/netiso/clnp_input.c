@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clnp_input.c	7.14 (Berkeley) %G%
+ *	@(#)clnp_input.c	7.15 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -36,32 +36,31 @@ SOFTWARE.
 /* $Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/09 16:20:32 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_input.c,v $ */
 
-#include "types.h"
-#include "param.h"
-#include "mbuf.h"
-#include "domain.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "errno.h"
-#include "time.h"
+#include <sys/param.h>
+#include <sys/mbuf.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/errno.h>
+#include <sys/time.h>
 
-#include "../net/if.h"
-#include "../net/if_types.h"
-#include "../net/route.h"
+#include <net/if.h>
+#include <net/if_types.h>
+#include <net/route.h>
 
-#include "iso.h"
-#include "iso_var.h"
-#include "iso_snpac.h"
-#include "clnp.h"
-#include "clnl.h"
-#include "esis.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/ip.h"
-#include "../netinet/if_ether.h"
-#include "eonvar.h"
-#include "clnp_stat.h"
-#include "argo_debug.h"
+#include <netiso/iso.h>
+#include <netiso/iso_var.h>
+#include <netiso/iso_snpac.h>
+#include <netiso/clnp.h>
+#include <netiso/clnl.h>
+#include <netiso/esis.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/if_ether.h>
+#include <netiso/eonvar.h>
+#include <netiso/clnp_stat.h>
+#include <netiso/argo_debug.h>
 
 #ifdef ISO
 u_char		clnp_protox[ISOPROTO_MAX];

@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fpu_compare.c	7.2 (Berkeley) %G%
+ *	@(#)fpu_compare.c	7.3 (Berkeley) %G%
  *
  * from: $Header: fpu_compare.c,v 1.2 92/06/17 05:41:29 torek Exp $
  */
@@ -25,12 +25,12 @@
  * adding zero bits to the end of narrower mantissas.
  */
 
-#include "sys/types.h"
+#include <sys/types.h>
 
-#include "machine/reg.h"
+#include <machine/reg.h>
 
-#include "fpu_arith.h"
-#include "fpu_emu.h"
+#include <sparc/fpu/fpu_arith.h>
+#include <sparc/fpu/fpu_emu.h>
 
 /*
  * Perform a compare instruction (with or without unordered exception).

@@ -13,33 +13,33 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)trap.c	7.2 (Berkeley) %G%
+ *	@(#)trap.c	7.3 (Berkeley) %G%
  *
  * from: $Header: trap.c,v 1.31 92/07/11 11:08:57 torek Exp $
  */
 
-#include "param.h"
-#include "systm.h"
-#include "proc.h"
-#include "user.h"
-#include "kernel.h"
-#include "malloc.h"
-#include "resource.h"
-#include "signal.h"
-#include "wait.h"
-#include "syscall.h"
-#include "syslog.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/user.h>
+#include <sys/kernel.h>
+#include <sys/malloc.h>
+#include <sys/resource.h>
+#include <sys/signal.h>
+#include <sys/wait.h>
+#include <sys/syscall.h>
+#include <sys/syslog.h>
 #ifdef KTRACE
-#include "ktrace.h"
+#include <sys/ktrace.h>
 #endif
 
-#include "vm/vm_kern.h"
+#include <vm/vm_kern.h>
 
-#include "machine/cpu.h"
-#include "machine/frame.h"
-#include "machine/trap.h"
+#include <machine/cpu.h>
+#include <machine/frame.h>
+#include <machine/trap.h>
 
-#include "ctlreg.h"
+#include <sparc/sparc/ctlreg.h>
 
 #define	offsetof(s, f) ((int)&((s *)0)->f)
 

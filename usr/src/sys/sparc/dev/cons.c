@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cons.c	7.2 (Berkeley) %G%
+ *	@(#)cons.c	7.3 (Berkeley) %G%
  *
  * from: $Header: cons.c,v 1.10 92/07/10 00:02:42 torek Exp $
  */
@@ -22,16 +22,16 @@
  * Console (indirect) driver.
  */
 
-#include "sys/param.h"
-#include "sys/proc.h"
-#include "sys/systm.h"
-#include "sys/ioctl.h"
-#include "sys/tty.h"
-#include "sys/file.h"
-#include "sys/conf.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/systm.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
+#include <sys/file.h>
+#include <sys/conf.h>
 
-#include "machine/bsd_openprom.h"
-#include "machine/psl.h"
+#include <machine/bsd_openprom.h>
+#include <machine/psl.h>
 
 #include "zs.h"
 

@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)reg.h	7.2 (Berkeley) %G%
+ *	@(#)reg.h	7.3 (Berkeley) %G%
  *
  * from: $Header: reg.h,v 1.7 92/06/17 06:10:26 torek Exp $
  */
@@ -50,7 +50,7 @@ struct rwindow {
 	int	rw_in[8];		/* %i0..%i7 */
 };
 
-#include "machine/fsr.h"
+#include <machine/fsr.h>
 
 /*
  * FP coprocessor registers.

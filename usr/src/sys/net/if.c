@@ -4,23 +4,23 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.c	7.21 (Berkeley) %G%
+ *	@(#)if.c	7.22 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "mbuf.h"
-#include "systm.h"
-#include "proc.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "protosw.h"
-#include "kernel.h"
-#include "ioctl.h"
+#include <sys/param.h>
+#include <sys/mbuf.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/protosw.h>
+#include <sys/kernel.h>
+#include <sys/ioctl.h>
 
-#include "if.h"
-#include "af.h"
-#include "if_dl.h"
-#include "if_types.h"
+#include <net/if.h>
+#include <net/af.h>
+#include <net/if_dl.h>
+#include <net/if_types.h>
 
 #include "ether.h"
 
@@ -277,7 +277,9 @@ ifaof_ifpforaddr(addr, ifp)
 	}
 	return (ifa_maybe);
 }
-#include "route.h"
+
+#include <net/route.h>
+
 /*
  * Default action when installing a route with a Link Level gateway.
  * Lookup an appropriate real ifa to point to.

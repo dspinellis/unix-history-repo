@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp.trans	7.20 (Berkeley) %G%
+ *	@(#)tp.trans	7.21 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -59,24 +59,25 @@ SOFTWARE.
 
 *INCLUDE
 {
-/* @(#)tp.trans	7.20 (Berkeley) %G% */
-#include "param.h"
-#include "systm.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "protosw.h"
-#include "mbuf.h"
-#include "time.h"
-#include "errno.h"
-#include "../netiso/tp_param.h"
-#include "../netiso/tp_stat.h"
-#include "../netiso/tp_pcb.h"
-#include "../netiso/tp_tpdu.h"
-#include "../netiso/argo_debug.h"
-#include "../netiso/tp_trace.h"
-#include "../netiso/iso_errno.h"
-#include "../netiso/tp_seq.h"
-#include "../netiso/cons.h"
+/* @(#)tp.trans	7.21 (Berkeley) %G% */
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/protosw.h>
+#include <sys/mbuf.h>
+#include <sys/time.h>
+#include <sys/errno.h>
+
+#include <netiso/tp_param.h>
+#include <netiso/tp_stat.h>
+#include <netiso/tp_pcb.h>
+#include <netiso/tp_tpdu.h>
+#include <netiso/argo_debug.h>
+#include <netiso/tp_trace.h>
+#include <netiso/iso_errno.h>
+#include <netiso/tp_seq.h>
+#include <netiso/cons.h>
 
 #define DRIVERTRACE TPPTdriver
 #define sbwakeup(sb)	sowakeup(p->tp_sock, sb);

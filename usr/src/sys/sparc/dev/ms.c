@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ms.c	7.2 (Berkeley) %G%
+ *	@(#)ms.c	7.3 (Berkeley) %G%
  *
  * from: $Header: ms.c,v 1.4 92/06/17 05:35:50 torek Exp $ (LBL)
  */
@@ -22,17 +22,17 @@
  * Mouse driver.
  */
 
-#include "sys/param.h"
-#include "sys/conf.h"
-#include "sys/ioctl.h"
-#include "sys/kernel.h"
-#include "sys/proc.h"
-#include "sys/syslog.h"
-#include "sys/systm.h"
-#include "sys/tty.h"
+#include <sys/param.h>
+#include <sys/conf.h>
+#include <sys/ioctl.h>
+#include <sys/kernel.h>
+#include <sys/proc.h>
+#include <sys/syslog.h>
+#include <sys/systm.h>
+#include <sys/tty.h>
 
-#include "vuid_event.h"
-#include "event_var.h"
+#include <sparc/dev/vuid_event.h>
+#include <sparc/dev/event_var.h>
 
 /*
  * Mouse state.  A Mouse Systems mouse is a fairly simple device,

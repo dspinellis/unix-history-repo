@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kbd.c	7.2 (Berkeley) %G%
+ *	@(#)kbd.c	7.3 (Berkeley) %G%
  *
  * from: $Header: kbd.c,v 1.15 92/07/09 07:59:27 torek Exp $ (LBL)
  */
@@ -24,22 +24,22 @@
  * passes them up to the appropriate reader.
  */
 
-#include "sys/param.h"
-#include "sys/conf.h"
-#include "sys/device.h"
-#include "sys/ioctl.h"
-#include "sys/kernel.h"
-#include "sys/proc.h"
-#include "sys/syslog.h"
-#include "sys/systm.h"
-#include "sys/tty.h"
+#include <sys/param.h>
+#include <sys/conf.h>
+#include <sys/device.h>
+#include <sys/ioctl.h>
+#include <sys/kernel.h>
+#include <sys/proc.h>
+#include <sys/syslog.h>
+#include <sys/systm.h>
+#include <sys/tty.h>
 
-#include "machine/autoconf.h"
+#include <machine/autoconf.h>
 
-#include "vuid_event.h"
-#include "event_var.h"
-#include "kbd.h"
-#include "kbio.h"
+#include <sparc/dev/vuid_event.h>
+#include <sparc/dev/event_var.h>
+#include <sparc/dev/kbd.h>
+#include <sparc/dev/kbio.h>
 
 /*
  * Sun keyboard definitions (from Sprite).

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.h	7.22 (Berkeley) %G%
+ *	@(#)tp_pcb.h	7.23 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -47,11 +47,11 @@ SOFTWARE.
 #ifndef  __TP_PCB__
 #define  __TP_PCB__
 
-#include "../netiso/tp_param.h"
-#include "../netiso/tp_timer.h"
-#include "../netiso/tp_user.h"
+#include <netiso/netiso/tp_param.h>
+#include <netiso/netiso/tp_timer.h>
+#include <netiso/netiso/tp_user.h>
 #ifndef sblock
-#include "socketvar.h"
+#include <sys/socketvar.h>
 #endif sblock
 
 /* NOTE: the code depends on REF_CLOSED > REF_OPEN > the rest, and

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.h	7.19 (Berkeley) %G%
+ *	@(#)if.h	7.20 (Berkeley) %G%
  */
 
 /*
@@ -32,11 +32,7 @@
  * interfaces.  These routines live in the files if.c and route.c
  */
 #ifndef _TIME_ /*  XXX fast fix for SNMP, going away soon */
-#ifdef KERNEL
-#include "../sys/time.h"
-#else
 #include <sys/time.h>
-#endif
 #endif
 
 #ifdef __STDC__
@@ -289,6 +285,8 @@ struct	ifconf {
 #define	ifc_req	ifc_ifcu.ifcu_req	/* array of structures returned */
 };
 
+#include <net/if_arp.h>
+
 #ifdef KERNEL
 #define	IFAFREE(ifa) \
 	if ((ifa)->ifa_refcnt <= 0) \
@@ -296,13 +294,10 @@ struct	ifconf {
 	else \
 		(ifa)->ifa_refcnt--;
 
-#include "../net/if_arp.h"
 struct	ifnet	*ifnet;
 struct	ifaddr	*ifa_ifwithaddr __P((struct sockaddr *)),
 		*ifa_ifwithnet __P((struct sockaddr *)),
 		*ifa_ifwithdstaddr __P((struct sockaddr *));
 void	ifafree __P((struct ifaddr *));
 void	if_attach __P((struct ifnet *));
-#else KERNEL
-#include <net/if_arp.h>
-#endif KERNEL
+#endif

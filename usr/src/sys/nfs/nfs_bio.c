@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_bio.c	7.32 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.33 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -19,8 +19,9 @@
 #include <sys/trace.h>
 #include <sys/mount.h>
 #include <sys/kernel.h>
-#include <machine/endian.h>
+
 #include <vm/vm.h>
+
 #include <nfs/nfsnode.h>
 #include <nfs/rpcv2.h>
 #include <nfs/nfsv2.h>

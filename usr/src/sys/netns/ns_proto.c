@@ -4,17 +4,18 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ns_proto.c	7.5 (Berkeley) %G%
+ *	@(#)ns_proto.c	7.6 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "socket.h"
-#include "protosw.h"
-#include "domain.h"
-#include "mbuf.h"
-#include "net/radix.h"
+#include <sys/param.h>
+#include <sys/socket.h>
+#include <sys/protosw.h>
+#include <sys/domain.h>
+#include <sys/mbuf.h>
 
-#include "ns.h"
+#include <net/radix.h>
+
+#include <netns/ns.h>
 
 /*
  * NS protocol family: IDP, ERR, PE, SPP, ROUTE.

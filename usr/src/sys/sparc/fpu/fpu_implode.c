@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fpu_implode.c	7.2 (Berkeley) %G%
+ *	@(#)fpu_implode.c	7.3 (Berkeley) %G%
  *
  * from: $Header: fpu_implode.c,v 1.4 92/06/17 05:41:33 torek Exp $
  */
@@ -23,14 +23,14 @@
  * `packed binary' format.
  */
 
-#include "sys/types.h"
+#include <sys/types.h>
 
-#include "machine/ieee.h"
-#include "machine/instr.h"
-#include "machine/reg.h"
+#include <machine/ieee.h>
+#include <machine/instr.h>
+#include <machine/reg.h>
 
-#include "fpu_arith.h"
-#include "fpu_emu.h"
+#include <sparc/fpu/fpu_arith.h>
+#include <sparc/fpu/fpu_emu.h>
 
 /*
  * Round a number (algorithm from Motorola MC68882 manual, modified for

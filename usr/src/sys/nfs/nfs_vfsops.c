@@ -7,36 +7,36 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	7.47 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.48 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "conf.h"
-#include "ioctl.h"
-#include "signal.h"
-#include "proc.h"
-#include "namei.h"
-#include "vnode.h"
-#include "kernel.h"
-#include "mount.h"
-#include "buf.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "systm.h"
+#include <sys/param.h>
+#include <sys/conf.h>
+#include <sys/ioctl.h>
+#include <sys/signal.h>
+#include <sys/proc.h>
+#include <sys/namei.h>
+#include <sys/vnode.h>
+#include <sys/kernel.h>
+#include <sys/mount.h>
+#include <sys/buf.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/systm.h>
 
-#include "net/if.h"
-#include "net/route.h"
-#include "netinet/in.h"
+#include <net/if.h>
+#include <net/route.h>
+#include <netinet/in.h>
 
-#include "rpcv2.h"
-#include "nfsv2.h"
-#include "nfsnode.h"
-#include "nfsmount.h"
-#include "nfs.h"
-#include "xdr_subs.h"
-#include "nfsm_subs.h"
-#include "nfsdiskless.h"
-#include "nqnfs.h"
+#include <nfs/rpcv2.h>
+#include <nfs/nfsv2.h>
+#include <nfs/nfsnode.h>
+#include <nfs/nfsmount.h>
+#include <nfs/nfs.h>
+#include <nfs/xdr_subs.h>
+#include <nfs/nfsm_subs.h>
+#include <nfs/nfsdiskless.h>
+#include <nfs/nqnfs.h>
 
 /*
  * nfs vfs operations.

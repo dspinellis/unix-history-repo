@@ -4,23 +4,23 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ns_pcb.c	7.11 (Berkeley) %G%
+ *	@(#)ns_pcb.c	7.12 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "errno.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "protosw.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/errno.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/protosw.h>
 
-#include "../net/if.h"
-#include "../net/route.h"
+#include <net/if.h>
+#include <net/route.h>
 
-#include "ns.h"
-#include "ns_if.h"
-#include "ns_pcb.h"
+#include <netns/ns.h>
+#include <netns/ns_if.h>
+#include <netns/ns_pcb.h>
 
 struct	ns_addr zerons_addr;
 

@@ -4,22 +4,22 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	7.30 (Berkeley) %G%
+ *	@(#)rtsock.c	7.31 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "proc.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "domain.h"
-#include "protosw.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
 
-#include "af.h"
-#include "if.h"
-#include "route.h"
-#include "raw_cb.h"
+#include <net/af.h>
+#include <net/if.h>
+#include <net/route.h>
+#include <net/raw_cb.h>
 
 struct	sockaddr route_dst = { 2, PF_ROUTE, };
 struct	sockaddr route_src = { 2, PF_ROUTE, };
@@ -634,7 +634,7 @@ rt_newaddrmsg(cmd, ifa, error, rt)
 	}
 }
 
-#include "kinfo.h"
+#include <sys/kinfo.h>
 /*
  * This is used in dumping the kernel table via getkinfo().
  */

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clnp_timer.c	7.5 (Berkeley) %G%
+ *	@(#)clnp_timer.c	7.6 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -36,21 +36,21 @@ SOFTWARE.
 /* $Header: clnp_timer.c,v 4.2 88/06/29 14:59:05 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/clnp_timer.c,v $ */
 
-#include "param.h"
-#include "mbuf.h"
-#include "domain.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "errno.h"
+#include <sys/param.h>
+#include <sys/mbuf.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/errno.h>
 
-#include "../net/if.h"
-#include "../net/route.h"
+#include <net/if.h>
+#include <net/route.h>
 
-#include "iso.h"
-#include "clnp.h"
-#include "clnp_stat.h"
-#include "argo_debug.h"
+#include <netiso/iso.h>
+#include <netiso/clnp.h>
+#include <netiso/clnp_stat.h>
+#include <netiso/argo_debug.h>
 
 extern struct clnp_fragl *clnp_frags;
 

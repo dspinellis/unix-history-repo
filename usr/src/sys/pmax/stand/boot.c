@@ -7,16 +7,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)boot.c	7.3 (Berkeley) %G%
+ *	@(#)boot.c	7.4 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "reboot.h"
-#include "exec.h"
+#include <sys/param.h>
+#include <sys/reboot.h>
+#include <sys/exec.h>
 
 #ifndef TEST
 #define DEF_MONFUNCS
-#include "../include/machMon.h"
+#include <machine/machMon.h>
 #endif
 
 char	line[1024];

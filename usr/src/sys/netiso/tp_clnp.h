@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_clnp.h	7.3 (Berkeley) %G%
+ *	@(#)tp_clnp.h	7.4 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -48,19 +48,19 @@ SOFTWARE.
 #define __TP_CLNP__
 
 #ifndef SOCK_STREAM
-#include "socket.h"
+#include <sys/socket.h>
 #endif SOCK_STREAM
 
 #ifndef RTFREE
-#include "../net/route.h"
+#include <net/route.h>
 #endif
-#include "../netiso/iso.h"
-#include "../netiso/clnp.h"
-#include "../netiso/iso_pcb.h"
+#include <netiso/iso.h>
+#include <netiso/clnp.h>
+#include <netiso/iso_pcb.h>
 #ifndef IF_DEQUEUE
-#include "../net/if.h"
+#include <net/if.h>
 #endif
-#include "../netiso/iso_var.h"
+#include <netiso/iso_var.h>
 
 struct isopcb tp_isopcb;	
 	/* queue of active inpcbs for tp ; for tp with dod ip */

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_timer.c	7.15 (Berkeley) %G%
+ *	@(#)tp_timer.c	7.16 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -41,22 +41,22 @@ SOFTWARE.
  *
  */
 
-#include "param.h"
-#include "systm.h"
-#include "time.h"
-#include "malloc.h"
-#include "protosw.h"
-#include "socket.h"
-#include "kernel.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/time.h>
+#include <sys/malloc.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/kernel.h>
 
-#include "argo_debug.h"
-#include "tp_param.h"
-#include "tp_timer.h"
-#include "tp_stat.h"
-#include "tp_pcb.h"
-#include "tp_tpdu.h"
-#include "tp_trace.h"
-#include "tp_seq.h"
+#include <netiso/argo_debug.h>
+#include <netiso/tp_param.h>
+#include <netiso/tp_timer.h>
+#include <netiso/tp_stat.h>
+#include <netiso/tp_pcb.h>
+#include <netiso/tp_tpdu.h>
+#include <netiso/tp_trace.h>
+#include <netiso/tp_seq.h>
 
 struct	tp_ref *tp_ref;
 int	tp_rttdiv, tp_rttadd, N_TPREF = 127;

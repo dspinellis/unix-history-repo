@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_trace.c	7.4 (Berkeley) %G%
+ *	@(#)tp_trace.c	7.5 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -48,22 +48,21 @@ SOFTWARE.
 
 #define TP_TRACEFILE
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "types.h"
-#include "time.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/time.h>
 
-#include "tp_param.h"
-#include "tp_timer.h"
-#include "tp_stat.h"
-#include "tp_param.h"
-#include "tp_ip.h"
-#include "tp_pcb.h"
-#include "tp_tpdu.h"
-#include "argo_debug.h"
-#include "tp_trace.h"
+#include <netiso/tp_param.h>
+#include <netiso/tp_timer.h>
+#include <netiso/tp_stat.h>
+#include <netiso/tp_param.h>
+#include <netiso/tp_ip.h>
+#include <netiso/tp_pcb.h>
+#include <netiso/tp_tpdu.h>
+#include <netiso/argo_debug.h>
+#include <netiso/tp_trace.h>
 
 #ifdef TPPT
 static tp_seq = 0;

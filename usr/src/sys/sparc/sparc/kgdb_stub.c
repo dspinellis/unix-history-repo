@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kgdb_stub.c	7.2 (Berkeley) %G%
+ *	@(#)kgdb_stub.c	7.3 (Berkeley) %G%
  *
  * from: $Header: kgdb_stub.c,v 1.11 92/06/17 05:22:07 torek Exp $
  */
@@ -27,19 +27,19 @@
 static char rcsid[] = "$Header: kgdb_stub.c,v 1.11 92/06/17 05:22:07 torek Exp $";
 #endif
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/buf.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/buf.h>
 
-#include "machine/psl.h"
-#include "machine/pte.h"
-#include "machine/reg.h"
-#include "machine/trap.h"
+#include <machine/psl.h>
+#include <machine/pte.h>
+#include <machine/reg.h>
+#include <machine/trap.h>
 
-#include "asm.h"
-#include "ctlreg.h"
-#include "kgdb_proto.h"
-#include "machine/remote-sl.h"
+#include <sparc/sparc/asm.h>
+#include <sparc/sparc/ctlreg.h>
+#include <sparc/sparc/kgdb_proto.h>
+#include <machine/remote-sl.h>
 
 #ifndef KGDBDEV
 #define KGDBDEV -1

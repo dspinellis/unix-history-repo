@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_param.h	7.5 (Berkeley) %G%
+ *	@(#)vm_param.h	7.6 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -43,11 +43,7 @@
 #ifndef	_VM_PARAM_
 #define	_VM_PARAM_
 
-#ifdef KERNEL
-#include "machine/vmparam.h"
-#else
 #include <machine/vmparam.h>
-#endif
 
 /*
  * This belongs in types.h, but breaks too many existing programs.

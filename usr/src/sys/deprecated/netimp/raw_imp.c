@@ -4,25 +4,25 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)raw_imp.c	7.6 (Berkeley) %G%
+ *	@(#)raw_imp.c	7.7 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "protosw.h"
-#include "socketvar.h"
-#include "errno.h"
+#include <sys/param.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/protosw.h>
+#include <sys/socketvar.h>
+#include <sys/errno.h>
 
-#include "../net/if.h"
-#include "../net/route.h"
-#include "../net/raw_cb.h"
+#include <net/if.h>
+#include <net/route.h>
+#include <net/raw_cb.h>
 
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/in_var.h"
-#include "../netinet/in_pcb.h"
-#include "if_imp.h"
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_var.h>
+#include <netinet/in_pcb.h>
+#include <netimp/if_imp.h>
 
 /*
  * Raw interface to IMP.

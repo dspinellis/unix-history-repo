@@ -13,23 +13,23 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)locore.s	7.3 (Berkeley) %G%
+ *	@(#)locore.s	7.4 (Berkeley) %G%
  *
  * from: $Header: locore.s,v 1.46 92/08/05 04:17:58 torek Exp $
  */
 
 #define	LOCORE
 #include "assym.s"
-#include "ctlreg.h"
-#include "intreg.h"
-#include "timerreg.h"
+#include <sparc/sparc/ctlreg.h>
+#include <sparc/sparc/intreg.h>
+#include <sparc/sparc/timerreg.h>
 #ifdef notyet
 #include "zsaddr.h"
-#include "../dev/zsreg.h"
+#include <sparc/dev/zsreg.h>
 #endif
-#include "machine/psl.h"
-#include "machine/signal.h"
-#include "machine/trap.h"
+#include <machine/psl.h>
+#include <machine/signal.h>
+#include <machine/trap.h>
 
 /*
  * GNU assembler does not understand `.empty' directive; Sun assembler

@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fpu_sqrt.c	7.2 (Berkeley) %G%
+ *	@(#)fpu_sqrt.c	7.3 (Berkeley) %G%
  *
  * from: $Header: fpu_sqrt.c,v 1.2 92/06/17 05:41:34 torek Exp $
  */
@@ -22,12 +22,12 @@
  * Perform an FPU square root (return sqrt(x)).
  */
 
-#include "sys/types.h"
+#include <sys/types.h>
 
-#include "machine/reg.h"
+#include <machine/reg.h>
 
-#include "fpu_arith.h"
-#include "fpu_emu.h"
+#include <sparc/fpu/fpu_arith.h>
+#include <sparc/fpu/fpu_emu.h>
 
 /*
  * Our task is to calculate the square root of a floating point number x0.

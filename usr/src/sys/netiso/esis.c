@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)esis.c	7.21 (Berkeley) %G%
+ *	@(#)esis.c	7.22 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -36,31 +36,30 @@ SOFTWARE.
 
 #ifdef ISO
 
-#include "types.h"
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "domain.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "errno.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/errno.h>
+#include <sys/kernel.h>
 
-#include "../net/if.h"
-#include "../net/if_dl.h"
-#include "../net/route.h"
-#include "../net/raw_cb.h"
+#include <net/if.h>
+#include <net/if_dl.h>
+#include <net/route.h>
+#include <net/raw_cb.h>
 
-#include "iso.h"
-#include "iso_pcb.h"
-#include "iso_var.h"
-#include "iso_snpac.h"
-#include "clnl.h"
-#include "clnp.h"
-#include "clnp_stat.h"
-#include "esis.h"
-#include "argo_debug.h"
-#include "kernel.h"
+#include <netiso/iso.h>
+#include <netiso/iso_pcb.h>
+#include <netiso/iso_var.h>
+#include <netiso/iso_snpac.h>
+#include <netiso/clnl.h>
+#include <netiso/clnp.h>
+#include <netiso/clnp_stat.h>
+#include <netiso/esis.h>
+#include <netiso/argo_debug.h>
 
 /*
  *	Global variables to esis implementation

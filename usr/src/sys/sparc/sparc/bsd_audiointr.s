@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bsd_audiointr.s	7.2 (Berkeley) %G%
+ *	@(#)bsd_audiointr.s	7.3 (Berkeley) %G%
  *
  * from: $Header: bsd_audiointr.s,v 1.4 92/07/03 23:24:17 mccanne Exp $ (LBL)
  */
@@ -29,7 +29,7 @@
 #define IE_L4 IR_SOFT_INT4
 #else
 /* 4.4BSD */
-#include "intreg.h"
+#include <sparc/sparc/intreg.h>
 /* XXX this goes in a header file -- currently, it's hidden in locore.s */
 #define INTREG_ADDR 0xf8002000
 #endif

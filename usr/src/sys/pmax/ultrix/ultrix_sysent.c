@@ -11,15 +11,15 @@
  *
  * from: Utah $Hdr: hpux_sysent.c 1.1 90/07/09$
  *
- *	@(#)ultrix_sysent.c	7.4 (Berkeley) %G%
+ *	@(#)ultrix_sysent.c	7.5 (Berkeley) %G%
  */
 
 /*
  * System call switch table.
  */
 
-#include "param.h"
-#include "systm.h"
+#include <sys/param.h>
+#include <sys/systm.h>
 
 int	nosys(),notimp();
 

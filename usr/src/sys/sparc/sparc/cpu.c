@@ -13,17 +13,17 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.c	7.2 (Berkeley) %G%
+ *	@(#)cpu.c	7.3 (Berkeley) %G%
  *
  * from: $Header: cpu.c,v 1.8 92/06/17 05:22:01 torek Exp $ (LBL)
  */
 
-#include "sys/param.h"
-#include "sys/device.h"
+#include <sys/param.h>
+#include <sys/device.h>
 
-#include "machine/autoconf.h"
-#include "machine/cpu.h"
-#include "machine/reg.h"
+#include <machine/autoconf.h>
+#include <machine/cpu.h>
+#include <machine/reg.h>
 
 static char *psrtoname();
 static char *fsrtoname();

@@ -4,32 +4,32 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spp_debug.c	7.7 (Berkeley) %G%
+ *	@(#)spp_debug.c	7.8 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "protosw.h"
-#include "errno.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/protosw.h>
+#include <sys/errno.h>
 
-#include "../net/route.h"
-#include "../net/if.h"
-#include "../netinet/tcp_fsm.h"
+#include <net/route.h>
+#include <net/if.h>
+#include <netinet/tcp_fsm.h>
 
-#include "ns.h"
-#include "ns_pcb.h"
-#include "idp.h"
-#include "idp_var.h"
-#include "sp.h"
-#include "spidp.h"
+#include <netns/ns.h>
+#include <netns/ns_pcb.h>
+#include <netns/idp.h>
+#include <netns/idp_var.h>
+#include <netns/sp.h>
+#include <netns/spidp.h>
 #define SPPTIMERS
-#include "spp_timer.h"
-#include "spp_var.h"
+#include <netns/spp_timer.h>
+#include <netns/spp_var.h>
 #define	SANAMES
-#include "spp_debug.h"
+#include <netns/spp_debug.h>
 
 int	sppconsdebug = 0;
 /*

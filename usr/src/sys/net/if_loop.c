@@ -4,44 +4,44 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_loop.c	7.17 (Berkeley) %G%
+ *	@(#)if_loop.c	7.18 (Berkeley) %G%
  */
 
 /*
  * Loopback interface driver for protocol testing and timing.
  */
 
-#include "param.h"
-#include "systm.h"
-#include "kernel.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "errno.h"
-#include "ioctl.h"
-#include "machine/cpu.h"
-#include "time.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/errno.h>
+#include <sys/ioctl.h>
+#include <sys/time.h>
+#include <machine/cpu.h>
 
-#include "if.h"
-#include "if_types.h"
-#include "netisr.h"
-#include "route.h"
-#include "bpf.h"
+#include <net/if.h>
+#include <net/if_types.h>
+#include <net/netisr.h>
+#include <net/route.h>
+#include <net/bpf.h>
 
 #ifdef	INET
-#include "netinet/in.h"
-#include "netinet/in_systm.h"
-#include "netinet/in_var.h"
-#include "netinet/ip.h"
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_var.h>
+#include <netinet/ip.h>
 #endif
 
 #ifdef NS
-#include "netns/ns.h"
-#include "netns/ns_if.h"
+#include <netns/ns.h>
+#include <netns/ns_if.h>
 #endif
 
 #ifdef ISO
-#include "netiso/iso.h"
-#include "netiso/iso_var.h"
+#include <netiso/iso.h>
+#include <netiso/iso_var.h>
 #endif
 
 #include "bpfilter.h"

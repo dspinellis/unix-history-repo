@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clock.c	7.2 (Berkeley) %G%
+ *	@(#)clock.c	7.3 (Berkeley) %G%
  *
  * from: $Header: clock.c,v 1.14 92/07/07 05:34:08 leres Exp $ (LBL)
  */
@@ -23,25 +23,25 @@
  * and includes the timer register functions too.
  */
 
-#include "sys/param.h"
-#include "sys/kernel.h"
-#include "sys/device.h"
-#include "sys/proc.h"
-#include "sys/resourcevar.h"
+#include <sys/param.h>
+#include <sys/kernel.h>
+#include <sys/device.h>
+#include <sys/proc.h>
+#include <sys/resourcevar.h>
 #ifdef GPROF
-#include "sys/gmon.h"
+#include <sys/gmon.h>
 #endif
 
-#include "vm/vm.h"
+#include <vm/vm.h>
 
-#include "machine/autoconf.h"
+#include <machine/autoconf.h>
 #ifdef notdef
-#include "machine/psl.h"
+#include <machine/psl.h>
 #endif
 
-#include "clockreg.h"
-#include "intreg.h"
-#include "timerreg.h"
+#include <sparc/sparc/clockreg.h>
+#include <sparc/sparc/intreg.h>
+#include <sparc/sparc/timerreg.h>
 
 /*
  * Statistics clock interval and variance, in usec.  Variance must be a

@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.h	7.2 (Berkeley) %G%
+ *	@(#)pmap.h	7.3 (Berkeley) %G%
  *
  * from: $Header: pmap.h,v 1.9 92/06/17 06:10:22 torek Exp $
  */
@@ -21,7 +21,7 @@
 #ifndef	_SPARC_PMAP_H_
 #define _SPARC_PMAP_H_
 
-#include "machine/pte.h"
+#include <machine/pte.h>
 
 /*
  * Pmap structure.

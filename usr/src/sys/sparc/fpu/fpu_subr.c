@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fpu_subr.c	7.2 (Berkeley) %G%
+ *	@(#)fpu_subr.c	7.3 (Berkeley) %G%
  *
  * from: $Header: fpu_subr.c,v 1.2 92/06/17 05:41:35 torek Exp $
  */
@@ -22,12 +22,12 @@
  * FPU subroutines.
  */
 
-#include "sys/types.h"
+#include <sys/types.h>
 
-#include "machine/reg.h"
+#include <machine/reg.h>
 
-#include "fpu_arith.h"
-#include "fpu_emu.h"
+#include <sparc/fpu/fpu_arith.h>
+#include <sparc/fpu/fpu_emu.h>
 
 /*
  * Shift the given number right rsh bits.  Any bits that `fall off' will get

@@ -13,34 +13,35 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	7.2 (Berkeley) %G%
+ *	@(#)genassym.c	7.3 (Berkeley) %G%
  *
  * from: $Header: genassym.c,v 1.12 92/06/28 10:13:01 mccanne $ (LBL)
  */
 
-#include "sys/param.h"
-#include "sys/buf.h"
-#include "sys/proc.h"
-#include "sys/map.h"
-#include "sys/proc.h"
-#include "sys/mbuf.h"
-#include "sys/msgbuf.h"
-#include "sys/syscall.h"
-#include "sys/user.h"
-#include "machine/pmap.h"
-#include "machine/psl.h"
+#include <sys/param.h>
+#include <sys/buf.h>
+#include <sys/proc.h>
+#include <sys/map.h>
+#include <sys/proc.h>
+#include <sys/mbuf.h>
+#include <sys/msgbuf.h>
+#include <sys/syscall.h>
+#include <sys/user.h>
+
+#include <machine/pmap.h>
+#include <machine/psl.h>
 
 #ifdef notyet
-#include "../dev/zsreg.h"
-#include "../dev/zsvar.h"
+#include <sparc/dev/zsreg.h>
+#include <sparc/dev/zsvar.h>
 #endif
-#include "../dev/bsd_audioreg.h"
-#include "../dev/bsd_audiovar.h"
+#include <sparc/dev/bsd_audioreg.h>
+#include <sparc/dev/bsd_audiovar.h>
 
-#include "intreg.h"
+#include <sparc/sparc/intreg.h>
 
 #include <stdio.h>
-/*nclude <stddef.h>*/
+/*#include <stddef.h>*/
 
 #ifndef offsetof
 #define	offsetof(str, mem) ((size_t)&((str *)0)->mem)

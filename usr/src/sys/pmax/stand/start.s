@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)start.s	7.3 (Berkeley) %G%
+ *	@(#)start.s	7.4 (Berkeley) %G%
  *
  * start.s -
  *
@@ -25,8 +25,8 @@
  *	v 1.1 90/02/16 16:19:39 shirriff Exp $ SPRITE (DECWRL)
  */
 
-#include "../include/regdef.h"
-#include "../include/machConst.h"
+#include <machine/regdef.h>
+#include <machine/machConst.h>
 
 /*
  * Amount to take off of the stack for the benefit of the debugger.

@@ -13,23 +13,23 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_machdep.c	7.2 (Berkeley) %G%
+ *	@(#)sys_machdep.c	7.3 (Berkeley) %G%
  *
  * from: $Header: sys_machdep.c,v 1.5 92/07/10 00:29:56 torek Exp $ (LBL)
  */
 
 #ifdef TRACE
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/ioctl.h"
-#include "sys/file.h"
-#include "sys/time.h"
-#include "sys/proc.h"
-#include "sys/uio.h"
-#include "sys/kernel.h"
-#include "sys/mtio.h"
-#include "sys/buf.h"
-#include "sys/trace.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/ioctl.h>
+#include <sys/file.h>
+#include <sys/time.h>
+#include <sys/proc.h>
+#include <sys/uio.h>
+#include <sys/kernel.h>
+#include <sys/mtio.h>
+#include <sys/buf.h>
+#include <sys/trace.h>
 
 int	nvualarm;
 

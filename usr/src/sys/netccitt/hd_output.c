@@ -9,25 +9,25 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hd_output.c	7.7 (Berkeley) %G%
+ *	@(#)hd_output.c	7.8 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "domain.h"
-#include "socket.h"
-#include "syslog.h"
-#include "protosw.h"
-#include "errno.h"
-#include "time.h"
-#include "kernel.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/domain.h>
+#include <sys/socket.h>
+#include <sys/syslog.h>
+#include <sys/protosw.h>
+#include <sys/errno.h>
+#include <sys/time.h>
+#include <sys/kernel.h>
 
-#include "../net/if.h"
+#include <net/if.h>
 
-#include "hdlc.h"
-#include "hd_var.h"
-#include "x25.h"
+#include <netccitt/hdlc.h>
+#include <netccitt/hd_var.h>
+#include <netccitt/x25.h>
 
 /*
  *      HDLC OUTPUT INTERFACE

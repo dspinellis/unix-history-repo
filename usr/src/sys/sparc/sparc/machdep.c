@@ -13,42 +13,42 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.3 (Berkeley) %G%
+ *	@(#)machdep.c	7.4 (Berkeley) %G%
  *
  * from: $Header: machdep.c,v 1.33 92/08/05 04:20:03 torek Exp $
  */
 
-#include "param.h"
-#include "proc.h"
-#include "user.h"
-#include "map.h"
-#include "buf.h"
-#include "device.h"
-#include "reboot.h"
-#include "systm.h"
-#include "conf.h"
-#include "file.h"
-#include "clist.h"
-#include "callout.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "mount.h"
-#include "msgbuf.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/user.h>
+#include <sys/map.h>
+#include <sys/buf.h>
+#include <sys/device.h>
+#include <sys/reboot.h>
+#include <sys/systm.h>
+#include <sys/conf.h>
+#include <sys/file.h>
+#include <sys/clist.h>
+#include <sys/callout.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/mount.h>
+#include <sys/msgbuf.h>
 #ifdef SYSVSHM
-#include "shm.h"
+#include <sys/shm.h>
 #endif
-#include "exec.h"
+#include <sys/exec.h>
 
-#include "machine/autoconf.h"
-#include "machine/frame.h"
-#include "machine/cpu.h"
+#include <machine/autoconf.h>
+#include <machine/frame.h>
+#include <machine/cpu.h>
 
-#include "vm/vm_kern.h"
-#include "vm/vm_page.h"
+#include <vm/vm_kern.h>
+#include <vm/vm_page.h>
 
-#include "asm.h"
-#include "cache.h"
-#include "vaddrs.h"
+#include <sparc/sparc/asm.h>
+#include <sparc/sparc/cache.h>
+#include <sparc/sparc/vaddrs.h>
 
 vm_map_t buffer_map;
 extern vm_offset_t avail_end;
@@ -604,7 +604,7 @@ dumpconf()
 
 #ifdef DUMPMMU
 /* XXX */
-#include "ctlreg.h"
+#include <sparc/sparc/ctlreg.h>
 #define	getpte(va)		lda(va, ASI_PTE)
 #define	setsegmap(va, pmeg)	stba(va, ASI_SEGMAP, pmeg)
 

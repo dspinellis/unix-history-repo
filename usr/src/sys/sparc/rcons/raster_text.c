@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)raster_text.c	7.1 (Berkeley) %G%
+ *	@(#)raster_text.c	7.2 (Berkeley) %G%
  *
  * from: $Header: raster_text.c,v 1.15 92/06/17 08:14:45 torek Exp $
  */
@@ -18,15 +18,15 @@
  */
 
 #ifdef KERNEL
-#include "sys/param.h"
-#include "raster.h"
+#include <sys/param.h>
+#include <sparc/rcons/raster.h>
 #ifdef COLORFONT_CACHE
-#include "sys/malloc.h"
+#include <sys/malloc.h>
 #define NEW(size) malloc(size, M_DEVBUF, M_NOWAIT)
 #endif
 #else
 #include <sys/types.h>
-#include "raster.h"
+#include <sparc/rcons/raster.h>
 #ifdef COLORFONT_CACHE
 #include <malloc.h>
 #define NEW(size) malloc(size)

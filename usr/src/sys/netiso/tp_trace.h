@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_trace.h	7.6 (Berkeley) %G%
+ *	@(#)tp_trace.h	7.7 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -63,13 +63,13 @@ SOFTWARE.
 #define TPPTdriver	14
 #define TPPTtpduout	15
 
-#include "../netiso/tp_pcb.h"
+#include <netiso/tp_pcb.h>
 
 /* this #if is to avoid lint */
 
 #if  defined(TP_TRACEFILE)||!defined(KERNEL)
 
-#include "../netiso/tp_tpdu.h"
+#include <netiso/tp_tpdu.h>
 
 #define TPTRACE_STRLEN 50
 
