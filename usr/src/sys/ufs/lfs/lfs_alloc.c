@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.36 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.37 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -60,16 +60,16 @@ lfs_valloc(pvp, notused, cred, vpp)
 	printf("lfs_ialloc: allocate inode %d\n", new_ino);
 #endif
 
-	/* Read the appropriate block from the ifile. */
+	/*
+	 * Remove the inode from the free list and write the free list
+	 * back.
+	 */
 	LFS_IENTRY(ifp, fs, new_ino, bp);
-
 	if (ifp->if_daddr != LFS_UNUSED_DADDR)
 		panic("lfs_ialloc: inuse inode on the free list");
-
-	/* Remove from the free list, set the access time, write it back. */
 	fs->lfs_free = ifp->if_nextfree;
 	ifp->if_st_atime = time.tv_sec;
-	lfs_bwrite(bp);
+	LFS_IWRITE(fs, bp);
 
 	/* Create a vnode to associate with the inode. */
 	if (error = lfs_vcreate(pvp->v_mount, new_ino, &vp))
@@ -155,16 +155,15 @@ lfs_vfree(vp, notused1, notused2)
 	ino = ip->i_number;
 
 	/*
-	 * Read the appropriate block from the ifile.  Set the inode entry to
-	 * unused, increment its version number and link it into the free chain.
+	 * Set the ifile's inode entry to unused, increment its version number
+	 * and link it into the free chain.
 	 */
 	LFS_IENTRY(ifp, fs, ino, bp);
 	ifp->if_daddr = LFS_UNUSED_DADDR;
 	++ifp->if_version;
 	ifp->if_nextfree = fs->lfs_free;
 	fs->lfs_free = ino;
-
-	lfs_bwrite(bp);
+	LFS_IWRITE(fs, bp);
 
 	/* Set superblock modified bit and decrement file count. */
 	fs->lfs_fmod = 1;
