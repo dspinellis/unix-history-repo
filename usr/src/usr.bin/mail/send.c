@@ -12,16 +12,16 @@
  * Mail to others.
  */
 
-static char *SccsId = "@(#)send.c	2.2 %G%";
+static char *SccsId = "@(#)send.c	2.3 %G%";
 
 /*
  * Send message described by the passed pointer to the
  * passed output buffer.  Return -1 on error, but normally
  * the number of lines written.  Adjust the status: field
- * if need be.
+ * if need be.  If doign is set, suppress ignored header fields.
  */
 
-send(mailp, obuf)
+send(mailp, obuf, doign)
 	struct message *mailp;
 	FILE *obuf;
 {
@@ -29,13 +29,15 @@ send(mailp, obuf)
 	register int t;
 	unsigned int c;
 	FILE *ibuf;
-	char line[LINESIZE];
-	int lc, ishead, infld, fline;
+	char line[LINESIZE], field[BUFSIZ];
+	int lc, ishead, infld, fline, dostat;
+	char *cp, *cp2;
 
 	mp = mailp;
 	ibuf = setinput(mp);
 	c = msize(mp);
-	ishead = (mailp->m_flag & MSTATUS) != 0;
+	ishead = 1;
+	dostat = 1;
 	infld = 0;
 	fline = 1;
 	lc = 0;
@@ -44,30 +46,75 @@ send(mailp, obuf)
 		c -= strlen(line);
 		lc++;
 		if (ishead) {
+			/* 
+			 * First line is the From line, so no headers
+			 * there to worry about
+			 */
 			if (fline) {
 				fline = 0;
 				goto writeit;
 			}
+			/*
+			 * If line is blank, we've reached end of
+			 * headers, so force out status: field
+			 * and note that we are no longer in header
+			 * fields
+			 */
 			if (line[0] == '\n') {
-				statusput(mailp, obuf);
+				if (dostat) {
+					statusput(mailp, obuf, doign);
+					dostat = 0;
+				}
 				ishead = 0;
 				goto writeit;
 			}
+			/*
+			 * If this line is a continuation
+			 * of a previous header field, just echo it.
+			 */
 			if (isspace(line[0]) && infld)
 				goto writeit;
 			infld = 0;
+			/*
+			 * If we are no longer looking at real
+			 * header lines, force out status:
+			 * This happens in uucp style mail where
+			 * there are no headers at all.
+			 */
 			if (!headerp(line)) {
-				statusput(mailp, obuf);
+				if (dostat) {
+					statusput(mailp, obuf, doign);
+					dostat = 0;
+				}
 				putc('\n', obuf);
 				ishead = 0;
 				goto writeit;
 			}
 			infld++;
+			/*
+			 * We are looking at a header line.
+			 * See if it is the status: field,
+			 * and if it is, print the real status: field
+			 */
 			if (icisname(line, "status", 6)) {
-				statusput(mailp, obuf);
-				ishead = 0;
+				if (dostat) {
+					statusput(mailp, obuf, doign);
+					dostat = 0;
+				}
 				continue;
 			}
+			/*
+			 * Pick up the header field.
+			 * If it is an ignored field and
+			 * we care about such things, skip it.
+			 */
+			cp = line;
+			cp2 = field;
+			while (*cp && *cp != ':' && !isspace(*cp))
+				*cp2++ = *cp++;
+			*cp2 = 0;
+			if (doign && isign(field))
+				continue;
 		}
 writeit:
 		fputs(line, obuf);
@@ -98,14 +145,16 @@ headerp(line)
 
 /*
  * Output a reasonable looking status field.
+ * But if "status" is ignored and doign, forget it.
  */
-
-statusput(mp, obuf)
+statusput(mp, obuf, doign)
 	register struct message *mp;
 	register FILE *obuf;
 {
 	char statout[3];
 
+	if (doign && isign("status"))
+		return;
 	if ((mp->m_flag & (MNEW|MREAD)) == MNEW)
 		return;
 	if (mp->m_flag & MREAD)
