@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.46 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.47 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -138,11 +138,11 @@ setdefaults()
 	WkRecipFact = 1000;
 	WkClassFact = 1800;
 	WkTimeFact = 9000;
-	FileMode = 0644;
+	FileMode = (getuid() != geteuid()) ? 0644 : 0600;
 	DefUid = 1;
 	DefGid = 1;
 	CheckpointInterval = 10;
-	MaxHopCount = MAXHOP;
+	MaxHopCount = 17;
 	SendMode = SM_FORK;
 	ErrorMode = EM_PRINT;
 	EightBit = FALSE;

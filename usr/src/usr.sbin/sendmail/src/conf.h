@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	5.31 (Berkeley) %G%
+ *	@(#)conf.h	5.32 (Berkeley) %G%
  */
 
 /*
@@ -20,16 +20,19 @@
 # define MAXLINE	1024		/* max line length */
 # define MAXNAME	256		/* max length of a name */
 # define MAXPV		40		/* max # of parms to mailers */
-# define MAXHOP		17		/* max value of HopCount */
 # define MAXATOM	100		/* max atoms per address */
 # define MAXMAILERS	25		/* maximum mailers known to system */
-# define MAXRWSETS	30		/* max # of sets of rewriting rules */
+# define MAXRWSETS	100		/* max # of sets of rewriting rules */
 # define MAXPRIORITIES	25		/* max values for Precedence: field */
 # define MAXTRUST	30		/* maximum number of trusted users */
 # define MAXUSERENVIRON	40		/* max # of items in user environ */
-# define QUEUESIZE	600		/* max # of jobs per queue run */
-# define MAXMXHOSTS	10		/* max # of MX records */
+# define MAXMXHOSTS	20		/* max # of MX records */
 # define SMTPLINELIM	990		/* maximum SMTP line length */
+
+# ifndef QUEUESIZE
+# define QUEUESIZE	1000		/* max # of jobs per queue run */
+# endif
+
 # ifndef FORK
 # define FORK		vfork		/* function to call to fork mailer */
 # endif
@@ -52,7 +55,7 @@
 # ifdef NEWDB
 # define USERDB		1	/* look in user database (requires NEWDB) */
 # define BTREE_MAP	1	/* enable BTREE mapping type (requires NEWDB) */
-/*# define HASH_MAP	1	/* enable HASH mapping type (requires NEWDB) */
+# define HASH_MAP	1	/* enable HASH mapping type (requires NEWDB) */
 # endif
 
 # ifdef NDBM
