@@ -1,0 +1,49 @@
+#
+#	This is correct for the
+#		XENIX (empty) 5.0 iAPX286 1 1006 (empty)
+#	version. There are so many versions of xenix out there
+#	that it is probabably wrong for yours. At least this should give
+#	you a starting point.
+#
+rm -f Makefile
+cp Makefile.dst Makefile
+chmod u+w Makefile
+ed - Makefile  <<'EOF'
+g/^#USG /s///
+g/^#V7 /d
+g/^#VMS /d
+g/^#BSD4_[123] /d
+g/#NOTVMS/s/#NOTVMS.*//
+g/^MISC *=/s/$/ uname.o/
+g/^UUXFLAGS/s//UUXFLAGS =/
+g/^IBMFLAGS/s/$/ -M2l -LARGE -DM_XENIX/
+g/^LIBS/s/$/ -lx -ldbm/
+g/termlib/s//curses -ltermcap/
+g/^LFLAGS =/s/$/ -F 8000 -m ${@}.map/
+g/rm -f $(COMMANDS) $(OTHERS) \*.o a.out/s/a.out/\*.map a.out/
+g/-o inews/s/-o/-m inews.map -F 5000 -o/
+g/-o readnews/s/-o/-m readnews.map -F 3000 -o/
+g/-o vnews /s/-o/-F 5000 -m vnews.map -o /
+g/-o checknews/s/-o/-F E000 -o/
+g/-o expire/s/-o/-F A000 -o/
+g/-Dvfork=fork/s///
+g/-Dindex=strchr/s///
+g/-Drindex=strrchr/s///
+g/^SCCSID/s/^/#/
+w
+q
+EOF
+
+rm -f defs.h
+cp defs.dist defs.h
+chmod u+w defs.h
+ed - defs.h <<'EOF'
+g/#define TMAIL/s//\/\* #define TMAIL/
+g/\/usr\/ucb\/more/s//\/usr\/bin\/more/
+g/uux - -r -z/s//uux - /
+g/uucpname/s//systemid/
+g/\/\* #define LOCKF/s//#define LOCKF/
+g/\/\* #define UUNAME/s/...//
+w
+q
+EOF
