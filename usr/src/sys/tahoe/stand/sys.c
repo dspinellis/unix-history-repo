@@ -3,18 +3,18 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	sys.c	1.2	86/12/18
+ *	sys.c	1.3	87/04/02
  *
- * from	@(#)sys.c	7.1 (Berkeley) 6/5/86
+ * from vax	@(#)sys.c	7.1 (Berkeley) 6/5/86
  */
-
-#include "../machine/mtpr.h"
 
 #include "param.h"
 #include "inode.h"
 #include "fs.h"
 #include "dir.h"
+#include "reboot.h"
 #include "saio.h"
+#include "../machine/mtpr.h"
 
 ino_t	dlook();
 
@@ -46,6 +46,7 @@ find(path, file)
 	struct iob *file;
 {
 	register char *q;
+	char *dir;
 	char c;
 	int n;
 
@@ -58,6 +59,7 @@ find(path, file)
 		printf("can't read root inode\n");
 		return (0);
 	}
+	dir = path;
 	while (*path) {
 		while (*path == '/')
 			path++;
@@ -68,7 +70,7 @@ find(path, file)
 		*q = '\0';
 		if (q == path) path = "." ;	/* "/" means "/." */
 
-		if ((n = dlook(path, file)) != 0) {
+		if ((n = dlook(path, file, dir)) != 0) {
 			if (c == '\0')
 				break;
 			if (openi(n, file) < 0)
@@ -162,9 +164,10 @@ sbmap(io, bn)
 }
 
 static ino_t
-dlook(s, io)
+dlook(s, io, dir)
 	char *s;
 	register struct iob *io;
+	char *dir;
 {
 	register struct direct *dp;
 	register struct inode *ip;
@@ -175,12 +178,11 @@ dlook(s, io)
 		return (0);
 	ip = &io->i_ino;
 	if ((ip->i_mode&IFMT) != IFDIR) {
-		printf("not a directory\n");
-		printf("%s: not a directory\n", s);
+		printf("%s: not a directory\n", dir);
 		return (0);
 	}
 	if (ip->i_size == 0) {
-		printf("%s: zero length directory\n", s);
+		printf("%s: zero length directory\n", dir);
 		return (0);
 	}
 	len = strlen(s);
@@ -431,19 +433,16 @@ write(fdesc, buf, count)
 #endif SMALL
 
 int	openfirst = 1;
-#ifdef notyet
-int	opendev;	/* last device opened; for boot to set bootdev */
-extern	int bootdev;
-#endif notyet
+unsigned opendev;		/* last device opened */
+extern	unsigned bootdev;
 
 open(str, how)
 	char *str;
 	int how;
 {
 	register char *cp;
-	int i;
+	register int i;
 	register struct iob *file;
-	register struct devsw *dp;
 	int fdesc;
 	long atol();
 
@@ -460,148 +459,138 @@ open(str, how)
 gotfile:
 	(file = &iob[fdesc])->i_flgs |= F_ALLOC;
 
-#ifdef notyet
-	for (cp = str; *cp && *cp != '/' && *cp != ':'; cp++)
-			;
-	if (*cp != ':') {
+	for (cp = str; *cp && *cp != '/' && *cp != ':' && *cp != '('; cp++)
+		;
+	if (*cp == '(') {
+		if ((file->i_ino.i_dev = getdev(str, cp - str)) == -1)
+			goto bad;
+		cp++;
+		if ((file->i_unit = getunit(cp)) == -1)
+			goto bad;
+		for (; *cp != ','; cp++)
+			if (*cp == NULL) {
+				errno = EOFFSET;
+				goto badspec;
+			}
+		file->i_boff = atol(++cp);
+		for (;;) {
+			if (*cp == ')')
+				break;
+			if (*cp++)
+				continue;
+			goto badspec;
+		}
+		cp++;
+	} else if (*cp != ':') {
 		/* default bootstrap unit and device */
-		file->i_ino.i_dev = bootdev;
+		file->i_ino.i_dev = (bootdev >> B_TYPESHIFT) & B_TYPEMASK;
+		file->i_unit = ((bootdev >> B_UNITSHIFT) & B_UNITMASK) +
+		     (8 * ((bootdev >> B_ADAPTORSHIFT) & B_ADAPTORMASK));
+		file->i_boff = (bootdev >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
 		cp = str;
 	} else {
 # define isdigit(n)	((n>='0') && (n<='9'))
+		if (cp == str)
+			goto badspec;
 		/*
 	 	 * syntax for possible device name:
 	 	 *	<alpha-string><digit-string><letter>:
 	 	 */
 		for (cp = str; *cp != ':' && !isdigit(*cp); cp++)
 			;
-		for (dp = devsw; dp->dv_name; dp++) {
-			if (!strncmp(str, dp->dv_name,cp-str))
-				goto gotdev;
-		}
-		printf("unknown device\n");
-		file->i_flgs = 0;
-		errno = EDEV;
-		return (-1);
-	gotdev:
-		i = 0;
-		while (*cp >= '0' && *cp <= '9')
-			i = i * 10 + *cp++ - '0';
-		if (i < 0 || i > 255) {
-			printf("minor device number out of range (0-255)\n");
-			file->i_flgs = 0;
-			errno = EUNIT;
-			return (-1);
-		}
-		if (*cp >= 'a' && *cp <= 'h') {
-			if (i > 31) {
-				printf("unit number out of range (0-31)\n");
-				file->i_flgs = 0;
-				errno = EUNIT;
-				return (-1);
-			}
-			i = make_minor(i, *cp++ - 'a');
-		}
-
+		if ((file->i_ino.i_dev = getdev(str, cp - str)) == -1)
+			goto bad;
+		if ((file->i_unit = getunit(cp)) == -1)
+			goto bad;
+		while (isdigit(*cp))
+			cp++;
+		file->i_boff = 0;
+		if (*cp >= 'a' && *cp <= 'h')
+			file->i_boff = *cp++ - 'a';
 		if (*cp++ != ':') {
-			printf("incorrect device specification\n");
-			file->i_flgs = 0;
 			errno = EOFFSET;
-			return (-1);
+			goto badspec;
 		}
-		opendev = file->i_ino.i_dev = makedev(dp-devsw, i);
 	}
-	file->i_boff = 0;
-	devopen(file);
+	opendev = file->i_ino.i_dev << B_TYPESHIFT;
+	opendev |= ((file->i_unit % 8) << B_UNITSHIFT);
+	opendev |= ((file->i_unit / 8) << B_ADAPTORSHIFT);
+	opendev |= file->i_boff << B_PARTITIONSHIFT;
+	opendev |= B_DEVMAGIC;
+	if (errno = devopen(file))
+		goto bad;
 	if (cp != str && *cp == '\0') {
 		file->i_flgs |= how+1;
 		file->i_cc = 0;
 		file->i_offset = 0;
 		return (fdesc+3);
 	}
-#else notyet
-	for (cp = str; *cp && *cp != '('; cp++)
-			;
-	if (*cp != '(') {
-		printf("Bad device\n");
-		file->i_flgs = 0;
-		errno = EDEV;
-		return (-1);
-	}
-	*cp++ = '\0';
-	for (dp = devsw; dp->dv_name; dp++) {
-		if (!strcmp(str, dp->dv_name))
-			goto gotdev;
-	}
-	printf("Unknown device\n");
-	file->i_flgs = 0;
-	errno = ENXIO;
-	return (-1);
-gotdev:
-	*(cp-1) = '(';
-	file->i_ino.i_dev = dp-devsw;
-	file->i_unit = *cp++ - '0';
-	if (*cp >= '0' && *cp <= '9')
-		file->i_unit = file->i_unit * 10 + *cp++ - '0';
-	if (file->i_unit < 0 || file->i_unit > 63) {
-		printf("Bad unit specifier\n");
-		file->i_flgs = 0;
-		errno = EUNIT;
-		return (-1);
-	}
-	if (*cp++ != ',') {
-badoff:
-		printf("Missing offset specification\n");
-		file->i_flgs = 0;
-		errno = EOFFSET;
-		return (-1);
-	}
-	file->i_boff = atol(cp);
-	for (;;) {
-		if (*cp == ')')
-			break;
-		if (*cp++)
-			continue;
-		goto badoff;
-	}
-	file->i_flgs |= how+1;
-	devopen(file);
-	if (*++cp == '\0') {
-		file->i_cc = 0;
-		file->i_offset = 0;
-		return (fdesc+3);
-	}
-#endif notyet
 	file->i_ma = (char *)(&file->i_fs);
 	file->i_cc = SBSIZE;
-	file->i_bn = SBLOCK + file->i_boff;
+	file->i_bn = SBOFF / DEV_BSIZE + file->i_boff;
 	file->i_offset = 0;
 	if (devread(file) < 0) {
 		errno = file->i_error;
 		printf("super block read error\n");
-		return (-1);
+		goto bad;
 	}
 	if ((i = find(cp, file)) == 0) {
-		file->i_flgs = 0;
 		errno = ESRCH;
-		return (-1);
+		goto bad;
 	}
 #ifndef	SMALL
 	if (how != 0) {
 		printf("Can't write files yet.. Sorry\n");
-		file->i_flgs = 0;
 		errno = EIO;
-		return (-1);
+		goto bad;
 	}
 #endif SMALL
 	if (openi(i, file) < 0) {
 		errno = file->i_error;
-		return (-1);
+		goto bad;
 	}
 	file->i_offset = 0;
 	file->i_cc = 0;
-	file->i_flgs |= F_FILE;
+	file->i_flgs |= F_FILE | (how+1);
 	return (fdesc+3);
+
+badspec:
+	printf("malformed device specification\n");
+bad:
+	file->i_flgs = 0;
+	return (-1);
+}
+
+static
+getdev(str, len)
+	char *str;
+	int len;
+{
+	register struct devsw *dp;
+
+	for (dp = devsw; dp->dv_name; dp++) {
+		if (!strncmp(str, dp->dv_name, len))
+			return (dp - devsw);
+	}
+	printf("Unknown device\n");
+	errno = ENXIO;
+	return (-1);
+}
+
+static
+getunit(cp)
+	register char *cp;
+{
+	register int i = 0;
+
+	while (*cp >= '0' && *cp <= '9')
+		i = i * 10 + *cp++ - '0';
+	if ((unsigned) i > 255) {
+		printf("minor device number out of range (0-255)\n");
+		errno = EUNIT;
+		i = -1;
+	}
+	return (i);
 }
 
 close(fdesc)
