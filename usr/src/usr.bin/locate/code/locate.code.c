@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)locate.code.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)locate.code.c	4.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -90,9 +90,13 @@ main ( argc, argv )
 	fclose( fp );
 
      	while ( fgets ( path, sizeof(buf2), stdin ) != NULL ) {
+		/* truncate newline */
+		cp = path + strlen(path) - 1;
+		if (cp > path && *cp == '\n')
+			*cp = '\0';
 		/* squelch characters that would botch the decoding */
 		for ( cp = path; *cp != NULL; cp++ ) {
-			if ( *cp >= PARITY )
+			if ( (unsigned char)*cp >= PARITY )
 				*cp &= PARITY-1;
 			else if ( *cp <= SWITCH )
 				*cp = '?';
