@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	7.59 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.60 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -20,7 +20,7 @@
 #include "mount.h"
 #include "vnode.h"
 #include "specdev.h"
-#include "fcntl.h"
+#include "fifo.h"
 #include "malloc.h"
 
 #include "lockf.h"
@@ -29,191 +29,12 @@
 #include "fs.h"
 
 /*
- * Global vfs data structures for ufs
- */
-
-int	ufs_lookup(),
-	ufs_create(),
-	ufs_mknod(),
-	ufs_open(),
-	ufs_close(),
-	ufs_access(),
-	ufs_getattr(),
-	ufs_setattr(),
-	ufs_read(),
-	ufs_write(),
-	ufs_ioctl(),
-	ufs_select(),
-	ufs_mmap(),
-	ufs_fsync(),
-	ufs_seek(),
-	ufs_remove(),
-	ufs_link(),
-	ufs_rename(),
-	ufs_mkdir(),
-	ufs_rmdir(),
-	ufs_symlink(),
-	ufs_readdir(),
-	ufs_readlink(),
-	ufs_abortop(),
-	ufs_inactive(),
-	ufs_reclaim(),
-	ufs_lock(),
-	ufs_unlock(),
-	ufs_bmap(),
-	ufs_strategy(),
-	ufs_print(),
-	ufs_islocked(),
-	ufs_advlock();
-
-struct vnodeops ufs_vnodeops = {
-	ufs_lookup,		/* lookup */
-	ufs_create,		/* create */
-	ufs_mknod,		/* mknod */
-	ufs_open,		/* open */
-	ufs_close,		/* close */
-	ufs_access,		/* access */
-	ufs_getattr,		/* getattr */
-	ufs_setattr,		/* setattr */
-	ufs_read,		/* read */
-	ufs_write,		/* write */
-	ufs_ioctl,		/* ioctl */
-	ufs_select,		/* select */
-	ufs_mmap,		/* mmap */
-	ufs_fsync,		/* fsync */
-	ufs_seek,		/* seek */
-	ufs_remove,		/* remove */
-	ufs_link,		/* link */
-	ufs_rename,		/* rename */
-	ufs_mkdir,		/* mkdir */
-	ufs_rmdir,		/* rmdir */
-	ufs_symlink,		/* symlink */
-	ufs_readdir,		/* readdir */
-	ufs_readlink,		/* readlink */
-	ufs_abortop,		/* abortop */
-	ufs_inactive,		/* inactive */
-	ufs_reclaim,		/* reclaim */
-	ufs_lock,		/* lock */
-	ufs_unlock,		/* unlock */
-	ufs_bmap,		/* bmap */
-	ufs_strategy,		/* strategy */
-	ufs_print,		/* print */
-	ufs_islocked,		/* islocked */
-	ufs_advlock,		/* advlock */
-};
-
-int	spec_lookup(),
-	spec_open(),
-	ufsspec_read(),
-	ufsspec_write(),
-	spec_strategy(),
-	spec_bmap(),
-	spec_ioctl(),
-	spec_select(),
-	ufsspec_close(),
-	spec_advlock(),
-	spec_badop();
-
-struct vnodeops spec_inodeops = {
-	spec_lookup,		/* lookup */
-	spec_badop,		/* create */
-	spec_badop,		/* mknod */
-	spec_open,		/* open */
-	ufsspec_close,		/* close */
-	ufs_access,		/* access */
-	ufs_getattr,		/* getattr */
-	ufs_setattr,		/* setattr */
-	ufsspec_read,		/* read */
-	ufsspec_write,		/* write */
-	spec_ioctl,		/* ioctl */
-	spec_select,		/* select */
-	spec_badop,		/* mmap */
-	nullop,			/* fsync */
-	spec_badop,		/* seek */
-	spec_badop,		/* remove */
-	spec_badop,		/* link */
-	spec_badop,		/* rename */
-	spec_badop,		/* mkdir */
-	spec_badop,		/* rmdir */
-	spec_badop,		/* symlink */
-	spec_badop,		/* readdir */
-	spec_badop,		/* readlink */
-	spec_badop,		/* abortop */
-	ufs_inactive,		/* inactive */
-	ufs_reclaim,		/* reclaim */
-	ufs_lock,		/* lock */
-	ufs_unlock,		/* unlock */
-	spec_bmap,		/* bmap */
-	spec_strategy,		/* strategy */
-	ufs_print,		/* print */
-	ufs_islocked,		/* islocked */
-	spec_advlock,		/* advlock */
-};
-
-#ifdef FIFO
-int	fifo_lookup(),
-	fifo_open(),
-	ufsfifo_read(),
-	ufsfifo_write(),
-	fifo_bmap(),
-	fifo_ioctl(),
-	fifo_select(),
-	ufsfifo_close(),
-	fifo_print(),
-	fifo_advlock(),
-	fifo_badop();
-
-struct vnodeops fifo_inodeops = {
-	fifo_lookup,		/* lookup */
-	fifo_badop,		/* create */
-	fifo_badop,		/* mknod */
-	fifo_open,		/* open */
-	ufsfifo_close,		/* close */
-	ufs_access,		/* access */
-	ufs_getattr,		/* getattr */
-	ufs_setattr,		/* setattr */
-	ufsfifo_read,		/* read */
-	ufsfifo_write,		/* write */
-	fifo_ioctl,		/* ioctl */
-	fifo_select,		/* select */
-	fifo_badop,		/* mmap */
-	nullop,			/* fsync */
-	fifo_badop,		/* seek */
-	fifo_badop,		/* remove */
-	fifo_badop,		/* link */
-	fifo_badop,		/* rename */
-	fifo_badop,		/* mkdir */
-	fifo_badop,		/* rmdir */
-	fifo_badop,		/* symlink */
-	fifo_badop,		/* readdir */
-	fifo_badop,		/* readlink */
-	fifo_badop,		/* abortop */
-	ufs_inactive,		/* inactive */
-	ufs_reclaim,		/* reclaim */
-	ufs_lock,		/* lock */
-	ufs_unlock,		/* unlock */
-	fifo_bmap,		/* bmap */
-	fifo_badop,		/* strategy */
-	ufs_print,		/* print */
-	ufs_islocked,		/* islocked */
-	fifo_advlock,		/* advlock */
-};
-#endif /* FIFO */
-
-enum vtype iftovt_tab[16] = {
-	VNON, VFIFO, VCHR, VNON, VDIR, VNON, VBLK, VNON,
-	VREG, VNON, VLNK, VNON, VSOCK, VNON, VNON, VBAD,
-};
-int	vttoif_tab[9] = {
-	0, IFREG, IFDIR, IFBLK, IFCHR, IFLNK, IFSOCK, IFIFO, IFMT,
-};
-
-/*
  * Create a regular file
  */
-ufs_create(ndp, vap)
+ufs_create(ndp, vap, p)
 	struct nameidata *ndp;
 	struct vattr *vap;
+	struct proc *p;
 {
 	struct inode *ip;
 	int error;
@@ -228,10 +49,11 @@ ufs_create(ndp, vap)
  * Mknod vnode call
  */
 /* ARGSUSED */
-ufs_mknod(ndp, vap, cred)
+ufs_mknod(ndp, vap, cred, p)
 	struct nameidata *ndp;
 	struct ucred *cred;
 	struct vattr *vap;
+	struct proc *p;
 {
 	register struct vnode *vp;
 	struct inode *ip;
@@ -265,10 +87,11 @@ ufs_mknod(ndp, vap, cred)
  * Nothing to do.
  */
 /* ARGSUSED */
-ufs_open(vp, mode, cred)
+ufs_open(vp, mode, cred, p)
 	struct vnode *vp;
 	int mode;
 	struct ucred *cred;
+	struct proc *p;
 {
 
 	return (0);
@@ -280,10 +103,11 @@ ufs_open(vp, mode, cred)
  * Update the times on the inode.
  */
 /* ARGSUSED */
-ufs_close(vp, fflag, cred)
+ufs_close(vp, fflag, cred, p)
 	struct vnode *vp;
 	int fflag;
 	struct ucred *cred;
+	struct proc *p;
 {
 	register struct inode *ip = VTOI(vp);
 
@@ -297,10 +121,11 @@ ufs_close(vp, fflag, cred)
  * The mode is shifted to select the owner/group/other fields. The
  * super user is granted all permissions.
  */
-ufs_access(vp, mode, cred)
+ufs_access(vp, mode, cred, p)
 	struct vnode *vp;
 	register int mode;
 	struct ucred *cred;
+	struct proc *p;
 {
 	register struct inode *ip = VTOI(vp);
 	register gid_t *gp;
@@ -347,10 +172,11 @@ found:
 }
 
 /* ARGSUSED */
-ufs_getattr(vp, vap, cred)
+ufs_getattr(vp, vap, cred, p)
 	struct vnode *vp;
 	register struct vattr *vap;
 	struct ucred *cred;
+	struct proc *p;
 {
 	register struct inode *ip = VTOI(vp);
 
@@ -395,12 +221,12 @@ ufs_getattr(vp, vap, cred)
 /*
  * Set attribute vnode op. called from several syscalls
  */
-ufs_setattr(vp, vap, cred)
+ufs_setattr(vp, vap, cred, p)
 	register struct vnode *vp;
 	register struct vattr *vap;
 	register struct ucred *cred;
+	struct proc *p;
 {
-	struct proc *p = curproc;		/* XXX */
 	register struct inode *ip = VTOI(vp);
 	int error = 0;
 
@@ -607,11 +433,13 @@ ufs_read(vp, uio, ioflag, cred)
 	int size, diff, error = 0;
 	long n, on, type;
 
+#ifdef DIAGNOSTIC
 	if (uio->uio_rw != UIO_READ)
 		panic("ufs_read mode");
 	type = ip->i_mode & IFMT;
 	if (type != IFDIR && type != IFREG && type != IFLNK)
 		panic("ufs_read type");
+#endif
 	if (uio->uio_resid == 0)
 		return (0);
 	if (uio->uio_offset < 0)
@@ -658,7 +486,7 @@ ufs_write(vp, uio, ioflag, cred)
 	int ioflag;
 	struct ucred *cred;
 {
-	struct proc *p = curproc;		/* XXX */
+	struct proc *p = uio->uio_procp;
 	register struct inode *ip = VTOI(vp);
 	register struct fs *fs;
 	struct buf *bp;
@@ -667,8 +495,10 @@ ufs_write(vp, uio, ioflag, cred)
 	int n, on, flags;
 	int size, resid, error = 0;
 
+#ifdef DIAGNOSTIC
 	if (uio->uio_rw != UIO_WRITE)
 		panic("ufs_write mode");
+#endif
 	switch (vp->v_type) {
 	case VREG:
 		if (ioflag & IO_APPEND)
@@ -746,25 +576,30 @@ ufs_write(vp, uio, ioflag, cred)
 }
 
 /* ARGSUSED */
-ufs_ioctl(vp, com, data, fflag, cred)
+ufs_ioctl(vp, com, data, fflag, cred, p)
 	struct vnode *vp;
 	int com;
 	caddr_t data;
 	int fflag;
 	struct ucred *cred;
+	struct proc *p;
 {
 
 	return (ENOTTY);
 }
 
 /* ARGSUSED */
-ufs_select(vp, which, fflags, cred)
+ufs_select(vp, which, fflags, cred, p)
 	struct vnode *vp;
 	int which, fflags;
 	struct ucred *cred;
+	struct proc *p;
 {
 
-	return (1);		/* XXX */
+	/*
+	 * We should really check to see if I/O is possible.
+	 */
+	return (1);
 }
 
 /*
@@ -773,10 +608,11 @@ ufs_select(vp, which, fflags, cred)
  * NB Currently unsupported.
  */
 /* ARGSUSED */
-ufs_mmap(vp, fflags, cred)
+ufs_mmap(vp, fflags, cred, p)
 	struct vnode *vp;
 	int fflags;
 	struct ucred *cred;
+	struct proc *p;
 {
 
 	return (EINVAL);
@@ -786,15 +622,16 @@ ufs_mmap(vp, fflags, cred)
  * Synch an open file.
  */
 /* ARGSUSED */
-ufs_fsync(vp, fflags, cred, waitfor)
+ufs_fsync(vp, fflags, cred, waitfor, p)
 	struct vnode *vp;
 	int fflags;
 	struct ucred *cred;
 	int waitfor;
+	struct proc *p;
 {
 	struct inode *ip = VTOI(vp);
 
-	if (fflags&FWRITE)
+	if (fflags & FWRITE)
 		ip->i_flag |= ICHG;
 	vflushbuf(vp, waitfor == MNT_WAIT ? B_SYNC : 0);
 	return (iupdat(ip, &time, &time, waitfor == MNT_WAIT));
@@ -820,8 +657,9 @@ ufs_seek(vp, oldoff, newoff, cred)
  * Hard to avoid races here, especially
  * in unlinking directories.
  */
-ufs_remove(ndp)
+ufs_remove(ndp, p)
 	struct nameidata *ndp;
+	struct proc *p;
 {
 	register struct inode *ip, *dp;
 	int error;
@@ -844,9 +682,10 @@ ufs_remove(ndp)
 /*
  * link vnode call
  */
-ufs_link(vp, ndp)
+ufs_link(vp, ndp, p)
 	register struct vnode *vp;
 	register struct nameidata *ndp;
+	struct proc *p;
 {
 	register struct inode *ip = VTOI(vp);
 	int error;
@@ -894,10 +733,10 @@ ufs_link(vp, ndp)
  *    is different from the source, patch the ".." entry in the
  *    directory.
  */
-ufs_rename(fndp, tndp)
+ufs_rename(fndp, tndp, p)
 	register struct nameidata *fndp, *tndp;
+	struct proc *p;
 {
-	struct proc *p = curproc;		/* XXX */
 	register struct inode *ip, *xp, *dp;
 	struct dirtemplate dirbuf;
 	int doingdirectory = 0, oldparent = 0, newparent = 0;
@@ -962,7 +801,7 @@ ufs_rename(fndp, tndp)
 		newparent = dp->i_number;
 	if (doingdirectory && newparent) {
 		VOP_LOCK(fndp->ni_vp);
-		error = ufs_access(fndp->ni_vp, VWRITE, tndp->ni_cred);
+		error = ufs_access(fndp->ni_vp, VWRITE, tndp->ni_cred, p);
 		VOP_UNLOCK(fndp->ni_vp);
 		if (error)
 			goto bad;
@@ -1135,7 +974,7 @@ ufs_rename(fndp, tndp)
 			error = vn_rdwr(UIO_READ, ITOV(xp), (caddr_t)&dirbuf,
 				sizeof (struct dirtemplate), (off_t)0,
 				UIO_SYSSPACE, IO_NODELOCKED, 
-				tndp->ni_cred, (int *)0);
+				tndp->ni_cred, (int *)0, (struct proc *)0);
 			if (error == 0) {
 				if (dirbuf.dotdot_namlen != 2 ||
 				    dirbuf.dotdot_name[0] != '.' ||
@@ -1148,7 +987,8 @@ ufs_rename(fndp, tndp)
 					    sizeof (struct dirtemplate),
 					    (off_t)0, UIO_SYSSPACE,
 					    IO_NODELOCKED|IO_SYNC,
-					    tndp->ni_cred, (int *)0);
+					    tndp->ni_cred, (int *)0,
+					    (struct proc *)0);
 					cache_purge(ITOV(dp));
 				}
 			}
@@ -1189,9 +1029,10 @@ struct dirtemplate mastertemplate = {
 /*
  * Mkdir system call
  */
-ufs_mkdir(ndp, vap)
+ufs_mkdir(ndp, vap, p)
 	struct nameidata *ndp;
 	struct vattr *vap;
+	struct proc *p;
 {
 	register struct inode *ip, *dp;
 	struct inode *tip;
@@ -1256,8 +1097,8 @@ ufs_mkdir(ndp, vap)
 	dirtemplate.dot_ino = ip->i_number;
 	dirtemplate.dotdot_ino = dp->i_number;
 	error = vn_rdwr(UIO_WRITE, ITOV(ip), (caddr_t)&dirtemplate,
-		sizeof (dirtemplate), (off_t)0, UIO_SYSSPACE,
-		IO_NODELOCKED|IO_SYNC, ndp->ni_cred, (int *)0);
+	    sizeof (dirtemplate), (off_t)0, UIO_SYSSPACE,
+	    IO_NODELOCKED|IO_SYNC, ndp->ni_cred, (int *)0, (struct proc *)0);
 	if (error) {
 		dp->i_nlink--;
 		dp->i_flag |= ICHG;
@@ -1297,8 +1138,9 @@ bad:
 /*
  * Rmdir system call.
  */
-ufs_rmdir(ndp)
+ufs_rmdir(ndp, p)
 	register struct nameidata *ndp;
+	struct proc *p;
 {
 	register struct inode *ip, *dp;
 	int error = 0;
@@ -1360,10 +1202,11 @@ out:
 /*
  * symlink -- make a symbolic link
  */
-ufs_symlink(ndp, vap, target)
+ufs_symlink(ndp, vap, target, p)
 	struct nameidata *ndp;
 	struct vattr *vap;
 	char *target;
+	struct proc *p;
 {
 	struct inode *ip;
 	int error;
@@ -1372,7 +1215,8 @@ ufs_symlink(ndp, vap, target)
 	if (error)
 		return (error);
 	error = vn_rdwr(UIO_WRITE, ITOV(ip), target, strlen(target), (off_t)0,
-		UIO_SYSSPACE, IO_NODELOCKED, ndp->ni_cred, (int *)0);
+		UIO_SYSSPACE, IO_NODELOCKED, ndp->ni_cred, (int *)0,
+		(struct proc *)0);
 	iput(ip);
 	return (error);
 }
@@ -1606,16 +1450,17 @@ ufsspec_write(vp, uio, ioflag, cred)
  *
  * Update the times on the inode then do device close.
  */
-ufsspec_close(vp, fflag, cred)
+ufsspec_close(vp, fflag, cred, p)
 	struct vnode *vp;
 	int fflag;
 	struct ucred *cred;
+	struct proc *p;
 {
 	register struct inode *ip = VTOI(vp);
 
 	if (vp->v_usecount > 1 && !(ip->i_flag & ILOCKED))
 		ITIMES(ip, &time, &time);
-	return (spec_close(vp, fflag, cred));
+	return (spec_close(vp, fflag, cred, p));
 }
 
 #ifdef FIFO
@@ -1658,16 +1503,17 @@ ufsfifo_write(vp, uio, ioflag, cred)
  *
  * Update the times on the inode then do device close.
  */
-ufsfifo_close(vp, fflag, cred)
+ufsfifo_close(vp, fflag, cred, p)
 	struct vnode *vp;
 	int fflag;
 	struct ucred *cred;
+	struct proc *p;
 {
 	register struct inode *ip = VTOI(vp);
 
 	if (vp->v_usecount > 1 && !(ip->i_flag & ILOCKED))
 		ITIMES(ip, &time, &time);
-	return (fifo_close(vp, fflag, cred));
+	return (fifo_close(vp, fflag, cred, p));
 }
 #endif /* FIFO */
 
@@ -1825,3 +1671,124 @@ ufs_advlock(vp, id, op, fl, flags)
 	}
 	/* NOTREACHED */
 }
+
+/*
+ * Global vfs data structures for ufs
+ */
+struct vnodeops ufs_vnodeops = {
+	ufs_lookup,		/* lookup */
+	ufs_create,		/* create */
+	ufs_mknod,		/* mknod */
+	ufs_open,		/* open */
+	ufs_close,		/* close */
+	ufs_access,		/* access */
+	ufs_getattr,		/* getattr */
+	ufs_setattr,		/* setattr */
+	ufs_read,		/* read */
+	ufs_write,		/* write */
+	ufs_ioctl,		/* ioctl */
+	ufs_select,		/* select */
+	ufs_mmap,		/* mmap */
+	ufs_fsync,		/* fsync */
+	ufs_seek,		/* seek */
+	ufs_remove,		/* remove */
+	ufs_link,		/* link */
+	ufs_rename,		/* rename */
+	ufs_mkdir,		/* mkdir */
+	ufs_rmdir,		/* rmdir */
+	ufs_symlink,		/* symlink */
+	ufs_readdir,		/* readdir */
+	ufs_readlink,		/* readlink */
+	ufs_abortop,		/* abortop */
+	ufs_inactive,		/* inactive */
+	ufs_reclaim,		/* reclaim */
+	ufs_lock,		/* lock */
+	ufs_unlock,		/* unlock */
+	ufs_bmap,		/* bmap */
+	ufs_strategy,		/* strategy */
+	ufs_print,		/* print */
+	ufs_islocked,		/* islocked */
+	ufs_advlock,		/* advlock */
+};
+
+struct vnodeops spec_inodeops = {
+	spec_lookup,		/* lookup */
+	spec_create,		/* create */
+	spec_mknod,		/* mknod */
+	spec_open,		/* open */
+	ufsspec_close,		/* close */
+	ufs_access,		/* access */
+	ufs_getattr,		/* getattr */
+	ufs_setattr,		/* setattr */
+	ufsspec_read,		/* read */
+	ufsspec_write,		/* write */
+	spec_ioctl,		/* ioctl */
+	spec_select,		/* select */
+	spec_mmap,		/* mmap */
+	spec_fsync,		/* fsync */
+	spec_seek,		/* seek */
+	spec_remove,		/* remove */
+	spec_link,		/* link */
+	spec_rename,		/* rename */
+	spec_mkdir,		/* mkdir */
+	spec_rmdir,		/* rmdir */
+	spec_symlink,		/* symlink */
+	spec_readdir,		/* readdir */
+	spec_readlink,		/* readlink */
+	spec_abortop,		/* abortop */
+	ufs_inactive,		/* inactive */
+	ufs_reclaim,		/* reclaim */
+	ufs_lock,		/* lock */
+	ufs_unlock,		/* unlock */
+	spec_bmap,		/* bmap */
+	spec_strategy,		/* strategy */
+	ufs_print,		/* print */
+	ufs_islocked,		/* islocked */
+	spec_advlock,		/* advlock */
+};
+
+#ifdef FIFO
+struct vnodeops fifo_inodeops = {
+	fifo_lookup,		/* lookup */
+	fifo_create,		/* create */
+	fifo_mknod,		/* mknod */
+	fifo_open,		/* open */
+	ufsfifo_close,		/* close */
+	ufs_access,		/* access */
+	ufs_getattr,		/* getattr */
+	ufs_setattr,		/* setattr */
+	ufsfifo_read,		/* read */
+	ufsfifo_write,		/* write */
+	fifo_ioctl,		/* ioctl */
+	fifo_select,		/* select */
+	fifo_mmap,		/* mmap */
+	fifo_fsync,		/* fsync */
+	fifo_seek,		/* seek */
+	fifo_remove,		/* remove */
+	fifo_link,		/* link */
+	fifo_rename,		/* rename */
+	fifo_mkdir,		/* mkdir */
+	fifo_rmdir,		/* rmdir */
+	fifo_symlink,		/* symlink */
+	fifo_readdir,		/* readdir */
+	fifo_readlink,		/* readlink */
+	fifo_abortop,		/* abortop */
+	ufs_inactive,		/* inactive */
+	ufs_reclaim,		/* reclaim */
+	ufs_lock,		/* lock */
+	ufs_unlock,		/* unlock */
+	fifo_bmap,		/* bmap */
+	fifo_strategy,		/* strategy */
+	ufs_print,		/* print */
+	ufs_islocked,		/* islocked */
+	fifo_advlock,		/* advlock */
+};
+#endif /* FIFO */
+
+enum vtype iftovt_tab[16] = {
+	VNON, VFIFO, VCHR, VNON, VDIR, VNON, VBLK, VNON,
+	VREG, VNON, VLNK, VNON, VSOCK, VNON, VNON, VBAD,
+};
+int	vttoif_tab[9] = {
+	0, IFREG, IFDIR, IFBLK, IFCHR, IFLNK, IFSOCK, IFIFO, IFMT,
+};
