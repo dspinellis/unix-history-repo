@@ -4,10 +4,10 @@ PROG=		gcpp
 BINDIR=		/usr/libexec
 SRCS=		cccp.c cexp.y version.c
 MAN1=		gcpp.1
-CFLAGS+=	-I. -I$(.CURDIR) -I$(.CURDIR)/../common \
+CFLAGS+=	-I. -I$(.CURDIR) -I$(.CURDIR)/../lib \
 		-DGCC_INCLUDE_DIR=\"\" \
 		-DGPLUSPLUS_INCLUDE_DIR=\"/usr/include/g++\"
 YFLAGS=
-.PATH:		$(.CURDIR)/../common
+.PATH:		$(.CURDIR)/../lib
 
 .include <bsd.prog.mk>

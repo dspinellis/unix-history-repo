@@ -3,11 +3,16 @@
 PROG=		gcc1
 BINDIR=		/usr/libexec
 SRCS=		c-parse.c c-lang.c  c-lex.c c-pragma.c c-decl.c \
-		c-typeck.c c-convert.c c-aux-info.c c-iterate.c \
-		$(COMMON_SRC)
+		c-typeck.c c-convert.c c-aux-info.c c-iterate.c 
 	
-CFLAGS+=	-I. -I$(.CURDIR) -I$(.CURDIR)/../common
+CFLAGS+=	-I. -I$(.CURDIR) -I$(.CURDIR)/../lib
 YFLAGS=
 NOMAN=		noman
-.PATH:		$(.CURDIR)/../common
+
+.if exists(${.CURDIR}/../lib/obj)
+LDADD=  -L${.CURDIR}/../lib/obj -lgcc2
+.else
+LDADD=  -L${.CURDIR}/../lib/ -lgcc2
+.endif
+
 .include <bsd.prog.mk>
