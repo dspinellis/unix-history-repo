@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)run.test	5.9 (Berkeley) %G%
+#	@(#)run.test	5.10 (Berkeley) %G%
 #
 
 # db regression tests
@@ -27,6 +27,7 @@ main()
 	test7
 	test8
 	test9
+	test10
 	rm -f $TMP1 $TMP2 $TMP3
 }
 
@@ -268,25 +269,6 @@ test7()
 	}' > $TMP1
 	rm -f TMP2 $TMP3
 
-	# Test that R_CURSOR doesn't succeed before cursor initialized
-	for type in btree recno; do
-		cat $TMP1 |
-		awk '{
-			if (i == 10)
-				exit;
-			printf("p\nk%d\nd%s\n", ++i, $0);
-		}
-		END {
-			printf("fR_CURSOR\nr\nk1\n");
-			printf("etest7 R_CURSOR SHOULD HAVE FAILED\n");
-		}' > $TMP2
-		$PROG -o $TMP3 $type $TMP2 > /dev/null 2>&1
-		if [ -s $TMP3 ] ; then
-			printf "test7: R_CURSOR SHOULD HAVE FAILED\n"
-			exit 1
-		fi
-	done
-			
 	for type in btree recno; do
 		cat $TMP1 |
 		awk '{
@@ -435,6 +417,59 @@ bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 		else
 			printf "test9: type hash:\
 bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
+			exit 1
+		fi
+	done
+}
+
+# Test use of cursor flags without initialization
+test10()
+{
+	printf "Test 10: btree, recno: test cursor flag use\n"
+	echo "abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg" |
+	awk '{
+		for (i = 1; i <= 120; ++i)
+			printf("%05d: input key %d: %s\n", i, i, $0);
+		printf("%05d: input key %d: %s\n", 120, 120, $0);
+		printf("get failed, no such key\n");
+		printf("%05d: input key %d: %s\n", 1, 1, $0);
+		printf("%05d: input key %d: %s\n", 2, 2, $0);
+		exit;
+	}' > $TMP1
+	rm -f TMP2 $TMP3
+
+	# Test that R_CURSOR doesn't succeed before cursor initialized
+	for type in btree recno; do
+		cat $TMP1 |
+		awk '{
+			if (i == 10)
+				exit;
+			printf("p\nk%d\nd%s\n", ++i, $0);
+		}
+		END {
+			printf("fR_CURSOR\nr\nk1\n");
+			printf("eR_CURSOR SHOULD HAVE FAILED\n");
+		}' > $TMP2
+		$PROG -o $TMP3 $type $TMP2 > /dev/null 2>&1
+		if [ -s $TMP3 ] ; then
+			printf "Test 10: delete: R_CURSOR SHOULD HAVE FAILED\n"
+			exit 1
+		fi
+	done
+	for type in btree recno; do
+		cat $TMP1 |
+		awk '{
+			if (i == 10)
+				exit;
+			printf("p\nk%d\nd%s\n", ++i, $0);
+		}
+		END {
+			printf("fR_CURSOR\np\nk1\ndsome data\n");
+			printf("eR_CURSOR SHOULD HAVE FAILED\n");
+		}' > $TMP2
+		$PROG -o $TMP3 $type $TMP2 > /dev/null 2>&1
+		if [ -s $TMP3 ] ; then
+			printf "Test 10: put: R_CURSOR SHOULD HAVE FAILED\n"
 			exit 1
 		fi
 	done
