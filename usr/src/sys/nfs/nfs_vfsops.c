@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	7.37 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.38 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -138,7 +138,7 @@ nfs_mountroot()
 	register struct mbuf *m;
 	struct socket *so;
 	struct vnode *vp;
-	int error;
+	int error, i;
 
 	/*
 	 * Do enough of ifconfig(8) so that the critical net interface can
@@ -146,7 +146,7 @@ nfs_mountroot()
 	 */
 	if (socreate(nfs_diskless.myif.ifra_addr.sa_family, &so, SOCK_DGRAM, 0))
 		panic("nfs ifconf");
-	if (ifioctl(so, SIOCAIFADDR, &nfs_diskless.myif))
+	if (ifioctl(so, SIOCAIFADDR, &nfs_diskless.myif, curproc)) /* XXX */
 		panic("nfs ifconf2");
 	soclose(so);
 
@@ -240,6 +240,18 @@ nfs_mountroot()
 	mp->mnt_vnodecovered = NULLVP;
 	vfs_unlock(mp);
 	rootvp = vp;
+
+	/*
+	 * This is not really an nfs issue, but it is much easier to
+	 * set hostname here and then let the "/etc/rc.xxx" files
+	 * mount the right /var based upon its preset value.
+	 */
+	bcopy(nfs_diskless.my_hostnam, hostname, MAXHOSTNAMELEN);
+	hostname[MAXHOSTNAMELEN - 1] = '\0';
+	for (i = 0; i < MAXHOSTNAMELEN; i++)
+		if (hostname[i] == '\0')
+			break;
+	hostnamelen = i;
 	inittodr((time_t)0);	/* There is no time in the nfs fsstat so ?? */
 	return (0);
 }
