@@ -15,7 +15,7 @@
  *
  * from: hp300/hp300/locore.s	7.13 (Berkeley) 6/5/92
  *
- *	@(#)locore.s	7.1 (Berkeley) %G%
+ *	@(#)locore.s	7.2 (Berkeley) %G%
  */
 
 #include "assym.s"
@@ -2126,12 +2126,13 @@ _fpvec:	movl	a0,a2@(FLINE_VEC)	| restore vectors
  */
 	.globl	_doboot
 _doboot:
+	movl	#0x41000004,a0
+	movl	a0@,a1			| get PROM restart entry address
 	movl	#CACHE_OFF,d0
 	movc	d0,cacr			| disable on-chip cache(s)
-	movl	#0,a0@			| value for pmove to TC (turn off MMU)
+	movl	#_tcroff,a0		| value for pmove to TC (turn off MMU)
 	pmove	a0@,tc			| disable MMU
-	lea	rom_mon,a0		| rom start address
-	jmp	a0@			| goto REBOOT
+	jmp	a1@			| goto REBOOT
 
 	.data
 	.space	NBPG
@@ -2153,8 +2154,10 @@ _want_resched:
 _proc0paddr:
 	.long	0		| KVA of proc0 u-area
 
-	.globl	rom_mon
-	.set	rom_mon,0x41000004	| rom monitor start address table
+	.globl	_tcroff
+_tcroff:
+	.long	0		| TC reg. reset flag
+
 #ifdef FPCOPROC
 	.globl	_fppnull
 _fppnull:
