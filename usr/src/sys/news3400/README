@@ -1,0 +1,37 @@
+#	@(#)README	5.1 (Berkeley) %G%
+
+------------------------------------------------------------------------------
+
+This version is not completed.  Please contact to utashiro@sra.co.jp if
+you have any comment about this code.  Bugfix will be greatly appreciated.
+
+------------------------------------------------------------------------------
+I'm using NWS-3200 laptop machine for development.  Only 3200's LCD display
+is supported now.  You can use on 3400 by serial line console, but it is not
+tested well.
+------------------------------------------------------------------------------
+config command is not changed to support NEWS because it will be changed
+to support dual processor machine in future.  Diffs are in config.diff
+in /sys/news3400 directory.
+------------------------------------------------------------------------------
+GCC 2.x has problem to build library objects.  Usually library object is made
+by following way.
+
+	cc -c x.c
+	ld -r -x x.o
+	mv a.out x.o
+
+But using gcc 2.x (at least 2.2.2), some object made by this can't be
+lordable.  ld complains that the object has bad isym.
+------------------------------------------------------------------------------
+Known bugs:
+	- Floating point doesn't work.
+	- Display driver is slow.
+	- Serial line driver is slow.
+	- Reboot doesn't work.
+	- NFS doesn't work (it worked before...)
+------------------------------------------------------------------------------
+
+			Kazumasa Utashiro <utashiro@sra.co.jp>
+			Software Research Associates, Inc.
+			1-1-1 Hirakawa-cho, Chiyoda-ku, Tokyo 102, Japan
