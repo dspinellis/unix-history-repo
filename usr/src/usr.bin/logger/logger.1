@@ -1,8 +1,14 @@
 .\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" All rights reserved.
 .\"
-.\"	@(#)logger.1	6.1 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that this notice is preserved and that due credit is given
+.\" to the University of California at Berkeley. The name of the University
+.\" may not be used to endorse or promote products derived from this
+.\" software without specific prior written permission. This software
+.\" is provided ``as is'' without express or implied warranty.
+.\"
+.\"	@(#)logger.1	6.2 (Berkeley) %G%
 .\"
 .TH LOGGER 1 ""
 .UC 6
@@ -51,20 +57,13 @@ with each line.
 Log the specified file.
 .TP
 message
-The message to log;
-if not specified,
-the
-.B \-f
-file or standard input is logged.
+The message to log; if not specified, and the \fB-f\fP flag is not
+provided, standard input is logged.
 .SH DESCRIPTION
 .I Logger
 provides a program interface to the
 .IR syslog (3)
 system log module.
-.PP
-A message can be given on the command line,
-which is logged immediately,
-or a file is read and each line is logged.
 .SH EXAMPLES
 logger System rebooted
 .PP
