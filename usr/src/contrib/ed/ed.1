@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)ed.1	5.8 (Berkeley) %G%
+.\"	@(#)ed.1	5.9 (Berkeley) %G%
 .\"
 .TH ED 1 ""
 .SH NAME
@@ -149,7 +149,7 @@ the buffer to the top of the buffer if need be.
 RE's are, outside of this document, now refered to as
 .IR "basic regular expressions" .
 Basic regular expressions (BRE's), traditionally described in \fIed(1)\fR are
-now fully described in regex(1). BRE's are, for the most part, the same as
+now fully described in regex(7). BRE's are, for the most part, the same as
 the old RE's - the name has changed and the expressions extended to meet
 POSIX 1003.2 specifications. (See the search command for more details.)
 .TP
@@ -472,7 +472,7 @@ command except (\fIe\fR, \fIE\fR, \fIf\fR, \fIq\fR, \fIQ\fR, \fIr\fR, \fIw\fR, \
 The move command moves the addressed lines in the buffer
 to after the address
 .BR a .
-Line 0 is valid for this command.
+Line 0 is valid as the address \fBa\fR for this command.
 .B Current
 is the location in the
 .B buffer
@@ -648,7 +648,7 @@ the
 .B buffer
 to after the address
 .BR a .
-Address 0 is valid for this command.
+Address 0 is valid as the address \fBa\fR for this command.
 .B Current
 is the last line transcribed.
 .TP 5
@@ -859,7 +859,7 @@ B. W. Kernighan,
 .I
 Advanced editing on UNIX
 .br
-regex(7), sed(1), learn(1), ex(1), POSIX 1003.2 (4.20)
+ex(1), learn(1), regex(3), regex(7), sed(1), vi(1), POSIX 1003.2 (4.20)
 .SH "AUTHOR"
 Rodney Ruddock
 .SH DIAGNOSTICS
@@ -887,6 +887,13 @@ BRE's, for the most part, are the same as previous
 RE's. The changes to the RE's are extensions for internationalization
 under POSIX 1003.2. Old scripts with RE's should work without
 modification.
+.PP
+Regular expression logic is very tight. If you believe a command with a
+regular expression in it has performed erroneously then a close reading
+of regex(7) is likely required.
+.PP
+Address `0' is legal only for those commands which explicitly state that
+it may be used; its use is illegal for all other commands.
 .PP
 The special form of substitute has been maintained for backward
 compatability and should not be used in scripts if they are to

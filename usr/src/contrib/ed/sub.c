@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sub.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)sub.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -38,9 +38,9 @@ s(inputt, errnum)
 	static int l_count2 = 1, l_global = 0, l_print = 0;
 	static int l_first_pass_flag = 0;
 	static char *l_match = NULL, *l_repl = NULL;
-	LINE *l_s_ret, *l_temp_line, *l_temp_line2, *l_kval, *l_last;
+	LINE *l_s_ret, *l_temp_line, *l_temp_line2, *l_kval, *l_last, *l_cur;
 	int l_s_flag, l_count, l_matched, l_nflag, l_cnt, yy, l_sr_flag = 0;
-	int l_err, l_sl, l_rep_flag, l_u_reuse_flag=0, l_local_len;
+	int l_err, l_sl, l_rep_flag, l_u_reuse_flag=0, l_local_len, l_nudge=0;
 	char *l_match2 = NULL, *l_local = NULL, *l_local_temp = NULL;
 #ifndef REG_STARTEND
 	size_t l_offset = 0;
@@ -175,6 +175,7 @@ bcg1:
 	if (sigint_flag && (!sigspecial))
 		SIGINT_ACTION;
 bcg2:
+	l_cur = current;
 	current = Start;
 	l_s_flag = 0;
 	do {
@@ -192,6 +193,9 @@ bcg2:
 #endif
 		do {
 			RE_match[0].rm_so = RE_match[0].rm_eo;
+			if (l_nudge)
+				RE_match[0].rm_so++;
+			l_nudge = 0;
 #ifdef REG_STARTEND
 			l_matched = regexec_n(&RE_comp, l_local,
 			    (size_t)RE_SEC, RE_match, 0, l_count,
@@ -202,8 +206,11 @@ bcg2:
 			    &l_offset, 0);
 #endif
 			if (l_matched == 0) {
-				if ((l_s_flag == 0) && (g_flag == 0))
+				if ((l_s_flag == 0) && (g_flag == 0)) {
+					current = l_cur;
 					u_clr_stk();
+					current = Start;
+				}
 				l_count = l_s_flag = 1;
 				l_rep_flag = 0;
 				/*
@@ -224,6 +231,8 @@ bcg2:
 				 * position of that character has changed
 				 * because of the replacement.
 				 */
+				if (RE_match[0].rm_so == RE_match[0].rm_eo)
+					l_nudge = 1;
 #ifdef REG_STARTEND
 				l_local = re_replace(l_local,
 				    (size_t)(RE_SEC - 1), RE_match, &l_repl[1]);
@@ -315,9 +324,13 @@ next:
 
 	if (l_s_flag == 0) {
 		current = Start;
-		strcpy(help_msg, "no matches found for substitution");
-		*errnum = -1;
-		ungetc('\n', inputt);
+		if (!g_flag) {
+			strcpy(help_msg, "no matches found for substitution");
+			*errnum = -1;
+			ungetc('\n', inputt);
+		}
+		else
+			*errnum = 0;
 		return;
 	}
 	change_flag = 1;

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)c.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)c.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -35,6 +35,8 @@ c(inputt, errnum)
 	FILE *inputt;
 	int *errnum;
 {
+	int l_flag=1;
+
 	if (Start_default && End_default)
 		Start = End = current;
 	else
@@ -45,6 +47,8 @@ c(inputt, errnum)
 		return;
 	}
 	Start_default = End_default = 0;
+	if (End == bottom)
+		l_flag = 0;
 
 	/* first delete the lines */
 	d(inputt, errnum);
@@ -52,7 +56,8 @@ c(inputt, errnum)
 		return;
 	*errnum = 0;
 
-	if ((current != NULL) && (current != bottom))
+	/*if ((current != NULL) && (current != bottom)) RMSR */
+	if ((current != NULL) && l_flag)
 		current = current->above;
 	add_flag = 1;
 	Start_default = End_default = 1;

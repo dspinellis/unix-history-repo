@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -51,11 +51,6 @@ w(inputt, errnum)
 	} else
 		if (Start_default)
 			Start = End;
-	if (Start == NULL) {
-		strcpy(help_msg, "buffer empty");
-		*errnum = -1;
-		return;
-	}
 	Start_default = End_default = 0;
 
 	l_sl = ss;
@@ -124,7 +119,10 @@ w(inputt, errnum)
 		goto point;
 
 	/* Write it out and get a report on the number of bytes written. */
-	l_ttl = edwrite(l_fp, Start, End);
+	if (Start == NULL)
+		l_ttl = 0;
+	else
+		l_ttl = edwrite(l_fp, Start, End);
 	if (explain_flag > 0)		/* For -s option. */
 		printf("%d\n", l_ttl);
 
