@@ -1,4 +1,4 @@
-/*	lfs_alloc.c	2.22	83/02/10	*/
+/*	lfs_alloc.c	2.23	83/02/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -372,7 +372,7 @@ hashalloc(ip, cg, pref, size, allocator)
 	 * Note that we start at i == 2, since 0 was checked initially,
 	 * and 1 is always checked in the quadratic rehash.
 	 */
-	cg = icg;
+	cg = (icg + 2) % fs->fs_ncg;
 	for (i = 2; i < fs->fs_ncg; i++) {
 		result = (*allocator)(ip, cg, 0, size);
 		if (result)
