@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_input.c	7.15.1.1 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -850,7 +850,7 @@ do_rst:
 		if (tp->snd_cwnd > tp->snd_ssthresh)
 			incr = MAX(incr * incr / tp->snd_cwnd, 1);
 
-		tp->snd_cwnd = MIN(tp->snd_cwnd + incr, 65535); /* XXX */
+		tp->snd_cwnd = MIN(tp->snd_cwnd + incr, IP_MAXPACKET); /* XXX */
 		}
 		if (acked > so->so_snd.sb_cc) {
 			tp->snd_wnd -= so->so_snd.sb_cc;
