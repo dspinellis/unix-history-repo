@@ -1,4 +1,4 @@
-/*	tcp_var.h	4.6	81/11/24	*/
+/*	tcp_var.h	4.7	81/11/24	*/
 
 /*
  * Kernel variables for tcp.
@@ -30,109 +30,104 @@ struct tcpiphdr {
 #define	ti_urp		ti_t.th_urp
 
 /*
+ * TCP sequence numbers are 32 bit integers operated
+ * on with modular arithmetic.  These macros can be
+ * used to compare such integers.
+ */
+#define	SEQ_LT(a,b)	((int)((a)-(b)) < 0)
+#define	SEQ_LEQ(a,b)	((int)((a)-(b)) <= 0)
+#define	SEQ_GT(a,b)	((int)((a)-(b)) > 0)
+#define	SEQ_GEQ(a,b)	((int)((a)-(b)) >= 0)
+
+/*
+ * Definitions of the TCP timers.  These timers are counted
+ * down PR_SLOWHZ times a second.
+ */
+#define	TCPT_NTIMERS	7
+
+#define	TCPT_INIT	0		/* initialization */
+#define	TCPT_REXMT	1		/* retransmit */
+#define	TCPT_REXMTTL	2		/* retransmit too long */
+#define	TCPT_KEEP	3		/* keep alive */
+#define	TCPT_KEEPTTL	4		/* keep alive too long */
+#define	TCPT_PERSIST	5		/* retransmit persistance */
+#define	TCPT_2MSL	6		/* 2*msl quiet time timer */
+
+/*
  * Tcp control block.
  */
 struct tcpcb {
 	struct	tcpiphdr *seg_next,*seg_prev;	/* seq queue */
-	struct	tcpiphdr *t_template;	/* skeletal packet for transmit */
-	struct	inpcb *t_inpcb;
-	seq_t	iss;			/* initial send seq # */
-	seq_t	irs;			/* initial recv seq # */
-	seq_t	rcv_urp;		/* rcv urgent pointer */
-	seq_t	rcv_nxt;		/* next seq # to rcv */
-	seq_t	rcv_end;		/* rcv eol pointer */
-	seq_t	snd_off;		/* seq # of first datum in send buf */
-	seq_t	seq_fin;		/* seq # of FIN sent */
-	seq_t	snd_end;		/* send eol pointer */
-	seq_t	snd_urp;		/* snd urgent pointer */
-	seq_t	snd_lst;		/* seq # of last sent datum */
-	seq_t	snd_nxt;		/* seq # of next datum to send */
-	seq_t	snd_una;		/* seq # of first unacked datum */
-	seq_t	snd_wl;			/* seq # of last sent window */
-	seq_t	snd_hi;			/* highest seq # sent */
-	seq_t	snd_wnd;		/* send window max */
-	seq_t	t_rexmt_val;		/* val saved in rexmt timer */
-	seq_t	t_rtl_val;		/* val saved in rexmt too long timer */
-	seq_t	t_xmt_val;		/* seq # sent when xmt timer started */
-	seq_t	rcv_adv;		/* advertised window */
-	struct	mbuf *seg_unack;	/* unacked message queue */
-	short	seqcnt;
-	u_short	tc_flags;		/* flags and state; see below */
-	u_short	t_options;
-#define	TO_EOL		0x01		/* eol mode */
-#define	TO_URG		0x02		/* urgent mode */
+	short	seqcnt;			/* count of chars in seq queue */
 	u_char	t_state;		/* state of this connection */
-	u_char	t_xmtime;		/* current rexmt time */
-/* timers... must be in order */
-	short	t_init;			/* init */
-	short	t_rexmt;		/* retransmission */
-	short	t_rexmttl;		/* retransmit too long */
-	short	t_persist;		/* retransmit persistance */
-	short	t_finack;		/* fin acknowledged */
-	short	t_xmt;			/* round trip transmission time */
-/* end timers */
-};
-
-/* tc_flags values */
-#define	TC_ACK_DUE	0x0001		/* must we send ACK */
-#define	TC_CANCELLED	0x0002		/* retransmit timer cancelled */
-#define	TC_FIN_RCVD	0x0004		/* FIN received */
-#define	TC_FORCE_ONE	0x0008		/* force sending of one byte */
-#define	TC_NEW_WINDOW	0x0010		/* received new window size */
-#define	TC_REXMT	0x0020		/* this msg is a retransmission */
-#define	TC_SND_FIN	0x0040		/* FIN should be sent */
-#define	TC_SND_RST	0x0080		/* RST should be sent */
-#define	TC_SND_URG	0x0100		/* urgent data to send */
-#define	TC_SYN_ACKED	0x0200		/* SYN has been ACKed */
-#define	TC_SYN_RCVD	0x0400		/* SYN has been received */
-#define	TC_USR_CLOSED	0x0800		/* user has closed connection */
-#define	TC_USR_ABORT	0x1000		/* user has closed and does not expect
-					   to receive any more data */
+	short	t_timers[TCPT_NTIMERS];	/* tcp timers */
+	u_char	t_options;		/* connection options: */
+#define	TO_PUSH		0x01			/* push mode */
+#define	TO_URG		0x02			/* urgent mode */
+#define	TO_KEEP		0x04			/* use keep-alives */
+	u_char	t_flags;
+#define	TF_OWEACK	0x01			/* owe ack to peer */
+	struct	mbuf *seg_unack;	/* unacked message queue */
+	struct	tcpiphdr *t_template;	/* skeletal packet for transmit */
+	struct	inpcb *t_inpcb;		/* back pointer to internet pcb */
 /*
- * TCP timers.
+ * The following fields are used as in the protocol specification.
+ * See RFC783, Dec. 1981, page 21.
  */
-#define	TINIT		0
-#define	TREXMT		1
-#define	TREXMTTL	2
-#define	TPERSIST	3
-#define	TFINACK		4
-#define	TNTIMERS	5
+/* send sequence variables */
+	tcp_seq	snd_una;		/* send unacknowledged */
+	tcp_seq	snd_nxt;		/* send next */
+	u_short	snd_wnd;		/* send window */
+	tcp_seq	snd_up;			/* send urgent pointer */
+	tcp_seq	snd_wl1;		/* window update seg seq number */
+	tcp_seq	snd_wl2;		/* window update seg ack number */
+	tcp_seq	iss;			/* initial send sequence number */
+/* receive sequence variables */
+	tcp_seq	rcv_nxt;		/* receive next */
+	u_short	rcv_wnd;		/* receive window */
+	tcp_seq	rcv_up;			/* receive urgent pointer */
+	tcp_seq	irs;			/* initial receive sequence number */
+/*
+ * Additional variables for this implementation.
+ */
+/* send variables */
+	tcp_seq	snd_off;	/*??*/	/* seq # of first datum in send buf */
+	tcp_seq	seq_fin;	/*??*/	/* seq # of FIN sent */
+	tcp_seq	snd_hi;		/*??*/	/* highest seq # sent */
+	tcp_seq	snd_end;	/*??*/	/* send eol pointer */
+	tcp_seq	snd_lst;	/*??*/	/* seq # of last sent datum */
+	tcp_seq	snd_wl;		/*??*/	/* seq # of last sent window */
+	tcp_seq	snd_wnd;	/*??*/	/* send window max */
+/* retransmit variables */
+	tcp_seq	t_rexmt_val;	/*??*/	/* val saved in rexmt timer */
+	tcp_seq	t_rtl_val;	/*??*/	/* val saved in rexmt too long timer */
+	tcp_seq	t_xmt_val;	/*??*/	/* seq # sent when xmt timer started */
+	u_char	t_xmtime;	/*??*/	/* current rexmt time */
+	short	t_xmt;		/*??*/	/* round trip transmission time */
+/* receive variables */
+	tcp_seq	rcv_end;	/*??*/	/* rcv eol pointer */
+	tcp_seq	rcv_adv;	/*??*/	/* advertised window */
+};
 
 #define	intotcpcb(ip)	((struct tcpcb *)(ip)->inp_ppcb)
 #define	sototcpcb(so)	(intotcpcb(sotoinpcb(so)))
 
-/*
- * Tcp machine predicates
- */
-#define	ack_ok(x, y) \
-    (((y)->ti_flags&TH_ACK)==0 || \
-      ((x)->iss < (y)->ti_ackno && (y)->ti_ackno <= (x)->snd_hi))
-
-#define	syn_ok(x, y) \
-    ((y)->ti_flags&TH_SYN)
-
-#define	ack_fin(x, y) \
-    ((x)->seq_fin > (x)->iss && (y)->ti_ackno > (x)->seq_fin)
-
-#define	rcv_empty(x) \
-    (((x)->tc_flags&TC_USR_ABORT) || \
-      ((x)->t_inpcb->inp_socket->so_rcv.sb_mb == NULL && \
-       (x)->seg_next == (x)->seg_prev))
-
 #define	ISSINCR		128		/* increment for iss each second */
 #define	TCPSIZE		20		/* size of TCP leader (bytes) */
 
+#define	TCP_TTL		30		/* time to live for TCP segs: 30s */
 /*
- * THESE NEED TO BE JUSTIFIED!
- *
- * *2 here is because slow timeout routine called every 1/2 second.
+ * TCPSC constants give various timeouts in ``slow-clock'' ticks.
  */
-#define	T_INIT		(30*2)
-#define	T_2ML		(10*2)		/* 2*maximum packet lifetime */
-#define	T_PERS		(5*2)		/* persist time */
-#define	T_REXMT		(1*2)		/* base for retransmission time */
-#define	T_REXMTTL	(30*2)		/* retransmit too long timeout */
-#define	T_REMAX		(30*2)		/* maximum retransmission time */
+#define	TCPSC_MSL	(TCP_TTL*PR_SLOWHZ)	/* max seg lifetime */
+#define	TCPSC_REXMT	(1*PR_SLOWHZ)		/* base retransmit time */
+#define	TCPSC_REXMTTL	(TCP_TTL*2*PR_SLOWHZ)	/* retransmit too long */
+#define	TCPSC_KEEP	(TCP_TTL*4*PR_SLOWHZ)	/* keep alive */
+#define	TCPSC_KEEPTTL	(4*TCPSC_KEEP)		/* keep alive too long */
+#define	TCPSC_PERSIST	(5*PR_SLOWHZ)		/* retransmit persistance */
+#define	TCPSC_2MSL	(TCP_TTL*2*PR_SLOWHZ)	/* 2*msl quiet time timer */
+
+#define	TCPSC_REMAX	(TCP_TTL*PR_SLOWHZ)	/* maximum rexmt time */
 
 struct	tcpstat {
 	int	tcps_badsum;
@@ -142,39 +137,15 @@ struct	tcpstat {
 	int	tcps_unack;
 };
 
-#ifdef TCPDEBUG
-#define	TDBSIZE		50
-/*
- * Tcp debugging record.
- */
-struct tcp_debug {
-	long	td_tod;			/* time of day */
-	struct	tcbcb *td_tcb;		/* -> tcb */
-	char	td_old;			/* old state */
-	char	td_inp;			/* input */
-	char	td_tim;			/* timer id */
-	char	td_new;			/* new state */
-	seq_t	td_sno;			/* seq_t number */
-	seq_t	td_ano;			/* acknowledgement */
-	u_short	td_wno;			/* window */
-	u_short	td_lno;			/* length */
-	u_char	td_flg;			/* message flags */
-};
-#endif
-
 #ifdef KERNEL
-seq_t	tcp_iss;			/* tcp initial send seq # */
-struct	inpcb tcb;
-struct	tcpstat tcpstat;
-#ifdef TCPDEBUG
-int	tcpconsdebug;			/* set to 1 traces on console */
-struct	tcp_debug tcp_debug[TDBSIZE];
-int	tdbx;			/* rotating index into tcp_debug */
+tcp_seq	tcp_iss;		/* tcp initial send seq # */
+struct	inpcb tcb;		/* head of queue of active tcpcb's */
+struct	tcpstat tcpstat;	/* tcp statistics */
 #endif
 struct	tcpiphdr *tcp_template();
 #endif
 
-#define	SEQ_LT(a,b)	((int)((a)-(b)) < 0)
-#define	SEQ_LEQ(a,b)	((int)((a)-(b)) <= 0)
-#define	SEQ_GT(a,b)	((int)((a)-(b)) > 0)
-#define	SEQ_GEQ(a,b)	((int)((a)-(b)) >= 0)
+#ifdef	TCPTIMERS
+char *tcptimers[] =
+    { "INIT", "REXMT", "REXMTTL", "KEEP", "KEEPTTL", "PERSIST", "2MSL" };
+#endif
