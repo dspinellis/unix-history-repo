@@ -1,17 +1,17 @@
 /*
- * Copyright (c) 1980, 1989 Regents of the University of California.
+ * Copyright (c) 1980, 1989, 1991 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980, 1989 Regents of the University of California.\n\
+"@(#) Copyright (c) 1980, 1989, 1991 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)stty.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)stty.c	5.19 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -215,7 +215,6 @@ struct {
 
 struct winsize win;
 int ldisc;
-int dodisc;
 int debug = 0;
 int trace, dotrace;
 int extproc;
@@ -278,10 +277,11 @@ main(argc, argv)
 			prmode(&t, ldisc, ALL);
 			exit(0);
 		}
-		if (eq("old", *argv)) {
-			goto next;
-		}
-		if (eq("new", *argv)) {
+		if (eq("tty", *argv) || eq("old", *argv) || eq("new", *argv)) {
+			int nldisc = TTYDISC;
+
+			if (ioctl(0, TIOCSETD, &nldisc) < 0)
+				syserrexit("TIOCSETD");
 			goto next;
 		}
 		if (eq("nl", *argv)) {
@@ -533,6 +533,7 @@ prmode(tp, ldisc, fmt)
 		default:	
 			sprintf(unknown, "#%d", ldisc);
 			ld = unknown;
+			break;
 		}
 		put("%s disc; ", ld);
 	}
