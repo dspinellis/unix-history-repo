@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	2.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	2.2 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -136,6 +136,7 @@ daddr_t	dupblk;
 int	inosumbad;
 int	offsumbad;
 int	frsumbad;
+int	sbsumbad;
 
 #define	zapino(x)	(*(x) = zino)
 struct	dinode zino;
@@ -444,6 +445,11 @@ check(dev)
 				    c, cgrp.cg_cs.cs_nifree, n);
 			inosumbad++;
 		}
+		if (cgrp.cg_cs.cs_nbfree != sblock.fs_cs(&sblock, c).cs_nbfree
+		  || cgrp.cg_cs.cs_nffree != sblock.fs_cs(&sblock, c).cs_nffree
+		  || cgrp.cg_cs.cs_nifree != sblock.fs_cs(&sblock, c).cs_nifree
+		  || cgrp.cg_cs.cs_ndir != sblock.fs_cs(&sblock, c).cs_ndir)
+			sbsumbad++;
 	}
 /* 1b */
 	if (enddup != &duplist[0]) {
@@ -647,11 +653,12 @@ out5:
 		if ((b = n_blks+n_ffree+sblock.fs_frag*n_bfree+n_index+n_bad) != fmax) {
 			pwarn("%ld BLK(S) MISSING\n", fmax - b);
 			fixcg = 1;
-		} else if (inosumbad + offsumbad + frsumbad) {
-			pwarn("SUMMARY INFORMATION %s%s%sBAD\n",
+		} else if (inosumbad + offsumbad + frsumbad + sbsumbad) {
+			pwarn("SUMMARY INFORMATION %s%s%s%sBAD\n",
 			    inosumbad ? "(INODE FREE) " : "",
 			    offsumbad ? "(BLOCK OFFSETS) " : "",
-			    frsumbad ? "(FRAG SUMMARIES) " : "");
+			    frsumbad ? "(FRAG SUMMARIES) " : "",
+			    sbsumbad ? "(SUPER BLOCK SUMMARIES) " : "");
 			fixcg = 1;
 		} else if (n_ffree != sblock.fs_cstotal.cs_nffree ||
 		    n_bfree != sblock.fs_cstotal.cs_nbfree) {
@@ -1203,6 +1210,7 @@ setup(dev)
 	dev_t rootdev;
 	struct stat statb;
 	int super = bflag ? bflag : SBLOCK;
+	int i;
 
 	bflag = 0;
 	if (stat("/", &statb) < 0)
@@ -1237,7 +1245,7 @@ setup(dev)
 	}
 	if (preen == 0)
 		printf("\n");
-	fixcg = 0; inosumbad = 0; offsumbad = 0; frsumbad = 0;
+	fixcg = 0; inosumbad = 0; offsumbad = 0; frsumbad = 0; sbsumbad = 0;
 	dfile.mod = 0;
 	n_files = n_blks = n_ffree = n_bfree = 0;
 	muldup = enddup = &duplist[0];
@@ -1248,10 +1256,19 @@ setup(dev)
 	initbarea(&fileblk);
 	initbarea(&inoblk);
 	initbarea(&cgblk);
+	/*
+	 * Read in the super block and its summary info.
+	 */
 	if (bread(&dfile, &sblock, super, SBSIZE) == 0)
 		return (0);
 	sblk.b_bno = super;
 	sblk.b_size = SBSIZE;
+	for (i = 0; i < howmany(sblock.fs_cssize, sblock.fs_bsize); i++) {
+		sblock.fs_csp[i] = (struct csum *)calloc(1, sblock.fs_bsize);
+		bread(&dfile, (char *)sblock.fs_csp[i],
+		    fsbtodb(&sblock, sblock.fs_csaddr + (i * sblock.fs_frag)),
+		    sblock.fs_bsize);
+	}
 	/*
 	 * run a few consistency checks of the super block
 	 */
@@ -1514,12 +1531,6 @@ makecg()
 	sblock.fs_cstotal.cs_nffree = 0;
 	sblock.fs_cstotal.cs_nifree = 0;
 	sblock.fs_cstotal.cs_ndir = 0;
-	for (i = 0; i < howmany(sblock.fs_cssize, sblock.fs_bsize); i++) {
-		sblock.fs_csp[i] = (struct csum *)calloc(1, sblock.fs_bsize);
-		bread(&dfile, (char *)sblock.fs_csp[i],
-		    fsbtodb(&sblock, sblock.fs_csaddr + (i * sblock.fs_frag)),
-		    sblock.fs_bsize);
-	}
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		dbase = cgbase(&sblock, c);
 		dmax = dbase + sblock.fs_fpg;
