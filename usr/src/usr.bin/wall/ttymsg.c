@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttymsg.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttymsg.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -104,7 +104,7 @@ ttymsg(iov, iovcnt, line)
 			(void) signal(SIGTERM, SIG_DFL); /* XXX */
 			(void) sigsetmask(0);
 			(void) alarm((u_int)(60 * 5));
-			(void) fcntl(fd, FNDELAY, &off);
+			(void) fcntl(fd, O_NONBLOCK, &off);
 			continue;
 		} 
 		/*
