@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)fopen.3	6.5 (Berkeley) %G%
+.\"	@(#)fopen.3	6.6 (Berkeley) %G%
 .\"
 .TH FOPEN 3 ""
 .UC 7
@@ -73,9 +73,9 @@ described above.
 This is strictly for compatibility with ANSI X3.159-1989 (``ANSI C'')
 and has no effect; the ``b'' is ignored.
 .PP
-Any created files will have mode
-``S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH'' (0666), 
-as modified by the process' umask value (see
+Any created files will have mode ``S_IRUSR  |  S_IWUSR | S_IRGRP | 
+S_IWGRP | S_IROTH | S_IWOTH'' (0666), as modified by the process'
+umask value (see
 .IR umask (2)).
 .PP
 Reads and writes may be intermixed on read/write streams in any order,
@@ -109,7 +109,7 @@ and
 .I stderr
 to files.
 .SH "SEE ALSO"
-fcntl(2), open(2), fclose(3), fseek(3), funopen(3), setbuf(3)
+open(2), fclose(3), fseek(3), funopen(3)
 .SH "RETURN VALUES"
 Upon successful completion 
 .IR fopen ,
@@ -131,9 +131,15 @@ provided to
 or
 .IR freopen 
 was invalid.
-.TP 15 
-[ENOMEM]
-Not enough memory was available to allocate data structures.
+.PP
+.IR Fopen ,
+.I fdopen
+and
+.I freopen
+may also fail and set
+.IR errno
+for any of the errors specified for the routine
+.IR malloc (3).
 .PP
 .I Fopen
 may also fail and set
