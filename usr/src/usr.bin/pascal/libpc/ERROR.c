@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)ERROR.c 1.2 %G%";
+static char sccsid[] = "@(#)ERROR.c 1.3 %G%";
 
 #include	<stdio.h>
 #include	<signal.h>
@@ -13,15 +13,19 @@ static char sccsid[] = "@(#)ERROR.c 1.2 %G%";
  * and an error specific piece of error data. The error file is constructed
  * from errdata by the makefile using the editor script make.ed1.
  */
-ERROR(errnum, errdata)
+long
+ERROR(errnum, errordata)
 
-	long		errnum;
+	short	errnum;
+	double	errordata;
+{
 	union cvt {
 		long	longdat;
 		char	*strngdat;
 		double	dbldat;
 	} errdata;
-{
+
+	errdata.dbldat = errordata;
 	PFLUSH();
 	if (_entry[errnum].entryaddr != 0) {
 		(*_entry[errnum].entryaddr)(errdata);
@@ -31,7 +35,7 @@ ERROR(errnum, errdata)
 	SETRACE();
 	switch (errnum) {
 	case ECHR:
-		fprintf(stderr, "Argument to chr of %d is out of range\n"
+		fprintf(stderr, "Argument to chr of %D is out of range\n"
 			,errdata.longdat);
 		return(errdata.longdat);
 	case EHALT:
@@ -59,7 +63,7 @@ ERROR(errnum, errdata)
 		fprintf(stderr,"%s: Line limit exceeded\n",errdata.strngdat);
 		return(0);
 	case ESQRT:
-		fprintf(stderr,"Negative argument of %E to sqrt\n"
+		fprintf(stderr,"Negative argument of %e to sqrt\n"
 			,errdata.dbldat);
 		return(errdata.dbldat);
 	case EREFINAF:
@@ -91,7 +95,7 @@ ERROR(errnum, errdata)
 		fprintf(stderr,"%s: File name too long\n",errdata.strngdat);
 		return(0);
 	case ELN:
-		fprintf(stderr,"Non-positive argument of %E to ln\n"
+		fprintf(stderr,"Non-positive argument of %e to ln\n"
 			,errdata.dbldat);
 		return(errdata.dbldat);
 	case EBADINUM:
@@ -109,61 +113,61 @@ ERROR(errnum, errdata)
 		return(0);
 	case ENAMRNG:
 		fprintf(stderr,
-			"Enumerated type value of %d is out of range on output\n",
+			"Enumerated type value of %D is out of range on output\n",
 			errdata.longdat);
 		return(errdata.longdat);
 	case EFMTSIZE:
-		fprintf(stderr,"Negative format width: %d\n",errdata.longdat);
+		fprintf(stderr,"Negative format width: %D\n",errdata.longdat);
 		return(0);
 	case EGOTO:
 		fputs("Active frame not found in non-local goto\n", stderr);
 		return(0);
 	case ECASE:
-		fprintf(stderr,"Label of %d not found in case\n"
+		fprintf(stderr,"Label of %D not found in case\n"
 			,errdata.longdat);
 		return(errdata.longdat);
 	case EOUTOFMEM:
 		fputs("Ran out of memory\n",stderr);
 		return(0);
 	case ECTLWR:
-		fprintf(stderr, "Range lower bound of %d out of set bounds\n",
+		fprintf(stderr, "Range lower bound of %D out of set bounds\n",
 			errdata.longdat);
 		return(0);
 	case ECTUPR:
-		fprintf(stderr, "Range upper bound of %d out of set bounds\n",
+		fprintf(stderr, "Range upper bound of %D out of set bounds\n",
 			errdata.longdat);
 		return(0);
 	case ECTSNG:
-		fprintf(stderr, "Value of %d out of set bounds\n",
+		fprintf(stderr, "Value of %D out of set bounds\n",
 			errdata.longdat);
 		return(0);
 	case ENARGS:
 		if (errdata.longdat < 0)
 			fprintf(stderr,
-				"There were %d too few arguments to formal routine\n",
+				"There were %D too few arguments to formal routine\n",
 				-errdata.longdat);
 		else
 			fprintf(stderr,
-				"There were %d too many arguments to formal routine\n",
+				"There were %D too many arguments to formal routine\n",
 				errdata.longdat);
 		return(0);
 	case EARGV:
-		fprintf(stderr,"Argument to argv of %d is out of range\n"
+		fprintf(stderr,"Argument to argv of %D is out of range\n"
 			,errdata.longdat);
 		return(errdata.longdat);
 	case EPACK:
-		fprintf(stderr,"i = %d: Bad i to pack(a,i,z)\n"
+		fprintf(stderr,"i = %D: Bad i to pack(a,i,z)\n"
 			,errdata.longdat);
 		return(errdata.longdat);
 	case EUNPACK:
-		fprintf(stderr,"i = %d: Bad i to unpack(z,a,i)\n"
+		fprintf(stderr,"i = %D: Bad i to unpack(z,a,i)\n"
 			,errdata.longdat);
 		return(errdata.longdat);
 	case ERANGE:
-		fprintf(stderr,"Value of %d is out of range\n",errdata.longdat);
+		fprintf(stderr,"Value of %D is out of range\n",errdata.longdat);
 		return(errdata.longdat);
 	case ESUBSC:
-		fprintf(stderr,"Subscript value of %d is out of range\n"
+		fprintf(stderr,"Subscript value of %D is out of range\n"
 			,errdata.longdat);
 		return(errdata.longdat);
 	case EASRT:
@@ -171,7 +175,7 @@ ERROR(errnum, errdata)
 		return(0);
 	case ESTLIM:
 		fprintf(stderr,
-			"Statement count limit exceeded, %d statements executed\n",
+			"Statement count limit exceeded, %D statements executed\n",
 			errdata.longdat);
 		return(errdata.longdat);
 	default:

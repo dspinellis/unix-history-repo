@@ -1,16 +1,17 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)REMOVE.c 1.1 %G%";
+static char sccsid[] = "@(#)REMOVE.c 1.2 %G%";
 
 #include "h00vars.h"
 #include "h01errs.h"
 
-REMOVE(name, maxnamlen)
+REMOVE(name, namlim)
 
 	char			*name;
-	int			maxnamlen;
+	long			namlim;
 {
 	register int	cnt;
+	register int	maxnamlen = namlim;
 	char		namebuf[NAMSIZ];
 
 	/*

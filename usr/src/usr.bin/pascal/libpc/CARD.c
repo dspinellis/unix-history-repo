@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)CARD.c 1.1 %G%";
+static char sccsid[] = "@(#)CARD.c 1.2 %G%";
 
 char _cntbl[] = {
 	0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,
@@ -21,12 +21,14 @@ char _cntbl[] = {
 	4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8
 	};
 
-CARD(setptr, size)
+long
+CARD(setptr, siz)
 
 	register unsigned char	*setptr;
-	register int		size;
+	long		siz;
 {
 	register int	cnt;
+	register int	size = siz;
 
 	cnt = 0;
 	do {

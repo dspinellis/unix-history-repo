@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)LLIMIT.c 1.1 %G%";
+static char sccsid[] = "@(#)LLIMIT.c 1.2 %G%";
 
 #include "h00vars.h"
 #include "h01errs.h"
@@ -8,7 +8,7 @@ static char sccsid[] = "@(#)LLIMIT.c 1.1 %G%";
 LLIMIT(curfile, limit)
 
 	register struct iorec	*curfile;
-	int			limit;
+	long			limit;
 {
 	if (limit <= 0)
 		limit = 0x7fffffff;

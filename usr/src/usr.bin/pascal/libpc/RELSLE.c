@@ -1,15 +1,18 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)RELSLE.c 1.1 %G%";
+static char sccsid[] = "@(#)RELSLE.c 1.2 %G%";
 
 #include "h00vars.h"
 
-RELSLE(size, str1, str2)
+bool
+RELSLE(siz, str1, str2)
 
-	register int	size;
+	long		siz;
 	register char	*str1;
 	register char	*str2;
 {
+	register int size = siz;
+
 	while (*str1++ == *str2++ && --size)
 		/* void */;
 	if ((size == 0) || (*--str1 <= *--str2))

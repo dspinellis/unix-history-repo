@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)IOSYNC.c 1.3 %G%";
+static char sccsid[] = "@(#)IOSYNC.c 1.4 %G%";
 
 #include "h00vars.h"
 #include "h01errs.h"
@@ -31,7 +31,7 @@ IOSYNC(curfile)
 		curfile->funit |= EOFF;
 		return;
 	}
-	fread(curfile->fileptr, curfile->fsize, 1, curfile->fbuf);
+	fread(curfile->fileptr, (int)curfile->fsize, 1, curfile->fbuf);
 	if (ferror(curfile->fbuf)) {
 		ERROR(EPASTEOF, curfile->pfname);
 		return;

@@ -1,7 +1,8 @@
-SCCSID = "@(#)Makefile 1.5 %G%"
+SCCSID = "@(#)Makefile 1.6 %G%"
 CFLAGS = -O
 LIB = ${DESTDIR}/usr/lib
-SRCDIR = /usr/ucb
+SRCDIR = ${DESTDIR}/usr/ucb
+PASDIR = ${DESTDIR}/usr/src/cmd/pascal
 LD= ld
 RM = /bin/rm -f
 RANLIB= ranlib
@@ -19,11 +20,11 @@ CMDS =	ACTFILE.c ADDT.c ARGV.c ASRT.c BUFF.c CARD.c CHR.c CLCK.c \
 	UNIT.c UNPACK.c WRITEC.c WRITEF.c WRITES.c WRITLN.c
 
 SYS =	ERROR.c GETNAME.c IOSYNC.c PCEXIT.c PCLOSE.c PCSTART.c PFLUSH.c \
-	PMFLUSH.c RAND.s SETRACE.s UNSYNC.c UNWIND.c
+	PMFLUSH.c RAND.s SETRACE.s UNSYNC.c UNWIND.c blkclr.c blkcpy.c
 
 EXTN =	APPEND.c CATCHERR.c SEEK.c TELL.c
 
-HDRS =	h00vars.h ashdr.s errdata make.ed1
+HDRS =	whoami.h h00vars.h ashdr.s errdata make.ed1
 
 OBJS =	ACTFILE.o ADDT.o ARGV.o ASRT.o BUFF.o CARD.o CHR.o CLCK.o\
 	CTTOT.o DATE.o DEFNAME.o DISPOSE.o EXPO.o FCALL.o FLUSH.o FNIL.o\
@@ -37,7 +38,7 @@ OBJS =	ACTFILE.o ADDT.o ARGV.o ASRT.o BUFF.o CARD.o CHR.o CLCK.o\
 	TRUNC.o UNIT.o UNPACK.o WRITEC.o WRITEF.o WRITES.o WRITLN.o
 
 SYOBJ =	ERROR.o GETNAME.o IOSYNC.o PCEXIT.o PCLOSE.o PCSTART.o PFLUSH.o\
-	PMFLUSH.o RAND.o SETRACE.o UNSYNC.o UNWIND.o
+	PMFLUSH.o RAND.o SETRACE.o UNSYNC.o UNWIND.o blkclr.o blkcpy.o
 
 EXOBJ =	APPEND.o CATCHERR.o SEEK.o TELL.o
 
@@ -64,6 +65,9 @@ libpc: h01errs.h ${OBJS} ${SYOBJ} ${EXOBJ}
 h01errs.h: errdata make.ed1 ashdr.s
 	ed - errdata <make.ed1
 	${RM} E.s *.o
+
+whoami.h:
+	cp ${PASDIR}/whoami.h whoami.h
 
 clean:
 	${RM} libpc *.o a.out lpr tmp core errs

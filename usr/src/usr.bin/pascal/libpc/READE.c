@@ -1,17 +1,16 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)READE.c 1.3 %G%";
+static char sccsid[] = "@(#)READE.c 1.4 %G%";
 
 #include "h00vars.h"
 #include "h01errs.h"
 
+long
 READE(curfile, name)
 
 	register struct iorec	*curfile;
 	char			*name;
 {
-	long			data;
-
 	register short	*sptr;
 	register int	len;
 	register int	nextlen;
@@ -50,7 +49,7 @@ READE(curfile, name)
 		if (nextlen == len && RELEQ(len, namebuf, cp)) {
 			return *((short *) name) - cnt;
 		}
-		cp += nextlen;
+		cp += (int)nextlen;
 	} while (--cnt);
 	ERROR(ENUMNTFD, namebuf);
 }

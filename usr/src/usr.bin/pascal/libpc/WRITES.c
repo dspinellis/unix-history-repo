@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)WRITES.c 1.1 %G%";
+static char sccsid[] = "@(#)WRITES.c 1.2 %G%";
 
 #include "h00vars.h"
 #include "h01errs.h"
@@ -8,13 +8,15 @@ static char sccsid[] = "@(#)WRITES.c 1.1 %G%";
 WRITES(curfile, d1, d2, d3, d4)
 
 	register struct iorec	*curfile;
-	int			d1, d2, d3, d4;
+	FILE			*d1;
+	long			d2, d3;
+	char			*d4;
 {
 	if (curfile->funit & FREAD) {
 		ERROR(EWRITEIT, curfile->pfname);
 		return;
 	}
-	fwrite(d1, d2, d3, d4);
+	fwrite(d1, (int)d2, (int)d3, d4);
 	if (ferror(curfile->fbuf)) {
 		ERROR(EWRITE, curfile->pfname);
 		return;

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)PMFLUSH.c 1.2 %G%";
+static char sccsid[] = "@(#)PMFLUSH.c 1.3 %G%";
 
 #include "h00vars.h"
 
@@ -13,13 +13,13 @@ PMFLUSH(cntrs, rtns, bufaddr)
 	register FILE	*filep;
 
 	bufaddr[0] = 0426;
-	bufaddr[1] = time();
+	time(&bufaddr[1]);
 	bufaddr[2] = cntrs;
 	bufaddr[3] = rtns;
 	filep = fopen(PXPFILE, "w");
 	if (filep == NULL)
 		goto ioerr;
-	fwrite(bufaddr, cntrs + 1, sizeof(long), filep);
+	fwrite(bufaddr, (int)(cntrs + 1), sizeof(long), filep);
 	if (ferror(filep))
 		goto ioerr;
 	fclose(filep);

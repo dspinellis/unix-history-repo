@@ -1,14 +1,16 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)DISPOSE.c 1.1 %G%";
+static char sccsid[] = "@(#)DISPOSE.c 1.2 %G%";
 
 #include	"h00vars.h"
 #include	"h01errs.h"
 
-DISPOSE(var, size)
+DISPOSE(var, siz)
 	register char	**var;	/* pointer to pointer being deallocated */
-	int		size;	/* sizeof(bletch) */
+	long		siz;	/* sizeof(bletch) */
 {
+	register int size = siz;
+
 	if (*var == 0 || *var + size > _maxptr || *var < _minptr) {
 		ERROR(ENILPTR,0);
 		return;
