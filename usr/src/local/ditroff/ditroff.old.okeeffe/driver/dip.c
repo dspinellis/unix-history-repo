@@ -1,4 +1,4 @@
-/*	dip.c	1.8	(Berkeley)	84/04/17
+/*	dip.c	1.9	(Berkeley)	84/04/30
  *	dip
  *	driver for impress/imagen canon laser printer
  */
@@ -564,6 +564,23 @@ char *s, *s1;
 		error(FATAL, "illegal fp command %d %s", n, s);
 	if (fontbase[n] != NULL && strcmp(s, fontbase[n]->namefont) == 0)
 		return;
+
+	for (fin = 1; fin <= NFONT; fin++)	/* first check to see if the */
+	    if (strcmp(s, fontbase[fin]->namefont) == 0) {  /* font is loaded */
+		register unsigned char *c;		    /* somewhere else */
+
+#define ptrswap(x, y) { c = (unsigned char*) (x); x = y; y = c; }
+#define ptrfswap(x, y) { c=(unsigned char*)(x); x = y; y = (struct font *) c; }
+
+		ptrfswap(fontbase[n], fontbase[fin]);
+		ptrswap(codetab[n], codetab[fin]);
+		ptrswap(widtab[n], widtab[fin]);
+		ptrswap(fitab[n], fitab[fin]);
+		t_fp(n, fontbase[n]->namefont, fontbase[n]->intname);
+		t_fp(fin, fontbase[fin]->namefont, fontbase[fin]->intname);
+		return;
+	    }
+
 	if (s1 == NULL || s1[0] == '\0')
 		sprintf(temp, "%s/devip/%s.out", fontdir, s);
 	else
