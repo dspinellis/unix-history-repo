@@ -1,0 +1,57 @@
+
+Changes made to the 4.3BSD-tahoe distribution to support 
+HCX9.
+
+Replace:
+	/boot
+	/dev/MAKEDEV
+	/etc/disktab
+	/etc/fstab
+	/etc/netstart
+	/stand/boot
+	/stand/cat
+	/stand/copy
+	/stand/ls
+	/sys/conf/devices.tahoe
+	/sys/conf/files.tahoe
+	/sys/netns/ns_ip.c
+	/sys/stand/cat.c
+	/sys/stand/gets.c
+	/sys/stand/ls.c
+	/sys/stand/saio.h
+	/sys/tahoe/autoconf.c
+	/sys/tahoe/conf.c
+	/sys/tahoe/genassym.c
+	/sys/tahoe/locore.s
+	/sys/tahoestand/Makefile
+	/sys/tahoestand/boot.c
+	/sys/tahoevba/vba.c
+	/sys/tahoevba/vx.c
+	/vmunix
+
+Add:
+	/dev/hd[0-7]
+	/sys/tahoeif/if_ex.c
+	/sys/tahoeif/if_exreg.h
+	/sys/tahoevba/hd.c
+	/sys/tahoevba/hdreg.h
+
+Original tahoe diagnostic files moved to /tahoe:
+	/fppoc
+	/fppwcs
+	/poc
+	/poc1
+	/poc2
+	/wcs
+
+Diagnostic files that need to be put in place to support the HCX9:
+	/fpevent
+	/fppwcs
+	/fppwcs_dual
+	/hdcwcs
+	/load_diags
+	/start_fpp
+	/wcs
+	/wcs_dual
+
+Repoint /sys/conf/GENERIC to /sys/conf/GENERIC.hcx9
