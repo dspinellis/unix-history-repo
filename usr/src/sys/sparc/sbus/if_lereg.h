@@ -4,9 +4,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_lereg.h	8.1 (Berkeley) %G%
+ *	@(#)if_lereg.h	8.2 (Berkeley) %G%
  *
- * from: $Header: if_lereg.h,v 1.6 92/11/26 02:28:12 torek Exp $
+ * from: $Header: if_lereg.h,v 1.7 93/10/31 04:41:00 leres Locked $
  */
 
 #define	LEMTU		1518
@@ -62,15 +62,15 @@ struct lereg1 {
  */
 struct lereg2 {
 	/* initialization block */
-	u_short	ler2_mode;		/* +0x0000: mode */
-	u_char	ler2_padr[6];		/* +0x0002: physical address */
-	u_long	ler2_ladrf[2];		/* +0x0008: logical address filter */
-	u_short	ler2_rdra;		/* +0x0010: receive descriptor addr */
-	u_short	ler2_rlen;		/* +0x0012: rda high and ring size */
-	u_short	ler2_tdra;		/* +0x0014: transmit descriptor addr */
-	u_short	ler2_tlen;		/* +0x0016: tda high and ring size */
+	u_short	ler2_mode;		/* mode */
+	u_char	ler2_padr[6];		/* physical address */
+	u_short	ler2_ladrf[4];		/* logical address filter */
+	u_short	ler2_rdra;		/* receive descriptor addr */
+	u_short	ler2_rlen;		/* rda high and ring size */
+	u_short	ler2_tdra;		/* transmit descriptor addr */
+	u_short	ler2_tlen;		/* tda high and ring size */
 	/* receive message descriptors. bits/hadr are byte order dependent. */
-	struct	lermd {			/* +0x0018 */
+	struct	lermd {
 		u_short	rmd0;		/* low address of packet */
 		u_char	rmd1_bits;	/* descriptor bits */
 		u_char	rmd1_hadr;	/* high address of packet */
@@ -78,15 +78,15 @@ struct lereg2 {
 		u_short	rmd3;		/* message byte count */
 	} ler2_rmd[LERBUF];
 	/* transmit message descriptors */
-	struct	letmd {			/* +0x0058 */
+	struct	letmd {
 		u_short	tmd0;		/* low address of packet */
 		u_char	tmd1_bits;	/* descriptor bits */
 		u_char	tmd1_hadr;	/* high address of packet */
 		short	tmd2;		/* buffer byte count */
 		u_short	tmd3;		/* transmit error bits */
 	} ler2_tmd[LETBUF];
-	char	ler2_rbuf[LERBUF][LEMTU]; /* +0x0060 */
-	char	ler2_tbuf[LETBUF][LEMTU]; /* +0x2fd0 */
+	char	ler2_rbuf[LERBUF][LEMTU];
+	char	ler2_tbuf[LETBUF][LEMTU];
 };
 
 /* Initialzation block (mode) */
