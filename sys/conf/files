@@ -1,4 +1,4 @@
-# $Id: files,v 1.14 1993/12/20 16:16:28 wollman Exp $
+# $Id: files,v 1.15 1994/01/17 09:43:24 davidg Exp $
 #
 ddb/db_access.c		optional ddb
 ddb/db_aout.c		optional ddb
@@ -56,6 +56,9 @@ kern/subr_xxx.c		standard
 kern/sys_generic.c	standard
 kern/sys_process.c	standard
 kern/sys_socket.c	standard
+kern/sysv_ipc.c         optional sysvipc
+kern/sysv_msg.c         optional sysvmsg
+kern/sysv_sem.c         optional sysvsem
 kern/sysv_shm.c		optional sysvshm
 kern/tty.c		standard
 kern/tty_compat.c	standard

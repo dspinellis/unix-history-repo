@@ -1,4 +1,4 @@
-	$Id: syscalls.master,v 1.5 1993/10/24 06:19:58 paul Exp $
+	$Id: syscalls.master,v 1.6 1993/11/07 21:24:01 wollman Exp $
 ;	from: @(#)syscalls.master	7.26 (Berkeley) 3/25/91
 ; System call name/number master file.
 ; Processed to created init_sysent.c, syscalls.c and syscall.h.
@@ -225,8 +225,16 @@
 166	UNIMPL	0 nosys
 167	UNIMPL	0 nosys
 168	UNIMPL	0 nosys
+#ifdef SYSVSEM
+169	STD	5 semsys
+#else
 169	UNIMPL	0 nosys
+#endif
+#ifdef SYSVMSG
+170	STD	6 msgsys
+#else
 170	UNIMPL	0 nosys
+#endif
 #ifdef SYSVSHM
 171	STD	4 shmsys
 #else

@@ -19,15 +19,15 @@ ASM=	accept.o access.o acct.o adjtime.o async_daemon.o bind.o chdir.o \
 	getpriority.o getrlimit.o getrusage.o getsockname.o getsockopt.o \
 	gettimeofday.o getuid.o ioctl.o kill.o ktrace.o link.o listen.o \
 	lseek.o lstat.o madvise.o mincore.o mkdir.o mkfifo.o mknod.o \
-	mmap.o mount.o mprotect.o msync.o munmap.o nfssvc.o open.o \
+	mmap.o mount.o mprotect.o msgsys.o msync.o munmap.o nfssvc.o open.o \
 	profil.o quotactl.o read.o readlink.o readv.o recvfrom.o recvmsg.o \
-	rename.o revoke.o rmdir.o select.o sendmsg.o sendto.o setdomainname.o \
-	setegid.o seteuid.o setgid.o setgroups.o sethostid.o sethostname.o \
-	setitimer.o setpgid.o setpriority.o setregid.o setreuid.o \
-	setrlimit.o setsid.o setsockopt.o settimeofday.o setuid.o shmsys.o \
-	shutdown.o sigaction.o sigstack.o socket.o socketpair.o stat.o \
-	statfs.o swapon.o symlink.o sync.o truncate.o umask.o uname.o unlink.o \
-	unmount.o utimes.o vadvise.o wait4.o write.o writev.o
+	rename.o revoke.o rmdir.o select.o semsys.o sendmsg.o sendto.o \
+	setdomainname.o setegid.o seteuid.o setgid.o setgroups.o sethostid.o \
+	sethostname.o setitimer.o setpgid.o setpriority.o setregid.o \
+	setreuid.o setrlimit.o setsid.o setsockopt.o settimeofday.o setuid.o \
+	shmsys.o shutdown.o sigaction.o sigstack.o socket.o socketpair.o \
+	stat.o statfs.o swapon.o symlink.o sync.o truncate.o umask.o uname.o \
+	unlink.o unmount.o utimes.o vadvise.o wait4.o write.o writev.o
 
 
 PASM=		${ASM:.o=.po}

@@ -5,7 +5,7 @@
  *
  * This code is derived from software contributed to Berkeley by
  * the Systems Programming Group of the University of Utah Computer
- * Science Department.
+ * Science Department. Originally from University of Wisconsin.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,51 +35,69 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	from: @(#)ipc.h	7.2 (Berkeley) 2/5/91
- *	$Id: ipc.h,v 1.2 1993/10/16 17:16:54 rgrimes Exp $
+ * from: Utah $Hdr: uipc_shm.c 1.9 89/08/14$
+ *
+ *	@(#)sysv_shm.c	7.15 (Berkeley) 5/13/91
  */
 
 /*
- * SVID compatible ipc.h file
+ * IPC routines shared by some or all of the SYSV IPC system calls.
  */
-#ifndef _IPC_H_
-#define _IPC_H_
 
-typedef	long	key_t;	/* XXX should be in types.h */
+#ifndef SYSVIPC
 
-struct ipc_perm {
-	ushort	cuid;	/* creator user id */
-	ushort	cgid;	/* creator group id */
-	ushort	uid;	/* user id */
-	ushort	gid;	/* group id */
-	ushort	mode;	/* r/w permission */
-	ushort	seq;	/* sequence # (to generate unique msg/sem/shm id) */
-	key_t	key;	/* user specified msg/sem/shm key */
-};
+#ifdef SYSVSHM
+#define SYSVIPC
+#endif
 
-/* common mode bits */
-#define	IPC_R		00400	/* read permission */
-#define	IPC_W		00200	/* write/alter permission */
+#ifdef SYSVSEM
+#define SYSVIPC
+#endif
 
-/* SVID required constants (same values as system 5) */
-#define	IPC_CREAT	01000	/* create entry if key does not exist */
-#define	IPC_EXCL	02000	/* fail if key exists */
-#define	IPC_NOWAIT	04000	/* error if request must wait */
-
-#define	IPC_PRIVATE	(key_t)0 /* private key */
-
-#define	IPC_RMID	0	/* remove identifier */
-#define	IPC_SET		1	/* set options */
-#define	IPC_STAT	2	/* get options */
-
-#ifdef KERNEL
-
-/* Macros to convert between ipc ids and array indices or sequence ids */
-
-#define IPCID_TO_IX(id)		((id) & 0xffff)
-#define IPCID_TO_SEQ(id)	(((id) >> 16) & 0xffff)
-#define IXSEQ_TO_IPCID(ix,perm)	(((perm.seq) << 16) | (ix & 0xffff))
+#ifdef SYSVMSG
+#define SYSVIPC
+#endif
 
 #endif
 
-#endif /* !_IPC_H_ */
+#ifdef SYSVIPC
+
+#include "param.h"
+#include "systm.h"
+#include "kernel.h"
+#include "proc.h"
+#include "ipc.h"
+#include "shm.h"
+
+/*
+ * Perform access checking.
+ */
+
+int
+ipcaccess(ipc, mode, cred)
+	register struct ipc_perm *ipc;
+	int mode;
+	register struct ucred *cred;
+{
+	register int m;
+
+	if (cred->cr_uid == 0)
+		return(0);
+	/*
+	 * Access check is based on only one of owner, group, public.
+	 * If not owner, then check group.
+	 * If not a member of the group, then check public access.
+	 */
+	mode &= 0700;
+	m = ipc->mode;
+	if (cred->cr_uid != ipc->uid && cred->cr_uid != ipc->cuid) {
+		m <<= 3;
+		if (!groupmember(ipc->gid, cred) &&
+		    !groupmember(ipc->cgid, cred))
+			m <<= 3;
+	}
+	if ((mode&m) == mode)
+		return (0);
+	return (EACCES);
+}
+#endif /* SYSVSHM */

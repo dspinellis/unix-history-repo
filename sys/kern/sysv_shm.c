@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: uipc_shm.c 1.9 89/08/14$
  *	from: @(#)sysv_shm.c	7.15 (Berkeley) 5/13/91
- *	$Id: sysv_shm.c,v 1.7 1993/12/19 00:51:37 wollman Exp $
+ *	$Id: sysv_shm.c,v 1.8 1993/12/20 19:31:18 wollman Exp $
  */
 
 /*
@@ -526,37 +526,5 @@ shmfree(shp)
 	shp->shm_perm.seq++;
 	if ((int)(shp->shm_perm.seq * SHMMMNI) < 0)
 		shp->shm_perm.seq = 0;
-}
-
-/*
- * XXX This routine would be common to all sysV style IPC
- *     (if the others were implemented).
- */
-static int
-ipcaccess(ipc, mode, cred)
-	register struct ipc_perm *ipc;
-	int mode;
-	register struct ucred *cred;
-{
-	register int m;
-
-	if (cred->cr_uid == 0)
-		return(0);
-	/*
-	 * Access check is based on only one of owner, group, public.
-	 * If not owner, then check group.
-	 * If not a member of the group, then check public access.
-	 */
-	mode &= 0700;
-	m = ipc->mode;
-	if (cred->cr_uid != ipc->uid && cred->cr_uid != ipc->cuid) {
-		m <<= 3;
-		if (!groupmember(ipc->gid, cred) &&
-		    !groupmember(ipc->cgid, cred))
-			m <<= 3;
-	}
-	if ((mode&m) == mode)
-		return (0);
-	return (EACCES);
 }
 #endif /* SYSVSHM */
