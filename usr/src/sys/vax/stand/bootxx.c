@@ -1,4 +1,4 @@
-/*	bootxx.c	4.2	83/02/16	*/
+/*	bootxx.c	4.3	83/02/20	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
@@ -8,21 +8,7 @@
 #include "saio.h"
 #include "../h/reboot.h"
 
-#ifdef	BOOTRK
-char bootprog[] = "hk(0,0)boot";
-#endif
-#ifdef	BOOTHP
-char bootprog[] = "hp(0,0)boot";
-#endif
-#ifdef	BOOTUP
-char bootprog[] = "up(0,0)boot";
-#endif
-#ifdef	BOOTRA
-char bootprog[] = "ra(0,0)boot";
-#endif
-#ifdef	BOOTRL
-char bootprog[] = "rl(0,0)boot";
-#endif
+char bootprog[] = "xx(0,0)boot";
 
 /*
  * Boot program... arguments passed in r10 and r11
