@@ -1,11 +1,16 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1988 Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	5.5	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that this notice is preserved and that due credit is given
+# to the University of California at Berkeley. The name of the University
+# may not be used to endorse or promote products derived from this
+# software without specific prior written permission. This software
+# is provided ``as is'' without express or implied warranty.
 #
-DESTDIR=
+#	@(#)Makefile	5.6 (Berkeley) %G%
+#
 FLAGS=	-I.. ${DEFS}
 CFLAGS=	-O ${FLAGS}
 SRCS=	addd.s addf.s cmpd.s cmpf.s cvtdl.s cvtfl.s cvtld.s cvtlf.s cvtud.s \
@@ -17,24 +22,25 @@ OBJS=	addd.o addf.o cmpd.o cmpf.o cvtdl.o cvtfl.o cvtld.o cvtlf.o cvtud.o \
 TAGSFILE=tags
 
 .s.o:
-	/lib/cpp -E ${FLAGS} -DPROF $*.s | ${AS} -o $*.o
-	ld -X -r $*.o
-	mv a.out profiled/$*.o
+	@/lib/cpp -E ${FLAGS} -DPROF $*.s | ${AS} -o $*.o
+	@ld -X -o profiled/$*.o -r $*.o
 	/lib/cpp -E ${FLAGS} $*.s | ${AS} -o $*.o
-	ld -x -r $*.o
-	mv a.out $*.o
+	@ld -x -r $*.o
+	@mv a.out $*.o
 
-fpelib fpelib_p: ${OBJS}
-	@echo "building profiled fpelib"
-	@cd profiled; ar cru ../fpelib_p ${OBJS}
-	@echo "building normal fpelib"
-	@ar cru fpelib ${OBJS}
+all: ${OBJS}
+
+link: ${OBJS}
+	(cd ../../library; rm -f ${OBJS})
+	(cd ../../profiled; rm -f ${OBJS})
+	ln ${OBJS} ../../library
+	(cd profiled; ln ${OBJS} ../../../profiled)
 
 tags:
 	echo "no tags here"
 
 clean:
-	rm -f ${OBJS} profiled/*.o errs a.out core fpelib fpelib_p
+	rm -f *.o profiled/* a.out core ${TAGSFILE}
 
 depend:
 	mkdep ${CFLAGS} ${SRCS}
