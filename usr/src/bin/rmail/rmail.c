@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rmail.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rmail.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -52,6 +52,10 @@ static char sccsid[] = "@(#)rmail.c	8.1 (Berkeley) %G%";
 #include <sysexits.h>
 #include <unistd.h>
 # include "conf.h"
+
+#ifndef MAX
+# define MAX(a, b)	((a) < (b) ? (b) : (a))
+#endif
 
 void err __P((int, const char *, ...));
 void usage __P((void));
@@ -227,11 +231,22 @@ main(argc, argv)
 	/*
 	 * Don't copy arguments beginning with - as they will be
 	 * passed to sendmail and could be interpreted as flags.
+	 * To prevent confusion of sendmail wrap < and > around
+	 * the address (helps to pass addrs like @gw1,@gw2:aa@bb)
 	 */
-	do {
-		if (*argv && **argv == '-')
+	while (*argv) {
+		if (**argv == '-')
 			err(EX_USAGE, "dash precedes argument: %s", *argv);
-	} while ((args[i++] = *argv++) != NULL);
+		if (strchr(*argv, ',') == NULL || strchr(*argv, '<') != NULL)
+			args[i++] = *argv;
+		else {
+			if ((args[i] = malloc(strlen(*argv) + 3)) == NULL)
+				err(EX_TEMPFAIL, "Cannot malloc");
+			sprintf (args [i++], "<%s>", *argv);
+		}
+		argv++;
+	} 
+	args[i] = 0;
 
 	if (debug) {
 		(void)fprintf(stderr, "Sendmail arguments:\n");
