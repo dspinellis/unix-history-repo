@@ -1,4 +1,4 @@
-/*	locore.s	6.1	83/07/29	*/
+/*	locore.s	4.85	83/08/01	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
@@ -31,18 +31,6 @@
 	.globl	_u
 	.set	_u,0x80000000 - UPAGES*NBPG
 
-/*
- * Restart parameter block
- * This is filled in in machdep.c in startup().
- * It MUST be page aligned.
- * When auto-restart occurs, we run restart() in machdep.c, which
- * takes a core-dump and then cold-starts.
- */ 
-	.globl	_rpb
-_rpb:
-	.space	508
-erpb:
-	.space	4
 	.globl	_intstack
 _intstack:
 	.space	NISP*NBPG
@@ -57,7 +45,7 @@ eintstack:
 	.globl	_doadump
 _doadump:
 	nop; nop				# .word 0x0101
-#define	_rpbmap	_Sysmap+8			# scb, UNIvec, rpb, istack*4
+#define	_rpbmap	_Sysmap				# rpb, scb, UNI*vec, istack*4
 	bicl2	$PG_PROT,_rpbmap
 	bisl2	$PG_KW,_rpbmap
 	tstl	_rpb+RP_FLAG			# dump only once!

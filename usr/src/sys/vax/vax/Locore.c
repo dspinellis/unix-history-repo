@@ -1,4 +1,4 @@
-/*	Locore.c	6.1	83/07/29	*/
+/*	Locore.c	4.26	83/08/01	*/
 
 #include "dz.h"
 #include "mba.h"
@@ -28,6 +28,9 @@
 
 struct	scb scb;
 int	(*UNIvec[128])();
+#if NUBA > 1
+int	(*UNI1vec[128])();
+#endif
 struct	rpb rpb;
 int	intstack[3*128];
 
@@ -93,6 +96,9 @@ lowinit()
 	panic("Machine check");
 	printf("Write timeout");
 	(*UNIvec[0])();
+#if NUBA > 1
+	(*UNI1vec[0])();
+#endif
 	ubaerror(0, (struct uba_hd *)0, 0, 0, (struct uba_regs *)0);
 	cnrint(0);
 	cnxint(0);
