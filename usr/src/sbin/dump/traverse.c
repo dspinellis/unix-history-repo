@@ -5,31 +5,28 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)traverse.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)traverse.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "dump.h"
 
 pass(fn, map)
-	int (*fn)();
-	char *map;
+	register int (*fn)();
+	register char *map;
 {
-	struct dinode *dp;
-	int bits;
+	register int bits;
 	ino_t maxino;
 
 	maxino = sblock->fs_ipg * sblock->fs_ncg - 1;
 	for (ino = 0; ino < maxino; ) {
-		if((ino % NBBY) == 0) {
+		if ((ino % NBBY) == 0) {
 			bits = ~0;
-			if(map != NULL)
+			if (map != NULL)
 				bits = *map++;
 		}
 		ino++;
-		if(bits & 1) {
-			dp = getino(ino);
-			(*fn)(dp);
-		}
+		if (bits & 1)
+			(*fn)(getino(ino));
 		bits >>= 1;
 	}
 }
@@ -37,13 +34,14 @@ pass(fn, map)
 mark(ip)
 	struct dinode *ip;
 {
-	register f;
+	register int f;
+	extern int anydskipped;
 
 	f = ip->di_mode & IFMT;
-	if(f == 0)
+	if (f == 0)
 		return;
 	BIS(ino, clrmap);
-	if(f == IFDIR)
+	if (f == IFDIR)
 		BIS(ino, dirmap);
 	if ((ip->di_mtime >= spcl.c_ddate || ip->di_ctime >= spcl.c_ddate) &&
 	    !BIT(ino, nodmap)) {
@@ -53,7 +51,8 @@ mark(ip)
 			return;
 		}
 		est(ip);
-	}
+	} else if (f == IFDIR)
+		anydskipped = 1;
 }
 
 add(ip)

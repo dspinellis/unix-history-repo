@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "dump.h"
@@ -19,6 +19,8 @@ int	cartridge = 0;	/* Assume non-cartridge tape */
 #ifdef RDUMP
 char	*host;
 #endif
+int	anydskipped;	/* set true in mark() if any directories are skipped */
+			/* this lets us avoid map pass 2 in some cases */
 
 main(argc, argv)
 	int	argc;
@@ -223,14 +225,18 @@ main(argc, argv)
 	dirmap = (char *)calloc(msiz, sizeof(char));
 	nodmap = (char *)calloc(msiz, sizeof(char));
 
+	anydskipped = 0;
 	msg("mapping (Pass I) [regular files]\n");
 	pass(mark, (char *)NULL);		/* mark updates esize */
 
-	do {
+	if (anydskipped) {
+		do {
+			msg("mapping (Pass II) [directories]\n");
+			nadded = 0;
+			pass(add, dirmap);
+		} while(nadded);
+	} else				/* keep the operators happy */
 		msg("mapping (Pass II) [directories]\n");
-		nadded = 0;
-		pass(add, dirmap);
-	} while(nadded);
 
 	bmapest(clrmap);
 	bmapest(nodmap);
