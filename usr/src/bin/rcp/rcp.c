@@ -1,9 +1,3 @@
-
-/*
- *	$Source:$
- *	$Header:$
- */
-
 /*
  * Copyright (c) 1983 The Regents of the University of California.
  * All rights reserved.
@@ -28,14 +22,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	5.21 (Berkeley) 7/17/89";
+static char sccsid[] = "@(#)rcp.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * rcp
  */
 #include <sys/param.h>
-#include <sys/types.h>
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/time.h>
