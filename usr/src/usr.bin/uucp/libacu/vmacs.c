@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vmacs.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmacs.c	4.3 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"
@@ -82,6 +82,7 @@ struct Devices *dev;
 		goto ret;
 	}
 	DEBUG(5, "ACU %s opened.\n", acu);
+	next_fd = -1;
 	fixline(va, dialspeed);
 
 	write(va, &c_SOH, 1);		/* abort, reset the dialer */
