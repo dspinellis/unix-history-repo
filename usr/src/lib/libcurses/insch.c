@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)insch.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)insch.c	5.12 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -27,7 +27,7 @@ winsch(win, ch)
 	temp1 = &win->lines[win->cury]->line[win->maxx - 1];
 	temp2 = temp1 - 1;
 	while (temp1 > end) {
-		bcopy(temp2, temp1, sizeof(__LDATA));
+		(void)memcpy(temp1, temp2, sizeof(__LDATA));
 		temp1--, temp2--;
 	}
 	temp1->ch = ch;

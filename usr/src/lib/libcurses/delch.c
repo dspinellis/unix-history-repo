@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)delch.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)delch.c	5.13 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -25,7 +25,7 @@ wdelch(win)
 	temp1 = &win->lines[win->cury]->line[win->curx];
 	temp2 = temp1 + 1;
 	while (temp1 < end) {
-		bcopy(temp2, temp1, sizeof(__LDATA));
+		(void)memcpy(temp1, temp2, sizeof(__LDATA));
 		temp1++, temp2++;
 	}
 	temp1->ch = ' ';

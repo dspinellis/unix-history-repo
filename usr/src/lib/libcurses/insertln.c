@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)insertln.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)insertln.c	5.15 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -36,8 +36,9 @@ winsertln(win)
 		if (win->orig == NULL)
 			win->lines[y] = win->lines[y - 1];
 		else
-			bcopy(win->lines[y - 1]->line, 
-			      win->lines[y]->line, win->maxx * __LDATASIZE);
+			(void)memcpy(win->lines[y]->line, 
+			    win->lines[y - 1]->line, 
+			    win->maxx * __LDATASIZE);
 		__touchline(win, y, 0, win->maxx - 1, 0);
 	}
 	if (win->orig == NULL)
