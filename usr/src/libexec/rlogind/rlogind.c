@@ -76,6 +76,8 @@ extern	errno;
 char	*line;
 extern	char	*inet_ntoa();
 
+struct winsize win = { 0, 0, 0, 0 };
+
 
 doit(f, fromp)
 	int f;
@@ -122,6 +124,7 @@ doit(f, fromp)
 	fatal(f, "Out of ptys");
 	/*NOTREACHED*/
 gotpty:
+	(void) ioctl(p, TIOCSWINSZ, &win);
 	netf = f;
 	line[strlen("/dev/")] = 't';
 #ifdef DEBUG
@@ -286,7 +289,7 @@ protocol(f, p)
 
 					if (nstop)
 						stop = nstop;
-					pibuf[0] |= nstop;
+					pibuf[0] |= nstop | oob[0];
 					send(f, &pibuf[0], 1, MSG_OOB);
 					if (pibuf[0] & TIOCPKT_FLUSHWRITE)
 					  ioctl(p, TIOCFLUSH, (char *)&out);
