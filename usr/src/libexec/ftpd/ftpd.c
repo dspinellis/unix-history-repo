@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)ftpd.c	4.31 (Berkeley) %G%";
+static	char sccsid[] = "@(#)ftpd.c	4.32 (Berkeley) %G%";
 #endif
 
 /*
@@ -327,7 +327,7 @@ FILE *
 getdatasock(mode)
 	char *mode;
 {
-	int s;
+	int s, on = 1;
 
 	if (data >= 0)
 		return (fdopen(data, mode));
@@ -335,7 +335,7 @@ getdatasock(mode)
 	if (s < 0)
 		return (NULL);
 	seteuid(0);
-	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, 0, 0) < 0)
+	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof (on)) < 0)
 		goto bad;
 	/* anchor socket to avoid multi-homing problems */
 	data_source.sin_family = AF_INET;
