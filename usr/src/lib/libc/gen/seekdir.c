@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)seekdir.c 4.2 %G%";
+static char sccsid[] = "@(#)seekdir.c 4.3 %G%";
 
 #include <sys/types.h>
 #include <ndir.h>
@@ -22,7 +22,7 @@ seekdir(dirp, loc)
 		return;
 	base = loc & ~(DIRBLKSIZ - 1);
 	offset = loc & (DIRBLKSIZ - 1);
-	if ((curloc & ~(DIRBLKSIZ - 1)) == base) {
+	if (dirp->dd_loc != 0 && (curloc & ~(DIRBLKSIZ - 1)) == base) {
 		dirp->dd_loc = offset;
 		return;
 	}
