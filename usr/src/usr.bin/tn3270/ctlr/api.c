@@ -3,15 +3,20 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)api.c	3.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)api.c	3.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -47,11 +52,12 @@ static void movetothem(int, int, char *, int);
 static void
 movetous(parms, es, di, length)
 char *parms;
-int es, di, length;
+int es, di;
+int length;
 {
     char far *farparms = parms;
 
-    movedata(es, di, (int) FP_SEG(farparms), (int) FP_OFF(farparms), length);
+    movedata(es, di, FP_SEG(farparms), FP_OFF(farparms), length);
 }
 
 static void
@@ -62,12 +68,13 @@ int length;
 {
     char far *farparms = parms;
 
-    movedata((int) FP_SEG(farparms), (int) FP_OFF(farparms), es, di, length);
+    movedata(FP_SEG(farparms), FP_OFF(farparms), es, di, length);
 }
 #endif	/* defined(MSDOS) */
 
 #if	defined(unix)
-extern char *access_api(), *unaccess_api();
+extern char *access_api();
+extern void movetous(), movetothem(), unaccess_api();
 #endif	/* defined(unix) */
 
 
@@ -122,10 +129,9 @@ struct SREGS *sregs;
 	parms.rc = 0x0b;
     } else {
 	NameArray list;
-	NameArrayElement element;
 
 	movetous((char *)&list, FP_SEG(parms.name_array),
-			    FP_OFF(parms.name_array), sizeof list);
+		    FP_OFF(parms.name_array), sizeof list);
 	if ((list.length < 14) || (list.length > 170)) {
 	    parms.rc = 0x12;
 	} else {
@@ -282,9 +288,10 @@ struct SREGS *sregs;
 		todo;
 
 	    movetous((char *)&list, FP_SEG(atlist),
-				FP_OFF(atlist), sizeof *atlist);
+			FP_OFF(atlist), sizeof *atlist);
 	    todo = list.length/2;
 	    ourentry = entry+(highestof(entry)+1);
+	    theirentry = &atlist->keystrokes;
 
 	    while (todo) {
 		if (ourentry > &entry[highestof(entry)]) {
@@ -433,7 +440,7 @@ int what_is_user;
 	    *output++ = *input++;
 	}
 	if (needtodo&TARGET_NO_EAB) {
-	    *input++;
+	    input++;
 	} else if (needtodo&SOURCE_NO_EAB) {
 	    *output++ = 0;		/* Should figure out good EAB? */
 	}
@@ -476,8 +483,8 @@ struct SREGS *sregs;
 		    if (source->characteristics&CHARACTERISTIC_EAB) {
 			length *= 2;
 		    }
-		    movetothem( (int) FP_SEG(target->buffer),
-			    (int) FP_OFF(target->buffer),
+		    movetothem(FP_SEG(target->buffer),
+			    FP_OFF(target->buffer),
 			    (char *)&Host[source->begin], length);
 		} else {
 		    copy_subroutine(target, source, &parms,
@@ -501,8 +508,8 @@ struct SREGS *sregs;
 		    length *= 2;
 		}
 		movetous((char *)&Host[target->begin],
-			    (int) FP_SEG(source->buffer),
-			    (int) FP_OFF(source->buffer), length);
+			    FP_SEG(source->buffer),
+			    FP_OFF(source->buffer), length);
 	    } else {
 		copy_subroutine(target, source, &parms, USER_IS_SOURCE, length);
 	    }
@@ -553,6 +560,7 @@ struct SREGS *sregs;
     movetothem(sregs->es, regs->x.di, (char *)&parms, sizeof parms);
 }
 
+/*ARGSUSED*/
 static void
 unknown_op(regs, sregs)
 union REGS *regs;

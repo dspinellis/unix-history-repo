@@ -3,15 +3,20 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)outbound.c	3.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)outbound.c	3.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -24,11 +29,8 @@ static char sccsid[] = "@(#)outbound.c	3.3 (Berkeley) %G%";
 #include "../api/ebc_disp.h"
 
 #include "../general/globals.h"
-#include "options.ext"
-#include "../telnet.ext"
-#include "inbound.ext"
-#include "outbound.ext"
-#include "../general/bsubs.ext"
+#include "externs.h"
+#include "declare.h"
 
 #define SetHighestLowest(position) { \
 					if (position < Lowest) { \
@@ -160,12 +162,13 @@ char	character;
 
 /* returns the number of characters consumed */
 int
-DataFromNetwork(buffer, count, control)
-register unsigned char	*buffer;		/* what the data is */
+DataFromNetwork(Buffer, count, control)
+char	*Buffer;				/* what the data is */
 register int	count;				/* and how much there is */
 int	control;				/* this buffer ended block? */
 {
     int origCount;
+    register unsigned char *buffer = (unsigned char *)Buffer;
     register int c;
     register int i;
     static int Command;
@@ -181,7 +184,7 @@ int	control;				/* this buffer ended block? */
 
 	if (count < 2) {
 	    if (count == 0) {
-		ExitString(stderr, "Short count received from host!\n", 1);
+		ExitString("Short count received from host!\n", 1);
 		return(count);
 	    }
 	    Command = buffer[0];
@@ -201,12 +204,12 @@ int	control;				/* this buffer ended block? */
 		break;
 	    default:
 		{
-		    char buffer[100];
+		    char s_buffer[100];
 
-		    sprintf(buffer,
+		    sprintf(s_buffer,
 			"Unexpected read command code 0x%x received.\n",
 								    Command);
-		    ExitString(stderr, buffer, 1);
+		    ExitString(s_buffer, 1);
 		    break;
 		}
 	    }
@@ -300,12 +303,12 @@ int	control;				/* this buffer ended block? */
 	    break;
 	default:
 	    {
-		char buffer[100];
+		char s_buffer[100];
 
-		sprintf(buffer,
+		sprintf(s_buffer,
 			"Unexpected write command code 0x%x received.\n",
 								Command);
-		ExitString(stderr, buffer, 1);
+		ExitString(s_buffer, 1);
 		break;
 	    }
 	}
@@ -427,8 +430,8 @@ int	control;				/* this buffer ended block? */
 	    case ORDER_GE:
 		Ensure(2);
 		/* XXX Should do SOMETHING! */
-		buffer += 0;
-		count -= 0;		/* For now, just use this character */
+		/* XXX buffer += 0; */
+		/* XXX count -= 0; *//* For now, just use this character */
 		break;
 	    case ORDER_YALE:		/* special YALE defined order */
 		Ensure(2);	/* need at least two characters */
@@ -444,22 +447,22 @@ int	control;				/* this buffer ended block? */
 		break;
 	    default:
 		{
-		    char buffer[100];
+		    char s_buffer[100];
 		    static struct orders_def unk_order
 						= { 0, "??", "(unknown)" };
 		    struct orders_def *porder = &unk_order;
-		    int i;
+		    int s_i;
 
-		    for (i = 0; i <= highestof(orders_def); i++) {
-			if (orders_def[i].code == c) {
-			    porder = &orders_def[i];
+		    for (s_i = 0; s_i <= highestof(orders_def); s_i++) {
+			if (orders_def[s_i].code == c) {
+			    porder = &orders_def[s_i];
 			    break;
 			}
 		    }
-		    sprintf(buffer,
+		    sprintf(s_buffer,
 			"Unsupported order '%s' (%s, 0x%x) received.\n",
 			porder->long_name, porder->short_name, c);
-		    ExitString(stderr, buffer, 1);
+		    ExitString(s_buffer, 1);
 		    /*NOTREACHED*/
 		}
 	    }
@@ -507,7 +510,7 @@ int	control;				/* this buffer ended block? */
 		TerminalIn();
 	    }
 	    if (Wcc & WCC_ALARM) {
-		RingBell(0);
+		RingBell((char *)0);
 	    }
 	}
 	LastWasTerminated = control;	/* state for next time */

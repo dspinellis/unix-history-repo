@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)api.h	3.4 (Berkeley) %G%
+ *	@(#)api.h	3.5 (Berkeley) %G%
  */
 
 /*
@@ -172,7 +172,7 @@ typedef struct {
 	function_id,
 	session_id,
 	reserved;
-    int
+    short
 	event_queue_id,
 	input_queue_id;
     char
@@ -186,18 +186,18 @@ typedef struct {
 	function_id,
 	session_id,
 	reserved;
-    int
+    short
 	connectors_task_id;
 } DisconnectFromKeyboardParms;
 
 typedef struct {
-    char
+    unsigned char
 	scancode,
 	shift_state;
 } KeystrokeEntry;
 
 typedef struct {
-    int
+    short
 	length;			/* Length (in bytes) of list */
     KeystrokeEntry keystrokes;	/* Variable size */
 } KeystrokeList;
@@ -208,7 +208,7 @@ typedef struct {
 	function_id,
 	session_id,
 	reserved;
-    int
+    short
 	connectors_task_id;
     char
 	options,
@@ -230,7 +230,7 @@ typedef struct {
 	function_id,
 	session_id,
 	reserved;
-    int
+    short
 	connectors_task_id;
 } DisableInputParms;
 
@@ -245,7 +245,7 @@ typedef struct {
     char
 	characteristics,
 	session_type;
-    int
+    short
 	begin;			/* Offset within buffer */
 } BufferDescriptor;
     
@@ -255,7 +255,7 @@ typedef struct {
 	function_id;
     BufferDescriptor
 	source;
-    int
+    short
 	source_end;		/* Offset within source buffer */
     BufferDescriptor
 	target;
@@ -304,8 +304,14 @@ typedef struct {
  * a dos system.
  */
 
-#define	FP_SEG(x)	(x)
-#define	FP_OFF(y)	(y)
+#define	FP_SEG(x)	((unsigned int)(((unsigned long)(x))>>16))
+#define	FP_OFF(y)	((unsigned int)(((unsigned long)(y))&0xFFFF))
+
+/*
+ * Undo the preceeding.
+ */
+
+#define	SEG_OFF_BACK(x,y)	(((x)<<16)|(y))
 
 /*
  * Now, it is somewhat of a pain, but we need to keep
@@ -315,7 +321,7 @@ typedef struct {
 
 struct highlow {
     unsigned char
-#if	defined(vax)
+#if	defined(vax) || defined(ns32000)
 	al,
 	ah,
 	bl,
@@ -324,7 +330,7 @@ struct highlow {
 	ch,
 	dl,
 	dh;
-#endif	/* defined(vax) */
+#endif	/* defined(vax) || defined(ns32000) */ 
 #if	defined(sun) || defined(tahoe) || defined(ibm032) || defined(pyr)
 	ah,
 	al,
@@ -334,7 +340,7 @@ struct highlow {
 	cl,
 	dh,
 	dl;
-#endif	/* defined(sun) || defined(tahoe) || defined(ibm032) */
+#endif	/* defined(sun) || defined(tahoe) || defined(ibm032) || defined(pyr) */
 };
 
 struct words {
@@ -343,7 +349,7 @@ struct words {
 	bx,
 	cx,
 	dx;
-    unsigned int
+    unsigned short
 	si,
 	di;
 };
@@ -354,7 +360,7 @@ union REGS {
 };
 
 struct SREGS {
-    unsigned int
+    unsigned short
 	cs,
 	ds,
 	es,

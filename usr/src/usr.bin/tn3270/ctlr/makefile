@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)makefile	3.5 (Berkeley) %G%
+#	@(#)makefile	3.6 (Berkeley) %G%
 #
 # msdos versus unix defines
 O	= .o
@@ -73,8 +73,8 @@ KBD	= 3270pc.kbd
 KBD	= unix.kbd
 
 # The source files...
-ALLH =	api.h function.h hostctlr.h inbound.ext oia.h \
-	options.ext options.h outbound.ext screen.h scrnctlr.h
+ALLH =	api.h declare.h externs.h function.h hostctlr.h oia.h \
+	options.h screen.h scrnctlr.h
 
 ALLC =	api.c function.c inbound.c oia.c options.c outbound.c
 
@@ -164,9 +164,8 @@ api$O: ../general/globals.h
 function$O: function.h
 inbound$O: ../general/general.h function.h hostctlr.h oia.h scrnctlr.h screen.h
 inbound$O: options.h ../api/dctype.h ../api/ebc_disp.h ../general/globals.h
-inbound$O: inbound.ext outbound.ext ../telnet.ext kbd.out
+inbound$O: externs.h declare.h kbd.out
 oia$O: ../general/general.h oia.h ../general/globals.h
-options$O: options.h ../general/globals.h options.ext
+options$O: options.h ../general/globals.h declare.h
 outbound$O: ../general/general.h hostctlr.h oia.h screen.h ../api/ebc_disp.h
-outbound$O: ../general/globals.h options.ext ../telnet.ext inbound.ext
-outbound$O: outbound.ext ../general/bsubs.ext
+outbound$O: ../general/globals.h externs.h declare.h
