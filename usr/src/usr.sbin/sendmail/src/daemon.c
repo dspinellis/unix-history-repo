@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.46 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.47 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.46 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.47 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -388,7 +388,7 @@ gothostent:
 		if (tTd(16, 101))
 		{
 			int on = 1;
-			(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_DEBUG,
+			(void) setsockopt(s, SOL_SOCKET, SO_DEBUG,
 					  (char *)&on, sizeof on);
 		}
 		if (CurEnv->e_xfp != NULL)
