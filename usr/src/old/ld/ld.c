@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ld.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)ld.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -27,6 +27,7 @@ static char sccsid[] = "@(#)ld.c	5.10 (Berkeley) %G%";
 #include <ranlib.h>
 #include <sys/stat.h>
 #include <sys/file.h>
+#include "pathnames.h"
 
 /*
  * Basic strategy:
@@ -375,9 +376,9 @@ char **argv;
 		}
 	}
 	/* add default search directories */
-	dirs[ndir++] = "/lib";
-	dirs[ndir++] = "/usr/lib";
-	dirs[ndir++] = "/usr/local/lib";
+	dirs[ndir++] = _PATH_LIB;
+	dirs[ndir++] = _PATH_USRLIB;
+	dirs[ndir++] = _PATH_LOCALLIB;
 
 	p = argv+1;
 	/*
