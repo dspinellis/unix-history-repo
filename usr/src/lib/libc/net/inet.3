@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)inet.3	6.1 (Berkeley) %G%
+.\"	@(#)inet.3	6.2 (Berkeley) %G%
 .\"
 .TH INET 3N ""
 .UC 5
@@ -17,7 +17,7 @@ inet_addr, inet_network, inet_ntoa, inet_makeaddr, inet_lnaof, inet_netof \- Int
 .B "unsigned long inet_addr(cp)
 .B "char *cp;
 .PP
-.B "int inet_network(cp)
+.B "unsigned long inet_network(cp)
 .B "char *cp;
 .PP
 .B "char *inet_ntoa(in)
