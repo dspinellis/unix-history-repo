@@ -1,0 +1,63 @@
+.pl +.5i
+.in +.5i
+.LG
+.LG
+.LG
+.ft ZC
+.ce 
+TCP/IP
+.SM
+.SM
+.SM
+.R
+.sp 2
+.TS
+tab (+) box expand;
+l s
+l l
+l l
+l l
+l l
+l l
+l l.
+_
+.sp
+ NAME:+
+.sp
+_
+ BLA Received on:+              Hardware/Software List Received on:
+.sp
+ Foreign Addendum Received on:+              Site Info Form Received on:
+.sp
+ $$$ Received on:
+.sp
+_
+ Miscellaneous Commentary:+
+.sp
+.ul
+ DATE:+REMARK:
+.sp 2
+ \l'1.5i'+\l'4i'
+.sp 2
+ \l'1.5i'+\l'4i'
+.sp 2
+ \l'1.5i'+\l'4i'
+.sp 2
+ \l'1.5i'+\l'4i'
+.sp 2
+ \l'1.5i'+\l'4i'
+.sp 2
+ \l'1.5i'+\l'4i'
+.sp 2
+ \l'1.5i'+\l'4i'
+.sp 2
+ \l'1.5i'+\l'4i'
+.sp 2
+ \l'1.5i'+\l'4i'
+.sp 2
+ \l'1.5i'+\l'4i'
+.sp 2
+ \l'1.5i'+\l'4i'
+.sp 2
+ \l'1.5i'+\l'4i'
+.sp
