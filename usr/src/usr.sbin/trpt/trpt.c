@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)trpt.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)trpt.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <machine/pte.h>
@@ -279,10 +279,12 @@ tcp_trace(act, ostate, atp, tp, ti, req)
 	case TA_INPUT:
 	case TA_OUTPUT:
 	case TA_DROP:
-		if (aflag)
-			printf("(src=%s,%u, dst=%s,%u)", inet_ntoa(ti->ti_src),
-			    ntohs(ti->ti_sport), inet_ntoa(ti->ti_dst),
-			    ntohs(ti->ti_dport));
+		if (aflag) {
+			printf("(src=%s,%u, ",
+			    inet_ntoa(ti->ti_src), ntohs(ti->ti_sport));
+			printf("dst=%s,%u)",
+			    inet_ntoa(ti->ti_dst), ntohs(ti->ti_dport));
+		}
 		seq = ti->ti_seq;
 		ack = ti->ti_ack;
 		len = ti->ti_len;
