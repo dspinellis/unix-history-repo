@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.19 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -195,7 +195,7 @@ readcf(cfname)
 
 			if (*p == '\0')
 			{
-				syserr("invalid rewrite line \"%s\"", bp);
+				syserr("invalid rewrite line \"%s\" (tab expected)", bp);
 				break;
 			}
 
