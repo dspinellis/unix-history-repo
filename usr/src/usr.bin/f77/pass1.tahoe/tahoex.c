@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include "../include/defines.h"
-#include "../include/machdefs.h"
+#include "defines.h"
+#include "machdefs.h"
 
 
 
