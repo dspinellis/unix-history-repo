@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)exec.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)exec.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -14,14 +14,15 @@ static char sccsid[] = "@(#)exec.c	5.8 (Berkeley) %G%";
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <paths.h>
+
 #if __STDC__
 #include <stdarg.h>
 #else
 #include <varargs.h>
 #endif
-#include <string.h>
-#include <stdio.h>
-#include <paths.h>
 
 extern char **environ;
 
@@ -48,7 +49,7 @@ buildargv(ap, arg, envpp)
 		if (!(argv[off] = va_arg(ap, char *)))
 			break;
 	}
-	/* Get environment pointer if need user supposed to provide one. */
+	/* Get environment pointer if user supposed to provide one. */
 	if (envpp)
 		*envpp = va_arg(ap, char **);
 	return(argv);
@@ -152,6 +153,7 @@ execvp(name, argv)
 	const char *name;
 	char * const *argv;
 {
+	register int lp, ln;
 	register char *p;
 	int eacces, etxtbsy;
 	char *bp, *cur, *path, buf[MAXPATHLEN];
@@ -175,9 +177,28 @@ execvp(name, argv)
 		 * It's a SHELL path -- double, leading and trailing colons
 		 * mean the current directory.
 		 */
-		if (!*p)
+		if (!*p) {
 			p = ".";
-		(void)snprintf(buf, sizeof(buf), "%s/%s", p, name);
+			lp = 1;
+		} else
+			lp = strlen(p);
+		ln = strlen(name);
+
+		/*
+		 * If the path is too long complain.  This is a possible
+		 * security issue; given a way to make the path too long
+		 * the user may execute the wrong program.
+		 */
+		if (lp + ln + 2 > sizeof(buf)) {
+			(void)write(STDERR_FILENO, "execvp: ", 8);
+			(void)write(STDERR_FILENO, p, lp);
+			(void)write(STDERR_FILENO, ": path too long\n", 16);
+			continue;
+		}
+		bcopy(p, buf, lp);
+		buf[lp] = '/';
+		bcopy(name, buf + lp + 1, ln);
+		buf[lp + ln + 1] = '\0';
 
 retry:		(void)execve(bp, argv, environ);
 		switch(errno) {
