@@ -42,7 +42,11 @@ struct	size
 	daddr_t	nblocks;
 	int	cyloff;
 } up_sizes[8] = {
+#ifdef ERNIE
+	49324,	0,		/* A=cyl 0 thru 26 */
+#else
 	15884,	0,		/* A=cyl 0 thru 26 */
+#endif
 	33440,	27,		/* B=cyl 27 thru 81 */
 	495520,	0,		/* C=cyl 0 thru 814 */
 	15884,	562,		/* D=cyl 562 thru 588 */
