@@ -1,0 +1,65 @@
+DISASSEMBLY
+	Use hex in favor of decimal when reasonable -- DONE
+	Distinguish between signed/unsigned, short/long when possible -- DONE
+	Addresses and masks should be unsigned, other values signed -- DONE
+	Print 'a7' as 'sp' -- DONE
+	If the 0x is left off, will there ever be any ambiguity between
+		a register name (d0, a6) and a hex number? -- YES, but not bad
+	What addressing modes are not handled?
+	Hex address hack -- if it doesn't match a symbol name, try it
+		as a hex number before giving up -- DONE
+
+BREAKPOINT DEBUGGING
+	pc is wrong after hitting a breakpoint -- DONE
+	The process is gone ('no process') after hitting a breakpoint
+		pid was declared as L_INT as well as INT, and shorts
+		don't nest in ints on 68000's (argh!) -- DONE
+	Stack trace is wrong too (no process?) (yup) -- DONE
+	Why do we go twice around the loop in runpcs()?
+		Because the code for :r does so explicitly; why?
+		I took this code out -- DONE (sort of)
+	How can we tell if we're doing a system call when the pc
+		is different depending on whether we read it from
+		a core file or from the running image with ptrace?
+		Answer -- check the trap vector on the stack! -- DONE
+	Why do we start over from scratch when we try to continue?
+		We don't, we were restarting at the breakpoint because
+		the single-step failed to advance the pc past the
+		breakpoint, and this in turn was because we were
+		looking in the wrong place for the saved pc since
+		I didn't catch all the places where variant stack
+		frame format makes a difference, and you get a
+		variant stack frame after a single-step -- DONE
+	How hard to add :S?
+
+REGISTER RECOVERY
+	Identify variant stack frames -- DONE
+	Add stack frame offset at runtime -- DONE
+		(not 100% cleanly, but done...)
+
+KERNEL DEBUGGING
+	Check behavior both with kernel cores and with /dev/mem
+	DONE
+
+68020 EXTENSIONS
+	Addressing modes -- lots of 'em DONE
+
+	Bcc, BRA, BSR -- 32-bit displacements DONE
+	BFxxxx -- bit field instructions DONE
+	BKPT -- new instruction DONE
+	CALLM -- new instruction DONE
+	CAS, CAS2 -- more new instructions DONE
+	CHK -- 32-bit operands DONE
+	CHK2 -- new instruction DONE
+	CMPI -- pc-relative addressing DONE
+	CMP2 -- new instruction DONE
+	DIVS, DIVU -- 32-bit and 64-bit operands DONE
+	EXTB -- sign-extends to 32 bits DONE
+	ILLEGAL -- the official illegal instruction DONE
+	LINK -- 32-bit displacement DONE
+	MOVEC -- new control registers DONE
+	MULS, MULU -- 32-bit operands DONE
+	PACK, UNPK -- new instruction DONE
+	RTD, RTM -- new instruction DONE
+	TST -- pc-relative addressing DONE
+	TRAP -- new instruction DONE
