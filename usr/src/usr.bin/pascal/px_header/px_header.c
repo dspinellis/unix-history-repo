@@ -6,11 +6,12 @@
  * Bill Joy UCB February 6, 1978
  */
 
-static char sccsid[] = "@(#)px_header.c 1.3 %G%";
+static char sccsid[] = "@(#)px_header.c 1.4 %G%";
 
 #include <stdio.h>
 #include <sys/types.h>
 #include <a.out.h>
+#include "config.h"
 #include "whoami.h"
 #include "objfmt.h"
 
@@ -48,7 +49,7 @@ main(argc, argv)
 			largv[i + 2] = argv[i];
 		largv[argc + 2] = 0;
 		writeobj(fd, codesiz, symtabsiz);
-		run(PX_DEBUG, largv);
+		run(px_debug, largv);
 		/* no return */
 	}
 	largv[0] = "pipe";
@@ -64,7 +65,7 @@ main(argc, argv)
 			close(pv[0]);
 		}
 		close(pv[1]);
-		run(PX_INTRP, largv);
+		run(px_intrp, largv);
 		/* no return */
 	}
 	writeobj(pv[1], codesiz, symtabsiz);
