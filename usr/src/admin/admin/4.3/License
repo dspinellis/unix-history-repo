@@ -1,5 +1,7 @@
-.\" @(#)License	1.3 (CSRG - distribution) %G%
+.\" @(#)License	1.4 (CSRG - distribution) %G%
 .ND
+.po +0.34375i
+.nr PO +0.34375i
 (Rev. 4/86)
 .ps 14
 .ft B
@@ -9,21 +11,23 @@ LICENSE AGREEMENT
 .sp 3
 .ps 12
 .vs 18
+.nr VS 18
 .PP
 .hy 0
-.vs 18
 THIS LICENSE AGREEMENT is made and entered into
 by and between THE REGENTS OF THE UNIVERSITY
-OF CALIFORNIA, a California corporation and \l'2.75i'
-\l'3i'\|, a \l'2.5i' having its
-principal office at \l'3i'\|, hereinafter
+OF CALIFORNIA, a California corporation, and
+\l'2.25i'
+\l'3.1i'\|, a \l'2.6i' having its
+principal office at \l'3.2i'\|, hereinafter
 ``LICENSEE'', and shall become effective
 on the date of execution by THE REGENTS OF THE UNIVERSITY OF CALIFORNIA.
 .hy 14
 .sp 2
 .vs
 .ps 10
-.vs 12
+.vs 15
+.nr VS 15
 .I
 .ce
 W I T N E S S E T H:
@@ -299,38 +303,48 @@ of the Fourth Berkeley Software Distribution and
 updates thereto which comprise release 4.3.
 .sp 2
 .PP
-IN WITNESS WHEREOF, the parties hereto have executed this
-Agreement as of the day and year first above written.
+IN WITNESS WHEREOF, The Regents of the University of California 
+and LICENSEE have executed this Agreement
+on the dates specified below.  The
+effective date of this Agreement shall be the date of execution by
+The Regents of the University of California.
 .sp 3
-.in +20
+.in +18
+.vs 12
+.B
 THE REGENTS OF THE
 .br
 UNIVERSITY OF CALIFORNIA
 .br
 (Licensor)
-.sp 3
-By \l'|6i-20m'
-
-
-   \l'|6i-20m'
-   (Title)
-
-   Date:\l'|6i-20m'
-.sp 3
+.R
+.sp 2
+.in +1
+By:\l'|6i-20m'
+.sp 2
 \l'|6i-20m'
+.sp -4p
+(Title)
 .sp 1
-\l'|6i-20m'
+Date:\l'|6i-20m'
+.in -1
+.sp 3
+.B
+\l'|6.125i-20m'
 .sp 1
-\l'|6i-20m'
-.br
+\l'|6.125i-20m'
+.sp 1
+\l'|6.125i-20m'
+.sp -4p
 (Licensee)
-.sp 3
-By \l'|6i-20m'
-
-
-   \l'|6i-20m'
-   (Title)
-
-   Date:\l'|6i-20m'
+.sp 2
+.in +1
+By:\l'|6i-20m'
+.sp 2
+\l'|6i-20m'
+.sp -4p
+(Title)
+.sp
+Date:\l'|6i-20m'
 .in -20
 
