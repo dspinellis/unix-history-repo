@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)cc.c 4.5 %G%";
+static	char sccsid[] = "@(#)cc.c 4.6 %G%";
 /*
  * cc - front end for C compiler
  */
@@ -21,7 +21,8 @@ char	*outfile;
 char	*savestr(), *strspl(), *setsuf();
 int	idexit();
 char	**av, **clist, **llist, **plist;
-int	cflag, eflag, gflag, oflag, pflag, sflag, wflag, Rflag, exflag, proflag;
+int	cflag, eflag, oflag, pflag, sflag, wflag, Rflag, exflag, proflag;
+int	gflag, Gflag;
 char	*dflag;
 int	exfail;
 char	*chpass;
@@ -76,7 +77,11 @@ main(argc, argv)
 				crt0 = "/usr/lib/gcrt0.o";
 			continue;
 		case 'g':
-			gflag++;
+			if (argv[i][2] == 'o') {
+			    Gflag++;	/* old format for -go */
+			} else {
+			    gflag++;	/* new format for -g */
+			}
 			continue;
 		case 'w':
 			wflag++;
@@ -128,7 +133,7 @@ main(argc, argv)
 				nxo++;
 		}
 	}
-	if (gflag) {
+	if (gflag || Gflag) {
 		if (oflag)
 			fprintf(stderr, "cc: warning: -g disables -O\n");
 		oflag = 0;
@@ -197,8 +202,11 @@ main(argc, argv)
 		av[0] = "ccom"; av[1] = tmp4; av[2] = oflag?tmp5:tmp3; na = 3;
 		if (proflag)
 			av[na++] = "-XP";
-		if (gflag)
+		if (gflag) {
 			av[na++] = "-Xg";
+		} else if (Gflag) {
+			av[na++] = "-XG";
+		}
 		if (wflag)
 			av[na++] = "-w";
 		av[na] = 0;
@@ -243,7 +251,7 @@ nocom:
 		}
 		while (i < nl)
 			av[na++] = llist[i++];
-		if (gflag)
+		if (gflag || Gflag)
 			av[na++] = "-lg";
 		if (proflag)
 			av[na++] = "-lc_p";
