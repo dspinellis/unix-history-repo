@@ -1,5 +1,5 @@
 /*
- *	@(#)names.h	4.1	(Berkeley)	82/11/06
+ *	@(#)names.h	4.2	(Berkeley)	82/11/06
  */
 
 #define ART	'A'
@@ -21,6 +21,7 @@
 #define POS	'O'
 #define SUBCONJ	'S'
 #define NOUN	'N'
+#define NOM	'm'
 #define VERB	'V'
 #define ADJ	'J'
 #define ADV	'D'
@@ -42,5 +43,7 @@
 #define AUXX	'Q'
 #define NV_PL	'n'
 #define INTER	'i'
+#define PNOUN 's'
+#define MVERB	'v'
 #define PLURAL	1
 #define SING	2

@@ -1,15 +1,22 @@
 #ifndef lint
-static char sccsid[] = "@(#)pscan.c	4.1	(Berkeley)	82/11/06";
+static char sccsid[] = "@(#)pscan.c	4.2	(Berkeley)	82/11/06";
 #endif not lint
 
 #include "names.h"
 #include "conp.h"
+#define isadv(c)	(c == ADV || c == ADJ_ADV)
+#define isadj(c)	(c == ADJ || c == NOUN_ADJ || c == ADJ_ADV || c == UNK)
+#define notnoun(c)	(c != NOUN && c != UNK && c != NOUN_VERB && c != NV_PL && c != PNOUN)
+#define issing(c)	(c == UNK || c == NOUN_VERB || c == NOUN || c == NOM || c == NOUN_ADJ)
+#define isnoun(c)	(c == NOUN || c == NOUN_VERB || c == NV_PL || c == UNK || c == PNOUN)
+#define nounnom(c)	(c == NOUN || c == NOM)
 char lastc,nextc;
 int savsub;
 scan(si,ce,command)	/*scan a phrase */
 int si; 
 char ce;
 {
+	int savi;
 	char c;
 	i=si;
 	if(command == 1)subty = PLURAL;
@@ -37,7 +44,7 @@ char ce;
 		if(verb==1)question=0;
 		switch(c){
 		case '"':
-			if(nextc==ED){
+			if(nextc==ED || nextc == MVERB){
 				verb=1;
 				sent[++i].cc=VERB;
 				subty=SING;
@@ -46,6 +53,14 @@ char ce;
 			subty=0;
 			verb=getv(++i,ce);
 			i=getnoun(i,ce);
+			continue;
+		case MVERB:
+			sent[i].cc = VERB;
+			if(i < nsleng*.5){
+				verb = getv(++i,ce);
+				i = getnoun(i,ce);
+				continue;
+			}
 			continue;
 		case ART:
 		case ADJ:
@@ -89,11 +104,11 @@ char ce;
 			continue;
 		case ADJ_ADV:
 			if(be == 1){
-				if(nextc == ADJ || nextc == NOUN_ADJ || nextc == ADJ_ADV || nextc == UNK){
+				if (isadj(nextc)) {
 					sent[i].cc = ADV;
 					continue;
 				}
-				if(nextc == ',' && (sent[i+2].cc == ADJ_ADV || sent[i+2].cc == ADV)){
+				if(nextc == ',' && isadv(sent[i+2].cc)) {
 					sent[i++].cc = ADV;
 					sent[++i].cc = ADV;
 					comma--;
@@ -106,7 +121,7 @@ char ce;
 				sent[i].cc=ADJ;
 				continue;
 			}
-			if(nextc!= UNK && nextc != NOUN_VERB && nextc != NOUN && nextc != NV_PL){
+			if(notnoun(nextc)){
 				sent[i].cc=ADV;
 				continue;
 			}
@@ -125,6 +140,10 @@ char ce;
 			}
 		case PRONS:
 			subty=SING;
+			continue;
+		case PNOUN:
+			sent[i].cc = NOUN;
+			if(subty == 0)subty=PLURAL;
 			continue;
 		case CONJ:
 			if(nextc==UNK || nextc == NOUN_VERB || nextc == NV_PL){
@@ -159,22 +178,25 @@ char ce;
 			}
 			verb=getv(i+1,ce);
 			j = i+1;
-			while(sent[j].cc == ADV || sent[j].cc == ADJ_ADV){
+			while(isadv(sent[j].cc)) {
 				j++;
 			}
-			if((verb==1 && iverb== j) || sent[j].cc==ED || sent[j].cc == VERB_ADJ){
+			nextc = sent[j].cc;
+			if((verb==1 && iverb== j) || nextc==ED || nextc == VERB_ADJ){
 				sent[i].cc=PRONP;
 				while(i+1 < j)sent[++i].cc = ADV;
 			}
 			else if(verb==0 && nextc==NV_PL && ((lastc==NOUN
-				&& (sent[i-1].ic==UNK || sent[i-1].ic==NOUN_VERB|| sent[i-1].ic==NOUN))|| lastc == ',')){
+				&& issing(sent[i-1].ic)) || lastc == ',')) {
 				sent[i].cc=PRONP;
 				subty=SING;
+				while(i+1 < j)sent[++i].cc = ADV;
 			}
 			else if(verb==0 && (nextc==UNK || nextc==NOUN_VERB) && (lastc==NOUN
 				&& sent[i-1].ic==NV_PL)){
 				subty=PLURAL;
 				sent[i].cc=PRONP;
+				while(i+1 < j)sent[++i].cc = ADV;
 			}
 			else {
 				if(i == 0)sent[i].cc=ADJ;
@@ -191,7 +213,7 @@ char ce;
 			}
 			i++;
 			comma--;
-			if(sent[i+1].cc == ED){
+			if(sent[i+1].cc == ED || sent[i+1].cc == MVERB){
 				sent[++i].cc = VERB;
 				continue;
 			}
@@ -201,6 +223,7 @@ char ce;
 			}
 		case SUBCONJ:	
 subc:
+			savi = i;
 			if(nextc==END||(lastc==',' && nextc==',')){
 				sent[i].cc=ADV;
 				continue;
@@ -208,11 +231,13 @@ subc:
 			subty=0;
 			ce=',';
 			verb=getv(++i,ce);
+			if(sent[savi+1].cc == VERB || sent[savi+1].cc == AUXX)
+				if(sent[savi].cc == SUBCONJ)sent[savi].cc = ADV;
 			i=getnoun(i,ce);
 			continue;
 		case PREP_ADV:
 			if(sent[i+2].cc==PREP_ADV &&(sent[i+1].cc != NOUN && sent[i+1].cc != NOUN_VERB
-				&& sent[i+1].cc != NV_PL)){
+				&& sent[i+1].cc != NV_PL && sent[i+1].cc != PNOUN)){
 				sent[i].cc=ADV;
 				sent[i+2].cc=CONJ;
 				continue;
@@ -250,14 +275,16 @@ subc:
 				continue;
 			}
 		case TO:	
+			savi = i;
 			sent[i++].cc=VERB;
+sw:
 			switch(nextc){
 			case UNK:
 			case AUXS:
 			case VERB_ADJ:
 			case NOUN_VERB:	
-			case ED:
 			case VERB:
+			case MVERB:
 				sent[i].cc=VERB;
 				continue;
 			case HAVE:
@@ -266,10 +293,12 @@ subc:
 					sent[++i].cc = VERB;
 					continue;
 				}
+				if(sent[i+1].cc == ADV)i++;
 				if(sent[i+1].cc != BE)continue;
 				i++;
 			case BE:	
 				sent[i].cc=VERB;
+				if(sent[i+1].cc == ADV)i++;
 				if(sent[i+1].cc == ED || sent[i+1].cc == ING){
 					sent[++i].cc = VERB;
 				}
@@ -277,8 +306,11 @@ subc:
 					sent[++i].cc = ADJ;
 				}
 				continue;
-			default:	
-				sent[i-1].cc = PREP;
+			case ADV:
+				nextc = sent[++i].cc;
+				goto sw;
+			default:
+				sent[savi].cc = PREP;
 				prep=1;
 				i=getnoun(i,ce);
 				prep=0;
@@ -306,8 +338,7 @@ subc:
 				}
 				i=getnoun(i,ce);
 			}
-			else if(nextc==NV_PL &&( sent[i+2].cc==NOUN_VERB || sent[i+2].cc==NOUN||
-				sent[i+2].cc==UNK || sent[i+2].cc==NV_PL)){
+			else if(nextc==NV_PL && isnoun(sent[i+2].cc)) {
 				sent[i].cc=NOUN;
 				if(sent[i-1].cc == NOUN){
 					sent[i-1].cc = ADJ;
@@ -336,7 +367,7 @@ subc:
 				i=getnoun(i,ce);
 			}
 			continue;
-		default:	printf("got a %c on %s\n",sent[i].cc,sent[i].sp);
+		default:	printf("got a %c %o on %sat %d\n",sent[i].cc,sent[i].cc,sent[i].sp,i);
 		}
 	}
 sdone:
@@ -418,7 +449,10 @@ next:
 			}
 			if((sent[j].cc!=VERB && sent[j].cc!=BE) && sent[iverb].cc==AUXX){
 				sent[iverb].cc=VERB;
-				for(ik=iverb+1;ik<=j;ik++)sent[ik].cc=sent[ik].ic;
+				for(ik=iverb+1;ik<=j;ik++){
+					if(sent[ik].ic == NOM)sent[ik].cc=NOUN;
+					else sent[ik].cc=sent[ik].ic;
+				}
 			}
 			return(conj);
 		case BES:	
@@ -573,6 +607,7 @@ b:
 				goto nn;
 			}
 			break;
+		case PNOUN:
 		case NOUN_ADJ:
 		case POS:
 		case NOUN:
@@ -581,6 +616,10 @@ nn:
 			goto b;
 		}
 		if(prep==0)subty=SING;
+		break;
+	case PNOUN:
+		sent[st].cc = NOUN;
+		if(prep == 0)subty=PLURAL;
 		break;
 	case ADV:
 		st++;
@@ -595,7 +634,7 @@ nn:
 		sent[st++].cc=ADJ;
 		goto b;
 	case ING:
-		if(nextst==UNK || nextst==NOUN_VERB || nextst==NOUN || nextst==NV_PL){
+		if(isnoun(nextst)){
 			sent[st++].cc=ADJ;
 			goto b;
 		}
@@ -618,7 +657,7 @@ nn:
 		if(prep==0)subty=SING;
 		break;
 	case NOUN_VERB:	
-		if(nextst==NOUN||(verb==1 && (nextst== NV_PL|| nextst==NOUN_VERB) )){
+		if((nextst==NOUN|| nextst==PNOUN)||(verb==1 && (nextst== NV_PL|| nextst==NOUN_VERB) )){
 			sent[st].cc=ADJ;
 			goto b;
 		}
@@ -628,12 +667,13 @@ nn:
 			if(sent[st].ic==NV_PL)subty=PLURAL;
 			else subty=SING;
 		}
-		if(sent[st-1].cc == NOUN && sent[st-1].ic == NOUN){
+		if(sent[st-1].cc == NOUN && nounnom(sent[st-1].ic)) {
 			sent[st-1].cc = ADJ;
 		}
 		break;
 	case PRONP_ADJ:	
 		switch(nextst){
+		case PNOUN:
 		case NOUN_ADJ:
 		case NV_PL:	
 		case ADJ_ADV:
@@ -682,6 +722,7 @@ def:
 			sent[st++].cc = ADJ;
 			st++;
 			goto b;
+		case PNOUN:
 		case ING:
 		case UNK:	
 		case NOUN_VERB:
@@ -718,7 +759,7 @@ def:
 		}
 		break;
 	case NOUN_ADJ:
-		if(nextst==NOUN||nextst==ADJ||nextst == NOUN_ADJ||nextst==PRONS_ADJ||nextst==PRONP_ADJ){
+		if(nextst==NOUN||nextst==ADJ||nextst == NOUN_ADJ||nextst==PRONS_ADJ||nextst==PRONP_ADJ||nextst==PNOUN){
 			sent[st++].cc=ADJ;
 			goto b;
 		}
@@ -734,12 +775,11 @@ def:
 		sent[st].cc=NOUN;
 		if(prep==0)subty=SING;
 		break;
-	case UNK:	
+	case UNK:
 		if(nextst != UNK){
 			if(nextst == ',' && rep==0){
 				c=sent[st+2].cc;
-				if((c==UNK||c==ADJ||c==NOUN_ADJ||c==ING) && (sent[st+3].cc==UNK||sent[st+3].cc==NOUN_VERB
-					|| sent[st+3].cc==NV_PL)){
+				if((c==UNK||c==ADJ||c==NOUN_ADJ||c==ING) && isnoun(sent[st+3].cc)){
 					comma--;
 					sent[st].cc=ADJ;
 					sent[st+2].cc=ADJ;
@@ -757,7 +797,7 @@ def:
 				}
 			}
 			if(nextst==NOUN||nextst==ING ||nextst==NOUN_ADJ|| sent[st-1].cc==ADV
-				|| nextst==ADJ){
+				|| nextst==ADJ || nextst==PNOUN){
 				sent[st++].cc=ADJ;
 				goto b;
 			}
@@ -768,7 +808,7 @@ def:
 					if(prep == 0)subty=PLURAL;
 					break;
 				}
-			if(nextst==CONJ &&(sent[st+2].cc==ADJ||sent[st+2].cc==ADJ_ADV)){
+			if(nextst == CONJ && isadv(sent[st+2].cc)){
 				sent[st].cc=ADJ;
 				goto b;
 			}
@@ -780,18 +820,22 @@ def:
 		for(t=st+1;sent[t].cc== UNK;t++);
 		if(verb==0 && prep == 0){		/* UUU. */
 			if(prep==0)subty=SING;
-			if(sent[t].cc==NV_PL){	/* UUZ.*/
+			if(sent[t].cc==NV_PL|| sent[t].cc == PNOUN){	/* UUZ.*/
 				if(sent[t+1].cc==UNK || sent[t+1].cc==NOUN_VERB){	/* UUZU */
 					sent[t+1].cc=VERB;
 					verb=1;
 					sent[t].cc=NOUN;
 					t1=t;
 				}
-				else{		/* UUZ. */
+				else if(sent[t].cc == NV_PL){		/* UUZ. */
 					sent[t].cc=VERB;
 					verb=1;
 					sent[t-1].cc=NOUN;
 					t1=t-1;
+				}
+				else {
+					sent[t].cc = NOUN;
+					t1 = t;
 				}
 			}
 			else{		/* UU. */
@@ -809,7 +853,7 @@ def:
 			}
 		}
 		else{
-			if(sent[t].cc==NOUN_VERB|| sent[t].cc==NOUN|| sent[t].cc==NV_PL){
+			if(sent[t].cc==NOUN_VERB|| sent[t].cc==NOUN|| sent[t].cc==NV_PL|| sent[t].cc==PNOUN){
 				sent[t].cc=NOUN;
 				if(prep==0)subty=PLURAL;
 				t1=t;
@@ -871,6 +915,8 @@ getdef:
 		switch(sent[st+2].cc){
 		case PREP:
 		case SUBCONJ:
+		case PRONS:
+		case PRONP:
 			prep=0;
 			return(st);
 		default:	rep++;
@@ -896,11 +942,11 @@ int kk,ce;
 	char c;
 	sent[kk].cc=PRONP;
 	c=sent[kk+1].cc;
-	while(c==ADV||c==ADJ_ADV){
+	while(isadv(c)){
 		sent[++kk].cc = ADV;
 		c = sent[kk+1].cc;
 	}
-	if(c==UNK||c==NOUN_VERB||c==VERB_ADJ||c==ED|| c==NV_PL){
+	if(c==UNK||c==NOUN_VERB||c==VERB_ADJ||c==ED|| c==NV_PL||c==MVERB){
 		sent[++kk].cc=VERB;
 		if(verb == 0)verb = getv(kk+1,ce);
 		return(kk);

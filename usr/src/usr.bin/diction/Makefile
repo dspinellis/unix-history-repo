@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	4.1	(Berkeley)	82/11/06
+#	@(#)Makefile	4.2	(Berkeley)	82/11/06
 #
 #	make file for STYLE and DICTION
 #
@@ -11,7 +11,7 @@
 BIN = ${DESTDIR}/usr/lib
 DICT= -DDICT=\"/usr/lib/dict.d\"
 
-all: diction style explain deroff
+all: diction style suggest deroff
 style: style1 style2 style3
 
 install: style diction
@@ -27,6 +27,8 @@ install: style diction
 	install -c explain ${DESTDIR}/usr/bin
 	install -c dict.d ${DESTDIR}/usr/lib
 	install -c explain.d ${DESTDIR}/usr/lib
+#	ln ${DESTDIR}/usr/bin/explain ${DESTDIR}/usr/bin/suggest
+#	ln ${DESTDIR}/usr/lib/explain.d ${DESTDIR}/usr/bin/suggest.d
 
 clean:
 	rm -f prtlex.c wdslex.c endlex.c
@@ -46,7 +48,7 @@ outp.o: names.h conp.h style.h
 
 style1: wdslex.o
 	cc wdslex.o -ll  -o style1
-wdslex.o: wdslex.c nhash.c dict.c ydict.c names.h
+wdslex.o: wdslex.c nhash.c dict.c ydict.c names.h abbrev.c
 	cc -c wdslex.c
 wdslex.c: nwords.l
 	lex nwords.l
@@ -64,5 +66,5 @@ diction: dprog
 dprog: diction.c
 	cc -O $(DICT) diction.c -i -o dprog
 
-deroff:	deroff.c
-	cc -O deroff.c -i -o deroff
+deroff:	deroff.c getopt.c
+	cc -O deroff.c  getopt.c -i -o deroff

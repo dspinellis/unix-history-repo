@@ -1,19 +1,25 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)part.l	4.1	(Berkeley)	82/11/06";
+static char sccsid[] = "@(#)part.l	4.2	(Berkeley)	82/11/06";
 #endif not lint
 
 #include "style.h"
 #include "names.h"
 #include "conp.h"
+FILE *deb;
+int nosave = 1;
 int part = 0;
+int barebones = 0;
+int topic = 0;
 int style = 1;
 int pastyle = 0;
 int pstyle = 0;
 int lstyle = 0;
 int rstyle = 0;
 int estyle = 0;
+int nstyle = 0;
+int Nstyle = 0;
 int lthresh;
 int rthresh;
 int nomin;
@@ -56,6 +62,7 @@ int noun = 0;
 long numlet = 0;
 int beg[15]  = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
 int sleng[50];
+int nsleng = 0;
 int j,jj,i;
 int comma = 0;
 int cflg;
@@ -64,13 +71,20 @@ int quote = 0;
 char *st;
 int initf = 0;
 int over = 1;
+int nroff = 0;
+int nrofflg = 0;
+int leng[MAXPAR];
+int sentno= 0;
 %}
 C	[A-DF-Za-z]
 %%
 ^{C}:.+	{
 collect:
 	sentp->cc = sentp->ic = yytext[0];
+	if(sentp->cc == NOM)
+		sentp->cc = NOUN;
 collect1:
+	nsleng++;
 	sentp->leng = yyleng-2;
 	sentp++->sp = sptr;
 	if(sentp >= &sent[SLENG-1]){
@@ -119,6 +133,7 @@ sdone:
 	if(yytext[2]=='?')question=1;
 	else question=0;
 
+fragment:
 	jj=0;
 	if(quote == 1 && sent[jj].cc == ED){
 		sent[jj].cc = VERB;
@@ -152,6 +167,18 @@ sdone:
 	if(*(st+1) == '"')
 		if(*st == '?' || *st == '!')quote = 1;
 	outp();
+	nsleng = 0;
+	if(nroff){
+		if(sentno > 0){
+			printf(".SL \"");
+			for(i=0;i<sentno;i++)
+				printf(" %d",leng[i]);
+			printf("\"\n");
+			sentno = 0;
+		}
+		printf("%s",&yytext[1]);
+		nroff = 0;
+	}
 	sptr=s;
 	sentp=sent;
 	comma=0;
@@ -160,7 +187,26 @@ sdone:
 	if(style){
 		nomin = atoi(&yytext[1]);
 	}
-	;
+	}
+^:.+[\n]	{
+	nrofflg=1;
+	if(sentp != sent){
+		sentp->cc = sentp->ic = END;
+		sentp++->sp = sptr;
+		*sptr++ = '.';
+		*sptr++ = '\0';
+		over = 1;
+		nroff = 1;
+		goto fragment;
+	}
+	if(sentno > 0){
+		printf(".SL \"");
+		for(i=0;i<sentno;i++)
+			printf(" %d",leng[i]);
+		printf("\"\n");
+		sentno = 0;
+	}
+	printf("%s",&yytext[1]);
 	}
 %%
 yywrap(){
@@ -169,6 +215,7 @@ yywrap(){
 	float aindex, avl, avw;
 	float cindex,kindex,findex,fgrad;
 	float syl, avsy, adjs,snonf;
+	FILE *io;
 
 	if(style){
 	if(numwds == 0 || numsent == 0)exit(0);
@@ -200,7 +247,7 @@ yywrap(){
 	if(mg > 49)mg = 49;
 	ml = avw - 4.5;
 	if(ml <= 0)ml = 1;
-	else if(ml > 49)ml = 48;
+	else if(ml > 49)ml=48;
 	gsum = lsum = 0;
 	for(ii=0;ii<50;ii++){
 		if(ii < ml)lsum += sleng[ii];
@@ -227,9 +274,23 @@ yywrap(){
 	printf("	subject opener: noun (%d) pron (%d) pos (%d) adj (%d) art (%d) tot %3.0f%%\n",
 beg[0],beg[7],beg[6],beg[3],beg[8],sperc(ii));
 	printf("	prep %3.0f%% (%d) adv %3.0f%% (%d) \n",sperc(beg[9]),beg[9],sperc(beg[4]),beg[4]);
-	printf("	verb %3.0f%% (%d) ",sperc(beg[1]+beg[10]+beg[12]),beg[1]+beg[10]+beg[12]);
+	printf("	verb %3.0f%% (%d) ",sperc(beg[1]+beg[10]+beg[11]),beg[1]+beg[10]+beg[11]);
 	printf(" sub_conj %3.0f%% (%d) conj %3.0f%% (%d)\n",sperc(beg[13]),beg[13],sperc(beg[5]),beg[5]);
 	printf("	expletives %3.0f%% (%d)\n",sperc(beg[14]),beg[14]);
+#ifdef SCATCH
+	if(nosave && (fopen(SCATCH,"r")) != NULL){
+	if(((io=fopen(SCATCH,"a")) != NULL)){
+		fprintf(io," read %4.1f %4.1f %4.1f %4.1f %4.1f\n",kindex, aindex, cindex, findex, fgrad);
+		fprintf(io," sentl %d %ld %4.2f %4.2f %d %d %ld %4.2f\n",numsent,numwds,avw,avl,qcount,icount,numnonf,snonf);
+		fprintf(io," l var %d %d %d %d %d\n",ml,lsum,mg,gsum,maxsent);
+		fprintf(io," t var %d %d %d %d\n",simple,complex,compound,compdx);
+		fprintf(io," verbs %d %d %d %d %d %d\n",tverbc,verbc,tobe,aux,infin,passive);
+		fprintf(io," ty %d %d %d %d %d %d %d\n",prepc,conjc,adv,noun,adj,pron,nomin);
+		fprintf(io," beg %d %d %d %d %d %d\n",beg[0],beg[7],beg[6],beg[3],beg[8],ii);
+		fprintf(io," sbeg %d %d %d %d %d %d\n",beg[9],beg[4],beg[1]+beg[10]+beg[11],beg[13],beg[5],beg[14]);
+		}
+	}
+#endif
 	}
 	return(1);
 }
@@ -259,6 +320,8 @@ char **argv;
 {
 	while(--argc > 0 && (++argv)[0][0] == '-' ){
 		switch(argv[0][1]){
+		case 'd': nosave = 0;
+			continue;
 		case 's': style=1;
 			continue;
 		case 'p': pastyle=style=1;
@@ -267,15 +330,30 @@ char **argv;
 			continue;
 		case 'e': estyle = style = 1;
 			continue;
+		case 'n': nstyle = style = 1;
+			continue;
+		case 'N': Nstyle = style = 1;
+			continue;
 		case 'l': style=lstyle=1;
 			lthresh = atoi(*(++argv));
+			argc--;
 			continue;
 		case 'r':
 			style=rstyle=1;
 			rthresh = atoi(*(++argv));
+			argc--;
 			continue;
 		case 'P':
 			part = 1;
+			style = 0;
+			continue;
+		case 'b':		/* print bare bones info rje */
+			barebones = 1;
+			style = 0;
+			continue;
+		case 'T':		/*topic*/
+			style = 0;
+			topic = 1;
 			continue;
 		default:
 			fprintf(stderr,"unknown flag to part %s\n",*argv);
@@ -283,5 +361,18 @@ char **argv;
 		}
 		argv++;
 	}
+#ifdef SNOM
+	if(fopen(SNOM,"r") != NULL){
+		deb = fopen(SNOM,"a");	/* SAVE NOM*/
+	}
+#else
+	deb = NULL;
+#endif
 	yylex();
+	if(nrofflg && sentno > 0){
+		printf(".SL \"");
+		for(i=0;i<sentno;i++)
+			printf(" %d",leng[i]);
+		printf("\"\n");
+	}
 }
