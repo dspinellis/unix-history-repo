@@ -1,11 +1,11 @@
 #!/bin/csh -f
 #
-#	@(#)updatedb.csh	4.6	(Berkeley)	85/04/22
+#	@(#)updatedb.csh	4.7	(Berkeley)	89/05/03
 #
 set SRCHPATHS = "/"			# directories to be put in the database
-set LIBDIR = /usr/lib/find		# for subprograms
+set LIBDIR = /usr/libexec		# for subprograms
 set FINDHONCHO = root			# for error messages
-set FCODES = /usr/lib/find/find.codes	# the database 
+set FCODES = /usr/libdata/find.database	# the database
 
 set path = ( $LIBDIR /usr/ucb /bin /usr/bin )
 set bigrams = /tmp/f.bigrams$$
