@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chown.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)chown.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -140,30 +140,7 @@ change(file)
 	struct stat buf;
 
 	if (chown(file, uid, gid)) {
-		static int euid = -1, ngroups = -1;
-
-		if (uid != -1 && euid == -1 && (euid = geteuid())) {
-			if (fflag)
-				exit(0);
-			err(file);
-			exit(-1);
-		}
-		/* check group membership; kernel just returns EPERM */
-		if (gid != -1 && ngroups == -1) {
-			int groups[NGROUPS];
-
-			ngroups = getgroups(NGROUPS, groups);
-			while (--ngroups >= 0 && gid != groups[ngroups]);
-			if (ngroups < 0) {
-				if (fflag)
-					exit(0);
-				fprintf(stderr,
-				    "%s: you are not a member of group %s.\n",
-				    myname, gname);
-				exit(-1);
-			}
-		}
-		err(file);
+		chownerr(file);
 		return;
 	}
 	if (!rflag)
@@ -189,6 +166,37 @@ change(file)
 			exit(fflag ? 0 : -1);
 		}
 	}
+}
+
+static
+chownerr(file)
+	char *file;
+{
+	static int euid = -1, ngroups = -1;
+
+	/* check for chown without being root */
+	if (uid != -1 && euid == -1 && (euid = geteuid())) {
+		if (fflag)
+			exit(0);
+		err(file);
+		exit(-1);
+	}
+	/* check group membership; kernel just returns EPERM */
+	if (gid != -1 && ngroups == -1) {
+		int groups[NGROUPS];
+
+		ngroups = getgroups(NGROUPS, groups);
+		while (--ngroups >= 0 && gid != groups[ngroups]);
+		if (ngroups < 0) {
+			if (fflag)
+				exit(0);
+			fprintf(stderr,
+			    "%s: you are not a member of group %s.\n",
+			    myname, gname);
+			exit(-1);
+		}
+	}
+	err(file);
 }
 
 static
