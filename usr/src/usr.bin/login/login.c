@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.67 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.68 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -50,6 +50,10 @@ static char sccsid[] = "@(#)login.c	5.67 (Berkeley) %G%";
 int	timeout = 300;
 #ifdef KERBEROS
 int	notickets = 1;
+int	rootlogin = 0;
+#define	ROOTLOGIN	(rootlogin || (pwd && pwd->pw_uid == 0))
+#else
+#define	ROOTLOGIN	(pwd && pwd->pw_uid == 0)
 #endif
 
 struct	passwd *pwd;
@@ -228,7 +232,7 @@ main(argc, argv)
 		 * If trying to log in as root, but with insecure terminal,
 		 * refuse the login attempt.
 		 */
-		if (pwd && pwd->pw_uid == 0 && !rootterm(tty)) {
+		if (ROOTLOGIN && !rootterm(tty)) {
 			(void)fprintf(stderr,
 			    "%s login refused on this terminal.\n",
 			    pwd->pw_name);
@@ -274,7 +278,7 @@ main(argc, argv)
 	endpwent();
 
 	/* if user not super-user, check for disabled logins */
-	if (pwd->pw_uid)
+	if (!(ROOTLOGIN))
 		checknologin();
 
 	if (chdir(pwd->pw_dir) < 0) {
@@ -368,12 +372,12 @@ main(argc, argv)
 	if (tty[sizeof("tty")-1] == 'd')
 		syslog(LOG_INFO, "DIALUP %s, %s", tty, pwd->pw_name);
 	/* if fflag is on, assume caller/authenticator has logged root login */
-	if (pwd->pw_uid == 0 && fflag == 0)
+	if (ROOTLOGIN && fflag == 0)
 		if (hostname)
-			syslog(LOG_NOTICE, "ROOT LOGIN ON %s FROM %s",
-			    tty, hostname);
+			syslog(LOG_NOTICE, "ROOT LOGIN (%s) ON %s FROM %s",
+			    username, tty, hostname);
 		else
-			syslog(LOG_NOTICE, "ROOT LOGIN ON %s", tty);
+			syslog(LOG_NOTICE, "ROOT LOGIN (%s) ON %s", username, tty);
 
 #ifdef KERBEROS
 	if (!quietlog && notickets == 1)
@@ -406,18 +410,27 @@ main(argc, argv)
 		syslog(LOG_ERR, "setlogin() failure: %m");
 
 	/* discard permissions last so can't get killed and drop core */
-	(void)setuid(pwd->pw_uid);
+	if (ROOTLOGIN)
+		(void) setuid(0);
+	else
+		(void)setuid(pwd->pw_uid);
 
 	execlp(pwd->pw_shell, tbuf, 0);
 	(void)fprintf(stderr, "login: no shell: %s.\n", strerror(errno));
 	exit(0);
 }
 
+#ifdef	KERBEROS
+#define	NBUFSIZ		(UT_NAMESIZE + 1 + 5) /* .root suffix */
+#else
+#define	NBUFSIZ		(UT_NAMESIZE + 1)
+#endif
+
 getloginname()
 {
 	register int ch;
-	register char *p;
-	static char nbuf[UT_NAMESIZE + 1];
+	register char *p, *instance;
+	static char nbuf[NBUFSIZ];
 
 	for (;;) {
 		(void)printf("login: ");
@@ -426,7 +439,7 @@ getloginname()
 				badlogin(username);
 				exit(0);
 			}
-			if (p < nbuf + UT_NAMESIZE)
+			if (p < nbuf + (NBUFSIZ - 1))
 				*p++ = ch;
 		}
 		if (p > nbuf)
@@ -439,6 +452,17 @@ getloginname()
 				break;
 			}
 	}
+#ifdef	KERBEROS
+	if ((instance = index(nbuf, '.')) != NULL) {
+		if (strncmp(instance, ".root", 5) == 0) {
+			rootlogin++;
+		}
+		*instance = '\0';
+		if ((instance - nbuf) > UT_NAMESIZE)
+			nbuf[UT_NAMESIZE] = '\0';
+	} else
+		rootlogin = 0;
+#endif
 }
 
 void

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)klogin.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)klogin.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -18,11 +18,12 @@ static char sccsid[] = "@(#)klogin.c	5.5 (Berkeley) %G%";
 #include <netdb.h>
 
 #define	PRINCIPAL_NAME	pw->pw_name
-#define	PRINCIPAL_INST	""
+#define	PRINCIPAL_INST	(rootlogin ? "root" : "")
 #define	INITIAL_TICKET	"krbtgt"
 #define	VERIFY_SERVICE	"rcmd"
 
 extern int notickets;
+extern int rootlogin;
 
 /*
  * Attempt to log the user in using Kerberos authentication
