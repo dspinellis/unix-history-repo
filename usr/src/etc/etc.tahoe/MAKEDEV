@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)MAKEDEV	5.1	%G%
+#	@(#)MAKEDEV	5.2	%G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -28,13 +28,14 @@ std)
 	/etc/mknod CP		c 0 0
 	/etc/mknod console	c 0 1
 	/etc/mknod remote	c 0 2
-	/etc/mknod drum 	c 8 0	; chmod 644 drum
-	/etc/mknod vmem 	c 3 3	; chmod 644 vmem
-	/etc/mknod kmem 	c 3 1	; chmod 644 kmem
-	/etc/mknod mem		c 3 0	; chmod 644 mem
-	/etc/mknod null 	c 3 2	; chmod 666 null
+	/etc/mknod drum 	c 8 0	; chmod 640 drum ; chgrp kmem drum
+	/etc/mknod mem		c 3 0	; chmod 640 mem ; chgrp kmem mem
+	/etc/mknod kmem		c 3 1	; chmod 640 kmem ; chgrp kmem kmem
+	/etc/mknod null		c 3 2	; chmod 666 null
+	/etc/mknod vmem 	c 3 3	; chmod 640 vmem ; chgrp kmem vmem
 	/etc/mknod tty		c 2 0	; chmod 666 tty
-	/etc/mknod klog		c 15 0	; chmod 644 klog
+	/etc/mknod klog		c 15 0	; chmod 400 klog
+	;;
 	;;
 
 cy*)
