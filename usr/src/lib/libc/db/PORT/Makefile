@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.4 (Berkeley) %G%
+#	@(#)Makefile	8.5 (Berkeley) %G%
 
 LIBDB=	libdb.a
 OBJ1=	hash.o hash_bigkey.o hash_buf.o hash_func.o hash_log2.o hash_page.o \
@@ -21,7 +21,8 @@ ${LIBDB}: ${OBJ1} ${OBJ2} ${OBJ3} ${OBJ4} ${OBJ5} ${MISC}
 	    `lorder ${OBJ1} ${OBJ2} ${OBJ3} ${OBJ4} ${OBJ5} ${MISC} | tsort`
 	ranlib $@
 
-CL=	${CC} -c -O -I. -Iinclude
+OORG=	-O
+CL=	${CC} -c ${OORG} -I. -Iinclude
 
 hash.o: ../../hash/hash.c
 	${CL} -I../../hash ../../hash/hash.c
