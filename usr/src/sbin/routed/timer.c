@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1983, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)timer.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)timer.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -30,8 +30,9 @@ timer()
 	register struct rthash *rh;
 	register struct rt_entry *rt;
 	struct rthash *base = hosthash;
-	int doinghost = 1, timetobroadcast;
+	int doinghost = 1, timetobroadcast, changes = 0;
 	extern int externalinterfaces;
+	time_t now;
 
 	timeval += TIMER_RATE;
 	if (lookforinterfaces && (timeval % CHECK_INTERVAL) == 0)
@@ -54,8 +55,13 @@ again:
 				rtdelete(rt->rt_forw);
 				continue;
 			}
-			if (rt->rt_timer >= EXPIRE_TIME)
+			if (rt->rt_timer >= EXPIRE_TIME) {
+				if (traceactions && changes++ == 0) {
+					(void) time(&now);
+					curtime = ctime(&now);
+				}
 				rtchange(rt, &rt->rt_router, HOPCNT_INFINITY);
+			}
 			if (rt->rt_state & RTS_CHANGED) {
 				rt->rt_state &= ~RTS_CHANGED;
 				/* don't send extraneous packets */
@@ -67,8 +73,7 @@ again:
 				msg->rip_nets[0].rip_dst.sa_family =
 				   htons(msg->rip_nets[0].rip_dst.sa_family);
 				msg->rip_nets[0].rip_metric =
-				   htonl(min(rt->rt_metric + rt->rt_ifmetric,
-				   HOPCNT_INFINITY));
+				   htonl(min(rt->rt_metric, HOPCNT_INFINITY));
 				toall(sendmsg);
 			}
 		}
