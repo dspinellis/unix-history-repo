@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -1981,6 +1981,17 @@ LOOP:
 		return (name);
 	}
 	return (new);
+}
+
+void
+setpassive(argc, argv)
+	int argc;
+	char *argv[];
+{
+
+	passivemode = !passivemode;
+	printf("Passive mode %s.\n", onoff(passivemode));
+	code = passivemode;
 }
 
 void

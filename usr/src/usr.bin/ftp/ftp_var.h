@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ftp_var.h	8.3 (Berkeley) %G%
+ *	@(#)ftp_var.h	8.4 (Berkeley) %G%
  */
 
 /*
@@ -40,6 +40,7 @@ int	mapflag;		/* use mapin mapout templates on file names */
 int	code;			/* return/reply code for ftp command */
 int	crflag;			/* if 1, strip car. rets. on ascii gets */
 char	pasv[64];		/* passive port for proxy data connection */
+int	passivemode;		/* passive mode enabled */
 char	*altarg;		/* argv[1] with no shell-like preprocessing  */
 char	ntin[17];		/* input translation table */
 char	ntout[17];		/* output translation table */
