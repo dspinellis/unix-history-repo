@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)malloc.h	7.29 (Berkeley) %G%
+ *	@(#)malloc.h	7.30 (Berkeley) %G%
  */
 
 #ifndef _MALLOC_H_
@@ -220,7 +220,7 @@ struct kmembuckets {
 /*
  * Macro versions for the usual cases of malloc/free
  */
-#if defined(KMEMSTATS) || defined(DIAGNOSTICS)
+#if defined(KMEMSTATS) || defined(DIAGNOSTIC)
 #define	MALLOC(space, cast, size, type, flags) \
 	(space) = (cast)malloc((u_long)(size), type, flags)
 #define FREE(addr, type) free((caddr_t)(addr), type)
