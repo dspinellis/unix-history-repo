@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)curses.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)curses.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -16,6 +16,11 @@ int	__echoit = 1;			/* If stty indicates ECHO. */
 int	__endwin = 0;			/* If endwin has been called. */
 int	__pfast;
 int	__rawmode = 0;			/* If stty indicates RAW mode. */
+int	__noqch = 0;			/* 
+					 * If terminal doesn't have 
+					 * insert/delete line capabilities 
+					 * for quick change on refresh.
+					 */
 
 /*
  * Public.
@@ -41,6 +46,6 @@ char	*AL, *BC, *BT, *CD, *CE, *CL, *CM, *CR, *CS, *DC, *DL,
 	*K7, *K8, *K9, *HO, *IC, *IM, *IP, *KD, *KE, *KH, *KL,
 	*KR, *KS, *KU, *LL, *MA, *ND, *NL, *RC, *SC, *SE, *SF,
 	*SO, *SR, *TA, *TE, *TI, *UC, *UE, *UP, *US, *VB, *VS,
-	*VE,
+	*VE, *al, *dl, *sf, *sr,
 	*AL_PARM, *DL_PARM, *UP_PARM, *DOWN_PARM, *LEFT_PARM,
 	*RIGHT_PARM;

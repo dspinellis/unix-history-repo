@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setterm.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)setterm.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/ioctl.h>
@@ -31,8 +31,9 @@ static char	*_PC,
 			&IM, &IP, &KD, &KE, &KH, &KL, &KR, &KS, &KU,
 			&LL, &MA, &ND, &NL, &_PC, &RC, &SC, &SE, &SF,
 			&SO, &SR, &TA, &TE, &TI, &UC, &UE, &UP, &US,
-			&VB, &VS, &VE, &AL_PARM, &DL_PARM, &UP_PARM,
-			&DOWN_PARM, &LEFT_PARM, &RIGHT_PARM,
+			&VB, &VS, &VE, &al, &dl, &sf, &sr, &AL_PARM, 
+			&DL_PARM, &UP_PARM, &DOWN_PARM, &LEFT_PARM, 
+			&RIGHT_PARM,
 		};
 
 static char	*aoftspace;		/* Address of _tspace for relocation */
@@ -122,6 +123,9 @@ setterm(type)
 	aoftspace = tspace;
 	ttytype = longname(genbuf, __ttytype);
 
+	if ((!AL && !al) || (!DL && !dl))
+		__noqch = 1;
+
 	return (unknown ? ERR : OK);
 }
 
@@ -152,7 +156,7 @@ zap()
 		namp += 2;
 		
 	} while (*namp);
-	namp = "albcbtcdceclcmcrcsdcdldmdoedeik0k1k2k3k4k5k6k7k8k9hoicimipkdkekhklkrkskullmandnlpcrcscsesfsosrtatetiucueupusvbvsveALDLUPDOLERI";
+	namp = "ALbcbtcdceclcmcrcsdcDLdmdoedeik0k1k2k3k4k5k6k7k8k9hoicimipkdkekhklkrkskullmandnlpcrcscseSFsoSRtatetiucueupusvbvsvealdlsfsrALDLUPDOLERI";
 	sp = sstrs;
 	do {
 		*tmp = *namp;
