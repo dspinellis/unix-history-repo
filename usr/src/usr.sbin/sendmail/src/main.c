@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -90,7 +90,6 @@ main(argc, argv, envp)
 	STAB *st;
 	register int i;
 	int j;
-	bool readconfig = TRUE;
 	bool queuemode = FALSE;		/* process queue requests */
 	bool nothaw;
 	bool safecf = TRUE;
@@ -212,13 +211,6 @@ main(argc, argv, envp)
 	InChannel = stdin;
 	OutChannel = stdout;
 
-# ifdef FROZENCONFIG
-	if (!nothaw)
-		readconfig = !thaw(FreezeFile, argv0);
-# else
-	readconfig = TRUE;
-# endif
-
 	/*
 	**  Move the environment so setproctitle can use the space at
 	**  the top of memory.
@@ -257,14 +249,11 @@ main(argc, argv, envp)
 	errno = 0;
 	from = NULL;
 
-	if (readconfig)
-	{
-		/* initialize some macros, etc. */
-		initmacros(CurEnv);
+	/* initialize some macros, etc. */
+	initmacros(CurEnv);
 
-		/* version */
-		define('v', Version, CurEnv);
-	}
+	/* version */
+	define('v', Version, CurEnv);
 
 	/* hostname */
 	av = myhostname(jbuf, sizeof jbuf);
@@ -362,18 +351,13 @@ main(argc, argv, envp)
 			  case MD_TEST:
 			  case MD_INITALIAS:
 			  case MD_PRINT:
-#ifdef FROZENCONFIG
-			  case MD_FREEZE:
-#endif
 				OpMode = p[2];
 				break;
 
-#ifndef FROZENCONFIG
 			  case MD_FREEZE:
 				usrerr("Frozen configurations unsupported");
 				ExitStat = EX_USAGE;
 				break;
-#endif
 
 			  default:
 				usrerr("Invalid operation mode %c", p[2]);
@@ -532,8 +516,7 @@ main(argc, argv, envp)
 	**	Extract special fields for local use.
 	*/
 
-	if (OpMode == MD_FREEZE || readconfig)
-		readcf(ConfFile, safecf, CurEnv);
+	readcf(ConfFile, safecf, CurEnv);
 
 	if (tTd(0, 1))
 	{
@@ -599,17 +582,6 @@ main(argc, argv, envp)
 
 	switch (OpMode)
 	{
-# ifdef FROZENCONFIG
-	  case MD_FREEZE:
-		/* this is critical to avoid forgeries of the frozen config */
-		(void) setgid(RealGid);
-		(void) setuid(RealUid);
-
-		/* freeze the configuration */
-		freeze(FreezeFile);
-		exit(EX_OK);
-# endif
-
 	  case MD_INITALIAS:
 		Verbose = TRUE;
 		break;
