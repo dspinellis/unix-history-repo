@@ -1,4 +1,4 @@
-/*	locore.s	1.15	87/05/31	*/
+/*	locore.s	1.16	87/06/04	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -601,7 +601,7 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(alignmap	,alignutl	,1		)	/* XXX */
 	SYSMAP(msgbufmap,msgbuf		,MSGBUFPTECNT	)
 	SYSMAP(Mbmap	,mbutl		,NMBCLUSTERS*CLSIZE+CLSIZE )
-	SYSMAP(camap	,cabase		,(4*32+4)*CLSIZE )
+	SYSMAP(camap	,cabase		,(VBPTSIZE+16)*CLSIZE )
 #ifdef	GPROF
 	SYSMAP(profmap	,profbase	,600*CLSIZE	)
 #endif
@@ -1041,9 +1041,11 @@ ENTRY(copyoutstr, 0)
 	subl2	r2,r5			# update bytes left count
 	movl	r2,r3			# r3 = saved count
 	movl	r0,r1
-# This is a workaround for a microcode bug that causes
-# a trap type 9 when cmps3/movs3 touches the last byte
-# on a valid page immediately followed by an invalid page.
+/*
+ * This is a workaround for a microcode bug that causes
+ * a trap type 9 when cmps3/movs3 touches the last byte
+ * on a valid page immediately followed by an invalid page.
+ */
 #ifdef good_cmps3
 	cmps3				# check for null
 	tstl	r2
