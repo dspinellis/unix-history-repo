@@ -1,5 +1,5 @@
 /*
-char id_rdfmt[] = "@(#)rdfmt.c	1.2";
+char id_rdfmt[] = "@(#)rdfmt.c	1.3";
  *
  * formatted read routines
  */
@@ -52,10 +52,12 @@ rd_ned(p,ptr) char *ptr; struct syl *p;
 {
 	switch(p->op)
 	{
-/*	case APOS:
-/*		return(rd_POS(p->p1));
-/*	case H:
-/*		return(rd_H(p->p1,p->p2));	*/
+#ifndef	KOSHER
+	case APOS:					/* NOT STANDARD F77 */
+		return(rd_POS((char *)p->p1));
+	case H:						/* NOT STANDARD F77 */
+		return(rd_H(p->p1,(char *)p->p2));
+#endif
 	case SLASH:
 		return((*donewrec)());
 	case TR:
@@ -231,23 +233,32 @@ rd_AW(p,w,len) char *p; ftnlen len;
 }
 
 /* THIS IS NOT ALLOWED IN THE NEW STANDARD 'CAUSE IT'S WEIRD */
-/*rd_H(n,s) char *s;
-/*{	int i,ch;
-/*	for(i=0;i<n;i++)
-/*		if((ch=(*getn)())<0) return(ch);
-/*		else if(ch=='\n') for(;i<n;i++) *s++ = ' ';
-/*		else *s++ = ch;
-/*	return(OK);
-/*}
-*/
-/*rd_POS(s) char *s;
-/*{	char quote;
-/*	int ch;
-/*	quote= *s++;
-/*	for(;*s;s++)
-/*		if(*s==quote && *(s+1)!=quote) break;
-/*		else if((ch=(*getn)())<0) return(ch);
-/*		else *s = ch=='\n'?' ':ch;
-/*	return(OK);
-/*}
-*/
+rd_H(n,s) char *s;
+{	int i,ch = 0;
+	for(i=0;i<n;i++)
+	{	if (ch != '\n')
+			GET(ch);
+		if (ch == '\n')
+			*s++ = ' ';
+		else
+			*s++ = ch;
+	}
+	return(OK);
+}
+
+rd_POS(s) char *s;
+{	char quote;
+	int ch = 0;
+	quote = *s++;
+	while(*s)
+	{	if(*s==quote && *(s+1)!=quote)
+			break;
+		if (ch != '\n')
+			GET(ch);
+		if (ch == '\n')
+			*s++ = ' ';
+		else
+			*s++ = ch;
+	}
+	return(OK);
+}
