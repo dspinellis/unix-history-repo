@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mbuf.c	4.4 82/12/09";
+static char sccsid[] = "@(#)mbuf.c	4.5 82/12/18";
 #endif
 
 #include <sys/param.h>
