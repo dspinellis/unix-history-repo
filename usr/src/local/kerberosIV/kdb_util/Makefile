@@ -1,9 +1,9 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 PROG=	kdb_util
 CFLAGS+=-DKERBEROS -DDEBUG -I${.CURDIR}/../kdb_edit \
 	-I${.CURDIR}/../include
-SRCS=	kdb_util.o maketime.o
+SRCS=	kdb_util.c maketime.c
 .PATH:	${.CURDIR}/../kdb_edit
 DPADD=	${LIBKDB} ${LIBKRB} ${LIBDES}
 LDADD=	-lkdb -lkrb -ldes
