@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)finger.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)finger.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -1029,7 +1029,6 @@ netfinger(name)
 		def.h_aliases = 0;
 		hp = &def;
 	}
-	printf("[%s]", hp->h_name);
 	sp = getservbyname("finger", "tcp");
 	if (sp == 0) {
 		printf("tcp/finger: unknown service\n");
@@ -1040,17 +1039,16 @@ netfinger(name)
 	sin.sin_port = sp->s_port;
 	s = socket(hp->h_addrtype, SOCK_STREAM, 0);
 	if (s < 0) {
-		fflush(stdout);
 		perror("socket");
 		return (1);
 	}
+	printf("[%s]", hp->h_name); fflush(stdout);
 	if (connect(s, (char *)&sin, sizeof (sin)) < 0) {
-		fflush(stdout);
 		perror("connect");
 		close(s);
 		return (1);
 	}
-	printf("\n");
+	putchar('\n');
 	if (large) write(s, "/W ", 3);
 	write(s, name, strlen(name));
 	write(s, "\r\n", 2);
