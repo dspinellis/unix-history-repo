@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)macro.c	4.3 %G%";
+static char sccsid[] = "@(#)macro.c	4.4 %G%";
 #endif
 
 #
@@ -84,7 +84,7 @@ retry:
 				THEN	dolg=1; c='1';
 				FI
 				c -= '0';
-				v=((c==0) ? cmdadr : (c<=dolc) ? dolv[c] : (dolg=0));
+				v=((c==0) ? cmdadr : (c<=dolc) ? dolv[c] : (STRING)(dolg=0));
 			ELIF c=='$'
 			THEN	v=pidadr;
 			ELIF c=='!'
