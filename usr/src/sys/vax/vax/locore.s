@@ -1,4 +1,4 @@
-/*	locore.s	6.7	84/03/22	*/
+/*	locore.s	6.8	84/07/08	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
@@ -747,6 +747,84 @@ _addupc:	.globl	_addupc
 	ret
 8:
 	clrl	12(r2)
+	ret
+
+/*
+ * Copy a null terminated string from the user address space into
+ * the kernel address space.
+ */
+	.globl	_copyinstr
+_copyinstr:
+	.word	0x40			# save r6
+	movl	12(ap),r6		# r6 = max length
+	jlss	9f
+	movl	4(ap),r1		# r1 = user address
+	bicl3	$~(NBPG-1),r1,r2	# r2 = bytes on first page
+	subl3	r2,$NBPG,r2
+	movl	8(ap),r3		# r3 = kernel address
+1:
+	cmpl	r6,r2			# r2 = min(bytes on page, length left);
+	jgeq	2f
+	movl	r6,r2
+2:
+	subl2	r2,r6			# update bytes left count
+	prober	$3,r2,(r1)		# bytes accessible?
+	jeql	9f
+	locc	$0,r2,(r1)		# null byte found?
+	jneq	3f
+	subl2	r2,r1			# back up pointer updated by `locc'
+	movc3	r2,(r1),(r3)		# copy in next piece
+	movl	$NBPG,r2		# check next page
+	tstl	r6			# run out of space?
+	jneq	1b
+	clrb	-(r1)			# null terminate what fit and return
+	jbr	8f
+3:
+	subl2	r0,r2			# r2 = number of bytes to move
+	subl2	r2,r1			# back up pointer updated by `locc'
+	incl	r2			# copy null byte as well
+	movc3	r2,(r1),(r3)		# copy in last piece
+	clrl	r0			# redundant
+	ret
+8:
+	movl	$ENOENT,r0
+	ret
+9:
+	movl	$EFAULT,r0
+	ret
+
+/*
+ * Copy a null terminated string from one point to another in
+ * the kernel address space.
+ */
+	.globl	_copystr
+_copystr:
+	.word	0x40			# save r6
+	movl	12(ap),r6		# r6 = max length
+	jlss	9b
+	movl	4(ap),r1		# r1 = src address
+	movl	8(ap),r3		# r3 = dest address
+1:
+	movzwl	$65535,r2		# r2 = bytes in first chunk
+	cmpl	r6,r2			# r2 = min(bytes in chunk, length left);
+	jgeq	2f
+	movl	r6,r2
+2:
+	subl2	r2,r6			# update bytes left count
+	locc	$0,r2,(r1)		# null byte found?
+	jneq	3f
+	subl2	r2,r1			# back up pointer updated by `locc'
+	movc3	r2,(r1),(r3)		# copy in next piece
+	tstl	r6			# run out of space?
+	jneq	1b
+	clrb	-(r1)			# null terminate what fit and return
+	jbr	8b
+3:
+	subl2	r0,r2			# r2 = number of bytes to move
+	subl2	r2,r1			# back up pointer updated by `locc'
+	incl	r2			# copy null byte as well
+	movc3	r2,(r1),(r3)		# copy in last piece
+	clrl	r0			# redundant
 	ret
 
 _Copyin:	.globl	_Copyin		# <<<massaged for jsb by asm.sed>>>
