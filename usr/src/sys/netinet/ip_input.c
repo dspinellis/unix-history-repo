@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_input.c	7.6.1.2 (Berkeley) %G%
+ *	@(#)ip_input.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -936,7 +936,10 @@ ip_forward(ip, ifp)
 
 	case ENETUNREACH:
 	case ENETDOWN:
-		code = ICMP_UNREACH_NET;
+		if (in_localaddr(ip->ip_dst))
+			code = ICMP_UNREACH_HOST;
+		else
+			code = ICMP_UNREACH_NET;
 		break;
 
 	case EMSGSIZE:
