@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vnops.c	8.10 (Berkeley) %G%
+ *	@(#)fdesc_vnops.c	8.11 (Berkeley) %G%
  *
  * $Id: fdesc_vnops.c,v 1.12 1993/04/06 16:17:17 jsp Exp $
  */
@@ -333,10 +333,10 @@ fdesc_attr(fd, vap, cred, p)
 		error = VOP_GETATTR((struct vnode *) fp->f_data, vap, cred, p);
 		if (error == 0 && vap->va_type == VDIR) {
 			/*
-			 * don't allow directories to show up because
-			 * that causes loops in the namespace.
+			 * directories can cause loops in the namespace,
+			 * so turn off the 'x' bits to avoid trouble.
 			 */
-			vap->va_type = VFIFO;
+			vap->va_mode &= ~((VEXEC)|(VEXEC>>3)|(VEXEC>>6));
 		}
 		break;
 
