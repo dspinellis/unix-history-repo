@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_input.c	7.26 (Berkeley) %G%
+ *	@(#)tp_input.c	7.27 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -123,7 +123,7 @@ tp_inputprep(m)
 		caddr_t ocp = m->m_data;
 
 		m->m_data = (caddr_t)(((int)m->m_data) & ~0x3);
-		ovbcopy(ocp, m->m_data, (unsigned)m->m_len);
+		bcopy(ocp, m->m_data, (unsigned)m->m_len);
 	}
 	CHANGE_MTYPE(m, TPMT_DATA);
 
