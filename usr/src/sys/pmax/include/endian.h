@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)endian.h	7.6 (Berkeley) %G%
+ *	@(#)endian.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -33,8 +33,18 @@
 
 #else
 
-unsigned short	ntohs(), htons();
-unsigned long	ntohl(), htonl();
+#ifdef KERNEL
+#include "cdefs.h"
+#else
+#include <sys/cdefs.h>
+#endif
+
+__BEGIN_DECLS
+unsigned long	htonl __P((unsigned long));
+unsigned short	htons __P((unsigned short));
+unsigned long	ntohl __P((unsigned long));
+unsigned short	ntohs __P((unsigned short));
+__END_DECLS
 
 #define	NTOHL(x)	(x) = ntohl((u_long)x)
 #define	NTOHS(x)	(x) = ntohs((u_short)x)
