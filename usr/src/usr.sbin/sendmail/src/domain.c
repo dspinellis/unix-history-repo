@@ -12,12 +12,12 @@
 
 #ifndef MXDOMAIN
 #ifndef lint
-static char	SccsId[] = "@(#)domain.c	5.5 (Berkeley) %G% (no MXDOMAIN)";
+static char	SccsId[] = "@(#)domain.c	5.6 (Berkeley) %G% (no MXDOMAIN)";
 #endif not lint
 #else MXDOMAIN
 
 #ifndef lint
-static char	SccsId[] = "@(#)domain.c	5.5 (Berkeley) %G%";
+static char	SccsId[] = "@(#)domain.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 # include <sys/param.h>
@@ -32,8 +32,7 @@ typedef union {
 
 static char	hostbuf[BUFSIZ];
 int		h_errno;
-
-# define getshort	_getshort	/* XXX hack attack! */
+extern u_short	getshort();
 
 getmxrr(host, mxhosts, maxmx, localhost)
 	char *host, **mxhosts;
@@ -292,4 +291,16 @@ getcanonname(host, hbsize)
 	}
 	return;
 }
+
+u_short
+getshort(msgp)
+	char *msgp;
+{
+	register u_char *p = (u_char *) msgp;
+	register int u;
+
+	u = *p++ << 8;
+	return ((u_short)(u | *p));
+}
+
 #endif MXDOMAIN
