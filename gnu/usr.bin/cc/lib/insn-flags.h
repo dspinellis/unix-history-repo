@@ -99,8 +99,15 @@ from the machine description file `md'.  */
    Use NOFPU to prevent them being generated on non-fpu machines.
 */
 #ifdef NOFPU
-#define HAVE_sqrtsf2 (TARGET_80387 && (TARGET_IEEE_FP || flag_fast_math))
+#define HAVE_sqrtdf2 0
+#define HAVE_sqrtsf2 0
+#define HAVE_sindf2 0
+#define HAVE_sinsf2 0
+#define HAVE_cosdf2 0
+#define HAVE_cossf2 0
+#else /* Have a fpu */
 #define HAVE_sqrtdf2 (TARGET_80387 && (TARGET_IEEE_FP || flag_fast_math))
+#define HAVE_sqrtsf2 (TARGET_80387 && (TARGET_IEEE_FP || flag_fast_math))
 #define HAVE_sindf2 (TARGET_80387 && (TARGET_IEEE_FP || flag_fast_math))
 #define HAVE_sinsf2 (TARGET_80387 && (TARGET_IEEE_FP || flag_fast_math))
 #define HAVE_cosdf2 (TARGET_80387 && (TARGET_IEEE_FP || flag_fast_math))

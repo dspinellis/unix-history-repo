@@ -1,21 +1,20 @@
 LIB = gcc2
 
-CFLAGS += -I${.CURDIR} -DNOFPU
+CFLAGS += -I${.CURDIR} -DNOFPU 
+NOPROFILE=no
 
-SRCS =  toplev.c version.c tree.c print-tree.c \
-	stor-layout.c fold-const.c function.c stmt.c expr.c \
-	calls.c expmed.c explow.c optabs.c varasm.c \
-	rtl.c print-rtl.c rtlanal.c emit-rtl.c real.c \
-	dbxout.c sdbout.c dwarfout.c xcoffout.c\
-	integrate.c jump.c cse.c loop.c unroll.c flow.c \
-	stupid.c combine.c regclass.c local-alloc.c \
-	global.c reload.c reload1.c caller-save.c \
-	insn-peep.c reorg.c sched.c final.c recog.c reg-stack.c \
-	insn-opinit.c insn-recog.c insn-extract.c insn-output.c insn-emit.c \
-	insn-attrtab.c aux-output.c getpwd.c convert.c \
-	c-common.c obstack.c 
+SRCS =  aux-output.c c-common.c caller-save.c calls.c combine.c \
+	convert.c cse.c dbxout.c dwarfout.c emit-rtl.c explow.c \
+	expmed.c expr.c final.c flow.c fold-const.c function.c \
+	getpwd.c global.c insn-attrtab.c insn-emit.c insn-extract.c \
+	insn-opinit.c insn-output.c insn-peep.c insn-recog.c \
+	integrate.c jump.c local-alloc.c loop.c obstack.c optabs.c \
+	print-rtl.c print-tree.c real.c recog.c reg-stack.c regclass.c \
+	reload.c reload1.c reorg.c rtl.c rtlanal.c sched.c sdbout.c \
+	stmt.c stor-layout.c stupid.c toplev.c tree.c unroll.c \
+	varasm.c version.c xcoffout.c
 
 install:
 	@echo -n
 
-.include <bsd.lib.mk>
+.include "lib.mk"
