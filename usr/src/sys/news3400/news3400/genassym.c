@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	7.3 (Berkeley) %G%
+ *	@(#)genassym.c	7.4 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -13,15 +13,9 @@
 
 #include <sys/param.h>
 #include <sys/buf.h>
-#include <sys/dir.h>
 #include <sys/map.h>
 #include <sys/proc.h>
-#include <sys/mbuf.h>
 #include <sys/user.h>
-#include <sys/msgbuf.h>
-#include <sys/syscall.h>
-#include <sys/signal.h>
-#include <vm/vm.h>
 #include <machine/reg.h>
 #include <machine/pte.h>
 #include <machine/pmap.h>
@@ -80,9 +74,6 @@ main()
 
 	printf("#define\tSIGILL %d\n", SIGILL);
 	printf("#define\tSIGFPE %d\n", SIGFPE);
-
-	printf("#define\tSYS_execve %d\n", SYS_execve);
-	printf("#define\tSYS_exit %d\n", SYS_exit);
 
 	exit(0);
 }
