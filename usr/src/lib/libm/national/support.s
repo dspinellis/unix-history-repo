@@ -1,4 +1,4 @@
-; @(#)support.s	1.1 (ucb.elefunt) %G%
+; @(#)support.s	1.2 (ucb.elefunt) %G%
 ; 
 ; IEEE recommended functions
 ;
@@ -17,7 +17,7 @@ _copysign:
 	movd	8(sp),r0
 	movd	16(sp),r1
 	xord	r0,r1
-	ord	0x80000000,r1
+	andd	0x80000000,r1
 	cmpqd	0,r1
 	beq	end
 	negl	f0,f0
