@@ -1,4 +1,4 @@
-/*	flp.c	4.3	%G%	*/
+/*	flp.c	4.4	%G%	*/
 
 #if VAX780
 #include "../h/flp.h"
@@ -10,6 +10,7 @@
 #include "../h/mtpr.h"
 #include "../h/buf.h"
 #include "../h/cons.h"
+#include "../h/cpu.h"
 
 struct {
 	short	fl_state;		/* open and busy flags */
