@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.11	%G%	*/
+/*	subr_prf.c	4.12	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -171,20 +171,6 @@ panic(s)
 	printf("panic: %s\n", s);
 	(void) spl0();
 	boot(RB_PANIC, bootopt);
-}
-
-/*
- * Prdev prints a warning message of the form "mesg on dev x/y".
- * x and y are the major and minor parts of the device argument.
- *
- * PRDEV SHOULD COMPUTE AND USE DEVICE NAMES
- */
-prdev(str, dev)
-	char *str;
-	dev_t dev;
-{
-
-	printf("%s on dev %d/%d\n", str, major(dev), minor(dev));
 }
 
 /*
