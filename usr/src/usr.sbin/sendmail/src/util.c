@@ -1,8 +1,9 @@
+# include <stdio.h>
 # include <sysexits.h>
 # include "useful.h"
 # include <ctype.h>
 
-static char	SccsId[] = "@(#)util.c	3.3	%G%";
+static char	SccsId[] = "@(#)util.c	3.4	%G%";
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -129,4 +130,158 @@ newstr(s)
 	p = xalloc((unsigned) (strlen(s) + 1));
 	strcpy(p, s);
 	return (p);
+}
+/*
+**  COPYPLIST -- copy list of pointers.
+**
+**	This routine is the equivalent of newstr for lists of
+**	pointers.
+**
+**	Parameters:
+**		list -- list of pointers to copy.
+**			Must be NULL terminated.
+**		copycont -- if TRUE, copy the contents of the vector
+**			(which must be a string) also.
+**
+**	Returns:
+**		a copy of 'list'.
+**
+**	Side Effects:
+**		none.
+*/
+
+char **
+copyplist(list, copycont)
+	char **list;
+	bool copycont;
+{
+	register char **vp;
+	register char **newvp;
+	extern char *xalloc();
+
+	for (vp = list; *vp != NULL; vp++)
+		continue;
+
+	vp++;
+
+	newvp = (char **) xalloc((vp - list) * sizeof *vp);
+	bmove(list, newvp, (vp - list) * sizeof *vp);
+
+	if (copycont)
+	{
+		for (vp = newvp; *vp != NULL; vp++)
+			*vp = newstr(*vp);
+	}
+
+	return (newvp);
+}
+/*
+**  PRINTAV -- print argument vector.
+**
+**	Parameters:
+**		av -- argument vector.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		prints av.
+*/
+
+# ifdef DEBUG
+printav(av)
+	register char **av;
+{
+	while (*av != NULL)
+	{
+		printf("\t%08x=", *av);
+		xputs(*av++);
+		putchar('\n');
+	}
+}
+# endif DEBUG
+/*
+**  LOWER -- turn letter into lower case.
+**
+**	Parameters:
+**		c -- character to turn into lower case.
+**
+**	Returns:
+**		c, in lower case.
+**
+**	Side Effects:
+**		none.
+*/
+
+char
+lower(c)
+	register char c;
+{
+	if (isascii(c) && isupper(c))
+		c = c - 'A' + 'a';
+	return (c);
+}
+/*
+**  XPUTS -- put string doing control escapes.
+**
+**	Parameters:
+**		s -- string to put.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		output to stdout
+*/
+
+# ifdef DEBUG
+xputs(s)
+	register char *s;
+{
+	register char c;
+
+	while ((c = *s++) != '\0')
+	{
+		if (!isascii(c))
+		{
+			putchar('\\');
+			c &= 0177;
+		}
+		if (iscntrl(c))
+		{
+			putchar('^');
+			c |= 0100;
+		}
+		putchar(c);
+	}
+	fflush(stdout);
+}
+# endif DEBUG
+/*
+**  MAKELOWER -- Translate a line into lower case
+**
+**	Parameters:
+**		p -- the string to translate.  If NULL, return is
+**			immediate.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		String pointed to by p is translated to lower case.
+**
+**	Called By:
+**		parse
+*/
+
+makelower(p)
+	register char *p;
+{
+	register char c;
+
+	if (p == NULL)
+		return;
+	for (; (c = *p) != '\0'; p++)
+		if (isascii(c) && isupper(c))
+			*p = c - 'A' + 'a';
 }

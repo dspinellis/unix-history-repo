@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.4	%G%";
+static char	SccsId[] = "@(#)main.c	3.5	%G%";
 
 /*
 **  POSTBOX -- Post mail to a set of destinations.
@@ -127,6 +127,7 @@ int	ExitStat;	/* the exit status byte */
 ADDRESS	SendQ;		/* queue of people to send to */
 ADDRESS	AliasQ;		/* queue of people who turned out to be aliases */
 HDR	*Header;	/* header list */
+char	*Macro[128];	/* macros */
 
 
 
@@ -150,10 +151,10 @@ main(argc, argv)
 	char nbuf[MAXLINE];
 	struct passwd *pw;
 	extern char *newstr();
-	extern char *Macro[];
 	extern char *index();
 	extern char *strcpy(), *strcat();
 	extern char *makemsgid();
+	char *cfname;
 
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		signal(SIGINT, finis);
@@ -176,7 +177,7 @@ main(argc, argv)
 # endif
 	errno = 0;
 	from = NULL;
-	initmacs();
+	cfname = "postbox.cf";
 
 	/*
 	** Crack argv.
@@ -258,12 +259,13 @@ main(argc, argv)
 			break;
 
 		  case 'D':	/* redefine internal macro */
-			if (!isupper(p[2]))
-				usrerr("Invalid flag: %s", p);
-			else
-				Macro[p[2] - 'A'] = &p[3];
+			Macro[p[2]] = &p[3];
 			break;
 # endif DEBUG
+
+		  case 'F':	/* select control file */
+			cfname = &p[2];
+			break;
 		
 		  case 'n':	/* don't alias */
 			NoAlias++;
@@ -295,6 +297,8 @@ main(argc, argv)
 
 	if (from != NULL && ArpaFmt)
 		syserr("-f and -a are mutually exclusive");
+
+	readcf(cfname);
 
 	/*
 	** Get a temp file.
