@@ -1,14 +1,18 @@
 /*
+ * Copyright (c) 1988 University of Utah.
  * Copyright (c) 1992 OMRON Corporation.
- * Copyright (c) 1992 The Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1990, 1992 The Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * OMRON Corporation.
+ * the Systems Programming Group of the University of Utah Computer
+ * Science Department.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)autoconf.c	7.4 (Berkeley) %G%
+ * from:hp300/hp300/autoconf.c	7.9 (Berkeley) 12/27/92
+ *
+ *	@(#)autoconf.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -42,8 +46,6 @@
 int	cold;		    /* if 1, still working on cold-start */
 int	dkn;		    /* number of iostat dk numbers assigned so far */
 struct	hp_hw sc_table[MAXCTLRS];
-
-u_long	bootdev;		/* should be dev_t, but not until 32 bits */
 
 #ifdef DEBUG
 int	acdebug = 0;
@@ -81,6 +83,7 @@ configure()
 #else
 	setroot();
 #endif
+	showroot();
 	swapconf();
 	cold = 0;
 }
@@ -489,6 +492,7 @@ swapconf()
 }
 
 #define	DOSWAP			/* Change swdevt and dumpdev too */
+u_long	bootdev;		/* should be dev_t, but not until 32 bits */
 
 static	char devname[][2] = {
 	0,0,		/* 0 = ct */
@@ -510,29 +514,26 @@ setroot()
 {
 	register struct hp_ctlr *hc;
 	register struct hp_device *hd;
-	int  majdev, mindev, unit, part, adaptor;
+	int  majdev, mindev, unit, part, controller, adaptor;
 	dev_t temp, orootdev;
 	struct swdevt *swp;
 
-	if (boothowto & RB_DFLTROOT)
-		goto defdev;
-
-	if ((bootdev & B_MAGICMASK) != (u_long)B_DEVMAGIC) {
+	if (boothowto & RB_DFLTROOT ||
+	    (bootdev & B_MAGICMASK) != (u_long)B_DEVMAGIC) {
 		printf("Wrong B_DEVMAGIC\n");
-		goto defdev;
+		return;
 	}
-
-	majdev = (bootdev >> B_TYPESHIFT) & B_TYPEMASK;
+	majdev = B_TYPE(bootdev);
 	if (majdev > sizeof(devname) / sizeof(devname[0])) {
 		printf("Wrong Major Number: %d", majdev);
-		goto defdev;
+		return;
 	}
-
-	adaptor = (bootdev >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
-	part = (bootdev >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
-	unit = (bootdev >> B_UNITSHIFT) & B_UNITMASK;
+	adaptor = B_ADAPTOR(bootdev);
+	controller = B_CONTROLLER(bootdev);
+	part = B_PARTITION(bootdev);
+	unit = B_UNIT(bootdev);
 	/*
-	 * First, find the device type which support this device.
+	 * First, find the controller type which supports this device.
 	 */
 	for (hd = hp_dinit; hd->hp_driver; hd++)
 		if (hd->hp_driver->d_name[0] == devname[majdev][0] &&
@@ -541,11 +542,11 @@ setroot()
 	if (hd->hp_driver == 0) {
 		printf("Device type mismatch: %c%c\n",
 		       devname[majdev][0], devname[majdev][1]);
-		goto defdev;
+		return;
 	}
 	/*
-	 * Next, find the controller of that type corresponding to
-	 * the adaptor number.
+	 * Next, find the "controller" (bus adaptor) of that type
+	 * corresponding to the adaptor number.
 	 */
 	for (hc = hp_cinit; hc->hp_driver; hc++)
 		if (hc->hp_alive && hc->hp_unit == adaptor &&
@@ -553,19 +554,20 @@ setroot()
 			break;
 	if (hc->hp_driver == 0) {
 		printf("Controller is not available\n");
-		goto defdev;
+		return;
 	}
 	/*
-	 * Finally, find the device in question attached to that controller.
+	 * Finally, find the "device" (controller or slave) in question
+	 * attached to that "controller".
 	 */
 	for (hd = hp_dinit; hd->hp_driver; hd++)
-		if (hd->hp_alive && hd->hp_slave == unit &&
+		if (hd->hp_alive && hd->hp_slave == controller &&
 		    hd->hp_cdriver == hc->hp_driver &&
 		    hd->hp_ctlr == hc->hp_unit)
 			break;
 	if (hd->hp_driver == 0) {
 		printf("Device not found\n");
-		goto defdev;
+		return;
 	}
 
 	mindev = hd->hp_unit;
@@ -579,12 +581,8 @@ setroot()
 	 * If the original rootdev is the same as the one
 	 * just calculated, don't need to adjust the swap configuration.
 	 */
-	if (rootdev == orootdev) {
-		printf("root on %c%c%d%c\n",
-		       devname[majdev][0], devname[majdev][1],
-		       mindev >> PARTITIONSHIFT, part + 'a');
+	if (rootdev == orootdev)
 		return;
-	}
 
 	printf("Changing root device to %c%c%d%c\n",
 		devname[majdev][0], devname[majdev][1],
@@ -611,19 +609,41 @@ setroot()
 	if (temp == dumpdev)
 		dumpdev = swdevt[0].sw_dev;
 #endif
-	return;
-
- defdev:
-	majdev = major(rootdev);
-	mindev = minor(rootdev);
-	unit   = mindev >> PARTITIONSHIFT;
-	part   = mindev &  PARTITIONMASK;
-	printf("Use default root device: %c%c%d%c\n",
-	       devname[majdev][0], devname[majdev][1],
-	       unit, part);
-	return;
 }
 
+showroot()
+{
+	register int majdev, mindev;
+	register struct swdevt *swp;
+
+	majdev = major(rootdev);
+	mindev = minor(rootdev);
+	printf("root on %c%c%d%c   ",
+		devname[majdev][0], devname[majdev][1],
+		mindev >> PARTITIONSHIFT, (mindev & PARTITIONMASK) + 'a');
+
+	swp = swdevt;
+	majdev = major(swp->sw_dev);
+	mindev = minor(swp->sw_dev);
+	printf("swap on %c%c%d%c ",
+		devname[majdev][0], devname[majdev][1],
+		mindev >> PARTITIONSHIFT, (mindev & PARTITIONMASK) + 'a');
+
+	swp++;
+	for (; swp->sw_dev; swp++) {
+		majdev = major(swp->sw_dev);
+		mindev = minor(swp->sw_dev);
+		printf("and %c%c%d%c ",
+		       devname[majdev][0], devname[majdev][1],
+		       mindev >> PARTITIONSHIFT, (mindev & PARTITIONMASK) + 'a');
+	}
+
+	majdev = major(dumpdev);
+	mindev = minor(dumpdev);
+	printf("  dump on %c%c%d%c\n",
+		devname[majdev][0], devname[majdev][1],
+		mindev >> PARTITIONSHIFT, (mindev & PARTITIONMASK) + 'a');
+}
 strcmp(s1, s2)
 	register char *s1, *s2;
 {
