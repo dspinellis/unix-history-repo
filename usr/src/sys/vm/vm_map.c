@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_map.c	7.6 (Berkeley) %G%
+ *	@(#)vm_map.c	7.7 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -251,9 +251,10 @@ vm_map_entry_t vm_map_entry_create(map)
 	vm_map_t	map;
 {
 	vm_map_entry_t	entry;
-	extern vm_map_t		kernel_map, kmem_map, mb_map;
+	extern vm_map_t		kernel_map, kmem_map, mb_map, pager_map;
 
-	if (map == kernel_map || map == kmem_map || map == mb_map) {
+	if (map == kernel_map || map == kmem_map || map == mb_map ||
+	    map == pager_map) {
 		if (entry = kentry_free)
 			kentry_free = kentry_free->next;
 	} else
@@ -274,9 +275,10 @@ void vm_map_entry_dispose(map, entry)
 	vm_map_t	map;
 	vm_map_entry_t	entry;
 {
-	extern vm_map_t		kernel_map, kmem_map, mb_map;
+	extern vm_map_t		kernel_map, kmem_map, mb_map, pager_map;
 
-	if (map == kernel_map || map == kmem_map || map == mb_map) {
+	if (map == kernel_map || map == kmem_map || map == mb_map ||
+	    map == pager_map) {
 		entry->next = kentry_free;
 		kentry_free = entry;
 	} else
