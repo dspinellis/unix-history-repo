@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.67 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.68 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -25,7 +25,7 @@
  */
 
 /*
- * mount system call
+ * Mount system call.
  */
 /* ARGSUSED */
 mount(p, uap, retval)
@@ -287,7 +287,7 @@ sync(p, uap, retval)
 }
 
 /*
- * operate on filesystem quotas
+ * Operate on filesystem quotas.
  */
 /* ARGSUSED */
 quotactl(p, uap, retval)
@@ -317,7 +317,7 @@ quotactl(p, uap, retval)
 }
 
 /*
- * get filesystem statistics
+ * Get filesystem statistics.
  */
 /* ARGSUSED */
 statfs(p, uap, retval)
@@ -350,7 +350,7 @@ statfs(p, uap, retval)
 }
 
 /*
- * get filesystem statistics
+ * Get filesystem statistics.
  */
 /* ARGSUSED */
 fstatfs(p, uap, retval)
@@ -377,7 +377,7 @@ fstatfs(p, uap, retval)
 }
 
 /*
- * get statistics on all filesystems
+ * Get statistics on all filesystems.
  */
 getfsstat(p, uap, retval)
 	struct proc *p;
@@ -619,7 +619,7 @@ ocreat(p, uap, retval)
 #endif /* COMPAT_43 */
 
 /*
- * Mknod system call
+ * Mknod system call.
  */
 /* ARGSUSED */
 mknod(p, uap, retval)
@@ -684,7 +684,7 @@ out:
 }
 
 /*
- * Mkfifo system call
+ * Mkfifo system call.
  */
 /* ARGSUSED */
 mkfifo(p, uap, retval)
@@ -726,7 +726,7 @@ mkfifo(p, uap, retval)
 }
 
 /*
- * link system call
+ * Link system call.
  */
 /* ARGSUSED */
 link(p, uap, retval)
@@ -782,7 +782,7 @@ out1:
 }
 
 /*
- * symlink -- make a symbolic link
+ * Make a symbolic link.
  */
 /* ARGSUSED */
 symlink(p, uap, retval)
@@ -827,9 +827,7 @@ out:
 }
 
 /*
- * Unlink system call.
- * Hard to avoid races here, especially
- * in unlinking directories.
+ * Delete a name from the filesystem.
  */
 /* ARGSUSED */
 unlink(p, uap, retval)
@@ -855,7 +853,7 @@ unlink(p, uap, retval)
 	    (error = suser(p->p_ucred, &p->p_acflag)))
 		goto out;
 	/*
-	 * Don't unlink a mounted file.
+	 * The root of a mounted filesystem cannot be deleted.
 	 */
 	if (vp->v_flag & VROOT) {
 		error = EBUSY;
@@ -882,7 +880,7 @@ out:
 }
 
 /*
- * Seek system call
+ * Seek system call.
  */
 lseek(p, uap, retval)
 	struct proc *p;
@@ -929,7 +927,7 @@ lseek(p, uap, retval)
 }
 
 /*
- * Access system call
+ * Check access permissions.
  */
 /* ARGSUSED */
 saccess(p, uap, retval)
@@ -979,7 +977,8 @@ out1:
 }
 
 /*
- * Stat system call.  This version follows links.
+ * Stat system call.
+ * This version follows links.
  */
 /* ARGSUSED */
 stat(p, uap, retval)
@@ -1010,7 +1009,8 @@ stat(p, uap, retval)
 }
 
 /*
- * Lstat system call.  This version does not follow links.
+ * Lstat system call.
+ * This version does not follow links.
  */
 /* ARGSUSED */
 lstat(p, uap, retval)
@@ -1041,7 +1041,7 @@ lstat(p, uap, retval)
 }
 
 /*
- * Return target name of a symbolic link
+ * Return target name of a symbolic link.
  */
 /* ARGSUSED */
 readlink(p, uap, retval)
@@ -1530,7 +1530,7 @@ out1:
 }
 
 /*
- * Mkdir system call
+ * Mkdir system call.
  */
 /* ARGSUSED */
 mkdir(p, uap, retval)
@@ -1607,7 +1607,7 @@ rmdir(p, uap, retval)
 		goto out;
 	}
 	/*
-	 * Don't unlink a mounted file.
+	 * The root of a mounted filesystem cannot be deleted.
 	 */
 	if (vp->v_flag & VROOT)
 		error = EBUSY;
@@ -1626,7 +1626,7 @@ out:
 }
 
 /*
- * Read a block of directory entries in a file system independent format
+ * Read a block of directory entries in a file system independent format.
  */
 getdirentries(p, uap, retval)
 	struct proc *p;
@@ -1673,7 +1673,7 @@ getdirentries(p, uap, retval)
 }
 
 /*
- * mode mask for creation of files
+ * Set the mode mask for creation of filesystem nodes.
  */
 mode_t
 umask(p, uap, retval)
@@ -1731,6 +1731,9 @@ out:
 	return (error);
 }
 
+/*
+ * Convert a user file descriptor to a kernel file entry.
+ */
 getvnode(fdp, fdes, fpp)
 	struct filedesc *fdp;
 	struct file **fpp;
