@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.47 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.48 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -94,7 +94,7 @@ printf("Extending ifile: max inum = %d\n", max);
 		ifp--;
 		ifp->if_nextfree = LFS_UNUSED_INUM;
 
-		++ip->i_blocks;			/* XXX This may not be right. */
+		ip->i_blocks += btodb(fs->lfs_bsize);
 		ip->i_size += fs->lfs_bsize;
 printf("Extending ifile: blocks = %d size = %d\n", ip->i_blocks, ip->i_size);
 		vnode_pager_setsize(vp, (u_long)ip->i_size);
