@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1062,7 +1062,9 @@ stab_map_open(map, mode)
 
 
 /*
-**  STAB_MAP_CLOSE -- close symbol table (???)
+**  STAB_MAP_CLOSE -- close symbol table.
+**
+**	Since this is in memory, there is nothing to do.
 */
 
 void
