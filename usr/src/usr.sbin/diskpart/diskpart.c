@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)diskpart.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)diskpart.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -347,12 +347,14 @@ promptfordisk(name)
 	for (;;) {
 		fprintf(stderr, "Disk/controller type (%s)? ", dktypenames[1]);
 		(void) gets(buf);
-		if (buf[0] == 0)
+		if (buf[0] == 0) {
 			dp->d_type = 1;
-		else
-			dp->d_type = gettype(buf, dktypenames);
-		if (dp->d_type >= 0)
 			break;
+		}
+		if ((i = gettype(buf, dktypenames)) >= 0) {
+			dp->d_type = i;
+			break;
+		}
 		fprintf(stderr, "%s: unrecognized controller type\n", buf);
 		fprintf(stderr, "use one of:\n", buf);
 		for (tp = dktypenames; *tp; tp++)
