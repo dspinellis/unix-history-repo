@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.35 (Berkeley) %G%
+ *	@(#)sendmail.h	6.36 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.35		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.36		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -776,11 +776,21 @@ extern char	*sfgets P((char *, int, FILE *, time_t));
 extern char	*queuename P((ENVELOPE *, char));
 extern time_t	curtime P(());
 extern bool	transienterror P((int));
-extern void	auth_warning P((ENVELOPE *, char *, ...));
-extern void	syserr P((char *, ...));
-extern void	usrerr P((char *, ...));
-extern void	message P((char *, ...));
-extern void	nmessage P((char *, ...));
+
+/* ellipsis is a different case though */
+#ifdef __STDC__
+extern void	auth_warning(ENVELOPE *, char *, ...);
+extern void	syserr(char *, ...);
+extern void	usrerr(char *, ...);
+extern void	message(char *, ...);
+extern void	nmessage(char *, ...);
+#else
+extern void	auth_warning();
+extern void	syserr();
+extern void	usrerr();
+extern void	message();
+extern void	nmessage();
+#endif
 
 /*
 **  HACK to fix bug in C compiler on CCI
