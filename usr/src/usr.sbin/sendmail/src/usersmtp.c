@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	5.17 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.18 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	5.17 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.18 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -124,14 +124,14 @@ smtpinit(m, pvp)
 	*/
 
 	if (setjmp(CtxGreeting) != 0)
-		goto tempfail;
+		goto tempfail1;
 	gte = setevent((time_t) 300, greettimeout, 0);
 	SmtpPhase = "greeting wait";
 	setproctitle("%s %s: %s", CurEnv->e_id, CurHostName, SmtpPhase);
 	r = reply(m);
 	clrevent(gte);
 	if (r < 0 || REPLYTYPE(r) != 2)
-		goto tempfail;
+		goto tempfail1;
 
 	/*
 	**  Send the HELO command.
@@ -143,11 +143,11 @@ smtpinit(m, pvp)
 	setproctitle("%s %s: %s", CurEnv->e_id, CurHostName, SmtpPhase);
 	r = reply(m);
 	if (r < 0)
-		goto tempfail;
+		goto tempfail1;
 	else if (REPLYTYPE(r) == 5)
 		goto unavailable;
 	else if (REPLYTYPE(r) != 2)
-		goto tempfail;
+		goto tempfail1;
 
 	/*
 	**  If this is expected to be another sendmail, send some internal
@@ -160,13 +160,13 @@ smtpinit(m, pvp)
 		smtpmessage("VERB", m);
 		r = reply(m);
 		if (r < 0)
-			goto tempfail;
+			goto tempfail2;
 
 		/* tell it we will be sending one transaction only */
 		smtpmessage("ONEX", m);
 		r = reply(m);
 		if (r < 0)
-			goto tempfail;
+			goto tempfail2;
 	}
 
 	/*
@@ -197,7 +197,7 @@ smtpinit(m, pvp)
 	setproctitle("%s %s: %s", CurEnv->e_id, CurHostName, SmtpPhase);
 	r = reply(m);
 	if (r < 0 || REPLYTYPE(r) == 4)
-		goto tempfail;
+		goto tempfail2;
 	else if (r == 250)
 		return (EX_OK);
 	else if (r == 552)
@@ -208,7 +208,20 @@ smtpinit(m, pvp)
 	return (EX_PROTOCOL);
 
 	/* signal a temporary failure */
-  tempfail:
+  tempfail1:
+#ifdef HOSTINFO
+	{
+		register STAB *st;
+		extern STAB *stab();
+
+		/* log this as an error to avoid sure-to-be-void connections */
+		st = stab(CurHostName, ST_HOST, ST_ENTER);
+		st->s_host.ho_exitstat = EX_TEMPFAIL;
+		st->s_host.ho_errno = errno;
+	}
+#endif /* HOSTINFO */
+
+  tempfail2:
 	smtpquit(m);
 	return (EX_TEMPFAIL);
 
