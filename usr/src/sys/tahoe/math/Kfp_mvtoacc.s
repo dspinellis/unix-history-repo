@@ -1,7 +1,7 @@
-/*	Kfp_mvtoacc.s	1.2	86/01/03	*/
+/*	Kfp_mvtoacc.s	1.3	86/01/05	*/
 
-#include "fp.h"
-#include "SYS.h"
+#include "../tahoemath/fp.h"
+#include "../tahoe/SYS.h"
 
 /*
  * mvtofacc(value, acc_addr)

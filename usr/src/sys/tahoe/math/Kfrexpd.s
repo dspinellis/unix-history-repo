@@ -1,6 +1,6 @@
-/*	Kfrexpd.s	1.2	86/01/03	*/
+/*	Kfrexpd.s	1.3	86/01/05	*/
 
-#include "SYS.h"
+#include "../tahoe/SYS.h"
 
 	.text
 ENTRY(Kfrexpd, 0)

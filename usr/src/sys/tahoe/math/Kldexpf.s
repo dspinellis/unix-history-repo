@@ -1,6 +1,8 @@
-/*	Kldexpf.s	1.2	86/01/03	*/
+/*	Kldexpf.s	1.3	86/01/05	*/
 
-#include "SYS.h"
+#include "../tahoe/SYS.h"
+#include "../tahoemath/fp.h"
+#include "../tahoemath/Kfp.h"
 
 /* @(*)Kldexpf.s	4.2 (Berkeley) 12/21/80
  *	Tahoe 		2/2/83
@@ -16,9 +18,6 @@
  * after you use Kldexpf, you had better set it to something
  * other than ERANGE first (zero is a reasonable value to use).
  */
-
-#include "fp.h"
-#include "Kfp.h"
 
 	.text
 ENTRY(Kldexpf, R2)

@@ -1,7 +1,7 @@
-/*	Kmodf.s	1.2	86/01/03	*/
+/*	Kmodf.s	1.3	86/01/05	*/
 
-#include "SYS.h"
-#include "fp.h"
+#include "../tahoe/SYS.h"
+#include "../tahoemath/fp.h"
 
 /* 
  *  float Kmodf (value, iptr, hfs)
