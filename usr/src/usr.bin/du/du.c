@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)du.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)du.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/stat.h>
@@ -91,11 +91,7 @@ char *np, *fname;
 			++linked;
 		}
 	}
-/*
-	blocks = (Statb.st_size + BSIZE-1) >> BSHIFT;
-*/
-	blocks = (Statb.st_size + 511) >> 9;
-
+	blocks = (Statb.st_size + 1023-1) >> 10;
 	if((Statb.st_mode&S_IFMT)!=S_IFDIR) {
 		if(Aflag)
 			printf("%ld	%s\n", blocks, np);
