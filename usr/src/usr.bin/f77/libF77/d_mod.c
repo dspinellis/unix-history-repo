@@ -3,11 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)d_mod.c	5.3	%G%
+ *	@(#)d_mod.c	5.4	%G%
  */
 #ifdef tahoe
-#include <tahoemath/FP.h>
-#endif tahoe
+#include <tahoe/math/FP.h>
+#endif
 
 double d_mod(x,y)
 double *x, *y;

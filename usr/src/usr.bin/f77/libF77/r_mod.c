@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)r_mod.c	5.4	%G%
+ *	@(#)r_mod.c	5.5	%G%
  */
 
 #ifndef tahoe
@@ -21,10 +21,10 @@ flt_retval = *x - (*y) * quotient ;
 return(flt_retval);
 }
 
-#else tahoe
+#else
 
 /*   THIS IS BASED ON THE TAHOE REPR. FOR FLOATING POINT */
-#include <tahoemath/FP.h>
+#include <tahoe/math/FP.h>
 
 double r_mod(x,y)
 float *x, *y;
@@ -40,4 +40,4 @@ else {
 	}
 return(*x - (*y) * quotient );
 }
-#endif tahoe
+#endif

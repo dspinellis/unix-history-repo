@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.18 (Berkeley) %G%
+#	@(#)Makefile	5.19 (Berkeley) %G%
 #
 
 # The file "defs.h" is included by all.
@@ -32,7 +32,7 @@ AS	= as
 # if you want gripes
 # CFLAGS = -g '-DMAINTAINER="linton@shasta.stanford.edu"'
 #
-CFLAGS	= -O # -g
+CFLAGS	= -I/sys -O # -g
 
 LD = cc
 LDFLAGS	= # -g
