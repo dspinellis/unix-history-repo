@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ec.c	7.1 (Berkeley) %G%
+ *	@(#)if_ec.c	7.2 (Berkeley) %G%
  */
 
 #include "ec.h"
@@ -57,7 +57,7 @@ int	ecubamem(), ecprobe(), ecattach(), ecrint(), ecxint(), eccollide();
 struct	uba_device *ecinfo[NEC];
 u_short ecstd[] = { 0 };
 struct	uba_driver ecdriver =
-	{ ecprobe, 0, ecattach, 0, ecstd, "ec", ecinfo, 0, 0, 0, ecubamem };
+	{ ecprobe, 0, ecattach, 0, ecstd, "ec", ecinfo, 0, 0, 0, 0, ecubamem };
 
 int	ecinit(),ecioctl(),ecoutput(),ecreset();
 struct	mbuf *ecget();
