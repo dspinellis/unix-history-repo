@@ -1,4 +1,4 @@
-/*	if_ec.c	6.1	83/07/29	*/
+/*	if_ec.c	6.2	84/03/20	*/
 
 #include "ec.h"
 
@@ -204,6 +204,7 @@ ecreset(unit, uban)
 		return;
 	printf(" ec%d", unit);
 	(void) ubamem(uban, ECMEM, 32*2, 0);	/* mr disable (no alloc) */
+	ec_softc[unit].es_if.if_flags &= ~IFF_RUNNING;
 	ecinit(unit);
 }
 
@@ -604,6 +605,8 @@ qfull:
 	splx(s);
 bad:
 	m_freem(m0);
+	if (mcopy)
+		m_freem(mcopy);
 	return (error);
 }
 
