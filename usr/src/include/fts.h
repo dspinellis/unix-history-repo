@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fts.h	5.16 (Berkeley) %G%
+ *	@(#)fts.h	5.17 (Berkeley) %G%
  */
 
 #ifndef	_FTS_H_
@@ -13,7 +13,6 @@
 typedef struct {
 	struct _ftsent *fts_cur;	/* current node */
 	struct _ftsent *fts_child;	/* linked list of children */
-	struct _ftsent *fts_savelink;	/* saved link if node had a cycle */
 	struct _ftsent **fts_array;	/* sort array */
 	dev_t rdev;			/* starting device # */
 	char *fts_path;			/* path for this descent */
@@ -33,8 +32,9 @@ typedef struct {
 } FTS;
 
 typedef struct _ftsent {
+	struct _ftsent *fts_cycle;	/* cycle node */
 	struct _ftsent *fts_parent;	/* parent directory */
-	struct _ftsent *fts_link;	/* cycle or next file structure */
+	struct _ftsent *fts_link;	/* next file in directory */
 	union {
 		long number;		/* local numeric value */
 		void *pointer;		/* local address value */
