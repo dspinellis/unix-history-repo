@@ -1,4 +1,4 @@
-#	Makefile	2.17	84/07/26
+#	Makefile	2.18	85/06/06
 #
 # Berkeley Mail
 #
@@ -37,7 +37,7 @@ all:	${ALL}
 Mail:	$S $(OBJS)
 	$(RM) -f Mail
 	@echo Loading ...
-	@$(CC) -n -o Mail $(OBJS) $(LIBES)
+	@$(CC) -o Mail $(OBJS) $(LIBES)
 	@size Mail
 
 install: all
