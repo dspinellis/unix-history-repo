@@ -5,14 +5,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_init.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_init.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <stdio.h>
-#include <netdb.h>
 #include <arpa/nameser.h>
 #include <arpa/resolv.h>
 
@@ -54,7 +53,6 @@ res_init()
 	extern u_long inet_addr();
 	extern char *index();
 	extern char *strcpy(), *strncpy();
-	struct servent *serv;
 #ifdef DEBUG
 	extern char *getenv();
 #endif
@@ -62,9 +60,7 @@ res_init()
 	_res.nsaddr.sin_family = AF_INET;
 	_res.nsaddr.sin_addr.s_addr = INADDR_ANY;
 	_res.defdname[0] = '\0';
-	if ((serv = getservbyname(NAMESERVER_SNAME, "tcp")) == NULL)
-		return(-1);
-	_res.nsaddr.sin_port = (u_short)serv->s_port;
+	_res.nsaddr.sin_port = htons(NAMESERVER_PORT);
 
 	if ((fp = fopen(conffile, "r")) != NULL) {
 		while (fgets(buf, sizeof(buf), fp) != NULL) {
