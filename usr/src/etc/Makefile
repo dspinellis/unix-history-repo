@@ -1,4 +1,6 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
+
+NOOBJ=	oobj
 
 # -rw-r--r--
 BIN1=	aliases crontab daily ftpusers group hosts hosts.equiv hosts.lpd \
@@ -12,6 +14,7 @@ BIN2=	motd
 # -rw-r--r--
 ROOT1=	master.passwd
 
+MTREE=	BSD.root.dist BSD.usr.dist BSD.var.dist
 
 all clean cleandir depend etc install lint:
 
@@ -27,6 +30,8 @@ distribution:
 	    ${DESTDIR}/root/.login
 	install -c -o ${BINOWN} -g ${BINGRP} -m 664 root/dot.profile \
 	    ${DESTDIR}/root/.profile
+	cd mtree; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${MTREE} \
+	    ${DESTDIR}/etc/mtree
 	install -c -o ${BINOWN} -g operator -m 664 /dev/null \
 	    ${DESTDIR}/etc/dumpdates
 	install -c -o ${BINOWN} -g ${BINGRP} -m 664 /dev/null \
@@ -37,6 +42,5 @@ distribution:
 	    ${DESTDIR}/var/log/lpd-errs
 	install -c -o ${BINOWN} -g ${BINGRP} -m 664 /dev/null \
 	    ${DESTDIR}/var/run/utmp
-
 
 .include <bsd.prog.mk>
