@@ -1,4 +1,4 @@
-"@(#)gram 1.2 %G%"
+"@(#)gram 1.3 %G%"
 /yyval/s//*&/
 /\*yysterm\[]/,$d
 1;/yyactr/ka
@@ -8,7 +8,7 @@
 	register int *p, *q;
 	yyYpv = yypv;
 .
-1;/^##/-w y.tab.h
+1;/^##/-w! y.tab.h
 /^int yylval 0/d
 /extern int yychar,/s//extern/
 /yyclearin/d
@@ -41,5 +41,5 @@ $a
 /int nnonter/d
 /int nstate/d
 /int yyerrval/d
-w
+w!
 q
