@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	4.7 82/12/25";
+static char sccsid[] = "@(#)rlogin.c	4.8 83/01/18";
 #endif
 
 #include <sys/types.h>
@@ -22,7 +22,6 @@ struct	passwd *getpwuid();
 char	*name;
 int	rem;
 char	cmdchar = '~';
-int	rcmdoptions = 0;
 int	eight;
 char	*speeds[] =
     { "0", "50", "75", "110", "134", "150", "200", "300",
@@ -39,7 +38,7 @@ main(argc, argv)
 	struct sgttyb ttyb;
 	struct passwd *pwd;
 	struct servent *sp;
-	int uid;
+	int uid, options = 0;
 
 	host = rindex(argv[0], '/');
 	if (host)
@@ -52,7 +51,7 @@ main(argc, argv)
 another:
 	if (!strcmp(*argv, "-d")) {
 		argv++, argc--;
-		rcmdoptions |= SO_DEBUG;
+		options |= SO_DEBUG;
 		goto another;
 	}
 	if (!strcmp(*argv, "-l")) {
@@ -98,6 +97,9 @@ another:
 	    name ? name : pwd->pw_name, term, 0);
         if (rem < 0)
                 exit(1);
+	if (options & SO_DEBUG &&
+	    setsockopt(rem, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
+		perror("rlogin: setsockopt (SO_DEBUG)");
 	uid = getuid();
 	if (setuid(uid) < 0) {
 		perror("rlogin: setuid");
@@ -167,6 +169,7 @@ done()
  * writer: write to remote: 0 -> line.
  * ~.	terminate
  * ~^Z	suspend rlogin process.
+ * ~^Y  suspend rlogin process, but leave reader alone.
  */
 writer()
 {
