@@ -1,0 +1,200 @@
+.SH
+Expression Optimization
+.PP
+Each expression tree, as it is read in, is subjected to
+a fairly comprehensive
+analysis.
+This is performed
+by the
+.II optim
+routine and a number of subroutines;
+the major things done are
+.IP 1.
+Modifications and simplifications
+of the tree so its value may be computed more efficiently
+and conveniently by the code generator.
+.RT
+.IP 2.
+Marking each interior node with an estimate of the number of
+registers required to evaluate it.
+This register count is needed to guide the code generation algorithm.
+.PP
+One thing that is definitely not done is
+discovery or exploitation of common subexpressions, nor is this done anywhere in the
+compiler.
+.PP
+The basic organization is simple: a depth-first scan of the tree.
+.II Optim
+does nothing for leaf nodes (except for automatics; see below),
+and calls
+.II unoptim
+to handle unary operators.
+For binary operators,
+it calls itself to process the operands,
+then treats each operator separately.
+One important case is
+commutative and associative operators, which are handled
+by
+.II acommute.
+.PP
+Here is a brief catalog of the transformations carried out by
+by
+.II optim
+itself.
+It is not intended to be complete.
+Some of the transformations are machine-dependent,
+although they may well be useful on machines other than the
+PDP-11.
+.IP 1.
+As indicated in the discussion of
+.II unoptim
+below, the optimizer can create a node type corresponding
+to the location addressed by a register plus a constant offset.
+Since this is precisely the implementation of automatic variables
+and arguments, where the register is fixed by convention,
+such variables are changed to the new form to simplify
+later processing.
+.RT
+.IP 2.
+Associative and commutative operators are processed by the
+special routine
+.II acommute.
+.RT
+.IP 3.
+After processing by
+.II acommute,
+the bitwise & operator is turned into a new
+.II andn
+operator; `a & b' becomes
+`a
+.II andn
+~b'.
+This is done because the PDP-11 provides
+no
+.II and
+operator, but only
+.II andn.
+A similar transformation takes place for
+`=&'.
+.RT
+.IP 4.
+Relationals are turned around so the
+more complicated expression is on the left.
+(So that `2 > f(x)' becomes `f(x) < 2').
+This improves code generation since
+the algorithm prefers to have the right operand
+require fewer registers than the left.
+.RT
+.IP 5.
+An expression minus a constant is turned into
+the expression plus the negative constant,
+and the
+.II acommute
+routine is called
+to take advantage of the properties of addition.
+.RT
+.IP 6.
+Operators with constant operands are evaluated.
+.RT
+.IP 7.
+Right shifts (unless by 1)
+are turned into left shifts with a negated right operand,
+since the PDP-11 lacks a general right-shift operator.
+.RT
+.IP 8.
+A number of special cases are simplified, such as division or
+multiplication by 1,
+and shifts by 0.
+.LP
+The
+.II unoptim
+routine performs the same sort of processing for unary operators.
+.IP 1.
+`*&x' and `&*x' are simplified to `x'.
+.RT
+.IP 2.
+If
+.II r
+is a register and
+.II c
+is a constant or the address of a static or external
+variable,
+the expressions `*(r+c)'
+and `*r' are turned into a special kind of name node
+which expresses
+the name itself and the offset.
+This simplifies subsequent processing
+because such constructions can appear as
+the the address of a PDP-11 instruction.
+.RT
+.IP 3.
+When the unary `&' operator is applied to
+a name node of the special kind just discussed,
+it is reworked to make the addition
+explicit again;
+this is done because the PDP-11 has no `load address' instruction.
+.RT
+.IP 4.
+Constructions
+like
+`*r++' and
+`*\-\-r'
+where
+.II r
+is a register are discovered and marked
+as being implementable using the PDP-11
+auto-increment and -decrement modes.
+.RT
+.IP 5.
+If `!' is applied to a relational,
+the `!' is discarded
+and the sense of the relational is reversed.
+.RT
+.IP 6.
+Special cases involving reflexive
+use of negation and complementation are discovered.
+.RT
+.IP 7.
+Operations applying to constants are evaluated.
+.PP
+The
+.II acommute
+routine, called for associative and commutative operators,
+discovers clusters of the same operator at the top levels
+of the current tree, and arranges them in a list:
+for `a+((b+c)+(d+f))'
+the list would be`a,b,c,d,e,f'.
+After each subtree is optimized, the list is sorted in
+decreasing difficulty of computation;
+as mentioned above,
+the code generation algorithm works best when left operands
+are the difficult ones.
+The `degree of difficulty'
+computed is actually finer than
+the mere number of registers required;
+a constant is considered simpler
+than the address of a static or external, which is simpler
+than reference to a variable.
+This makes it easy to fold all the constants
+together,
+and also to merge together the sum of a constant and the address of
+a static
+or external (since in such nodes there is space for
+an `offset' value).
+There are also special cases, like multiplication by 1 and addition of 0.
+.II
+A special routine is invoked to handle sums of products.
+.II Distrib
+is based on the fact that it is better
+to compute `c1*c2*x + c1*y' as `c1*(c2*x + y)'
+and makes the divisibility tests required to assure the
+correctness of the transformation.
+This transformation is rarely
+possible with code directly written by the user,
+but it invariably occurs as a result of the
+implementation of multi-dimensional arrays.
+.PP
+Finally,
+.II acommute
+reconstructs a tree from the list
+of expressions which result.
