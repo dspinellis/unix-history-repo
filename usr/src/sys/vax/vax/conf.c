@@ -1,4 +1,4 @@
-/*	conf.c	4.11	%G%	*/
+/*	conf.c	4.12	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -20,7 +20,7 @@ int	nodev();
 
 #include "hp.h"
 #if NHP > 0
-int	hpstrategy(),hpread(),hpwrite(),hpintr();
+int	hpstrategy(),hpread(),hpwrite(),hpintr(),hpdump();
 struct	buf	hptab;
 #define	HPTAB	&hptab
 #else
@@ -28,12 +28,13 @@ struct	buf	hptab;
 #define	hpread		nodev
 #define	hpwrite		nodev
 #define	hpintr		nodev
+#define	hpdump		nodev
 #define	HPTAB		0
 #endif
  
 #include "ht.h"
 #if NHT > 0
-int	htopen(),htclose(),htstrategy(),htread(),htwrite();
+int	htopen(),htclose(),htstrategy(),htread(),htwrite(),htdump();
 struct	buf	httab;
 #define	HTTAB	&httab
 #else
@@ -42,12 +43,13 @@ struct	buf	httab;
 #define	htstrategy	nodev
 #define	htread		nodev
 #define	htwrite		nodev
+#define	htdump		0
 #define	HTTAB		0
 #endif
 
 #include "rk.h"
 #if NRK > 0
-int	rkstrategy(),rkread(),rkwrite(),rkintr();
+int	rkstrategy(),rkread(),rkwrite(),rkintr(),rkdump();
 struct	buf	rktab;
 #define	RKTAB	&rktab
 #else
@@ -55,12 +57,13 @@ struct	buf	rktab;
 #define	rkread		nodev
 #define	rkwrite		nodev
 #define	rkintr		nodev
+#define	rkdump		nodev
 #define	RKTAB		0
 #endif
 
 #include "tm.h"
 #if NTM > 0
-int	tmopen(),tmclose(),tmstrategy(),tmread(),tmwrite(),tmioctl();
+int	tmopen(),tmclose(),tmstrategy(),tmread(),tmwrite(),tmioctl(),tmdump();
 struct	buf	tmtab;
 #define	TMTAB	&tmtab
 #else
@@ -70,12 +73,13 @@ struct	buf	tmtab;
 #define	tmread		nodev
 #define	tmwrite		nodev
 #define	tmioctl		nodev
+#define	tmdump		nodev
 #define	TMTAB		0
 #endif
 
 #include "ts.h"
 #if NTS > 0
-int	tsopen(),tsclose(),tsstrategy(),tsread(),tswrite();
+int	tsopen(),tsclose(),tsstrategy(),tsread(),tswrite(),tsdump();
 struct	buf	tstab;
 #define	TSTAB	&tstab
 #else
@@ -84,23 +88,13 @@ struct	buf	tstab;
 #define	tsstrategy	nodev
 #define	tsread		nodev
 #define	tswrite		nodev
+#define	tsdump		nodev
 #define	TSTAB		0
-#endif
-
-#include "lp.h"
-#if NLP > 0
-int	lpopen(),lpclose(),lpwrite(),lpioctl(),lpreset();
-#else
-#define	lpopen		nodev
-#define	lpclose		nodev
-#define	lpwrite		nodev
-#define	lpioctl		nodev
-#define	lpreset		nulldev
 #endif
 
 #include "up.h"
 #if NUP > 0
-int	upstrategy(),upread(),upwrite(),upreset();
+int	upstrategy(),upread(),upwrite(),upreset(),updump();
 struct	buf	uptab;
 #define	UPTAB	&uptab
 #else
@@ -108,6 +102,7 @@ struct	buf	uptab;
 #define	upread		nodev
 #define	upwrite		nodev
 #define	upreset		nulldev
+#define	updump		nodev
 #define	UPTAB		0
 #endif
 
@@ -115,13 +110,13 @@ int	swstrategy(),swread(),swwrite();
 
 struct bdevsw	bdevsw[] =
 {
-	nulldev,	nulldev,	hpstrategy,	HPTAB,		/*0*/
-	htopen,		htclose,	htstrategy,	HTTAB,		/*1*/
-	nulldev,	nulldev,	upstrategy,	UPTAB,		/*2*/
-	nulldev,	nulldev,	rkstrategy,	RKTAB,		/*3*/
-	nodev,		nodev,		swstrategy,	0,		/*4*/
-	tmopen,		tmclose,	tmstrategy,	TMTAB,		/*5*/
-	tsopen,		tsclose,	tsstrategy,	TSTAB,		/*6*/
+	nulldev,	nulldev,	hpstrategy,	hpdump,	HPTAB,	/*0*/
+	htopen,		htclose,	htstrategy,	htdump,	HTTAB,	/*1*/
+	nulldev,	nulldev,	upstrategy,	updump,	UPTAB,	/*2*/
+	nulldev,	nulldev,	rkstrategy,	rkdump,	RKTAB,	/*3*/
+	nodev,		nodev,		swstrategy,	nodev,	0,	/*4*/
+	tmopen,		tmclose,	tmstrategy,	tmdump,	TMTAB,	/*5*/
+	tsopen,		tsclose,	tsstrategy,	tsdump,	TSTAB,	/*6*/
 	0,
 };
 
@@ -195,6 +190,17 @@ struct	tty	dkchans[];
 #else
 int	dzopen(),dzclose(),dzread(),dzwrite(),dzioctl(),dzstop(),dzreset();
 struct	tty dz_tty[];
+#endif
+
+#include "lp.h"
+#if NLP > 0
+int	lpopen(),lpclose(),lpwrite(),lpioctl(),lpreset();
+#else
+#define	lpopen		nodev
+#define	lpclose		nodev
+#define	lpwrite		nodev
+#define	lpioctl		nodev
+#define	lpreset		nulldev
 #endif
 
 #include "pk.h"
