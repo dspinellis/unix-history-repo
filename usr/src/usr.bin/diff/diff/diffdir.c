@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffdir.c 4.2 %G%";
+static	char sccsid[] = "@(#)diffdir.c 4.3 %G%";
 
 #include "diff.h"
 /*
@@ -308,14 +308,14 @@ closem:
 	close(f1); close(f2);
 }
 
-char	*prargs[] = { "pr", "-h", "-f", 0, 0 };
+char	*prargs[] = { "pr", "-h", 0, "-f", 0, 0 };
 
 calldiff(wantpr)
 	char *wantpr;
 {
 	int pid, status, status2, pv[2];
 
-	prargs[3] = wantpr;
+	prargs[2] = wantpr;
 	fflush(stdout);
 	if (wantpr) {
 		sprintf(etitle, "%s %s", file1, file2);
@@ -331,7 +331,7 @@ calldiff(wantpr)
 			close(pv[0]);
 			close(pv[1]);
 			execv(pr+4, prargs);
-			execl(pr, prargs);
+			execv(pr, prargs);
 			perror(pr);
 			done();
 		}
