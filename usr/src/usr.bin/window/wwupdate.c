@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwupdate.c	3.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwupdate.c	3.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -31,7 +31,6 @@ wwupdate1(top, bot)
 	char check_clreos = 0;
 	int scan_top, scan_bot;
 
-	xxflush();
 	wwnupdate++;
 	{
 		register char *t1 = wwtouched + top, *t2 = wwtouched + bot;
@@ -137,7 +136,7 @@ wwupdate1(top, bot)
 		}
 		if (tt.tt_clreos == 0) {
 			if (gain > simple_gain && gain > 4) {
-				(*tt.tt_clear)();
+				xxclear();
 				i = top = scan_top;
 				bot = scan_bot;
 				j = 0;
@@ -146,8 +145,7 @@ wwupdate1(top, bot)
 		} else
 			if (best_gain > simple_gain && best_gain > 4) {
 				i = best_row;
-				(*tt.tt_move)(i, j = wwupd[i].best_col);
-				(*tt.tt_clreos)();
+				xxclreos(i, j = wwupd[i].best_col);
 				bot = scan_bot;
 				didit = 1;
 			}
@@ -180,8 +178,7 @@ simple:
 		didit = 0;
 		if (tt.tt_clreol != 0 && upd->best_gain > 4) {
 			wwnupdclreol++;
-			(*tt.tt_move)(i, j = upd->best_col);
-			(*tt.tt_clreol)();
+			xxclreol(i, j = upd->best_col);
 			for (os = &wwos[i][j], j = wwncol - j; --j >= 0;)
 				os++->c_w = ' ';
 			didit = 1;
@@ -222,55 +219,42 @@ simple:
 				}
 				j++;
 			}
-			tt.tt_nmodes = m;
 			if (wwwrap
 			    && i == wwnrow - 1 && q - buf + c == wwncol) {
 				if (tt.tt_setinsert) {
 					if (q - buf != 1) {
-						(*tt.tt_move)(i, c);
-						(*tt.tt_write)(buf + 1,
-							q - buf - 1);
-						(*tt.tt_move)(i, c);
-						tt.tt_ninsert = 1;
-						(*tt.tt_write)(buf, 1);
-						tt.tt_ninsert = 0;
+						xxwrite(i, c, buf + 1,
+							q - buf - 1, m);
+						xxinschar(i, c, *buf |
+							m << WWC_MSHIFT);
 					} else {
-						(*tt.tt_move)(i, c - 1);
-						(*tt.tt_write)(buf, 1);
-						tt.tt_nmodes = ns[-2].c_m;
-						(*tt.tt_move)(i, c - 1);
-						tt.tt_ninsert = 1;
-						(*tt.tt_write)(&ns[-2].c_c, 1);
-						tt.tt_ninsert = 0;
+						xxwrite(i, c - 1, buf, 1, m);
+						xxinschar(i, c - 1,
+							ns[-2].c_w);
 					}
 				} else if (tt.tt_inschar) {
 					if (q - buf != 1) {
-						(*tt.tt_move)(i, c);
-						(*tt.tt_write)(buf + 1,
-							q - buf - 1);
-						(*tt.tt_move)(i, c);
-						(*tt.tt_inschar)(1);
-						(*tt.tt_write)(buf, 1);
+						xxwrite(i, c, buf + 1,
+							q - buf - 1, m);
+						xxinschar(i, c, *buf |
+							m << WWC_MSHIFT);
+						xxwrite(i, c, buf, 1, m);
 					} else {
-						(*tt.tt_move)(i, c - 1);
-						(*tt.tt_write)(buf, 1);
-						tt.tt_nmodes = ns[-2].c_m;
-						(*tt.tt_move)(i, c - 1);
-						(*tt.tt_inschar)(1);
-						(*tt.tt_write)(&ns[-2].c_c, 1);
+						xxwrite(i, c - 1, buf, 1, m);
+						xxinschar(i, c - 1,
+							ns[-2].c_w);
+						xxwrite(i, c - 1, &ns[-2].c_c,
+							1, ns[-2].c_m);
 					}
 				} else {
-					if (q - buf > 1) {
-						(*tt.tt_move)(i, c);
-						(*tt.tt_write)(buf, q-buf-1);
-					}
+					if (q - buf > 1)
+						xxwrite(i, c, buf,
+							q - buf - 1, m);
 					os[-1] = lastc;
 					*touched = WWU_TOUCHED;
 				}
-			} else {
-				(*tt.tt_move)(i, c);
-				(*tt.tt_write)(buf, q - buf);
-			}
+			} else
+				xxwrite(i, c, buf, q - buf, m);
 			didit = 1;
 		}
 		if (!didit)

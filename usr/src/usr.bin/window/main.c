@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	3.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	3.37 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -120,7 +120,6 @@ char **argv;
 	for (n = 0; n < wwncol; n++)			/* XXX */
 		Waputc(0, WINVERSE|WBUF, cmdwin->ww_win);
 	wwflush();
-	(void) signal(SIGCHLD, wwchild);
 	setvars();
 		if (dflag || doconfig() < 0)
 			dodefault();

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tt.h	3.21 (Berkeley) %G%
+ *	@(#)tt.h	3.22 (Berkeley) %G%
  */
 
 /*
@@ -22,7 +22,7 @@
  */
 struct tt {
 		/* startup and cleanup */
-	int (*tt_init)();
+	int (*tt_start)();
 	int (*tt_end)();
 
 		/* terminal functions */
@@ -41,6 +41,8 @@ struct tt {
 	int (*tt_setscroll)();		/* set scrolling region */
 	int (*tt_setinsert)();		/* set insert mode */
 	int (*tt_setmodes)();		/* set display modes */
+	int (*tt_set_token)();		/* define a token */
+	int (*tt_put_token)();		/* refer to a defined token */
 
 		/* internal variables */
 	char tt_modes;			/* the current display modes */
@@ -58,6 +60,11 @@ struct tt {
 	char tt_availmodes;		/* the display modes supported */
 	char tt_wrap;			/* has auto wrap around */
 	char tt_retain;			/* can retain below (db flag) */
+	int tt_ntoken;			/* number of compression tokens */
+	int tt_token_min;		/* minimun token size */
+	int tt_token_max;		/* maximum token size */
+	int tt_set_token_cost;		/* cost in addition to string */
+	int tt_put_token_cost;		/* constant cost */
 
 		/* the frame characters */
 	short *tt_frame;

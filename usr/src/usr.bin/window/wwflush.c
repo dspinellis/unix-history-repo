@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwflush.c	3.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwflush.c	3.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -24,10 +24,16 @@ static char sccsid[] = "@(#)wwflush.c	3.9 (Berkeley) %G%";
 
 wwflush()
 {
-	if (wwcursorrow < 0 || wwcursorrow >= wwnrow
-	    || wwcursorcol < 0 || wwcursorcol >= wwncol)
-		(*tt.tt_move)(0, 0);
-	else
-		(*tt.tt_move)(wwcursorrow, wwcursorcol);
-	ttflush();
+	register row, col;
+
+	if ((row = wwcursorrow) < 0)
+		row = 0;
+	else if (row >= wwnrow)
+		row = wwnrow - 1;
+	if ((col = wwcursorcol) < 0)
+		col = 0;
+	else if (col >= wwncol)
+		col = wwncol - 1;
+	xxmove(row, col);
+	xxflush(1);
 }

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwinit.c	3.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwinit.c	3.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -126,8 +126,10 @@ wwinit()
 	 */
 	(void) setenv("TERM", WWT_TERM, 1);
 
-	(void) signal(SIGPIPE, SIG_IGN);
 	(void) sigsetmask(s);
+	/* catch typeahead before ASYNC was set */
+	(void) kill(getpid(), SIGIO);
+	xxstart();
 	return 0;
 }
 
