@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union.h	1.3 (Berkeley) %G%
+ *	@(#)union.h	1.4 (Berkeley) %G%
  */
 
 struct union_args {
@@ -41,10 +41,10 @@ struct union_mount {
  */
 struct union_node {
 	struct union_node	*un_next;	/* Hash chain */
+	struct vnode		*un_vnode;	/* Back pointer */
 	struct vnode	        *un_uppervp;	/* overlaying object */
 	struct vnode	        *un_lowervp;	/* underlying object */
 	struct vnode		*un_dirvp;	/* Parent dir of uppervp */
-	struct vnode		*un_vnode;	/* Back pointer */
 	char			*un_path;	/* saved component name */
 	int			un_flags;
 	pid_t			un_pid;
@@ -53,7 +53,7 @@ struct union_node {
 #define UN_WANT 0x01
 #define UN_LOCKED 0x02
 
-extern int union_node_create __P((struct mount *mp, struct vnode *target, struct vnode **vpp));
+extern int union_allocvp __P((struct vnode **, struct mount *, struct vnode *, struct vnode *, struct componentname *, struct vnode *, struct vnode *));
 
 #define	MOUNTTOUNIONMOUNT(mp) ((struct union_mount *)((mp)->mnt_data))
 #define	VTOUNION(vp) ((struct union_node *)(vp)->v_data)

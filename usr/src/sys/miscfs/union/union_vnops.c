@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	1.3 (Berkeley) %G%
+ *	@(#)union_vnops.c	1.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -62,7 +62,8 @@ union_mkshadow(dvp, cnp, vpp)
 }
 
 static int
-union_lookup1(dvp, vpp, cnp)
+union_lookup1(udvp, dvp, vpp, cnp)
+	struct vnode *udvp;
 	struct vnode *dvp;
 	struct vnode **vpp;
 	struct componentname *cnp;
@@ -90,7 +91,8 @@ union_lookup1(dvp, vpp, cnp)
 		return (error);
 
 	dvp = tdvp;
-	while ((dvp->v_type == VDIR) && (mp = dvp->v_mountedhere) &&
+	while (dvp != udvp && (dvp->v_type == VDIR) &&
+	       (mp = dvp->v_mountedhere) &&
 	       (cnp->cn_flags & NOCROSSMOUNT) == 0) {
 
 		if (mp->mnt_flag & MNT_MLOCK) {
@@ -126,7 +128,7 @@ union_lookup(ap)
 	struct vnode *uppervp, *lowervp;
 	struct vnode *upperdvp, *lowerdvp;
 	struct vnode *dvp = ap->a_dvp;
-	struct union_node *dun = VTOUNION(ap->a_dvp);
+	struct union_node *dun = VTOUNION(dvp);
 	struct componentname *cnp = ap->a_cnp;
 	int lockparent = cnp->cn_flags & LOCKPARENT;
 
@@ -143,11 +145,13 @@ union_lookup(ap)
 	 * then assume that something special is going
 	 * on and just return that vnode.
 	 */
-	uppervp = 0;
 	if (upperdvp) {
 		VOP_LOCK(upperdvp);
-		uerror = union_lookup1(upperdvp, &uppervp, cnp);
-		VOP_UNLOCK(upperdvp);
+		uerror = union_lookup1(
+			MOUNTTOUNIONMOUNT(dvp->v_mount)->um_uppervp,
+			upperdvp, &uppervp, cnp);
+		if (uppervp != upperdvp)
+			VOP_UNLOCK(upperdvp);
 
 		if (cnp->cn_consume != 0) {
 			*ap->a_vpp = uppervp;
@@ -166,11 +170,13 @@ union_lookup(ap)
 	 * back from the upper layer and return the lower vnode
 	 * instead.
 	 */
-	lowervp = 0;
 	if (lowerdvp) {
 		VOP_LOCK(lowerdvp);
-		lerror = union_lookup1(lowerdvp, &lowervp, cnp);
-		VOP_UNLOCK(lowerdvp);
+		lerror = union_lookup1(
+			MOUNTTOUNIONMOUNT(dvp->v_mount)->um_lowervp,
+			lowerdvp, &lowervp, cnp);
+		if (lowervp != lowerdvp)
+			VOP_UNLOCK(lowerdvp);
 
 		if (cnp->cn_consume != 0) {
 			if (uppervp) {
@@ -222,9 +228,11 @@ union_lookup(ap)
 	/* case 2. */
 	if (uerror != 0 /* && (lerror == 0) */ ) {
 		if (lowervp->v_type == VDIR) { /* case 2b. */
-			VOP_LOCK(upperdvp);
+			if (uppervp != upperdvp)
+				VOP_LOCK(upperdvp);
 			uerror = union_mkshadow(upperdvp, cnp, &uppervp);
-			VOP_UNLOCK(upperdvp);
+			if (uppervp != upperdvp)
+				VOP_UNLOCK(upperdvp);
 			if (uerror) {
 				if (lowervp) {
 					vput(lowervp);
@@ -235,7 +243,7 @@ union_lookup(ap)
 		}
 	}
 
-	error = union_allocvp(ap->a_vpp, dvp->v_mount, dvp, cnp,
+	error = union_allocvp(ap->a_vpp, dvp->v_mount, dvp, upperdvp, cnp,
 			      uppervp, lowervp);
 
 	if (uppervp)
@@ -249,8 +257,8 @@ union_lookup(ap)
 		if (lowervp)
 			vrele(lowervp);
 	} else {
-		if (!lockparent)
-			VOP_UNLOCK(*ap->a_vpp);
+		if (!lockparent && (*ap->a_vpp != dvp))
+			VOP_UNLOCK(dvp);
 	}
 
 	return (error);
@@ -271,7 +279,6 @@ union_create(ap)
 	if (dvp) {
 		int error;
 		struct vnode *vp;
-		struct mount *mp = ap->a_dvp->v_mount;
 
 		VREF(dvp);
 		VOP_LOCK(dvp);
@@ -282,7 +289,8 @@ union_create(ap)
 
 		error = union_allocvp(
 				ap->a_vpp,
-				mp,
+				ap->a_dvp->v_mount,
+				ap->a_dvp,
 				NULLVP,
 				ap->a_cnp,
 				vp,
@@ -312,7 +320,6 @@ union_mknod(ap)
 	if (dvp) {
 		int error;
 		struct vnode *vp;
-		struct mount *mp = ap->a_dvp->v_mount;
 
 		VREF(dvp);
 		VOP_LOCK(dvp);
@@ -324,7 +331,8 @@ union_mknod(ap)
 		if (vp) {
 			error = union_allocvp(
 					ap->a_vpp,
-					mp,
+					ap->a_dvp->v_mount,
+					ap->a_dvp,
 					NULLVP,
 					ap->a_cnp,
 					vp,
@@ -892,7 +900,6 @@ union_mkdir(ap)
 	if (dvp) {
 		int error;
 		struct vnode *vp;
-		struct mount *mp = ap->a_dvp->v_mount;
 
 		VREF(dvp);
 		VOP_LOCK(dvp);
@@ -903,7 +910,8 @@ union_mkdir(ap)
 
 		error = union_allocvp(
 				ap->a_vpp,
-				mp,
+				ap->a_dvp->v_mount,
+				ap->a_dvp,
 				NULLVP,
 				ap->a_cnp,
 				vp,
@@ -1073,6 +1081,14 @@ union_inactive(ap)
 	 * like they do in the name lookup cache code.
 	 * That's too much work for now.
 	 */
+
+#ifdef DIAGNOSTIC
+	struct union_node *un = VTOUNION(ap->a_vp);
+
+	if (un->un_flags & UN_LOCKED)
+		panic("union: inactivating locked node");
+#endif
+
 	return (0);
 }
 
@@ -1118,15 +1134,20 @@ union_lock(ap)
 
 	while (un->un_flags & UN_LOCKED) {
 #ifdef DIAGNOSTIC
-		if (un->un_pid == curproc->p_pid)
-			panic("union: locking agsinst myself");
+		if (curproc && un->un_pid == curproc->p_pid &&
+			    un->un_pid > -1 && curproc->p_pid > -1)
+			panic("union: locking against myself");
 #endif
 		un->un_flags |= UN_WANT;
 		sleep((caddr_t) &un->un_flags, PINOD);
 	}
 	un->un_flags |= UN_LOCKED;
+
 #ifdef DIAGNOSTIC
-	un->un_pid = curproc->p_pid;
+	if (curproc)
+		un->un_pid = curproc->p_pid;
+	else
+		un->un_pid = -1;
 #endif
 }
 
@@ -1139,7 +1160,8 @@ union_unlock(ap)
 #ifdef DIAGNOSTIC
 	if ((un->un_flags & UN_LOCKED) == 0)
 		panic("union: unlock unlocked node");
-	if (un->un_pid != curproc->p_pid)
+	if (curproc && un->un_pid != curproc->p_pid &&
+			curproc->p_pid > -1 && un->un_pid > -1)
 		panic("union: unlocking other process's union node");
 #endif
 
