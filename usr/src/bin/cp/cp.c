@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)cp.c	4.6 82/12/21";
+static char *sccsid = "@(#)cp.c	4.7 83/06/20";
 #endif
 
 /*
@@ -66,11 +66,12 @@ copy(from, to)
 
 	fold = open(from, 0);
 	if (fold < 0) {
-		fprintf(stderr, "cp: "); perror(from);
+		Perror(from);
 		return (1);
 	}
 	if (fstat(fold, &stfrom) < 0) {
-		fprintf(stderr, "cp: "); perror(from);
+		Perror(from);
+		(void) close(fold);
 		return (1);
 	}
 	if (stat(to, &stto) >= 0 &&
@@ -79,6 +80,7 @@ copy(from, to)
 		if (last) last++; else last = from;
 		if (strlen(to) + strlen(last) >= BSIZE - 1) {
 			fprintf(stderr, "cp: %s/%s: Name too long", to, last);
+			(void) close(fold);
 			return(1);
 		}
 		(void) sprintf(destname, "%s/%s", to, last);
@@ -88,7 +90,7 @@ copy(from, to)
 		(void) close(fold);
 		if (stat(to, &stto) < 0) {
 			if (mkdir(to, (int)stfrom.st_mode) < 0) {
-				fprintf(stderr, "cp: "); perror(to);
+				Perror(to);
 				return (1);
 			}
 		} else if ((stto.st_mode&S_IFMT) != S_IFDIR) {
@@ -101,6 +103,7 @@ copy(from, to)
 		if (stfrom.st_dev == stto.st_dev &&
 		   stfrom.st_ino == stto.st_ino) {
 			fprintf(stderr, "cp: Cannot copy file to itself.\n");
+			(void) close(fold);
 			return (1);
 		}
 		if (iflag) {
@@ -110,14 +113,15 @@ copy(from, to)
 			i = c = getchar();
 			while (c != '\n' && c != EOF)
 				c = getchar();
-			if (i != 'y')
+			if (i != 'y') {
+				(void) close(fold);
 				return(1);
+			}
 		}
 	}
 	fnew = creat(to, (int)stfrom.st_mode);
 	if (fnew < 0) {
-		fprintf(stderr, "cp: ");
-		perror(to);
+		Perror(to);
 		(void) close(fold); return(1);
 	}
 	for (;;) {
@@ -125,11 +129,11 @@ copy(from, to)
 		if (n == 0)
 			break;
 		if (n < 0) {
-			fprintf(stderr, "cp: "); perror(from);
+			Perror(from);
 			(void) close(fold); (void) close(fnew); return (1);
 		}
 		if (write(fnew, buf, n) != n) {
-			fprintf(stderr, "cp: "); perror(to);
+			Perror(to);
 			(void) close(fold); (void) close(fnew); return (1);
 		}
 	}
@@ -145,7 +149,7 @@ rcopy(from, to)
 	char fromname[BUFSIZ];
 
 	if (fold == 0) {
-		perror(from);
+		Perror(from);
 		return (1);
 	}
 	for (;;) {
@@ -167,4 +171,12 @@ rcopy(from, to)
 		(void) sprintf(fromname, "%s/%s", from, dp->d_name);
 		errs += copy(fromname, to);
 	}
+}
+
+Perror(s)
+	char *s;
+{
+
+	fprintf(stderr, "cp: ");
+	perror(s);
 }
