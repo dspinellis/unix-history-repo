@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.56		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.57		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.56		%G%);
+SCCSID(@(#)queue.c	3.57		%G%);
 
 /*
 **  Work queue.
@@ -393,7 +393,6 @@ dowork(w)
 		(void) chompheader("from: $q", TRUE);
 
 		/* create the link to the control file during processing */
-		openxscrpt();
 		initsys();
 		readqf(w->w_name);
 		if (!bitset(EF_FATALERRS, CurEnv->e_flags))
@@ -478,8 +477,8 @@ readqf(e)
 
 		  case 'D':		/* data file name */
 			e->e_df = newstr(&buf[1]);
-			TempFile = fopen(e->e_df, "r");
-			if (TempFile == NULL)
+			e->e_dfp = fopen(e->e_df, "r");
+			if (e->e_dfp == NULL)
 				syserr("readqf: cannot open %s", e->e_df);
 			break;
 

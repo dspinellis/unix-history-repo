@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.135		%G%);
+SCCSID(@(#)deliver.c	3.136		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -701,8 +701,8 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 	**	DOFORK is clever about retrying.
 	*/
 
-	if (Xscript != NULL)
-		(void) fflush(Xscript);			/* for debugging */
+	if (CurEnv->e_xfp != NULL)
+		(void) fflush(CurEnv->e_xfp);		/* for debugging */
 	(void) fflush(stdout);
 	DOFORK(XFORK);
 	/* pid is set by DOFORK */
@@ -741,7 +741,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		{
 			/* put mailer output in transcript */
 			(void) close(1);
-			(void) dup(fileno(Xscript));
+			(void) dup(fileno(CurEnv->e_xfp));
 		}
 		(void) close(2);
 		(void) dup(1);
@@ -1170,8 +1170,8 @@ sendall(e, mode)
 		return;
 
 	  case SM_FORK:
-		if (Xscript != NULL)
-			(void) fflush(Xscript);
+		if (e->e_xfp != NULL)
+			(void) fflush(e->e_xfp);
 		pid = fork();
 		if (pid < 0)
 		{

@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.50		%G%);
+SCCSID(@(#)savemail.c	3.51		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -96,9 +96,9 @@ savemail(e)
 			expand("$n", buf, &buf[sizeof buf - 1], e);
 			printf("\r\nMessage from %s...\r\n", buf);
 			printf("Errors occurred while sending mail.\r\n");
-			if (Xscript != NULL)
+			if (e->e_xfp != NULL)
 			{
-				(void) fflush(Xscript);
+				(void) fflush(e->e_xfp);
 				xfile = fopen(queuename(e, 'x'), "r");
 			}
 			else
@@ -159,7 +159,7 @@ savemail(e)
 		p = "/usr/tmp";
 # endif
 	}
-	if (p != NULL && TempFile != NULL)
+	if (p != NULL && e->e_dfp != NULL)
 	{
 		auto ADDRESS *q;
 		bool oldverb = Verbose;
@@ -272,6 +272,7 @@ errhdr(fp, m, xdot)
 	register FILE *fp;
 	register struct mailer *m;
 	bool xdot;
+	register ENVELOPE *e;
 {
 	char buf[MAXLINE];
 	register FILE *xfile;
@@ -290,7 +291,7 @@ errhdr(fp, m, xdot)
 
 	(void) fflush(stdout);
 	(void) fflush(Xscript);
-	p = queuename(CurEnv->e_parent, 'x');
+	p = queuename(e->e_parent, 'x');
 	if ((xfile = fopen(p, "r")) == NULL)
 	{
 		syserr("Cannot open %s", p);
@@ -299,8 +300,8 @@ errhdr(fp, m, xdot)
 	else
 	{
 		fprintf(fp, "   ----- Transcript of session follows -----\n");
-		if (Xscript != NULL)
-			(void) fflush(Xscript);
+		if (e->e_xfp != NULL)
+			(void) fflush(e->e_xfp);
 		while (fgets(buf, sizeof buf, xfile) != NULL)
 			putline(buf, fp, fullsmtp);
 		(void) fclose(xfile);
@@ -347,7 +348,7 @@ errhdr(fp, m, xdot)
 
 	if (NoReturn)
 		fprintf(fp, "\n   ----- Return message suppressed -----\n\n");
-	else if (TempFile != NULL)
+	else if (e->e_parent->e_dfp != NULL)
 	{
 		if (SendBody)
 		{
@@ -359,7 +360,7 @@ errhdr(fp, m, xdot)
 		{
 			fprintf(fp, "\n  ----- Message header follows -----\n");
 			(void) fflush(fp);
-			putheader(fp, m, CurEnv->e_parent);
+			putheader(fp, m, e->e_parent);
 		}
 	}
 	else

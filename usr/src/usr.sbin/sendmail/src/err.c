@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)err.c	3.37		%G%);
+SCCSID(@(#)err.c	3.38		%G%);
 
 /*
 **  SYSERR -- Print error message.
@@ -168,8 +168,8 @@ putmsg(msg, holdmsg)
 	bool holdmsg;
 {
 	/* output to transcript */
-	if (Xscript != NULL)
-		fprintf(Xscript, "%s\n", OpMode == MD_SMTP ? msg : &msg[4]);
+	if (CurEnv->e_xfp != NULL)
+		fprintf(CurEnv->e_xfp, "%s\n", OpMode == MD_SMTP ? msg : &msg[4]);
 
 	/* output to channel if appropriate */
 	if (!holdmsg && (Verbose || msg[0] != '0'))
