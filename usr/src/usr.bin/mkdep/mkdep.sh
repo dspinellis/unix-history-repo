@@ -10,30 +10,35 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)mkdep.sh	5.8 (Berkeley) %G%
+#	@(#)mkdep.sh	5.9 (Berkeley) %G%
 #
 
 PATH=/bin:/usr/bin:/usr/ucb
 export PATH
 
+MAKE=Makefile			# default makefile name is "Makefile"
+
+while :
+	do case "$1" in
+		# -f allows you to select a makefile name
+		-f)
+			MAKE=$2
+			shift; shift ;;
+
+		# the -p flag produces "program: program.c" style dependencies
+		# so .o's don't get produced
+		-p)
+			SED='-e s;\.o;;'
+			shift ;;
+		*)
+			break ;;
+	esac
+done
+
 if [ $# = 0 ] ; then
 	echo 'usage: mkdep [-p] [-f makefile] [flags] file ...'
 	exit 1
 fi
-
-MAKE=Makefile			# default makefile name is "Makefile"
-case $1 in
-	# -f allows you to select a makefile name
-	-f)
-		MAKE=$2
-		shift; shift ;;
-
-	# the -p flag produces "program: program.c" style dependencies
-	# so .o's don't get produced
-	-p)
-		SED='-e s;\.o;;'
-		shift ;;
-esac
 
 if [ ! -w $MAKE ]; then
 	echo "mkdep: no writeable file \"$MAKE\""
