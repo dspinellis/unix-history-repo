@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#) (Berkeley) 83/04/15";
+static char *sccsid = "@(#)pstat.c	4.19 (Berkeley) %G%";
 #endif
 /*
  * Print system stuff
@@ -69,10 +69,12 @@ struct nlist nl[] = {
 	{ "_nswapmap" },
 #define	SPTY	18
 	{ "_pt_tty" },
-#define SDMF	19
-	{ "_dmf_tty" },
-#define SNDMF	20
-	{ "_ndmf" },
+#define	SDMMIN	19
+	{ "_dmmin" },
+#define	SDMMAX	20
+	{ "_dmmax" },
+#define	SNSWDEV	21
+	{ "_nswdev" },
 	0,
 };
 
@@ -376,12 +378,12 @@ dotty()
 	register struct tty *tp;
 	register char *mesg;
 
-	mesg = " # RAW CAN OUT     MODE     ADDR DEL COL STATE     PGRP DISC\n";
 	printf("1 cons\n");
 	if (kflg)
 		nl[SKL].n_value = clear(nl[SKL].n_value);
 	lseek(fc, (long)nl[SKL].n_value, 0);
 	read(fc, dz_tty, sizeof(dz_tty[0]));
+	mesg = " # RAW CAN OUT   MODE    ADDR   DEL COL  STATE   PGRP DISC\n";
 	printf(mesg);
 	ttyprt(&dz_tty[0], 0);
 	if (nl[SNDZ].n_type == 0)
@@ -395,12 +397,11 @@ dotty()
 	printf("%d dz lines\n", ndz);
 	lseek(fc, (long)nl[SDZ].n_value, 0);
 	read(fc, dz_tty, ndz * sizeof (struct tty));
-	printf(mesg);
 	for (tp = dz_tty; tp < &dz_tty[ndz]; tp++)
 		ttyprt(tp, tp - dz_tty);
 dh:
 	if (nl[SNDH].n_type == 0)
-		goto dmf;
+		goto pty;
 	if (kflg) {
 		nl[SNDH].n_value = clear(nl[SNDH].n_value);
 		nl[SDH].n_value = clear(nl[SDH].n_value);
@@ -410,22 +411,6 @@ dh:
 	printf("%d dh lines\n", ndz);
 	lseek(fc, (long)nl[SDH].n_value, 0);
 	read(fc, dz_tty, ndz * sizeof(struct tty));
-	printf(mesg);
-	for (tp = dz_tty; tp < &dz_tty[ndz]; tp++)
-		ttyprt(tp, tp - dz_tty);
-dmf:
-	if (nl[SNDMF].n_type == 0)
-		goto pty;
-	if (kflg) {
-		nl[SNDMF].n_value = clear(nl[SNDMF].n_value);
-		nl[SDMF].n_value = clear(nl[SDMF].n_value);
-	}
-	lseek(fc, (long)nl[SNDMF].n_value, 0);
-	read(fc, &ndz, sizeof(ndz));
-	printf("%d dmf lines\n", ndz);
-	lseek(fc, (long)nl[SDMF].n_value, 0);
-	read(fc, dz_tty, ndz * sizeof(struct tty));
-	printf(mesg);
 	for (tp = dz_tty; tp < &dz_tty[ndz]; tp++)
 		ttyprt(tp, tp - dz_tty);
 pty:
@@ -437,7 +422,6 @@ pty:
 	printf("32 pty lines\n");
 	lseek(fc, (long)nl[SPTY].n_value, 0);
 	read(fc, dz_tty, 32*sizeof(struct tty));
-	printf(mesg);
 	for (tp = dz_tty; tp < &dz_tty[32]; tp++)
 		ttyprt(tp, tp - dz_tty);
 }
@@ -465,9 +449,9 @@ struct tty *atp;
 		printf("%4d", tp->t_canq.c_cc);
 	}
 	printf("%4d", tp->t_outq.c_cc);
-	printf(" %8.1x", tp->t_flags);
+	printf("%8.1x", tp->t_flags);
 	printf(" %8.1x", tp->t_addr);
-	printf(" %3d", tp->t_delct);
+	printf("%3d", tp->t_delct);
 	printf("%4d ", tp->t_col);
 	putf(tp->t_state&TS_TIMEOUT, 'T');
 	putf(tp->t_state&TS_WOPEN, 'W');
@@ -659,6 +643,8 @@ dofile()
 	}
 }
 
+int dmmin, dmmax, nswdev;
+
 doswap()
 {
 	struct proc *proc;
@@ -668,9 +654,11 @@ doswap()
 	struct map *swapmap;
 	int nswapmap;
 	register struct proc *pp;
-	int nswap, used, tused, free;
+	int nswap, used, tused, free, waste;
+	int db, sb;
 	register struct mapent *me;
 	register struct text *xp;
+	int i, j;
 
 	nproc = getw(nl[SNPROC].n_value);
 	proc = (struct proc *)calloc(nproc, sizeof (struct proc));
@@ -681,6 +669,9 @@ doswap()
 	lseek(fc, getw(nl[SWAPMAP].n_value), 0);
 	read(fc, swapmap, nswapmap * sizeof (struct map));
 	nswap = getw(nl[SNSWAP].n_value);
+	dmmin = getw(nl[SDMMIN].n_value);
+	dmmax = getw(nl[SDMMAX].n_value);
+	nswdev = getw(nl[SNSWDEV].n_value);
 	free = 0;
 	for (me = (struct mapent *)(swapmap+1);
 	    me < (struct mapent *)&swapmap[nswapmap]; me++)
@@ -694,22 +685,37 @@ doswap()
 		if (xp->x_iptr!=NULL)
 			tused += xdsize(xp);
 	used = tused;
+	waste = 0;
 	for (pp = proc; pp < &proc[nproc]; pp++) {
 		if (pp->p_stat == 0 || pp->p_stat == SZOMB)
 			continue;
 		if (pp->p_flag & SSYS)
 			continue;
-		used += up(pp->p_dsize) + up(pp->p_ssize);
+		db = ctod(pp->p_dsize);
+		sb = ctod(pp->p_ssize);
+		waste -= db + sb;
+		db = up(db);
+		sb = up(sb);
+		used += db + sb;
+		waste += db + sb;
 		if ((pp->p_flag&SLOAD) == 0)
 			used += vusize(pp);
 	}
 	/* a DMMAX/2 block goes to argmap */
 	if (totflg) {
-		printf("%3d/%3d 00k swap\n", used/2/100, (used+free)/2/100);
+		printf("%3d/%3d 00k swap\n", used/100, (used+free)/100);
 		return;
 	}
-	printf("%d used (%d text), %d free, %d missing\n",
-	    used/2, tused/2, free/2, (nswap - DMMAX/2 - (used + free))/2);
+	printf("%d used (%d text), %d free, %d wasted, %d missing\n",
+	    used, tused, free, waste, (nswap - dmmax/2 - (used + free)));
+	printf("avail: ");
+	for (i = dmmax; i >= dmmin; i /= 2) {
+		j = 0;
+		while (rmalloc(swapmap, i) != 0)
+			j++;
+		if (j) printf("%d*%d ", j, i);
+	}
+	printf("\n");
 }
 
 up(size)
@@ -718,10 +724,10 @@ up(size)
 	register int i, block;
 
 	i = 0;
-	block = DMMIN;
+	block = dmmin;
 	while (i < size) {
 		i += block;
-		if (block < DMMAX)
+		if (block < dmmax)
 			block *= 2;
 	}
 	return (i);
@@ -732,7 +738,8 @@ struct proc *p;
 {
 	register int tsz = p->p_tsize / NPTEPG;
 
-	return (clrnd(UPAGES + clrnd(ctopt(p->p_tsize+p->p_dsize+p->p_ssize+UPAGES)) - tsz));
+	return (ctod(clrnd(UPAGES +
+	    clrnd(ctopt(p->p_tsize+p->p_dsize+p->p_ssize+UPAGES)) - tsz)));
 }
 
 xdsize(xp)
@@ -740,6 +747,181 @@ struct text *xp;
 {
 
 	if (xp->x_flag & XPAGI)
-		return (clrnd(xp->x_size + ctopt(xp->x_size)));
-	return (xp->x_size);
+		return (ctod(clrnd(xp->x_size + ctopt(xp->x_size))));
+	return (ctod(xp->x_size));
+}
+
+/*
+ * Allocate 'size' units from the given
+ * map. Return the base of the allocated space.
+ * In a map, the addresses are increasing and the
+ * list is terminated by a 0 size.
+ *
+ * Algorithm is first-fit.
+ *
+ * This routine knows about the interleaving of the swapmap
+ * and handles that.
+ */
+long
+rmalloc(mp, size)
+	register struct map *mp;
+	long size;
+{
+	register struct mapent *ep = (struct mapent *)(mp+1);
+	register int addr;
+	register struct mapent *bp;
+	swblk_t first, rest;
+
+	if (size <= 0 || size > dmmax)
+		return (0);
+	/*
+	 * Search for a piece of the resource map which has enough
+	 * free space to accomodate the request.
+	 */
+	for (bp = ep; bp->m_size; bp++) {
+		if (bp->m_size >= size) {
+			/*
+			 * If allocating from swapmap,
+			 * then have to respect interleaving
+			 * boundaries.
+			 */
+			if (nswdev > 1 &&
+			    (first = dmmax - bp->m_addr%dmmax) < bp->m_size) {
+				if (bp->m_size - first < size)
+					continue;
+				addr = bp->m_addr + first;
+				rest = bp->m_size - first - size;
+				bp->m_size = first;
+				if (rest)
+					rmfree(mp, rest, addr+size);
+				return (addr);
+			}
+			/*
+			 * Allocate from the map.
+			 * If there is no space left of the piece
+			 * we allocated from, move the rest of
+			 * the pieces to the left.
+			 */
+			addr = bp->m_addr;
+			bp->m_addr += size;
+			if ((bp->m_size -= size) == 0) {
+				do {
+					bp++;
+					(bp-1)->m_addr = bp->m_addr;
+				} while ((bp-1)->m_size = bp->m_size);
+			}
+			if (addr % CLSIZE)
+				return (0);
+			return (addr);
+		}
+	}
+	return (0);
+}
+
+/*
+ * Free the previously allocated space at addr
+ * of size units into the specified map.
+ * Sort addr into map and combine on
+ * one or both ends if possible.
+ */
+rmfree(mp, size, addr)
+	struct map *mp;
+	long size, addr;
+{
+	struct mapent *firstbp;
+	register struct mapent *bp;
+	register int t;
+
+	/*
+	 * Both address and size must be
+	 * positive, or the protocol has broken down.
+	 */
+	if (addr <= 0 || size <= 0)
+		goto badrmfree;
+	/*
+	 * Locate the piece of the map which starts after the
+	 * returned space (or the end of the map).
+	 */
+	firstbp = bp = (struct mapent *)(mp + 1);
+	for (; bp->m_addr <= addr && bp->m_size != 0; bp++)
+		continue;
+	/*
+	 * If the piece on the left abuts us,
+	 * then we should combine with it.
+	 */
+	if (bp > firstbp && (bp-1)->m_addr+(bp-1)->m_size >= addr) {
+		/*
+		 * Check no overlap (internal error).
+		 */
+		if ((bp-1)->m_addr+(bp-1)->m_size > addr)
+			goto badrmfree;
+		/*
+		 * Add into piece on the left by increasing its size.
+		 */
+		(bp-1)->m_size += size;
+		/*
+		 * If the combined piece abuts the piece on
+		 * the right now, compress it in also,
+		 * by shifting the remaining pieces of the map over.
+		 */
+		if (bp->m_addr && addr+size >= bp->m_addr) {
+			if (addr+size > bp->m_addr)
+				goto badrmfree;
+			(bp-1)->m_size += bp->m_size;
+			while (bp->m_size) {
+				bp++;
+				(bp-1)->m_addr = bp->m_addr;
+				(bp-1)->m_size = bp->m_size;
+			}
+		}
+		goto done;
+	}
+	/*
+	 * Don't abut on the left, check for abutting on
+	 * the right.
+	 */
+	if (addr+size >= bp->m_addr && bp->m_size) {
+		if (addr+size > bp->m_addr)
+			goto badrmfree;
+		bp->m_addr -= size;
+		bp->m_size += size;
+		goto done;
+	}
+	/*
+	 * Don't abut at all.  Make a new entry
+	 * and check for map overflow.
+	 */
+	do {
+		t = bp->m_addr;
+		bp->m_addr = addr;
+		addr = t;
+		t = bp->m_size;
+		bp->m_size = size;
+		bp++;
+	} while (size = t);
+	/*
+	 * Segment at bp is to be the delimiter;
+	 * If there is not room for it 
+	 * then the table is too full
+	 * and we must discard something.
+	 */
+	if (bp+1 > mp->m_limit) {
+		/*
+		 * Back bp up to last available segment.
+		 * which contains a segment already and must
+		 * be made into the delimiter.
+		 * Discard second to last entry,
+		 * since it is presumably smaller than the last
+		 * and move the last entry back one.
+		 */
+		bp--;
+		printf("%s: rmap ovflo, lost [%d,%d)\n", mp->m_name,
+		    (bp-1)->m_addr, (bp-1)->m_addr+(bp-1)->m_size);
+		bp[-1] = bp[0];
+		bp[0].m_size = bp[0].m_addr = 0;
+	}
+done:
+	return;
+badrmfree:
+	printf("bad rmfree\n");
 }
