@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)systm.h	7.15 (Berkeley) %G%
+ *	@(#)systm.h	7.16 (Berkeley) %G%
  */
 
 extern char *panicstr;		/* panic message */
@@ -17,8 +17,6 @@ extern int nswdev;		/* number of swap devices */
 extern int nswap;		/* size of swap space */
 
 extern int selwait;		/* select timeout address */
-
-extern char kmapwnt;		/* kernel map want flag */
 
 extern u_char curpri;		/* priority of current process */
 
