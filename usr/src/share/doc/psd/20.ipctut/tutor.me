@@ -2,34 +2,36 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tutor.me	6.1 (Berkeley) %G%
+.\"	@(#)tutor.me	6.2 (Berkeley) %G%
 .\"
-.he ``%``
-.sp7
-.b
-.ce
-Tutorial Examples of Interprocess Communication in Berkeley UNIX 4.3 BSD
-.r
-.sp2
+.oh 'Introductory 4.3BSD IPC''PS1:7-%'
+.eh 'PS1:7-%''Introductory 4.3BSD IPC'
+.ps 12
+.ft B
+.ce 2
+An Introductory 4.3BSD
+Interprocess Communication Tutorial
+.ps 10
+.sp 2
 .ce
 .i "Stuart Sechrest"
+.ft
 .sp
-.ce4
+.ce 4
 Computer Science Research Group
 Computer Science Division
 Department of Electrical Engineering and Computer Science
 University of California, Berkeley
-.sp2
+.sp 2
 .ce
 .i ABSTRACT
 .sp
 .(c
-.xl 5i
-.lp
+.pp
 This is a second version of a tutorial document written for
 Berkeley UNIX 4.2BSD.  The present version contains certain clarifications
 and corrections.
-.lp
+.pp
 Berkeley UNIX 4.3BSD offers several choices for interprocess communication.
 To aid the programmer in  developing programs comprising cooperating
 processes, the different choices are discussed and a series of example 
@@ -38,20 +40,10 @@ demonstrate in a simple way the use of pipes, socketpairs, and sockets
 and the use of datagram and stream communication.  The intent of this
 document is to present a few simple example programs, not to describe the
 networking system in full generality.
-.xl
 .)c
-.sp2
-.ls2
+.sp 2
 .(f
 UNIX is a trademark of AT&T Bell Laboratories.
-.sp
-This work was sponsored by the Defense Advanced Research Projects Agency
-(DoD), ARPA Order No. 4031, monitored by the Naval Electronics Systems
-Command under contract No. N00039-C-0235. 
-The views and conclusions contained in this document are those of the
-author and should not be interpreted as representing official policies,
-either expressed or implied, of the Defense Research Projects Agency
-or of the US Government.
 .)f
 .b
 .sh 1 "Goals"
@@ -186,6 +178,13 @@ the shell creates two processes connected by a pipe. One process
 runs the program prog1, the other runs prog2.  The pipe is an I/O
 mechanism with two ends, or sockets.  Data that is written into one socket
 can be read from the other.  
+.(z
+.ft CW
+.so pipe.c
+.ft
+.ce 1
+Figure 1\ \ Use of a pipe
+.)z
 .pp
 Since a program specifies its input and output only by the descriptor table
 indices, which appear as variables or constants,
@@ -197,15 +196,6 @@ and replace it with one
 end of a pipe.  Similarly, the process that will execute prog2 can substitute
 the opposite end of the pipe for 
 \fIstdin.\fP
-.(z
-.ft CW
-.eo
-.so ../examples/pipe.c
-.ec \
-.r
-.ce 1
-Figure 1\ \ Use of a pipe
-.)z
 .pp
 Let us now examine a program that creates a pipe for communication between
 its child and itself (Figure 1).
@@ -233,10 +223,11 @@ After the fork, both parent's and child's descriptor table point to
 the pipe.
 The child can then use the pipe to send a message to the parent.
 .(z
-.GS C
-height 6i
-file pipe
-.GE
+-
+.bl 5.8i
+-
+.\" pipe.grn goes here
+.sp
 .ce 1
 Figure 2\ \ Sharing a pipe between parent and child
 .)z
@@ -305,18 +296,17 @@ which in turn requires the file
 for some of its definitions.
 .(z
 .ft CW
-.eo
-.so ../examples/socketpair.c
-.ec \
-.r
+.so socketpair.c
+.ft
 .ce 1
 Figure 3\ \ Use of a socketpair
 .)z
 .(z
-.GS C
-height 6i
-file socketpair
-.GE
+-
+.bl 5.8i
+-
+.\" socketpair.grn goes here
+.sp
 .ce 1
 Figure 4\ \ Sharing a socketpair between parent and child
 .)z
@@ -407,6 +397,13 @@ in the UNIX domain.
 .b
 .sh 1 "Datagrams in the UNIX Domain"
 .r
+.(z
+.ft CW
+.so udgramread.c
+.ft
+.ce 1
+Figure 5a\ \ Reading using UNIX domain datagrams
+.)z
 .pp
 Let us now look at two programs that create sockets separately.
 The programs in Figures 5a and 5b use datagram communication
@@ -428,21 +425,8 @@ socket only for sending messages.  It does not create a name for
 the socket because no other process has to refer to it.  
 .(z
 .ft CW
-.eo
-.so ../examples/udgramread.c
-.ec \
-.r
-.sp 1
-.ce 1
-Figure 5a\ \ Reading using UNIX domain datagrams
-.)z
-.(z
-.ft CW
-.eo
-.so ../examples/udgramsend.c
-.ec \
-.r
-.sp 1
+.so udgramsend.c
+.ft
 .ce 1
 Figure 5b\ \ Sending a UNIX domain datagrams
 .)z
@@ -472,6 +456,13 @@ names less of a problem than it now is.
 .b
 .sh 1 "Datagrams in the Internet Domain"
 .r
+.(z
+.ft CW
+.so dgramread.c
+.ft
+.ce 1
+Figure 6a\ \ Reading using Internet domain datagrams
+.)z
 .pp
 The examples in Figure 6a and 6b are very close to the previous example
 except that the socket is in the Internet domain.
@@ -496,21 +487,8 @@ Thus, implicitly, an Internet name is a triple including a protocol as
 well as the port and machine address.
 .(z
 .ft CW
-.eo
-.so ../examples/dgramread.c
-.ec \
-.r
-.sp 1
-.ce 1
-Figure 6a\ \ Reading using Internet domain datagrams
-.)z
-.(z
-.ft CW
-.eo
-.so ../examples/dgramsend.c
-.ec \
-.r
-.sp 1
+.so dgramsend.c
+.ft
 .ce 1
 Figure 6b\ \ Sending an Internet domain datagram
 .)z
@@ -570,9 +548,9 @@ entry for \fIbyteorder\fP in section 3 of the manual.
 .pp
 To send data between stream sockets (having communication style SOCK_STREAM),
 the sockets must be connected.
-Figures 7a and 7b show two programs that create such a connection.  The program in
-7b is relatively simple.  To initiate a connection, this program
-simply calls \fI connect(), \fP
+Figures 7a and 7b show two programs that create such a connection.
+The program in 7a is relatively simple.
+To initiate a connection, this program simply calls \fI connect(), \fP
 specifying the name of the socket to which
 it wishes its socket connected.  Provided that the target socket exists and
 is prepared to handle a connection, the program can begin to send
@@ -587,45 +565,36 @@ the process will terminate and the shell
 will print the message ``broken pipe.'' 
 .(z
 .ft CW
-.eo
-.so ../examples/streamread.c
-.ec \
-.r
-.sp 1
+.so streamwrite.c
+.ft
 .ce 1
-Figure 7a\ \ Accepting an Internet domain stream connection
+Figure 7a\ \ Initiating an Internet domain stream connection
 .)z
 .(z
 .ft CW
-.eo
-.so ../examples/streamwrite.c
-.ec \
-.r
-.sp 1
+.so streamread.c
+.ft
 .ce 1
-Figure 7b\ \ Initiating an Internet domain stream connection
-.)z
-.(z
+Figure 7b\ \ Accepting an Internet domain stream connection
+.sp 2
 .ft CW
-.eo
-.so ../examples/strchkread.c
-.ec \
-.r
-.sp 1
+.so strchkread.c
+.ft
 .ce 1
 Figure 7c\ \ Using select() to check for pending connections
 .)z
 .(z
-.GS C
-height 6i
-file accept
-.GE
+-
+.bl 5.8i
+-
+.\" accept.grn goes here
+.sp
 .ce 1
 Figure 8\ \ Establishing a stream connection
 .)z
 .pp
 Forming a connection is asymmetrical; one process, like that running the
-program in Figure 7b, requests a connection with a particular socket,
+program in Figure 7a, requests a connection with a particular socket,
 the other process accepts connection requests.
 Before a connection can be accepted a socket must be created and a name 
 bound to it.  This
@@ -640,7 +609,7 @@ As a result, a new socket is created for each connection.  This new socket
 is the endpoint of communication within this process for this connection.
 A connection can be destroyed by closing the corresponding socket.
 .pp
-The program in Figure 7a is a rather trivial example of a server.  It 
+The program in Figure 7b is a rather trivial example of a server.  It 
 creates a socket to which it binds a name, which it then advertises.
 (In this case it prints out the socket number.)  The program then calls
 \fIlisten() \fP for this socket.  
@@ -668,7 +637,7 @@ The number of bytes read is returned.  When a connection is destroyed,
 the read call returns immediately.  The number of bytes returned will
 be zero.
 .pp
-The program in Figure 7c is a slight variation on the server in Figure 7a.
+The program in Figure 7c is a slight variation on the server in Figure 7b.
 It avoids blocking when there are no pending connection requests by 
 calling \fIselect() \fP
 to check for pending requests before calling \fIaccept().\fP
@@ -683,23 +652,16 @@ streams in the two domains, notably in the handling of
 are beyond the scope of this paper.
 .(z
 .ft CW
-.eo
-.so ../examples/ustreamread.c
-.ec \
-.r
-.sp 1
+.so ustreamwrite.c
+.ft
 .ce 1
-Figure 9a\ \ Accepting a UNIX domain stream connection
-.)z
-.(z
+Figure 9a\ \ Initiating a UNIX domain stream connection
+.sp 2
 .ft CW
-.eo
-.so ../examples/ustreamwrite.c
-.ec \
-.r
-.sp 1
+.so ustreamread.c
+.ft
 .ce 1
-Figure 9b\ \ Initiating a UNIX domain stream connection
+Figure 9b\ \ Accepting a UNIX domain stream connection
 .)z
 .b
 .sh 1 "Reads, Writes, Recvs, etc."
@@ -777,45 +739,49 @@ In the examples given in this paper, the calls \fIread()\fP and
 without having to use most of the other calls.
 .(z
 .ft CW
-     cc	= read(descriptor, buf, nbytes)
-     int cc, descriptor; char *buf; int nbytes;
-     /* The variable descriptor may be the descriptor of either a file
-      * or of a socket.
-      */
+	/*
+	 * The variable descriptor may be the descriptor of either a file
+	 * or of a socket.
+	 */
+	cc = read(descriptor, buf, nbytes)
+	int cc, descriptor; char *buf; int nbytes;
 
-     cc	= readv(descriptor, iov, iovcnt)
-     int cc, descriptor; struct iovec *iov; int iovcnt;
-     /* An iovec can include several source buffers.
-      */
+	/*
+	 * An iovec can include several source buffers.
+	 */
+	cc = readv(descriptor, iov, iovcnt)
+	int cc, descriptor; struct iovec *iov; int iovcnt;
 
-     cc = write(descriptor, buf, nbytes)
-     int cc, descriptor; char *buf; int nbytes;
+	cc = write(descriptor, buf, nbytes)
+	int cc, descriptor; char *buf; int nbytes;
 
-     cc = writev(descriptor, iovec, ioveclen)
-     int cc, descriptor; struct iovec *iovec; int ioveclen;
+	cc = writev(descriptor, iovec, ioveclen)
+	int cc, descriptor; struct iovec *iovec; int ioveclen;
 
-     cc	= send(socket, msg, len, flags)
-     int cc, socket; char *msg; int len, flags; 
-     /* The variable socket must be the descriptor of a socket.
-      * Flags include OOB and ``peeking.''
-      */
+	/*
+	 * The variable socket must be the descriptor of a socket.
+	 * Flags include OOB and ``peeking.''
+	 */
+	cc = send(socket, msg, len, flags)
+	int cc, socket; char *msg; int len, flags; 
 
-     cc	= sendto(socket, msg, len, flags, to, tolen)
-     int cc, socket; char *msg; int len, flags; struct sockaddr *to; int tolen;
+	cc = sendto(socket, msg, len, flags, to, tolen)
+	int cc, socket; char *msg; int len, flags;
+	struct sockaddr *to; int tolen;
 
-     cc	= sendmsg(socket, msg, flags)
-     int cc, socket; struct msghdr msg[]; int flags;
+	cc = sendmsg(socket, msg, flags)
+	int cc, socket; struct msghdr msg[]; int flags;
 
-     cc	= recv(socket, buf, len, flags)
-     int cc, socket; char *buf; int len, flags;
+	cc = recv(socket, buf, len, flags)
+	int cc, socket; char *buf; int len, flags;
 
-     cc	= recvfrom(socket, buf, len, flags, from, fromlen)
-     int cc, socket; char *buf; int len, flags;
-     struct sockaddr *from; int *fromlen;
+	cc = recvfrom(socket, buf, len, flags, from, fromlen)
+	int cc, socket; char *buf; int len, flags;
+	struct sockaddr *from; int *fromlen;
 
-     cc	= recvmsg(socket, msg, flags)
-     int cc, socket; struct msghdr msg[]; int flags;
-.r
+	cc = recvmsg(socket, msg, flags)
+	int cc, socket; struct msghdr msg[]; int flags;
+.ft
 .sp 1
 .ce 1
 Figure 10\ \ Varieties of read and write commands
@@ -871,28 +837,16 @@ found in [Leffler, Fabry & Joy 1983].
 More detailed information about particular calls is provided by the
 UNIX Programmer's Manual [Leffler, Joy & McKusick 1983].
 In particular the following manual pages are relevant:
-.sp 1
-.ti 5
-creating and naming sockets:\ \ \ socket(2),
-bind(2)
-.sp 1
-.ti 5
-establishing connections:\ \ \ listen(2),
-accept(2),
-connect(2)
-.sp 1
-.ti 5
-transferring data:\ \ \ read(2),
-write(2),
-send(2),
-recv(2)
-.sp 1
-.ti 5
-addresses:\ \ \ inet(4F)
-.sp 1
-.ti 5
-protocols:\ \ \ tcp(4P),
-udp(4P).
+.(b
+.TS
+l l.
+creating and naming sockets	socket(2), bind(2)
+establishing connections	listen(2), accept(2), connect(2)
+transferring data	read(2), write(2), send(2), recv(2)
+addresses	inet(4F)
+protocols	tcp(4P), udp(4P).
+.TE
+.)b
 .(b
 .sp
 .b
@@ -901,6 +855,14 @@ Acknowledgements
 I would like to thank Sam Leffler and Mike Karels for their help in
 understanding the IPC mechanisms and all the people whose comments 
 have helped in writing and improving this report.
+.pp
+This work was sponsored by the Defense Advanced Research Projects Agency
+(DoD), ARPA Order No. 4031, monitored by the Naval Electronics Systems
+Command under contract No. N00039-C-0235. 
+The views and conclusions contained in this document are those of the
+author and should not be interpreted as representing official policies,
+either expressed or implied, of the Defense Research Projects Agency
+or of the US Government.
 .)b
 .(b
 .sp
