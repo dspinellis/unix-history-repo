@@ -1,4 +1,4 @@
-/*	lp.c	4.28	82/10/10	*/
+/*	lp.c	4.29	82/10/10	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -151,16 +151,18 @@ lpwrite(dev, uio)
 	register unsigned n;
 	register char *cp;
 	register struct lp_softc *sc = &lp_softc[LPUNIT(dev)];
+	int error;
 
 	while (n = min(512, uio->uio_resid)) {
 		cp = sc->sc_inbuf->b_un.b_addr;
-		u.u_error = uiomove(cp, n, UIO_WRITE, uio);
-		if (u.u_error)
-			break;
+		error = uiomove(cp, n, UIO_WRITE, uio);
+		if (error)
+			return (error);
 		do
 			lpcanon(dev, *cp++);
 		while (--n);
 	}
+	return (0);
 }
 
 lpcanon(dev, c)

@@ -1,4 +1,4 @@
-/*	rk.c	4.46	82/10/10	*/
+/*	rk.c	4.47	82/10/10	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -530,9 +530,8 @@ rkwrite(dev, uio)
 	register int unit = minor(dev) >> 3;
 
 	if (unit >= NRK)
-		u.u_error = ENXIO;
-	else
-		physio(rkstrategy, &rrkbuf[unit], dev, B_WRITE, minphys, uio);
+		return (ENXIO);
+	return (physio(rkstrategy, &rrkbuf[unit], dev, B_WRITE, minphys, uio));
 }
 
 rkecc(ui, flag)

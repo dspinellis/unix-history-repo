@@ -1,4 +1,4 @@
-/*	dn.c	4.7	82/10/10	*/
+/*	dn.c	4.8	82/10/10	*/
 
 #include "dn.h"
 #if NDN > 0
@@ -120,14 +120,15 @@ dnwrite(dev, uio)
 	char buf[OBUFSIZ];
 	register char *cp;
 	extern lbolt;
+	int error;
 
 	dp = (struct dndevice *)dninfo[DNUNIT(dev)]->ui_addr;
 	dnreg = &(dp->dn_reg[DNREG(dev)]);
 	cc = MIN(uio->uio_resid, OBUFSIZ);
 	cp = buf;
-	u.u_error = uiomove(cp, (unsigned)cc, UIO_WRITE, uio);
-	if (u.u_error)
-		return;
+	error = uiomove(cp, (unsigned)cc, UIO_WRITE, uio);
+	if (error)
+		return (error);
 	while ((*dnreg & (PWI|ACR|DSS)) == 0 && cc >= 0) {
 		spl4();
 		if ((*dnreg & PND) == 0 || cc == 0)
@@ -172,7 +173,8 @@ dnwrite(dev, uio)
 		spl0();
 	}
 	if (*dnreg & (PWI|ACR))
-		u.u_error = EIO;
+		return (EIO);
+	return (0);
 }
 
 dnintr(dev)

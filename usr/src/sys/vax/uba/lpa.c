@@ -1,4 +1,4 @@
-/*	lpa.c	4.6	82/10/10	*/
+/*	lpa.c	4.7	82/10/10	*/
 
 #include "lpa.h"
 #if NLPA > 0
@@ -14,9 +14,8 @@
 #include "../vaxuba/ubavar.h"
 
 /*
- *	LPA driver for 4.1BSD
- *	Asa Romberger
- * method of usage:
+ * LPA driver for -- Asa Romberger
+ *
  *	open
  *	write microcode
  *	write dedicated mode dispatch table
@@ -34,11 +33,10 @@
  *		= 01 for analog output
  *	CCCCCC	= channel number
  */
-/*
- *	define TRACELPA to get trace printouts on the console
  *	define NOMCODE to eliminate the microcode download check
  */
-/*	#define	NOMCODE		*/
+/* #define TRACELPA */
+/* #define NOMCODE */
 
 #ifdef TRACELPA
 #	define TRACER(x)	printf(x)
@@ -53,29 +51,18 @@
 
 #define NICE	0
 
-	/* WAKEUP PRIORITY */
+#define inc(v)		(sc->v = ((sc->v + 1) % sc->sc_nbuf))
 
-#define LPAPRI	(PZERO + 0)
-
-	/* MACRO DEFINITIONS */
-#define inc(v)	(sc->v = ((sc->v + 1) % sc->sc_nbuf))
+#define LPAPRI		(PZERO + 0)
 #define LPAUNIT(dev)	0
 #define LPADEVICE(dev)	(((dev) >> 6) & 03)
 #define LPACHANNEL(dev)	((dev) & 077)
 
-	/* DEFINITIONS FOR INTERACTION WITH UNIX I/O */
-
-int lpaprobe(), /*lpaslave(),*/ lpaattach() /*,lpadgo()*/;
-int lpaiintr(), lpaointr();
-u_short lpastd[] = {0170460, 0};
-struct uba_device *lpadinfo[NLPA];
-/*struct uba_ctlr *lpaminfo[Ndevice name];*/
+int	lpaprobe(), lpaattach(), lpaiintr(), lpaointr();
+u_short	lpastd[] = {0170460, 0};
+struct	uba_device *lpadinfo[NLPA];
 struct uba_driver lpadriver =
-	{lpaprobe, 0/*lpaslave*/, lpaattach, 0/*lpadgo*/, lpastd,
-	"lpa", lpadinfo, 0/*"device name"*/, 0/*lpaminfo*/, 0/*exclusive use*/};
-
-
-	/* LPA SOFTWARE OPERATION FLAGS */
+  {lpaprobe, 0, lpaattach, 0, lpastd, "lpa", lpadinfo, 0, 0, 0 };
 
 struct lpa_softc {
 	int	sc_flag;	/* flags, as defined below */
@@ -94,19 +81,19 @@ struct lpa_softc {
 	struct buf *sc_buffer;	/* scratch buffer header */
 	int	sc_start;	/* 0 if lpa operation has been started */
 } lpa_softc[NLPA];
-    /* flag bits */
+
+/* flags for sc_flag */
 #define OPEN	01		/* device is open */
 #define MCODE	02		/* microcode has been loaded */
 #define DMDT	04		/* dedicated mode dispatch table loaded */
 #define STTY	010		/* stty call and device initialized */
 #define SLEEP	020		/* sleeping */
-    /* ustat bits */
+
+/* bits for ustat */
 #define DONE	0100000		/* done */
 #define STOP	0040000		/* stop data transfer */
 #define NBI	0003400		/* next buffer index */
 #define LBI	0000003		/* last buffer index */
-
-	/* DEVICE REGISTER DESCRIPTION AREA */
 
 struct lpadevice {
 	short	lcim;		/* control in and maintenance */
@@ -114,7 +101,8 @@ struct lpadevice {
 	short	lrda;		/* request description array address word */
 	short	lms;		/* maintenance status */
 };
-    /* control in and maintenance register bits */
+
+/* control in and maintenance register bits */
 #define	READYI	0000200		/* ready in */
 #define IIE	0000100		/* in interrupt enable */
 #define RDAEXT	0000014		/* rda address extension */
@@ -127,7 +115,8 @@ struct lpadevice {
 #define ROMO	0002000		/* rom O */
 #define ROMI	0001000		/* rom I */
 #define SMICRO	0000400		/* step microprocessor */
-    /* control and status out register bits */
+
+/* control and status out register bits */
 #define READYO	0200		/* ready out */
 #define OIE	0100		/* out interrupt enable */
 #define UINDEX	0007		/* user index */
@@ -137,9 +126,9 @@ struct lpadevice {
 #define ECODE	0077400		/* error status + error sub code */
 #define OVERRUN	0243		/* overrun error */
 
-	/* LPA COMMAND DESCRIPTION AREA */
+/* LPA COMMAND DESCRIPTION AREA */
 
-	/* INIT COMMAND */
+/* INIT COMMAND */
 #define INIT	0		/* mode */
 #define MCVERS	4		/* microcode version */
 #define ACLOCKA	0170404		/* LPA bus addresses */
@@ -152,10 +141,11 @@ struct lpadevice {
 #define ADIO3	1		/* 0167750 - DOES NOT EXIST */
 #define ADIO4	1		/* 0167740 - DOES NOT EXIST */
 #define ADIO5	1		/* 0167730 - DOES NOT EXIST */
-	/* CLOCK START COMMAND */
+
+/* CLOCK START COMMAND */
 #define CLOCK	1		/* mode */
 #define CLOCKA	0<<4		/* clock A */
-		/* clock status word */
+	/* clock status word */
 #define ENACTR	1		/* enable counter */
 #define R1M	1<<1		/* 1 MHz rate */
 #define R100K	2<<1		/* 100 KHz rate */
@@ -171,20 +161,16 @@ struct lpadevice {
 #define MEETZ	3<<8		/* external event time mode from zero base */
 #define ST1EC	020000		/* st1 enable counter */
 #define ST1IE	040000		/* st1 interrupt enable */
-	/* DATA TRANSFER START COMMAND */
+
+/* DATA TRANSFER START COMMAND */
 #define DTS	2		/* mode */
 #define SCHAN	1<<8		/* single channel */
 
-	/* THE ROUTINES THEMSELVES */
-
-/*
- *	probe lpa to get br level and interrupt vector
- */
 lpaprobe(reg)
-caddr_t reg;
+	caddr_t reg;
 {
-	register int br, cvec;	/* value result (required for UNIX) */
-	register struct lpadevice *lpaaddr = (struct lpadevice *) reg;
+	register int br, cvec;	/* value result */
+	register struct lpadevice *lpaaddr = (struct lpadevice *)reg;
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
@@ -196,21 +182,15 @@ TRACER("PROBE\n");
 	return (sizeof (struct lpadevice));
 }
 
-/*
- *	attach the specified controller
- */
 lpaattach(ui)
-register struct upa_device *ui;
+	register struct upa_device *ui;
 {
-	/* any stuff necessary for initialization can go here */
+
 }
 
-/*
- *	open the device
- */
 lpaopen(dev, flag)
-dev_t dev;
-int flag;
+	dev_t dev;
+	int flag;
 {
 	register int unit = LPAUNIT(dev);
 	register struct lpa_softc *sc = &lpa_softc[unit];
@@ -241,12 +221,9 @@ TRACER("OPEN\n");
 	u.u_procp->p_nice = NICE;
 }
 
-/*
- *	close the device
- */
 lpaclose(dev, flag)
-dev_t dev;
-int flag;
+	dev_t dev;
+	int flag;
 {
 	register int unit = LPAUNIT(dev);
 	register struct lpa_softc *sc = &lpa_softc[unit];
@@ -289,11 +266,6 @@ TRACER("SLEEP\n");
 TRACER("CLOSE\n");
 }
 
-/*
- *	write
- *		first write is the microcode
- *		second write is the dispatch table
- */
 lpawrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
@@ -306,20 +278,13 @@ lpawrite(dev, uio)
 
 TRACER("WRITE\n");
 	f = sc->sc_flag;
-	if ((f & OPEN) == 0) {
-		u.u_error = ENXIO;
-		return;
-	}
-	if ((f & MCODE) == 0) {
-		lpamcode(lpaaddr, sc, uio);
-		return;
-	}
-	if ((f & DMDT) == 0) {
-		lpadmdt(lpaaddr, sc, ui->ui_ubanum, uio);
-		return;
-	}
-	/* writes are only for microcode and dedicated mode dispatch table */
-	u.u_error = ENXIO;
+	if ((f & OPEN) == 0)
+		return (ENXIO);
+	if ((f & MCODE) == 0)		/* first write is the microcode */
+		return (lpamcode(lpaaddr, sc, uio));
+	if ((f & DMDT) == 0)		/* second write is the dispatch table */
+		return (lpadmdt(lpaaddr, sc, ui->ui_ubanum, uio));
+	return (ENXIO);
 }
 
 lpamcode(lpaaddr, sc, uio)
@@ -344,8 +309,7 @@ lpamcode(lpaaddr, sc, uio)
 		if ((r = lpaaddr->lms) != v) {
 			/* download failure */
 			printf("LPA MICROCODE FAIL: exp:%o got:%o\n", v, r);
-			u.u_error = ENXIO;
-			return;
+			return (ENXIO);
 		}
 		mcaddr++;
 	}
@@ -353,6 +317,7 @@ lpamcode(lpaaddr, sc, uio)
 	sc->sc_flag |= MCODE;
 	lpaaddr->lcim |= IIE;
 	lpaaddr->lcos |= OIE;
+	return (0);
 TRACER("MCODE\n");
 }
 
@@ -364,6 +329,7 @@ lpadmdt(lpaaddr, sc, ubanum, uio)
 {
 	register short *p;
 	register int n;
+	int error;
 
 	p = (short *) sc->sc_buffer->b_un.b_addr;		/* INIT */
 	*p++ = (MCVERS << 8) | INIT;	/* mode */
@@ -378,13 +344,16 @@ lpadmdt(lpaaddr, sc, ubanum, uio)
 	*p++ = ADIO4;
 	*p++ = ADIO5;
 	n = min(uio->uio_resid, 256);	/* dedicated mode dispatch table */
-	uiomove((char *)p, n, UIO_WRITE, uio);
+	error = uiomove((char *)p, n, UIO_WRITE, uio);
+	if (error)
+		return (error);
 	n >>= 1;
 	p += n;
 	while (n++ < 128)
 		*p++ = 0;
 	lpacmd(sc->sc_buffer, lpaaddr, sc, ubanum);
 	sc->sc_flag |= DMDT;
+	return (0);
 TRACER("DMDT\n");
 }
 
@@ -481,9 +450,6 @@ TRACER("USER BUFFER FAULT\n");
 TRACER("IOCTL OUT\n");
 }
 
-/*
- * Lparead reads 1 character only -- the next available buffer number.
- */
 lparead(dev, uio)
 	dev_t dev;
 	struct uio *uio;
@@ -494,14 +460,10 @@ lparead(dev, uio)
 	register struct lpadevice *lpaaddr = (struct lpadevice *) ui->ui_addr;
 
 TRACER("READ\n");
-	if ((sc->sc_flag & STTY) == 0) {
-		u.u_error = ENXIO;
-		return;
-	}
-	if (sc->sc_flag & ERROR) {
-		u.u_error = ENXIO;
-		return;
-	}
+	if ((sc->sc_flag & STTY) == 0)
+		return (ENXIO);
+	if (sc->sc_flag & ERROR)
+		return (ENXIO);
 	if (sc->sc_start)
 		if (--sc->sc_start == 0) {
 			lpacmd(sc->sc_buffer, lpaaddr, sc, ui->ui_ubanum);
@@ -511,10 +473,8 @@ TRACER("START\n");
 	if (sc->sc_start == 0) {
 		(void) spl5();
 		while (sc->sc_ubufn == sc->sc_lbufn) {
-			if (sc->sc_flag & ERROR) {
-				u.u_error = ENXIO;
-				return;
-			}
+			if (sc->sc_flag & ERROR)
+				return (ENXIO);
 TRACER("SLEEP\n");
 			sc->sc_flag |= SLEEP;
 			sleep(sc, LPAPRI);
@@ -522,12 +482,9 @@ TRACER("SLEEP\n");
 		(void) spl0();
 	}
 TRACERN("READ %d\n", sc->sc_ubufn);
-	uiomove(&sc->sc_ubufn, 1, UIO_READ, uio);
+	return (uiomove(&sc->sc_ubufn, 1, UIO_READ, uio));
 }
 
-/*
- * Execute a lpa command and wait for completion.
- */
 lpacmd(bp, lpaaddr, sc, ubanum)
 	register struct buf *bp;
 	register struct lpadevice *lpaaddr;
@@ -537,7 +494,6 @@ lpacmd(bp, lpaaddr, sc, ubanum)
 	int ubareg;
 
 TRACER("CMD\n");
-/*	bp->b_flags |= B_BUSY|B_WRITE;		*/
 	ubareg = ubasetup(ubanum, bp, UBA_NEEDBDP);
 	lpawait(lpaaddr, sc);
 	lpaaddr->lrda = ubareg;
@@ -545,16 +501,13 @@ TRACER("CMD\n");
 	lpaaddr->lcim |= ((ubareg >> (16-RDAEXTOFFSET)) & RDAEXT) | GO;
 	lpawait(lpaaddr, sc);
 	ubarelse(ubanum, &ubareg);
-/*	bp->b_flags &= ~(B_BUSY|B_WRITE);		*/
 }
 
-/*
- *	wait for completion (ready input)
- */
 lpawait(lpaaddr, sc)
-register struct lpadevice *lpaaddr;
-register struct lpa_softc *sc;
+	register struct lpadevice *lpaaddr;
+	register struct lpa_softc *sc;
 {
+
 	(void) spl5();
 	while ((lpaaddr->lcim & READYI) == 0) {
 TRACER("SLEEP\n");
@@ -564,13 +517,8 @@ TRACER("SLEEP\n");
 	(void) spl0();
 }
 
-/*
- *	lpaiintr
- *		in interrupt
- *		LPA is now ready to accept a user request
- */
 lpaiintr(unit)
-int unit;
+	int unit;
 {
 	register struct lpa_softc *sc = &lpa_softc[unit];
 
@@ -583,13 +531,8 @@ TRACER("<WAKEUP>");
 TRACER("}");
 }
 
-/*
- *	lpaointr
- *		out interrupt
- *		LPA has status information
- */
 lpaointr(unit)
-int unit;
+	int unit;
 {
 	register int c, m;
 	register struct lpa_softc *sc = &lpa_softc[unit];
@@ -636,11 +579,8 @@ TRACERN("<USTAT %o>", sc->sc_ustat);
 TRACERN("<LPAN %d>}", sc->sc_lbufnx);
 }
 
-/*
- *	reset called for a unibus reset
- */
 lpareset(uban)
-int uban;
+	int uban;
 {
 	register struct uba_device *ui;
 	register struct lpadevice *lpaaddr;
@@ -649,10 +589,9 @@ int uban;
 
 TRACER("LPA RESET\n");
 	for (unit = 0; unit < NLPA; unit++) {
-		if (	(ui = lpadinfo[unit]) == 0 ||
-			ui->ui_ubanum != uban ||
-			ui->ui_alive == 0)
-				continue;
+		if ((ui = lpadinfo[unit]) == 0 ||
+		    ui->ui_ubanum != uban || ui->ui_alive == 0)
+			continue;
 		printf(" lpa%d", unit);
 		lpaaddr = (struct lpadevice *)ui->ui_addr;
 		sc = &lpa_softc[unit];
