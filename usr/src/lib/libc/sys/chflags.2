@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)chflags.2	6.7 (Berkeley) %G%
+.\"	@(#)chflags.2	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHFLAGS 2
@@ -28,9 +28,41 @@ or referenced by the descriptor
 has its flags changed to
 .Fa flags .
 .Pp
-Only the owner of a file (or the super-user) may change the flags.
-The owner may only change the lower 16 bits of the flags;
-the super-user may change all 32 bits of the flags.
+The flags specified are formed by
+.Em or Ns 'ing
+the following values
+.Pp
+.Bl -tag -width "SYS_IMMUTABLE" -compact -offset indent
+.It NODUMP
+Do not dump the file.
+.It USR_IMMUTABLE
+The file may not be changed.
+.It USR_APPEND
+The file may only be appended to.
+.\".It ARCHIVED
+.\"File is archived.
+.It SYS_IMMUTABLE
+The file may not be changed.
+.It SYS_APPEND
+The file may only be appended to.
+.El
+.Pp
+The
+.Dq USR_IMMUTABLE
+and
+.Dq USR_APPEND
+flags may be set or unset by either the owner of a file or the super-user.
+.Pp
+The
+.Dq SYS_IMMUTABLE
+and
+.Dq SYS_APPEND
+flags may only be set or unset by the super-user.
+They may be set at any time, but normally may only be unset when
+the system is in single-user mode.
+(See
+.Xr init 8
+for details.)
 .Sh RETURN VALUES
 Upon successful completion, a value of 0 is returned.
 Otherwise, -1 is returned and the global variable
@@ -38,7 +70,7 @@ Otherwise, -1 is returned and the global variable
 is set to indicate the error.
 .Sh ERRORS
 .Fn Chflags
-fails if:
+will fail it:
 .Bl -tag -width Er
 .It Bq Er ENOTDIR
 A component of the path prefix is not a directory.
@@ -86,10 +118,8 @@ An
 error occurred while reading from or writing to the file system.
 .El
 .Sh SEE ALSO
-.Xr chmod 2 ,
-.Xr open 2 ,
-.Xr chown 2 ,
-.Xr stat 2
+.Xr chflags 1,
+.Xr init 8
 .Sh HISTORY
 The
 .Nm chflags
