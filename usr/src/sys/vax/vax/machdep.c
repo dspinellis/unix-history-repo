@@ -1,5 +1,4 @@
-/*	machdep.c	3.16	%G%	*/
-extern cmap,ecmap;
+/*	machdep.c	3.17	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -15,7 +14,7 @@ extern cmap,ecmap;
 #include "../h/psl.h"
 #include "../h/uba.h"
 
-char	version[] = "VM/UNIX (Berkeley Version 3.16) %H% \n";
+char	version[] = "VM/UNIX (Berkeley Version 3.17) %H% \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init.vm",0]; pushab */
@@ -103,6 +102,24 @@ clkreld()
 {
 
 	mtpr(ICCS, ICCS_RUN+ICCS_IE+ICCS_INT+ICCS_ERR);
+}
+
+clkinit(base)
+time_t base;
+{
+
+	for (time = ((unsigned)mfpr(TODR))/100; time < base; time += SECYR)
+		;
+	clkset();
+	if (time - base >= SECDAY*2)
+		printf("warning: lost %d days; check the date\n",
+		    (time-base) / SECDAY);
+}
+
+clkset()
+{
+
+	mtpr(TODR, ((unsigned)time%SECYR)*100);
 }
 
 #ifdef PGINPROF
