@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tail.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)tail.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -57,25 +57,25 @@ main(argc, argv)
 	 * number of characters in reverse order.  Finally, the default for
 	 * -r is the entire file, not 10 lines.
 	 */
-#define	ARG(units, forward, backward) { \
-	if (style) \
-		usage(); \
-	off = strtol(optarg, &p, 10) * (units); \
-	if (*p) \
-		err(1, "illegal offset -- %s", optarg); \
-	switch(optarg[0]) { \
-	case '+': \
-		if (off) \
-			off -= (units); \
-			style = (forward); \
-		break; \
-	case '-': \
-		off = -off; \
-		/* FALLTHROUGH */ \
-	default: \
-		style = (backward); \
-		break; \
-	} \
+#define	ARG(units, forward, backward) {					\
+	if (style)							\
+		usage();						\
+	off = strtol(optarg, &p, 10) * (units);				\
+	if (*p)								\
+		err(1, "illegal offset -- %s", optarg);			\
+	switch(optarg[0]) {						\
+	case '+':							\
+		if (off)						\
+			off -= (units);					\
+			style = (forward);				\
+		break;							\
+	case '-':							\
+		off = -off;						\
+		/* FALLTHROUGH */					\
+	default:							\
+		style = (backward);					\
+		break;							\
+	}								\
 }
 
 	obsolete(argv);
@@ -144,6 +144,7 @@ main(argc, argv)
 				(void)printf("%s==> %s <==\n",
 				    first ? "" : "\n", fname);
 				first = 0;
+				(void)fflush(stdout);
 			}
 
 			if (rflag)
