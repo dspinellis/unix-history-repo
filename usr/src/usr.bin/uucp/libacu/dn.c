@@ -1,9 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)dn.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)dn.c	4.2 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"
 #ifdef DN11
+#define ACULAST "-<"
 
 /***
  *	dnopn(ph, flds, dev)	dial remote machine
@@ -18,12 +19,15 @@ char *flds[];
 struct Devices *dev;
 {
 	char dcname[20], dnname[20], phone[MAXPH+2], c = 0;
-#ifdef	SYSIII
+#ifdef	USG
 	struct termio ttbuf;
-#endif 	SYSIII
+#endif 	USG
 	int dnf, dcf;
 	int nw, lt, pid, status;
 	unsigned timelim;
+#ifdef TIOCFLUSH
+	int zero = 0;
+#endif TIOCFLUSH
 
 	sprintf(dnname, "/dev/%s", dev->D_calldev);
 	errno = 0;
@@ -68,8 +72,8 @@ struct Devices *dev;
 		fclose(stdin);
 		fclose(stdout);
 #ifdef	TIOCFLUSH
-		ioctl(dnf, TIOCFLUSH, STBNULL);
-#endif
+		ioctl(dnf, TIOCFLUSH, &zero);
+#endif	TIOCFLUSH
 		nw = write(dnf, phone, lt = strlen(phone));
 		if (nw != lt) {
 			logent("DIALUP ACU write", _FAILED);
@@ -102,13 +106,13 @@ struct Devices *dev;
 	}
 	while ((nw = wait(&lt)) != pid && nw != -1)
 		;
-#ifdef	SYSIII
+#ifdef	USG
 	ioctl(dcf, TCGETA, &ttbuf);
 	if(!(ttbuf.c_cflag & HUPCL)) {
 		ttbuf.c_cflag |= HUPCL;
 		ioctl(dcf, TCSETA, &ttbuf);
 	}
-#endif SYSIII
+#endif USG
 	alarm(0);
 	fflush(stdout);
 	fixline(dcf, dev->D_speed);

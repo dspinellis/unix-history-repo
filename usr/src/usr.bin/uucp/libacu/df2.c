@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)df2.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)df2.c	4.2 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"
@@ -18,12 +18,15 @@ char *flds[];
 struct Devices *dev;
 {
 	char dcname[20], dnname[20], phone[MAXPH+2], c = 0;
-#ifdef	SYSIII
+#ifdef	USG
 	struct termio ttbuf;
-#endif
+#endif  USG
 	int dcf, dnf;
 	int nw, lt, pid, st, status;
 	unsigned timelim;
+#ifdef	TIOCFLUSH
+	int zero = 0;
+#endif	TIOCFLUSH
 
 	sprintf(dnname, "/dev/%s", dev->D_calldev);
 	if (setjmp(Sjbuf)) {
@@ -69,7 +72,7 @@ struct Devices *dev;
 		fclose(stdin);
 		fclose(stdout);
 #ifdef TIOCFLUSH
-		ioctl(dnf, TIOCFLUSH, STBNULL);
+		ioctl(dnf, TIOCFLUSH, &zero);
 #endif TIOCFLUSH
 		write(dnf, "\01", 1);
 		sleep(1);
@@ -105,13 +108,13 @@ struct Devices *dev;
 	dnf = 0;
 	while ((nw = wait(&lt)) != pid && nw != -1)
 		;
-#ifdef	SYSIII
+#ifdef	USG
 	ioctl(dcf, TCGETA, &ttbuf);
 	if(!(ttbuf.c_cflag & HUPCL)) {
 		ttbuf.c_cflag |= HUPCL;
 		ioctl(dcf, TCSETA, &ttbuf);
 	}
-#endif SYSIII
+#endif USG
 	alarm(0);
 	fflush(stdout);
 	fixline(dcf, dev->D_speed);
