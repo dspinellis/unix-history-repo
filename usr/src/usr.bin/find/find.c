@@ -1,5 +1,5 @@
 #ifndef	lint
-static char *sccsid = "@(#)find.c	4.21 (Berkeley) %G%";
+static char *sccsid = "@(#)find.c	4.22 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -53,8 +53,8 @@ char *rindex();
 char *sbrk();
 
 /*
- * SEE ALSO:	updatedb, bigram.c, code.c
- *		Usenix ;login:, February/March, 1983, p. 8.
+ * SEE ALSO:	code.c, updatedb, bigram.c
+ *		Usenix ;login:, Vol 8, No 1, February/March, 1983, p. 8.
  *
  * REVISIONS: 	James A. Woods, Informatics General Corporation,
  *		NASA Ames Research Center, 6/81.
@@ -817,9 +817,9 @@ again:
  * The codes are:
  *
  *	0-28	likeliest differential counts + offset to make nonnegative 
- *	30	escape code for out-of-range count to follow in next word
- *	128-255 bigram codes, (128 most common, as determined by 'updatedb')
- *	32-127  single character (printable) ascii residue
+ *	30	switch code for out-of-range count to follow in next word
+ *	128-255 bigram codes (128 most common, as determined by 'updatedb')
+ *	32-127  single character (printable) ascii residue (ie, literal)
  *
  * A novel two-tiered string search technique is employed: 
  *
@@ -833,10 +833,10 @@ again:
  * provided in the standard 'find'.
  */
 
+#include "find.h"
+
 #define	YES	1
 #define	NO	0
-#define	OFFSET	14
-#define	ESCCODE	30
 
 fastfind ( pathpart )	
 	char pathpart[];
@@ -844,38 +844,38 @@ fastfind ( pathpart )
 	register char *p, *s;
 	register int c; 
 	char *q, *index(), *patprep();
-	int i, count = 0, globflag;
+	int count = 0, found = NO, globflag;
 	FILE *fp, *fopen();
 	char *patend, *cutoff;
-	char path[1024];
-	char bigram1[128], bigram2[128];
-	int found = NO;
+	char path[MAXPATHLEN];
+	char bigram1[NBG], bigram2[NBG];
 
 	if ( (fp = fopen ( _PATH_FCODES, "r" )) == NULL ) {
-		fprintf ( stderr, "find: can't open %s\n", _PATH_FCODES );
+		perror( _PATH_FCODES );
 		exit ( 1 );
 	}
-	for ( i = 0; i < 128; i++ ) 
-		bigram1[i] = getc ( fp ),  bigram2[i] = getc ( fp );
+	for ( c = 0, p = bigram1, s = bigram2; c < NBG; c++ ) 
+		p[c] = getc ( fp ),  s[c] = getc ( fp );
 
-	globflag = index ( pathpart, '*' ) || index ( pathpart, '?' ) ||
-		index ( pathpart, '[' );
-	patend = patprep ( pathpart );
+	p = pathpart;
+	globflag = index ( p, '*' ) || index ( p, '?' ) || index ( p, '[' );
+	patend = patprep ( p );
 
-	c = getc ( fp );
-	for ( ; ; ) {
+	for ( c = getc ( fp ); ; ) {
 
-		count += ( (c == ESCCODE) ? getw ( fp ) : c ) - OFFSET;
+		count += ( (c == SWITCH) ? getw ( fp ) : c ) - OFFSET;
 
-		for ( p = path + count; (c = getc ( fp )) > ESCCODE; )	/* overlay old path */
-			if ( c < 0200 )	
+		for ( p = path + count; (c = getc ( fp )) > SWITCH; )	/* overlay old path */
+			if ( c < PARITY )	
 				*p++ = c;
-			else		/* bigrams are parity-marked */
-				*p++ = bigram1[c & 0177],  *p++ = bigram2[c & 0177];
+			else {			/* bigrams are parity-marked */
+				c &= PARITY-1;
+				*p++ = bigram1[c], *p++ = bigram2[c];
+			}
 		if ( c == EOF )
 			break;
 		*p-- = NULL;
-		cutoff = ( found ? path : path + count);
+		cutoff = ( found ? path : path + count );
 
 		for ( found = NO, s = p; s >= cutoff; s-- ) 
 			if ( *s == *patend ) {		/* fast first char check */
