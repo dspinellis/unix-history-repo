@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_extern.h	7.22 (Berkeley) %G%
+ *	@(#)lfs_extern.h	7.23 (Berkeley) %G%
  */
 
 struct fid;
@@ -33,6 +33,7 @@ struct dinode *
 	 lfs_ifind __P((struct lfs *, ino_t, struct dinode *));
 int	 lfs_inactive __P((struct vop_inactive_args *));
 int	 lfs_init __P((void));
+int	 lfs_initseg __P((struct lfs *));
 int	 lfs_link __P((struct vop_link_args *));
 int	 lfs_makeinode __P((int, struct nameidata *, struct inode **));
 int	 lfs_mkdir __P((struct vop_mkdir_args *));
@@ -47,7 +48,7 @@ int	 lfs_remove __P((struct vop_remove_args *));
 int	 lfs_rmdir __P((struct vop_rmdir_args *));
 int	 lfs_rename __P((struct vop_rename_args *));
 int	 lfs_root __P((struct mount *, struct vnode **));
-void	 lfs_seglock __P((struct lfs *));
+void	 lfs_seglock __P((struct lfs *, unsigned long flags));
 void	 lfs_segunlock __P((struct lfs *));
 int	 lfs_segwrite __P((struct mount *, int));
 int	 lfs_statfs __P((struct mount *, struct statfs *, struct proc *));
@@ -62,6 +63,8 @@ int	 lfs_vfree __P((struct vop_vfree_args *));
 int	 lfs_vflush __P((struct vnode *));
 int	 lfs_vget __P((struct mount *, ino_t, struct vnode **));
 int	 lfs_vptofh __P((struct vnode *, struct fid *));
+int	 lfs_vref __P((struct vnode *));
+void	 lfs_vunref __P((struct vnode *));
 int	 lfs_write __P((struct vop_write_args *));
 #ifdef DEBUG
 void	lfs_dump_dinode __P((struct dinode *));
