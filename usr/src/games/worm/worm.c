@@ -18,6 +18,9 @@ static char sccsid[] = "	worm.c	4.1	82/10/24	";
 #define when break;case
 #define otherwise break;default
 #define CNTRL(p) ('p'-'A'+1)
+#ifndef attron
+# define	baudrate()	_tty.sg_ospeed
+#endif
 
 WINDOW *tv;
 WINDOW *stw;
@@ -29,6 +32,7 @@ struct body {
 } *head, *tail, goody;
 int growing = 0;
 int running = 0;
+int slow = 0;
 int score = 0;
 int start_len = LENGTH;
 char lastch;
@@ -55,6 +59,7 @@ char **argv;
 	initscr();
 	crmode();
 	noecho();
+	slow = (baudrate() <= B1200);
 	clear();
 	stw = newwin(1, COLS-1, 0, 0);
 	tv = newwin(LINES-1, COLS-1, 1, 0);
@@ -104,7 +109,6 @@ life()
 	}
 	tail = np;
 	tail->prev = NULL;
-	wrefresh(tv);
 }
 
 display(pos, chr)
@@ -210,8 +214,10 @@ char ch;
 	nh->x = x;
 	display(nh, HEAD);
 	head = nh;
-	wrefresh(tv);
-	if (! running) alarm(1);
+	if (!(slow && running))
+		wrefresh(tv);
+	if (!running)
+		alarm(1);
 }
 
 crash()
