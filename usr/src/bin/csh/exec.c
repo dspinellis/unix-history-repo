@@ -1,6 +1,7 @@
-static	char *sccsid = "@(#)exec.c 4.2 %G%";
+static	char *sccsid = "@(#)exec.c 4.3 %G%";
 
 #include "sh.h"
+#include <ndir.h>
 
 /*
  * C shell
@@ -251,9 +252,9 @@ xechoit(t)
 dohash()
 {
 	struct stat stb;
-	struct direct dirbuf[BUFSIZ / sizeof (struct direct)];
-	char d_name[DIRSIZ + 1];
-	register int dirf, cnt;
+	DIR *dirp;
+	register struct direct *dp;
+	register int cnt;
 	int i = 0;
 	struct varent *v = adrof("path");
 	char **pv;
@@ -266,24 +267,19 @@ dohash()
 	for (pv = v->vec; *pv; pv++, i = (i + 1) % 8) {
 		if (pv[0][0] != '/')
 			continue;
-		dirf = open(*pv, 0);
-		if (dirf < 0)
+		dirp = opendir(*pv);
+		if (dirp == NULL)
 			continue;
-		if (fstat(dirf, &stb) < 0 || !isdir(stb)) {
-			close(dirf);
+		if (fstat(dirp->dd_fd, &stb) < 0 || !isdir(stb)) {
+			closedir(dirp);
 			continue;
 		}
-		while ((cnt = read(dirf, (char *) dirbuf, sizeof dirbuf)) >= sizeof dirbuf[0]) {
-			register struct direct *ep = dirbuf;
-
-			for (cnt /= sizeof(struct direct); cnt > 0; cnt--, ep++) {
-				if (ep->d_ino == 0)
-					continue;
-				copdent(d_name, ep->d_name);
-				xhash[hash(d_name)] |= (1 << i);
-			}
+		while ((dp = readdir(dirp)) != NULL) {
+			if (dp->d_ino == 0)
+				continue;
+			xhash[hash(dp->d_name)] |= (1 << i);
 		}
-		close(dirf);
+		closedir(dirp);
 	}
 }
 

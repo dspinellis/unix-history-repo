@@ -1,5 +1,7 @@
-static	char *sccsid = "@(#)glob.c 4.2 %G%";
+static	char *sccsid = "@(#)glob.c 4.3 %G%";
+
 #include "sh.h"
+#include <ndir.h>
 
 /*
  * C Shell
@@ -170,51 +172,37 @@ matchdir(pattern)
 	char *pattern;
 {
 	struct stat stb;
-	struct direct dirbuf[BUFSIZ / sizeof (struct direct)];
-	char d_name[DIRSIZ+1];
-	register int dirf, cnt;
+	register struct direct *dp;
+	DIR *dirp;
+	register int cnt;
 
-	dirf = open(gpath, 0);
-	if (dirf < 0) {
+	dirp = opendir(gpath);
+	if (dirp == NULL) {
 		if (globbed)
 			return;
-		goto patherr;
+		goto patherr2;
 	}
-	if (fstat(dirf, &stb) < 0)
-		goto patherr;
+	if (fstat(dirp->dd_fd, &stb) < 0)
+		goto patherr1;
 	if (!isdir(stb)) {
 		errno = ENOTDIR;
-		goto patherr;
+		goto patherr1;
 	}
-	while ((cnt = read(dirf, (char *) dirbuf, sizeof dirbuf)) >= sizeof dirbuf[0]) {
-		register struct direct *ep = dirbuf;
-
-		for (cnt /= sizeof (struct direct); cnt > 0; cnt--, ep++) {
-			if (ep->d_ino == 0)
-				continue;
-			copdent(d_name, ep->d_name);
-			if (match(d_name, pattern)) {
-				Gcat(gpath, d_name);
-				globcnt++;
-			}
+	while ((dp = readdir(dirp)) != NULL) {
+		if (dp->d_ino == 0)
+			continue;
+		if (match(dp->d_name, pattern)) {
+			Gcat(gpath, dp->d_name);
+			globcnt++;
 		}
 	}
-	close(dirf);
+	closedir(dirp);
 	return;
 
-patherr:
+patherr1:
+	closedir(dirp);
+patherr2:
 	Perror(gpath);
-}
-
-copdent(to, from)
-	register char *to, *from;
-{
-	register int cnt = DIRSIZ;
-
-	do
-		*to++ = *from++;
-	while (--cnt);
-	*to = 0;
 }
 
 execbrc(p, s)
