@@ -1,5 +1,5 @@
 /*
-char id_dfe[] = "@(#)dfe.c	1.5";
+char id_dfe[] = "@(#)dfe.c	1.6";
  *
  * direct formatted external i/o
  */
@@ -9,8 +9,8 @@ char id_dfe[] = "@(#)dfe.c	1.5";
 extern int rd_ed(),rd_ned(),w_ed(),w_ned();
 int y_getc(),y_putc(),y_rnew(),y_wnew(),y_tab();
 
-char rdfe[] = "read dfe";
-char wdfe[] = "write dfe";
+LOCAL char rdfe[] = "read dfe";
+LOCAL char wdfe[] = "write dfe";
 
 s_rdfe(a) cilist *a;
 {
@@ -57,6 +57,7 @@ e_wdfe()
 	return(OK);
 }
 
+LOCAL
 c_dfe(a,flag) cilist *a;
 {	int n;
 	sequential = NO;
@@ -86,6 +87,7 @@ c_dfe(a,flag) cilist *a;
 	return(OK);
 }
 
+LOCAL
 y_getc()
 {
 	int ch;
@@ -106,6 +108,7 @@ y_getc()
 	else return(' ');
 }
 
+LOCAL
 y_putc(c)
 {
 	if(curunit->url!=1 && recpos++ >= curunit->url) err(errflag,F_EREREC,wdfe)
@@ -113,6 +116,7 @@ y_putc(c)
 	return(OK);
 }
 
+LOCAL
 y_tab()
 {	int n;
 	if(curunit->url==1)
@@ -154,6 +158,7 @@ y_tab()
 /*}
 */
 
+LOCAL
 y_rnew()
 {	if(curunit->url != 1)
 	{	fseek(cf,(long)curunit->url*(++recnum),0);
@@ -162,6 +167,7 @@ y_rnew()
 	return(OK);
 }
 
+LOCAL
 y_wnew()
 {	if(curunit->url != 1)
 	{	if(reclen > recpos)
@@ -175,11 +181,13 @@ y_wnew()
 	return(OK);
 }
 
+LOCAL
 y_rend()
 {
 	return(OK);
 }
 
+LOCAL
 y_wend()
 {
 	return(y_wnew());

@@ -1,7 +1,7 @@
 /*
-char id_open[] = "@(#)open.c	1.11";
+char id_open[] = "@(#)open.c	1.12";
  *
- * open.c  -  f77 file open routines
+ * open.c  -  f77 file open and I/O library initialization routines
  */
 
 #include	<sys/types.h>
@@ -16,8 +16,8 @@ char id_open[] = "@(#)open.c	1.11";
 #define FROM_OPEN	"\2"	/* for use in f_clos() */
 #define BUF_LEN 256
 
-extern char *tmplate;
-extern char *fortfile;
+LOCAL char *tmplate = "tmp.FXXXXXX";	/* scratch file template */
+LOCAL char *fortfile = "fort.%d";	/* default file template */
 
 char *getenv();
 
@@ -181,6 +181,7 @@ fk_open(rd,seq,fmt,n) ftnint n;
 	return(f_open(&a));
 }
 
+LOCAL
 isdev(s) char *s;
 {	struct stat x;
 	int j;
@@ -189,3 +190,47 @@ isdev(s) char *s;
 	else	return(YES);
 }
 
+/*initialization routine*/
+f_init()
+{
+	ini_std(STDERR, stderr, WRITE);
+	ini_std(STDIN, stdin, READ);
+	ini_std(STDOUT, stdout, WRITE);
+	setlinebuf(stderr);
+}
+
+LOCAL
+ini_std(u,F,w) FILE *F;
+{	unit *p;
+	p = &units[u];
+	p->ufd = F;
+	p->ufnm = NULL;
+	p->useek = canseek(F);
+	p->ufmt = YES;
+	p->uwrt = (w==WRITE)? YES : NO;
+	p->uscrtch = p->uend = NO;
+	p->ublnk = blzero;
+	p->uprnt = ccntrl;
+	p->url = 0;
+	p->uinode = finode(F);
+}
+
+LOCAL
+canseek(f) FILE *f; /*SYSDEP*/
+{	struct stat x;
+	return( (fstat(fileno(f),&x)==0) &&
+	(x.st_nlink > 0 /*!pipe*/) && !isatty(fileno(f)) );
+}
+
+LOCAL
+finode(f) FILE *f;
+{	struct stat x;
+	if(fstat(fileno(f),&x)==0) return(x.st_ino);
+	else return(-1);
+}
+
+inode(a) char *a;
+{	struct stat x;
+	if(stat(a,&x)==0) return(x.st_ino);
+	else return(-1);
+}

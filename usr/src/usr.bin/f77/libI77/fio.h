@@ -1,11 +1,12 @@
 /*
-char id_fio[] = "@(#)fio.h	1.2";
+char id_fio[] = "@(#)fio.h	1.3";
  *
  * f77 file i/o common definitions
  */
 
 #include "fiodefs.h"
 
+#define LOCAL		static
 #define err(f,n,s)	{if(f) return(errno=n); else fatal(n,s);}
 #define not_legal(u)	(u>=MXUNIT || u<0)
 #define GET(x)		if((x=(*getn)())<0) return(x)
@@ -19,7 +20,6 @@ long ftell();
 
 extern int errno;
 extern ioflag init;
-extern icilist *svic;	/* active internal io list */
 extern flag reading,external,sequential,formatted;
 extern int (*getn)(),(*putn)(),(*ungetn)();	/*for formatted io*/
 extern FILE *cf;	/*current file structure*/

@@ -1,5 +1,5 @@
 /*
-char id_rdfmt[] = "@(#)rdfmt.c	1.10";
+char id_rdfmt[] = "@(#)rdfmt.c	1.11";
  *
  * formatted read routines
  */
@@ -85,6 +85,7 @@ rd_ned(p,ptr) char *ptr; struct syl *p;
 	}
 }
 
+LOCAL
 rd_mvcur()
 {	int n;
 	if(tab) return((*dotab)());
@@ -93,6 +94,7 @@ rd_mvcur()
 	return(cursor=0);
 }
 
+LOCAL
 rd_I(n,w,len) ftnlen len; uint *n;
 {	long x=0;
 	int i,sign=0,ch,c,sign_ok=YES;
@@ -135,6 +137,7 @@ done:
 	return(OK);
 }
 
+LOCAL
 rd_L(n,w,len) uint *n; ftnlen len;
 {	int ch,i,v = -1;
 	for(i=0;i<w;i++)
@@ -149,6 +152,7 @@ rd_L(n,w,len) uint *n; ftnlen len;
 	return(OK);
 }
 
+LOCAL
 rd_F(p,w,d,len) ftnlen len; ufloat *p;
 {	double x,y;
 	int i,sx,sz,ch,dot,ny,z,sawz,mode, sign_ok=YES;
@@ -265,6 +269,7 @@ done:
 	return(OK);
 }
 
+LOCAL
 rd_AW(p,w,len) char *p; ftnlen len;
 {	int i,ch;
 	if(w >= len)
@@ -287,6 +292,7 @@ rd_AW(p,w,len) char *p; ftnlen len;
 }
 
 /* THIS IS NOT ALLOWED IN THE NEW STANDARD 'CAUSE IT'S WEIRD */
+LOCAL
 rd_H(n,s) char *s;
 {	int i,ch = 0;
 
@@ -302,6 +308,7 @@ rd_H(n,s) char *s;
 	return(OK);
 }
 
+LOCAL
 rd_POS(s) char *s;
 {	char quote;
 	int ch = 0;

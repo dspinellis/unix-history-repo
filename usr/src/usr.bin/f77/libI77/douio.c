@@ -1,14 +1,15 @@
 /*
-char id_douio[] = "@(#)douio.c	1.3";
+char id_douio[] = "@(#)douio.c	1.4";
  *
  * unformatted external i/o
  */
 
 #include "fio.h"
 
-char *eor = "eor/uio";
-char *uio = "uio";
+LOCAL char *eor = "eor/uio";
+LOCAL char *uio = "uio";
 
+LOCAL
 do_us(number,ptr,len) ftnint *number; ftnlen len; char *ptr;  /* sequential */
 {
 	if(reading)
@@ -39,6 +40,7 @@ do_uio(number,ptr,len) ftnint *number; ftnlen len; char *ptr;
 		return(do_ud(number,ptr,len));
 }
 
+LOCAL
 do_ud(number,ptr,len) ftnint *number; ftnlen len; char *ptr;  /* direct */
 {
 	recpos += *number * len;

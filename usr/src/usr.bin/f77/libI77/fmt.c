@@ -1,5 +1,5 @@
 /*
-char id_fmt[] = "@(#)fmt.c	1.8";
+char id_fmt[] = "@(#)fmt.c	1.9";
  *
  * fortran format parser
  */
@@ -23,9 +23,10 @@ char id_fmt[] = "@(#)fmt.c	1.8";
 #define SYLMX 300
 #endif
 
-struct syl syl_vec[SYLMX];
+LOCAL struct syl syl_vec[SYLMX];
 struct syl *syl_ptr;
-int parenlvl,revloc, low_case[256];
+LOCAL int parenlvl,revloc;
+int low_case[256];
 short pc;
 char *f_s(), *f_list(), *i_tem(), *gt_num(), *ap_end();
 char *s_init;
@@ -61,6 +62,7 @@ pars_f()
 	}
 }
 
+LOCAL
 char *f_s(s,curloc) char *s;
 {
 	skip(s);
@@ -79,6 +81,7 @@ char *f_s(s,curloc) char *s;
 	return(s);
 }
 
+LOCAL
 char *f_list(s) char *s;
 {
 	while (*s)
@@ -98,6 +101,7 @@ char *f_list(s) char *s;
 	return(FMTERR);
 }
 
+LOCAL
 char *i_tem(s) char *s;
 {	char *t;
 	int n,curloc;
@@ -116,6 +120,7 @@ char *i_tem(s) char *s;
 	return(f_s(s,curloc));
 }
 
+LOCAL
 ne_d(s,p) char *s,**p;
 {	int n,x,sign=0,pp1,pp2;
 	switch(low_case[*s])
@@ -204,6 +209,7 @@ ne_d(s,p) char *s,**p;
 	return(FMTOK);
 }
 
+LOCAL
 e_d(s,p) char *s,**p;
 {	int n,w,d,e,x=0, rep_count;
 	char *sv=s;
@@ -311,6 +317,7 @@ ed_err:
 	return(FMTERR);
 }
 
+LOCAL
 op_gen(a,b,c,rep,s) char *s;
 {	struct syl *p= &syl_ptr[pc];
 	if(pc>=SYLMX)
@@ -332,6 +339,7 @@ op_gen(a,b,c,rep,s) char *s;
 	return(pc++);
 }
 
+LOCAL
 char *gt_num(s,n) char *s; int *n;
 {	int m=0,a_digit=NO;
 	skip(s);
@@ -349,6 +357,7 @@ char *gt_num(s,n) char *s; int *n;
 	return(s);
 }
 
+LOCAL
 char *ap_end(s) char *s;
 {
 	char quote;

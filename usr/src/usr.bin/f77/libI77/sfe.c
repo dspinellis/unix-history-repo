@@ -1,5 +1,5 @@
 /*
-char id_sfe[] = "@(#)sfe.c	1.9";
+char id_sfe[] = "@(#)sfe.c	1.10";
  *
  * sequential formatted external routines
  */
@@ -13,8 +13,8 @@ char id_sfe[] = "@(#)sfe.c	1.9";
 extern int rd_ed(),rd_ned();
 int x_rnew(),x_getc(),x_tab();
 
-char rsfe[] = "read sfe";
-char wsfe[] = "write sfe";
+LOCAL char rsfe[] = "read sfe";
+LOCAL char wsfe[] = "write sfe";
 
 s_rsfe(a) cilist *a; /* start */
 {	int n;
@@ -31,6 +31,7 @@ s_rsfe(a) cilist *a; /* start */
 	return(OK);
 }
 
+LOCAL
 x_rnew()			/* find next record */
 {	int ch;
 	if(curunit->uend)
@@ -44,6 +45,7 @@ x_rnew()			/* find next record */
 	return(OK);
 }
 
+LOCAL
 x_getc()
 {	int ch;
 	if(curunit->uend) return(EOF);
@@ -66,6 +68,7 @@ e_rsfe()
 	return(n);
 }
 
+LOCAL
 c_sfe(a,flag) cilist *a; /* check */
 {	unit *p;
 	int n;
@@ -99,7 +102,7 @@ c_sfe(a,flag) cilist *a; /* check */
 
 extern int w_ed(),w_ned();
 int x_putc(),pr_put(),x_wend(),x_wnew();
-ioflag new;
+LOCAL ioflag new;
 
 s_wsfe(a) cilist *a;	/*start*/
 {	int n;
@@ -120,6 +123,7 @@ s_wsfe(a) cilist *a;	/*start*/
 	return(OK);
 }
 
+LOCAL
 x_putc(c)
 {
 	if(c=='\n') recpos = reclen = cursor = 0;
@@ -128,6 +132,7 @@ x_putc(c)
 	return(OK);
 }
 
+LOCAL
 pr_put(c)
 {
 	if(c=='\n')
@@ -145,6 +150,7 @@ pr_put(c)
 	return(OK);
 }
 
+LOCAL
 x_tab()
 {	int n;
 	if(reclen < recpos) reclen = recpos;
@@ -175,12 +181,14 @@ x_tab()
 	return(cursor=0);
 }
 
+LOCAL
 x_wnew()
 {
 	if(reclen>recpos) fseek(cf,(long)(reclen-recpos),1);
 	return((*putn)('\n'));
 }
 
+LOCAL
 x_wend(last) char last;
 {
 	if(reclen>recpos) fseek(cf,(long)(reclen-recpos),1);

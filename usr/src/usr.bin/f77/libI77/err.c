@@ -1,20 +1,18 @@
 /*
-char id_err[] = "@(#)err.c	1.15";
+char id_err[] = "@(#)err.c	1.16";
  *
- * file i/o error and initialization routines
+ * fatal(): i/o error routine
+ * flush_(): flush file buffer
  */
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <signal.h>
-#include "fiodefs.h"
+#include "fio.h"
 
 /*
  * global definitions
  */
-
-char *tmplate = "tmp.FXXXXXX";	/* scratch file template */
-char *fortfile = "fort.%d";	/* default file template */
 
 unit units[MXUNIT];	/*unit table*/
 flag reading;		/*1 if reading,		0 if writing*/
@@ -26,7 +24,6 @@ int (*doed)(),(*doned)();
 int (*doend)(),(*donewrec)(),(*dorevert)(),(*dotab)();
 int (*lioproc)();
 int (*getn)(),(*putn)(),(*ungetn)();	/*for formatted io*/
-icilist *svic;		/* active internal io list */
 FILE *cf;		/*current file structure*/
 unit *curunit;		/*current unit structure*/
 int lunit;		/*current logical unit*/
@@ -95,6 +92,7 @@ fatal(n,s) char *s;
 	f77_abort(n);
 }
 
+LOCAL
 prnt_ext()
 {	int ch;
 	int i=1;
@@ -111,6 +109,7 @@ prnt_ext()
 	fputc('\n',stderr);
 }
 
+LOCAL
 prnt_int()
 {	char *ep;
 	fprintf (stderr,"part of last string: ");
@@ -121,6 +120,7 @@ prnt_int()
 	fputc('\n',stderr);
 }
 
+LOCAL
 prnt_fmt(n) int n;
 {	int i; char *ep;
 	fprintf(stderr, "format: ");
@@ -144,6 +144,7 @@ prnt_fmt(n) int n;
 	fputc('\n',stderr);
 }
 
+LOCAL
 ffputc(c, f)
 int	c;
 FILE	*f;
@@ -157,12 +158,16 @@ FILE	*f;
 	fputc(c, f);
 }
 
-/*initialization routine*/
-f_init()
+ftnint
+flush_(u) ftnint *u;
 {
-	ini_std(STDERR, stderr, WRITE);
-	ini_std(STDIN, stdin, READ);
-	ini_std(STDOUT, stdout, WRITE);
-	setlinebuf(stderr);
-}
+	FILE *F;
 
+	if(not_legal(*u))
+		return(F_ERUNIT);
+	F = units[*u].ufd;
+	if(F)
+		return(fflush(F));
+	else
+		return(F_ERNOPEN);
+}

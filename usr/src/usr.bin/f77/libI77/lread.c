@@ -1,5 +1,5 @@
 /*
-char id_lread[] = "@(#)lread.c	1.10";
+char id_lread[] = "@(#)lread.c	1.11";
  *
  * list directed read
  */
@@ -22,13 +22,13 @@ char id_lread[] = "@(#)lread.c	1.10";
 
 #define GETC(x) (x=(*getn)())
 
-char lrd[] = "list read";
-char *lchar;
-double lx,ly;
-int ltype;
+LOCAL char lrd[] = "list read";
+LOCAL char *lchar;
+LOCAL double lx,ly;
+LOCAL int ltype;
 int l_read(),t_getc(),ungetc();
 
-char ltab[128+1] =
+LOCAL char ltab[128+1] =
 {		EIN, /* offset one for EOF */
 /*   0- 15 */	0,0,AP,0,0,0,0,0,0,B,SP|B|EIN,0,0,0,0,0, /* ^B,TAB,NEWLINE */
 /*  16- 31 */	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -57,6 +57,7 @@ s_rsle(a) cilist *a;	/* start read sequential list external */
 	return(OK);
 }
 
+LOCAL
 t_getc()
 {	int ch;
 	if(curunit->uend) return(EOF);
@@ -163,6 +164,7 @@ l_read(number,ptr,len,type) ftnint *number,type; flex *ptr; ftnlen len;
 	return(OK);
 }
 
+LOCAL
 lr_comm()
 {	int ch;
 	if(lcount) return(lcount);
@@ -181,6 +183,7 @@ lr_comm()
 		return(OK);
 }
 
+LOCAL
 get_repet()
 {	char ch;
 	double lc;
@@ -199,6 +202,7 @@ get_repet()
 	return(OK);
 }
 
+LOCAL
 l_R(flg) int flg;
 {	double a,b,c,d;
 	int da,db,dc,dd;
@@ -254,6 +258,7 @@ l_R(flg) int flg;
 	return(OK);
 }
 
+LOCAL
 rd_int(x) double *x;
 {	int ch,sign=0,i=0;
 	double y=0.0;
@@ -270,6 +275,7 @@ rd_int(x) double *x;
 	return(y==0.0?sign:i); /* 0:[+]&&y==0, -1:-&&y==0, >0:#digits&&y!=0 */
 }
 
+LOCAL
 l_C()
 {	int ch,n;
 	if(lr_comm()) return(OK);
@@ -288,6 +294,7 @@ l_C()
 	return(OK);
 }
 
+LOCAL
 l_L()
 {
 	int ch,n;
@@ -321,6 +328,7 @@ l_L()
 }
 
 #define BUFSIZE	128
+LOCAL
 l_CHAR()
 {	int ch,size,i,n;
 	char quote,*p;
@@ -377,6 +385,7 @@ l_CHAR()
 	}
 }
 
+LOCAL
 t_sep()
 {
 	int ch;
@@ -393,6 +402,7 @@ t_sep()
 	return(OK);
 }
 
+LOCAL
 nullfld()	/* look for null field following a repeat count */
 {
 	int	ch;

@@ -1,13 +1,13 @@
 /*
-char id_due[] = "@(#)due.c	1.3";
+char id_due[] = "@(#)due.c	1.4";
  *
  * direct unformatted external i/o
  */
 
 #include "fio.h"
 
-char rdue[] = "read due";
-char wdue[] = "write due";
+LOCAL char rdue[] = "read due";
+LOCAL char wdue[] = "write due";
 
 s_rdue(a) cilist *a;
 {
@@ -28,6 +28,7 @@ s_wdue(a) cilist *a;
 	return(OK);
 }
 
+LOCAL
 c_due(a,flag) cilist *a;
 {	int n;
 	lfname = NULL;
