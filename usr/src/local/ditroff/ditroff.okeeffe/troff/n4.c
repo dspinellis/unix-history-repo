@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)n4.c	2.1 (CWI) 85/07/18";
+static char sccsid[] = "@(#)n4.c	2.2 (CWI) 90/11/30";
 #endif lint
 /*      @(#)n4.c	1.1     */
 #include	<ctype.h>
@@ -28,12 +28,14 @@ setn()
 	int	f;
 
 	f = nform = 0;
+	lgf++;					/* don;t catch ligatures */
 	if ((i = cbits(ii = getach())) == '+')
 		f = 1;
 	else if (i == '-')
 		f = -1;
 	else 
 		ch = ii;
+	lgf--;					/* ok, catch `em again */
 	if (falsef)
 		f = 0;
 	if ((i = getsn()) == 0)
