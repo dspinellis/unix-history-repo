@@ -9,20 +9,30 @@
 #include "sendmail.h"
 
 #ifndef lint
-#ifdef USERDB
-static char sccsid [] = "@(#)udb.c	8.21 (Berkeley) %G% (with USERDB)";
+#if !USERDB
+static char sccsid [] = "@(#)udb.c	8.22 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	8.21 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	8.22 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
-#ifdef USERDB
+#if USERDB
 
 #include <errno.h>
-#include <db.h>
+
+#ifdef NEWDB
+# include <db.h>
+#else
+# define DBT	struct _data_base_thang_
+DBT
+{
+	void	*data;		/* pointer to data */
+	size_t	size;		/* length of data */
+};
+#endif
 
 #ifdef HESIOD
-#include <hesiod.h>
+# include <hesiod.h>
 #endif /* HESIOD */
 
 /*
@@ -55,6 +65,7 @@ struct udbent
 		} udb_forward;
 #define udb_fwdhost	udb_u.udb_forward._udb_fwdhost
 
+#ifdef NEWDB
 		/* type UE_FETCH -- lookup in local database */
 		struct
 		{
@@ -63,6 +74,7 @@ struct udbent
 		} udb_lookup;
 #define udb_dbname	udb_u.udb_lookup._udb_dbname
 #define udb_dbp		udb_u.udb_lookup._udb_dbp
+#endif
 	} udb_u;
 };
 
@@ -871,8 +883,12 @@ badspec:
 				break;
 
 			  case UDB_DBFETCH:
+#ifdef NEWDB
 				printf("FETCH: file %s\n",
 					up->udb_dbname);
+#else
+				printf("FETCH\n");
+#endif
 				break;
 
 			  case UDB_FORWARD:
@@ -965,6 +981,7 @@ hes_udb_get(key, info)
 
 	/* make the hesiod query */
 	hp = hes_resolve(name, type);
+	*--type = ':';
 	if (hp == NULL)
 	{
 		/* network problem or timeout */
