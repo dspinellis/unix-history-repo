@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)stdio.h	5.1 (Berkeley) %G%
+ *	@(#)stdio.h	5.2 (Berkeley) %G%
  */
 
 # ifndef FILE
@@ -53,7 +53,6 @@ FILE	*fdopen();
 FILE	*freopen();
 FILE	*popen();
 long	ftell();
-long	fseek();
 char	*fgets();
 char	*gets();
 #ifdef vax
