@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc-syms	5.4 (Berkeley) %G%
+.\"     @(#)doc-syms	5.5 (Berkeley) %G%
 .\"
 .\"     %beginstrip%
 .\" NS Ux macro - UNIX
@@ -181,6 +181,16 @@
 .		el \{\
 .			ds b1 \&\\*(tNANSI C\\*(aa3.159-1989\\*(sV
 .			as b1 (``\\*(tNANSI C\\*(aa'')
+.		\}
+.       \}
+.       if "\\*(A\\n(aP"-iso8802-3" \{\
+.		ie \\n(sT==1 \{\
+.			ds b1 \&\\*(tNISO \\*(aa8802-3: 1989\\*(sV
+.\" .			as b1 (``\\*(tNANSI C\\*(aa'')
+.		\}
+.		el \{\
+.			ds b1 \&\\*(tNISO \\*(aa8802-3: 1989\\*(sV
+.\" .			as b1 (``\\*(tNANSI C\\*(aa'')
 .		\}
 .       \}
 .	ie \\n(aC>\\n(aP \{\

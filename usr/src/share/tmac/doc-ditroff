@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc-ditroff	5.6 (Berkeley) %G%
+.\"     @(#)doc-ditroff	5.7 (Berkeley) %G%
 .\"
 .\" tmac.mdoc-ditroff
 .\"     %beginstrip%
@@ -34,15 +34,17 @@
 .ds mL \fB\s10
 .ds nM \f(CB\s10
 .ds nO \fR\s10
+.ds nT \s0
 .ds pA \fC\s10
 .ds Pu \fR[.,:;(\^)[\^]\fR]
 .ds rA \fR\s10
 .ds rT \f(CO\s10
 .ds sH \fB\s10
+.ds sP \s0
 .ds sY \fB\s10
 .ds sX \fR\s10
 .ds tF \fR
-.ds tN \s10
+.ds tN \s9
 .ds vA \fI\s10
 .ds Vs \fR\s10
 .ds vT \f(CB\s10
@@ -205,6 +207,7 @@
 .       nr nF 0
 .       nr nT 0
 .       nr nY 0
+.       nr oT 0
 .       if "\\$1"SYNOPSIS" \{\
 .		na
 .		nr nS 1

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc-nroff	5.4 (Berkeley) %G%
+.\"     @(#)doc-nroff	5.5 (Berkeley) %G%
 .\"
 .\" tmac.mdoc-nroff
 .\"     %beginstrip%
@@ -39,6 +39,7 @@
 .ds rA \fR
 .ds rT \fI
 .ds sH \fB
+.ds sP
 .ds sY \fB
 .ds sX \fI
 .ds tF \fR
@@ -169,6 +170,7 @@
 .       nr nT 0
 .       nr nY 0
 .       nr aN 0
+.       nr oT 0
 .       if "\\$1"SEE" .nr nA 1
 .       if "\\$1"FILES" .nr nF 1
 .       if "\\$1"STANDARDS" .nr nT 1
