@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.10	81/12/02	*/
+/*	uipc_syscalls.c	4.11	81/12/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -307,6 +307,7 @@ COUNT(SSEND);
 		u.u_error = ENOTSOCK;
 		return;
 	}
+	u.u_base = uap->cbuf;
 	u.u_count = uap->count;
 	u.u_segflg = 0;
 	if (useracc(uap->cbuf, uap->count, B_READ) == 0 ||
@@ -315,6 +316,7 @@ COUNT(SSEND);
 		return;
 	}
 	u.u_error = sosend(fp->f_socket, uap->asa ? &sa : 0);
+	u.u_r.r_val1 = uap->count - u.u_count;
 }
 
 /*
@@ -339,6 +341,7 @@ COUNT(SRECEIVE);
 		u.u_error = ENOTSOCK;
 		return;
 	}
+	u.u_base = uap->cbuf;
 	u.u_count = uap->count;
 	u.u_segflg = 0;
 	if (useracc(uap->cbuf, uap->count, B_WRITE) == 0 ||
@@ -351,6 +354,7 @@ COUNT(SRECEIVE);
 		return;
 	if (uap->asa)
 		(void) copyout((caddr_t)&sa, (caddr_t)uap->asa, sizeof (sa));
+	u.u_r.r_val1 = uap->count - u.u_count;
 }
 
 /*
