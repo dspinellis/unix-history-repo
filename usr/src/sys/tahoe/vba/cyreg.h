@@ -1,4 +1,4 @@
-/*	cyreg.h	7.5	87/04/09	*/
+/*	cyreg.h	7.6	88/09/09	*/
 
 /*
  * Tapemaster controller definitions.
@@ -12,7 +12,7 @@
 char	*cybuf;
 
 /* for byte swapping Multibus values */
-#define	htoms(x) (short)((((x)>>8)&0xff) | (((x)<<8)&0xff00))
+#define	htoms(x) (u_short)((((x)>>8)&0xff) | (((x)<<8)&0xff00))
 
 #define	b_repcnt  b_bcount
 #define	b_command b_resid
@@ -188,8 +188,10 @@ char	*cyerror[] = {
 /*
  * Masks defining hard and soft errors (must check against 1<<CYER_code).
  */
-#define	CYMASK(e)	(1<<(CYER_/**/e))
-#define	CYER_HARD	(CYMASK(TIMOUT)|CYMASK(TIMOUT1)|CYMASK(TIMOUT2)|\
-    CYMASK(TIMOUT3)|CYMASK(TIMOUT4)|CYMASK(NXM)|CYMASK(DIAG)|CYMASK(JUMPER)|\
-    CYMASK(STROBE)|CYMASK(PROT)|CYMASK(CKSUM)|CYMASK(HERR)|CYMASK(BLANK))
-#define	CYER_SOFT	(CYMASK(FIFO)|CYMASK(NOTRDY)|CYMASK(PARITY))
+#define	CYMASK(e)	(1 << (e))
+#define	CYBIT(e)	(1<<(CYER_/**/e))
+#define	CYER_HARD	(CYBIT(TIMOUT)|CYBIT(TIMOUT1)|CYBIT(TIMOUT2)|\
+    CYBIT(TIMOUT3)|CYBIT(TIMOUT4)|CYBIT(NXM)|CYBIT(DIAG)|CYBIT(JUMPER)|\
+    CYBIT(STROBE)|CYBIT(PROT)|CYBIT(CKSUM)|CYBIT(HERR)|CYBIT(BLANK))
+#define	CYER_RSOFT	(CYBIT(FIFO)|CYBIT(NOTRDY)|CYBIT(PARITY))
+#define	CYER_WSOFT	(CYBIT(HERR)|CYBIT(FIFO)|CYBIT(NOTRDY)|CYBIT(PARITY))
