@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ventel.c	1.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ventel.c	1.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -20,9 +20,8 @@ ven_dialer(num, acu)
 {
 	register char *cp;
 	register int connected = 0;
-#ifdef ACULOG
-	char line[80];
-#endif
+	char *msg, *index(), line[80];
+
 	/*
 	 * Get in synch with a couple of carriage returns
 	 */
@@ -43,8 +42,8 @@ ven_dialer(num, acu)
 		write(FD, cp, 1);
 	}
 	echo("\r$\n");
-	if (gobble('\n'))
-		connected = gobble('!');
+	if (gobble('\n', line))
+		connected = gobble('!', line);
 	ioctl(FD, TIOCFLUSH);
 #ifdef ACULOG
 	if (timeout) {
@@ -55,6 +54,26 @@ ven_dialer(num, acu)
 #endif
 	if (timeout)
 		ven_disconnect();	/* insurance */
+	if (connected || timeout || !boolean(value(VERBOSE)))
+		return (connected);
+	/* call failed, parse response for user */
+	cp = index(line, '\r');
+	if (cp)
+		*cp = '\0';
+	for (cp = line; cp = index(cp, ' '); cp++)
+		if (cp[1] == ' ')
+			break;
+	if (cp) {
+		while (*cp == ' ')
+			cp++;
+		msg = cp;
+		while (*cp) {
+			if (isupper(*cp))
+				*cp = tolower(*cp);
+			cp++;
+		}
+		printf("%s...", msg);
+	}
 	return (connected);
 }
 
@@ -105,9 +124,11 @@ sigALRM()
 }
 
 static int
-gobble(match)
+gobble(match, response)
 	register char match;
+	char response[];
 {
+	register char *cp = response;
 	char c;
 	int (*f)();
 
@@ -116,18 +137,20 @@ gobble(match)
 	do {
 		if (setjmp(timeoutbuf)) {
 			signal(SIGALRM, f);
+			*cp = '\0';
 			return (0);
 		}
 		alarm(number(value(DIALTIMEOUT)));
-		read(FD, &c, 1);
+		read(FD, cp, 1);
 		alarm(0);
-		c &= 0177;
+		c = (*cp++ &= 0177);
 #ifdef notdef
 		if (boolean(value(VERBOSE)))
 			putchar(c);
 #endif
 	} while (c != '\n' && c != match);
 	signal(SIGALRM, SIG_DFL);
+	*cp = '\0';
 	return (c == match);
 }
 
