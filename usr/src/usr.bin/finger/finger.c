@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)finger.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)finger.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -71,7 +71,7 @@ static char sccsid[] = "@(#)finger.c	5.7 (Berkeley) %G%";
 #define CORY		'C'		/* cory hall office */
 #define EVANS		'E'		/* evans hall office */
 #define SAMENAME	'&'		/* repeat login name in real name */
-#define TALKABLE	0222		/* tty is writable if 222 mode */
+#define TALKABLE	0220		/* tty is writable if 220 mode */
 
 struct utmp user;
 #define NMAX sizeof(user.ut_name)
