@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.2.t	8.3 (Berkeley) %G%
+.\"	@(#)1.2.t	8.4 (Berkeley) %G%
 .\"
 .Sh 2 "Memory management
 .Sh 3 "Text, data, and stack
@@ -35,15 +35,8 @@ that provide a more convenient interface to
 and
 .Fn sbrk .
 .LP
-The call:
-.DS
-.Fd sstk 1 "change stack size
-addr = sstk(incr);
-result caddr_t addr; int incr;
-.DE
-changes the size of the stack area.
-This call is not typically used as
-the stack area is also automatically extended as needed.
+There is no call for extending the stack,
+as it is automatically extended as needed.
 .Sh 3 "Mapping pages
 .PP
 The system supports sharing of data between processes
@@ -69,7 +62,6 @@ Flags contain sharing type and options. Sharing options, choose one
 MAP_SHARED	/* share changes */
 MAP_PRIVATE	/* changes are private */
 MAP_COPY	/* ``copy'' region at mmap time */
-MAP_ANON	/* allocated from virtual memory; \fIfd\fP ignored */
 .TE
 .DE
 .DS
@@ -77,6 +69,7 @@ MAP_ANON	/* allocated from virtual memory; \fIfd\fP ignored */
 l s
 l l.
 Other flags
+MAP_ANON	/* allocated from virtual memory; \fIfd\fP ignored */
 MAP_FIXED	/* map addr must be exactly as requested */
 MAP_NORESERVE	/* don't reserve needed swap area */
 MAP_INHERIT	/* region is retained after exec */
@@ -191,8 +184,13 @@ the granularity of protection changes may be as large as an entire region.
 .LP
 A process that has knowledge of its memory behavior may
 use the
-.Fn madvise
+.Fn madvise \(dg
 call:
+.FS
+\(dg The entry point for this system call is defined,
+but is not implemented,
+so currently always returns with the error ``Operation not supported.''
+.FE
 .DS
 .Fd madvise 3 "give advise about use of memory
 madvise(addr, len, behav);
@@ -211,16 +209,18 @@ MADV_DONTNEED	/* don't need these pages */
 MADV_SPACEAVAIL	/* ensure that resources are reserved */
 .TE
 .DE
-A process may obtain information about whether pages are
-core resident by using the call:
+The
+.Fn mincore \(dg
+function allows a process to obtain information
+about whether pages are memory resident:
 .DS
 .Fd mincore 3 "get advise about use of memory
 mincore(addr, len, vec)
 caddr_t addr; int len; result char *vec;
 .DE
-Here the current core residency of the pages is returned
+Here the current memory residency of the pages is returned
 in the character array \fIvec\fP, with a value of 1 meaning
-that the page is in-core.
+that the page is in-memory.
 .Fn Mincore
 provides only transient information about page residency.
 Real-time processes that need guaranteed residence over time
