@@ -1,4 +1,4 @@
-/*	lp.c	4.19	81/07/09	*/
+/*	lp.c	4.20	81/07/25	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -88,6 +88,7 @@ lpprobe(reg)
 	lpaddr->lpsr = IENABLE;
 	DELAY(5);
 	lpaddr->lpsr = 0;
+	return (1);
 }
 
 /*ARGSUSED*/
