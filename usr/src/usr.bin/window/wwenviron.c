@@ -1,8 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwenviron.c	3.11 %G%";
+static char sccsid[] = "@(#)wwenviron.c	3.12 %G%";
 #endif
 
 #include "ww.h"
+#include <sys/signal.h>
 
 /*
  * Set up the environment of this process to run in window 'wp'.
@@ -27,7 +28,7 @@ register struct ww *wp;
 		(void) close(i);
 	(void) ioctl(0, (int)TIOCSPGRP, (char *)&pgrp);
 	(void) setpgrp(pgrp, pgrp);
-
+	(void) signal(SIGPIPE, SIG_DFL);
 	(void) sprintf(wwwintermcap, "TERMCAP=%sco#%d:li#%d:%s%s%s%s",
 		WWT_TERMCAP, wp->ww_w.nc, wp->ww_w.nr,
 		wwavailmodes & WWM_REV ? WWT_REV : "",
