@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_subr.c,v 5.1 89/02/09 16:20:46 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_subr.c,v $ */
-/*	@(#)clnp_subr.c	7.10 (Berkeley) %G% */
+/*	@(#)clnp_subr.c	7.11 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_subr.c,v 5.1 89/02/09 16:20:46 hagens Exp $";
@@ -184,9 +184,10 @@ register struct iso_addr *dst;		/* ptr to destination address */
 		 * XXX Warning:
 		 * We are overloading siso_tlen in the if's address, as an nsel length.
 		 */
-		if (dst->isoa_len == ia->ia_addr.siso_tlen + ia->ia_addr.siso_nlen &&
+		if (dst->isoa_len == ia->ia_addr.siso_nlen &&
 			bcmp((caddr_t)ia->ia_addr.siso_addr.isoa_genaddr,
-				 (caddr_t)dst->isoa_genaddr, ia->ia_addr.siso_nlen) == 0)
+				 (caddr_t)dst->isoa_genaddr,
+				 ia->ia_addr.siso_nlen - ia->ia_addr.siso_tlen) == 0)
 					return 1;
 	}
 	return 0;
@@ -295,13 +296,8 @@ struct snpa_hdr		*inbound_shp;	/* subnetwork header of inbound packet */
 	 *	then generate a redirect request
 	 */
 	if ((iso_systype & SNPA_IS) && (inbound_shp) && 
-		(ifp == inbound_shp->snh_ifp)) {
-			register struct sockaddr_dl *sdl =
-				(struct sockaddr_dl *) route.ro_rt->rt_gateway;
-			if (sdl->sdl_family == AF_LINK && sdl->sdl_alen != 0)
-				esis_rdoutput(inbound_shp, m, oidx, dst, route.ro_rt);
-	}
-
+		(ifp == inbound_shp->snh_ifp))
+		    esis_rdoutput(inbound_shp, m, oidx, dst, route.ro_rt);
 	/*
 	 *	If options are present, update them
 	 */
@@ -504,10 +500,10 @@ clnp_route(dst, ro, flags, first_hop, ifa)
  * NOTES:			Remember that option index pointers are really
  *					offsets from the beginning of the mbuf.
  */
-clnp_srcroute(options, oidx, route, first_hop, ifa, final_dst)
+clnp_srcroute(options, oidx, ro, first_hop, ifa, final_dst)
 struct mbuf			*options;		/* ptr to options */
 struct clnp_optidx	*oidx;			/* index to options */
-struct route_iso	*route;			/* route structure */
+struct route_iso	*ro;			/* route structure */
 struct sockaddr		**first_hop;	/* RETURN: fill in with ptr to firsthop */
 struct iso_ifaddr	**ifa;			/* RETURN: fill in with ptr to interface */
 struct iso_addr		*final_dst;		/* final destination */
@@ -533,7 +529,7 @@ struct iso_addr		*final_dst;		/* final destination */
 	/*
 	 *	try to route it
 	 */
-	error = clnp_route(&dst, route, 0, first_hop, ifa);
+	error = clnp_route(&dst, ro, 0, first_hop, ifa);
 	if (error != 0)
 		return error;
 	

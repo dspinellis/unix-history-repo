@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_input.c,v 5.6 88/11/18 17:27:38 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_input.c,v $
- *	@(#)tp_input.c	7.10 (Berkeley) %G% *
+ *	@(#)tp_input.c	7.11 (Berkeley) %G% *
  *
  * tp_input() gets an mbuf chain from ip.  Actually, not directly
  * from ip, because ip calls a net-level routine that strips off
@@ -169,8 +169,10 @@ static u_char tpdu_info[][4] =
 };
 
 #define CHECK(Phrase, Erval, Stat, Whattodo, Loc)\
-	if(Phrase) { error = (Erval); errlen = (int)(Loc); IncStat(Stat); \
+	if (Phrase) {error = (Erval); errlen = (int)(Loc); IncStat(Stat); tpibrk();\
 	goto Whattodo; }
+
+tpibrk() {}
 
 /* 
  * WHENEVER YOU USE THE FOLLOWING MACRO,
@@ -1287,7 +1289,6 @@ again:
 			goto respond;
 		}
 	}
-
 	/* peel off the tp header; 
 	 * remember that the du_li doesn't count itself.
 	 * This may leave us w/ an empty mbuf at the front of a chain.
@@ -1320,11 +1321,15 @@ again:
 		make_control_msg:
 			c_hdr.cmsg_level = SOL_TRANSPORT;
 			mbtype = MT_CONTROL;
-			datalen += sizeof(c_hdr);
-			m->m_len += sizeof(c_hdr);
-			m->m_data -= sizeof(c_hdr);
-			c_hdr.cmsg_len = datalen;
-			bcopy((caddr_t)&c_hdr, mtod(m, caddr_t), sizeof(c_hdr));
+			MGET(n, M_DONTWAIT, MT_DATA);
+			if (n) {
+				datalen += sizeof(c_hdr);
+				n->m_len = sizeof(c_hdr);
+				c_hdr.cmsg_len = datalen;
+				*mtod(n, struct cmsghdr *) = c_hdr;
+				n->m_next = m;
+				m = n;
+			} else {m_freem(m); m = 0; goto invoke;}
 			/* FALLTHROUGH */
 
 		case XPD_TPDU_type:
@@ -1337,6 +1342,7 @@ again:
 			for (n = m; n; n = n->m_next) { 
 				MCHTYPE(n, mbtype);
 			}
+		invoke:
 			e.ATTR(DT_TPDU).e_datalen = datalen;
 			e.ATTR(DT_TPDU).e_data =  m;
 			break;
@@ -1447,7 +1453,7 @@ nonx_dref:
 		error |= TP_ERROR_SNDC;
 	}
 respond:
-	IFDEBUG(D_ERROR_EMIT)
+	IFDEBUG(D_TPINPUT)
 		printf("RESPOND: error 0x%x, errlen 0x%x\n", error, errlen);
 	ENDDEBUG
 	IFTRACE(D_TPINPUT)

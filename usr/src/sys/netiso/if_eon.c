@@ -27,7 +27,7 @@ SOFTWARE.
 /*
  * $Header: if_eon.c,v 1.4 88/07/19 15:53:59 hagens Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/if_eon.c,v $ 
- *	@(#)if_eon.c	7.9 (Berkeley) %G% *
+ *	@(#)if_eon.c	7.10 (Berkeley) %G% *
  *
  *	EON rfc 
  *  Layer between IP and CLNL
@@ -73,7 +73,6 @@ static char *rcsid = "$Header: if_eon.c,v 1.4 88/07/19 15:53:59 hagens Exp $";
 #include "iso.h"
 #include "iso_var.h"
 #include "iso_snpac.h"
-extern struct snpa_cache all_es, all_is;
 #include "argo_debug.h"
 #include "iso_errno.h"
 #include "eonvar.h"
@@ -161,7 +160,6 @@ eonioctl(ifp, cmd, data)
 
 	switch (cmd) {
 		register struct ifaddr *ifa;
-		extern link_rtrequest();
 
 	case SIOCSIFADDR:
 		if (ifa = (struct ifaddr *)data) {
@@ -224,28 +222,30 @@ register struct sockaddr *gate;
 	caddr_t	ipaddrloc = (caddr_t) &zerodst;
 	register struct eon_llinfo *el = (struct eon_llinfo *)rt->rt_llinfo;
 
-	if (el == 0)
-		panic("eonrtrequest");
 	/*
 	 * Common Housekeeping
 	 */
 	switch (cmd) {
+	case RTM_DELETE:
+		if (el) {
+			remque(&(el->el_qhdr));
+			if (el->el_iproute.ro_rt)
+				RTFREE(el->el_iproute.ro_rt);
+			Free(el);
+			rt->rt_llinfo = 0;
+		}
+		return;
 
+	case RTM_RESOLVE:
 	case RTM_ADD:
+		R_Malloc(el, struct eon_llinfo *, sizeof(*el));
+		rt->rt_llinfo = (caddr_t)el;
+		if (el == 0)
+			return;
+		Bzero(el, sizeof(*el));
 		insque(&(el->el_qhdr), &eon_llinfo.el_qhdr);
 		el->el_rt = rt;
 		break;
-
-	case RTM_DELETE:
-		remque(&(el->el_qhdr));
-		/* FALLTHROUGH */
-	case RTM_CHANGE:
-		el->el_flags &= ~RTF_UP;
-		el->el_snpaoffset = 0;
-		if (el->el_iproute.ro_rt)
-			RTFREE(el->el_iproute.ro_rt);
-		if (cmd = RTM_DELETE)
-			return;
 	}
 	if (gate || (gate = rt->rt_gateway)) switch (gate->sa_family) {
 		case AF_LINK:
