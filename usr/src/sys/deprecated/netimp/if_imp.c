@@ -1,4 +1,4 @@
-/*	if_imp.c	4.39	82/10/09	*/
+/*	if_imp.c	4.40	82/10/13	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -18,7 +18,7 @@
 #include "../h/ubareg.h"
 #include "../h/ubavar.h"
 #include "../h/cpu.h"
-#include "../h/mtpr.h"
+#include "../vax/mtpr.h"
 #include "../h/vmmac.h"
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
