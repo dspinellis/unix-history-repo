@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.12 1993/09/10 02:01:34 rgrimes Exp $
+#	$Id: Makefile,v 1.13 1993/09/13 21:33:02 rgrimes Exp $
 #
 
 SUBDIR=
@@ -90,10 +90,10 @@ includes:
 	@echo
 .if defined(CLOBBER)
 	rm -rf ${DESTDIR}/usr/include
-.endif
 	mkdir ${DESTDIR}/usr/include
 	chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include
 	chmod 755 ${DESTDIR}/usr/include
+.endif
 	cd ${.CURDIR}/include;			make install
 	cd ${.CURDIR}/gnu/libg++;		make beforeinstall
 	cd ${.CURDIR}/gnu/libregex;		make beforeinstall
@@ -108,10 +108,10 @@ libraries:
 	@echo
 .if defined(CLOBBER)
 	rm -rf ${DESTDIR}/usr/lib
-.endif
 	mkdir ${DESTDIR}/usr/lib
 	chown -R bin.bin ${DESTDIR}/usr/lib
 	chmod 755 ${DESTDIR}/usr/lib
+.endif
 	cd ${.CURDIR}/lib;				make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/gnu/gcc2/libgcc;		make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/usr.bin/lex;			make depend all install ${CLEANDIR} obj
