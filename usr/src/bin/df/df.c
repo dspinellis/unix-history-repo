@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -85,7 +85,7 @@ main(argc, argv)
 				(void) strcpy(root, fsp->fs_spec);
 			dfree(fsp->fs_spec, 1);
 		}
-		endfsent();
+		(void)endfsent();
 		exit(0);
 	}
 	for (i=1; i<argc; i++)
@@ -107,18 +107,18 @@ dfree(file, infsent)
 			fprintf(stderr, "%s: screwy /etc/fstab entry\n", file);
 			return;
 		}
-		setfsent();
+		(void)setfsent();
 		while (fsp = getfsent()) {
 			struct stat stb;
 
 			if (stat(fsp->fs_spec, &stb) == 0 &&
 			    stb.st_rdev == stbuf.st_dev) {
 				file = fsp->fs_spec;
-				endfsent();
+				(void)endfsent();
 				goto found;
 			}
 		}
-		endfsent();
+		(void)endfsent();
 		fprintf(stderr, "%s: mounted on unknown device\n", file);
 		return;
 	}
@@ -128,7 +128,7 @@ found:
 		perror(file);
 		return;
 	}
-	if (bread(SBLOCK, (char *)&sblock, SBSIZE) == 0) {
+	if (bread((long)SBOFF, (char *)&sblock, SBSIZE) == 0) {
 		(void) close(fi);
 		return;
 	}
@@ -156,18 +156,18 @@ found:
 
 long lseek();
 
-bread(bno, buf, cnt)
-	daddr_t bno;
+bread(off, buf, cnt)
+	long off;
 	char *buf;
 {
 	int n;
 	extern errno;
 
-	(void) lseek(fi, (long)(bno * DEV_BSIZE), 0);
+	(void) lseek(fi, off, 0);
 	if ((n=read(fi, buf, cnt)) != cnt) {
 		/* probably a dismounted disk if errno == EIO */
 		if (errno != EIO) {
-			printf("\nread error bno = %ld\n", bno);
+			printf("\nread error off = %ld\n", off);
 			printf("count = %d; errno = %d\n", n, errno);
 		}
 		return (0);
