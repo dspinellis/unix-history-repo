@@ -3,129 +3,149 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)man.1	6.13 (Berkeley) %G%
+.\"     @(#)man.1	6.14 (Berkeley) %G%
 .\"
-.TH MAN 1 "%Q"
-.UC 4
-.SH NAME
-man \- display the on-line manual pages
-.SH SYNOPSIS
-.nf
-.ft B
-man [ -achw ] [ -M path ] [ -m path ] [ section ] name ...
-.ft R
-.fi
-.SH DESCRIPTION
-.I Man
-displays the UNIX manual pages entitled
-.IR name .
-.PP
+.Dd 
+.Dt MAN 1
+.Os BSD 4
+.Sh NAME
+.Nm man
+.Nd display the on-line manual pages
+.Sh SYNOPSIS
+.Nm man
+.Op Fl achw
+.Op Fl M Ar path
+.Op Fl m Ar path
+.Op Ar section
+.Ar name Ar ...
+.Sh DESCRIPTION
+The
+.Nm man
+utility
+displays the
+.Bx
+manual pages entitled
+.Ar name .
+.Pp
 The options are as follows:
-.TP
-a
+.Bl -tag -width indent
+.It Fl a
 Display all of the manual pages for a specified
-.I section
+.Ar section
 and
-.I name
+.Ar name
 combination.
 (Normally, only the first manual page found is displayed.)
-.TP
-c
+.It Fl c
 Copy the manual page to the standard output instead of using
-.IR more (1)
+.Xr more 1
 to paginate it.
 This is done by default if the standard output is not a terminal device.
-.TP
-h
-Display only the ``SYNOPSIS'' lines of the requested manual pages.
-.TP
-M
+.It Fl h
+Display only the
+.Dq Tn SYNOPSIS
+lines of the requested manual pages.
+.It Fl M
 Override the list of standard directories which
-.I man
+.Nm man
 searches for manual pages.
 The supplied
-.I path
+.Ar path
 must be a colon (``:'') separated list of directories.
 This search path may also be set using the environment variable
-.IR MANPATH .
+.Ev MANPATH .
 The subdirectories to be searched as well as their search order
 is specified by the ``_subdir'' line in the
-.I man
+.Nm man
 configuration file.
-.TP
-m
+.It Fl m
 Augment the list of standard directories which
-.I man
+.Nm man
 searches for manual pages.
 The supplied
-.I path
+.Ar path
 must be a colon (``:'') separated list of directories.
 These directories will be searched before the standard directories or
 the directories specified using the
-.I M
+.Fl M
 option or the
-.I MANPATH
+.Ev MANPATH
 environment variable.
-.TP
-.I w
+.It Fl w
 List the pathnames of the manual pages which
-.I man
+.Nm man
 would display for the specified
-.I section
+.Ar section
 and
-.I name
+.Ar name
 combination.
-.PP
+.El
+.Pp
 The optional
-.I section
+.Ar section
 restricts the directories that
-.I man
+.Nm man
 will search.
 The
-.I man
+.Nm man
 configuration file (see
-.IR man_conf (5))
+.Xr man_conf 5 )
 specifies the possible
-.I section
+.Ar section
 values that are currently available.
 If only a single argument is specified or if the first argument is
 not a valid section,
-.I man
+.Nm man
 assumes that the argument is the name of a manual page to be displayed.
-.SH ENVIRONMENT
-.TP
-MACHINE
+.Sh ENVIRONMENT
+.Bl -tag -width MANPATHX
+.It Ev MACHINE
 As some manual pages are intended only for use on certain architectures,
-.I man
+.Nm man
 searches certain directories applicable to the current machine.
-.I Man's
+Man's
 determination of the current machine type may be overridden by setting
-the environment variable MACHINE to the name of an architecture (see
-.IR machine (1)).
+the environment variable
+.Ev MACHINE
+to the name of an architecture (see
+.Xr machine 1 ) .
 Machine specific areas are checked before general areas.
-.TP
-MANPATH
+.It Ev MANPATH
 The standard search path used by
-.I man
-may be overridden by specifying a path in the MANPATH environment
+.Nm man
+may be overridden by specifying a path in the
+.Ev MANPATH
+environment
 variable.
 The format of the path is a colon (``:'') separated list of directories.
 The subdirectories to be searched as well as their search order
 is specified by the ``_subdir'' line in the
-.I man
+.Nm man
 configuration file.
-.TP
-PAGER
+.It Ev PAGER
 Any value of the environment variable
-.I PAGER
+.Ev PAGER
 will be used instead of the standard pagination program
-.IR more (1).
-.SH FILES
-/etc/man.conf	man configuration file (see
-.IR man_conf (5))
-.SH "SEE ALSO"
-apropos(1), machine(1), whatis(1), whereis(1), man_conf(5)
-.SH BUGS
+.Xr more 1 .
+.El
+.Sh FILES
+.Bl -tag -width /etc/man.conf -compact
+.It Pa /etc/man.conf
+man configuration file (see
+.Xr man_conf 5 )
+.El
+.Sh SEE ALSO
+.Xr apropos 1 ,
+.Xr machine 1 ,
+.Xr whatis 1 ,
+.Xr whereis 1 ,
+.Xr man_conf 5
+.Sh BUGS
 The on-line manual pages are, by necessity, forgiving toward stupid
 display devices, causing some manual pages to not be as good as their
 typeset counterparts.
+.Sh HISTORY
+A
+.Nm
+command appeared in
+.At v6 .
