@@ -88,7 +88,7 @@
 
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)pas.y 1.7 %G%"; */
+/* static	char sccsid[] = "@(#)pas.y 1.8 %G%"; */
 
 /*
  * The following line marks the end of the yacc
@@ -98,7 +98,7 @@
 ##
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pas.y 1.7 %G%";
+static	char sccsid[] = "@(#)pas.y 1.8 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -475,9 +475,6 @@ variant:
 		|
 	const_list ':' '(' field_list ')'
 		= $$ = tree4(T_TYVARNT, lineof($2), fixlist($1), $4);
-		|
-	const_list ':' '(' ')'
-		= $$ = tree4(T_TYVARNT, lineof($2), fixlist($1), NIL);
 		;
 
 /*
