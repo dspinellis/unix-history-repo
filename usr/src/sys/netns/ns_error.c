@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_error.c	6.3 (Berkeley) %G%
+ *	@(#)ns_error.c	6.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -58,6 +58,12 @@ ns_error(om, type, param)
 	if (ns_errprintfs)
 		printf("ns_err_error(%x, %d, %d)\n", oip, type, param);
 #endif
+	/*
+	 * Don't Generate error packets in response to multicasts.
+	 */
+	if (oip->idp_dna.x_host.c_host[0] & 1)
+		goto free;
+
 	ns_errstat.ns_es_error++;
 	/*
 	 * Make sure that the old IDP packet had 30 bytes of data to return;
@@ -156,6 +162,7 @@ ns_err_input(m)
 	ep = &(mtod(m, struct ns_epidp *)->ns_ep_errp);
 	type = ntohs(ep->ns_err_num);
 	param = ntohs(ep->ns_err_param);
+	ns_errstat.ns_es_inhist[ns_err_x(type)]++;
 
 #ifdef NS_ERRPRINTFS
 	/*
