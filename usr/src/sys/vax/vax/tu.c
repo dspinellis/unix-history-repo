@@ -1,4 +1,4 @@
-/*	tu.c	81/11/18	4.2	*/
+/*	tu.c	81/11/20	4.3	*/
 
 #if defined(VAX750) || defined(VAX7ZZ)
 /*
@@ -496,12 +496,16 @@ top:
  * it has to be fast and it is hard to
  * do add-carry in C.  Sorry.
  */
-/*ARGSUSED*/
 tuchk(word0, wp, n)
 	register int word0;	/* known to be r11 */
 	register caddr_t wp;	/* known to be r10 */
 	register int n;		/* known to be r9 */
 {
+#ifdef lint
+	/* for some reason ARGSUSED doesn't work to quiet lint */
+	word0 = 0; n = word0; word0 = n;
+	wp = 0; wp = wp;
+#endif
 
 	asm("loop:");
 	asm("	addw2	(r10)+,r11");	/* add a word to sum */
