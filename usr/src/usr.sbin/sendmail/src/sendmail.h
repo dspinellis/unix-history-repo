@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.89 (Berkeley) %G%
+ *	@(#)sendmail.h	8.90 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.89		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.90		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -280,6 +280,7 @@ extern struct hdrinfo	HdrInfo[];
 # define H_ERRORSTO	0x0800	/* this field has error address info */
 # define H_CTE		0x1000	/* this field is a content-transfer-encoding */
 # define H_CTYPE	0x2000	/* this is a content-type field */
+# define H_STRIPVAL	0x4000	/* strip value from header (Bcc:) */
 /*
 **  Information about currently open connections to mailers, or to
 **  hosts that we have looked up recently.
@@ -748,6 +749,16 @@ EXTERN int	QueueSortOrder;
 
 #define QS_BYPRIORITY	0		/* sort by message priority */
 #define QS_BYHOST	1		/* sort by first host name */
+
+
+/* how to handle messages without any recipient addresses */
+EXTERN int		NoRecipientAction;
+
+#define NRA_NO_ACTION		0	/* just leave it as is */
+#define NRA_ADD_TO		1	/* add To: header */
+#define NRA_ADD_APPARENTLY_TO	2	/* add Apparently-To: header */
+#define NRA_ADD_BCC		3	/* add empty Bcc: header */
+#define NRA_ADD_TO_UNDISCLOSED	4	/* add To: undisclosed:; header */
 /*
 **  Additional definitions
 */
