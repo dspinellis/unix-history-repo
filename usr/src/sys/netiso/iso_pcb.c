@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_pcb.c	8.1 (Berkeley) %G%
+ *	@(#)iso_pcb.c	8.2 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -174,7 +174,7 @@ iso_pcbbind(isop, nam)
 			printf("iso_pcbbind: bind to NOT zeroisoaddr\n");
 		ENDDEBUG
 		for (ia = iso_ifaddr; ia; ia = ia->ia_next) 
-			if (SAME_ISOADDR(siso, &ia->ia_addr))
+			if (SAME_ISOIFADDR(siso, &ia->ia_addr))
 				break;
 		if (ia == 0)
 			return EADDRNOTAVAIL;
@@ -202,6 +202,7 @@ iso_pcbbind(isop, nam)
 		register char *cp;
 noname:
 		cp = TSEL(isop->isop_laddr);
+		isop->isop_laddr.siso_tlen = 2;
 	IFDEBUG(D_ISO)
 		printf("iso_pcbbind noname\n");
 	ENDDEBUG
