@@ -1,9 +1,9 @@
-.\" Copyright (c) 1989, 1991, 1993
+.\" Copyright (c) 1989, 1991, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fts.3	8.3 (Berkeley) %G%
+.\"     @(#)fts.3	8.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FTS 3
@@ -83,7 +83,7 @@ typedef struct _ftsent {
 	char *fts_name;			/* file name */
 	short fts_namelen;		/* strlen(fts_name) */
 	short fts_level;		/* depth (\-1 to N) */
-	int fts_error;			/* file errno */
+	int fts_errno;			/* file errno */
 	long fts_number;		/* local numeric value */
 	void *fts_pointer;		/* local address value */
 	struct ftsent *fts_parent;	/* parent directory */
