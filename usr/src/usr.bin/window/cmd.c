@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.16 83/11/30";
+static	char *sccsid = "@(#)cmd.c	3.17 83/12/02";
 #endif
 
 #include "defs.h"
@@ -212,14 +212,14 @@ setselwin(w)
 struct ww *w;
 {
 	lastselwin = selwin;
-	front(selwin = w);
+	front(selwin = w, 1);
 }
 
 /*
  * wwvisible() doesn't work for tinted windows.
  * But anything to make it faster.
  */
-front(w)
+front(w, doreframe)
 register struct ww *w;
 {
 	struct ww *oldselwin = selwin;
