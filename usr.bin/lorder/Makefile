@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.3 (Berkeley) 5/18/90
 
-MAN1=	lorder.0
+MAN1=	lorder.1
 
 all lorder: ${MAN1}
 

@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1 (Berkeley) 5/23/90
 
-MAN1=	shar.0
+MAN1=	shar.1
 
 all shar: ${MAN1}
 

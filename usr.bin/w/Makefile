@@ -3,7 +3,7 @@
 PROG=	w
 SRCS=	attime.c w.c proc_compare.c
 CFLAGS+=-I/sys
-MAN1=	w.0 uptime.0
+MAN1=	w.1 uptime.1
 DPADD=	${LIBUTIL}
 LDADD=	-lutil
 BINGRP=	kmem

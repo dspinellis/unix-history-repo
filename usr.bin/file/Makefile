@@ -7,8 +7,8 @@ PROG=		file
 SRCS=		file.c apprentice.c fsmagic.c softmagic.c ascmagic.c is_tar.c \
 		print.c compress.c
 CFLAGS+=	-DMAGIC='"$(MAGIC)"'
-MAN1=		file.0
-MAN5=		magic.0
+MAN1=		file.1
+MAN5=		magic.5
 
 CLEANFILES+=	magic
 all:		file magic

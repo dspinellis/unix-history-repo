@@ -1,5 +1,5 @@
-#	@(#)Makefile	5.1 (Berkeley) 5/27/90
+PROG=	man
+LINKS=	${BINDIR}/man ${BINDIR}/apropos ${BINDIR}/man ${BINDIR}/whatis
+MAN1=	man.1 apropos.1 whatis.1
 
-SUBDIR=	apropos man whatis
-
-.include <bsd.subdir.mk>
+.include <bsd.prog.mk>

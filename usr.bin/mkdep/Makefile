@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.4 (Berkeley) 2/19/91
 
-MAN1=	mkdep.0
+MAN1=	mkdep.1
 
 .if (${MACHINE} == "hp300" || ${MACHINE} == "i386")
 beforeinstall:

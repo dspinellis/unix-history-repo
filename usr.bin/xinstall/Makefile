@@ -1,7 +1,7 @@
 #	@(#)Makefile	5.5 (Berkeley) 6/24/90
 
 PROG=	xinstall
-MAN1=	install.0
+MAN1=	install.1
 CLEANFILES=xinstall
 
 install: maninstall
