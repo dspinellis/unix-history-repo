@@ -1,12 +1,13 @@
 #ifndef lint
-static char *sccsid ="@(#)order.c	1.8 (Berkeley) %G%";
+static char *sccsid ="@(#)order.c	1.9 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
 
 int maxargs = { -1 };
 
-stoasg( p, o ) register NODE *p; {
+/*ARGSUSED*/
+stoasg( p, o ) NODE *p; {
 	/* should the assignment op p be stored,
 	   given that it lies as the right operand of o
 	   (or the left, if o==UNARY MUL) */
@@ -61,6 +62,7 @@ mkadrs(p) register NODE *p; {
 		}
 	}
 
+/*ARGSUSED*/
 notoff( t, r, off, cp) TWORD t; CONSZ off; char *cp; {
 	/* is it legal to make an OREG or NAME entry which has an
 	/* offset of off, (from a register of r), if the
