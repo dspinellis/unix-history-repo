@@ -1,47 +1,60 @@
+.\"	@(#)HEADERS	1.2	%G%
 .\"
-.\"	.NH -- UCB external letterhead, CSRG address
+.\"	.UC -- UCB external letterhead, CSRG address
+.\"	troff/ditroff, -ms / -me
+.\"	(was called .NH!)
 .\"
-.de NH 
+.de NH	\"	compatibility (for now)
+.UC
+..
+.de UC
 .ls 1 
-.ev 0 
-.nf 
 .LP 
-.nf
-.ev 1
-.ll +10
-.ND
+.lp
+.rs
+.sp 1			.\" onto first page
+.rs
+.sp |.5i		.\" trip page-top macro
+.\".ll +10
 .ps 12
 .ft B
 UNIVERSITY OF CALIFORNIA, BERKELEY
-.ft R 
-.sp
+.ft
+.ps
+.sp .5
 .vs 7p
 \l'\\n(.lu'
 .br
 .ps 6
-.sp 3p
+.sp 2.5p
 BERKELEY \\(bu DAVIS \\(bu IRVINE \\(bu 
 LOS\\ ANGELES \\(bu RIVERSIDE \\(bu SAN\\ DIEGO
 \\(bu SAN\\ FRANCISCO \\(bu SANTA\\ BARBARA \\(bu SANTA\\ CRUZ\\p
-.br
-.sp -3p
+.sp -3.5p
 \l'\\n(.lu'
+.ps
+.vs
 .nf
 .ps 7
 .vs 9p
 .sp
 COMPUTER SYSTEMS RESEARCH GROUP
-COMPUTER SCIENCE DIVISION, EECS\\h'25'\\s10\\*(td\\s7
+COMPUTER SCIENCE DIVISION, EECS\\h'25'\\s0\\s10\\*(td\\s0\\s7
 BERKELEY, CALIFORNIA 94720
 (415) 642-7780
+.ps
+.vs
 .fi
 .sp 2
-.ev 0
+.\".ll
 .LP
+.lp
 .rs
+.ls
 ..
 .\"
-.\"	.FH
+.\"	.FH -- Fancy Header, with seal
+.\"	ditroff, (probably -ms only)
 .\"
 .de FH
 .nr xx \\n(.d
@@ -92,6 +105,7 @@ UNIVERSITY OF CALIFORNIA, BERKELEY
 .\"
 .\"	.LT -- letter format; uses seal with ditroff, CS address with nroff
 .\"	.LT D adds date with nroff
+.\"	ditroff, -ms
 .\"
 .de LT
 .nr PO 1.1i
@@ -115,20 +129,58 @@ Berkeley, California  94720
 .br
 .if t .sp 3
 .if n .sp
-.nf
-.if n .na
-.rm CF
+.ND
 ..
 .\"
 .\"	.IH -- internal memo format
+.\"	.IH D -- add date
+.\"	troff/ditroff, -me
 .\"
 .de IH
+.rs
+.sp 1			.\" onto first page
+.rs
+.sp |.3i		.\" trip page-top macro
+.ps 6
+.vs 8
 .nf
-.ta 25 35
-	\s7BERKELEY:	DEPARTMENT OF ELECTRICAL ENGINEERING
-			AND COMPUTER SCIENCE
-			COMPUTER SCIENCE DIVISION\s10
-.sp 2
-		\*(td
+.in \\n(.lu-\w'BERKELEY:  DEPARTMENT OF ELECTRICAL ENGINEERING'u
+.ti -\w'BERKELEY:  'u
+BERKELEY:  DEPARTMENT OF ELECTRICAL ENGINEERING
+AND COMPUTER SCIENCES
+COMPUTER SCIENCE DIVISION
 .fi
+.ps
+.vs
+.if "\\$1"D" \{\
+.sp 2
+\\*(DY\\*(td\}
+.in
+..
+.\"
+.\"	.IM -- CSRG internal memo format
+.\"	.IM D -- add date
+.\"	troff/ditroff, -ms / -me
+.\"
+.de IM
+.rs
+.sp 1			.\" onto first page
+.rs
+.sp |.3i		.\" trip page-top macro
+.ps 6
+.vs 8
+.nf
+.in \\n(.lu-\w'BERKELEY:  DEPARTMENT OF ELECTRICAL ENGINEERING'u
+.ti -\w'BERKELEY:  'u
+BERKELEY:  DEPARTMENT OF ELECTRICAL ENGINEERING
+AND COMPUTER SCIENCES
+COMPUTER SCIENCE DIVISION
+COMPUTER SYSTEMS RESEARCH GROUP
+.fi
+.ps
+.vs
+.if "\\$1"D" \{\
+.sp 2
+\\*(DY\\*(td\}
+.in
 ..
