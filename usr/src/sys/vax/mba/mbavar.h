@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mbavar.h	6.2 (Berkeley) %G%
+ *	@(#)mbavar.h	6.3 (Berkeley) %G%
  */
 
 /*
@@ -114,6 +114,7 @@ struct mba_driver {
 #define	MBD_DONE	0		/* data transfer complete */
 #define	MBD_RETRY	1		/* error occurred, please retry */
 #define	MBD_RESTARTED	2		/* driver restarted i/o itself */
+#define	MBD_REPOSITION	3		/* driver started unit, not transfer */
 
 /*
  * Possible return values from non-data-transfer interrupt handling routines

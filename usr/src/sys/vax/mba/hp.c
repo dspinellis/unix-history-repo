@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	6.14 (Berkeley) %G%
+ *	@(#)hp.c	6.15 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -19,10 +19,7 @@ int	hpbdebug;
  * HP disk driver for RP0x+RMxx+ML11
  *
  * TODO:
- *	check RM80 skip sector handling when ECC's occur later
- *	check offset recovery handling
  *	see if DCLR and/or RELEASE set attention status
- *	print bits of mr && mr2 symbolically
  */
 #include "../machine/pte.h"
 
@@ -255,7 +252,7 @@ struct	hpsoftc {
 	u_char	sc_hdr;		/* next i/o includes header */
 	u_char	sc_doseeks;	/* perform explicit seeks */
 	daddr_t	sc_mlsize;	/* ML11 size */
-	int	sc_pgdone;	/* amount sucessfully transfered */
+	int	sc_blkdone;	/* amount sucessfully transfered */
 	daddr_t	sc_badbn;	/* replacement block number */
 } hpsoftc[NHP];
 
@@ -490,6 +487,19 @@ hpustart(mi)
 	hpaddr->hpcs1 = 0;
 	if ((hpaddr->hpcs1&HP_DVA) == 0)
 		return (MBU_BUSY);
+
+	switch (sc->sc_recal) {
+
+	case 1:
+		HPWAIT(mi, hpaddr);
+		hpaddr->hpdc = bp->b_cylin;
+		hpaddr->hpcs1 = HP_SEEK|HP_GO;
+		sc->sc_recal++;
+		return (MBU_STARTED);
+	case 2:
+		break;
+	}
+	sc->sc_recal = 0;
 	if ((hpaddr->hpds & HPDS_VV) == 0 || !sc->sc_hpinit) {
 		struct buf *bbp = &bhpbuf[mi->mi_unit];
 
@@ -513,8 +523,16 @@ hpustart(mi)
 			bp = bbp;
 		}
 	}
-	if (mi->mi_tab.b_active || mi->mi_hd->mh_ndrive == 1)
+	if (mi->mi_tab.b_active || mi->mi_hd->mh_ndrive == 1) {
+		if (mi->mi_tab.b_errcnt >= 16 && (bp->b_flags & B_READ)) {
+			hpaddr->hpof =
+			    hp_offset[mi->mi_tab.b_errcnt & 017]|HPOF_FMT22;
+			hpaddr->hpcs1 = HP_OFFSET|HP_GO;
+			HPWAIT(mi, hpaddr);
+			mbclrattn(mi);
+		}
 		return (MBU_DODATA);
+	}
 	if (ML11)
 		return (MBU_DODATA);
 	if ((hpaddr->hpds & HPDS_DREADY) != HPDS_DREADY)
@@ -551,20 +569,27 @@ hpstart(mi)
 	register struct hpst *st = &hpst[mi->mi_type];
 	struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
 	daddr_t bn;
-	int sn, tn;
+	int sn, tn, cn;
 
-	if (bp->b_flags & B_BAD)
-		bn = sc->sc_badbn;
-	else
-		bn = bp->b_blkno + sc->sc_pgdone;
 	if (ML11)
-		hpaddr->hpda = bn;
+		hpaddr->hpda = bp->b_blkno + sc->sc_blkdone;
 	else {
-		sn = bn%st->nspc;
-		tn = sn/st->nsect;
+		if (bp->b_flags & B_BAD) {
+			bn = sc->sc_badbn;
+			cn = bn / st->nspc;
+		} else {
+			bn = bp->b_blkno;
+			cn = bp->b_cylin;
+		}
+		sn = bn % st->nspc;
+		if ((bp->b_flags & B_BAD) == 0)
+			sn += sc->sc_blkdone;
+		tn = sn / st->nsect;
 		sn %= st->nsect;
-		hpaddr->hpdc = bp->b_cylin;
+		cn += tn / st->ntrak;
+		tn %= st->ntrak;
 		hpaddr->hpda = (tn << 8) + sn;
+		hpaddr->hpdc = cn;
 	}
 	if (sc->sc_hdr) {
 		if (bp->b_flags & B_READ)
@@ -596,15 +621,14 @@ hpdtint(mi, mbsr)
 		if (hpdebug) {
 			int dc = hpaddr->hpdc, da = hpaddr->hpda;
 
-			printf("hperr: bp %x cyl %d blk %d pgdone %d as %o ",
-				bp, bp->b_cylin, bp->b_blkno, sc->sc_pgdone,
-				hpaddr->hpas&0xff);
-			printf("dc %x da %x\n",MASKREG(dc), MASKREG(da));
-			printf("errcnt %d ", mi->mi_tab.b_errcnt);
-			printf("mbsr=%b ", mbsr, mbsr_bits);
-			printf("er1=%b er2=%b\n", MASKREG(er1), HPER1_BITS,
-			    MASKREG(er2), HPER2_BITS);
-			DELAY(1000000);
+			log(LOG_DEBUG,
+		    "hperr: bp %x cyl %d blk %d blkdone %d as %o dc %x da %x\n",
+				bp, bp->b_cylin, bp->b_blkno, sc->sc_blkdone,
+				hpaddr->hpas&0xff, MASKREG(dc), MASKREG(da));
+			log(LOG_DEBUG, "errcnt %d mbsr=%b er1=%b er2=%b\n",
+				mi->mi_tab.b_errcnt, mbsr, mbsr_bits,
+				MASKREG(er1), HPER1_BITS,
+				MASKREG(er2), HPER2_BITS);
 		}
 #endif
 		if (er1 & HPER1_HCRC) {
@@ -629,7 +653,7 @@ hpdtint(mi, mbsr)
 				return (MBD_RESTARTED);
 			goto hard;
 		} else if ((er1 & (HPER1_DCK | HPER1_ECH)) == HPER1_DCK &&
-		    mi->mi_tab.b_errcnt > 7) {
+		    mi->mi_tab.b_errcnt >= 3) {
 			if (hpecc(mi, ECC))
 				return (MBD_RESTARTED);
 			/* else done */
@@ -660,10 +684,6 @@ hard:
 			printf("er1=%b er2=%b",
 			    MASKREG(hpaddr->hper1), HPER1_BITS,
 			    MASKREG(hpaddr->hper2), HPER2_BITS);
-			if (hpaddr->hpmr)
-				printf(" mr=%o", MASKREG(hpaddr->hpmr));
-			if (hpaddr->hpmr2)
-				printf(" mr2=%o", MASKREG(hpaddr->hpmr2));
 			if (sc->sc_hdr)
 				printf(" (hdr i/o)");
 			printf("\n");
@@ -675,43 +695,22 @@ hard:
 		if ((mi->mi_tab.b_errcnt & 07) == 4) {
 			hpaddr->hpcs1 = HP_RECAL|HP_GO;
 			sc->sc_recal = 1;
-			return (MBD_RESTARTED);
+			return (MBD_REPOSITION);
 		}
 	}
 #ifdef HPDEBUG
 	else
 		if (hpdebug && sc->sc_recal) {
-			printf("recal %d ", sc->sc_recal);
-			printf("errcnt %d\n", mi->mi_tab.b_errcnt);
-			printf("mbsr=%b ", mbsr, mbsr_bits);
-			printf("er1=%b er2=%b\n",
+			log(LOG_DEBUG,
+			    "recal %d errcnt %d mbsr=%b er1=%b er2=%b\n",
+			    sc->sc_recal, mi->mi_tab.b_errcnt, mbsr, mbsr_bits,
 			    hpaddr->hper1, HPER1_BITS,
 			    hpaddr->hper2, HPER2_BITS);
 		}
 #endif
 	HPWAIT(mi, hpaddr);
-	switch (sc->sc_recal) {
-
-	case 1:
-		hpaddr->hpdc = bp->b_cylin;
-		hpaddr->hpcs1 = HP_SEEK|HP_GO;
-		sc->sc_recal++;
-		return (MBD_RESTARTED);
-	case 2:
-		retry = 1;
-		break;
-	}
-	sc->sc_recal = 0;
-	if (retry) {
-		if (mi->mi_tab.b_errcnt >= 16 && (bp->b_flags & B_READ)) {
-			hpaddr->hpof =
-			    hp_offset[mi->mi_tab.b_errcnt & 017]|HPOF_FMT22;
-			hpaddr->hpcs1 = HP_OFFSET|HP_GO;
-			HPWAIT(mi, hpaddr);
-			mbclrattn(mi);
-		}
+	if (retry)
 		return (MBD_RETRY);
-	}
 	if (mi->mi_tab.b_errcnt >= 16) {
 		/*
 		 * This is fast and occurs rarely; we don't
@@ -721,10 +720,17 @@ hard:
 		HPWAIT(mi, hpaddr);
 		mbclrattn(mi);
 	}
+	if (mi->mi_tab.b_errcnt)
+		log(LOG_INFO, "hp%d%c: %d retries %sing sn%d\n",
+		    hpunit(bp->b_dev), 'a'+(minor(bp->b_dev)&07),
+		    mi->mi_tab.b_errcnt,
+		    (bp->b_flags & B_READ) ? "read" : "writ",
+		    (bp->b_flags & B_BAD) ?
+		    sc->sc_badbn : bp->b_blkno + sc->sc_blkdone);
 	if ((bp->b_flags & B_BAD) && hpecc(mi, CONT))
 		return (MBD_RESTARTED);
 	sc->sc_hdr = 0;
-	sc->sc_pgdone = 0;
+	sc->sc_blkdone = 0;
 	bp->b_resid = MASKREG(-mi->mi_mba->mba_bcr);
 	if (!ML11) {
 		hpaddr->hpof = HPOF_FMT22;
@@ -864,7 +870,7 @@ hpecc(mi, flag)
  			sn++;
 #ifdef HPBDEBUG
 		if (hpbdebug)
-		printf("hpecc, BSE: bn %d cn %d tn %d sn %d\n", bn, cn, tn, sn);
+		log(LOG_DEBUG, "hpecc, BSE: bn %d cn %d tn %d sn %d\n", bn, cn, tn, sn);
 #endif
 		if (bp->b_flags & B_BAD)
 			return (0);
@@ -883,14 +889,14 @@ hpecc(mi, flag)
 		mbp->mba_bcr = -(min(512, bp->b_bcount - (int)ptob(npf)));
 #ifdef HPBDEBUG
 		if (hpbdebug)
-		printf("revector to cn %d tn %d sn %d\n", cn, tn, sn);
+		log(LOG_DEBUG, "revector to cn %d tn %d sn %d\n", cn, tn, sn);
 #endif
 		break;
 
 	case CONT:
 #ifdef HPBDEBUG
 		if (hpbdebug)
-		printf("hpecc, CONT: bn %d cn %d tn %d sn %d\n", bn,cn,tn,sn);
+		log(LOG_DEBUG, "hpecc, CONT: bn %d cn %d tn %d sn %d\n", bn,cn,tn,sn);
 #endif
 		bp->b_flags &= ~B_BAD;
 		if ((int)ptob(npf) >= bp->b_bcount)
@@ -907,7 +913,7 @@ hpecc(mi, flag)
 	mbp->mba_var = (int)ptob(npf) + o;
 	rp->hpcs1 = bp->b_flags&B_READ ? HP_RCOM|HP_GO : HP_WCOM|HP_GO;
 	mi->mi_tab.b_errcnt = 0;	/* error has been corrected */
-	sc->sc_pgdone = npf;
+	sc->sc_blkdone = npf;
 	return (1);
 }
 
