@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_vfsops.c	7.35 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.36 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -137,9 +137,23 @@ ufs_mount(mp, path, data, ndp)
 
 	if (error = copyin(data, (caddr_t)&args, sizeof (struct ufs_args)))
 		return (error);
-	if ((error = getmdev(&devvp, args.fspec, ndp)) != 0)
-		return (error);
+	/*
+	 * Process export requests.
+	 */
+	if ((args.exflags & M_EXPORTED) || (mp->m_flag & M_EXPORTED)) {
+		if (args.exflags & M_EXPORTED)
+			mp->m_flag |= M_EXPORTED;
+		else
+			mp->m_flag &= ~M_EXPORTED;
+		if (args.exflags & M_EXRDONLY)
+			mp->m_flag |= M_EXRDONLY;
+		else
+			mp->m_flag &= ~M_EXRDONLY;
+		mp->m_exroot = args.exroot;
+	}
 	if ((mp->m_flag & M_UPDATE) == 0) {
+		if ((error = getmdev(&devvp, args.fspec, ndp)) != 0)
+			return (error);
 		error = mountfs(devvp, mp);
 	} else {
 		ump = VFSTOUFS(mp);
@@ -150,6 +164,10 @@ ufs_mount(mp, path, data, ndp)
 		 * Verify that the specified device is the one that
 		 * is really being used for the root file system.
 		 */
+		if (args.fspec == 0)
+			return (0);
+		if ((error = getmdev(&devvp, args.fspec, ndp)) != 0)
+			return (error);
 		if (devvp != ump->um_devvp)
 			error = EINVAL;	/* needs translation */
 	}
