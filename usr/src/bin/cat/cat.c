@@ -1,7 +1,7 @@
 /*
  * Concatenate files.
  */
-static	char *Sccsid = "@(#)cat.c	4.2 (Berkeley) %G%";
+static	char *Sccsid = "@(#)cat.c	4.3 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -53,11 +53,12 @@ char **argv;
 		}
 		break;
 	}
-	fstat(fileno(stdout), &statb);
-	statb.st_mode &= S_IFMT;
-	if (statb.st_mode!=S_IFCHR && statb.st_mode!=S_IFBLK) {
-		dev = statb.st_dev;
-		ino = statb.st_ino;
+	if (fstat(fileno(stdout), &statb) == 0) {
+		statb.st_mode &= S_IFMT;
+		if (statb.st_mode!=S_IFCHR && statb.st_mode!=S_IFBLK) {
+			dev = statb.st_dev;
+			ino = statb.st_ino;
+		}
 	}
 	if (argc < 2) {
 		argc = 2;
@@ -72,12 +73,13 @@ char **argv;
 				continue;
 			}
 		}
-		fstat(fileno(fi), &statb);
-		if (statb.st_dev==dev && statb.st_ino==ino) {
-			fprintf(stderr, "cat: input %s is output\n",
-			   fflg?"-": *argv);
-			fclose(fi);
-			continue;
+		if (fstat(fileno(fi), &statb) == 0) {
+			if (statb.st_dev==dev && statb.st_ino==ino) {
+				fprintf(stderr, "cat: input %s is output\n",
+				   fflg?"-": *argv);
+				fclose(fi);
+				continue;
+			}
 		}
 		if (nflg||sflg||vflg)
 			copyopt(fi);
