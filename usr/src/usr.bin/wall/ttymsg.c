@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttymsg.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttymsg.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -23,9 +23,9 @@ static char sccsid[] = "@(#)ttymsg.c	8.1 (Berkeley) %G%";
 
 /*
  * Display the contents of a uio structure on a terminal.  Used by wall(1),
- * syslogd(8), and talk(1).  Forks and finishes in child if write would block, 
- * waiting up to tmout seconds.  Returns pointer to error string on unexpected 
- * error; string is not newline-terminated.  Various "normal" errors are 
+ * syslogd(8), and talkd(8).  Forks and finishes in child if write would block,
+ * waiting up to tmout seconds.  Returns pointer to error string on unexpected
+ * error; string is not newline-terminated.  Various "normal" errors are
  * ignored (exclusive-use, lack of permission, etc.).
  */
 char *
@@ -41,13 +41,21 @@ ttymsg(iov, iovcnt, line, tmout)
 	struct iovec localiov[6];
 	int forked = 0;
 
-	if (iovcnt > 6)
+	if (iovcnt > sizeof(localiov) / sizeof(localiov[0]))
 		return ("too many iov's (change code in wall/ttymsg.c)");
+
+	(void) strcpy(device + sizeof(_PATH_DEV) - 1, line);
+	if (strchr(device + sizeof(_PATH_DEV) - 1, '/')) {
+		/* A slash is an attempt to break security... */
+		(void) snprintf(errbuf, sizeof(errbuf), "'/' in \"%s\"",
+		    device);
+		return (errbuf);
+	}
+
 	/*
 	 * open will fail on slip lines or exclusive-use lines
 	 * if not running as root; not an error.
 	 */
-	(void) strcpy(device + sizeof(_PATH_DEV) - 1, line);
 	if ((fd = open(device, O_WRONLY|O_NONBLOCK, 0)) < 0) {
 		if (errno == EBUSY || errno == EACCES)
 			return (NULL);
@@ -66,7 +74,7 @@ ttymsg(iov, iovcnt, line, tmout)
 		if (wret >= 0) {
 			left -= wret;
 			if (iov != localiov) {
-				bcopy(iov, localiov, 
+				bcopy(iov, localiov,
 				    iovcnt * sizeof(struct iovec));
 				iov = localiov;
 			}
@@ -107,7 +115,7 @@ ttymsg(iov, iovcnt, line, tmout)
 			(void) alarm((u_int)tmout);
 			(void) fcntl(fd, O_NONBLOCK, &off);
 			continue;
-		} 
+		}
 		/*
 		 * We get ENODEV on a slip line if we're running as root,
 		 * and EIO if the line just went away.

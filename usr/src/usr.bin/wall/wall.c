@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)wall.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)wall.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -24,11 +24,16 @@ static char sccsid[] = "@(#)wall.c	8.1 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/uio.h>
-#include <utmp.h>
+
+#include <paths.h>
 #include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <paths.h>
+#include <string.h>
+#include <unistd.h>
+#include <utmp.h>
+
+void	makemsg __P((char *));
 
 #define	IGNOREUSER	"sleeper"
 
@@ -37,6 +42,7 @@ int mbufsize;
 char *mbuf;
 
 /* ARGSUSED */
+int
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -47,6 +53,7 @@ main(argc, argv)
 	struct utmp utmp;
 	FILE *fp;
 	char *p, *ttymsg();
+	char line[sizeof(utmp.ut_line) + 1];
 
 	while ((ch = getopt(argc, argv, "n")) != EOF)
 		switch (ch) {
@@ -79,12 +86,15 @@ usage:
 		if (!utmp.ut_name[0] ||
 		    !strncmp(utmp.ut_name, IGNOREUSER, sizeof(utmp.ut_name)))
 			continue;
-		if (p = ttymsg(&iov, 1, utmp.ut_line, 60*5))
+		strncpy(line, utmp.ut_line, sizeof(utmp.ut_line));
+		line[sizeof(utmp.ut_line)] = '\0';
+		if ((p = ttymsg(&iov, 1, line, 60*5)) != NULL)
 			(void)fprintf(stderr, "wall: %s\n", p);
 	}
 	exit(0);
 }
 
+void
 makemsg(fname)
 	char *fname;
 {
@@ -135,7 +145,7 @@ makemsg(fname)
 		exit(1);
 	}
 	while (fgets(lbuf, sizeof(lbuf), stdin))
-		for (cnt = 0, p = lbuf; ch = *p; ++p, ++cnt) {
+		for (cnt = 0, p = lbuf; (ch = *p) != '\0'; ++p, ++cnt) {
 			if (cnt == 79 || ch == '\n') {
 				for (; cnt < 79; ++cnt)
 					putc(' ', fp);
