@@ -35,7 +35,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)pk_usrreq.c	7.16 (Berkeley) 6/27/91
+ *	from: @(#)pk_usrreq.c	7.16 (Berkeley) 6/27/91
+ *	$Id$
  */
 
 #include "param.h"
