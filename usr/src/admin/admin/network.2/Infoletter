@@ -1,8 +1,8 @@
-.\"     @(#)Infoletter	1.2 (Berkeley) %G%
+.\"     @(#)Infoletter	1.3 (Berkeley) %G%
 .\" use -ms
-.nr PS 11
-.ps 11
-.nr VS 13
+.nr PS 10
+.ps 10
+.nr VS 12
 .vs 11p
 .nr LL 6.5i
 .ll 6.5i
@@ -19,9 +19,24 @@ Dear Colleague:
 .PP
 We are happy to send you information about our April,
 1991 update to our 1988 networking release.
-This software is copyright Berkeley and may be freely redistributed.
+This software is copyright by the University of California
+but may be freely redistributed.
 It is available to anyone and requires no previous license, either from
 AT&T or The Regents of the University of California.
+The license agreement is similar to that of the first BSD
+Networking Release; however, this version includes much additional software
+that is not network-related.
+The new release contains those portions of the 4.3BSD-Reno release
+that are available for distribution without other licenses,
+as well as new material that has been written or contributed
+since the Reno release.
+Although many portions of this release have been written or integrated
+only recently, and thus have not been well tested, we have received
+numerous requests for portions of the system.
+Therefore, we are providing this release as an experimental test release
+for interested developers.
+The distribution includes both software developed at Berkeley
+and also a large amount of software contributed by authors outside of Berkeley.
 .PP
 This packet is designed to serve two purposes.
 The first is to acquaint you with the details of our distribution
@@ -30,52 +45,67 @@ The second purpose is to tell you how to obtain our distribution.
 .SH
 Distribution contents
 .PP
-The distribution is a source distribution only, and does
-.B not
-contain binaries for any architecture.
-qIt includes source code and manual pages for the C library
+.B "The distribution is a source distribution only,"
+.B "and does not contain program binaries for any architecture."
+Thus, it will not be possible to compile or run this software
+without a pre-existing system that is already installed and running.
+In addition, the distribution does not include sources for a complete system.
+It includes source code and manual pages for the C library
 and approximately three-fourths of the utilities distributed as
 part of 4.3BSD-Reno.
 An approximate list of the included and excluded utilities is provided
 in the attached appendix.
 .PP
 Additionally, the distribution includes source code for most of the
-4.3BSD-Reno kernel, including machine support for the HP300
-(Motorola 68000 based machines)
-and for the PC's built by Compaq and others
-(Intel 386/486 based machines).
-It does
+4.3BSD-Reno kernel, including machine support for the HP9000/300 series
+(Motorola 680x0-based machines)
+and for the PCs built by Compaq and others
+(Intel 386/486-based machines with ISA/AT or EISA bus only).
+A limited number of device drivers are provided.
+The distribution does
 .B not
 include machine support for the Tahoe and VAX architectures
 found in the standard BSD distributions.
-The kernel source code is
-.B not
-complete for any architecture.
+.B "The kernel source code is not complete for any architecture."
 Specifically, code for executing files, doing physical I/O,
 managing the buffer cache, handling process tracing and doing accounting
-is not included as it contains AT&T proprietary code.
+is not included as it contains proprietary code.
+.PP
+.B "This software distribution is provided on 1/2'' 9-track tape only."
+No other media are currently available.
 .PP
 This distribution represents an intermediate point in the development
 of 4.4BSD; several new facilities have been completed and are ready
-for external use, while other new facilities slated for the 4.4BSD
+for external testing, while other new facilities slated for the 4.4BSD
 release have not yet been integrated.
 The major addition since the 4.3BSD-Reno release is the replacement 
 of the 1979 vintage virtual memory system with a virtual memory
 implementation derived from Carnegie-Mellon's MACH operating system.
-Other major kernel changes include the elimination of all references
-to the user area except for the per-process runtime stack and converting
-to ANSI C (including function prototypes).
+The kernel sources have been reorganized to collect all machine-dependent
+files for each architecture under one directory,
+and most of the machine-independent code is now free of code
+conditional on specific machines.
+The user structure and process structure have been reorganized
+to eliminate the statically-mapped user structure and to make most
+of the process resources shareable by multiple processes.
+The kernel has been converted to be compatible with ANSI C,
+including function prototypes for many of the exported functions.
 .SH
 Intended audience for this distribution
 .PP
+This release is indended for system developers and others who wish
+to preview or experiment with the most recent Berkeley system.
+It may also be useful as an update to earlier BSD or BSD-derived systems,
+although substantial work will be required to integrate portions of this
+release into older systems.
 This distribution is
 .B not
-intended to be used on production systems;
+intended to be used on production systems,
 nor is it intended for sites without sufficient expertise
 to find and fix problems that are encountered.
 It is
 .B not
-suitable for the home hobbyist wishing to run BSD on their PC.
+suitable for the home hobbyist wishing to run BSD on a 386 PC.
 It is intended to be used to provide an advance look at some of the
 facilities and interfaces that we will be distributing in 4.4BSD.
 Our goal in making this release available is to obtain feedback on
@@ -84,9 +114,9 @@ interfaces.
 This distribution will allow adventurous sites to gain experience with the
 new framework and to provide input as it evolves into 4.4BSD.
 Because many of the oldest and most stable parts of the
-system have been replaced to eliminate code proprietary to AT&T,
+system have been replaced to eliminate proprietary code,
 this software is not as stable, reliable or well documented as
-traditional BSD distributions.
+most BSD distributions.
 Much of the work to be done between now and the 4.4BSD distribution
 is release engineering and documentation.
 .PP
@@ -95,7 +125,7 @@ Specifically,
 we cannot provide help with installation
 of this software on other systems.
 We are, or course, interested in getting feedback on the problems that you
-find and also any compatibility problems that you expect in trying
+find and also any compatibility problems that you encounter in trying
 to convert your applications to run on this release.
 Some of the interfaces in this release will change before the release
 of 4.4BSD (at least in part based on feedback from this test group).
@@ -108,33 +138,33 @@ Please send your comments to reno43-bugs@vangogh.Berkeley.EDU.
 The code in this distribution may be redistributed and used
 in released products.
 However, you are strongly encouraged to upgrade any code
-that you use from this distribution to the similarly licensed
+that you use from this distribution to the similarly-licensed
 distribution of the 4.4BSD code within one year of its release.
 We regret that changes documents are not available;
 the major changes are outlined in the next section.
 .SH
 Summary of changes since the first networking distribution
 .PP
-In addition to the inclusion of the process scheduling and management funtions,
+In addition to the inclusion of a much larger portion of the BSD system,
 there are four major new kernel facilities available in this release.
 They are ISO/OSI networking support,
-a freely redistributable implementation of UFS and NFS,
+a freely-redistributable implementation of UFS and NFS,
 a new virtual memory implementation, and
 the conversion to and addition of the POSIX.1 facilities.
 There are numerous other changes throughout the system.
 .PP
 The ISO/OSI Networking consists of a kernel implementation of
 transport class 4 (TP-4),
-connectionless networking protocol (CLNP),
+Connectionless Network Protocol (CLNP),
 and 802.3-based link-level support (hardware-compatible with Ethernet\(dg).
 .FS
 \(dgEthernet is a trademark of the Xerox Corporation.
 .FE
-The session and presentation layers will be provided outside
-the kernel by the ISO development environment (ISODE).
+The session and presentation layers are provided outside
+the kernel by the ISO Development Environment (ISODE).
 Included in this development environment are file
 transfer and management (FTAM), virtual terminals (VT),
-a directory services implementation (X.500),
+a directory-services implementation (X.500),
 and miscellaneous other utilities.
 .PP
 A new virtual filesystem interface has been added to the
@@ -142,12 +172,13 @@ kernel to support multiple filesystems.
 Although generally similar to Sun's vnode interface,
 the Berkeley interface has been structured for more efficient support
 of filesystems that maintain state (such as the local filesystem).
-In addition to the local ``fast filesystem'',
+In addition to the local ``fast filesystem'' (UFS),
 we have added an implementation of the network filesystem (NFS)
+from the University of Guelph
 that fully interoperates with the NFS shipped by Sun and its licensees.
-Because our NFS implementation was implemented using only the
+Because this NFS implementation was done using only the
 publicly available NFS specification,
-it does not require a license from Sun to use in source or binary form.
+it does not require a license from Sun for use in source or binary form.
 By default it runs over UDP to be compatible with Sun's implementation.
 However, it can be configured on a per-mount basis to run over TCP.
 Using TCP allows it to be used quickly and efficiently through
@@ -164,8 +195,9 @@ This change makes quotas more useful on fileservers
 onto which users seldom login.
 .PP
 The new virtual memory implementation is derived from the MACH
-operating system developed at Carnegie-Mellon.
-The MACH virtual memory interface has been replaced with the
+operating system developed at Carnegie-Mellon,
+and was ported to the BSD kernel at the University of Utah.
+The MACH virtual memory system call interface has been replaced with the
 ``mmap''-based interface described in the ``Berkeley Software
 Architecture Manual'' (see UNIX Programmer's Manual, 
 Supplementary Documents, PS1:6).
@@ -187,26 +219,24 @@ This distribution also adds the POSIX job control interface,
 which is similar to the 4.3BSD job control interface,
 but adds a security model that was missing in the
 4.3BSD job control implementation.
-Other additions include POSIX signals, FIFO's, byte-range file locking,
+Other additions include POSIX signals, FIFOs, byte-range file locking,
 and saved user and group identifiers.
 .PP
 We have been tracking the POSIX 1003.2 shell and utility work
 and have included prototypes of many of the proposed utilities.
 Because most of the traditional utilities have been replaced to eliminate
 code proprietary to AT&T, you should realize that the utility software
-not as stable, reliable or well documented as traditional Berkeley
+may not be as stable, reliable or well documented as in traditional Berkeley
 releases.
 In particular, almost the entire manual suite has been rewritten to
-be freely redistributable and does not correctly reflect, in many
-instances, the current software.
+be freely redistributable and, in many instances,
+it does not correctly reflect the current state of the software.
 Most of the libraries and header files have been converted
 to be compliant with ANSI C.
-The compiler default is to require ANSI C;
-the default can be over-ridden by using the \fB-traditional\fP flag.
-Another compiler default is to put strings into the shared text region.
-This change obviates the need for the xstr and mkstr utilities.
-The old behavior of placing strings in data space can be obtained
-by specifying the \fB-fwritable-strings\fP flag.
+The default compiler (gcc) is compatible with traditional C,
+but supports ANSI C as well.
+The system libraries and utilities all compile
+with either ANSI or traditional C.
 .PP
 Work has also progressed in several other areas.
 Several important enhancements have been added to the TCP/IP
@@ -219,15 +249,12 @@ The routing table also stores and caches route characteristics
 to speed the adaptation of the throughput and congestion avoidance
 algorithms.
 .PP
-The Kerberos (version 4) authentication software has been
-integrated into much of the system (except NFS) to provide
-the first real network authentication on BSD.
-.PP
 The hardware supported is:
 .IP \(bu
 HP 9000/300 series
 .IP \(bu
-Intel 386/486 based PC with AT-bus peripherals
+Intel 386/486-based PCs with AT-bus peripherals
+(IDE-compatible disks are supported, but SCSI disks are not yet supported)
 .IP \(bu
 Sample drivers for the Tahoe and the VAX, but no complete machine support
 .PP
@@ -236,7 +263,7 @@ is because it does not contain several major interfaces that we
 plan to have available for that distribution.
 These include:
 .IP \(bu
-Support for ISO Connection-Oriented Network Service, X.25, TP-0.
+Kernel support for TP-0 over ISO Connection-Oriented Network Service, X.25.
 .IP \(bu
 A new internal network layering (``bstreams'') combining features
 of the current socket layering and of Streams.
@@ -244,42 +271,27 @@ of the current socket layering and of Streams.
 Fixes, tuning, fixes, documentation, and fixes.
 .PP
 This release does include several important structural kernel changes.
-The kernel uses a new internal system call convention:
-.ft C
-.nf
-.ti +5i
-error = (*callp)(proc, args, retval);
-.fi
-.ft P
-.PP
-Another major change is the introduction
-of a new sleep interface:
-.ft C
-.nf
-.ti +5i
-error = tsleep(wchan, pri|PCATCH, wstring, timeout);
-.fi
-.ft P
-.LP
-The old sleep interface can be used only for non-interruptible sleeps.
-The \fItsleep\fP interface can be used at any priority,
-but is only interruptible if the PCATCH flag is set.
-When interrupted, \fItsleep\fP returns EINTR or ERESTART;
-all non-local goto's (longjmp's) have been eliminated from the kernel.
+The kernel uses a new internal system call convention;
+the use of global (``u-dot'') variables for parameters and error returns
+has been eliminated,
+and interrupted system calls no longer abort using non-local goto's (longjmp's).
+A new sleep interface separates signal handling from scheduling priority,
+returning characteristic errors to abort or restart the current system call.
+This sleep call also passes a string describing the process state,
+which is used by the ps(1) program.
 .PP
 Many data structures that were previously statically allocated
 are now allocated dynamically.
 These structures include proc structure entries,
-user file descriptors, the mount table,
+user file tables, the mount table,
 the vnode table, the name cache, and the quota structures.
 .SH
 How to obtain this software
 .PP
-You do not have to get this software from Berkeley
-nor obtain a license from Berkeley to use it.
-You may obtain it from anybody that has a copy.
-If you wish to obtain this software from Berkeley,
-you need to follow the procedure below.
+The following procedure is necessary to obtain this software
+and license from Berkeley.
+As the software is freely distributable, you may also obtain part or all
+of this release from other sites.
 .PP
 Before the distribution can be sent, we require:
 .IP \(bu
@@ -296,7 +308,7 @@ The Berkeley License Agreement governs.''
 organization; this fee covers only our distribution costs.)
 .IP \(bu
 The attached Site Information Form and
-Checklist for Hardware/Software completely filled out and dated.
+Checklist completely filled out and dated.
 Your copy of the signed Berkeley License Agreement will be sent to the
 person listed as the administrative contact.
 The distribution itself will be sent to the technical contact.
@@ -332,7 +344,7 @@ quickly as possible is to include, in a single package, two copies of the
 completed and properly signed Berkeley License Agreement (\fBwithout
 modification\fR), the check properly made out to ``The Regents of the
 University of California,'' and a completely filled out Site Information
-Form and Checklist for Hardware/Software, and to send this single package to 
+Form and Checklist, and to send this single package to 
 the address noted above.
 .PP
 Please note that if you modify the Berkeley License Agreement, you may
@@ -365,7 +377,7 @@ If You Have Read Everything and Still Need Help
 .PP
 If you have questions about the licensing process after reading this letter,
 you may call Pauline Schwartz at 415-642-7780, or contact her via electronic
-mail at bsd-dist@cs.berkeley.edu. or uunet!bsd-dist@cs.berkeley.edu.
+mail at bsd-dist@CS.Berkeley.EDU. or uunet!bsd-dist@CS.Berkeley.EDU.
 She will not be able to answer technical questions.
 .sp 2
 .ti +2.5i
