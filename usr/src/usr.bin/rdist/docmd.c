@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.11 (Berkeley) 83/12/19";
+static	char *sccsid = "@(#)docmd.c	4.12 (Berkeley) 84/01/04";
 #endif
 
 #include "defs.h"
@@ -367,13 +367,13 @@ notify(file, rhost, to, lmod)
 	 */
 	fprintf(pf, "From: rdist (Remote distribution program)\n");
 	fprintf(pf, "To:");
-	if (!any('@', to->b_name) && host != NULL)
+	if (!any('@', to->b_name) && rhost != NULL)
 		fprintf(pf, " %s@%s", to->b_name, rhost);
 	else
 		fprintf(pf, " %s", to->b_name);
 	to = to->b_next;
 	while (to != NULL) {
-		if (!any('@', to->b_name) && host != NULL)
+		if (!any('@', to->b_name) && rhost != NULL)
 			fprintf(pf, ", %s@%s", to->b_name, rhost);
 		else
 			fprintf(pf, ", %s", to->b_name);
