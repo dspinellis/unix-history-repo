@@ -16,10 +16,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)com6.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)com6.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "externs.h"
+#include "pathnames.h"
 
 launch()
 {
@@ -84,7 +85,7 @@ char ch;
 	gettimeofday(&tv, (struct timezone *)0);	/* can't call time */
 	date = ctime(&tv.tv_sec);
 	date[24] = '\0';
-	if (fp = fopen(logfile,"a")) {
+	if (fp = fopen(_PATH_SCORE,"a")) {
 		fprintf(fp, "%s  %8s  %c%20s", date, uname, ch, rate());
 		if (wiz)
 			fprintf(fp, "   wizard\n");
@@ -93,7 +94,7 @@ char ch;
 		else
 			fprintf(fp, "\n");
 	} else
-		perror(logfile);
+		perror(_PATH_SCORE);
 	sigsetmask(s);
 }
 
