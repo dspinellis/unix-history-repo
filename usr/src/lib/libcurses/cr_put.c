@@ -6,11 +6,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cr_put.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)cr_put.c	5.8 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
 #include <string.h>
+#include <termios.h>
 
 #define	HARDTABS	8
 
@@ -245,7 +246,7 @@ plod(cnt)
 	 * If we will later need a \n which will turn into a \r\n by the
 	 * system or the terminal, then don't bother to try to \r.
 	 */
-	if ((NONL || !__pfast) && outline < destline)
+	if ((!(origtermio.c_oflag & ONLCR) || !__pfast) && outline < destline)
 		goto dontcr;
 
 	/*
@@ -286,7 +287,7 @@ dontcr:	while (outline < destline) {
 			plodput('\n');
 		if (plodcnt < 0)
 			goto out;
-		if (NONL || __pfast == 0)
+		if (!(origtermio.c_oflag & ONLCR) || __pfast == 0)
 			outcol = 0;
 	}
 	if (BT)
