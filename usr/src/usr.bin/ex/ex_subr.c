@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_subr.c	7.7	%G%";
+static char *sccsid = "@(#)ex_subr.c	7.8	%G%";
 #include "ex.h"
 #include "ex_re.h"
 #include "ex_tty.h"
@@ -919,8 +919,8 @@ onsusp()
 		error(0);
 	else {
 		if (ioctl(0, TIOCGWINSZ, &win) >= 0)
-			if (win.ws_row != winsz.ws_row 
-					|| win.ws_col != winsz.ws_col)
+			if (win.ws_row != winsz.ws_row ||
+			    win.ws_col != winsz.ws_col)
 				winch();
 		if (vcnt < 0) {
 			vcnt = -vcnt;
