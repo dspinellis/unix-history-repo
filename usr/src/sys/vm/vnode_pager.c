@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode_pager.c	7.2 (Berkeley) %G%
+ *	@(#)vnode_pager.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -74,6 +74,7 @@ vnode_pager_alloc(handle, size, prot)
 	vm_object_t object;
 	struct vattr vattr;
 	struct vnode *vp;
+	struct proc *p = curproc;	/* XXX */
 
 #ifdef DEBUG
 	if (vpagerdebug & (VDB_FOLLOW|VDB_ALLOC))
@@ -106,7 +107,7 @@ vnode_pager_alloc(handle, size, prot)
 		/*
 		 * And an object of the appropriate size
 		 */
-		if (VOP_GETATTR(vp, &vattr, curproc->p_ucred) == 0) {
+		if (VOP_GETATTR(vp, &vattr, p->p_ucred, p) == 0) {
 			object = vm_object_allocate(round_page(vattr.va_size));
 			vm_object_enter(object, pager);
 			vm_object_setpager(object, pager, 0, TRUE);
@@ -152,6 +153,7 @@ vnode_pager_dealloc(pager)
 {
 	register vn_pager_t vnp = (vn_pager_t)pager->pg_data;
 	register struct vnode *vp;
+	struct proc *p = curproc;		/* XXX */
 
 #ifdef DEBUG
 	if (vpagerdebug & VDB_FOLLOW)
@@ -162,7 +164,7 @@ vnode_pager_dealloc(pager)
 		vp->v_flag &= ~VTEXT;
 #if 0
 		/* can hang if done at reboot on NFS FS */
-		(void) VOP_FSYNC(vp, curproc->p_ucred);
+		(void) VOP_FSYNC(vp, p->p_ucred, p);
 #endif
 		vrele(vp);
 	}
@@ -387,6 +389,7 @@ vnode_pager_io(vnp, m, rw)
 	struct iovec aiov;
 	vm_offset_t kva, foff;
 	int error, size;
+	struct proc *p = curproc;		/* XXX */
 
 #ifdef DEBUG
 	if (vpagerdebug & VDB_FOLLOW)
@@ -422,15 +425,16 @@ vnode_pager_io(vnp, m, rw)
 	auio.uio_segflg = UIO_SYSSPACE;
 	auio.uio_rw = rw;
 	auio.uio_resid = size;
+	auio.uio_procp = (struct proc *)0;
 #ifdef DEBUG
 	if (vpagerdebug & VDB_IO)
 		printf("vnode_pager_io: vp %x kva %x foff %x size %x",
 		       vnp->vnp_vp, kva, foff, size);
 #endif
 	if (rw == UIO_READ)
-		error = VOP_READ(vnp->vnp_vp, &auio, 0, curproc->p_ucred);
+		error = VOP_READ(vnp->vnp_vp, &auio, 0, p->p_ucred);
 	else
-		error = VOP_WRITE(vnp->vnp_vp, &auio, 0, curproc->p_ucred);
+		error = VOP_WRITE(vnp->vnp_vp, &auio, 0, p->p_ucred);
 #ifdef DEBUG
 	if (vpagerdebug & VDB_IO) {
 		if (error || auio.uio_resid)
