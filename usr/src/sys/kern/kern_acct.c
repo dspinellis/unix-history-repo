@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_acct.c	7.26 (Berkeley) %G%
+ *	@(#)kern_acct.c	7.27 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -27,7 +27,7 @@
  */
 int	acctsuspend = 2;	/* stop accounting when < 2% free space left */
 int	acctresume = 4;		/* resume when free space risen to > 4% */
-int	chk = 15;		/* frequency (in seconds) to check space */
+int	acctchkfreq = 15;	/* frequency (in seconds) to check space */
 
 /*
  * SHOULD REPLACE THIS WITH A DRIVER THAT CAN BE READ TO SIMPLIFY.
@@ -109,18 +109,18 @@ acctwatch(a)
 			acctp = savacctp;
 			savacctp = NULL;
 			log(LOG_NOTICE, "Accounting resumed\n");
+		}
+	} else {
+		if (acctp == NULL)
 			return;
+		(void)VFS_STATFS(acctp->v_mount, &sb, (struct proc *)0);
+		if (sb.f_bavail <= acctsuspend * sb.f_blocks / 100) {
+			savacctp = acctp;
+			acctp = NULL;
+			log(LOG_NOTICE, "Accounting suspended\n");
 		}
 	}
-	if (acctp == NULL)
-		return;
-	(void)VFS_STATFS(acctp->v_mount, &sb, (struct proc *)0);
-	if (sb.f_bavail <= acctsuspend * sb.f_blocks / 100) {
-		savacctp = acctp;
-		acctp = NULL;
-		log(LOG_NOTICE, "Accounting suspended\n");
-	}
-	timeout(acctwatch, NULL, chk * hz);
+	timeout(acctwatch, NULL, acctchkfreq * hz);
 }
 
 /*
