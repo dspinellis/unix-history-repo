@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_subr.c	7.10 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -57,7 +57,7 @@ tcp_template(tp)
 	register struct tcpiphdr *n;
 
 	if ((n = tp->t_template) == 0) {
-		m = m_get(M_WAIT, MT_HEADER);
+		m = m_get(M_DONTWAIT, MT_HEADER);
 		if (m == NULL)
 			return (0);
 		m->m_off = MMAXOFF - sizeof (struct tcpiphdr);
@@ -178,6 +178,7 @@ tcp_newtcpcb(inp)
 	tp->t_srtt = TCPTV_SRTTBASE;
 	tp->t_rttvar = TCPTV_SRTTDFLT << 2;
 	tp->snd_cwnd = sbspace(&inp->inp_socket->so_snd);
+	tp->snd_ssthresh = 65535;		/* XXX */
 	inp->inp_ppcb = (caddr_t)tp;
 	return (tp);
 }
