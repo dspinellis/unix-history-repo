@@ -1,4 +1,4 @@
-/* @(#)dterm.c	1.11	(Berkeley)	%G%"
+/* @(#)dterm.c	1.12	(Berkeley)	%G%"
  *
  *	Converts ditroff output to text on a terminal.  It is NOT meant to
  *	produce readable output, but is to show one how one's paper is (in
@@ -55,7 +55,7 @@
 #define sqr(x)		(long int)(x)*(x)
 
 
-char	SccsId [] = "@(#)dterm.c	1.11	(Berkeley)	%G%";
+char	SccsId [] = "@(#)dterm.c	1.12	(Berkeley)	%G%";
 
 char	**spectab;		/* here go the special characters */
 char	*specfile = SPECFILE;	/* place to look up special characters */
