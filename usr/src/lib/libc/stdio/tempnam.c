@@ -16,12 +16,10 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)tempnam.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)tempnam.c	4.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
-#include <sys/stat.h>
-#include <sys/file.h>
 #include <stdio.h>
 
 #define	P_tmpdir	"/usr/tmp"
@@ -30,10 +28,10 @@ FILE *
 tmpfile()
 {
 	FILE *fp;
-	char *f, name[MAXPATHLEN], *tmpnam();
+	char *f, *tmpnam();
 
-	if (!(fp = fopen(f = tmpnam(name), "w+"))) {
-		fprintf(stderr, "tmpfile: cannot open %s.\n", name);
+	if (!(f = tmpnam((char *)NULL)) || !(fp = fopen(f, "w+"))) {
+		fprintf(stderr, "tmpfile: cannot open %s.\n", f);
 		return(NULL);
 	}
 	(void)unlink(f);
@@ -44,11 +42,10 @@ char *
 tmpnam(s)
 	char *s;
 {
-	static char name[MAXPATHLEN];
-	char *mktemp();
+	char *malloc(), *mktemp();
 
-	if (!s)
-		s = name;
+	if (!s && !(s = malloc((u_int)MAXPATHLEN)))
+		return(NULL);
 	(void)sprintf(s, "%s/XXXXXX", P_tmpdir);
 	return(mktemp(s));
 }
@@ -57,35 +54,24 @@ char *
 tempnam(dir, pfx)
 	char *dir, *pfx;
 {
-	struct stat buf;
-	char *f, *name, *getenv(), *malloc(), *mktemp(), *strcat(), *strcpy();
+	char *f, *name, *getenv(), *malloc(), *mktemp();
 
 	if (!(name = malloc((u_int)MAXPATHLEN)))
 		return(NULL);
-	if ((f = getenv("TMPDIR")) && !stat(f, &buf) &&
-	    (buf.st_mode&S_IFMT) == S_IFDIR && !access(f, W_OK|X_OK)) {
-		(void)strcpy(name, f);
-		goto done;
+
+	if (f = getenv("TMPDIR")) {
+		(void)sprintf(name, "%s/%sXXXXXX", f, pfx ? "" : pfx);
+		if (f = mktemp(name))
+			return(f);
 	}
-	if (dir && !stat(dir, &buf) &&
-	    (buf.st_mode&S_IFMT) == S_IFDIR && !access(dir, W_OK|X_OK)) {
-		(void)strcpy(name, dir);
-		goto done;
+	if (dir) {
+		(void)sprintf(name, "%s/%sXXXXXX", dir, pfx ? "" : pfx);
+		if (f = mktemp(name))
+			return(f);
 	}
-	if (!stat(P_tmpdir, &buf) &&
-	    (buf.st_mode&S_IFMT) == S_IFDIR && !access(P_tmpdir, W_OK|X_OK)) {
-		(void)strcpy(name, P_tmpdir);
-		goto done;
-	}
-	if (!stat("/tmp", &buf) &&
-	    (buf.st_mode&S_IFMT) == S_IFDIR && !access("/tmp", W_OK|X_OK)) {
-		(void)strcpy(name, "/tmp");
-		goto done;
-	}
-	return(NULL);
-done:	(void)strcat(name, "/");
-	if (pfx)
-		(void)strcat(name, pfx);
-	(void)strcat(name, "XXXXXX");
+	(void)sprintf(name, "%s/%sXXXXXX", P_tmpdir, pfx ? "" : pfx);
+	if (f = mktemp(name))
+		return(f);
+	(void)sprintf(name, "/tmp/%sXXXXXX", pfx ? "" : pfx);
 	return(mktemp(name));
 }
