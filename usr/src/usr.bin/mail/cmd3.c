@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)cmd3.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd3.c	5.12 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -287,7 +287,7 @@ reedit(subj)
 		return subj;
 	newsubj = salloc(strlen(subj) + 5);
 	strcpy(newsubj, "Re: ");
-	strcpy(subj, newsubj + 4);
+	strcpy(newsubj + 4, subj);
 	return newsubj;
 }
 
