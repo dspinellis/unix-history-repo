@@ -1,4 +1,12 @@
-# @(#)WHATSNEW	8.2 (Berkeley) %G%
+# @(#)WHATSNEW	8.3 (Berkeley) %G%
+
+New in alpha3.4:  The complex bug alluded to below has been fixed (in a
+slightly kludgey temporary way that may hurt efficiency a bit; this is
+another "get it out the door for 4.4" release).  The tests at the end of
+the tests file have accordingly been uncommented.  The primary sign of
+the bug was that something like a?b matching ab matched b rather than ab.
+(The bug was essentially specific to this exact situation, else it would
+have shown up earlier.)
 
 New in alpha3.3:  The definition of word boundaries has been altered
 slightly, to more closely match the usual programming notion that "_"
