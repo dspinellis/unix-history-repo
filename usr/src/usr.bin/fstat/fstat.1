@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)fstat.1	5.10 (Berkeley) %G%
+.\"     @(#)fstat.1	5.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FSTAT 1
@@ -14,7 +14,8 @@
 .Sh SYNOPSIS
 .Nm fstat
 .Op Fl fnv
-.Op Fl p Ar pid
+.Op Fl M Ar core
+.Op Fl N Ar system
 .Op Fl u Ar user
 .Op Ar filename...
 .Sh DESCRIPTION
@@ -37,6 +38,13 @@ directory
 .Pa /usr/src
 resides, type
 .Dq Li fstat -f /usr/src .
+.It Fl M
+Extract values associated with the name list from the specified core
+instead of the default
+.Pa /dev/kmem .
+.It Fl N
+Extract the name list from the specified system instead of the default
+.Pa /vmunix .
 .It Fl n
 Numerical format.  Print the device number (maj,min) of the filesystem
 the file resides in rather than the mount point name; for special
@@ -164,12 +172,14 @@ takes a snapshot of the system, it is only correct for a very short period
 of time.
 .Sh SEE ALSO
 .Xr netstat 1 ,
+.Xr nfsstat 1 ,
 .Xr ps 1 ,
 .Xr systat 1 ,
-.Xr stat 2 ,
+.Xr vmstat 1 ,
+.Xr iostat 8 ,
 .Xr pstat 8
 .Sh HISTORY
 The
 .Nm
 command appeared in
-.Bx 4.2 .
+.Bx 4.4 .
