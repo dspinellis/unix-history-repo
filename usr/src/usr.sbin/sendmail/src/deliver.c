@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.156 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.157 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1286,7 +1286,7 @@ tryhost:
 			(void) setsignal(SIGHUP, SIG_IGN);
 			(void) setsignal(SIGTERM, SIG_DFL);
 
-			if (m != FileMailer || stat(to->q_user, &stb) < 0)
+			if (m != FileMailer || stat(tochain->q_user, &stb) < 0)
 				stb.st_mode = 0;
 
 			/* tweak niceness */
