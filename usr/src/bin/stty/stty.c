@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)stty.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)stty.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -282,7 +282,7 @@ char	**iargv;
 				goto done;
 			win.ws_row = atoi(*++argv);
 		}
-		if (eq("columns")) {
+		if (eq("cols") || eq("columns")) {
 			if (--argc == 0)
 				goto done;
 			win.ws_col = atoi(*++argv);
