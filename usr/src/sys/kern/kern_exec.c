@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_exec.c	7.4 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.5 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -135,41 +135,33 @@ execve()
 		break;
 
 	default:
-		if (exdata.ex_shell[0] != '#' ||
-		    exdata.ex_shell[1] != '!' ||
-		    indir) {
+		if (exdata.ex_shell[0] != '#' || exdata.ex_shell[1] != '!' ||
+		    indir++) {
 			u.u_error = ENOEXEC;
 			goto bad;
 		}
-		cp = &exdata.ex_shell[2];		/* skip "#!" */
-		while (cp < &exdata.ex_shell[MAXINTERP]) {
-			if (*cp == '\t')
-				*cp = ' ';
-			else if (*cp == '\n') {
+		for (cp = &exdata.ex_shell[2];; ++cp) {
+			if (cp == &exdata.ex_shell[MAXINTERP]) {
+				u.u_error = ENOEXEC;
+				goto bad;
+			}
+			if (*cp == '\n') {
 				*cp = '\0';
 				break;
 			}
-			cp++;
+			if (*cp == '\t')
+				*cp = ' ';
 		}
-		if (*cp != '\0') {
-			u.u_error = ENOEXEC;
-			goto bad;
-		}
-		cp = &exdata.ex_shell[2];
-		while (*cp == ' ')
-			cp++;
+		for (cp = &exdata.ex_shell[2]; *cp == ' '; ++cp);
 		ndp->ni_dirp = cp;
-		while (*cp && *cp != ' ')
-			cp++;
-		cfarg[0] = '\0';
+		for (; *cp && *cp != ' '; ++cp);
 		if (*cp) {
-			*cp++ = '\0';
-			while (*cp == ' ')
-				cp++;
+			for (*cp++ = '\0'; *cp == ' '; ++cp);
 			if (*cp)
 				bcopy((caddr_t)cp, (caddr_t)cfarg, MAXINTERP);
 		}
-		indir = 1;
+		else
+			cfarg[0] = '\0';
 		iput(ip);
 		ndp->ni_nameiop = LOOKUP | FOLLOW;
 		ndp->ni_segflg = UIO_SYSSPACE;
@@ -179,6 +171,8 @@ execve()
 		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)cfname,
 		    MAXCOMLEN);
 		cfname[MAXCOMLEN] = '\0';
+		uid = u.u_uid;		/* shell scripts can't be setuid */
+		gid = u.u_gid;
 		goto again;
 	}
 
