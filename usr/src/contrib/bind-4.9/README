@@ -1,0 +1,364 @@
+4.9 release - April, 1993 - Paul Vixie <vixie@pa.dec.com>
+
+For information on what's new in 4.9, see OPTIONS and CHANGES.  Also note
+that the man page for named(8) in man/named.8, and the entire Bind Operations
+Guide in doc/BOG/*, has been updated for 4.9.  Both make excellent reading.
+
+I recommend reading this ENTIRE FILE before you attempt to build BIND.
+
+Those of you who are thinking of adding features should first read TODO to
+see if someone else has already indicated an intention to work on the same
+thing.  If your feature is significant you should ask <bind@uunet.uu.net>
+before you hack, if for no other reason than to tell other maintainers to
+expect a patch soon.
+
+Note that the resolver has a number of routines that may already be present
+on your system.  Efforts have been made to avoid generating code for them on
+systems where they aren't needed; don't worry about them if they're
+generated unneccessarily since the linker will sort things out.
+
+This software is protected under the U C Regents' copyright.  Changes made
+by or released through Digital Equipment Corporation are subject to a
+subsidiary copyright.  The entire copyright is as follows:
+
+++Copyright++ 1989
+-
+Copyright (c) 1989 Regents of the University of California.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. All advertising materials mentioning features or use of this software
+   must display the following acknowledgement:
+	This product includes software developed by the University of
+	California, Berkeley and its contributors.
+4. Neither the name of the University nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE.
+-
+Portions Copyright (c) 1993 by Digital Equipment Corporation.
+
+Permission to use, copy, modify, and distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies, and that
+the name of Digital Equipment Corporation not be used in advertising or
+publicity pertaining to distribution of the document or software without
+specific, written prior permission.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS ALL
+WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL EQUIPMENT
+CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+SOFTWARE.
+-
+--Copyright--
+
+To build this:
+
+	(on SUNOS, use the BSD build environment or you will
+	get the wrong definition for O_NDELAY)
+
+	look at conf/options.h and edit to your tastes.
+	The OPTIONS file here in this directory will help you
+	figure out what to do.
+
+	"make links" will build a shadow source tree full
+	of symbolic links.  the default name of this tree
+	is "./native.b", but you can override it by setting
+	the DST variable on the "make" command line, as in:
+		make DST=vax.b 
+	if your DST is not a subdir of "here", you will need to
+	override the SRC variable's default (which is ".."),
+	as in:
+		make DST=/tmp/vax.b SRC=`pwd` 
+	note that the DST directory must be nonexistent at
+	the time that you run "make links".
+
+	after "make links", you can cd to the new build
+	directory to run "make depend".  if you aren't using
+	"make links" (shame on you), just use "make depend"
+	from "here".  "make depend" may fail on your system;
+	if so, look in the bin/ directory and find a mkdep that
+	does in fact work for you.
+
+	if you skip the "make depend" phase, or after you run it,
+	you can do "make all" (from the build directory if you
+	used "make links" or from "here" if you're just hacking
+	around).  you will get the following new things out of it:
+		res/libresolv.a
+		include/{netdb,resolv}.h
+		include/arpa/{inet,nameser}.h
+		include/sys/cdefs.h
+		tools/{nstest,nsquery,dig,host}
+		tools/nslookup/nslookup
+		named/named
+		named/named-xfer
+	if you have trouble with "make all", check conf/portability.h
+	for things that your system needs, or doesn't need, or whatever.
+	it is preferable to add #ifdef's to conf/portability.h than to
+	add them to any other source file.
+	
+	from the build directory (or "here" if you didn't
+	use "make links"), you can try "make -n install"
+	which will tell you what will be installed.  it will
+	almost certainly be wrong; what you really want to
+	do is copy the above files into the places you want
+	run them from (note that named-xfer's path is hard-
+	coded in named/pathnames.h -- edit that file if you
+	want to install named-xfer in some new place).  the
+	other files you will need are:
+		tools/nslookup/nslookup.help
+		named/named.restart (or maybe named.restart.reno)
+		named/named.reload (or maybe named.reload.reno)
+	note that nslookup.help's path is hardcoded in the
+	tools/nslookup/pathnames.h include file, so make sure
+	that you edit that file to say where you intend to
+	install nslookup.help.
+
+	library notes: this resolver is not much changed from
+	the 4.8.3 version, but you should install it anyway just
+	to prove that you can.  to do this, either put the .a
+	file into /usr/local/lib or /usr/lib (if you use -lresolv
+	on all the links of your networking software), or use "ar"
+	to put all res/*.o directly into your /lib/libc.a file.
+	either way you will want to copy the include files over
+	to /usr/include (or /usr/local/include if you're willing
+	to use -I/usr/local/include on all your network-software
+	compiles).  something like this:
+	    cp res/libresolv.a /usr/lib; ranlib /usr/lib/libresolv.a
+	    tar chf - include | (cd /usr/include; tar xvpf -)
+
+	installing the man pages is left as an exercise for the
+	reader.  there are just too many different versions of
+	"man" floating around for me to be able to help you figure
+	out what to do for the one you happen to be using.
+
+Special security-related information for SUNOS systems:
+
+	From: smb@research.att.com
+	Received: by bigbird; Sat Jan  2 17:57:05 EST 1993
+	To: Paul A Vixie <vixie>
+	Subject: Re: YABAR (yet another bind 4.9 alpha release) 
+	Date: Sat, 02 Jan 93 17:57:01 EST
+
+	There's a serious problem with that library on Suns.  Sun has put the
+	PTR-A record cross-check in gethostbyaddr(), rather than in rshd and
+	rlogind and rpc.mountd and...  I won't argue if they're right or wrong,
+	but anyone who installs the new code without knowing that is exposing
+	their system to attack.  ``You'' really need an option to do that
+	check.  (I may have time to write the code, but not for another week
+	or so.)
+
+(special compilation-related warning about SunOS systems:)
+
+	From: Tom Limoncelli <tom_limoncelli@Warren.MENTORG.COM>
+	Message-Id: <199301111630.AA26308@warren.mentorg.com>
+	To: vixie (Paul A Vixie)
+	Date: Mon, 11 Jan 93 11:30:39 EST
+
+	Sun compiler v2.0.1 hates bind4.9 code.
+
+	Sun has 3 compilers:
+
+	/usr/ucb/cc  -- the default for SunOS 4.1.[123],
+			dropped in Solaris 2.0.
+	/usr/lang/cc  -- the "unbundled" cc v1.0
+			(pretty good, but expensive), only
+	                 generates code for SunOS 4.1.x.
+	/usr/lang/cc.2.0.1 -- the latest "unbundled" cc,
+			for when they stop shipping the
+			bundled version altogether.  This
+			generates code for SunOS 4.1.x and Solaris 2.x.
+
+	Well, the v2.0.1 compiler's backend was written by some people that
+	really know the SPARC arch. and did a great job.
+
+	The v2.0.1 FRONTEND was written by some weenie with the ANSI spec that
+	wanted to show everyone how smart he/she was.  Either that, or they had
+	never programmed in "C" before.
+
+	The frontend follows the spec so closely that everything seems to be a
+	warning.  If the spec leaves something undefined, they went with the
+	opposite of all previously known compilers.
+
+	Anyway, if you really want an anal retentive list of warnings that the
+	bind4.9 distribution generates, I can send it to you.  However, I
+	hesitate to send it because I think the real "right thing" to do is
+	join the "unbundled C boycott" and skip to GCC.
+
+--------------------- (4.8.3 README -- mostly obsolete now)
+
+This directory contains all the info and sources
+for the Berkeley Internet Name Domain server.
+You should read and understand these directions before starting
+to install the libraries and nameserver.  Some of these steps
+replace existing source and binary files; you should make backups
+of all existing files before you begin this installation.
+Two installation procedures are described.  The first is for 4.3BSD
+and other similar systems that are already configured to use earlier
+versions of the nameserver, and which have the new version of <netdb.h>
+(containing a h_addr_list field in the hostent structure).  The second
+procedure is for 4.2BSD and derived systems.  This procedure requires
+more decisions to be made, and may have to be varied due to system
+or operation constraints.
+
+The subdirectories and their contents are:
+
+bin       - shell scripts used by current Berkeley makefiles
+man       - manual pages & documentation
+doc       - copy of Bind Operations Guide, and other documents 
+include   - include files to go in /usr/include
+named     - name server sources
+res       - source for C library resolver routines (and other libc additions)
+	    (may be used as separate library, resolv.a)
+master    - Sample data files
+tools     - some test programs
+
+
+Here is how to install the name server on 4.3BSD:
+
+0) cp bin/mkdep.append /usr/ucb/mkdep
+   cp bin/manroff /usr/man/manroff
+1) cp include/arpa/nameser.h /usr/include/arpa  
+2) cp include/*.h /usr/include 
+3) cp man/*.1 /usr/man/manl
+   cp man/*.3 /usr/man/man3
+   cp man/*.5 /usr/man/man5
+   cp man/*.7 /usr/man/man7
+   cp man/*.8 /usr/man/man8
+4) NOTE: Don't install the Makefiles on 4.3 Tahoe Release
+   cp res/{res*.c,herror.c} /usr/src/lib/libc/net
+   cp res/Makefile.libc.net /usr/src/lib/libc/net/Makefile
+   cp res/strcasecmp.c /usr/src/lib/libc/gen
+   cp res/strpbrk.c /usr/src/lib/libc/compat-sys5
+   cp res/named/{*.c,Makefile} /usr/src/lib/libc/net/named
+5) add strcasecmp.[co] to the Makefile in /usr/src/lib/libc/gen
+6) add strpbrk.[co] to the Makefile in /usr/src/lib/libc/compat-sys5
+7) rebuild and install /lib/libc.a.
+8) edit named/pathnames.h to correpond with your system's configuration
+9) cd named; make depend; make all; make install
+10) cd tools/nslookup; make nslookup; make install
+11) create the master files (samples in master/*)
+12) edit /etc/rc.local to include:
+
+if [ -f /etc/named ]; then
+        /etc/named; echo -n ' named' >/dev/console
+fi
+
+13) recompile network client and server programs that use gethostbyname, etc.
+
+
+
+Here is how to install the name server on 4.2BSD or similar systems.
+First, a few notes on the choices that must be made.
+
+Rather than building libresolv.a, you may wish to integrate the resolver
+routines into /lib/libc.a.  This is recommended to make it easy to recompile
+network programs once named is running.  This procedure may require hand-
+tayloring on some systems.
+
+You will have to choose a version of mkdep from the bin directory
+that will work on your system:
+If you've modified make(1) to use .depend files as described
+in the current sendmail distribution, use mkdep; otherwise,
+if you have the 4.3BSD cc -M option, use mkdep.append; on ultrix,
+use mkdep.ultrix (uses cc -Em); otherwise, use mkdep.old.compiler.
+The mkdep script is used by "make depend" to regenerate Makefile dependency
+lists.
+
+You will need to chose a version of netdb.h.  First, check /usr/include/netdb.h
+on your system.  If the hostent structure has a h_addr_list entry, you can
+probably use your existing netdb.h or the one in include/netdb.h.
+If the existing netdb.h in /usr/include does not have a h_addr_list field,
+you will have to decide whether to update to the 4.3BSD format of the hostent
+structure.  This is the best approach, but cannot be used unless you plan
+to upgrade entirely: if you use the new structure in /usr/include/resolv.h,
+you must recompile everything that uses the hostent structure, including
+the rest of the C library and all networking programs, without using
+any pre-existing object files.  If this isn't possible or desirable,
+and /usr/include/netdb.h doesn't have an h_addr_list line, use
+include/netdb.h.4.2 instead of netdb.h.  The other version of netdb.h
+(include/netdb.h.4.2.compat) may be used instead of include/netdb.h.4.2.
+This version along with a change in res/named/gethostnamadr.c.compat
+provide for using the new format of the hostent structure while having
+binary compatibility with existing libraries.
+
+On systems with Sun RPC, you will have to merge include/netdb.h or
+include/netdb.h.4.2 with /usr/include/netdb.h; copy the rpc-related lines
+into the appropriate copy of netdb.h.  Alternatively, use an alternate
+include path when compiling the resolver library and programs that use it.
+
+0) cp bin/{whatever} /usr/ucb/mkdep		(see above)
+   cp bin/manroff /usr/man/manroff
+1) cp include/arpa/nameser.h /usr/include/arpa  
+   Also, on ultrix 2.x, if you haven't fixed
+   the inet_addr definition in inet.h, do
+   cp include/arpa/inet.h /usr/include/arpa
+2) cp include/resolv.h /usr/include
+3) cp include/netdb.h /usr/include/netdb.h
+OR
+   cp include/netdb.h.4.2 /usr/include/netdb.h
+OR
+   edit /usr/include/netdb.h
+4) cp man/*.1 /usr/man/manl
+   cp man/*.3 /usr/man/man3
+   cp man/*.5 /usr/man/man5
+   cp man/*.7 /usr/man/man7
+   cp man/*.8 /usr/man/man8
+5) cd res; make depend;
+   make libresolv.a;
+   make install
+OR
+   update the libc sources as in the 4.3BSD instructions above
+   and use res/Makefile as a guide for integration
+   and omit the RES=-lresolv in the next two steps
+OR
+   compile the .o files in res according to Makefile,
+   then use place those object files in /lib/libc.a (keeping a backup!)
+   and omit the RES=-lresolv in the next two steps
+6) edit named/pathnames.h to correpond with your system's configuration
+7) cd named; make depend; make RES=-lresolv all; make install
+   (if your system defines signal-catching routines to return int
+   instead of void, use "make DEFINES=-DSIG_FN=int RES=-lresolv all")
+8) edit tools/nslookup/pathnames.h to correpond with your system's
+     configuration
+9) cd tools/nslookup; make RES=-lresolv nslookup install
+10) create the master files (samples in master/*)
+11) edit /etc/rc.local to include:
+
+if [ -f /etc/named ]; then
+        /etc/named; echo -n ' named' >/dev/console
+fi
+
+12) eventually, recompile network client and server programs that use
+gethostbyname, etc.
+
+If you have any problems or fixes send them to 
+	bind@ucbarpa.berkeley.edu
+
+To be added to that mailing list, send mail to
+	bind-request@ucbarpa.berkeley.edu
+
+For sendmail that supports MX records, use anonymous ftp to obtain
+	ucbarpa.Berkeley.EDU:~ftp/4.3/sendmail.5.64.tar.Z
