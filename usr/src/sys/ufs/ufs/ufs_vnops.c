@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.117 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.112.1.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -134,12 +134,6 @@ ufs_open(ap)
 	} */ *ap;
 {
 
-	/*
-	 * Files marked append-only must be opened for appending.
-	 */
-	if ((VTOI(ap->a_vp)->i_flags & APPEND) &&
-	    (ap->a_mode & (FWRITE | O_APPEND)) == FWRITE)
-		return (EPERM);
 	return (0);
 }
 
@@ -202,8 +196,6 @@ ufs_access(ap)
 		}
 	}
 #endif /* QUOTA */
-	if ((mode & VWRITE) && (ip->i_flags & IMMUTABLE))
-		return (EPERM);
 	/*
 	 * If you're the super-user, you always get access.
 	 */
@@ -300,27 +292,6 @@ ufs_setattr(ap)
 	    ((int)vap->va_bytes != VNOVAL) || (vap->va_gen != VNOVAL)) {
 		return (EINVAL);
 	}
-	if (vap->va_flags != VNOVAL) {
-		if (cred->cr_uid != ip->i_uid &&
-		    (error = suser(cred, &p->p_acflag)))
-			return (error);
-		if (cred->cr_uid == 0) {
-			if ((ip->i_flags & (SF_IMMUTABLE | SF_APPEND)) &&
-			    securelevel > 0)
-				return (EPERM);
-			ip->i_flags = vap->va_flags;
-		} else {
-			if (ip->i_flags & (SF_IMMUTABLE | SF_APPEND))
-				return (EPERM);
-			ip->i_flags &= 0xffff0000;
-			ip->i_flags |= (vap->va_flags & 0xffff);
-		}
-		ip->i_flag |= ICHG;
-		if (vap->va_flags & (IMMUTABLE | APPEND))
-			return (0);
-	}
-	if (ip->i_flags & (IMMUTABLE | APPEND))
-		return (EPERM);
 	/*
 	 * Go through the fields and update iff not VNOVAL.
 	 */
@@ -336,9 +307,7 @@ ufs_setattr(ap)
 	ip = VTOI(vp);
 	if (vap->va_atime.ts_sec != VNOVAL || vap->va_mtime.ts_sec != VNOVAL) {
 		if (cred->cr_uid != ip->i_uid &&
-		    (error = suser(cred, &p->p_acflag)) &&
-		    ((vap->va_vaflags & VA_UTIMES_NULL) == 0 || 
-		    (error = VOP_ACCESS(vp, VWRITE, cred, p))))
+		    (error = suser(cred, &p->p_acflag)))
 			return (error);
 		if (vap->va_atime.ts_sec != VNOVAL)
 			ip->i_flag |= IACC;
@@ -354,6 +323,18 @@ ufs_setattr(ap)
 	error = 0;
 	if (vap->va_mode != (mode_t)VNOVAL)
 		error = ufs_chmod(vp, (int)vap->va_mode, cred, p);
+	if (vap->va_flags != VNOVAL) {
+		if (cred->cr_uid != ip->i_uid &&
+		    (error = suser(cred, &p->p_acflag)))
+			return (error);
+		if (cred->cr_uid == 0) {
+			ip->i_flags = vap->va_flags;
+		} else {
+			ip->i_flags &= 0xffff0000;
+			ip->i_flags |= (vap->va_flags & 0xffff);
+		}
+		ip->i_flag |= ICHG;
+	}
 	return (error);
 }
 
@@ -586,16 +567,12 @@ ufs_remove(ap)
 	int error;
 
 	ip = VTOI(vp);
-	if ((ip->i_flags & (IMMUTABLE | APPEND)) ||
-	    (VTOI(dvp)->i_flags & APPEND)) {
-		error = EPERM;
-		goto out;
-	}
-	if ((error = ufs_dirremove(dvp, ap->a_cnp)) == 0) {
+	error = ufs_dirremove(dvp, ap->a_cnp);
+	if (!error) {
+		ip = VTOI(vp);
 		ip->i_nlink--;
 		ip->i_flag |= ICHG;
 	}
-out:
 	if (dvp == vp)
 		vrele(vp);
 	else
@@ -639,11 +616,6 @@ ufs_link(ap)
 	if ((nlink_t)ip->i_nlink >= LINK_MAX) {
 		VOP_ABORTOP(vp, cnp);
 		error = EMLINK;
-		goto out1;
-	}
-	if (ip->i_flags & (IMMUTABLE | APPEND)) {
-		VOP_ABORTOP(vp, cnp);
-		error = EPERM;
 		goto out1;
 	}
 	ip->i_nlink++;
@@ -898,11 +870,6 @@ abortit:
 	/*
 	 * Check if just deleting a link name.
 	 */
-	if (tvp && ((VTOI(tvp)->i_flags & (IMMUTABLE | APPEND)) ||
-	    (VTOI(tdvp)->i_flags & APPEND))) {
-		error = EPERM;
-		goto abortit;
-	}
 	if (fvp == tvp) {
 		if (fvp->v_type == VDIR) {
 			error = EINVAL;
@@ -925,11 +892,6 @@ abortit:
 		goto abortit;
 	dp = VTOI(fdvp);
 	ip = VTOI(fvp);
-	if ((ip->i_flags & (IMMUTABLE | APPEND)) || (dp->i_flags & APPEND)) {
-		VOP_UNLOCK(fvp);
-		error = EPERM;
-		goto abortit;
-	}
 	if ((ip->i_mode & IFMT) == IFDIR) {
 		/*
 		 * Avoid ".", "..", and aliases of "." for obvious reasons.
@@ -1250,18 +1212,22 @@ ufs_mkdir(ap)
 #endif
 	dp = VTOI(dvp);
 	if ((nlink_t)dp->i_nlink >= LINK_MAX) {
-		error = EMLINK;
-		goto out;
+		free(cnp->cn_pnbuf, M_NAMEI);
+		vput(dvp);
+		return (EMLINK);
 	}
-	dmode = vap->va_mode & 0777;
+	dmode = vap->va_mode&0777;
 	dmode |= IFDIR;
 	/*
 	 * Must simulate part of maknode here to acquire the inode, but
 	 * not have it entered in the parent directory. The entry is made
 	 * later after writing "." and ".." entries.
 	 */
-	if (error = VOP_VALLOC(dvp, dmode, cnp->cn_cred, &tvp))
-		goto out;
+	if (error = VOP_VALLOC(dvp, dmode, cnp->cn_cred, &tvp)) {
+		free(cnp->cn_pnbuf, M_NAMEI);
+		vput(dvp);
+		return (error);
+	}
 	ip = VTOI(tvp);
 	ip->i_uid = cnp->cn_cred->cr_uid;
 	ip->i_gid = dp->i_gid;
@@ -1332,7 +1298,6 @@ bad:
 		vput(tvp);
 	} else
 		*ap->a_vpp = tvp;
-out:
 	FREE(cnp->cn_pnbuf, M_NAMEI);
 	vput(dvp);
 	return (error);
@@ -1376,10 +1341,6 @@ ufs_rmdir(ap)
 	if (ip->i_nlink != 2 ||
 	    !ufs_dirempty(ip, dp->i_number, cnp->cn_cred)) {
 		error = ENOTEMPTY;
-		goto out;
-	}
-	if ((dp->i_flags & APPEND) || (ip->i_flags & (IMMUTABLE | APPEND))) {
-		error = EPERM;
 		goto out;
 	}
 	/*
@@ -1664,6 +1625,9 @@ ufs_islocked(ap)
  * Calculate the logical to physical mapping if not done already,
  * then call the device strategy routine.
  */
+#include <sys/sysctl.h>
+int checkblk = 1;
+struct ctldebug debug10 = { "checkblk", &checkblk };
 int
 ufs_strategy(ap)
 	struct vop_strategy_args /* {
@@ -1673,22 +1637,50 @@ ufs_strategy(ap)
 	register struct buf *bp = ap->a_bp;
 	register struct vnode *vp = bp->b_vp;
 	register struct inode *ip;
+	daddr_t blkno;
 	int error;
 
 	ip = VTOI(vp);
 	if (vp->v_type == VBLK || vp->v_type == VCHR)
 		panic("ufs_strategy: spec");
-	if (bp->b_blkno == bp->b_lblkno) {
-		if (error =
-		    VOP_BMAP(vp, bp->b_lblkno, NULL, &bp->b_blkno, NULL)) {
+	if ((checkblk && (long)bp->b_lblkno >= 0 &&
+	    (bp->b_flags & B_XXX) == 0) ||
+	    bp->b_blkno == bp->b_lblkno) {
+		if (error = VOP_BMAP(vp, bp->b_lblkno, NULL, &blkno, NULL)) {
 			bp->b_error = error;
 			bp->b_flags |= B_ERROR;
 			biodone(bp);
 			return (error);
 		}
+		if (bp->b_blkno != bp->b_lblkno && bp->b_blkno != blkno &&
+		    !((bp->b_flags & B_READ) && (long)blkno == -1))
+			panic("ufs_strategy: bad blkno %d != %d", bp->b_blkno,
+			    blkno);
+		/* If this is a clustered block, check sub-blocks as well */
+		if (bp->b_saveaddr) {
+			struct buf *tbp;
+			struct cluster_save *b_save;
+			int i;
+			daddr_t bn;
+
+			b_save = (struct cluster_save *)bp->b_saveaddr;
+			for (i = 0; i < b_save->bs_nchildren; i++) {
+				tbp = b_save->bs_children[i];
+				if ((tbp->b_flags & B_XXX) == 0 &&
+				    !VOP_BMAP(vp, tbp->b_lblkno, NULL,
+				    &bn, NULL) && tbp->b_blkno != bn)
+					panic("ufs_strategy: bad bno %d != %d",
+					    bp->b_blkno, blkno);
+			}
+		}
+		bp->b_blkno = blkno;
 		if ((long)bp->b_blkno == -1)
-			clrbuf(bp);
+			if ((bp->b_flags & B_READ) == 0)
+				panic("ufs_startegy: write unallocated block");
+			else
+				clrbuf(bp);
 	}
+	bp->b_flags &=~ B_XXX;
 	if ((long)bp->b_blkno == -1) {
 		biodone(bp);
 		return (0);
