@@ -1,4 +1,4 @@
-/* tcp_input.c 1.14 81/10/31 */
+/* tcp_input.c 1.15 81/10/31 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -679,11 +679,11 @@ ctlonly:
 		n = n->t_next;
 		while (m) {
 			if (m->m_len == 0) {
-				m = m_free(m);
-				continue;
+				MFREE(m, *mp);
+			} else {
+				*mp = m;
+				mp = &m->m_next;
 			}
-			*mp = m;
-			mp = &m->m_next;
 			m = *mp;
 		}
 	}
