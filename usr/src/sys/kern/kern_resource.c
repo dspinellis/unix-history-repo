@@ -1,4 +1,4 @@
-/*	kern_resource.c	4.7	82/06/07	*/
+/*	kern_resource.c	4.8	82/06/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -25,8 +25,7 @@ sysacct()
 	if (suser()) {
 		if (uap->fname==NULL) {
 			if (ip = acctp) {
-				ilock(ip);
-				iput(ip);
+				irele(ip);
 				acctp = NULL;
 			}
 			return;

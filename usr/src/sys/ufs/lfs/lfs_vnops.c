@@ -1,4 +1,4 @@
-/*	lfs_vnops.c	4.25	82/06/07	*/
+/*	lfs_vnops.c	4.26	82/06/10	*/
 
 #ifdef SIMFS
 #include "../h/sysrenam.h"
@@ -46,10 +46,8 @@ register struct inode **ipp;
 	if(access(ip, IEXEC))
 		goto bad;
 	iunlock(ip);
-	if (*ipp) {
-		ilock(*ipp);
-		iput(*ipp);
-	}
+	if (*ipp)
+		irele(*ipp);
 	*ipp = ip;
 	return;
 
@@ -120,8 +118,10 @@ open1(ip, mode, trf)
 				u.u_error = EISDIR;
 		}
 	}
-	if (u.u_error)
-		goto out;
+	if (u.u_error) {
+		iput(ip);
+		return;
+	}
 	if (trf == 1)
 		itrunc(ip);
 	iunlock(ip);
@@ -136,8 +136,7 @@ open1(ip, mode, trf)
 	u.u_ofile[i] = NULL;
 	fp->f_count--;
 out:
-	if (ip != NULL)
-		iput(ip);
+	irele(ip);
 }
 
 /*
@@ -220,7 +219,7 @@ out:
 		ip->i_flag |= ICHG;
 	}
 out1:
-	iput(ip);
+	irele(ip);
 }
 
 /*
@@ -281,6 +280,7 @@ unlink()
 	struct fs *fs;
 	struct buf *bp;
 	int lbn, bn, base;
+	int unlinkingdot = 0;
 
 	pp = namei(uchar, 2, 0);
 	if(pp == NULL)
@@ -292,6 +292,7 @@ unlink()
 	if (pp->i_number == u.u_dent.d_ino) {
 		ip = pp;
 		ip->i_count++;
+		unlinkingdot++;
 	} else
 		ip = iget(pp->i_dev, pp->i_fs, u.u_dent.d_ino);
 	if(ip == NULL)
@@ -343,7 +344,10 @@ unlink()
 	ip->i_flag |= ICHG;
 
 out:
-	iput(ip);
+	if (unlinkingdot)
+		irele(ip);
+	else
+		iput(ip);
 out1:
 	iput(pp);
 }
