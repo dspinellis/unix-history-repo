@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)setbuf.3	6.1 (Berkeley) %G%
+.\"	@(#)setbuf.3	6.2 (Berkeley) %G%
 .\"
 .TH SETBUF 3S  ""
 .UC 4
@@ -135,4 +135,10 @@ The
 .I setbuffer
 and
 .I setlinebuf
-functions are not portable to non 4.2 BSD versions of UNIX.
+functions are not portable to non-4.2BSD versions of UNIX.
+On 4.2BSD and 4.3BSD systems,
+.I setbuf
+always uses a suboptimal buffer size and should be avoided.
+.I Setbuffer
+is not usually needed
+as the default file I/O buffer sizes are optimal.
