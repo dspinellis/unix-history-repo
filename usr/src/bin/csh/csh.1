@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)csh.1	5.1 (Berkeley) %G%
+.\"	@(#)csh.1	6.1 (Berkeley) %G%
 .\"
-.TH CSH 1 "18 July 1983"
+.TH CSH 1 ""
 .UC 4
 .de sh
 .br
@@ -1220,11 +1220,27 @@ then the job or process will be sent a CONT (continue) signal as well.
 .HP 5
 \fBlimit\fR \fIresource\fR \fImaximum-use\fR
 .br
+.ns
+.HP 5
+\fBlimit\ \-h\fR
+.br
+.ns
+.HP 5
+\fBlimit\ \-h\fR \fIresource\fR
+.br
+.ns
+.HP 5
+\fBlimit\ \-h\fR \fIresource\fR \fImaximum-use\fR
+.br
 Limits the consumption by the current process and each process
 it creates to not individually exceed \fImaximum-use\fR on the
 specified \fIresource\fR.  If no \fImaximum-use\fR is given, then
 the current limit is printed; if no \fIresource\fR is given, then
-all limitations are given.
+all limitations are given.  If the \fB\-h\fR
+flag is given, the hard limits are used instead of the current
+limits.  The hard limits impose a ceiling on the values of
+the current limits.  Only the super-user may raise the hard limits,
+but a user may lower or raise the current limits within the legal range.
 .IP
 Resources controllable currently include \fIcputime\fR (the maximum
 number of cpu-seconds to be used by each process), \fIfilesize\fR
@@ -1614,14 +1630,24 @@ It is not an error for nothing to be
 Use of the internal hash table to speed location of executed programs
 is disabled.
 .HP 5
+\fBunlimit\fR
+.br
+.ns
+.HP 5
 \fBunlimit\fR \fIresource\fR
 .br
 .ns
 .HP 5
-\fBunlimit\fR
+\fBunlimit\ \-h\fR
+.br
+.ns
+.HP 5
+\fBunlimit\ \-h\fR \fIresource\fR
 .br
 Removes the limitation on \fIresource\fR.  If no \fIresource\fR
-is specified, then all \fIresource\fR limitations are removed.
+is specified, then all \fIresource\fR limitations are removed.  If
+\fB\-h\fR is given, the corresponding hard limits are removed.  Only the
+super-user may do this.
 .HP 5
 .BR unset " pattern"
 .br
