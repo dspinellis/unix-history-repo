@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)dbopen.3	5.12 (Berkeley) %G%
+.\"	@(#)dbopen.3	5.13 (Berkeley) %G%
 .\"
 .TH DB 3  ""
 .UC 7
@@ -67,9 +67,9 @@ void *openinfo;
 .br
 int (*close)(const DB *db);
 .br
-int (*delete)(const DB *db, const DBT *key);
+int (*delete)(const DB *db, const DBT *key, u_long flag);
 .br
-int (*get)(const DB *db, DBT *key, DBT *data);
+int (*get)(const DB *db, DBT *key, DBT *data, u_long flag);
 .br
 int (*put)(const DB *db, const DBT *key, const DBT *data, u_long flag);
 .br
@@ -322,9 +322,13 @@ any of the following values:
 .RS
 .TP
 R_DUP
-If the key already exists in the file, create an entry with a duplicate
-key, i.e. one with the same key and different data as another entry.
-(This implies that keys are not required to be unique.)
+On insertion,
+if the key to be inserted already exists,
+permit insertion anyway.
+This flag permits duplicate keys in the tree.
+By default,
+duplicates are not permitted,
+and attempts to insert them will fail.
 Note, the order of retrieval of key/data pairs with duplicate keys is
 undefined.
 .RE
@@ -338,7 +342,8 @@ recently used pages substantially improves access time.
 In addition, physical writes are delayed as long as possible, so a moderate
 cache can reduce the number of I/O operations significantly.
 Obviously, using a cache increases the likelihood of corruption or lost data
-if the system crashes while a tree is being modified, however, caching 10
+if the system crashes while a tree is being modified.
+However, caching 10
 pages decreases the creation time of a large tree by between two and three
 orders of magnitude.
 .TP
@@ -674,9 +679,6 @@ Margo Seltzer, USENIX Proceedings, Winter 1991.
 .SH BUGS
 The typedef DBT is a mnemonic for ``data base thang'', and was used
 because noone could think of a reasonable name that wasn't already used.
-.PP
-Btrees should reclaim unused pages automatically, and key lengths should
-be unbounded.
 .PP
 None of the access methods provide any form of concurrent access,
 locking, or transactions.
