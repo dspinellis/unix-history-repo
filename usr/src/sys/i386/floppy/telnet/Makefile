@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	telnet
 SRCS=	authenc.c commands.c main.c network.c ring.c sys_bsd.c telnet.c \

@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	sh
 SRCS=	builtins.c cd.c dirent.c echo.c error.c eval.c exec.c expand.c \
