@@ -25,15 +25,15 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 #ifndef lint
 #ifdef NEWDB
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.39 (Berkeley) %G% (with NEWDB and NDBM)";
+static char sccsid[] = "@(#)alias.c	6.40 (Berkeley) %G% (with NEWDB and NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.39 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	6.40 (Berkeley) %G% (with NEWDB)";
 #endif
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.39 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	6.40 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.39 (Berkeley) %G% (without NEWDB or NDBM)";
+static char sccsid[] = "@(#)alias.c	6.40 (Berkeley) %G% (without NEWDB or NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -250,6 +250,9 @@ setalias(spec)
 	char *class;
 	STAB *s;
 
+	if (tTd(27, 8))
+		printf("setalias(%s)\n", spec);
+
 	if (NAliasDBs >= MAXALIASDB)
 	{
 		syserr("Too many alias databases defined, %d max", MAXALIASDB);
@@ -317,13 +320,19 @@ initaliases(rebuild, e)
 	for (dbno = 0; dbno < NAliasDBs; dbno++)
 	{
 		ad = &AliasDB[dbno];
+
+		if (tTd(27, 2))
+			printf("initaliases(%s:%s)\n",
+				ad->ad_class->ac_name, ad->ad_name);
+
 		if (rebuild)
 		{
 			rebuildaliases(ad, FALSE, e);
 		}
 		else
 		{
-			ad->ad_class->ac_init(ad, e);
+			if (ad->ad_class->ac_init(ad, e))
+				ad->ad_flags |= ADF_VALID;
 		}
 	}
 }
@@ -343,6 +352,9 @@ aliaswait(ad, ext, e)
 	struct stat stb;
 	char buf[MAXNAME];
 
+	if (tTd(27, 3))
+		printf("aliaswait\n");
+
 	atcnt = SafeAlias * 2;
 	if (atcnt > 0)
 	{
@@ -353,6 +365,9 @@ aliaswait(ad, ext, e)
 			**  Close and re-open the alias database in case
 			**  the one is mv'ed instead of cp'ed in.
 			*/
+
+			if (tTd(27, 2))
+				printf("aliaswait: sleeping\n");
 
 			ad->ad_class->ac_close(ad, e);
 			sleep(30);
@@ -665,6 +680,9 @@ ndbm_alookup(ad, name, e)
 	datum rhs, lhs;
 	char keybuf[MAXNAME + 1];
 
+	if (tTd(27, 20))
+		printf("ndbm_lookup(%s)\n", name);
+
 	/* create a key for fetch */
 	i = strlen(name) + 1;
 	if (i > sizeof keybuf)
@@ -695,10 +713,10 @@ ndbm_astore(ad, lhs, rhs, e)
 	datum data;
 	int stat;
 
-	key.dsize = strlen(lhs);
+	key.dsize = strlen(lhs) + 1;
 	key.dptr = lhs;
 
-	data.dsize = strlen(rhs);
+	data.dsize = strlen(rhs) + 1;
 	data.dptr = rhs;
 
 	stat = dbm_store((DBM *) ad->ad_dbp, key, data, DBM_INSERT);
@@ -723,11 +741,13 @@ ndbm_ainit(ad, e)
 {
 	char buf[MAXNAME];
 
+	if (tTd(27, 2))
+		printf("ndbm_ainit(%s)\n", ad->ad_name);
+
 	/* open the database */
 	ad->ad_dbp = (void *) dbm_open(ad->ad_name, O_RDONLY, DBMMODE);
 	if (ad->ad_dbp == NULL)
 		return FALSE;
-	ad->ad_flags |= ADF_VALID;
 
 	/* wait for @:@ to appear */
 	aliaswait(ad, ".pag", e);
@@ -750,6 +770,9 @@ ndbm_arebuild(ad, fp, e)
 	int i;
 	char buf[MAXNAME];
 
+	if (tTd(27, 2))
+		printf("ndbm_arebuild(%s)\n", ad->ad_name);
+
 	db = dbm_open(ad->ad_name, O_RDWR|O_CREAT|O_TRUNC, DBMMODE);
 	if (db == NULL)
 	{
@@ -757,7 +780,7 @@ ndbm_arebuild(ad, fp, e)
 		return;
 	}
 	ad->ad_dbp = (void *) db;
-	ad->ad_flags |= ADF_VALID|ADF_WRITABLE;
+	ad->ad_flags |= ADF_WRITABLE;
 
 	/* read and store the aliases */
 	readaliases(ad, fp, e);
@@ -808,10 +831,13 @@ hash_astore(ad, lhs, rhs, e)
 	DBT key;
 	DBT data;
 
-	key.size = strlen(lhs);
+	if (tTd(27, 20))
+		printf("hash_astore(%s, %s)\n", lhs, rhs);
+
+	key.size = strlen(lhs) + 1;
 	key.data = lhs;
 
-	data.size = strlen(rhs);
+	data.size = strlen(rhs) + 1;
 	data.data = rhs;
 
 	stat = ad->ad_ndbp->put(ad->ad_ndbp, &key, &data, R_NOOVERWRITE);
@@ -836,13 +862,15 @@ hash_ainit(ad, e)
 {
 	char buf[MAXNAME];
 
+	if (tTd(27, 2))
+		printf("hash_ainit(%s)\n", ad->ad_name);
+
 	/* open the database */
 	(void) strcpy(buf, ad->ad_name);
 	(void) strcat(buf, ".db");
 	ad->ad_ndbp = dbopen(buf, O_RDONLY, DBMMODE, DB_HASH, NULL);
 	if (ad->ad_ndbp == NULL)
 		return FALSE;
-	ad->ad_flags |= ADF_VALID;
 
 	/* wait for @:@ to appear */
 	aliaswait(ad, ".db", e);
@@ -863,6 +891,9 @@ hash_arebuild(ad, fp, e)
 	register DB *db;
 	char buf[MAXNAME];
 
+	if (tTd(27, 2))
+		printf("hash_arebuild(%s)\n", ad->ad_name);
+
 	db = dbopen(buf, O_RDWR|O_CREAT|O_TRUNC, DBMMODE, DB_HASH, NULL);
 	if (db == NULL)
 	{
@@ -870,7 +901,7 @@ hash_arebuild(ad, fp, e)
 		return;
 	}
 	ad->ad_ndbp = db;
-	ad->ad_flags |= ADF_VALID|ADF_WRITABLE;
+	ad->ad_flags |= ADF_WRITABLE;
 
 	/* read and store the aliases */
 	readaliases(ad, fp, e);
@@ -886,6 +917,9 @@ hash_aclose(ad, e)
 	ALIASDB *ad;
 	ENVELOPE *e;
 {
+	if (tTd(27, 9))
+		printf("hash_aclose(%x)\n", ad->ad_flags);
+
 	if (bitset(ADF_WRITABLE, ad->ad_flags))
 	{
 		/* write out the distinguished alias */
@@ -913,6 +947,9 @@ stab_alookup(ad, name, e)
 	ENVELOPE *e;
 {
 	register STAB *s;
+
+	if (tTd(27, 20))
+		printf("stab_lookup(%s)\n", name);
 
 	s = stab(name, ST_ALIAS, ST_FIND);
 	if (s != NULL)
@@ -950,6 +987,9 @@ stab_ainit(ad, e)
 {
 	FILE *af;
 
+	if (tTd(27, 2))
+		printf("stab_ainit(%s)\n", ad->ad_name);
+
 	af = fopen(ad->ad_name, "r");
 	if (af == NULL)
 	{
@@ -957,7 +997,6 @@ stab_ainit(ad, e)
 		errno = 0;
 		return FALSE;
 	}
-	ad->ad_flags |= ADF_VALID;
 
 	readaliases(ad, af, e);
 }
@@ -973,7 +1012,10 @@ stab_arebuild(ad, fp, e)
 	FILE *fp;
 	ENVELOPE *e;
 {
-	ad->ad_flags |= ADF_VALID|ADF_WRITABLE;
+	if (tTd(27, 2))
+		printf("stab_arebuild(%s)\n", ad->ad_name);
+
+	ad->ad_flags |= ADF_WRITABLE;
 }
 
 
@@ -1007,6 +1049,9 @@ nis_alookup(ad, name, e)
 	auto char *vp;
 	auto int vsize;
 
+	if (tTd(27, 20))
+		printf("nis_lookup(%s)\n", name);
+
 	if (ypmatch(ad->ad_domain, ad->ad_name, name, strlen(name),
 			&vp, &vsize) != 0)
 		return NULL;
@@ -1039,6 +1084,9 @@ nis_ainit(ad, e)
 	register char *p;
 	auto char *ypmaster;
 
+	if (tTd(27, 2))
+		printf("nis_ainit(%s)\n", ad->ad_name);
+
 	p = strchr(ad->ad_name, '@');
 	if (p != NULL)
 	{
@@ -1066,6 +1114,9 @@ nis_arebuild(ad, fp, e)
 	FILE *fp;
 	ENVELOPE *e;
 {
+	if (tTd(27, 2))
+		printf("nis_arebuild(%s)\n", ad->ad_name);
+
 	/* nothing */
 }
 
@@ -1099,6 +1150,9 @@ impl_alookup(ad, name, e)
 	char *name;
 	ENVELOPE *e;
 {
+	if (tTd(27, 20))
+		printf("impl_lookup(%s)\n", name);
+
 #ifdef NEWDB
 	if (bitset(ADF_IMPLHASH, ad->ad_flags))
 		return hash_alookup(ad, name, e);
@@ -1141,31 +1195,34 @@ impl_ainit(ad, e)
 	ALIASDB *ad;
 	ENVELOPE *e;
 {
+	if (tTd(27, 2))
+		printf("impl_ainit(%s)\n", ad->ad_name);
+
 	/* implicit class */
 #ifdef NEWDB
+	ad->ad_flags |= ADF_IMPLHASH;
 	if (hash_ainit(ad, e))
 	{
-		ad->ad_flags |= ADF_VALID|ADF_IMPLHASH;
-		NAliasDBs++;
-		return;
+		return TRUE;
 	}
+	ad->ad_flags &= ~ADF_IMPLHASH;
 #endif
 #ifdef NDBM
+	ad->ad_flags |= ADF_IMPLNDBM;
 	if (ndbm_ainit(ad, e))
 	{
-		ad->ad_flags |= ADF_VALID|ADF_IMPLNDBM;
-		NAliasDBs++;
-		return;
+		return TRUE;
 	}
+	ad->ad_flags &= ~ADF_IMPLNDBM;
 #endif
 	syserr("WARNING: cannot open alias database %s", ad->ad_name);
 
 	if (stab_ainit(ad, e))
 	{
-		ad->ad_flags |= ADF_VALID;
-		NAliasDBs++;
-		return;
+		return TRUE;
 	}
+
+	return FALSE;
 }
 
 /*
@@ -1181,7 +1238,12 @@ impl_arebuild(ad, fp, e)
 #ifdef NEWDB
 	DB *ndb;
 	char buf[MAXNAME];
+#endif
 
+	if (tTd(27, 2))
+		printf("impl_arebuild(%s)\n", ad->ad_name);
+
+#ifdef NEWDB
 	(void) strcpy(buf, ad->ad_name);
 	(void) strcat(buf, ".db");
 	ndb = dbopen(buf, O_RDWR|O_CREAT|O_TRUNC, DBMMODE, DB_HASH, NULL);
@@ -1195,8 +1257,8 @@ impl_arebuild(ad, fp, e)
 		ad->ad_flags |= ADF_IMPLHASH;
 #if defined(NDBM) && defined(YPCOMPAT)
 		if (access("/var/yp/Makefile", R_OK) != 0)
-			return;
 #endif
+			goto readem;
 	}
 #endif
 
@@ -1216,7 +1278,8 @@ impl_arebuild(ad, fp, e)
 	if (!bitset(ADF_IMPLHASH|ADF_IMPLNDBM, ad->ad_flags))
 		return;
 
-	ad->ad_flags |= ADF_VALID|ADF_WRITABLE;
+  readem:
+	ad->ad_flags |= ADF_WRITABLE;
 
 	/* read and store aliases */
 	readaliases(ad, fp, e);
@@ -1233,11 +1296,13 @@ impl_aclose(ad, e)
 	ENVELOPE *e;
 {
 #ifdef NEWDB
-	hash_aclose(ad, e);
+	if (bitset(ADF_IMPLHASH, ad->ad_flags))
+		hash_aclose(ad, e);
 #endif
 
 #ifdef NDBM
-	ndbm_aclose(ad, e);
+	if (bitset(ADF_IMPLNDBM, ad->ad_flags))
+		ndbm_aclose(ad, e);
 #endif
 }
 /*
