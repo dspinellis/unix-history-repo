@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	1.8	83/03/23	*/
+/*	uipc_usrreq.c	1.9	83/04/03	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -242,6 +242,10 @@ unp_bind(unp, nam)
 	if (ip) {
 		iput(ip);
 		return (EADDRINUSE);
+	}
+	if (error = u.u_error) {
+		u.u_error = 0;			/* XXX */
+		return (error);
 	}
 	ip = maknode(IFSOCK | 0777);
 	if (ip == NULL) {
