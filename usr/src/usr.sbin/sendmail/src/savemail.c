@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.16 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -450,7 +450,7 @@ returntosender(msg, returnq, sendbody, e)
 	ee->e_msgsize = ERRORFUDGE;
 	if (!NoReturn)
 		ee->e_msgsize += e->e_msgsize;
-	openxscript(ee);
+	initsys(ee);
 	for (q = returnq; q != NULL; q = q->q_next)
 	{
 		if (bitset(QBADADDR, q->q_flags))
