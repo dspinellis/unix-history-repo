@@ -1,14 +1,14 @@
-.\"	@(#)license	1.1 (Berkeley) %G%
+.\"	@(#)license	1.2 (Berkeley) %G%
 .\"
 .nr LL 6.8i
-.OF '28 June 1991'''
-.EF '28 June 1991'''
+.OF '6 February 1991'''
+.EF '6 February 1991'''
 .ll 6.8i
 .ls 2
 .ce 2
 .ps 11
 .ft HB
-BSD NETWORKING SOFTWARE, RELEASE 2 LICENSE AGREEMENT
+4.4BSD-LITE LICENSE AGREEMENT
 .sp
 University of California, Berkeley
 .sp
@@ -32,7 +32,7 @@ on the date of execution by THE REGENTS OF THE UNIVERSITY OF CALIFORNIA.
 .nr FT HB
 .PP
 LICENSEE desires to obtain from THE REGENTS the Computer Programs
-and documentation known as BSD Networking Software Release 2,
+and documentation known as 4.4BSD-LITE,
 hereinafter called `LICENSED MATERIAL,' and THE REGENTS desires to
 grant to LICENSEE, a license to use LICENSED MATERIAL. THE REGENTS
 hereby grants to LICENSEE a non-exclusive, non-transferable, and
@@ -107,7 +107,7 @@ THE REGENTS DOES NOT WARRANT THAT THE USE OF THE LICENSED MATERIAL
 WILL NOT INFRINGE ANY COPYRIGHT, TRADE SECRET, PATENT, OR OTHER
 PROPRIETARY RIGHT OF ANOTHER PARTY.
 THE LIMITATION OF LIABILITY SET FORTH IN THIS AGREEMENT IS APPLICABLE
-TO ANY CLAIM THAT BSD NETWORKING SOFTWARE, RELEASE 2, OR ANY PORTION
+TO ANY CLAIM THAT 4.4BSD-LITE, OR ANY PORTION
 THEREOF, INFRINGES ANOTHER'S COPYRIGHT, TRADE SECRET, PATENT, OR OTHER
 PROPRIETARY RIGHT.
 .IP 8.
@@ -123,14 +123,13 @@ direct, indirect, special, incidental, or consequential damages
 whether incurred, made or suffered
 by LICENSEE or any of its sublicensees or by other third parties, in 
 connection with or in any way arising out of the furnishing, sublicensing,
-performance or use of the BSD Networking Software, Release 2 in connection
+performance or use of the 4.4BSD-LITE in connection
 with this Agreement. LICENSEE's obligations include, but are not limited to,
 its obligation to indemnify, defend, and hold The Regents of the University
 of California, their agents, officers and
 employees harmless in the case of any claim of copyright, trade secret,
 patent, or any other type of proprietary rights infringement
-based in any manner on LICENSEE's use of BSD
-Networking Software, Release 2.
+based in any manner on LICENSEE's use of 4.4BSD-LITE.
 .IP 9.
 .I Limitation
 .I of
@@ -159,7 +158,7 @@ Electrical Engineering and Computer Science
 Department of the University of California at Berkeley.
 This obligation will be considered met if
 LICENSEE includes
-"Copyright (c) 1989, 1991, The Regents of the University of California"
+"Copyright (c) 1989, 1991, 1992, The Regents of the University of California"
 on the label for electronic media
 containing source or binary code, and the
 statement regarding derivation appears on the
@@ -167,7 +166,7 @@ cover page of the installation or release documentation
 accompanying the electronic media,
 such statement to include
 "This software and documentation
-is based in part on BSD Networking Software, Release 2
+is based in part on 4.4BSD-Lite 
 licensed from The Regents of the University of
 California.  We acknowledge the
 role of the
