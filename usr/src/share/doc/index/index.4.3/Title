@@ -2,10 +2,11 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)Title	6.1 (Berkeley) %G%
+.\"	@(#)Title	6.2 (Berkeley) %G%
 .\"
-.ps 18
-.vs 22
+.\" run this off with NO macro package.
+.ps 20
+.vs 24
 .sp 2.75i
 .ft B
 .ce 1
@@ -23,12 +24,6 @@ Virtual VAX\-11 Version
 .ce
 April, 1986
 .sp |8.2i
-.ce 5
-Computer Systems Research Group
-Computer Science Division
-Department of Electrical Engineering and Computer Science
-University of California
-Berkeley, California  94720
 .bp
 .ll 5.3i
 .in 1.25i
@@ -39,12 +34,3 @@ Berkeley, California  94720
 This index is in the public domain.
 It may be freely copied provided that the acknowledgement
 in the introduction is included.
-.sp 2
-This index reflects system enhancements made at Berkeley and sponsored
-in part by the Defense Advanced Research Projects Agency
-(DoD), Arpa Order No. 4871 monitored by the Naval Electronics Systems
-Command under contract No. N00039-84-C-0089.
-The views and conclusions contained in these documents are those of the
-authors and should not be interpreted as representing official policies,
-either expressed or implied, of the Defense Research Projects Agency
-or of the US Government.
