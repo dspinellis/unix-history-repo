@@ -1,0 +1,30 @@
+  case 'a':	/* arpanet format */
+  case 'c':	/* don't initiate non-local delivery */
+  case 'd':	/* debug */
+  case 'e':	/* error message disposition */
+	  case 'e':	/* do berknet error processing */
+	  case 'm':	/* mail back */
+	  case 'p':	/* print errors normally */
+	  case 'q':	/* be silent about it */
+	  case 'w':	/* write back (or mail) */
+  case 'f':	/* from address */
+  case 'h':	/* hop count */
+  case 'i':	/* don't let dot stop me */
+  case 'm':	/* send to me too */
+  case 'n':	/* don't alias */
+  case 'o':	/* take old-style headers (no commas) */
+  case 'p':	/* fork politely after initial verification */
+  case 'q':	/* run queue files at intervals */
+  case 'r':	/* obsolete -f flag */
+  case 's':	/* save From lines in headers */
+  case 't':	/* read recipients from message */
+  case 'v':	/* give blow-by-blow description */
+  case 'A':	/* select alias file */
+  case 'C':	/* select configuration file */
+  case 'D':	/* run as a daemon */
+  case 'F':	/* set full name */
+  case 'I':	/* initialize alias DBM file */
+  case 'M':	/* redefine internal macro */
+  case 'Q':	/* select queue dir */
+  case 'T':	/* set timeout interval */
+  case 'V':	/* verify only */
