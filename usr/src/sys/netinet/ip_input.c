@@ -488,6 +488,7 @@ ip_drain()
 	}
 }
 
+extern struct in_ifaddr *ifptoia();
 struct in_ifaddr *ip_rtaddr();
 
 /*
@@ -618,7 +619,7 @@ ip_dooptions(ip, ifp)
 					goto bad;
 				break;
 			}
-			sin = (struct in_addr *)(cp+cp[IPOPT_OFFSET]-1);
+			sin = (struct in_addr *)(cp + ipt->ipt_ptr - 1);
 			switch (ipt->ipt_flg) {
 
 			case IPOPT_TS_TSONLY:
@@ -628,21 +629,20 @@ ip_dooptions(ip, ifp)
 				if (ipt->ipt_ptr + sizeof(n_time) +
 				    sizeof(struct in_addr) > ipt->ipt_len)
 					goto bad;
-				if (in_ifaddr == 0)
-					goto bad;	/* ??? */
-				bcopy((caddr_t)&IA_SIN(in_ifaddr)->sin_addr,
+				ia = ifptoia(ifp);
+				bcopy((caddr_t)&IA_SIN(ia)->sin_addr,
 				    (caddr_t)sin, sizeof(struct in_addr));
-				sin++;
+				ipt->ipt_ptr += sizeof(struct in_addr);
 				break;
 
 			case IPOPT_TS_PRESPEC:
+				if (ipt->ipt_ptr + sizeof(n_time) +
+				    sizeof(struct in_addr) > ipt->ipt_len)
+					goto bad;
 				bcopy((caddr_t)sin, (caddr_t)&ipaddr.sin_addr,
 				    sizeof(struct in_addr));
 				if (ifa_ifwithaddr((struct sockaddr *)&ipaddr) == 0)
 					continue;
-				if (ipt->ipt_ptr + sizeof(n_time) +
-				    sizeof(struct in_addr) > ipt->ipt_len)
-					goto bad;
 				ipt->ipt_ptr += sizeof(struct in_addr);
 				break;
 
@@ -650,7 +650,8 @@ ip_dooptions(ip, ifp)
 				goto bad;
 			}
 			ntime = iptime();
-			bcopy((caddr_t)&ntime, (caddr_t)sin, sizeof(n_time));
+			bcopy((caddr_t)&ntime, (caddr_t)cp + ipt->ipt_ptr - 1,
+			    sizeof(n_time));
 			ipt->ipt_ptr += sizeof(n_time);
 		}
 	}
@@ -877,7 +878,6 @@ ip_forward(ip, ifp)
 	    satosin(&ipforward_rt.ro_rt->rt_dst)->sin_addr.s_addr != 0 &&
 	    ipsendredirects && ip->ip_hl == (sizeof(struct ip) >> 2)) {
 		struct in_ifaddr *ia;
-		extern struct in_ifaddr *ifptoia();
 		u_long src = ntohl(ip->ip_src.s_addr);
 		u_long dst = ntohl(ip->ip_dst.s_addr);
 
