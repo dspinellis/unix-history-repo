@@ -1,4 +1,4 @@
-/*	vba.c	1.8	87/06/06	*/
+/*	vba.c	1.9	87/06/30	*/
 
 /*
  * Tahoe VERSAbus adapator support routines.
@@ -40,11 +40,18 @@ vbainit(vb, xsize, flags)
 	register n;
 
 	vb->vb_flags = flags;
-	vbmapalloc(btoc(xsize) + 1, &vb->vb_map, &vb->vb_utl);
+	if (vbmapalloc(btoc(xsize) + 1, &vb->vb_map, &vb->vb_utl) == 0) {
+		printf("vbmap exhausted\n");
+		return (0);
+	}
 	n = roundup(xsize, NBPG);
 	vb->vb_bufsize = n;
 	if (vb->vb_rawbuf == 0)
 		vb->vb_rawbuf = (caddr_t)malloc(n, M_DEVBUF, M_NOWAIT);
+	if (vb->vb_rawbuf == 0) {
+		printf("no memory for device buffer\n");
+		return (0);
+	}
 	if ((int)vb->vb_rawbuf & PGOFSET)
 		panic("vbinit pgoff");
 	vb->vb_physbuf = vtoph((struct proc *)0, vb->vb_rawbuf);
@@ -64,6 +71,7 @@ vbainit(vb, xsize, flags)
 	for (n = btoc(n); n--; pte++)
 		pte->pg_nc = 1;
 	mtpr(TBIA, 0);
+	return (1);
 }
 
 /*

@@ -1,4 +1,4 @@
-/*	cy.c	1.13	87/04/09	*/
+/*	cy.c	1.14	87/06/30	*/
 
 #include "yc.h"
 #if NCY > 0
@@ -166,7 +166,10 @@ cyprobe(reg, vm)
 			return (0);
 		}
 		cy->cy_rbuf.vb_rawbuf = cybuf + ctlr * CYMAXIO;
-		vbainit(&cy->cy_rbuf, CYMAXIO, VB_20BIT);
+		if (vbainit(&cy->cy_rbuf, CYMAXIO, VB_20BIT) == 0) {
+			printf("cy%d: vbainit failed\n", ctlr);
+			return (0);
+		}
 
 		br = 0x13, cvec = 0x80;			/* XXX */
 		return (sizeof (struct cyccb));
