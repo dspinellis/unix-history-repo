@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	8.2 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -250,3 +250,5 @@ loop:
 	}
 	splx(s);
 	tv = time;
+	return (VOP_UPDATE(ap->a_vp, &tv, &tv, ap->a_waitfor == MNT_WAIT));
+}
