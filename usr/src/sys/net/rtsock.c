@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	7.25 (Berkeley) %G%
+ *	@(#)rtsock.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -163,13 +163,21 @@ route_output(m, so)
 		rt = rtalloc1(dst, 0);
 		if (rt == 0)
 			senderr(ESRCH);
-		if (rtm->rtm_type != RTM_GET) {
+		if (rtm->rtm_type != RTM_GET) {/* XXX: too grotty */
+			struct radix_node *rn, *rn_search();
+			extern struct radix_node_head *mask_rnhead;
+
 			if (Bcmp(dst, rt_key(rt), dst->sa_len) != 0)
 				senderr(ESRCH);
-			if (rt->rt_nodes->rn_dupedkey &&
-			    (netmask == 0 ||
-			     Bcmp(netmask, rt_mask(rt), netmask->sa_len)))
+			if (netmask && (rn = rn_search(netmask,
+					    mask_rnhead->rnh_treetop)))
+				netmask = (struct sockaddr *)rn->rn_key;
+			for (rn = rt->rt_nodes; rn; rn = rn->rn_dupedkey)
+				if (netmask == (struct sockaddr *)rn->rn_mask)
+					break;
+			if (rn == 0)
 				senderr(ETOOMANYREFS);
+			rt = (struct rtentry *)rn;
 		}
 		switch(rtm->rtm_type) {
 
