@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- * 		@(#)qevent.h	1.2  Berkeley  %G%
+ * 		@(#)qevent.h	1.3  Berkeley  %G%
  */
 /************************************************************************
 *									*

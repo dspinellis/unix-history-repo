@@ -3,11 +3,9 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- * 		@(#)qdreg.h	1.3  Berkeley  %G%
- *
- *	derived from: qdreg.h	1.5	(ULTRIX)	5/21/86
+ * 		@(#)qdreg.h	1.4  Berkeley  %G%
  */
-
+/* derived from: @(#)qdreg.h	6.1	(ULTRIX)	11/24/87       */
 
 /************************************************************************
  *									*
@@ -34,7 +32,7 @@
 /*
  * qdreg.h
  *
- * Modification history (belongs in sccs)
+ * Modification history
  *
  * QDSS registers/data structures and definitions
  *
@@ -80,6 +78,7 @@
  *	Added new DEVIOCGET ioctl request code. V2.0
  *
  */
+#define DEV_SIZE 8	/*XXX*/
 
 /* Dragon ADDER reg map */
 /* ADDER register bit definitions */
@@ -405,7 +404,6 @@
 	};
 
 /* Driver and data specific structure */
-#define DEV_SIZE 8  /* from ultrix - i don't see where its used ! - marc */
 struct	qd_softc {
 	long	sc_flags;		/* Flags			*/
 	long	sc_category_flags;	/* Category flags		*/

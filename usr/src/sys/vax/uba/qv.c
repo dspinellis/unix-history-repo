@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- * 		@(#)qv.c	1.5  Berkeley  %G%
+ * 		@(#)qv.c	1.6  Berkeley  %G%
  *
  *	derived from: @(#)qv.c	1.8 (ULTRIX) 8/21/85
  */
@@ -111,12 +111,10 @@
 #include "uio.h"
 #include "kernel.h"
 #include "syslog.h"
-
-#include "../vax/cpu.h"
-#include "../vax/mtpr.h"
-
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
+#include "../machine/cpu.h"
+#include "../machine/mtpr.h"
+#include "ubareg.h"
+#include "ubavar.h"
 
 #define CONS_HACK
 
