@@ -1,4 +1,4 @@
-/* mbuf.c 1.2 81/10/23 */
+/* uipc_mbuf.c 1.4 81/10/28 */
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -244,7 +244,7 @@ m_cat(m, n)
 		m = m->m_next;
 	while (n)
 		if (m->m_off + m->m_len + n->m_len <= MMAXOFF) {
-			bcopy(mtod(n), mtod(m) + m->m_len, n->m_len);
+			bcopy(mtod(n, caddr_t), mtod(m, caddr_t) + m->m_len, n->m_len);
 			m->m_len += n->m_len;
 			n = m_free(n);
 		} else {
