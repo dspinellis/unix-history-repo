@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dbtest.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)dbtest.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -66,11 +66,15 @@ main(argc, argv)
 	DBT data, key, keydata;
 	size_t len;
 	int ch;
-	char *infoarg, *p, buf[8 * 1024];
+	char *fname, *infoarg, *p, buf[8 * 1024];
 
 	infoarg = NULL;
-	while ((ch = getopt(argc, argv, "i:o:")) != EOF)
+	fname = NULL;
+	while ((ch = getopt(argc, argv, "f:i:o:")) != EOF)
 		switch(ch) {
+		case 'f':
+			fname = optarg;
+			break;
 		case 'i':
 			infoarg = optarg;
 			break;
@@ -105,10 +109,13 @@ main(argc, argv)
 			if (*p != '\0')
 				infop = setinfo(type, p);
 
-#define	BACKINGFILE	"/tmp/__dbtest"
 	/* Open the DB. */
-	(void)unlink(BACKINGFILE);
-	if ((dbp = dbopen(BACKINGFILE,
+#define	BACKINGFILE	"/tmp/__dbtest"
+	if (fname == NULL) {
+		fname = BACKINGFILE;
+		(void)unlink(BACKINGFILE);
+	}
+	if ((dbp = dbopen(fname,
 	    O_CREAT | O_RDWR, S_IRUSR | S_IWUSR, type, infop)) == NULL)
 		err("dbopen: %s", strerror(errno));
 	XXdbp = dbp;
@@ -248,6 +255,8 @@ lkey:			switch(command) {
 			    p, lineno);
 		}
 	}
+	if (dbp->close(dbp))
+		err("db->close: %s", strerror(errno));
 	(void)close(ofd);
 	exit(0);
 }
@@ -582,7 +591,7 @@ void
 usage()
 {
 	(void)fprintf(stderr,
-	    "usage: dbtest [-i info] [-o file] type script\n");
+	    "usage: dbtest [-f file] [-i info] [-o file] type script\n");
 	exit(1);
 }
 
