@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)radix.c	7.10 (Berkeley) %G%
+ *	@(#)radix.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -83,6 +83,23 @@ rn_search_m(v, head, m)
 	}
 	return x;
 };
+
+rn_refines(m, n)
+	register caddr_t m, n;
+{
+	register caddr_t lim, lim2 = lim = n + *(u_char *)n;
+	int longer = (*(u_char *)n++) - (int)(*(u_char *)m++);
+
+	if (longer > 0)
+		lim -= longer;
+	while (n < lim)
+		if (*n++ & ~(*m++))
+			return 0;
+	while (n < lim2)
+		if (*n++)
+			return 0;
+	return 1;
+}
 
 
 #define MAXKEYLEN 52
@@ -349,18 +366,32 @@ struct radix_node *head;
 			if (tt->rn_mask == netmask)
 				return (0);
 			t = tt;
+			if (netmask == 0 ||
+			    (tt->rn_mask && rn_refines(netmask, tt->rn_mask)))
+				break;
 		} while (tt = tt->rn_dupedkey);
 		/*
 		 * If the mask is not duplicated, we wouldn't
 		 * find it among possible duplicate key entries
 		 * anyway, so the above test doesn't hurt.
 		 *
-		 * XXX: we really ought to sort the masks
+		 * We sort the masks
 		 * for a duplicated key the same way as in a masklist.
 		 * It is an unfortunate pain having to relocate
 		 * the head of the list.
 		 */
-		t->rn_dupedkey = tt = treenodes;
+		if (tt && t == saved_tt) {
+			struct	radix_node *xx = x;
+			/* link in at head of list */
+			(tt = treenodes)->rn_dupedkey = t;
+			tt->rn_flags = t->rn_flags;
+			tt->rn_p = x = t->rn_p;
+			if (x->rn_l == t) x->rn_l = tt; else x->rn_r = tt;
+			saved_tt = tt; x = xx;
+		} else {
+			(tt = treenodes)->rn_dupedkey = t->rn_dupedkey;
+			t->rn_dupedkey = tt;
+		}
 #ifdef RN_DEBUG
 		t=tt+1; tt->rn_info = rn_nodenum++; t->rn_info = rn_nodenum++;
 		tt->rn_twin = t; tt->rn_ybro = rn_clist; rn_clist = tt;
@@ -425,12 +456,9 @@ struct radix_node *head;
 			tt->rn_mklist = m;
 			return tt;
 		}
-		maskp = (u_char *)m->rm_mask;
-		for (cp = netmask; cp < cplim; cp++)
-			if (*(u_char *)cp > *maskp++)
-				goto on2;
+		if (rn_refines(netmask, m->rm_mask))
+			break;
 	}
-on2:
 	MKGet(m);
 	if (m == 0) {
 		printf("Mask for route not entered\n");
@@ -509,19 +537,21 @@ on1:
 		if (tt == saved_tt) {
 			x = dupedkey; x->rn_p = t;
 			if (t->rn_l == tt) t->rn_l = x; else t->rn_r = x;
-#ifndef RN_DEBUG
-			x++; t = tt + 1; *x = *t; p = t->rn_p;
-#else
-			x++; b = x->rn_info; t = tt + 1; *x = *t; p = t->rn_p;
-			x->rn_info = b;
-#endif
-			if (p->rn_l == t) p->rn_l = x; else p->rn_r = x;
-			x->rn_l->rn_p = x; x->rn_r->rn_p = x;
 		} else {
-			for (p = saved_tt; p && p->rn_dupedkey != tt;)
+			for (x = p = saved_tt; p && p->rn_dupedkey != tt;)
 				p = p->rn_dupedkey;
 			if (p) p->rn_dupedkey = tt->rn_dupedkey;
 			else printf("rn_delete: couldn't find us\n");
+		}
+		t = tt + 1;
+		if  (t->rn_flags & RNF_ACTIVE) {
+#ifndef RN_DEBUG
+			*++x = *t; p = t->rn_p;
+#else
+			b = t->rn_info; *++x = *t; t->rn_info = b; p = t->rn_p;
+#endif
+			if (p->rn_l == t) p->rn_l = x; else p->rn_r = x;
+			x->rn_l->rn_p = x; x->rn_r->rn_p = x;
 		}
 		goto out;
 	}
@@ -588,7 +618,6 @@ rn_walk(rn, f, w)
 		}
 		rn = rn->rn_p->rn_r;		/* otherwise, go right*/
 	}
-	return 0;
 }
 char rn_zeros[MAXKEYLEN], rn_ones[MAXKEYLEN];
 
