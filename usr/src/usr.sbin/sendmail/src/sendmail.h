@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	4.8		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	4.9		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -442,8 +442,8 @@ EXTERN bool	QueueRun;	/* currently running message from the queue */
 EXTERN bool	HoldErrs;	/* only output errors to transcript */
 EXTERN bool	NoConnect;	/* don't connect to non-local mailers */
 EXTERN bool	SuperSafe;	/* be extra careful, even if expensive */
-EXTERN bool	SafeAlias;	/* alias file must have "@:@" to be complete */
 EXTERN bool	AutoRebuild;	/* auto-rebuild the alias database as needed */
+EXTERN int	SafeAlias;	/* minutes to wait until @:@ in alias file */
 EXTERN time_t	TimeOut;	/* time until timeout */
 EXTERN FILE	*InChannel;	/* input connection */
 EXTERN FILE	*OutChannel;	/* output connection */
