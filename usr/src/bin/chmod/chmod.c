@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)chmod.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)chmod.c	5.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -61,16 +61,20 @@ done:
 	for (i = 1; i < argc; i++) {
 		p = argv[i];
 		/* do stat for directory arguments */
-		if (stat(p, &st) < 0) {
-			status += error("can't access %s", p);
+		if (lstat(p, &st) < 0) {
+			status += Perror(p);
 			continue;
 		}
-		if (rflag && st.st_mode&S_IFDIR) {
+		if (rflag && (st.st_mode&S_IFMT) == S_IFDIR) {
 			status += chmodr(p, newmode(st.st_mode));
 			continue;
 		}
+		if ((st.st_mode&S_IFMT) == S_IFLNK && stat(p, &st) < 0) {
+			status += Perror(p);
+			continue;
+		}
 		if (chmod(p, newmode(st.st_mode)) < 0) {
-			status += error("can't change %s", p);
+			status += Perror(p);
 			continue;
 		}
 	}
@@ -91,30 +95,36 @@ chmodr(dir, mode)
 	/*
 	 * Change what we are given before doing it's contents
 	 */
-	if (chmod(dir, newmode(mode)) < 0 && error("can't change %s", dir))
+	if (chmod(dir, newmode(mode)) < 0 && Perror(dir))
 		return (1);
-	if (chdir(dir) < 0)
-		return (Perror(dir));
-	if ((dirp = opendir(".")) == NULL)
-		return (Perror(dir));
+	if (chdir(dir) < 0) {
+		Perror(dir);
+		return (1);
+	}
+	if ((dirp = opendir(".")) == NULL) {
+		Perror(dir);
+		return (1);
+	}
 	dp = readdir(dirp);
 	dp = readdir(dirp); /* read "." and ".." */
 	ecode = 0;
 	for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp)) {
 		if (lstat(dp->d_name, &st) < 0) {
-			ecode = error("can't access %s", dp->d_name);
+			ecode = Perror(dp->d_name);
 			if (ecode)
 				break;
 			continue;
 		}
-		if (st.st_mode&S_IFDIR) {
+		if ((st.st_mode&S_IFMT) == S_IFDIR) {
 			ecode = chmodr(dp->d_name, newmode(st.st_mode));
 			if (ecode)
 				break;
 			continue;
 		}
+		if ((st.st_mode&S_IFMT) == S_IFLNK)
+			continue;
 		if (chmod(dp->d_name, newmode(st.st_mode)) < 0 &&
-		    (ecode = error("can't change %s", dp->d_name)))
+		    (ecode = Perror(dp->d_name)))
 			break;
 	}
 	closedir(dirp);
@@ -149,9 +159,11 @@ Perror(s)
 	char *s;
 {
 
-	fprintf(stderr, "chmod: ");
-	perror(s);
-	return (1);
+	if (!fflag) {
+		fprintf(stderr, "chmod: ");
+		perror(s);
+	}
+	return (!fflag);
 }
 
 newmode(nm)
