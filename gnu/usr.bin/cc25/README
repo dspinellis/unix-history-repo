@@ -5,6 +5,8 @@
  this stuff is worth it, you can buy me a beer in return.   Poul-Henning Kamp
  ----------------------------------------------------------------------------
 
+ $Id$
+
 "If you're looking for trouble, 
  you've come to the right place !"
 			The King.
@@ -130,7 +132,10 @@ Installation:
 History:
 --------
 
-This is revision: 199402211500 (v5)
+199402272230
+	Received blessed patch for the ((packed)) problem from GNU.
+
+199402211500 (v5):
 
 	Got more patches from Richard to expmed.c, not quite right yet.
 
