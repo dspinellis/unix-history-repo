@@ -1,0 +1,80 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)select.2	5.1 (Berkeley) %G%
+.\"
+.TH SELECT 2 "2 July 1983"
+.UC 5
+.SH NAME
+select \- synchronous i/o multiplexing
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/time.h>
+.PP
+.ft B
+nfound = select(nfds, readfds, writefds, execptfds, timeout)
+int nfound, nfds, *readfds, *writefds, *execptfds;
+struct timeval *timeout;
+.fi
+.SH DESCRIPTION
+.I Select
+examines the i/o descriptors specified by the bit masks
+.IR readfds ,
+.IR writefds ,
+and
+.I execptfds
+to see if they are ready for reading, writing, or have an exceptional
+condition pending, respectively.
+File descriptor 
+.I f
+is represented by the bit \*(lq1<<f\*(rq in
+the mask.
+.I Nfds
+desciptors are checked,
+i.e. the bits from 0 through
+.IR nfds -1
+in the masks are examined.
+.I Select
+returns, in place, a mask of those descriptors which are ready.
+The total number of ready descriptors is returned in
+.IR nfound .
+.PP
+If
+.I timeout
+is a non-zero pointer, it specifies a maximum interval to wait for the
+selection to complete.  If 
+.I timeout
+is a zero pointer, the select blocks indefinitely.  To affect a poll, the
+.I timeout
+argument should be non-zero, pointing to a zero valued timeval structure.
+.PP
+Any of
+.IR readfds ,
+.IR writefds ,
+and
+.I execptfds
+may be given as 0 if no descriptors are of interest.
+.SH "RETURN VALUE
+.I Select
+returns the number of descriptors which are contained in
+the bit masks,
+or \-1 if an error occurred.
+If the time limit expires then
+.I select
+returns 0.
+.SH "ERRORS
+An error return from \fIselect\fP indicates:
+.TP 15
+[EBADF]
+One of the bit masks specified an invalid descriptor.
+.TP 15
+[EINTR]
+An signal was delivered before any of the selected for
+events occurred or the time limit expired.
+.SH SEE ALSO
+accept(2), connect(2), read(2), write(2), recv(2), send(2)
+.SH BUGS
+The descriptor masks are always modified on return, even
+if the call returns as the result of the timeout.
