@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_cluster.c	7.36 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.37 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -593,6 +593,8 @@ mntflushbuf(mountp, flags)
 		panic("mntflushbuf: not busy");
 loop:
 	for (vp = mountp->mnt_mounth; vp; vp = vp->v_mountf) {
+		if (VOP_ISLOCKED(vp))
+			continue;
 		if (vget(vp))
 			goto loop;
 		vflushbuf(vp, flags);
