@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.31 (Berkeley) %G%
+		@(#)README	8.32 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -814,6 +814,37 @@ To build the internal form of the user databae, use:
 	makemap btree /usr/data/base.db < /usr/data/base.txt
 
 
++--------------------------------+
+| MISCELLANEOUS SPECIAL FEATURES |
++--------------------------------+
+
+DOTTED_USER(name)
+	Sometimes it is convenient to merge configuration on a
+	centralized mail machine, for example, to forward all
+	root mail to a mail server.  In this case it might be
+	useful to be able to treat the root addresses as a class
+	of addresses with subtle differences.  You can do this
+	using dotted users.  For example, a client might include
+	the alias:
+
+		root:  root.client1@server
+
+	On the server, the mail configuration would include:
+
+		DOTTED_USER(root)
+
+	Aliases on the server that would match this address would
+	be "root.client", "root.*", and "root", tried in that
+	order.  You can specify multiple addresses either by
+	joining them in one DOTTTED_USER macro or by having
+	multiple macros:
+
+		DOTTED_USER(root)
+		DOTTED_USER(postmaster mailer-daemon)
+
+	defines three dotted users.
+
+
 +------------------+
 | FlexFAX SOFTWARE |
 +------------------+
@@ -1198,7 +1229,7 @@ CLASSES
    A
    B
    C
-   D
+   D	"dotted" users
    E	addresses that should not seem to come from $M
    F	hosts we forward for
    G

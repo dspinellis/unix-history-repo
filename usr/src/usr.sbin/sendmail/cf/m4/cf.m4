@@ -60,6 +60,11 @@ S2
 define(`LOCAL_RULE_3', `divert(2)')
 define(`LOCAL_CONFIG', `divert(6)')
 define(`LOCAL_NET_CONFIG', `define(`_LOCAL_RULES_', 1)divert(1)')
+define(`DOTTED_USER',
+	`ifdef(`__DOTTED_USER_LIST__',
+		`define(`__DOTTED_USER_LIST__', __DOTTED_USER_LIST__
+CD $1)',
+		`define(`__DOTTED_USER_LIST__', CD $1)')')
 define(`UUCPSMTP', `R DOL(*) < @ $1 .UUCP > DOL(*)	DOL(1) < @ $2 > DOL(2)')
 define(`CONCAT', `$1$2$3$4$5$6$7')
 define(`DOL', ``$'$1')
@@ -119,4 +124,4 @@ define(`confMIME_FORMAT_ERRORS', `True')
 define(`confTRY_NULL_MX_LIST', `False')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	8.5 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	8.6 (Berkeley) %G%')
