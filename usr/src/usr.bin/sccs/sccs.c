@@ -72,22 +72,35 @@
 **		UIDUSER -- determine who the user is by looking at the
 **			uid rather than the login name -- for machines
 **			where SCCS gets the user in this way.
-**		SRCDIR -- if defined, forces the -d flag to take on
+**		SCCSDIR -- if defined, forces the -d flag to take on
 **			this value.  This is so that the setuid
 **			aspects of this program cannot be abused.
+**			This flag also disables the -p flag.
+**		SCCSPATH -- the default for the -p flag.
 **
 **	Compilation Instructions:
 **		cc -O -n -s sccs.c
 **
 **	Author:
 **		Eric Allman, UCB/INGRES
+**		Copyright 1980 Regents of the University of California
 */
+
+/*******************  Configuration Information  ********************/
 
 # ifdef CSVAX
 # define UIDUSER
-# endif
+# define PROGPATH(name)	"/usr/local/name"
+# endif CSVAX
 
-static char SccsId[] = "@(#)sccs.c	1.28 %G%";
+# define SCCSPATH	"SCCS"
+/* put #define SCCSDIR here */
+
+char	MyName[] = "sccs";	/* name used in messages */
+
+/****************  End of Configuration Information  ****************/
+
+static char SccsId[] = "@(#)sccs.c	1.29 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -98,8 +111,6 @@ typedef char	bool;
 # ifdef UIDUSER
 # include <pwd.h>
 # endif UIDUSER
-
-char	MyName[] = "sccs";
 
 struct sccsprog
 {
@@ -124,10 +135,6 @@ struct sccsprog
 # define CLEANC		0	/* clean command */
 # define INFOC		1	/* info command */
 # define CHECKC		2	/* check command */
-
-# ifdef CSVAX
-# define PROGPATH(name)	"/usr/local/name"
-# endif CSVAX
 
 # ifndef PROGPATH
 # define PROGPATH(name)	"/usr/sccs/name"
@@ -164,11 +171,11 @@ struct pfile
 	char	*p_time;	/* time of get */
 };
 
-char	*SccsPath = "SCCS";	/* pathname of SCCS files */
-# ifdef SRCDIR
-char	*SccsDir = SRCDIR;	/* directory to begin search from */
+char	*SccsPath = SCCSPATH;	/* pathname of SCCS files */
+# ifdef SCCSDIR
+char	*SccsDir = SCCSDIR;	/* directory to begin search from */
 # else
-char	*SccsDir = "";		/* directory to begin search from */
+char	*SccsDir = "";
 # endif
 bool	RealUser;		/* if set, running as real user */
 # ifdef DEBUG
@@ -206,7 +213,7 @@ main(argc, argv)
 				RealUser++;
 				break;
 
-# ifndef SRCDIR
+# ifndef SCCSDIR
 			  case 'p':		/* path of sccs files */
 				SccsPath = ++p;
 				break;
