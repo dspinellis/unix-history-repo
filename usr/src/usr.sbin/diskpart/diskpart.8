@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)diskpart.8	6.3 (Berkeley) %G%
+.\"	@(#)diskpart.8	6.4 (Berkeley) %G%
 .\"
 .TH DISKPART 8 ""
 .UC 4
@@ -14,6 +14,9 @@ diskpart \- calculate default disk partition sizes
 .B \-p
 ] [
 .B \-d
+] [
+.B \-s
+size
 ]
 disk-type
 .SH DESCRIPTION
@@ -32,16 +35,23 @@ is generated; c.f.
 On disks that use
 .IR bad144 \|-style
 bad-sector forwarding,
-space is left in the last partition on the disk
-for a bad sector forwarding table.  The space reserved
+space is normally left in the last partition on the disk
+for a bad sector forwarding table, although this space
+is not reflected in the tables produced.  The space reserved
 is one track for the replicated copies of the table and
 sufficient tracks to hold a pool of 126 sectors to which bad sectors
 are mapped.  For more information, see 
 .IR bad144 (8).
+The size of the disk may be limited with the
+.B \-s
+option, specifying the amount of the disk to be used.
+This option is intended for other controllers that reserve some space at the end
+of the disk for bad-sector replacements or other control areas,
+even if not a multiple of cylinders.
 .PP
 The disk partition sizes are based on the total amount of
 space on the disk as given in the table below (all values
-are supplied in units of 512 byte sectors).  The `c' partition
+are supplied in units of sectors).  The `c' partition
 is, by convention, used to access the entire physical disk.
 The device driver tables include
 the space reserved for the bad sector forwarding table in the `c' partition;
@@ -74,7 +84,7 @@ will prompt for the required disk geometry information.
 disktab(5),
 bad144(8)
 .SH BUGS
-Certain default partition sizes are based on historical artifacts
+Most default partition sizes are based on historical artifacts
 (e.g. RP06), and may result in unsatisfactory layouts.
 .PP
 When using the \-d flag, alternate disk names are not included
