@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)gram.dcl	5.1 (Berkeley) %G%
+ *	@(#)gram.dcl	5.2 (Berkeley) %G%
  */
 
 /*
@@ -12,6 +12,18 @@
  * University of Utah CS Dept modification history:
  *
  * $Log:	gram.dcl,v $
+ * Revision 5.4  85/08/20  23:37:33  donn
+ * Fix from Jerry Berkman to prevent length problems with -r8.
+ * 
+ * Revision 5.3  85/08/15  20:16:29  donn
+ * SAVE statements are not executable...
+ * 
+ * Revision 5.2  85/08/10  04:24:56  donn
+ * Jerry Berkman's changes to handle the -r8/double precision flag.
+ * 
+ * Revision 5.1  85/08/10  03:47:18  donn
+ * 4.3 alpha
+ * 
  * Revision 3.2  84/11/12  18:36:26  donn
  * A side effect of removing the ability of labels to define the start of
  * a program is that format statements have to do the job now...
@@ -29,10 +41,10 @@ spec:	  dcl
 	| implicit
 	| data
 	| namelist
-	| SSAVE
+	| SSAVE in_dcl
 		{ NO66("SAVE statement");
 		  saveall = YES; }
-	| SSAVE savelist
+	| SSAVE in_dcl savelist
 		{ NO66("SAVE statement"); }
 	| SFORMAT
 		{
@@ -66,12 +78,14 @@ type:	  typespec lengspec
 	;
 
 typespec:  typename
-		{ varleng = ($1<0 || $1==TYLONG ? 0 : typesize[$1]); }
+		{ varleng = ($1<0 || $1==TYLONG ? 0 : typesize[$1]);
+		  vartype = $1;
+		}
 	;
 
 typename:    SINTEGER	{ $$ = TYLONG; }
-	| SREAL		{ $$ = TYREAL; }
-	| SCOMPLEX	{ $$ = TYCOMPLEX; }
+	| SREAL		{ $$ = dblflag ? TYDREAL : TYREAL; }
+	| SCOMPLEX	{ $$ = dblflag ? TYDCOMPLEX : TYCOMPLEX; }
 	| SDOUBLE	{ $$ = TYDREAL; }
 	| SDCOMPLEX	{ NOEXT("DOUBLE COMPLEX statement"); $$ = TYDCOMPLEX; }
 	| SLOGICAL	{ $$ = TYLOGICAL; }
@@ -87,6 +101,8 @@ lengspec:
 	| SSTAR intonlyon expr intonlyoff
 		{
 		expptr p;
+		int typlen;
+		
 		p = $3;
 		NO66("length specification *n");
 		if( ! ISICON(p) || p->constblock.const.ci<0 )
@@ -95,7 +111,15 @@ lengspec:
 			dclerr("- length must be a positive integer value",
 				PNULL);
 			}
-		else $$ = p->constblock.const.ci;
+		else if( dblflag )
+			{
+			typlen = p->constblock.const.ci;
+			if( vartype == TYDREAL && typlen == 4 ) $$ = 8;
+			else if( vartype == TYDCOMPLEX && typlen == 8 ) $$ = 16;
+			else $$ = typlen;
+			}
+		else
+			$$ = p->constblock.const.ci;
 		}
 	| SSTAR intonlyon SLPAR SSTAR SRPAR intonlyoff
 		{ NO66("length specification *(*)"); $$ = -1; }
