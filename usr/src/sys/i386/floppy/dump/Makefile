@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	dump
 SRCS=	dumpitime.c dumpmain.c dumpoptr.c dumptape.c dumptraverse.c \
