@@ -1,0 +1,31 @@
+			-----------------Configuration----------------
+Machine		Code	local	c?base	base	ether	localm	etherm
+-------		----	-----   ------	-----	-----	------	------
+arpa (c)	3.224	3.10	3.1	3.20
+arpa (c)		tcphosts 3.1
+cad		3.180	1.19
+calder (c)	3.211	3.3	3.1	3.16	3.2
+dali		3.220	3.1	3.1	3.19	3.3
+degas		3.180	1.18
+ear		3.117	?
+ernie		3.227	3.2	3.1	3.22	3.3
+ernie			fudge 3.3
+esvax		3.147	1.2
+ingres		3.159	1.2
+ic		3.256	3.1	3.6	3.34	3.6	3.2	3.1
+icw		-	-
+jade		3.256	3.8	3.4	3.34	-	3.2	3.1
+jade			cchosts 3.2 berkm 3.1 compat 3.1 berkhosts 3.2
+kim		3.256	3.9	3.6	3.34	3.6	3.2	3.1
+kim			fudge 3.4 compat 3.1 berkhosts 3.2
+matisse (c)	3.147	1.2
+medea		3.256	3.2	3.6	3.34	3.6	3.2	3.1
+medea			fudge 3.4
+miro		3.256	3.1	3.6	3.34	3.6	3.2	3.1
+monet (c)	3.211	3.2	3.1	3.16	3.2
+oz		3.147	1.2
+ruby		-	-
+statvax
+turner
+ucbvax		3.227	3.13	3.1	3.22
+ucbvax			cchosts 3.1
