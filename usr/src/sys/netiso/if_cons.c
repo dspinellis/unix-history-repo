@@ -59,6 +59,7 @@ unsigned LAST_CALL_PCB;
 #include "socketvar.h"
 #include "errno.h"
 #include "ioctl.h"
+#include "tsleep.h"
 
 #include "../net/if.h"
 #include "../net/netisr.h"
@@ -1369,7 +1370,8 @@ cons_output(isop, m, len, isdgm)
 						((struct isopcb *)isop)->isop_negchanmask
 					);
 				ENDDEBUG
-				sleep( (caddr_t)&copcb->co_state, PZERO+1 );
+				tsleep( (caddr_t)&copcb->co_state, PZERO+1,
+					SLP_ISO_CONSOUT, 0);
 				IFDEBUG(D_CCONS)
 					printf("AFTER SLEEP 1 chan 0x%x chanmask 0x%x negchanmask 0x%x\n",
 						copcb->co_channel, isop->isop_chanmask, 
@@ -1445,7 +1447,7 @@ cons_openvc(copcb, faddr, so)
 				copcb->co_negchanmask
 			);
 		ENDDEBUG
-		sleep( (caddr_t)&copcb->co_state, PZERO+2 );
+		tsleep((caddr_t)&copcb->co_state, PZERO+2, SLP_ISO_CONSCONN, 0);
 		IFDEBUG(D_CCONS)
 			printf("AFTER SLEEP2 chan 0x%x chanmask 0x%x negchanmask 0x%x\n",
 				copcb->co_channel, copcb->co_chanmask, 
@@ -2208,7 +2210,7 @@ cons_usrreq(so, req, m, nam, ifp)
 					copcb->co_socket->so_error,
 					(caddr_t)&copcb->co_state );
 			ENDDEBUG
-			sleep( (caddr_t)&copcb->co_state, PZERO+3 );
+			sleep((caddr_t)&copcb->co_state, PZERO+3, SLP_ISO_CONS, 0 );
 		}
 
 		ASSERT( copcb->co_channel != 0);
