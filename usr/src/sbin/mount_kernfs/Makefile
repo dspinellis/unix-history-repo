@@ -1,6 +1,11 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 
 PROG=	mount_kernfs
+SRCS=	mount_kernfs.c getmntopts.c
 MAN8=	mount_kernfs.0
+
+MOUNT=	${.CURDIR}/../mount
+CFLAGS+= -I${MOUNT}
+.PATH:	${MOUNT}
 
 .include <bsd.prog.mk>
