@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)abort.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)abort.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <signal.h>
@@ -24,7 +24,7 @@ static char sccsid[] = "@(#)abort.c	5.5 (Berkeley) %G%";
 abort()
 {
 	(void)sigblock(~0L);
-	(void)signal(SIGILL, SIG_DFL);
-	(void)sigsetmask(~sigmask(SIGILL));
-	(void)kill(getpid(), SIGILL);
+	(void)signal(SIGABRT, SIG_DFL);
+	(void)sigsetmask(~sigmask(SIGABRT));
+	(void)kill(getpid(), SIGABRT);
 }
