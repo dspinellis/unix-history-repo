@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.63		%G%);
+SCCSID(@(#)main.c	3.64		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -493,6 +493,16 @@ main(argc, argv)
 	/* if we have had errors sofar, drop out now */
 	if (Errors > 0 && ExitStat == EX_OK)
 		ExitStat = EX_USAGE;
+
+	/*
+	**  Hack attack!
+	**	If the sender is local, we will default to old style
+	**	headers.  Ugh ugh ugh.  But oh-so-necessary under the
+	**	circumstances.
+	*/
+
+	if (bitset(M_LOCAL, From.q_mailer->m_flags))
+		OldStyle = TRUE;
 
 	/*
 	**  Read the input mail.
