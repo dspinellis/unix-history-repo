@@ -5,13 +5,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_debug.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <stdio.h>
-#include <nameser.h>
+#include <arpa/nameser.h>
 
 extern char *p_cdname(), *p_rr(), *p_type(), *p_class();
 extern char *inet_ntoa();
