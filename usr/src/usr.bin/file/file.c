@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)file.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)file.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -33,7 +33,10 @@ static char sccsid[] = "@(#)file.c	5.3 (Berkeley) %G%";
 extern  int errno;
 int in;
 int i  = 0;
-char buf[BUFSIZ];
+
+#define BUFSIZE 4096
+
+char buf[BUFSIZE];
 char *troff[] = {	/* new troff intermediate lang */
 	"x","T","res","init","font","202","V0","p1",0};
 char *fort[] = {
@@ -145,7 +148,7 @@ char *file;
 		return;
 	}
 	printf("%s:\t", file);
-	in = read(ifile, buf, BUFSIZ);
+	in = read(ifile, buf, BUFSIZE);
 	if (in == 0) {
 		printf("empty\n");
 		return;
@@ -288,7 +291,7 @@ char *file;
 	}
 	if (mbuf.st_size % 512 == 0) {	/* it may be a PRESS file */
 		lseek(ifile, -512L, 2);	/* last block */
-		if (read(ifile, buf, BUFSIZ) > 0 && *(short *)buf == 12138) {
+		if (read(ifile, buf, BUFSIZE) > 0 && *(short *)buf == 12138) {
 			printf("PRESS file\n");
 			return;
 		}
@@ -418,7 +421,7 @@ outa:
 			return;
 		}
 	/* if next few lines in then read whole file looking for nulls ...
-		while((in = read(ifile,buf,BUFSIZ)) > 0)
+		while((in = read(ifile,buf,BUFSIZE)) > 0)
 			for(i = 0; i < in; i++)
 				if((buf[i]&0377) > 127){
 					printf(" with garbage\n");
