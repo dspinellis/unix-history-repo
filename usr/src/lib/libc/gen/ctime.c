@@ -19,7 +19,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ctime.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctime.c	5.17 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -1335,7 +1335,7 @@ const long		offset;
 	int				okay;
 
 	if (tmp->tm_isdst > 1)
-		return WRONG;
+		tmp->tm_isdst = 1;
 	t = time2(tmp, funcp, offset, &okay);
 	if (okay || tmp->tm_isdst < 0)
 		return t;
