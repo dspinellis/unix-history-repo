@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_bio.c	8.6 (Berkeley) %G%
+ *	@(#)nfs_bio.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -699,6 +699,7 @@ nfs_doio(bp, cr, p)
 		}
 		if (p && (vp->v_flag & VTEXT) &&
 			(((nmp->nm_flag & NFSMNT_NQNFS) &&
+			  NQNFS_CKINVALID(vp, np, NQL_READ) &&
 			  np->n_lrev != np->n_brev) ||
 			 (!(nmp->nm_flag & NFSMNT_NQNFS) &&
 			  np->n_mtime != np->n_vattr.va_mtime.ts_sec))) {
