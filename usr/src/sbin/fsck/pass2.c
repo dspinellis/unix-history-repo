@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)pass2.c	3.5 (Berkeley) %G%";
+static char version[] = "@(#)pass2.c	3.6 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -83,6 +83,7 @@ pass2check(idesc)
 	int n, entrysize, ret = 0;
 	DINODE *dp;
 	DIRECT proto;
+	char namebuf[BUFSIZ];
 
 	/* 
 	 * check for "."
@@ -217,9 +218,16 @@ again:
 			goto again;
 
 		case DFOUND:
-			if (idesc->id_entryno > 2)
-				pwarn("WARNING: %s IS %s\n", pathname,
-				    "AN EXTRANEOUS HARD LINK TO A DIRECTORY");
+			if (idesc->id_entryno > 2) {
+				getpathname(namebuf, dirp->d_ino, dirp->d_ino);
+				pwarn("%s %s %s\n", pathname,
+				    "IS AN EXTRANEOUS HARD LINK TO DIRECTORY",
+				    namebuf);
+				if (preen)
+					printf(" (IGNORED)\n");
+				else if ((n = reply("REMOVE")) == 1)
+					break;
+			}
 			/* fall through */
 
 		case FSTATE:

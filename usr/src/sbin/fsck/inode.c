@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)inode.c	3.7 (Berkeley) %G%";
+static char version[] = "@(#)inode.c	3.8 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -183,6 +183,17 @@ clri(idesc, s, flg)
 	}
 }
 
+findname(idesc)
+	struct inodesc *idesc;
+{
+	register DIRECT *dirp = idesc->id_dirp;
+
+	if (dirp->d_ino != idesc->id_parent)
+		return (KEEPON);
+	bcopy(dirp->d_name, idesc->id_name, dirp->d_namlen + 1);
+	return (STOP);
+}
+
 findino(idesc)
 	struct inodesc *idesc;
 {
@@ -190,9 +201,9 @@ findino(idesc)
 
 	if (dirp->d_ino == 0)
 		return (KEEPON);
-	if (!strcmp(dirp->d_name, idesc->id_name)) {
-		if (dirp->d_ino >= ROOTINO && dirp->d_ino <= imax)
-			idesc->id_parent = dirp->d_ino;
+	if (strcmp(dirp->d_name, idesc->id_name) == 0 &&
+	    dirp->d_ino >= ROOTINO && dirp->d_ino <= imax) {
+		idesc->id_parent = dirp->d_ino;
 		return (STOP);
 	}
 	return (KEEPON);
