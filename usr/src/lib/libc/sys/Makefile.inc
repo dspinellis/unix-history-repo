@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	8.1 (Berkeley) %G%
+#	@(#)Makefile.inc	5.34 (Berkeley) %G%
 
 # Missing: profil.0, ptrace.0
 
@@ -69,10 +69,10 @@ MAN2+=	accept.0 access.0 acct.0 adjtime.0 bind.0 brk.0 chdir.0 chflags.0 \
 	fcntl.0 flock.0 fork.0 fsync.0 getdirentries.0 getdtablesize.0 \
 	getfh.0 getfsstat.0 getgid.0 getgroups.0 getitimer.0 getlogin.0 \
 	getpeername.0 getpgrp.0 getpid.0 getpriority.0 getrlimit.0 \
-	getrusage.0 getsockname.0 getsockopt.0 gettimeofday.0 getuid.0 intro.0 \
-	ioctl.0 kill.0 ktrace.0 link.0 listen.0 lseek.0 mkdir.0 mkfifo.0 \
-	mknod.0 madvise.0 mincore.0 mlock.0 mmap.0 mount.0 mprotect.0 \
-	msync.0 munmap.0 \
+	getrusage.0 getsockname.0 getsockopt.0 gettimeofday.0 getuid.0 \
+	indir.0 intro.0 ioctl.0 kill.0 ktrace.0 link.0 listen.0 lseek.0 \
+	mkdir.0 mkfifo.0 mknod.0 madvise.0 mincore.0 mlock.0 mmap.0 \
+	mount.0 mprotect.0 msync.0 munmap.0 \
 	nfssvc.0 open.0 pathconf.0 pipe.0 profil.0 ptrace.0 quotactl.0 \
 	munmap.0 nfssvc.0 open.0 pipe.0 profil.0 ptrace.0 quotactl.0 \
 	read.0 readlink.0 reboot.0 recv.0 rename.0 revoke.0 rmdir.0 \
@@ -97,6 +97,7 @@ MLINKS+=getrlimit.2 setrlimit.2
 MLINKS+=getsockopt.2 setsockopt.2
 MLINKS+=gettimeofday.2 settimeofday.2
 MLINKS+=getuid.2 geteuid.2
+MLINKS+=indir.2 _indir.2
 MLINKS+=intro.2 errno.2
 MLINKS+=lseek.2 seek.2
 MLINKS+=mlock.2 munlock.2
