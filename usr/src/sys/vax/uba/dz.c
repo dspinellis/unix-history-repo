@@ -1,4 +1,4 @@
-/*	dz.c	4.49	82/12/30	*/
+/*	dz.c	4.50	83/02/10	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -25,6 +25,7 @@
 #include "../h/bk.h"
 #include "../h/file.h"
 #include "../h/uio.h"
+#include "../h/kernel.h"
 
 #include "../vaxuba/pdma.h"
 #include "../vaxuba/ubavar.h"

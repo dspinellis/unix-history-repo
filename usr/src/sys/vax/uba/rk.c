@@ -1,4 +1,4 @@
-/*	rk.c	4.52	83/02/10	*/
+/*	rk.c	4.53	83/02/10	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -32,6 +32,7 @@ int	rkbdebug;
 #include "../h/cmap.h"
 #include "../h/dkbad.h"
 #include "../h/uio.h"
+#include "../h/kernel.h"
 
 #include "../vax/cpu.h"
 #include "../vaxuba/ubareg.h"

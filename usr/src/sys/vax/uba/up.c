@@ -1,4 +1,4 @@
-/*	up.c	4.66	83/02/10	*/
+/*	up.c	4.67	83/02/10	*/
 
 #include "up.h"
 #if NSC > 0
@@ -25,6 +25,7 @@
 #include "../h/vm.h"
 #include "../h/cmap.h"
 #include "../h/uio.h"
+#include "../h/kernel.h"
 #include "../h/dkbad.h"
 #include "../vax/cpu.h"
 #include "../vax/nexus.h"

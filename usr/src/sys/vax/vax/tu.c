@@ -1,4 +1,4 @@
-/*	tu.c	4.12	82/11/13	*/
+/*	tu.c	4.13	83/02/10	*/
 
 #if defined(VAX750) || defined(VAX730)
 /*
@@ -20,6 +20,7 @@
 #include "../h/conf.h"
 #include "../h/dir.h"
 #include "../h/user.h"
+#include "../h/kernel.h"
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
