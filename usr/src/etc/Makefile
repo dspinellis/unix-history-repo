@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 
 NOOBJ=	oobj
 
@@ -16,6 +16,9 @@ BIN2=	motd
 MTREE=	BSD.root.dist BSD.usr.dist BSD.var.dist
 KRB=	README krb.conf krb.realms
 NAMEDB=	localhost.rev named.boot root.cache
+PCS=	pcs750.bin
+WCS1=	wcs fppwcs poc poc1 poc2 fppoc
+WCS2=	fpevent fppwcs fppwcs_dual hdcwcs load_diags start_fpp wcs wcs_dual
 
 all clean cleandir depend etc install lint:
 
@@ -58,5 +61,17 @@ distribution:
 	    ${DESTDIR}/var/log/lpd-errs
 	install -c -o ${BINOWN} -g ${BINGRP} -m 664 /dev/null \
 	    ${DESTDIR}/var/run/utmp
+.if ${MACHINE} == "tahoe"
+	cd etc.tahoe; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${WCS1} \
+	    ${DESTDIR}/
+.endif
+.if ${MACHINE} == "vax"
+	cd etc.vax; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${PCS} \
+	    ${DESTDIR}/
+.endif
+
+hcx9-distribution:
+	cd etc.tahoe; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${WCS2} \
+	    ${DESTDIR}/
 
 .include <bsd.prog.mk>
