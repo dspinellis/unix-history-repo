@@ -9,7 +9,7 @@
  * Message list handling.
  */
 
-static char *SccsId = "@(#)list.c	1.1 %G%";
+static char *SccsId = "@(#)list.c	1.2 %G%";
 
 /*
  * Convert the user string of message numbers and
@@ -174,9 +174,17 @@ number:
 	if (np > namelist) {
 		for (i = 1; i <= msgCount; i++) {
 			for (mc = 0, np = &namelist[0]; *np != NOSTR; np++)
-				if (sender(*np, i)) {
-					mc++;
-					break;
+				if (**np == '/') {
+					if (matchsubj(*np, i)) {
+						mc++;
+						break;
+					}
+				}
+				else {
+					if (sender(*np, i)) {
+						mc++;
+						break;
+					}
 				}
 			if (mc == 0)
 				unmark(i);
@@ -443,6 +451,46 @@ sender(str, mesg)
 	mp = &message[mesg-1];
 	cp = nameof(mp);
 	return(icequal(cp, str));
+}
+
+/*
+ * See if the given string matches inside the subject field of the
+ * given message.  For the purpose of the scan, we ignore case differences.
+ * If it does, return true.  The string search argument is assumed to
+ * have the form "/search-string."  If it is of the form "/," we use the
+ * previous search string.
+ */
+
+char lastscan[128];
+
+matchsubj(str, mesg)
+	char *str;
+{
+	register struct message *mp;
+	register char *cp, *cp2;
+
+	str++;
+	if (strlen(str) == 0)
+		str = lastscan;
+	else
+		strcpy(lastscan, str);
+	mp = &message[mesg-1];
+	
+	/*
+	 * Now look, ignoring case, for the word in the string.
+	 */
+
+	cp = str;
+	cp2 = hfield("subject", mp);
+	if (cp2 == NOSTR)
+		return(0);
+	while (*cp2) {
+		if (*cp == 0)
+			return(1);
+		if (raise(*cp++) != raise(*cp2++))
+			cp = str;
+	}
+	return(*cp == 0);
 }
 
 /*
