@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dca.c	7.12 (Berkeley) %G%
+ *	@(#)dca.c	7.13 (Berkeley) %G%
  */
 
 #include "dca.h"
@@ -34,7 +34,8 @@ struct	driver dcadriver = {
 	dcaprobe, "dca",
 };
 
-int	dcastart(), dcaparam(), dcaintr();
+void	dcastart();
+int	dcaparam(), dcaintr();
 int	dcasoftCAR;
 int	dca_active;
 int	dca_hasfifo;
@@ -506,6 +507,7 @@ dcaparam(tp, t)
 	return (0);
 }
  
+void
 dcastart(tp)
 	register struct tty *tp;
 {
