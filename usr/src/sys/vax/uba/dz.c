@@ -1,4 +1,4 @@
-/*	dz.c	4.7	%G%	*/
+/*	dz.c	4.8	%G%	*/
 
 #include "dz.h"
 #if NDZ11 > 0
@@ -294,7 +294,7 @@ dzparam(dev)
 	}
 	lpr = (dz_speeds[tp->t_ispeed]<<8) | (dev & 07);
 #ifndef IIASA
-	if (tp->t_local & LLITOUT)
+	if ((tp->t_local&LLITOUT) || (tp->t_flags&RAW))
 		lpr |= BITS8;
 	else
 		lpr |= (BITS7|PENABLE);

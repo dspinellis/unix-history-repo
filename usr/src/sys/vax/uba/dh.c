@@ -1,4 +1,4 @@
-/*	dh.c	4.10	%G%	*/
+/*	dh.c	4.11	%G%	*/
 
 #include "dh.h"
 #if NDH11 > 0
@@ -299,7 +299,7 @@ dhparam(dev)
 	d = ((tp->t_ospeed)<<10) | ((tp->t_ispeed)<<6);
 	if ((tp->t_ispeed) == 4)		/* 134.5 baud */
 		d |= BITS6|PENABLE|HDUPLX;
-	else if (tp->t_local & LLITOUT)
+	else if ((tp->t_flag&RAW) || (tp->t_local&LLITOUT))
 		d |= BITS8;
 	else
 		d |= BITS7|PENABLE;
