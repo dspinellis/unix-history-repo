@@ -7,12 +7,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdio.h	5.19 (Berkeley) %G%
+ *	@(#)stdio.h	5.20 (Berkeley) %G%
  */
 
 #ifndef	_STDIO_H_
 #define	_STDIO_H_
 
+#include <sys/types.h>
 #include <sys/cdefs.h>
 
 #include <machine/ansi.h>
@@ -25,7 +26,7 @@ typedef	_SIZE_T_	size_t;
 #define	NULL	0
 #endif
 
-typedef long fpos_t;		/* Must match off_t <sys/types.h> */
+typedef off_t fpos_t;		/* Must match off_t <sys/types.h> */
 
 #define	_FSTDIO			/* Define for new stdio with functions. */
 
