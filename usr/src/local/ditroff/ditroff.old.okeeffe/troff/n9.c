@@ -287,8 +287,10 @@ setdraw()	/* generate internal cookies for a drawing function */
 		cbuf[j++] = MOT | VMOT | ((dy[k] >= 0) ? dy[k] : (NMOT | -dy[k]));
 	}
 	if (type == DRAWELLIPSE) {
-		cbuf[5] = cbuf[4] | NMOT;	/* so the net vertical is zero */
+		cbuf[5] = cbuf[4] | NMOT;	/* so net vertical is zero */
 		j = 6;
+	} else if (type == DRAWTHICK || type == DRAWSTYLE) {
+		cbuf[4] = cbuf[3] | NMOT;	/* so net horizontal is zero */
 	}
 	cbuf[j++] = '.' | chbits | ZBIT;	/* marks end for ptout */
 	cbuf[j] = 0;
