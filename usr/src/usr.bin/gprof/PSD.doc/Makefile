@@ -1,42 +1,28 @@
 #
-#	since vtroff is a cshell script, the semi-colon is needed
-#	to get a cshell to execute the vtroff commands.
+# Copyright (c) 1986 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
 #
-#	Makefile 1.1 %G% 15:30:05
+#	@(#)Makefile	5.1 (Berkeley) %G%
+#
+SRCS=	header.me abstract.me intro.me profiling.me gathering.me \
+	postp.me present.me refs.me
+MACROS=	-me
+PRINTER=Pdp
+EQN=	deqn -${PRINTER}
+TBL=	dtbl -${PRINTER}
+TROFF=	ditroff -${PRINTER}
 
-HEADER = header.me
-FILES = abstract.me intro.me profiling.me gathering.me \
-      postp.tbl.eqn present.tbl refs.me
-MES = abstract.me intro.me profiling.me gathering.me \
-      postp.me present.me refs.me
+paper:	paper.${PRINTER}
+	lpr -${PRINTER} -n paper.${PRINTER}
 
-all: $(FILES)
-	vtroff -t -me $(HEADER) $(FILES) >/tmp/peter.vpr-t;
-	vpr -t /tmp/peter.vpr-t
-
-Wall: $(FILES)
-	vtroff -W -l14 -t -me Wheader.me $(FILES) > ccc.vpr-t-W;
-
-vpr-t: $(FILES)
-	vtroff -t -me $(HEADER) $(FILES) >/tmp/peter.vpr-t;
-
-equations.eqn: equations.me
-	eqn < equations.me > equations.eqn
-
-postp.tbl.eqn: postp.me
-	tbl postp.me | eqn > postp.tbl.eqn
-
-present.tbl: present.me
-	tbl < present.me > present.tbl
-
-sources: $(HEADER) $(MES)
-
-$(HEADER) $(MES):
-	sccs get $@
-
-echo:
-	@echo ${HEADER} ${MES}
+paper.${PRINTER}: ${SRCS}
+	${TBL} ${SRCS} | ${EQN} | ${TROFF} ${MACROS} -t > paper.${PRINTER}
 
 clean:
-	rm *.vpr-t
-	touch $(MES)
+	rm -f paper.[PT]* *.spell errs Errs make.out
+
+spell:	${SRCS}
+	@for i in ${SRCS}; do \
+		echo $$i; spell $$i | sort | comm -23 - spell.ok > $$i.spell; \
+	done
