@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getpwent.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpwent.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -28,8 +28,8 @@ static char sccsid[] = "@(#)getpwent.c	5.7 (Berkeley) %G%";
 static DBM *_pw_db;
 static FILE *_pw_fp;
 static struct passwd _pw_passwd;
-static int _pw_fd, _pw_rewind = 1, _pw_stayopen;
-static char _pw_flag, *_pw_file = _PATH_MASTERPASSWD;
+static int _pw_rewind = 1, _pw_stayopen;
+static char _pw_flag, *_pw_file = _PATH_PASSWD;
 
 #define	MAXLINELENGTH	1024
 static char line[MAXLINELENGTH];
@@ -108,6 +108,8 @@ getpwuid(uid)
 static
 start_pw()
 {
+	char *p;
+
 	if (_pw_db) {
 		_pw_rewind = 1;
 		return(1);
@@ -118,7 +120,12 @@ start_pw()
 	}
 	if (_pw_db = dbm_open(_pw_file, O_RDONLY, 0))
 		return(1);
-	if (_pw_fp = fopen(_pw_file, "r"))
+	/*
+	 * special case; if it's the official password file, look in
+	 * the master password file, otherwise, look in the file itself.
+	 */
+	p = strcmp(_pw_file, _PATH_PASSWD) ? _pw_file : _PATH_MASTERPASSWD;
+	if (_pw_fp = fopen(p, "r"))
 		return(1);
 	return(0);
 }
@@ -146,10 +153,6 @@ endpwent()
 	} else if (_pw_fp) {
 		(void)fclose(_pw_fp);
 		_pw_fp = (FILE *)NULL;
-	}
-	if (_pw_fd) {
-		(void)close(_pw_fd);
-		_pw_fd = NULL;
 	}
 }
 
@@ -252,17 +255,22 @@ getpw()
 	static char pwbuf[50];
 	off_t lseek();
 	long pos, atol();
-	int n;
+	int fd, n;
 	char *p;
 
 	if (geteuid())
 		return;
-	if (!_pw_fd && (_pw_fd = open(_pw_file, O_RDONLY, 0)) < 0)
-		goto bad;
+	/*
+	 * special case; if it's the official password file, look in
+	 * the master password file, otherwise, look in the file itself.
+	 */
+	p = strcmp(_pw_file, _PATH_PASSWD) ? _pw_file : _PATH_MASTERPASSWD;
+	if ((fd = open(p, O_RDONLY, 0)) < 0)
+		return;
 	pos = atol(_pw_passwd.pw_passwd);
-	if (lseek(_pw_fd, pos, L_SET) != pos)
+	if (lseek(fd, pos, L_SET) != pos)
 		goto bad;
-	if ((n = read(_pw_fd, pwbuf, sizeof(pwbuf) - 1)) < 0)
+	if ((n = read(fd, pwbuf, sizeof(pwbuf) - 1)) < 0)
 		goto bad;
 	pwbuf[n] = '\0';
 	for (p = pwbuf; *p; ++p)
@@ -271,5 +279,5 @@ getpw()
 			_pw_passwd.pw_passwd = pwbuf;
 			break;
 		}
-bad:	(void)close(_pw_fd);
+bad:	(void)close(fd);
 }
