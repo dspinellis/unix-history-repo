@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -101,7 +101,7 @@ main(argc, argv)
 	rlogin = (strncmp(prompt, "rlog", 4) == 0) ? '~' : _POSIX_VDISABLE;
 	autologin = -1;
 
-	while ((ch = getopt(argc, argv, "8EKLX:ade:k:l:n:rt:x")) != EOF) {
+	while ((ch = getopt(argc, argv, "8EKLS:X:ade:k:l:n:rt:x")) != EOF) {
 		switch(ch) {
 		case '8':
 			eight = 3;	/* binary output and input */
@@ -116,6 +116,23 @@ main(argc, argv)
 			break;
 		case 'L':
 			eight |= 2;	/* binary output only */
+			break;
+		case 'S':
+		    {
+#ifdef	HAS_GETTOS
+			extern int tos;
+
+			if ((tos = parsetos(optarg, "tcp")) < 0)
+				fprintf(stderr, "%s%s%s%s\n",
+					prompt, ": Bad TOS argument '",
+					optarg,
+					"; will try to use default TOS");
+#else
+			fprintf(stderr,
+			   "%s: Warning: -S ignored, no parsetos() support.\n",
+								prompt);
+#endif
+		    }
 			break;
 		case 'X':
 #ifdef	AUTHENTICATE
