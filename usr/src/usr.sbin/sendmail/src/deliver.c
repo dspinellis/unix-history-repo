@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.55 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.56 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1592,7 +1592,7 @@ endmailer(mci, e, pv)
 	syserr("mailer %s died with signal %o", pv[0], st);
 
 	/* log the arguments */
-	if (e->e_xfp != NULL)
+	if (pv != NULL && e->e_xfp != NULL)
 	{
 		register char **av;
 
