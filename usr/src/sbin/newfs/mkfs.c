@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	6.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	6.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <unistd.h>
@@ -144,6 +144,8 @@ mkfs(pp, fsys, fi, fo)
 	}
 	fsi = fi;
 	fso = fo;
+	sblock.fs_inodefmt = FS_44INODEFMT;
+	sblock.fs_maxsymlinklen = MAXSYMLINKLEN;
 	/*
 	 * Validate the given file system size.
 	 * Verify that its last block can actually be accessed.
@@ -735,17 +737,17 @@ struct dinode node;
 #endif
 
 struct direct root_dir[] = {
-	{ ROOTINO, sizeof(struct direct), 1, "." },
-	{ ROOTINO, sizeof(struct direct), 2, ".." },
+	{ ROOTINO, sizeof(struct direct), DT_DIR, 1, "." },
+	{ ROOTINO, sizeof(struct direct), DT_DIR, 2, ".." },
 #ifdef LOSTDIR
-	{ LOSTFOUNDINO, sizeof(struct direct), 10, "lost+found" },
+	{ LOSTFOUNDINO, sizeof(struct direct), DT_DIR, 10, "lost+found" },
 #endif
 };
 #ifdef LOSTDIR
 struct direct lost_found_dir[] = {
-	{ LOSTFOUNDINO, sizeof(struct direct), 1, "." },
-	{ ROOTINO, sizeof(struct direct), 2, ".." },
-	{ 0, DIRBLKSIZ, 0, 0 },
+	{ LOSTFOUNDINO, sizeof(struct direct), DT_DIR, 1, "." },
+	{ ROOTINO, sizeof(struct direct), DT_DIR, 2, ".." },
+	{ 0, DIRBLKSIZ, 0, 0, 0 },
 };
 #endif
 char buf[MAXBSIZE];
@@ -767,7 +769,8 @@ fsinit(utime)
 	 */
 	(void)makedir(lost_found_dir, 2);
 	for (i = DIRBLKSIZ; i < sblock.fs_bsize; i += DIRBLKSIZ)
-		bcopy(&lost_found_dir[2], &buf[i], DIRSIZ(&lost_found_dir[2]));
+		bcopy(&lost_found_dir[2], &buf[i],
+		    DIRSIZ(0, &lost_found_dir[2]));
 	node.di_mode = IFDIR | UMASK;
 	node.di_nlink = 2;
 	node.di_size = sblock.fs_bsize;
@@ -804,13 +807,13 @@ makedir(protodir, entries)
 
 	spcleft = DIRBLKSIZ;
 	for (cp = buf, i = 0; i < entries - 1; i++) {
-		protodir[i].d_reclen = DIRSIZ(&protodir[i]);
+		protodir[i].d_reclen = DIRSIZ(0, &protodir[i]);
 		bcopy(&protodir[i], cp, protodir[i].d_reclen);
 		cp += protodir[i].d_reclen;
 		spcleft -= protodir[i].d_reclen;
 	}
 	protodir[i].d_reclen = spcleft;
-	bcopy(&protodir[i], cp, DIRSIZ(&protodir[i]));
+	bcopy(&protodir[i], cp, DIRSIZ(0, &protodir[i]));
 	return (DIRBLKSIZ);
 }
 
