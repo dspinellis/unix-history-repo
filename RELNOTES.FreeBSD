@@ -12,8 +12,8 @@ NetBSD, CSRG, and the Free Software Foundation.
 
 Many hundreds of bugs from the 386BSD 0.1 distribution were fixed,
 and many out-of-date pieces of software were upgraded to their current
-releases in the GAMMA distribution.  This 1.0 distribution fixes
-many of the first-run problems our GAMMA and EPSILON users reported back
+releases in the GAMMA distribution.  This 1.1 distribution fixes
+many of the first-run problems our BETA and GAMMA users reported back
 to us.
 
 Additionally, many packages such as XFree86 2.1, xview 3.2, elm, nntp,
@@ -296,4 +296,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.29 1994/05/01 22:50:55 jkh Exp $
+$Id: RELNOTES.FreeBSD,v 1.30 1994/05/05 14:28:37 jkh Exp $
