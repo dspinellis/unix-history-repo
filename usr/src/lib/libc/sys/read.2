@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)read.2	6.1 (Berkeley) %G%
+.\"	@(#)read.2	6.2 (Berkeley) %G%
 .\"
 .TH READ 2 ""
 .UC 4
@@ -87,7 +87,7 @@ and
 .I readv
 return the number of bytes actually read and placed in the buffer.
 The system guarantees to read the number of bytes requested if
-the descriptor references a file which has that many bytes left
+the descriptor references a file that has that many bytes left
 before the end-of-file, but in no other cases.
 .PP
 If the returned value is 0, then
