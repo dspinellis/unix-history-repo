@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -21,8 +21,10 @@ static char sccsid[] = "@(#)collect.c	5.9 (Berkeley) %G%";
 **	stripped off (after important information is extracted).
 **
 **	Parameters:
-**		sayok -- if set, give an ARPANET style message
-**			to say we are ready to collect input.
+**		smtpmode -- if set, we are running SMTP: give an RFC819
+**			style message to say we are ready to collect
+**			input, and never ignore a single dot to mean
+**			end of message.
 **
 **	Returns:
 **		none.
@@ -32,10 +34,11 @@ static char sccsid[] = "@(#)collect.c	5.9 (Berkeley) %G%";
 **		The from person may be set.
 */
 
-collect(sayok)
-	bool sayok;
+collect(smtpmode)
+	bool smtpmode;
 {
 	register FILE *tf;
+	bool ignrdot = smtpmode ? FALSE : IgnrDot;
 	char buf[MAXFIELD], buf2[MAXFIELD];
 	register char *workbuf, *freebuf;
 	register int workbuflen;
@@ -59,7 +62,7 @@ collect(sayok)
 	**  Tell ARPANET to go ahead.
 	*/
 
-	if (sayok)
+	if (smtpmode)
 		message("354", "Enter mail, end with \".\" on a line by itself");
 
 	/*
@@ -190,11 +193,11 @@ collect(sayok)
 		fixcrlf(buf, TRUE);
 
 		/* check for end-of-message */
-		if (!IgnrDot && buf[0] == '.' && (buf[1] == '\n' || buf[1] == '\0'))
+		if (!ignrdot && buf[0] == '.' && (buf[1] == '\n' || buf[1] == '\0'))
 			break;
 
 		/* check for transparent dot */
-		if (OpMode == MD_SMTP && !IgnrDot && bp[0] == '.' && bp[1] == '.')
+		if (OpMode == MD_SMTP && bp[0] == '.' && bp[1] == '.')
 			bp++;
 
 		/*
