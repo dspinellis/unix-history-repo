@@ -1,36 +1,48 @@
 #ifndef lint
-static char sccsid[] = "@(#)start.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)start.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
 #include "lrnref.h"
 #include <sys/types.h>
+#include <whoami.h>
 #include <sys/dir.h>
-#define	ND	64
 
 start(lesson)
 char *lesson;
 {
-	struct direct dv[ND], *dm, *dp;
-	int f, c, n;
+	struct direct dbuf;
+	register struct direct *ep = &dbuf;	/* directory entry pointer */
+	int c, n;
 	char where [100];
 
-	f = open(".", 0);		/* clean up play directory */
-	n = read(f, dv, ND*sizeof(*dp));
-	n /= sizeof(*dp);
-	if (n==ND)
-		fprintf(stderr, "Start:  play directory too long\n");
-	dm = dv+n;
-	for(dp=dv; dp<dm; dp++)
-		if (dp->d_ino) {
-			n = strlen(dp->d_name);
-			if (dp->d_name[n-2] == '.' && dp->d_name[n-1] == 'c')
-				continue;
-			c = dp->d_name[0];
-			if (c>='a' && c<= 'z')
-				unlink(dp->d_name);
-		}
-	close(f);
+#if BSD4_2
+	DIR *dp;
+#define OPENDIR(s)	((dp = opendir(s)) != NULL)
+#define DIRLOOP(s)	for (s = readdir(dp); s != NULL; s = readdir(dp))
+#define PATHSIZE 256
+#define EPSTRLEN	ep->d_namlen
+#define CLOSEDIR	closedir(dp)
+#else
+	int f;
+#define OPENDIR(s)	((f = open(s, 0)) >= 0)
+#define DIRLOOP(s)	while (read(f, s, sizeof *s) == sizeof *s)
+#define EPSTRLEN	strlen(ep->d_name)
+#define CLOSEDIR	close(f)
+#endif
+
+	OPENDIR(".");				/* clean up play directory */
+	DIRLOOP(ep) {
+		if (ep->d_ino == 0)
+			continue;
+		n = EPSTRLEN;
+		if (ep->d_name[n-2] == '.' && ep->d_name[n-1] == 'c')
+			continue;
+		c = ep->d_name[0];
+		if (c>='a' && c<= 'z')
+			unlink(ep->d_name);
+	}
+	CLOSEDIR;
 	if (ask)
 		return;
 	sprintf(where, "%s/%s/L%s", direct, sname, lesson);
