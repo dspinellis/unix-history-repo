@@ -6,18 +6,19 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm_proc.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_proc.c	5.16 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
+#include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/ioctl.h>
 #include <sys/kinfo.h>
 #include <sys/tty.h>
 #include <machine/vmparam.h>
 #include <fcntl.h>
-#include <kvm.h>
 #include <nlist.h>
+#include <kvm.h>
 #include <ndbm.h>
 #include <limits.h>
 #include <paths.h>
@@ -33,16 +34,19 @@ static char sccsid[] = "@(#)kvm_proc.c	5.15 (Berkeley) %G%";
 #define	ptob(x)		((caddr_t)((x) << PGSHIFT))	/* XXX */
 #include <vm/vm.h>	/* ??? kinfo_proc currently includes this*/
 #include <sys/kinfo_proc.h>
-#else
+#ifdef hp300
+#include <hp300/hp300/pte.h>
+#endif
+#else /* NEWVM */
 #include <machine/pte.h>
 #include <sys/vmmac.h>
 #include <sys/text.h>
-#endif
+#endif /* NEWVM */
 
 /*
  * files
  */
-static	char *unixf, *memf, *kmemf, *swapf;
+static	const char *unixf, *memf, *kmemf, *swapf;
 static	int unixx, mem, kmem, swap;
 static	DBM *db;
 /*
@@ -66,10 +70,12 @@ static union {
 /*
  * random other stuff
  */
+#ifndef NEWVM
 static	struct pte *Usrptmap, *usrpt;
-static	int	dmmin, dmmax;
 static	struct	pte *Sysmap;
 static	int	Syssize;
+#endif
+static	int	dmmin, dmmax;
 static	int	pcbpf;
 static	int	argaddr0;	/* XXX */
 static	int	argaddr1;
@@ -140,7 +146,7 @@ static int getkvars(), kvm_doprocs(), kvm_init();
  *		-1 if files could not be opened.
  */
 kvm_openfiles(uf, mf, sf)
-	char *uf, *mf, *sf; 
+	const char *uf, *mf, *sf; 
 {
 	if (kvmfilesopen)
 		return (1);
@@ -229,10 +235,12 @@ kvm_close()
 	kvminit = 0;
 	kvmfilesopen = 0;
 	deadkernel = 0;
+#ifndef NEWVM
 	if (Sysmap) {
 		free(Sysmap);
 		Sysmap = NULL;
 	}
+#endif
 }
 
 kvm_nlist(nl)
@@ -311,7 +319,7 @@ win:
 		 * query db
 		 */
 		if ((len = strlen(n->n_name)) > MAXSYMSIZE) {
-			seterr("kvm_nlist: symbol too large");
+			seterr("symbol too large");
 			return (-1);
 		}
 		(void)strcpy(symbuf, n->n_name);
@@ -331,7 +339,10 @@ hard1:
 	dbm_close(db);
 	db = NULL;
 hard2:
-	return (nlist(unixf, nl));	/* XXX seterr if -1 */
+	num = nlist(unixf, nl);
+	if (num == -1)
+		seterr("nlist (hard way) failed");
+	return (num);
 }
 
 kvm_getprocs(what, arg)
@@ -366,8 +377,8 @@ kvm_getprocs(what, arg)
 	} else {
 		int nproc;
 
-		if (kvm_read(nl[X_NPROC].n_value, &nproc, sizeof (int)) !=
-		    sizeof (int)) {
+		if (kvm_read((void *) nl[X_NPROC].n_value, &nproc,
+		    sizeof (int)) != sizeof (int)) {
 			seterr("can't read nproc");
 			return (-1);
 		}
@@ -409,7 +420,7 @@ kvm_doprocs(what, arg, buff)
 #endif
 
 	/* allproc */
-	if (kvm_read(nl[X_ALLPROC].n_value, &p, 
+	if (kvm_read((void *) nl[X_ALLPROC].n_value, &p, 
 	    sizeof (struct proc *)) != sizeof (struct proc *)) {
 		seterr("can't read allproc");
 		return (-1);
@@ -544,7 +555,7 @@ again:
 	}
 	if (!doingzomb) {
 		/* zombproc */
-		if (kvm_read(nl[X_ZOMBPROC].n_value, &p, 
+		if (kvm_read((void *) nl[X_ZOMBPROC].n_value, &p, 
 		    sizeof (struct proc *)) != sizeof (struct proc *)) {
 			seterr("can't read zombproc");
 			return (-1);
@@ -593,12 +604,11 @@ kvm_freeprocs()
 #ifdef NEWVM
 struct user *
 kvm_getu(p)
-	struct proc *p;
+	const struct proc *p;
 {
 	register struct kinfo_proc *kp = (struct kinfo_proc *)p;
 	register int i;
 	register char *up;
-	struct pte pte[CLSIZE*2];
 
 	if (kvminit == 0 && kvm_init(NULL, NULL, NULL, 0) == -1)
 		return (NULL);
@@ -631,11 +641,15 @@ kvm_getu(p)
 	argaddr0 = argaddr1 = 0;
 #ifdef hp300
 	if (kp->kp_eproc.e_vm.vm_pmap.pm_ptab) {
+		struct pte pte[CLSIZE*2];
+
 		klseek(kmem,
 		    (long)&kp->kp_eproc.e_vm.vm_pmap.pm_ptab
 		    [btoc(USRSTACK-CLBYTES*2)], 0);
 		if (read(kmem, (char *)&pte, sizeof(pte)) == sizeof(pte)) {
+#if CLBYTES < 2048
 			argaddr0 = ctob(pftoc(pte[CLSIZE*0].pg_pfnum));
+#endif
 			argaddr1 = ctob(pftoc(pte[CLSIZE*1].pg_pfnum));
 		}
 	}
@@ -735,7 +749,7 @@ kvm_getargs(p, up)
 	int stkoff = 0;
 
 #if defined(NEWVM) && defined(hp300)
-	stkoff = 24;	/* XXX for sigcode */
+	stkoff = 20;			/* XXX for sigcode */
 #endif
 	if (up == NULL || p->p_pid == 0 || p->p_pid == 2)
 		goto retucomm;
@@ -766,10 +780,10 @@ kvm_getargs(p, up)
 		lseek(mem, (long)argaddr1, 0);
 		if (read(mem, &argspac.argc[CLBYTES], CLBYTES) != CLBYTES)
 			goto bad;
-		file = memf;
+		file = (char *) memf;
 	}
 	ip = &argspac.argi[CLBYTES*2/sizeof (int)];
-	ip -= 2;		/* last arg word and .long 0 */
+	ip -= 2;                /* last arg word and .long 0 */
 	ip -= stkoff / sizeof (int);
 	while (*--ip) {
 		if (ip == argspac.argi)
@@ -872,17 +886,17 @@ getkvars()
 	usrpt = (struct pte *)nl[X_USRPT].n_value;
 	Usrptmap = (struct pte *)nl[X_USRPTMAP].n_value;
 #endif
-	if (kvm_read((long)nl[X_NSWAP].n_value, &nswap, sizeof (long)) !=
+	if (kvm_read((void *) nl[X_NSWAP].n_value, &nswap, sizeof (long)) !=
 	    sizeof (long)) {
 		seterr("can't read nswap");
 		return (-1);
 	}
-	if (kvm_read((long)nl[X_DMMIN].n_value, &dmmin, sizeof (long)) !=
+	if (kvm_read((void *) nl[X_DMMIN].n_value, &dmmin, sizeof (long)) !=
 	    sizeof (long)) {
 		seterr("can't read dmmin");
 		return (-1);
 	}
-	if (kvm_read((long)nl[X_DMMAX].n_value, &dmmax, sizeof (long)) !=
+	if (kvm_read((void *) nl[X_DMMAX].n_value, &dmmax, sizeof (long)) !=
 	    sizeof (long)) {
 		seterr("can't read dmmax");
 		return (-1);
@@ -891,8 +905,8 @@ getkvars()
 }
 
 kvm_read(loc, buf, len)
-	unsigned long loc;
-	char *buf;
+	void *loc;
+	void *buf;
 {
 	if (kvmfilesopen == 0 && kvm_openfiles(NULL, NULL, NULL) == -1)
 		return (-1);
@@ -1038,7 +1052,7 @@ seterr(va_alist)
 
 	va_start(ap);
 	fmt = va_arg(ap, char *);
-	(void) vsprintf(errbuf, fmt, ap);
+	(void) vsnprintf(errbuf, _POSIX2_LINE_MAX, fmt, ap);
 	va_end(ap);
 }
 
@@ -1052,10 +1066,10 @@ setsyserr(va_alist)
 
 	va_start(ap);
 	fmt = va_arg(ap, char *);
-	(void) vsprintf(errbuf, fmt, ap);
+	(void) vsnprintf(errbuf, _POSIX2_LINE_MAX, fmt, ap);
 	for (cp=errbuf; *cp; cp++)
 		;
-	sprintf(cp, ": %s", strerror(errno));
+	snprintf(cp, _POSIX2_LINE_MAX - (cp - errbuf), ": %s", strerror(errno));
 	va_end(ap);
 }
 
