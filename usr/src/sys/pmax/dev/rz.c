@@ -7,12 +7,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rz.c	7.2 (Berkeley) %G%
+ *	@(#)rz.c	7.3 (Berkeley) %G%
  */
 
 /*
  * SCSI CCS (Command Command Set) disk driver.
- * NOTE: The name was changed from "sd" to "rz" for DEC compatibility.
+ * NOTE: The name was changed from "sd" to "rz" for DEC naming compatibility.
  * I guess I can't avoid confusion someplace.
  */
 #include "rz.h"
@@ -22,20 +22,21 @@
 #include "systm.h"
 #include "buf.h"
 #include "errno.h"
+#include "fcntl.h"
+#include "ioctl.h"
 #include "dkstat.h"
 #include "disklabel.h"
 #include "malloc.h"
+#include "proc.h"
+#include "uio.h"
+#include "stat.h"
+#include "syslog.h"
+#include "ufs/ffs/fs.h"
+#include "ufs/ufs/ufs_extern.h"
 
 #include "device.h"
 #include "scsi.h"
-#include "devDiskLabel.h"
 
-#include "proc.h"
-#include "uio.h"
-
-extern void printf();
-extern void bcopy();
-extern void disksort();
 extern int splbio();
 extern void splx();
 extern int physio();
@@ -49,32 +50,29 @@ struct	driver rzdriver = {
 
 struct	size {
 	u_long	strtblk;
-	u_long	endblk;
-	int	nblocks;
-};
-
-struct rzinfo {
-	struct	size part[8];
+	u_long	nblocks;
 };
 
 /*
  * Since the SCSI standard tends to hide the disk structure, we define
  * partitions in terms of DEV_BSIZE blocks.  The default partition table
- * (for an unlabeled disk) reserves 512K for a boot area, has an 8 meg
+ * (for an unlabeled disk) reserves 8K for a boot area, has an 8 meg
  * root and 32 meg of swap.  The rest of the space on the drive goes in
  * the G partition.  As usual, the C partition covers the entire disk
  * (including the boot area).
  */
-struct rzinfo rzdefaultpart = {
-	     1024,   17408,   16384   ,	/* A */
-	    17408,   82944,   65536   ,	/* B */
-	        0,       0,       0   ,	/* C */
-	    17408,  115712,   98304   ,	/* D */
-	   115712,  218112,  102400   ,	/* E */
-	   218112,       0,       0   ,	/* F */
-	    82944,       0,       0   ,	/* G */
-	   115712,       0,       0   ,	/* H */
+struct size rzdefaultpart[MAXPARTITIONS] = {
+	        0,   16384,	/* A */
+	    16384,   65536,	/* B */
+	        0,       0,	/* C */
+	    17408,       0,	/* D */
+	   115712,       0,	/* E */
+	   218112,       0,	/* F */
+	    81920,       0,	/* G */
+	   115712,       0,	/* H */
 };
+
+#define	RAWPART		2	/* 'c' partition */	/* XXX */
 
 struct rzstats {
 	long	rzresets;
@@ -84,14 +82,17 @@ struct rzstats {
 
 struct	rz_softc {
 	struct	scsi_device *sc_sd;	/* physical unit info */
-	int	sc_format_pid;		/* process using "format" mode */
+	pid_t	sc_format_pid;		/* process using "format" mode */
+	u_long	sc_openpart;		/* partitions open */
+	u_long	sc_bopenpart;		/* block partitions open */
+	u_long	sc_copenpart;		/* character partitions open */
 	short	sc_flags;		/* see below */
 	short	sc_type;		/* drive type from INQUIRY cmd */
 	u_int	sc_blks;		/* number of blocks on device */
 	int	sc_blksize;		/* device block size in bytes */
 	int	sc_bshift;		/* convert device blocks to DEV_BSIZE */
 	u_int	sc_wpms;		/* average xfer rate in 16bit wds/sec */
-	struct	rzinfo sc_info;		/* drive partition table & label info */
+	struct	disklabel sc_label;	/* disk label for this disk */
 	struct	rzstats sc_stats;	/* statisic counts */
 	struct	buf sc_tab;		/* queue of pending operations */
 	struct	buf sc_buf;		/* buf for doing I/O */
@@ -103,8 +104,10 @@ struct	rz_softc {
 } rz_softc[NRZ];
 
 /* sc_flags values */
-#define	RZF_ALIVE		0x1	/* drive found and ready */
-#define	RZF_SENSEINPROGRESS	0x2	/* REQUEST_SENSE command in progress */
+#define	RZF_ALIVE		0x01	/* drive found and ready */
+#define	RZF_SENSEINPROGRESS	0x02	/* REQUEST_SENSE command in progress */
+#define	RZF_HAVELABEL		0x04	/* valid label found on disk */
+#define	RZF_WLABEL		0x08	/* label is writeable */
 
 #ifdef DEBUG
 int	rzdebug = 3;
@@ -113,7 +116,7 @@ int	rzdebug = 3;
 #define RZB_PRLABEL	0x04
 #endif
 
-#define	rzunit(x)	((minor(x) >> 3) & 0x7)
+#define	rzunit(x)	(minor(x) >> 3)
 #define rzpart(x)	(minor(x) & 0x7)
 #define	b_cylin		b_resid
 
@@ -265,8 +268,8 @@ rzprobe(sd)
 	rzstart(sd->sd_unit);
 	if (biowait(&sc->sc_buf) || sc->sc_buf.b_resid != 0)
 		goto bad;
-	sc->sc_blks = (capbuf[0] << 24) | (capbuf[1] << 16) |
-		(capbuf[2] << 8) | capbuf[3];
+	sc->sc_blks = ((capbuf[0] << 24) | (capbuf[1] << 16) |
+		(capbuf[2] << 8) | capbuf[3]) + 1;
 	sc->sc_blksize = (capbuf[4] << 24) | (capbuf[5] << 16) |
 		(capbuf[6] << 8) | capbuf[7];
 
@@ -310,49 +313,6 @@ rzprobe(sd)
 	sc->sc_wpms = 32 * (60 * DEV_BSIZE / 2);	/* XXX */
 	sc->sc_format_pid = 0;
 	sc->sc_flags = RZF_ALIVE;
-
-	/* try to read disk label or partition table information */
-	if (rzreadlabel(sc, sd) == 0)
-		goto ok;
-
-	/*
-	 * We don't have a disk label, build a default partition
-	 * table with 'standard' size root & swap and everything else
-	 * in the G partition.
-	 */
-	sc->sc_info = rzdefaultpart;
-	/* C gets everything */
-	sc->sc_info.part[2].nblocks = sc->sc_blks;
-	sc->sc_info.part[2].endblk = sc->sc_blks;
-	/* G gets from end of B to end of disk */
-	sc->sc_info.part[6].nblocks = sc->sc_blks - sc->sc_info.part[1].endblk;
-	sc->sc_info.part[6].endblk = sc->sc_blks;
-	/*
-	 * We also define the D, E and F paritions as an alternative to
-	 * B and G.  D is 48Mb, starts after A and is intended for swapping.
-	 * E is 50Mb, starts after D and is intended for /usr. F starts
-	 * after E and is what ever is left.
-	 */
-	if (sc->sc_blks >= sc->sc_info.part[4].endblk) {
-		sc->sc_info.part[5].nblocks =
-			sc->sc_blks - sc->sc_info.part[4].endblk;
-		sc->sc_info.part[5].endblk = sc->sc_blks;
-	} else {
-		sc->sc_info.part[5].strtblk = 0;
-		sc->sc_info.part[3] = sc->sc_info.part[5];
-		sc->sc_info.part[4] = sc->sc_info.part[5];
-	}
-	/*
-	 * H is a single partition alternative to E and F.
-	 */
-	if (sc->sc_blks >= sc->sc_info.part[3].endblk) {
-		sc->sc_info.part[7].nblocks =
-			sc->sc_blks - sc->sc_info.part[3].endblk;
-		sc->sc_info.part[7].endblk = sc->sc_blks;
-	} else
-		sc->sc_info.part[7].strtblk = 0;
-
-ok:
 	sc->sc_buf.b_flags = 0;
 	return (1);
 
@@ -361,110 +321,6 @@ bad:
 	sc->sc_format_pid = 0;
 	sc->sc_buf.b_flags = 0;
 	return (0);
-}
-
-/*
- * Try to read the disk label and fill in the partition table info.
- */
-static int
-rzreadlabel(sc, sd)
-	register struct rz_softc *sc;
-	register struct scsi_device *sd;
-{
-	register struct size *sp;
-	Sun_DiskLabel *sunLabelPtr;
-	Dec_DiskLabel *decLabelPtr;
-	char labelBuffer[DEV_BSIZE];
-	int part, error;
-
-	/*
-	 * The label of a SCSI disk normally resides in the first sector.
-	 * Format and send a SCSI READ command to fetch the sector.
-	 */
-	sc->sc_buf.b_flags = B_BUSY | B_PHYS | B_READ;
-	sc->sc_buf.b_bcount = sizeof(labelBuffer);
-	sc->sc_buf.b_un.b_addr = labelBuffer;
-	sc->sc_buf.b_cylin = SUN_LABEL_SECTOR;
-	sc->sc_buf.av_forw = (struct buf *)0;
-	sc->sc_tab.b_actf = sc->sc_tab.b_actl = &sc->sc_buf;
-	rzstart(sd->sd_unit);
-	if (error = biowait(&sc->sc_buf))
-		return (error);
-	sunLabelPtr = (Sun_DiskLabel *)labelBuffer;
-	if (sunLabelPtr->magic == SUN_DISK_MAGIC) {
-		/*
-		 * XXX - Should really check if label is valid.
-		 */
-#ifdef DEBUG
-		if (rzdebug & RZB_PRLABEL) {
-			printf("rz%d: SUN label %s\n", sd->sd_unit,
-				sunLabelPtr->asciiLabel);
-			printf("  Partitions");
-		}
-#endif
-		sp = sc->sc_info.part;
-		for (part = 0; part < DEV_NUM_DISK_PARTS; part++, sp++) {
-			sp->strtblk =
-				sunLabelPtr->map[part].cylinder *
-				sunLabelPtr->numHeads * 
-				sunLabelPtr->numSectors;
-			sp->nblocks =
-				sunLabelPtr->map[part].numBlocks;
-			sp->endblk = sp->strtblk + sp->nblocks;
-#ifdef DEBUG
-			if (rzdebug & RZB_PRLABEL)
-				printf(" (%d,%d)", sp->strtblk, sp->nblocks);
-#endif
-		}
-#ifdef DEBUG
-		if (rzdebug & RZB_PRLABEL)
-			printf("\n");
-#endif
-		return (0);
-	}
-
-	/*
-	 * The disk isn't in SUN or UNIX format so try Dec format.
-	 * We have to read the right sector first.
-	 */
-	sc->sc_buf.b_flags = B_BUSY | B_PHYS | B_READ;
-	sc->sc_buf.b_bcount = sizeof(labelBuffer);
-	sc->sc_buf.b_un.b_addr = labelBuffer;
-	sc->sc_buf.b_cylin = DEC_LABEL_SECTOR;
-	sc->sc_buf.av_forw = (struct buf *)0;
-	sc->sc_tab.b_actf = sc->sc_tab.b_actl = &sc->sc_buf;
-	rzstart(sd->sd_unit);
-	if (error = biowait(&sc->sc_buf))
-		return (error);
-	decLabelPtr = (Dec_DiskLabel *)labelBuffer;
-	if (decLabelPtr->magic == DEC_LABEL_MAGIC &&
-	    decLabelPtr->isPartitioned) {
-		/*
-		 * XXX - Should really check if label is valid.
-		 */
-#ifdef DEBUG
-		if (rzdebug & RZB_PRLABEL) {
-			printf("rz%d: DEC label\n", sd->sd_unit);
-			printf("  Partitions");
-		}
-#endif
-		sp = sc->sc_info.part;
-		for (part = 0; part < DEV_NUM_DISK_PARTS; part++, sp++) {
-			sp->strtblk = decLabelPtr->map[part].startBlock;
-			sp->nblocks = decLabelPtr->map[part].numBlocks;
-			sp->endblk = sp->strtblk + sp->nblocks;
-#ifdef DEBUG
-			if (rzdebug & RZB_PRLABEL)
-				printf(" (%d,%d)", sp->strtblk, sp->nblocks);
-#endif
-		}
-#ifdef DEBUG
-		if (rzdebug & RZB_PRLABEL)
-			printf("\n");
-#endif
-		return (0);
-	}
-	return (EIO);
 }
 
 /*
@@ -572,8 +428,9 @@ rzstrategy(bp)
 {
 	register int unit = rzunit(bp->b_dev);
 	register int part = rzpart(bp->b_dev);
-	register int bn, sz;
+	register u_long bn, sz;
 	register struct rz_softc *sc = &rz_softc[unit];
+	register struct partition *pp = &sc->sc_label.d_partitions[part];
 	register int s;
 
 	if (sc->sc_format_pid) {
@@ -584,13 +441,29 @@ rzstrategy(bp)
 		bp->b_cylin = 0;
 	} else {
 		bn = bp->b_blkno;
-		sz = (bp->b_bcount + (DEV_BSIZE - 1)) >> DEV_BSHIFT;
-		if (bn < 0 || bn + sz > sc->sc_info.part[part].nblocks) {
-			if (bn == sc->sc_info.part[part].nblocks) {
+		sz = (bp->b_bcount + DEV_BSIZE - 1) >> DEV_BSHIFT;
+		if (bn + sz > pp->p_size) {
+			/* if exactly at end of disk, return an EOF */
+			if (bn == pp->p_size) {
 				bp->b_resid = bp->b_bcount;
 				goto done;
 			}
-			bp->b_error = EINVAL;
+			/* if none of it fits, error */
+			if (bn >= pp->p_size) {
+				bp->b_error = EINVAL;
+				goto bad;
+			}
+			/* otherwise, truncate */
+			sz = pp->p_size - bn;
+			bp->b_bcount = sz << DEV_BSHIFT;
+		}
+		/* check for write to write protected label */
+		if (bn + pp->p_offset <= LABELSECTOR &&
+#if LABELSECTOR != 0
+		    bn + pp->p_offset + sz > LABELSECTOR &&
+#endif
+		    !(bp->b_flags & B_READ) && !(sc->sc_flags & RZF_WLABEL)) {
+			bp->b_error = EROFS;
 			goto bad;
 		}
 		/*
@@ -601,8 +474,7 @@ rzstrategy(bp)
 			rzlblkstrat(bp, sc->sc_blksize);
 			goto done;
 		}
-		bp->b_cylin = (bn + sc->sc_info.part[part].strtblk) >>
-				sc->sc_bshift;
+		bp->b_cylin = (bn + pp->p_offset) >> sc->sc_bshift;
 	}
 	/* don't let disksort() see sc_errbuf */
 	while (sc->sc_flags & RZF_SENSEINPROGRESS)
@@ -756,8 +628,12 @@ rzdone(unit, error, resid, status)
 	biodone(bp);
 	if (sc->sc_tab.b_actf)
 		rzstart(unit);
-	else
+	else {
 		sc->sc_tab.b_active = 0;
+		/* finish close protocol */
+		if (sc->sc_openpart == 0)
+			wakeup((caddr_t)&sc->sc_tab);
+	}
 }
 
 int
@@ -768,21 +644,117 @@ rzopen(dev, flags, mode, p)
 {
 	register int unit = rzunit(dev);
 	register struct rz_softc *sc = &rz_softc[unit];
+	register struct disklabel *lp;
+	register int i;
+	char *err_msg;
+	int part;
+	u_long mask;
 
-	if (unit >= NRZ)
-		return (ENXIO);
-	if (!(sc->sc_flags & RZF_ALIVE) || suser(p->p_ucred, &p->p_acflag))
+	if (unit >= NRZ || !(sc->sc_flags & RZF_ALIVE))
 		return (ENXIO);
 
+	/* try to read disk label and partition table information */
+	part = rzpart(dev);
+	lp = &sc->sc_label;
+	if (!(sc->sc_flags & RZF_HAVELABEL)) {
+		sc->sc_flags |= RZF_HAVELABEL;
+		lp->d_secsize = DEV_BSIZE;
+		lp->d_secpercyl = 1 << sc->sc_bshift;
+		lp->d_npartitions = MAXPARTITIONS;
+		lp->d_partitions[part].p_offset = 0;
+		lp->d_partitions[part].p_size = sc->sc_blks;
+		if (err_msg = readdisklabel(dev, rzstrategy, lp)) {
+			printf("rz%d: %s\n", unit, err_msg);
+			sc->sc_label.d_magic = DISKMAGIC;
+			sc->sc_label.d_magic2 = DISKMAGIC;
+			sc->sc_label.d_type = DTYPE_SCSI;
+			sc->sc_label.d_subtype = 0;
+			sc->sc_label.d_typename[0] = '\0';
+			sc->sc_label.d_secsize = DEV_BSIZE;
+			sc->sc_label.d_secperunit = sc->sc_blks;
+			sc->sc_label.d_npartitions = MAXPARTITIONS;
+			sc->sc_label.d_bbsize = BBSIZE;
+			sc->sc_label.d_sbsize = SBSIZE;
+			for (i = 0; i < MAXPARTITIONS; i++) {
+				sc->sc_label.d_partitions[i].p_size =
+					rzdefaultpart[i].nblocks;
+				sc->sc_label.d_partitions[i].p_offset =
+					rzdefaultpart[i].strtblk;
+			}
+			sc->sc_label.d_partitions[RAWPART].p_size =
+				sc->sc_blks;
+		}
+	}
+
+	if (part >= lp->d_npartitions || lp->d_partitions[part].p_size == 0)
+		return (ENXIO);
+	/*
+	 * Warn if a partition is opened that overlaps another
+	 * already open, unless either is the `raw' partition
+	 * (whole disk).
+	 */
+	mask = 1 << part;
+	if ((sc->sc_openpart & mask) == 0 && part != RAWPART) {
+		register struct partition *pp;
+		u_long start, end;
+
+		pp = &lp->d_partitions[part];
+		start = pp->p_offset;
+		end = pp->p_offset + pp->p_size;
+		for (pp = lp->d_partitions, i = 0;
+		     i < lp->d_npartitions; pp++, i++) {
+			if (pp->p_offset + pp->p_size <= start ||
+			    pp->p_offset >= end || i == RAWPART)
+				continue;
+			if (sc->sc_openpart & (1 << i))
+				log(LOG_WARNING,
+				    "rz%d%c: overlaps open partition (%c)\n",
+				    unit, part + 'a', i + 'a');
+		}
+	}
+	switch (mode) {
+	case S_IFCHR:
+		sc->sc_copenpart |= mask;
+		break;
+	case S_IFBLK:
+		sc->sc_bopenpart |= mask;
+		break;
+	}
+	sc->sc_openpart |= mask;
 	if (sc->sc_sd->sd_dk >= 0)
 		dk_wpms[sc->sc_sd->sd_dk] = sc->sc_wpms;
 	return (0);
 }
 
-rzclose(dev, flags)
+rzclose(dev, flags, mode)
 	dev_t dev;
-	int flags;
+	int flags, mode;
 {
+	register struct rz_softc *sc = &rz_softc[rzunit(dev)];
+	u_long mask = (1 << rzpart(dev));
+	int s;
+
+	switch (mode) {
+	case S_IFCHR:
+		sc->sc_copenpart &= ~mask;
+		break;
+	case S_IFBLK:
+		sc->sc_bopenpart &= ~mask;
+		break;
+	}
+	sc->sc_openpart = sc->sc_copenpart | sc->sc_bopenpart;
+
+	/*
+	 * Should wait for I/O to complete on this partition even if
+	 * others are open, but wait for work on blkflush().
+	 */
+	if (sc->sc_openpart == 0) {
+		s = splbio();
+		while (sc->sc_tab.b_actf)
+			sleep((caddr_t)&sc->sc_tab, PZERO - 1);
+		splx(s);
+		sc->sc_flags &= ~RZF_WLABEL;
+	}
 	return (0);
 }
 
@@ -823,6 +795,8 @@ rzioctl(dev, cmd, data, flag, p)
 	struct proc *p;
 {
 	register struct rz_softc *sc = &rz_softc[rzunit(dev)];
+	int error;
+	int flags;
 
 	switch (cmd) {
 	default:
@@ -866,6 +840,53 @@ rzioctl(dev, cmd, data, flag, p)
 		bcopy((caddr_t)&sc->sc_sense, data, sizeof(sc->sc_sense));
 		return (0);
 
+	case DIOCGDINFO:
+		/* get the current disk label */
+		*(struct disklabel *)data = sc->sc_label;
+		return (0);
+
+	case DIOCSDINFO:
+		/* set the current disk label */
+		if (!(flag & FWRITE))
+			return (EBADF);
+		return (setdisklabel(&sc->sc_label,
+			(struct disklabel *)data,
+			(sc->sc_flags & RZF_WLABEL) ? 0 : sc->sc_openpart));
+
+#if 0
+	case DIOCGPART:
+		/* return the disk partition data */
+		((struct partinfo *)data)->disklab = &sc->sc_label;
+		((struct partinfo *)data)->part =
+			&sc->sc_label.d_partitions[rzpart(dev)];
+		return (0);
+#endif
+
+	case DIOCWLABEL:
+		if (!(flag & FWRITE))
+			return (EBADF);
+		if (*(int *)data)
+			sc->sc_flags |= RZF_WLABEL;
+		else
+			sc->sc_flags &= ~RZF_WLABEL;
+		return (0);
+
+	case DIOCWDINFO:
+		/* write the disk label to disk */
+		if (!(flag & FWRITE))
+			return (EBADF);
+		error = setdisklabel(&sc->sc_label,
+			(struct disklabel *)data,
+			(sc->sc_flags & RZF_WLABEL) ? 0 : sc->sc_openpart);
+		if (error)
+			return (error);
+
+		/* simulate opening partition 0 so write succeeds */
+		flags = sc->sc_flags;
+		sc->sc_flags = RZF_ALIVE | RZF_WLABEL;
+		error = writedisklabel(dev, rzstrategy, &sc->sc_label);
+		sc->sc_flags = flags;
+		return (error);
 	}
 	/*NOTREACHED*/
 }
@@ -875,12 +896,14 @@ rzsize(dev)
 	dev_t dev;
 {
 	register int unit = rzunit(dev);
+	register int part = rzpart(dev);
 	register struct rz_softc *sc = &rz_softc[unit];
 
-	if (unit >= NRZ || !(sc->sc_flags & RZF_ALIVE))
+	if (unit >= NRZ || !(sc->sc_flags & RZF_ALIVE) ||
+	    part >= sc->sc_label.d_npartitions)
 		return (-1);
 
-	return (sc->sc_info.part[rzpart(dev)].nblocks);
+	return (sc->sc_label.d_partitions[part].p_size);
 }
 
 /*
