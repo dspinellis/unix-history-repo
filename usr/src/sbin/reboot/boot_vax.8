@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)boot_vax.8	6.3 (Berkeley) %G%
+.\"	@(#)boot_vax.8	6.4 (Berkeley) %G%
 .\"
 .TH REBOOT 8 ""
 .UC 4
@@ -30,8 +30,11 @@ is normally used.
 If there are no users then
 .B /etc/reboot
 can be used.
-Reboot causes the disks to be synced, and then a multi-user
-reboot (as described below) is initiated.  This causes a system to be
+Reboot causes the disks to be synced and allows the system
+to perform other shutdown activities such as resynchronizing
+hardware time-of-day clocks.
+A multi-user reboot (as described below) is then initiated.
+This causes a system to be
 booted and an automatic disk check to be performed.  If all this succeeds
 without incident, the system is then brought up for many users.
 .PP
@@ -186,6 +189,13 @@ UDA50 disk drive, and \*(lqrb(0,0)vmunix\*(rq would specify a
 disk on a 730 IDC.
 For tapes, the minor device number gives a file offset.
 .PP
+On an 11/750 with patchable control store,
+microcode patches will be installed by
+.I boot
+if the file
+.I psc750.bin
+exists in the root of the filesystem from which the system is booted.
+.PP
 In an emergency, the bootstrap methods described in the paper
 ``Installing and Operating 4.3bsd'' can be used
 to boot from a distribution tape.
@@ -200,6 +210,8 @@ to boot from a distribution tape.
 /usr/mdec/bootxx	second-stage boot for 750, xx is disk type
 .br
 /usr/mdec/installboot	program to install boot blocks on 750
+.br
+/pcs750.bin	microcode patch file on 750
 .SH "SEE ALSO"
 arff(8V),
 crash(8V),
