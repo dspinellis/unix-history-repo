@@ -1,4 +1,4 @@
-/*	tty.c	4.11	81/07/09	*/
+/*	tty.c	4.12	81/07/22	*/
 
 /*
  * TTY subroutines common to more than one line discipline
