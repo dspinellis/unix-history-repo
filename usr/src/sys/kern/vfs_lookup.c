@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_lookup.c	7.19 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -83,32 +83,43 @@ namei(ndp)
 	int flag;			/* LOOKUP, CREATE, RENAME or DELETE */
 	int wantparent;			/* 1 => wantparent or lockparent flag */
 	int lockparent;			/* 1 => lockparent flag */
+	int getbuf;			/* 1 => Malloc a pathname buffer */
+	int rdonly;			/* mounted read-only flag bit(s) */
 	int error = 0;
 
+	/*
+	 * Setup: break out flag bits into variables.
+	 */
 	ndp->ni_dvp = NULL;
 	flag = ndp->ni_nameiop & OPFLAG;
 	wantparent = ndp->ni_nameiop & (LOCKPARENT|WANTPARENT);
 	lockparent = ndp->ni_nameiop & LOCKPARENT;
 	docache = (ndp->ni_nameiop & NOCACHE) ^ NOCACHE;
+	getbuf = (ndp->ni_nameiop & HASBUF) ^ HASBUF;
 	if (flag == DELETE || wantparent)
 		docache = 0;
+	rdonly = M_RDONLY;
+	if (ndp->ni_nameiop & REMOTE)
+		rdonly |= M_EXRDONLY;
 	/*
 	 * Get a buffer for the name to be translated, and copy the
 	 * name into the buffer.
 	 */
-	MALLOC(ndp->ni_pnbuf, caddr_t, MAXPATHLEN, M_NAMEI, M_WAITOK);
-	if (ndp->ni_segflg == UIO_SYSSPACE)
-		error = copystr(ndp->ni_dirp, ndp->ni_pnbuf, MAXPATHLEN,
-		    &ndp->ni_pathlen);
-	else
-		error = copyinstr(ndp->ni_dirp, ndp->ni_pnbuf, MAXPATHLEN,
-		    &ndp->ni_pathlen);
-	if (error) {
-		free(ndp->ni_pnbuf, M_NAMEI);
-		ndp->ni_vp = NULL;
-		return (error);
+	if (getbuf) {
+		MALLOC(ndp->ni_pnbuf, caddr_t, MAXPATHLEN, M_NAMEI, M_WAITOK);
+		if (ndp->ni_segflg == UIO_SYSSPACE)
+			error = copystr(ndp->ni_dirp, ndp->ni_pnbuf,
+				    MAXPATHLEN, &ndp->ni_pathlen);
+		else
+			error = copyinstr(ndp->ni_dirp, ndp->ni_pnbuf,
+				    MAXPATHLEN, &ndp->ni_pathlen);
+		if (error) {
+			free(ndp->ni_pnbuf, M_NAMEI);
+			ndp->ni_vp = NULL;
+			return (error);
+		}
+		ndp->ni_ptr = ndp->ni_pnbuf;
 	}
-	ndp->ni_ptr = ndp->ni_pnbuf;
 	ndp->ni_loopcnt = 0;
 	dp = ndp->ni_cdir;
 	VREF(dp);
@@ -149,51 +160,32 @@ dirloop:
 	 * that ni_ptr would be left pointing to the last component, but since
 	 * the ni_pnbuf gets free'd, that is not a good idea.
 	 */
-#ifdef notdef
-	for (cp = ndp->ni_ptr; *cp != 0 && *cp != '/'; cp++) {
-		if ((*cp & 0200) == 0)
-			continue;
-		if ((*cp&0377) == ('/'|0200) || flag != DELETE) {
-			error = EINVAL;
-			goto bad;
-		}
-	}
-	ndp->ni_namelen = cp - ndp->ni_ptr;
-	if (ndp->ni_namelen >= MAXNAMLEN) {
-		error = ENAMETOOLONG;
-		goto bad;
-	}
-	ndp->ni_pathlen -= ndp->ni_namelen;
-#ifdef NAMEI_DIAGNOSTIC
-	{ char c = *cp;
-	*cp = '\0';
-	printf("{%s}: ", ndp->ni_ptr);
-	*cp = c; }
-#endif
-#else fornow
-	ndp->ni_hash = 0;
-	for (cp = ndp->ni_ptr, i = 0; *cp != 0 && *cp != '/'; cp++) {
-		if (i >= MAXNAMLEN) {
-			error = ENAMETOOLONG;
-			goto bad;
-		}
-		if (*cp & 0200)
-			if ((*cp&0377) == ('/'|0200) || flag != DELETE) {
-				error = EINVAL;
+	if (getbuf) {
+		ndp->ni_hash = 0;
+		for (cp = ndp->ni_ptr, i = 0; *cp != 0 && *cp != '/'; cp++) {
+			if (i >= MAXNAMLEN) {
+				error = ENAMETOOLONG;
 				goto bad;
 			}
-		ndp->ni_dent.d_name[i++] = *cp;
-		ndp->ni_hash += (unsigned char)*cp * i;
-	}
-	ndp->ni_namelen = i;
-	ndp->ni_dent.d_namlen = i;
-	ndp->ni_dent.d_name[i] = '\0';
-	ndp->ni_pathlen -= i;
+			if (*cp & 0200)
+				if ((*cp&0377) == ('/'|0200) ||
+				    flag != DELETE) {
+					error = EINVAL;
+					goto bad;
+				}
+			ndp->ni_dent.d_name[i++] = *cp;
+			ndp->ni_hash += (unsigned char)*cp * i;
+		}
+		ndp->ni_namelen = i;
+		ndp->ni_dent.d_namlen = i;
+		ndp->ni_dent.d_name[i] = '\0';
+		ndp->ni_pathlen -= i;
+		ndp->ni_next = cp;
 #ifdef NAMEI_DIAGNOSTIC
-	printf("{%s}: ", ndp->ni_dent.d_name);
+		printf("{%s}: ", ndp->ni_dent.d_name);
 #endif
-#endif fornow
-	ndp->ni_next = cp;
+	}
+	cp = ndp->ni_next;
 	ndp->ni_makeentry = 1;
 	if (*cp == '\0' && docache == 0)
 		ndp->ni_makeentry = 0;
@@ -210,7 +202,8 @@ dirloop:
 			error = EISDIR;
 			goto bad;
 		}
-		free(ndp->ni_pnbuf, M_NAMEI);
+		if (getbuf)
+			free(ndp->ni_pnbuf, M_NAMEI);
 		if (!(ndp->ni_nameiop & LOCKLEAF))
 			VOP_UNLOCK(dp);
 		ndp->ni_vp = dp;
@@ -234,7 +227,8 @@ dirloop:
 				VREF(dp);
 				goto nextname;
 			}
-			if ((dp->v_flag & VROOT) == 0)
+			if ((dp->v_flag & VROOT) == 0 ||
+				(ndp->ni_nameiop & NOCROSSMOUNT))
 				break;
 			tdp = dp;
 			dp = dp->v_mount->m_vnodecovered;
@@ -260,7 +254,7 @@ dirloop:
 		 * If creating and at end of pathname, then can consider
 		 * allowing file to be created.
 		 */
-		if (ndp->ni_dvp->v_mount->m_flag & M_RDONLY) {
+		if (ndp->ni_dvp->v_mount->m_flag & rdonly) {
 			error = EROFS;
 			goto bad;
 		}
@@ -269,7 +263,8 @@ dirloop:
 		 * doesn't currently exist, leaving a pointer to the
 		 * (possibly locked) directory inode in ndp->ni_dvp.
 		 */
-		FREE(ndp->ni_pnbuf, M_NAMEI);
+		if (getbuf)
+			FREE(ndp->ni_pnbuf, M_NAMEI);
 		return (0);	/* should this be ENOENT? */
 	}
 #ifdef NAMEI_DIAGNOSTIC
@@ -286,6 +281,8 @@ dirloop:
 		struct uio auio;
 		int linklen;
 
+		if (!getbuf)
+			panic("namei: unexpected symlink");
 		if (++ndp->ni_loopcnt > MAXSYMLINKS) {
 			error = ELOOP;
 			goto bad2;
@@ -334,7 +331,8 @@ dirloop:
 	 * if so find the root of the mounted file system.
 	 */
 mntloop:
-	while (dp->v_type == VDIR && (mp = dp->v_mountedhere)) {
+	while (dp->v_type == VDIR && (mp = dp->v_mountedhere) &&
+	       (ndp->ni_nameiop & NOCROSSMOUNT) == 0) {
 		while(mp->m_flag & M_MLOCK) {
 			mp->m_flag |= M_MWAIT;
 			sleep((caddr_t)mp, PVFS);
@@ -369,8 +367,8 @@ nextname:
 		 * Disallow directory write attempts on read-only
 		 * file systems.
 		 */
-		if ((dp->v_mount->m_flag & M_RDONLY) ||
-		    (wantparent && (ndp->ni_dvp->v_mount->m_flag & M_RDONLY))) {
+		if ((dp->v_mount->m_flag & rdonly) ||
+		    (wantparent && (ndp->ni_dvp->v_mount->m_flag & rdonly))) {
 			error = EROFS;
 			goto bad2;
 		}
@@ -379,7 +377,8 @@ nextname:
 		vrele(ndp->ni_dvp);
 	if ((ndp->ni_nameiop & LOCKLEAF) == 0)
 		VOP_UNLOCK(dp);
-	FREE(ndp->ni_pnbuf, M_NAMEI);
+	if (getbuf)
+		FREE(ndp->ni_pnbuf, M_NAMEI);
 	return (0);
 
 bad2:
@@ -389,6 +388,7 @@ bad2:
 bad:
 	vput(dp);
 	ndp->ni_vp = NULL;
-	FREE(ndp->ni_pnbuf, M_NAMEI);
+	if (getbuf)
+		FREE(ndp->ni_pnbuf, M_NAMEI);
 	return (error);
 }
