@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dmesg.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)dmesg.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/cdefs.h>
@@ -40,16 +40,16 @@ main(argc, argv)
 	register int ch, newl, skip;
 	register char *p, *ep;
 	struct msgbuf cur;
-	char *core, *namelist;
+	char *memf, *nlistf;
 
-	core = namelist = NULL;
+	memf = nlistf = NULL;
 	while ((ch = getopt(argc, argv, "M:N:")) != EOF)
 		switch(ch) {
 		case 'M':
-			core = optarg;
+			memf = optarg;
 			break;
 		case 'N':
-			namelist = optarg;
+			nlistf = optarg;
 			break;
 		case '?':
 		default:
@@ -58,13 +58,20 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
+	/*
+	 * Discard setgid privileges if not the running kernel so that bad
+	 * guys can't print interesting stuff from kernel memory.
+	 */
+	if (memf != NULL || nlistf != NULL)
+		setgid(getgid());
+
 	/* Read in kernel message buffer, do sanity checks. */
-	if (kvm_openfiles(namelist, core, NULL) == -1)
+	if (kvm_openfiles(nlistf, memf, NULL) == -1)
 		err("kvm_openfiles: %s", kvm_geterr());
 	if (kvm_nlist(nl) == -1)
 		err("kvm_nlist: %s", kvm_geterr());
 	if (nl[X_MSGBUF].n_type == 0)
-		err("msgbuf not found namelist");
+		err("s: msgbuf not found", nlistf ? nlistf : "namelist");
 
         kvm_read((void *)nl[X_MSGBUF].n_value, (void *)&cur, sizeof(cur));
 	if (cur.msg_magic != MSG_MAGIC)

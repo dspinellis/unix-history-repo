@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.38 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -134,14 +134,21 @@ main(argc, argv)
 	register struct passwd *passwd;
 	struct proc *p;
 	int arg, ch, what;
-	char *namelist = NULL, *memfile = NULL;
+	char *memf, *nlistf;
 
 	arg = 0;
 	what = KINFO_PROC_ALL;
+	nlistf = memf = NULL;
 	while ((ch = getopt(argc, argv, "fnp:u:vNM")) != EOF)
 		switch((char)ch) {
 		case 'f':
 			fsflg = 1;
+			break;
+		case 'M':
+			memf = optarg;
+			break;
+		case 'N':
+			nlistf = optarg;
 			break;
 		case 'n':
 			nflg = 1;
@@ -171,12 +178,6 @@ main(argc, argv)
 		case 'v':
 			vflg = 1;
 			break;
-		case 'N':
-			namelist = optarg;
-			break;
-		case 'M':
-			memfile = optarg;
-			break;
 		case '?':
 		default:
 			usage();
@@ -200,7 +201,14 @@ main(argc, argv)
 		checkfile = 1;
 	}
 
-	if (kvm_openfiles(namelist, memfile, NULL) == -1) {
+	/*
+	 * Discard setgid privileges if not the running kernel so that bad
+	 * guys can't print interesting stuff from kernel memory.
+	 */
+	if (nlistf != NULL || memf != NULL)
+		setgid(getgid());
+
+	if (kvm_openfiles(nlistf, memf, NULL) == -1) {
 		fprintf(stderr, "fstat: %s\n", kvm_geterr());
 		exit(1);
 	}

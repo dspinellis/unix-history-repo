@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.44 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -218,6 +218,13 @@ main(argc, argv)
 		}
 	}
 #endif
+	/*
+	 * Discard setgid privileges if not the running kernel so that bad
+	 * guys can't print interesting stuff from kernel memory.
+	 */
+	if (nlistf != NULL || memf != NULL || swapf != NULL)
+		setgid(getgid());
+
 	if (kvm_openfiles(nlistf, memf, swapf) == -1)
 		err("kvm_openfiles: %s", kvm_geterr());
 
