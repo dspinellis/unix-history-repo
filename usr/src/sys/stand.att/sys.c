@@ -3,13 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys.c	7.12 (Berkeley) %G%
+ *	@(#)sys.c	7.13 (Berkeley) %G%
  */
 
 #include "sys/param.h"
-#include "ufs/dir.h"
 #include "sys/reboot.h"
-#include "saio.h"
+#include "ufs/dir.h"
+#include "stand/saio.h"		/* used from machine/stand dir */
 
 #define	isdigit(c)	((u_int)((c) - '0') <= 9)
 #define	isspace(c)	((c) == ' ' || (c) == '\t')

@@ -3,20 +3,20 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ht.c	7.5 (Berkeley) %G%
+ *	@(#)ht.c	7.6 (Berkeley) %G%
  */
 
 /*
  * TM03/TU?? tape driver
  */
-#include "machine/pte.h"
+#include "../include/pte.h"
 
-#include "param.h"
+#include "sys/param.h"
 
-#include "../vaxmba/htreg.h"
-#include "../vaxmba/mbareg.h"
+#include "../mba/htreg.h"
+#include "../mba/mbareg.h"
 
-#include "saio.h"
+#include "stand/saio.h"
 #include "savax.h"
 
 short	httypes[] =

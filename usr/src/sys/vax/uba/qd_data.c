@@ -111,25 +111,25 @@
 
 #include "qd.h" 	/* # of QDSS's the system is configured for */
 
-#include "../vax/pte.h"	/* page table values */
-#include "../vax/mtpr.h"	/* VAX register access stuff */
+#include "../include/pte.h"	/* page table values */
+#include "../include/mtpr.h"	/* VAX register access stuff */
 
-#include "../sys/param.h" 	/* general system params & macros */
-#include "../sys/conf.h"	/* "linesw" tty driver dispatch */
-#include "../sys/user.h"	/* user structure (what else?) */
+#include "sys/param.h" 		/* general system params & macros */
+#include "sys/conf.h"		/* "linesw" tty driver dispatch */
+#include "sys/user.h"		/* user structure (what else?) */
 #include "qdioctl.h" 		/* ioctl call values */
-#include "../sys/tty.h"
-#include "../sys/map.h"		/* resource allocation map struct */
-#include "../sys/buf.h"		/* buf structs */
-#include "../sys/vm.h"		/* includes 'vm' header files */
-#include "../sys/clist.h" 	/* char list handling structs */
-#include "../sys/file.h"	/* file I/O definitions */
-#include "../sys/uio.h"		/* write/read call structs */
-#include "../sys/kernel.h"	/* clock handling structs */
-#include "../vax/cpu.h" 	/* per cpu (pcpu) struct */
+#include "sys/tty.h"
+#include "sys/map.h"		/* resource allocation map struct */
+#include "sys/buf.h"		/* buf structs */
+#include "sys/vm.h"		/* includes 'vm' header files */
+#include "sys/clist.h" 		/* char list handling structs */
+#include "sys/file.h"		/* file I/O definitions */
+#include "sys/uio.h"		/* write/read call structs */
+#include "sys/kernel.h"		/* clock handling structs */
+#include "../include/cpu.h" 	/* per cpu (pcpu) struct */
 
-#include "../vaxuba/ubareg.h"	/* uba & 'qba' register structs */
-#include "../vaxuba/ubavar.h"	/* uba structs & uba map externs */
+#include "../uba/ubareg.h"	/* uba & 'qba' register structs */
+#include "../uba/ubavar.h"	/* uba structs & uba map externs */
 
 #include "qduser.h"	/* definitions shared with my client */
 #include "qdreg.h"	/* QDSS device register structures */

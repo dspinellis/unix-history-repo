@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ix.c	7.7 (Berkeley) %G%
+ *	@(#)if_ix.c	7.8 (Berkeley) %G%
  */
 
 #include "np.h"
@@ -16,42 +16,42 @@
 /*
  * Interlan NP100 Ethernet Communications Controller interface
  */
-#include "machine/pte.h"
+#include "../include/pte.h"
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "buf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "vmmac.h"
-#include "ioctl.h"
-#include "errno.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/mbuf.h"
+#include "sys/buf.h"
+#include "sys/protosw.h"
+#include "sys/socket.h"
+#include "sys/vmmac.h"
+#include "sys/ioctl.h"
+#include "sys/errno.h"
 
-#include "../net/if.h"
-#include "../net/netisr.h"
-#include "../net/route.h"
+#include "net/if.h"
+#include "net/netisr.h"
+#include "net/route.h"
 
 #ifdef INET
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/in_var.h"
-#include "../netinet/ip.h"
-#include "../netinet/if_ether.h"
+#include "netinet/in.h"
+#include "netinet/in_systm.h"
+#include "netinet/in_var.h"
+#include "netinet/ip.h"
+#include "netinet/if_ether.h"
 #endif
 
 #ifdef NS
-#include "../netns/ns.h"
-#include "../netns/ns_if.h"
+#include "netns/ns.h"
+#include "netns/ns_if.h"
 #endif
 
-#include "../vax/cpu.h"
-#include "../vax/mtpr.h"
-#include "../vaxif/if_uba.h"
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
-#include "../vaxuba/npreg.h"
-#include "../vaxif/if_ix.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
+#include "../if/if_uba.h"
+#include "../uba/ubareg.h"
+#include "../uba/ubavar.h"
+#include "../uba/npreg.h"
+#include "../if/if_ix.h"
 
 int	ixattach(), ixrint(), ixcint();
 #define	ILUNIT(x)	minor(x)

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)qv.c	1.14 (Berkeley) %G%
+ *	@(#)qv.c	1.15 (Berkeley) %G%
  */
 
 /*
@@ -97,23 +97,23 @@
 #include "qv.h"
 #if NQV > 0
 
-#include "machine/pte.h"
+#include "../include/pte.h"
 
-#include "param.h"
-#include "conf.h"
-#include "user.h"
+#include "sys/param.h"
+#include "sys/conf.h"
+#include "sys/user.h"
 #include "qvioctl.h"
-#include "tty.h"
-#include "map.h"
-#include "buf.h"
-#include "vm.h"
-#include "clist.h"
-#include "file.h"
-#include "uio.h"
-#include "kernel.h"
-#include "syslog.h"
-#include "machine/cpu.h"
-#include "machine/mtpr.h"
+#include "sys/tty.h"
+#include "sys/map.h"
+#include "sys/buf.h"
+#include "sys/vm.h"
+#include "sys/clist.h"
+#include "sys/file.h"
+#include "sys/uio.h"
+#include "sys/kernel.h"
+#include "sys/syslog.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
 #include "ubareg.h"
 #include "ubavar.h"
 

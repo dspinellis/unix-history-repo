@@ -3,19 +3,19 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)imptst.c	7.3 (Berkeley) %G%
+ *	@(#)imptst.c	7.4 (Berkeley) %G%
  */
 
-#include "param.h"
+#include "sys/param.h"
 
-#include "../vaxuba/ubareg.h"
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
+#include "../uba/ubareg.h"
+#include "netinet/in.h"
+#include "netinet/in_systm.h"
 #define	IMPLEADERS
-#include "../netimp/if_imp.h"
-#include "../vaxif/if_acc.h"
+#include "netimp/if_imp.h"
+#include "../if/if_acc.h"
 
-#include "saio.h"
+#include "stand/saio.h"
 #include "savax.h"
 
 #define min(a,b) (a<b ? a : b)

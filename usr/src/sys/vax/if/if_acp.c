@@ -1,5 +1,5 @@
 /*-
- *	@(#)if_acp.c	7.2 (Berkeley) %G%
+ *	@(#)if_acp.c	7.3 (Berkeley) %G%
  */
 
 /*************************************************************************/
@@ -113,38 +113,38 @@ int acp_debug = 0;	/* acp_debug is 1-8 for increasing verbosity */
 
 #include "acp.h"
 #if NACP > 0
-#include "../machine/pte.h"
+#include "../include/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mbuf.h"
-#include "../h/buf.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/vmmac.h"
-#include "../h/errno.h"
-#include "../h/time.h"
-#include "../h/kernel.h"
-#include "../h/ioctl.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/mbuf.h"
+#include "sys/buf.h"
+#include "sys/protosw.h"
+#include "sys/socket.h"
+#include "sys/vmmac.h"
+#include "sys/errno.h"
+#include "sys/time.h"
+#include "sys/kernel.h"
+#include "sys/ioctl.h"
 
-#include "../net/if.h"
-#include "../net/netisr.h"
-#include "../net/route.h"
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
+#include "net/if.h"
+#include "net/netisr.h"
+#include "net/route.h"
+#include "netinet/in.h"
+#include "netinet/in_systm.h"
 #ifndef FOURTWO
-# include "../netinet/in_var.h"
+# include "netinet/in_var.h"
 #endif
-#include "../netinet/ip.h"
-#include "../netinet/ip_var.h"
+#include "netinet/ip.h"
+#include "netinet/ip_var.h"
 
-#include "../vax/cpu.h"
-#include "../vax/mtpr.h"
-#include "../vaxif/if_acpreg.h"
-#include "../vaxif/if_acpvar.h"
-#include "../vaxif/if_uba.h"
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
+#include "../if/if_acpreg.h"
+#include "../if/if_acpvar.h"
+#include "../if/if_uba.h"
+#include "../uba/ubareg.h"
+#include "../uba/ubavar.h"
 
 
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/

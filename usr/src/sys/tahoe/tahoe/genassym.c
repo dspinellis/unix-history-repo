@@ -12,25 +12,25 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)genassym.c	7.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)genassym.c	7.7 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "param.h"
-#include "vmmeter.h"
-#include "vmparam.h"
-#include "buf.h"
-#include "user.h"
-#include "cmap.h"
-#include "map.h"
-#include "proc.h"
-#include "text.h"
-#include "mbuf.h"
-#include "msgbuf.h"
+#include "sys/param.h"
+#include "sys/vmmeter.h"
+#include "sys/vmparam.h"
+#include "sys/buf.h"
+#include "sys/user.h"
+#include "sys/cmap.h"
+#include "sys/map.h"
+#include "sys/proc.h"
+#include "sys/text.h"
+#include "sys/mbuf.h"
+#include "sys/msgbuf.h"
 
-#include "pte.h"
-#include "scb.h"
+#include "../include/pte.h"
+#include "../tahoe/scb.h"
 
-#include "../tahoevba/vbaparam.h"
+#include "../vba/vbaparam.h"
 
 main()
 {

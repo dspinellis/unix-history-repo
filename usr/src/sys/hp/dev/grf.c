@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: grf.c 1.28 89/08/14$
  *
- *	@(#)grf.c	7.5 (Berkeley) %G%
+ *	@(#)grf.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -23,31 +23,31 @@
 #include "grf.h"
 #if NGRF > 0
 
-#include "param.h"
-#include "user.h"
-#include "proc.h"
-#include "ioctl.h"
-#include "file.h"
-#include "malloc.h"
+#include "sys/param.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/ioctl.h"
+#include "sys/file.h"
+#include "sys/malloc.h"
 
 #include "device.h"
 #include "grfioctl.h"
 #include "grfvar.h"
 
-#include "machine/cpu.h"
+#include "../include/cpu.h"
 
 #ifdef HPUXCOMPAT
 #include "../hpux/hpux.h"
 #endif
 
-#include "../vm/vm_param.h"
-#include "../vm/vm_map.h"
-#include "../vm/vm_kern.h"
-#include "../vm/vm_page.h"
-#include "../vm/vm_pager.h"
-#include "specdev.h"
-#include "vnode.h"
-#include "mman.h"
+#include "vm/vm_param.h"
+#include "vm/vm_map.h"
+#include "vm/vm_kern.h"
+#include "vm/vm_page.h"
+#include "vm/vm_pager.h"
+#include "sys/specdev.h"
+#include "sys/vnode.h"
+#include "sys/mman.h"
 
 #include "ite.h"
 #if NITE == 0

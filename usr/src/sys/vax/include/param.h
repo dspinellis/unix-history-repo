@@ -3,19 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.16 (Berkeley) %G%
+ *	@(#)param.h	7.17 (Berkeley) %G%
  */
 
 /*
  * Machine dependent constants for VAX.
  */
 #define	MACHINE	"vax"
-
-#ifndef BYTE_ORDER
-#include <machine/endian.h>
-#endif
-
-#include <machine/machlimits.h>
 
 /*
  * Round p (pointer or byte index) up to a correctly-aligned value

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ik.c	7.6 (Berkeley) %G%
+ *	@(#)ik.c	7.7 (Berkeley) %G%
  */
 
 #include "ik.h"
@@ -11,15 +11,15 @@
 /*
  * Ikonas Frame Buffer Interface -- Bill Reeves.
  */
-#include "machine/pte.h"
+#include "../include/pte.h"
 
-#include "param.h"
-#include "user.h"
-#include "buf.h"
-#include "systm.h"
-#include "map.h"
-#include "uio.h"
-#include "ioctl.h"
+#include "sys/param.h"
+#include "sys/user.h"
+#include "sys/buf.h"
+#include "sys/systm.h"
+#include "sys/map.h"
+#include "sys/uio.h"
+#include "sys/ioctl.h"
 
 #include "ubareg.h"
 #include "ubavar.h"

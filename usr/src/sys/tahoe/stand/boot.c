@@ -1,12 +1,12 @@
-/*	boot.c	7.4	90/06/30	*/
+/*	boot.c	7.5	90/12/16	*/
 
-#include "machine/mtpr.h"
+#include "../include/mtpr.h"
 
 #include "sys/param.h"
 #include "sys/time.h"
 #include "sys/vm.h"
 #include "sys/reboot.h"
-#include "saio.h"
+#include "stand/saio.h"
 
 #include <a.out.h>
 

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- * 		@(#)qduser.h	1.4  Berkeley  %G%
+ * 		@(#)qduser.h	1.5  Berkeley  %G%
  */
 /* derived from: @(#)qduser.h	6.1	(ULTRIX)	11/24/87       */
 /************************************************************************
@@ -63,9 +63,9 @@
 ***************************************************************************/
 
 #ifdef KERNEL
-#include "qevent.h"		/* include event struct defs */
+#include "../uba/qevent.h"		/* include event struct defs */
 #else
-#include <vaxuba/qevent.h>
+#include <vax/uba/qevent.h>
 #endif
 
 /*---------------------

@@ -7,22 +7,22 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mscp.c	7.4 (Berkeley) %G%
+ *	@(#)mscp.c	7.5 (Berkeley) %G%
  */
 
 /*
  * MSCP generic driver routines
  */
 
-#include "param.h"
-#include "buf.h"
-#include "errno.h"
-#include "dkstat.h"
-#include "ioctl.h"
-#include "disklabel.h"
-#include "syslog.h"
+#include "sys/param.h"
+#include "sys/buf.h"
+#include "sys/errno.h"
+#include "sys/dkstat.h"
+#include "sys/ioctl.h"
+#include "sys/disklabel.h"
+#include "sys/syslog.h"
 
-#include "../vaxuba/ubavar.h"
+#include "../uba/ubavar.h"
 
 #include "mscp.h"
 #include "mscpvar.h"

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_dp.c	7.6 (Berkeley) %G%
+ *	@(#)if_dp.c	7.7 (Berkeley) %G%
  */
 
 #include "dp.h"
@@ -24,36 +24,36 @@
 
 /* #define DEBUG	/* for base table dump on fatal error */
 
-#include "machine/pte.h"
+#include "../include/pte.h"
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "buf.h"
-#include "ioctl.h"		/* must precede tty.h */
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "syslog.h"
-#include "vmmac.h"
-#include "errno.h"
-#include "time.h"
-#include "kernel.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/mbuf.h"
+#include "sys/buf.h"
+#include "sys/ioctl.h"		/* must precede tty.h */
+#include "sys/protosw.h"
+#include "sys/socket.h"
+#include "sys/socketvar.h"
+#include "sys/syslog.h"
+#include "sys/vmmac.h"
+#include "sys/errno.h"
+#include "sys/time.h"
+#include "sys/kernel.h"
 
-#include "../net/if.h"
-#include "../net/netisr.h"
-#include "../net/route.h"
+#include "net/if.h"
+#include "net/netisr.h"
+#include "net/route.h"
 
-#include "../vax/cpu.h"
-#include "../vax/mtpr.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
 
 #define	dzdevice dpdevice
-#include "../vaxuba/pdma.h"
-#include "../vaxuba/ubavar.h"
+#include "../uba/pdma.h"
+#include "../uba/ubavar.h"
 
-#include "../netccitt/x25.h"
-#include "../netccitt/pk.h"
-#include "../netccitt/pk_var.h"
+#include "netccitt/x25.h"
+#include "netccitt/pk.h"
+#include "netccitt/pk_var.h"
 
 #include "if_dpreg.h"
 

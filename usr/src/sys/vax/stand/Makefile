@@ -1,26 +1,16 @@
 #
-# Copyright (c) 1980, 1988 Regents of the University of California.
+# Copyright (c) 1990 The Regents of the University of California.
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms are permitted
-# provided that the above copyright notice and this paragraph are
-# duplicated in all such forms and that any documentation,
-# advertising materials, and other materials related to such
-# distribution and use acknowledge that the software was developed
-# by the University of California, Berkeley.  The name of the
-# University may not be used to endorse or promote products derived
-# from this software without specific prior written permission.
-# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+# %sccs.include.redist.sh
 #
-#	@(#)Makefile	7.23 (Berkeley) %G%
+#	@(#)Makefile	7.24 (Berkeley) %G%
 #
 
 DESTDIR=
-STAND=	/stand
-INCPATH=-I. -I../stand -I../sys
-VPATH=	../stand:../vax
+STAND=	../../stand
+INCPATH=-I. -I../..
+VPATH=	${STAND}:../vax
 C2=	/usr/libexec/c2
 DEFS=	${INCPATH} -DSTANDALONE -DCOMPAT_42
 MACH=	-DVAX8600 -DVAX8200 -DVAX780 -DVAX750 -DVAX730 -DVAX630 -DVAX650
@@ -74,13 +64,13 @@ ${DRIVERS}:
 
 # startups
 
-srt0.o: srt0.c ../vax/mtpr.h ../vax/cpu.h
+srt0.o: srt0.c ../include/mtpr.h ../include/cpu.h
 	${CC} -E -DRELOC=0x${RELOC} ${COPTS} srt0.c | as -o srt0.o
 
-tpsrt0.o: srt0.c ../vax/mtpr.h ../vax/cpu.h
+tpsrt0.o: srt0.c ../include/mtpr.h ../include/cpu.h
 	${CC} -E -DRELOC=0x${RELOC} -DTP ${COPTS} srt0.c | as -o tpsrt0.o
 
-relsrt0.o: srt0.c ../vax/mtpr.h ../vax/cpu.h
+relsrt0.o: srt0.c ../include/mtpr.h ../include/cpu.h
 	${CC} -E -DRELOC=0x${RELOC} -DREL ${COPTS} srt0.c | as -o relsrt0.o
 
 # bootable from tape
@@ -230,9 +220,9 @@ sm_up.o: up.o
 	${C2} -i sm_up.s | as -o sm_up.o
 	rm -f sm_up.s sm_up.c
 
-sm_sys.o: ../stand/sys.c
+sm_sys.o: ${STAND}/sys.c
 	rm -f sm_sys.c
-	ln -s ../stand/sys.c sm_sys.c
+	ln -s ${STAND}/sys.c sm_sys.c
 	${CC} -c -O ${SMOPTS} sm_sys.c
 	rm -f sm_sys.c
 
@@ -252,23 +242,23 @@ confrl.o: confrl.c confxx.o
 confxx.o:
 	touch confxx.o
 
-confrk.c: confxx.c ../stand/dev.c
-	sed -e 's/io->i_dev/0/g'		< ../stand/dev.c > confrk.c
+confrk.c: confxx.c ${STAND}/dev.c
+	sed -e 's/io->i_dev/0/g'		< ${STAND}/dev.c > confrk.c
 	sed -e 's/XX/hk/' -e 's/xx/rk/g'	< confxx.c >> confrk.c
-confhp.c: confxx.c ../stand/dev.c
-	sed -e 's/io->i_dev/0/g'		< ../stand/dev.c > confhp.c
+confhp.c: confxx.c ${STAND}/dev.c
+	sed -e 's/io->i_dev/0/g'		< ${STAND}/dev.c > confhp.c
 	sed -e 's/XX/hp/' -e 's/xx/hp/g'	< confxx.c >> confhp.c
-confkra.c: confxx.c ../stand/dev.c
-	sed -e 's/io->i_dev/0/g'		< ../stand/dev.c > confkra.c
+confkra.c: confxx.c ${STAND}/dev.c
+	sed -e 's/io->i_dev/0/g'		< ${STAND}/dev.c > confkra.c
 	sed -e 's/XX/kra/' -e 's/xx/kra/g'	< confxx.c >> confkra.c
-confup.c: confxx.c ../stand/dev.c
-	sed -e 's/io->i_dev/0/g'		< ../stand/dev.c > confup.c
+confup.c: confxx.c ${STAND}/dev.c
+	sed -e 's/io->i_dev/0/g'		< ${STAND}/dev.c > confup.c
 	sed -e 's/XX/up/' -e 's/xx/up/g'	< confxx.c >> confup.c
-confra.c: confxx.c ../stand/dev.c
-	sed -e 's/io->i_dev/0/g'		< ../stand/dev.c > confra.c
+confra.c: confxx.c ${STAND}/dev.c
+	sed -e 's/io->i_dev/0/g'		< ${STAND}/dev.c > confra.c
 	sed -e 's/XX/ra/' -e 's/xx/ra/g'	< confxx.c >> confra.c
-confrl.c: confxx.c ../stand/dev.c
-	sed -e 's/io->i_dev/0/g'		< ../stand/dev.c > confrl.c
+confrl.c: confxx.c ${STAND}/dev.c
+	sed -e 's/io->i_dev/0/g'		< ${STAND}/dev.c > confrl.c
 	sed -e 's/XX/rl/' -e 's/xx/rl/g'	< confxx.c >> confrl.c
 
 clean:
@@ -283,7 +273,8 @@ depend: ${SRCS}
 	mkdep ${INCPATH} -DSTANDALONE ${SRCS} ${DUMMIES}
 
 install: FRC
-	install -c -s -o bin -g bin -m 644 format cat copy drtest ls ${DESTDIR}${STAND}
+	install -c -s -o bin -g bin -m 644 \
+	    format cat copy drtest ls ${DESTDIR}/stand
 	[ -d ../vaxdist/tp ] || mkdir ../vaxdist/tp
 	cp tpcopy ../vaxdist/tp/copy
 	cp tpboot ../vaxdist/tp/boot

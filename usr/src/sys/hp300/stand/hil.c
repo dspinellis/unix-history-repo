@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hil.c 1.1 89/08/22$
  *
- *	@(#)hil.c	7.1 (Berkeley) %G%
+ *	@(#)hil.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -21,10 +21,10 @@
 
 #ifdef ITECONSOLE
 
-#include "param.h"
-#include "../hpdev/hilreg.h"
-#include "../hpdev/kbdmap.h"
-#include "../hpdev/itevar.h"
+#include "sys/param.h"
+#include "../dev/hilreg.h"
+#include "../dev/kbdmap.h"
+#include "../dev/itevar.h"
 
 #ifndef SMALL
 

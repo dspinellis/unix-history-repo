@@ -3,24 +3,24 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mem.c	7.4 (Berkeley) %G%
+ *	@(#)mem.c	7.5 (Berkeley) %G%
  */
 
 /*
  * Memory special file
  */
 
-#include "pte.h"
+#include "../include/pte.h"
 
-#include "param.h"
-#include "user.h"
-#include "conf.h"
-#include "buf.h"
-#include "systm.h"
-#include "vm.h"
-#include "cmap.h"
+#include "sys/param.h"
+#include "sys/user.h"
+#include "sys/conf.h"
+#include "sys/buf.h"
+#include "sys/systm.h"
+#include "sys/vm.h"
+#include "sys/cmap.h"
 
-#include "mtpr.h"
+#include "../include/mtpr.h"
 
 mmrw(dev, uio, flags)
 	dev_t dev;

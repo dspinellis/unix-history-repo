@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hpib.c	7.2 (Berkeley) %G%
+ *	@(#)hpib.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -13,15 +13,15 @@
 #include "hpib.h"
 #if NHPIB > 0
 
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/buf.h"
 #include "device.h"
 #include "hpibvar.h"
 #include "dmavar.h"
 
-#include "machine/cpu.h"
-#include "machine/isr.h"
+#include "../include/cpu.h"
+#include "../hp300/isr.h"
 
 int	hpibinit(), hpibstart(), hpibgo(), hpibintr(), hpibdone();
 struct	driver hpibdriver = {

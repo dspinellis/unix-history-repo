@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uda.c	7.30 (Berkeley) %G%
+ *	@(#)uda.c	7.31 (Berkeley) %G%
  */
 
 /*
@@ -48,24 +48,24 @@
 #define	MAXUNIT	8		/* maximum allowed unit number */
 #define	DEFAULT_BURST	4	/* default DMA burst size */
 
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
-#include "conf.h"
-#include "file.h"
-#include "ioctl.h"
-#include "user.h"
-#include "map.h"
-#include "vm.h"
-#include "dkstat.h"
-#include "cmap.h"
-#include "disklabel.h"
-#include "syslog.h"
-#include "stat.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/buf.h"
+#include "sys/conf.h"
+#include "sys/file.h"
+#include "sys/ioctl.h"
+#include "sys/user.h"
+#include "sys/map.h"
+#include "sys/vm.h"
+#include "sys/dkstat.h"
+#include "sys/cmap.h"
+#include "sys/disklabel.h"
+#include "sys/syslog.h"
+#include "sys/stat.h"
 
-#include "machine/pte.h"
+#include "../include/pte.h"
 
-#include "../vax/cpu.h"
+#include "../include/cpu.h"
 #include "ubareg.h"
 #include "ubavar.h"
 
@@ -75,7 +75,7 @@
 #include "udareg.h"
 #include "../vax/mscp.h"
 #include "../vax/mscpvar.h"
-#include "../vax/mtpr.h"
+#include "../include/mtpr.h"
 
 /*
  * UDA communications area and MSCP packet pools, per controller.

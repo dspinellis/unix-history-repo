@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dn.c	7.6 (Berkeley) %G%
+ *	@(#)dn.c	7.7 (Berkeley) %G%
  */
 
 #include "dn.h"
@@ -11,15 +11,15 @@
 /*
  * DN-11 ACU interface
  */
-#include "machine/pte.h"
+#include "../include/pte.h"
 
-#include "param.h"
-#include "systm.h"
-#include "user.h"
-#include "buf.h"
-#include "map.h"
-#include "conf.h"
-#include "uio.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/user.h"
+#include "sys/buf.h"
+#include "sys/map.h"
+#include "sys/conf.h"
+#include "sys/uio.h"
 
 #include "ubavar.h"
 

@@ -3,11 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rxreg.h	7.2 (Berkeley) %G%
+ *	@(#)rxreg.h	7.3 (Berkeley) %G%
  */
 
 #ifdef KERNEL
-#include "ioctl.h"
+#include "sys/ioctl.h"
 #else
 #include <sys/ioctl.h>
 #endif

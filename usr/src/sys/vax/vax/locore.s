@@ -3,26 +3,27 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.27 (Berkeley) %G%
+ *	@(#)locore.s	7.28 (Berkeley) %G%
  */
 
-#include "psl.h"
-#include "pte.h"
+#include "vax/include/psl.h"
+#include "vax/include/pte.h"
 
-#include "errno.h"
-#include "cmap.h"
+#include "sys/errno.h"
+#include "sys/syscall.h"
+#include "sys/cmap.h"
 
-#include "mtpr.h"
-#include "trap.h"
-#include "cpu.h"
-#include "nexus.h"
-#include "cons.h"
-#include "clock.h"
-#include "ioa.h"
-#include "ka630.h"
-#include "ka650.h"
-#include "ka820.h"
-#include "../vaxuba/ubareg.h"
+#include "vax/include/mtpr.h"
+#include "vax/include/trap.h"
+#include "vax/include/cpu.h"
+#include "vax/vax/nexus.h"
+#include "vax/vax/cons.h"
+#include "vax/include/clock.h"
+#include "vax/vax/ioa.h"
+#include "vax/vax/ka630.h"
+#include "vax/vax/ka650.h"
+#include "vax/vax/ka820.h"
+#include "vax/uba/ubareg.h"
 
 #include "dz.h"
 #include "dp.h"
@@ -30,6 +31,7 @@
 #include "ps.h"
 #include "mba.h"
 #include "uba.h"
+#include "imp.h"
 
 	.set	HIGH,0x1f	# mask for total disable
 	.set	MCKVEC,4	# offset into scb of machine check vector
@@ -369,11 +371,10 @@ SCBVEC(softclock):
 	incl	_cnt+V_SOFT
 	rei
 
-#include "../net/netisr.h"
+#include "net/netisr.h"
 	.globl	_netisr
 SCBVEC(netintr):
 	PUSHR
-#include "imp.h"
 #if NIMP > 0
 	bbcc	$NETISR_IMP,_netisr,1f; calls $0,_impintr; 1:
 #endif

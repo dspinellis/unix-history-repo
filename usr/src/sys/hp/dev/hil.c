@@ -11,32 +11,32 @@
  *
  * from: Utah $Hdr: hil.c 1.33 89/12/22$
  *
- *	@(#)hil.c	7.5 (Berkeley) %G%
+ *	@(#)hil.c	7.6 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "conf.h"
-#include "user.h"
-#include "proc.h"
-#include "ioctl.h"
-#include "file.h"
-#include "tty.h"
-#include "systm.h"
-#include "uio.h"
-#include "kernel.h"
+#include "sys/param.h"
+#include "sys/conf.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/ioctl.h"
+#include "sys/file.h"
+#include "sys/tty.h"
+#include "sys/systm.h"
+#include "sys/uio.h"
+#include "sys/kernel.h"
 
 #include "hilreg.h"
 #include "hilioctl.h"
 #include "hilvar.h"
 #include "kbdmap.h"
 
-#include "machine/cpu.h"
+#include "../include/cpu.h"
 
-#include "../vm/vm_param.h"
-#include "../vm/vm_map.h"
-#include "../vm/vm_kern.h"
-#include "../vm/vm_page.h"
-#include "../vm/vm_pager.h"
+#include "vm/vm_param.h"
+#include "vm/vm_map.h"
+#include "vm/vm_kern.h"
+#include "vm/vm_page.h"
+#include "vm/vm_pager.h"
 
 struct	hilloop	hil0;
 struct	_hilbell default_bell = { BELLDUR, BELLFREQ };
@@ -1038,7 +1038,7 @@ hilqunmap(qnum, device)
 	return(0);
 }
 
-#include "clist.h"
+#include "sys/clist.h"
 
 /*
  * This is just a copy of the virgin q_to_b routine with minor

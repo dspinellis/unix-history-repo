@@ -1,8 +1,8 @@
-/*	machdep.c	1.4	90/06/22	*/
+/*	machdep.c	1.5	90/12/16	*/
 
-#include "tahoe/mem.h"
-#include "tahoe/mtpr.h"
-#include "tahoe/SYS.h"
+#include "../tahoe/mem.h"
+#include "../include/mtpr.h"
+#include "../tahoe/SYS.h"
 
 	.set	_scb, 0x0
 	.set	HIGH, 0x1f	# mask for total disable

@@ -3,22 +3,22 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.15 (Berkeley) %G%
+ *	@(#)locore.s	7.16 (Berkeley) %G%
  */
 
-#include "../tahoe/mtpr.h"
-#include "../tahoe/trap.h"
-#include "../tahoe/psl.h"
-#include "../tahoe/pte.h"
-#include "../tahoe/cp.h"
-#include "../tahoe/mem.h"
-#include "../tahoe/SYS.h"
+#include "tahoe/include/mtpr.h"
+#include "tahoe/include/trap.h"
+#include "tahoe/include/psl.h"
+#include "tahoe/include/pte.h"
+#include "tahoe/tahoe/cp.h"
+#include "tahoe/tahoe/mem.h"
+#include "tahoe/tahoe/SYS.h"
 
-#include "../tahoemath/fp.h"
+#include "tahoe/math/fp.h"
 
-#include "errno.h"
-#include "syscall.h"
-#include "cmap.h"
+#include "sys/errno.h"
+#include "sys/syscall.h"
+#include "sys/cmap.h"
 
 	.set	HIGH,0x1f		# mask for total disable
 	.set	NISP,3			# number of interrupt stack pages
@@ -316,7 +316,7 @@ SCBVEC(stray):
 	incl	_cnt+V_INTR		# add to statistics
 	rei
 
-#include "../net/netisr.h"
+#include "net/netisr.h"
 	.globl	_netisr
 SCBVEC(netintr):
 	CHECK_SFE(4)
@@ -607,14 +607,14 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(msgbufmap,msgbuf		,MSGBUFPTECNT	)
 	SYSMAP(Mbmap	,mbutl		,NMBCLUSTERS*MCLBYTES/NBPG+CLSIZE )
 #ifdef MFS
-#include "../ufs/mfsiom.h"
+#include "ufs/mfsiom.h"
 	/*
 	 * Used by the mfs_doio() routine for physical I/O
 	 */
 	SYSMAP(Mfsiomap	,mfsiobuf	,MFS_MAPREG )
 #endif /* MFS */
 #ifdef NFS
-#include "../nfs/nfsiom.h"
+#include "nfs/nfsiom.h"
 	/*
 	 * Used by the nfs_doio() routine for physical I/O
 	 */
@@ -1742,7 +1742,7 @@ ENTRY(locc, 0)
 	subl3	r0,r1,r0; ret		# return (end - cp);
 
 #ifdef ALIGN
-#include "../tahoealign/align.h"
+#include "tahoe/align/align.h"
 
 	.globl	_alignment
 /*

@@ -11,22 +11,22 @@
  *
  * from: Utah $Hdr: vm_machdep.c 1.18 89/08/23$
  *
- *	@(#)vm_machdep.c	7.6 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.7 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "user.h"
-#include "proc.h"
-#include "cmap.h"
-#include "malloc.h"
-#include "buf.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/cmap.h"
+#include "sys/malloc.h"
+#include "sys/buf.h"
 
-#include "cpu.h"
+#include "../include/cpu.h"
 
-#include "../vm/vm_param.h"
-#include "../vm/pmap.h"
-#include "../vm/vm_map.h"
+#include "vm/vm_param.h"
+#include "vm/pmap.h"
+#include "vm/vm_map.h"
 
 /*
  * Move pages from one kernel virtual address to another.

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dca.c	7.7 (Berkeley) %G%
+ *	@(#)dca.c	7.8 (Berkeley) %G%
  */
 
 #include "dca.h"
@@ -12,21 +12,21 @@
 /*
  *  98626/98644/internal serial interface
  */
-#include "param.h"
-#include "systm.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "user.h"
-#include "conf.h"
-#include "file.h"
-#include "uio.h"
-#include "kernel.h"
-#include "syslog.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/ioctl.h"
+#include "sys/tty.h"
+#include "sys/user.h"
+#include "sys/conf.h"
+#include "sys/file.h"
+#include "sys/uio.h"
+#include "sys/kernel.h"
+#include "sys/syslog.h"
 
 #include "device.h"
 #include "dcareg.h"
-#include "machine/cpu.h"
-#include "machine/isr.h"
+#include "../include/cpu.h"
+#include "../hp300/isr.h"
 
 int	dcaprobe();
 struct	driver dcadriver = {
@@ -524,7 +524,7 @@ dcamctl(dev, bits, how)
 /*
  * Following are all routines needed for DCA to act as console
  */
-#include "machine/cons.h"
+#include "../hp300/cons.h"
 
 dcacnprobe(cp)
 	struct consdev *cp;

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_sig.c 1.1 90/07/09$
  *
- *	@(#)hpux_sig.c	7.5 (Berkeley) %G%
+ *	@(#)hpux_sig.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -20,12 +20,12 @@
 
 #ifdef HPUXCOMPAT
 
-#include "param.h"
-#include "systm.h"
-#include "user.h"
-#include "kernel.h"
-#include "proc.h"
-#include "hpux.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/user.h"
+#include "sys/kernel.h"
+#include "sys/proc.h"
+#include "sys/hpux.h"
 
 /* indexed by HPUX signal number - 1 */
 char hpuxtobsdsigmap[NSIG] = {

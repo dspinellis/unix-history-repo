@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmx.c	7.4 (Berkeley) %G%
+ *	@(#)dmx.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -13,24 +13,24 @@
 #include "dmz.h"
 #if NDMF + NDMZ > 0
 
-#include "machine/pte.h"
+#include "../include/pte.h"
 
+#include "sys/param.h"
 #include "uba.h"
-#include "param.h"
-#include "conf.h"
-#include "user.h"
-#include "proc.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "map.h"
-#include "buf.h"
-#include "vm.h"
-#include "bkmac.h"
-#include "clist.h"
-#include "file.h"
-#include "uio.h"
-#include "kernel.h"
-#include "syslog.h"
+#include "sys/conf.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/ioctl.h"
+#include "sys/tty.h"
+#include "sys/map.h"
+#include "sys/buf.h"
+#include "sys/vm.h"
+#include "sys/bkmac.h"
+#include "sys/clist.h"
+#include "sys/file.h"
+#include "sys/uio.h"
+#include "sys/kernel.h"
+#include "sys/syslog.h"
 
 #include "dmx.h"
 #include "ubareg.h"

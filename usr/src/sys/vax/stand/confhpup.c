@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)confhpup.c	7.6 (Berkeley) %G%
+ *	@(#)confhpup.c	7.7 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "saio.h"
+#include "sys/param.h"
+#include "stand/saio.h"
 
 int	nullsys();
 int	hpstrategy(), hpopen(), hpioctl();

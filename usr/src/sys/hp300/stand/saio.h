@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)saio.h	7.3 (Berkeley) %G%
+ *	@(#)saio.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -12,8 +12,8 @@
  */
 
 #include <sys/param.h>
-#include "../ufs/dinode.h"
-#include "../ufs/fs.h"
+#include "ufs/dinode.h"
+#include "ufs/fs.h"
 
 /*
  * Io block: includes a

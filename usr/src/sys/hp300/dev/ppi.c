@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ppi.c	7.2 (Berkeley) %G%
+ *	@(#)ppi.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -14,10 +14,10 @@
 #include "ppi.h"
 #if NPPI > 0
 
-#include "param.h"
-#include "errno.h"
-#include "uio.h"
-#include "malloc.h"
+#include "sys/param.h"
+#include "sys/errno.h"
+#include "sys/uio.h"
+#include "sys/malloc.h"
 
 #include "device.h"
 #include "ppiioctl.h"

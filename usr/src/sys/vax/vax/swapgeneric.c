@@ -3,26 +3,26 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)swapgeneric.c	7.9 (Berkeley) %G%
+ *	@(#)swapgeneric.c	7.10 (Berkeley) %G%
  */
 
 #include "mba.h"
 
-#include "pte.h"
+#include "../include/pte.h"
 
-#include "param.h"
-#include "conf.h"
-#include "buf.h"
-#include "vm.h"
-#include "systm.h"
-#include "reboot.h"
+#include "sys/param.h"
+#include "sys/conf.h"
+#include "sys/buf.h"
+#include "sys/vm.h"
+#include "sys/systm.h"
+#include "sys/reboot.h"
 
 #include "cons.h"
-#include "mtpr.h"
-#include "../vaxmba/mbareg.h"
-#include "../vaxmba/mbavar.h"
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
+#include "../include/mtpr.h"
+#include "../mba/mbareg.h"
+#include "../mba/mbavar.h"
+#include "../uba/ubareg.h"
+#include "../uba/ubavar.h"
 
 /*
  * Generic configuration;  all in one

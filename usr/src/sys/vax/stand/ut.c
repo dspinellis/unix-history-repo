@@ -3,21 +3,21 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ut.c	7.6 (Berkeley) %G%
+ *	@(#)ut.c	7.7 (Berkeley) %G%
  */
 
 /*
  * SI Model 9700 -- emulates TU45 on the UNIBUS
  */
 
-#include "param.h"
+#include "sys/param.h"
 
-#include "../vax/pte.h"
+#include "../include/pte.h"
 
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/utreg.h"
+#include "../uba/ubareg.h"
+#include "../uba/utreg.h"
 
-#include "saio.h"
+#include "stand/saio.h"
 #include "savax.h"
 
 #define	MASKREG(reg)	((reg)&0xffff)

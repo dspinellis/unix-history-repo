@@ -3,18 +3,18 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cpudata.c	7.5 (Berkeley) %G%
+ *	@(#)cpudata.c	7.6 (Berkeley) %G%
  */
 
-#include "pte.h"
+#include "../include/pte.h"
 
-#include "param.h"
+#include "sys/param.h"
 
-#include "cpu.h"
+#include "../include/cpu.h"
 #include "nexus.h"
 #include "ioa.h"
-#include "../vaxbi/bireg.h"
-#include "../vaxuba/ubareg.h"
+#include "../bi/bireg.h"
+#include "../uba/ubareg.h"
 
 /*
  * Initialization of per-cpu data structures.

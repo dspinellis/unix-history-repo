@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: cd.c 1.1 90/07/09$
  *
- *	@(#)cd.c	7.2 (Berkeley) %G%
+ *	@(#)cd.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -20,13 +20,13 @@
 #include "cd.h"
 #if NCD > 0
 
-#include "param.h"
-#include "systm.h"
-#include "errno.h"
-#include "dkstat.h"
-#include "buf.h"
-#include "malloc.h"
-#include "conf.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/errno.h"
+#include "sys/dkstat.h"
+#include "sys/buf.h"
+#include "sys/malloc.h"
+#include "sys/conf.h"
 
 #include "cdvar.h"
 

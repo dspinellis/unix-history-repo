@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)np.c	7.8 (Berkeley) %G%
+ *	@(#)np.c	7.9 (Berkeley) %G%
  *
  * From:
  *	np.c version 1.5
@@ -42,19 +42,19 @@
 
 #include "np.h"
 #if NNP > 0
-#include "param.h"
-#include "buf.h"
-#include "conf.h"
-#include "ubavar.h"
-#include "signal.h"
-#include "systm.h"
-#include "user.h"
-#include "proc.h"
-#include "uio.h"
-#include "errno.h"
-#include "ioctl.h"
+#include "sys/param.h"
+#include "sys/buf.h"
+#include "sys/conf.h"
+#include "sys/ubavar.h"
+#include "sys/signal.h"
+#include "sys/systm.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/uio.h"
+#include "sys/errno.h"
+#include "sys/ioctl.h"
 
-#include "../vaxuba/npreg.h"
+#include "../uba/npreg.h"
 
 #define b_uio b_forw
 #define b_rp  av_back

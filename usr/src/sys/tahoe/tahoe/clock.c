@@ -4,17 +4,17 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clock.c	7.3 (Berkeley) %G%
+ *	@(#)clock.c	7.4 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "time.h"
-#include "kernel.h"
+#include "sys/param.h"
+#include "sys/time.h"
+#include "sys/kernel.h"
 
-#include "pte.h"
-#include "cpu.h"
-#include "mtpr.h"
-#include "clock.h"
+#include "../include/pte.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
+#include "../include/clock.h"
 #include "cp.h"
 
 /*

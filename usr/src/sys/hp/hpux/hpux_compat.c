@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.3 90/09/17$
  *
- *	@(#)hpux_compat.c	7.10 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -20,28 +20,28 @@
 
 #ifdef HPUXCOMPAT
 
-#include "param.h"
-#include "systm.h"
-#include "user.h"
-#include "kernel.h"
-#include "proc.h"
-#include "buf.h"
-#include "wait.h"
-#include "file.h"
-#include "vnode.h"
-#include "ioctl.h"
-#include "uio.h"
-#include "ptrace.h"
-#include "stat.h"
-#include "syslog.h"
-#include "malloc.h"
-#include "mount.h"
-#include "ipc.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/user.h"
+#include "sys/kernel.h"
+#include "sys/proc.h"
+#include "sys/buf.h"
+#include "sys/wait.h"
+#include "sys/file.h"
+#include "sys/vnode.h"
+#include "sys/ioctl.h"
+#include "sys/uio.h"
+#include "sys/ptrace.h"
+#include "sys/stat.h"
+#include "sys/syslog.h"
+#include "sys/malloc.h"
+#include "sys/mount.h"
+#include "sys/ipc.h"
 
-#include "machine/cpu.h"
-#include "machine/reg.h"
-#include "machine/psl.h"
-#include "machine/vmparam.h"
+#include "../include/cpu.h"
+#include "../include/reg.h"
+#include "../include/psl.h"
+#include "../include/vmparam.h"
 #include "hpux.h"
 #include "hpux_termio.h"
 
@@ -1331,7 +1331,7 @@ hpuxdumpu(vp, cred)
 
 #define HPUX_HZ	50
 
-#include "../sys/times.h"
+#include "sys/times.h"
 
 /* from old timeb.h */
 struct hpuxtimeb {

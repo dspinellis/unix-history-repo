@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)genassym.c	7.9 (Berkeley) %G%
+ *	@(#)genassym.c	7.10 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -13,22 +13,22 @@
 #define	VAX630	1
 #define	VAX650	1
 
-#include "pte.h"
+#include "../include/pte.h"
 
-#include "param.h"
-#include "buf.h"
-#include "vmmeter.h"
-#include "vmparam.h"
-#include "user.h"
-#include "cmap.h"
-#include "map.h"
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
-#include "proc.h"
-#include "text.h"
+#include "sys/param.h"
+#include "sys/buf.h"
+#include "sys/vmmeter.h"
+#include "sys/vmparam.h"
+#include "sys/user.h"
+#include "sys/cmap.h"
+#include "sys/map.h"
+#include "../uba/ubareg.h"
+#include "../uba/ubavar.h"
+#include "sys/proc.h"
+#include "sys/text.h"
 #include "rpb.h"
-#include "mbuf.h"
-#include "msgbuf.h"
+#include "sys/mbuf.h"
+#include "sys/msgbuf.h"
 
 struct uba_hd uba_hd[1];
 

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mt.c	7.8 (Berkeley) %G%
+ *	@(#)mt.c	7.9 (Berkeley) %G%
  */
 
 #include "mu.h"
@@ -23,22 +23,22 @@
  *	Write dump routine
  */
 
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
-#include "conf.h"
-#include "file.h"
-#include "user.h"
-#include "proc.h"
-#include "map.h"
-#include "ioctl.h"
-#include "mtio.h"
-#include "cmap.h"
-#include "tty.h"
-#include "syslog.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/buf.h"
+#include "sys/conf.h"
+#include "sys/file.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/map.h"
+#include "sys/ioctl.h"
+#include "sys/mtio.h"
+#include "sys/cmap.h"
+#include "sys/tty.h"
+#include "sys/syslog.h"
 
-#include "../vax/pte.h"
-#include "../vax/cpu.h"
+#include "../include/pte.h"
+#include "../include/cpu.h"
 #include "mbareg.h"
 #include "mbavar.h"
 #include "mtreg.h"

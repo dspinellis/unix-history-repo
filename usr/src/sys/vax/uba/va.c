@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)va.c	7.3 (Berkeley) %G%
+ *	@(#)va.c	7.4 (Berkeley) %G%
  */
 
 #include "va.h"
@@ -11,17 +11,17 @@
 /*
  * Varian printer plotter
  */
-#include "machine/pte.h"
+#include "../include/pte.h"
 
-#include "param.h"
-#include "user.h"
-#include "buf.h"
-#include "systm.h"
-#include "map.h"
-#include "ioctl.h"
-#include "vcmd.h"
-#include "uio.h"
-#include "kernel.h"
+#include "sys/param.h"
+#include "sys/user.h"
+#include "sys/buf.h"
+#include "sys/systm.h"
+#include "sys/map.h"
+#include "sys/ioctl.h"
+#include "sys/vcmd.h"
+#include "sys/uio.h"
+#include "sys/kernel.h"
 
 #include "ubareg.h"
 #include "ubavar.h"

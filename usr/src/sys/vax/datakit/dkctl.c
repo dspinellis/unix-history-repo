@@ -6,18 +6,18 @@
 #include "datakit.h"
 #if NDATAKIT>0
 
-#include "param.h"
-#include "../machine/pte.h"
-#include "time.h"
-#include "kernel.h"
-#include "mbuf.h"
-#include "errno.h"
+#include "../include/pte.h"
+#include "sys/param.h"
+#include "sys/time.h"
+#include "sys/kernel.h"
+#include "sys/mbuf.h"
+#include "sys/errno.h"
 
 #include "dkit.h"
 #include "dkcmc.h"
 #include "dk.h"
 #include "dkdev.h"
-#include "syslog.h"
+#include "sys/syslog.h"
 
 
 extern char *dkfcanon() ;

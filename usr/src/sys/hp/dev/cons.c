@@ -11,17 +11,17 @@
  *
  * from: Utah $Hdr: cons.c 1.1 90/07/09$
  *
- *	@(#)cons.c	7.4 (Berkeley) %G%
+ *	@(#)cons.c	7.5 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "user.h"
-#include "systm.h"
-#include "buf.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "file.h"
-#include "conf.h"
+#include "sys/param.h"
+#include "sys/user.h"
+#include "sys/systm.h"
+#include "sys/buf.h"
+#include "sys/ioctl.h"
+#include "sys/tty.h"
+#include "sys/file.h"
+#include "sys/conf.h"
 
 #include "cons.h"
 

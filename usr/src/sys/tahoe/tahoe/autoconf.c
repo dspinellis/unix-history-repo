@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.4 (Berkeley) %G%
+ *	@(#)autoconf.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -14,20 +14,20 @@
  * devices are determined (from possibilities mentioned in ioconf.c),
  * and the drivers are initialized.
  */
-#include "param.h"
-#include "systm.h"
-#include "map.h"
-#include "buf.h"
-#include "dkstat.h"
-#include "vm.h"
-#include "conf.h"
-#include "dmap.h"
-#include "reboot.h"
-#include "malloc.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/map.h"
+#include "sys/buf.h"
+#include "sys/dkstat.h"
+#include "sys/vm.h"
+#include "sys/conf.h"
+#include "sys/dmap.h"
+#include "sys/reboot.h"
+#include "sys/malloc.h"
 
-#include "pte.h"
+#include "../include/pte.h"
 #include "mem.h"
-#include "mtpr.h"
+#include "../include/mtpr.h"
 #include "scb.h"
 
 #include "vba.h"
@@ -44,8 +44,8 @@
 
 #include "vba.h"
 
-#include "../tahoevba/vbavar.h"
-#include "../tahoevba/vbaparam.h"
+#include "../vba/vbavar.h"
+#include "../vba/vbaparam.h"
 
 /*
  * The following several variables are related to

@@ -4,29 +4,29 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	7.4 (Berkeley) %G%
+ *	@(#)genassym.c	7.5 (Berkeley) %G%
  */
 
 #define KERNEL
 
-#include "param.h"
-#include "buf.h"
-#include "vmmeter.h"
-#include "user.h"
-#include "cmap.h"
-#include "map.h"
-#include "proc.h"
-#include "mbuf.h"
-#include "msgbuf.h"
-#include "cpu.h"
-#include "trap.h"
-#include "psl.h"
-#include "reg.h"
+#include "sys/param.h"
+#include "sys/buf.h"
+#include "sys/vmmeter.h"
+#include "sys/user.h"
+#include "sys/cmap.h"
+#include "sys/map.h"
+#include "sys/proc.h"
+#include "sys/mbuf.h"
+#include "sys/msgbuf.h"
+#include "../include/cpu.h"
+#include "../include/trap.h"
+#include "../include/psl.h"
+#include "../include/reg.h"
 #include "clockreg.h"
-#include "syscall.h"
-#include "../vm/vm_param.h"
-#include "../vm/vm_map.h"
-#include "pmap.h"
+#include "sys/syscall.h"
+#include "vm/vm_param.h"
+#include "vm/vm_map.h"
+#include "../include/pmap.h"
 
 main()
 {

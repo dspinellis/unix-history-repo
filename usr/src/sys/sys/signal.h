@@ -4,18 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)signal.h	7.13 (Berkeley) %G%
+ *	@(#)signal.h	7.14 (Berkeley) %G%
  */
 
 #ifndef	NSIG
 #define NSIG	32		/* counting 0; could be 33 (mask is 1-32) */
 
 #ifndef _POSIX_SOURCE
-#ifdef KERNEL
-#include "machine/trap.h"	/* codes for SIGILL, SIGFPE */
-#else
 #include <machine/trap.h>	/* codes for SIGILL, SIGFPE */
-#endif
 #endif /* _POSIX_SOURCE */
 
 #define	SIGHUP	1	/* hangup */

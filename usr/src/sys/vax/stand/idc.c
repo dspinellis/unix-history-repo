@@ -3,20 +3,20 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)idc.c	7.5 (Berkeley) %G%
+ *	@(#)idc.c	7.6 (Berkeley) %G%
  */
 
 /*
  * IDC (RB730)
  */
 
-#include "param.h"
+#include "sys/param.h"
 
-#include "../vax/pte.h"
-#include "../vaxuba/idcreg.h"
-#include "../vaxuba/ubareg.h"
+#include "../include/pte.h"
+#include "../uba/idcreg.h"
+#include "../uba/ubareg.h"
 
-#include "saio.h"
+#include "stand/saio.h"
 #include "savax.h"
 
 short	rb02_off[] = { 0, 400, 0, -1, -1, -1, -1, -1 };

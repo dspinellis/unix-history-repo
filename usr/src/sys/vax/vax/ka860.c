@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ka860.c	7.3 (Berkeley) %G%
+ *	@(#)ka860.c	7.4 (Berkeley) %G%
  */
 
 #if VAX8600
@@ -13,10 +13,10 @@
  * VAX 8600 specific routines.
  */
 
-#include "param.h"
+#include "sys/param.h"
 
-#include "cpu.h"
-#include "mtpr.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
 
 /*
  * 8600 memory register (MERG) bit definitions

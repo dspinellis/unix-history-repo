@@ -1,4 +1,4 @@
-/*	cons.c	7.6	90/11/01	*/
+/*	cons.c	7.7	90/12/16	*/
 
 /*
  * Tahoe console processor driver
@@ -8,21 +8,21 @@
  * Minor 1 is the console terminal.
  * Minor 2 is the remote line trminal.
  */
-#include "param.h"
-#include "conf.h"
-#include "file.h"
-#include "ioctl.h"
-#include "user.h"
-#include "proc.h"
-#include "tty.h"
-#include "callout.h"
-#include "systm.h"
-#include "kernel.h"
-#include "syslog.h"
+#include "sys/param.h"
+#include "sys/conf.h"
+#include "sys/file.h"
+#include "sys/ioctl.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/tty.h"
+#include "sys/callout.h"
+#include "sys/systm.h"
+#include "sys/kernel.h"
+#include "sys/syslog.h"
 
-#include "../tahoe/cp.h"
-#include "../tahoe/cpu.h"
-#include "../tahoe/mtpr.h"
+#include "cp.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
 
 int	cnrestart();
 int	timeout();

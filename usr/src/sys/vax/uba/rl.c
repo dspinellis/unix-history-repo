@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rl.c	7.9 (Berkeley) %G%
+ *	@(#)rl.c	7.10 (Berkeley) %G%
  */
 
 #include "rl.h"
@@ -11,25 +11,25 @@
 /*
  * UNIBUS RL02 disk driver
  */
-#include "machine/pte.h"
+#include "../include/pte.h"
 
-#include "param.h"
-#include "systm.h"
-#include "dkstat.h"
-#include "dkbad.h"
-#include "ioctl.h"
-#include "disklabel.h"
-#include "buf.h"
-#include "conf.h"
-#include "user.h"
-#include "map.h"
-#include "vm.h"
-#include "cmap.h"
-#include "uio.h"
-#include "kernel.h"
-#include "syslog.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/dkstat.h"
+#include "sys/dkbad.h"
+#include "sys/ioctl.h"
+#include "sys/disklabel.h"
+#include "sys/buf.h"
+#include "sys/conf.h"
+#include "sys/user.h"
+#include "sys/map.h"
+#include "sys/vm.h"
+#include "sys/cmap.h"
+#include "sys/uio.h"
+#include "sys/kernel.h"
+#include "sys/syslog.h"
 
-#include "../vax/cpu.h"
+#include "../include/cpu.h"
 #include "../vax/nexus.h"
 #include "ubavar.h"
 #include "ubareg.h"

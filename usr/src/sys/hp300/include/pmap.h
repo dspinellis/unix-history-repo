@@ -9,21 +9,15 @@
  * The CMU software License Agreement specifies the terms and conditions
  * for use and redistribution.
  *
- *	@(#)pmap.h	7.1 (Berkeley) %G%
+ *	@(#)pmap.h	7.2 (Berkeley) %G%
  */
 
 #ifndef	_PMAP_MACHINE_
 #define	_PMAP_MACHINE_	1
 
-#ifdef	KERNEL
-#include "../sys/lock.h"
-#include "machine/vmparam.h"
-#include "../vm/vm_statistics.h"
-#else
 #include <sys/lock.h>
-#include <machine/vmparam.h>
+#include <hp300/include/vmparam.h>
 #include <vm/vm_statistics.h>
-#endif	/* KERNEL */
 
 /*
  * HP300 hardware segment/page table entries

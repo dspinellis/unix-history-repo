@@ -3,12 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.2 (Berkeley) %G%
+ *	@(#)machdep.c	7.3 (Berkeley) %G%
  */
 
-#include "param.h"
+#include "sys/param.h"
 
-#include "../vax/mtpr.h"
+#include "../include/mtpr.h"
 
 /*ARGSUSED*/
 /*VARARGS1*/

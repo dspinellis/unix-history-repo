@@ -3,15 +3,15 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)boot.c	7.13 (Berkeley) %G%
+ *	@(#)boot.c	7.14 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "vm.h"
-#include "reboot.h"
+#include "sys/param.h"
+#include "sys/vm.h"
+#include "sys/reboot.h"
 
 #include <a.out.h>
-#include "saio.h"
+#include "stand/saio.h"
 
 /*
  * Boot program... arguments passed in r10 and r11 determine
@@ -131,8 +131,8 @@ shread:
 #ifdef VAX750
 /* 750 Patchable Control Store magic */
 
-#include "../vax/mtpr.h"
-#include "../vax/cpu.h"
+#include "../include/mtpr.h"
+#include "../include/cpu.h"
 #define	PCS_BITCNT	0x2000		/* number of patchbits */
 #define	PCS_MICRONUM	0x400		/* number of ucode locs */
 #define	PCS_PATCHADDR	0xf00000	/* start addr of patchbits */

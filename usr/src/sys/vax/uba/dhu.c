@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dhu.c	7.12 (Berkeley) %G%
+ *	@(#)dhu.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -19,30 +19,30 @@
 /*
  * DHU-11 driver
  */
-#include "machine/pte.h"
+#include "../include/pte.h"
 
-#include "param.h"
-#include "conf.h"
-#include "user.h"
-#include "proc.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "ttydefaults.h"
-#include "map.h"
-#include "buf.h"
-#include "vm.h"
-#include "kernel.h"
-#include "syslog.h"
+#include "sys/param.h"
+#include "sys/conf.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/ioctl.h"
+#include "sys/tty.h"
+#include "sys/ttydefaults.h"
+#include "sys/map.h"
+#include "sys/buf.h"
+#include "sys/vm.h"
+#include "sys/kernel.h"
+#include "sys/syslog.h"
 
 #include "uba.h"
 #include "ubareg.h"
 #include "ubavar.h"
 #include "dhureg.h"
 
-#include "bkmac.h"
-#include "clist.h"
-#include "file.h"
-#include "uio.h"
+#include "sys/bkmac.h"
+#include "sys/clist.h"
+#include "sys/file.h"
+#include "sys/uio.h"
 
 /*
  * Definition of the driver for the auto-configuration program.

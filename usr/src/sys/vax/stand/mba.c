@@ -3,19 +3,19 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mba.c	7.8 (Berkeley) %G%
+ *	@(#)mba.c	7.9 (Berkeley) %G%
  */
 
-#include "machine/pte.h"
+#include "../include/pte.h"
 
-#include "param.h"
-#include "vm.h"
+#include "sys/param.h"
+#include "sys/vm.h"
 
-#include "../vax/mtpr.h"
-#include "../vaxmba/mbareg.h"
-#include "../vaxmba/hpreg.h"
+#include "../include/mtpr.h"
+#include "../mba/mbareg.h"
+#include "../mba/hpreg.h"
 
-#include "saio.h"
+#include "stand/saio.h"
 #include "savax.h"
 
 mbastart(io, unit, func)

@@ -4,15 +4,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fhpib.c	7.1 (Berkeley) %G%
+ *	@(#)fhpib.c	7.2 (Berkeley) %G%
  */
 
 /*
  * 98625A/B HPIB driver
  */
 
-#include "param.h"
-#include "../hpdev/fhpibreg.h"
+#include "sys/param.h"
+#include "../dev/fhpibreg.h"
 #include "hpibvar.h"
 
 fhpibinit(unit)

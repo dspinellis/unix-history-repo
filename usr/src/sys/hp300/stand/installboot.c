@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)installboot.c	7.1 (Berkeley) %G%
+ *	@(#)installboot.c	7.2 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -14,11 +14,11 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)installboot.c	7.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)installboot.c	7.2 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "../sys/param.h"
-#include "../ufs/fs.h"
+#include "sys/param.h"
+#include "ufs/fs.h"
 
 char block[1024];
 int maxbootsize = 16 * 7 * 512;		/* XXX */

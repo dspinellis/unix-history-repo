@@ -9,14 +9,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dcm.c	7.1 (Berkeley) %G%
+ *	@(#)dcm.c	7.2 (Berkeley) %G%
  */
 
 #ifdef DCMCONSOLE
-#include "param.h"
-#include "machine/cons.h"
-#include "../hpdev/device.h"
-#include "../hpdev/dcmreg.h"
+#include "sys/param.h"
+#include "../hp300/cons.h"
+#include "../dev/device.h"
+#include "../dev/dcmreg.h"
 
 #define CONSPORT	(1)
 struct dcmdevice *CONSOLE = NULL;

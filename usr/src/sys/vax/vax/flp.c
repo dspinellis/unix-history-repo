@@ -3,20 +3,20 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)flp.c	7.3 (Berkeley) %G%
+ *	@(#)flp.c	7.4 (Berkeley) %G%
  */
 
 #if VAX780
-#include "param.h"
-#include "systm.h"
-#include "conf.h"
-#include "user.h"
-#include "buf.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/conf.h"
+#include "sys/user.h"
+#include "sys/buf.h"
 
 #include "cons.h"
-#include "cpu.h"
+#include "../include/cpu.h"
 #include "flp.h"
-#include "mtpr.h"
+#include "../include/mtpr.h"
 
 struct {
 	short	fl_state;		/* open and busy flags */

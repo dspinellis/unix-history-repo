@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.18 (Berkeley) %G%
+ *	@(#)autoconf.c	7.19 (Berkeley) %G%
  */
 
 /*
@@ -18,36 +18,36 @@
 #include "mba.h"
 #include "uba.h"
 #include "kra.h"		/* XXX wrong file */
+#include "bi.h"
 
-#include "param.h"
-#include "systm.h"
-#include "map.h"
-#include "buf.h"
-#include "dkstat.h"
-#include "vm.h"
-#include "malloc.h"
-#include "conf.h"
-#include "dmap.h"
-#include "reboot.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/map.h"
+#include "sys/buf.h"
+#include "sys/dkstat.h"
+#include "sys/vm.h"
+#include "sys/malloc.h"
+#include "sys/conf.h"
+#include "sys/dmap.h"
+#include "sys/reboot.h"
 #ifdef SECSIZE
 #include "file.h"
 #include "ioctl.h"
 #include "disklabel.h"
 #endif SECSIZE
 
-#include "pte.h"
-#include "pte.h"
-#include "cpu.h"
+#include "../include/pte.h"
+#include "../include/cpu.h"
 #include "mem.h"
-#include "mtpr.h"
+#include "../include/mtpr.h"
 #include "nexus.h"
 #include "scb.h"
 #include "ioa.h"
-#include "../vaxbi/bireg.h"
-#include "../vaxmba/mbareg.h"
-#include "../vaxmba/mbavar.h"
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
+#include "../bi/bireg.h"
+#include "../mba/mbareg.h"
+#include "../mba/mbavar.h"
+#include "../uba/ubareg.h"
+#include "../uba/ubavar.h"
 
 /*
  * The following several variables are related to
@@ -478,7 +478,6 @@ setscbnex(fn)
 }
 #endif
 
-#include "bi.h"
 #if NBI > 0
 /*
  * Probe BI node space.

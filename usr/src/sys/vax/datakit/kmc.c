@@ -11,15 +11,15 @@
 #include "kmc.h"
 #if NKMC > 0
 
-#include "syslog.h"
-#include "param.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "kmcreg.h"
-#include "buf.h"
-#include "user.h"
-#include "../vaxuba/ubavar.h"
-#include "uio.h"
+#include "sys/param.h"
+#include "sys/ioctl.h"
+#include "sys/tty.h"
+#include "sys/kmcreg.h"
+#include "sys/buf.h"
+#include "sys/user.h"
+#include "sys/syslog.h"
+#include "../uba/ubavar.h"
+#include "sys/uio.h"
 
 #ifdef	DATAKIT
 #include "dkitkmc.h"

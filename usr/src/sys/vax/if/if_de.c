@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_de.c	7.11 (Berkeley) %G%
+ *	@(#)if_de.c	7.12 (Berkeley) %G%
  */
 
 #include "de.h"
@@ -19,48 +19,48 @@
  * TODO:
  *	timeout routine (get statistics)
  */
-#include "machine/pte.h"
+#include "../include/pte.h"
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "buf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "vmmac.h"
-#include "ioctl.h"
-#include "errno.h"
-#include "syslog.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/mbuf.h"
+#include "sys/buf.h"
+#include "sys/protosw.h"
+#include "sys/socket.h"
+#include "sys/vmmac.h"
+#include "sys/ioctl.h"
+#include "sys/errno.h"
+#include "sys/syslog.h"
 
-#include "../net/if.h"
-#include "../net/netisr.h"
-#include "../net/route.h"
+#include "net/if.h"
+#include "net/netisr.h"
+#include "net/route.h"
 
 #ifdef INET
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/in_var.h"
-#include "../netinet/ip.h"
-#include "../netinet/if_ether.h"
+#include "netinet/in.h"
+#include "netinet/in_systm.h"
+#include "netinet/in_var.h"
+#include "netinet/ip.h"
+#include "netinet/if_ether.h"
 #endif
 
 #ifdef NS
-#include "../netns/ns.h"
-#include "../netns/ns_if.h"
+#include "netns/ns.h"
+#include "netns/ns_if.h"
 #endif
 
 #ifdef ISO
-#include "../netiso/iso.h"
-#include "../netiso/iso_var.h"
+#include "netiso/iso.h"
+#include "netiso/iso_var.h"
 extern char all_es_snpa[], all_is_snpa[];
 #endif
 
-#include "../vax/cpu.h"
-#include "../vax/mtpr.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
 #include "if_dereg.h"
 #include "if_uba.h"
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
+#include "../uba/ubareg.h"
+#include "../uba/ubavar.h"
 
 #define	NXMT	3	/* number of transmit buffers */
 #define	NRCV	7	/* number of receive buffers (must be > 1) */

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tm.c	7.13 (Berkeley) %G%
+ *	@(#)tm.c	7.14 (Berkeley) %G%
  */
 
 #include "te.h"
@@ -18,24 +18,24 @@
  *	what happens if you offline tape during rewind?
  *	test using file system on tape
  */
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
-#include "conf.h"
-#include "user.h"
-#include "file.h"
-#include "map.h"
-#include "vm.h"
-#include "ioctl.h"
-#include "mtio.h"
-#include "cmap.h"
-#include "uio.h"
-#include "kernel.h"
-#include "syslog.h"
-#include "tprintf.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/buf.h"
+#include "sys/conf.h"
+#include "sys/user.h"
+#include "sys/file.h"
+#include "sys/map.h"
+#include "sys/vm.h"
+#include "sys/ioctl.h"
+#include "sys/mtio.h"
+#include "sys/cmap.h"
+#include "sys/uio.h"
+#include "sys/kernel.h"
+#include "sys/syslog.h"
+#include "sys/tprintf.h"
 
-#include "machine/pte.h"
-#include "../vax/cpu.h"
+#include "../include/pte.h"
+#include "../include/cpu.h"
 #include "ubareg.h"
 #include "ubavar.h"
 #include "tmreg.h"

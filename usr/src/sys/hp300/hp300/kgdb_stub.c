@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kgdb_stub.c	7.3 (Berkeley) %G%
+ *	@(#)kgdb_stub.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -54,14 +54,14 @@
  ****************************************************************************/
 
 #ifdef KGDB
-#include "param.h"
-#include "systm.h"
-#include "trap.h"
-#include "cpu.h"
-#include "psl.h"
-#include "reg.h"
-#include "frame.h"
-#include "buf.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "../include/trap.h"
+#include "../include/cpu.h"
+#include "../include/psl.h"
+#include "../include/reg.h"
+#include "../include/frame.h"
+#include "sys/buf.h"
 
 extern void printf();
 extern void bcopy();
@@ -96,7 +96,7 @@ int kgdb_rate = KGDBRATE;	/* remote debugging baud rate */
 int kgdb_debug_init = 0;	/* != 0 waits for remote at system init */
 int kgdb_debug = 0;		/* > 0 prints command & checksum errors */
 
-#include "../hp300/cons.h"
+#include "cons.h"
 
 #define GETC	\
 	(constab[major(kgdb_dev)].cn_getc ? \

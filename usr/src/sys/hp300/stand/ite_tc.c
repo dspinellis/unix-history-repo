@@ -11,18 +11,18 @@
  *
  * from: Utah $Hdr: ite_tc.c 1.9 89/02/20$
  *
- *	@(#)ite_tc.c	7.1 (Berkeley) %G%
+ *	@(#)ite_tc.c	7.2 (Berkeley) %G%
  */
 
 #include "samachdep.h"
 
 #ifdef ITECONSOLE
 
-#include "param.h"
-#include "../hpdev/itevar.h"
-#include "../hpdev/itereg.h"
-#include "../hpdev/grfvar.h"
-#include "../hpdev/grf_tcreg.h"
+#include "sys/param.h"
+#include "../dev/itevar.h"
+#include "../dev/itereg.h"
+#include "../dev/grfvar.h"
+#include "../dev/grf_tcreg.h"
 
 #define REGBASE	    	((struct tcboxfb *)(ip->regbase))
 #define WINDOWMOVER 	topcat_windowmove

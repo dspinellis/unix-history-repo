@@ -2,9 +2,9 @@
  *	@(#)kdb_opset.c	7.4 (Berkeley) 5/1/89
  */
 
-#include "../kdb/defs.h"
+#include "kdb/defs.h"
 
-#include "frame.h"
+#include "../include/frame.h"
 
 ADDR	kdbcallpc;
 ADDR	kdblastframe;
@@ -245,7 +245,7 @@ static	char *insregname();	/* how to print a register */
 /*
  * Definitions for large numbers
  */
-#include "asnumber.h"
+#include "../vax/asnumber.h"
 typedef	struct	as_number	*numberp;
 static	numberp snarf();
 static	numberp snarfreloc();

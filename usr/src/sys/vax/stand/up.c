@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)up.c	7.9 (Berkeley) %G%
+ *	@(#)up.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -11,16 +11,16 @@
  * block forwarding.  Also supports header operation and write check
  * for data and/or header.
  */
-#include "param.h" 
-#include "dkbad.h"
-#include "disklabel.h"
+#include "sys/param.h" 
+#include "sys/dkbad.h"
+#include "sys/disklabel.h"
 
-#include "../vax/pte.h"
+#include "../include/pte.h"
 
-#include "../vaxuba/upreg.h"
-#include "../vaxuba/ubareg.h"
+#include "../uba/upreg.h"
+#include "../uba/ubareg.h"
 
-#include "saio.h"
+#include "stand/saio.h"
 #include "savax.h"
 
 #define RETRIES		27

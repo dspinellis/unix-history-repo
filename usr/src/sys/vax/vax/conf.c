@@ -3,15 +3,15 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	7.15 (Berkeley) %G%
+ *	@(#)conf.c	7.16 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "conf.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/buf.h"
+#include "sys/ioctl.h"
+#include "sys/tty.h"
+#include "sys/conf.h"
 
 int nulldev(), nodev(), rawread(), rawwrite(), swstrategy();
 

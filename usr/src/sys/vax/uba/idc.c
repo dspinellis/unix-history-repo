@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)idc.c	7.9 (Berkeley) %G%
+ *	@(#)idc.c	7.10 (Berkeley) %G%
  */
 
 #include "rb.h"
@@ -23,24 +23,24 @@ int	*trp = idctrb;
  * TODO:
  *	ecc
  */
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
-#include "conf.h"
-#include "user.h"
-#include "map.h"
-#include "vm.h"
-#include "ioctl.h"
-#include "disklabel.h"
-#include "dkstat.h"
-#include "cmap.h"
-#include "dkbad.h"
-#include "uio.h"
-#include "kernel.h"
-#include "syslog.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/buf.h"
+#include "sys/conf.h"
+#include "sys/user.h"
+#include "sys/map.h"
+#include "sys/vm.h"
+#include "sys/ioctl.h"
+#include "sys/disklabel.h"
+#include "sys/dkstat.h"
+#include "sys/cmap.h"
+#include "sys/dkbad.h"
+#include "sys/uio.h"
+#include "sys/kernel.h"
+#include "sys/syslog.h"
 
-#include "machine/pte.h"
-#include "../vax/cpu.h"
+#include "../include/pte.h"
+#include "../include/cpu.h"
 #include "ubareg.h"
 #include "ubavar.h"
 #include "idcreg.h"

@@ -4,15 +4,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)boot.c	7.1 (Berkeley) %G%
+ *	@(#)boot.c	7.2 (Berkeley) %G%
  */
 
 #include <a.out.h>
 #include "saio.h"
-#include "../sys/reboot.h"
+#include "sys/reboot.h"
 
 #ifndef INSECURE
-#include "../sys/stat.h"
+#include "sys/stat.h"
 struct stat sb;
 #endif
 

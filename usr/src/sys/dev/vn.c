@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: fd.c 1.1 90/07/09$
  *
- *	@(#)vn.c	7.2 (Berkeley) %G%
+ *	@(#)vn.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -30,18 +30,18 @@
 #include "fd.h"
 #if NFD > 0
 
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
-#include "errno.h"
-#include "dkstat.h"
-#include "ioctl.h"
-#include "user.h"
-#include "vfs.h"
-#include "vnode.h"
-#include "file.h"
-#include "uio.h"
-#include "malloc.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/buf.h"
+#include "sys/errno.h"
+#include "sys/dkstat.h"
+#include "sys/ioctl.h"
+#include "sys/user.h"
+#include "sys/vfs.h"
+#include "sys/vnode.h"
+#include "sys/file.h"
+#include "sys/uio.h"
+#include "sys/malloc.h"
 
 #include "fdioctl.h"
 

@@ -3,35 +3,36 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)Locore.c	7.5 (Berkeley) %G%
+ *	@(#)Locore.c	7.6 (Berkeley) %G%
  */
 
 #include "dz.h"
 #include "mba.h"
 #include "uba.h"
+#include "imp.h"
 
-#include "pte.h"
+#include "../include/pte.h"
 
-#include "param.h"
-#include "systm.h"
-#include "user.h"
-#include "vm.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "proc.h"
-#include "buf.h"
-#include "msgbuf.h"
-#include "mbuf.h"
-#include "protosw.h"
-#include "domain.h"
-#include "map.h"
-#include "dkbad.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/user.h"
+#include "sys/vm.h"
+#include "sys/ioctl.h"
+#include "sys/tty.h"
+#include "sys/proc.h"
+#include "sys/buf.h"
+#include "sys/msgbuf.h"
+#include "sys/mbuf.h"
+#include "sys/protosw.h"
+#include "sys/domain.h"
+#include "sys/map.h"
+#include "sys/dkbad.h"
 
 #include "scb.h"
 #include "nexus.h"
 #include "ioa.h"
-#include "../vaxuba/ubavar.h"
-#include "../vaxuba/ubareg.h"
+#include "../uba/ubavar.h"
+#include "../uba/ubareg.h"
 
 /*
  * Pseudo file for lint to show what is used/defined in locore.s.
@@ -76,7 +77,6 @@ lowinit()
 #ifdef INET
 	extern struct domain inetdomain;
 #endif
-#include "imp.h"
 #if NIMP > 0
 	extern struct domain impdomain;
 #endif

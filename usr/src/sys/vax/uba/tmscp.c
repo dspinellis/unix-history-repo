@@ -1,4 +1,4 @@
-/*	@(#)tmscp.c	7.14 (Berkeley) %G% */
+/*	@(#)tmscp.c	7.15 (Berkeley) %G% */
 
 #ifndef lint
 static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
@@ -122,24 +122,24 @@ static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
 #include "tms.h"
 #if NTMSCP > 0
 
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
-#include "conf.h"
-#include "errno.h"
-#include "file.h"
-#include "map.h"
-#include "vm.h"
-#include "ioctl.h"
-#include "syslog.h"
-#include "mtio.h"
-#include "cmap.h"
-#include "uio.h"
-#include "tprintf.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/buf.h"
+#include "sys/conf.h"
+#include "sys/errno.h"
+#include "sys/file.h"
+#include "sys/map.h"
+#include "sys/vm.h"
+#include "sys/ioctl.h"
+#include "sys/syslog.h"
+#include "sys/mtio.h"
+#include "sys/cmap.h"
+#include "sys/uio.h"
+#include "sys/tprintf.h"
 
-#include "../vax/pte.h"
-#include "../vax/cpu.h"
-#include "../vax/mtpr.h"
+#include "../include/pte.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
 #include "ubareg.h"
 #include "ubavar.h"
 
