@@ -1,11 +1,10 @@
+# include <sys/types.h>
 # include <pwd.h>
 # include <stdio.h>
 # include <sysexits.h>
 # include <ctype.h>
-# include "useful.h"
-# include "userdbm.h"
 
-SCCSID(@(#)vacation.c	4.1		%G%);
+static char	SccsId[] =	"@(#)vacation.c	4.2		%G%";
 
 /*
 **  VACATION -- return a message to the sender when on vacation.
@@ -16,18 +15,11 @@ SCCSID(@(#)vacation.c	4.1		%G%);
 **	care not to return a message too often to prevent
 **	"I am on vacation" loops.
 **
-**	For best operation, this program should run setuid to
-**	root or uucp or someone else that sendmail will believe
-**	a -f flag from.  Otherwise, the user must be careful
-**	to include a header on his .vacation.msg file.
-**
 **	Positional Parameters:
 **		the user to collect the vacation message from.
 **
 **	Flag Parameters:
 **		-I	initialize the database.
-**		-tT	set the timeout to T.  messages arriving more
-**			often than T will be ignored to avoid loops.
 **
 **	Side Effects:
 **		A message is sent back to the sender.
@@ -36,6 +28,11 @@ SCCSID(@(#)vacation.c	4.1		%G%);
 **		Eric Allman
 **		UCB/INGRES
 */
+
+typedef int	bool;
+
+# define TRUE		1
+# define FALSE		0
 
 # define MAXLINE	256	/* max size of a line */
 # define MAXNAME	128	/* max size of one name */
@@ -48,6 +45,14 @@ struct dbrec
 {
 	long	sentdate;
 };
+
+typedef struct
+{
+	char	*dptr;
+	int	dsize;
+} DATUM;
+
+extern DATUM fetch();
 
 main(argc, argv)
 	char **argv;
@@ -72,10 +77,6 @@ main(argc, argv)
 		  case 'I':	/* initialize */
 			initialize();
 			exit(EX_OK);
-
-		  case 't':	/* set timeout */
-			Timeout = convtime(++p);
-			break;
 
 		  default:
 			usrerr("Unknown flag -%s", p);
@@ -139,6 +140,7 @@ getfrom()
 {
 	static char line[MAXLINE];
 	register char *p;
+	extern char *index();
 
 	/* read the from line */
 	if (fgets(line, sizeof line, stdin) == NULL ||
@@ -267,6 +269,7 @@ initialize()
 {
 	char *homedir;
 	char buf[MAXLINE];
+	extern char *getenv();
 
 	setgid(getgid());
 	setuid(getuid());
@@ -345,6 +348,7 @@ newstr(s)
 	char *s;
 {
 	char *p;
+	extern char *malloc();
 
 	p = malloc(strlen(s) + 1);
 	if (p == NULL)
