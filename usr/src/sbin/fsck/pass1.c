@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass1.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass1.c	8.1.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -154,10 +154,22 @@ checkinode(inumber, idesc)
 		ndb /= NINDIR(&sblock);
 	for (; j < NIADDR; j++)
 		if (dp->di_ib[j] != 0) {
-			if (debug)
-				printf("bad indirect addr: %ld\n",
-					dp->di_ib[j]);
-			goto unknown;
+			if (debug) {
+				for (j = 0; j < NIADDR; j++) {
+				printf("bad indirect addr[%d]: %lx\n",
+					j, dp->di_ib[j]);
+				}
+				printf("flags: %x, blocks %d\n",
+					dp->di_flags, dp->di_blocks);
+				pfatal("BAD THIRD INDIRECT");
+				if (reply("ZERO")) {
+					dp = ginode(inumber);
+					dp->di_ib[2] = 0;
+					inodirty();
+				} else
+					goto unknown;
+			} else
+				goto unknown;
 		}
 	if (ftypeok(dp) == 0)
 		goto unknown;
