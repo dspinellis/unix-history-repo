@@ -1,0 +1,92 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)truncate.2	5.1 (Berkeley) %G%
+.\"
+.TH TRUNCATE 2 "7 July 1983"
+.UC 5
+.SH NAME
+truncate \- truncate a file to a specified length
+.SH SYNOPSIS
+.nf
+.ft B
+truncate(path, length)
+char *path;
+int length;
+.PP
+.ft B
+ftruncate(fd, length)
+int fd, length;
+.fi
+.SH DESCRIPTION
+.I Truncate
+causes the file named by
+.I path
+or referenced by
+.I fd
+to be truncated to at most
+.I length
+bytes in size.  If the file previously
+was larger than this size, the extra data
+is lost.
+With
+.IR ftruncate ,
+the file must be open for writing.
+.SH "RETURN VALUES
+A value of 0 is returned if the call succeeds.  If the call
+fails a \-1 is returned, and the global variable \fIerrno\fP
+specifies the error.
+.SH "ERRORS
+.I Truncate
+succeeds unless:
+.TP 15
+[EPERM]
+The pathname contains a character with the high-order bit set.
+.TP 15
+[ENOENT]
+The pathname was too long.
+.TP 15
+[ENOTDIR]
+A component of the path prefix of \fIpath\fP is not a directory.
+.TP 15
+[ENOENT]
+The named file does not exist.
+.TP 15
+[EACCES]
+A component of the \fIpath\fP prefix denies search permission.
+.TP 15
+[EISDIR]
+The named file is a directory.
+.TP 15
+[EROFS]
+The named file resides on a read-only file system.
+.TP 15
+[ETXTBSY]
+The file is a pure procedure (shared text) file that is being executed.
+.TP 15
+[EFAULT]
+.I Name
+points outside the process's allocated address space.
+.PP
+.I Ftruncate
+succeeds unless:
+.TP 15
+[EBADF]
+The
+.I fd
+is not a valid descriptor.
+.TP 15
+[EINVAL]
+The
+.I fd
+references a socket, not a file.
+.SH "SEE ALSO"
+open(2)
+.SH BUGS
+Partial blocks discarded as the result of truncation
+are not zero filled; this can result in holes in files
+which do not read as zero.
+.PP
+These calls should be generalized to allow ranges
+of bytes in a file to be discarded.
