@@ -27,7 +27,7 @@ char copyright[] =
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)kvm_mkdb.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_mkdb.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 #include <sys/param.h>
 #include <sys/file.h>
@@ -37,7 +37,7 @@ static char sccsid[] = "@(#)kvm_mkdb.c	5.1 (Berkeley) %G%";
 #include <paths.h>
 #include <limits.h>
 #include <errno.h>
-#include <strings.h>
+#include <string.h>
 #include <stdio.h>
 
 char *tmp;

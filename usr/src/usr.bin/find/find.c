@@ -15,14 +15,14 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)find.c	4.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)find.c	4.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fts.h>
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 #include <errno.h>
 #include "find.h"
 

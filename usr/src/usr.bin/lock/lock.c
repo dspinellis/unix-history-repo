@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lock.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)lock.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -41,7 +41,7 @@ static char sccsid[] = "@(#)lock.c	5.11 (Berkeley) %G%";
 #include <pwd.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <strings.h>
+#include <string.h>
 
 #define	TIMEOUT	15
 

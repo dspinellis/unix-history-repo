@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.39 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -35,7 +35,7 @@ static char sccsid[] = "@(#)passwd.c	4.38 (Berkeley) %G%";
 #include <pwd.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <strings.h>
+#include <string.h>
 
 uid_t uid;
 

@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)traceroute.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)traceroute.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -189,12 +189,8 @@ static char sccsid[] = "@(#)traceroute.c	5.3 (Berkeley) %G%";
  *     Tue Dec 20 03:50:13 PST 1988
  */
 
-#include <stdio.h>
-#include <errno.h>
-#include <strings.h>
-#include <sys/time.h>
-
 #include <sys/param.h>
+#include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/file.h>
 #include <sys/ioctl.h>
@@ -205,6 +201,10 @@ static char sccsid[] = "@(#)traceroute.c	5.3 (Berkeley) %G%";
 #include <netinet/ip_icmp.h>
 #include <netinet/udp.h>
 #include <netdb.h>
+
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
 
 #define	MAXPACKET	65535	/* max ip packet size */
 #ifndef MAXHOSTNAMELEN
