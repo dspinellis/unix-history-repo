@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -732,7 +732,7 @@ main(argc, argv, envp)
 
 
 	/* operate in queue directory */
-	if (chdir(QueueDir) < 0)
+	if (OpMode != MD_TEST && chdir(QueueDir) < 0)
 	{
 		syserr("cannot chdir(%s)", QueueDir);
 		ExitStat = EX_SOFTWARE;
