@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)if_imphost.c	7.7 (Berkeley) %G%
+ *	@(#)if_imphost.c	7.8 (Berkeley) %G%
  */
 
 #include "imp.h"
@@ -116,6 +116,7 @@ foundhost:
 
 /*
  * Reset a given imp unit's host entries.
+ * Must be called at splimp.
  */
 hostreset(unit)
 	int unit;
@@ -176,12 +177,18 @@ hostflush(hp)
 	}
 }
 
+/*
+ * Release mbufs in host table that contain no entries
+ * currently in use.  Must be called at splimp.
+ */
 hostcompress(unit)
 	int unit;
 {
 	register struct mbuf *m, **mprev;
+	struct imp_softc *sc = &imp_softc[unit];
 
-	mprev = &imp_softc[unit].imp_hosts;
+	mprev = &sc->imp_hosts;
+	sc->imp_hostq = 0;
 	while (m = *mprev) {
 		if (mtod(m, struct hmbuf *)->hm_count == 0)
 			*mprev = m_free(m);
