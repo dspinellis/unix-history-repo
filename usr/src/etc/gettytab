@@ -2,7 +2,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)gettytab	5.6 (Berkeley) %G%
+#	@(#)gettytab	5.7 (Berkeley) %G%
 #
 #
 # Most of the table entries here are just copies of the
@@ -85,7 +85,7 @@ X|Xwindow|X window system:\
 #
 # Fast dialup terminals, 2400/1200/300 rotary (can start either way)
 #
-D2400|Fast-Dial-1200:\
+D2400|Fast-Dial-2400:\
 	:nx=D1200:tc=2400-baud:
 3|D1200|Fast-Dial-1200:\
 	:nx=D300:tc=1200-baud:
