@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)local.c	1.8 (Berkeley) %G%";
+static char *sccsid ="@(#)local.c	1.9 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -239,6 +239,7 @@ incode( p, sz ) register NODE *p; {
 	/* inoff is updated to have the proper final value */
 	/* we also assume sz  < SZINT */
 
+	if (nerrors) return;
 	if((sz+inwd) > SZINT) cerror("incode: field > int");
 	word |= ((unsigned)(p->tn.lval<<(32-sz))) >> (32-sz-inwd);
 	inwd += sz;
@@ -256,6 +257,7 @@ fincode( d, sz ) double d; {
 	/* on the target machine, write it out in octal! */
 
 
+	if (nerrors) return;
 	printf("	%s	0%c%.20e\n", sz == SZDOUBLE ? ".double" : ".float",
 		sz == SZDOUBLE ? 'd' : 'f', d);
 	inoff += sz;
@@ -298,6 +300,7 @@ vfdzero( n ){ /* define n bits of zeros in a vfd */
 
 	if( n <= 0 ) return;
 
+	if (nerrors) return;
 	inwd += n;
 	inoff += n;
 	if( inoff%ALINT ==0 ) {
@@ -360,6 +363,7 @@ commdec( id ){ /* make a common declaration for id, if reasonable */
 	register struct symtab *q;
 	OFFSZ off, tsize();
 
+	if (nerrors) return;
 	q = &stab[id];
 	printf( "	.comm	%s,", exname( q->sname ) );
 	off = tsize( q->stype, q->dimoff, q->sizoff );
