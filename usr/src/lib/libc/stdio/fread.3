@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fread.3	6.6 (Berkeley) %G%
+.\"     @(#)fread.3	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FREAD 3
@@ -27,7 +27,7 @@ The function
 .Fn fread
 reads
 .Fa nmemb
-elements of data, each
+objects, each
 .Xr size
 bytes long, from the stream pointed to by
 .Fa stream ,
@@ -38,7 +38,7 @@ The function
 .Fn fwrite
 writes
 .Fa nmemb
-elements of data, each
+objects, each
 .Fa size
 bytes long, to the stream pointed to by
 .Fa stream ,
@@ -50,10 +50,10 @@ The functions
 and
 .Fn fwrite
 advance the file position indicator for the stream
-by the number of characters successfully read or written and return
-that number.
+by the number of bytes read or written.
+They return the number of objects read or written.
 If an error occurs, or the end-of-file is reached,
-the return value is a short character count (or zero).
+the return value is a short object count (or zero).
 .Pp
 The function
 .Fn fread
