@@ -1,4 +1,4 @@
-/*	if_en.c	4.61	82/05/25	*/
+/*	if_en.c	4.62	82/05/27	*/
 
 #include "en.h"
 #include "imp.h"
