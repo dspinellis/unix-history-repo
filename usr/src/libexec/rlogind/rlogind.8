@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rlogind.8	6.2 (Berkeley) %G%
+.\"	@(#)rlogind.8	6.3 (Berkeley) %G%
 .\"
 .TH RLOGIND 8C ""
 .UC 5
@@ -31,13 +31,13 @@ The server checks the client's source port.
 If the port is not in the range 0-1023, the server
 aborts the connection.
 .IP 2)
-The server checks the client's source address.
-If the address is associated with a host for which no
-corresponding entry exists in the host name data base (see
+The server checks the client's source address
+and requests the corresponding host name (see
 .IR gethostbyaddr (3N),
 .IR hosts (5)
 and
-.IR named (8)),
+.IR named (8)).
+If the hostname cannot be determined,
 the dot-notation representation of the host address is used.
 .PP
 Once the source port and address have been checked, 
@@ -98,3 +98,5 @@ insecure, but is useful in an ``open'' environment.
 .PP
 A facility to allow all data exchanges to be encrypted should be
 present.
+.PP
+A more extensible protocol should be used.
