@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)telnet.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	4.8 (Berkeley) %G%";
 /*
  * User telnet program.
  */
@@ -36,8 +36,9 @@ char	wont[] = { IAC, WONT, '%', 'c', 0 };
 int	connected;
 int	net;
 int	showoptions;
+int	options;
 char	*prompt;
-char	escape = ctrl('_');
+char	escape = ctrl(']');
 
 char	line[200];
 int	margc;
@@ -93,6 +94,8 @@ main(argc, argv)
 	setbuf(stdin, 0);
 	setbuf(stdout, 0);
 	prompt = argv[0];
+	if (argc > 1 && !strcmp(argv[1], "-d"))
+		options = SO_DEBUG, argv++, argc--;
 	if (argc != 1) {
 		if (setjmp(toplevel) != 0)
 			exit(0);
@@ -138,8 +141,9 @@ tn(argc, argv)
 			printf("%s: bad port number\n", argv[2]);
 			return;
 		}
+		sin.sin_port = swab(sin.sin_port);
 	}
-	if ((net = socket(SOCK_STREAM, 0, 0, 0)) < 0) {
+	if ((net = socket(SOCK_STREAM, 0, 0, options)) < 0) {
 		perror("socket");
 		return;
 	}
