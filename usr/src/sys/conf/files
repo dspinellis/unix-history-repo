@@ -105,6 +105,8 @@ kdb/kdb_runpcs.c	optional kadb
 kdb/kdb_sym.c		optional kadb
 kdb/kdb_trap.c		optional kadb
 net/af.c		standard
+net/bpf.c		optional bpfilter
+net/bpf_filter.c	optional bpfilter
 net/if.c		standard
 net/if_ethersubr.c	optional ether
 net/if_loop.c		optional loop
