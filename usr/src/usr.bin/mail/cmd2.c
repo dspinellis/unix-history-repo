@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd2.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd2.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -336,6 +336,7 @@ undelete(msgvec)
 		dot = mp;
 		mp->m_flag &= ~MDELETED;
 	}
+	return 0;
 }
 
 /*
@@ -378,6 +379,7 @@ clobber(argv)
 	else
 		times = (atoi(argv[0]) + 511) / 512;
 	clob1(times);
+	return 0;
 }
 
 /*
