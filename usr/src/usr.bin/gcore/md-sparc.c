@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)md-sparc.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)md-sparc.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -19,7 +19,7 @@ static char sccsid[] = "@(#)md-sparc.c	5.3 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <sys/proc.h>
 #include <sys/user.h>
-#include <sys/kinfo_proc.h>
+#include <sys/sysctl.h>
 #include <machine/vmparam.h>
 
 #include <kvm.h>
