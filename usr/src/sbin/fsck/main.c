@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.25 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.26 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -1051,9 +1051,9 @@ dirscan(blk, nf)
 	int nf;
 {
 	register DIRECT *dp;
-	DIRECT direntry;
 	struct dirstuff dirp;
-	int blksiz, n;
+	int blksiz, dsize, n;
+	char dbuf[DIRBLKSIZ];
 
 	if (outrange(blk)) {
 		filsize -= sblock.fs_bsize;
@@ -1064,10 +1064,11 @@ dirscan(blk, nf)
 	dirp.blkno = blk;
 	dirp.blksiz = blksiz;
 	for (dp = readdir(&dirp); dp != NULL; dp = readdir(&dirp)) {
-		copy(dp, &direntry, DIRSIZ(dp));
-		if ((n = (*pfunc)(&direntry)) & ALTERD) {
+		dsize = dp->d_reclen;
+		copy(dp, dbuf, dsize);
+		if ((n = (*pfunc)(dbuf)) & ALTERD) {
 			if (getblk(&fileblk, blk, blksiz) != NULL) {
-				copy(&direntry, dp, DIRSIZ(&direntry));
+				copy(dbuf, dp, dsize);
 				dirty(&fileblk);
 				sbdirty();
 			} else
@@ -1086,7 +1087,7 @@ DIRECT *
 readdir(dirp)
 	register struct dirstuff *dirp;
 {
-	register DIRECT *dp;
+	register DIRECT *dp, *ndp;
 
 	if (getblk(&fileblk, dirp->blkno, dirp->blksiz) == NULL) {
 		filsize -= dirp->blksiz - dirp->loc;
@@ -1098,8 +1099,26 @@ readdir(dirp)
 		dp = (DIRECT *)(dirblk.b_buf + dirp->loc);
 		dirp->loc += dp->d_reclen;
 		filsize -= dp->d_reclen;
-		if (dp->d_ino == 0)
+		ndp = (DIRECT *)(dirblk.b_buf + dirp->loc);
+		if (dirp->loc < dirp->blksiz &&
+		    (ndp->d_ino > imax || ndp->d_namlen > MAXNAMLEN ||
+		    ndp->d_reclen <= 0 || 
+		    ndp->d_reclen > DIRBLKSIZ - (dirp->loc % DIRBLKSIZ))) {
+			pwarn("DIRECTORY CORRUPTED");
+			if (preen)
+				printf(" (SALVAGED)\n");
+			else if (reply("SALVAGE") == 0) {
+				dirp->loc +=
+				    DIRBLKSIZ - (dirp->loc % DIRBLKSIZ);
+				filsize -= DIRBLKSIZ - (dirp->loc % DIRBLKSIZ);
+				return(dp);
+			}
+			dirp->loc -= dp->d_reclen;
+			filsize += dp->d_reclen;
+			dp->d_reclen = DIRBLKSIZ - (dirp->loc % DIRBLKSIZ);
+			dirty(&fileblk);
 			continue;
+		}
 		return (dp);
 	}
 }
@@ -1662,13 +1681,28 @@ mkentry(dirp)
 {
 	register ino_t in;
 	register char *p;
+	DIRECT newent;
+	int newlen, oldlen;
 
-	if (dirp->d_ino)
+	newent.d_namlen = 11;
+	newlen = DIRSIZ(&newent);
+	if (dirp->d_ino != 0)
+		oldlen = DIRSIZ(dirp);
+	else
+		oldlen = 0;
+	if (dirp->d_reclen - oldlen < newlen)
 		return (KEEPON);
+	newent.d_reclen = dirp->d_reclen - oldlen;
+	dirp->d_reclen = oldlen;
+	dirp = (struct direct *)(((char *)dirp) + oldlen);
 	dirp->d_ino = orphan;
-	in = orphan;
-	p = &dirp->d_name[8];
+	dirp->d_reclen = newent.d_reclen;
+	p = &dirp->d_name[2];
+	for (in = imax; in > 0; in /= 10)
+		p++;
 	*--p = 0;
+	dirp->d_namlen = p - dirp->d_name;
+	in = orphan;
 	while (p > dirp->d_name) {
 		*--p = (in % 10) + '0';
 		in /= 10;
