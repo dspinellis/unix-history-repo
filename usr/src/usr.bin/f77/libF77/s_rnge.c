@@ -20,6 +20,5 @@ fprintf(stderr, ".\nAttempt to access the %ld-th element of variable ", offset+1
 for(i = 0 ; i < 6  && *varn!=' ' ; ++i)
 	putc(*varn++, stderr);
 fprintf(stderr, ".\n");
-_cleanup();
-abort();
+f77_abort();
 }

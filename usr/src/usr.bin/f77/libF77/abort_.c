@@ -20,8 +20,6 @@ char *msg; int len;
 	if (nargs()) while (len-- > 0) fputc(*msg++, stderr);
 	else fprintf(stderr, "called");
 	fputc('\n', stderr);
-	f_exit();
-	_cleanup();
-	abort();
+	f77_abort();
 }
 #endif	vax

@@ -3,6 +3,8 @@
  */
 
 #include "complex"
+#include <stdio.h>
+#include <errno.h>
 
 z_div(c, a, b)
 dcomplex *a, *b, *c;
@@ -16,8 +18,10 @@ if( (abi = b->dimag) < 0.)
 	abi = - abi;
 if( abr <= abi )
 	{
-	if(abi == 0)
-		abort(); /* fatal("complex division by zero"); */
+	if(abi == 0) {
+		fprintf( stderr, "Double complex division by zero\n" );
+		f77_abort(EDOM);
+	}
 	ratio = b->dreal / b->dimag ;
 	den = b->dimag * (1 + ratio*ratio);
 	c->dreal = (a->dreal*ratio + a->dimag) / den;

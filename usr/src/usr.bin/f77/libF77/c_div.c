@@ -3,6 +3,8 @@
  */
 
 #include "complex"
+#include <stdio.h>
+#include <errno.h>
 
 c_div(c, a, b)
 complex *a, *b, *c;
@@ -16,8 +18,10 @@ if( (abi = b->imag) < 0.)
 	abi = - abi;
 if( abr <= abi )
 	{
-	if(abi == 0)
-		abort(); /* fatal("complex division by zero"); */
+	if(abi == 0) {
+		fprintf(stderr,"complex division by zero\n");
+		f77_abort(EDOM);
+	}
 	ratio = b->real / b->imag ;
 	den = b->imag * (1 + ratio*ratio);
 	c->real = (a->real*ratio + a->imag) / den;
