@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	7.10 (Berkeley) %G%
+ *	@(#)conf.h	7.11 (Berkeley) %G%
  */
 
 /*
@@ -23,7 +23,7 @@ struct bdevsw {
 	int	(*d_strategy)	__P((struct buf *bp));
 	int	(*d_ioctl)	__P((dev_t dev, int cmd, caddr_t data,
 				     int fflag, struct proc *p));
-	int	(*d_dump)	__P((dev_t dev));
+	int	(*d_dump)	();	/* parameters vary by architecture */
 	int	(*d_psize)	__P((dev_t dev));
 	int	d_flags;
 };
@@ -58,16 +58,17 @@ extern char devioc[], devcls[];
 #endif
 
 struct linesw {
-	int	(*l_open)();
-	int	(*l_close)();
-	int	(*l_read)();
-	int	(*l_write)();
-	int	(*l_ioctl)();
-	int	(*l_rint)();
-	int	(*l_rend)();
-	int	(*l_meta)();
-	int	(*l_start)();
-	int	(*l_modem)();
+	int	(*l_open)	__P((dev_t dev, struct tty *tp));
+	int	(*l_close)	__P((struct tty *tp, int flag));
+	int	(*l_read)	__P((struct tty *tp, struct uio *uio,
+				     int flag));
+	int	(*l_write)	__P((struct tty *tp, struct uio *uio,
+				     int flag));
+	int	(*l_ioctl)	__P((struct tty *tp, int cmd, caddr_t data,
+				     int flag, struct proc *p));
+	int	(*l_rint)	__P((int c, struct tty *tp));
+	int	(*l_start)	__P((struct tty *tp));
+	int	(*l_modem)	__P((struct tty *tp, int flag));
 };
 
 #ifdef KERNEL
