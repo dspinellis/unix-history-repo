@@ -1,4 +1,4 @@
-/*	rk.c	4.14	%G%	*/
+/*	rk.c	4.15	%G%	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -461,7 +461,7 @@ rkecc(ui)
 		rk->rkatt = 0;
 		return (0);
 	}
-	ubp->uba_dpr[(um->um_ubinfo>>28)&0x0f] |= UBA_BNE;
+	ubapurge(um);
 	i = rk->rkec1 - 1;		/* -1 makes 0 origin */
 	bit = i&07;
 	i = (i&~07)>>3;
