@@ -1,4 +1,4 @@
-/*	locore.s	4.76	82/12/29	*/
+/*	locore.s	4.77	82/12/30	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
@@ -13,6 +13,7 @@
 #include "../vax/clock.h"
 #include "../vaxuba/ubareg.h"
 
+#include "dh.h"
 #include "dz.h"
 #include "mba.h"
 
