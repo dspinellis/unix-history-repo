@@ -5,7 +5,7 @@
 # include "useful.h"
 # include "userdbm.h"
 
-static char	SccsId[] =	"@(#)vacation.c	3.3	%G%";
+static char	SccsId[] =	"@(#)vacation.c	3.4	%G%";
 
 /*
 **  VACATION -- return a message to the sender when on vacation.
@@ -292,48 +292,4 @@ syserr(f, p)
 	_doprnt(f, &p, stderr);
 	fprintf(stderr, "\n");
 	exit(EX_USAGE);
-}
-/*
-**  CONVTIME -- convert time
-**
-**	Parameters:
-**		p -- pointer to ascii time.
-**
-**	Returns:
-**		time in seconds.
-**
-**	Side Effects:
-**		none.
-*/
-
-long
-convtime(p)
-	char *p;
-{
-	register long t;
-
-	t = 0;
-	while (isdigit(*p))
-		t = t * 10 + (*p++ - '0');
-	switch (*p)
-	{
-	  case 'w':		/* weeks */
-		t *= 7;
-
-	  case 'd':		/* days */
-	  case '\0':
-	  default:
-		t *= 24;
-
-	  case 'h':		/* hours */
-		t *= 60;
-
-	  case 'm':		/* minutes */
-		t *= 60;
-
-	  case 's':		/* seconds */
-		break;
-	}
-
-	return (t);
 }
