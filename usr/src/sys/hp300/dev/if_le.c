@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	7.14 (Berkeley) %G%
+ *	@(#)if_le.c	7.15 (Berkeley) %G%
  */
 
 #include "le.h"
@@ -59,6 +59,9 @@ extern llc_ctlinput(), cons_rtrequest();
 #include <machine/mtpr.h>
 #include <hp/dev/device.h>
 #include <hp300/dev/if_lereg.h>
+#ifdef USELEDS
+#include <hp300/hp300/led.h>
+#endif
 
 #if NBPFILTER > 0
 #include <net/bpf.h>
@@ -484,6 +487,10 @@ lexint(unit)
 	register struct letmd *tmd;
 	int i, gotone = 0;
 
+#ifdef USELEDS
+	if (inledcontrol == 0)
+		ledcontrol(0, 0, LED_LANXMT);
+#endif
 	do {
 		if ((i = le->sc_tmd - le->sc_txcnt) < 0)
 			i += LETBUF;
@@ -538,6 +545,10 @@ lerint(unit)
 	register int bix = le->sc_rmd;
 	register struct lermd *rmd = &le->sc_r2->ler2_rmd[bix];
 
+#ifdef USELEDS
+	if (inledcontrol == 0)
+		ledcontrol(0, 0, LED_LANRCV);
+#endif
 	/*
 	 * Out of sync with hardware, should never happen?
 	 */
