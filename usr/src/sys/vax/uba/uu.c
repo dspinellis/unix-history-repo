@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uu.c	7.3 (Berkeley) %G%
+ *	@(#)uu.c	7.4 (Berkeley) %G%
  */
 
 #include "uu.h"
@@ -37,7 +37,6 @@
 #include "kernel.h"
 #include "errno.h"
 #include "file.h"
-#include "tsleep.h"
 
 #include "../vax/cpu.h"
 #include "../vax/nexus.h"
@@ -133,7 +132,7 @@ uuopen(dev, flag)
 	register struct uba_device *ui;
 	register struct uu_softc *uuc;
 	register struct uudevice *uuaddr;
-	int ctlr, unit = UNIT(dev), s;
+	int ctlr, unit = UNIT(dev), s, error;
 
 	ctlr = unit / NDPC;
 	if (unit >= NUX || (ui = uudinfo[ctlr]) == 0 || ui->ui_alive == 0)
@@ -168,7 +167,10 @@ uuopen(dev, flag)
 	 * and wait for things to settle down.
 	 */
 	uureset(ctlr);
-	tsleep((caddr_t)uuc, PZERO+1, SLP_UU_OPN, 0);
+	if (error = tsleep((caddr_t)uuc, (PZERO+1) | PCATCH, devopn, 0)) {
+		splx(s);
+		return (error);
+	}
 	uitab[ctlr].b_active = NULL;
 	if (uuc->tu_state != TUS_IDLE) {
 		uuc->tu_state = TUS_INIT1;
@@ -223,6 +225,7 @@ uuclose(dev, flag)
 		uuaddr->rcs = 0;
 	}
 	splx(s);
+	return (0);
 }
 
 uuwake(bp)

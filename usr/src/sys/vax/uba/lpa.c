@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lpa.c	7.3 (Berkeley) %G%
+ *	@(#)lpa.c	7.4 (Berkeley) %G%
  */
 
 #include "lpa.h"
@@ -268,6 +268,7 @@ TRACER("SLEEP\n");
 	}
 	sc->sc_flag = 0;
 TRACER("CLOSE\n");
+	return (0);
 }
 
 lpawrite(dev, uio)

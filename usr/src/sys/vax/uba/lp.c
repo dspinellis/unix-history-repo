@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lp.c	7.5 (Berkeley) %G%
+ *	@(#)lp.c	7.6 (Berkeley) %G%
  */
 
 #include "lp.h"
@@ -25,7 +25,6 @@
 #include "ioctl.h"
 #include "tty.h"
 #include "kernel.h"
-#include "tsleep.h"
 
 #include "ubavar.h"
 
@@ -141,6 +140,7 @@ lpclose(dev, flag)
 	lpcanon(dev, '\f');
 	brelse(sc->sc_inbuf);
 	sc->sc_state &= ~OPEN;
+	return (0);
 }
 
 lpwrite(dev, uio)
@@ -265,19 +265,22 @@ lpoutput(dev, c)
 	int c;
 {
 	register struct lp_softc *sc = &lp_softc[LPUNIT(dev)];
-	int s;
+	int s, error = 0;
 
 	if (sc->sc_outq.c_cc >= LPHWAT) {
 		s = spl4();
 		lpintr(LPUNIT(dev));				/* unchoke */
-		while (sc->sc_outq.c_cc >= LPHWAT) {
+		while (sc->sc_outq.c_cc >= LPHWAT && error == 0) {
 			sc->sc_state |= ASLP;		/* must be ERROR */
-			tsleep((caddr_t)sc, LPPRI, SLP_LP_OUT, 0);
+			error = tsleep((caddr_t)sc, LPPRI | PCATCH,
+			    devout, 0);
 		}
 		splx(s);
 	}
-	while (putc(c, &sc->sc_outq))
-		tsleep((caddr_t)&lbolt, LPPRI, SLP_LP_CLIST, 0);
+	while (error == 0 && putc(c, &sc->sc_outq))
+		error = tsleep((caddr_t)&lbolt, LPPRI | PCATCH,
+		    ttybuf, 0);
+	return (error);
 }
 
 lpintr(lp11)

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vp.c	7.3 (Berkeley) %G%
+ *	@(#)vp.c	7.4 (Berkeley) %G%
  */
 
 #include "vp.h"
@@ -141,7 +141,7 @@ vpopen(dev)
 	while (sc->sc_state & VPSC_CMNDS) {
 		(void) spl4();
 		if (vpwait(dev)) {
-			vpclose(dev);
+			(void) vpclose(dev);
 			return (EIO);
 		}
 		vpstart(dev);
@@ -320,6 +320,7 @@ vpclose(dev)
 	sc->sc_state = 0;
 	sc->sc_count = 0;
 	vpaddr->plcsr = 0;
+	return (0);
 }
 
 vpreset(uban)

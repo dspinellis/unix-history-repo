@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dz.c	7.6 (Berkeley) %G%
+ *	@(#)dz.c	7.7 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -28,7 +28,6 @@
 #include "uio.h"
 #include "kernel.h"
 #include "syslog.h"
-#include "tsleep.h"
 
 #include "pdma.h"
 #include "ubavar.h"
@@ -156,7 +155,7 @@ dzopen(dev, flag)
 {
 	register struct tty *tp;
 	register int unit;
-	int dzparam();
+	int error, dzparam();
  
 	unit = minor(dev);
 	if (unit >= dz_cnt || dzpdma[unit].p_addr == 0)
@@ -187,12 +186,16 @@ dzopen(dev, flag)
 		return (EBUSY);
 	(void) dzmctl(dev, DZ_ON, DMSET);
 	(void) spl5();
-	while (!(flag&O_NONBLOCK) && !(tp->t_cflag&CLOCAL) &&
+	while ((flag&O_NONBLOCK) == 0 && (tp->t_cflag&CLOCAL) == 0 &&
 	       (tp->t_state & TS_CARR_ON) == 0) {
 		tp->t_state |= TS_WOPEN;
-		tsleep((caddr_t)&tp->t_rawq, TTIPRI, SLP_DZ_OPN, 0);
+		if (error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
+		    ttopen, 0))
+			break;
 	}
 	(void) spl0();
+	if (error)
+		return (error);
 	return ((*linesw[tp->t_line].l_open)(dev, tp));
 }
  
@@ -217,7 +220,7 @@ dzclose(dev, flag)
 	if (tp->t_cflag&HUPCL || tp->t_state&TS_WOPEN || 
 	    (tp->t_state&TS_ISOPEN) == 0)
 		(void) dzmctl(dev, DZ_OFF, DMSET);
-	ttyclose(tp);
+	return (ttyclose(tp));
 }
  
 dzread(dev, uio, flag)

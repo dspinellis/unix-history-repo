@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)np.c	7.5 (Berkeley) %G%
+ *	@(#)np.c	7.6 (Berkeley) %G%
  *
  * From:
  *	np.c version 1.5
@@ -51,7 +51,6 @@
 #include "proc.h"
 #include "uio.h"
 #include "errno.h"
-#include "tsleep.h"
 
 #include "../vaxuba/npreg.h"
 
@@ -766,7 +765,9 @@ caddr_t	addr;
 
 		NpState |= ICPAVAIL;
 
-		tsleep((caddr_t)&NpState, PZERO + 1, SLP_NP_SLP, 0);
+		if (error = tsleep((caddr_t)&NpState, (PZERO + 1) | PCATCH,
+		    devio, 0))
+			return (error);
 
 		if(NpDebug & DEBMAINT)
 			printf("wakeup in NpPoll\n");
@@ -1860,7 +1861,9 @@ struct npreq *rp;
 		wakeup((caddr_t)&NpState);
 
 		while(mp->reqtab->reqcnt)
-			tsleep((caddr_t)(&mp->reqtab),PZERO +1, SLP_NP_SLP, 0);
+			if (error = tsleep((caddr_t)(&mp->reqtab),
+			    (PZERO + 1) | PCATCH, devio, 0))
+				return (error);
 
 		if(NpDebug & DEBMAINT)
 			printf("Reset:awoken by ICP senior!\n");
@@ -1878,8 +1881,9 @@ struct npreq *rp;
 			printf("Reqcnt is %d.\n",mp->reqtab->reqcnt);
 		}
 
-		tsleep((caddr_t)(&mp->reqtab),PZERO +1, SLP_NP_SLP, 0);
-
+		if (error = tsleep((caddr_t)(&mp->reqtab),
+		    (PZERO + 1) | PCATCH, devio, 0))
+			return (error);
 	}
 
 	/* Free up I/O Map registers if any allocated */

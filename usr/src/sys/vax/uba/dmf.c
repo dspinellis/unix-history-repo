@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmf.c	7.10 (Berkeley) %G%
+ *	@(#)dmf.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -41,7 +41,6 @@
 #include "uio.h"
 #include "kernel.h"
 #include "syslog.h"
-#include "tsleep.h"
 
 #include "dmx.h"
 #include "ubareg.h"
@@ -236,7 +235,7 @@ dmfclose(dev, flag)
 		dmflclose(dev, flag);
 		return;
 	}
-	dmxclose(&dmf_tty[unit]);
+	return (dmxclose(&dmf_tty[unit]));
 }
 
 dmfread(dev, uio, flag)
@@ -525,7 +524,7 @@ dmflout(dev, cp, n)
 	register int dmf;
 	register struct uba_device *ui;
 	register struct dmfdevice *d;
-	int s;
+	int s, error;
 
 	dmf = DMFL_UNIT(dev);
 	sc = &dmfl_softc[dmf];
@@ -552,16 +551,21 @@ dmflout(dev, cp, n)
 	d->dmfl_indrct = sc->dmfl_lines 	/* lines per page */
 		| (sc->dmfl_cols<<8);		/* carriage width */
 	sc->dmfl_state |= ASLP;
+	error = 0;
 	s = spltty();
 	d->dmfl_ctrl |= DMFL_PEN | DMFL_IE;
 	while (sc->dmfl_state & ASLP) {
-		tsleep(sc->dmfl_buf, PZERO + 8, SLP_DMFL_ASLP, 0);
+		if (error = tsleep(sc->dmfl_buf, (PZERO + 8) | PCATCH,
+		    ttyout, 0))
+			break;
 		while (sc->dmfl_state & ERROR) {
 			timeout(dmflint, (caddr_t)dmf, 10 * hz);
-			tsleep((caddr_t)&sc->dmfl_state, PZERO + 8,
-				SLP_DMFL_ERROR, 0);
+			if (error = tsleep((caddr_t)&sc->dmfl_state,
+			    (PZERO + 8) | PCATCH, ttyout, 0))
+				goto out;
 		}
 	}
+out:
 	splx(s);
 	return (0);
 }

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ct.c	7.4 (Berkeley) %G%
+ *	@(#)ct.c	7.5 (Berkeley) %G%
  */
 
 #include "ct.h"
@@ -22,7 +22,6 @@
 #include "conf.h"
 #include "user.h"
 #include "kernel.h"
-#include "tsleep.h"
 
 #include "ubareg.h"
 #include "ubavar.h"
@@ -129,19 +128,26 @@ ctwrite(dev, uio)
 {
 	register struct ct_softc *sc = &ct_softc[CTUNIT(dev)];
 	register int c;
-	int s;
+	int s, error;
 
 	while ((c = uwritec(uio)) >= 0) {
 		s = spl5();
 		while (sc->sc_oq.c_cc > CATHIWAT)
-			tsleep((caddr_t)&sc->sc_oq, PCAT, SLP_PCAT_OUT, 0);
+			if (error = tsleep((caddr_t)&sc->sc_oq, PCAT | PCATCH,
+			    devout, 0))
+				goto out;
 		while (putc(c, &sc->sc_oq) < 0)
-			tsleep((caddr_t)&lbolt, PCAT, SLP_PCAT_CLIST, 0);
+			if (error = tsleep((caddr_t)&lbolt, PCAT | PCATCH,
+			    ttybuf, 0))
+				goto out;
 		if ( ! (sc->sc_state & CT_RUNNING) )
 			ctintr(dev);
 		splx(s);
 	}
 	return (0);
+out:
+	splx(s);
+	return (error);
 }
 
 /*

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rx.c	7.3 (Berkeley) %G%
+ *	@(#)rx.c	7.4 (Berkeley) %G%
  */
 
 #include "rx.h"
@@ -225,6 +225,7 @@ rxclose(dev, flag)
 #ifdef RXDEBUG
 	printf("rxclose: dev=0x%x, sc_open=%d\n", dev, sc->sc_open);
 #endif
+	return (0);
 }
 
 rxstrategy(bp)
