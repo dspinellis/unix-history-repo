@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tcp_usrreq.c	7.12 (Berkeley) %G%
+ *	@(#)tcp_usrreq.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -31,9 +31,9 @@
 #include "../net/route.h"
 
 #include "in.h"
-#include "in_pcb.h"
 #include "in_systm.h"
 #include "ip.h"
+#include "in_pcb.h"
 #include "ip_var.h"
 #include "tcp.h"
 #include "tcp_fsm.h"
