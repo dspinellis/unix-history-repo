@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ruptime.c	4.16 (Berkeley) 83/11/17";
+static char sccsid[] = "@(#)ruptime.c	4.17 (Berkeley) 85/02/27";
 #endif
 
 #include <sys/param.h>
@@ -35,7 +35,7 @@ main(argc, argv)
 {
 	struct direct *dp;
 	int f, i, t;
-	char buf[BUFSIZ]; int cc;
+	char buf[sizeof(struct whod)]; int cc;
 	char *name;
 	register struct hs *hsp = hs;
 	register struct whod *wd;
@@ -90,7 +90,7 @@ main(argc, argv)
 		}
 		f = open(dp->d_name, 0);
 		if (f > 0) {
-			cc = read(f, buf, BUFSIZ);
+			cc = read(f, buf, sizeof(struct whod));
 			if (cc >= WHDRSIZE) {
 				hsp->hs_wd = (struct whod *)malloc(WHDRSIZE);
 				wd = (struct whod *)buf;
