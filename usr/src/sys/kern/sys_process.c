@@ -11,7 +11,6 @@
 #include "param.h"
 #include "proc.h"
 #include "vnode.h"
-#include "seg.h"
 #include "buf.h"
 #include "ptrace.h"
 
@@ -177,7 +176,11 @@ procxmt(p)
 		else
 #endif
 		i = (int)ipc.ip_addr;
+#ifdef mips
+		poff = (int *)PHYSOFF(curproc->p_addr, i);
+#else
 		poff = (int *)PHYSOFF(kstack, i);
+#endif
 		for (i=0; i<NIPCREG; i++)
 			if (poff == &p->p_regs[ipcreg[i]])
 				goto ok;
@@ -210,8 +213,11 @@ procxmt(p)
 		if ((unsigned)ipc.ip_data > NSIG)
 			goto error;
 		p->p_xstat = ipc.ip_data;	/* see issig */
+#ifdef PSL_T
+		/* need something more machine independent here... */
 		if (i == PT_STEP) 
 			p->p_regs[PS] |= PSL_T;
+#endif
 		wakeup((caddr_t)&ipc);
 		return (1);
 
