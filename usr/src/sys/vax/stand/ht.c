@@ -1,4 +1,4 @@
-/*	ht.c	4.5	81/03/22	*/
+/*	ht.c	4.6	81/12/01	*/
 
 /*
  * TM03/TU?? tape driver
@@ -54,6 +54,7 @@ htstrategy(io, func)
 	int func;
 {
 	register int den, errcnt, ds;
+	int er;
 	short fc;
 	register struct htdevice *htaddr =
 	    (struct htdevice *)mbadrv(io->i_unit);
@@ -76,22 +77,25 @@ retry:
 		htaddr->htcs1 = func|HT_GO;
 	htquiet(htaddr);
 	ds = htaddr->htds;
+	er = htaddr->hter;
 	if (ds & HTDS_TM) {
 		htaddr->htcs1 = HT_DCLR|HT_GO;
 		return (0);
 	}
 	if (ds & HTDS_ERR) {
-		printf("ht error: ds=%b, er=%b\n",
-		    MASKREG(htaddr->htds), HTDS_BITS,
-		    MASKREG(htaddr->hter), HTER_BITS);
 		htaddr->htcs1 = HT_DCLR|HT_GO;
-		if (errcnt == 10) {
-			printf("ht: unrecovered error\n");
-			return (-1);
+		if ((er & HTER_CORCRC) == 0) {
+			printf("ht error: ds=%b, er=%b\n",
+			    MASKREG(ds), HTDS_BITS,
+			    MASKREG(er), HTER_BITS);
+			if (errcnt == 10) {
+				printf("ht: unrecovered error\n");
+				return (-1);
+			}
+			errcnt++;
+			htstrategy(io, HT_SREV);
+			goto retry;
 		}
-		errcnt++;
-		htstrategy(io, HT_SREV);
-		goto retry;
 	}
 	if (errcnt)
 		printf("ht: recovered by retry\n");
@@ -108,3 +112,5 @@ htquiet(htaddr)
 		s = htaddr->htds;
 	while ((s & HTDS_DRY) == 0);
 }
+
+
