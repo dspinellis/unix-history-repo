@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)fortran.c	1.3	%G%";
+static char sccsid[] = "@(#)fortran.c	1.4	%G%";
 
 /*
  * FORTRAN dependent symbol routines.
@@ -164,26 +164,26 @@ Symbol s;
 Symbol eltype;
 
     switch (s->class) {
-
 	case CONST:
-	    
 	    printf("parameter %s = ", symname(s));
             printval(s);
 	    break;
 
         case REF:
             printf(" (dummy argument) ");
-
+	    /* fall through */
 	case VAR:
-	    if (s->type->class == ARRAY &&
-		 (not istypename(s->type->type,"char")) ) {
-                char bounds[130], *p1, **p;
+	    if (s->type->class == ARRAY and
+	        (not istypename(s->type->type, "char"))
+	    ) {
+		char bounds[130], *p1, **p;
+
 		p1 = bounds;
                 p = &p1;
-                mksubs(p,s->type);
+                mksubs(p, s->type);
                 *p -= 1; 
                 **p = '\0';   /* get rid of trailing ',' */
-		printf(" %s %s[%s] ",typename(s), symname(s), bounds);
+		printf(" %s %s[%s] ", typename(s), symname(s), bounds);
 	    } else {
 		printf("%s %s", typename(s), symname(s));
 	    }
@@ -192,14 +192,15 @@ Symbol eltype;
 	case FUNC:
 	    if (not istypename(s->type, "void")) {
                 printf(" %s function ", typename(s) );
+	    } else {
+		printf(" subroutine");
 	    }
-	    else printf(" subroutine");
 	    printf(" %s ", symname(s));
 	    fortran_listparams(s);
 	    break;
 
 	case MODULE:
-	    printf("source file \"%s.c\"", symname(s));
+	    printf("source file \"%s.f\"", symname(s));
 	    break;
 
 	case PROG:
