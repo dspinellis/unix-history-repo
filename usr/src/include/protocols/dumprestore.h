@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dumprestore.h	5.3 (Berkeley) %G%
+ *	@(#)dumprestore.h	5.4 (Berkeley) %G%
  */
 
 /*
@@ -68,5 +68,5 @@ union u_spcl {
 #define DR_NEWHEADER	1	/* new format tape header */
 
 #define	DUMPOUTFMT	"%-16s %c %s"		/* for printf */
-						/* name, incno, ctime(date) */
+						/* name, level, ctime(date) */
 #define	DUMPINFMT	"%16s %c %[^\n]\n"	/* inverse for scanf */
