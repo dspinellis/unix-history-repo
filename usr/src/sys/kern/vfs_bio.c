@@ -1,4 +1,4 @@
-/*	vfs_bio.c	4.31	82/05/31	*/
+/*	vfs_bio.c	4.32	82/06/01	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -350,7 +350,7 @@ loop:
 	bremhash(bp);
 	binshash(bp, dp);
 	bp->b_dev = (dev_t)NODEV;
-	bp->b_bcount = size;
+	brealloc(bp, size);
 	return(bp);
 }
 
@@ -372,10 +372,9 @@ brealloc(bp, size)
 	 */
 	if (size == bp->b_bcount)
 		return;
-	if (size < bp->b_bcount) {
-		bp->b_bcount = size;
-		return;
-	}
+	if (size < bp->b_bcount || bp->b_dev == NODEV)
+		goto allocit;
+
 	start = bp->b_blkno + (bp->b_bcount / DEV_BSIZE);
 	last = bp->b_blkno + (size / DEV_BSIZE) - 1;
 	if (bp->b_bcount == 0) {
