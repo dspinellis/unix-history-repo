@@ -1,5 +1,5 @@
 /*
- * @(#)ww.h	3.41 %G%	
+ * @(#)ww.h	3.42 %G%	
  */
 
 /*
@@ -182,7 +182,7 @@ char **wwsmap;			/* the screen map */
 union ww_char **wwos;		/* the old (current) screen */
 union ww_char **wwns;		/* the new (desired) screen */
 char *wwtouched;		/* wwns changed flags */
-int wwbaudmap[];		/* maps stty() baud rate code into number */
+extern int wwbaudmap[];		/* maps stty() baud rate code into number */
 int wwbaud;			/* wwbaudmap[wwoldtty.ww_sgttyb.sg_ospeed] */
 int wwcursorrow, wwcursorcol;	/* where we want the cursor to be */
 int wwerrno;			/* error number */

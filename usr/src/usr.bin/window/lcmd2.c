@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lcmd2.c	3.12 %G%";
+static char sccsid[] = "@(#)lcmd2.c	3.13 %G%";
 #endif
 
 /*
@@ -83,11 +83,11 @@ register struct value *a;
 	wwprintf(w, "%-16s", strtime(&timeval));
 	wwprintf(w, "%-16s", strtime(&rusage.ru_utime));
 	wwprintf(w, "%-16s", strtime(&rusage.ru_stime));
-	wwprintf(w, "%D\t%D\t%D\t%D\n",
+	wwprintf(w, "%ld\t%ld\t%ld\t%ld\n",
 		rusage.ru_maxrss, rusage.ru_ixrss,
 		rusage.ru_idrss, rusage.ru_isrss);
 	wwprintf(w, "minflt\tmajflt\tnswap\tinblk\toublk\tmsgsnd\tmsgrcv\tnsigs\tnvcsw\tnivcsw\n");
-	wwprintf(w, "%D\t%D\t%D\t%D\t%D\t%D\t%D\t%D\t%D\t%D\n",
+	wwprintf(w, "%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\n",
 		rusage.ru_minflt, rusage.ru_majflt, rusage.ru_nswap,
 		rusage.ru_inblock, rusage.ru_oublock,
 		rusage.ru_msgsnd, rusage.ru_msgrcv, rusage.ru_nsignals,
@@ -106,7 +106,7 @@ register struct timeval *t;
 	register char *p = buf;
 
 	if (t->tv_sec > 60*60) {
-		(void) sprintf(p, "%D:", t->tv_sec / (60*60));
+		(void) sprintf(p, "%ld:", t->tv_sec / (60*60));
 		while (*p++)
 			;
 		p--;
@@ -114,14 +114,14 @@ register struct timeval *t;
 		fill++;
 	}
 	if (t->tv_sec > 60) {
-		(void) sprintf(p, fill ? "%02D:" : "%D:", t->tv_sec / 60);
+		(void) sprintf(p, fill ? "%02ld:" : "%ld:", t->tv_sec / 60);
 		while (*p++)
 			;
 		p--;
 		t->tv_sec %= 60;
 		fill++;
 	}
-	(void) sprintf(p, fill ? "%02D.%02d" : "%D.%02D",
+	(void) sprintf(p, fill ? "%02ld.%02d" : "%ld.%02ld",
 		t->tv_sec, t->tv_usec / 10000);
 	return buf;
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwprintf.c	3.5 %G%";
+static char sccsid[] = "@(#)wwprintf.c	3.6 %G%";
 #endif
 
 /*
@@ -9,15 +9,18 @@ static char sccsid[] = "@(#)wwprintf.c	3.5 %G%";
  */
 
 #include "ww.h"
+#include <varargs.h>
 
 /*VARARGS2*/
-wwprintf(w, fmt, args)
+wwprintf(w, fmt, va_alist)
 struct ww *w;
 char *fmt;
+va_dcl
 {
 #include <stdio.h>
 	struct _iobuf _wwbuf;
 	char buf[1024];
+	va_list ap;
 
 	/*
 	 * A danger is that when buf overflows, _flsbuf() will be
@@ -28,6 +31,8 @@ char *fmt;
 	_wwbuf._base = _wwbuf._ptr = buf;
 	_wwbuf._cnt = sizeof buf;
 	_wwbuf._file = -1;			/* safe */
-	_doprnt(fmt, &args, &_wwbuf);
+	va_start(ap);
+	_doprnt(fmt, ap, &_wwbuf);
+	va_end(ap);
 	(void) wwwrite(w, buf, _wwbuf._ptr - buf);
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lcmd.c	3.25 %G%";
+static char sccsid[] = "@(#)lcmd.c	3.26 %G%";
 #endif
 
 /*
@@ -35,25 +35,25 @@ int l_variable();
 int l_window();
 int l_write();
 
-struct lcmd_arg arg_alias[];
-struct lcmd_arg arg_cursormodes[];
-struct lcmd_arg arg_debug[];
-struct lcmd_arg arg_echo[];
-struct lcmd_arg arg_escape[];
-struct lcmd_arg arg_foreground[];
-struct lcmd_arg arg_label[];
-struct lcmd_arg arg_nline[];
-struct lcmd_arg arg_close[];
-struct lcmd_arg arg_select[];
-struct lcmd_arg arg_shell[];
-struct lcmd_arg arg_smooth[];
-struct lcmd_arg arg_source[];
-struct lcmd_arg arg_terse[];
-struct lcmd_arg arg_time[];
-struct lcmd_arg arg_unalias[];
-struct lcmd_arg arg_unset[];
-struct lcmd_arg arg_window[];
-struct lcmd_arg arg_write[];
+extern struct lcmd_arg arg_alias[];
+extern struct lcmd_arg arg_cursormodes[];
+extern struct lcmd_arg arg_debug[];
+extern struct lcmd_arg arg_echo[];
+extern struct lcmd_arg arg_escape[];
+extern struct lcmd_arg arg_foreground[];
+extern struct lcmd_arg arg_label[];
+extern struct lcmd_arg arg_nline[];
+extern struct lcmd_arg arg_close[];
+extern struct lcmd_arg arg_select[];
+extern struct lcmd_arg arg_shell[];
+extern struct lcmd_arg arg_smooth[];
+extern struct lcmd_arg arg_source[];
+extern struct lcmd_arg arg_terse[];
+extern struct lcmd_arg arg_time[];
+extern struct lcmd_arg arg_unalias[];
+extern struct lcmd_arg arg_unset[];
+extern struct lcmd_arg arg_window[];
+extern struct lcmd_arg arg_write[];
 struct lcmd_arg arg_null[] = 0;
 
 struct lcmd_tab lcmd_tab[] = {
