@@ -19,11 +19,11 @@ POPDIVERT
 ###   Local and Program Mailer specification   ###
 ##################################################
 
-VERSIONID(`@(#)local.m4	8.9 (Berkeley) %G%')
+VERSIONID(`@(#)local.m4	8.10 (Berkeley) %G%')
 
 Mlocal,		P=LOCAL_MAILER_PATH, F=CONCAT(`lsDFMAw5:/|@', LOCAL_MAILER_FLAGS), S=10, R=20/40,
 		A=LOCAL_MAILER_ARGS
-Mprog,		P=LOCAL_SHELL_PATH, F=CONCAT(`lsDFM', LOCAL_SHELL_FLAGS), S=10, R=20/40, D=LOCAL_SHELL_DIR,
+Mprog,		P=LOCAL_SHELL_PATH, F=CONCAT(`lsDFMo', LOCAL_SHELL_FLAGS), S=10, R=20/40, D=LOCAL_SHELL_DIR,
 		A=LOCAL_SHELL_ARGS
 
 S10
