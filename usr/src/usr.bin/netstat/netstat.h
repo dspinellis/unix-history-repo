@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)netstat.h	5.4 (Berkeley) %G%
+ *	@(#)netstat.h	5.5 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
@@ -41,6 +41,7 @@ void	tcp_stats __P((u_long, char *));
 void	udp_stats __P((u_long, char *));
 void	ip_stats __P((u_long, char *));
 void	icmp_stats __P((u_long, char *));
+void	igmp_stats __P((u_long, char *));
 void	protopr __P((u_long, char *));
 
 void	mbpr(u_long);
