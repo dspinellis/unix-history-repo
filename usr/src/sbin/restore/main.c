@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-char version[] = "@(#)main.c 1.11 %G%";
+char version[] = "@(#)main.c 1.12 %G%";
 
 /*	Modified to include h option (recursively extract all files within
  *	a subtree) and m option (recreate the heirarchical structure of
@@ -26,14 +26,14 @@ char version[] = "@(#)main.c 1.11 %G%";
 #include "../h/inode.h"
 #include "../h/fs.h"
 #include "../h/buf.h"
-#include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/dumprestor.h"
 #include <sys/mtio.h>
 
+#define ODIRSIZ 14
 struct odirect {
 	u_short	d_ino;
-	char	d_name[DIRSIZ];
+	char	d_name[ODIRSIZ];
 };
 
 #define	MWORD(m,i) (m[(unsigned)(i-1)/NBBY])
@@ -64,6 +64,7 @@ char	mbuf[50];
 
 daddr_t	seekpt;
 FILE	*df;
+DIR	*dirp;
 int	ofile;
 char	dirfile[] = "rstXXXXXX";
 
@@ -103,6 +104,7 @@ char	clearedbuf[MAXBSIZE];
 
 extern char *ctime();
 ino_t search();
+int dirwrite();
 char **envp;
 
 main(argc, argv, arge)
@@ -367,10 +369,11 @@ again:
 					goto skipfile;
 				}
 				xchown(name, spcl.c_dinode.di_uid, spcl.c_dinode.di_gid);
-				if (cvtdir)
+				if (cvtdir) {
 					getfile(xtrcvtdir, xtrcvtskip,
 					    spcl.c_dinode.di_size);
-				else
+					flushent(xtrfile);
+				} else
 					getfile(xtrfile, xtrskip,
 					    spcl.c_dinode.di_size);
 				xclose(ofile);
@@ -428,7 +431,7 @@ restorfiles(command, argv)
 	char command;
 	char **argv;
 {
-	int	rstrfile(), rstrskip(), rstrcvtdir(), rstrcvtskip();
+	int null(), rstrfile(), rstrskip(), rstrcvtdir(), rstrcvtskip();
 	register struct dinode *dp;
 	register struct inode *ip;
 	struct fs *fs;
@@ -487,7 +490,6 @@ restorfiles(command, argv)
 	gethead(&spcl); /* volume header already checked above */
 	gethead(&spcl);
 	for (;;) {
-ragain:
 		if (ishead(&spcl) == 0) {
 			fprintf(stderr, "Missing header block\n");
 			while (gethead(&spcl) == 0)
@@ -520,17 +522,17 @@ ragain:
 					ip->i_flag |= ICHG;
 					iput(ip);
 				}
-			goto ragain;
+			continue;
 		}
 		if (checktype(&spcl, TS_BITS) == 1) {
 			readbits(dumpmap);
-			goto ragain;
+			continue;
 		}
 		if (checktype(&spcl, TS_INODE) == 0) {
 			fprintf(stderr, "Unknown header type\n");
 			eflag++;
 			gethead(&spcl);
-			goto ragain;
+			continue;
 		}
 		ino = spcl.c_inumber;
 		if (eflag)
@@ -539,7 +541,12 @@ ragain:
 		if (ino > maxi) {
 			fprintf(stderr, "%u: ilist too small\n", ino);
 			gethead(&spcl);
-			goto ragain;
+			continue;
+		}
+		dp = &spcl.c_dinode;
+		if (ino < ROOTINO) {
+			getfile(null, null, dp->di_size);
+			continue;
 		}
 		if (iexist(dev, ino)) {
 			ip = iget(dev, ino);
@@ -552,7 +559,6 @@ ragain:
 			ip->i_flag |= ICHG;
 			iput(ip);
 		}
-		dp = &spcl.c_dinode;
 		ip = ialloc(dev, ino, dp->di_mode);
 		if (ip == NULL || ip->i_number != ino) {
 			fprintf(stderr, "can't create inode %u\n", ino);
@@ -572,9 +578,10 @@ ragain:
 		cur_ip = ip;
 		u.u_offset = 0;
 		u.u_segflg = 1;
-		if (cvtdir && type == IFDIR)
+		if (cvtdir && type == IFDIR) {
 			getfile(rstrcvtdir, rstrcvtskip, dp->di_size);
-		else
+			flushent(rstrfile);
+		} else
 			getfile(rstrfile, rstrskip, dp->di_size);
 		ip->i_mode = mode;
 		ip->i_flag &= ~(IUPD|IACC);
@@ -595,10 +602,12 @@ pass1(savedir)
 	register struct dinode *ip;
 	struct direct nulldir;
 	char buf[TP_BSIZE];
-	int putdir(), null();
+	int putdir(), null(), dirwrite();
 
-	nulldir.d_ino = 0;
-	strncpy(nulldir.d_name, "/", DIRSIZ);
+	nulldir.d_ino = 1;
+	nulldir.d_namlen = 1;
+	strncpy(nulldir.d_name, "/", nulldir.d_namlen);
+	nulldir.d_reclen = DIRSIZ(&nulldir);
 	while (gethead(&spcl) == 0) {
 		fprintf(stderr, "Can't find directory header!\n");
 	}
@@ -613,8 +622,12 @@ pass1(savedir)
 		}
 		if (checktype(&spcl, TS_INODE) == 0) {
 finish:
-			if (savedir)
-				freopen(dirfile, "r", df);
+			if (savedir) {
+				fclose(df);
+				dirp = opendir(dirfile);
+				if (dirp == NULL)
+					perror("opendir");
+			}
 			resetmt();
 			return;
 		}
@@ -642,7 +655,8 @@ finish:
 		allocinotab(spcl.c_inumber, seekpt);
 		if (savedir) {
 			getfile(putdir, null, spcl.c_dinode.di_size);
-			putent(&nulldir);
+			putent(&nulldir, dirwrite);
+			flushent(dirwrite);
 		} else {
 			getfile(null, null, spcl.c_dinode.di_size);
 		}
@@ -662,44 +676,21 @@ putdir(buf, size)
 	register struct odirect *odp;
 	struct odirect *eodp;
 	register struct direct *dp;
-	struct direct *edp;
+	long loc;
 
 	if (cvtdir) {
 		eodp = (struct odirect *)&buf[size];
 		for (odp = (struct odirect *)buf; odp < eodp; odp++)
 			if (odp->d_ino != 0) {
 				dcvt(odp, &cvtbuf);
-				putent(&cvtbuf);
+				putent(&cvtbuf, dirwrite);
 			}
 	} else {
-		edp = (struct direct *)&buf[size];
-		for (dp = (struct direct *)buf; dp < edp; dp++)
+		for (loc = 0; loc < size; ) {
+			dp = (struct direct *)(buf + loc);
 			if (dp->d_ino != 0)
-				putent(dp);
-	}
-}
-
-putent(dp)
-	struct direct *dp;
-{
-	fwrite(dp, 1, sizeof(struct direct), df);
-	seekpt = ftell(df);
-}
-
-dcvt(odp, ndp)
-	register struct odirect *odp;
-	register struct direct *ndp;
-{
-	register struct inotab *itp;
-
-	blkclr(ndp, sizeof *ndp);
-	ndp->d_ino =  odp->d_ino;
-	strncpy(ndp->d_name, odp->d_name, DIRSIZ);
-	for (itp = inotab[INOHASH(odp->d_ino)]; itp; itp = itp->t_next) {
-		if (itp->t_ino != odp->d_ino)
-			continue;
-		ndp->d_fmt = IFDIR;
-		break;
+				putent(dp, dirwrite);
+		}
 	}
 }
 
@@ -713,9 +704,9 @@ getleaves(ino, pname)
 {
 	register struct inotab *itp;
 	int namelen;
-	daddr_t	bpt;
-	struct direct dir;
-	char 	locname[BUFSIZ + 1];
+	long bpt;
+	register struct direct *dp;
+	char locname[BUFSIZ + 1];
 
 	if (BIT(ino, dumpmap) == 0) {
 		fprintf(stdout, "%s: not on the tape\n", pname);
@@ -735,26 +726,26 @@ getleaves(ino, pname)
 		strncpy(locname, pname, BUFSIZ);
 		strncat(locname, "/", BUFSIZ);
 		namelen = strlen(locname);
-		fseek(df, itp->t_seekpt, 0);
-		fread(&dir, 1, sizeof(struct direct), df);
-		fread(&dir, 1, sizeof(struct direct), df);
-		fread(&dir, 1, sizeof(struct direct), df);
-		bpt = ftell(df);
+		seekdir(dirp, itp->t_seekpt, itp->t_seekpt);
+		dp = readdir(dirp);
+		dp = readdir(dirp);
+		dp = readdir(dirp);
+		bpt = telldir(dirp);
 		/*
 		 * "/" signals end of directory
 		 */
-		while (strncmp(dir.d_name, "/", DIRSIZ)) {
+		while (dp->d_namlen != 1 || dp->d_name[0] != '/') {
 			locname[namelen] = '\0';
-			strncat(locname, dir.d_name, DIRSIZ);
-			if (strlen(locname) >= BUFSIZ) {
-				fprintf(stderr, "%s: name exceedes %d char\n",
-					locname, BUFSIZ);
+			if (namelen + dp->d_namlen >= BUFSIZ) {
+				fprintf(stderr, "%s%s: name exceedes %d char\n",
+					locname, dp->d_name, BUFSIZ);
 				continue;
 			}
-			getleaves(dir.d_ino, locname);
-			fseek(df, bpt, 0);
-			fread(&dir, 1, sizeof(struct direct), df);
-			bpt = ftell(df);
+			strncat(locname, dp->d_name, dp->d_namlen);
+			getleaves(dp->d_ino, locname);
+			seekdir(dirp, bpt, itp->t_seekpt);
+			dp = readdir(dirp);
+			bpt = telldir(dirp);
 		}
 		return;
 	}
@@ -805,21 +796,23 @@ search(inum, cp)
 	ino_t	inum;
 	char	*cp;
 {
-	struct direct dir;
+	register struct direct *dp;
 	register struct inotab *itp;
+	int len;
 
 	for (itp = inotab[INOHASH(inum)]; itp; itp = itp->t_next)
 		if (itp->t_ino == inum)
 			goto found;
 	return(0);
 found:
-	fseek(df, itp->t_seekpt, 0);
+	seekdir(dirp, itp->t_seekpt, itp->t_seekpt);
+	len = strlen(cp);
 	do {
-		fread(&dir, 1, sizeof(struct direct), df);
-		if (!strncmp(dir.d_name, "/", DIRSIZ))
+		dp = readdir(dirp);
+		if (dp->d_namlen == 1 && dp->d_name[0] == '/')
 			return(0);
-	} while (strncmp(dir.d_name, cp, DIRSIZ));
-	return(dir.d_ino);
+	} while (dp->d_namlen != len || strncmp(dp->d_name, cp, len));
+	return(dp->d_ino);
 }
 #endif
 
@@ -913,18 +906,13 @@ xtrcvtdir(buf, size)
 	struct odirect *buf;
 	long size;
 {
-	struct direct
-		cvtbuf[MAXBSIZE / sizeof(struct odirect)];
 	struct odirect *odp, *edp;
-	struct direct *dp;
+	struct direct *dp, cvtbuf;
 
 	edp = &buf[size / sizeof(struct odirect)];
-	for (odp = buf, dp = cvtbuf; odp < edp; odp++, dp++) 
-		dcvt(odp, dp);
-	size = size * sizeof(struct direct) / sizeof(struct odirect);
-	if (xwrite(ofile, cvtbuf, (int) size) == -1) {
-		perror("extract write");
-		done(1);
+	for (odp = buf; odp < edp; odp++) {
+		dcvt(odp, &cvtbuf);
+		putent(&cvtbuf, xtrfile);
 	}
 }
 
@@ -933,10 +921,7 @@ xtrcvtskip(buf, size)
 	long size;
 {
 	fprintf(stderr, "unallocated block in directory\n");
-	if (xseek(ofile, size, 1) == -1) {
-		perror("extract seek");
-		done(1);
-	}
+	xtrskip(buf, size);
 }
 #endif
 
@@ -964,20 +949,13 @@ rstrcvtdir(buf, size)
 	struct odirect *buf;
 	long size;
 {
-	struct direct
-		cvtbuf[MAXBSIZE / sizeof(struct odirect)];
 	struct odirect *odp, *edp;
-	struct direct *dp;
+	struct direct *dp, cvtbuf;
 
 	edp = &buf[size / sizeof(struct odirect)];
-	for (odp = buf, dp = cvtbuf; odp < edp; odp++, dp++) 
-		dcvt(odp, dp);
-	u.u_base = (char *)cvtbuf;
-	u.u_count = size * sizeof(struct direct) / sizeof(struct odirect);
-	writei(cur_ip);
-	if (u.u_error) {
-		perror("restor write");
-		done(1);
+	for (odp = buf; odp < edp; odp++) {
+		dcvt(odp, &cvtbuf);
+		putent(&cvtbuf, rstrfile);
 	}
 }
 
@@ -986,7 +964,7 @@ rstrcvtskip(buf, size)
 	long size;
 {
 	fprintf(stderr, "unallocated block in directory\n");
-	u.u_offset += size;
+	rstrskip(buf, size);
 }
 
 null() {;}
@@ -1035,7 +1013,7 @@ loop:
 			return;
 		}
 	}
-	copy(&tbf[(bct++*TP_BSIZE)], b, TP_BSIZE);
+	blkcpy(&tbf[(bct++*TP_BSIZE)], b, TP_BSIZE);
 }
 
 flsht()
@@ -1043,15 +1021,11 @@ flsht()
 	bct = NTREC+1;
 }
 
-copy(f, t, s)
-	register char *f, *t;
+blkcpy(from, to, size)
+	char *from, *to;
+	int size;
 {
-	register int i;
-
-	i = s;
-	do
-		*t++ = *f++;
-	while (--i);
+	asm("	movc3	12(ap),*4(ap),*8(ap)");
 }
 
 blkclr(buf, size)
@@ -1199,6 +1173,99 @@ checkdir(name)
 			*cp = '/';
 		}
 	}
+}
+
+/*
+ * These variables are "local" to the following two functions.
+ */
+char dirbuf[DIRBLKSIZ];
+long dirloc = 0;
+long prev = 0;
+
+/*
+ * add a new directory entry to a file.
+ */
+putent(dp, wrtfunc)
+	struct direct *dp;
+	int (*wrtfunc)();
+{
+	if (dp->d_ino == 0)
+		return;
+	for (;;) {
+		if (dp->d_reclen < DIRBLKSIZ - dirloc) {
+			blkcpy(dp, dirbuf + dirloc, dp->d_reclen);
+			prev = dirloc;
+			dirloc += dp->d_reclen;
+			return;
+		}
+		((struct direct *)(dirbuf + prev))->d_reclen = DIRBLKSIZ - prev;
+		(*wrtfunc)(dirbuf, DIRBLKSIZ);
+		dirloc = 0;
+	}
+}
+
+/*
+ * flush out a directory that is finished.
+ */
+flushent(wrtfunc)
+	int (*wrtfunc)();
+{
+	((struct direct *)(dirbuf + prev))->d_reclen = DIRBLKSIZ - prev;
+	(*wrtfunc)(dirbuf, dirloc);
+	dirloc = 0;
+}
+
+dirwrite(buf, size)
+	char *buf;
+	int size;
+{
+	fwrite(buf, 1, size, df);
+	seekpt = ftell(df);
+}
+
+dcvt(odp, ndp)
+	register struct odirect *odp;
+	register struct direct *ndp;
+{
+	struct inotab *itp;
+
+	blkclr(ndp, sizeof *ndp);
+	ndp->d_ino =  odp->d_ino;
+	strncpy(ndp->d_name, odp->d_name, ODIRSIZ);
+	ndp->d_namlen = strlen(ndp->d_name);
+	ndp->d_reclen = DIRSIZ(ndp);
+	/*
+	 * this quickly calculates if this inode is a directory.
+	 * Currently not maintained.
+	 *
+	for (itp = inotab[INOHASH(odp->d_ino)]; itp; itp = itp->t_next) {
+		if (itp->t_ino != odp->d_ino)
+			continue;
+		ndp->d_fmt = IFDIR;
+		break;
+	}
+	 */
+}
+
+/*
+ * seek to an entry in a directory.
+ * Only values returned by ``telldir'' should be passed to seekdir.
+ * Modified to have many directories based in one file.
+ */
+void
+seekdir(dirp, loc, base)
+	register DIR *dirp;
+	long loc, base;
+{
+	if (loc == telldir(dirp))
+		return;
+	loc -= base;
+	if (loc < 0)
+		fprintf(stderr, "bad seek pointer to seekdir %d\n", loc);
+	lseek(dirp->dd_fd, base + (loc & ~(DIRBLKSIZ - 1)), 0);
+	dirp->dd_loc = loc & (DIRBLKSIZ - 1);
+	if (dirp->dd_loc != 0)
+		dirp->dd_size = read(dirp->dd_fd, dirp->dd_buf, DIRBLKSIZ);
 }
 
 /*

@@ -1,6 +1,7 @@
-static	char *sccsid = "@(#)traverse.c	1.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)traverse.c	1.6 (Berkeley) %G%";
 
 #include "dump.h"
+#include <ndir.h>
 
 pass(fn, map)
 	int (*fn)();
@@ -235,30 +236,31 @@ dsrch(d, size)
 	daddr_t d;
 	int size;
 {
-	register char *cp;
-	register i;
-	register ino_t in;
-	struct direct dblk[MAXDIRPB];
+	register struct direct *dp;
+	long loc;
+	char dblk[MAXBSIZE];
 
 	if(dadded)
 		return;
-	bread(fsbtodb(sblock, d), (char *)dblk, size);
-	for(i=0; i < DIRPB(sblock); i++) {
-		in = dblk[i].d_ino;
-		if(in == 0)
+	bread(fsbtodb(sblock, d), dblk, size);
+	for (loc = 0; loc < size; ) {
+		dp = (struct direct *)(dblk + loc);
+		if (dp->d_reclen == 0)
+			break;
+		loc += dp->d_reclen;
+		if(dp->d_ino == 0)
 			continue;
-		cp = dblk[i].d_name;
-		if(cp[0] == '.') {
-			if(cp[1] == '\0')
+		if(dp->d_name[0] == '.') {
+			if(dp->d_name[1] == '\0')
 				continue;
-			if(cp[1] == '.' && cp[2] == '\0')
+			if(dp->d_name[1] == '.' && dp->d_name[2] == '\0')
 				continue;
 		}
-		if(BIT(in, nodmap)) {
+		if(BIT(dp->d_ino, nodmap)) {
 			dadded++;
 			return;
 		}
-		if(BIT(in, dirmap))
+		if(BIT(dp->d_ino, dirmap))
 			nsubdir++;
 	}
 }

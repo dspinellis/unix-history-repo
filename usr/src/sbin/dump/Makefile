@@ -1,4 +1,4 @@
-# sccsid = "@(#)Makefile	1.3 (Berkeley) %G%"
+# sccsid = "@(#)Makefile	1.4 (Berkeley) %G%"
 #
 #	dump.h			header file
 #	dumpitime.c		reads /etc/ddate
@@ -12,7 +12,8 @@
 #	TDEBUG			trace out the process forking
 #
 PSRCS = \
-	dump.h dumpmain.c dumptraverse.c dumptape.c dumpoptr.c dumpitime.c
+	../../h/dumprestor.h dump.h \
+	dumpmain.c dumptraverse.c dumptape.c dumpoptr.c dumpitime.c unctime.c
 
 SRCS =  \
 	dump.h dumpitime.c \
@@ -25,17 +26,22 @@ OBJS = \
 	dumptape.o dumptraverse.o unctime.o
 
 DFLAGS =
-CFLAGS = -O $(DFLAGS)
+CFLAGS = -O -DKERNEL $(DFLAGS)
 
 dump:	$(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o dump
+
 install:
 	install -s dump $(DESTDIR)/etc
+
 clean:
 	rm -f *.o dump
 
 lint:
 	lint $(DFLAGS) $(SRCS)
 
-psrcs:
-	echo $(PSRCS)
+print:
+	pr $(PSRCS) | lpr
+
+$(OBJS): dump.h ../../h/param.h ../../h/stat.h ../../h/fs.h
+$(OBJS): ../../h/inode.h ../../h/dumprestor.h
