@@ -1,4 +1,4 @@
-#	@(#)Makefile.hp300	7.5 (Berkeley) %G%
+#	@(#)Makefile.hp300	7.6 (Berkeley) %G%
 #
 # Makefile for 4.4 BSD
 #
@@ -28,7 +28,7 @@ S=	../..
 HP300=	../../hp300
 
 INCLUDES= -I. -I$S -I$S/sys
-COPTS=	${INCLUDES} ${IDENT} -DKERNEL -Dmc68020 -Dhp300 -DFPCOPROC -DREFBIT
+COPTS=	${INCLUDES} ${IDENT} -DNVM -DKERNEL -Dmc68020 -Dhp300 -DFPCOPROC -DREFBIT
 CFLAGS=	-O ${COPTS}
 
 %OBJS
