@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)route.c	4.5 82/11/15";
+static char sccsid[] = "@(#)route.c	4.6 83/01/06";
 #endif
 
 #include <sys/types.h>
@@ -18,6 +18,7 @@ struct	rtentry route;
 int	options;
 int	s;
 struct	sockaddr_in sin = { AF_INET };
+struct	in_addr inet_makeaddr();
 
 main(argc, argv)
 	int argc;
@@ -96,17 +97,32 @@ getaddr(s, sin)
 	struct sockaddr_in *sin;
 {
 	struct hostent *hp;
+	struct netent *np;
+	u_long val;
 
 	hp = gethostbyname(s);
-	if (hp == 0) {
-		sin->sin_addr.s_addr = inet_addr(s);
-		if (sin->sin_addr.s_addr == -1) {
-			fprintf(stderr, "%s: bad value\n", s);
-			exit(1);
-		}
-		sin->sin_family = AF_INET;
+	if (hp) {
+		sin->sin_family = hp->h_addrtype;
+		bcopy(hp->h_addr, &sin->sin_addr, hp->h_length);
 		return;
 	}
-	sin->sin_family = hp->h_addrtype;
-	bcopy(hp->h_addr, &sin->sin_addr, hp->h_length);
+	np = getnetbyname(s);
+	if (np) {
+		sin->sin_family = np->n_addrtype;
+		sin->sin_addr = inet_makeaddr(np->n_net, INADDR_ANY);
+		return;
+	}
+	sin->sin_family = AF_INET;
+	val = inet_addr(s);
+	if (val != -1) {
+		sin->sin_addr.s_addr = val;
+		return;
+	}
+	val = inet_network(s);
+	if (val != -1) {
+		sin->sin_addr = inet_makeaddr(val, INADDR_ANY);
+		return;
+	}
+	fprintf(stderr, "%s: bad value\n", s);
+	exit(1);
 }
