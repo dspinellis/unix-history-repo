@@ -32,12 +32,19 @@
  *
  * from tahoe:	in_cksum.c	1.2	86/01/05
  *	@(#)in_cksum.c	1.3 (Berkeley) 1/19/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00104
+ * --------------------         -----   ----------------------
+ *
+ * 24 Jul 92	Bakul Shah		Optimized some more
+ *
+ * 920724 	i386 changes by Bakul Shah <bvs@bitblocks.com>
  */
 
 #include "param.h"
 #include "sys/mbuf.h"
-#include "netinet/in.h"
-#include "netinet/in_systm.h"
 
 /*
  * Checksum routine for Internet Protocol family headers.
@@ -49,23 +56,26 @@
  */
 
 #undef	ADDCARRY
-#define ADDCARRY(sum)  {				\
-			if (sum & 0xffff0000) {		\
-				sum &= 0xffff;		\
-				sum++;			\
-			}				\
-		}
+#define ADDCARRY(x)     if ((x) > 0xffff) (x) -= 0xffff
+#define REDUCE          {sum = (sum & 0xffff) + (sum >> 16); ADDCARRY(sum);}
+
+/*
+ * Thanks to gcc we don't have to guess
+ * which registers contain sum & w.
+ */
+#define CLC     asm("clc")
+#define ADD(n)  asm("adcl " #n "(%2), %0": "=r"(sum): "0"(sum), "r"(w))
+#define MOP     asm("adcl $0, %0":         "=r"(sum): "0"(sum))
+
 in_cksum(m, len)
 	register struct mbuf *m;
 	register int len;
 {
-	union word {
-		char	c[2];
-		u_short	s;
-	} u;
 	register u_short *w;
-	register int sum = 0;
+	register unsigned sum = 0;
 	register int mlen = 0;
+	int byte_swapped = 0;
+	union { char	c[2]; u_short	s; } su;
 
 	for (;m && len; m = m->m_next) {
 		if (m->m_len == 0)
@@ -78,53 +88,94 @@ in_cksum(m, len)
 			 * last mbuf.
 			 */
 
-			/* u.c[0] is already saved when scanning previous 
-			 * mbuf.
+			/* su.c[0] is already saved when scanning previous 
+			 * mbuf.  sum was REDUCEd when we found mlen == -1
 			 */
-			u.c[1] = *(u_char *)w;
-			sum += u.s;
-			ADDCARRY(sum);
+			su.c[1] = *(u_char *)w;
+			sum += su.s;
 			w = (u_short *)((char *)w + 1);
 			mlen = m->m_len - 1;
 			len--;
 		} else
 			mlen = m->m_len;
-
 		if (len < mlen)
 			mlen = len;
 		len -= mlen;
-
 		/*
-		 * add by words.
+		 * Force to long boundary so we do longword aligned
+		 * memory operations
 		 */
-		while ((mlen -= 2) >= 0) {
-			if ((int)w & 0x1) {
-				/* word is not aligned */
-				u.c[0] = *(char *)w;
-				u.c[1] = *((char *)w+1);
-				sum += u.s;
-				w++;
-			} else
+		if (3 & (int) w) {
+			REDUCE;
+			if ((1 & (int) w) && (mlen > 0)) {
+				sum <<= 8;
+				su.c[0] = *(char *)w;
+				w = (u_short *)((char *)w + 1);
+				mlen--;
+				byte_swapped = 1;
+			}
+			if ((2 & (int) w) && (mlen >= 2)) {
 				sum += *w++;
-			ADDCARRY(sum);
+				mlen -= 2;
+			}
 		}
-		if (mlen == -1)
+		/*
+		 * Do as much of the checksum as possible 32 bits at at time.
+		 * In fact, this loop is unrolled to make overhead from
+		 * branches &c small.
+		 */
+		while ((mlen -= 32) >= 0) {
 			/*
-			 * This mbuf has odd number of bytes. 
+			 * Clear the carry flag, add with carry 16 words
+			 * and fold-in last carry by adding a 0 with carry.
+			 */
+			CLC;
+			ADD(0);  ADD(4);  ADD(8);  ADD(12);
+			ADD(16); ADD(20); ADD(24); ADD(28);
+			MOP; w += 16;
+		}
+		mlen += 32;
+		while ((mlen -= 8) >= 0) {
+			CLC;
+			ADD(0); ADD(4);
+			MOP;
+			w += 4;
+		}
+		mlen += 8;
+		if (mlen == 0 && byte_swapped == 0)
+			continue;       /* worth 1% maybe ?? */
+		REDUCE;
+		while ((mlen -= 2) >= 0) {
+			sum += *w++;
+		}
+		if (byte_swapped) {
+			sum <<= 8;
+			byte_swapped = 0;
+			if (mlen == -1) {
+				su.c[1] = *(char *)w;
+				sum += su.s;
+				mlen = 0;
+			} else
+				mlen = -1;
+		} else if (mlen == -1)
+			/*
+			 * This mbuf has odd number of bytes.
 			 * There could be a word split betwen
 			 * this mbuf and the next mbuf.
 			 * Save the last byte (to prepend to next mbuf).
 			 */
-			u.c[0] = *(u_char *)w;
+			su.c[0] = *(char *)w;
 	}
+
 	if (len)
 		printf("cksum: out of data\n");
 	if (mlen == -1) {
 		/* The last mbuf has odd # of bytes. Follow the
 		   standard (the odd byte is shifted left by 8 bits) */
-		u.c[1] = 0;
-		sum += u.s;
-		ADDCARRY(sum);
+		su.c[1] = 0;
+		sum += su.s;
 	}
+	REDUCE;
 	return (~sum & 0xffff);
 }
+
