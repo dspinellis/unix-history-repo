@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.19 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.20 (Berkeley) %G%
  */
 
 /*
@@ -1327,9 +1327,21 @@ vfs_hang_addrlist(mp, nep, argp)
 	}
 	rn = (*rnh->rnh_addaddr)((caddr_t)saddr, (caddr_t)smask, rnh,
 		np->netc_rnodes);
-	if (rn == 0 || np != (struct netcred *)rn) { /* already exists */
-		error = EPERM;
-		goto out;
+	if (rn == 0) {
+		/*
+		 * One of the reasons that rnh_addaddr may fail is that
+		 * the entry already exists. To check for this case, we
+		 * look up the entry to see if it is there. If so, we
+		 * do not need to make a new entry but do return success.
+		 */
+		free(np, M_NETADDR);
+		rn = (*rnh->rnh_matchaddr)((caddr_t)saddr, rnh);
+		if (rn != 0 && (rn->rn_flags & RNF_ROOT) == 0 &&
+		    ((struct netcred *)rn)->netc_exflags == argp->ex_flags &&
+		    !bcmp((caddr_t)&((struct netcred *)rn)->netc_anon,
+			    (caddr_t)&argp->ex_anon, sizeof(struct ucred)))
+			return (0);
+		return (EPERM);
 	}
 	np->netc_exflags = argp->ex_flags;
 	np->netc_anon = argp->ex_anon;
