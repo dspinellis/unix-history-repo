@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.37 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -48,30 +48,28 @@ main(argc, argv)
 	struct rlimit rlim;
 	FILE *temp_fp;
 	int fd;
-	char *fend, *np, *passwd, *temp, *tend;
+	char *fend, *np, *passwd, *temp, *tend, *uname;
 	char from[MAXPATHLEN], to[MAXPATHLEN];
-	char *getnewpasswd();
+	char *getnewpasswd(), *getlogin();
 
 	uid = getuid();
+	uname = getlogin();
 	switch(--argc) {
 	case 0:
-		if (!(pw = getpwuid(uid))) {
-			fprintf(stderr, "passwd: unknown user: uid %u\n", uid);
-			exit(1);
-		}
 		break;
 	case 1:
-		if (!(pw = getpwnam(argv[1]))) {
-			fprintf(stderr, "passwd: unknown user %s.\n", argv[1]);
-			exit(1);
-		}
-		if (uid && uid != pw->pw_uid) {
-			fprintf(stderr, "passwd: %s\n", strerror(EACCES));
-			exit(1);
-		}
+		uname = argv[1];
 		break;
 	default:
 		fprintf(stderr, "usage: passwd [user]\n");
+		exit(1);
+	}
+	if (!(pw = getpwnam(uname))) {
+		fprintf(stderr, "passwd: unknown user %s.\n", uname);
+		exit(1);
+	}
+	if (uid && uid != pw->pw_uid) {
+		fprintf(stderr, "passwd: %s\n", strerror(EACCES));
 		exit(1);
 	}
 
@@ -214,6 +212,7 @@ getnewpasswd(pw, temp)
 {
 	register char *p, *t;
 	char buf[10], salt[2], *crypt(), *getpass();
+	int tries = 0;
 	time_t time();
 
 	if (uid && pw->pw_passwd &&
@@ -231,12 +230,12 @@ getnewpasswd(pw, temp)
 			(void)unlink(temp);
 			exit(0);
 		}
-		if (strlen(p) <= 5) {
+		if (strlen(p) <= 5 && (uid != 0 || tries++ < 2)) {
 			printf("Please enter a longer password.\n");
 			continue;
 		}
 		for (t = p; *t && islower(*t); ++t);
-		if (!*t) {
+		if (!*t && (uid != 0 || tries++ < 2)) {
 			printf("Please don't use an all-lower case password.\nUnusual capitalization, control characters or digits are suggested.\n");
 			continue;
 		}
