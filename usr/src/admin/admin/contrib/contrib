@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.22 (Berkeley) %G%
+.\"	@(#)contrib	5.23 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -181,6 +181,7 @@ uniq(1)	Case Larsen
 uucpd(8)	Rick Adams
 uuq(1)	Lou Salkind and Rick Adams
 uusnap(8)	Randy King and Rick Adams
+vi(1)	Steve Kirkendall
 who(1)	Michael Fischbein
 window(1)	Edward Wang
 worm(6)	Michael Toy
