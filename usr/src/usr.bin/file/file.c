@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)file.c	4.13 (Berkeley) %G%";
+static	char sccsid[] = "@(#)file.c	4.14 (Berkeley) %G%";
 #endif
 /*
  * file - determine type of file
@@ -422,7 +422,7 @@ char *bp;
 		ct[j]=0;
 	for(j=0; j<n; j++)
 	{
-		if (bp[j]<NASC)
+		if ((u_char)bp[j]<NASC)
 			ct[bp[j]|040]++;
 		switch (bp[j])
 		{
