@@ -4,7 +4,7 @@
  */
 
 /*
- * Sccs Id = "@(#)glob.h	1.2 %G%";
+ * Sccs Id = "@(#)glob.h	1.3 %G%";
  */
 
 int	msgCount;			/* Count of messages read in */
@@ -20,6 +20,7 @@ int	edit;				/* Indicates editing a file */
 int	readonly;			/* Will be unable to rewrite file */
 int	noreset;			/* String resets suspended */
 int	sourcing;			/* Currently reading variant file */
+int	shudann;			/* Print headers when possible */
 FILE	*itf;				/* Input temp file buffer */
 FILE	*otf;				/* Output temp file buffer */
 FILE	*pipef;				/* Pipe file we have opened */
