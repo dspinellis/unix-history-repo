@@ -1,6 +1,7 @@
+#include <sys/param.h>
 # include	"../hdr/defines.h"
 
-SCCSID(@(#)permiss.c	1.2);
+SCCSID(@(#)permiss.c	1.2	%G%);
 
 finduser(pkt)
 register struct packet *pkt;
@@ -8,20 +9,30 @@ register struct packet *pkt;
 	register char *p;
 	register int i;
 	char *user;
-	char *strend();
-	char userid[6];
+	char *index();
+	int gid, ngroups = NGROUPS, groups[NGROUPS];
 	int none;
 
 	none = 1;
 	user = logname();
-	sprintf(userid,"%d",getuid() & 0377);
+	if (getgroups(&ngroups, groups) < 0) {
+		perror("getgroups");
+		ngroups = 0;
+	}
 	while ((p = getline(pkt)) != NULL && *p != CTLCHAR) {
 		none = 0;
 		repl(p,'\n','\0');	/* this is done for equal test below */
-		if (!pkt->p_user)
-			if (equal(user,p) || equal(userid,p))
+		if (!pkt->p_user) {
+			if (equal(user,p))
 				pkt->p_user = 1;
-		*(strend(p)) = '\n';	/* repl \0 end of line w/ \n again */
+			else if (gid = atoi(p))
+				for (i = 0; i < ngroups; i++)
+				    if (gid == groups[i]) {
+					pkt->p_user = 1;
+					break;
+				    }
+		}
+		*(index(p,'\0')) = '\n';/* repl \0 end of line w/ \n again */
 	}
 	if (none)
 		pkt->p_user = 1;
