@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_conf.c	8.1 (Berkeley) %G%
+ *	@(#)tty_conf.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -21,16 +21,8 @@
 #define	ttyerrinput ((int (*) __P((int c, struct tty *)))enodev)
 #define	ttyerrstart ((int (*) __P((struct tty *)))enodev)
 
-int	ttyopen __P((dev_t dev, struct tty *tp));
-int	ttylclose __P((struct tty *tp, int flags));
-int	ttread __P((struct tty *, struct uio *, int flags));
-int	ttwrite __P((struct tty *, struct uio *, int flags));
 int	nullioctl __P((struct tty *tp, int cmd, caddr_t data,
 			int flag, struct proc *p));
-int	ttyinput __P((int c, struct tty *tp));
-int	ttstart __P((struct tty *tp));
-int	ttymodem __P((struct tty *tp, int flags));
-int	nullmodem __P((struct tty *tp, int flags));
 
 #include "tb.h"
 #if NTB > 0

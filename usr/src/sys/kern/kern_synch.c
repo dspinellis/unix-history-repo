@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_synch.c	8.1 (Berkeley) %G%
+ *	@(#)kern_synch.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -22,7 +22,7 @@
 
 #include <machine/cpu.h>
 
-u_char	curpri;			/* usrpri of curproc */
+u_char	curpriority;		/* usrpri of curproc */
 int	lbolt;			/* once a second sleep address */
 
 /*
@@ -35,7 +35,7 @@ roundrobin(arg)
 {
 
 	need_resched();
-	timeout(roundrobin, (void *)0, hz / 10);
+	timeout(roundrobin, NULL, hz / 10);
 }
 
 /*
@@ -124,7 +124,7 @@ fixpt_t	ccpu = 0.95122942450071400909 * FSCALE;		/* exp(-1/20) */
 #define	CCPU_SHIFT	11
 
 /*
- * Recompute process priorities, once a second
+ * Recompute process priorities, every hz ticks.
  */
 /* ARGSUSED */
 void
@@ -169,7 +169,7 @@ schedcpu(arg)
 		p->p_cpticks = 0;
 		newcpu = (u_int) decay_cpu(loadfac, p->p_cpu) + p->p_nice;
 		p->p_cpu = min(newcpu, UCHAR_MAX);
-		setpri(p);
+		resetpriority(p);
 		if (p->p_pri >= PUSER) {
 #define	PPQ	(128 / NQS)		/* priorities per queue */
 			if ((p != curproc) &&
@@ -210,7 +210,7 @@ updatepri(p)
 			newcpu = (int) decay_cpu(loadfac, newcpu);
 		p->p_cpu = min(newcpu, UCHAR_MAX);
 	}
-	setpri(p);
+	resetpriority(p);
 }
 
 #define SQSIZE 0100	/* Must be power of 2 */
@@ -232,29 +232,26 @@ struct slpque {
 int safepri;
 
 /*
- * General sleep call.
- * Suspends current process until a wakeup is made on chan.
- * The process will then be made runnable with priority pri.
- * Sleeps at most timo/hz seconds (0 means no timeout).
- * If pri includes PCATCH flag, signals are checked
- * before and after sleeping, else signals are not checked.
- * Returns 0 if awakened, EWOULDBLOCK if the timeout expires.
- * If PCATCH is set and a signal needs to be delivered,
- * ERESTART is returned if the current system call should be restarted
- * if possible, and EINTR is returned if the system call should
- * be interrupted by the signal (return EINTR).
+ * General sleep call.  Suspends the current process until a wakeup is
+ * performed on the specified identifier.  The process will then be made
+ * runnable with the specified priority.  Sleeps at most timo/hz seconds
+ * (0 means no timeout).  If pri includes PCATCH flag, signals are checked
+ * before and after sleeping, else signals are not checked.  Returns 0 if
+ * awakened, EWOULDBLOCK if the timeout expires.  If PCATCH is set and a
+ * signal needs to be delivered, ERESTART is returned if the current system
+ * call should be restarted if possible, and EINTR is returned if the system
+ * call should be interrupted by the signal (return EINTR).
  */
 int
-tsleep(chan, pri, wmesg, timo)
-	void *chan;
-	int pri;
+tsleep(ident, priority, wmesg, timo)
+	void *ident;
+	int priority, timo;
 	char *wmesg;
-	int timo;
 {
 	register struct proc *p = curproc;
 	register struct slpque *qp;
 	register s;
-	int sig, catch = pri & PCATCH;
+	int sig, catch = priority & PCATCH;
 	extern int cold;
 	void endtsleep __P((void *));
 
@@ -275,14 +272,14 @@ tsleep(chan, pri, wmesg, timo)
 		return (0);
 	}
 #ifdef DIAGNOSTIC
-	if (chan == NULL || p->p_stat != SRUN || p->p_rlink)
+	if (ident == NULL || p->p_stat != SRUN || p->p_rlink)
 		panic("tsleep");
 #endif
-	p->p_wchan = chan;
+	p->p_wchan = ident;
 	p->p_wmesg = wmesg;
 	p->p_slptime = 0;
-	p->p_pri = pri & PRIMASK;
-	qp = &slpque[HASH(chan)];
+	p->p_pri = priority & PRIMASK;
+	qp = &slpque[HASH(ident)];
 	if (qp->sq_head == 0)
 		qp->sq_head = p;
 	else
@@ -317,7 +314,7 @@ tsleep(chan, pri, wmesg, timo)
 	p->p_stats->p_ru.ru_nvcsw++;
 	swtch();
 resume:
-	curpri = p->p_usrpri;
+	curpriority = p->p_usrpri;
 	splx(s);
 	p->p_flag &= ~SSINTR;
 	if (p->p_flag & STIMO) {
@@ -376,9 +373,9 @@ endtsleep(arg)
  * Short-term, non-interruptable sleep.
  */
 void
-sleep(chan, pri)
-	void *chan;
-	int pri;
+sleep(ident, priority)
+	void *ident;
+	int priority;
 {
 	register struct proc *p = curproc;
 	register struct slpque *qp;
@@ -386,9 +383,9 @@ sleep(chan, pri)
 	extern int cold;
 
 #ifdef DIAGNOSTIC
-	if (pri > PZERO) {
-		printf("sleep called with pri %d > PZERO, wchan: %x\n",
-		    pri, chan);
+	if (priority > PZERO) {
+		printf("sleep called with priority %d > PZERO, wchan: %x\n",
+		    priority, ident);
 		panic("old sleep");
 	}
 #endif
@@ -405,14 +402,14 @@ sleep(chan, pri)
 		return;
 	}
 #ifdef DIAGNOSTIC
-	if (chan == NULL || p->p_stat != SRUN || p->p_rlink)
+	if (ident == NULL || p->p_stat != SRUN || p->p_rlink)
 		panic("sleep");
 #endif
-	p->p_wchan = chan;
+	p->p_wchan = ident;
 	p->p_wmesg = NULL;
 	p->p_slptime = 0;
-	p->p_pri = pri;
-	qp = &slpque[HASH(chan)];
+	p->p_pri = priority;
+	qp = &slpque[HASH(ident)];
 	if (qp->sq_head == 0)
 		qp->sq_head = p;
 	else
@@ -429,7 +426,7 @@ sleep(chan, pri)
 	if (KTRPOINT(p, KTR_CSW))
 		ktrcsw(p->p_tracep, 0, 0);
 #endif
-	curpri = p->p_usrpri;
+	curpriority = p->p_usrpri;
 	splx(s);
 }
 
@@ -458,26 +455,25 @@ unsleep(p)
 }
 
 /*
- * Wakeup on "chan"; set all processes
- * sleeping on chan to run state.
+ * Make all processes sleeping on the specified identifier runnable.
  */
 void
-wakeup(chan)
-	register void *chan;
+wakeup(ident)
+	register void *ident;
 {
 	register struct slpque *qp;
 	register struct proc *p, **q;
 	int s;
 
 	s = splhigh();
-	qp = &slpque[HASH(chan)];
+	qp = &slpque[HASH(ident)];
 restart:
 	for (q = &qp->sq_head; p = *q; ) {
 #ifdef DIAGNOSTIC
 		if (p->p_rlink || p->p_stat != SSLEEP && p->p_stat != SSTOP)
 			panic("wakeup");
 #endif
-		if (p->p_wchan == chan) {
+		if (p->p_wchan == ident) {
 			p->p_wchan = 0;
 			*q = p->p_link;
 			if (qp->sq_tailp == &p->p_link)
@@ -491,8 +487,8 @@ restart:
 				if (p->p_flag & SLOAD)
 					setrq(p);
 				/*
-				 * Since curpri is a usrpri,
-				 * p->p_pri is always better than curpri.
+				 * Since curpriority is a user priority,
+				 * p->p_pri is always better than curpriority.
 				 */
 				if ((p->p_flag&SLOAD) == 0)
 					wakeup((caddr_t)&proc0);
@@ -553,7 +549,7 @@ swtch()
 	}
 	if (s > 10 * 60 && p->p_ucred->cr_uid && p->p_nice == NZERO) {
 		p->p_nice = NZERO + 4;
-		setpri(p);
+		resetpriority(p);
 	}
 
 	/*
@@ -614,24 +610,24 @@ setrun(p)
 	p->p_slptime = 0;
 	if ((p->p_flag&SLOAD) == 0)
 		wakeup((caddr_t)&proc0);
-	else if (p->p_pri < curpri)
+	else if (p->p_pri < curpriority)
 		need_resched();
 }
 
 /*
- * Compute priority of process when running in user mode.
- * Arrange to reschedule if the resulting priority
- * is better than that of the current process.
+ * Compute the priority of a process when running in user mode.
+ * Arrange to reschedule if the resulting priority is better
+ * than that of the current process.
  */
 void
-setpri(p)
+resetpriority(p)
 	register struct proc *p;
 {
-	register unsigned int newpri;
+	register unsigned int newpriority;
 
-	newpri = PUSER + p->p_cpu / 4 + 2 * p->p_nice;
-	newpri = min(newpri, MAXPRI);
-	p->p_usrpri = newpri;
-	if (newpri < curpri)
+	newpriority = PUSER + p->p_cpu / 4 + 2 * p->p_nice;
+	newpriority = min(newpriority, MAXPRI);
+	p->p_usrpri = newpriority;
+	if (newpriority < curpriority)
 		need_resched();
 }
