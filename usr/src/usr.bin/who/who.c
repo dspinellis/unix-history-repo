@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)who.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)who.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -23,6 +23,7 @@ static char sccsid[] = "@(#)who.c	5.6 (Berkeley) %G%";
 #include <pwd.h>
 #include <stdio.h>
 #include <ctype.h>
+#include "pathnames.h"
 
 #define NMAX sizeof(utmp.ut_name)
 #define LMAX sizeof(utmp.ut_line)
@@ -41,7 +42,7 @@ main(argc, argv)
 	register char *tp, *s;
 	register FILE *fi;
 
-	s = "/etc/utmp";
+	s = _PATH_UTMP;
 	if(argc == 2)
 		s = argv[1];
 	if (argc == 3) {
