@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.31 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.32 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -147,7 +147,7 @@ Ar|q102|qume102|Qume 102:\
 	:k0=^A@\r:k1=^AA\r:k2=^AB\r:k3=^AC\r:kd=^J:kl=^H:kr=^L:ku=^K:\
 	:le=^H:li#24:ma=^K^P^L :nd=^L:\
 	:se=\EG0:sg#1:so=\EG4:st=\E1:\
-	:ue=\EG0:ug#1:ul:up=^K:us=\EG8:
+	:ue=\EG0:ug#1:up=^K:us=\EG8:
 # From ucbvax!mtxinu!sybase!tim (Tim Wood) Fri Sep 27 10:25:24 PDT 1985
 # This entry supports line and character insert and delete, scroll up and
 # down and the arrow keys.  To use it, perform the following on your qvt-101
@@ -234,11 +234,11 @@ H4|h1420|hazeltine 1420:\
 	:up=\E^L:nd=^P:ce=\E^O:ta=^N:cm=\E^Q%r%.%+ :so=\E\037:se=\E^Y:
 H5|h1500|hazeltine 1500:\
 	:do=^J:al=40~^Z:am:le=^H:bs:cd=10~^X:ce=~^O:cl=~^\:cm=~^Q%r%.%.:\
-	:co#80:dl=40~^S:do=~^K:li#24:nd=^P:.se=~^_:.so=~^Y:up=~^L:
+	:co#80:dl=40~^S:do=~^K:hz:li#24:nd=^P:.se=~^_:.so=~^Y:up=~^L:
 # h1510 assumed to be in sane escape mode.  Else use h1500.
 H6|h1510|hazeltine 1510:\
 	:do=^J:al=\E^Z:am:le=^H:bs:cd=\E^X:ce=\E^O:cl=\E^\:cm=\E^Q%r%.%.:\
-	:co#80:dl=\E^S:do=\E^K:li#24:nd=^P:.se=\E^_:.so=\E^Y:up=\E^L:
+	:co#80:dl=\E^S:do=\E^K:hz:li#24:nd=^P:.se=\E^_:.so=\E^Y:up=\E^L:
 H8|h1520|hazeltine 1520:\
 	:do=^J:al=~^Z:am:le=^H:bs:cd=~^X:ce=~^O:cl=~\034:cm=~^Q%r%.%.\200:\
 	:co#80:dl=~^S:do=~^K:hz:li#24:nd=^P:se=~^Y:so=~\037:up=~^L:ho=~^R:
@@ -282,6 +282,20 @@ I9|ibm|ibm3101|3101|i3101|IBM 3101-10:\
 	:if=/usr/lib/tabset/ibm3101:\
 	:am:le=^H:bs:cl=\EK:li#24:co#80:nd=\EC:up=\EA:cd=\EJ:ce=\EI:\
 	:kd=\EB:kl=\ED:kr=\EC:ku=\EA:ho=\EH:cm=\EY%+\40%+\40:pt:
+# ibm61 and ibm63 from Warren Gish (cswarren@violet.berkeley.edu).
+# installed 12-17-86.
+# 3161 only opens a new line if a null line exists on the screen.
+# To ensure a null line exists, an SBA is performed, positioning the
+# Buffer Address in column 0 of the last line.  The last line is then
+# cleared to nulls, BA mode is cancelled, and the new line is opened
+# at the cursor position.
+I1|ibm61|ibm3161|3161|IBM 3161-11:\
+	:am:bs:bw:cl=\EL:li#24:co#80:cd=\EJ:al=\EX7 \EI\E Z\EN:\
+	:ce=\EI:cm=\EY%+\040%+\040:nd=\EC:up=\EA:do=\EB:\
+	:dl=\EO:dc=\EQ:kd=\EB:ku=\EA:kl=\ED:kr=\EC:kh=\EH:\
+	:us=\E4\102:ue=\E4\100:so=\E4\110:se=\E4\100:
+I3|ibm63|ibm3163|3163|i3163|IBM 3163:\
+	:tc=I1:
 Ia|ibm-apl|apl|IBM apl terminal simulator:\
 	:li#25:tc=dm1520:
 #
@@ -347,7 +361,7 @@ MF|falco-p|falco ts-1sp|falco with paging option:\
 	:dl=\ER:kd=\E[B:kl=\E[D:ei=\Er:im=\Eq:pt:db:\
 	:kr=\E[C:ku=\E[A:li#24:nd=\E[C:se=\Eg0:so=\Eg4:\
 	:up=\E[A:us=\Eg1:ti=\E_d:te=\E_b:\
-	:ue=\Eg0:do=\E[B:cm=\E=%+ %+ :ms:ul:kh=\E[H:da:mi:bt=\EI:
+	:ue=\Eg0:do=\E[B:cm=\E=%+ %+ :ms:kh=\E[H:da:mi:bt=\EI:
 #NOTE: bg can scroll, it just would rather not (ns) - rwells 3/13/81.
 # (Shouldn't you take out ns and put in an nl instead? - mrh)
 MG|bg|bitgraph|BBN BitGraph terminal:\
@@ -561,6 +575,14 @@ L1|f200|freedom200| Freedom 200 VDT by Liberty Electronics :\
 Mg|dg|dg6053|data general 6053:\
 	:do=^J:am:le=^H:bs:cm=^P%r%.%.:cl=^L:ho=^H:nd=^S:\
 	:up=^W:ce=^K:co#80:li#24:
+# dg450 and dg200 from cornell
+Mj|dg450|dg6134|data general 6134:\
+	:nd=\030:bs@:tc=dg200:
+Mk|dg200|data general Dasher 200:\
+	:am:bc=^Y:bs=0:ce=^K:cl=^L:cm=^P%r%+\200%+\200:co#80:do=^Z:\
+	:ho=^H:li#24:\
+	:ll=\036FP0017:se=\036E:so=\036D:up=^W:\
+	:is=\036O\036FQ2\036FB000\036FE\036FA\036FQ2:
 Mi|cdi|cdi1203:\
 	:am:le=^H:bs:hc:os:co#80:dC#200:do=^J:
 # ^S is an arrow key!  Boy is this guy in for a surprise on v7!
@@ -651,6 +673,36 @@ MX|dmchat|dmchat version of datamedia 2500:\
 	:MT:km:\
 	:dl=2^P^Z^X^]:\
 	:tc=dm2500:
+#from Carol Block at ear (cblock@ear)
+#
+m7|mt70|m70|morrow mt70:\
+	:is=EGO\E"5:\
+	:cl=^Z:\
+	:cm=\E=%+ %+ :\
+	:do=^J:\
+	:im=:ic=\EQ:ei:\
+	:dm=:dc=\EW:ed=:\
+	:kl=\034L:kr=\034M:ku=\034J:kd=\034K:\
+	:so=\EG4:se=\EGO:\
+	:us=\EG1:ue=\EGO:\
+	:vs=\E"2:ve=\E"5\E(:\
+	:tc=adm31:
+# from keith bostic (bostic@monet)
+#
+m2|mod2|Modgraph GX-1000, set to 80x24, keypad not enabled:\
+        :is=\E<\E\^5;2s\E\^7;1s\E[3g\E\^11;9s\E\^11;17s\E\^11;25s\E\^11;33s\E\^11;41s\E\^11;49s\E\^11;57s\E\^11;65s\E\^11;73s\E\^11;81s\E\^11;89s\E\^12;0s\E\^14;2s\E\^15;9s\E\^25;1s\E\^9;1s\E\^27;1:\
+	:bs:cd=50\EJ:ce=3\EK:cl=50\EH\EJ:cm=5\EY%+ %+ :co#80:li#24:nd=2\EC:\
+	:pt:sr=5\EI:up=2\EA:da:db:am:
+S1|wsiris|iris40|iris emulating a 40 line visual 50 (approximately):\
+	:am:al=\EL:is=\E7B0\E7F7\E7C2\E7R3:\
+	:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:ho=\EH:cm=\EY%+ %+ :co#80:li#40:nd=\EC:\
+	:pt:sr=\EI:up=\EA:ku=\EA:kd=\EB:kr=\EC:kl=\ED:\
+        :k0=\E0:k1=\E1:k2=\E2:k3=\E3:k4=\E4:k5=\E5:k6=\E6:k7=\E7:k8=\E8:k9=\E9:\
+	:vs=\E;:ve=\E>:cl=\Ev:ho=\EH:dl=\EM:so=\E9P:se=\E0@:\
+	:HS=\E7F2:HE=\E7F7:\
+	:us=\E7R2\E9P:ue=\E7R3\E0@:\
+	:CT#2:CZ=*Bblack,red,green,yellow,blue,magenta,cyan,*Fwhite:
+	
 # # --------------------------------
 #
 # N: ANN ARBOR
@@ -775,7 +827,7 @@ NA|aaa-unk|ann arbor ambassador (internal - don't use this directly):\
 	:ku=\EM:kd=\ED:kl=\E[D:kr=\E[C:kh=\E[H:ko=cl,dc,dl,ce,cd:\
 	:ks=\EP`?z~[H~[[J`>z~[[J`8xz~[M`4xz~[[D`6xz~[[C`2xz~[D\E\\:\
 	:ke=\EP`?y~[H~[[J`>y~[[2J`8xy~[M`4xy~[[D`6xy~[[C`2xy~[D\E\\:\
-	:ch=\E[%i%d`:ul:ei=:im=:pt:bw:bt=\E[Z:\
+	:ch=\E[%i%d`:ei=:im=:pt:bw:bt=\E[Z:\
 	:mi:nd=\E[C:se=\E[m:so=\E[7m:ue=\E[m:us=\E[4m:up=\EM:
 NB|aaa-18|ann arbor ambassador/18 lines:\
 	:ti=\E[2J\E[18;0;0;18p:te=\E[60;0;0;18p\E[18;1H\E[J:\
@@ -1030,6 +1082,51 @@ N1|aa|annarbor|4080|ann arbor 4080:\
 	:kb=^^:kd=^J:ku=^N:kl=^H:kr=^_:kh=^K:ma=^_ ^N^P:
 # # --------------------------------
 #
+# P: PC entries for use with kermit
+#
+# greg small (gts@populi)
+#
+# Cannot use :pt:, it does not work (why?).  :ho: seems required (why?). [gts]
+# Caution: 4.3 BSD tset does not pass li#25 to stty rows except during login?
+# :cl: clears attributes and sets wrap at margin before clearing the screen.
+P1|ansi.sys|ansisys|PC-DOS 3.1 ANSI.SYS:\
+	:am:bs:ce=\E[K:cl=\E[m\E[7h\E[2J:cm=\E[%i%d;%dH:co#80:\
+	:ku=^K:kd=^J:kl=^H:kr=^L:kh=^^:ma=^Hh\012j^Kk^Ll^^H:\
+	:ho=\E[H:li#25:nd=\E[C:up=\E[A:\
+	:ms:md=\E[1m:me=\E[m:mr=\E[7m:se=\E[m:so=\E[1m:ue=\E[m:us=\E[4m:\
+	:is=U1 PC-DOS 3.1 ANSI.SYS 9-23-86\n\E[m\E[7h:
+#
+# Define IBM PC keypad keys for vi as per MS-Kermit while using ANSI.SYS.
+# This should only be used when the terminal emulator cannot redefine the keys.
+# Since redefining keys with ansi.sys also affects PC-DOS programs, the key
+# definitions must be restored.  If the terminal emulator is quit while in vi
+# or others using :ks:ke:, the keypad keys will not be defined as per PC-DOS.
+# The PgUp and PgDn are prefixed with ESC so that tn3270 can be used on Unix
+# (^U and ^D are already defined for tn3270).  The ESC is safe for vi but it
+# does "beep".  ESC ESC i is used for Ins to avoid tn3270 ESC i for coltab.
+# Left arrow is always BS, because PC-dos can tolerate this change.
+# Caution: vi is limited to 256 string bytes, longer crashes or wierds vi.
+# Consequently the End keypad key could not be set (it is relatively safe and
+# actually useful because it sends ^@ O, which beeps and opens a line above).
+P2|ansi.sysk|ansisysk|PC-DOS 3.1 ANSI.SYS with keypad redefined for vi:\
+	:ks=\E[;71;30p\E[;72;11p\E[;73;27;21p\E[;77;12p\E[;80;10p\E[;81;27;4p\E[;82;27;27;105p\E[;83;127p:\
+	:ke=\E[;71;0;71p\E[;72;0;72p\E[;73;0;73p\E[;77;0;77p\E[;80;0;80p\E[;81;0;81p\E[;82;0;82p\E[;83;0;83p:\
+	:is=U2 PC-DOS 3.1 ANSI.SYS with keypad redefined for vi 9-29-86\n\E[;75;8p:\
+	:tc=ansi.sys
+#
+# Adds ins/del line/character, hence vi reverse scrolls/inserts/deletes nicer.
+P3|nansi.sys|nansisys||PC-DOS Public Domain NANSI.SYS:\
+	:al=\E[1L:dl=\E[1M:ic=\E[1@:dc=\E[1P:\
+	:is=U3 PC-DOS Public Domain NANSI.SYS 9-23-86\n:\
+	:tc=ansi.sys:
+#
+# See U2 ansi.sysk and U3 nansi.sys above.
+P4|nansi.sysk|nansisysk|PC-DOS Public Domain NANSI.SYS with keypad redefined for vi:\
+	:al=\E[1L:dl=\E[1M:ic=\E[1@:dc=\E[1P:\
+	:is=U4 PC-DOS Public Domain NANSI.SYS with keypad redefined for vi 9-29-86\n\E[;75;8p:\
+	:tc=ansi.sysk:
+# # --------------------------------
+#
 # T: TELETYPE
 #
 # We need descriptions for the model 40.  There are known to be at least three
@@ -1163,7 +1260,7 @@ Xp|4107|tek4107|Tektronix 4107 graphics terminal with memory:\
 	:ce=5\E[K:cl=156\E[H\E[J:cm=\E[%i%d;%dH:co#80:dc=4\E[P:dl=3\E[M:\
 	:ho=\E[H:ic=4\E[@:md=\E[1m:mr=\E[7m:mb=\E[5m:me=\E[m:ku=\EM:\
 	:kd=\ED:kl=\E[D:kr=\E[C:kh=\E[H:\
-	:ul:ei=:im=:pt:bw:bt=\E[Z:mi:nd=\E[C:se=\E[m:so=\E[7m:\
+	:ei=:im=:pt:bw:bt=\E[Z:mi:nd=\E[C:se=\E[m:so=\E[7m:\
 	:ue=\E[m:us=\E[4m:up=\EM:
 #  Tektronix 4107 with sysline
 Xq|4107-s|tek4107-s|Tektronix 4107 with sysline but no memory:\
@@ -1215,7 +1312,7 @@ Xz|4105|tek4105:\
 	:al=\E[1L:am:bs:cd=\E[J:ce=\E[K:cl=\E[2J\E[H:cm=\E[%i%2;%2H:co#80:\
 	:dc=\E[1P:dl=\E[1M:dn=\E[1B:ho=\E[H:im=\E[4h:li#30:mi:nd=\E[1C:\
 	:as=\E[1m:ae=\E[0m:ms:pt:se=\E[0m:so=\E[7m:up=\E[1A:kb=^h:ku=\E[1A:\
-	:kd=\E[1B:kl=\E[1D:kr=\E[1C:ul:us=\E[4m:ue=\E[0m:is=\E%!1\E[?6l\E[0m:\
+	:kd=\E[1B:kl=\E[1D:kr=\E[1C:us=\E[4m:ue=\E[0m:is=\E%!1\E[?6l\E[0m:\
 	:mr=\E[<3m:md=\E[<4m:mh=\E[<6m:mb=\E[<7m:me=\E[<1m:ti=\E%!1\E[?6l:xt:
 # This entry is from Tek. Inc.  (Brian Biehl)
 Xz|4115|tek4115|Tektronix 4115:\
@@ -1274,6 +1371,24 @@ a6|regent60|regent200|Adds Regent 60:se=\ER\E0@\EV:so=\ER\E0P\EV:dc=\EE:ei=\EF:\
 	:im=\EF:is=\EV\EB:ko=dc,im,ei:tc=regent40+:
 a7|regent60na|regent 60 w/no arrow keys:\
 	kl@:kr@:ku@:kd@:tc=regent60:
+#
+# adds viewpoint 90 - from cornell
+# Note:  emacs sends ei occasionally to insure the terminal is out of
+#        insert mode. This unfortunately puts the viewpoint90 IN insert
+#        mode.  A hack to get around this is:  ic=\EF \EF^U.  (Also,
+#   -    ei=:im=: must be present.)
+#   -    xs indicates glich that attributes stick to location
+#   -    bs save to move in standout mode
+#   -    cl=\EG\Ek clears screen and visual attributes without affecting
+#               the status line
+a9|vp90|viewpoint90|adds viewpoint 90:\
+	:bs:bw:cd=\Ek:ce=\EK:cl=\EG\Ek:cm=\EY%+ %+ :co#80:cr=^M:\
+	:dc=\EE:dl=\El:dm=:do=^J:ed=:ei=:im=:ic=\EF \EF^U:ho=\EY  :\
+	:nd=^F:up=^Z:\
+	:kb=^H:kd=^J:kh=^A:kl=^U:kr=^F:ku=^Z:li#24:ll=^A:\
+        :so=\ER\E0Q\EV:se=\ER\E0@\EV:\
+        :us=\ER\E0`\EV:ue=\ER\E0@\EV:\
+        :xs:ms:
 # Note: if return acts weird on a980, check internal switch #2
 # on the top chip on the CONTROL pc board.
 ac|a980|adds consul 980:\
@@ -1376,7 +1491,7 @@ c3|c108-4p|concept108-4p|concept 108 w/4 pages:\
 	:ti=\EU\Ev  8p\Ep\r:te=\Ev  \177p\Ep\r\n:\
 	:al=\E^R:le=^H:bs:cd=\E^C:ce=\E^S:cl=\E?\E^E:cm=\Ea%+ %+ :co#80:\
 	:dc=\E^Q:dl=\E^B:ei=\E\200:eo:im=\E^P:li#24:mi:nd=\E=:\
-	:kb=^h:ul:up=\E;:db:us=\EG:ue=\Eg:vs=\EW:ve=\Ew:am:xn:\
+	:kb=^h:up=\E;:db:us=\EG:ue=\Eg:vs=\EW:ve=\Ew:am:xn:\
 	:vb=\Ek\200\200\200\200\200\200\200\200\200\200\200\200\200\200\EK:\
 	:ks=\EX:ke=\Ex:ku=\E;:kd=\E<:kl=\E>:kr=\E=:kh=\E?:\
 	:k1=\E5:k2=\E6:k3=\E7:k4=\E8:k5=\E9:k6=\E\72:\
@@ -1422,7 +1537,7 @@ cE|avt|HDS concept avt w/4 or 8 pages, 80 columns:\
 	:ks=\E[1;4!z\E[1;8!z\E[1;10!z\E[1;11!z\E[1;12!z\E[1;14!z\E[3;7!z\E[3;9!z:\
 	:ke=\E[;4!z\E[;8!z\E[;10!z\E[;11!z\E[;12!z\E[3;14!z\E[;7!z\E[;9!z:\
 	:ku=\E[A:li#24:mi:nd=\E[C:pt:se=\E[7!{:so=\E[7m:\
-	:te=\E[w\E2\n:ti=\E[1;24w\E2\n:ue=\E[4!{:ul:\
+	:te=\E[w\E2\n:ti=\E[1;24w\E2\n:ue=\E[4!{:\
 	:up=\E[A:us=\E[4m:ve=\E[=4;119l:vs=\E[4l\E[=119h:xn:
 #
 # Concepts have only window relative cursor addressing, not screen relative.
@@ -1441,7 +1556,7 @@ ca|c100|concept|c1004p|c100-4p|concept100|concept 100:\
 	:ti=\EU\Ev  8p\Ep\r:te=\Ev    \200\200\200\200\200\200\Ep\r\n:\
 	:al=3*\E^R:am:le=^H:bs:cd=16*\E^C:ce=16\E^U:cl=2*^L:cm=\Ea%+ %+ :co#80:\
 	:dc=16\E^Q:dl=3*\E^B:ei=\E\200:eo:im=\E^P:ip=16*:li#24:mi:nd=\E=:\
-	:pt:kb=^h:ta=8\t:ul:up=\E;:db:us=\EG:ue=\Eg:xn:\
+	:pt:kb=^h:ta=8\t:up=\E;:db:us=\EG:ue=\Eg:xn:\
 	:vb=\Ek\200\200\200\200\200\200\200\200\200\200\200\200\200\200\EK:\
 	:.dN#9:dC#9:pb#9600:vt#8:us=\EG:ue=\Eg:so=\EE\ED:se=\Ed\Ee:\
 	:mh=\EE:mr=\ED:mb=\EC:mp=\EI:mk=\EH:me=\EN\200:do=^J:\
@@ -1495,14 +1610,14 @@ dp|vt100-np|vt100 with no padding (for psl games):\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
 	:md=\E[1m:mr=\E[7m:mb=\E[5m:me=\E[m:tc=vt100:
 d0|vt100|vt100-am|vt100am|dec vt100:\
-	:do=^J:co#80:li#24:cl=50\E[;H\E[2J:sf=5\ED:\
+	:do=^J:co#80:li#24:cl=50\E[;H\E[2J:sf=2*\ED:\
 	:le=^H:bs:am:cm=5\E[%i%d;%dH:nd=2\E[C:up=2\E[A:\
 	:ce=3\E[K:cd=50\E[J:so=2\E[7m:se=2\E[m:us=2\E[4m:ue=2\E[m:\
 	:md=2\E[1m:mr=2\E[7m:mb=2\E[5m:me=2\E[m:is=\E[1;24r\E[24;1H:\
 	:rf=/usr/lib/tabset/vt100:\
 	:rs=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h:ks=\E[?1h\E=:ke=\E[?1l\E>:\
 	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:kb=^H:\
-	:ho=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:sr=5\EM:vt#3:xn:\
+	:ho=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:sr=2*\EM:vt#3:xn:\
 	:sc=\E7:rc=\E8:cs=\E[%i%d;%dr:
 d1|vt100-nam|vt100nam|vt100 w/no am:\
 	:am@:xn@:\
@@ -2095,7 +2210,7 @@ v9|925a|tvi925a|TeleVideo Model 925:\
 	:al=\EE:am:bs:bt=\EI:bw:cd=\EY:ce=\ET:cl=^Z:cm=\E=%+ %+ :co#80:dc=\EW:\
 	:dl=\ER:do=^V:ei=:ic=\EQ:if=/usr/lib/tabset/std:im=:kb=^H:kd=^V:\
 	:kh=^^:kl=^H:kn#12:kr=^L:ku=^K:li#24:nd=^L:pt:se=\EG0:sg=#1:so=\EG4:\
-	:ue=\EG0:ug#1:ul:up=^K:us=\EG8:is=\El\
+	:ue=\EG0:ug#1:up=^K:us=\EG8:is=\El\
 	:vb=\Eb\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Ed:\
 	:ve=\E.4:vs=\E.2:
 # The following tvi descriptions from B:pjphar and virus!mike
@@ -2313,7 +2428,7 @@ wx|wyse75|wy75|wyse 75 terminal :\
 	:k5=\E[17~:k6=\E[31~:k7=\E[18~:k8=\E[19~:k9=\E[20~:kn#10:\
 	:l0=PF1:l1=PF2:l2=PF3:l3=PF4:l4=F5:\
 	:l5=F6:l6=F7:l7=F8:l8=F9:l9=F10:\
-	:is=\E[1;24r\E[?10;3;1l\E[4l\E[?25h\E[m\E(B\E>:\
+	:is=\E[1;24r\E[24;1H\E[35;?25h\E[4;?10;3;1l\E[m\E(B\E>:\
 	:ds=\E7\E[>,//\E8:ts=\E7\E[>,^A:fs=^A\E8:
 wx|wyse75-80|wy75-80|wyse 75 terminal with 80-column initialization:\
 	:is=\E[?3l:tc=wy75:
@@ -2382,7 +2497,7 @@ z7|trs2|trsII|trs80II|Radio Shack Model II using P&T CP/M:\
 z8|apollo:\
 	:al=\EI:am:bs:cd=\EJ:ce=\EK:ch=\EN%d:cl=^L:cm=\EM%+ %d):\
 	:cv=\EO+ :dc=\EP:dl=\EL:do=\EB:ei=\ER:im=\EQ:mi:nd=\EC:se=\ET:sf=\EE:\
-	:so=\ES:sr=\ED:te=\EX:ti=\EW:ue=\EV:ul:up=\EA:us=\EU:co#88:li#53:
+	:so=\ES:sr=\ED:te=\EX:ti=\EW:ue=\EV:up=\EA:us=\EU:co#88:li#53:
 z9|ps300|Picture System 300:us@:ue@:so@:se@:xt:pt@:tc=vt100:
 za|masscomp2:co#64:li#21:tc=masscomp:
 zb|masscomp1:co#104:li#36:tc=masscomp:
@@ -2574,7 +2689,7 @@ K3|pckermit120|UCB IBMPC Kermit 1.20:\
 # Initialization must escape from that region by cursor position to line 24.
 # Does not use am: because autowrap mode lost when kermit dropped and restarted.
 # Reverse video for standout like H19.
-K4|mskermit227|msk227|MS-DOS Kermit 2.27 for the IBMPC:\
+K4|msk227|mskermit227|MS-DOS Kermit 2.27 for the IBMPC:\
 	:al=\EL:am@:bs:cd=\EJ:ce=\EK:cl=\EE:cm=\EY%+ %+ :co#80:\
 	:dc=\EN:dl=\EM:do=\EB:ei=\EO:im=\E@:\
 	:ho=\EH:li#24:nd=\EC:up=\EA:pt:rc=\Ek:sc=\Ej:se=\Eq:so=\Ep:\
@@ -2582,14 +2697,14 @@ K4|mskermit227|msk227|MS-DOS Kermit 2.27 for the IBMPC:\
 	:is=\EO\Eq\EG\Ew\EJ\EY7 K4 MS Kermit 2.27 for the IBMPC 3-17-85\n:\
 	:vs=\EO\Eq\EG\EwK4:
 # MS-DOS Kermit 2.27 with automatic margins	(UCB gts 3-17-85)
-K5|mskermit227am|msk227am|UCB MS-DOS Kermit 2.27 with automatic margins:\
+K5|msk227am|mskermit227am|UCB MS-DOS Kermit 2.27 with automatic margins:\
 	:am:\
 	:is=\EO\Eq\EG\Ev\EJ\EY7 K5 MS Kermit 2.27 +automatic margins 3-17-85\n:\
 	:vs=\EO\Eq\EG\EvK5:tc=mskermit227:
 # MS-DOS Kermit 2.27 UCB 227.14 for the IBM PC	(UCB gts 3-17-85)
 # Automatic margins now default.  Use ansi set graphic rendition for standout,
 # underline and ul codes (md,me,mr).  Define function keys.
-K6|mskermit22714|msk22714|UCB MS-DOS Kermit 2.27 UCB 227.14 IBM PC:\
+K6|msk22714|mskermit22714|UCB MS-DOS Kermit 2.27 UCB 227.14 IBM PC:\
 	:am:kn#10:\
 	:k0=\E0:k1=\E1:k2=\E2:k3=\E3:k4=\E4:k5=\E5:k6=\E6:k7=\E7:k8=\E8:k9=\E9:\
 	:md=\E[1m:me=\E[m:mr=\E[7m:se=\E[m:so=\E[1m:ue=\E[m:us=\E[4m:\
@@ -2597,7 +2712,7 @@ K6|mskermit22714|msk22714|UCB MS-DOS Kermit 2.27 UCB 227.14 IBM PC:\
 	:vs=\EO\Eq\EG\EvK6:tc=mskermit227:
 # From earle@smeagol.UUCP 29 Oct 85 05:40:18 GMT
 # MS-Kermit with Heath-19 emulation mode enabled
-Kh|h19kermit|h19k|heathkit emulation provided by Kermit (no auto margin):\
+Kh|h19k|h19kermit|heathkit emulation provided by Kermit (no auto margin):\
 	:am@:ta@:pt@:xt:da:db:tc=h19-u:
 # rough draft of Amiga termcap by Mike Meyer
 AA|amiga|Amiga ANSI:\
