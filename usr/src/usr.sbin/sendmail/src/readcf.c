@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.101 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.102 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -868,6 +868,7 @@ makemailer(line)
 			break;
 
 		  case 'T':		/* MTA-Name/Address/Diagnostic types */
+			/* extract MTA name type; default to "dns" */
 			m->m_mtatype = newstr(p);
 			p = strchr(m->m_mtatype, '/');
 			if (p != NULL)
@@ -876,23 +877,26 @@ makemailer(line)
 				if (*p == '\0')
 					p = NULL;
 			}
-			if (p == NULL)
-				m->m_addrtype = m->m_mtatype;
-			else
-			{
-				m->m_addrtype = p;
+			if (*m->m_mtatype == '\0')
+				m->m_mtatype = "dns";
+
+			/* extract address type; default to "rfc822" */
+			m->m_addrtype = p;
+			if (p != NULL)
 				p = strchr(p, '/');
-			}
 			if (p != NULL)
 			{
 				*p++ = '\0';
 				if (*p == '\0')
 					p = NULL;
 			}
-			if (p == NULL)
-				m->m_diagtype = m->m_mtatype;
-			else
-				m->m_diagtype = p;
+			if (m->m_addrtype == NULL || *m->m_addrtype == '\0')
+				m->m_addrtype = "rfc822";
+
+			/* extract diagnostic type; default to "smtp" */
+			m->m_diagtype = p;
+			if (m->m_diagtype == NULL || *m->m_diagtype == '\0')
+				m->m_diagtype = "smtp";
 			break;
 
 		  case 'U':		/* user id */

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.73 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.74 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -582,7 +582,7 @@ errbody(mci, e, separator)
 	bool printheader;
 	bool sendbody;
 	char buf[MAXLINE];
-	extern char *xtextify();
+	extern char *xuntextify();
 
 	if (bitset(MCIF_INHEADER, mci->mci_flags))
 	{
@@ -752,7 +752,7 @@ errbody(mci, e, separator)
 		putline("", mci);
 		(void) sprintf(buf, "--%s", e->e_msgboundary);
 		putline(buf, mci);
-		putline("Content-Type: message/X-delivery-status-04a (Draft of April 4, 1995)", mci);
+		putline("Content-Type: message/X-delivery-status-05 (Draft of May 29, 1995)", mci);
 		putline("", mci);
 
 		/*
@@ -763,13 +763,12 @@ errbody(mci, e, separator)
 		if (e->e_parent->e_envid != NULL)
 		{
 			(void) sprintf(buf, "Original-Envelope-Id: %s",
-				xtextify(e->e_parent->e_envid));
+				xuntextify(e->e_parent->e_envid));
 			putline(buf, mci);
 		}
 
 		/* Reporting-MTA: is us (required) */
-		(void) sprintf(buf, "Reporting-MTA: dns; %s",
-			xtextify(MyHostName));
+		(void) sprintf(buf, "Reporting-MTA: dns; %s", MyHostName);
 		putline(buf, mci);
 
 		/* DSN-Gateway: not relevant since we are not translating */
@@ -782,7 +781,7 @@ errbody(mci, e, separator)
 			if (p == NULL)
 				p = "dns";
 			(void) sprintf(buf, "Received-From-MTA: %s; %s",
-				p, xtextify(RealHostName));
+				p, RealHostName);
 			putline(buf, mci);
 		}
 
@@ -826,7 +825,7 @@ errbody(mci, e, separator)
 			if (q->q_orcpt != NULL)
 			{
 				(void) sprintf(buf, "Original-Recipient: %s",
-					xtextify(q->q_orcpt));
+					q->q_orcpt);
 				putline(buf, mci);
 			}
 
@@ -839,13 +838,13 @@ errbody(mci, e, separator)
 			if (strchr(r->q_user, '@') == NULL)
 			{
 				(void) sprintf(buf, "Final-Recipient: %s; %s@",
-					p, xtextify(r->q_user));
-				strcat(buf, xtextify(MyHostName));
+					p, r->q_user);
+				strcat(buf, MyHostName);
 			}
 			else
 			{
 				(void) sprintf(buf, "Final-Recipient: %s; %s",
-					p, xtextify(r->q_user));
+					p, r->q_user);
 			}
 			putline(buf, mci);
 
@@ -855,13 +854,13 @@ errbody(mci, e, separator)
 				if (strchr(q->q_user, '@') == NULL)
 				{
 					(void) sprintf(buf, "X-Actual-Recipient: %s; %s@",
-						p, xtextify(q->q_user));
-					strcat(buf, xtextify(MyHostName));
+						p, q->q_user);
+					strcat(buf, MyHostName);
 				}
 				else
 				{
 					(void) sprintf(buf, "X-Actual-Recipient: %s; %s",
-						p, xtextify(q->q_user));
+						p, q->q_user);
 				}
 				putline(buf, mci);
 			}
@@ -909,7 +908,7 @@ errbody(mci, e, separator)
 				if (p == NULL)
 					p = "smtp";
 				(void) sprintf(buf, "Diagnostic-Code: %s; %s",
-					p, xtextify(q->q_rstatus));
+					p, q->q_rstatus);
 				putline(buf, mci);
 			}
 
@@ -1117,6 +1116,85 @@ xtextify(t)
 			*p++ = c;
 	}
 	*p = '\0';
+	return bp;
+}
+/*
+**  XUNTEXTIFY -- take xtext and turn it into plain text
+**
+**	Parameters:
+**		t -- the xtextified text.
+**
+**	Returns:
+**		The decoded text.  No attempt is made to deal with
+**		null strings in the resulting text.
+*/
+
+char *
+xuntextify(t)
+	register char *t;
+{
+	register char *p;
+	int l;
+	static char *bp = NULL;
+	static int bplen = 0;
+
+	/* heuristic -- if no plus sign, just return the input */
+	if (strchr(t, '+') == NULL)
+		return t;
+
+	/* xtext is always longer than decoded text */
+	l = strlen(t);
+	if (l > bplen)
+	{
+		if (bp != NULL)
+			free(bp);
+		bp = xalloc(l);
+		bplen = l;
+	}
+
+	/* ok, copy the text with byte compression */
+	for (p = bp; *t != '\0'; t++)
+	{
+		register int c = *t & 0xff;
+
+		if (c != '+')
+		{
+			*p++ = c;
+			continue;
+		}
+
+		c = *++t & 0xff;
+		if (!isascii(c) || !isxdigit(c))
+		{
+			/* error -- first digit is not hex */
+			usrerr("bogus xtext: +%c", c);
+			t--;
+			continue;
+		}
+		if (isdigit(c))
+			c -= '0';
+		else if (isupper(c))
+			c -= 'A' - 10;
+		else
+			c -= 'a' - 10;
+		*p = c << 4;
+
+		c = *++t & 0xff;
+		if (!isascii(c) || !isxdigit(c))
+		{
+			/* error -- second digit is not hex */
+			usrerr("bogus xtext: +%x%c", *p >> 4, c);
+			t--;
+			continue;
+		}
+		if (isdigit(c))
+			c -= '0';
+		else if (isupper(c))
+			c -= 'A' - 10;
+		else
+			c -= 'a' - 10;
+		*p++ |= c;
+	}
 	return bp;
 }
 /*
