@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-SCCSID(@(#)delta.c	4.3);
+SCCSID(@(#)delta.c	4.4);
 USXALLOC();
 
 char	Diffpgm[]	"/usr/local/bdiff";
@@ -399,7 +399,7 @@ struct sid *sp;
 	struct pfile pf;
 	static struct pfile goodpf;
 	char line[512];
-	int cnt;
+	int cnt, root;
 	FILE *in, *out;
 
 	cnt = -1;
@@ -407,9 +407,10 @@ struct sid *sp;
 	zero(&goodpf,sizeof(goodpf));
 	in = xfopen(auxf(pkt->p_file,'p'),0);
 	out = xfcreat(auxf(pkt->p_file,'q'),0644);
+	root = getuid() == 0;
 	while (fgets(line,sizeof(line),in) != NULL) {
 		pf_ab(line,&pf,1);
-		if (equal(pf.pf_user,user)) {
+		if (root || equal(pf.pf_user,user)) {
 			if (sp->s_rel == 0) {
 				if (++cnt) {
 					fclose(out);
