@@ -602,7 +602,7 @@ do_systemspec(f, fl, first)
 
 	fprintf(f, "%s: ${SYSTEM_DEP} swap%s.o", fl->f_needs, fl->f_fn);
 	if (first)						/* 29 Jun 92*/
-		fprintf(f, " newvers");
+		fprintf(f, " vers.o");
 	fprintf(f, "\n\t${SYSTEM_LD_HEAD}\n");
 	fprintf(f, "\t${SYSTEM_LD} swap%s.o\n", fl->f_fn);
 	fprintf(f, "\t${SYSTEM_LD_TAIL}\n\n");
