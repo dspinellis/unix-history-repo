@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_vnops.c	7.21 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -191,7 +191,7 @@ ufs_mknod(ndp, vap, cred)
 		 * Want to be able to use this to make badblock
 		 * inodes, so don't truncate the dev number.
 		 */
-		vp->v_rdev = ip->i_rdev = vap->va_rdev;
+		ip->i_rdev = vap->va_rdev;
 		ip->i_flag |= IACC|IUPD|ICHG;
 	}
 	/*
@@ -434,6 +434,165 @@ chown1(vp, uid, gid, cred)
 #endif
 }
 
+/*
+ * Vnode op for reading.
+ */
+/* ARGSUSED */
+ufs_read(vp, uio, ioflag, cred)
+	struct vnode *vp;
+	register struct uio *uio;
+	int ioflag;
+	struct ucred *cred;
+{
+	register struct inode *ip = VTOI(vp);
+	register struct fs *fs;
+	struct buf *bp;
+	daddr_t lbn, bn, rablock;
+	int size, rasize, diff, error = 0;
+	long n, on, type;
+
+	if (uio->uio_rw != UIO_READ)
+		panic("ufs_read mode");
+	type = ip->i_mode & IFMT;
+	if (type != IFDIR && type != IFREG && type != IFLNK)
+		panic("ufs_read type");
+	if (uio->uio_resid == 0)
+		return (0);
+	if (uio->uio_offset < 0)
+		return (EINVAL);
+	ip->i_flag |= IACC;
+	fs = ip->i_fs;
+	do {
+		lbn = lblkno(fs, uio->uio_offset);
+		on = blkoff(fs, uio->uio_offset);
+		n = MIN((unsigned)(fs->fs_bsize - on), uio->uio_resid);
+		diff = ip->i_size - uio->uio_offset;
+		if (diff <= 0)
+			return (0);
+		if (diff < n)
+			n = diff;
+		if (error = bmap(ip, lbn, &bn, &rablock, &rasize))
+			return (error);
+		size = blksize(fs, ip, lbn);
+		if ((long)bn < 0) {
+			bp = geteblk(size);
+			clrbuf(bp);
+		} else if (ip->i_lastr + 1 == lbn)
+			error = breada(ip->i_devvp, bn, size, rablock, rasize,
+				NOCRED, &bp);
+		else
+			error = bread(ip->i_devvp, bn, size, NOCRED, &bp);
+		ip->i_lastr = lbn;
+		n = MIN(n, size - bp->b_resid);
+		if (error) {
+			brelse(bp);
+			return (error);
+		}
+		error = uiomove(bp->b_un.b_addr + on, (int)n, uio);
+		if (n + on == fs->fs_bsize || uio->uio_offset == ip->i_size)
+			bp->b_flags |= B_AGE;
+		brelse(bp);
+	} while (error == 0 && uio->uio_resid > 0 && n != 0);
+	return (error);
+}
+
+/*
+ * Vnode op for writing.
+ */
+ufs_write(vp, uio, ioflag, cred)
+	register struct vnode *vp;
+	struct uio *uio;
+	int ioflag;
+	struct ucred *cred;
+{
+	register struct inode *ip = VTOI(vp);
+	register struct fs *fs;
+	struct buf *bp;
+	daddr_t lbn, bn;
+	u_long osize;
+	int i, n, on, flags;
+	int count, size, resid, error = 0;
+
+	if (uio->uio_rw != UIO_WRITE)
+		panic("ufs_write mode");
+	switch (vp->v_type) {
+	case VREG:
+		if (ioflag & IO_APPEND)
+			uio->uio_offset = ip->i_size;
+		/* fall through */
+	case VLNK:
+		break;
+
+	case VDIR:
+		if ((ioflag & IO_SYNC) == 0)
+			panic("ufs_write nonsync dir write");
+		break;
+
+	default:
+		panic("ufs_write type");
+	}
+	if (uio->uio_offset < 0)
+		return (EINVAL);
+	if (uio->uio_resid == 0)
+		return (0);
+	/*
+	 * Maybe this should be above the vnode op call, but so long as
+	 * file servers have no limits, i don't think it matters
+	 */
+	if (vp->v_type == VREG &&
+	    uio->uio_offset + uio->uio_resid >
+	      u.u_rlimit[RLIMIT_FSIZE].rlim_cur) {
+		psignal(u.u_procp, SIGXFSZ);
+		return (EFBIG);
+	}
+	resid = uio->uio_resid;
+	osize = ip->i_size;
+	fs = ip->i_fs;
+	do {
+		lbn = lblkno(fs, uio->uio_offset);
+		on = blkoff(fs, uio->uio_offset);
+		n = MIN((unsigned)(fs->fs_bsize - on), uio->uio_resid);
+		if (n < fs->fs_bsize)
+			flags = B_CLRBUF;
+		else
+			flags = 0;
+		if (error = balloc(ip, lbn, (int)(on + n), &bn, flags))
+			break;
+		if (uio->uio_offset + n > ip->i_size)
+			ip->i_size = uio->uio_offset + n;
+		size = blksize(fs, ip, lbn);
+		count = howmany(size, CLBYTES);
+		for (i = 0; i < count; i++)
+			munhash(ip->i_devvp, bn + i * CLBYTES / DEV_BSIZE);
+		if (n == fs->fs_bsize)
+			bp = getblk(ip->i_devvp, bn, size);
+		else
+			error = bread(ip->i_devvp, bn, size, NOCRED, &bp);
+		n = MIN(n, size - bp->b_resid);
+		if (error) {
+			brelse(bp);
+			break;
+		}
+		error = uiomove(bp->b_un.b_addr + on, n, uio);
+		if (ioflag & IO_SYNC)
+			(void) bwrite(bp);
+		else if (n + on == fs->fs_bsize) {
+			bp->b_flags |= B_AGE;
+			bawrite(bp);
+		} else
+			bdwrite(bp);
+		ip->i_flag |= IUPD|ICHG;
+		if (cred->cr_uid != 0)
+			ip->i_mode &= ~(ISUID|ISGID);
+	} while (error == 0 && uio->uio_resid > 0 && n != 0);
+	if (error && (ioflag & IO_UNIT)) {
+		(void) itrunc(ip, osize);
+		uio->uio_offset -= resid - uio->uio_resid;
+		uio->uio_resid = resid;
+	}
+	return (error);
+}
+
 /* ARGSUSED */
 ufs_ioctl(vp, com, data, fflag, cred)
 	struct vnode *vp;
@@ -443,7 +602,6 @@ ufs_ioctl(vp, com, data, fflag, cred)
 	struct ucred *cred;
 {
 
-	printf("ufs_ioctl called with type %d\n", vp->v_type);
 	return (ENOTTY);
 }
 
@@ -454,7 +612,6 @@ ufs_select(vp, which, cred)
 	struct ucred *cred;
 {
 
-	printf("ufs_select called with type %d\n", vp->v_type);
 	return (1);		/* XXX */
 }
 
