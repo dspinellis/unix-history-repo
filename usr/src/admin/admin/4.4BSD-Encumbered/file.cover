@@ -1,0 +1,84 @@
+.ll 3i 
+.pl 12i
+.sp 3
+.TS
+tab (+) box;
+lllll.
+Distribution Code:
+.sp 2
+.TE
+.ll 6.8i
+.sp -4
+.in 3.5i
+.TS
+tab (+);
+ll.
+New Licensee\l'.5i'+4.2 Lic. #\l'.75i'  
+.sp
+4.3 Lic. #\l'.80i'+Tahoe Lic. #\l'.6i'
+.sp
+Reno Lic. #\l'.80i'+Reno Tahoe Lic. #\l'.6i'
+.TE
+.in 0
+.sp 
+.TS
+tab (+) box expand;
+lw(1.7i)sw(1.7i)sw(1i)sw(2.4i)
+l r l l
+lsls
+lsls
+lsls
+lsls
+l
+llss.
+_
+.sp
+ NAME:+
+.sp
+_
+.sp 4p
+ Type of AT&T License:      32V \(ci\+SystemIII \(ci\++SystemV \(ci\    Release #:
+.sp 6p
+_
+.sp 4p
+ AT&T Confirmation Date:+By:
+.sp 6p
+_
+.sp 4p
+ BLA Received on:+Addendum Received on:
+.sp
+ AT&T License Received on:+$$$ Received on:
+.sp
+ Equipment List Received on:+Site Info Form Received on:
+.sp 6p
+_
+ Miscellaneous Commentary:+
+.sp 6p
+.ul
+ DATE:+REMARK:
+.sp 2
+ \l'1.5i'+\l'5i'
+.sp 2
+ \l'1.5i'+\l'5i'
+.sp 2
+ \l'1.5i'+\l'5i'
+.sp 2
+ \l'1.5i'+\l'5i'
+.sp 2
+ \l'1.5i'+\l'5i'
+.sp 2
+ \l'1.5i'+\l'5i'
+.sp 2
+ \l'1.5i'+\l'5i'
+.sp 2
+ \l'1.5i'+\l'5i'
+.sp 2
+ \l'1.5i'+\l'5i'
+.sp 2
+ \l'1.5i'+\l'5i'
+.sp 2
+ \l'1.5i'+\l'5i'
+.sp 2
+ \l'1.5i'+\l'5i'
+.sp
+.TE
