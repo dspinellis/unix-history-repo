@@ -48,10 +48,11 @@ SRCS+=	svi_confirm.c svi_ex.c svi_get.c svi_line.c svi_refresh.c \
 SRCS+=	xaw_screen.c
 
 #LDADD+=-pg
-DPADD+= ${LIBCURSES} ${LIBTERM}
-LDADD+=	 -lregex -lcurses -ltermlib -lutil
+DPADD+= ${LIBCURSES} ${LIBTERM} ${LIBUTIL}
+LDADD+=	 -lcurses -ltermlib -lutil
 SPECHDR=excmd.h options.h
 CLEANFILES+=${SPECHDR}
+DPSRCS+=${SPECHDR}
 LINKS=	${BINDIR}/vi ${BINDIR}/ex ${BINDIR}/vi ${BINDIR}/view
 
 all: vi vi.1
