@@ -4,19 +4,21 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)locc.c	7.2 (Berkeley) %G%
+ *	@(#)locc.c	7.3 (Berkeley) %G%
  */
+
+#include "libkern.h"
 
 int
 locc(mask0, cp0, size)
 	int mask0;
 	char *cp0;
-	unsigned int size;
+	u_int size;
 {
-	register unsigned char *cp, *end, mask;
+	register u_char *cp, *end, mask;
 
 	mask = mask0;
-	cp = (unsigned char *)cp0;
+	cp = (u_char *)cp0;
 	for (end = &cp[size]; cp < end && *cp != mask; ++cp);
 	return (end - cp);
 }
