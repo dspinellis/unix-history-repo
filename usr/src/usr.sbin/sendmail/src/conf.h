@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.59 (Berkeley) %G%
+ *	@(#)conf.h	8.60 (Berkeley) %G%
  */
 
 /*
@@ -795,6 +795,11 @@ struct utsname
 typedef void		(*sigfunc_t) __P((int));
 #endif
 
+/* size of syslog buffer */
+#ifndef SYSLOG_BUFSIZE
+# define SYSLOG_BUFSIZE	1024
+#endif
+
 /*
 **  Size of tobuf (deliver.c)
 **	Tweak this to match your syslog implementation.  It will have to
@@ -802,7 +807,11 @@ typedef void		(*sigfunc_t) __P((int));
 */
 
 #ifndef TOBUFSIZE
-# define TOBUFSIZE (1024 - 256)
+# if (SYSLOG_BUFSIZE) > 512
+#  define TOBUFSIZE	(SYSLOG_BUFSIZE - 256)
+# else
+#  define TOBUFSIZE	256
+# endif
 #endif
 
 /*
