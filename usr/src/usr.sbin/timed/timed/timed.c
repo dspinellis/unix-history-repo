@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)timed.c	2.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)timed.c	2.11 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -24,7 +24,7 @@ static char sccsid[] = "@(#)timed.c	2.10 (Berkeley) %G%";
 
 int id;
 int trace;
-int sock, sock_raw;
+int sock, sock_raw = -1;
 int status = 0;
 int backoff;
 int slvcount;				/* no. of slaves controlled by master */
@@ -332,13 +332,6 @@ char **argv;
 
 
 	if (Mflag) {
-		/* open raw socket used to measure time differences */
-		sock_raw = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP); 
-		if (sock_raw < 0)  {
-			syslog(LOG_ERR, "opening raw socket: %m");
-			exit (1);
-		}
-
 		/*
 		 * number (increased by 1) of slaves controlled by master: 
 		 * used in master.c, candidate.c, networkdelta.c, and 
@@ -386,6 +379,23 @@ char **argv;
 			break;
 		}
 			
+		if (status & MASTER) {
+			/* open raw socket used to measure time differences */
+			if (sock_raw == -1) {
+			    sock_raw = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP); 
+			    if (sock_raw < 0)  {
+				    syslog(LOG_ERR, "opening raw socket: %m");
+				    exit (1);
+			    }
+			}
+		} else {
+			/* sock_raw is not being used now */
+			if (sock_raw != -1) {
+			    (void)close(sock_raw);
+			    sock_raw = -1;
+			}
+		}
+
 		if (status == MASTER) 
 			master();
 		else 
