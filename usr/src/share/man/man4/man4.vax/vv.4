@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vv.4	6.1 (Berkeley) %G%
+.\"	@(#)vv.4	6.2 (Berkeley) %G%
 .\"
 .TH VV 4 ""
 .UC 5
@@ -30,11 +30,6 @@ Lost input interrupts are checked for when packets are sent out.
 If the installation is running CTL boards which use the old broadcast
 address of 0 instead of the new address of 0xff, the define OLD_BROADCAST
 should be specified in the driver.
-.PP
-If the installation has a Wirecenter, the define WIRECENTER should
-be specified in the driver.
-.BR N.B. :
-Incorrect definition of WIRECENTER can cause hardware damage.
 .PP
 The driver can use ``trailer'' encapsulation to minimize copying
 data on input and output.
@@ -68,3 +63,8 @@ an immediate
 .IR "panic: vs_olen" .
 .SH SEE ALSO
 intro(4N), inet(4F)
+.SH BUGS
+The encapsulation of trailer packets in the 4.2BSD version of this driver
+was incorrect (the packet type was in VAX byte order).
+As a result, the trailer encapsulation in this version is not compatible
+with the 4.2BSD VAX version.
