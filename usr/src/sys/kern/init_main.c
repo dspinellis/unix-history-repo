@@ -1,4 +1,4 @@
-/*	init_main.c	4.38	82/09/12	*/
+/*	init_main.c	4.39	82/10/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,7 +13,6 @@
 #include "../h/seg.h"
 #include "../h/conf.h"
 #include "../h/buf.h"
-#include "../h/mtpr.h"
 #include "../h/pte.h"
 #include "../h/vm.h"
 #include "../h/cmap.h"
@@ -24,6 +23,7 @@
 #endif
 #include "../h/quota.h"
 
+extern	struct user u;		/* have to declare it somewhere! */
 /*
  * Initialization code.
  * Called from cold start routine as
@@ -55,7 +55,7 @@ main(firstaddr)
 	 * set up system process 0 (swapper)
 	 */
 	p = &proc[0];
-	p->p_p0br = (struct pte *)mfpr(P0BR);
+	p->p_p0br = u.u_pcb.pcb_p0br;
 	p->p_szpt = 1;
 	p->p_addr = uaddr(p);
 	p->p_stat = SRUN;
@@ -153,7 +153,7 @@ main(firstaddr)
 	proc[1].p_stat = 0;
 	proc[0].p_szpt = CLSIZE;
 	if (newproc(0)) {
-		expand(clrnd((int)btoc(szicode)), P0BR);
+		expand(clrnd((int)btoc(szicode)), 0);
 		(void) swpexpand(u.u_dsize, 0, &u.u_dmap, &u.u_smap);
 		(void) copyout((caddr_t)icode, (caddr_t)0, (unsigned)szicode);
 		/*
@@ -168,7 +168,7 @@ main(firstaddr)
 	 *			pid == 3
 	 */
 	if (newproc(0)) {
-		expand(clrnd((int)btoc(szmcode)), P0BR);
+		expand(clrnd((int)btoc(szmcode)), 0);
 		(void) swpexpand(u.u_dsize, 0, &u.u_dmap, &u.u_smap);
 		(void) copyout((caddr_t)mcode, (caddr_t)0, (unsigned)szmcode);
 		/*

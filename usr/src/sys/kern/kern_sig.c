@@ -1,4 +1,4 @@
-/*	kern_sig.c	5.7	82/09/08	*/
+/*	kern_sig.c	5.8	82/10/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -7,7 +7,6 @@
 #include "../h/reg.h"
 #include "../h/inode.h"
 #include "../h/proc.h"
-#include "../h/mtpr.h"
 #include "../h/timeb.h"
 #include "../h/times.h"
 #include "../h/conf.h"
@@ -409,6 +408,7 @@ psignal(p, sig)
 		 * It will either never be noticed, or noticed very soon.
 		 */
 		if (p == u.u_procp && !noproc)
+#include "../vax/mtpr.h"
 			aston();
 		goto out;
 	}

@@ -1,4 +1,4 @@
-/*	kern_time.c	5.7	82/09/11	*/
+/*	kern_time.c	5.8	82/10/10	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"		/* XXX */
@@ -345,7 +345,7 @@ oftime()
 	(void) spl0();
 	tb.timezone = tz.tz_minuteswest;
 	tb.dstflag = tz.tz_dsttime;
-	if (copyout((caddr_t)&tb, (caddr_t)uap->tp, sizeof(t)) < 0)
+	if (copyout((caddr_t)&tb, (caddr_t)uap->tp, sizeof (tb)) < 0)
 		u.u_error = EFAULT;
 }
 
