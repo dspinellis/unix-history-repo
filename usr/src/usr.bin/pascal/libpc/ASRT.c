@@ -1,8 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)ASRT.c 1.1 %G%";
+static char sccsid[] = "@(#)ASRT.c 1.2 %G%";
 
-#include "h01errs.h"
+#define NULL 0
 
 ASRT(cond, stmt)
 
@@ -11,5 +11,11 @@ ASRT(cond, stmt)
 {
 	if (cond)
 		return;
-	ERROR(EASRT, stmt);
+	if (stmt != NULL) {
+		ERROR("Assertion failed: %s\n", stmt);
+		return;
+	} else {
+		ERROR("Assertion failed\n", 0);
+		return;
+	}
 }

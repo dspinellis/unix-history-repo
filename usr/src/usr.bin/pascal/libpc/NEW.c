@@ -1,9 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)NEW.c 1.2 %G%";
+static char sccsid[] = "@(#)NEW.c 1.3 %G%";
 
 #include "h00vars.h"
-#include "h01errs.h"
 
 NEW(var, size)
 	char	**var;	/* pointer to item being deallocated */
@@ -14,7 +13,7 @@ NEW(var, size)
 
 	memblk = malloc((int)size);
 	if (memblk == 0) {
-		ERROR(EOUTOFMEM,0);
+		ERROR("Ran out of memory\n", 0);
 		return;
 	}
 	*var = memblk;

@@ -1,9 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)RESET.c 1.3 %G%";
+static char sccsid[] = "@(#)RESET.c 1.4 %G%";
 
 #include "h00vars.h"
-#include "h01errs.h"
 
 RESET(filep, name, maxnamlen, datasize)
 
@@ -14,7 +13,7 @@ RESET(filep, name, maxnamlen, datasize)
 {
 	if (name == NULL && filep == INPUT && filep->fname[0] == '\0') {
 		if (fseek(filep->fbuf, (long)0, 0)) {
-			ERROR(ESEEK, filep->pfname);
+			PERROR("Could not reset ", filep->pfname);
 			return;
 		}
 		filep->funit &= ~(EOFF | EOLN);
@@ -28,7 +27,7 @@ RESET(filep, name, maxnamlen, datasize)
 			filep->funit |= (EOFF | SYNC | FREAD);
 			return;
 		}
-		ERROR(EOPEN, filep->pfname);
+		PERROR("Could not open ", filep->pfname);
 		return;
 	}
 	filep->funit |= (SYNC | FREAD);

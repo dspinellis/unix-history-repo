@@ -1,9 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)REMOVE.c 1.2 %G%";
+static char sccsid[] = "@(#)REMOVE.c 1.3 %G%";
 
 #include "h00vars.h"
-#include "h01errs.h"
 
 REMOVE(name, namlim)
 
@@ -22,7 +21,7 @@ REMOVE(name, namlim)
 		if (name[cnt] == '\0' || name[cnt++] == ' ')
 			break;
 	if (cnt >= NAMSIZ) {
-		ERROR(ENAMESIZE, name);
+		ERROR("%s: File name too long\n", name);
 		return;
 	}
 	maxnamlen = cnt;
@@ -36,7 +35,7 @@ REMOVE(name, namlim)
 	 * unlink the file
 	 */
 	if (unlink(namebuf)) {
-		ERROR(EREMOVE, namebuf);
+		PERROR("Could not remove ", namebuf);
 		return;
 	}
 }

@@ -1,9 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)IOSYNC.c 1.4 %G%";
+static char sccsid[] = "@(#)IOSYNC.c 1.5 %G%";
 
 #include "h00vars.h"
-#include "h01errs.h"
 
 /*
  * insure that a usable image is in the buffer window
@@ -15,14 +14,15 @@ IOSYNC(curfile)
 	char			*limit, *ptr;
 
 	if (curfile->funit & FWRITE) {
-		ERROR(EREADIT, curfile->pfname);
+		ERROR("%s: Attempt to read, but open for writing\n",
+			curfile->pfname);
 		return;
 	}
 	if ((curfile->funit & SYNC) == 0) {
 		return;
 	}
 	if (curfile->funit & EOFF) {
-		ERROR(EPASTEOF, curfile->pfname);
+		ERROR("%s: Tried to read past end of file\n", curfile->pfname);
 		return;
 	}
 	curfile->funit &= ~SYNC;
@@ -33,7 +33,7 @@ IOSYNC(curfile)
 	}
 	fread(curfile->fileptr, (int)curfile->fsize, 1, curfile->fbuf);
 	if (ferror(curfile->fbuf)) {
-		ERROR(EPASTEOF, curfile->pfname);
+		ERROR("%s: Tried to read past end of file\n", curfile->pfname);
 		return;
 	}
 	if (feof(curfile->fbuf)) {

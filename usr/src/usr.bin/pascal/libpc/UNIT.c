@@ -1,9 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)UNIT.c 1.1 %G%";
+static char sccsid[] = "@(#)UNIT.c 1.2 %G%";
 
 #include "h00vars.h"
-#include "h01errs.h"
 
 struct iorec *
 UNIT(curfile)
@@ -11,11 +10,11 @@ UNIT(curfile)
 	register struct iorec	*curfile;
 {
 	if (curfile->fblk >= MAXFILES || _actfile[curfile->fblk] != curfile) {
-		ERROR(ENOFILE, 0);
+		ERROR("Reference to an inactive file\n", 0);
 		return;
 	}
 	if (curfile->funit & FDEF) {
-		ERROR(EREFINAF, curfile->pfname);
+		ERROR("%s: Reference to an inactive file\n", curfile->pfname);
 		return;
 	}
 	return curfile;

@@ -1,9 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)TEOF.c 1.2 %G%";
+static char sccsid[] = "@(#)TEOF.c 1.3 %G%";
 
 #include "h00vars.h"
-#include "h01errs.h"
 
 bool
 TEOF(filep)
@@ -11,7 +10,7 @@ TEOF(filep)
 	register struct iorec	*filep;
 {
 	if (filep->fblk >= MAXFILES || _actfile[filep->fblk] != filep) {
-		ERROR(ENOFILE, 0);
+		ERROR("Reference to an inactive file\n", 0);
 		return;
 	}
 	if (filep->funit & EOFF)

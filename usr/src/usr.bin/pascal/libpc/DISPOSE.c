@@ -1,9 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)DISPOSE.c 1.2 %G%";
+static char sccsid[] = "@(#)DISPOSE.c 1.3 %G%";
 
 #include	"h00vars.h"
-#include	"h01errs.h"
 
 DISPOSE(var, siz)
 	register char	**var;	/* pointer to pointer being deallocated */
@@ -12,7 +11,7 @@ DISPOSE(var, siz)
 	register int size = siz;
 
 	if (*var == 0 || *var + size > _maxptr || *var < _minptr) {
-		ERROR(ENILPTR,0);
+		ERROR("Pointer value out of legal range\n", 0);
 		return;
 	}
 	free(*var);

@@ -1,9 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)PCLOSE.c 1.3 %G%";
+static char sccsid[] = "@(#)PCLOSE.c 1.4 %G%";
 
 #include "h00vars.h"
-#include "h01errs.h"
 
 PCLOSE(level)
 
@@ -21,13 +20,14 @@ PCLOSE(level)
 				}
 				fclose(next->fbuf);
 				if (ferror(next->fbuf)) {
-					ERROR(ECLOSE, next->pfname);
+					ERROR("%s: Close failed\n",
+						next->pfname);
 					return;
 				}
 			}
 			if ((next->funit & TEMP) != 0 &&
 			    unlink(next->pfname)) {
-				ERROR(EREMOVE, next->pfname);
+				PERROR("Could not remove ", next->pfname);
 				return;
 			}
 		}

@@ -1,9 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)WRITES.c 1.3 %G%";
+static char sccsid[] = "@(#)WRITES.c 1.4 %G%";
 
 #include "h00vars.h"
-#include "h01errs.h"
 
 WRITES(curfile, d1, d2, d3, d4)
 
@@ -13,12 +12,13 @@ WRITES(curfile, d1, d2, d3, d4)
 	char			*d4;
 {
 	if (curfile->funit & FREAD) {
-		ERROR(EWRITEIT, curfile->pfname);
+		ERROR("%s: Attempt to write, but open for reading\n",
+			curfile->pfname);
 		return;
 	}
 	fwrite(d1, d2, d3, d4);
 	if (ferror(curfile->fbuf)) {
-		ERROR(EWRITE, curfile->pfname);
+		PERROR("Could not write to ", curfile->pfname);
 		return;
 	}
 }
