@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)table.c	1.15 (Berkeley) %G%";
+static char *sccsid ="@(#)table.c	1.16 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -394,10 +394,16 @@ ASSIGN,	FOREFF,
 		"	insv	AR,$H,$S,AL\n",
 
 ASSIGN,	INAREG,
-	SFLD,	TANY,
+	SFLD,	ANYSIGNED,
 	SAREG|AWD,	TWORD,
 		NAREG,	RESC1,
 		"	insv	AR,$H,$S,AL\n	extv	$H,$S,AL,A1\n",
+
+ASSIGN,	INAREG,
+	SFLD,	ANYUSIGNED,
+	SAREG|AWD,	TWORD,
+		NAREG,	RESC1,
+		"	insv	AR,$H,$S,AL\n	extzv	$H,$S,AL,A1\n",
 
 ASSIGN,	INAREG|FOREFF|FORCC,
 	SAREG|AWD,	TWORD,
