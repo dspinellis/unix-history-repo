@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)misc.c	5.1 (Berkeley) %G%
+ *	@(#)misc.c	5.2 (Berkeley) %G%
  */
 
 #include <sys/types.h>
@@ -19,27 +19,31 @@ extern int lineno;
 typedef struct _key {
 	char *name;			/* key name */
 	u_int val;			/* value */
+
+#define	NEEDVALUE	0x01
+	u_int flags;
 } KEY;
 
 /* NB: the following table must be sorted lexically. */
 static KEY keylist[] = {
-	"cksum",	F_CKSUM,
-	"gid",		F_GID,
-	"gname",	F_GNAME,
-	"ignore",	F_IGN,
-	"link",		F_SLINK,
-	"mode",		F_MODE,
-	"nlink",	F_NLINK,
-	"size",		F_SIZE,
-	"time",		F_TIME,
-	"type",		F_TYPE,
-	"uid",		F_UID,
-	"uname",	F_UNAME,
+	"cksum",	F_CKSUM,	NEEDVALUE,
+	"gid",		F_GID,		NEEDVALUE,
+	"gname",	F_GNAME,	NEEDVALUE,
+	"ignore",	F_IGN,		0,
+	"link",		F_SLINK,	NEEDVALUE,
+	"mode",		F_MODE,		NEEDVALUE,
+	"nlink",	F_NLINK,	NEEDVALUE,
+	"size",		F_SIZE,		NEEDVALUE,
+	"time",		F_TIME,		NEEDVALUE,
+	"type",		F_TYPE,		NEEDVALUE,
+	"uid",		F_UID,		NEEDVALUE,
+	"uname",	F_UNAME,	NEEDVALUE,
 };
 
 u_int
-parsekey(name)
+parsekey(name, needvaluep)
 	char *name;
+	int *needvaluep;
 {
 	KEY *k, tmp;
 	int keycompare __P((const void *, const void *));
@@ -49,6 +53,9 @@ parsekey(name)
 	    sizeof(KEY), keycompare);
 	if (k == NULL)
 		err("unknown keyword %s", name);
+
+	if (needvaluep)
+		*needvaluep = k->flags & NEEDVALUE ? 1 : 0;
 	return (k->val);
 }
 
