@@ -1,4 +1,4 @@
-/*	hpmaptype.c	4.2	83/02/18	*/
+/*	hpmaptype.c	4.3	83/02/21	*/
 
 /*
  * RP??/RM?? drive type mapping routine.
