@@ -1,0 +1,1367 @@
+\input texinfo    @c -*-para-*-
+@c %**start of header
+@setfilename configure.info
+@settitle Cygnus Configure
+@c %**end of header
+@synindex ky cp
+@tex
+\def\$#1${{#1}}  % Kluge: collect RCS revision info without $...$
+\xdef\manvers{\$Revision: 1.19 $}  % For use in headers, footers too
+@end tex
+@setchapternewpage off
+
+@ifinfo
+@format
+START-INFO-DIR-ENTRY
+* configure: (configure).		Cygnus configure.
+END-INFO-DIR-ENTRY
+@end format
+@end ifinfo
+
+@ifinfo
+This document attempts to describe the Cygnus Support version of
+@code{configure}.
+
+Copyright 1991, 1992 Free Software Foundation, Inc.
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+@ignore
+Permission is granted to process this file through TeX and print the
+results, provided the printed document carries copying permission
+notice identical to this one except for the removal of this paragraph
+(this paragraph not being relevant to the printed manual).
+
+@end ignore
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by Cygnus Support.
+@end ifinfo
+
+@titlepage
+@sp 10
+@title{Cygnus Configure}
+@subtitle @manvers, for Cygnus Configure version 1.84
+@author{K. Richard Pixley, @code{rich@@cygnus.com}}
+@author{Cygnus Support}
+@page
+
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1991, 1992 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by Cygnus Support.
+@end titlepage
+
+@ifinfo
+
+@node top, What Configure Does, (dir), (dir)
+@top top
+
+This file documents the configuration system used and distributed by
+Cygnus Support.
+
+@menu
+* What Configure Does::		What Configure Does
+* Invoking::			Invoking
+* Using Configure::		Using Configure
+* Porting::			Porting with Configure
+* Reference::			Gory details described
+* Known Bugs::			Known Bugs
+* Variables Index::		Variable Index
+* Concept Index::		Concept Index
+
+ --- The Detailed Node Listing ---
+
+Using Configure
+
+* Install Locations::		Where to install things once they are built
+* Build Directories::		Where to build object files
+* Host::			Telling @code{configure} what will source will
+			  be built
+* Target::			Telling @code{configure} what the source will
+			  target
+* Local Conventions::		Adding information about local conventions
+
+Install Locations
+
+* prefix::		Changing the default install directory
+* exec_prefix::		How to separate host independent files
+			  from host dependent files when
+			  installing for multiple hosts
+* Install Details::	Full descriptions of all installation
+			  subdirectories
+
+Porting with Configure
+
+* Programs::			Adding configure to new programs
+* Hosts and Targets::		Adding hosts and targets
+* Sites::			Adding site info
+
+Gory details described
+
+* Makefile Extensions::		Extensions to the @sc{gnu} coding standards
+* configure.in::		The format of the configure.in file
+* config.status::		config.status
+* Makefile Fragments::		Makefile Fragments
+
+The format of the @file{configure.in} file
+
+* Minimal::			A minimal configure.in
+* Configure Variables::		Variables available to configure.in
+* Declarations::		For each invocation
+* Per-host::			For each host
+* Per-target::			For each target
+* Post-target::			After each target
+* Example::			An example configure.in
+@end menu
+
+@end ifinfo
+
+@node What Configure Does, Invoking, top, top
+@chapter What Configure Does
+
+@code{configure} prepares source directories for building working
+programs.  A program cannot be built until its source has been
+configured.  When configure runs, it does the following things.
+
+@table @emph
+@item Create build directories
+(see @ref{Build Directories}).  When you run @code{configure} with the
+@code{-srcdir=} option, it uses the current directory as build
+directory, creating under it a directory tree that parallels the
+directory structure under the source directory.  (See @ref{Invoking}).
+
+@item Generate makefiles
+A makefile template from the source directory, usually called
+@file{Makefile.in}, is copied to an output file in the build directory.
+The output file is usually named @file{Makefile}.  @code{configure}
+places definitions for a number of standard makefile macros at the
+beginning of the output file.  If @code{-prefix=} or @code{-exec_prefix}
+were specified on the @code{configure} command line, corresponding
+makefile variables are set accordingly.  If host, target, or site
+specific makefile fragments exist, these are inserted into the output
+file.  (See @ref{Makefiles, , , make, Makefiles}.)
+
+@item Generate @file{.gdbinit} If the source directory contains a
+@file{.gdbinit} file and the build directory is not the same as the
+source directory, a @file{.gdbinit} file is created in the build
+directory.  This @file{.gdbinit} file contains @code{dir} commands and
+a @code{source} command, which will cause the @file{.gdbinit} file from
+the source directory to be read by GDB, and will allow GDB to find
+source files in either the source directory or the build directory.
+(see @ref{Command Files, , , gdb, Command Files}.)
+
+@item Make symbolic links
+Most directories have some symbolic links with generic names built
+pointing to specific files in the source directory.  If the system where
+@code{configure} runs cannot support symbolic links, hard links are used
+instead.
+
+@item Miscellaneous
+If the source directory has special needs, they are handled by shell
+script fragments stored with the source.  Usually there are no special
+needs, but sometimes they involve changes to the output makefile.
+
+@item Generate @file{config.status}
+@code{configure} creates a shell script named @file{config.status} in
+the build directory.  This shell script, when run from the build
+directory, will reconfigure the build directory (but not its
+subdirectories).  This is most often used to have a @code{Makefile} update
+itself automatically if a new source directory is available.
+
+@item Recursion
+If the source directory has subdirectories that should also be
+configured, @code{configure} is called for each.
+@end table
+
+@node Invoking, Using Configure, What Configure Does, top
+@chapter Invoking
+
+The usual way to invoke @code{configure} is as follows:
+@example
+configure @var{host}
+@end example
+This prepares the source to be compiled in a
+@var{host} environment with programs and files to be installed in
+@file{/usr/local}.
+
+@code{configure} prepares the source as you specify by selecting and
+using script and Makefile fragments prepared in advance, and stored with
+the source.  @code{configure}'s command line options also allow you to
+specify other aspects of the source configuration:
+
+@table @code
+@item -exec_prefix=@var{dir}
+Configure the source to install host dependent files in @var{dir}.
+
+This option sets the @code{configure} variable @code{exec_prefix}.
+Generated Makefiles will have their @code{exec_prefix} variables set to
+this value. (See @ref{Install Details}.)
+
+@item -gas
+Configure to use the @sc{GNU} assembler.
+
+@item -help
+Display a quick summary of how to invoke @code{configure}.
+
+@item -host=@var{host}
+FIXME-soon: I don't think this option should be documented.
+@c Then why does it exist?  /Pesch 7jan92
+
+@item -nfp
+@emph{No floating point} unit available on the target; configure to
+avoid dependencies on hardware floating point.
+
+@item -norecursion
+Configure only this directory; ignore any subdirectories.  This is used
+by the executable shell script @file{config.status} to reconfigure the
+current directory.  (see @ref{config.status}).
+
+@item -prefix=@var{dir}
+Configure the source to install programs and files under directory
+@file{@var{dir}}.
+
+This option sets the @code{configure} variable @code{prefix}.  Generated
+Makefiles will have their @code{prefix} variables set to this value.
+(See @ref{Install Details}.)
+
+@item -program_prefix=@var{string}
+Configure the source to install certain programs using @var{string} as a
+prefix.  This applies to programs which might be used for cross-compilation,
+such as the compiler and the binutils, and also to programs which have the same
+name as a common Unix program, such as make.
+
+This option sets the @code{configure} variable @code{program_prefix}.
+Generated Makefiles will have their @code{program_prefix} variables set to this
+value.  (See @ref{Install Details}.)
+
+@item -program_suffix=@var{string}
+Configure the source to install certain programs using @var{string} as a
+suffix.  This applies to programs which might be used for cross-compilation.
+
+@item -program_transform_name=@var{sed-pattern}
+Configure the source to install certain programs using the names that result
+from passing the usual name through @code{sed} invoked with @var{sed-pattern}.
+This option may be given multiple times; each @var{sed-pattern} will be applied
+in turn.  This applies to programs which might be used for cross-compilation.
+
+This option sets the @code{configure} variable @code{program_transform_name}.
+Generated Makefiles will have their @code{program_transform_name} variables set
+to this value.  (See @ref{Install Details}.)
+
+@item -recurring
+@c Wouldn't it make more sense to call this "-quiet"? (FIXME).
+This option is used internally by @code{configure} when recurring on
+subdirectories.  Its sole purpose is to suppress status output.  You can
+override this effect with the @code{-verbose} option.
+
+@item -rm
+@emph{Remove} the configuration specified by @var{host} and the other
+command-line options, rather than creating it.
+
+@item -site=@var{site}
+Generate Makefiles using site specific Makefile fragments for
+@var{site}.  See also @ref{Sites}.
+
+@item -srcdir=@var{_dir}
+Build Makefiles to use the sources located in directory @file{@var{dir}}.  The
+build directory is assumed to be @file{.}.
+
+@item -target=@var{target}
+Requests that the sources be configured to target the @var{target}
+machine.  If no target is specified explicitly, the target is assumed
+to be the same as the host.  
+
+@item -tmpdir=@var{tmpdir}
+Use the directory @var{tmpdir} for @code{configure}'s temporary files.
+The default is the value of the environment variable TMPDIR, or
+@file{/tmp} if the environment variable is not set.
+
+@item -verbose
+@itemx -v
+Print status lines for each directory configured.  Normally, only the
+status lines for the initial working directory are printed.
+
+@item -x
+Use @sc{MIT} style @sc{X11} header files and libraries on the host, even
+if they are not normally available.
+@end table
+
+@node Using Configure, Porting, Invoking, top
+@chapter Using Configure
+
+The choices and options available at configuration time
+generally have valid defaults, but the defaults do not cover all cases.
+The choices available include install locations, build directories,
+host, target, and local conventions.
+
+@menu
+* Install Locations::		Where to install things once they are built
+* Build Directories::		Where to build object files
+* Host::			Telling @code{configure} what will source will
+			  be built
+* Target::			Telling @code{configure} what the source will
+			  target
+* Local Conventions::		Adding information about local conventions
+@end menu
+
+@node Install Locations, Build Directories, Using Configure, Using Configure
+@section Install Locations
+@cindex Where to install
+
+Using the default configuration, @code{make install} creates a
+single tree of files, some of which are programs.  The location of this
+tree is determined by the value of the variable @code{prefix}.  The
+default value of @code{prefix} is @file{/usr/local}.  This is
+often correct for native tools installed on only one host.
+
+@menu
+* prefix::		Changing the default install directory
+* exec_prefix::		How to separate host independent files
+			  from host dependent files when
+			  installing for multiple hosts
+* Install Details::	Full descriptions of all installation
+			  subdirectories
+@end menu
+
+@node prefix, exec_prefix, Install Locations, Install Locations
+@subsection Changing the default install directory
+@cindex Changing the default install directory
+@cindex Prefix directory
+
+In the default configuration, all files are installed in subdirectories
+of @file{/usr/local}.  The location is determined by the value of
+the @code{configure} variable @code{prefix}; in turn, this determines the
+value of the Makefile variable of the same name (@code{prefix}).
+
+You can also set the value of the Makefile variable @code{prefix}
+explicitly each time you invoke @code{make} if you are so inclined; but
+because many programs have this location compiled in, you must specify
+the @code{prefix} value consistently on each invocation of @code{make},
+or you will end up with a broken installation.
+
+To make this easier, the value of the @code{configure} variable
+@code{prefix} can be set on the command line to @code{configure}
+using the option @code{-prefix=}.  
+
+
+@node exec_prefix, Install Details, prefix, Install Locations
+@subsection Installing for multiple hosts
+@cindex Configuring for multiple hosts
+@cindex Sharing host independent files
+@cindex The @file{exec_prefix} directory
+@cindex Installing host independent files
+
+By default, host dependent files are installed in subdirectories of
+@file{@var{exec_prefix}}.  The location is determined by the value of the
+@code{configure} variable @code{exec_prefix}, which determines the value of
+the Makefile variable @code{exec_prefix}.  This makes it simpler to install
+for a single host, and simplifies changing the default location for the
+install tree; but the default doesn't allow for multiple hosts to
+effectively share host independent files.
+
+To configure so that multiple hosts can share common files, use
+something like:
+
+@example
+configure @var{host1} -prefix=/usr/gnu -exec_prefix=/usr/gnu/H-host1
+make all info install install-info clean
+
+configure @var{host2} -prefix=/usr/gnu -exec_prefix=/usr/gnu/H-host2
+make all info install install-info
+@end example
+
+The first line configures the source for @var{host1} to place host
+specific programs in subdirectories of @file{/usr/gnu/H-@var{host1}}.  
+
+The second line builds and installs all programs for @var{host1},
+including both host independent and host specific files.
+
+The third line reconfigures the source for @var{host2} to place host
+specific programs in subdirectories of @file{/usr/gnu/H-@var{host2}}.
+
+The fourth line builds and installs all programs for @var{host2}.  Host
+specific files are installed in new directories, but the host
+independent files are installed @emph{on top of} the host
+independent files installed for @var{host1}.  This results in a single
+copy of the host independent files, suitable for use by both hosts.
+
+@node Install Details,  , exec_prefix, Install Locations
+@subsection Full descriptions of all installation subdirectories
+
+During any install, a number of standard directories are created.  Their
+names are determined by Makefile variables.  Some of the
+defaults for Makefile variables can be changed at configure time using
+command line options to @code{configure}.  For more information on the
+standard directories or the Makefile variables, please refer to
+@cite{standards.text}.
+
+Note that @code{configure} does not create the directory @code{srcdir}
+at any time.  @code{srcdir} is not an installation directory.
+
+You can override all makefile variables on the command line to
+@code{make}.  (See @ref{Overriding, Overriding Variables, Overriding
+Variables, make, Make}.)  If you do so, you will need to specify the
+value precisely the same way for each invocation of @code{make}, or you
+risk ending up with a broken installation.  This is because many
+programs have the locations of other programs or files compiled into
+them.  If you find yourself overriding any of the variables frequently,
+you should consider site dependent Makefile fragments.  See also
+@ref{Sites}.
+
+During @code{make install}, a number of standard directories are
+created and populated.  The following Makefile variables define them.
+Those whose defaults are set by corresponding @code{configure} variables
+are marked ``Makefile and configure''.
+
+@vindex prefix
+@defvr {Makefile and configure} prefix
+The root of the installation tree.  You can set
+its Makefile default with the @code{-prefix=} command line option to
+@code{configure}.  (@ref{Invoking}.)  The default value for
+@code{prefix} is @file{/usr/local}.
+@end defvr
+
+@vindex bindir
+@defvr Makefile bindir
+A directory for binary programs that users can run.
+The default value for @code{bindir} depends on @code{prefix};
+@code{bindir} is normally changed only indirectly through @code{prefix}.
+The default value for @code{bindir} is @file{$(prefix)/bin}.
+@end defvr
+
+@vindex exec_prefix
+@defvr {Makefile and configure} exec_prefix
+A directory for host dependent files.  You can specify the Makefile
+default value by using the @code{-exec_prefix=} option to @code{configure}.
+(See also @ref{Invoking}.)  The default value for @code{exec_prefix} is
+@file{$(prefix)}.
+@end defvr
+
+@vindex libdir
+@defvr Makefile libdir
+A directory for libraries and support programs.  The default value for
+@code{libdir} depends on @code{prefix}; @code{libdir} is normally
+changed only indirectly through @code{prefix}.  The default value for
+@code{libdir} is @file{$(prefix)/lib}.
+@end defvr
+
+@vindex mandir
+@defvr Makefile mandir
+A directory for @code{man} format documentation (``man pages'').  The
+default value for @code{mandir} depends on @code{prefix};
+@code{mandir} is normally changed only indirectly through @code{prefix}.
+The default value for @code{mandir} is @file{$(prefix)/man}.
+@end defvr
+
+@vindex man@var{N}dir
+@defvr Makefile man@var{N}dir
+There are eight variables named @code{man1dir}, @code{man2dir}, etc.
+They name the specific directories for each man page section.  For
+example, @code{man1dir} holds @file{emacs.1} (the man page for the emacs
+program), while @code{man5dir} holds @file{rcsfile.5} (the man page
+describing the @code{rcs} data file format).  The default value for any
+of the @code{man@var{N}dir} variables depends indirectly on
+@code{prefix}, and is normally changed only through @code{prefix}.  The
+default value for @code{man@var{N}dir} is
+@file{$(mandir)/man@var{N}}.
+@end defvr
+
+@vindex manext
+@defvr Makefile manext
+@emph{Not supported by @code{configure}}.  The @sc{gnu} coding standards
+do not call for @code{man1ext}, @code{man2ext}, so the intended use for
+@code{manext} is apparently not parallel to @code{mandir}.  Its use is
+not clear.  (See also @ref{Makefile Extensions}.)
+@end defvr
+
+@vindex infodir
+@defvr Makefile infodir
+A directory for @emph{info} format documentation.  The default value for
+@code{infodir} depends indirectly on @code{prefix}; @code{infodir} is
+normally changed only through @code{prefix}.  The default value for
+@code{infodir} is @file{$(prefix)/info}.
+@end defvr
+
+@vindex docdir
+@defvr Makefile docdir
+A directory for any documentation that is in a format other than those
+used by @code{info} or @code{man}.  The default value for @code{docdir}
+depends indirectly on @code{prefix}; @code{docdir} is normally changed only
+through @code{prefix}.  The default value for @code{docdir}
+is @file{$(datadir)/doc}.  @emph{This variable is an extension to
+the @sc{gnu} coding standards}.  (See also @ref{Makefile Extensions}.)
+@end defvr
+
+@vindex includedir
+@defvr Makefile includedir
+A directory for the header files accompanying the libraries installed in
+@code{libdir}.  The default value for @code{includedir} depends on
+@code{prefix}; @code{includedir} is normally changed only indirectly
+through @code{prefix}.  The default value for @code{includedir} is
+@file{$(prefix)/include}.
+@end defvr
+
+@node Build Directories, Host, Install Locations, Using Configure
+@section Build Directories
+@cindex Build directories
+@kindex objdir
+@cindex Object directories
+@kindex subdirs
+@cindex Building for multiple hosts
+@cindex Building for multiple targets
+
+Normally, @code{configure} builds a @file{Makefile} and symbolic links
+in the same directory as the source files.  This is the typical
+@sc{un*x} way to build programs, but it has limitations.  For instance,
+using this approach, you can only build for one host at a time.
+
+We refer to the directories where @code{configure} builds a
+Makefile as the @emph{build directories} or sometimes as
+@emph{objdir} because these are the directories in which @code{make}
+will build object files, among other things.
+
+The default build directory is the same as the source directory.
+You can use a different build directory with a sequence like the following:
+
+@example
+mkdir @var{builddir}
+cd @var{builddir}
+configure @var{host} -srcdir=@var{sourcedirectory}
+@end example
+
+@noindent
+where @var{builddir} is the directory where you wish to build,
+@var{host} is the host for which you want to build, and
+@var{sourcedirectory} is the directory containing the source files.
+
+If you were to do this twice with different values for @var{builddir}
+and @var{host}, then you could @code{make} for both at the same time.
+
+@node Host, Target, Build Directories, Using Configure
+@section Host
+
+The arguments to @code{configure} are @emph{hosts}.  By @emph{host} we
+mean the environment in which the source will be compiled.  This need
+not necessarily be the same as the  physical machine involved,
+although it usually is.
+
+For example, if some obscure machine running an operating system other
+than @sc{un*x}  had the @sc{gnu} @sc{posix} emulation libraries
+available, it would be possible to configure most @sc{gnu} source for a
+@sc{posix} system and build it on the obscure host.
+
+For more on this topic, see @ref{Host Environments, , Host Environments,
+cfg-paper, On Configuring Development Tools}.
+
+@node Target, Local Conventions, Host, Using Configure
+@section Target
+
+For building native development tools, or most of the other @sc{gnu}
+tools, you need not worry about the target.  The @emph{target} of a
+configuration defaults to the same as the @emph{host}.
+
+For building cross development tools, please see @ref{Building
+Development Environments, , Building Development Environments,
+cfg-paper, On Configuring Development Tools}.
+
+@node Local Conventions,  , Target, Using Configure
+@section Local Conventions
+
+If you find that a tool does not get configured to your liking, or if
+@code{configure}'s conventions differ from your local conventions, you
+should probably consider site specific Makefile fragments.  See also
+@ref{Sites}.
+
+These are probably not the right choice for options that can be set from
+the @code{configure} command line or for differences that are host or
+target dependent.
+
+@node Porting, Reference, Using Configure, top
+@chapter Porting with Configure
+@cindex Porting
+
+This section explains how to add programs, host and target configuration
+names, and site-specific information to Cygnus configure.
+
+@menu
+* Programs::			Adding configure to new programs
+* Hosts and Targets::		Adding hosts and targets
+* Sites::			Adding site info
+@end menu
+
+
+@node Programs, Hosts and Targets, Porting, Porting
+@section Adding Configure To New Programs
+
+If you are writing a new program, you probably shouldn't worry about
+porting issues or configure until it is running reasonably on some host.
+Then refer back to this section.
+
+If the program in question currently has a configure script that meets
+the criteria set out by @cite{standards.text}, please do not add Cygnus
+configure.  It should be possible to add this program without change to
+a Cygnus configure style source tree.
+
+If the program is not target dependent, please consider using
+@code{autoconf} instead of Cygnus configure.  @code{autoconf} will
+be available soon from the @sc{fsf}.
+
+To add Cygnus configure to an existing program, do the following:
+
+@table @asis
+@item Make sure the Makefile conforms to @sc{gnu} standard
+The coding standard for @sc{gnu} Makefiles is described in
+@cite{standards.text}.
+
+@item Add Cygnus extensions to the Makefile
+These are described in @ref{Makefile Extensions}.
+
+@item Move host support from Makefile to fragments
+This usually involves finding sections of the Makefile that say things
+like ``uncomment these lines for host foo'' and moving them to a new
+file called @file{./config/mh-foo}. For more information, see @ref{Hosts
+and Targets}.
+
+@item Choose defaults
+If the program has compile time options that determine the way the
+program should behave, chose reasonable defaults and make these Makefile
+variables.  Be sure the variables are assigned their default values
+before the @code{####} line so that site specific Makefile fragments can
+override them (@pxref{Makefile Extensions,,Extensions to the @sc{gnu}
+coding standards}).
+
+@item Locate configuration files
+If there is configuration information in header files or source files,
+separate it in such a way that the files have a generic name.  Then move
+the specific instances of those files into the @file{./config}
+directory.
+
+@item Separate host and target information
+Some programs already have this information separated.  If yours does
+not, you will need to separate these two kinds of configuration
+information.  @dfn{Host specific} information is the information needed to
+compile the program.  @dfn{Target specific} information is information on the
+format of data files that the program will read or write.  This
+information should live in separate files in the @file{./config}
+directory with names that reflect the configuration for which they are
+intended.
+
+At this point you might skip this step and simply move on.  If you do,
+you should end up with a program that can be configured only to build
+native tools, that is, tools for which the host system is also the
+target system.  Later, you could attempt to build a cross tool and
+separate out the target specific information by figuring out what went
+wrong.  This is often simpler than combing through all of the source
+code.
+
+@item Write @code{configure.in}
+Usually this involves writing shell script fragments to map from
+canonical configuration names into the names of the configuration files.
+These files will then be linked at configure time from the specific
+instances of those files in @file{./config} to file in the build
+directory with more generic names.  (see also @ref{Build Directories}).
+The format of configure.in is described in @ref{configure.in}.
+
+@item Rename @file{Makefile} to @file{Makefile.in}
+@end table
+
+At this point you should have a program that can be configured using
+Cygnus @code{configure}.
+
+@node Hosts and Targets, Sites, Programs, Porting
+@section Adding hosts and targets
+
+To add a host or target to a program that already uses Cygnus
+configure, do the following.
+
+@itemize @bullet
+
+@item
+Make sure the new configuration name is represented in
+@file{config.sub}.  If not, add it.  For more details, see the comments
+in the shell script @file{config.sub}.
+
+@item
+If you are adding a host configuration, look in @file{configure.in}, in
+the per-host section.  Make sure that your configuration name is
+represented in the mapping from host configuration names to
+configuration files.  If not, add it.  Also see @ref{configure.in}.
+
+@item
+If you are adding a target configuration, look in @file{configure.in},
+in the per-target section.  Make sure that your configuration name is
+represented in the mapping from target configuration names to
+configuration files.  If not, add it.  Also see @ref{configure.in}.
+
+@item
+Look in @file{configure.in} for the variables @samp{files},
+@samp{links}, @samp{host_makefile_frag}, and
+@samp{target_makefile_frag}.  The values assigned to these variables are
+the names of the configuration files, relative to @code{srcdir} that the
+program uses.  Make sure that copies of the files exist for your host.
+If not, create them.  See also @ref{Configure Variables}.
+@end itemize
+
+This should be enough to configure for a new host or target
+configuration name.  Getting the program to compile and run properly
+remains the hard work of the port.
+
+@node Sites,  , Hosts and Targets, Porting
+@section Adding site info
+
+If some of the Makefile defaults are not right for your site, you can
+build site specific Makefile fragments.  To do this, do the following.
+
+@itemize @bullet
+
+@item
+Choose a name for your site.  It must be less than eleven characters for
+now.
+
+@item
+If the program source does not have a @file{./config} directory, create it.
+
+@item
+Create a file called @file{./config/ms-@var{site}} where @var{site} is
+the name of your site.  In it, set whatever Makefile variables you need
+to override to match your site's conventions.
+
+@item
+Configure the program with:
+
+@example
+configure @dots{} +site=@var{site}
+@end example
+
+@end itemize
+
+@node Reference, Known Bugs, Porting, top
+@chapter Gory details described
+
+@cindex Backends
+Here we describe the backend support.
+
+@menu
+* Makefile Extensions::		Extensions to the @sc{gnu} coding standards
+* configure.in::		The format of the configure.in file
+* config.status::		config.status
+* Makefile Fragments::		Makefile Fragments
+@end menu
+
+@node Makefile Extensions, configure.in, Reference, Reference
+@section Extensions to the @sc{gnu} coding standards
+
+@cindex Makefile extensions
+@cindex Cygnus extensions
+
+The following additions to the @sc{gnu} coding standards are required
+for Cygnus configure to work properly.
+
+@itemize @bullet
+@item
+The Makefile must contain exactly one line starting with @code{####}.
+This line should follow any default macro definitions but precede any
+rules.  Host, target, and site specific Makefile fragments will be
+inserted immediately after this line.  If the line is missing, the
+fragments will not be inserted.
+@end itemize
+
+Cygnus adds the following targets to our Makefiles.  Their existence is
+not required for Cygnus configure, but they are documented here for
+completeness.
+
+@table @code
+@kindex info
+@item info
+Build all info files from texinfo source.
+
+@kindex install-info
+@item install-info
+Install all info files.
+
+@kindex clean-info
+@item clean-info
+Remove all info files and any intermediate files that can be generated
+from texinfo source.
+
+@kindex stage1
+@item stage1
+@kindex stage2
+@itemx stage2
+@kindex stage3
+@itemx stage3
+@kindex stage4
+@itemx stage4
+@kindex de-stage1
+@itemx de-stage1
+@kindex de-stage2
+@itemx de-stage2
+@kindex de-stage3
+@itemx de-stage3
+@kindex de-stage4
+@itemx de-stage4
+@kindex bootstrap
+@itemx bootstrap
+@kindex comparison
+@itemx comparison
+@kindex Makefile
+@itemx Makefile
+These targets are in transition and may be removed shortly.
+@end table
+
+In addition, the following Makefile targets have revised semantics:
+
+@table @code
+@kindex install
+@item install
+Should @emph{not} depend on the target @code{all}.  If the program is
+not already built, @code{make install} should fail.  This allows you
+to install programs even when @code{make} would otherwise determine
+them to be out of date.  This can happen when the result of a @code{make
+all} is transported via tape to another machine for installation as
+well as in a number of other cases.
+
+@kindex clean
+@item clean
+Should remove any file that can be regenerated by the Makefile,
+excepting only the Makefile itself, and any links created by configure.
+That is, @code{make all clean} should return all directories to their
+original condition.  If this is not done, then:
+
+@example
+configure @var{host1} ; make all clean ; configure @var{host2} ; make all
+@end example
+
+@noindent
+will fail because of intermediate files intended for @var{host1}.
+@end table
+
+Cygnus adds the following macros to all @file{Makefile.in} files, but
+you are not required to use them to run Cygnus configure.
+
+@table @code
+@kindex docdir
+@item docdir
+The directory in which to install any documentation that is not either a
+man page or an info file.  For man pages, see mandir, for info, see
+infodir.
+
+@kindex includedir
+@item includedir
+The directory in which to install any headers files that should be made
+available to users.  This is distinct from the @code{gcc} include
+directory which is intended for @code{gcc} only.  Files in
+@code{includedir} may be used by @code{cc} as well.
+@end table
+
+In addition, the following macros have revised semantics.  Most of them
+describe installation directories; see also @ref{Install Details,,Full
+description of all installation subdirectories}.
+
+@table @code
+
+@kindex manext
+@item manext
+is not used.  The intended usage is not clear.  For example, if you have a
+@file{foo.man} and a @file{bar.man}, and @file{foo.man} is destined for
+@file{/usr/local/lib/man/man1/foo.1} while @file{bar.man} is destined
+for @file{/usr/local/lib/man/man5/bar.5}, then what is the desired value
+of @code{manext}?
+
+@kindex datadir
+@item datadir
+is used for host independent data files.
+
+@kindex mandir
+@item mandir
+The default path for @code{mandir} depends on @code{prefix}.
+
+@kindex infodir
+@item infodir
+The default path for @code{infodir} depends on @code{prefix}.
+
+@kindex BISON
+@item BISON
+is assumed to have a @code{yacc} calling convention.  To  use
+@code{bison}, use @code{BISON=bison -y}.
+@end table
+
+Cygnus Makefiles also conform to one additional restriction:
+
+@itemize @bullet
+@item
+When libraries are installed, the line containing the call to
+@code{INSTALL_DATA} should always be followed by a line containing a
+call to @code{RANLIB} on the installed library.  This is to accomodate
+systems that use @code{ranlib}.  Systems that do not use @code{ranlib}
+can set @code{RANLIB} to @code{echo} in a host specific Makefile
+fragment.
+@end itemize
+
+@node configure.in, config.status, Makefile Extensions, Reference
+@section The format of the @file{configure.in} file
+@kindex configure.in
+
+A @file{configure.in} file for Cygnus configure consists of a
+@dfn{per-invocation} section, followed by a @dfn{per-host} section,
+followed by a @dfn{per-target} section, optionally followed by a
+@dfn{post-target} section.  Each section is a shell script fragment,
+which is sourced by the configure shell script at an appropriate time.
+Values are passed among configure and the shell fragments through a
+set of shell variables.  When each section is being interpreted
+(sourced) by the shell, the shell's current directory is the build
+directory, and any files created by the section (or referred to by the
+section) will be relative to the build directory.  To reference files
+in other places (such as the source directory), prepend a shell
+variable such as @code{srcdir} to the desired file name.
+
+@cindex Per-invocation section
+The beginning of the @file{configure.in} file begins the per-invocation
+section.
+
+@cindex Per-host section
+A line beginning with @code{# Per-host:} begins the per-host section.
+
+@cindex Per-target section
+A line beginning with @code{# Per-target:} begins the per-target
+section.
+
+@cindex Post-target section
+If it exists, the post-target section begins with @code{# Per-target:}.
+
+@menu
+* Minimal::			A minimal configure.in
+* Configure Variables::		Variables available to configure.in
+* Declarations::		For each invocation
+* Per-host::			For each host
+* Per-target::			For each target
+* Post-target::			After each target
+* Example::			An example configure.in
+@end menu
+
+@node Minimal, Configure Variables, configure.in, configure.in
+@subsection A minimal @file{configure.in}
+
+@cindex Minimal @file{configure.in} example
+A minimal @file{configure.in} consists of four lines.
+
+@example
+srctrigger=foo.c
+srcname="source for the foo program"
+# Per-host:
+# Per-target:
+@end example
+
+The @samp{Per-host} and @samp{Per-target} lines divide the file into the
+three required sections.  The @samp{srctrigger} line names a file.
+@code{configure} checks to see that this file exists in the source
+directory before configuring.  If the @samp{srctrigger} file does not
+exist, @code{configure} uses the value of @samp{srcname} to print an
+error message about not finding the source.
+
+This particular example uses no links, and only the default host,
+target, and site specific Makefile fragments if they exist.
+
+@node Configure Variables, Declarations, Minimal, configure.in
+@subsection Variables available to configure.in
+
+@cindex @file{configure.in} interface
+
+The following variables pass information between the standard parts of
+@code{configure} and the shell-script fragments in @file{configure.in}:
+
+@defvar{srctrigger}
+Contains the name of a source file that is expected to live in the
+source directory.  You must usually set this in the per-invocation
+section of @file{configure.in}.  Configure tests to see that this file
+exists.  If the file does not exist, configure prints an error message.
+This is used as a sanity check that configure.in matches the source
+directory.
+@end defvar
+
+@defvar{srcname}
+Contains the name of the source collection contained in the source
+directory.  You must usually set this in the per-invocation section of
+@file{configure.in}.  If the file named in @code{srctrigger} does not
+exist, configure uses the value of this variable when it prints the
+error message.
+@end defvar
+
+@defvar{configdirs}
+Contains the names of any subdirectories where @code{configure} should
+recur.  You must usually set this in the per-invocation section of
+@file{configure.in}.
+If @file{Makefile.in} contains a line starting with @code{SUBDIRS =},
+then it will be replaced with an assignment to @code{SUBDIRS} using
+the value of @code{configdirs} (if @code{subdirs} is empty).  This can
+be used to determine which directories to configure and build depending
+on the host and target configurations.
+@c Most other matching makefile/config vars use the same name.  Why not
+@c this? (FIXME).
+@c Can we get rid of SUBDIRS-substitution?  It doesn't work well with subdirs.
+Use @code{configdirs} (instead of the @code{subdirs} variable
+described below) if you want to be able to partition the
+sub-directories, or use independent Makefile fragments.
+Each sub-directory can be independent, and independently re-configured.
+@end defvar
+
+@defvar{subdirs}
+Contains the names of any subdirectories where @code{configure} should
+create a @code{Makefile} (in addition to the current directory),
+@emph{without} recursively running @code{configure}.
+Use @code{subdirs} (instead of the @code{configdirs} variable
+described above) if you want to configure all of the directories
+as a unit.  Since there is a single invocation of @code{configure}
+that configures many directories, all the directories can use the
+same Makefile fragments, and the same @code{configure.in}.
+@end defvar
+
+@defvar{host}
+Contains the full configuration name (generated by the script
+@file{config.sub} from the name that the user entered) for the host.
+This is a three-part name of the form 
+
+@example
+@var{cpu}-@var{vendor}-@var{os}
+@end example
+
+@noindent
+There are separate variables @code{host_cpu}, @code{host_vendor}, and
+@code{host_os} that you can use to test each of the three parts; this
+variable is useful, however, for error messages, and for testing
+combinations of the three components.
+@end defvar
+
+@defvar{host_cpu}
+Contains the first element of the canonical triple representing the host
+as returned by @file{config.sub}.  This is occasionally used to
+distinguish between minor variations of a particular vendor's operating
+system and sometimes to determine variations in binary format between
+the host and the target.
+@end defvar
+
+@defvar{host_vendor}
+Contains the second element of the canonical triple representing the
+host as returned by @file{config.sub}.  This is usually used to
+distinguish betwen the numerous variations between @emph{common}
+operating systems.
+@c "@emph{common} OS" doesn't convey much to me.  Is this meant to cover 
+@c cases like Unix, widespread but with many variations?
+@end defvar
+
+@defvar{host_os}
+Contains the the third element of the canonical triple representing the
+host as returned by @file{config.sub}.
+@end defvar
+
+@defvar{target}
+Contains the full configuration name (generated by the script
+@file{config.sub} from the name that the user entered) for the target.
+This is a three-part name of the form 
+
+@example
+@var{cpu}-@var{vendor}-@var{os}
+@end example
+
+@noindent
+There are separate variables @code{target_cpu}, @code{target_vendor}, and
+@code{target_os} that you can use to test each of the three parts; this
+variable is useful, however, for error messages, and for testing
+combinations of the three components.
+@end defvar
+
+@defvar{target_cpu}
+Contains the first element of the canonical triple representing the
+target as returned by @file{config.sub}.  This is used heavily by
+programs involved in building programs, like the compiler, assembler,
+linker, etc.  Most programs will not need the @code{target} variables at
+all, but this one could conceivably be used to build a program, for
+instance, that operated on binary data files whose byte order or
+alignment differ from the system where the program is running.
+@end defvar
+
+@defvar{target_vendor}
+Contains the second element of the canonical triple representing the
+target as returned by @file{config.sub}.  This is usually used to
+distinguish betwen the numerous variations between @emph{common}
+operating systems or object file formats.  Sometimes it is used to
+switch between different flavors of user interfaces.
+@c above query re "@emph{common} OS" applies here too
+@end defvar
+
+@defvar{target_os}
+Contains the the third element of the canonical triple representing the
+target as returned by @file{config.sub}.  This variable is used by
+development tools to distinguish between subtle variations in object
+file formats that some vendors use across operating system releases.  It
+might also be use to decide which libraries to build or what user
+interface the tool should provide.
+@end defvar
+
+@defvar{floating_point}
+Is set to @code{no} if the user invoked configure with the @code{-nfp}
+command line option, otherwise it is empty.  This is a request to target
+machines with @emph{no floating point} unit, even if the targets
+ordinarily have floating point units available.  This option has no
+negation.
+@end defvar
+
+@defvar{gas}
+Is set to @code{true} if the user invoked configure with the @code{-gas}
+command line option, otherwise it is empty.  This is a request to assume
+that all target machines have @sc{gas} available even if they ordinarily do
+not.  The converse option @samp{-no-gas} is not available.
+@end defvar
+
+@defvar{x}
+Is set to @code{true} if the user invoked configure with the @code{-x}
+command line option, otherwise it is empty.  This is a request to assume
+that @sc{mit x11} compatible headers files and libraries are available
+on all hosts, regardless of what is normally available on them.
+@end defvar
+
+@defvar{srcdir}
+Is set to the name of the directory containing the source for this
+program.  This will be different from @file{.} if the user has specified
+the @code{-srcdir=} option.  Note that @code{srcdir} is not necessarily
+an absolute path.
+@end defvar
+
+@defvar{host_makefile_frag}
+If set by @file{configure.in}, this variable should be the name a file,
+relative to @code{srcdir} to be included in the resulting Makefile.  If
+the named file does not exist, @code{configure} will print a warning
+message.  This variable is not set by @code{configure}.
+@end defvar
+
+@defvar{target_makefile_frag}
+If set by @file{configure.in}, this variable should be the name of a
+file, relative to @code{srcdir}, to be included in the resulting
+Makefile.  If the named file does not exist, @code{configure} will print
+a warning message.  This variable is not set by @code{configure}.
+@end defvar
+
+@defvar{site_makefile_frag} 
+Is set to a file name representing to the default Makefile fragment for
+this host.  It may be set in @file{configure.in} to override this
+default.  Normally @code{site_makefile_frag} is empty, but will have a
+value if the user specified @code{-site=} on the command line.  It is
+probably not a good idea to override this variable from
+@file{configure.in}, since that may defeat the @code{configure} user's
+intentions. 
+@end defvar
+
+@defvar{Makefile}
+Is set to the name of the generated @file{Makefile}.  Normally this
+value is precisely @file{Makefile} but some programs may want something
+else.
+@end defvar
+
+@defvar{removing}
+Is normally empty but will be set to some non-empty value if the user
+specified @code{-rm} on the command line.  That is, if @code{removing}
+is non-empty, then configure is @emph{removing} a configuration rather
+than creating one.
+@end defvar
+
+@defvar{files}
+If this variable is non-empty following the @code{per-target:} section,
+then each word in its value will be the target of a symbolic link named
+in the corresponding word from the @code{links} variable.
+@end defvar
+
+@defvar{links}
+If the @code{files} variable is non-empty following the
+@code{per-target:} section, then @code{configure} creates symbolic links
+with the first word of @code{links} pointing to the first word of
+@code{files}, the second word of @code{links} pointing to the second
+word of @code{files}, and so on.
+@end defvar
+
+@node Declarations, Per-host, Configure Variables, configure.in
+@subsection For each invocation
+
+@cindex Declarations section
+
+@code{configure} sources the entire shell script fragment from the start
+of @file{configure.in} up to a line beginning with @samp{# Per-host:}
+immediately after parsing command line arguments.  The variables
+@code{srctrigger} and @code{srcname} @emph{must} be set here.
+
+You might also want to set the variable @code{configdirs} here.
+
+@node Per-host, Per-target, Declarations, configure.in
+@subsection For each host
+@cindex per-host section
+@cindex host shell-script fragment
+
+The per-host section of @file{configure.in} starts with the line that begins
+with @samp{# Per-host:} and ends before a line beginning with 
+@samp{# Per-target:}.  @code{configure} sources the per-host section once for
+each host.
+
+This section usually contains a big case statement using the variables
+@samp{host_cpu}, @samp{host_vendor}, and @samp{host_os} to determine
+appropriate values for @samp{host_makefile_frag} and @samp{files},
+although @samp{files} is not usually set here.  Usually, it is set
+at the end of the per-target section after determining the names of the
+target specific configuration files.
+
+@node Per-target, Post-target, Per-host, configure.in
+@subsection For each target
+@cindex per-target section
+@cindex target shell-script fragment
+
+The per-target section of @file{configure.in} starts with the line that
+begins with @samp{# Per-target:} and ends before the line that begins
+with @samp{# Post-target:}, if there is such a line.  Otherwise the
+per-target section extends to the end of the file.  @code{configure} sources
+the per-target section once for each target before building any files,
+directories, or links.
+
+This section usually contains a big case statement using the variables called
+@samp{target_cpu}, @samp{target_vendor}, and @samp{target_os} to determine
+appropriate values for @samp{target_makefile_frag} and @samp{files}.
+The last lines in the per-target section normally set the variables
+@code{files} and @code{links}.
+
+@node Post-target, Example, Per-target, configure.in
+@subsection After each target
+
+The post-target section is optional.  If it exists, the post-target
+section starts with a line beginning with @code{# Post-target:} and
+extends to the end of the file.  If it exists, @code{configure} sources this
+section once for each target after building all files, directories, or
+links.
+
+This section is seldom needed, but you can use it to edit the Makefile
+generated by @code{configure}.
+
+@node Example,  , Post-target, configure.in
+@subsection An example @file{configure.in}
+@cindex example @file{configure.in}
+@cindex sample @file{configure.in}
+@cindex Bison @file{configure.in}
+
+Here is a small example of a @file{configure.in} file.
+
+@example
+# This file is a collection of shell script fragments used to tailor
+# a template configure script as appropriate for this directory.  
+# For more information, see configure.texi.
+
+configdirs=
+srctrigger=warshall.c
+srcname="bison"
+
+# per-host:
+case "$@{host_os@}" in
+m88kbcs)
+	host_makefile_frag=config/mh-delta88
+	;;
+esac
+
+# per-target:
+
+files="bison_in.hairy"
+links="bison.hairy"
+
+# post-target:
+@end example
+
+@node config.status, Makefile Fragments, configure.in, Reference
+@section @code{config.status}
+
+@kindex config.status
+
+The final step in configuring a directory is to create an executable
+shell script, @file{config.status}.  The main purpose of this file
+is to allow the Makefile for the current directory to rebuild itself, if
+necessary.  For this reason, @file{config.status} uses the
+@samp{-norecursion} option to @code{configure}, and is therefore
+probably inappropriate for reconfiguring a tree of source code.
+
+@node Makefile Fragments,  , config.status, Reference
+@section Makefile Fragments
+
+@cindex Makefile fragments
+
+Cygnus @code{configure} uses three types of Makefile fragments.  In a
+generated Makefile they appear in the order target fragment, host
+fragment, and site fragment.  This allows host fragments to override
+target fragments, and site fragments to override both.
+
+Host specific Makefile fragments conventionally reside in the
+@file{./config} directory with names of the form
+@file{mh-@var{host}}.  They are used for hosts that require
+odd options to the standard compiler and for compile time options based
+on the host configuration.
+
+Target specific Makefile fragments conventionally reside in the
+@file{./config} directory with names of the form @file{mt-@var{target}}.
+They are used for target dependent compile time options.
+
+Site specific Makefile fragments conventionally reside in the
+@file{./config} directory with names of the form @file{ms-@var{site}}.
+They are used to override host and target independent compile time
+options.  Note that you can also override these options on the
+@code{make} invocation line.
+
+@node Known Bugs, Variables Index, Reference, top
+@chapter Known Bugs
+
+@cindex bugs
+
+We know of the following bugs:
+
+@itemize @bullet
+
+@item
+There is no way to query about known hosts, known targets, or the
+porting or testing status of any configuration.
+
+@item
+The negations to the options @code{-gas}, @code{-x}, and @code{-nfp} are
+not available.
+
+@end itemize
+
+@page
+@node Variables Index, Concept Index, Known Bugs, top
+@appendix Variable Index
+
+@printindex vr
+
+@page
+@node     Concept Index,  , Variables Index, top
+@appendix Concept Index
+
+@printindex cp
+@contents
+@bye
+
+@c Local Variables:
+@c fill-column: 79
+@c outline-regexp: "@chap"
+@c End:
+@c (setq outline-regexp "@chapt\\\|@unnum\\\|@setf\\\|@conte\\\|@sectio\\\|@subsect\\\|@itemize\\\|@defvar{")
