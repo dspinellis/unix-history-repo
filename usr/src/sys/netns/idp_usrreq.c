@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *      @(#)idp_usrreq.c	6.4 (Berkeley) %G%
+ *      @(#)idp_usrreq.c	6.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -31,13 +31,23 @@
 
 struct	sockaddr_ns idp_ns = { AF_NS };
 
+/*
+ *  This may also be called for raw listeners.
+ */
 idp_input(m, nsp)
 	struct mbuf *m;
 	register struct nspcb *nsp;
 {
 	register struct idp *idp = mtod(m, struct idp *);
-	if (nsp==0)
-		panic("Impossible idp_input");
+
+	if (nsp==0) {
+		nsp = ns_pcblookup(&idp->idp_sna,
+					idp->idp_dna.x_port, NS_WILDCARD);
+		if (nsp==0) {
+			ns_error(m, NS_ERR_NOSOCK, 0);
+			return;
+		}
+	}
 
 	/*
 	 * Construct sockaddr format source address.
@@ -63,6 +73,30 @@ idp_abort(nsp)
 {
 	struct socket *so = nsp->nsp_socket;
 
+	ns_pcbdisconnect(nsp);
+	soisdisconnected(so);
+}
+/*
+ * Drop connection, reporting
+ * the specified error.
+ */
+struct nspcb *
+idp_drop(nsp, errno)
+	register struct nspcb *nsp;
+	int errno;
+{
+	struct socket *so = nsp->nsp_socket;
+
+	/*
+	 * someday, in the xerox world
+	 * we will generate error protocol packets
+	 * announcing that the socket has gone away.
+	 */
+	/*if (TCPS_HAVERCVDSYN(tp->t_state)) {
+		tp->t_state = TCPS_CLOSED;
+		(void) tcp_output(tp);
+	}*/
+	so->so_error = errno;
 	ns_pcbdisconnect(nsp);
 	soisdisconnected(so);
 }
@@ -175,6 +209,7 @@ idp_ctloutput(req, so, level, name, value)
 	register struct mbuf *m;
 	struct nspcb *nsp = sotonspcb(so);
 	int mask, error = 0;
+	extern long ns_pexseq;
 
 	if (nsp == NULL)
 		return (EINVAL);
@@ -213,6 +248,12 @@ idp_ctloutput(req, so, level, name, value)
 				idp->idp_dna = nsp->nsp_faddr;
 				idp->idp_sna = nsp->nsp_laddr;
 			}
+			break;
+
+		case SO_SEQNO:
+			m->m_len = sizeof(long);
+			m->m_off = MMAXOFF - sizeof(long);
+			*mtod(m, long *) = ns_pexseq++;
 		}
 		*value = m;
 		break;
