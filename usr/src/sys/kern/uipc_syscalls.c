@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.11	81/12/09	*/
+/*	uipc_syscalls.c	4.12	81/12/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -185,11 +185,15 @@ COUNT(SACCEPT);
 		splx(s);
 		return;
 	}
+	while ((so->so_state & SS_CONNAWAITING) == 0)
+		sleep((caddr_t)&so->so_timeo, PZERO+1);
 	u.u_error = soaccept(so, &sa);
 	if (u.u_error) {
 		splx(s);
 		return;
 	}
+	if (uap->asa)
+		(void) copyout((caddr_t)&sa, (caddr_t)uap->asa, sizeof (sa));
 	/* deal with new file descriptor case */
 	/* u.u_r.r_val1 = ... */
 	splx(s);
