@@ -18,24 +18,9 @@ SRCS=	 	AllocRing.cc Obstack.cc builtin.cc \
 		insque.c strerror.c
 
 CFLAGS+=	-I$(.CURDIR) -I$(.CURDIR)/../libiberty
-GFLAGS=		-nostdinc++ -I$(.CURDIR) -I$(.CURDIR)/../g++-include \
+CXXFLAGS=	-nostdinc++ -I$(.CURDIR) -I$(.CURDIR)/../g++-include \
 		-I$(.CURDIR)/../iostream
 NOMAN=		noman
 .PATH:		$(.CURDIR)/../iostream $(.CURDIR)/../libiberty
 
-depend:
-	@echo "BROKEN MAKE DEPEND"
 .include <bsd.lib.mk>
-
-.SUFFIXES: .cc .C
-.cc.o:
-	$(CC) $(GFLAGS) -c $(.IMPSRC)
-
-.cc.po:
-	$(CC) -p $(GFLAGS) -c $(.IMPSRC) -o $(.TARGET)
-
-.C.o:
-	$(CC) $(GFLAGS) -c $(.IMPSRC)
-
-.C.po:
-	$(CC) -p $(GFLAGS) -c $(.IMPSRC) -o $(.TARGET)
