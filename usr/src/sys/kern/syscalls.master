@@ -1,4 +1,4 @@
-	@(#)syscalls.master	7.21 (Berkeley) %G%
+	@(#)syscalls.master	7.22 (Berkeley) %G%
 ; System call name/number master file.
 ; Processed to created init_sysent.c, syscalls.c and syscall.h.
 
@@ -13,6 +13,7 @@
 ; types:
 ;	STD	always included
 ;	COMPAT	included on COMPAT #ifdef
+;	LIBCOMPAT included on COMPAT #ifdef, and placed in syscall.h
 ;	OBSOL	obsolete, not included in system, only specifies name
 ;	UNIMPL	not implemented, placeholder only
 
@@ -32,7 +33,7 @@
 5	STD	3 open
 6	STD	1 close
 7	STD	4 wait4
-8	STD	2 creat
+8	COMPAT	2 creat
 9	STD	2 link
 10	STD	1 unlink
 11	STD	2 execv
@@ -47,9 +48,9 @@
 20	STD	0 getpid
 21	STD	4 mount
 22	STD	2 unmount
-23	OBSOL	0 setuid
+23	STD	1 setuid
 24	STD	0 getuid
-25	OBSOL	0 stime
+25	STD	0 geteuid
 26	STD	4 ptrace
 27	STD	3 recvmsg
 28	STD	3 sendmsg
@@ -63,16 +64,16 @@
 36	STD	0 sync
 37	STD	2 kill
 38	STD	2 stat
-39	OBSOL	0 setpgrp
+39	STD	0 getppid
 40	STD	2 lstat
 41	STD	2 dup
 42	STD	0 pipe
-43	OBSOL	0 times
+43	STD	0 getegid
 44	STD	4 profil
 #ifdef KTRACE
 45	STD	4 ktrace
 #else
-45	UNIMPL	0 nosys
+45	UNIMPL	0 ktrace
 #endif
 46	STD	3 sigaction
 47	STD	0 getgid
@@ -88,7 +89,7 @@
 #endif
 54	STD	3 ioctl
 55	STD	1 reboot
-56	STD	2 revoke
+56	STD	1 revoke
 57	STD	2 symlink
 58	STD	3 readlink
 59	STD	3 execve
@@ -166,8 +167,8 @@
 123	STD	3 fchown
 124	STD	2 fchmod
 125	COMPAT	6 recvfrom
-126	STD	2 setreuid
-127	STD	2 setregid
+126	LIBCOMPAT	2 setreuid
+127	LIBCOMPAT	2 setregid
 128	STD	2 rename
 129	STD	2 truncate
 130	STD	2 ftruncate
@@ -195,6 +196,7 @@
 ; Syscalls 151-180 inclusive are reserved for vendor-specific
 ; system calls.  (This includes various calls added for compatibity
 ; with other Unix variants.)
+; Some of these calls are now supported by BSD...
 151	UNIMPL	0 nosys
 152	UNIMPL	0 nosys
 153	UNIMPL	0 nosys
@@ -239,10 +241,10 @@
 179	UNIMPL	0 nosys
 180	UNIMPL	0 nosys
 
-; Syscalls above 180 are used by BSD
-181	UNIMPL	0 nosys
-182	UNIMPL	0 nosys
-183	UNIMPL	0 nosys
+; Syscalls 180-199 are used by/reserved for BSD
+181	STD	1 setgid
+182	STD	1 setegid
+183	STD	1 seteuid
 184	UNIMPL	0 nosys
 185	UNIMPL	0 nosys
 186	UNIMPL	0 nosys
