@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.35 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.36 (Berkeley) %G%
  */
 
 /*
@@ -618,14 +618,36 @@ void vgoneall(vp)
 {
 	register struct vnode *vq;
 
-	while (vp->v_flag & VALIASED) {
-		for (vq = *vp->v_hashchain; vq; vq = vq->v_specnext) {
-			if (vq->v_rdev != vp->v_rdev ||
-			    vq->v_type != vp->v_type || vp == vq)
-				continue;
-			vgone(vq);
-			break;
+	if (vp->v_flag & VALIASED) {
+		/*
+		 * If a vgone (or vclean) is already in progress,
+		 * wait until it is done and return.
+		 */
+		if (vp->v_flag & VXLOCK) {
+			vp->v_flag |= VXWANT;
+			sleep((caddr_t)vp, PINOD);
+			return;
 		}
+		/*
+		 * Ensure that vp will not be vgone'd while we
+		 * are eliminating its aliases.
+		 */
+		vp->v_flag |= VXLOCK;
+		while (vp->v_flag & VALIASED) {
+			for (vq = *vp->v_hashchain; vq; vq = vq->v_specnext) {
+				if (vq->v_rdev != vp->v_rdev ||
+				    vq->v_type != vp->v_type || vp == vq)
+					continue;
+				vgone(vq);
+				break;
+			}
+		}
+		/*
+		 * Remove the lock so that vgone below will
+		 * really eliminate the vnode after which time
+		 * vgone will awaken any sleepers.
+		 */
+		vp->v_flag &= ~VXLOCK;
 	}
 	vgone(vp);
 }
