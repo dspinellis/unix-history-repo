@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)gettable.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)gettable.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -79,7 +79,8 @@ main(argc, argv)
 	argv++, argc--;
 	hp = gethostbyname(host);
 	if (hp == NULL) {
-		fprintf(stderr, "gettable: %s: host unknown\n", host);
+		fprintf(stderr, "gettable: %s: ", host);
+		herror((char *)NULL);
 		exit(2);
 	}
 	host = hp->h_name;

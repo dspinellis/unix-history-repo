@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	2.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	2.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "timedc.h"
@@ -78,7 +78,8 @@ char *argv[];
 		argc--; argv++;
 		hp = gethostbyname(*argv);
 		if (hp == NULL) {
-			printf("%s: unknown host\n", *argv);
+			fprintf(stderr, "timed: %s: ", *argv);
+			herror((char *)NULL);
 			continue;
 		}
 		server.sin_family = hp->h_addrtype;
@@ -146,14 +147,15 @@ int argc;
 	if (srvp == 0) {
 		fprintf(stderr, "udp/timed: unknown service\n");
 		return;
-	}	
+	}
 	dest.sin_port = srvp->s_port;
 	dest.sin_family = AF_INET;
 
-	(void)gethostname(hostname,sizeof(hostname));
+	(void)gethostname(hostname, sizeof(hostname));
 	hp = gethostbyname(hostname);
 	if (hp == NULL) {
-		perror("gethostbyname");
+		fprintf(stderr, "timed: %s: ", hostname);
+		herror((char *)NULL);
 		return;
 	}
 	bcopy(hp->h_addr, &dest.sin_addr.s_addr, hp->h_length);
@@ -234,7 +236,8 @@ char *argv[];
 		argc--; argv++;
 		hp = gethostbyname(*argv);
 		if (hp == NULL) {
-			printf("%s: unknown host\n", *argv);
+			fprintf(stderr, "timed: %s: ", *argv);
+			herror((char *)NULL);
 			argc--; argv++;
 			continue;
 		}
