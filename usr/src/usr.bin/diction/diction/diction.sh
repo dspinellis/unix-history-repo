@@ -1,7 +1,8 @@
 #! /bin/sh
 #
-#	@(#)diction.sh	4.2	(Berkeley)	82/11/06
+#	@(#)diction.sh	4.3	(Berkeley)	82/11/06
 #
+D=/usr/bin
 B=/usr/lib
 echo $*
 rest=
@@ -20,4 +21,4 @@ do case $i in
 *) rest=$*; break;;
 esac
 done
- $B/deroff $mflag $lflag $rest^$B/dprog -d $nflag $flag $file
+ $D/deroff $mflag $lflag $rest^$B/dprog -d $nflag $flag $file

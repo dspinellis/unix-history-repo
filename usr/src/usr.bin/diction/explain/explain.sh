@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	@(#)explain.sh	4.2	(Berkeley)	82/11/06
+#	@(#)explain.sh	4.3	(Berkeley)	82/11/06
 #
 trap 'rm $$; exit' 1 2 3 15
 D=/usr/lib/explain.d
