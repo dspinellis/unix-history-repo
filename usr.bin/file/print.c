@@ -27,71 +27,144 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <string.h>
+#if __STDC__
+# include <stdarg.h>
+#else
+# include <varargs.h>
+#endif
+#include <stdlib.h>
+#include <unistd.h>
 #include "file.h"
 
-#ifndef	lint
-static char *moduleid = 
-	"@(#)$Header: print.c,v 1.11 88/01/15 12:17:06 ian Exp $";
-#endif	/* lint */
+#ifndef lint
+static char *moduleid =
+	"@(#)print.c,v 1.2 1993/06/10 00:38:17 jtc Exp";
+#endif  /* lint */
 
-#define MAXSTR		500
-
-extern char *progname;
-extern char *magicfile;
-extern int debug, nmagic;	/* number of valid magic[]s */
-extern void showstr();
-
+void
 mdump(m)
 struct magic *m;
 {
-	(void) printf("%d\t%d\t%d\t%c\t",
-		m->contflag,
+	static char *offs[] = {  "absolute", "offset", 
+				 "indirect", "indirect-offset" };
+	static char *typ[] = {   "invalid", "byte", "short", "invalid",
+				 "long", "string", "date", "beshort",
+				 "belong", "bedate", "leshort", "lelong",
+				 "ledate" };
+	(void) fprintf(stderr, "[%s,%d,%s,%s%c,",
+		(m->flag >= 0 && m->flag < 4 ? offs[m->flag]: "*bad*"),
 		m->offset,
-		m->type,
-		m->reln,
-		0);
+		(m->type >= 0 && m->type < 13 ? 
+				typ[(unsigned char) m->type] : "*bad*"),
+		m->reln & MASK ? "&" : "",
+		m->reln & ~MASK);
+	if (m->flag & INDIR)
+	    (void) fprintf(stderr, "(%s,%d)",
+		(m->in.type >= 0 && 
+		m->in.type < 6 ? typ[(unsigned char) m->in.type] : "*bad*"),
+		m->in.offset);
+
 	if (m->type == STRING)
 		showstr(m->value.s);
 	else
-		(void) printf("%d",m->value.l);
-	(void) printf("\t%s", m->desc);
-	(void) putchar('\n');
+		(void) fprintf(stderr, "%d",m->value.l);
+	(void) fprintf(stderr, ",%s", m->desc);
+	(void) fputs("]\n", stderr);
+}
+
+/*
+ * ckfputs - futs, but with error checking
+ * ckfprintf - fprintf, but with error checking
+ */
+void
+ckfputs(str, fil) 	
+    const char *str;
+    FILE *fil;
+{
+	if (fputs(str,fil) == EOF)
+		error("write failed.\n");
+}
+
+/*VARARGS*/
+void
+#if __STDC__
+ckfprintf(FILE *f, const char *fmt, ...)
+#else
+ckfprintf(va_alist)
+	va_dcl
+#endif
+{
+	va_list va;
+#if __STDC__
+	va_start(va, fmt);
+#else
+	FILE *f;
+	const char *fmt;
+	va_start(va);
+	f = va_arg(va, FILE *);
+	fmt = va_arg(va, const char *);
+#endif
+	(void) vfprintf(f, fmt, va);
+	if (ferror(f))
+		error("write failed.\n");
+	va_end(va);
 }
 
 /*
  * error - print best error message possible and exit
  */
-/*ARGSUSED1*/
 /*VARARGS*/
 void
-error(s1, s2)
-char *s1, *s2;
+#if __STDC__
+error(const char *f, ...)
+#else
+error(va_alist)
+	va_dcl
+#endif
 {
-	warning(s1, s2);
-	exit(1);
-}
-
-/*ARGSUSED1*/
-/*VARARGS*/
-warning(f, a)
-char *f, *a;
-{
-	extern int errno, sys_nerr;
-	extern char *sys_errlist[];
-	int myerrno;
-
-	myerrno = errno;
-
+	va_list va;
+#if __STDC__
+	va_start(va, f);
+#else
+	const char *f;
+	va_start(va);
+	f = va_arg(va, const char *);
+#endif
 	/* cuz we use stdout for most, stderr here */
 	(void) fflush(stdout); 
 
-	if (progname != NULL) {
-		(void) fputs(progname, stderr);
-		(void) putc(':', stderr);
-		(void) putc(' ', stderr);
-	}
-	(void) fprintf(stderr, f, a);
-	if (myerrno > 0 && myerrno < sys_nerr)
-		(void) fprintf(stderr, " (%s)", sys_errlist[myerrno]);
-	putc('\n', stderr);
+	if (progname != NULL) 
+		(void) fprintf(stderr, "%s: ", progname);
+	(void) vfprintf(stderr, f, va);
+	va_end(va);
+	exit(1);
+}
+
+/*VARARGS*/
+void
+#if __STDC__
+magwarn(const char *f, ...)
+#else
+magwarn(va_alist)
+	va_dcl
+#endif
+{
+	va_list va;
+#if __STDC__
+	va_start(va, f);
+#else
+	const char *f;
+	va_start(va);
+	f = va_arg(va, const char *);
+#endif
+	/* cuz we use stdout for most, stderr here */
+	(void) fflush(stdout); 
+
+	if (progname != NULL) 
+		(void) fprintf(stderr, "%s: %s, %d: ", 
+			       progname, magicfile, lineno);
+	(void) vfprintf(stderr, f, va);
+	va_end(va);
+	fputc('\n', stderr);
 }

@@ -1,8 +1,16 @@
-Copyright (c) Ian F. Darwin 1986, 1987.
-Written by Ian F. Darwin.
+Copyright (c) Ian F. Darwin 1986, 1987, 1989, 1990, 1991, 1992.
+Written by Ian F. Darwin and others.
+LEGAL.NOTICE,v 1.2 1993/06/10 00:37:55 jtc Exp
 
-This software is not subject to any license of the American Telephone
-and Telegraph Company or of the Regents of the University of California.
+This software is not subject to and may not be made subject to any
+license of the American Telephone and Telegraph Company (AT&T Inc.),
+UNIX System Laboratories (USL Inc.), Novell Inc., Sun Microsystems
+Inc., Digital Equipment Inc., Lotus Development Inc., the Regents of
+the University of California, The X Consortium or MIT, or The Free
+Software Foundation.
+
+This software is not subject to any export provision of the United States
+Department of Commerce, and may be exported to any country or planet.
 
 Permission is granted to anyone to use this software for any purpose on
 any computer system, and to alter it and redistribute it freely, subject
@@ -20,3 +28,10 @@ to the following restrictions:
    ever read sources, credits must appear in the documentation.
 
 4. This notice may not be removed or altered.
+
+UNIX is a trademark of UNIX System Laboratories (which is probably a
+subsidiary of Novell, Inc., by the time you read this). The name "UNIX"
+may not be used by commercial undertakings without permission in
+writing from USL. Just ask BSDI (Berkeley Software Design Inc.), a
+commercial venture not officially connected with the University of
+California at Berkeley.

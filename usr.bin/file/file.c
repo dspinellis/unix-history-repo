@@ -24,50 +24,68 @@
  *
  * 4. This notice may not be removed or altered.
  */
-
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include "file.h"
-
-#define USAGE		"usage: %s [-c] [-f namefile] [-m magicfile] file...\n"
-
 #ifndef	lint
 static char *moduleid = 
-	"@(#)$Header: file.c,v 1.14 87/11/12 13:11:06 ian Exp $";
+	"@(#)file.c,v 1.2 1993/06/10 00:38:08 jtc Exp";
 #endif	/* lint */
-extern char *ckfmsg;
-int 	debug = 0, 	/* huh? */
-	nbytes = 0,	/* number of bytes read from a datafile */
-	nmagic = 0;	/* number of valid magic[]s */
-FILE *efopen();
-#ifdef MAGIC
-char *magicfile = MAGIC;	/* where magic be found */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/param.h>	/* for MAXPATHLEN */
+#include <sys/stat.h>
+#include <fcntl.h>	/* for open() */
+#include <utime.h>
+#include <unistd.h>	/* for read() */
+
+#include "file.h"
+
+#ifdef S_IFLNK
+# define USAGE  "Usage: %s [-czL] [-f namefile] [-m magicfile] file...\n"
 #else
-char *magicfile = "/etc/magic";	/* where magic be found */
+# define USAGE  "Usage: %s [-cz] [-f namefile] [-m magicfile] file...\n"
 #endif
-char *progname;
-struct stat statbuf;
-struct utimbuf {	/* for utime(2), belongs in a .h file */
-	time_t actime;	/* access time */
-	time_t modtime;	/* modification time */
-};
+
+#ifndef MAGIC
+# define MAGIC "/etc/magic"
+#endif
+
+int 			/* Global command-line options 		*/
+	debug = 0, 	/* debugging 				*/
+	lflag = 0,	/* follow Symlinks (BSD only) 		*/
+	zflag = 0;	/* follow (uncompress) compressed files */
+
+int			/* Misc globals				*/
+	nmagic = 0;	/* number of valid magic[]s 		*/
+
+struct  magic *magic;	/* array of magic entries		*/
+
+char *magicfile = MAGIC;/* where magic be found 		*/
+
+char *progname;		/* used throughout 			*/
+int lineno;		/* line number in the magic file	*/
+
+
+static void unwrap	__P((char *fn));
 
 /*
  * main - parse arguments and handle options
  */
+int
 main(argc, argv)
 int argc;
 char *argv[];
 {
 	int c;
 	int check = 0, didsomefiles = 0, errflg = 0, ret = 0;
-	extern int optind;
-	extern char *optarg;
 
-	progname = argv[0];
+	if ((progname = strrchr(argv[0], '/')) != NULL)
+		progname++;
+	else
+		progname = argv[0];
 
-	while ((c = getopt(argc, argv, "cdf:m:")) != EOF)
+	while ((c = getopt(argc, argv, "cdf:Lm:z")) != EOF)
 		switch (c) {
 		case 'c':
 			++check;
@@ -79,8 +97,16 @@ char *argv[];
 			unwrap(optarg);
 			++didsomefiles;
 			break;
+#ifdef S_IFLNK
+		case 'L':
+			++lflag;
+			break;
+#endif
 		case 'm':
 			magicfile = optarg;
+			break;
+		case 'z':
+			zflag++;
 			break;
 		case '?':
 		default:
@@ -97,108 +123,150 @@ char *argv[];
 		exit(ret);
 
 	if (optind == argc) {
-		if (!didsomefiles)
+		if (!didsomefiles) {
 			(void)fprintf(stderr, USAGE, progname);
+			exit(2);
+		}
 	}
-	else
+	else {
+		int i, wid, nw;
+		for (wid = 0, i = optind; i < argc; i++) {
+			nw = strlen(argv[i]);
+			if (nw > wid)
+				wid = nw;
+		}
 		for (; optind < argc; optind++)
-			process(argv[optind]);
+			process(argv[optind], wid);
+	}
 
-	exit(0);
+	return 0;
 }
+
 
 /*
  * unwrap -- read a file of filenames, do each one.
  */
+static void
 unwrap(fn)
 char *fn;
 {
-#define FILENAMELEN 128
-	char buf[FILENAMELEN];
+	char buf[MAXPATHLEN];
 	FILE *f;
+	int wid = 0, cwid;
 
-	if ((f = fopen(fn, "r")) == NULL)
-		(void) fprintf(stderr, "%s: file %s unreadable\n",
-			progname, fn);
-	else {
-		while (fgets(buf, FILENAMELEN, f) != NULL) {
-			buf[strlen(buf)-1] = '\0';
-			process(buf);
-		}
-		(void) fclose(f);
+	if ((f = fopen(fn, "r")) == NULL) {
+		error("Cannot open `%s' (%s).\n", fn, strerror(errno));
+		/*NOTREACHED*/
 	}
+
+	while (fgets(buf, MAXPATHLEN, f) != NULL) {
+		cwid = strlen(buf) - 1;
+		if (cwid > wid)
+			wid = cwid;
+	}
+
+	rewind(f);
+
+	while (fgets(buf, MAXPATHLEN, f) != NULL) {
+		buf[strlen(buf)-1] = '\0';
+		process(buf, wid);
+	}
+
+	(void) fclose(f);
 }
+
 
 /*
  * process - process input file
  */
-process(inname)
-char	*inname;
+void
+process(inname, wid)
+const char	*inname;
+int wid;
 {
-	int	fd;
-	char	buf[HOWMANY];
-	struct utimbuf utbuf;
+	int	fd = 0;
+	static  const char stdname[] = "standard input";
+	unsigned char	buf[HOWMANY+1];	/* one extra for terminating '\0' */
+	struct utimbuf  utbuf;
+	struct stat	sb;
+	int nbytes = 0;	/* number of bytes read from a datafile */
 
 	if (strcmp("-", inname) == 0) {
-		(void) printf("standard input:\t");
-		if (fstat(0, &statbuf)<0)
-			warning("cannot fstat; ");
-		fd = 0;
-		goto readit;
+		if (fstat(0, &sb)<0) {
+			error("cannot fstat `%s' (%s).\n", stdname, 
+			      strerror(errno));
+			/*NOTREACHED*/
+		}
+		inname = stdname;
 	}
+
+	if (wid > 0)
+	     (void) printf("%s:%*s ", inname, wid - strlen(inname), "");
+
+	if (inname != stdname) {
+	    /*
+	     * first try judging the file based on its filesystem status
+	     */
+	    if (fsmagic(inname, &sb) != 0) {
+		    putchar('\n');
+		    return;
+	    }
 		
-	(void) printf("%s:\t", inname);
+	    if ((fd = open(inname, O_RDONLY)) < 0) {
+		    /* We can't open it, but we were able to stat it. */
+		    if (sb.st_mode & 0002) ckfputs("writeable, ", stdout);
+		    if (sb.st_mode & 0111) ckfputs("executable, ", stdout);
+		    ckfprintf(stdout, "can't read `%s' (%s).\n",
+			inname, strerror(errno));
+		    return;
+	    }
+	}
+
 
 	/*
-	 * first try judging the file based on its filesystem status
-	 * Side effect: fsmagic updates global data `statbuf'.
+	 * try looking at the first HOWMANY bytes
 	 */
-	if (fsmagic(inname) != 0) {
-		/*NULLBODY*/;
-	} else if ((fd = open(inname, 0)) < 0) {
-		/* We can't open it, but we were able to stat it. */
-		if (statbuf.st_mode & 0002) ckfputs("writeable, ", stdout);
-		if (statbuf.st_mode & 0111) ckfputs("executable, ", stdout);
-		warning("can't read");
-	} else {
-readit:
-		/*
-		 * try looking at the first HOWMANY bytes
-		 */
-		if ((nbytes = read(fd, buf, HOWMANY)) == -1)
-			warning("read failed");
-		if (nbytes == 0) {
-			ckfputs("empty", stdout);
-		} else
-		/*
-		 * try tests in /etc/magic (or surrogate magic file)
-		 */
-		if (softmagic(buf) == 1)
-			/*NULLBODY*/;
-		else if (ascmagic(buf) == 1)
-			/*
-			 * try known keywords, check for ascii-ness too.
-			 */
-			/*NULLBODY*/;
-		else {
-			/*
-			 * abandon hope, all ye who remain here
-			 */
-			ckfputs("data", stdout);
-		}
-		if (strcmp("-", inname) != 0) {
-			/*
-			 * Restore access, modification times if we read it.
-			 */
-			utbuf.actime = statbuf.st_atime;
-			utbuf.modtime = statbuf.st_mtime;
-			(void) utime(inname, &utbuf);
-			/* we don't care if we lack perms */
-			(void) close(fd);
-		}
+	if ((nbytes = read(fd, (char *)buf, HOWMANY)) == -1) {
+		error("read failed (%s).\n", strerror(errno));
+		/*NOTREACHED*/
 	}
 
+	if (nbytes == 0) 
+		ckfputs("empty", stdout);
+	else {
+		buf[nbytes] = '\0';	/* null-terminate it */
+		tryit(buf, nbytes);
+	}
+
+	if (inname != stdname) {
+		/*
+		 * Try to restore access, modification times if read it.
+		 */
+		utbuf.actime = sb.st_atime;
+		utbuf.modtime = sb.st_mtime;
+		(void) utime(inname, &utbuf); /* don't care if loses */
+		(void) close(fd);
+	}
 	(void) putchar('\n');
 }
 
+
+void
+tryit(buf, nb)
+unsigned char *buf;
+int nb;
+{
+	/*
+	 * try tests in /etc/magic (or surrogate magic file)
+	 */
+	if (softmagic(buf, nb) != 1)
+	    /*
+	     * try known keywords, check for ascii-ness too.
+	     */
+	    if (ascmagic(buf, nb) != 1)
+		/*
+		 * abandon hope, all ye who remain here
+		 */
+		ckfputs("data", stdout);
+}
 

@@ -1,26 +1,24 @@
-.\"
-.\" PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
-.\" --------------------         -----   ----------------------
-.\" CURRENT PATCH LEVEL:         1       00103
-.\" --------------------         -----   ----------------------
-.\"
-.\" 16 Feb 93	Rodney W. Grimes	Fixed all the commands that had two
-.\"					dots in them.
-.\"
 .TH FILE 1 "Copyright but distributable"
+.\# file.1,v 1.3 1993/06/10 00:38:06 jtc Exp
 .SH NAME
 .I file
 \- determine file type
 .SH SYNOPSIS
 .B file
 [
-.B -c
+.B \-c
 ]
 [
-.B -f
+.B \-z
+]
+[
+.B \-L
+]
+[
+.B \-f
 namefile ]
 [
-.B -m 
+.B \-m 
 magicfile ]
 file ...
 .SH DESCRIPTION
@@ -50,28 +48,29 @@ or the program itself,
 .B "preserve these keywords" .
 People depend on knowing that all the readable files in a directory
 have the word ``text'' printed.
-Don't do as one computer vendor did \- change ``shell commands text''
+Don't do as Berkeley did \- change ``shell commands text''
 to ``shell script''.
 .PP
 The filesystem tests are based on examining the return from a
-.I stat (2)
+.IR stat (2)
 system call.
 The program checks to see if the file is empty,
 or if it's some sort of special file.
 Any known file types appropriate to the system you are running on
-(sockets and symbolic links on 4.2BSD, named pipes (FIFOs) on System V)
+(sockets, symbolic links, or named pipes (FIFOs) on those systems that
+implement them)
 are intuited if they are defined in
 the system header file
-.I sys/stat.h  .
+.BR sys/stat.h  .
 .PP
 The magic number tests are used to check for files with data in
 particular fixed formats.
 The canonical example of this is a binary executable (compiled program)
-.I a.out
+.B a.out
 file, whose format is defined in 
-.I a.out.h
+.B a.out.h
 and possibly
-.I exec.h
+.B exec.h
 in the standard include directory.
 These files have a `magic number' stored in a particular place
 near the beginning of the file that tells the \s-1UNIX\s0 operating system
@@ -80,7 +79,7 @@ The concept of `magic number' has been applied by extension to data files.
 Any file with some invariant identifier at a small fixed
 offset into the file can usually be described in this way.
 The information in these files is read from the magic file
-.I /etc/magic .
+.I /etc/magic.
 .PP
 If an argument appears to be an
 .SM ASCII 
@@ -90,10 +89,10 @@ attempts to guess its language.
 The language tests look for particular strings (cf \fInames.h\fP)
 that can appear anywhere in the first few blocks of a file.
 For example, the keyword
-.I .br
+.B .br
 indicates that the file is most likely a troff input file,
 just as the keyword 
-.I struct
+.B struct
 indicates a C program.
 These tests are less reliable than the previous
 two groups, so they are performed last.
@@ -104,19 +103,23 @@ archives) and determine whether an unknown file should be
 labelled as `ascii text' or `data'. 
 .PP
 Use
-.B -m
+.B \-m
 .I file
 to specify an alternate file of magic numbers.
 .PP
 The
-.B -c
+.B \-z
+tries to look inside compressed files.
+.PP
+The
+.B \-c
 option causes a checking printout of the parsed form of the magic file.
 This is usually used in conjunction with 
-.B -m
+.B \-m
 to debug a new magic file before installing it.
 .PP
 The 
-.B -f
+.B \-f
 .I namefile
 option specifies that the names of the files to be examined
 are to be read (one per line) from 
@@ -126,11 +129,16 @@ Either
 .I namefile
 or at least one filename argument must be present;
 to test the standard input, use ``-'' as a filename argument.
+.PP
+The 
+.B \-L
+option causes symlinks to be followed, as the like-named option in
+.IR ls (1).
 .SH FILES
 .I /etc/magic
 \- default list of magic numbers
 .SH SEE ALSO
-.IR Magic (FILES)
+.IR magic (__SECTION__)
 \- description of magic file format.
 .br
 .IR Strings (1), " od" (1)
@@ -154,21 +162,25 @@ For example,
 in an existing magic file would have to be changed to
 .br
 >10	string	language\e impress	(imPRESS data)
+.br
+In addition, in this version, if a pattern string contains a backslash,
+it must be escaped.  For example
+.br
+0	string		\ebegindata	Andrew Toolkit document
+.br
+in an existing magic file would have to be changed to
+.br
+0	string		\e\ebegindata	Andrew Toolkit document
+.br
 .PP
-The Sun Microsystems implementation of System V compatibility
-includes a file(1) command that has some extentions.
+SunOS releases 3.2 and later from Sun Microsystems include a
+.IR file (1)
+command derived from the System V one, but with some extensions.
 My version differs from Sun's only in minor ways.
-The significant one is the `&' operator, which Sun's program expects as,
+It includes the extension of the `&' operator, used as,
 for example,
 .br
 >16	long&0x7fffffff	>0		not stripped
-.br
-would be entered in my version as
-.br
->16	long	&0x7fffffff	not stripped
-.br
-which is a little less general; it simply tests (location 16)&0x7ffffff
-and returns its truth value as a C expression.
 .SH MAGIC DIRECTORY
 The magic file entries have been collected from various sources,
 mainly USENET, and contributed by various authors.
@@ -203,19 +215,47 @@ the first version.
 Geoff Collyer found several inadequacies
 and provided some magic file entries.
 The program has undergone continued evolution since.
-.SH NOTICE
-Copyright (c) Ian F. Darwin,  1986 and 1987.
+.SH AUTHOR
 Written by Ian F. Darwin, UUCP address {utzoo | ihnp4}!darwin!ian,
 Internet address ian@sq.com,
 postal address: P.O. Box 603, Station F, Toronto, Ontario, CANADA M4Y 2L8.
 .PP
-.I Strtok.c
-and
-.I getopt.c
-written by and copyright by Henry Spencer, utzoo!henry.
+Altered by Rob McMahon, cudcv@warwick.ac.uk, 1989, to extend the `&' operator
+from simple `x&y != 0' to `x&y op z'.
 .PP
-This software is not subject to any license of the American Telephone
-and Telegraph Company or of the Regents of the University of California.
+Altered by Guy Harris, guy@auspex.com, 1993, to:
+.RS
+.PP
+put the ``old-style'' `&'
+operator back the way it was, because 1) Rob McMahon's change broke the
+previous style of usage, 2) the SunOS ``new-style'' `&' operator,
+which this version of
+.I file
+supports, also handles `x&y op z', and 3) Rob's change wasn't documented
+in any case;
+.PP
+put in multiple levels of `>';
+.PP
+put in ``beshort'', ``leshort'', etc. keywords to look at numbers in the
+file in a specific byte order, rather than in the native byte order of
+the process running
+.IR file .
+.RE
+.PP
+Changes by Ian Darwin and various authors including
+Christos Zoulas (christos@ee.cornell.edu), 1990-1992.
+.SH LEGAL NOTICE
+Copyright (c) Ian F. Darwin, Toronto, Canada,
+1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993.
+.PP
+This software is not subject to and may not be made subject to any
+license of the American Telephone and Telegraph Company, Sun
+Microsystems Inc., Digital Equipment Inc., Lotus Development Inc., the
+Regents of the University of California, The X Consortium or MIT, or
+The Free Software Foundation.
+.PP
+This software is not subject to any export provision of the United States
+Department of Commerce, and may be exported to any country or planet.
 .PP
 Permission is granted to anyone to use this software for any purpose on
 any computer system, and to alter it and redistribute it freely, subject
@@ -250,8 +290,14 @@ were written by John Gilmore from his public-domain
 .I tar
 program, and are not covered by the above restrictions.
 .SH BUGS
-There must be a way to automate the construction of the Magic
-file from all the glop in magdir. What is it?
+There must be a better way to automate the construction of the Magic
+file from all the glop in Magdir. What is it?
+Better yet, the magic file should be compiled into binary (say,
+.IR ndbm (3)
+or, better yet, fixed-length ASCII strings 
+for use in heterogenous network environments) for faster startup.
+Then the program would run as fast as the Version 7 program of the same name,
+with the flexibility of the System V version.
 .PP
 .I File
 uses several algorithms that favor speed over accuracy,
@@ -260,14 +306,11 @@ thus it can be misled about the contents of ASCII files.
 The support for ASCII files (primarily for programming languages)
 is simplistic, inefficient and requires recompilation to update.
 .PP
-Should there be an ``else'' clause to follow a series of continuation lines?
-.PP
-Is it worthwhile to implement recursive file inspection,
-so that compressed files, uuencoded, etc., can say ``compressed
-ascii text'' or ``compressed executable'' or ``compressed tar archive"
-or whatever? 
+There should be an ``else'' clause to follow a series of continuation lines.
 .PP
 The magic file and keywords should have regular expression support.
+Their use of ASCII TAB as a field delimiter is ugly and makes
+it hard to edit the files, but is entrenched.
 .PP
 It might be advisable to allow upper-case letters in keywords
 for e.g., troff commands vs man page macros.
@@ -283,18 +326,6 @@ The list of keywords in
 probably belongs in the Magic file.
 This could be done by using some keyword like `*' for the offset value.
 .PP
-The program should malloc the magic file structures,
-rather than using a fixed-size array as at present.
-.PP
-The magic file should be compiled into binary 
-(or better yet, fixed-length ASCII strings 
-for use in heterogenous network environments) for faster startup.
-Then the program would run as fast as the Version 7 program of the same name,
-with the flexibility of the System V version.
-But then there would have to be yet another magic number for the 
-.I magic.out
-file.
-.PP
 Another optimisation would be to sort
 the magic file so that we can just run down all the
 tests for the first byte, first word, first long, etc, once we
@@ -309,10 +340,12 @@ they are not as good as other guesses (e.g. ``Newsgroups:'' versus
 "Return-Path:").  Still, if the others don't pan out, it should be
 possible to use the first guess.  
 .PP
-Perhaps the program should automatically try all tests with
-byte-swapping done, to avoid having to figure out the byte-swapped values
-when constructing the magic file.
-Of course this will run more slowly, so it should probably be
-an option (-a?).
+This program is slower than some vendors' file commands.
 .PP
 This manual page, and particularly this section, is too long.
+.SH AVAILABILITY
+You can obtain the original author's latest version by anonymous FTP
+on
+.B ftp.cs.toronto.edu
+in the directory
+.BR /pub/darwin/file .

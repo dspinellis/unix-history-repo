@@ -27,41 +27,49 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <ctype.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include "file.h"
 #include "names.h"
 
 #ifndef	lint
 static char *moduleid = 
-	"@(#)$Header: ascmagic.c,v 1.5 87/09/16 14:44:45 ian Exp $";
+	"@(#)ascmagic.c,v 1.2 1993/06/10 00:38:04 jtc Exp";
 #endif	/* lint */
-
-char *ckfmsg = "write error on output";
 
 			/* an optimisation over plain strcmp() */
 #define	STREQ(a, b)	(*(a) == *(b) && strcmp((a), (b)) == 0)
 
-ascmagic(buf)
-register char	*buf;
+int
+ascmagic(buf, nbytes)
+unsigned char *buf;
+int nbytes;	/* size actually read */
 {
-	register int i;
-	char	*s, *strtok(), *token;
+	int i, isblock, has_escapes = 0;
+	unsigned char *s;
+	char nbuf[HOWMANY+1];	/* one extra for terminating '\0' */
+	char *token;
 	register struct names *p;
-	extern int nbytes;
-	short has_escapes = 0;
 
 	/* these are easy, do them first */
 
 	/*
-	 * for troff, look for . + letter + letter;
+	 * for troff, look for . + letter + letter or .\";
 	 * this must be done to disambiguate tar archives' ./file
 	 * and other trash from real troff input.
 	 */
-	if (*buf == '.' && 
-		isascii(*(buf+1)) && isalnum(*(buf+1)) &&
-		isascii(*(buf+2)) && isalnum(*(buf+2))){
-		ckfputs("troff or preprocessor input text", stdout);
-		return 1;
+	if (*buf == '.') {
+		unsigned char *tp = buf + 1;
+
+		while (isascii(*tp) && isspace(*tp))
+			++tp;	/* skip leading whitespace */
+		if ((isascii(*tp) && (isalnum(*tp) || *tp=='\\') &&
+		    isascii(*(tp+1)) && (isalnum(*(tp+1)) || *tp=='"'))) {
+			ckfputs("troff or preprocessor input text", stdout);
+			return 1;
+		}
 	}
 	if ((*buf == 'c' || *buf == 'C') && 
 	    isascii(*(buf + 1)) && isspace(*(buf + 1))) {
@@ -70,12 +78,17 @@ register char	*buf;
 	}
 
 	/* look for tokens from names.h - this is expensive! */
-	s = buf;
-	while ((token = strtok(s, " \t\n\r\f")) != NULL) {
+	/* make a copy of the buffer here because strtok() will destroy it */
+	s = (unsigned char*) memcpy(nbuf, buf, HOWMANY);
+	has_escapes = (memchr(s, '\033', HOWMANY) != NULL);
+	while ((token = strtok((char*)s, " \t\n\r\f")) != NULL) {
 		s = NULL;	/* make strtok() keep on tokin' */
 		for (p = names; p < names + NNAMES; p++) {
 			if (STREQ(p->name, token)) {
 				ckfputs(types[p->type], stdout);
+				if (has_escapes)
+					ckfputs(" (with escape sequences)", 
+						stdout);
 				return 1;
 			}
 		}
@@ -90,20 +103,33 @@ register char	*buf;
 		return 1;
 	}
 
+	if (i = is_compress(buf, &isblock)) {
+		if (zflag) {
+			unsigned char *newbuf;
+			int newsize;
+
+			if (newsize = uncompress(buf, &newbuf, nbytes)) {
+			    tryit(newbuf, newsize);
+			    free(newbuf);
+			}
+			printf(" (%scompressed data - %d bits)",
+				isblock ? "block " : "", i);
+		}
+	 	else printf("%scompressed data - %d bits",
+			isblock ? "block " : "", i);
+		return 1;
+	}
+
 	for (i = 0; i < nbytes; i++) {
 		if (!isascii(*(buf+i)))
 			return 0;	/* not all ascii */
-		if (*(buf+i) == '\033')	/* ascii ESCAPE */
-			has_escapes ++;
 	}
 
 	/* all else fails, but it is ascii... */
-	if (has_escapes){
-		ckfputs("ascii text (with escape sequences)", stdout);
-		}
-	else {
-		ckfputs("ascii text", stdout);
-		}
+	ckfputs("ascii text", stdout);
+	if (has_escapes) {
+		ckfputs(" (with escape sequences)", stdout);
+	}
 	return 1;
 }
 

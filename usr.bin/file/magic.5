@@ -1,13 +1,4 @@
-.\"
-.\" PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
-.\" --------------------         -----   ----------------------
-.\" CURRENT PATCH LEVEL:         1       00103
-.\" --------------------         -----   ----------------------
-.\"
-.\" 16 Feb 93	Rodney W. Grimes	Fixed all the commands that had two
-.\"					dots in them.
-.\"
-.TH MAGIC FILES "Public Domain"
+.TH MAGIC 5 "Public Domain"
 .\" install as magic.4 on USG, magic.5 on V7 or Berkeley systems.
 .SH NAME
 magic \- file command's magic number file
@@ -38,12 +29,33 @@ The type of the data to be tested.  The possible values are:
 .IP byte \w'message'u+2n
 A one-byte value.
 .IP short
-A two-byte value (on most systems).
+A two-byte value (on most systems) in this machine's native byte order.
 .IP long
-A four-byte value (on most systems).
+A four-byte value (on most systems) in this machine's native byte order.
 .IP string
 A string of bytes.
+.IP date
+A four-byte value interpreted as a unix date.
+.IP beshort
+A two-byte value (on most systems) in big-endian byte order.
+.IP belong
+A four-byte value (on most systems) in big-endian byte order.
+.IP bedate
+A four-byte value (on most systems) in big-endian byte order,
+interpreted as a unix date.
+.IP leshort
+A two-byte value (on most systems) in little-endian byte order.
+.IP lelong
+A four-byte value (on most systems) in little-endian byte order.
+.IP ledate
+A four-byte value (on most systems) in little-endian byte order,
+interpreted as a unix date.
 .RE
+The numeric types may optionally be followed by
+.B &
+and a numeric value,
+to specify that the value is to be AND'ed with the
+numeric value before any comparisons are done.
 .IP test
 The value to be compared with the value from the file.  If the type is
 numeric, this value
@@ -61,10 +73,14 @@ value,
 .BR > ,
 to specify that the value from the file must be greater than the specified
 value,
-or
 .BR & ,
-to specify that the value is to be AND'ed with the
-numeric value before any comparisons are done.
+to specify that the value from the file must have set all of the bits 
+that are set in the specified value,
+or
+.BR ^ ,
+to specify that the value from the file must have clear any of the bits 
+that are set in the specified value.
+.IP
 Numeric values are specified in C form; e.g.
 .B 13
 is decimal,
@@ -78,9 +94,19 @@ is omitted, it is assumed to be
 .IP
 For string values, the byte string from the
 file must match the specified byte string. 
-The operators =, < and > (but not &) can be applied to strings.
+The operators
+.BR = ,
+.B <
+and
+.B >
+(but not
+.BR & )
+can be applied to strings.
 The length used for matching is that of the string argument
-in the magic file.
+in the magic file.  This means that a line can match any string, and
+then presumably print that string, by doing
+.B >\e0
+(because all strings are greater than the null string).
 .IP message
 The message to be printed if the comparison succeeds.  If the string
 contains a
@@ -91,30 +117,61 @@ performed) is printed using the message as the format string.
 Some file formats contain additional information which is to be printed
 along with the file type.  A line which begins with the character
 .B >
-indicates additional tests and messages to be printed.  If the test on the
-line preceding the first line with a
+indicates additional tests and messages to be printed.  The number of
 .B >
-succeeds, the tests specified in all the subsequent lines beginning with
+on the line indicates the level of the test; a line with no
 .B >
+at the beginning is considered to be at level 0.
+Each line at level
+.IB n \(pl1
+is under the control of the line at level
+.IB n
+most closely preceding it in the magic file.
+If the test on a line at level
+.I n
+succeeds, the tests specified in all the subsequent lines at level
+.IB n \(pl1
 are performed, and the messages printed if the tests succeed.  The next
-line which does not begin with a
-.B >
+line at level
+.I n
 terminates this.
+If the first character following the last
+.B >
+is a
+.B (
+then the string after the parenthesis is interpreted as an indirect offset.
+That means that the number after the parenthesis is used as a offset in
+the file. The value at that offset is read, and is used again as an offset
+in the file. Indirect offsets are of the form:
+.BI (( x [.[bsl]][+-][ y ]).
+The value of 
+.I x
+is used as an offset in the file. A byte, short or long is read at that offset
+depending on the 
+.B [bsl] 
+type specifier. To that number the value of
+.I y
+is added and the result is used as an offset in the file. The default type
+if one is not specified is long.
 .SH BUGS
 The formats 
-.I long
+.IR long ,
+.IR belong ,
+.IR lelong ,
+.IR short ,
+.IR beshort ,
+.IR leshort ,
+.IR date ,
+.IR bedate ,
 and
-.I short
+.I ledate
 are system-dependant; perhaps they should be specified as a number
 of bytes (2B, 4B, etc), 
 since the files being recognized typically come from
 a system on which the lengths are invariant.
 .PP
-There should be more than one level of subtests,
-with the level possibly indicated by
-the number of
-.B >
-at the beginning of the line.
+There is (currently) no support for specified-endian data to be used in
+indirect offsets.
 .SH SEE ALSO
 .IR file (1)
 \- the command that reads this file.
@@ -131,4 +188,4 @@ at the beginning of the line.
 .\" the changes I posted to the S5R2 version.
 .\"
 .\" Modified for Ian Darwin's version of the file command.
-.\" @(#)$Header: magic.4,v 1.5 87/11/06 20:54:31 ian Exp $
+.\" @(#)magic.5,v 1.3 1993/06/10 00:38:13 jtc Exp

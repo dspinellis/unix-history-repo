@@ -1,16 +1,26 @@
-PROG=	file
-MAGIC	= /etc/magic
-CFLAGS+= -DMAGIC='"$(MAGIC)"'
-SRCS=	file.c apprentice.c fsmagic.c softmagic.c ascmagic.c is_tar.c \
-	print.c $(LOCALSRCS)
-MAN5=	magic.0
-MAN1=	file.0
+MAGIC=		/etc/magic
+MAGICOWN=	bin
+MAGICGRP=	bin
+MAGICMODE=	444
 
-ascmagic.o:	names.h
+PROG=		file
+SRCS=		file.c apprentice.c fsmagic.c softmagic.c ascmagic.c is_tar.c \
+		print.c compress.c
+CFLAGS+=	-DMAGIC='"$(MAGIC)"'
+MAN1=		file.0
+MAN5=		magic.0
 
-apprentice.o ascmagic.o file.o fsmagic.o print.o softmagic.o: file.h
+CLEANFILES+=	magic
+all:		file magic
+
+MAGFILES=	$(.CURDIR)/magdir/Header\
+		$(.CURDIR)/magdir/Localstuff\
+		$(.CURDIR)/magdir/[a-z]*
+magic:		$(MAGFILES)
+	cat $(MAGFILES) > $(.TARGET)
 
 afterinstall:
-	install -c ${.CURDIR}/magic $(MAGIC)
+	install -c -o $(MAGICOWN) -g $(MAGICGRP) -m $(MAGICMODE) magic \
+		$(DESTDIR)$(MAGIC)
 
 .include <bsd.prog.mk>
