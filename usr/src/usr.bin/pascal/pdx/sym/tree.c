@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)tree.c 1.3 %G%";
+static char sccsid[] = "@(#)tree.c 1.4 %G%";
 
 /*
  * This module contains the interface between the SYM routines and
@@ -300,7 +300,6 @@ SYM *field;
 	p->op = O_ADD;
 	p->nodetype = field->type;
 	p->left = record;
-	p->left->nodetype = t_int;
 	p->right = build(O_LCON, (long) field->symvalue.offset);
     }
     return p;
