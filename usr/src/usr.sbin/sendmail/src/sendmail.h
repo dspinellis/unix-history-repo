@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.138 (Berkeley) %G%
+ *	@(#)sendmail.h	8.139 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.138		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.139		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -1028,6 +1028,8 @@ EXTERN time_t	DialDelay;	/* delay between dial-on-demand tries */
 EXTERN char	*SafeFileEnv;	/* chroot location for file delivery */
 EXTERN char	*HostsFile;	/* path to /etc/hosts file */
 EXTERN int	MaxQueueRun;	/* maximum number of jobs in one queue run */
+EXTERN int	MaxChildren;	/* maximum number of daemonic children */
+EXTERN int	CurChildren;	/* current number of daemonic children */
 EXTERN char	*ServiceSwitchFile;	/* backup service switch */
 EXTERN char	*DefaultCharSet;	/* default character set for MIME */
 EXTERN int	DeliveryNiceness;	/* how nice to be during delivery */
