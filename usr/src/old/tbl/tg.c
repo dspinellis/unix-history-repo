@@ -1,6 +1,10 @@
+/*-
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)tg.c	4.2 %G%";
-#endif
+static char sccsid[] = "@(#)tg.c	4.3 (Berkeley) %G%";
+#endif /* not lint */
 
  /* tg.c: process included text blocks */
 # include "t..c"

@@ -1,6 +1,10 @@
+/*-
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)t9.c	4.3 %G%";
-#endif
+static char sccsid[] = "@(#)t9.c	4.4 (Berkeley) %G%";
+#endif /* not lint */
 
  /* t9.c: write lines for tables over 200 lines */
 # include "t..c"

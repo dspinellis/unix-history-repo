@@ -1,6 +1,10 @@
+/*-
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)t1.c	4.4 %G%";
-#endif
+static char sccsid[] = "@(#)t1.c	4.5 (Berkeley) %G%";
+#endif /* not lint */
 
  /* t1.c: main control and input switching */
 #

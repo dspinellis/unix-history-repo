@@ -1,4 +1,19 @@
-static	char *sccsid = "@(#)sort.c	4.17 (Berkeley) %G%";
+/*-
+ * Copyright (c) 1986 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1986 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)sort.c	4.18 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/file.h>

@@ -1,4 +1,8 @@
-/*	t..c	4.4	88/07/22	*/
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)t..c	4.5 (Berkeley) %G%
+ */
 
 /* t..c : external declarations */
 

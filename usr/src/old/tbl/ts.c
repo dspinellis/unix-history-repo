@@ -1,6 +1,10 @@
+/*-
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)ts.c	4.2 %G%";
-#endif
+static char sccsid[] = "@(#)ts.c	4.3 (Berkeley) %G%";
+#endif /* not lint */
 
  /* ts.c: minor string processing subroutines */
 match (s1, s2)

@@ -1,6 +1,10 @@
+/*-
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)ti.c	4.2 %G%";
-#endif
+static char sccsid[] = "@(#)ti.c	4.3 (Berkeley) %G%";
+#endif /* not lint */
 
  /* ti.c: classify line intersections */
 # include "t..c"
