@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.25 (Berkeley) %G%
+#	@(#)Makefile	7.26 (Berkeley) %G%
 
 DESTDIR=
 STAND=	../../stand
@@ -25,7 +25,7 @@ LIBSA=	libsa.a
 
 SRCS=	autoconf.c boot.c bootxx.c cat.c copy.c dev.c drtest.c format.c \
 	format.c getfile.c gets.c hp.c hpmaptype.c ht.c idc.c kdb.c \
-	machdep.c mba.c mt.c prf.c printn.c qdcons.c qvcons.c qfont.c \
+	machdep.c mba.c mt.c prf.c printf.c qdcons.c qvcons.c qfont.c \
 	rk.c rl.c sys.c tm.c tmscp.c ts.c uba.c uda.c up.c upmaptype.c \
 	ut.c conf.c ../vax/dkbad.c
 DUMMIES=confxx.c
@@ -45,7 +45,7 @@ ALL=	boot tpboot cat copy tpcopy format tpformat drtest ls \
 
 all: ${ALL}
 
-${LIBSA}: conf.o dev.o dkbad.o getfile.o gets.o machdep.o prf.o printn.o \
+${LIBSA}: conf.o dev.o dkbad.o getfile.o gets.o machdep.o prf.o printf.o \
 	qfont.o sys.o ${DRIVERS}
 	ar crv ${LIBSA} $?
 	ranlib ${LIBSA}
