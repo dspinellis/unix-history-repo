@@ -1,4 +1,4 @@
-.\"	@(#)r.t	1.2	(Copyright 1986 M. K. McKusick)	86/11/29
+.\"	@(#)r.t	1.3	(Copyright 1986 M. K. McKusick)	86/12/04
 .NH
 References
 .ls 1
@@ -15,6 +15,11 @@ Brownbridge, D.R., L.F. Marshall, B. Randell,
 ``The Newcastle Connection, or UNIXes of the World Unite!,''
 \fISoftware\- Practice and Experience\fP, Vol. 12, pp. 1147-1162, 1982.
 .sp
+.IP Chandler86
+Chandler, D.,
+``The Monthly Report \- Up the Streams Without a Standard'',
+\fIUNIX Review\fP, Vol. 4, No. 9, pp. 6-14, September 1986.
+.sp
 .IP Cole85
 Cole, C.T., P.B. Flinn, A.B. Atlas,
 ``An Implementation of an Extended File System for UNIX,''
@@ -29,7 +34,7 @@ August 1983.
 .sp
 .IP Karels86
 Karels, M., M. McKusick,
-``Towards a Compatible Filesystem Interface,''
+``Towards a Compatible File System Interface,''
 \fIProceedings of the European UNIX Users Group Meeting\fP,
 Manchester, England, pp. 481-496, September 1986.
 .sp
@@ -86,7 +91,7 @@ pp. 260-269, June, 1986.
 .sp
 .IP Sandberg85
 Sandberg, R., D. Goldberg, S. Kleiman, D. Walsh, B. Lyon,
-``Design and Implementation of the Sun Network Filesystem,''
+``Design and Implementation of the Sun Network File System,''
 \fIUsenix Conference Proceedings\fP,
 pp. 119-130, June, 1985.
 .sp
@@ -97,7 +102,7 @@ Satyanarayanan, M., \fIet al.\fP,
 ACM, December, 1985.
 .sp
 .IP Walker85
-Walker, B.J. and S.H. Kiser, ``The LOCUS Distributed Filesystem,''
+Walker, B.J. and S.H. Kiser, ``The LOCUS Distributed File System,''
 \fIThe LOCUS Distributed System Architecture\fP,
 G.J. Popek and B.J. Walker, ed., The MIT Press, Cambridge, MA, 1985.
 .sp
