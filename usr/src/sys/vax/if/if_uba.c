@@ -75,7 +75,6 @@ if_ubaminit(ifu, uban, hlen, nmr, ifr, nr, ifw, nw)
 		ifu->iff_hlen = hlen;
 		ifu->iff_uban = uban;
 		ifu->iff_uba = uba_hd[uban].uh_uba;
-		ifu->iff_ubamr = uba_hd[uban].uh_mr;
 	}
 	for (i = 0; i < nr; i++)
 		if (if_ubaalloc(ifu, &ifr[i], nmr) == 0) {
@@ -127,7 +126,8 @@ if_ubaalloc(ifu, ifrw, nmr)
 	ifrw->ifrw_info = info;
 	ifrw->ifrw_bdp = UBAI_BDP(info);
 	ifrw->ifrw_proto = UBAMR_MRV | (UBAI_BDP(info) << UBAMR_DPSHIFT);
-	ifrw->ifrw_mr = &ifu->iff_ubamr[UBAI_MR(info) + (ifu->iff_hlen? 1 : 0)];
+	ifrw->ifrw_mr = &ifu->iff_uba->uba_map[UBAI_MR(info) + (ifu->iff_hlen?
+		1 : 0)];
 	return (1);
 }
 
