@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	4.19	82/03/12	*/
+/*	vfs_syscalls.c	4.20	82/03/16	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -175,6 +175,8 @@ symlink()
 		u.u_error = EEXIST;
 		return;
 	}
+	if (u.u_error)
+		return;
 	ip = maknode(IFLNK | 0777);
 	if (ip == NULL)
 		return;
