@@ -1,14 +1,14 @@
-static char *sccsid = "@(#)atrun.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)atrun.c	4.3 (Berkeley) %G%";
 /*
  * Run programs submitted by at.
  */
 #include <stdio.h>
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/dir.h>
 #include <time.h>
 #include <sys/stat.h>
 
-# define DIR "/usr/spool/at"
+# define ATDIR "/usr/spool/at"
 # define PDIR	"past"
 # define LASTF "/usr/spool/at/lasttimedone"
 
@@ -20,22 +20,19 @@ main(argc, argv)
 char **argv;
 {
 	int tt, day, year, uniq;
-	struct direct dirent;
-	FILE *dirf;
-	char file[DIRSIZ+1];
+	struct direct *dirent;
+	DIR *dirp;
 
-	chdir(DIR);
+	chdir(ATDIR);
 	makenowtime();
-	if ((dirf = fopen(".", "r")) == NULL) {
+	if ((dirp = opendir(".")) == NULL) {
 		fprintf(stderr, "Cannot read at directory\n");
 		exit(1);
 	}
-	while (fread((char *)&dirent, sizeof(dirent), 1, dirf) == 1) {
-		if (dirent.d_ino==0)
+	while ((dirent = readdir(dirp)) != NULL) {
+		if (dirent->d_ino==0)
 			continue;
-		strcpyn(file, dirent.d_name, DIRSIZ);
-		file[DIRSIZ] = '\0';
-		if (sscanf(file, "%2d.%3d.%4d.%2d", &year, &day, &tt, &uniq) != 4)
+		if (sscanf(dirent->d_name, "%2d.%3d.%4d.%2d", &year, &day, &tt, &uniq) != 4)
 			continue;
 		if (nowyear < year)
 			continue;
@@ -43,9 +40,9 @@ char **argv;
 			continue;
 		if (nowyear==year && nowdate==day && nowtime < tt)
 			continue;
-		run(file);
+		run(dirent->d_name);
 	}
-	fclose(dirf);
+	closedir(dirp);
 	updatetime(nowtime);
 	exit(0);
 }
