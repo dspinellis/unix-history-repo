@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	4.13 83/05/03";
+static char sccsid[] = "@(#)rlogind.c	4.14 83/05/22";
 #endif
 
 #include <stdio.h>
@@ -340,6 +340,7 @@ rmut()
 				continue;
 			lseek(f, -(long)sizeof(wtmp), 1);
 			SCPYN(wtmp.ut_name, "");
+			SCPYN(wtmp.ut_host, "");
 			time(&wtmp.ut_time);
 			write(f, (char *)&wtmp, sizeof(wtmp));
 			found++;
@@ -351,6 +352,7 @@ rmut()
 		if (f >= 0) {
 			SCPYN(wtmp.ut_line, line+5);
 			SCPYN(wtmp.ut_name, "");
+			SCPYN(wtmp.ut_host, "");
 			time(&wtmp.ut_time);
 			lseek(f, (long)0, 2);
 			write(f, (char *)&wtmp, sizeof(wtmp));
