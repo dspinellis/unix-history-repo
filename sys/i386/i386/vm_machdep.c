@@ -38,7 +38,7 @@
  *
  *	from: @(#)vm_machdep.c	7.3 (Berkeley) 5/13/91
  *	Utah $Hdr: vm_machdep.c 1.16.1.1 89/06/23$
- *	$Id: vm_machdep.c,v 1.26 1994/05/29 18:15:57 ats Exp $
+ *	$Id: vm_machdep.c,v 1.27 1994/06/01 01:58:10 davidg Exp $
  */
 
 #include "npx.h"
@@ -423,16 +423,14 @@ vm_bounce_free(bp)
  * if this is a bounced pa, then process as one
  */
 		if ( mybouncepa != pmap_kextract( i386_trunc_page( origkva))) {
-			if (i < bp->b_bcount) {
-				vm_offset_t tocopy = copycount;
-				if (i + tocopy > bp->b_bcount)
-					tocopy = bp->b_bcount - i;
+			vm_offset_t tocopy = copycount;
+			if (i + tocopy > bp->b_bufsize)
+				tocopy = bp->b_bufsize - i;
 /*
  * if this is a read, then copy from bounce buffer into original buffer
  */
-				if (bp->b_flags & B_READ)
-					bcopy((caddr_t) bouncekva, (caddr_t) origkva, tocopy);
-			}
+			if (bp->b_flags & B_READ)
+				bcopy((caddr_t) bouncekva, (caddr_t) origkva, tocopy);
 /*
  * free the bounce allocation
  */
