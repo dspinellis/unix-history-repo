@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)chpass.1	5.3 (Berkeley) %G%
+.\"	@(#)chpass.1	5.4 (Berkeley) %G%
 .\"
 .TH CHPASS 1 ""
 .UC 4
@@ -82,27 +82,25 @@ This field may be filled in with either a number or a group name (see
 .PP
 The
 .I change
-field is the number in seconds, GMT, from the epoch, until the
-password for the account must be changed.
+field is the date by which the password must be changed.
 .PP
 The
 .I expire
-field is the number in seconds, GMT, from the epoch, until the
-account expires.
+field is the date on which the account expires.
 .PP
 Both the
 .I change
 and
 .I expire
-fields should be entered in the form
-.I month dd [yy]yy
-where
+fields should be entered in the form ``month dd yy'' where
 .I month
-is the month name (the first three characters are sufficient), and
+is the month name (the first three characters are sufficient),
 .I dd
 is the day of the month, and
 .I yy
-is the year (either ``89'' or ``1989'' is sufficient).
+is the year.
+Also, either field may be ``none'' which will disable password
+aging or expiration.
 .PP
 The
 .I class
@@ -110,6 +108,8 @@ field is currently unused.  In the near future it will be a key to
 a
 .IR termcap (5)
 style database of user attributes.
+The string ``none'' is the default for not belonging to any
+class.
 .PP
 The user's home directory is the full UNIX path name where the user
 will be placed on login.
