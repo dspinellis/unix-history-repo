@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)defs.h	5.6 (Berkeley) %G%
+ *	@(#)defs.h	5.7 (Berkeley) %G%
  */
 
 #include <sys/types.h>
@@ -67,7 +67,6 @@ struct	rip *msg;
 
 char	**argv0;
 
-extern	char *sys_errlist[];
 extern	int errno;
 
 char	*malloc();

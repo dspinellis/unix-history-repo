@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)file.c	4.15 (Berkeley) %G%";
+static	char sccsid[] = "@(#)file.c	4.16 (Berkeley) %G%";
 #endif
 /*
  * file - determine type of file
@@ -7,13 +7,12 @@ static	char sccsid[] = "@(#)file.c	4.15 (Berkeley) %G%";
 
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <string.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <a.out.h>
 
 extern int	errno;
-extern int	sys_nerr;
-extern char	*sys_errlist[];
 
 int in;
 int i  = 0;
@@ -87,8 +86,7 @@ char *file;
 
 	ifile = -1;
 	if (lstat(file, &mbuf) < 0) {
-		printf("%s\n",
-		(unsigned)errno < sys_nerr? sys_errlist[errno]: "Cannot stat");
+		fprintf(stderr, "file: %s: %s\n", file, strerror(errno));
 		return;
 	}
 	switch (mbuf.st_mode & S_IFMT) {
@@ -123,8 +121,7 @@ char *file;
 
 	ifile = open(file, 0);
 	if(ifile < 0) {
-		printf("%s\n",
-		(unsigned)errno < sys_nerr? sys_errlist[errno]: "Cannot read");
+		fprintf(stderr, "file: %s: %s\n", file, strerror(errno));
 		return;
 	}
 	in = read(ifile, buf, BUFSIZ);

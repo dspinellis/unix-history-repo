@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startdaemon.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)startdaemon.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -73,12 +73,9 @@ static
 perr(msg)
 	char *msg;
 {
-	extern char *name;
-	extern int sys_nerr;
-	extern char *sys_errlist[];
 	extern int errno;
+	extern char *name;
+	char *strerror();
 
-	printf("%s: %s: ", name, msg);
-	fputs(errno < sys_nerr ? sys_errlist[errno] : "Unknown error" , stdout);
-	putchar('\n');
+	(void)printf("%s: %s: %s\n", name, msg, strerror(errno));
 }

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tftp.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)tftp.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /* Many bug fixes are from Jim Guyton <guyton@rand-unix> */
@@ -312,10 +312,10 @@ struct errmsg {
 nak(error)
 	int error;
 {
+	register struct errmsg *pe;
 	register struct tftphdr *tp;
 	int length;
-	register struct errmsg *pe;
-	extern char *sys_errlist[];
+	char *strerror();
 
 	tp = (struct tftphdr *)ackbuf;
 	tp->th_opcode = htons((u_short)ERROR);
@@ -324,7 +324,7 @@ nak(error)
 		if (pe->e_code == error)
 			break;
 	if (pe->e_code < 0) {
-		pe->e_msg = sys_errlist[error - 100];
+		pe->e_msg = strerror(error - 100);
 		tp->th_code = EUNDEF;
 	}
 	strcpy(tp->th_msg, pe->e_msg);
