@@ -1,4 +1,4 @@
-/*	hp.c	4.70	83/02/24	*/
+/*	hp.c	4.71	83/02/27	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -346,6 +346,8 @@ hpmaptype(mi)
 	if (type == HPDT_RM02) {
 		int ntracks, nsectors;
 
+		hpaddr->hpof = HPOF_FMT22;
+		mbclrattn(mi);
 		hpaddr->hpcs1 = HP_NOP;
 		hpaddr->hphr = HPHR_MAXTRAK;
 		ntracks = MASKREG(hpaddr->hphr) + 1;
@@ -354,19 +356,19 @@ hpmaptype(mi)
 			type = HPDT_CAPRICORN;
 			goto done;
 		}
-		if (ntracks != 20) {
-			printf("hp%d: ntracks %d: unknown device\n", ntracks);
-			goto done;
-		}
 		hpaddr->hpcs1 = HP_NOP;
 		hpaddr->hphr = HPHR_MAXSECT;
 		nsectors = MASKREG(hpaddr->hphr) + 1;
-		if (nsectors == 48) {
+		if (ntracks == 20 && nsectors == 48) {
 			type = HPDT_EAGLE;
 			printf("hp%d: eagle\n", mi->mi_unit);
+			goto done;
 		}
+		printf("hp%d: ntracks %d, nsectors %d: unknown device\n",
+			ntracks, nsectors);
 done:
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
+		mbclrattn(mi);		/* conservative */
 		return (type);
 	} 
 
@@ -451,11 +453,12 @@ hpustart(mi)
 {
 	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
-	register struct hpst *st = &hpst[mi->mi_type];
+	register struct hpst *st;
 	struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
 	daddr_t bn;
 	int sn, dist;
 
+	st = &hpst[mi->mi_type];
 	hpaddr->hpcs1 = 0;
 	if ((hpaddr->hpcs1&HP_DVA) == 0)
 		return (MBU_BUSY);
@@ -545,15 +548,14 @@ hpdtint(mi, mbsr)
 {
 	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
-	register struct hpst *st = &hpst[mi->mi_type];
+	register struct hpst *st;
 	register int er1, er2;
 	struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
 	int retry = 0;
 
-	if (bp->b_flags&B_BAD) {
-		if (hpecc(mi, CONT))
-			return (MBD_RESTARTED);
-	}
+	st = &hpst[mi->mi_type];
+	if (bp->b_flags&B_BAD && hpecc(mi, CONT))
+		return (MBD_RESTARTED);
 	if (hpaddr->hpds&HPDS_ERR || mbsr&MBSR_EBITS) {
 #ifdef HPDEBUG
 		if (hpdebug) {
@@ -623,8 +625,7 @@ hard:
 		} else if ((er2 & HPER2_BSE) && !ML11) {
 			if (hpecc(mi, BSE))
 				return (MBD_RESTARTED);
-			else
-				goto hard;
+			goto hard;
 		} else if (RM80 && er2&HPER2_SSE) {
 			(void) hpecc(mi, SSE);
 			return (MBD_RESTARTED);
