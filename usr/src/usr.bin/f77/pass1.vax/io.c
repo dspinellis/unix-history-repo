@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static	char *sccsid = "@(#)io.c	5.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)io.c	5.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -16,8 +16,13 @@ static	char *sccsid = "@(#)io.c	5.2 (Berkeley) %G%";
  *
  * University of Utah CS Dept modification history:
  *
- * $Header: io.c,v 5.2 85/12/19 17:22:35 donn Exp $
+ * $Header: io.c,v 5.3 86/03/04 17:45:33 donn Exp $
  * $Log:	io.c,v $
+ * Revision 5.3  86/03/04  17:45:33  donn
+ * Change the order of length and offset code in startrw() -- always emit
+ * the memoffset first, since it may define a temporary which is used in
+ * the length expression.
+ * 
  * Revision 5.2  85/12/19  17:22:35  donn
  * Don't permit more than one 'positional iocontrol' parameter unless we
  * are doing a READ or a WRITE.
@@ -787,8 +792,9 @@ if(iostmt == IOREAD)
 if(intfile)
 	{
 	ioset(TYIOINT, XIRNUM, nump);
+	ioseta(XIUNIT, cpexpr(unitp));
 	ioset(TYIOINT, XIRLEN, cpexpr(unitp->vleng) );
-	ioseta(XIUNIT, unitp);
+	frexpr(unitp);
 	}
 else
 	ioset(TYIOINT, XUNIT, (expptr) unitp);
