@@ -12,17 +12,23 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  *  fstat 
  */
-#include <machine/pte.h>
-
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/proc.h>
+#include <sys/user.h>
+#ifdef SPPWAIT
+#define NEWVM
+#endif
+#ifndef NEWVM
+#include <machine/pte.h>
+#include <sys/vmmac.h>
+#endif
 #include <sys/text.h>
 #include <sys/stat.h>
 #include <sys/vnode.h>
@@ -31,9 +37,7 @@ static char sccsid[] = "@(#)fstat.c	5.27 (Berkeley) %G%";
 #include <sys/domain.h>
 #include <sys/protosw.h>
 #include <sys/unpcb.h>
-#include <sys/vmmac.h>
 #include <sys/kinfo.h>
-#include <sys/namei.h>
 #include <sys/filedesc.h>
 #define	KERNEL
 #define NFS
@@ -59,6 +63,7 @@ static char sccsid[] = "@(#)fstat.c	5.27 (Berkeley) %G%";
 #include <pwd.h>
 #include <string.h>
 #include <stdio.h>
+
 
 #define	TEXT	-1
 #define	CDIR	-2
@@ -124,7 +129,6 @@ main(argc, argv)
 {
 	register struct passwd *passwd;
 	int what = KINFO_PROC_ALL, arg = 0;
-	struct passwd *getpwnam(), *getpwuid();
 	struct proc *p;
 	extern char *optarg;
 	extern int optind;
@@ -203,9 +207,10 @@ main(argc, argv)
 		exit(1);
 	}
 	if (nflg)
-fputs("USER     CMD        PID   FD  DEV    INUM       MODE SZ|DV", stdout);
+fputs("USER     CMD          PID   FD  DEV    INUM       MODE SZ|DV", stdout);
 	else
-fputs("USER     CMD        PID   FD MOUNT      INUM MODE         SZ|DV", stdout);
+fputs("USER     CMD          PID   FD MOUNT      INUM MODE         SZ|DV",
+	    stdout);
 	if (checkfile && fsflg == 0)
 		fputs(" NAME\n", stdout);	
 	else
@@ -222,7 +227,7 @@ fputs("USER     CMD        PID   FD MOUNT      INUM MODE         SZ|DV", stdout)
 char	*Uname, *Comm;
 int	Pid;
 
-#define PREFIX(i) printf("%-8.8s %-8s %5d", Uname, Comm, Pid); \
+#define PREFIX(i) printf("%-8.8s %-10s %5d", Uname, Comm, Pid); \
 	switch(i) { \
 	case TEXT: \
 		fputs(" text", stdout); \
@@ -249,30 +254,49 @@ dofiles(p)
 {
 	int i, last;
 	struct file file;
+#ifdef NEWVM
+	struct filedesc0 filed0;
+#define	filed	filed0.fd_fd
+	struct eproc *ep;
+#else
 	struct filedesc filed;
+#endif
 
 	extern char *user_from_uid();
-#ifdef notdef
+#ifndef NEWVM
 	struct vnode *xvptr;
 #endif
 
+#ifdef NEWVM
+	ep = kvm_geteproc(p);
+	Uname = user_from_uid(ep->e_ucred.cr_uid, 0);
+#else
 	Uname = user_from_uid(p->p_uid, 0);
+#endif
 	Pid = p->p_pid;
 	Comm = p->p_comm;
 
 	if (p->p_fd == NULL)
 		return;
-	if (!KVM_READ(p->p_fd, &filed, sizeof (struct filedesc))) {
+#ifdef NEWVM
+	if (!KVM_READ(p->p_fd, &filed0, sizeof (filed0))) {
 		dprintf(stderr, "can't read filedesc at %x for pid %d\n",
 			p->p_fd, Pid);
 		return;
 	}
+#else
+	if (!KVM_READ(p->p_fd, &filed, sizeof (filed))) {
+		dprintf(stderr, "can't read filedesc at %x for pid %d\n",
+			p->p_fd, Pid);
+		return;
+	}
+#endif
 	/*
 	 * root directory vnode, if one
 	 */
 	if (filed.fd_rdir)
 		vtrans(filed.fd_rdir, RDIR);
-#ifdef notdef
+#ifndef NEWVM
 	/*
 	 * text vnode
 	 */
@@ -294,15 +318,21 @@ dofiles(p)
 	 * open files
 	 */
 #define FPSIZE	(sizeof (struct file *))
-	ALLOC_OFILES(last=filed.fd_lastfile);
-#ifdef newvm
-	if (!KVM_READ(filed.fd_ofiles, ofiles, filed.fd_lastfile * FPSIZE)) {
-		dprintf(stderr, "can't read file structures at %x for pid %d\n",
-			filed.fd_ofiles, Pid);
-		return;
-	}
+	ALLOC_OFILES(filed.fd_lastfile);
+#ifdef NEWVM
+	if (filed.fd_nfiles > NDFILE) {
+		if (!KVM_READ(filed.fd_ofiles, ofiles,
+		    filed.fd_lastfile * FPSIZE)) {
+			dprintf(stderr,
+			    "can't read file structures at %x for pid %d\n",
+			    filed.fd_ofiles, Pid);
+			return;
+		}
+	} else
+		bcopy(filed0.fd_dfiles, ofiles, filed.fd_lastfile * FPSIZE);
 #else
-	bcopy(filed.fd_ofile, ofiles, NDFILE * FPSIZE);
+	bcopy(filed.fd_ofile, ofiles, MIN(filed.fd_lastfile, NDFILE) * FPSIZE);
+	last = filed.fd_lastfile;
 	if ((last > NDFILE) && !KVM_READ(filed.fd_moreofiles, &ofiles[NDFILE],
 	    (last - NDFILE) * FPSIZE)) {
 		dprintf(stderr, "can't read rest of files at %x for pid %d\n",
