@@ -1,6 +1,5 @@
-/*	if_en.c	4.28	82/01/07	*/
+/*	if_en.c	4.29	82/01/19	*/
 
-#define ENKLUDGE
 #include "en.h"
 
 /*
