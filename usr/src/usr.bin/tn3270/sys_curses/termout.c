@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)termout.c	3.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)termout.c	3.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #if defined(unix)
@@ -68,7 +68,7 @@ static WINDOW *bellwin = 0;		/* The window the bell message is in */
 int	bellwinup = 0;			/* Are we up with it or not */
 
 #if	defined(unix)
-static char *KS, *KE;
+static char *myKS, *myKE;
 #endif	/* defined(unix) */
 
 
@@ -649,12 +649,12 @@ InitTerminal()
 			 * be nice, but it messes us up.
 			 */
 	signal(SIGTSTP, SIG_DFL);
-	if ((KS = tgetstr("ks", &lotsofspace)) != 0) {
-	    KS = strsave(KS);
-	    StringToTerminal(KS);
+	if ((myKS = tgetstr("ks", &lotsofspace)) != 0) {
+	    myKS = strsave(myKS);
+	    StringToTerminal(myKS);
 	}
-	if ((KE = tgetstr("ke", &lotsofspace)) != 0) {
-	    KE = strsave(KE);
+	if ((myKE = tgetstr("ke", &lotsofspace)) != 0) {
+	    myKE = strsave(myKE);
 	}
 	if (tgetstr("md", &lotsofspace) && tgetstr("me", &lotsofspace)) {
 	   SO = strsave(tgetstr("md", &lotsofspace));
@@ -687,8 +687,8 @@ int doNewLine;
 	endwin();
 	setconnmode();
 #if	defined(unix)
-	if (KE) {
-	    StringToTerminal(KE);
+	if (myKE) {
+	    StringToTerminal(myKE);
 	}
 #endif	/* defined(unix) */
 	if (doNewLine) {
@@ -717,8 +717,8 @@ ConnectScreen()
 {
     if (screenInitd) {
 #if	defined(unix)
-	if (KS) {
-	    StringToTerminal(KS);
+	if (myKS) {
+	    StringToTerminal(myKS);
 	}
 #endif	/* defined(unix) */
 	RefreshScreen();
