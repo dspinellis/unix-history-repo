@@ -1,0 +1,1100 @@
+Tue Jan 21 00:22:00 1992  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* parse.y, shell.h, new files parser.h and input.h:  parser.h
+	contains all of the structures necessary to parse commands; this
+	file is included within shell.h.  input.h contains definitions and
+	structures which are used by the parser to read input; this file
+	is included only by parse.y and builtins/common.c.
+
+	* execute_cmd.c (find_user_command_in_path), (extract_colon_unit),
+	and (user_command_matches): Fix core dumping when Bash encounters
+	a trailing `:' in $PATH.
+
+	* bashline.c (initialize_readline) Fix typo: name of user visible
+	function is `operate-and-get-next', not `operate_and_get_next'.
+
+	* machines.h: (DGUX) Fix typo '_DFOO' -> '-DFOO'.
+
+	* execute_cmd.c (do_redirection_internal) Add a workaround for
+	machines using AFS which exhibit the `AFS create bug'.  This code
+	is conditionalized on "AFS_CREATE_BUG".
+
+	* execute_cmd.c (do_redirection_internal) Add an additional step
+	when calling alloca () for those machines which only allow the
+	output of alloca () to be assigned to a simple variable.
+
+	* execute_cmd.c (execute_command_internal) Free memory allocated
+	with alloca () on machines where the alloca emulation is being
+	used.
+
+	* jobs.c (drain_output) Remove extra argument to select ().  Now
+	we expect drain_output () to work correctly.
+
+	* parse.y: Many functions.  New union INPUT_STREAM can contain a
+	(FILE *) or a (char *).  New structure BASH_INPUT contains all of
+	the information that used to be in globals, namely:  the address
+	of the function to get a character (getter), the address of the
+	function to unget a character (ungetter), the location from which
+	to get or unget (INPUT_STREAM)location, the type (type), and the
+	name of the stream (name).  New global structure variable
+	`bash_input' is the place in which the globals are stored.
+
+	* shellc. (initialize_shell) Call initialize_bash_input () to zero
+	the data structure used by the BASH_INPUT functions.
+
+Mon Jan 20 23:04:15 1992  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* parse.y (decode_prompt_string): '\s' now always returns the
+	base_pathname () of the shell_name.
+
+	* shell.c (reader_loop): Make declaration of setjmp () variable
+	and call for that variable to receive output of setjmp () two
+	separate statements so that the Cray and other compilers won't
+	complain.
+
+	* nojobs.c: Add define for WAITPID which does Posix or non-posix
+	versions of wait ().  Add code to reap zombied children, and call
+	it when forking fails the first time so we can retry the fork.
+
+	* builtins/read.def (read_builtin): Fix bug in -r mode.  We use a
+	new variable called `raw_mode' to control input handling.
+
+	* builtins/times.def: Clean up defines.
+
+	* builtins/ulimit.def (ulimit_builtin): Fix typos.
+
+Sat Jan 18 14:46:19 1992  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* builtins/getopt.c: Include ../config.h if being compiled for
+	Bash.
+
+	* cpp-Makefile: Remove declaration of DESTDIR and associated
+	comment.  It is passed in from Makefile now.
+
+	* Makefile: Pass DESTDIR variable in from Makefile to
+	cpp-Makefile.
+
+	* variables.c: (initialize_shell_variables) Set our internal PWD
+	variable before reading the environment so that if an exported PWD
+	exists it takes precedence.
+
+Thu Jan  9 02:45:02 1992  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* machines.h: Added entry for an Amiga running USGr4.
+
+	* support/mksysdefs: If the directory `/usr/amiga' exists, then
+	this machine is an Amiga running USGr4.
+
+Wed Jan  1 20:20:05 1992  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* builtins/type.def: (type_builtin) Fix bug which prevented output
+	from being produced for unfound items after a previous item was
+	found: i.e., `type ls blarney' did not produce error message for
+	blarney, but now it does.
+
+	* builtins/echo.def: (echo_builtin) Document -E flag.  Check
+	option strings for full validity before handling any of the
+	options; echo -n9 should echo "-n9" with a trailing newline.
+
+Mon Dec 30 17:06:36 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* machines.h, test.c: Change HAVE_MULTIPLE_GROUPS to
+	HAVE_GETGROUPS.
+
+	* machines.h, cpp-Makefile: Change HAVE_SIGLIST to
+	HAVE_SYS_SIGLIST.
+
+	* shell.c, print_cmd.c, make_cmd.c, machines.c, cpp-Makefile:
+	Change HAVE_VPRINTF to HAVE_VFPRINTF.
+
+Sun Dec 29 11:04:05 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* machines.h (ISC 2.2) 2.2 and greater have multiple groups and
+	the ld that is shipped with them needs the -Xp option to compile
+	with Posix semantics.
+
+	* execute_cmd.c (find_user_command_in_path) Allow the user to
+	interrupt lengthy path searches.
+
+	* execute_cmd.c, general.c (all_digits) Moved all_digits () from
+	execute_cmd.c to general.c.
+
+	* builtins/alias.def: (unalias_builtin) Allow `-a' option to delete
+	all aliases.  Allow `--' to signify end of options.
+
+	* builtins/jobs.def: (jobs_builtin) Allow `--' to signify end of
+	options.
+
+	* builtins/set.def (set_builtin) `set -b' is equivalent to `set -o
+	notify'.  This removes special case code from set_builtin ();
+
+	  flags.c: Move declaration of ASYNCHRONOUS_NOTIFICATION from
+	  jobs.c to flags.c.
+
+	  flags.h: Add external declaration of ASYNCHRONOUS_NOTIFICATION
+	  to list of flags.
+
+	* execute_cmd.c: (user_command_matches) If PATH_ELEMENT is the
+	empty string, then replace it with ".".
+
+	* builtins/cd.def: (dirs_builtin) Document -l flag.  Do not print
+	trailing space at end of output.
+
+	* builtins/fc.def (fc_builtin) Modify output of listed history
+	lines to match Posix.2a specification.
+
+Sat Dec 28 16:29:28 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* bashline.c: New functions and define for controlling their
+	presence.  The define is DYNAMIC_HISTORY_EXPANSION, and it
+	controls whether code for completing over history tokens with
+	M-TAB is compiled.
+
+	* cpp-Makefile: Use new #define SEARCH_LIB_NEEDS_SPACE to create
+	local Makefile variable SEARCH_LIB, which is either `-L' or `-L '.
+
+	machines.h: hpux compiler requires SEARCH_LIB_NEEDS_SPACE.
+
+Sat Dec 14 12:21:17 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* mailcheck.c; Carefully save and restore the value of $_ while
+	hacking mail.
+
+	* new file getcwd.c is included for ISC systems (or others) with
+	broken implementations of getcwd ().
+
+	* builtins/kill.def; sscanf () an integer variable and then cast
+	the results into a pid_t.
+
+	* parse.y; check shell_input_line for non-nullness before checking
+	the contents of it.
+
+Fri Nov 22 01:21:44 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* support/getcppsyms.c: Add "luna88k".
+
+	* builtins/jobs.def: New function execute_list_with_replacements
+	() implements the POSIX specified "jobs -x foo %1" behaviour.
+
+Thu Nov 21 00:15:01 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* machines.h: Description for Omron Luna 88k.
+
+	* machines.h, shell.c: Instead of Xenix being the #define which
+	determines whether the arguments to setvbuf () are reversed, make
+	a new define (added to SYSDEP_CFLAGS for Xenix machines) called
+	REVERSED_SETVBUF_ARGS.
+
+	* cpp-Makefile: Quote values of AR and RANLIB passed to sub makes.
+
+Wed Nov 20 05:06:10 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+	* parse.y: New variable CURRENT_COMMAND_LINE_COUNT controls how
+	commands are added to the history.  New function bash_add_history
+	() handles the details of adding a line to the history.
+
+	* shell.c: (parse_command) Clear current_command_line_count before
+	calling yyparse ();
+
+	* subst.c: New function and variable pair
+	"command_oriented_history" controls behaviour of bash_add_history ().
+
+Sat Nov 16 21:43:47 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* builtins/help.def: (help_builtin) Call QUIT while listing help.
+
+	* subst.c: Include fnmatch.h, don't include glob.h.  Remove
+	definition of fnmatch.
+
+	* execute_cmd.c: Include fnmatch.h, don't include glob.h.
+	  (execute_case_command) Use define for FNM_NOESCAPE instead of 0.
+
+	* lib/glob/glob.c: Removed glob_match () and made glob_vector ()
+	call fnmatch ().
+
+	* lib/glob:  Added new files fnmatch.c,h.
+
+Thu Nov 14 04:23:08 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* builtins/shift.def; The shift count can be zero.
+
+	* subst.c; New variable last_command_subst_pid keeps track of the
+	process ID of the last command executed within command substition.
+
+	* execute_cmd.c (execute_simple_command); Use
+	last_command_subst_pid (in conjunction with temp var
+	old_last_command_subst_pid) to return the POSIX specified value in
+	the case of simple commands which ostensibly have no command
+	words. I.e.:
+
+	       If a redirection fails then return a non-zero status.
+	       Else, if the command contained a command substitution
+	       then return the exit status of the command substitution.
+	       Else return a status of 0.	
+
+Mon Nov 11 04:52:26 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* machines.h: Entry for drs6000, contributed by
+	R.S.JONES@qmw.ac.uk, Rob Jones.
+
+	* test.c: (two_arguments) Disallow "test -foo" being treated as
+	"test -f".
+
+Tue Nov  5 12:10:52 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* Makefile, cpp-Makefile; Remove target for "clone" because it is
+	now too hairy to support, and is largely unused.
+
+	* subst.c (command_substitute); Save and restore the original
+	pipeline process group for the making of the $() child.
+
+Mon Nov  4 00:00:39 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* config.h: Two new defines: DISABLED_BUILTINS allows "builtin
+	foo" to execute the shell builtin "foo" even if it has been
+	disabled with "enable -n foo".  ALLOW_RIGID_POSIX_COMPLIANCE
+	allows the environment variable POSIX_PEDANTIC to control shell
+	behaviour, making it a totally rigid posix compliant shell.
+
+	* builtins/common.c: Rearrangement of functions and new functions.
+	find_shell_builtin () now calls builtin_address_internal ().  New
+	function builtin_address () returns the address of a builtin
+	whether it is enabled or not.  builtin_address_internal () takes
+	two args, NAME and DISABLED_OKAY.
+
+	* support/getcppsyms.c: Add _AIX, M_UNIX, and M_XENIX to list of
+	known defines.
+
+Sun Nov  3 23:57:05 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* shell.c, jobs.c: Define and use top_level_mask, a signal mask
+	for the creation of children.  This fixes pipeline children being
+	created with SIGCHLD masked.
+
+Fri Nov  1 07:07:32 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* expr.c (evalexp) Zero token and token length before calling
+	readtok ();
+
+	* make_cmd.c (make_here_document) Inhibit <<- from deleting
+	anything other than tab characters.
+
+	* subst.c (parameter_brace_expand_length) Implement ${#xx} by
+	actually expanding $xx instead of assuming that it is a variable.
+
+	* execute_cmd.c (execute_subshell_builtin_or_function) Unwind
+	protect and restore the return_catch jump buffer during function
+	execution.
+
+	* machines.h (ardent/titan) #undef HAVE_ALLOCA to avoid compiler
+	bug.
+
+Wed Oct 30 12:43:54 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* execute_cmd.c (shell_execve) Only call _setostype () if the
+	machine is isc386, and _POSIX_SOURCE is defined.
+
+	* general.c (index, rindex); Check for existence of index #define
+	before declaring functions.
+
+	* subst.c (expand_word_internal) Make ${#-} and ${#?} return
+	the lengths of $- and $?.
+
+Mon Oct 28 11:24:31 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* execute_cmd.c (execute_command_internal); dispose of already
+	executed redirections when a subshell is recursively executing.
+
+	* support/getcppsyms.c; All of convex, __convex__ and __convexc
+	are translated to " -pcc -Dconvex".
+
+Thu Oct 24 14:29:24 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* builtins/Makefile: Massage declaration of $(MKBUILTINS) to
+	satisfy HPUX 7.0 native compiler.
+
+	* builtins/type.def; Make found_file local to disk file search
+	block.  In the case of a hashed file being found, increment
+	found_something.
+
+Tue Oct 22 17:22:37 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* nojobs.c; check _POSIX_VERSION for the right to include
+	termios.h.
+
+	* machines.h; Added entry for MagicStation.
+
+Thu Oct  3 16:28:55 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* parse.y (command_token_position) Now a define which calls
+	reserved_word_acceptable (), excluding SEMI_SEMI in case clauses.
+
+	* machines.h (description for ultrix && mipsel); MIPS Ultrix 4.2
+	machines still have alloca in the library, and it works perfectly
+	well; the only thing to be avoided is the inclusion of alloca.h.
+
+	* builtins/kill.def (kill_builtin).  Allow negative signal
+	specifiers to signify process groups.
+
+Fri Sep  6 17:34:38 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* execute_cmd.c: (do_redirect_internal) Fix to >&- of stdout
+	redirection bug.
+
+	Minor cosmetic changes to many files.
+	shell.h, make_cmd.c, copy_cmd.c, parse.y, 
+	    
+
+Sun Jul 28 19:28:17 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* Moved several scripts and support files into ./support.  Files
+	moved and renamed: makeargs.sh -> mksysdefs, cppmagic.sh ->
+	cppmagic, cat-s, getcppsyms.c info, mail-shell, make-tarfile.
+
+	* Moved glob/, readline/, and malloc/ (renamed from alloc-files)
+	into a subdirectory called lib.  This affected cpp-Makefile.
+
+	* cpp-Makefile: Use #defines to create a macro which builds
+	libraries, regardless of the directory that the source code
+	resides in.
+
+Thu Jul 11 21:00:20 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* builtins/kill.def: Make the exit status of `kill' be SUCCESS if
+	any of the killed processes accepted the signal.
+
+	* psize.c, jobs.c, shell.c, parse.y: Make signal handler functions
+	return a value if VOID_SIGHANDLER is not defined.
+
+	* parse.y, general.h, bashline.c builtins/type.def: Change
+	token_word_alist to word_token_alist, and typedef STRING_INT_ALIST
+	in general.h.  Use the new definitions in bashline.c,
+	builtins/type.def, and parse.y.
+
+	* bashline.c: (command_word_completion_function) Complete on
+	shell reserved words after trying aliases.
+
+Tue Jul  9 07:01:33 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* New file maxpath.h contains the right things to define
+	MAXPATHLEN on various systems.
+
+	* (shell.h) Always include unwind_prot.h.
+
+	* HUGE CHANGE.  All builtins appear in builtins/*.def.  There is a
+	new program called builtins/mkbuiltins.c which is called to
+	generate .c files from the .def files.  It also makes a header
+	file containing external declarations, and a C source file
+	containing the shell_builtins[] array.
+
+	The builtins are compiled into builtins/libbuiltins.a, and then
+	that file is one of the OBJECTS in bash-Makefile.
+
+Sun Jul  7 02:23:21 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* builtins.c: Add `--' flag to trap, type, umask and hash
+	builtins.
+
+	* jobs.c: (set_job_control) returns the original value of
+	job_control.  Remove extra ignore of SIGQUIT.
+
+	* config.h: Add define of STANDARD_UTILS_PATH for `command -p'.
+	Add "defined" for UNIXPC where it was missing.
+
+	* subst.c: make and use QUOTED_CHAR define.  Test for possibilty
+	of tilde expansion before doing it.
+
+	* make_cmd.c: Only do quote_removal on here document delimiters.
+
+	* builtins.c: (command_builtin) Add Posix -p flag to `command'
+	builtin.  Random textual changes to clarify the meaning of the
+	output for various commands.
+
+	exec_builtin now restores the default signal handlers.
+
+	* glob.c: Avoid globbing in directories that begin with `.' if the
+	glob pattern (and noglob_dot_filenames) don't allow it.
+
+	* test.c: Avoid calling strlen () when we only care if the length
+	is non-zero.  Instead, test the first byte.
+
+	* jobs.c(kill_pid) Kill the process pointed to by P, not the last
+	one we looked at.
+
+	* shell.c: Only source the .bashrc if this is not a login shell,
+	even if we are not sourcing .bash_profile.
+
+	Xenix's setvbuf () has 2 middle arguments reversed.
+
+	Run the exit trap when the shell is dying from a terminating
+	signal (like SIGINT).
+
+	* general.c:(get_hostname) Change `uts' to `ut' to avoid conflict
+	with Amdahl compiler.
+
+	* execute_cmd.c:(execute_simple_command) changes to make
+	this_shell_bultin always reflect the current command; i.e. NULL if
+	not a builtin, otherwise, the address of the currently executing
+	builtin.
+
+	variables.c:(find_variable) Check temporary environment if current
+	execution environment is a builtin or function.
+
+	flags.h: Prevent multiple inclusion, add declarations for
+	functions found in flags.c.
+
+Mon Jun 24 20:44:47 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* execute_cmd.c: (do_redirections) Hack errors on variable names
+	as redirectee's to display themselves correctly.  New function
+	expandable_redirection_filename () takes a (REDIRECT *) and
+	returns non-zero if the redirectee should be expanded or treated
+	as an integer.
+
+	* builtins.c: New builtin documentation: bind_builtin ().
+	  bashline.c: New builtin code: bind_builtin ().
+	  mailcheck.c: Cosmetic changes.
+
+Mon Jun 10 10:47:13 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* machines.h: Group all of the i386 machines together.  Merge SCO
+	port.
+
+	* jobs.c: Use SCO instead of M_UNIX.
+
+	* shell.c, jobs.c, execute_cmd.c, general.c, builtins.c,
+	make_cmd.c, subst.c, general.h: New file filecntl.h should be
+	included wherever you needed to include fcntl.h.
+
+	* cpp-Makefile: #undef i386 around Makefile assignments where the
+	preprocessor might munge it.
+
+	* test,c, execute_cmd.c: moved definition of group_member () into
+	test.c from execute_cmd.c so test.c can be compiled standalone.
+
+Tue May 28 19:02:41 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* expr.c: (evalexp) Save and restore the longjmp destination of
+	evalbuf for each call to evalexp () to allow recursive calls to
+	error correctly.
+
+	* makeargs.sh: Fix typo for determining RISC6000.
+
+	* machines.h: Fix bugs in machine descriptions according to bug
+	reports.
+
+	* execute_cmd.c: (execute_simple_command) Remove all of the execve
+	code and shell interpretation code placing it into a new function
+	called shell_execve ().
+
+	* builtins.c (exec_builtin) call shell_execve () instead of
+	execve ().
+
+	* Makefile: Add $(STRERROR) to flags.
+
+Fri May 24 12:05:45 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* cpp-Makefile: Pass AR to library builds, same as RANLIB.
+
+	* general.c: Move definitions of index () and rindex () to top of
+	file so that those systems which do not have them get the return
+	type correct.
+
+	* Fixed typo in README; removed MAINTAINENCE (mispelled) from
+	cpp-Makefile, since it is no longer used.  Fixed mispeslling in
+	machines.h of Sun Miscrosystems.
+
+	* bashline.c: (command_word_completion_function) Interpret tildes
+	while completing along PATH.  This may be obsoleted in the near
+	future, since we might do rms's `=~' and `:~' expansion hacks.
+
+	* all files: Remove extraneous tab characters in comments.
+
+	* Makefile: Change rules for SQUASH_BLANKS; default to using
+	  awk script.
+
+	* cat-s: New awk script file added to distribution.
+
+Thu May 23 17:56:35 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* machines.h: Default to USE_GNU_MALLOC and HAVE_DUP2.  Turn off
+	USE_GNU_MALLOC for Sun workstations because of YP bug in Sun.
+	cpp-Makefile: Add -DHAVE_DUP2 to CFLAGS if you have it.  Add
+	-DHAVE_ALLOCA to cflags if you have it, so config.h gets it.
+
+	* test.c: (two_arguments) Fix typo in call to unop ().
+	(posixtest) Add missing `break' for 4 argument case.
+
+Wed May 22 15:02:31 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* shell.c: (maybe_save_history): add a call to using_history ()
+	before checking history_lines_this_session.
+
+Sun May 19 17:47:15 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* Makefile: Use an awk script instead of cat -s, since that
+	doesn't work on USG systems.  Pass MFLAGS to recursive invocations
+
+	* bashline.c: All local names are now declared static.
+	(display_shell_version) outputs carriage return after printing the
+	shell version so that readline will not be confused.  New
+	functions operate_and_get_next (), and  set_saved_history () are
+	compatible wth the C-o command from K*rn shell.
+
+	* bashline.c: Only allow enabled commands to be completed on.
+
+	* braces.c: When compiled with -DSHELL, the brace_arg_separator
+	character must be seen for any change to take place in
+	brace_expand ().
+
+	* bultins.c: (parse_and_execute) Save and restore top_level
+	jmp_buf, and supply an alternate place for throws to top_level
+	to go to.  This is for arithmetic and bad substitution errors.
+
+	* builtins.c: (hash_builtin) use absolute_program () instead of
+	absolute_pathname ().
+
+	* cpp-Makefile: Numerous changes include using cpp defines for
+	readline and termcap targets for those `make' programs which don't
+	correctly handle variable expansion in the target postion,
+	.distribution now depends on version.h, `make clean' now
+	removes created support files. substantial reorganization.  Pass
+	$(RANLIB) to library building makes.
+
+	* builtins.c (builtin_error) Only print this_command_name if it is
+	non-null and non-empty.
+
+	* execute_cmd.c (execute_command_internal) A command run in a
+	subshell with `()' now runs trap 0 upon completion.  Only let
+	auto_resume resume stopped jobs.
+
+	* execute_cmd.c: Set file descriptors to close on exec when
+	executing builtin commands.
+
+	Conditionalize traditional behaviour;  BSD systems exec scripts
+	with csh when the first line of the script is `#' by itself.  This
+	now only happens if the cpp define HAVE_CSH exists.
+
+	* makeargs.sh: If the file /bin/csh exists, then define HAVE_CSH
+	in sysdefs.h.
+
+	* New define, DUP2_BROKEN determines whether the system's dup2
+	doesn't handle close-on-exec correctly.  Add it to SYSDEP_CFLAGS
+	in the machine description.  This was done for all Sequents.
+
+	* execute_cmd.c (find_user_command_in_path) Use absolute_program
+	() instead of absolute_pathname ().
+
+	* expr.c: Allowed any valid variable name.
+
+	* fc.c: Error messages do not have "fc:" in them anymore.  Fixed
+	memory leak in fc_readline ().
+
+	* general.c (itos) Use unsigned arithmetic after determining the
+	sign to about overflow errors.
+
+	* execute_cmd.c, general.h: Moved macro declarations for setting
+	the close on exec flag so that shell.c and jobs.c can use them.
+
+	* glob.c: #include "posixstat.h" instead of "sys/stat.h" on
+	systems where opendir () does not check whether the file being
+	opened is a directory.
+
+	* jobs.c: Improved error messages.  Make the first command in a
+	pipeline block reading from a pipe until the last command is
+	created.  This solves all sync problems.
+
+	New define "getpgid (pid)" gets around differences in getpgrp ()
+	calls on different systems.
+
+	set_new_line_discipline () works on TERMIO systems without
+	NTTYDISC.
+
+	* jobs.h: HP/UX systems barf on WIF* macros in sys/wait.h.  Use
+	our definitions in jobs.h instead.
+
+	* machines.h: Numerous changes.  Compiler flags for MIPS.
+	Improved Encore machines.
+
+	* makeargs.sh: Better tests for whoami and hostname.
+
+	* nojobs.c: Changes to allow compilation on MINIX and BSD without
+	job control.
+
+	* parse.y: Discard null input characters.
+	Properly count parens and quotes inside of $() and $[].
+	subst.c:(extract_delimited_string) also counts correctly.
+
+	* posixstat.h: More definitions and fewer assumptions about the
+	target system.
+
+	* shell.h: Provide a default shell_name when argv[0] is empty or
+	null.  Remove leading `-' from argv[0] on recursive calls to main
+	().  Exit status made Posix compliant (127) for attempts to
+	execute a binary file, or a non-existant file.
+
+	Test for existance of all signal definitions for
+	terminating_signals array;  assume nothing about target system.
+
+	(throw_to_top_level) If using readline, reset readline function
+	pointers to avoid interrupted completion leaving them in a funny
+	state.
+
+	subst.c: Separate out command substitution from the the main loop.
+	(string_extract_double_quoted) now allows new quoting rules from
+	Posix.2.
+
+	* test.c: test -f behaviour now rigidly Posix.2 compliant.
+
+Thu Feb 21 19:54:29 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* jobs.c: Merged in changes to call POSIX signal functions.  Added
+	declarations to make those functions work on non-POSIX systems.
+	POSIXfied jobs.h.
+
+Sun Feb 17 15:31:33 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* glob.c (glob_vector (), glob_filename ()).  In case of interrupt
+	and compiled for Bash, then free arrays and throw to top level.
+
+	* braces.c; (brace_expand) In case of an error, if compiled for
+	Bash, then throw to top level.  Errors are defined as:
+
+	foo{   -> no error
+	foo{a, -> error
+	foo{}  -> no error
+	foo}   -> no error
+
+Wed Jan 30 17:09:06 1991  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* Changed xrealloc to call xmalloc if the pointer argument was
+	NULL.  Changed all calls to xmalloc to xrealloc if they were
+	placed as a safegaurd against calling xrealloc on a NULL pointer.
+
+	* replaced all occurences of <sys/stat.h> with "posixstat.h".
+
+Mon Jun 11 16:34:38 1990  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* Change SYSV to USG everywhere (system V to "Unix Systems
+	Group").  In config.h, #define USG if SYSV is defined.
+	In machines.h, change `#define M_OS SYSV' to define USG instead.
+
+Tue Jun	 5 15:56:12 1990  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* execute_cmd.c: (extract_colon_unit) No longer skip leading `:'
+	by itself.  Instead return a string of length 0.
+
+Thu May 24 17:36:40 1990  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* parse.y (shell_getc) Remember the value of the prompt when
+	getting a new line so that history errors and other "stay here"
+	faults reuse the same prompt. 
+
+Wed May 23 05:12:20 1990  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* bashline.c; Fixed extra call to rl_add_defun in
+	initialize_readline (). 
+
+	* ulimit.c (shell_umlimit) SYSV can handle setting the break max.
+	It does some things in 512 byte blocks, not 1k blocks.
+
+	* builtins.c (kill_builtin) Exit value is FAILURE if any of the
+	arguments couldn't be killed, else SUCCESS.
+
+	* subst.c New function dequote_string ().  Changed all places
+	where strings were being dequoted to call this function.
+	No longer give up on globbing the rest of the line if the first
+	glob fails, due to file system error.
+
+	* parse.y, (yylex) Only check for mail when the PS1 prompt is to
+	be printed.  Save value of last_command_exit_value around calls to
+	execute the value of PROMPT_COMMAND.
+
+	* machines.h: ports for sgi, i386 running MACH, and i386 Symmetry.
+	  Port for Gould 9000 - UTX/32 R2.1A
+
+	* jobs.c (execute_command_internal) allow the output of `jobs'
+	to be piped.
+
+Tue May 15 02:24:30 1990  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* builtins.c (set_builtin) fixed type in call to strcmp ().
+
+Fri Apr 27 20:30:40 1990  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* machines.h, jobs.c (initialize_jobs).  Fix things to work with
+	the SGI machines and OS.
+
+Thu Apr 26 13:41:34 1990  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* builtins.c (read_builtin) New flag -r says not to ignore
+	backslash-newline pair in input text.
+
+	* builtins.c: add "-f" to readonly and export builtins as per
+	POSIX specification.
+
+	* execute_cmd.c (intern_function) report error if function cell is
+	already taken and the variable is already readonly.
+
+	* parse.y: Surround YYACCEPT's in "if foo YYACCEPT; else..." with
+	curly braces to avoid bug in Sun's Yacc.
+
+Mon Apr	 9 19:35:51 1990  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* bashline.c: specific completion functions.  e.g. M-@ completes a
+	hostname, no matter what the first character of the word is, while
+	C-x @ lists possible hosts.
+
+	* execute_cmd.c; (execute_simple_command) Pipelined functions call
+	execute_simple_command () directly so as to avoid extra forks
+	(which hid SIGPIPE signals).
+
+Sun Apr	 8 11:19:13 1990  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* bashline.c:snarf_hosts_from_file () Now accepts "$include
+	filename" and includes that file.  No limit to nesting.
+
+Sat Apr	 7 11:48:09 1990  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* execute_cmd.c: find_user_command_in_path (); swapped cases in if
+	statement for the sake of efficiency.  It is quicker to check two
+	variables than to call a function.  Only matters in 10 percent of
+	cases.
+
+	* parse.y: read_secondary_line (); Cleaned up.  Duplicated code,
+	special case for when using readline library replaced with
+	prompt_again ().  New function reset_readline_prompt () keeps the
+	readline prompt in sync with the Bash prompt.
+
+Thu Apr	 5 13:32:35 1990  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* machines.h: added description for Apollo running Bsd.  Patched
+	readline.c at rl_restart_output (), also for Apollo.
+
+	* execute_cmd.c; do_redirection (): no_clobber test is only valid
+	for regular files.  Devices and sockets are okay to "clobber".
+
+Sun Apr	 1 12:24:56 1990  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* parse.y: reserved_word_acceptable (); added WHILE and UNTIL to
+	the list of tokens which would allow bash command words to follow.
+	For example: while case hi in...
+
+Wed Mar 21 11:08:11 1990  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* nojobs.c: initialize_job_signals ();	Use sigint_sighandler ()
+	instead of throw_to_top_level ().
+
+	* shell.c: sigint_sighandler (); Reset signal handler to this
+	function so that Sys V machines can win.
+
+	* parse.y: yy_readline_get (); use sigint_sighandler () rather
+	than throw_to_top_level ().
+
+	* parse.y: pre_process_line (); Figure out how long PATH is before
+	alloca'ing the space for it.
+
+	* builtins.c: history_builtin (); moved check for -s flag within
+	test for any arguments.
+
+	* machines.h: convex has setlinebuf, but doesn't have vprintf.  It
+	also apparently runs something like Bsd.
+
+	* jobs.c: wait_for ().  Only allow QUIT macro if bash owns the
+	terminal.
+
+	* mailcheck.c: free_mail_files (); Don't free a NULL pointer.
+
+Tue Mar 20 05:41:05 1990  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* parse.y: removed "inserted ;;" error message in CASE rule.
+
+Mon Mar 12 01:25:29 1990  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* Makefile:
+
+	* Fixed typos in subst.c (quoted = 2) --> (quoted == 2)
+
+Sun Mar 11 04:28:30 1990  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* shell.h, subst.c, expand_word_internal ().  Here-documents don't
+	let backslash quote double-quote while being expanded.  Controlled
+	by the value of QUOTED passed into expand_word_internal ().  1 ==
+	expanding inside of double quotes, 2 = expanding a here document.
+
+	* parse.y: handle_eof_unit () now alls reset_parser () before
+	calling logout_or_exit () to prevent incorrect parsing of the
+	.logout file.
+
+Sat Mar 10 16:40:10 1990  Brian Fox  (bfox at gnuwest.fsf.org)
+
+	* execute_cmd.c: execute_command_internal ().  Fixed bug of
+	backgrounded shell control structures not being in the background.
+
+	* subst.c: expand_word_internal (); If a command substitution
+	string was not closed properly, the shell could walk off of the
+	end of a string.  Fixed with simple test.
+
+	* parse.y: shell_getc ();  now takes argument saying how to handle
+	backslash-newline.  All calls to shell_getc () adjusted.
+	read_token () adjusted to handle new scheme; it has to know when
+	to allow backslash newline, and when to ignore.
+
+	* builtins.c: echo_builtin ();	Words ending in `\' handled
+	incorrectly, allowing a reference past the end of the string.
+	Fixed.
+
+	* execute_cmd.c: find_user_command_in_path ();
+	if PATH ended with a `:', then that didn't mean to search
+	`.' for a file.  Now it does.
+
+	* builtins.c: added hack to history_builtin ().  Let
+	history -s args produce output the way that ARGS would if typed
+	interactively.  Thus "history -s "!?ema" might produce
+	"ls -l emacs-18.55.tar.Z".
+
+	* Added sun-cmd.termcap to the examples directory.
+
+	* POSIX`fied jobs.c: new define tcsetpgrp () takes place of
+	ioctl TIOCSPGRP; order of setting pgrp and terminal pgrp now
+	pgrp first, then terminal next.
+
+Fri Mar	 9 00:04:53 1990  Brian Fox  (bfox at gnuwest)
+
+	* subst.c: new function unquote_bang () removes backslashed `!'
+	from single-quoted strings after extracting them.
+
+Sat Feb 24 13:40:12 1990  Brian Fox  (bfox at gnuwest.gnu.org)
+
+	* parse.y:read_token (); backslash doesn't quote inside
+	of single quotes.  Esp. newline.
+
+Tue Jan 30 09:23:13 1990  Brian Fox  (bfox at sbphy.ucsb.edu)
+
+	* cpp-Makefile, machines.h, config.h:  HAVE_SETLINEBUF define is
+	defined or not in machines.h.
+
+	* shell.c: main (); Line buffer stdout as well as stderr.
+
+	  builtins.c: type_builtin (), jobs_builtin (), alias_builtin (),
+	  cd_builtin (), dirs_builtin ().  fflush (stdout) after printing.
+
+	  jobs.c: pretty_print_job (); fflush (stream) after printing.
+
+Sat Jan 20 12:02:41 1990  Brian Fox  (bfox at sbphy.ucsb.edu)
+
+	* unwind_prot.c: run_unwind_protects_internal () -- don't
+	run a non-existant function, like when the element is a
+	catch frame marker.
+
+Fri Jan 19 16:57:31 1990  Brian Fox  (bfox at sbphy.ucsb.edu)
+
+	* variables.c: getenv () now calls find_tempenv_variable () first
+	to find the most recent exported variable.
+
+	* variables.c: find_tempenv_variable () -- new function.  Makes a
+	shell variable if one exists in the temporary environment for a
+	command and returns that, or NULL otherwise.  Used in
+	set_or_show_attributes (), found in builtins.c.  This specifically
+	allows shell builtins to get the value of variables in the local
+	environment for this command.
+
+	* parse.y: pre_process_line ().  Don't do any preprocessing if
+	history_exapnsion_inhibited is on.  builtins.c: parse_and_execute
+	().  Save and restore the value of history_expansion_inhibited,
+	not of history_expansion.  In this way, .bashrc files can set or
+	clear this flag with "set +o".
+
+Thu Jan 18 19:52:02 1990  Brian Fox  (bfox at sbphy.ucsb.edu)
+
+	* builtins.c: All builtins use builtin_error () instead of
+	report_error ().  All builtins have a return value.
+	get_numeric_value () no longer takes FOR_WHOM argument.  The value
+	is now taken from THIS_COMMAND_NAME.  Ditto for no_args ().
+
+	* builtins.c: new function builtin_error () is similar to
+	report_error (), but can never exit the shell, and uses the value
+	of this_command_name in reports.
+
+Fri Jan	 5 11:12:31 1990  Brian Fox  (bfox at sbphy.ucsb.edu)
+
+	* variables.c: initialize_shell_variables ().  Added new variable
+	HOSTTYPE which contains the machine type that this shell is
+	compiled on.  Also affected Makefile for additional define and
+	rule for variables.c.
+
+	* parse.y: pre_process_line ().  In the case of ALIAS not being
+	defined, a non-malloced string could be returned.  Fixed by
+	calling savestring (line) in that case.
+
+	* execute_cmd.c: do_redirections (), do_redirect ():
+	  Added noclobber variable.  If set redirections are
+	  not allowed to overwrite existing files.  Also affected subst.c:
+	  stupidly_hack_variables.
+
+Thu Jan	 4 11:51:25 1990  Brian Fox  (bfox at sbphy.ucsb.edu)
+
+	* builtins.c: pushd_builtin (), popd_builtin ().  If variable
+	"pushd_silent" exists don't print out new directory after cd'ing.
+	Allow pushd and popd to take "-NUM" args -- they count back from
+	the end of the list.
+
+Wed Jan	 3 11:42:30 1990  Brian Fox  (bfox at sbphy.ucsb.edu)
+
+	* Gave variables two cells; one for value, one for functions.
+	  This modifies a large number of files.  The function cell of
+	  a variable is addressed with "function_cell (var)"; this can be
+	  a LHS.   The value cell is addressed with "value_cell (var)".
+	  There is no more att_function; you can still check to see if the
+	  variable has a function value with function_p (var).
+
+Mon Sep	 4 18:30:33 1989  Brian Fox  (bfox at aurel)
+
+	* copy_command.c: copy_command ().  Don't forget to copy
+	  the command redirections.
+
+Sun Sep	 3 08:23:04 1989  Brian Fox  (bfox at aurel)
+
+	* readline.c: update_display ().  Fixed printing of initial
+	  character on line twice bug. 
+
+Fri Sep	 1 18:52:08 1989  Brian Fox  (bfox at aurel)
+
+	* readline.c: rl_insert ().  Optimized for large amounts
+	  of typeahead.  Insert all insertable characters at once.
+
+	* I update this too irregularly.
+	  Released 1.03.
+
+	  jobs.c: stop_pipeline ().  If THE_PIPELINE is null, don't
+	  try to install it as a job.
+
+	  execute_command.c: execute_simple_command ().  Fixed call
+	  to stop_pipeline () by adding required arguments.
+
+	  parse.y: yy_error (), new function report_syntax_error ().
+		   CASE case uses report_syntax_error ().
+	  shell.c: main (). If the input to the shell is a command file,
+	  then remember the name of the file in with_input_from_stream ().
+
+Tue Aug	 8 18:11:54 1989  Brian Fox  (bfox at aurel)
+
+	* general.c: strindex () now placed there.  Static version
+	  is in readline.c.
+
+	* execute_cmd.c: If the shell is to read a file as commands,
+	  and the file appears to contain non-ascii characters, then
+	  complain about it being a binary file.
+
+Sun Aug	 6 13:07:41 1989  Brian Fox  (bfox at aurel)
+
+	* unwind_prot.c: Added tag based unwind frames.
+	  begin_unwind_frame ("foo");
+	    add_unwind_protect (free, data);
+	    add_unwind_protect (free, data);
+	    ...
+	  run_unwind_frame ("foo");
+
+	* readline.c: Added input buffer management, and event
+	  input.
+	  rl_event_hook, if non-zero, is the address of a function to
+	  call repeatadly while polling for input.
+
+	  rl_stuff_char (char) pushes CHAR onto input ring.
+
+	  rl_get_char (&char) (when returning non-zero) pops the front of
+	  the input ring, placing it into CHAR (an int).
+
+	  rl_gather_tyi () puts characters into input ring if available.
+
+	* execute_cmd.c: execute_simple_command (): even when a function
+	  is being piped we need to set return_catch_flag.
+
+Sat Aug	 5 08:32:05 1989  Brian Fox  (bfox at aurel)
+
+	* variables.c: make_var_array (), initialize_shell_variables ()
+	  Added exporting of functions.
+
+	* read_builtin (): reads characters singly from stdin, allowing
+	  backslash-newline to pass.
+
+	* test.c: use access () instead of opening files.
+
+	* numerous files, parse_and_execute (), with_input_from...
+	  Added stream_name to contents of pushed and popped streams,
+	  and to functions that push and pop streams.  yyerror () uses
+	  this to aid in reporting errors.
+
+Fri Aug	 4 12:35:08 1989  Brian Fox  (bfox at aurel)
+
+	* copy_cmd.c copy_redirect (): case of r_read_until falls through
+	  to copy the actual here-document.
+
+Wed Aug	 2 11:47:50 1989  Brian Fox  (bfox at aurel)
+
+	* builtins.c:cd_builtin (): if the shell variable "cdable_vars"
+	  exists, and the directory specified cannot be changed to, either
+	  first with CDPATH or directly, the the directory name is looked
+	  up in the list of shell variables.  If it exists, and is a
+	  string, then that value is tried.
+
+	* test.c: moved `!' operator to term () from expr ()
+
+Tue Aug	 1 16:03:32 1989  Brian Fox  (bfox at aurel)
+
+	* execute_cmd.c, builtins.c: global variable return_catch_value
+	  now contains the value of `return' calls.
+
+	* parse.y: current_readline_prompt gets NULL after it is freed.
+
+Sun Jul 16 07:51:46 1989  Brian Fox  (bfox at aurel)
+
+	* test.c: Added -S to test for file being a socket.
+	  builtins.c: Added documentation for -S test.
+
+	* execute_cmd.c: execute_case_command ()
+	  The clause patterns are now expanded before being
+	  matched against.
+
+Tue Jul 11 05:30:58 1989  Brian Fox  (bfox at aurel)
+
+	* parse.y:yy_readline_get ()
+	  Fixed bug with readline returning EOF.
+
+	* All files
+	  Changed #ifndef NOJOBS to #ifdef JOB_CONTROL.
+
+Sat Jul	 8 05:02:39 1989  Brian Fox  (bfox at aurel)
+
+	* parse.y
+	  New command type `Group' is for running commands in `{}'.  This
+	  allows all of the commands to be piped at the same time.
+
+Wed Jun 28 16:51:42 1989  Brian Fox  (bfox at aurel)
+
+	* New directory: LIB contains readline and history stuff,
+	  and is Make-able on its own.  Also contains its own
+	  ChangeLog.
+
+	* history.c: removed shell dependent stuff, made into module
+	  in readline library.
+
+Tue Jun 27 13:05:54 1989  Brian Fox  (bfox at aurel)
+
+	* readline.c: removed shell dependent stuff.
+
+	* New file: bashline.c contains all of the shell specific
+	  readline material in an attempt to begin using the
+	  readline stuff as a library.
+
+
+Mon Jun 26 13:35:16 1989  Brian Fox  (bfox at aurel)
+
+	* parse.y
+	   Fixed problem in read_token () which prevented '{' from
+	   being recognized after "c () {".  Changed
+	   reserved_word_acceptable () to know about `{' as precursor
+	   to commands.
+
+	* readline.c, jobs.c
+	   Make commands that do not complete sucessfully restore the
+	   tty state to whatever it was before the command was executed.
