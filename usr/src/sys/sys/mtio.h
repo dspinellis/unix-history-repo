@@ -1,16 +1,19 @@
-/*	mtio.h	4.4	81/02/25	*/
+/*	mtio.h	4.5	81/04/02	*/
 /*
  * Structures and definitions for mag tape io control commands
  */
 
-/* structure for MTIOCTOP - mag tape op command */
+/* mag tape io control commands */
+#define MTIOCTOP	(('m'<<8)|1)	/* do a mag tape op */
+#define MTIOCGET	(('m'<<8)|2)	/* get mag tape status */
 
+/* structure for MTIOCTOP - mag tape op command */
 struct	mtop	{
 	short	mt_op;		/* operations defined below */
-	short	mt_count;	/* how many of them */
+	daddr_t	mt_count;	/* how many of them */
 };
 
-/* operations: */
+/* operations */
 #define MTWEOF	0	/* write an end-of-file record */
 #define MTFSF	1	/* forward space file */
 #define MTBSF	2	/* backward space file */
@@ -23,16 +26,21 @@ struct	mtop	{
 /* structure for MTIOCGET - mag tape get status command */
 
 struct	mtget	{
-	short	mt_dsreg;	/* drive status register */
-	short	mt_erreg;	/* error register */
+	short	mt_type;	/* type of magtape device */
+/* the following two registers are grossly device dependent */
+	short	mt_dsreg;	/* ``drive status'' register */
+	short	mt_erreg;	/* ``error'' register */
+/* end device-dependent registers */
 	short	mt_resid;	/* residual count */
 /* the following two are not yet implemented */
-	short	mt_fileno;	/* file number of current position */
-	short	mt_blkno;	/* block number of current position */
+	daddr_t	mt_fileno;	/* file number of current position */
+	daddr_t	mt_blkno;	/* block number of current position */
+/* end not yet implemented */
 };
 
-/* unfortunately the bits in these registers are grossly device dependent */
-/* should be defined here but aren't */
-/* mag tape io control commands */
-#define MTIOCTOP	(('m'<<8)|1)	/* do a mag tape op (see <mtio.h>) */
-#define MTIOCGET	(('m'<<8)|2)	/* get mag tape status (see <mtio.h>*/
+/*
+ * Constants for mt_type byte
+ */
+#define MT_ISTS		01
+#define MT_ISHT		02
+#define MT_ISTM		03
