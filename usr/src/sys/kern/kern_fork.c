@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_fork.c	7.34 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.35 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -151,6 +151,7 @@ again:
 	    (unsigned) ((caddr_t)&p2->p_endzero - (caddr_t)&p2->p_startzero));
 	bcopy(&p1->p_startcopy, &p2->p_startcopy,
 	    (unsigned) ((caddr_t)&p2->p_endcopy - (caddr_t)&p2->p_startcopy));
+	p2->p_wmesg = NULL;	/* XXX - should be in zero range */
 	p2->p_spare[0] = 0;	/* XXX - should be in zero range */
 	p2->p_spare[1] = 0;	/* XXX - should be in zero range */
 	p2->p_spare[2] = 0;	/* XXX - should be in zero range */
