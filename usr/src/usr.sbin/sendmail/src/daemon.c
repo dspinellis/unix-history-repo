@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.9 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.10 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.9 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.10 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -298,6 +298,8 @@ clrdaemon()
 **	Side Effects:
 **		none.
 */
+
+struct sockaddr_in	CurHostAddr;		/* address of current host */
 
 int
 makeconnection(host, port, outfile, infile, usesecureport)
