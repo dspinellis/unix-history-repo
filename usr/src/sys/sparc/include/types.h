@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)types.h	8.2 (Berkeley) %G%
+ *	@(#)types.h	8.3 (Berkeley) %G%
  *
  * from: $Header: types.h,v 1.5 92/11/26 02:00:07 torek Exp $ (LBL)
  */
@@ -38,7 +38,7 @@ typedef	unsigned long	vm_size_t;
  * Basic integral types.  Omit the typedef if
  * not possible for a machine/compiler combination.
  */
-typedef	signed char		   int8_t;
+typedef	__signed char		   int8_t;
 typedef	unsigned char		 u_int8_t;
 typedef	short			  int16_t;
 typedef	unsigned short		u_int16_t;
