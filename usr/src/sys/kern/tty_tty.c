@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_tty.c	7.14 (Berkeley) %G%
+ *	@(#)tty_tty.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -35,10 +35,10 @@ cttyopen(dev, flag, mode, p)
 	VOP_LOCK(ttyvp);
 	error = VOP_ACCESS(ttyvp,
 	  (flag&FREAD ? VREAD : 0) | (flag&FWRITE ? VWRITE : 0), p->p_ucred, p);
+	if (!error)
+		error = VOP_OPEN(ttyvp, flag, NOCRED, p);
 	VOP_UNLOCK(ttyvp);
-	if (error)
-		return (error);
-	return (VOP_OPEN(ttyvp, flag, NOCRED, p));
+	return (error);
 }
 
 /*ARGSUSED*/
