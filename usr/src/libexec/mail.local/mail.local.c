@@ -12,13 +12,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
-#include <sys/errno.h>
 #include <netinet/in.h>
 #include <syslog.h>
 #include <fcntl.h>
@@ -26,6 +25,7 @@ static char sccsid[] = "@(#)mail.local.c	5.5 (Berkeley) %G%";
 #include <pwd.h>
 #include <time.h>
 #include <unistd.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,6 +33,12 @@ static char sccsid[] = "@(#)mail.local.c	5.5 (Berkeley) %G%";
 
 #define	FATAL		1
 #define	NOTFATAL	0
+
+int	deliver __P((int, char *));
+void	err __P((int, const char *, ...));
+void	notifybiff __P((char *));
+int	store __P((char *));
+void	usage __P((void));
 
 main(argc, argv)
 	int argc;
@@ -55,7 +61,7 @@ main(argc, argv)
 		case 'f':
 		case 'r':		/* backward compatible */
 			if (from)
-			    error(FATAL, "multiple -f options.");
+			    err(FATAL, "multiple -f options");
 			from = optarg;
 			break;
 		case '?':
@@ -94,7 +100,7 @@ store(from)
 
 	tn = strdup(_PATH_LOCTMP);
 	if ((fd = mkstemp(tn)) == -1 || !(fp = fdopen(fd, "w+")))
-		error(FATAL, "unable to open temporary file.");
+		err(FATAL, "unable to open temporary file");
 	(void)unlink(tn);
 	free(tn);
 
@@ -123,7 +129,7 @@ store(from)
 
 	(void)fflush(fp);
 	if (ferror(fp))
-		error(FATAL, "temporary file write error.");
+		err(FATAL, "temporary file write error");
 	return(fd);
 }
 
@@ -142,7 +148,7 @@ deliver(fd, name)
 	 * handled in the sendmail aliases file.
 	 */
 	if (!(pw = getpwnam(name))) {
-		error(NOTFATAL, "unknown name: %s.", name);
+		err(NOTFATAL, "unknown name: %s", name);
 		return(1);
 	}
 
@@ -150,7 +156,7 @@ deliver(fd, name)
 
 	if (!(created = lstat(path, &sb)) &&
 	    (sb.st_nlink != 1 || S_ISLNK(sb.st_mode))) {
-		error(NOTFATAL, "%s: linked file.", path);
+		err(NOTFATAL, "%s: linked file", path);
 		return(1);
 	}
 
@@ -160,14 +166,14 @@ deliver(fd, name)
 	 */
 	if ((mbfd =
 	    open(path, O_APPEND|O_CREAT|O_WRONLY, S_IRUSR|S_IWUSR)) < 0) {
-		error(NOTFATAL, "%s: %s.", path, strerror(errno));
+		err(NOTFATAL, "%s: %s", path, strerror(errno));
 		return(1);
 	}
 
 	rval = 0;
 	/* XXX: Open should allow flock'ing the file; see 4.4BSD. */
 	if (flock(mbfd, LOCK_EX)) {
-		error(NOTFATAL, "%s: %s.", path, strerror(errno));
+		err(NOTFATAL, "%s: %s", path, strerror(errno));
 		rval = 1;
 		goto bad;
 	}
@@ -175,7 +181,7 @@ deliver(fd, name)
 	curoff = lseek(mbfd, 0L, SEEK_END);
 	(void)sprintf(biffmsg, "%s@%ld\n", name, curoff);
 	if (lseek(fd, 0L, SEEK_SET) == (off_t)-1) {
-		error(FATAL, "temporary file: %s.", strerror(errno));
+		err(FATAL, "temporary file: %s", strerror(errno));
 		rval = 1;
 		goto bad;
 	}
@@ -183,12 +189,11 @@ deliver(fd, name)
 	while ((nr = read(fd, buf, sizeof(buf))) > 0)
 		for (off = 0; off < nr; nr -= nw, off += nw)
 			if ((nw = write(mbfd, buf + off, nr)) < 0) {
-				error(NOTFATAL,
-				    "%s: %s.", path, strerror(errno));
+				err(NOTFATAL, "%s: %s", path, strerror(errno));
 				goto trunc;
 			}
 	if (nr < 0) {
-		error(FATAL, "temporary file: %s.", strerror(errno));
+		err(FATAL, "temporary file: %s", strerror(errno));
 trunc:		(void)ftruncate(mbfd, curoff);
 		rval = 1;
 	}
@@ -210,6 +215,7 @@ bad:	if (created)
 	return(rval);
 }
 
+void
 notifybiff(msg)
 	char *msg;
 {
@@ -224,7 +230,7 @@ notifybiff(msg)
 		if (!(sp = getservbyname("biff", "udp")))
 			return;
 		if (!(hp = gethostbyname("localhost"))) {
-			error(NOTFATAL, "localhost: %s.", strerror(errno));
+			err(NOTFATAL, "localhost: %s", strerror(errno));
 			return;
 		}
 		addr.sin_family = hp->h_addrtype;
@@ -232,28 +238,43 @@ notifybiff(msg)
 		addr.sin_port = sp->s_port;
 	}
 	if (f < 0 && (f = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-		error(NOTFATAL, "socket: %s.", strerror(errno));
+		err(NOTFATAL, "socket: %s", strerror(errno));
 		return;
 	}
 	len = strlen(msg) + 1;
 	if (sendto(f, msg, len, 0, (struct sockaddr *)&addr, sizeof(addr))
 	    != len)
-		error(NOTFATAL, "sendto biff: %s.", strerror(errno));
+		err(NOTFATAL, "sendto biff: %s", strerror(errno));
 }
 
+void
 usage()
 {
-	error(FATAL, "usage: mail.local [-f from] user ...");
+	err(FATAL, "usage: mail.local [-f from] user ...");
 }
 
-/* VARARGS */
-error(isfatal, fmt)
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(int isfatal, const char *fmt, ...)
+#else
+err(isfatal, fmt)
 	int isfatal;
 	char *fmt;
+	va_dcl
+#endif
 {
 	va_list ap;
-
+#if __STDC__
 	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
 	vsyslog(LOG_ERR, fmt, ap);
 	va_end(ap);
 	if (isfatal)
