@@ -1,0 +1,45 @@
+.TH RCP 1C "17 March 1982"
+.UC 4
+.SH NAME
+rcp \- remote file copy
+.SH SYNOPSIS
+.B rcp
+file1 file2
+.br
+.B rcp
+[ \-r ]
+file ... directory
+.SH DESCRIPTION
+.I Rcp
+copies files between machines.  Each
+\fIfile\fP or \fIdirectory\fP argument is either a remote file name of the
+form ``rhost:path'', or a local file name (containing no `:' characters,
+or a `/' before any `:'s.)
+.PP
+If the
+.B \-r
+is specified and any of the source files are directories,
+.I rcp
+copies each subtree rooted at that name; in this case
+the destination must be a directory.
+.PP
+If \fIpath\fP is not a full path name, it is interpreted relative to
+your login directory on \fIrhost\fP.
+A \fIpath\fP on a remote host may be quoted (using \e, ", or \(aa)
+so that the metacharacters are interpreted remotely.
+.PP
+.I Rcp
+does not prompt for passwords; your current local user name
+must exist on \fIrhost\fP and allow remote command execution via
+.IR rsh (1c).
+.PP
+.I Rcp
+handles third party copies, where neither source nor target files
+are on the current machine.
+Hostnames may also take the form ``rhost.rname'' to use
+\fIrname\fP rather than the current user name on the remote host.
+.SH SEE ALSO
+ftp(1c), rsh(1c), rlogin(1c)
+.SH BUGS
+Doesn't detect in all cases the fact that a target of a copy might
+be a file in cases where only a directory should be legal.
