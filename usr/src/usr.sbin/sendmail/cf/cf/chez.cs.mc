@@ -8,16 +8,11 @@ divert(-1)
 #
 
 include(`../m4/cf.m4')
-VERSIONID(`@(#)chez.cs.mc	8.2 (Berkeley) %G%')
+VERSIONID(`@(#)chez.cs.mc	8.3 (Berkeley) %G%')
 OSTYPE(bsd4.4)dnl
 DOMAIN(cs.exposed)dnl
 define(`LOCAL_RELAY', vangogh.CS.Berkeley.EDU)dnl
 define(`MASQUERADE_NAME', vangogh.CS.Berkeley.EDU)dnl
+FEATURE(use_cw_file)dnl
 MAILER(local)dnl
 MAILER(smtp)dnl
-Fw/etc/sendmail.cw
-
-LOCAL_RULE_0
-# handle byzantium specially: no IP forwarding for now, so we map to
-# it's name on a different network
-R$* < @ Byzantium.$m. > $*	$#relay $@ byzantium-247.$m. $: $1 < @ Byzantium.$m. > $2
