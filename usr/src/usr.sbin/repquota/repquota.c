@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)repquota.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)repquota.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -45,7 +45,6 @@ int	vflag;		/* verbose */
 int	aflag;		/* all file systems */
 
 char *qfname = "quotas";
-char quotafile[MAXPATHLEN + 1];
 struct dqblk zerodqblk;
 
 main(argc, argv)
@@ -93,7 +92,7 @@ again:
 		      oneof(fs->fs_spec, argv, argc)))
 			continue;
 		(void) sprintf(quotafile, "%s/%s", fs->fs_file, qfname);
-		errs += repquota(fs->fs_spec, quotafile);
+		errs += repquota(fs->fs_spec, fs->fs_file, quotafile);
 	}
 	endfsent();
 	for (i = 0; i < argc; i++)
@@ -103,8 +102,9 @@ again:
 	exit(errs);
 }
 
-repquota(fsdev, qffile)
+repquota(fsdev, fsfile, qffile)
 	char *fsdev;
+	char *fsfile;
 	char *qffile;
 {
 	register struct fileusage *fup;
@@ -116,7 +116,7 @@ repquota(fsdev, qffile)
 	extern int errno;
 
 	if (vflag)
-		fprintf(stdout, "*** Quota report for %s\n", fsdev);
+		fprintf(stdout, "*** Quota report for %s (%s)\n", fsdev, fsfile);
 	qf = fopen(qffile, "r");
 	if (qf == NULL) {
 		perror(qffile);
@@ -124,6 +124,7 @@ repquota(fsdev, qffile)
 	}
 	if (fstat(fileno(qf), &statb) < 0) {
 		perror(qffile);
+		fclose(qf);
 		return (1);
 	}
 	if (quota(Q_SYNC, 0, statb.st_dev, 0) < 0 &&
@@ -136,9 +137,10 @@ repquota(fsdev, qffile)
 		fread(&dqbuf, sizeof(struct dqblk), 1, qf);
 		if (feof(qf))
 			break;
-		if (dqbuf.dqb_curinodes == 0 && dqbuf.dqb_curblocks == 0)
-			continue;
 		fup = lookup(uid);
+		if ((fup == 0 || fup->fu_name[0] == 0) &&
+		    dqbuf.dqb_curinodes == 0 && dqbuf.dqb_curblocks == 0)
+			continue;
 		if (fup == 0)
 			fup = adduid(uid);
 		fup->fu_dqblk = dqbuf;
@@ -149,7 +151,8 @@ repquota(fsdev, qffile)
 		fup = lookup(uid);
 		if (fup == 0)
 			continue;
-		if (fup->fu_dqblk.dqb_curinodes == 0 &&
+		if ((fup == 0 || fup->fu_name[0] == 0) &&
+		    fup->fu_dqblk.dqb_curinodes == 0 &&
 		    fup->fu_dqblk.dqb_curblocks == 0)
 			continue;
 		if (fup->fu_name[0] != '\0')
@@ -173,6 +176,7 @@ repquota(fsdev, qffile)
 			fup->fu_dqblk.dqb_iwarn);
 		fup->fu_dqblk = zerodqblk;
 	}
+	fclose(qf);
 	return (0);
 }
 
@@ -207,6 +211,7 @@ adduid(uid)
 	u_short uid;
 {
 	struct fileusage *fup, **fhp;
+	extern char *calloc();
 
 	fup = lookup(uid);
 	if (fup != 0)
