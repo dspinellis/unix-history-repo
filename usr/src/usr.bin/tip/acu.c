@@ -1,4 +1,4 @@
-/*	acu.c	4.5	81/11/29	*/
+/*	acu.c	4.6	82/02/02	*/
 #include "tip.h"
 #include <setjmp.h>
 
@@ -63,7 +63,8 @@ connect()
 		while (*cp) {
 			for (phnum = cp; any(*cp, "0123456789-*="); cp++)
 				;
-			*cp++ = '\0';
+			if (*cp)
+				*cp++ = '\0';
 			
 			if (conflag = (*acu->acu_dialer)(phnum, CU)) {
 				logent(value(HOST), phnum, acu->acu_name,
