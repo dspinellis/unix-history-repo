@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)yyfix.sh	5.1 (Berkeley) %G%
+#	@(#)yyfix.sh	5.2 (Berkeley) %G%
 #
 OLDYACC="yyexca yyact yypact yypgo yyr1 yyr2 yychk yydef"
 NEWYACC="yylhs yylen yydefred yydgoto yysindex yyrindex yygindex \
@@ -17,6 +17,12 @@ shift
 
 if [ $# -eq 0 ] ; then
 	if grep yylhs y.tab.c > /dev/null ; then
+		if grep yyname y.tab.c > /dev/null ; then
+			NEWYACC="$NEWYACC yyname"
+		fi
+		if grep yyrule y.tab.c > /dev/null ; then
+			NEWYACC="$NEWYACC yyrule"
+		fi
 		set $NEWYACC
 	else
 		set $OLDYACC
