@@ -1,0 +1,9 @@
+SECTIONS
+{
+	.text : {}
+	GROUP ALIGN(1024):
+	{
+		.data : {}
+		.bss  : {}
+	}
+}
