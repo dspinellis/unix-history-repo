@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)termcap.3	6.3 (Berkeley) %G%
+.\"	@(#)termcap.3	6.4 (Berkeley) %G%
 .\"
 .TH TERMCAP 3 ""
 .UC 4
@@ -50,7 +50,7 @@ tgetent, tgetnum, tgetflag, tgetstr, tgoto, tputs \- terminal independent operat
 .fi
 .SH DESCRIPTION
 These functions extract and use capabilities from a terminal capability data
-base, usually /etc/termcap, the format of which is described in
+base, usually /usr/share/misc/termcap, the format of which is described in
 .IR termcap (5).
 These are low level routines;
 see
@@ -86,7 +86,7 @@ If TERMCAP does not begin with a slash and
 .I name
 is different from TERM,
 .I tgetent
-searches the files $HOME/.termcap and /etc/termcap,
+searches the files $HOME/.termcap and /usr/share/misc/termcap,
 in that order, unless the environment variable TERMPATH exists,
 in which case it specifies a list of file pathnames
 (separated by spaces or colons) to be searched instead.
@@ -97,7 +97,7 @@ in the same file or one of the succeeding files.
 This can speed up entry into programs that call
 .IR tgetent ,
 as well as help debug new terminal descriptions
-or make one for your terminal if you can't write the file /etc/termcap.
+or make one for your terminal if you can't write the file /usr/share/misc/termcap.
 .PP
 .I Tgetnum
 gets the numeric value of capability
@@ -166,7 +166,7 @@ if a null (\fB^@\fR) is inappropriate.
 .ta \w'/usr/lib/libtermcap.a  'u
 /usr/lib/libtermcap.a	\-ltermcap library (also known as \-ltermlib)
 .br
-/etc/termcap	standard terminal capability data base
+/usr/share/misc/termcap	standard terminal capability data base
 .br
 $HOME/.termcap	user's terminal capability data base
 .DT
