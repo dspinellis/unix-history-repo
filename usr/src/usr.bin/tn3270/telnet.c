@@ -26,7 +26,7 @@ static char copyright[] =
 #endif	/* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	6.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	6.5 (Berkeley) %G%";
 #endif	/* not lint */
 
 /*
@@ -634,6 +634,8 @@ static char
     termLiteralNextChar,
     termQuitChar;
 
+static char
+    savedInState, savedOutState;
 
 /*
  * MSDOS doesn't have anyway of deciding whether a full-edited line
@@ -834,12 +836,47 @@ void
 CtrlCInterrupt()
 {
     if (!MODE_COMMAND_LINE(globalmode)) {
+	char far *Bios_Break = (char far *) (((long)0x40<<16)|0x71);
+
+	*Bios_Break = 0;
 	ctrlCCount++;		/* XXX */
 	signal(SIGINT, CtrlCInterrupt);
     } else {
 	closeallsockets();
 	exit(1);
     }
+}
+
+int
+dosbinary(fd, onoff)
+int	fd;
+int	onoff;
+{
+    union REGS regs;
+    int oldstate;
+
+    /* Get old stuff */
+    regs.h.ah = 0x44;
+    regs.h.al = 0;
+    regs.x.bx = fd;
+    intdos(&regs, &regs);
+    oldstate = regs.h.dl&(1<<5);		/* Save state */
+
+    /* Set correct bits in new mode */
+    regs.h.dh = 0;
+    if (onoff) {
+	regs.h.dl |= 1<<5;
+    } else {
+	regs.h.dl &= ~(1<<5);
+    }
+
+    /* Set in new mode */
+    regs.h.ah = 0x44;
+    regs.h.al = 1;
+    regs.x.bx = fd;
+    intdos(&regs, &regs);
+
+    return oldstate;
 }
 
 /*
@@ -892,9 +929,11 @@ register int f;
 	if (setmode(fileno(stdout), O_TEXT) == -1) {
 	    ExitPerror("setmode (text)", 1);
 	}
+	(void) dosbinary(fileno(stdout), 0);
 	if (setmode(fileno(stdin), O_TEXT) == -1) {
 	    ExitPerror("setmode (text)", 1);
 	}
+	(void) dosbinary(fileno(stdin), 0);
     } else {
 	signal(SIGINT, CtrlCInterrupt);
 	if ((old_1b_segment|old_1b_offset) == 0) {
@@ -916,16 +955,20 @@ register int f;
 	    if (setmode(fileno(stdout), O_TEXT) == -1) {
 		ExitPerror("setmode (text)", 1);
 	    }
+	    (void) dosbinary(fileno(stdout), 0);
 	    if (setmode(fileno(stdin), O_TEXT) == -1) {
 		ExitPerror("setmode (text)", 1);
 	    }
+	    (void) dosbinary(fileno(stdin), 0);
 	} else {
 	    if (setmode(fileno(stdout), O_BINARY) == -1) {
 		ExitPerror("setmode (binary)", 1);
 	    }
+	    (void) dosbinary(fileno(stdout), 1);
 	    if (setmode(fileno(stdin), O_BINARY) == -1) {
 		ExitPerror("setmode (binary)", 1);
 	    }
+	    (void) dosbinary(fileno(stdin), 1);
 	}
     }
 }
@@ -957,6 +1000,8 @@ int	count;
 static void
 TerminalSaveState()				/* MSDOS */
 {
+    savedInState = dosbinary(fileno(stdin), 0);
+    savedOutState = dosbinary(fileno(stdout), 0);
 }
 
 int
@@ -969,6 +1014,8 @@ TerminalSpecialChars(c)			/* MSDOS */
 static void
 TerminalRestoreState()				/* MSDOS */
 {
+    (void) dosbinary(fileno(stdin), savedInState);
+    (void) dosbinary(fileno(stdout), savedOutState);
 }
 
 
