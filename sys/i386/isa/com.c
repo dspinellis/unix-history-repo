@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)com.c	7.5 (Berkeley) 5/16/91
- *	$Id: com.c,v 1.7 1993/12/19 00:50:32 wollman Exp $
+ *	$Id: com.c,v 1.8 1994/03/02 20:28:32 guido Exp $
  */
 
 #include "com.h"
@@ -259,8 +259,8 @@ comclose(dev, flag, mode, p)
 	    (tp->t_state&TS_ISOPEN) == 0)
 		(void) commctl(dev, 0, DMSET);
 	ttyclose(tp);
-	ttyfree(tp);
 #ifdef broken /* session holds a ref to the tty; can't deallocate */
+	ttyfree(tp);
 	com_tty[unit] = (struct tty *)NULL;
 #endif
 	return (0);
