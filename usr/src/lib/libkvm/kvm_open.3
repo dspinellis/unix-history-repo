@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)kvm_open.3	5.4 (Berkeley) %G%
+.\"     @(#)kvm_open.3	5.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt KVM_OPEN 3
@@ -24,7 +24,7 @@
 .Ft kvm_t *
 .Fn kvm_open "const char *execfile" "const char *corefile" "char *swapfile" "int flags" "const char *errstr"
 .Ft kvm_t *
-.Fn kvm_openfiles "const char *execfile" "const char *corefile" "char *swapfile" "int flags" "const char *errbuf"
+.Fn kvm_openfiles "const char *execfile" "const char *corefile" "char *swapfile" "int flags" "char *errbuf"
 .Ft int
 .Fn kvm_close "kvm_t *kd"
 .Sh DESCRIPTION
