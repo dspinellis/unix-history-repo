@@ -1,6 +1,6 @@
-#	@(#)Makefile	5.4 (Berkeley) 6/5/91
+#	$Id$
 
 PROG=	st
-MAN8=   st.8
+MAN1=   st.1
 
 .include <bsd.prog.mk>
