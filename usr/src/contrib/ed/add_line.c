@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)add_line.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)add_line.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -46,8 +46,9 @@ add_line(p, len)
 		fseek(fhtmp, 0L, 2); /* set to end-to-file */
 	}
 	l_key = ftell(fhtmp);
-					/* keeps user time down 20%approx */
+					/* keeps user time down 20% approx. */
 	file_loc = l_key + fwrite(p, sizeof(char), len, fhtmp);
+	sigspecial2 = 0;
 	return (l_key);
 }
 #endif
@@ -59,7 +60,7 @@ add_line(p, len)
 	long len;
 {
 	DBT db_key, db_data;
-	static recno_t l_key;
+	static recno_t l_key=0;
 	int l_jmp_flag;
 
 	if (l_jmp_flag = setjmp(ctrl_position2))
@@ -71,6 +72,7 @@ add_line(p, len)
 	(db_data.data) = p;
 	(db_data.size) = len;
 	(dbhtmp->put)(dbhtmp, &db_key, &db_data, (u_int)(R_NOOVERWRITE));
+	sigspecial2 = 0;
 	return (l_key);
 }
 #endif
@@ -92,6 +94,7 @@ add_line(p, len)
 		bcopy(p, tmp, len);
 		tmp[len] = '\0';
 	}
+	sigspecial2 = 0;
 	return (tmp);
 }
 #endif
