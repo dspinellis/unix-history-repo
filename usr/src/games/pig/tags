@@ -1,0 +1,3 @@
+Mpig	pig.c	/^main(argc, argv)$/
+pigout	pig.c	/^pigout(buf, len)$/
+usage	pig.c	/^usage()$/
