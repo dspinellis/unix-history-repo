@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	6.16 (Berkeley) %G%
+		@(#)README	6.17 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -601,7 +601,7 @@ confOPERATORS		.:%@!^/[]	Do	Address operator characters.
 confSTMP_LOGIN_MSG	$j Sendmail $v/$Z ready at $b
 					De	The initial (spontaneous)
 						SMTP greeting message.
-confEIGHT_BIT_INPUT	False		O8	Use 8-bit input?
+confEIGHT_BIT_INPUT	True		O8	Use 8-bit input?
 confALIAS_WAIT		10		Oa	Wait (in minutes) for alias
 						file rebuild.
 confMIN_FREE_BLOCKS	4		Ob	Minimum number of free blocks
@@ -636,15 +636,15 @@ confCHECK_ALIASES	True		On	Check RHS of aliases when
 						running newaliases.
 confOLD_STYLE_HEADERS	True		Oo	Assume that headers without
 						special chars are old style.
-confPRIVACY_FLAGS	public		Op	Privacy flags.
+confPRIVACY_FLAGS	authwarnings	Op	Privacy flags.
 confCOPY_ERRORS_TO	(undefined)	OP	Address for additional copies
 						of all error messages.
 confQUEUE_FACTOR	(undefined)	Oq	Slope of queue-only function
 confREAD_TIMEOUT	(undefined)	Or	SMTP read timeouts.
 confSAFE_QUEUE		True		Os	Commit all messages to disk
 						before forking.
-confMESSAGE_TIMEOUT	5d		OT	Timeout for messages before
-						sending error message.
+confMESSAGE_TIMEOUT	5d/4h		OT	Timeout for messages before
+						sending error/warning message.
 confTIME_ZONE		USE_SYSTEM	Oz	Time zone info -- can be
 						USE_SYSTEM to use the system's
 						idea, USE_TZ to use the user's
