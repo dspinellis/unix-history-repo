@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.5	%G%	*/
+/*	kern_clock.c	4.6	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -182,24 +182,13 @@ out:
 		runrun++;
 	}
 	if (lbolt >= HZ) {
-#if VAX==780
-		extern int hangcnt;
-#endif
-
 		if (BASEPRI(ps))
 			return;
 		lbolt -= HZ;
 		++time;
 		(void) spl1();
-#if VAX==780
-		/*
-		 * machdep.c:unhang uses hangcnt to make sure uba
-		 * doesn't forget to interrupt (this has been observed).
-		 * This prevents an accumulation of < 5 second uba failures
-		 * from summing to a uba reset.
-		 */
-		if (hangcnt)
-			hangcnt--;
+#if VAX780
+		ubawatch();		/* should be a timeout */
 #endif
 		runrun++;
 		wakeup((caddr_t)&lbolt);
@@ -317,7 +306,7 @@ timeout(fun, arg, tim)
 int (*fun)();
 caddr_t arg;
 {
-	register struct callo *p1, *p2;
+	register struct callo *p1, *p2, *p3;
 	register int t;
 	int s;
 
@@ -328,12 +317,14 @@ caddr_t arg;
 		t -= p1->c_time;
 		p1++;
 	}
-	if (p1 >= &callout[NCALL-1])
-		panic("Timeout table overflow");
 	p1->c_time -= t;
 	p2 = p1;
-	while(p2->c_func != 0)
+	p3 = &callout[NCALL-2];
+	while(p2->c_func != 0) {
+		if (p2 >= p3)
+			panic("Timeout table overflow");
 		p2++;
+	}
 	while(p2 >= p1) {
 		(p2+1)->c_time = p2->c_time;
 		(p2+1)->c_func = p2->c_func;
