@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)implement	8.1 (Berkeley) %G%
+.\"	@(#)implement	8.2 (Berkeley) %G%
 .\"
 .EH 'PSD:2-%''UNIX Implementation'
 .OH 'UNIX Implementation''PSD:2-%'
@@ -428,6 +428,7 @@ impacts the file system traffic.
 It is exactly these small systems
 that tend to double usage of limited disk
 resources.
+.sp 
 .NH 2
 Synchronization and scheduling
 .PP
