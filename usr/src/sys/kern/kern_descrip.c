@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_descrip.c	7.25 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -26,6 +26,8 @@
 /*
  * Descriptor management.
  */
+struct file *filehead;	/* head of list of open files */
+int nfiles;		/* actual number of open files */
 
 /*
  * System calls on descriptors.
@@ -429,7 +431,6 @@ fdavail(p, n)
 	return (0);
 }
 
-struct	file *lastf;
 /*
  * Create a new open file structure and allocate
  * a file decriptor for the process that refers to it.
@@ -439,34 +440,64 @@ falloc(p, resultfp, resultfd)
 	struct file **resultfp;
 	int *resultfd;
 {
-	register struct file *fp;
+	register struct file *fp, *fq, **fpp;
 	int error, i;
 
 	if (error = fdalloc(p, 0, &i))
 		return (error);
-	if (lastf == 0)
-		lastf = file;
-	for (fp = lastf; fp < fileNFILE; fp++)
-		if (fp->f_count == 0)
-			goto slot;
-	for (fp = file; fp < lastf; fp++)
-		if (fp->f_count == 0)
-			goto slot;
-	tablefull("file");
-	return (ENFILE);
-slot:
+	if (nfiles >= maxfiles) {
+		tablefull("file");
+		return (ENFILE);
+	}
+	/*
+	 * Allocate a new file descriptor.
+	 * If the process has file descriptor zero open, add to the list
+	 * of open files at that point, otherwise put it at the front of
+	 * the list of open files.
+	 */
+	nfiles++;
+	MALLOC(fp, struct file *, sizeof(struct file), M_FILE, M_WAITOK);
 	p->p_fd->fd_ofiles[i] = fp;
+	if (fq = p->p_fd->fd_ofiles[0])
+		fpp = &fq->f_filef;
+	else
+		fpp = &filehead;
+	if (fq = *fpp)
+		fq->f_fileb = &fp->f_filef;
+	fp->f_filef = fq;
+	fp->f_fileb = fpp;
+	*fpp = fp;
 	fp->f_count = 1;
-	fp->f_data = 0;
+	fp->f_msgcount = 0;
 	fp->f_offset = 0;
 	fp->f_cred = p->p_ucred;
 	crhold(fp->f_cred);
-	lastf = fp + 1;
 	if (resultfp)
 		*resultfp = fp;
 	if (resultfd)
 		*resultfd = i;
 	return (0);
+}
+
+/*
+ * Free a file descriptor.
+ */
+ffree(fp)
+	register struct file *fp;
+{
+	register struct file *fq;
+
+	if (fq = fp->f_filef)
+		fq->f_fileb = fp->f_fileb;
+	*fp->f_fileb = fq;
+	crfree(fp->f_cred);
+#ifdef DIAGNOSTIC
+	fp->f_filef = NULL;
+	fp->f_fileb = NULL;
+	fp->f_count = 0;
+#endif
+	nfiles--;
+	FREE(fp, M_FILE);
 }
 
 /*
@@ -553,7 +584,7 @@ fdfree(p)
  */
 closef(fp, p)
 	register struct file *fp;
-	struct proc *p;
+	register struct proc *p;
 {
 	struct vnode *vp;
 	struct flock lf;
@@ -588,8 +619,7 @@ closef(fp, p)
 		(void) VOP_ADVLOCK(vp, (caddr_t)fp, F_UNLCK, &lf, F_FLOCK);
 	}
 	error = (*fp->f_ops->fo_close)(fp, p);
-	crfree(fp->f_cred);
-	fp->f_count = 0;
+	ffree(fp);
 	return (error);
 }
 
