@@ -180,4 +180,31 @@ dbfree(ptr, file, line)
 	}
 	free(ptr - sizeof(long));
 }
+
+dbcheckmem(file, line)
+	char	*file;
+	int	line;
+{
+	int	i, j;
+
+	for (i = j = 0; i < MAXALLOC && allocated[i]; i++)
+	{
+		if (((long *)allocated[i])[-1] != MEMMAGIC)
+		{
+			if (!j) endwin();
+			fprintf(stderr, "\r\n%s(%d): underflowed malloc space, allocated at %s(%d)\n", file, line, fromfile[i], fromline[i]);
+			j++;
+		}
+		if (((long *)allocated[i])[sizes[i]] != MEMMAGIC)
+		{
+			if (!j) endwin();
+			fprintf(stderr, "\r\n%s(%d): overflowed malloc space, allocated at %s(%d)\n", file, line, fromfile[i], fromline[i]);
+			j++;
+		}
+	}
+	if (j)
+	{
+		abort();
+	}
+}
 #endif

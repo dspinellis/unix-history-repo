@@ -7,6 +7,8 @@
 #include "config.h"
 #include "ctype.h"
 
+void _ct_init P_((uchar *));
+
 uchar	_ct_toupper[256];
 uchar	_ct_tolower[256];
 uchar	_ct_ctypes[256];

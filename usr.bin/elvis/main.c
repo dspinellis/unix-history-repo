@@ -20,8 +20,7 @@
 #include <setjmp.h>
 #include "vi.h"
 
-extern		trapint(); /* defined below */
-extern char	*getenv();
+extern SIGTYPE	trapint(); /* defined below */
 jmp_buf		jmpenv;
 
 #ifndef NO_DIGRAPH
@@ -89,33 +88,33 @@ void main(argc, argv)
 
 	/* arrange for deadly signals to be caught */
 # ifdef SIGHUP
-	signal(SIGHUP, (void(*)()) deathtrap);
+	signal(SIGHUP, deathtrap);
 # endif
 # ifndef DEBUG
 #  ifdef SIGILL
-	signal(SIGILL, (void(*)()) deathtrap);
+	signal(SIGILL, deathtrap);
 #  endif
 #  ifdef SIGBUS
-	signal(SIGBUS, (void(*)()) deathtrap);
+	signal(SIGBUS, deathtrap);
 #  endif
 #  ifdef SIGSEGV
-	signal(SIGSEGV, (void(*)()) deathtrap);
+	signal(SIGSEGV, deathtrap);
 #  endif
 #  ifdef SIGSYS
-	signal(SIGSYS, (void(*)()) deathtrap);
+	signal(SIGSYS, deathtrap);
 #  endif
 # endif /* !DEBUG */
 # ifdef SIGPIPE
-	signal(SIGPIPE, (void(*)()) deathtrap);
+	signal(SIGPIPE, deathtrap);
 # endif
 # ifdef SIGTERM
-	signal(SIGTERM, (void(*)()) deathtrap);
+	signal(SIGTERM, deathtrap);
 # endif
 # ifdef SIGUSR1
-	signal(SIGUSR1, (void(*)()) deathtrap);
+	signal(SIGUSR1, deathtrap);
 # endif
 # ifdef SIGUSR2
-	signal(SIGUSR2, (void(*)()) deathtrap);
+	signal(SIGUSR2, deathtrap);
 # endif
 
 	/* initialize the options - must be done after initscr(), so that
@@ -187,11 +186,11 @@ void main(argc, argv)
 
 		  case 'L':
 		  case 'r':	/* recover */
-			msg("Use the `elvisrecover` program to recover lost files");
+			msg("Use the `elvrec` program to recover lost files");
 			endmsgs();
 			refresh();
 			endwin();
-			exit(0);
+			exit(1);
 			break;
 
 		  case 't':	/* tag */
@@ -309,7 +308,7 @@ void main(argc, argv)
 	doexrc(SYSEXRC);
 #endif
 #ifdef HMEXRC
-	str = getenv("HOME");
+	str = gethome(argv[0]);
 	if (str && *str)
 	{
 		strcpy(tmpblk.c, str);
@@ -346,7 +345,7 @@ void main(argc, argv)
 	blkinit();
 	if (tag)
 	{
-		cmd_tag(MARK_FIRST, MARK_FIRST, CMD_TAG, 0, tag);
+		cmd_tag(MARK_UNSET, MARK_FIRST, CMD_TAG, 0, tag);
 	}
 #ifndef NO_ERRLIST
 	else if (err)
@@ -386,7 +385,7 @@ void main(argc, argv)
 			/* Maybe we just aborted a change? */
 			abortdo();
 		}
-		signal(SIGINT, (void(*)()) trapint);
+		signal(SIGINT, trapint);
 
 		switch (mode)
 		{
@@ -419,13 +418,13 @@ void main(argc, argv)
 	refresh();
 	endwin();
 
-	exit(0);
+	exit(exitcode);
 	/*NOTREACHED*/
 }
 
 
 /*ARGSUSED*/
-int trapint(signo)
+SIGTYPE trapint(signo)
 	int	signo;
 {
 	beep();
@@ -434,16 +433,11 @@ int trapint(signo)
 #if OSK
 	sigmask(-1);
 #endif
-#if TURBOC || __GNUC__
-	signal(signo, (void (*)())trapint);
-#else
 	signal(signo, trapint);
-#endif
 	doingglobal = FALSE;
 
 	longjmp(jmpenv, 1);
-
-	return 0;
+	/*NOTREACHED*/
 }
 
 
@@ -502,7 +496,7 @@ static char	digtable[][4] =
 	""
 };
 
-static init_digraphs()
+static int init_digraphs()
 {
 	int	i;
 

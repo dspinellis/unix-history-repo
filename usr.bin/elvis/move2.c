@@ -44,37 +44,50 @@ MARK m_wsrch(word, m, cnt)
 }
 #endif
 
-MARK	m_nsrch(m)
+MARK	m_nsrch(m, cnt, cmd)
 	MARK	m;	/* where to start searching */
+	long	cnt;	/* number of searches to do */
+	int	cmd;	/* command character -- 'n' or 'N' */
 {
-	if (prevsf)
+	int	oldprevsf; /* original value of prevsf, so we can fix any changes */
+
+	DEFAULT(1L);
+
+	/* clear the bottom line.  In particular, we want to loose any
+	 * "(wrapped)" notice.
+	 */
+	move(LINES - 1, 0);
+	clrtoeol();
+
+	/* if 'N' command, then invert the "prevsf" variable */
+	oldprevsf = prevsf;
+	if (cmd == 'N')
 	{
-		m = m_fsrch(m, (char *)0);
-		prevsf = TRUE;
+		prevsf = !prevsf;
 	}
-	else
+
+	/* search forward if prevsf -- i.e., if previous search was forward */
+	while (--cnt >= 0L && m != MARK_UNSET)
 	{
-		m = m_bsrch(m, (char *)0);
-		prevsf = FALSE;
+		if (prevsf)
+		{
+			m = m_fsrch(m, (char *)0);
+		}
+		else
+		{
+			m = m_bsrch(m, (char *)0);
+		}
 	}
+
+	/* restore the old value of prevsf -- if cmd=='N' then it was inverted,
+	 * and the m_fsrch() and m_bsrch() functions force it to a (possibly
+	 * incorrect) value.  The value of prevsf isn't supposed to be changed
+	 * at all here!
+	 */
+	prevsf = oldprevsf;
 	return m;
 }
 
-MARK	m_Nsrch(m)
-	MARK	m;	/* where to start searching */
-{
-	if (prevsf)
-	{
-		m = m_bsrch(m, (char *)0);
-		prevsf = TRUE;
-	}
-	else
-	{
-		m = m_fsrch(m, (char *)0);
-		prevsf = FALSE;
-	}
-	return m;
-}
 
 MARK	m_fsrch(m, ptrn)
 	MARK	m;	/* where to start searching */
@@ -104,7 +117,7 @@ MARK	m_fsrch(m, ptrn)
 		ptrn++;
 
 		/* free the previous pattern */
-		if (re) free(re);
+		if (re) _free_(re);
 
 		/* compile the pattern */
 		re = regcomp(ptrn);
@@ -214,7 +227,7 @@ MARK	m_bsrch(m, ptrn)
 		ptrn++;
 
 		/* free the previous pattern, if any */
-		if (re) free(re);
+		if (re) _free_(re);
 
 		/* compile the pattern */
 		re = regcomp(ptrn);

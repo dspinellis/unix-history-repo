@@ -6,8 +6,8 @@ are implemented in a slightly different manner.
 .NH 2
 Extensions
 .IP "Save Configuration" 1i
-The :mkexrc command saves the current :set and :map configurations in
-the ".exrc" file in your current directory.
+The :mkexrc command saves the current :set, :map, :ab, :color, and :digraph
+configurations in the ".exrc" file in your current directory.
 .IP "Previous File" 1i
 The :N or :prev command moves backwards through the args list.
 .IP "Center Current Row" 1i
@@ -92,7 +92,7 @@ the temporary file and then immediately reopen it.
 \*E changes the shape of the cursor to indicate which mode you're in,
 if your terminal's termcap entry includes the necessary capabilities.
 .IP "Hide nroff Lines" 1i
-Th ":set hideformat" option hides nroff format control lines.
+The ":set hideformat" option hides nroff format control lines.
 (They are displayed on the screen as blank lines.)
 .ne 7
 .IP "Compiler Interface" 1i
@@ -116,7 +116,7 @@ to the other endpoint, and then press one of the operator commands
 The operator will then immediately be applied to the selected text.
 .IP "Pop-up Menu Operator" 1i
 The '\\' key is a new operator,
-similar in operation to the c/d/y/</>/! operators
+similar in operation to the c/d/y/</>/! operators.
 It conjures up a menu, from which you can select any of the other
 operators plus a few other common commands.
 .IP "Preset Filter Operator" 1i

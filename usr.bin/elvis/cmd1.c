@@ -17,6 +17,19 @@
 #include "vi.h"
 #include "regexp.h"
 
+#ifndef NO_TAGSTACK
+/* These describe the current state of the tag related commands		  */
+#define MAXTAGS	15
+
+struct Tag_item {
+    MARK		tag_mark;
+    char		*tag_file;
+};
+
+static struct Tag_item	tag_stack[MAXTAGS];
+static int		curr_tag = -1;
+#endif /* !NO_TAGSTACK */
+
 #ifdef DEBUG
 /* print the selected lines with info on the blocks */
 /*ARGSUSED*/
@@ -197,7 +210,7 @@ void cmd_write(frommark, tomark, cmd, bang, extra)
 	}
 
 	/* either the file must not exist, or we must have a ! or be appending */
-	if (access(extra, 0) == 0 && !bang && !append)
+	if (*extra && access(extra, 0) == 0 && !bang && !append)
 	{
 		msg("File already exists - Use :w! to overwrite");
 		return;
@@ -337,7 +350,7 @@ void cmd_global(frommark, tomark, cmd, bang, extra)
 	}
 
 	/* make sure we got a search pattern */
-	if (*extra != '/' && *extra != '?')
+	if (*extra == ' ' || *extra == '\n')
 	{
 		msg("Usage: %c /regular expression/ command", cmd == CMD_GLOBAL ? 'g' : 'v');
 		return;
@@ -395,7 +408,7 @@ void cmd_global(frommark, tomark, cmd, bang, extra)
 	doingglobal = FALSE;
 
 	/* free the regexp */
-	free(re);
+	_free_(re);
 
 	/* Reporting...*/
 	rptlines = nchanged;
@@ -421,9 +434,9 @@ void cmd_file(frommark, tomark, cmd, bang, extra)
 	if (cmd == CMD_FILE)
 	{
 #ifndef CRUNCH
-		msg("\"%s\" %s%s%s %ld lines,  line %ld [%ld%%]",
+		msg("\"%s\" %s%s%s line %ld of %ld [%ld%%]",
 #else
-		msg("\"%s\" %s%s %ld lines,  line %ld [%ld%%]",
+		msg("\"%s\" %s%s line %ld of %ld [%ld%%]",
 #endif
 			*origname ? origname : "[NO FILE]",
 			tstflag(file, MODIFIED) ? "[MODIFIED]" : "",
@@ -431,8 +444,8 @@ void cmd_file(frommark, tomark, cmd, bang, extra)
 			tstflag(file, NOTEDITED) ?"[NOT EDITED]":"",
 #endif
 			tstflag(file, READONLY) ? "[READONLY]" : "",
-			nlines,
 			markline(frommark),
+			nlines,
 			markline(frommark) * 100 / nlines);
 	}
 #ifndef CRUNCH
@@ -590,8 +603,8 @@ void cmd_next(frommark, tomark, cmd, bang, extra)
 	}
 }
 
-/* also called from :wq -- always writes back in this case */
-
+/* also called for :wq -- always writes back in this case */
+/* also called for :q -- never writes back in that case */
 /*ARGSUSED*/
 void cmd_xit(frommark, tomark, cmd, bang, extra)
 	MARK	frommark, tomark;
@@ -602,45 +615,40 @@ void cmd_xit(frommark, tomark, cmd, bang, extra)
 	static long	whenwarned;	/* when the user was last warned of extra files */
 	int		oldflag;
 
-	/* if there are more files to edit, then warn user */
-	if (argno >= 0 && argno + 1 < nargs && whenwarned != changes && (!bang || cmd != CMD_QUIT))
+	/* Unless the command is ":q", save the file if it has been modified */
+	if (cmd != CMD_QUIT
+	 && (cmd == CMD_WQUIT || tstflag(file, MODIFIED))
+	 && !tmpsave((char *)0, FALSE) && !bang)
+	{
+		msg("Could not save file -- use quit! to abort changes, or w filename");
+		return;
+	}
+
+	/* If there are more files to edit, then warn user */
+	if (argno >= 0 && argno + 1 < nargs	/* more args */
+	 && whenwarned != changes		/* user not already warned */
+	 && (!bang || cmd != CMD_QUIT))		/* command not ":q!" */
 	{
 		msg("More files to edit -- Use \":n\" to go to next file");
 		whenwarned = changes;
 		return;
 	}
 
-	if (cmd == CMD_QUIT)
+	/* Discard the temp file.  Note that we should already have saved the
+	 * the file, unless the command is ":q", so the only way that tmpabort
+	 * could fail would be if you did a ":q" on a modified file.
+	 */
+	oldflag = *o_autowrite;
+	*o_autowrite = FALSE;
+	if (tmpabort(bang))
 	{
-		oldflag = *o_autowrite;
-		*o_autowrite = FALSE;
-		if (tmpabort(bang))
-		{
-			mode = MODE_QUIT;
-		}
-		else
-		{
-			msg("Use q! to abort changes, or wq to save changes");
-		}
-		*o_autowrite = oldflag;
+		mode = MODE_QUIT;
 	}
 	else
 	{
-		/* else try to save this file */
-		oldflag = tstflag(file, MODIFIED);
-		if (cmd == CMD_WQUIT)
-			setflag(file, MODIFIED);
-		if (tmpend(bang))
-		{
-			mode = MODE_QUIT;
-		}
-		else
-		{
-			msg("Could not save file -- use quit! to abort changes, or w filename");
-		}
-		if (!oldflag)
-			clrflag(file, MODIFIED);
+		msg("Use q! to abort changes, or wq to save changes");
 	}
+	*o_autowrite = oldflag;
 }
 
 
@@ -746,8 +754,6 @@ void cmd_cd(frommark, tomark, cmd, bang, extra)
 	int	bang;
 	char	*extra;
 {
-	char	*getenv();
-
 #ifndef CRUNCH
 	/* if current file is modified, and no '!' was given, then error */
 	if (tstflag(file, MODIFIED) && !bang)
@@ -759,7 +765,7 @@ void cmd_cd(frommark, tomark, cmd, bang, extra)
 	/* default directory name is $HOME */
 	if (!*extra)
 	{
-		extra = getenv("HOME");
+		extra = gethome((char *)0);
 		if (!extra)
 		{
 			msg("environment variable $HOME not set");
@@ -928,7 +934,14 @@ void cmd_tag(frommark, tomark, cmd, bang, extra)
 #ifdef INTERNAL_TAGS
 	char	*cmp;	/* char of tag name we're comparing, or NULL */
 	char	*end;	/* marks the end of chars in tmpblk.c */
+	char	file[128];	/* name of file containing tag */
+	int	found;		/* whether the tag has been found */
+	int	file_exists;	/* whether any tag file exists */
+	char	*s, *t;
 #else
+# ifndef NO_TAGSTACK
+	char	*s;
+# endif
 	int	i;
 #endif
 #ifndef NO_MAGIC
@@ -971,66 +984,96 @@ void cmd_tag(frommark, tomark, cmd, bang, extra)
 	*scan = '\0';
 
 	/* close the pipe.  abort if error */
-	if (rpclose(fd) != 0 || scan < tmpblk.c + 3)
+	if (rpclose(fd) != 0)
+	{
+		msg("Trouble running \"ref\" -- Can't do tag lookup");
+		return;
+	}
+	else if (scan < tmpblk.c + 3)
 	{
 		msg("tag \"%s\" not found", extra);
 		return;
 	}
 
 #else /* use internal code to look up the tag */
-	/* open the tags file */
-	fd = open(TAGS, O_RDONLY);
-	if (fd < 0)
-	{
+	found = 0;
+	file_exists = 0;
+	s = o_tags;
+	while (!found && *s != 0) {
+		while (isspace(*s)) s++;
+		for(t = file; s && *s && !isspace(*s); s++)
+			*t++ = *s;
+		*t = '\0';
+
+		/* open the next tags file */
+		fd = open(file, O_RDONLY);
+		if (fd < 0)
+			continue;
+		else
+			file_exists = 1;
+
+		/* Hmmm... this would have been a lot easier with <stdio.h> */
+	
+		/* find the line with our tag in it */
+		for(scan = end = tmpblk.c, cmp = extra; ; scan++)
+		{
+			/* read a block, if necessary */
+			if (scan >= end)
+			{
+				end = tmpblk.c + tread(fd, tmpblk.c, BLKSIZE);
+				scan = tmpblk.c;
+				if (scan >= end)
+				{
+					close(fd);
+					break;
+				}
+			}
+	
+			/* if we're comparing, compare... */
+			if (cmp)
+			{
+				/* matched??? wow! */
+				if (!*cmp && *scan == '\t')
+				{
+					if ((s = strrchr(file, '/')) != 0 ||
+					    (s = strrchr(file, '\\')) != 0)
+						++s;
+					else
+						s = file;
+					*s = '\0';
+					found = 1;
+					break;
+				}
+				if (*cmp++ != *scan)
+				{
+					/* failed! skip to newline */
+					cmp = (char *)0;
+				}
+			}
+	
+			/* if we're skipping to newline, do it fast! */
+			if (!cmp)
+			{
+				while (scan < end && *scan != '\n')
+				{
+					scan++;
+				}
+				if (scan < end)
+				{
+					cmp = extra;
+				}
+			}
+		}
+	}
+
+	if (!file_exists) {
 		msg("No tags file");
 		return;
 	}
 
-	/* Hmmm... this would have been a lot easier with <stdio.h> */
-
-	/* find the line with our tag in it */
-	for(scan = end = tmpblk.c, cmp = extra; ; scan++)
-	{
-		/* read a block, if necessary */
-		if (scan >= end)
-		{
-			end = tmpblk.c + tread(fd, tmpblk.c, BLKSIZE);
-			scan = tmpblk.c;
-			if (scan >= end)
-			{
-				msg("tag \"%s\" not found", extra);
-				close(fd);
-				return;
-			}
-		}
-
-		/* if we're comparing, compare... */
-		if (cmp)
-		{
-			/* matched??? wow! */
-			if (!*cmp && *scan == '\t')
-			{
-				break;
-			}
-			if (*cmp++ != *scan)
-			{
-				/* failed! skip to newline */
-				cmp = (char *)0;
-			}
-		}
-
-		/* if we're skipping to newline, do it fast! */
-		if (!cmp)
-		{
-			while (scan < end && *scan != '\n')
-			{
-				scan++;
-			}
-			if (scan < end)
-			{
-				cmp = extra;
-			}
-		}
+	if (!found) {
+		msg("tag \"%s\" not found", extra);
+		return;
 	}
 
 	/* found it! get the rest of the line into memory */
@@ -1062,7 +1105,32 @@ void cmd_tag(frommark, tomark, cmd, bang, extra)
 			return;
 		}
 		tmpstart(tmpblk.c);
+#ifdef NO_TAGSTACK
 	}
+#else /* tagstack enabled */
+		s = prevorig;
+	}
+	else
+		s = origname;
+
+	if (frommark != MARK_UNSET && *s && *o_tagstack)
+	{
+		curr_tag++;
+		if (curr_tag >= MAXTAGS)
+		{
+			/* discard the oldest tag position */
+			free(tag_stack[0].tag_file);
+			for (curr_tag = 0; curr_tag < MAXTAGS - 1; curr_tag++)
+			{
+				tag_stack[curr_tag] = tag_stack[curr_tag + 1];
+			}
+			/* at this point, curr_tag = MAXTAGS-1 */
+		}
+		tag_stack[curr_tag].tag_file = (char *) malloc(strlen(s) + 1);
+		strcpy(tag_stack[curr_tag].tag_file, s);
+		tag_stack[curr_tag].tag_mark = frommark;
+	}
+#endif
 
 	/* move to the desired line (or to line 1 if that fails) */
 #ifndef NO_MAGIC
@@ -1082,6 +1150,44 @@ void cmd_tag(frommark, tomark, cmd, bang, extra)
 }
 
 
+#ifndef NO_TAGSTACK
+/*ARGSUSED*/
+void cmd_pop(frommark, tomark, cmd, bang, extra)
+	MARK	frommark, tomark;
+	CMD	cmd;
+	int	bang;
+	char	*extra;
+{
+	char	buf[8];
+
+	if (!*o_tagstack)
+	{
+		msg("Tagstack not enabled");
+		return;
+	}
+
+	if (curr_tag < 0)
+		msg("Tagstack empty");
+	else
+	{
+		if (strcmp(origname, tag_stack[curr_tag].tag_file) != 0)
+		{
+			if (!tmpabort(bang))
+			{
+				msg("Use :pop! to abort changes, or :w to save changes");
+				return;
+			}
+			tmpstart(tag_stack[curr_tag].tag_file);
+		}
+		cursor = tag_stack[curr_tag].tag_mark;
+		if (cursor < MARK_FIRST || cursor > MARK_LAST + BLKSIZE)
+		{
+			cursor = MARK_FIRST;
+		}
+		free(tag_stack[curr_tag--].tag_file);
+	}
+}
+#endif
 
 
 
@@ -1247,7 +1353,7 @@ static char *parse_errmsg(text)
 	}
 
 	/* if the number is part of a larger word, then ignore this line */
-	if (*text && isalpha(text[-1]))
+	if (*text && (isalpha(text[-1]) || text[-1] == '_'))
 	{
 		return (char *)0;
 	}
@@ -1451,15 +1557,38 @@ void cmd_make(frommark, tomark, cmd, bang, extra)
 		errfd = -3;
 	}
 
+#if MINT
+	/* I guess MiNT can't depend on the shell for redirection? */
+	close(creat(ERRLIST, 0666));
+	if ((fd = open(ERRLIST, O_RDWR)) == -1)
+	{
+		unlink(ERRLIST);
+		return;
+	}
+	suspend_curses();
+	old2 = dup(2);
+	dup2(fd, 2);
+	system(buf.c);
+	dup2(old2, 2);
+	close(old2);
+	close(fd);
+#else
 	/* run the command, with curses temporarily disabled */
 	suspend_curses();
 	system(buf.c);
+#endif
 	resume_curses(mode == MODE_EX);
 	if (mode == MODE_COLON)
-		mode = MODE_VI;
+		/* ':' hit instead of CR, so let him escape... -nox */
+		return;
 
 	/* run the "errlist" command */
 	cmd_errlist(MARK_UNSET, MARK_UNSET, cmd, bang, ERRLIST);
+
+	/* avoid spurious `Hit <RETURN>' after 1st error message  -nox */
+	/* (which happened when cmd_errlist didn't have to change files...)  */
+	if (mode == MODE_VI)
+		refresh();
 }
 #endif
 
@@ -1738,9 +1867,9 @@ void cmd_suspend(frommark, tomark, cmd, bang, extra)
 	int	bang;
 	char	*extra;
 {
-	void	(*func)();	/* stores the previous setting of SIGTSTP */
+	SIGTYPE	(*func)();	/* stores the previous setting of SIGTSTP */
 
-#if !defined(__386BSD__) && defined(ANY_UNIX)
+#if ANY_UNIX
 	/* the Bourne shell can't handle ^Z */
 	if (!strcmp(o_shell, "/bin/sh"))
 	{
@@ -1749,11 +1878,6 @@ void cmd_suspend(frommark, tomark, cmd, bang, extra)
 	}
 #endif
 
-	func = signal(SIGTSTP, SIG_DFL);
-	if ( func == SIG_IGN ) {
-		msg("SIGTSTP is being ignored, you may not suspend the editor", func);
-		return;
-	}
 	move(LINES - 1, 0);
 	if (tstflag(file, MODIFIED))
 	{
@@ -1764,7 +1888,7 @@ void cmd_suspend(frommark, tomark, cmd, bang, extra)
 	}
 	refresh();
 	suspend_curses();
-	/* was here func = signal(SIGTSTP, SIG_DFL); /* races ??? */
+	func = signal(SIGTSTP, SIG_DFL);
 	kill (0, SIGTSTP);
 
 	/* the process stops and resumes here */

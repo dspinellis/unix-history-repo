@@ -378,7 +378,7 @@ void add(atmark, newtext)
 	{
 		/* hey, we probably can!  Get the following block & see... */
 		following = blkget(blkno + 1);
-		if (strlen(following->c) + (build - blk->c) < BLKSIZE - 1)
+		if (strlen(following->c) + (build - blk->c) < (unsigned)(BLKSIZE - 1))
 		{
 			/* we can!  Copy text from following to blk */
 			for (scan = following->c; *scan; )

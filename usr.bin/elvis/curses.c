@@ -18,15 +18,17 @@
 #include "vi.h"
 
 #if ANY_UNIX
-# if UNIXV
+# if UNIXV || COH_386
 #  ifdef TERMIOS
 #   include	<termios.h>
 #  else
 #   include	<termio.h>
 #  endif
-#  ifdef S5WINSIZE
-#   include	<sys/stream.h>	/* winsize struct defined in one of these? */
-#   include	<sys/ptem.h>
+#  ifndef NO_S5WINSIZE
+#   ifndef _SEQUENT_
+#    include	<sys/stream.h>	/* winsize struct defined in one of these? */
+#    include	<sys/ptem.h>
+#   endif
 #  else
 #   undef	TIOCGWINSZ	/* we can't handle it correctly yet */
 #  endif
@@ -48,7 +50,6 @@ extern int VMS_read_raw;  /* Set in initscr() */
 #endif
 
 
-extern char	*getenv();
 static void	 starttcap();
 
 /* variables, publicly available & used in the macros */
@@ -89,8 +90,8 @@ char	*SR_;		/* :sr=: scroll reverse */
 #else
 char	*SR;		/* :sr=: scroll reverse */
 #endif
-char	*KS = "";	/* :ks=: init string for cursor */
-char	*KE = "";	/* :ke=: restore string for cursor */
+char	*KS = "";	/* :ks=: switch keypad to application mode */
+char	*KE = "";	/* :ke=: switch keypad to system mode */
 char	*KU;		/* :ku=: key sequence sent by up arrow */
 char	*KD;		/* :kd=: key sequence sent by down arrow */
 char	*KL;		/* :kl=: key sequence sent by left arrow */
@@ -127,25 +128,25 @@ char	*CR = "";	/* :cR=: cursor used for VI replace mode */
 char	*aend = "";	/* end an attribute -- either UE or ME */
 char	ERASEKEY;	/* backspace key taken from ioctl structure */
 #ifndef NO_COLOR
-char	normalcolor[16];
-char	SOcolor[16];
-char	SEcolor[16];
-char	UScolor[16];
-char	UEcolor[16];
-char	MDcolor[16];
-char	MEcolor[16];
-char	AScolor[16];
-char	AEcolor[16];
+char	normalcolor[24];
+char	SOcolor[24];
+char	SEcolor[24];
+char	UScolor[24];
+char	UEcolor[24];
+char	MDcolor[24];
+char	MEcolor[24];
+char	AScolor[24];
+char	AEcolor[24];
 # ifndef NO_POPUP
-char	POPUPcolor[16];
+char	POPUPcolor[24];
 # endif
 # ifndef NO_VISIBLE
-char	VISIBLEcolor[16];
+char	VISIBLEcolor[24];
 # endif
 #endif
 
 #if ANY_UNIX
-# if UNIXV
+# if UNIXV || COH_386
 #  ifdef TERMIOS
 static struct termios	oldtermio;	/* original tty mode */
 static struct termios	newtermio;	/* cbreak/noecho tty mode */
@@ -210,11 +211,11 @@ void initscr()
 	{
 #if ANY_UNIX
 		write(2, "Environment variable TERM must be set\n", (unsigned)38);
-		exit(1);
+		exit(2);
 #endif
 #if OSK
 		writeln(2, "Environment variable TERM must be set\n", (unsigned)38);
-		exit(1);
+		exit(2);
 #endif
 #if AMIGA
 		termtype = TERMTYPE;
@@ -229,7 +230,7 @@ void initscr()
 #endif
 #if VMS
 		write(2, "UNKNOWN terminal: define ELVIS_TERM\n", (unsigned)36);
-		exit(1);
+		exit(2);
 #endif
 	}
 	else
@@ -246,7 +247,7 @@ void initscr()
 
 	/* change the terminal mode to cbreak/noecho */
 #if ANY_UNIX
-# if UNIXV
+# if UNIXV || COH_386
 #  ifdef TERMIOS
 	tcgetattr(2, &oldtermio);
 #  else
@@ -281,10 +282,12 @@ void endwin()
 
 static int curses_active = FALSE;
 
+extern int oldcurs;
+
 /* Send any required termination strings.  Turn off "raw" mode. */
 void suspend_curses()
 {
-#if ANY_UNIX && !UNIXV
+#if ANY_UNIX && !(UNIXV || COH_386)
 	struct tchars	tbuf;
 # ifdef TIOCSLTC
 	struct ltchars	ltbuf;
@@ -294,6 +297,7 @@ void suspend_curses()
 	if (has_CQ)
 	{
 		do_CQ();
+		oldcurs = 0;
 	}
 #endif
 	if (has_TE)					/* GB */
@@ -311,8 +315,8 @@ void suspend_curses()
 
 	/* change the terminal mode back the way it was */
 #if ANY_UNIX
-# if UNIXV
-#  if TERMIOS
+# if (UNIXV || COH_386)
+#  ifdef TERMIOS
 	tcsetattr(2, TCSADRAIN, &oldtermio);
 #  else
 	ioctl(2, TCSETAW, &oldtermio);
@@ -360,7 +364,7 @@ void resume_curses(quietly)
 	{
 		/* change the terminal mode to cbreak/noecho */
 #if ANY_UNIX
-# if UNIXV
+# if UNIXV || COH_386
 		ospeed = (oldtermio.c_cflag & CBAUD);
 		ERASEKEY = oldtermio.c_cc[VERASE];
 		newtermio = oldtermio;
@@ -381,7 +385,7 @@ void resume_curses(quietly)
 #  else
 		ioctl(2, TCSETAW, &newtermio);
 #  endif
-# else /* BSD or V7 or Coherent or Minix */
+# else /* BSD, V7, Coherent-286, or Minix */
 		struct tchars	tbuf;
 #  ifdef TIOCSLTC
 		struct ltchars	ltbuf;
@@ -438,6 +442,12 @@ void resume_curses(quietly)
 		ERASEKEY = '\177';  /* Accept <DEL> as <^H> for VMS */
 #endif
 
+		curses_active = TRUE;
+	}
+
+	/* If we're supposed to quit quietly, then we're done */
+	if (quietly)
+	{
 		if (has_TI)					/* GB */
 		{
 			do_TI();
@@ -447,12 +457,6 @@ void resume_curses(quietly)
 			do_KS();
 		}
 
-		curses_active = TRUE;
-	}
-
-	/* If we're supposed to quit quietly, then we're done */
-	if (quietly)
-	{
 		return;
 	}
 
@@ -468,6 +472,10 @@ void resume_curses(quietly)
 	do_SE();
 	refresh();
 	ttyread(kbuf, 20, 0); /* in RAW mode, so <20 is very likely */
+	if (has_TI)
+	{
+		do_TI();
+	}
 	if (kbuf[0] == ':')
 	{
 		mode = MODE_COLON;
@@ -481,11 +489,7 @@ void resume_curses(quietly)
 	}	
 	exwrote = FALSE;
 
-#if TURBOC || __GNUC__
-	signal(SIGINT, (void(*)()) trapint);
-#else
 	signal(SIGINT, trapint);
-#endif
 }
 
 /* This function fetches an optional string from termcap */
@@ -517,7 +521,7 @@ static void musthave(T, s)
 #if OSK
 		write(2, "\l", 1);
 #endif
-		exit(1);
+		exit(2);
 	}
 }
 
@@ -615,11 +619,16 @@ static void starttcap(term)
 	getsize(0);
 
 	/* Key sequences */
-	pair(&KS, &KE, "ks", "ke");
+	pair(&KS, &KE, "ks", "ke");	/* keypad enable/disable */
 	mayhave(&KU, "ku");		/* up */
 	mayhave(&KD, "kd");		/* down */
-	mayhave(&KL, "kl");		/* left */
 	mayhave(&KR, "kr");		/* right */
+	mayhave(&KL, "kl");		/* left */
+	if (KL && KL[0]=='\b' && !KL[1])
+	{
+		/* never use '\b' as a left arrow! */
+		KL = (char *)0;
+	}
 	mayhave(&PU, "kP");		/* PgUp */
 	mayhave(&PD, "kN");		/* PgDn */
 	mayhave(&HM, "kh");		/* Home */
@@ -913,8 +922,8 @@ void wqrefresh()
 /* This function is called during termination.  It resets color modes */
 int ansiquit()
 {
-	/* if ANSI color terminal, then reset the colors */
-	if (!strcmp(UP, "\033[A"))
+	/* if ANSI terminal & colors were set, then reset the colors */
+	if (!strcmp(UP, "\033[A") &&  strcmp(SOcolor, SO))
 	{
 		tputs("\033[37;40m\033[m", 1, faddch);
 		clrtoeol();
@@ -931,21 +940,33 @@ int ansicolor(cmode, attrbyte)
 	int	cmode;		/* mode to set, e.g. A_NORMAL */
 	int	attrbyte;	/* IBM PC attribute byte */
 {
-	char	temp[16];	/* hold the new mode string */
+	char	temp[24];	/* hold the new mode string */
 
 	/* if not ANSI-ish, then fail */
 	if (strcmp(UP, "\033[A") && strcmp(UP, "\033OA"))
 	{
-		msg("Don't know how to set colors for this terminal");
-		return 0;
+		/* Only give an error message if we're editing a file.
+		 * (I.e., if we're *NOT* currently doing a ".exrc")
+		 */
+		if (tmpfd >= 0)
+			msg("Don't know how to set colors for this terminal");
+		return FALSE;
 	}
 
 	/* construct the color string */
+#ifdef MWC /* either Coherent-286 ("COHERENT"), or Coherent-386 ("M_SYSV") */
+	sprintf(temp, "\033[m\033[3%cm\033[4%cm%s%s",
+		"04261537"[attrbyte & 0x07],
+		"04261537"[(attrbyte >> 4) & 0x07],
+		(attrbyte & 0x08) ? "\033[1m" : "",
+		(attrbyte & 0x80) ? "\033[5m" : "");
+#else
 	sprintf(temp, "\033[m\033[3%c;4%c%s%sm",
 		"04261537"[attrbyte & 0x07],
 		"04261537"[(attrbyte >> 4) & 0x07],
 		(attrbyte & 0x08) ? ";1" : "",
 		(attrbyte & 0x80) ? ";5" : "");
+#endif
 
 	/* stick it in the right place */
 	switch (cmode)
@@ -997,7 +1018,7 @@ int ansicolor(cmode, attrbyte)
 #endif
 	}
 
-	return 1;
+	return TRUE;
 }
 
 
@@ -1006,6 +1027,7 @@ int ansicolor(cmode, attrbyte)
  * yet, this is one of the termcap strings; for color terminals that really
  * have had colors defined, we just the "normal color" escape sequence.
  */
+int
 endcolor()
 {
 	if (aend == ME)

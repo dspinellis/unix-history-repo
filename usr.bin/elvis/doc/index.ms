@@ -1,8 +1,8 @@
 .XS 1
 INTRODUCTION
-What E\s-2LVIS\s+2 does,
+What \*E does,
 Copyright,
-How to compile E\s-2LVIS\s+2,
+How to compile \*E,
 Overview
 .XA 2
 VISUAL MODE COMMANDS
@@ -47,7 +47,7 @@ Pasting from a cut buffer,
 Macros,
 The effect of switching files
 .XA 7
-DIFFERENCES BETWEEN E\s-2LVIS\s+2 AND THE REAL VI/EX
+DIFFERENCES BETWEEN \*E AND THE REAL VI/EX
 Extensions,
 Omissions
 .XA 8
@@ -60,14 +60,16 @@ Colon command interpretation,
 Screen control,
 Portability
 .XA 9
-CFLAGS
+MAKEFILE
 .XA 10
-TERMCAP
+CFLAGS
 .XA 11
-ENVIRONMENT VARIABLES
+TERMCAP
 .XA 12
-VERSIONS
+ENVIRONMENT VARIABLES
 .XA 13
+VERSIONS
+.XA 14
 QUESTIONS & ANSWERS
 .XE
 .PX

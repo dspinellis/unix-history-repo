@@ -1,11 +1,11 @@
-.Go 12 "VERSIONS"
+.Go 13 "VERSIONS"
 .PP
 \*E currently works under BSD UNIX, AT&T System-V UNIX, SCO XENIX,
 Minix, Coherent, MS-DOS, Atari TOS, OS9/68k, VAX/VMS, and AmigaDos.
 This section of the manual provides special information that applies to each
 particular version of \*E.
 .PP
-For all versions except MS-DOS,
+For all versions except MS-DOS and VMS,
 the file "Makefile.mix" should be copied to "Makefile",
 and then edited to select the correct set of options for your system.
 There is more information about this embedded in the file itself.
@@ -17,12 +17,12 @@ Temporary files are stored in /tmp.
 You should modify /etc/rc so that
 the temp files are preserved when the system is rebooted.
 Find a line in /etc/rc which reads
-.br
+.sp
 .ti +0.5i
 ex4.3preserve /tmp
-.PP
-or something like that, and append the following line after it:
-.br
+.LP
+or something like that, and append the following line:
+.sp
 .ti +0.5i
 elvprsv /tmp/elv*
 .PP
@@ -36,17 +36,20 @@ Only a system crash or power failure could hurt you.
 .PP
 Both \*E and the real Vi
 read initialization commands from a file called ".exrc",
-but the commands in that file might work on one but not the other.
+but the commands in that file might work on one editor but not the other.
 For example, "set keywordprg=man" will work for \*E,
 but Vi will complain because it doesn't have a "keywordprg" option.
-If the warning messages annoy you, then you can edit the config.h file
-to change the name of the initialization file ".exrc" to something else,
-such as ".elvisrc".
+If the warning messages annoy you, then you can edit the CFLAGS setting
+in the Makefile and add -DEXRC=\\".elvisrc\\".
 .PP
 If you use X windows, you may wish to add "-DCS_LATIN1" to CFLAGS.
 This will cause the digraph table and the flipcase option to have default
 values that are appropriate for the LATIN-1 character set.
 That's the standard character set for X.
+.PP
+The default mailer used notify users when text is preserver is "mail".
+You may wish to change this to "Mail" (with an uppercase 'M').
+See the description of "MAILER" in the CFLAGS section of this manual.
 .PP
 The default keyboard macro time-out value is larger for BSD than it is for
 some other systems, because I've had trouble running \*E via rlogin or Xterm.
@@ -56,32 +59,38 @@ System-V UNIX
 .PP
 Most SysV UNIX systems use terminfo instead of termcap,
 but  the  terminfo  library  doesn't seem to have a standard name.
-As shipped, Elvis' Makefile.mix  is  configured  with "LIBS=-lterm".
-You may need to change it to "LIBS=-ltermcap" or "LIBS=-lterminfo"
+As shipped, \*E' Makefile.mix  is  configured  with "LIBS=-ltermcap".
+You may need to change it to "LIBS=-lterm" or "LIBS=-lterminfo"
 or even "LIBS=-lcurses".
 .PP
-The /etc/rc file should be modified as described for BSD systems, above.
-The only difference is that SysV systems tend to have directories for
-initialization, instead of a single large /etc/rc file.
-Editor recovery is usually done somewhere in the /etc/rc2.d directory.
+The /etc/rc file (or its equivelent) should be modified as described
+for BSD systems, above.
+There's a pretty good chance that "make install" will do this for you;
+it knows how to create an editor recovery file in the /etc/rc2.d directory,
+which is where most modern SysV systems store initialization commands.
+You only need to do it manually for older SysV systems.
 .PP
 The potential trouble with ".exrc" described above for BSD UNIX applies
 to System-V UNIX as well.
 .PP
+The default mailer used notify users when text is preserver is "mail".
+You may wish to change this to "mailx".
+See the description of "MAILER" in the CFLAGS section of this manual.
+.PP
 \*E uses control-C as the interrupt key, not Delete.
+This was done so that the <Del> key could be used for character deletion.
 .NH 2
 SCO Xenix
 .PP
 For Xenix-386, you can use the generic System-V settings.
 You may wish to add "-DCS_IBMPC" to CFLAGS, to have the digraph table and
 flipcase option start up in a mode that is appropriate for the console.
-
-There is a separate group of settings for use with Xenix-286.
+Also, note that there is a separate group of settings for use with Xenix-286.
 It already has "-DCS_IBMPC" in CFLAGS.
 .PP
 Because Xenix is so similar to System-V, everything I said earlier about
 System-V applies to the Xenix version too, except that editor recovery
-probably belongs in a directory called /etc/rc.d/8.
+might belong in a directory called /etc/rc.d/8 instead.
 .NH 2
 Minix
 .PP
@@ -90,20 +99,26 @@ The differences between these two are that
 the 68k version uses ".o" for the object file extension where
 the PC version uses ".s", and
 the PC version has some extra flags in CFLAGS to reduce the size of \*E.
-The PC version also uses tinytcap (instead of the full termcap) to make it smaller.
+The PC version also uses tinytcap (instead of the full termcap)
+to make it smaller.
 .PP
 Minix-PC users should read the CFLAGS section of this manual very carefully.
 You have some choices to make...
 .PP
 The temporary files are stored in /usr/tmp.
 The /usr/tmp directory must exist before you run \*E,
-and it must be readable/writable by everybody.
+and it must be readable & writable by everybody.
 We use /usr/tmp instead of /tmp because
 after a system crash or power failure,
 you can recover the altered version of a file from the temporary file
 in /usr/tmp.
 If it was stored in /tmp, though, then it would be lost because /tmp is
 normally located on the RAM disk.
+Also, you'll need a /usr/preserve directory which is readable & writable
+by root;
+this directory is used to store text files that have been preserved after a
+crash.
+The "make install" script will create it if necessary.
 .PP
 \*E uses control-C as the interrupt key, not Delete.
 .NH 2
@@ -125,7 +140,13 @@ To use tinytcap, just add "tinytcap.o" to the "EXTRA=" line in the Makefile,
 and remove "-lterm" from the "LIBS=" line.
 .PP
 The temporary files are stored in /tmp.
-You should modify your /etc/rc file as described for BSD earlier.
+Preserved files are stored in /usr/preserve.
+You should modify your /etc/rc file to support file file preservation;
+add the line...
+.sp
+	/usr/bin/elvprsv /tmp/*
+.sp
+... just before the first "/bin/rm" line.
 .NH 2
 MS-DOS
 .PP
@@ -141,7 +162,7 @@ With Microsoft C 6.00, you may have trouble compiling regexp.c.
 If so, try compiling it without optimization.
 .PP
 The "Makefile.mix" file contains a set of suggested settings for compiling
-elvis with Turbo-C or Borland C.
+\*E with Turbo-C or Borland C.
 (If you have Turbo-C, but not the Make utility,
 then you can \fIalmost\fR use the "\*E.prj" file to compile \*E,
 but you must explicitly force Turbo-C to compile it with the "medium" memory model.
@@ -158,7 +179,7 @@ You can also control the name of the temp directory via an environment
 variable named TMP or TEMP.
 The directory must exist before you can run \*E.
 .PP
-The TERM environment variable determines how elvis will write to the screen.
+The TERM environment variable determines how \*E will write to the screen.
 It can be set to any one of the following values:
 .LD
 .ta 1.5i 2.5i
@@ -168,7 +189,7 @@ It can be set to any one of the following values:
 	nansi	User faster NANSI.SYS driver.
 .DE
 .PP
-If the TERM variable isn't set, then elvis will automatically select either
+If the TERM variable isn't set, then \*E will automatically select either
 the "rainbow" interface (when run on a Rainbow) or "pcbios" (on an IBM clone).
 .PP
 You may prefer to use NANSI.SYS for speed;
@@ -183,11 +204,13 @@ After that, \*E will notice the "TERM" setting and use the driver.
 .PP
 Since ".exrc" is not a valid DOS filename,
 the name of the initialization file has been changed to "elvis.rc".
-Elvis will look for an "elvis.rc" file first in your home directory,
-and then in the current directory.
-Note that you must set an environment variable named "HOME" to the
-full pathname of your home directory, for Elvis to check there;
-if "HOME" isn't set, then Elvis will only look in the current directory.
+\*E will look for an "elvis.rc" file first in your home directory.
+If it exists, and contains ":set exrc", then \*E will check for
+another "elvis.rc" in the current directory.
+By default, the directory where ELVIS.EXE resides is taken to be your
+home directory.
+You can override this default by setting an environment variable named
+"HOME" to the full pathname of your home directory.
 To set "HOME", you would typically add the following line to your
 AUTOEXEC.BAT file:
 .br
@@ -199,11 +222,11 @@ It expands wildcard characters in file names.
 If \*E flashes a "Bad command or filename" message when it starts,
 then you've probably lost the WILDCARD.EXE program somehow.
 .PP
-\*E can run under Windows, but only in full-screen mode.
-Also, Windows uses an environment variable called TEMP which interferes with
-elvis' usage of TEMP;
+\*E can run under Windows, but you may have trouble with TEMP.
+Windows uses an environment variable called TEMP which interferes with
+\*E' usage of TEMP;
 to work around this, you can simply set an environment variable named
-TMP (with no 'E') to the name of elvis' temporary directory.
+TMP (with no 'E') to the name of \*E' temporary directory.
 When TEMP and TMP are both set, \*E uses TMP and ignored TEMP.
 .NH 2
 Atari TOS
@@ -265,14 +288,14 @@ VAX/VMS
 .PP
 John Campbell ported \*E to VAX/VMS.
 .PP
-A heavily laden VAX can take half an hour to compile elvis.
+A heavily laden VAX can take half an hour to compile \*E.
 This is normal.
 Don't panic.
 .PP
-While running, elvis will create temporary files in SYS$SCRATCH.
+While running, \*E will create temporary files in SYS$SCRATCH.
 Enter SHOW LOGICAL SYS$SCRATCH to see what actual directory you are using.
 Many sites have SYS$SCRATCH equivalenced to SYS$LOGIN.
-The elvis temporary files look like the following on VMS while elvis is running:
+The \*E temporary files look like the following on VMS while \*E is running:
 .br
 .ti 0.75i
 ELV_1123A.1;1       ELV_1123A.2;1       SO070202.;1
@@ -318,7 +341,7 @@ Under AmigaDOS 1.2/1.3 \*E works, buts lacks the more advanced features.
 .PP
 For the port to AmigaDOS 2.04, we tried to use as many Native AmigaDOS
 calls as we could.
-This should increase Elvis's chances at being compiled with other compilers.
+This should increase \*E's chances at being compiled with other compilers.
 DICE seems to have a different default char type.
 You may need to use the UCHAR() macro in tio.c.
 To test it, try the :map command; if it looks right, things are cool.
@@ -335,8 +358,8 @@ supplied with Aztec, but for people with a straight Aztec installation,
 I went with the default names for the Aztec pragmas.
 .PP
 One include you'll need is <sys/types.h>.
-Its a common include when porting software just make yourself one.
-Its a two line file that saves a lot of hassle especially in the elvis source.
+It's a common include when porting software just make yourself one.
+It's a two line file that saves a lot of hassle especially in the \*E source.
 So, make a directory where your includes are located called `sys'
 and in a file below that type:
 .br
@@ -349,7 +372,7 @@ and in a file below that type:
 When setting environment variables (either local or global) for
 variables that specify a directory, make sure the variable ends in `:'
 or `/'.
-This saved from having to change much of the way elvis works.
+This saved from having to change much of the way \*E works.
 The default temporary directory (if TEMP and TMP aren't specified) is "T:".
 The default if HOME directory (if no HOME environment variable is set) is "S:".
 .PP
@@ -358,9 +381,10 @@ where it looks for macros.
 .NH 2
 Other Systems
 .PP
-For Sun workstations, use the BSD configuration.
-Earlier versions of elvis didn't link correctly due to a quirk in Sun's
-version of the "make" utility, but this version of elvis has a work-around
+For SunOS and Solaris 1.x, use the BSD settings;
+for Solaris 2.x, use the SysV settings.
+Earlier versions of \*E didn't link correctly due to a quirk in Sun's
+version of the "make" utility, but this version of \*E has a work-around
 for that quirk so you should have no trouble at all.
 .PP
 For Linux, use the SysV settings.
@@ -376,3 +400,6 @@ will therefore support V7/Minix code.
 You may need to fiddle with #include directives or something, though.
 Minix-68k is a better starting point than Minix-PC because the PC compiler
 has some severe quirks.
+.PP
+If you're thinking of porting \*E to some non-UNIX system,
+I suggest you begin by studying the "INTERNALS" section of this manual.

@@ -56,6 +56,7 @@ void regsub(re, src, dst)
 	}
 
 	/* allocate memory for the ~ed version of src */
+	checkmem();
 	start = cpy = (char *)malloc((unsigned)(len + 1));
 	if (!cpy)
 	{
@@ -94,10 +95,11 @@ void regsub(re, src, dst)
 		msg("Bug in regsub.c! Predicted length = %d, Actual length = %d", len, (int)(cpy - start));
 	}
 #endif
+	checkmem();
 
 	/* remember this as the "previous" for next time */
 	if (prev)
-		free(prev);
+		_free_(prev);
 	prev = src = start;
 
 #endif /* undef CRUNCH */

@@ -1,4 +1,4 @@
-.Go 9 "CFLAGS"
+.Go 10 "CFLAGS"
 .PP
 \*E uses many preprocessor symbols to control compilation.
 Some of these control the sizes of buffers and such.
@@ -15,15 +15,11 @@ For other systems, the config.h file can generally figure it out automatically.
 .IP -DRAINBOW
 For MS-DOS systems, this causes support for the DEC Rainbow to be compiled
 into \*E.
-.IP -DS5WINSIZE
+.IP -DNO_S5WINSIZE
 Some versions of SysV UNIX don't support support the "winsize"
-style of screen-size testing,
-so elvis ignores window size changes by default.
-.IP
-However, many of the newer SysV systems defines "winsize" in the
-file "/usr/include/sys/ptem.h".
-If your SysV system has "winsize" then you should add
--DS5SWINSIZE to the CFLAGS setting.
+style of screen-size testing.
+If you have a SysV system and can't compile "curses.c",
+then try adding -DNO_S5WINSIZE to the CFLAGS.
 .IP -DTERMIOS
 POSIX is a SysV-derived specification which uses a terminal control
 package called "termios", instead of "termio".
@@ -39,7 +35,7 @@ The default is 5 blocks, and the minimum is 3 blocks.
 (See the -DBLKSIZE flag, below.)
 .IP
 More RAM allows global changes to happen a little faster.
- f you're just making many small changes in one section of a file, though,
+If you're just making many small changes in one section of a file, though,
 extra RAM won't help much.
 .IP -DBLKSIZE=\fInumber\fP
 This controls the size of blocks that \*E uses internally.
@@ -109,6 +105,14 @@ This only controls the default;
 the value you give here may be overridden at run-time by setting
 an environment variable named SHELL (or COMSPEC for MS-DOS).
 Its value must be a string constant, so be careful about quoting.
+.IP -DMAILER=\fIstring\fP
+This is the name of the program that \*E uses to send mail to a user whose
+text has just been preserved.
+(See the manual page for the \fIelvprsv\fR program.)
+If your system doesn't use electronic mail, then this option is irrelevent.
+For UNIX and OS-9 systems, though, the value should be a quoted string.
+The default value is "mail", but
+SysV users may prefer to use "mailx", and BSD users may prefer "Mail".
 .IP -DTAGS=\fIstring\fP
 This sets the name of the "tags" file,
 which is used by the :tag command.
@@ -137,7 +141,7 @@ A couple of obscure features are disabled by this, too.
 .IP -DNO_MKEXRC
 This removes the ":mkexrc" command,
 so you have to create any .exrc files manually.
-The size of the .text segment will be reduced by about 600 bytes.
+The size of the .text segment will be reduced by about 1500 bytes.
 .IP -DNO_CHARATTR
 Permanently disables the charattr option.
 This reduces the size of your ".text" segment by about 850 bytes.
@@ -217,7 +221,10 @@ This removes all support for modelines.
 .IP -DNO_TAG
 This disables tag lookup.
 It reduces the size of the .text segment by about 750 bytes.
-.IP "-DNO_ALT_FKEY -DNO_CTRL_FKEY -DNO_SHIFT_FKEY -DNO_FKEY"
+.IP -DNO_TAGSTACK
+This disables the tagstack.
+The ^T and :pop commands will no longer be available.
+.IP "-DNO_ALT_FKEY, -DNO_CTRL_FKEY, -DNO_SHIFT_FKEY, -DNO_FKEY"
 These remove explicit support of function keys.
 -DNO_ALT_FKEY removes support for the <alternate> versions function keys.
 -DNO_CTRL_FKEY removes support for the <control> and <alternate> versions function keys.
@@ -248,8 +255,7 @@ so you might as well add -DNO_SHIFT_FKEY to CFLAGS if you're using terminfo.
 Note that, even if you have -DNO_FKEYS, you can still configure \*E to use
 your function keys my mapping the literal character codes sent by the key.
 You just couldn't do it in a terminal-independent way.
-TERM_925
-.IP "-DTERM_AMIGA -DTERM_VT100 -DTERM_VT52 etc."
+.IP "-DTERM_925, -DTERM_AMIGA, -DTERM_VT100, -DTERM_VT52, etc."
 The tinytcap.c file contains descriptions of several terminal types.
 For each system that uses tinytcap, a reasonable subset of the available
 descriptions is actually compiled into \*E.
@@ -263,7 +269,7 @@ This is more powerful than the real vi's tag lookup,
 but it can be much slower.
 .IP
 If you add -DINTERNAL_TAGS to your CFLAGS setting,
-then \* will use its own internal tag lookup code, which is faster.
+then \*E will use its own internal tag lookup code, which is faster.
 .IP -DPRSVDIR=\fIdirectory\fR
 This controls where preserved files will be placed.
 An appropriate default has been chosen for each Operating System,

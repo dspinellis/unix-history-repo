@@ -5,14 +5,6 @@
  *	14407 SW Teal Blvd. #C
  *	Beaverton, OR 97005
  *	kirkenda@cs.pdx.edu
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00043
- * --------------------         -----   ----------------------
- *
- * 27 Nov 1992	 Felix Gaehtgens	Fixed <ESC>:wq!
- *
  */
 
 
@@ -60,6 +52,8 @@ static struct
 }
 	cmdnames[] =
 {   /*	cmd name	cmd code	function	arguments */
+	{"print",	CMD_PRINT,	cmd_print,	RANGE+NL	},
+
 	{"append",	CMD_APPEND,	cmd_append,	FROM+ZERO+BANG	},
 #ifdef DEBUG
 	{"bug",		CMD_DEBUG,	cmd_debug,	RANGE+BANG+EXTRA+NL},
@@ -76,7 +70,6 @@ static struct
 	{"move",	CMD_MOVE,	cmd_move,	RANGE+EXTRA	},
 	{"next",	CMD_NEXT,	cmd_next,	BANG+NAMEDFS	},
 	{"Next",	CMD_PREVIOUS,	cmd_next,	BANG		},
-	{"print",	CMD_PRINT,	cmd_print,	RANGE+NL	},
 	{"quit",	CMD_QUIT,	cmd_xit,	BANG		},
 	{"read",	CMD_READ,	cmd_read,	FROM+ZERO+NAMEDF},
 	{"substitute",	CMD_SUBSTITUTE,	cmd_substitute,	RANGE+EXTRA	},
@@ -118,6 +111,9 @@ static struct
 	{"mkexrc",	CMD_MKEXRC,	cmd_mkexrc,	NAMEDF		},
 #endif
 	{"number",	CMD_NUMBER,	cmd_print,	RANGE+NL	},
+#ifndef NO_TAGSTACK
+	{"pop",		CMD_POP,	cmd_pop,	BANG+WORD1	},
+#endif
 	{"put",		CMD_PUT,	cmd_put,	FROM+ZERO+WORD1	},
 	{"set",		CMD_SET,	cmd_set,	EXRCOK+EXTRA	},
 	{"shell",	CMD_SHELL,	cmd_shell,	NL		},
@@ -128,7 +124,7 @@ static struct
 	{"tag",		CMD_TAG,	cmd_tag,	BANG+WORD1	},
 	{"version",	CMD_VERSION,	cmd_version,	EXRCOK+NONE	},
 	{"visual",	CMD_VISUAL,	cmd_edit,	BANG+NAMEDF	},
-	{"wq",		CMD_WQUIT,	cmd_xit,	BANG+NL		},
+	{"wq",		CMD_WQUIT,	cmd_xit,	NL		},
 
 #ifdef DEBUG
 	{"debug",	CMD_DEBUG,	cmd_debug,	RANGE+BANG+EXTRA+NL},
@@ -392,8 +388,8 @@ void doexcmd(cmdbuf)
 	}
 	else if (*scan == '0')
 	{
-		frommark = tomark = MARK_UNSET;
 		scan++;
+		frommark = tomark = (*scan ? MARK_UNSET : MARK_FIRST);
 	}
 	else
 	{
@@ -424,16 +420,23 @@ void doexcmd(cmdbuf)
 		scan++;
 	}
 
-	/* if no command, then just move the cursor to the mark */
+	/* Figure out how long the command name is.  If no command, then the
+	 * length is 0, which will match the "print" command.
+	 */ 
 	if (!*scan)
 	{
-		if (tomark != MARK_UNSET)
-			cursor = tomark;
-		return;
+		/* if not in ex mode, and both endpoints are at the line,
+		 * then just move to the start of that line without printing
+		 */
+		if (mode != MODE_EX && frommark == tomark)
+		{
+			if (tomark != MARK_UNSET)
+				cursor = tomark;
+			return;
+		}
+		cmdlen = 0;
 	}
-
-	/* figure out how long the command name is */
-	if (!isalpha(*scan))
+	else if (!isalpha(*scan))
 	{
 		cmdlen = 1;
 	}
@@ -672,23 +675,60 @@ int doexrc(filename)
 	int	fd;		/* file descriptor */
 	int	len;		/* length of the ".exrc" file */
 
+#ifdef CRUNCH
+	/* small address space - we need to conserve space */
+
 	/* !!! kludge: we use U_text as the buffer.  This has the side-effect
 	 * of interfering with the shift-U visual command.  Disable shift-U.
 	 */
 	U_line = 0L;
+#else
+# if TINYSTACK
+#  if TOS || MINT
+	/* small stack, but big heap.  Allocate buffer from heap */
+	char	*U_text = (char *)malloc(4096);
+	if (!U_text)
+	{
+		return 0;
+	}
+#  else
+	/* small stack - we need to conserve space */
+
+	/* !!! kludge: we use U_text as the buffer.  This has the side-effect
+	 * of interfering with the shift-U visual command.  Disable shift-U.
+	 */
+	U_line = 0L;
+#  endif
+# else
+	/* This is how we would *like* to do it -- with a large buffer on the
+	 * stack, so we can handle large .exrc files and also recursion.
+	 */
+	char	U_text[4096];
+# endif
+#endif
 
 	/* open the file, read it, and close */
 	fd = open(filename, O_RDONLY);
 	if (fd < 0)
 	{
+#if TINYSTACK && (TOS || MINT)
+		free(U_text);
+#endif
 		return 0;
 	}
-	len = tread(fd, U_text, BLKSIZE);
+#if TINYSTACK && (TOS || MINT)
+	len = tread(fd, U_text, 4096);
+#else
+	len = tread(fd, U_text, sizeof U_text);
+#endif
 	close(fd);
 
 	/* execute the string */
 	exstring(U_text, len, ctrl('V'));
 
+#if TINYSTACK && (TOS || MINT)
+	free(U_text);
+#endif
 	return 1;
 }
 

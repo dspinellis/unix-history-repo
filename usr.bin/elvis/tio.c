@@ -14,10 +14,11 @@
 #include "vi.h"
 #include "ctype.h"
 
+static int showmsg P_((void));
 
 /* This function reads in a line from the terminal. */
 int vgets(prompt, buf, bsize)
-	char	prompt;	/* the prompt character, or '\0' for none */
+	int	prompt;	/* the prompt character, or '\0' for none */
 	char	*buf;	/* buffer into which the string is read */
 	int	bsize;	/* size of the buffer */
 {
@@ -57,7 +58,7 @@ int vgets(prompt, buf, bsize)
 		else
 		{
 			/* maybe expand an abbreviation while getting key */
-			for (word = len; --word >= 0 && isalnum(buf[word]); )
+			for (word = len; --word >= 0 && !isspace(buf[word]); )
 			{
 			}
 			word++;
@@ -74,8 +75,10 @@ int vgets(prompt, buf, bsize)
 #endif
 
 		/* some special conversions */
+#if 0
 		if (ch == ctrl('D') && len == 0)
 			ch = ctrl('[');
+#endif
 #ifndef NO_DIGRAPH
 		if (*o_digraph && erased != 0 && ch != '\b')
 		{
@@ -99,9 +102,10 @@ int vgets(prompt, buf, bsize)
 			quoted = TRUE;
 			break;
 
-		  case ctrl('['):
+		  case ctrl('D'):
 			return -1;
 
+		  case ctrl('['):
 		  case '\n':
 #if OSK
 		  case '\l':
@@ -110,6 +114,21 @@ int vgets(prompt, buf, bsize)
 #endif
 			clrtoeol();
 			goto BreakBreak;
+
+#ifndef CRUNCH
+		  case ctrl('U'):
+			while (len > 0)
+			{
+				len--;
+				while (widths[len]-- > 0)
+				{
+					qaddch('\b');
+					qaddch(' ');
+					qaddch('\b');
+				}
+			}
+			break;
+#endif
 
 		  case '\b':
 			if (len > 0)
@@ -235,14 +254,24 @@ void endmsgs()
  * msg("")		- clears the message line
  * msg("%s %d", ...)	- does a printf onto the message line
  */
-/*VARARGS1*/
+#ifdef	__STDC__
+void msg (char *fmt, ...)
+{
+	va_list	ap;
+	va_start (ap, fmt);
+#else
 void msg(fmt, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 	char	*fmt;
 	long	arg1, arg2, arg3, arg4, arg5, arg6, arg7;
 {
+#endif
 	if (mode != MODE_VI)
 	{
+#ifdef	__STDC__
+		vsprintf (pmsg, fmt, ap);
+#else
 		sprintf(pmsg, fmt, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+#endif
 		qaddstr(pmsg);
 		addch('\n');
 		exrefresh();
@@ -256,12 +285,19 @@ void msg(fmt, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 		}
 
 		/* real message */
+#ifdef	__STDC__
+		vsprintf (pmsg, fmt, ap);
+#else
 		sprintf(pmsg, fmt, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+#endif
 		if (*fmt)
 		{
 			manymsgs = TRUE;
 		}
 	}
+#ifdef	__STDC__
+	va_end (ap);
+#endif
 }
 
 
@@ -330,7 +366,7 @@ void beep()
 	}
 	else if (*o_errorbells)
 	{
-		ttywrite("\007", 1);
+		tputs("\007", 1, faddch);
 	}
 
 	/* discard any buffered input, and abort macros */
@@ -426,6 +462,10 @@ void execmap(rawlen, cookedstr, visual)
 #endif
 }
 
+#ifndef NO_CURSORSHAPE
+/* made global so that suspend_curses() can reset it.  -nox */
+int	oldcurs;
+#endif
 /* This function calls ttyread().  If necessary, it will also redraw the screen,
  * change the cursor shape, display the mode, and update the ruler.  If the
  * number of characters read is 0, and we didn't time-out, then it exits because
@@ -442,9 +482,6 @@ static int fillkeybuf(when, timeout)
 	static long	oldtop;
 	static long	oldnlines;
 	char		*str;
-#endif
-#ifndef NO_CURSORSHAPE
-	static int	oldcurs;
 #endif
 
 #ifdef DEBUG
@@ -480,7 +517,10 @@ static int fillkeybuf(when, timeout)
 		redraw(cursor, !(when & WHEN_VICMD));
 
 		/* now the "topline" test should be valid */
-		if (when != oldwhen || topline != oldtop || leftcol != oldleft || nlines != oldnlines)
+		if (when != oldwhen
+		 || topline != oldtop
+		 || leftcol != oldleft
+		 || nlines != oldnlines)
 		{
 			oldwhen = when;
 			oldtop = topline;
@@ -490,9 +530,9 @@ static int fillkeybuf(when, timeout)
 			if (when & WHEN_VICMD)	    str = "Command";
 			else if (when & WHEN_VIINP) str = " Input ";
 			else if (when & WHEN_VIREP) str = "Replace";
-			else if (when & WHEN_REP1)  str = " Rep 1 ";
-			else if (when & WHEN_CUT)   str = "BufName";
-			else if (when & WHEN_MARK)  str = "Mark AZ";
+			else if (when & WHEN_REP1)  str = "Replc 1";
+			else if (when & WHEN_CUT)   str = "Buffer ";
+			else if (when & WHEN_MARK)  str = " Mark  ";
 			else if (when & WHEN_CHAR)  str = "Dest Ch";
 			else			    str = (char *)0;
 
@@ -539,7 +579,7 @@ static int fillkeybuf(when, timeout)
 		clrtoeol();
 		refresh();
 		endwin();
-		exit(1);
+		exit(exitcode);
 	}
 
 	cend += nkeys;
@@ -592,7 +632,12 @@ static int countmatch(when)
 			/* No, it wouldn't.  But check for partial match */
 			if (!strncmp(map->rawin, &keybuf[next], cend - next))
 			{
-				count++;
+				/* increment by 2 instead of 1 so that, in the
+				 * event that we have a partial match with a
+				 * single map, we don't mistakenly assume we
+				 * have resolved the map yet.
+				 */
+				count += 2;
 			}
 		}
 	}
@@ -612,7 +657,7 @@ static void expandabbr(word, wlen)
 	MAP	*abbr;
 
 	/* if the next character wouldn't end the word, then don't expand */
-	if (isalnum(keybuf[next]) || keybuf[next] == ctrl('V'))
+	if (isalnum(keybuf[next]) || keybuf[next] == ctrl('V') || keybuf[next] == '\b')
 	{
 		return;
 	}
@@ -696,7 +741,7 @@ int getabkey(when, word, wlen)
 	}
 
 	/* try to map the key, unless already mapped and not ":set noremap" */
-	if (next >= user || *o_remap)
+	if (next <= user || *o_remap)
 	{
 		do
 		{
@@ -713,6 +758,12 @@ int getabkey(when, word, wlen)
 		} while (*o_remap && matches == 1);
 	}
 
+	/* ERASEKEY should always be mapped to '\b'. */
+	if (keybuf[next] == ERASEKEY)
+	{
+		keybuf[next] = '\b';
+	}
+
 #ifndef NO_ABBR
 	/* try to expand an abbreviation, except in visual command mode */
 	if (wlen > 0 && (mode & (WHEN_EX|WHEN_VIINP|WHEN_VIREP)) != 0)
@@ -720,12 +771,6 @@ int getabkey(when, word, wlen)
 		expandabbr(word, wlen);
 	}
 #endif
-
-	/* ERASEKEY should always be mapped to '\b'. */
-	if (keybuf[next] == ERASEKEY)
-	{
-		keybuf[next] = '\b';
-	}
 
 	/* return the next key */
 	return keybuf[next++];
@@ -735,7 +780,7 @@ int getabkey(when, word, wlen)
 void mapkey(rawin, cooked, when, name)
 	char	*rawin;	/* the input key sequence, before mapping */
 	char	*cooked;/* after mapping -- or NULL to remove map */
-	short	when;	/* bitmap of when mapping should happen */
+	int	when;	/* bitmap of when mapping should happen */
 	char	*name;	/* name of the key, NULL for no name, "abbr" for abbr */
 {
 	MAP	**head;	/* head of list of maps or abbreviations */
@@ -751,7 +796,7 @@ void mapkey(rawin, cooked, when, name)
 
 	/* try to find the map in the list */
 	for (scan = *head, prev = (MAP *)0;
-	     scan && (strcmp(rawin, scan->rawin) ||
+	     scan && (strcmp(rawin, scan->rawin) && strcmp(rawin, scan->cooked) ||
 		!(scan->flags & when & (WHEN_EX|WHEN_VICMD|WHEN_VIINP|WHEN_VIREP)));
 	     prev = scan, scan = scan->next)
 	{
@@ -778,7 +823,7 @@ void mapkey(rawin, cooked, when, name)
 		{
 			scan = (MAP *)malloc(sizeof(MAP));
 			scan->len = strlen(rawin);
-			scan->rawin = malloc(scan->len + 1);
+			scan->rawin = malloc((unsigned)(scan->len + 1));
 			strcpy(scan->rawin, rawin);
 			scan->flags = when;
 			scan->label = name;
@@ -794,9 +839,9 @@ void mapkey(rawin, cooked, when, name)
 		}
 		else /* recycle old structure */
 		{
-			free(scan->cooked);
+			_free_(scan->cooked);
 		}
-		scan->cooked = malloc(strlen(cooked) + 1);
+		scan->cooked = malloc((unsigned)(strlen(cooked) + 1));
 		strcpy(scan->cooked, cooked);
 	}
 	else /* unmapping */
@@ -818,9 +863,9 @@ void mapkey(rawin, cooked, when, name)
 		}
 
 		/* free it, and the strings that it refers to */
-		free(scan->rawin);
-		free(scan->cooked);
-		free(scan);
+		_free_(scan->rawin);
+		_free_(scan->cooked);
+		_free_(scan);
 	}
 }
 
@@ -924,7 +969,7 @@ void dumpkey(when, abbr)
 
 #ifndef NO_MKEXRC
 
-static safequote(str)
+static void safequote(str)
 	char	*str;
 {
 	char	*build;
@@ -949,15 +994,14 @@ static safequote(str)
  *	:abbr	dumpkey(WHEN_VIINP|WHEN_VIREP, TRUE);
  *	:abbr!	dumpkey(WHEN_EX|WHEN_VIINP|WHEN_VIREP, TRUE);
  */
+void
 savemaps(fd, abbr)
 	int	fd;	/* file descriptor of an open file to write to */
 	int	abbr;	/* boolean: do abbr table? (else do map table) */
 {
 	MAP	*scan;
-	char	*str;
 	int	bang;
 	int	when;
-	int	len;
 
 # ifndef NO_ABBR
 	for (scan = (abbr ? abbrs : maps); scan; scan = scan->next)

@@ -76,7 +76,7 @@ void cmd_substitute(frommark, tomark, cmd, bang, extra)
 	else /* CMD_SUBSTITUTE */
 	{
 		/* make sure we got a search pattern */
-		if (*extra != '/' && *extra != '?')
+		if (*extra == ' ' || *extra == '\n')
 		{
 			msg("Usage: s/regular expression/new text/");
 			return;
@@ -253,7 +253,7 @@ Continue:
 	}
 
 	/* free the regexp */
-	free(re);
+	_free_(re);
 
 	/* if done from within a ":g" command, then finish silently */
 	if (doingglobal)
@@ -447,7 +447,7 @@ void cmd_join(frommark, tomark, cmd, bang, extra)
 		}
 
 		/* see if the line will fit */
-		if (strlen(scan) + len + 3 > BLKSIZE)
+		if (strlen(scan) + len + 3 > (unsigned)BLKSIZE)
 		{
 			msg("Can't join -- the resulting line would be too long");
 			return;
@@ -463,8 +463,12 @@ void cmd_join(frommark, tomark, cmd, bang, extra)
 				 || tmpblk.c[len - 1] == '!')
 				{
 					 tmpblk.c[len++] = ' ';
+					 tmpblk.c[len++] = ' ';
 				}
-				tmpblk.c[len++] = ' ';
+				else if (tmpblk.c[len - 1] != ' ')
+				{
+					 tmpblk.c[len++] = ' ';
+				}
 			}
 		}
 		strcpy(tmpblk.c + len, scan);
@@ -769,7 +773,7 @@ void cmd_print(frommark, tomark, cmd, bang, extra)
 					col++;
 				} while (col % *o_tabstop != 0);
 			}
-			else if (*scan > 0 && *scan < ' ' || *scan == '\177')
+			else if (*scan >= 1 && *scan < ' ' || *scan == '\177')
 			{
 				qaddch('^');
 				qaddch(*scan ^ 0x40);
@@ -801,6 +805,9 @@ void cmd_print(frommark, tomark, cmd, bang, extra)
 		addch('\n');
 		exrefresh();
 	}
+
+	/* leave the cursor on the last line printed */
+	cursor = tomark;
 }
 
 

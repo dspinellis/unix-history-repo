@@ -22,7 +22,9 @@
 
 #include "config.h"
 #include "vi.h"
+#ifndef XDOS
 extern char	**environ;
+#endif
 
 #if ANY_UNIX
 
@@ -30,6 +32,9 @@ extern char	**environ;
  * between this one and the library one is: this one uses the o_shell option.
  */
 int system(cmd)
+#ifdef	__STDC__
+	const
+#endif
 	char	*cmd;	/* a command to run */
 {
 	int	pid;	/* process ID of child */
@@ -73,11 +78,7 @@ int system(cmd)
 		{
 			status = -1;
 		}
-#if __GNUC__
-		signal(SIGINT, (void (*)()) trapint);
-#else
 		signal(SIGINT, trapint);
-#endif
 	}
 
 	return status;
@@ -168,11 +169,7 @@ int rpclose(fd)
 
 	close(fd);
 	wait(&status);
-#if __GNUC__
-	signal(SIGINT, (void (*)()) trapint);
-#else
 	signal(SIGINT, trapint);
-#endif
 	return status;
 }
 
@@ -372,13 +369,13 @@ int filter(from, to, cmd, back)
 				}
 #endif
 			}
-		}
 
-		/* delete old text, if any */
-		if (to)
-		{
-			cut(from, to);
-			delete(from, to);
+			/* delete old text, if any */
+			if (to)
+			{
+				cut(from, to);
+				delete(from, to);
+			}
 		}
 	}
 	else

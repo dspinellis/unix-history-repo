@@ -150,7 +150,7 @@ static void cutfree(buf)
 		msg("cutfree() tried to free a NULL buf->phys pointer.");
 	else
 #endif
-	free((char *)buf->phys);
+	_free_((char *)buf->phys);
 
 	/* maybe delete the temp file */
 	maybezap(num);
@@ -666,7 +666,7 @@ int cb2str(name, buf, size)
 	}
 
 	/* if too big, return the size now, without doing anything */
-	if (cb->end - cb->start >= size)
+	if ((unsigned)(cb->end - cb->start) >= size)
 	{
 		return cb->end - cb->start;
 	}

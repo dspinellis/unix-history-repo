@@ -1,5 +1,5 @@
 
-
+CFLAGS += -DBSD
 DPADD=	${LIBTERM}
 LDADD=	-ltermcap
 

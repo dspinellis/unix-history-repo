@@ -18,7 +18,6 @@
 #ifndef NULL
 #define NULL (char *)0
 #endif
-extern char	*getenv();
 
 /* maximum width to permit for strings, including ="" */
 #define MAXWIDTH 20
@@ -28,7 +27,7 @@ char	o_autoindent[1] =	{FALSE};
 char	o_autoprint[1] =	{TRUE};
 char	o_autotab[1] =		{TRUE};
 char	o_autowrite[1] = 	{FALSE};
-char	o_columns[3] =		{80, 32, 255};
+char	o_columns[3] =		{80, 32, ~0};
 char	o_directory[30] =	TMPDIR;
 char	o_edcompatible[1] =	{FALSE};
 char	o_equalprg[80] =	{"fmt"};
@@ -45,7 +44,7 @@ char	o_remap[1] =		{TRUE};
 char	o_report[3] =		{5, 1, 127};
 char	o_scroll[3] =		{12, 1, 127};
 char	o_shell[60] =		SHELL;
-char	o_shiftwidth[3] =	{8, 1, 255};
+char	o_shiftwidth[3] =	{8, 1, ~0};
 char	o_sidescroll[3] =	{8, 1, 40};
 char	o_sync[1] =		{NEEDSYNC};
 char	o_tabstop[3] =		{8, 1, 40};
@@ -59,12 +58,14 @@ char	o_beautify[1] =		{FALSE};
 char	o_exrc[1] =		{FALSE};
 char	o_mesg[1] =		{TRUE};
 char	o_more[1] =		{TRUE};
+char	o_nearscroll[3] =	{15, 0, ~0};
 char	o_novice[1] =		{FALSE};
 char	o_prompt[1] =		{TRUE};
 char	o_taglength[3] =	{0, 0, 30};
+char	o_tags[256] =		{"tags"};
 char	o_terse[1] =		{FALSE};
 char	o_window[3] =		{0, 1, 24};
-char	o_wrapmargin[3] =	{0, 0, 255};
+char	o_wrapmargin[3] =	{0, 0, ~0};
 char	o_writeany[1] =		{FALSE};
 #endif
 
@@ -122,6 +123,11 @@ char	o_showmatch[1] =	{FALSE};
 #ifndef	NO_SHOWMODE
 char	o_smd[1] =		{FALSE};
 #endif
+
+#ifndef NO_TAGSTACK
+char	o_tagstack[1] =		{TRUE};
+#endif
+
 
 
 /* The following describes the names & types of all options */
@@ -199,6 +205,7 @@ struct
 #endif
 #ifndef CRUNCH
 	{ "more",	"mo",	BOOL,	CANSET,		o_more		},
+	{ "nearscroll",	"ns",	NUM,	CANSET,		o_nearscroll	},
 	{ "novice",	"nov",	BOOL,	CANSET,		o_novice	},
 #endif
 	{ "number",	"nu",	BOOL,	CANSET|MR,	o_number	},
@@ -234,6 +241,10 @@ struct
 	{ "tabstop",	"ts",	NUM,	CANSET|MR,	o_tabstop	},
 #ifndef CRUNCH
 	{ "taglength",	"tl",	NUM,	CANSET,		o_taglength	},
+	{ "tags",	"tag",	STR,	CANSET,		o_tags		},
+#endif
+#ifndef NO_TAGSTACK
+	{ "tagstack",	"tgs",	BOOL,	CANSET,		o_tagstack	},
 #endif
 	{ "term",	"te",	STR,	SET,		o_term		},
 #ifndef CRUNCH
@@ -304,6 +315,7 @@ void initopts()
 	{
 		o_window[0] = o_window[2] = *o_lines;
 	}
+	*o_nearscroll = *o_lines;
 #endif
 
 	/* disable the flash option if we don't know how to do a flash */
@@ -685,7 +697,11 @@ void setopts(assignments)
 		/* change the variable */
 		if (!opts[i].name)
 		{
-			msg("invalid option name \"%s\"", name);
+			/* only complain about unknown options if we're editing
+			 * a file;  i.e., if we're not executing the .exrc now.
+			 */
+			if (tmpfd >= 0)
+				msg("invalid option name \"%s\"", name);
 		}
 		else if ((opts[i].flags & CANSET) != CANSET)
 		{

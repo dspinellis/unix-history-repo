@@ -38,6 +38,9 @@ static struct _blkbuf
 
 
 
+void blkflush P_((REG struct _blkbuf *this));
+
+
 
 
 /* This function wipes out all buffers */
@@ -72,7 +75,7 @@ BLK *blkget(logical)
 	/* see if we have that block in mem already */
 	for (this = blk; this < &blk[NBUFS]; this++)
 	{
-		if (this->logical == logical)
+		if (this->logical == (unsigned)logical)
 		{
 			newtoo = toonew;
 			toonew = this;
@@ -162,6 +165,7 @@ void blkflush(this)
 	if (write(tmpfd, this->buf.c, (unsigned)BLKSIZE) != BLKSIZE)
 	{
 		msg("Trouble writing to tmp file");
+		deathtrap(0);
 	}
 	this->dirty = FALSE;
 
@@ -243,7 +247,7 @@ void blkdirty(bp)
 		k = blk[i].logical;
 		for (j = 0; j < NBUFS; j++)
 		{
-			if (blk[j].logical >= k)
+			if (blk[j].logical >= (unsigned)k)
 			{
 				blk[j].logical--;
 			}
@@ -268,7 +272,20 @@ void blkdirty(bp)
 BLK *blkadd(logical)
 	int	logical;	/* where to insert the new block */
 {
+	static long	chg;
 	REG int	i;
+
+	/* if we're approaching the limit, then give a warning */
+	if (hdr.n[MAXBLKS - 10] && chg != changes)
+	{
+		chg = changes;
+		msg("WARNING: The edit buffer will overflow soon.");
+	}
+	if (hdr.n[MAXBLKS - 2])
+	{
+		msg("BAD NEWS: edit buffer overflow -- GOOD NEWS: text preserved");
+		deathtrap(0);
+	}
 
 	/* adjust hdr and lnum[] */
 	for (i = MAXBLKS - 1; i > logical; i--)
@@ -282,7 +299,7 @@ BLK *blkadd(logical)
 	/* adjust the cache */
 	for (i = 0; i < NBUFS; i++)
 	{
-		if (blk[i].logical >= logical)
+		if (blk[i].logical >= (unsigned)logical)
 		{
 			blk[i].logical++;
 		}
@@ -343,7 +360,8 @@ void beforedo(forundo)
 	lseek(tmpfd, 0L, 0);
 	if (write(tmpfd, hdr.c, (unsigned)BLKSIZE) != BLKSIZE)
 	{
-		msg("Trouble writing header to tmp file ");
+		msg("Trouble writing header to tmp file");
+		deathtrap(0);
 	}
 
 	/* copy or swap oldnlines <--> nlines, oldlnum <--> lnum */
