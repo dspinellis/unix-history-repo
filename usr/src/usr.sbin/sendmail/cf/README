@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.24 (Berkeley) %G%
+		@(#)README	8.25 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -631,9 +631,11 @@ shared /var/spool/mail scheme, use
 	define(`MAIL_HUB', mailer:hostname)
 
 Again, ``mailer:'' defaults to "smtp".  If you define both LOCAL_RELAY
-and MAIL_HUB, unqualified names and names in class L will be sent to
-the LOCAL_RELAY and other local names will be sent to MAIL_HUB.  For
-example, if are on machine mastodon.CS.Berkeley.EDU, the following
+and MAIL_HUB, unqualified names will be sent to the LOCAL_RELAY and
+other local names will be sent to MAIL_HUB.  Names in $=L will be
+delivered locally, so you MUST have aliases or .forward files for them.
+
+For example, if are on machine mastodon.CS.Berkeley.EDU, the following
 combinations of settings will have the indicated effects:
 
 email sent to....	eric			  eric@mastodon.CS.Berkeley.EDU
