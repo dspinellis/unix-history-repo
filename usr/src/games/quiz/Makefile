@@ -1,41 +1,41 @@
-#	@(#)Makefile	4.2	(Berkeley)	%G%
 #
-DESTDIR=
+# Copyright (c) 1987 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	4.3	(Berkeley)	%G%
+#
 CFLAGS=	-O
+LIBC=	/lib/libc.a
+SRCS=	quiz.c
+OBJS=	quiz.o
 
-quiz: quiz.c
-	cc ${CFLAGS} -o quiz quiz.c
+all: quiz
 
-install:
-	install -s quiz ${DESTDIR}/usr/games/quiz
+quiz:	${OBJS} ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${OBJS}
+
+clean: FRC
+	rm -f ${OBJS} core quiz
+
+depend: FRC
+	mkdep ${CFLAGS} ${SRCS}
+
+install: FRC
+	install -s -o bin -g bin -m 755 quiz ${DESTDIR}/usr/games/quiz
 	cp -r quiz.k ${DESTDIR}/usr/games/lib
 
-clean:
-	rm -f a.out core *.s *.o quiz
+lint: FRC
+	lint ${CFLAGS} ${SRCS}
 
-depend:
-	cat </dev/null >x.c
-	for i in quiz; do \
-		(echo $$i: $$i.c >>makedep; \
-		/bin/grep '^#[ 	]*include' x.c $$i.c | sed \
-			-e 's,<\(.*\)>,"/usr/include/\1",' \
-			-e 's/:[^"]*"\([^"]*\)".*/: \1/' \
-			-e 's/\.c//' >>makedep); done
-	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
-	echo '$$r makedep' >>eddep
-	echo 'w' >>eddep
-	cp Makefile Makefile.bak
-	ed - Makefile < eddep
-	rm eddep makedep x.c
-	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
-	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
-	echo '# see make depend above' >> Makefile
+tags: FRC
+	ctags ${SRCS}
 
-# DO NOT DELETE THIS LINE -- make depend uses it
+FRC:
 
-quiz: quiz.c
-quiz: /usr/include/stdio.h
-quiz: /usr/include/signal.h
-# DEPENDENCIES MUST END AT END OF FILE
-# IF YOU PUT STUFF HERE IT WILL GO AWAY
-# see make depend above
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+quiz.o: quiz.c /usr/include/stdio.h /usr/include/signal.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
