@@ -3,7 +3,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)crtplot.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)crtplot.c	4.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -36,7 +36,6 @@ static int lastX, lastY;	/* last point plotted */
 
 
 char *getenv();
-extern char _putchar(); 
 
 /* This routine just moves the cursor. */
 screen_move(y, x)
@@ -55,7 +54,7 @@ int x,y;
 plot_addch(ch)
 char ch;
 {
-	putchar(ch);
+	_putchar(ch);
 	if (++lastX >= COLS) {
 		if (AM) {
 			lastX = 0;
@@ -139,7 +138,7 @@ _puts(VS);
 
 noecho();
 nonl();
-tputs(CL, LINES, _putchar);
+tputs(CL, LINES, __cputchar);
 mvcur(0, COLS-1, LINES-1, 0);
 lastX = 0;
 lastY = LINES-1;
