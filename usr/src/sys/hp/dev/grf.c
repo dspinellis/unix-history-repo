@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: grf.c 1.32 92/01/21$
  *
- *	@(#)grf.c	7.15 (Berkeley) %G%
+ *	@(#)grf.c	7.16 (Berkeley) %G%
  */
 
 /*
@@ -478,7 +478,8 @@ grfmmap(dev, addrp, p)
 	vn.v_specinfo = &si;			/* XXX */
 	vn.v_rdev = dev;			/* XXX */
 	error = vm_mmap(&p->p_vmspace->vm_map, (vm_offset_t *)addrp,
-			(vm_size_t)len, VM_PROT_ALL, flags, (caddr_t)&vn, 0);
+			(vm_size_t)len, VM_PROT_ALL, VM_PROT_ALL,
+			flags, (caddr_t)&vn, 0);
 	return(error);
 }
 
