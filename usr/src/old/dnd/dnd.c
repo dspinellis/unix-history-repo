@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)dnd.c	4.3 (Berkeley) %G%";
+static char *sccsid ="@(#)dnd.c	4.4 (Berkeley) %G%";
 /*
  * batch queue manager. by Greg Chesson.  Modified to be
  * a daemon managing requests to a multiple autodialers, by
@@ -24,7 +24,7 @@ struct mx_leaves {
     char    rack,modem;
     short   chan;
     int     file;
-} pdevs[] = {{"/dev/cua0",'4','0'}, {"/dev/cua1",'4','1'}, {0}};
+} pdevs[] = {{"/dev/cua0",'4','8'}, /*{"/dev/cua1",'4','1'},*/ {0}};
 /* the second line here is commented out because,
    our 1200 baud dialer is being repaired, and if one attempts
    to dial with a modem that is not capable, the dialer gets
