@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	6.5 (Berkeley) %G%
+#	@(#)Makefile	6.6 (Berkeley) %G%
 #
 DESTDIR=/
 CFLAGS=	-O -I../h -DSTANDALONE ${COPTS} 
@@ -223,21 +223,25 @@ install: ${ALL}
 	cp 730boot a.out; strip a.out; \
 		dd if=a.out of=../cassette/boot.730 bs=32 skip=1
 	cp ../floppy/boot ../cassette/boot.750
+	cp ../floppy/boot ../consolerl/boot
 	cp copy a.out; strip a.out; \
 		dd if=a.out of=../floppy/copy bs=32 skip=1
 	cp 730copy a.out; strip a.out; \
 		dd if=a.out of=../cassette/copy.730 bs=32 skip=1
 	cp ../floppy/copy ../cassette/copy.750
+	cp ../floppy/copy ../consolerl/copy
 	cp format a.out; strip a.out; \
 		dd if=a.out of=../floppy/format bs=32 skip=1
 	cp 730format a.out; strip a.out; \
 		dd if=a.out of=../cassette/format.730 bs=32 skip=1
 	cp ../floppy/format ../cassette/format.750
+	cp ../floppy/format ../consolerl/format
 	cp drtest a.out; strip a.out; \
 		dd if=a.out of=../floppy/drtest bs=32 skip=1
 	cp 730drtest a.out; strip a.out; \
 		dd if=a.out of=../cassette/drtest.730 bs=32 skip=1
 	cp ../floppy/drtest ../cassette/drtest.750
+	cp ../floppy/drtest ../consolerl/drtest
 	cp bootup boothk boothp bootra bootrl ${DESTDIR}/usr/mdec
 
 # beware...
