@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.45 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.46 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1174,7 +1174,7 @@ tryhost:
 					(void) initgroups(ctladdr->q_ruser?
 						ctladdr->q_ruser: ctladdr->q_user,
 						ctladdr->q_gid);
-					(void) setuid(ctladdr->q_gid);
+					(void) setgid(ctladdr->q_gid);
 					(void) setuid(ctladdr->q_uid);
 				}
 			}
