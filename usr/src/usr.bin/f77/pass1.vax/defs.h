@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)defs.h	5.2 (Berkeley) %G%
+ *	@(#)defs.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -14,6 +14,13 @@
  * University of Utah CS Dept modification history:
  *
  * $Log:	defs.h,v $
+ * Revision 5.5  86/01/10  17:11:11  donn
+ * Add a vparamval field to Nameblock struct -- fix up klugy sharing between
+ * Paramblock and Nameblock structs.
+ * 
+ * Revision 5.4  85/11/25  00:23:47  donn
+ * 4.3 beta
+ * 
  * Revision 5.3  85/08/10  06:31:09  donn
  * Added missing definition for intrconv().
  * 
@@ -309,6 +316,7 @@ struct Nameblock
 	field vstg;
 	expptr vleng;
 	char varname[VL];
+	expptr vparamval;
 	unsigned vdovar:1;
 	unsigned vdcldone:1;
 	unsigned vadjdim:1;
