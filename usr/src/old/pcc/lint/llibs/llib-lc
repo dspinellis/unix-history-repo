@@ -1,4 +1,4 @@
-/*	llib-lc	1.31	86/02/17	*/
+/*	llib-lc	1.32	86/03/01	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
@@ -269,7 +269,7 @@ int	fread( p, s, n, f ) char *p; FILE *f; {return(1);}
 FILE *	freopen(s, m, f) char *s, *m; FILE *f; { return(stdin); }
 	/* VARARGS2 */
 	fscanf( f, s ) FILE *f; char *s; {return(1);}
-long	fseek(f, o, p) FILE *f; long o; { return(0L); }
+int	fseek(f, o, p) FILE *f; long o; { return(0); }
 long	ftell(f) FILE *f; { return(0L); }
 int	fwrite( p, s, n, f ) char *p; FILE *f; {return(0);}
 int	getw(f) FILE *f; { return 0;}
