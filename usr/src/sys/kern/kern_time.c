@@ -1,4 +1,4 @@
-/*	kern_time.c	5.4	82/09/06	*/
+/*	kern_time.c	5.5	82/09/08	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"		/* XXX */
@@ -108,19 +108,25 @@ getitimer()
 		u_int	which;
 		struct	itimerval *itv;
 	} *uap = (struct a *)u.u_ap;
-	register struct itimerval *itp;
+	struct itimerval aitv;
 	int s;
 
 	if (uap->which > 2) {
 		u.u_error = EINVAL;
 		return;
 	}
-	if (uap->which == ITIMER_REAL)
-		itp = &u.u_procp->p_realtimer;
-	else
-		itp = &u.u_timer[uap->which];
 	s = spl7();
-	if (copyout((caddr_t)itp, uap->itv, sizeof (struct itimerval)))
+	if (uap->which == ITIMER_REAL) {
+		aitv = u.u_procp->p_realtimer;
+		if (timerisset(&aitv.it_value))
+			if (timercmp(&aitv.it_value, &time, <))
+				timerclear(&aitv.it_value);
+			else
+				timevalsub(&aitv.it_value, &time);
+	} else
+		aitv = u.u_timer[uap->which];
+	splx(s);
+	if (copyout((caddr_t)&aitv, uap->itv, sizeof (struct itimerval)))
 		u.u_error = EFAULT;
 	splx(s);
 }
@@ -133,6 +139,7 @@ setitimer()
 	} *uap = (struct a *)u.u_ap;
 	struct itimerval aitv;
 	int s;
+	register struct proc *p = u.u_procp;
 
 	if (uap->which > 2) {
 		u.u_error = EINVAL;
@@ -152,18 +159,47 @@ setitimer()
 		return;
 	}
 	s = spl7();
-	if (uap->which == ITIMER_REAL)
-		u.u_procp->p_realtimer = aitv;
-	else
+	if (uap->which == ITIMER_REAL) {
+		untimeout(unrto, p);
+		if (timerisset(&aitv.it_value)) {
+			timevaladd(&aitv.it_value, &time);
+			timeout(unrto, p, hzto(&aitv.it_value));
+		}
+		p->p_realtimer = aitv;
+	} else
 		u.u_timer[uap->which] = aitv;
 	splx(s);
+}
+
+unrto(p)
+	register struct proc *p;
+{
+	int s;
+
+	psignal(p, SIGALRM);
+	if (!timerisset(&p->p_realtimer.it_interval)) {
+		timerclear(&p->p_realtimer.it_value);
+		return;
+	}
+	for (;;) {
+		s = spl7();
+		timevaladd(&p->p_realtimer.it_value,
+		    &p->p_realtimer.it_interval);
+		if (timercmp(&p->p_realtimer.it_value, &time, >)) {
+			timeout(unrto, p, hzto(&p->p_realtimer.it_value));
+			splx(s);
+			return;
+		}
+		splx(s);
+	}
 }
 
 itimerfix(tv)
 	struct timeval *tv;
 {
 
-	if (tv->tv_sec < 0 || tv->tv_usec < 0)
+	if (tv->tv_sec < 0 || tv->tv_sec > 100000000 ||
+	    tv->tv_usec < 0 || tv->tv_usec >= 1000000)
 		return (EINVAL);
 	if (tv->tv_sec == 0 && tv->tv_usec < tick)
 		tv->tv_usec = tick;
