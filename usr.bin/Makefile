@@ -32,4 +32,14 @@ SUBDIR=	ar awk biff basename cal calendar \
 
 # disabled tn3270
 
+awk::
+	@rm -f awk
+	ln -s ../gnu/gawk awk
+groff::
+	@rm -f groff
+	ln -s ../gnu/groff .
+tar::
+	@rm -f tar
+	ln -s ../gnu/tar . 
+
 .include <bsd.subdir.mk>
