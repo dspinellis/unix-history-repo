@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	6.4	84/08/29	*/
+/*	tcp_usrreq.c	6.5	85/03/18	*/
 
 #include "param.h"
 #include "systm.h"
@@ -49,6 +49,9 @@ tcp_usrreq(so, req, m, nam, rights)
 	int error = 0;
 	int ostate;
 
+	if (req == PRU_CONTROL)
+		return (in_control(so, (int)m, (caddr_t)nam,
+			(struct ifnet *)rights));
 	if (rights && rights->m_len) {
 		splx(s);
 		return (EINVAL);
@@ -232,12 +235,6 @@ tcp_usrreq(so, req, m, nam, rights)
 		tp = tcp_drop(tp, ECONNABORTED);
 		break;
 
-/* SOME AS YET UNIMPLEMENTED HOOKS */
-	case PRU_CONTROL:
-		error = EOPNOTSUPP;
-		break;
-/* END UNIMPLEMENTED HOOKS */
-
 	case PRU_SENSE:
 		((struct stat *) m)->st_blksize = so->so_snd.sb_hiwat;
 		return (0);
@@ -295,8 +292,8 @@ tcp_usrreq(so, req, m, nam, rights)
 	return (error);
 }
 
-int	tcp_sendspace = 1024*2;
-int	tcp_recvspace = 1024*2;
+int	tcp_sendspace = 1024*4;
+int	tcp_recvspace = 1024*4;
 /*
  * Attach TCP protocol to socket, allocating
  * internet protocol control block, tcp control block,
