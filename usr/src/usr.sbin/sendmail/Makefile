@@ -1,7 +1,7 @@
 #
 #	Makefile for sendmail base directory
 #
-#		@(#)Makefile	3.2		%G%
+#		@(#)Makefile	3.3		%G%
 #
 
 ALL=	src/sendmail aux/syslog
@@ -10,6 +10,7 @@ SRCDIR=	$(DESTDIR)/usr/src/usr.lib/sendmail
 ALLDIRS=include adm src aux md cf lib doc adb test
 MACH=	calder
 SENDMAIL=$(DESTDIR)/usr/lib/sendmail
+SYSLOG=	/usr/spool/mqueue/syslog
 
 LN=	ln -s
 CP=	cp
@@ -25,15 +26,18 @@ install: $(ALL) $(DIRS)
 	$(CP)	/dev/null	$(DESTDIR)/etc/syslog.pid
 	chown	daemon		$(DESTDIR)/etc/syslog.pid
 	chmod	644		$(DESTDIR)/etc/syslog.pid
-	$(CP)	/dev/null	$(DESTDIR)/usr/spool/mqueue/syslog
-	chown	daemon		$(DESTDIR)/usr/spool/mqueue/syslog
-	chmod	644		$(DESTDIR)/usr/spool/mqueue/syslog
-	$(CP)	src/sendmail	$(DESTDIR)/usr/lib/sendmail
-	$(CP)	lib/sendmail.hf	$(DESTDIR)/usr/lib/sendmail.hf
-	$(CP)	/dev/null	$(DESTDIR)/usr/lib/sendmail.st
-	chmod	666		$(DESTDIR)/usr/lib/sendmail.st
-	$(CP)	/dev/null	$(DESTDIR)/usr/lib/sendmail.fc
-	$(CP)	cf/default.cf	$(DESTDIR)/usr/lib/sendmail.cf
+	$(CP)	/dev/null	$(DESTDIR)$(SYSLOG)
+	chown	daemon		$(DESTDIR)$(SYSLOG)
+	chmod	644		$(DESTDIR)$(SYSLOG)
+	for i in 0 1 2 3 4 5 6 7; do cp /dev/null $(DESTDIR)$(SYSLOG).$$i; done
+	$(CP)	lib/newsyslog.sh $(DESTDIR)/usr/adm/newsyslog
+	echo	'5 4 * * * sh /usr/adm/newsyslog' >> $(DESTDIR)/usr/lib/crontab
+	$(CP)	src/sendmail	$(SENDMAIL)
+	$(CP)	lib/sendmail.hf	$(SENDMAIL).hf
+	$(CP)	/dev/null	$(SENDMAIL).st
+	chmod	666		$(SENDMAIL).st
+	$(CP)	/dev/null	$(SENDMAIL).fc
+	$(CP)	cf/default.cf	$(SENDMAIL).cf
 	$(LN)	$(SENDMAIL)	$(DESTDIR)/usr/ucb/newaliases
 	$(LN)	$(SENDMAIL)	$(DESTDIR)/usr/ucb/mailq
 
