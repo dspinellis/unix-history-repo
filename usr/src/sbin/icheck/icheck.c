@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)icheck.c	1.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)icheck.c	1.3 (Berkeley) %G%";
 /*
  * icheck
  */
@@ -12,10 +12,6 @@ static	char *sccsid = "@(#)icheck.c	1.2 (Berkeley) %G%";
 #include "../h/param.h"
 #include "../h/inode.h"
 #include "../h/fs.h"
-
-#define	setbit(a, i)	((a)[(i)/NBBY] |= 1<<((i)%NBBY))
-#define	clrbit(a, i)	((a)[(i)/NBBY] &= ~(1<<((i)%NBBY)))
-#define	isset(a,i)	((a)[(i)/NBBY] & (1<<((i)%NBBY)))
 
 union {
 	struct	fs sb;
