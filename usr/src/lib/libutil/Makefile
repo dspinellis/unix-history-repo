@@ -1,8 +1,9 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
 LIB=	util
 CFLAGS+=-DLIBC_SCCS
-SRCS=	getloadavg.c login.c logout.c logwtmp.c kvm.c pwcache.c
-MAN3=	pwcache.0
+SRCS=	daemon.c getloadavg.c login.c login_tty.c logout.c logwtmp.c kvm.c \
+	pty.c pwcache.c
+MAN3=	getloadavg.0 pwcache.0
 
 .include <bsd.lib.mk>
