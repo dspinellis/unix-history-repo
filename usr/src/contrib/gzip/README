@@ -1,0 +1,93 @@
+This is the file README for the gzip distribution, version 1.0.7.
+
+gzip (GNU zip) is a compression utility designed to be a replacement
+for 'compress'. Its main advantages over compress are much better
+compression and freedom from patented algorithms.  The GNU Project
+uses it as the standard compression program for its system.
+
+gzip currently uses by default the LZ77 algorithm used in zip 1.9 (the
+portable pkzip compatible archiver). The gzip format was however
+designed to accommodate several compression algorithms.
+
+gunzip can currently decompress files created by gzip, zip (with
+restrictions), compress or pack. (The SCO 'compress -H' format will be
+supported in a future version.)  The detection of the input format is
+automatic.  When using the first two formats, gunzip checks a 32 bit
+CRC. For pack, gunzip checks the uncompressed length.  The 'compress'
+format was not designed to allow consistency checks. However gunzip is
+sometimes able to detect a bad .Z file because there is some
+redundancy in the .Z compression format. If you get an error when
+uncompressing a .Z file, do not assume that the .Z file is correct
+simply because the standard uncompress does not complain.  This
+generally means that the standard uncompress does not check its input,
+and happily generates garbage output.
+
+gzip produces files with a .z extension. This was chosen to mimic the
+'compress' .Z extension. Using exactly the same extension would have
+caused too much confusion. Using a completely different extension
+would have forced changes in other programs such as GNU tar (which has
+a -z option).  The .z extension is already used by the 'pack'
+Huffman encoder, but gunzip is able to decompress packed files.
+
+Several planned features are not yet supported (see the file TODO).
+See the file INSTALL for installation instructions. See the file NEWS
+for a summary of changes since 0.5.
+
+WARNINGS about broken optimizers:
+
+- on the NeXT, "cc -finline-functions" is broken.  gzip produces
+  valid .z files but they are much too large because the string
+  matching code misses most matches. Use "cc -O" instead.
+
+- on the Mips R4000, gcc -O (version 2.3.1) generates bad code, use cc
+  or just gcc -g instead.
+
+- gcc 2.3.3 on the SGI Indigo IRIX 4.0.5 also produces bad code. Use
+  instead: make CC='cc -O2'
+
+- on SparcStation with SunOS 4.1.1 and the SC1.0 compiler, the optimizer
+  works up to -O3 but -O4 does not work.
+
+- MSC 5.1 with -Ox and -DDYN_ALLOC generates bad code in inflate.c.
+  The default is static allocation (no DYN_ALLOC) and -Ox works on inflate.c.
+  But -Ox does not work on util.c, so you must use -Oait -Gs.
+
+For all machines, Use "make check" to check that gzip was compiled correctly.
+
+Please send all comments and bug reports by electronic mail to:
+   Jean-loup Gailly <jloup@chorus.fr>
+
+or, if this fails, to bug-gnu-utils@prep.ai.mit.edu.
+Bug reports should ideally include:
+
+    * The complete output of "gzip -V" (or the contents of revision.h
+      if you can't get gzip to compile)
+    * The hardware and operating system
+    * The compiler used to compile
+    * A description of the bug behavior
+    * The input to gzip, that triggered the bug
+
+The package crypt++.el is highly recommended to manipulate gzip'ed
+file from emacs. It recognizes automatically encrypted and compressed
+files when they are first visited or written. It is available via
+anonymous ftp to roebling.poly.edu [128.238.5.31] in /pub/crypt++.el.
+The same directory contains also patches to dired, ange-ftp, info and
+tar. A patch for tar 1.11.1 is included in the gzip distribution
+because too many people independently reinvent it (see gzip-tar.patch).
+
+The znew and gzexe shell scripts provided with gzip benefit from
+(but do not require) the cpmod utility to transfer file attributes.
+It is available by anonymous ftp on gatekeeper.dec.com in
+/.0/usenet/comp.sources.unix/volume11/cpmod.Z.
+
+gzip is free software, you can redistribute it and/or modify it under
+the terms of the GNU General Public License, a copy of which is
+provided under the name COPYING. The latest version of the gzip
+sources can always be found in prep.ai.mit.edu:/pub/gnu/gzip-*.tar*
+or any of the prep mirror sites. An MSDOS lha self-extracting exe is in
+gzip-msdos-*.exe. The Soloaris 2 executables are in gzip-solaris-*.tar.
+A VMS executable is available in ftp.spc.edu:[.macro32.savesets]gzip-1-*.zip
+(use [.macro32]unzip.exe to extract).
+
+Many thanks to those who provided me with bug reports and feedback.
+See the files THANKS and ChangeLog for more details.
