@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rmt.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rmt.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -193,6 +193,7 @@ checkbuf(record, size)
 		DEBUG("rmtd: cannot allocate buffer space\n");
 		exit(4);
 	}
+	maxrecsize = size;
 	while (size > 1024 &&
 	       setsockopt(0, SOL_SOCKET, SO_RCVBUF, &size, sizeof (size)) < 0)
 		size -= 1024;
