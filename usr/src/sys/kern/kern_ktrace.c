@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_ktrace.c	7.1 (Berkeley) %G%
+ *	@(#)kern_ktrace.c	7.2 (Berkeley) %G%
  */
 
 #ifdef KTRACE
@@ -311,7 +311,7 @@ ktrwrite(vp, kth)
 {
 	struct uio auio;
 	struct iovec aiov[2];
-	int offset, error;
+	int error;
 
 	if (vp == NULL)
 		return;
@@ -329,6 +329,8 @@ ktrwrite(vp, kth)
 		aiov[1].iov_len = kth->ktr_len;
 		auio.uio_resid += kth->ktr_len;
 	}
-	error = VOP_WRITE(vp, &auio, &offset, IO_UNIT|IO_APPEND, u.u_cred);
+	VOP_LOCK(vp);
+	error = VOP_WRITE(vp, &auio, IO_UNIT|IO_APPEND, u.u_cred);
+	VOP_UNLOCK(vp);
 }
 #endif
