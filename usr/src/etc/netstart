@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)netstart	5.5 (Berkeley) %G%
+#	@(#)netstart	5.6 (Berkeley) %G%
 
 routedflags=-q
 rwhod=NO
@@ -9,6 +9,7 @@ rwhod=NO
 # my-netmask is specified in /etc/networks
 #
 hostname=myname.my.domain
+hostname $hostname
 
 ifconfig imp0 inet $hostname
 ifconfig ace0 inet $hostname netmask my-netmask
