@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_qe.c	7.13 (Berkeley) %G%
+ *	@(#)if_qe.c	7.14 (Berkeley) %G%
  */
 
 /* from  @(#)if_qe.c	1.15	(ULTRIX)	4/16/86 */
@@ -175,7 +175,7 @@ extern struct snpa_cache all_es, all_is;
 #define NTOT	(NXMT + NRCV)
 
 #define	QETIMEOUT	2		/* transmit timeout, must be > 1 */
-#define QESLOWTIMEOUT	10		/* timeout when no xmits in progress */
+#define QESLOWTIMEOUT	40		/* timeout when no xmits in progress */
 
 /*
  * This constant should really be 60 because the qna adds 4 bytes of crc.
