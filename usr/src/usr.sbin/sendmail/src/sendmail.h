@@ -6,7 +6,7 @@
 
 # ifdef _DEFINE
 # define EXTERN
-static char SmailSccsId[] =	"@(#)sendmail.h	3.54	%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.55	%G%";
 # else  _DEFINE
 # define EXTERN extern
 # endif _DEFINE
@@ -58,6 +58,7 @@ struct address
 	char		*q_fullname;	/* full name if known */
 	struct address	*q_next;	/* chain */
 	struct address	*q_alias;	/* address this results from */
+	struct address	*q_tchain;	/* temporary use chain */
 	time_t		q_timeout;	/* timeout for this address */
 };
 
@@ -172,8 +173,7 @@ extern struct hdrinfo	HdrInfo[];
 struct work
 {
 	char		*w_name;	/* name of control file */
-	short		w_pri;		/* priority of message, see below */
-	long		w_size;		/* length of data file */
+	long		w_pri;		/* priority of message, see below */
 	struct work	*w_next;	/* next in queue */
 };
 
@@ -185,16 +185,25 @@ EXTERN WORK	*WorkQ;			/* queue of things to be done */
 /*
 **  Message priorities.
 **	Priorities > 0 should be preemptive.
+**
+**	MsgPriority is the number of bytes in the message adjusted
+**	by the message priority and the amount of time the message
+**	has been sitting around.  Each priority point is worth
+**	WKPRIFACT bytes of message, and each time we reprocess a
+**	message the size gets reduced by WKTIMEFACT.
 */
 
 # define PRI_ALERT	20
 # define PRI_QUICK	10
-# define PRI_FIRSTCL	0
-# define PRI_NORMAL	-4
+# define PRI_FIRSTCL	3
+# define PRI_NORMAL	0
 # define PRI_SECONDCL	-10
 # define PRI_THIRDCL	-20
 
-EXTERN int	MsgPriority;		/* priority of this message */
+# define WKPRIFACT	1800		/* bytes each pri point is worth */
+# define WKTIMEFACT	400		/* bytes each time unit is worth */
+
+EXTERN long	MsgPriority;		/* adjusted priority of this message */
 
 
 
