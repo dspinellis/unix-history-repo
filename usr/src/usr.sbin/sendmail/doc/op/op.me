@@ -1,6 +1,6 @@
 .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 1.1'DRAFT'Last Mod %G%'
+.fo 'Version 1.2'DRAFT'Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -394,7 +394,7 @@ to the queue run.
 .pp
 As an example,
 the following is a queue file sent to
-.q calder:mckusick
+.q mckusick@calder
 and
 .q wnj :
 .(b
@@ -421,7 +421,7 @@ the submission time
 (in seconds since January 1, 1970),
 the message priority,
 the message class,
-The recipients,
+the recipients,
 and the headers for the message.
 .sh 3 "Forcing the queue"
 .pp
@@ -574,7 +574,42 @@ Before sendmail will access the database,
 it checks to insure that this entry exists.
 It will wait up to five minutes
 for this entry to appear,
-at which point it will force a rebuild itself.
+at which point it will force a rebuild itself\**.
+.(f
+\**Note:
+the
+.q a
+option must be specified in the configuration file
+for this operation to occur.
+.)f
+.sh 3 "List owners"
+.pp
+If an error occurs on sending to a certain address,
+say
+.q \fIx\fP ,
+.i sendmail
+will look for an alias
+of the form
+.q owner-\fIx\fP
+to receive the errors.
+This is typically useful
+for a mailing list
+where the submitter of the list
+has no control over the maintanence of the list itself;
+in this case the list maintainer would be the owner of the list.
+For example:
+.(b
+unix-wizards: eric@ucbarpa, wnj@monet, sam@matisse, nosuchuser
+owner-unix-wizards: eric@ucbarpa
+.)b
+would cause
+.q eric@ucbarpa
+to get the error that will occur
+when someone sends to
+unix-wizards
+due to the inclusion of
+.q nosuchuser
+on the list.
 .sh 1 "THE WHOLE SCOOP ON THE CONFIGURATION FILE"
 .pp
 This section describes the configuration file
@@ -1273,8 +1308,35 @@ the
 is necessary to avoid an infinite loop.
 .sh 3 "Semantics of rewriting rule sets"
 .pp
-There are four rewriting sets
+There are five rewriting sets
 that have specific semantics.
+These are related as depicted by figure 2.
+.(z
+.hl
+.ie t .sp 2i
+.el \{.(c
+                    +---+
+                 -->| 0 |-->resolved address
+                /   +---+
+               /            +---+   +---+
+              /        ---->| 1 |-->| S |--
+       +---+ / +---+  /     +---+   +---+  \e    +---+
+addr-->| 3 |-->| D |--                      --->| 4 |-->msg
+       +---+   +---+  \e     +---+   +---+  /    +---+
+                        --->| 2 |-->| R |--
+                            +---+   +---+
+.)c
+
+.ce
+Figure 2 \*- Rewriting set semantics
+.(c
+D \*- sender domain addition
+S \*- mailer-specific sender rewriting
+R \*- mailer-specific recipient rewriting
+.)c
+.\}
+.hl
+.)z
 .pp
 Ruleset three
 should turn the address into
@@ -1323,125 +1385,15 @@ are applied to all sender and recipient addresses respectively.
 They are applied before any specification
 in the mailer definition.
 They must never resolve.
+.pp
+Ruleset four is applied to all addresses
+in the message.
+It is typically used
+to translate internal to external form.
 .sh 3 "Mailer flags etc."
 .pp
 There are a number of flags that may be associated with each mailer.
-These are:
-.ip f
-The mailer wants a
-.b \-f
-.i from
-flag,
-but only if this is a network forward operation
-(i.e.,
-the mailer will give an error
-if the executing user
-does not have special permissions).
-.ip r
-Same as
-.b f ,
-but sends a
-.b \-r
-flag.
-.ip q
-Don't print errors \*- the mailer will do it for us.
-.ip S
-Don't reset the userid
-before calling the mailer.
-This would be used in a secure environment
-where
-.i sendmail
-ran as root.
-This could be used to avoid forged addresses.
-This flag is suppressed if given from an
-.q unsafe
-environment
-(e.g, a user's mail.cf file).
-.ip n
-Do not insert a UNIX-style
-.q From
-line on the front of the message.
-.ip l
-This mailer is local
-(i.e.,
-final delivery will be performed).
-.ip s
-Strip quote characters off of the address
-before calling the mailer.
-.ip m
-This mailer can send to multiple users
-on the same host
-in one transaction.
-When a
-.b $u
-macro occurs in the
-.i argv
-part of the mailer definition,
-that field will be repeated as necessary
-for all qualifying users.
-.ip F
-This mailer wants a
-.q From:
-header line.
-.ip D
-This mailer wants a
-.q Date:
-header line.
-.ip M
-This mailer wants a
-.q Message-Id:
-header line.
-.ip x
-This mailer wants a
-.q Full-Name:
-header line.
-.ip u
-Upper case should be preserved in user names
-for this mailer.
-.ip h
-Upper case should be preserved in host names
-for this mailer.
-.ip A
-This is an Arpanet-compatible mailer,
-and all appropriate modes should be set.
-.ip U
-This mailer wants Unix-style
-.q From
-lines with the ugly UUCP-style
-.q "remote from <host>"
-on the end.
-.ip e
-This mailer is expensive to connect to,
-so try to avoid connecting normally;
-any necessary connection will occur during a queue run.
-.ip X
-This mailer wants to run the full SMTP protocol,
-including limiting line lengths,
-putting <CRLF> on the end of lines,
-etc.
-.ip C
-If mail is
-.i received
-from a mailer with this flag set,
-any addresses in the header that do not have an at sign
-(\c
-.q @ )
-after being rewritten by ruleset three
-will have the
-.q @domain
-clause from the sender
-tacked on.
-This allows mail with headers of the form:
-.(b
-From: usera@hosta
-To: userb@hostb, userc
-.)b
-to be rewritten as:
-.(b
-From: usera@hosta
-To: userb@hostb, userc@hosta
-.)b
-automatically.
+These are detailed in Appendix C.
 .sh 3 "Special header lines"
 .pp
 Several header lines have special interpretations
@@ -1500,13 +1452,16 @@ This should be done in ruleset three.
 The second phase maps this canonical form
 into the syntax appropriate for the receiving mailer.
 .i Sendmail
-does this in two subphases.
+does this in three subphases.
 Rulesets one and two
 are applied to all sender and recipient addresses respectively.
 After this,
 you may specify per-mailer rulesets
 for both sender and recipient addresses;
 this allows mailer-specific customization.
+Finally,
+ruleset four is applied to do any default conversion
+to external form.
 .pp
 The third purpose
 is to map addresses into the actual set of instructions
@@ -1734,7 +1689,7 @@ Although technically legal,
 this can lead to unpleasantly and unnecessarily long addresses
 reflected into messages.
 The Berkeley configuration files
-define ruleset four
+define ruleset nine
 to qualify domain names and strip local domains.
 This is called from ruleset zero
 to get all addresses into a cleaner form.
@@ -1743,7 +1698,7 @@ Once you have ruleset three finished,
 the other rulesets should be relatively trivial.
 If you need hints,
 examine the supplied configuration tables.
-.sh 3 "Testing the configuration \*- the \-bt flag"
+.sh 3 "Testing the rewriting rules \*- the \-bt flag"
 .pp
 When you build a configuration table,
 you can do a certain amount of testing
@@ -1775,6 +1730,17 @@ is an address to apply the set to.
 Test mode shows you the steps it takes
 as it proceeds,
 finally showing you the address it ends up with.
+You may use a comma separated list of rwsets
+for sequential application of rules to an input;
+ruleset three is always applied first.
+For example:
+.(b
+1,21,4 monet:bollard
+.)b
+first applies ruleset three to the input
+.q monet:bollard.
+Ruleset one is then applied to the output of ruleset three,
+followed similarly by rulesets twenty-one and four.
 .pp
 If you need more detail,
 you can also use the
@@ -1787,6 +1753,215 @@ sendmail \-bt \-d21.99
 turns on an incredible amount of information;
 a single word address
 is probably going to print out several pages worth of information.
+.sh 3 "Building mailer descriptions"
+.pp
+To add an outgoing mailer to your mail system,
+you will have to define the characteristics of the mailer.
+.pp
+First,
+each mailer must have an internal name.
+This can be arbitrary.
+.pp
+Second, the pathname of the mailer must be given.
+If this mailer should be accessed via an IPC connection,
+use the string
+.q [IPC]
+instead.
+.pp
+The third field defines the mailer flags.
+You should specify an
+.q f
+or
+.q r
+flag to pass the name of the sender as a
+.b \-f
+or
+.b \-r
+flag respectively.
+These flags are only passed if they were passed to
+.i sendmail,
+so that mailers that give errors under some circumstances
+can be placated.
+If the mailer must be called as
+.b root
+the
+.q S
+flag should be given;
+this will not reset the userid
+before calling the mailer\**.
+.(f
+\**\c
+.i Sendmail
+must be running setuid to root
+for this to work.
+.)f
+If this mailer is local
+(i.e., will perform final delivery
+rather than another network hop)
+the
+.q l
+flag should be given.
+Quote characters
+(backslashes and " marks)
+can be stripped from addresses if the
+.q s
+flag is specified;
+if this is not given
+they are passed through.
+If the mailer is capable of sending to more than one user
+on the same host
+in a single transaction
+the
+.q m
+flag should be stated.
+If this flag is on,
+then the argv template containing
+.b $u
+will be repeated for each unique user
+on a given host.
+The
+.q e
+flag will mark the mailer as being
+.q expensive,
+which will cause
+.i sendmail
+to defer connection
+until a queue run\**
+.(f
+\**The
+.q c
+configuration option must be given
+for this to be effective.
+.)f
+.pp
+An unusual case is the
+.q C
+flag.
+This flag applies to the mailer that the message is received from,
+rather than the mailer being sent to;
+if set,
+the domain spec of the sender
+(i.e., the
+.q @host.domain
+part)
+is saved
+and is appended to any addresses in the message
+that do not already contain a domain spec.
+For example,
+a message of the form:
+.(b
+From: eric@ucbarpa
+To: wnj@monet, mckusick
+.)b
+will be modified to:
+.(b
+From: eric@ucbarpa
+To: wnj@monet, mckusick@ucbarpa
+.)b
+.i "if and only if"
+the
+.q C
+flag is defined in the mailer corresponding to
+.q eric@ucbarpa.
+.pp
+Other flags are described
+in Appendix C.
+.pp
+The next two fields in the mailer description
+are per-mailer rewriting sets
+to be applied to sender and recipient addresses
+respectively.
+These are applied after the sending domain is appended
+and the general rewriting sets
+(numbers one and two)
+are applied,
+but before the output rewrite
+(ruleset four)
+is applied.
+A typical use is to append the current domain
+to addresses that do not already have a domain.
+For example,
+a header of the form:
+.(b
+From: eric
+.)b
+might be changed to be:
+.(b
+From: eric@ucbarpa
+.)b
+or
+.(b
+From: ucbvax!eric
+.)b
+depending on the domain it is being shipped into.
+These sets can also be used
+to do special purpose output rewriting
+in cooperation with ruleset four.
+.pp
+Finally,
+an argv template is given as the final argument.
+It may have embedded spaces.
+If there is no argv with a
+.b $u
+macro in it,
+.i sendmail
+will speak SMTP
+to the mailer.
+If the pathname for this mailer is
+.q [IPC],
+the argv should be
+.(b
+IPC $h \fIport\fP
+.)b
+where
+.i port
+is the optional port number
+to connect to.
+.pp
+For example,
+the specifications:
+.(b
+.ta \w'Mlocal 'u +\w'/bin/mail 'u +\w'rlsAmn 'u +\w'10 'u +\w'20 'u
+Mlocal	/bin/mail	rlsm	10	20	mail -d $u
+Mether	[IPC]	meC	11	21	IPC $h
+.)b
+specifies two mailers.
+The first is called
+.q local,
+is located in the file
+.q /bin/mail,
+takes a picky
+.b \-r
+flag,
+does local delivery,
+quotes should be stripped from addresses,
+and multiple users can be delivered at once;
+ruleset ten
+should be applied to sender addresses in the message
+and ruleset twenty
+should be applied to recipient addresses;
+the argv to send to a message will be the word
+.q mail,
+the word
+.q \-d,
+and words containing the name of the receiving user;
+if a
+.b \-r
+flag is inserted
+it will be between the words
+.q mail
+and
+.q \-d.
+The second mailer is called
+.q ether,
+it should be connected to via an IPC connection,
+it can handle multiple users at once,
+connections should be deferred,
+and any domain from the sender
+should be appended to any receiver name
+without a domain;
+sender addresses should be processed by ruleset eleven
+and recipient addresses by ruleset twenty-one.
 .sh 1 "TUNING"
 .pp
 There are a number of configuration parameters
@@ -1881,9 +2056,9 @@ Mode
 .b q
 puts the minimum load on your machine,
 but means that delivery may be delayed for up to the queue interval.
-The
+Mode
 .b f
-mode is probably a good compromise.
+is probably a good compromise.
 .sh 2 "Log Level"
 .pp
 If you have
@@ -1997,9 +2172,9 @@ If this step is ignored or forgotten
 any intended changes will also be ignored or forgotten.
 .sh 1 "ARGUMENTS"
 .pp
-Sendmail has gobs of arguments.
-The arguments are
-described in detail in Appendix A.
+The complete list of arguments to
+.i sendmail
+is described in detail in Appendix A.
 Some important arguments are described here.
 .sh 2 "Queue Interval"
 .pp
@@ -2087,7 +2262,7 @@ For example,
 For a complete list of the available debug flags
 you will have to look at the code
 (they are too dynamic to keep this documentation up to date).
-.sh 3 "Trying a different configuration file"
+.sh 2 "Trying a Different Configuration File"
 .pp
 An alternative configuration file
 can be specified using the
@@ -2106,7 +2281,7 @@ flag has no value
 it defaults to
 .i sendmail.cf
 in the current directory.
-.sh 3 "Changing the values of options"
+.sh 2 "Changing the Values of Options"
 .pp
 Options can be overridden using the
 .b \-o
@@ -2120,7 +2295,7 @@ sets the
 (timeout) option to two minutes
 for this run only.
 .++ A
-.+c "COMMAND LINE OPTIONS"
+.+c "COMMAND LINE FLAGS"
 .ba 0
 .pp
 Arguments must be presented with flags before addresses.
@@ -2224,7 +2399,7 @@ the f option
 may be specified as the
 .b \-s
 flag.
-.+c "OPTIONS"
+.+c "CONFIGURATION OPTIONS"
 .pp
 The following options may be set using the
 .b \-o
@@ -2241,6 +2416,14 @@ If no file is specified,
 use
 .i aliases
 in the current directory.
+.ip a
+If set,
+wait for an
+.q @:@
+entry to exist in the alias database
+before starting up.
+If it does not appear in five minutes,
+rebuild the database.
 .ip b\fIx\fP
 Run in mode
 .i x .
@@ -2273,6 +2456,10 @@ m	Mail back errors
 w	Write back errors (mail if user not logged in)
 e	Mail back errors and give zero exit stat always
 .)b
+.ip F\fIn\fP
+The temporary file mode,
+in octal.
+644 and 600 are good choices.
 .ip f
 Save
 Unix-style
@@ -2354,6 +2541,123 @@ flag in the mailer definition
 will run as this user.
 .ip v
 Run in verbose mode.
+.+c "MAILER FLAGS"
+The following flags may be set in the mailer description.
+.ip f
+The mailer wants a
+.b \-f
+.i from
+flag,
+but only if this is a network forward operation
+(i.e.,
+the mailer will give an error
+if the executing user
+does not have special permissions).
+.ip r
+Same as
+.b f ,
+but sends a
+.b \-r
+flag.
+.ip q
+Don't print errors \*- the mailer will do it for us.
+.ip S
+Don't reset the userid
+before calling the mailer.
+This would be used in a secure environment
+where
+.i sendmail
+ran as root.
+This could be used to avoid forged addresses.
+This flag is suppressed if given from an
+.q unsafe
+environment
+(e.g, a user's mail.cf file).
+.ip n
+Do not insert a UNIX-style
+.q From
+line on the front of the message.
+.ip l
+This mailer is local
+(i.e.,
+final delivery will be performed).
+.ip s
+Strip quote characters off of the address
+before calling the mailer.
+.ip m
+This mailer can send to multiple users
+on the same host
+in one transaction.
+When a
+.b $u
+macro occurs in the
+.i argv
+part of the mailer definition,
+that field will be repeated as necessary
+for all qualifying users.
+.ip F
+This mailer wants a
+.q From:
+header line.
+.ip D
+This mailer wants a
+.q Date:
+header line.
+.ip M
+This mailer wants a
+.q Message-Id:
+header line.
+.ip x
+This mailer wants a
+.q Full-Name:
+header line.
+.ip u
+Upper case should be preserved in user names
+for this mailer.
+.ip h
+Upper case should be preserved in host names
+for this mailer.
+.ip A
+This is an Arpanet-compatible mailer,
+and all appropriate modes should be set.
+.ip U
+This mailer wants Unix-style
+.q From
+lines with the ugly UUCP-style
+.q "remote from <host>"
+on the end.
+.ip e
+This mailer is expensive to connect to,
+so try to avoid connecting normally;
+any necessary connection will occur during a queue run.
+.ip X
+This mailer wants to run the full SMTP protocol,
+including limiting line lengths,
+putting <CRLF> on the end of lines,
+etc.
+.ip C
+If mail is
+.i received
+from a mailer with this flag set,
+any addresses in the header that do not have an at sign
+(\c
+.q @ )
+after being rewritten by ruleset three
+will have the
+.q @domain
+clause from the sender
+tacked on.
+This allows mail with headers of the form:
+.(b
+From: usera@hosta
+To: userb@hostb, userc
+.)b
+to be rewritten as:
+.(b
+From: usera@hosta
+To: userb@hostb, userc@hosta
+.)b
+automatically.
 .+c "OTHER CONFIGURATION"
 .pp
 There are some configuration changes that can be made by
@@ -2711,11 +3015,23 @@ unless they were local.
 The actual use of this routine is highly dependent on the
 implementation,
 and use should be limited.
-.sh 1 "OTHER STUFF"
-.sh 2 "owner-*"
 .ro
+.ls 1
+.tp
 .bp 1
+.sp 2i
+.ce 100
+.sz 16
+SENDMAIL
+.sz 12
+.sp
+INSTALLATION AND OPERATION GUIDE
+.sp
+.sz
+Eric Allman
+Britton-Lee, Inc.
+.ce 0
+.bp
 .ce
 TABLE OF CONTENTS
-.ls 1
 .xp
