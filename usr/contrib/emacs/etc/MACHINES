@@ -1,0 +1,183 @@
+This is a list of the status of GNU Emacs on various machines and systems.
+Last updated March 25, 1986.
+
+Systems:
+  For each type of system, the name of the appropriate s- header file
+  is given.
+
+Berkeley 4.1 (s-bsd4.1.h)
+
+  Works on vaxes.
+
+Berkeley 4.2 (s-bsd4.2.h)
+
+  Works on several machines.
+
+Berkeley 4.3 (s-bsd4.3.h)
+
+  Works, on Vaxes at least.
+
+Ultrix
+
+  This is another name for Berkeley 4.2.
+
+Uniplus 5.2 (s-unipl5.2.h)
+
+  Works, on Dual machines at least.
+
+VMS
+
+  A port for this system is in distribution on the
+  Internet, but the changes have not been merged
+  into this Emacs distribution yet.
+
+System V rel 0 (s-usg5.0.h)
+
+  Works, on Vaxes.
+
+System V rel 2 (s-usg5.2.h)
+
+  Works on various machines.
+  On some (maybe all) machines the library -lPW exists and contains
+  a version of `alloca'.  On these machines, to use it, put
+     #define HAVE_ALLOCA
+     #define LIB_STANDARD -lPW -lc
+  in the m-...h file for the machine.
+
+  If you find that the character Meta-DEL makes Emacs crash,
+  find where function init_sys_modes in sysdep.c sets sg.c_cc[VQUIT]
+  and make it store 7 there.  I have as yet no evidence of whether
+  this problem, known in HP-UX, exists in other system V versions.
+
+System V rel 2.2 (s-usg5.2.2.h)
+
+  In 5.2.2 AT&T undid, incompatibly, their previous incompatible
+  change to the way the nlist library is called.  A different s- file
+  is used to enable the other interface.
+
+  They call themselves the right choice--can't they choose?
+
+
+Machines:
+  For each type of machine, the names of the m- and s- header files
+  are given.
+
+Apollo running Domain (m-apollo.h; s-bsd4.2.h)
+
+  Works, but it is impossible to dump Emacs; the standard
+  Lisp code must be loaded each time Emacs is started.  This
+  is a limitation of their operating system.  In other respects
+  the system appears to be Berkeley 4.2, and Emacs is told that
+  it is running under 4.2.
+
+AT&T 7300 (m-7300.h; s-usg5.0.h? not sure)
+
+  Changes merged as of 17.57.  You may have to change
+  the CPP= line to cc -E, in src/Makefile.
+
+Celerity (m-celerity.h; s-bsd4.2.h)
+
+  Works, as of 17.56.
+
+Dual running System V (m-dual.h; s-usg5.2.h)
+
+  As of 17.46, this works except for a few changes
+  needed in unexec.c.
+
+Dual running Uniplus (m-dual.h; s-unipl5.2.h)
+
+  Works, as of 17.51.
+
+Encore machine (m-ns16000.h; s-umax4.2.h)
+
+  This machine bizarrely uses 4.2BSD modified to use the COFF format
+  for object files.  Works (as of 17.52).
+
+Gould
+
+  A port has been done but has not been merged into this
+  distribution version.
+
+HP 9000s300 (m-hp200.h; s-hpux.h)
+
+  Works as of 17.52.  This machine is a 68020.
+  There are at least three kinds of "HP9000" that are really
+  completely different computers.  The one called "series 500"
+  uses a seriously incompatible memory architecture and it
+  is not supported.  Supporting it would require solving
+  difficult problems.
+
+Masscomp
+
+  An attempt was made but it encountered too many compiler bugs.
+
+Megatest (m-mega68.h; s-bsd4.2.h)
+
+  Emacs 15 worked; do not have any reports about Emacs 16 or 17
+  but any new bugs are probably not difficult.
+
+NCR Tower 32 (m-tower32.h; s-usg5.2.h)
+
+  Works as of 17.56.
+
+Nu (TI or LMI) (m-nu.h; s-usg5.2.h)
+
+  Nearly working; a few bugs remain.
+
+Plexus (m-plexus.h; s-usg5.2.h)
+
+  Works as of 17.56.
+
+Pyramid (m-pyramid.h; s-bsd4.2.h)
+
+  In Pyramid system 2.5 there has been a compiler bug making
+  Emacs crash just after screen-splitting with Qnil containing 0.
+  A compiler that fixes this is Pyramid customer number 8494,
+  internal number 1923.
+
+  Some versions of the pyramid compiler get fatal
+  errors when the -gx compiler switch is used; if this
+  happens to you, change src/ymakefile to remove that switch.
+
+Sequent Balance (m-sequent.h; s-bsd4.2.h)
+
+  Emacs 17.52 works in their system version 2.0.
+  Emacs has not been tried on their system version 1.3.
+
+Stride (m-stride.h; s-usg5.2.h)
+
+  Works (most recent news for 17.54).
+  Note, however, that this was on a Unix version not
+  yet released by Stride.  It is probably also possible
+  to run on Stride's 5.1 system but changes in the s- file
+  are probably needed.
+
+Sun (m-sun.h, m-sun2.h, m-sun3.h; s-bsd4.2.h)
+
+  There are three m- files for different models of Sun.
+  All use Berkeley 4.2.  Emacs 17 has run on all of them.
+
+Tahoe (m-tahoe.h; s-bsd4.2.h)
+
+  Works, as of an early version 17.
+
+Tektronix(?) 16000 box (m-16000.h; s-bsd4.2.h)
+
+  Emacs 15 worked; no reports since then.
+
+Vax running Berkeley Unix (m-vax.h; s-bsd4.1.h or s-bsd4.2.h or s-bsd4.3.h)
+
+  Works.  Note that "ultrix" is essentially 4.2; use s-bsd4.2.h.
+
+Vax running System V rel 2 (m-vax.h; s-usg5.2.h)
+
+  17.53 is believed to fix the problems previously known.
+
+Vax running System V rel 0 (m-vax.h; s-usg5.0.h)
+
+  Works as of 17.56.
+
+Vax running VMS
+
+  Preliminary port completed; merging to be done soon.
+
