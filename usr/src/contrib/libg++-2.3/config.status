@@ -1,0 +1,5 @@
+#!/bin/sh
+# This file was generated automatically by configure.  Do not edit.
+# This directory was configured as follows:
+./configure hppa1.0-bsd -norecursion 
+# 
