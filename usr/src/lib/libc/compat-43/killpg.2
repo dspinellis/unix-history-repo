@@ -2,60 +2,50 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)killpg.2	4.1 (Berkeley) %G%
+.\"	@(#)killpg.2	5.1 (Berkeley) %G%
 .\"
-.TH KILLPG 2J
+.TH KILLPG 2 "27 July 1983"
 .UC 4
 .SH NAME
-killpg \- send signal to a process or a process group
+killpg \- send signal to a process group
 .SH SYNOPSIS
-.B killpg(pgrp, sig)
-.PP
-.B cc ... \-ljobs
+.ft B
+killpg(pgrp, sig)
+.br
+int pgrp, sig;
+.ft R
 .SH DESCRIPTION
 .I Killpg
 sends the signal
 .I sig
-to the specified process group.
+to the process group
+.IR pgrp .
 See
-.IR sigsys (2)
-for a list of signals;
-see
-.IR jobs (3)
-for an explanation of process groups.
+.IR sigvec (2)
+for a list of signals.
 .PP
 The sending process and members of the process group must
 have the same effective user ID, otherwise
 this call is restricted to the super-user.
 As a single special case the continue signal SIGCONT may be sent
-to any process which is a descendant of the current process.  This
-allows a command interpreter such as
-.IR csh (1)
-to restart set-user-id processes stopped from the keyboard with a stop signal.
-.PP
-The calls
-.IP
-.B "killpg(0, sig)"
-.LP
-and
-.IP
-.B "kill(0, sig)
-.LP
-have identical effects, sending the signal to all members of the
-invoker's process group (including the process itself).
-It is preferable to use the call involving
-.I kill
-in this case, as it is portable to other UNIX systems.
+to any process which is a descendant of the current process.
+.SH "RETURN VALUE
+Upon successful completion, a value of 0 is returned.  Otherwise,
+a value of \-1 is returned and the global variable \fIerrno\fP
+is set to indicate the error.
+.SH "ERRORS
+\fIKillpg\fP will fail and no signal will be sent if any of the
+following occur:
+.TP 15
+[EINVAL]
+\fISig\fP is not a valid signal number.
+.TP 15
+[ESRCH]
+No process can be found corresponding to that specified by \fIpid\fP.
+.TP 15
+[EPERM]
+The sending process is not the super-user and one or more
+of the target processes has an effective user ID different from that
+of the sending process.
 .SH "SEE ALSO"
-jobs(3), kill(2), sigsys(2), signal(2), csh(1), kill(1)
-.SH DIAGNOSTICS
-Zero is returned if the processes are sent the signals;
-\-1 is returned if any process in the process group cannot be sent
-the signal, or if there are no members in the process group.
-.SH BUGS
-The job control facilities are not available in standard version 7 UNIX.
-These facilities are still under development and may change in future
-releases of the system as better inter-process communication facilities
-and support for virtual terminals become available.  The options and
-specifications of this system call and even the call itself
-are thus subject to change.
+kill(2), getpgrp(2), sigvec(2)
