@@ -1,4 +1,4 @@
-/*	dh.c	4.35	81/06/02	*/
+/*	dh.c	4.36	81/06/05	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -635,7 +635,9 @@ dhreset(uban)
 			continue;
 		printf(" dh%d", dh);
 		((struct dhdevice *)ui->ui_addr)->un.dhcsr |= DH_IE;
+#if NBK > 0
 		((struct dhdevice *)ui->ui_addr)->dhsilo = 16;
+#endif
 		unit = dh * 16;
 		for (i = 0; i < 16; i++) {
 			tp = &dh11[unit];
