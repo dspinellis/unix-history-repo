@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ms.diffs	5.1 (Berkeley) %G%
+.\"	@(#)ms.diffs	6.1 (Berkeley) %G%
 .\"
 .nr LL 6.5i
 .nr FL 6.0i
@@ -10,8 +10,8 @@
 .if t .ds m \u\(ul\dm
 .if n .ds m -m
 .AM
-.OH '\fIThe New -ms Macros\fR''\fIPage %\fR'
-.EH '\fIPage %\fR''\fIThe New -ms Macros\fR'
+.OH 'A Revised Version of \*ms''USD:21-%'
+.EH 'USD:21-%''A Revised Version of \*ms'
 .TL
 A Revised Version of \*ms
 .AU
@@ -21,7 +21,8 @@ Computing Services
 University of California
 Berkeley, CA  94720
 .PP
-The \*ms macros have been slightly revised and re\%arranged.
+The \*ms macros have been slightly revised and re\%arranged for the
+Berkeley Unix distribution.
 Because of the rearrangement,
 the new macros can be read by the computer
 in about half the time required by the previous version of \*ms.
