@@ -1,9 +1,10 @@
 #ifndef lint
-static char *sccsid = "@(#)su.c	4.7 (Berkeley) %G%";
+static char *sccsid = "@(#)su.c	4.8 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
 #include <pwd.h>
+#include <grp.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -19,7 +20,7 @@ int	fulllogin;
 int	fastlogin;
 
 extern char	**environ;
-struct	passwd *pwd,*getpwnam();
+struct	passwd *pwd;
 char	*crypt();
 char	*getpass();
 char	*getenv();
@@ -48,23 +49,20 @@ again:
 		argc--, argv++;
 	}
 	if (strcmp(user, "root") == 0) {
+		struct	group *gr;
+		int i;
+
 		/*
-		 * Read the "/.suok" file for list of people who can su.
+		 * Only allow those in group zero to su.
 		 */
 		if ((pwd = getpwuid(getuid())) == NULL) {
 			fprintf(stderr, "Who are you?\n");
 			exit(1);
 		}
-		if ((fp = fopen("/.suok", "r")) != NULL) {
-			while ((fgets(buf, sizeof(buf), fp)) != NULL) {
-				/* blast newline */
-				buf[strlen(buf) - 1] = '\0';
-				if (strcmp(pwd->pw_name, buf) == 0) {
-					fclose(fp);
+		if ((gr = getgrgid(0)) != NULL) {
+			for (i = 0; gr->gr_mem[i] != NULL; i++)
+				if (strcmp(pwd->pw_name, gr->gr_mem[i]) == 0)
 					goto userok;
-				}
-			}
-			fclose(fp);
 			fprintf(stderr, "You do not have permission to su root\n");
 			exit(1);
 		}
