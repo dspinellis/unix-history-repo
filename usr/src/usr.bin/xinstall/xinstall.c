@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xinstall.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)xinstall.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -49,6 +49,7 @@ main(argc, argv)
 	struct stat from_sb, to_sb;
 	int ch, no_target;
 	char *to_name;
+	mode_t setmode();
 
 	while ((ch = getopt(argc, argv, "cg:m:o:s")) != EOF)
 		switch((char)ch) {
