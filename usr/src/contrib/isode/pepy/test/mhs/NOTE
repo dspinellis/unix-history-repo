@@ -1,0 +1,1068 @@
+Delivery-Date: Thu, 27 Mar 86 18:48:31 -0800
+Received: from ECLA by NRTC id aa08556 ;27 Mar 86 18:36 PST
+Received: from ICS.UCI.EDU (for ICS.UCI.EDU) by USC-ECL.ARPA; Thu 27 Mar 86 17:51:43-PST
+Received: from localhost by ICS.UCI.EDU id a029767; 25 Mar 86 14:24 PST
+Sender: mrose@ICS.UCI.EDU
+Resent-Date: Tue, 25 Mar 86 14:23:59 -0800
+Resent-To: mrose%nrtc@usc-ecl.arpa
+Received: from cs.ucl.ac.uk by ICS.UCI.EDU id a029611; 25 Mar 86 14:15 PST
+Date:     Tue, 25 Mar 86 13:51:43 BST
+From:     Alina da Cruz <alina@cs.ucl.ac.uk>
+To:       Marshall Rose <mrose@ICS.UCI.EDU>
+cc:       alina@cs.ucl.ac.uk
+Subject:  P2 messages
+
+Here are the EAN messages Steve Kille asked me to forward to
+you.
+
+The uuencoded messages I have included are:
+
+msg1    -       Simple, basic, message
+msg2    -       An Auto-forwarded message
+msg3    -       Reply to a preceeding report
+msg4    -       P2 acknowledgement
+msg5    -       Looped message - auto-forwarded
+msg6    -       A send [confirm] report
+msg7    -       A manually forwarded message
+
+I have also included X409 decodings of each of the uuencoded mesages.
+
+******************************************************************************
+msg1 uuencoded
+******************************************************************************
+begin 640 msg1
+M 0 ! 0   .(   (XH('3,8'08#,P#F$"$P!B A, H@03 G5K,"$P!Q, $P-E
+M86XP%A, $Q)E86XN=F%X,BYC<RYU8VPN86-E! ,"!2!* S0R,$<! *) ,3Y@
+M-3 .80(3 &("$P"B!!,"=6LP(S )$P 3!6%L:6YA,!83 !,296%N+G9A>#(N
+M8W,N=6-L+F%C@0(#B( ! 48! F0<8PQA A, 8@(3 !,"=6L6##@U,3$P-C$P
+M,S,Q,6DH,"9C#&$"$P!B A, $P)U:S$6@!$X-3$Q,#8Q,#,S,3$K,# P,((!
+M *"" 5(Q@=>B/S$]H#=@-3 .80(3 &("$P"B!!,"=6LP(S )$P 3!6%L:6YA
+M,!83 !,296%N+G9A>#(N8W,N=6-L+F%C@0(&0*@6%!13:6UP;&4@8F%S:6,@
+M;65S<V%G9:! @ E%04X@4VQA=F5@,S .80(3 &("$P"B!!,"=6LP(3 '$P 3
+M V5A;C 6$P 3$F5A;BYV87@R+F-S+G5C;"YA8VLZ8#,P#F$"$P!B A, H@03
+M G5K,"$P!Q, $P-E86XP%A, $Q)E86XN=F%X,BYC<RYU8VPN86,3 S0R,#!V
+MH'0Q X !!39M!"=4:&ES(&UE<W-A9V4@8VYT86EN<R U(&QI;F5S(&]F('1E
+M>'0N#0H$"&QI;F4@,0T*! AL:6YE(#(-"@0(;&EN92 S#0H$"&QI;F4@- T*
+<! AL:6YE(#4-"@0096YD(&]F(&UE<W-A9V4-"FEN
+ 
+end
+******************************************************************************
+msg2 uuencoded
+******************************************************************************
+begin 640 msg2
+M 0 ! 0   .0   (>H('5,8'28#4P#F$"$P!B A, H@03 G5K,",P"1, $P5A
+M;&EN83 6$P 3$F5A;BYV87@R+F-S+G5C;"YA8V4$ P(&0$H#-#(Q1P$ HD Q
+M/F U, YA A, 8@(3 *($$P)U:S C, D3 !,%9W5E<W0P%A, $Q)E86XN=F%X
+M,BYC<RYU8VPN86.! @.(@ $!1@$"9!QC#&$"$P!B A, $P)U:Q8,.#4Q,3 V
+M,38S-#$S:2@P)F,,80(3 &("$P 3 G5K,1: $3@U,3$P-C$V,S0Q-"LP,# P
+M@@$ H((!-C&!V:! @ E%04X@4VQA=F5@,S .80(3 &("$P"B!!,"=6LP(3 '
+M$P 3 V5A;C 6$P 3$F5A;BYV87@R+F-S+G5C;"YA8Z)!,3^@.8  8#4P#F$"
+M$P!B A, H@03 G5K,",P"1, $P5A;&EN83 6$P 3$F5A;BYV87@R+F-S+G5C
+M;"YA8X$"!D"H$Q019F]R=V%R9&5D(&UE<W-A9V5K.F S, YA A, 8@(3 *($
+M$P)U:S A, <3 !,#96%N,!83 !,296%N+G9A>#(N8W,N=6-L+F%C$P,T,C&.
+M ?\P6*!6,0.  04V3P0G5&AI<R!M97-S86=E(&-O;G1A:6YS(#(@;&EN97,@
+M;V8@=&5X= T*! AL:6YE(#$-"@0(;&EN92 R#0H$$&5N9"!O9B!M97-S86=E
+"#0H@
+ 
+end
+******************************************************************************
+msg3 uuencoded
+******************************************************************************
+begin 640 msg3
+M 0 ! 0   .(   )$H('3,8'08#4P#F$"$P!B A, H@03 G5K,",P"1, $P5A
+M;&EN83 6$P 3$F5A;BYV87@R+F-S+G5C;"YA8V4$ P(%($H#,3(P1P$ HCXQ
+M/& S, YA A, 8@(3 *($$P)U:S A, <3 !,#96%N,!83 !,296%N+G9A>#(N
+M8W,N=6-L+F%C@0(#B( ! 48! F0<8PQA A, 8@(3 !,"=6L6##@U,3$P-C$W
+M,#0S,6DH,"9C#&$"$P!B A, $P)U:S$6@!$X-3$Q,#8Q-S T,S$K,# P,((!
+M *"" 5XQ@@$DI3I@,S .80(3 &("$P"B!!,"=6LP(3 '$P 3 V5A;C 6$P 3
+M$F5A;BYV87@R+F-S+G5C;"YA8Q,#-#(RHD@Q1J! @ E%04X@4VQA=F5@,S .
+M80(3 &("$P"B!!,"=6LP(3 '$P 3 V5A;C 6$P 3$F5A;BYV87@R+F-S+G5C
+M;"YA8X$"!D"H'A0<4F5P;'D@=&\@82!P<F5C965D:6YG(')E<&]R=* ^@ 5A
+M;&EN86 U, YA A, 8@(3 *($$P)U:S C, D3 !,%86QI;F$P%A, $Q)E86XN
+M=F%X,BYC<RYU8VPN86-K/& U, YA A, 8@(3 *($$P)U:S C, D3 !,%86QI
+M;F$P%A, $Q)E86XN=F%X,BYC<RYU8VPN86,3 S$R,# TH#(Q X !!38K!"E4
+H:&ES(&ES(&$@<F5P;'D@;&EN92!T;R!T:&4@<F5P;W)T('-E;G0-"C8K
+ 
+end
+******************************************************************************
+msg4 uuencoded
+******************************************************************************
+begin 640 msg4
+M 0 ! 0   -8   '@H('',8'$8"LP#V$"$P!B A, H@43 V1F;C 8, D3 !,%
+M8G5S8V@P"Q, $P=X<',N9VUD$0!' 0"B0S%!8#4P#F$"$P!B A, H@03 G5K
+M,",P"1, $P5A;&EN83 6$P 3$F5A;BYV87@R+F-S+G5C;"YA8X$"!XH" 0"
+M 0%& 0)D'6,-80(3 &("$P 3 V1F;A8,.#4Q,3$T,3<Q,C(X:2DP)V,-80(3
+M &("$P 3 V1F;C$6@!$X-3$Q,30Q-C$R,C@M,#$P,((! *&!EJ$\8"LP#V$"
+M$P!B A, H@43 V1F;C 8, D3 !,%8G5S8V@P"Q, $P=X<',N9VUD@ UM87)T
+M:6YA(&)U<V-H:SQ@-3 .80(3 &("$P"B!!,"=6LP(S )$P 3!6%L:6YA,!83
+M !,296%N+G9A>#(N8W,N=6-L+F%C$P,Q,C2@&*$6@!$X-3$Q,30Q-C$R,C@M
+M,#$P,($! 0$ *0@J!C P,# P,6UA<G1I;F$@8G5S8VAK/& U, YA A, 8@(3
+M *($$P)U:S C, D3 !,%86QI;F$P%A, $Q)E86XN=F%X,BYC<RYU8VPN86,3
+> S$R-* 8H1: $3@U,3$Q-#$V,3(R."TP,3 P@0$!
+ 
+end
+******************************************************************************
+msg5 uuencoded
+******************************************************************************
+begin 640 msg5
+M 0 ! 0   -@   (!H('),8'&8"HP$&$"$P!B A, H@83!&-E<FXP%C )$P 3
+M!7-T979E, D3 !,%<')I86UE! ,"!D!* S0S-$<! *([,3E@,# .80(3 &("
+M$P"B!!,"=6LP'C <$P 3&&%L:6YA0&5A;BYV87@R+F-S+G5C;"YA8X$" XB
+M 0%& 0)D'F,.80(3 &("$P 3!&-E<FX6##@U,3$Q-3 P-#$S.&DJ,"AC#F$"
+M$P!B A, $P1C97)N,1: $3@U,3$Q-#(S-#$S."TP,3 P@@$ H((!(#&" 1RB
+M+S$MH"=@)3 080(3 &("$P"B!A,$8V5R;C 1, \3 !,+<W1E=F5 <')I86V!
+M @9 HT@Q1J! 8#XP#F$"$P!B A, H@03 G5K,"PP$A, $PY#15).(&QO;W @
+M=&5S=# 6$P 3$F5A;BYV87@R+F-S+G5C;"YA8X$"!D"H'A0<5&AU($YO=B Q
+M-" R,SHQ-#HQ-B!'350@,3DX-:! @ E%04X@4VQA=F5@,S .80(3 &("$P"B
+M!!,"=6LP(3 '$P 3 V5A;C 6$P 3$F5A;BYV87@R+F-S+G5C;"YA8VLZ8#,P
+M#F$"$P!B A, H@03 G5K,"$P!Q, $P-E86XP%A, $Q)E86XN=F%X,BYC<RYU
+28VPN86,3 S0S-(X!_P$ *0@J
+ 
+end
+******************************************************************************
+msg6 uuencoded
+******************************************************************************
+begin 640 msg6
+M 0 ! 0   .X   &CH('?,8'<8#$P$V$"$P!B A, H@D3!V]S:7)I9&4P&C *
+M$P 3!FQA;F-I83 ,$P 3"&EA<VDN8VYR$0!' 0"B0S%!8#4P#F$"$P!B A,
+MH@03 G5K,",P"1, $P5A;&EN83 6$P 3$F5A;BYV87@R+F-S+G5C;"YA8X$"
+M!XT" 0"  0%& 0)D)F,680<3!6ET86QY8@(3 !,';W-I<FED918,.#4Q,C Y
+M,34P-S,X:3(P,&,680<3!6ET86QY8@(3 !,';W-I<FED93$6@!$X-3$R,#DP
+M-S W,S@M,#@P,((! *&!GJ%$8#$P$V$"$P!B A, H@D3!V]S:7)I9&4P&C *
+M$P 3!FQA;F-I83 ,$P 3"&EA<VDN8VYR@ ]-875R:7II;R!,86YC:6%K/& U
+M, YA A, 8@(3 *($$P)U:S C, D3 !,%86QI;F$P%A, $Q)E86XN=F%X,BYC
+M<RYU8VPN86,3 S$S,Z 8H1: $3@U,3(P.3 W,#<S."TP.# P@0$! 0 I""H&
+.,# P,# Q+3 X,#"! 0$8
+ 
+end
+******************************************************************************
+msg7 uuencoded
+******************************************************************************
+begin 640 msg7
+M 0 ! 0   .(   *XH('3,8'08#4P#F$"$P!B A, H@03 G5K,",P"1, $P5A
+M;&EN83 6$P 3$F5A;BYV87@R+F-S+G5C;"YA8V4$ P(%($H#,3<R1P$ HCXQ
+M/& S, YA A, 8@(3 *($$P)U:S A, <3 !,#96%N,!83 !,296%N+G9A>#(N
+M8W,N=6-L+F%C@0(#B( ! 48! F0<8PQA A, 8@(3 !,"=6L6##@V,#,R-#$S
+M,S0T.&DH,"9C#&$"$P!B A, $P)U:S$6@!$X-C S,C0Q,S,T-#@K,# P,((!
+M *"" =(Q@>.@/H %86QI;F%@-3 .80(3 &("$P"B!!,"=6LP(S )$P 3!6%L
+M:6YA,!83 !,296%N+G9A>#(N8W,N=6-L+F%CHC\Q/: W@ !@,S .80(3 &("
+M$P"B!!,"=6LP(3 '$P 3 V5A;C 6$P 3$F5A;BYV87@R+F-S+G5C;"YA8X$"
+M!D"H(A0@=&5S=&EN9R!O9B!T:&4@9F]R=V%R9"!S=&%T96UE;G1K/& U, YA
+M A, 8@(3 *($$P)U:S C, D3 !,%86QI;F$P%A, $Q)E86XN=F%X,BYC<RYU
+M8VPN86,3 S$W,C"!Z:"!YC$#@ $%-H'>!#1$96QI=F5R>2UD871E.B!-;VYD
+M87DL($UA<F-H(#(T+" Q.3@V(&%T(#$S.C,T($=-5 T*!"M&<F]M.B!G=65S
+M=" \9W5E<W1 96%N+G9A>#(N8W,N=6-L+F%C+G5K/@T*!"-4;SH@/&%L:6YA
+M0&5A;BYV87@R+F-S+G5C;"YA8RYU:SX-"@06365S<V%G92U)1#H@:6YB;W@Z
+M-#$-"@074W5B:F5C=#H@9F]R=V%R9"!T97-T#0H$ @T*!!=L:6YE<R!O9B!I
+5;F9O<FUA=&EO;BX-"@0"#0H$ @T*
+ 
+end
+******************************************************************************
+msg1 X409 decode
+******************************************************************************
+User MPDU
+    UMPDU Envelope
+        originator ORName
+            Standard Attribute List
+                Country Name
+                    Printable String = ""
+                Administration Domain Name
+                    Printable String = ""
+                Private Domain Name
+                    Printable String = "uk"
+            Domain Defined Attribute List
+                Domain Defined Attribute
+                    type Printable String = ""
+                    value Printable String = "ean"
+                Domain Defined Attribute
+                    type Printable String = ""
+                    value Printable String = "ean.vax2.cs.ucl.ac"
+        Encoded Information Types
+            Bit String = iA5 Text
+        UA Content ID = "420"
+        Priority = normal
+        Recipient Info
+            Set
+                recipient ORName
+                    Standard Attribute List
+                        Country Name
+                            Printable String = ""
+                        Administration Domain Name
+                            Printable String = ""
+                        Private Domain Name
+                            Printable String = "uk"
+                    Domain Defined Attribute List
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "alina"
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean.vax2.cs.ucl.ac"
+                per Recipient Flag = On, Not-used, Basic
+                Extension Identifier = 1
+        Content Type = p2
+        MPDU Identifier
+            Global Domain Identifier
+                Country Name
+                    Printable String = ""
+                Administration Domain Name
+                    Printable String = ""
+                Private Domain Identifier = "uk"
+            IA5 String = "851106103311"
+        Trace Information
+            Sequence
+                Global Domain Identifier
+                    Country Name
+                        Printable String = ""
+                    Administration Domain Name
+                        Printable String = ""
+                    Private Domain Identifier = "uk"
+                Domain Supplied Info
+                    arrival Time = 06/11/85 10:33:11 +0000
+                    action = relayed
+    IM-UAPDU Content
+        Heading
+            primary Recipients
+                Set
+                    ORDescriptor
+                        ORName
+                            Standard Attribute List
+                                Country Name
+                                    Printable String = ""
+                                Administration Domain Name
+                                    Printable String = ""
+                                Private Domain Name
+                                    Printable String = "uk"
+                            Domain Defined Attribute List
+                                Domain Defined Attribute
+                                    type Printable String = ""
+                                    value Printable String = "alina"
+                                Domain Defined Attribute
+                                    type Printable String = ""
+                                    value Printable String = "ean.vax2.cs.ucl.ac"
+                    report Request = non Receipt Notification
+            subject
+                S61 String = "Simple basic message"
+            originator
+                free form Name = "EAN Slave"
+                ORName
+                    Standard Attribute List
+                        Country Name
+                            Printable String = ""
+                        Administration Domain Name
+                            Printable String = ""
+                        Private Domain Name
+                            Printable String = "uk"
+                    Domain Defined Attribute List
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean"
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean.vax2.cs.ucl.ac"
+            IPMessageId
+                ORName
+                    Standard Attribute List
+                        Country Name
+                            Printable String = ""
+                        Administration Domain Name
+                            Printable String = ""
+                        Private Domain Name
+                            Printable String = "uk"
+                    Domain Defined Attribute List
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean"
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean.vax2.cs.ucl.ac"
+                Printable String = "420"
+        Body
+            IA5 Text
+                Set
+                    repertoire = ia5
+                IA5 String
+                    Octet String = This message cntains 5 lines of text.
+
+                    Octet String = line 1
+
+                    Octet String = line 2
+
+                    Octet String = line 3
+
+                    Octet String = line 4
+
+                    Octet String = line 5
+
+                    Octet String = end of message
+
+******************************************************************************
+msg2 X409 decode
+******************************************************************************
+User MPDU
+    UMPDU Envelope
+        originator ORName
+            Standard Attribute List
+                Country Name
+                    Printable String = ""
+                Administration Domain Name
+                    Printable String = ""
+                Private Domain Name
+                    Printable String = "uk"
+            Domain Defined Attribute List
+                Domain Defined Attribute
+                    type Printable String = ""
+                    value Printable String = "alina"
+                Domain Defined Attribute
+                    type Printable String = ""
+                    value Printable String = "ean.vax2.cs.ucl.ac"
+        Encoded Information Types
+            Bit String = tLX
+        UA Content ID = "421"
+        Priority = normal
+        Recipient Info
+            Set
+                recipient ORName
+                    Standard Attribute List
+                        Country Name
+                            Printable String = ""
+                        Administration Domain Name
+                            Printable String = ""
+                        Private Domain Name
+                            Printable String = "uk"
+                    Domain Defined Attribute List
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "guest"
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean.vax2.cs.ucl.ac"
+                per Recipient Flag = On, Not-used, Basic
+                Extension Identifier = 1
+        Content Type = p2
+        MPDU Identifier
+            Global Domain Identifier
+                Country Name
+                    Printable String = ""
+                Administration Domain Name
+                    Printable String = ""
+                Private Domain Identifier = "uk"
+            IA5 String = "851106163413"
+        Trace Information
+            Sequence
+                Global Domain Identifier
+                    Country Name
+                        Printable String = ""
+                    Administration Domain Name
+                        Printable String = ""
+                    Private Domain Identifier = "uk"
+                Domain Supplied Info
+                    arrival Time = 06/11/85 16:34:14 +0000
+                    action = relayed
+    IM-UAPDU Content
+        Heading
+            originator
+                free form Name = "EAN Slave"
+                ORName
+                    Standard Attribute List
+                        Country Name
+                            Printable String = ""
+                        Administration Domain Name
+                            Printable String = ""
+                        Private Domain Name
+                            Printable String = "uk"
+                    Domain Defined Attribute List
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean"
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean.vax2.cs.ucl.ac"
+            primary Recipients
+                Set
+                    ORDescriptor
+                        free form Name = ""
+                        ORName
+                            Standard Attribute List
+                                Country Name
+                                    Printable String = ""
+                                Administration Domain Name
+                                    Printable String = ""
+                                Private Domain Name
+                                    Printable String = "uk"
+                            Domain Defined Attribute List
+                                Domain Defined Attribute
+                                    type Printable String = ""
+                                    value Printable String = "alina"
+                                Domain Defined Attribute
+                                    type Printable String = ""
+                                    value Printable String = "ean.vax2.cs.ucl.ac"
+                    report Request = non Receipt Notification
+            subject
+                S61 String = "forwarded message"
+            IPMessageId
+                ORName
+                    Standard Attribute List
+                        Country Name
+                            Printable String = ""
+                        Administration Domain Name
+                            Printable String = ""
+                        Private Domain Name
+                            Printable String = "uk"
+                    Domain Defined Attribute List
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean"
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean.vax2.cs.ucl.ac"
+                Printable String = "421"
+            autoforwarded = True
+        Body
+            IA5 Text
+                Set
+                    repertoire = ia5
+                IA5 String
+                    Octet String = This message contains 2 lines of text
+
+                    Octet String = line 1
+
+                    Octet String = line 2
+
+                    Octet String = end of message
+
+******************************************************************************
+msg3 X409 decode
+******************************************************************************
+User MPDU
+    UMPDU Envelope
+        originator ORName
+            Standard Attribute List
+                Country Name
+                    Printable String = ""
+                Administration Domain Name
+                    Printable String = ""
+                Private Domain Name
+                    Printable String = "uk"
+            Domain Defined Attribute List
+                Domain Defined Attribute
+                    type Printable String = ""
+                    value Printable String = "alina"
+                Domain Defined Attribute
+                    type Printable String = ""
+                    value Printable String = "ean.vax2.cs.ucl.ac"
+        Encoded Information Types
+            Bit String = iA5 Text
+        UA Content ID = "120"
+        Priority = normal
+        Recipient Info
+            Set
+                recipient ORName
+                    Standard Attribute List
+                        Country Name
+                            Printable String = ""
+                        Administration Domain Name
+                            Printable String = ""
+                        Private Domain Name
+                            Printable String = "uk"
+                    Domain Defined Attribute List
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean"
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean.vax2.cs.ucl.ac"
+                per Recipient Flag = On, Not-used, Basic
+                Extension Identifier = 1
+        Content Type = p2
+        MPDU Identifier
+            Global Domain Identifier
+                Country Name
+                    Printable String = ""
+                Administration Domain Name
+                    Printable String = ""
+                Private Domain Identifier = "uk"
+            IA5 String = "851106170431"
+        Trace Information
+            Sequence
+                Global Domain Identifier
+                    Country Name
+                        Printable String = ""
+                    Administration Domain Name
+                        Printable String = ""
+                    Private Domain Identifier = "uk"
+                Domain Supplied Info
+                    arrival Time = 06/11/85 17:04:31 +0000
+                    action = relayed
+    IM-UAPDU Content
+        Heading
+            in Reply To
+                ORName
+                    Standard Attribute List
+                        Country Name
+                            Printable String = ""
+                        Administration Domain Name
+                            Printable String = ""
+                        Private Domain Name
+                            Printable String = "uk"
+                    Domain Defined Attribute List
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean"
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean.vax2.cs.ucl.ac"
+                Printable String = "422"
+            primary Recipients
+                Set
+                    ORDescriptor
+                        free form Name = "EAN Slave"
+                        ORName
+                            Standard Attribute List
+                                Country Name
+                                    Printable String = ""
+                                Administration Domain Name
+                                    Printable String = ""
+                                Private Domain Name
+                                    Printable String = "uk"
+                            Domain Defined Attribute List
+                                Domain Defined Attribute
+                                    type Printable String = ""
+                                    value Printable String = "ean"
+                                Domain Defined Attribute
+                                    type Printable String = ""
+                                    value Printable String = "ean.vax2.cs.ucl.ac"
+                    report Request = non Receipt Notification
+            subject
+                S61 String = "Reply to a preceeding report"
+            originator
+                free form Name = "alina"
+                ORName
+                    Standard Attribute List
+                        Country Name
+                            Printable String = ""
+                        Administration Domain Name
+                            Printable String = ""
+                        Private Domain Name
+                            Printable String = "uk"
+                    Domain Defined Attribute List
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "alina"
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean.vax2.cs.ucl.ac"
+            IPMessageId
+                ORName
+                    Standard Attribute List
+                        Country Name
+                            Printable String = ""
+                        Administration Domain Name
+                            Printable String = ""
+                        Private Domain Name
+                            Printable String = "uk"
+                    Domain Defined Attribute List
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "alina"
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean.vax2.cs.ucl.ac"
+                Printable String = "120"
+        Body
+            IA5 Text
+                Set
+                    repertoire = ia5
+                IA5 String
+                    Octet String = This is a reply line to the report sent
+
+******************************************************************************
+msg4 X409 decode
+******************************************************************************
+User MPDU
+    UMPDU Envelope
+        originator ORName
+            Standard Attribute List
+                Country Name
+                    Printable String = ""
+                Administration Domain Name
+                    Printable String = ""
+                Private Domain Name
+                    Printable String = "dfn"
+            Domain Defined Attribute List
+                Domain Defined Attribute
+                    type Printable String = ""
+                    value Printable String = "busch"
+                Domain Defined Attribute
+                    type Printable String = ""
+                    value Printable String = "xps.gmd"
+
+*** Unknown protocol type ***
+
+        Set
+        Priority
+        Context[ 2 ] Construct
+            Set
+                ORName
+                    Sequence
+                        Country Name
+                            Printable String = ""
+                        Administration Domain Name
+                            Printable String = ""
+                        Context[ 2 ] Construct
+                            Printable String = "uk"
+                    Sequence
+                        Sequence
+                            Printable String = ""
+                            Printable String = "alina"
+                        Sequence
+                            Printable String = ""
+                            Printable String = "ean.vax2.cs.ucl.ac"
+                Context[ 1 ] Primitive
+                Integer = 0
+                Context[ 0 ] Primitive
+        Content Type 
+        MPDU Identifier 
+            Global Domain Identifier 
+                Country Name 
+                    Printable String = ""
+                Administration Domain Name 
+                    Printable String = ""
+                Printable String = "dfn"
+            IA5 String = "851114171228"
+        Trace Information 
+            Sequence
+                Global Domain Identifier 
+                    Country Name 
+                        Printable String = ""
+                    Administration Domain Name 
+                        Printable String = ""
+                    Printable String = "dfn"
+                Set
+                    Context[ 0 ] Primitive
+                    Context[ 2 ] Primitive
+    SR-UAPDU Content
+        actual Recipient
+            ORName
+                Standard Attribute List
+                    Country Name
+                        Printable String = ""
+                    Administration Domain Name
+                        Printable String = ""
+                    Private Domain Name
+                        Printable String = "dfn"
+                Domain Defined Attribute List
+                    Domain Defined Attribute
+                        type Printable String = ""
+                        value Printable String = "busch"
+                    Domain Defined Attribute
+                        type Printable String = ""
+                        value Printable String = "xps.gmd"
+            free form Name = "martina busch"
+        reported IPMessageId
+            ORName
+                Standard Attribute List
+                    Country Name
+                        Printable String = ""
+                    Administration Domain Name
+                        Printable String = ""
+                    Private Domain Name
+                        Printable String = "uk"
+                Domain Defined Attribute List
+                    Domain Defined Attribute
+                        type Printable String = ""
+                        value Printable String = "alina"
+                    Domain Defined Attribute
+                        type Printable String = ""
+                        value Printable String = "ean.vax2.cs.ucl.ac"
+            Printable String = "124"
+        Choice
+            recipt
+                receipt = 14/11/85 16:12:28 -0100
+                type Of Receipt = automatic
+******************************************************************************
+msg5 X409 decode
+******************************************************************************
+User MPDU
+    UMPDU Envelope
+        originator ORName
+            Standard Attribute List
+                Country Name
+                    Printable String = ""
+                Administration Domain Name
+                    Printable String = ""
+                Private Domain Name
+                    Printable String = "cern"
+            Domain Defined Attribute List
+                Domain Defined Attribute
+                    type Printable String = ""
+                    value Printable String = "steve"
+                Domain Defined Attribute
+                    type Printable String = ""
+                    value Printable String = "priam"
+        Encoded Information Types
+            Bit String = tLX
+        UA Content ID = "434"
+        Priority = normal
+        Recipient Info
+            Set
+                recipient ORName
+                    Standard Attribute List
+                        Country Name
+                            Printable String = ""
+                        Administration Domain Name
+                            Printable String = ""
+                        Private Domain Name
+                            Printable String = "uk"
+                    Domain Defined Attribute List
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "alina@ean.vax2.cs.ucl.ac"
+                per Recipient Flag = On, Not-used, Basic
+                Extension Identifier = 1
+        Content Type = p2
+        MPDU Identifier
+            Global Domain Identifier
+                Country Name
+                    Printable String = ""
+                Administration Domain Name
+                    Printable String = ""
+                Private Domain Identifier = "cern"
+            IA5 String = "851115004138"
+        Trace Information
+            Sequence
+                Global Domain Identifier
+                    Country Name
+                        Printable String = ""
+                    Administration Domain Name
+                        Printable String = ""
+                    Private Domain Identifier = "cern"
+                Domain Supplied Info
+                    arrival Time = 14/11/85 23:41:38 -0100
+                    action = relayed
+    IM-UAPDU Content
+        Heading
+            primary Recipients
+                Set
+                    ORDescriptor
+                        ORName
+                            Standard Attribute List
+                                Country Name
+                                    Printable String = ""
+                                Administration Domain Name
+                                    Printable String = ""
+                                Private Domain Name
+                                    Printable String = "cern"
+                            Domain Defined Attribute List
+                                Domain Defined Attribute
+                                    type Printable String = ""
+                                    value Printable String = "steve@priam"
+                    report Request = non Receipt Notification
+            copy Recipients
+                Set
+                    ORDescriptor
+                        ORName
+                            Standard Attribute List
+                                Country Name
+                                    Printable String = ""
+                                Administration Domain Name
+                                    Printable String = ""
+                                Private Domain Name
+                                    Printable String = "uk"
+                            Domain Defined Attribute List
+                                Domain Defined Attribute
+                                    type Printable String = ""
+                                    value Printable String = "CERN loop test"
+                                Domain Defined Attribute
+                                    type Printable String = ""
+                                    value Printable String = "ean.vax2.cs.ucl.ac"
+                    report Request = non Receipt Notification
+            subject
+                S61 String = "Thu Nov 14 23:14:16 GMT 1985"
+            originator
+                free form Name = "EAN Slave"
+                ORName
+                    Standard Attribute List
+                        Country Name
+                            Printable String = ""
+                        Administration Domain Name
+                            Printable String = ""
+                        Private Domain Name
+                            Printable String = "uk"
+                    Domain Defined Attribute List
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean"
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean.vax2.cs.ucl.ac"
+            IPMessageId
+                ORName
+                    Standard Attribute List
+                        Country Name
+                            Printable String = ""
+                        Administration Domain Name
+                            Printable String = ""
+                        Private Domain Name
+                            Printable String = "uk"
+                    Domain Defined Attribute List
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean"
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean.vax2.cs.ucl.ac"
+                Printable String = "434"
+            autoforwarded = True
+******************************************************************************
+msg6 X409 decode
+******************************************************************************
+User MPDU
+    UMPDU Envelope
+        originator ORName
+            Standard Attribute List
+                Country Name
+                    Printable String = ""
+                Administration Domain Name
+                    Printable String = ""
+                Private Domain Name
+                    Printable String = "osiride"
+            Domain Defined Attribute List
+                Domain Defined Attribute
+                    type Printable String = ""
+                    value Printable String = "lancia"
+                Domain Defined Attribute
+                    type Printable String = ""
+                    value Printable String = "iasi.cnr"
+
+*** Unknown protocol type ***
+
+        Set
+        Priority
+        Context[ 2 ] Construct
+            Set
+                ORName 
+                    Sequence
+                        Country Name 
+                            Printable String = ""
+                        Administration Domain Name 
+                            Printable String = ""
+                        Context[ 2 ] Construct
+                            Printable String = "uk"
+                    Sequence
+                        Sequence
+                            Printable String = ""
+                            Printable String = "alina"
+                        Sequence
+                            Printable String = ""
+                            Printable String = "ean.vax2.cs.ucl.ac"
+                Context[ 1 ] Primitive
+                Integer = 0
+                Context[ 0 ] Primitive
+        Content Type 
+        MPDU Identifier 
+            Global Domain Identifier 
+                Country Name 
+                    Printable String = "italy"
+                Administration Domain Name 
+                    Printable String = ""
+                Printable String = "osiride"
+            IA5 String = "851209150738"
+        Trace Information 
+            Sequence
+                Global Domain Identifier 
+                    Country Name 
+                        Printable String = "italy"
+                    Administration Domain Name 
+                        Printable String = ""
+                    Printable String = "osiride"
+                Set
+                    Context[ 0 ] Primitive
+                    Context[ 2 ] Primitive
+    SR-UAPDU Content
+        actual Recipient
+            ORName
+                Standard Attribute List
+                    Country Name
+                        Printable String = ""
+                    Administration Domain Name
+                        Printable String = ""
+                    Private Domain Name
+                        Printable String = "osiride"
+                Domain Defined Attribute List
+                    Domain Defined Attribute
+                        type Printable String = ""
+                        value Printable String = "lancia"
+                    Domain Defined Attribute
+                        type Printable String = ""
+                        value Printable String = "iasi.cnr"
+            free form Name = "Maurizio Lancia"
+        reported IPMessageId
+            ORName
+                Standard Attribute List
+                    Country Name
+                        Printable String = ""
+                    Administration Domain Name
+                        Printable String = ""
+                    Private Domain Name
+                        Printable String = "uk"
+                Domain Defined Attribute List
+                    Domain Defined Attribute
+                        type Printable String = ""
+                        value Printable String = "alina"
+                    Domain Defined Attribute
+                        type Printable String = ""
+                        value Printable String = "ean.vax2.cs.ucl.ac"
+            Printable String = "133"
+        Choice
+            recipt
+                receipt = 09/12/85 07:07:38 -0800
+                type Of Receipt = automatic
+******************************************************************************
+msg7 X409 decode
+******************************************************************************
+User MPDU
+    UMPDU Envelope
+        originator ORName
+            Standard Attribute List
+                Country Name
+                    Printable String = ""
+                Administration Domain Name
+                    Printable String = ""
+                Private Domain Name
+                    Printable String = "uk"
+            Domain Defined Attribute List
+                Domain Defined Attribute
+                    type Printable String = ""
+                    value Printable String = "alina"
+                Domain Defined Attribute
+                    type Printable String = ""
+                    value Printable String = "ean.vax2.cs.ucl.ac"
+        Encoded Information Types
+            Bit String = iA5 Text
+        UA Content ID = "172"
+        Priority = normal
+        Recipient Info
+            Set
+                recipient ORName
+                    Standard Attribute List
+                        Country Name
+                            Printable String = ""
+                        Administration Domain Name
+                            Printable String = ""
+                        Private Domain Name
+                            Printable String = "uk"
+                    Domain Defined Attribute List
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean"
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean.vax2.cs.ucl.ac"
+                per Recipient Flag = On, Not-used, Basic
+                Extension Identifier = 1
+        Content Type = p2
+        MPDU Identifier
+            Global Domain Identifier
+                Country Name
+                    Printable String = ""
+                Administration Domain Name
+                    Printable String = ""
+                Private Domain Identifier = "uk"
+            IA5 String = "860324133448"
+        Trace Information
+            Sequence
+                Global Domain Identifier
+                    Country Name
+                        Printable String = ""
+                    Administration Domain Name
+                        Printable String = ""
+                    Private Domain Identifier = "uk"
+                Domain Supplied Info
+                    arrival Time = 24/03/86 13:34:48 +0000
+                    action = relayed
+    IM-UAPDU Content
+        Heading
+            originator
+                free form Name = "alina"
+                ORName
+                    Standard Attribute List
+                        Country Name
+                            Printable String = ""
+                        Administration Domain Name
+                            Printable String = ""
+                        Private Domain Name
+                            Printable String = "uk"
+                    Domain Defined Attribute List
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "alina"
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean.vax2.cs.ucl.ac"
+            primary Recipients
+                Set
+                    ORDescriptor
+                        free form Name = ""
+                        ORName
+                            Standard Attribute List
+                                Country Name
+                                    Printable String = ""
+                                Administration Domain Name
+                                    Printable String = ""
+                                Private Domain Name
+                                    Printable String = "uk"
+                            Domain Defined Attribute List
+                                Domain Defined Attribute
+                                    type Printable String = ""
+                                    value Printable String = "ean"
+                                Domain Defined Attribute
+                                    type Printable String = ""
+                                    value Printable String = "ean.vax2.cs.ucl.ac"
+                    report Request = non Receipt Notification
+            subject
+                S61 String = "testing of the forward statement"
+            IPMessageId
+                ORName
+                    Standard Attribute List
+                        Country Name
+                            Printable String = ""
+                        Administration Domain Name
+                            Printable String = ""
+                        Private Domain Name
+                            Printable String = "uk"
+                    Domain Defined Attribute List
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "alina"
+                        Domain Defined Attribute
+                            type Printable String = ""
+                            value Printable String = "ean.vax2.cs.ucl.ac"
+                Printable String = "172"
+        Body
+            IA5 Text
+                Set
+                    repertoire = ia5
+                IA5 String
+                    Octet String = Delivery-date: Monday, March 24, 1986 at 13:34 GMT
+
+                    Octet String = From: guest <guest@ean.vax2.cs.ucl.ac.uk>
+
+                    Octet String = To: <alina@ean.vax2.cs.ucl.ac.uk>
+
+                    Octet String = Message-ID: inbox:41
+
+                    Octet String = Subject: forward test
+
+                    Octet String = 
+
+                    Octet String = lines of information.
+
+                    Octet String = 
+
+                    Octet String = 
+
+******************************************************************************
+End of file
+******************************************************************************
+
