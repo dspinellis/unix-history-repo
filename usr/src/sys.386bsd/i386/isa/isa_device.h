@@ -31,6 +31,17 @@
  * SUCH DAMAGE.
  *
  *	@(#)isa_device.h	7.1 (Berkeley) 5/9/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00091
+ * --------------------         -----   ----------------------
+ *
+ * 27 Feb 93    Chris Demetriou		Add proper flag handling.
+ * 10 Mar 93	Rodney W. Grimes	Fixed isa_device->id_irq to be
+ *					the u_short instead of short. This
+ *					enables us to use irq15!
+ *
  */
 
 /*
@@ -43,12 +54,13 @@
 struct isa_device {
 	struct	isa_driver *id_driver;
 	short	id_iobase;	/* base i/o address */
-	short	id_irq;		/* interrupt request */
+	u_short	id_irq;		/* interrupt request */
 	short	id_drq;		/* DMA request */
 	caddr_t id_maddr;	/* physical i/o memory address on bus (if any)*/
 	int	id_msize;	/* size of i/o memory */
 	int	(*id_intr)();	/* interrupt interface routine */
 	int	id_unit;	/* unit number */
+	int	id_flags;	/* flags */
 	int	id_scsiid;	/* scsi id if needed */
 	int	id_alive;	/* device is present */
 };

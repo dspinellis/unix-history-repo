@@ -29,6 +29,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00091
+ * --------------------         -----   ----------------------
+ *
+ * 27 Feb 93    Chris Demetriou		Add proper flag handling.
+ *
  */
 
 #ifndef lint
@@ -649,7 +657,7 @@ i386_ioconf()
 		}
 		fprintf(fp, "\nstruct isa_device isa_devtab_bio[] = {\n");
 		fprintf(fp, "\
-/* driver 	iobase	irq   drq     maddr    msiz    intr   unit */\n");
+/* driver 	iobase	irq   drq     maddr    msiz    intr   unit   flags */\n");
 		for (dp = dtab; dp != 0; dp = dp->d_next) {
 			mp = dp->d_conn;
 			if (dp->d_unit == QUES || mp == 0 ||
@@ -660,15 +668,16 @@ i386_ioconf()
 		 fprintf(fp, "{ &%sdriver,  %8.8s,", dp->d_name, dp->d_port);
 			else
 	 fprintf(fp, "{ &%sdriver,     0x%03x,", dp->d_name, dp->d_portn);
-		fprintf(fp, " %5.5s, %2d,  C 0x%05X, %5d, V(%s%d),  %2d },\n",
+		fprintf(fp, " %5.5s, %2d,  C 0x%05X, %5d, V(%s%d),  %2d,  %#x },\n",
 			 	sirq(dp->d_irq), dp->d_drq, dp->d_maddr,
-			 dp->d_msize, dp->d_name, dp->d_unit, dp->d_unit);
+			 dp->d_msize, dp->d_name, dp->d_unit, dp->d_unit,
+			 dp->d_flags);
 		}
 		fprintf(fp, "0\n};\n");
 
 		fprintf(fp, "struct isa_device isa_devtab_tty[] = {\n");
 		fprintf(fp, "\
-/* driver 	iobase	irq   drq     maddr    msiz    intr   unit */\n");
+/* driver 	iobase	irq   drq     maddr    msiz    intr   unit   flags */\n");
 		for (dp = dtab; dp != 0; dp = dp->d_next) {
 			mp = dp->d_conn;
 			if (dp->d_unit == QUES || mp == 0 ||
@@ -679,15 +688,16 @@ i386_ioconf()
 		 fprintf(fp, "{ &%sdriver,  %8.8s,", dp->d_name, dp->d_port);
 			else
 	 fprintf(fp, "{ &%sdriver,     0x%03x,", dp->d_name, dp->d_portn);
-		fprintf(fp, " %5.5s, %2d,  C 0x%05X, %5d, V(%s%d),  %2d },\n",
+		fprintf(fp, " %5.5s, %2d,  C 0x%05X, %5d, V(%s%d),  %2d,  %#x },\n",
 			 	sirq(dp->d_irq), dp->d_drq, dp->d_maddr,
-			 dp->d_msize, dp->d_name, dp->d_unit, dp->d_unit);
+			 dp->d_msize, dp->d_name, dp->d_unit, dp->d_unit,
+			 dp->d_flags);
 		}
 		fprintf(fp, "0\n};\n\n");
 
 		fprintf(fp, "struct isa_device isa_devtab_net[] = {\n");
 		fprintf(fp, "\
-/* driver 	iobase	irq   drq     maddr    msiz    intr   unit */\n");
+/* driver 	iobase	irq   drq     maddr    msiz    intr   unit   flags */\n");
 		for (dp = dtab; dp != 0; dp = dp->d_next) {
 			mp = dp->d_conn;
 			if (dp->d_unit == QUES || mp == 0 ||
@@ -698,15 +708,16 @@ i386_ioconf()
 		 fprintf(fp, "{ &%sdriver,  %8.8s,", dp->d_name, dp->d_port);
 			else
 	 fprintf(fp, "{ &%sdriver,     0x%03x,", dp->d_name, dp->d_portn);
-		fprintf(fp, " %5.5s, %2d,  C 0x%05X, %5d, V(%s%d),  %2d },\n",
+		fprintf(fp, " %5.5s, %2d,  C 0x%05X, %5d, V(%s%d),  %2d,  %#x },\n",
 			 	sirq(dp->d_irq), dp->d_drq, dp->d_maddr,
-			 dp->d_msize, dp->d_name, dp->d_unit, dp->d_unit);
+			 dp->d_msize, dp->d_name, dp->d_unit, dp->d_unit,
+			 dp->d_flags);
 		}
 		fprintf(fp, "0\n};\n\n");
 
 		fprintf(fp, "struct isa_device isa_devtab_null[] = {\n");
 		fprintf(fp, "\
-/* driver 	iobase	irq   drq     maddr    msiz    intr   unit */\n");
+/* driver 	iobase	irq   drq     maddr    msiz    intr   unit   flags */\n");
 		for (dp = dtab; dp != 0; dp = dp->d_next) {
 			mp = dp->d_conn;
 			if (dp->d_unit == QUES || mp == 0 ||
@@ -717,9 +728,10 @@ i386_ioconf()
 		 fprintf(fp, "{ &%sdriver,  %8.8s,", dp->d_name, dp->d_port);
 			else
 	 fprintf(fp, "{ &%sdriver,     0x%03x,", dp->d_name, dp->d_portn);
-		fprintf(fp, " %5.5s, %2d,  C 0x%05X, %5d, V(%s%d),  %2d },\n",
+		fprintf(fp, " %5.5s, %2d,  C 0x%05X, %5d, V(%s%d),  %2d,  %#x },\n",
 			 	sirq(dp->d_irq), dp->d_drq, dp->d_maddr,
-			 dp->d_msize, dp->d_name, dp->d_unit, dp->d_unit);
+			 dp->d_msize, dp->d_name, dp->d_unit, dp->d_unit,
+			 dp->d_flags);
 		}
 		fprintf(fp, "0\n};\n\n");
 	}
