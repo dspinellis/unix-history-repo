@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)MAKEDEV	4.9	%G%
+#	@(#)MAKEDEV	4.10	%G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices (for 730 must be followed by tu0 & tu1)
@@ -128,12 +128,6 @@ rx*)
 	0|1|2|3|4|5|6|7)
 		/etc/mknod ${name}${unit}a	b $blk `expr $unit '*' 8 + 0`
 		/etc/mknod ${name}${unit}b	b $blk `expr $unit '*' 8 + 1`
-		/etc/mknod ${name}${unit}c	b $blk `expr $unit '*' 8 + 2`
-		/etc/mknod ${name}${unit}d	b $blk `expr $unit '*' 8 + 3`
-		/etc/mknod ${name}${unit}e	b $blk `expr $unit '*' 8 + 4`
-		/etc/mknod ${name}${unit}f	b $blk `expr $unit '*' 8 + 5`
-		/etc/mknod ${name}${unit}g	b $blk `expr $unit '*' 8 + 6`
-		/etc/mknod ${name}${unit}h	b $blk `expr $unit '*' 8 + 7`
 		/etc/mknod r${name}${unit}a	c $chr `expr $unit '*' 8 + 0`
 		/etc/mknod r${name}${unit}b	c $chr `expr $unit '*' 8 + 1`
 		/etc/mknod r${name}${unit}c	c $chr `expr $unit '*' 8 + 2`
