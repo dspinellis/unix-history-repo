@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -133,7 +133,8 @@ collect(smtpmode, e)
 
 				/* we have room for more of this field */
 				fixcrlf(freebuf, TRUE);
-				*p++ = '\n'; workbuflen++;
+				*p++ = '\n';
+				workbuflen++;
 				while(*q != '\0' && workbuflen < MAXFIELD-1)
 				{
 					*p++ = *q++;
