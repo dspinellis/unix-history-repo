@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.107 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.108 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -315,6 +315,12 @@ setupmaps()
 	MAPDEF("hesiod", NULL, MCF_ALIASOK|MCF_ALIASONLY,
 		map_parseargs, null_map_open, null_map_close,
 		hesiod_map_lookup, null_map_store);
+#endif
+
+#ifdef NETINFO
+	MAPDEF("netinfo", NULL, MCF_ALIASOK,
+		map_parseargs, ni_map_open, null_map_close,
+		ni_map_lookup, null_map_store);
 #endif
 
 #if 0
@@ -2136,7 +2142,8 @@ getcfname()
 		extern char *ni_propval();
 		char *cflocation;
 
-		cflocation = ni_propval("/locations/sendmail", "sendmail.cf");
+		cflocation = ni_propval("/locations", NULL, "sendmail",
+					"sendmail.cf", '\0');
 		if (cflocation != NULL)
 			return cflocation;
 	}
@@ -2328,8 +2335,16 @@ solaris_gethostbyaddr(addr, len, type)
 **  NI_PROPVAL -- netinfo property value lookup routine
 **
 **	Parameters:
-**		directory -- the Netinfo directory name.
-**		propname -- the Netinfo property name.
+**		keydir -- the Netinfo directory name in which to search
+**			for the key.
+**		keyprop -- the name of the property in which to find the
+**			property we are interested.  Defaults to "name".
+**		keyval -- the value for which we are really searching.
+**		valprop -- the property name for the value in which we
+**			are interested.
+**		sepchar -- if non-nil, this can be multiple-valued, and
+**			we should return a string separated by this
+**			character.
 **
 **	Returns:
 **		NULL -- if:
@@ -2338,6 +2353,10 @@ solaris_gethostbyaddr(addr, len, type)
 **			3. the property contains multiple values
 **			4. some error occured
 **		else -- the location of the config file.
+**
+**	Example:
+**		To search for an alias value, use:
+**		  ni_propval("/aliases", "name", aliasname, "members", ',')
 **
 **	Notes:
 **      	Caller should free the return value of ni_proval
@@ -2352,17 +2371,44 @@ solaris_gethostbyaddr(addr, len, type)
 # define MAX_NI_LEVELS           256
 
 char *
-ni_propval(directory, propname)
-	char *directory;
-	char *propname;
+ni_propval(keydir, keyprop, keyval, valprop, sepchar)
+	char *keydir;
+	char *keyprop;
+	char *keyval;
+	char *valprop;
+	char sepchar;
 {
 	char *propval = NULL;
 	int i;
+	int j, alen;
 	void *ni = NULL;
 	void *lastni = NULL;
 	ni_status nis;
 	ni_id nid;
 	ni_namelist ninl;
+	register char *p;
+	char keybuf[1024];
+
+	/*
+	**  Create the full key from the two parts.
+	**
+	**	Note that directory can end with, e.g., "name=" to specify
+	**	an alternate search property.
+	*/
+
+	i = strlen(keydir) + strlen(keyval) + 2)
+	if (keyprop != NULL)
+		i += strlen(keyprop) + 1;
+	if (i > sizeof keybuf)
+		return NULL;
+	strcpy(keybuf, keydir);
+	strcat(keybuf, "/");
+	if (keyprop != NULL)
+	{
+		strcat(keybuf, keyprop);
+		strcat(keybuf, "=");
+	}
+	strcat(keybuf, keyval);
 
 	/*
 	**  If the passed directory and property name are found
@@ -2401,27 +2447,46 @@ ni_propval(directory, propname)
 		**  Find the path to the server information.
 		*/
 
-		if (ni_pathsearch(ni, &nid, directory) != 0)
+		if (ni_pathsearch(ni, &nid, keybuf) != 0)
 			continue;
 
 		/*
-		**  Find "host" information.
+		**  Find associated value information.
 		*/
 
-		if (ni_lookupprop(ni, &nid, propname, &ninl) != 0)
+		if (ni_lookupprop(ni, &nid, valprop, &ninl) != 0)
 			continue;
 
 		/*
-		**  If there's only one name in
-		**  the list, assume we've got
-		**  what we want.
+		**  See if we have an acceptable number of values.
 		*/
 
-		if (ninl.ni_namelist_len == 1)
+		if (ninl.ni_namelist_len <= 0)
+			continue;
+
+		if (sepchar == '\0' && ninl.ni_namelist_len > 1)
 		{
-			propval = ni_name_dup(ninl.ni_namelist_val[0]);
-			break;
+			ni_namelist_free(&ninl);
+			continue;
 		}
+
+		/* 
+		**  Calculate number of bytes needed and build result
+		*/
+
+		alen = 1;
+		for (j = 0; j < ninl.ni_namelist_len; j++)
+			alen += strlen(ninl.ni_namelist_val[j]) + 1;
+		propval = p = xalloc(alen);
+		for (j = 0; j < ninl.ni_namelist_len; j++)
+		{
+			strcpy(p, ninl.ni_namelist_val[j]);
+			p += strlen(p);
+			*p++ = sepchar;
+		} 
+		*--p = '\0';
+
+		ni_namelist_free(&ninl);
 	}
 
 	/*
