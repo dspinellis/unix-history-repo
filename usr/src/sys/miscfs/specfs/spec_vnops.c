@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spec_vnops.c	7.5 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -29,7 +29,8 @@
 #include "errno.h"
 #include "malloc.h"
 
-int	blk_open(),
+int	blk_lookup(),
+	blk_open(),
 	blk_read(),
 	blk_write(),
 	blk_strategy(),
@@ -47,7 +48,7 @@ int	ufs_getattr(),
 	ufs_inactive();
 
 struct vnodeops blk_vnodeops = {
-	blk_badop,
+	blk_lookup,
 	blk_badop,
 	blk_badop,
 	blk_open,
@@ -77,6 +78,19 @@ struct vnodeops blk_vnodeops = {
 	blk_badop,
 	blk_strategy,
 };
+
+/*
+ * Trivial lookup routine that always fails.
+ */
+blk_lookup(vp, ndp)
+	struct vnode *vp;
+	struct nameidata *ndp;
+{
+
+	ndp->ni_dvp = vp;
+	ndp->ni_vp = NULL;
+	return (ENOTDIR);
+}
 
 /*
  * Open called to allow handler
@@ -317,8 +331,8 @@ blk_close(vp, flag, cred)
 blk_badop()
 {
 
-	printf("blk_badop called\n");
-	return (ENXIO);
+	panic("blk_badop called");
+	/* NOTREACHED */
 }
 
 /*
