@@ -1,4 +1,4 @@
-/*	ufs_vnops.c	6.12	84/07/20	*/
+/*	ufs_vnops.c	6.13	84/07/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -780,11 +780,12 @@ fsync()
  *
  * 1) Bump link count on source while we're linking it to the
  *    target.  This also insure the inode won't be deleted out
- *    from underneath us while we work.
+ *    from underneath us while we work (it may be truncated by
+ *    a concurrent `trunc' or `open' for creation).
  * 2) Link source to destination.  If destination already exists,
  *    delete it first.
- * 3) Unlink source reference to inode if still around.
- * 4) If a directory was moved and the parent of the destination
+ * 3) Unlink source reference to inode if still around. If a
+ *    directory was moved and the parent of the destination
  *    is different from the source, patch the ".." entry in the
  *    directory.
  *
@@ -798,8 +799,8 @@ rename()
 		char	*to;
 	} *uap = (struct a *)u.u_ap;
 	register struct inode *ip, *xp, *dp;
-	struct inode *zp;
-	int oldparent, parentdifferent, doingdirectory;
+	struct dirtemplate dirbuf;
+	int doingdirectory = 0, oldparent = 0, newparent = 0;
 	register struct nameidata *ndp = &u.u_nd;
 	int error = 0;
 
@@ -810,7 +811,6 @@ rename()
 	if (ip == NULL)
 		return;
 	dp = ndp->ni_pdir;
-	oldparent = 0, doingdirectory = 0;
 	if ((ip->i_mode&IFMT) == IFDIR) {
 		register struct direct *d;
 
@@ -820,7 +820,7 @@ rename()
 		 */
 		if ((d->d_namlen == 1 && d->d_name[0] == '.') ||
 		    (d->d_namlen == 2 && bcmp(d->d_name, "..", 2) == 0) ||
-		    (dp == ip)) {
+		    (dp == ip) || (ip->i_flag & IRENAME)) {
 			iput(dp);
 			if (dp == ip)
 				irele(ip);
@@ -829,6 +829,7 @@ rename()
 			u.u_error = EINVAL;
 			return;
 		}
+		ip->i_flag |= IRENAME;
 		oldparent = dp->i_number;
 		doingdirectory++;
 	}
@@ -867,8 +868,9 @@ rename()
 	 * to namei, as the parent directory is unlocked by the
 	 * call to checkpath().
 	 */
-	parentdifferent = oldparent != dp->i_number;
-	if (doingdirectory && parentdifferent) {
+	if (oldparent != dp->i_number)
+		newparent = dp->i_number;
+	if (doingdirectory && newparent) {
 		if (access(ip, IWRITE))
 			goto bad;
 		do {
@@ -898,13 +900,11 @@ rename()
 			goto bad;
 		}
 		/*
-		 * Account for ".." in directory.
-		 * When source and destination have the
-		 * same parent we don't fool with the
-		 * link count -- this isn't required
-		 * because we do a similar check below.
+		 * Account for ".." in new directory.
+		 * When source and destination have the same
+		 * parent we don't fool with the link count.
 		 */
-		if (doingdirectory && parentdifferent) {
+		if (doingdirectory && newparent) {
 			dp->i_nlink++;
 			dp->i_flag |= ICHG;
 			iupdat(dp, &time, &time, 1);
@@ -930,7 +930,7 @@ rename()
 		 * not directories).
 		 */
 		if ((xp->i_mode&IFMT) == IFDIR) {
-			if (!dirempty(xp) || xp->i_nlink > 2) {
+			if (!dirempty(xp, dp->i_number) || xp->i_nlink > 2) {
 				error = ENOTEMPTY;
 				goto bad;
 			}
@@ -938,6 +938,7 @@ rename()
 				error = ENOTDIR;
 				goto bad;
 			}
+			cacheinval(dp);
 		} else if (doingdirectory) {
 			error = EISDIR;
 			goto bad;
@@ -954,9 +955,8 @@ rename()
 		 * no links to it, so we can squash the inode and
 		 * any space associated with it.  We disallowed
 		 * renaming over top of a directory with links to
-		 * it above, as we've no way to determine if
-		 * we've got a link or the directory itself, and
-		 * if we get a link, then ".." will be screwed up.
+		 * it above, as the remaining link would point to
+		 * a directory without "." or ".." entries.
 		 */
 		xp->i_nlink--;
 		if (doingdirectory) {
@@ -975,79 +975,65 @@ rename()
 	ndp->ni_nameiop = DELETE | LOCKPARENT;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->from;
-	zp = namei(ndp);
+	xp = namei(ndp);
 	dp = ndp->ni_pdir;
 	/*
-	 * Insure directory entry still exists and
-	 * has not changed since the start of all
-	 * this.  If either has occured, forget about
-	 * about deleting the original entry.
+	 * Insure that the directory entry still exists and has not
+	 * changed while the new name has been entered. If the source is
+	 * a file then the entry may have been unlinked or renamed. In
+	 * either case there is no further work to be done. If the source
+	 * is a directory then it cannot have been rmdir'ed; its link
+	 * count of three would cause a rmdir to fail with ENOTEMPTY.
+	 * The IRENAME flag insures that it cannot be moved by another
+	 * rename.
 	 */
-	if (dp != NULL && zp == ip) {
+	if (dp == NULL || xp != ip) {
+		if (doingdirectory)
+			panic("rename: lost entry");
+	} else {
 		/*
-		 * If source is a directory, must adjust
-		 * link count of parent directory also.
-		 * If target didn't exist and source and
-		 * target have the same parent, then we
-		 * needn't touch the link count, it all
-		 * balances out in the end.  Otherwise, we
-		 * must do so to reflect deletion of ".."
-		 * done above.
+		 * If the source is a directory with a
+		 * new parent, the link count of the old
+		 * parent directory must be decremented
+		 * and ".." set to point to the new parent.
 		 */
-		if (doingdirectory && (xp != NULL || parentdifferent)) {
+		if (doingdirectory && newparent) {
 			dp->i_nlink--;
 			dp->i_flag |= ICHG;
+			error = rdwri(UIO_READ, xp, (caddr_t)&dirbuf,
+				sizeof (struct dirtemplate), (off_t)0, 1,
+				(int *)0);
+			if (error == 0) {
+				if (dirbuf.dotdot_namlen != 2 ||
+				    dirbuf.dotdot_name[0] != '.' ||
+				    dirbuf.dotdot_name[1] != '.') {
+					printf("rename: mangled dir\n");
+				} else {
+					dirbuf.dotdot_ino = newparent;
+					(void) rdwri(UIO_WRITE, xp,
+					    (caddr_t)&dirbuf,
+					    sizeof (struct dirtemplate),
+					    (off_t)0, 1, (int *)0);
+					cacheinval(dp);
+				}
+			}
 		}
 		if (dirremove(ndp)) {
-			zp->i_nlink--;
-			zp->i_flag |= ICHG;
+			xp->i_nlink--;
+			xp->i_flag |= ICHG;
 		}
-		if (error == 0)		/* conservative */
+		xp->i_flag &= ~IRENAME;
+		if (error == 0)		/* XXX conservative */
 			error = u.u_error;
 	}
-	if (zp != NULL)
-		iput(zp);
-	irele(ip);
 	if (dp)
 		iput(dp);
-
-	/*
-	 * 4) Renaming a directory with the parent
-	 *    different requires ".." to be rewritten.
-	 *    The window is still there for ".." to
-	 *    be inconsistent, but this is unavoidable,
-	 *    and a lot shorter than when it was done
-	 *    in a user process.
-	 */
-	if (doingdirectory && parentdifferent && error == 0) {
-		struct dirtemplate dirbuf;
-
-		ndp->ni_nameiop = LOOKUP | LOCKPARENT;
-		ndp->ni_segflg = UIO_USERSPACE;
-		ndp->ni_dirp = uap->to;
-		ip = namei(ndp);
-		if (ip == NULL) {
-			printf("rename: .. went away\n");
-			return;
-		}
-		dp = ndp->ni_pdir;
-		if ((ip->i_mode&IFMT) != IFDIR) {
-			printf("rename: .. not a directory\n");
-			goto stuck;
-		}
-		error = rdwri(UIO_READ, ip, (caddr_t)&dirbuf,
-			sizeof (struct dirtemplate), (off_t)0, 1, (int *)0);
-		if (error == 0) {
-			dirbuf.dotdot_ino = dp->i_number;
-			cacheinval(dp);
-			(void) rdwri(UIO_WRITE, ip, (caddr_t)&dirbuf,
-			  sizeof (struct dirtemplate), (off_t)0, 1, (int *)0);
-		}
-stuck:
-		irele(dp);
-		iput(ip);
-	}
-	goto done;
+	if (xp)
+		iput(xp);
+	irele(ip);
+	if (error)
+		u.u_error = error;
+	return;
 
 bad:
 	iput(dp);
@@ -1058,7 +1044,6 @@ out:
 	ip->i_nlink--;
 	ip->i_flag |= ICHG;
 	irele(ip);
-done:
 	if (error)
 		u.u_error = error;
 }
@@ -1281,7 +1266,7 @@ rmdir()
 	 *  the current directory and thus be
 	 *  non-empty.)
 	 */
-	if (ip->i_nlink != 2 || !dirempty(ip)) {
+	if (ip->i_nlink != 2 || !dirempty(ip, dp->i_number)) {
 		u.u_error = ENOTEMPTY;
 		goto out;
 	}
@@ -1294,6 +1279,7 @@ rmdir()
 		goto out;
 	dp->i_nlink--;
 	dp->i_flag |= ICHG;
+	cacheinval(dp);
 	iput(dp);
 	dp = NULL;
 	/*
