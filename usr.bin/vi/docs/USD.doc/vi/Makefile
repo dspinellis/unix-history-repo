@@ -2,7 +2,7 @@
 
 DIR=	usd/12.vi
 SRCS=	vi.in vi.chars
-MACROS=	-msU
+MACROS=	-ms
 CLEANFILES+=summary.* viapwh.*
 
 paper.ps: ${SRCS} summary.ps viapwh.ps

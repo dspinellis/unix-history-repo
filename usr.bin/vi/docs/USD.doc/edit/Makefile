@@ -2,7 +2,7 @@
 
 DIR=	usd/11.edit
 SRCS=	edittut.ms
-MACROS=	-msU
+MACROS=	-ms
 
 paper.ps: ${SRCS}
 	${TBL} ${SRCS} | ${ROFF} > ${.TARGET}

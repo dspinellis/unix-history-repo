@@ -2,7 +2,7 @@
 
 DIR=	usd/13.ex
 SRCS=	ex.rm
-MACROS=	-msU
+MACROS=	-ms
 CLEANFILES=summary.*
 
 paper.ps: ${SRCS} summary.ps
