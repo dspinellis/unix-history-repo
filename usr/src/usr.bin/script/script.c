@@ -142,11 +142,7 @@ dooutput()
 		(void) write(1, obuf, cc);
 		(void) fwrite(obuf, 1, cc, fscript);
 	}
-	tvec = time((time_t *)0);
-	fprintf(fscript,"\nscript done on %s", ctime(&tvec));
-	(void) fclose(fscript);
-	(void) close(master);
-	exit(0);
+	done();
 }
 
 doshell()
@@ -189,8 +185,14 @@ fail()
 
 done()
 {
+	time_t tvec;
 
-	if (!subchild) {
+	if (subchild) {
+		tvec = time((time_t *)0);
+		fprintf(fscript,"\nscript done on %s", ctime(&tvec));
+		(void) fclose(fscript);
+		(void) close(master);
+	} else {
 		(void) ioctl(0, TIOCSETP, (char *)&b);
 		printf("Script done, file is %s\n", fname);
 	}
