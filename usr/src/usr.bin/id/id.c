@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)id.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)id.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -126,9 +126,11 @@ pretty(pw)
 	u_int eid, rid;
 	char *login;
 
-	if (pw)
+	if (pw) {
 		(void)printf("uid\t%s\n", pw->pw_name);
-	else {
+		(void)printf("groups\t");
+		group(pw, 1);
+	} else {
 		if ((login = getlogin()) == NULL)
 			err("getlogin: %s", strerror(errno));
 
@@ -150,9 +152,9 @@ pretty(pw)
 				(void)printf("rgid\t%s\n", gr->gr_name);
 			else
 				(void)printf("rgid\t%u\n", rid);
+		(void)printf("groups\t");
+		group(NULL, 1);
 	}
-	(void)printf("groups\t");
-	group(pw, 1);
 }
 
 void
@@ -228,7 +230,7 @@ group(pw, nflag)
 	int nflag;
 {
 	struct group *gr;
-	int id, lastid, ngroups, groups[NGROUPS + 1];
+	int cnt, id, lastid, ngroups, groups[NGROUPS + 1];
 	char *fmt, *name, **p;
 
 	fmt = nflag ? "%s" : "%u";
@@ -250,8 +252,8 @@ group(pw, nflag)
 	} else {
 		groups[0] = getgid();
 		ngroups = getgroups(NGROUPS, groups + 1) + 1;
-		for (lastid = -1; --ngroups >= 0;) {
-			if (lastid == (id = groups[ngroups]))
+		for (lastid = -1, cnt = 0; cnt < ngroups; ++cnt) {
+			if (lastid == (id = groups[cnt]))
 				continue;
 			if (nflag) {
 				if (gr = getgrgid(id))
