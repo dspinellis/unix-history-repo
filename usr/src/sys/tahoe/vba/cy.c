@@ -1,4 +1,4 @@
-/*	cy.c	1.6	86/01/27	*/
+/*	cy.c	1.7	86/11/03	*/
 
 #include "yc.h"
 #if NCY > 0
@@ -7,9 +7,6 @@
  */
 int	cydebug = 0;
 #define	dlog	if (cydebug) log
-
-#include "../tahoe/mtpr.h"
-#include "../tahoe/pte.h"
 
 #include "param.h"
 #include "systm.h"
@@ -27,6 +24,10 @@ int	cydebug = 0;
 #include "cmap.h"
 #include "kernel.h"
 #include "syslog.h"
+
+#include "../tahoe/cpu.h"
+#include "../tahoe/mtpr.h"
+#include "../tahoe/pte.h"
 
 #include "../tahoevba/vbavar.h"
 #define	CYERROR
