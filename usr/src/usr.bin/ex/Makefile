@@ -1,9 +1,10 @@
-#	@(#)Makefile	7.33.1.1 (Berkeley) %G%
+#	@(#)Makefile	7.34 (Berkeley) %G%
 
 # Things that can be turned off to save space:
 #	LISPCODE (-l flag, showmatch and lisp options)
 #	UCVISUAL (visual \ nonsense on upper case only terminals)
 #	CHDIR (the undocumented chdir command)
+#	CRYPT includes code to edit encrypted files (the -x option, like ed.)
 #	VMUNIX makes ex considerably larger, raising many limits and
 #		improving speed and simplicity of maintenance.
 #
@@ -11,7 +12,7 @@
 #
 PROG=	ex
 SUBDIR=	ex3.7recover ex3.7preserve
-CFLAGS+=-I. -DTABS=8 -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX \
+CFLAGS+=-I. -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX \
 	-DFASTTAG -DUNIX_SBRK
 SRCS=	ex.c ex_addr.c ex_cmds.c ex_cmds2.c ex_cmdsub.c ex_data.c ex_extern.c \
 	ex_get.c ex_io.c ex_put.c ex_re.c ex_set.c ex_subr.c ex_tagio.c \
@@ -20,7 +21,7 @@ SRCS=	ex.c ex_addr.c ex_cmds.c ex_cmds2.c ex_cmdsub.c ex_data.c ex_extern.c \
 	printf.c
 BINMODE=1755
 DPADD=	${LIBTERMCAP}
-LDADD=	-z -ltermcap
+LDADD=	-ltermcap
 MAN1=	ex.0 vi.0
 LINKS=	${BINDIR}/ex ${BINDIR}/vi ${BINDIR}/ex ${BINDIR}/view \
 	${BINDIR}/ex ${BINDIR}/edit
