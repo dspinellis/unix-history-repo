@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_inode.c	7.30 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.31 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -142,6 +142,14 @@ loop:
 	 */
 	if (error = bread(VFSTOUFS(mntp)->um_devvp, fsbtodb(fs, itod(fs, ino)),
 	    (int)fs->fs_bsize, NOCRED, &bp)) {
+		/*
+		 * The inode does not contain anything useful, so it would
+		 * be misleading to leave it on its hash chain.
+		 * Iput() will take care of putting it back on the free list.
+		 */
+		remque(ip);
+		ip->i_forw = ip;
+		ip->i_back = ip;
 		/*
 		 * Unlock and discard unneeded inode.
 		 */
