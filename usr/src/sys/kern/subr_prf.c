@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.9	%G%	*/
+/*	subr_prf.c	4.10	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -61,6 +61,7 @@ register u_int *adx;
 {
 	register int b, c, i;
 	char *s;
+	int any;
 
 loop:
 	while ((c = *fmt++) != '%') {
@@ -92,6 +93,28 @@ number:
 			if (c = (b >> i) & 0x7f)
 				putchar(c, touser);
 		break;
+	case 'b':
+		b = *adx++;
+		s = (char *)*adx;
+		printn(b, *s++, touser);
+		any = 0;
+		if (b) {
+			putchar('<', touser);
+			while (i = *s++) {
+				if (b & (1 << (i-1))) {
+					if (any)
+						putchar(',', touser);
+					any = 1;
+					for (; (c = *s) > 32; s++)
+						putchar(c, touser);
+				} else
+					for (; *s > 32; s++)
+						;
+			}
+			putchar('>', touser);
+		}
+		break;
+
 	case 's':
 		s = (char *)*adx;
 		while (c = *s++)
@@ -152,21 +175,12 @@ prdev(str, dev)
 	printf("%s on dev %d/%d\n", str, major(dev), minor(dev));
 }
 
-/*
- * deverr prints a diagnostic from
- * a device driver.
- * It prints the device, block number,
- * and an octal word (usually some error
- * status register) passed as argument.
- */
-deverror(bp, o1, o2)
-	register struct buf *bp;
+harderr(bp)
+	struct buf *bp;
 {
 
-	printf("bn=%d er=%x,%x", bp->b_blkno, o1,o2);
-	prdev("", bp->b_dev);
+	printf("hard err bn %d ", bp->b_blkno);
 }
-
 /*
  * Print a character on console or users terminal.
  * If destination is console then the last MSGBUFS characters
