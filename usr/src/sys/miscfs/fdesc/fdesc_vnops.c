@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vnops.c	7.5 (Berkeley) %G%
+ *	@(#)fdesc_vnops.c	7.6 (Berkeley) %G%
  *
  * $Id: fdesc_vnops.c,v 1.12 1993/04/06 16:17:17 jsp Exp $
  */
@@ -55,10 +55,13 @@ fdesc_allocvp(ftype, ix, mp, vpp)
 	struct vnode **nvpp = 0;
 	int error = 0;
 
+loop:
 	/* get stashed copy of the vnode */
 	if (ix >= 0 && ix < FD_MAX) {
 		nvpp = &fdescvp[ix];
-		if (*nvpp && vget(*nvpp) == 0) {
+		if (*nvpp) {
+			if (vget(*nvpp))
+				goto loop;
 			VOP_UNLOCK(*nvpp);
 			*vpp = *nvpp;
 			return (error);
@@ -69,9 +72,10 @@ fdesc_allocvp(ftype, ix, mp, vpp)
 	 * otherwise lock the array while we call getnewvnode
 	 * since that can block.
 	 */ 
-	while (fdescvplock & FDL_LOCKED) {
+	if (fdescvplock & FDL_LOCKED) {
 		fdescvplock |= FDL_WANT;
 		sleep((caddr_t) &fdescvplock, PINOD);
+		goto loop;
 	}
 	fdescvplock |= FDL_LOCKED;
 
