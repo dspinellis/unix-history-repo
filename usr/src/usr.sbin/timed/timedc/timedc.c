@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)timedc.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)timedc.c	1.2 (Berkeley) %G%";
 #endif not lint
 
 #include "timedc.h"
@@ -34,6 +34,8 @@ main(argc, argv)
 	char *argv[];
 {
 	register struct cmd *c;
+
+	openlog("timedc", LOG_ODELAY, LOG_AUTH);
 
 	/*
 	 * security dictates!
