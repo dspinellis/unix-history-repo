@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getrusage.2	6.1 (Berkeley) %G%
+.\"	@(#)getrusage.2	6.2 (Berkeley) %G%
 .\"
 .TH GETRUSAGE 2 ""
 .UC 4
@@ -76,7 +76,7 @@ the maximum resident set size utilized (in kilobytes).
 .TP 15
 ru_ixrss
 an \*(lqintegral\*(rq value indicating the amount of memory used
-which was also shared among other processes.  This value is expressed
+that was also shared among other processes.  This value is expressed
 in units of kilobytes * seconds-of-execution and is calculated by
 summing the number of shared memory pages in use each time the internal
 system clock ticks and then averaging over 1 second intervals.
@@ -97,7 +97,7 @@ i/o activity is avoided by \*(lqreclaiming\*(rq a page frame from
 the list of pages awaiting reallocation.
 .TP 15
 ru_majflt
-the number of page faults serviced which required i/o activity.
+the number of page faults serviced that required i/o activity.
 .TP 15
 ru_nswap
 the number of times a process was \*(lqswapped\*(rq out of main
@@ -139,4 +139,4 @@ to the first process to read or write the data.
 gettimeofday(2), wait(2)
 .SH BUGS
 There is no way to obtain information about a child process
-which has not yet terminated.
+that has not yet terminated.

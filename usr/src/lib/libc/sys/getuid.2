@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getuid.2	6.1 (Berkeley) %G%
+.\"	@(#)getuid.2	6.2 (Berkeley) %G%
 .\"
 .TH GETUID 2 ""
 .UC 4
@@ -28,7 +28,7 @@ The real user ID identifies the person who is logged in.
 The effective user ID
 gives the process additional permissions during
 execution of \*(lqset-user-ID\*(rq mode processes, which use
-\fIgetuid\fP to determine the real-user-id of the process which
+\fIgetuid\fP to determine the real-user-id of the process that
 invoked them.
 .SH "SEE ALSO"
 getgid(2), setreuid(2)
