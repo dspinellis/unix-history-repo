@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)quot.c	4.7 (Berkeley) 83/08/16";
+static char *sccsid = "@(#)quot.c	4.8 (Berkeley) 83/08/19";
 #endif
 
 /*
@@ -355,7 +355,7 @@ getname(uid)
 			if (pw->pw_uid != uid)
 				continue;
 			outrangeuid = pw->pw_uid;
-			strncpy(outrangename, pw->pw_name, NUID);
+			strncpy(outrangename, pw->pw_name, NMAX);
 			endpwent();
 			return (outrangename);
 		}
@@ -368,7 +368,7 @@ getname(uid)
 		if (pw->pw_uid < 0 || pw->pw_uid >= NUID) {
 			if (pw->pw_uid == uid) {
 				outrangeuid = pw->pw_uid;
-				strncpy(outrangename, pw->pw_name, NUID);
+				strncpy(outrangename, pw->pw_name, NMAX);
 				return (outrangename);
 			}
 			continue;
