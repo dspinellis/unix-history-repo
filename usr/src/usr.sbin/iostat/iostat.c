@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)iostat.c	4.8 (Berkeley) 83/05/30";
+static	char *sccsid = "@(#)iostat.c	4.9 (Berkeley) 83/09/25";
 /*
  * iostat
  */
@@ -34,19 +34,19 @@ struct nlist nl[] = {
 #define	X_CP_TIME	7
 	{ "_dk_mspw" },
 #define	X_DK_MSPW	8
+	{ "_hz" },
+#define	X_HZ		9
 
 #ifdef vax
 	{ "_mbdinit" },
-#define X_MBDINIT	9
+#define X_MBDINIT	10
 	{ "_ubdinit" },
-#define X_UBDINIT	10
+#define X_UBDINIT	11
 #endif
-
 #ifdef sun
 	{ "_mbdinit" },
-#define X_MBDINIT	9
+#define X_MBDINIT	10
 #endif
-
 	{ 0 },
 };
 
@@ -66,6 +66,7 @@ struct
 } s, s1;
 
 int	mf;
+int	hz;
 double	etime;
 
 main(argc, argv)
@@ -132,6 +133,8 @@ loop:
 	read(mf, s.cp_time, sizeof s.cp_time);
 	lseek(mf, (long)nl[X_DK_MSPW].n_value, 0);
 	read(mf, s.dk_mspw, sizeof s.dk_mspw);
+	lseek(mf, (long)nl[X_HZ].n_value, 0);
+	read(mf, &hz, sizeof hz);
 	for (i = 0; i < DK_NDRIVE; i++) {
 #define X(fld)	t = s.fld[i]; s.fld[i] -= s1.fld[i]; s1.fld[i] = t
 		X(dk_xfer); X(dk_seek); X(dk_wds); X(dk_time);
@@ -145,7 +148,7 @@ loop:
 	}
 	if (etime == 0.0)
 		etime = 1.0;
-	etime /= 60.0;
+	etime /= (float) hz;
 	printf("%4.0f%5.0f", s.tk_nin/etime, s.tk_nout/etime);
 	for (i=0; i<DK_NDRIVE; i++)
 		if (s.dk_mspw[i] != 0.0)
@@ -172,7 +175,7 @@ stats(dn)
 		return;
 	}
 	atime = s.dk_time[dn];
-	atime /= 60.0;
+	atime /= (float) hz;
 	words = s.dk_wds[dn]*32.0;	/* number of words transferred */
 	xtime = s.dk_mspw[dn]*words;	/* transfer time */
 	itime = atime - xtime;		/* time not transferring */
