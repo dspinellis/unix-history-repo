@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: autoconf.c 1.31 91/01/21$
  *
- *	@(#)autoconf.c	7.2 (Berkeley) %G%
+ *	@(#)autoconf.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -289,8 +289,5 @@ fndmaj:
 		part = part * 10 + *cp++ - '0';
 	if (*cp != ')')
 		goto defdev;
-	bootdev = (majdev << B_TYPESHIFT) |
-		(ctrl << B_CONTROLLERSHIFT) |
-		(unit << B_UNITSHIFT) |
-		(part << B_PARTITIONSHIFT);
+	bootdev = MAKEBOOTDEV(majdev, 0, ctrl, unit, part);
 }
