@@ -31,6 +31,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)ttydev.h	7.8 (Berkeley) 5/9/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00150
+ * --------------------         -----   ----------------------
+ *
+ * 22 Apr 93	David Greenman		support for 57600 and 115200 baud
+ *
  */
 
 /* COMPATABILITY HEADER FILE */
@@ -55,6 +63,8 @@
 #define B9600	13
 #define EXTA	14
 #define EXTB	15
+#define B57600	16
+#define B115200	17
 #endif /* USE_OLD_TTY */
 
 #endif /* !_TTYDEV_H_ */

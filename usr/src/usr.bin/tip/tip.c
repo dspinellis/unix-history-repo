@@ -29,6 +29,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00150
+ * --------------------         -----   ----------------------
+ *
+ * 22 Apr 93	Rodney W. Grimes	support for 115200 baud
+ *
  */
 
 #ifndef lint
@@ -55,7 +63,7 @@ static char sccsid[] = "@(#)tip.c	5.15 (Berkeley) 2/4/91";
  */
 int bauds[] = {
 	0, 50, 75, 110, 134, 150, 200, 300, 600,
-	1200, 1800, 2400, 4800, 9600, 19200, 38400, 57600, -1
+	1200, 1800, 2400, 4800, 9600, 19200, 38400, 57600, 115200, -1
 };
 
 int	disc = OTTYDISC;		/* tip normally runs this way */

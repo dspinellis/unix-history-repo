@@ -31,6 +31,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)termios.h	7.22 (Berkeley) 5/7/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00150
+ * --------------------         -----   ----------------------
+ *
+ * 22 Apr 93	David Greenman		support for 57600 and 115200 baud
+ *
  */
 
 /*
@@ -221,6 +229,8 @@ struct termios {
 #define EXTA	19200
 #define EXTB	38400
 #endif  /*_POSIX_SOURCE */
+#define B57600	57600
+#define B115200	115200
 
 #ifndef KERNEL
 

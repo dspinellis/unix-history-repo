@@ -29,6 +29,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00150
+ * --------------------         -----   ----------------------
+ *
+ * 22 Apr 93	Rodney W. Grimes	support for 57600 and 115200 baud
+ *
  */
 
 #ifndef lint
@@ -356,6 +364,8 @@ struct speedtab {
 	38400,	EXTB,
 	38,	EXTB,
 	7200,	EXTB,		/* alternative */
+	57600,	B57600,
+	115200,	B115200,
 	0
 };
 
