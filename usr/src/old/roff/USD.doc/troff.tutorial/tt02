@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)tt02	8.2 (Berkeley) %G%
+.\"	@(#)tt02	8.3 (Berkeley) %G%
 .\"
 .NH
 Point Sizes; Line Spacing
@@ -33,7 +33,7 @@ correct after the photo reduction process used to make this book.
 .vs 27p
 \s1916 point\s24 20 point
 .vs 47p
-.ps 43p
+.ps 43
 \s29 24\s0\s36 30\s0 36
 .ps 10
 .vs 12p
