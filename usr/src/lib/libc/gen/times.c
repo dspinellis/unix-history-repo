@@ -6,34 +6,36 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)times.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)times.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
+#include <sys/param.h>
 #include <sys/time.h>
 #include <sys/times.h>
 #include <sys/resource.h>
 
+/*
+ * Convert usec to clock ticks; could do (usec * CLK_TCK) / 1000000,
+ * but this would overflow if we switch to nanosec.
+ */
+#define	CONVTCK(r)	(r.tv_sec * CLK_TCK + r.tv_usec / (1000000 / CLK_TCK))
+
 clock_t
-times(tmsp)
-	register struct tms *tmsp;
+times(tp)
+	register struct tms *tp;
 {
 	struct rusage ru;
-	clock_t scale60();
+	struct timeval t;
 
 	if (getrusage(RUSAGE_SELF, &ru) < 0)
 		return ((clock_t)-1);
-	tmsp->tms_utime = scale60(&ru.ru_utime);
-	tmsp->tms_stime = scale60(&ru.ru_stime);
+	tp->tms_utime = CONVTCK(ru.ru_utime);
+	tp->tms_stime = CONVTCK(ru.ru_stime);
 	if (getrusage(RUSAGE_CHILDREN, &ru) < 0)
 		return ((clock_t)-1);
-	tmsp->tms_cutime = scale60(&ru.ru_utime);
-	tmsp->tms_cstime = scale60(&ru.ru_stime);
-	return ((clock_t)0);
-}
-
-static clock_t
-scale60(tvp)
-	register struct timeval *tvp;
-{
-	return (tvp->tv_sec * 60 + tvp->tv_usec / 16667);
+	tp->tms_cutime = CONVTCK(ru.ru_utime);
+	tp->tms_cstime = CONVTCK(ru.ru_stime);
+	if (gettimeofday(&t, (struct timezone *)0))
+		return ((clock_t)-1);
+	return ((clock_t)(CONVTCK(t)));
 }
