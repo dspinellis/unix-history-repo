@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)driver.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)driver.c	4.3 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -61,7 +61,7 @@ fplt(fin)  FILE *fin; {
 			line(x0,y0,x1,y1);
 			break;
 		case 't':
-			gets(s,fin);
+			getstr(s,fin);
 			label(s);
 			break;
 		case 'e':
@@ -100,7 +100,7 @@ fplt(fin)  FILE *fin; {
 			circle(xi,yi,r);
 			break;
 		case 'f':
-			gets(s,fin);
+			getstr(s,fin);
 			linemod(s);
 			break;
 		case 'd':
@@ -124,10 +124,9 @@ getsi(fin)  FILE *fin; {	/* get an integer stored in 2 ascii bytes. */
 	a = a<<8;
 	return(a|b);
 }
-gets(s,fin)  char *s;  FILE *fin; {
+getstr(s,fin)  char *s;  FILE *fin; {
 	for( ; *s = getc(fin); s++)
 		if(*s == '\n')
 			break;
 	*s = '\0';
-	return;
 }

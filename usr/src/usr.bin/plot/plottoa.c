@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)plottoa.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)plottoa.c	4.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -68,7 +68,7 @@ FILE *fin;
 			line(x0,y0,x1,y1);
 			break;
 		case 't':
-			gets(s,fin);
+			getstr(s,fin);
 			label(s);
 			break;
 		case 'e':
@@ -107,7 +107,7 @@ FILE *fin;
 			circle(xi,yi,r);
 			break;
 		case 'f':
-			gets(s,fin);
+			getstr(s,fin);
 			linemod(s);
 			break;
 		case 'd':
@@ -136,7 +136,7 @@ FILE *fin;
 	return(a|b);
 }
 
-gets(s,fin)
+getstr(s,fin)
 char *s;
 FILE *fin;
 {
@@ -144,7 +144,6 @@ FILE *fin;
 		if(*s == '\n')
 			break;
 	*s = '\0';
-	return;
 }
 
 /* Print out the arguments to plot routines. */
