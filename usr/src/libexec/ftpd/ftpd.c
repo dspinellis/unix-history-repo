@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.6 (Berkeley) 83/01/16";
+static char sccsid[] = "@(#)ftpd.c	4.7 (Berkeley) 83/01/16";
 #endif
 
 /*
@@ -374,7 +374,7 @@ dataconn(name, size, mode)
 		data_dest = his_addr;
 		data_dest.sin_port = htons(ntohs(sp->s_port) - 1);
 	}
-	usedefault = 0;
+	usedefault = 1;
 	if (connect(data, &data_dest, sizeof (data_dest), 0) < 0) {
 		reply(425, "Can't build data connection: %s.",
 		    sys_errlist[errno]);
