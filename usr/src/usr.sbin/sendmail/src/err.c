@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.20 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -406,25 +406,25 @@ fmtmsg(eb, to, num, eno, fmt, ap)
 **  ERRSTRING -- return string description of error code
 **
 **	Parameters:
-**		errno -- the error number to translate
+**		errnum -- the error number to translate
 **
 **	Returns:
-**		A string description of errno.
+**		A string description of errnum.
 **
 **	Side Effects:
 **		none.
 */
 
 const char *
-errstring(errno)
-	int errno;
+errstring(errnum)
+	int errnum;
 {
 	char *dnsmsg;
 	static char buf[50];
 
-	if (errno > 0 && errno < sys_nerr)
-		return (sys_errlist[errno]);
+	if (errnum > 0 && errnum < sys_nerr)
+		return (sys_errlist[errnum]);
 
-	(void) sprintf(buf, "Error %d", errno);
+	(void) sprintf(buf, "Error %d", errnum);
 	return (buf);
 }
