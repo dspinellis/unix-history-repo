@@ -1,9 +1,9 @@
-.\" Copyright (c) 1983, 1986 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1983, 1986, 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)b.t	6.5 (Berkeley) %G%
+.\"	@(#)b.t	8.1 (Berkeley) %G%
 .\"
 .nr H2 1
 .\".ds RH "Raw sockets
