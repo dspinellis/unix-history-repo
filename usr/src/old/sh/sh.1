@@ -1,9 +1,9 @@
-.\"	@(#)sh.1	4.1 (Berkeley) %G%
+.\"	@(#)sh.1	5.1 (Berkeley) %G%
 .\"
-.TH SH 1
+.TH SH 1 "7 February 1983"
 .AT 3
 .SH NAME
-sh, for, case, if, while, \fB:\fP, \fB.\fP, break, continue, cd, eval, exec, exit, export, login, newgrp, read, readonly, set, shift, times, trap, umask, wait \- command language
+sh, for, case, if, while, \fB:\fP, \fB.\fP, break, continue, cd, eval, exec, exit, export, login, read, readonly, set, shift, times, trap, umask, wait \- command language
 .SH SYNOPSIS
 .B sh
 [
@@ -17,10 +17,8 @@ sh, for, case, if, while, \fB:\fP, \fB.\fP, break, continue, cd, eval, exec, exi
 .ds ST *
 .SH DESCRIPTION
 .I Sh
-is a command programming language
-that executes commands read from a terminal
-or a file.
-See
+is a command programming language that executes commands read from a terminal
+or a file.  See
 .B invocation
 for the meaning of arguments to the shell.
 .PP
@@ -34,25 +32,17 @@ separated by blanks (a blank is a
 .B tab
 or a
 .BR space ).
-A word that begins with a # introduces a comment; that word and the
-rest of the line is ignored.
-.PP
-The first word of a simple-command specifies the name of the command to
-be executed.
-Except as specified below
-the remaining words are passed as arguments
+The first word specifies the name of the command to be executed.
+Except as specified below the remaining words are passed as arguments
 to the invoked command.
-The command name is passed as argument 0
-(see
-.IR exec (2)).
+The command name is passed as argument 0 (see
+.IR execve (2)).
 The
 .I value
 of a simple-command is its exit status
-if it terminates normally or 200+\fIstatus\fP if
-it terminates abnormally (see
-.IR signal (2)
-for a list of
-status values).
+if it terminates normally or 200+\fIstatus\fP if it terminates abnormally (see
+.IR sigvec (2)
+for a list of status values).
 .LP
 A
 .I pipeline
@@ -60,8 +50,7 @@ is a sequence of one or more
 .I commands
 separated by
 .B \(or.
-The standard output of each command but the last
-is connected by a
+The standard output of each command but the last is connected by a
 .IR pipe (2)
 to the standard input of the next command.
 Each command is run as a separate process;
@@ -84,8 +73,7 @@ or
 .B ;
 and
 .B &
-have equal precedence
-which is lower than that of
+have equal precedence which is lower than that of
 .B &&
 and
 .BR \(or\|\(or ,
@@ -93,27 +81,22 @@ and
 and
 .B \(or\|\(or
 also have equal precedence.
-A semicolon causes sequential execution; an ampersand causes
-the preceding
+A semicolon causes sequential execution; an ampersand causes the preceding
 .I pipeline
-to be executed without waiting for it to finish.
-The symbol
+to be executed without waiting for it to finish.  The symbol
 .B &&
 .RB ( \(or\|\(or )
 causes the
 .I list
 following to be executed only if the preceding
 .I pipeline
-returns a zero (non zero) value.
-Newlines may appear in a
+returns a zero (non zero) value.  Newlines may appear in a
 .I list,
-instead of semicolons,
-to delimit commands.
+instead of semicolons, to delimit commands.
 .LP
 A
 .I command
-is either a simple-command
-or one of the following.
+is either a simple-command or one of the following.
 The value returned by a command is that of the
 last simple-command executed in the command.
 .TP
@@ -128,23 +111,19 @@ word list
 If
 .BI in \ word
 \&...
-is omitted then
+is omitted,
 .B
 in "$@"
-is assumed.
-Execution ends when there are no more words in the list.
+is assumed.  Execution ends when there are no more words in the list.
 .TP
 \fBcase \fIword \fBin\fR \*(OK\fIpattern \fR\*(OK \fB\(or \fIpattern \fR\*(CK ... \fB) \fIlist \fB;;\fR\*(CK ... \fBesac\fR
 A
 .B case
 command executes the
 .I list
-associated with the first
-pattern that matches
+associated with the first pattern that matches
 .I word.
-The form of the patterns is
-the same as that used for
-file name generation.
+The form of the patterns is the same as that used for file name generation.
 .TP
 \fBif \fIlist \fBthen \fIlist\fR \*(OK\fBelif \fIlist \fBthen \fIlist\fR\*(CK ... \*(OK\fBelse \fIlist\fR\*(CK \fBfi\fR
 The
@@ -155,18 +134,15 @@ is executed and if it returns zero the
 .I list
 following
 .B then
-is executed.
-Otherwise, the
+is executed.  Otherwise, the
 .I list
 following
 .B elif
-is executed and if its value is zero
-the
+is executed and if its value is zero the
 .I list
 following
 .B then
-is executed.
-Failing that the
+is executed.  Failing that the
 .B else
 .I list
 is executed.
@@ -180,18 +156,15 @@ command repeatedly executes the
 and if its value is zero executes the
 .B do
 .I list;
-otherwise the loop terminates.
-The value returned by a
+otherwise the loop terminates.  The value returned by a
 .B while
-command is that
-of the last executed command in the
+command is that of the last executed command in the
 .B do
 .I list.
 .B until
 may be used in place of
 .B while
-to negate
-the loop termination test.
+to negate the loop termination test.
 .TP
 .BI ( " list " )
 Execute
@@ -202,8 +175,7 @@ in a subshell.
 .I list
 is simply executed.
 .LP
-The following words
-are only recognized as the first word of a command
+The following words are only recognized as the first word of a command
 and when not quoted.
 .IP
 .B
@@ -211,19 +183,15 @@ if then else elif fi case in esac for while until do done { }
 .PP
 .B Command substitution.
 .br
-The standard output from a command enclosed in
-a pair of grave accents
+The standard output from a command enclosed in a pair of back quotes 
 .RB ( \`\|\` )
-may be used as part or all
-of a word;
-trailing newlines are removed.
+may be used as part or all of a word; trailing newlines are removed.
 .PP
 .B Parameter substitution.
 .br
 The character
 .B $
-is used to introduce substitutable
-parameters.
+is used to introduce substitutable parameters.
 Positional parameters may be assigned values by
 .BR set .
 Variables may be set by writing
@@ -238,74 +206,61 @@ A
 .I parameter
 is a sequence of letters, digits or underscores (a
 .IR name ),
-a digit,
-or any of the characters
+a digit, or any of the characters
 .B
 * @ # ? \- $ !\|.
 The value, if any, of the parameter is substituted.
 The braces are required only when
 .I parameter
 is followed by a letter, digit, or underscore
-that is not to be interpreted as part of its name.
-If
+that is not to be interpreted as part of its name.  If
 .I parameter
-is a digit then it is a positional parameter.
-If
+is a digit, it is a positional parameter.  If
 .I parameter
 is
 .BR * " or" " @"
-then all the positional
-parameters, starting with
+then all the positional parameters, starting with
 .SM
 .BR $1 ,
-are substituted
-separated by spaces.
+are substituted separated by spaces.
 .SM
 .B $0
-is set from argument zero when the shell
-is invoked.
+is set from argument zero when the shell is invoked.
 .TP
 $\fB\|{\fIparameter\|\-word\|\fB}\fR
 If
 .I parameter
-is set then substitute its value;
-otherwise substitute
+is set, substitute its value; otherwise substitute
 .I word.
 .TP
 $\fB\|{\fIparameter\|\(eq\|word\|\fB}\fR
 If
 .I parameter
-is not set then set it to
+is not set, set it to
 .I word;
 the value of the parameter is then substituted.
-Positional parameters may not be assigned to
-in this way.
+Positional parameters may not be assigned to in this way.
 .TP
 $\fB\|{\fIparameter\|?\|word\|\fB}\fR
 If
 .I parameter
-is set then substitute its value;
-otherwise, print
+is set, substitute its value; otherwise, print
 .I word
-and exit from the shell.
-If
+and exit from the shell.  If
 .I word
-is omitted then a standard message is printed.
+is omitted, a standard message is printed.
 .TP
 $\fB\|{\fIparameter\|\(plword\|\fB}\fR
 If
 .I parameter
-is set then substitute
+is set, substitute
 .I word;
 otherwise substitute nothing.
 .LP
 In the above
 .I word
-is not evaluated unless it is
-to be used as the substituted string.
-(So that, for example,
-echo ${d\-\`pwd\`}
-will only execute
+is not evaluated unless it is to be used as the substituted string.
+(So that, for example, echo ${d\-\'pwd\'} will only execute
 .I pwd
 if
 .I d
@@ -325,8 +280,7 @@ Options supplied to the shell on invocation or by
 .BR set .
 .TP
 .B ?
-The value returned by the last executed command
-in decimal.
+The value returned by the last executed command in decimal.
 .TP
 .B $
 The process number of this shell.
@@ -356,21 +310,20 @@ The search path for commands (see
 .B
 .SM MAIL
 If this variable is set to the name of
-a mail file then the shell informs the user of
+a mail file, the shell informs the user of
 the arrival of mail in the specified file.
 .SM
 .TP
 .B PS1
-Primary prompt string, by default `$ '.
+Primary prompt string, by default '$ '.
 .TP
 .SM
 .B PS2
-Secondary prompt string, by default `> '.
+Secondary prompt string, by default '> '.
 .TP
 .SM
 .B IFS
-Internal field separators,
-normally
+Internal field separators, normally
 .BR space ,
 .BR tab ,
 and
@@ -387,28 +340,23 @@ characters (those found in
 .BR $IFS \*S)
 and split into distinct arguments where such characters are found.
 Explicit null arguments ("" or \'\') are retained.
-Implicit null arguments
-(those resulting from
+Implicit null arguments (those resulting from
 .I parameters
 that have no values) are removed.
 .PP
 .B File name generation.
 .br
-Following substitution, each command word is scanned for
-the characters
+Following substitution, each command word is scanned for the characters
 .BR * ,
 .B ?
 and
 .B \*(OK.
-If one of these characters appears
-then the word is regarded as a pattern.
-The word is replaced with alphabetically sorted file names that match the pattern.
-If no file name is found that matches the pattern then
-the word is left unchanged.
-The character
+If one of these characters appears, the word is regarded as a pattern.
+The word is replaced with alphabetically sorted file names that match the
+pattern.  If no file name is found that matches the pattern,
+the word is left unchanged.  The character
 .B .
-at the start of a file name
-or immediately following a
+at the start of a file name or immediately following a
 .BR / ,
 and the character
 .BR / ,
@@ -422,12 +370,10 @@ Matches any string, including the null string.
 Matches any single character.
 .TP 
 .B \*(OK...\*(CK
-Matches any one of the characters
-enclosed.
+Matches any one of the characters enclosed.
 A pair of characters separated by
 .B \-
-matches any
-character lexically between the pair.
+matches any character lexically between the pair.
 .PD
 .PP
 .B Quoting.
@@ -439,23 +385,19 @@ and cause termination of a word unless quoted.
 .LP
 A character may be
 .I quoted
-by preceding
-it with a
+by preceding it with a
 .B
 \\\|.
 .B \\\\newline
 is ignored.
 All characters enclosed between a pair of quote marks (\fB\'\|\'\fP),
-except a single quote,
-are quoted.
-Inside double quotes
-(\fB"\|"\fP)
+except a single quote, are quoted.  Inside double quotes (\fB"\|"\fP)
 parameter and command substitution occurs and
 .B
 \\
 quotes the characters
 .B
-\\ \` "
+\\ \' "
 and
 .BR $ \|.
 .LP
@@ -476,13 +418,12 @@ is equivalent to
 .PP
 .B Prompting.
 .br
-When used interactively,
-the shell prompts with the value of
+When used interactively, the shell prompts with the value of
 .SM
 PS1
 before reading a command.
 If at any time a newline is typed and further input is needed
-to complete a command then the secondary prompt
+to complete a command, the secondary prompt
 .RB ( \s-2$PS2\s0 )
 is issued.
 .PP
@@ -510,36 +451,33 @@ as standard input (file descriptor 0).
 Use file
 .I word
 as standard output (file descriptor 1).
-If the file does not exist then it is created;
+If the file does not exist, it is created;
 otherwise it is truncated to zero length.
 .TP
 \*(GT\*(GT\fI\|word\fP
 Use file
 .I word
 as standard output.
-If the file exists then output is appended (by seeking to the end);
+If the file exists, output is appended (by seeking to the end);
 otherwise the file is created.
 .TP
 \*(LT\*(LT\fI\|word\fP
 The shell input is read up to a line the same as
 .IR word ,
 or end of file.
-The resulting document becomes
-the standard input.
+The resulting document becomes the standard input.
 If any character of
 .I word
-is quoted then no interpretation
-is placed upon the characters of the document;
+is quoted, no interpretation is placed upon the characters of the document;
 otherwise, parameter and command substitution occurs,
 .B
 \\newline
-is ignored,
-and
+is ignored, and
 .B
 \\
 is used to quote the characters
 .B
-\\ $ \`
+\\ $ \'
 and the first character of
 .I word.
 .TP
@@ -555,12 +493,9 @@ The standard input is closed.
 Similarly for the standard output using \*(GT\|.
 .PD
 .LP
-If one of the above is preceded by a digit
-then the
-file descriptor created is that specified
-by the digit
-(instead of the default 0 or 1).
-For example,
+If one of the above is preceded by a digit, the
+file descriptor created is that specified by the digit
+(instead of the default 0 or 1).  For example,
 .LP
 	\&... 2\*(GT&1
 .LP
@@ -569,9 +504,7 @@ of file descriptor 1.
 .LP
 If a command is followed by
 .B &
-then the default standard input
-for the command
-is the empty file
+then the default standard input for the command is the empty file
 (/dev/null).
 Otherwise, the environment for the execution of a command contains the
 file descriptors of the invoking shell as modified by input
@@ -579,33 +512,26 @@ output specifications.
 .PP
 .B Environment.
 .br
-The environment
-is a list of name-value pairs that is passed to
-an executed program in the same way as a normal argument list;
-see
-.IR exec (2)
+The environment is a list of name-value pairs that is passed to
+an executed program in the same way as a normal argument list; see
+.IR execve (2)
 and
-.IR environ (5).
+.IR environ (7).
 The shell interacts with the environment in several ways.
-On invocation, the shell scans the environment
-and creates a
+On invocation, the shell scans the environment and creates a
 .I parameter
-for each name found,
-giving it the corresponding value.
+for each name found, giving it the corresponding value.
 Executed commands inherit the same environment.
 If the user modifies the values of these
 .I parameters
-or creates new ones,
-none of these affects the environment
-unless the
+or creates new ones, none of these affects the environment unless the
 .B export
 command is used to bind the shell's
 .I parameter
 to the environment.
 The environment seen by any executed command is thus composed
 of any unmodified name-value pairs originally inherited by the shell,
-plus any modifications or additions,
-all of which must be noted in
+plus any modifications or additions, all of which must be noted in
 .B export
 commands.
 .LP
@@ -625,7 +551,7 @@ flag is set,
 .I all
 keyword arguments are placed in the environment,
 even if the occur after the command name.
-The following prints `a=b c' and `c':
+The following prints 'a=b c' and 'c':
 .nf
 echo a=b c
 set \-k
@@ -637,41 +563,32 @@ echo a=b c
 The INTERRUPT and QUIT signals for an invoked
 command are ignored if the command is followed by
 .BR & ;
-otherwise signals have the values
-inherited by the shell from its parent.
+otherwise signals have the values inherited by the shell from its parent.
 (But see also
 .BR trap. )
 .PP
 .B Execution.
 .br
-Each time a command is executed the above substitutions
-are carried out.
-Except for the `special commands' listed below a new
-process is created and
+Each time a command is executed the above substitutions are carried out.
+Except for the 'special commands' listed below a new process is created and
 an attempt is made to execute the command via an
-.IR exec (2).
+.IR execve (2).
 .LP
 The shell parameter
 .B
 .SM $PATH
-defines the search path for
-the directory containing the command.
-Each alternative directory name is separated by
-a colon
+defines the search path for the directory containing the command.
+Each alternative directory name is separated by a colon
 .RB ( : ).
 The default path is
 .BR :/bin:/usr/bin .
-If the command name contains a / then the search path
-is not used.
-Otherwise, each directory in the path is
-searched for an executable file.
+If the command name contains a /, the search path is not used.
+Otherwise, each directory in the path is searched for an executable file.
 If the file has execute permission but is not an
 .I a.out
-file,
-it is assumed to be a file containing shell commands.
+file, it is assumed to be a file containing shell commands.
 A subshell (i.e., a separate process) is spawned to read it.
-A parenthesized command is also executed in
-a subshell.
+A parenthesized command is also executed in a subshell.
 .PP
 .B Special commands.
 .br
@@ -686,8 +603,7 @@ No effect; the command does nothing.
 .BI . \ file
 Read and execute commands from
 .I file
-and return.
-The search path
+and return.  The search path
 .B
 .SM $PATH
 is used to find the directory containing
@@ -701,7 +617,7 @@ or
 loop, if any.
 If
 .I n
-is specified then break
+is specified, break
 .I n
 levels.
 .TP
@@ -710,81 +626,67 @@ Resume the next iteration of the enclosing
 .B for
 or
 .B while
-loop.
-If
+loop.  If
 .I n
-is specified then resume at the
+is specified, resume at the
 .IR n -th
 enclosing loop.
 .TP
 \fBcd\fR \*(OK\fIarg\fR\*(CK
 Change the current directory to
 .I arg.
-The shell
-parameter
+The shell parameter
 .B
 .SM $HOME
 is the default
 .IR arg .
 .TP
 \fBeval\fR \*(OK\fIarg \fR...\*(CK
-The arguments are read as input
-to the shell
+The arguments are read as input to the shell
 and the resulting command(s) executed.
 .TP
 \fBexec\fR \*(OK\fIarg \fR...\*(CK
-The command specified by
-the arguments is executed in place of this shell
+The command specified by the arguments is executed in place of this shell
 without creating a new process.
 Input output arguments may appear and if no other
-arguments are given cause the shell input
-output to be modified.
+arguments are given cause the shell input output to be modified.
 .TP
 \fBexit\fR \*(OK\fIn\fR\*(CK
-Causes a non interactive shell to exit
-with the exit status specified by
+Causes a non interactive shell to exit with the exit status specified by
 .I n.
 If
 .I n
-is omitted then the exit status is that of the last command executed.
+is omitted, the exit status is that of the last command executed.
 (An end of file will also exit from the shell.)
 .TP
 \fBexport\fR \*(OK\fIname\fR ...\*(CK
-The given names are marked
-for automatic export to the
+The given names are marked for automatic export to the
 .I environment
 of subsequently-executed commands.
-If no arguments are given then a list of
-exportable names is printed.
+If no arguments are given, a list of exportable names is printed.
 .TP
 \fBlogin\fR \*(OK\fIarg\fR ...\*(CK
-Equivalent to `exec login arg ...'.
-.TP
-\fBnewgrp\fR \*(OK\fIarg \fR...\*(CK
-Equivalent to `exec newgrp arg ...'.
+Equivalent to 'exec login arg ...'.
 .TP
 .BI read \ name\ ...
 One line is read from the standard input;
-successive words of the input are assigned to the
-variables
+successive words of the input are assigned to the variables
 .I name
-in order,
-with leftover words to the last variable.
+in order, with leftover words to the last variable.
 The return code is 0 unless the end-of-file is encountered.
 .TP
 \fBreadonly\fR \*(OK\fIname \fR...\*(CK
 The given names are marked readonly and
 the values of the these names may not be changed
 by subsequent assignment.
-If no arguments are given then a list
-of all readonly names is printed.
+If no arguments are given, a list of all readonly names is printed.
 .TP
 \fBset\fR \*(OK\fB\-eknptuvx\fR \*(OK\fIarg \fR...\*(CK\*(CK
 .RS
 .PD 0
 .TP 3m
 .B \-e
-If non interactive then exit immediately if a command fails.
+If non interactive, exit immediately if a command fails.
 .TP
 .B \-k
 All keyword arguments are placed in the environment for a command,
@@ -823,9 +725,7 @@ parameters and are assigned, in order, to
 .BR $1 ,
 .SM
 .BR $2 ,
-etc.
-If no arguments are given then the values
-of all names are printed.
+etc.  If no arguments are given, the values of all names are printed.
 .RE
 .TP
 .B shift
@@ -837,47 +737,37 @@ are renamed
 .BR $1 ...
 .TP
 .B times
-Print the accumulated user and system times for
-processes run from the shell.
+Print the accumulated user and system times for processes run from the shell.
 .TP
 \fBtrap\fR \*(OK\fIarg\fR\*(CK \*(OK\fIn\fR\*(CK ...
 .I Arg
-is a command to be read and executed when the shell
-receives signal(s)
+is a command to be read and executed when the shell receives signal(s)
 .I n.
 (Note that
 .I arg
-is scanned once when
-the trap is set and once when the trap
-is taken.)
-Trap commands are executed in order of signal number.
-If
+is scanned once when the trap is set and once when the trap is taken.)
+Trap commands are executed in order of signal number.  If
 .I arg
-is absent then all trap(s)
+is absent, all trap(s)
 .I n
-are reset
-to their original values.
+are reset to their original values.
 If
 .I arg
 is the null
-string then this signal is ignored by the shell and by invoked commands.
+string, this signal is ignored by the shell and by invoked commands.
 If
 .I n
-is 0 then the command
+is 0, the command
 .I arg
-is executed
-on exit from the shell,
-otherwise upon receipt of signal
+is executed on exit from the shell, otherwise upon receipt of signal
 .I n
 as numbered in
-.IR signal (2).
+.IR sigvec (2).
 .I Trap
-with no arguments prints a list
-of commands associated with each signal number.
+with no arguments prints a list of commands associated with each signal number.
 .TP
 \fBumask \fR[ \fInnn\fR ]
-The user file creation mask is set to
-the octal value
+The user file creation mask is set to the octal value
 .I nnn
 (see
 .IR umask (2)).
@@ -886,13 +776,10 @@ If
 is omitted, the current value of the mask is printed.
 .TP
 \fBwait\fP \*(OK\fIn\fP\*(CK
-Wait for the specified process and
-report its termination status.
-If
+Wait for the specified process and report its termination status.  If
 .I n
-is not given then all currently active child processes are waited for.
-The return code from this command is that of
-the process waited for.
+is not given, all currently active child processes are waited for.
+The return code from this command is that of the process waited for.
 .PD
 .LP
 .PP
@@ -904,25 +791,21 @@ commands are read from
 .BR \s-2$HOME\s0/.\|profile ,
 if such a file exists.
 Commands are then read as described below.
-The following flags are interpreted by the shell
-when it is invoked.
+The following flags are interpreted by the shell when it is invoked.
 .PD 0
 .TP 11n
 .BI \-c \ string
 If the
 .B \-c
-flag is present then
-commands are read from
+flag is present, commands are read from
 .I string\|.
 .TP 11n
 .B \-s
 If the
 .B \-s
-flag is present or if no
-arguments remain
+flag is present or if no arguments remain
 then commands are read from the standard input.
-Shell output is written to
-file descriptor 2.
+Shell output is written to file descriptor 2.
 .TP 11n
 .B \-i
 If the
@@ -932,15 +815,13 @@ if the shell input and output are attached to a terminal (as told by
 .IR gtty )
 then this shell is
 .I interactive.
-In this case the terminate signal
-SIGTERM (see
-.IR signal (2))
-is ignored (so that `kill 0'
+In this case the terminate signal SIGTERM (see
+.IR sigvec (2))
+is ignored (so that 'kill 0'
 does not kill an interactive shell) and the interrupt signal
-SIGINT is caught and ignored
-(so that
+SIGINT is caught and ignored (so that
 .B wait
-is interruptable).
+is interruptible).
 In all cases SIGQUIT is ignored by the shell.
 .PD
 .LP
@@ -956,10 +837,10 @@ command.
 .SH SEE ALSO
 csh(1),
 test(1),
-exec(2),
+execve(2),
+environ(7)
 .SH DIAGNOSTICS
-Errors detected by the shell, such as syntax errors
-cause the shell
+Errors detected by the shell, such as syntax errors cause the shell
 to return a non zero exit status.
 If the shell is being used non interactively
 then execution of the shell file is abandoned.
@@ -967,8 +848,7 @@ Otherwise, the shell returns the exit status of
 the last command executed (see also
 .BR exit ).
 .SH BUGS
-IF \*(LT\*(LT is used to provide standard input to an asynchronous
-process invoked by &,
-the shell gets mixed up about naming the input document.
+If \*(LT\*(LT is used to provide standard input to an asynchronous
+process invoked by &, the shell gets mixed up about naming the input document.
 A garbage file /tmp/sh* is created, and the shell complains about
 not being able to find the file by another name.
