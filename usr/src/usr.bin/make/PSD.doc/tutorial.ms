@@ -8,7 +8,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tutorial.ms	8.1 (Berkeley) %G%
+.\"	@(#)tutorial.ms	8.2 (Berkeley) %G%
 .\"
 .EH 'PSD:12-%''PMake \*- A Tutorial'
 .OH 'PMake \*- A Tutorial''PSD:12-%'
@@ -52,6 +52,9 @@
 .\" up with such weird commands, they came from running grn on a
 .\" gremlin file...
 .de No
+(\(*D)
+..
+.de nO
 .br
 .ne 0.5i
 .po -0.5i
@@ -126,8 +129,8 @@ considerably faster. It also has a great deal more functionality than
 Make. Throughout the text, whenever something is mentioned that is an
 important difference between PMake and Make (i.e.  something that will
 cause a makefile to fail if you don't do something about it), or is
-simply important, it will be flagged with a little sign in the left
-margin, like this:
+simply important, it will be flagged with a parenthetical delta
+symbol, like this:
 .No
 .LP
 This tutorial is divided into three main sections corresponding to basic,
