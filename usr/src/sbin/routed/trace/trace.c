@@ -1,17 +1,18 @@
 #ifndef lint
-static char sccsid[] = "@(#)trace.c	4.2 %G%";
+static char sccsid[] = "@(#)trace.c	4.3 %G%";
 #endif
 
 #include <sys/param.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
-#include <net/in.h>
+#include <netinet/in.h>
 #include <errno.h>
 #include <stdio.h>
 #include <netdb.h>
-#include "rip.h"
+#include "../protocol.h"
 
 struct	sockaddr_in myaddr = { AF_INET, IPPORT_RESERVED-1 };
+char	packet[MAXPACKETSIZE];
 
 main(argc, argv)
 	int argc;
@@ -20,7 +21,6 @@ main(argc, argv)
 	int size, s;
 	struct sockaddr from;
 	struct sockaddr_in router;
-	char packet[MAXPACKETSIZE];
 	register struct rip *msg = (struct rip *)packet;
 	struct hostent *hp;
 	struct servent *sp;
@@ -31,17 +31,23 @@ usage:
 		printf("cmd either \"on filename\", or \"off\"\n");
 		exit(1);
 	}
-#ifdef vax || pdp11
-	myaddr.sin_port = htons(myaddr.sin_port);
-#endif
-	s = socket(SOCK_DGRAM, 0, &myaddr, 0);
+	s = socket(AF_INET, SOCK_DGRAM, 0);
 	if (s < 0) {
 		perror("socket");
 		exit(2);
 	}
+#ifdef vax || pdp11
+	myaddr.sin_port = htons(myaddr.sin_port);
+#endif
+	if (bind(s, &myaddr, sizeof(myaddr)) < 0) {
+		perror("bind");
+		exit(2);
+	}
+
 	argv++, argc--;
 	msg->rip_cmd = strcmp(*argv, "on") == 0 ?
 		RIPCMD_TRACEON : RIPCMD_TRACEOFF;
+	msg->rip_vers = RIPVERSION;
 	argv++, argc--;
 	size = sizeof (int);
 	if (msg->rip_cmd == RIPCMD_TRACEON) {
@@ -58,7 +64,7 @@ usage:
 		printf("udp/router: service unknown\n");
 		exit(1);
 	}
-	router.sin_port = htons(sp->s_port);
+	router.sin_port = sp->s_port;
 	while (argc > 0) {
 		hp = gethostbyname(*argv);
 		if (hp == 0) {
@@ -66,7 +72,7 @@ usage:
 			continue;
 		}
 		bcopy(hp->h_addr, &router.sin_addr, hp->h_length);
-		if (send(s, &router, packet, size) < 0)
+		if (sendto(s, packet, size, 0, &router, sizeof(router)) < 0)
 			perror(*argv);
 		argv++, argc--;
 	}

@@ -1,15 +1,18 @@
 #ifndef lint
-static char sccsid[] = "@(#)query.c	4.5 %G%";
+static char sccsid[] = "@(#)query.c	4.6 %G%";
 #endif
 
 #include <sys/param.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
-#include <net/in.h>
+#include <sys/time.h>
+#include <netinet/in.h>
 #include <errno.h>
 #include <stdio.h>
 #include <netdb.h>
-#include "rip.h"
+#include "../protocol.h"
+
+#define	WTIME	5		/* Time to wait for responses */
 
 int	s;
 char	packet[MAXPACKETSIZE];
@@ -18,18 +21,21 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int cc, count;
+	int cc, count, bits;
 	struct sockaddr from;
+	int fromlen = sizeof(from);
+	struct timeval notime;
 	
 	if (argc < 2) {
 		printf("usage: query hosts...\n");
 		exit(1);
 	}
-	s = socket(SOCK_DGRAM, 0, 0, 0);
+	s = socket(AF_INET, SOCK_DGRAM, 0);
 	if (s < 0) {
 		perror("socket");
 		exit(2);
 	}
+
 	argv++, argc--;
 	count = argc;
 	while (argc > 0) {
@@ -38,13 +44,17 @@ main(argc, argv)
 	}
 
 	/*
-	 * Listen for returning packets
+	 * Listen for returning packets;
+	 * may be more than one packet per host.
 	 */
-	while (count > 0) {
-		cc = receive(s, &from, packet, sizeof (packet));
+	bits = 1 << s;
+	bzero(&notime, sizeof(notime));
+	while (count > 0 || select(20, &bits, 0, 0, &notime) > 0) {
+		cc = recvfrom(s, packet, sizeof (packet), 0,
+		  &from, &fromlen);
 		if (cc <= 0) {
 			if (cc < 0) {
-				perror("receive");
+				perror("recvfrom");
 				(void) close(s);
 				exit(1);
 			}
@@ -76,11 +86,13 @@ query(host)
 		printf("udp/router: service unknown\n");
 		exit(1);
 	}
-	router.sin_port = htons(sp->s_port);
+	router.sin_port = sp->s_port;
 	msg->rip_cmd = RIPCMD_REQUEST;
-	msg->rip_nets[0].rip_dst.sa_family = AF_UNSPEC;
-	msg->rip_nets[0].rip_metric = HOPCNT_INFINITY;
-	if (send(s, &router, packet, sizeof (struct rip)) < 0)
+	msg->rip_vers = RIPVERSION;
+	msg->rip_nets[0].rip_dst.sa_family = htons(AF_UNSPEC);
+	msg->rip_nets[0].rip_metric = htonl(HOPCNT_INFINITY);
+	if (sendto(s, packet, sizeof (struct rip), 0,
+	  &router, sizeof(router)) < 0)
 		perror(host);
 }
 
@@ -101,7 +113,7 @@ rip_input(from, size)
 		return;
 	hp = gethostbyaddr(&from->sin_addr, sizeof (struct in_addr), AF_INET);
 	name = hp == 0 ? "???" : hp->h_name;
-	printf("from %s(%x):\n", name, from->sin_addr);
+	printf("from %s(%s):\n", name, inet_ntoa(from->sin_addr));
 	size -= sizeof (int);
 	n = msg->rip_nets;
 	while (size > 0) {
@@ -109,6 +121,11 @@ rip_input(from, size)
 
 		if (size < sizeof (struct netinfo))
 			break;
+		if (msg->rip_vers > 0) {
+			n->rip_dst.sa_family =
+				ntohs(n->rip_dst.sa_family);
+			n->rip_metric = ntohl(n->rip_metric);
+		}
 		sin = (struct sockaddr_in *)&n->rip_dst;
 		if (inet_lnaof(sin->sin_addr) == INADDR_ANY) {
 			np = getnetbyaddr(inet_netof(sin->sin_addr), AF_INET);
@@ -118,8 +135,13 @@ rip_input(from, size)
 				sizeof (struct in_addr), AF_INET);
 			name = hp ? hp->h_name : "???";
 		}
-		printf("\t%s(%x), metric %d\n", name,
-			sin->sin_addr, n->rip_metric);
+		printf("\t%s(%s), metric %d\n", name,
+			inet_ntoa(sin->sin_addr), n->rip_metric);
 		size -= sizeof (struct netinfo), n++;
 	}
+}
+
+timeout()
+{
+	timedout = 1;
 }
