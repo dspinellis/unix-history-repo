@@ -1,14 +1,13 @@
-static	char *sccsid = "@(#)dumpfs.c	2.4 (Berkeley) %G%";
+#ifndef lint
+static	char *sccsid = "@(#)dumpfs.c	2.5 (Berkeley) %G%";
+#endif
 
-#ifndef SIMFS
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
-#else
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
-#endif
+
+#include <stdio.h>
+#include <fstab.h>
 
 /*
  * dumpfs
@@ -29,14 +28,37 @@ union {
 main(argc, argv)
 	char **argv;
 {
+	register struct fstab *fs;
+
+	argc--, argv++;
+	if (argc < 1) {
+		fprintf(stderr, "usage: dumpfs fs ...\n");
+		exit(1);
+	}
+	for (; argc > 0; argv++, argc--) {
+		fs = getfsfile(*argv);
+		if (fs == 0)
+			dumpfs(*argv);
+		else
+			dumpfs(fs->fs_spec);
+	}
+}
+
+dumpfs(name)
+	char *name;
+{
 	int c, i, j, k, size;
 
 	close(0);
-	if (open(argv[1], 0) != 0)
-		perror(argv[1]), exit(1);
+	if (open(name, 0) != 0) {
+		perror(name);
+		return;
+	}
 	lseek(0, SBLOCK * DEV_BSIZE, 0);
-	if (read(0, &afs, SBSIZE) != SBSIZE)
-		perror(argv[1]), exit(1);
+	if (read(0, &afs, SBSIZE) != SBSIZE) {
+		perror(name);
+		return;
+	}
 	printf("magic\t%x\ttime\t%s", afs.fs_magic, ctime(&afs.fs_time));
 	printf("sblkno\t%d\tcblkno\t%d\tiblkno\t%d\tdblkno\t%d\n",
 	    afs.fs_sblkno, afs.fs_cblkno, afs.fs_iblkno, afs.fs_dblkno);
@@ -94,8 +116,10 @@ main(argc, argv)
 		afs.fs_csp[j] = (struct csum *)calloc(1, size);
 		lseek(0, fsbtodb(&afs, (afs.fs_csaddr + j * afs.fs_frag)) *
 		    DEV_BSIZE, 0);
-		if (read(0, afs.fs_csp[j], size) != size)
-			perror(argv[1]), exit(1);
+		if (read(0, afs.fs_csp[j], size) != size) {
+			perror(name);
+			return;
+		}
 	}
 	for (i = 0; i < afs.fs_ncg; i++) {
 		struct csum *cs = &afs.fs_cs(&afs, i);
@@ -113,19 +137,21 @@ main(argc, argv)
 	}
 	printf("\n");
 	for (i = 0; i < afs.fs_ncg; i++)
-		dumpcg(i);
+		dumpcg(name, i);
+	close(0);
 };
 
-dumpcg(c)
+dumpcg(name, c)
+	char *name;
 	int c;
 {
 	int i,j;
 
 	printf("\ncg %d:\n", c);
 	lseek(0, fsbtodb(&afs, cgtod(&afs, c)) * DEV_BSIZE, 0);
-	i = tell(0);
+	i = lseek(0, 1, 0);
 	if (read(0, (char *)&acg, afs.fs_bsize) != afs.fs_bsize) {
-		printf("\terror reading cg\n");
+		printf("dumpfs: %s: error reading cg\n", name);
 		return;
 	}
 	printf("magic\t%x\ttell\t%x\ttime\t%s",
