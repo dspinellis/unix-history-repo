@@ -1,4 +1,4 @@
-/*	kern_descrip.c	5.7	82/09/06	*/
+/*	kern_descrip.c	5.8	82/09/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -163,6 +163,7 @@ wrap()
 	/* DO WRAP */
 }
 
+int	unselect();
 int	nselcoll;
 /*
  * Select system call.
@@ -170,119 +171,149 @@ int	nselcoll;
 select()
 {
 	register struct uap  {
-		fd_set	*rp, *wp, *ep;
+		long	*ibits;
+		long	*obits;
 		struct	timeval *tv;
 	} *uap = (struct uap *)u.u_ap;
-	fd_set rd, wr;
-	int nfds = 0, readable = 0, writeable = 0;
-	struct timeval atv, origin, now;
+	int ibits[3], obits[3];
+	struct timeval atv;
 	int s, tsel, ncoll, rem;
+	label_t lqsave;
 
 	if (uap->tv) {
 		if (copyin((caddr_t)uap->tv, (caddr_t)&atv, sizeof (atv))) {
 			u.u_error = EFAULT;
 			return;
 		}
-	} else
-		timerclear(&atv);
-	if (uap->rp && copyin((caddr_t)uap->rp,(caddr_t)&rd,sizeof(fd_set)))
+		if (itimerfix(&atv)) {
+			u.u_error = EINVAL;
+			return;
+		}
+		s = spl7(); timevaladd(&atv, &time); splx(s);
+	}
+	if (copyin((caddr_t)uap->ibits, (caddr_t)ibits, sizeof (ibits))) {
+		u.u_error = EFAULT;
 		return;
-	if (uap->wp && copyin((caddr_t)uap->wp,(caddr_t)&wr,sizeof(fd_set)))
-		return;
+	}
 retry:
-	s = spl7(); now = time; splx(s);
 	ncoll = nselcoll;
 	u.u_procp->p_flag |= SSEL;
-	if (uap->rp)
-		readable = selscan(rd, &nfds, FREAD);
-	if (uap->wp)
-		writeable = selscan(wr, &nfds, FWRITE);
+	u.u_r.r_val1 = selscan(ibits, obits);
 	if (u.u_error)
-		goto done;
-	if (readable || writeable)
-		goto done;
-	if (!timerisset(&atv))
+		return;
+	if (u.u_r.r_val1)
 		goto done;
 	s = spl6();
+	if (uap->tv && timercmp(&atv, &time, >=)) {
+		splx(s);
+		goto done;
+	}
 	if ((u.u_procp->p_flag & SSEL) == 0 || nselcoll != ncoll) {
 		u.u_procp->p_flag &= ~SSEL;
 		splx(s);
 		goto retry;
 	}
 	u.u_procp->p_flag &= ~SSEL;
-	tsel = tsleep((caddr_t)&selwait, PZERO+1, &atv);
-	splx(s);
-	switch (tsel) {
-
-	case TS_OK:
-		now = time;
-		timevalsub(&now, &origin);
-		timevalsub(&atv, now);
-		if (atv.tv_sec < 0 || atv.tv_usec < 0)
-			timerclear(&atv);
-		goto retry;
-
-	case TS_SIG:
-		u.u_error = EINTR;
-		return;
-
-	case TS_TIME:
-		break;
+	if (uap->tv) {
+		lqsave = u.u_qsave;
+		if (setjmp(&u.u_qsave)) {
+			untimeout(unselect, u.u_procp);
+			u.u_error = EINTR;
+			splx(s);
+			return;
+		}
+		timeout(unselect, u.u_procp, hzto(&atv));
 	}
+	sleep((caddr_t)&selwait, PZERO+1);
+	if (uap->tv) {
+		u.u_qsave = lqsave;
+		untimeout(unselect, u.u_procp);
+	}
+	splx(s);
+	goto retry;
 done:
-	rd.fds_bits[0] = readable;
-	wr.fds_bits[0] = writeable;
-	s = sizeof (fd_set);
-	u.u_r.r_val1 = nfds;
-	if (uap->rp)
-		(void) copyout((caddr_t)&rd, (caddr_t)uap->rp, sizeof(fd_set));
-	if (uap->wp)
-		(void) copyout((caddr_t)&wr, (caddr_t)uap->wp, sizeof(fd_set));
+	if (copyout((caddr_t)obits, (caddr_t)uap->obits, sizeof (obits))) {
+		u.u_error = EFAULT;
+		return;
+	}
 }
 
-selscan(fds, nfdp, flag)
-	fd_set fds;
-	int *nfdp, flag;
+unselect(p)
+	register struct proc *p;
 {
+	register int s = spl6();
+
+	switch (p->p_stat) {
+
+	case SSLEEP:
+		setrun(p);
+		break;
+
+	case SSTOP:
+		unsleep(p);
+		break;
+	}
+	splx(s);
+}
+
+selscan(ibits, obits)
+	int *ibits, *obits;
+{
+	register int which, bits, i;
+	int flag;
 	struct file *fp;
+	int able;
 	struct inode *ip;
-	register int bits;
-	int i, able, res = 0;
-		
-	bits = fds.fds_bits[0];
-	while (i = ffs(bits)) {
-		bits &= ~(1<<(i-1));
-		fp = u.u_ofile[i-1];
-		if (fp == NULL) {
-			u.u_error = EBADF;
-			return (0);
+	int n = 0;
+
+	for (which = 0; which < 3; which++) {
+		bits = ibits[which];
+		obits[which] = 0;
+		switch (which) {
+
+		case 0:
+			flag = FREAD; break;
+
+		case 1:
+			flag = FWRITE; break;
+
+		case 2:
+			flag = 0; break;
 		}
-		if (fp->f_type == DTYPE_SOCKET)
-			able = soselect(fp->f_socket, flag);
-		else {
-			ip = fp->f_inode;
-			switch (ip->i_mode & IFMT) {
-
-			case IFCHR:
-				able =
-				    (*cdevsw[major(ip->i_rdev)].d_select)
-					(ip->i_rdev, flag);
-				break;
-
-			case IFBLK:
-			case IFREG:
-			case IFDIR:
-				able = 1;
+		while (i = ffs(bits)) {
+			bits &= ~(1<<(i-1));
+			fp = u.u_ofile[i-1];
+			if (fp == NULL) {
+				u.u_error = EBADF;
 				break;
 			}
+			if (fp->f_type == DTYPE_SOCKET)
+				able = soselect(fp->f_socket, flag);
+			else {
+				ip = fp->f_inode;
+				switch (ip->i_mode & IFMT) {
 
-		}
-		if (able) {
-			res |= (1<<(i-1));
-			(*nfdp)++;
+				case IFCHR:
+					able =
+					    (*cdevsw[major(ip->i_rdev)].d_select)
+						(ip->i_rdev, flag);
+					break;
+
+				case IFBLK:
+				case IFREG:
+				case IFDIR:
+					able = 1;
+					break;
+				}
+
+			}
+			if (able) {
+				obits[which] |= (1<<(i-1));
+				n++;
+			}
 		}
 	}
-	return (res);
+	return (n);
 }
 
 /*ARGSUSED*/
