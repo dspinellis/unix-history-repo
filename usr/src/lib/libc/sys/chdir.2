@@ -1,0 +1,33 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)chdir.2	4.1 (Berkeley) %G%
+.\"
+.TH CHDIR 2 
+.UC 4
+.SH NAME
+chdir \- change current working directory
+.SH SYNOPSIS
+.nf
+.B chdir(dirname)
+.B char *dirname;
+.fi
+.SH DESCRIPTION
+.I Dirname
+is the address of the pathname of a directory, terminated by a null byte.
+.I Chdir
+causes this directory
+to become the current working directory,
+the starting point for path names not beginning with `/'.
+.SH "SEE ALSO"
+cd(1)
+.SH DIAGNOSTICS
+Zero is returned if the directory is changed; \-1
+is returned
+if the given name is not that of a directory
+or is not searchable.
+.SH ASSEMBLER
+(chdir = 12.)
+.br
+.B sys chdir; dirname
