@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	4.6 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -33,7 +33,7 @@ hookup(host, port)
 	int port;
 {
 	register struct hostent *hp;
-	int s;
+	int s, len;
 
 	bzero((char *)&hisctladdr, sizeof (hisctladdr));
 	hp = gethostbyname(host);
@@ -74,8 +74,9 @@ hookup(host, port)
 		perror("ftp: connect");
 		goto bad;
 	}
-	if (socketaddr(s, &myctladdr) < 0) {
-		perror("ftp: socketaddr");
+	len = sizeof (myctladdr);
+	if (getsockname(s, (char *)&myctladdr, &len) < 0) {
+		perror("ftp: getsockname");
 		goto bad;
 	}
 	cin = fdopen(s, "r");
@@ -437,7 +438,7 @@ bad:
 initconn()
 {
 	register char *p, *a;
-	int result;
+	int result, len;
 
 	data_addr = myctladdr;
 	data_addr.sin_port = 0;		/* let system pick one */
@@ -453,8 +454,9 @@ initconn()
 	if (options & SO_DEBUG &&
 	    setsockopt(data, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
 		perror("ftp: setsockopt (ignored)");
-	if (socketaddr(data, &data_addr) < 0) {
-		perror("ftp: socketaddr");
+	len = sizeof (data_addr);
+	if (getsockname(data, (char *)&data_addr, &len) < 0) {
+		perror("ftp: getsockname");
 		goto bad;
 	}
 	if (listen(data, 1) < 0) {
