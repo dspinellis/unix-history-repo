@@ -1,4 +1,4 @@
-#	@(#)bsd.doc.mk	8.1 (Berkeley) %G%
+#	@(#)bsd.doc.mk	5.11 (Berkeley) %G%
 
 BIB?=		bib
 EQN?=		eqn
@@ -12,6 +12,11 @@ SOELIM?=	soelim
 TBL?=		tbl
 
 .PATH: ${.CURDIR}
+
+.if !target(all)
+.MAIN: all
+all: paper.ps
+.endif
 
 .if !target(paper.ps)
 paper.ps: ${SRCS}
