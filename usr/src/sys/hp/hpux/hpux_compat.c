@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.41 91/04/06$
  *
- *	@(#)hpux_compat.c	7.15 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.16 (Berkeley) %G%
  */
 
 /*
@@ -248,12 +248,12 @@ hpuxopen(p, uap, retval)
 		 * proper error).
 		 */
 		if ((mode & HPUXFEXCL) || (FFLAGS(mode) & FWRITE))
-			uap->mode |= FCREAT;
+			uap->mode |= O_CREAT;
 	}
 	if (mode & HPUXFTRUNC)
-		uap->mode |= FTRUNC;
+		uap->mode |= O_TRUNC;
 	if (mode & HPUXFEXCL)
-		uap->mode |= FEXCL;
+		uap->mode |= O_EXCL;
 	return (open(p, uap, retval));
 }
 
@@ -282,12 +282,12 @@ hpuxfcntl(p, uap, retval)
 	}
 	switch (uap->cmd) {
 	case F_SETFL:
-		if (uap->arg & FNDELAY)
+		if (uap->arg & FNONBLOCK)
 			*fp |= UF_FNDELAY_ON;
 		else {
 			*fp &= ~UF_FNDELAY_ON;
 			if (*fp & UF_FIONBIO_ON)
-				uap->arg |= FNDELAY;
+				uap->arg |= FNONBLOCK;
 		}
 		uap->arg &= ~(HPUXFSYNCIO|HPUXFREMOTE|FUSECACHE);
 		break;
@@ -302,14 +302,14 @@ hpuxfcntl(p, uap, retval)
 	error = fcntl(p, uap, retval);
 	if (error == 0 && uap->cmd == F_GETFL) {
 		mode = *retval;
-		*retval &= ~(FCREAT|FTRUNC|FEXCL|FUSECACHE);
-		if ((mode & FNDELAY) && (*fp & UF_FNDELAY_ON) == 0)
-			*retval &= ~FNDELAY;
-		if (mode & FCREAT)
+		*retval &= ~(O_CREAT|O_TRUNC|O_EXCL|FUSECACHE);
+		if ((mode & FNONBLOCK) && (*fp & UF_FNDELAY_ON) == 0)
+			*retval &= ~FNONBLOCK;
+		if (mode & O_CREAT)
 			*retval |= HPUXFCREAT;
-		if (mode & FTRUNC)
+		if (mode & O_TRUNC)
 			*retval |= HPUXFTRUNC;
-		if (mode & FEXCL)
+		if (mode & O_EXCL)
 			*retval |= HPUXFEXCL;
 	}
 	return (error);
@@ -320,7 +320,7 @@ hpuxfcntl(p, uap, retval)
  * on a VNODE would block, not an error.
  *
  * In 6.2 and 6.5 sockets appear to return EWOULDBLOCK.
- * In 7.0 the behavior for sockets depends on whether FNDELAY is in effect.
+ * In 7.0 the behavior for sockets depends on whether FNONBLOCK is in effect.
  */
 hpuxread(p, uap, retval)
 	struct proc *p;
@@ -963,13 +963,10 @@ hpuxioctl(p, uap, retval)
 		else
 			*ofp &= ~UF_FIONBIO_ON;
 		/*
-		 * Only set/clear if FNDELAY not in effect
+		 * Only set/clear if FNONBLOCK not in effect
 		 */
 		if ((*ofp & UF_FNDELAY_ON) == 0) {
-			if (tmp = (fp->f_flag & FNDELAY))
-				fp->f_flag |= FNDELAY;
-			else
-				fp->f_flag &= ~FNDELAY;
+			tmp = fp->f_flag & FNONBLOCK;
 			error = (*fp->f_ops->fo_ioctl)(fp, FIONBIO,
 						       (caddr_t)&tmp, p);
 		}
