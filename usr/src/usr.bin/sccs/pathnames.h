@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	5.5 (Berkeley) %G%
+ *	@(#)pathnames.h	5.6 (Berkeley) %G%
  */
 
 #include <paths.h>
@@ -13,7 +13,7 @@
 #define	_PATH_SCCSBDIFF	"/usr/local/bin/bdiff"
 #define	_PATH_SCCSCOMB	"/usr/local/bin/comb"
 #define	_PATH_SCCSDELTA	"/usr/local/bin/delta"
-#define	_PATH_SCCSDIFF	"/usr/local/bin/diff"
+#define	_PATH_SCCSDIFF	"/usr/local/bin/sccsdiff"
 #define	_PATH_SCCSGET	"/usr/local/bin/get"
 #define	_PATH_SCCSHELP	"/usr/local/bin/help"
 #define	_PATH_SCCSPRS	"/usr/local/bin/prs"
