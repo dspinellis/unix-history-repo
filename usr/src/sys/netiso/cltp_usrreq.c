@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)cltp_usrreq.c	7.1 (Berkeley) %G%
+ *	@(#)cltp_usrreq.c	7.2 (Berkeley) %G%
  */
 
 #ifndef CLTPOVAL_SRC /* XXX -- till files gets changed */
@@ -95,28 +95,36 @@ cltp_input(m0, srcsa, dstsa, cons_channel, output)
 		continue;
 
 	case CLTPOVAL_CSM:
-		if (iso_check_csum(m0, len))
+		if (iso_check_csum(m0, len)) {
+			cltpstat.cltps_badsum++;
 			goto bad;
+		}
 		up += 4;
+		continue;
 
 	default:
 		printf("clts: unknown option (%x)\n", up[0]);
+		cltpstat.cltps_hdrops++;
 		goto bad;
 	}
 	if (dlen == 0 || src->siso_tlen == 0)
 		goto bad;
 	for (isop = cltb.isop_next;; isop = isop->isop_next) {
-		if (isop == &cltb)
+		if (isop == &cltb) {
+			cltpstat.cltps_noport++;
 			goto bad;
+		}
 		if (isop->isop_laddr &&
 		    bcmp(TSEL(isop->isop_laddr), dtsap, dlen) == 0)
 			break;
 	}
 	m = m0;
-	m->m_len += hdrlen;
+	m->m_len -= hdrlen;
+	m->m_data += hdrlen;
 	if (sbappendaddr(&isop->isop_socket->so_rcv, (struct sockaddr *)src,
 	    m, (struct mbuf *)0) == 0)
 		goto bad;
+	cltpstat.cltps_ipackets++;
 	sorwakeup(isop->isop_socket);
 	m0 = 0;
 bad:
@@ -124,7 +132,7 @@ bad:
 		m_freem(dtom(src));
 	if (m0)
 		m_freem(m0);
-	return;
+	return 0;
 }
 
 /*
@@ -199,14 +207,14 @@ cltp_output(isop, m)
 	 * Fill in mbuf with extended CLTP header
 	 */
 	up = mtod(m, u_char *);
-	up[0] = UD_TPDU_type;
-	up[1] = hdrlen - 1;
-	up[2] = CLTPOVAL_DST;
+	up[0] = hdrlen - 1;
+	up[1] = UD_TPDU_type;
+	up[2] = CLTPOVAL_SRC;
 	up[3] = (siso = isop->isop_laddr)->siso_tlen;
 	up += 4;
 	bcopy(TSEL(siso), (caddr_t)up, siso->siso_tlen);
 	up += siso->siso_tlen;
-	up[0] = CLTPOVAL_SRC;
+	up[0] = CLTPOVAL_DST;
 	up[1] = (siso = isop->isop_faddr)->siso_tlen;
 	up += 2;
 	bcopy(TSEL(siso), (caddr_t)up, siso->siso_tlen);
@@ -217,8 +225,9 @@ cltp_output(isop, m)
 		up += siso->siso_tlen;
 		up[0] = CLTPOVAL_CSM;
 		up[1] = 2;
-		iso_gen_cksum(m, 2 + up - mtod(m, u_char *), len);
+		iso_gen_csum(m, 2 + up - mtod(m, u_char *), len);
 	}
+	cltpstat.cltps_opackets++;
 	return (tpclnp_output(isop, m, len, !docsum));
 bad:
 	m_freem(m);

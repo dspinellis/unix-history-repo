@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)cltp_var.h	7.1 (Berkeley) %G%
+ *	@(#)cltp_var.h	7.2 (Berkeley) %G%
  */
 
 #define UD_TPDU_type	0x40	/* packet type */
