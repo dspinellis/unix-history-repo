@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	6.3 (Berkeley) %G%
+#	@(#)Makefile	6.4 (Berkeley) %G%
 #
 # $Header: Makefile 1.4 83/07/21 21:27:16 sklower Exp $
 #	makefile for the franz lisp manual
@@ -109,8 +109,7 @@ app.${PRINTER}: tindex ${TMacSrc} ${DocApp}
 	echo ".Ib" | sort +2 tindex - | sed -f indexsed | \
 		${TROFF} -t -me ${TMacSrc} - ${DocApp} > app.${PRINTER}
 
-all:
-	make rall
+all: rall
 
 rall: ${Append}
 	make NROFF=${NROFF} O=${O} `${Append} .r ${RootGenSrc}` helpindex
@@ -164,8 +163,8 @@ spall: ${Append}
 .n.sp:
 	spell $*.n > $*.sp
 	
-install: 
-	make O=${O} rall
+install: rall
+	-mkdir ${LibDir}/manual
 	cp `${Append} .r ${RootGenSrc}` helpindex ${LibDir}/manual
 
 clean:
