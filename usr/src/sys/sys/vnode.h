@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vnode.h	7.10 (Berkeley) %G%
+ *	@(#)vnode.h	7.11 (Berkeley) %G%
  */
 
 /*
@@ -145,7 +145,7 @@ struct vnodeops {
 #define	VOP_MKDIR(n,a)		(*((n)->ni_dvp->v_op->vn_mkdir))((n),(a))
 #define	VOP_RMDIR(n)		(*((n)->ni_dvp->v_op->vn_rmdir))(n)
 #define	VOP_SYMLINK(n,a,m)	(*((n)->ni_dvp->v_op->vn_symlink))((n),(a),(m))
-#define	VOP_READDIR(v,u,i,c)	(*((v)->v_op->vn_readdir))((v),(u),(i),(c))
+#define	VOP_READDIR(v,u,c)	(*((v)->v_op->vn_readdir))((v),(u),(c))
 #define	VOP_READLINK(v,u,c)	(*((v)->v_op->vn_readlink))((v),(u),(c))
 #define	VOP_ABORTOP(n)		(*((n)->ni_dvp->v_op->vn_abortop))(n)
 #define	VOP_INACTIVE(v)		(*((v)->v_op->vn_inactive))(v)
