@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -750,7 +750,7 @@ dofile()
 		if (fp->f_type <= DTYPE_SOCKET)
 			printf("%-8.8s", dtypes[fp->f_type]);
 		else
-			printf("8d", fp->f_type);
+			printf("%8d", fp->f_type);
 		putf(fp->f_flag&FREAD, 'R');
 		putf(fp->f_flag&FWRITE, 'W');
 		putf(fp->f_flag&FAPPEND, 'A');
