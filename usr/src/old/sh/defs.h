@@ -1,4 +1,4 @@
-/*	defs.h	4.4	85/03/19	*/
+/*	defs.h	4.5	89/05/08	*/
 
 #
 /*
@@ -177,8 +177,6 @@ STRING		exitadr;
 STRING		dolladr;
 STRING		pcsadr;
 STRING		pidadr;
-
-MSG		defpath;
 
 /* names always present */
 MSG		mailname;

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ed.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)ed.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
@@ -82,7 +82,7 @@ int	col;
 char	*globp;
 int	tfile	= -1;
 int	tline;
-char	tfname[] = "/tmp/eXXXXX";
+char	tfname[] = _PATH_TMP;
 char	*loc1;
 char	*loc2;
 char	*locs;
@@ -1748,8 +1748,7 @@ char	*keyp, *permp;
 		close(1);
 		dup(pf[0]);
 		dup(pf[1]);
-		execl(_PATH_UL_MAKEKEY, "-", 0);
-		execl(_PATH_L_MAKEKEY, "-", 0);
+		execl(_PATH_MAKEKEY, "-", 0);
 		exit(1);
 	}
 	write(pf[1], buf, 10);

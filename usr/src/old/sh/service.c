@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)service.c	4.6 %G%";
+static char sccsid[] = "@(#)service.c	4.7 %G%";
 #endif
 
 #
@@ -13,6 +13,7 @@ static char sccsid[] = "@(#)service.c	4.6 %G%";
 
 #include	"defs.h"
 #include	"errno.h"
+#include	"pathnames.h"
 
 
 PROC VOID	gsort();
@@ -72,7 +73,7 @@ STRING	getpath(s)
 		ELSE	return(nullstr);
 		FI
 	ELIF (path = pathnod.namval)==0
-	THEN	return(defpath);
+	THEN	return(_PATH_DEFPATH);
 	ELSE	return(cpystak(path));
 	FI
 }
@@ -183,9 +184,9 @@ gocsh(t, cp, xecenv)
 	for (i = 0; t[i]; i++)
 		newt[i+1] = t[i];
 	newt[i+1] = 0;
-	newt[0] = "/bin/csh";
+	newt[0] = _PATH_CSHELL;
 	newt[1] = cp;
-	execve("/bin/csh", newt, xecenv);
+	execve(_PATH_CSHELL, newt, xecenv);
 }
 
 /* for processes to be waited for */

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ar.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ar.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #ifndef lint
@@ -20,9 +20,9 @@ char copyright[] =
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-
 #include <stdio.h>
 #include <ar.h>
+#include "pathnames.h"
 
 struct	stat	stbuf;
 struct	ar_hdr	arbuf;
@@ -59,9 +59,9 @@ char	**namv;
 int	namc;
 char	*arnam;
 char	*ponam;
-char	*tmpnam		=	{ "/tmp/vXXXXX" };
-char	*tmp1nam	=	{ "/tmp/v1XXXXX" };
-char	*tmp2nam	=	{ "/tmp/v2XXXXX" };
+char	*tmpnam = _PATH_TMP1;
+char	*tmp1nam = _PATH_TMP2;
+char	*tmp2nam = _PATH_TMP3;
 char	*tfnam;
 char	*tf1nam;
 char	*tf2nam;
