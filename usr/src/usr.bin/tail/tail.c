@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tail.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)tail.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -42,39 +42,56 @@ main(argc, argv)
 	long off;
 	enum STYLE style;
 	int ch;
-	char *p, *num;
+	char *p;
+
+	/*
+	 * Tail's options are weird.  First, -n10 is the same as -n-10, not
+	 * -n+10.  Second, the number options are 1 based and not offsets,
+	 * so -n+1 is the first line, and -c-1 is the last byte.  Third, the
+	 * number options for the -r option specify the number of things that
+	 * get displayed, not the starting point in the file.  The one major
+	 * incompatibility in this version as compared to historical versions
+	 * is that the 'r' option couldn't be modified by the -lbc options,
+	 * i.e. it was always done in lines.  This version treats -rc as a
+	 * number of characters in reverse order.  Finally, the default for
+	 * -r is the entire file, not 10 lines.
+	 */
+#define	ARG(units, forward, backward) { \
+	if (style) \
+		usage(); \
+	off = strtol(optarg, &p, 10) * (units); \
+	if (*p) \
+		err("illegal offset -- %s", optarg); \
+	switch(optarg[0]) { \
+	case '+': \
+		if (off) \
+			off -= (units); \
+			style = (forward); \
+		break; \
+	case '-': \
+		off = -off; \
+		/* FALLTHROUGH */ \
+	default: \
+		style = (backward); \
+		break; \
+	} \
+}
 
 	obsolete(argv);
-
 	style = NOTSET;
 	while ((ch = getopt(argc, argv, "b:c:fn:r")) != EOF)
 		switch(ch) {
 		case 'b':
-			if (style)
-				usage();
-			off = strtol(num = optarg, &p, 10) * 512;
-			if (*p)
-				err("illegal offset -- %s", optarg);
-			style = *num == '+' ? FBYTES : RBYTES;
+			ARG(512, FBYTES, RBYTES);
 			break;
 		case 'c':
-			if (style)
-				usage();
-			off = strtol(num = optarg, &p, 10);
-			if (*p)
-				err("illegal offset -- %s", optarg);
-			style = *num == '+' ? FBYTES : RBYTES;
+			ARG(1, FBYTES, RBYTES);
 			break;
 		case 'f':
 			fflag = 1;
 			break;
 		case 'n':
-			if (style)
-				usage();
-			off = strtol(num = optarg, &p, 10);
-			if (*p)
-				err("illegal offset -- %s", optarg);
-			style = *num == '+' ? FLINES : RLINES;
+			ARG(1, FLINES, RLINES);
 			break;
 		case 'r':
 			rflag = 1;
@@ -87,19 +104,30 @@ main(argc, argv)
 	argv += optind;
 
 	/*
-	 * Don't permit follow option if displaying in reverse.  An offset
-	 * with an explicit leading minus is meaningless.
+	 * If displaying in reverse, don't permit follow option, and convert
+	 * style values.
 	 */
 	if (rflag) {
 		if (fflag)
 			usage();
-		if (style && *num == '-')
-			err("illegal offset for -r option -- %s", num);
 		if (style == FBYTES)
 			style = RBYTES;
 		if (style == FLINES)
 			style = RLINES;
 	}
+
+	/*
+	 * If style not specified, the default is the whole file for -r, and
+	 * the last 10 lines if not -r.
+	 */
+	if (style == NOTSET)
+		if (rflag) {
+			off = 0;
+			style = REVERSE;
+		} else {
+			off = 10;
+			style = RLINES;
+		}
 
 	if (fname = *argv) {
 		if ((fp = fopen(fname, "r")) == NULL)
@@ -120,24 +148,6 @@ main(argc, argv)
 		errno = 0;
 		fflag = 0;		/* POSIX.2 requires this. */
 	}
-
-	/*
-	 * Tail's options are weird.  First, -n10 is the same as -n-10, not
-	 * -n+10.  Second, the number options for the -r option specify the
-	 * number of bytes/chars/lines that get displayed, not the offset from
-	 * the beginning/end of the file.  Finally, the default for -r is the
-	 * entire file, not 10 lines.
-	 */
-	if (!style)
-		if (rflag) {
-			off = 0;
-			style = REVERSE;
-		} else {
-			off = 10;
-			style = RLINES;
-		}
-	else if (off < 0)
-		off = -off;
 
 	if (rflag)
 		reverse(fp, style, off, &sb);
