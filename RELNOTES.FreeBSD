@@ -16,9 +16,9 @@ releases in the GAMMA distribution.  This 1.0 distribution fixes
 many of the first-run problems our GAMMA and EPSILON users reported back
 to us.
 
-Additionally, many packages such as XFree86 2.0, xview 3.2, elm, nntp,
-mh and dozens of other miscellaneous utilities have been ported and
-are now available as add-ons.  See then next section of this document
+Additionally, many packages such as XFree86 2.1, xview 3.2, elm, nntp,
+mh, InterViews and dozens of other miscellaneous utilities have been ported
+and are now available as add-ons.  See then next section of this document
 for more details.
 
 For a list of contributors, please see the files "CONTRIB.FreeBSD" and
@@ -28,9 +28,9 @@ The core of FreeBSD does not contain DES code which would inhibit its
 being exported outside the United States.  There is an add-on package
 to the core distribution, for use only in the United States, that
 contains the programs that normally use DES.  The auxilliary packages
-provided separately can be used by anyone.  Work is in progress to
-provide a freely (from outside the U.S.) exportable European distribution
-of DES for our non U.S. users.
+provided separately can be used by anyone.   A freely (from outside the U.S.)
+exportable European distribution of DES for our non U.S. users also exists
+and is described in the FreeBSD FAQ.
 
 
 2. Supported Configurations
@@ -296,4 +296,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.27 1994/03/24 21:57:38 davidg Exp $
+$Id: RELNOTES.FreeBSD,v 1.28 1994/03/25 15:27:46 jkh Exp $
