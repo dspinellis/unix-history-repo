@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	8.12 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	8.13 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -66,7 +66,7 @@ struct vnodeopv_entry_desc lfs_vnodeop_entries[] = {
 	{ &vop_readdir_desc, ufs_readdir },		/* readdir */
 	{ &vop_readlink_desc, ufs_readlink },		/* readlink */
 	{ &vop_abortop_desc, ufs_abortop },		/* abortop */
-	{ &vop_inactive_desc, lfs_inactive },		/* inactive */
+	{ &vop_inactive_desc, ufs_inactive },		/* inactive */
 	{ &vop_reclaim_desc, lfs_reclaim },		/* reclaim */
 	{ &vop_lock_desc, ufs_lock },			/* lock */
 	{ &vop_unlock_desc, ufs_unlock },		/* unlock */
@@ -116,7 +116,7 @@ struct vnodeopv_entry_desc lfs_specop_entries[] = {
 	{ &vop_readdir_desc, spec_readdir },		/* readdir */
 	{ &vop_readlink_desc, spec_readlink },		/* readlink */
 	{ &vop_abortop_desc, spec_abortop },		/* abortop */
-	{ &vop_inactive_desc, lfs_inactive },		/* inactive */
+	{ &vop_inactive_desc, ufs_inactive },		/* inactive */
 	{ &vop_reclaim_desc, lfs_reclaim },		/* reclaim */
 	{ &vop_lock_desc, ufs_lock },			/* lock */
 	{ &vop_unlock_desc, ufs_unlock },		/* unlock */
@@ -167,7 +167,7 @@ struct vnodeopv_entry_desc lfs_fifoop_entries[] = {
 	{ &vop_readdir_desc, fifo_readdir },		/* readdir */
 	{ &vop_readlink_desc, fifo_readlink },		/* readlink */
 	{ &vop_abortop_desc, fifo_abortop },		/* abortop */
-	{ &vop_inactive_desc, lfs_inactive },		/* inactive */
+	{ &vop_inactive_desc, ufs_inactive },		/* inactive */
 	{ &vop_reclaim_desc, lfs_reclaim },		/* reclaim */
 	{ &vop_lock_desc, ufs_lock },			/* lock */
 	{ &vop_unlock_desc, ufs_unlock },		/* unlock */
@@ -453,23 +453,6 @@ lfs_close(ap)
 	}
 	simple_unlock(&vp->v_interlock);
 	return (0);
-}
-
-/*
- * Stub inactive routine that avoid calling ufs_inactive in some cases.
- */
-int lfs_no_inactive = 0;
-
-int
-lfs_inactive(ap)
-	struct vop_inactive_args /* {
-		struct vnode *a_vp;
-	} */ *ap;
-{
-	
-	if (lfs_no_inactive)
-		return (0);
-	return (ufs_inactive(ap));
 }
 
 /*
