@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)srt0.c	7.7 (Berkeley) %G%
+ *	@(#)srt0.c	7.8 (Berkeley) %G%
  */
 
 #include "../include/mtpr.h"
@@ -22,7 +22,7 @@
 	.globl	__rtt
 	.globl	_configure
 	.globl	_cpu
-	.globl	_openfirst
+	.globl	_firstopen
 	.globl	_boothowto
 	.globl	_bootdev
 
@@ -101,7 +101,7 @@ begin:
 again:
 	mtpr	$0,$SCBB
 	calls	$0,_configure
-	movl	$1,_openfirst
+	movl	$1,_firstopen
 	calls	$0,_main
 #ifdef REL
 	jmp	again
