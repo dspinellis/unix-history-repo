@@ -1,6 +1,6 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
 PROG=	cp
-SRCS=	cp.c path.c
+SRCS=	cp.c utils.c
 
 .include <bsd.prog.mk>
