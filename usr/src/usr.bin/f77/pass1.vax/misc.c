@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -16,6 +16,12 @@ static char sccsid[] = "@(#)misc.c	5.1 (Berkeley) %G%";
  * University of Utah CS Dept modification history:
  *
  * $Log:	misc.c,v $
+ * Revision 5.2  85/12/18  00:35:08  donn
+ * Prevent core dumps for peculiar statement numbers.
+ * 
+ * Revision 5.1  85/08/10  03:48:29  donn
+ * 4.3 alpha
+ * 
  * Revision 3.1  84/10/13  01:53:26  donn
  * Installed Jerry Berkman's version; added UofU comment header.
  * 
@@ -355,7 +361,7 @@ register struct Labelblock *lp;
 
 if(l <= 0 || l > 99999 ) {
 	errstr("illegal label %d", l);
-	return(NULL);
+	l = 0;
 	}
 
 for(lp = labeltab ; lp < highlabtab ; ++lp)
