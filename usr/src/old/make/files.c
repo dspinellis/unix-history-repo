@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)files.c	4.13 (Berkeley) 86/07/24";
+static	char *sccsid = "@(#)files.c	4.14 (Berkeley) 86/10/13";
 #include <fcntl.h>
 
 /* UNIX DEPENDENT PROCEDURES */
@@ -20,7 +20,7 @@ char *builtin[] =
 	"LEX=lex",
 	"LFLAGS=",
 	"CC=cc",
-#if defined(vax) || defined(sun)
+#if defined(vax) || defined(sun) || defined(tahoe)
 	"AS=as",
 #else
 	"AS=as -",
