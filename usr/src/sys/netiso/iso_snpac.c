@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_snpac.c	7.13 (Berkeley) %G%
+ *	@(#)iso_snpac.c	7.14 (Berkeley) %G%
  */
 
 /***********************************************************
