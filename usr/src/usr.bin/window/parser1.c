@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)parser1.c	3.8 84/01/11";
+static	char *sccsid = "@(#)parser1.c	3.9 84/01/12";
 #endif
 
 #include <stdio.h>
@@ -14,7 +14,6 @@ static	char *sccsid = "@(#)parser1.c	3.8 84/01/11";
 #define p_synerred()	(cx.x_synerred)
 #define p_clearerr()	(cx.x_erred = cx.x_synerred = 0)
 #define p_abort()	(cx.x_abort)
-#define p_valfree(v)	if ((v).v_type == V_STR) str_free((v).v_str)
 
 p_start()
 {
@@ -157,7 +156,7 @@ char flag;
 #ifdef DEBUG
 			error("command: expression.");
 #endif
-			p_valfree(t);
+			val_free(t);
 			return 0;
 		}
 	}
@@ -192,7 +191,7 @@ char flag;
 		}
 	}
 	str_free(cmd);
-	p_valfree(t);
+	val_free(t);
 	if (token == T_EOL)
 		(void) s_gettok();
 	else if (token != T_EOF) {
@@ -248,7 +247,7 @@ register struct value *v;
 				if (ap->arg_name == 0) {
 					p_error("%s: Too many arguments.",
 						c->lc_name);
-					p_valfree(t);
+					val_free(t);
 					ap = 0;
 					flag = 0;
 				} else
@@ -287,7 +286,7 @@ register struct value *v;
 				if (ap->arg_name == 0) {
 					p_error("%s: Unknown argument \"%s\".",
 						c->lc_name, tmp);
-					p_valfree(t);
+					val_free(t);
 					flag = 0;
 					ap = 0;
 				}
@@ -299,7 +298,7 @@ register struct value *v;
 				p_error("%s: Argument %d (%s) duplicated.",
 					c->lc_name, ap - c->lc_arg + 1,
 					ap->arg_name);
-				p_valfree(t);
+				val_free(t);
 				flag = 0;
 			} else if (t.v_type == V_ERR) {
 				/* do nothing */
@@ -308,7 +307,7 @@ register struct value *v;
 				p_error("%s: Argument %d (%s) type mismatch.",
 					c->lc_name, ap - c->lc_arg + 1,
 					ap->arg_name);
-				p_valfree(t);
+				val_free(t);
 				flag = 0;
 			} else
 				ap->arg_val = t;
@@ -326,12 +325,12 @@ register struct value *v;
 		(*c->lc_func)(v);
 	if (c != 0)
 		for (ap = c->lc_arg; ap->arg_name != 0; ap++)
-			p_valfree(ap->arg_val);
+			val_free(ap->arg_val);
 	return 0;
 abort:
 	if (c != 0)
 		for (ap = c->lc_arg; ap->arg_name != 0; ap++)
-			p_valfree(ap->arg_val);
+			val_free(ap->arg_val);
 	return -1;
 }
 
@@ -351,7 +350,7 @@ char flag;
 	case V_NUM:
 		if (flag && var_set(name, v) == 0) {
 			p_memerror();
-			p_valfree(*v);
+			val_free(*v);
 			return -1;
 		}
 		break;
@@ -438,7 +437,7 @@ char flag;
 	if ((flag && true ? p_expr1(v, 1) : p_expr1(&t, 0)) < 0)
 		return -1;
 	if (token != T_COLON) {
-		p_valfree(*v);
+		val_free(*v);
 		p_synerror();
 		return -1;
 	}
@@ -623,13 +622,13 @@ char flag;
 		if (level == 10) {
 			if (p_expr11(&t, flag) < 0) {
 				p_synerror();
-				p_valfree(*v);
+				val_free(*v);
 				return -1;
 			}
 		} else {
 			if (p_expr3_10(level + 1, &t, flag) < 0) {
 				p_synerror();
-				p_valfree(*v);
+				val_free(*v);
 				return -1;
 			}
 		}
@@ -665,8 +664,8 @@ char flag;
 		}
 
 		if (!flag) {
-			p_valfree(*v);
-			p_valfree(t);
+			val_free(*v);
+			val_free(t);
 			v->v_type = V_ERR;
 			continue;
 		}
@@ -867,7 +866,7 @@ char flag;
 		}
 		if (token != T_RP) {
 			p_synerror();
-			p_valfree(*v);
+			val_free(*v);
 			return -1;
 		}
 		(void) s_gettok();
@@ -907,7 +906,7 @@ char flag;
 		str_free(cmd);
 		if (token != T_RP) {
 			p_synerror();
-			p_valfree(*v);
+			val_free(*v);
 			return -1;
 		}
 		(void) s_gettok();
