@@ -633,3 +633,36 @@ biodone(bp)
 		wakeup((caddr_t)bp);
 	}
 }
+
+#ifdef DIAGNOSTIC
+/*
+ * Print out statistics on the current allocation of the buffer pool.
+ * Can be enabled to print out on every ``sync'' by setting "syncprt"
+ * above.
+ */
+void
+vfs_bufstats()
+{
+	int s, i, j, count;
+	register struct buf *dp, *bp;
+	int counts[MAXBSIZE/CLBYTES+1];
+	static char *bname[BQUEUES] = { "LOCKED", "LRU", "AGE", "EMPTY" };
+
+	for (dp = bfreelist, i = 0; dp < &bfreelist[BQUEUES]; dp++, i++) {
+		count = 0;
+		for (j = 0; j <= MAXBSIZE/CLBYTES; j++)
+			counts[j] = 0;
+		s = splbio();
+		for (bp = dp->av_forw; dp != bp; bp = bp->av_forw) {
+			counts[bp->b_bufsize/CLBYTES]++;
+			count++;
+		}
+		splx(s);
+		printf("%s: total-%d", bname[i], count);
+		for (j = 0; j <= MAXBSIZE/CLBYTES; j++)
+			if (counts[j] != 0)
+				printf(", %d-%d", j * CLBYTES, counts[j]);
+		printf("\n");
+	}
+}
+#endif /* DIAGNOSTIC */
