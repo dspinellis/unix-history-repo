@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fstat.1	5.1 (Berkeley) %G%
+.\"	@(#)fstat.1	5.2 (Berkeley) %G%
 .\"
 .TH FSTAT 8 ""
 .UC 4
@@ -18,7 +18,7 @@ pid ] [
 .B \-f
 filename ]
 .br
-.B fstat filename
+.B fstat filename [ filename... ]
 .SH DESCRIPTION
 .I Fstat
 identifies open files.
@@ -46,6 +46,9 @@ treating it as a mounted file system.
 .PP
 If more than one type of option is specified, files
 must match the criteria of each option specified.
+More than one file flag may be present.  In particular,
+one may say "fstat foo* bar*" and the right thing will
+happen.
 .PP
 The following fields are printed
 .TP 6
