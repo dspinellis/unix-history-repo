@@ -1,0 +1,22 @@
+To install everything, you might use:
+cd /usr/local/bin; ln -s /usr/src/public/zmodem-3.03/bin/* .
+cd /usr/local/man/cat1; ln -s /usr/src/public/zmodem-3.03/man/cat1/* .
+
+To recompile, cd to the zmodem-3.03 directory and type 'make'.  Gcc
+should not report any errors or warnings except;
+'ed.inputl.c:516: warning: variable `v' may be clobbered by `longjmp''
+which you can ignore.
+
+To reconfigure, type 'sh configure' (or 'bash configure' if you have
+bash since it works better with configure than ash does).
+
+The preformatted manpages are in man/cat1.  To regenerate the
+preformatted manual pages, cd to man and type 'sh catman'.
+
+The unmodified sources are available via anonymous ftp from
+prep.ai.mit.edu in directory /pub/gnu and file zmodem-3.03.tar.Z.
+
+Rich Murphey                   409-772-3399
+Physiology & Biophysics F-41   Fax 409-772-3381
+Univ. of Texas Medical Branch  rich@rice.edu
+Galveston, Texas 77555-0641    rich@rice.UUCP
