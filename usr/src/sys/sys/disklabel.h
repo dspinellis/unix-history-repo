@@ -1,5 +1,5 @@
 /*
- *	@(#)disklabel.h	7.5 (Berkeley) %G%
+ *	@(#)disklabel.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -14,9 +14,9 @@
  * to leave room for a bootstrap, etc.
  */
 
-#define LABELSECTOR	0		/* sector containing label */
-#define LABELOFFSET	64		/* offset of label in sector */
-#define DISKMAGIC	0x82564557	/* The disk magic number */
+#define LABELSECTOR	0			/* sector containing label */
+#define LABELOFFSET	64			/* offset of label in sector */
+#define DISKMAGIC	((u_long) 0x82564557)	/* The disk magic number */
 #ifndef MAXPARTITIONS
 #define	MAXPARTITIONS	8
 #endif
