@@ -1,4 +1,4 @@
-/* vsort.c	1.7	83/11/30
+/* vsort.c	1.8	84/02/05
  *
  *	Sorts and shuffles ditroff output for versatec wide printer.  It
  *	puts pages side-by-side on the output, and fits as many as it can
@@ -20,7 +20,9 @@
 #define	OBUFSIZ	250000	/* size of character buffer before sorting */
 #define	SLOP	1000	/* extra bit of buffer to allow for passing OBUFSIZ */
 
+#ifndef FONTDIR
 #define FONTDIR "/usr/lib/font"
+#endif
 #define INCH	200	/* assumed resolution of the printer (dots/inch) */
 #define POINT	72	/* number of points per inch */
 #define WIDTH	7040	/* number of pixels across the page */
@@ -58,20 +60,20 @@ int	pageno	= 0;	/* number of pages spread across a physical page */
 
 
 struct vlist {
-	short	v;	/* vertical position of this spread */
-	short	h;	/* horizontal position */
-	short	t;	/* line thickness */
+	unsigned short	v;	/* vertical position of this spread */
+	unsigned short	h;	/* horizontal position */
+	unsigned short	t;	/* line thickness */
 	short	st;	/* style mask */
-	short	u;	/* upper extent of height */
-	short	d;	/* depth of height */
-	char	s;	/* point size */
-	char	f;	/* font number */
+	unsigned short	u;	/* upper extent of height */
+	unsigned short	d;	/* depth of height */
+	unsigned char	s;	/* point size */
+	unsigned char	f;	/* font number */
 	char	*p;	/* text pointer to this spread */
 };
 
 struct	vlist	vlist[NVLIST + 1];
 struct	vlist	*vlp;			/* current spread being added to */
-int	nvlist	= 0;			/* number of spreads in list */
+int	nvlist	= 1;			/* number of spreads in list */
 int	obufsiz	= OBUFSIZ;
 char	obuf[OBUFSIZ + SLOP];
 char	*op = obuf;			/* pointer to current spot in buffer */
@@ -85,9 +87,14 @@ char *argv[];
 	double atof();
 
 
-	vlp = &vlist[0] - 1;		/* initialize pointer to one less */
-	startspan(0);			/* than beginning so "startspan" can */
-					/* increment it before using it */
+	vlp = &vlist[0];		/* initialize spread pointer */
+	vlp->p = op;
+	vlp->v = vlp->d = vlp->u = vlp->h = 0;
+	vlp->s = size;
+	vlp->f = font;
+	vlp->st = style;
+	vlp->t = thick;
+
 	while (argc > 1 && **++argv == '-') {
 	    switch ((*argv)[1]) {
 		case 'f':
@@ -190,27 +197,27 @@ register FILE *fp;
 		case '0': case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':
 				/* two motion digits plus a character */
+			setlimit(vpos - up, vpos + down);
 			*op++ = c;
 			hmot((c-'0') * 10 + (*op++ = getc(fp)) - '0');
 			*op++ = getc(fp);
-			setlimit();
 			break;
 		case 'c':	/* single ascii character */
+			setlimit(vpos - up, vpos + down);
 			*op++ = c;
 			*op++ = getc(fp);
-			setlimit();
 			break;
 		case 'C':	/* white-space terminated funny character */
+			setlimit(vpos - up, vpos + down);
 			*op++ = c;
 			while ((*op++ = c = getc(fp)) != ' ' && c != '\n')
 				;
-			setlimit();
 			break;
 		case 't':	/* straight text */
+			setlimit(vpos - up, vpos + down);
 			*op++ = c;
 			fgets(op, SLOP, fp);
 			op += strlen(op);
-			setlimit();
 			break;
 		case 'D':	/* draw function */
 			fgets(buf, SLOP, fp);
@@ -225,42 +232,28 @@ register FILE *fp;
 				break;
 			case 'l':	/* draw a line */
 				sscanf(buf+1, "%d %d", &n, &m);
-						/* put line on its own spread */
 				if (m < 0) {
-				    startspan(vpos + m);
-				    vlp->d = vpos + thick/2;
+				    setlimit(vpos+m-thick/2, vpos+thick/2);
 				} else {
-				    startspan(vpos);
-				    vlp->d = vpos + m + thick/2;
+				    setlimit(vpos-thick/2, vpos+m+thick/2);
 				}
-				sprintf(op, "V%dD%s", vpos, buf);
+				sprintf(op, "D%s", buf);
 				op += strlen(op);
 				hmot(n);
 				vmot(m);
 				break;
 			case 'c':	/* circle */
-				sscanf(buf+1, "%d", &n);	/* put circle */
-				startspan(vpos - (n + thick)/2);/* on its own */
-				vlp->d = vpos + (n + thick)/2;	/* spread */
-				sprintf(op, "V%dD%s", vpos, buf);
+			case 'e':	/* ellipse */
+				sscanf(buf+1, "%d", &n);
+				setlimit(vpos-(n+thick)/2, vpos+(n+thick)/2);
+				sprintf(op, "D%s", buf);
 				op += strlen(op);
 				hmot(n);
-				startspan(vpos);
-				break;
-			case 'e':	/* ellipse */
-				sscanf(buf+1, "%d %d", &m, &n);	/* same here */
-				startspan(vpos - (n + thick)/2);
-				vlp->d = vpos + (n + thick)/2;
-				sprintf(op, "V%dD%s", vpos, buf);
-				op += strlen(op);
-				hmot(m);
-				startspan(vpos);
 				break;
 			case 'a':	/* arc */
 				sscanf(buf+1, "%d %d %d %d", &n, &m, &n1, &m1);
-				startspan(vpos);
 				arcbounds(n, m, n1, m1);
-				sprintf(op, "V%dD%s", vpos, buf);
+				sprintf(op, "D%s", buf);
 				op += strlen(op);
 				hmot(n + n1);
 				vmot(m + m1);
@@ -269,12 +262,12 @@ register FILE *fp;
 			case 'g':	/* gremlin curve */
 			    {
 				register char *pop;
-							   /* a curve goes on */
-				startspan(vpos);	      /* its own span */
-				sprintf(op, "V%dD", vpos);   /* vertical move */
-				pop = op += strlen(op);     /* to curve start */
-				do {			   /* read in rest of */
-				    sprintf(op, "%s", buf);    /* point input */
+
+				startspan(vpos);	/* always put curve */
+				*op++ = 'D';		 /* on its own span */
+				pop = op;	   /* pop -> start of points */
+				do {			  /* read in rest of */
+				    sprintf(op, "%s", buf);   /* point input */
 				    op += strlen(op);
 				    if (*(op - 1) != '\n')
 					fgets(buf, SLOP, fp);
@@ -293,7 +286,7 @@ register FILE *fp;
 				    else if (vpos > m) m = vpos;
 				} while (*pop != '\n');
 
-				vlp->u = vlp->v = n < 0 ? 0 : n;
+				vlp->u = n < 0 ? 0 : n;
 				vlp->d = m;
 				startspan(vpos);
 			    }
@@ -307,7 +300,7 @@ register FILE *fp;
 		case 's':
 			*op++ = c;
 			size = getnumber(fp);
-			up = (size * INCH) / POINT;	/* rough estimate */
+			up = (size * INCH) / POINT;	/* ROUGH estimate */
 			down = up / 3;			/* of max up/down */
 			break;
 		case 'f':
@@ -340,6 +333,7 @@ register FILE *fp;
 			hpos = leftmarg;
 		case '#':	/* comment */
 		case 'x':	/* device control */
+			startspan(vpos);
 			*op++ = c;
 			while ((*op++ = getc(fp)) != '\n')
 				;
@@ -355,22 +349,63 @@ register FILE *fp;
 /*----------------------------------------------------------------------------*
  | Routine:	setlimit
  |
- | Results:	using "up" and "down" set by point size changes, set the
- |		maximum rise and/or fall of a vertical extent
+ | Results:	using "newup" and "newdown" decide when to start a new span.
+ |		maximum rise and/or fall of a vertical extent are saved.
  |
- | Side Efct:	may set vlp's u and/or d
- |
- | Bugs:	assumes all text of a particular point size is of the same
- |		maximum rise fall above and below the text base line
+ | Side Efct:	may start new span.
  *----------------------------------------------------------------------------*/
 
-setlimit()
-{
-	register int upv = vpos - up;
-	register int downv = vpos + down;
+#define diffspan(x,y)	((x)/((int)(BAND * INCH)) - (y)/((int)(BAND * INCH)))
 
-	if (upv < vlp->u) vlp->u = upv;
-	if (downv > vlp->d) vlp->d = downv;
+setlimit(newup, newdown)
+register int newup;
+register int newdown;
+{
+	register int currup = vlp->u;
+	register int currdown = vlp->d;
+
+	if (newup < 0) newup = 0;	/* don't go back beyond start of page */
+	if (newdown < 0) newdown = 0;
+
+	if (diffspan(currup, currdown)) {	/* now spans > one band */
+	    if ((newup < currup && diffspan(newup, currup))
+		    || (newdown > currdown && diffspan(newdown, currdown))
+		    || diffspan(newup, newdown) == 0) {
+		startspan (vpos);
+		vlp->u = newup;
+		vlp->d = newdown;
+	    }
+	} else {
+	    if (newup < currup) {	/* goes farther up than before */
+		if (currup == vlp->v) {		/* is new span, just set "up" */
+		    vlp->u = newup;
+		} else {
+		    if (diffspan(newup, currup)) {	/* goes up farther */
+			startspan(vpos);		/* than previously */
+			vlp->u = newup;			/* AND to a higher */
+			vlp->d = newdown;		/* band.  */
+			return;
+		    } else {
+			vlp->u = newup;
+		    }
+		}
+	    }
+	    if (newdown > currdown) {
+		if (currdown == vlp->v) {
+		    vlp->d = newdown;
+		    return;
+		} else {
+		    if (diffspan(newdown, currdown)) {
+			startspan(vpos);
+			vlp->u = newup;
+			vlp->d = newdown;
+			return;
+		    } else {
+			vlp->d = newdown;
+		    }
+		}
+	    }
+	}
 }
 
 
@@ -383,7 +418,7 @@ setlimit()
  |		of the arc which is one of:  starting point, ending point
  |		or center + rad for bottom, and center - rad for top.
  |
- | Side Efct:	sets vlp's v, u and d
+ | Side Efct:	calls setlimit(up, down) to save the extent information.
  *----------------------------------------------------------------------------*/
 
 arcbounds(h, v, h1, v1)
@@ -396,11 +431,10 @@ int h, v, h1, v1;
 			/* left of the center point, and which is higher */
 
 	v1 += vpos + v;		/* v1 is vertical position of ending point */
-	vlp->v = vpos;		/* set vertical starting position of arc */
-
 				/* test relative positions for maximums */
-	vlp->u = (((i&3)==1) ? v1 : (((i&5)==4) ? vpos : vpos+v-rad)) - thick/2;
-	vlp->d = (((i&3)==2) ? v1 : (((i&5)==1) ? vpos : vpos+v+rad)) + thick/2;
+	setlimit(		/* and set the up/down of the arc */
+	    ((((i&3)==1) ? v1 : (((i&5)==4) ? vpos : vpos+v-rad)) - thick/2),
+	    ((((i&3)==2) ? v1 : (((i&5)==1) ? vpos : vpos+v+rad)) + thick/2));
 }
 
 
@@ -435,8 +469,8 @@ oflush()	/* sort, then dump out contents of obuf */
 		if(dbg>1)fprintf(stderr,"u=%d, d=%d,%.60s\n",vp->u,vp->d,vp->p);
 #endif
 		if (vp->u <= botv && vp->d >= topv) {
-		    printf("V%dH%ds%df%dDs%d\nDt%d\n",
-				vp->v, vp->h, vp->s, vp->f, vp->st, vp->t);
+		    printf("H%dV%ds%df%dDs%d\nDt%d\n",
+				vp->h, vp->v, vp->s, vp->f, vp->st, vp->t);
 		    for (p = vp->p; *p != 0; p++) putchar(*p);
 		}
 		notdone |= vp->d > botv;	/* not done if there's still */
@@ -523,11 +557,21 @@ t_pop()	/* pop to previous state */
 vgoto(n)
 register int n;
 {
-    if (n != vpos)
-	startspan(n);
-    vpos = n;
+	sprintf (op, "V%d", n);
+	op += strlen(op);
+	vpos = n;
 }
 
+
+/*----------------------------------------------------------------------------*
+ | Routine:	t_page
+ |
+ | Results:	new Margins are calculated for putting pages side-by-side.
+ |		If no more pages can fit across the paper (WIDTH wide)
+ |		a real page end is done and the currrent page is output.
+ |
+ | Side Efct:	oflush is called on a REAL page boundary.
+ *----------------------------------------------------------------------------*/
 
 t_page(n)
 int n;
@@ -558,6 +602,9 @@ register int n;
 {
 	*op++ = 0;
 	if (nvlist >= NVLIST) {
+#ifdef DEBUGABLE
+	    error(!FATAL, "ran out of vlist");
+#endif
 	    oflush();
 	}
 	vlp++;
