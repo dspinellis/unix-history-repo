@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)script.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)script.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -40,7 +40,7 @@ struct	termios tt;
 struct	winsize win;
 int	lb;
 int	l;
-char	*line = "/dev/ptyXX";
+char	line[] = "/dev/ptyXX";
 int	aflg;
 
 main(argc, argv)
