@@ -1,41 +1,81 @@
-#
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
-#
-#	@(#)Makefile	4.3	(Berkeley)	%G%
-#
+autoconfig
+backingstore
+badsectforw
+bdp
+bottomhalf
+busadapter
+byte
+capability
+cbreak
+character
+cookedmode
+demandpage
+egid
+erasechar
+euid
+fodkluster
+gid
+hardlimit
+hardlock
+interruptvectab
+iopage
+ipl
+killchar
+kluster
+ldpctx
+mmapioarch
+msl
+nbio
+page
+pagedaemon
+panic
+psn
+rawmode
+recvwindow
+rgid
+ruid
+secondstorage
+sharedtextseg
+sigdrivenio
+slidingwindowscheme
+sndwindow
+stickytext
+svpctx
+swapper
+syspagetab
+text
+tophalf
+uid
+unbuffered
+usrrequest
+worderasechar
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	diff3.c
-OBJS=	diff3.o
+OBJS=
+MAN=	diff3.0
 
 all: diff3
 
-diff3: diff3.c ${LIBC}
-	${CC} ${CFLAGS} -o $@ diff3.c
+diff3: ${LIBC}
+	${CC} ${CFLAGS} -o $@ $@.c
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core diff3
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 diff3 $(DESTDIR)/usr/lib/diff3
 	install -c -o bin -g bin -m 755 diff3.sh $(DESTDIR)/usr/bin/diff3
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-diff3: diff3.c /usr/include/stdio.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
