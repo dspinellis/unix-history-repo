@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)touch.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)touch.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -32,7 +32,7 @@ touch()
 
 	afd = open_archive(O_RDWR);
 
-	if (!get_header(afd) ||
+	if (!get_arobj(afd) ||
 	    strncmp(RANLIBMAG, chdr.name, sizeof(RANLIBMAG) - 1)) {
 		(void)fprintf(stderr,
 		    "ranlib: %s: no symbol table.\n", archive);

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)build.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)build.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -53,14 +53,13 @@ build()
 
 	/* Read through the archive, creating list of symbols. */
 	pnext = &rhead;
-	while(get_header(afd)) {
+	while(get_arobj(afd)) {
 		if (!strcmp(chdr.name, RANLIBMAG)) {
-			SKIP(afd, chdr.size, archive);
+			skip_arobj(afd);
 			continue;
 		}
 		rexec(afd, tfd);
-		put_header(&cf, (struct stat *)NULL);
-		copyfile(&cf, chdr.size);
+		put_arobj(&cf, (struct stat *)NULL);
 	}
 	*pnext = NULL;
 
@@ -71,7 +70,7 @@ build()
 	size = lseek(tfd, (off_t)0, SEEK_CUR);
 	(void)lseek(tfd, (off_t)0, SEEK_SET);
 	SETCF(tfd, tname, afd, archive, RPAD|WPAD);
-	copyfile(&cf, size);
+	copy_ar(&cf, size);
 	(void)ftruncate(afd, lseek(afd, (off_t)0, SEEK_CUR));
 	(void)close(tfd);
 
