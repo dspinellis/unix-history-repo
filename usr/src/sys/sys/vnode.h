@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.33 (Berkeley) %G%
+ *	@(#)vnode.h	7.34 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -293,7 +293,8 @@ struct vnodeops {
 #define	VOP_BMAP(v,s,p,n)	(*((v)->v_op->vn_bmap))(v,s,p,n)
 #define	VOP_STRATEGY(b)		(*((b)->b_vp->v_op->vn_strategy))(b)
 #define	VOP_PRINT(v)		(*((v)->v_op->vn_print))(v)
-#define	VOP_ISLOCKED(v)		(*((v)->v_op->vn_islocked))(v)
+#define	VOP_ISLOCKED(v)		(((v)->v_flag & VXLOCK) || \
+				(*((v)->v_op->vn_islocked))(v))
 #define	VOP_ADVLOCK(v,p,o,l,f)	(*((v)->v_op->vn_advlock))(v,p,o,l,f)
 
 /*
