@@ -1,4 +1,4 @@
-/*	tty_subr.c	4.14	82/02/08	*/
+/*	tty_subr.c	4.15	82/03/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -54,7 +54,7 @@ register struct clist *p;
 	return(c);
 }
 
-#if 0
+#if notdef
 /*
  * copy clist to buffer.
  * return number of bytes moved.
