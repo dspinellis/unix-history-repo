@@ -1,4 +1,4 @@
-#	Makefile.vax	4.7	%G%
+#	Makefile.vax	4.8	%G%
 #
 # Makefile for 4.2 bsd
 #
@@ -16,6 +16,7 @@
 #	IF YOU CHANGE THE DEFINITION OF ANY OF THESE RECOMPILE EVERYTHING
 #
 # -DTRACE	compile in kernel tracing hooks
+# -DQUOTA	compile in file system quotas
 #
 C2=	/lib/c2
 LD=	/bin/ld
@@ -33,7 +34,7 @@ AHEADS=	../vax/pcb.m
 %LOAD
 
 clean:
-	rm -f eddep *vmunix* tags *.o locore.i [a-tv-z]*.s \
+	rm -f eddep *vmunix tags *.o locore.i [a-tv-z]*.s \
 		errs linterrs makelinks
 
 lint: /tmp
