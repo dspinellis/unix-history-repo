@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.24 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -600,7 +600,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 		int ret = errno;
 
 		clrevent(ev);
-		usrerr("550 Cannot open %s", fname);
+		usrerr("550 Cannot open %s: %s", fname, errstring(ret));
 		return ret;
 	}
 
