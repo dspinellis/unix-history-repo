@@ -1,4 +1,4 @@
-/*	tu.c	4.9	82/10/17	*/
+/*	tu.c	4.10	82/10/17	*/
 
 #if defined(VAX750) || defined(VAX730)
 /*
@@ -417,7 +417,7 @@ turintr()
 				tu.tu_herrs++;
 				harderr(bp, "tu");
 				printf("  pk_mod %o\n", tudata.pk_mod&0377);
-			} else if (tudata.pk_mod > 0)	/* soft error */
+			} else if (tudata.pk_mod != 0)	/* soft error */
 				tu.tu_serrs++;
 			tutab.b_active = NULL;
 			tutab.b_actf = bp->av_forw;
@@ -597,7 +597,7 @@ top:
 /*
  * Compute checksum TU58 fashion
  */
-#ifdef notdef
+#ifdef lint
 tuchk(word, cp, n)
 	register word;
 	register unsigned short *cp;
@@ -611,15 +611,15 @@ tuchk(word, cp, n)
 	} while (--c > 0);
 	if (n & 1)
 		word += *(unsigned char *)cp;
-	while (word & 0xFFFF0000)
-		word = (word & 0xFFFF) + ((word >> 16) & 0xFFFF);
+	while (word & 0xffff0000)
+		word = (word & 0xffff) + ((word >> 16) & 0xffff);
 	return (word);
 }
 #else
 tuchk(word0, wp, n)
-register int word0;	/* r11 */
-register char *wp;	/* r10 */
-register int n;		/* r9 */
+	register int word0;	/* r11 */
+	register char *wp;	/* r10 */
+	register int n;		/* r9 */
 {
 	asm("loop:");
 	asm("	addw2	(r10)+,r11");	/* add a word to sum */

@@ -1,4 +1,4 @@
-/*	Locore.c	4.19	82/10/13	*/
+/*	Locore.c	4.20	82/10/17	*/
 
 #include "dz.h"
 #include "mba.h"
@@ -102,8 +102,8 @@ char	Sysbase[6*NPTEPG*NBPG];
 int	umbabeg;
 struct	pte Nexmap[16][16];
 struct	nexus nexus[MAXNNEXUS];
-struct	pte UMEMmap[4][16];
-char	umem[4][16*NBPG];
+struct	pte UMEMmap[MAXNUBA][512];
+char	umem[MAXNUBA][512*NBPG];
 int	umbaend;
 struct	pte Usrptmap[USRPTSIZE];
 struct	pte usrpt[USRPTSIZE*NPTEPG];
@@ -138,9 +138,6 @@ int	calimit;
 
 /*ARGSUSED*/
 badaddr(addr, len) caddr_t addr; int len; { return (0); }
-
-/*ARGSUSED*/
-addupc(pc, prof, n) int pc; struct uprof *prof; { }
 
 /*ARGSUSED*/
 copyin(udaddr, kaddr, n) caddr_t udaddr, kaddr; unsigned n; { return (0); }

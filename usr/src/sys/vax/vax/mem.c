@@ -1,4 +1,4 @@
-/*	mem.c	4.5	82/10/13	*/
+/*	mem.c	4.6	82/10/17	*/
 
 /*
  * Memory special file
@@ -84,7 +84,7 @@ mmrw(dev, uio, rw)
 /* minor device 2 is EOF/RATHOLE */
 		case 2:
 			if (rw == UIO_READ)
-				return;
+				return (0);
 			c = iov->iov_len;
 			break;
 
@@ -114,13 +114,12 @@ fault:
 /*
  * UNIBUS Address Space <--> User Space transfer
  */
-UNIcpy(uniadd, usradd, cnt, rw)
+UNIcpy(uniadd, usradd, n, rw)
 	caddr_t uniadd, usradd;
-	int cnt;
+	register int n;
 	enum uio_rw rw;
 {
 	register short *from, *to;
-	register int i;
  
 	if (rw == UIO_READ) {
 		from = (short *)uniadd;
@@ -129,7 +128,7 @@ UNIcpy(uniadd, usradd, cnt, rw)
 		from = (short *)usradd;
 		to = (short *)uniadd;
 	}
-	for (i = (cnt>>1); i > 0; i--)
+	for (n >>= 1; n > 0; n--)
 		*to++ = *from++;
 	return (0);
 }
