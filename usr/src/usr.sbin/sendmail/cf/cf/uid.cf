@@ -1,0 +1,480 @@
+#
+#  Sendmail
+#  Copyright (c) 1983  Eric P. Allman
+#  Berkeley, California
+#
+#  Copyright (c) 1983 Regents of the University of California.
+#  All rights reserved.  The Berkeley software License Agreement
+#  specifies the terms and conditions for redistribution.
+#
+#	@(#)uucpproto.mc	1.2 (Berkeley) 1/24/89
+#	@(#)proto.mc	1.20 (Berkeley) 1/25/89
+#
+# built by rich on Mon May 11 20:00:12 CDT 1992
+# in /home/rich/sendmail/idcf/cf on id
+#
+############################################################
+############################################################
+#####
+#####		SENDMAIL CONFIGURATION FILE
+#####
+############################################################
+############################################################
+
+
+##################
+#   local info   #
+##################
+
+# file containing our internet aliases
+Fw/etc/sendmail.cw
+
+# uucp hostnames
+DUid
+CUid uid
+
+# local UUCP connections
+CVjpunix
+
+
+#############################
+###   Setup Information   ###
+#############################
+
+
+######################
+#   General Macros   #
+######################
+
+# local domain name
+DDUUCP
+
+
+
+
+
+
+
+
+
+# my official hostname
+Dj$w
+
+
+
+###############
+#   Classes   #
+###############
+
+# Internal ("fake") domains that we use in rewriting
+CIUUCP BITNET CSNET
+
+
+
+
+######################
+#   Version Number   #
+######################
+
+DZ1.34
+
+
+######################
+#   Special macros   #
+######################
+
+# my name
+DnMAILER-DAEMON
+# UNIX header format
+DlFrom $g  $d
+# delimiter (operator) characters
+Do.:%@!^=/[]
+# format of a total name
+Dq$g$?x ($x)$.
+# SMTP login message
+De$j Sendmail $v/$Z ready at $b
+
+###############
+#   Options   #
+###############
+
+# location of alias file
+OA/etc/aliases
+# wait up to ten minutes for alias file rebuild
+Oa10
+# substitution for space (blank) characters
+OB.
+# (don't) connect to "expensive" mailers
+#Oc
+# default delivery mode (deliver in background)
+Odbackground
+# temporary file mode
+OF0600
+# default GID
+Og1
+# location of help file
+OH/usr/share/misc/sendmail.hf
+# log level
+OL9
+# default network name
+ONARPA
+# default messages to old style
+Oo
+# queue directory
+OQ/var/spool/mqueue
+# read timeout -- violates protocols
+Or2h
+# status file
+OS/var/log/sendmail.st
+# queue up everything before starting transmission
+Os
+# default timeout interval
+OT3d
+# time zone names (V6 only)
+OtPST,PDT
+# default UID
+Ou1
+# wizard's password
+OW*
+# load average at which we just queue messages
+Ox8
+# load average at which we refuse connections
+OX12
+
+###########################
+#   Message precedences   #
+###########################
+
+Pfirst-class=0
+Pspecial-delivery=100
+Pbulk=-60
+Pjunk=-100
+
+#####################
+#   Trusted users   #
+#####################
+
+Troot
+Tdaemon
+Tuucp
+
+#########################
+#   Format of headers   #
+#########################
+
+H?P?Return-Path: <$g>
+HReceived: $?sfrom $s $.by $j ($v/$Z)
+	id $i; $b
+H?D?Resent-Date: $a
+H?D?Date: $a
+H?F?Resent-From: $q
+H?F?From: $q
+H?x?Full-Name: $x
+HSubject:
+# HPosted-Date: $a
+# H?l?Received-Date: $b
+H?M?Resent-Message-Id: <$t.$i@$j>
+H?M?Message-Id: <$t.$i@$j>
+
+
+
+###########################
+###   Rewriting Rules   ###
+###########################
+
+
+################################
+#  Sender Field Pre-rewriting  #
+################################
+S1
+#R$*<$*>$*		$1$2$3				defocus
+
+###################################
+#  Recipient Field Pre-rewriting  #
+###################################
+S2
+#R$*<$*>$*		$1$2$3				defocus
+
+
+
+#################################
+#  Final Output Post-rewriting  #
+#################################
+S4
+
+R@			$@				handle <> error addr
+
+# resolve numeric addresses to name if possible
+R$*<@[$+]>$*		$:$1<@$[[$2]$]>$3		lookup numeric internet addr
+
+# externalize local domain info
+R$*<$+>$*		$1$2$3				defocus
+R@$+:@$+:$+		@$1,@$2:$3			<route-addr> canonical
+
+# UUCP must always be presented in old form
+R$+@$-.UUCP		$2!$1				u@h.UUCP => h!u
+
+# delete duplicate local names
+R$+%$=w@$=w		$1@$w				u%host@host => u@host
+R$+%$=w@$=w.$D		$1@$w				u%host@host => u@host
+
+
+###########################
+#  Name Canonicalization  #
+###########################
+S3
+
+# handle "from:<>" special case
+R$*<>$*			$@@				turn into magic token
+
+# basic textual canonicalization -- note RFC733 heuristic here
+R$*<$*<$*<$+>$*>$*>$*	$4				3-level <> nesting
+R$*<$*<$+>$*>$*		$3				2-level <> nesting
+R$*<$+>$*		$2				basic RFC821/822 parsing
+
+# make sure <@a,@b,@c:user@d> syntax is easy to parse -- undone later
+R@$+,$+			@$1:$2				change all "," to ":"
+
+# localize and dispose of route-based addresses
+R@$+:$+			$@$>6<@$1>:$2			handle <route-addr>
+
+# more miscellaneous cleanup
+R$+			$:$>8$1				host dependent cleanup
+R$+:$*;@$+		$@$1:$2;@$3			list syntax
+R$+:$*;			$@$1:$2;			list syntax
+R$+@$+			$:$1<@$2>			focus on domain
+R$+<$+@$+>		$1$2<@$3>			move gaze right
+R$+<@$+>		$@$>6$1<@$2>			already canonical
+
+# convert old-style addresses to a domain-based address
+R$+^$+			$1!$2				convert ^ to !
+R$-!$+			$@$>6$2<@$1.UUCP>		resolve uucp names
+R$+.$-!$+		$@$>6$3<@$1.$2>			domain uucps
+R$+!$+			$@$>6$2<@$1.UUCP>		uucp subdomains
+R$+%$+			$:$>9$1%$2			user%host
+R$+<@$+>		$@$>6$1<@$2>			already canonical
+R$-.$+			$@$>6$2<@$1>			host.user
+
+
+#################################
+#   special local conversions   #
+#################################
+
+S6
+R$*<@$=w>$*		$:$1<@$w>$3			get into u@$w form
+R$*<@$=w.$D>$*		$:$1<@$w>$3
+R$*<@$=U.UUCP>$*	$:$1<@$w>$3
+
+################################
+#   Change rightmost % to @.   #
+################################
+
+S9
+R$*%$*			$1@$2				First make them all @'s.
+R$*@$*@$*		$1%$2@$3			Undo all but the last.
+R$*@$*			$@$1<@$2>			Put back the brackets.
+
+
+
+###################
+###   Mailers   ###
+###################
+
+
+############################################################
+############################################################
+#####
+#####		Local and Program Mailer specification
+#####
+############################################################
+############################################################
+
+Mlocal,	P=/usr/libexec/mail.local, F=lsDFMmn, S=10, R=20, A=mail -r $g -d $u
+Mprog,	P=/bin/sh,   F=lsDFMe,   S=10, R=20, A=sh -c $u
+
+S10
+R@			$n			errors to mailer-daemon
+
+
+
+############################################################
+############################################################
+#####
+#####		Internet SMTP Mailer specification
+#####
+#####	Messages processed by this specification are assumed to leave
+#####	the local domain -- hence, they must be canonical according to
+#####	RFC822 etc.  This means that machines not registered with
+#####	the NIC must be hidden behind our Internet relay.
+#####
+############################################################
+############################################################
+
+Mtcp,	P=[IPC], F=mDFMueXLC, S=14, R=24, A=IPC $h, E=\r\n
+
+S14
+
+# pass <route-addr>'s through
+R<@$+>$*		$@<@$[$1$]>$2			resolve <route-addr>
+
+# map colons to dots everywhere
+R$*:$*			$1.$2				map colons to dots
+
+# output local host in user@host.domain syntax
+R$-			$1<@$w>				user w/o host
+R$+<@$=w>		$:$1<@$w>			this host
+R$+<@$->		$:$1<@$[$2$]>			canonicalize into dom
+R$+<@$->		$:$1<@$2.$D>			if nameserver fails
+R$+<@$=N.$D>		$@$1<@$2.$D>			nic-reg hosts are ok
+R$+<@$*.$D>		$@$1%$2.$D<@$A>			else -> u%h@gateway
+
+# if not local, and not a "fake" domain, ask the nameserver
+R$+<@$+.$~I>		$@$1<@$[$2.$3$]>		user@host.domain
+R$+<@[$+]>		$@$1<@[$2]>			already ok
+
+# output internal ("fake") domains as "user%host@relay"
+
+
+
+R$+<@$+.UUCP>		$@$2!$1<@$w>			user@host.UUCP
+
+
+S24
+
+# put in <> kludge
+R$*<$*>$*		$1$2$3				defocus
+R$*			$:$>3$1				now canonical form
+
+# pass <route-addr>'s through
+R<@$+>$*		$@<@$[$1$]>$2			resolve <route-addr>
+
+# map colons to dots everywhere.....
+R$*:$*			$1.$2				map colons to dots
+
+# output local host in user@host.domain syntax
+R$-			$1<@$w>				user w/o host
+R$+<@$=w>		$:$1<@$w>			this host
+R$+<@$->		$:$1<@$[$2$]>			canonicalize into dom
+R$+<@$->		$:$1<@$2.$D>			if nameserver fails
+R$+<@$=N.$D>		$@$1<@$2.$D>			nic-reg hosts are ok
+R$+<@$*.$D>		$@$1%$2.$D<@$A>			else -> u%h@gateway
+
+# if not local, and not a "fake" domain, ask the nameserver
+R$+<@$+.$~I>		$@$1<@$[$2.$3$]>		user@host.domain
+R$+<@[$+]>		$@$1<@[$2]>			already ok
+
+# Hide fake domains behind relays
+
+
+
+R$+<@$+.UUCP>		$@$2!$1				user@host.UUCP
+
+
+
+
+############################################################
+############################################################
+#####
+#####		Provide Backward Compatibility
+#####
+############################################################
+############################################################
+
+#####################################################
+#  General code to convert back to old style names  #
+#####################################################
+S5
+
+R$+<@$w>		$1				strip host
+R$+<@$-.UUCP>		$2!$1				u@host.UUCP => host!u
+
+############################################################
+############################################################
+#####
+#####		UUCP Mailer specification
+#####
+############################################################
+############################################################
+
+
+Muucp,	P=/usr/local/bin/uux, F=DFMhuU, S=13, R=23, M=100000,
+	A=uux - -r -z -a$f -gC $h!rmail ($u)
+
+S13
+R$+			$:$>5$1				convert to old style
+R$*<@$=w>$*		$1<@$w>$2			resolve abbreviations
+R$*<@$->$*		$1<@$2.$D>$3			resolve abbreviations
+R$+<@$+>		$2!$1				uucpize (no @'s in addr)
+R$w!$+			$1				strip local name
+R$+			$:$U!$1				stick on our host name
+R$=U!$-%$-		$:$1!$2@$3.$D			ucbvax!user@host.domain
+
+S23
+R$+			$:$>5$1				convert to old style
+R$*<@$=w>$*		$1<@$w>$2			resolve abbreviations
+R$*<@$->$*		$1<@$2.$D>$3			resolve abbreviations
+R$+<@$w>		$U!$1				a!b@here -> here!a!b
+R$=U!$+			$2				here!a!b -> a!b
+# sanity ... should not happen.
+R$=U.$D!$+		$2				strip local name.domain
+
+
+
+#####################
+###   Rule Zero   ###
+#####################
+
+
+############################################################
+############################################################
+#####
+#####		RULESET ZERO PREAMBLE
+#####
+#####	The beginning of ruleset zero is constant through all
+#####	configurations.
+#####
+############################################################
+############################################################
+
+S0
+
+# first make canonical
+R$*<$*>$*		$1$2$3				defocus
+R$+			$:$>3$1				make canonical
+
+# handle special cases
+R$*<@[$+]>$*		$:$1<@$[[$2]$]>$3		numeric internet addr
+R$*<@[$+]>$*		$#tcp$@[$2]$:$1@[$2]$3		numeric internet spec
+R$+			$:$>6$1
+R$-<@$w>		$#local$:$1
+R@			$#error$:Invalid address	handle <> form
+
+# canonicalize using the nameserver if not internal domain
+R$*<@$*.$~I>$*		$:$1<@$[$2.$3$]>$4
+R$*<@$->$*		$:$1<@$[$2$]>$3
+R$*<@$->$*		$:$1<@$2.$D>$3			if nameserver fails
+
+# now delete the local info
+R<@$w>:$*		$@$>0$1				@here:... -> ...
+R$*<@$w>		$@$>0$1				...@here -> ...
+
+##################################
+#  End of ruleset zero preamble  #
+##################################
+
+
+###############################################
+###   Machine dependent part of Rule Zero   ###
+###############################################
+
+
+
+# resolve local UUCP connections
+R<@$=V.UUCP>:$+		$#uucp$@$1$:$2				@host.UUCP:...
+R$+<@$=V.UUCP>		$#uucp$@$2$:$1				user@host.UUCP
+
+
+
+
+# remaining names must be local
+R$+			$#local$:$1			everything else
