@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)msgs.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)msgs.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -44,16 +44,17 @@ static char sccsid[] = "@(#)msgs.c	8.1 (Berkeley) %G%";
 
 #include <sys/param.h>
 #include <sys/dir.h>
+#include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <ctype.h>
 #include <errno.h>
 #include <pwd.h>
 #include <setjmp.h>
-#include <sgtty.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <termios.h>
 #include <time.h>
 #include <unistd.h>
 #include "pathnames.h"
@@ -104,7 +105,6 @@ int	nlines;
 int	Lpp = 0;
 time_t	t;
 time_t	keep;
-struct	sgttyb	otty;
 
 char	*mktemp();
 char	*nxtfld();
@@ -136,7 +136,6 @@ int argc; char *argv[];
 	setbuf(stdout, NULL);
 #endif
 
-	gtty(fileno(stdout), &otty);
 	time(&t);
 	setuid(uid = getuid());
 	ruptible = (signal(SIGINT, SIG_IGN) == SIG_DFL);
@@ -607,7 +606,7 @@ int length;
 	}
 
 	/* trick to force wait on output */
-	stty(fileno(stdout), &otty);
+	tcdrain(fileno(stdout));
 }
 
 void
