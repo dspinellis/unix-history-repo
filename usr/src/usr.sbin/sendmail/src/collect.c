@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.37		%G%);
+SCCSID(@(#)collect.c	3.38		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -213,7 +213,10 @@ collect(sayok)
 		CurEnv->e_msgpriority = CurEnv->e_msgsize;
 		p = hvalue("priority");
 		if (p != NULL)
-			CurEnv->e_msgpriority -= priencode(p) * WKPRIFACT;
+			CurEnv->e_class = priencode(p);
+		else
+			CurEnv->e_class = PRI_NORMAL;
+		CurEnv->e_msgpriority -= CurEnv->e_class * WKPRIFACT;
 	}
 
 	/* special handling */
@@ -394,6 +397,7 @@ static struct prio	Prio[] =
 	"normal",		PRI_NORMAL,
 	"second-class",		PRI_SECONDCL,
 	"third-class",		PRI_THIRDCL,
+	"junk",			PRI_JUNK,
 	NULL,			PRI_NORMAL,
 };
 
