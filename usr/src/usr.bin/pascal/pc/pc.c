@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)pc.c 3.18 %G%";
+static	char sccsid[] = "@(#)pc.c 3.19 %G%";
 
 #include <stdio.h>
 #include <signal.h>
@@ -326,6 +326,7 @@ main(argc, argv)
 	pc3args[pc3argx] = 0;
 	if (dosys(pc3, pc3args, 0, 0) > 1)
 		done();
+	errs = 0;
 /* char	*ldargs[NARGS] =	{ "ld", "-X", "/lib/crt0.o", 0, }; */
 	ldargs[0] = "ld";
 	ldargs[1] = "-X";
