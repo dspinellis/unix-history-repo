@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)comsat.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)comsat.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -41,6 +41,7 @@ static char sccsid[] = "@(#)comsat.c	5.15 (Berkeley) %G%";
 #include <netdb.h>
 #include <syslog.h>
 #include <strings.h>
+#include <ctype.h>
 
 #include "pathnames.h"
 
@@ -57,6 +58,7 @@ struct	utmp *utmp = NULL;
 time_t	lastmsgtime, time();
 int	nutmp, uf;
 
+/* ARGSUSED */
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -65,13 +67,14 @@ main(argc, argv)
 	register int cc;
 	char msgbuf[100];
 	struct sockaddr_in from;
-	int fromlen, reapchildren(), onalrm();
+	int fromlen;
+	void onalrm(), reapchildren();
 
 	/* verify proper invocation */
-	fromlen = sizeof (from);
+	fromlen = sizeof(from);
 	if (getsockname(0, &from, &fromlen) < 0) {
-		fprintf(stderr, "%s: ", argv[0]);
-		perror("getsockname");
+		(void)fprintf(stderr,
+		    "comsat: getsockname: %s.\n", strerror(errno));
 		exit(1);
 	}
 	openlog("comsat", LOG_PID, LOG_DAEMON);
@@ -108,11 +111,13 @@ main(argc, argv)
 	}
 }
 
+void
 reapchildren()
 {
 	while (wait3((union wait *)NULL, WNOHANG, (struct rusage *)NULL) > 0);
 }
 
+void
 onalrm()
 {
 	static u_int utmpsize;		/* last malloced size for utmp */
@@ -159,7 +164,7 @@ mailfor(name)
 			notify(utp, offset);
 }
 
-static char	*cr;
+static char *cr;
 
 notify(utp, offset)
 	register struct utmp *utp;
@@ -186,13 +191,14 @@ notify(utp, offset)
 		_exit(-1);
 	}
 	(void)ioctl(fileno(tp), TIOCGETP, &gttybuf);
-	cr = (gttybuf.sg_flags&CRMOD) && !(gttybuf.sg_flags&RAW) ? "" : "\r";
+	cr = (gttybuf.sg_flags&CRMOD) && !(gttybuf.sg_flags&RAW) ?
+	    "\n" : "\n\r";
 	(void)strncpy(name, utp->ut_name, sizeof (utp->ut_name));
 	name[sizeof (name) - 1] = '\0';
-	fprintf(tp, "%s\n\007New mail for %s@%.*s\007 has arrived:%s\n----%s\n",
-	    cr, name, sizeof (hostname), hostname, cr, cr);
+	(void)fprintf(tp, "%s\007New mail for %s@%.*s\007 has arrived:%s----%s",
+	    cr, name, sizeof(hostname), hostname, cr, cr);
 	jkfprintf(tp, name, offset);
-	fclose(tp);
+	(void)fclose(tp);
 	_exit(0);
 }
 
@@ -201,7 +207,7 @@ jkfprintf(tp, name, offset)
 	char name[];
 	off_t offset;
 {
-	register char *cp;
+	register char *cp, ch;
 	register FILE *fi;
 	register int linecnt, charcnt, inheader;
 	char line[BUFSIZ];
@@ -230,14 +236,18 @@ jkfprintf(tp, name, offset)
 				continue;
 		}
 		if (linecnt <= 0 || charcnt <= 0) {
-			fprintf(tp, "...more...%s\n", cr);
+			(void)fprintf(tp, "...more...%s", cr);
 			return;
 		}
-		if (cp = index(line, '\n'))
-			*cp = '\0';
-		fprintf(tp, "%s%s\n", line, cr);
-		charcnt -= strlen(line);
-		linecnt--;
+		/* strip weird stuff so can't trojan horse stupid terminals */
+		for (cp = line; (ch = *cp) && ch != '\n'; ++cp, --charcnt) {
+			ch &= 0x7f;
+			if (!isprint(ch) && !isspace(ch))
+				ch |= 0x40;
+			(void)fputc(ch, tp);
+		}
+		(void)fputs(cr, tp);
+		--linecnt;
 	}
-	fprintf(tp, "----%s\n", cr);
+	(void)fprintf(tp, "----%s\n", cr);
 }
