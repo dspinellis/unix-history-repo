@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_io.c	7.4	%G%";
+static char *sccsid = "@(#)ex_io.c	7.5	%G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -462,13 +462,6 @@ other:
 			vcline = 0;
 			vreplace(0, LINES, lineDOL());
 		}
-	}
-	if (laste) {
-#ifdef VMUNIX
-		tlaste();
-#endif
-		laste = 0;
-		sync();
 	}
 }
 
