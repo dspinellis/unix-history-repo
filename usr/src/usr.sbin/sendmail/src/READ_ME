@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.56 (Berkeley) %G%
+#	@(#)READ_ME	8.57 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -159,6 +159,7 @@ NeXT		Define this if you are on a NeXT box.  (This one may
 		have to make -- see below.
 _AIX3		Define this if you are IBM AIX 3.x.
 RISCOS		Define this if you are running RISC/os from MIPS.
+IRIX		Define this if you are running IRIX from SGI.
 _SCO_unix_	Define this if you are on SCO UNIX.
 _SCO_unix_4_2	Define this if you are on SCO Open Server 3.2v4.
 
@@ -496,6 +497,17 @@ OSF/1
 	Also, the enclosed makefile removed /usr/sbin/smtpd; if you need
 	it, just create the link to the sendmail binary.
 
+IRIX
+	The header files on SGI IRIX are completely prototyped, and as
+	a result you can sometimes get some warning messages during
+	compilation.  These can be ignored.  There are two errors in
+	deliver only if you are using gcc, both of the form ``warning:
+	passing arg N of `execve' from incompatible pointer type''.
+	Also, if you compile with -DNIS, you will get a complaint
+	about a declaration of struct dom_binding in a prototype
+	when compiling map.c; this is not important because the
+	function being prototyped is not used in that file.
+
 NeXT
 	If you are compiling on NeXT, you will have to create an empty
 	file "unistd.h" and create a file "dirent.h" containing:
@@ -623,6 +635,11 @@ Linux
 AIX
 	This version of sendmail does not support MB, MG, and MR resource
 	records, which are supported by AIX sendmail.
+
+RISC/os
+	RISC/os from MIPS is a merged AT&T/Berkeley system.  When you
+	compile on that platform you will get duplicate definitions
+	on many files.  You can ignore these.
 
 System V Release 4 Based Systems
 	There is a single Makefile that is intended for all SVR4-based
@@ -806,4 +823,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.56, last update %G% 09:03:00)
+(Version 8.57, last update %G% 08:49:24)
