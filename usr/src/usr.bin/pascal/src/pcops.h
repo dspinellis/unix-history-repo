@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)pcops.h 1.1 %G%"; */
+/* static	char sccsid[] = "@(#)pcops.h 1.2 %G%"; */
 
     /*
      *	tree node operators
@@ -134,11 +134,3 @@
 #define ADDTYPE( t,m )	( ( ( ( t ) & ~P2BASETYPE ) << P2TYPESHIFT )	\
 		  | ( m )						\
 		  | ( ( t ) & P2BASETYPE ) )
-
-    /*
-     *	the runtime framepointer and argumentpointer registers
-     */
-#define	P2FP		13
-#define	P2FPNAME	"fp"
-#define	P2AP		12
-#define P2APNAME	"ap"
