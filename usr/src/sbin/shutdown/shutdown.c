@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)shutdown.c	4.8 (Berkeley) 81/06/11";
+static	char *sccsid = "@(#)shutdown.c	4.9 (Berkeley) 81/06/11";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -271,7 +271,7 @@ warn(term, sdt, nowtime)
 	long sdt, nowtime;
 {
 	char *ts;
-	register delay = std - nowtime;
+	register delay = sdt - nowtime;
 
 	if (delay > 8)
 		while (delay % 5)
