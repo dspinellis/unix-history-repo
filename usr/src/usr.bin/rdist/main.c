@@ -1,8 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	4.13 (Berkeley) 84/12/06";
+static	char *sccsid = "@(#)main.c	4.14 (Berkeley) 85/02/04";
 #endif
 
 #include "defs.h"
+
+#define NHOSTS 100
 
 /*
  * Remote distribution program.
@@ -36,6 +38,7 @@ main(argc, argv)
 {
 	register char *arg;
 	int cmdargs = 0;
+	char *dhosts[NHOSTS], **hp = dhosts;
 
 	pw = getpwuid(userid = getuid());
 	if (pw == NULL) {
@@ -60,6 +63,16 @@ main(argc, argv)
 				distfile = *++argv;
 				if (distfile[0] == '-' && distfile[1] == '\0')
 					fin = stdin;
+				break;
+
+			case 'm':
+				if (--argc <= 0)
+					usage();
+				if (hp >= &dhosts[NHOSTS-2]) {
+					fprintf(stderr, "rdist: too many destination hosts\n");
+					exit(1);
+				}
+				*hp++ = *++argv;
 				break;
 
 			case 'd':
@@ -124,6 +137,7 @@ main(argc, argv)
 				usage();
 			}
 	}
+	*hp = NULL;
 
 	setreuid(0, userid);
 	mktemp(tmpfile);
@@ -142,7 +156,7 @@ main(argc, argv)
 		}
 		yyparse();
 		if (nerrs == 0)
-			docmds(argc, argv);
+			docmds(dhosts, argc, argv);
 	}
 
 	exit(nerrs != 0);
@@ -150,7 +164,7 @@ main(argc, argv)
 
 usage()
 {
-	printf("Usage: rdist [-nqbhirvwyD] [-f distfile] [-d var=value] [file ...]\n");
+	printf("Usage: rdist [-nqbhirvwyD] [-f distfile] [-d var=value] [-m host] [file ...]\n");
 	printf("or: rdist [-nqbhirvwyD] -c source [...] machine[:dest]\n");
 	exit(1);
 }
@@ -189,6 +203,8 @@ docmdargs(nargs, args)
 		*dest++ = '\0';
 	tnl.n_name = cp;
 	hosts = expand(&tnl, E_ALL);
+	if (nerrs)
+		exit(1);
 
 	if (dest == NULL || *dest == '\0')
 		cmds = NULL;
@@ -205,7 +221,7 @@ docmdargs(nargs, args)
 		prnames(hosts);
 	}
 	insert(NULL, files, hosts, cmds);
-	docmds(0, NULL);
+	docmds(NULL, 0, NULL);
 }
 
 /*

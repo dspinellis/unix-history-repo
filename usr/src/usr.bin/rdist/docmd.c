@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.22 (Berkeley) 84/12/06";
+static	char *sccsid = "@(#)docmd.c	4.23 (Berkeley) 85/02/04";
 #endif
 
 #include "defs.h"
@@ -19,7 +19,8 @@ int	lostconn();
 /*
  * Do the commands in cmds (initialized by yyparse).
  */
-docmds(argc, argv)
+docmds(dhosts, argc, argv)
+	char **dhosts;
 	int argc;
 	char **argv;
 {
@@ -34,6 +35,13 @@ docmds(argc, argv)
 	signal(SIGTERM, cleanup);
 
 	for (c = cmds; c != NULL; c = c->c_next) {
+		if (dhosts != NULL) {
+			for (cpp = dhosts; *cpp; cpp++)
+				if (strcmp(c->c_name, *cpp) == 0)
+					goto fndhost;
+			continue;
+		}
+	fndhost:
 		if (argc) {
 			for (cpp = argv; *cpp; cpp++) {
 				if (c->c_label != NULL &&
