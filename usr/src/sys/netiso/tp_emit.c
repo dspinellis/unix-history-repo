@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_emit.c	7.13 (Berkeley) %G%
+ *	@(#)tp_emit.c	7.14 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -216,6 +216,7 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 
 		case CR_TPDU_type:
 			hdr->tpdu_CRdref_0 = 0;	/* must be zero */
+		case CC_TPDU_type: 
 			if (!tpcb->tp_cebit_off) {
 				tpcb->tp_win_recv = tp_start_win << 8;
 				LOCAL_CREDIT(tpcb);
@@ -223,17 +224,13 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 			} else
 				LOCAL_CREDIT(tpcb);
 
-
-		case CC_TPDU_type: 
-				{
+/* Case CC_TPDU_type used to be here */
+		{
 					u_char x;
 
 				hdr->tpdu_CCsref =  htons(tpcb->tp_lref); /* same as CRsref */
 
 				if( tpcb->tp_class > TP_CLASS_1 ) {
-/* ifdef CE_BIT, we did this in tp_input when the CR came in */
-					if (tpcb->tp_cebit_off)
-						LOCAL_CREDIT( tpcb );
 					tpcb->tp_sent_uwe = tpcb->tp_lcredit -1;
 					tpcb->tp_sent_rcvnxt = 1;
 					tpcb->tp_sent_lcdt = tpcb->tp_lcredit;
