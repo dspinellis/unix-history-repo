@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)sys_process.c	8.3 (Berkeley) %G%
+ *	@(#)sys_process.c	8.4 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -244,16 +244,23 @@ trace_req(p)
 
 	case PT_STEP:			/* single step the child */
 	case PT_CONTINUE:		/* continue the child */
+#ifndef mips
 		regs = (int *)((short *)regs + 1);
+#endif
 		if ((unsigned)ipc.ip_data >= NSIG)
 			goto error;
 		if ((int)ipc.ip_addr != 1)
 			regs[PC] = (int)ipc.ip_addr;
 		p->p_xstat = ipc.ip_data;	/* see issignal */
+#ifdef mips
+		if (i == PT_STEP && cpu_singlestep(p))
+			goto error;
+#else
 #ifdef PSL_T
 		/* need something more machine independent here... */
 		if (i == PT_STEP) 
 			regs[PS] |= PSL_T;
+#endif
 #endif
 		wakeup((caddr_t)&ipc);
 		return (1);
