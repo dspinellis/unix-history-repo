@@ -1,17 +1,17 @@
-/*-
- * Copyright (c) 1989, 1990 The Regents of the University of California.
+/*
+ * Copyright (c) 1983, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)iso.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)iso.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
- * $Header: iso.c,v 3.3 88/12/08 14:44:49 hagens Exp $
- * $Source: /usr/argo/src/ucb/netstat/RCS/iso.c,v $
+ * $Header: iso.c,v 1.5 92/06/04 00:36:32 leres Exp $
+ * $Source: /usr/src/usr.bin/netstat/RCS/iso.c,v $
  */
 /*******************************************************************************
 	          Copyright IBM Corporation 1987
@@ -74,14 +74,17 @@ SOFTWARE.
 #undef IncStat
 #endif
 #include <netiso/cons_pcb.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "netstat.h"
 
 static void tprintstat __P((struct tp_stat *, int));
 static void isonetprint __P((struct sockaddr_iso *, int));
 static void hexprint __P((int, char *, char *));
+extern void inetprint __P((struct in_addr *, int, char *));
 
 /*
  *	Dump esis stats
@@ -223,8 +226,10 @@ iso_protopr(off, name)
 	}
 }
 
+void
 iso_protopr1(kern_addr, istp)
-off_t kern_addr;
+	off_t kern_addr;
+	int istp;
 {
 	if (first) {
 		printf("Active ISO net connections");
@@ -242,7 +247,7 @@ off_t kern_addr;
 	}
 	if (Aflag)
 			printf("%8x ",
-					(sockb.so_pcb ? (off_t)sockb.so_pcb : (off_t)kern_addr));
+					(sockb.so_pcb ? (void *)sockb.so_pcb : (void *)kern_addr));
 	printf("%-5.5s %6d %6d ", "tp", sockb.so_rcv.sb_cc, sockb.so_snd.sb_cc);
 	if (istp && tpcb.tp_lsuffixlen) {
 			hexprint(tpcb.tp_lsuffixlen, tpcb.tp_lsuffix, "()");
@@ -272,9 +277,10 @@ off_t kern_addr;
 	}
 }
 
+void
 tp_protopr(off, name)
-off_t off;
-char *name;
+	off_t off;
+	char *name;
 {
 	struct tp_ref *tpr, *tpr_base;
 	struct tp_refinfo tpkerninfo;
@@ -301,11 +307,11 @@ char *name;
 		kget(tpcb.tp_sock, sockb);
 		if (tpcb.tp_npcb) switch(tpcb.tp_netservice) {
 			case IN_CLNS:
-				tp_inproto(tpkerninfo.tpr_base);
+				tp_inproto((off_t)tpkerninfo.tpr_base);
 				break;
 			default:
 				kget(tpcb.tp_npcb, isopcb);
-				iso_protopr1(tpcb.tp_npcb, 1);
+				iso_protopr1((off_t)tpcb.tp_npcb, 1);
 				break;
 		}
 		if (tpcb.tp_state >= tp_NSTATES)
@@ -315,8 +321,10 @@ char *name;
 		putchar('\n');
 	}
 }
+
+void
 tp_inproto(pcb)
-off_t pcb;
+	off_t pcb;
 {
 	struct inpcb inpcb;
 	kget(tpcb.tp_npcb, inpcb);
@@ -324,10 +332,12 @@ off_t pcb;
 		return;
 	if (Aflag)
 		printf("%8x ", pcb);
-	printf("%-5.5s %6d %6d ", "tpip", sockb.so_rcv.sb_cc, sockb.so_snd.sb_cc);
+	printf("%-5.5s %6d %6d ", "tpip",
+	    sockb.so_rcv.sb_cc, sockb.so_snd.sb_cc);
 	inetprint(&inpcb.inp_laddr, inpcb.inp_lport, "tp");
 	inetprint(&inpcb.inp_faddr, inpcb.inp_fport, "tp");
 }
+
 /*
  * Pretty print an iso address (net address + port).
  * If the nflag was specified, use numbers instead of names.
@@ -741,21 +751,21 @@ tprintstat(s, indent)
 	fprintf(OUT,
 		"\n%*sACK reasons:\n", indent, " ");
 	fprintf(OUT, "\t%*s%6d not acked immediately\n", indent, " ",
-										s->ts_ackreason[_ACK_DONT_] );
+		s->ts_ackreason[_ACK_DONT_] );
 	fprintf(OUT, "\t%*s%6d strategy==each\n", indent, " ",
-										s->ts_ackreason[_ACK_STRAT_EACH_] );
+		s->ts_ackreason[_ACK_STRAT_EACH_] );
 	fprintf(OUT, "\t%*s%6d strategy==fullwindow\n", indent, " ",
-										s->ts_ackreason[_ACK_STRAT_FULLWIN_] );
+		s->ts_ackreason[_ACK_STRAT_FULLWIN_] );
 	fprintf(OUT, "\t%*s%6d duplicate DT\n", indent, " ",
-										s->ts_ackreason[_ACK_DUP_] );
+		s->ts_ackreason[_ACK_DUP_] );
 	fprintf(OUT, "\t%*s%6d EOTSDU\n", indent, " ",
-										s->ts_ackreason[_ACK_EOT_] );
+		s->ts_ackreason[_ACK_EOT_] );
 	fprintf(OUT, "\t%*s%6d reordered DT\n", indent, " ",
-										s->ts_ackreason[_ACK_REORDER_] );
+		s->ts_ackreason[_ACK_REORDER_] );
 	fprintf(OUT, "\t%*s%6d user rcvd\n", indent, " ",
-										s->ts_ackreason[_ACK_USRRCV_] );
+		s->ts_ackreason[_ACK_USRRCV_] );
 	fprintf(OUT, "\t%*s%6d fcc reqd\n", indent, " ",
-										s->ts_ackreason[_ACK_FCC_] );
+		s->ts_ackreason[_ACK_FCC_] );
 }
 #ifndef SSEL
 #define SSEL(s) ((s)->siso_tlen + TSEL(s))
@@ -776,6 +786,7 @@ isonetprint(siso, islocal)
 		hexprint(siso->siso_plen, PSEL(siso), "<>");
 	putchar(' ');
 }
+
 static char hexlist[] = "0123456789abcdef", obuf[128];
 
 static void
