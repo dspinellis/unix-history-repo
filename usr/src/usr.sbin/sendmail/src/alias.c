@@ -3,7 +3,7 @@
 # include <pwd.h>
 # include "dlvrmail.h"
 
-static char SccsId[] = "@(#)alias.c	1.7	%G%";
+static char SccsId[] = "@(#)alias.c	1.8	%G%";
 
 /*
 **  ALIAS -- Compute aliases.
@@ -231,6 +231,10 @@ alias()
 		tkoffq(q, &SendQ);
 		putonq(q, &AliasQ);
 		sendto(p, 1);
+
+		/* if our last entry had an alias, process them */
+		if (q2 == NULL)
+			q2 = nxtinq(&SendQ);
 	}
 #endif DBM
 }
