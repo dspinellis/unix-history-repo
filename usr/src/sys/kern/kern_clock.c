@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_clock.c	8.3 (Berkeley) %G%
+ *	@(#)kern_clock.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -250,11 +250,13 @@ timeout(ftn, arg, ticks)
 	 * of the previous event on the queue.  Walk the queue, correcting
 	 * the ticks argument for queue entries passed.  Correct the ticks
 	 * value for the queue entry immediately after the insertion point
-	 * as well.
+	 * as well.  Watch out for negative c_time values; these represent
+	 * overdue events.
 	 */
 	for (p = &calltodo;
 	    (t = p->c_next) != NULL && ticks > t->c_time; p = t)
-		ticks -= t->c_time;
+		if (t->c_time > 0)
+			ticks -= t->c_time;
 	new->c_time = ticks;
 	if (t != NULL)
 		t->c_time -= ticks;
