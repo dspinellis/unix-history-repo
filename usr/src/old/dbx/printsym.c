@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)printsym.c 1.13 %G%";
+static char sccsid[] = "@(#)printsym.c 1.14 %G%";
 /*
  * Printing of symbolic information.
  */
@@ -16,6 +16,7 @@ static char sccsid[] = "@(#)printsym.c 1.13 %G%";
 #include "runtime.h"
 #include "machine.h"
 #include "names.h"
+#include "keywords.h"
 #include "main.h"
 
 #ifndef public
@@ -36,8 +37,9 @@ static char sccsid[] = "@(#)printsym.c 1.13 %G%";
  */
 
 private String clname[] = {
-    "bad use", "constant", "type", "variable", "array", "fileptr",
-    "record", "field", "procedure", "function", "funcvar",
+    "bad use", "constant", "type", "variable", "array", "@dynarray",
+    "@subarray", "fileptr", "record", "field",
+    "procedure", "function", "funcvar",
     "ref", "pointer", "file", "set", "range", "label", "withptr",
     "scalar", "string", "program", "improper", "variant",
     "procparam", "funcparam", "module", "tag", "common", "typeref"
@@ -57,7 +59,9 @@ public printentry(s)
 Symbol s;
 {
     if (s != program) {
-	printf("\nentering %s %s\n", classname(s), symname(s));
+	printf("\nentering %s ", classname(s));
+	printname(stdout, s);
+	printf("\n");
     }
 }
 
@@ -69,7 +73,9 @@ public printexit(s)
 Symbol s;
 {
     if (s != program) {
-	printf("leaving %s %s\n\n", classname(s), symname(s));
+	printf("leaving %s ", classname(s));
+	printname(stdout, s);
+	printf("\n\n");
     }
 }
 
@@ -80,9 +86,12 @@ Symbol s;
 public printcall(s, t)
 Symbol s, t;
 {
-    printf("calling %s", symname(s));
+    printf("calling ");
+    printname(stdout, s);
     printparams(s, nil);
-    printf(" from %s %s\n", classname(t), symname(t));
+    printf(" from %s ", classname(t));
+    printname(stdout, t);
+    printf("\n");
 }
 
 /*
@@ -111,7 +120,9 @@ Symbol s;
 	    printf("(value too large) ");
 	}
     }
-    printf("from %s\n", symname(s));
+    printf("from ");
+    printname(stdout, s);
+    printf("\n");
 }
 
 /*
@@ -129,16 +140,19 @@ Frame frame;
     n = nargspassed(frame);
     param = f->chain;
     if (param != nil or n > 0) {
-	printf("(");
 	m = n;
 	if (param != nil) {
 	    for (;;) {
-		s = size(param) div sizeof(Word);
+		s = psize(param) div sizeof(Word);
 		if (s == 0) {
 		    s = 1;
 		}
 		m -= s;
-		printv(param, frame);
+		if (showaggrs) {
+		    printv(param, frame);
+		} else {
+		    printparamv(param, frame);
+		}
 		param = param->chain;
 	    if (param == nil) break;
 		printf(", ");
@@ -158,8 +172,8 @@ Frame frame;
 		printf(", ");
 	    }
 	}
-	printf(")");
     }
+    printf(")");
 }
 
 /*
@@ -207,6 +221,42 @@ Symbol s;
 }
 
 /*
+ * Print out a parameter value.
+ *
+ * Since this is intended to be printed on a single line with other information
+ * aggregate values are not printed.
+ */
+
+public printparamv (p, frame)
+Symbol p;
+Frame frame;
+{
+    Symbol t;
+
+    t = rtype(p->type);
+    switch (t->class) {
+	case ARRAY:
+	case DYNARRAY:
+	case SUBARRAY:
+	    t = rtype(t->type);
+	    if (compatible(t, t_char)) {
+		printv(p, frame);
+	    } else {
+		printf("%s = (...)", symname(p));
+	    }
+	    break;
+
+	case RECORD:
+	    printf("%s = (...)", symname(p));
+	    break;
+
+	default:
+	    printv(p, frame);
+	    break;
+    }
+}
+
+/*
  * Print the name and value of a variable.
  */
 
@@ -226,21 +276,6 @@ Frame frame;
     if(s->type->class == ARRAY && (! istypename(s->type->type,"char")) ) {
 	printf(" ARRAY ");
     } else {
-       if (isvarparam(s)) {
-	   rpush(address(s, frame), sizeof(Address));
-	   addr = pop(Address);
-	   len = size(s->type);
-       } else {
-	   addr = address(s, frame);
-	   len = size(s);
-       }
-       if (canpush(len)) {
-	   rpush(addr, len);
-	   printval(s->type);
-       } else {
-	   printf("*** expression too large ***");
-       }
-   }
 }
 
 /*
@@ -317,8 +352,15 @@ Symbol s;
 public printdecl(s)
 Symbol s;
 {
+    Language lang;
+
     checkref(s);
-    (*language_op(s->language, L_PRINTDECL))(s);
+    if (s->language == nil or s->language == primlang) {
+	lang = findlanguage(".s");
+    } else {
+	lang = s->language;
+    }
+    (*language_op(lang, L_PRINTDECL))(s);
 }
 
 /*
@@ -348,6 +390,10 @@ Symbol s;
     }
     putchar('\n');
     switch (s->class) {
+	case TYPE:
+	    printf("size\t%d\n", size(s));
+	    break;
+
 	case VAR:
 	case REF:
 	    if (s->level >= 3) {
@@ -436,8 +482,6 @@ Symbol t;
 	    break;
 
 	default:
-	    if (t->language == nil) {
-		error("unknown language");
 	    } else {
 		(*language_op(t->language, L_PRINTVAL))(t);
 	    }

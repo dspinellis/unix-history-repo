@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)main.c 1.10 %G%";
+static char sccsid[] = "@(#)main.c 1.11 %G%";
 /*
  * Debugger main routine.
  */
@@ -10,12 +10,16 @@ static char sccsid[] = "@(#)main.c 1.10 %G%";
 #include <signal.h>
 #include <errno.h>
 #include "main.h"
+#include "eval.h"
+#include "debug.h"
 #include "symbols.h"
 #include "scanner.h"
+#include "keywords.h"
 #include "process.h"
 #include "source.h"
 #include "object.h"
 #include "mappings.h"
+#include "coredump.h"
 
 #ifndef public
 
@@ -25,23 +29,16 @@ static char sccsid[] = "@(#)main.c 1.10 %G%";
 #include <fcntl.h>
 
 typedef struct {
-	struct sgttyb	sg;		/* standard sgttyb structure */
-	struct tchars	tc;		/* terminal characters */
-	struct ltchars	ltc;		/* local special characters */
-	int		ldisc;		/* line discipline */
-	int		local;		/* TIOCLGET */
-	int		fcflags;	/* fcntl(2) F_GETFL, F_SETFL */
+    struct sgttyb sg;		/* standard sgttyb structure */
+    struct tchars tc;		/* terminal characters */
+    struct ltchars ltc;		/* local special characters */
+    integer ldisc;		/* line discipline */
+    integer local;		/* TIOCLGET */
+    integer fcflags;		/* fcntl(2) F_GETFL, F_SETFL */
 } Ttyinfo;
 
 #endif
 
-public Boolean coredump;		/* true if using a core dump */
-public Boolean runfirst;		/* run program immediately */
-public Boolean interactive;		/* standard input IS a terminal */
-public Boolean lexdebug;		/* trace yylex return values */
-public Boolean tracebpts;		/* trace create/delete breakpoints */
-public Boolean traceexec;		/* trace process execution */
-public Boolean tracesyms;		/* print symbols as their read */
 
 public File corefile;			/* File id of core dump */
 
@@ -49,10 +46,12 @@ public File corefile;			/* File id of core dump */
 
 private Boolean initdone = false;	/* true if initialization done */
 private jmp_buf env;			/* setjmp/longjmp data */
+private char outbuf[BUFSIZ];		/* standard output buffer */
 private char namebuf[512];		/* possible name of object file */
 private int firstarg;			/* first program argument (for -r) */
 
 private Ttyinfo ttyinfo;
+private String corename;		/* name of core file */
 
 private catchintr();
 
@@ -70,11 +69,10 @@ String argv[];
     cmdname = argv[0];
     catcherrs();
     onsyserr(EINTR, nil);
-    setlinebuf(stderr);
-    printf("dbx version of %s.\nType 'help' for help.\n", date);
     fflush(stdout);
     scanargs(argc, argv);
     language_init();
+    symbols_init();
     symbols_init();
     process_init();
     if (runfirst) {
@@ -94,12 +92,6 @@ String argv[];
     setjmp(env);
     restoretty(stdout, &ttyinfo);
     signal(SIGINT, catchintr);
-    if (isterm(stdin)) {
-	    printf("(%s) ", cmdname);
-	    fflush(stdout);
-    }
-    endshellmode();		/* after an error longjmp */
-    startaliasing();
     yyparse();
     putchar('\n');
     quit(0);
@@ -129,6 +121,10 @@ public init()
     printf("\n");
     fflush(stdout);
     if (coredump) {
+	printf("[using memory image in %s]\n", corename);
+	if (vaddrs) {
+	    coredump_getkerinfo();
+	}
 	curfunc = whatblock(pc);
     } else {
 	curfunc = program;
@@ -182,7 +178,7 @@ String outfile;
     tmpfile = mktemp("/tmp/dbxXXXX");
     setout(tmpfile);
     status();
-    print_alias(nil);
+    alias(nil, nil, nil);
     if (argv != nil) {
 	printf("run");
 	for (i = 1; argv[i] != nil; i++) {
@@ -199,6 +195,7 @@ String outfile;
     unsetout();
     bpfree();
     objfree();
+    symbols_init();
     process_init();
     enterkeywords();
     scanner_init();
@@ -214,7 +211,8 @@ String outfile;
 }
 
 /*
- * After a non-fatal error we jump back to command parsing.
+ * After a non-fatal error we skip the rest of the current input line, and
+ * jump back to command parsing.
  */
 
 public erecover()
@@ -231,6 +229,10 @@ public erecover()
 
 private catchintr()
 {
+    if (isredirected()) {
+	fflush(stdout);
+	unsetout();
+    }
     putchar('\n');
     longjmp(env, 1);
 }
@@ -268,6 +270,12 @@ String argv[];
 		    fatal("missing directory for -I");
 		}
 		list_append(list_item(argv[i]), nil, sourcepath);
+	    } else if (streq(argv[i], "-c")) {
+		++i;
+		if (i >= argc) {
+		    fatal("missing command file name for -c");
+		}
+		initfile = argv[i];
 	    } else {
 		for (j = 1; argv[i][j] != '\0'; j++) {
 		    setoption(argv[i][j]);
@@ -278,6 +286,7 @@ String argv[];
 	    foundfile = true;
 	} else if (coredump and corefile == nil) {
 	    corefile = fopen(argv[i], "r");
+	    corename = argv[i];
 	    if (corefile == nil) {
 		coredump = false;
 	    }
@@ -308,9 +317,18 @@ String argv[];
 	list_append(list_item(tmp), nil, sourcepath);
     }
     if (coredump and corefile == nil) {
-	corefile = fopen("core", "r");
-	if (corefile == nil) {
-	    coredump = false;
+	if (vaddrs) {
+	    corefile = fopen("/dev/mem", "r");
+	    corename = "/dev/mem";
+	    if (corefile == nil) {
+		panic("can't open /dev/mem");
+	    }
+	} else {
+	    corefile = fopen("core", "r");
+	    corename = "core";
+	    if (corefile == nil) {
+		coredump = false;
+	    }
 	}
     }
 }
@@ -345,7 +363,11 @@ char c;
 	    break;
 
 	case 'l':
+#   	    ifdef LEXDEBUG
 		lexdebug = true;
+#	    else
+		fatal("\"-l\" only applicable when compiled with LEXDEBUG");
+#	    endif
 	    break;
 
 	default:

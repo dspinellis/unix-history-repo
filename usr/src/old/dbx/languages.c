@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)languages.c 1.4 %G%";
+static char sccsid[] = "@(#)languages.c 1.5 %G%";
 /*
  * Language management.
  */

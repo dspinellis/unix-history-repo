@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)check.c 1.6 %G%";
+static char sccsid[] = "@(#)check.c 1.7 %G%";
 /*
  * Check a tree for semantic correctness.
  */
@@ -15,6 +15,7 @@ static char sccsid[] = "@(#)check.c 1.6 %G%";
 #include "object.h"
 #include "mappings.h"
 #include "process.h"
+#include <signal.h>
 
 #ifndef public
 #endif
@@ -29,11 +30,52 @@ static char sccsid[] = "@(#)check.c 1.6 %G%";
 public check(p)
 register Node p;
 {
+    Node p1, p2;
     Address addr;
     Symbol f;
 
     checkref(p);
     switch (p->op) {
+	case O_ASSIGN:
+	    p1 = p->value.arg[0];
+	    p2 = p->value.arg[1];
+	    if (not compatible(p1->nodetype, p2->nodetype)) {
+		error("incompatible types");
+	    }
+	    break;
+
+	case O_CATCH:
+	case O_IGNORE:
+	    if (p->value.lcon < 0 or p->value.lcon > NSIG) {
+		error("invalid signal number");
+	    }
+	    break;
+
+	case O_CONT:
+	    if (p->value.lcon != DEFSIG and (
+		p->value.lcon < 0 or p->value.lcon > NSIG)
+	    ) {
+		error("invalid signal number");
+	    }
+	    break;
+
+	case O_DUMP:
+	    if (p->value.arg[0] != nil) {
+		if (p->value.arg[0]->op == O_SYM) {
+		    f = p->value.arg[0]->value.sym;
+		    if (not isblock(f)) {
+			error("\"%s\" is not a block", symname(f));
+		    }
+		} else {
+		    beginerrmsg();
+		    fprintf(stderr, "expected a symbol, found \"");
+		    prtree(stderr, p->value.arg[0]);
+		    fprintf(stderr, "\"");
+		    enderrmsg();
+		}
+	    }
+	    break;
+
 	case O_LIST:
 	    if (p->value.arg[0]->op == O_SYM) {
 		f = p->value.arg[0]->value.sym;
@@ -57,6 +99,7 @@ register Node p;
 	    chkstop(p);
 	    break;
 
+	case O_CALLPROC:
 	default:
 	    break;
     }

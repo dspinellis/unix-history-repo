@@ -1,7 +1,8 @@
-
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)runtime.c 1.12 %G%";
+static char sccsid[] = "@(#)runtime.c 1.13 %G%";
+
+static char rcsid[] = "$Header: runtime.c,v 1.5 84/12/26 10:41:52 linton Exp $";
 
 /*
  * Runtime organization dependent routines, mostly dealing with
@@ -30,8 +31,8 @@ typedef struct Frame *Frame;
 #define NSAVEREG 12
 
 struct Frame {
-    Integer condition_handler;
-    Integer mask;
+    integer condition_handler;
+    integer mask;
     Address save_ap;		/* argument pointer */
     Address save_fp;		/* frame pointer */
     Address save_pc;		/* program counter */
@@ -45,7 +46,7 @@ private Boolean walkingstack = false;
  */
 
 private getcurframe(frp)
-register Frame frp;
+Frame frp;
 {
     register int i;
 
@@ -53,9 +54,31 @@ register Frame frp;
     frp->mask = reg(NREG);
     frp->save_ap = reg(ARGP);
     frp->save_fp = reg(FRP);
-    frp->save_pc = reg(PROGCTR) + 1;
+    frp->save_pc = reg(PROGCTR);
     for (i = 0; i < NSAVEREG; i++) {
 	frp->save_reg[i] = reg(i);
+    }
+}
+
+/*
+ * Get the saved registers from one frame to another
+ * given mask specifying which registers were actually saved.
+ */
+
+#define bis(b, n) ((b & (1 << (n))) != 0)
+
+private getsaveregs (newfrp, frp, mask)
+Frame newfrp, frp;
+integer mask;
+{
+    integer i, j;
+
+    j = 0;
+    for (i = 0; i < NSAVEREG; i++) {
+	if (bis(mask, i)) {
+	    newfrp->save_reg[i] = frp->save_reg[j];
+	    ++j;
+	}
     }
 }
 
@@ -65,16 +88,14 @@ register Frame frp;
  * Writes over space pointed to by given argument.
  */
 
-#define bis(b, n) ((b & (1 << (n))) != 0)
-
 private Frame nextframe(frp)
 Frame frp;
 {
-    register Frame newfrp;
+    Frame newfrp;
     struct Frame frame;
-    register Integer i, j, mask;
+    integer mask;
     Address prev_frame, callpc; 
-    static Integer ntramp = 0;
+    static integer ntramp = 0;
 
     newfrp = frp;
     prev_frame = frp->save_fp;
@@ -108,23 +129,17 @@ nextf:
     } else {
 	callpc = frame.save_pc;
     }
-    if (frame.save_fp == nil) {
+    if (frame.save_fp == nil or frame.save_pc == (Address) -1) {
 	newfrp = nil;
-    } else if (callpc > 0x80000000 - 0x200 * UPAGES ) {
-	 ntramp++;
-	 prev_frame = frame.save_fp;
-	 goto nextf;
+    } else if (isstackaddr(callpc)) {
+	ntramp++;
+	prev_frame = frame.save_fp;
+	goto nextf;
     } else {
 	frame.save_pc = callpc;
         ntramp = 0;
 	mask = ((frame.mask >> 16) & 0x0fff);
-	j = 0;
-	for (i = 0; i < NSAVEREG; i++) {
-	    if (bis(mask, i)) {
-		newfrp->save_reg[i] = frame.save_reg[j];
-		++j;
-	    }
-	}
+	getsaveregs(newfrp, &frame, mask);
 	newfrp->condition_handler = frame.condition_handler;
 	newfrp->mask = mask;
 	newfrp->save_ap = frame.save_ap;
@@ -144,36 +159,61 @@ nextf:
 public Frame findframe(f)
 Symbol f;
 {
-    register Frame frp;
+    Frame frp;
     static struct Frame frame;
     Symbol p;
+    Boolean done;
 
     frp = &frame;
     getcurframe(frp);
-    if (f == nil)
-	return (frp);
-    /*
-     * Starting at the current stack frame,
-     * walk backwards looking for a symbol
-     * match.  Beware of local blocks which
-     * have a back pointer but no stack frame.
-     */
-    p = whatblock(frp->save_pc);
-    while (p != f) {
-	if (p == program) {
-	    frp = nil;
-	    break;
+    if (f != nil) {
+	if (f == curfunc and curframe != nil) {
+	    *frp = *curframe;
+	} else {
+	    done = false;
+	    p = whatblock(frp->save_pc);
+	    do {
+		if (p == f) {
+		    done = true;
+		} else if (p == program) {
+		    done = true;
+		    frp = nil;
+		} else {
+		    frp = nextfunc(frp, &p);
+		    if (frp == nil) {
+			done = true;
+		    }
+		}
+	    } while (not done);
 	}
-	if (isinline(p)) {
-	    p = container(p);
-	    continue;
-	}
-	frp = nextframe(frp);
-	if (frp == nil)
-	   break;
-	p = whatblock(frp->save_pc);
     }
-    return (frp);
+    return frp;
+}
+
+/*
+ * Set the registers according to the given frame pointer.
+ */
+
+public getnewregs (addr)
+Address addr;
+{
+    struct Frame frame;
+    integer i, j, mask;
+
+    dread(&frame, addr, sizeof(frame));
+    setreg(ARGP, frame.save_ap);
+    setreg(FRP, frame.save_fp);
+    setreg(PROGCTR, frame.save_pc);
+    mask = ((frame.mask >> 16) & 0x0fff);
+    j = 0;
+    for (i = 0; i < NSAVEREG; i++) {
+	if (bis(mask, i)) {
+	    setreg(i, frame.save_reg[j]);
+	    ++j;
+	}
+    }
+    pc = frame.save_pc;
+    setcurfunc(whatblock(pc));
 }
 
 /*
@@ -202,8 +242,8 @@ public Address return_addr()
  */
 
 public pushretval(len, isindirect)
-Integer len;
-Boolean isindirect;
+integer len;
+boolean isindirect;
 {
     Word r0;
 
@@ -227,7 +267,7 @@ Boolean isindirect;
 		    push(Word, r0);
 		    push(Word, reg(1));
 		} else {
-		    panic("not indirect in pushretval?");
+		    error("[internal error: bad size %d in pushretval]", len);
 		}
 		break;
 	}
@@ -239,7 +279,7 @@ Boolean isindirect;
  */
 
 public Address locals_base(frp)
-register Frame frp;
+Frame frp;
 {
     return (frp == nil) ? reg(FRP) : frp->save_fp;
 }
@@ -249,7 +289,7 @@ register Frame frp;
  */
 
 public Address args_base(frp)
-register Frame frp;
+Frame frp;
 {
     return (frp == nil) ? reg(ARGP) : frp->save_ap;
 }
@@ -259,10 +299,10 @@ register Frame frp;
  */
 
 public Word savereg(n, frp)
-register Integer n;
-register Frame frp;
+integer n;
+Frame frp;
 {
-    register Word w;
+    Word w;
 
     if (frp == nil) {
 	w = reg(n);
@@ -298,27 +338,13 @@ register Frame frp;
  */
 
 public Word argn(n, frp)
-Integer n;
+integer n;
 Frame frp;
 {
     Word w;
 
     dread(&w, args_base(frp) + (n * sizeof(Word)), sizeof(w));
     return w;
-}
-
-/*
- * Calculate the entry address for a procedure or function parameter,
- * given the address of the descriptor.
- */
-
-public Address fparamaddr(a)
-Address a;
-{
-    Address r;
-
-    dread(&r, a, sizeof(r));
-    return r;
 }
 
 /*
@@ -331,11 +357,36 @@ public wherecmd()
 }
 
 /*
- * Dump the world to the given file.
- * Like "where", but variables are dumped also.
+ * Print the variables in the given frame or the current one if nil.
  */
 
-public dump()
+public dump (func)
+Symbol func;
+{
+    Symbol f;
+    Frame frp;
+
+    if (func == nil) {
+	f = curfunc;
+	if (curframe != nil) {
+	    frp = curframe;
+	} else {
+	    frp = findframe(f);
+	}
+    } else {
+	f = func;
+	frp = findframe(f);
+    }
+    showaggrs = true;
+    printcallinfo(f, frp);
+    dumpvars(f, frp);
+}
+
+/*
+ * Dump all values.
+ */
+
+public dumpall ()
 {
     walkstack(true);
 }
@@ -348,32 +399,21 @@ public dump()
 private walkstack(dumpvariables)
 Boolean dumpvariables;
 {
-    register Frame frp;
-    register Symbol f;
-    register Boolean save;
-    register Lineno line;
+    Frame frp;
+    boolean save;
     struct Frame frame;
 
-    if (notstarted(process)) {
+    if (notstarted(process) or isfinished(process)) {
 	error("program is not active");
     } else {
 	save = walkingstack;
 	walkingstack = true;
+	showaggrs = dumpvariables;
 	frp = &frame;
 	getcurframe(frp);
 	f = whatblock(frp->save_pc);
-	do {
-	    printf("%s", symname(f));
-	    if (not isinline(f)) {
-		printparams(f, frp);
-	    }
-	    line = srcline(frp->save_pc - 1);
-	    if (line != 0) {
-		printf(", line %d", line);
-		printf(" in \"%s\"\n", srcfilename(frp->save_pc - 1));
-	    } else {
-		printf(" at 0x%x\n", frp->save_pc);
-	    }
+	for (;;) {
+	    printcallinfo(f, frp);
 	    if (dumpvariables) {
 		dumpvars(f, frp);
 		putchar('\n');
@@ -386,7 +426,10 @@ Boolean dumpvariables;
 		    f = whatblock(frp->save_pc);
 		}
 	    }
-	} while (frp != nil and f != program);
+	    if (frp == nil or f == program) {
+		break;
+	    }
+	}
 	if (dumpvariables) {
 	    printf("in \"%s\":\n", symname(program));
 	    dumpvars(program, nil);
@@ -397,10 +440,39 @@ Boolean dumpvariables;
 }
 
 /*
+ * Print out the information about a call, i.e.,
+ * routine name, parameter values, and source location.
+ */
+
+private printcallinfo (f, frp)
+Symbol f;
+Frame frp;
+{
+    Lineno line;
+    Address savepc;
+
+    savepc = frp->save_pc;
+    if (frp->save_fp != reg(FRP)) {
+	savepc -= 1;
+    }
+    printname(stdout, f);
+    if (not isinline(f)) {
+	printparams(f, frp);
+    }
+    line = srcline(savepc);
+    if (line != 0) {
+	printf(", line %d", line);
+	printf(" in \"%s\"\n", srcfilename(savepc));
+    } else {
+	printf(" at 0x%x\n", savepc);
+    }
+}
+
+/*
  * Find the entry point of a procedure or function.
  */
 
-public findbeginning(f)
+public findbeginning (f)
 Symbol f;
 {
     f->symvalue.funcv.beginaddr += 2;
@@ -450,7 +522,7 @@ public runtofirst()
 
 public Address lastaddr()
 {
-    register Symbol s;
+    Symbol s;
 
     s = lookup(identname("exit", true));
     if (s == nil) {
@@ -469,7 +541,7 @@ public Address lastaddr()
 public Boolean isactive(f)
 Symbol f;
 {
-    register Boolean b;
+    Boolean b;
 
     if (isfinished(process)) {
 	b = false;
@@ -488,13 +560,16 @@ Symbol f;
  * Evaluate a call to a procedure.
  */
 
-public callproc(procnode, arglist)
-Node procnode;
-Node arglist;
+public callproc(exprnode, isfunc)
+Node exprnode;
+boolean isfunc;
 {
+    Node procnode, arglist;
     Symbol proc;
-    Integer argc;
+    integer argc;
 
+    procnode = exprnode->value.arg[0];
+    arglist = exprnode->value.arg[1];
     if (procnode->op != O_SYM) {
 	beginerrmsg();
 	fprintf(stderr, "can't call \"");
@@ -507,14 +582,13 @@ Node arglist;
     if (not isblock(proc)) {
 	error("\"%s\" is not a procedure or function", symname(proc));
     }
+    endproc.isfunc = isfunc;
+    endproc.callnode = exprnode;
+    endproc.cmdnode = topnode;
     pushenv();
     pc = codeloc(proc);
     argc = pushargs(proc, arglist);
     beginproc(proc, argc);
-    isstopped = true;
-    event_once(build(O_EQ, build(O_SYM, pcsym), build(O_SYM, retaddrsym)),
-	buildcmdlist(build(O_PROCRTN, proc)));
-    cont();
     /* NOTREACHED */
 }
 
@@ -524,7 +598,7 @@ Node arglist;
  * space.
  */
 
-private Integer pushargs(proc, arglist)
+private integer pushargs(proc, arglist)
 Symbol proc;
 Node arglist;
 {
@@ -544,7 +618,7 @@ Node arglist;
  * Evaluate arguments left-to-right.
  */
 
-private Integer evalargs(proc, arglist)
+private integer evalargs(proc, arglist)
 Symbol proc;
 Node arglist;
 {
@@ -552,7 +626,7 @@ Node arglist;
     Symbol arg;
     Stack *savesp;
     Address addr;
-    Integer count;
+    integer count;
 
     savesp = sp;
     count = 0;
@@ -593,11 +667,32 @@ Node arglist;
 public procreturn(f)
 Symbol f;
 {
+    integer retvalsize;
+    Node tmp;
+    char *copy;
+
     flushoutput();
-    putchar('\n');
-    printname(stdout, f);
-    printf(" returns successfully\n");
     popenv();
+    if (endproc.isfunc) {
+	retvalsize = size(f->type);
+	if (retvalsize > sizeof(long)) {
+	    pushretval(retvalsize, true);
+	    copy = newarr(char, retvalsize);
+	    popn(retvalsize, copy);
+	    tmp = build(O_SCON, copy);
+	} else {
+	    tmp = build(O_LCON, (long) (reg(0)));
+	}
+	tmp->nodetype = f->type;
+	tfree(endproc.callnode);
+	*(endproc.callnode) = *(tmp);
+	dispose(tmp);
+	eval(endproc.cmdnode);
+    } else {
+	putchar('\n');
+	printname(stdout, f);
+	printf(" returns successfully\n", symname(f));
+    }
     erecover();
 }
 
@@ -622,10 +717,11 @@ private pushenv()
 
 public popenv()
 {
-    register String filename;
+    String filename;
 
     setreg(STKP, pop(Word));
     setreg(PROGCTR, pop(Word));
+    endproc = pop(CallEnv);
     curfunc = pop(Symbol);
     isstopped = pop(Boolean);
     filename = pop(String);
@@ -642,8 +738,8 @@ public popenv()
 
 public flushoutput()
 {
-    register Symbol p, iob;
-    register Stack *savesp;
+    Symbol p, iob;
+    Stack *savesp;
 
     p = lookup(identname("fflush", true));
     while (p != nil and not isblock(p)) {

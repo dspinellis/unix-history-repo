@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)object.c 1.15 %G%";
+static char sccsid[] = "@(#)object.c 1.16 %G%";
 /*
  * Object code interface, mainly for extraction of symbolic information.
  */
@@ -66,6 +66,17 @@ private Address addrstk[MAXBLKDEPTH];
     curblock = b; \
 }
 
+/*
+ * Change the current block with saving the previous one,
+ * since it is assumed that the symbol for the current one is to be deleted.
+ */
+
+public changeBlock (b)
+Symbol b;
+{
+    curblock = b;
+}
+
 #define exitblock() { \
     if (curblock->class == FUNC or curblock->class == PROC) { \
 	if (prevlinep != linep) { \
@@ -124,10 +135,17 @@ String file;
 	fatal("can't open %s", file);
     }
     read(f, &hdr, sizeof(hdr));
-    objsize = hdr.a_text;
-    nlhdr.nsyms = hdr.a_syms / sizeof(nlist);
-    nlhdr.nfiles = nlhdr.nsyms;
-    nlhdr.nlines = nlhdr.nsyms;
+    if (N_BADMAG(hdr)) {
+	objsize = 0;
+	nlhdr.nsyms = 0;
+	nlhdr.nfiles = 0;
+	nlhdr.nlines = 0;
+    } else {
+	objsize = hdr.a_text;
+	nlhdr.nsyms = hdr.a_syms / sizeof(nlist);
+	nlhdr.nfiles = nlhdr.nsyms;
+	nlhdr.nlines = nlhdr.nsyms;
+    }
     if (nlhdr.nsyms > 0) {
 	lseek(f, (long) N_STROFF(hdr), 0);
 	read(f, &(nlhdr.stringsize), sizeof(nlhdr.stringsize));
@@ -140,8 +158,27 @@ String file;
 	ordfunctab();
 	setnlines();
 	setnfiles();
+    } else {
+	initsyms();
     }
     close(f);
+}
+
+/*
+ * Found the beginning of the externals in the object file
+ * (signified by the "-lg" or find an external), close the
+ * block for the last procedure.
+ */
+
+private foundglobals ()
+{
+    if (curblock->class != PROG) {
+	exitblock();
+	if (curblock->class != PROG) {
+	    exitblock();
+	}
+    }
+    enterline(0, (linep-1)->addr + 1);
 }
 
 /*
@@ -201,25 +238,18 @@ Fileid f;
 	    enter_nl(name, np);
 	} else if (name[0] == '-') {
 	    afterlg = true;
-	    if (curblock->class != PROG) {
-		exitblock();
-		if (curblock->class != PROG) {
-		    exitblock();
-		}
-	    }
-	    enterline(0, (linep-1)->addr + 1);
+	    foundglobals();
 	} else if (afterlg) {
-	    if (name[0] == '_') {
-		check_global(&name[1], np);
-	    }
+	    check_global(name, np);
+	} else if ((np->n_type&N_EXT) == N_EXT) {
+	    afterlg = true;
+	    foundglobals();
+	    check_global(name, np);
 	} else if (name[0] == '_') {
 	    check_local(&name[1], np);
 	} else if ((np->n_type&N_TEXT) == N_TEXT) {
 	    check_filename(name);
 	}
-    }
-    if (not afterlg) {
-	fatal("not linked for debugging, use \"cc -g ...\"");
     }
     dispose(namelist);
 }
@@ -259,9 +289,9 @@ private initsyms()
 public objfree()
 {
     symbol_free();
-    keywords_free();
-    names_free();
-    dispose(stringtab);
+    /* keywords_free(); */
+    /* names_free(); */
+    /* dispose(stringtab); */
     clrfunctab();
 }
 
@@ -390,23 +420,31 @@ register struct nlist *np;
 {
     register Name n;
     register Symbol t, u;
+    char buf[4096];
+    boolean isextref;
+    integer count;
 
-    if (not streq(name, "end")) {
-	n = identname(name, true);
+    if (not streq(name, "_end")) {
+	if (name[0] == '_') {
+	    n = identname(&name[1], true);
+	} else {
+	    n = identname(name, true);
+	    if (lookup(n) != nil) {
+		sprintf(buf, "$%s", name);
+		n = identname(buf, false);
+	    }
+	}
 	if ((np->n_type&N_TYPE) == N_TEXT) {
 	    find(t, n) where
 		t->level == program->level and
 		(t->class == PROC or t->class == FUNC)
 	    endfind(t);
-	    if (t == nil) {
-		t = insert(n);
-		t->language = findlanguage(".s");
-		t->class = FUNC;
-		t->type = t_int;
-		t->block = curblock;
-		t->level = program->level;
-		t->symvalue.funcv.src = false;
-		t->symvalue.funcv.inline = false;
+	    count = 0;
+	    t = findsym(n, &isextref);
+	    while (isextref) {
+		++count;
+		updateTextSym(t, name, np->n_value);
+		t = findsym(n, &isextref);
 	    }
 	    t->symvalue.funcv.beginaddr = np->n_value;
 	    newfunc(t, codeloc(t));
@@ -435,26 +473,24 @@ register struct nlist *np;
  * If not, create a variable for the entry.  In any case,
  * set the offset of the variable according to the value field
  * in the entry.
+ *
+ * If the external name has been referred to by several other symbols,
+ * we must update each of them.
  */
 
 private check_var(np, n)
 struct nlist *np;
 register Name n;
 {
-    register Symbol t;
+    register Symbol t, u, next;
+    Symbol conflict;
 
     find(t, n) where
 	t->class == VAR and t->level == program->level
     endfind(t);
     if (t == nil) {
-	t = insert(n);
-	t->language = findlanguage(".s");
-	t->class = VAR;
-	t->type = t_int;
-	t->level = program->level;
     }
     t->block = curblock;
-    t->symvalue.offset = np->n_value;
 }
 
 /*
@@ -502,7 +538,8 @@ String name;
 {
     register String mname;
     register Integer i;
-    register Symbol s;
+    Name n;
+    Symbol s;
 
     mname = strdup(name);
     i = strlen(mname) - 2;
@@ -512,11 +549,15 @@ String name;
 	while (mname[i] != '/' and i >= 0) {
 	    --i;
 	}
-	s = insert(identname(&mname[i+1], true));
-	s->language = findlanguage(".s");
-	s->class = MODULE;
-	s->symvalue.funcv.beginaddr = 0;
-	findbeginning(s);
+	n = identname(&mname[i+1], true);
+	find(s, n) where s->block == program and s->class == MODULE endfind(s);
+	if (s == nil) {
+	    s = insert(n);
+	    s->language = findlanguage(".s");
+	    s->class = MODULE;
+	    s->symvalue.funcv.beginaddr = 0;
+	    findbeginning(s);
+	}
 	if (curblock->class != PROG) {
 	    exitblock();
 	    if (curblock->class != PROG) {

@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)symbols.c 1.16 %G%";
+static char sccsid[] = "@(#)symbols.c 1.17 %G%";
 /*
  * Symbol management.
  */
@@ -25,13 +25,14 @@ typedef struct Symbol *Symbol;
 #include "machine.h"
 #include "names.h"
 #include "languages.h"
+#include "tree.h"
 
 /*
  * Symbol classes
  */
 
 typedef enum {
-    BADUSE, CONST, TYPE, VAR, ARRAY, PTRFILE, RECORD, FIELD,
+    BADUSE, CONST, TYPE, VAR, ARRAY, DYNARRAY, SUBARRAY, PTRFILE, RECORD, FIELD,
     PROC, FUNC, FVAR, REF, PTR, FILET, SET, RANGE, 
     LABEL, WITHPTR, SCAL, STR, PROG, IMPROPER, VARNT,
     FPROC, FFUNC, MODULE, TAG, COMMON, TYPEREF
@@ -47,9 +48,11 @@ struct Symbol {
     Symbol type;
     Symbol chain;
     union {
+	Node constval;		/* value of constant symbol */
 	int offset;		/* variable address */
 	long iconval;		/* integer constant value */
 	double fconval;		/* floating constant value */
+	int ndims;		/* no. of dimensions for dynamic/sub-arrays */
 	struct {		/* field offset and size (both in bits) */
 	    int offset;
 	    int length;
@@ -92,6 +95,8 @@ Symbol t_nil;
 
 Symbol program;
 Symbol curfunc;
+
+boolean showaggrs;
 
 #define symname(s) ident(s->name)
 #define codeloc(f) ((f)->symvalue.funcv.beginaddr)
@@ -162,8 +167,7 @@ public Symbol symbol_alloc()
     return &(sympool->sym[nleft]);
 }
 
-
-public symbol_dump(func)
+public symbol_dump (func)
 Symbol func;
 {
     register Symbol s;
@@ -182,6 +186,7 @@ Symbol func;
 /*
  * Free all the symbols currently allocated.
  */
+
 
 public symbol_free()
 {
@@ -216,6 +221,7 @@ Symbol chain;
 
     s = symbol_alloc();
     s->name = name;
+    s->language = primlang;
     s->level = blevel;
     s->class = class;
     s->type = type;
@@ -261,7 +267,7 @@ Name name;
 
 /*
  * Dump out all the variables associated with the given
- * procedure, function, or program at the given recursive level.
+ * procedure, function, or program associated with the given stack frame.
  *
  * This is quite inefficient.  We traverse the entire symbol table
  * each time we're called.  The assumption is that this routine
@@ -307,14 +313,20 @@ public symbols_init()
  * Builtin types are circular in that btype->type->type = btype.
  */
 
-public Symbol maketype(name, lower, upper)
+private Symbol maketype(name, lower, upper)
 String name;
 long lower;
 long upper;
 {
     register Symbol s;
+    Name n;
 
-    s = newSymbol(identname(name, true), 0, TYPE, nil, nil);
+    if (name == nil) {
+	n = nil;
+    } else {
+	n = identname(name, true);
+    }
+    s = insert(n);
     s->language = findlanguage(".c");
     s->type = newSymbol(nil, 0, RANGE, s, nil);
     s->type->symvalue.rangev.lower = lower;
@@ -323,27 +335,34 @@ long upper;
 }
 
 /*
- * These functions are now compiled inline.
- *
- * public String symname(s)
-Symbol s;
-{
-    checkref(s);
-    return ident(s->name);
-}
-
- *
- * public Address codeloc(f)
-Symbol f;
-{
-    checkref(f);
-    if (not isblock(f)) {
-	panic("codeloc: \"%s\" is not a block", ident(f->name));
-    }
-    return f->symvalue.funcv.beginaddr;
-}
- *
+ * Create the builtin symbols.
  */
+
+public symbols_init ()
+{
+    Symbol s;
+
+    t_boolean = maketype("$boolean", 0L, 1L);
+    t_int = maketype("$integer", 0x80000000L, 0x7fffffffL);
+    t_char = maketype("$char", 0L, 255L);
+    t_real = maketype("$real", 8L, 0L);
+    t_nil = maketype("$nil", 0L, 0L);
+    t_addr = insert(identname("$address", true));
+    t_addr->language = primlang;
+    t_addr->level = 0;
+    t_addr->class = TYPE;
+    t_addr->type = newSymbol(nil, 1, PTR, t_int, nil);
+    s = insert(identname("true", true));
+    s->class = CONST;
+    s->type = t_boolean;
+    s->symvalue.constval = build(O_LCON, 1L);
+    s->symvalue.constval->nodetype = t_boolean;
+    s = insert(identname("false", true));
+    s->class = CONST;
+    s->type = t_boolean;
+    s->symvalue.constval = build(O_LCON, 0L);
+    s->symvalue.constval->nodetype = t_boolean;
+}
 
 /*
  * Reduce type to avoid worrying about type names.
@@ -356,7 +375,9 @@ Symbol type;
 
     t = type;
     if (t != nil) {
-	if (t->class == VAR or t->class == FIELD or t->class == REF ) {
+	if (t->class == VAR or t->class == CONST or
+	    t->class == FIELD or t->class == REF
+	) {
 	    t = t->type;
 	}
 	while (t->class == TYPE or t->class == TAG) {
@@ -366,11 +387,18 @@ Symbol type;
     return t;
 }
 
-public Integer level(s)
+public integer regnum (s)
 Symbol s;
 {
+    integer r;
+
     checkref(s);
-    return s->level;
+    if (s->level < 0) {
+	r = s->symvalue.offset;
+    } else {
+	r = -1;
+    }
+    return r;
 }
 
 public Symbol container(s)
@@ -378,6 +406,16 @@ Symbol s;
 {
     checkref(s);
     return s->block;
+}
+
+public Node constval(s)
+Symbol s;
+{
+    checkref(s);
+    if (s->class != CONST) {
+	error("[internal error: constval(non-CONST)]");
+    }
+    return s->symvalue.constval;
 }
 
 /*
@@ -395,7 +433,7 @@ Symbol s;
 #define islocaloff(s)		(s->level >= 3 and s->symvalue.offset < 0)
 #define isparamoff(s)		(s->level >= 3 and s->symvalue.offset >= 0)
 
-public Address address(s, frame)
+public Address address (s, frame)
 Symbol s;
 Frame frame;
 {
@@ -416,11 +454,14 @@ Frame frame;
 		cur = cur->block;
 	    }
 	    if (cur == nil) {
-		cur = whatblock(pc);
-	    }
-	    frp = findframe(cur);
-	    if (frp == nil) {
-		panic("unexpected nil frame for \"%s\"", symname(s));
+		frp = nil;
+	    } else {
+		frp = findframe(cur);
+		if (frp == nil) {
+		    error("[internal error: unexpected nil frame for \"%s\"]",
+			symname(s)
+		    );
+		}
 	    }
 	}
 	if (islocaloff(s)) {
@@ -440,20 +481,17 @@ Frame frame;
  * Define a symbol used to access register values.
  */
 
-public defregname(n, r)
+public defregname (n, r)
 Name n;
-Integer r;
+integer r;
 {
-    register Symbol s, t;
+    Symbol s;
 
     s = insert(n);
-    t = newSymbol(nil, 0, PTR, t_int, nil);
-    t->language = findlanguage(".s");
-    s->language = t->language;
+    s->language = t_addr->language;
     s->class = VAR;
     s->level = -3;
-    s->type = t;
-    s->block = program;
+    s->type = t_addr;
     s->symvalue.offset = r;
 }
 
@@ -482,10 +520,17 @@ Symbol s;
     if (prev == nil) {
 	error("couldn't find link to type reference");
     }
-    find(t, prev->name) where
-	t->type != nil and t->class == prev->class and
-	t->type->class != BADUSE and t->block->class == MODULE
-    endfind(t);
+    t = lookup(prev->name);
+    while (t != nil and
+	not (
+	    t != prev and t->name == prev->name and
+	    t->block->class == MODULE and t->class == prev->class and
+	    t->type != nil and t->type->type != nil and
+	    t->type->type->class != BADUSE
+	)
+    ) {
+	t = t->next_sym;
+    }
     if (t == nil) {
 	error("couldn't resolve reference");
     } else {
@@ -509,10 +554,6 @@ Symbol s;
 #define MAXSHORT 32767
 
 public Integer size(sym)
-Symbol sym;
-{
-    register Symbol s, t;
-    register int nel, elsize;
     long lower, upper;
     int r;
 
@@ -566,9 +607,16 @@ Symbol sym;
 	    r = nel*elsize;
 	    break;
 
+	case DYNARRAY:
+	    r = (t->symvalue.ndims + 1) * sizeof(Word);
+	    break;
+
+	case SUBARRAY:
+	    r = (2 * t->symvalue.ndims + 1) * sizeof(Word);
+	    break;
+
 	case REF:
 	case VAR:
-	case FVAR:
 	    r = size(t->type);
 	    /*
 	     *
@@ -578,7 +626,9 @@ Symbol sym;
 	    */
 	    break;
 
+	case FVAR:
 	case CONST:
+	case TAG:
 	    r = size(t->type);
 	    break;
 
@@ -586,10 +636,6 @@ Symbol sym;
 	    if (t->type->class == PTR and t->type->type->class == BADUSE) {
 		findtype(t);
 	    }
-	    r = size(t->type);
-	    break;
-
-	case TAG:
 	    r = size(t->type);
 	    break;
 
@@ -606,6 +652,7 @@ Symbol sym;
 	    break;
 
 	case PTR:
+	case TYPEREF:
 	case FILET:
 	    r = sizeof(Word);
 	    break;
@@ -647,6 +694,33 @@ Symbol sym;
 }
 
 /*
+ * Return the size associated with a symbol that takes into account
+ * reference parameters.  This might be better as the normal size function, but
+ * too many places already depend on it working the way it does.
+ */
+
+public integer psize (s)
+Symbol s;
+{
+    integer r;
+    Symbol t;
+
+    if (s->class == REF) {
+	t = rtype(s->type);
+	if (t->class == DYNARRAY) {
+	    r = (t->symvalue.ndims + 1) * sizeof(Word);
+	} else if (t->class == SUBARRAY) {
+	    r = (2 * t->symvalue.ndims + 1) * sizeof(Word);
+	} else {
+	    r = sizeof(Word);
+	}
+    } else {
+	r = size(s);
+    }
+    return r;
+}
+
+/*
  * Test if a symbol is a parameter.  This is true if there
  * is a cycle from s->block to s via chain pointers.
  */
@@ -679,27 +753,20 @@ Symbol s;
  */
 
 public Boolean isvariable(s)
-register Symbol s;
+Symbol s;
 {
     return (Boolean) (s->class == VAR or s->class == FVAR or s->class == REF);
 }
 
 /*
- * Test if a symbol is a block, e.g. function, procedure, or the
- * main program.
- *
- * This function is now expanded inline for efficiency.
- *
- * public Boolean isblock(s)
-register Symbol s;
-{
-    return (Boolean) (
-	s->class == FUNC or s->class == PROC or
-	s->class == MODULE or s->class == PROG
-    );
-}
- *
+ * Test if a symbol is a constant.
  */
+
+public Boolean isconst(s)
+Symbol s;
+{
+    return (Boolean) (s->class == CONST);
+}
 
 /*
  * Test if a symbol is a module.
@@ -709,17 +776,6 @@ public Boolean ismodule(s)
 register Symbol s;
 {
     return (Boolean) (s->class == MODULE);
-}
-
-/*
- * Test if a symbol is builtin, that is, a predefined type or
- * reserved word.
- */
-
-public Boolean isbuiltin(s)
-register Symbol s;
-{
-    return (Boolean) (s->level == 0 and s->class != PROG and s->class != VAR);
 }
 
 /*
@@ -745,10 +801,6 @@ register Symbol t1, t2;
     } else if (t1->language == nil) {
 	b = (Boolean) (t2->language == nil or
 	    (*language_op(t2->language, L_TYPEMATCH))(t1, t2));
-    } else if (t2->language == nil) {
-	b = (Boolean) (*language_op(t1->language, L_TYPEMATCH))(t1, t2);
-    } else if ( isbuiltin(t1) or isbuiltin(t1->type) ) {
-	b = (Boolean) (*language_op(t2->language, L_TYPEMATCH))(t1, t2);
     } else {
 	b = (Boolean) (*language_op(t1->language, L_TYPEMATCH))(t1, t2);
     }
@@ -763,14 +815,17 @@ public Boolean istypename(type, name)
 Symbol type;
 String name;
 {
-    Symbol t;
+    register Symbol t;
     Boolean b;
 
     t = type;
-    checkref(t);
-    b = (Boolean) (
-	t->class == TYPE and t->name == identname(name, true)
-    );
+    if (t == nil) {
+	b = false;
+    } else {
+	b = (Boolean) (
+	    t->class == TYPE and streq(ident(t->name), name)
+	);
+    }
     return b;
 }
 
@@ -792,15 +847,15 @@ typedef char *Arglist;
 #define nextarg(type)  ((type *) (ap += sizeof(type)))[-1]
 
 private Symbol mkstring();
-private Symbol namenode();
 
 /*
  * Determine the type of a parse tree.
+ *
  * Also make some symbol-dependent changes to the tree such as
- * changing removing RVAL nodes for constant symbols.
+ * removing indirection for constant or register symbols.
  */
 
-public assigntypes(p)
+public assigntypes (p)
 register Node p;
 {
     register Node p1;
@@ -808,11 +863,15 @@ register Node p;
 
     switch (p->op) {
 	case O_SYM:
-	    p->nodetype = namenode(p);
+	    p->nodetype = p->value.sym;
 	    break;
 
 	case O_LCON:
 	    p->nodetype = t_int;
+	    break;
+
+	case O_CCON:
+	    p->nodetype = t_char;
 	    break;
 
 	case O_FCON:
@@ -820,18 +879,19 @@ register Node p;
 	    break;
 
 	case O_SCON:
-	    p->value.scon = strdup(p->value.scon);
-	    s = mkstring(p->value.scon);
-	    if (s == t_char) {
-		p->op = O_LCON;
-		p->value.lcon = p->value.scon[0];
-	    }
-	    p->nodetype = s;
+	    p->nodetype = mkstring(p->value.scon);
 	    break;
 
 	case O_INDIR:
 	    p1 = p->value.arg[0];
-	    chkclass(p1, PTR);
+	    s = rtype(p1->nodetype);
+	    if (s->class != PTR) {
+		beginerrmsg();
+		fprintf(stderr, "\"");
+		prtree(stderr, p1);
+		fprintf(stderr, "\" is not a pointer");
+		enderrmsg();
+	    }
 	    p->nodetype = rtype(p1->nodetype)->type;
 	    break;
 
@@ -843,21 +903,16 @@ register Node p;
 	    p1 = p->value.arg[0];
 	    p->nodetype = p1->nodetype;
 	    if (p1->op == O_SYM) {
-		if (p1->nodetype->class == FUNC) {
-		    p->op = O_CALL;
-		    p->value.arg[1] = nil;
+		if (p1->nodetype->class == PROC or p->nodetype->class == FUNC) {
+		    p->op = p1->op;
+		    p->value.sym = p1->value.sym;
+		    p->nodetype = p1->nodetype;
+		    dispose(p1);
 		} else if (p1->value.sym->class == CONST) {
-		    if (compatible(p1->value.sym->type, t_real)) {
-			p->op = O_FCON;
-			p->value.fcon = p1->value.sym->symvalue.fconval;
-			p->nodetype = t_real;
-			dispose(p1);
-		    } else {
-			p->op = O_LCON;
-			p->value.lcon = p1->value.sym->symvalue.iconval;
-			p->nodetype = p1->value.sym->type;
-			dispose(p1);
-		    }
+		    p->op = p1->op;
+		    p->value = p1->value;
+		    p->nodetype = p1->nodetype;
+		    dispose(p1);
 		} else if (isreg(p1->value.sym)) {
 		    p->op = O_SYM;
 		    p->value.sym = p1->value.sym;
@@ -977,40 +1032,6 @@ register Node p;
 }
 
 /*
- * Create a node for a name.  The symbol for the name has already
- * been chosen, either implicitly with "which" or explicitly from
- * the dot routine.
- */
-
-private Symbol namenode(p)
-Node p;
-{
-    register Symbol r, s;
-    register Node np;
-
-    s = p->value.sym;
-    if (s->class == REF) {
-	np = new(Node);
-	np->op = p->op;
-	np->nodetype = s;
-	np->value.sym = s;
-	p->op = O_INDIR;
-	p->value.arg[0] = np;
-    }
-/*
- * Old way
- *
-    if (s->class == CONST or s->class == VAR or s->class == FVAR) {
-	r = s->type;
-    } else {
-	r = s;
-    }
- *
- */
-    return s;
-}
-
-/*
  * Convert a tree to a type via a conversion operator;
  * if this isn't possible generate an error.
  *
@@ -1055,26 +1076,27 @@ public Node dot(record, fieldname)
 Node record;
 Name fieldname;
 {
-    register Node p;
+    register Node rec, p;
     register Symbol s, t;
 
-    if (isblock(record->nodetype)) {
+    rec = record;
+    if (isblock(rec->nodetype)) {
 	find(s, fieldname) where
-	    s->block == record->nodetype and
-	    s->class != FIELD and s->class != TAG
+	    s->block == rec->nodetype and
+	    s->class != FIELD
 	endfind(s);
 	if (s == nil) {
 	    beginerrmsg();
 	    fprintf(stderr, "\"%s\" is not defined in ", ident(fieldname));
-	    printname(stderr, record->nodetype);
+	    printname(stderr, rec->nodetype);
 	    enderrmsg();
 	}
 	p = new(Node);
 	p->op = O_SYM;
 	p->value.sym = s;
-	p->nodetype = namenode(p);
+	p->nodetype = s;
     } else {
-	p = record;
+	p = rec;
 	t = rtype(p->nodetype);
 	if (t->class == PTR) {
 	    s = findfield(fieldname, t->type);
@@ -1084,15 +1106,16 @@ Name fieldname;
 	if (s == nil) {
 	    beginerrmsg();
 	    fprintf(stderr, "\"%s\" is not a field in ", ident(fieldname));
-	    prtree(stderr, record);
+	    prtree(stderr, rec);
 	    enderrmsg();
 	}
-	if (t->class == PTR and not isreg(record->nodetype)) {
-	    p = build(O_INDIR, record);
+	if (t->class != PTR or isreg(rec->nodetype)) {
+	    p = unrval(p);
 	}
+	p->nodetype = t_addr;
 	p = build(O_DOT, p, build(O_SYM, s));
     }
-    return p;
+    return build(O_RVAL, p);
 }
 
 /*
@@ -1107,7 +1130,8 @@ Symbol t;
 
    t = rtype(a->nodetype);
    if(t->language == nil) {
-	error("unknown language");
+    if (t->language == nil or t->language == primlang) {
+	p = (Node) (*language_op(findlanguage(".s"), L_BUILDAREF))(a, slist);
    }
    else {
         return ( (Node)
@@ -1120,15 +1144,17 @@ Symbol t;
  * Evaluate a subscript index.
  */
 
-public int evalindex(s, i)
+public int evalindex(s, base, i)
 Symbol s;
+Address base;
 long i;
 {
 Symbol t;
 
    t = rtype(s);
    if(t->language == nil) {
-	error("unknown language");
+    if (t->language == nil or t->language == primlang) {
+	r = ((*language_op(findlanguage(".s"), L_EVALAREF)) (s, base, i));
    }
    else {
         return (
@@ -1154,26 +1180,6 @@ register Node p;
 }
 
 /*
- * Check to make sure the given tree has a type of the given class.
- */
-
-private chkclass(p, class)
-Node p;
-Symclass class;
-{
-    struct Symbol tmpsym;
-
-    tmpsym.class = class;
-    if (rtype(p->nodetype)->class != class) {
-	beginerrmsg();
-	fprintf(stderr, "\"");
-	prtree(stderr, p);
-	fprintf(stderr, "\" is not a %s", classname(&tmpsym));
-	enderrmsg();
-    }
-}
-
-/*
  * Construct a node for the type of a string.  While we're at it,
  * scan the string for '' that collapse to ', and chop off the ends.
  */
@@ -1181,26 +1187,8 @@ Symclass class;
 private Symbol mkstring(str)
 String str;
 {
-    register char *p, *q;
     register Symbol s;
 
-    p = str;
-    q = str;
-    while (*p != '\0') {
-	if (*p == '\\') {
-	    ++p;
-	}
-	*q = *p;
-	++p;
-	++q;
-    }
-    *q = '\0';
-    s = newSymbol(nil, 0, ARRAY, t_char, nil);
-    s->language = findlanguage(".s");
-    s->chain = newSymbol(nil, 0, RANGE, t_int, nil);
-    s->chain->language = s->language;
-    s->chain->symvalue.rangev.lower = 1;
-    s->chain->symvalue.rangev.upper = p - str + 1;
     return s;
 }
 
@@ -1215,49 +1203,121 @@ Symbol s;
 }
 
 /*
- * Figure out the "current" variable or function being referred to,
- * this is either the active one or the most visible from the
- * current scope.
+ * Figure out the "current" variable or function being referred to
+ * by the name n.
  */
 
-public Symbol which(n)
+private boolean stwhich(), dynwhich();
+
+public Symbol which (n)
 Name n;
 {
-    register Symbol s, p, t, f;
+    Symbol s;
 
-    find(s, n)
-	where s->class != FIELD and s->class != TAG and s->class != MODULE
-    endfind(s);
-    if (s == nil) {
-	s = lookup(n);
-    }
+    s = lookup(n);
     if (s == nil) {
 	error("\"%s\" is not defined", ident(n));
-    } else if (s == program or isbuiltin(s)) {
-	t = s;
-    } else {
-       /* start with current function */
-	p = curfunc;
-	do {
-	    find(t, n) where
-		t->block == p and
-		t->class != FIELD and t->class != TAG and t->class != MODULE
-	    endfind(t);
-	    p = p->block;
-	} while (t == nil and p != nil);
-	if (t == nil) {
-	    t = s;
-	}
+    } else if (not stwhich(&s) and isambiguous(s) and not dynwhich(&s)) {
+	printf("[using ");
+	printname(stdout, s);
+	printf("]\n");
     }
-    return t;
+    return s;
 }
 
 /*
- * Find the symbol which is has the same name and scope as the
+ * Static search.
+ */
+
+private boolean stwhich (var_s)
+Symbol *var_s;
+{
+    Name n;		/* name of desired symbol */
+    Symbol s;		/* iteration variable for symbols with name n */
+    Symbol f;		/* iteration variable for blocks containing s */
+    integer count;	/* number of levels from s->block to curfunc */
+    Symbol t;		/* current best answer for stwhich(n) */
+    integer mincount;	/* relative level for current best answer (t) */
+    boolean b;		/* return value, true if symbol found */
+
+    s = *var_s;
+    n = s->name;
+    t = s;
+    mincount = 10000; /* force first match to set mincount */
+    do {
+	if (s->name == n and s->class != FIELD and s->class != TAG) {
+	    f = curfunc;
+	    count = 0;
+	    while (f != nil and f != s->block) {
+		++count;
+		f = f->block;
+	    }
+	    if (f != nil and count < mincount) {
+		t = s;
+		mincount = count;
+		b = true;
+	    }
+	}
+	s = s->next_sym;
+    } while (s != nil);
+    if (mincount != 10000) {
+	*var_s = t;
+	b = true;
+    } else {
+	b = false;
+    }
+    return b;
+}
+
+/*
+ * Dynamic search.
+ */
+
+private boolean dynwhich (var_s)
+Symbol *var_s;
+{
+    Name n;		/* name of desired symbol */
+    Symbol s;		/* iteration variable for possible symbols */
+    Symbol f;		/* iteration variable for active functions */
+    Frame frp;		/* frame associated with stack walk */
+    boolean b;		/* return value */
+
+    f = curfunc;
+    frp = curfuncframe();
+    n = (*var_s)->name;
+    b = false;
+    if (frp != nil) {
+	frp = nextfunc(frp, &f);
+	while (frp != nil) {
+	    s = *var_s;
+	    while (s != nil and
+		(
+		    s->name != n or s->block != f or
+		    s->class == FIELD or s->class == TAG
+		)
+	    ) {
+		s = s->next_sym;
+	    }
+	    if (s != nil) {
+		*var_s = s;
+		b = true;
+		break;
+	    }
+	    if (f == program) {
+		break;
+	    }
+	    frp = nextfunc(frp, &f);
+	}
+    }
+    return b;
+}
+
+/*
+ * Find the symbol that has the same name and scope as the
  * given symbol but is of the given field.  Return nil if there is none.
  */
 
-public Symbol findfield(fieldname, record)
+public Symbol findfield (fieldname, record)
 Name fieldname;
 Symbol record;
 {

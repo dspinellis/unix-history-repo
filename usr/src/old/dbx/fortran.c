@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)fortran.c	1.5	%G%";
+static char sccsid[] = "@(#)fortran.c	1.6	%G%";
 /*
  * FORTRAN dependent symbol routines.
  */
@@ -254,8 +254,8 @@ Symbol s;
     register Symbol t;
     register Address a;
     register int i, len;
+    double d1, d2;
 
-    /* printf("fortran_printval with class %s \n",classname(s)); OUT*/
     switch (s->class) {
 	case CONST:
 	case TYPE:
@@ -285,14 +285,17 @@ Symbol s;
 			break;
 
 		    case sizeof(double):
-			if(istypename(s->type,"complex")) {
-			   printf("(");
-			prtreal(pop(float));
-			   printf(",");
-			prtreal(pop(float));
-			   printf(")");
+			if (istypename(s->type,"complex")) {
+			    d2 = pop(float);
+			    d1 = pop(float);
+			    printf("(");
+			    prtreal(d1);
+			    printf(",");
+			    prtreal(d2);
+			    printf(")");
+			} else {
+			    prtreal(pop(double));
 			}
-			else prtreal(pop(double));
 			break;
 
 		    default:
@@ -461,34 +464,45 @@ Node a, slist;
  * Evaluate a subscript index.
  */
 
-public int fortran_evalaref(s, i)
+public fortran_evalaref(s, base, i)
 Symbol s;
+Address base;
 long i;
 {
-    Symbol r;
+    Symbol r, t;
     long lb, ub;
 
-    r = rtype(s)->chain;
-    if(r->symvalue.rangev.lowertype == R_ARG or
-       r->symvalue.rangev.lowertype == R_TEMP  ) {
-	if(! getbound(s,r->symvalue.rangev.lower,
-		        r->symvalue.rangev.lowertype,&lb))
+    t = rtype(s);
+    r = t->chain;
+    if (
+	r->symvalue.rangev.lowertype == R_ARG or
+        r->symvalue.rangev.lowertype == R_TEMP
+    ) {
+	if (not getbound(
+	    s, r->symvalue.rangev.lower, r->symvalue.rangev.lowertype, &lb
+	)) {
           error("dynamic bounds not currently available");
+	}
+    } else {
+	lb = r->symvalue.rangev.lower;
     }
-    else lb = r->symvalue.rangev.lower;
-
-    if(r->symvalue.rangev.uppertype == R_ARG or
-       r->symvalue.rangev.uppertype == R_TEMP  ) {
-	if(! getbound(s,r->symvalue.rangev.upper,
-		        r->symvalue.rangev.uppertype,&ub))
+    if (
+	r->symvalue.rangev.uppertype == R_ARG or
+        r->symvalue.rangev.uppertype == R_TEMP
+    ) {
+	if (not getbound(
+	    s, r->symvalue.rangev.upper, r->symvalue.rangev.uppertype, &ub
+	)) {
           error("dynamic bounds not currently available");
+	}
+    } else {
+	ub = r->symvalue.rangev.upper;
     }
-    else ub = r->symvalue.rangev.upper;
 
     if (i < lb or i > ub) {
 	error("subscript out of range");
     }
-    return (i - lb);
+    push(long, base + (i - lb) * size(t->type));
 }
 
 private fortran_printarray(a)

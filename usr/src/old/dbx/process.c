@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)process.c 1.16 %G%";
+static char sccsid[] = "@(#)process.c 1.17 %G%";
 /*
  * Process management.
  *
@@ -22,7 +22,6 @@ static char sccsid[] = "@(#)process.c 1.16 %G%";
 #include "coredump.h"
 #include <signal.h>
 #include <errno.h>
-#include <ptrace.h>
 #include <sys/param.h>
 #include <machine/reg.h>
 #include <sys/stat.h>
@@ -66,7 +65,7 @@ struct Process {
     Word oreg[NREG];		/* registers when process last stopped */
     short status;		/* either STOPPED or FINISHED */
     short signo;		/* signal that stopped process */
-    short sigcode;		/* auxiliary signal info code */
+    short sigcode;		/* extra signal information */
     int exitval;		/* return value from exit() */
     long sigset;		/* bit array of traced signals */
     CacheWord word[CSIZE];	/* text segment cache */
@@ -82,7 +81,7 @@ typedef enum { TEXTSEG, DATASEG } PioSeg;
 
 private struct Process pbuf;
 
-#define MAXNCMDARGS 100         /* maximum number of arguments to RUN */
+#define MAXNCMDARGS 1000         /* maximum number of arguments to RUN */
 
 extern int errno;
 
@@ -171,10 +170,10 @@ String infile, outfile;
     } else {
 	argv[argc] = nil;
     }
+    pstart(process, argv, infile, outfile);
     if (remade(objname)) {
 	reinit(argv, infile, outfile);
     }
-    pstart(process, argv, infile, outfile);
     if (process->status == STOPPED) {
 	pc = 0;
 	curfunc = program;
@@ -304,9 +303,6 @@ typedef int Intfunc();
 private Intfunc *dbintr;
 private intr();
 
-#define succeeds    == true
-#define fails       == false
-
 public cont(signo)
 int signo;
 {
@@ -327,7 +323,7 @@ int signo;
 	    setallbps();
 	    resume(signo);
 	    unsetallbps();
-	    if (bpact() fails) {
+	    if (not isbperr() or not bpact()) {
 		printstatus();
 	    }
 	}
@@ -337,12 +333,12 @@ int signo;
 }
 
 /*
- * This routine is called if we get an interrupt while "running" px
+ * This routine is called if we get an interrupt while "running"
  * but actually in the debugger.  Could happen, for example, while
  * processing breakpoints.
  *
  * We basically just want to keep going; the assumption is
- * that when the process resumes it will get the interrupt
+ * that when the process resumes it will get the interrupt,
  * which will then be handled.
  */
 
@@ -381,7 +377,11 @@ int signo;
 	if (p->signo != 0) {
 	    error("program terminated by signal %d", p->signo);
 	} else if (not runfirst) {
-	    error("program unexpectedly exited with %d", p->exitval);
+	    if (p->exitval == 0) {
+		error("program exited");
+	    } else {
+		error("program exited with code %d", p->exitval);
+	    }
 	}
     }
 }
@@ -443,9 +443,8 @@ private stepover()
 }
 
 /*
- * Resume execution up to the given address.  It is assumed that
- * no breakpoints exist between the current address and the one
- * we're stepping to.  This saves us from setting all the breakpoints.
+ * Resume execution up to the given address.  We can either ignore
+ * breakpoints (stepto) or catch them (contto).
  */
 
 public stepto(addr)
@@ -530,16 +529,43 @@ Process p;
 }
 
 /*
- * Return the signal number which stopped the process.
+ * Predicate to test if the reason the process stopped was because
+ * of a breakpoint.  If so, as a side effect clear the local copy of
+ * signal handler associated with process.  We must do this so as to
+ * not confuse future stepping or continuing by possibly concluding
+ * the process should continue with a SIGTRAP handler.
  */
 
-public Integer errnum(p)
+public boolean isbperr()
+{
+    Process p;
+    boolean b;
+
+    p = process;
+    if (p->status == STOPPED and p->signo == SIGTRAP) {
+	b = true;
+	p->sigstatus = 0;
+    } else {
+	b = false;
+    }
+    return b;
+}
+
+/*
+ * Return the signal number that stopped the process.
+ */
+
+public integer errnum (p)
 Process p;
 {
     return p->signo;
 }
 
-public Integer errcode(p)
+/*
+ * Return the signal code associated with the signal.
+ */
+
+public integer errcode (p)
 Process p;
 {
     return p->sigcode;
@@ -549,7 +575,7 @@ Process p;
  * Return the termination code of the process.
  */
 
-public Integer exitcode(p)
+public integer exitcode (p)
 Process p;
 {
     return p->exitval;
@@ -623,14 +649,16 @@ int nbytes;
 {
     Intfunc *f;
 
-    f = onsyserr(EIO, read_err);
     badaddr = addr;
     if (coredump) {
+	f = onsyserr(EFAULT, read_err);
 	coredump_readdata(buff, addr, nbytes);
+	onsyserr(EFAULT, f);
     } else {
+	f = onsyserr(EIO, read_err);
 	pio(process, PREAD, DATASEG, buff, addr, nbytes);
+	onsyserr(EIO, f);
     }
-    onsyserr(EIO, f);
 }
 
 /*
@@ -688,9 +716,23 @@ private write_err()
 #define FIRSTSIG        SIGINT
 #define LASTSIG         SIGQUIT
 #define ischild(pid)    ((pid) == 0)
-#define traceme()       ptrace(PT_TRACE_ME, 0, 0, 0)
+#define traceme()       ptrace(0, 0, 0, 0)
 #define setrep(n)       (1 << ((n)-1))
 #define istraced(p)     (p->sigset&setrep(p->signo))
+
+/*
+ * Ptrace options (specified in first argument).
+ */
+
+#define UREAD   3       /* read from process's user structure */
+#define UWRITE  6       /* write to process's user structure */
+#define IREAD   1       /* read from process's instruction space */
+#define IWRITE  4       /* write to process's instruction space */
+#define DREAD   2       /* read from process's data space */
+#define DWRITE  5       /* write to process's data space */
+#define CONT    7       /* continue stopped process */
+#define SSTEP   9       /* continue for approximately one instruction */
+#define PKILL   8       /* terminate the process */
 
 /*
  * Start up a new process by forking and exec-ing the
@@ -717,12 +759,14 @@ String outfile;
 	pwait(p->pid, &status);		/* wait for it to exit */
 	unptraced(p->pid);
     }
+    fflush(stdout);
     psigtrace(p, SIGTRAP, true);
     p->pid = vfork();
     if (p->pid == -1) {
 	panic("can't fork");
     }
     if (ischild(p->pid)) {
+	nocatcherrs();
 	traceme();
 	if (infile != nil) {
 	    in = open(infile, 0);
@@ -745,17 +789,16 @@ String outfile;
 	    fswap(1, out);
 	}
 	execv(argv[0], argv);
-	write(2, "can't exec ", 11);
-	write(2, argv[0], strlen(argv[0]));
-	write(2, "\n", 1);
 	_exit(1);
     }
     pwait(p->pid, &status);
     getinfo(p, status);
     if (p->status != STOPPED) {
-	error("program could not begin execution");
+	beginerrmsg();
+	fprintf(stderr, "warning: cannot execute %s\n", argv[0]);
+    } else {
+	ptraced(p->pid);
     }
-    ptraced(p->pid);
 }
 
 /*
@@ -775,12 +818,12 @@ int signo;
     int status;
 
     if (p->pid == 0) {
-	error("program not active");
+	error("program is not active");
     }
     do {
 	setinfo(p, signo);
 	sigs_off();
-	if (ptrace(PT_CONTINUE, p->pid, p->reg[PROGCTR], p->signo) < 0) {
+	if (ptrace(CONT, p->pid, p->reg[PROGCTR], p->signo) < 0) {
 	    panic("error %d trying to continue process", errno);
 	}
 	pwait(p->pid, &status);
@@ -796,14 +839,9 @@ int signo;
 public pstep(p)
 Process p;
 {
-    int status;
+    int s, status;
 
     setinfo(p, DEFSIG);
-    sigs_off();
-    ptrace(SSTEP, p->pid, p->reg[PROGCTR], p->signo);
-    pwait(p->pid, &status);
-    sigs_on();
-    getinfo(p, status);
 }
 
 /*
@@ -887,11 +925,11 @@ register int status;
     } else {
 	p->status = p->signo;
 	p->signo = p->exitval;
-	p->sigcode = ptrace(PT_READ_U, p->pid, &((struct user *)0)->u_code, 0);
+	p->sigcode = ptrace(UREAD, p->pid, &((struct user *) 0)->u_code, 0);
 	p->exitval = 0;
-	p->mask = ptrace(PT_READ_U, p->pid, regloc(PS), 0);
+	p->mask = ptrace(UREAD, p->pid, regloc(PS), 0);
 	for (i = 0; i < NREG; i++) {
-	    p->reg[i] = ptrace(PT_READ_U, p->pid, regloc(rloc[i]), 0);
+	    p->reg[i] = ptrace(UREAD, p->pid, regloc(rloc[i]), 0);
 	    p->oreg[i] = p->reg[i];
 	}
 	savetty(stdout, &(p->ttyinfo));
@@ -918,7 +956,7 @@ int signo;
     }
     for (i = 0; i < NREG; i++) {
 	if ((r = p->reg[i]) != p->oreg[i]) {
-	    ptrace(PT_WRITE_U, p->pid, regloc(rloc[i]), r);
+	    ptrace(UWRITE, p->pid, regloc(rloc[i]), r);
 	}
     }
     restoretty(stdout, &(p->ttyinfo));
@@ -1033,7 +1071,7 @@ register int addr;
 	    wp = &p->word[cachehash(addr)];
 	    if (addr == 0 or wp->addr != addr) {
 		++nreads;
-		w = ptrace(PT_READ_I, p->pid, addr, 0);
+		w = ptrace(IREAD, p->pid, addr, 0);
 		wp->addr = addr;
 		wp->val = w;
 	    } else {
@@ -1042,7 +1080,7 @@ register int addr;
 	    break;
 
 	case DATASEG:
-	    w = ptrace(PT_READ_D, p->pid, addr, 0);
+	    w = ptrace(DREAD, p->pid, addr, 0);
 	    break;
 
 	default:
@@ -1071,17 +1109,27 @@ Word data;
 	    wp = &p->word[cachehash(addr)];
 	    wp->addr = addr;
 	    wp->val = data;
-	    ptrace(PT_WRITE_I, p->pid, addr, data);
+	    ptrace(IWRITE, p->pid, addr, data);
 	    break;
 
 	case DATASEG:
-	    ptrace(PT_WRITE_D, p->pid, addr, data);
+	    ptrace(DWRITE, p->pid, addr, data);
 	    break;
 
 	default:
 	    panic("store: bad seg %d", seg);
 	    /* NOTREACHED */
     }
+}
+
+/*
+ * Flush the instruction cache associated with a process.
+ */
+
+private cacheflush (p)
+Process p;
+{
+    bzero(p->word, sizeof(p->word));
 }
 
 public printptraceinfo()
@@ -1104,64 +1152,71 @@ int newfd;
     }
 }
 
-#define	bit(i)		(1 << ((i)-1))
 /*
- * Signal manipulation routines.
+ * Signal name manipulation.
  */
-static String signames[NSIG] = {
-	0,
-	"HUP",
-	"INT",
-	"QUIT",
-	"ILL",
-	"TRAP",
-	"IOT",
-	"EMT",
-	"FPE",
-	"KILL",
-	"BUS",
-	"SEGV",
-	"SYS",
-	"PIPE",
-	"ALRM",
-	"TERM",
-	0,
-	"STOP",
-	"TSTP",
-	"CONT",
-	"CHLD",
-	"TTIN",
-	"TTOU",
-	"TINT",
-	"XCPU",
-	"XFSZ",
+
+private String signames[NSIG] = {
+    0,
+    "HUP", "INT", "QUIT", "ILL", "TRAP",
+    "IOT", "EMT", "FPE", "KILL", "BUS",
+    "SEGV", "SYS", "PIPE", "ALRM", "TERM",
+    0, "STOP", "TSTP", "CONT", "CHLD",
+    "TTIN", "TTOU", "TINT", "XCPU", "XFSZ",
 };
 
 /*
- * Map a signal name to a number.
+ * Get the signal number associated with a given name.
+ * The name is first translated to upper case if necessary.
  */
-public signalname(s)
+
+public integer siglookup (s)
 String s;
 {
-	register String *p;
+    register char *p, *q;
+    char buf[100];
+    integer i;
 
-	if (strneq(s, "SIG", 3))
-	    s += 3;
-	for (p = signames; p < &signames[NSIG]; p++)
-		if (*p && streq(*p, s))
-			return (p - signames);
-	error("%s: Unknown signal.", s);
+    p = s;
+    q = buf;
+    while (*p != '\0') {
+	if (*p >= 'a' and *p <= 'z') {
+	    *q = (*p - 'a') + 'A';
+	} else {
+	    *q = *p;
+	}
+	++p;
+	++q;
+    }
+    *q = '\0';
+    p = buf;
+    if (buf[0] == 'S' and buf[1] == 'I' and buf[2] == 'G') {
+	p += 3;
+    }
+    i = 1;
+    for (;;) {
+	if (i >= sizeof(signames) div sizeof(signames[0])) {
+	    error("signal \"%s\" unknown", s);
+	    i = 0;
+	    break;
+	}
+	if (signames[i] != nil and streq(signames[i], p)) {
+	    break;
+	}
+	++i;
+    }
+    return i;
 }
 
 /*
- * Print all signals being ignored by the
- * debugger.  These signals are auotmatically
+ * Print all signals being ignored by the debugger.
+ * These signals are auotmatically
  * passed on to the debugged process.
  */
-public printsigsignored(p)
+
+public printsigsignored (p)
 Process p;
 {
-
     printsigs(~p->sigset);
 }
 
@@ -1169,26 +1224,30 @@ Process p;
  * Print all signals being intercepted by
  * the debugger for the specified process.
  */
+
 public printsigscaught(p)
 Process p;
 {
-
     printsigs(p->sigset);
 }
 
-private printsigs(vec)
-register Integer vec;
+private printsigs (set)
+integer set;
 {
-    register Integer s;
-    String sep = "";
+    integer s;
+    char separator[2];
 
-    for (s = 1; s < NSIG; s++)
-	if (vec & bit(s) && signames[s]) {
-	    printf("%s%s", sep, signames[s]);
-	    sep = " ";
+    separator[0] = '\0';
+    for (s = 1; s < sizeof(signames) div sizeof(signames[0]); s++) {
+	if (set & setrep(s)) {
+	    if (signames[s] != nil) {
+		printf("%s%s", separator, signames[s]);
+		separator[0] = ' ';
+		separator[1] = '\0';
+	    }
 	}
-    if (*sep != '\0') {
+    }
+    if (separator[0] == ' ') {
 	putchar('\n');
-	fflush(stdout);
     }
 }

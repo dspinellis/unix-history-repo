@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)library.c	1.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)library.c	1.6 (Berkeley) %G%";
 #endif
 
 /* Copyright (c) 1982 Regents of the University of California */
