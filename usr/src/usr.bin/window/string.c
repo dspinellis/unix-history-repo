@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)string.c	3.3 84/01/05";
+static	char *sccsid = "@(#)string.c	3.4 84/01/09";
 #endif
 
 #include "string.h"
@@ -86,7 +86,7 @@ int l;
 str_free(str)
 char *str;
 {
-	register struct string *s = str_stos(s);
+	register struct string *s;
 
 	for (s = str_head.s_forw; s != &str_head && s->s_data != str;
 	     s = s->s_forw)
@@ -95,6 +95,6 @@ char *str;
 		abort();
 	s->s_back->s_forw = s->s_forw;
 	s->s_forw->s_back = s->s_back;
-	free(s->s_data);
+	free((char *)s);
 }
 #endif
