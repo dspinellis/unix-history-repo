@@ -1,7 +1,7 @@
-/* exect.s 4.1 82/12/04 */
+/* exect.s 4.2 82/12/17 */
 
 #include "SYS.h"
-#include <sys/psl.h>
+#include <machine/psl.h>
 
 ENTRY(exect)
 	bispsw	$PSL_T
