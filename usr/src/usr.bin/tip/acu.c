@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)acu.c	4.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)acu.c	4.10 (Berkeley) %G%";
 #endif
 
 #include "tip.h"
@@ -74,7 +74,7 @@ connect()
 				return (NOSTR);
 			} else
 				logent(value(HOST), phnum, acu->acu_name,
-					"no answer");
+					"call failed");
 			tried++;
 		}
 	} else {
@@ -109,7 +109,7 @@ connect()
 				return (NOSTR);
 			} else
 				logent(value(HOST), phnum, acu->acu_name,
-					"no answer");
+					"call failed");
 			tried++;
 		}
 		fclose(fd);
@@ -118,7 +118,7 @@ connect()
 		logent(value(HOST), "", acu->acu_name, "missing phone number");
 	else
 		(*acu->acu_abort)();
-	return (tried ? "no answer" : "missing phone number");
+	return (tried ? "call failed" : "missing phone number");
 }
 
 disconnect()
