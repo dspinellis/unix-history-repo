@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	7.54 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.55 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -520,7 +520,7 @@ killpg1(cp, signo, pgid, all)
 		 * broadcast 
 		 */
 		for (p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
-			if (p->p_pid <= 1 || p->p_flag&SSYS || 
+			if (p->p_pid <= 1 || p->p_flag & SSYS || 
 			    p == cp || !CANSIGNAL(cp, pc, p, signo))
 				continue;
 			nfound++;
@@ -539,7 +539,7 @@ killpg1(cp, signo, pgid, all)
 				return (ESRCH);
 		}
 		for (p = pgrp->pg_mem; p != NULL; p = p->p_pgrpnxt) {
-			if (p->p_pid <= 1 || p->p_flag&SSYS ||
+			if (p->p_pid <= 1 || p->p_flag & SSYS ||
 			    p->p_stat == SZOMB || !CANSIGNAL(cp, pc, p, signo))
 				continue;
 			nfound++;
@@ -579,7 +579,7 @@ pgsignal(pgrp, sig, checkctty)
 
 	if (pgrp)
 		for (p = pgrp->pg_mem; p != NULL; p = p->p_pgrpnxt)
-			if (checkctty == 0 || p->p_flag&SCTTY)
+			if (checkctty == 0 || p->p_flag & SCTTY)
 				psignal(p, sig);
 }
 
@@ -663,8 +663,8 @@ psignal(p, sig)
 			action = SIG_DFL;
 	}
 
-	if (p->p_nice > NZERO && (sig == SIGKILL ||
-	    sig == SIGTERM && (p->p_flag&STRC || action != SIG_DFL)))
+	if (p->p_nice > NZERO && action == SIG_DFL && (prop & SA_KILL) &&
+	    (p->p_flag & STRC) == 0)
 		p->p_nice = NZERO;
 
 	if (prop & SA_CONT)
@@ -707,8 +707,17 @@ psignal(p, sig)
 		 * so it can discover the signal in issig() and stop
 		 * for the parent.
 		 */
-		if (p->p_flag&STRC)
+		if (p->p_flag & STRC)
 			goto run;
+		/*
+		 * If SIGCONT is default (or ignored) and process is
+		 * asleep, we are finished; the process should not
+		 * be awakened.
+		 */
+		if ((prop & SA_CONT) && action == SIG_DFL) {
+			p->p_sig &= ~mask;
+			goto out;
+		}
 		/*
 		 * When a sleeping process receives a stop
 		 * signal, process immediately if possible.
@@ -722,7 +731,7 @@ psignal(p, sig)
 			 * If a child holding parent blocked,
 			 * stopping could cause deadlock.
 			 */
-			if (p->p_flag&SPPWAIT)
+			if (p->p_flag & SPPWAIT)
 				goto out;
 			p->p_sig &= ~mask;
 			p->p_xstat = sig;
@@ -739,7 +748,7 @@ psignal(p, sig)
 		 * If traced process is already stopped,
 		 * then no further action is necessary.
 		 */
-		if (p->p_flag&STRC)
+		if (p->p_flag & STRC)
 			goto out;
 
 		/*
@@ -832,7 +841,7 @@ issig(p)
 
 	for (;;) {
 		mask = p->p_sig &~ p->p_sigmask;
-		if (p->p_flag&SPPWAIT)
+		if (p->p_flag & SPPWAIT)
 			mask &= ~stopsigmask;
 		if (mask == 0)	 	/* no signal to send */
 			return (0);
@@ -843,11 +852,11 @@ issig(p)
 		 * We should see pending but ignored signals
 		 * only if STRC was on when they were posted.
 		 */
-		if (mask & p->p_sigignore && (p->p_flag&STRC) == 0) {
+		if (mask & p->p_sigignore && (p->p_flag & STRC) == 0) {
 			p->p_sig &= ~mask;
 			continue;
 		}
-		if (p->p_flag&STRC && (p->p_flag&SPPWAIT) == 0) {
+		if (p->p_flag & STRC && (p->p_flag & SPPWAIT) == 0) {
 			/*
 			 * If traced, always stop, and stay
 			 * stopped until released by the parent.
@@ -857,7 +866,7 @@ issig(p)
 			do {
 				stop(p);
 				swtch();
-			} while (!procxmt(p) && p->p_flag&STRC);
+			} while (!procxmt(p) && p->p_flag & STRC);
 
 			/*
 			 * If the traced bit got turned off,
@@ -865,7 +874,7 @@ issig(p)
 			 * This ensures that p_sig* and ps_sigact
 			 * are consistent.
 			 */
-			if ((p->p_flag&STRC) == 0)
+			if ((p->p_flag & STRC) == 0)
 				continue;
 
 			/*
@@ -919,7 +928,7 @@ issig(p)
 			 * process group, ignore tty stop signals.
 			 */
 			if (prop & SA_STOP) {
-				if (p->p_flag&STRC ||
+				if (p->p_flag & STRC ||
 		    		    (p->p_pgrp->pg_jobc == 0 &&
 				    prop & SA_TTYSTOP))
 					break;	/* == ignore */
@@ -945,7 +954,7 @@ issig(p)
 			 * to take action on an ignored signal other
 			 * than SIGCONT, unless process is traced.
 			 */
-			if ((prop & SA_CONT) == 0 && (p->p_flag&STRC) == 0)
+			if ((prop & SA_CONT) == 0 && (p->p_flag & STRC) == 0)
 				printf("issig\n");
 			break;		/* == ignore */
 
