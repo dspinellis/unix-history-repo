@@ -1,4 +1,4 @@
-"@(#)gram 1.7 %G%"
+"@(#)gram 1.8 %G%"
 /yyval/s/int/union semstack/
 s/ 0//
 /yypv/s/int/union semstack/
@@ -25,6 +25,7 @@ char *var;
 switch(__np__) {
 default:
 return (1);
+break;
 .
 g/case.*@@/s/@@//\
 .m$
@@ -33,8 +34,10 @@ g/@@/ka\
 'am$\
 a\
 }\
+break;
 $a
 }
+/*NOTREACHED*/
 }
 .
 1,$s/@@//
@@ -49,9 +52,10 @@ $a
 /yygo/s/ {/ = {/
 /yypgo/s/ {/ = {/
 /static/i
-\#ifndef lint
+#ifndef lint
 .
 /static/a
-\#endif
+#endif
+.
 w!
 q

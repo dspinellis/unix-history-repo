@@ -88,7 +88,9 @@
 
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)pas.y 1.10 %G%"; */
+#ifndef lint
+static	char sccsid[] = "@(#)pas.y 1.11 %G%";
+#endif
 
 /*
  * The following line marks the end of the yacc
@@ -98,10 +100,11 @@
 ##
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pas.y 1.10 %G%";
+static	char sccsid[] = "@(#)pas.y 1.11 %G%";
 
 #include "whoami.h"
 #include "0.h"
+#include "tree_ty.h"		/* must be included for yy.h */
 #include "yy.h"
 #include "tree.h"
 
@@ -120,7 +123,7 @@ static	char sccsid[] = "@(#)pas.y 1.10 %G%";
 
 goal:
 	prog_hedr decls block '.'
-		= funcend($1, $3, lineof($4));
+		= funcend($1.nl_entry, $3.tr_entry, lineof($4.i_entry));
 		|
 	decls
 		= segend();
@@ -129,10 +132,10 @@ goal:
 
 prog_hedr:
 	YPROG YID '(' id_list ')' ';' 
-		= $$ = funcbody(funchdr(tree5(T_PROG, lineof($1), $2, fixlist($4), NIL)));
+		= $$.nl_entry = funcbody(funchdr(tree5(T_PROG, lineof($1.i_entry), $2.tr_entry, fixlist($4.tr_entry), TR_NIL)));
 		|
 	YPROG YID ';'
-		= $$ = funcbody(funchdr(tree5(T_PROG, lineof($1), $2, NIL, NIL)));
+		= $$.nl_entry = funcbody(funchdr(tree5(T_PROG, lineof($1.i_entry),  $2.tr_entry, TR_NIL, TR_NIL)));
 		|
 	YPROG error
 		= {
@@ -141,15 +144,15 @@ prog_hedr:
 			 * Should make a program statement
 			 * with "input" and "output" here.
 			 */
-			$$ = funcbody(funchdr(tree5(T_PROG, lineof($1), NIL, NIL, NIL)));
+			$$.nl_entry = funcbody(funchdr(tree5(T_PROG, lineof($1.i_entry), TR_NIL, TR_NIL, TR_NIL)));
 		  }
 		;
 block:
 	YBEGIN stat_list YEND
 		= {
-			$$ = tree3(T_BSTL, lineof($1), fixlist($2));
-			if ($3 < 0)
-				brerror($1, "begin");
+			$$.tr_entry = tree3(T_BSTL, lineof($1.i_entry), fixlist($2.tr_entry));
+			if ($3.i_entry < 0)
+				brerror($1.i_entry, "begin");
 		  }
 		;
 
@@ -163,7 +166,6 @@ decls:
 		|
 	decls error
 		= {
-Derror:
 			constend(), typeend(), varend(), trfree();
 			yyPerror("Malformed declaration", PDECL);
 		  }
@@ -193,14 +195,16 @@ decl:
 
 labels:
 	YLABEL label_decl ';'
-		= label(fixlist($2), lineof($1));
+		= label(fixlist($2.tr_entry), lineof($1.i_entry));
 		;
 label_decl:
 	YINT
-		= $$ = newlist($1 == NIL ? NIL : *hash($1, 1));
+		= $$.tr_entry = newlist($1.i_entry == NIL ? TR_NIL :
+					(struct tnode *) *hash($1.cptr, 1));
 		|
 	label_decl ',' YINT
-		= $$ = addlist($1, $3 == NIL ? NIL : *hash($3, 1));
+		= $$.tr_entry = addlist($1.tr_entry, $3.i_entry == NIL ?
+				TR_NIL : (struct tnode *) *hash($3.cptr, 1));
 		;
 
 /*
@@ -209,14 +213,15 @@ label_decl:
 
 const_decl:
 	YCONST YID '=' const ';'
-		= constbeg($1, line2of($2)), const(lineof($3), $2, $4);
+		= constbeg($1.i_entry), const(lineof($3.i_entry), $2.cptr,
+						$4.tr_entry);
 		|
 	const_decl YID '=' const ';'
-		= const(lineof($3), $2, $4);
+		= const(lineof($3.i_entry), $2.cptr, $4.tr_entry);
 		|
 	YCONST error
 		= {
-			constbeg($1, line2of($1));
+			constbeg($1.i_entry);
 Cerror:
 			yyPerror("Malformed const declaration", PDECL);
 		  }
@@ -231,14 +236,14 @@ Cerror:
 
 type_decl:
 	YTYPE YID '=' type ';'
-		= typebeg($1, line2of($2)), type(lineof($3), $2, $4);
+		= typebeg($1.i_entry, line2of($2.i_entry)), type(lineof($3.i_entry), $2.cptr, $4.tr_entry);
 		|
 	type_decl YID '=' type ';'
-		= type(lineof($3), $2, $4);
+		= type(lineof($3.i_entry), $2.cptr, $4.tr_entry);
 		|
 	YTYPE error
 		= {
-			typebeg($1, line2of($1));
+			typebeg($1.i_entry, line2of($1.i_entry));
 Terror:
 			yyPerror("Malformed type declaration", PDECL);
 		  }
@@ -253,14 +258,14 @@ Terror:
 
 var_decl:
 	YVAR id_list ':' type ';'
-		= varbeg($1, line2of($3)), var(lineof($3), fixlist($2), $4);
+		= varbeg($1.i_entry, line2of($3.i_entry)), var(lineof($3.i_entry), fixlist($2.tr_entry), $4.tr_entry);
 		|
 	var_decl id_list ':' type ';'
-		= var(lineof($3), fixlist($2), $4);
+		= var(lineof($3.i_entry), fixlist($2.tr_entry), $4.tr_entry);
 		|
 	YVAR error 
 		= {
-			varbeg($1, line2of($1));
+			varbeg($1.i_entry, line2of($1.i_entry));
 Verror:
 			yyPerror("Malformed var declaration", PDECL);
 		  }
@@ -275,37 +280,38 @@ Verror:
 
 proc_decl:
 	phead YFORWARD ';'
-		= funcfwd($1);
+		= funcfwd($1.nl_entry);
 		|
 	phead YEXTERN ';'
-		= funcext($1);
+		= (void) funcext($1.nl_entry);
 		|
 	pheadres decls block ';'
-		= funcend($1, $3, lineof($4));
+		= funcend($1.nl_entry, $3.tr_entry, lineof($4.i_entry));
 		|
 	phead error
 		;
 pheadres:
 	phead
-		= funcbody($1);
+		= (void) funcbody($1.nl_entry);
 		;
 phead:
 	porf YID params ftype ';'
-		= $$ = funchdr(tree5($1, lineof($5), $2, $3, $4));
+		= $$.nl_entry = funchdr(tree5($1.i_entry, lineof($5.i_entry),
+				$2.tr_entry, $3.tr_entry, $4.tr_entry));
 		;
 porf:
 	YPROCEDURE
-		= $$ = T_PDEC;
+		= $$.i_entry = T_PDEC;
 		|
 	YFUNCTION
-		= $$ = T_FDEC;
+		= $$.i_entry = T_FDEC;
 		;
 params:
 	'(' param_list ')'
-		= $$ = fixlist($2);
+		= $$.tr_entry = fixlist($2.tr_entry);
 		|
 	/* lambda */
-		= $$ = NIL;
+		= $$.tr_entry = TR_NIL;
 		;
 
 /*
@@ -314,30 +320,34 @@ params:
 
 param:
 	id_list ':' type
-		= $$ = tree3(T_PVAL, fixlist($1), $3);
+		= $$.tr_entry = tree3(T_PVAL, (int) fixlist($1.tr_entry), $3.tr_entry);
 		|
 	YVAR id_list ':' type
-		= $$ = tree3(T_PVAR, fixlist($2), $4);
+		= $$.tr_entry = tree3(T_PVAR, (int) fixlist($2.tr_entry), $4.tr_entry);
 		|
 	YFUNCTION id_list params ftype
-		= $$ = tree5(T_PFUNC, fixlist($2), $4, $3, lineof($1));
+		= $$.tr_entry = tree5(T_PFUNC, (int) fixlist($2.tr_entry),
+				$4.tr_entry, $3.tr_entry, 
+				(struct tnode *) lineof($1.i_entry));
 		|
 	YPROCEDURE id_list params ftype
-		= $$ = tree5(T_PPROC, fixlist($2), $4, $3, lineof($1));
+		= $$.tr_entry = tree5(T_PPROC, (int) fixlist($2.tr_entry),
+				$4.tr_entry, $3.tr_entry, 
+				(struct tnode *) lineof($1.i_entry));
 		;
 ftype:
 	':' type
 		= $$ = $2;
 		|
 	/* lambda */
-		= $$ = NIL;
+		= $$.tr_entry = TR_NIL;
 		;
 param_list:
 	param
-		= $$ = newlist($1);
+		= $$.tr_entry = newlist($1.tr_entry);
 		|
 	param_list ';' param
-		= $$ = addlist($1, $3);
+		= $$.tr_entry = addlist($1.tr_entry, $3.tr_entry);
 		;
 
 /*
@@ -346,35 +356,35 @@ param_list:
 
 const:
 	YSTRING
-		= $$ = tree2(T_CSTRNG, $1);
+		= $$.tr_entry = tree2(T_CSTRNG, $1.i_entry);
 		|
 	number
 		|
 	'+' number
-		= $$ = tree2(T_PLUSC, $2);
+		= $$.tr_entry = tree2(T_PLUSC, $2.i_entry);
 		|
 	'-' number
-		= $$ = tree2(T_MINUSC, $2);
+		= $$.tr_entry = tree2(T_MINUSC, $2.i_entry);
 		;
 number:
 	const_id
-		= $$ = tree2(T_ID, $1);
+		= $$.tr_entry = tree2(T_ID, $1.i_entry);
 		|
 	YINT
-		= $$ = tree2(T_CINT, $1);
+		= $$.tr_entry = tree2(T_CINT, $1.i_entry);
 		|
 	YBINT
-		= $$ = tree2(T_CBINT, $1);
+		= $$.tr_entry = tree2(T_CBINT, $1.i_entry);
 		|
 	YNUMB
-		= $$ = tree2(T_CFINT, $1);
+		= $$.tr_entry = tree2(T_CFINT, $1.i_entry);
 		;
 const_list:
 	const
-		= $$ = newlist($1);
+		= $$.tr_entry = newlist($1.tr_entry);
 		|
 	const_list ',' const
-		= $$ = addlist($1, $3);
+		= $$.tr_entry = addlist($1.tr_entry, $3.tr_entry);
 		;
 
 /*
@@ -385,45 +395,48 @@ type:
 	simple_type
 		|
 	'^' YID
-		= $$ = tree3(T_TYPTR, lineof($1), tree2(T_ID, $2));
+		= $$.tr_entry = tree3(T_TYPTR, lineof($1.i_entry), tree2(T_ID,
+								$2.i_entry));
 		|
 	struct_type
 		|
 	YPACKED struct_type
-		= $$ = tree3(T_TYPACK, lineof($1), $2);
+		= $$.tr_entry = tree3(T_TYPACK, lineof($1.i_entry), $2.tr_entry);
 		;
 simple_type:
 	type_id
 		|
 	'(' id_list ')'
-		= $$ = tree3(T_TYSCAL, lineof($1), fixlist($2));
+		= $$.tr_entry = tree3(T_TYSCAL, lineof($1.i_entry), fixlist($2.tr_entry));
 		|
 	const YDOTDOT const
-		= $$ = tree4(T_TYRANG, lineof($2), $1, $3);
+		= $$.tr_entry = tree4(T_TYRANG, lineof($2.i_entry), $1.tr_entry,
+				$3.tr_entry);
 		;
 struct_type:
 	YARRAY '[' simple_type_list ']' YOF type
-		= $$ = tree4(T_TYARY, lineof($1), fixlist($3), $6);
+		= $$.tr_entry = tree4(T_TYARY, lineof($1.i_entry),
+					fixlist($3.tr_entry), $6.tr_entry);
 		|
 	YFILE YOF type
-		= $$ = tree3(T_TYFILE, lineof($1), $3);
+		= $$.tr_entry = tree3(T_TYFILE, lineof($1.i_entry), $3.tr_entry);
 		|
 	YSET YOF simple_type
-		= $$ = tree3(T_TYSET, lineof($1), $3);
+		= $$.tr_entry = tree3(T_TYSET, lineof($1.i_entry), $3.tr_entry);
 		|
 	YRECORD field_list YEND
 		= {
-			$$ = setuptyrec( lineof( $1 ) , $2 );
-			if ($3 < 0)
-				brerror($1, "record");
+			$$.tr_entry = setuptyrec( lineof( $1.i_entry ) , $2.tr_entry);
+			if ($3.i_entry < 0)
+				brerror($1.i_entry, "record");
 		  }
 		;
 simple_type_list:
 	simple_type
-		= $$ = newlist($1);
+		= $$.tr_entry = newlist($1.tr_entry);
 		|
 	simple_type_list ',' simple_type
-		= $$ = addlist($1, $3);
+		= $$.tr_entry = addlist($1.tr_entry, $3.tr_entry);
 		;
 
 /*
@@ -431,52 +444,58 @@ simple_type_list:
  */
 field_list:
 	fixed_part variant_part
-		= $$ = tree4(T_FLDLST, lineof(NIL), fixlist($1), $2);
+		= $$.tr_entry = tree4(T_FLDLST, lineof(NIL), 
+				fixlist($1.tr_entry), $2.tr_entry);
 		;
 fixed_part:
 	field
-		= $$ = newlist($1);
+		= $$.tr_entry = newlist($1.tr_entry);
 		|
 	fixed_part ';' field
-		= $$ = addlist($1, $3);
+		= $$.tr_entry = addlist($1.tr_entry, $3.tr_entry);
 		|
 	fixed_part error
 		= yyPerror("Malformed record declaration", PDECL);
 		;
 field:
 	/* lambda */
-		= $$ = NIL;
+		= $$.tr_entry = TR_NIL;
 		|
 	id_list ':' type
-		= $$ = tree4(T_RFIELD, lineof($2), fixlist($1), $3);
+		= $$.tr_entry = tree4(T_RFIELD, lineof($2.i_entry),
+				fixlist($1.tr_entry), $3.tr_entry);
 		;
 
 variant_part:
 	/* lambda */
-		= $$ = NIL;
+		= $$.tr_entry = TR_NIL;
 		|
 	YCASE type_id YOF variant_list
-		= $$ = tree5(T_TYVARPT, lineof($1), NIL, $2, fixlist($4));
+		= $$.tr_entry = tree5(T_TYVARPT, lineof($1.i_entry), TR_NIL, 
+				$2.tr_entry, fixlist($4.tr_entry));
 		|
 	YCASE YID ':' type_id YOF variant_list
-		= $$ = tree5(T_TYVARPT, lineof($1), $2, $4, fixlist($6));
+		= $$.tr_entry = tree5(T_TYVARPT, lineof($1.i_entry),
+				$2.tr_entry, $4.tr_entry,
+					fixlist($6.tr_entry));
 		;
 variant_list:
 	variant
-		= $$ = newlist($1);
+		= $$.tr_entry = newlist($1.tr_entry);
 		|
 	variant_list ';' variant
-		= $$ = addlist($1, $3);
+		= $$.tr_entry = addlist($1.tr_entry, $3.tr_entry);
 		|
 	variant_list error
 		= yyPerror("Malformed record declaration", PDECL);
 		;
 variant:
 	/* lambda */
-		= $$ = NIL;
+		= $$.tr_entry = TR_NIL;
 		|
 	const_list ':' '(' field_list ')'
-		= $$ = tree4(T_TYVARNT, lineof($2), fixlist($1), $4);
+		= $$.tr_entry = tree4(T_TYVARNT,lineof($2.i_entry), fixlist($1.tr_entry),
+				$4.tr_entry);
 		;
 
 /*
@@ -485,29 +504,29 @@ variant:
 
 stat_list:
 	stat
-		= $$ = newlist($1);
+		= $$.tr_entry = newlist($1.tr_entry);
 		|
 	stat_lsth stat
 		= {
-			if ((p = $1) != NIL && (q = p[1])[0] == T_IFX) {
-				q[0] = T_IFEL;
-				q[4] = $2;
+			if ((p = $1.tr_entry) != TR_NIL && (q = p->list_node.list)->tag == T_IFX) {
+				q->tag = T_IFEL;
+				q->if_node.else_stmnt = $2.tr_entry;
 			} else
-				$$ = addlist($1, $2);
+				$$.tr_entry= addlist($1.tr_entry, $2.tr_entry);
 		  }
 		;
 
 stat_lsth:
 	stat_list ';'
-		= if ((q = $1) != NIL && (p = q[1]) != NIL && p[0] == T_IF) {
+		= if ((q = $1.tr_entry) != TR_NIL && (p = q->list_node.list) != TR_NIL && p->tag == T_IF) {
 			if (yychar < 0)
 				yychar = yylex();
 			if (yyshifts >= 2 && yychar == YELSE) {
 				recovered();
-				copy(&Y, &OY, sizeof Y);
+				copy((char *) (&Y), (char *) (&OY), sizeof Y);
 				yerror("Deleted ';' before keyword else");
 				yychar = yylex();
-				p[0] = T_IFX;
+				p->tag = T_IFX;
 			}
 		  }
 		;
@@ -518,14 +537,14 @@ stat_lsth:
 
 cstat_list:
 	cstat
-		= $$ = newlist($1);
+		= $$.tr_entry = newlist($1.tr_entry);
 		|
 	cstat_list ';' cstat
-		= $$ = addlist($1, $3);
+		= $$.tr_entry = addlist($1.tr_entry, $3.tr_entry);
 		|
 	error
 		= {
-			$$ = NIL;
+			$$.tr_entry = TR_NIL;
 Kerror:
 			yyPerror("Malformed statement in case", PSTAT);
 		  }
@@ -536,13 +555,15 @@ Kerror:
 
 cstat:
 	const_list ':' stat
-		= $$ = tree4(T_CSTAT, lineof($2), fixlist($1), $3);
+		= $$.tr_entry = tree4(T_CSTAT, lineof($2.i_entry),
+				fixlist($1.tr_entry), $3.tr_entry);
 		|
 	YCASELAB stat
-		= $$ = tree4(T_CSTAT, lineof($1), NIL, $2);
+		= $$.tr_entry = tree4(T_CSTAT, lineof($1.i_entry), TR_NIL,
+					$2.tr_entry);
 		|
 	/* lambda */
-		= $$ = NIL;
+		= $$.tr_entry = TR_NIL;
 		;
 
 /*
@@ -551,16 +572,20 @@ cstat:
 
 stat:
 	/* lambda */
-		= $$ = NIL;
+		= $$.tr_entry = TR_NIL;
 		|
 	YINT ':' stat
-		= $$ = tree4(T_LABEL, lineof($2), $1 == NIL ? NIL : *hash($1, 1), $3);
+		= $$.tr_entry = tree4(T_LABEL, lineof($2.i_entry),
+				$1.tr_entry == TR_NIL ? TR_NIL :
+					    (struct tnode *) *hash($1.cptr, 1), $3.tr_entry);
 		|
 	proc_id
-		= $$ = tree4(T_PCALL, lineof(yyline), $1, NIL);
+		= $$.tr_entry = tree4(T_PCALL, lineof(yyline), $1.tr_entry,
+						TR_NIL);
 		|
 	proc_id '(' wexpr_list ')'
-		= $$ = tree4(T_PCALL, lineof($2), $1, fixlist($3));
+		= $$.tr_entry = tree4(T_PCALL, lineof($2.i_entry), $1.tr_entry,
+					fixlist($3.tr_entry));
 		|
 	YID error
 		= goto NSerror;
@@ -569,53 +594,63 @@ stat:
 		|
 	YBEGIN stat_list YEND
 		= {
-			$$ = tree3(T_BLOCK, lineof($1), fixlist($2));
-			if ($3 < 0)
-				brerror($1, "begin");
+			$$.tr_entry = tree3(T_BLOCK, lineof($1.i_entry),
+						fixlist($2.tr_entry));
+			if ($3.i_entry < 0)
+				brerror($1.i_entry, "begin");
 		  }
 		|
 	YCASE expr YOF cstat_list YEND
 		= {
-			$$ = tree4(T_CASE, lineof($1), $2, fixlist($4));
-			if ($5 < 0)
-				brerror($1, "case");
+			$$.tr_entry = tree4(T_CASE, lineof($1.i_entry),
+					$2.tr_entry, fixlist($4.tr_entry));
+			if ($5.i_entry < 0)
+				brerror($1.i_entry, "case");
 		  }
 		|
 	YWITH var_list YDO stat
-		= $$ = tree4(T_WITH, lineof($1), fixlist($2), $4);
+		= $$.tr_entry = tree4(T_WITH, lineof($1.i_entry),
+				fixlist($2.tr_entry), $4.tr_entry);
 		|
 	YWHILE expr YDO stat
-		= $$ = tree4(T_WHILE, lineof($1), $2, $4);
+		= $$.tr_entry = tree4(T_WHILE, lineof($1.i_entry), $2.tr_entry,
+					$4.tr_entry);
 		|
 	YREPEAT stat_list YUNTIL expr
-		= $$ = tree4(T_REPEAT, lineof($3), fixlist($2), $4);
+		= $$.tr_entry = tree4(T_REPEAT, lineof($3.i_entry),
+				fixlist($2.tr_entry), $4.tr_entry);
 		|
 	YFOR assign YTO expr YDO stat
-		= $$ = tree5(T_FORU, lineof($1), $2, $4, $6);
+		= $$.tr_entry = tree5(T_FORU, lineof($1.i_entry), $2.tr_entry,
+				$4.tr_entry, $6.tr_entry);
 		|
 	YFOR assign YDOWNTO expr YDO stat
-		= $$ = tree5(T_FORD, lineof($1), $2, $4, $6);
+		= $$.tr_entry = tree5(T_FORD, lineof($1.i_entry), $2.tr_entry,
+				$4.tr_entry, $6.tr_entry);
 		|
 	YGOTO YINT
-		= $$ = tree3(T_GOTO, lineof($1), *hash($2, 1));
+		= $$.tr_entry = tree3(T_GOTO, lineof($1.i_entry),
+				(struct tnode *) *hash($2.cptr, 1));
 		|
 	YIF expr YTHEN stat
-		= $$ = tree5(T_IF, lineof($1), $2, $4, NIL);
+		= $$.tr_entry = tree5(T_IF, lineof($1.i_entry), $2.tr_entry,
+				$4.tr_entry, TR_NIL);
 		|
 	YIF expr YTHEN stat YELSE stat
-		= $$ = tree5(T_IFEL, lineof($1), $2, $4, $6);
+		= $$.tr_entry = tree5(T_IFEL, lineof($1.i_entry), $2.tr_entry,
+					$4.tr_entry, $6.tr_entry);
 		|
 	error
 		= {
 NSerror:
-			$$ = NIL;
-Serror:
+			$$.tr_entry = TR_NIL;
 			yyPerror("Malformed statement", PSTAT);
 		  }
 		;
 assign:
 	variable ':' '=' expr
-		= $$ = tree4(T_ASGN, lineof($2), $1, $4);
+		= $$.tr_entry = tree4(T_ASGN, lineof($2.i_entry), $1.tr_entry,
+				    $4.tr_entry);
 		;
 
 /*
@@ -626,40 +661,53 @@ expr:
 	error
 		= {
 NEerror:
-			$$ = NIL;
-Eerror:
+			$$.tr_entry = TR_NIL;
 			yyPerror("Missing/malformed expression", PEXPR);
 		  }
 		|
 	expr relop expr			%prec '<'
-		= $$ = tree4($2, $1[1] == SAWCON ? $3[1] : $1[1], $1, $3);
+		= $$.tr_entry = tree4($2.i_entry,
+			$1.tr_entry->expr_node.const_tag == SAWCON ?
+			$3.tr_entry->expr_node.const_tag :
+			$1.tr_entry->expr_node.const_tag,
+			$1.tr_entry, $3.tr_entry);
 		|
 	'+' expr			%prec UNARYSIGN
-		= $$ = tree3(T_PLUS, $2[1], $2);
+		= $$.tr_entry = tree3(T_PLUS, $2.tr_entry->expr_node.const_tag,
+				$2.tr_entry);
 		|
 	'-' expr			%prec UNARYSIGN
-		= $$ = tree3(T_MINUS, $2[1], $2);
+		= $$.tr_entry = tree3(T_MINUS, $2.tr_entry->expr_node.const_tag,
+				$2.tr_entry);
 		|
 	expr addop expr			%prec '+'
-		= $$ = tree4($2, $1[1] == SAWCON ? $3[1] : $1[1], $1, $3);
+		= $$.tr_entry = tree4($2.i_entry,
+			$1.tr_entry->expr_node.const_tag == SAWCON ?
+			$3.tr_entry->expr_node.const_tag :
+			$1.tr_entry->expr_node.const_tag, $1.tr_entry,
+			$3.tr_entry);
 		|
 	expr divop expr			%prec '*'
-		= $$ = tree4($2, $1[1] == SAWCON ? $3[1] : $1[1], $1, $3);
+		= $$.tr_entry = tree4($2.i_entry,
+			$1.tr_entry->expr_node.const_tag == SAWCON ?
+			$3.tr_entry->expr_node.const_tag :
+			$1.tr_entry->expr_node.const_tag, $1.tr_entry,
+			$3.tr_entry);
 		|
 	YNIL
-		= $$ = tree2(T_NIL, NOCON);
+		= $$.tr_entry = tree2(T_NIL, NOCON);
 		|
 	YSTRING
-		= $$ = tree3(T_STRNG, SAWCON, $1);
+		= $$.tr_entry = tree3(T_STRNG, SAWCON, $1.tr_entry);
 		|
 	YINT
-		= $$ = tree3(T_INT, NOCON, $1);
+		= $$.tr_entry = tree3(T_INT, NOCON, $1.tr_entry);
 		|
 	YBINT
-		= $$ = tree3(T_BINT, NOCON, $1);
+		= $$.tr_entry = tree3(T_BINT, NOCON, $1.tr_entry);
 		|
 	YNUMB
-		= $$ = tree3(T_FINT, NOCON, $1);
+		= $$.tr_entry = tree3(T_FINT, NOCON, $1.tr_entry);
 		|
 	variable
 		|
@@ -667,33 +715,34 @@ Eerror:
 		= goto NEerror;
 		|
 	func_id '(' wexpr_list ')'
-		= $$ = tree4(T_FCALL, NOCON, $1, fixlist($3));
+		= $$.tr_entry = tree4(T_FCALL, NOCON, $1.tr_entry,
+			fixlist($3.tr_entry));
 		|
 	'(' expr ')'
-		= $$ = $2;
+		= $$.tr_entry = $2.tr_entry;
 		|
 	negop expr			%prec YNOT
-		= $$ = tree3(T_NOT, NOCON, $2);
+		= $$.tr_entry = tree3(T_NOT, NOCON, $2.tr_entry);
 		|
 	'[' element_list ']'
-		= $$ = tree3(T_CSET, SAWCON, fixlist($2));
+		= $$.tr_entry = tree3(T_CSET, SAWCON, fixlist($2.tr_entry));
 		|
 	'[' ']'
-		= $$ = tree3(T_CSET, SAWCON, NIL);
+		= $$.tr_entry = tree3(T_CSET, SAWCON, TR_NIL);
 		;
 
 element_list:
 	element
-		= $$ = newlist($1);
+		= $$.tr_entry = newlist($1.tr_entry);
 		|
 	element_list ',' element
-		= $$ = addlist($1, $3);
+		= $$.tr_entry = addlist($1.tr_entry, $3.tr_entry);
 		;
 element:
 	expr
 		|
 	expr YDOTDOT expr
-		= $$ = tree3(T_RANG, $1, $3);
+		= $$.tr_entry = tree3(T_RANG, $1.i_entry, $3.tr_entry);
 		;
 
 /*
@@ -704,30 +753,38 @@ variable:
 	YID
 		= {
 			@@ return (identis(var, VAR));
-			$$ = setupvar($1, NIL);
+			$$.tr_entry = setupvar($1.cptr, TR_NIL);
 		  }
 		|
 	qual_var
-		= $1[3] = fixlist($1[3]);
+		= $1.tr_entry->var_node.qual = 
+					fixlist($1.tr_entry->var_node.qual);
 		;
 qual_var:
 	array_id '[' expr_list ']'
-		= $$ = setupvar($1, tree2(T_ARY, fixlist($3)));
+		= $$.tr_entry = setupvar($1.cptr, tree2(T_ARY, 
+				(int) fixlist($3.tr_entry)));
 		|
 	qual_var '[' expr_list ']'
-		= $1[3] = addlist($1[3], tree2(T_ARY, fixlist($3)));
+		= $1.tr_entry->var_node.qual =
+				addlist($1.tr_entry->var_node.qual,
+				tree2(T_ARY, (int) fixlist($3.tr_entry)));
 		|
 	record_id '.' field_id
-		= $$ = setupvar($1, setupfield($3, NIL));
+		= $$.tr_entry = setupvar($1.cptr, setupfield($3.tr_entry,
+							TR_NIL));
 		|
 	qual_var '.' field_id
-		= $1[3] = addlist($1[3], setupfield($3, NIL));
+		= $1.tr_entry->var_node.qual =
+		    addlist($1.tr_entry->var_node.qual,
+		    setupfield($3.tr_entry, TR_NIL));
 		|
 	ptr_id '^'
-		= $$ = setupvar($1, tree1(T_PTR));
+		= $$.tr_entry = setupvar($1.cptr, tree1(T_PTR));
 		|
 	qual_var '^'
-		= $1[3] = addlist($1[3], tree1(T_PTR));
+		= $1.tr_entry->var_node.qual = 
+			addlist($1.tr_entry->var_node.qual, tree1(T_PTR));
 		;
 
 /*
@@ -737,39 +794,41 @@ wexpr:
 	expr
 		|
 	expr ':' expr
-		= $$ = tree4(T_WEXP, $1, $3, NIL);
+		= $$.tr_entry = tree4(T_WEXP, $1.i_entry, $3.tr_entry, TR_NIL);
 		|
 	expr ':' expr ':' expr
-		= $$ = tree4(T_WEXP, $1, $3, $5);
+		= $$.tr_entry = tree4(T_WEXP, $1.i_entry, $3.tr_entry,
+						$5.tr_entry);
 		|
 	expr octhex
-		= $$ = tree4(T_WEXP, $1, NIL, $2);
+		= $$.tr_entry = tree4(T_WEXP, $1.i_entry, TR_NIL, $2.tr_entry);
 		|
 	expr ':' expr octhex
-		= $$ = tree4(T_WEXP, $1, $3, $4);
+		= $$.tr_entry = tree4(T_WEXP, $1.i_entry, $3.tr_entry,
+					$4.tr_entry);
 		;
 octhex:
 	YOCT
-		= $$ = OCT;
+		= $$.i_entry = OCT;
 		|
 	YHEX
-		= $$ = HEX;
+		= $$.i_entry = HEX;
 		;
 
 expr_list:
 	expr
-		= $$ = newlist($1);
+		= $$.tr_entry = newlist($1.tr_entry);
 		|
 	expr_list ',' expr
-		= $$ = addlist($1, $3);
+		= $$.tr_entry = addlist($1.tr_entry, $3.tr_entry);
 		;
 
 wexpr_list:
 	wexpr
-		= $$ = newlist($1);
+		= $$.tr_entry = newlist($1.tr_entry);
 		|
 	wexpr_list ',' wexpr
-		= $$ = addlist($1, $3);
+		= $$.tr_entry = addlist($1.tr_entry, $3.tr_entry);
 		;
 
 /*
@@ -777,41 +836,41 @@ wexpr_list:
  */
 
 relop:
-	'='	= $$ = T_EQ;
+	'='	= $$.i_entry = T_EQ;
 		|
-	'<'	= $$ = T_LT;
+	'<'	= $$.i_entry = T_LT;
 		|
-	'>'	= $$ = T_GT;
+	'>'	= $$.i_entry = T_GT;
 		|
-	'<' '>'	= $$ = T_NE;
+	'<' '>'	= $$.i_entry = T_NE;
 		|
-	'<' '='	= $$ = T_LE;
+	'<' '='	= $$.i_entry = T_LE;
 		|
-	'>' '='	= $$ = T_GE;
+	'>' '='	= $$.i_entry = T_GE;
 		|
-	YIN	= $$ = T_IN;
+	YIN	= $$.i_entry = T_IN;
 		;
 addop:
-	'+'	= $$ = T_ADD;
+	'+'	= $$.i_entry = T_ADD;
 		|
-	'-'	= $$ = T_SUB;
+	'-'	= $$.i_entry = T_SUB;
 		|
-	YOR	= $$ = T_OR;
+	YOR	= $$.i_entry = T_OR;
 		|
-	'|'	= $$ = T_OR;
+	'|'	= $$.i_entry = T_OR;
 		;
 divop:
-	'*'	= $$ = T_MULT;
+	'*'	= $$.i_entry = T_MULT;
 		|
-	'/'	= $$ = T_DIVD;
+	'/'	= $$.i_entry = T_DIVD;
 		|
-	YDIV	= $$ = T_DIV;
+	YDIV	= $$.i_entry = T_DIV;
 		|
-	YMOD	= $$ = T_MOD;
+	YMOD	= $$.i_entry = T_MOD;
 		|
-	YAND	= $$ = T_AND;
+	YAND	= $$.i_entry = T_AND;
 		|
-	'&'	= $$ = T_AND;
+	'&'	= $$.i_entry = T_AND;
 		;
 
 negop:
@@ -826,18 +885,18 @@ negop:
 
 var_list:
 	variable
-		= $$ = newlist($1);
+		= $$.tr_entry = newlist($1.tr_entry);
 		|
 	var_list ',' variable
-		= $$ = addlist($1, $3);
+		= $$.tr_entry = addlist($1.tr_entry, $3.tr_entry);
 		;
 
 id_list:
 	YID
-		= $$ = newlist($1);
+		= $$.tr_entry = newlist($1.tr_entry);
 		|
 	id_list ',' YID
-		= $$ = addlist($1, $3);
+		= $$.tr_entry = addlist($1.tr_entry, $3.tr_entry);
 		;
 
 /*
@@ -864,7 +923,7 @@ type_id:
 	YID
 		= {
 			@@ return (identis(var, TYPE));
-			$$ = tree3(T_TYID, lineof(yyline), $1);
+			$$.tr_entry = tree3(T_TYID, lineof(yyline), $1.tr_entry);
 		  }
 		;
 var_id:

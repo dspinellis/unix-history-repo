@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)objfmt.h 1.13 %G%"; */
+/* static char sccsid[] = "@(#)objfmt.h 1.14 %G%"; */
 
 /*
  * The size of the display.
@@ -109,7 +109,12 @@ struct formalrtn {
 	long		(*fentryaddr)();	/* formal entry point */
 	long		fbn;			/* block number of function */
 	struct dispsave	fdisp[ DSPLYSZ ];	/* saved at first passing */
-} frtn;
+};
+#ifndef PC
+#ifndef OBJ
+struct formalrtn	frtn;
+#endif
+#endif
 
 #define	FENTRYOFFSET	0
 #define FBNOFFSET	( FENTRYOFFSET + sizeof frtn.fentryaddr )

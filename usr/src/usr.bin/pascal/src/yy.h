@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)yy.h 1.2 %G%"; */
+/* static	char sccsid[] = "@(#)yy.h 1.3 %G%"; */
 
 #include "y.tab.h"
 /*
@@ -99,11 +99,22 @@ struct yytok {
 #define	yyefile	Y.Yyefile
 #define	yyeseqid Y.Yyeseqid
 
+/* Semantic Stack so that y.tab.c will lint */
+
+union semstack
+{
+    int		  i_entry;
+    struct nl	 *nl_entry;
+    struct tnode *tr_entry;
+    char	 *cptr;
+} yyval;
+
 /*
  * Yyval is the semantic value returned by a reduction.
  * It is what "$$" is expanded to by yacc.
  */
-int	*Ps, *yyval;
+
+int	*Ps;
 
 /*
  * N is the length of a reduction.
@@ -164,7 +175,11 @@ char	yyResume;
 
 char	dquote;
 
+#ifndef PC
+#ifndef OBJ
 char	errout;
+#endif OBJ
+#endif PC
 
 /*
  * Yyidwant and yyidhave are the namelist classes
