@@ -1,15 +1,12 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-#ifndef lint
 static	char copyright[] =
 	    "@(#)Copyright (c) 1979 Regents of the University of California";
 
-static char sccsid[] = "@(#)main.c 2.1 %G%";
-#endif
+static char sccsid[] = "@(#)main.c 1.9.1.1 %G%";
 
 #include "whoami.h"
 #include "0.h"
-#include "tree_ty.h"		/* must be included for yy.h */
 #include "yy.h"
 #include <signal.h>
 #include "objfmt.h"
@@ -24,22 +21,16 @@ static char sccsid[] = "@(#)main.c 2.1 %G%";
  */
 
 char	piusage[]	= "pi [ -blnpstuw ] [ -i file ... ] name.p";
+char	pixusage[]	= "pix [ -blnpstuw ] [ -i file ... ] name.p [ arg ... ]";
+char	pcusage[]	= "pc [ options ] [ -o file ] [ -i file ... ] name.p";
 
 char	*usageis	= piusage;
 
 #ifdef OBJ
-
-char	pixusage[]	= "pix [ -blnpstuw ] [ -i file ... ] name.p [ arg ... ]";
-char	*obj	= "obj";
-
+    char	*obj	= "obj";
 #endif OBJ
-
 #ifdef PC
-
-char	*pcname = "pc.pc0";
-char	pcusage[]	= "pc [ options ] [ -o file ] [ -i file ... ] name.p";
-FILE	*pcstream = NULL;
-
+    char	*pcname = "pc.pc0";
 #endif PC
 #ifdef PTREE
     char	*pTreeName = "pi.pTree";
@@ -50,6 +41,7 @@ int	onintr();
 extern	char *lastname;
 
 FILE	*ibuf;
+FILE	*pcstream = NULL;
 
 /*
  * these are made real variables
@@ -70,9 +62,6 @@ main(argc, argv)
 {
 	register char *cp;
 	register c;
-	FILE *fopen();
-	extern char *myctime();
-	extern long lseek();
 	int i;
 
 	if (argv[0][0] == 'a')
@@ -133,7 +122,7 @@ main(argc, argv)
 				    opt('r')++;
 				    continue;
 			    case 'U':
-				    yyunique = FALSE;
+				    yyunique = 0;
 				    continue;
 #endif
 			    case 'b':
@@ -162,6 +151,9 @@ main(argc, argv)
 				    continue;
 			    case 'z':
 				    monflg = TRUE;
+				    continue;
+			    case 'L':
+				    togopt( 'L' );
 				    continue;
 			    default:
     usage:
@@ -204,7 +196,7 @@ main(argc, argv)
 			    opt('r')++;
 			    break;
 		    case 'U':
-			    yyunique = FALSE;
+			    yyunique = 0;
 			    break;
 #endif
 		    case 'b':
@@ -263,6 +255,9 @@ main(argc, argv)
 		    case 'z':
 			    monflg = TRUE;
 			    break;
+		    case 'L':
+			    togopt( 'L' );
+			    break;
 		    default:
 usage:
 			    Perror( "Usage", usageis);
@@ -291,7 +286,7 @@ usage:
 		perror( pcname );
 		pexit( NOSTART );
 	    }
-	    stabsource( filename );
+	    stabsource( filename, TRUE );
 #	endif PC
 #	ifdef PTREE
 #	    define	MAXpPAGES	16
@@ -301,7 +296,7 @@ usage:
 	    }
 #	endif PTREE
 	if ( signal( SIGINT , SIG_IGN ) != SIG_IGN )
-		(void) signal( SIGINT , onintr );
+		signal( SIGINT , onintr );
 	if (opt('l')) {
 		opt('n')++;
 		yysetfile(filename);
@@ -388,7 +383,7 @@ pexit(c)
 onintr()
 {
 
-	(void) signal( SIGINT , SIG_IGN );
+	signal( SIGINT , SIG_IGN );
 	pexit(NOSTART);
 }
 
@@ -400,7 +395,7 @@ geterr(seekpt, buf)
 	char *buf;
 {
 
-	(void) lseek(efil, (long) seekpt, 0);
+	lseek(efil, (long) seekpt, 0);
 	if (read(efil, buf, 256) <= 0)
 		perror(err_file), pexit(DIED);
 }
@@ -416,10 +411,10 @@ header()
 	anyheaders++;
 #	ifdef OBJ
 	    printf("Berkeley Pascal PI -- Version %s\n\n%s  %s\n\n",
-		    version, myctime((int *) (&tvec)), filename);
+		    version, myctime(&tvec), filename);
 #	endif OBJ
 #	ifdef PC
 	    printf("Berkeley Pascal PC -- Version %s\n\n%s  %s\n\n",
-		    version, myctime((int *) (&tvec)), filename);
+		    version, myctime(&tvec), filename);
 #	endif PC
 }
