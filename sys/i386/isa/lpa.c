@@ -45,7 +45,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: lpa.c,v 1.4 1993/11/25 01:31:40 wollman Exp $
+ *	$Id: lpa.c,v 1.5 1994/02/22 09:04:08 rgrimes Exp $
  */
 
 /*
@@ -178,6 +178,18 @@ lpaprobe(struct isa_device *dvp)
 	u_char	data;
 	u_char	mask;
 	int	i;
+	static	int	warned = 0;
+
+
+	/* Warn users that the lpa driver should no longer be used */
+	if(!warned) {
+		printf("*************************************************\n");
+		printf("WARNING: The lpa driver is now obsolete, and will\n");
+		printf("WARNING: be removed soon.\n");
+		printf("WARNING: Please change your config to use lpt\n");
+		printf("*************************************************\n");
+		warned = 1;
+	}
 
 	status = IO_LPTSIZE;
 
