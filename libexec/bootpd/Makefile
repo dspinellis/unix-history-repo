@@ -12,7 +12,7 @@ CFLAGS+=-DSYSLOG -DDEBUG -DVEND_CMU -DPRIVATE=static ${FILESPECS} -traditional
 SRCS=	bootpd.c readfile.c hash.c version.c
 MAN5=	bootptab.5
 MAN8=	bootpd.8
-CLEANFILES+=version.c
+CLEANFILES+=version.c version
 
 version.c:
 	sh ${.CURDIR}/newvers.sh ${.CURDIR}/Version.c
