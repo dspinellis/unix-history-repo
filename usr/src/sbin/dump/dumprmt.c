@@ -5,8 +5,8 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumprmt.c	5.8 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)dumprmt.c	5.9 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/mtio.h>
@@ -20,6 +20,8 @@ static char sccsid[] = "@(#)dumprmt.c	5.8 (Berkeley) %G%";
 #include <protocols/dumprestore.h>
 #include <pwd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "pathnames.h"
 
 #define	TS_CLOSED	0
@@ -27,11 +29,18 @@ static char sccsid[] = "@(#)dumprmt.c	5.8 (Berkeley) %G%";
 
 static	int rmtstate = TS_CLOSED;
 int	rmtape;
-int	rmtconnaborted();
+void	rmtgetconn();
+void	rmtconnaborted();
+int	rmtreply();
+int	rmtgetb();
+void	rmtgets();
+int	rmtcall();
 char	*rmtpeer;
 
 extern int ntrec;		/* blocking factor on tape */
+extern void msg();
 
+int
 rmthost(host)
 	char *host;
 {
@@ -44,6 +53,7 @@ rmthost(host)
 	return (1);
 }
 
+void
 rmtconnaborted()
 {
 
@@ -51,6 +61,7 @@ rmtconnaborted()
 	exit(1);
 }
 
+void
 rmtgetconn()
 {
 	static struct servent *sp = 0;
@@ -75,6 +86,7 @@ rmtgetconn()
 		size -= TP_BSIZE;
 }
 
+int
 rmtopen(tape, mode)
 	char *tape;
 	int mode;
@@ -86,6 +98,7 @@ rmtopen(tape, mode)
 	return (rmtcall(tape, buf));
 }
 
+void
 rmtclose()
 {
 
@@ -95,6 +108,7 @@ rmtclose()
 	rmtstate = TS_CLOSED;
 }
 
+int
 rmtread(buf, count)
 	char *buf;
 	int count;
@@ -118,6 +132,7 @@ rmtread(buf, count)
 	return (n);
 }
 
+int
 rmtwrite(buf, count)
 	char *buf;
 	int count;
@@ -130,6 +145,7 @@ rmtwrite(buf, count)
 	return (rmtreply("write"));
 }
 
+void
 rmtwrite0(count)
 	int count;
 {
@@ -139,6 +155,7 @@ rmtwrite0(count)
 	write(rmtape, line, strlen(line));
 }
 
+void
 rmtwrite1(buf, count)
 	char *buf;
 	int count;
@@ -147,13 +164,14 @@ rmtwrite1(buf, count)
 	write(rmtape, buf, count);
 }
 
+int
 rmtwrite2()
 {
-	int i;
 
 	return (rmtreply("write"));
 }
 
+int
 rmtseek(offset, pos)
 	int offset, pos;
 {
@@ -179,6 +197,7 @@ rmtstatus()
 	return (&mts);
 }
 
+int
 rmtioctl(cmd, count)
 	int cmd, count;
 {
@@ -190,6 +209,7 @@ rmtioctl(cmd, count)
 	return (rmtcall("ioctl", buf));
 }
 
+int
 rmtcall(cmd, buf)
 	char *cmd, *buf;
 {
@@ -199,10 +219,10 @@ rmtcall(cmd, buf)
 	return (rmtreply(cmd));
 }
 
+int
 rmtreply(cmd)
 	char *cmd;
 {
-	register int c;
 	char code[30], emsg[BUFSIZ];
 
 	rmtgets(code, sizeof (code));
@@ -223,6 +243,7 @@ rmtreply(cmd)
 	return (atoi(code + 1));
 }
 
+int
 rmtgetb()
 {
 	char c;
@@ -232,6 +253,7 @@ rmtgetb()
 	return (c);
 }
 
+void
 rmtgets(cp, len)
 	char *cp;
 	int len;

@@ -5,12 +5,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)unctime.c	5.1 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)unctime.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/time.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 /*
  * Convert a ctime(3) format string into a system format date.
  * Return the date thus calculated.
@@ -29,7 +32,10 @@ static char sccsid[] = "@(#)unctime.c	5.1 (Berkeley) %G%";
 #define	E_SECOND	17
 #define	E_YEAR		20
 
-time_t unctime(str)
+static int lookup();
+
+time_t
+unctime(str)
 	char *str;
 {
 	struct tm then;
@@ -40,9 +46,8 @@ time_t unctime(str)
 		str[25] = 0;
 	strcpy(dbuf, str);
 	dbuf[E_MONTH+3] = 0;
-	if ( (then.tm_mon = lookup(&dbuf[E_MONTH])) < 0) {
-		return(-1);;
-	}
+	if ((then.tm_mon = lookup(&dbuf[E_MONTH])) < 0)
+		return (-1);
 	then.tm_mday = atoi(&dbuf[E_DAY]);
 	then.tm_hour = atoi(&dbuf[E_HOUR]);
 	then.tm_min = atoi(&dbuf[E_MINUTE]);
@@ -54,7 +59,7 @@ time_t unctime(str)
 static char months[] =
 	"JanFebMarAprMayJunJulAugSepOctNovDec";
 
-static
+static int
 lookup(str)
 	char *str;
 {
@@ -73,8 +78,10 @@ lookup(str)
  */
 
 struct tm *localtime();
+static int dcmp();
 
-time_t emitl(dp)
+time_t
+emitl(dp)
 	struct tm *dp;
 {
 	time_t conv;
@@ -103,7 +110,7 @@ time_t emitl(dp)
 	if (dp->a < dp2->a) \
 		return(-1)
 
-static
+static int
 dcmp(dp, dp2)
 	register struct tm *dp, *dp2;
 {
