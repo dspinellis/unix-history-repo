@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)atrun.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)atrun.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -276,7 +276,7 @@ char *spoolfile;
 		 * It's up to you if you want to implement this.
 		 *
 		 */ 
-		if (notifybymail)
+		if (exitstatus == ABNORMAL || notifybymail)
 			sendmailto(getname(jobbuf.st_uid),jobname,exitstatus);
 
 		/*
