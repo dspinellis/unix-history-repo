@@ -1,4 +1,6 @@
-static char *sccsid = "@(#)w.c	4.10 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid = "@(#)w.c	4.11 (Berkeley) %G%";
+#endif
 /*
  * w - print system status (who and what)
  *
@@ -54,6 +56,10 @@ struct	nlist nl[] = {
 #define	X_BOOTTIME	6
 	{ "_nproc" },
 #define	X_NPROC		7
+	{ "_dmmin" },
+#define	X_DMMIN		8
+	{ "_dmmax" },
+#define	X_DMMAX		9
 	{ "" },
 };
 
@@ -64,13 +70,14 @@ int	kmem;
 int	mem;
 int	swap;			/* /dev/kmem, mem, and swap */
 int	nswap;
+int	dmmin, dmmax;
 dev_t	tty;
 char	doing[520];		/* process attached to terminal */
 time_t	proctime;		/* cpu time of process in doing */
 double	avenrun[3];
 struct	proc *aproc;
 
-#define	DIV60(t)	((t + 30) / 60)    /* x/60 rounded */ 
+#define	DIV60(t)	((t+30)/60)    /* x/60 rounded */ 
 #define	TTYEQ		(tty == pr[i].w_tty)
 #define IGINT		(1+3*1)		/* ignoring both SIGINT & SIGQUIT */
 
@@ -430,10 +437,14 @@ readpr()
 	lseek(kmem, (long)nl[X_SWAPDEV].n_value, 0);
 	read(kmem, &nl[X_SWAPDEV].n_value, sizeof(nl[X_SWAPDEV].n_value));
 	/*
-	 * Find base of swap
+	 * Find base of and parameters of swap
 	 */
 	lseek(kmem, (long)nl[X_NSWAP].n_value, 0);
 	read(kmem, &nswap, sizeof(nswap));
+	lseek(kmem, (long)nl[X_DMMIN].n_value, 0);
+	read(kmem, &dmmin, sizeof(dmmin));
+	lseek(kmem, (long)nl[X_DMMAX].n_value, 0);
+	read(kmem, &dmmax, sizeof(dmmax));
 	/*
 	 * Locate proc table
 	 */
@@ -595,7 +606,7 @@ vstodb(vsbase, vssize, dmp, dbp, rev)
 	struct dmap *dmp;
 	register struct dblock *dbp;
 {
-	register int blk = DMMIN;
+	register int blk = dmmin;
 	register swblk_t *ip = dmp->dm_map;
 
 	vsbase = ctod(vsbase);
@@ -604,7 +615,7 @@ vstodb(vsbase, vssize, dmp, dbp, rev)
 		panic("vstodb");
 	while (vsbase >= blk) {
 		vsbase -= blk;
-		if (blk < DMMAX)
+		if (blk < dmmax)
 			blk *= 2;
 		ip++;
 	}
