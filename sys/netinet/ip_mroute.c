@@ -96,7 +96,7 @@ static	struct mrt *mrtfind __P((u_long));
 static	void phyint_send __P((struct ip *, struct vif *, struct mbuf *));
 static	void srcrt_send __P((struct ip *, struct vif *, struct mbuf *));
 static	void encap_send __P((struct ip *, struct vif *, struct mbuf *));
-static	multiencap_decap __P((struct mbuf *, int hlen));
+static	void multiencap_decap __P((struct mbuf *, int hlen));
 
 #define INSIZ sizeof(struct in_addr)
 #define	same(a1, a2) (bcmp((caddr_t)(a1), (caddr_t)(a2), INSIZ) == 0)
@@ -149,7 +149,7 @@ static	struct mrt *cached_mrt = NULL;
 static	u_long cached_origin;
 static	u_long cached_originmask;
 
-static int (*encap_oldrawip)();
+static void (*encap_oldrawip)();
 
 /*
  * one-back cache used by multiencap_decap to locate a tunnel's vif
@@ -390,8 +390,6 @@ add_vif(vifcp)
 			 * arrival 'interface' to be the decapsulator.
 			 */
 			if (encap_oldrawip == 0) {
-				extern struct protosw inetsw[];
-				extern u_char ip_protox[];
 				register int pr = ip_protox[ENCAP_PROTO];
 
 				encap_oldrawip = inetsw[pr].pr_input;
@@ -986,6 +984,7 @@ encap_send(ip, vifp, m)
  * routine is called whenever IP gets a packet with proto type
  * ENCAP_PROTO and a local destination address).
  */
+static void
 multiencap_decap(m, hlen)
 	register struct mbuf *m;
 	int hlen;
