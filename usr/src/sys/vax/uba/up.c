@@ -109,10 +109,10 @@ struct	upst {
 	struct	size *sizes;
 } upst[] = {
 	32,	19,	32*19,	815,	up_sizes,	/* 9300 */
+	32,	19,	32*19,	823,	up_sizes,	/* 9766 */
 	32,	10,	32*10,	823,	fj_sizes,	/* fujitsu 160m */
 	32,	16,	32*16,	1024,	upam_sizes,	/* ampex capricorn */
-/* should make a new partition table for cdc drives */
-	32,	19,	32*19,	823,	up_sizes,	/* cdc */
+	0,	0,	0,	0,	0
 };
 
 u_char	up_offset[16] = {
@@ -186,19 +186,33 @@ upattach(ui)
 	upip[ui->ui_ctlr][ui->ui_slave] = ui;
 	up_softc[ui->ui_ctlr].sc_ndrive++;
 	upaddr = (struct updevice *)ui->ui_addr;
+	ui->ui_type = upmaptype(ui);
+}
+
+upmaptype(ui)
+	register struct uba_device *ui;
+{
+	register struct updevice *upaddr = (struct updevice *)ui->ui_addr;
+	int type = ui->ui_type;
+	register struct upst *st;
+
 	upaddr->upcs1 = 0;
 	upaddr->upcs2 = ui->ui_slave;
 	upaddr->uphr = UPHR_MAXTRAK;
-	if (upaddr->uphr == 9)
-		ui->ui_type = 1;		/* fujitsu hack */
-	else if (upaddr->uphr == 15)
-		ui->ui_type = 2;		/* ampex hack */
-	else {
+	for (st = upst; st->nsect != 0; st++)
+		if (upaddr->uphr == st->ntrak - 1) {
+			type = st - upst;
+			break;
+		}
+	if (st->nsect == 0)
+		printf("up%d: uphr=%x\n", ui->ui_slave, upaddr->uphr);
+	if (type == 0) {
 		upaddr->uphr = UPHR_MAXCYL;
 		if (upaddr->uphr == 822)
-			ui->ui_type = 3;	/* cdc hack */
+			type++;
 	}
 	upaddr->upcs2 = UPCS2_CLR;
+	return (type);
 }
  
 upopen(dev)
