@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.97 (Berkeley) %G%
+ *	@(#)conf.h	8.98 (Berkeley) %G%
  */
 
 /*
@@ -793,6 +793,22 @@ typedef int		pid_t;
 # ifndef IDENTPROTO
 #  define IDENTPROTO	0	/* TCP/IP implementation is broken */
 # endif
+#endif
+
+
+/*
+**  Intergraph CLIX 3.1
+**
+**	From Paul Southworth <pauls@locust.cic.net>
+*/
+
+#ifdef CLIX
+# define SYSTEM5	1	/* looks like System V */
+# define DEV_BSIZE	512	/* device block size not defined */
+# define GIDSET_T	gid_t
+# undef LOG			/* syslog not available */
+# define NEEDFSYNC	1	/* no fsync in system library */
+# define GETSHORT	_getshort
 #endif
 
 
