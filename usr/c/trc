@@ -1,0 +1,7 @@
+cvopt $1.s $1.i
+/lib/c2 $1.i $1.x
+as $1.x
+if -r a.out rm $1.i $1.x
+mv a.out $1.o
+ar r tab.a $1.o
+rm $1.o
