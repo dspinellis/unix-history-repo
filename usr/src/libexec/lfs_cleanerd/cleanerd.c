@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cleanerd.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cleanerd.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -116,7 +116,7 @@ main(argc, argv)
 	struct timeval timeout;		/* sleep timeout */
 	fsid_t fsid;
 	int count;			/* number of file systems */
-	int i;
+	int i, nclean;
 	
 	count = fs_getmntinfo(&lstatfsp, MOUNT_LFS);
 
@@ -126,8 +126,15 @@ main(argc, argv)
 	fsid.val[1] = 0;
 
 	for (fsp = get_fs_info(lstatfsp, count); ; reread_fs_info(fsp, count)) {
-		for (lfp = fsp, i = 0; i < count; ++lfp, ++i)
-			clean_loop(lfp);
+		for (nclean = 0, lfp = fsp, i = 0; i < count; ++lfp, ++i)
+			nclean += clean_loop(lfp);
+		/*
+		 * If some file systems were actually cleaned, run again
+		 * to make sure that some nasty process hasn't just
+		 * filled the disk system up.
+		 */
+		if (nclean)
+			continue;
 
 #ifdef VERBOSE
 		(void)printf("Cleaner going to sleep.\n");
@@ -162,9 +169,9 @@ clean_loop(fsp)
 	now = time((time_t *)NULL);
 	if (fsp->fi_cip->clean <= MIN_SEGS(&fsp->fi_lfs) ||
 	    fsp->fi_cip->clean < max_free_segs * BUSY_LIM) {
-		clean_fs(fsp, cost_benefit);
 		printf("Cleaner Running  at %s (need space)\n",
 		    ctime(&now));
+		clean_fs(fsp, cost_benefit);
 		return (1);
 	} else {
 	        /* 
