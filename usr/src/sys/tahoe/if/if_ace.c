@@ -1,4 +1,4 @@
-/*	if_ace.c	1.9	86/06/09	*/
+/*	if_ace.c	1.10	86/07/16	*/
 
 /*
  * ACC VERSAbus Ethernet controller
@@ -218,7 +218,6 @@ aceinit(unit)
  * Start output on interface.
  * Get another datagram to send off of the interface queue,
  * and map it to the interface before starting the output.
- *
  */
 acestart(unit)
 	int unit;
@@ -466,7 +465,6 @@ aceoutput(ifp, m0, dst)
 		    sizeof (edst)))
 			mcopy = m_copy(m, 0, (int)M_COPYALL);
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
-		/* need per host negotiation */
 		if (usetrailers && off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
 			type = ETHERTYPE_TRAIL + (off>>9);
@@ -648,17 +646,12 @@ aceget(rxbuf, totlen, off0, ifp)
 			len = totlen;
 		if (ifp)
 			len += sizeof(ifp);
-		if (len >= CLBYTES) {
-			struct mbuf *p;
-
-			MCLGET(p, 1);
-			if (p != 0) {
-				m->m_len = len = CLBYTES;
-				m->m_off = (int)p - (int)m;
-			} else {
+		if (len >= NBPG) {
+			MCLGET(m);
+			if (m->m_len == CLBYTES)
+				m->m_len = len = MIN(len, CLBYTES);
+			else
 				m->m_len = len = MIN(MLEN, len);
-				m->m_off = MMINOFF;
-			}
 		} else {
 			m->m_len = len = MIN(MLEN, len);
 			m->m_off = MMINOFF;
@@ -717,8 +710,8 @@ bad:
 
 /* backoff table masks */
 short	random_mask_tbl[16] = {
-	0x0040, 0x00C0, 0x01C0, 0x03C0, 0x07C0, 0x0FC0, 0x1FC0, 0x3FC0,
-	0x7FC0, 0xFFC0, 0xFFC0, 0xFFC0, 0xFFC0, 0xFFC0, 0xFFC0, 0xFFC0
+	0x0040, 0x00c0, 0x01c0, 0x03c0, 0x07c0, 0x0fc0, 0x1fc0, 0x3fc0,
+	0x7fc0, 0xffc0, 0xffc0, 0xffc0, 0xffc0, 0xffc0, 0xffc0, 0xffc0
 };
 
 acebakoff(is, txseg, retries)
@@ -734,7 +727,7 @@ acebakoff(is, txseg, retries)
 	while (--retries >= 0) {
 		random_num = (is->is_currnd = (is->is_currnd * 18741)-13849);
 		random_num &= *pMask++;
-		*pBakNum++ = random_num ^ (short)(0xFF00 | 0x00FC);
+		*pBakNum++ = random_num ^ (short)(0xff00 | 0x00fc);
 	}
 }
 
