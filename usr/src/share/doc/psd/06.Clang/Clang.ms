@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.man%
 .\"
-.\"	@(#)Clang.ms	8.1 (Berkeley) %G%
+.\"	@(#)Clang.ms	8.2 (Berkeley) %G%
 .\"
 .nr Cl 2
 .TL
@@ -28,7 +28,7 @@ This manual describes the C language on the DEC PDP-11\(dg, the DEC VAX-11,
 .FE
 and the AT&T 3B 20\(dd.
 Where differences exist, it concentrates on the VAX, but tries to point
-out implementation-dependent details.  With few execptions, these dependencies
+out implementation-dependent details.  With few exceptions, these dependencies
 follow directly from the underlying properties of the hardware; the various
 compilers are generally quite compatible.
 .NH 1 
@@ -85,6 +85,7 @@ AT&T 3B 20	>100 characters, 2 cases
 .TE
 .fi
 .DE
+.ne 1i
 .NH 2
 Keywords
 .PP
@@ -1783,7 +1784,9 @@ e.g., in lists of actual arguments
 to functions (see ``Primary Expressions'') and lists
 of initializers (see ``Initialization'' under ``DECLARATIONS''),
 the comma operator as described in this subpart
-can only appear in parentheses. For example,
+can only appear in parentheses.
+.ne 1i
+For example,
 .DS 
 \fBf(a, (t=3, t\(pl2), c)\fR
 .DE
@@ -1897,6 +1900,7 @@ outside.
 Exception:
 functions are never
 automatic.
+.ne 1i
 .NH 2 
 Type Specifiers
 .PP
@@ -2166,6 +2170,7 @@ the extra parentheses are necessary, as they are also
 in an expression, to indicate that indirection through
 a pointer to a function yields a function, which is then called;
 it returns an integer.
+.ne 1i
 .PP
 As another example,
 .DS 
@@ -2287,6 +2292,7 @@ PDP-11
 and
 VAX-11,
 left to right on the 3B 20.
+.ne 1i
 .PP
 A struct-declarator with no declarator, only a colon and a width,
 indicates an unnamed field useful for padding to conform
@@ -2537,6 +2543,7 @@ consists of an expression or a list of values nested in braces.
         { \fIinitializer-list \fR}
         { \fIinitializer-list\fR , }
 .DE
+.pl -1
 .PP
 All the expressions in an initializer
 for a static or external variable must be constant
@@ -2545,6 +2552,7 @@ or expressions which reduce to the address of a previously
 declared variable, possibly offset by a constant expression.
 Automatic or register variables may be initialized by arbitrary
 expressions involving constants and previously declared variables and functions.
+.pl +1
 .PP
 Static and external variables that are not initialized are
 guaranteed to start off as zero.
@@ -2663,6 +2671,7 @@ and
 .B
 y[2]\fR.
 .R
+.ne 1i
 Also,
 .DS 
 \fBfloat y[4][3] = 
@@ -3813,8 +3822,10 @@ For example, the following is a legal fragment:
                 int        type;
                 float      floatnode;
         } nf;
-} u;
-\&...
+} u;\fR
+.DE
+.DS
+\fB\&...
 u.nf.type = FLOAT;
 u.nf.floatnode = 3.14;
 \&...
