@@ -1,4 +1,4 @@
-/*	setjmp.s	4.1	83/06/27	*/
+/*	setjmp.s	4.2	83/06/28	*/
 
 /*
  * C library -- setjmp, longjmp
@@ -28,7 +28,6 @@ ENTRY(setjmp)
 	ret
 
 ENTRY(longjmp)
-	.word	0x0000
 	movl	8(ap),r0		# return(v)
 	movl	4(ap),r1		# fetch buffer
 	tstl	(r1)
