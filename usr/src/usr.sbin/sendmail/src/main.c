@@ -6,7 +6,7 @@
 # include <log.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	2.1.1.1	%G%";
+static char	SccsId[] = "@(#)main.c	2.2	%G%";
 
 /*
 **  DELIVERMAIL -- Deliver mail to a set of destinations
@@ -153,7 +153,7 @@ main(argc, argv)
 	signal(SIGTERM, finis);
 	setbuf(stdout, (char *) NULL);
 # ifdef LOG
-	initlog("delivermail", 0, LOG_INDEP);
+	openlog("delivermail", 0);
 # endif LOG
 # ifdef DEBUG
 # ifdef DEBUGFILE

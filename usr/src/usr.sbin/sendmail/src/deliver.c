@@ -6,7 +6,7 @@
 # include <log.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	2.3	%G%";
+static char SccsId[] = "@(#)deliver.c	2.4	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -220,7 +220,7 @@ deliver(to, editfcn)
 		if (!flagset(M_RESTR, m->m_flags))
 			setuid(getuid());
 # ifdef LOG
-		initlog(NULL, 0, LOG_CLOSE);
+		closelog();
 # endif LOG
 # ifndef VFORK
 		/*
