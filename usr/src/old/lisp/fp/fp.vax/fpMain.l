@@ -1,4 +1,4 @@
-(setq SCCS-fpMain.l "@(#)fpMain.l	1.1	%G%")
+(setq SCCS-fpMain.l "@(#)fpMain.l	1.2	%G%")
 ;  FP interpreter/compiler
 ;  Copyright (c) 1982  Scott B. Baden
 ;  Berkeley, California
@@ -67,11 +67,11 @@
 			  (let ((sPlist
 				 (If DynTraceFlg then
 				     (copy (plist 'Measures)) else nil))
-				(wcTime1 (syscall 13))
+				(wcTime1 (sys:time))
 				(time1 (ptime))
 				(rslt (*catch 'bottom$up (funcall fn_name arg)))
 				(time2 (ptime))
-				(wcTime2 (syscall 13)))
+				(wcTime2 (sys:time)))
 			       
 			       (fpPP rslt)
 
