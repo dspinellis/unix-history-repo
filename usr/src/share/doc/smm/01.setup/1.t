@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.t	6.8 (Berkeley) %G%
+.\"	@(#)1.t	6.9 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -141,8 +141,7 @@ to work faster.
 Raw devices are used when making new filesystems,
 when checking unmounted filesystems,
 or for copying quiescent filesystems.
-The block devices are used to mount filesystems,
-or when operating on a mounted filesystem such as the root.
+The block devices are used to mount filesystems.
 .PP
 You should be aware that it is sometimes important whether to use
 the character device (for efficiency) or not (because it would not
