@@ -20,9 +20,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	5.28 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	5.29 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	5.28 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	5.29 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -69,22 +69,36 @@ FILE *
 queueup(df)
 	char *df;
 {
-	char *tf;
 	char *qf;
 	register FILE *f;
 	register HDR *h;
 	register ADDRESS *q;
 	MAILER nullmailer;
-	int fd;
+	int fd, ret;
 
 	/*
 	**  Create control file.
 	*/
 
-	{
-		syserr("queueup: cannot create temp file %s", tf);
-		return NULL;
-	}
+	do {
+		strcpy(tf, queuename(e, 't'));
+		fd = open(tf, O_CREAT|O_WRONLY|O_EXCL, FileMode);
+		if (fd < 0) {
+			if ( errno != EEXIST) {
+				syserr("queueup: cannot create temp file %s",
+					tf);
+				return NULL;
+			}
+		} else {
+			if (flock(fd, LOCK_EX|LOCK_NB) < 0) {
+				if (errno != EWOULDBLOCK)
+					syserr("cannot flock(%s)", tf);
+				close(fd);
+				fd = -1;
+			}
+		}
+	} while (fd < 0);
+
 	tfp = fdopen(fd, "w");
 
 	if (tTd(40, 1))
@@ -172,11 +186,6 @@ queueup(df)
 	/*
 	**  Clean up.
 	*/
-
-	if (flock(fileno(tfp), LOCK_EX|LOCK_NB) < 0)
-	{
-		syserr("cannot flock(%s)", tf);
-	}
 
 	(void) fclose(f);
 }
@@ -566,6 +575,7 @@ dowork(w)
 			finis();
 		else
 			dropenvelope(CurEnv);
+		fclose(qflock);
 	}
 	else
 	{
@@ -625,7 +635,7 @@ readqf(e, full)
 # ifdef LOG
 		/* being processed by another queuer */
 		if (Verbose)
-			printf("%s: locked", CurEnv->e_id);
+			printf("%s: locked\n", CurEnv->e_id);
 # endif LOG
 		(void) fclose(qfp);
 		return NULL;
