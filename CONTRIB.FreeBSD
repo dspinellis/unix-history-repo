@@ -32,7 +32,7 @@ FreeBSD core:
 
 Andrew Moore <alm@netcom.com>
 Andreas Schulz <ats@g386bsd.first.bmd.de>
-J.T. Conklin <jtc@winsey.com>
+John Dyson <dyson@implode.rain.com>
 Christoph Robitschko <chmr@edvz.tu-graz.ac.at>
 David Greenman <davidg@implode.rain.com>
 Jordan K. Hubbard <jkh@whisker.lotus.ie>
@@ -64,6 +64,7 @@ Guido van Rooij <guido@gvr.win.tue.nl>
 Havard Eidnes <Havard.Eidnes@runit.sintef.no>
 Holger Veit <Holger.Veit@gmd.de>
 Ishii Masahiro, R. Kym Horsell
+J.T. Conklin <jtc@winsey.com>
 James Clark <jjc@jclark.com>
 James da Silva <jds@cs.umd.edu> et al
 Jim Wilson <wilson@moria.cygnus.com>
