@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)trpt.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)trpt.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <machine/pte.h>
@@ -72,11 +72,10 @@ struct nlist nl[] = {
 	{ "" },
 };
 
-static struct pte	*Sysmap;
-static struct tcp_debug	tcp_debug[TCP_NDEBUG];
-static caddr_t	tcp_pcbs[TCP_NDEBUG];
-static n_time	ntime;
-static int	aflag, kflag, memf, follow, sflag, tcp_debx, tflag;
+static struct pte *Sysmap;
+static caddr_t tcp_pcbs[TCP_NDEBUG];
+static n_time ntime;
+static int aflag, kflag, memf, follow, sflag, tflag;
 
 main(argc, argv)
 	int argc;
