@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)master.c	2.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)master.c	2.8 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -60,7 +60,7 @@ master()
 	setlinebuf(fp);
 #endif
 
-	syslog(LOG_INFO, "THIS MACHINE IS MASTER");
+	syslog(LOG_INFO, "This machine is master");
 	if (trace)
 		fprintf(fd, "THIS MACHINE IS MASTER\n");
 
@@ -116,7 +116,6 @@ loop:
 			otime = time;
 			time.tv_sec = msg->tsp_time.tv_sec;
 			time.tv_usec = msg->tsp_time.tv_usec;
-			time.tv_sec++;
 			(void)settimeofday(&time, &tzone);
 			syslog(LOG_NOTICE, "date changed from: %s", olddate);
 			logwtmp(otime, time);
@@ -135,7 +134,7 @@ loop:
 		case TSP_SETDATEREQ:
 			ind = findhost(msg->tsp_name);
 			if (ind < 0) { 
-			    syslog(LOG_ERR,
+			    syslog(LOG_WARNING,
 				"DATEREQ from uncontrolled machine");
 			    break;
 			}
@@ -151,7 +150,6 @@ loop:
 				otime = time;
 				time.tv_sec = msg->tsp_time.tv_sec;
 				time.tv_usec = msg->tsp_time.tv_usec;
-				time.tv_sec++;
 				(void)settimeofday(&time, &tzone);
 				syslog(LOG_NOTICE,
 				    "date changed by %s from: %s",
@@ -255,7 +253,8 @@ loop:
 			answer = acksend(&to, &server, msg->tsp_name, TSP_ACK,
 				(struct netinfo *)NULL);
 			if (answer == NULL) {
-				syslog(LOG_ERR, "election error");
+				syslog(LOG_WARNING,
+				    "loop breakage: no reply to QUIT");
 			} else {
 				(void)addmach(msg->tsp_name, &from);
 			}
@@ -376,7 +375,8 @@ spreadtime()
 		answer = acksend(&to, &hp[i].addr, hp[i].name, TSP_ACK,
 		    (struct netinfo *)NULL);
 		if (answer == NULL) {
-			syslog(LOG_ERR, "ERROR ON SETTIME machine: %s", hp[i].name);
+			syslog(LOG_WARNING,
+			    "no reply to SETTIME from: %s", hp[i].name);
 		}
 	}
 }
@@ -419,7 +419,7 @@ struct sockaddr_in *addr;
 		if (slvcount < NHOSTS)
 			slvcount++;
 		else {
-			syslog(LOG_ALERT, "no more slots in host table");
+			syslog(LOG_ERR, "no more slots in host table");
 		}
 	} else {
 		/* need to clear sequence number anyhow */
@@ -527,8 +527,8 @@ newslave(ind, seq)
 		    hp[ind].name, TSP_ACK,
 		    (struct netinfo *)NULL);
 		if (answer == NULL) {
-			syslog(LOG_ERR,
-			    "ERROR ON SETTIME machine: %s",
+			syslog(LOG_WARNING,
+			    "no reply to initial SETTIME from: %s",
 			    hp[ind].name);
 			rmmach(ind);
 		}
