@@ -1,4 +1,4 @@
-#	@(#)special	5.4 (Berkeley) %G%
+#	@(#)special	5.5 (Berkeley) %G%
 #
 # Hand-crafted mtree specification for the dangerous files.
 #
@@ -64,7 +64,7 @@ root		type=dir mode=0755 uname=root gname=wheel
 sbin		type=dir mode=0755 uname=root gname=wheel ignore
 ..	#sbin
 
-usr		type=dir mode=0755 uname=root gname=wsrc
+usr		type=dir mode=0755 uname=root gname=wheel
 bin		type=dir mode=0755 uname=root gname=wheel ignore
 ..	#usr/bin
 contrib		type=dir mode=0755 uname=root gname=wheel
@@ -119,8 +119,7 @@ at		type=dir mode=0755 uname=root gname=daemon ignore
 ..	#var/at
 backups		type=dir mode=0755 uname=root gname=wheel ignore
 ..	#var/backups
-db		type=dir mode=0775 uname=root gname=wheel ignore
-kvm_vmunix.db	type=file mode=0644 uname=root gname=wheel
+db		type=dir mode=0755 uname=root gname=wheel ignore
 ..	#var/db
 local		type=dir mode=0755 uname=root gname=wheel ignore
 ..	#var/local
@@ -133,6 +132,7 @@ mail		type=dir mode=0755 uname=root gname=wheel ignore
 preserve	type=dir mode=0755 uname=root gname=wheel ignore
 ..	#var/preserve
 run		type=dir mode=0755 uname=root gname=wheel
+kvm_vmunix.db	type=file mode=0644 uname=root gname=wheel
 utmp		type=file mode=0664 uname=root gname=utmp
 ..	#var/run
 spool		type=dir mode=0755 uname=root gname=wheel
@@ -151,13 +151,13 @@ hidden		type=dir mode=0111 uname=root gname=wheel ignore
 pub		type=dir mode=0777 uname=root gname=wheel ignore
 ..	#var/spool/ftp/pub
 ..	#var/spool/ftp
-mqueue		type=dir mode=0775 uname=root gname=wheel ignore
+mqueue		type=dir mode=0755 uname=root gname=wheel ignore
 ..	#var/spool/mqueue
-news		type=dir mode=0775 uname=root gname=wheel ignore
+news		type=dir mode=0755 uname=root gname=wheel ignore
 ..	#var/spool/news
-output		type=dir mode=0775 uname=root gname=wheel ignore
+output		type=dir mode=0755 uname=root gname=wheel ignore
 ..	#var/spool/output
-secretmail	type=dir mode=0775 uname=root gname=wheel ignore
+secretmail	type=dir mode=0755 uname=root gname=wheel ignore
 ..	#var/spool/secretmail
 uucp		type=dir mode=0755 uname=uucp gname=daemon ignore
 ..	#var/spool/uucp
