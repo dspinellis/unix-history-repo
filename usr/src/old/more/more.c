@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)more.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)more.c	5.4.1.1 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -31,6 +31,8 @@ static char sccsid[] = "@(#)more.c	5.6 (Berkeley) %G%";
 #include <sgtty.h>
 #include <setjmp.h>
 #include <sys/stat.h>
+#include <sys/file.h>
+#include <sys/exec.h>
 
 #define HELPFILE	"/usr/lib/more.help"
 #define VI		"/usr/ucb/vi"
@@ -349,23 +351,13 @@ int *clearfirst;
 	perror(fs);
 	return (NULL);
     }
-    c = Getc(f);
-
     /* Try to see whether it is an ASCII file */
-
-    switch ((c | *f->_ptr << 8) & 0177777) {
-    case 0405:
-    case 0407:
-    case 0410:
-    case 0411:
-    case 0413:
-    case 0177545:
+    if (magic(f)) {
 	printf("\n******** %s: Not a text file ********\n\n", fs);
 	fclose (f);
 	return (NULL);
-    default:
-	break;
     }
+    c = Getc(f);
     if (c == '\f')
 	*clearfirst = 1;
     else {
@@ -375,6 +367,22 @@ int *clearfirst;
     if ((file_size = stbuf.st_size) == 0)
 	file_size = 0x7fffffffffffffffL;
     return (f);
+}
+
+/*
+ * Check for file magic numbers. This code would best
+ * be shared with the file(1) program or, perhaps, more
+ * should not try and be so smart?
+ */
+magic(f)
+    FILE *f;
+{
+    long magic;
+
+    magic = getw(f);
+    fseek(f, -sizeof (magic), L_INCR);		/* reset file position */
+    return (magic == 0405 || magic == OMAGIC || magic == NMAGIC ||
+	magic == 0411 || magic == ZMAGIC || magic == 0177545);
 }
 
 /*
