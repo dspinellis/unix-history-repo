@@ -14,26 +14,26 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)defs.h	5.5 (Berkeley) %G%
+ *	@(#)defs.h	5.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/file.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
 #include <pwd.h>
 #include <grp.h>
+#include "pathnames.h"
 
 /*
  * The version number should be changed whenever the protocol changes.
  */
 #define VERSION	 3
-
-#define	MAILCMD	 "/usr/lib/sendmail -oi -t"
 
 	/* defines for yacc */
 #define EQUAL	1

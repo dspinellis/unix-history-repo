@@ -16,16 +16,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)docmd.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)docmd.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
 #include <setjmp.h>
 #include <netdb.h>
-
-#ifndef RDIST
-#define RDIST "/usr/ucb/rdist"
-#endif
 
 FILE	*lfp;			/* log file for recording files updated */
 struct	subcmd *subcmds;	/* list of sub-commands for current cmd */
@@ -209,7 +205,7 @@ makeconn(rhost)
 		ruser = user;
 	if (!qflag)
 		printf("updating host %s\n", rhost);
-	(void) sprintf(buf, "%s -Server%s", RDIST, qflag ? " -q" : "");
+	(void) sprintf(buf, "%s -Server%s", _PATH_RDIST, qflag ? " -q" : "");
 	if (port < 0) {
 		struct servent *sp;
 
@@ -493,9 +489,10 @@ notify(file, rhost, to, lmod)
 	/*
 	 * Create a pipe to mailling program.
 	 */
-	pf = popen(MAILCMD, "w");
+	(void)sprintf(buf, "%s -oi -t", _PATH_SENDMAIL);
+	pf = popen(buf, "w");
 	if (pf == NULL) {
-		error("notify: \"%s\" failed\n", MAILCMD);
+		error("notify: \"%s\" failed\n", _PATH_SENDMAIL);
 		(void) close(fd);
 		return;
 	}
