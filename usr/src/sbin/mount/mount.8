@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)mount.8	6.12 (Berkeley) %G%
+.\"	@(#)mount.8	6.13 (Berkeley) %G%
 .\"
 .TH MOUNT 8 ""
 .UC 4
@@ -137,6 +137,12 @@ retransmissions
 If the first mount request times out, do retries in background
 .IP "intr" 12
 I/O system calls can be interrupted.
+.IP "noconn" 12
+Do not connect the socket.
+Used for UDP servers that send replies from a
+socket other than the nfs server socket.
+.IP "tcp" 12
+Use TCP transport instead of UDP.
 .IP "rsize=#" 12
 Set read size to \fI#\fP bytes.
 .IP "wsize=#" 12
