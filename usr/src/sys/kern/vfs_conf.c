@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_conf.c	8.3 (Berkeley) %G%
+ *	@(#)vfs_conf.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -108,6 +108,20 @@ extern	struct vfsops procfs_vfsops;
 #define PROCFS_VFSOPS	NULL
 #endif
 
+#ifdef AFS
+extern	struct vfsops afs_vfsops;
+#define AFS_VFSOPS	&afs_vfsops
+#else
+#define AFS_VFSOPS	NULL
+#endif
+
+#ifdef ISOFS
+extern	struct vfsops isofs_vfsops;
+#define ISOFS_VFSOPS	&isofs_vfsops
+#else
+#define ISOFS_VFSOPS	NULL
+#endif
+
 struct vfsops *vfssw[] = {
 	NULL,			/* 0 = MOUNT_NONE */
 	UFS_VFSOPS,		/* 1 = MOUNT_UFS */
@@ -122,6 +136,8 @@ struct vfsops *vfssw[] = {
 	UMAP_VFSOPS,		/* 10 = MOUNT_UMAP */
 	KERNFS_VFSOPS,		/* 11 = MOUNT_KERNFS */
 	PROCFS_VFSOPS,		/* 12 = MOUNT_PROCFS */
+	AFS_VFSOPS,		/* 13 = MOUNT_AFS */
+	ISOFS_VFSOPS,		/* 14 = MOUNT_ISOFS */
 	0
 };
 
@@ -153,6 +169,9 @@ extern struct vnodeopv_desc null_vnodeop_opv_desc;
 extern struct vnodeopv_desc umap_vnodeop_opv_desc;
 extern struct vnodeopv_desc kernfs_vnodeop_opv_desc;
 extern struct vnodeopv_desc procfs_vnodeop_opv_desc;
+extern struct vnodeopv_desc isofs_vnodeop_opv_desc;
+extern struct vnodeopv_desc isofs_specop_opv_desc;
+extern struct vnodeopv_desc isofs_fifoop_opv_desc;
 
 struct vnodeopv_desc *vfs_opv_descs[] = {
 	&ffs_vnodeop_opv_desc,
@@ -202,6 +221,13 @@ struct vnodeopv_desc *vfs_opv_descs[] = {
 #endif
 #ifdef PROCFS
 	&procfs_vnodeop_opv_desc,
+#endif
+#ifdef ISOFS
+	&isofs_vnodeop_opv_desc,
+	&isofs_specop_opv_desc,
+#ifdef FIFO
+	&isofs_fifoop_opv_desc,
+#endif
 #endif
 	NULL
 };
