@@ -1,0 +1,11 @@
+#! /bin/csh -f
+# configure ACP5250/6250 for external loopback (using loopback connector)
+set UNIT=0			# change to suit your unit number
+set INET_ADDR=X.X.X.X		# change to your site's internet address
+alias acp /etc/acpconfig dda$UNIT
+acp $INET_ADDR
+acp -u 0			# required only if interface was enabled
+acp -b 9600			# set internal clocking
+acp -s standard			# DDN standard mode
+acp -f window on -f packet on	# enable negotiation
+acp -u ext			# external loopback

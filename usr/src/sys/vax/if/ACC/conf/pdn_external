@@ -1,0 +1,12 @@
+#! /bin/csh -f
+# configure ACP5250/6250 for external loopback (using loopback connector)
+set UNIT=0			# if necessary, change to suit your system
+set INET_ADDR=X.X.X.X		# change to your site's internet address
+set X25_ADDR=11223344556677 	# (optionally) change to your X.25 address
+alias acp /etc/acpconfig dda$UNIT
+acp $INET_ADDR
+acp -u down			# required only if interface was enabled
+acp -b 9600			# set internal clocking
+acp -a $INET_ADDR $X25_ADDR	# enter ourselves in translation table
+acp -s pdn			# PDN mode
+acp -u ext			# external loopback

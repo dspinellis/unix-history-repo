@@ -1,0 +1,803 @@
+.TH DDA 4 "19 July 1989"
+.nh
+.UC 4
+.ds ]W "4.3 BSD
+.SH NAME
+dda \- ACC ACP 5250/6250 Network Interface Driver for X.25
+.SH SYNOPSIS
+.B "optional device-driver dda"
+.br
+.B "options ACC_BSD=43"
+.br
+.B "device dda0 at uba0 csr 0167000 flags 0 vector ddainta ddaintb"
+.SH DESCRIPTION
+The 
+.I dda
+device supports virtual circuits between the ACP 5250/6250 and the DDN
+IMP for carrying IP datagrams.  The dda driver may also be configured
+to support IP traffic on X.25 Public Data Networks.  The ACP 5250/6250
+is a microprocessor-based front end that provides X.25 capability.  Via
+the ACC supplied ACPCONFIG(8C) program, the user can set the device's
+internet address, loopback state, baud rate, and service mode (DDN
+standard, DDN basic, or PDN X.25).  By default, the driver supports DDN
+standard X.25 service.
+.SH CONFIGURATION
+In previous versions, the
+.I dda
+driver configured itself to operate with whatever version of Unix, Ultrix,
+or VMS it was compiled under.
+However,  since these distinctions have become rather muddy,  the driver
+requires an additional "options" command line in the system's kernel
+configuration file.
+Only one ACC_<operating system> option line is required.  The following
+lines may be used:
+.PP
+.nf
+.ta .5i 2.5i
+options ACC_BSD=43	4.3bsd or 4.3-tahoe system
+options ACC_BSD=42	4.2bsd
+options ACC_ULTRIX=30	Ultrix 3.0
+options ACC_ULTRIX=22	Ultrix 2.2
+options ACC_ULTRIX=20	Ultrix 2.0
+options ACC_ULTRIX=12	Ultrix 1.2
+options ACC_VMS=4n	VAX/VMS 4.n (Multinet or WIN/TCP)
+options ACC_VMS=5n	VAX/VMS 5.n (Multinet or WIN/TCP)
+.fi
+.PP
+In addition to the operating system definitons,  if either the X.29 or PI
+options are installed,  they may be enabled using:
+.PP
+.nf
+.ta .5i 2.5i
+options DDA_RAWOPT	enables the raw "programmer's interface"
+options DDA_PADOPT	enables the X.29 pad/host option
+.fi
+.PP
+Debugging code is normally unused in a customer environment,  but some
+sites may find it useful when using the programmer's interface or when
+working on site dependant modifications to the driver.
+If you wish to enable the debugging code,  add the line:
+.PP
+.nf
+.ta .5i 2.5i
+options DDADEBUG
+.fi
+.SH DIAGNOSTICS
+The diagnostic messages below refer to concepts that are explained further
+in the ACP 5250/6250 Hardware Installation and User Guide.
+The content of the
+messages ranges from status information to notification of
+unrecoverable errors.  The notation is based on the C Programming
+Language's formatted output conventions where %d represents decimal
+notation and %x represents unsigned hexadecimal notation.  The messages
+preceded by numbers in square brackets may be disabled via the
+acpconfig -c option, specifying the message number; the numbers are not
+displayed as part of the message.  These messages are normally enabled.
+.sp
+.PP
+The following messages are informational only; no action need be taken.
+.PP
+[0]
+.BR "dda%d: reset"
+.br
+This message indicates reset of the front end, in response to a
+UNIBUS/Qbus reset, or an ACPCONFIG command invoked by the user
+(acpconfig dda0 -z).  After a bus reset, if the interface is on the
+specified bus adapter, its state is reset.  There is a pause to allow
+the powerup diagnostics to run for a short period of time.
+If the buffer size has been altered via the acpconfig -e command,
+it reverts to the value set in the on-board switches.
+.PP
+[38]
+.BR "dda%d: buffer size reset"
+.br
+This message indicates that the front end is being reset to change its
+buffer size, in response to the acpconfig -e command.
+.PP
+[14]
+.BR "lcn=%d func=%x"
+.br
+This message provides the logical channel number and the function code
+for the errors reported by messages 7 through 13.
+.PP
+[29]
+.BR "dda%d:  link disabled"
+.br
+This message indicates that the interface has been disabled, in
+response to the -u 0 option to ACPCONFIG.
+.PP
+[31]
+.BR "dda%d: Restart (%x %x) received"
+.br
+[31]
+.BR "dda%d: Restart Ack Received"
+.br
+These messages indicate receipt of an X.25 Restart Indication or
+Restart Confirmation packet; these packets are used to initialize the
+packet level protocol.  The numbers in parentheses are the Cause and
+Diagnostic fields from the Restart Indication packet.
+See CCITT Recommendation X.25 for an explanation of cause and
+diagnostic codes.
+.PP
+[32]
+.BR "dda%d: (ACP6250 rev %d.%d) link up"
+.br
+[32]
+.BR "dda%d: (ACP5250 rev %d.%d) link up"
+.br
+This message indicates that the interface is ready to make and accept
+calls (X.25 frame level is up and Restart packets have been
+exchanged).  The board type (ACP6250/ACP5250) and firmware revision
+level are indicated in the message.  The front end will not attempt to
+bring the link up until instructed to do so via the -u option to ACPCONFIG.
+If this message is displayed when the link is already up,
+it indicates that the link has been reset.
+.PP
+[258]
+.BR "dda%d: Accepting call from %d.%d.%d.%d (%s) on lcn %d
+.br
+This message is disabled by default.
+The message reports the internet address and X.25
+address of the host originating the call, and the  logical channel
+number used by the front end, when the driver accepts an incoming call
+from the network.
+.PP
+[258]
+.BR "dda%d: Calling %d.%d.%d.%d (%s) on lcn %d
+.br
+[258]
+.BR "dda%d: lcn %d connected
+.br
+These messages are disabled by default.
+The first message reports the internet address (%d.%d.%d.%d)
+and X.25 address (%s) of the destination host,
+and the logical channel number used by the front end,
+when the driver initiates a call to the network.
+The second message indicates that the call has been successfully established.
+(If the call fails, message 33 is displayed,
+reporting the reason for the failure).
+.PP
+[258]
+.BR "dda%d: Cleared lcn %d
+.br
+This message is disabled by default.
+It indicates that the driver has closed a circuit
+after it has been idle for the period defined by the "idle timeout".
+.PP
+[258]
+.BR "dda%d: Cleared lcn %d to %d.%d.%d.%d (%x %x)"
+.br
+This message is disabled by default.
+A circuit was cleared by the remote host or the
+network; the Clearing Cause and Diagnostic fields are displayed in
+parentheses.
+See CCITT Recommendation X.25 for an explanation of cause and
+diagnostic codes.
+.PP
+[256]
+.BR "dda%d: abort completed on chan %d
+.br
+This message is disabled by default.
+An outstanding read or write to the indicated
+logical channel has been aborted; this occurs when the circuit is
+cleared or reset.
+.sp
+.PP
+The following messages are warnings of potential problems.
+.PP
+[27]
+.BR "dda%d: supervisory channel overflow (maxlen=%d)"
+br
+The output queue for the supervisory path has reached its maximum length.
+The queue length for the supervisory path is doubled;
+the supervisory message is not dropped.
+If this message is repeated, the front end may have stopped accepting commands
+from the host, in which case the front end should be reset;
+however, this message may also be displayed during error recovery if a
+large number of circuits is opened or closed.
+.PP
+[28]
+.BR "dda%d: truncated supervisor message"
+.br
+A message from the front end over the supervisor path exceeded the
+maximum anticipated length; the partial message is discarded.
+.PP
+[30]
+.BR "dda%d: link down"
+.br
+This message indicates that the front end has reported the link down,
+because it has not received any response to its messages, because a
+protocol error has occurred, or because the network interface has requested
+that the link be disconnected.  If the link has not yet been reported up,
+this may indicate that the configuration parameters for the front end and
+the network interface are incompatible (i.e., both declared as DCE, or
+clock source is incorrectly specified).  The front end will continue to
+attempt to bring the link up, unless the user disables the link with the -u 0
+option to ACPCONFIG.
+.PP
+[33]
+.BR "dda%d: Call to %d.%d.%d.%d on lcn %d failed (%x %x)"
+The front end has placed a call to the X.25 address associated with the IP
+address displayed in the message; the network has refused the call with the
+Clearing Cause and Diagnostic reported in parentheses.
+See CCITT Recommendation X.25 for an explanation of cause and
+diagnostic codes.
+.PP
+[34]
+.BR "dda%d: X25 RESET (%x %x) on lcn %d: %d.%d.%d.%d"
+.br
+An X.25 RESET supervisor message was received from the front end.  The
+Resetting Cause and Diagnostic fields are displayed, as well as the
+channel number and the internet address of the remote host.
+This message may indicate that the front end and network interface
+configurations are incompatible (incorrect packet size or window size,
+for instance).
+See CCITT Recommendation X.25 for an explanation of cause and
+diagnostic codes.
+.PP
+[35]
+.BR "dda%d: X25 INTERRUPT (%x) on lcn %d: %d.%d.%d.%d"
+.br
+An X.25 INTERRUPT supervisor message was received from the front end.
+The Interrupt User Data is displayed, as well as the channel number and
+the internet address of the remote host.
+.PP
+[36]
+.BR "dda%d: supervisor error (%x %x %x %x)"
+.br
+A message was received over the supervisor channel which is not
+recognized by the driver.
+The first four bytes of the message are displayed.
+.PP
+[37]
+.BR "dda%d: Clear request lost -- lcn %d"
+.br
+The driver has attempted to close an circuit, but the request was not
+acknowledged before the clear timeout expired.  The lcn will remain
+inactive until the clear request is acknowledged, Restart packets are
+exchanged, or the interface is reset.
+.PP
+[38]
+.BR "dda%d: make_x25_call message too large for mbuf (%d bytes)"
+.br
+The driver attempted to make a call,  but there was too much data to be
+passed into the calling mbuf.  This usually occurs because of a
+.ul user data
+field that is too large.  Attempt the call again with less information
+in the user data field.  (Note: this should not occur except when an X.29
+call is being placed).
+.PP
+[258]
+.BR "dda%d: Rejecting call from %s on VC 0x%x
+.br
+An incoming call from the X.25 address shown (%s)
+is being rejected because the front end does not have an available channel
+on which to accept it.
+.PP
+[258]
+.BR "dda%d: Network cleared VC %x (%x %x)
+.br
+It should follow the "Rejecting call" message,
+and indicates that the specified virtual circuit is again ready for use.
+.PP
+[257]
+.BR "dda%d: all circuits in use"
+.br
+While attempting to open a new circuit,
+the driver has discovered that all circuits are active.
+This can be prevented by increasing the number of circuits available
+(if possible), or by reducing the amount of time an idle circuit will
+be left open (via the -t option to ACPCONFIG).
+This message may be suppressed by clearing the LOG_BUSY bit in the
+dda_logger variable with the -v option to ACPCONFIG.
+.PP
+[257]
+.BR "dda%d: no circuits available"
+.br
+While attempting to open a new circuit, the driver has discovered that
+no circuits are available; this is usually because the link is being
+reset.  This message may be suppressed by clearing the LOG_BUSY bit in
+the dda_logger variable with the -v option to ACPCONFIG.
+.sp
+.PP
+The following messages report errors affecting only a single message;
+the message is discarded.
+.PP
+[2]
+.BR "dda%d: can't handle af%d"
+.br
+The driver was requested to transmit a datagram with an address family
+other than AF_INET (internetwork:  UDP, TCP, etc.).  The datagram is
+discarded.
+.PP
+[10]
+.BR "dda%d: DMA completion error (%x) lcn=%d func=%x"
+.br
+An I/O interrupt from the ACP 5250/6250 has occurred; the I/O
+completion status indicates that its DMA controller detected an error.
+The value in parentheses is the contents of the channel error register,
+which indicates what type of error occurred.
+This message may result from a software error
+(invalid address passed to the front end),
+or from a hardware error (bus timeout or other bus error).
+The lcn and function codes are printed only if message 14 is enabled.
+.PP
+[22]
+.BR "dda%d: couldn't get mbuf for call command."
+.br
+The driver was given a datagram addressed to a destination to which no
+circuit is open, and was unable to allocate the mbuf needed to place a
+call.  The datagram is discarded.
+.PP
+[26]
+.BR "dda: couldn't get buffer for ifp header"
+.br
+The driver received a datagram, but was unable to allocate the mbuf needed
+for the interface header.  The datagram is discarded.
+.sp
+.PP
+The following messages report errors affecting the operation of the
+interface.
+.PP
+[1]
+.BR "dda%d: failed getting UBA resources"
+.br
+Insufficient UNIBUS resources existed to initialize the device.  This
+is likely to be a shortage of UNIBUS mapping registers.  The driver
+will try again if the front end is reset.
+.PP
+[15]
+.BR "dda%d: asynchronous restart, status = %d"
+.br
+A system interrupt occurred (as opposed to an I/O interrupt).  The
+status indicates the status of the ACP 5250/6250 device.  If the ACP
+5250/6250 is operational, a system interrupt is unexpected.
+.PP
+[16]
+.BR "dda%d: Diagnostic failure = %d"
+.br
+A system interrupt occurred (as opposed to an I/O interrupt).
+The powerup diagnostics resident in the ACP 5250/6250 detected a
+hardware failure.
+.PP
+[17]
+.BR "dda%d: No Microcode Present!"
+.br
+The device status indicates that the front end is ready to be downloaded.
+Since the ACP 5250/6250 is not downloadable,
+this may indicate a system configuration error.
+.PP
+[18]
+.BR "dda%d: can't get bfr for acpconfig msg"
+.br
+While processing a configuration command (via the acpconfig -m option),
+the driver was unable to obtain an mbuf to hold the command to the
+front end.  The configuration command is ignored.
+.PP
+[19]
+.BR "dda%d: supervisor message too long"
+.br
+The driver received a configuration command (via the acpconfig -m
+option) that is too long; the configuration command is ignored.
+.PP
+[23]
+.BR "dda%d: failed to get supr msg bfr!"
+.br
+While attempting to send a supervisory message, the driver was unable
+to allocate an mbuf to hold the message.
+The supervisor command is not sent.
+.PP
+[25]
+.BR "dda%d: couldn't get buffer for read"
+.br
+The attempt to allocate an mbuf for a read was unsuccessful.
+No read is issued for the channel, so no additional messages will be
+received from this circuit.
+.sp
+.PP
+The following messages report possible configuration errors.
+.PP
+[20]
+.BR "dda%d: illegal X25 address length!"
+.br
+In DDN Standard or Basic mode, an incoming call contained an X.25
+address whose address length was found to be invalid.  The call is
+refused.  This should not happen if the front end is attached to a
+DDN X.25 network.
+.PP
+[21]
+.BR "dda%d: illegal X25 address format!"
+.br
+In DDN Standard or Basic mode, an incoming call contained an X.25
+address which does not conform to the DDN X.25 address format.  The
+call is refused.  This should not happen if the front end is attached to a
+DDN X.25 network.
+.sp
+.PP
+The following messages "can't happen" -- they may indicate logic errors
+in the driver or the front end.
+.PP
+[4]
+.BR "dda%d: unknown transfer channel, lcn=%d"
+.br
+An I/O interrupt from the ACP 5250/6250 has occurred; the type of
+interrupt is a transfer request from the front end and the logical
+channel is invalid.
+.PP
+[5]
+.BR "dda%d: transfer request lcn %d: no mbuf"
+.br
+While servicing a transfer request, the driver discovered that it had no
+buffer to transmit on the listed channel.  The driver aborts the transfer
+(by specifying a byte count of zero).
+.PP
+[6]
+.BR "dda%d: unknown completion channel, lcn=%d"
+.br
+An I/O interrupt from the ACP 5250/6250 has occurred; the type of
+interrupt is an I/O completion and the logical channel is invalid.
+.PP
+[7]
+.BR "dda%d: program error lcn=%d func=%x"
+.br
+An I/O interrupt from the ACP 5250/6250 has occurred; the I/O
+completion status indicates a program error.  Resetting the board with
+the -z option to acpconfig(8C) may clear the error.  The lcn and
+function codes are printed only if message 14 is enabled.
+.PP
+[8]
+.BR "dda%d: overrun error lcn=%d func=%x"
+.br
+An I/O interrupt from the ACP 5250/6250 has occurred; the I/O
+completion status indicates a data overrun.  A matching pair of I/O
+requests specified a larger write request count than the read request
+count without specifying stream mode.  The lcn and function codes are
+printed only if message 14 is enabled.
+.PP
+[9]
+.BR "dda%d: transfer count = 0 lcn=%d func=%x"
+.br
+An I/O interrupt from the ACP 5250/6250 has occurred; the I/O
+completion status indicates that the host specified a byte count of 0.
+Either the driver inadvertently passed a byte count of 0 on an I/O
+request or transfer grant, or the driver has intentionally aborted a
+transfer request by granting a byte count of 0 (because it no longer has
+a buffer).  The lcn and function codes are printed only if message 14
+is enabled.
+.PP
+[11]
+.BR "dda%d: listen collision lcn=%d func=%x"
+.br
+An I/O interrupt from the ACP 5250/6250 has occurred; the I/O
+completion status indicates that both sides of a data path in the same
+direction have listen requests pending.  Both requests are terminated
+with this status code.  The lcn and function codes are printed only if
+message 14 is enabled.
+.PP
+[12]
+.BR "dda%d: invalid function lcn=%d func=%x"
+.br
+An I/O interrupt from the ACP 5250/6250 has occurred; the I/O
+completion status indicates that the function specified in a request is
+invalid.  The lcn and function codes are printed only if message 14 is
+enabled.
+.PP
+[13]
+.BR "dda%d: invalid dpn lcn=%d func=%x"
+.br
+An I/O interrupt from the ACP 5250/6250 has occurred; the I/O
+completion status indicates that the data path number (DPN) specified
+in a request is invalid (too large).  The lcn and function codes are
+printed only if message 14 is enabled.
+.PP
+[24]
+.BR "dda%d: dequeued NULL mbuf in IP output chain!"
+.br
+.BR "RESET dda%d MANUALLY: use /etc/acpconfig dda%d -z"
+.br
+When attempting to start I/O on a channel, the driver discovered that
+no data was available to be started.
+The interface is disabled, and must be reset before it can be used again.
+.sp
+.PP
+The following error messages are only produced if the X.29 module is
+installed and enabled.
+.PP
+[96]
+.BR "dda%d:(x29) xxstart: unit offline"
+.br
+The unit has gone offline,  data will be flushed and the connection will
+be dropped.
+.PP
+[97]
+.BR "dda%d:(x29) xxstart: could not get mbuf"
+.br
+A memory buffer could not be obtained.  This should never happen unless
+the mbuf pool is too small.
+.PP
+[98]
+.BR "dda%d:(x29) x29_supr: unexpected message type
+.br
+A supervisor message came in that should normally never be processed by
+the X29 module.
+[100]
+.BR "dda%d:(x29) Bad decode, call REJECTED VC 0x%x"
+.br
+An invalid call request was received,  either the remote PAD is
+configured improperly or the front end is not equipped to offer
+the X.28 options requested by the remote pad.
+.PP
+[101]
+.BR "dda%d:(x29) Call cleared LCN %d (%x %x)"
+.br
+A call was cleared unexpectedly.  This could be due to network failure
+or remote PAD failure.  No action required.
+.PP
+[102]
+.BR "dda%d:(x29) X25 RESET on LCN %d (%x %x)"
+.br
+A reset was received.  The driver will take appropriate action.  Possibly
+due to link hardware problems.   No action usually required.
+.PP
+[104]
+.BR "dda%d:(x29) supervisor error (%x %x %x %x)"
+.br
+An invalid command was sent to the front-end supervisor.  This could be
+due to the driver losing sync with the front-end.  No action required.
+.PP
+[105]
+.BR "dda%d:(x29) x29_dhandle: null mbuf"
+.br
+Unable to obtain a memory buffer.  If this happens often, the mbuf pool
+may need to be resized, otherwise no action required.
+.PP
+[106]
+.BR "dda%d:(x29) couldn't get mbuf for QBIT message"
+.br
+We're out of mbufs.  Probably need to resize the mbuf pool.  System
+configurations should be checked, and a netstat -m should be issued to
+attempt to determine what is being a mbuf hog.
+.PP
+[107]
+.BR "dda%d:(x29) x29_supr: answer: line was -1, VC 0x%x"
+.br
+[107]
+.BR "dda%d:(x29) x29_supr: ring: line was -1, VC 0x%x"
+.br
+[107]
+.BR "dda%d:(x29) x29_supr: break: line was -1, VC 0x%x"
+.br
+[107]
+.BR "dda%d:(x29) xx_tp_hangup: line was -1"
+.br
+This error should never happen.  The driver attempted to perform an action
+on a terminal structure entry,  but no link from the bottom of the stack
+to the top of the stack was found.  If you see this error, please contact
+ACC customer service,  as you've found a bug in the driver.
+.sp
+.PP
+The following messages are produced by the driver only if debugging is
+enabled (by defining the symbol DDADEBUG).  By default, they are disabled,
+but they may be enabled using the acpconfig -c <msg> command.
+.PP
+[always enabled]
+.BR "dda%d: write completion timeout lcn %d"
+.br
+[128]
+.BR "dda%d: ddainit()"
+.br
+[129]
+.BR "dda%d: ddaoutput: dst = %d.%d.%d.%d"
+.br
+[130]
+.BR "dda%d: ddaoutput: dst = %d.%d.%d.%d"
+.br
+[130]
+.BR "dda%d: ddaoutput: lcn found = %d"
+.br
+[131]
+.BR "dda%d: ddatimer()"
+.br
+[132]
+.BR "dda%d: acpconfig_msg is %x %x %x"
+.br
+[132]
+.BR "dda%d: ioctl()"
+.br
+[133]
+.BR "dda%d: ddainta()"
+.br
+[134]
+.BR "dda%d: ddaintb()"
+.br
+[135]
+.BR "dda%d: send_config()"
+.br
+[136]
+.BR "dda%d: send_config"
+[followed by data]
+.br
+[137]
+.BR "dda%d: locate_x25_lcn()"
+.br
+[138]
+.BR "dda%d: locate_x25_lcn: made call to %d.%d.%d.%d"
+.br
+[139]
+.BR "dda%d: convert_ip_addr: %d.%d.%d.%d ==> %s"
+.br
+[140]
+.BR "dda%d: convert_x25_addr: %s ==> %d.%d.%d.%d"
+.br
+[141]
+.BR "dda%d: make_x25_call: call_bfr"
+[followed by data]
+.br
+[141]
+.BR "dda%d: make_x25_call: lcn used = %d"
+.br
+[142]
+.BR "dda%d: dda_start()"
+.br
+[143]
+.BR "dda%d: dda_wrq: chan=%d func=%x"
+.br
+[144]
+.BR "dda%d: dda_rrq()"
+.br
+[145]
+.BR "dda%d: start_chn()"
+.br
+[146]
+.BR "dda%d: start_chn: WRITE on lcn %d func %x"
+.br
+[147]
+.BR "dda%d: dda_data: chan=%d cc=%x cnt=%x"
+.br
+[147]
+.BR "dda%d: dda_data: chan=%d DDAIOCOK"
+.br
+[147]
+.BR "dda%d: received data"
+[followed by data]
+.br
+[148]
+.BR "dda%d: dda_supr: chan=%d cc=%x"
+.br
+[149]
+.BR "dda%d: supr_msg"
+[followed by data]
+.br
+[149]
+.BR "dda%d: supr_msg: CLEARVC VCN=%x"
+.br
+[149]
+.BR "dda%d: supr_msg: HDLC link up"
+.br
+[149]
+.BR "dda%d: Unexpected RESTART in state %x
+.br
+[149]
+.BR "dda%d: supr_msg: RESTART rcvd, no RESTART pending"
+.br
+[149]
+.BR "dda%d: supr_msg: got call from %d.%d.%d.%d"
+.br
+[150]
+.BR "dda: decode_ring()"
+.br
+[151]
+.BR "dda%d: clear_lcn(%d)"
+.br
+[152]
+.BR "dda%d: send_restart()"
+.br
+[153]
+.BR "dda%d: send_supr"
+[followed by data]
+.br
+[154]
+.BR "dda%d: start_supr"
+.br
+[155]
+.BR "dda%d: abort_io on lcn's %d - %d"
+.br
+[156]
+.BR "dda%d: abort_io--invalidating sioq lcn %d"
+.br
+[156]
+.BR "dda%d: abort_io--queueing abort: lcn %d"
+.br
+[156]
+.BR "dda%d: start_chn: aborting chan %d"
+.sp
+.PP
+The following debug messages are relevant only if the X.29 option has
+been installed.
+.PP
+[224]
+.BR "dda%d:(x29) open line %d flag %o in %s mode"
+.br
+[225]
+.BR "dda%d:(x29) closing line %d"
+.br
+[225]
+.BR "dda%d:(x29) close: tp->t_state = %x"
+.br
+[226]
+.BR "dda%d:(x29) ioctl qbit msg: cmd=%x ACC=%x"
+.br
+[227]
+.BR "dda%d:(x29) xxstart: port %d t_state = %x"
+.br
+[228]
+.BR "dda%d:(x29) xxstart: asked for %d got %d chars"
+.br
+[229]
+.BR "dda%d:(x29) xxstart: mbuf %x len %d"
+.br
+[230]
+.BR "dda%d:(x29) select()"
+.br
+[231]
+.BR "dda%d:(x29) x29_supr()"
+.br
+[231]
+.BR "dda%d:(x29) supr_msg: got call from %X"
+.br
+[232]
+.BR "dda%d:(x29) x29_data: chan=%x cc=%x cnt=%x subcc=%x"
+.br
+[233]
+.BR "dda%d:(x29) received data: <stream>"
+.br
+[234]
+.BR "dda%d:(x29) x29_data: read complete mbuf %x %x"
+.br
+[235]
+.BR "dda%d:(x29) x29_data: chan=%x DDAIOCOK"
+.br
+[236]
+.BR "dda%d:(x29) qbit: <stream>"
+.br
+[237]
+.BR "dda%d:(x29) flow restart [%d] in %x"
+.br
+[237]
+.BR "dda%d:(x29) flow on [%d] in %x of %d"
+.br
+[238]
+.BR "dda%d:(x29) xx_qbit_msg: %d %d %d"
+.br
+[239]
+.BR "dda%d:(x29) xxcntl()"
+.br
+[239]
+.BR "dda%d:(x29) xxcntl: close state: %s"
+.br
+[239]
+.BR "dda%d:(x29) xxcntl: warning: state not data_idle"
+.br
+[240]
+.BR "dda%d:(x29) xxclear: line=%d pgrp=%d state=%d"
+.br
+[241]
+.BR "dda%d:(x29) x29_init() active=%d"
+.br
+[242]
+.BR "dda%d:(x29) x29_supr: answer: line=%d"
+.br
+[242]
+.BR "dda%d:(x29) x29_supr: answer: line=%d"
+.br
+
+.SH "NOTES"
+The old logging and debug functionality has been merged in with the
+rest of the driver messages.
+Messages are simply enabled or disabled
+by using the acpconfig "-c" command to toggle the current state of
+the message.
+The acpconfig options "-v debug" and "-v dbgunit" and "-v log" are no
+longer valid.
+
+.SH "SEE ALSO" acpconfig(8C)

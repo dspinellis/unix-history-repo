@@ -1,0 +1,143 @@
+README:		changes	-- pst 7/19/89 -- test release
+		recently tested under: Ultrix 3.0 and 4.3tahoe
+
+note: the man pages have been updated;  please read them for more info.
+
+		[1]
+
+This version of the driver has had changes made to data structures shared
+between acpconfig and the kernel resident software.  It is imperative that
+installation of this software is done in sequence.
+
+	(a)	move the driver files to their proper locations:
+		cp if_dda* if_x29* if_pi* /sys/vaxif
+	(b)	compile acpconfig and generate the new kernel (see note [2])
+	(c)	install the new acpconfig in /etc or wherever finer system
+		management tools belong and install the new kernel.
+
+The new version of acpconfig has a "generation" date which is displayed if
+you simply type "acpconfig."  The date on the acpconfig shipped with this
+driver should be 19-Jul-1989.
+
+		[2]
+
+The driver is no longer auto-configuring, as there are just too many different
+systems available now.  You must tell it what type of system you are running.
+This is done by adding the appropriate "options" line to your kernel
+configuration file in the /sys/conf directory.
+
+For example:
+
+options	ACC_BSD=43		for 4.3bsd or 4.3-tahoe system
+options	ACC_BSD=42		for 4.2bsd
+options ACC_ULTRIX=30		for Ultrix 3.0
+options ACC_ULTRIX=22		for Ultrix 2.2
+options ACC_ULTRIX=20		for Ultrix 2.0
+options ACC_ULTRIX=12		for Ultrix 1.2
+options ACC_VMS=4n		for VAX/VMS 4.n	(Multinet or WIN/TCP)
+options ACC_VMS=5n		for VAX/VMS 5.n	(Multinet or WIN/TCP)
+
+In addition to the operating system definitons,  if you are using either
+the X.29 option or the programmers interface option, you may enable these
+options by adding options statements.
+
+options	DDA_RAWOPT		enables the raw "programmer's interface"
+options	DDA_PADOPT		enables the X.29 pad/host option
+
+Debugging code is normally unused in a customer environment,  but some
+sites may find it useful when using the programmer's interface or when
+working on site dependant modifications to the driver.  If you wish to
+enable the debugging code,  add the line:
+
+options	DDADEBUG
+
+
+		[3]
+
+The debug facility for the driver has been completely rewritten.  Debug
+messages are now controlled via the acpconfig "-c" command and may be
+selectively enabled or disabled.
+
+Messages 0 - 127 are error messages.  By default, they are on.  To toggle
+on or off the display of these messages, simply type acpconfig -c <msgnum>.
+
+The following error messages have been added for the X29 module:
+
+[96]  dda%d:(x29) xxstart: unit offline
+[97]  dda%d:(x29) xxstart: could not get mbuf
+[98]  dda%d:(x29) x29_supr: unexpected message type
+[100] dda%d:(x29) Bad decode, call REJECTED VC 0x%x
+[101] dda%d:(x29) Call cleared LCN %d (%x %x)
+[102] dda%d:(x29) X25 RESET on LCN %d (%x %x)
+[104] dda%d:(x29) supervisor error (%x %x %x %x)
+[105] dda%d:(x29) x29_dhandle: null mbuf
+[106] dda%d:(x29) couldn't get mbuf for QBIT message
+[107] dda%d:(x29) x29_supr: answer: line was -1, VC 0x%x
+[107] dda%d:(x29) x29_supr: ring: line was -1, VC 0x%x
+[107] dda%d:(x29) x29_supr: break: line was -1, VC 0x%x
+[107] dda%d:(x29) xx_tp_hangup: line was -1
+[108] dda%d:(x29) x29_supr: unexpected answer on LCN %d
+
+Messages 128 - 255 are debug assistance messages.  They are not compiled
+in unless DDADEBUG is defined.  If the code has been compiled in,  they
+may be enabled (they are OFF by default) by using acpconfig.  The current
+manual page for dda(4) has a list of debug messages on the last page.
+Add 128 to the number in the square bracket and use acpconfig -c to toggle
+the printing of the message.
+
+Example:
+	[0] dda%d: ddainit()
+
+	Type "acpconfig -c 128" to toggle this message.
+
+* Do not attempt to use the old acpconfig commands "-v debug" and "-v dbg_unit",
+* as they are nonfunctional with this driver.
+
+The following messages are debug messages,  they are off by default, I
+have already added 128 to the number.
+
+[224] dda%d:(x29) open line %d flag %o in %s mode
+[225] dda%d:(x29) closing line %d
+[225] dda%d:(x29) close: tp->t_state = %x
+[226] dda%d:(x29) ioctl qbit msg: cmd=%x ACC=%x
+[227] dda%d:(x29) xxstart: port %d t_state = %x
+[228] dda%d:(x29) xxstart: asked for %d got %d chars
+[229] dda%d:(x29) xxstart: mbuf %x len %d
+[230] dda%d:(x29) select()
+[231] dda%d:(x29) x29_supr()
+[231] dda%d:(x29) supr_msg: got call from %X
+[232] dda%d:(x29) x29_data: chan=%x cc=%x cnt=%x subcc=%x
+[233] dda%d:(x29) received data: <stream>
+[234] dda%d:(x29) x29_data: read complete mbuf %x %x
+[235] dda%d:(x29) x29_data: chan=%x DDAIOCOK
+[236] dda%d:(x29) qbit: <stream>
+[237] dda%d:(x29) flow restart [%d] in %x
+[237] dda%d:(x29) flow on [%d] in %x of %d
+[238] dda%d:(x29) xx_qbit_msg: %d %d %d
+[239] dda%d:(x29) xxcntl()
+[239] dda%d:(x29) xxcntl: close state: %s
+[239] dda%d:(x29) xxcntl: warning: state not data_idle
+[240] dda%d:(x29) xxclear: line=%d pgrp=%d state=%d
+
+	[4]
+
+4.3-tahoe support has been added.  However, due to a change in the cpp
+(they finally fixed it!),  ioctl command argument definitions have changed.
+In releases prior to 4.3-tahoe,  argument definitions looked like:
+
+#define	XIOWRITE	_IOWR(t, 1, struct pi_dblock)
+
+The newer systems require the ioctl defines to have the command surrounded
+by apostrophe marks,  like the following line:
+
+#define	XIOWRITE	_IOWR('t', 1, struct pi_dblock)
+
+Since most of our customers are running Ultrix or versions of BSD UNIX older
+than 4.3-tahoe,  we ship the PI module with the apostrophes removed.  If you
+are running 4.3-tahoe or a newer BSD release,  you should rename the
+current if_pivar.h file to if_pivar.h.pretahoe and rename the if_pivar.h.tahoe
+file to if_pivar.h.  The only difference in the files is the addition of
+the apostrophe as the CPP parameter delimiter.
+
+You will also need to modify the three ioctl definitions that were previously
+ placed in /usr/include/sys/ioctl.h if you haven't done so already.
