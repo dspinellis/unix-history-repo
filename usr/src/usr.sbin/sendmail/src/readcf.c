@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.105 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.106 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -685,7 +685,7 @@ fileclass(class, filename, fmt, safe, optional)
 	while (fgets(buf, sizeof buf, f) != NULL)
 	{
 		register char *p;
-# ifdef SCANF
+# if SCANF
 		char wordbuf[MAXNAME+1];
 
 		if (sscanf(buf, fmt, wordbuf) != 1)
