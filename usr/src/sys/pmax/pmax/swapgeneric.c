@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)swapgeneric.c	7.1 (Berkeley) %G%
+ *	@(#)swapgeneric.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -48,14 +48,27 @@ setconf()
 	register struct genericconf *gc;
 	register char *cp, *gp;
 	int unit, swaponroot = 0;
+	char *root_swap;
 
-	if (rootdev != NODEV)
-		goto doswap;
+	/*
+	 * If we are running on the in memory, mini-root; then we just need
+	 * to set the swap device.
+	 */
+	if (boothowto & RB_MINIROOT)
+		root_swap = "swap";
+	else {
+		if (rootdev != NODEV) {
+			swdevt[0].sw_dev = argdev = dumpdev =
+				makedev(major(rootdev), minor(rootdev)+1);
+			return;
+		}
+		root_swap = "root";
+	}
 	unit = 0;
 	if (boothowto & RB_ASKNAME) {
 		char name[128];
 retry:
-		printf("root device? ");
+		printf("%s device? ", root_swap);
 		gets(name);
 		for (gc = genericconf; gc->gc_driver; gc++)
 		    for (cp = name, gp = gc->gc_name; *cp == *gp; cp++)
@@ -90,17 +103,20 @@ gotit:
 			}
 		}
 	}
-	printf("no suitable root\n");
+	printf("no suitable %s\n", root_swap);
 	goto retry;
 found:
-	gc->gc_root = makedev(major(gc->gc_root), unit*8);
-	rootdev = gc->gc_root;
-doswap:
-	swdevt[0].sw_dev = argdev = dumpdev =
-	    makedev(major(rootdev), minor(rootdev)+1);
-	/* swap size and dumplo set during autoconfigure */
-	if (swaponroot)
-		rootdev = dumpdev;
+	if (boothowto & RB_MINIROOT) {
+		swdevt[0].sw_dev = argdev = dumpdev =
+			makedev(major(gc->gc_root), unit*8+1);
+	} else {
+		rootdev = makedev(major(gc->gc_root), unit*8);
+		swdevt[0].sw_dev = argdev = dumpdev =
+			makedev(major(rootdev), minor(rootdev)+1);
+		/* swap size and dumplo set during autoconfigure */
+		if (swaponroot)
+			rootdev = dumpdev;
+	}
 }
 
 gets(cp)
