@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)file.c 3.1 %G%";
+static	char sccsid[] = "@(#)file.c 3.2 %G%";
 /*
  * file - determine type of file
  */
@@ -138,6 +138,10 @@ exec:
 
 	case 0177545:
 		printf("old archive\n");
+		goto out;
+
+	case 070707:
+		printf("cpio data\n");
 		goto out;
 	}
 
