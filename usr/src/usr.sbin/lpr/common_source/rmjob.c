@@ -1,4 +1,4 @@
-/*	rmjob.c	4.1	83/04/29	*/
+/*	rmjob.c	4.2	83/05/13	*/
 /*
  * rmjob - remove the specified jobs from the queue.
  */
@@ -27,8 +27,6 @@ rmjob()
 	int assasinated = 0;
 	struct direct **files;
 
-	name = "rmjob";
-
 	if ((i = pgetent(line, printer)) < 0)
 		fatal("cannot open printer description file");
 	else if (i == 0)
@@ -40,7 +38,7 @@ rmjob()
 	if ((LP = pgetstr("lp", &bp)) == NULL)
 		LP = DEFDEVLP;
 	if ((RP = pgetstr("rp", &bp)) == NULL)
-		RP = printer;
+		RP = DEFLP;
 	if ((RM = pgetstr("rm", &bp)) == NULL)
 		RM = host;
 
@@ -201,26 +199,21 @@ chk(file)
 
 /*
  * If root is removing a file on the local machine, allow it.
- * If root is removing a file on a remote machine, only allow
- * files sent from the local machine to be removed.
+ * If root is removing a file from a remote machine, only allow
+ * files sent from the remote machine to be removed.
  * Normal users can only remove the file from where it was sent.
  */
 isowner(owner, file)
 	char *owner, *file;
 {
-	register int r;
-
-	if (from == host)
-		r = access(file, 2) == 0;
-	else
-		r = (!strcmp(person, root) || !strcmp(person, owner)) &&
-			!strcmp(from, file+6);
-	if (!r) {
-		if (from != host)
-			printf("%s: ", host);
-		printf("%s: Permission denied\n", file);
-	}
-	return(r);
+	if (!strcmp(person, root) && (from == host || !strcmp(from, file+6)))
+		return(1);
+	if (!strcmp(person, owner) && !strcmp(from, file+6))
+		return(1);
+	if (from != host)
+		printf("%s: ", host);
+	printf("%s: Permission denied\n", file);
+	return(0);
 }
 
 /*
@@ -235,6 +228,12 @@ chkremote()
 
 	if (*LP || RM == NULL)
 		return;	/* not sending to a remote machine */
+
+	/*
+	 * Flush stdout so the user can see what has been deleted
+	 * while we wait (possibly) for the connection.
+	 */
+	fflush(stdout);
 
 	sprintf(buf, "\5%s %s", RP, all ? "-all" : person);
 	cp = buf;

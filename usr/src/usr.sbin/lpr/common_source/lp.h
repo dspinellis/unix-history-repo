@@ -1,4 +1,4 @@
-/*	lp.h	4.1	83/04/29	*/
+/*	lp.h	4.2	83/05/13	*/
 /*
  * Global definitions for the line printer system.
  */
@@ -31,6 +31,7 @@ extern char	*AF;		/* accounting file */
 extern char	*LF;		/* log file for error messages */
 extern char	*OF;		/* name of output filter (created once) */
 extern char	*IF;		/* name of input filter (created per job) */
+extern char	*RF;		/* name of fortran text filter (per job) */
 extern char	*TF;		/* name of troff(1) filter (per job) */
 extern char	*DF;		/* name of tex filter (per job) */
 extern char	*GF;		/* name of graph(1G) filter (per job) */
@@ -43,12 +44,15 @@ extern short	SH;		/* suppress header page */
 extern short	SB;		/* short banner instead of normal header */
 extern short	RW;		/* open LP for reading and writing */
 extern short	PW;		/* page width */
+extern short	PX;		/* page width in pixels */
+extern short	PY;		/* page length in pixels */
 extern short	PL;		/* page length */
 extern short	BR;		/* baud rate if lp is a tty */
 extern short	FC;		/* flags to clear if lp is a tty */
 extern short	FS;		/* flags to set if lp is a tty */
 extern short	XC;		/* flags to clear for local mode */
 extern short	XS;		/* flags to set for local mode */
+extern short	RS;		/* restricted to those with local accounts */
 
 extern char	line[BUFSIZ];
 extern char	pbuf[];		/* buffer for printcap entry */

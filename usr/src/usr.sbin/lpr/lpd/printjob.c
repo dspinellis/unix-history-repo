@@ -1,4 +1,4 @@
-/*	printjob.c	4.1	83/04/29	*/
+/*	printjob.c	4.2	83/05/13	*/
 /*
  * printjob -- print jobs in the queue.
  *

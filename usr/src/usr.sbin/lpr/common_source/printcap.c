@@ -1,10 +1,10 @@
-/*	printcap.c	1.4	83/01/05	*/
+/*	printcap.c	1.5	83/05/13	*/
 /* Copyright (c) 1979 Regents of the University of California */
 #define	BUFSIZ	1024
 #define MAXHOP	32	/* max number of tc= indirections */
 
 #include <ctype.h>
-#include "local/uparm.h"
+#include <stdio.h>
 /*
  * termcap - routines for dealing with the terminal capability data base
  *
@@ -36,12 +36,64 @@
 #define V6
 #endif
 
+static	FILE *pfp = NULL;	/* printcap data base file pointer */
 static	char *tbuf;
-static	int hopcount;	/* detect infinite loops in termcap, init 0 */
+static	int hopcount;		/* detect infinite loops in termcap, init 0 */
 char	*tskip();
 char	*tgetstr();
 char	*tdecode();
 char	*getenv();
+
+/*
+ * Similar to tgetent except it returns the next enrty instead of
+ * doing a lookup.
+ */
+getprent(bp)
+	register char *bp;
+{
+	register int c, skip = 0;
+
+	if (pfp == NULL && (pfp = fopen(E_TERMCAP, "r")) == NULL)
+		return(-1);
+	tbuf = bp;
+	for (;;) {
+		switch (c = getc(pfp)) {
+		case EOF:
+			fclose(pfp);
+			pfp = NULL;
+			return(0);
+		case '\n':
+			if (bp == tbuf) {
+				skip = 0;
+				continue;
+			}
+			if (bp[-1] == '\\') {
+				bp--;
+				continue;
+			}
+			*bp = '\0';
+			return(1);
+		case '#':
+			if (bp == tbuf)
+				skip++;
+		default:
+			if (skip)
+				continue;
+			if (bp >= tbuf+BUFSIZ) {
+				write(2, "Termcap entry too long\n", 23);
+				*bp = '\0';
+				return(1);
+			}
+			*bp++ = c;
+		}
+	}
+}
+
+endprent()
+{
+	if (pfp != NULL)
+		fclose(pfp);
+}
 
 /*
  * Get an entry for terminal name in buffer bp,
