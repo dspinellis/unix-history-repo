@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.16 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -1196,14 +1196,14 @@ retucomm:
 }
 
 char	*lhdr =
-"     F  UID   PID  PPID CP PRI NI ADDR    SZ  RSS %*sSTAT TT  TIME";
+"      F  UID   PID  PPID CP PRI NI ADDR    SZ  RSS %*sSTAT TT  TIME";
 lpr(sp)
 	struct savcom *sp;
 {
 	register struct asav *ap = sp->ap;
 	register struct lsav *lp = sp->s_un.lp;
 
-	printf("%6x %4d %5u %5u %2d %3d %2d %4x %5d %4d",
+	printf("%7x %4d %5u %5u %2d %3d %2d %4x %5d %4d",
 	    (ap->a_flag &~ SPTECHG),				/* XXX */
 	    ap->a_uid, ap->a_pid, lp->l_ppid,
 	    lp->l_cpu > 99 ? 99 : lp->l_cpu, ap->a_pri-PZERO,
