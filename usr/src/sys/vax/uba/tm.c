@@ -1,4 +1,4 @@
-/*	tm.c	4.5	%G%	*/
+/*	tm.c	4.6	%G%	*/
 
 #include "tm.h"
 #if NTM > 0
@@ -498,7 +498,7 @@ twall(start, num)
 #if VAX==780
 	register struct uba_regs *up = (struct uba_regs *)PHYSUBA0;
 #endif
-	int blk;
+	int blk, bdp;
 
 	TMPHYS->tmcs = DCLR | GO;
 #if VAX==780
@@ -513,16 +513,19 @@ twall(start, num)
 		start += blk;
 		num -= blk;
 	}
-	((struct uba_regs *)PHYSUBA0)->uba_dpr[1] |= BNE;
+	bdp = 1;		/* crud to fool c compiler */
+	((struct uba_regs *)PHYSUBA0)->uba_dpr[bdp] |= BNE;
 }
 
 tmdwrite(buf, num)
 register buf, num;
 {
 	register int *io, npf;
+	int bdp;
 
 	twait();
-	((struct uba_regs *)PHYSUBA0)->uba_dpr[1] |= BNE;
+	bdp = 1;		/* more dastardly tricks on pcc */
+	((struct uba_regs *)PHYSUBA0)->uba_dpr[bdp] |= BNE;
 	io = (int *)((struct uba_regs *)PHYSUBA0)->uba_map;
 	npf = num+1;
 	while (--npf != 0)
