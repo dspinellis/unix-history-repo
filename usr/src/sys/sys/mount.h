@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mount.h	7.8 (Berkeley) %G%
+ *	@(#)mount.h	7.9 (Berkeley) %G%
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -87,6 +87,7 @@ struct vfsops {
 	int	(*vfs_sync)(	/* mp, waitfor */ );
 	int	(*vfs_fhtovp)(	/* mp, fidp, vpp */ );
 	int	(*vfs_vptofh)(	/* vp, fidp */ );
+	int	(*vfs_init)(	/* */ );
 };
 
 #define VFS_MOUNT(MP, PATH, DATA, NDP) \
