@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_vv.c	7.5 (Berkeley) %G%
+ *	@(#)if_vv.c	7.6 (Berkeley) %G%
  */
 
 #include "vv.h"
@@ -71,6 +71,7 @@
 #include "ioctl.h"
 
 #include "../net/if.h"
+#include "../net/if_types.h"
 #include "../net/netisr.h"
 #include "../net/route.h"
 
@@ -237,7 +238,13 @@ vvattach(ui)
 	vs->vs_ifuba.ifu_flags = UBA_CANTWAIT | UBA_NEEDBDP;
 
 	/* use flag to determine if this is proNET-80 */
-	vs->vs_is80 = (short)(ui->ui_flags & 01);
+	if (vs->vs_is80 = (short)(ui->ui_flags & 01)) {
+		vs->vs_if.if_type = IFT_P80;
+		vs->vs_if.if_baudrate = 80 * 1024 * 1024;
+	} else {
+		vs->vs_if.if_type = IFT_P10;
+		vs->vs_if.if_baudrate = 10 * 1024 * 1024;
+	}
 	vs->vs_host = NOHOST;
 
 #if defined(VAX750)
@@ -399,14 +406,12 @@ vvidentify(unit)
 	 * the intermediate transmit buffer (ifu_w.ifrw_addr) that
 	 * if_ubainit() aquired for us.
 	 */
-	m = m_get(M_DONTWAIT, MT_HEADER);
+	MGETHDR(m, M_DONTWAIT, MT_HEADER);
 	if (m == NULL) {
 		printf("vv%d: can't initialize, m_get() failed\n", unit);
 		return (NOHOST);
 	}
-	m->m_next = 0;
-	m->m_off = MMINOFF;
-	m->m_len = sizeof(struct vv_header);
+	m->m_pkthdr.len = m->m_len = sizeof(struct vv_header);
 	v = mtod(m, struct vv_header *);
 	v->vh_dhost = VV_BROADCAST;	/* multicast destination address */
 	v->vh_shost = 0;		/* will be overwritten with ours */
@@ -577,6 +582,8 @@ vvstart(dev)
 	dest = mtod(m, struct vv_header *)->vh_dhost;
 	vs->vs_olen = if_wubaput(&vs->vs_ifuba, m);
 	vs->vs_lastx = dest;
+	vs->vs_if.if_obytes += vs->vs_olen;
+	vs->vs_if.if_lastchange = time;
 restart:
 	/*
 	 * Have request mapped to UNIBUS for transmission.
@@ -655,6 +662,7 @@ vvxint(unit)
 	vs->vs_tries = 0;
 
 	if (oc & VVXERR) {
+		vs->vs_if.if_obytes -= vs->vs_olen;
 		vs->vs_if.if_oerrors++;
 		vvlog(LOG_ERR, "vv%d: error vvocsr = %b\n",
 		    unit, 0xffff & oc, VV_OBITS);
@@ -707,6 +715,7 @@ vvrint(unit)
 	splx(vs->vs_ipl);
 #endif
 	vs->vs_if.if_ipackets++;
+	vs->vs_if.if_lastchange = time;
 	addr = (struct vvreg *)vvinfo[unit]->ui_addr;
 
 	/*
@@ -812,15 +821,11 @@ len = %d, vvicsr = %b\n",
 		    unit, 0xffff&(addr->vvicsr), VV_IBITS);
 		goto dropit;
 	}
-	if (off) {
-		struct ifnet *ifp;
-
-		ifp = *(mtod(m, struct ifnet **));
-		m->m_off += 2 * sizeof (u_short);
-		m->m_len -= 2 * sizeof (u_short);
-		*(mtod(m, struct ifnet **)) = ifp;
+	vs->vs_if.if_ibytes += m->m_pkthdr.len;
+	if (vv->vh_dhost == VV_BROADCAST) {
+		m->m_flags |= M_BCAST;
+		vs->vs_if.if_imcasts++;
 	}
-
 	/* Keep track of source address of this packet */
 	vs->vs_lastr = vv->vh_shost;
 
@@ -839,15 +844,16 @@ len = %d, vvicsr = %b\n",
 		vvlog(LOG_DEBUG, "vv%d: unknown pkt type 0x%x\n",
 		    unit, vv->vh_type);
 		m_freem(m);
+		vs->vs_if.if_noproto++;
 		goto setup;
 	}
 	s = splimp();
 	if (IF_QFULL(inq)) {
 		IF_DROP(inq);
 		m_freem(m);
+		vs->vs_if.if_iqdrops++;
 	} else
 		IF_ENQUEUE(inq, m);
-
 	splx(s);
 	/*
 	 * Reset for the next packet.
@@ -938,9 +944,9 @@ vvoutput(ifp, m0, dst)
 		 */
 		if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
 		if (off > 0 && (off & 0x1ff) == 0 &&
-		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
+		    m->m_data >= m->m_pktdat + 2 * sizeof (u_short)) {
 			type = RING_TRAILER;
-			m->m_off -= 2 * sizeof (u_short);
+			m->m_data -= 2 * sizeof (u_short);
 			m->m_len += 2 * sizeof (u_short);
 			*mtod(m, u_short *) = htons((short)RING_IP);
 			*(mtod(m, u_short *) + 1) = htons((u_short)m->m_len);
@@ -972,19 +978,10 @@ gottype:
 	 * Add local net header.  If no space in first mbuf,
 	 * allocate another.
 	 */
-	if (m->m_off > MMAXOFF ||
-	    MMINOFF + sizeof (struct vv_header) > m->m_off) {
-		m = m_get(M_DONTWAIT, MT_HEADER);
-		if (m == NULL) {
-			error = ENOBUFS;
-			goto bad;
-		}
-		m->m_next = m0;
-		m->m_off = MMINOFF;
-		m->m_len = sizeof (struct vv_header);
-	} else {
-		m->m_off -= sizeof (struct vv_header);
-		m->m_len += sizeof (struct vv_header);
+	M_PREPEND(m, sizeof (struct vv_header), M_DONTWAIT);
+	if (m == 0) {
+		error = ENOBUFS;
+		goto bad;
 	}
 	vv = mtod(m, struct vv_header *);
 	vv->vh_shost = vs->vs_host;
@@ -1045,7 +1042,7 @@ vvioctl(ifp, cmd, data)
 			 * Attempt to check agreement of protocol address
 			 * and board address.
 			 */
-			switch (ifa->ifa_addr.sa_family) {
+			switch (ifa->ifa_addr->sa_family) {
 			case AF_INET:
 				if ((in_lnaof(IA_SIN(ifa)->sin_addr) & 0xff) !=
 				    vs->vs_host)
