@@ -12,19 +12,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)defs.h	5.1 (Berkeley) %G%
+ *	@(#)defs.h	5.2 (Berkeley) %G%
  *
  * Utah $Hdr: defs.h 3.1 92/07/06$
  * Author: Jeff Forys, University of Utah CSS
  */
-
-#include <stdio.h>
-#include <signal.h>
-
-#include <sys/param.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/socket.h>
 
 #include "rmp.h"
 #include "rmp_var.h"
@@ -73,8 +65,8 @@
 /*
  *  These need not be functions, so...
  */
-#define	FreeStr(str)	free((char *) str)
-#define	FreeClient(cli)	free((char *) cli)
+#define	FreeStr(str)	free(str)
+#define	FreeClient(cli)	free(cli)
 #define	GenSessID()	(++SessionID ? SessionID: ++SessionID)
 
 /*
@@ -82,7 +74,6 @@
  *  Using `rmp.hp_hdr.saddr' works because this field is *never* changed;
  *  it will *always* contain the source address of the packet.
  */
-extern	char *GetEtherAddr();
 #define	EnetStr(rptr)	GetEtherAddr(&(rptr)->rmp.hp_hdr.saddr[0])
 
 /*
@@ -133,9 +124,36 @@ extern	RMPCONN	*RmpConns;		/* list of active connections */
 
 extern	char	RmpMcastAddr[];		/* RMP multicast address */
 
-/*
- * Some common routines that generally cause lint to complain.
- */
-#if defined(lint) && !defined(BSD4_4)
-extern	char	*malloc();
-#endif
+void	 AddConn __P((RMPCONN *));
+int	 BootDone __P((RMPCONN *));
+void	 BpfClose __P((void));
+char	*BpfGetIntfName __P((char **));
+int	 BpfOpen __P((void));
+int	 BpfRead __P((RMPCONN *, int));
+int	 BpfWrite __P((RMPCONN *));
+void	 DebugOff __P((int));
+void	 DebugOn __P((int));
+void	 DispPkt __P((RMPCONN *, int));
+void	 DoTimeout __P((void));
+void	 DspFlnm __P((u_int, char *));
+void	 Exit __P((int));
+CLIENT	*FindClient __P((RMPCONN *));
+RMPCONN	*FindConn __P((RMPCONN *));
+void	 FreeClients __P((void));
+void	 FreeConn __P((RMPCONN *));
+void	 FreeConns __P((void));
+int	 GetBootFiles __P((void));
+char	*GetEtherAddr __P((u_char *));
+CLIENT	*NewClient __P((u_char *));
+RMPCONN	*NewConn __P((RMPCONN *));
+char	*NewStr __P((char *));
+u_char	*ParseAddr __P((char *));
+int	 ParseConfig __P((void));
+void	 ProcessPacket __P((RMPCONN *, CLIENT *));
+void	 ReConfig __P((int));
+void	 RemoveConn __P((RMPCONN *));
+int	 SendBootRepl __P((struct rmp_packet *, RMPCONN *, char *[]));
+int	 SendFileNo __P((struct rmp_packet *, RMPCONN *, char *[]));
+int	 SendPacket __P((RMPCONN *));
+int	 SendReadRepl __P((RMPCONN *));
+int	 SendServerID __P((RMPCONN *));

@@ -12,23 +12,27 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)utils.c	5.1 (Berkeley) %G%
+ *	@(#)utils.c	5.2 (Berkeley) %G%
  *
  * Utah $Hdr: utils.c 3.1 92/07/06$
  * Author: Jeff Forys, University of Utah CSS
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utils.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)utils.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "defs.h"
+#include <sys/param.h>
 
-#include <sys/file.h>
-
+#include <fcntl.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <syslog.h>
-#include <strings.h>
-
+#include <time.h>
+#include <unistd.h>
+#include "defs.h"
 
 /*
 **  DispPkt -- Display the contents of an RMPCONN packet.
@@ -43,10 +47,10 @@ static char sccsid[] = "@(#)utils.c	5.1 (Berkeley) %G%";
 **	Side Effects:
 **		None.
 */
-
+void
 DispPkt(rconn, direct)
-RMPCONN *rconn;
-int direct;
+	RMPCONN *rconn;
+	int direct;
 {
 	static char BootFmt[] = "\t\tRetCode:%u SeqNo:%lx SessID:%x Vers:%u";
 	static char ReadFmt[] = "\t\tRetCode:%u Offset:%lx SessID:%x\n";
@@ -173,10 +177,9 @@ int direct;
 **		  be copied if it's to be saved.
 **		- For speed, we assume a u_char consists of 8 bits.
 */
-
 char *
 GetEtherAddr(addr)
-u_char *addr;
+	u_char *addr;
 {
 	static char Hex[] = "0123456789abcdef";
 	static char etherstr[RMP_ADDRLEN*3];
@@ -216,10 +219,10 @@ u_char *addr;
 **	Side Effects:
 **		- Characters are sent to `DbgFp'.
 */
-
+void
 DspFlnm(size, flnm)
-register u_char size;
-register char *flnm;
+	register u_int size;
+	register char *flnm;
 {
 	register int i;
 
@@ -243,10 +246,9 @@ register char *flnm;
 **		- Memory will be malloc'd for the new CLIENT.
 **		- If malloc() fails, a log message will be generated.
 */
-
 CLIENT *
 NewClient(addr)
-u_char *addr;
+	u_char *addr;
 {
 	CLIENT *ctmp;
 
@@ -256,8 +258,8 @@ u_char *addr;
 		return(NULL);
 	}
 
-	bzero((char *)ctmp, sizeof(CLIENT));
-	bcopy((char *)addr, (char *)&ctmp->addr[0], RMP_ADDRLEN);
+	bzero(ctmp, sizeof(CLIENT));
+	bcopy(addr, &ctmp->addr[0], RMP_ADDRLEN);
 	return(ctmp);
 }
 
@@ -277,7 +279,7 @@ u_char *addr;
 **	Warnings:
 **		- This routine must be called with SIGHUP blocked.
 */
-
+void
 FreeClients()
 {
 	register CLIENT *ctmp;
@@ -302,10 +304,9 @@ FreeClients()
 **		- Memory will be malloc'd for the new character array.
 **		- If malloc() fails, a log message will be generated.
 */
-
 char *
 NewStr(str)
-char *str;
+	char *str;
 {
 	char *stmp;
 
@@ -338,10 +339,9 @@ static RMPCONN *LastFree = NULL;
 **		- Memory may be malloc'd for the new RMPCONN (if not cached).
 **		- If malloc() fails, a log message will be generated.
 */
-
 RMPCONN *
 NewConn(rconn)
-RMPCONN *rconn;
+	RMPCONN *rconn;
 {
 	RMPCONN *rtmp;
 
@@ -380,9 +380,9 @@ RMPCONN *rconn;
 **		- Memory associated with `rtmp' may be free'd (or cached).
 **		- File desc associated with `rtmp->bootfd' will be closed.
 */
-
+void
 FreeConn(rtmp)
-register RMPCONN *rtmp;
+	register RMPCONN *rtmp;
 {
 	/*
 	 *  If the file descriptor is in use, close the file.
@@ -415,7 +415,7 @@ register RMPCONN *rtmp;
 **	Warnings:
 **		- This routine must be called with SIGHUP blocked.
 */
-
+void
 FreeConns()
 {
 	register RMPCONN *rtmp;
@@ -447,9 +447,9 @@ FreeConns()
 **	Warnings:
 **		- This routine must be called with SIGHUP blocked.
 */
-
+void
 AddConn(rconn)
-register RMPCONN *rconn;
+	register RMPCONN *rconn;
 {
 	if (RmpConns != NULL)
 		rconn->next = RmpConns;
@@ -475,10 +475,9 @@ register RMPCONN *rconn;
 **	Warnings:
 **		- This routine must be called with SIGHUP blocked.
 */
-
 RMPCONN *
 FindConn(rconn)
-register RMPCONN *rconn;
+	register RMPCONN *rconn;
 {
 	register RMPCONN *rtmp;
 
@@ -506,9 +505,9 @@ register RMPCONN *rconn;
 **	Warnings:
 **		- This routine must be called with SIGHUP blocked.
 */
-
+void
 RemoveConn(rconn)
-register RMPCONN *rconn;
+	register RMPCONN *rconn;
 {
 	register RMPCONN *thisrconn, *lastrconn;
 

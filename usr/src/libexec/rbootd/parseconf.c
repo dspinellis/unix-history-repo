@@ -12,25 +12,28 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)parseconf.c	5.1 (Berkeley) %G%
+ *	@(#)parseconf.c	5.2 (Berkeley) %G%
  *
  * Utah $Hdr: parseconf.c 3.1 92/07/06$
  * Author: Jeff Forys, University of Utah CSS
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseconf.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseconf.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "defs.h"
-
+#include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/dir.h>
-#include <sys/file.h>
 
-#include <syslog.h>
-#include <strings.h>
 #include <ctype.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <syslog.h>
+#include "defs.h"
 
 /*
 **  ParseConfig -- parse the config file into linked list of clients.
@@ -48,14 +51,13 @@ static char sccsid[] = "@(#)parseconf.c	5.1 (Berkeley) %G%";
 **		- GetBootFiles() must be called before this routine
 **		  to create a linked list of default boot files.
 */
-
 int
 ParseConfig()
 {
 	FILE *fp;
-	CLIENT *client, *NewClient();
-	u_char *addr, *ParseAddr();
-	char *NewStr(), line[C_LINELEN];
+	CLIENT *client;
+	u_char *addr;
+	char line[C_LINELEN];
 	register char *cp, *bcp;
 	register int i, j;
 	int omask, linecnt = 0;
@@ -215,10 +217,9 @@ ParseConfig()
 **		  be copied if it's to be saved.
 **		- For speed, we assume a u_char consists of 8 bits.
 */
-
 u_char *
 ParseAddr(str)
-char *str;
+	char *str;
 {
 	static u_char addr[RMP_ADDRLEN];
 	register char *cp;
@@ -280,15 +281,13 @@ char *str;
 **		- After this routine is called, ParseConfig() must be
 **		  called to re-order it's list of boot file pointers.
 */
-
 int
 GetBootFiles()
 {
 	DIR *dfd;
 	struct stat statb;
-	register struct direct *dp;
+	register struct dirent *dp;
 	register int i;
-	char *NewStr();
 
 	/*
 	 *  Free the current list of boot files.
