@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)param.c	7.20 (Berkeley) 6/27/91
- *	$Id: param.c,v 1.7 1994/01/28 18:03:41 davidg Exp $
+ *	$Id: param.c,v 1.8 1994/01/31 04:18:08 davidg Exp $
  */
 
 #include "sys/param.h"
@@ -74,7 +74,7 @@ int	tick = 1000000 / HZ;
 #ifndef TICKADJ
 int	tickadj = 240000 / (60 * HZ);		/* can adjust 240ms in 60s */
 #else
-int	tickadj = TICKADJ	/* NTP users may prefer a smaller value */
+int     tickadj = TICKADJ;      /* NTP users may prefer a smaller value */
 #endif
 struct	timezone tz = { TIMEZONE, DST };
 #define	NPROC (20 + 16 * MAXUSERS)
