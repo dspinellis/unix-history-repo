@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_meter.c	8.6 (Berkeley) %G%
+ *	@(#)vm_meter.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -204,5 +204,6 @@ vmtotal(totalp)
 			}
 		}
 	}
+	simple_unlock(&vm_object_list_lock);
 	totalp->t_free = cnt.v_free_count;
 }
