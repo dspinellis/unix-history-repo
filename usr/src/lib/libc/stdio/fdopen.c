@@ -1,62 +1,64 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Chris Torek.
+ *
+ * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fdopen.c	5.2 (Berkeley) %G%";
-#endif LIBC_SCCS and not lint
-
-/*
- * Unix routine to do an "fopen" on file descriptor
- * The mode has to be repeated because you can't query its
- * status
- */
+static char sccsid[] = "@(#)fdopen.c	5.3 (Berkeley) %G%";
+#endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/file.h>
+#include <sys/errno.h>
 #include <stdio.h>
+#include "local.h"
 
 FILE *
 fdopen(fd, mode)
-	register char *mode;
+	int fd;
+	char *mode;
 {
-	extern FILE *_findiop();
-	static int nofile = -1;
-	register FILE *iop;
+	static int nofile;
+	register FILE *fp;
+	int flags, oflags, fdflags, fdmode;
 
-	if (nofile < 0)
+	if (nofile == 0)
 		nofile = getdtablesize();
 
-	if (fd < 0 || fd >= nofile)
+	if ((fdflags = fcntl(fd, F_GETFL, 0)) < 0)
 		return (NULL);
 
-	iop = _findiop();
-	if (iop == NULL)
-		return (NULL);
-
-	iop->_cnt = 0;
-	iop->_file = fd;
-	iop->_bufsiz = 0;
-	iop->_base = iop->_ptr = NULL;
-
-	switch (*mode) {
-	case 'r':
-		iop->_flag = _IOREAD;
-		break;
-	case 'a':
-		lseek(fd, (off_t)0, L_XTND);
-		/* fall into ... */
-	case 'w':
-		iop->_flag = _IOWRT;
-		break;
-	default:
+	/* Make sure the mode the user wants is a subset of the actual mode. */
+	fdmode = fdflags & O_ACCMODE;
+	if (fdmode != O_RDWR && fdmode != (oflags & O_ACCMODE)) {
+		errno = EINVAL;
 		return (NULL);
 	}
 
-	if (mode[1] == '+')
-		iop->_flag = _IORW;
+	if ((fp = __sfp()) == NULL)
+		return (NULL);
 
-	return (iop);
+	if ((fp->_flags = __sflags(mode, &oflags)) == 0) 
+		return (NULL);
+
+	/*
+	 * If opened for appending, but underlying descriptor does not have
+	 * O_APPEND bit set, assert __SAPP so that __swrite() will lseek to
+	 * end before each write.
+	 */
+	if ((oflags & O_APPEND) && !(fdflags & O_APPEND))
+		fp->_flags |= __SAPP;
+
+	fp->_file = fd;
+	fp->_cookie = fp;
+	fp->_read = __sread;
+	fp->_write = __swrite;
+	fp->_seek = __sseek;
+	fp->_close = __sclose;
+	return (fp);
 }

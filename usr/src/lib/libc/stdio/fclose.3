@@ -1,59 +1,59 @@
-.\"	@(#)fclose.3	6.2 (Berkeley) %G%
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.TH FCLOSE 3S  ""
-.AT 3
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)fclose.3	6.3 (Berkeley) %G%
+.\"
+.TH FCLOSE 3 ""
+.UC 7
 .SH NAME
-fclose, fflush \- close or flush a stream
+fclose \- close a stream
 .SH SYNOPSIS
-.B #include <stdio.h>
-.PP
-.B fclose(stream)
-.br
-.SM
-.B FILE
-.B *stream;
-.PP
-.B fflush(stream)
-.br
-.SM
-.B FILE
-.B *stream;
-.PP
-.B fpurge(stream)
-.br
-.SM
-.B FILE
-.B *stream;
+.nf
+.ft B
+#include <stdio.h>
+
+int
+fclose(FILE *stream);
+.ft R
+.fi
 .SH DESCRIPTION
 .I Fclose
-causes any buffers for the named
+dissociates the named
 .I stream
-to be emptied, and the file to be closed.
-Buffers allocated by the standard input/output system
-are freed.
+from its underlying file or set of functions.
+If the stream was being used for output, any buffered data is written
+first, using
+.IR fflush (3).
+Any allocated memory is 
+.IR free 'd.
+.SH "SEE ALSO"
+close(2), fflush(3), fopen(3), free(3), setbuf(3)
+.SH "RETURN VALUE"
+Upon successful completion 0 is returned.
+Otherwise,
+.B EOF
+is returned and the global variable
+.I errno
+is set to indicate the error.
+In either case no further access to the stream is possible. 
+.SH ERRORS
+.TP 15
+[EBADF]
+.I Stream
+is not an open stream.
 .PP
 .I Fclose
-is performed automatically upon
-calling
-.IR  exit (3).
-.PP
-.I Fflush
-causes any buffered data for the named output
-.I stream
-to be written to that file.
-The stream remains open.
-.PP
-.I Fpurge
-causes any buffered data for the named
-.I stream
-to be lost.  The stream remains open.
-.SH "SEE ALSO"
-close(2), fopen(3), setbuf(3)
-.SH DIAGNOSTICS
-These routines return
-.SM
-.B EOF
-if
-.I stream
-is not associated with an output file, or
-if buffered data cannot be transferred to that file.
+may also fail and set 
+.I errno
+for any of the errors specified for the routines
+.IR close (2)
+or 
+.IR fflush (3).
+.SH STANDARDS
+.I Fclose
+conforms to ANSI X3.159-1989 (``ANSI C'').
