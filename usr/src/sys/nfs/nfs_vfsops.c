@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	7.49 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.50 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -150,7 +150,7 @@ nfs_mountroot()
 	struct socket *so;
 	struct vnode *vp;
 	struct proc *p = curproc;		/* XXX */
-	int error, i;
+	int error, i, s;
 
 	/*
 	 * XXX time must be non-zero when we init the interface or else
@@ -184,16 +184,15 @@ nfs_mountroot()
 	 * If the gateway field is filled in, set it as the default route.
 	 */
 	if (nd->mygateway.sin_len != 0) {
-		struct sockaddr_in sin;
-		extern struct sockaddr_in icmpmask;
+		struct sockaddr_in mask, sin;
 
-		sin.sin_len = sizeof (struct sockaddr_in);
+		bzero((caddr_t)&mask, sizeof(mask));
+		sin = mask;
 		sin.sin_family = AF_INET;
-		sin.sin_addr.s_addr = 0;	/* default */
-		in_sockmaskof(sin.sin_addr, &icmpmask);
+		sin.sin_len = sizeof(sin);
 		if (error = rtrequest(RTM_ADD, (struct sockaddr *)&sin,
 		    (struct sockaddr *)&nd->mygateway,
-		    (struct sockaddr *)&icmpmask,
+		    (struct sockaddr *)&mask,
 		    RTF_UP | RTF_GATEWAY, (struct rtentry **)0))
 			panic("nfs_mountroot: RTM_ADD: %d", error);
 	}
