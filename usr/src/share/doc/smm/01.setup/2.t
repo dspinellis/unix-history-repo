@@ -601,7 +601,7 @@ SPARCstation Lance (le).
 T}
 _
 GRAPHICS	T{
-bwtwo and cgthree.
+bwtwo, cgthree, and the GX (cgsix).
 T}
 _
 INPUT	T{
@@ -618,7 +618,6 @@ T}
 .LP
 Major items that are not supported include
 anything VME-based,
-the GX (cgsix) display,
 the floppy disk, and SCSI tapes.
 .Sh 3 "Limitations"
 .LP
@@ -637,7 +636,7 @@ The \*(4B SPARC kernel does not remap SCSI IDs.  A SCSI disk at
 target 0 will become ``sd0'', where in SunOS the same disk will
 normally be called ``sd3''.  If your existing SunOS system is
 diskful, it will be least painful to have SunOS running on the disk
-on target 0 lun 0 and put \*(4B on the disk on target 3 lun 0.  Both
+on target 3 lun 0 and put \*(4B on the disk on target 0 lun 0.  Both
 systems will then think they are running on ``sd0'', and you can
 boot either system as needed simply by changing the EEPROM's boot
 device.
