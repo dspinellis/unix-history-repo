@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)c21.c 4.16 %G%";
+static	char sccsid[] = "@(#)c21.c 4.17 %G%";
 #endif
 /* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
 
@@ -259,8 +259,8 @@ bmove() {
 			case 3:	pf->subop = QUAD; break;
 			}
 			redunm++; nsaddr++; nchange++;
+			goto std;
 		}
-		goto std;
 ashadd:
 		/* at this point, RT2 and RT3 are guaranteed to be simple regs*/
 		if (shcnt == 1 && equstr(regs[RT2], regs[RT3]))
