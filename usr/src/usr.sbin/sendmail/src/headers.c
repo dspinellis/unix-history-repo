@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.53 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.54 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -21,6 +21,7 @@ static char sccsid[] = "@(#)headers.c	8.53 (Berkeley) %G%";
 **	Parameters:
 **		line -- header as a text line.
 **		def -- if set, this is a default value.
+**		hdrp -- a pointer to the place to save the header.
 **		e -- the envelope including this header.
 **
 **	Returns:
@@ -31,9 +32,10 @@ static char sccsid[] = "@(#)headers.c	8.53 (Berkeley) %G%";
 **		Contents of 'line' are destroyed.
 */
 
-chompheader(line, def, e)
+chompheader(line, def, hdrp, e)
 	char *line;
 	bool def;
+	HDR **hdrp;
 	register ENVELOPE *e;
 {
 	register char *p;
@@ -43,12 +45,17 @@ chompheader(line, def, e)
 	char *fvalue;
 	struct hdrinfo *hi;
 	bool cond = FALSE;
+	bool headeronly;
 	BITMAP mopts;
 	char buf[MAXNAME + 1];
 	extern ADDRESS *sendto();
 
 	if (tTd(31, 6))
 		printf("chompheader: %s\n", line);
+
+	headeronly = hdrp != NULL;
+	if (!headeronly)
+		hdrp = &e->e_header;
 
 	/* strip off options */
 	clrbitmap(mopts);
@@ -105,11 +112,12 @@ chompheader(line, def, e)
 	}
 
 	/* see if this is a resent message */
-	if (!def && bitset(H_RESENT, hi->hi_flags))
+	if (!def && !headeronly && bitset(H_RESENT, hi->hi_flags))
 		e->e_flags |= EF_RESENT;
 
 	/* if this is an Errors-To: header keep track of it now */
-	if (UseErrorsTo && !def && bitset(H_ERRORSTO, hi->hi_flags))
+	if (UseErrorsTo && !def && !headeronly &&
+	    bitset(H_ERRORSTO, hi->hi_flags))
 		(void) sendtolist(fvalue, NULLADDR, &e->e_errorqueue, 0, e);
 
 	/* if this means "end of header" quit now */
@@ -125,7 +133,8 @@ chompheader(line, def, e)
 	p = "resent-from";
 	if (!bitset(EF_RESENT, e->e_flags))
 		p += 7;
-	if (!def && !bitset(EF_QUEUERUN, e->e_flags) && strcasecmp(fname, p) == 0)
+	if (!def && !headeronly && !bitset(EF_QUEUERUN, e->e_flags) &&
+	    strcasecmp(fname, p) == 0)
 	{
 		if (tTd(31, 2))
 		{
@@ -189,7 +198,7 @@ chompheader(line, def, e)
 	}
 
 	/* delete default value for this header */
-	for (hp = &e->e_header; (h = *hp) != NULL; hp = &h->h_link)
+	for (hp = hdrp; (h = *hp) != NULL; hp = &h->h_link)
 	{
 		if (strcasecmp(fname, h->h_field) == 0 &&
 		    bitset(H_DEFAULT, h->h_flags) &&
@@ -212,7 +221,7 @@ chompheader(line, def, e)
 		(void) sendto(h->h_value, 0, (ADDRESS *) NULL, 0);
 
 	/* hack to see if this is a new format message */
-	if (!def && bitset(H_RCPT|H_FROM, h->h_flags) &&
+	if (!def && !headeronly && bitset(H_RCPT|H_FROM, h->h_flags) &&
 	    (strchr(fvalue, ',') != NULL || strchr(fvalue, '(') != NULL ||
 	     strchr(fvalue, '<') != NULL || strchr(fvalue, ';') != NULL))
 	{
@@ -309,6 +318,12 @@ hvalue(field, header)
 **	A line is a header if it has a single word followed by
 **	optional white space followed by a colon.
 **
+**	Header fields beginning with two dashes, although technically
+**	permitted by RFC822, are automatically rejected in order
+**	to make MIME work out.  Without this we could have a technically
+**	legal header such as ``--"foo:bar"'' that would also be a legal
+**	MIME separator.
+**
 **	Parameters:
 **		h -- string to check for possible headerness.
 **
@@ -325,6 +340,9 @@ isheader(h)
 	char *h;
 {
 	register char *s = h;
+
+	if (s[0] == '-' && s[1] == '-')
+		return FALSE;
 
 	while (*s > ' ' && *s != ':' && *s != '\0')
 		s++;
