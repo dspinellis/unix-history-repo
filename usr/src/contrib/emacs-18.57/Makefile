@@ -13,9 +13,10 @@ SHELL = /bin/sh
 
 # Where to install things
 # Note that on system V you must change MANDIR to /use/local/man/man1.
-LIBDIR= /usr/local/emacs
-BINDIR= /usr/local/bin
-MANDIR= /usr/man/man1
+LIBDIR= /usr/contrib/lib/emacs
+BINDIR= /usr/contrib/bin
+MANDIR= /usr/contrib/man/man1
+LOCKDIR= /var/emacs/lock
 
 # Flags passed down to subdirectory makefiles.
 MFLAGS=
@@ -34,7 +35,9 @@ CLEANDIR= ${COPYDIR} lisp/term
 all:	src/paths.h ${SUBDIR}
 
 src/paths.h: Makefile src/paths.h-dist
-	/usr/bin/sed 's;/usr/local/emacs;${LIBDIR};g' < src/paths.h-dist > src/paths.h
+	/usr/bin/sed -e 's;/usr/local/emacs;${LIBDIR};g' \
+		-e 's;${LIBDIR}/lock;${LOCKDIR};g' \
+		< src/paths.h-dist > src/paths.h
 
 src:	etc
 
@@ -112,8 +115,8 @@ clean:
 	fi
 
 lockdir:
-	-mkdir ${LIBDIR}/lock
-	-chmod 777 ${LIBDIR}/lock
+	-mkdir ${LOCKDIR}
+	-chmod 777 ${LOCKDIR}
 
 FRC:
 
