@@ -1,11 +1,12 @@
-/*	rwhod.h	4.4	83/05/04	*/
+/*	rwhod.h	4.5	83/05/05	*/
 
 /*
  * rwho protocol packet format.
  */
 struct	whod {
+	char	wd_vers;		/* protocol version # */
 	char	wd_type;		/* packet type, see below */
-	char	wd_pad[3];
+	char	wd_pad[2];
 	int	wd_sendtime;		/* time stamp by sender */
 	int	wd_recvtime;		/* time stamp applied by receiver */
 	char	wd_hostname[32];	/* hosts's name */
@@ -17,4 +18,5 @@ struct	whod {
 	} wd_we[1024 / sizeof (struct whoent)];
 };
 
+#define	WHODVERSION	1
 #define	WHODTYPE_STATUS	1		/* host status */
