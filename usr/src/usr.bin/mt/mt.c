@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mt.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)mt.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -23,84 +23,92 @@ static char sccsid[] = "@(#)mt.c	5.7 (Berkeley) %G%";
 #include <sys/ioctl.h>
 #include <sys/mtio.h>
 #include <fcntl.h>
+#include <errno.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
-
-#define	equal(s1,s2)	(strcmp(s1, s2) == 0)
+#include <string.h>
 
 struct commands {
 	char *c_name;
 	int c_code;
 	int c_ronly;
 } com[] = {
-	{ "weof",	MTWEOF,	0 },
+	{ "bsf",	MTBSF,	1 },
+	{ "bsr",	MTBSR,	1 },
 	{ "eof",	MTWEOF,	0 },
 	{ "fsf",	MTFSF,	1 },
-	{ "bsf",	MTBSF,	1 },
 	{ "fsr",	MTFSR,	1 },
-	{ "bsr",	MTBSR,	1 },
-	{ "rewind",	MTREW,	1 },
 	{ "offline",	MTOFFL,	1 },
+	{ "rewind",	MTREW,	1 },
 	{ "rewoffl",	MTOFFL,	1 },
 	{ "status",	MTNOP,	1 },
-	{ 0 }
+	{ "weof",	MTWEOF,	0 },
+	{ NULL }
 };
 
-int mtfd;
-struct mtop mt_com;
-struct mtget mt_status;
-char *tape;
+void err __P((const char *, ...));
+void printreg __P((char *, u_int, char *));
+void status __P((struct mtget *));
+void usage __P((void));
 
+int
 main(argc, argv)
-	char **argv;
+	int argc;
+	char *argv[];
 {
-	char line[80], *getenv();
-	register char *cp;
 	register struct commands *comp;
+	struct mtget mt_status;
+	struct mtop mt_com;
+	int ch, len, mtfd;
+	char *p, *tape;
 
-	if (argc > 2 && (equal(argv[1], "-t") || equal(argv[1], "-f"))) {
-		argc -= 2;
-		tape = argv[2];
-		argv += 2;
-	} else
-		if ((tape = getenv("TAPE")) == NULL)
-			tape = DEFTAPE;
-	if (argc < 2) {
-		fprintf(stderr, "usage: mt [ -f device ] command [ count ]\n");
-		exit(1);
-	}
-	cp = argv[1];
-	for (comp = com; comp->c_name != NULL; comp++)
-		if (strncmp(cp, comp->c_name, strlen(cp)) == 0)
+	if ((tape = getenv("TAPE")) == NULL)
+		tape = DEFTAPE;
+
+	while ((ch = getopt(argc, argv, "f:t:")) != EOF)
+		switch(ch) {
+		case 'f':
+		case 't':
+			tape = optarg;
 			break;
-	if (comp->c_name == NULL) {
-		fprintf(stderr, "mt: don't grok \"%s\"\n", cp);
-		exit(1);
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
+
+	if (argc < 1 || argc > 2)
+		usage();
+
+	len = strlen(p = *argv++);
+	for (comp = com;; comp++) {
+		if (comp->c_name == NULL)
+			err("%s: unknown command", p);
+		if (strncmp(p, comp->c_name, len) == 0)
+			break;
 	}
-	if ((mtfd = open(tape, comp->c_ronly ? O_RDONLY : O_RDWR)) < 0) {
-		perror(tape);
-		exit(1);
-	}
+	if ((mtfd = open(tape, comp->c_ronly ? O_RDONLY : O_RDWR)) < 0)
+		err("%s: %s", tape, strerror(errno));
 	if (comp->c_code != MTNOP) {
 		mt_com.mt_op = comp->c_code;
-		mt_com.mt_count = (argc > 2 ? atoi(argv[2]) : 1);
-		if (mt_com.mt_count < 0) {
-			fprintf(stderr, "mt: negative repeat count\n");
-			exit(1);
+		if (*argv) {
+			mt_com.mt_count = strtol(*argv, &p, 10);
+			if (mt_com.mt_count <= 0 || *p)
+				err("%s: illegal count", *argv);
 		}
-		if (ioctl(mtfd, MTIOCTOP, &mt_com) < 0) {
-			fprintf(stderr, "%s %s %d ", tape, comp->c_name,
-				mt_com.mt_count);
-			perror("failed");
-			exit(2);
-		}
+		else
+			mt_com.mt_count = 1;
+		if (ioctl(mtfd, MTIOCTOP, &mt_com) < 0)
+			err("%s: %s: %s", tape, comp->c_name, strerror(errno));
 	} else {
-		if (ioctl(mtfd, MTIOCGET, (char *)&mt_status) < 0) {
-			perror("mt");
-			exit(2);
-		}
+		if (ioctl(mtfd, MTIOCGET, &mt_status) < 0)
+			err("%s", strerror(errno));
 		status(&mt_status);
 	}
+	exit (0);
+	/* NOTREACHED */
 }
 
 #ifdef vax
@@ -148,31 +156,35 @@ struct tape_desc {
 /*
  * Interpret the status buffer returned
  */
+void
 status(bp)
 	register struct mtget *bp;
 {
 	register struct tape_desc *mt;
 
-	for (mt = tapes; mt->t_type; mt++)
+	for (mt = tapes;; mt++) {
+		if (mt->t_type == 0) {
+			(void)printf("%d: unknown tape drive type\n",
+			    bp->mt_type);
+			return;
+		}
 		if (mt->t_type == bp->mt_type)
 			break;
-	if (mt->t_type == 0) {
-		printf("unknown tape drive type (%d)\n", bp->mt_type);
-		return;
 	}
-	printf("%s tape drive, residual=%d\n", mt->t_name, bp->mt_resid);
+	(void)printf("%s tape drive, residual=%d\n", mt->t_name, bp->mt_resid);
 	printreg("ds", bp->mt_dsreg, mt->t_dsbits);
 	printreg("\ner", bp->mt_erreg, mt->t_erbits);
-	putchar('\n');
+	(void)putchar('\n');
 }
 
 /*
- * Print a register a la the %b format of the kernel's printf
+ * Print a register a la the %b format of the kernel's printf.
  */
+void
 printreg(s, v, bits)
 	char *s;
+	register u_int v;
 	register char *bits;
-	register unsigned short v;
 {
 	register int i, any = 0;
 	register char c;
@@ -197,4 +209,40 @@ printreg(s, v, bits)
 		}
 		putchar('>');
 	}
+}
+
+void
+usage()
+{
+	(void)fprintf(stderr, "usage: mt [-f device] command [ count ]\n");
+	exit(1);
+}
+
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+        va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "mt: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(1);
+	/* NOTREACHED */
 }
