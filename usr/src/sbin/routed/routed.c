@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)routed.c	4.4 %G%";
+static char sccsid[] = "@(#)routed.c	4.5 %G%";
 #endif
 
 #include <sys/param.h>
@@ -174,10 +174,9 @@ again:
 			 * from the initialization file),
 			 * don't time out it's entry.
 			 */
-			if (rt->rt_flags & RTF_SILENT)
-				continue;
+			if ((rt->rt_flags & RTF_SILENT) == 0)
+				rt->rt_timer += TIMER_RATE;
 			log("", rt);
-			rt->rt_timer += TIMER_RATE;
 
 			/*
 			 * If the entry should be deleted
