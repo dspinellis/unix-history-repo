@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 LIBC=	/lib/libc.a
 AS=	../../as/as.vax
@@ -40,7 +40,7 @@ instrs.adb: ${AS}/instrs
 	(echo FLAVOR ADB; cat ${AS}/instrs) | awk -f ${AS}/instrs > instrs.adb
 
 clean:
-	rm -f ${OBJS} core adb instrs.adb
+	rm -f ${OBJS} core adb
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
