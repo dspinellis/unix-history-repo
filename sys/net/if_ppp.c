@@ -70,7 +70,7 @@
  */
 
 /*
- *	$Id: if_ppp.c,v 1.10 1994/03/22 01:16:04 ache Exp $
+ *	$Id: if_ppp.c,v 1.11 1994/03/23 01:58:24 ache Exp $
  * 	From: if_ppp.c,v 1.22 1993/08/31 23:20:40 paulus Exp
  *	From: if_ppp.c,v 1.21 1993/08/29 11:22:37 paulus Exp
  *	From: if_sl.c,v 1.11 84/10/04 12:54:47 rick Exp 
@@ -92,6 +92,7 @@
 #include "kernel.h"
 #include "conf.h"
 #include "dkstat.h"
+#include "pppdefs.h"
 
 #include "if.h"
 #include "if_types.h"
