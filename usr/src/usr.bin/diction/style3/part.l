@@ -1,12 +1,15 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)part.l	4.2	(Berkeley)	82/11/06";
+static char sccsid[] = "@(#)part.l	4.3	(Berkeley)	90/06/26";
 #endif not lint
 
 #include "style.h"
 #include "names.h"
 #include "conp.h"
+
+#undef yywrap
+
 FILE *deb;
 int nosave = 1;
 int part = 0;
