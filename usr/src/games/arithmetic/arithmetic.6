@@ -1,4 +1,4 @@
-.\"	@(#)arithmetic.6	6.1 (Berkeley) %G%
+.\"	@(#)arithmetic.6	6.2 (Berkeley) %G%
 .\"
 .TH ARITHMETIC 6  ""
 .AT 3
@@ -15,7 +15,7 @@ types out simple arithmetic problems, and waits for an answer to be typed in.
 If the answer is correct, it types back \*(lqRight!\*(rq, and a new problem.
 If the answer is wrong, it replies \*(lqWhat?\*(rq,
 and waits for another answer.
-Every twenty problems, it publishes
+After every twenty problems, it publishes
 statistics on correctness and the time required to answer.
 .PP
 To quit the program, type an interrupt (delete).
@@ -27,7 +27,7 @@ problems to be generated.
 One or more characters can be given;
 if more than one is given, the different types of
 problems will be mixed in random order; default is
-.B +\-
+.B +\-.
 .PP
 .I Range
 is a decimal number;
