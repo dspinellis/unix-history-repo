@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcproc.c 1.23 %G%";
+static	char sccsid[] = "@(#)pcproc.c 2.1 %G%";
 
 #include "whoami.h"
 #ifdef PC

@@ -1,4 +1,4 @@
-/* static	char sccsid[] = "@(#)OPnames.h 1.8 %G%"; */
+/* static	char sccsid[] = "@(#)OPnames.h 2.1 %G%"; */
 
 #ifndef PC
 char	*otext[] = {

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)objfmt.h 1.15 %G%"; */
+/* static char sccsid[] = "@(#)objfmt.h 2.1 %G%"; */
 
 /*
  * The size of the display.

@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)stab.c 1.11 %G%";
+static	char sccsid[] = "@(#)stab.c 2.1 %G%";
 
     /*
      *	procedures to put out sdb symbol table information.

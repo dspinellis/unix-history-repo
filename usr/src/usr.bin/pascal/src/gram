@@ -1,4 +1,4 @@
-"@(#)gram 1.8 %G%"
+"@(#)gram 2.1 %G%"
 /yyval/s/int/union semstack/
 s/ 0//
 /yypv/s/int/union semstack/

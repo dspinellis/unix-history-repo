@@ -1,4 +1,4 @@
-    /*	static	char sccsid[] = "@(#)pstab.h 1.4 %G%"; */
+    /*	static	char sccsid[] = "@(#)pstab.h 2.1 %G%"; */
 
     /*
      *	subtypes within the stab type N_PC
