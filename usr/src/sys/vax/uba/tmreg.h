@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tmreg.h	6.2 (Berkeley) %G%
+ *	@(#)tmreg.h	6.3 (Berkeley) %G%
  */
 
 /*
@@ -17,6 +17,9 @@ struct tmdevice {
 	short	tmdb;		/* data buffer */
 	short	tmrd;		/* read lines */
 	short	tmmr;		/* maintenance register */
+#ifdef	AVIV
+	short	tmfsr;		/* formatter status reading */
+#endif
 };
 
 #define	b_repcnt  b_bcount
@@ -67,3 +70,29 @@ struct tmdevice {
 
 #define	TMER_HARD	(TMER_ILC|TMER_EOT)
 #define	TMER_SOFT	(TMER_CRE|TMER_PAE|TMER_BGL|TMER_RLE|TMER_BTE|TMER_NXM)
+
+#ifdef	AVIV
+/* bits in tmmr (formatter diagnostic reading) */
+#define	DTS		000000		/* select dead track status */
+#   define	DTS_MASK	0xff
+
+#define	DAB		010000		/* select diagnostic aid bits */
+#   define  DAB_MASK		037	/* reject code only */
+
+#define	RWERR		020000		/* select read-write errors */
+#    define RWERR_MASK		01777	/* include bit 9 (MAI) */
+#    define RWERR_BITS \
+"\10\12MAI\11CRC ERR\10WTMCHK\7UCE\6PART REC\5MTE\3END DATA CHK\
+\2VEL ERR\1DIAG MODE"
+
+#define	DRSENSE		030000		/* select drive sense */
+#    define DRSENSE_MASK	0777
+#    define DRSENSE_BITS \
+"\10\11WRTS\10EOTS\7BOTS\6WNHB\5PROS\4BWDS\3HDNG\2RDYS\1ON LINE"
+
+#define	CRCF		040000		/* CRC-F Generator */
+
+#define	FSR_BITS \
+"\10\20REJ\17TMS\16OVRN\15DATACHK\14SSC\13EOTS\12WRTS\11ROMPS\10CRERR\
+\7ONLS\6BOTS\5HDENS\4BUPER\3FPTS\2REWS\1RDYS"
+#endif	AVIV
