@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -66,7 +66,7 @@ char	length[10] = "-l";	/* page length in lines */
 char	pxwidth[10] = "-x";	/* page width in pixels */
 char	pxlength[10] = "-y";	/* page length in pixels */
 char	indent[10] = "-i0";	/* indentation size in characters */
-char	tmpfile[] = "errsXXXXXX"; /* file name for filter output */
+char	tempfile[] = "errsXXXXXX"; /* file name for filter output */
 
 printjob()
 {
@@ -93,7 +93,7 @@ printjob()
 	signal(SIGQUIT, abortpr);
 	signal(SIGTERM, abortpr);
 
-	(void) mktemp(tmpfile);
+	(void) mktemp(tempfile);
 
 	/*
 	 * uses short form file names
@@ -211,7 +211,7 @@ again:
 			if (TR != NULL)		/* output trailer */
 				(void) write(ofd, TR, strlen(TR));
 		}
-		(void) unlink(tmpfile);
+		(void) unlink(tempfile);
 		exit(0);
 	}
 	goto again;
@@ -428,6 +428,7 @@ print(format, file)
 	register int n;
 	register char *prog;
 	int fi, fo;
+	FILE *fp;
 	char *av[15], buf[BUFSIZ];
 	int pid, p[2], stopped = 0;
 	union wait status;
@@ -582,7 +583,7 @@ start:
 	if ((child = dofork(DORETURN)) == 0) {	/* child */
 		dup2(fi, 0);
 		dup2(fo, 1);
-		n = open(tmpfile, O_WRONLY|O_CREAT|O_TRUNC, 0664);
+		n = open(tempfile, O_WRONLY|O_CREAT|O_TRUNC, 0664);
 		if (n >= 0)
 			dup2(n, 2);
 		for (n = 3; n < NOFILE; n++)
@@ -606,6 +607,16 @@ start:
 		}
 	}
 	tof = 0;
+
+	/* Copy filter output to "lf" logfile */
+	if (fp = fopen(tempfile, "r")) {
+		char tbuf[512];
+
+		while (fgets(buf, sizeof(buf), fp))
+			fputs(buf, stderr);
+		close(fp);
+	}
+
 	if (!WIFEXITED(status)) {
 		syslog(LOG_WARNING, "%s: Daemon filter '%c' terminated (%d)",
 			printer, format, status.w_termsig);
@@ -949,8 +960,8 @@ sendmail(user, bombed)
 			printf("\ncould not be printed without an account on %s\n", host);
 			break;
 		case FILTERERR:
-			if (stat(tmpfile, &stb) < 0 || stb.st_size == 0 ||
-			    (fp = fopen(tmpfile, "r")) == NULL) {
+			if (stat(tempfile, &stb) < 0 || stb.st_size == 0 ||
+			    (fp = fopen(tempfile, "r")) == NULL) {
 				printf("\nwas printed but had some errors\n");
 				break;
 			}
@@ -1009,7 +1020,7 @@ dofork(action)
  */
 abortpr()
 {
-	(void) unlink(tmpfile);
+	(void) unlink(tempfile);
 	kill(0, SIGINT);
 	if (ofilter > 0)
 		kill(ofilter, SIGCONT);
