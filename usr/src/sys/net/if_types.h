@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_types.h	8.1 (Berkeley) %G%
+ *	@(#)if_types.h	8.2 (Berkeley) %G%
  */
 
 
