@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)script.c	4.6 (Berkeley) 84/12/23";
+static char *sccsid = "@(#)script.c	4.7 (Berkeley) 85/02/21";
 #endif
 
 /*
@@ -27,6 +27,7 @@ int	finish();
 struct	sgttyb b;
 struct	tchars tc;
 struct	ltchars lc;
+struct	winsize win;
 int	lb;
 int	l;
 char	*line = "/dev/ptyXX";
@@ -206,6 +207,7 @@ getmaster()
 					ioctl(0, TIOCGETD, (char *)&l);
 					ioctl(0, TIOCGLTC, (char *)&lc);
 					ioctl(0, TIOCLGET, (char *)&lb);
+					ioctl(0, TIOCGWINSZ, (char *)&win);
 					return;
 				}
 				close(master);
@@ -230,4 +232,5 @@ getslave()
 	ioctl(slave, TIOCSLTC, (char *)&lc);
 	ioctl(slave, TIOCLSET, (char *)&lb);
 	ioctl(slave, TIOCSETD, (char *)&l);
+	ioctl(slave, TIOCSWINSZ, (char *)&win);
 }
