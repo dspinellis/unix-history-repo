@@ -1,0 +1,15 @@
+#!/bin/sh
+if
+test -r $2
+then
+if
+cmp $1 $2 > /dev/null
+then
+echo $2 is unchanged
+rm $1
+else
+mv $1 $2
+fi
+else
+mv $1 $2
+fi
