@@ -1,8 +1,8 @@
 #ifndef lint
-static char *sccsid ="@(#)scan.c	1.5 (Berkeley) %G%";
+static char *sccsid ="@(#)scan.c	1.6 (Berkeley) %G%";
 #endif lint
 
-# include "mfile1"
+# include "pass1.h"
 # include <a.out.h>
 # include <stab.h>
 # include <ctype.h>

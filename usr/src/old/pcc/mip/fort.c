@@ -1,10 +1,10 @@
 #ifndef lint
-static char *sccsid ="@(#)fort.c	4.3 (Berkeley) %G%";
+static char *sccsid ="@(#)fort.c	4.4 (Berkeley) %G%";
 #endif lint
 
 # define FORT
 /* this forces larger trees, etc. */
-# include "mfile2"
+# include "pass2.h"
 # include "fort.h"
 
 /*	masks for unpacking longs */
@@ -87,18 +87,6 @@ lccopy( n ) register n; {
 		}
 	}
 # endif
-
-/*	new opcode definitions */
-
-# define FORTOPS 200
-# define FTEXT 200
-# define FEXPR 201
-# define FSWITCH 202
-# define FLBRAC 203
-# define FRBRAC 204
-# define FEOF 205
-# define FARIF 206
-# define LABEL 207
 
 /*	stack for reading nodes in postfix form */
 
@@ -263,7 +251,7 @@ mainp2( argc, argv ) char *argv[]; {
 			tcheck();
 			continue;
 
-		case LABEL:
+		case FLABEL:
 			if( VAL(x) ){
 				tlabel();
 				}

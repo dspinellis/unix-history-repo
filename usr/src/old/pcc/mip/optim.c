@@ -1,8 +1,8 @@
 #ifndef lint
-static char *sccsid ="@(#)optim.c	4.4 (Berkeley) %G%";
+static char *sccsid ="@(#)optim.c	4.5 (Berkeley) %G%";
 #endif lint
 
-# include "mfile1"
+# include "pass1.h"
 
 # define SWAP(p,q) {sp=p; p=q; q=sp;}
 # define RCON(p) (p->in.right->in.op==ICON)
