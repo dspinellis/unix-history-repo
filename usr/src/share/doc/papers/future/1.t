@@ -1,5 +1,5 @@
-.\"	@(#)1.t	1.1	(Copyright 1986 M. K. McKusick)	86/11/25
-.SH
+.\"	@(#)1.t	1.2	(Copyright 1986 M. K. McKusick)	86/11/29
+.NH
 The Role of Research in Maintaining System Vitality
 .PP
 Since the AT&T divestiture, UNIX has become the focus of
@@ -88,7 +88,7 @@ complete with virtual memory --
 a first for UNIX users.
 The idea was so successful that System V eventually adopted it
 six years later.
-.SH 2
+.NH 2
 Motivations for Change
 .PP
 At the same time that AT&T was beginning
