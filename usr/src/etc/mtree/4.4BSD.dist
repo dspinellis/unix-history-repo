@@ -3,7 +3,7 @@
 #	   tree: distribution tree: /, /usr, /var
 #	   date: Wed Jul 15 13:40:13 1992
 #
-#	@(#)4.4BSD.dist	5.18 (Berkeley) %G%
+#	@(#)4.4BSD.dist	5.19 (Berkeley) %G%
 
 /set type=dir uname=root gname=wheel mode=0755
 # .
@@ -926,9 +926,9 @@ usd
 # ./usr/share/doc/usd/06.bc
 ..
 
-# ./usr/share/doc/usd/07.Mail
-07.Mail
-# ./usr/share/doc/usd/07.Mail
+# ./usr/share/doc/usd/07.mail
+07.mail
+# ./usr/share/doc/usd/07.mail
 ..
 
 # ./usr/share/doc/usd/08.mh
@@ -936,134 +936,119 @@ usd
 # ./usr/share/doc/usd/08.mh
 ..
 
-# ./usr/share/doc/usd/09.newsread
-09.newsread
-# ./usr/share/doc/usd/09.newsread
+# ./usr/share/doc/usd/09.edtut
+09.edtut
+# ./usr/share/doc/usd/09.edtut
 ..
 
-# ./usr/share/doc/usd/10.etiq
-10.etiq
-# ./usr/share/doc/usd/10.etiq
+# ./usr/share/doc/usd/10.edadv
+10.edadv
+# ./usr/share/doc/usd/10.edadv
 ..
 
-# ./usr/share/doc/usd/11.notes
-11.notes
-# ./usr/share/doc/usd/11.notes
+# ./usr/share/doc/usd/11.edit
+11.edit
+# ./usr/share/doc/usd/11.edit
 ..
 
-# ./usr/share/doc/usd/12.edtut
-12.edtut
-# ./usr/share/doc/usd/12.edtut
+# ./usr/share/doc/usd/12.vi
+12.vi
+# ./usr/share/doc/usd/12.vi
 ..
 
-# ./usr/share/doc/usd/13.edadv
-13.edadv
-# ./usr/share/doc/usd/13.edadv
+# ./usr/share/doc/usd/13.ex
+13.ex
+# ./usr/share/doc/usd/13.ex
 ..
 
-# ./usr/share/doc/usd/14.edit
-14.edit
-# ./usr/share/doc/usd/14.edit
+# ./usr/share/doc/usd/14.jove
+14.jove
+# ./usr/share/doc/usd/14.jove
 ..
 
-# ./usr/share/doc/usd/15.vi
-15.vi
-# ./usr/share/doc/usd/15.vi
+# ./usr/share/doc/usd/15.sed
+15.sed
+# ./usr/share/doc/usd/15.sed
 ..
 
-# ./usr/share/doc/usd/16.ex
-16.ex
-# ./usr/share/doc/usd/16.ex
+# ./usr/share/doc/usd/16.awk
+16.awk
+# ./usr/share/doc/usd/16.awk
 ..
 
-# ./usr/share/doc/usd/17.jove
-17.jove
-# ./usr/share/doc/usd/17.jove
+# ./usr/share/doc/usd/17.msmacros
+17.msmacros
+# ./usr/share/doc/usd/17.msmacros
 ..
 
-# ./usr/share/doc/usd/18.sed
-18.sed
-# ./usr/share/doc/usd/18.sed
+# ./usr/share/doc/usd/18.msdiffs
+18.msdiffs
+# ./usr/share/doc/usd/18.msdiffs
 ..
 
-# ./usr/share/doc/usd/19.awk
-19.awk
-# ./usr/share/doc/usd/19.awk
+# ./usr/share/doc/usd/19.memacros
+19.memacros
+# ./usr/share/doc/usd/19.memacros
 ..
 
-# ./usr/share/doc/usd/20.msmacros
-20.msmacros
-# ./usr/share/doc/usd/20.msmacros
+# ./usr/share/doc/usd/20.meref
+20.meref
+# ./usr/share/doc/usd/20.meref
 ..
 
-# ./usr/share/doc/usd/21.msdiffs
-21.msdiffs
-# ./usr/share/doc/usd/21.msdiffs
+# ./usr/share/doc/usd/21.troff
+21.troff
+# ./usr/share/doc/usd/21.troff
 ..
 
-# ./usr/share/doc/usd/22.memacros
-22.memacros
-# ./usr/share/doc/usd/22.memacros
+# ./usr/share/doc/usd/22.trofftut
+22.trofftut
+# ./usr/share/doc/usd/22.trofftut
 ..
 
-# ./usr/share/doc/usd/23.meref
-23.meref
-# ./usr/share/doc/usd/23.meref
+# ./usr/share/doc/usd/23.eqn
+23.eqn
+# ./usr/share/doc/usd/23.eqn
 ..
 
-# ./usr/share/doc/usd/24.troff
-24.troff
-# ./usr/share/doc/usd/24.troff
+# ./usr/share/doc/usd/24.eqnguide
+24.eqnguide
+# ./usr/share/doc/usd/24.eqnguide
 ..
 
-# ./usr/share/doc/usd/25.trofftut
-25.trofftut
-# ./usr/share/doc/usd/25.trofftut
+# ./usr/share/doc/usd/25.tbl
+25.tbl
+# ./usr/share/doc/usd/25.tbl
 ..
 
-# ./usr/share/doc/usd/26.eqn
-26.eqn
-# ./usr/share/doc/usd/26.eqn
+# ./usr/share/doc/usd/26.refer
+26.refer
+# ./usr/share/doc/usd/26.refer
 ..
 
-# ./usr/share/doc/usd/27.eqnguide
-27.eqnguide
-# ./usr/share/doc/usd/27.eqnguide
+# ./usr/share/doc/usd/27.invert
+27.invert
+# ./usr/share/doc/usd/27.invert
 ..
 
-# ./usr/share/doc/usd/28.tbl
-28.tbl
-# ./usr/share/doc/usd/28.tbl
+# ./usr/share/doc/usd/28.bib
+28.bib
+# ./usr/share/doc/usd/28.bib
 ..
 
-# ./usr/share/doc/usd/29.refer
-29.refer
-# ./usr/share/doc/usd/29.refer
+# ./usr/share/doc/usd/29.diction
+29.diction
+# ./usr/share/doc/usd/29.diction
 ..
 
-# ./usr/share/doc/usd/30.invert
-30.invert
-# ./usr/share/doc/usd/30.invert
+# ./usr/share/doc/usd/30.rogue
+30.rogue
+# ./usr/share/doc/usd/30.rogue
 ..
 
-# ./usr/share/doc/usd/31.bib
-31.bib
-# ./usr/share/doc/usd/31.bib
-..
-
-# ./usr/share/doc/usd/32.diction
-32.diction
-# ./usr/share/doc/usd/32.diction
-..
-
-# ./usr/share/doc/usd/33.rogue
-33.rogue
-# ./usr/share/doc/usd/33.rogue
-..
-
-# ./usr/share/doc/usd/34.trek
-34.trek
-# ./usr/share/doc/usd/34.trek
+# ./usr/share/doc/usd/31.trek
+31.trek
+# ./usr/share/doc/usd/31.trek
 ..
 
 # ./usr/share/doc/usd
