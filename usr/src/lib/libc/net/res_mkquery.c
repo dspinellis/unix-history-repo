@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_mkquery.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_mkquery.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -13,6 +13,8 @@ static char sccsid[] = "@(#)res_mkquery.c	5.5 (Berkeley) %G%";
 #include <netinet/in.h>
 #include <arpa/nameser.h>
 #include <arpa/resolv.h>
+
+extern	char *sprintf();
 
 /*
  * Form all types of queries.
