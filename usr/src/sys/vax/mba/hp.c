@@ -1,4 +1,4 @@
-/*	hp.c	3.14	%G%	*/
+/*	hp.c	3.15	%G%	*/
 
 /*
  * RP06/RM03/RM05 disk driver
@@ -158,10 +158,19 @@ register struct buf *bp;
 	unit = dkunit(bp);
 	if (hp_type[unit] == 0) {
 		struct device *hpaddr;
+		double mspw;
 
 		/* determine device type */
 		hpaddr = mbadev(HPMBA, unit);
-		hp_type[unit] = hpaddr->hpdt;
+
+		/* record transfer rate (these are guesstimates secs/word) */
+		switch (hp_type[unit] = hpaddr->hpdt) {
+		case RM:	mspw = .0000019728; break;
+		case RM5:	mspw = .0000020345; break;
+		case RP:	mspw = .0000029592; break;
+		}
+		if (DK_N + unit <= DK_NMAX)
+			dk_mspw[DK_N+unit] = mspw;
 	}
 	switch (hp_type[unit]) {
 
@@ -270,10 +279,10 @@ search:
 		hpaddr->hpcs1 = SEARCH|GO;
 	}
 	unit += DK_N;
-	if (unit <= DK_NMAX && DK_N+NHP <= DK_NMAX) {
+	if (unit <= DK_NMAX)
 		dk_busy |= 1<<unit;
-		dk_numb[unit]++;
-	}
+	if (DK_N+NHP <= DK_NMAX)
+		dk_seek[unit]++;
 	return;
 
 done:
@@ -350,11 +359,9 @@ loop:
 	mbastart(bp, (int *)hpaddr);
 
 	unit = dn+DK_N;
-	if (NHP+DK_N == DK_NMAX)
-		unit = NHP+DK_N;
 	if (unit <= DK_NMAX) {
 		dk_busy |= 1<<unit;
-		dk_numb[unit]++;
+		dk_xfer[unit]++;
 		dk_wds[unit] += bp->b_bcount>>6;
 	}
 }
@@ -369,9 +376,7 @@ hpintr(mbastat, as)
 		dp = hptab.b_actf;
 		bp = dp->b_actf;
 		unit = dkunit(bp);
-		if (DK_N+NHP == DK_NMAX)
-			dk_busy &= ~(1<<(DK_N+NHP));
-		else if (DK_N+unit <= DK_NMAX)
+		if (DK_N+unit <= DK_NMAX)
 			dk_busy &= ~(1<<(DK_N+unit));
 		hpaddr = mbadev(HPMBA, unit);
 		if (hpaddr->hpds & ERR || mbastat & MBAEBITS) {
@@ -461,11 +466,7 @@ register struct buf *bp;
 	if (bcr)
 		bcr |= 0xffff0000;		/* sxt */
 	npf = btop(bcr + bp->b_bcount) - 1;
-	printf("bcr %d npf %d\n", bcr, npf);
-	if (bp->b_flags&B_PHYS)
-		reg = 128 + npf;
-	else
-		reg = btop(bp->b_un.b_addr - buffers[0]) + npf;
+	reg = npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	printf("%D ", bp->b_blkno + npf);
 	prdev("ECC", bp->b_dev);
