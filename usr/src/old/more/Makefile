@@ -1,10 +1,10 @@
-#	Makefile	4.2	83/07/03
+#	Makefile	4.3	83/11/21
 #
 CFLAGS=	-O
 DESTDIR=
 
 more:	more.o
-	${CC} -o more more.o -lcurses -ltermcap
+	${CC} -o more more.o -ltermcap
 
 install: more more.help
 	install -s more ${DESTDIR}/usr/ucb/more
