@@ -1,4 +1,4 @@
-/*	init_main.c	4.41	82/10/31	*/
+/*	init_main.c	4.42	82/11/02	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -93,7 +93,7 @@ main(regs)
 	qtinit();
 	p->p_quota = u.u_quota = getquota(0, 0, Q_NDQ);
 #endif
-	clockstart();
+	startrtclock();
 
 	/*
 	 * Initialize tables, protocols, and set up well-known inodes.
@@ -120,8 +120,7 @@ main(regs)
 		panic("iinit");
 	bcopy("/", fs->fs_fsmnt, 2);
 
-/* initialize wall clock */
-	clockinit(fs->fs_time);
+	inittodr(fs->fs_time);
 	boottime = time;
 
 /* kick off timeout driven events by calling first time */
@@ -161,8 +160,8 @@ main(regs)
 			sleep((caddr_t)&u, PSLEP);
 #else
 		pageout();
-#endif
 		/*NOTREACHED*/
+#endif
 	}
 
 	/*
