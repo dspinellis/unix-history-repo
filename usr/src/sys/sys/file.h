@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)file.h	7.1 (Berkeley) %G%
+ *	@(#)file.h	7.2 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -51,7 +51,7 @@ struct	file *falloc();
 #define	FEXLOCK		00400		/* exclusive lock present */
 
 /* bits to save after open */
-#define	FMASK		00113
+#define	FMASK		01113
 #define	FCNTLCANT	(FREAD|FWRITE|FMARK|FDEFER|FSHLOCK|FEXLOCK)
 
 /* open only modes */
@@ -80,7 +80,8 @@ struct	file *falloc();
 #define	O_RDONLY	000		/* open for reading */
 #define	O_WRONLY	001		/* open for writing */
 #define	O_RDWR		002		/* open for read & write */
-#define	O_NDELAY	FNDELAY		/* non-blocking open */
+#define	O_NDELAY	FNDELAY		/* non-blocking open on file */
+#define O_NONBLOCK	FNDELAY		/* ditto */
 #define	O_APPEND	FAPPEND		/* append on each write */
 #define	O_CREAT		FCREAT		/* open with file create */
 #define	O_TRUNC		FTRUNC		/* open with truncation */
