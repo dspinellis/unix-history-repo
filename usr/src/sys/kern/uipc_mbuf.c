@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	6.3	84/08/29	*/
+/*	uipc_mbuf.c	6.4	85/05/27	*/
 
 #include "../machine/pte.h"
 
@@ -14,44 +14,47 @@
 
 mbinit()
 {
+	int s;
 
-	if (m_clalloc(4096/CLBYTES, MPG_MBUFS) == 0)
+	s = splimp();
+	if (m_clalloc(4096/CLBYTES, MPG_MBUFS, M_DONTWAIT) == 0)
 		goto bad;
-	if (m_clalloc(8*4096/CLBYTES, MPG_CLUSTERS) == 0)
+	if (m_clalloc(8*4096/CLBYTES, MPG_CLUSTERS, M_DONTWAIT) == 0)
 		goto bad;
+	splx(s);
 	return;
 bad:
 	panic("mbinit");
 }
 
+/*
+ * Must be called at splimp.
+ */
 caddr_t
-m_clalloc(ncl, how)
+m_clalloc(ncl, how, canwait)
 	register int ncl;
 	int how;
 {
 	int npg, mbx;
 	register struct mbuf *m;
 	register int i;
-	int s;
 
 	npg = ncl * CLSIZE;
-	s = splimp();		/* careful: rmalloc isn't reentrant */
 	mbx = rmalloc(mbmap, (long)npg);
-	splx(s);
-	if (mbx == 0)
+	if (mbx == 0) {
+		if (canwait == M_WAIT)
+			panic("out of mbuf map");
 		return (0);
+	}
 	m = cltom(mbx / CLSIZE);
 	if (memall(&Mbmap[mbx], npg, proc, CSYS) == 0) {
-		s = splimp();
 		rmfree(mbmap, (long)npg, (long)mbx);
-		splx(s);
 		return (0);
 	}
 	vmaccess(&Mbmap[mbx], (caddr_t)m, npg);
 	switch (how) {
 
 	case MPG_CLUSTERS:
-		s = splimp();
 		for (i = 0; i < ncl; i++) {
 			m->m_off = 0;
 			m->m_next = mclfree;
@@ -60,7 +63,6 @@ m_clalloc(ncl, how)
 			mbstat.m_clfree++;
 		}
 		mbstat.m_clusters += ncl;
-		splx(s);
 		break;
 
 	case MPG_MBUFS:
@@ -87,10 +89,14 @@ m_pgfree(addr, n)
 #endif
 }
 
-m_expand()
+/*
+ * Must be called at splimp.
+ */
+m_expand(canwait)
+	int canwait;
 {
 
-	if (m_clalloc(1, MPG_MBUFS) == 0)
+	if (m_clalloc(1, MPG_MBUFS, canwait) == 0)
 		goto steal;
 	return (1);
 steal:
@@ -121,7 +127,7 @@ m_getclr(canwait, type)
 {
 	register struct mbuf *m;
 
-	m = m_get(canwait, type);
+	MGET(m, canwait, type);
 	if (m == 0)
 		return (0);
 	bzero(mtod(m, caddr_t), MLEN);
@@ -138,6 +144,10 @@ m_free(m)
 	return (n);
 }
 
+/*
+ * Get more mbufs; called from MGET macro if mfree list is empty.
+ * Must be called at splimp.
+ */
 /*ARGSUSED*/
 struct mbuf *
 m_more(canwait, type)
@@ -145,9 +155,14 @@ m_more(canwait, type)
 {
 	register struct mbuf *m;
 
-	if (!m_expand()) {
-		mbstat.m_drops++;
-		return (NULL);
+	while (m_expand(canwait) == 0) {
+		if (canwait == M_WAIT) {
+			m_want++;
+			sleep((caddr_t)mfree, PZERO - 1);
+		} else {
+			mbstat.m_drops++;
+			return (NULL);
+		}
 	}
 #define m_more(x,y) (panic("m_more"), (struct mbuf *)0)
 	MGET(m, canwait, type);
@@ -172,6 +187,12 @@ m_freem(m)
 
 /*
  * Mbuffer utility routines.
+ */
+
+/*
+ * Make a copy of an mbuf chain starting "off" bytes from the beginning,
+ * continuing for "len" bytes.  If len is M_COPYALL, copy to end of mbuf.
+ * Should get M_WAIT/M_DONTWAIT from caller.
  */
 struct mbuf *
 m_copy(m, off, len)
@@ -202,7 +223,7 @@ m_copy(m, off, len)
 				panic("m_copy");
 			break;
 		}
-		MGET(n, M_WAIT, m->m_type);
+		MGET(n, M_DONTWAIT, m->m_type);
 		*np = n;
 		if (n == 0)
 			goto nospace;
