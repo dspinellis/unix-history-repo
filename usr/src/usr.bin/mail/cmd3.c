@@ -9,7 +9,7 @@
  * Still more user commands.
  */
 
-static char *SccsId = "@(#)cmd3.c	1.3 %G%";
+static char *SccsId = "@(#)cmd3.c	1.4 %G%";
 
 /*
  * Process a shell escape by saving signals, ignoring signals,
@@ -497,6 +497,7 @@ file(argv)
 	 *	# -- gets the previous file
 	 *	% -- gets the invoker's post office box
 	 *	%user -- gets someone else's post office box
+	 *	& -- gets invoker's mbox file
 	 *	string -- reads the given file
 	 */
 
@@ -513,17 +514,52 @@ file(argv)
  *	% -- for my system mail box
  *	%user -- for user's system mail box
  *	# -- for previous file
+ *	& -- get's invoker's mbox file
  *	file name -- for any other file
  */
+
+char	prevfile[BUFSIZ];
 
 char *
 getfilename(name)
 	char *name;
 {
 	register char *cp;
+	char savename[BUFSIZ];
 
-	cp = expand(name);
-	return(cp);
+	switch (*name) {
+	case '%':
+		if (name[1] != 0) {
+			strcpy(savename, myname);
+			strncpy(myname, name+1, PATHSIZE-1);
+			myname[PATHSIZE-1] = 0;
+			findmail();
+			cp = mailname;
+			strcpy(myname, savename);
+			return(cp);
+		}
+		findmail();
+		return(mailname);
+
+	case '#':
+		if (name[1] != 0)
+			goto regular;
+		if (prevfile[0] == 0) {
+			printf("No previous file\n");
+			return(NOSTR);
+		}
+		return(prevfile);
+
+	case '&':
+		if (name[1] == 0)
+			return(mbox);
+		/* Fall into . . . */
+
+	default:
+regular:
+		cp = expand(name);
+		return(cp);
+	}
 }
 
 /*
