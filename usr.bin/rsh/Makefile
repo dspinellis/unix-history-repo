@@ -1,7 +1,7 @@
 #	@(#)Makefile	5.6 (Berkeley) 9/27/90
 
 PROG=	rsh
-SRCS=	rsh.c
+SRCS=	rsh.c krcmd.c
 BINOWN=	root
 BINMODE=4555
 .PATH:	${.CURDIR}/../rlogin
