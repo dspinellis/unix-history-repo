@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)munmap.2	8.2 (Berkeley) %G%
+.\"	@(#)munmap.2	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MUNMAP 2
@@ -37,8 +37,8 @@ The
 parameter was not page aligned, the
 .Fa len
 parameter was negative, or
-some part of the region being unmapped is not part of the currently
-valid address space.
+some part of the region being unmapped is outside the
+valid address range for a process.
 .Sh "SEE ALSO"
 .Xr getpagesize 2 ,
 .Xr msync 2 ,
