@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_sysctl.c	7.8 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -115,12 +115,11 @@ kinfo_doproc(op, where, acopysize, arg, aneeded)
 	int *acopysize, *aneeded;
 {
 	register struct proc *p;
-	register caddr_t dp = (caddr_t)where;
+	register struct kinfo_proc *dp = (struct kinfo_proc *)where;
 	register needed = 0;
 	int buflen;
 	int doingzomb;
 	struct eproc eproc;
-	struct tty *tp;
 	int error = 0;
 
 	if (where != NULL)
@@ -167,26 +166,26 @@ again:
 		}
 		if (where != NULL && buflen >= sizeof (struct kinfo_proc)) {
 			register struct text *txt;
+			register struct tty *tp;
 
-			if (error = copyout((caddr_t)p, dp, 
+			if (error = copyout((caddr_t)p, &dp->kp_proc, 
 			    sizeof (struct proc)))
 				return (error);
-			dp += sizeof (struct proc);
-			/*
-			 *	XXX NEED ALLIGNMENT
-			 */
 			eproc.e_paddr = p;
 			eproc.e_sess = p->p_pgrp->pg_session;
 			eproc.e_pgid = p->p_pgrp->pg_id;
 			eproc.e_jobc = p->p_pgrp->pg_jobc;
-			if (tp = p->p_pgrp->pg_session->s_ttyp) {
-				/* up to caller to check for SCTTY */
+			if ((p->p_flag&SCTTY) && 
+			     (tp = eproc.e_sess->s_ttyp)) {
 				eproc.e_tdev = tp->t_dev;
 				eproc.e_tpgid = tp->t_pgrp ? 
 					tp->t_pgrp->pg_id : -1;
 				eproc.e_tsess = tp->t_session;
 			} else
 				eproc.e_tdev = NODEV;
+			eproc.e_flag = eproc.e_sess->s_ttyvp ? EPROC_CTTY : 0;
+			if (SESS_LEADER(p))
+				eproc.e_flag |= EPROC_SLEADER;
 			if (p->p_wmesg)
 				strncpy(eproc.e_wmesg, p->p_wmesg, WMESGLEN);
 			if (txt = p->p_textp) {
@@ -198,10 +197,10 @@ again:
 				eproc.e_xsize = eproc.e_xrssize =
 				  eproc.e_xccount =  eproc.e_xswrss = 0;
 			}
-			if (error = copyout((caddr_t)&eproc, dp, 
+			if (error = copyout((caddr_t)&eproc, &dp->kp_eproc, 
 			    sizeof (eproc)))
 				return (error);
-			dp += sizeof (eproc);
+			dp++;
 			buflen -= sizeof (struct kinfo_proc);
 		}
 		needed += sizeof (struct kinfo_proc);
@@ -212,7 +211,7 @@ again:
 		goto again;
 	}
 	if (where != NULL)
-		*acopysize = dp - where;
+		*acopysize = (caddr_t)dp - where;
 	else
 		needed += KINFO_PROCSLOP;
 	*aneeded = needed;
