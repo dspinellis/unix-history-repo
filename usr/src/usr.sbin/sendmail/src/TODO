@@ -1,11 +1,12 @@
-(Version 8.37 of %G%)
+(Version 8.38 of %G%)
 
 ==============================================================================
 For Release 8.7:
-  - better DSN error codes throughout code
   - getcanonname needs to be in service switch?
   - another pass through Sun changes
   - another pass through documentation
+  - change dotted users to plussed users
+  - rip out MIME (on compile flag)
 ==============================================================================
 
 Key:
@@ -14,6 +15,8 @@ Key:
   S -- security fix
   E -- enhancement to existing algorithm
 
+
+E ****	forward.5 man page.
 
 X ****	Multiple queues.
 
@@ -100,6 +103,13 @@ E ***	Users in more than one list with different owners get duplicate
 	envelope or the other?
 
 E ***	Mailer flag to turn off MX lookups.
+
+E **	Hooks for "mail status daemon" -- send dgrams to a WKS that will
+	announce when jobs are created/destroyed.  Someone needs to write
+	the daemon though....
+
+X **	Mailer timeout (to handle things like local mailers that hang).
+	Perhaps a per-mailer value?
 
 E **	If you get a connection from a host for which you have queued
 	mail, deliver everything to that host.  Intended for dialup SLIP
