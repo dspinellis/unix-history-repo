@@ -15,13 +15,12 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- * static char sccsid[] = "@(#)popen.c	5.7 (Berkeley) 9/1/88";
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)popen.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
