@@ -7,14 +7,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.47 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.48 (Berkeley) %G%
  */
 
 /*
  * vnode op calls for sun nfs version 2
  */
 
-#include "machine/pte.h"
 #include "machine/mtpr.h"
 #include "param.h"
 #include "user.h"
@@ -22,14 +21,12 @@
 #include "kernel.h"
 #include "mount.h"
 #include "buf.h"
-#include "vm.h"
 #include "malloc.h"
 #include "mbuf.h"
 #include "errno.h"
 #include "file.h"
 #include "conf.h"
 #include "vnode.h"
-#include "text.h"
 #include "map.h"
 #include "../ufs/quota.h"
 #include "../ufs/inode.h"
@@ -1637,15 +1634,7 @@ nfs_doio(bp)
 			nfsstats.read_physios++;
 			bp->b_error = error = nfs_readrpc(vp, uiop,
 				bp->b_rcred, bp->b_proc);
-			/*
-			 * If a text file has been modified since it was exec'd
-			 * blow the process' out of the water. This is the
-			 * closest we can come to "Text File Busy" in good old
-			 * stateless nfs.
-			 */
-			if ((vp->v_flag & VTEXT) &&
-			    (vp->v_text->x_mtime != np->n_vattr.va_mtime.tv_sec))
-				xinval(vp);
+			(void) vnode_pager_uncache(vp);
 		} else {
 			uiop->uio_rw = UIO_WRITE;
 			nfsstats.write_physios++;

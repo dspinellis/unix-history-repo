@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_bio.c	7.16 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -211,8 +211,10 @@ nfs_write(vp, uio, ioflag, cred)
 		lbn = uio->uio_offset / biosize;
 		on = uio->uio_offset & (biosize-1);
 		n = MIN((unsigned)(biosize - on), uio->uio_resid);
-		if (uio->uio_offset+n > np->n_size)
+		if (uio->uio_offset+n > np->n_size) {
 			np->n_size = uio->uio_offset+n;
+			vnode_pager_setsize(vp, np->n_size);
+		}
 		bn = lbn*(biosize/DEV_BSIZE);
 again:
 		bp = getblk(vp, bn, biosize);

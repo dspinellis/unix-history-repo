@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.32 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.33 (Berkeley) %G%
  */
 
 /*
@@ -650,8 +650,10 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	vap->va_uid = fxdr_unsigned(uid_t, fp->fa_uid);
 	vap->va_gid = fxdr_unsigned(gid_t, fp->fa_gid);
 	vap->va_size = fxdr_unsigned(u_long, fp->fa_size);
-	if ((np->n_flag & NMODIFIED) == 0 || vap->va_size > np->n_size)
+	if ((np->n_flag & NMODIFIED) == 0 || vap->va_size > np->n_size) {
 		np->n_size = vap->va_size;
+		vnode_pager_setsize(vp, np->n_size);
+	}
 	vap->va_size_rsv = 0;
 	vap->va_blocksize = fxdr_unsigned(long, fp->fa_blocksize);
 	vap->va_rdev = (dev_t)rdev;
@@ -692,9 +694,10 @@ nfs_getattrcache(vp, vap)
 	if ((time.tv_sec-np->n_attrstamp) < NFS_ATTRTIMEO) {
 		nfsstats.attrcache_hits++;
 		bcopy((caddr_t)&np->n_vattr,(caddr_t)vap,sizeof(struct vattr));
-		if ((np->n_flag & NMODIFIED) == 0)
+		if ((np->n_flag & NMODIFIED) == 0) {
 			np->n_size = vap->va_size;
-		else if (np->n_size > vap->va_size)
+			vnode_pager_setsize(vp, np->n_size);
+		} else if (np->n_size > vap->va_size)
 			vap->va_size = np->n_size;
 		return (0);
 	} else {
