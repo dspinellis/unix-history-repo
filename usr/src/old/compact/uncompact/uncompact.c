@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uncompact.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)uncompact.c	4.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -39,7 +39,7 @@ main(argc, argv)
 		head->next = dirp;
 	}
 	bottom = dirp->pt = dict;
-	dict[0].top[LEFT] = dict[0].top[RIGHT] = dirp;
+	dict[0].sons[LEFT].top = dict[0].sons[RIGHT].top = dirp;
 	dirq = dirp->next;
 	in[EF].flags = FBIT | SEEN;
 	if (argc == 0)
@@ -59,9 +59,10 @@ uncompact(file)
 	int ignore;
 	FILE *setup();
 
-	bottom->top[1]->next = flist;
-	bottom->top[1] = dirp;
+	bottom->sons[RIGHT].top->next = flist;
+	bottom->sons[RIGHT].top = dirp;
 	flist = dirq;
+	uncfp = cfp = NULL;
 	if (strcmp(file, "-") != 0) {
 		char *cp;
 
@@ -70,13 +71,13 @@ uncompact(file)
 		if (cp == 0 || strcmp(cp, ".C") != 0) {
 			fprintf(stderr,
 			    "uncompact: %s: File must have .C suffix.\n", file);
-			return;
+			goto bad;
 		}
 		*cp = '\0';
 		cfp = fopen(file, "r");
 		if (cfp == NULL) {
 			fprintf(stderr, "uncompact: "), perror(file);
-			return;
+			goto bad;
 		}
 		(void) fstat(fileno(cfp), &status);
 	} else
@@ -91,13 +92,16 @@ uncompact(file)
 	decompress(cfp, uncfp);
 	fflush(uncfp);
 	if (ferror(uncfp) || ferror(cfp)) {
+		fprintf(stderr, "uncompact: ");
 		if (uncfp != stdout) {
 			if (ferror(uncfp))
 				perror(fname);
 			else
 				perror(infname);
 			(void) unlink(fname);
-		}
+		} else
+			fprintf(stderr,
+	    "Unsuccessful uncompact of standard input to standard output.\n");
 		goto bad;
 	}
 	if (uncfp != stdout && unlink(infname) < 0)
@@ -109,12 +113,8 @@ done:
 		fclose(cfp);
 	return (0);
 bad:
-	fprintf(stderr, "uncompact: ");
-	if (strcmp(infname, "-") != 0)
-		perror(infname);
-	else
-		fprintf(stderr,
-	    "Unsuccessful uncompact of standard input to standard output.\n");
+	if (cfp != NULL)
+		fclose(cfp);
 	return (1);
 }
 
@@ -133,7 +133,7 @@ decompress(cfp, uncfp)
 			b = (m & c.integ ? 1 : 0);
 			m >>= 1;
 			if (p->fath.flags & (b ? RLEAF : LLEAF)) {
-				dp->integ = p->sp[b].ch;
+				dp->integ = p->sons[b].sp.ch;
 				if (dp->integ == EF)
 					break;
 				if (dp->integ == NC) {
@@ -154,7 +154,7 @@ decompress(cfp, uncfp)
 				putc(dp->chars.lob, uncfp);
 				p = dict;
 			} else
-				p = p->sp[b].p;
+				p = p->sons[b].sp.p;
 		}
 	}
 }
@@ -168,14 +168,16 @@ setup(cfp, ignore)
 	register union cio *dp = &d;
 	register union cio *cp = &c;
 
+	*ignore = 0;
 	dp->integ = getc(cfp);
-	if (*ignore = (dp->integ == EOF))
-		goto bad;
-	cp->integ = getc(cfp);
-	if (*ignore = (cp->integ == EOF))
-		goto bad;
-	dp->chars.hib = cp->integ & 0377;
+	if (dp->integ != EOF) {	
+		cp->integ = getc(cfp);
+		if (cp->integ != EOF)
+			dp->chars.hib = cp->integ & 0377;
+	} else
+		dp->integ = 0;
 	if ((dp->integ &= 0177777) != COMPACTED) {
+		fprintf(stderr, "uncompact: ");
 		if (dp->integ == PACKED)
 			fprintf(stderr, "%s: File is packed, use unpack.\n",
 			    infname);
@@ -186,23 +188,21 @@ setup(cfp, ignore)
 	}
 	if (strcmp(infname, "-") != 0) {
 		uncfp = fopen(fname, "w");
-		if (uncfp == NULL) {
-			perror(fname);
-			goto bad;
-		}
+		if (uncfp == NULL)
+			goto bad2;
 		(void) fchmod(fileno(uncfp), status.st_mode);
 	} else
 		uncfp = stdout;
 	cp->integ = getc(cfp);
 	if (cp->integ == EOF)
-		goto bad;
+		goto bad2;
 	putc(cp->chars.lob, uncfp);
 
-	in[NC].fp = in[EF].fp = dict[0].sp[LEFT].p = bottom = dict + 1;
-	bottom->count[LEFT] = bottom->count[RIGHT] =
-	    dict[0].count[RIGHT] = 1;
-	dirp->next = dict[0].top[RIGHT] = bottom->top[LEFT] =
-	    bottom->top[RIGHT] = dirq = NEW;
+	in[NC].fp = in[EF].fp = dict[0].sons[LEFT].sp.p = bottom = dict + 1;
+	bottom->sons[LEFT].count = bottom->sons[RIGHT].count =
+	    dict[0].sons[RIGHT].count = 1;
+	dirp->next = dict[0].sons[RIGHT].top = bottom->sons[LEFT].top =
+	    bottom->sons[RIGHT].top = dirq = NEW;
 	dirq->next = NULL;
 	dict[0].fath.fp = NULL;
 	dirq->pt = bottom->fath.fp = in[cp->integ].fp = dict;
@@ -210,15 +210,17 @@ setup(cfp, ignore)
 	in[NC].flags = SEEN;
 	dict[0].fath.flags = RLEAF;
 	bottom->fath.flags = (LLEAF | RLEAF);
-	dict[0].count[LEFT] = 2;
+	dict[0].sons[LEFT].count = 2;
 
-	dict[0].sp[RIGHT].ch = cp->integ;
-	bottom->sp[LEFT].ch = NC;
-	bottom->sp[RIGHT].ch = EF;
+	dict[0].sons[RIGHT].sp.ch = cp->integ;
+	bottom->sons[LEFT].sp.ch = NC;
+	bottom->sons[RIGHT].sp.ch = EF;
 	return (uncfp);
+bad2:
+	fprintf(stderr, "uncompact: ");
+	perror(fname);
 bad:
 	if (uncfp && uncfp != stdout) {
-		perror(fname);
 		(void) unlink(fname);
 		fclose(uncfp);
 	}
