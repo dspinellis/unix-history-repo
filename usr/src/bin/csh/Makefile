@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.29 (Berkeley) %G%
+#	@(#)Makefile	5.30 (Berkeley) %G%
 #
 # C Shell with process control; VM/UNIX VAX Makefile
 # Bill Joy UC Berkeley; Jim Kulp IIASA, Austria
@@ -10,9 +10,6 @@ DFLAGS=-DBUILTIN -DFILEC -DNLS -DSHORT_STRINGS
 #CFLAGS+=-g
 #CFLAGS+=-Wall
 CFLAGS+=-I${.CURDIR} -I. ${DFLAGS}
-.if ${MACHINE} == "hp300"
-CFLAGS+=-fcombine-regs -fstrength-reduce 
-.endif
 SRCS=	alloc.c char.c const.c csh.c dir.c dol.c err.c exec.c exp.c file.c \
 	func.c glob.c hist.c init.c lex.c misc.c parse.c printf.c proc.c \
 	sem.c set.c str.c time.c
