@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.37 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -313,8 +313,10 @@ main(argc, argv)
 		printf("Logging in with home = \"/\".\n");
 	}
 
+	quietlog = access(_PATH_HUSHLOGIN, F_OK) == 0;
+
 #ifdef KERBEROS
-	if (notickets)
+	if (notickets && !quietlog)
 		printf("Warning: no Kerberos tickets issued\n");
 #endif
 
@@ -326,7 +328,7 @@ main(argc, argv)
 			printf("Sorry -- your password has expired.\n");
 			sleepexit(1);
 		}
-		else if (tp.tv_sec - pwd->pw_change < TWOWEEKS) {
+		else if (tp.tv_sec - pwd->pw_change < TWOWEEKS && !quietlog) {
 			ttp = localtime(&pwd->pw_change);
 			printf("Warning: your password expires on %s %d, 19%d\n",
 			    months[ttp->tm_mon], ttp->tm_mday, ttp->tm_year);
@@ -336,7 +338,7 @@ main(argc, argv)
 			printf("Sorry -- your account has expired.\n");
 			sleepexit(1);
 		}
-		else if (tp.tv_sec - pwd->pw_expire < TWOWEEKS) {
+		else if (tp.tv_sec - pwd->pw_expire < TWOWEEKS && !quietlog) {
 			ttp = localtime(&pwd->pw_expire);
 			printf("Warning: your account expires on %s %d, 19%d\n",
 			    months[ttp->tm_mon], ttp->tm_mday, ttp->tm_year);
@@ -355,7 +357,6 @@ main(argc, argv)
 		login(&utmp);
 	}
 
-	quietlog = access(_PATH_HUSHLOGIN, F_OK) == 0;
 	dolastlog(quietlog);
 
 	if (!hflag) {					/* XXX */
