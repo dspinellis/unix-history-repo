@@ -1,0 +1,261 @@
+From cbosg!decvax!watmath!bstempleton Tue Mar  2 20:01:49 1982
+Date: Mon Mar  1 19:37:04 1982
+From: cbosg!decvax!watmath!bstempleton
+Subject: net.adm.site stuff
+Via: cbosgd.uucp (V3.73 [1/5/82]); 2-Mar-82 20:01:48-EST (Tue)
+Mail-From: cbosg received by cbosgd at 2-Mar-82 20:01:45-EST (Tue)
+To: decvax!cbosg!cbosgd!mark decvax!duke!unc!smb decvax!ittvax!swatt
+    decvax!shannon decvax!ucbvax!ARPAVAX:glickman watarts!eric
+:::::::::::::::::::::::::::::::::::::::::::::::::::
+OK, here goes - a new idea for automating some of the work done by news
+administrators on the USENET.
+
+I propose the setting up of a set of control newsgroups called net.adm.*, which
+will primarily be for computer rather than human consumption.  Messages posted
+to these groups will all be fed by lines in the SYS file into programs that
+interpret them, as well as forwarding them to other systems.
+
+The first of these programs I include below.  It is for a group to be called
+net.adm.site, and implements automatic USENET directories.  There are two
+programs.  One prompts a news administrator for information concerning his
+site, and builds a file of it.  This file is posted to net.adm.site.
+One of the things the script asks for is a list of your uucp connections
+in the format required by unc!smb's cheapest path uucp alias generator.
+If all sites provide the public paths they have, this will allow the
+generator to produce the best routings, saving everybody money and phone time.
+
+The second file reads articles posted to net.adm.site.  It takes the system
+name off the article-id and creates an entry for that site.  Included in
+that entry is a path to that site derived from the 'from' line in the
+header.  This article is appended to the USENET directory file, in this
+case called /usr/lib/news/usenetdir, and deletes the old entry for that
+site.  If you want it to put the entry in a private one file per site
+directory, the change is fairly obvious.
+
+This is a simple description, but the shell scripts are simple and easy to
+read if you want to know what is going on.  The scripts use A format so
+that both A and B news users can take advantage of them.  To install this
+at your site:
+
+1) Put the 'siteform' shell script somewhere hand so that you can execute
+it when you like.  If you run B news, it is probably a good idea to NOT
+have net.adm groups in your ngfile, but rather manually, temporarily put
+them in when the time comes to make an entry, to avoid accidental posting
+to these groups by other users.
+
+2) Put the 'recsite' shell script somewhere, and make it executable.  I
+suggest /usr/lib/news as a fine place for it, but anything will do.
+(A sites don't have this directory, they can use another)
+
+3) If you like, make recsite run setuid to the newsuser (and setgid if you
+also desire) so that the usenet directory will not have to be generally
+writable
+
+4) Alter the variables in 'recsite' as you need regarding files and
+directories to use.  If you run A news, change the mentions of inews -t
+to 'news -i' as you like.
+
+5) add a line to your sys or .sys file to handle recsite.  A typical line
+might be:
+
+siterec:net.adm.site:A:/usr/lib/news/recsite
+
+This depends on what directories you have used etc.
+Note also that the name 'siterec' is just a dummy name that should not
+match any existing or likely uucp system name.
+
+You are now ready to go.  I will be posting the watmath entry in a short
+time.  Entries are put in the usenetdir file with each line prepended with
+"sitename;" so you can conveniently grep for info on a given site.
+
+In addition, each entry contains a line called 'Best Path:'.  You will probably
+want to alter this line when a new site entry comes in, since it will contain
+the rather roundabout USENET path.  This line can eventually be used for
+things such as aliasing programs or to answer the user's question:
+"How to I get to site X?"
+Unfortunately, the Best Path part won't work if an ARPANET like is used,
+as for site 'cca'.  You'll have to manually alter this.
+Eventually, best paths will be pulled out of the UUCP link entries in your
+directory.
+
+There are further plans for net.adm.*  These groups can be used for all
+sorts of control messages that might also be read by humans unlike the
+net.*.ctl messages coming out in the B release of netnews.  It would
+be fairly simple to set up programs to create a uucp 'phonebook' listing
+people on the USENET (net.adm.phone) or a group in which newly created
+uucp links are declared if you will allow public use on them.
+(thus the wonder programs to do the graph theory on the net have a database
+to work on.)
+
+If others have ideas - they can go ahead, all that need be done is to write
+the code to enter items and the code to decode them.  Post the code to the
+net, with installation instructions, and wait for acceptance.  In about
+a week, assuming this idea is accepted, I will give the go-ahead for all
+sites to post their entries.  After this, every site that wants one will have
+an up to date USENET directory in a standard form.
+
+Some further notes on installation:
+
+1) You may desire to make it possible for users to subscribe to and read this
+newsgroup.  If you don't, and run B news there are a few ways you can stop the
+articles from being posted.  The first is the built in RESTRICT feature of B
+news that lets you exclude newsgroups.  Normally this is not turned on.  The
+second is a kludge involving chown.  Allow the newsgroup net.adm.site (and
+other net.adm.* groups as they come along) to be created.  Once it is created,
+chown the directory in which it lives to some user other than the newsuser.
+(you will probably wish to chgrp it as well).  Once this is done, attempts
+to write into the directory by the news program, which is setuid, will fail
+because of permissions denied.  As far as I can tell, news just handles this
+quietly and the article is not written.  It is still forwarded however, which
+is important.
+
+2) The new release of B news involves control messages of the form all.all.ctl,
+which are never put in files on the local system - just interpreted by special
+case code.  It is possible that once these are fully implemented that automatic
+directory entries will switch over to this method, or use a combination of the
+methods.
+
+3) When you connect a new site to the USENET, you should send them your current
+directory of the net and a copy of these programs for them to use to announce
+themselves.
+
+4) Use of these programs does not exclude normal, human readable announcement
+in the group net.news.newsite.  It is possible to change the 'siteform' script
+to post to both net.adm.site and net.news.newsite, since the entries are
+generally human readable, although they do not contain the uucp name of the
+site anywhere.  (That is pulled from the article-id)
+
+Here is the shell script for the reading program, called 'siteform'
+
+-------------------------------------------------------------------
+san=/tmp/tan$$
+SITEGROUP=net.adm.site
+echo "Give the institution type name of your site, ie. the name of your company?"
+read name
+echo Site: $name >$san
+echo "Please give the contact userid for uucp and usenet queries"
+read contact
+echo Contact userid: $contact >>$san
+echo "What is the real name of the contact person?"
+read realname
+echo Contact name: $realname >>$san
+echo "What is the postal service address of your site?"
+echo "Type as many lines as you like, ending with a null line"
+while { read addr; test -n "$addr"; }
+	do echo Address: $addr >>$san
+done
+echo "Please give the network names of your USENET partners (the people in your"
+echo "sys (or .sys) file (seperated by commas)"
+read unpart
+echo Usenet partners: $unpart >>$san
+cat <<"blart"
+Please give the network names of the people that you talk to
+on the uucp network.  This information is desired for a database of UUCP
+connections from which UUCP aliasing files can be built through a program
+written by unc!smb.  List each site to which you have a uucp connection
+that you wish to make public.  To list a site, give its UUCP name, followed
+by a value describing how useful the connection is in parentheses. Your
+cost can be given as a standard arithmetic expression.  The lower the number,
+the better the line is.  The following 'manifests' are known to the program
+with the following values: (If you don't give an expression, 3000 is default)
+	LOCAL = 10
+	ARPA = 31
+	DED = 95
+	DEDICATED = 95
+	DIRECT = 200
+	DEMAND = 300
+	DIAL = 300
+	DIALED = 300
+	HOURLY = 500
+	POLLED = 5000
+	DAILY = 5000
+	WEEKLY = 30000
+	DEAD = INF/2
+	HIGH = -5	/* baud rate bonus */
+	LOW = 5		/* baud rate penalty */
+
+Delimit your entries with commas.  Type as many lines as you like,
+(naturally, don't put a comma after the last entry) and enter a null
+line when you are done.  Here is an example:
+decvax(2*HOURLY), watcgl(DIRECT), watarts(DEMAND),
+hcr(POLLED), cbosg(WEEKLY)
+blart
+while { read uupart; test -n "$uupart"; }
+	do echo Partners: $uupart >>$san
+done
+echo "Please give the voice phone number of the contact person at your site."
+echo "(nnn) nnn-nnnn format please"
+read voiph
+echo Voice phone: $voiph >>$san
+echo "Please give the data dial-in number of your system if you wish to give it"
+echo "Also give the type of modem on these dial in lines."
+echo "Type in: (nnn) nnn-nnnn modem type"
+read dialno
+echo Dial in: $dialno >>$san
+echo "Please give the names/classifications of newsgroups that you receive"
+echo "at your site.  You may want to include local area groups you work with."
+echo "Example: net.all,fa.all - internally wat.all"
+read ngrps
+echo Subscribes to: $ngrps >>$san
+echo "Please indicate your willingness to allow other sites to connect to you"
+echo "for USENET news and mail.  Indicate if you can call other sites, how"
+echo "far you can call, or if you will only give news to those who can call you."
+read will
+echo Willingness: $will >>$san
+echo "To help in producing a USENET map, would you please give your latitude"
+echo "and longitude on the following line.  please type in the figures in the"
+echo "form 'deg.min D deg.min D', latitude first, longitude second.  For"
+echo "example, something like '43.00 N 75.00 W' is in the right format"
+echo "Note that if you can't find this information, don't worry about it."
+echo "You can always submit the information in a later entry"
+read loc
+echo Location: $loc >>$san
+echo "Please enter any comments you might wish to add to your directory entry."
+echo "You may want to describe what hardware you have, or just give additional"
+echo "details regarding your site.  Enter an EOF to indicate you are done"
+while read cline
+	do echo Comment: $cline >>$san
+done
+echo "Here is your USENET directory entry.  Enter a newline to send it off."
+echo "Anything else will abort the sending and leave the entry in $san"
+cat $san
+read abrt
+if test -z "$abrt"
+	then inews -n $SITEGROUP -t "sitedir \"$name\"" -q <$san
+	rm $san
+else
+	echo "Your item is now in file $san"
+	echo "You may edit it, and post it with the command:"
+	echo "inews -n $SITEGROUP -t \"sitedir "$name"\" -q <$san"
+fi
+------------------------------------------------------------------------
+
+Here is the decoding program, called 'recsite', to go in /usr/lib/news if
+you desire.  Note a temporary file is needed, you should define it as
+you like.
+
+-------------------------------------------------------------------------
+DIRFILE=/usr/lib/news/usenetdir
+DIRTEM=/usr/lib/news/dirtem
+read site
+site=`echo $site | sed -e 's/^A//' -e 's/\..*$//'`
+read groups
+read path
+path=`echo $path | sed -e 's/^[^!:]*[!:]//' -e 's/[!:]*[^!:]*$//'`
+read date
+read title
+if test ! -r $DIRFILE; then
+	touch $DIRTEM
+else
+	sed -e "/^$site;/d" >$DIRTEM <$DIRFILE
+fi
+while read item; do
+	echo "$site;$item" >>$DIRTEM
+done
+echo "$site;Best Path: $path" >>$DIRTEM
+mv $DIRTEM $DIRFILE
+--------------------------------------------------------------
+
+
+
+

@@ -1,0 +1,54 @@
+From mark ...
+
+This package of two shell scripts allows you to send outgoing news in batches
+rather than as it comes through.  By controlling the batches, you can
+implement a policy such as "mail goes through at once, but news only
+goes out during non-working hours".  The disadvantage is that news takes
+longer to propagate, so unless you have system load or phone bill problems,
+you probably don't want to use this.
+
+Basically, there are two shell scripts.  /usr/lib/news/spoolnews <system>
+will copy stdin out to a spool directory.  /usr/lib/news/sendspoolednews
+is run from cron periodically, and will uux all news which has been
+spooled, then start a single uucico.  If you run over a different network,
+you can make suitable mods.
+
+To install:  mkdir /usr/spool/outnews.  For each system you spool news
+to, mkdir a subdirectory with that name.  The subdirectories should be
+mode 777 unless you want to deal with protection issues, which I haven't
+bothered with.
+
+Now edit your sys file, changing, say
+	foo:net.all,fa.all,to.foo::
+to
+	foo:net.all,fa.all,to.foo::/usr/lib/news/spoolnews foo
+Install the two shell scripts (mode 755) in /usr/lib/news.
+
+Add a line to /usr/lib/crontab such as
+	0 0,2,4,6,8,12,17,19,21 * * * /usr/lib/news/sendspoolednews
+to send outgoing news at the given times of the day.  If you want
+it to go every hour, make the 2nd field just "*".  The above entry
+will send news every two hours during unloaded times of a typical
+working day - adjust it as you see fit locally.  A line for a system
+with phone bill problems might look like
+	0 0,1,2,3,4,5,6,7,23 * * * /usr/lib/news/sendspoolednews
+--- spoolnews
+: ' spoolnews system : spool outgoing news to be transmitted to system '
+S=/usr/spool/outnews
+cat > $S/$1/$$
+--- sendspoolednews
+: ' sendspoolednews : transmit news which has been spooled'
+S=/usr/spool/outnews
+cd $S
+for sys in *
+do
+	cd $sys
+	for file in `ls -rt`
+	do
+		uux -z -r - $sys!rnews < $file
+		rm -f $file
+	done
+	cd ..
+done
+/usr/lib/uucp/uucico -r1 &
+--- end
