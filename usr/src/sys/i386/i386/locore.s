@@ -5,8 +5,11 @@
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
- *	@(#)locore.s	5.9 (Berkeley) 1/19/91
+ * %sccs.include.redist.c%
+ *
+ *	@(#)locore.s	7.1 (Berkeley) %G%
  */
+
 
 /*
  * locore.s:	4BSD machine support for the Intel 386
