@@ -1,6 +1,6 @@
 %{
 #ifndef lint
-static	char *sccsid = "@(#)gram.y	4.9 (Berkeley) 84/04/06";
+static	char *sccsid = "@(#)gram.y	4.10 (Berkeley) 84/05/03";
 #endif
 
 #include "defs.h"
@@ -24,8 +24,9 @@ struct	subcmd *last_sc;
 %term INSTALL	10
 %term NOTIFY	11
 %term EXCEPT	12
-%term SPECIAL	13
-%term OPTION	14
+%term PATTERN	13
+%term SPECIAL	14
+%term OPTION	15
 
 %union {
 	int intval;
@@ -36,7 +37,7 @@ struct	subcmd *last_sc;
 
 %type <intval> OPTION, options
 %type <string> NAME, STRING
-%type <subcmd> INSTALL, NOTIFY, EXCEPT, SPECIAL, cmdlist, cmd
+%type <subcmd> INSTALL, NOTIFY, EXCEPT, PATTERN, SPECIAL, cmdlist, cmd
 %type <namel> namelist, names, opt_namelist
 
 %%
@@ -120,6 +121,16 @@ cmd:		  INSTALL options opt_namelist SM = {
 		| EXCEPT namelist SM = {
 			if ($2 != NULL)
 				$1->sc_args = expand($2, E_ALL);
+			$$ = $1;
+		}
+		| PATTERN namelist SM = {
+			struct namelist *nl;
+			char *cp, *re_comp();
+
+			for (nl = $2; nl != NULL; nl = nl->n_next)
+				if ((cp = re_comp(nl->n_name)) != NULL)
+					yyerror(cp);
+			$1->sc_args = $2;
 			$$ = $1;
 		}
 		| SPECIAL opt_namelist STRING SM = {
@@ -281,6 +292,8 @@ again:
 		c = NOTIFY;
 	else if (!strcmp(yytext, "except"))
 		c = EXCEPT;
+	else if (!strcmp(yytext, "exp_pat"))
+		c = PATTERN;
 	else if (!strcmp(yytext, "special"))
 		c = SPECIAL;
 	else {
