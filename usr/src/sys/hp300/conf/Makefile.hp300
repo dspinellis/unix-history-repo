@@ -1,4 +1,4 @@
-#	@(#)Makefile.hp300	7.8 (Berkeley) %G%
+#	@(#)Makefile.hp300	7.9 (Berkeley) %G%
 #
 # Makefile for 4.4 BSD
 #
@@ -21,7 +21,7 @@
 AS=	as ${PROF}
 CC=	cc ${PROF}
 CPP=	cpp
-LD=	/bin/ld
+LD=	ld
 TOUCH=	touch -f -c
 
 S=	../..
