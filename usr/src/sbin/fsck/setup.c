@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #define DKTYPENAMES
@@ -188,7 +188,7 @@ setup(dev)
 		sbdirty();
 		dirty(&asblk);
 	}
-	if (asblk.b_dirty) {
+	if (asblk.b_dirty && !bflag) {
 		bcopy((char *)&sblock, (char *)&altsblock,
 			(size_t)sblock.fs_sbsize);
 		flush(fswritefd, &asblk);
@@ -304,6 +304,8 @@ readsb(listerr)
 	getblk(&asblk, cgsblock(&sblock, sblock.fs_ncg - 1), sblock.fs_sbsize);
 	if (asblk.b_errs)
 		return (0);
+	altsblock.fs_firstfield = sblock.fs_firstfield;
+	altsblock.fs_unused_1 = sblock.fs_unused_1;
 	altsblock.fs_time = sblock.fs_time;
 	altsblock.fs_cstotal = sblock.fs_cstotal;
 	altsblock.fs_cgrotor = sblock.fs_cgrotor;
