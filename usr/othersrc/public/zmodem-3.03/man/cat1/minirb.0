@@ -1,0 +1,66 @@
+
+
+
+MINIRB(1)                                               MINIRB(1)
+
+
+NNAAMMEE
+       minirb - Bootstrap YMODEM Batch file receive
+
+SSYYNNOOPPSSIISS
+       mmiinniirrbb
+
+DDEESSCCRRIIPPTTIIOONN
+       _M_i_n_i_r_b  receives  one or more files with YMODEM batch file
+       transfer protocol.  _M_i_n_i_r_b was  developed  for  use  as  a
+       bootstrap  to  simplify  uploading of the longer _r_z and _s_z
+       programs, such as are  contained  in  the  _r_z_s_z._z_o_o  "zoo"
+       archive or the _r_z_s_z._s_h shell archive.
+
+SSEEEE AALLSSOO
+       YMODEM.DOC, Professional-YAM manual, sz(omen)
+
+NNOOTTEESS
+       The  source  file _m_i_n_i_r_b._c has been ruthlessly pruned (4k,
+       175 lines) to simplify uploading  without  benefit  of  an
+       error  correcting file transfer protocol.  Do not reformat
+       or add tabs to the source file as  this  would  complicate
+       uploading.
+
+       Please  read the uploading suggestions in the chapter _F_i_l_e
+       _T_r_a_n_s_f_e_r _B_a_s_i_c_s in the Professional-YAM  or  ZCOMM  user's
+       manual.
+
+       _M_i_n_i_r_b  uses  8  bit  checksum which may not be compatible
+       with some programs claiming to support YMODEM batch trans-
+       fers.
+
+       _M_i_n_i_r_b  uses  the YMODEM header file length information to
+       avoid storing extraneous characters.  _M_i_n_i_r_b deletes  car-
+       riage  returns  and  CPMEOF (^Z) characters encountered in
+       uploaded files.
+
+       _M_i_n_i_r_b calls stty(1) to set and reset raw tty mode.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                               OMEN                             1
+
+
