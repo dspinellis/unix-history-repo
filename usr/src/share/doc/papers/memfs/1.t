@@ -1,4 +1,4 @@
-.\"	@(#)1.t	1.3	(Copyright 1990 M. K. McKusick)	90/04/16
+.\"	@(#)1.t	1.4	(Copyright 1990 M. K. McKusick)	90/04/16
 .nr PS 11
 .nr VS 13
 .SH
@@ -8,8 +8,7 @@ This paper describes the motivation for and implementation of
 a memory-based filesystem.
 Memory-based filesystems have existed for a long time;
 they have generally been marketed as RAM disks or sometimes
-as software packages that use the general purpose memory on
-a machine.
+as software packages that use the machine's general purpose memory.
 .[
 white
 .]
@@ -45,16 +44,16 @@ for machines with limited addressing capabilities such as PC's
 that do not have an effective way of using the extra memory anyway.
 .PP
 Most software RAM disks lose their contents when the system is powered
-down or is rebooted.
+down or rebooted.
 The contents can be saved by using battery backed-up memory,
-by storing critical filesystem data structure in the filesystem,
+by storing critical filesystem data structures in the filesystem,
 and by running a consistency check program after each reboot.
-These conditions increase the hardware cost,
+These conditions increase the hardware cost
 and potentially slow down the speed of the disk.
 Thus, RAM-disk filesystems are not typically
 designed to survive power failures;
 because of their volatility, their usefulness is limited to transient
-or easily recreated information such as would be found in
+or easily recreated information such as might be found in
 .PN /tmp .
 Their primary benefit is that they have higher throughput
 than disk based filesystems.
@@ -62,7 +61,7 @@ than disk based filesystems.
 smith
 .]
 This improved throughput is particularly useful for utilities that
-make heavy use of temporary files such as many compilers.
+make heavy use of temporary files, such as compilers.
 On fast processors, nearly half of the elapsed time for a compilation
 is spent waiting for synchronous operations required for file
 creation and deletion.
@@ -74,7 +73,7 @@ The overall throughput of the system can be improved
 by using the memory where it is getting the highest access rate.
 These needs may shift between supporting process virtual address spaces
 and caching frequently used disk blocks.
-If the memory is to be dedicated to the filesystem,
+If the memory is dedicated to the filesystem,
 it is better used in a buffer cache.
 The buffer cache permits faster access to the data
 because it requires only a single memory-to-memory copy
@@ -84,8 +83,8 @@ memory-to-memory copies, one from the RAM disk
 to the buffer cache,
 then another copy from the buffer cache to the user process.
 .PP
-The new work being presented in this paper is to build
-a prototype RAM-disk filesystem in pageable memory instead of dedicated memory.
+The new work being presented in this paper is building a prototype
+RAM-disk filesystem in pageable memory instead of dedicated memory.
 The goal is to provide the speed benefits of a RAM disk
 without paying the performance penalty inherent in dedicating
 part of the physical memory on the machine to the RAM disk.
@@ -103,16 +102,16 @@ which is larger than the amount of memory on the machine.
 This configuration allows small files to be accessed quickly,
 while still allowing
 .PN /tmp
-to be used for big files, albeit
-at the speed more typical of normal disk-based filesystems.
+to be used for big files,
+although at a speed more typical of normal, disk-based filesystems.
 .PP
 An alternative to building a memory-based filesystem would be to have
 a filesystem that never did operations synchronously and never
 flushed its dirty buffers to disk.
 However, we believe that such a filesystem would either
 use a disproportionately large percentage of the buffer
-cache space, to the detriment of other disk based filesystems,
-or would require the paging system to push out its dirty pages.
+cache space, to the detriment of other filesystems,
+or would require the paging system to flush its dirty pages.
 Waiting for other filesystems to push dirty pages
 subjects them to delays while waiting for the pages to be written.
 We await the results of others trying this approach.
@@ -143,7 +142,7 @@ to the base of the memory in which it has built the filesystem.
 specifies the block device containing the filesystem.)
 .PP
 The mount system call allocates and initializes a mount table
-entry, then calls the filesystem-specific mount routine.
+entry and then calls the filesystem-specific mount routine.
 The filesystem-specific routine is responsible for doing
 the mount and initializing the filesystem-specific
 portion of the mount table entry.
@@ -205,8 +204,8 @@ Here,
 must do the I/O itself to avoid deadlock.
 .PP
 The final piece of kernel code to support the
-memory-based filesystem is in the close routine.
-After a filesystem is successfully unmounted,
+memory-based filesystem is the close routine.
+After the filesystem has been successfully unmounted,
 the device close routine is called.
 For a memory-based filesystem, the device close routine is
 .RN mfs_close .
@@ -217,20 +216,20 @@ that is recognized by the I/O servicing loop in
 as an indication that the filesystem is unmounted.
 The
 .RN mfs_mount
-routine exits which in turn causes the \fInewfs\fP process
-to exit, resulting in the vanishing of the filesystem in a cloud of dirty pages.
+routine exits, in turn causing the \fInewfs\fP process
+to exit, resulting in the filesystem vanishing in a cloud of dirty pages.
 .PP
 The paging of the filesystem does not require any additional
 code beyond that already in the kernel to support virtual memory.
 The \fInewfs\fP process competes with other processes on an equal basis
-for the available memory on the machine.
+for the machine's available memory.
 Data pages of the filesystem that have not yet been used
 are zero-fill-on-demand pages that do not occupy memory,
 although they currently allocate space in backing store.
-If memory is plentiful, the entire contents of the filesystem
+As long as memory is plentiful, the entire contents of the filesystem
 remain memory resident.
-When memory runs short, the oldest pages of \fInewfs\fP are
-pushed to backing store.
+When memory runs short, the oldest pages of \fInewfs\fP will be
+pushed to backing store as part of the normal paging activity.
 The pages that are pushed usually hold the contents of
 files that have been created in the memory-based filesystem
 but have not been recently accessed (or have been deleted).
@@ -305,7 +304,7 @@ even though it will not be entirely addressable at once within the kernel.
 In that system, the implementation of a memory-based filesystem
 that avoids the double copy and context switches will be much easier.
 .PP
-Ideally part of the kernel's address space could reside in pageable memory.
+Ideally part of the kernel's address space would reside in pageable memory.
 Once such a facility is available it would be most efficient to
 build a memory-based filesystem within the kernel.
 One potential problem with such a scheme is that many kernels
