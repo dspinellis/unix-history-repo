@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)4.t	4.4 (Berkeley) %G%
+.\"	@(#)4.t	4.5 (Berkeley) %G%
 .\"
 .ds RH Appendix A \- Fsck Error Conditions
 .NH
@@ -83,7 +83,7 @@ when the file system is being preen'ed.
 .br
 \fIC\fP is not a legal option to
 .I fsck ;
-legal options are \-b, \-y, \-n, and \-p.
+legal options are \-b, \-c, \-y, \-n, and \-p.
 .I Fsck
 terminates on this error condition.
 See the
@@ -200,6 +200,29 @@ Possible responses to the SET TO DEFAULT prompt are:
 The minfree parameter is set to 10%.
 (If some other percentage is desired,
 it can be set using \fItunefs\fP(8).)
+.IP NO
+ignore this error condition.
+.sp
+.LP
+.B "IMPOSSIBLE INTERLEAVE=\fID\fP IN SUPERBLOCK (SET TO DEFAULT)"
+.br
+The file system interleave is less than or equal to zero.
+.LP
+Possible responses to the SET TO DEFAULT prompt are:
+.IP YES
+The interleave parameter is set to 1.
+.IP NO
+ignore this error condition.
+.sp
+.LP
+.B "IMPOSSIBLE NPSECT=\fID\fP IN SUPERBLOCK (SET TO DEFAULT)"
+.br
+The number of physical sectors per track is less than the number
+of usable sectors per track.
+.LP
+Possible responses to the SET TO DEFAULT prompt are:
+.IP YES
+The npsect parameter is set to the number of usable sectors per track.
 .IP NO
 ignore this error condition.
 .sp
