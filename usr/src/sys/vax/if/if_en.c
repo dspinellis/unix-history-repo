@@ -1,4 +1,4 @@
-/*	if_en.c	4.72	82/11/13	*/
+/*	if_en.c	4.73	82/11/17	*/
 
 #include "en.h"
 
@@ -121,6 +121,11 @@ enattach(ui)
 	es->es_if.if_output = enoutput;
 	es->es_if.if_reset = enreset;
 	es->es_ifuba.ifu_flags = UBA_NEEDBDP | UBA_NEED16 | UBA_CANTWAIT;
+#if defined(VAX750)
+	/* don't chew up 750 bdp's */
+	if (cpu == VAX_750 && ui->ui_unit > 0)
+		es->es_ifuba.ifu_flags &= ~UBA_NEEDBDP;
+#endif
 	if_attach(&es->es_if);
 }
 
