@@ -1,6 +1,6 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
-/*	@(#)restore.h	3.4	(Berkeley)	83/03/23	*/
+/*	@(#)restore.h	3.5	(Berkeley)	83/03/27	*/
 
 #include <stdio.h>
 #include <sys/param.h>
@@ -92,10 +92,10 @@ struct context {
  * Other exported routines
  */
 extern ino_t psearch();
-extern void listfile();
-extern void addfile();
-extern void nodeupdates();
-extern void verifyfile();
+extern long listfile();
+extern long addfile();
+extern long nodeupdates();
+extern long verifyfile();
 extern char *rindex();
 extern char *index();
 extern char *strcat();

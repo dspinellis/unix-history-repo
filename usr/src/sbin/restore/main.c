@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	3.7	(Berkeley)	83/03/08";
+static char sccsid[] = "@(#)main.c	3.8	(Berkeley)	83/03/27";
 #endif
 
 /*
@@ -144,10 +144,7 @@ usage:
 				fprintf(stderr, "%s: not on tape\n", name);
 				continue;
 			}
-			if (hflag)
-				treescan(name, ino, listfile);
-			else
-				listfile(name, ino, inodetype(ino));
+			treescan(name, ino, listfile);
 		}
 		done(0);
 
@@ -164,10 +161,7 @@ usage:
 			}
 			if (mflag)
 				pathcheck(name);
-			if (hflag)
-				treescan(name, ino, addfile);
-			else
-				addfile(name, ino, inodetype(ino));
+			treescan(name, ino, addfile);
 		}
 		createfiles();
 		createlinks();
