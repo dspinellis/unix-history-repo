@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)init_main.c	8.1 (Berkeley) %G%
+ *	@(#)init_main.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -38,10 +38,7 @@ char	copyright[] =
 "Copyright (c) 1982, 1986, 1989, 1991, 1993\n\tThe Regents of the University of California.  All rights reserved.\n\n";
 #endif
 
-/*
- * Components of process 0;
- * never freed.
- */
+/* Components of the first process -- never freed. */
 struct	session session0;
 struct	pgrp pgrp0;
 struct	proc proc0;
@@ -54,7 +51,6 @@ struct	proc *initproc, *pageproc;
 
 int	cmask = CMASK;
 extern	struct user *proc0paddr;
-extern	int (*mountroot)();
 
 struct	vnode *rootvp, *swapdev_vp;
 int	boothowto;
@@ -62,26 +58,26 @@ struct	timeval boottime;
 struct	timeval runtime;
 
 /*
- * System startup; initialize the world, create process 0,
- * mount root filesystem, and fork to create init and pagedaemon.
- * Most of the hard work is done in the lower-level initialization
- * routines including startup(), which does memory initialization
- * and autoconfiguration.
+ * System startup; initialize the world, create process 0, mount root
+ * filesystem, and fork to create init and pagedaemon.  Most of the
+ * hard work is done in the lower-level initialization routines including
+ * startup(), which does memory initialization and autoconfiguration.
  */
 main()
 {
-	register int i;
 	register struct proc *p;
 	register struct filedesc0 *fdp;
 	register struct pdevinit *pdev;
+	register int i;
 	int s, rval[2];
+	extern int (*mountroot) __P((void));
 	extern struct pdevinit pdevinit[];
 	extern void roundrobin __P((void *));
 	extern void schedcpu __P((void *));
 
 	/*
-	 * Initialize curproc before any possible traps/probes
-	 * to simplify trap processing.
+	 * Initialize the current process pointer (curproc) before
+	 * any possible traps/probes to simplify trap processing.
 	 */
 	p = &proc0;
 	curproc = p;
@@ -96,9 +92,7 @@ main()
 	kmeminit();
 	cpu_startup();
 
-	/*
-	 * set up system process 0 (swapper)
-	 */
+	/* Create process 0 (the swapper). */
 	p = &proc0;
 	curproc = p;
 
@@ -116,17 +110,13 @@ main()
 	p->p_nice = NZERO;
 	bcopy("swapper", p->p_comm, sizeof ("swapper"));
 
-	/*
-	 * Setup credentials
-	 */
+	/* Create credentials. */
 	cred0.p_refcnt = 1;
 	p->p_cred = &cred0;
 	p->p_ucred = crget();
 	p->p_ucred->cr_ngroups = 1;	/* group 0 */
 
-	/*
-	 * Create the file descriptor table for process 0.
-	 */
+	/* Create the file descriptor table. */
 	fdp = &filedesc0;
 	p->p_fd = &fdp->fd_fd;
 	fdp->fd_fd.fd_refcnt = 1;
@@ -135,9 +125,7 @@ main()
 	fdp->fd_fd.fd_ofileflags = fdp->fd_dfileflags;
 	fdp->fd_fd.fd_nfiles = NDFILE;
 
-	/*
-	 * Set initial limits
-	 */
+	/* Create the limits structures. */
 	p->p_limit = &limit0;
 	for (i = 0; i < sizeof(p->p_rlimit)/sizeof(p->p_rlimit[0]); i++)
 		limit0.pl_rlimit[i].rlim_cur =
@@ -150,9 +138,7 @@ main()
 	limit0.pl_rlimit[RLIMIT_MEMLOCK].rlim_cur = i / 3;
 	limit0.p_refcnt = 1;
 
-	/*
-	 * Allocate a prototype map so we have something to fork
-	 */
+	/* Allocate a prototype map so we have something to fork. */
 	p->p_vmspace = &vmspace0;
 	vmspace0.vm_refcnt = 1;
 	pmap_pinit(&vmspace0.vm_pmap);
@@ -162,8 +148,8 @@ main()
 	p->p_addr = proc0paddr;				/* XXX */
 
 	/*
-	 * We continue to place resource usage info
-	 * and signal actions in the user struct so they're pageable.
+	 * We continue to place resource usage info and signal
+	 * actions in the user struct so they're pageable.
 	 */
 	p->p_stats = &p->p_addr->u_stats;
 	p->p_sigacts = &p->p_addr->u_sigacts;
@@ -186,10 +172,14 @@ main()
 	/* Start real time and statistics clocks. */
 	initclocks();
 
-	/* Initialize tables. */
+	/* Initialize mbuf's. */
 	mbinit();
-	cinit();
+
+	/* Initialize clists. */
+	clist_init();
+
 #ifdef SYSVSHM
+	/* Initialize System V style shared memory. */
 	shminit();
 #endif
 
@@ -207,27 +197,24 @@ main()
 	splx(s);
 
 #ifdef GPROF
+	/* Initialize kernel profiling. */
 	kmstartup();
 #endif
 
-	/* kick off timeout driven events by calling first time */
+	/* Kick off timeout driven events by calling first time. */
 	roundrobin(NULL);
 	schedcpu(NULL);
 
-	/*
-	 * Set up the root file system and vnode.
-	 */
+	/* Mount the root file system. */
 	if ((*mountroot)())
 		panic("cannot mount root");
-	/*
-	 * Get vnode for '/'.
-	 * Setup rootdir and fdp->fd_fd.fd_cdir to point to it.
-	 */
-	if (VFS_ROOT(rootfs, &rootdir))
+
+	/* Get the vnode for '/'.  Set fdp->fd_fd.fd_cdir to reference it. */
+	if (VFS_ROOT(rootfs, &rootvnode))
 		panic("cannot find root vnode");
-	fdp->fd_fd.fd_cdir = rootdir;
+	fdp->fd_fd.fd_cdir = rootvnode;
 	VREF(fdp->fd_fd.fd_cdir);
-	VOP_UNLOCK(rootdir);
+	VOP_UNLOCK(rootvnode);
 	fdp->fd_fd.fd_rdir = NULL;
 	swapinit();
 
@@ -239,10 +226,10 @@ main()
 	p->p_stats->p_start = runtime = mono_time = boottime = time;
 	p->p_rtime.tv_sec = p->p_rtime.tv_usec = 0;
 
-	/*
-	 * make init process
-	 */
+	/* Initialize signal state for process 0. */
 	siginit(p);
+
+	/* Create process 1 (init(8)). */
 	if (fork(p, NULL, rval))
 		panic("fork init");
 	if (rval[1]) {
@@ -275,7 +262,7 @@ main()
 		    addr != VM_MIN_ADDRESS)
 			panic("init: couldn't allocate at zero");
 
-		/* need just enough stack to exec from */
+		/* Need just enough stack from which to exec. */
 		addr = trunc_page(USRSTACK - PAGE_SIZE);
 		if (vm_allocate(&p->p_vmspace->vm_map, &addr,
 		    PAGE_SIZE, FALSE) != KERN_SUCCESS)
@@ -288,9 +275,7 @@ main()
 		return;			/* returns to icode */
 	}
 
-	/*
-	 * Start up pageout daemon (process 2).
-	 */
+	/* Create process 2 (the pageout daemon). */
 	if (fork(p, NULL, rval))
 		panic("fork pager");
 	if (rval[1]) {
@@ -302,11 +287,10 @@ main()
 		p->p_flag |= SLOAD|SSYS;		/* XXX */
 		bcopy("pagedaemon", curproc->p_comm, sizeof ("pagedaemon"));
 		vm_pageout();
-		/*NOTREACHED*/
+		/* NOTREACHED */
 	}
 
-	/*
-	 * enter scheduling loop
-	 */
-	sched();
+	/* The scheduler is an infinite loop. */
+	scheduler();
+	/* NOTREACHED */
 }
