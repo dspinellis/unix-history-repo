@@ -10,7 +10,7 @@
 @c %**end of header
 
 @ifinfo
-$Id$
+$Id: options.texi,v 1.1 1993/11/06 00:07:44 wollman Exp $
 
 This file documents the configuration options available in the FreeBSD
 operating system.
@@ -475,11 +475,9 @@ This option enables the @samp{ddb} debugger, taken from Mach.  See the
 of this debugger.
 
 @item options DIAGNOSTIC
-@itemx options DIANOSTIC
 @itemx options NAMEI_DIAGNOSTIC
 @itemx options PARANOID
 @findex DIAGNOSTIC
-@findex DIANOSTIC
 @findex NAMEI_DIAGNOSTIC
 @findex PARANOID
 @cindex Debugging options
