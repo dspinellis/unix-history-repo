@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)device_pager.c	8.2 (Berkeley) %G%
+ *	@(#)device_pager.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -260,8 +260,8 @@ dev_pager_getpage(pager, m, sync)
 	vm_object_lock(object);
 	vm_page_lock_queues();
 	vm_page_free(m);
-	vm_page_unlock_queues();
 	vm_page_insert(page, object, offset);
+	vm_page_unlock_queues();
 	PAGE_WAKEUP(m);
 	if (offset + PAGE_SIZE > object->size)
 		object->size = offset + PAGE_SIZE;	/* XXX anal */
