@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uba.c	7.3 (Berkeley) %G%
+ *	@(#)uba.c	7.4 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -32,36 +32,63 @@ char	ubasr_bits[] = UBASR_BITS;
 
 #define	spluba	spl7		/* IPL 17 */
 
+#define	BDPMASK	0xf0000000	/* see ubavar.h */
+
 /*
  * Do transfer on device argument.  The controller
  * and uba involved are implied by the device.
  * We queue for resource wait in the uba code if necessary.
  * We return 1 if the transfer was started, 0 if it was not.
- * If you call this routine with the head of the queue for a
- * UBA, it will automatically remove the device from the UBA
- * queue before it returns.  If some other device is given
- * as argument, it will be added to the request queue if the
- * request cannot be started immediately.  This means that
- * passing a device which is on the queue but not at the head
- * of the request queue is likely to be a disaster.
+ *
+ * The onq argument must be zero iff the device is not on the
+ * queue for this UBA.  If onq is set, the device must be at the
+ * head of the queue.  In any case, if the transfer is started,
+ * the device will be off the queue, and if not, it will be on.
+ *
+ * Drivers that allocate one BDP and hold it for some time should
+ * set ud_keepbdp.  In this case um_bdp tells which BDP is allocated
+ * to the controller, unless it is zero, indicating that the controller
+ * does not now have a BDP.
  */
-ubago(ui)
+ubaqueue(ui, onq)
 	register struct uba_device *ui;
+	int onq;
 {
 	register struct uba_ctlr *um = ui->ui_mi;
 	register struct uba_hd *uh;
+	register struct uba_driver *ud;
 	register int s, unit;
 
 	uh = &uba_hd[um->um_ubanum];
+	ud = um->um_driver;
 	s = spluba();
-	if (um->um_driver->ud_xclu && uh->uh_users > 0 || uh->uh_xclu)
+	/*
+	 * Honor exclusive BDP use requests.
+	 */
+	if (ud->ud_xclu && uh->uh_users > 0 || uh->uh_xclu)
 		goto rwait;
-	um->um_ubinfo = ubasetup(um->um_ubanum, um->um_tab.b_actf->b_actf,
-	    UBA_NEEDBDP|UBA_CANTWAIT);
+	if (ud->ud_keepbdp) {
+		/*
+		 * First get just a BDP (though in fact it comes with
+		 * one map register too).
+		 */
+		if (um->um_bdp == 0) {
+			um->um_bdp = uballoc(um->um_ubanum,
+				(caddr_t)0, 0, UBA_NEEDBDP|UBA_CANTWAIT);
+			if (um->um_bdp == 0)
+				goto rwait;
+		}
+		/* now share it with this transfer */
+		um->um_ubinfo = ubasetup(um->um_ubanum,
+			um->um_tab.b_actf->b_actf,
+			um->um_bdp|UBA_HAVEBDP|UBA_CANTWAIT);
+	} else
+		um->um_ubinfo = ubasetup(um->um_ubanum,
+			um->um_tab.b_actf->b_actf, UBA_NEEDBDP|UBA_CANTWAIT);
 	if (um->um_ubinfo == 0)
 		goto rwait;
 	uh->uh_users++;
-	if (um->um_driver->ud_xclu)
+	if (ud->ud_xclu)
 		uh->uh_xclu = 1;
 	splx(s);
 	if (ui->ui_dk >= 0) {
@@ -70,12 +97,12 @@ ubago(ui)
 		dk_xfer[unit]++;
 		dk_wds[unit] += um->um_tab.b_actf->b_actf->b_bcount>>6;
 	}
-	if (uh->uh_actf == ui)
+	if (onq)
 		uh->uh_actf = ui->ui_forw;
-	(*um->um_driver->ud_dgo)(um);
+	(*ud->ud_dgo)(um);
 	return (1);
 rwait:
-	if (uh->uh_actf != ui) {
+	if (!onq) {
 		ui->ui_forw = NULL;
 		if (uh->uh_actf == NULL)
 			uh->uh_actf = ui;
@@ -95,6 +122,8 @@ ubadone(um)
 	if (um->um_driver->ud_xclu)
 		uh->uh_xclu = 0;
 	uh->uh_users--;
+	if (um->um_driver->ud_keepbdp)
+		um->um_ubinfo &= ~BDPMASK;	/* keep BDP for misers */
 	ubarelse(um->um_ubanum, &um->um_ubinfo);
 }
 
@@ -277,7 +306,7 @@ ubarelse(uban, amr)
 		uh->uh_mrwant = 0;
 		wakeup((caddr_t)&uh->uh_mrwant);
 	}
-	while (uh->uh_actf && ubago(uh->uh_actf))
+	while (uh->uh_actf && ubaqueue(uh->uh_actf, 1))
 		;
 }
 
