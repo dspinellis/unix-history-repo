@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_output.c	6.16 (Berkeley) %G%
+ *	@(#)tcp_output.c	6.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -97,21 +97,21 @@ log(7, "persist offset %d\n", off);
 
 	if (len < 0) {
 		/*
-		 * If closing and all data acked, len will be -1;
-		 * retransmit FIN if necessary.
+		 * If FIN has been sent but not acked,
+		 * but we haven't been called to retransmit,
+		 * len will be -1; no need to transmit now.
 		 * Otherwise, window shrank after we sent into it.
 		 * If window shrank to 0, cancel pending retransmit
 		 * and pull snd_nxt back to (closed) window.
 		 * We will enter persist state below.
+		 * If the window didn't close completely,
+		 * just wait for an ACK.
 		 */
-		if (flags & TH_FIN)
-			len = 0;
-		else if (win == 0) {
-			tp->t_timer[TCPT_REXMT] = 0;
-			tp->snd_nxt = tp->snd_una;
-			len = 0;
-		} else
+		if (flags & TH_FIN || win != 0)
 			return (0);
+		tp->t_timer[TCPT_REXMT] = 0;
+		tp->snd_nxt = tp->snd_una;
+		len = 0;
 	}
 	win = sbspace(&so->so_rcv);
 
@@ -328,7 +328,8 @@ send:
 		if (tp->t_timer[TCPT_REXMT] == 0 &&
 		    tp->snd_nxt != tp->snd_una) {
 			TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
-			    tcp_beta * tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
+			  tcp_beta * (tp->t_srtt ? tp->t_srtt : TCPTV_SRTTDFLT),
+			  TCPTV_MIN, TCPTV_MAX);
 			tp->t_rxtshift = 0;
 			tp->t_timer[TCPT_PERSIST] = 0;
 		}
