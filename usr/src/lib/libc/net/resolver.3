@@ -1,10 +1,10 @@
-.\" Copyright (c) 1980 Regents of the University of California.
+.\" Copyright (c) 1985 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)resolver.3	1.1 (Berkeley) %G%
+.\"	@(#)resolver.3	1.2 (Berkeley) %G%
 .\"
-.TH RESOLVER 3 "25 March 1985"
+.TH RESOLVER 3 "15 November 1985"
 .UC 4
 .SH NAME
 res_mkquery, res_send, res_init, dn_comp, dn_expand \- resolver routines
@@ -13,9 +13,9 @@ res_mkquery, res_send, res_init, dn_comp, dn_expand \- resolver routines
 .br
 .B #include <netinet/in.h>
 .br
-.B #include <nameser.h>
+.B #include <arpa/nameser.h>
 .br
-.B #include <resolv.h>
+.B #include <arpa/resolv.h>
 .PP
 .B "res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)"
 .br
@@ -95,17 +95,17 @@ Unused currently (ignore truncation errors, i.e., don't retry with TCP).
 Set the recursion desired bit in queries. This is the default.
 (
 .I res_send
-does not currently perform iterative queries and expects the nameserver
+does not currently perform iterative queries and expects the name server
 to handle recursion. This should be fixed.)
 .IP RES_DEFNAMES
 Append the default domain name to single label queries. This is the default.
 .PP
 .I Res_init
 .PP
-reads the the first line of the initialization file to get the default
-domain name. The second line is the Internet address of the initial host
+reads the initialization file to get the default
+domain name and the Internet address of the initial hosts
 running the name server. If this line does not exist, the host running
-the resolver is tried (only works in 4.3 BSD).
+the resolver is tried.
 .I Res_mkquery
 is used to make a standard query message and places it in
 .IR buf .
@@ -132,7 +132,7 @@ is currently unused but is intended for making update messages.
 is used to send a query to name servers and return an answer.
 It will call
 .I res_init
-if RES_INIT is not set, send the query to the local nameserver, and
+if RES_INIT is not set, send the query to the local name server, and
 handle timeouts and retries. The length of the message is returned or
 \-1 if there were errors.
 .PP
@@ -173,6 +173,13 @@ is NULL, we don't try to compress names. If
 .I lastdnptr
 is NULL, we don't update the list.
 .SH FILES
-resolv.conf	default resolver information
+resolv.conf	Contains the default resolver information read by res_init.
+There are two types of records in this file, domain and name server.
+The domain record specifies the default domain for the resolver to use.
+You can have multiple name server records to designate the name servers 
+addresses you would like the resolver to try. By using this 
+file you don't have to have a name server actually running on your system
+and you can have a back up name server to try in the event your local server 
+is not responsive.
 .SH "SEE ALSO"
 named(8), RFC882, RFC883
