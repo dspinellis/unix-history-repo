@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)rm1	8.1 (Berkeley) %G%
+.\"	@(#)rm1	8.2 (Berkeley) %G%
 .\"
 .EQ
 delim $$
@@ -44,6 +44,7 @@ EXPLAIN acts as a thesaurus for the phrases found by DICTION.
 Sections 2, 3, and 4 describe the programs; Section 5 gives the results
 on a cross-section of technical documents; Section 6 discusses
 accuracy and problems; Section 7 gives implementation details.
+.ne 1i
 .NH 1
 STYLE
 .PP
@@ -214,6 +215,7 @@ Reading_Grade = 5.89 * let_per_wd - .3 * sent_per_100_wds - 15.8
 .br
 Of the four formulae this one usually gives the lowest
 grade when applied to technical documents.
+.ne 1i
 .PP
 The last formula, the Flesch Reading Ease Score, is based
 on grade school text covering grades 3 to 12.
@@ -405,6 +407,7 @@ is retained better than the subject of a passive verb.
 These experiments support the advice of the style books suggesting
 that writers should try to use active verbs wherever possible.
 The flag ``\-p'' causes STYLE to print all sentences containing passive verbs.
+.ne 1i
 .PP
 .IP "\fIPronouns\fR "
 add cohesiveness and connectivity to a document
@@ -490,6 +493,7 @@ For example,
 There are three streets used by the traffic.
 There are too many users on this system.
 .DE
+.ne 1i
 This construction tends to emphasize the object rather than the
 subject of the sentence.
 The flag ``\-e'' will cause STYLE to print all
@@ -724,6 +728,7 @@ Although most of these phrases are valid and correct
 in some contexts, the 50-75% change rate seems to
 show that the phrases are used much more often than
 concise diction warrants.
+.ne 1i
 .NH 1
 Accuracy
 .NH 2
