@@ -75,8 +75,8 @@ action:
 print:
 	${PRINT} ${ALLPRINT}
 
-sourcelist:	${ALLSOURCE}
-	@for i in ${ALLSOURCE}; \
+sourcelist:	${ALLSOURCE} tarread.exe
+	@for i in ${ALLSOURCE} tarread.exe; \
 		do (echo ${DIRPATH}$$i); done
 
 depend:
