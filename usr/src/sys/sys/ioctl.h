@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ioctl.h	7.6 (Berkeley) %G%
+ *	@(#)ioctl.h	7.6.1.1 (Berkeley) %G%
  */
 
 /*
@@ -92,13 +92,14 @@ struct ttysize {
 #define	IOC_OUT		0x40000000	/* copy out parameters */
 #define	IOC_IN		0x80000000	/* copy in parameters */
 #define	IOC_INOUT	(IOC_IN|IOC_OUT)
-#define	IOC_DIRMASK	0xe0000000	/* mask for IN/OUT/VOID */
+#define	IOC_DIRMASK	(IOC_IN|IOC_OUT|IOC_VOID)
 /* the 0x20000000 is so we can distinguish new ioctl's from old */
 #define	_IO(x,y)	(IOC_VOID|(x<<8)|y)
 #define	_IOR(x,y,t)	(IOC_OUT|((sizeof(t)&IOCPARM_MASK)<<16)|(x<<8)|y)
 #define	_IOW(x,y,t)	(IOC_IN|((sizeof(t)&IOCPARM_MASK)<<16)|(x<<8)|y)
 /* this should be _IORW, but stdio got there first */
 #define	_IOWR(x,y,t)	(IOC_INOUT|((sizeof(t)&IOCPARM_MASK)<<16)|(x<<8)|y)
+#define	_IOWX(x,y,s)	(IOC_IN|(((s)&IOCPARM_MASK)<<16)|(x<<8)|(y))
 #endif
 
 /*
@@ -214,6 +215,7 @@ struct ttysize {
 #define		TIOCPKT_START		0x08	/* start output */
 #define		TIOCPKT_NOSTOP		0x10	/* no more ^S, ^Q */
 #define		TIOCPKT_DOSTOP		0x20	/* now do ^S ^Q */
+#define		TIOCPKT_TIOC		0x40	/* transparent ioctl packet */
 #define	TIOCSTOP	_IO('t', 111)		/* stop output, like ^S */
 #define	TIOCSTART	_IO('t', 110)		/* start output, like ^Q */
 #define	TIOCMSET	_IOW('t', 109, int)	/* set all modem bits */
@@ -223,8 +225,11 @@ struct ttysize {
 #define	TIOCREMOTE	_IOW('t', 105, int)	/* remote input editing */
 #define	TIOCGWINSZ	_IOR('t', 104, struct winsize)	/* get window size */
 #define	TIOCSWINSZ	_IOW('t', 103, struct winsize)	/* set window size */
-#define	TIOCUCNTL	_IOW('t', 102, int)	/* pty: set/clr usr cntl mode */
 #define		UIOCCMD(n)	_IO('u', n)		/* usr cntl op "n" */
+#define	TIOCUCNTL	_IOW('t', 102, int)	/* pty: set/clr usr cntl mode */
+#define	TIOCTIOC	_IOW('t', 101, int)	/* pty: set/clr transparent */
+#define	TIOCBLK		_IOW('t', 100, int)	/* pty: block slave writes */
+#define	TIOCIOANS(s)	_IOWX('t', 99, (s))	/* pty: reply to user ioctl */
 #define	TIOCCONS	_IO('t', 98)		/* become virtual console */
 
 #define	OTTYDISC	0		/* old, v7 std tty driver */
