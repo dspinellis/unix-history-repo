@@ -4,7 +4,7 @@
 # include "sendmail.h"
 # include <sys/file.h>
 
-SCCSID(@(#)main.c	3.156		%G%);
+SCCSID(@(#)main.c	3.157		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -638,6 +638,8 @@ finis()
 	if (LogLevel > 11)
 		syslog(LOG_DEBUG, "finis, pid=%d", getpid());
 # endif LOG
+	if (ExitStat == EX_TEMPFAIL)
+		ExitStat = EX_OK;
 	exit(ExitStat);
 }
 /*

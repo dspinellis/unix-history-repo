@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.116		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.117		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -473,10 +473,13 @@ EXTERN u_char	tTdvect[100];
 */
 
 /* set exit status */
-# define setstat(s)		{ if (ExitStat == EX_OK) ExitStat = s; }
+#define setstat(s)	{ \
+				if (ExitStat == EX_OK || ExitStat == EX_TEMPFAIL) \
+					ExitStat = s; \
+			}
 
 /* make a copy of a string */
-# define newstr(s)		strcpy(xalloc(strlen(s) + 1), s)
+#define newstr(s)	strcpy(xalloc(strlen(s) + 1), s)
 
 
 /*
