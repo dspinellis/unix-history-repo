@@ -1,72 +1,79 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)whatis.1	6.7 (Berkeley) %G%
+.\"     @(#)whatis.1	6.7 (Berkeley) %G%
 .\"
-.TH WHATIS 1 ""
-.UC 4
-.SH NAME
-whatis \- describe what a command is
-.SH SYNOPSIS
-.nf
-.ft B
-whatis [-M path] [-m path] command ...
-.ft R
-.fi
-.SH DESCRIPTION
-.I Whatis
+.Dd 
+.Dt WHATIS 1
+.Os BSD 4
+.Sh NAME
+.Nm whatis
+.Nd describe what a command is
+.Sh SYNOPSIS
+.Nm whatis
+.Op Fl M Ar path
+.Op Fl m Ar path
+.Ar command Ar ...
+.Sh DESCRIPTION
+.Nm Whatis
 looks up a given command and gives the header line from the manual page.
 You can then use the
-.IR man (1)
+.Xr man 1
 command to get more information.
-.PP
+.Pp
 The options are as follows:
-.TP
-.I M
-Override the list of standard directories where
-.I whatis
-searches for its database named ``whatis.db''.
+.Bl -tag -width Fl
+.It Fl M Ar path
+Override the list of standard directories
+.Nm whatis
+searches for its database named
+.Dq Pa whatis.db .
 The supplied
-.I path
-must be a colon (``:'') separated list of directories.
-This search path may also be set using the environmental variable
-.IR MANPATH .
-.TP
-.I m
-Augment the list of standard directories where
-.I whatis
-searches for its database named ``whatis.db''.
+.Ar path
+must be a colon
+.Dq \&:
+separated list of directories.
+This search path may also be set using the environment variable
+.Ev MANPATH .
+.It Fl m Ar path
+Augment the list of standard directories
+.Nm whatis
+searches for its database named
+.Dq Pa whatis.db .
 The supplied
-.I path
-must be a colon (``:'') separated list of directories.
+.Ar path
+must be a colon
+.Dq \&:
+separated list of directories.
 These directories will be searched before the standard directories
 or the directories supplied with the
-.I M
+.Fl M
 option or the
-.I MANPATH
-environmental variable are searched.
-.SH "ENVIRONMENTAL VARIABLES"
-.TP
-.I MANPATH
+.Ev MANPATH
+environment variable are searched.
+.El
+.Sh ENVIRONMENT
+.Bl -tag -width MANPATH
+.It Ev MANPATH
 The standard search path used by
-.I man
+.Xr man 1
 may be overridden by specifying a path in the
-.I MANPATH
-environmental variable.
-The format of the path is a colon (``:'') separated list of directories.
-.SH FILES
-whatis.db		name of the whatis database
-.SH "SEE ALSO"
-apropos(1), man(1), whereis(1)
+.Ev MANPATH
+environment variable.
+.El
+.Sh FILES
+.Bl -tag -width whatis.db
+.It Pa whatis.db
+name of the whatis database
+.El
+.Sh SEE ALSO
+.Xr apropos 1 ,
+.Xr man 1 ,
+.Xr whereis 1
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 3.0 .
