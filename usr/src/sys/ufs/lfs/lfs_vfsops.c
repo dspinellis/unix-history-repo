@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	7.68 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.69 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -33,7 +33,7 @@
 #include <ufs/lfs/lfs.h>
 #include <ufs/lfs/lfs_extern.h>
 
-static int lfs_mountfs __P((struct vnode *, struct mount *, struct proc *));
+int lfs_mountfs __P((struct vnode *, struct mount *, struct proc *));
 
 struct vfsops lfs_vfsops = {
 	lfs_mount,
@@ -148,7 +148,7 @@ lfs_mount(mp, path, data, ndp, p)
 	bzero(fs->fs_fsmnt + size, sizeof(fs->fs_fsmnt) - size);
 	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->mnt_stat.f_mntonname,
 	    MNAMELEN);
-	(void) copyinstr(args.fspec, mp->mnt_stat.f_mntfromname, MNAMELEN - 1, 
+	(void) copyinstr(args.fspec, mp->mnt_stat.f_mntfromname, MNAMELEN - 1,
 	    &size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
 	(void) ufs_statfs(mp, &mp->mnt_stat, p);
@@ -157,7 +157,7 @@ lfs_mount(mp, path, data, ndp, p)
 	bzero(fs->lfs_fsmnt + size, sizeof(fs->lfs_fsmnt) - size);
 	bcopy((caddr_t)fs->lfs_fsmnt, (caddr_t)mp->mnt_stat.f_mntonname,
 	    MNAMELEN);
-	(void) copyinstr(args.fspec, mp->mnt_stat.f_mntfromname, MNAMELEN - 1, 
+	(void) copyinstr(args.fspec, mp->mnt_stat.f_mntfromname, MNAMELEN - 1,
 	    &size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
 	(void) lfs_statfs(mp, &mp->mnt_stat, p);
@@ -169,7 +169,7 @@ lfs_mount(mp, path, data, ndp, p)
  * Common code for mount and mountroot
  * LFS specific
  */
-static int
+int
 lfs_mountfs(devvp, mp, p)
 	register struct vnode *devvp;
 	struct mount *mp;
@@ -238,7 +238,7 @@ lfs_mountfs(devvp, mp, p)
 	dev = devvp->v_rdev;
 	mp->mnt_data = (qaddr_t)ump;
 	mp->mnt_stat.f_fsid.val[0] = (long)dev;
-	mp->mnt_stat.f_fsid.val[1] = MOUNT_LFS;	
+	mp->mnt_stat.f_fsid.val[1] = MOUNT_LFS;
 	mp->mnt_flag |= MNT_LOCAL;
 	ump->um_mountp = mp;
 	ump->um_dev = dev;
@@ -406,7 +406,7 @@ lfs_sync(mp, waitfor)
 		ufs_bufstats();
 
 	/* All syncs must be checkpoints until roll-forward is implemented. */
-	error = lfs_segwrite(mp, 1);		
+	error = lfs_segwrite(mp, 1);
 #ifdef QUOTA
 	qsync(mp);
 #endif
