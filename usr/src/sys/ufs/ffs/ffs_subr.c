@@ -1,4 +1,4 @@
-/*	ffs_subr.c	6.6	85/03/19	*/
+/*	ffs_subr.c	6.7	85/05/27	*/
 
 #ifdef KERNEL
 #include "param.h"
@@ -365,3 +365,44 @@ bufstats()
 	}
 }
 #endif
+
+#if !defined(vax)
+/*
+ * C definitions of special vax instructions.
+ */
+scanc(size, cp, table, mask)
+	u_int size;
+	register u_char *cp, table[];
+	register u_char mask;
+{
+	register u_char *end = &cp[size];
+
+	while (cp < end && (table[*cp] & mask) == 0)
+		cp++;
+	return (end - cp);
+}
+
+skpc(mask, size, cp)
+	register u_char mask;
+	u_int size;
+	register u_char *cp;
+{
+	register u_char *end = &cp[size];
+
+	while (cp < end && *cp == mask)
+		cp++;
+	return (end - cp);
+}
+
+locc(mask, size, cp)
+	register u_char mask;
+	u_int size;
+	register u_char *cp;
+{
+	register u_char *end = &cp[size];
+
+	while (cp < end && *cp != mask)
+		cp++;
+	return (end - cp);
+}
+#endif vax
