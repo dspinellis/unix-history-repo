@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	1.2	(Berkeley)	84/01/21
+#	@(#)Makefile	1.4	85/06/11
 #
 DEST	      = $(DESTDIR)/usr/lib/bmac
 
