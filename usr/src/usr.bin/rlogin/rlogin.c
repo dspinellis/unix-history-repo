@@ -1,3 +1,9 @@
+
+/*
+ *	$Source: /a/staff/kfall/mit/rlogin/RCS/rlogin.c,v $
+ *	$Header: /a/staff/kfall/mit/rlogin/RCS/rlogin.c,v 5.2 89/07/26 12:11:21 kfall Exp Locker: kfall $
+ */
+
 /*
  * Copyright (c) 1983 The Regents of the University of California.
  * All rights reserved.
@@ -47,12 +53,14 @@ static char sccsid[] = "@(#)rlogin.c	5.12 (Berkeley) 9/19/88";
 #include <netdb.h>
 
 #ifdef	KERBEROS
-#include <kerberos/krb.h>
+#include <krb.h>
 int		encrypt = 0;
-char		krb_realm[REALM_SZ];
+char		dst_realm_buf[REALM_SZ];
+char		*dest_realm = NULL;
 CREDENTIALS	cred;
 Key_schedule	schedule;
 int		use_kerberos = 1;
+extern char	*krb_realmofhost();
 #endif	/* KERBEROS */
 
 # ifndef TIOCPKT_WINDOW
@@ -177,7 +185,8 @@ another:
 			fprintf(stderr, "-k option requires an argument\n");
 			exit(1);
 		}
-		strncpy(krb_realm, *argv, REALM_SZ);
+		dest_realm = dst_realm_buf;
+		strncpy(dest_realm, *argv, REALM_SZ);
 		argv++, argc--;
 		goto another;
 	}
@@ -188,7 +197,8 @@ another:
 		goto usage;
 	if (argc > 0)
 		goto usage;
-	pwd = getpwuid(getuid());
+	uid = getuid();
+	pwd = getpwuid(uid);
 	if (pwd == 0) {
 		fprintf(stderr, "Who are you?\n");
 		exit(1);
@@ -223,47 +233,41 @@ another:
 try_connect:
 	if(use_kerberos) {
 		rem = KSUCCESS;
-		if(krb_realm[0] == '\0') {
-			rem = krb_get_lrealm(krb_realm, 1);
-		}
-		if(rem == KSUCCESS) {
-			setreuid(0,getuid());
-			if(encrypt) {
-				rem = krcmd_mutual(
-					&host, sp->s_port,
-					name ? name : pwd->pw_name, term,
-					0, krb_realm,
-					&cred, schedule
-				);
-			} else {
-				rem = krcmd(
-			    		&host, sp->s_port,
-					name ? name : pwd->pw_name, term,
-					0, krb_realm
-				);
-			}
-			setuid(geteuid());
-		} else {
-			fprintf(
-				stderr,
-				"rlogin: Kerberos error getting local realm %s\n",
-				krb_err_txt[rem]
+		if (dest_realm == NULL)
+			dest_realm = krb_realmofhost(host);
+
+		errno = 0;
+		if(encrypt) {
+			rem = krcmd_mutual(
+				&host, sp->s_port,
+				name ? name : pwd->pw_name, term,
+				0, dest_realm,
+				&cred, schedule
 			);
-			exit(1);
+		} else {
+			rem = krcmd(
+				&host, sp->s_port,
+				name ? name : pwd->pw_name, term,
+				0, dest_realm
+			);
 		}
-		if((rem < 0) && errno == ECONNREFUSED) {
+		if (rem < 0) {
 			use_kerberos = 0;
 			sp = getservbyname("login", "tcp");
 			if(sp == NULL) {
-				fprintf(stderr, "unknown service login/tcp\n");
+				fprintf(stderr,
+					"unknown service login/tcp\n");
 				exit(1);
 			}
-			old_warning("remote host doesn't support Kerberos");
+			if (errno == ECONNREFUSED)
+				old_warning("remote host doesn't support Kerberos");
+			if (errno == ENOENT)
+				old_warning("Can't provide Kerberos auth data");
 			goto try_connect;
 		}
 	} else {
 		if(encrypt) {
-			fprintf(stderr, "The -x flag requires Kerberos authencation\n");
+			fprintf(stderr, "The -x flag requires Kerberos authentication\n");
 			exit(1);
 		}
         	rem = rcmd(&host, sp->s_port, pwd->pw_name,
@@ -280,7 +284,6 @@ try_connect:
 	if (options & SO_DEBUG &&
 	    setsockopt(rem, SOL_SOCKET, SO_DEBUG, &on, sizeof (on)) < 0)
 		perror("rlogin: setsockopt (SO_DEBUG)");
-	uid = getuid();
 	if (setuid(uid) < 0) {
 		perror("rlogin: setuid");
 		exit(1);
