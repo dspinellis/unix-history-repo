@@ -2,10 +2,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.45		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.46		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.45		%G%);
+SCCSID(@(#)srvrsmtp.c	3.46		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -76,6 +76,8 @@ char	*WizWord = NULL;		/* the wizard word to compare against */
 # endif DEBUG
 bool	InChild = FALSE;		/* true if running in a subprocess */
 bool	OneXact = FALSE;		/* one xaction only this run */
+char	*RealHostName = NULL;		/* verified hostname, set in daemon.c */
+
 #define EX_QUIT		22		/* special code for QUIT command */
 
 smtp()
@@ -152,7 +154,15 @@ smtp()
 		switch (c->cmdcode)
 		{
 		  case CMDHELO:		/* hello -- introduce yourself */
-			define('s', newstr(p), CurEnv);
+			if (RealHostName != NULL && !sameword(p, RealHostName))
+			{
+				char buf[MAXNAME];
+
+				(void) sprintf(buf, "%s (%s)", p, RealHostName);
+				define('s', newstr(buf), CurEnv);
+			}
+			else
+				define('s', newstr(p), CurEnv);
 			message("250", "%s Hello %s, pleased to meet you",
 				HostName, p);
 			break;
