@@ -1,0 +1,103 @@
+.TH MP 3X
+.UC
+.SH NAME
+itom, mcmp, m_in, m_out, madd, msub, mult, mdiv, min, mout,
+pow, gcd, rpow \- multiple precision integer arithmetic
+.SH SYNOPSIS
+.nf
+.B #include <mp.h>
+.sp
+.B "typedef struct mint { int len; short *val; } MINT;"
+.PP
+.PP
+.B madd(a, b, c)
+.B msub(a, b, c)
+.B mult(a, b, c)
+.B mdiv(a, b, q, r)
+.B min(a)
+.B mout(a)
+.B pow(a, b, m, c)
+.B gcd(a, b, c)
+.B rpow(a, n, c)
+.B msqrt(a, b, r)
+.B mcmp(a,b)
+.B MINT *a, *b, *c, *m, "*q, *r;"
+.B int n;
+.PP
+.B
+.B sdiv(a, n, q, r)
+.B MINT *a, *q;
+.B short *r;
+.PP
+.B MINT *itom(n)
+.PP
+.B cc ... \-lmp
+.SH DESCRIPTION
+These routines perform arithmetic on integers of
+arbitrary length.
+The integers are stored using the defined type
+.IR MINT .
+Pointers to
+a
+.I MINT
+can be initialized using the function
+.I itom
+which sets the initial value to
+.IR n .
+After that space is managed automatically by the routines.
+.PP
+.IR madd , " msub" , " mult" ,
+assign to their third arguments the sum, difference, and
+product, respectively, of their first two arguments.
+.I mdiv
+assigns the quotient and remainder, respectively,
+to its third and fourth arguments.
+.I sdiv
+is like
+.I mdiv
+except that the divisor is an ordinary integer.
+.I msqrt
+produces the square root and remainder of its first argument.
+.I rpow
+calculates
+.I a
+raised to the (``regular'' integral) power
+.IR n ,
+while
+.I pow
+calculates this (for
+.IR *n " a " MINT )
+reduced modulo
+.IR m .
+.IR min " and " mout
+do decimal input and output.
+More generally,
+.IR fmin " and " fmout
+do decimal input and output from file
+.IR f ,
+and
+.IR m_in " and " m_out
+do I/O base 
+.IR n .
+.PP
+The functions are obtained with the
+loader option
+.IR \-lmp .
+.SH FILES
+.ta 2i
+/usr/include/mp.h	include file
+.br
+/usr/lib/libmp.a	object code library
+.SH SEE ALSO
+ape(3X)
+.SH DIAGNOSTICS
+Illegal operations and running out of memory
+produce messages and core images.
+.SH BUGS
+Bases for input and output should be <= 10.
+.PP
+The
+.I mp
+package has some bugs--users are advised to use
+.I ape
+instead.
