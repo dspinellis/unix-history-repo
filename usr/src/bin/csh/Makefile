@@ -15,7 +15,7 @@ CXREF=	/usr/ucb/cxref
 VGRIND=	csh /usr/ucb/vgrind
 CTAGS=	/usr/ucb/ctags
 LIBES=
-SCCS=	/usr/local/sccs
+SCCS=	sccs
 
 OBJS=	alloc.o doprnt.o printf.o sh.o sh.char.o sh.dir.o sh.dol.o sh.err.o \
 	sh.exec.o sh.exp.o sh.file.o sh.func.o sh.glob.o sh.hist.o sh.init.o \
@@ -90,120 +90,23 @@ clean:
 tags:
 	${CTAGS} *.h sh*.c
 
-###
-alloc.o: /usr/include/sys/types.h
-sh.o: sh.h /usr/include/sys/time.h /usr/include/sys/resource.h \
-	/usr/include/sys/param.h /usr/include/machine/machparam.h \
-	/usr/include/signal.h /usr/include/signal.h /usr/include/sys/types.h \
-	/usr/include/sys/stat.h /usr/include/sys/signal.h \
-	/usr/include/errno.h /usr/include/setjmp.h sh.local.h \
-	/usr/include/sys/ioctl.h /usr/include/sys/ttychars.h \
-	/usr/include/sys/ttydev.h /usr/include/sys/jioctl.h \
-	/usr/include/fcntl.h /usr/include/pwd.h
+sh.o: sh.h sh.local.h
 sh.char.o: sh.char.h
-sh.dir.o: sh.h /usr/include/sys/time.h /usr/include/sys/resource.h \
-	/usr/include/sys/param.h /usr/include/machine/machparam.h \
-	/usr/include/signal.h /usr/include/signal.h /usr/include/sys/types.h \
-	/usr/include/sys/stat.h /usr/include/sys/signal.h \
-	/usr/include/errno.h /usr/include/setjmp.h sh.local.h sh.dir.h
-sh.dol.o: sh.h /usr/include/sys/time.h /usr/include/sys/resource.h \
-	/usr/include/sys/param.h /usr/include/machine/machparam.h \
-	/usr/include/signal.h /usr/include/signal.h /usr/include/sys/types.h \
-	/usr/include/sys/stat.h /usr/include/sys/signal.h \
-	/usr/include/errno.h /usr/include/setjmp.h sh.local.h sh.char.h
-sh.err.o: sh.h /usr/include/sys/time.h /usr/include/sys/resource.h \
-	/usr/include/sys/param.h /usr/include/machine/machparam.h \
-	/usr/include/signal.h /usr/include/signal.h /usr/include/sys/types.h \
-	/usr/include/sys/stat.h /usr/include/sys/signal.h \
-	/usr/include/errno.h /usr/include/setjmp.h sh.local.h \
-	/usr/include/sys/ioctl.h /usr/include/sys/ttychars.h \
-	/usr/include/sys/ttydev.h /usr/include/sys/jioctl.h
-sh.exec.o: sh.h /usr/include/sys/time.h /usr/include/sys/resource.h \
-	/usr/include/sys/param.h /usr/include/machine/machparam.h \
-	/usr/include/signal.h /usr/include/signal.h /usr/include/sys/types.h \
-	/usr/include/sys/stat.h /usr/include/sys/signal.h \
-	/usr/include/errno.h /usr/include/setjmp.h sh.local.h \
-	/usr/include/sys/dir.h
-sh.exp.o: sh.h /usr/include/sys/time.h /usr/include/sys/resource.h \
-	/usr/include/sys/param.h /usr/include/machine/machparam.h \
-	/usr/include/signal.h /usr/include/signal.h /usr/include/sys/types.h \
-	/usr/include/sys/stat.h /usr/include/sys/signal.h \
-	/usr/include/errno.h /usr/include/setjmp.h sh.local.h
-sh.file.o: sh.h /usr/include/sys/time.h /usr/include/sys/resource.h \
-	/usr/include/sys/param.h /usr/include/machine/machparam.h \
-	/usr/include/signal.h /usr/include/signal.h /usr/include/sys/types.h \
-	/usr/include/sys/stat.h /usr/include/sys/signal.h \
-	/usr/include/errno.h /usr/include/setjmp.h sh.local.h \
-	/usr/include/sgtty.h /usr/include/sys/ioctl.h \
-	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
-	/usr/include/sys/jioctl.h /usr/include/sys/dir.h /usr/include/pwd.h
-sh.func.o: sh.h /usr/include/sys/time.h /usr/include/sys/resource.h \
-	/usr/include/sys/param.h /usr/include/machine/machparam.h \
-	/usr/include/signal.h /usr/include/signal.h /usr/include/sys/types.h \
-	/usr/include/sys/stat.h /usr/include/sys/signal.h \
-	/usr/include/errno.h /usr/include/setjmp.h sh.local.h \
-	/usr/include/sys/ioctl.h /usr/include/sys/ttychars.h \
-	/usr/include/sys/ttydev.h /usr/include/sys/jioctl.h
-sh.glob.o: sh.h /usr/include/sys/time.h /usr/include/sys/resource.h \
-	/usr/include/sys/param.h /usr/include/machine/machparam.h \
-	/usr/include/signal.h /usr/include/signal.h /usr/include/sys/types.h \
-	/usr/include/sys/stat.h /usr/include/sys/signal.h \
-	/usr/include/errno.h /usr/include/setjmp.h sh.local.h sh.char.h \
-	/usr/include/sys/dir.h
-sh.hist.o: sh.h /usr/include/sys/time.h /usr/include/sys/resource.h \
-	/usr/include/sys/param.h /usr/include/machine/machparam.h \
-	/usr/include/signal.h /usr/include/signal.h /usr/include/sys/types.h \
-	/usr/include/sys/stat.h /usr/include/sys/signal.h \
-	/usr/include/errno.h /usr/include/setjmp.h sh.local.h
+sh.dir.o: sh.h sh.local.h sh.dir.h
+sh.dol.o: sh.h sh.local.h sh.char.h
+sh.err.o: sh.h sh.local.h
+sh.exec.o: sh.h sh.local.h
+sh.exp.o: sh.h sh.local.h
+sh.file.o: sh.h sh.local.h
+sh.func.o: sh.h sh.local.h
+sh.glob.o: sh.h sh.local.h sh.char.h
+sh.hist.o: sh.h sh.local.h
 sh.init.o: sh.local.h
-sh.lex.o: sh.h /usr/include/sys/time.h /usr/include/sys/resource.h \
-	/usr/include/sys/param.h /usr/include/machine/machparam.h \
-	/usr/include/signal.h /usr/include/signal.h /usr/include/sys/types.h \
-	/usr/include/sys/stat.h /usr/include/sys/signal.h \
-	/usr/include/errno.h /usr/include/setjmp.h sh.local.h sh.char.h \
-	/usr/include/sgtty.h /usr/include/sys/ioctl.h \
-	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
-	/usr/include/sys/jioctl.h
-sh.misc.o: sh.h /usr/include/sys/time.h /usr/include/sys/resource.h \
-	/usr/include/sys/param.h /usr/include/machine/machparam.h \
-	/usr/include/signal.h /usr/include/signal.h /usr/include/sys/types.h \
-	/usr/include/sys/stat.h /usr/include/sys/signal.h \
-	/usr/include/errno.h /usr/include/setjmp.h sh.local.h
-sh.parse.o: sh.h /usr/include/sys/time.h /usr/include/sys/resource.h \
-	/usr/include/sys/param.h /usr/include/machine/machparam.h \
-	/usr/include/signal.h /usr/include/signal.h /usr/include/sys/types.h \
-	/usr/include/sys/stat.h /usr/include/sys/signal.h \
-	/usr/include/errno.h /usr/include/setjmp.h sh.local.h
-sh.print.o: sh.h /usr/include/sys/time.h /usr/include/sys/resource.h \
-	/usr/include/sys/param.h /usr/include/machine/machparam.h \
-	/usr/include/signal.h /usr/include/signal.h /usr/include/sys/types.h \
-	/usr/include/sys/stat.h /usr/include/sys/signal.h \
-	/usr/include/errno.h /usr/include/setjmp.h sh.local.h \
-	/usr/include/sys/ioctl.h /usr/include/sys/ttychars.h \
-	/usr/include/sys/ttydev.h /usr/include/sys/jioctl.h
-sh.proc.o: sh.h /usr/include/sys/time.h /usr/include/sys/resource.h \
-	/usr/include/sys/param.h /usr/include/machine/machparam.h \
-	/usr/include/signal.h /usr/include/signal.h /usr/include/sys/types.h \
-	/usr/include/sys/stat.h /usr/include/sys/signal.h \
-	/usr/include/errno.h /usr/include/setjmp.h sh.local.h sh.dir.h \
-	sh.proc.h /usr/include/sys/wait.h /usr/include/sys/ioctl.h \
-	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h \
-	/usr/include/sys/jioctl.h
-sh.sem.o: sh.h /usr/include/sys/time.h /usr/include/sys/resource.h \
-	/usr/include/sys/param.h /usr/include/machine/machparam.h \
-	/usr/include/signal.h /usr/include/signal.h /usr/include/sys/types.h \
-	/usr/include/sys/stat.h /usr/include/sys/signal.h \
-	/usr/include/errno.h /usr/include/setjmp.h sh.local.h sh.proc.h \
-	/usr/include/sys/ioctl.h /usr/include/sys/ttychars.h \
-	/usr/include/sys/ttydev.h /usr/include/sys/jioctl.h \
-	/usr/include/fcntl.h
-sh.set.o: sh.h /usr/include/sys/time.h /usr/include/sys/resource.h \
-	/usr/include/sys/param.h /usr/include/machine/machparam.h \
-	/usr/include/signal.h /usr/include/signal.h /usr/include/sys/types.h \
-	/usr/include/sys/stat.h /usr/include/sys/signal.h \
-	/usr/include/errno.h /usr/include/setjmp.h sh.local.h
-sh.time.o: sh.h /usr/include/sys/time.h /usr/include/sys/resource.h \
-	/usr/include/sys/param.h /usr/include/machine/machparam.h \
-	/usr/include/signal.h /usr/include/signal.h /usr/include/sys/types.h \
-	/usr/include/sys/stat.h /usr/include/sys/signal.h \
-	/usr/include/errno.h /usr/include/setjmp.h sh.local.h
+sh.lex.o: sh.h sh.local.h sh.char.h
+sh.misc.o: sh.h sh.local.h
+sh.parse.o: sh.h sh.local.h
+sh.print.o: sh.h sh.local.h
+sh.proc.o: sh.h sh.local.h sh.dir.h sh.proc.h
+sh.sem.o: sh.h sh.local.h sh.proc.h
+sh.set.o: sh.h sh.local.h
+sh.time.o: sh.h sh.local.h
