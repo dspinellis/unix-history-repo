@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.12 (Berkeley) %G%
+.\"	@(#)op.me	8.13 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.12
+Version 8.13
 .sp
 For Sendmail Version 8.6
 .)l
@@ -4905,6 +4905,15 @@ These sets can also be used
 to do special purpose output rewriting
 in cooperation with ruleset four.
 .pp
+The S and R fields
+can be specified as two numbers separated by a slash
+(e.g.,
+.q "S=10/11" ),
+meaning that all envelope addresses will be processed through ruleset 10
+and all header addresses will be processed through ruleset 11.
+With only one number specified,
+both envelope and header rewriting sets are set to the indicated ruleset.
+.pp
 The E field defines the string to use
 as an end-of-line indication.
 A string containing only newline is the default.
@@ -6667,7 +6676,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.12
+.\"Version 8.13
 .\".ce 0
 .bp 2
 .ce
