@@ -1,0 +1,62 @@
+.TH registerhost 8 Cornell
+.\" $Header: registerhost.n,v 1.2 86/12/15 11:26:19 jqj Exp $
+.UC 4
+.tr -\-
+." differences between troff and nroff compensated here:
+.ie t .ds sc \(sc
+.el .ds sc section\
+.ds lq \&"\"
+.ds rq \&"\"
+.if t \
+.	ds lq ''
+.if t \
+.	ds rq ``
+.SH NAME
+registerhost \- create clearinghouse entry for this UNIX host
+.SH SYNOPSIS
+.B registerhost
+[
+.B -f
+]
+.SH DESCRIPTION
+.I Registerhost
+should be run as part of the installation of XNS support on a UNIX system.
+It queries the kernel and user for necessary information, then updates the
+Clearinghouse on the local network to contain an entry for this UNIX system.
+The Clearinghouse entry will be used by XNS clients (e.g. XDE Chat, the
+Cornell Bridge, etc.) to find the address of the UNIX host.
+.PP
+If the \fB-\fR option is used, the entry will also be added as a network
+file service.
+.PP
+Before running
+.I registerhost
+you must use
+.I ifconfig
+to enable an Ethernet interface for XNS use.
+.PP
+.I Registerhost
+first prompts for an XNS user name and password;
+you must have domain administrator status on the clearinghouse in order to
+update an entry.
+It next attempts to determine your XNS address.  This address consists of
+a net number assigned by Xerox and a processor number which matches the
+Ethernet address of the interface on your machine.  Note that if you have
+a UNIX host operating as a gateway with several Ethernet interfaces
+configured
+for XNS, all such interfaces must have the same Ethernet address, but must
+be on different networks, and all must be specified to
+.IR registerhost .
+.SH FILES
+/usr/local/lib/xnscourier/CH.addrs	address of local Clearinghouse
+.SH "SEE ALSO"
+ifconfig(8)
+.SH DIAGNOSTICS
+.SH BUGS
+Probably lots of them.  In particular,
+.I registerhost
+should determine Ethernet addresses by using ioctl(2) rather than asking
+the user.
+.SH AUTHORS
+JQ Johnson and Keith Sklower
+.PP
