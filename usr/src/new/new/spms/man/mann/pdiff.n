@@ -1,0 +1,69 @@
+.TH PDIFF 1P "22 June 1983"
+.UC 4
+.SH NAME
+pdiff \- differential project comparator
+.SH SYNOPSIS
+.B pdiff
+[\fB\-rx\fR] [\fB\-T \fRtypexpr] [diff options] projectname1 projectname2
+.PP
+.B pdiff
+[\fB\-x\fR] [diff options] pdirname1 pdirname2
+.PP
+.B pdiff
+[\fB\-x\fR] [diff options] file1 file2
+.SH DESCRIPTION
+.I Pdiff
+compares files in projects using the
+.I diff
+command.
+.I Diff
+tells what lines must be changed in the files to bring them into agreement.
+Except in rare circumstances, it finds a smallest sufficient set of file
+differences.
+.PP
+If both arguments are projects,
+.I pdiff
+sorts the project directories in each project by name,
+and then runs
+.I diff
+on the contents of common directories. Binary files that differ,
+common subdirectories, and files that appear in only one directory are
+listed.
+.PP
+If
+.I pdirname1
+is a project, then a project directory in that project with the same name as
+.I pdirname2
+is used (and vice versa).
+.PP
+If
+.I file1
+is a project, then a file in that project with the same name as
+.I file2,
+residing in a project directory with the same name as the current working
+project directory, is used (and vice versa).
+.SH OPTIONS
+.IP \fB\-r\fR
+Apply
+.I pdiff
+recursively to common subprojects.
+.IP \fB\-x\fR
+Trace and print
+.I diff
+commands, but do not execute.
+.IP "\fB\-T \fItypexpr\fR"
+Only compare project directories corresponding to
+boolean type label expression,
+.I typexpr.
+.SH "SEE ALSO"
+diff(1)
+.SH DIAGNOSTICS
+The error message ``pdiff: don't know which project directory to use in
+\fIprojectname\fR'' indicates that the file or directory that is being
+compared against
+.I projectname
+is not part of the current working project.
+.PP
+Exit status is 0 for no differences, 1 for some, 2 for trouble.
+.SH AUTHOR
+Peter J. Nicklin

@@ -1,0 +1,46 @@
+.TH PD 1P "22 June 1983"
+.UC 4
+.SH NAME
+pd \- change working project directory
+.SH SYNOPSIS
+.B pd
+[\fB\-dp\fR] [dirname]
+.SH DESCRIPTION
+.I Dirname
+becomes the new working directory.
+.I Dirname
+may be either a project or a regular directory.
+.PP
+Given without any arguments,
+.I pd
+returns you to the root directory of the current working project.
+.PP
+If
+.I dirname
+is a project directory in another project,
+.I pd
+makes that project the current working project.
+.SH OPTIONS
+.IP \fB\-d\fR
+Print project directory description.
+.IP \fB\-p\fR
+Push old working directory onto the directory stack. The current working
+project is not changed.
+.SH EXAMPLE
+To change to the `work' directory of a project named `spms':
+.PP
+	pd  ^spms^work
+.SH "SEE ALSO"
+cd(1), csh(1)
+.SH DIAGNOSTICS
+Exit status 0 is normal. Exit status 1 indicates an error.
+.SH AUTHOR
+Peter J. Nicklin
+.SH BUGS
+.I Pd
+is provided only for C shell,
+.I csh,
+users because it is an aliased command. The `.cshrc' file in your
+home directory should contain the following alias:
+.PP
+		alias pd  \'eval \`\^"pd"  \\!*\`\^\'
