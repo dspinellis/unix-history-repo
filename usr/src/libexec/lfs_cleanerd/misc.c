@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -43,7 +43,9 @@ err(fmt, va_alist)
 	(void)fprintf(stderr, "%s: ", special);
 	(void)vfprintf(stderr, fmt, ap);
 	va_end(ap);
-	(void)fprintf(stderr, " %s\n", strerror(errno));
+	if (errno)
+		(void)fprintf(stderr, " %s", strerror(errno));
+	(void)fprintf(stderr, "\n");
 	if (fatal)
 		exit(1);
 }
