@@ -1,4 +1,0 @@
-mkdir /usr/lib/tabset
-cp dtc /usr/lib/tabset/dtc
-cp owl /usr/lib/tabset/owl
-cp teleray /usr/lib/tabset/teleray

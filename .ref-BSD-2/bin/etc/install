@@ -1,3 +1,0 @@
-cat /dev/null >> /etc/htmp
-cp termcap /etc/termcap
-cat /dev/null >> /etc/ttytype

@@ -1,6 +1,0 @@
-OBJECTS = main.o init.o proc.o gram.o lex.o \
-	  equiv.o data.o expr.o exec.o intr.o io.o misc.o error.o\
-	  put.o putscjb.o vax.o vaxx.o
-
-f77pass1: $(OBJECTS)
-	cc $(OBJECTS) libS.a -o f77pass1

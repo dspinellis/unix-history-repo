@@ -1,5 +1,0 @@
-play:
-	-rm -r ../lib/play; mkdir ../lib/play; chmod +w ../lib/play
-
-log:
-	-rm -r ../lib/log; mkdir ../lib/log; chmod +w ../lib/log

@@ -1,8 +1,0 @@
-cc -O -DV6 -I/usr/include/retrofit -c termcap.c
-cc -O -DV6 -I/usr/include/retrofit -c tgoto.c
-cc -O -DV6 -I/usr/include/retrofit -c tputs.c
-ar r termlib.a termcap.o tgoto.o tputs.o
-cp termlib.a /usr/lib/libtermlib.a
-cp termcap /etc
-chmod 644 /etc/termcap /usr/lib/libtermlib.a
-chdir tabset; sh install

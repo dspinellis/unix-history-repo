@@ -1,3 +1,0 @@
-chdir /usr/net
-date >>netqstats
-/usr/new/netq -a $1 | wc >>netqstats

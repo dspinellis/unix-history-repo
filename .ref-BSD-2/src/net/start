@@ -1,5 +1,0 @@
-cd /usr/net
-rm -f rcv/*
-csh bin/setlength 50 plogfiley logfile netstaty netqstats
-csh bin/fixusernames &
-bin/netstart y &

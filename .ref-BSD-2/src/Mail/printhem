@@ -1,5 +1,0 @@
-pr makefile
-pr rcv.h def.h glob.h main.c aux.c cmd1.c cmd2.c cmd3.c cmdtab.c collect.c
-pr edit.c fio.c getname.c lex.c list.c names.c quit.c send.c
-pr strings.c temp.c tty.c
-pr v6hdr/local.h v6.local.c v7.local.h v7.local.c

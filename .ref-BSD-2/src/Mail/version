@@ -1,4 +1,0 @@
-date >/tmp/$$
-ed - /tmp/$$ < :versfix
-cp /tmp/$$ version.c
-rm /tmp/$$

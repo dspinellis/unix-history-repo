@@ -1,7 +1,0 @@
-mkdir /usr/man/manu
-cp setenv.u /usr/man/manu/setenv.u
-cp htmp.u /usr/man/manu/htmp.u
-cp tmac.an /usr/lib/tmac/tmac.an
-cp tmac.an.new /usr/lib/tmac/tmac.an.new
-cp tmac.an6n /usr/lib/tmac/tmac.an6n
-cp tmac.an6t /usr/lib/tmac/tmac.an6t

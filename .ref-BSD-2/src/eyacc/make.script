@@ -1,2 +1,0 @@
-cc -o eyacc -O -i ey?.c
-mv eyacc /usr/ucb/eyacc
