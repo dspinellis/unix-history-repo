@@ -1,10 +1,13 @@
+#ifndef lint
+static char sccsid[] = "@(#)popen.c	1.7 (Berkeley) %G%";
+#endif
+
 #include <stdio.h>
 #include <signal.h>
 #define	tst(a,b)	(*mode == 'r'? (b) : (a))
 #define	RDR	0
 #define	WTR	1
 static	int	popen_pid[20];
-static	char	*sccsid = "@(#)popen.c	1.7 %G%";
 
 FILE *
 popen(cmd,mode)
