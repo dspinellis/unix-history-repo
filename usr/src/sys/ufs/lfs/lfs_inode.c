@@ -1,4 +1,4 @@
-/*	lfs_inode.c	4.34	83/03/15	*/
+/*	lfs_inode.c	4.35	83/05/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -243,7 +243,7 @@ irele(ip)
 			ip->i_flag |= IUPD|ICHG;
 			ifree(ip, ip->i_number, mode);
 #ifdef QUOTA
-			(void)chkiq(ip->i_dev, ip, ip->i_uid, 0);
+			(void) chkiq(ip->i_dev, ip, ip->i_uid, 0);
 			dqrele(ip->i_dquot);
 			ip->i_dquot = NODQUOT;
 #endif
@@ -338,11 +338,9 @@ itrunc(oip, length)
 	register struct fs *fs;
 	register struct inode *ip;
 	struct inode tip;
-	int level;
-#ifdef QUOTA
 	long blocksreleased = 0, nblocks;
 	long indirtrunc();
-#endif
+	int level;
 
 	if (oip->i_size <= length)
 		return;
@@ -357,9 +355,7 @@ itrunc(oip, length)
 	lastiblock[SINGLE] = lastblock - NDADDR;
 	lastiblock[DOUBLE] = lastiblock[SINGLE] - NINDIR(fs);
 	lastiblock[TRIPLE] = lastiblock[DOUBLE] - NINDIR(fs) * NINDIR(fs);
-#ifdef QUOTA
-	nblocks = fs->fs_bsize / DEV_BSIZE;
-#endif
+	nblocks = btodb(fs->fs_bsize);
 	/*
 	 * Update size of file and block pointers
 	 * on disk before we start freeing blocks.
@@ -388,16 +384,12 @@ itrunc(oip, length)
 	for (level = TRIPLE; level >= SINGLE; level--) {
 		bn = ip->i_ib[level];
 		if (bn != 0) {
-#ifdef QUOTA
 			blocksreleased +=
-#endif
-				indirtrunc(ip, bn, lastiblock[level], level);
+			    indirtrunc(ip, bn, lastiblock[level], level);
 			if (lastiblock[level] < 0) {
 				ip->i_ib[level] = 0;
 				free(ip, bn, (off_t)fs->fs_bsize);
-#ifdef QUOTA
 				blocksreleased += nblocks;
-#endif
 			}
 		}
 		if (lastiblock[level] >= 0)
@@ -416,9 +408,7 @@ itrunc(oip, length)
 		ip->i_db[i] = 0;
 		size = (off_t)blksize(fs, ip, i);
 		free(ip, bn, size);
-#ifdef QUOTA
-		blocksreleased += size / DEV_BSIZE;
-#endif
+		blocksreleased += btodb(size);
 	}
 	if (lastblock < 0)
 		goto done;
@@ -448,9 +438,7 @@ itrunc(oip, length)
 			 */
 			bn += numfrags(fs, newspace);
 			free(ip, bn, oldspace - newspace);
-#ifdef QUOTA
-			blocksreleased += (oldspace - newspace) / DEV_BSIZE;
-#endif
+			blocksreleased += btodb(oldspace - newspace);
 		}
 	}
 done:
@@ -462,8 +450,12 @@ done:
 		if (ip->i_db[i] != oip->i_db[i])
 			panic("itrunc2");
 /* END PARANOIA */
+	oip->i_blocks -= blocksreleased;
+	if (oip->i_blocks < 0)			/* sanity */
+		oip->i_blocks = 0;
+	oip->i_flag |= ICHG;
 #ifdef QUOTA
-	(void) chkdq(ip, -blocksreleased, 0);
+	(void) chkdq(oip, -blocksreleased, 0);
 #endif
 }
 
@@ -477,9 +469,7 @@ done:
  *
  * NB: triple indirect blocks are untested.
  */
-#ifdef QUOTA
 long
-#endif
 indirtrunc(ip, bn, lastbn, level)
 	register struct inode *ip;
 	daddr_t bn, lastbn;
@@ -491,9 +481,7 @@ indirtrunc(ip, bn, lastbn, level)
 	register struct fs *fs = ip->i_fs;
 	daddr_t nb, last;
 	long factor;
-#ifdef QUOTA
 	int blocksreleased = 0, nblocks;
-#endif
 
 	/*
 	 * Calculate index in current block of last
@@ -506,9 +494,7 @@ indirtrunc(ip, bn, lastbn, level)
 	last = lastbn;
 	if (lastbn > 0)
 		last /= factor;
-#ifdef QUOTA
-	nblocks = fs->fs_bsize / DEV_BSIZE;
-#endif
+	nblocks = btodb(fs->fs_bsize);
 	/*
 	 * Get buffer of block pointers, zero those 
 	 * entries corresponding to blocks to be free'd,
@@ -519,11 +505,7 @@ indirtrunc(ip, bn, lastbn, level)
 	if (bp->b_flags&B_ERROR) {
 		brelse(copy);
 		brelse(bp);
-#ifdef QUOTA
 		return (0);
-#else
-		return;
-#endif
 	}
 	bap = bp->b_un.b_daddr;
 	bcopy((caddr_t)bap, (caddr_t)copy->b_un.b_daddr, (u_int)fs->fs_bsize);
@@ -540,14 +522,10 @@ indirtrunc(ip, bn, lastbn, level)
 		if (nb == 0)
 			continue;
 		if (level > SINGLE)
-#ifdef QUOTA
 			blocksreleased +=
-#endif
-				indirtrunc(ip, nb, (daddr_t)-1, level - 1);
+			    indirtrunc(ip, nb, (daddr_t)-1, level - 1);
 		free(ip, nb, (int)fs->fs_bsize);
-#ifdef QUOTA
 		blocksreleased += nblocks;
-#endif
 	}
 
 	/*
@@ -557,15 +535,10 @@ indirtrunc(ip, bn, lastbn, level)
 		last = lastbn % factor;
 		nb = bap[i];
 		if (nb != 0)
-#ifdef QUOTA
-			blocksreleased +=
-#endif
-				indirtrunc(ip, nb, last, level - 1);
+			blocksreleased += indirtrunc(ip, nb, last, level - 1);
 	}
 	brelse(bp);
-#ifdef QUOTA
 	return (blocksreleased);
-#endif
 }
 
 /*
