@@ -3,15 +3,20 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)termout.c	3.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)termout.c	3.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #if defined(unix)
@@ -33,22 +38,17 @@ static char sccsid[] = "@(#)termout.c	3.6 (Berkeley) %G%";
 
 #include "terminal.h"
 
-#include "../telnet.ext"
-
 #include "../api/disp_asc.h"
 
 #include "../ctlr/hostctlr.h"
-#include "../ctlr/inbound.ext"
+#include "../ctlr/externs.h"
+#include "../ctlr/declare.h"
 #include "../ctlr/oia.h"
-#include "../ctlr/options.ext"
-#include "../ctlr/outbound.ext"
 #include "../ctlr/screen.h"
-
-#include "../ascii/map3270.ext"
 
 #include "../general/globals.h"
 
-extern void EmptyTerminal();
+#include "../telextrn.h"
 
 #define CorrectTerminalCursor() ((TransparentClock == OutputClock)? \
 		CursorAddress:UnLocked? CursorAddress: HighestScreen())
@@ -101,8 +101,7 @@ init_screen()
 /* OurExitString - designed to keep us from going through infinite recursion */
 
 static void
-OurExitString(file, string, value)
-FILE	*file;
+OurExitString(string, value)
 char	*string;
 int	value;
 {
@@ -110,7 +109,7 @@ int	value;
 
     if (!recursion) {
 	recursion = 1;
-	ExitString(file, string, value);
+	ExitString(string, value);
     }
 }
 
@@ -121,7 +120,7 @@ static void
 DoARefresh()
 {
     if (ERR == refresh()) {
-	OurExitString(stderr, "ERR from refresh\n", 1);
+	OurExitString("ERR from refresh\n", 1);
     }
 }
 
@@ -134,7 +133,7 @@ int	where;		/* cursor address */
 
 	sprintf(foo, "ERR from %s at %d (%d, %d)\n",
 		from, where, ScreenLine(where), ScreenLineOffset(where));
-	OurExitString(stderr, foo, 1);
+	OurExitString(foo, 1);
 	/* NOTREACHED */
 }
 
@@ -490,7 +489,7 @@ FastScreen()
 		return;
 	    } else if (fieldattr) {	/* Should we display? */
 			    /* Display translated data */
-		addch(disp_asc[GetTerminalPointer(p)]);
+		addch((char)disp_asc[GetTerminalPointer(p)]);
 	    } else {
 		addch(' ');			/* Display a blank */
 	    }
@@ -522,7 +521,7 @@ FastScreen()
 	    if (IsStartFieldPointer(p)) {	/* New field? */
 		if (tmp != tmpbuf) {
 		    *tmp++ = 0;			/* close out */
-		    addstr(tmpbuf);
+		    addstr((char *)tmpbuf);
 		    tmp = tmpbuf;
 		    tmpend = tmpbuf + NumberColumns - ScreenLineOffset(p-Host);
 		}
@@ -547,7 +546,7 @@ FastScreen()
 		int i = p-Host;		/* Be sure the "p++" happened first! */
 
 		*tmp++ = 0;
-		addstr(tmpbuf);
+		addstr((char *)tmpbuf);
 		tmp = tmpbuf;
 		move(ScreenLine(i), 0);
 		tmpend = tmpbuf + NumberColumns;
@@ -555,7 +554,7 @@ FastScreen()
 	}
 	if (tmp != tmpbuf) {
 	    *tmp++ = 0;
-	    addstr(tmpbuf);
+	    addstr((char *)tmpbuf);
 	    tmp = tmpbuf;
 	}
     }
@@ -585,6 +584,7 @@ void
 #endif	/* defined(NOT43) */
 	(*TryToSend)() = FastScreen;
 
+/*ARGSUSED*/
 void
 ScreenOIA(oia)
 OIA *oia;
@@ -602,6 +602,7 @@ InitTerminal()
     static int speeds[] = { 0, 50, 75, 110, 134, 150, 200, 300, 600, 1200, 1800,
 		2400, 4800, 9600 };
 #endif
+    extern void InitMapping();
     
     InitMapping();		/* Go do mapping file (MAP3270) first */
     if (!screenInitd) { 	/* not initialized */
@@ -732,6 +733,8 @@ ConnectScreen()
 void
 LocalClearScreen()
 {
+    extern void Clear3270();
+
     outputPurge();		/* flush all data to terminal */
     clear();			/* clear in curses */
     ClearArray(Terminal);
@@ -766,22 +769,22 @@ char *s;
 	    len = COLS-2;
 	}
 	if ((bellwin = newwin(3, len+2, LINES/2, 0)) == NULL) {
-	    OurExitString(stderr, "Error from newwin in RingBell", 1);
+	    OurExitString("Error from newwin in RingBell", 1);
 	}
 	werase(bellwin);
 	wstandout(bellwin);
 	box(bellwin, '|', '-');
 	if (wmove(bellwin, 1, 1) == ERR) {
-	    OurExitString(stderr, "Error from wmove in RingBell", 1);
+	    OurExitString("Error from wmove in RingBell", 1);
 	}
 	while (len--) {
 	    if (waddch(bellwin, *s++) == ERR) {
-		OurExitString(stderr, "Error from waddch in RingBell", 1);
+		OurExitString("Error from waddch in RingBell", 1);
 	    }
 	}
 	wstandend(bellwin);
 	if (wrefresh(bellwin) == ERR) {
-	    OurExitString(stderr, "Error from wrefresh in RingBell", 1);
+	    OurExitString("Error from wrefresh in RingBell", 1);
 	}
 	bellwinup = 1;
     }
@@ -845,7 +848,7 @@ int		control;	/* To see if we are done */
 {
 #if	defined(unix)
     extern char *transcom;
-    int inpipefd[2], outpipefd[2], savemode;
+    int inpipefd[2], outpipefd[2];
     void aborttc();
 #endif	/* defined(unix) */
 
@@ -887,7 +890,7 @@ int		control;	/* To see if we are done */
 	     setcommandmode();
 	     tin = inpipefd[0];
 	     tout = outpipefd[1];
-	     (void) signal(SIGCHLD, aborttc);
+	     (void) signal(SIGCHLD, (int (*)())aborttc);
 	     setconnmode();
 	     tcflag = 1;
 	     break;
@@ -897,10 +900,12 @@ int		control;	/* To see if we are done */
        }
     }
 #endif	/* defined(unix) */
-    (void) DataToTerminal(buffer, count);
+    (void) DataToTerminal((char *)buffer, count);
     if (control && (kind == 0)) {		/* Send in AID byte */
 	SendToIBM();
     } else {
+	extern void TransInput();
+
 	TransInput(1, kind);			/* Go get some data */
     }
 }
@@ -910,8 +915,6 @@ int		control;	/* To see if we are done */
 static void
 aborttc()
 {
-	int savemode;
-
 	setcommandmode();
 	(void) close(tin);
 	(void) close(tout);

@@ -3,15 +3,20 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)system.c	3.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)system.c	3.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -73,9 +78,11 @@ static int
 
 static enum { DEAD, UNCONNECTED, CONNECTED } state;
 
+static long
+    storage_location;		/* Address we have */
+static short
+    storage_length = 0;		/* Length we have */
 static int
-    storage_location,		/* Address we have */
-    storage_length = 0,		/* Length we have */
     storage_must_send = 0,	/* Storage belongs on other side of wire */
     storage_accessed = 0;	/* The storage is accessed (so leave alone)! */
 
@@ -162,9 +169,8 @@ doassociate()
     char
 	promptbuf[100],
 	buffer[200];
-    int length;
-    int was;
     struct storage_descriptor sd;
+    extern char *crypt();
 
     if (api_exch_intype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
 	return -1;
@@ -180,7 +186,9 @@ doassociate()
     buffer[sd.length] = 0;
 
     if (strcmp(buffer, key) != 0) {
-	if ((pwent = getpwuid(geteuid())) == 0) {
+	extern uid_t geteuid();
+
+	if ((pwent = getpwuid((int)geteuid())) == 0) {
 	    return -1;
 	}
 	sprintf(promptbuf, "Enter password for user %s:", pwent->pw_name);
@@ -253,7 +261,6 @@ doassociate()
 void
 freestorage()
 {
-    char buffer[40];
     struct storage_descriptor sd;
 
     if (storage_accessed) {
@@ -286,13 +293,13 @@ freestorage()
 
 static int
 getstorage(address, length, copyin)
+long
+    address;
 int
-    address,
     length,
     copyin;
 {
     struct storage_descriptor sd;
-    char buffer[40];
 
     freestorage();
     if (storage_accessed) {
@@ -310,7 +317,7 @@ int
     storage_location = address;
     storage_length = length;
     if (copyin) {
-	sd.location = storage_location;
+	sd.location = (long)storage_location;
 	sd.length = storage_length;
 	if (api_exch_outtype(EXCH_TYPE_STORE_DESC,
 					sizeof sd, (char *)&sd) == -1) {
@@ -330,16 +337,19 @@ int
     return 0;
 }
 
+/*ARGSUSED*/
 void
 movetous(local, es, di, length)
 char
     *local;
-int
+unsigned int
     es,
     di;
 int
     length;
 {
+    long where = SEG_OFF_BACK(es, di);
+
     if (length > sizeof storage) {
 	fprintf(stderr, "Internal API error - movetous() length too long.\n");
 	fprintf(stderr, "(detected in file %s, line %d)\n", __FILE__, __LINE__);
@@ -347,13 +357,14 @@ int
     } else if (length == 0) {
 	return;
     }
-    getstorage(di, length, 1);
-    memcpy(local, storage+(di-storage_location), length);
+    getstorage(where, length, 1);
+    memcpy(local, (char *)(storage+((where-storage_location))), length);
 }
 
+/*ARGSUSED*/
 void
 movetothem(es, di, local, length)
-int
+unsigned int
     es,
     di;
 char
@@ -361,6 +372,8 @@ char
 int
     length;
 {
+    long where = SEG_OFF_BACK(es, di);
+
     if (length > sizeof storage) {
 	fprintf(stderr, "Internal API error - movetothem() length too long.\n");
 	fprintf(stderr, "(detected in file %s, line %d)\n", __FILE__, __LINE__);
@@ -371,15 +384,16 @@ int
     freestorage();
     memcpy((char *)storage, local, length);
     storage_length = length;
-    storage_location = di;
+    storage_location = where;
     storage_must_send = 1;
 }
 
 
 char *
 access_api(location, length, copyin)
+char *
+    location;
 int
-    location,
     length,
     copyin;			/* Do we need to copy in initially? */
 {
@@ -390,16 +404,19 @@ int
 	quit();
     } else if (length != 0) {
 	freestorage();
-	getstorage(location, length, copyin);
+	getstorage((long)location, length, copyin);
 	storage_accessed = 1;
     }
     return (char *) storage;
 }
 
+/*ARGSUSED*/
+void
 unaccess_api(location, local, length, copyout)
-int	location;
+char 	*location;
 char	*local;
 int	length;
+int	copyout;
 {
     if (storage_accessed == 0) {
 	fprintf(stderr, "Internal error - unnecessary unaccess_api call.\n");
@@ -425,7 +442,8 @@ doconnect()
     FD_ZERO(&fdset);
     while (shell_active && (sock == -1)) {
 	FD_SET(serversock, &fdset);
-	if ((i = select(serversock+1, &fdset, 0, 0, 0)) < 0) {
+	if ((i = select(serversock+1, &fdset,
+		    (fd_set *)0, (fd_set *)0, (struct timeval *)0)) < 0) {
 	    if (errno = EINTR) {
 		continue;
 	    } else {
@@ -433,7 +451,7 @@ doconnect()
 		return -1;
 	    }
 	} else {
-	    i = accept(serversock, 0, 0);
+	    i = accept(serversock, (struct sockaddr *)0, (int *)0);
 	    if (i == -1) {
 		perror("accepting API connection");
 		return -1;
@@ -443,10 +461,13 @@ doconnect()
     }
     /* If the process has already exited, we may need to close */
     if ((shell_active == 0) && (sock != -1)) {
+	extern void setcommandmode();
+
 	(void) close(sock);
 	sock = -1;
 	setcommandmode();	/* In case child_died sneaked in */
     }
+    return 0;
 }
 
 /*
@@ -536,12 +557,14 @@ shell_continue()
 static int
 child_died()
 {
-    union wait *status;
+    union wait status;
     register int pid;
 
-    while ((pid = wait3(&status, WNOHANG, 0)) > 0) {
+    while ((pid = wait3(&status, WNOHANG, (struct rusage *)0)) > 0) {
 	if (pid == shell_pid) {
 	    char inputbuffer[100];
+	    extern void setconnmode();
+	    extern void ConnectScreen();
 
 	    shell_active = 0;
 	    if (sock != -1) {
@@ -582,6 +605,7 @@ char	*argv[];
     long ikey;
     extern long random();
     extern char *mktemp();
+    extern char *strcpy();
 
     /* First, create verification file. */
     do {
@@ -596,7 +620,7 @@ char	*argv[];
 
     /* Now, get seed for random */
 
-    if (gettimeofday(&tv, 0) == -1) {
+    if (gettimeofday(&tv, (struct timezone *)0) == -1) {
 	perror("gettimeofday");
 	return 0;
     }
@@ -604,7 +628,7 @@ char	*argv[];
     do {
 	ikey = random();
     } while (ikey == 0);
-    sprintf(key, "%lu\n", ikey);
+    sprintf(key, "%lu\n", (unsigned long) ikey);
     if (write(fd, key, strlen(key)) != strlen(key)) {
 	perror("write");
 	return 0;
@@ -625,12 +649,12 @@ char	*argv[];
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = INADDR_ANY;
     server.sin_port = 0;
-    if (bind(serversock, &server, sizeof server) < 0) {
+    if (bind(serversock, (struct sockaddr *)&server, sizeof server) < 0) {
 	perror("binding API socket");
 	return 0;
     }
     length = sizeof server;
-    if (getsockname(serversock, &server, &length) < 0) {
+    if (getsockname(serversock, (struct sockaddr *)&server, &length) < 0) {
 	perror("getting API socket name");
 	(void) close(serversock);
     }
@@ -642,7 +666,7 @@ char	*argv[];
 	fprintf(stderr, "Local hostname too large; using 'localhost'.\n");
 	strcpy(sockNAME, "localhost");
     }
-    sprintf(sockNAME+strlen(sockNAME), ":%d", ntohs(server.sin_port));
+    sprintf(sockNAME+strlen(sockNAME), ":%u", ntohs(server.sin_port));
     sprintf(sockNAME+strlen(sockNAME), ":%s", keyname);
 
     if (whereAPI == 0) {
