@@ -1,0 +1,236 @@
+%    Copyright (C) 1990, 1992 Aladdin Enterprises.  All rights reserved.
+%    Distributed by Free Software Foundation, Inc.
+%
+% This file is part of Ghostscript.
+%
+% Ghostscript is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
+% to anyone for the consequences of using it or for whether it serves any
+% particular purpose or works at all, unless he says so in writing.  Refer
+% to the Ghostscript General Public License for full details.
+%
+% Everyone is granted permission to copy, modify and redistribute
+% Ghostscript, but only under the conditions described in the Ghostscript
+% General Public License.  A copy of this license is supposed to have been
+% given to you along with Ghostscript so you can know your rights and
+% responsibilities.  It should be in a file named COPYING.  Among other
+% things, the copyright notice and this notice must be preserved on all
+% copies.
+
+% ----------------------------------------------------------------
+
+% This file is a catalog of fonts known to Ghostscript.  Any font
+% that is to be loaded automatically when named must be in this catalog.
+
+% Each font has an entry consisting of three items:
+%
+%	- The name by which the font is known inside Ghostscript
+%	(a Ghostscript literal name).  This is used to find the file
+%	from which a font of a given name should be loaded.
+%
+%	- The name of the Ghostscript font file (a Ghostscript string).
+%	The filename should include the extension, which (by convention)
+%	is `.gsf'.
+%
+%	- A terminating semicolon.
+
+% Because of limitations in the MS-DOS environment, Ghostscript font
+% file names must be no more than 8 characters long, must consist only
+% of LOWER CASE letters, digits, and underscores, and must start with a
+% letter.  Font names, on the other hand, need only obey the syntax of
+% names in the Ghostscript language, which is much more liberal.
+
+% Most of the Ghostscript fonts were created automatically from freely
+% available bitmaps.  There is a makefile (fonts.mak) that specifies
+% how this conversion was done.  fonts.mak also specifies, for each such
+% converted font, its uniqueID (an integer used to identify distinct fonts
+% within the Ghostscript font machinery), and its encoding (the mapping
+% from character codes in a string to character names).  For more detailed
+% information, read fonts.mak.
+
+% The following table is actually a Ghostscript data structure.
+% If you add new entries, be sure to copy the punctuation accurately.
+
+% 
+% A homemade font.
+ 
+/Ugly				(uglyr.gsf)	;
+
+
+% Fonts converted from bitmaps.
+
+/AvantGarde-Book		(pagk.gsf)	;
+/AvantGarde-BookOblique		(pagko.gsf)	;
+/AvantGarde-Demi		(pagd.gsf)	;
+/AvantGarde-DemiOblique		(pagdo.gsf)	;
+
+/Bookman-Light			(pbkl.gsf)	;
+/Bookman-LightItalic		(pbkli.gsf)	;
+/Bookman-Demi			(pbkd.gsf)	;
+/Bookman-DemiItalic		(pbkdi.gsf)	;
+
+/Charter-Roman			(bchr.gsf)	;
+/Charter-Italic			(bchri.gsf)	;
+/Charter-Bold			(bchb.gsf)	;
+/Charter-BoldItalic		(bchbi.gsf)	;
+
+% The converted Courier font has been replaced by a Type 1 font
+% contributed to the X11R5 distribution; see below.
+% Unfortunately, quite a few PostScript files use Courier-Oblique
+% rather than Courier-Italic, so we have to keep the old Obliques around.
+%/Courier			(pcrr.gsf)	;
+/Courier-Oblique		(pcrro.gsf)	;
+%/Courier-Bold			(pcrb.gsf)	;
+/Courier-BoldOblique		(pcrbo.gsf)	;
+
+/Helvetica			(phvr.gsf)	;
+/Helvetica-Oblique		(phvro.gsf)	;
+/Helvetica-Narrow		(phvrrn.gsf)	;
+/Helvetica-Bold			(phvb.gsf)	;
+/Helvetica-BoldOblique		(phvbo.gsf)	;
+
+/NewCenturySchlbk-Roman		(pncr.gsf)	;
+/NewCenturySchlbk-Italic	(pncri.gsf)	;
+/NewCenturySchlbk-Bold		(pncb.gsf)	;
+/NewCenturySchlbk-BoldItalic	(pncbi.gsf)	;
+
+/Palatino-Roman			(pplr.gsf)	;
+/Palatino-Italic		(pplri.gsf)	;
+/Palatino-Bold			(pplb.gsf)	;
+/Palatino-BoldItalic		(pplbi.gsf)	;
+
+/Symbol				(psyr.gsf)	;
+
+/Times-Roman			(ptmr.gsf)	;
+/Times-Italic			(ptmri.gsf)	;
+/Times-Bold			(ptmb.gsf)	;
+/Times-BoldItalic		(ptmbi.gsf)	;
+
+/ZapfChancery			(zcr.gsf)	;
+/ZapfChancery-MediumItalic	(zcri.gsf)	;
+/ZapfChancery-Oblique		(zcro.gsf)	;
+/ZapfChancery-Bold		(zcb.gsf)	;
+
+/ZapfDingbats			(pzdr.gsf)	;
+
+
+% 
+%
+% Type 1 fonts contributed to the X11R5 distribution.
+% These have UniqueIDs and file names of their own.
+%
+
+% The following notice accompanied the Courier font:
+%
+%   IBM Courier - Copyright (c) IBM Corporation 1990, 1991
+%
+%   You are hereby granted permission under the terms of the IBM/MIT X
+%   Consortium Courier Typefont agreement to execute, reproduce,
+%   distribute, display, market, sell and otherwise transfer copies of
+%   the IBM Courier font to third parties.
+%
+%   The font is provided "AS IS" without charge.  NO WARRANTIES OR
+%   INDEMNIFICATION ARE GIVEN, WHETHER EXPRESS OR IMPLIED INCLUDING, BUT
+%   LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+%   A PARTICULAR PURPOSE.
+
+/Courier		(cour.pfa)	;
+/Courier-Italic		(couri.pfa)	;
+/Courier-Bold		(courb.pfa)	;
+/Courier-BoldItalic	(courbi.pfa)	;
+
+% The following notice accompanied the Utopia font:
+%
+%   Permission to use, reproduce, display and distribute the listed
+%   typefaces is hereby granted, provided that the Adobe Copyright notice
+%   appears in all whole and partial copies of the software and that the
+%   following trademark symbol and attribution appear in all unmodified
+%   copies of the software:
+%
+%           Copyright (c) 1989 Adobe Systems Incorporated
+%           Utopia (R)
+%           Utopia is a registered trademark of Adobe Systems Incorporated
+%
+%   The Adobe typefaces (Type 1 font program, bitmaps and Adobe Font
+%   Metric files) donated are:
+%
+%           Utopia Regular
+%           Utopia Italic
+%           Utopia Bold
+%           Utopia Bold Italic
+
+/Utopia-Regular		(utrg.pfa)	;
+/Utopia-Italic		(uti.pfa)	;
+/Utopia-Bold		(utb.pfa)	;
+/Utopia-BoldItalic	(utbi.pfa)	;
+
+
+% 
+% 
+% Fonts converted from Hershey outlines.  These are constructed and
+% maintained manually.  Their entries here in the map contain a UniqueID
+% because the fonts themselves don't currently contain a UniqueID entry.
+% This is clearly wrong, and will be fixed someday.
+%
+% The UniqueID's and filenames are constructed differently for
+% these than for the ones above, because of the strange way that the Hershey
+% fonts were constructed.  The scheme for these looks like:
+% 
+% 42TTXY0
+% 
+% TT = typeface, X = ``class'', Y = variation
+% 
+% The typeface numbers are given above.
+% 
+% class:
+% 0 = normal			= r
+% 1 = simplex			= s
+% 2 = complex			= c
+% 3 = triplex			= t
+% 
+% variation:
+% 0 = normal			(omitted)
+% 1 = oblique			= o
+% 2 = italic			= i
+% 3 = bold			= b
+% 4 = bold oblique		= bo
+% 5 = bold italic		= bi
+% 
+
+/Hershey-Gothic-English		(hrge_r.gsf)	4290000 ;
+/Hershey-Gothic-English-Bold	(hrge_rb.gsf)	4290030 ;
+/Hershey-Gothic-English-Oblique	(hrge_ro.gsf)	4290010 ;
+
+/Hershey-Gothic-German		(hrgr_r.gsf)	4291000 ;
+/Hershey-Gothic-German-Bold	(hrgr_rb.gsf)	4291030 ;
+/Hershey-Gothic-German-Oblique	(hrgr_ro.gsf)	4291010 ;
+
+/Hershey-Gothic-Italian		(hrit_r.gsf)	4292000 ; 
+/Hershey-Gothic-Italian-Bold	(hrit_rb.gsf)	4292030 ;
+/Hershey-Gothic-Italian-Oblique	(hrit_ro.gsf)	4292010 ;
+
+/Hershey-Greek-Complex		(hrgk_c.gsf)	4293200 ;
+/Hershey-Greek-Simplex		(hrgk_s.gsf)	4293100 ;
+
+/Hershey-Plain			(hrpl_r.gsf)	4294000 ;
+/Hershey-Plain-Bold		(hrpl_rb.gsf)	4294030 ;
+/Hershey-Plain-Oblique		(hrpl_ro.gsf)	4294010 ;
+/Hershey-Plain-Simplex		(hrpl_s.gsf)	4294100 ;
+/Hershey-Plain-Simplex-Bold	(hrpl_sb.gsf)	4294130 ;
+/Hershey-Plain-Simplex-Bold-Oblique (hrpl_sbo.gsf) 4294140 ;
+/Hershey-Plain-Simplex-Oblique	(hrpl_so.gsf)	4294110 ;
+/Hershey-Plain-Triplex		(hrpl_t.gsf)	4294300 ;
+/Hershey-Plain-Triplex-Italic	(hrpl_ti.gsf)	4294320 ;
+/Hershey-Plain-Triplex-Bold	(hrpl_tb.gsf)	4294330 ;
+/Hershey-Plain-Triplex-Bold-Italic (hrpl_tbi.gsf) 4294350 ;
+
+/Hershey-Script-Complex		(hrsc_c.gsf)	4295200 ;
+/Hershey-Script-Complex-Bold	(hrsc_cb.gsf)	4295230 ;
+/Hershey-Script-Complex-Oblique	(hrsc_co.gsf)	4295210 ;
+/Hershey-Script-Simplex		(hrsc_s.gsf)	4295100 ;
+/Hershey-Script-Simplex-Bold	(hrsc_sb.gsf)	4295130 ;
+/Hershey-Script-Simplex-Oblique	(hrsc_so.gsf)	4295110 ;
+
+% This font, and only this font among the Hershey fonts, uses
+% the SymbolEncoding.
+/Hershey-Symbol			(hrsy_r.gsf)	4296000 ;
