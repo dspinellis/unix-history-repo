@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.6.1.1 (Berkeley) %G%
 
-MAN7=	ascii.0 environ.0 eqnchar.0 hier.0 hostname.0 intro.0 mailaddr.0 \
-	man.0 mdoc.samples.0 ms.0 operator.0 term.0
+MAN7=	ascii.0 environ.0 hier.0 hostname.0 intro.0 mailaddr.0 \
+	mdoc.samples.0 operator.0 term.0
 MLINKS=	intro.7 miscellaneous.7
 
 all: ${MAN7}

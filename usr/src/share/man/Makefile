@@ -1,6 +1,8 @@
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.8.1.1 (Berkeley) %G%
 
-SUBDIR=	man1 man3 man3f man4 man5 man7 man8
+# Missing: man3f
+
+SUBDIR=	man1 man3 man4 man5 man7 man8
 
 afterinstall:
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 makewhatis.sed \
