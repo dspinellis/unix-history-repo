@@ -23,7 +23,7 @@
  * from: $Header: /sprite/src/kernel/vm/ds3100.md/vmPmaxAsm.s,
  *	v 1.1 89/07/10 14:27:41 nelson Exp $ SPRITE (DECWRL)
  *
- *	@(#)locore.s	7.5 (Berkeley) %G%
+ *	@(#)locore.s	7.6 (Berkeley) %G%
  */
 
 /*
@@ -32,6 +32,7 @@
  */
 
 #include <sys/errno.h>
+#include <sys/syscall.h>
 
 #include <machine/param.h>
 #include <machine/vmparam.h>
@@ -145,6 +146,20 @@ szicode:
 	.text
 
 /*
+ * This code is copied the user's stack for returning from signal handlers
+ * (see sendsig() and sigreturn()). We have to compute the address
+ * of the sigcontext struct for the sigreturn call.
+ */
+	.globl	sigcode
+sigcode:
+	addu	a0, sp, 16		# address of sigcontext 
+	li	v0, SYS_sigreturn	# sigreturn(scp)
+	syscall
+	break	0			# just in case sigreturn fails
+	.globl	esigcode
+esigcode:
+
+/*
  * Primitives
  */
 
@@ -201,11 +216,11 @@ baderr:
 	j	ra
 END(badaddr)
 
+#if BYTE_ORDER == LITTLE_ENDIAN
 /*
  * netorder = htonl(hostorder)
  * hostorder = ntohl(netorder)
  */
-#ifdef NOTDEF
 LEAF(htonl)				# a0 = 0x11223344, return 0x44332211
 ALEAF(ntohl)
 	srl	v1, a0, 24		# v1 = 0x00000011
@@ -219,13 +234,11 @@ ALEAF(ntohl)
 	or	v0, v0, v1
 	j	ra
 END(htonl)
-#endif /* NOTDEF */
 
 /*
  * netorder = htons(hostorder)
  * hostorder = ntohs(netorder)
  */
-#ifdef NOTDEF
 LEAF(htons)
 ALEAF(ntohs)
 	srl	v0, a0, 8
@@ -235,7 +248,7 @@ ALEAF(ntohs)
 	or	v0, v0, v1
 	j	ra
 END(htons)
-#endif /* NOTDEF */
+#endif
 
 /*
  * bit = ffs(value)
@@ -1823,7 +1836,17 @@ LEAF(MachTLBMissException)
 	sltu	k1, k0, k1
 	beq	k1, zero, SlowFault		# No. do it the long way
 	sll	k0, k0, 2			# compute offset from index
+#ifdef notdef
+	/*
+	 * This code sometimes uses $at register depending on the value
+	 * of PMAP_HASH_KADDR.  0xFFFF7000 is it on Sony NEWS.
+	 */
 	lw	k0, PMAP_HASH_KADDR(k0)		# get PTE entry
+#else
+	lui	k1, PMAP_HASH_KADDR >> 16
+	addu	k1, k1, k0
+	lw	k0, (PMAP_HASH_KADDR & 0xffff)(k1)
+#endif
 	mfc0	k1, MACH_COP_0_EXC_PC		# get return address
 	mtc0	k0, MACH_COP_0_TLB_LOW		# save PTE entry
 	and	k0, k0, PG_V			# make sure it's valid
@@ -1899,124 +1922,8 @@ LEAF(MachEnableIntr)
 	.set	reorder
 END(MachEnableIntr)
 
-#ifdef PMAXSPL
-LEAF(spl0)
-	.set	noreorder
-	mfc0	v0, MACH_COP_0_STATUS_REG	# read status register
-	nop
-	or	t0, v0, (MACH_INT_MASK | MACH_SR_INT_ENA_CUR)
-	mtc0	t0, MACH_COP_0_STATUS_REG	# enable all interrupts
-	j	ra
-	and	v0, v0, (MACH_INT_MASK | MACH_SR_INT_ENA_CUR)
-	.set	reorder
-END(spl0)
-
-LEAF(splsoftclock)
-	.set	noreorder
-	mfc0	v0, MACH_COP_0_STATUS_REG	# read status register
-	li	t0, ~MACH_SOFT_INT_MASK_0	# disable soft clock
-	and	t0, t0, v0
-	mtc0	t0, MACH_COP_0_STATUS_REG	# save it
-	j	ra
-	and	v0, v0, (MACH_INT_MASK | MACH_SR_INT_ENA_CUR)
-	.set	reorder
-END(splsoftclock)
-
-LEAF(Mach_spl0)
-	.set	noreorder
-	mfc0	v0, MACH_COP_0_STATUS_REG	# read status register
-	li	t0, ~(MACH_INT_MASK_0|MACH_SOFT_INT_MASK)
-	and	t0, t0, v0
-	mtc0	t0, MACH_COP_0_STATUS_REG	# save it
-	j	ra
-	and	v0, v0, (MACH_INT_MASK | MACH_SR_INT_ENA_CUR)
-	.set	reorder
-END(Mach_spl0)
-
-LEAF(Mach_spl1)
-	.set	noreorder
-	mfc0	v0, MACH_COP_0_STATUS_REG	# read status register
-	li	t0, ~(MACH_INT_MASK_1|MACH_SOFT_INT_MASK)
-	and	t0, t0, v0
-	mtc0	t0, MACH_COP_0_STATUS_REG	# save it
-	j	ra
-	and	v0, v0, (MACH_INT_MASK | MACH_SR_INT_ENA_CUR)
-	.set	reorder
-END(Mach_spl1)
-
-LEAF(Mach_spl2)
-	.set	noreorder
-	mfc0	v0, MACH_COP_0_STATUS_REG	# read status register
-	li	t0, ~(MACH_INT_MASK_2|MACH_SOFT_INT_MASK)
-	and	t0, t0, v0
-	mtc0	t0, MACH_COP_0_STATUS_REG	# save it
-	j	ra
-	and	v0, v0, (MACH_INT_MASK | MACH_SR_INT_ENA_CUR)
-	.set	reorder
-END(Mach_spl2)
-
-LEAF(Mach_spl3)
-	.set	noreorder
-	mfc0	v0, MACH_COP_0_STATUS_REG	# read status register
-	li	t0, ~(MACH_INT_MASK_3|MACH_SOFT_INT_MASK)
-	and	t0, t0, v0
-	mtc0	t0, MACH_COP_0_STATUS_REG	# save it
-	j	ra
-	and	v0, v0, (MACH_INT_MASK | MACH_SR_INT_ENA_CUR)
-	.set	reorder
-END(Mach_spl3)
-
-LEAF(Mach_spl4)
-	.set	noreorder
-	mfc0	v0, MACH_COP_0_STATUS_REG	# read status register
-	li	t0, ~(MACH_INT_MASK_4|MACH_SOFT_INT_MASK)
-	and	t0, t0, v0
-	mtc0	t0, MACH_COP_0_STATUS_REG	# save it
-	j	ra
-	and	v0, v0, (MACH_INT_MASK | MACH_SR_INT_ENA_CUR)
-	.set	reorder
-END(Mach_spl4)
-
-LEAF(Mach_spl5)
-	.set	noreorder
-	mfc0	v0, MACH_COP_0_STATUS_REG	# read status register
-	li	t0, ~(MACH_INT_MASK_5|MACH_SOFT_INT_MASK)
-	and	t0, t0, v0
-	mtc0	t0, MACH_COP_0_STATUS_REG	# save it
-	j	ra
-	and	v0, v0, (MACH_INT_MASK | MACH_SR_INT_ENA_CUR)
-	.set	reorder
-END(Mach_spl5)
-
-LEAF(splhigh)
-	.set	noreorder
-	mfc0	v0, MACH_COP_0_STATUS_REG	# read status register
-	li	t0, ~MACH_SR_INT_ENA_CUR	# disable all interrupts
-	and	t0, t0, v0
-	mtc0	t0, MACH_COP_0_STATUS_REG	# save it
-	j	ra
-	and	v0, v0, (MACH_INT_MASK | MACH_SR_INT_ENA_CUR)
-	.set	reorder
-END(splhigh)
-
-/*
- * Restore saved interrupt mask.
- */
-LEAF(splx)
-	.set	noreorder
-	mfc0	v0, MACH_COP_0_STATUS_REG
-	li	t0, ~(MACH_INT_MASK | MACH_SR_INT_ENA_CUR)
-	and	t0, t0, v0
-	or	t0, t0, a0
-	mtc0	t0, MACH_COP_0_STATUS_REG
-	j	ra
-	nop
-	.set	reorder
-END(splx)
-
-#else /* PMAXSPL */
-
 #include <sys/cdefs.h>
+
 #define	SPL(level) \
 LEAF(__CONCAT(spl,level)); \
 	.set	noreorder; \
@@ -2059,7 +1966,6 @@ LEAF(splx)
 	.set	reorder
 	j	ra
 	END(splx)
-#endif /* PMAXSPL */
 
 /*----------------------------------------------------------------------------
  *
@@ -3032,7 +2938,7 @@ LEAF(MachFlushICache)
 	.set	reorder
 END(MachFlushICache)
 
-#ifdef news3400
+#ifndef NOTDEF /* I don't know why Ralph's code doesn't work. KU:XXX */
 /*----------------------------------------------------------------------------
  *
  * MachFlushDCache --
@@ -3083,7 +2989,51 @@ LEAF(MachFlushDCache)
 	nop
 	.set	reorder
 END(MachFlushDCache)
-#endif /* news3400 */
+#else
+/*----------------------------------------------------------------------------
+ *
+ * MachFlushDCache --
+ *
+ *	void MachFlushDCache(addr, len)
+ *		vm_offset_t addr, len;
+ *
+ *	Flush data cache for range of addr to addr + len - 1.
+ *	The address can be any valid address so long as no TLB misses occur.
+ *	(Be sure to use cached K0SEG kernel addresses)
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The contents of the cache is flushed.
+ *
+ *----------------------------------------------------------------------------
+ */
+LEAF(MachFlushDCache)
+	.set	noreorder
+	mfc0	t0, MACH_COP_0_STATUS_REG	# Save SR
+	mtc0	zero, MACH_COP_0_STATUS_REG	# Disable interrupts.
+
+	la	v1, 1f
+	or	v1, MACH_UNCACHED_MEMORY_ADDR	# Run uncached.
+	j	v1
+	nop
+1:
+	bc0t	1b				# make sure stores are complete
+	li	v1, MACH_SR_ISOL_CACHES
+	mtc0	v1, MACH_COP_0_STATUS_REG
+	nop
+	addu	a1, a1, a0			# compute ending address
+1:
+	addu	a0, a0, 4
+	bne	a0, a1, 1b
+	sb	zero, -4(a0)
+
+	mtc0	t0, MACH_COP_0_STATUS_REG	# enable interrupts
+	j	ra				# return and run cached
+	nop
+	.set	reorder
+END(MachFlushDCache)
+#endif /* NOTDEF */
 
 #ifdef KADB
 /*
