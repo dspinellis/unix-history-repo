@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mkproto.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkproto.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -19,10 +19,8 @@ static char sccsid[] = "@(#)mkproto.c	5.5 (Berkeley) %G%";
  * usage: mkproto filsys proto
  */
 #include <sys/param.h>
-#include <sys/time.h>
-#include <sys/vnode.h>
 #include <sys/dir.h>
-#include <ufs/inode.h>
+#include <ufs/dinode.h>
 #include <ufs/fs.h>
 #include <stdio.h>
 
@@ -46,6 +44,7 @@ long	dev_bsize = 1;
 int	ino = 10;
 long	getnum();
 char	*strcpy();
+ino_t	ialloc();
 
 main(argc, argv)
 	int argc;
@@ -74,7 +73,7 @@ main(argc, argv)
 			    fs->fs_cssize - i : fs->fs_bsize),
 			((char *)fscs) + i);
 	proto = fopen(argv[2], "r");
-	descend((struct inode *)0);
+	descend((struct dinode *)0, ROOTINO);
 	wtfs(SBOFF / dev_bsize, SBSIZE, (char *)fs);
 	for (i = 0; i < fs->fs_cssize; i += fs->fs_bsize)
 		wtfs(fsbtodb(&sblock, fs->fs_csaddr + numfrags(&sblock, i)),
@@ -84,10 +83,12 @@ main(argc, argv)
 	exit(errs);
 }
 
-descend(par)
-	struct inode *par;
+descend(par, parinum)
+	struct dinode *par;
+	ino_t parinum;
 {
-	struct inode in;
+	struct dinode in;
+	ino_t inum;
 	int ibc = 0;
 	int i, f, c;
 	struct dinode *dip, inos[MAXBSIZE / sizeof (struct dinode)];
@@ -95,9 +96,9 @@ descend(par)
 	char buf[MAXBSIZE];
 
 	getstr();
-	in.i_mode = gmode(token[0], "-bcd", IFREG, IFBLK, IFCHR, IFDIR);
-	in.i_mode |= gmode(token[1], "-u", 0, ISUID, 0, 0);
-	in.i_mode |= gmode(token[2], "-g", 0, ISGID, 0, 0);
+	in.di_mode = gmode(token[0], "-bcd", IFREG, IFBLK, IFCHR, IFDIR);
+	in.di_mode |= gmode(token[1], "-u", 0, ISUID, 0, 0);
+	in.di_mode |= gmode(token[2], "-g", 0, ISGID, 0, 0);
 	for (i = 3; i < 6; i++) {
 		c = token[i];
 		if (c < '0' || c > '7') {
@@ -105,34 +106,34 @@ descend(par)
 			errs++;
 			c = 0;
 		}
-		in.i_mode |= (c-'0')<<(15-3*i);
+		in.di_mode |= (c-'0')<<(15-3*i);
 	}
-	in.i_uid = getnum(); in.i_gid = getnum();
+	in.di_uid = getnum(); in.di_gid = getnum();
 	for (i = 0; i < fs->fs_bsize; i++)
 		buf[i] = 0;
 	for (i = 0; i < NINDIR(fs); i++)
 		ib[i] = (daddr_t)0;
-	in.i_nlink = 1;
-	in.i_size = 0;
+	in.di_nlink = 1;
+	in.di_size = 0;
 	for (i = 0; i < NDADDR; i++)
-		in.i_db[i] = (daddr_t)0;
+		in.di_db[i] = (daddr_t)0;
 	for (i = 0; i < NIADDR; i++)
-		in.i_ib[i] = (daddr_t)0;
-	if (par != (struct inode *)0) {
-		ialloc(&in);
+		in.di_ib[i] = (daddr_t)0;
+	if (par != (struct dinode *)0) {
+		inum = ialloc(&in);
 	} else {
 		par = &in;
 		i = itod(fs, ROOTINO);
 		rdfs(fsbtodb(fs, i), fs->fs_bsize, (char *)inos);
 		dip = &inos[ROOTINO % INOPB(fs)];
-		in.i_number = ROOTINO;
-		in.i_nlink = dip->di_nlink;
-		in.i_size = dip->di_size;
-		in.i_db[0] = dip->di_db[0];
-		rdfs(fsbtodb(fs, in.i_db[0]), fs->fs_bsize, buf);
+		inum = ROOTINO;
+		in.di_nlink = dip->di_nlink;
+		in.di_size = dip->di_size;
+		in.di_db[0] = dip->di_db[0];
+		rdfs(fsbtodb(fs, in.di_db[0]), fs->fs_bsize, buf);
 	}
 
-	switch (in.i_mode&IFMT) {
+	switch (in.di_mode&IFMT) {
 
 	case IFREG:
 		getstr();
@@ -143,8 +144,8 @@ descend(par)
 			break;
 		}
 		while ((i = read(f, buf, (int)fs->fs_bsize)) > 0) {
-			in.i_size += i;
-			newblk(buf, &ibc, ib, (int)blksize(fs, &in, ibc));
+			in.di_size += i;
+			newblk(buf, &ibc, ib, (int)dblksize(fs, &in, ibc));
 		}
 		close(f);
 		break;
@@ -158,7 +159,7 @@ descend(par)
 
 		i = getnum() & 0377;
 		f = getnum() & 0377;
-		in.i_rdev = (i << 8) | f;
+		in.di_rdev = (i << 8) | f;
 		break;
 
 	case IFDIR:
@@ -169,26 +170,26 @@ descend(par)
 		 * name of "$" found
 		 */
 
-		if (in.i_number != ROOTINO) {
-			par->i_nlink++;
-			in.i_nlink++;
-			entry(&in, in.i_number, ".", buf);
-			entry(&in, par->i_number, "..", buf);
+		if (inum != ROOTINO) {
+			par->di_nlink++;
+			in.di_nlink++;
+			entry(&in, inum, ".", buf);
+			entry(&in, parinum, "..", buf);
 		}
 		for (;;) {
 			getstr();
 			if (token[0]=='$' && token[1]=='\0')
 				break;
 			entry(&in, (ino_t)(ino+1), token, buf);
-			descend(&in);
+			descend(&in, inum);
 		}
-		if (in.i_number != ROOTINO)
-			newblk(buf, &ibc, ib, (int)blksize(fs, &in, 0));
+		if (inum != ROOTINO)
+			newblk(buf, &ibc, ib, (int)dblksize(fs, &in, 0));
 		else
-			wtfs(fsbtodb(fs, in.i_db[0]), (int)fs->fs_bsize, buf);
+			wtfs(fsbtodb(fs, in.di_db[0]), (int)fs->fs_bsize, buf);
 		break;
 	}
-	iput(&in, &ibc, ib);
+	iput(&in, &ibc, ib, inum);
 }
 
 /*ARGSUSED*/
@@ -256,7 +257,7 @@ loop:
 }
 
 entry(ip, inum, str, buf)
-	struct inode *ip;
+	struct dinode *ip;
 	ino_t inum;
 	char *str;
 	char *buf;
@@ -265,7 +266,7 @@ entry(ip, inum, str, buf)
 	int oldsize, newsize, spacefree;
 
 	odp = dp = (struct direct *)buf;
-	while ((int)dp - (int)buf < ip->i_size) {
+	while ((int)dp - (int)buf < ip->di_size) {
 		odp = dp;
 		dp = (struct direct *)((int)dp + dp->d_reclen);
 	}
@@ -292,7 +293,7 @@ entry(ip, inum, str, buf)
 		dp->d_reclen = DIRBLKSIZ;
 	}
 	strcpy(dp->d_name, str);
-	ip->i_size = (int)dp - (int)buf + newsize;
+	ip->di_size = (int)dp - (int)buf + newsize;
 }
 
 newblk(buf, aibc, ib, size)
@@ -316,33 +317,34 @@ newblk(buf, aibc, ib, size)
 	}
 }
 
-iput(ip, aibc, ib)
-	struct inode *ip;
+iput(ip, aibc, ib, inum)
+	struct dinode *ip;
 	int *aibc;
 	daddr_t *ib;
+	ino_t inum;
 {
 	daddr_t d, alloc();
 	int i;
 	struct dinode buf[MAXBSIZE / sizeof (struct dinode)];
 	time_t time();
 
-	ip->i_atime = ip->i_mtime = ip->i_ctime = time((time_t *)NULL);
-	switch (ip->i_mode&IFMT) {
+	ip->di_atime = ip->di_mtime = ip->di_ctime = time((time_t *)NULL);
+	switch (ip->di_mode&IFMT) {
 
 	case IFDIR:
 	case IFREG:
 		for (i = 0; i < *aibc; i++) {
 			if (i >= NDADDR)
 				break;
-			ip->i_db[i] = ib[i];
+			ip->di_db[i] = ib[i];
 		}
 		if (*aibc > NDADDR) {
-			ip->i_ib[0] = alloc((int)fs->fs_bsize);
+			ip->di_ib[0] = alloc((int)fs->fs_bsize);
 			for (i = 0; i < NINDIR(fs) - NDADDR; i++) {
 				ib[i] = ib[i+NDADDR];
 				ib[i+NDADDR] = (daddr_t)0;
 			}
-			wtfs(fsbtodb(fs, ip->i_ib[0]),
+			wtfs(fsbtodb(fs, ip->di_ib[0]),
 			    (int)fs->fs_bsize, (char *)ib);
 		}
 		break;
@@ -352,12 +354,12 @@ iput(ip, aibc, ib)
 		break;
 
 	default:
-		printf("bad mode %o\n", ip->i_mode);
+		printf("bad mode %o\n", ip->di_mode);
 		exit(1);
 	}
-	d = fsbtodb(fs, itod(fs, ip->i_number));
+	d = fsbtodb(fs, itod(fs, inum));
 	rdfs(d, (int)fs->fs_bsize, (char *)buf);
-	buf[itoo(fs, ip->i_number)].di_ic = ip->i_ic;
+	buf[itoo(fs, inum)] = *ip;
 	wtfs(d, (int)fs->fs_bsize, (char *)buf);
 }
 
@@ -414,36 +416,37 @@ goth:
 /*
  * Allocate an inode on the disk
  */
+ino_t
 ialloc(ip)
-	register struct inode *ip;
+	register struct dinode *ip;
 {
+	ino_t inum;
 	int c;
 
-	ip->i_number = ++ino;
-	c = itog(&sblock, ip->i_number);
+	inum = ++ino;
+	c = itog(&sblock, inum);
 	rdfs(fsbtodb(&sblock, cgtod(&sblock, c)), (int)sblock.fs_cgsize,
 	    (char *)&acg);
 	if (!cg_chkmagic(&acg)) {
 		printf("cg %d: bad magic number\n", c);
 		exit(1);
 	}
-	if (ip->i_mode & IFDIR) {
+	if (ip->di_mode & IFDIR) {
 		acg.cg_cs.cs_ndir++;
 		sblock.fs_cstotal.cs_ndir++;
 		fscs[c].cs_ndir++;
 	}
 	acg.cg_cs.cs_nifree--;
-	setbit(cg_inosused(&acg), ip->i_number);
+	setbit(cg_inosused(&acg), inum);
 	wtfs(fsbtodb(&sblock, cgtod(&sblock, c)), (int)sblock.fs_cgsize,
 	    (char *)&acg);
 	sblock.fs_cstotal.cs_nifree--;
 	fscs[c].cs_nifree--;
-	if(ip->i_number >= sblock.fs_ipg * sblock.fs_ncg) {
-		printf("fsinit: inode value out of range (%lu).\n",
-		    ip->i_number);
+	if(inum >= sblock.fs_ipg * sblock.fs_ncg) {
+		printf("fsinit: inode value out of range (%lu).\n", inum);
 		exit(1);
 	}
-	/* return (ip->i_number); */
+	return (inum);
 }
 
 /*
