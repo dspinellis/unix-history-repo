@@ -2,17 +2,16 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)chown.8	6.2 (Berkeley) %G%
+.\"	@(#)chown.8	6.3 (Berkeley) %G%
 .\"
 .TH CHOWN 8 ""
 .UC 4
 .SH NAME
 chown \- change owner
 .SH SYNOPSIS
-.B /etc/chown
+.B chown
 [
-.B \-f
-.B \-R
+.B \-Rf
 ]
 owner[.group] file ...
 .SH DESCRIPTION
@@ -29,7 +28,7 @@ a group name found in the group-ID file.
 .PP
 Only the super-user can change owner,
 in order to simplify accounting procedures.
-No errors are reported when the
+No errors, except for usage errors, are reported when the
 .B \-f
 (force) option is given.
 .PP
@@ -41,9 +40,5 @@ recursively descends its directory arguments
 setting the specified owner.
 When symbolic links are encountered, their ownership is changed,
 but they are not traversed.
-.SH FILES
-/etc/passwd
 .SH "SEE ALSO"
-chgrp(1),
-chown(2),
-passwd(5), group(5)
+chgrp(1), chown(2)
