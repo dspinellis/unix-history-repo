@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_malloc.c	7.35 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.36 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -109,6 +109,7 @@ malloc(size, type, flags)
 		tsleep((caddr_t)ksp, PSWP+2, memname[type], 0);
 		IN;
 	}
+	ksp->ks_size |= 1 << indx;
 #endif
 #ifdef DIAGNOSTIC
 	copysize = 1 << indx < MAX_COPY ? 1 << indx : MAX_COPY;
