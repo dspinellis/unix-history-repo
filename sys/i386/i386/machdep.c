@@ -35,7 +35,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)machdep.c	7.4 (Berkeley) 6/3/91
- *	$Id: machdep.c,v 1.44 1994/06/01 01:58:08 davidg Exp $
+ *	$Id: machdep.c,v 1.45 1994/06/04 10:59:58 davidg Exp $
  */
 
 #include "npx.h"
@@ -343,6 +343,8 @@ struct cpu_nameclass i386_cpus[] = {
 static void
 identifycpu()
 {
+	extern unsigned long cpu_id;
+	extern char cpu_vendor[];
 	printf("CPU: ");
 	if (cpu >= 0 && cpu < (sizeof i386_cpus/sizeof(struct cpu_nameclass))) {
 		printf("%s", i386_cpus[cpu].cpu_name);
@@ -370,6 +372,10 @@ identifycpu()
 		printf("unknown");	/* will panic below... */
 	}
 	printf("-class CPU)");
+	if(cpu_id)
+		printf("  Id = 0x%x",cpu_id);
+	if(*cpu_vendor)
+		printf("  Origin = \"%s\"",cpu_vendor);
 	printf("\n");	/* cpu speed would be nice, but how? */
 
 	/*
