@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)bad144.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)bad144.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -37,7 +37,9 @@ static char sccsid[] = "@(#)bad144.c	5.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <disktab.h>
 
-int	fflag, add, copy, verbose;
+#define RETRIES	10		/* number of retries on reading old sectors */
+
+int	fflag, add, copy, verbose, nflag;
 int	compare();
 struct	dkbad dkbad, oldbad;
 daddr_t	size, getold(), badsn();
@@ -69,6 +71,9 @@ main(argc, argv)
 				break;
 			    case 'v':
 				verbose++;
+				break;
+			    case 'n':
+				nflag++;
 				break;
 			}
 			(*argv)++;
@@ -130,6 +135,7 @@ main(argc, argv)
 			    bt->bt_cyl, bt->bt_trksec>>8, bt->bt_trksec&0xff);
 			bt++;
 		}
+		(void) checkold();
 		exit(0);
 	}
 	f = open(name, (fflag || add)? O_RDWR: O_WRONLY);
@@ -205,14 +211,15 @@ main(argc, argv)
 		if (verbose)
 			printf("write badsect file at %d\n",
 				size - dp->d_nsectors + i);
-		if (write(f, (caddr_t)&dkbad, sizeof dkbad) != sizeof dkbad) {
+		if (nflag == 0 &&
+		    write(f, (caddr_t)&dkbad, sizeof dkbad) != sizeof dkbad) {
 			char msg[80];
 			sprintf(msg, "bad144: write bad sector file %d", i/2);
 			perror(msg);
 		}
 	}
 	if (fflag)
-		for (i = 0; i < new; i++)
+		for (i = nbad - new; i < nbad; i++)
 			format(f, bn[i]);
 	exit(0);
 }
@@ -247,15 +254,16 @@ checkold()
 	register int i;
 	register struct bt_bad *bt;
 	daddr_t sn, lsn;
+	int errors = 0, warned = 0;
 
 	if (oldbad.bt_flag != 0) {
 		fprintf(stderr, "bad144: %s: bad flag in bad-sector table\n",
 			name);
-		exit(1);
+		errors++;
 	}
 	if (oldbad.bt_mbz != 0) {
 		fprintf(stderr, "bad144: %s: bad magic number\n", name);
-		exit(1);
+		errors++;
 	}
 	lsn = 0;
 	bt = oldbad.bt_bad;
@@ -265,19 +273,26 @@ checkold()
 		if ((bt->bt_cyl >= dp->d_ncylinders) ||
 		    ((bt->bt_trksec >> 8) >= dp->d_ntracks) ||
 		    ((bt->bt_trksec & 0xff) >= dp->d_nsectors)) {
-			fprintf(stderr, "bad144: cyl/sect/trk out of range\n");
-			exit(1);
+			fprintf(stderr,
+		     "bad144: cyl/trk/sect out of range in existing entry: ");
+			fprintf(stderr, "sn=%d, cn=%d, tn=%d, sn=%d\n",
+				badsn(bt), bt->bt_cyl, bt->bt_trksec>>8,
+				bt->bt_trksec & 0xff);
+			errors++;
 		}
 		sn = (bt->bt_cyl * dp->d_ntracks +
 		    (bt->bt_trksec >> 8)) *
 		    dp->d_nsectors + (bt->bt_trksec & 0xff);
-		if (sn < lsn) {
+		if (sn < lsn && !warned) {
 		    fprintf(stderr, "bad144: bad sector file out of order\n");
-		    exit(1);
+		    errors++;
+		    warned++;
 		}
 		lsn = sn;
 	}
-	return i;
+	if (errors)
+		exit(1);
+	return (i);
 }
 
 /*
@@ -324,6 +339,7 @@ char *buf;
 blkcopy(f, s1, s2)
 daddr_t s1, s2;
 {
+	register tries, n;
 
 	if (buf == (char *)NULL) {
 		buf = malloc(dp->d_secsize);
@@ -334,18 +350,23 @@ daddr_t s1, s2;
 	}
 	if (lseek(f, dp->d_secsize * s1, L_SET) < 0)
 		Perror("lseek");
-	if (read(f, buf, sizeof (buf)) != sizeof (buf)) {
-		if (verbose)
-			fprintf(stderr, "bad144: can't read sector, %d\n", s1);
+	for (tries = 0; tries < RETRIES; tries++)
+		if ((n = read(f, buf, sizeof (buf))) == sizeof (buf))
+			break;
+	if (n != sizeof (buf)) {
+		fprintf(stderr, "bad144: can't read sector, %d: ", s1);
+		if (n < 0)
+			perror(0);
 		return(0);
 	}
 	if (lseek(f, dp->d_secsize * s2, L_SET) < 0)
 		Perror("lseek");
 	if (verbose)
 		printf("copying %d to %d\n", s1, s2);
-	if (write(f, buf, sizeof (buf)) != sizeof (buf)) {
+	if (nflag == 0 && write(f, buf, sizeof (buf)) != sizeof (buf)) {
 		fprintf(stderr,
-		    "bad144: can't write replacement sector, %d\n", s2);
+		    "bad144: can't write replacement sector, %d: ", s2);
+		perror(0);
 		return(0);
 	}
 	return(1);
@@ -368,10 +389,10 @@ daddr_t sn;
 		Perror("lseek");
 	if (verbose)
 		printf("zeroing %d\n", sn);
-	if (write(f, zbuf, sizeof (zbuf)) != sizeof (zbuf)) {
+	if (nflag == 0 && write(f, zbuf, sizeof (zbuf)) != sizeof (zbuf)) {
 		fprintf(stderr,
-		    "bad144: can't write replacement sector, %d\n", sn);
-		exit(1);
+		    "bad144: can't write replacement sector, %d: ", sn);
+		perror(0);
 	}
 }
 
@@ -408,10 +429,13 @@ struct rp06hdr {
  */
 struct hpuphdr {
 	u_short	hpup_cyl;
-	u_short hpup_trksec;
+	u_char	hpup_sect;
+	u_char	hpup_track;
 	char	hpup_data[512];
 #define	HPUP_OKSECT	0xc000		/* this normally means sector is good */
+#define	HPUP_16BIT	0x1000		/* 1 == 16 bit format */
 };
+int rp06format(), hpupformat();
 
 struct	formats {
 	char	*f_name;		/* disk name */
@@ -419,22 +443,60 @@ struct	formats {
 	int	f_bic;			/* value to bic in hpup_cyl */
 	int	(*f_routine)();		/* routine for special handling */
 } formats[] = {
-	{ "rp06",	sizeof (struct rp06hdr),	RP06_FMT,	0 },
-	{ "eagle",	sizeof (struct hpuphdr),	HPUP_OKSECT,	0 },
-	{ "capricorn",	sizeof (struct hpuphdr),	HPUP_OKSECT,	0 },
-	{ "rm03",	sizeof (struct hpuphdr),	HPUP_OKSECT,	0 },
-	{ "rm05",	sizeof (struct hpuphdr),	HPUP_OKSECT,	0 },
-	{ "9300",	sizeof (struct hpuphdr),	HPUP_OKSECT,	0 },
-	{ "9766",	sizeof (struct hpuphdr),	HPUP_OKSECT,	0 },
+	{ "rp06",	sizeof (struct rp06hdr), RP06_FMT,	rp06format },
+	{ "eagle",	sizeof (struct hpuphdr), HPUP_OKSECT,	hpupformat },
+	{ "capricorn",	sizeof (struct hpuphdr), HPUP_OKSECT,	hpupformat },
+	{ "rm03",	sizeof (struct hpuphdr), HPUP_OKSECT,	hpupformat },
+	{ "rm05",	sizeof (struct hpuphdr), HPUP_OKSECT,	hpupformat },
+	{ "9300",	sizeof (struct hpuphdr), HPUP_OKSECT,	hpupformat },
+	{ "9766",	sizeof (struct hpuphdr), HPUP_OKSECT,	hpupformat },
 	{ 0, 0, 0, 0 }
 };
+
+hpupformat(fp, dp, blk, buf, count)
+	struct format *fp;
+	struct disktab *dp;
+	daddr_t blk;
+	char *buf;
+	int count;
+{
+	struct hpuphdr *hdr = (struct hpuphdr *)buf;
+	int sect;
+
+	if (count < sizeof(struct hpuphdr)) {
+		hdr->hpup_cyl = (HPUP_OKSECT | HPUP_16BIT) |
+			(blk / (dp->d_nsectors * dp->d_ntracks));
+		sect = blk % (dp->d_nsectors * dp->d_ntracks);
+		hdr->hpup_track = (u_char)(sect / dp->d_nsectors);
+		hdr->hpup_sect = (u_char)(sect % dp->d_nsectors);
+	}
+	return (0);
+}
+
+rp06format(fp, dp, blk, buf, count)
+	struct format *fp;
+	struct disklabel *dp;
+	daddr_t blk;
+	char *buf;
+	int count;
+{
+
+	if (count < sizeof(struct rp06hdr)) {
+		fprintf(stderr, "Can't read header on blk %d, can't reformat\n",
+			blk);
+		return (-1);
+	}
+	return (0);
+}
 
 format(fd, blk)
 	int fd;
 	daddr_t blk;
 {
 	register struct formats *fp;
-	char *buf;
+	static char *buf;
+	static char bufsize;
+	int n;
 
 	for (fp = formats; fp->f_name; fp++)
 		if (strcmp(dp->d_name, fp->f_name) == 0)
@@ -444,11 +506,17 @@ format(fd, blk)
 			dp->d_name);
 		exit(2);
 	}
-	buf = malloc(fp->f_bufsize);
+	if (buf && bufsize < fp->f_bufsize) {
+		free(buf);
+		buf = NULL;
+	}
+	if (buf == NULL)
+		buf = malloc(fp->f_bufsize);
 	if (buf == NULL) {
 		fprintf(stderr, "bad144: can't allocate sector buffer\n");
 		exit(3);
 	}
+	bufsize = fp->f_bufsize;
 	/*
 	 * Here we do the actual formatting.  All we really
 	 * do is rewrite the sector header and flag the bad sector
@@ -462,16 +530,20 @@ format(fd, blk)
 		printf("format blk %d\n", blk);
 	if (ioctl(fd, DKIOCHDR, 0) < 0)
 		Perror("ioctl");
-	read(fd, buf, fp->f_bufsize);
+	if ((n = read(fd, buf, fp->f_bufsize)) < 0)
+		bzero(buf, fp->f_bufsize);
 	if (fp->f_bic) {
 		struct hpuphdr *xp = (struct hpuphdr *)buf;
 
 		xp->hpup_cyl &= ~fp->f_bic;
 	}
 	if (fp->f_routine)
-		(*fp->f_routine)(fp, dp, blk, buf);
+		if ((*fp->f_routine)(fp, dp, blk, buf, n) != 0)
+			return;
 	if (lseek(fd, (long)blk * dp->d_secsize, L_SET) < 0)
 		Perror("lseek");
+	if (nflag)
+		return;
 	if (ioctl(fd, DKIOCHDR, 0) < 0)
 		Perror("ioctl");
 	if (write(fd, buf, fp->f_bufsize) != fp->f_bufsize) {
