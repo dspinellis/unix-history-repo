@@ -35,7 +35,7 @@ askunit:
 	ioctl(fd,SAIODEVDATA,&st);
 
 	chunk = st.nsect*SECTSIZ;
-	printf("Testing %s, chunk size is %d\n",buf, chunk);
+	printf("Testing %s, chunk size is %d bytes\n",buf, chunk);
 	printf("Start ...Make sure %s is online\n",buf);
 	lseek(fd,0,0);
 	for (i=0;i < st.ncyl*st.ntrak; i++) {
@@ -44,7 +44,7 @@ askunit:
 */
 			read(fd,buffer, chunk);
 /*		}					*/
-		if (i%st.ntrak == 0) printf("%d\r",i/st.ntrak);
+		if (i%(st.ntrak*5) == 0) printf("%d\r",i/st.ntrak);
 	}
 	goto askunit;
 }
