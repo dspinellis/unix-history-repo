@@ -98,7 +98,7 @@ caseha()
 	else {
 		noscale++;
 		noscale = 0;
-		i = max(atoi(), 0);
+		i = max((int)atoi0(), 0);
 		if (nonumb)
 			return;
 		if (i > MAXDIALECTS) {
@@ -126,9 +126,9 @@ caseht()
 		return;
 	noscale++;
 	if (hyalg == DUTCH)
-		thresh = max(atoi(), 1);
+		thresh = max((int)atoi0(), 1);
 	else
-		thresh = atoi();
+		thresh = (int)atoi0();
 	noscale = 0;
 }
 

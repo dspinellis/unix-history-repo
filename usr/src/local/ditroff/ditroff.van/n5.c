@@ -136,7 +136,7 @@ casehy()
 	if (skip())
 		return;
 	noscale++;
-	i = atoi();
+	i = (int)atoi0();
 	noscale = 0;
 	if (nonumb)
 		return;
@@ -166,7 +166,7 @@ casece()
 
 	noscale++;
 	skip();
-	i = max(atoi(), 0);
+	i = max((int)atoi0(), 0);
 	if (nonumb)
 		i = 1;
 	tbreak();
@@ -478,7 +478,7 @@ caseev()
 		return;
 	}
 	noscale++;
-	nxev = atoi();
+	nxev = (int)atoi0();
 	noscale = 0;
 	if (nonumb) {
 		if (evi != 0) {
@@ -545,7 +545,7 @@ int	x;
 		notflag = 0;
 		ch = i;
 	}
-	i = atoi();
+	i = (int)atoi0();
 	if (!nonumb) {
 		if (i > 0)
 			true++;
@@ -827,7 +827,7 @@ caseul()
 	if (skip())
 		i = 1;
 	else 
-		i = atoi();
+		i = (int)atoi0();
 	if (ul && (i == 0)) {
 		font = sfont;
 		ul = cu = 0;
@@ -867,7 +867,7 @@ caseit()
 	it = itmac = 0;
 	noscale++;
 	skip();
-	i = atoi();
+	i = (int)atoi0();
 	skip();
 	if (!nonumb && (itmac = getrq()))
 		it = i;
@@ -967,7 +967,7 @@ int	*p, min;
 	eat(' ');
 	if (skip())
 		return;
-	i = atoi();
+	i = (int)atoi0();
 	if (nonumb)
 		return;
 	*p = max(i, min);
@@ -978,7 +978,7 @@ casenn()
 {
 	noscale++;
 	skip();
-	nn = max(atoi(), 1);
+	nn = max((int)atoi0(), 1);
 	noscale = 0;
 }
 

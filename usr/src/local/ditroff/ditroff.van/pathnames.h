@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	1.1 (Berkeley) %G%
+ *	@(#)pathnames.h	1.2 (Berkeley) %G%
  */
 
 #define	_PATH_TMAC		"/usr/share/tmac/tmac."

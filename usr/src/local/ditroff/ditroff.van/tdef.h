@@ -251,7 +251,6 @@ extern	tchar	setz();
 extern	tchar	setch();
 extern	tchar	setht(), setslant();
 
-#define	atoi(i)		((int) atoi0(i))
 extern	long	atoi0();
 
 extern	int	Inch, Hor, Vert, Unitwidth;

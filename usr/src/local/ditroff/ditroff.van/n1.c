@@ -33,7 +33,7 @@ filep	ipl[NSO];
 long	offl[NSO];
 long	ioff;
 char	*ttyp;
-char	cfname[NSO][NS] = "<standard input>";	/*file name stack*/
+char	cfname[NSO][NS] = {"<standard input>"};	/*file name stack*/
 int	cfline[NSO];		/*input line count stack*/
 char	*progname;	/* program name (troff) */
 
@@ -44,7 +44,7 @@ char	**argv;
 	register char	*p, *q;
 	register j;
 	register tchar i;
-	extern catch(), kcatch();
+	extern void catch(), kcatch();
 	char	**oargv, *getenv();
 
 	progname = argv[0];
@@ -202,13 +202,13 @@ Lt:
 }
 
 
-catch()
+void catch()
 {
 	done3(01);
 }
 
 
-kcatch()
+void kcatch()
 {
 	signal(SIGTERM, SIG_IGN);
 	done3(01);
@@ -924,7 +924,7 @@ caself()	/* set line number and file */
 
 	if (skip())
 		return;
-	n = atoi();
+	n = (int)atoi0();
 	cfline[ifi] = numtab[CD].val = n - 2;
 	if (skip())
 		return;
