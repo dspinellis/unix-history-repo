@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tn3270.c	1.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)tn3270.c	1.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -47,7 +47,7 @@ static int
 
 
 void
-tn3270_init()
+init_3270()
 {
 #if	defined(TN3270)
     Sent3270TerminalType = 0;
@@ -83,6 +83,7 @@ int		done;		/* is this the last of a logical block */
     origCount = count;
 
     while (count) {
+	/* If not enough room for EORs, IACs, etc., wait */
 	if (NETROOM() < 6) {
 	    fd_set o;
 
@@ -95,7 +96,11 @@ int		done;		/* is this the last of a logical block */
 		netflush();
 	    }
 	}
-	c = loop = ring_empty_consecutive(&netoring);
+	c = ring_empty_count(&netoring);
+	if (c > count) {
+	    c = count;
+	}
+	loop = c;
 	while (loop) {
 	    if (*buffer == IAC) {
 		break;
@@ -110,11 +115,12 @@ int		done;		/* is this the last of a logical block */
 	if (loop) {
 	    NET2ADD(IAC, IAC);
 	    count--;
+	    buffer++;
 	}
     }
 
     if (done) {
-	NET2ADD(IAC, IAC);
+	NET2ADD(IAC, EOR);
 	netflush();		/* try to move along as quickly as ... */
     }
     return(origCount - count);
@@ -141,7 +147,12 @@ outputPurge()
  * routines make calls into telnet.c.
  */
 
-/* DataToTerminal - queue up some data to go to terminal. */
+/*
+ * DataToTerminal - queue up some data to go to terminal.
+ *
+ * Note: there are people who call us and depend on our processing
+ * *all* the data at one time (thus the select).
+ */
 
 int
 DataToTerminal(buffer, count)
@@ -170,20 +181,15 @@ register int	count;			/* how much to send */
 		ttyflush();
 	    }
 	}
-	c = loop = ring_empty_consecutive(&ttyoring);
-	while (loop) {
-	    if (*buffer == IAC) {
-		break;
-	    }
-	    buffer++;
-	    loop--;
+	c = TTYROOM();
+	if (c > count) {
+	    c = count;
 	}
-	if ((c = c-loop)) {
-	    ring_supply_data(&ttyoring, buffer-c, c);
-	    count -= c;
-	}
+	ring_supply_data(&ttyoring, buffer, c);
+	count -= c;
+	buffer += c;
     }
-    return(origCount - count);
+    return(origCount);
 }
 
 /* EmptyTerminal - called to make sure that the terminal buffer is empty.
@@ -200,7 +206,7 @@ EmptyTerminal()
     FD_ZERO(&o);
 #endif	/* defined(unix) */
 
-    if (TTYBYTES()) {
+    if (TTYBYTES() == 0) {
 #if	defined(unix)
 	FD_SET(tout, &o);
 	(void) select(tout+1, (int *) 0, &o, (int *) 0,
