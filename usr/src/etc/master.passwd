@@ -1,36 +1,36 @@
-root::0:10:Charlie &:/:/bin/csh
-toor::0:10:Bourne-again Superuser:/:
-daemon:*:1:31:The devil himself:/:
-operator::2:28:System &:/usr/guest/operator:/bin/csh
-games:***:7:2:Games pseudo-user:/usr/games:
-uucp::66:1:UNIX-to-UNIX Copy:/usr/spool/uucppublic:/usr/lib/uucp/uucico
-nobody:*:32767:9999:Unprivileged user:/nonexistent:/dev/null
-notes:*:5:31:Notesfile maintainer:/usr/spool/notes:/bin/csh
-karels:QOrZFUGpxDUlo:6:10:Mike &:/usr/guest/karels:/bin/csh
-sam:Yd6H6R7ejeIP2:7:10:& Leffler:/usr/guest/sam:/bin/csh
-wnj:ZDjXDBwXle2gc:8:10:Bill Joy:/usr/guest/wnj:/bin/csh
-mckusick:6l7zMyp8dZLZU:201:10:Kirk &:/usr/guest/mckusick:/bin/csh
-dmr:AiInt5qKdjmHs:10:31:Dennis Ritchie:/usr/guest/dmr:
-ken:sq5UDrPlKj1nA:11:31:& Thompson:/usr/guest/ken:
-shannon:NYqgD2jjeuozk:12:31:Bill &:/usr/guest/shannon:/bin/csh
-peter:y5G5mbEX4HhOY:13:31:peter b. kessler:/usr/guest/peter:/bin/csh
-kre:vpyVBWM3ARc0.:14:31:Robert Elz:/usr/guest/kre:/bin/csh
-ingres:64c19dZOElp9I:267:74:& Group:/usr/ingres:/bin/csh
-ralph:s.EZm/wQTqbro:16:31:& Campbell:/usr/guest/ralph:/bin/csh
-linton:1/WWIjn5Sd8qM:19:31:Mark &:/usr/guest/linton:/bin/csh
-sklower:p0taJy06Qye1g:20:31:Keith &:/usr/guest/sklower:/bin/csh
-eric:PcEfNNJN.UHpM:22:31:& Allman:/usr/guest/eric:/usr/new/csh
-rrh:lj1vXnxTAPnDc:23:31:Robert R. Henry:/usr/guest/rrh:/bin/csh
-arnold:5vTJh54EqjZsU:25:31:Kenneth C R C &:/usr/guest/arnold:/bin/csh
-jkf:G6cip/I8C792U:26:31:John Foderaro:/usr/guest/jkf:/bin/csh
-ghg:FA/4weg1/wy2c:32:31:George Goble:/usr/guest/ghg:/bin/csh
-bloom:n0QtVD80F82MM:33:10:Jim &:/usr/guest/bloom:/bin/csh
-miriam:hnZ1ZK5H2qapE:36:10:& Amos:/usr/guest/miriam:/bin/csh
-kjd:ogYPQZGnihezk:37:10:Kevin Dunlap:/usr/guest/kjd:/bin/csh
-rwh:LReNSwE9gQF7w:38:10:Robert W. Henry:/usr/guest/rwh:/bin/csh
-tef:OciUqGHcs9YOw:39:31:Thomas Ferrin:/usr/guest/tef:/bin/csh
-van:STpwu/Ggmk78A:40:31:& Jacobson:/usr/guest/van:/bin/csh
-rich:uxxJaRZvgyiPg:41:31:& Hyde:/usr/guest/rich:/bin/csh
-jim:.6s.pzMqjyMrU:42:10:& McKie:/usr/guest/jim:/bin/csh
-donn:5cJ5uHclmVJKA:43:31:& Seeley:/usr/guest/donn:/bin/csh
-falcon:.MTZpW8TC8tqs:32766:31:Prof. Steven &:/usr/games:/usr/games/wargames
+root::0:10::0:0:Charlie &:/:/bin/csh
+toor::0:10::0:0:Bourne-again Superuser:/:
+daemon:*:1:31::0:0:The devil himself:/:
+operator::2:28::0:0:System &:/usr/guest/operator:/bin/csh
+games:***:7:2::0:0:Games pseudo-user:/usr/games:
+uucp::66:1::0:0:UNIX-to-UNIX Copy:/usr/spool/uucppublic:/usr/lib/uucp/uucico
+nobody:*:32767:9999::0:0:Unprivileged user:/nonexistent:/dev/null
+notes:*:5:31::0:0:Notesfile maintainer:/usr/spool/notes:/bin/csh
+karels:QOrZFUGpxDUlo:6:10::0:0:Mike &:/usr/guest/karels:/bin/csh
+sam:Yd6H6R7ejeIP2:7:10::0:0:& Leffler:/usr/guest/sam:/bin/csh
+wnj:ZDjXDBwXle2gc:8:10::0:0:Bill Joy:/usr/guest/wnj:/bin/csh
+mckusick:6l7zMyp8dZLZU:201:10::0:0:Kirk &:/usr/guest/mckusick:/bin/csh
+dmr:AiInt5qKdjmHs:10:31::0:0:Dennis Ritchie:/usr/guest/dmr:
+ken:sq5UDrPlKj1nA:11:31::0:0:& Thompson:/usr/guest/ken:
+shannon:NYqgD2jjeuozk:12:31::0:0:Bill &:/usr/guest/shannon:/bin/csh
+peter:y5G5mbEX4HhOY:13:31::0:0:peter b. kessler:/usr/guest/peter:/bin/csh
+kre:vpyVBWM3ARc0.:14:31::0:0:Robert Elz:/usr/guest/kre:/bin/csh
+ingres:64c19dZOElp9I:267:74::0:0:& Group:/usr/ingres:/bin/csh
+ralph:s.EZm/wQTqbro:16:31::0:0:& Campbell:/usr/guest/ralph:/bin/csh
+linton:1/WWIjn5Sd8qM:19:31::0:0:Mark &:/usr/guest/linton:/bin/csh
+sklower:p0taJy06Qye1g:20:31::0:0:Keith &:/usr/guest/sklower:/bin/csh
+eric:PcEfNNJN.UHpM:22:31::0:0:& Allman:/usr/guest/eric:/usr/new/csh
+rrh:lj1vXnxTAPnDc:23:31::0:0:Robert R. Henry:/usr/guest/rrh:/bin/csh
+arnold:5vTJh54EqjZsU:25:31::0:0:Kenneth C R C &:/usr/guest/arnold:/bin/csh
+jkf:G6cip/I8C792U:26:31::0:0:John Foderaro:/usr/guest/jkf:/bin/csh
+ghg:FA/4weg1/wy2c:32:31::0:0:George Goble:/usr/guest/ghg:/bin/csh
+bloom:n0QtVD80F82MM:33:10::0:0:Jim &:/usr/guest/bloom:/bin/csh
+miriam:hnZ1ZK5H2qapE:36:10::0:0:& Amos:/usr/guest/miriam:/bin/csh
+kjd:ogYPQZGnihezk:37:10::0:0:Kevin Dunlap:/usr/guest/kjd:/bin/csh
+rwh:LReNSwE9gQF7w:38:10::0:0:Robert W. Henry:/usr/guest/rwh:/bin/csh
+tef:OciUqGHcs9YOw:39:31::0:0:Thomas Ferrin:/usr/guest/tef:/bin/csh
+van:STpwu/Ggmk78A:40:31::0:0:& Jacobson:/usr/guest/van:/bin/csh
+rich:uxxJaRZvgyiPg:41:31::0:0:& Hyde:/usr/guest/rich:/bin/csh
+jim:.6s.pzMqjyMrU:42:10::0:0:& McKie:/usr/guest/jim:/bin/csh
+donn:5cJ5uHclmVJKA:43:31::0:0:& Seeley:/usr/guest/donn:/bin/csh
+falcon:.MTZpW8TC8tqs:32766:31::0:0:Prof. Steven &:/usr/games:/usr/games/wargames
