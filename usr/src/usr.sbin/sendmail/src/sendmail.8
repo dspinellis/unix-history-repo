@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)sendmail.8	6.10 (Berkeley) %G%
+.\"     @(#)sendmail.8	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SENDMAIL 8
@@ -324,17 +324,17 @@ option compiled in.
 .It Li u Ns Ar N
 Set the default user id for mailers.
 .It Li w
-If not set, name server lookups will us a querytype of ANY
+If set, name server lookups will us a querytype of ANY
 to find types
 .Dv CNAME , A ,
 and
 .Dv MX ,
 and will cause all existing records to be cached by our local server.
-If there is (might be) a wildcard MX in the local domain
-or its parents that are searched, you
-.ul
-must
-set this option, which will use a querytype of
+If you are certain that there are no wildcard MX records in the local domain
+or its parents that are searched, you can
+set this option.
+If the option is not set,
+name server lookups will use a querytype of
 .Dv CNAME
 only;
 otherwise, it would cause all fully-qualified names

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	5.27 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	5.28 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	5.27 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	5.28 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -175,14 +175,14 @@ getcanonname(host, hbsize)
 	loopcnt = 0;
 loop:
 	/*
-	 * Use query type of ANY if possible (NO_WILDCARD_MX), which will
+	 * Use query type of ANY if possible (NoWildcardMX), which will
 	 * find types CNAME, A, and MX, and will cause all existing records
 	 * to be cached by our local server.  If there is (might be) a
 	 * wildcard MX record in the local domain or its parents that are
 	 * searched, we can't use ANY; it would cause fully-qualified names
 	 * to match as names in a local domain.
 	 */
-	n = res_search(host, C_IN, WildcardMX ? T_CNAME : T_ANY,
+	n = res_search(host, C_IN, NoWildcardMX ? T_ANY : T_CNAME,
 			(char *)&answer, sizeof(answer));
 	if (n < 0) {
 		if (tTd(8, 1))
