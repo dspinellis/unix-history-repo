@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.7 (Berkeley) %G%
+#	@(#)Makefile	8.8 (Berkeley) %G%
 
 M4=	m4
 #M4=	/usr/src/usr.bin/m4/obj/m4
@@ -49,6 +49,7 @@ M4FILES=\
 	../feature/notsticky.m4 \
 	../feature/nouucp.m4 \
 	../feature/nullclient.m4 \
+	../feature/procmail.m4 \
 	../feature/redirect.m4 \
 	../feature/stickyhost.m4 \
 	../feature/use_cw_file.m4 \
