@@ -1,4 +1,4 @@
-/*	rk.c	4.26	81/03/09	*/
+/*	rk.c	4.27	81/03/09	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -348,11 +348,12 @@ rkintr(rk11)
 				bp->b_flags |= B_ERROR;
 			} else if (++um->um_tab.b_errcnt > 28 ||
 			    ds&RKDS_HARD || er&RKER_HARD || cs2&RKCS2_HARD) {
-				bp->b_flags |= B_ERROR;
 				harderr(bp, "rk");
 				printf("cs2=%b ds=%b er=%b\n",
 				    cs2, RKCS2_BITS, ds, 
 				    RKDS_BITS, er, RKER_BITS);
+				bp->b_flags |= B_ERROR;
+				sc->sc_recal = 0;
 			} else
 				um->um_tab.b_active = 0;
 			if (cs2&RK_MDS) {
