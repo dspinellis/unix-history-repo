@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mci.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mci.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -147,7 +147,7 @@ mci_uncache(mcislot)
 	register MCI **mcislot;
 {
 	register MCI *mci;
-	extern ENVELOPE *BlankEnvelope;
+	extern ENVELOPE BlankEnvelope;
 
 	mci = *mcislot;
 	if (mci == NULL)
