@@ -1,4 +1,4 @@
-/*	trap.c	6.4	84/08/28	*/
+/*	trap.c	6.5	85/03/12	*/
 
 #include "psl.h"
 #include "reg.h"
@@ -190,10 +190,10 @@ syscall(sp, type, code, pc, psl)
 	if (!USERMODE(locr0[PS]))
 		panic("syscall");
 	u.u_ar0 = locr0;
-	if (code == 139) {			/* XXX */
-		sigcleanup();			/* XXX */
-		goto done;			/* XXX */
-	}
+	if (code == 139) {			/* XXX 4.2 COMPATIBILITY */
+		osigcleanup();			/* XXX 4.2 COMPATIBILITY */
+		goto done;			/* XXX 4.2 COMPATIBILITY */
+	}					/* XXX 4.2 COMPATIBILITY */
 	params = (caddr_t)locr0[AP] + NBPW;
 	u.u_error = 0;
 	opc = pc - 2;
@@ -205,26 +205,19 @@ syscall(sp, type, code, pc, psl)
 		params += NBPW;
 		callp = ((unsigned)i >= nsysent) ? &sysent[63] : &sysent[i];
 	}
-	if (i = callp->sy_narg * sizeof (int)) {
-#ifndef lint
-		asm("prober $3,r9,(r10)");		/* GROT */
-		asm("bnequ ok");			/* GROT */
-		u.u_error = EFAULT;			/* GROT */
-		goto bad;				/* GROT */
-asm("ok:");						/* GROT */
-		asm("movc3 r9,(r10),_u+U_ARG");		/* GROT */
-#else
-		bcopy(params, (caddr_t)u.u_arg, (u_int)i);
-#endif
+	if ((i = callp->sy_narg * sizeof (int)) &&
+	    (u.u_error = copyin(params, (caddr_t)u.u_arg, (u_int)i)) != 0) {
+		locr0[R0] = u.u_error;
+		locr0[PS] |= PSL_C;	/* carry bit */
+		goto done;
 	}
-	u.u_ap = u.u_arg;
 	u.u_r.r_val1 = 0;
 	u.u_r.r_val2 = locr0[R1];
 	if (setjmp(&u.u_qsave)) {
-		if (u.u_error == 0 && u.u_eosys == JUSTRETURN)
+		if (u.u_error == 0 && u.u_eosys != RESTARTSYS)
 			u.u_error = EINTR;
 	} else {
-		u.u_eosys = JUSTRETURN;
+		u.u_eosys = NORMALRETURN;
 #ifdef SYSCALLTRACE
 		if (syscalltrace) {
 			register int i;
@@ -246,23 +239,19 @@ asm("ok:");						/* GROT */
 #endif
 		(*(callp->sy_call))();
 	}
-	if (u.u_eosys == RESTARTSYS)
+	if (u.u_eosys == NORMALRETURN) {
+		if (u.u_error) {
+			locr0[R0] = u.u_error;
+			locr0[PS] |= PSL_C;	/* carry bit */
+		} else {
+			locr0[R0] = u.u_r.r_val1;
+			locr0[R1] = u.u_r.r_val2;
+			locr0[PS] &= ~PSL_C;
+		}
+	} else if (u.u_eosys == RESTARTSYS)
 		pc = opc;
-#ifdef notdef
-	else if (u.u_eosys == SIMULATERTI)
-		dorti();
-#endif
-	else if (u.u_error) {
-#ifndef lint
-bad:
-#endif
-		locr0[R0] = u.u_error;
-		locr0[PS] |= PSL_C;	/* carry bit */
-	} else {
-		locr0[R0] = u.u_r.r_val1;
-		locr0[R1] = u.u_r.r_val2;
-		locr0[PS] &= ~PSL_C;
-	}
+	/* else if (u.u_eosys == JUSTRETURN) */
+		/* nothing to do */
 done:
 	p = u.u_procp;
 	if (p->p_cursig || ISSIG(p))
