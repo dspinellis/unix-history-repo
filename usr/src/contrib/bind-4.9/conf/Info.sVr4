@@ -1,0 +1,32 @@
+(Message inbox:59)
+Date:    Wed, 17 Mar 93 17:08:36 CST
+From:    sblair@upurbmw.dell.com
+Subject: bind 4.9 porting to SVR4..
+To:      vixie
+Cc:      cwg@dell.com
+
+[ I can't remember if it's 4.9, or 5.0 ]
+
+If one defines the following in the top of the opt-level makefile, it does 
+indeed build, and work on SVR4 Intel boxes:
+
+
+CC = cc-bsd -DBSD -DPOSIX
+
+Also, one has to change the cd $x(for dir's) Makefiles' install to
+be /usr/ucb/install as the SVR4 one don't have the options BSD
+does.
+
+
+It seems to deal real well with authorative as well as non-authorative
+answers. Speed is much better than stock USL SVR4 nslookup, and nstest.
+
+I made NO code changes after figuring out the compiler options. I setup
+a rogue secondary on my machine here, upurbmw.dell.com and will keep
+you and cwg advised as to what's up.
+
+-- 
+Steve Blair	DELL NETWORK SERVICES	sblair@dell.com	hostmaster@dell.com
+==============================================================================
+If every american puts $ 29,999 as salary, and takes the remainder and
+puts it into a 401K(or other deferment plan), then TAXES WON'T HELP !!!!!!!!!
