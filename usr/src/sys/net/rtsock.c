@@ -4,18 +4,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	7.16 (Berkeley) %G%
+ *	@(#)rtsock.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "mbuf.h"
-#include "user.h"
 #include "proc.h"
 #include "socket.h"
 #include "socketvar.h"
 #include "domain.h"
 #include "protosw.h"
-#include "errno.h"
 
 #include "af.h"
 #include "if.h"
@@ -114,7 +112,7 @@ route_output(m, so)
 	m_copydata(m, 0, len, (caddr_t)rtm);
 	if (rtm->rtm_version != RTM_VERSION)
 		senderr(EPROTONOSUPPORT);
-	rtm->rtm_pid = u.u_procp->p_pid;
+	rtm->rtm_pid = curproc->p_pid;
 	lim = len + (caddr_t) rtm;
 	cp = (caddr_t) (rtm + 1);
 	if (rtm->rtm_addrs & RTA_DST) {
@@ -373,7 +371,7 @@ m_copyback(m0, off, len, cp)
 
 	if (m0 == 0)
 		return;
-	while (off >= (mlen = m->m_len)) {
+	while (off > (mlen = m->m_len)) {
 		off -= mlen;
 		totlen += mlen;
 		if (m->m_next == 0) {
@@ -436,7 +434,7 @@ struct sockaddr *gate, *mask, *src;
 	rtm->rtm_type = type;
 	rtm->rtm_addrs = RTA_DST;
 	if (type == RTM_OLDADD || type == RTM_OLDDEL) {
-		rtm->rtm_pid = u.u_procp->p_pid;
+		rtm->rtm_pid = curproc->p_pid;
 	}
 	m_copyback(m, sizeof (*rtm), dlen, (caddr_t)dst);
 	if (gate) {
