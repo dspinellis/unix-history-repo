@@ -1,10 +1,10 @@
-static	char *sccsid = "@(#)tar.c	4.7 (Berkeley) 82/03/17";
+static	char *sccsid = "@(#)tar.c	4.8 (Berkeley) 82/03/31";
 
 /*
  * Tape Archival Program
  */
 #include <stdio.h>
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <ndir.h>
 #include <sys/mtio.h>
