@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)measure.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)measure.c	1.2 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -125,7 +125,13 @@ empty:
 					continue;
 				}
 				histime = ntohl((u_long)icp->icmp_rtime);
-				if ((histime >> 32) == -1) {
+				/*
+ 				 * a hosts using a time format different from 
+				 * ms. since midnight UT (as per RFC792) should
+				 * set the high order bit of the 32-bit time
+				 * value it transmits.
+				 */
+				if ((histime & 0x80000000) != 0) {
 					status = NONSTDTIME;
 					break;
 				}
