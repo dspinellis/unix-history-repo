@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -146,7 +146,7 @@ main(argc, argv)
 		}
 
 	if (*(argv += optind)) {
-		for (argv += optind; *argv; ++argv) {
+		for (; *argv; ++argv) {
 			if (getfname(*argv))
 				fflg = 1;
 		}
