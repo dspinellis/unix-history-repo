@@ -1,9 +1,8 @@
-# files 1.1 82/10/28
-net/af.c		optional inet
-net/if.c		optional inet
-net/raw_cb.c		optional inet
-net/raw_usrreq.c	optional inet
-net/route.c		optional inet
+net/af.c		standard
+net/if.c		standard
+net/raw_cb.c		standard
+net/raw_usrreq.c	standard
+net/route.c		standard
 netdecnet/nsp_input.c	optional decnet
 netdecnet/nsp_output.c	optional decnet
 netdecnet/nsp_subr.c	optional decnet
@@ -17,6 +16,7 @@ netinet/if_loop.c	optional loop inet device-driver
 netinet/in.c		optional inet
 netinet/in_cksum.c	optional inet
 netinet/in_pcb.c	optional inet
+netinet/in_proto.c	optional inet
 netinet/ip_icmp.c	optional inet
 netinet/ip_input.c	optional inet
 netinet/ip_output.c	optional inet
@@ -30,6 +30,7 @@ netinet/tcp_timer.c	optional inet
 netinet/tcp_usrreq.c	optional inet
 netinet/udp_usrreq.c	optional inet
 netpup/pup.c		optional pup
+netpup/pup_proto.c	optional pup
 netpup/raw_pup.c	optional pup
 sys/init_main.c		standard
 sys/init_sysent.c	standard
@@ -45,6 +46,7 @@ sys/kern_time.c		standard
 sys/quota_charges.c	standard
 sys/quota_share.c	standard
 sys/quota_sys.c		standard
+sys/subr_mcount.c	standard profiling-routine
 sys/subr_prf.c		standard
 sys/subr_rmap.c		standard
 sys/subr_xxx.c		standard
@@ -66,6 +68,7 @@ sys/ufs_alloc.c		standard
 sys/ufs_bio.c		standard
 sys/ufs_bmap.c		standard
 sys/ufs_dsort.c		standard
+sys/ufs_efs.c		optional efs device-driver
 sys/ufs_fio.c		standard
 sys/ufs_inode.c		standard
 sys/ufs_nami.c		standard
@@ -79,6 +82,7 @@ sys/uipc_pipe.c		standard
 sys/uipc_proto.c	standard
 sys/uipc_socket.c	standard
 sys/uipc_socket2.c	standard
+sys/uipc_usrreq.c	standard
 sys/vm_drum.c		standard
 sys/vm_mem.c		standard
 sys/vm_mon.c		standard
