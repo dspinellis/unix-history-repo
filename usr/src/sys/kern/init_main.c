@@ -1,4 +1,4 @@
-/*	init_main.c	3.1	%H%	*/
+/*	init_main.c	3.2	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -66,6 +66,7 @@ main(firstaddr)
 	 */
 
 	ihinit();
+	bhinit();
 	cinit();
 	binit();
 	bswinit();
