@@ -1,17 +1,17 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
+ * Copyright (c) 1980, 1989 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+"@(#) Copyright (c) 1980, 1989 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)stty.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)stty.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -32,7 +32,7 @@ static char sccsid[] = "@(#)stty.c	5.7 (Berkeley) %G%";
 #include <stdio.h>
 
 #ifndef STATIC
-#define STATIC
+#define STATIC	/* ??? */
 #endif
 
 #define eq(s1, s2)	(strcmp(s1, s2) == 0)
@@ -90,8 +90,8 @@ STATIC struct modes omodes[] = {
 	"-onlcr",	0, ONLCR,
 	"tabs",		0, OXTABS,	/* "preserve" tabs */
 	"-tabs",	OXTABS, 0,
-	"xtabs",	OXTABS, 0,
-	"-xtabs",	0, OXTABS,
+	"xtabs",	OXTABS, 0,	/* ??? */
+	"-xtabs",	0, OXTABS,	/* ??? */
 	"oxtabs",	OXTABS, 0,
 	"-oxtabs",	0, OXTABS,
 	0
@@ -114,6 +114,7 @@ STATIC struct modes cmodes[] = {
 	"evenp",	PARENB | CS7, PARODD | CSIZE,
 	"oddp",		PARENB | CS7 | PARODD, CSIZE,
 	"-parity",	CS8, PARODD | PARENB | CSIZE,
+	"pass8",	CS8, PARODD | PARENB | CSIZE,
 	"-evenp",	CS8, PARODD | PARENB | CSIZE,
 	"-oddp",	CS8, PARODD | PARENB | CSIZE,
 	"hupcl",	HUPCL, 0,
@@ -190,9 +191,9 @@ STATIC struct modes lmodes[] = {
  * fit within 80 cols).  The rest are optional aliases.
  * All names are recognized on the command line.
  */
-#define MAXNAMES 5
+#define MAXNAMES 5	/* ??? */
 STATIC struct {
-	char	*names[MAXNAMES+1];
+	char	*names[MAXNAMES+1];	/* ??? */
 	int	sub;
 	u_char	def;
 } cchars[] = {
@@ -211,6 +212,7 @@ STATIC struct {
 	{ "lnext", "lnxt" },		VLNEXT,	CLNEXT,
 	{ "flusho", "fls", "flush" },	VFLUSHO, CFLUSHO,
 	{ "reprint", "rpnt", "rprnt" },	VREPRINT, CREPRINT,
+	{ "info", "info" },		VINFO, CINFO,
 	0
 };
 	
@@ -327,6 +329,24 @@ main(argc, argv)
 			t.c_lflag &= ~ECHOPRT;
 			t.c_lflag |= ECHOE|ECHOKE|ECHOCTL;
 			t.c_iflag &= ~IXANY;
+			goto next;
+		}
+		if (eq("raw", *argv)) {
+			cfmakeraw(&t);
+			t.c_cflag &= ~(CSIZE|PARENB);
+			t.c_cflag |= CS8;
+			goto next;
+		}
+		if (eq("cooked", *argv) || eq("-raw", *argv) ||
+		    eq("sane", *argv)) {
+			t.c_cflag = TTYDEF_CFLAG | (t.c_cflag & CLOCAL);
+			t.c_iflag = TTYDEF_IFLAG;
+			t.c_iflag |= ICRNL;
+			/* preserve user-preference flags in lflag */
+#define	LKEEP	(ECHOKE|ECHOE|ECHOK|ECHOPRT|ECHOCTL|ALTWERASE|TOSTOP|NOFLSH)
+			t.c_lflag = TTYDEF_LFLAG | (t.c_lflag & LKEEP);
+			t.c_oflag = TTYDEF_OFLAG;
+			t.c_oflag |= (OPOST|ONLCR);	/* XXX */
 			goto next;
 		}
 		if (eq("rows", *argv)) {
@@ -649,7 +669,7 @@ mdput(s)
 }
 
 STATIC
-put(f, a)
+put(f, a)	/* ??? */
 	char *f;
 {
 	_doprnt(f, &a, OUT);
@@ -660,7 +680,7 @@ warning(s, a)
 	char *s;
 {
 	fprintf(ERR, "stty: warning: ");
-	_doprnt(s, &a, ERR);
+	_doprnt(s, &a, ERR);	/* ??? */
 	fprintf(ERR, "\n");
 }
 
@@ -669,13 +689,13 @@ errexit(s, a)
 	char *s;
 {
 	fprintf(ERR, "stty: ");
-	_doprnt(s, &a, ERR);
+	_doprnt(s, &a, ERR);	/* ??? */
 	fprintf(ERR, "\n");
 	exit(1);
 }
 
 STATIC
-syserrexit(s, a)
+syserrexit(s, a)	/* ??? */
 	char *s;
 {
 	fprintf(ERR, "stty: ");
