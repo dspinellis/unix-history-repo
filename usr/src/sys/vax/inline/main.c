@@ -1,7 +1,7 @@
 /* Copyright (c) 1984 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.3	(Berkeley)	%G%";
+static char sccsid[] = "@(#)main.c	1.4	(Berkeley)	%G%";
 #endif not lint
 
 #include <stdio.h>
@@ -22,10 +22,11 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	register struct pats *pp, **hp;
 	register char *cp, *lp;
 	register char *bufp;
-	register struct pats **tablep;
+	register struct pats *pp, **php;
+	struct pats **tablep;
+	register struct inststoptbl *itp, **ithp;
 	int size;
 	extern char *index();
 
@@ -34,15 +35,24 @@ main(argc, argv)
 	if (argc > 2)
 		freopen(argv[2], "w", stdout);
 	/*
-	 * set up the hash table
+	 * Set up the hash table for the patterns.
 	 */
 	for (tablep = inittables; *tablep; tablep++) {
 		for (pp = *tablep; pp->name[0] != '\0'; pp++) {
-			hp = hash(pp->name, &size);
+			php = &patshdr[hash(pp->name, &size)];
 			pp->size = size;
-			pp->next = *hp;
-			*hp = pp;
+			pp->next = *php;
+			*php = pp;
 		}
+	}
+	/*
+	 * Set up the hash table for the instruction stop table.
+	 */
+	for (itp = inststoptable; itp->name[0] != '\0'; itp++) {
+		ithp = &inststoptblhdr[hash(itp->name, &size)];
+		itp->size = size;
+		itp->next = *ithp;
+		*ithp = itp;
 	}
 	/*
 	 * check each line and replace as appropriate
@@ -68,7 +78,7 @@ main(argc, argv)
 			bufp = newline();
 			continue;
 		}
-		for (pp = *hash(cp, &size); pp; pp = pp->next) {
+		for (pp = patshdr[hash(cp, &size)]; pp; pp = pp->next) {
 			if (pp->size == size && bcmp(pp->name, cp, size) == 0) {
 				expand(pp->replace);
 				bufp = line[bufhead];
@@ -92,29 +102,32 @@ expand(replace)
 {
 	register int curptr;
 	char *nextreplace, *argv[MAXARGS];
-	int argc, argreg, queueempty, mod = 0;
+	int argc, argreg, foundarg, mod = 0;
 	char parsebuf[BUFSIZ];
 
 	for (curptr = bufhead; curptr != buftail; ) {
-		queueempty = (curptr == buftail);
-		curptr = PRED(curptr);
 		nextreplace = copyline(replace, line[bufhead]);
 		argc = parseline(line[bufhead], argv, parsebuf);
 		argreg = nextarg(argc, argv);
 		if (argreg == -1)
 			break;
-		while (!queueempty) {
+		for (foundarg = 0; curptr != buftail; ) {
+			curptr = PRED(curptr);
 			argc = parseline(line[curptr], argv, parsebuf);
-			if (ispusharg(argc, argv))
+			if (isendofblock(argc, argv))
+				break;
+			if (foundarg = ispusharg(argc, argv))
 				break;
 			mod |= 1 << modifies(argc, argv);
-			queueempty = (curptr == buftail);
-			curptr = PRED(curptr);
 		}
-		if (queueempty)
+		if (!foundarg)
 			break;
 		replace = nextreplace;
 		if (mod & (1 << argreg)) {
+			if (curptr == buftail) {
+				(void)newline();
+				break;
+			}
 			(void)newline();
 		} else {
 			rewrite(line[curptr], argc, argv, argreg);
@@ -152,14 +165,32 @@ parseline(linep, argv, linebuf)
 			return (argc);
 		}
 		argv[argc++] = bufp;
-		while (!isspace(*cp) && *cp != ',' && *cp != COMMENTCHAR)
+		while (!isspace(*cp) && *cp != ARGSEPCHAR && *cp != COMMENTCHAR)
 			*bufp++ = *cp++;
 		*bufp++ = '\0';
 		if (*cp == COMMENTCHAR)
 			return (argc);
-		if (*cp == ',')
+		if (*cp == ARGSEPCHAR)
 			cp++;
 	}
+}
+
+/*
+ * Check for instructions that end a basic block.
+ */
+isendofblock(argc, argv)
+	int argc;
+	char *argv[];
+{
+	register struct inststoptbl *itp;
+	int size;
+
+	if (argc == 0)
+		return (0);
+	for (itp = inststoptblhdr[hash(argv[0], &size)]; itp; itp = itp->next)
+		if (itp->size == size && bcmp(argv[0], itp->name, size) == 0)
+			return (1);
+	return (0);
 }
 
 /*
@@ -207,18 +238,16 @@ emptyqueue()
  * Compute the hash of a string.
  * Return the hash and the size of the item hashed
  */
-struct pats **
 hash(cp, size)
 	char *cp;
 	int *size;
 {
 	register char *cp1 = cp;
-	register int hash;
+	register int hash = 0;
 
-	hash = 1;
 	while (*cp1 && *cp1 != '\n')
 		hash += (int)*cp1++;
 	*size = cp1 - cp + 1;
 	hash &= HSHSIZ - 1;
-	return (&hashhdr[hash]);
+	return (hash);
 }
