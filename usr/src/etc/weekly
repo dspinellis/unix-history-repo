@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)weekly	8.1 (Berkeley) %G%
+#	@(#)weekly	8.2 (Berkeley) %G%
 #
 
 PATH=/bin:/sbin:/usr/sbin:/usr/bin:/usr/libexec
@@ -29,10 +29,12 @@ then
 		echo "$owner	$file"
 		echo $file >> $TDIR/$owner
 	done | sed -e 's,SCCS/p.,,' | sort
-	for file in $TDIR/*; do
-		sed -e 's,SCCS/p.,,' $file | \
-		    Mail -s 'checked out files' `basename $file`
-	done
+	if test -n "`ls $TDIR`"; then
+		for file in $TDIR/*; do
+			sed -e 's,SCCS/p.,,' $file | \
+			    Mail -s 'checked out files' `basename $file`
+		done
+	fi
 	rm -rf $TDIR
 fi
 
