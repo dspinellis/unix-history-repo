@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_vnops.c	7.22 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -954,7 +954,7 @@ ufs_rename(fndp, tndp)
 				if (dirbuf.dotdot_namlen != 2 ||
 				    dirbuf.dotdot_name[0] != '.' ||
 				    dirbuf.dotdot_name[1] != '.') {
-					printf("rename: mangled dir\n");
+					dirbad(xp, 12, "rename: mangled dir");
 				} else {
 					dirbuf.dotdot_ino = newparent;
 					(void) vn_rdwr(UIO_WRITE, ITOV(xp),
