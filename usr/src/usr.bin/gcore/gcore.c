@@ -1,67 +1,84 @@
 /*-
- * Copyright (c) 1992 Regents of the University of California.
+ * Copyright (c) 1992 The Regents of the University of California.
  * All rights reserved.
- *
- * This software was developed by the Computer Systems Engineering group
- * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
- * contributed to Berkeley.
  *
  * %sccs.include.redist.c%
  */
 
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1992 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)gcore.c	5.13 (Berkeley) %G%";
+#endif /* not lint */
+
 /*
- * gcore - get core images of running processes
+ * Originally written by Eric Cooper in Fall 1981.
+ * Inspired by a version 6 program by Len Levin, 1978.
+ * Several pieces of code lifted from Bill Joy's 4BSD ps.
+ * Most recently, hacked beyond recognition for 4.4BSD by Steven McCanne,
+ * Lawrence Berkeley Laboratory.
+ *
+ * Portions of this software were developed by the Computer Systems
+ * Engineering group at Lawrence Berkeley Laboratory under DARPA
+ * contract BG 91-66 and contributed to Berkeley.
  */
-#include <stdio.h>
-#include <limits.h>
-#include <kvm.h>
-#include <a.out.h>
+
 #include <sys/param.h>
 #include <sys/time.h>
-#include <sys/file.h>
+#include <sys/stat.h>
 #include <sys/proc.h>
 #include <sys/user.h>
 #include <sys/kinfo.h>
 #include <sys/kinfo_proc.h>
 #include <machine/vmparam.h>
 
-kvm_t *kd;
+#include <a.out.h>
+#include <fcntl.h>
+#include <kvm.h>
+#include <limits.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include "extern.h"
 
-extern int getopt();
-extern int optind, opterr;
-extern char *optarg;
+void	core __P((int, int, struct kinfo_proc *));
+void	datadump __P((int, int, struct proc *, u_long, int));
+void	usage __P((void));
+void	userdump __P((int, struct proc *, u_long, int));
+
+kvm_t *kd;
+/* XXX undocumented routine, should be in kvm.h? */
+ssize_t kvm_uread __P((kvm_t *, struct proc *, u_long, char *, size_t));
 
 static int data_offset;
 
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	register struct proc *p;
-	off_t procbase, procp;
-	int pid, uid, fd, cnt, i, op, efd;
 	struct kinfo_proc *ki;
-	char *corefile = 0;
-	int err;
-	int sflag = 0;
 	struct exec exec;
-	char errbuf[_POSIX2_LINE_MAX];
-	char fname[64];
+	int ch, cnt, efd, fd, pid, sflag, uid;
+	char *corefile, errbuf[_POSIX2_LINE_MAX], fname[MAXPATHLEN + 1];
 
-	setprog(argv[0]);
-
-        opterr = 0;
-        while ((op = getopt(argc, argv, "c:s")) != EOF) {
-                switch (op) {
-
+	sflag = 0;
+	corefile = NULL;
+        while ((ch = getopt(argc, argv, "c:s")) != EOF) {
+                switch (ch) {
                 case 'c':
 			corefile = optarg;
                         break;
-
 		case 's':
-			++sflag;
+			sflag = 1;
 			break;
-
 		default:
 			usage();
 			break;
@@ -69,87 +86,113 @@ main(argc, argv)
 	}
 	argv += optind;
 	argc -= optind;
+
 	if (argc != 2)
 		usage();
 
 	kd = kvm_openfiles(0, 0, 0, O_RDONLY, errbuf);
-	if (kd == 0)
-		error("%s", errbuf);
+	if (kd == NULL)
+		err(1, "%s", errbuf);
 
 	uid = getuid();
 	pid = atoi(argv[1]);
 			
 	ki = kvm_getprocs(kd, KINFO_PROC_PID, pid, &cnt);
-	if (ki == 0 || cnt != 1)
-		error("%d: not found", pid);
+	if (ki == NULL || cnt != 1)
+		err(1, "%d: not found", pid);
 
 	p = &ki->kp_proc;
 	if (ki->kp_eproc.e_pcred.p_ruid != uid && uid != 0)
-		error("%d: not owner", pid);
+		err(1, "%d: not owner", pid);
 
 	if (p->p_stat == SZOMB)
-		error("%d: zombie", pid);
+		err(1, "%d: zombie", pid);
 
 	if (p->p_flag & SWEXIT)
-		warning("process exiting");
-	if (p->p_flag & SSYS)
-		/* i.e. swapper or pagedaemon */
-		error("%d: system process");
+		err(0, "process exiting");
+	if (p->p_flag & SSYS)		/* Swapper or pagedaemon. */
+		err(1, "%d: system process");
 
-	if (corefile == 0) {
-		sprintf(fname, "core.%d", pid);
+	if (corefile == NULL) {
+		(void)snprintf(fname, sizeof(fname), "core.%d", pid);
 		corefile = fname;
 	}
-	fd = open(corefile, O_RDWR|O_CREAT|O_TRUNC, 0666);
-	if (fd < 0) {
-		perror(corefile);
-		exit(1);
-	}
-	efd = open(argv[0], O_RDONLY);
-	if (efd < 0) {
-		perror(argv[0]);
-		exit(1);
-	}
-	if (read(efd, &exec, sizeof(exec)) != sizeof(exec))
-		error("cannot read exec header of %s", argv[0]);
+	fd = open(corefile, O_RDWR|O_CREAT|O_TRUNC, DEFFILEMODE);
+	if (fd < 0)
+		err(1, "%s: %s\n", corefile, strerror(errno));
+
+	efd = open(argv[0], O_RDONLY, 0);
+	if (efd < 0)
+		err(1, "%s: %s\n", argv[0], strerror(errno));
+
+	cnt = read(efd, &exec, sizeof(exec));
+	if (cnt != sizeof(exec))
+		err(1, "%s exec header: %s",
+		    argv[0], cnt > 0 ? strerror(EIO) : strerror(errno));
 
 	data_offset = N_DATOFF(exec);
 
-	if (sflag && kill(pid, SIGSTOP) < 0) 
-		warning("%d: could not deliver stop signal", pid);
+	if (sflag && kill(pid, SIGSTOP) < 0)
+		err(0, "%d: stop signal: %s", pid, strerror(errno));
 
-	err = core(efd, fd, p);
-	if (err == 0)
-		err = md_core(kd, fd, p);
+	core(efd, fd, ki);
 
 	if (sflag && kill(pid, SIGCONT) < 0)
-		warning("%d: could not deliver continue signal", pid);
-	close(fd);
+		err(0, "%d: continue signal: %s", pid, strerror(errno));
+	(void)close(fd);
 
 	exit(0);
 }
 
-int
-userdump(fd, p, addr, npage)
-	register int fd;
-	struct proc *p;
-	register u_long addr;
-	register int npage;
+/*
+ * core --
+ *	Build the core file.
+ */
+void
+core(efd, fd, ki)
+	int efd;
+	int fd;
+	struct kinfo_proc *ki;
 {
-	register int cc;
-	char buffer[NBPG];
+	union {
+		struct user user;
+		char ubytes[ctob(UPAGES)];
+	} uarea;
+	struct proc *p = &ki->kp_proc;
+	int tsize = ki->kp_eproc.e_vm.vm_tsize;
+	int dsize = ki->kp_eproc.e_vm.vm_dsize;
+	int ssize = ki->kp_eproc.e_vm.vm_ssize;
+	int cnt;
 
-	while (--npage >= 0) {
-		cc = kvm_uread(kd, p, addr, buffer, NBPG);
-		if (cc != NBPG)
-			return (-1);
-		(void)write(fd, buffer, NBPG);
-		addr += NBPG;
-	}
-	return (0);
+	/* Read in user struct */
+	cnt = kvm_read(kd, (u_long)p->p_addr, &uarea, sizeof(uarea));
+	if (cnt != sizeof(uarea))
+		err(1, "read user structure: %s",
+		    cnt > 0 ? strerror(EIO) : strerror(errno));
+
+	/*
+	 * Fill in the eproc vm parameters, since these are garbage unless
+	 * the kernel is dumping core or something.
+	 */
+	uarea.user.u_kproc = *ki;
+
+	/* Dump user area */
+	cnt = write(fd, &uarea, sizeof(uarea));
+	if (cnt != sizeof(uarea))
+		err(1, "write user structure: %s",
+		    cnt > 0 ? strerror(EIO) : strerror(errno));
+
+	/* Dump data segment */
+	datadump(efd, fd, p, USRTEXT + ctob(tsize), dsize);
+
+	/* Dump stack segment */
+	userdump(fd, p, USRSTACK - ctob(ssize), ssize);
+
+	/* Dump machine dependent portions of the core. */
+	md_core(kd, fd, ki);
 }
 
-int
+void
 datadump(efd, fd, p, addr, npage)
 	register int efd;
 	register int fd;
@@ -164,59 +207,78 @@ datadump(efd, fd, p, addr, npage)
 	while (--npage >= 0) {
 		cc = kvm_uread(kd, p, addr, buffer, NBPG);
 		if (cc != NBPG) {
-			/*
-			 * Try to read page from executable.
-			 */
-			if (lseek(efd, addr + delta, SEEK_SET) == -1)
-				return (-1);
-			if (read(efd, buffer, sizeof(buffer)) < 0)
-				return (-1);
+			/* Try to read the page from the executable. */
+			if (lseek(efd, (off_t)addr + delta, SEEK_SET) == -1)
+				err(1, "seek executable: %s", strerror(errno));
+			cc = read(efd, buffer, sizeof(buffer));
+			if (cc != sizeof(buffer))
+				err(1, "read executable: %s",
+				    cc > 0 ? strerror(EIO) : strerror(errno));
 		}
-		(void)write(fd, buffer, NBPG);
+		cc = write(fd, buffer, NBPG);
+		if (cc != NBPG)
+			err(1, "write data segment: %s",
+			    cc > 0 ? strerror(EIO) : strerror(errno));
 		addr += NBPG;
 	}
-	return (0);
 }
 
-/*
- * Build the core file.
- */
-int
-core(efd, fd, ki)
-	int efd;
-	int fd;
-	struct kinfo_proc *ki;
+void
+userdump(fd, p, addr, npage)
+	register int fd;
+	struct proc *p;
+	register u_long addr;
+	register int npage;
 {
-	struct user user;
+	register int cc;
+	char buffer[NBPG];
 
-	int tsize = ki->kp_eproc.e_vm.vm_tsize;
-	int dsize = ki->kp_eproc.e_vm.vm_dsize;
-	int ssize = ki->kp_eproc.e_vm.vm_ssize;
-	struct proc *p = &ki->kp_proc;
+	while (--npage >= 0) {
+		cc = kvm_uread(kd, p, addr, buffer, NBPG);
+		if (cc != NBPG)
+			/* Could be an untouched fill-with-zero page. */
+			bzero(buffer, NBPG);
+		cc = write(fd, buffer, NBPG);
+		if (cc != NBPG)
+			err(1, "write stack segment: %s",
+			    cc > 0 ? strerror(EIO) : strerror(errno));
+		addr += NBPG;
+	}
+}
 
-	/* Read in user struct */
-	if (kvm_read(kd, (u_long)p->p_addr, (void *)&user, sizeof(user)) 
-	    != sizeof(user))
-		error("could not read user structure");
+void
+usage()
+{
+	(void)fprintf(stderr, "usage: gcore [-s] [-c core] executable pid\n");
+	exit(1);
+}
 
-	/*
-	 * Fill in the eproc vm parameters, since these are garbage unless
-	 * the kernel is dumping core or something.
-	 */
-	user.u_kproc.kp_eproc.e_vm.vm_tsize = tsize;
-	user.u_kproc.kp_eproc.e_vm.vm_dsize = dsize;
-	user.u_kproc.kp_eproc.e_vm.vm_ssize = ssize;
-	/* write out the user struct and leave the right amount of space */
-	(void)write(fd, (char *)&user, sizeof(user));
-	(void)lseek(fd, UPAGES * NBPG, SEEK_SET);
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
 
-	/* Dump data segment */
-	if (datadump(efd, fd, p, USRTEXT + ctob(tsize), dsize) < 0)
-		error("could not dump data segment");
-
-	/* Dump stack segment */
-	if (userdump(fd, p, USRSTACK - ctob(ssize), ssize) < 0)
-		error("could not dump stack segment");
-
-	return (0);
+void
+#if __STDC__
+err(int fatal, const char *fmt, ...)
+#else
+err(fatal, fmt, va_alist)
+	int fatal;
+	char *fmt;
+        va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "gcore: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(1);
+	/* NOTREACHED */
 }
