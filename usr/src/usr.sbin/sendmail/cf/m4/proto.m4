@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.7 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.8 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -22,7 +22,9 @@ define(`_SET_96_', 96)dnl
 define(`_SET_97_', 97)dnl
 define(`_SET_98_', 98)dnl')
 ifdef(`confSMTP_MAILER',, `define(`confSMTP_MAILER', `esmtp')')dnl
-define(`_SMTP_', `confSMTP_MAILER')dnl	for readability only
+ifdef(`confLOCAL_MAILER',, `define(`confLOCAL_MAILER', `local')')dnl
+define(`_SMTP_', `confSMTP_MAILER')dnl		for readability only
+define(`_LOCAL_', `confLOCAL_MAILER')dnl	for readability only
 
 ##################
 #   local info   #
@@ -486,7 +488,7 @@ R$*			$@ $>0 $1
 
 S0
 
-R<@>			$#local $: <>			special case error msgs
+R<@>			$#_LOCAL_ $: <>			special case error msgs
 R$*:;<@>		$#error $@ USAGE $: "list:; syntax illegal for recipient addresses"
 
 ifdef(`_MAILER_smtp_',
@@ -512,15 +514,15 @@ R$* < @ $-:$+ > $*	$# $2 $@ $3 $: $1 @ $3 $4	found a match',
 
 # short circuit local delivery so forwarded email works
 ifdef(`_LOCAL_NOT_STICKY_',
-`R$=L < @ $=w . >		$#local $: @ $1			special local names
-R$+ < @ $=w . >		$#local $: $1			dispose directly',
+`R$=L < @ $=w . >		$#_LOCAL_ $: @ $1			special local names
+R$+ < @ $=w . >		$#_LOCAL_ $: $1			dispose directly',
 `R$+ < @ $=w . >		$: $1 < @ $2 @ $H >		first try hub
 ifdef(`_OLD_SENDMAIL_',
 `R$+ < $+ @ $-:$+ >	$# $3 $@ $4 $: $1 $2		yep ....
 R$+ < $+ @ $+ >		$#relay $@ $3 $: $1 $2		yep ....
-R$+ < $+ @ >		$#local $: $1			nope, local address',
-`R$+ < $+ @ $+ >		$#local $: $1			yep ....
-R$+ < $+ @ >		$#local $: @ $1			nope, local address')')
+R$+ < $+ @ >		$#_LOCAL_ $: $1			nope, local address',
+`R$+ < $+ @ $+ >		$#_LOCAL_ $: $1			yep ....
+R$+ < $+ @ >		$#_LOCAL_ $: @ $1			nope, local address')')
 undivert(4)dnl
 
 ifdef(`_NO_UUCP_', `dnl',
@@ -558,7 +560,7 @@ R$+ < @ $+ .UUCP >	$#uucp $@ $2 $: $1		user@host.UUCP',
 	`dnl')')
 ifdef(`_MAILER_usenet_', `
 # addresses sent to net.group.USENET will get forwarded to a newsgroup
-R$+ . USENET		$# usenet $: $1',
+R$+ . USENET		$#usenet $: $1',
 	`dnl')
 
 ifdef(`_LOCAL_RULES_',
@@ -578,11 +580,11 @@ ifdef(`_MAILER_smtp_',
 
 ifdef(`_OLD_SENDMAIL_',
 `# forward remaining names to local relay, if any
-R$=L			$#local $: $1			special local names
+R$=L			$#_LOCAL_ $: $1			special local names
 R$+			$: $1 < @ $R >			append relay
 R$+ < @ >		$: $1 < @ $H >			no relay, try hub
-R$+ < @ >		$#local $: $1			no relay or hub: local
-R$+ < @ $=w  >		$#local $: $1			we are relay/hub: local
+R$+ < @ >		$#_LOCAL_ $: $1			no relay or hub: local
+R$+ < @ $=w  >		$#_LOCAL_ $: $1			we are relay/hub: local
 R$+ < @ $-:$+ >		$# $2 $@ $3 $: $1		deliver to relay/hub
 R$+ < @ $+ >		$#relay $@ $2 $: $1		deliver to relay/hub',
 
@@ -591,8 +593,8 @@ R$+			$: $(dequote $1 $)		strip quotes
 R$* $=O $*		$@ $>_SET_97_ $1 $2 $3			try again
 
 # handle locally delivered names
-R$=L			$#local $: @ $1			special local names
-R$+			$#local $: $1			regular local names
+R$=L			$#_LOCAL_ $: @ $1			special local names
+R$+			$#_LOCAL_ $: $1			regular local names
 
 ###########################################################################
 ###   Ruleset 5 -- special rewriting after aliases have been expanded   ###

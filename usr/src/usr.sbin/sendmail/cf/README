@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.5 (Berkeley) %G%
+		@(#)README	8.6 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -771,6 +771,9 @@ confCW_FILE		/etc/sendmail.cw	Name of file used to get the
 confSMTP_MAILER		esmtp		-	The mailer name used when
 						SMTP connectivity is required.
 						Either "smtp" or "esmtp".
+confLOCAL_MAILER	local		-	The mailer name used when
+						local connectivity is required.
+						Almost always "local".
 
 
 +-----------+
