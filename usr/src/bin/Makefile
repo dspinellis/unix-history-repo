@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -19,13 +19,13 @@ SCRIPT=	false true
 # C programs that live in the current directory and do not need
 # explicit make lines.
 #
-STD=	ar cat cc chmod cmp date dd du echo ed expr grep hostid hostname \
+STD=	ar cat cc chmod cmp date dd du echo ed grep hostid hostname \
 	kill ld ln ls mkdir mt nice nm od pagesize pr pwd rm rmail \
 	rmdir size strip stty sync tar tee test time wall who write
 
 # C programs that live in the current directory and need explicit make lines.
 #
-NSTD=	
+NSTD=	expr
 
 # Programs that must run setuid to root
 #
@@ -85,6 +85,9 @@ depend:
 	echo '# see make depend above' >> Makefile
 
 # Files listed in ${NSTD} have explicit make lines given below.
+
+expr: expr.o
+	cc ${CFLAGS} -o expr expr.o
 
 ps:
 	cc ${CFLAGS} -o ps ps.c -lm
