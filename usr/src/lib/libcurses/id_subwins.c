@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)id_subwins.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)id_subwins.c	5.6 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -20,7 +20,7 @@ __id_subwins(orig)
 	register WINDOW *orig;
 {
 	register WINDOW *win;
-	register int oy, realy, x, y;
+	register int oy, realy, y;
 
 	realy = orig->_begy + orig->_cury;
 	for (win = orig->_nextp; win != orig; win = win->_nextp) {

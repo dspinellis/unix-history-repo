@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)insertln.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)insertln.c	5.6 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
+#include <string.h>
 
 /*
  * winsertln --
@@ -20,7 +21,7 @@ winsertln(win)
 	register WINDOW *win;
 {
 
-	register int x, y;
+	register int y;
 	register char *end, *temp;
 
 #ifdef DEBUG

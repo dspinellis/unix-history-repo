@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)addbytes.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)addbytes.c	5.7 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -18,6 +18,7 @@ static char sccsid[] = "@(#)addbytes.c	5.6 (Berkeley) %G%";
  * waddbytes --
  *	Add the character to the current position in the given window.
  */
+int
 waddbytes(win, bytes, count)
 	register WINDOW *win;
 	register char *bytes;
