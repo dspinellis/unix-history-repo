@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.29	%G%";
+static char	SccsId[] = "@(#)main.c	3.30	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -160,8 +160,9 @@ main(argc, argv)
 	char nbuf[MAXLINE];		/* holds full name */
 	struct passwd *pw;
 	extern char *arpadate();
-	char *cfname;
-	char *aliasname;
+	extern char *AliasFile;		/* location of alias file */
+	extern char *ConfFile;		/* location of configuration file */
+	extern char *StatFile;		/* location of statistics summary */
 	register int i;
 	bool verifyonly = FALSE;	/* only verify names */
 	bool safecf = TRUE;		/* this conf file is sys default */
@@ -205,8 +206,6 @@ main(argc, argv)
 	*/
 
 	from = NULL;
-	cfname = CONFFILE;
-	aliasname = ALIASFILE;
 
 	/* process id */
 	(void) sprintf(pbuf, "%d", getpid());
@@ -332,17 +331,17 @@ main(argc, argv)
 
 		  case 'C':	/* select configuration file */
 			if (p[2] == '\0')
-				cfname = "sendmail.cf";
+				ConfFile = "sendmail.cf";
 			else
-				cfname = &p[2];
+				ConfFile = &p[2];
 			safecf = FALSE;
 			break;
 
 		  case 'A':	/* select alias file */
 			if (p[2] == '\0')
-				aliasname = "aliases";
+				AliasFile = "aliases";
 			else
-				aliasname = &p[2];
+				AliasFile = &p[2];
 			break;
 		
 		  case 'n':	/* don't alias */
@@ -408,7 +407,7 @@ main(argc, argv)
 	**  Read control file.
 	*/
 
-	readcf(cfname, safecf);
+	readcf(ConfFile, safecf);
 
 # ifndef V6
 	p = getenv("HOME");
@@ -423,7 +422,7 @@ main(argc, argv)
 	}
 # endif V6
 
-	initaliases(aliasname, aliasinit);
+	initaliases(AliasFile, aliasinit);
 # ifdef DBM
 	if (aliasinit)
 		exit(EX_OK);
@@ -584,6 +583,10 @@ main(argc, argv)
 	if (verifyonly && GrabTo)
 		finis();
 
+	/* collect statistics */
+	Stat.stat_nf[From.q_mailer]++;
+	Stat.stat_bf[From.q_mailer] += kbytes(MsgSize);
+
 	/*
 	**  Arrange that the person who is sending the mail
 	**  will not be expanded (unless explicitly requested).
@@ -629,6 +632,7 @@ main(argc, argv)
 			break;
 		}
 	}
+	poststats(StatFile);
 	finis();
 }
 /*
