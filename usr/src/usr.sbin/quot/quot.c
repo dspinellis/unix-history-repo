@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)quot.c	4.13 (Berkeley) 87/10/22";
+static char *sccsid = "@(#)quot.c	4.14 (Berkeley) 88/04/18";
 #endif
 
 /*
@@ -46,7 +46,6 @@ int	cflg;
 int	vflg;
 int	hflg;
 long	now;
-long	dev_bsize = 1;
 
 unsigned	ino;
 
@@ -57,52 +56,51 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	register int n;
+	extern char *optarg;
+	extern int optind;
+	int ch;
+	time_t time();
 
-	now = time(0);
-	argc--, argv++;
-	while (argc > 0 && argv[0][0] == '-') {
-		register char *cp;
+	while ((ch = getopt(argc, argv, "cfhnv")) != EOF)
+		switch((char)ch) {
+		case 'c':
+			cflg++; break;
+		case 'f':
+			fflg++; break;
+		case 'h':		/* undocumented */
+			hflg++; break;
+		case 'n':
+			nflg++; break;
+		case 'v':		/* undocumented */
+			vflg++; break;
+		case '?':
+		default:
+			fputs("usage: quot [-cfn] [filesystem ...]\n", stderr);
+			exit(1);
+		}
+	argc -= optind;
+	argv += optind;
 
-		for (cp = &argv[0][1]; *cp; cp++)
-			switch (*cp) {
-			case 'n':
-				nflg++; break;
-			case 'f':
-				fflg++; break;
-			case 'c':
-				cflg++; break;
-			case 'v':
-				vflg++; break;
-			case 'h':
-				hflg++; break;
-			default:
-				fprintf(stderr,
-				    "usage: quot [ -nfcvh ] [ device ... ]\n");
-				exit(1);
-			}
-		argc--, argv++;
-	}
-	if (argc == 0)
+	(void)time(&now);
+	if (argc)
+		for (; *argv; ++argv) {
+			if (check(*argv, (char *)NULL) == 0)
+				report();
+		}
+	else
 		quotall();
-	while (argc-- > 0)
-		if (check(*argv++, (char *)NULL) == 0)
-			report();
-	exit (0);
+	exit(0);
 }
 
+#include <sys/dir.h>
 #include <fstab.h>
 
 quotall()
 {
 	register struct fstab *fs;
 	register char *cp;
-	char dev[80], *rindex();
+	char dev[MAXNAMLEN + 10], *rindex();
 
-	if (setfsent() == 0) {
-		fprintf(stderr, "quot: no %s file\n", FSTAB);
-		exit(1);
-	}
 	while (fs = getfsent()) {
 		if (strcmp(fs->fs_type, FSTAB_RO) &&
 		    strcmp(fs->fs_type, FSTAB_RW) &&
@@ -115,7 +113,6 @@ quotall()
 		if (check(dev, fs->fs_file) == 0)
 			report();
 	}
-	endfsent();
 }
 
 check(file, fsdir)
@@ -125,6 +122,7 @@ check(file, fsdir)
 	register int i, j, nfiles;
 	register struct du **dp;
 	daddr_t iblk;
+	long dev_bsize;
 	int c, fd;
 
 	/*
@@ -154,18 +152,18 @@ check(file, fsdir)
 		printf(" (%s)", fsdir);
 	printf(":\n");
 	sync();
-	bread(fd, SBOFF, (char *)&sblock, SBSIZE);
+	bread(fd, (long)SBOFF, (char *)&sblock, SBSIZE);
 	dev_bsize = sblock.fs_fsize / fsbtodb(&sblock, 1);
 	if (nflg) {
 		if (isdigit(c = getchar()))
-			ungetc(c, stdin);
+			(void)ungetc(c, stdin);
 		else while (c != '\n' && c != EOF)
 			c = getchar();
 	}
 	nfiles = sblock.fs_ipg * sblock.fs_ncg;
 	for (ino = 0; ino < nfiles; ) {
 		iblk = fsbtodb(&sblock, itod(&sblock, ino));
-		bread(fd, iblk, (char *)itab, sblock.fs_bsize);
+		bread(fd, iblk * dev_bsize, (char *)itab, (int)sblock.fs_bsize);
 		for (j = 0; j < INOPB(&sblock) && ino < nfiles; j++, ino++) {
 			if (ino < ROOTINO)
 				continue;
@@ -251,9 +249,9 @@ acct(ip)
 			continue;
 		}
 		if (np = getname(dp->uid))
-			printf("%.7s	", np);
+			printf("%.7s\t", np);
 		else
-			printf("%d	", ip->di_uid);
+			printf("%u\t", ip->di_uid);
 		while ((n = getchar()) == ' ' || n == '\t')
 			;
 		putchar(n);
@@ -267,13 +265,14 @@ acct(ip)
 }
 
 bread(fd, bno, buf, cnt)
-	unsigned bno;
+	long bno;
 	char *buf;
 {
+	off_t lseek();
 
-	lseek(fd, (long)bno * dev_bsize, L_SET);
+	(void)lseek(fd, bno, L_SET);
 	if (read(fd, buf, cnt) != cnt) {
-		fprintf(stderr, "quot: read error at block %u\n", bno);
+		fprintf(stderr, "quot: read error at block %ld\n", bno);
 		exit(1);
 	}
 }
@@ -309,9 +308,9 @@ report()
 		for (i = 0; i < TSIZE - 1; i++)
 			if (sizes[i]) {
 				t += i*sizes[i];
-				printf("%d	%d	%D\n", i, sizes[i], t);
+				printf("%d\t%d\t%ld\n", i, sizes[i], t);
 			}
-		printf("%d	%d	%D\n",
+		printf("%d\t%d\t%ld\n",
 		    TSIZE - 1, sizes[TSIZE - 1], overflow + t);
 		return;
 	}
@@ -352,8 +351,6 @@ struct ncache {
 	int	uid;
 	char	name[NMAX+1];
 } nc[NUID];
-char	outrangename[NMAX+1];
-int	outrangeuid = -1;
 
 char *
 getname(uid)
