@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)pow.c	4.5 (Berkeley) 8/21/85; 1.2 (ucb.elefunt) %G%";
+"@(#)pow.c	4.5 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
 #endif not lint
 
 /* POW(X,Y)  
@@ -88,7 +88,7 @@ static char sccsid[] =
 #include <errno.h>
 extern double infnan();
 
-/* double static */
+/* static double */
 /* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
 /* ln2lo  =  1.6465949582897081279E-12   , Hex  2^-39   *  .E7BCD5E4F1D9CC */
 /* invln2 =  1.4426950408889634148E0     , Hex  2^  1   *  .B8AA3B295C17F1 */
@@ -102,14 +102,14 @@ static long     sqrt2x[] = { 0x04f340b5, 0xde6533f9};
 #define   invln2    (*(double*)invln2x)
 #define    sqrt2    (*(double*)sqrt2x)
 #else	/* IEEE double */
-double static
+static double
 ln2hi  =  6.9314718036912381649E-1    , /*Hex  2^ -1   *  1.62E42FEE00000 */
 ln2lo  =  1.9082149292705877000E-10   , /*Hex  2^-33   *  1.A39EF35793C76 */
 invln2 =  1.4426950408889633870E0     , /*Hex  2^  0   *  1.71547652B82FE */
 sqrt2  =  1.4142135623730951455E0     ; /*Hex  2^  0   *  1.6A09E667F3BCD */
 #endif
 
-double static zero=0.0, half=1.0/2.0, one=1.0, two=2.0, negone= -1.0;
+static double zero=0.0, half=1.0/2.0, one=1.0, two=2.0, negone= -1.0;
 
 double pow(x,y)  	
 double x,y;

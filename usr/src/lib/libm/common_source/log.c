@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)log.c	4.5 (Berkeley) 8/21/85; 1.2 (ucb.elefunt) %G%";
+"@(#)log.c	4.5 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
 #endif not lint
 
 /* LOG(X)
@@ -70,7 +70,7 @@ static char sccsid[] =
 #ifdef VAX	/* VAX D format */
 #include <errno.h>
 
-/* double static */
+/* static double */
 /* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
 /* ln2lo  =  1.6465949582897081279E-12   , Hex  2^-39   *  .E7BCD5E4F1D9CC */
 /* sqrt2  =  1.4142135623730950622E0     ; Hex  2^  1   *  .B504F333F9DE65 */
@@ -81,7 +81,7 @@ static long     sqrt2x[] = { 0x04f340b5, 0xde6533f9};
 #define    ln2lo    (*(double*)ln2lox)
 #define    sqrt2    (*(double*)sqrt2x)
 #else	/* IEEE double */
-double static
+static double
 ln2hi  =  6.9314718036912381649E-1    , /*Hex  2^ -1   *  1.62E42FEE00000 */
 ln2lo  =  1.9082149292705877000E-10   , /*Hex  2^-33   *  1.A39EF35793C76 */
 sqrt2  =  1.4142135623730951455E0     ; /*Hex  2^  0   *  1.6A09E667F3BCD */

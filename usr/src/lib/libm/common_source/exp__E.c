@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)exp__E.c	1.2 (Berkeley) 8/21/85; 1.2 (ucb.elefunt) %G%";
+"@(#)exp__E.c	1.2 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
 #endif not lint
 
 /* exp__E(x,c)
@@ -95,7 +95,7 @@ q2     =  9.9176615021572857300E-4    ; /*Hex  2^-10   *  1.03FC4CB8C98E8 */
 double exp__E(x,c)
 double x,c;
 {
-	double static zero=0.0, one=1.0, half=1.0/2.0, small=1.0E-19;
+	static double zero=0.0, one=1.0, half=1.0/2.0, small=1.0E-19;
 	double copysign(),z,p,q,xp,xh,w;
 	if(copysign(x,one)>small) {
            z = x*x  ;
