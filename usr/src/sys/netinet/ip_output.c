@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_output.c	6.11 (Berkeley) %G%
+ *	@(#)ip_output.c	6.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -68,6 +68,16 @@ ip_output(m, opt, ro, flags)
 		bzero((caddr_t)ro, sizeof (*ro));
 	}
 	dst = (struct sockaddr_in *)&ro->ro_dst;
+	/*
+	 * If there is a cached route,
+	 * check that it is to the same destination
+	 * and is still up.  If not, free it and try again.
+	 */
+	if (ro->ro_rt && ((ro->ro_rt->rt_flags & RTF_UP) == 0 ||
+	   dst->sin_addr.s_addr != ip->ip_dst.s_addr)) {
+		RTFREE(ro->ro_rt);
+		ro->ro_rt = (struct rtentry *)0;
+	}
 	if (ro->ro_rt == 0) {
 		dst->sin_family = AF_INET;
 		dst->sin_addr = ip->ip_dst;
@@ -85,17 +95,6 @@ ip_output(m, opt, ro, flags)
 		}
 		ifp = ia->ia_ifp;
 	} else {
-		/*
-		 * If there is a cached route,
-		 * check that it is to the same destination
-		 * and is still up.  If not, free it and try again.
-		 */
-		if (ro->ro_rt && ((ro->ro_rt->rt_flags & RTF_UP) == 0 ||
-		   dst->sin_addr.s_addr != ip->ip_dst.s_addr)) {
-			RTFREE(ro->ro_rt);
-			ro->ro_rt = (struct rtentry *)0;
-			dst->sin_addr = ip->ip_dst;
-		}
 		if (ro->ro_rt == 0)
 			rtalloc(ro);
 		if (ro->ro_rt == 0 || (ifp = ro->ro_rt->rt_ifp) == 0) {
