@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	6.19	85/02/20	*/
+/*	vfs_lookup.c	6.20	85/02/22	*/
 
 #include "param.h"
 #include "systm.h"
@@ -909,6 +909,10 @@ direnter(ip, ndp)
 		ndp->ni_dent.d_reclen = DIRBLKSIZ;
 		error = rdwri(UIO_WRITE, dp, (caddr_t)&ndp->ni_dent,
 		    newentrysize, ndp->ni_offset, 1, (int *)0);
+		if (DIRBLKSIZ > dp->i_fs->fs_fsize)
+			panic("wdir: blksize"); /* XXX - should grow w/bmap() */
+		else
+			dp->i_size = roundup(dp->i_size, DIRBLKSIZ);
 		iput(dp);
 		return (error);
 	}
@@ -926,6 +930,8 @@ direnter(ip, ndp)
 	 * Increase size of directory if entry eats into new space.
 	 * This should never push the size past a new multiple of
 	 * DIRBLKSIZE.
+	 *
+	 * N.B. - THIS IS AN ARTIFACT OF 4.2 AND SHOULD NEVER HAPPEN.
 	 */
 	if (ndp->ni_offset + ndp->ni_count > dp->i_size)
 		dp->i_size = ndp->ni_offset + ndp->ni_count;
