@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_subr.c	7.9 (Berkeley) %G%
+ *	@(#)ffs_subr.c	7.10 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -51,8 +51,9 @@
  *	overlap the inode. This brings the inode up to
  *	date with recent mods to the cooked device.
  */
-syncip(ip)
+syncip(ip, waitfor)
 	register struct inode *ip;
+	int waitfor;
 {
 	register struct fs *fs;
 	register struct buf *bp;
@@ -92,11 +93,13 @@ syncip(ip)
 			}
 			splx(s);
 			notavail(bp);
-			if (error = bwrite(bp))
+			if (waitfor == MNT_NOWAIT)
+				bawrite(bp);
+			else if (error = bwrite(bp))
 				allerror = error;
 		}
 	}
-	if (error = iupdat(ip, &time, &time, 1))
+	if (error = iupdat(ip, &time, &time, waitfor == MNT_WAIT))
 		allerror = error;
 	return (allerror);
 }
