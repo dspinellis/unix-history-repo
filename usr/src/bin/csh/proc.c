@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)proc.c	5.5 (Berkeley) %G%";
+static char *sccsid = "@(#)proc.c	5.6 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -136,7 +136,8 @@ found:
 pnote()
 {
 	register struct process *pp;
-	int flags, omask;
+	int flags;
+	long omask;
 
 	neednote = 0;
 	for (pp = proclist.p_next; pp != PNULL; pp = pp->p_next) {
@@ -158,7 +159,7 @@ pnote()
 pwait()
 {
 	register struct process *fp, *pp;
-	int omask;
+	long omask;
 
 	/*
 	 * Here's where dead procs get flushed.
@@ -186,7 +187,8 @@ pjwait(pp)
 	register struct process *pp;
 {
 	register struct process *fp;
-	int jobflags, reason, omask;
+	int jobflags, reason;
+	long omask;
 
 	while (pp->p_pid != pp->p_jobid)
 		pp = pp->p_friends;
@@ -208,7 +210,7 @@ pjwait(pp)
 		while ((fp = (fp->p_friends)) != pp);
 		if ((jobflags & PRUNNING) == 0)
 			break;
-		sigpause(sigblock(0) &~ sigmask(SIGCHLD));
+		sigpause(sigblock(0L) &~ sigmask(SIGCHLD));
 	}
 	(void) sigsetmask(omask);
 	if (tpgrp > 0)			/* get tty back */
@@ -245,7 +247,7 @@ pjwait(pp)
 dowait()
 {
 	register struct process *pp;
-	int omask;
+	long omask;
 
 	pjobs++;
 	omask = sigblock(sigmask(SIGCHLD));
@@ -253,7 +255,7 @@ loop:
 	for (pp = proclist.p_next; pp; pp = pp->p_next)
 		if (pp->p_pid && /* pp->p_pid == pp->p_jobid && */
 		    pp->p_flags&PRUNNING) {
-			sigpause(0);
+			sigpause(0L);
 			goto loop;
 		}
 	(void) sigsetmask(omask);
@@ -814,7 +816,8 @@ pkill(v, signum)
 {
 	register struct process *pp, *np;
 	register int jobflags = 0;
-	int omask, pid, err = 0;
+	int pid, err = 0;
+	long omask;
 	char *cp;
 	extern char *sys_errlist[];
 
@@ -878,7 +881,8 @@ pstart(pp, foregnd)
 	int foregnd;
 {
 	register struct process *np;
-	int omask, jobflags = 0;
+	int jobflags = 0;
+	long omask;
 
 	omask = sigblock(sigmask(SIGCHLD));
 	np = pp;
@@ -1013,7 +1017,8 @@ pfork(t, wanttty)
 {
 	register int pid;
 	bool ignint = 0;
-	int pgrp, omask;
+	int pgrp;
+	long omask;
 
 	/*
 	 * A child will be uninterruptible only under very special

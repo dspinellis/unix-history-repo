@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)time.c	5.4 (Berkeley) %G%";
+static char *sccsid = "@(#)time.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -84,9 +84,9 @@ prusage(r0, r1, e, b)
 	    (r1->ru_stime.tv_sec-r0->ru_stime.tv_sec)*100+
 	    (r1->ru_stime.tv_usec-r0->ru_stime.tv_usec)/10000;
 	register char *cp;
-	register int i;
+	register long i;
 	register struct varent *vp = adrof("time");
-	int ms =
+	long ms =
 	    (e->tv_sec-b->tv_sec)*100 + (e->tv_usec-b->tv_usec)/10000;
 
 	cp = "%Uu %Ss %E %P %X+%Dk %I+%Oio %Fpf+%Ww";
@@ -106,7 +106,7 @@ prusage(r0, r1, e, b)
 		break;
 
 	case 'E':
-		psecs((long)(ms / 100));
+		psecs(ms / 100);
 		break;
 
 	case 'P':
@@ -115,42 +115,42 @@ prusage(r0, r1, e, b)
 
 	case 'W':
 		i = r1->ru_nswap - r0->ru_nswap;
-		printf("%d", i);
+		printf("%ld", i);
 		break;
 
 	case 'X':
-		printf("%d", t == 0 ? 0 : (r1->ru_ixrss-r0->ru_ixrss)/t);
+		printf("%ld", t == 0 ? 0L : (r1->ru_ixrss-r0->ru_ixrss)/t);
 		break;
 
 	case 'D':
-		printf("%d", t == 0 ? 0 :
+		printf("%ld", t == 0 ? 0L :
 		    (r1->ru_idrss+r1->ru_isrss-(r0->ru_idrss+r0->ru_isrss))/t);
 		break;
 
 	case 'K':
-		printf("%d", t == 0 ? 0 :
+		printf("%ld", t == 0 ? 0L :
 		    ((r1->ru_ixrss+r1->ru_isrss+r1->ru_idrss) -
 		    (r0->ru_ixrss+r0->ru_idrss+r0->ru_isrss))/t);
 		break;
 
 	case 'M':
-		printf("%d", r1->ru_maxrss/2);
+		printf("%ld", r1->ru_maxrss/2);
 		break;
 
 	case 'F':
-		printf("%d", r1->ru_majflt-r0->ru_majflt);
+		printf("%ld", r1->ru_majflt-r0->ru_majflt);
 		break;
 
 	case 'R':
-		printf("%d", r1->ru_minflt-r0->ru_minflt);
+		printf("%ld", r1->ru_minflt-r0->ru_minflt);
 		break;
 
 	case 'I':
-		printf("%d", r1->ru_inblock-r0->ru_inblock);
+		printf("%ld", r1->ru_inblock-r0->ru_inblock);
 		break;
 
 	case 'O':
-		printf("%d", r1->ru_oublock-r0->ru_oublock);
+		printf("%ld", r1->ru_oublock-r0->ru_oublock);
 		break;
 	}
 	putchar('\n');

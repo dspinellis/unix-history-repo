@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)file.c	5.6 (Berkeley) %G%";
+static char *sccsid = "@(#)file.c	5.7 (Berkeley) %G%";
 #endif
 
 #ifdef FILEC
@@ -73,7 +73,7 @@ static
 back_to_col_1()
 {
 	struct sgttyb tty, tty_normal;
-	int omask;
+	long omask;
 
 	omask = sigblock(sigmask(SIGINT));
 	(void) ioctl(SHIN, TIOCGETP, (char *)&tty);
@@ -94,7 +94,7 @@ pushback(string)
 {
 	register char *p;
 	struct sgttyb tty, tty_normal;
-	int omask;
+	long omask;
 
 	omask = sigblock(sigmask(SIGINT));
 	(void) ioctl(SHOUT, TIOCGETP, (char *)&tty);
@@ -340,7 +340,7 @@ free_items(items)
 }
 
 #define FREE_ITEMS(items) { \
-	int omask;\
+	long omask;\
 \
 	omask = sigblock(sigmask(SIGINT));\
 	free_items(items);\

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)sem.c	5.4 (Berkeley) %G%";
+static char *sccsid = "@(#)sem.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -121,7 +121,7 @@ execute(t, wanttty, pipein, pipeout)
 			int vffree();
 			int ochild, osetintr, ohaderr, odidfds;
 			int oSHIN, oSHOUT, oSHDIAG, oOLDSTD, otpgrp;
-			int omask;
+			long omask;
 
 			/* 
 			 * Prepare for the vfork by saving everything

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)func.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)func.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -418,7 +418,7 @@ preread()
 
 	whyles->w_end = -1;
 	if (setintr)
-		(void) sigsetmask(sigblock(0) & ~sigmask(SIGINT));
+		(void) sigsetmask(sigblock(0L) & ~sigmask(SIGINT));
 	search(ZBREAK, 0);
 	if (setintr)
 		(void) sigblock(sigmask(SIGINT));
@@ -467,7 +467,8 @@ dorepeat(v, kp)
 	char **v;
 	struct command *kp;
 {
-	register int i, omask;
+	register int i;
+	register long	omask;
 
 	i = getn(v[1]);
 	if (setintr)
@@ -731,7 +732,7 @@ echo(sep, v)
 	int nonl = 0;
 
 	if (setintr)
-		(void) sigsetmask(sigblock(0) & ~sigmask(SIGINT));
+		(void) sigsetmask(sigblock(0L) & ~sigmask(SIGINT));
 	v++;
 	if (*v == 0)
 		return;
@@ -774,7 +775,7 @@ dosetenv(v)
 		register char **ep;
 
 		if (setintr)
-			(void) sigsetmask(sigblock(0) & ~ sigmask(SIGINT));
+			(void) sigsetmask(sigblock(0L) & ~ sigmask(SIGINT));
 		for (ep = environ; *ep; ep++)
 			printf("%s\n", *ep);
 		return;
