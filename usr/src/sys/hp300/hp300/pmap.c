@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	7.7 (Berkeley) %G%
+ *	@(#)pmap.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -179,7 +179,6 @@ vm_size_t	Sysptsize = VM_KERNEL_PT_PAGES;
 #endif
 
 struct pmap	kernel_pmap_store;
-pmap_t		kernel_pmap;
 vm_map_t	pt_map;
 
 vm_offset_t    	avail_start;	/* PA of first available physical page */
@@ -259,13 +258,6 @@ pmap_bootstrap(firstaddr, loadaddr)
 	 * Initialize protection array.
 	 */
 	hp300_protection_init();
-
-	/*
-	 * The kernel's pmap is statically allocated so we don't
-	 * have to use pmap_create, which is unlikely to work
-	 * correctly at this part of the boot sequence.
-	 */
-	kernel_pmap = &kernel_pmap_store;
 
 	/*
 	 * Kernel page/segment table allocated in locore,

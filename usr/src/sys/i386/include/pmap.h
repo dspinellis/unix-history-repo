@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.h	7.4 (Berkeley) %G%
+ *	@(#)pmap.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -161,7 +161,8 @@ struct pmap {
 typedef struct pmap	*pmap_t;
 
 #ifdef KERNEL
-extern pmap_t		kernel_pmap;
+extern struct pmap	kernel_pmap_store;
+#define kernel_pmap (&kernel_pmap_store)
 #endif
 
 /*
