@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	8.1 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.56 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -34,6 +34,9 @@
 #include <vm/vm.h>
 #include <vm/vm_kern.h>
 
+__dead void cpu_exit __P((struct proc *));
+__dead void exit1 __P((struct proc *, int));
+
 /*
  * exit --
  *	Death of process.
@@ -41,6 +44,7 @@
 struct rexit_args {
 	int	rval;
 };
+__dead void
 exit(p, uap, retval)
 	struct proc *p;
 	struct rexit_args *uap;
@@ -56,6 +60,7 @@ exit(p, uap, retval)
  * to zombie, and unlink proc from allproc and parent's lists.  Save exit
  * status and rusage for wait().  Check for child processes and orphan them.
  */
+__dead void
 exit1(p, rv)
 	register struct proc *p;
 	int rv;
@@ -232,7 +237,6 @@ done:
 	 * our execution (pun intended).
 	 */
 	cpu_exit(p);
-	/* NOTREACHED */
 }
 
 struct wait_args {
