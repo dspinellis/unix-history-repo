@@ -3,13 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_time.c	7.15 (Berkeley) %G%
+ *	@(#)kern_time.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "resourcevar.h"
 #include "kernel.h"
 #include "proc.h"
+#include "vnode.h"
 
 
 /* 
