@@ -1,6 +1,7 @@
 /*
  * 	DATAKIT VCS Interface Definitions
  *		@(#)dkit.h	1.4 Garage 84/03/30
+ *		   @(#)dkit.h	1.2 (Berkeley) %G%
  */
 
 /*
@@ -47,7 +48,7 @@
 /*
  *   Datakit-specific mbuf types
  */
-#define	DKMT_HDR	128		/* Header packet with driver stuff */
+#define	DKMT_HDR	16		/* Header packet with driver stuff */
 #define	DKMT_DATA	DKMT_HDR+1	/* Data */
 #define	DKMT_CTL	DKMT_HDR+2	/* Control bytes */
 #define	DKMT_PCB	DKMT_HDR+3	/* Setup request block */
