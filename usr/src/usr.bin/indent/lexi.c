@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lexi.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)lexi.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -247,9 +247,9 @@ lexi()
 	    }			/* end of switch */
 	}			/* end of if (found_it) */
 	if (*buf_ptr == '(' && ps.tos <= 1 && ps.ind_level == 0) {
-	    register char *p = buf_ptr;
-	    while (p < buf_end)
-		if (*p++ == ')' && *p == ';')
+	    register char *tp = buf_ptr;
+	    while (tp < buf_end)
+		if (*tp++ == ')' && *tp == ';')
 		    goto not_proc;
 	    strncpy(ps.procname, token, sizeof ps.procname - 1);
 	    ps.in_parameter_declaration = 1;
