@@ -4,12 +4,12 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	5.17 (Berkeley) %G%
+.\"	@(#)op.me	5.18 (Berkeley) %G%
 .\"
 .\" eqn % | troff -me
 .\"if n .ls 2
 .\".he 'Sendmail Installation and Operation Guide''%'
-.\".fo 'Version 5.17''Last Mod %G%'
+.\".fo 'Version 5.18''Last Mod %G%'
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
 .oh 'Sendmail Installation and Operation Guide''SMM:07-%'
 .nr si 3n
@@ -40,7 +40,7 @@ Eric Allman
 University of California, Berkeley
 Mammoth Project
 .sp
-Version 5.17
+Version 5.18
 .sp
 For Sendmail Version 5.61
 .)l
@@ -1919,6 +1919,7 @@ v	The version number of sendmail
 w	The hostname of this site
 x	The full name of the sender
 z	The home directory of the recipient
+<	The return-path (sender in envelope) relative to recipient
 .)b
 .pp
 There are three types of dates that can be used.
@@ -2917,6 +2918,112 @@ without a domain;
 sender addresses should be processed by ruleset eleven
 and recipient addresses by ruleset twenty-one.
 There is a 100,000 byte limit on messages passed through this mailer.
+.sh 2 "The User Database"
+.pp
+If you have a version of sendmail with the user database package
+compiled in,
+the handling of sender and recipient addresses
+is modified.
+.sh 3 "Structure of the user database"
+.pp
+The database is a sorted (BTree-based) structure.
+User records are stored with the key:
+.(b
+\fIuser-name\fP\fB:\fP\fIfield-name\fP
+.)b
+The sorted database format ensures that user records are clustered together.
+Meta-information is always stored with a leading colon.
+.pp
+Field names define both the syntax and semantics of the value.
+Defined fields include:
+.ip maildrop
+The delivery address for this user.
+There may be multiple values of this record.
+In particular,
+mailing lists will have one
+.i maildrop
+record for each user on the list.
+.ip "mailname"
+The outgoing mailname for this user.
+For each outgoing name,
+there should be an appropriate
+.i maildrop
+record for that name to allow return mail.
+See also
+.i :default:mailname .
+.ip fullname
+The full name of the user.
+.ip office-address
+The office address for this user.
+.ip office-phone
+The office phone number for this user.
+.ip office-fax
+The office FAX number for this user.
+.ip home-address
+The home address for this user.
+.ip home-phone
+The home phone number for this user.
+.ip home-fax
+The home FAX number for this user.
+.ip plan
+A pointer to a file from which plan information can be gathered.
+.pp
+As of this writing,
+only a few of these fields are actually being used by sendmail:
+.i maildrop
+and
+.i mailname .
+A
+.i finger
+program that uses the other fields is planned.
+.sh 3 "User database semantics"
+.pp
+When the rewriting rules submit an address to the local mailer,
+the user name is passed through the alias file.
+If no alias is found (or if the alias points back to the same address),
+the name (with
+.q :maildrop
+appended)
+is then used as a key in the user database.
+If no match occurs (or if the maildrop points at the same address),
+forwarding is tried.
+.pp
+If the first token of the user name returned by ruleset 0
+is an
+.q @
+sign, the user database lookup is skipped.
+The intent is that the user database will act as a set of defaults
+for a cluster (in our case, the Computer Science Division);
+mail sent to a specific machine should ignore these defaults.
+.pp
+When mail is sent,
+the name of the sending user is looked up in the database.
+If that user has a
+.q mailname
+record,
+the value of that record is used as their outgoing name.
+For example, I might have a record:
+.(b
+eric:mailname	Eric.Allman@CS.Berkeley.EDU
+.)b
+This would cause my outgoing mail to be sent as Eric.Allman.
+.pp
+If a
+.q maildrop
+is found for the user,
+but no corresponding
+.q maildrop
+record exists,
+the record
+.q :default:mailname
+is consulted.
+If present, this is the name of a host to override the local host.
+For example, in our case we would set it to
+.q CS.Berkeley.EDU .
+The effect is that anyone known in the database
+gets their outgoing mail stamped as
+.q user@CS.Berkeley.EDU ,
+but people not listed in the database use the local hostname.
 .++ A
 .+c "COMMAND LINE FLAGS"
 .ba 0
@@ -4023,7 +4130,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 5.17
+.\"Version 5.18
 .\".ce 0
 .pn 2
 .bp
