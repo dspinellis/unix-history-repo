@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.8 1993/09/01 10:35:48 rgrimes Exp $
+#	$Id: Makefile,v 1.9 1993/09/06 00:04:23 nate Exp $
 #
 
 SUBDIR=	bin contrib games gnu include lib libexec sbin share usr.bin usr.sbin
@@ -58,7 +58,7 @@ includes:
 	chmod 755 ${DESTDIR}/usr/include
 	cd ${.CURDIR}/include;			make install
 	cd ${.CURDIR}/gnu/libg++;		make beforeinstall
-	cd ${.CURIDR}/gnu/libregex;		make beforeinstall
+	cd ${.CURDIR}/gnu/libregex;		make beforeinstall
 	cd ${.CURDIR}/lib/libcurses;		make beforeinstall
 	cd ${.CURDIR}/lib/librpc/rpc;		make beforeinstall
 
