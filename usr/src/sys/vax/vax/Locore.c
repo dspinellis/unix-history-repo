@@ -1,4 +1,4 @@
-/*	Locore.c	4.18	82/06/27	*/
+/*	Locore.c	4.19	82/10/13	*/
 
 #include "dz.h"
 #include "mba.h"
@@ -12,11 +12,12 @@
 #include "../h/tty.h"
 #include "../h/proc.h"
 #include "../h/buf.h"
-#include "../h/ubavar.h"
-#include "../h/ubareg.h"
-#include "../h/nexus.h"
 #include "../h/msgbuf.h"
 #include "../h/mbuf.h"
+
+#include "../vax/nexus.h"
+#include "../vaxuba/ubavar.h"
+#include "../vaxuba/ubareg.h"
 
 /*
  * Pseudo file for lint to show what is used/defined in locore.s.

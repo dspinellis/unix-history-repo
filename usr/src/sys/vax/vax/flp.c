@@ -1,17 +1,18 @@
-/*	flp.c	4.7	82/08/22	*/
+/*	flp.c	4.8	82/10/13	*/
 
 #if VAX780
-#include "../h/flp.h"
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/conf.h"
 #include "../h/dir.h"
 #include "../h/user.h"
-#include "../h/mtpr.h"
 #include "../h/buf.h"
-#include "../h/cons.h"
-#include "../h/cpu.h"
 #include "../h/uio.h"
+
+#include "../vax/cons.h"
+#include "../vax/cpu.h"
+#include "../vax/flp.h"
+#include "../vax/mtpr.h"
 
 struct {
 	short	fl_state;		/* open and busy flags */
@@ -59,6 +60,7 @@ floperation(rw, uio)
 {
 	register struct buf *bp;
 	register int i;
+	int error;
 
 	/*
 	 * Assume one block read/written for each call - 
@@ -70,7 +72,7 @@ floperation(rw, uio)
 	 *	track# * (sectors/track) + sector #
 	 */
 	if (uio->uio_resid == 0) 
-		return;
+		return (0);
 	(void) spl4();
 	while (fltab.fl_state & FL_BUSY)
 		sleep((caddr_t)&fltab, PRIBIO);
@@ -78,17 +80,18 @@ floperation(rw, uio)
 	(void) spl0();
 
 	bp = fltab.fl_buf;
+	error = 0;
 	while ((i = imin(RXBYSEC, uio->uio_resid)) > 0) {
 		bp->b_blkno = uio->uio_offset>>7;
 		if (bp->b_blkno >= MAXSEC || (uio->uio_offset & 0177) != 0) {
 			/* block number out of range */
 			/* or offset in middle of block */
-			u.u_error = ENXIO;
+			return (ENXIO);
 			break;	
 		}
 		if (rw == UIO_WRITE) {
-			u.u_error = uiomove(bp->b_un.b_addr, i, UIO_WRITE, uio);
-			if (u.u_error)
+			error = uiomove(bp->b_un.b_addr, i, UIO_WRITE, uio);
+			if (error)
 				break;
 		}
 		bp->b_flags = rw == UIO_WRITE ? B_WRITE : B_READ;
@@ -98,17 +101,18 @@ floperation(rw, uio)
 			sleep((caddr_t)bp, PRIBIO);	
 		(void) spl0();
 		if (bp->b_flags & B_ERROR) {
-			u.u_error = EIO;
+			error = EIO;
 			break;
 		}
 		if (rw == UIO_READ) {
-			u.u_error = uiomove(bp->b_un.b_addr, i, UIO_READ, uio);
-			if (u.u_error)
+			error = uiomove(bp->b_un.b_addr, i, UIO_READ, uio);
+			if (error)
 				break;
 		}
 	}
 	fltab.fl_state &= ~FL_BUSY;
 	wakeup((caddr_t)&fltab);
+	return (error);
 }
 
 /*ARGSUSED*/
@@ -117,7 +121,7 @@ flread(dev, uio)
 	struct uio *uio;
 {
 
-	floperation(UIO_READ, uio);
+	return (floperation(UIO_READ, uio));
 }
 
 /*ARGSUSED*/
@@ -126,7 +130,7 @@ flwrite(dev, uio)
 	struct uio *uio;
 {
 
-	floperation(UIO_WRITE, uio);
+	return (floperation(UIO_WRITE, uio));
 }
 
 flstart()

@@ -1,18 +1,10 @@
-/*	conf.c	4.55	82/06/26	*/
+/*	conf.c	4.56	82/10/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/buf.h"
 #include "../h/tty.h"
 #include "../h/conf.h"
-#include "../h/text.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/proc.h"
-#include "../h/file.h"
-#include "../h/inode.h"
-#include "../h/acct.h"
-#include "../h/pte.h"
 
 int	nulldev();
 int	nodev();
@@ -488,58 +480,6 @@ struct cdevsw	cdevsw[] =
 	0,	
 };
 
-int	ttyopen(),ttyclose(),ttread(),nullioctl(),ttstart();
-char	*ttwrite();
-int	ttyinput();
-
-#include "bk.h"
-#if NBK > 0
-int	bkopen(),bkclose(),bkread(),bkinput(),bkioctl();
-#endif
-
-#include "tb.h"
-#if NTB > 0
-int	tbopen(),tbclose(),tbread(),tbinput(),tbioctl();
-#endif
-
-struct	linesw linesw[] =
-{
-	ttyopen, nodev, ttread, ttwrite, nullioctl,
-	ttyinput, nodev, nulldev, ttstart, nulldev,
-#if NBK > 0
-	bkopen, bkclose, bkread, ttwrite, bkioctl,
-	bkinput, nodev, nulldev, ttstart, nulldev,
-#else
-	nodev, nodev, nodev, (char *(*)())nodev, nodev,
-	nodev, nodev, nodev, nodev, nodev,
-#endif
-	ttyopen, ttyclose, ttread, ttwrite, nullioctl,
-	ttyinput, nodev, nulldev, ttstart, nulldev,
-#if NTB > 0
-	tbopen, tbclose, tbread, (char *(*)())nodev, tbioctl,
-	tbinput, nodev, nulldev, ttstart, nulldev,		/* 3 */
-#else
-	nodev, nodev, nodev, (char *(*)())nodev, nodev,
-	nodev, nodev, nodev, nodev, nodev,
-#endif
-#if NTB > 0
-	tbopen, tbclose, tbread, (char *(*)())nodev, tbioctl,
-	tbinput, nodev, nulldev, ttstart, nulldev,		/* 4 */
-#else
-	nodev, nodev, nodev, (char *(*)())nodev, nodev,
-	nodev, nodev, nodev, nodev, nodev,
-#endif
-	0
-};
-
-int	nldisp = 5;
-
-struct	buf	bfreelist[BQUEUES];	/* buffer chain headers */
-struct	buf	bswlist;	/* free list of swap headers */
-struct	buf	*bclnlist;	/* header for list of cleaned pages */
-struct	acct	acctbuf;
-struct	inode	*acctp;
-
 int	mem_no = 3; 	/* major device number of memory special file */
 
 /*
@@ -552,5 +492,3 @@ int	mem_no = 3; 	/* major device number of memory special file */
  * provided as a character (raw) device.
  */
 dev_t	swapdev = makedev(4, 0);
-
-extern struct user u;
