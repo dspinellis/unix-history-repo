@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)recipient.c	5.7 (Berkeley) %G%";
+static char	SccsId[] = "@(#)recipient.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 # include <pwd.h>
@@ -264,8 +264,8 @@ recipient(a, sendq)
 		a->q_user++;
 		if (a->q_alias == NULL && !tTd(0, 1) && !QueueRun && !ForceMail)
 		{
-			usrerr("Cannot mail directly to programs");
 			a->q_flags |= QDONTSEND;
+			usrerr("Cannot mail directly to programs");
 		}
 	}
 
@@ -345,8 +345,8 @@ recipient(a, sendq)
 			/* check if writable or creatable */
 			if (a->q_alias == NULL && !tTd(0, 1) && !QueueRun && !ForceMail)
 			{
-				usrerr("Cannot mail directly to files");
 				a->q_flags |= QDONTSEND;
+				usrerr("Cannot mail directly to files");
 			}
 			else if ((stat(buf, &stb) >= 0) ? (!writable(&stb)) :
 			    (*p = '\0', !safefile(buf, getruid(), S_IWRITE|S_IEXEC)))
