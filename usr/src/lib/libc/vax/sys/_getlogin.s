@@ -16,7 +16,7 @@
  */
 
 #if defined(SYSLIBC_SCCS) && !defined(lint)
-	.asciz "@(#)_getlogin.s	5.2 (Berkeley) %G%"
+	.asciz "@(#)_getlogin.s	5.3 (Berkeley) %G%"
 #endif /* SYSLIBC_SCCS and not lint */
 
 #include "SYS.h"
@@ -24,4 +24,4 @@
 /* internal version of getlogin() */
 
 PSEUDO(_getlogin,getlogin)
-	ret		# _getlogin(buf, buflen)
+	ret		/* _getlogin(buf, buflen) */
