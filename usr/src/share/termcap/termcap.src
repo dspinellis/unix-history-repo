@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.67 (Berkeley) %G%
+#	@(#)termcap.src	5.68 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -855,19 +855,12 @@ MX|dmchat|dmchat version of datamedia 2500:\
 	:MT:km:\
 	:dl=2^P^Z^X^]:\
 	:tc=dm2500:
-#from Carol Block at ear (cblock@ear)
-#
+# originally from Carol Block at ear (cblock@ear); changed O's to 0's and
+# fixed :is \E from pcuser@garnet.berkeley.edu, 27 Feb 90
 m7|mt70|m70|morrow mt70:\
-	:is=EGO\E"5:\
-	:cl=^Z:\
-	:cm=\E=%+ %+ :\
-	:do=^J:\
-	:im=:ic=\EQ:ei:\
-	:dm=:dc=\EW:ed=:\
-	:kl=\034L:kr=\034M:ku=\034J:kd=\034K:\
-	:so=\EG4:se=\EGO:\
-	:us=\EG1:ue=\EGO:\
-	:vs=\E"2:ve=\E"5\E(:\
+	:is=\EG0\E"5:cl=^Z:cm=\E=%+ %+ :do=^J:im=:ic=\EQ:ei:\
+	:dm=:dc=\EW:ed=:kl=\034L:kr=\034M:ku=\034J:kd=\034K:\
+	:so=\EG4:se=\EG0:us=\EG1:ue=\EG0:vs=\E"2:ve=\E"5\E(:\
 	:tc=adm31:
 # from keith bostic (bostic@monet)
 #
