@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)types.h	6.7 (Berkeley) %G%
+ *	@(#)types.h	6.8 (Berkeley) %G%
  */
 
 #ifndef _TYPES_
@@ -69,6 +69,6 @@ typedef	struct fd_set {
 #define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
 #define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
 #define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
-#define FD_ZERO(p)	bzero(p, sizeof(*(p)))
+#define FD_ZERO(p)	bzero((char *)(p), sizeof(*(p)))
 
 #endif
