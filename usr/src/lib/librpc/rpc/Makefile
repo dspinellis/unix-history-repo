@@ -26,20 +26,20 @@ MAN=	portmap.0 rpcinfo.0
 CFLAGS= -O -I.
 
 .c.o:
-	${CC} -p -c ${CFLAGS} $*.c
-	-ld -X -r $*.o
-	mv a.out profiled/$*.o
 	${CC} ${CFLAGS} -c $*.c
-	-ld -x -r $*.o
-	mv a.out $*.o
+	@-ld -x -r $*.o
+	@mv a.out $*.o
+	@${CC} -p -c ${CFLAGS} $*.c
+	@-ld -X -r $*.o
+	@mv a.out profiled/$*.o
 
 all: rpclib portmap rpcinfo ${MAN}
 
 portmap: portmap.o
-	cc $(CFLAGS) portmap.o rpclib -o portmap
+	${CC} $(CFLAGS) portmap.o rpclib -o portmap
 
 rpcinfo: rpcinfo.o
-	cc $(CFLAGS) rpcinfo.o rpclib -o rpcinfo
+	${CC} $(CFLAGS) rpcinfo.o rpclib -o rpcinfo
 
 rpclib rpclib_p: ${OBJ}
 	@echo "building profiled rpclib"
@@ -81,6 +81,9 @@ print:
 
 clean:
 	rm -f $(OBJ) librpc.a linted made profiled/*.o portmap.o rpcinfo.o
+
+cleandir: clean
+	rm -f $(MAN) tags .depend
 
 depend:
 	@-grep '^#include' $(SRC) | grep -v '<' | grep -v '../' | \
