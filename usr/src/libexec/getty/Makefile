@@ -1,52 +1,48 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1987 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	5.3	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	main.c init.c subr.c gettytab.c get_date.c
 OBJS=	main.o init.o subr.o gettytab.o get_date.o
+MAN=	getty.0
 
 all: getty
 
-getty:	${OBJS} ${LIBC}
+getty: ${OBJS} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${OBJS}
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core getty
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 getty ${DESTDIR}/etc/getty
 	install -c -o bin -g bin -m 444 gettytab ${DESTDIR}/etc/gettytab
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-main.o: main.c /usr/include/sgtty.h /usr/include/sys/ioctl.h
-main.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-main.o: /usr/include/signal.h /usr/include/ctype.h /usr/include/setjmp.h
-main.o: /usr/include/syslog.h /usr/include/sys/file.h gettytab.h
-init.o: init.c /usr/include/sgtty.h /usr/include/sys/ioctl.h
-init.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h gettytab.h
-subr.o: subr.c /usr/include/sgtty.h /usr/include/sys/ioctl.h
-subr.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h gettytab.h
-subr.o: /usr/include/sys/time.h /usr/include/time.h
-gettytab.o: gettytab.c /usr/include/ctype.h
-get_date.o: get_date.c /usr/include/stdio.h /usr/include/sys/time.h
-get_date.o: /usr/include/time.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
