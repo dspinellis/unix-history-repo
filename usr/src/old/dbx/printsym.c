@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)printsym.c 1.3 %G%";
+static char sccsid[] = "@(#)printsym.c 1.4 %G%";
 
 /*
  * Printing of symbolic information.
@@ -337,6 +337,7 @@ Symbol s;
 	    } else {
 		printf("offset\t%d\n", s->symvalue.offset);
 	    }
+	    printf("size\t%d\n", size(s));
 	    break;
 
 	case RECORD:
