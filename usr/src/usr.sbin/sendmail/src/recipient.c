@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -109,7 +109,6 @@ sendtolist(list, ctladdr, sendq)
 		extern ADDRESS *recipient();
 
 		al = a->q_next;
-		setctladdr(a);
 		a = recipient(a, sendq);
 
 		/* arrange to inherit full name */
