@@ -1,0 +1,179 @@
+1 GZIP
+NAME
+     gzip, gunzip, zcat - compress or expand files
+
+SYNOPSIS
+     gzip [ -cdfhLrtvV19 ] [ name ... ]
+     gunzip [ -cfhLrtvV ] [ name ... ]
+     zcat [ -hLV ] [ name ... ]
+
+2 DESCRIPTION
+     Gzip reduces the size of the named  files  using  Lempel-Ziv
+     coding  (LZ77).  Whenever possible, each file is replaced by
+     one with an extension *-z, while keeping the same  ownership
+     modes,  access  and  modification  times.   If  no files are
+     specified, the standard input is compressed to the  standard
+     output.  If the new file name is too long, gzip truncates it
+     and keeps the original file name  in  the  compressed  file.
+     Gzip  will  only attempt to compress regular files.  In par-
+     ticular, it will ignore devices.
+
+     Compressed files can be  restored  to  their  original  form
+     using gzip -d or gunzip or zcat.
+
+     gunzip takes a  list  of  files  on  its  command  line  and
+     replaces  each  file whose name ends with -z and which begins
+     with the correct magic number  with  an  uncompressed file
+     without the original extension. gunzip also recognizes the
+     special  extensions .tgz and .taz as shorthand for .tar-z.
+
+     gunzip can currently decompress files created by gzip,  zip,
+     compress  or  pack.  The  detection  of  the input format is
+     automatic.  When using the first two formats, gunzip  checks
+     a  32  bit  CRC.  For  pack,  gunzip checks the uncompressed
+     length. The compress format was not designed to  allow  con-
+     sistency  checks. However gunzip is sometimes able to detect
+     a bad .Z file. If you get an error when uncompressing  a  .Z
+     file,  do  not  assume  that  the  .Z file is correct simply
+     because the standard uncompress does not complain. This gen-
+     erally means that the standard uncompress does not check its
+     input, and happily generates garbage output.
+
+     Files created by zip can be uncompressed  by  gzip  only  if
+     they  have  a  single member compressed with the 'deflation'
+     method. This feature is only intended to help conversion  of
+     tar.zip files to the tar.z format. To extract zip files with
+     several members, use unzip instead of gunzip.
+
+     zcat is identical to gunzip -c. zcat uncompresses  either  a
+     list  of files on the command line or its standard input and
+     writes the uncompressed data on standard output.  zcat  will
+     uncompress  files that have the correct magic number whether
+     they have a -z suffix or not.
+
+     Gzip uses the Lempel-Ziv algorithm used in  zip  and  PKZIP.
+     The  amount  of  compression obtained depends on the size of
+     the input and the distribution of common substrings.   Typi-
+     cally,  text  such  as  source code or English is reduced by
+     60-70%.  Compression is  generally  much  better  than  that
+     achieved  by  LZW  (as used in compress), Huffman coding (as
+     used in pack), or adaptive Huffman coding (compact).
+
+     Compression is always performed, even if the compressed file
+     is  slightly larger than the original. The worst case expan-
+     sion is a few bytes for the gzip file header, plus  5  bytes
+     every  32K  block, or an expansion ratio of 0.015% for large
+     files.  gzip preserves the mode, ownership and timestamps of
+     files when compressing or decompressing.
+
+2 OPTIONS
+     -c --stdout
+          Write output on standard output;  keep  original  files
+          unchanged.   If there are several input files, the out-
+          put consists of a sequence of independently  compressed
+          members.  To obtain better compression, concatenate all
+          input files before compressing them.
+
+     -d --decompress
+          Decompress.
+
+     -f --force
+          Force compression even if the corresponding file already
+          exists. If -f is not given, and when not running in the
+          background, gzip prompts to verify whether an existing
+          file should be overwritten.
+
+     -h --help
+          Display a help screen.
+
+     -L --license
+          Display the gzip license.
+
+     -q --quiet
+          Suppress all warnings.
+
+     -r --recurse
+          Travel the directory structure recursively. If  any  of
+          the file names specified on the command line are direc-
+          tories,  gzip  will  descend  into  the  directory  and
+          compress  all  the  files it finds there (or decompress
+          them in the case of gunzip ).
+
+     -t --test
+          Test. Check the compressed file integrity.
+
+     -v --verbose
+          Verbose. Display the name and percentage reduction  for
+          each file compressed.
+
+     -V --version
+          Version. Display the  version  number  and  compilation
+          options.
+
+     -# --fast --best
+          Regulate the speed of compression using  the  specified
+          digit  #,  where  -1  or  --fast  indicates the fastest
+          compression method (less compression) and -9 or  --best
+          indicates   the  slowest  compression  method  (optimal
+          compression).  The default compression level is -5.
+
+2 ENVIRONMENT
+     The environment variable GZIP_OPT can hold a set of  default
+     options  for  gzip.  These options are interpreted first and
+     can be overwritten by explicit command line  parameters. For
+     example:
+           GZIP_OPT == "-8 -v"
+
+2 SEE ALSO
+     compress, zip, unzip
+
+2 DIAGNOSTICS
+
+     Usage: gzip [-cdfhLrtvV19] [file ...]
+             Invalid options were specified on the command line.
+     file: not in gzip format
+             The  file  specified  to   gunzip   has   not   been
+             compressed.
+     file: Corrupt input. Use zcat to recover some data.
+             The compressed file has been damaged. The data up to
+             the point of failure can be recovered using
+		     define /user sys$output file.recover
+                     zcat file
+     file: compressed with xx bits, can only handle yy bits
+             File was compressed (using LZW) by  a  program  that
+             could  deal  with more bits than the decompress code
+             on this machine.  Recompress  the  file  with  gzip,
+             which compresses better and uses less memory.
+     file: already has z suffix -- no change
+             The  file  is  assumed  to  be  already  compressed.
+             Rename the file and try again or use zcat.
+     file already exists; do you wish to overwrite (y or n)?
+             Respond "y" if  you  want  the  output  file  to  be
+             replaced; "n" if not.
+     gunzip: corrupt input
+             A SIGSEGV violation was detected which usually means
+             that the input file has been corrupted.
+     xx.x%
+             Percentage  of  the  input  saved  by   compression.
+             (Relevant only for -v.)
+     -- not a regular file or directory: ignored
+             When the input file is not a regular file or  direc-
+             tory, it is left unaltered.
+
+2 CAVEATS
+     On VMS:
+     - upper case options need quotes: gzip "-V".
+     - restoration of timestamps and version numbers is not supported
+     - If a compressed file already exists, gzip -f overwrites it, it
+       does not create a new version.
+     - wildcards in file names are not supported.
+     - multi-part gzip files are not supported.
+     - gunzip does not preserver the input file format. You can use a
+       separate utility to restore the original format.
+     - gunzip and zcat can be used only if you have created the
+       links to gzip as documented in makegzip.com.  Otherwise
+       you must use explicit parameters ("gzip -c" or "gzip -dc").
+
+2 BUGS
+     On VMS, files in VFC record format are not correctly handled by
+     the C runtime library (the linefeed character is suppressed).
