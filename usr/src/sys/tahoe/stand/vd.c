@@ -1,4 +1,4 @@
-/*	vd.c	7.6	87/02/18	*/
+/*	vd.c	7.7	87/04/06	*/
 
 /*
  * Stand alone driver for the VDDC/SMDE controller 
@@ -8,6 +8,7 @@
 #include "param.h"
 #include "inode.h"
 #include "fs.h"
+#include "buf.h"
 #include "disklabel.h"
 #include "saio.h"
 
@@ -38,7 +39,7 @@ vdopen(io)
 {
 	register int ctlr = VDCTLR(io->i_unit);
 	register struct dkinfo *dk;
-	register struct disklabel *lp;
+	register struct disklabel *lp, *dlp;
 	int error;
 
 	if (ctlr >= NVD) {
@@ -70,23 +71,24 @@ vdopen(io)
 			printf("can't read disk label");
 			return (EIO);
 		}
-		*lp = *(struct disklabel *)(lbuf + LABELOFFSET);
-		if (lp->d_magic != DISKMAGIC || lp->d_magic2 != DISKMAGIC) {
-			printf("dk%d: unlabeled\n", io->i_unit);
+		dlp = (struct disklabel *)(lbuf + LABELOFFSET);
+		if (dlp->d_magic != DISKMAGIC || dlp->d_magic2 != DISKMAGIC) {
 #ifdef COMPAT_42
 			if (error = vdmaptype(io))
 				return (error);
 #else
+			printf("dk%d: unlabeled\n", io->i_unit);
 			return (ENXIO);
 #endif
-		}
+		} else
+			*lp = *dlp;
 		if (!vdreset_drive(io))
 			return (ENXIO);
 		dkconfigured[io->i_unit] = 1;
 	}
 	if (io->i_boff < 0 || io->i_boff >= lp->d_npartitions ||
 	    lp->d_partitions[io->i_boff].p_size == 0) {
-		printf("dk bad minor");
+		printf("dk%d: bad minor\n", io->i_unit);
 		return (EUNIT);
 	}
 	io->i_boff =
@@ -158,7 +160,7 @@ again:
 	dcb.trail.rstrail.ncyl = lp->d_ncylinders;
 	dcb.trail.rstrail.nsurfaces = lp->d_ntracks;
 	if (type == VDTYPE_SMDE) {
-		dcb.trailcnt = sizeof (treset) / sizeof (long);
+		dcb.trailcnt = sizeof (struct treset) / sizeof (long);
 		dcb.trail.rstrail.nsectors = lp->d_nsectors;
 		dcb.trail.rstrail.slip_sec = 0;		/* XXX */
 		dcb.trail.rstrail.recovery = 0x18f;	/* ??? */
@@ -247,8 +249,8 @@ vdstrategy(io, cmd)
 	dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
 	dcb.operrsta  = 0;
 	dcb.devselect = VDSLAVE(io->i_unit);
-	dcb.trailcnt = sizeof (trrw) / sizeof (int);
-	dcb.trail.rwtrail.memadr = io->i_ma; 
+	dcb.trailcnt = sizeof (struct trrw) / sizeof (int);
+	dcb.trail.rwtrail.memadr = (u_long)io->i_ma; 
 	dcb.trail.rwtrail.wcount = (io->i_cc + 1) / sizeof (short);
 	dcb.trail.rwtrail.disk.cylinder = cn;
 	dcb.trail.rwtrail.disk.track = tn;
@@ -367,9 +369,9 @@ vdmaptype(io)
 		dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
 		dcb.devselect = VDSLAVE(io->i_unit);
 		dcb.operrsta = 0;
-		dcb.trailcnt = sizeof (trrw) / sizeof (long);
-		dcb.trail.rwtrail.memadr = lbuf; 
-		dcb.trail.rwtrail.wcount = sizeof (lbuf) / sizeof (short);
+		dcb.trailcnt = sizeof (struct trrw) / sizeof (long);
+		dcb.trail.rwtrail.memadr = (u_long)lbuf; 
+		dcb.trail.rwtrail.wcount = 512 / sizeof (short);
 		dcb.trail.rwtrail.disk.cylinder = dp->ncylinders - 2;
 		dcb.trail.rwtrail.disk.track = dp->ntracks - 1;
 		dcb.trail.rwtrail.disk.sector = dp->nsectors - 1;
