@@ -1,7 +1,7 @@
 #
 /*      Re-coding of advent in C: file i/o and user i/o                 */
 
-static char sccsid[] = "	io.c	1.1	82/05/11	";
+static char sccsid[] = "	io.c	4.1	82/05/11	";
 
 #include "hdr.h"
 #include <stdio.h>

@@ -2,7 +2,7 @@
 
 #include "hdr.h"
 
-static char sccsid[] = "	main.c	1.1	82/05/11	";
+static char sccsid[] = "	main.c	4.1	82/05/11	";
 
 int	datfd = -1;
 main(argc,argv)

@@ -1,4 +1,4 @@
-static char sccsid[] = "	okplay.c	1.1	82/05/11	";
+static char sccsid[] = "	okplay.c	4.1	82/05/11	";
 
 main(argc, argv)
 int argc; char *argv[];

@@ -1,7 +1,7 @@
 #
 /*      Re-coding of advent in C: subroutines from main                 */
 
-static char sccsid[] = "	subr.c	1.1	82/05/11	";
+static char sccsid[] = "	subr.c	4.1	82/05/11	";
 
 # include "hdr.h"
 

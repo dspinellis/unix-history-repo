@@ -1,4 +1,4 @@
-#	Makefile	1.1	82/05/11
+#	Makefile	4.1	82/05/11
 
 CFILES=	done.c init.c io.c main.c save.c subr.c vocab.c wizard.c
 OBJS=	done.o init.o io.o main.o save.o subr.o vocab.o wizard.o

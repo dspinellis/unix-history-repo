@@ -6,7 +6,7 @@
  *      (but people that do that get what they deserve)
  */
 
-static char sccsid[] = "	save.c	1.1	82/05/11	";
+static char sccsid[] = "	save.c	4.1	82/05/11	";
 
 #include <a.out.h>
 int filesize;                    /* accessible to caller         */
