@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-SCCSID(@(#)get.c	4.1);
+SCCSID(@(#)get.c	4.2);
 USXALLOC();
 
 int	Debug	0;
@@ -165,7 +165,7 @@ get(file)
 	setup(&gpkt,ser);
 	if (!(Type = Sflags[TYPEFLAG - 'a']))
 		Type = Null;
-	if (!(HADP || HADG) && access(Gfile,2) == 0)
+	if (!(HADP || HADG) && writable(Gfile))
 		fatal(sprintf(Error,"writable `%s' exists (ge4)",Gfile));
 	if (gpkt.p_verbose) {
 		sid_ba(&gpkt.p_gotsid,str);
@@ -213,6 +213,14 @@ get(file)
 		else if (gpkt.p_verbose)
 			fprintf(stderr,"No id keywords (cm7)\n");
 	xfreeall();
+}
+
+writable(fn)
+char *fn;
+{
+	struct stat s;
+
+	return (stat(fn, &s) >= 0 && (s.st_mode & 0222) != 0);
 }
 
 
