@@ -1,17 +1,16 @@
-.\" @(#)Cover.distribution	5.1 (Berkeley) %G%
+.\" @(#)Cover.distribution	5.2 (Berkeley) %G%
 .so HEADERS
-.UC
+.FH
 .OF ''''
 .EF ''''
-.sp .5i
-.ti 4.5i
-July, 1991
-.sp 2
+.ti 4i
+July 1991
+.sp 4
 .PP
 This is a distribution kit for the second release of the BSD networking
 software.
 This software is
-Copyright \(co 1991 The Regents of the University of California, but may
+Copyright \(co 1989, 1991 The Regents of the University of California, but may
 be used and redistributed freely as long as due credit is provided to
 the University; see the license agreement for further details.
 Your countersigned license agreement has been mailed separately.
@@ -29,7 +28,7 @@ placed in the usr/src directory hierarchy.
 Each utility is in a separate directory which contains both its source
 and roff-format manual pages.
 The kernel-related sources are in the usr/src/sys directory hierarchy.
-The include files meant for /usr/include are in usr/src/include and
+The include files meant for usr/include are in usr/src/include and
 the the library routines are in usr/src/lib.
 Supplementary documentation is in the usr/src/share/doc and
 usr/src/share/man directories.
@@ -49,43 +48,43 @@ apply, and will integrate these fixes into the 4.4BSD source distribution.
 .PP
 Bug reports about this distribution can be submitted using the sendbug
 program on the tape, which will submit a formatted report to
-``4bsd-bugs@Berkeley.EDU'' via the Internet.
+``net2-bugs@Berkeley.EDU'' via the Internet.
 On the uucp net, modify the sendbug script to send to
-``uunet!ucbvax!4bsd-bugs'' by an appropriate path.
+``uunet!ucbvax!net2-bugs'' by an appropriate path.
 Ideas for improvement of the system should be sent to ``4bsd-ideas''
 in the same network context.
 If you have changes or other software which you would be willing to share
 with others, please let us know.  
 .sp 2
-.ti 2.5i
+.ti 3i
 Good Luck,
-.ti 3.0i
+.ti 3.5i
 .br
 Mike Karels
-.ti 3.5i
+.ti 4i
 .br
 karels@Berkeley.EDU
 .br
-.ti 3.5i
+.ti 4i
 ucbvax!karels
 .sp
-.ti 3.0i
+.ti 3.5i
 .br
 Kirk McKusick
 .br
-.ti 3.5i
+.ti 4i
 mckusick@Berkeley.EDU
 .br
-.ti 3.5i
+.ti 4i
 ucbvax!mckusick
 .sp
-.ti 3.0i
+.ti 3.5i
 .br
 Keith Bostic
-.ti 3.5i
+.ti 4i
 .br
 bostic@Berkeley.EDU
-.ti 3.5i
+.ti 4i
 .br
 uunet!bostic
 
