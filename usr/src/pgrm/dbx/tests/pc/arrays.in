@@ -1,0 +1,12 @@
+whatis p.a
+stop at 12
+run
+print a
+print a[3], a[4], a[5]
+step
+step
+step
+step
+where
+print b, c
+print b[BLUE]
