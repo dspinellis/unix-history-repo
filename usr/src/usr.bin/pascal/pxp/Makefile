@@ -1,10 +1,10 @@
-SCCSID = "@(#)Makefile	1.8 (Berkeley) %G%"
+SCCSID = "@(#)Makefile	1.9 (Berkeley) %G%"
 DESTDIR=
 ED=	-ex
 AS=	-as
 RM=	rm -f
 EYACC=	/usr/ucb/eyacc
-CFLAGS=	-O -I. -I${SRCDIR} -w
+CFLAGS=	-O -I. -I${SRCDIR} -w -DRMOTHERS
 SRCDIR=	../src
 BINDIR=	../pxp
 #
@@ -13,7 +13,7 @@ BINDIR=	../pxp
 LOCOBJ=	Version.o call.o case.o const.o cset.o error.o fdec.o func.o \
 	lab.o lval.o main.o nl.o pmon.o pp.o proc.o rec.o rval.o stat.o \
 	string.o subr.o type.o var.o y.tab.o yycomm.o yyerror.o \
-	yymain.o yyput.o
+	yymain.o yyput.o rmothers.o
 #
 # Files which are shared with pi and pc0
 #
@@ -118,6 +118,7 @@ pmon.o: pmon.c
 pp.o: pp.c
 proc.o: proc.c
 rec.o: rec.c
+rmothers.o: rmothers.c
 rval.o: rval.c
 stat.o: stat.c
 string.o: string.c
@@ -212,6 +213,8 @@ pp.o: 0.h
 proc.o: 0.h
 proc.o: ../src/tree.h
 rec.o: 0.h
+rmothers.o: 0.h
+rmothers.o: ../src/tree.h
 rval.o: 0.h
 rval.o: ../src/tree.h
 stat.o: 0.h
