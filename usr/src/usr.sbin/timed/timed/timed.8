@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)timed.8	1.1 (Berkeley) %G%
+.\"	@(#)timed.8	1.2 (Berkeley) %G%
 .\"
 .TH TIMED 8 ""
 .UC 6
@@ -11,7 +11,7 @@
 timed \- time server daemon
 .SH SYNOPSIS
 .B /etc/timed
-[ -t ] [ -M ] [ -n network ]
+[ -t ] [ -M ] [ -n network ] [ -i network ]
 .SH DESCRIPTION
 .I Timed
 is the time server daemon and is normally invoked
@@ -60,7 +60,25 @@ The
 .B \-n 
 flag, followed by the name of a network which the host is connected to
 (see: /etc/networks), overrides the default choice of the
-network address made by the program.
+network addresses made by the program.
+Each time the
+.B \-n
+flag appears, that network name is added to a list of valid networks.
+All other networks are ignored.
+The 
+.B \-i 
+flag, followed by the name of a network which the host is connected to
+(see: /etc/networks), overrides the default choice of the
+network addresses made by the program.
+Each time the
+.B \-i
+flag appears, that network name is added to a list of networks to ignore.
+All other networks are used by the time daemon.
+The
+.B \-n
+and 
+.B \-i
+flags are meaningless if used together.
 .SH FILES
 .nf
 .ta \w'/usr/adm/masterlog       'u
