@@ -963,7 +963,7 @@ pass5()
 	daddr_t cbase;
 	int blockbits = (1<<sblock.fs_frag)-1;
 
-	blkcpy((unsigned)bmapsz, blockmap, freemap);
+	bcopy(blockmap, freemap, (unsigned)bmapsz);
 	dupblk = 0;
 	n_index = sblock.fs_ncg * (cgdmin(&sblock, 0) - cgtod(&sblock, 0));
 	for (c = 0; c < sblock.fs_ncg; c++) {
