@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)symbols.c 5.2 %G%";
+static char sccsid[] = "@(#)symbols.c 5.3 %G%";
 /*
  * Symbol management.
  */
@@ -47,8 +47,8 @@ typedef enum { R_CONST, R_TEMP, R_ARG, R_ADJUST } Rangetype;
 struct Symbol {
     Name name;
     Language language;
-    Symclass class : 8;
-    Integer level : 8;
+    Symclass class;
+    Integer level;
     Symbol type;
     Symbol chain;
     union {
