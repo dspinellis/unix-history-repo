@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs.h	7.5 (Berkeley) %G%
+ *	@(#)nfs.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -88,6 +88,8 @@ struct nfsstats {
 	int	attrcache_misses;
 	int	lookupcache_hits;
 	int	lookupcache_misses;
+	int	direofcache_hits;
+	int	direofcache_misses;
 	int	biocache_reads;
 	int	read_bios;
 	int	read_physios;

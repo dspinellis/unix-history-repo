@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_serv.c	7.14 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -1028,7 +1028,7 @@ nfsrv_readdir(mrep, md, dpos, cred, xid, mrq, repstat)
 	fhandle_t *fhp;
 	struct uio io;
 	struct iovec iv;
-	int siz, cnt, fullsiz;
+	int siz, cnt, fullsiz, eofflag;
 	u_long on;
 	char *rbuf;
 	off_t off, toff;
@@ -1061,7 +1061,7 @@ again:
 	io.uio_resid = fullsiz;
 	io.uio_segflg = UIO_SYSSPACE;
 	io.uio_rw = UIO_READ;
-	error = VOP_READDIR(vp, &io, cred);
+	error = VOP_READDIR(vp, &io, cred, &eofflag);
 	off = io.uio_offset;
 	if (error) {
 		vrele(vp);
@@ -1172,7 +1172,10 @@ again:
 	*p = nfs_false;
 	bp += NFSX_UNSIGNED;
 	nfsm_clget;
-	*p = nfs_false;
+	if (eofflag)
+		*p = nfs_true;
+	else
+		*p = nfs_false;
 	bp += NFSX_UNSIGNED;
 	if (bp < be)
 		mp->m_len = bp-mtod(mp, caddr_t);

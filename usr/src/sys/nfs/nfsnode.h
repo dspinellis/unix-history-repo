@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfsnode.h	7.8 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.9 (Berkeley) %G%
  */
 
 /*
@@ -33,7 +33,7 @@ struct nfsnode {
 	nfsv2fh_t n_fh;			/* NFS File Handle */
 	long	n_flag;			/* Flag for locking.. */
 	struct	vnode *n_vnode;	/* vnode associated with this nfsnode */
-	long	n_attrstamp;	/* Time stamp (sec) for attributes */
+	time_t	n_attrstamp;	/* Time stamp (sec) for attributes */
 	struct	vattr n_vattr;	/* Vnode attribute cache */
 	struct	sillyrename *n_sillyrename;	/* Ptr to silly rename struct */
 	u_long	n_size;		/* Current size of file */
@@ -42,6 +42,8 @@ struct nfsnode {
 	int	n_error;	/* Save write error value */
 	pid_t	n_lockholder;	/* holder of nfsnode lock */
 	pid_t	n_lockwaiter;	/* most recent waiter for nfsnode lock */
+	u_long	n_direofoffset;	/* Dir. EOF offset cache */
+	time_t	n_direofstamp;	/* Time stamp for dir. EOF offset cache */
 };
 
 #define	n_forw		n_chain[0]
