@@ -1,5 +1,5 @@
 /*
- *	@(#)uda.c	7.1 (Berkeley) %G%
+ *	@(#)uda.c	7.2 (Berkeley) %G%
  */
 
 /************************************************************************
@@ -15,6 +15,7 @@
  * decvax!rich
  */
 
+#define	COMPAT_42
 #define	DEBUG
 #define	UDADEVNUM	(9)		/* entry in bdevsw */
 #include "ra.h"
@@ -32,12 +33,16 @@
 #include "buf.h"
 #include "conf.h"
 #include "dir.h"
+#include "file.h"
+#include "ioctl.h"
 #include "user.h"
 #include "map.h"
 #include "vm.h"
-#include "dk.h"
+#include "dkstat.h"
 #include "cmap.h"
 #include "uio.h"
+#include "disklabel.h"
+#include "syslog.h"
 
 #include "../vax/cpu.h"
 #include "ubareg.h"
@@ -73,110 +78,22 @@ struct uda {
 } uda[NUDA];
 
 #define udunit(dev)	(minor(dev) >> 3)
-
-/* THIS SHOULD BE READ OFF THE PACK, PER DRIVE */
-struct size {
-	daddr_t nblocks;
-	daddr_t blkoff;
-}  ra25_sizes[8] = {
-	15884,	0,		/* A=blk 0 thru 15883 */
-	10032,	15884,		/* B=blk 15884 thru 49323 */
-	-1,	0,		/* C=blk 0 thru end */
-	0,	0,		/* D=blk 340670 thru 356553 */
-	0,	0,		/* E=blk 356554 thru 412489 */
-	0,	0,		/* F=blk 412490 thru end */
-	-1,	25916,		/* G=blk 49324 thru 131403 */
-	0,	0,		/* H=blk 131404 thru end */
-}, rd52_sizes[8] = {
-	15884,	0,		/* A=blk 0 thru 15883 */
-	9766,	15884,		/* B=blk 15884 thru 25649 */
-	-1,	0,		/* C=blk 0 thru end */
-	0,	0,		/* D=unused */
-	0,	0,		/* E=unused */
-	0,	0,		/* F=unused */
-	-1,	25650,		/* G=blk 25650 thru end */
-	0,	0,		/* H=unused */
-}, rd53_sizes[8] = {
-	15884,	0,		/* A=blk 0 thru 15883 */
-	33440,	15884,		/* B=blk 15884 thru 49323 */
-	-1,	0,		/* C=blk 0 thru end */
-	0,	0,		/* D=unused */
-	33440,	0,		/* E=blk 0 thru 33439 */
-	-1,	33440,		/* F=blk 33440 thru end */
-	-1,	49324,		/* G=blk 49324 thru end */
-	-1,	15884,		/* H=blk 15884 thru end */
-}, ra60_sizes[8] = {
-	15884,	0,		/* A=sectors 0 thru 15883 */
-	33440,	15884,		/* B=sectors 15884 thru 49323 */
-	400176,	0,		/* C=sectors 0 thru 400175 */
-	82080,	49324,		/* 4.2 G => D=sectors 49324 thru 131403 */
-	268772,	131404,		/* 4.2 H => E=sectors 131404 thru 400175 */
-	350852,	49324,		/* F=sectors 49324 thru 400175 */
-	157570,	242606,		/* UCB G => G=sectors 242606 thru 400175 */
-	193282,	49324,		/* UCB H => H=sectors 49324 thru 242605 */
-}, ra80_sizes[8] = {
-	15884,	0,		/* A=sectors 0 thru 15883 */
-	33440,	15884,		/* B=sectors 15884 thru 49323 */
-	242606,	0,		/* C=sectors 0 thru 242605 */
-	0,	0,		/* D=unused */
-	193282,	49324,		/* UCB H => E=sectors 49324 thru 242605 */
-	82080,	49324,		/* 4.2 G => F=sectors 49324 thru 131403 */
-	192696,	49910,		/* G=sectors 49910 thru 242605 */
-	111202,	131404,		/* 4.2 H => H=sectors 131404 thru 242605 */
-}, ra81_sizes[8] ={
-/*
- * These are the new standard partition sizes for ra81's.
- * An RA_COMPAT system is compiled with D, E, and F corresponding
- * to the 4.2 partitions for G, H, and F respectively.
- */
-#ifndef	UCBRA
-	15884,	0,		/* A=sectors 0 thru 15883 */
-	66880,	16422,		/* B=sectors 16422 thru 83301 */
-	891072,	0,		/* C=sectors 0 thru 891071 */
-#ifdef RA_COMPAT
-	82080,	49324,		/* 4.2 G => D=sectors 49324 thru 131403 */
-	759668,	131404,		/* 4.2 H => E=sectors 131404 thru 891071 */
-	478582,	412490,		/* 4.2 F => F=sectors 412490 thru 891071 */
-#else
-	15884,	375564,		/* D=sectors 375564 thru 391447 */
-	307200,	391986,		/* E=sectors 391986 thru 699185 */
-	191352,	699720,		/* F=sectors 699720 thru 891071 */
-#endif RA_COMPAT
-	515508,	375564,		/* G=sectors 375564 thru 891071 */
-	291346,	83538,		/* H=sectors 83538 thru 374883 */
-
-/*
- * These partitions correspond to the sizes used by sites at Berkeley,
- * and by those sites that have received copies of the Berkeley driver
- * with deltas 6.2 or greater (11/15/83).
- */
-#else UCBRA
-
-	15884,	0,		/* A=sectors 0 thru 15883 */
-	33440,	15884,		/* B=sectors 15884 thru 49323 */
-	891072,	0,		/* C=sectors 0 thru 891071 */
-	15884,	242606,		/* D=sectors 242606 thru 258489 */
-	307200,	258490,		/* E=sectors 258490 thru 565689 */
-	325382,	565690,		/* F=sectors 565690 thru 891071 */
-	648466,	242606,		/* G=sectors 242606 thru 891071 */
-	193282,	49324,		/* H=sectors 49324 thru 242605 */
-
-#endif UCBRA
-};
+#define udpart(dev)	(minor(dev) & 07)
+#define udminor(unit, part)	(((unit) << 3) | (part))
 
 struct	ra_info {
-	struct  size    *ra_sizes;	/* Partion tables for drive */
 	daddr_t		radsize;	/* Max user size form online pkt */
 	unsigned	ratype;		/* Drive type int field  */
 	unsigned	rastatus;	/* Command status from */
 					/* last onlin or GTUNT */
+	int		rastate;   	/* open/closed state */
+	u_long		openpart;	/* partitions open */
 } ra_info[NRA];
 
-
-/* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
 struct  uba_ctlr *udminfo[NUDA];
 struct  uba_device *uddinfo[NRA];
 struct  uba_device *udip[NUDA][8];      /* 8 == max number of drives */
+struct  disklabel udlabel[NRA];
 struct  buf rudbuf[NRA];
 struct  buf udutab[NRA];
 struct  buf udwtab[NUDA];               /* I/O wait queue, per controller */
@@ -196,6 +113,14 @@ int     udaburst[NUDA] = { 0 };	/* DMA burst size, 0 is default */
 #define S_SCHAR 4               /* doing "set controller characteristics" */
 #define S_RUN   5               /* running */
 
+/*
+ * Software state, per drive
+ */
+#define	CLOSED		0
+#define	WANTOPEN	1
+#define	RDLABEL		2
+#define	OPEN		3
+#define	OPENRAW		4
 
 int     udaerror = 0;                   /* causes hex dump of packets */
 int     udadebug = 0;
@@ -318,7 +243,8 @@ udattach(ui)
 {
 	register struct uba_ctlr *um = ui->ui_mi ;
 	struct udadevice *udaddr = (struct udadevice *) um->um_addr;
-	struct	mscp	*mp;
+	register struct	mscp	*mp;
+	register unit = ui->ui_unit;
 	int	i;			/* Something to write into to start */
 					/* the uda polling */
 	if (ui->ui_dk >= 0)
@@ -327,7 +253,7 @@ udattach(ui)
 	udip[ui->ui_ctlr][ui->ui_slave] = ui;
 	/* check to see if the drive is a available if it is bring it online */
 	/* if not then just return.  open will try an online later */
-	if(ra_info[ui->ui_unit].rastatus != M_ST_AVLBL)
+	if(ra_info[unit].rastatus != M_ST_AVLBL)
 		return;			/* status was set by a GTUNT */
 	if(0 == (mp = udgetcp(um))){	/* ditto */
 		printf("UDA can't get command packet\n");
@@ -344,14 +270,27 @@ udattach(ui)
 #ifdef	lint
 	i = i;
 #endif
-	while(ui->ui_flags == 0 && ra_info[ui->ui_unit].ratype != 0);
+	for (i = 1000; ui->ui_flags == 0 && ra_info[unit].ratype != 0; ) {
+		if (--i == 0)
+			break;
+		DELAY(1000);
+	}
+	/*
+	 * Try to read pack label.
+	 */
+	if (rainit(ui, 0) == 0) {
+		printf("ra%d: %s\n", unit, udlabel[unit].d_typename);
+#ifdef notyet
+		addswap(makedev(UDADEVNUM, udminor(unit, 0)), &udlabel[unit]);
+#endif
+	} else
+		printf("ra%d: offline\n", unit);
 }
 
 /*
  * Open a UDA.  Initialize the device and
  * set the unit online.
  */
-/* ARGSUSED */
 udopen(dev, flag)
 	dev_t dev;
 	int flag;
@@ -359,15 +298,17 @@ udopen(dev, flag)
 	register int unit;
 	register struct uba_device *ui;
 	register struct uda_softc *sc;
-	register struct mscp *mp;
-	register struct uba_ctlr *um;
-	struct udadevice *udaddr;
-	int s,i;
-	
+	register struct disklabel *lp;
+	register struct partition *pp;
+	int s, i, part;
+	daddr_t start, end;
+
 	unit = udunit(dev);
+	part = udpart(dev);
 	if (unit >= NRA || (ui = uddinfo[unit]) == 0 || ui->ui_alive == 0)
 		return (ENXIO);
 	sc = &uda_softc[ui->ui_ctlr];
+	lp = &udlabel[unit];
 	s = spl5();
 	if (sc->sc_state != S_RUN) {
 		if (sc->sc_state == S_IDLE)
@@ -385,39 +326,71 @@ udopen(dev, flag)
 			return (EIO);
 		}
 	}
-	/* check to see if the device is really there. */
-	/* this code was taken from Fred Canters 11 driver */
-	um = ui->ui_mi;
-	udaddr = (struct udadevice *) um->um_addr;
 	(void) splx(s);
-	if(ui->ui_flags == 0){
-		s = spl5();
-		while(0 ==(mp = udgetcp(um))){
-			uda_cp_wait++;
-			sleep((caddr_t)&uda_cp_wait,PSWP+1);
-			uda_cp_wait--;
-		}
-		mp->mscp_opcode = M_OP_ONLIN;
-		mp->mscp_unit = ui->ui_slave;
-		mp->mscp_cmdref = (long) & ra_info[ui->ui_unit].ratype;
-			/* need to sleep on something */
-#ifdef	DEBUG
-		printd("uda: bring unit %d online\n",ui->ui_unit);
-#endif	
-		*((long *) mp->mscp_dscptr ) |= UDA_OWN | UDA_INT ;
-		i = udaddr->udaip;
-#ifdef	lint
-		i = i;
-#endif
-		timeout(wakeup,(caddr_t) mp->mscp_cmdref,10 * hz);
-			/* make sure we wake up */
-		sleep((caddr_t) mp->mscp_cmdref,PSWP+1); /*wakeup in udrsp() */
-		(void) splx(s);
-	}
-	if(ui->ui_flags == 0){
+	if (ui->ui_flags == 0)
+		rainit(ui, flag);
+	if (ui->ui_flags == 0)
 		return(ENXIO);  /* Didn't go online */
+
+	if (part >= lp->d_npartitions)
+		return (ENXIO);
+	/*
+	 * Warn if a partion is opened
+	 * that overlaps another partition which is open
+	 * unless one is the "raw" partition (whole disk).
+	 */
+#define	RAWPART		2		/* 'c' partition */	/* XXX */
+	if ((ra_info[unit].openpart & (1 << part)) == 0 &&
+	    part != RAWPART) {
+		pp = &lp->d_partitions[part];
+		start = pp->p_offset;
+		end = pp->p_offset + pp->p_size;
+		for (pp = lp->d_partitions;
+		     pp < &lp->d_partitions[lp->d_npartitions]; pp++) {
+			if (pp->p_offset + pp->p_size <= start ||
+			    pp->p_offset >= end)
+				continue;
+			if (pp - lp->d_partitions == RAWPART)
+				continue;
+			if (ra_info[unit].openpart &
+			    (1 << (pp - lp->d_partitions)))
+				log(LOG_WARNING,
+				    "ra%d%c: overlaps open partition (%c)\n",
+				    unit, part + 'a',
+				    pp - lp->d_partitions + 'a');
+		}
 	}
+	ra_info[unit].openpart |= (1 << part);
 	return (0);
+}
+
+/* ARGSUSED */
+udclose(dev, flags)
+	dev_t dev;
+	int flags;
+{
+	register int unit = udunit(dev);
+	register struct uda_softc *sc;
+	struct uba_ctlr *um;
+	int s;
+
+	um = udminfo[unit];
+	sc = &uda_softc[um->um_ctlr];
+	ra_info[unit].openpart &= ~(1 << udpart(dev));
+#ifdef notdef
+	/*
+	 * Should wait for I/O to complete on this partition
+	 * even if others are open, but wait for work on blkflush().
+	 */
+	if (ra_info[unit].openpart == 0) {
+		s = spl5();
+		/* Can't sleep on b_actf, it might be async. */
+		while (um->um_tab.b_actf)
+			sleep((caddr_t)&um->um_tab.b_actf, PZERO - 1);
+		splx(s);
+		ra_info[unit].rastate = CLOSED;
+	}
+#endif
 }
 
 /*
@@ -471,42 +444,157 @@ udinit(d)
 	return(1);
 }
 
+/*
+ * Initialize a drive:
+ * bring on line and read in pack label.
+ */
+rainit(ui, flags)
+	register struct uba_device *ui;
+{
+	register struct mscp *mp;
+	register struct buf *bp;
+	register struct disklabel *lp;
+	register struct uda_softc *sc;
+	register unit = ui->ui_unit;
+	struct disklabel *dlp;
+	struct udadevice *udaddr;
+	int s, i, error = 0;
+	extern int cold;
+
+	lp = &udlabel[unit];
+	sc = &uda_softc[ui->ui_ctlr];
+
+	/* check to see if the device is really there. */
+	/* this code was taken from Fred Canters 11 driver */
+	udaddr = (struct udadevice *) ui->ui_mi->um_addr;
+
+	ra_info[unit].rastate = WANTOPEN;
+	s = spl5();
+	while(0 ==(mp = udgetcp(ui->ui_mi))){
+		uda_cp_wait++;
+		sleep((caddr_t)&uda_cp_wait,PSWP+1);
+		uda_cp_wait--;
+	}
+	mp->mscp_opcode = M_OP_ONLIN;
+	mp->mscp_unit = ui->ui_slave;
+		/* need to sleep on something */
+	mp->mscp_cmdref = (long) & ra_info[unit].ratype;
+#ifdef	DEBUG
+	printd("uda: bring unit %d online\n",unit);
+#endif	
+	*((long *) mp->mscp_dscptr ) |= UDA_OWN | UDA_INT ;
+	i = udaddr->udaip;
+#ifdef	lint
+	i = i;
+#endif
+		/* make sure we wake up */
+	if (cold) {
+		(void) splx(s);
+		for (i = 10*1000; ra_info[unit].rastate == WANTOPEN && --i; )
+			DELAY(1000);
+	} else {
+		timeout(wakeup,(caddr_t) mp->mscp_cmdref,10 * hz);
+		sleep((caddr_t) mp->mscp_cmdref,PSWP+1); /*wakeup in udrsp() */
+		(void) splx(s);
+	}
+	if (ra_info[unit].rastate != OPENRAW)
+		return (EIO);
+
+	if (flags & O_NDELAY)
+		return (0);
+	ra_info[unit].rastate = RDLABEL;
+	/*
+	 * Set up default sizes until we've read the label,
+	 * or longer if there isn't one there.
+	 */
+	lp->d_secsize = DEV_BSIZE;
+	lp->d_secperunit = ra_info[unit].radsize;
+	lp->d_npartitions = 1;
+	lp->d_partitions[0].p_size = lp->d_secperunit;
+	lp->d_partitions[0].p_offset = 0;
+	/*
+	 * Read pack label.
+	 */
+	bp = geteblk(DEV_BSIZE);		/* max sector size */
+	bp->b_dev = udminor(unit, 0);
+	bp->b_blkno = LABELSECTOR;
+	bp->b_bcount = DEV_BSIZE;
+	bp->b_flags = B_BUSY | B_READ;
+	udstrategy(bp);
+	biowait(bp);
+	if (bp->b_flags & B_ERROR) {
+		error = u.u_error;		/* XXX */
+		u.u_error = 0;
+		ra_info[unit].rastate = CLOSED;
+		goto done;
+	}
+
+	dlp = (struct disklabel *)(bp->b_un.b_addr + LABELOFFSET);
+	if (dlp->d_magic == DISKMAGIC &&
+	    dlp->d_magic2 == DISKMAGIC && dkcksum(dlp) == 0) {
+		*lp = *dlp;
+		ra_info[unit].rastate = OPEN;
+	} else {
+		log(LOG_ERR, "ra%d: no disk label\n", unit);
+#ifdef COMPAT_42
+		if (udmaptype(unit, lp))
+			ra_info[unit].rastate = OPEN;
+		else
+#endif
+		ra_info[unit].rastate = OPENRAW;
+	}
+done:
+	brelse(bp);
+	return (error);
+}
+
 udstrategy(bp)
 	register struct buf *bp;
 {
 	register struct uba_device *ui;
 	register struct uba_ctlr *um;
 	register struct buf *dp;
+	register struct disklabel *lp;
 	register int unit;
-	register struct size    *rasizes;
-	int xunit = minor(bp->b_dev) & 07;
+	struct uda_softc *sc;
+	int xunit = udpart(bp->b_dev);
 	daddr_t sz, maxsz;
 	int s;
 
-	sz = (bp->b_bcount+511) >> 9;
 	unit = udunit(bp->b_dev);
 	if (unit >= NRA) {
 		bp->b_error = ENXIO;
 		goto bad;
 	}
-	rasizes = ra_info[unit].ra_sizes;
 	ui = uddinfo[unit];
+	lp = &udlabel[unit];
+	sc = &uda_softc[ui->ui_ctlr];
 	um = ui->ui_mi;
-	if (ui == 0 || ui->ui_alive == 0) {
+	if (ui == 0 || ui->ui_alive == 0 || ra_info[unit].rastate == CLOSED) {
 		bp->b_error = ENXIO;
 		goto bad;
 	}
-	if ((maxsz = rasizes[xunit].nblocks) < 0)
-		maxsz = ra_info[unit].radsize - rasizes[xunit].blkoff;
-	if (bp->b_blkno < 0 || bp->b_blkno+sz > maxsz ||
-	    rasizes[xunit].blkoff >= ra_info[unit].radsize) {
-		if (bp->b_blkno == maxsz) {
-			bp->b_resid = bp->b_bcount;
-		        goto done;
-		}
-		bp->b_error = EINVAL;
+	if (ra_info[unit].rastate < OPEN)
+		goto q;
+	if ((ra_info[unit].openpart & (1 << xunit)) == 0) {
+		bp->b_error = ENODEV;
 		goto bad;
 	}
+	maxsz = lp->d_partitions[xunit].p_size; 
+	sz = (bp->b_bcount + DEV_BSIZE - 1) >> DEV_BSHIFT;
+	if (bp->b_blkno < 0 || bp->b_blkno + sz > maxsz) {
+		if (bp->b_blkno == maxsz) {
+			bp->b_resid = bp->b_bcount;
+			goto done;
+		}
+		sz = maxsz - bp->b_blkno;
+		if (sz <= 0) {
+			bp->b_error = EINVAL;
+			goto bad;
+		}
+		bp->b_bcount = sz << DEV_BSHIFT;
+	}
+q:
 	s = spl5();
 	/*
 	 * Link the buffer onto the drive queue
@@ -561,18 +649,17 @@ udstart(um)
 	register struct mscp *mp;
 	register struct uda_softc *sc;
 	register struct uba_device *ui;
-	struct  size    *rasizes;
+	struct disklabel *lp;
 	struct udadevice *udaddr;
-	struct  uda     *ud = &uda[um->um_ctlr];
+	struct uda *ud = &uda[um->um_ctlr];
+	daddr_t sz;
 	int i;
 
 	sc = &uda_softc[um->um_ctlr];
 	
 loop:
 	if ((dp = um->um_tab.b_actf) == NULL) {
-		/*
-		 * Release uneeded UBA resources and return
-		 */
+
 		um->um_tab.b_active = 0;
 		/* Check for response ring transitions lost in the
 		 * Race condition
@@ -607,7 +694,7 @@ loop:
 		return (0);
 	}
 	ui = uddinfo[udunit(bp->b_dev)];
-	rasizes = ra_info[ui->ui_unit].ra_sizes;
+	lp = &udlabel[ui->ui_unit];
 	if (ui->ui_flags == 0) {        /* not online */
 		if ((mp = udgetcp(um)) == NULL){
 			return (0);
@@ -653,14 +740,21 @@ loop:
 	mp->mscp_cmdref = (long)bp;     /* pointer to get back */
 	mp->mscp_opcode = bp->b_flags&B_READ ? M_OP_READ : M_OP_WRITE;
 	mp->mscp_unit = ui->ui_slave;
-	mp->mscp_lbn = bp->b_blkno + rasizes[minor(bp->b_dev)&7].blkoff;
-	mp->mscp_bytecnt = bp->b_bcount;
 	mp->mscp_buffer = (i & 0x3ffff) | (((i>>28)&0xf)<<24);
 #if defined(VAX750)
 	if (cpu == VAX_750)
 		i &= 0xfffffff;         /* mask off bdp */
 #endif
 	bp->b_ubinfo = i;               /* save mapping info */
+	i = udpart(bp->b_dev);
+	mp->mscp_lbn = bp->b_blkno +
+	    lp->d_partitions[i].p_offset;
+	sz = (bp->b_bcount + DEV_BSIZE - 1) >> DEV_BSHIFT;
+	if (bp->b_blkno + sz > lp->d_partitions[i].p_size)
+		mp->mscp_bytecnt = (lp->d_partitions[i].p_size - bp->b_blkno) >>
+		    DEV_BSHIFT;
+	else
+		mp->mscp_bytecnt = bp->b_bcount;
 	*((long *)mp->mscp_dscptr) |= UDA_OWN|UDA_INT;
 	if (udaddr->udasa&UDA_ERR) 
 		printf("Uda(%d) udasa (%x)\n",um->um_ctlr , udaddr->udasa&0xffff);
@@ -697,16 +791,16 @@ loop:
  * UDA interrupt routine.
  */
 udintr(d)
-	int d;
+	register d;
 {
-	register struct uba_ctlr *um = udminfo[d];
+	struct uba_ctlr *um = udminfo[d];
 	register struct udadevice *udaddr = (struct udadevice *)um->um_addr;
 	struct buf *bp;
 	register int i;
 	register struct uda_softc *sc = &uda_softc[d];
 	register struct uda *ud = &uda[d];
 	struct uda *uud;
-	struct mscp *mp;
+	register struct mscp *mp;
 
 #ifdef	DEBUG
 	printd10("udintr: state %d, udasa %o\n", sc->sc_state, udaddr->udasa);
@@ -753,10 +847,8 @@ udintr(d)
 			return;
 		}
 		udamicro[d] = udaddr->udasa;
-#ifdef	DEBUG
-		printd("Uda%d Version %d model %d\n",d,udamicro[d]&0xF,
-			(udamicro[d]>>4) & 0xF);
-#endif
+		log(LOG_INFO, "uda%d: version %d model %d\n", d,
+		    udamicro[d] & 0xf, (udamicro[d] >> 4) & 0xf);
 		/*
 		 * Requesting the error status (|= 2)
 		 * may hang older controllers.
@@ -866,8 +958,9 @@ udrsp(um, ud, sc, i)
 	int i;
 {
 	register struct mscp *mp;
-	struct uba_device *ui;
-	struct buf *dp, *bp,nullbp;
+	register struct uba_device *ui;
+	register int unit;
+	struct buf *dp, *bp, nullbp;
 	int st;
 
 	mp = &ud->uda_rsp[i];
@@ -903,12 +996,13 @@ udrsp(um, ud, sc, i)
 		return;
 	if ((ui = udip[um->um_ctlr][mp->mscp_unit]) == 0)
 		return;
+	unit = ui->ui_unit;
 	switch (mp->mscp_opcode) {
 
 	case M_OP_ONLIN|M_OP_END:
-		ra_info[ui->ui_unit].rastatus = st;
-		ra_info[ui->ui_unit].ratype =  mp->mscp_mediaid;
-		dp = &udutab[ui->ui_unit];
+		ra_info[unit].rastatus = st;
+		ra_info[unit].ratype =  mp->mscp_mediaid;
+		dp = &udutab[unit];
 		if (st == M_ST_SUCC) {
 			/*
 			 * Link the drive onto the controller queue
@@ -920,7 +1014,8 @@ udrsp(um, ud, sc, i)
 				um->um_tab.b_actl->b_forw = dp;
 			um->um_tab.b_actl = dp;
 			ui->ui_flags = 1;       /* mark it online */
-			ra_info[ui->ui_unit].radsize=(daddr_t)mp->mscp_untsize;
+			ra_info[unit].radsize=(daddr_t)mp->mscp_untsize;
+			ra_info[unit].rastate = OPENRAW;
 #ifdef	DEBUG
 			printd("uda: unit %d online\n", mp->mscp_unit);
 #endif			
@@ -933,46 +1028,13 @@ udrsp(um, ud, sc, i)
 				,F_to_C(mp,1),F_to_C(mp,0)
 				,mp->mscp_mediaid & 0x7f);
 #endif				
-			switch((int)(mp->mscp_mediaid & 0x7f)){
-			case    25:
-				ra_info[ui->ui_unit].ra_sizes = ra25_sizes;
-				break;
-			case    52:
-				ra_info[ui->ui_unit].ra_sizes = rd52_sizes;
-				break;
-			case    53:
-				ra_info[ui->ui_unit].ra_sizes = rd53_sizes;
-				break;
-			case    60:
-				ra_info[ui->ui_unit].ra_sizes = ra60_sizes;
-				break;
-			case    80:
-				ra_info[ui->ui_unit].ra_sizes = ra80_sizes;
-				break;
-			case    81:
-				ra_info[ui->ui_unit].ra_sizes = ra81_sizes;
-				break;
-			default:
-				ui->ui_flags = 0;       /* mark it offline */
-				ra_info[ui->ui_unit].ratype = 0;
-				printf("Don't have a parition table for ");
-				printf("a %c%c %c%c%c%d\n"
-				,F_to_C(mp,4),F_to_C(mp,3),F_to_C(mp,2)
-				,F_to_C(mp,1),F_to_C(mp,0)
-				,mp->mscp_mediaid & 0x7f);
-				while (bp = dp->b_actf) {
-					dp->b_actf = bp->av_forw;
-					bp->b_flags |= B_ERROR;
-					iodone(bp);
-				}
-			}
 			dp->b_active = 1;
 		} else {
 			if(dp->b_actf){
 				harderr(dp->b_actf,"ra");
 			} else {
 				nullbp.b_blkno = 0;
-				nullbp.b_dev = makedev(UDADEVNUM,ui->ui_unit);
+				nullbp.b_dev = makedev(UDADEVNUM,unit);
 				harderr(&nullbp, "ra");
 			}
 			printf("OFFLINE\n");
@@ -981,6 +1043,7 @@ udrsp(um, ud, sc, i)
 				bp->b_flags |= B_ERROR;
 				iodone(bp);
 			}
+			ra_info[unit].rastate = CLOSED;
 		}
 		if(mp->mscp_cmdref!=NULL){/* Seems to get lost sometimes */
 			wakeup((caddr_t)mp->mscp_cmdref);
@@ -998,7 +1061,7 @@ udrsp(um, ud, sc, i)
 		printd("uda: unit %d attention\n", mp->mscp_unit);
 #endif		
 		ui->ui_flags = 0;       /* it went offline and we didn't notice */
-		ra_info[ui->ui_unit].ratype =  mp->mscp_mediaid;
+		ra_info[unit].ratype =  mp->mscp_mediaid;
 		break;
 
 	case M_OP_END:
@@ -1032,7 +1095,7 @@ udrsp(um, ud, sc, i)
 				ubarelse(um->um_ubanum, &um->um_ubinfo);
 		}
 #endif
-		dp = &udutab[ui->ui_unit];
+		dp = &udutab[unit];
 		dp->b_qsize--;
 		if (ui->ui_dk >= 0)
 			if (dp->b_qsize == 0)
@@ -1081,8 +1144,8 @@ udrsp(um, ud, sc, i)
 		printd("GTUNT end packet status = 0x%x media id 0x%x\n"
 			,st,mp->mscp_mediaid);
 #endif		
-		ra_info[ui->ui_unit].rastatus = st;
-		ra_info[ui->ui_unit].ratype =  mp->mscp_mediaid;
+		ra_info[unit].rastatus = st;
+		ra_info[unit].ratype = mp->mscp_mediaid;
 		break;
 
 	default:
@@ -1296,7 +1359,7 @@ uddump(dev)
 	register struct uda *udp;
 	register struct pte *io;
 	register int i;
-	struct  size    *rasizes;
+	struct disklabel *lp;
 	unit = udunit(dev);
 	if (unit >= NRA)
 		return (ENXIO);
@@ -1309,6 +1372,7 @@ uddump(dev)
 	udaddr = (struct udadevice *)ui->ui_physaddr;
 	DELAY(2000000);
 	udp = phys(struct uda *, &udad[ui->ui_ctlr]);
+	lp = &udlabel[unit];
 
 	num = btoc(sizeof(struct uda)) + 1;
 	io = &uba->uba_map[NUBMREG-num];
@@ -1343,11 +1407,8 @@ uddump(dev)
 
 	num = maxfree;
 	start = 0;
-	rasizes = ra_info[ui->ui_unit].ra_sizes;
-	maxsz = rasizes[minor(dev)&07].nblocks;
-	blkoff = rasizes[minor(dev)&07].blkoff;
-	if(maxsz < 0)
-		maxsz = ra_info[unit].radsize-blkoff;
+	blkoff = lp->d_partitions[udpart(dev)].p_offset;
+	maxsz = lp->d_partitions[udpart(dev)].p_size;
 	if (dumplo < 0)
 		return (EINVAL);
 	if (dumplo + num >= maxsz)
@@ -1409,18 +1470,258 @@ udcmd(op, udp, udaddr)
 	return(1);
 }
 
+udioctl(dev, cmd, data, flag)
+	dev_t dev;
+	int cmd;
+	caddr_t data;
+	int flag;
+{
+	int unit = udunit(dev);
+	register struct disklabel *lp;
+	int error = 0;
+
+	lp = &udlabel[unit];
+
+	switch (cmd) {
+
+	case DIOCGDINFO:
+		*(struct disklabel *)data = *lp;
+		break;
+
+	case DIOCGDINFOP:
+		*(struct disklabel **)data = lp;
+		break;
+
+	case DIOCSDINFO:
+		if ((flag & FWRITE) == 0)
+			error = EBADF;
+		else
+			*lp = *(struct disklabel *)data;
+		break;
+
+	case DIOCWDINFO:
+		if ((flag & FWRITE) == 0) {
+			error = EBADF;
+			break;
+		}
+		{
+		struct buf *bp;
+		struct disklabel *dlp;
+		daddr_t alt, end;
+
+		*lp = *(struct disklabel *)data;
+		bp = geteblk(lp->d_secsize);
+		bp->b_dev = dev;
+		bp->b_bcount = lp->d_secsize;
+		bp->b_blkno = LABELSECTOR;
+		bp->b_flags = B_READ;
+		dlp = (struct disklabel *)(bp->b_un.b_addr + LABELOFFSET);
+		udstrategy(bp);
+		biowait(bp);
+		if (bp->b_flags & B_ERROR) {
+			error = u.u_error;		/* XXX */
+			u.u_error = 0;
+			goto bad;
+		}
+		*dlp = *lp;
+		alt = lp->d_ncylinders * lp->d_secpercyl - lp->d_ntracks + 1;
+		end = alt + 8;
+		for (;;) {
+			bp->b_flags = B_WRITE;
+			udstrategy(bp);
+			biowait(bp);
+			if (bp->b_flags & B_ERROR) {
+				error = u.u_error;	/* XXX */
+				u.u_error = 0;
+			}
+			if (bp->b_blkno >= end)
+				break;
+			bp->b_blkno = alt;
+			alt += 2;
+		}
+bad:
+		brelse(bp);
+		}
+		break;
+
+	default:
+		error = ENOTTY;
+		break;
+	}
+	return (0);
+}
+
 udsize(dev)
 	dev_t dev;
 {
-	int unit = udunit(dev);
-	struct uba_device *ui;
-	struct	size	*rasizes;
+	register int unit = udunit(dev);
+	register struct uba_device *ui;
 
-	if (unit >= NRA || (ui = uddinfo[unit]) == 0 || ui->ui_alive == 0
-		 || ui->ui_flags == 0)
+	if (unit >= NRA || (ui = uddinfo[unit]) == 0 || ui->ui_alive == 0 ||
+	    ui->ui_flags == 0 || ra_info[unit].rastate != OPEN)
 		return (-1);
-	rasizes = ra_info[ui->ui_unit].ra_sizes;
-	return (rasizes[minor(dev) & 07].nblocks);
+	return ((int)udlabel[unit].d_partitions[udpart(dev)].p_size);
 }
 
+#ifdef COMPAT_42
+struct size {
+	daddr_t nblocks;
+	daddr_t blkoff;
+}  ra25_sizes[8] = {
+	15884,	0,		/* A=blk 0 thru 15883 */
+	10032,	15884,		/* B=blk 15884 thru 49323 */
+	-1,	0,		/* C=blk 0 thru end */
+	0,	0,		/* D=blk 340670 thru 356553 */
+	0,	0,		/* E=blk 356554 thru 412489 */
+	0,	0,		/* F=blk 412490 thru end */
+	-1,	25916,		/* G=blk 49324 thru 131403 */
+	0,	0,		/* H=blk 131404 thru end */
+}, rd52_sizes[8] = {
+	15884,	0,		/* A=blk 0 thru 15883 */
+	9766,	15884,		/* B=blk 15884 thru 25649 */
+	-1,	0,		/* C=blk 0 thru end */
+	0,	0,		/* D=unused */
+	0,	0,		/* E=unused */
+	0,	0,		/* F=unused */
+	-1,	25650,		/* G=blk 25650 thru end */
+	0,	0,		/* H=unused */
+}, rd53_sizes[8] = {
+	15884,	0,		/* A=blk 0 thru 15883 */
+	33440,	15884,		/* B=blk 15884 thru 49323 */
+	-1,	0,		/* C=blk 0 thru end */
+	0,	0,		/* D=unused */
+	33440,	0,		/* E=blk 0 thru 33439 */
+	-1,	33440,		/* F=blk 33440 thru end */
+	-1,	49324,		/* G=blk 49324 thru end */
+	-1,	15884,		/* H=blk 15884 thru end */
+}, ra60_sizes[8] = {
+	15884,	0,		/* A=sectors 0 thru 15883 */
+	33440,	15884,		/* B=sectors 15884 thru 49323 */
+	400176,	0,		/* C=sectors 0 thru 400175 */
+	82080,	49324,		/* 4.2 G => D=sectors 49324 thru 131403 */
+	268772,	131404,		/* 4.2 H => E=sectors 131404 thru 400175 */
+	350852,	49324,		/* F=sectors 49324 thru 400175 */
+	157570,	242606,		/* UCB G => G=sectors 242606 thru 400175 */
+	193282,	49324,		/* UCB H => H=sectors 49324 thru 242605 */
+}, ra80_sizes[8] = {
+	15884,	0,		/* A=sectors 0 thru 15883 */
+	33440,	15884,		/* B=sectors 15884 thru 49323 */
+	242606,	0,		/* C=sectors 0 thru 242605 */
+	0,	0,		/* D=unused */
+	193282,	49324,		/* UCB H => E=sectors 49324 thru 242605 */
+	82080,	49324,		/* 4.2 G => F=sectors 49324 thru 131403 */
+	192696,	49910,		/* G=sectors 49910 thru 242605 */
+	111202,	131404,		/* 4.2 H => H=sectors 131404 thru 242605 */
+}, ra81_sizes[8] ={
+/*
+ * These are the new standard partition sizes for ra81's.
+ * An RA_COMPAT system is compiled with D, E, and F corresponding
+ * to the 4.2 partitions for G, H, and F respectively.
+ */
+#ifndef	UCBRA
+	15884,	0,		/* A=sectors 0 thru 15883 */
+	66880,	16422,		/* B=sectors 16422 thru 83301 */
+	891072,	0,		/* C=sectors 0 thru 891071 */
+#ifdef RA_COMPAT
+	82080,	49324,		/* 4.2 G => D=sectors 49324 thru 131403 */
+	759668,	131404,		/* 4.2 H => E=sectors 131404 thru 891071 */
+	478582,	412490,		/* 4.2 F => F=sectors 412490 thru 891071 */
+#else
+	15884,	375564,		/* D=sectors 375564 thru 391447 */
+	307200,	391986,		/* E=sectors 391986 thru 699185 */
+	191352,	699720,		/* F=sectors 699720 thru 891071 */
+#endif RA_COMPAT
+	515508,	375564,		/* G=sectors 375564 thru 891071 */
+	291346,	83538,		/* H=sectors 83538 thru 374883 */
+
+/*
+ * These partitions correspond to the sizes used by sites at Berkeley,
+ * and by those sites that have received copies of the Berkeley driver
+ * with deltas 6.2 or greater (11/15/83).
+ */
+#else UCBRA
+
+	15884,	0,		/* A=sectors 0 thru 15883 */
+	33440,	15884,		/* B=sectors 15884 thru 49323 */
+	891072,	0,		/* C=sectors 0 thru 891071 */
+	15884,	242606,		/* D=sectors 242606 thru 258489 */
+	307200,	258490,		/* E=sectors 258490 thru 565689 */
+	325382,	565690,		/* F=sectors 565690 thru 891071 */
+	648466,	242606,		/* G=sectors 242606 thru 891071 */
+	193282,	49324,		/* H=sectors 49324 thru 242605 */
+
+#endif UCBRA
+};
+
+udmaptype(unit, lp)
+	register unit;
+	register struct disklabel *lp;
+{
+	register struct size *rasizes;
+	register struct partition *pp;
+	register type;
+
+	lp->d_secperunit = ra_info[unit].radsize;
+	type = ra_info[unit].ratype & 0x7f;
+	lp->d_typename[0] = 'r';
+	lp->d_typename[1] = 'a';
+	lp->d_typename[2] = '0' + type/10;
+	lp->d_typename[3] = '0' + type%10;
+	switch (type) {
+	case    25:
+		rasizes = ra25_sizes;
+		lp->d_nsectors = 42;
+		lp->d_ntracks = 4;
+		lp->d_ncylinders = 302;
+		break;
+	case    52:
+		lp->d_typename[1] = 'd';
+		rasizes = rd52_sizes;
+		lp->d_nsectors = 18;
+		lp->d_ntracks = 7;
+		lp->d_ncylinders = 480;
+		break;
+	case    53:
+		rasizes = rd53_sizes;
+		lp->d_typename[1] = 'd';
+		lp->d_nsectors = 18;
+		lp->d_ntracks = 8;
+		lp->d_ncylinders = 963;
+		break;
+	case    60:
+		rasizes = ra60_sizes;
+		lp->d_nsectors = 42;
+		lp->d_ntracks = 4;
+		lp->d_ncylinders = 2382;
+		break;
+	case    80:
+		rasizes = ra80_sizes;
+		lp->d_nsectors = 31;
+		lp->d_ntracks = 14;
+		lp->d_ncylinders = 559;
+		break;
+	case    81:
+		rasizes = ra81_sizes;
+		lp->d_nsectors = 51;
+		lp->d_ntracks = 14;
+		lp->d_ncylinders = 1248;
+		break;
+	default:
+		printf("Don't have a partition table for an ra%d\n", type);
+		lp->d_npartitions = 1;
+		lp->d_partitions[0].p_offset = 0;
+		lp->d_partitions[0].p_size = lp->d_secperunit;
+		return (0);
+	}
+	lp->d_npartitions = 8;
+	lp->d_secpercyl = lp->d_nsectors * lp->d_ntracks;
+	for (pp = lp->d_partitions; pp < &lp->d_partitions[8];
+	    pp++, rasizes++) {
+		pp->p_offset = rasizes->blkoff;
+		if ((pp->p_size = rasizes->nblocks) == (u_long)-1)
+			pp->p_size = ra_info[unit].radsize - rasizes->blkoff;
+	}
+	return (1);
+}
+#endif COMPAT_42
 #endif

@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mba.c	7.1 (Berkeley) %G%
+ *	@(#)mba.c	7.2 (Berkeley) %G%
  */
 
 #include "mba.h"
@@ -15,7 +15,7 @@
 
 #include "param.h"
 #include "systm.h"
-#include "dk.h"
+#include "dkstat.h"
 #include "buf.h"
 #include "conf.h"
 #include "dir.h"
@@ -65,7 +65,7 @@ loop:
 		mi->mi_tab.b_active = 0;
 		mi->mi_tab.b_errcnt = 0;
 		mi->mi_tab.b_actf = bp->av_forw;
-		iodone(bp);
+		biodone(bp);
 		goto loop;
 
 	case MBU_DODATA:	/* all ready to do data transfer */
@@ -130,6 +130,7 @@ mbstart(mhp)
 	struct buf *bp;
 	register struct mba_regs *mbp;
 	register int com;
+	extern int cold;
 
 loop:
 	/*
@@ -148,21 +149,25 @@ loop:
 	 * Only check for non-tapes because tape drivers check
 	 * ONLINE themselves and because TU78 registers are
 	 * different.
+	 * No complaints during autoconfiguration,
+	 * when we try to read disk labels from anything on line.
 	 */
 	if (((com = mi->mi_drv->mbd_dt) & MBDT_TAP) == 0)
 	if ((mi->mi_drv->mbd_ds & MBDS_DREADY) != MBDS_DREADY) {
-		if ((com & MBDT_TYPE) == 0) {
+		if (!cold) {
+		    if ((com & MBDT_TYPE) == 0) {
 			mi->mi_alive = 0;
 			printf("%s%d: nonexistent\n", mi->mi_driver->md_dname,
 			    mbunit(bp->b_dev));
-		} else
+		    } else
 			printf("%s%d: not ready\n", mi->mi_driver->md_dname,
 			    mbunit(bp->b_dev));
+		}
 		mi->mi_tab.b_actf = bp->av_forw;
 		mi->mi_tab.b_errcnt = 0;
 		mi->mi_tab.b_active = 0;
 		bp->b_flags |= B_ERROR;
-		iodone(bp);
+		biodone(bp);
 		goto loop;
 	}
 	/*
@@ -256,7 +261,7 @@ mbintr(mbanum)
 			 */
 			mi->mi_tab.b_errcnt = 0;
 			mi->mi_tab.b_actf = bp->av_forw;
-			iodone(bp);
+			biodone(bp);
 			/* fall into... */
 		case MBD_RETRY:		/* attempt the operation again */
 			/*
@@ -335,7 +340,7 @@ mbintr(mbanum)
 				mi->mi_tab.b_errcnt = 0;
 				bp = mi->mi_tab.b_actf;
 				mi->mi_tab.b_actf = bp->av_forw;
-				iodone(bp);
+				biodone(bp);
 				/* fall into common code */
 			case MBN_RETRY:		/* operation continues */
 				if (mi->mi_tab.b_actf)
