@@ -12,8 +12,17 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	8.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	8.18 (Berkeley) %G%";
 #endif /* not lint */
+
+/*
+ * This is not intended to compile on System V derived systems
+ * such as Solaris or HP-UX, since they use a totally different
+ * approach to mailboxes (essentially, they have a setgid program
+ * rather than setuid, and they rely on the ability to "give away"
+ * files to do their work).  IT IS NOT A BUG that this doesn't
+ * compile on such architectures.
+ */
 
 #include <sys/param.h>
 #include <sys/stat.h>
