@@ -1,7 +1,7 @@
-/*	Kfp_exp.s	1.3	86/01/05	*/
+/*	Kfp_exp.s	1.4	90/12/04	*/
 
-#include "../tahoemath/fp.h"
-#include "../tahoemath/Kfp.h"
+#include "../math/fp.h"
+#include "../math/Kfp.h"
 #include "../tahoe/SYS.h"
 
 ENTRY(Kfpover, 0)

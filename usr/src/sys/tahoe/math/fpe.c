@@ -1,18 +1,18 @@
-/*	fpe.c	1.3	90/06/21	*/
+/*	fpe.c	1.4	90/12/04	*/
 
-#include "../tahoe/psl.h"
-#include "../tahoe/reg.h"
-#include "../tahoe/pte.h"
-#include "../tahoe/mtpr.h"
-#include "../tahoemath/Kfp.h"
+#include "../include/psl.h"
+#include "../include/reg.h"
+#include "../include/pte.h"
+#include "../include/mtpr.h"
+#include "../math/Kfp.h"
 
-#include "param.h"
-#include "systm.h"
-#include "user.h"
-#include "proc.h"
-#include "seg.h"
-#include "acct.h"
-#include "kernel.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/seg.h"
+#include "sys/acct.h"
+#include "sys/kernel.h"
 
 /*
  * Floating point emulation support.
