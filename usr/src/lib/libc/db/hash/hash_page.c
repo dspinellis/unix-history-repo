@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_page.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_page.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /******************************************************************************
@@ -283,7 +283,22 @@ int	moved;		/* number of pairs moved to new page */
 
     n = ino[0]-1;
     while ( n < ino[0] ) {
-	if ( ino[n+1] == OVFLPAGE ) {
+	if ( ino[2] < REAL_KEY && ino[2] != OVFLPAGE ) {
+	    if (__big_split (old_bufp, new_bufp, bufp, ov_addr, obucket, &ret)) {
+		return(-1);
+	    }
+	    old_bufp = ret.oldp;
+	    if ( !old_bufp ) return(-1);
+	    op = (u_short *)old_bufp->page;
+	    new_bufp = ret.newp;
+	    if ( !new_bufp ) return(-1);
+	    np = (u_short *)new_bufp->page;
+	    bufp = ret.nextp;
+	    if ( !bufp ) return(0);
+	    cino = (char *)bufp->page;
+	    ino = (u_short *)cino;
+	    last_bfp = ret.nextp;
+	} else if ( ino[n+1] == OVFLPAGE ) {
 	    ov_addr = ino[n];
 	    /* 
 		Fix up the old page -- the extra 2 are the fields which
@@ -306,24 +321,6 @@ int	moved;		/* number of pairs moved to new page */
 	    }
 	    last_bfp = bufp;
 	} 
-
-	if ( (ino[2] < REAL_KEY) && (ino[2] != OVFLPAGE) ) {
-	    if (__big_split (old_bufp,
-		new_bufp, bufp, ov_addr, obucket, &ret)) {
-		    return(-1);
-	    }
-	    old_bufp = ret.oldp;
-	    if ( !old_bufp ) return(-1);
-	    op = (u_short *)old_bufp->page;
-	    new_bufp = ret.newp;
-	    if ( !new_bufp ) return(-1);
-	    np = (u_short *)new_bufp->page;
-	    bufp = ret.nextp;
-	    if ( !bufp ) return(0);
-	    cino = (char *)bufp->page;
-	    ino = (u_short *)cino;
-	    last_bfp = ret.nextp;
-	}
 	
 
 	/* Move regular sized pairs of there are any */
@@ -499,7 +496,7 @@ int	is_bitmap;
     fd = hashp->fp;
     size = hashp->BSIZE;
 
-    if ( (fd == -1) || (hashp->new_file && !is_disk) ) {
+    if ( (fd == -1) || !is_disk ) { 
 	PAGE_INIT(p);
 	return(0);
     }
