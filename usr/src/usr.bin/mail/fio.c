@@ -6,13 +6,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <sys/wait.h>
+#include <unistd.h>
 #include <paths.h>
 #include <errno.h>
 
@@ -175,7 +176,6 @@ makemessage(f)
 	FILE *f;
 {
 	register size = (msgCount + 1) * sizeof (struct message);
-	off_t lseek();
 
 	if (message != 0)
 		free((char *) message);
@@ -184,7 +184,7 @@ makemessage(f)
 	dot = message;
 	size -= sizeof (struct message);
 	fflush(f);
-	(void) lseek(fileno(f), (long) sizeof *message, 0);
+	(void) lseek(fileno(f), (off_t) sizeof *message, 0);
 	if (read(fileno(f), (char *) message, size) != size)
 		panic("Message temporary file corrupted");
 	message[msgCount].m_size = 0;
