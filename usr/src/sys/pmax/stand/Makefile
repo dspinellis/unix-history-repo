@@ -1,8 +1,8 @@
-#	@(#)Makefile	8.2 (Berkeley) %G%
+#	@(#)Makefile	8.3 (Berkeley) %G%
 
 DESTDIR=
 STAND=	../../stand
-INCPATH=-I. -I../..
+INCPATH=-I. -I/sys
 VPATH=	${STAND}
 
 # RELOC=80200000 allows for boot prog up to 1D0000 (1900544) bytes long
@@ -63,9 +63,9 @@ dec_label: dec_label.c
 
 clean cleandir:
 	rm -f .depend *.o *.exe *.i errs make.out core*
-	rm -f a.out boot cat
+	rm -f a.out ${ALL}
 	rm -f boot[a-z][a-z] [a-z][a-z]boot
-	rm -f libdrive.a mkboot mkboottape
+	rm -f libdrive.a
 	cd libsa; make cleandir
 
 install:
