@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vmparam.h	8.1 (Berkeley) %G%
+ *	@(#)vmparam.h	8.2 (Berkeley) %G%
  */
 
 
@@ -136,14 +136,11 @@
  * Strategy of 1/19/85:
  *	lotsfree is 512k bytes, but at most 1/4 of memory
  *	desfree is 200k bytes, but at most 1/8 of memory
- *	minfree is 64k bytes, but at most 1/2 of desfree
  */
 #define	LOTSFREE	(512 * 1024)
 #define	LOTSFREEFRACT	4
 #define	DESFREE		(200 * 1024)
 #define	DESFREEFRACT	8
-#define	MINFREE		(64 * 1024)
-#define	MINFREEFRACT	2
 
 /*
  * There are two clock hands, initially separated by HANDSPREAD bytes
