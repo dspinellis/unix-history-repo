@@ -1,0 +1,9 @@
+width=80,overflowtext=,overflowoffset=10
+leftadjust,compress,compwidth=9
+Date:formatfield="%<(nodate{text})%{text}%|%(tws{text})%>"
+From:
+To:
+cc:
+Subject:
+:
+body:nocomponent,overflowoffset=0,noleftadjust,nocompress
