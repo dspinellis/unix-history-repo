@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)telnet.h	5.4 (Berkeley) %G%
+ *	@(#)telnet.h	5.5 (Berkeley) %G%
  */
 
 /*
@@ -37,14 +37,22 @@
 #define	NOP	241		/* nop */
 #define	SE	240		/* end sub negotiation */
 #define EOR     239             /* end of record (transparent mode) */
+#define	ABORT	238		/* Abort process */
+#define	SUSP	237		/* Suspend process */
+#define	xEOF	236		/* End of file: EOF is already used... */
 
 #define SYNCH	242		/* for telfunc calls */
 
 #ifdef TELCMDS
 char *telcmds[] = {
+	"EOF", "SUSP", "ABORT", "EOR",
 	"SE", "NOP", "DMARK", "BRK", "IP", "AO", "AYT", "EC",
 	"EL", "GA", "SB", "WILL", "WONT", "DO", "DONT", "IAC",
 };
+#define	TELCMD_FIRST	xEOF
+#define	TELCMD_LAST	IAC
+#define	TELCMD_OK(x)	((x) <= TELCMD_LAST && (x) >= TELCMD_FIRST)
+#define	TELCMD(x)	telcmds[(x)-TELCMD_FIRST]
 #endif
 
 /* telnet options */
@@ -82,10 +90,11 @@ char *telcmds[] = {
 #define	TELOPT_NAWS	31	/* window size */
 #define	TELOPT_TSPEED	32	/* terminal speed */
 #define	TELOPT_LFLOW	33	/* remote flow control */
+#define TELOPT_LINEMODE	34	/* Linemode option */
 #define	TELOPT_EXOPL	255	/* extended-options-list */
 
 #ifdef TELOPTS
-#define	NTELOPTS	(1+TELOPT_LFLOW)
+#define	NTELOPTS	(1+TELOPT_LINEMODE)
 char *telopts[NTELOPTS] = {
 	"BINARY", "ECHO", "RCP", "SUPPRESS GO AHEAD", "NAME",
 	"STATUS", "TIMING MARK", "RCTE", "NAOL", "NAOP",
@@ -95,9 +104,72 @@ char *telopts[NTELOPTS] = {
 	"SEND LOCATION", "TERMINAL TYPE", "END OF RECORD",
 	"TACACS UID", "OUTPUT MARKING", "TTYLOC",
 	"3270 REGIME", "X.3 PAD", "NAWS", "TSPEED", "LFLOW",
+	"LINEMODE",
 };
+#define	TELOPT_FIRST	TELOPT_BINARY
+#define	TELOPT_LAST	TELOPT_LINEMODE
+#define	TELOPT_OK(x)	((x) <= TELOPT_LAST && (x) >= TELOPT_FIRST)
+#define	TELOPT(x)	telopts[(x)-TELOPT_FIRST]
 #endif
 
 /* sub-option qualifiers */
 #define	TELQUAL_IS	0	/* option is... */
 #define	TELQUAL_SEND	1	/* send option */
+
+/*
+ * LINEMODE suboptions
+ */
+
+#define	LM_MODE		1
+#define	LM_FORWARDMASK	2
+#define	LM_SLC		3
+
+#define	MODE_EDIT	0x01
+#define	MODE_TRAPSIG	0x02
+#define	MODE_ACK	0x04
+
+#define	MODE_MASK	(MODE_EDIT|MODE_TRAPSIG|MODE_ACK)
+
+/* Not part of protocol, but needed to simplify things... */
+#define MODE_FLOW		0x40
+#define MODE_ECHO		0x80
+#define MODE_FORCE		0x20
+
+#define	SLC_SYNCH	1
+#define	SLC_BRK		2
+#define	SLC_IP		3
+#define	SLC_AO		4
+#define	SLC_AYT		5
+#define	SLC_EOR		6
+#define	SLC_ABORT	7
+#define	SLC_EOF		8
+#define	SLC_SUSP	9
+#define	SLC_EC		10
+#define	SLC_EL		11
+#define	SLC_EW		12
+#define	SLC_RP		13
+#define	SLC_LNEXT	14
+#define	SLC_XON		15
+#define	SLC_XOFF	16
+#define	SLC_FORW1	17
+#define	SLC_FORW2	18
+
+#define	NSLC		18
+
+#define	SLC_NAMES	"0", "SYNCH", "BRK", "IP", "AO", "AYT", "EOR", \
+			"ABORT", "EOF", "SUSP", "EC", "EL", "EW", "RP", \
+			"LNEXT", "XON", "XOFF", "FORW1", "FORW2"
+
+#define	SLC_NOSUPPORT	0
+#define	SLC_CANTCHANGE	1
+#define	SLC_VARIABLE	2
+#define	SLC_DEFAULT	3
+#define	SLC_LEVELBITS	0x03
+
+#define	SLC_FUNC	0
+#define	SLC_FLAGS	1
+#define	SLC_VALUE	2
+
+#define	SLC_ACK		0x80
+#define	SLC_FLUSHIN	0x40
+#define	SLC_FLUSHOUT	0x20
