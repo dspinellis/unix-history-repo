@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.76 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.77 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -621,14 +621,20 @@ safefile(fn, uid, gid, uname, flags, mode, st)
 
 	if (bitset(SFF_SETUIDOK, flags))
 	{
-		if (bitset(S_ISUID, st->st_mode) &&
-		    (st->st_uid != 0 || bitset(SFF_ROOTOK, flags)))
+#ifdef SUID_ROOT_FILES_OK
+		if (bitset(S_ISUID, st->st_mode))
+#else
+		if (bitset(S_ISUID, st->st_mode) && st->st_uid != 0)
+#endif
 		{
 			uid = st->st_uid;
 			uname = NULL;
 		}
-		if (bitset(S_ISGID, st->st_mode) &&
-		    (st->st_gid != 0 || bitset(SFF_ROOTOK, flags)))
+#ifdef SUID_ROOT_FILES_OK
+		if (bitset(S_ISGID, st->st_mode))
+#else
+		if (bitset(S_ISGID, st->st_mode) && st->st_gid != 0)
+#endif
 			gid = st->st_gid;
 	}
 
