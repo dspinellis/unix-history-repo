@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)stab.c 1.4 %G%";
+static	char sccsid[] = "@(#)stab.c 1.5 %G%";
 
     /*
      *	procedures to put out sdb symbol table information.
@@ -29,12 +29,11 @@ static	char sccsid[] = "@(#)stab.c 1.4 %G%";
 #define	ABS( x )	( x < 0 ? -x : x )
 
     /*
-     *	variables
+     *	global variables
      */
-stabvar( name , type , level , offset , length , line )
+stabgvar( name , type , offset , length , line )
     char	*name;
     int		type;
-    int		level;
     int		offset;
     int		length;
     int		line;
@@ -43,10 +42,8 @@ stabvar( name , type , level , offset , length , line )
 	    /*
 	     *	for separate compilation
 	     */
-	if ( level == 1 ) {
-	    putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
-			, name , N_PC , N_PGVAR , ABS( line ) );
-    	}
+	putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
+		    , name , N_PC , N_PGVAR , ABS( line ) );
 	    /*
 	     *	for sdb
 	     */
@@ -55,15 +52,32 @@ stabvar( name , type , level , offset , length , line )
 	}
 	putprintf( "	.stabs	\"" , 1 );
 	putprintf( NAMEFORMAT , 1 , name );
-	if ( level == 1 ) {
-		putprintf( "\",0x%x,0,0x%x,0" , 0 , N_GSYM , type );
-	} else {
-		putprintf( "\",0x%x,0,0x%x,0x%x" , 0 , N_LSYM , type , -offset );
-	}
+	putprintf( "\",0x%x,0,0x%x,0" , 0 , N_GSYM , type );
 	putprintf( "	.stabs	\"" , 1 );
 	putprintf( NAMEFORMAT , 1 , name );
 	putprintf( "\",0x%x,0,0,0x%x" , 0 , N_LENG , length );
+}
 
+    /*
+     *	local variables
+     */
+stablvar( name , type , level , offset , length )
+    char	*name;
+    int		type;
+    int		level;
+    int		offset;
+    int		length;
+    {
+
+	if ( ! opt('g') ) {
+		return;
+	}
+	putprintf( "	.stabs	\"" , 1 );
+	putprintf( NAMEFORMAT , 1 , name );
+	putprintf( "\",0x%x,0,0x%x,0x%x" , 0 , N_LSYM , type , -offset );
+	putprintf( "	.stabs	\"" , 1 );
+	putprintf( NAMEFORMAT , 1 , name );
+	putprintf( "\",0x%x,0,0,0x%x" , 0 , N_LENG , length );
 }
 
 
