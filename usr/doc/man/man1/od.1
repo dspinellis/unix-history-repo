@@ -1,0 +1,69 @@
+.th OD I 1/15/73
+.sh NAME
+od  \*-  octal dump
+.sh SYNOPSIS
+.bd od
+[
+.bd \*-abcdho
+] [ file ] [ [
+.bd +
+] offset[ \fB. \fR][ \fBb\fR ] ]
+.sh DESCRIPTION
+.it Od
+dumps
+.it file
+in
+one or more formats
+as
+selected by the first argument.
+If the first argument is missing
+.bd \*-o
+is default.
+The meanings of the format argument characters
+are:
+.s3
+.lp +3 3
+\fBa\fR	interprets words as PDP-11 instructions and
+dis-assembles the operation code.
+Unknown operation codes print as ???.
+.s3
+.lp +3 3
+\fBb\fR	interprets bytes in octal.
+.s3
+.lp +3 3
+\fBc\fR	interprets bytes in ascii.
+Unknown ascii characters are printed as \\?.
+.s3
+.lp +3 3
+\fBd\fR	interprets words in decimal.
+.s3
+.lp +3 3
+\fBh\fR	interprets words in hex.
+.s3
+.lp +3 3
+\fBo\fR	interprets words in octal.
+.s3
+.s3
+.i0
+The \fIfile\fR argument specifies which file is to be dumped.
+If no file argument is specified,
+the standard input is used.
+Thus
+.it od
+can be used as a filter.
+.s3
+The offset argument specifies the offset
+in the file where dumping is to commence.
+This argument is normally interpreted
+as octal bytes.
+If `\fB.\fR' is appended, the offset is interpreted in
+decimal.
+If `\fBb\fR' is appended, the offset is interpreted in blocks.
+(A block is 512 bytes.)
+If the file argument is omitted,
+the offset argument must be preceded by `\fB+\fR'.
+.s3
+Dumping continues until end-of-file.
+.sh "SEE ALSO"
+db (I)
+.sh BUGS
