@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)master.c	2.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)master.c	2.6 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -15,6 +15,8 @@ static char sccsid[] = "@(#)master.c	2.5 (Berkeley) %G%";
 extern int machup;
 extern int measure_delta;
 extern jmp_buf jmpenv;
+
+extern short sequence;
 
 #ifdef MEASURE
 int header;
@@ -69,6 +71,22 @@ loop:
 	if (time.tv_sec >= pollingtime) {
 		pollingtime = time.tv_sec + SAMPLEINTVL;
 		synch(0L);
+
+		for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
+			to.tsp_type = TSP_LOOP;
+			to.tsp_vers = TSPVERSION;
+			to.tsp_seq = sequence;
+			to.tsp_hopcnt = 10;
+			(void)strcpy(to.tsp_name, hostname);
+			bytenetorder(&to);
+			if (sendto(sock, (char *)&to, sizeof(struct tsp), 0,
+			    &ntp->dest_addr, sizeof(struct sockaddr_in)) < 0) {
+				syslog(LOG_ERR, "sendto: %m");
+				exit(1);
+			if (++sequence > MAXSEQ)
+				sequence = 1;
+			}
+		}
 	}
 
 	wait.tv_sec = pollingtime - time.tv_sec;
@@ -218,6 +236,22 @@ loop:
 #endif
 			longjmp(jmpenv, 2);
 			break;
+		case TSP_LOOP:
+			/*
+			 * We should not have received this from a net
+			 * we are master on.  There must be two masters
+			 * in this case.
+			 */
+			to.tsp_type = TSP_QUIT;
+			(void)strcpy(to.tsp_name, hostname);
+			server = from;
+			answer = acksend(&to, &server, msg->tsp_name, TSP_ACK,
+				(struct netinfo *)NULL);
+			if (answer == NULL) {
+				syslog(LOG_ERR, "election error");
+			} else {
+				(void)addmach(msg->tsp_name, &from);
+			}
 		default:
 			if (trace) {
 				fprintf(fd, "garbage: ");
