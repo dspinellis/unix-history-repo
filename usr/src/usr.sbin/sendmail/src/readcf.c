@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.112 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.113 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -502,6 +502,9 @@ readcf(cfname)
 				p = macvalue('w', e);
 				if (p != NULL && (p = strchr(p, '.')) != NULL)
 					*p = '\0';
+				if (tTd(35, 9))
+					printf("redefine('w' as %s)\n",
+						macvalue('w', e));
 			}
 			if (ConfigLevel >= 6)
 			{
@@ -1991,7 +1994,7 @@ setclass(class, str)
 	register STAB *s;
 
 	if (tTd(37, 8))
-		printf("setclass(%c, %s)\n", class, str);
+		printf("setclass(%s, %s)\n", macname(class), str);
 	s = stab(str, ST_CLASS, ST_ENTER);
 	setbitn(class, s->s_class);
 }
