@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)term.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)term.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -33,7 +33,7 @@ get_termcap_entry(userarg, tcapbufp)
 {
 	struct ttyent *t;
 	int rval;
-	char *base, *ttype, *ttypath;
+	char *p, *ttype, *ttypath;
 
 	if (userarg) {
 		ttype = userarg;
@@ -46,11 +46,11 @@ get_termcap_entry(userarg, tcapbufp)
 
 	/* Try ttyname(3); check for dialup or other mapping. */
 	if (ttypath = ttyname(STDERR_FILENO)) {
-		if (base = rindex(ttypath, '/'))
-			++base;
+		if (p = rindex(ttypath, '/'))
+			++p;
 		else
-			base = ttypath;
-		if ((t = getttynam(base))) {
+			p = ttypath;
+		if ((t = getttynam(p))) {
 			ttype = t->ty_type;
 			goto map;
 		}
@@ -62,11 +62,12 @@ get_termcap_entry(userarg, tcapbufp)
 map:	ttype = mapped(ttype);
 
 	/*
-	 * Remove TERMCAP from the environment so we get a real entry from
-	 * /etc/termcap.  This prevents us from being fooled by out of date
-	 * stuff in the environment.
+	 * If not a path, remove TERMCAP from the environment so we get a
+	 * real entry from /etc/termcap.  This prevents us from being fooled
+	 * by out of date stuff in the environment.
 	 */
-found:	unsetenv("TERMCAP");
+found:	if ((p = getenv("TERMCAP")) != NULL && *p != '/')
+		unsetenv("TERMCAP");
 
 	/*
 	 * ttype now contains a pointer to the type of the terminal.
