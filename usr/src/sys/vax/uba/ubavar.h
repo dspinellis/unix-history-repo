@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ubavar.h	6.5 (Berkeley) %G%
+ *	@(#)ubavar.h	6.6 (Berkeley) %G%
  */
 
 /*
@@ -159,6 +159,7 @@ struct uba_driver {
 #define	UBAI_NMR(i)	((int)((i)>>18)&0x3ff)
 #define	UBAI_MR(i)	((int)((i)>>9)&0x1ff)
 #define	UBAI_BOFF(i)	((int)((i)&0x1ff))
+#define	UBAI_ADDR(i)	((int)((i)&0x3ffff))	/* uba addr (boff+mr) */
 
 #ifndef LOCORE
 #ifdef KERNEL
