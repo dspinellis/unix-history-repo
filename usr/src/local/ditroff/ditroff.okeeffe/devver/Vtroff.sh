@@ -1,6 +1,6 @@
 #! /bin/csh -f
 #
-#	@(#)vtroff.sh	4.4	(Berkeley)	5/4/84;	1.3	(CWI)	86/10/21
+#	@(#)vtroff.sh	4.4	(Berkeley)	5/4/84;	1.4	(CWI)	88/03/04
 #
 umask 0
 set flags=() noglob length=() fonts=() fontf=() banner=() Tflags=(-Tver) Dflags=()
@@ -41,7 +41,9 @@ top:
 			goto top
 		case -x:
 			set Tflags = -Thar
-			set banner = Harris
+			set banner = NewHarris
+			set lpr = (/usr/ucb/lpr -Pnvp -n)
+			set sort = (/usr/lib/nvsort80)
 			shift argv
 			goto top
 		case -N:
@@ -76,12 +78,12 @@ if ($?host) then
     if ($?t) then
 	soelim $* | rsh $host \"$troff $tflags - | $sort \"
     else
-	soelim $* | rsh $host \"$troff $Tflags $Dflags $tflags - | $sort | $lpr -Tvp -J$banner -n \"
+	soelim $* | rsh $host \"$troff $Tflags $Dflags $tflags - | $sort | $lpr -Tvp -J$banner \"
     endif
 else
     if ($?t) then
 	$troff $tflags $* | $sort
     else
-	$troff $Tflags $Dflags $tflags $* | $sort | $lpr -J$banner -C$class -n
+	$troff $Tflags $Dflags $tflags $* | $sort | $lpr -J$banner -C$class
     endif
 endif
