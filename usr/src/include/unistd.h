@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)unistd.h	5.16 (Berkeley) %G%
+ *	@(#)unistd.h	5.17 (Berkeley) %G%
  */
 
 #ifndef _UNISTD_H_
@@ -59,7 +59,8 @@ pid_t	 getppid __P((void));
 uid_t	 getuid __P((void));
 int	 isatty __P((int));
 int	 link __P((const char *, const char *));
-long	 lseek __P((int, long, int));
+#define	 lseek __lseek
+long	 lseek __P((int, off_t, int));
 long	 pathconf __P((const char *, int));	/* not yet */
 int	 pause __P((void));
 int	 pipe __P((int *));
@@ -98,6 +99,7 @@ int	 fchflags __P((int, long));
 int	 fchown __P((int, int, int));
 int	 fnmatch __P((const char *, const char *, int));
 int	 fsync __P((int));
+#define	 ftruncate __ftruncate
 int	 ftruncate __P((int, off_t));
 int	 getdtablesize __P((void));
 long	 gethostid __P((void));
@@ -146,6 +148,7 @@ int	 swapon __P((const char *));
 int	 symlink __P((const char *, const char *));
 void	 sync __P((void));
 int	 syscall __P((int, ...));
+#define	 truncate __truncate
 int	 truncate __P((const char *, off_t));
 int	 ttyslot __P((void));
 u_int	 ualarm __P((u_int, u_int));
