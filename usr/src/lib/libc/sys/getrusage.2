@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getrusage.2	6.4 (Berkeley) %G%
+.\"	@(#)getrusage.2	6.5 (Berkeley) %G%
 .\"
 .TH GETRUSAGE 2 ""
 .UC 4
@@ -107,7 +107,7 @@ memory.
 ru_inblock
 the number of times the file system had to perform input.
 .TP 15
-ru_outblock
+ru_oublock
 the number of times the file system had to perform output.
 .TP 15
 ru_msgsnd
@@ -132,7 +132,7 @@ exceeded its time slice.
 The numbers 
 .I ru_inblock
 and 
-.I ru_outblock
+.I ru_oublock
 account only for real
 I/O; data supplied by the caching mechanism is charged only
 to the first process to read or write the data.
