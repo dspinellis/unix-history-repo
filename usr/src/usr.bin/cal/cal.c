@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cal.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)cal.c	4.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -37,7 +37,7 @@ static char sccsid[] = "@(#)cal.c	4.6 (Berkeley) %G%";
 #define	SATURDAY 		6		/* 1 Jan 1 was a Saturday */
 #define	FIRST_MISSING_DAY 	639787		/* 3 Sep 1752 */
 #define	NUMBER_MISSING_DAYS 	11		/* 11 day correction */
-#define	SPACE			99		/* used in day array */
+#define	SPACE			-1		/* used in day array */
 
 static int days_in_month[2][13] = {
 	{0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31},
@@ -45,12 +45,19 @@ static int days_in_month[2][13] = {
 };
 
 static int sep1752[42] = {
-	SPACE, SPACE,     1,     2,    14,    15,    16,
-	   17,    18,    19,    20,    21,    22,    23,
-	   24,    25,    26,    27,    28,    29,    30,
-	SPACE, SPACE, SPACE, SPACE, SPACE, SPACE, SPACE,
-	SPACE, SPACE, SPACE, SPACE, SPACE, SPACE, SPACE,
-	SPACE, SPACE, SPACE, SPACE, SPACE, SPACE, SPACE,
+	SPACE,	SPACE,	1,	2,	14,	15,	16,
+	17,	18,	19,	20,	21,	22,	23,
+	24,	25,	26,	27,	28,	29,	30,
+	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,
+	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,
+	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,
+}, j_sep1752[42] = {
+	SPACE,	SPACE,	245,	246,	258,	259,	260,
+	261,	262,	263,	264,	265,	266,	267,
+	268,	269,	270,	271,	272,	273,	274,
+	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,
+	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,
+	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,	SPACE,
 };
 
 static char *month_names[12] = {
@@ -58,7 +65,8 @@ static char *month_names[12] = {
 	"July", "August", "September", "October", "November", "December",
 };
 
-static char *day_headings = " S  M Tu  W Th  F  S";
+static char *day_headings = " S  M  Tu W  Th F  S";
+static char *j_day_headings = " S   M   Tu  W   Th  F   S";
 
 /* leap year -- account for gregorian reformation in 1752 */
 #define	leap_year(yr) \
@@ -77,6 +85,8 @@ static char *day_headings = " S  M Tu  W Th  F  S";
 #define	leap_years_since_year_1(yr) \
 	((yr) / 4 - centuries_since_1700(yr) + quad_centuries_since_1700(yr))
 
+int julian;
+
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -88,8 +98,11 @@ main(argc, argv)
 	int ch, month, year, yflag;
 
 	yflag = 0;
-	while ((ch = getopt(argc, argv, "y")) != EOF)
+	while ((ch = getopt(argc, argv, "jy")) != EOF)
 		switch(ch) {
+		case 'j':
+			julian = 1;
+			break;
 		case 'y':
 			yflag = 1;
 			break;
@@ -124,32 +137,44 @@ main(argc, argv)
 		usage();
 	}
 	if (month)
-		print_monthly_calendar(month, year);
+		monthly(month, year);
+	else if (julian)
+		j_yearly(year);
 	else
-		print_yearly_calendar(year);
+		yearly(year);
 	exit(0);
 }
 
-print_monthly_calendar(month, year)
+#define	DAY_LEN		3		/* 3 spaces per day */
+#define	J_DAY_LEN	4		/* 4 spaces per day */
+#define	WEEK_LEN	20		/* 7 * 3 - one space at the end */
+#define	J_WEEK_LEN	27		/* 7 * 4 - one space at the end */
+#define	HEAD_SEP	2		/* spaces between day headings */
+#define	J_HEAD_SEP	3
+
+monthly(month, year)
 	int month, year;
 {
 	register int col, row;
 	register char *p;
-	int days[42];
+	int len, days[42];
 	char lineout[30];
 
-	generate_day_array(month, year, days);
-	(void)printf("   %s %d\n%s\n",
-	    month_names[month - 1], year, day_headings);
+	day_array(month, year, days);
+	len = sprintf(lineout, "%s %d", month_names[month - 1], year);
+	(void)printf("%*s%s\n%s\n",
+	    ((julian ? J_WEEK_LEN : WEEK_LEN) - len) / 2, "",
+	    lineout, julian ? j_day_headings : day_headings);
 	for (row = 0; row < 6; row++) {
-		for (col = 0, p = lineout; col < 7; col++, p += 3)
+		for (col = 0, p = lineout; col < 7; col++,
+		    p += julian ? J_DAY_LEN : DAY_LEN)
 			ascii_day(p, days[row * 7 + col]);
 		trim_trailing_spaces(lineout);
 		(void)printf("%s\n", lineout);
 	}
 }
 
-print_yearly_calendar(year)
+j_yearly(year)
 	int year;
 {
 	register int col, *dp, i, month, row, which_cal;
@@ -157,58 +182,93 @@ print_yearly_calendar(year)
 	int days[12][42];
 	char lineout[80];
 
-	(void)printf("\n\n\n\t\t\t\t%d\n\n", year);
+	(void)sprintf(lineout, "%d", year);
+	center(lineout, J_WEEK_LEN * 2 + J_HEAD_SEP, 0);
+	(void)printf("\n\n");
 	for (i = 0; i < 12; i++)
-		generate_day_array(i + 1, year, &days[i][0]);
+		day_array(i + 1, year, &days[i][0]);
 	(void)memset(lineout, ' ', sizeof(lineout) - 1);
 	lineout[sizeof(lineout) - 1] = '\0';
-	for (month = 0; month < 12; month += 3) {
-		(void)printf("\t %.3s\t\t\t%.3s\t\t       %.3s\n",
-		    month_names[month], month_names[month + 1],
-		    month_names[month + 2]);
-		for (i = 0; i < 3; i++) {
-			(void)printf("%s", day_headings);
-			if (i < 2)
-				(void)printf("   ");
-		}
-		(void)printf("\n");
+	for (month = 0; month < 12; month += 2) {
+		center(month_names[month], J_WEEK_LEN, J_HEAD_SEP);
+		center(month_names[month + 1], J_WEEK_LEN, 0);
+		(void)printf("\n%s%*s%s\n", j_day_headings, J_HEAD_SEP, "",
+		    j_day_headings);
 		for (row = 0; row < 6; row++) {
-			for (which_cal = 0; which_cal < 3; which_cal++) {
-				p = lineout + which_cal * 23;
+			for (which_cal = 0; which_cal < 2; which_cal++) {
+				p = lineout + which_cal * (J_WEEK_LEN + 2);
 				dp = &days[month + which_cal][row * 7];
-				for (col = 0; col < 7; col++, p += 3)
+				for (col = 0; col < 7; col++, p += J_DAY_LEN)
 					ascii_day(p, *dp++);
 			}
 			trim_trailing_spaces(lineout);
 			(void)printf("%s\n", lineout);
 		}
 	}
-	(void)printf("\n\n\n");
+	(void)printf("\n");
+}
+
+yearly(year)
+	int year;
+{
+	register int col, *dp, i, month, row, which_cal;
+	register char *p;
+	int days[12][42];
+	char lineout[80];
+
+	(void)sprintf(lineout, "%d", year);
+	center(lineout, WEEK_LEN * 3 + HEAD_SEP * 2, 0);
+	(void)printf("\n\n");
+	for (i = 0; i < 12; i++)
+		day_array(i + 1, year, &days[i][0]);
+	(void)memset(lineout, ' ', sizeof(lineout) - 1);
+	lineout[sizeof(lineout) - 1] = '\0';
+	for (month = 0; month < 12; month += 3) {
+		center(month_names[month], WEEK_LEN, HEAD_SEP);
+		center(month_names[month + 1], WEEK_LEN, HEAD_SEP);
+		center(month_names[month + 2], WEEK_LEN, 0);
+		(void)printf("\n%s%*s%s%*s%s\n", day_headings, HEAD_SEP,
+		    "", day_headings, HEAD_SEP, "", day_headings);
+		for (row = 0; row < 6; row++) {
+			for (which_cal = 0; which_cal < 3; which_cal++) {
+				p = lineout + which_cal * (WEEK_LEN + 2);
+				dp = &days[month + which_cal][row * 7];
+				for (col = 0; col < 7; col++, p += DAY_LEN)
+					ascii_day(p, *dp++);
+			}
+			trim_trailing_spaces(lineout);
+			(void)printf("%s\n", lineout);
+		}
+	}
+	(void)printf("\n");
 }
 
 /*
- * generate_day_array --
+ * day_array --
  *	Fill in an array of 42 integers with a calendar.  Assume for a moment
  *	that you took the (maximum) 6 rows in a calendar and stretched them
  *	out end to end.  You would have 42 numbers or spaces.  This routine
  *	builds that array for any month from Jan. 1 through Dec. 9999.
  */
-generate_day_array(month, year, days)
-	int month, year, *days;
+day_array(month, year, days)
+	register int *days;
+	int month, year;
 {
-	register int i, day, dw, dm;
+	register int i, day, dw, dm, *p;
 
 	dm = days_in_month[leap_year(year)][month];
 	dw = day_in_week(1, month, year);
-	if (month == 9 && year == 1752)
+	if (month == 9 && year == 1752) {
+		p = julian ? j_sep1752 : sep1752;
 		for (i = 0; i < 42; i++)
-			days[i] = sep1752[i];
-	else {
-		for (i = 0; i < 42; i++)
-			days[i] = SPACE;
-		for (day = 1, i = dw; day <= dm; ++day, ++i)
-			days[i] = day;
+			*days++ = *p++;
+		return;
 	}
+	for (i = 42, p = days; i--;)
+		*p++ = SPACE;
+	day = julian ? day_in_year(1, month, year) : 1;
+	while (dm--)
+		days[dw++] = day++;
 }
 
 /*
@@ -252,17 +312,27 @@ ascii_day(p, day)
 	register char *p;
 	register int day;
 {
-	register int ten;
+	register int display, val;
 
 	if (day == SPACE) {
-		*p++ = ' ';
-		*p++ = ' ';
+		memset(p, ' ', julian ? 4 : 3);
+		return;
 	}
-	else {
-		ten = day / 10;
-		*p++ = ten ? ten + '0' : ' ';
-		*p++ = day % 10 + '0';
+	display = 0;
+	if (julian) {
+		if (val = day / 100) {
+			day %= 100;
+			*p++ = val + '0';
+			display = 1;
+		} else
+			*p++ = ' ';
 	}
+	val = day / 10;
+	if (val || display)
+		*p++ = val + '0';
+	else
+		*p++ = ' ';
+	*p++ = day % 10 + '0';
 	*p = ' ';
 }
 
@@ -278,8 +348,19 @@ trim_trailing_spaces(s)
 	*p = '\0';
 }
 
+center(str, len, separate)
+	char *str;
+	register int len;
+	int separate;
+{
+	len -= strlen(str);
+	(void)printf("%*s%s%*s", len / 2, "", str, len / 2 + len % 2, "");
+	if (separate)
+		(void)printf("%*s", separate, "");
+}
+
 usage()
 {
-	(void)fprintf(stderr, "usage: cal [-y] [[month] year]\n");
+	(void)fprintf(stderr, "usage: cal [-jy] [[month] year]\n");
 	exit(1);
 }

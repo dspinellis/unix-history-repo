@@ -16,7 +16,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)cal.1	6.4 (Berkeley) %G%
+.\"	@(#)cal.1	6.5 (Berkeley) %G%
 .\"
 .TH CAL 1 ""
 .UC 7
@@ -24,7 +24,7 @@
 cal \- displays a calendar
 .SH SYNOPSIS
 .B cal
-[ -y ] [[
+[ -jy ] [[
 .I month 
 ] 
 .I year 
@@ -33,6 +33,9 @@ cal \- displays a calendar
 .I Cal
 displays a calendar for a specified month and/or year.
 The options are as follows:
+.TP
+\-j
+Display julian dates (days one-based, numbered from January 1).
 .TP
 \-y
 Display a calendar for the current year.
