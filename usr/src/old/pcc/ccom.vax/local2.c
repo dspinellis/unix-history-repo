@@ -1,5 +1,5 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.36 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.37 (Berkeley) %G%";
 # endif
 
 # include "pass2.h"
@@ -569,9 +569,7 @@ sconv( p, forarg ) register NODE *p; {
 		if (m = collapsible(l, r))
 			r->in.type = m;
 		else {
-			/*
-			 * Two steps are required.
-			 */
+			/* two steps are required */
 			NODE *x;
 
 			if (forarg) {
@@ -600,7 +598,33 @@ sconv( p, forarg ) register NODE *p; {
 		l->in.type = (ISUNSIGNED(l->in.type) ? UNSIGNED : INT);
 		}
 
-	if ((r->in.type == UNSIGNED || r->in.type == ULONG) &&
+	else if ((forarg || l == resc) &&
+		 tlen(l) < SZINT/SZCHAR &&
+		 mixtypes(l, r)) {
+		/* two steps needed here too */
+		NODE *x;
+
+		if (forarg) {
+			x = resc;
+			x->in.type = l->in.type;
+			}
+		else {
+			x = &resc[1];
+			*x = *l;
+			}
+		putstr("cvt");
+		prtype(r);
+		prtype(x);
+		putchar('\t');
+		adrput(r);
+		putchar(',');
+		adrput(x);
+		putstr("\n\t");
+		r = x;
+		l->in.type = (ISUNSIGNED(l->in.type) ? UNSIGNED : INT);
+		}
+
+	else if ((r->in.type == UNSIGNED || r->in.type == ULONG) &&
 	    mixtypes(l, r)) {
 		int label1, label2;
 		NODE *x = NULL;
@@ -646,23 +670,27 @@ sconv( p, forarg ) register NODE *p; {
 		adrput(l);
 		printf("\nL%d:", label2);
 
+#if defined(FORT) || defined(SPRECC)
+		if (!forarg)
+#else
 		if (!forarg && (l->in.type == DOUBLE || l != resc))
+#endif
 			goto cleanup;
-		if (x != NULL) {
-			if (l == x) {
-				r = &resc[1];
-				*r = *l;
-				}
-			else {
-				r = l;
-				l = x;
-				}
-			l->in.type = DOUBLE;
+		if (x == NULL)
+			cerror("sconv botch");
+		if (l == x) {
+			r = &resc[1];
+			*r = *l;
 			}
+		else {
+			r = l;
+			l = x;
+			}
+		l->in.type = DOUBLE;
 		putstr("\n\t");
 		}
 
-	if( (l->in.type == FLOAT || l->in.type == DOUBLE) &&
+	else if( (l->in.type == FLOAT || l->in.type == DOUBLE) &&
 	    (r->in.type == UCHAR || r->in.type == USHORT) ) {
 		/* skip unnecessary unsigned to floating conversion */
 #if defined(FORT) || defined(SPRECC)
