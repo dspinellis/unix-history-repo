@@ -6,10 +6,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setlocale.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)setlocale.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <locale.h>
+#include <string.h>
 
 static char C[] = "C";
 
@@ -21,14 +22,11 @@ static char C[] = "C";
 char *
 setlocale(category, locale)
 	int category;
-	char *locale;
+	const char *locale;
 {
-
-	if ((unsigned)category >= _LC_LAST)
+	if ((unsigned int)category >= _LC_LAST)
 		return (NULL);
 	if (locale == NULL)
 		return (C);
-	if (strcmp(locale, C) == 0)
-		return (C);
-	return (NULL);
+	return(strcmp(locale, C) ? NULL : C);
 }
