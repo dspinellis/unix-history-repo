@@ -1,4 +1,4 @@
-/*	@(#)tmscp.c	7.10 (Berkeley) %G% */
+/*	@(#)tmscp.c	7.11 (Berkeley) %G% */
 
 #ifndef lint
 static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
@@ -127,6 +127,7 @@ static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
 #include "buf.h"
 #include "conf.h"
 #include "user.h"
+#include "proc.h"
 #include "file.h"
 #include "map.h"
 #include "vm.h"
@@ -190,7 +191,7 @@ struct tms_info {
 	short		tms_fmtmenu;	/* the unit's format (density) menu */
 	short		tms_unitflgs;	/* unit flag parameters */
 	short		tms_format;	/* the unit's current format (density) */
-	caddr_t 	*tms_ctty;	/* user's controlling tty (vnode) */
+	caddr_t 	tms_ctty;	/* user's controlling tty (vnode) */
 } tms_info[NTMS];
 struct uba_ctlr *tmscpminfo[NTMSCP];
 struct uba_device *tmsdinfo[NTMS];
