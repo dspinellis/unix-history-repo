@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.43 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.44 (Berkeley) %G%
  */
 
 /*
@@ -532,7 +532,10 @@ vflush(mp, skipvp, flags)
 
 	if ((mp->mnt_flag & MNT_MPBUSY) == 0)
 		panic("vflush: not busy");
+loop:
 	for (vp = mp->mnt_mounth; vp; vp = nvp) {
+		if (vp->v_mount != mp)
+			goto loop;
 		nvp = vp->v_mountf;
 		/*
 		 * Skip over a selected vnode.
@@ -873,7 +876,6 @@ kinfo_vnode(op, where, acopysize, arg, aneeded)
 	int *acopysize, *aneeded;
 {
 	register struct mount *mp = rootfs;
-	register struct vnode *nextvp;
 	struct mount *omp;
 	struct vnode *vp;
 	register needed = 0;
@@ -888,7 +890,6 @@ kinfo_vnode(op, where, acopysize, arg, aneeded)
 		return (0);
 	}
 		
-#define RETRY	bp = savebp ; goto again
 	do {
 		if (vfs_busy(mp)) {
 			mp = mp->mnt_next;
@@ -898,25 +899,25 @@ kinfo_vnode(op, where, acopysize, arg, aneeded)
 		 * A vget can fail if the vnode is being
 		 * recycled.  In this (rare) case, we have to start
 		 * over with this filesystem.  Also, have to
-		 * check that nextvp is still associated
+		 * check that the next vp is still associated
 		 * with this filesystem.  RACE: could have been
-		 * recycled onto same filesystem.
+		 * recycled onto the same filesystem.
 		 */
 		savebp = bp;
 again:
-		nextvp = mp->mnt_mounth;
-		while (vp = nextvp) {
+		for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
+			if (vp->v_mount != mp) {
+				if (kinfo_vdebug)
+					printf("kinfo: vp changed\n");
+				bp = savebp;
+				goto again;
+			}
 			if (vget(vp)) {
 				if (kinfo_vdebug)
 					printf("kinfo: vget failed\n");
 				kinfo_vgetfailed++;
-				RETRY;
-			}
-			if (vp->v_mount != mp) {
-				if (kinfo_vdebug)
-					printf("kinfo: vp changed\n");
-				vput(vp);
-				RETRY;
+				bp = savebp;
+				goto again;
 			}
 			if ((bp + VPTRSZ + VNODESZ <= ewhere) && 
 			    ((error = copyout((caddr_t)&vp, bp, VPTRSZ)) ||
@@ -926,7 +927,6 @@ again:
 				return (error);
 			}
 			bp += VPTRSZ + VNODESZ;
-			nextvp = vp->v_mountf;
 			vput(vp);
 		}
 		omp = mp;
