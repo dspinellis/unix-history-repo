@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.c	7.16 (Berkeley) %G%
+ *	@(#)tp_pcb.c	7.17 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -435,7 +435,7 @@ tp_soisdisconnected(tpcb)
 
 	soisdisconnecting(so);
 	so->so_state &= ~SS_CANTSENDMORE;
-	IFPERF(sototpcb(so))
+	IFPERF(tpcb)
 		register struct tp_pcb *ttpcb = sototpcb(so);
 		u_int 	fsufx, lsufx;
 
@@ -448,12 +448,10 @@ tp_soisdisconnected(tpcb)
 		tpcb->tp_perf_on = 0; /* turn perf off */
 	ENDPERF
 
-	tpcb->tp_refp->tpr_state = REF_FROZEN;
-	tp_recycle_tsuffix( tpcb );
+	tpcb->tp_refstate = REF_FROZEN;
+	tp_recycle_tsuffix(tpcb);
 	tp_etimeout(tpcb->tp_refp, TM_reference, 0,0,0, (int)tpcb->tp_refer_ticks);
 }
-
-int tp_maxrefopen;  /* highest reference # of the set of open tp connections */
 
 /*
  * NAME:	tp_freeref()
@@ -477,30 +475,31 @@ void
 tp_freeref(r)
 	register struct tp_ref *r;
 {
+	register struct tp_pcb *tpcb = r->tpr_pcb;
 	IFDEBUG(D_TIMER)
 		printf("tp_freeref called for ref %d maxrefopen %d\n", 
-		r - tp_ref, tp_maxrefopen);
+		r - tp_ref, tp_refinfo.tpr_maxopen);
 	ENDDEBUG
 	IFTRACE(D_TIMER)
-		tptrace(TPPTmisc, "tp_freeref ref tp_maxrefopen",
-		r - tp_ref, tp_maxrefopen, 0, 0);
+		tptrace(TPPTmisc, "tp_freeref ref maxrefopen",
+		r - tp_ref, tp_refinfo.tpr_maxopen, 0, 0);
 	ENDTRACE
 	r->tpr_state = REF_FREE;
 	IFDEBUG(D_CONN)
 		printf("tp_freeref: CLEARING tpr_pcb 0x%x\n", r->tpr_pcb);
 	ENDDEBUG
 	r->tpr_pcb = (struct tp_pcb *)0;
+	if (tpcb)
+		tpcb->tp_refp = 0;
 
-	r = &tp_ref[tp_maxrefopen];
-
-	while( tp_maxrefopen > 0 ) {
-		if(r->tpr_state )
+	for (r = tp_ref + tp_refinfo.tpr_maxopen; r > tp_ref; r--)
+		if (r->tpr_pcb)
 			break;
-		tp_maxrefopen--;
-		r--;
-	}
+	tp_refinfo.tpr_maxopen = r - tp_ref;
+	tp_refinfo.tpr_numopen--;
+
 	IFDEBUG(D_TIMER)
-		printf("tp_freeref ends w/ maxrefopen %d\n", tp_maxrefopen);
+		printf("tp_freeref ends w/ maxrefopen %d\n", tp_refinfo.tpr_maxopen);
 	ENDDEBUG
 }
 
@@ -522,24 +521,41 @@ tp_freeref(r)
  *
  * NOTES:
  */
-static RefNum
+RefNum
 tp_getref(tpcb) 
 	register struct tp_pcb *tpcb;
 {
-	register struct tp_ref	*r = tp_ref; /* tp_ref[0] is never used */
-	register int 			i=1;
+	register struct tp_ref	*r, *rlim;
+	register int 			i;
+	caddr_t obase;
+	unsigned size;
 
+	if (++tp_refinfo.tpr_numopen < tp_refinfo.tpr_size)
+		for (r = tp_refinfo.tpr_base, rlim = r + tp_refinfo.tpr_size;
+								++r < rlim; ) 	/* tp_ref[0] is never used */
+			if (r->tpr_pcb == 0)
+				goto got_one;
+	/* else have to allocate more space */
 
-	while ((++r)->tpr_state != REF_FREE) {
-		if (++i == N_TPREF)
-			return TP_ENOREF;
-	}
-	r->tpr_state = REF_OPENING;
-	if (tp_maxrefopen < i) 
-		tp_maxrefopen = i;
+	obase = (caddr_t)tp_refinfo.tpr_base;
+	size = tp_refinfo.tpr_size * sizeof(struct tp_ref);
+	r = (struct tp_ref *) malloc(size + size, M_PCB, M_NOWAIT);
+	if (r == 0)
+		return (--tp_refinfo.tpr_numopen, TP_ENOREF);
+	tp_refinfo.tpr_base = tp_ref = r;
+	tp_refinfo.tpr_size *= 2;
+	bcopy(obase, (caddr_t)r, size);
+	free(obase, M_PCB);
+	r = (struct tp_ref *)(size + (caddr_t)r);
+	bzero((caddr_t)r, size);
+
+got_one:
 	r->tpr_pcb = tpcb;
+	r->tpr_state = REF_OPENING;
 	tpcb->tp_refp = r;
-
+	i = r - tp_refinfo.tpr_base;
+	if (tp_refinfo.tpr_maxopen < i) 
+		tp_refinfo.tpr_maxopen = i;
 	return i;
 }
 
@@ -621,7 +637,7 @@ tp_attach(so, protocol)
 		return EISCONN;	/* socket already part of a connection*/
 	}
 
-	error = soreserve(so, TP_SOCKBUFSIZE, TP_SOCKBUFSIZE);
+	error = soreserve(so, 2 * TP_SOCKBUFSIZE, TP_SOCKBUFSIZE);
 		/* later an ioctl will allow reallocation IF still in closed state */
 
 	if (error)
@@ -802,7 +818,7 @@ tp_detach(tpcb)
 		else
 			printf("tp_detach from listen: should panic\n");
 	}
-	if( tpcb->tp_refp->tpr_state == REF_OPENING ) {
+	if (tpcb->tp_refp && tpcb->tp_refp->tpr_state == REF_OPENING ) {
 		/* no connection existed here so no reference timer will be called */
 		IFDEBUG(D_CONN)
 			printf("SETTING ref %d, 0x%x to REF_FREE\n", tpcb->tp_lref,

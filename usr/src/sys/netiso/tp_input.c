@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_input.c	7.21 (Berkeley) %G%
+ *	@(#)tp_input.c	7.22 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -861,7 +861,7 @@ again:
 		IncStat(ts_ER_rcvd);
 		e.ev_number = ER_TPDU;
 		e.ATTR(ER_TPDU).e_reason =  (u_char)hdr->tpdu_ERreason;
-		CHECK (((int)dref <= 0 || dref >= N_TPREF || 
+		CHECK (((int)dref <= 0 || dref >= tp_refinfo.tpr_size || 
 			(tpcb = tp_ref[dref].tpr_pcb ) == (struct tp_pcb *) 0 ||
 			tpcb->tp_refp->tpr_state == REF_FREE ||
 			tpcb->tp_refp->tpr_state == REF_FROZEN),
@@ -896,7 +896,7 @@ again:
 #endif
 		{
 
-			CHECK( ((int)dref <= 0 || dref >= N_TPREF) ,
+			CHECK( ((int)dref <= 0 || dref >= tp_refinfo.tpr_size) ,
 				E_TP_MISM_REFS,ts_inv_dref, nonx_dref,
 				(1 + 2 + (caddr_t)&hdr->_tpduf - (caddr_t)hdr))
 			CHECK( ((tpcb = tp_ref[dref].tpr_pcb ) == (struct tp_pcb *) 0 ), 
