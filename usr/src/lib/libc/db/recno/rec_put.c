@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_put.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_put.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -84,9 +84,9 @@ einval:		errno = EINVAL;
 		if (nrec > t->bt_nrecs + 1) {
 			tdata.data = NULL;
 			tdata.size = 0;
-			while (nrec > t->bt_nrecs)
+			while (nrec > t->bt_nrecs + 1)
 				if (__rec_iput(t,
-				    nrec, &tdata, 0) != RET_SUCCESS)
+				    t->bt_nrecs, &tdata, 0) != RET_SUCCESS)
 					return (RET_ERROR);
 		}
 	}
@@ -142,7 +142,8 @@ __rec_iput(t, nrec, data, flags)
 		dflags = 0;
 
 	/* __rec_search pins the returned page. */
-	if ((e = __rec_search(t, nrec, SINSERT)) == NULL)
+	if ((e = __rec_search(t, nrec,
+	    nrec > t->bt_nrecs ? SINSERT : SEARCH)) == NULL)
 		return (RET_ERROR);
 
 	h = e->page;
