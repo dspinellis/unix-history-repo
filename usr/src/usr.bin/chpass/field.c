@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)field.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)field.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -35,7 +35,7 @@ p_login(p, pw, ep)
 	struct entry *ep;
 {
 	if (!*p) {
-		fprintf(stderr, "chpass: empty field");
+		fprintf(stderr, "chpass: empty login field");
 		return(1);
 	}
 	if (*p == '-') {
@@ -59,7 +59,7 @@ p_uid(p, pw, ep)
 	int id;
 
 	if (!*p) {
-		fprintf(stderr, "chpass: empty field");
+		fprintf(stderr, "chpass: empty uid field");
 		return(1);
 	}
 	if (!isdigit(*p)) {
@@ -86,7 +86,7 @@ p_gid(p, pw, ep)
 	int id;
 
 	if (!*p) {
-		fprintf(stderr, "chpass: empty field");
+		fprintf(stderr, "chpass: empty gid field");
 		return(1);
 	}
 	if (!isdigit(*p)) {
@@ -113,14 +113,13 @@ p_class(p, pw, ep)
 	struct passwd *pw;
 	struct entry *ep;
 {
-	if (!*p) {
-		fprintf(stderr, "chpass: empty field");
-		return(0);
-	}
-	if (!(pw->pw_class = strdup(p))) {
+	if (!*p)
+		pw->pw_class = "";
+	else if (!(pw->pw_class = strdup(p))) {
 		fprintf(stderr, "chpass: can't save entry");
 		return(1);
 	}
+	
 	return(0);
 }
 
@@ -149,12 +148,14 @@ p_expire(p, pw, ep)
 }
 
 /* ARGSUSED */
-p_save(p, pw, ep)
+p_gecos(p, pw, ep)
 	char *p;
 	struct passwd *pw;
 	struct entry *ep;
 {
-	if (*p && !(ep->save = strdup(p))) {
+	if (!*p)
+		ep->save = "";
+	else if (!(ep->save = strdup(p))) {
 		fprintf(stderr, "chpass: can't save entry");
 		return(1);
 	}
@@ -168,7 +169,7 @@ p_hdir(p, pw, ep)
 	struct entry *ep;
 {
 	if (!*p) {
-		fprintf(stderr, "chpass: empty field");
+		fprintf(stderr, "chpass: empty home directory field");
 		return(1);
 	}
 	if (!(pw->pw_dir = strdup(p))) {

@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chpass.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)chpass.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -42,7 +42,7 @@ char e1[] = ": ";
 char e2[] = ":,";
 
 int p_login(), p_uid(), p_gid(), p_hdir(), p_shell(), p_change(), p_class();
-int p_expire(), p_save();
+int p_expire(), p_gecos();
 
 struct entry list[] = {
 	{ "Login",		p_login,  1,   5, e1,   },
@@ -52,13 +52,13 @@ struct entry list[] = {
 	{ "Change",		p_change, 1,   6, NULL, },
 	{ "Expire",		p_expire, 1,   6, NULL, },
 #define	E_NAME		6
-	{ "Full Name",		p_save,   0,   9, e2,   },
+	{ "Full Name",		p_gecos,  0,   9, e2,   },
 #define	E_BPHONE	7
-	{ "Office Phone",	p_save,   0,  12, e2,   },
+	{ "Office Phone",	p_gecos,  0,  12, e2,   },
 #define	E_HPHONE	8
-	{ "Home Phone",		p_save,   0,  10, e2,   },
+	{ "Home Phone",		p_gecos,  0,  10, e2,   },
 #define	E_LOCATE	9
-	{ "Location",		p_save,   0,   8, e2,   },
+	{ "Location",		p_gecos,  0,   8, e2,   },
 	{ "Home directory",	p_hdir,   1,  14, e1,   },
 	{ "Shell",		p_shell,  0,   5, e1,   },
 	{ NULL, 0, },
@@ -148,10 +148,8 @@ main(argc, argv)
 		exit(1);
 	}
 	(void)sprintf(pw->pw_gecos = buf, "%s,%s,%s,%s",
-	    list[E_NAME].save ? list[E_NAME].save : "",
-	    list[E_LOCATE].save ? list[E_LOCATE].save : "",
-	    list[E_BPHONE].save ? list[E_BPHONE].save : "",
-	    list[E_HPHONE].save ? list[E_HPHONE].save : "");
+	    list[E_NAME].save, list[E_LOCATE].save, list[E_BPHONE].save,
+	    list[E_HPHONE].save);
 
 	/* root should have a 0 uid and a reasonable shell */
 	if (!strcmp(pw->pw_name, "root")) {

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -32,8 +32,9 @@ static char sccsid[] = "@(#)util.c	5.4 (Berkeley) %G%";
 static int dmsize[] =
 	{ -1, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 static char *months[] =
-	{ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug",
-	  "Sep", "Oct", "Nov", "Dec", NULL };
+	{ "January", "February", "March", "April", "May", "June",
+	  "July", "August", "September", "October", "November",
+	  "December", NULL };
 char *
 ttoa(tval)
 	time_t tval;
@@ -41,13 +42,13 @@ ttoa(tval)
 	struct tm *tp;
 	static char tbuf[10];
 
-	if (!tval)
-		bcopy("None", tbuf, 6);
-	else {
+	if (tval) {
 		tp = localtime(&tval);
 		(void)sprintf(tbuf, "%s %d, 19%d", months[tp->tm_mon],
 		    tp->tm_mday, tp->tm_year);
 	}
+	else
+		*tbuf = '\0';
 	return(tbuf);
 } 
 
@@ -60,7 +61,7 @@ atot(p, store)
 	time_t tval, time();
 	int day, month, year;
 
-	if (!strncasecmp(p, "none", 4)) {
+	if (!*p) {
 		*store = 0;
 		return(0);
 	}
@@ -117,8 +118,8 @@ print(fp, pw)
 		fprintf(fp, "Login: %s\n", pw->pw_name);
 		fprintf(fp, "Uid [#]: %d\n", pw->pw_uid);
 		fprintf(fp, "Gid [# or name]: %d\n", pw->pw_gid);
-		fprintf(fp, "Change [dd month yy]: %s\n", ttoa(pw->pw_change));
-		fprintf(fp, "Expire [dd month yy]: %s\n", ttoa(pw->pw_expire));
+		fprintf(fp, "Change [month day year]: %s\n", ttoa(pw->pw_change));
+		fprintf(fp, "Expire [month day year]: %s\n", ttoa(pw->pw_expire));
 		fprintf(fp, "Class: %s\n", pw->pw_class);
 		fprintf(fp, "Home directory: %s\n", pw->pw_dir);
 		fprintf(fp, "Shell: %s\n",
