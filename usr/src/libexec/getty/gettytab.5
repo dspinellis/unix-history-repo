@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gettytab.5	6.1 (Berkeley) %G%
+.\"	@(#)gettytab.5	6.2 (Berkeley) %G%
 .\"
 .TH GETTYTAB 5 ""
 .UC 5
@@ -56,6 +56,7 @@ ck	bool	false	use crt kill algorithm
 cl	str	NULL	screen clear sequence
 co	bool	false	console - add \\n after login prompt
 ds	str	^Y	delayed suspend character
+dx	bool	false	set DECCTLQ
 ec	bool	false	leave echo \s-2OFF\s0
 ep	bool	false	terminal uses even parity
 er	str	^?	erase character
