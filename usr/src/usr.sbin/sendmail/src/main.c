@@ -4,7 +4,7 @@
 # include "sendmail.h"
 # include <sys/file.h>
 
-SCCSID(@(#)main.c	4.8		%G%);
+SCCSID(@(#)main.c	4.9		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -580,7 +580,7 @@ main(argc, argv, envp)
 
 	if (OpMode != MD_ARPAFTP && *av == NULL && !GrabTo)
 	{
-		usrerr("Usage: /etc/sendmail [flags] addr...");
+		usrerr("Usage: /usr/lib/sendmail [flags] addr...");
 		finis();
 	}
 	if (OpMode == MD_VERIFY)
