@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)printf.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)printf.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -97,14 +97,14 @@ next:		for (start = fmt;; ++fmt) {
 
 		/* skip to field width */
 		for (; index(skip1, *fmt); ++fmt);
-		if (*fmt == '*')
-			fieldwidth = getint();
-		/* skip to possible '.' */
+		fieldwidth = *fmt == '*' ? getint() : 0;
+
+		/* skip to possible '.', get following precision */
 		for (; index(skip2, *fmt); ++fmt);
 		if (*fmt == '.')
 			++fmt;
-		if (*fmt == '*')
-			precision = getint();
+		precision = *fmt == '*' ? getint() : 0;
+
 		/* skip to conversion char */
 		for (; index(skip2, *fmt); ++fmt);
 		if (!*fmt) {
