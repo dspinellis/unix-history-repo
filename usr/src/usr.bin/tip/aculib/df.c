@@ -1,34 +1,29 @@
 #ifndef lint
-static char sccsid[] = "@(#)df.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
  * Dial the DF02-AC or DF03-AC
  */
 
-#if defined(DF02) || defined(DF03)
 #include "tip.h"
 
 static jmp_buf Sjbuf;
 static timeout();
 
-#if DF02
 df02_dialer(num, acu)
 	char *num, *acu;
 {
 
 	return (df_dialer(num, acu, 0));
 }
-#endif
 
-#if DF03
 df03_dialer(num, acu)
 	char *num, *acu;
 {
 
 	return (df_dialer(num, acu, 1));
 }
-#endif
 
 df_dialer(num, acu, df03)
 	char *num, *acu;
@@ -102,4 +97,3 @@ timeout()
 
 	longjmp(Sjbuf, 1);
 }
-#endif

@@ -1,10 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)biz22.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)biz22.c	4.4 (Berkeley) %G%";
 #endif
 
 #include "tip.h"
 
-#if BIZ1022
 #define DISCONNECT_CMD	"\20\04"	/* disconnection string */
 
 static	int sigALRM();
@@ -152,4 +151,3 @@ detect(s)
 	signal(SIGALRM, f);
 	return (timeout == 0);
 }
-#endif

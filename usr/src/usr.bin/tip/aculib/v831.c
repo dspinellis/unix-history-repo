@@ -1,8 +1,7 @@
 #ifndef lint
-static char sccsid[] = "@(#)v831.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)v831.c	4.5 (Berkeley) %G%";
 #endif
 
-#ifdef V831
 /*
  * Routines for dialing up on Vadic 831
  */
@@ -129,7 +128,6 @@ v831_abort()
                 ioctl(FD, TIOCCDTR, 0);
         close(FD);
 }
-#endif
 
 /*
  * Sigh, this probably must be changed at each site.

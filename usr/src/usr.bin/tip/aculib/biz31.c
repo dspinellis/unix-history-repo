@@ -1,10 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)biz31.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)biz31.c	4.7 (Berkeley) %G%";
 #endif
 
 #include "tip.h"
 
-#if BIZ1031
 #define MAXRETRY	3		/* sync up retry count */
 #define DISCONNECT_CMD	"\21\25\11\24"	/* disconnection string */
 
@@ -214,4 +213,3 @@ retry:
 	}
 	return (1);
 }
-#endif
