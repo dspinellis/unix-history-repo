@@ -1,4 +1,4 @@
-/*	bugfiler.c	4.2	83/05/23	*/
+/*	bugfiler.c	4.3	83/08/05	*/
 /*
  * Bug report processing program.
  * It is designed to be invoked by alias(5) and to be compatible with mh.
@@ -503,7 +503,7 @@ reply(to, file1, file2)
 	/*
 	 * Output the proper header information.
 	 */
-	fprintf(fout, "Reply-To: 4bsd-bugs%ucbarpa@BERKELEY\n");
+	fprintf(fout, "Reply-To: 4bsd-bugs%%ucbarpa@BERKELEY\n");
 	if (RETURNPATH_I != NULL)
 		to = RETURNPATH_I;
 	if (REPLYTO_I != NULL)
