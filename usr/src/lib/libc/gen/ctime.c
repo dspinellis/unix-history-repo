@@ -1,16 +1,16 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
+ * Copyright (c) 1987 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ctime.c	5.6 (Berkeley) %G%";
-#endif LIBC_SCCS and not lint
+#ifndef lint
+static char sccsid[] = "@(#)ctime.c	5.7 (Berkeley) %G%";
+#endif
 
 #include "sys/param.h"
+#include "sys/time.h"
 #include "tzfile.h"
-#include "time.h"
 
 char *
 ctime(t)
@@ -219,6 +219,27 @@ register char *	name;
 }
 
 static
+tzsetkernel()
+{
+	struct timeval	tv;
+	struct timezone	tz;
+	char	*tztab();
+
+	if (gettimeofday(&tv, &tz))
+		return -1;
+	s.timecnt = 0;		/* UNIX counts *west* of Greenwich */
+	s.ttis[0].tt_gmtoff = tz.tz_minuteswest * -SECS_PER_MIN;
+	s.ttis[0].tt_abbrind = 0;
+	(void)strcpy(s.chars, tztab(tz.tz_minuteswest, 0));
+	tzname[0] = tzname[1] = s.chars;
+#ifdef USG_COMPAT
+	timezone = tz.tz_minuteswest * 60;
+	daylight = tz.tz_dsttime;
+#endif /* USG_COMPAT */
+	return 0;
+}
+
+static
 tzsetgmt()
 {
 	s.timecnt = 0;
@@ -239,10 +260,15 @@ tzset()
 
 	tz_is_set = TRUE;
 	name = getenv("TZ");
-	if (name != 0 && *name == '\0')
-		tzsetgmt();		/* GMT by request */
-	else if (tzload(name) != 0)
-		tzsetgmt();
+	if (!name || *name) {			/* did not request GMT */
+		if (name && !tzload(name))	/* requested name worked */
+			return;
+		if (!tzload((char *)0))		/* default name worked */
+			return;
+		if (!tzsetkernel())		/* kernel guess worked */
+			return;
+	}
+	tzsetgmt();				/* GMT is default */
 }
 
 struct tm *
