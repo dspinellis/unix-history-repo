@@ -1,4 +1,4 @@
-/*	param.h	6.6	84/12/20	*/
+/*	param.h	6.7	85/02/15	*/
 
 /*
  * Machine type dependent parameters.
@@ -21,7 +21,7 @@
 #define	NOFILE	48		/* max open files per process */
 #define	CANBSIZ	256		/* max size of typewriter line */
 #define	NCARGS	20480		/* # characters in exec arglist */
-#define	NGROUPS	8		/* max number groups */
+#define	NGROUPS	16		/* max number groups */
 
 #define	NOGROUP	-1		/* marker for empty group set member */
 
