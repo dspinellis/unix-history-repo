@@ -1,6 +1,6 @@
 # include "useful.h"
 
-static char SccsId[] = "@(#)macro.c	1.1	%G%";
+static char SccsId[] = "@(#)macro.c	1.2	%G%";
 
 char	*Macro[128];
 extern bool	Debug;
@@ -29,23 +29,52 @@ expand(s, buf, buflim)
 {
 	register char *q;
 	register char *bp;
+	bool skipping;
 
 # ifdef DEBUG
 	if (Debug)
 		printf("expand(%s)\n", s);
 # endif DEBUG
 
+	skipping = FALSE;
 	for (bp = buf; *s != '\0'; s++)
 	{
 		/* q will be the interpolated quantity */
 		q = NULL;
 		if (*s == '$')
-			q = Macro[*++s & 0177];
+		{
+			char c;
+
+			c = *++s;
+			switch (c)
+			{
+			  case '?':	/* see if var set */
+				c = *++s;
+				skipping = Macro[c] == NULL;
+				break;
+
+			  case ':':	/* else */
+				skipping = !skipping;
+				break;
+
+			  case '.':	/* end if */
+				skipping = FALSE;
+				break;
+
+			  default:
+				q = Macro[c & 0177];
+				break;
+			}
+			if (q == NULL)
+				continue;
+		}
 
 		/*
 		**  Interpolate q or output one character
 		*/
 
+		if (skipping)
+			continue;
 		if (q != NULL)
 			bp = expand(q, bp, buflim);
 		else if (bp < buflim - 1)
