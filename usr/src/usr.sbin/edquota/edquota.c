@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)edquota.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)edquota.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -239,18 +239,6 @@ putprivs(uid)
 		if (j >= NMOUNT)
 			continue;
 		*odqf[j] = '\0';
-		if (dq[i].dq_isoftlimit == odq[j].dq_isoftlimit &&
-		    dq[i].dq_ihardlimit == odq[j].dq_ihardlimit &&
-		    dq[i].dq_bsoftlimit == odq[j].dq_bsoftlimit &&
-		    dq[i].dq_bhardlimit == odq[j].dq_bhardlimit) {
-			for (j = i; j < NMOUNT; j++) {
-				dq[j] = dq[j+1];
-				strcpy(dqf[j], dqf[j+1]);
-			}
-			*dqf[j] = '\0';
-			i--;
-			continue;
-		}
 		/*
 		 * This isn't really good enough, it is quite likely
 		 * to have changed while we have been away editing,
@@ -356,7 +344,21 @@ getdiscq(uid, dq, dqf)
 			if (fd < 0)
 				continue;
 			lseek(fd, (long)(uid * sizeof dqblk), L_SET);
-			if (read(fd, &dqblk, sizeof dqblk) != sizeof (dqblk)) {
+			switch (read(fd, &dqblk, sizeof dqblk)) {
+			case 0:			/* EOF */
+				/*
+				 * Convert implicit 0 quota (EOF)
+				 * into an explicit one (zero'ed dqblk)
+				 */
+				bzero((caddr_t)&dqblk, sizeof dqblk);
+				break;
+
+			case sizeof dqblk:	/* OK */
+				break;
+
+			default:		/* ERROR */
+				fprintf(stderr, "edquota: read error in ");
+				perror(qfilename);
 				close(fd);
 				continue;
 			}
