@@ -295,5 +295,13 @@ only when the pattern space is selected.
 .TP
 (0)\|
 An empty command is ignored.
+.TP
+(0)\|#
+If a \fI#\fP appears as the first character on a line of a script,
+then that entire line is treated as a comment, with one exception.
+If the first line of the script starts with the characters ``\fI#\fPn'',
+then the default output will be suppressed.  The rest of the line after
+``\fI#\fPn'' will also be ignored.  A script file must contain at least one
+non-comment line.
 .SH SEE ALSO
 ed(1), grep(1), awk(1), lex(1)
