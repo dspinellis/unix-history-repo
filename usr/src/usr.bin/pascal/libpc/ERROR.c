@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)ERROR.c 1.5 %G%";
+static char sccsid[] = "@(#)ERROR.c 1.6 %G%";
 
 #include	<stdio.h>
 #include	<signal.h>
@@ -137,16 +137,6 @@ ERROR(errnum, errdata)
 	case ECTSNG:
 		fprintf(stderr, "Value of %D out of set bounds\n",
 			errdata.longdat);
-		return(0);
-	case ENARGS:
-		if (errdata.longdat < 0)
-			fprintf(stderr,
-				"There were %D too few arguments to formal routine\n",
-				-errdata.longdat);
-		else
-			fprintf(stderr,
-				"There were %D too many arguments to formal routine\n",
-				errdata.longdat);
 		return(0);
 	case EARGV:
 		fprintf(stderr,"Argument to argv of %D is out of range\n"
