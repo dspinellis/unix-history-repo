@@ -10,7 +10,7 @@
  * File I/O.
  */
 
-static char *SccsId = "@(#)fio.c	2.11 %G%";
+static char *SccsId = "@(#)fio.c	2.12 %G%";
 
 /*
  * Set up the input pointers while copying the mail file into
@@ -22,7 +22,8 @@ setptr(ibuf)
 {
 	register int c;
 	register char *cp, *cp2;
-	register int count, s, l;
+	register int count, l;
+	long s;
 	off_t offset;
 	char linebuf[LINESIZE];
 	char wbuf[LINESIZE];
@@ -34,7 +35,7 @@ setptr(ibuf)
 		exit(1);
 	msgCount = 0;
 	offset = 0;
-	s = 0;
+	s = 0L;
 	l = 0;
 	maybe = 1;
 	flag = MUSED|MNEW;
@@ -84,7 +85,7 @@ setptr(ibuf)
 			this.m_offset = offsetof(offset);
 			this.m_size = s;
 			this.m_lines = l;
-			s = 0;
+			s = 0L;
 			l = 0;
 			if (append(&this, mestmp)) {
 				perror(tempSet);
@@ -109,7 +110,7 @@ setptr(ibuf)
 			}
 		}
 		offset += count;
-		s += count;
+		s += (long) count;
 		l++;
 		maybe = 0;
 		if (linebuf[0] == 0)
@@ -248,7 +249,7 @@ makemessage(f)
 		m->m_lines = (m+1)->m_lines;
 		m->m_flag = (m+1)->m_flag;
 	}
-	message[msgCount].m_size = 0;
+	message[msgCount].m_size = 0L;
 	message[msgCount].m_lines = 0;
 }
 
