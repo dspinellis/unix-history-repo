@@ -23,7 +23,7 @@
 # include "../hdr/defines.h"
 # include "../hdr/had.h"
 
-SCCSID(@(#)prs.c	1.3);
+SCCSID(@(#)prs.c	1.2);
 
 char	had[26];
 char	Getpgm[]	"/usr/local/get";
@@ -51,7 +51,7 @@ char	iline[BUFSIZ], xline[BUFSIZ], gline[BUFSIZ];
 char	*maket();
 struct	packet	gpkt;
 struct	sid	sid;
-struct	time	*Dtime;
+struct	tm	*Dtime;
 
 main(argc,argv)
 int argc;
@@ -277,7 +277,7 @@ struct	stats	*statp;
 	register char	*k;
 	union {
 		char	str[2];
-		int	istr;
+		short	istr;
 	} u;
 	register	char	c;
 
@@ -353,8 +353,8 @@ struct	stats	*statp;
 				*lp =+ 2;
 				continue;
 			}
-			u.str[0] = *++lp;
 			u.str[1] = *++lp;
+			u.str[0] = *++lp;
 			switch (u.istr) {
 			case 'Dl':	/* Delta line statistics */
 				printf("%05d",statp->s_ins);
@@ -376,22 +376,22 @@ struct	stats	*statp;
 				printf("%c",dtp->d_type);
 				break;
 			case 'Dy':	/* Year delta created */
-				printf("%02d",Dtime->t_year);
+				printf("%02d",Dtime->tm_year);
 				break;
 			case 'Dm':	/* Month delta created */
-				printf("%02d",(Dtime->t_month + 1));
+				printf("%02d",(Dtime->tm_mon + 1));
 				break;
 			case 'Dd':	/* Day delta created */
-				printf("%02d",Dtime->t_day_month);
+				printf("%02d",Dtime->tm_mday);
 				break;
 			case 'Th':	/* Hour delta created */
-				printf("%02d",Dtime->t_hours);
+				printf("%02d",Dtime->tm_hour);
 				break;
 			case 'Tm':	/* Minutes delta created */
-				printf("%02d",Dtime->t_minutes);
+				printf("%02d",Dtime->tm_min);
 				break;
 			case 'Ts':	/* Seconds delta created */
-				printf("%02d",Dtime->t_seconds);
+				printf("%02d",Dtime->tm_sec);
 				break;
 			case 'DS':	/* Delta sequence number */
 				printf("%d",dtp->d_serial);
@@ -529,6 +529,8 @@ clean_up()
 	unlink(untmp);
 	unlink(uttmp);
 	unlink(bdtmp);
+	if (gpkt.p_iop)
+		fclose(gpkt.p_iop);
 }
 
 
@@ -775,7 +777,7 @@ long	*bdate;
 {
 
 	register	char	*p;
-	extern	struct	time	*localtime();
+	extern	struct	tm	*localtime();
 
 	date_ba(bdate,Deltadate);
 
