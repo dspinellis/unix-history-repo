@@ -5,12 +5,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)master.c	2.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)master.c	2.7 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
 #include <protocols/timed.h>
+#include <sys/file.h>
 #include <setjmp.h>
+#include <utmp.h>
 
 extern int machup;
 extern int measure_delta;
@@ -40,6 +42,7 @@ master()
 	long pollingtime;
 	struct timeval wait;
 	struct timeval time;
+	struct timeval otime;
 	struct timezone tzone;
 	struct tsp *msg, to;
 	struct sockaddr_in saveaddr;
@@ -110,11 +113,13 @@ loop:
 			 */
 			(void)strcpy(olddate, date());
 			(void)gettimeofday(&time, &tzone);
+			otime = time;
 			time.tv_sec = msg->tsp_time.tv_sec;
 			time.tv_usec = msg->tsp_time.tv_usec;
 			time.tv_sec++;
 			(void)settimeofday(&time, &tzone);
 			syslog(LOG_NOTICE, "date changed from: %s", olddate);
+			logwtmp(otime, time);
 			msg->tsp_type = TSP_DATEACK;
 			msg->tsp_vers = TSPVERSION;
 			(void)strcpy(msg->tsp_name, hostname);
@@ -143,6 +148,7 @@ loop:
 				 */
 				(void)strcpy(olddate, date());
 				(void)gettimeofday(&time, &tzone);
+				otime = time;
 				time.tv_sec = msg->tsp_time.tv_sec;
 				time.tv_usec = msg->tsp_time.tv_usec;
 				time.tv_sec++;
@@ -150,6 +156,7 @@ loop:
 				syslog(LOG_NOTICE,
 				    "date changed by %s from: %s",
 				    msg->tsp_name, olddate);
+				logwtmp(otime, time);
 				spreadtime();
 				pollingtime = 0;
 			}
@@ -525,5 +532,30 @@ newslave(ind, seq)
 			    hp[ind].name);
 			rmmach(ind);
 		}
+	}
+}
+
+char *wtmpfile = "/usr/adm/wtmp";
+struct utmp wtmp[2] = {
+	{ "|", "", "", 0 },
+	{ "{", "", "", 0 }
+};
+
+/*
+ * Rounding doesn't work well because new time is always
+ * truncated, but oldtime is normally distributed.
+ */
+logwtmp(otime, ntime)
+struct timeval otime, ntime;
+{
+	int f;
+
+	if (otime.tv_sec == ntime.tv_sec)
+		return;
+	wtmp[0].ut_time = otime.tv_sec; /* +(otime.tv_usec + 500000)/1000000;*/
+	wtmp[1].ut_time = ntime.tv_sec; /* +(ntime.tv_usec + 500000)/1000000;*/
+	if ((f = open(wtmpfile, O_WRONLY|O_APPEND)) >= 0) {
+		(void) write(f, (char *)wtmp, sizeof(wtmp));
+		(void) close(f);
 	}
 }

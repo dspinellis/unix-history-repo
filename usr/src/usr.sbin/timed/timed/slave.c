@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slave.c	2.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)slave.c	2.11 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -26,7 +26,7 @@ slave()
 	struct tsp *msg, to, *readmsg();
 	struct sockaddr_in saveaddr, msaveaddr;
 	struct timeval wait;
-	struct timeval time, mytime;
+	struct timeval time, mytime, otime;
 	struct tsp *answer, *acksend();
 	int timeout();
 	char *date();
@@ -205,10 +205,12 @@ loop:
 			seq = msg->tsp_seq;
 
 			(void)strcpy(olddate, date());
+			(void)gettimeofday(&otime, (struct timezone *)0);
 			(void)settimeofday(&msg->tsp_time,
 				(struct timezone *)0);
 			syslog(LOG_NOTICE, "date changed by %s from: %s",
 				msg->tsp_name, olddate);
+			logwtmp(otime, msg->tsp_time);
 			if ((status & SUBMASTER) == SUBMASTER)
 				spreadtime();
 			(void)gettimeofday(&time, (struct timezone *)0);
