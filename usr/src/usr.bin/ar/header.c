@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)header.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)header.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -84,6 +84,7 @@ get_header(fd)
 				error(archive);
 			badfmt();
 		}
+		chdr.name[len] = 0;
 		chdr.size -= (chdr.lname = len);
 	} else {
 		bcopy(hdr->ar_name, chdr.name, sizeof(hdr->ar_name));
