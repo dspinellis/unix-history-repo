@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	4.22	82/08/14	*/
+/*	ufs_lookup.c	4.23	82/08/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -9,6 +9,7 @@
 #include "../h/user.h"
 #include "../h/buf.h"
 #include "../h/conf.h"
+#include "../h/uio.h"
 
 struct	buf *blkatoff();
 int	dirchk = 1;
@@ -313,7 +314,7 @@ found:
 	 * Found component in pathname; save directory
 	 * entry in u.u_dent, and release directory buffer.
 	 */
-	bcopy((caddr_t)ep, (caddr_t)&u.u_dent, DIRSIZ(ep));
+	bcopy((caddr_t)ep, (caddr_t)&u.u_dent, (u_int)DIRSIZ(ep));
 	brelse(bp);
 	bp = NULL;
 
@@ -388,8 +389,7 @@ found:
 	 * Check for symbolic link
 	 */
 	if ((dp->i_mode & IFMT) == IFLNK && (follow || *cp == '/')) {
-		int pathlen = strlen(cp) + 1;
-		int bn;
+		u_int pathlen = strlen(cp) + 1;
 
 		if (dp->i_size + pathlen >= MAXPATHLEN - 1 ||
 		    ++nlink > MAXSYMLINKS) {
@@ -398,7 +398,8 @@ found:
 		}
 		bcopy(cp, nbp->b_un.b_addr + dp->i_size, pathlen);
 		u.u_error =
-		    readip1(dp, nbp->b_un.b_addr, dp->i_size, 0, 1, 0);
+		    rdwri(UIO_READ, dp, nbp->b_un.b_addr, dp->i_size,
+			0, 1, (int *)0);
 		if (u.u_error)
 			goto bad2;
 		cp = nbp->b_un.b_addr;
@@ -454,7 +455,6 @@ dirbad(ip, how)
 dirbadname(ep)
 	register struct direct *ep;
 {
-	register char *cp;
 	register int i;
 
 	for (i = 0; i < ep->d_namlen; i++)
@@ -475,9 +475,9 @@ direnter(ip)
 	struct inode *ip;
 {
 	register struct direct *ep, *nep;
-	struct fs *fs;
 	struct buf *bp;
-	int loc, dsize, freespace, newentrysize;
+	int loc, freespace;
+	u_int dsize, newentrysize;
 	char *dirbuf;
 
 	u.u_dent.d_ino = ip->i_number;
@@ -493,10 +493,8 @@ direnter(ip)
 		if (u.u_offset&(DIRBLKSIZ-1))
 			panic("wdir: newblk");
 		u.u_dent.d_reclen = DIRBLKSIZ;
-		u.u_count = newentrysize;
-		u.u_base = (caddr_t)&u.u_dent;
-		u.u_segflg = 1;
-		writei(u.u_pdir);
+		(void) rdwri(UIO_WRITE, u.u_pdir, (caddr_t)&u.u_dent, newentrysize,
+		    u.u_offset, 1, (int *)0);
 		iput(u.u_pdir);
 		return;
 	}
@@ -556,7 +554,7 @@ direnter(ip)
 /*ZZ*/if((loc&~0x1ff)!=(loc+nep->d_reclen-1&~0x1ff))
 /*ZZ*/printf("wdir: compact loc %d reclen %d (dir %s/%d)\n",loc,nep->d_reclen,
 /*ZZ*/u.u_pdir->i_fs->fs_fsmnt,u.u_pdir->i_number);
-		bcopy(nep, ep, dsize);
+		bcopy((caddr_t)nep, (caddr_t)ep, dsize);
 	}
 	/*
 	 * Update the pointer fields in the previous entry (if any),
@@ -585,7 +583,6 @@ direnter(ip)
 dirremove()
 {
 	register struct inode *dp = u.u_pdir;
-	register struct fs *fs = dp->i_fs;
 	register struct buf *bp;
 	struct direct *ep;
 
@@ -595,16 +592,14 @@ dirremove()
 		 */
 /*ZZ*/if(u.u_offset&0x1ff)printf("missed dir compact dir %s/%d off %d file %s\n"
 /*ZZ*/,dp->i_fs->fs_fsmnt,dp->i_number,u.u_offset,u.u_dent.d_name);
-		u.u_base = (caddr_t)&u.u_dent;
-		u.u_count = DIRSIZ(&u.u_dent);
-		u.u_segflg = 1;
 		u.u_dent.d_ino = 0;
-		writei(dp);
+		(void) rdwri(UIO_WRITE, dp, (caddr_t)&u.u_dent, DIRSIZ(&u.u_dent),
+		    u.u_offset, 1, (int *)0);
 	} else {
 		/*
 		 * Collapse new free space into previous entry.
 		 */
-		bp = blkatoff(dp, u.u_offset - u.u_count, (char **)&ep);
+		bp = blkatoff(dp, (int)(u.u_offset - u.u_count), (char **)&ep);
 		if (bp == 0)
 			return (0);
 		ep->d_reclen += u.u_dent.d_reclen;
