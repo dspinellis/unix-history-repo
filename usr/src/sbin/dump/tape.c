@@ -5,12 +5,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.11 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)tape.c	5.12 (Berkeley) %G%";
+#endif /* not lint */
 
-#include <sys/types.h>
-#include <fcntl.h>
 #include "dump.h"
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <errno.h>
+#include <fcntl.h>
 #include "pathnames.h"
 
 char	(*tblock)[TP_BSIZE];	/* pointer to malloc()ed buffer for tape */
@@ -22,7 +24,12 @@ extern int cartridge;
 extern int read(), write();
 #ifdef RDUMP
 extern char *host;
+int	rmtopen(), rmtwrite();
+void	rmtclose();
 #endif RDUMP
+
+int	atomic();
+void	doslave(), enslave(), flusht(), killall();
 
 /*
  * Concurrent dump mods (Caltech) - disk block reading and tape writing
@@ -44,6 +51,7 @@ int rotor;			/* next slave to be instructed */
 int master;			/* pid of master, for sending error signals */
 int tenths;			/* length of tape used per block written */
 
+int
 alloctape()
 {
 	int pgoff = getpagesize() - 1;
@@ -71,6 +79,7 @@ alloctape()
 }
 
 
+void
 taprec(dp)
 	char *dp;
 {
@@ -80,10 +89,11 @@ taprec(dp)
 	lastspclrec = spcl.c_tapea;
 	trecno++;
 	spcl.c_tapea++;
-	if(trecno >= ntrec)
+	if (trecno >= ntrec)
 		flusht();
 }
 
+void
 dmpblk(blkno, size)
 	daddr_t blkno;
 	int size;
@@ -91,7 +101,7 @@ dmpblk(blkno, size)
 	int avail, tpblks, dblkno;
 
 	dblkno = fsbtodb(sblock, blkno);
-	tpblks = size / TP_BSIZE;
+	tpblks = size >> tp_bshift;
 	while ((avail = MIN(tpblks, ntrec - trecno)) > 0) {
 		req[trecno].dblk = dblkno;
 		req[trecno].count = avail;
@@ -99,18 +109,19 @@ dmpblk(blkno, size)
 		spcl.c_tapea += avail;
 		if (trecno >= ntrec)
 			flusht();
-		dblkno += avail * (TP_BSIZE / dev_bsize);
+		dblkno += avail << (tp_bshift - dev_bshift);
 		tpblks -= avail;
 	}
 }
 
 int	nogripe = 0;
 
-tperror() {
+void
+tperror()
+{
 	if (pipeout) {
 		msg("Tape write error on %s\n", tape);
-		msg("Cannot recover\n");
-		dumpabort();
+		quit("Cannot recover\n");
 		/* NOTREACHED */
 	}
 	msg("Tape write error %d feet into tape %d\n", asize/120L, tapeno);
@@ -126,17 +137,18 @@ tperror() {
 	Exit(X_REWRITE);
 }
 
+void
 sigpipe()
 {
 
-	msg("Broken pipe\n");
-	dumpabort();
+	quit("Broken pipe\n");
 }
 
 #ifdef RDUMP
 /*
  * compatibility routine
  */
+void
 tflush(i)
 	int i;
 {
@@ -146,15 +158,15 @@ tflush(i)
 }
 #endif RDUMP
 
+void
 flusht()
 {
 	int siz = (char *)tblock - (char *)req;
 
-	if (atomic(write, slavefd[rotor], req, siz) != siz) {
-		perror("  DUMP: error writing command pipe");
-		dumpabort();
-	}
-	if (++rotor >= SLAVES) rotor = 0;
+	if (atomic(write, slavefd[rotor], req, siz) != siz)
+		quit("error writing command pipe: %s\n", strerror(errno));
+	if (++rotor >= SLAVES)
+		rotor = 0;
 	tblock = (char (*)[TP_BSIZE]) &req[ntrec];
 	trecno = 0;
 	asize += tenths;
@@ -166,6 +178,7 @@ flusht()
 	timeest();
 }
 
+void
 trewind()
 {
 	int f;
@@ -174,7 +187,8 @@ trewind()
 		return;
 	for (f = 0; f < SLAVES; f++)
 		close(slavefd[f]);
-	while (wait(NULL) >= 0)    ;	/* wait for any signals from slaves */
+	while (wait((int *)NULL) >= 0)	/* wait for any signals from slaves */
+		/* void */;
 	msg("Tape rewinding\n");
 #ifdef RDUMP
 	if (host) {
@@ -191,6 +205,7 @@ trewind()
 	close(f);
 }
 
+void
 close_rewind()
 {
 	trewind();
@@ -215,6 +230,7 @@ close_rewind()
  *	everything continues as if nothing had happened.
  */
 
+void
 otape()
 {
 	int	parentpid;
@@ -326,6 +342,7 @@ otape()
 	}
 }
 
+void
 dumpabort()
 {
 	if (master != 0 && master != getpid())
@@ -337,6 +354,7 @@ dumpabort()
 	Exit(X_ABORT);
 }
 
+void
 Exit(status)
 	int status;
 {
@@ -349,6 +367,7 @@ Exit(status)
 /*
  * could use pipe() for this if flock() worked on pipes
  */
+void
 lockfile(fd)
 	int fd[2];
 {
@@ -356,19 +375,16 @@ lockfile(fd)
 
 	strcpy(tmpname, _PATH_LOCK);
 	mktemp(tmpname);
-	if ((fd[1] = creat(tmpname, 0400)) < 0) {
-		msg("Could not create lockfile ");
-		perror(tmpname);
-		dumpabort();
-	}
-	if ((fd[0] = open(tmpname, 0)) < 0) {
-		msg("Could not reopen lockfile ");
-		perror(tmpname);
-		dumpabort();
-	}
-	unlink(tmpname);
+	if ((fd[1] = creat(tmpname, 0400)) < 0)
+		quit("cannot create lockfile %s: %s\n",
+		    tmpname, strerror(errno));
+	if ((fd[0] = open(tmpname, 0)) < 0)
+		quit("cannot reopen lockfile %s: %s\n",
+		    tmpname, strerror(errno));
+	(void) unlink(tmpname);
 }
 
+void
 enslave()
 {
 	int first[2], prev[2], next[2], cmd[2];     /* file descriptors */
@@ -394,11 +410,9 @@ enslave()
 			next[0] = first[0];
 			next[1] = first[1];	    /* Last slave loops back */
 		}
-		if (pipe(cmd) < 0 || (slavepid[i] = fork()) < 0) {
-			msg("too many slaves, %d (recompile smaller) ", i);
-			perror("");
-			dumpabort();
-		}
+		if (pipe(cmd) < 0 || (slavepid[i] = fork()) < 0)
+			quit("too many slaves, %d (recompile smaller): %s\n",
+			    i, strerror(errno));
 		slavefd[i] = cmd[1];
 		if (slavepid[i] == 0) { 	    /* Slave starts up here */
 			for (j = 0; j <= i; j++)
@@ -418,6 +432,7 @@ enslave()
 	master = 0; rotor = 0;
 }
 
+void
 killall()
 {
 	register int i;
@@ -434,16 +449,15 @@ killall()
  * file, allowing the following process to lock it and proceed. We
  * get the lock back for the next cycle by swapping descriptors.
  */
+void
 doslave(cmd, prev, next)
 	register int cmd, prev[2], next[2];
 {
 	register int nread, toggle = 0;
 
 	close(fi);
-	if ((fi = open(disk, 0)) < 0) { 	/* Need our own seek pointer */
-		perror("  DUMP: slave couldn't reopen disk");
-		dumpabort();
-	}
+	if ((fi = open(disk, 0)) < 0) 	/* Need our own seek pointer */
+		quit("slave couldn't reopen disk: %s\n", strerror(errno));
 	/*
 	 * Get list of blocks to dump, read the blocks into tape buffer
 	 */
@@ -455,10 +469,8 @@ doslave(cmd, prev, next)
 					p->count * TP_BSIZE);
 			} else {
 				if (p->count != 1 || atomic(read, cmd,
-				    tblock[trecno], TP_BSIZE) != TP_BSIZE) {
-					msg("Master/slave protocol botched.\n");
-					dumpabort();
-				}
+				    tblock[trecno], TP_BSIZE) != TP_BSIZE)
+					quit("master/slave protocol botched.\n");
 			}
 		}
 		flock(prev[toggle], LOCK_EX);	/* Wait our turn */
@@ -476,10 +488,8 @@ doslave(cmd, prev, next)
 		toggle ^= 1;
 		flock(next[toggle], LOCK_UN);	/* Next slave's turn */
 	}					/* Also jolts him awake */
-	if (nread != 0) {
-		perror("  DUMP: error reading command pipe");
-		dumpabort();
-	}
+	if (nread != 0)
+		quit("error reading command pipe: %s\n", strerror(errno));
 }
 
 /*
@@ -487,6 +497,7 @@ doslave(cmd, prev, next)
  * or a write may not write all we ask if we get a signal,
  * loop until the count is satisfied (or error).
  */
+int
 atomic(func, fd, buf, count)
 	int (*func)(), fd, count;
 	char *buf;
