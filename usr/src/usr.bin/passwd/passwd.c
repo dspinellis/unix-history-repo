@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.38 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -95,12 +95,12 @@ main(argc, argv)
 		goto bad;
 	}
 	if (!(temp_fp = fdopen(fd, "w"))) {
-		fprintf(stderr, "passwd: can't write %s\n", temp);
+		fprintf(stderr, "passwd: can't write %s", temp);
 		goto bad;
 	}
 	passwd = _PATH_MASTERPASSWD;
 	if (!freopen(passwd, "r", stdin)) {
-		fprintf(stderr, "passwd: can't read %s\n", passwd);
+		fprintf(stderr, "passwd: can't read %s", passwd);
 		goto bad;
 	}
 
@@ -211,7 +211,7 @@ getnewpasswd(pw, temp)
 	char *temp;
 {
 	register char *p, *t;
-	char buf[10], salt[2], *crypt(), *getpass();
+	char buf[_PASSWORD_LEN+1], salt[2], *crypt(), *getpass();
 	int tries = 0;
 	time_t time();
 
@@ -246,9 +246,28 @@ getnewpasswd(pw, temp)
 	}
 	/* grab a random printable character that isn't a colon */
 	(void)srandom((int)time((time_t *)NULL));
-	while ((salt[0] = random() % 93 + 33) == ':');
-	while ((salt[1] = random() % 93 + 33) == ':');
+#ifdef NEWSALT
+	salt[0] = '_';
+	to64(&salt[1], (long)(29*25), 4);
+	to64(&salt[5], (long)random(), 4);
+#else
+	to64(&salt[0], (long)random(), 2);
+#endif
 	return(crypt(buf, salt));
+}
+
+static unsigned char itoa64[] =		/* 0..63 => ascii-64 */
+	"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+to64(s, v, n)
+	register char *s;
+	register long v;
+	register int n;
+{
+	while (--n >= 0) {
+		*s++ = itoa64[v&0x3f];
+		v >>= 6;
+	}
 }
 
 makedb(file)
