@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)pk1.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)pk1.c	5.11	(Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -8,7 +8,13 @@ static char sccsid[] = "@(#)pk1.c	5.10 (Berkeley) %G%";
 #include <setjmp.h>
 #ifdef BSD4_2
 #include <sys/time.h>
-#endif BSD4_2
+#include <sys/uio.h>
+#else /* !BSD4_2 */
+struct iovec {
+	caddr_t iov_base;
+	int iov_len;
+}
+#endif /* !BSD4_2 */
 
 #ifdef VMS
 #include <eunice/eunice.h>
@@ -224,8 +230,7 @@ register struct pack *pk;
 char **bp;
 {
 	register x;
-	int t;
-	char m;
+	register int t;
 
 	if (pk->p_state & DRAINO || !(pk->p_state & LIVE)) {
 		pk->p_msg |= pk->p_rmsg;
@@ -233,28 +238,23 @@ char **bp;
 		goto drop;
 	}
 	t = next[pk->p_pr];
-	for(x=pk->p_pr; x!=t; x = (x-1)&7) {
-		if (pk->p_is[x] == 0)
-			goto slot;
+	for(x = pk->p_pr; x != t; x = (x-1)&7) {
+		if (pk->p_is[x] == 0) {
+			pk->p_imap |= mask[x];
+			pk->p_is[x] = c;
+			pk->p_isum[x] = sum;
+			pk->p_ib[x] = (char *)bp;
+			return;
+		}
 	}
 drop:
 	*bp = (char *)pk->p_ipool;
 	pk->p_ipool = bp;
-	return;
-
-slot:
-	m = mask[x];
-	pk->p_imap |= m;
-	pk->p_is[x] = c;
-	pk->p_isum[x] = sum;
-	pk->p_ib[x] = (char *)bp;
 }
 
 /*
  * setup input transfers
- */
-#define PKMAXBUF 128
-/*
+ *
  * Start transmission on output device associated with pk.
  * For asynch devices (t_line==1) framing is
  * imposed.  For devices with framing and crc
@@ -297,47 +297,38 @@ register x;
 			longjmp(Sjbuf, 4);
 		}
 	} else {
-		char buf[PKMAXBUF + HDRSIZ + TAILSIZE], *b;
+		struct iovec iov[2];
+
+		iov[0].iov_base = p;
+		iov[0].iov_len = HDRSIZ;
+		iov[1].iov_base = pk->p_ob[x];
+		iov[1].iov_len = pk->p_xsize;
+
+		if (writev(pk->p_ofn, iov, 2) < 0) {
+			alarm(0);
+			logent("PKXSTART write failed", sys_errlist[errno]);
+			longjmp(Sjbuf, 5);
+		}
+#ifdef 0
+		char buf[PKMAXBUF + HDRSIZ], *b;
 		int i;
 		for (i = 0, b = buf; i < HDRSIZ; i++)
 			*b++ = *p++;
 		for (i = 0, p = pk->p_ob[x]; i < pk->p_xsize; i++)
 			*b++ = *p++;
-#if TAILSIZE != 0
-		for (i = 0; i < TAILSIZE; i++)
-			*b++ = '\0';
-#endif TAILSIZE
-		if (write(pk->p_ofn, buf, pk->p_xsize + HDRSIZ + TAILSIZE)
-		    != (HDRSIZ + TAILSIZE + pk->p_xsize)) {
+
+		if (write(pk->p_ofn, buf, pk->p_xsize + HDRSIZ)
+		    != (HDRSIZ + pk->p_xsize)) {
 			alarm(0);
 			logent("PKXSTART write failed", sys_errlist[errno]);
 			longjmp(Sjbuf, 5);
 		}
+#endif 0
 		Connodata = 0;
 	}
 	if (pk->p_msg)
 		pkoutput(pk);
 }
-
-
-pkmove(p1, p2, count, flag)
-char *p1, *p2;
-int count, flag;
-{
-	register char *s, *d;
-	register int i;
-
-	if (flag == B_WRITE) {
-		s = p2;
-		d = p1;
-	} else {
-		s = p1;
-		d = p2;
-	}
-	for (i = 0; i < count; i++)
-		*d++ = *s++;
-}
-
 
 /*
  *	get n characters from input
