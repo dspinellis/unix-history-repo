@@ -1,4 +1,4 @@
-/*	autoconf.c	1.7	86/11/25	*/
+/*	autoconf.c	1.8	86/12/08	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -42,14 +42,13 @@ int	cold;		/* cold start flag initialized in locore.s */
 struct	vba_hd vba_hd[NVBA];
 
 /*
- * Determine mass storage configuration for a machine.
+ * Determine i/o configuration for a machine.
  */
 configure()
 {
 	register int *ip;
 	extern caddr_t Sysbase;
 
-	printf("vba%d at %x\n", numvba, VBIOBASE);
 	vbafind(numvba, vmem, VMEMmap);
 	numvba++;
 	/*
@@ -132,6 +131,7 @@ vbafind(vban, vumem, memmap)
 	struct vba_hd *vhp;
 	struct vba_driver *udp;
 	int i, (**ivec)();
+	caddr_t valloc, zmemall();
 	extern long cold, catcher[SCB_LASTIV*2];
 
 #ifdef lint
@@ -143,6 +143,7 @@ vbafind(vban, vumem, memmap)
 	 * by mapping kernel ptes starting at pte.
 	 */
 	vbaccess(memmap, VBIOBASE, VBIOSIZE);
+	printf("vba%d at %x\n", vban, VBIOBASE);
 	/*
 	 * Setup scb device entries to point into catcher array.
 	 */
@@ -154,6 +155,17 @@ vbafind(vban, vumem, memmap)
 	 * this number and use result as interrupt vector.
 	 */
 	vhp->vh_lastiv = SCB_LASTIV;
+	/*
+	 * Grab some memory to record the address space we allocate,
+	 * so we can be sure not to place two devices at the same address.
+	 *
+	 * We could use just 1/8 of this (we only want a 1 bit flag) but
+	 * we are going to give it back anyway, and that would make the
+	 * code here bigger (which we can't give back), so ...
+	 */
+	valloc = zmemall(memall, ctob(VBIOSIZE));
+	if (valloc == (caddr_t)0)
+		panic("no mem for vbafind");
 
 	/*
 	 * Check each VERSAbus mass storage controller.
@@ -161,7 +173,7 @@ vbafind(vban, vumem, memmap)
 	 * see if it is really there, and if it is record it and
 	 * then go looking for slaves.
 	 */
-#define	vbaddr(off)	(u_short *)((int)vumem + ((off) & 0x0fffff))
+#define	vbaddr(off)	(u_short *)((int)vumem + vboff(off))
 	for (um = vbminit; udp = um->um_driver; um++) {
 		if (um->um_vbanum != vban && um->um_vbanum != '?')
 			continue;
@@ -173,11 +185,12 @@ vbafind(vban, vumem, memmap)
 		 */
 		addr = (long)um->um_addr;
 	    for (ap = udp->ud_addr; addr || (addr = *ap++); addr = 0) {
-#ifdef notdef
-		if (vballoc[vbaoff(addr)])
-			continue;
-#endif
-		reg = vbaddr(addr);
+		if (VBIOMAPPED(addr)) {
+			if (valloc[vboff(addr)])
+				continue;
+			reg = vbaddr(addr);
+		} else
+			reg = (u_short *)addr;
 		um->um_hd = vhp;
 		cvec = SCB_LASTIV, cold &= ~0x2;
 		i = (*udp->ud_probe)(reg, um);
@@ -195,6 +208,7 @@ vbafind(vban, vumem, memmap)
 			continue;
 		}
 		printf("vec %x, ipl %x\n", cvec, br);
+		csralloc(valloc, addr, i);
 		um->um_alive = 1;
 		um->um_vbanum = vban;
 		um->um_addr = (caddr_t)reg;
@@ -211,8 +225,7 @@ vbafind(vban, vumem, memmap)
 				ui->ui_ctlr = um->um_ctlr;
 				ui->ui_vbanum = vban;
 				ui->ui_addr = (caddr_t)reg;
-				ui->ui_physaddr =
-				    (caddr_t)VBIOBASE + (addr&0x0fffff);
+				ui->ui_physaddr = (caddr_t)addr;
 				if (ui->ui_dk && dkn < DK_NDRIVE)
 					ui->ui_dk = dkn++;
 				else
@@ -240,7 +253,12 @@ vbafind(vban, vumem, memmap)
 			continue;
 		addr = (long)ui->ui_addr;
 	    for (ap = udp->ud_addr; addr || (addr = *ap++); addr = 0) {
-		reg = vbaddr(addr);
+		if (VBIOMAPPED(addr)) {
+			if (valloc[vboff(addr)])
+				continue;
+			reg = vbaddr(addr);
+		} else
+			reg = (u_short *)addr;
 		ui->ui_hd = vhp;
 		cvec = SCB_LASTIV, cold &= ~0x2;
 		i = (*udp->ud_probe)(reg, ui);
@@ -249,31 +267,57 @@ vbafind(vban, vumem, memmap)
 			continue;
 		printf("%s%d at vba%d csr %x ",
 		    ui->ui_driver->ud_dname, ui->ui_unit, vban, addr);
-		if (cvec < 0 && vhp->vh_lastiv == cvec) {
-			printf("no space for vector(s)\n");
-			continue;
-		}
-		if (cvec == SCB_LASTIV) {
-			printf("didn't interrupt\n");
-			continue;
-		}
-		printf("vec %x, ipl %x\n", cvec, br);
-#ifdef notdef
-		while (--i >= 0)
-			vballoc[vbaoff(addr+i)] = 1;
-#endif
-		for (ivec = ui->ui_intr; *ivec; ivec++)
-			((long *)&scb)[cvec++] = (long)*ivec;
+		if (ui->ui_intr) {
+			if (cvec < 0 && vhp->vh_lastiv == cvec) {
+				printf("no space for vector(s)\n");
+				continue;
+			}
+			if (cvec == SCB_LASTIV) {
+				printf("didn't interrupt\n");
+				continue;
+			}
+			printf("vec %x, ipl %x\n", cvec, br);
+			for (ivec = ui->ui_intr; *ivec; ivec++)
+				((long *)&scb)[cvec++] = (long)*ivec;
+		} else
+			printf("no interrupts\n");
+		csralloc(valloc, addr, i);
 		ui->ui_alive = 1;
 		ui->ui_vbanum = vban;
 		ui->ui_addr = (caddr_t)reg;
-		ui->ui_physaddr = (caddr_t)VBIOBASE + (addr&0x0fffff);
+		ui->ui_physaddr = (caddr_t)addr;
 		ui->ui_dk = -1;
 		/* ui_type comes from driver */
 		udp->ud_dinfo[ui->ui_unit] = ui;
 		(*udp->ud_attach)(ui);
 		break;
 	    }
+	}
+	wmemfree(valloc, ctob(VBIOSIZE));
+}
+
+/*
+ * Mark addresses starting at addr and continuing
+ * size bytes as allocated in the map.
+ * Warn if the new allocation overlaps a previous allocation.
+ */
+csralloc(valloc, addr, size)
+	caddr_t valloc, addr;
+	register int size;
+{
+	register caddr_t p;
+	int warned = 0;
+
+	if (!VBIOMAPPED(addr))
+		return;
+	p = &valloc[vboff(addr+size)];
+	while (--size >= 0) {
+		if (*--p && !warned) {
+			printf(
+	"WARNING: device registers overlap those for a previous device\n");
+			warned = 1;
+		}
+		*p = 1;
 	}
 }
 
