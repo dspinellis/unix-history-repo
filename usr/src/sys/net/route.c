@@ -1,4 +1,4 @@
-/*	route.c	6.3	83/12/15	*/
+/*	route.c	6.4	84/04/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -137,7 +137,7 @@ rtredirect(dst, gateway, flags)
 		rt = 0;
 	}
 	if (rt == 0) {
-		rtinit(dst, gateway, RTF_GATEWAY);
+		rtinit(dst, gateway, (flags & RTF_HOST) | RTF_GATEWAY);
 		rtstat.rts_dynamic++;
 		return;
 	}
@@ -148,12 +148,11 @@ rtredirect(dst, gateway, flags)
 	if (rt->rt_flags & RTF_GATEWAY) {
 		if (((rt->rt_flags & RTF_HOST) == 0) && (flags & RTF_HOST)) {
 			/*
-			 * Changing from route to gateway => route to host.
+			 * Changing from route to net => route to host.
 			 * Create new route, rather than smashing route to net.
 			 */
 			rtfree(rt);
 			rtinit(dst, gateway, flags);
-			rtstat.rts_newgateway++;
 		} else {
 			/*
 			 * Smash the current notion of the gateway to
@@ -164,8 +163,8 @@ rtredirect(dst, gateway, flags)
 			 */
 			rt->rt_gateway = *gateway;
 			rtfree(rt);
-			rtstat.rts_newgateway++;
 		}
+		rtstat.rts_newgateway++;
 	}
 }
 
