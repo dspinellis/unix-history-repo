@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_io.c	5.4 %G%";
+static char *sccsid = "@(#)ex_io.c	5.5 %G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -304,6 +304,8 @@ rop(c)
 	register int i;
 	struct stat stbuf;
 	short magic;
+	static int ovro;	/* old value(READONLY) */
+	static int denied;	/* 1 if READONLY was set due to file permissions */
 
 	io = open(file, 0);
 	if (io < 0) {
@@ -355,8 +357,15 @@ rop(c)
 			break;
 		}
 	}
-	if ((stbuf.st_mode & 0222) == 0 || access(file, 2) < 0)
+	if (value(READONLY) && denied) {
+		value(READONLY) = ovro;
+		denied = 0;
+	}
+	if (c != 'r' && (stbuf.st_mode & 0222) == 0 || access(file, 2) < 0) {
+		ovro = value(READONLY);
+		denied = 1;
 		value(READONLY) = 1;
+	}
 	if (value(READONLY)) {
 		printf(" [Read only]");
 		flush();
