@@ -1,4 +1,4 @@
-#	@(#)TODO	5.1 (Berkeley) %G%
+#	@(#)TODO	5.2 (Berkeley) %G%
 
 TODO:  =======================
 
@@ -8,18 +8,22 @@ Keith:
 	    the inode cache).  Q: Should the underlying inode be in the
 	    inode cache (does it get flushed)?  Q: Should the mount code
 	    update the ifile inode slot to reflect the current disk address?
-	Make syncs reentrant.
+
+	Move utils into main-line source.
 
 Margo:
-	Extend IFILE as necessary.
+	See if lfs_mountfs can just call lfs_vget for IFILE vnode
+		by minor hack to lfs_itod.
 	Unmount; not doing a bgetvp (VHOLD) in lfs_newbuf call.
-	Document where the checkpoint information is.
+	Document in the README file where the checkpoint information is
+		on disk.
 	Variable block sizes (Margo/Keith).
 	Switch the byte accounting to sector accounting.
 	Check lfs.h and make sure that the #defines/structures are all
 		actually needed.
 	Add a check in lfs_segment.c so that if the segment is empty,
-		we don't write it.
+		we don't write it.  (Margo, do you remember what this
+		meant?  TK)
 	Need to keep vnode v_numoutput up to date for pending writes?
 
 Carl:
