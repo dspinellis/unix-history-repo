@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpd.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpd.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -81,18 +81,7 @@ main(argc, argv)
 	/*
 	 * Set up standard environment by detaching from the parent.
 	 */
-	if (fork())
-		exit(0);
-	for (f = 0; f < 5; f++)
-		(void) close(f);
-	(void) open(_PATH_DEVNULL, O_RDONLY);
-	(void) open(_PATH_DEVNULL, O_WRONLY);
-	(void) dup(1);
-	f = open(_PATH_TTY, O_RDWR);
-	if (f > 0) {
-		ioctl(f, TIOCNOTTY, 0);
-		(void) close(f);
-	}
+	daemon(0, 0);
 #endif
 
 	openlog("lpd", LOG_PID, LOG_LPR);
