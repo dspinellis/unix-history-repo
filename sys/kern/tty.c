@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.6 1993/11/07 21:44:44 wollman Exp $
+ *	$Id: tty.c,v 1.7 1993/11/08 19:15:00 ache Exp $
  */
 
 #include "param.h"
@@ -51,6 +51,19 @@
 #include "syslog.h"
 
 #include "vm/vm.h"
+
+/*
+ * Input control starts when we would not be able to fit the maximum
+ * contents of the ping-pong buffers and finishes when we would be able
+ * to fit that much plus 1/8 more.
+ */
+#define	I_HIGH_WATER	(TTYHOG - 2 * 256)	/* XXX */
+#define	I_LOW_WATER	((TTYHOG - 2 * 256) * 7 / 8)	/* XXX */
+
+/* XXX RB_LEN() is too slow. */
+#define INPUT_LEN(tp)	(RB_LEN(&(tp)->t_can) + RB_LEN(&(tp)->t_raw))
+#undef MAX_INPUT		/* XXX wrong in <sys/syslimits.h> */
+#define	MAX_INPUT	TTYHOG
 
 static int proc_compare __P((struct proc *p1, struct proc *p2));
 
@@ -221,36 +234,72 @@ ttyflush(tp, rw)
 			tp->t_state &= ~TS_WCOLL;
 		}
 	}
+	if (rw & FREAD) {
+		if (tp->t_state & (TS_TBLOCK | TS_HW_IFLOW)
+		    && INPUT_LEN(tp) < I_LOW_WATER) {
+			int out_cc;
+			int t_state;
+
+			/*
+			 * We delayed turning off input flow control in case
+			 * we have to send a start character and the output
+			 * queue was previously full.  Sending a start char
+			 * is still tricky because we don't want to add a
+			 * new obstruction to draining the output queue.
+			 */
+			out_cc = RB_LEN(&tp->t_out);
+			t_state = tp->t_state;
+			ttyunblock(tp);
+			tp->t_state &= ~TS_TBLOCK;
+			if (t_state & TS_TBLOCK && RB_LEN(&tp->t_out) != 0)
+				ttysleep(tp, (caddr_t)&tp->t_out, TTIPRI,
+					 ttyout, hz / 10);
+			if (out_cc == 0 && RB_LEN(&tp->t_out) != 0) {
+				(*cdevsw[major(tp->t_dev)].d_stop)(tp, FWRITE);
+				flushq(&tp->t_out);
+			}
+		}
+	}
 	splx(s);
 }
 
 /*
- * Send stop character on input overflow.
+ * Handle input high water.  Send stop character for the IXOFF case.  Turn
+ * on all enabled input flow control bits and propagate the change to the
+ * driver.
  */
+/* static void */
 ttyblock(tp)
-	register struct tty *tp;
+	struct tty *tp;
 {
-	register x;
-	int rawcc, cancc;
 
-	rawcc = RB_LEN(&tp->t_raw);
-	cancc = RB_LEN(&tp->t_can);
-	x = rawcc + cancc;
-	if (rawcc > TTYHOG) {
-		ttyflush(tp, FREAD|FWRITE);
-	}
-	/*
-	 * Block further input iff:
-	 * Current input > threshold AND input is available to user program
-	 */
-	if (x >= TTYHOG/2 && (tp->t_state & TS_TBLOCK) == 0 &&
-	    ((tp->t_lflag&ICANON) == 0) || (cancc > 0)) {
-		if (tp->t_cc[VSTOP] != _POSIX_VDISABLE) {
-		    putc(tp->t_cc[VSTOP], &tp->t_out);
-		}
-		tp->t_state |= TS_TBLOCK;	/* XXX - should be TS_RTSBLOCK? */
-		ttstart(tp);
-	}
+	if ((tp->t_state & TS_TBLOCK) == 0
+	    && tp->t_cc[VSTOP] != _POSIX_VDISABLE
+	    && putc(tp->t_cc[VSTOP], &tp->t_out) == 0)
+		tp->t_state |= TS_TBLOCK;
+	if (tp->t_cflag & CDTR_IFLOW)
+		tp->t_state |= TS_DTR_IFLOW;
+	if (tp->t_cflag & CRTS_IFLOW)
+		tp->t_state |= TS_RTS_IFLOW;
+	ttstart(tp);
+}
+
+/*
+ * Handle input low water.  Send start character for the IXOFF case.  Turn
+ * off our input flow control bits and propagate the change to the driver.
+ */
+/* static */
+int
+ttyunblock(tp)
+	struct tty *tp;
+{
+
+	if (tp->t_state & TS_TBLOCK
+	    && tp->t_cc[VSTART] != _POSIX_VDISABLE
+	    && putc(tp->t_cc[VSTART], &tp->t_out) == 0)
+		tp->t_state &= ~TS_TBLOCK;
+	tp->t_state &= ~TS_HW_IFLOW;
+	ttstart(tp);
 }
 
 ttstart(tp)
@@ -687,10 +736,6 @@ ttyclose(tp)
 	ttyflush(tp, FREAD|FWRITE);
 	tp->t_session = NULL;
 	tp->t_pgrp = NULL;
-/*
- * XXX - do we need to send cc[VSTART] or do a ttstart() here in some cases?
- * (TS_TBLOCK and TS_RTSBLOCK are being cleared.)
- */
 	tp->t_state = 0;
 	tp->t_gen++;
 	return (0);
@@ -710,10 +755,10 @@ ttymodem(tp, flag)
 		 * MDMBUF: do flow control according to carrier flag
 		 */
 		if (flag) {
-			tp->t_state &= ~TS_TTSTOP;
+			tp->t_state &= ~TS_CAR_OFLOW;
 			ttstart(tp);
-		} else if ((tp->t_state&TS_TTSTOP) == 0) {
-			tp->t_state |= TS_TTSTOP;
+		} else if ((tp->t_state&TS_CAR_OFLOW) == 0) {
+			tp->t_state |= TS_CAR_OFLOW;
 			(*cdevsw[major(tp->t_dev)].d_stop)(tp, 0);
 		}
 	} else if (flag == 0) {
@@ -810,6 +855,17 @@ ttyinput(c, tp)
 		tp->t_rawcc++;
 	}
 	/*
+	 * If input flow control is enabled and not yet invoked, check the
+	 * high water mark.  Block further input iff:
+	 * current input > threshold AND input is available to user program.
+	 * The 3 is slop for PARMRK.
+	 */
+	if ((iflag & IXOFF && (tp->t_state & TS_TBLOCK) == 0
+	     || tp->t_cflag & TS_HW_IFLOW && (tp->t_state & TS_HW_IFLOW) == 0)
+	    && INPUT_LEN(tp) > I_HIGH_WATER - 3
+	    && ((lflag & ICANON) == 0 || RB_LEN(&tp->t_can) != 0))
+		ttyblock(tp);
+	/*
 	 * Handle exceptional conditions (break, parity, framing).
 	 */
 	if (err = (c&TTY_ERRORMASK)) {
@@ -827,6 +883,8 @@ ttyinput(c, tp)
 				goto endcase;
 			else if (iflag&PARMRK) {
 parmrk:
+				if (INPUT_LEN(tp) > MAX_INPUT - 3)
+					goto input_overflow;
 				putc(0377|TTY_QUOTE, &tp->t_raw);
 				putc(0|TTY_QUOTE, &tp->t_raw);
 				putc(c|TTY_QUOTE, &tp->t_raw);
@@ -835,11 +893,6 @@ parmrk:
 				c = 0;
 		}
 	}
-	/*
-	 * In tandem mode, check high water mark.
-	 */
-	if (iflag&IXOFF)
-		ttyblock(tp);
 	if ((tp->t_state&TS_TYPEN) == 0 && (iflag&ISTRIP))
 		c &= ~0x80;
 	if ((tp->t_lflag&EXTPROC) == 0) {
@@ -879,7 +932,7 @@ parmrk:
 				else {
 					ttyflush(tp, FWRITE);
 					ttyecho(c, tp);
-					if (RB_LEN(&tp->t_raw) + RB_LEN(&tp->t_can))
+					if (INPUT_LEN(tp) != 0)
 						ttyretype(tp);
 					tp->t_lflag |= FLUSHO;
 				}
@@ -992,6 +1045,13 @@ parmrk:
 			c = unputc(&tp->t_raw);
 			if (c == -1)
 				goto endcase;
+			/*
+			 * Handle one-letter word cases.
+			 */
+			if (c == ' ' || c == '\t') {
+				putc(c, &tp->t_raw);
+				goto endcase;
+			}
 			ctype = ISALPHA(c);
 			/*
 			 * erase rest of word
@@ -1026,12 +1086,13 @@ parmrk:
 	/*
 	 * Check for input buffer overflow
 	 */
-	if (RB_LEN(&tp->t_raw)+RB_LEN(&tp->t_can) >= TTYHOG) {
+	if (INPUT_LEN(tp) >= MAX_INPUT) {
+input_overflow:
 		if (iflag&IMAXBEL) {
 			if (RB_LEN(&tp->t_out) < tp->t_hiwat)
 				(void) ttyoutput(CTRL('g'), tp);
 		} else
-			ttyflush(tp, FREAD | FWRITE);
+			ttyflush(tp, FREAD);
 		goto endcase;
 	}
 	/*
@@ -1299,25 +1360,13 @@ loop:
 		first = 0;
 	}
 	/*
-	 * Look to unblock output now that (presumably)
+	 * Look to unblock input now that (presumably)
 	 * the input queue has gone down.
 	 */
-#if 0
-	if (tp->t_state&TS_TBLOCK && RB_LEN(&tp->t_raw) < TTYHOG/5) {
-		if (cc[VSTART] != _POSIX_VDISABLE &&
-		    putc(cc[VSTART], &tp->t_out) == 0) {
-			tp->t_state &= ~TS_TBLOCK;
-			ttstart(tp);
-		}
-	}
-#else
-#define	TS_RTSBLOCK	TS_TBLOCK	/* XXX */
-#define	RB_I_LOW_WATER	((RBSZ - 2 * 256) * 7 / 8)	/* XXX */
-	if (tp->t_state&TS_RTSBLOCK && RB_LEN(&tp->t_raw) <= RB_I_LOW_WATER) {
-		tp->t_state &= ~TS_RTSBLOCK;
-		ttstart(tp);
-	}
-#endif
+	if (tp->t_state & (TS_TBLOCK | TS_HW_IFLOW)
+	    && INPUT_LEN(tp) <= I_LOW_WATER)
+		ttyunblock(tp);
+
 	return (error);
 }
 
@@ -1460,7 +1509,6 @@ loop:
 					if (ttyoutput(*cp, tp) >= 0) {
 					    /* no c-lists, wait a bit */
 					    ttstart(tp);
-printf("\nttysleep - no c-lists\n");	/* XXX */
 					    if (error = ttysleep(tp, 
 						(caddr_t)&lbolt,
 						 TTOPRI | PCATCH, ttybuf, 0))

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.h	7.10 (Berkeley) 6/26/91
- *	$Id$
+ *	$Id: tty.h,v 1.4 1993/10/16 17:18:06 rgrimes Exp $
  */
 
 #ifndef _SYS_TTY_H_
@@ -154,7 +154,12 @@ extern	struct ttychars ttydefaults;
 #define	TS_LNCH		0x080000	/* next character is literal */
 #define	TS_TYPEN	0x100000	/* retyping suspended input (PENDIN) */
 #define	TS_CNTTB	0x200000	/* counting tab width, ignore FLUSHO */
+/* flow-control-invoked bits */
+#define	TS_CAR_OFLOW	0x0400000	/* for MDMBUF (XXX handle in driver) */
+#define	TS_DTR_IFLOW	0x2000000	/* not implemented */
+#define	TS_RTS_IFLOW	0x4000000	/* for CRTS_IFLOW */
 
+#define	TS_HW_IFLOW	(TS_DTR_IFLOW | TS_RTS_IFLOW)
 #define	TS_LOCAL	(TS_BKSL|TS_ERASE|TS_LNCH|TS_TYPEN|TS_CNTTB)
 
 /* define partab character types */
