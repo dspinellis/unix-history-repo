@@ -1,7 +1,7 @@
-/*	locore.s	4.24	81/02/19	*/
+/*	locore.s	4.25	81/02/21	*/
 
 	.set	HIGH,0x1f	# mask for total disable
-	.set	MCKVEC,4	# offset into Scbbase of machine check vector
+	.set	MCKVEC,4	# offset into scb of machine check vector
 	.set	NBPG,512
 	.set	PGSHIFT,9
 
@@ -465,15 +465,15 @@ _badaddr:
 	movl	$1,r0
 	mfpr	$IPL,r1
 	mtpr	$HIGH,$IPL
-	movl	_Scbbase+MCKVEC,r2
+	movl	_scb+MCKVEC,r2
 	movl	4(ap),r3
 	movl	8(ap),r4
-	movab	9f+INTSTK,_Scbbase+MCKVEC
+	movab	9f+INTSTK,_scb+MCKVEC
 	bbc	$0,r4,1f; tstb	(r3)
 1:	bbc	$1,r4,1f; tstw	(r3)
 1:	bbc	$2,r4,1f; tstl	(r3)
 1:	clrl	r0			# made it w/o machine checks
-2:	movl	r2,_Scbbase+MCKVEC
+2:	movl	r2,_scb+MCKVEC
 	mtpr	r1,$IPL
 	ret
 	.align	2
