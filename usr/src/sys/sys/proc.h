@@ -1,4 +1,4 @@
-/*	proc.h	4.21	83/05/18	*/
+/*	proc.h	4.22	83/05/22	*/
 
 /*
  * One structure allocated per active
@@ -31,8 +31,8 @@ struct	proc {
 	short	p_ppid;		/* process id of parent */
 	u_short	p_xstat;	/* Exit status for wait */
 	struct	rusage *p_ru;	/* mbuf holding exit information */
-	short	p_poip;	/* page outs in progress */
-	short	p_szpt;	/* copy of page table size */
+	short	p_poip;		/* page outs in progress */
+	short	p_szpt;		/* copy of page table size */
 	size_t	p_tsize;	/* size of text (clicks) */
 	size_t	p_dsize;	/* size of data space (clicks) */
 	size_t	p_ssize;	/* copy of stack size (clicks) */
@@ -53,15 +53,9 @@ struct	proc {
 	struct	proc *p_osptr;	/* pointer to older sibling processes */
 	struct	proc *p_ysptr;	/* pointer to younger siblings */
 	struct	itimerval p_realtimer;
+	struct	quota *p_quota;	/* quotas for this process */
 #ifdef sun
 	struct	context *p_ctx;	/* pointer to current context */
-#endif
-#ifdef QUOTA
-	struct	quota *p_quota;	/* quotas for this process (MUSH) */
-#endif
-#ifdef MUSH
-	mmsgbuf	p_mb;		/* pending message */
-	int	p_msgflgs;	/* message flags */
 #endif
 };
 
@@ -70,11 +64,7 @@ struct	proc {
 
 #ifdef KERNEL
 short	pidhash[PIDHSZ];
-
 struct	proc *pfind();
-#endif
-
-#ifdef	KERNEL
 struct	proc *proc, *procNPROC;	/* the proc table itself */
 int	nproc;
 
