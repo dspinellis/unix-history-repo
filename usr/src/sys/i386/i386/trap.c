@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)trap.c	7.4 (Berkeley) %G%
+ *	@(#)trap.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -32,7 +32,6 @@
 #include "vm/vm_param.h"
 #include "vm/pmap.h"
 #include "vm/vm_map.h"
-#include "sys/vmmeter.h"
 
 #include "machine/trap.h"
 #include "machine/dbg.h"
@@ -61,7 +60,9 @@ trap(frame)
 	register struct proc *p = curproc;
 	struct timeval syst;
 	int ucode, type, code, eva;
+	extern int cold;
 
+if(cold) goto we_re_toast;
 	frame.tf_eflags &= ~PSL_NT;	/* clear nested trap XXX */
 	type = frame.tf_trapno;
 	
@@ -269,6 +270,7 @@ out:
 		psig(i);
 	p->p_pri = p->p_usrpri;
 	if (want_resched) {
+		int pl;
 		/*
 		 * Since we are curproc, clock will normally just change
 		 * our priority without moving us from one queue to another
@@ -277,10 +279,11 @@ out:
 		 * swtch()'ed, we might not be on the queue indicated by
 		 * our priority.
 		 */
-		(void) splclock();
+		pl = splclock();
 		setrq(p);
 		p->p_stats->p_ru.ru_nivcsw++;
 		swtch();
+		splx(pl);
 		while (i = CURSIG(p))
 			psig(i);
 	}
@@ -302,7 +305,6 @@ out:
 	}
 	curpri = p->p_pri;
 	curpcb->pcb_flags &= ~FM_TRAP;	/* used by sendsig */
-	spl0(); /*XXX*/
 }
 
 /*
@@ -333,6 +335,7 @@ syscall(frame)
 
 	code = frame.sf_eax;
 	p->p_regs = (int *)&frame;
+	curpcb->pcb_flags &= ~FM_TRAP;	/* used by sendsig */
 	params = (caddr_t)frame.sf_esp + sizeof (int) ;
 
 	/*
@@ -387,6 +390,7 @@ done:
 		psig(i);
 	p->p_pri = p->p_usrpri;
 	if (want_resched) {
+		int pl;
 		/*
 		 * Since we are curproc, clock will normally just change
 		 * our priority without moving us from one queue to another
@@ -395,10 +399,11 @@ done:
 		 * swtch()'ed, we might not be on the queue indicated by
 		 * our priority.
 		 */
-		(void) splclock();
+		pl = splclock();
 		setrq(p);
 		p->p_stats->p_ru.ru_nivcsw++;
 		swtch();
+		splx(pl);
 		while (i = CURSIG(p))
 			psig(i);
 	}

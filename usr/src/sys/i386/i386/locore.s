@@ -5,9 +5,35 @@
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
- * %sccs.include.redist.c%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
- *	@(#)locore.s	7.3 (Berkeley) %G%
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	@(#)locore.s	7.3 (Berkeley) 5/13/91
  */
 
 
@@ -88,11 +114,17 @@ _atdevphys:	.long	0	# location of device mapping ptes (phys)
 _IdlePTD:	.long	0
 _KPTphys:	.long	0
 
-	.space 512
+pcb:
+	.space 8192
 tmpstk:
+pcb2:
+	.space 8192
+tmpstk2:
 	.text
 	.globl	start
-start:	movw	$0x1234,%ax
+ #start:
+	.set start,0
+	movw	$0x1234,%ax
 	movw	%ax,0x472	# warm boot
 	jmp	1f
 	.space	0x500		# skip over warm boot shit
@@ -127,32 +159,33 @@ start:	movw	$0x1234,%ax
 
 	/* count up memory */
 
-	xorl	%eax,%eax		# start with base memory at 0x0
+	xorl	%edx,%edx		# start with base memory at 0x0
 	#movl	$ 0xA0000/NBPG,%ecx	# look every 4K up to 640K
 	movl	$ 0xA0,%ecx		# look every 4K up to 640K
-1:	movl	0(%eax),%ebx		# save location to check
-	movl	$0xa55a5aa5,0(%eax)	# write test pattern
-	/* flush stupid cache here! (with bcopy (0,0,512*1024) ) */
-	cmpl	$0xa55a5aa5,0(%eax)	# does not check yet for rollover
-	jne	2f
-	movl	%ebx,0(%eax)		# restore memory
-	addl	$ NBPG,%eax
-	loop	1b
-2:	shrl	$12,%eax
-	movl	%eax,_Maxmem-SYSTEM
+1:	movl	0(%edx),%ebx		# save location to check
+	movl	$0xa55a5aa5,0(%edx)	# write test pattern
 
-	movl	$0x100000,%eax		# next, talley remaining memory
+	inb	$0x84,%al		# flush write buffer
+	/* flush stupid cache here! (with bcopy (0,0,512*1024) ) */
+
+	cmpl	$0xa55a5aa5,0(%edx)	# does not check yet for rollover
+	jne	2f
+	movl	%ebx,0(%edx)		# restore memory
+	addl	$ NBPG,%edx
+	loop	1b
+
+	movl	$0x100000,%edx		# next, talley remaining memory
 	#movl	$((0xFFF000-0x100000)/NBPG),%ecx
 	movl	$(0xFFF-0x100),%ecx
-1:	movl	0(%eax),%ebx		# save location to check
-	movl	$0xa55a5aa5,0(%eax)	# write test pattern
-	cmpl	$0xa55a5aa5,0(%eax)	# does not check yet for rollover
+1:	movl	0(%edx),%ebx		# save location to check
+	movl	$0xa55a5aa5,0(%edx)	# write test pattern
+	cmpl	$0xa55a5aa5,0(%edx)	# does not check yet for rollover
 	jne	2f
-	movl	%ebx,0(%eax)		# restore memory
-	addl	$ NBPG,%eax
+	movl	%ebx,0(%edx)		# restore memory
+	addl	$ NBPG,%edx
 	loop	1b
-2:	shrl	$12,%eax
-	movl	%eax,_Maxmem-SYSTEM
+2:	shrl	$12,%edx
+	movl	%edx,_Maxmem-SYSTEM
 
 /* find end of kernel image */
 	movl	$_end-SYSTEM,%ecx
@@ -276,10 +309,10 @@ begin: /* now running relocated at SYSTEM where the system is linked to run */
 	pushl	%esi
 	
 	call	_init386		# wire 386 chip for unix operation
+	popl	%esi
 	
 	movl	$0,_PTD
 	call 	_main
-	popl	%esi
 
 	.globl	__ucodesel,__udatasel
 	movzwl	__ucodesel,%eax
@@ -483,6 +516,8 @@ _ovbcopy:
 	std			/* decrementing as we go */
 	rep
 	movsb
+	popl	%edi
+	popl	%esi
 	xorl	%eax,%eax
 	cld
 	ret
@@ -644,8 +679,19 @@ _lcr3:
 	inb	$0x84,%al	# check wristwatch
 	movl	4(%esp),%eax
  	orl	$ I386_CR3PAT,%eax
+
+	movl	$tmpstk2,%edx
+	movl	(%edx),%ecx	# touch stack, fault if not there
+	movl	%ecx,(%edx)
+	movl	%esp,%ecx
+	movl	%edx,%esp
+
 	movl	%eax,%cr3
 	inb	$0x84,%al	# check wristwatch
+
+	movl	(%ecx),%edx	# touch stack, fault if not there
+	movl	%edx,(%ecx)
+	movl	%ecx,%esp
 	ret
 
 	# tlbflush()
@@ -654,8 +700,19 @@ _tlbflush:
 	inb	$0x84,%al	# check wristwatch
 	movl	%cr3,%eax
  	orl	$ I386_CR3PAT,%eax
+
+	movl	$tmpstk2,%edx
+	movl	(%edx),%ecx	# touch stack, fault if not there
+	movl	%ecx,(%edx)
+	movl	%esp,%ecx
+	movl	%edx,%esp
+
 	movl	%eax,%cr3
 	inb	$0x84,%al	# check wristwatch
+
+	movl	(%ecx),%edx	# touch stack, fault if not there
+	movl	%edx,(%ecx)
+	movl	%ecx,%esp
 	ret
 
 	# lcr0(cr0)
@@ -923,7 +980,7 @@ ENTRY(swtch)
 	movl	%esi, PCB_ESI(%ecx)
 	movl	%edi, PCB_EDI(%ecx)
 
-#ifdef NPX
+#ifdef NPXx
 	movb	PCB_FLAGS(%ecx),%al
 	/* have we used fp, and need a save? */
 	andb	$ FP_WASUSED|FP_NEEDSSAVE,%al
@@ -946,6 +1003,12 @@ ENTRY(swtch)
 
 	movw	_cpl, %ax
 	movw	%ax, PCB_IML(%ecx)	# save ipl
+
+	movl	$tmpstk2,%edx
+	movl	(%edx),%eax	# touch stack, fault if not there
+	movl	%eax,(%edx)
+	movl	%edx,%esp
+	movl	$pcb2,_curpcb
 
 	/* save is done, now choose a new process or idle */
 sw1:
@@ -995,14 +1058,18 @@ swfnd:
 	movl	%eax,P_RLINK(%ecx) /* isolate process to run */
 	movl	P_ADDR(%ecx),%edx
 	movl	%edx,_curpcb
+	inb	$0x84,%al	# flush write buffers
 	movl	PCB_CR3(%edx),%ebx
 
 	/* switch address space */
-	movl	%esp,%ecx
-	movl	$tmpstk,%esp
+	cli
  	orl	$ I386_CR3PAT,%ebx
-	inb	$0x84,%al	# flush write buffers
 	movl	%ebx,%cr3	# context switch address space
+
+	jmp	7f
+	nop
+ 7:	inb	$0x84,%al	# flush write buffers
+	movl	PCB_ESP(%edx), %ecx
 	movl	(%ecx),%eax	# touch stack, fault if not there
 	movl	%eax,(%ecx)
 	movl	%ecx,%esp
@@ -1017,12 +1084,17 @@ swfnd:
 	movl	%eax, (%esp)
 
 #ifdef NPX
+#ifdef notdef
 	movb	PCB_FLAGS(%edx),%al
 	/* if fp could be used, a dna trap will do a restore */
 	testb	$ FP_WASUSED,%al
 	je	1f
 	orb	$ FP_NEEDSRESTORE,PCB_FLAGS(%ecx)
 1:
+#endif
+	movl	%cr0,%eax
+	orb 	$4,%al			/* disable it */
+	movl	%eax,%cr0
 #endif
 
 	movl	PCB_CMAP2(%edx),%eax	# get temporary map
@@ -1045,12 +1117,24 @@ swfnd:
  * pass it back as a return value.
  */
 ENTRY(swtch_to_inactive)
+
+	movl	$tmpstk2-4,%ecx		# temporary stack, compensated for call
+	movl	(%ecx),%eax		# touch stack, fault if not there
+	movl	%eax,(%ecx)
+
 	popl	%edx			# old pc
 	popl	%eax			# arg, our return value
+	inb	$0x84,%al	# flush write buffers
+
+	movl	%ecx,%esp
+
 	movl	_IdlePTD,%ecx
+
 	movl	%ecx,%cr3		# good bye address space
+	inb	$0x84,%al	# flush write buffers
+
  #write buffer?
-	movl	$tmpstk-4,%esp		# temporary stack, compensated for call
+	movl	$pcb2,_curpcb
 	jmp	%edx			# return, execute remainder of cleanup
 
 /*
@@ -1069,7 +1153,7 @@ ENTRY(savectx)
 	movl	%ebp, PCB_EBP(%ecx)
 	movl	%esi, PCB_ESI(%ecx)
 	movl	%edi, PCB_EDI(%ecx)
-#ifdef NPX
+#ifdef NPXx
 	/* have we ever used fp, and need to save? */
 	testb	$ FP_WASUSED, PCB_FLAGS(%ecx)
 	je	1f
@@ -1101,6 +1185,10 @@ ENTRY(savectx)
 	movl	%eax,24(%ecx)
 1:
 	xorl	%eax, %eax		# return 0
+	ret
+
+	.globl	_mvesp
+_mvesp:	movl	%esp,%eax
 	ret
 
 /*

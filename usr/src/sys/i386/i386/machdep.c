@@ -5,9 +5,35 @@
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
- * %sccs.include.redist.c%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
- *	@(#)machdep.c	7.5 (Berkeley) %G%
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	@(#)machdep.c	7.4 (Berkeley) 6/3/91
  */
 
 
@@ -230,7 +256,7 @@ again:
 	for (i = 1; i < ncallout; i++)
 		callout[i-1].c_next = &callout[i];
 
-	printf("avail mem = %d\n", ptoa(vm_stat.free_count));
+	/*printf("avail mem = %d\n", ptoa(vm_page_free_count));*/
 	printf("using %d buffers containing %d bytes of memory\n",
 		nbuf, bufpages * CLBYTES);
 
@@ -442,6 +468,7 @@ boot(arghowto)
 	register int howto;		/* r11 == how to boot */
 	register int devtype;		/* r10 == major of root dev */
 	extern char *panicstr;
+extern int cold;
 
 	howto = arghowto;
 	if ((howto&RB_NOSYNC) == 0 && waittime < 0 && bfreelist[0].b_forw) {
@@ -490,6 +517,7 @@ boot(arghowto)
 	dummy = 0; dummy = dummy;
 	printf("howto %d, devtype %d\n", arghowto, devtype);
 #endif
+pg("pausing (hit any key to reset)");
 	reset_cpu();
 	for(;;) ;
 	/*NOTREACHED*/
@@ -588,11 +616,11 @@ initcpu()
 /*
  * Clear registers on exec
  */
-setregs(p, entry)
-	struct proc *p;
+setregs(p, entry, retval)
+	register struct proc *p;
 	u_long entry;
+	int retval[2];
 {
-
 	p->p_regs[sEBP] = 0;	/* bottom of the fp chain */
 	p->p_regs[sEIP] = entry;
 
@@ -855,20 +883,9 @@ init386(first) { extern ssdtosd(), lgdt(), lidt(), lldt(), etext;
 	lidt(idt, sizeof(idt)-1);
 	lldt(GSEL(GLDT_SEL, SEL_KPL));
 
-#ifdef notyet
-	/* determine amount of memory present so we can scale kernel PT */
-	for (i= RAM_BEGIN; i < IOM_BEGIN; i += NBPG)
-		if (probemem(i) == 0) break;
-	if (i == IOM_BEGIN) {
-		if (maxphysmem == 0) maxphysmem = RAM_END;
-		for (i= IOM_END; i < maxphysmem; i += NBPG)
-			if (probemem(i) == 0) break;
-	}
-	maxmem = i / NBPG;
-#else
-Maxmem = 8192 *1024 /NBPG;
+	/*if (Maxmem > 6*1024/4)
+		Maxmem = (1024+384) *1024 /NBPG;*/
 	maxmem = Maxmem;
-#endif
 
 	/* reconcile against BIOS's recorded values in RTC
 	 * we trust neither of them, as both can lie!
@@ -882,9 +899,16 @@ Maxmem = 8192 *1024 /NBPG;
 		int totbios = (biosbasemem + 0x60000 + biosextmem)/4;
 		if (totbios < maxmem) maxmem = totbios;
 	} else	maxmem = 640/4;
+	maxmem = (biosextmem+1024)/4;
 	maxmem = maxmem-1;
-	physmem = maxmem - (0x100 -0xa0);
+	physmem = maxmem;
+	if (maxmem > 1024/4)
+		physmem -= (1024 - 640)/4;
+printf("bios base %d ext %d maxmem %d physmem %d\n",
+	biosbasemem, biosextmem, 4*maxmem, 4*physmem);
 
+maxmem=8192/4 -2;
+	vm_set_page_size();
 	/* call pmap initialization to make new kernel address space */
 	pmap_bootstrap (first, 0);
 	/* now running on new page tables, configured,and u/iom is accessible */

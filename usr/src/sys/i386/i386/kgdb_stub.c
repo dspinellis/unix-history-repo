@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kgdb_stub.c	7.2 (Berkeley) %G%
+ *	@(#)kgdb_stub.c	7.3 (Berkeley) %G%
  */
 /*
  * "Stub" to allow remote cpu to debug over a serial line using gdb.
@@ -42,7 +42,7 @@ extern void chgkprot();
 int kgdb_dev = KGDBDEV;		/* remote debugging device (-1 if none) */
 int kgdb_rate = KGDBRATE;	/* remote debugging baud rate */
 int kgdb_active = 0;            /* remote debugging active if != 0 */
-int kgdb_debug_init = 1;	/* != 0 waits for remote at system init */
+int kgdb_debug_init = 0;	/* != 0 waits for remote at system init */
 int kgdb_debug_panic = 1;	/* != 0 waits for remote on panic */
 int kgdb_debug = 3;
 
