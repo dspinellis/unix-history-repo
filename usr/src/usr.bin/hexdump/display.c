@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)display.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)display.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -15,6 +15,7 @@ static char sccsid[] = "@(#)display.c	5.10 (Berkeley) %G%";
 #include <errno.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "hexdump.h"
 
@@ -316,7 +317,7 @@ char *
 emalloc(size)
 	int size;
 {
-	char *p, *malloc();
+	char *p;
 
 	if (!(p = malloc((u_int)size)))
 		nomem();
