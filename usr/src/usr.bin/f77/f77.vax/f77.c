@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static	char sccsid[] = "@(#)f77.c	5.3 (Berkeley) %G%";
+static	char sccsid[] = "@(#)f77.c	5.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -80,7 +80,7 @@ static	char sccsid[] = "@(#)f77.c	5.3 (Berkeley) %G%";
  * 
  */
 
-char *xxxvers[] = "\n@(#) F77 DRIVER, VERSION 4.2,   1984 JULY 28\n";
+char *xxxvers = "\n@(#) F77 DRIVER, VERSION 4.2,   1984 JULY 28\n";
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
