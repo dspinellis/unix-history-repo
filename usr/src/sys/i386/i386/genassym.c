@@ -7,22 +7,23 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	5.8 (Berkeley) %G%
+ *	@(#)genassym.c	5.9 (Berkeley) %G%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)genassym.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)genassym.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sys/param.h"
 #include "sys/buf.h"
 #include "sys/vmmeter.h"
-#include "sys/user.h"
 #include "sys/cmap.h"
 #include "sys/map.h"
 #include "sys/proc.h"
+#include "sys/user.h"
 #include "sys/mbuf.h"
 #include "sys/msgbuf.h"
+#include "sys/resourcevar.h"
 #include "machine/cpu.h"
 #include "machine/trap.h"
 #include "machine/psl.h"
@@ -39,19 +40,18 @@ main()
 	struct user *up = (struct user *)0;
 	struct rusage *rup = (struct rusage *)0;
 	struct uprof *uprof = (struct uprof *)0;
+	struct vmspace *vms = (struct vmspace *)0;
 	vm_map_t map = (vm_map_t)0;
 	pmap_t pmap = (pmap_t)0;
 	struct pcb *pcb = (struct pcb *)0;
 	register unsigned i;
 
 	printf("#define\tI386_CR3PAT %d\n", I386_CR3PAT);
-	printf("#define\tU_PROCP %d\n", &up->u_procp);
 	printf("#define\tUDOT_SZ %d\n", sizeof(struct user));
 	printf("#define\tP_LINK %d\n", &p->p_link);
 	printf("#define\tP_RLINK %d\n", &p->p_rlink);
-	printf("#define\tP_MAP %d\n", &p->p_map);
-	printf("#define\tPMAP %d\n", &map->pmap);
-	printf("#define\tPM_STCHG %d\n", &pmap->pm_pdchanged);
+	printf("#define\tP_VMSPACE %d\n", &p->p_vmspace);
+	printf("#define\tVM_PMAP %d\n", &vms->vm_pmap);
 	printf("#define\tP_ADDR %d\n", &p->p_addr);
 	printf("#define\tP_PRI %d\n", &p->p_pri);
 	printf("#define\tP_STAT %d\n", &p->p_stat);
@@ -113,21 +113,19 @@ main()
 	printf("#define\tPCB_LDT %d\n", &pcb->pcbtss.tss_ldt);
 	printf("#define\tPCB_IOOPT %d\n", &pcb->pcbtss.tss_ioopt);
 	printf("#define\tNKMEMCLUSTERS %d\n", NKMEMCLUSTERS);
-	printf("#define\tU_PROCP %d\n", &up->u_procp);
-	printf("#define\tU_RU %d\n", &up->u_ru);
-	printf("#define\tU_PROF %d\n", &up->u_prof);
-	printf("#define\tU_PROFSCALE %d\n", &up->u_prof.pr_scale);
-	printf("#define\tPR_BASE %d\n", &uprof.pr_base);
-	printf("#define\tPR_SIZE %d\n", &uprof.pr_size);
-	printf("#define\tPR_OFF %d\n", &uprof.pr_off);
-	printf("#define\tPR_SCALE %d\n", &uprof.pr_scale);
+	printf("#define\tU_PROF %d\n", &up->u_stats.p_prof);
+	printf("#define\tU_PROFSCALE %d\n", &up->u_stats.p_prof.pr_scale);
+	printf("#define\tPR_BASE %d\n", &uprof->pr_base);
+	printf("#define\tPR_SIZE %d\n", &uprof->pr_size);
+	printf("#define\tPR_OFF %d\n", &uprof->pr_off);
+	printf("#define\tPR_SCALE %d\n", &uprof->pr_scale);
 	printf("#define\tRU_MINFLT %d\n", &rup->ru_minflt);
 	printf("#define\tPCB_FLAGS %d\n", &pcb->pcb_flags);
+	printf("#define\tPCB_SAVEFPU %d\n", &pcb->pcb_savefpu);
 	printf("#define\tFP_WASUSED %d\n", FP_WASUSED);
 	printf("#define\tFP_NEEDSSAVE %d\n", FP_NEEDSSAVE);
 	printf("#define\tFP_NEEDSRESTORE %d\n", FP_NEEDSRESTORE);
 	printf("#define\tFP_USESEMC %d\n", FP_USESEMC);
-	printf("#define\tPCB_SAVEFPU %d\n", &pcb->pcb_savefpu);
 	printf("#define\tPCB_SAVEEMC %d\n", &pcb->pcb_saveemc);
 	printf("#define\tPCB_CMAP2 %d\n", &pcb->pcb_cmap2);
 	printf("#define\tPCB_SSWAP %d\n", &pcb->pcb_sswap);
