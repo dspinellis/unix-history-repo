@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.39 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -368,8 +368,6 @@ int f, p;
 	 * Rather than doing them slowly, one at a time, do them all
 	 * at once.
 	 */
-	if (!myopts[TELOPT_ECHO])
-		dooption(TELOPT_ECHO);
 	if (!myopts[TELOPT_SGA])
 		dooption(TELOPT_SGA);
 	/*
@@ -414,6 +412,27 @@ int f, p;
 	 */
 	while (hiswants[TELOPT_NAWS] != hisopts[TELOPT_NAWS])
 		ttloop();
+
+	/*
+	 * On the off chance that the telnet client is broken and does not
+	 * respond to the DO ECHO we sent, (after all, we did send the
+	 * DO NAWS negotiation after the DO ECHO, and we won't get here
+	 * until a response to the DO NAWS comes back) simulate the
+	 * receipt of a will echo.  This will also send a WONT ECHO
+	 * to the client, since we assume that the client failed to
+	 * respond because it believes that it is already in DO ECHO
+	 * mode, which we do not want.
+	 */
+	if (hiswants[TELOPT_ECHO] == OPT_YES)
+		willoption(TELOPT_ECHO, 0);
+
+	/*
+	 * Finally, to clean things up, we turn on our echo.  This
+	 * will break stupid 4.2 telnets out of local terminal echo.
+	 */
+
+	if (!myopts[TELOPT_ECHO])
+		dooption(TELOPT_ECHO);
 
 	/*
 	 * Turn on packet mode, and default to line at at time mode.
