@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)gmon.h	7.4 (Berkeley) %G%
+ *	@(#)gmon.h	7.5 (Berkeley) %G%
  */
 
 #ifndef _GMON_H_
@@ -18,7 +18,7 @@
 struct gmonhdr {
 	u_long	lpc;		/* base pc address of sample buffer */
 	u_long	hpc;		/* max pc address of sampled buffer */
-	int	ncnt;		/* size of sample buffer (not including hdr) */
+	int	ncnt;		/* size of sample buffer (plus this header) */
 	int	version;	/* version number */
 	int	profrate;	/* profiling clock rate */
 	int	spare[3];	/* reserved */
