@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.92 (Berkeley) %G%
+#	@(#)READ_ME	8.93 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -608,6 +608,69 @@ Solaris 2.x (SunOS 5.x)
 	Be sure you have the appropriate patch installed or you won't
 	see system logging.
 
+Solaris 2.4 (SunOS 5.4)
+	Date: Fri, 17 Feb 1995 23:00:13 +0100
+	From: nissen@montefiore.ulg.ac.be (Alain Nissen)
+	To: sendmail@CS.Berkeley.EDU
+	Subject: A bug inside Solaris 2.4 can cause problems to Sendmail
+
+	I discovered a bug inside Solaris 2.4 which can cause problems with
+	Sendmail 8.6.9 (and maybe other versions).  Here is a short
+	description of the bug.  There isn't a bugid yet, nor a patchid
+	(of course).  The bug has been reported to SunSoft (Belgium), and a
+	bugid should be created in a few days.
+
+	When a root-setuid dynamically program is executed by a user
+	different from root, then, at run-time, the dynamic libraries are
+	first searched in /usr/lib, then is the contents of LD_RUN_PATH as
+	it was at compilation-time.
+
+	The correct behaviour (as it is in Solaris 2.3) should be to search
+	at run-time first in the contents of LD_RUN_PATH as it was at
+	compilation, then in /usr/lib.
+
+	This bug causes problems with Sendmail if the following particular
+	condition is encountered: you want to link Sendmail (at
+	compilation-time) with BIND's shared libresolv.so library that has
+	been put in /usr/local/lib (for example).
+
+	By default, BIND's shared library is optionnaly merged inside the
+	libc library.  But it is possible to build (by hand) a shared
+	library which would be called libresolv.so and put in /usr/local/lib
+	(for example).
+
+	At compilation-time, the linker uses BIND's library, but, at run-time,
+	it uses the original /usr/lib/libresolv.so library (because the name
+	is the same as the one in /usr/local/lib), even if LD_RUN_PATH was
+	containing /usr/local/lib before /usr/lib at compilation-time.
+
+	When Sendmail is called from some mailer (for example, the BSD Mail),
+	it runs uid=user and euid=root and the wrong library is used.
+	Numerous "name server timeouts" or "host not found" errors may occur.
+
+	A quick fix is to link "libresolv" and "lib44bsd" statically, while
+	linking other libraries dynamically.  With GCC, this can be done using
+
+		LIBDIRS= -L/usr/local/lib -R/usr/local/lib
+		LIBS= -Xlinker -Bstatic -lresolv -l44bsd -Xlinker \
+			-Bdynamic -lsocket -lnsl -lelf
+
+	in the Makefile.SunOS.5.x.
+
+	I hope this will help other Solaris 2.4 users.
+
+		    ********************************************************
+		    * Alain Nissen - Teacher Assistant                     *
+	 _________  * Department of Computer Science (A.I.)                *
+	| | |  _| | * University of Liege - Institut Montefiore, Bat B28,  *
+	| | | | | | * Grande Traverse, 10, B-4000 Liege - Belgium (Europe) *
+	| | | | | | * Phone: (+32)-41-662626          Fax: (+32)-41-662984 *
+	| | |___| | *                                                      *
+	| \_____/ | * E-mail: nissen@montefiore.ulg.ac.be                  *
+	\_________/ * URL:    http://www.montefiore.ulg.ac.be/~nissen/     *
+		    * Finger: nissen@finger.montefiore.ulg.ac.be           *
+		    ********************************************************
+
 Ultrix
 	By default, the IDENT protocol is turned off on Ultrix.  If you
 	are running Ultrix 4.4 or later, or if you have included patch
@@ -1027,4 +1090,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.92, last update %G% 07:44:01)
+(Version 8.93, last update %G% 14:37:39)
