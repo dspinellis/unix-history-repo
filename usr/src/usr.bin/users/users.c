@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)users.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)users.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -22,12 +22,25 @@ static char sccsid[] = "@(#)users.c	5.10 (Berkeley) %G%";
 
 #define	MAXUSERS	200
 
-main()
+main(argc, argv)
+	int argc;
+	char **argv;
 {
+	extern int optind;
 	register int cnt, ncnt;
 	struct utmp utmp;
 	char names[MAXUSERS][UT_NAMESIZE];
-	int scmp();
+	int ch, scmp();
+
+	while ((ch = getopt(argc, argv, "")) != EOF)
+		switch(ch) {
+		case '?':
+		default:
+			(void)fprintf(stderr, "usage: users\n");
+			exit(1);
+		}
+	argc -= optind;
+	argv += optind;
 
 	if (!freopen(_PATH_UTMP, "r", stdin)) {
 		(void)fprintf(stderr, "users: can't open %s.\n", _PATH_UTMP);
