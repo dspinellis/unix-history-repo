@@ -1,12 +1,12 @@
 .nr _0 \n(c.
-.\"	@(#)index.me	2.5	%G%
+.\"	@(#)index.me	2.6	%G%
 .\"	%beginstrip%
 .de (x			\" *** begin index entry
 .\" please note these cases MUST be in this order
 .ie !"\\n(.z"" \
 \{\
 .	ev 2			\" if in a diversion, save & process later
-\!.(x \\$1
+\!\\!.(x \\$1
 .\}
 .el \
 \{\
@@ -35,8 +35,8 @@
 .\}
 .el \
 \{\
+\!\\!.)x \\$1 \\$2
 .	br			\" if in a diversion, save & process later
-\!.)x \\$1 \\$2
 .	ev
 .\}
 ..
