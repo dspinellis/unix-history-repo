@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rexec.3	5.1 (Berkeley) %G%
+.\"	@(#)rexec.3	6.1 (Berkeley) %G%
 .\"
-.TH REXEC 3X "17 March 1982"
+.TH REXEC 3X ""
 .UC 5
 .SH NAME
 rexec \- return stream to a remote command
@@ -37,9 +37,10 @@ If all this fails, the user is prompted for the information.
 The port
 .I inport
 specifies which well-known DARPA Internet port to use for
-the connection; it will normally be the value returned from
-the call ``getservbyname("exec", "tcp")'' (see 
-.IR getservent (3N)).
+the connection; the call ``getservbyname("exec", "tcp")'' (see 
+.IR getservent (3N))
+will return a pointer to a structure, which contains the
+necessary port.
 The protocol for connection is described in detail in
 .IR rexecd (8C).
 .PP
@@ -57,7 +58,10 @@ in
 The control process will return diagnostic
 output from the command (unit 2) on this channel, and will also
 accept bytes on this channel as being UNIX signal numbers, to be
-forwarded to the process group of the command.
+forwarded to the process group of the command.  The diagnostic
+information returned does not include remote authorization failure,
+as the secondary connection is set up after authorization has been
+verified.
 If
 .I fd2p
 is 0, then the 
