@@ -1,4 +1,4 @@
-/*	tftpd.c	4.2	82/08/19	*/
+/*	tftpd.c	4.3	82/10/08	*/
 
 /*
  * Trivial file transfer protocol server.
@@ -13,10 +13,11 @@
 #include <wait.h>
 #include <errno.h>
 #include <ctype.h>
+#include <netdb.h>
 #include "tftp.h"
 
 extern	int errno;
-struct	sockaddr_in sin = { AF_INET, IPPORT_TFTP };
+struct	sockaddr_in sin = { AF_INET };
 int	f;
 int	options;
 char	buf[BUFSIZ];
@@ -28,7 +29,14 @@ main(argc, argv)
 	struct sockaddr_in from;
 	register struct tftphdr *tp;
 	register int n;
+	struct servent *sp;
 
+	sp = getservbyname("tftp", "udp");
+	if (sp == 0) {
+		fprintf(stderr, "tftpd: udp/tftp: unknown service\n");
+		exit(1);
+	}
+	sin.sin_port = htons(sp->s_port);
 #ifndef DEBUG
 	if (fork())
 		exit(0);
@@ -43,9 +51,6 @@ main(argc, argv)
 		(void) close(t);
 	  }
 	}
-#endif
-#if vax || pdp11
-	sin.sin_port = htons(sin.sin_port);
 #endif
 	argc--, argv++;
 	if (argc > 0 && !strcmp(argv[0], "-d"))

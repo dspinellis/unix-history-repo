@@ -1,4 +1,4 @@
-/*	main.c	4.1	82/08/16	*/
+/*	main.c	4.2	82/10/08	*/
 
 /*
  * TFTP User Program -- Command Interface.
@@ -11,8 +11,9 @@
 #include <errno.h>
 #include <setjmp.h>
 #include <ctype.h>
+#include <netdb.h>
 
-struct	sockaddr_in sin = { AF_INET, IPPORT_TFTP };
+struct	sockaddr_in sin = { AF_INET };
 int	f;
 int	options;
 int	trace;
@@ -25,6 +26,7 @@ char	*margv[20];
 char	*prompt = "tftp";
 jmp_buf	toplevel;
 int	intr();
+struct	servent *sp;
 
 int	quit(), help(), setverbose(), settrace(), status();
 int	get(), put(), setpeer(), setmode();
@@ -68,9 +70,12 @@ char	*rindex();
 main(argc, argv)
 	char *argv[];
 {
-	register struct requestpkt *tp;
-	register int n;
-
+	sp = getservbyname("tftp", "udp");
+	if (sp == 0) {
+		fprintf(stderr, "tftp: udp/tftp: unknown service\n");
+		exit(1);
+	}
+	sin.sin_port = htons(sp->s_port);
 	if (argc > 1 && !strcmp(argv[1], "-d")) {
 		options |= SO_DEBUG;
 		argc--, argv++;
@@ -80,9 +85,6 @@ main(argc, argv)
 		perror("socket");
 		exit(3);
 	}
-#if vax || pdp11
-	sin.sin_port = htons(sin.sin_port);
-#endif
 	strcpy(mode, "netascii");
 	if (argc > 1) {
 		if (setjmp(toplevel) != 0)
@@ -94,13 +96,15 @@ main(argc, argv)
 		command(1);
 }
 
-char host_name[100];
+char	*hostname;
+char	hnamebuf[32];
 
 setpeer(argc, argv)
 	int argc;
 	char *argv[];
 {
 	register int c;
+	struct hostent *host;
 
 	if (argc < 2) {
 		strcpy(line, "Connect ");
@@ -114,12 +118,21 @@ setpeer(argc, argv)
 		printf("usage: %s host-name [port]\n", argv[0]);
 		return;
 	}
-	sin.sin_addr.s_addr = rhost(&argv[1]);
-	if (sin.sin_addr.s_addr == (u_long)-1) {
-		printf("%s: unknown host\n", argv[1]);
-		connected = 0;
-		return;
+	host = gethostbyname(argv[1]);
+	if (host) {
+		bcopy(host->h_addr, &sin.sin_addr, host->h_length);
+		hostname = host->h_name;
+	} else {
+		sin.sin_addr.s_addr = inet_addr(argv[1]);
+		if (sin.sin_addr.s_addr == -1) {
+			connected = 0;
+			printf("%s: unknown host\n", argv[1]);
+			return;
+		}
+		strcpy(hnamebuf, argv[1]);
+		hostname = hnamebuf;
 	}
+	sin.sin_port = sp->s_port;
 	if (argc == 3) {
 		sin.sin_port = atoi(argv[2]);
 		if (sin.sin_port < 0) {
@@ -127,11 +140,10 @@ setpeer(argc, argv)
 			connected = 0;
 			return;
 		}
-#if vax || pdp11
-		sin.sin_port = htons(sin.sin_port);
-#endif
 	}
-	strcpy(host_name, argv[1]);
+#if vax || pdp11
+	sin.sin_port = htons(sin.sin_port);
+#endif
 	connected = 1;
 }
 
@@ -200,24 +212,26 @@ put(argc, argv)
 	}
 	targ = argv[argc - 1];
 	if (index(argv[argc - 1], ':')) {
-		char *hostname;
+		char *cp;
+		struct hostent *hp;
 
 		for (n = 1; n < argc - 1; n++)
 			if (index(argv[n], ':')) {
 				putusage(argv[0]);
 				return;
 			}
-		hostname = argv[argc - 1];
-		targ = index(hostname, ':');
+		cp = argv[argc - 1];
+		targ = index(cp, ':');
 		*targ++ = 0;
-		addr = rhost(&hostname);
-		if (addr == -1) {
-			printf("%s: Unknown host.\n", hostname);
+		hp = gethostbyname(cp);
+		if (hp == 0) {
+			printf("%s: Unknown host.\n", cp);
 			return;
 		}
-		sin.sin_addr.s_addr = addr;
+		bcopy(hp->h_addr, &sin.sin_addr, hp->h_length);
+		sin.sin_family = hp->h_addrtype;
 		connected = 1;
-		strcpy(host_name, hostname);
+		hostname = hp->h_name;
 	}
 	if (!connected) {
 		printf("No target machine specified.\n");
@@ -289,15 +303,18 @@ get(argc, argv)
 		if (src == NULL)
 			src = argv[n];
 		else {
+			struct hostent *hp;
+
 			*src++ = 0;
-			addr = rhost(&argv[n]);
-			if (addr == -1) {
+			hp = gethostbyname(argv[n]);
+			if (hp == 0) {
 				printf("%s: Unknown host.\n", argv[n]);
 				continue;
 			}
-			sin.sin_addr.s_addr = addr;
+			bcopy(hp->h_addr, &sin.sin_addr, hp->h_length);
+			sin.sin_family = hp->h_addrtype;
 			connected = 1;
-			strcpy(host_name, argv[n]);
+			hostname = hp->h_name;
 		}
 		if (argc < 4) {
 			cp = argc == 3 ? argv[2] : tail(src);
@@ -331,7 +348,7 @@ status(argc, argv)
 	char *argv[];
 {
 	if (connected)
-		printf("Connected to %s.\n", host_name);
+		printf("Connected to %s.\n", hostname);
 	else
 		printf("Not connected.\n");
 	printf("Mode: %s Verbose: %s Tracing: %s\n", mode,
@@ -513,4 +530,3 @@ setverbose()
 	verbose = !verbose;
 	printf("Verbose mode %s.\n", verbose ? "on" : "off");
 }
-
