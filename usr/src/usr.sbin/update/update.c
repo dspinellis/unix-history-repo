@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 1987 Regents of the University of California.
+ * Copyright (c) 1987, 1990 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)update.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)update.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -16,21 +16,15 @@ static char sccsid[] = "@(#)update.c	4.4 (Berkeley) %G%";
 #include <sys/time.h>
 #include <sys/file.h>
 #include <sys/signal.h>
-#include <syslog.h>
-#include <stdio.h>
 #include "pathnames.h"
 
 main()
 {
-	struct itimerval	value;
-	register char	**f;
-	extern int	sync();
+	struct itimerval value;
+	register char **f;
+	extern int sync();
 
-	if (fork())
-		exit(0);
-	(void)close(0);
-	(void)close(1);
-	(void)close(2);
+	daemon(0, 0);
 	for (f = fillst; *f; f++)
 		(void)open(*f, O_RDONLY, 0);
 	(void)signal(SIGALRM, sync);
