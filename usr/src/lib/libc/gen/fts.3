@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)fts.3	5.2 (Berkeley) %G%
+.\"	@(#)fts.3	5.3 (Berkeley) %G%
 .\"
 .TH FTS 3 ""
 .UC 7
@@ -153,9 +153,9 @@ should return a negative value, zero, or a positive value to indicate
 if the file referenced by its first argument comes before, in any order
 with respect to, or after, the file referenced by its second argument.
 Note, the
-.I accpath
+.I fts_accpath
 and
-.I path
+.I fts_path
 fields of the FTSENT structures may not be used in this comparison.
 If the
 .I compar
@@ -191,78 +191,80 @@ The FTSENT structure contains at least the following fields:
 .nf
 .ta .5i +.5i +\w'struct ftsent *parent;\0\0\0'u
 typedef struct ftsent {
-	struct ftsent *parent;		/* parent structure */
-	struct ftsent *link;		/* cycle or file structure */
+	struct ftsent *fts_parent;		/* parent structure */
+	struct ftsent *fts_link;		/* cycle or file structure */
 	union {
 		long number;		/* local numeric value */
 		void *pointer;		/* local address value */
-	} local;
-	char *accpath;			/* path from current directory */
-	char *path;			/* path from starting directory */
-	char *name;			/* file name */
-	short pathlen;			/* strlen(path) */
-	short namelen;			/* strlen(name) */
-	short level;			/* depth (\-1 to N) */
-	unsigned short info;		/* flags for entry */
-	struct stat statb;			/* stat(2) information */
+	} fts_local;
+	char *fts_accpath;			/* path from current directory */
+	char *fts_path;			/* path from starting directory */
+	char *fts_name;			/* file name */
+	short fts_pathlen;			/* strlen(path) */
+	short fts_namelen;			/* strlen(name) */
+	short fts_level;			/* depth (\-1 to N) */
+	unsigned short fts_info;		/* flags for entry */
+	struct stat fts_statb;			/* stat(2) information */
 } FTSENT;
 .fi
 .RE
 .PP
 The fields are as follows:
 .TP
-parent
+fts_parent
 A pointer to a structure referencing the file in the hierarchy
 immediately above the current file/structure.
 A parent structure for the initial entry point is provided as well,
 however, only the
-.I local
+.I fts_local
 and
-.I level
+.I fts_level
 fields are guaranteed to be initialized.
 .TP
-link
+fts_link
 If a directory causes a cycle in the hierarchy, either because of a
 hard link between two directories, or a symbolic link pointing to a
 directory, the
-.I link
+.I fts_link
 field of the structure will point to the structure in the hierarchy 
 that references the same file as the current structure.
 Upon return from the
 .I ftschildren
 routine, the
-.I link
+.I fts_link
 field points to the next structure in the linked list of entries
 from the directory.
-Otherwise, the contents of the link field are undefined.
+Otherwise, the contents of the
+.I fts_link
+field are undefined.
 .TP
-local
+fts_local
 This field is provided for the use of the application program.
 It can be used to store either a long value or an address.
 .TP
-accpath
+fts_accpath
 A path that can be used to access the file.
 .TP
-path
+fts_path
 The path for the file relative to the root of the traversal.
 .TP
-name
+fts_name
 The basename of the file.
 .TP
-pathlen
+fts_pathlen
 The length of the string referenced by
-.IR path .
+.IR fts_path .
 .TP
-namelen
+fts_namelen
 The length of the string referenced by
-.IR name .
+.IR fts_name .
 .TP 
-level
+fts_level
 The depth of the traversal, numbered from \-1 to N.
 The parent structure of the root of the traversal is numbered \-1, and
 the structure for the root of the traversal is numbered 0.
 .TP 
-info
+fts_info
 Information describing the file.
 With the exception of directories (FTS_D), all of these entries are
 terminal, i.e. they will not be revisited, nor will their descendants
@@ -275,7 +277,7 @@ A directory being visited in pre-order.
 FTS_DC
 A directory that causes a cycle.
 The 
-.I link
+.I fts_link
 field of the structure will be filled in as well.
 .TP
 FTS_DEFAULT
@@ -289,7 +291,7 @@ A directory that cannot be searched.
 .TP
 FTS_DOT
 A file named ``.'' or ``..'' with a
-.I level
+.I fts_level
 field not equal to zero, i.e. one not specified as an argument to
 .IR ftsopen .
 (See FTS_SEEDOT.)
@@ -312,7 +314,7 @@ No
 .IR stat (2)
 information is available at this time (see FTS_NOSTAT); the
 contents of the
-.I statb
+.I fts_statb
 field are undefined.
 .TP
 FTS_SL
@@ -322,24 +324,24 @@ FTS_SLNONE
 A symbolic link with a non-existent target.
 .RE
 .TP
-statb
+fts_statb
 .IR Stat (2)
 information for the file.
 .PP
 The
-.IR accpath
+.I fts_accpath
 and
-.I path
+.I fts_path
 fields are guaranteed to be NULL-terminated
 .B only
 for the file most recently returned by
 .IR ftsread .
 The
-.I name
+.I fts_name
 field is always NULL-terminated.
 To use these fields to reference any other active files may require
 that they be modified using the information contained in the
-.I pathlen
+.I fts_pathlen
 field.
 Any such modifications should be undone before further calls to
 .I ftsread
@@ -364,7 +366,7 @@ returns a pointer to the first entry in a linked list (sorted by
 the comparison routine, if provided) of the directory entries
 it contains.
 The linked list is linked through the
-.I link
+.I fts_link
 field of the FTSENT structure.
 Each call to
 .I ftschildren
@@ -373,7 +375,7 @@ Note, cycles are not detected until a directory is actually visited,
 therefore
 .I ftschildren
 will never return a structure with an
-.I info
+.I fts_info
 field set to FTS_DC.
 If the current file is not a directory being visited in pre-order,
 or if an error occurs, or the file does not contain any entries
@@ -432,9 +434,9 @@ The next call to
 .I ftsread
 will return the referenced file.
 The 
-.I stat
+.I fts_stat
 and
-.I info
+.I fts_info
 fields of the structure will be reinitialized at that time,
 but no other fields will have been modified.
 This option is meaningful only for the most recently returned
@@ -451,17 +453,17 @@ If the referenced file is the one most recently returned by
 the next call to
 .I ftsread
 returns the file with the
-.I info
+.I fts_info
 and
-.I statb
+.I fts_statb
 fields reinitialized to reflect the target of the symbolic link instead
 of the symbolic link itself.
 If the file is one of those most recently returned by
 .IR ftschildren ,
 the
-.I info
+.I fts_info
 and
-.I statb
+.I fts_statb
 fields of the structure, when returned by
 .IR ftsread ,
 will reflect the target of the symbolic link instead of the symbolic link
@@ -504,4 +506,4 @@ find(1), chdir(2), stat(2), qsort(3)
 .SH STANDARDS
 The
 .I fts
-utility is expected to be POSIX 1003.1 compliant.
+utility is expected to be a superset of the POSIX 1003.1 specification.
