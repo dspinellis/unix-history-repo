@@ -1,8 +1,8 @@
 #	Makefile	4.1	83/09/07
 
 DESTDIR=
-SRCS =	main.c gram.y docmd.c expand.c server.c
-OBJS =	main.o gram.o docmd.o expand.o server.o
+SRCS =	docmd.c expand.c gram.y lookup.c main.c server.c
+OBJS =	docmd.o expand.o gram.o lookup.o main.o server.o
 LINT =	lint -ps
 CFLAGS=
 
@@ -17,8 +17,8 @@ clean:
 install:
 	install -s rdist ${DESTDIR}/usr/ucb/rdist
 
-lint:	main.c gram.c docmd.c expand.c server.c
-	${LINT} main.c gram.c docmd.c expand.c server.c
+lint:	docmd.c expand.c gram.c lookup.c main.c server.c
+	${LINT} docmd.c expand.c gram.c lookup.c main.c server.c
 
 print:	${SRCS}
 	lpr -p ${SRCS} defs.h

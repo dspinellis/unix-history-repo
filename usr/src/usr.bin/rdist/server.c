@@ -1,15 +1,20 @@
 #ifndef lint
-static	char *sccsid = "@(#)server.c	4.1 (Berkeley) 83/09/07";
+static	char *sccsid = "@(#)server.c	4.2 (Berkeley) 83/09/27";
 #endif
 
 #include "defs.h"
 
 #define	ga() 	(void) write(rem, "", 1)
 
-char	buf[BUFSIZ];		/* gerneral purpose buffer */
+char	buf[BUFSIZ];		/* general purpose buffer */
 char	target[BUFSIZ];		/* target/source directory name */
 char	*tp;			/* pointer to end of target name */
 int	catname;		/* cat name to target name */
+
+static struct passwd *p = NULL;
+static struct group *g = NULL;
+
+extern	FILE *lfp;		/* log file for mailing changes */
 
 /*
  * Server routine to read requests and process them.
@@ -40,7 +45,7 @@ server()
 		do {
 			if (read(rem, cp, 1) != 1)
 				lostconn();
-		} while (*cp++ != '\n');
+		} while (*cp++ != '\n' && cp < &cmdbuf[BUFSIZ]);
 		*--cp = '\0';
 		cp = cmdbuf;
 		switch (*cp++) {
@@ -66,8 +71,13 @@ server()
 			continue;
 
 		case 'T':  /* init target file/directory name */
+			catname = 1;	/* target should be directory */
+			goto dotarget;
+
+		case 't':  /* init target file/directory name */
 			catname = 0;
-			shexpand(target, cp);
+		dotarget:
+			exptilde(target, cp);
 			tp = target;
 			while (*tp)
 				tp++;
@@ -93,13 +103,17 @@ server()
 
 		case 'E':  /* End. (of directory) */
 			*tp = '\0';
-			cp = rindex(target, '/');
-			if (cp == NULL || --catname < 0) {
+			if (--catname < 0) {
 				error("too many 'E's\n");
 				continue;
 			}
-			*cp = '\0';
-			tp = cp;
+			cp = rindex(target, '/');
+			if (cp == NULL)
+				tp = NULL;
+			else {
+				*cp = '\0';
+				tp = cp;
+			}
 			ga();
 			continue;
 
@@ -110,6 +124,13 @@ server()
 		case 'L':  /* Log. save message in log file */
 			query(cp);
 			continue;
+
+		case '\1':
+			errs++;
+			continue;
+
+		case '\2':
+			return;
 
 		default:
 			error("unknown command type %s\n", cp);
@@ -127,10 +148,8 @@ sendf(name, verify)
 	int verify;
 {
 	register char *last;
-	struct passwd *p;
-	struct group *g;
 	struct stat stb;
-	int sizerr, f;
+	int sizerr, f, u;
 	off_t i;
 
 	if (debug)
@@ -139,6 +158,15 @@ sendf(name, verify)
 	if (exclude(name))
 		return;
 
+	/*
+	 * first time sendf() is called?
+	 */
+	if (tp == NULL) {
+		exptilde(target, name);
+		tp = name = target;
+		while (*tp)
+			tp++;
+	}
 	if (access(name, 4) < 0 || stat(name, &stb) < 0) {
 		error("%s: %s\n", name, sys_errlist[errno]);
 		return;
@@ -148,21 +176,19 @@ sendf(name, verify)
 		last = name;
 	else
 		last++;
-	if (!update(last, &stb))
+	if ((u = update(last, &stb)) == 0)
 		return;
 
-	setpwent();
-	if ((p = getpwuid(stb.st_uid)) == NULL) {
-		error("no password entry for uid %d\n", stb.st_uid);
-		return;
-	}
-	endpwent();
-	setgrent();
-	if ((g = getgrgid(stb.st_gid)) == NULL) {
-		error("no name for group %d\n", stb.st_gid);
-		return;
-	}
-	endgrent();
+	if (p == NULL || p->pw_uid != stb.st_uid)
+		if ((p = getpwuid(stb.st_uid)) == NULL) {
+			error("no password entry for uid %d\n", stb.st_uid);
+			return;
+		}
+	if (g == NULL || g->gr_gid != stb.st_gid)
+		if ((g = getgrgid(stb.st_gid)) == NULL) {
+			error("no name for group %d\n", stb.st_gid);
+			return;
+		}
 
 	switch (stb.st_mode & S_IFMT) {
 	case S_IFREG:
@@ -177,15 +203,15 @@ sendf(name, verify)
 		return;
 	}
 
-	if ((f = open(name, 0)) < 0) {
-		error("%s: %s\n", name, sys_errlist[errno]);
-		return;
-	}
-	log("updating: %s\n", name);
+	log(lfp, "%s: %s\n", u == 2 ? "updating" : "installing", name);
 
 	if (verify || vflag)
 		return;
 
+	if ((f = open(name, 0)) < 0) {
+		error("%s: %s\n", name, sys_errlist[errno]);
+		return;
+	}
 	(void) sprintf(buf, "R%04o %D %D %s %s %s\n", stb.st_mode & 07777,
 		stb.st_size, stb.st_mtime, p->pw_name, g->gr_name, last);
 	if (debug)
@@ -222,6 +248,7 @@ rsendf(name, verify, st, owner, group)
 	struct direct *dp;
 	register char *last;
 	char *otp;
+	int len;
 
 	if (debug)
 		printf("rsendf(%s, %d, %x, %s, %s)\n", name, verify, st,
@@ -245,23 +272,12 @@ rsendf(name, verify, st, owner, group)
 		closedir(d);
 		return;
 	}
-	/*
-	 * first time rsendf() is called?
-	 */
-	if (tp == NULL) {
-		tp = target;
-		last = name;
-		while (*tp++ = *last++)
-			;
-		tp--;
-	}
 	otp = tp;
+	len = tp - target;
 	while (dp = readdir(d)) {
-		if (dp->d_ino == 0)
-			continue;
 		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, ".."))
 			continue;
-		if (strlen(name) + 1 + strlen(dp->d_name) >= BUFSIZ - 1) {
+		if (len + 1 + strlen(dp->d_name) >= BUFSIZ - 1) {
 			error("%s/%s: Name too long\n", name, dp->d_name);
 			continue;
 		}
@@ -282,6 +298,7 @@ rsendf(name, verify, st, owner, group)
 
 /*
  * Check to see if file needs to be updated on the remote machine.
+ * Returns 0 if no update, 1 if remote doesn't exist, and 2 if out of date.
  */
 update(name, st)
 	char *name;
@@ -305,7 +322,7 @@ update(name, st)
 	do {
 		if (read(rem, cp, 1) != 1)
 			lostconn();
-	} while (*cp++ != '\n');
+	} while (*cp++ != '\n' && cp < &buf[BUFSIZ]);
 	*--cp = '\0';
 	cp = buf;
 	if (debug)
@@ -315,11 +332,19 @@ update(name, st)
 	case 'Y':
 		break;
 
-	case 'N':  /* file doesn't exist so update it */
+	case 'N':  /* file doesn't exist so install it */
 		return(1);
 
 	case '\1':
-		error("%s\n", cp);
+		errs++;
+		if (*cp != '\0') {
+			if (!iamremote) {
+				fflush(stdout);
+				(void) write(2, cp, strlen(cp));
+			}
+			if (lfp != NULL)
+				(void) fwrite(cp, 1, strlen(cp), lfp);
+		}
 		return(0);
 
 	default:
@@ -329,9 +354,8 @@ update(name, st)
 
 	if (*cp == '\0') {
 		if ((st->st_mode & S_IFMT) == S_IFDIR)
-			return(1);
-		error("file -> directory\n");
-		return(0);
+			return(2);
+		return(1);
 	}
 
 	size = 0;
@@ -352,10 +376,9 @@ update(name, st)
 	 * File needs to be updated?
 	 */
 	if (st->st_mtime == mtime && st->st_size == size ||
-	    yflag && st->st_mtime < mtime) {
+	    yflag && st->st_mtime < mtime)
 		return(0);
-	}
-	return(1);
+	return(2);
 }
 
 /*
@@ -407,6 +430,7 @@ recvf(cmd, isdir)
 	struct timeval tvp[2];
 	char *owner, *group, *dir;
 	char new[BUFSIZ];
+	extern char *tmpname;
 
 	mode = 0;
 	for (cp = cmd; cp < cmd+4; cp++) {
@@ -451,12 +475,17 @@ recvf(cmd, isdir)
 	}
 	*cp++ = '\0';
 
+	new[0] = '\0';
 	if (isdir) {
 		if (catname++) {
 			*tp++ = '/';
 			while (*tp++ = *cp++)
 				;
 			tp--;
+		}
+		if (vflag) {
+			ga();
+			return;
 		}
 		if (stat(target, &stb) == 0) {
 			if ((stb.st_mode & S_IFMT) != S_IFDIR) {
@@ -477,16 +506,15 @@ recvf(cmd, isdir)
 				dir = target;
 				*cp = '\0';
 			}
-			f = access(dir, 2);
+			if (access(dir, 2) < 0)
+				goto bad2;
 			if (cp != NULL)
 				*cp = '/';
-			if (f < 0)
-				goto bad;
 			if (mkdir(target, mode) < 0)
 				goto bad;
+			if (chog(target, owner, group, mode) < 0)
+				return;
 		}
-		if (chog(target, owner, group) < 0)
-			return;
 		ga();
 		return;
 	}
@@ -522,17 +550,23 @@ recvf(cmd, isdir)
 		dir = target;
 		*cp = '\0';
 	}
-	(void) sprintf(new, "%s/rdistXXXXXX", dir);
-	mktemp(new);
-	f = access(dir, 2);
+	if (access(dir, 2) < 0) {
+bad2:
+		error("%s: %s\n", dir, sys_errlist[errno]);
+		if (cp != NULL)
+			*cp = '/';
+		return;
+	}
+	(void) sprintf(new, "%s/%s", dir, tmpname);
 	if (cp != NULL)
 		*cp = '/';
-	if (f < 0)
-		goto bad;
 	if ((f = creat(new, mode)) < 0)
 		goto bad1;
-	if (chog(new, owner, group) < 0)
+	if (chog(new, owner, group, mode) < 0) {
+		(void) close(f);
+		(void) unlink(new);
 		return;
+	}
 	ga();
 
 	wrerr = 0;
@@ -545,8 +579,11 @@ recvf(cmd, isdir)
 		do {
 			int j = read(rem, cp, amt);
 
-			if (j <= 0)
+			if (j <= 0) {
+				(void) close(f);
+				(void) unlink(new);
 				cleanup();
+			}
 			amt -= j;
 			cp += j;
 		} while (amt > 0);
@@ -561,6 +598,8 @@ recvf(cmd, isdir)
 	(void) response();
 	if (wrerr) {
 		error("%s: %s\n", cp, sys_errlist[olderrno]);
+		(void) close(f);
+		(void) unlink(new);
 		return;
 	}
 
@@ -576,12 +615,16 @@ recvf(cmd, isdir)
 	if (utimes(new, tvp) < 0) {
 bad1:
 		error("%s: %s\n", new, sys_errlist[errno]);
+		if (new[0])
+			(void) unlink(new);
 		return;
 	}
 	
 	if (rename(new, target) < 0) {
 bad:
 		error("%s: %s\n", target, sys_errlist[errno]);
+		if (new[0])
+			(void) unlink(new);
 		return;
 	}
 	ga();
@@ -590,38 +633,44 @@ bad:
 /*
  * Change owner and group of file.
  */
-chog(file, owner, group)
+chog(file, owner, group, mode)
 	char *file, *owner, *group;
+	int mode;
 {
-	extern int userid, usergid;
-	extern char *user;
-	struct passwd *p;
-	struct group *g;
+	extern int userid, groupid;
+	extern char user[];
 	register int i;
 	int uid, gid;
 
 	uid = userid;
 	if (userid == 0) {
-		p = getpwnam(owner);
-		if (p == NULL) {
-			error("%s: unknown login name\n", owner);
-			return(-1);
-		}
-		uid = p->pw_uid;
+		if (p == NULL || strcmp(owner, p->pw_name) != 0) {
+			if ((p = getpwnam(owner)) == NULL) {
+				if (mode & 04000) {
+					error("%s: unknown login name\n", owner);
+					return(-1);
+				}
+			} else
+				uid = p->pw_uid;
+		} else
+			uid = p->pw_uid;
 	}
-	setgrent();
-	g = getgrnam(group);
-	if (g == NULL) {
-		error("%s: unknown group\n", group);
-		return(-1);
-	}
-	gid = g->gr_gid;
-	if (userid && usergid != gid) {
-		for (i = 0; g->gr_mem[i]; i++)
+	gid = groupid;
+	if (g == NULL || strcmp(group, g->gr_name) != 0) {
+		if ((g = getgrnam(group)) == NULL) {
+			if (mode & 02000) {
+				error("%s: unknown group\n", group);
+				return(-1);
+			}
+		} else
+			gid = g->gr_gid;
+	} else
+		gid = g->gr_gid;
+	if (userid && groupid != gid) {
+		for (i = 0; g->gr_mem[i] != NULL; i++)
 			if (!(strcmp(user, g->gr_mem[i])))
 				goto ok;
-		error("You are not a member of the %s group\n", group);
-		return(-1);
+		gid = groupid;
 	}
 ok:
 	if (chown(file, uid, gid) < 0) {
@@ -631,10 +680,9 @@ ok:
 	return(0);
 }
 
-extern FILE *lfp;	/* log file for mailing changes */
-
 /*VARARGS*/
-log(fmt, a1, a2, a3)
+log(fp, fmt, a1, a2, a3)
+	FILE *fp;
 	char *fmt;
 	int a1, a2, a3;
 {
@@ -643,8 +691,8 @@ log(fmt, a1, a2, a3)
 		printf(fmt, a1, a2, a3);
 
 	/* Save changes (for mailing) if really updating files */
-	if (!vflag)
-		fprintf(lfp, fmt, a1, a2, a3);
+	if (!vflag && fp != NULL)
+		fprintf(fp, fmt, a1, a2, a3);
 }
 
 /*VARARGS*/
@@ -657,8 +705,10 @@ error(fmt, a1, a2, a3)
 	(void) sprintf(buf+8, fmt, a1, a2, a3);
 	(void) write(rem, buf, strlen(buf));
 	if (buf[1] != '\0') {
-		if (!iamremote)
+		if (!iamremote) {
+			fflush(stdout);
 			(void) write(2, buf+1, strlen(buf+1));
+		}
 		if (lfp != NULL)
 			(void) fwrite(buf+1, 1, strlen(buf+1), lfp);
 	}
@@ -674,8 +724,10 @@ fatal(fmt, a1, a2,a3)
 	(void) sprintf(buf+8, fmt, a1, a2, a3);
 	(void) write(rem, buf, strlen(buf));
 	if (buf[1] != '\0') {
-		if (!iamremote)
+		if (!iamremote) {
+			fflush(stdout);
 			(void) write(2, buf+1, strlen(buf+1));
+		}
 		if (lfp != NULL)
 			(void) fwrite(buf+1, 1, strlen(buf+1), lfp);
 	}
@@ -705,10 +757,12 @@ response()
 		do {
 			if (read(rem, cp, 1) != 1)
 				lostconn();
-		} while (cp < &buf[BUFSIZ] && *cp++ != '\n');
-		if (buf[1] != '\0') {
-			if (!iamremote)
+		} while (*cp++ != '\n' && cp < &buf[BUFSIZ]);
+		if (buf[0] != '\n') {
+			if (!iamremote) {
+				fflush(stdout);
 				(void) write(2, buf, cp - buf);
+			}
 			if (lfp != NULL)
 				(void) fwrite(buf, 1, cp - buf, lfp);
 		}
