@@ -3,7 +3,7 @@
 #	   tree: distribution tree: /, /usr, /var
 #	   date: Wed Jul 15 13:40:13 1992
 #
-#	@(#)4.4BSD.dist	5.16 (Berkeley) %G%
+#	@(#)4.4BSD.dist	5.17 (Berkeley) %G%
 
 /set type=dir uname=root gname=wheel mode=0755
 # .
@@ -14,6 +14,16 @@ a
 # ./a
 ..
 
+# ./altroot
+altroot
+# ./altroot
+..
+
+# ./amd
+amd	mode=0555
+# ./amd
+..
+
 # ./b
 b
 # ./b
@@ -22,6 +32,11 @@ b
 # ./c
 c
 # ./c
+..
+
+# ./dump
+dump
+# ./dump	uname=operator gname=operator mode=0775
 ..
 
 # ./bin
@@ -61,6 +76,11 @@ mtree
 # ./etc/namedb
 namedb
 # ./etc/namedb
+..
+
+# ./etc/sliphome
+sliphome
+# ./etc/sliphome
 ..
 
 # ./etc
@@ -146,6 +166,11 @@ jove
 # ./usr/contrib/lib/jove
 ..
 
+# ./usr/contrib/lib/perl
+perl
+# ./usr/contrib/lib/perl
+..
+
 # ./usr/contrib/lib
 ..
 
@@ -200,20 +225,41 @@ cat8
 # ./usr/contrib/man
 ..
 
-# ./usr/contrib/mh
-mh
+# ./usr/contrib/mh-6.8
+mh-6.8
 
-# ./usr/contrib/mh/bin
+# ./usr/contrib/mh-6.8/bin
 bin
-# ./usr/contrib/mh/bin
+# ./usr/contrib/mh-6.8/bin
 ..
 
-# ./usr/contrib/mh/lib
+# ./usr/contrib/mh-6.8/lib
 lib
-# ./usr/contrib/mh/lib
+# ./usr/contrib/mh-6.8/lib
 ..
 
-# ./usr/contrib/mh
+# ./usr/contrib/mh-6.8/man
+man
+
+# ./usr/contrib/mh-6.8/man/man1
+man1
+# ./usr/contrib/mh-6.8/man/man1
+..
+
+# ./usr/contrib/mh-6.8/man/man5
+man5
+# ./usr/contrib/mh-6.8/man/man5
+..
+
+# ./usr/contrib/mh-6.8/man/man8
+man8
+# ./usr/contrib/mh-6.8/man/man8
+..
+
+# ./usr/contrib/mh-6.8/man
+..
+
+# ./usr/contrib/mh-6.8
 ..
 
 # ./usr/contrib
@@ -241,14 +287,9 @@ arpa
 # ./usr/include/g++
 g++
 
-# ./usr/include/g++/gen
-gen
-# ./usr/include/g++/gen
-..
-
-# ./usr/include/g++/groff
-groff
-# ./usr/include/g++/groff
+# ./usr/include/g++/sys
+sys
+# ./usr/include/g++/sys
 ..
 
 # ./usr/include/g++
@@ -337,16 +378,60 @@ morefiles
 # ./usr/libdata/learn
 ..
 
-# ./usr/libdata/lint
-lint
-# ./usr/libdata/lint
-..
-
 # ./usr/libdata
 ..
 
 # ./usr/libexec
 libexec
+
+# ./usr/libexec/gcc2
+gcc2
+
+# ./usr/libexec/gcc2/gcc-lib
+gcc-lib
+
+# ./usr/libexec/gcc2/gcc-lib/include
+include
+# ./usr/libexec/gcc2/gcc-lib/include
+..
+
+# ./usr/libexec/gcc2/gcc-lib/m68k-hp-bsd
+m68k-hp-bsd
+
+# ./usr/libexec/gcc2/gcc-lib/m68k-hp-bsd/2.3.3
+2.3.3
+
+# ./usr/libexec/gcc2/gcc-lib/m68k-hp-bsd/2.3.3/include
+include
+# ./usr/libexec/gcc2/gcc-lib/m68k-hp-bsd/2.3.3/include
+..
+
+# ./usr/libexec/gcc2/gcc-lib/m68k-hp-bsd/2.3.3
+..
+
+# ./usr/libexec/gcc2/gcc-lib/m68k-hp-bsd
+..
+
+# ./usr/libexec/gcc2/gcc-lib
+..
+
+# ./usr/libexec/gcc2
+..
+
+# ./usr/libexec/lpr
+lpr
+# ./usr/libexec/lpr
+..
+
+# ./usr/libexec/lpr
+lpr
+# ./usr/libexec/lpr
+..
+
+# ./usr/libexec/lpr
+lpr
+# ./usr/libexec/lpr
+..
 
 # ./usr/libexec/lpr
 lpr
@@ -435,17 +520,17 @@ cat8
 # ./usr/local/man
 ..
 
+# ./usr/local/sbin
+sbin
+# ./usr/local/sbin
+..
+
 # ./usr/local
 ..
 
 # ./usr/mdec
 mdec
 # ./usr/mdec
-..
-
-# ./usr/obj
-obj
-# ./usr/obj
 ..
 
 # ./usr/old
@@ -1272,23 +1357,6 @@ US               mode=0555
 # ./usr/share
 ..
 
-# ./usr/spool
-spool
-
-# ./usr/spool/sockets
-sockets	mode=777
-
-# ./usr/spool/sockets/X11
-X11	mode=777
-# ./usr/spool/sockets/X11
-..
-
-# ./usr/spool/sockets
-..
-
-# ./usr/spool
-..
-
 # ./usr/src
 src
 # ./usr/src
@@ -1374,13 +1442,14 @@ phantasia        uname=games gname=games mode=0775
 # ./var/games
 ..
 
-# ./var/local
-local
-# ./var/local
-..
-
 # ./var/log
 log
+
+# ./var/log/rdist
+rdist
+# ./var/log/rdist
+..
+
 # ./var/log
 ..
 
@@ -1392,6 +1461,11 @@ mail
 # ./var/msgs
 msgs
 # ./var/msgs
+..
+
+# ./var/obj
+obj
+# ./var/obj
 ..
 
 # ./var/preserve
@@ -1461,6 +1535,17 @@ output
 # ./var/spool/secretmail
 secretmail
 # ./var/spool/secretmail
+..
+
+# ./var/spool/sockets
+sockets	mode=777
+
+# ./var/spool/sockets/X11
+X11	mode=777
+# ./var/spool/sockets/X11
+..
+
+# ./var/spool/sockets
 ..
 
 /set uname=uucp gname=daemon
