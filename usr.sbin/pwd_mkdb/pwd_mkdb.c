@@ -53,7 +53,7 @@ static char sccsid[] = "@(#)pwd_mkdb.c	5.5 (Berkeley) 5/6/91";
 #include <string.h>
 #include <stdlib.h>
 
-#define PW_COMPACT
+/* #define PW_COMPACT */
 /* Compact pwd.db/spwd.db structure by Alex G. Bulushev, bag@demos.su */
 #ifdef PW_COMPACT
 # define HI_BSIZE 1024
