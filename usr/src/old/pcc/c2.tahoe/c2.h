@@ -1,4 +1,4 @@
-/*	c2.h	1.1	86/03/02	*/
+/*	c2.h	1.2	86/07/27	*/
 
 /*
  * Header for object code improver
@@ -135,6 +135,12 @@ struct node {
 	short	seq;
 };
 
+struct intleavetab  {
+	char		op;
+	unsigned char	subop;
+	int		intleavect;
+} intltab[];
+
 /* struct { NUXI problems
 	short	combop;
 }; */
@@ -165,6 +171,7 @@ int	nchange;
 int	isn;
 int	debug;
 int	fortflg;
+int 	aobflag;
 char	*lasta;
 char	*lastr;
 char	*firstr;
@@ -183,8 +190,10 @@ char	ccloc[C2_ASIZE];
 #define RT4	NREG+4
 #define	LABHS	127
 
+#define MAXAOBDISP	5000
+
 #define NUSE 6
-struct node *uses[NUSE]; /* for backwards flow analysis */
+struct node *uses[NUSE + 7]; /* for backwards flow analysis */
 struct node *useacc; /* same for acc */
 char *lastrand; /* last operand of instruction */
 struct node *bflow();

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)c21.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)c21.c	1.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -124,7 +124,8 @@ bmove() {
 			p->code=copy(buf); p->op = MOVA; p->subop = BYTE; p->pop=0;
 		} else
 #endif MOVAFASTER
-		if (*cp1++=='-' && 0<=(r=getnum(cp1))) {
+		if (*cp1++=='-' && 0==(r=getnum(cp1)) &&
+		!checkexpr(cp1)) {
 			p->op=ADD; p->pop=0; *--cp1='$'; p->code=cp1;
 		} goto std;
 	case ADD:
@@ -166,7 +167,8 @@ bmove() {
 			p->op = MOVA; p->subop = BYTE; p->pop=0;
 		} else
 #endif MOVAFASTER
-		if (*cp1++=='-' && 0<=(r=getnum(cp1))) {
+		if (*cp1++=='-' && 0==(r=getnum(cp1)) &&
+		!checkexpr(cp1)) {
 			p->op=SUB; p->pop=0; *--cp1='$'; p->code=cp1;
 		}
 		/* fall thru ... */
@@ -514,7 +516,9 @@ ashadd:
 		if(useacc == 0)
 			useacc = p;
 		goto std;
-	case TSTF: case PUSHD:
+	case TSTF: 
+		break;
+	case PUSHD:
 		if(ldmov(p)) {
 			p = p->forw;
 			break;
@@ -905,6 +909,7 @@ register struct node *q;
 		if(p->op == LDF) {
 			if((s = dlsw(p->code)) == NULL)
 				return(0);
+
 			strcpy(line, s);
 			if(q->op == STF) {
 				strcat(line, ",");
@@ -954,11 +959,13 @@ char *
 dlsw(d)
 	register char *d;
 {
-	register char *s, *t;
+	register char *s, *t, *c;
 	register int r;
 	static char lsw[C2_ASIZE];
 
 	if(d[0] == '*' || d[0] == '$')
+		return(NULL);
+	if (((strncmp(d, "(r", 2)) == 0) && isdigit(d[2]))
 		return(NULL);
 	t = lsw;
 	if((r=isreg(d)) >= 0)
@@ -967,10 +974,25 @@ dlsw(d)
 		for(s=d; *s && *s!='('; *t++ = *s++)
 			if(*s == '[')
 				return(NULL);
-		*t++ = '+'; *t++ = '4';
+		if(s!=d)
+			*t++ = '+';
+		*t++ = '4';
 		while(*t++ = *s)
-			if(*s++ == '[')
+			if(*s++ == '[' )
+			{
 				return(NULL);
+			}
 	}
 	return(lsw);
+}
+checkexpr(p)
+register char *p;
+{
+
+	while(*p && *p != ','){
+	if ((*p == '+' ) || (*p == '-'))
+		return(1);
+	*p++;
+	}
+	return(0);
 }

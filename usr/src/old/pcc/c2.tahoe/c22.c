@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)c22.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)c22.c	1.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -298,7 +298,8 @@ addaob()
 		  (p2=p1->forw)->op==CBR && p2->forw->op!=CBR) {
 			register char *cp1,*cp2;
 			splitrand(p1); if (!equstr(p->code,regs[RT1])) continue;
-			if (p2->subop==JLE || p2->subop==JLT) {
+			if ((p2->subop==JLE || p2->subop==JLT) &&
+			    checkaobdisp(p2)){
 				if (p2->subop==JLE) p->op = AOBLEQ; else p->op = AOBLSS; p->subop = 0;
 				cp2=regs[RT1]; cp1=regs[RT2]; while (*cp2++= *cp1++); /* limit */
 				cp2=regs[RT2]; cp1=p->code; while (*cp2++= *cp1++); /* index */
@@ -366,7 +367,7 @@ struct node *ap;
 
 clearuse() {
 	register struct node **i;
-	for (i=uses+NUSE; i>uses;) *--i=0;
+	for (i=uses+NREG; i>uses;) *--i=0;
 	useacc = 0;
 }
 
@@ -598,7 +599,7 @@ findcon(p, type)
 		return(p);
 	if ((r = isreg(p)) >= 0 && compat(regs[r][0],type))
 		return(regs[r]+1);
-	if (equstr(p, conloc) && conval[0] == type)
+	if (equstr(p, conloc))
 		return(conval+1);
 	return(p);
 }
@@ -714,4 +715,195 @@ register char	*cp;
 	if (*cp == '_' || *cp == 'L')
 		return (1);
 	return (0);
+}
+
+
+checkaobdisp(p)
+register struct node *p;
+{
+register struct node *q;
+register int i;
+	
+
+if (!aobflag) return(1);
+/*  backward search */
+	i = 0;
+	q = p; 
+	while (i++ < MAXAOBDISP && ((q= q->back) !=&first))
+	{
+		if (p->ref == q) 
+		   return(1);
+	}
+
+/*  forward search */
+	i = 0;
+	q = p; 
+	while (i++ < MAXAOBDISP && ((q= q->forw) !=0))
+	{
+		if (p->ref == q) 
+		   return(1);
+	}
+	return(0);
+}
+
+
+struct intleavetab intltab[] = {
+	ADDF,	FLOAT,		1,
+	ADDF,	DOUBLE,		1,
+	SUBF,	FLOAT,		1,
+	SUBF,	DOUBLE,		1,
+	MULF,	FLOAT,		1,
+	MULF,	DOUBLE,		1,
+	DIVF,	FLOAT,		1,
+	DIVF,	DOUBLE,		1,
+	SINF,	FLOAT,		1,
+	COSF,	FLOAT,		1,
+	ATANF,	FLOAT,		1,
+	LOGF,	FLOAT,		1,
+	SQRTF,	FLOAT,		1,
+	EXPF,	FLOAT,		1,
+	LDF,	FLOAT,		0,
+	LDF,	DOUBLE,		0,
+	LNF,	FLOAT,		0,
+	LNF,	DOUBLE,		0,
+	STF,	FLOAT,		0,
+	CMPF,	FLOAT,		0,
+	CMPF,	DOUBLE,		0,
+	CMPF2,	FLOAT,		0,
+	TSTF,	FLOAT,		0,
+	TSTF,	DOUBLE,		0,
+	PUSHD,	DOUBLE,		0,
+	CVLF,	U(LONG,FLOAT),	0,
+	CVFL,	U(FLOAT,LONG),	0, 
+	LDFD,	U(FLOAT,DOUBLE),0, 
+	CVDF,	U(DOUBLE,FLOAT),0,
+	NEGF,	FLOAT,		0,
+	0,	0,		0};
+
+interleave()
+{
+	register struct node *p, *p1;
+
+	register struct intleavetab *t;
+	register int r;
+	int count;
+	for (p= first.forw; p!=0; p = p->forw){
+		count = 0;
+		for  (t =intltab; t->op != 0; t++){
+			if (t->op == p->op && t->subop == p->subop){
+			count = t->intleavect;
+			break;
+			}
+		}
+		if (count < 1) continue;
+		p1 = p->forw;
+		clearuse();
+		clearreg();
+		while ((p1 != 0) && (p1->op != CBR) &&
+		      (p1->subop == FLOAT || p1->subop == DOUBLE ||
+	              ((p1->subop&0xF0)==DOUBLE<<4) || ((p1->subop&0xF)==DOUBLE )||
+	              ((p1->subop&0xF0)==FLOAT<<4) || (p1->subop&0xF)==FLOAT))
+		{
+			if (((r = isreg(p1->code)) >= 0)){
+			uses[r] = p1;
+			if ((p1->subop == DOUBLE) || ((p->subop&0xF0)==DOUBLE<<4) || 
+		           ((p->subop&0xF)==DOUBLE)) 
+				uses[r+1] = p1;
+			}
+			else checkreg(p1,p1->code);
+			p1 = p1->forw;
+
+		}
+		if (p1 == 0) return;
+		if (!(sideeffect(p, p1)))
+			insertblk(p,p1);
+	}
+		
+}
+
+
+insertblk(p, p1)
+struct node *p, *p1;
+{
+	p1->back->forw = p1->forw;
+	p1->forw->back = p1->back;
+	p1->forw = p->forw;
+	p->forw->back = p1;
+	p->forw = p1;
+	p1->back = p;
+}
+
+int termop[] = {
+	JBR, CBR, JMP, LABEL, DLABEL, EROU, JSW, TST, CMP, BIT,
+	CALLF, CALLS, CASE, AOBLEQ, AOBLSS, CMPF, CMPF2, TSTF, MOVBLK, MFPR,
+	MTPR, PROBE, MOVO, TEXT, DATA, BSS, ALIGN, END, LGEN, SET,
+	LCOMM, COMM, 0
+	}; 
+
+sideeffect(p,p1)
+struct node *p, *p1;
+{
+	register struct node *q;
+	register int r;
+	register int *t;
+	register char *cp;
+	int i;
+
+	if (p1->op == 0) return(1);  /*  special instructions */
+
+	for (t = termop; *t!=0; t++){
+		if (*t == p1->op) return(1);
+	}
+	if ((p1->forw != NULL) && (p1->forw->op == CBR))
+		return(1);
+	splitrand(p1);
+	r = isreg(lastrand);
+	if (uses[r] &&  r >= 0 ) return(1);
+	if ((p1->op == EDIV) && (r = isreg(regs[RT3]) >= 0) &&
+	   (uses[r]))  return(1);
+
+	for (q = p1->back ; q!=p; q=q->back)
+	{
+		if ((p1->op == PUSH || p1->op == PUSHA) &&
+		    (q->op == PUSHD || q->op == PUSH || q->op == PUSHA))  
+		     return(1); 		     /* keep args in order */
+		if (((i = strlen(q->code)) >= 5 &&    /* cvdl -(sp); pushl r0*/
+		    (strcmp(q->code+i-5,"-(sp)") == 0 )) || 
+		    (strcmp(lastrand,"-(sp)") == 0)) return(1);
+		if (equstr(q->code, lastrand))
+		    return(1);
+		if (q->op == STF || q->op == CVFL || q->op == CVLF) 
+		   {
+		    if (equstr(q->code, regs[RT1])) return(1);
+		if (OP3 == ((p1->subop >> 4)&0xF) || p1->op == EMUL 
+		|| p1->op == EDIV)
+		    if (equstr(q->code, regs[RT2]))
+		       return(1);
+		/*  handle the case  std -56(fp) pushl -60(fp) pushl
+		    -56(fp);
+		*/
+		if ((p1->forw != NULL) &&  (q->op == STF) &&
+		(q->subop == DOUBLE)){ 
+		if (!strncmp(q->code,p1->forw->code,strlen(q->code)))
+			return(1);
+		}
+		}
+	}
+	return(0);
+}
+checkreg(p,s)
+struct node *p;
+char *s;
+{
+char *cp2;  
+register int r;
+	/* check for (r),[r] */
+	do if (*s=='(' || *s=='[') {/* get register number */
+		char t;
+		cp2= ++s; while (*++s!=')' && *s!=']'); t= *s; *s=0;
+		if ((r=isreg(cp2)) >= 0)  {
+			uses[r]=p; 
+		}
+		*s=t;
+	} while (*++s);
 }
