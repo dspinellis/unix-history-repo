@@ -18,5 +18,6 @@ AINC=	-I${.CURDIR}/${MACHINE}
 .include "${.CURDIR}/stdlib/Makefile.inc"
 .include "${.CURDIR}/string/Makefile.inc"
 .include "${.CURDIR}/sys/Makefile.inc"
+.include "${.CURDIR}/rpc/Makefile.inc"
 
 .include <bsd.lib.mk>
