@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -497,6 +497,7 @@ config()
 			continue;
 		}
 		if (sp->s_port != sep->se_ctrladdr.sin_port) {
+			sep->se_ctrladdr.sin_family = AF_INET;
 			sep->se_ctrladdr.sin_port = sp->s_port;
 			if (sep->se_fd >= 0)
 				close_sep(sep);
