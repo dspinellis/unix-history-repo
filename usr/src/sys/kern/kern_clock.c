@@ -3,14 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_clock.c	7.4 (Berkeley) %G%
+ *	@(#)kern_clock.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "dkstat.h"
 #include "callout.h"
-#include "dir.h"
 #include "user.h"
 #include "kernel.h"
 #include "proc.h"
