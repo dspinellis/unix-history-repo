@@ -1,23 +1,21 @@
-#	@(#)bsd.doc.mk	5.6 (Berkeley) %G%
-
-PRINTER=psc
+#	@(#)bsd.doc.mk	5.7 (Berkeley) %G%
 
 BIB?=		bib
-EQN?=		deqn -P${PRINTER}
-GREMLIN?=	grn -P${PRINTER}
+EQN?=		eqn
+GREMLIN?=	grn
 GRIND?=		vgrind -f
 INDXBIB?=	indxbib
 PIC?=		pic
 REFER?=		refer
-ROFF?=		ditroff -t ${MACROS} ${PAGES} -P${PRINTER}
+ROFF?=		groff ${MACROS} ${PAGES}
 SOELIM?=	soelim
-TBL?=		dtbl -P${PRINTER}
+TBL?=		tbl
 
 .PATH: ${.CURDIR}
 
 .if !target(print)
-print: paper.${PRINTER}
-	lpr -P${PRINTER} paper.${PRINTER}
+print: paper.ps
+	lpr -P${PRINTER} paper.ps
 .endif
 
 .if !target(manpages)
