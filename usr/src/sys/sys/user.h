@@ -1,4 +1,4 @@
-/*	user.h	4.2	%G%	*/
+/*	user.h	4.3	%G%	*/
 
 #ifdef KERNEL
 #include "../h/pcb.h"
@@ -27,7 +27,6 @@ asm(".set U_QSAV,140");
  * same process.
  */
  
-#define	EXCLOSE 01
 #define	SHSIZE	32
  
 struct	user
@@ -64,6 +63,8 @@ struct	user
 	struct	inode *u_pdir;		/* inode of parent directory of dirp */
 	struct	file *u_ofile[NOFILE];	/* pointers to file structures of open files */
 	char	u_pofile[NOFILE];	/* per-process flags of open files */
+#define	EXCLOSE 01		/* auto-close on exec */
+#define	ISPORT	02		/* is a port */
 	label_t u_ssav;			/* label variable for swapping */
 	int	(*u_signal[NSIG])();	/* disposition of signals */
 	int	u_cfcode;		/* ``code'' to trap when CM faulted */
