@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkheaders.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkheaders.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -108,6 +108,7 @@ do_header(dev, hname, count)
 		if (cp == (char *)EOF)
 			break;
 		fl = (struct file_list *) malloc(sizeof *fl);
+		bzero(fl, sizeof(*fl));
 		fl->f_fn = inw;
 		fl->f_type = inc;
 		fl->f_next = fl_head;
@@ -121,6 +122,7 @@ do_header(dev, hname, count)
 	}
 	if (oldcount == -1) {
 		fl = (struct file_list *) malloc(sizeof *fl);
+		bzero(fl, sizeof(*fl));
 		fl->f_fn = name;
 		fl->f_type = count;
 		fl->f_next = fl_head;

@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -41,7 +41,7 @@ main(argc, argv)
 	char *p;
 
 	while ((ch = getopt(argc, argv, "gp")) != EOF)
-		switch((char)ch) {
+		switch (ch) {
 		case 'g':
 			debugging++;
 			break;
@@ -155,6 +155,57 @@ get_word(fp)
 	if (ch == EOF)
 		return ((char *)EOF);
 	(void) ungetc(ch, fp);
+	return (line);
+}
+
+/*
+ * get_quoted_word
+ *	like get_word but will accept something in double or single quotes
+ *	(to allow embedded spaces).
+ */
+char *
+get_quoted_word(fp)
+	register FILE *fp;
+{
+	static char line[256];
+	register int ch;
+	register char *cp;
+
+	while ((ch = getc(fp)) != EOF)
+		if (ch != ' ' && ch != '\t')
+			break;
+	if (ch == EOF)
+		return ((char *)EOF);
+	if (ch == '\n')
+		return (NULL);
+	cp = line;
+	if (ch == '"' || ch == '\'') {
+		register int quote = ch;
+
+		while ((ch = getc(fp)) != EOF) {
+			if (ch == quote)
+				break;
+			if (ch == '\n') {
+				*cp = 0;
+				printf("config: missing quote reading `%s'\n",
+					line);
+				exit(2);
+			}
+			*cp++ = ch;
+		}
+	} else {
+		*cp++ = ch;
+		while ((ch = getc(fp)) != EOF) {
+			if (isspace(ch))
+				break;
+			*cp++ = ch;
+		}
+		if (ch != EOF)
+			(void) ungetc(ch, fp);
+	}
+	*cp = 0;
+	if (ch == EOF)
+		return ((char *)EOF);
 	return (line);
 }
 
