@@ -1,4 +1,4 @@
-/*	sys_process.c	5.5	82/10/31	*/
+/*	sys_process.c	5.6	82/10/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -91,7 +91,7 @@ int ipcreg[NIPCREG] =
 	{R0,R1,R2,R3,R4,R5,R6,R7,AR0,AR1,AR2,AR3,AR4,AR5,AR6,AR7,PC};
 #endif
 
-#define	PHYSOFF(p, o)
+#define	PHYSOFF(p, o) \
 	((physadr)(p)+((o)/sizeof(((physadr)0)->r[0])))
 
 /*
