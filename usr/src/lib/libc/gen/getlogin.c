@@ -23,6 +23,8 @@ getlogin()
 		return (0);
 	}
 	close(uf);
+	if (ubuf.ut_name[0] == '\0')
+		return (0);
 	ubuf.ut_name[sizeof (ubuf.ut_name)] = ' ';
 	for (cp = ubuf.ut_name; *cp++ != ' '; )
 		;
