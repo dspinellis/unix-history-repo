@@ -1,6 +1,18 @@
-/* Copyright (c) 1982 Regents of the University of California */
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
 
-static	char sccsid[] = "@(#)makedefs.c	1.4 (Berkeley) %G%";
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1983 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif not lint
+
+#ifndef lint
+static char sccsid[] = "@(#)makedefs.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 static char rcsid[] = "$Header: makedefs.c,v 1.4 84/12/26 10:40:22 linton Exp $";
 
