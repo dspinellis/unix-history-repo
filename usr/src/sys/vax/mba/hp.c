@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.4 (Berkeley) %G%
+ *	@(#)hp.c	7.5 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -290,10 +290,7 @@ hpinit(dev, flags)
 	mi = hpinfo[unit];
 	hpaddr = (struct hpdevice *)mi->mi_drv;
 
-	if (flags & O_NDELAY)
-		sc->sc_state = WANTOPENRAW;
-	else
-		sc->sc_state = WANTOPEN;
+	sc->sc_state = WANTOPEN;
 	/*
 	 * Use the default sizes until we've read the label,
 	 * or longer if there isn't one there.
@@ -302,6 +299,9 @@ hpinit(dev, flags)
 	lp->d_nsectors = 32;
 	lp->d_ntracks = 20;
 	lp->d_secpercyl = 32*20;
+
+	if (flags & O_NDELAY)
+		goto raw;
 
 	/*
 	 * Map all ML11's to the same type.  Also calculate
@@ -322,7 +322,7 @@ hpinit(dev, flags)
 		mi->mi_type = MBDT_ML11A;
 		lp->d_partitions[0].p_size = sc->sc_mlsize;
 		lp->d_secpercyl = sc->sc_mlsize;
-		sc->sc_state = WANTOPENRAW;
+		goto raw;
 	}
 
 	/*
@@ -330,8 +330,6 @@ hpinit(dev, flags)
 	 * during first read operation.
 	 */
 	if (msg = readdisklabel(dev, hpstrategy, lp)) {
-		if (sc->sc_state == OPENRAW)
-			goto done;
 		if (cold)
 			printf(": %s", msg);
 		else
@@ -339,8 +337,7 @@ hpinit(dev, flags)
 #ifdef COMPAT_42
 		mi->mi_type = hpmaptype(mi, lp);
 #else
-		sc->sc_state = OPENRAW;
-		goto done;
+		goto raw;
 #endif
 	}
 
@@ -381,6 +378,11 @@ hpinit(dev, flags)
 	bp->b_flags = B_INVAL | B_AGE;
 	brelse(bp);
 done:
+	wakeup((caddr_t)sc);
+	return (error);
+
+raw:
+	sc->sc_state = OPENRAW;
 	wakeup((caddr_t)sc);
 	return (error);
 }
