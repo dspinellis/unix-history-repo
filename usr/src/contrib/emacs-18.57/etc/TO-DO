@@ -1,0 +1,26 @@
+Things useful to do for GNU Emacs:
+
+* Primitive for random access insertion of part of a file.
+
+* Making I/O streams for files, so that read and prin1 can
+ be used on files directly.  The I/O stream itself would
+ serve as a function to read or write one character.
+
+* If a file you can't write is in a directory you can write,
+ make sure it works to modify and save this file.
+
+* Make dired's commands handle correctly the case where
+ ls has listed several subdirectories' contents.
+ It needs to be able to tell which directory each file
+ is really in, by searching backward for the line
+ which identifies the start of a directory.
+
+* Add more dired commands, such as sorting (use the
+ sort utility through call-process-region).
+
+* Make display.c record inverse-video-ness on
+ a character by character basis.  Then make non-full-screen-width
+ mode lines inverse video, and display the marked location in
+ inverse video.
+
+* VMS code to list a file directory.  Make dired work.
