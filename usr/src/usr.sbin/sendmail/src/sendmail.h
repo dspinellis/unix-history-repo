@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.114		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.115		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -178,6 +178,7 @@ extern struct hdrinfo	HdrInfo[];
 # define H_EOH		00001	/* this field terminates header */
 # define H_RCPT		00002	/* contains recipient addresses */
 # define H_DEFAULT	00004	/* if another value is found, drop this */
+# define H_RESENT	00010	/* this address is a "resent-..." address */
 # define H_CHECK	00020	/* check h_mflags against m_flags */
 # define H_ACHECK	00040	/* ditto, but always (not just default) */
 # define H_FORCE	00100	/* force this field, even if default */
