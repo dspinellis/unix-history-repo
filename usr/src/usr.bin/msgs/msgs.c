@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)msgs.c	4.2 %G%";
+static char sccsid[] = "@(#)msgs.c	4.3 %G%";
 #endif lint
 /*
  * msgs - a user bulletin board program
@@ -699,7 +699,7 @@ FILE *infile;
 			ptr = from;
 			in = nxtfld(inbuf);
 			if (*in) while (*in && *in > ' ') {
-				if (*in == ':')
+				if (*in == ':' || *in == '@')
 					local = NO;
 				*ptr++ = *in++;
 				/* what about sizeof from ? */
