@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  *
- *	@(#)swap_pager.c	8.3 (Berkeley) %G%
+ *	@(#)swap_pager.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -278,7 +278,7 @@ swap_pager_alloc(handle, size, prot, foff)
 	pager->pg_handle = handle;
 	pager->pg_ops = &swappagerops;
 	pager->pg_type = PG_SWAP;
-	pager->pg_data = (caddr_t)swp;
+	pager->pg_data = swp;
 
 #ifdef DEBUG
 	if (swpagerdebug & SDB_ALLOC)
@@ -453,7 +453,25 @@ swap_pager_io(swp, m, flags)
 		return (VM_PAGER_FAIL);		/* XXX: correct return? */
 	if (swpagerdebug & (SDB_FOLLOW|SDB_IO))
 		printf("swpg_io(%x, %x, %x)\n", swp, m, flags);
+	if ((flags & (B_READ|B_ASYNC)) == (B_READ|B_ASYNC))
+		panic("swap_pager_io: cannot do ASYNC reads");
 #endif
+
+	/*
+	 * First determine if the page exists in the pager if this is
+	 * a sync read.  This quickly handles cases where we are
+	 * following shadow chains looking for the top level object
+	 * with the page.
+	 */
+	off = m->offset + m->object->paging_offset;
+	ix = off / dbtob(swp->sw_bsize);
+	if (swp->sw_blocks == NULL || ix >= swp->sw_nblocks)
+		return(VM_PAGER_FAIL);
+	swb = &swp->sw_blocks[ix];
+	off = off % dbtob(swp->sw_bsize);
+	if ((flags & B_READ) &&
+	    (swb->swb_block == 0 || (swb->swb_mask & (1 << atop(off))) == 0))
+		return(VM_PAGER_FAIL);
 
 	/*
 	 * For reads (pageins) and synchronous writes, we clean up
@@ -497,36 +515,9 @@ swap_pager_io(swp, m, flags)
 	}
 
 	/*
-	 * Determine swap block and allocate as necessary.
+	 * Allocate a swap block if necessary.
 	 */
-	off = m->offset + m->object->paging_offset;
-	ix = off / dbtob(swp->sw_bsize);
-	if (swp->sw_blocks == NULL || ix >= swp->sw_nblocks) {
-#ifdef DEBUG
-		if (swpagerdebug & SDB_FAIL)
-			printf("swpg_io: bad offset %x+%x(%d) in %x\n",
-			       m->offset, m->object->paging_offset,
-			       ix, swp->sw_blocks);
-#endif
-		return(VM_PAGER_FAIL);
-	}
-	swb = &swp->sw_blocks[ix];
-	off = off % dbtob(swp->sw_bsize);
-	if (flags & B_READ) {
-		if (swb->swb_block == 0 ||
-		    (swb->swb_mask & (1 << atop(off))) == 0) {
-#ifdef DEBUG
-			if (swpagerdebug & (SDB_ALLOCBLK|SDB_FAIL))
-				printf("swpg_io: %x bad read: blk %x+%x, mask %x, off %x+%x\n",
-				       swp->sw_blocks,
-				       swb->swb_block, atop(off),
-				       swb->swb_mask,
-				       m->offset, m->object->paging_offset);
-#endif
-			/* XXX: should we zero page here?? */
-			return(VM_PAGER_FAIL);
-		}
-	} else if (swb->swb_block == 0) {
+	if (swb->swb_block == 0) {
 		swb->swb_block = rmalloc(swapmap, swp->sw_bsize);
 		if (swb->swb_block == 0) {
 #ifdef DEBUG
@@ -560,7 +551,7 @@ swap_pager_io(swp, m, flags)
 			       m, flags);
 #endif
 		bswlist.b_flags |= B_WANTED;
-		sleep((caddr_t)&bswlist, PSWP+1);
+		tsleep((caddr_t)&bswlist, PSWP+1, "swpgio", 0);
 	}
 	bp = bswlist.b_actf;
 	bswlist.b_actf = bp->b_actf;
