@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	8.3 (Berkeley) %G%
+ *	@(#)nfs_subs.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -1043,6 +1043,7 @@ nfsrv_fhtovp(fhp, lockflag, vpp, cred, slp, nam, rdonlyp)
 			cred->cr_uid = uidp->nu_cr.cr_uid;
 			for (i = 0; i < uidp->nu_cr.cr_ngroups; i++)
 				cred->cr_groups[i] = uidp->nu_cr.cr_groups[i];
+			cred->cr_ngroups = uidp->nu_cr.cr_ngroups;
 		} else {
 			vput(*vpp);
 			return (NQNFS_AUTHERR);
@@ -1051,6 +1052,7 @@ nfsrv_fhtovp(fhp, lockflag, vpp, cred, slp, nam, rdonlyp)
 		cred->cr_uid = credanon->cr_uid;
 		for (i = 0; i < credanon->cr_ngroups && i < NGROUPS; i++)
 			cred->cr_groups[i] = credanon->cr_groups[i];
+		cred->cr_ngroups = i;
 	}
 	if (exflags & MNT_EXRDONLY)
 		*rdonlyp = 1;
