@@ -5,9 +5,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: hp300/hp300/genassym.c	7.14 (Berkeley) 12/30/92
+ * from: hp300/hp300/genassym.c	8.2 (Berkeley) 9/23/93
  *
- *	@(#)genassym.c	8.2 (Berkeley) %G%
+ *	@(#)genassym.c	8.3 (Berkeley) %G%
  */
 
 #define KERNEL
