@@ -6,18 +6,20 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)keyword.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)keyword.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/proc.h>
+
 #include <errno.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stddef.h>
 #include <string.h>
+
 #include "ps.h"
 
 #ifdef SPPWAIT
@@ -26,7 +28,7 @@ static char sccsid[] = "@(#)keyword.c	5.14 (Berkeley) %G%";
 
 #ifdef NEWVM
 #include <sys/ucred.h>
-#include <sys/kinfo_proc.h>
+#include <sys/sysctl.h>
 #endif
 
 static VAR *findvar __P((char *));
