@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: mem.c 1.14 90/10/12$
  *
- *	@(#)mem.c	7.8 (Berkeley) %G%
+ *	@(#)mem.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -63,7 +63,7 @@ mmrw(dev, uio, flags)
 			if (v >= 0xFFFFFFFC || v < lowram)
 				return (EFAULT);
 #endif
-			pmap_enter(pmap_kernel(), (vm_offset_t)vmmap,
+			pmap_enter(kernel_pmap, (vm_offset_t)vmmap,
 			    trunc_page(v), uio->uio_rw == UIO_READ ?
 			    VM_PROT_READ : VM_PROT_WRITE, TRUE);
 			o = (int)uio->uio_offset & PGOFSET;
@@ -71,7 +71,7 @@ mmrw(dev, uio, flags)
 			c = MIN(c, (u_int)(NBPG - o));
 			c = MIN(c, (u_int)iov->iov_len);
 			error = uiomove((caddr_t)&vmmap[o], (int)c, uio);
-			pmap_remove(pmap_kernel(), (vm_offset_t)vmmap,
+			pmap_remove(kernel_pmap, (vm_offset_t)vmmap,
 			    (vm_offset_t)&vmmap[NBPG]);
 			continue;
 
