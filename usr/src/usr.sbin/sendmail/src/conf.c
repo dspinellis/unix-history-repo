@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.173 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.174 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1007,20 +1007,20 @@ init_vendor_macros(e)
 # define FSCALE		(1 << FSHIFT)
 #endif
 
-#if (LA_TYPE == LA_INT) || (LA_TYPE == LA_FLOAT) || (LA_TYPE == LA_SHORT)
-
-#include <nlist.h>
-
-#ifdef IRIX64
-# define nlist		nlist64
-#endif
-
 #ifndef LA_AVENRUN
 # ifdef SYSTEM5
 #  define LA_AVENRUN	"avenrun"
 # else
 #  define LA_AVENRUN	"_avenrun"
 # endif
+#endif
+
+#if (LA_TYPE == LA_INT) || (LA_TYPE == LA_FLOAT) || (LA_TYPE == LA_SHORT)
+
+#include <nlist.h>
+
+#ifdef IRIX64
+# define nlist		nlist64
 #endif
 
 /* _PATH_UNIX should be defined in <paths.h> */
