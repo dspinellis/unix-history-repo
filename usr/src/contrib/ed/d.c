@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)d.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)d.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -153,6 +153,9 @@ d_do()
 			/* no garbage collection done currently */
 #endif
 #ifdef DBI
+			/* garbage collection should be done iff the
+			 * open was done as btree, not recno.
+			 */
 			l_db_key.size = sizeof(recno_t);
 			l_db_key.data = &(l_temp2->handle);
 			(dbhtmp->del) (dbhtmp, &l_db_key, (u_int) 0);
