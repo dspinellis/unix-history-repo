@@ -3,35 +3,23 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)signal.h	7.1 (Berkeley) %G%
+ *	@(#)signal.h	7.2 (Berkeley) %G%
  */
 
 #ifndef	NSIG
 #define NSIG	32
 
+#include <machine/trap.h>	/* codes for SIGILL, SIGFPE */
+
 #define	SIGHUP	1	/* hangup */
 #define	SIGINT	2	/* interrupt */
 #define	SIGQUIT	3	/* quit */
 #define	SIGILL	4	/* illegal instruction (not reset when caught) */
-#define	    ILL_RESAD_FAULT	0x0	/* reserved addressing fault */
-#define	    ILL_PRIVIN_FAULT	0x1	/* privileged instruction fault */
-#define	    ILL_RESOP_FAULT	0x2	/* reserved operand fault */
-/* CHME, CHMS, CHMU are not yet given back to users reasonably */
 #define	SIGTRAP	5	/* trace trap (not reset when caught) */
 #define	SIGIOT	6	/* IOT instruction */
 #define	SIGABRT	SIGIOT	/* compatibility */
 #define	SIGEMT	7	/* EMT instruction */
 #define	SIGFPE	8	/* floating point exception */
-#define	    FPE_INTOVF_TRAP	0x1	/* integer overflow */
-#define	    FPE_INTDIV_TRAP	0x2	/* integer divide by zero */
-#define	    FPE_FLTOVF_TRAP	0x3	/* floating overflow */
-#define	    FPE_FLTDIV_TRAP	0x4	/* floating/decimal divide by zero */
-#define	    FPE_FLTUND_TRAP	0x5	/* floating underflow */
-#define	    FPE_DECOVF_TRAP	0x6	/* decimal overflow */
-#define	    FPE_SUBRNG_TRAP	0x7	/* subscript out of range */
-#define	    FPE_FLTOVF_FAULT	0x8	/* floating overflow fault */
-#define	    FPE_FLTDIV_FAULT	0x9	/* divide by zero floating fault */
-#define	    FPE_FLTUND_FAULT	0xa	/* floating underflow fault */
 #define	SIGKILL	9	/* kill (cannot be caught or ignored) */
 #define	SIGBUS	10	/* bus error */
 #define	SIGSEGV	11	/* segmentation violation */
