@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_qe.c	7.14 (Berkeley) %G%
+ *	@(#)if_qe.c	7.15 (Berkeley) %G%
  */
 
 /* from  @(#)if_qe.c	1.15	(ULTRIX)	4/16/86 */
@@ -154,8 +154,7 @@
 #ifdef ISO
 #include "../netiso/iso.h"
 #include "../netiso/iso_var.h"
-#include "../netiso/iso_snpac.h"
-extern struct snpa_cache all_es, all_is;
+extern char all_es_snpa[], all_is_snpa[];
 #endif
 
 #include "../vax/pte.h"
@@ -840,8 +839,8 @@ struct qe_softc *sc;
 	for ( i = 0; i < 6 ; i++ ) {
 		sc->setup_pkt[i][2] = 0xff;
 #ifdef ISO
-		sc->setup_pkt[i][3] = all_es.sc_snpa[i];
-		sc->setup_pkt[i][4] = all_is.sc_snpa[i];
+		sc->setup_pkt[i][3] = all_es_snpa[i];
+		sc->setup_pkt[i][4] = all_is_snpa[i];
 #endif
 	}
 	sc->setupqueued++;
