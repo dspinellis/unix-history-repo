@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -409,6 +409,7 @@ putline()
 }
 
 /* find & return number of minutes current tty has been idle */
+time_t
 findidle()
 {
 	struct stat stbuf;
