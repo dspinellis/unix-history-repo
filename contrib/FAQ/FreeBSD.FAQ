@@ -5,7 +5,7 @@
 Please mail all suggestions and additions to <FreeBSD-FAQ@freefall.cdrom.com>
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.14 1994/04/20 20:38:36 wollman Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.15 1994/04/20 21:23:30 wollman Exp $
 
 
 Table of Contents
@@ -486,7 +486,7 @@ here.
 
 
 
-5 Misc Questions
+5 Miscellaneous Questions
 ----------------
 
 5.1:  I've heard of something called FreeBSD-current.  How do I run it, and
@@ -531,6 +531,18 @@ in a directory tree identical to the installed one, rooted at
 ${DESTDIR}.  Some random combination of shared libraries modifications
 and program rebuilds can cause this to fail in `make world', however.
 
+
+5.5:  When my system booted, it told me that ``(bus speed defaulted)''.
+      What does that mean?
+
+The Adaptec 1542 SCSI host adapters allow the user to configure their
+bus access speed in software.  Previous versions of the 1542 driver tried
+to determine the fastest usable speed and set the adapter to that.  We
+found that this breaks some users' systems, so you now have to define
+the ``TUNE_1542''' kernel configuration option in order to have this
+take place.  Using it on those systems where it works may make your
+disks run faster, but on those systems where it doesn't, your data could
+be corrupted.
 
 
 6 Kernel Configuration
