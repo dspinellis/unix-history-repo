@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.91	83/03/27	*/
+/*	tcp_input.c	1.92	83/04/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -77,6 +77,8 @@ tcp_input(m0)
 		ti->ti_len = (u_short)tlen;
 		ti->ti_len = htons((u_short)ti->ti_len);
 		if (ti->ti_sum = in_cksum(m, len)) {
+			if (tcpprintfs)
+				printf("tcp sum: src %x\n", ti->ti_src);
 			tcpstat.tcps_badsum++;
 			goto drop;
 		}
@@ -88,6 +90,8 @@ tcp_input(m0)
 	 */
 	off = ti->ti_off << 2;
 	if (off < sizeof (struct tcphdr) || off > tlen) {
+		if (tcpprintfs)
+			printf("tcp off: src %x off %d\n", ti->ti_src, off);
 		tcpstat.tcps_badoff++;
 		goto drop;
 	}
