@@ -2,23 +2,26 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)autoconf.4	6.1 (Berkeley) %G%
+.\"	@(#)autoconf.4	6.2 (Berkeley) %G%
 .\"
 .TH AUTOCONF 4 ""
 .UC 4
 .SH NAME
 autoconf \- diagnostics from the autoconfiguration code
 .SH DESCRIPTION
-When UNIX bootstraps it probes the innards of the machine it is running
-on and locates controllers, drives, and other devices, printing out
+When UNIX bootstraps it probes the innards of the machine
+on which it is running
+and locates controllers, drives, and other devices, printing out
 what it finds on the console.  This procedure is driven by a system
 configuration table which is processed by
 .IR config (8)
 and compiled into each kernel.
 .PP
-Devices in NEXUS slots are normally noted, thus memory controllers,
+On the VAX,
+devices in NEXUS slots are normally noted, thus memory controllers,
 UNIBUS and MASSBUS adaptors.  Devices which are not supported which
 are found in NEXUS slots are noted also.
+The Q-bus on the MICROVAX is configured in the same way as the UNIBUS.
 .PP
 MASSBUS devices are located by a very deterministic procedure since
 MASSBUS space is completely probe-able.  If devices exist which
@@ -31,16 +34,19 @@ status register responds but the device cannot be made to interrupt,
 a diagnostic warning will be printed on the console and the device
 will not be available to the system. 
 .PP
-A generic system may be built which picks its root device at boot time
+Normally, the system uses the disk from which it was loaded as the root
+filesystem.
+If that is not possible,
+a generic system will pick its root device
 as the ``best'' available device (MASSBUS disks are better than
 SMD UNIBUS disks are better than RK07's; the device must be drive 0
-to be considered.)
-If such a system is booted with the RB_ASKNAME option of (see
+to be considered).
+If such a system is booted with the RB_ASKNAME option (see
 .IR reboot (2)),
 then the name of the root device is read from the console terminal at boot
 time, and any available device may be used.
 .SH SEE ALSO
-intro(4), config(8)
+intro(4), boot(8), config(8)
 .SH DIAGNOSTICS
 \fBcpu type %d not configured\fR.  You tried to boot UNIX on a cpu
 type which it doesn't (or at least this compiled version of UNIX doesn't)
