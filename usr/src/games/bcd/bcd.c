@@ -3,7 +3,7 @@
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Steve Hayman of the Indiana University Computer Science Dept..
+ * Steve Hayman of the Indiana University Computer Science Dept.
  *
  * %sccs.include.redist.c%
  */
@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)bcd.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)bcd.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
