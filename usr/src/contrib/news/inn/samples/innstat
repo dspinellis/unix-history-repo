@@ -1,0 +1,129 @@
+#! /bin/sh
+##  $Revision: 1.7 $
+##  Display status of INN.
+##  Written by Landon Curt Noll <chongo@toad.com>.
+
+##  =()<. @<_PATH_SHELLVARS>@>()=
+. /var/spool/news/data/innshellvars
+
+SYSLOG_CRIT=news.crit
+SYSLOG_ERR=news.err
+SYSLOG_NOTICE=news.notice
+SYSLOGS="${SYSLOG_CRIT} ${SYSLOG_ERR} ${SYSLOG_NOTICE}"
+
+##  Set up the list of log files.
+LOGS="${SYSLOGS}"
+if [ -f "${MOST_LOGS}/`basename ${ERRLOG}`" ]; then
+    LOGS="${LOGS} `basename ${ERRLOG}`"
+else
+    LOGS="${LOGS} ${ERRLOG}"
+fi
+if [ -f "${MOST_LOGS}/`basename ${LOG}`" ]; then
+    LOGS="${LOGS} `basename ${LOG}`"
+else
+    LOGS="${LOGS} ${LOG}"
+fi
+
+##  Show INND status.
+echo 'Server status:'
+ctlinnd mode 2>&1
+
+##  Show disk usage.  You might have to change this.
+echo ''
+echo 'Disk usage:'
+df ${SPOOL} ${NEWSLIB} ${INCOMING} ${BATCH} ${MOST_LOGS} |
+	grep '/dev/' | sort -u
+
+##  Show size of batch files.
+echo ''
+echo 'Batch file sizes:'
+( cd ${BATCH}; ls -Cs | tail +2 )
+
+##  Show size of log files.
+echo ''
+echo 'Log file sizes:'
+( cd ${MOST_LOGS}; ls -Cs ${LOGS} *.log 2>&1 )
+
+##  Show the lock files
+echo ''
+(	cd ${LOCKS}
+	set -$- LOCK.*
+	if [ -f "$1" ]; then
+		echo 'Lock files:'
+		ls -C LOCK.* 2>&1
+	else
+		echo 'Innwatch is not running'
+	fi
+)
+
+echo ''
+echo 'Server connections:'
+ctlinnd -t60 name '' 2>&1 \
+    | ${SED} -e '/^[	 ]*$/d' \
+    | ${AWK} '{print length($0), $0}' \
+    | sort -n \
+    | ${SED} 's/^[0-9][0-9]*  *//' \
+    | ${AWK} '
+BEGIN {
+    linelen = 0;
+}
+{
+    len = length($0);
+    if (len >= 80) {
+	end = "";
+    }
+    else if (len >= 72) {
+	end = "\t\t\t";
+	len += 16 + (8 - len % 8);
+    }
+    else if (len >= 64) {
+	end = "\t";
+	len += (8 - len % 8);
+    }
+    else if (len >= 56) {
+	end = "\t\t";
+	len += 8 + (8 - len % 8);
+    }
+    else if (len >= 48) {
+	end = "\t\t\t";
+	len += 16 + (8 - len % 8);
+    }
+    else if (len >= 40) {
+	end = "\t";
+	len += (8 - len % 8);
+    }
+    else if (len >= 32) {
+	end = "\t";
+	len += (8 - len % 8);
+    }
+    else if (len >= 24) {
+	end = "\t\t";
+	len += 8 + (8 - len % 8);
+    }
+    else if (len >= 16) {
+	end = "\t";
+	len += (8 - len % 8);
+    }
+    else if (len >= 8) {
+	end = "\t\t";
+	len += 8 + (8 - len % 8);
+    }
+    else {
+	end = "\t\t\t";
+	len += 16 + (8 - len % 8);
+    }
+    if (len + linelen > 80) {
+	printf("\n");
+	linelen = len;
+    }
+    else {
+	linelen += len;
+    }
+    printf("%s%s", $0, end);
+}
+END {
+    if (end != "\n") {
+	printf("\n");
+    }
+    printf("\n");
+}'

@@ -1,0 +1,158 @@
+.\" $Revision: 1.25 $
+.TH INEWS 1
+.SH NAME
+inews \- send a Usenet article to the local news server for distribution
+.SH SYNOPSIS
+.B inews
+[
+.B \-h
+]
+[
+.B \-D
+]
+[
+.B \-O
+]
+[
+.B \-R
+]
+[
+.B \-S
+]
+[
+.I "header_flags"
+]
+[
+.I input
+]
+.SH DESCRIPTION
+.I Inews
+reads a Usenet news article (perhaps with headers) from
+the named file or standard input if no file is given.
+It adds some headers and performs some consistency checks.
+If the article does not meet these checks (for example, too much
+quoting of old articles, or posting to non-existent newsgroups) then
+the article is rejected.
+If it passes the checks,
+.I inews
+sends the article to the local news
+server as specified in the
+.IR inn.conf (5)
+file for distribution.
+.PP
+In the standard mode of operation, the input consists of the article
+headers, a blank line, and the message body.
+For compatibility with older software, the ``\-h'' flag must be used.
+If there are no headers in the message, then this flag may be omitted.
+.PP
+Several headers may be specified on the command line, shown in the
+synopsis above as
+.IR "header_flags" .
+Each of these flags takes a single parameter; if the value is more than
+one word (for example, almost all Subject lines) then quotes must be used
+to prevent the shell from splitting it into multiple words.
+The options, and their equivalent header, are as follows:
+.RS
+.nf
+a	Approved
+c	Control
+d	Distribution
+e	Expires
+f	From
+w	Followup-To
+n	Newsgroups
+r	Reply-To
+t	Subject
+F	References
+o	Organization
+x	Path prefix
+.fi
+.RE
+.PP
+.\" =()<.if '@<INEWS_PATH>@'DO' \{\>()=
+.if 'DO'DO' \{\
+The Path header is built according to the following rules.\}
+If the ``\-x'' flag is used, then its value will be the start of the header.
+Any other host will see the site in the header, and therefore not
+offer the article to that site.
+.\" =()<.if '@<INEWS_PATH>@'DO' \{\>()=
+.if 'DO'DO' \{\
+If the ``pathhost'' configuration parameter is specified in the
+.IR inn.conf (5)
+file, then it will be added to the Path.
+Otherwise, if the ``server'' configuration parameter is specified,
+then the full domain name of the local host will be added to the Path.\}
+The Path will always end
+.\" =()<.IR @<PATHMASTER>@ .>()=
+.IR not-for-mail .
+.PP
+The default Organization header will be provided if none is present
+in the article or if the ``\-o'' flag is not used.
+To prevent adding the default, use the ``\-O'' flag.
+.PP
+As a debugging aide, if the ``\-D'' flag is used, the consistency checks
+will be performed, and the article will be sent to the standard output,
+rather then sent to the server.
+.PP
+For compatibility with C News,
+.I inews
+accepts, but ignores, the ``\-A'', ``\-V'' and ``\-W'' flags.
+The C News ``\-N'' flag is treated as the ``\-D'' flag.
+.PP
+If a file named
+.I .signature
+exists in the user's home directory,
+.I inews
+will try to append it to the end of the article.
+If the file cannot be read, or if it is too long (for example, more than
+four lines or one standard I/O buffer), or if some other problem occurs,
+then the article will not be posted.
+To suppress this action use the ``\-S'' flag.
+.PP
+If the ``\-R'' flag is used then
+.I inews
+will reject any attempts to post control messages.
+.PP
+If an unapproved posting is made to a moderated newsgroup,
+.I inews
+will try to mail the article to the moderator for posting.
+It uses the
+.IR moderators (5)
+file to determine the mailing address.
+If no address is found, it will use the
+.IR inn.conf
+file to determine a ``last-chance'' host to try.
+.PP
+If the NNTP server needs to authenticate the client,
+.I inews
+will use the
+.IR NNTPsendpassword (3)
+routine to authenticate itself.
+In order to do this, the program will need read access to the
+.IR passwd.nntp (5)
+file.
+This is typically done by having the file group-readable and making
+.I inews
+run setgid to that group.
+.PP
+.I Inews
+exits with a zero status if the article was succesfully posted or mailed,
+or with a non-zero status if the article could not be delivered.
+.PP
+Since
+.I inews
+will spool its input if the server is unavailable, it is usually necessary
+to run
+.IR rnews (1)
+with the ``\-U'' flag on a regular basis, usually out of
+.IR cron (8).
+.SH HISTORY
+Written by Rich $alz <rsalz@uunet.uu.net> for InterNetNews.
+.de R$
+This is revision \\$3, dated \\$4.
+..
+.R$ $Id: inews.1,v 1.25 1993/03/18 21:03:38 rsalz Exp $
+.SH "SEE ALSO"
+moderators(5),
+inn.conf(5).
+rnews(1).
