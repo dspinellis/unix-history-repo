@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)raw_usrreq.c	6.11 (Berkeley) %G%
+ *	@(#)raw_usrreq.c	6.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -232,8 +232,6 @@ raw_usrreq(so, req, m, nam, rights)
 			error = ENOTCONN;
 			break;
 		}
-		if (rp->rcb_route.ro_rt)
-			rtfree(rp->rcb_route.ro_rt);
 		raw_disconnect(rp);
 		soisdisconnected(so);
 		break;
@@ -259,22 +257,6 @@ raw_usrreq(so, req, m, nam, rights)
 		} else if ((rp->rcb_flags & RAW_FADDR) == 0) {
 			error = ENOTCONN;
 			break;
-		}
-		/*
-		 * Check for routing.  If new foreign address, or
-		 * no route presently in use, try to allocate new
-		 * route.  On failure, just hand packet to output
-		 * routine anyway in case it can handle it.
-		 */
-		if ((!equal(rp->rcb_faddr, rp->rcb_route.ro_dst) ||
-		    (so->so_options & SO_DONTROUTE)) && rp->rcb_route.ro_rt) {
-			RTFREE(rp->rcb_route.ro_rt);
-			rp->rcb_route.ro_rt = NULL;
-		}
-		if ((so->so_options & SO_DONTROUTE) == 0 &&
-		    rp->rcb_route.ro_rt == 0) {
-			rp->rcb_route.ro_dst = rp->rcb_faddr;
-			rtalloc(&rp->rcb_route);
 		}
 		error = (*so->so_proto->pr_output)(m, so);
 		m = NULL;
