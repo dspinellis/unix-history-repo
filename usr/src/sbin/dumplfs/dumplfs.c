@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumplfs.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumplfs.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -527,6 +527,17 @@ dump_super(lfsp)
 		"curseg   ", lfsp->lfs_curseg,
 		"offset   ", lfsp->lfs_offset);
 	(void)printf("tstamp   %s", ctime((time_t *)&lfsp->lfs_tstamp));
+	(void)printf("In-Memory Information\n");
+	(void)printf("%s%d\t%s%X\t%s%d\t%s%d\t%s%d\n",
+		"seglock  ", lfsp->lfs_seglock,
+		"iocount  ", lfsp->lfs_iocount,
+		"writer   ", lfsp->lfs_writer,
+		"dirops   ", lfsp->lfs_dirops,
+		"doifile  ", lfsp->lfs_doifile );
+	(void)printf("%s%d\t%s%X\t%s%d\n",
+		"fmod     ", lfsp->lfs_fmod,
+		"clean    ", lfsp->lfs_clean,
+		"ronly    ", lfsp->lfs_ronly);
 }
 
 static void
