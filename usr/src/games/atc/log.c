@@ -8,7 +8,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)log.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)log.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "include.h"
@@ -56,7 +56,7 @@ log_score(list_em)
 	register int	i, fd, num_scores = 0, good, changed = 0, found = 0;
 	struct passwd	*pw;
 	FILE		*fp;
-	char		*cp, logstr[BUFSIZ];
+	char		*cp, logstr[BUFSIZ], *index(), *rindex();
 	SCORE		score[100], thisscore;
 #ifdef SYSV
 	struct utsname	name;
