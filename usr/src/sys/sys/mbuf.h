@@ -3,7 +3,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mbuf.h	7.16 (Berkeley) %G%
+ *	@(#)mbuf.h	7.17 (Berkeley) %G%
  */
 
 #ifndef M_WAITOK
@@ -118,6 +118,19 @@ struct mbuf {
 #define	M_WAIT		M_WAITOK
 
 /*
+ * mbuf utility macros:
+ *
+ *	MBUFLOCK(code)
+ * prevents a section of code from from being interrupted by network
+ * drivers.
+ */
+#define	MBUFLOCK(code) \
+	{ int ms = splimp(); \
+	  { code } \
+	  splx(ms); \
+	}
+
+/*
  * mbuf allocation/deallocation macros:
  *
  *	MGET(struct mbuf *m, int how, int type)
@@ -131,7 +144,7 @@ struct mbuf {
 	MALLOC((m), struct mbuf *, MSIZE, mbtypes[type], (how)); \
 	if (m) { \
 		(m)->m_type = (type); \
-		mbstat.m_mtypes[type]++; \
+		MBUFLOCK(mbstat.m_mtypes[type]++;) \
 		(m)->m_next = (struct mbuf *)NULL; \
 		(m)->m_nextpkt = (struct mbuf *)NULL; \
 		(m)->m_data = (m)->m_dat; \
@@ -144,7 +157,7 @@ struct mbuf {
 	MALLOC((m), struct mbuf *, MSIZE, mbtypes[type], (how)); \
 	if (m) { \
 		(m)->m_type = (type); \
-		mbstat.m_mtypes[type]++; \
+		MBUFLOCK(mbstat.m_mtypes[type]++;) \
 		(m)->m_next = (struct mbuf *)NULL; \
 		(m)->m_nextpkt = (struct mbuf *)NULL; \
 		(m)->m_data = (m)->m_pktdat; \
@@ -171,15 +184,14 @@ union mcluster {
 };
 
 #define	MCLALLOC(p, how) \
-	{ int ms = splimp(); \
+	MBUFLOCK( \
 		(void)m_clalloc(1, (how)); \
 	  if ((p) = (caddr_t)mclfree) { \
 		++mclrefcnt[mtocl(p)]; \
 		mbstat.m_clfree--; \
 		mclfree = ((union mcluster *)(p))->mcl_next; \
 	  } \
-	  splx(ms); \
-	}
+	)
 
 #define	MCLGET(m, how) \
 	{ MCLALLOC((m)->m_ext.ext_buf, (how)); \
@@ -192,14 +204,13 @@ union mcluster {
 	}
 
 #define	MCLFREE(p) \
-	{ int ms = splimp(); \
+	MBUFLOCK ( \
 	  if (--mclrefcnt[mtocl(p)] == 0) { \
 		((union mcluster *)(p))->mcl_next = mclfree; \
 		mclfree = (union mcluster *)(p); \
 		mbstat.m_clfree++; \
 	  } \
-	  splx(ms); \
-	}
+	)
 
 /*
  * MFREE(struct mbuf *m, struct mbuf *n)
@@ -208,7 +219,7 @@ union mcluster {
  */
 #ifdef notyet
 #define	MFREE(m, n) \
-	{ mbstat.m_mtypes[(m)->m_type]--; \
+	{ MBUFLOCK(mbstat.m_mtypes[(m)->m_type]--;) \
 	  if ((m)->m_flags & M_EXT) { \
 		if ((m)->m_ext.ext_free) \
 			(*((m)->m_ext.ext_free))((m)->m_ext.ext_buf, \
@@ -221,7 +232,7 @@ union mcluster {
 	}
 #else /* notyet */
 #define	MFREE(m, nn) \
-	{ mbstat.m_mtypes[(m)->m_type]--; \
+	{ MBUFLOCK(mbstat.m_mtypes[(m)->m_type]--;) \
 	  if ((m)->m_flags & M_EXT) { \
 		MCLFREE((m)->m_ext.ext_buf); \
 	  } \
@@ -289,8 +300,7 @@ union mcluster {
 
 /* change mbuf to new type */
 #define MCHTYPE(m, t) { \
-	mbstat.m_mtypes[(m)->m_type]--; \
-	mbstat.m_mtypes[t]++; \
+	MBUFLOCK(mbstat.m_mtypes[(m)->m_type]--; mbstat.m_mtypes[t]++;) \
 	(m)->m_type = t;\
 }
 
@@ -318,7 +328,7 @@ struct mbstat {
 extern	struct mbuf *mbutl;		/* virtual address of mclusters */
 extern	char *mclrefcnt;		/* cluster reference counts */
 struct	mbstat mbstat;
-int	nmbclusters;
+extern	int nmbclusters;
 union	mcluster *mclfree;
 int	max_linkhdr;			/* largest link-level header */
 int	max_protohdr;			/* largest protocol header */
