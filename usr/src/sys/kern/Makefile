@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.3 (Berkeley) %G%
+#	@(#)Makefile	7.4 (Berkeley) %G%
 #
 # Put the ../h stuff near the end so that subroutine definitions win when
 # there is a struct tag with the same name (eg., vmmeter).  The real
@@ -31,15 +31,21 @@ all:
 
 tags: FRC
 	-mv ${TVAX} ${TVAX}.old
-	${CTAGS} -atf ${TVAX} ${SVAX}
-	/usr/bin/egrep "^SCBVEC(.*)|^ENTRY(.*)|^JSBENTRY(.*)" ${AVAX} | \
+	${CTAGS} -dtf ${TVAX} ${SVAX}
+	/usr/bin/egrep "^SCBVEC(.*)" ${AVAX} | \
+/bin/sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);X\3 \1 /^\2(\3\4$$/;" \
+		>> ${TVAX}
+	/usr/bin/egrep "^ENTRY(.*)|^JSBENTRY(.*)" ${AVAX} | \
 /bin/sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \1 /^\2(\3\4$$/;" \
 		>> ${TVAX}
 	/usr/bin/sort -o ${TVAX} ${TVAX}
 	rm -f ${TVAX}.old
 	-mv ${TTAHOE} ${TTAHOE}.old
-	${CTAGS} -atf ${TTAHOE} ${STAHOE}
-	/usr/bin/egrep "^SCBVEC(.*)|^ENTRY(.*)|^JSBENTRY(.*)" ${ATAHOE} | \
+	${CTAGS} -dtf ${TTAHOE} ${STAHOE}
+	/usr/bin/egrep "^SCBVEC(.*)" ${ATAHOE} | \
+/bin/sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);X\3 \1 /^\2(\3\4$$/;" \
+		>> ${TTAHOE}
+	/usr/bin/egrep "^ENTRY(.*)|^JSBENTRY(.*)" ${ATAHOE} | \
 /bin/sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \1 /^\2(\3\4$$/;" \
 		>> ${TTAHOE}
 	/usr/bin/sort -o ${TTAHOE} ${TTAHOE}
