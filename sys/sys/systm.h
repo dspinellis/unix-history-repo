@@ -85,6 +85,9 @@ extern char *bootesym;		/* end of symbol info from boot */
 /*
  * General function declarations.
  */
+
+volatile void     cpu_exit __P((struct proc *));
+
 int	nullop __P((void));
 int	enodev __P((void));
 int	enoioctl __P((void));
