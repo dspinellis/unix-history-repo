@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	8.3 (Berkeley) %G%
+ *	@(#)pmap.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -43,6 +43,9 @@
 #include <sys/malloc.h>
 #include <sys/user.h>
 #include <sys/buf.h>
+#ifdef SYSVSHM
+#include <sys/shm.h>
+#endif
 
 #include <vm/vm_kern.h>
 #include <vm/vm_page.h>
@@ -147,12 +150,15 @@ pmap_bootstrap(firstaddr)
 	    (name) = (type *)firstaddr; firstaddr = (vm_offset_t)((name)+(num))
 	/*
 	 * Allocate a PTE table for the kernel.
-	 * The first '256' comes from PAGER_MAP_SIZE in vm_pager_init().
+	 * The '1024' comes from PAGER_MAP_SIZE in vm_pager_init().
 	 * This should be kept in sync.
 	 * We also reserve space for kmem_alloc_pageable() for vm_fork().
 	 */
 	Sysmapsize = (VM_KMEM_SIZE + VM_MBUF_SIZE + VM_PHYS_SIZE +
-		nbuf * MAXBSIZE + 16 * NCARGS) / NBPG + 256 + 256;
+		nbuf * MAXBSIZE + 16 * NCARGS) / NBPG + 1024 + 256;
+#ifdef SYSVSHM
+	Sysmapsize += shminfo.shmall;
+#endif
 	valloc(Sysmap, pt_entry_t, Sysmapsize);
 #ifdef ATTR
 	valloc(pmap_attributes, char, physmem);
