@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)termout.c	3.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)termout.c	3.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #if defined(unix)
@@ -246,7 +246,7 @@ SlowScreen()
      * decide when the output has caught up.
      */
 
-    if (Highest == HighestScreen()) {
+    if (Highest >= HighestScreen()) {	/* Could be > if screen shrunk... */
 	Highest = ScreenDec(Highest);	/* else, while loop will never end */
     }
     if (Lowest < LowestScreen()) {
