@@ -1,4 +1,4 @@
-/*	hp.c	4.33	81/03/17	*/
+/*	hp.c	4.34	81/03/22	*/
 int	hpdebug;
 
 #include "hp.h"
@@ -317,6 +317,7 @@ hpdtint(mi, mbsr)
 		mbclrattn(mi);
 	}
 	hpaddr->hpcs1 = HP_RELEASE|HP_GO;
+	hpaddr->hpof = HPOF_FMT22;
 	if (mi->mi_mba->mba_drv[0].mbd_as & (1<<mi->mi_drive))
 		printf("REL attn\n");
 	mbclrattn(mi);
@@ -406,10 +407,8 @@ sse:
 	sn %= st->nsect;
 	cn += tn/st->ntrak;
 	tn %= st->ntrak;
-#ifdef notdef
-	if (rp->hpof&SSEI)
+	if (rp->hpof&HPOF_SSEI)
 		sn++;
-#endif
 	rp->hpdc = cn;
 	rp->hpda = (tn<<8) + sn;
 	mbp->mba_sr = -1;
