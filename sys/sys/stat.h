@@ -33,6 +33,9 @@
  *	@(#)stat.h	7.11 (Berkeley) 3/3/91
  */
 
+#ifndef _SYS_STAT_H_
+#define _SYS_STAT_H_
+
 struct stat
 {
 	dev_t	st_dev;			/* inode's device */
@@ -125,4 +128,5 @@ int	fchmod __P((int, mode_t));
 int	lstat __P((const char *, struct stat *));
 #endif /* not POSIX */
 __END_DECLS
+#endif
 #endif

@@ -33,6 +33,9 @@
  *	@(#)wait.h	7.17 (Berkeley) 6/19/91
  */
 
+#ifndef _SYS_WAIT_H_
+#define _SYS_WAIT_H_
+
 /*
  * This file holds definitions relevent to the wait4 system call
  * and the alternate interfaces that use it (wait, wait3, waitpid).
@@ -155,4 +158,5 @@ pid_t	wait3 __P((int *, int, struct rusage *));
 pid_t	wait4 __P((pid_t, int *, int, struct rusage *));
 #endif
 __END_DECLS
+#endif
 #endif

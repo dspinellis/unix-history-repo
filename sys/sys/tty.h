@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	@(#)tty.h	7.10 (Berkeley) 6/26/91
- * $Header: /usr/bill/working/sys/sys/RCS/tty.h,v 1.3 92/01/21 21:51:49 william Exp $
+ * $Header: /a/cvs/386BSD/src/sys.386bsd/sys/tty.h,v 1.1.1.1 1993/06/12 14:58:17 rgrimes Exp $
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
