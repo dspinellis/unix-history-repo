@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -105,12 +105,6 @@ ifinit()
 				lookforinterfaces = 1;
 			sdl = (struct sockaddr_dl *) (ifm + 1);
 			sdl->sdl_data[sdl->sdl_nlen] = 0;
-			/*
-			 * Use a minimum metric of one;
-			 * treat the interface metric (default 0)
-			 * as an increment to the hop count of one.
-			 */
-			ifs.int_metric = ifm->ifm_data.ifi_metric + 1;
 			no_ipaddr = 1;
 			continue;
 		}
@@ -169,6 +163,12 @@ ifinit()
 			}
 			ifs.int_dstaddr = *brdaddr;
 		}
+		/*
+		 * Use a minimum metric of one;
+		 * treat the interface metric (default 0)
+		 * as an increment to the hop count of one.
+		 */
+		ifs.int_metric = ifam->ifam_metric + 1;
 		if (netmask == 0) {
 				syslog(LOG_ERR, "%s: (get netmask)",
 					sdl->sdl_data);
