@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)scb.s	7.3 (Berkeley) %G%
+ *	@(#)scb.s	7.4 (Berkeley) %G%
  */
 
 #include "uba.h"
@@ -53,15 +53,18 @@ _scb:	.globl	_scb
  * 750 hardware reads through UNIvec (scb + 512 bytes) to find Unibus
  * interrupt vectors.  780s use this space as a jump table (lookup
  * code in locore.s makes 780s work like 750s).  Additional pages
- * of interrupt vectors for additional UBAs follow immediately
+ * of interrupt vectors for additional UBAs follow immediately.
  *
- * 8600s use this area as a second SCB, for which purpose we init it
- * here.  Everything else will simply replace these with Unibus vectors.
+ * 8600s may use the next page as a second SCB, for which purpose we init
+ * it here.  Everything else will simply replace these with Unibus vectors.
  * An additional page is provided for UBA jump tables if the second
- * scb might be present.
+ * scb might be present.  Other CPUs with additional scbs should expand
+ * this area as needed.
  */
-	.globl	_UNIvec,_eUNIvec
+	.globl	_UNIvec
+	.globl	_eUNIvec
 _UNIvec:
+#if VAX8600
 /* 200 */	STRAY16(0x200);		/* unused (?) */
 /* 240 */	STRAY16(0x240);		/* sbi1fail etc. set at boot time */
 /* 280 */	STRAY16(0x280);		/* unused (?) */
@@ -71,11 +74,9 @@ _UNIvec:
 /* 380 */	NEX1(0x380);		/* ipl 0x16, nexus 0-15, sbia 1 */
 /* 3c0 */	NEX1(0x3c0);		/* ipl 0x17, nexus 0-15, sbia 1 */
 
-#if VAX8600
-		.space	512		# replacement space for UBA
 #endif
-#if NUBA > 1
-		.space	512*(NUBA-1)	# 750 second unibus intr vector
-					# 2nd+ UBA jump table on 780's
+#if NUBA > 0
+		.space	512*NUBA	# 750 first/second unibus intr vector
+					# UBA jump tables on 780's
 #endif
 _eUNIvec:
