@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vmparam.h 1.14 89/08/14$
  *
- *	@(#)vmparam.h	7.1 (Berkeley) %G%
+ *	@(#)vmparam.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -190,3 +190,24 @@
 
 #define	mapin(pte, v, pfnum, prot) \
 	(*(u_int *)(pte) = ((pfnum) << PGSHIFT) | (prot), TBIS((caddr_t)(v)))
+
+/*
+ * Mach derived constants
+ */
+
+/* user/kernel map constants */
+#define VM_MIN_ADDRESS		((vm_offset_t)0)
+#define VM_MAX_ADDRESS		((vm_offset_t)0xFFF00000)
+#define VM_MIN_KERNEL_ADDRESS	((vm_offset_t)0)
+#define VM_MAX_KERNEL_ADDRESS	((vm_offset_t)0xFFFFF000)
+
+/* virtual sizes (bytes) for various kernel submaps */
+#define VM_MBUF_SIZE		(NMBCLUSTERS*MCLBYTES)
+#define VM_KMEM_SIZE		(NKMEMCLUSTERS*CLBYTES)
+#define VM_PHYS_SIZE		(USRIOSIZE*CLBYTES)
+
+/* # of kernel PT pages (initial only, can grow dynamically) */
+#define VM_KERNEL_PT_PAGES	((vm_size_t)2)		/* XXX: SYSPTSIZE */
+
+/* pcb base */
+#define	pcbb(p)		((u_int)(p)->p_addr)

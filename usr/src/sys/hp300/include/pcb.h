@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: pcb.h 1.13 89/04/23$
  *
- *	@(#)pcb.h	7.1 (Berkeley) %G%
+ *	@(#)pcb.h	7.2 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -30,11 +30,7 @@ struct pcb
 	int	pcb_ustp;	/* user segment table pointer (+4) */
 	int	pcb_usp;	/* user stack pointer (+8) */
 	int	pcb_regs[12];	/* D0-D7, A0-A7 (+C) */
-	struct pte *pcb_p0br;	/* P0 base register (+3C) */
-	int	pcb_p0lr;	/* P0 length register (+40) */
-	struct pte *pcb_p1br;	/* P1 base register (+44) */
-	int	pcb_p1lr;	/* P1 length register (+48) */
-	int	pcb_szpt; 	/* number of pages of user page table (+4C) */
+	int	pcb_pad[5];
 	int	pcb_cmap2;	/* temporary copy PTE (+50) */
 	int	*pcb_sswap;	/* saved context for swap return (+54) */
 	short	pcb_sigc[12];	/* signal trampoline code (+58) */

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machparam.h 1.11 89/08/14$
  *
- *	@(#)param.h	7.1 (Berkeley) %G%
+ *	@(#)param.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -106,6 +106,18 @@
  * For now though just use DEV_BSIZE.
  */
 #define	bdbtofsb(bn)	((bn) / (BLKDEV_IOSIZE/DEV_BSIZE))
+
+/*
+ * Mach derived conversion macros
+ */
+#define hp300_round_seg(x)	((((unsigned)(x)) + NBSEG - 1) & ~(NBSEG-1))
+#define hp300_trunc_seg(x)	((unsigned)(x) & ~(NBSEG-1))
+#define hp300_round_page(x)	((((unsigned)(x)) + NBPG - 1) & ~(NBPG-1))
+#define hp300_trunc_page(x)	((unsigned)(x) & ~(NBPG-1))
+#define hp300_btos(x)		((unsigned)(x) >> SEGSHIFT)
+#define hp300_stob(x)		((unsigned)(x) << SEGSHIFT)
+#define hp300_btop(x)		((unsigned)(x) >> PGSHIFT)
+#define hp300_ptob(x)		((unsigned)(x) << PGSHIFT)
 
 /*
  * Macros to decode processor status word.
