@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)getfsstat.2	6.1 (Berkeley) %G%
+.\"	@(#)getfsstat.2	6.2 (Berkeley) %G%
 .\"
 .TH GETFSSTAT 2 ""
 .UC 7
@@ -27,8 +27,8 @@ getfsstat \- get list of all mounted filesystems
 .LP
 .ft B
 getfsstat(buf, bufsize)
-struct statfs *buf[];
-int bufsize;
+struct statfs buf[];
+size_t bufsize;
 .fi
 .ft R
 .SH DESCRIPTION
@@ -65,7 +65,8 @@ struct statfs {
  */
 #define	MOUNT_UFS	1
 #define	MOUNT_NFS	2
-#define	MOUNT_PC	3
+#define	MOUNT_MFS	3
+#define	MOUNT_PC	4
 .fi
 .PP
 Fields that are undefined for a particular file system are set to \-1.
