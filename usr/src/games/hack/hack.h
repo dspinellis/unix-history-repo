@@ -2,11 +2,9 @@
 /* hack.h - version 1.0.3 */
 
 #include "config.h"
+#include <string.h>
 
-#ifdef BSD
-#include <strings.h>		/* declarations for strcat etc. */
-#else
-#include <string.h>		/* idem on System V */
+#ifndef BSD
 #define	index	strchr
 #define	rindex	strrchr
 #endif BSD

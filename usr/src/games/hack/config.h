@@ -12,7 +12,6 @@
 /*
  * Some include files are in a different place under SYSV
  * 	BSD		   SYSV
- * <strings.h>		<string.h>
  * <sys/wait.h>		<wait.h>
  * <sys/time.h>		<time.h>
  * <sgtty.h>		<termio.h>

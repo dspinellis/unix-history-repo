@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.42 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -64,7 +64,7 @@ static char sccsid[] = "@(#)rlogind.c	5.41 (Berkeley) %G%";
 #include <pwd.h>
 #include <netdb.h>
 #include <syslog.h>
-#include <strings.h>
+#include <string.h>
 #include <stdio.h>
 #include <unistd.h>
 #include "pathnames.h"

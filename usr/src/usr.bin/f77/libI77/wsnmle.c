@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)wsnmle.c	5.2	%G%
+ *	@(#)wsnmle.c	5.3	%G%
  */
 
 /*
@@ -13,7 +13,7 @@
 #include "fio.h"
 #include "lio.h"
 #include "nmlio.h"
-#include <strings.h>
+#include <string.h>
 
 int l_write(), t_putc();
 LOCAL char nml_wrt[] = "namelist write";

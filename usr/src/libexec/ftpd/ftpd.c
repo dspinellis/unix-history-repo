@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.32	(Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.33	(Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -50,7 +50,7 @@ static char sccsid[] = "@(#)ftpd.c	5.32	(Berkeley) %G%";
 #include <setjmp.h>
 #include <netdb.h>
 #include <errno.h>
-#include <strings.h>
+#include <string.h>
 #include <syslog.h>
 #include <varargs.h>
 #include "pathnames.h"

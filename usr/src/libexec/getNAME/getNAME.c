@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)getNAME.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)getNAME.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -14,8 +14,8 @@ static char sccsid[] = "@(#)getNAME.c	5.2 (Berkeley) %G%";
  *	-i	for building intro entries
  *	other	apropos database
  */
-#include <strings.h>
 #include <stdio.h>
+#include <string.h>
 
 int tocrc;
 int intro;

@@ -33,7 +33,7 @@
 #include <cencode.h>
 #include <nlist.h>
 #include <pwd.h>
-#include <strings.h>
+#include <string.h>
 #include <ndbm.h>
 #include <limits.h>
 #include <paths.h>
