@@ -5,7 +5,7 @@
 # include	<sys/dir.h>
 # include	"pathnames.h"
 
-static char Sccsid[] = "@(#)get.c	4.11	%G%";
+static char Sccsid[] = "@(#)get.c	4.12	%G%";
 
 int	Debug = 0;
 struct packet gpkt;
@@ -588,15 +588,13 @@ char line[];
 		}
 		if (!strncmp(lp, "%sccs.include.", 14)) {
 			for (p = lp + 14; *p && *p != '%'; ++p);
-			if (*p != '%')
-				*tp++ = '%';
-			else {
+			if (*p == '%') {
 				*p = '\0';
-				tp = readcopy(lp + 14, tp);
-				lp = p + 1;
+				readcopy(lp + 14, tline);
+				return(tline);
 			}
-		} else
-			*tp++ = '%';
+		}
+		*tp++ = '%';
 	}
 
 	*tp = 0;
@@ -613,9 +611,9 @@ register char *tp, *str;
 	return(tp-1);
 }
 
-readcopy(name, tp)
+readcopy(name, p)
 	register char *name;
-	register char *tp;
+	register char *p;
 {
 	register FILE *fp;
 	register int ch;
@@ -627,9 +625,8 @@ readcopy(name, tp)
 		fatal(Error);
 	}
 	while ((ch = getc(fp)) != EOF)
-		*tp++ = ch;
+		*p++ = ch;
 	(void)fclose(fp);
-	return(tp);
 }
 
 clean_up(n)
