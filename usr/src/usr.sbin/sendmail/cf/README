@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	6.14 (Berkeley) %G%
+		@(#)README	6.15 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -640,10 +640,6 @@ confTIME_ZONE		USE_SYSTEM	Oz	Time zone info -- can be
 						else to force that value.
 confDEF_USER_ID		1		Ou	Default user id.
 confUSERDB_SPEC		(undefined)	OU	User database specification.
-						If it has commas it should be
-						double quoted (e.g.,
-						``file1,file2'') to prevent
-						m4 from chomping on it.
 confNO_WILDCARD_MX	False		Ow	No wildcard MX records matches
 						our domain.
 confQUEUE_LA		8		Ox	Load average at which queue-only

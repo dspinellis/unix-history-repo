@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.23 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.24 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -228,7 +228,7 @@ ifelse(confTIME_ZONE, `USE_SYSTEM', `#Ot',
 CONCAT(Ou, confDEF_USER_ID)
 
 # list of locations of user database file (null means no lookup)
-CONCAT(OU, ifdef(`USERDB_SPEC', `USERDB_SPEC'))
+OU`'ifdef(`confUSERDB_SPEC', `confUSERDB_SPEC')
 
 # load average at which we just queue messages
 CONCAT(Ox, confQUEUE_LA)
