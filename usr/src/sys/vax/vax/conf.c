@@ -1,4 +1,4 @@
-/*	conf.c	4.4	%G%	*/
+/*	conf.c	4.5	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -45,6 +45,33 @@ struct	buf	httab;
 #define	HTTAB		0
 #endif
 
+#include "../conf/rk.h"
+#if NRK > 0
+int	rkstrategy(),rkread(),rkwrite(),rkintr();
+struct	buf	rktab;
+#define	RKTAB	&rktab
+#else
+#define	rkstrategy	nodev
+#define	rkread		nodev
+#define	rkwrite		nodev
+#define	rkintr		nodev
+#define	RKTAB		0
+#endif
+
+#include "../conf/ts.h"
+#if NTS > 0
+int	tsopen(),tsclose(),tsstrategy(),tsread(),tswrite();
+struct	buf	tstab;
+#define	TSTAB	&tstab
+#else
+#define	tsopen		nodev
+#define	tsclose		nodev
+#define	tsstrategy	nodev
+#define	tsread		nodev
+#define	tswrite		nodev
+#define	TSTAB		0
+#endif
+
 #include "../conf/up.h"
 #if NUP > 0
 int	upstrategy(),upread(),upwrite(),upreset();
@@ -65,14 +92,16 @@ struct bdevsw	bdevsw[] =
 	nulldev,	nulldev,	hpstrategy,	HPTAB,		/*0*/
 	htopen,		htclose,	htstrategy,	HTTAB,		/*1*/
 	nulldev,	nulldev,	upstrategy,	UPTAB,		/*2*/
-/* 3 reserved for rk07 */
-	nodev,		nodev,		nodev,		0,		/*3*/
+	nulldev,	nulldev,	rkstrategy,	RKTAB,		/*3*/
 	nodev,		nodev,		swstrategy,	0,		/*4*/
 /* 5 reserved for tm03 */
+	nodev,		nodev,		nodev,		0,		/*5*/
+	tsopen,		tsclose,	tsstrategy,	TSTAB,		/*6*/
 	0,
 };
 
 int	cnopen(),cnclose(),cnread(),cnwrite(),cnioctl();
+struct tty cons;
 
 #include "../conf/dh.h"
 #if NDH11 == 0
@@ -89,7 +118,23 @@ int	dhopen(),dhclose(),dhread(),dhwrite(),dhioctl(),dhstop(),dhreset();
 struct	tty dh11[];
 #endif
 
+#if VAX==780
 int	flopen(),flclose(),flread(),flwrite();
+#endif
+
+#include "../conf/dk.h"
+#if NDK == 0
+#define	dkopen	nodev
+#define	dkclose	nodev
+#define	dkread	nodev
+#define	dkwrite	nodev
+#define	dkioctl	nodev
+#define	dkstop	nodev
+#define	dkreset	nulldev
+#else
+int	dkopen(),dkclose(),dkread(),dkwrite(),dkioctl(),dkstop(),dkreset();
+struct	tty	dkchans[];
+#endif
 
 #include "../conf/dz.h"
 #if NDZ11 == 0
@@ -104,6 +149,57 @@ int	flopen(),flclose(),flread(),flwrite();
 #else
 int	dzopen(),dzclose(),dzread(),dzwrite(),dzioctl(),dzstop(),dzreset();
 struct	tty dz_tty[];
+#endif
+
+#include "../conf/pk.h"
+#if NPK == 0
+#define	pkopen	nodev
+#define	pkclose	nodev
+#define	pkread	nodev
+#define	pkwrite	nodev
+#define	pkioctl	nodev
+#define	pkrint	nodev
+#define	pkrend	nodev
+#define	pkxint	nodev
+#define	pkmoden	nodev
+#else
+int	pkopen(),pkclose(),pkread(),pkioctl();
+int	pkrint(),pkrend(),pkxint(),pkmodem();
+char	*pkwrite();
+#endif
+
+#include "../conf/tr.h"
+#if HAVTR==0
+#define	tropen	nodev
+#define	trclose	nodev
+#define	trread	nodev
+#define	trwrite	nodev
+#define	trioctl	nodev
+#define	trinput	nodev
+#define	trrend	nodev
+#define	trmeta	nodev
+#define	trxint	nodev
+#define	trmodem	nodev
+#else
+int	tropen(), trclose(), trread(), trioctl(), trinput();
+int	trrend(), trmeta(), trxint(), trmodem();
+char	*trwrite();
+#endif
+
+#include "../conf/tdk.h"
+#if NTDK == 0
+#define	dt_lopen	nodev
+#define	dt_lclose	nodev
+#define	dt_lread	nodev
+#define	dt_lwrite	nodev
+#define	dtlinput	nodev
+#define	dt_lrend	nodev
+#define	dt_lmeta	nodev
+#define	dt_lstart	nodev
+#else
+int	dt_lopen(), dt_lclose(), dt_lread(), dtlinput();
+int	dt_lrend(), dt_lmeta(), dt_lstart();
+char	*dt_lwrite();
 #endif
 
 int	syopen(),syread(),sywrite(),syioctl();
@@ -140,7 +236,7 @@ char	*mcwrite();
 struct cdevsw	cdevsw[] =
 {
 	cnopen,		cnclose,	cnread,		cnwrite,	/*0*/
-	cnioctl,	nulldev,	nulldev,	0,
+	cnioctl,	nulldev,	nulldev,	&cons,
 	dzopen,		dzclose,	dzread,		dzwrite,	/*1*/
 	dzioctl,	dzstop,		dzreset,	dz_tty,
 	syopen,		nulldev,	syread,		sywrite,	/*2*/
@@ -155,21 +251,41 @@ struct cdevsw	cdevsw[] =
 	vpioctl,	nulldev,	vpreset,	0,
 	nulldev,	nulldev,	swread,		swwrite,	/*7*/
 	nodev,		nodev,		nulldev,	0,
+#if VAX==780
 	flopen,		flclose,	flread,		flwrite,	/*8*/
 	nodev,		nodev,		nulldev,	0,
+#else
+	nodev,		nodev,		nodev,		nodev,		/*8*/
+	nodev,		nodev,		nodev,		0,
+#endif
 	mxopen,		mxclose,	mxread,		mxwrite,	/*9*/
 	mxioctl,	nulldev,	nulldev,	0,
 	vaopen,		vaclose,	nodev,		vawrite,	/*10*/
 	vaioctl,	nulldev,	vareset,	0,
-/* 11 reserved for rk07 */
-	nodev,		nodev,		nodev,		nodev,		/*11*/
+	nulldev,	nulldev,	rkread,		rkwrite,	/*11*/
 	nodev,		nodev,		nulldev,	0,
 	dhopen,		dhclose,	dhread,		dhwrite,	/*12*/
 	dhioctl,	dhstop,		dhreset,	dh11,
 	nulldev,	nulldev,	upread,		upwrite,	/*13*/
 	nodev,		nodev,		upreset,	0,
 /* 14 reserved for tm03 */
+	nodev,		nodev,		nodev,		nodev,		/*14*/
+	nodev,		nodev,		nodev,		0,
 /* 15 reserved for lp11 */
+	nodev,		nodev,		nodev,		nodev,		/*15*/
+	nodev,		nodev,		nodev,		0,
+	tsopen,		tsclose,	tsread,		tswrite,	/*16*/
+	nodev,		nodev,		nulldev,	0,
+	dkopen,		dkclose,	dkread,		dkwrite,	/*17*/
+	dkioctl,	dkstop,		dkreset,	dkchans,
+/* 18 reserved for cat */
+	nodev,		nodev,		nodev,		nodev,		/*18*/
+	nodev,		nodev,		nodev,		0,
+	nodev,		nodev,		nodev,		nodev,		/*19*/
+	nodev,		nodev,		nodev,		0,
+/* 20-24 reserved to local sites */
+	nodev,		nodev,		nodev,		nodev,		/*20*/
+	nodev,		nodev,		nodev,		0,
 	0,	
 };
 
@@ -184,17 +300,23 @@ int	ntyinput(),ntyrend();
 struct	linesw linesw[] =
 {
 	ttyopen, nulldev, ttread, ttwrite, nullioctl,
-	ttyinput, ttyrend, nulldev, nulldev, nulldev,	/* 0 */
+	ttyinput, ttyrend, nulldev, nulldev, nulldev,		/* 0 */
 	bkopen, bkclose, bkread, ttwrite, bkioctl,
-	bkinput, nodev, nulldev, ttstart, nulldev,	/* 1 */
+	bkinput, nodev, nulldev, ttstart, nulldev,		/* 1 */
 	ntyopen, ntyclose, ntread, ntwrite, nullioctl,
-	ntyinput, ntyrend, nulldev, ttstart, nulldev,	/* 2 */
+	ntyinput, ntyrend, nulldev, ttstart, nulldev,		/* 2 */
+	pkopen, pkclose, pkread, pkwrite, pkioctl,	
+	pkrint, pkrend, nulldev, pkxint, pkmodem,		/* 3 */
+	tropen, trclose, trread, trwrite, trioctl,
+	trinput, trrend, trmeta, trxint, trmodem,		/* 4 */
+	dt_lopen, dt_lclose, dt_lread, dt_lwrite, nullioctl,
+	dtlinput, dt_lrend, dt_lmeta, dt_lstart, nulldev, 	/* 5 */
 	mxopen, mxclose, mcread, mcwrite, mxioctl,
-	nulldev, nulldev, nulldev, nulldev, nulldev,	/* 3 */
+	nulldev, nulldev, nulldev, nulldev, nulldev,		/* 6 */
 	0
 };
  
-int	nldisp = 3;
+int	nldisp = 6;
  
 struct	buf	buf[NBUF];
 struct	file	file[NFILE];
@@ -223,6 +345,7 @@ dev_t	swapdev = makedev(4, 0);
 
 extern struct user u;
 
+#if VAX==780
 /*
  * This is stupid, and will go away soon.
  */
@@ -241,3 +364,4 @@ struct	mba_info mbainfo[] = {
 	MBA0,	PHYSMBA0,	MBA0map,
 	MBA1,	PHYSMBA1,	MBA1map
 };
+#endif
