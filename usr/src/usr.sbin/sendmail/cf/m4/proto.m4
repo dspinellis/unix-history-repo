@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.20 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.21 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -298,6 +298,7 @@ undivert(6)dnl
 ######################################################################
 ######################################################################
 
+undivert(9)dnl
 
 ###########################################
 ###  Rulset 3 -- Name Canonicalization  ###
