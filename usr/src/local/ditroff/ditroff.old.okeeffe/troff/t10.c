@@ -82,7 +82,9 @@ ptinit()
 	nfonts = dev.nfonts;
 	nsizes = dev.nsizes;
 	nchtab = dev.nchtab;
-	filebase = setbrk(dev.filesize + 2*EXTRAFONT);	/* enough room for whole file */
+			/* "unsigned" so very large files will work properly */
+	filebase = setbrk((unsigned short) dev.filesize + 2*EXTRAFONT);
+						/* enough room for whole file */
 	read(fin, filebase, dev.filesize);	/* all at once */
 	pstab = (short *) filebase;
 	chtab = pstab + nsizes + 1;
