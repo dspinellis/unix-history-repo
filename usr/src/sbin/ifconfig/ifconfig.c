@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	4.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)ifconfig.c	4.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -221,7 +221,7 @@ main(argc, argv)
 	}
 	if (setipdst && af == AF_ISO) {
 		iso_ridreq.ifr_Addr = iso_addreq.ifra_addr;
-		iso_ridreq.ifr_Addr.siso_ssuffixlen =
+		iso_ridreq.ifr_Addr.siso_slen =
 			((struct sockaddr_in *)&addreq.ifra_dstaddr)->
 				sin_addr.s_addr;
 		strncpy(rafp->af_ridreq, name, sizeof ifr.ifr_name);
@@ -546,31 +546,20 @@ in_getaddr(s, which)
 	struct netent *np;
 	int val;
 
-	if (which == MASK)
-		sin->sin_len = 8;
-	else {
+	sin->sin_len = sizeof(*sin);
+	if (which != MASK)
 		sin->sin_family = AF_INET;
-		sin->sin_len = sizeof(*sin);
-	}
-	val = inet_addr(s);
-	if (val != -1) {
+
+	if ((val = inet_addr(s)) != -1)
 		sin->sin_addr.s_addr = val;
-		return;
-	}
-	hp = gethostbyname(s);
-	if (hp) {
-		sin->sin_family = hp->h_addrtype;
+	else if (hp = gethostbyname(s))
 		bcopy(hp->h_addr, (char *)&sin->sin_addr, hp->h_length);
-		return;
-	}
-	np = getnetbyname(s);
-	if (np) {
-		sin->sin_family = np->n_addrtype;
+	else if (np = getnetbyname(s))
 		sin->sin_addr = inet_makeaddr(np->n_net, INADDR_ANY);
-		return;
+	else {
+		fprintf(stderr, "%s: bad value\n", s);
+		exit(1);
 	}
-	fprintf(stderr, "%s: bad value\n", s);
-	exit(1);
 }
 
 /*
@@ -636,7 +625,7 @@ char *addr;
 	struct iso_addr *iso_addr();
 	siso->siso_addr = *iso_addr(addr);
 	if (which == MASK) {
-		siso->siso_len = siso->siso_nlen + 5;
+		siso->siso_len = TSEL(siso) - (caddr_t)(siso);
 		siso->siso_nlen = 0;
 	} else {
 	    siso->siso_family = AF_ISO;
