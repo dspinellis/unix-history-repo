@@ -1,4 +1,4 @@
-/*	locore.s	6.20	84/09/08	*/
+/*	locore.s	6.21	84/10/26	*/
 
 #include "psl.h"
 #include "pte.h"
@@ -137,7 +137,6 @@ SCBVEC(ua1int):
 SCBVEC(ua0int):
 	PUSHR; movl $0,rUBANUM; moval _uba_hd+(0*UH_SIZE),rUBAHD;
 1:
-	incl	_cnt+V_INTR
 	mfpr	$IPL,r2				/* r2 = mfpr(IPL); */
 	movl	UH_UBA(rUBAHD),rUBA		/* uba = uhp->uh_uba; */
 	movl	UBA_BRRVR-0x14*4(rUBA)[r2],rUVEC
@@ -148,9 +147,10 @@ ubanorm:
 	bicl3	$3,(rUVEC),r1 
 	jmp	2(r1)				/* 2 skips ``pushr $0x3f'' */
 ubaerror:
-	incl _intrcnt+I_UBA[rUBANUM]
 	PUSHR; calls $0,_ubaerror; POPR		/* ubaerror r/w's r0-r5 */
 	tstl rUVEC; jneq ubanorm		/* rUVEC contains result */
+	incl _intrcnt+I_UBA[rUBANUM]
+	incl	_cnt+V_INTR
 	POPR
 	rei
 #endif
