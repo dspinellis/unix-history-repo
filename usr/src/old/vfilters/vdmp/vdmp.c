@@ -1,4 +1,4 @@
-/*  VDMP: version 4.2				updated %G%
+/*  VDMP: version 4.3				updated %G%
  *
  *  reads raster file created by cifplot and dumps it onto the
  *  Varian or Versatec plotter.
@@ -14,7 +14,7 @@
 extern char *ctime();
 extern long time();
 
-char *Sid = "@(#)vdmp.c	4.2\t%G%";
+char *Sid = "@(#)vdmp.c	4.3\t%G%";
 int	plotmd[]	= { VPLOT, 0, 0};
 int	prtmd[]		= { VPRINT, 0, 0};
 char *name = "";
@@ -102,5 +102,5 @@ putplot()
      /* vpd has already opened the Versatec as device 3 */
      ioctl(3, VSETSTATE, plotmd);
      while( (i=read(in,buf, BUFSIZE)) > 0)
-		write(3,buf,i);
+		if(write(3,buf,i)!=i) exit(1);
     }
