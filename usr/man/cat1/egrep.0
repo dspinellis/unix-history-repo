@@ -1,0 +1,198 @@
+
+
+
+GREP(1)             UNIX Programmer's Manual		  GREP(1)
+
+
+
+NNAAMMEE
+     grep, egrep, fgrep - search a file for a pattern
+
+SSYYNNOOPPSSIISS
+     ggrreepp [ option ] ...  expression [ file ] ...
+
+     eeggrreepp [ option ] ...  [ expression ] [ file ] ...
+
+     ffggrreepp [ option ] ...  [ strings ] [ file ]
+
+DDEESSCCRRIIPPTTIIOONN
+     Commands of the _g_r_e_p family search the input _f_i_l_e_s (standard
+     input default) for lines matching a pattern.  Normally, each
+     line found is copied to the standard output.  _G_r_e_p patterns
+     are limited regular expressions in the style of _e_x(1); it
+     uses a compact nondeterministic algorithm.  _E_g_r_e_p patterns
+     are full regular expressions; it uses a fast deterministic
+     algorithm that sometimes needs exponential space.	_F_g_r_e_p
+     patterns are fixed strings; it is fast and compact.  The
+     following options are recognized.
+
+     --vv   All lines but those matching are printed.
+
+     --xx   (Exact) only lines matched in their entirety are
+	  printed (_f_g_r_e_p only).
+
+     --cc   Only a count of matching lines is printed.
+
+     --ll   The names of files with matching lines are listed
+	  (once) separated by newlines.
+
+     --nn   Each line is preceded by its relative line number in
+	  the file.
+
+     --bb   Each line is preceded by the block number on which it
+	  was found.  This is sometimes useful in locating disk
+	  block numbers by context.
+
+     --hh   Never print filename headers with output lines.
+
+     --oo   Always print filename headers with output lines.
+
+     --ii   The case of letters is ignored in making comparisons -
+	  that is, upper and lower case are considered identical.
+
+     --ss   Silent mode.	Nothing is printed (except error mes-
+	  sages).  This is useful for checking the error status.
+
+     --ww   The expression is searched for as a word (as if sur-
+	  rounded by `\<' and `\>', see _e_x(1).) (_g_r_e_p only)
+
+     --ee _e_x_p_r_e_s_s_i_o_n
+
+
+
+Printed 7/9/88		 October 8, 1987			1
+
+
+
+
+
+
+GREP(1)             UNIX Programmer's Manual		  GREP(1)
+
+
+
+	  Same as a simple _e_x_p_r_e_s_s_i_o_n argument, but useful when
+	  the _e_x_p_r_e_s_s_i_o_n begins with a -.
+
+     --ff _f_i_l_e
+	  The regular expression (_e_g_r_e_p) or string list (_f_g_r_e_p)
+	  is taken from the _f_i_l_e.
+
+     In all cases the file name is shown if there is more than
+     one input file.  Care should be taken when using the charac-
+     ters $ * [ ^ | ( ) and \ in the _e_x_p_r_e_s_s_i_o_n as they are also
+     meaningful to the Shell.  It is safest to enclose the entire
+     _e_x_p_r_e_s_s_i_o_n argument in single quotes ' '.
+
+     _F_g_r_e_p searches for lines that contain one of the (newline-
+     separated) _s_t_r_i_n_g_s.
+
+     _E_g_r_e_p accepts extended regular expressions.  In the follow-
+     ing description `character' excludes newline:
+
+	  A \ followed by a single character other than newline
+	  matches that character.
+
+	  The character ^ matches the beginning of a line.
+
+	  The character $ matches the end of a line.
+
+	  A .. (period) matches any character.
+
+	  A single character not otherwise endowed with special
+	  meaning matches that character.
+
+	  A string enclosed in brackets [] matches any single
+	  character from the string.  Ranges of ASCII character
+	  codes may be abbreviated as in `a-z0-9'.  A ] may occur
+	  only as the first character of the string.  A literal -
+	  must be placed where it can't be mistaken as a range
+	  indicator.
+
+	  A regular expression followed by an * (asterisk)
+	  matches a sequence of 0 or more matches of the regular
+	  expression.  A regular expression followed by a +
+	  (plus) matches a sequence of 1 or more matches of the
+	  regular expression.  A regular expression followed by a
+	  ? (question mark) matches a sequence of 0 or 1 matches
+	  of the regular expression.
+
+	  Two regular expressions concatenated match a match of
+	  the first followed by a match of the second.
+
+	  Two regular expressions separated by | or newline match
+	  either a match for the first or a match for the second.
+
+
+
+
+Printed 7/9/88		 October 8, 1987			2
+
+
+
+
+
+
+GREP(1)             UNIX Programmer's Manual		  GREP(1)
+
+
+
+	  A regular expression enclosed in parentheses matches a
+	  match for the regular expression.
+
+     The order of precedence of operators at the same parenthesis
+     level is [] then *+? then concatenation then | and newline.
+
+     Ideally there should be only one _g_r_e_p, but we don't know a
+     single algorithm that spans a wide enough range of space-
+     time tradeoffs.
+
+SSEEEE AALLSSOO
+     ex(1), sed(1), sh(1)
+
+DDIIAAGGNNOOSSTTIICCSS
+     Exit status is 0 if any matches are found, 1 if none, 2 for
+     syntax errors or inaccessible files.
+
+BBUUGGSS
+     Lines are limited to 256 characters; longer lines are trun-
+     cated.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 October 8, 1987			3
+
+
+

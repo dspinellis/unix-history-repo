@@ -1,0 +1,132 @@
+
+
+
+TALK(1)             UNIX Programmer's Manual		  TALK(1)
+
+
+
+NNAAMMEE
+     talk - talk to another user
+
+SSYYNNOOPPSSIISS
+     ttaallkk person [ ttyname ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _T_a_l_k is a visual communication program which copies lines
+     from your terminal to that of another user.
+
+     If you wish to talk to someone on your own machine, then
+     _p_e_r_s_o_n is just the person's login name.  If you wish to talk
+     to a user on another host, then _p_e_r_s_o_n is of the form
+     _u_s_e_r@_h_o_s_t.
+
+     If you want to talk to a user who is logged in more than
+     once, the _t_t_y_n_a_m_e argument may be used to indicate the
+     appropriate terminal name, where _t_t_y_n_a_m_e is of the form
+     ``ttyXX''.
+
+     When first called, _t_a_l_k sends the message
+
+	  Message from TalkDaemon@his_machine...
+	  talk: connection requested by your_name@your_machine.
+	  talk: respond with: talk your_name@your_machine
+
+     to the user you wish to talk to. At this point, the reci-
+     pient of the message should reply by typing
+
+	  talk	your_name@your_machine
+
+     It doesn't matter from which machine the recipient replies,
+     as long as his login-name is the same.  Once communication
+     is established, the two parties may type simultaneously,
+     with their output appearing in separate windows.  Typing
+     control L (^L) will cause the screen to be reprinted, while
+     your erase, kill, and word kill characters will behave nor-
+     mally.  To exit, just type your interrupt character; _t_a_l_k
+     then moves the cursor to the bottom of the screen and
+     restores the terminal to its previous state.
+
+     Permission to talk may be denied or granted by use of the
+     _m_e_s_g command.  At the outset talking is allowed.  Certain
+     commands, in particular _n_r_o_f_f and _p_r, disallow messages in
+     order to prevent messy output.
+
+FFIILLEESS
+     /etc/hosts     to find the recipient's machine
+     /etc/utmp	    to find the recipient's tty
+
+SSEEEE AALLSSOO
+     mail(1), mesg(1), who(1), write(1)
+
+
+
+Printed 7/9/88		November 24, 1987			1
+
+
+
+
+
+
+TALK(1)             UNIX Programmer's Manual		  TALK(1)
+
+
+
+BBUUGGSS
+     The version of _t_a_l_k(1) released with 4.3BSD uses a protocol
+     that is incompatible with the protocol used in the version
+     released with 4.2BSD.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		November 24, 1987			2
+
+
+

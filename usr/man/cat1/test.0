@@ -1,0 +1,132 @@
+
+
+
+TEST(1)             UNIX Programmer's Manual		  TEST(1)
+
+
+
+NNAAMMEE
+     test - condition command
+
+SSYYNNOOPPSSIISS
+     tteesstt expr
+
+DDEESSCCRRIIPPTTIIOONN
+     _t_e_s_t evaluates the expression _e_x_p_r, and if its value is true
+     then returns zero exit status; otherwise, a non zero exit
+     status is returned.  _t_e_s_t returns a non zero exit if there
+     are no arguments.
+
+     The following primitives are used to construct _e_x_p_r.
+
+     --rr file  true if the file exists and is readable.
+
+     --ww file  true if the file exists and is writable.
+
+     --ff file  true if the file exists and is not a directory.
+
+     --dd file  true if the file exists and is a directory.
+
+     --ss file  true if the file exists and has a size greater than
+	      zero.
+
+     --tt [ fildes ]
+	      true if the open file whose file descriptor number
+	      is _f_i_l_d_e_s (1 by default) is associated with a ter-
+	      minal device.
+
+     --zz s1    true if the length of string _s_1 is zero.
+
+     --nn s1    true if the length of the string _s_1 is nonzero.
+
+     s1 == s2  true if the strings _s_1 and _s_2 are equal.
+
+     s1 !!== s2 true if the strings _s_1 and _s_2 are not equal.
+
+     s1       true if _s_1 is not the null string.
+
+     n1 --eeqq n2
+	      true if the integers _n_1 and _n_2 are algebraically
+	      equal.  Any of the comparisons --nnee, --ggtt, --ggee, --lltt,
+	      or --llee may be used in place of --eeqq.
+
+     These primaries may be combined with the following opera-
+     tors:
+
+     !!	  unary negation operator
+
+     --aa   binary _a_n_d operator
+
+
+
+
+Printed 7/9/88	       September 22, 1987			1
+
+
+
+
+
+
+TEST(1)             UNIX Programmer's Manual		  TEST(1)
+
+
+
+     --oo   binary _o_r operator
+
+     (( expr ))
+	  parentheses for grouping.
+
+     --aa has higher precedence than --oo.. Notice that all the opera-
+     tors and flags are separate arguments to _t_e_s_t.  Notice also
+     that parentheses are meaningful to the Shell and must be
+     escaped.
+
+SSEEEE AALLSSOO
+     sh(1), find(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88	       September 22, 1987			2
+
+
+

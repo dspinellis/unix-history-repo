@@ -1,0 +1,66 @@
+
+
+
+SOELIM(1)	    UNIX Programmer's Manual		SOELIM(1)
+
+
+
+NNAAMMEE
+     soelim - eliminate .so's from nroff input
+
+SSYYNNOOPPSSIISS
+     ssooeelliimm [ file ...	]
+
+DDEESSCCRRIIPPTTIIOONN
+     _S_o_e_l_i_m reads the specified files or the standard input and
+     performs the textual inclusion implied by the _n_r_o_f_f direc-
+     tives of the form
+
+	  .so somefile
+
+     when they appear at the beginning of input lines.	This is
+     useful since programs such as _t_b_l do not normally do this;
+     it allows the placement of individual tables in separate
+     files to be run as a part of a large document.
+
+     An argument consisting of a single minus (--) is taken to be
+     a file name corresponding to the standard input.
+
+     Note that inclusion can be suppressed by using `'' instead
+     of `.', i.e.
+
+	  'so /usr/lib/tmac.s
+
+     A sample usage of _s_o_e_l_i_m would be
+
+	  soelim exum?.n | tbl | nroff -ms | col | lpr
+
+SSEEEE AALLSSOO
+     colcrt(1), more(1)
+
+BBUUGGSS
+     The format of the source commands must involve no strange-
+     ness - exactly one blank must precede and no blanks follow
+     the file name.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		   May 7, 1986				1
+
+
+

@@ -1,0 +1,330 @@
+
+
+
+MORE(1)             UNIX Programmer's Manual		  MORE(1)
+
+
+
+NNAAMMEE
+     more, page - file perusal filter for crt viewing
+
+SSYYNNOOPPSSIISS
+     mmoorree [ --ccddffllssuu ] [ --_n ] [ ++_l_i_n_e_n_u_m_b_e_r ] [ ++//_p_a_t_t_e_r_n ] [ name
+     ...  ]
+
+     ppaaggee _m_o_r_e _o_p_t_i_o_n_s
+
+DDEESSCCRRIIPPTTIIOONN
+     _M_o_r_e is a filter which allows examination of a continuous
+     text one screenful at a time on a soft-copy terminal.  It
+     normally pauses after each screenful, printing --More-- at
+     the bottom of the screen.	If the user then types a carriage
+     return, one more line is displayed.  If the user hits a
+     space, another screenful is displayed.  Other possibilities
+     are enumerated later.
+
+     The command line options are:
+
+     -_n   An integer which is the size (in lines) of the window
+	  which _m_o_r_e will use instead of the default.
+
+     --cc   _M_o_r_e will draw each page by beginning at the top of the
+	  screen and erasing each line just before it draws on
+	  it.  This avoids scrolling the screen, making it easier
+	  to read while _m_o_r_e is writing.  This option will be
+	  ignored if the terminal does not have the ability to
+	  clear to the end of a line.
+
+     --dd   _M_o_r_e will prompt the user with the message "Press space
+	  to continue, 'q' to quit." at the end of each screen-
+	  ful, and will respond to subsequent illegal user input
+	  by printing "Press 'h' for instructions." instead of
+	  ringing the bell.  This is useful if _m_o_r_e is being used
+	  as a filter in some setting, such as a class, where
+	  many users may be unsophisticated.
+
+     --ff   This causes _m_o_r_e to count logical, rather than screen
+	  lines.  That is, long lines are not folded.  This
+	  option is recommended if _n_r_o_f_f output is being piped
+	  through _u_l, since the latter may generate escape
+	  sequences.  These escape sequences contain characters
+	  which would ordinarily occupy screen positions, but
+	  which do not print when they are sent to the terminal
+	  as part of an escape sequence.  Thus _m_o_r_e may think
+	  that lines are longer than they actually are, and fold
+	  lines erroneously.
+
+     --ll   Do not treat ^L (form feed) specially.  If this option
+	  is not given, _m_o_r_e will pause after any line that con-
+	  tains a ^L, as if the end of a screenful had been
+
+
+
+Printed 7/9/88		  June 5, 1986				1
+
+
+
+
+
+
+MORE(1)             UNIX Programmer's Manual		  MORE(1)
+
+
+
+	  reached.  Also, if a file begins with a form feed, the
+	  screen will be cleared before the file is printed.
+
+     --ss   Squeeze multiple blank lines from the output, producing
+	  only one blank line.	Especially helpful when viewing
+	  _n_r_o_f_f output, this option maximizes the useful informa-
+	  tion present on the screen.
+
+     --uu   Normally, _m_o_r_e will handle underlining such as produced
+	  by _n_r_o_f_f in a manner appropriate to the particular ter-
+	  minal:  if the terminal can perform underlining or has
+	  a stand-out mode, _m_o_r_e will output appropriate escape
+	  sequences to enable underlining or stand-out mode for
+	  underlined information in the source file.  The -_u
+	  option suppresses this processing.
+
+     ++_l_i_n_e_n_u_m_b_e_r
+	  Start up at _l_i_n_e_n_u_m_b_e_r.
+
+     ++//_p_a_t_t_e_r_n
+	  Start up two lines before the line containing the regu-
+	  lar expression _p_a_t_t_e_r_n.
+
+     If the program is invoked as _p_a_g_e, then the screen is
+     cleared before each screenful is printed (but only if a full
+     screenful is being printed), and _k - 1 rather than _k - 2
+     lines are printed in each screenful, where _k is the number
+     of lines the terminal can display.
+
+     _M_o_r_e looks in the file /_e_t_c/_t_e_r_m_c_a_p to determine terminal
+     characteristics, and to determine the default window size.
+     On a terminal capable of displaying 24 lines, the default
+     window size is 22 lines.
+
+     _M_o_r_e looks in the environment variable _M_O_R_E to pre-set any
+     flags desired.  For example, if you prefer to view files
+     using the -_c mode of operation, the _c_s_h command _s_e_t_e_n_v _M_O_R_E
+     -_c or the _s_h command sequence _M_O_R_E='-_c' ; _e_x_p_o_r_t _M_O_R_E would
+     cause all invocations of _m_o_r_e , including invocations by
+     programs such as _m_a_n and _m_s_g_s , to use this mode.	Normally,
+     the user will place the command sequence which sets up the
+     _M_O_R_E environment variable in the ._c_s_h_r_c or ._p_r_o_f_i_l_e file.
+
+     If _m_o_r_e is reading from a file, rather than a pipe, then a
+     percentage is displayed along with the --More-- prompt.
+     This gives the fraction of the file (in characters, not
+     lines) that has been read so far.
+
+     Other sequences which may be typed when _m_o_r_e pauses, and
+     their effects, are as follows (_i is an optional integer
+     argument, defaulting to 1) :
+
+
+
+
+Printed 7/9/88		  June 5, 1986				2
+
+
+
+
+
+
+MORE(1)             UNIX Programmer's Manual		  MORE(1)
+
+
+
+     _i<space>
+	  display _i more lines, (or another screenful if no argu-
+	  ment is given)
+
+     ^D   display 11 more lines (a ``scroll'').  If _i is given,
+	  then the scroll size is set to _i.
+
+     d	  same as ^D (control-D)
+
+     _iz   same as typing a space except that _i, if present,
+	  becomes the new window size.
+
+     _is   skip _i lines and print a screenful of lines
+
+     _if   skip _i screenfuls and print a screenful of lines
+
+     _ib   skip back _i screenfuls and print a screenful of lines
+
+     _i^B  same as b
+
+     q or Q
+	  Exit from _m_o_r_e.
+
+     =	  Display the current line number.
+
+     v	  Start up the editor _v_i at the current line.
+
+     h	  Help command; give a description of all the _m_o_r_e com-
+	  mands.
+
+     _i/expr
+	  search for the _i-th occurrence of the regular expres-
+	  sion _e_x_p_r.  If there are less than _i occurrences of
+	  _e_x_p_r, and the input is a file (rather than a pipe),
+	  then the position in the file remains unchanged.  Oth-
+	  erwise, a screenful is displayed, starting two lines
+	  before the place where the expression was found.  The
+	  user's erase and kill characters may be used to edit
+	  the regular expression.  Erasing back past the first
+	  column cancels the search command.
+
+     _in   search for the _i-th occurrence of the last regular
+	  expression entered.
+
+     '	  (single quote) Go to the point from which the last
+	  search started.  If no search has been performed in the
+	  current file, this command goes back to the beginning
+	  of the file.
+
+     !command
+	  invoke a shell with _c_o_m_m_a_n_d. The characters `%' and `!'
+	  in "command" are replaced with the current file name
+
+
+
+Printed 7/9/88		  June 5, 1986				3
+
+
+
+
+
+
+MORE(1)             UNIX Programmer's Manual		  MORE(1)
+
+
+
+	  and the previous shell command respectively.	If there
+	  is no current file name, `%' is not expanded.  The
+	  sequences "\%" and "\!" are replaced by "%" and "!"
+	  respectively.
+
+     _i:n  skip to the _i-th next file given in the command line
+	  (skips to last file if n doesn't make sense)
+
+     _i:p  skip to the _i-th previous file given in the command
+	  line.  If this command is given in the middle of print-
+	  ing out a file, then _m_o_r_e goes back to the beginning of
+	  the file. If _i doesn't make sense, _m_o_r_e skips back to
+	  the first file.  If _m_o_r_e is not reading from a file,
+	  the bell is rung and nothing else happens.
+
+     :f   display the current file name and line number.
+
+     :q or :Q
+	  exit from _m_o_r_e (same as q or Q).
+
+     .	  (dot) repeat the previous command.
+
+     The commands take effect immediately, i.e., it is not neces-
+     sary to type a carriage return.  Up to the time when the
+     command character itself is given, the user may hit the line
+     kill character to cancel the numerical argument being
+     formed.  In addition, the user may hit the erase character
+     to redisplay the --More--(xx%) message.
+
+     At any time when output is being sent to the terminal, the
+     user can hit the quit key (normally control-\).  _M_o_r_e will
+     stop sending output, and will display the usual --More--
+     prompt.  The user may then enter one of the above commands
+     in the normal manner.  Unfortunately, some output is lost
+     when this is done, due to the fact that any characters wait-
+     ing in the terminal's output queue are flushed when the quit
+     signal occurs.
+
+     The terminal is set to _n_o_e_c_h_o mode by this program so that
+     the output can be continuous.  What you type will thus not
+     show on your terminal, except for the / and !  commands.
+
+     If the standard output is not a teletype, then _m_o_r_e acts
+     just like _c_a_t, except that a header is printed before each
+     file (if there is more than one).
+
+     A sample usage of _m_o_r_e in previewing _n_r_o_f_f output would be
+
+	  nroff -ms +2 doc.n | more -s
+
+FFIILLEESS
+     /etc/termcap	 Terminal data base
+
+
+
+Printed 7/9/88		  June 5, 1986				4
+
+
+
+
+
+
+MORE(1)             UNIX Programmer's Manual		  MORE(1)
+
+
+
+     /usr/lib/more.help  Help file
+
+SSEEEE AALLSSOO
+     csh(1), man(1), msgs(1), script(1), sh(1), environ(7)
+
+BBUUGGSS
+     Skipping backwards is too slow on large files.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  June 5, 1986				5
+
+
+

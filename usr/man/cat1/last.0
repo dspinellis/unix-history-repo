@@ -1,0 +1,66 @@
+
+
+
+LAST(1)             UNIX Programmer's Manual		  LAST(1)
+
+
+
+NNAAMMEE
+     last - indicate last logins of users and ttys
+
+SSYYNNOOPPSSIISS
+     llaasstt [-#] [-f file] [-h host] [-t tty] [user ...]
+
+DDEESSCCRRIIPPTTIIOONN
+     _L_a_s_t will list the sessions of specified _u_s_e_r_s, _t_t_y_s, and
+     _h_o_s_t_s, in reverse time order.  Each line of output contains
+     the user name, the tty from which the session was conducted,
+     any hostname, the start and stop times for the session, and
+     the duration of the session.  If the session is still con-
+     tinuing or was cut short by a crash or shutdown, _l_a_s_t will
+     so indicate.
+
+     _L_a_s_t reads the file _f_i_l_e, or by default, /_u_s_r/_a_d_m/_w_t_m_p.  The
+     --## option limits the report to ## lines.
+
+     Other arguments specify _u_s_e_r_s, _t_t_y_s or _h_o_s_t_s of interest.
+     Tty names may be given fully or abbreviated, e.g., ``last -t
+     03'' is equivalent to ``last -t tty03''.  Host names may be
+     internet numbers.	If multiple arguments are given, the
+     information which applies to any of the arguments is
+     printed, e.g., ``last root -t console'' would list all of
+     ``root's'' sessions as well as all sessions on the console
+     terminal. If no users, hostnames or terminals are specified,
+     _l_a_s_t prints a record of all logins and logouts.
+
+     The pseudo-user rreebboooott logs in at reboots of the system,
+     thus ``last reboot'' will give an indication of mean time
+     between reboot.
+
+     If _l_a_s_t is interrupted, it indicates to what date the search
+     has progressed.  If interrupted with a quit signal _l_a_s_t
+     indicates how far the search has progressed and then contin-
+     ues.
+
+FFIILLEESS
+     /usr/adm/wtmp	 login data base
+
+SSEEEE AALLSSOO
+     lastcomm(1), utmp(5), ac(8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88	       September 10, 1987			1
+
+
+

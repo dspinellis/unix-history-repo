@@ -1,0 +1,66 @@
+
+
+
+CD(1)		    UNIX Programmer's Manual		    CD(1)
+
+
+
+NNAAMMEE
+     cd - change working directory
+
+SSYYNNOOPPSSIISS
+     ccdd directory
+
+DDEESSCCRRIIPPTTIIOONN
+     _D_i_r_e_c_t_o_r_y becomes the new working directory.  The process
+     must have execute (search) permission in _d_i_r_e_c_t_o_r_y.
+
+     Because a new process is created to execute each command, _c_d
+     would be ineffective if it were written as a normal command.
+     It is therefore recognized and executed by the shells.  In
+     _c_s_h(1) you may specify a list of directories in which _d_i_r_e_c_-
+     _t_o_r_y is to be sought as a subdirectory if it is not a sub-
+     directory of the current directory; see the description of
+     the _c_d_p_a_t_h variable in _c_s_h(1).
+
+SSEEEE AALLSSOO
+     csh(1), sh(1), pwd(1), chdir(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+

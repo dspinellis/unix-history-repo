@@ -1,0 +1,132 @@
+
+
+
+VMSTAT(1)	    UNIX Programmer's Manual		VMSTAT(1)
+
+
+
+NNAAMMEE
+     vmstat - report virtual memory statistics
+
+SSYYNNOOPPSSIISS
+     vvmmssttaatt [ --ffssiimm ] [ drives ] [ interval [ count ] ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _V_m_s_t_a_t delves into the system and normally reports certain
+     statistics kept about process, virtual memory, disk, trap
+     and cpu activity.	If given a --ff argument, it instead
+     reports on the number of _f_o_r_k_s and _v_f_o_r_k_s since system
+     startup and the number of pages of virtual memory involved
+     in each kind of fork.  If given a --ss argument, it instead
+     prints the contents of the _s_u_m structure, giving the total
+     number of several kinds of paging related events which have
+     occurred since boot.  If given a --ii argument, it instead
+     reports on the number of _i_n_t_e_r_r_u_p_t_s taken by each device
+     since system startup.  If given a --mm argument, it instead
+     reports on the usage of kernel dynamic memory listed first
+     by _s_i_z_e of allocation and then by _t_y_p_e of usage.
+
+     If none of these options are given, _v_m_s_t_a_t will report in
+     the first line a summary of the virtual memory activity
+     since the system has been booted.	If _i_n_t_e_r_v_a_l is specified,
+     then successive lines are summaries over the last _i_n_t_e_r_v_a_l
+     seconds.  ``vmstat 5'' will print what the system is doing
+     every five seconds; this is a good choice of printing inter-
+     val since this is how often some of the statistics are sam-
+     pled in the system; others vary every second, running the
+     output for a while will make it apparent which are recom-
+     puted every second.  If a _c_o_u_n_t is given, the statistics are
+     repeated _c_o_u_n_t times.  The format fields are:
+
+     Procs: information about numbers of processes in various
+     states.
+
+     r	  in run queue
+     b	  blocked for resources (i/o, paging, etc.)
+     w	  runnable or short sleeper (< 20 secs) but swapped
+
+     Memory: information about the usage of virtual and real
+     memory.  Virtual pages are considered active if they belong
+     to processes which are running or have run in the last 20
+     seconds.  A ``page'' here is 1024 bytes.
+
+     avm  active virtual pages
+     fre  size of the free list
+
+     Page: information about page faults and paging activity.
+     These are averaged each five seconds, and given in units per
+     second.
+
+
+
+
+Printed 7/9/88		February 27, 1988			1
+
+
+
+
+
+
+VMSTAT(1)	    UNIX Programmer's Manual		VMSTAT(1)
+
+
+
+     re   page reclaims (simulating reference bits)
+     at   pages attached (found in free list)
+     pi   pages paged in
+     po   pages paged out
+     fr   pages freed per second
+     de   anticipated short term memory shortfall
+     sr   pages scanned by clock algorithm, per-second
+
+     up/hp/rk/ra: Disk operations per second (this field is sys-
+     tem dependent).  Typically paging will be split across
+     several of the available drives.  The number under each of
+     these is the unit number.
+
+     Faults: trap/interrupt rate averages per second over last 5
+     seconds.
+
+     in   (non clock) device interrupts per second
+     sy   system calls per second
+     cs   cpu context switch rate (switches/sec)
+
+     Cpu: breakdown of percentage usage of CPU time
+
+     us   user time for normal and low priority processes
+     sy   system time
+     id   cpu idle
+
+     If more than 4 disk drives are configured in the system,
+     _v_m_s_t_a_t displays only the first 4 drives, with priority given
+     to Massbus disk drives (i.e. if both Unibus and Massbus
+     drives are present and the total number of drives exceeds 4,
+     then some number of Unibus drives will not be displayed in
+     favor of the Massbus drives).  To force _v_m_s_t_a_t to display
+     specific drives, their names may be supplied on the command
+     line.
+
+FFIILLEESS
+     /dev/kmem, /vmunix
+
+SSEEEE AALLSSOO
+     _s_y_s_t_a_t(1), _i_o_s_t_a_t(1)
+
+     The sections starting with ``Interpreting system activity''
+     in _I_n_s_t_a_l_l_i_n_g _a_n_d _O_p_e_r_a_t_i_n_g _4._2_b_s_d.
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		February 27, 1988			2
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+APPLY(1)	    UNIX Programmer's Manual		 APPLY(1)
+
+
+
+NNAAMMEE
+     apply - apply a command to a set of arguments
+
+SSYYNNOOPPSSIISS
+     aappppllyy [ --aa_c ] [ --_n ] command args ...
+
+DDEESSCCRRIIPPTTIIOONN
+     _A_p_p_l_y runs the named _c_o_m_m_a_n_d on each argument _a_r_g in turn.
+     Normally arguments are chosen singly; the optional number _n
+     specifies the number of arguments to be passed to _c_o_m_m_a_n_d.
+     If _n is zero, _c_o_m_m_a_n_d is run without arguments once for each
+     _a_r_g. Character sequences of the form %_d in _c_o_m_m_a_n_d, where _d
+     is a digit from 1 to 9, are replaced by the _d'th following
+     unused _a_r_g. If any such sequences occur, _n is ignored, and
+     the number of arguments passed to _c_o_m_m_a_n_d is the maximum
+     value of _d in _c_o_m_m_a_n_d. The character `%' may be changed by
+     the --aa option.
+
+     Examples:
+	  apply echo *
+     is similar to ls(1);
+	  apply -2 cmp a1 b1 a2 b2 ...
+     compares the `a' files to the `b' files;
+	  apply -0 who 1 2 3 4 5
+     runs who(1) 5 times; and
+	  apply 'ln %1 /usr/joe' *
+     links all files in the current directory to the directory
+     /usr/joe.
+
+SSEEEE AALLSSOO
+     sh(1)
+
+AAUUTTHHOORR
+     Rob Pike
+
+BBUUGGSS
+     Shell metacharacters in _c_o_m_m_a_n_d may have bizarre effects; it
+     is best to enclose complicated commands in single quotes
+     ' '.
+
+     There is no way to pass a literal `%2' if `%' is the argu-
+     ment expansion character.
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+

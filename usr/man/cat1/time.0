@@ -1,0 +1,66 @@
+
+
+
+TIME(1)             UNIX Programmer's Manual		  TIME(1)
+
+
+
+NNAAMMEE
+     time - time a command
+
+SSYYNNOOPPSSIISS
+     ttiimmee [-l] command
+
+DDEESSCCRRIIPPTTIIOONN
+     The given command is executed; after it is complete, _t_i_m_e
+     prints the elapsed time during the command, the time spent
+     in the system, and the time spent in execution of the com-
+     mand.  Times are reported in seconds.  If the --ll option is
+     supplied, the contents of the _r_u_s_a_g_e structure are printed
+     as well.
+
+     On a PDP-11, the execution time can depend on what kind of
+     memory the program happens to land in; the user time in MOS
+     is often half what it is in core.
+
+     The times are printed on the diagnostic output stream,
+     ``stderr''.
+
+     _T_i_m_e is a built-in command to _c_s_h(1), with a much different
+     syntax.  This command is available as ``/bin/time'' to _c_s_h
+     users.
+
+BBUUGGSS
+     Elapsed time is accurate to the second, while the CPU times
+     are measured to the 100th second.	Thus the sum of the CPU
+     times can be up to a second larger than the elapsed time.
+
+SSEEEE AALLSSOO
+     include/sys/h/resource.h
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		November 17, 1987			1
+
+
+

@@ -1,0 +1,132 @@
+
+
+
+AT(1)		    UNIX Programmer's Manual		    AT(1)
+
+
+
+NNAAMMEE
+     at - execute commands at a later time
+
+SSYYNNOOPPSSIISS
+     aatt [[ --cc ]] [[ --ss ]] [[ --mm ]] time [ day ] [ file ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _A_t spools away a copy of the named _f_i_l_e to be used as input
+     to _s_h(1) or _c_s_h(1).  If the --cc flag (for (_c_s_h(1))) or the --ss
+     flag (for (_s_h(1))) is specified, then that shell will be
+     used to execute the job; if no shell is specified, the
+     current environment shell is used.  If no file name is
+     specified, _a_t prompts for commands from standard input until
+     a ^D is typed.
+
+     If the --mm flag is specified, mail will be sent to the user
+     after the job has been run. If errors occur during execution
+     of the job, then a copy of the error diagnostics will be
+     sent to the user. If no errors occur, then a short message
+     is sent informing the user that no errors occurred.
+
+     The format of the spool file is as follows: A four line
+     header that includes the owner of the job, the name of the
+     job, the shell used to run the job, and whether mail will be
+     set after the job is executed. The header is followed by a
+     _c_d command to the current directory and a _u_m_a_s_k command to
+     set the modes on any files created by the job.  Then _a_t
+     copies all relevant environment variables to the spool file.
+     When the script is run, it uses the user and group ID of the
+     creator of the spool file.
+
+     The _t_i_m_e is 1 to 4 digits, with an optional following `A',
+     `P', `N' or `M' for AM, PM, noon or midnight.  One and two
+     digit numbers are taken to be hours, three and four digits
+     to be hours and minutes.  If no letters follow the digits, a
+     24 hour clock time is understood.
+
+     The optional _d_a_y is either (1) a month name followed by a
+     day number, or (2) a day of the week; if the word `week'
+     follows, invocation is moved seven days further off.  Names
+     of months and days may be recognizably truncated.	Examples
+     of legitimate commands are
+
+	  at 8am jan 24
+	  at -c -m 1530 fr week
+	  at -s -m 1200n week
+
+     _A_t programs are executed by periodic execution of the com-
+     mand  /usr/lib/atrun from _c_r_o_n(8).  The granularity of _a_t
+     depends upon the how often atrun is executed.
+
+
+
+
+
+Printed 7/9/88		 March 20, 1986                         1
+
+
+
+
+
+
+AT(1)		    UNIX Programmer's Manual		    AT(1)
+
+
+
+     Error output is lost unless redirected or the -_m flag is
+     requested, in which case a copy of the errors is sent to the
+     user via _m_a_i_l(1).
+
+FFIILLEESS
+     /usr/spool/at		  spooling area
+     /usr/spool/at/yy.ddd.hhhh.*  job file
+     /usr/spool/at/past           directory where jobs are executed from
+     /usr/spool/at/lasttimedone   last time atrun was run
+     /usr/lib/atrun		  executor (run by cron(8))
+
+SSEEEE AALLSSOO
+     atq(1), atrm(1), calendar(1), sleep(1), cron(8)
+
+DDIIAAGGNNOOSSTTIICCSS
+     Complains about various syntax errors and times out of
+     range.
+
+BBUUGGSS
+     Due to the granularity of the execution of /_u_s_r/_l_i_b/_a_t_r_u_n,
+     there may be bugs in scheduling things almost exactly 24
+     hours into the future.
+
+     If the system crashes, mail is not sent to the user inform-
+     ing them that the job was not completed.
+
+     Sometimes old spool files are not removed from the directory
+     /usr/spool/at/past. This is usually due to a system crash,
+     and requires that they be removed by hand.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 March 20, 1986                         2
+
+
+

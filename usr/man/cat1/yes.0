@@ -1,0 +1,66 @@
+
+
+
+YES(1)		    UNIX Programmer's Manual		   YES(1)
+
+
+
+NNAAMMEE
+     yes - be repetitively affirmative
+
+SSYYNNOOPPSSIISS
+     yyeess [ _e_x_p_l_e_t_i_v_e ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _Y_e_s outputs _e_x_p_l_e_t_i_v_e, or, by default, "y", forever.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 January 9, 1988			1
+
+
+

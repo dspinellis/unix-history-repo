@@ -1,0 +1,66 @@
+
+
+
+LOGGER(1)	    UNIX Programmer's Manual		LOGGER(1)
+
+
+
+NNAAMMEE
+     logger - make entries in the system log
+
+SSYYNNOOPPSSIISS
+     llooggggeerr [ --tt tag ] [ --pp pri ] [ --ii ] [ --ff file ] [ message
+     ...  ]
+
+AARRGGUUMMEENNTTSS
+     --tt _t_a_g	 Mark every line in the log with the specified
+		 _t_a_g.
+
+     --pp _p_r_i	 Enter the message with the specified priority.
+		 The priority may be specified numerically or as
+		 a ``facility.level'' pair.  For example, ``-p
+		 local3.info'' logs the message(s) as
+		 _i_n_f_ormational level in the _l_o_c_a_l_3 facility.  The
+		 default is ``user.notice.''
+
+     --ii          Log the process id of the logger process with
+		 each line.
+
+     --ff _f_i_l_e	 Log the specified file.
+
+     message	 The message to log; if not specified, and the --ff
+		 flag is not provided, standard input is logged.
+
+DDEESSCCRRIIPPTTIIOONN
+     _L_o_g_g_e_r provides a program interface to the _s_y_s_l_o_g(3) system
+     log module.
+
+EEXXAAMMPPLLEESS
+     logger System rebooted
+
+     logger -p local0.notice -t HOSTIDM -f /dev/idmc
+
+SSEEEE AALLSSOO
+     syslog(3), syslogd(8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  July 9, 1988				1
+
+
+

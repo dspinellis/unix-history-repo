@@ -1,0 +1,66 @@
+
+
+
+LASTCOMM(1)	    UNIX Programmer's Manual	      LASTCOMM(1)
+
+
+
+NNAAMMEE
+     lastcomm - show last commands executed in reverse order
+
+SSYYNNOOPPSSIISS
+     llaassttccoommmm [ -f file ] [ command name ] ... [user name] ...
+     [terminal name] ...
+
+DDEESSCCRRIIPPTTIIOONN
+     _L_a_s_t_c_o_m_m gives information on previously executed commands.
+     With no arguments, _l_a_s_t_c_o_m_m prints information about all the
+     commands recorded during the current accounting file's life-
+     time.  The -_f option causes _l_a_s_t_c_o_m_m to read from a file
+     other than the default accounting file.  If called with
+     arguments, only accounting entries with a matching command
+     name, user name, or terminal name are printed.  So, for
+     example,
+	  lastcomm a.out root ttyd0
+     would produce a listing of all the executions of commands
+     named _a._o_u_t by user _r_o_o_t on the terminal _t_t_y_d_0.
+
+     For each process entry, the following are printed.
+	  The name of the user who ran the process.
+	  Flags, as accumulated by the accounting facilities in
+	  the system.
+	  The command name under which the process was called.
+	  The amount of cpu time used by the process (in
+	  seconds).
+	  The time the process exited.
+
+     The flags are encoded as follows: ``S'' indicates the com-
+     mand was executed by the super-user, ``F'' indicates the
+     command ran after a fork, but without a following _e_x_e_c,
+     ``C'' indicates the command was run in PDP-11 compatibility
+     mode (VAX only), ``D'' indicates the command terminated with
+     the generation of a _c_o_r_e file, and ``X'' indicates the com-
+     mand was terminated with a signal.
+
+FFIILLEESS
+     /usr/adm/acct
+
+SSEEEE AALLSSOO
+     last(1), sigvec(2), acct(8), core(5)
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  March 8, 1988                         1
+
+
+

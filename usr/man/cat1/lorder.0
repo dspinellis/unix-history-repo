@@ -1,0 +1,66 @@
+
+
+
+LORDER(1)	    UNIX Programmer's Manual		LORDER(1)
+
+
+
+NNAAMMEE
+     lorder - find ordering relation for an object library
+
+SSYYNNOOPPSSIISS
+     lloorrddeerr file ...
+
+DDEESSCCRRIIPPTTIIOONN
+     The input is one or more object or library archive (see
+     _a_r(1)) _f_i_l_e_s. The standard output is a list of pairs of
+     object file names, meaning that the first file of the pair
+     refers to external identifiers defined in the second.  The
+     output may be processed by _t_s_o_r_t(1) to find an ordering of a
+     library suitable for one-pass access by _l_d(1).
+
+     This brash one-liner intends to build a new library from
+     existing `.o' files.
+
+	  ar cr library `lorder *.o | tsort`
+
+     The need for lorder may be vitiated by use of _r_a_n_l_i_b(1),
+     which converts an ordered archive into a randomly accessed
+     library.
+
+FFIILLEESS
+     *symref, *symdef
+     nm(1), sed(1), sort(1), join(1)
+
+SSEEEE AALLSSOO
+     tsort(1), ld(1), ar(1), ranlib(1)
+
+BBUUGGSS
+     The names of object files, in and out of libraries, must end
+     with `.o'; nonsense results otherwise.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+WHOAMI(1)	    UNIX Programmer's Manual		WHOAMI(1)
+
+
+
+NNAAMMEE
+     whoami - print effective current user id
+
+SSYYNNOOPPSSIISS
+     wwhhooaammii
+
+DDEESSCCRRIIPPTTIIOONN
+     _W_h_o_a_m_i prints who you are.  It works even if you are su'd,
+     while `who am i' does not since it uses /etc/utmp.
+
+FFIILLEESS
+     /etc/passwd    Name data base
+
+SSEEEE AALLSSOO
+     who (1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+

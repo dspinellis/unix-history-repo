@@ -1,0 +1,198 @@
+
+
+
+LINT(1)             UNIX Programmer's Manual		  LINT(1)
+
+
+
+NNAAMMEE
+     lint - a C program verifier
+
+SSYYNNOOPPSSIISS
+     lliinntt [ --aabbcchhnnppuuvvxx ] file ...
+
+DDEESSCCRRIIPPTTIIOONN
+     _L_i_n_t attempts to detect features of the C program _f_i_l_e_s
+     which are likely to be bugs, or non-portable, or wasteful.
+     It also checks the type usage of the program more strictly
+     than the compilers.  Among the things which are currently
+     found are unreachable statements, loops not entered at the
+     top, automatic variables declared and not used, and logical
+     expressions whose value is constant.  Moreover, the usage of
+     functions is checked to find functions which return values
+     in some places and not in others, functions called with
+     varying numbers of arguments, and functions whose values are
+     not used.
+
+     By default, it is assumed that all the _f_i_l_e_s are to be
+     loaded together; they are checked for mutual compatibility.
+     Function definitions for certain libraries are available to
+     _l_i_n_t; these libraries are referred to by a conventional
+     name, such as `-lm', in the style of _l_d(1).  Arguments end-
+     ing in ._l_n are also treated as library files.  To create
+     lint libraries, use the --CC option:
+
+	  lint -Cfoo files . . .
+
+     where _f_i_l_e_s are the C sources of library _f_o_o. The result is
+     a file _l_l_i_b-_l_f_o_o._l_n in the correct library format suitable
+     for linting programs using _f_o_o.
+
+     Any number of the options in the following list may be used.
+     The --DD, --UU, and --II options of _c_c(1) are also recognized as
+     separate arguments.
+
+     pp	  Attempt to check portability to the _I_B_M and _G_C_O_S
+	  dialects of C.
+
+     hh	  Apply a number of heuristic tests to attempt to intuit
+	  bugs, improve style, and reduce waste.
+
+     bb	  Report _b_r_e_a_k statements that cannot be reached.  (This
+	  is not the default because, unfortunately, most _l_e_x and
+	  many _y_a_c_c outputs produce dozens of such comments.)
+
+     vv	  Suppress complaints about unused arguments in func-
+	  tions.
+
+     xx	  Report variables referred to by extern declarations,
+	  but never used.
+
+
+
+Printed 7/9/88		 March 17, 1986                         1
+
+
+
+
+
+
+LINT(1)             UNIX Programmer's Manual		  LINT(1)
+
+
+
+     aa	  Report assignments of long values to int variables.
+
+     cc	  Complain about casts which have questionable portabil-
+	  ity.
+
+     uu	  Do not complain about functions and variables used and
+	  not defined, or defined and not used (this is suitable
+	  for running _l_i_n_t on a subset of files out of a larger
+	  program).
+
+     nn	  Do not check compatibility against the standard
+	  library.
+
+     zz	  Do not complain about structures that are never defined
+	  (e.g.  using a structure pointer without knowing its
+	  contents.).
+
+     _E_x_i_t(2) and other functions which do not return are not
+     understood; this causes various lies.
+
+     Certain conventional comments in the C source will change
+     the behavior of _l_i_n_t:
+
+     /*NOTREACHED*/
+	  at appropriate points stops comments about unreachable
+	  code.
+
+     /*VARARGS_n*/
+	  suppresses the usual checking for variable numbers of
+	  arguments in the following function declaration.  The
+	  data types of the first _n arguments are checked; a
+	  missing _n is taken to be 0.
+
+     /*NOSTRICT*/
+	  shuts off strict type checking in the next expression.
+
+     /*ARGSUSED*/
+	  turns on the --vv option for the next function.
+
+     /*LINTLIBRARY*/
+	  at the beginning of a file shuts off complaints about
+	  unused functions in this file.
+
+AAUUTTHHOORR
+     S.C. Johnson.  Lint library construction implemented by
+     Edward Wang.
+
+FFIILLEESS
+     /usr/lib/lint/lint[12]	 programs
+     /usr/lib/lint/llib-lc.ln	 declarations for standard func-
+     tions
+     /usr/lib/lint/llib-lc	 human readable version of above
+
+
+
+Printed 7/9/88		 March 17, 1986                         2
+
+
+
+
+
+
+LINT(1)             UNIX Programmer's Manual		  LINT(1)
+
+
+
+     /usr/lib/lint/llib-port.ln  declarations for portable func-
+     tions
+     /usr/lib/lint/llib-port	 human readable . . .
+     llib-l*.ln                  library created with --CC
+
+SSEEEE AALLSSOO
+     cc(1)
+     S. C. Johnson, _L_i_n_t, _a _C _P_r_o_g_r_a_m _C_h_e_c_k_e_r
+
+BBUUGGSS
+     There are some things you just ccaann''tt get lint to shut up
+     about.
+
+     /*NOSTRICT*/ is not implemented in the current version
+     (alas).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 March 17, 1986                         3
+
+
+

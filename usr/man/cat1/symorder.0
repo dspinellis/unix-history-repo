@@ -1,0 +1,66 @@
+
+
+
+SYMORDER(1)	    UNIX Programmer's Manual	      SYMORDER(1)
+
+
+
+NNAAMMEE
+     symorder - rearrange name list
+
+SSYYNNOOPPSSIISS
+     ssyymmoorrddeerr orderlist symbolfile
+
+DDEESSCCRRIIPPTTIIOONN
+     _O_r_d_e_r_l_i_s_t is a file containing symbols to be found in sym-
+     bolfile, 1 symbol per line.
+
+     _S_y_m_b_o_l_f_i_l_e is updated in place to put the requested symbols
+     first in the symbol table, in the order specified.  This is
+     done by swapping the old symbols in the required spots with
+     the new ones.  If all of the order symbols are not found, an
+     error is generated.
+
+     This program was specifically designed to cut down on the
+     overhead of getting symbols from /vmunix.
+
+SSEEEE AALLSSOO
+     nlist(3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+

@@ -1,0 +1,132 @@
+
+
+
+DATE(1)             UNIX Programmer's Manual		  DATE(1)
+
+
+
+NNAAMMEE
+     date - print and set the date
+
+SSYYNNOOPPSSIISS
+     ddaattee [-nu] [-d dst] [-t minutes_west] [yymmddhhmm [..ss] ]
+
+DDEESSCCRRIIPPTTIIOONN
+     If no arguments are given, the current date and time are
+     printed.  Providing an argument will set the desired date;
+     only the superuser can set the date. The -_d and -_t flags set
+     the kernel's values for daylight savings time and minutes
+     west of GMT.  If _d_s_t is non-zero, future calls to _g_e_t_t_i_m_e_o_f_-
+     _d_a_y(2) will return a non-zero _t_z__d_s_t_t_i_m_e.	_M_i_n_u_t_e_s__w_e_s_t pro-
+     vides the number of minutes returned by future calls to _g_e_t_-
+     _t_i_m_e_o_f_d_a_y(2) in _t_z__m_i_n_u_t_e_s_w_e_s_t.  The -_u flag is used to
+     display or set the date in GMT (universal) time.  _y_y
+     represents the last two digits of the year; the first _m_m is
+     the month number; _d_d is the day number; _h_h is the hour
+     number (24 hour system); the second _m_m is the minute number;
+     .._s_s is optional and represents the seconds.  For example:
+
+	  date 8506131627
+
+     sets the date to June 13 1985, 4:27 PM.  The year, month and
+     day may be omitted; the default values will be the current
+     ones.  The system operates in GMT.  _D_a_t_e takes care of the
+     conversion to and from local standard and daylight-saving
+     time.
+
+     If _t_i_m_e_d(_8) is running to synchronize the clocks of machines
+     in a local area network, _d_a_t_e sets the time globally on all
+     those machines unless the --nn option is given.
+
+FFIILLEESS
+     /usr/adm/wtmp to record time-setting.  In /usr/adm/messages,
+     _d_a_t_e records the name of the user setting the time.
+
+SSEEEE AALLSSOO
+     gettimeofday(2), utmp(5), timed(8),
+     _T_S_P: _T_h_e _T_i_m_e _S_y_n_c_h_r_o_n_i_z_a_t_i_o_n _P_r_o_t_o_c_o_l _f_o_r _U_N_I_X _4._3_B_S_D, R.
+     Gusella and S. Zatti
+
+DDIIAAGGNNOOSSTTIICCSS
+     Exit status is 0 on success, 1 on complete failure to set
+     the date, and 2 on successfully setting the local date but
+     failing globally.
+
+     Occasionally, when _t_i_m_e_d synchronizes the time on many
+     hosts, the setting of a new time value may require more than
+     a few seconds.  On these occasions, _d_a_t_e prints: `Network
+     time being set'.  The message `Communication error with
+     timed' occurs when the communication between _d_a_t_e and _t_i_m_e_d
+
+
+
+Printed 7/9/88		  April 1, 1987                         1
+
+
+
+
+
+
+DATE(1)             UNIX Programmer's Manual		  DATE(1)
+
+
+
+     fails.
+
+BBUUGGSS
+     The system attempts to keep the date in a format closely
+     compatible with VMS.  VMS, however, uses local time (rather
+     than GMT) and does not understand daylight-saving time.
+     Thus, if you use both UNIX and VMS, VMS will be running on
+     GMT.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  April 1, 1987                         2
+
+
+

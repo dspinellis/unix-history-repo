@@ -1,0 +1,66 @@
+
+
+
+DU(1)		    UNIX Programmer's Manual		    DU(1)
+
+
+
+NNAAMMEE
+     du - summarize disk usage
+
+SSYYNNOOPPSSIISS
+     dduu [ --ss ] [ --aa ] [ name ... ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _D_u gives the number of kilobytes contained in all files and,
+     recursively, directories within each specified directory or
+     file _n_a_m_e.  If _n_a_m_e is missing, `..' is used.
+
+     The argument --ss causes only the grand total to be given.
+     The argument --aa causes an entry to be generated for each
+     file.  Absence of either causes an entry to be generated for
+     each directory only.
+
+     A file which has two links to it is only counted once.
+
+SSEEEE AALLSSOO
+     df(1), quot(8)
+
+BBUUGGSS
+     Non-directories given as arguments (not under --aa option) are
+     not listed.
+     If there are too many distinct linked files, _d_u counts the
+     excess files multiply.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+TR(1)		    UNIX Programmer's Manual		    TR(1)
+
+
+
+NNAAMMEE
+     tr - translate characters
+
+SSYYNNOOPPSSIISS
+     ttrr [ --ccddss ] [ string1 [ string2 ] ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _T_r copies the standard input to the standard output with
+     substitution or deletion of selected characters.  Input
+     characters found in _s_t_r_i_n_g_1 are mapped into the correspond-
+     ing characters of _s_t_r_i_n_g_2.  When _s_t_r_i_n_g_2 is short it is pad-
+     ded to the length of _s_t_r_i_n_g_1 by duplicating its last charac-
+     ter.  Any combination of the options --ccddss may be used: --cc
+     complements the set of characters in _s_t_r_i_n_g_1 with respect to
+     the universe of characters whose ASCII codes are 01 through
+     0377 octal; --dd deletes all input characters in _s_t_r_i_n_g_1; --ss
+     squeezes all strings of repeated output characters that are
+     in _s_t_r_i_n_g_2 to single characters.
+
+     In either string the notation _a--_b means a range of charac-
+     ters from _a to _b in increasing ASCII order.  The character
+     `\' followed by 1, 2 or 3 octal digits stands for the char-
+     acter whose ASCII code is given by those digits.  A `\' fol-
+     lowed by any other character stands for that character.
+
+     The following example creates a list of all the words in
+     `file1' one per line in `file2', where a word is taken to be
+     a maximal string of alphabetics.  The second string is
+     quoted to protect `\' from the Shell.  012 is the ASCII code
+     for newline.
+
+	  tr -cs A-Za-z '\012' <file1 >file2
+
+SSEEEE AALLSSOO
+     ed(1), ascii(7), expand(1)
+
+BBUUGGSS
+     Won't handle ASCII NUL in _s_t_r_i_n_g_1 or _s_t_r_i_n_g_2; always deletes
+     NUL from input.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+

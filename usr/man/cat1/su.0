@@ -1,0 +1,66 @@
+
+
+
+SU(1)		    UNIX Programmer's Manual		    SU(1)
+
+
+
+NNAAMMEE
+     su - substitute user id temporarily
+
+SSYYNNOOPPSSIISS
+     ssuu [ -f ] [ - ] [ userid ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _S_u demands the password of the specified _u_s_e_r_i_d, and if it
+     is given, changes to that _u_s_e_r_i_d and invokes the Shell _s_h(1)
+     or _c_s_h(1) without changing the current directory.	The user
+     environment is unchanged except for HOME and SHELL, which
+     are taken from the password file for the user being substi-
+     tuted (see _e_n_v_i_r_o_n(7)).  The new user ID stays in force
+     until the Shell exits.
+
+     If no _u_s_e_r_i_d is specified, ``root'' is assumed.  Only users
+     in the ``wheel'' group (group 0) can _s_u to ``root'', even
+     with the root password.  To remind the super-user of his
+     responsibilities, the Shell substitutes `#' for its usual
+     prompt.
+
+     The --ff option prevents _c_s_h(1) from executing the .cshrc
+     file; thus making _s_u start up faster.
+
+     The -- option simulates a full login.
+
+SSEEEE AALLSSOO
+     sh(1), csh(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		   May 5, 1986				1
+
+
+

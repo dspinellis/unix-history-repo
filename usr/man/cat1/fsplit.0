@@ -1,0 +1,66 @@
+
+
+
+FSPLIT(1)	    UNIX Programmer's Manual		FSPLIT(1)
+
+
+
+NNAAMMEE
+     fsplit - split a multi-routine Fortran file into individual
+     files
+
+SSYYNNOOPPSSIISS
+     ffsspplliitt [ --ee efile] ... [ file ]
+
+DDEESSCCRRIIPPTTIIOONN
+     FFsspplliitt takes as input either a file or standard input con-
+     taining Fortran source code.  It attempts to split the input
+     into separate routine files of the form _n_a_m_e._f, where _n_a_m_e
+     is the name of the program unit (e.g. function, subroutine,
+     block data or program).  The name for unnamed block data
+     subprograms has the form _b_l_k_d_t_a_N_N_N._f where NNN is three
+     digits and a file of this name does not already exist.  For
+     unnamed main programs the name has the form _m_a_i_n_N_N_N._f. If
+     there is an error in classifying a program unit, or if
+     _n_a_m_e._f already exists, the program unit will be put in a
+     file of the form _z_z_z_N_N_N._f where _z_z_z_N_N_N._f does not already
+     exist.
+
+     Normally each subprogram unit is split into a separate file.
+     When the -_e option is used, only the specified subprogram
+     units are split into separate files.  E.g.:
+	  fsplit -e readit -e doit prog.f
+     will split readit and doit into separate files.
+
+DDIIAAGGNNOOSSTTIICCSS
+     If names specified via the -_e option are not found, a diag-
+     nostic is written to _s_t_a_n_d_a_r_d _e_r_r_o_r.
+
+AAUUTTHHOORR
+     Asa Romberger and Jerry Berkman
+
+BBUUGGSS
+     _F_s_p_l_i_t assumes the subprogram name is on the first noncom-
+     ment line of the subprogram unit.	Nonstandard source for-
+     mats may confuse _f_s_p_l_i_t.
+
+     It is hard to use -_e for unnamed main programs and block
+     data subprograms since you must predict the created file
+     name.
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+RANLIB(1)	    UNIX Programmer's Manual		RANLIB(1)
+
+
+
+NNAAMMEE
+     ranlib - convert archives to random libraries
+
+SSYYNNOOPPSSIISS
+     rraannlliibb [ --tt ] archive ...
+
+DDEESSCCRRIIPPTTIIOONN
+     _R_a_n_l_i_b converts each _a_r_c_h_i_v_e to a form which the loader can
+     load more rapidly.  _R_a_n_l_i_b does this by adding a table of
+     contents called ____..SSYYMMDDEEFF to the beginning of the archive.
+     _R_a_n_l_i_b uses _a_r(1) to reconstruct the archive, so that suffi-
+     cient temporary file space must be available in the file
+     system which contains the current directory.
+
+     If given the --tt option, ranlib only "touches" the archives
+     and does not modify them.	This is useful after copying an
+     archive or using the --tt option of _m_a_k_e(1) in order to avoid
+     having _l_d(1) complain about an "out of date" symbol table.
+
+SSEEEE AALLSSOO
+     ld(1), ar(1), lorder(1), make(1)
+
+BBUUGGSS
+     Because generation of a library by _a_r and randomization of
+     the library by _r_a_n_l_i_b are separate processes, phase errors
+     are possible.  The loader, _l_d, warns when the modification
+     date of a library is more recent than the creation date of
+     its dictionary;  but this means that you get the warning
+     even if you only copy the library.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		   May 3, 1985				1
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+SPLIT(1)	    UNIX Programmer's Manual		 SPLIT(1)
+
+
+
+NNAAMMEE
+     split - split a file into pieces
+
+SSYYNNOOPPSSIISS
+     sspplliitt [ -nn ] [ -bb byte_cnt ] [ file [ name ] ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _S_p_l_i_t reads _f_i_l_e and writes it in _n-line pieces or in
+     _b_y_t_e__c_n_t byte pieces to a set of output files.  The default
+     is in 1000 line pieces.  The name of the first output file
+     is _n_a_m_e with "aa" appended, and so on, lexicographically, to
+     "zz".  If no output name is given, "x" is the default, in
+     which case _s_p_l_i_t will create files from "xaa" to "zzz".
+
+     If no input file is given, or if -- is given in its stead,
+     then the standard input file is used.
+
+BBUUGGSS
+     If you provide _n_a_m_e, _s_p_l_i_t can only create 676 separate
+     files.  The default naming convention allows 2028 separate
+     files.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		November 20, 1986			1
+
+
+

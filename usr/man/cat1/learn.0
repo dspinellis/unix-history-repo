@@ -1,0 +1,132 @@
+
+
+
+LEARN(1)	    UNIX Programmer's Manual		 LEARN(1)
+
+
+
+NNAAMMEE
+     learn - computer aided instruction about UNIX
+
+SSYYNNOOPPSSIISS
+     lleeaarrnn [ --directory ] [ subject [ lesson ] ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _L_e_a_r_n gives Computer Aided Instruction courses and practice
+     in the use of UNIX, the C Shell, and the Berkeley text edi-
+     tors.  To get started simply type lleeaarrnn.  If you had used
+     _l_e_a_r_n before and left your last session without completing a
+     subject, the program will use information in $HOME/.learnrc
+     to start you up in the same place you left off.  Your first
+     time through, _l_e_a_r_n will ask questions to find out what you
+     want to do.  Some questions may be bypassed by naming a _s_u_b_-
+     _j_e_c_t, and more yet by naming a _l_e_s_s_o_n.  You may enter the
+     _l_e_s_s_o_n as a number that _l_e_a_r_n gave you in a previous ses-
+     sion.  If you do not know the lesson number, you may enter
+     the _l_e_s_s_o_n as a word, and _l_e_a_r_n will look for the first les-
+     son containing it.  If the _l_e_s_s_o_n is `--', _l_e_a_r_n prompts for
+     each lesson; this is useful for debugging.
+
+     The _s_u_b_j_e_c_t's presently handled are
+
+	  files
+	  editor
+	  vi
+	  morefiles
+	  macros
+	  eqn
+	  C
+
+     There are a few special commands.	The command `bye' ter-
+     minates a _l_e_a_r_n session and `where' tells you of your pro-
+     gress, with `where m' telling you more.  The command `again'
+     re-displays the text of the lesson and `again _l_e_s_s_o_n' lets
+     you review _l_e_s_s_o_n.  There is no way for _l_e_a_r_n to tell you
+     the answers it expects in English, however, the command
+     `hint' prints the last part of the lesson script used to
+     evaluate a response, while `hint m' prints the whole lesson
+     script.  This is useful for debugging lessons and might pos-
+     sibly give you an idea about what it expects.
+
+     The --_d_i_r_e_c_t_o_r_y option allows one to exercise a script in a
+     nonstandard place.
+
+FFIILLEESS
+     /usr/lib/learn subtree for all dependent directories and
+     files
+     /usr/tmp/pl*   playpen directories
+     $HOME/.learnrc startup information
+
+
+
+
+Printed 7/9/88		  May 15, 1986				1
+
+
+
+
+
+
+LEARN(1)	    UNIX Programmer's Manual		 LEARN(1)
+
+
+
+SSEEEE AALLSSOO
+     csh(1), ex(1)
+     B. W. Kernighan and M. E. Lesk, _L_E_A_R_N - _C_o_m_p_u_t_e_r-_A_i_d_e_d
+     _I_n_s_t_r_u_c_t_i_o_n _o_n _U_N_I_X
+
+BBUUGGSS
+     The main strength of _l_e_a_r_n, that it asks the student to use
+     the real UNIX, also makes possible baffling mistakes.  It is
+     helpful, especially for nonprogrammers, to have a UNIX ini-
+     tiate near at hand during the first sessions.
+
+     Occasionally lessons are incorrect, sometimes because the
+     local version of a command operates in a non-standard way.
+     Occasionally a lesson script does not recognize all the dif-
+     ferent correct responses, in which case the `hint' command
+     may be useful.  Such lessons may be skipped with the `skip'
+     command, but it takes some sophistication to recognize the
+     situation.
+
+     To find a _l_e_s_s_o_n given as a word, _l_e_a_r_n does a simple
+     _f_g_r_e_p(1) through the lessons.  It is unclear whether this
+     sort of subject indexing is better than none.
+
+     Spawning a new shell is required for each of many user and
+     internal functions.
+
+     The `vi' lessons are provided separately from the others.
+     To use them see your system administrator.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1986				2
+
+
+

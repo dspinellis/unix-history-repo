@@ -1,0 +1,396 @@
+
+
+
+INDENT(1)	    UNIX Programmer's Manual		INDENT(1)
+
+
+
+NNAAMMEE
+     indent - indent and format C program source
+
+SSYYNNOOPPSSIISS
+     iinnddeenntt  [ _i_n_p_u_t-_f_i_l_e [ _o_u_t_p_u_t-_f_i_l_e ] ] [ --bbaadd | --nnbbaadd ]
+	    [ --bbaapp | --nnbbaapp ] [ --bbbbbb | --nnbbbbbb ] [ --bbcc | --nnbbcc ]
+	    [ --bbll | --bbrr ] [ --cc_n ] [ --ccdd_n ] [ --ccddbb | --nnccddbb ]
+	    [ --ccee | --nnccee ] [ --ccii_n ] [ --ccllii_n ] [ --dd_n ] [ --ddii_n ]
+	    [ --ddjj | --nnddjj ] [ --eeii | --nneeii ] [ --ffcc11 | --nnffcc11 ]
+	    [ --ii_n ] [ --iipp | --nniipp ] [ --ll_n ] [ --llcc_n ]
+	    [ --llpp | --nnllpp ] [ --nnpprroo ] [ --ppccss | --nnppccss ]
+	    [ --ppss | --nnppss ] [ --ppssll | --nnppssll ] [ --sscc | --nnsscc ]
+	    [ --ssoobb | --nnssoobb ] [ --sstt ] [ --ttrrooffff ] [ --vv | --nnvv ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _I_n_d_e_n_t is a CC program formatter.  It reformats the CC program
+     in the _i_n_p_u_t-_f_i_l_e according to the switches.  The switches
+     which can be specified are described below. They may appear
+     before or after the file names.
+
+     NNOOTTEE: If you only specify an _i_n_p_u_t-_f_i_l_e, the formatting is
+     done `in-place', that is, the formatted file is written back
+     into _i_n_p_u_t-_f_i_l_e and a backup copy of _i_n_p_u_t-_f_i_l_e is written
+     in the current directory.	If _i_n_p_u_t-_f_i_l_e is named
+     `/blah/blah/file', the backup file is named file._B_A_K.
+
+     If _o_u_t_p_u_t-_f_i_l_e is specified, _i_n_d_e_n_t checks to make sure it
+     is different from _i_n_p_u_t-_f_i_l_e.
+
+OOPPTTIIOONNSS
+     The options listed below control the formatting style
+     imposed by _i_n_d_e_n_t.
+
+     --bbaadd,--nnbbaadd     If --bbaadd is specified, a blank line is forced
+		    after every block of declarations.	Default:
+		    --nnbbaadd.
+
+     --bbaapp,--nnbbaapp     If --bbaapp is specified, a blank line is forced
+		    after every procedure body.  Default: --nnbbaapp..
+
+     --bbbbbb,--nnbbbbbb     If --bbbbbb is specified, a blank line is forced
+		    before every block comment.  Default: --nnbbbbbb..
+
+     --bbcc,--nnbbcc	    If --bbcc is specified, then a newline is forced
+		    after each comma in a declaration. --nnbbcc turns
+		    off this option.  The default is --nnbbcc.
+
+     --bbrr,--bbll	    Specifying --bbll lines up compound statements
+		    like this:
+			if (...)
+			{
+			    code
+
+
+
+Printed 7/9/88	       September 10, 1985			1
+
+
+
+
+
+
+INDENT(1)	    UNIX Programmer's Manual		INDENT(1)
+
+
+
+			}
+		    Specifying --bbrr (the default) makes them look
+		    like this:
+			if (...) {
+			    code
+			}
+
+     --cc_n	    The column in which comments on code start.
+		    The default is 33.
+
+     --ccdd_n	    The column in which comments on declarations
+		    start.  The default is for these comments to
+		    start in the same column as those on code.
+
+     --ccddbb,--nnccddbb     Enables (disables) the placement of comment
+		    delimiters on blank lines.	With this option
+		    enabled, comments look like this:
+			 /*
+			  * this is a comment
+			  */
+		    Rather than like this:
+			 /* this is a comment */
+		    This only affects block comments, not com-
+		    ments to the right of code. The default is
+		    --ccddbb.
+
+     --ccee,--nnccee	    Enables (disables) forcing `else's to cuddle
+		    up to the immediately preceding `}'.  The
+		    default is --ccee.
+
+     --ccii_n	    Sets the continuation indent to be _n.  Con-
+		    tinuation lines will be indented that far
+		    from the beginning of the first line of the
+		    statement.	Parenthesized expressions have
+		    extra indentation added to indicate the nest-
+		    ing, unless --llpp is in effect.  --ccii defaults
+		    to the same value as --ii.
+
+     --ccllii_n	    Causes case labels to be indented _n tab stops
+		    to the right of the containing sswwiittcchh state-
+		    ment.  --ccllii00..55 causes case labels to be
+		    indented half a tab stop.  The default is
+		    --ccllii00.  (This is the only option that takes a
+		    fractional argument.)
+
+     --dd_n	    Controls the placement of comments which are
+		    not to the right of code.  Specifying --dd11
+		    means that such comments are placed one
+		    indentation level to the left of code.  The
+		    default --dd00 lines up these comments with the
+		    code.  See the section on comment indentation
+		    below.
+
+
+
+Printed 7/9/88	       September 10, 1985			2
+
+
+
+
+
+
+INDENT(1)	    UNIX Programmer's Manual		INDENT(1)
+
+
+
+     --ddii_n	    Specifies the indentation, in character posi-
+		    tions, from a declaration keyword to the fol-
+		    lowing identifier.	The default is --ddii1166.
+
+     --ddjj,--nnddjj	    --ddjj left justifies declarations.  --nnddjj
+		    indents declarations the same as code.  The
+		    default is --nnddjj.
+
+     --eeii,--nneeii	    Enables (disables) special eellssee--iiff process-
+		    ing.  If enabled, iiffs following eellssees will
+		    have the same indentation as the preceding iiff
+		    statement.	The default is --eeii.
+
+     --ffcc11,--nnffcc11     Enables (disables) the formatting of comments
+		    that start in column 1.  Often, comments
+		    whose leading `/' is in column 1 have been
+		    carefully hand formatted by the programmer.
+		    In such cases, --nnffcc11 should be used.  The
+		    default is --ffcc11.
+
+     --ii_n	    The number of spaces for one indentation
+		    level.  The default is 8.
+
+     --iipp,--nniipp	    Enables (disables) the indentation of parame-
+		    ter declarations from the left margin.  The
+		    default is --iipp.
+
+     --ll_n	    Maximum length of an output line.  The
+		    default is 78.
+
+     --llpp,--nnllpp	    Lines up code surrounded by parenthesis in
+		    continuation lines.  If a line has a left
+		    paren which is not closed on that line, then
+		    continuation lines will be lined up to start
+		    at the character position just after the left
+		    paren.  For example, here is how a piece of
+		    continued code looks with --nnllpp in effect:
+			p1 = first_procedure(second_procedure(p2, p3),
+			    third_procedure(p4, p5));
+		    With --llpp in effect (the default) the code
+		    looks somewhat clearer:
+			p1 = first_procedure(second_procedure(p2, p3),
+					     third_procedure(p4, p5));
+		    Inserting two more newlines we get:
+			p1 = first_procedure(second_procedure(p2,
+							      p3),
+					     third_procedure(p4,
+							     p5));
+
+     --nnpprroo	    Causes the profile files, `./.indent.pro' and
+		    `~/.indent.pro', to be ignored.
+
+
+
+
+Printed 7/9/88	       September 10, 1985			3
+
+
+
+
+
+
+INDENT(1)	    UNIX Programmer's Manual		INDENT(1)
+
+
+
+     --ppccss,--nnppccss     If true (--ppccss) all procedure calls will have
+		    a space inserted between the name and the
+		    `('.  The default is --nnppccss.
+
+     --ppss,--nnppss	    If true (--ppss) the pointer following operator
+		    `->' will be surrounded by spaces on either
+		    side.  The default is --nnppss.
+
+     --ppssll,--nnppssll     If true (--ppssll) the names of procedures being
+		    defined are placed in column 1 - their types,
+		    if any, will be left on the previous lines.
+		    The default is --ppssll.
+
+     --sscc,--nnsscc	    Enables (disables) the placement of asterisks
+		    (`*'s) at the left edge of all comments.  The
+		    default is --sscc.
+
+     --ssoobb,--nnssoobb     If --ssoobb is specified, indent will swallow
+		    optional blank lines.  You can use this to
+		    get rid of blank lines after declarations.
+		    Default: --nnssoobb.
+
+     --sstt	    Causes iinnddeenntt to take its input from stdin,
+		    and put its output to stdout.
+
+     --TT_t_y_p_e_n_a_m_e     Adds _t_y_p_e_n_a_m_e to the list of type keywords.
+		    Names accumulate: --TT can be specified more
+		    than once.	You need to specify all the
+		    typenames that appear in your program that
+		    are defined by ttyyppeeddeeffs - nothing will be
+		    harmed if you miss a few, but the program
+		    won't be formatted as nicely as it should.
+		    This sounds like a painful thing to have to
+		    do, but it's really a symptom of a problem in
+		    C: ttyyppeeddeeff causes a syntactic change in the
+		    language and _i_n_d_e_n_t can't find all ttyyppeeddeeffs.
+
+     --ttrrooffff	    Causes iinnddeenntt to format the program for pro-
+		    cessing by troff.  It will produce a fancy
+		    listing in much the same spirit as vvggrriinndd.
+		    If the output file is not specified, the
+		    default is standard output, rather than for-
+		    matting in place.
+
+     --vv,--nnvv	    --vv turns on `verbose' mode; --nnvv turns it off.
+		    When in verbose mode, _i_n_d_e_n_t reports when it
+		    splits one line of input into two or more
+		    lines of output, and gives some size statis-
+		    tics at completion. The default is --nnvv.
+
+FFUURRTTHHEERR DDEESSCCRRIIPPTTIIOONN
+
+
+
+
+Printed 7/9/88	       September 10, 1985			4
+
+
+
+
+
+
+INDENT(1)	    UNIX Programmer's Manual		INDENT(1)
+
+
+
+     You may set up your own `profile' of defaults to _i_n_d_e_n_t by
+     creating a file called .._i_n_d_e_n_t.._p_r_o in either your login
+     directory and/or the current directory and including what-
+     ever switches you like.  Switches in `.indent.pro' in the
+     current directory override those in your login directory
+     (with the exception of --TT type definitions, which just accu-
+     mulate).  If _i_n_d_e_n_t is run and a profile file exists, then
+     it is read to set up the program's defaults.  The switches
+     should be separated by spaces, tabs or newlines.  Switches
+     on the command line, however, override profile switches.
+
+     CCoommmmeennttss
+
+     `_B_o_x' _c_o_m_m_e_n_t_s.  _I_n_d_e_n_t assumes that any comment with a dash
+     or star immediately after the start of comment (that is,
+     `/*-' or `/**') is a comment surrounded by a box of stars.
+     Each line of such a comment is left unchanged, except that
+     its indentation may be adjusted to account for the change in
+     indentation of the first line of the comment.
+
+     _S_t_r_a_i_g_h_t _t_e_x_t.  All other comments are treated as straight
+     text.  _I_n_d_e_n_t fits as many words (separated by blanks, tabs,
+     or newlines) on a line as possible.  Blank lines break para-
+     graphs.
+
+     CCoommmmeenntt iinnddeennttaattiioonn
+
+     If a comment is on a line with code it is started in the
+     `comment column', which is set by the --cc_n command line
+     parameter.  Otherwise, the comment is started at _n indenta-
+     tion levels less than where code is currently being placed,
+     where _n is specified by the --dd_n command line parameter.  If
+     the code on a line extends past the comment column, the com-
+     ment starts further to the right, and the right margin may
+     be automatically extended in extreme cases.
+
+     PPrreepprroocceessssoorr lliinneess
+
+     In general, _i_n_d_e_n_t leaves preprocessor lines alone.  The
+     only reformatting that it will do is to straighten up trail-
+     ing comments.  It leaves embedded comments alone.	Condi-
+     tional compilation (##iiffddeeff......##eennddiiff) is recognized and
+     _i_n_d_e_n_t attempts to correctly compensate for the syntactic
+     peculiarities introduced.
+
+     CC ssyynnttaaxx
+
+     _I_n_d_e_n_t understands a substantial amount about the syntax of
+     C, but it has a `forgiving' parser.  It attempts to cope
+     with the usual sorts of incomplete and misformed syntax.  In
+     particular, the use of macros like:
+	     #define forever for(;;)
+
+
+
+Printed 7/9/88	       September 10, 1985			5
+
+
+
+
+
+
+INDENT(1)	    UNIX Programmer's Manual		INDENT(1)
+
+
+
+     is handled properly.
+
+FFIILLEESS
+     ./.indent.pro  profile file
+     ~/.indent.pro  profile file
+
+BBUUGGSS
+     _I_n_d_e_n_t has even more switches than _l_s.
+
+     A common mistake that often causes grief is typing:
+	 indent *.c
+     to the shell in an attempt to indent all the CC programs in a
+     directory.  This is probably a bug, not a feature.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88	       September 10, 1985			6
+
+
+

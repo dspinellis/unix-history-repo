@@ -1,0 +1,66 @@
+
+
+
+COL(1)		    UNIX Programmer's Manual		   COL(1)
+
+
+
+NNAAMMEE
+     col - filter reverse line feeds
+
+SSYYNNOOPPSSIISS
+     ccooll [ --bbffhh ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _C_o_l reads the standard input and writes the standard output.
+     It performs the line overlays implied by reverse line feeds
+     (ESC-7 in ASCII) and by forward and reverse half line feeds
+     (ESC-9 and ESC-8).  _C_o_l is particularly useful for filtering
+     multicolumn output made with the `.rt' command of _n_r_o_f_f and
+     output resulting from use of the _t_b_l(1) preprocessor.
+
+     Although _c_o_l accepts half line motions in its input, it nor-
+     mally does not emit them on output.  Instead, text that
+     would appear between lines is moved to the next lower full
+     line boundary.  This treatment can be suppressed by the --ff
+     (fine) option; in this case the output from _c_o_l may contain
+     forward half line feeds (ESC-9), but will still never con-
+     tain either kind of reverse line motion.
+
+     If the --bb option is given, _c_o_l assumes that the output dev-
+     ice in use is not capable of backspacing.	In this case, if
+     several characters are to appear in the same place, only the
+     last one read will be taken.
+
+     The control characters SO (ASCII code 017), and SI (016) are
+     assumed to start and end text in an alternate character set.
+     The character set (primary or alternate) associated with
+     each printing character read is remembered; on output, SO
+     and SI characters are generated where necessary to maintain
+     the correct treatment of each character.
+
+     If the --hh option is given, _c_o_l converts white space to tabs
+     to shorten printing time.
+
+     All control characters are removed from the input except
+     space, backspace, tab, return, newline, ESC (033) followed
+     by one of 7, 8, 9, SI, SO, and VT (013).  This last charac-
+     ter is an alternate form of full reverse line feed, for com-
+     patibility with some other hardware conventions.  All other
+     non-printing characters are ignored.
+
+SSEEEE AALLSSOO
+     troff(1), tbl(1)
+
+BBUUGGSS
+     Can't back up more than 128 lines.
+     No more than 800 characters, including backspaces, on a
+     line.
+
+
+
+
+Printed 7/9/88		  May 16, 1986				1
+
+
+

@@ -1,0 +1,132 @@
+
+
+
+LOOKBIB(1)	    UNIX Programmer's Manual	       LOOKBIB(1)
+
+
+
+NNAAMMEE
+     indxbib, lookbib - build inverted index for a bibliography,
+     find references in a bibliography
+
+SSYYNNOOPPSSIISS
+     iinnddxxbbiibb database  ...
+     llooookkbbiibb [ --nn ] database
+
+DDEESSCCRRIIPPTTIIOONN
+     _I_n_d_x_b_i_b makes an inverted index to the named _d_a_t_a_b_a_s_e_s (or
+     files) for use by _l_o_o_k_b_i_b(1) and _r_e_f_e_r(1).  These files con-
+     tain bibliographic references (or other kinds of informa-
+     tion) separated by blank lines.
+
+     A bibliographic reference is a set of lines, constituting
+     fields of bibliographic information.  Each field starts on a
+     line beginning with a ``%'', followed by a key-letter, then
+     a blank, and finally the contents of the field, which may
+     continue until the next line starting with ``%''.
+
+     _I_n_d_x_b_i_b is a shell script that calls /usr/lib/refer/mkey and
+     /usr/lib/refer/inv.  The first program, _m_k_e_y, truncates
+     words to 6 characters, and maps upper case to lower case.
+     It also discards words shorter than 3 characters, words
+     among the 100 most common English words, and numbers (dates)
+     < 1900 or > 2000.	These parameters can be changed; see page
+     4 of the _R_e_f_e_r document by Mike Lesk.  The second program,
+     _i_n_v, creates an entry file (.ia), a posting file (.ib), and
+     a tag file (.ic), all in the working directory.
+
+     _L_o_o_k_b_i_b uses an inverted index made by _i_n_d_x_b_i_b to find sets
+     of bibliographic references.  It reads keywords typed after
+     the ``>'' prompt on the terminal, and retrieves records con-
+     taining all these keywords.  If nothing matches, nothing is
+     returned except another ``>'' prompt.
+
+     _L_o_o_k_b_i_b will ask if you need instructions, and will print
+     some brief information if you reply ``y''.  The ``-n'' flag
+     turns off the prompt for instructions.
+
+     It is possible to search multiple databases, as long as they
+     have a common index made by _i_n_d_x_b_i_b. In that case, only the
+     first argument given to _i_n_d_x_b_i_b is specified to _l_o_o_k_b_i_b.
+
+     If _l_o_o_k_b_i_b does not find the index files (the .i[abc]
+     files), it looks for a reference file with the same name as
+     the argument, without the suffixes.  It creates a file with
+     a '.ig' suffix, suitable for use with _f_g_r_e_p. It then uses
+     this fgrep file to find references.  This method is simpler
+     to use, but the .ig file is slower to use than the .i[abc]
+     files, and does not allow the use of multiple reference
+     files.
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+
+
+
+
+LOOKBIB(1)	    UNIX Programmer's Manual	       LOOKBIB(1)
+
+
+
+FFIILLEESS
+     _x.ia, _x.ib, _x.ic, where _x is the first argument, or if these
+     are not present, then _x.ig, _x
+
+SSEEEE AALLSSOO
+     refer(1), addbib(1), sortbib(1), roffbib(1), lookbib(1)
+
+BBUUGGSS
+     Probably all dates should be indexed, since many disciplines
+     refer to literature written in the 1800s or earlier.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         2
+
+
+

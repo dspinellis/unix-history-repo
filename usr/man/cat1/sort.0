@@ -1,0 +1,198 @@
+
+
+
+SORT(1)             UNIX Programmer's Manual		  SORT(1)
+
+
+
+NNAAMMEE
+     sort - sort or merge files
+
+SSYYNNOOPPSSIISS
+     ssoorrtt [ -_m_u_b_d_f_i_n_r_t_x ] [ ++_p_o_s_1  [ --_p_o_s_2 ] ] ...  [ --oo name ] [
+     --TT directory ] [ name ] ...
+
+DDEESSCCRRIIPPTTIIOONN
+     _S_o_r_t sorts lines of all the named files together and writes
+     the result on the standard output.  The name `-' means the
+     standard input.  If no input files are named, the standard
+     input is sorted.
+
+     The default sort key is an entire line.  Default ordering is
+     lexicographic by bytes in machine collating sequence.  The
+     ordering is affected globally by the following options, one
+     or more of which may appear.
+
+     bb	  Ignore leading blanks (spaces and tabs) in field com-
+	  parisons.
+
+     dd	  `Dictionary' order: only letters, digits and blanks are
+	  significant in comparisons.
+
+     ff	  Fold upper case letters onto lower case.
+
+     ii	  Ignore characters outside the ASCII range 040-0176 in
+	  nonnumeric comparisons.
+
+     nn	  An initial numeric string, consisting of optional
+	  blanks, optional minus sign, and zero or more digits
+	  with optional decimal point, is sorted by arithmetic
+	  value.  (Note that --00 is considered equal to 00.) Option
+	  nn implies option bb..
+
+     rr	  Reverse the sense of comparisons.
+
+     tt_x   `Tab character' separating fields is _x.
+
+     The notation ++_p_o_s_1 --_p_o_s_2 restricts a sort key to a field
+     beginning at _p_o_s_1 and ending just before _p_o_s_2.  _P_o_s_1 and
+     _p_o_s_2 each have the form _m.._n, optionally followed by one or
+     more of the flags bbddffiinnrr,, where _m tells a number of fields
+     to skip from the beginning of the line and _n tells a number
+     of characters to skip further.  If any flags are present
+     they override all the global ordering options for this key.
+     If the bb option is in effect _n is counted from the first
+     nonblank in the field; bb is attached independently to _p_o_s_2.
+     A missing .._n means .0; a missing --_p_o_s_2 means the end of the
+     line.  Under the --tt_x option, fields are strings separated by
+     _x; otherwise fields are nonempty nonblank strings separated
+     by blanks.
+
+
+
+Printed 7/9/88	       September 30, 1987			1
+
+
+
+
+
+
+SORT(1)             UNIX Programmer's Manual		  SORT(1)
+
+
+
+     When there are multiple sort keys, later keys are compared
+     only after all earlier keys compare equal.  Lines that oth-
+     erwise compare equal are ordered with all bytes significant.
+
+     These option arguments are also understood:
+
+     cc	  Check that the input file is sorted according to the
+	  ordering rules; give no output unless the file is out
+	  of sort.
+
+     mm	  Merge only, the input files are already sorted.
+
+     oo	  The next argument is the name of an output file to use
+	  instead of the standard output.  This file may be the
+	  same as one of the inputs.
+
+     TT	  The next argument is the name of a directory in which
+	  temporary files should be made.
+
+     uu	  Suppress all but one in each set of equal lines.
+	  Ignored bytes and bytes outside keys do not participate
+	  in this comparison.
+
+EEXXAAMMPPLLEESS
+     Print in alphabetical order all the unique spellings in a
+     list of words.  Capitalized words differ from uncapitalized.
+
+	     sort -u +0f +0 list
+
+     Print the password file (_p_a_s_s_w_d(5)) sorted by user id number
+     (the 3rd colon-separated field).
+
+	     sort -t: +2n /etc/passwd
+
+     Print the first instance of each month in an already sorted
+     file of (month day) entries.  The options --uumm with just one
+     input file make the choice of a unique representative from a
+     set of equal lines predictable.
+
+	     sort -um +0 -1 dates
+
+FFIILLEESS
+     /usr/tmp/stm*, /tmp/*    first and second tries for tem-
+     porary files
+
+SSEEEE AALLSSOO
+     uniq(1), comm(1), rev(1), join(1)
+
+DDIIAAGGNNOOSSTTIICCSS
+     Comments and exits with nonzero status for various trouble
+     conditions and for disorder discovered under option --cc.
+
+
+
+
+Printed 7/9/88	       September 30, 1987			2
+
+
+
+
+
+
+SORT(1)             UNIX Programmer's Manual		  SORT(1)
+
+
+
+BBUUGGSS
+     Very long lines are silently truncated.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88	       September 30, 1987			3
+
+
+

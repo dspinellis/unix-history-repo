@@ -1,0 +1,66 @@
+
+
+
+CP(1)		    UNIX Programmer's Manual		    CP(1)
+
+
+
+NNAAMMEE
+     cp - copy
+
+SSYYNNOOPPSSIISS
+     ccpp [ --iipp ] file1 file2
+
+     ccpp [ --iipprr ] file ... directory
+
+DDEESSCCRRIIPPTTIIOONN
+     _F_i_l_e_1 is copied onto _f_i_l_e_2.  By default, the mode and owner
+     of _f_i_l_e_2 are preserved if it already existed; otherwise the
+     mode of the source file modified by the current _u_m_a_s_k(2) is
+     used.  The --pp option causes _c_p to attempt to preserve
+     (duplicate) in its copies the modification times and modes
+     of the source files, ignoring the present _u_m_a_s_k.
+
+     In the second form, one or more _f_i_l_e_s are copied into the
+     _d_i_r_e_c_t_o_r_y with their original file-names.
+
+     _C_p refuses to copy a file onto itself.
+
+     If the --ii option is specified, _c_p will prompt the user with
+     the name of the file whenever the copy will cause an old
+     file to be overwritten. An answer of 'y' will cause _c_p to
+     continue. Any other answer will prevent it from overwriting
+     the file.
+
+     If the --rr option is specified and any of the source files
+     are directories, _c_p copies each subtree rooted at that name;
+     in this case the destination must be a directory.
+
+SSEEEE AALLSSOO
+     cat(1), mv(1), rcp(1C)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  June 8, 1985				1
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+UNIQ(1)             UNIX Programmer's Manual		  UNIQ(1)
+
+
+
+NNAAMMEE
+     uniq - report repeated lines in a file
+
+SSYYNNOOPPSSIISS
+     uunniiqq [ --uuddcc [ ++n ] [ --n ] ] [ input [ output ] ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _U_n_i_q reads the input file comparing adjacent lines.  In the
+     normal case, the second and succeeding copies of repeated
+     lines are removed; the remainder is written on the output
+     file.  Note that repeated lines must be adjacent in order to
+     be found; see _s_o_r_t(1).  If the --uu flag is used, just the
+     lines that are not repeated in the original file are output.
+     The --dd option specifies that one copy of just the repeated
+     lines is to be written.  The normal mode output is the union
+     of the --uu and --dd mode outputs.
+
+     The --cc option supersedes --uu and --dd and generates an output
+     report in default style but with each line preceded by a
+     count of the number of times it occurred.
+
+     The _n arguments specify skipping an initial portion of each
+     line in the comparison:
+
+     --_n      The first _n fields together with any blanks before
+	     each are ignored.	A field is defined as a string of
+	     non-space, non-tab characters separated by tabs and
+	     spaces from its neighbors.
+
+     ++_n      The first _n characters are ignored.  Fields are
+	     skipped before characters.
+
+SSEEEE AALLSSOO
+     sort(1), comm(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+

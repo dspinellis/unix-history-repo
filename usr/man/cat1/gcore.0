@@ -1,0 +1,66 @@
+
+
+
+GCORE(1)	    UNIX Programmer's Manual		 GCORE(1)
+
+
+
+NNAAMMEE
+     gcore - get core images of running processes
+
+SSYYNNOOPPSSIISS
+     ggccoorree process-id ...
+
+DDEESSCCRRIIPPTTIIOONN
+     _G_c_o_r_e creates a core image of each specified process, suit-
+     able for use with _a_d_b(1) or _d_b_x(1).
+
+FFIILLEESS
+     core.<process-id>	 core images
+
+BBUUGGSS
+     Paging activity that occurs while _g_c_o_r_e is running may cause
+     the program to become confused.  For best results, the
+     desired processes should be stopped.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+

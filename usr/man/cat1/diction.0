@@ -1,0 +1,66 @@
+
+
+
+DICTION(1)	    UNIX Programmer's Manual	       DICTION(1)
+
+
+
+NNAAMMEE
+     diction, explain - print wordy sentences; thesaurus for dic-
+     tion
+
+SSYYNNOOPPSSIISS
+     ddiiccttiioonn [ --mmll ] [ --mmmm ] [ --nn ] [ --ff pfile ] file ...
+     eexxppllaaiinn
+
+DDEESSCCRRIIPPTTIIOONN
+     _D_i_c_t_i_o_n finds all sentences in a document that contain
+     phrases from a data base of bad or wordy diction.	Each
+     phrase is bracketed with [ ].  Because _d_i_c_t_i_o_n runs _d_e_r_o_f_f
+     before looking at the text, formatting header files should
+     be included as part of the input.	The default macro package
+     --mmss may be overridden with the flag --mmmm.. The flag --mmll which
+     causes ddeerrooffff to skip lists, should be used if the document
+     contains many lists of non-sentences.  The user may supply
+     her/his own pattern file to be used in addition to the
+     default file with --ff _p_f_i_l_e. If the flag --nn is also supplied
+     the default file will be suppressed.
+
+     _E_x_p_l_a_i_n is an interactive thesaurus for the phrases found by
+     diction.
+
+SSEEEE AALLSSOO
+     deroff(1)
+
+BBUUGGSS
+     Use of non-standard formatting macros may cause incorrect
+     sentence breaks.  In particular, _d_i_c_t_i_o_n doesn't grok --mmee..
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 10, 1986				1
+
+
+

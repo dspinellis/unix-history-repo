@@ -1,0 +1,132 @@
+
+
+
+FINGER(1)	    UNIX Programmer's Manual		FINGER(1)
+
+
+
+NNAAMMEE
+     finger - user information lookup program
+
+SSYYNNOOPPSSIISS
+     ffiinnggeerr [ options ] name ...
+
+DDEESSCCRRIIPPTTIIOONN
+     By default _f_i_n_g_e_r lists the login name, full name, terminal
+     name and write status (as a `*' before the terminal name if
+     write permission is denied), idle time, login time, and
+     office location and phone number (if they are known) for
+     each current UNIX user.  (Idle time is minutes if it is a
+     single integer, hours and minutes if a ':' is present, or
+     days and hours if a 'd' is present.)
+
+     A longer format also exists and is used by _f_i_n_g_e_r whenever a
+     list of people's names is given.  (Account names as well as
+     first and last names of users are accepted.) This format is
+     multi-line, and includes all the information described above
+     as well as the user's home directory and login shell, any
+     plan which the person has placed in the file ._p_l_a_n in their
+     home directory, and the project on which they are working
+     from the file ._p_r_o_j_e_c_t also in the home directory.
+
+     _F_i_n_g_e_r may be used to lookup users on a remote machine.  The
+     format is to specify the user as ``user@host.''  If the user
+     name is left off, the standard format listing is provided on
+     the remote machine.
+
+     _F_i_n_g_e_r options include:
+
+     --mm   Match arguments only on user name.
+
+     --ll   Force long output format.
+
+     --pp   Suppress printing of the ._p_l_a_n files
+
+     --ss   Force short output format.
+
+FFIILLEESS
+     /etc/utmp		 who file
+     /etc/passwd	 for users names, offices, ...
+     /usr/adm/lastlog	 last login times
+     ~/.plan		 plans
+     ~/.project          projects
+
+SSEEEE AALLSSOO
+     chfn(1), w(1), who(1)
+
+AAUUTTHHOORR
+     Earl T. Cohen
+
+
+
+
+Printed 7/9/88		  May 10, 1986				1
+
+
+
+
+
+
+FINGER(1)	    UNIX Programmer's Manual		FINGER(1)
+
+
+
+BBUUGGSS
+     Only the first line of the ._p_r_o_j_e_c_t file is printed.
+
+     The encoding of the gcos field is UCB dependent - it knows
+     that an office `197MC' is `197M Cory Hall', and that `529BE'
+     is `529B Evans Hall'.  It also knows that a four digit
+     office phone number should have a ``x2-'' prepended.
+
+     There is no way to pass arguments to the remote machine as
+     _f_i_n_g_e_r uses an internet standard port.
+
+     A user information data base is in the works and will radi-
+     cally alter the way the information that _f_i_n_g_e_r uses is
+     stored.  Finger will require extensive modification when
+     this is implemented.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 10, 1986				2
+
+
+
