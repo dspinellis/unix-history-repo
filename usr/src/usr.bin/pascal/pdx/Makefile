@@ -1,6 +1,6 @@
 # Copyright (c) 1982 Regents of the University of California
 #
-#	@(#)Makefile	1.10	(Berkeley)	%G%
+#	@(#)Makefile	1.11	(Berkeley)	%G%
 #
 # make file for pdx
 #
@@ -22,9 +22,9 @@
 #	to touch the C files that include it.
 #
 
-HOME	= /usr/src/cmd/pdx
+HOME	= /usr/src/ucb/pdx
 LIB	= library.o cerror.o
-PASCAL	= /usr/src/cmd/pascal/
+PASCAL	= /usr/src/ucb/pascal/
 INSTALL	= /usr/ucb/pdx
 
 RM	= /bin/rm -f
