@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)script.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)script.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -179,7 +179,7 @@ fixtty()
 	rtt = tt;
 	cfmakeraw(&rtt);
 	rtt.c_lflag &= ~ECHO;
-	(void) tcsetattr(0, TCSADFLUSH, &rtt);
+	(void) tcsetattr(0, TCSAFLUSH, &rtt);
 }
 
 fail()
@@ -200,7 +200,7 @@ done()
 		(void) fclose(fscript);
 		(void) close(master);
 	} else {
-		(void) tcsetattr(0, TCSADFLUSH, &tt);
+		(void) tcsetattr(0, TCSAFLUSH, &tt);
 		printf("Script done, file is %s\n", fname);
 	}
 	exit(0);
@@ -251,7 +251,7 @@ getslave()
 		perror(line);
 		fail();
 	}
-	(void) tcsetattr(slave, TCSADFLUSH, &tt);
+	(void) tcsetattr(slave, TCSAFLUSH, &tt);
 	(void) ioctl(slave, TIOCSWINSZ, (char *)&win);
 	(void) setsid();
 	(void) ioctl(slave, TIOCSCTTY, 0);
