@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "dlvrmail.h"
 
-static char	SccsId[] = "@(#)collect.c	1.2	%G%";
+static char	SccsId[] = "@(#)collect.c	1.3	%G%";
 
 /*
 **  MAKETEMP -- read & parse message header & make temp file.
@@ -35,6 +35,8 @@ static char	SccsId[] = "@(#)collect.c	1.2	%G%";
 **		This is broken off from main largely so that the
 **		temp buffer can be deallocated.
 */
+
+char	MsgId[MAXNAME];
 
 char *
 maketemp()
