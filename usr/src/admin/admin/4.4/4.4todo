@@ -1,17 +1,17 @@
-#	@(#)4.4todo	5.4 (Berkeley) %G%
+#	@(#)4.4todo	5.5 (Berkeley) %G%
 
 Target for alpha tape release: May 31.
 Target architectures: 386/486, HP300, Sparc, DECstation 3100/5000.
 
-Required:			Owner:		Prio:	Time:	Date:
-64-bit file sizes		Kirk
-32-bit uid/gid			Kirk
-32-bit dev			Kirk
+Required:			Owner:		Prio:	Time:	Date:	Status:
+NFS update			Kirk		1	1 week	07 Feb	done
+32-bit uid/gid			Kirk		1	2 day	11 Feb
+64-bit file sizes		Kirk		2	3 day	14 Feb
+32-bit dev			Kirk		3	1 week	21 Feb
 VM				Kirk
 	Merged buffer pool
 	kern_exec.c
 	vfs_bio.c
-NFS update			Kirk
 Nano-second (POSIX) timers	Kirk
 kern_physio.c			Kirk
 Getloadinfo			Kirk/TK
