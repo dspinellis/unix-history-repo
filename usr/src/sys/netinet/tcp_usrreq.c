@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_usrreq.c	7.1 (Berkeley) %G%
+ *	@(#)tcp_usrreq.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -155,6 +155,7 @@ tcp_usrreq(so, req, m, nam, rights)
 			break;
 		}
 		soisconnecting(so);
+		tcpstat.tcps_connattempt++;
 		tp->t_state = TCPS_SYN_SENT;
 		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
 		tp->iss = tcp_iss; tcp_iss += TCP_ISSINCR/2;

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_output.c	7.2 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -216,10 +216,27 @@ send:
 	m->m_off = MMAXOFF - sizeof (struct tcpiphdr);
 	m->m_len = sizeof (struct tcpiphdr);
 	if (len) {
+		if (tp->t_force && len == 1)
+			tcpstat.tcps_sndprobe++;
+		else if (SEQ_LT(tp->snd_nxt, tp->snd_max)) {
+			tcpstat.tcps_sndrexmitpack++;
+			tcpstat.tcps_sndrexmitbyte += len;
+		} else {
+			tcpstat.tcps_sndpack++;
+			tcpstat.tcps_sndbyte += len;
+		}
 		m->m_next = m_copy(so->so_snd.sb_mb, off, len);
 		if (m->m_next == 0)
 			len = 0;
-	}
+	} else if (tp->t_flags & TF_ACKNOW)
+		tcpstat.tcps_sndacks++;
+	else if (flags & (TH_SYN|TH_FIN|TH_RST))
+		tcpstat.tcps_sndctrl++;
+	else if (SEQ_GT(tp->snd_up, tp->snd_una))
+		tcpstat.tcps_sndurg++;
+	else
+		tcpstat.tcps_sndwinup++;
+
 	ti = mtod(m, struct tcpiphdr *);
 	if (tp->t_template == 0)
 		panic("tcp_output");
@@ -335,6 +352,7 @@ send:
 			if (tp->t_rtt == 0) {
 				tp->t_rtt = 1;
 				tp->t_rtseq = tp->snd_nxt - len;
+				tcpstat.tcps_segstimed++;
 			}
 		}
 
@@ -373,6 +391,7 @@ send:
 	    so->so_options & SO_DONTROUTE);
 	if (error)
 		return (error);
+	tcpstat.tcps_sndtotal++;
 
 	/*
 	 * Data sent (as far as we can tell).
