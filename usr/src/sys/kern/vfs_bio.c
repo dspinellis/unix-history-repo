@@ -1,4 +1,4 @@
-/*	vfs_bio.c	4.8	%G%	*/
+/*	vfs_bio.c	4.9	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -771,10 +771,12 @@ register struct buf *bp;
 binval(dev)
 dev_t dev;
 {
-	register struct buf *bp, *dp;
+	register struct buf *bp;
+	register struct bufhd *hp;
+#define dp ((struct buf *)hp)
 
-	dp = bdevsw[major(dev)].d_tab;
-	for (bp = dp->b_forw; bp != dp; bp = bp->b_forw)
-		if (bp->b_dev == dev)
-			bp->b_flags |= B_INVAL;
+	for (hp = bufhash; hp < &bufhash[BUFHSZ]; hp++)
+		for (bp = dp->b_forw; bp != dp; bp = bp->b_forw)
+			if (bp->b_dev == dev)
+				bp->b_flags |= B_INVAL;
 }
