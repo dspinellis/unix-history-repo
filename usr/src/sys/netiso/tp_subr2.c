@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_subr2.c	7.11 (Berkeley) %G%
+ *	@(#)tp_subr2.c	7.12 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -80,6 +80,7 @@ SOFTWARE.
 #include "cons.h"
 
 #include "../net/if.h"
+#include "../net/if_types.h"
 #ifdef TRUE
 #undef FALSE
 #undef TRUE
@@ -382,10 +383,17 @@ tp_netcmd( tpcb, cmd )
 
 	case CONN_CLOSE:
 	case CONN_REFUSE:
-		if (isop->isop_refcnt == 1)
+		if (isop->isop_refcnt == 1) {
+			/* This is really superfluous, since it would happen
+			   anyway in iso_pcbdetach, although it is a courtesy
+			   to free up the x.25 channel before the refwait timer
+			   expires. */
+			lcp->lcd_upper = 0;
+			lcp->lcd_upnext = 0;
 			pk_disconnect(lcp);
-		isop->isop_chan = 0;
-		isop->isop_refcnt = 0;
+			isop->isop_chan = 0;
+			isop->isop_refcnt = 0;
+		}
 		break;
 
 	default:
@@ -474,8 +482,8 @@ tp_route_to( m, tpcb, channel)
 {
 	register struct sockaddr_iso *siso;	/* NOTE: this may be a sockaddr_in */
 	extern struct tp_conn_param tp_conn_param[];
-	struct pklcd *lcp = (struct pklcd *)channel;
-	int error = 0;
+	int error = 0, save_netservice = tpcb->tp_netservice;
+	register struct rtentry *rt = 0;
 
 	siso = mtod(m, struct sockaddr_iso *);
 	IFTRACE(D_CONN)
@@ -490,39 +498,65 @@ tp_route_to( m, tpcb, channel)
 		printf("m->mlen x%x, m->m_data:\n", m->m_len);
 		dump_buf(mtod(m, caddr_t), m->m_len);
 	ENDDEBUG
-	if (siso->siso_family != tpcb->tp_domain) {
-		error = EAFNOSUPPORT;
-		goto done;
-	}
-	IFDEBUG(D_CONN)
-		printf("tp_route_to  calling nlp_pcbconn, netserv %d\n",
-			tpcb->tp_netservice);
-	ENDDEBUG
+	if (channel) {
 #ifdef TPCONS
-	if (lcp) {
+		struct pklcd *lcp = (struct pklcd *)channel;
 		struct isopcb *isop = (struct isopcb *)lcp->lcd_upnext,
 			*isop_new = (struct isopcb *)tpcb->tp_npcb;
+		/* The next 2 lines believe that you haven't
+		   set any network level options or done a pcbconnect
+		   and XXXXXXX'edly apply to both inpcb's and isopcb's */
 		remque(isop_new);
 		free(isop_new, M_PCB);
 		tpcb->tp_npcb = (caddr_t)isop;
-		if (isop->isop_refcnt == 0) {
-			extern struct isopcb tp_isopcb;
-			remque(isop);
-			insque(isop, &tp_isopcb);
-			isop->isop_head = &tp_isopcb;
+		tpcb->tp_netservice = ISO_CONS;
+		tpcb->tp_nlproto = nl_protosw + ISO_CONS;
+		isop->isop_socket = tpcb->tp_sock;
+		if (isop->isop_refcnt == 0)
 			iso_putsufx(isop, tpcb->tp_lsuffix, tpcb->tp_lsuffixlen, TP_LOCAL);
-		}
-		/* else there are already connections sharing this */
+		else
+			/* there are already connections sharing this */;
 		isop->isop_refcnt++;
-	} else
 #endif
+	} else {
+		switch (siso->siso_family) {
+		default:
+			error = EAFNOSUPPORT;
+			goto done;
+#ifdef ISO
+		case AF_ISO:
+			tpcb->tp_netservice = ISO_CLNS;
+			if (rt = rtalloc1((struct sockaddr *)siso, 0)) {
+				rt->rt_refcnt--;
+				if (rt->rt_flags & RTF_PROTO1)
+					tpcb->tp_netservice = ISO_CONS;
+			}
+			break;
+#endif
+#ifdef INET
+		case AF_INET:
+			tpcb->tp_netservice = IN_CLNS;
+		}
+#endif
+		if (tpcb->tp_nlproto->nlp_afamily != siso->siso_family) {
+			IFDEBUG(D_CONN)
+				printf("tp_route_to( CHANGING nlproto old 0x%x new 0x%x)\n", 
+						save_netservice, tpcb->tp_netservice);
+			ENDDEBUG
+			if (error = tp_set_npcb(tpcb))
+				goto done;
+		}
+		IFDEBUG(D_CONN)
+			printf("tp_route_to  calling nlp_pcbconn, netserv %d\n",
+				tpcb->tp_netservice);
+		ENDDEBUG
+		tpcb->tp_nlproto = nl_protosw + tpcb->tp_netservice;
 		error = (tpcb->tp_nlproto->nlp_pcbconn)(tpcb->tp_npcb, m);
+	}
 	if( error )
 		goto done;
 
 	{
-		register int save_netservice = tpcb->tp_netservice;
-
 		switch(tpcb->tp_netservice) {
 		case ISO_COSNS:
 		case ISO_CLNS:
@@ -530,8 +564,7 @@ tp_route_to( m, tpcb, channel)
 			 * can get long enough timers. sigh.
 			if( siso->siso_addr.osinet_idi[1] == (u_char)IDI_OSINET )
 			 */
-#define	IDI_OSINET	0x0004	/* bcd of "0004" */	
-			if( siso->siso_addr.isoa_genaddr[2] == (char)IDI_OSINET ) {
+			if (rt && rt->rt_ifp && rt->rt_ifp->if_type == IFT_X25) {
 				if( tpcb->tp_dont_change_params == 0) {
 					copyQOSparms( &tp_conn_param[ISO_COSNS],
 							&tpcb->_tp_param);
@@ -542,7 +575,7 @@ tp_route_to( m, tpcb, channel)
 		case IN_CLNS:
 			if (iso_localifa(siso))
 				tpcb->tp_flags |= TPF_PEER_ON_SAMENET;
-			if( (tpcb->tp_class & TP_CLASS_4)==0 ) {
+			if((tpcb->tp_class & TP_CLASS_4) == 0) {
 				error = EPROTOTYPE;
 				break;
 			} 
@@ -567,14 +600,6 @@ tp_route_to( m, tpcb, channel)
 			}
 			tpcb->tp_rx_strat =  TPRX_USE_CW;
 
-			if( (tpcb->tp_nlproto != &nl_protosw[ISO_CONS]) ) {
-				IFDEBUG(D_CONN)
-					printf(
-					"tp_route_to( CHANGING nlproto old 0x%x new 0x%x)\n", 
-							tpcb->tp_nlproto , &nl_protosw[ISO_CONS]);
-				ENDDEBUG
-				tpcb->tp_nlproto = &nl_protosw[ISO_CONS];
-			}
 			/* class 4 doesn't need to open a vc now - may use one already 
 			 * opened or may open one only when it sends a pkt.
 			 */
@@ -586,7 +611,6 @@ tp_route_to( m, tpcb, channel)
 			error = EPROTOTYPE;
 		}
 
-		ASSERT( save_netservice == tpcb->tp_netservice);
 	}
 	if (error) {
 		tp_netcmd( tpcb, CONN_CLOSE);

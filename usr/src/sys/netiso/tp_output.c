@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_output.c	7.11 (Berkeley) %G%
+ *	@(#)tp_output.c	7.12 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -61,8 +61,6 @@ SOFTWARE.
 #include "tp_trace.h"
 #include "kernel.h"
 
-#define USERFLAGSMASK_G 0x0f00643b
-#define USERFLAGSMASK_S 0x0f000432
 #define TPDUSIZESHIFT 24
 #define CLASSHIFT 16
 
@@ -431,48 +429,46 @@ tp_ctloutput(cmd, so, level, optname, mp)
 	switch (optname) {
 
 	case TPOPT_INTERCEPT:
+#define INA(t) (((struct inpcb *)(t->tp_npcb))->inp_laddr.s_addr)
+#define ISOA(t) (((struct isopcb *)(t->tp_npcb))->isop_laddr->siso_addr)
+
 		if ((so->so_state & SS_PRIV) == 0) {
 			error = EPERM;
-			break;
-		} else if (cmd != PRCO_SETOPT || tpcb->tp_state != TP_LISTENING)
+		} else if (cmd != PRCO_SETOPT || tpcb->tp_state != TP_CLOSED ||
+					(tpcb->tp_flags & TPF_GENERAL_ADDR) ||
+					tpcb->tp_next == 0)
 			error = EINVAL;
 		else {
-			register struct tp_pcb *t = 0;
-			struct mbuf *m = m_getclr(M_WAIT, MT_SONAME);
-			struct sockaddr *sa = mtod(m, struct sockaddr *);
-			(*tpcb->tp_nlproto->nlp_getnetaddr)(tpcb->tp_npcb, m, TP_LOCAL);
-			switch (sa->sa_family) {
-			case AF_ISO:
-				if (((struct sockaddr_iso *)sa)->siso_nlen == 0)
-					default: error = EINVAL;
-				break;
-			case AF_INET:
-				if (((struct sockaddr_in *)sa)->sin_addr.s_addr == 0)
-					error = EINVAL;
-				break;
-			}
-			for (t = tp_intercepts; t; t = t->tp_nextlisten) {
-				if (t->tp_nlproto->nlp_afamily != tpcb->tp_nlproto->nlp_afamily)
-					continue;
-				if ((*t->tp_nlproto->nlp_cmpnetaddr)(t->tp_npcb, sa, TP_LOCAL))
-					error = EADDRINUSE;
-			}
-			m_freem(m);
-			if (error)
-				break;
+			register struct tp_pcb *t;
+			error = EADDRINUSE;
+			for (t = tp_listeners; t; t = t->tp_nextlisten)
+				if ((t->tp_flags & TPF_GENERAL_ADDR) == 0 &&
+						t->tp_domain == tpcb->tp_domain)
+					switch (tpcb->tp_domain) {
+					default:
+						goto done;
+#ifdef	INET
+					case AF_INET:
+						if (INA(t) == INA(tpcb))
+							goto done;
+						continue;
+#endif
+#ifdef ISO
+					case AF_ISO:
+						if (bcmp(ISOA(t).isoa_genaddr, ISOA(tpcb).isoa_genaddr,
+										ISOA(t).isoa_len) == 0)
+							goto done;
+						continue;
+#endif
+					}
+			tpcb->tp_lsuffixlen = 0;
+			tpcb->tp_state = TP_LISTENING;
+			error = 0;
+			remque(tpcb);
+			tpcb->tp_next = tpcb->tp_prev = tpcb;
+			tpcb->tp_nextlisten = tp_listeners;
+			tp_listeners = tpcb;
 		}
-		{
-			register struct tp_pcb **tt;
-			for (tt = &tp_listeners; *tt; tt = &((*tt)->tp_nextlisten))
-				if (*tt == tpcb)
-					break;
-			if (*tt)
-				*tt = tpcb->tp_nextlisten;
-			else
-				{error = EHOSTUNREACH; goto done; }
-		}
-		tpcb->tp_nextlisten = tp_intercepts;
-		tp_intercepts = tpcb;
 		break;
 
 	case TPOPT_MY_TSEL:

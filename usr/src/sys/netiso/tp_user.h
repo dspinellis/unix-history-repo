@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_user.h	7.10 (Berkeley) %G%
+ *	@(#)tp_user.h	7.11 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -110,12 +110,11 @@ struct tp_conn_param {
 #define TPOPT_DISC_DATA		0x500 
 #define TPOPT_CFRM_DATA		0x600 
 #define TPOPT_CDDATA_CLEAR	0x700 
+#define TPOPT_MY_TSEL		0x800 
+#define TPOPT_PEER_TSEL		0x900 
 #define TPOPT_PERF_MEAS		0xa00
 #define TPOPT_PSTATISTICS	0xb00
 #define TPOPT_PARAMS		0xc00 /* to replace a bunch of the others */
-#define TPOPT_MY_TSEL		0x800 
-#define TPOPT_PEER_TSEL		0x900 
-#define TPOPT_NGC8_ACCEPT	0xd00 /* negotiate connection requests */
 #define TPOPT_DISC_REASON	0xe00
 
 struct tp_disc_reason {
@@ -128,14 +127,9 @@ struct tp_disc_reason {
  */
 
 /* read only flags */
-#define TPFLAG_DISC_DATA_OUT	(u_char)0x10 /* disc data present */
-#define TPFLAG_DISC_DATA_IN		(u_char)0x20 /* disc data present */
-#define TPFLAG_CONN_DATA_OUT	(u_char)0x40 /* conn data present */
-#define TPFLAG_CONN_DATA_IN		(u_char)0x80 /* conn data present */
-#define TPFLAG_XPD_PRESENT		(u_char)0x08 /* xpd data present */
-#define TPFLAG_PEER_ON_SAMENET	(u_char)0x02
 #define TPFLAG_NLQOS_PDN		(u_char)0x01
-#define TPFLAG_NGC8_ACCEPT		(u_char)0x04 /* negotiate conn rq's */
+#define TPFLAG_PEER_ON_SAMENET	(u_char)0x02
+#define TPFLAG_GENERAL_ADDR		(u_char)0x04 /* bound to wildcard addr */
 
 
 /* 

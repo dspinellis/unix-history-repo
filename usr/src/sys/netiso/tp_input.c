@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_input.c	7.20 (Berkeley) %G%
+ *	@(#)tp_input.c	7.21 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -43,7 +43,7 @@ SOFTWARE.
  * from ip, because ip calls a net-level routine that strips off
  * the net header and then calls tp_input(), passing the proper type
  * of addresses for the address family in use (how it figures out
- * which AF is not yet determined.
+ * which AF is not yet determined.)
  *
  * Decomposing the tpdu is some of the most laughable code.  The variable-length
  * parameters and the problem of non-aligned memory references
@@ -229,7 +229,7 @@ static struct socket *
 tp_newsocket(so, fname, cons_channel, class_to_use, netservice)
 	struct socket				*so;
 	struct sockaddr				*fname;
-	u_int						cons_channel;
+	caddr_t						cons_channel;
 	u_char						class_to_use;
 	u_int						netservice;
 {
@@ -382,7 +382,7 @@ ProtoHook
 tp_input(m, faddr, laddr, cons_channel, dgout_routine, ce_bit)
 	register	struct mbuf 	*m;
 	struct sockaddr 			*faddr, *laddr; /* NSAP addresses */
-	u_int 						cons_channel;
+	caddr_t						cons_channel;
 	int 						(*dgout_routine)();
 	int							ce_bit;
 
@@ -399,7 +399,7 @@ tp_input(m, faddr, laddr, cons_channel, dgout_routine, ce_bit)
 #ifdef TP_PERF_MEAS
 	u_char					perf_meas;
 #endif TP_PERF_MEAS
-	u_char					fsufxlen = 0, lsufxlen = 0, intercepted = 0;
+	u_char					fsufxlen = 0, lsufxlen = 0;
 	caddr_t					fsufxloc = 0, lsufxloc = 0;
 	int						tpdu_len = 0;
 	u_int 					takes_data = FALSE;
@@ -634,21 +634,27 @@ again:
 			goto respond;
 		} else {
 			register struct tp_pcb *t;
-
-			for (t = tp_intercepts; t ; t = t->tp_nextlisten) {
-				if (laddr->sa_family != t->tp_nlproto->nlp_afamily)
-					continue;
-				if ((*t->tp_nlproto->nlp_cmpnetaddr)(
-						t->tp_npcb, laddr, TP_LOCAL)) {
-							intercepted = 1;
-							goto check_duplicate_cr;
-				}
-			}
+			/*
+			 * The intention here is to trap all CR requests
+			 * to a given nsap, for constructing transport
+			 * service bridges at user level; so these
+			 * intercepts should precede the normal listens.
+			 * Phrasing the logic in this way also allows for
+			 * mop-up listeners, which we don't currently implement.
+			 * We also wish to have a single socket be able to
+			 * listen over any network service provider,
+			 * (cons or clns or ip).
+			 */
 			for (t = tp_listeners; t ; t = t->tp_nextlisten)
-				if (lsufxlen == t->tp_lsuffixlen &&
-					bcmp(lsufxloc, t->tp_lsuffix, lsufxlen) == 0 &&
-					laddr->sa_family == t->tp_nlproto->nlp_afamily)
-						break;
+				if ((t->tp_lsuffixlen == 0 ||
+					 (lsufxlen == t->tp_lsuffixlen &&
+					  bcmp(lsufxloc, t->tp_lsuffix, lsufxlen) == 0)) &&
+					((t->tp_flags & TPF_GENERAL_ADDR) ||
+					 (laddr->sa_family == t->tp_domain &&
+					  (*t->tp_nlproto->nlp_cmpnetaddr)
+								(t->tp_npcb, laddr, TP_LOCAL))))
+					break;
+
 			CHECK(t == 0, E_TP_NO_SESSION, ts_inv_sufx, respond,
 				(1 + 2 + (caddr_t)&hdr->_tpduf - (caddr_t)hdr))
 				/* _tpduf is the fixed part; add 2 to get the dref bits of 
@@ -657,7 +663,6 @@ again:
 			IFDEBUG(D_TPINPUT)
 				printf("checking if dup CR\n");
 			ENDDEBUG
-		check_duplicate_cr:
 			tpcb = t;
 			for (t = tpcb->tp_next; t != tpcb; t = t->tp_next) {
 				if (sref != t->tp_fref)
@@ -715,7 +720,7 @@ again:
 
 		CHECK(
 			tp_consistency(tpcb, 0 /* not force or strict */, &tpp) != 0, 
-			E_TP_NEGOT_FAILED, ts_negotfailed, respond,
+			E_TP_NEGOT_FAILED, ts_negotfailed, clear_parent_tcb,
 			(1 + 2 + (caddr_t)&hdr->_tpdufr.CRCC - (caddr_t)hdr) 
 				/* ^ more or less the location of class */
 			)
@@ -729,7 +734,7 @@ again:
 		ENDTRACE
 		CHECK(
 			((class_to_use == TP_CLASS_0)&&(dgout_routine != tpcons_output)),
-			E_TP_NEGOT_FAILED, ts_negotfailed, respond,
+			E_TP_NEGOT_FAILED, ts_negotfailed, clear_parent_tcb,
 			(1 + 2 + (caddr_t)&hdr->_tpdufr.CRCC - (caddr_t)hdr) 
 				/* ^ more or less the location of class */
 			)
@@ -766,6 +771,9 @@ again:
 					printf("tp_newsocket returns 0\n");
 				ENDDEBUG
 				goto discard;
+			clear_parent_tcb:
+				tpcb = 0;
+				goto respond;
 			}
 			tpcb = sototpcb(so);
 			insque(tpcb, parent_tpcb);
@@ -779,12 +787,14 @@ again:
 			(tpcb->tp_nlproto->nlp_putnetaddr)(tpcb->tp_npcb, laddr, TP_LOCAL);
 
 			/* stash the f suffix in the new tpcb */
-			bcopy(fsufxloc, tpcb->tp_fsuffix, fsufxlen);
-			/* l suffix is already there, unless this is an intercept case */
-			if (intercepted)
-				bcopy(lsufxloc, tpcb->tp_lsuffix, lsufxlen);
-			(tpcb->tp_nlproto->nlp_putsufx)
-					(tpcb->tp_npcb, fsufxloc, fsufxlen, TP_FOREIGN);
+			if (tpcb->tp_fsuffixlen = fsufxlen) {
+				bcopy(fsufxloc, tpcb->tp_fsuffix, fsufxlen);
+				(tpcb->tp_nlproto->nlp_putsufx)
+						(tpcb->tp_npcb, fsufxloc, fsufxlen, TP_FOREIGN);
+			}
+			/* stash the l suffix in the new tpcb */
+			tpcb->tp_lsuffixlen = lsufxlen;
+			bcopy(lsufxloc, tpcb->tp_lsuffix, lsufxlen);
 			(tpcb->tp_nlproto->nlp_putsufx)
 					(tpcb->tp_npcb, lsufxloc, lsufxlen, TP_LOCAL);
 #ifdef TP_PERF_MEAS
@@ -864,35 +874,26 @@ again:
 		 * _tpduf is the fixed part; add 2 to get the dref bits of 
 		 * the fixed part (can't take the address of a bit field) 
 		 */
-#ifdef old_history
-		if(cons_channel) {
-#ifdef NARGOXTWENTYFIVE
-			extern struct tp_pcb *cons_chan_to_tpcb();
+#ifdef TPCONS
+		if (cons_channel && dutype == DT_TPDU_type) {
+			struct isopcb *isop = ((struct isopcb *)
+				((struct pklcd *)cons_channel)->lcd_upnext);
+			if (isop && isop->isop_refcnt == 1 && isop->isop_socket &&
+				(tpcb = sototpcb(isop->isop_socket)) &&
+				 (tpcb->tp_class == TP_CLASS_0/* || == CLASS_1 */)) {
+				IFDEBUG(D_TPINPUT)
+					printf("tpinput_dt: class 0 short circuit\n");
+				ENDDEBUG
+				dref = tpcb->tp_lref;
+				sref = tpcb->tp_fref;
+				CHECK( (tpcb->tp_refp->tpr_state == REF_FREE), 
+					E_TP_MISM_REFS,ts_inv_dref, nonx_dref,
+					(1 + 2 + (caddr_t)&hdr->_tpduf - (caddr_t)hdr))
+				goto tp0_data;
+			}
 
-			tpcb = cons_chan_to_tpcb( cons_channel );
-			/* Problem:  We may have a legit
-			 * error situation yet we may or may not have 
-			 * a correspondence between the tpcb and the vc,
-			 * e.g., TP4cr--> <no dice, respond w/ DR on vc>
-			 *          <---  DR
-			 * Now it's up to TP to look at the tpdu and do one of:
-			 * confirm(dgm)(cr),  confirm(circuit)(cr), reject(cr), or
-			 * nothing, if the circuit is already open (any other tpdu). 
-			 * Sigh.
-			 */
-
-			/* I don't know about this error value */
-			CHECK( (tpcb == (struct tp_pcb *)0) ,
-				E_TP_NO_CR_ON_NC, ts_inv_dref, respond, 
-				(1 + 2 + (caddr_t)&hdr->_tpduf - (caddr_t)hdr))
-#else
-			printf("tp_input(): X25 NOT CONFIGURED!!\n");
+		}
 #endif
-		} else
-			/* we've now made the error reporting thing check for
-			multiple channels and not close out if more than
-			one in use */
-#endif old_history
 		{
 
 			CHECK( ((int)dref <= 0 || dref >= N_TPREF) ,
@@ -1275,6 +1276,7 @@ again:
 				ENDDEBUG
 			}
 			if (tpcb->tp_class == TP_CLASS_0) {
+			tp0_data:
 				e.ATTR(DT_TPDU).e_seq = 0; /* actually don't care */
 				e.ATTR(DT_TPDU).e_eot = (((struct tp0du *)hdr)->tp0du_eot);
 			} else if (tpcb->tp_xtd_format) {
@@ -1501,7 +1503,7 @@ respond:
 		goto discard;
 	(void) tp_error_emit(error, (u_long)sref, (struct sockaddr_iso *)faddr,
 				(struct sockaddr_iso *)laddr, m, errlen, tpcb,
-				(int)cons_channel, dgout_routine);
+				cons_channel, dgout_routine);
 	IFDEBUG(D_ERROR_EMIT)
 		printf("tp_input after error_emit\n");
 	ENDDEBUG

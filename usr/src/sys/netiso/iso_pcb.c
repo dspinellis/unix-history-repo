@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_pcb.c	7.10 (Berkeley) %G%
+ *	@(#)iso_pcb.c	7.11 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -431,12 +431,15 @@ iso_pcbdetach(isop)
 			isop, isop->isop_socket, so);
 	ENDDEBUG
 #ifdef TPCONS
-	if (isop->isop_refcnt) {
+	if (isop->isop_chan) {
 		register struct pklcd *lcp = (struct pklcd *)isop->isop_chan;
 		if (--isop->isop_refcnt > 0)
 			return;
-		if (lcp && lcp->lcd_state == DATA_TRANSFER)
+		if (lcp && lcp->lcd_state == DATA_TRANSFER) {
+			lcp->lcd_upper = 0;
+			lcp->lcd_upnext = 0;
 			pk_disconnect(lcp);
+		}
 		isop->isop_chan = 0;
 	}
 #endif
