@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmx.c	1.2 (Berkeley) %G%
+ *	@(#)dmx.c	1.3 (Berkeley) %G%
  */
 
 /*
@@ -33,6 +33,7 @@
 #include "uio.h"
 #include "kernel.h"
 #include "syslog.h"
+#include "tsleep.h"
 
 #include "dmx.h"
 #include "ubareg.h"
@@ -134,7 +135,7 @@ dmxopen(tp, sc, flag)
 		    tp->t_cflag&CLOCAL)
 			break;
 		tp->t_state |= TS_WOPEN;
-		sleep((caddr_t)&tp->t_rawq, TTIPRI);
+		tsleep((caddr_t)&tp->t_rawq, TTIPRI, SLP_DMX_OPN, 0);
 	}
 	splx(s);
 	return ((*linesw[tp->t_line].l_open)(tp->t_dev, tp));

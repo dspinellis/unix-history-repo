@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uda.c	7.24.1.1 (Berkeley) %G%
+ *	@(#)uda.c	7.25 (Berkeley) %G%
  */
 
 /*
@@ -73,6 +73,7 @@
 #include "disklabel.h"
 #include "syslog.h"
 #include "stat.h"
+#include "tsleep.h"
 
 #include "machine/pte.h"
 
@@ -684,7 +685,7 @@ udaopen(dev, flag, fmt)
 	ra = &ra_info[unit];
 	while (ra->ra_state != OPEN && ra->ra_state != OPENRAW &&
 	    ra->ra_state != CLOSED)
-		sleep((caddr_t)ra, PZERO + 1);
+		tsleep((caddr_t)ra, PZERO + 1, SLP_UDA_OPN, 0);
 
 	/*
 	 * If not on line, or we are not sure of the label, reinitialise

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dh.c	7.8 (Berkeley) %G%
+ *	@(#)dh.c	7.9 (Berkeley) %G%
  */
 
 #include "dh.h"
@@ -27,6 +27,7 @@
 #include "vm.h"
 #include "kernel.h"
 #include "syslog.h"
+#include "tsleep.h"
 
 #include "ubareg.h"
 #include "ubavar.h"
@@ -735,7 +736,7 @@ dmopen(dev, flag)
 		if (tp->t_state&TS_CARR_ON || flag&O_NONBLOCK || 
 		    tp->t_cflag&CLOCAL)
 			break;
-		sleep((caddr_t)&tp->t_rawq, TTIPRI);
+		tsleep((caddr_t)&tp->t_rawq, TTIPRI, SLP_DH_OPN, 0);
 	}
 	splx(s);
 }

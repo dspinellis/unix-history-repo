@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ad.c	7.3 (Berkeley) %G%
+ *	@(#)ad.c	7.4 (Berkeley) %G%
  */
 
 #include "ad.h"
@@ -24,6 +24,7 @@
 #include "ubareg.h"
 #include "ubavar.h"
 #include "adreg.h"
+#include "tsleep.h"
 
 #define ADBUSY 01
 #define ADWAITPRI (PZERO+1)
@@ -121,7 +122,7 @@ adioctl(dev, cmd, addr, flag)
 		adp->ad_state |= ADBUSY;
 		adaddr->ad_csr |= AD_IENABLE|AD_START;
 		while (adp->ad_state&ADBUSY)
-			sleep((caddr_t)adp, ADWAITPRI);
+			tsleep((caddr_t)adp, ADWAITPRI, SLP_AD_GETW), 0;
 		spl0();
 		*(int *)addr = adp->ad_softdata;
 		break;

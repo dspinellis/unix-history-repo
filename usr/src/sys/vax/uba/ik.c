@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ik.c	7.3 (Berkeley) %G%
+ *	@(#)ik.c	7.4 (Berkeley) %G%
  */
 
 #include "ik.h"
@@ -21,6 +21,7 @@
 #include "map.h"
 #include "uio.h"
 #include "ioctl.h"
+#include "tsleep.h"
 
 #include "ubareg.h"
 #include "ubavar.h"
@@ -204,7 +205,7 @@ ikioctl(dev, cmd, data, flag)
 		ikp = &ik_softc[IKUNIT(dev)];
 		ikp->ik_state |= IKBUSY;
 		while (ikp->ik_state&IKBUSY)
-			sleep((caddr_t)ikp, IKWAITPRI);
+			tsleep((caddr_t)ikp, IKWAITPRI, SLP_IK_BUSY, 0);
 		break;
 
 	default:

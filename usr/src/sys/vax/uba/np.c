@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)np.c	7.3 (Berkeley) %G%
+ *	@(#)np.c	7.4 (Berkeley) %G%
  *
  * From:
  *	np.c version 1.5
@@ -42,16 +42,17 @@
 
 #include "np.h"
 #if NNP > 0
-#include "../h/param.h"
-#include "../h/buf.h"
-#include "../vaxuba/ubavar.h"
-#include "../h/signal.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/proc.h"
-#include "../h/uio.h"
-#include "../h/errno.h"
+#include "param.h"
+#include "buf.h"
+#include "ubavar.h"
+#include "signal.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "proc.h"
+#include "uio.h"
+#include "errno.h"
+#include "tsleep.h"
 
 #include "../vaxuba/npreg.h"
 
@@ -766,7 +767,7 @@ caddr_t	addr;
 
 		NpState |= ICPAVAIL;
 
-		sleep((caddr_t)&NpState, PZERO + 1);
+		tsleep((caddr_t)&NpState, PZERO + 1, SLP_NP_SLP, 0);
 
 		if(NpDebug & DEBMAINT)
 			printf("wakeup in NpPoll\n");
@@ -1860,7 +1861,7 @@ struct npreq *rp;
 		wakeup((caddr_t)&NpState);
 
 		while(mp->reqtab->reqcnt)
-			sleep((caddr_t)(&mp->reqtab),PZERO +1);
+			tsleep((caddr_t)(&mp->reqtab),PZERO +1, SLP_NP_SLP, 0);
 
 		if(NpDebug & DEBMAINT)
 			printf("Reset:awoken by ICP senior!\n");
@@ -1878,7 +1879,7 @@ struct npreq *rp;
 			printf("Reqcnt is %d.\n",mp->reqtab->reqcnt);
 		}
 
-		sleep((caddr_t)(&mp->reqtab),PZERO +1);
+		tsleep((caddr_t)(&mp->reqtab),PZERO +1, SLP_NP_SLP, 0);
 
 	}
 

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmf.c	7.8 (Berkeley) %G%
+ *	@(#)dmf.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -42,6 +42,7 @@
 #include "uio.h"
 #include "kernel.h"
 #include "syslog.h"
+#include "tsleep.h"
 
 #include "dmx.h"
 #include "ubareg.h"
@@ -555,10 +556,11 @@ dmflout(dev, cp, n)
 	s = spltty();
 	d->dmfl_ctrl |= DMFL_PEN | DMFL_IE;
 	while (sc->dmfl_state & ASLP) {
-		sleep(sc->dmfl_buf, PZERO + 8);
+		tsleep(sc->dmfl_buf, PZERO + 8, SLP_DMFL_ASLP, 0);
 		while (sc->dmfl_state & ERROR) {
 			timeout(dmflint, (caddr_t)dmf, 10 * hz);
-			sleep((caddr_t)&sc->dmfl_state, PZERO + 8);
+			tsleep((caddr_t)&sc->dmfl_state, PZERO + 8,
+				SLP_DMFL_ERROR, 0);
 		}
 	}
 	splx(s);

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ut.c	7.4 (Berkeley) %G%
+ *	@(#)ut.c	7.5 (Berkeley) %G%
  */
 
 #include "tj.h"
@@ -31,6 +31,7 @@
 #include "kernel.h"
 #include "tty.h"
 #include "syslog.h"
+#include "tsleep.h"
 
 #include "machine/pte.h"
 #include "../vax/cpu.h"
@@ -74,7 +75,7 @@ struct	tj_softc {
 	u_short	sc_dens;	/* sticky selected density */
 	daddr_t	sc_timo;	/* time until timeout expires */
 	short	sc_tact;	/* timeout is active flag */
-	struct	tty *sc_ttyp;	/* record user's tty for errors */
+	caddr_t	sc_ctty;	/* user's controlling tty (vnode) */
 	int	sc_blks;	/* number of I/O operations since open */
 	int	sc_softerrs;	/* number of soft I/O errors since open */
 } tj_softc[NTJ];
@@ -151,7 +152,7 @@ utopen(dev, flag)
 get:
 	utcommand(dev, UT_SENSE, 1);
 	if (sc->sc_dsreg&UTDS_PIP) {
-		sleep((caddr_t)&lbolt, PZERO+1);
+		tsleep((caddr_t)&lbolt, PZERO+1, SLP_UT_OPN, 0);
 		goto get;
 	}
 	sc->sc_dens = olddens;
@@ -177,7 +178,8 @@ get:
 	sc->sc_blks = 0;
 	sc->sc_softerrs = 0;
 	sc->sc_dens = dens;
-	sc->sc_ttyp = u.u_ttyp;
+	sc->sc_ctty = (caddr_t)(u.u_procp->p_flag&SCTTY ? 
+			u.u_procp->p_session->s_ttyvp : 0);
 	/*
 	 * For 6250 bpi take exclusive use of the UNIBUS.
 	 */
@@ -521,7 +523,7 @@ utintr(ut11)
 		 */
 		if (sc->sc_erreg & UTER_COR && (bp->b_flags & B_READ) &&
 		    (addr->uttc & UTTC_DEN) != UT_NRZI) {
-			tprintf(sc->sc_ttyp,
+			tprintf(sc->sc_ctty,
 			  "ut%d: soft error bn%d cs1=%b er=%b cs2=%b ds=%b\n",
 			  tjunit, bp->b_blkno, cs1, UT_BITS, sc->sc_erreg,
 			  UTER_BITS, cs2, UTCS2_BITS, sc->sc_dsreg, UTDS_BITS);
@@ -563,7 +565,7 @@ utintr(ut11)
 		/*
 		 * Couldn't recover error.
 		 */
-		tprintf(sc->sc_ttyp,
+		tprintf(sc->sc_ctty,
 			"ut%d: hard error bn%d cs1=%b er=%b cs2=%b ds=%b\n",
 			tjunit, bp->b_blkno, cs1, UT_BITS, sc->sc_erreg,
 			UTER_BITS, cs2, UTCS2_BITS, sc->sc_dsreg, UTDS_BITS);

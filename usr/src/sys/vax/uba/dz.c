@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dz.c	7.4 (Berkeley) %G%
+ *	@(#)dz.c	7.5 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -29,6 +29,7 @@
 #include "uio.h"
 #include "kernel.h"
 #include "syslog.h"
+#include "tsleep.h"
 
 #include "pdma.h"
 #include "ubavar.h"
@@ -190,7 +191,7 @@ dzopen(dev, flag)
 	while (!(flag&O_NONBLOCK) && !(tp->t_cflag&CLOCAL) &&
 	       (tp->t_state & TS_CARR_ON) == 0) {
 		tp->t_state |= TS_WOPEN;
-		sleep((caddr_t)&tp->t_rawq, TTIPRI);
+		tsleep((caddr_t)&tp->t_rawq, TTIPRI, SLP_DZ_OPN, 0);
 	}
 	(void) spl0();
 	return ((*linesw[tp->t_line].l_open)(dev, tp));

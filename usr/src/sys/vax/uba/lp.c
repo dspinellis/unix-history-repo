@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lp.c	7.3 (Berkeley) %G%
+ *	@(#)lp.c	7.4 (Berkeley) %G%
  */
 
 #include "lp.h"
@@ -26,6 +26,7 @@
 #include "ioctl.h"
 #include "tty.h"
 #include "kernel.h"
+#include "tsleep.h"
 
 #include "ubavar.h"
 
@@ -272,12 +273,12 @@ lpoutput(dev, c)
 		lpintr(LPUNIT(dev));				/* unchoke */
 		while (sc->sc_outq.c_cc >= LPHWAT) {
 			sc->sc_state |= ASLP;		/* must be ERROR */
-			sleep((caddr_t)sc, LPPRI);
+			tsleep((caddr_t)sc, LPPRI, SLP_LP_OUT, 0);
 		}
 		splx(s);
 	}
 	while (putc(c, &sc->sc_outq))
-		sleep((caddr_t)&lbolt, LPPRI);
+		tsleep((caddr_t)&lbolt, LPPRI, SLP_LP_CLIST, 0);
 }
 
 lpintr(lp11)
