@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_proto.c	7.7 (Berkeley) %G%
+ *	@(#)uipc_proto.c	7.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -17,8 +17,8 @@
  * Definitions of protocols supported in the UNIX domain.
  */
 
-int	uipc_usrreq();
-int	raw_init(),raw_usrreq(),raw_input(),raw_ctlinput();
+int	uipc_usrreq(), raw_usrreq();
+void	raw_init(),raw_input(),raw_ctlinput();
 extern	struct domain unixdomain;		/* or at least forward */
 
 struct protosw unixsw[] = {
