@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lint.c	1.7	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lint.c	1.8	(Berkeley)	%G%";
 #endif lint
 
 # include "pass1.h"
@@ -651,6 +651,7 @@ clocal(p) NODE *p; {
 
 	register o;
 	register unsigned t, tl;
+	int s;
 
 	switch( o = p->in.op ){
 
@@ -697,6 +698,20 @@ clocal(p) NODE *p; {
 		if( p->in.right->in.op != ICON ) cerror( "bad conversion");
 		p->in.op = FREE;
 		return( buildtree( o==PMCONV?MUL:DIV, p->in.left, p->in.right ) );
+
+	case RS:
+	case LS:
+	case ASG RS:
+	case ASG LS:
+		if( p->in.right->in.op != ICON )
+			break;
+		s = p->in.right->tn.lval;
+		if( s < 0 )
+			werror( "negative shift" );
+		else
+		if( s >= dimtab[ p->fn.csiz ] )
+			werror( "shift greater than size of object" );
+		break;
 
 		}
 
