@@ -1,4 +1,4 @@
-/*	vm_swap.c	4.4	81/03/09	*/
+/*	vm_swap.c	4.5	82/03/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -59,7 +59,7 @@ vswapon()
 	dev_t dev;
 	register struct swdevt *sp;
 
-	ip = namei(uchar, 0);
+	ip = namei(uchar, 0, 1);
 	if (ip == NULL)
 		return;
 	if ((ip->i_mode&IFMT) != IFBLK) {
