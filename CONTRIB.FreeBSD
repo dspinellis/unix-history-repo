@@ -54,6 +54,7 @@ Bruce Evans <bde@kralizec.zeta.org.au>
 Charles Hannum <mycroft@ai.mit.edu>
 Chris G. Demetriou <cgd@postgres.berkeley.edu>
 Chris Torek <torek@ee.lbl.gov>
+Curt Mayer <curt@toad.com>
 Dave Burgess <burgess@hrd769.brooks.af.mil>
 Dave Rivers <rivers@ponds.uucp>
 David Dawes <dawes@physics.su.OZ.AU>
@@ -181,4 +182,4 @@ Wolfgang Solfrank <ws@tools.de>
 Wolfgang Stanglmeier <wolf@dentaro.GUN.de>
 Yuval Yarom <yval@cs.huji.ac.il>
 
-$Id: CONTRIB.FreeBSD,v 1.31 1994/02/14 23:05:37 nate Exp $
+$Id: CONTRIB.FreeBSD,v 1.32 1994/02/16 22:28:47 rgrimes Exp $

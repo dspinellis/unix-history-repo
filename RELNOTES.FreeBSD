@@ -99,6 +99,12 @@ Novell NE1000, NE2000, and NE2100 ethernet interface.
 
 3Com 3C503 Etherlink II
 
+3Com 3C509 Ethernet cards
+
+Toshiba ethernet cards
+
+WD Elite Ultra
+
 
 2.3. Misc
 
@@ -110,7 +116,7 @@ BOCA ATIO66 6 port serial card using shared IRQ.
 
 STB 4 port card using shared IRQ.
 
-Mitsumi (LU005 and FX001D) CDROM interface and drive.
+Mitsumi (all models) CDROM interface and drive.
 
 Adlib, Soundblaster, Soundblaster Pro, ProAudioSpectrum, Gravis UltraSound
 and Roland MPU-401 sound cards.
@@ -271,9 +277,10 @@ Special mention to:
 	J.T. Conklin				Chris Demetriou
 	Julian Elischer				Bruce Evans
 	Sean Eric Fagan				Guy Helmer
-	Terry Lambert				Gary Moyer
-	Jaye Mathisen				L Jonas Olsson
-	Chris Provenzano			Dave Rivers
+	Jeffrey Hsu				Terry Lambert
+	Gary Moyer				Jaye Mathisen
+	Curt Mayer				L Jonas Olsson
+	Chris Provenzano 			Dave Rivers
 	Guido van Rooij				Steven Wallace
 	Rick Weldon				Terry Williams
 
@@ -286,4 +293,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.22 1994/02/06 21:14:09 jkh Exp $
+$Id: RELNOTES.FreeBSD,v 1.23 1994/02/22 17:23:48 rgrimes Exp $
