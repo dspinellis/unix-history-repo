@@ -1,4 +1,4 @@
-/*	up.c	4.16	81/02/17	*/
+/*	up.c	4.17	81/02/19	*/
 
 #include "up.h"
 #if NSC21 > 0
@@ -20,8 +20,8 @@
 #include "../h/pte.h"
 #include "../h/mba.h"
 #include "../h/mtpr.h"
-#include "../h/uba.h"
 #include "../h/vm.h"
+#include "../h/uba.h"
 #include "../h/cmap.h"
 
 #include "../h/upreg.h"
@@ -29,7 +29,6 @@
 struct	up_softc {
 	int	sc_softas;
 	int	sc_seek;
-	int	sc_info;
 	int	sc_wticks;
 	/* struct uba_minfo sc_minfo; */
 } up_softc[NSC21];
@@ -72,7 +71,7 @@ struct	uba_dinfo *updinfo[NUP];
 
 u_short	upstd[] = { 0776700, 0774400, 0776300 };
 struct	uba_driver updriver =
-	{ upcntrlr, upslave, updgo, 0, upstd, "up", updinfo, upminfo };
+	{ upcntrlr, upslave, updgo, 0, upstd, "up", updinfo, "sc", upminfo };
 struct	buf	uputab[NUP];
 
 struct	upst {
@@ -133,13 +132,11 @@ upslave(ui, reg, slaveno)
 		timeout(upwatch, (caddr_t)0, HZ);
 		upwstart++;
 	}
+	if (ui->ui_dk >= 0)
+		dk_mspw[ui->ui_dk] = .0000020345;
 	return (1);
 }
  
-/*
-	dk_mspw[UPDK_N+unit] = .0000020345;
-*/
-
 upstrategy(bp)
 	register struct buf *bp;
 {
@@ -289,8 +286,6 @@ loop:
 	upaddr = (struct device *)ui->ui_addr;
 	if ((upaddr->upcs2 & 07) != dn)
 		upaddr->upcs2 = dn;
-	sc->sc_info =
-	    ubasetup(ui->ui_ubanum, bp, UBA_NEEDBDP|UBA_CANTWAIT);
 	/*
 	 * If drive is not present and on-line, then
 	 * get rid of this with an error and loop to get
@@ -307,8 +302,6 @@ loop:
 			dp->b_active = 0;
 			bp->b_flags |= B_ERROR;
 			iodone(bp);
-			/* A funny place to do this ... */
-			ubarelse(ui->ui_ubanum, &sc->sc_info);
 			goto loop;
 		}
 		printf("-- came back\n");
@@ -330,29 +323,23 @@ loop:
 	 */
 	upaddr->updc = bp->b_cylin;
 	upaddr->upda = (tn << 8) + sn;
-	upaddr->upba = sc->sc_info;
 	upaddr->upwc = -bp->b_bcount / sizeof (short);
-	cmd = (sc->sc_info >> 8) & 0x300;
 	if (bp->b_flags & B_READ)
-		cmd |= IE|RCOM|GO;
+		cmd = IE|RCOM|GO;
 	else
-		cmd |= IE|WCOM|GO;
-	upaddr->upcs1 = cmd;
-	/*
-	 * Mark i/o in progress
-	 */
-	if (ui->ui_dk >= 0) {
-		unit = ui->ui_dk;
-		dk_busy |= 1<<unit;
-		dk_xfer[unit]++;
-		dk_wds[unit] += bp->b_bcount>>6;
-	}
+		cmd = IE|WCOM|GO;
+	um->um_cmd = cmd;
+	ubago(ui);
 	return (1);
 }
 
-updgo()
+updgo(um)
+	struct uba_minfo *um;
 {
+	register struct device *upaddr = (struct device *)um->um_addr;
 
+	upaddr->upba = um->um_ubinfo;
+	upaddr->upcs1 = um->um_cmd|((um->um_ubinfo>>8)&0x300);
 }
 
 /*
@@ -376,7 +363,6 @@ upintr(sc21)
 	int as = upaddr->upas & 0377;
 	int needie = 1;
 
-	(void) spl6();
 	sc->sc_wticks = 0;
 	if (um->um_tab.b_active) {
 		if ((upaddr->upcs1 & RDY) == 0)
@@ -413,6 +399,7 @@ upintr(sc21)
 				return;
 			}
 		}
+		ubarelse(ui->ui_ubanum, &um->um_ubinfo);
 		if (um->um_tab.b_active) {
 			if (um->um_tab.b_errcnt >= 16) {
 				upaddr->upcs1 = RTC|GO|IE;
@@ -438,7 +425,6 @@ upintr(sc21)
 					needie = 0;
 		}
 		sc->sc_softas &= ~(1<<ui->ui_slave);
-		ubarelse(ui->ui_ubanum, &sc->sc_info);
 	} else {
 		if (upaddr->upcs1 & TRE)
 			upaddr->upcs1 = TRE;
@@ -500,7 +486,7 @@ upecc(ui)
 	 * O is offset within a memory page of the first byte transferred.
 	 */
 	npf = btop((up->upwc * sizeof(short)) + bp->b_bcount) - 1;
-	reg = btop(sc->sc_info&0x3ffff) + npf;
+	reg = btop(um->um_ubinfo&0x3ffff) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	printf("%D ", bp->b_blkno+npf);
 	prdev("ECC", bp->b_dev);
@@ -515,7 +501,7 @@ upecc(ui)
 	 * is the byte offset in the transfer, the variable byte
 	 * is the offset from a page boundary in main memory.
 	 */
-	ubp->uba_dpr[(sc->sc_info>>28)&0x0f] |= UBA_BNE;
+	ubp->uba_dpr[(um->um_ubinfo>>28)&0x0f] |= UBA_BNE;
 	i = up->upec1 - 1;		/* -1 makes 0 origin */
 	bit = i&07;
 	i = (i&~07)>>3;
@@ -587,9 +573,9 @@ upreset(uban)
 		}
 		um->um_tab.b_active = 0;
 		um->um_tab.b_actf = um->um_tab.b_actl = 0;
-		if (sc->sc_info) {
-			printf("<%d>", (sc->sc_info>>28)&0xf);
-			ubarelse(um->um_ubanum, &sc->sc_info);
+		if (um->um_ubinfo) {
+			printf("<%d>", (um->um_ubinfo>>28)&0xf);
+			ubarelse(um->um_ubanum, &um->um_ubinfo);
 		}
 		((struct device *)(um->um_addr))->upcs2 = CLR;
 		for (unit = 0; unit < NUP; unit++) {
