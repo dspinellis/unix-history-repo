@@ -1,0 +1,87 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)uu.4	5.1 (Berkeley) %G%
+.\"
+.TH UU 4 "27 July 1983"
+.UC 5
+.SH NAME
+uu \- TU58/DECtape II UNIBUS cassette interface 
+.SH SYNOPSIS
+.B "options UUDMA"
+.br
+.B "device uu0 at uba0 csr 0176500 vector uurintr uuxintr"
+.SH DESCRIPTION
+The
+.I uu
+device provides access to dual DEC TU58 tape cartridge drives
+connected to the UNIBUS via a DL11-W interface module.
+.PP
+The interface supports only block i/o to the TU58 cassettes.
+The drives are normally manipulated with the
+.IR arff (8V)
+program using the ``m'' and ``f'' options.
+.PP
+The driver provides for an optional write and verify 
+(read after write) mode that is activated by specifying the
+``a'' device.
+.PP
+The TU58 is treated as a single device by the system even
+though it has two separate drives, ``uu0'' and ``uu1''. If there is 
+more than one TU58 unit on a system, the extra drives
+are named ``uu2'', ``uu3'' etc.
+.SH NOTES
+Assembly language code to assist the driver in handling
+the receipt of data (using a pseudo-dma approach) should
+be included when using this driver; specify ``options UUDMA''
+in the configuration file.
+.SH ERRORS
+The following errors may be returned:
+.TP 12
+[ENXIO]
+Nonexistent drive (on open); 
+offset is too large or bad (undefined) ioctl code.
+.TP
+[EIO]
+Open failed, the device could not be reset.
+.TP
+[EBUSY]
+Drive in use.
+.SH FILES
+/dev/uu?
+.br
+/dev/uu?a
+.SH SEE ALSO
+tu(4), arff(8V)
+.SH DIAGNOSTICS
+.BR "uu%d: no bp, active %d" .
+A transmission complete interrupt was received with no outstanding
+i/o request. This indicates a hardware problem.
+.PP
+.BR "uu%d protocol error, state=%s, op=%x, cnt=%d, block=%d" .
+The driver entered an illegal state.  The information printed
+indicates the illegal state, the 
+operation currently being executed,
+the i/o count, and the block number on the cassette.
+.PP
+.BR "uu%d: break received, transfer restarted" .
+The TU58 was sending a continuous break signal and had
+to be reset. This may indicate a hardware problem, but
+the driver will attempt to recover from the error.
+.PP
+.BR "uu%d receive state error, state=%s, byte=%x" .
+The driver entered an illegal state in the receiver finite
+state machine.  The state is shown along with the control
+byte of the received packet.
+.PP
+.BR "uu%d: read stalled" .
+A timer watching the controller detected no interrupt for
+an extended period while an operation was outstanding.
+This usually indicates that one or more receiver interrupts
+were lost and the transfer is restarted.
+.PP
+.BR "uu%d: hard error bn%d, pk_mod %o" .
+The device returned a status code indicating a hard error. The
+actual error code is shown in octal. No retries are attempted
+by the driver.
