@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)atrun.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)atrun.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -516,13 +516,12 @@ updatetime()
  */
 char *
 getname(uid)
-int uid;
+	int uid;
 {
 	struct passwd *pwdinfo;			/* password info structure */
 	
-
 	if ((pwdinfo = getpwuid(uid)) == 0) {
-		perror(uid);
+		(void)fprintf(stderr, "atrun: %d: no such user uid\n");
 		exit(1);
 	}
 	return(pwdinfo->pw_name);
