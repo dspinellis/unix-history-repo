@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prof.c	7.19 (Berkeley) %G%
+ *	@(#)subr_prof.c	7.20 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -59,7 +59,6 @@ kmstartup()
 	p->kcount = (u_short *)cp;
 	cp += p->kcountsize;
 	p->froms = (u_short *)cp;
-	startprofclock(&proc0);
 }
 
 /*
@@ -74,6 +73,7 @@ sysctl_doprof(name, namelen, oldp, oldlenp, newp, newlen, p)
 	size_t newlen;
 {
 	struct gmonparam *gp = &_gmonparam;
+	int error;
 
 	/* all sysctl names at this level are terminal */
 	if (namelen != 1)
@@ -81,7 +81,14 @@ sysctl_doprof(name, namelen, oldp, oldlenp, newp, newlen, p)
 
 	switch (name[0]) {
 	case GPROF_STATE:
-		return (sysctl_int(oldp, oldlenp, newp, newlen, &gp->state));
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &gp->state);
+		if (error)
+			return (error);
+		if (gp->state == GMON_PROF_OFF)
+			stopprofclock(&proc0);
+		else
+			startprofclock(&proc0);
+		return (0);
 	case GPROF_COUNT:
 		return (sysctl_struct(oldp, oldlenp, newp, newlen,
 		    gp->kcount, gp->kcountsize));
