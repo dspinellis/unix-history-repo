@@ -20,11 +20,11 @@
 #define	memset(s,c,n)		if (c == 0) { \
 				    bzero(s,n); \
 				} else { \
-				    char buffer[100]; \
-				    \
-				    sprintf( \
-				"Attempt to use memchr(, != 0,) in %s, %s.\n", \
-						__FILE__, __LINE__); \
-				    ExitString(stderr, buffer, 1); \
+				    register char *src = s; \
+				    register int count = n; \
+					\
+				    while (count--) { \
+					*src++ = c; \
+				    } \
 				}
 #endif	/* defined(unix) */
