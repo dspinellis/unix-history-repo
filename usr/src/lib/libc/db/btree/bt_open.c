@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	5.17 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -148,7 +148,8 @@ __bt_open(fname, flags, mode, openinfo)
 	 * open a backing temporary file.  Otherwise, it's a disk-based tree.
 	 */
 	if (fname) {
-#define	USEFLAGS	(O_CREAT|O_EXCL|O_RDONLY|O_RDWR|O_TRUNC|O_WRONLY)
+#define	USEFLAGS \
+	(O_CREAT|O_EXCL|O_EXLOCK|O_RDONLY|O_RDWR|O_SHLOCK|O_TRUNC|O_WRONLY)
 		if ((t->bt_fd = open(fname, flags & USEFLAGS, mode)) < 0)
 			goto err;
 		if ((flags & O_ACCMODE) == O_RDONLY)
