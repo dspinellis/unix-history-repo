@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)savecore.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)savecore.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -86,7 +86,7 @@ int	clear;
 
 int	dump_exists __P(());
 void	clear_dump __P(());
-char	*find_dev __P((int, int));
+char	*find_dev __P((dev_t, int));
 char	*rawname __P((char *s));
 void	read_kmem __P(());
 void	check_kmem __P(());
@@ -168,7 +168,8 @@ clear_dump()
 
 char *
 find_dev(dev, type)
-	register int dev, type;
+	register dev_t dev;
+	register int type;
 {
 	struct stat statb;
 	char *dp;
