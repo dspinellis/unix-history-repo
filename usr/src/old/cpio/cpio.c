@@ -408,7 +408,7 @@ char **argv;
 				symlsz = (int) mklong(Hdr.h_filesize);
 				bread(Symlbuf, symlsz);
 				Symlbuf[symlsz] = '\0';
-				if((void) ckname(Hdr.h_name)  &&  !Toc)
+				if( ckname(Hdr.h_name)  &&  !Toc)
 					(void)openout(Hdr.h_name, Symlbuf);
 			} else {
 				if( (select = ckname(Hdr.h_name))  &&  !Toc )
