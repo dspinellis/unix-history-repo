@@ -1,4 +1,4 @@
-/*	types.h	4.7	82/10/20	*/
+/*	types.h	4.8	82/10/31	*/
 
 /*
  * Basic system types and major/minor device constructing/busting macros.
@@ -18,18 +18,25 @@ typedef	unsigned short	u_short;
 typedef	unsigned int	u_int;
 typedef	unsigned long	u_long;
 
-/* SHOULD USE long RATHER THAN int HERE BUT IT WOULD GIVE LINT ON THE KERNEL */
-/* GASTRIC DISTRESS AND DON'T HAVE TIME TO FIX THAT JUST NOW */
+#ifdef vax
 typedef	struct	_physadr { int r[1]; } *physadr;
+typedef	struct	label_t	{
+	int	val[14];
+} label_t;
+#endif
+#ifdef sun
+typedef	struct	_physadr { short r[1]; } *physadr;
+typedef	struct	label_t	{
+	int	val[13];
+} label_t;
+typedef	struct	quad { long val[2]; } quad;
+#endif
 typedef	long	daddr_t;
 typedef	char *	caddr_t;
 typedef	u_long	ino_t;
 typedef	long	swblk_t;
 typedef	int	size_t;
 typedef	int	time_t;
-typedef	struct	label_t	{
-	int	val[14];
-} label_t;
 typedef	short	dev_t;
 typedef	int	off_t;
 
