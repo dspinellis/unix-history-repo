@@ -1,4 +1,4 @@
-/* @(#)fseek.c	4.2 (Berkeley) %G% */
+/* @(#)fseek.c	4.3 (Berkeley) %G% */
 /*
  * Seek for standard library.  Coordinates with buffering.
  */
@@ -36,6 +36,7 @@ long offset;
 		if (iop->_flag & _IORW) {
 			iop->_ptr = iop->_base;
 			iop->_flag &= ~_IOREAD;
+			resync = 0;
 		}
 		p = lseek(fileno(iop), offset-resync, ptrname);
 		iop->_cnt = 0;
