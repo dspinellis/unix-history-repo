@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)cb.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)cb.c	4.3 (Berkeley) %G%";
 #include <stdio.h>
 int	slevel[10];
 int	clevel	= 0;
@@ -345,15 +345,19 @@ getnl(){
 	return(0);
 }
 comment(){
-rep:
-	while((c = string[j++] = getch()) != '*')
-		if(c == '\n'){
+	int i = j;
+
+	while ((c = getch()) != EOF) {
+		string[j++] = c;
+		switch(c) {
+		case '/':
+			if (j > i + 1 && string[j-2] == '*')
+				return;
+			break;
+		case '\n':
 			puts();
 			sflg = 1;
+			break;
 		}
-gotstar:
-	if((c = string[j++] = getch()) != '/'){
-		if(c == '*')goto gotstar;
-		goto rep;
 	}
 }
