@@ -18,22 +18,22 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 # ifdef NDBM
 # include <ndbm.h>
 # endif
-# ifdef NIS
+# ifdef NIS_ALIASES
 # include <rpcsvc/ypclnt.h>
 # endif
 
 #ifndef lint
 #ifdef NEWDB
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.41 (Berkeley) %G% (with NEWDB and NDBM)";
+static char sccsid[] = "@(#)alias.c	6.42 (Berkeley) %G% (with NEWDB and NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.41 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	6.42 (Berkeley) %G% (with NEWDB)";
 #endif
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.41 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	6.42 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.41 (Berkeley) %G% (without NEWDB or NDBM)";
+static char sccsid[] = "@(#)alias.c	6.42 (Berkeley) %G% (without NEWDB or NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -1122,7 +1122,7 @@ stab_aclose(ad, e)
 **  NIS Modules
 */
 
-#ifdef NIS
+#ifdef NIS_ALIASES
 
 /*
 **  NIS_ALOOKUP
@@ -1219,7 +1219,7 @@ nis_aclose(ad, e)
 	/* nothing */
 }
 
-#endif /* NIS */
+#endif /* NIS_ALIASES */
 /*
 **  Implicit Modules
 **
@@ -1413,7 +1413,7 @@ ALIASCLASS	DbmAClass =
 };
 #endif
 
-#ifdef NIS
+#ifdef NIS_ALIASES
 ALIASCLASS	NisAClass =
 {
 	"nis",		nis_alookup,	nis_astore,
@@ -1450,7 +1450,7 @@ setupaliases()
 	s->s_aliasclass = &DbmAClass;
 #endif
 
-#ifdef NIS
+#ifdef NIS_ALIASES
 	s = stab("nis", ST_ALIASCLASS, ST_ENTER);
 	s->s_aliasclass = &NisAClass;
 #endif
