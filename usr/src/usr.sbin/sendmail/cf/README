@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.57 (Berkeley) %G%
+		@(#)README	8.58 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -262,11 +262,16 @@ file, referenced by the DOMAIN macro.  For example, our Berkeley
 domain file includes definitions for several internal distinguished
 hosts:
 
-UUCP_RELAY	The host that will forward UUCP-addressed email.
+UUCP_RELAY	The host that will accept UUCP-addressed email.
 		If not defined, all UUCP sites must be directly
 		connected.
-BITNET_RELAY	The host that will forward BITNET-addressed email.
+BITNET_RELAY	The host that will accept BITNET-addressed email.
 		If not defined, the .BITNET pseudo-domain won't work.
+DECNET_RELAY	The host that will accept DECNET-addressed email.
+		If not defined, the .DECNET pseudo-domain and addresses
+		of the form node::user will not work.
+FAX_RELAY	The host that will accept mail to the .FAX pseudo-domain.
+		The "fax" mailer overrides this value.
 LOCAL_RELAY	DEPRECATED.  The site that will handle unqualified
 		names -- that is, names with out an @domain extension.
 		If not set, they are assumed to belong on this machine.
@@ -826,11 +831,11 @@ SMART_HOST as well.  Briefly:
 		local host (e.g., "eric@mastodon.CS.Berkeley.EDU").
 	SMART_HOST applies to names qualified with other hosts.
 
-However, beware that other relays (e.g., UUCP_RELAY, BITNET_RELAY, and
-FAX_RELAY) take precedence over SMART_HOST, so if you really want
-absolutely everything to go to a single central site you will need to
-unset all the other relays -- or better yet, find or build a minimal
-config file that does this.
+However, beware that other relays (e.g., UUCP_RELAY, BITNET_RELAY,
+DECNET_RELAY, and FAX_RELAY) take precedence over SMART_HOST, so if you
+really want absolutely everything to go to a single central site you will
+need to unset all the other relays -- or better yet, find or build a
+minimal config file that does this.
 
 
 +-------------------------------+
@@ -1450,7 +1455,7 @@ MACROS
 
    A
    B	Bitnet Relay
-   C
+   C	DECnet Relay
    D	The local domain -- usually not needed
    E
    F	FAX Relay
@@ -1493,7 +1498,7 @@ CLASSES
    M
    N
    O	operators that indicate network operations (cannot be in local names)
-   P	top level pseudo-domains: BITNET, FAX, UUCP, etc.
+   P	top level pseudo-domains: BITNET, DECNET, FAX, UUCP, etc.
    Q
    R
    S
