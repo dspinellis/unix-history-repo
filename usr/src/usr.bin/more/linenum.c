@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)linenum.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)linenum.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -45,8 +45,9 @@ static char sccsid[] = "@(#)linenum.c	5.4 (Berkeley) %G%";
  * called to make sure we cache line numbers often enough.
  */
 
-#include "less.h"
-#include "position.h"
+#include <sys/types.h>
+#include <stdio.h>
+#include <less.h>
 
 /*
  * Structure to keep track of a line number and the associated file position.
@@ -56,8 +57,8 @@ struct linenum
 {
 	struct linenum *next;		/* Link to next in the list */
 	struct linenum *prev;		/* Line to previous in the list */
-	POSITION pos;			/* File position */
-	POSITION gap;			/* Gap between prev and next */
+	off_t pos;			/* File position */
+	off_t gap;			/* Gap between prev and next */
 	int line;			/* Line number */
 };
 /*
@@ -73,7 +74,7 @@ struct linenum
 
 #define	LONGTIME	(2)		/* In seconds */
 
-public int lnloop = 0;			/* Are we in the line num loop? */
+int lnloop = 0;				/* Are we in the line num loop? */
 
 static struct linenum anchor;		/* Anchor of the list */
 static struct linenum *freelist;	/* Anchor of the unused entries */
@@ -86,7 +87,6 @@ extern int sigs;
 /*
  * Initialize the line number structures.
  */
-	public void
 clr_linenum()
 {
 	register struct linenum *p;
@@ -107,14 +107,14 @@ clr_linenum()
 	 */
 	anchor.next = anchor.prev = &anchor;
 	anchor.gap = 0;
-	anchor.pos = (POSITION)0;
+	anchor.pos = (off_t)0;
 	anchor.line = 1;
 }
 
 /*
  * Calculate the gap for an entry.
  */
-	static void
+static
 calcgap(p)
 	register struct linenum *p;
 {
@@ -134,16 +134,15 @@ calcgap(p)
  * The specified position (pos) should be the file position of the
  * FIRST character in the specified line.
  */
-	public void
 add_lnum(line, pos)
 	int line;
-	POSITION pos;
+	off_t pos;
 {
 	register struct linenum *p;
 	register struct linenum *new;
 	register struct linenum *nextp;
 	register struct linenum *prevp;
-	register POSITION mingap;
+	register off_t mingap;
 
 	/*
 	 * Find the proper place in the list for the new one.
@@ -222,7 +221,7 @@ add_lnum(line, pos)
  * If we get stuck in a long loop trying to figure out the
  * line number, print a message to tell the user what we're doing.
  */
-	static void
+static
 longloopmessage()
 {
 	ierror("Calculating line numbers");
@@ -238,15 +237,14 @@ longloopmessage()
  * Find the line number associated with a given position.
  * Return 0 if we can't figure it out.
  */
-	public int
 find_linenum(pos)
-	POSITION pos;
+	off_t pos;
 {
 	register struct linenum *p;
 	register int lno;
 	register int loopcount;
-	POSITION cpos;
-	long startime;
+	off_t cpos, back_raw_line(), forw_raw_line();
+	time_t startime, time();
 
 	if (!linenums)
 		/*
@@ -258,7 +256,7 @@ find_linenum(pos)
 		 * Caller doesn't know what he's talking about.
 		 */
 		return (0);
-	if (pos == (POSITION)0)
+	if (pos == (off_t)0)
 		/*
 		 * Beginning of file is always line number 1.
 		 */
@@ -285,7 +283,7 @@ find_linenum(pos)
 	 * traversing fewer bytes in the file.
 	 */
 	flush();
-	startime = get_time();
+	(void)time(&startime);
 	if (p == &anchor || pos - p->prev->pos < p->pos - pos)
 	{
 		/*
@@ -303,11 +301,10 @@ find_linenum(pos)
 			cpos = forw_raw_line(cpos);
 			if (sigs || cpos == NULL_POSITION)
 				return (0);
-			if (loopcount >= 0 && ++loopcount > 100)
-			{
+			if (loopcount >= 0 && ++loopcount > 100) {
 				loopcount = 0;
-				if (get_time() >= startime + LONGTIME)
-				{
+				if (time((time_t *)NULL)
+				    >= startime + LONGTIME) {
 					longloopmessage();
 					loopcount = -1;
 				}
@@ -336,11 +333,10 @@ find_linenum(pos)
 			cpos = back_raw_line(cpos);
 			if (sigs || cpos == NULL_POSITION)
 				return (0);
-			if (loopcount >= 0 && ++loopcount > 100)
-			{
+			if (loopcount >= 0 && ++loopcount > 100) {
 				loopcount = 0;
-				if (get_time() >= startime + LONGTIME)
-				{
+				if (time((time_t *)NULL)
+				    >= startime + LONGTIME) {
 					longloopmessage();
 					loopcount = -1;
 				}
@@ -361,32 +357,12 @@ find_linenum(pos)
  * The argument "where" tells which line is to be considered
  * the "current" line (e.g. TOP, BOTTOM, MIDDLE, etc).
  */
-	public int
 currline(where)
 	int where;
 {
-	POSITION pos;
+	off_t pos, ch_length(), position();
 
-	pos = position(where);
-	if (pos == NULL_POSITION)
+	if ((pos = position(where)) == NULL_POSITION)
 		pos = ch_length();
-	return (find_linenum(pos));
+	return(find_linenum(pos));
 }
-
-#if DEBUG_STUFF
-debug()
-{
-	register struct linenum *p;
-	char buf[20];
-
-	lower_left();
-	clear_eol();
-	for (p = anchor.next;  p != &anchor;  p = p->next)
-	{
-		(void)sprintf(buf, "%d-%d ", p->line, p->pos);
-		putstr(buf);
-	}
-	putstr("\n");
-	error("DEBUG");
-}
-#endif /*DEBUG_STUFF*/
