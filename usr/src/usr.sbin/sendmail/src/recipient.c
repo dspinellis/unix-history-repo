@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	3.36		%G%);
+SCCSID(@(#)recipient.c	3.37		%G%);
 
 /*
 **  SENDTO -- Designate a send list.
@@ -77,35 +77,6 @@ sendto(list, copyf, ctladdr, sendq)
 			continue;
 		a->q_next = al;
 		a->q_alias = ctladdr;
-
-		/*
-		**  If this address should have a host alias, take care
-		**  of it now.
-		*/
-
-		if (strcmp(a->q_mailer->m_name, "xlate") == 0)
-		{
-			register char *newaddr;
-			extern char *hostalias();
-
-			newaddr = hostalias(a);
-			if (newaddr == NULL)
-			{
-				/* couldn't do anything with it */
-				giveresponse(EX_NOUSER, TRUE, a->q_mailer);
-				continue;
-			}
-
-			if (Verbose)
-				printf("%s... translated to %s\n", a->q_paddr, newaddr);
-
-			/* change the print address so the message looks good */
-			a->q_paddr = newaddr;
-
-			/* call ourselves recursively to send to our friends */
-			sendto(newaddr, copyf > 0 ? 0 : copyf, ctladdr, sendq);
-			continue;
-		}
 
 		/* see if this should be marked as a primary address */
 		if (ctladdr == NULL ||

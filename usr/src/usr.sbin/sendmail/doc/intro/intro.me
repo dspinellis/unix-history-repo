@@ -21,7 +21,7 @@ Berkeley, California  94720
 .(f
 This is
 .if \n(DR draft
-version 3.18,
+version 3.19,
 last modified on %G%.
 .if \n(DR Please do not distribute this version without permission
 .if \n(DR of the author.
@@ -966,7 +966,6 @@ M\&prog	/bin/csh	lA	$f	...prog\&mail -fc $u
 M\&berk	/usr/net/bin/sendberkmail	fxs	$B:$f	...berk\&mail -m $h -h $c -t $u
 M\&arpa	/usr/lib/mailers/arpa	sAu	$f@$A	...arpa\&mail $f $h $u
 M\&uucp	/usr/bin/uux	rsDxmU	$U!$f	...uucp\&mail - $h!rmail ($u)
-M\&xlate	/	A	$f	/
 .sp \n(psu
 ### rewriting rules
 .ta \w'R\&CSVAX:$-h!$+u  'u +\w'$#berk$@ing70$:$+u@$+h  'u
@@ -1713,7 +1712,6 @@ M\&prog	/bin/csh	lA	$f	...progmail -fc $u
 M\&berk	/usr/net/bin/sendberkmail	fxs	$B:$f	...berkmail -m $h -h $c -t $u
 M\&arpa	/usr/lib/mailers/arpa	sAu	$f@$A	...arpamail $f $h $u
 M\&uucp	/usr/bin/uux	rsDxmU	$U!$f	...uucpmail - $h!rmail ($u)
-M\&xlate	/	A	$f	/
 .if n .in
 .if t .sz
 .)b
@@ -1815,16 +1813,6 @@ line,
 and with multiple users listed.
 Since UUCP is a relic of the (not so) distant past,
 it requires ugly header lines.
-.pp
-The final entry is a dummy entry to declare the pseudo-mailer
-.i xlate .
-When this mailer is found
-it causes a table lookup to be done in the alias file
-using the host name as a key.
-A
-.q %s
-in the value part is replaced by the user name.
-The entire parsing mechanism is restarted when this is encountered.
 .pp
 If
 .q $u
