@@ -29,17 +29,11 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00032
- * --------------------         -----   ----------------------
- *
- * 05 Aug 92	David Greenman		Fix kernel namelist db create/use
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)nlist.c	5.4 (Berkeley) 4/27/91";
+/*static char sccsid[] = "from: @(#)nlist.c	5.4 (Berkeley) 4/27/91";*/
+static char rcsid[] = "$Id";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -146,10 +140,15 @@ create_knlist(name, db)
 			rel_off = nbuf.n_value & ~KERNBASE;
 #endif
 #ifdef i386
-			/* -hv- 180793 for kernel loaded at 0xfe100000,
-			 * ~KERNBASE alone is not correct mask
+			/*
+			 * XXX: This is a KLUGE to handle the kernel being
+			 * loaded at a different address than KERNBASE.  Stupid
+			 * a.out format has no way of recording the text
+			 * address we gave ld.  It only works for multiples of
+			 * 1MB.
 			 */
-			rel_off = ((nbuf.n_value & ~(KERNBASE|0x00F00000)) + CLBYTES);
+			rel_off = ((nbuf.n_value - (ebuf.a_entry & -0x100000))
+				  + CLBYTES);
 #endif
 			/*
 			 * When loaded, data is rounded to next page cluster
@@ -200,6 +199,6 @@ badfmt(p)
 	char *p;
 {
 	(void)fprintf(stderr,
-	    "symorder: %s: %s: %s\n", kfile, p, strerror(EFTYPE));
+	    "kvm_mkdb: %s: %s: %s\n", kfile, p, strerror(EFTYPE));
 	exit(1);
 }
