@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_syscalls.c	7.31 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.32 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -71,12 +71,13 @@ static int nfs_asyncdaemon[NFS_MAXASYNCDAEMON];
 /*
  * Get file handle system call
  */
+struct getfh_args {
+	char	*fname;
+	fhandle_t *fhp;
+};
 getfh(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		char	*fname;
-		fhandle_t *fhp;
-	} *uap;
+	register struct getfh_args *uap;
 	int *retval;
 {
 	register struct vnode *vp;
@@ -115,12 +116,13 @@ static struct nfssvc_sock nfssvc_sockhead;
  * - remains in the kernel as an nfsd
  * - remains in the kernel as an nfsiod
  */
+struct nfssvc_args {
+	int flag;
+	caddr_t argp;
+};
 nfssvc(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int flag;
-		caddr_t argp;
-	} *uap;
+	register struct nfssvc_args *uap;
 	int *retval;
 {
 	struct nameidata nd;

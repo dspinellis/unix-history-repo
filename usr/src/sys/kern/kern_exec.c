@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.64 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.65 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -50,14 +50,15 @@ extern char sigcode[], esigcode[];
 /*
  * exec system call
  */
+struct execve_args {
+	char	*fname;
+	char	**argp;
+	char	**envp;
+};
 /* ARGSUSED */
 execve(p, uap, retval)
 	register struct proc *p;
-	register struct args {
-		char	*fname;
-		char	**argp;
-		char	**envp;
-	} *uap;
+	register struct execve_args *uap;
 	int *retval;
 {
 	register struct ucred *cred = p->p_ucred;

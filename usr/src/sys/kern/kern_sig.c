@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	7.49 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.50 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -41,14 +41,15 @@
 	    (pc)->pc_ucred->cr_uid == (q)->p_ucred->cr_uid || \
 	    ((signo) == SIGCONT && (q)->p_session == (p)->p_session))
 
+struct sigaction_args {
+	int	signo;
+	struct	sigaction *nsa;
+	struct	sigaction *osa;
+};
 /* ARGSUSED */
 sigaction(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	signo;
-		struct	sigaction *nsa;
-		struct	sigaction *osa;
-	} *uap;
+	register struct sigaction_args *uap;
 	int *retval;
 {
 	struct sigaction vec;
@@ -199,12 +200,13 @@ execsigs(p)
  * and return old mask as return value;
  * the library stub does the rest.
  */
+struct sigprocmask_args {
+	int	how;
+	sigset_t mask;
+};
 sigprocmask(p, uap, retval)
 	register struct proc *p;
-	struct args {
-		int	how;
-		sigset_t mask;
-	} *uap;
+	struct sigprocmask_args *uap;
 	int *retval;
 {
 	int error = 0;
@@ -233,10 +235,13 @@ sigprocmask(p, uap, retval)
 	return (error);
 }
 
+struct sigpending_args {
+	int	dummy;
+};
 /* ARGSUSED */
 sigpending(p, uap, retval)
 	struct proc *p;
-	void *uap;
+	struct sigpending_args *uap;
 	int *retval;
 {
 
@@ -248,14 +253,15 @@ sigpending(p, uap, retval)
 /*
  * Generalized interface signal handler, 4.3-compatible.
  */
+struct osigvec_args {
+	int	signo;
+	struct	sigvec *nsv;
+	struct	sigvec *osv;
+};
 /* ARGSUSED */
 osigvec(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	signo;
-		struct	sigvec *nsv;
-		struct	sigvec *osv;
-	} *uap;
+	register struct osigvec_args *uap;
 	int *retval;
 {
 	struct sigvec vec;
@@ -305,11 +311,12 @@ osigvec(p, uap, retval)
 	return (0);
 }
 
+struct osigblock_args {
+	int	mask;
+};
 osigblock(p, uap, retval)
 	register struct proc *p;
-	struct args {
-		int	mask;
-	} *uap;
+	struct osigblock_args *uap;
 	int *retval;
 {
 
@@ -320,11 +327,12 @@ osigblock(p, uap, retval)
 	return (0);
 }
 
+struct osigsetmask_args {
+	int	mask;
+};
 osigsetmask(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	mask;
-	} *uap;
+	struct osigsetmask_args *uap;
 	int *retval;
 {
 
@@ -341,12 +349,13 @@ osigsetmask(p, uap, retval)
  * in the meantime.  Note nonstandard calling convention:
  * libc stub passes mask, not pointer, to save a copyin.
  */
+struct sigsuspend_args {
+	sigset_t mask;
+};
 /* ARGSUSED */
 sigsuspend(p, uap, retval)
 	register struct proc *p;
-	struct args {
-		sigset_t mask;
-	} *uap;
+	struct sigsuspend_args *uap;
 	int *retval;
 {
 	register struct sigacts *ps = p->p_sigacts;
@@ -367,13 +376,14 @@ sigsuspend(p, uap, retval)
 }
 
 #if defined(COMPAT_43) || defined(COMPAT_SUNOS)
+struct osigstack_args {
+	struct	sigstack *nss;
+	struct	sigstack *oss;
+};
 /* ARGSUSED */
 osigstack(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		struct	sigstack *nss;
-		struct	sigstack *oss;
-	} *uap;
+	register struct osigstack_args *uap;
 	int *retval;
 {
 	struct sigstack ss;
@@ -397,13 +407,14 @@ osigstack(p, uap, retval)
 }
 #endif /* COMPAT_43 || COMPAT_SUNOS */
 
+struct sigaltstack_args {
+	struct	sigaltstack *nss;
+	struct	sigaltstack *oss;
+};
 /* ARGSUSED */
 sigaltstack(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		struct	sigaltstack *nss;
-		struct	sigaltstack *oss;
-	} *uap;
+	register struct sigaltstack_args *uap;
 	int *retval;
 {
 	struct sigacts *psp;
@@ -434,13 +445,14 @@ sigaltstack(p, uap, retval)
 	return (0);
 }
 
+struct kill_args {
+	int	pid;
+	int	signo;
+};
 /* ARGSUSED */
 kill(cp, uap, retval)
 	register struct proc *cp;
-	register struct args {
-		int	pid;
-		int	signo;
-	} *uap;
+	register struct kill_args *uap;
 	int *retval;
 {
 	register struct proc *p;
@@ -471,13 +483,14 @@ kill(cp, uap, retval)
 }
 
 #if defined(COMPAT_43) || defined(COMPAT_SUNOS)
+struct okillpg_args {
+	int	pgid;
+	int	signo;
+};
 /* ARGSUSED */
 okillpg(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	pgid;
-		int	signo;
-	} *uap;
+	register struct okillpg_args *uap;
 	int *retval;
 {
 
@@ -1110,10 +1123,13 @@ out:
  * Nonexistent system call-- signal process (may want to handle it).
  * Flag error in case process won't see signal immediately (blocked or ignored).
  */
+struct nosys_args {
+	int	dummy;
+};
 /* ARGSUSED */
 nosys(p, args, retval)
 	struct proc *p;
-	void *args;
+	struct nosys_args *args;
 	int *retval;
 {
 
