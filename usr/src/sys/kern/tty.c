@@ -1,4 +1,4 @@
-/*	tty.c	6.17	85/06/03	*/
+/*	tty.c	6.18	85/06/08	*/
 
 #include "../machine/reg.h"
 
@@ -741,6 +741,19 @@ ttyinput(c, tp)
 		goto endcase;
 	}
 
+	if (tp->t_flags & LCASE && c <= 0177) {
+		if (tp->t_state&TS_BKSL) {
+			ttyrub(unputc(&tp->t_rawq), tp);
+			if (maptab[c])
+				c = maptab[c];
+			c |= 0200;
+			tp->t_state &= ~(TS_BKSL|TS_QUOT);
+		} else if (c >= 'A' && c <= 'Z')
+			c += 'a' - 'A';
+		else if (c == '\\')
+			tp->t_state |= TS_BKSL;
+	}
+
 	/*
 	 * Cbreak mode, don't process line editing
 	 * characters; check high water mark for wakeup.
@@ -1041,8 +1054,6 @@ ttread(tp, uio)
 	register c, t_flags;
 	int s, first, error = 0;
 
-	if ((tp->t_state&TS_CARR_ON)==0)
-		return (EIO);
 loop:
 	/*
 	 * Take any pending input first.
@@ -1052,20 +1063,21 @@ loop:
 		ttypend(tp);
 	splx(s);
 
+	if ((tp->t_state&TS_CARR_ON)==0)
+		return (EIO);
+
 	/*
 	 * Hang process if it's in the background.
 	 */
 #define bit(a) (1<<(a-1))
-	while (tp == u.u_ttyp && u.u_procp->p_pgrp != tp->t_pgrp) {
+	if (tp == u.u_ttyp && u.u_procp->p_pgrp != tp->t_pgrp) {
 		if ((u.u_procp->p_sigignore & bit(SIGTTIN)) ||
 		   (u.u_procp->p_sigmask & bit(SIGTTIN)) ||
-/*
-		    (u.u_procp->p_flag&SDETACH) ||
-*/
 		    u.u_procp->p_flag&SVFORK)
 			return (EIO);
 		gsignal(u.u_procp->p_pgrp, SIGTTIN);
 		sleep((caddr_t)&lbolt, TTIPRI);
+		goto loop;
 	}
 	t_flags = tp->t_flags;
 #undef	bit
@@ -1125,21 +1137,6 @@ loop:
 		if (t_flags&CRMOD && c == '\r')
 			c = '\n';
 		/*
-		 * Hack lower case simulation on
-		 * upper case only terminals.
-		 */
-		if (t_flags&LCASE && c <= 0177)
-			if (tp->t_state&TS_BKSL) {
-				if (maptab[c])
-					c = maptab[c];
-				tp->t_state &= ~TS_BKSL;
-			} else if (c >= 'A' && c <= 'Z')
-				c += 'a' - 'A';
-			else if (c == '\\') {
-				tp->t_state |= TS_BKSL;
-				continue;
-			}
-		/*
 		 * Check for delayed suspend character.
 		 */
 		if (tp->t_line == NTTYDISC && c == tp->t_dsuspc) {
@@ -1171,7 +1168,6 @@ loop:
 			break;
 		first = 0;
 	}
-	tp->t_state &= ~TS_BKSL;
 
 checktandem:
 	/*
@@ -1530,8 +1526,6 @@ ttyecho(c, tp)
 				c += 'A' - 1;
 		}
 	}
-	if ((tp->t_flags&LCASE) && (c >= 'A' && c <= 'Z'))
-		c += 'a' - 'A';
 	(void) ttyoutput(c&0177, tp);
 }
 
