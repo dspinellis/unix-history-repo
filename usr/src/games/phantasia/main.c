@@ -475,7 +475,7 @@ int	ch;		/* input */
 	    {
 	    mvaddstr(16, 0, "Enter the X Y coordinates of your experimento ? ");
 	    getstring(Databuf, SZ_DATABUF);
-	    sscanf(Databuf, "%F %F", &Player.p_x, &Player.p_y);
+	    sscanf(Databuf, "%lf %lf", &Player.p_x, &Player.p_y);
 
 	    if (fabs(Player.p_x) > D_EXPER || fabs(Player.p_y) > D_EXPER)
 		mvaddstr(17, 0, "Invalid coordinates.  Try again.\n");
@@ -625,7 +625,7 @@ bool	hasmoved = FALSE;	/* set if player has moved */
 		mvaddstr(4, 0, "X Y Coordinates ? ");
 		getstring(Databuf, SZ_DATABUF);
 
-		if (sscanf(Databuf, "%F %F", &x, &y) != 2)
+		if (sscanf(Databuf, "%lf %lf", &x, &y) != 2)
 		    mvaddstr(5, 0, "Try again\n");
 		else if (distance(Player.p_x, x, Player.p_y, y) > MAXMOVE())
 		    ILLMOVE();
@@ -690,7 +690,7 @@ bool	hasmoved = FALSE;	/* set if player has moved */
 		    mvaddstr(4, 0, "X Y Coordinates ? ");
 		    getstring(Databuf, SZ_DATABUF);
 
-		    if (sscanf(Databuf, "%F %F", &x, &y) == 2)
+		    if (sscanf(Databuf, "%lf %lf", &x, &y) == 2)
 			{
 			temp = distance(Player.p_x, x, Player.p_y, y);
 			if (!Throne

@@ -153,7 +153,7 @@ infloat()
 double	result;		/* return value */
 
     getstring(Databuf, SZ_DATABUF);
-    if (sscanf(Databuf, "%F", &result) < 1)
+    if (sscanf(Databuf, "%lf", &result) < 1)
 	/* no valid number entered */
 	result = 0.0;
 
