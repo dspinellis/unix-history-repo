@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)0.h 1.18 %G%"; */
+/* static char sccsid[] = "@(#)0.h 1.19 %G%"; */
 
 #define DEBUG
 #define CONSETS
@@ -232,9 +232,6 @@ bool	Enoline;
  */
 extern int	pnumcnt;
 
-#ifdef PTREE
-#   include	"pTree.h"
-#endif PTREE
 struct	nl {
 	char	*symbol;
 	char	info[4];
