@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.27 (Berkeley) %G%
+#	@(#)Makefile.inc	5.28 (Berkeley) %G%
 
 # Missing: profil.0, ptrace.0
 
@@ -14,28 +14,25 @@ SRCS+=	Ovfork.s brk.s cerror.s exect.s fork.s pipe.s ptrace.s reboot.s \
 SRCS+=	__ftruncate.c __lseek.c mmap.c __truncate.c
 
 # modules with default implementations on all architectures:
-ASM=	accept.o access.o acct.o adjtime.o bind.o chdir.o \
-	chflags.o chmod.o chown.o chroot.o close.o connect.o dup.o dup2.o \
-	execve.o fchdir.o fchflags.o fchmod.o fchown.o fcntl.o flock.o \
-	fstat.o fstatfs.o fsync.o ftruncate.o getdirentries.o \
-	getdtablesize.o getegid.o geteuid.o getfh.o getfsstat.o getgid.o \
-	getgroups.o getitimer.o \
-	getpeername.o getpgrp.o getpid.o getppid.o \
-	getpriority.o getrlimit.o getrusage.o getsockname.o getsockopt.o \
-	gettimeofday.o getuid.o indir.o ioctl.o kill.o ktrace.o \
-	lfs_bmapv.o lfs_markv.o lfs_segclean.o lfs_segwait.o \
-	link.o listen.o \
-	lseek.o lstat.o madvise.o mincore.o mkdir.o mkfifo.o mknod.o \
-	mount.o mprotect.o msync.o munmap.o nfssvc.o open.o \
-	profil.o quotactl.o read.o readlink.o readv.o recvfrom.o recvmsg.o \
-	rename.o revoke.o rmdir.o select.o sendmsg.o sendto.o setegid.o \
-	seteuid.o setgid.o setgroups.o \
-	setitimer.o setpgid.o setpriority.o \
-	setrlimit.o setsid.o setsockopt.o settimeofday.o setuid.o \
-	shutdown.o sigaction.o sigaltstack.o socket.o socketpair.o stat.o \
-	statfs.o swapon.o symlink.o sync.o sysctl.o truncate.o umask.o \
-	unlink.o unmount.o utimes.o vadvise.o wait4.o write.o writev.o \
-	sem_lock.o sem_wakeup.o \
+ASM=	accept.o access.o acct.o adjtime.o bind.o chdir.o chflags.o chmod.o \
+	chown.o chroot.o close.o connect.o dup.o dup2.o execve.o fchdir.o \
+	fchflags.o fchmod.o fchown.o fcntl.o flock.o fstat.o fstatfs.o \
+	fsync.o ftruncate.o getdirentries.o getdtablesize.o getegid.o \
+	geteuid.o getfh.o getfsstat.o getgid.o getgroups.o getitimer.o \
+	getpeername.o getpgrp.o getpid.o getppid.o getpriority.o \
+	getrlimit.o getrusage.o getsockname.o getsockopt.o gettimeofday.o \
+	getuid.o indir.o ioctl.o kill.o ktrace.o lfs_bmapv.o lfs_markv.o \
+	lfs_segclean.o lfs_segwait.o link.o listen.o lseek.o lstat.o \
+	madvise.o mincore.o mkdir.o mkfifo.o mknod.o mount.o mprotect.o \
+	msync.o munmap.o nfssvc.o open.o profil.o quotactl.o read.o \
+	readlink.o readv.o recvfrom.o recvmsg.o rename.o revoke.o rmdir.o \
+	select.o sendmsg.o sendto.o setegid.o seteuid.o setgid.o \
+	setgroups.o setitimer.o setpgid.o setpriority.o setrlimit.o \
+	setsid.o setsockopt.o settimeofday.o setuid.o shutdown.o \
+	sigaction.o sigaltstack.o socket.o socketpair.o stat.o statfs.o \
+	swapon.o symlink.o sync.o truncate.o umask.o unlink.o unmount.o \
+	utimes.o vadvise.o wait4.o write.o writev.o sem_lock.o \
+	sem_wakeup.o __sysctl.o \
 	__getrlimit.o __indir.o __setrlimit.o
 
 PSEUDO=	_exit.o _getlogin.o
@@ -68,22 +65,21 @@ ${PSEUDO}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
 
 # Missing: profil.0, ptrace.0
 
-MAN2+=	accept.0 access.0 acct.0 adjtime.0 bind.0 brk.0 \
-	chdir.0 chflags.0 chmod.0 chown.0 chroot.0 close.0 connect.0 \
-	dup.0 execve.0 _exit.0 fcntl.0 flock.0 fork.0 fsync.0 \
-	getdirentries.0 getdtablesize.0 getfh.0 getfsstat.0 getgid.0 \
-	getgroups.0 getitimer.0 getlogin.0 \
-	getpeername.0 getpgrp.0 getpid.0 getpriority.0 \
-	getrlimit.0 getrusage.0 getsockname.0 getsockopt.0 gettimeofday.0 \
-	getuid.0 intro.0 ioctl.0 kill.0 link.0 listen.0 lseek.0 mkdir.0 \
-	mkfifo.0 mknod.0 madvise.0 mincore.0 mmap.0 mount.0 mprotect.0 \
-	msync.0 munmap.0 nfssvc.0 open.0 pipe.0 profil.0 ptrace.0 \
-	quotactl.0 read.0 readlink.0 reboot.0 recv.0 rename.0 revoke.0 \
-	rmdir.0 select.0 send.0 setgroups.0 setpgid.0 setsid.0 setuid.0 \
-	shutdown.0 sigaction.0 sigpending.0 sigprocmask.0 sigreturn.0 \
-	sigaltstack.0 sigstack.0 sigsuspend.0 socket.0 socketpair.0  \
-	stat.0 statfs.0 swapon.0 symlink.0 sync.0 syscall.0 sysctl.0 \
-	truncate.0 umask.0 unlink.0 utimes.0 vfork.0 wait.0 write.0
+MAN2+=	accept.0 access.0 acct.0 adjtime.0 bind.0 brk.0 chdir.0 chflags.0 \
+	chmod.0 chown.0 chroot.0 close.0 connect.0 dup.0 execve.0 _exit.0 \
+	fcntl.0 flock.0 fork.0 fsync.0 getdirentries.0 getdtablesize.0 \
+	getfh.0 getfsstat.0 getgid.0 getgroups.0 getitimer.0 getlogin.0 \
+	getpeername.0 getpgrp.0 getpid.0 getpriority.0 getrlimit.0 \
+	getrusage.0 getsockname.0 getsockopt.0 gettimeofday.0 getuid.0 \
+	intro.0 ioctl.0 kill.0 link.0 listen.0 lseek.0 mkdir.0 mkfifo.0 \
+	mknod.0 madvise.0 mincore.0 mmap.0 mount.0 mprotect.0 msync.0 \
+	munmap.0 nfssvc.0 open.0 pipe.0 profil.0 ptrace.0 quotactl.0 \
+	read.0 readlink.0 reboot.0 recv.0 rename.0 revoke.0 rmdir.0 \
+	select.0 send.0 setgroups.0 setpgid.0 setsid.0 setuid.0 shutdown.0 \
+	sigaction.0 sigpending.0 sigprocmask.0 sigreturn.0 sigaltstack.0 \
+	sigstack.0 sigsuspend.0 socket.0 socketpair.0 stat.0 statfs.0 \
+	swapon.0 symlink.0 sync.0 syscall.0 truncate.0 umask.0 unlink.0 \
+	utimes.0 vfork.0 wait.0 write.0
 
 MLINKS+=brk.2 sbrk.2
 MLINKS+=dup.2 dup2.2
