@@ -1,0 +1,43 @@
+.TH "XNSBFS" 1 "30-Dec-86" "Xerox (WRC)"
+.\" $Header: xnsbfs.n,v 1.1 87/01/15 16:47:37 ed Exp $
+.SH NAME
+xnsbfs - Perform a broadcast for either Clearinghouse or Authentication 
+servers
+.SH SYNOPSIS
+xnsbfs [options] xnshostaddress
+.SH DESCRIPTION
+.I Xnsbfs
+performs a broadcast for servers request looking for either a Clearinghouse
+or Authentication server as determined by the 
+.I -a
+option. The broadcast is done via the Packet Exchange Protocol as specified 
+in either the
+.B "Clearinghouse Protocol"
+or
+.BR "Authentication Protocol" .
+The network addresses of all servers responding to the broadcast are written
+to
+.I stdout
+as they are received.
+.PP
+If no network address is specified, then the query is broadcast to all
+directly connected XNS networks. If an address is specified in
+.IR xnshostaddress ,
+the broadcast will be directed to that address.
+.PP
+The possible options are:
+.TP
+.BI -a
+Causes the broadcast to request Authentication servers rather than
+Clearinghouse servers.
+.SH NOTES
+Currently, only those servers responding within 3 seconds of the broadcast
+are considered to be available.
+.SH "SEE ALSO"
+CH_GetFirstCH(3N), Auth_GetFistAuth(3N)
+.br
+Clearinghouse Protocol, \s8XSIS\s0 048404 (April 1984)
+.br
+Authentication Protocol, \s8XSIS\s0 098404 (April 1984)
+.SH AUTHORS
+JQ Johnson
