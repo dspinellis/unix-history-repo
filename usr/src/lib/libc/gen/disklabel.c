@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)disklabel.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.19 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -33,7 +33,7 @@ getdiskbyname(name)
 	const char *name;
 {
 	static struct	disklabel disk;
-	static char 	boot[BUFSIZ];
+	static char	boot[BUFSIZ];
 	char	localbuf[BUFSIZ];
 	char	buf[BUFSIZ];
 	char	*cp, *cq;	/* can't be register */
@@ -161,7 +161,8 @@ dgetent(bp, name)
 			if (i == cnt) {
 				cnt = read(tf, ibuf, BUFSIZ);
 				if (cnt <= 0) {
-					error(errno);
+					if (cnt < 0)
+						error(errno);
 					close(tf);
 					return (0);
 				}
@@ -400,6 +401,7 @@ error(err)
 
 	(void)write(STDERR_FILENO, "disktab: ", 9);
 	(void)write(STDERR_FILENO, _PATH_DISKTAB, sizeof(_PATH_DISKTAB) - 1);
+	(void)write(STDERR_FILENO, ": ", 2);
 	p = strerror(err);
 	(void)write(STDERR_FILENO, p, strlen(p));
 	(void)write(STDERR_FILENO, "\n", 1);
