@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)query.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)query.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -140,7 +140,7 @@ rip_input(from, size)
 
 	if (msg->rip_cmd != RIPCMD_RESPONSE)
 		return;
-	printf("%d bytes from ");
+	printf("%d bytes from ", size);
 	if (nflag)
 		printf("%s:\n", inet_ntoa(from->sin_addr));
 	else {
@@ -173,7 +173,7 @@ rip_input(from, size)
 					name = np->n_name;
 				else if (net == 0)
 					name = "default";
-			} else if ((subnet != net) && ((lna & 0xff) == 0) &&
+			} else if ((lna & 0xff) == 0 &&
 			    (np = getnetbyaddr(subnet, AF_INET))) {
 				struct in_addr subnaddr, inet_makeaddr();
 
