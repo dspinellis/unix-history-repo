@@ -1,4 +1,4 @@
-/* tcp_timer.c 4.7 81/12/12 */
+/* tcp_timer.c 4.8 81/12/19 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -52,6 +52,8 @@ COUNT(TCP_SLOWTIMO);
 	}
 	for (; ip != &tcb; ip = ip->inp_next) {
 		tp = intotcpcb(ip);
+		if (tp == 0)
+			continue;
 		for (i = 0; i < TCPT_NTIMERS; i++) {
 			if (tp->t_timer[i] && --tp->t_timer[i] == 0)
 				(void) tcp_usrreq(tp->t_inpcb->inp_socket,
