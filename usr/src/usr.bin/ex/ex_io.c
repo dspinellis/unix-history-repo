@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ex_io.c	7.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)ex_io.c	7.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ex.h"
@@ -453,9 +453,11 @@ rop(c)
 				if ((u_char)bp[0] == (u_char)'\037' &&
 				    (u_char)bp[1] == (u_char)'\235')
 					error(" Compressed file");
+#ifdef ARCHIVES_ARE_OK
 				if (!strncmp(bp, "!<arch>\n__.SYMDEF", 17)
 				    || !strncmp(bp, "!<arch>\n", 8))
 					error(" Archive");
+#endif
 			}
 			break;
 		}
