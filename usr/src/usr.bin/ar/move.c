@@ -9,14 +9,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)move.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)move.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <dirent.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <ar.h>
 #include "archive.h"
@@ -55,14 +55,15 @@ move(argv)
 	 * positioning after the key, place the key at the end of the before
 	 * key entries.  Put it all back together at the end.
 	 */
+
+	/* Read and write to an archive; pad on both. */
 	SETCF(afd, archive, 0, tname, RPAD|WPAD);
 	for (curfd = tfd1; get_header(afd);) {	
 		if (*argv && files(argv)) {
 			if (options & AR_V)
 				(void)printf("m - %s\n", chdr.name);
 			cf.wfd = tfd2;
-			put_header(&cf, (struct stat *)NULL);
-			copyfile(&cf, chdr.size);
+			put_object(&cf, (struct stat *)NULL);
 			continue;
 		}
 		if (mods && compare(posname)) {
@@ -70,14 +71,12 @@ move(argv)
 			if (options & AR_B)
 				curfd = tfd3;
 			cf.wfd = curfd;
-			put_header(&cf, (struct stat *)NULL);
-			copyfile(&cf, chdr.size);
+			put_object(&cf, (struct stat *)NULL);
 			if (options & AR_A)
 				curfd = tfd3;
 		} else {
 			cf.wfd = curfd;
-			put_header(&cf, (struct stat *)NULL);
-			copyfile(&cf, chdr.size);
+			put_object(&cf, (struct stat *)NULL);
 		}
 	}
 
@@ -92,7 +91,7 @@ move(argv)
 	eval = 0;
 	ORPHANS;
 
-	SETCF(tfd1, tname, afd, archive, RPAD|WPAD);
+	SETCF(tfd1, tname, afd, archive, NOPAD);
 	tsize = size = lseek(tfd1, (off_t)0, SEEK_CUR);
 	(void)lseek(tfd1, (off_t)0, SEEK_SET);
 	copyfile(&cf, size);
