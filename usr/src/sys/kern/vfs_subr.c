@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.18 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.19 (Berkeley) %G%
  */
 
 /*
@@ -445,8 +445,7 @@ void vrele(vp)
 		panic("vrele: null vp");
 	vp->v_count--;
 	if (vp->v_count < 0)
-		printf("vnode bad ref count %d, type %d, tag %d\n",
-			vp->v_count, vp->v_type, vp->v_tag);
+		vprint("vrele: bad ref count", vp);
 	if (vp->v_count > 0)
 		return;
 	if (vfreeh == (struct vnode *)0) {
@@ -516,8 +515,7 @@ vflush(mp, skipvp, flags)
 			continue;
 		}
 		if (busyprt)
-			printf("vflush: busy vnode count %d type %d tag %d\n",
-			    vp->v_count, vp->v_type, vp->v_tag);
+			vprint("vflush: busy vnode", vp);
 		busy++;
 	}
 	if (busy)
@@ -537,21 +535,29 @@ void vclean(vp, doclose)
 
 	/*
 	 * Check to see if the vnode is in use.
-	 * If so we have to lock it before we clean it out.
+	 * If so we have to reference it before we clean it out
+	 * so that its count cannot fall to zero and generate a
+	 * race against ourselves to recycle it.
 	 */
-	if (active = vp->v_count) {
+	if (active = vp->v_count)
 		VREF(vp);
-		VOP_LOCK(vp);
-	}
 	/*
 	 * Prevent the vnode from being recycled or
 	 * brought into use while we clean it out.
 	 */
-	while (vp->v_flag & VXLOCK) {
-		vp->v_flag |= VXWANT;
-		sleep((caddr_t)vp, PINOD);
-	}
+	if (vp->v_flag & VXLOCK)
+		panic("vclean: deadlock");
 	vp->v_flag |= VXLOCK;
+	/*
+	 * Even if the count is zero, the VOP_INACTIVE routine may still
+	 * have the object locked while it cleans it out. The VOP_LOCK
+	 * ensures that the VOP_INACTIVE routine is done with its work.
+	 * For active vnodes, it ensures that no other activity can
+	 * occur while the buffer list is being cleaned out.
+	 */
+	VOP_LOCK(vp);
+	if (doclose)
+		vinvalbuf(vp, 1);
 	/*
 	 * Prevent any further operations on the vnode from
 	 * being passed through to the old file system.
@@ -563,8 +569,8 @@ void vclean(vp, doclose)
 	 * If purging an active vnode, it must be unlocked, closed,
 	 * and deactivated before being reclaimed.
 	 */
+	(*(origops->vn_unlock))(vp);
 	if (active) {
-		(*(origops->vn_unlock))(vp);
 		if (doclose)
 			(*(origops->vn_close))(vp, 0, NOCRED);
 		(*(origops->vn_inactive))(vp);
@@ -709,4 +715,21 @@ loop:
 		count += vq->v_count;
 	}
 	return (count);
+}
+
+/*
+ * Print out a description of a vnode.
+ */
+static char *typename[] =
+	{ "VNON", "VREG", "VDIR", "VBLK", "VCHR", "VLNK", "VSOCK", "VBAD" };
+
+vprint(label, vp)
+	char *label;
+	register struct vnode *vp;
+{
+
+	if (label != NULL)
+		printf("%s: ", label);
+	printf("type %s, count %d, ", typename[vp->v_type], vp->v_count);
+	VOP_PRINT(vp);
 }
