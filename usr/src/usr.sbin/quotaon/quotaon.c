@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quotaon.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)quotaon.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -30,17 +30,13 @@ static char sccsid[] = "@(#)quotaon.c	5.5 (Berkeley) %G%";
  */
 #include <sys/param.h>
 #include <sys/file.h>
+#include <sys/mount.h>
 #include <stdio.h>
 #include <fstab.h>
-#include <mtab.h>
-#include "pathnames.h"
-
-struct	mtab mtab[NMOUNT];
 
 int	vflag;		/* verbose */
 int	aflag;		/* all file systems */
 int	done;
-int	mf;
 
 char	*qfname = "quotas";
 char	quotafile[MAXPATHLEN + 1];
@@ -79,13 +75,6 @@ again:
 			whoami, whoami);
 		exit(1);
 	}
-	mf = open(_PATH_MTAB, O_RDONLY);
-	if (mf < 0) {
-		perror(_PATH_MTAB);
-		exit(1);
-	}
-	(void) read(mf, (char *)mtab, sizeof (mtab));
-	close(mf);
 	setfsent();
 	while ((fs = getfsent()) != NULL) {
 		if (aflag &&
@@ -117,7 +106,6 @@ quotaonoff(fs, offmode)
 			goto bad;
 		if (vflag)
 			printf("%s: quotas turned off\n", fs->fs_file);
-		changemtab(fs, FSTAB_RW);
 		return (0);
 	}
 	(void) sprintf(quotafile, "%s/%s", fs->fs_file, qfname);
@@ -125,7 +113,6 @@ quotaonoff(fs, offmode)
 		goto bad;
 	if (vflag)
 		printf("%s: quotas turned on\n", fs->fs_file);
-	changemtab(fs, FSTAB_RQ);
 	return (0);
 bad:
 	fprintf(stderr, "setquota: ");
@@ -147,66 +134,23 @@ oneof(target, list, n)
 	return (0);
 }
 
-changemtab(fs, type)
-	register struct fstab *fs;
-	char *type;
-{
-	register struct mtab *mp;
-	register char *cp;
-
-	cp = index(fs->fs_spec, '\0');
-	while (*--cp == '/')
-		*cp = '\0';
-	cp = rindex(fs->fs_spec, '/');
-	if (cp)
-		cp++;
-	else
-		cp = fs->fs_spec;
-	for (mp = mtab; mp < &mtab[NMOUNT]; mp++)
-		if (strcmp(mp->m_dname, cp) == 0)
-			goto replace;
-	for (mp = mtab; mp < &mtab[NMOUNT]; mp++)
-		if (mp->m_path[0] == '\0')
-			goto replace;
-	return;
-replace:
-	strcpy(mp->m_type, type);
-	mp = mtab + NMOUNT - 1;
-	while (mp > mtab && mp->m_path[0] == '\0')
-		--mp;
-	mf = creat(_PATH_MTAB, 0644);
-	(void) write(mf, (char *)mtab, (mp - mtab + 1) * sizeof (struct mtab));
-	close(mf);
-}
-
 /*
  * Verify file system is mounted and not readonly.
  */
 readonly(fs)
 	register struct fstab *fs;
 {
-	register struct mtab *mp;
-	register char *cp;
+	struct statfs fsbuf;
 
-	cp = index(fs->fs_spec, '\0');
-	while (*--cp == '/')
-		*cp = '\0';
-	cp = rindex(fs->fs_spec, '/');
-	if (cp)
-		cp++;
-	else
-		cp = fs->fs_spec;
-	for (mp = mtab; mp < mtab + NMOUNT; mp++) {
-		if (mp->m_path[0] == '\0')
-			continue;
-		if (strcmp(cp, mp->m_dname) == 0) {
-			if (strcmp(mp->m_type, FSTAB_RO) == 0) {
-				printf("%s: mounted read-only\n", fs->fs_file);
-				return (1);
-			}
-			return (0);
-		}
+	if (statfs(fs->fs_file, &fsbuf) < 0 ||
+	    strcmp(fsbuf.f_mntonname, fs->fs_file) ||
+	    strcmp(fsbuf.f_mntfromname, fs->fs_spec)) {
+		printf("%s: not mounted\n", fs->fs_file);
+		return (1);
 	}
-	printf("%s: not mounted\n", fs->fs_file);
-	return (1);
+	if (fsbuf.f_flags & M_RDONLY) {
+		printf("%s: mounted read-only\n", fs->fs_file);
+		return (1);
+	}
+	return (0);
 }
