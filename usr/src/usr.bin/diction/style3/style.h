@@ -1,7 +1,7 @@
 /*-
  * %sccs.include.proprietary.c%
  *
- *	@(#)style.h	4.4 (Berkeley) %G%
+ *	@(#)style.h	8.1 (Berkeley) %G%
  */
 
 extern int part;

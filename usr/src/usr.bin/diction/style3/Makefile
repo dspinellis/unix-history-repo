@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	style3
 CFLAGS+=-I${.CURDIR} -I${.CURDIR}/../style1

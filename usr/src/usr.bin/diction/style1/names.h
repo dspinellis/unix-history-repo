@@ -1,7 +1,7 @@
 /*-
  * %sccs.include.proprietary.c%
  *
- *	@(#)names.h	4.4 (Berkeley) %G%
+ *	@(#)names.h	8.1 (Berkeley) %G%
  */
 
 #define ART	'A'

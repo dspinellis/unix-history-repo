@@ -1,7 +1,7 @@
 /*-
  * %sccs.include.proprietary.c%
  *
- *	@(#)edict.c	4.4 (Berkeley) %G%
+ *	@(#)edict.c	8.1 (Berkeley) %G%
  */
 
 struct dict able_d[] = {
