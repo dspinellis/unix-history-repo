@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_descrip.c	7.6 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -455,7 +455,7 @@ fdopen(dev, mode, type)
 	 * but this entire driver is a real kludge anyway.
 	 */
 	rwmode = mode & (FREAD|FWRITE);
-	if ((fp->f_flag & rwmode) != rwmode)
+	if ((wfp->f_flag & rwmode) != rwmode)
 		return (EACCES);
 	/* 
 	 * Dup the file descriptor. 
