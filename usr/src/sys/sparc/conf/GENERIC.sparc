@@ -1,4 +1,4 @@
-#	@(#)GENERIC.sparc	8.1 (Berkeley) %G%
+#	@(#)GENERIC.sparc	8.2 (Berkeley) %G%
 #
 # Generic SPARC
 
@@ -21,6 +21,7 @@ options		KGDB			# support for kernel gdb
 options		KGDBDEV=0xc01, KGDBRATE=38400	# device & baud rate
 makeoptions	DEBUG="-g"			# symbols for kgdb
 options		RCONSOLE		# fast rasterop console
+#options	SYSVSHM, SHMMAXPGS=1024	# System V shared memory
 
 # Filesystem options
 options		FIFO		# POSIX fifo support (in all filesystems)
@@ -57,6 +58,7 @@ sd*	at tg? drive ?
 
 bwtwo*	at sbus? slot ? offset ?
 cgthree* at sbus? slot ? offset ?
+cgsix*	at sbus? slot ? offset ?
 
 le*	at sbus? slot ? offset ?
 
