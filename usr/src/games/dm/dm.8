@@ -1,0 +1,40 @@
+.\" Copyright (c) 1987 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)dm.8	5.1 (Berkeley) %G%
+.\"
+.TH DM 8 ""
+.UC 8
+.SH NAME
+dm \- dungeon master
+.SH SYNOPSIS
+.B ln -s dm game
+.SH DESCRIPTION
+\fIDm\fP is a program used to regulate game playing.  \fIDm\fP expects to
+be invoked with the name of a game that a user wishes to play.  This is
+done by creating symbolic links to \fIdm\fP, in \fI/usr/games\fP, for all
+of the regulated games.  The actual binaries for these games are located
+in a ``hidden'' directory, \fI/usr/games/hide\fP, that may only be accessed
+by the \fIdm\fP program.  \fIDm\fP determines if the requested game is
+available and, if so, runs it.  The file \fI/usr/games/game.control\fP
+controls the times when games may be run.
+.PP
+The file \fI/usr/games/nogames\fP may be used to ``turn off'' game
+playing.  If the file exists, no game playing is allowed; the contents
+of the file will be displayed to any user requesting a game.
+.SH FILES
+.nf
+.ta \w'/usr/games/lib/game.conf 'u
+/usr/games/lib/game.conf	- configuration file
+/usr/games/hide		- directory of ``real'' binaries
+/usr/games/nogames	- turns off game playing
+.SH SEE ALSO
+game.control(5)
+.SH BUGS
+Since \fIdm\fP must run the games setuid ``games'', it is very important
+that all games that allow users to run UNIX commands carefully set both
+the real and effective user id's immediately before executing those commands.
+It is possibly more important that \fIdm\fP never be setuid anything
+except ``games'' so that compromising a game will result only in the user's
+ability to play games at will.
