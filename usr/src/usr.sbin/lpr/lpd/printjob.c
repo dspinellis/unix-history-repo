@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	4.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	4.14 (Berkeley) %G%";
 #endif
 
 /*
@@ -55,7 +55,10 @@ printjob()
 	dup(1);
 	pid = getpid();				/* for use with lprm */
 	setpgrp(0, pid);
+	signal(SIGHUP, onintr);
 	signal(SIGINT, onintr);
+	signal(SIGQUIT, onintr);
+	signal(SIGTERM, onintr);
 
 	/*
 	 * uses short form file names
@@ -875,7 +878,7 @@ dofork(action)
 }
 
 /*
- * Cleanup child processes when a SIGINT is caught.
+ * Cleanup child processes when a signal is caught.
  */
 static
 onintr()
