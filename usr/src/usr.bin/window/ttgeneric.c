@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ttgeneric.c	3.18 83/12/17";
+static	char *sccsid = "@(#)ttgeneric.c	3.19 83/12/21";
 #endif
 
 #include "ww.h"
@@ -311,7 +311,7 @@ tt_generic()
 	if (gen_NL == 0)
 		gen_NL = "\n";
 	if (gen_BC == 0 && gen_BS)
-		gen_BC == "\b";
+		gen_BC = "\b";
 
 	{
 		extern char PC, *BC, *UP;
