@@ -1,4 +1,4 @@
-/*	ubareg.h	4.15	81/02/27	*/
+/*	ubareg.h	4.16	81/03/06	*/
 
 /*
  * UNIBUS adaptor
@@ -60,7 +60,10 @@ struct uba_regs
 #define	UBA_MRPF	0x00000008	/* map register parity failure */
 #define	UBA_LEB		0x00000004	/* lost error */
 #define	UBA_UBSTO	0x00000002	/* UNIBUS select timeout */
-#define	UBA_UBSSTO	0x00000001	/* UNIBUS slave sync timeout */
+#define	UBA_UBSSYNTO	0x00000001	/* UNIBUS slave sync timeout */
+
+#define	UBASR_BITS \
+"\20\13RDTO\12RDS\11CRD\10CXTER\7CXTMO\6DPPE\5IVMR\4MRPF\3LEB\2UBSTO\1UBSSYNTO"
 
 /* BR receive vector register, BRRVR */
 #define	UBA_AIRI	0x80000000	/* adapter interrupt request */

@@ -1,4 +1,4 @@
-/*	nexus.h	4.4	81/02/27	*/
+/*	nexus.h	4.5	81/03/06	*/
 
 /*
  * Information about nexus's.
@@ -37,12 +37,20 @@ extern struct nexus nexus[NNEXUS];
  */
 #define	SBI_PARFLT	(1<<31)		/* sbi parity fault */
 #define	SBI_WSQFLT	(1<<30)		/* write sequence fault */
-#define	SBI_UIDFLT	(1<<29)		/* unexpected read data fault */
+#define	SBI_URDFLT	(1<<29)		/* unexpected read data fault */
 #define	SBI_ISQFLT	(1<<28)		/* interlock sequence fault */
 #define	SBI_MXTFLT	(1<<27)		/* multiple transmitter fault */
 #define	SBI_XMTFLT	(1<<26)		/* transmit fault */
 
 #define	NEX_CFGFLT	(0xfc000000)
+
+#ifndef LOCORE
+#if VAX780
+#define	NEXFLT_BITS \
+"\20\40PARFLT\37WSQFLT\36URDFLT\35ISQFLT\34MXTFLT\33XMTFLT"
+extern	char nexflt_bits[];
+#endif
+#endif
 
 #define	NEX_APD		(1<<23)		/* adaptor power down */
 #define	NEX_APU		(1<<22)		/* adaptor power up */
