@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)locate.code.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)locate.code.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
 /*
@@ -10,16 +10,26 @@ static char sccsid[] = "@(#)locate.code.c	4.2	(Berkeley)	%G%";
  *		process bigrams (see updatedb) > common_bigrams
  *		code common_bigrams < list > squozen_list
  *
- * METHOD:	Uses 'front compression' (see ";login:", March 1983, p. 8 ).
- *		Output format is, per line, an offset differential count byte
- *		followed by a partially bigram-encoded ascii residue. 
+ * METHOD:	Uses 'front compression' (see ";login:", Volume 8, Number 1
+ *		February/March 1983, p. 8 ).  Output format is, per line, an
+ *		offset differential count byte followed by a partially bigram-
+ *		encoded ascii residue.  A bigram is a two-character sequence,
+ *		the first 128 most common of which are encoded in one byte.
+ *
+ * EXAMPLE:	For simple front compression with no bigram encoding,
+ *		if the input is...		then the output is...
+ *
+ *		/usr/src			 0 /usr/src
+ *		/usr/src/cmd/aardvark.c		 8 /cmd/aardvark.c
+ *		/usr/src/cmd/armadillo.c	14 armadillo.c
+ *		/usr/tmp/zoo			 5 tmp/zoo
  *
  *  	The codes are:
  *
  *	0-28	likeliest differential counts + offset to make nonnegative 
- *	30	escape code for out-of-range count to follow in next word
- *	128-255 bigram codes, (128 most common, as determined by 'updatedb')
- *	32-127  single character (printable) ascii residue
+ *	30	switch code for out-of-range count to follow in next word
+ *	128-255 bigram codes (128 most common, as determined by 'updatedb')
+ *	32-127  single character (printable) ascii residue (ie, literal)
  *
  * SEE ALSO:	updatedb.csh, bigram.c, find.c
  * 
@@ -28,93 +38,83 @@ static char sccsid[] = "@(#)locate.code.c	4.2	(Berkeley)	%G%";
  */
 
 #include <stdio.h>
+#include <sys/param.h>
+#include "find.h"
 
-#define MAXPATH 1024		/* maximum pathname length */
-#define	RESET	30		/* switch code */
+#define BGBUFSIZE	(NBG * 2)	/* size of bigram buffer */
 
-char path[MAXPATH];
-char oldpath[MAXPATH] = " ";	
-char bigrams[257] = { 0 };
+char buf1[MAXPATHLEN] = " ";	
+char buf2[MAXPATHLEN];
+char bigrams[BGBUFSIZE + 1] = { 0 };
 
 main ( argc, argv )
 	int argc; char *argv[];
 {
-  	int count, oldcount, diffcount;
-	int j, code;
-	char bigram[3];
+	register char *cp, *oldpath = buf1, *path = buf2;
+  	int code, count, diffcount, oldcount = 0;
 	FILE *fp;
 
-	oldcount = 0;
-	bigram[2] = NULL;
-
 	if ((fp = fopen(argv[1], "r")) == NULL) {
-		printf("Usage: code common_bigrams < list > coded_list\n");
+		printf("Usage: code common_bigrams < list > squozen_list\n");
 		exit(1);
 	}
-	fgets ( bigrams, 257, fp );
-	fwrite ( bigrams, 1, 256, stdout );
+	/* first copy bigram array to stdout */
+	fgets ( bigrams, BGBUFSIZE + 1, fp );
+	fwrite ( bigrams, 1, BGBUFSIZE, stdout );
+	fclose( fp );
 
+	/* every path will fit in path buffer, so safe to use gets */
      	while ( gets ( path ) != NULL ) {
-		/*
-		   squelch unprintable chars so as not to botch decoding
-		*/
-		for ( j = 0; path[j] != NULL; j++ ) {	
-			path[j] &= 0177;		
-			if ( path[j] < 040 || path[j] == 0177 )
-				path[j] = '?';
+		/* squelch characters that would botch the decoding */
+		for ( cp = path; *cp != NULL; cp++ ) {
+			if ( *cp >= PARITY )
+				*cp &= PARITY-1;
+			else if ( *cp <= SWITCH )
+				*cp = '?';
 		}
-		count = prefix_length ( oldpath, path );
-		diffcount = count - oldcount;
-		if ( (diffcount < -14) || (diffcount > 14) ) {
-			putc ( RESET, stdout );
-			putw ( diffcount + 14, stdout );
+		/* skip longest common prefix */
+		for ( cp = path; *cp == *oldpath; cp++, oldpath++ )
+			if ( *oldpath == NULL )
+				break;
+		count = cp - path;
+		diffcount = count - oldcount + OFFSET;
+		oldcount = count;
+		if ( diffcount < 0 || diffcount > 2*OFFSET ) {
+			putc ( SWITCH, stdout );
+			putw ( diffcount, stdout );
 		}
 		else
-			putc ( diffcount + 14, stdout );	
+			putc ( diffcount, stdout );	
 
-		for ( j = count; path[j] != NULL; j += 2 ) {
-			if ( path[j + 1] == NULL ) {
-				putchar ( path[j] );
+		while ( *cp != NULL ) {
+			if ( *(cp + 1) == NULL ) {
+				putchar ( *cp );
 				break;
 			}
-			bigram[0] = path[j];
-			bigram[1] = path[j + 1];
-			/*
-			    linear search for specific bigram in string table
-			*/
-			if ( (code = strindex ( bigrams, bigram )) % 2 == 0 )
-				putchar ( (code / 2) | 0200 );	
-			else 		
-				fputs ( bigram, stdout );
+			if ( (code = bgindex ( cp )) < 0 ) {
+				putchar ( *cp++ );
+				putchar ( *cp++ );
+			}
+			else {	/* found, so mark byte with parity bit */
+				putchar ( (code / 2) | PARITY );
+				cp += 2;
+			}
 		}
-		strcpy ( oldpath, path );	
-		oldcount = count;
+		if ( path == buf1 )		/* swap pointers */
+			path = buf2, oldpath = buf1;
+		else
+			path = buf1, oldpath = buf2;
 	}
 }
 
-strindex ( string, pattern )	/* return location of pattern in string or -1 */
-	char *string, *pattern;
+bgindex ( bg )			/* return location of bg in bigrams or -1 */
+	char *bg;
 {
-	register char *s, *p, *q;
+	register char *p;
+	register char bg0 = bg[0], bg1 = bg[1];
 
-	for ( s = string; *s != NULL; s++ ) 
-		if ( *s == *pattern ) {		/* fast first char check */
-			for ( p = pattern + 1, q = s + 1; *p != NULL; p++, q++ )
-				if ( *q != *p )
-					break;
-			if ( *p == NULL )	
-				return ( q - strlen ( pattern ) - string );
-		}
-	return ( -1 );
-}
-
-prefix_length ( s1, s2 )	/* return length of longest common prefix */
-	char *s1, *s2;		/* ... of strings s1 and s2 */
-{
-	register char *start;
-
-    	for ( start = s1; *s1 == *s2; s1++, s2++ )	
-		if ( *s1 == NULL )		
-	    		break;
-    	return ( s1 - start );
+	for ( p = bigrams; *p != NULL; p++ )
+		if ( *p++ == bg0 && *p == bg1 )
+			break;
+	return ( *p == NULL ? -1 : --p - bigrams );
 }
