@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)announce.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)announce.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
+#include <sys/uio.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/wait.h>
@@ -27,71 +28,24 @@ extern char hostname[];
 
 /*
  * Announce an invitation to talk.
- *
- * Because the tty driver insists on attaching a terminal-less
- * process to any terminal that it writes on, we must fork a child
- * to protect ourselves
  */
-announce(request, remote_machine)
-	CTL_MSG *request;
-	char *remote_machine;
-{
-	int pid, val, status;
-
-	if (pid = fork()) {
-		/* we are the parent, so wait for the child */
-		if (pid == -1)		/* the fork failed */
-			return (FAILED);
-		do {
-			val = wait(&status);
-			if (val == -1) {
-				if (errno == EINTR)
-					continue;
-				/* shouldn't happen */
-				syslog(LOG_WARNING, "announce: wait: %m");
-				return (FAILED);
-			}
-		} while (val != pid);
-		if (status&0377 > 0)	/* we were killed by some signal */
-			return (FAILED);
-		/* Get the second byte, this is the exit/return code */
-		return ((status >> 8) & 0377);
-	}
-	/* we are the child, go and do it */
-	_exit(announce_proc(request, remote_machine));
-}
 	
 /*
  * See if the user is accepting messages. If so, announce that 
  * a talk is requested.
  */
-announce_proc(request, remote_machine)
+announce(request, remote_machine)
 	CTL_MSG *request;
 	char *remote_machine;
 {
-	int pid, status;
 	char full_tty[32];
 	FILE *tf;
 	struct stat stbuf;
 
 	(void)sprintf(full_tty, "%s/%s", _PATH_DEV, request->r_tty);
-	if (access(full_tty, 0) != 0)
-		return (FAILED);
-	if ((tf = fopen(full_tty, "w")) == NULL)
+	if (stat(full_tty, &stbuf) < 0 || (stbuf.st_mode&020) == 0)
 		return (PERMISSION_DENIED);
-	/*
-	 * On first tty open, the server will have
-	 * it's pgrp set, so disconnect us from the
-	 * tty before we catch a signal.
-	 */
-	ioctl(fileno(tf), TIOCNOTTY, (struct sgttyb *) 0);
-	if (fstat(fileno(tf), &stbuf) < 0)
-		return (PERMISSION_DENIED);
-	if ((stbuf.st_mode&020) == 0)
-		return (PERMISSION_DENIED);
-	print_mesg(tf, request, remote_machine);
-	fclose(tf);
-	return (SUCCESS);
+	return (print_mesg(request->r_tty, tf, request, remote_machine));
 }
 
 #define max(a,b) ( (a) > (b) ? (a) : (b) )
@@ -104,7 +58,8 @@ announce_proc(request, remote_machine)
  * try to keep the message in one piece if the recipient
  * in in vi at the time
  */
-print_mesg(tf, request, remote_machine)
+print_mesg(tty, tf, request, remote_machine)
+	char *tty;
 	FILE *tf;
 	CTL_MSG *request;
 	char *remote_machine;
@@ -113,10 +68,11 @@ print_mesg(tf, request, remote_machine)
 	struct timezone zone;
 	struct tm *localtime();
 	struct tm *localclock;
+	struct iovec iovec;
 	char line_buf[N_LINES][N_CHARS];
 	int sizes[N_LINES];
 	char big_buf[N_LINES*N_CHARS];
-	char *bptr, *lptr;
+	char *bptr, *lptr, *ttymsg();
 	int i, j, max_size;
 
 	i = 0;
@@ -162,7 +118,10 @@ print_mesg(tf, request, remote_machine)
 		*(bptr++) = '\n';
 	}
 	*bptr = '\0';
-	fprintf(tf, big_buf);
-	fflush(tf);
-	ioctl(fileno(tf), TIOCNOTTY, (struct sgttyb *) 0);
+	iovec.iov_base = big_buf;
+	iovec.iov_len = bptr - big_buf;
+	if (ttymsg(&iovec, 1, tty, 30) != NULL)
+		return (FAILED);
+
+	return (SUCCESS);
 }
