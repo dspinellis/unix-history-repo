@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ls.c	4.19 (Berkeley) %G%";
+static	char *sccsid = "@(#)ls.c	4.20 (Berkeley) %G%";
 #endif
 
 /*
@@ -613,6 +613,7 @@ getname(uid)
 		return (&names[uid][0]);
 	if (uid >= 0 && uid == outrangeuid)
 		return (outrangename);
+rescan:
 	if (init == 2) {
 		if (uid < NUID)
 			return (0);
@@ -642,13 +643,11 @@ getname(uid)
 		if (names[pw->pw_uid][0])
 			continue;
 		SCPYN(names[pw->pw_uid], pw->pw_name);
-		if (pw->pw_uid == uid) {
+		if (pw->pw_uid == uid)
 			return (&names[uid][0]);
-		}
 	}
 	init = 2;
-	endpwent();
-	return (0);
+	goto rescan;
 }
 
 char *
@@ -662,6 +661,7 @@ getgroup(gid)
 		return (&groups[gid][0]);
 	if (gid >= 0 && gid == outrangegid)
 		return (outrangegroup);
+rescan:
 	if (init == 2) {
 		if (gid < NGID)
 			return (0);
@@ -691,11 +691,9 @@ getgroup(gid)
 		if (groups[gr->gr_gid][0])
 			continue;
 		SCPYN(groups[gr->gr_gid], gr->gr_name);
-		if (gr->gr_gid == gid) {
+		if (gr->gr_gid == gid)
 			return (&groups[gid][0]);
-		}
 	}
 	init = 2;
-	endgrent();
-	return (0);
+	goto rescan;
 }
