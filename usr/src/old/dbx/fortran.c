@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)fortran.c	1.2	%G%";
+static char sccsid[] = "@(#)fortran.c	1.3	%G%";
 
 /*
  * FORTRAN dependent symbol routines.
@@ -190,7 +190,7 @@ Symbol eltype;
 	    break;
 
 	case FUNC:
-	    if (not istypename(s->type, "subroutine")) {
+	    if (not istypename(s->type, "void")) {
                 printf(" %s function ", typename(s) );
 	    }
 	    else printf(" subroutine");
@@ -514,7 +514,7 @@ for(;;){
           if(sc->symvalue.rangev.lowertype == R_ARG or
              sc->symvalue.rangev.lowertype == R_TEMP) {
 	      if( ! getbound(a,sc->symvalue.rangev.lower, 
-                    sc->symvalue.rangev.lowertype, &dim[i].lb) )
+                    sc->symvalue.rangev.lowertype, &dim[ndim].lb) )
 		error(" dynamic bounds not currently available");
 	  }
 	  else dim[ndim].lb = sc->symvalue.rangev.lower;
