@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dev_mkdb.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)dev_mkdb.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -53,7 +53,7 @@ main(argc, argv)
 
 	dirp = opendir(".");
 
-	(void)sprintf(dbtmp, "%s/dev.db.tmp", _PATH_VARRUN);
+	(void)sprintf(dbtmp, "%s/dev.tmp", _PATH_VARRUN);
 	(void)sprintf(dbname, "%s/dev.db", _PATH_VARRUN);
 	if ((db = dbm_open(dbtmp, O_CREAT|O_WRONLY|O_EXCL,
 	    S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH)) == NULL)
@@ -76,6 +76,7 @@ main(argc, argv)
 			error("dbm_store");
 	}
 	(void)dbm_close(db);
+	(void)strcat(dbtmp, DBM_SUFFIX);
 	if (rename(dbtmp, dbname)) {
 		(void)fprintf(stderr, "dev_mkdb: %s to %s: %s.\n",
 		    dbtmp, dbname, strerror(errno));
