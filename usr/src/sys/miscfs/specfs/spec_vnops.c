@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spec_vnops.c	7.13 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -38,40 +38,41 @@ int	spec_lookup(),
 	spec_lock(),
 	spec_unlock(),
 	spec_close(),
+	spec_ebadf(),
 	spec_badop(),
 	spec_nullop();
 
 struct vnodeops spec_vnodeops = {
-	spec_lookup,
-	spec_badop,
-	spec_badop,
-	spec_open,
-	spec_close,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_read,
-	spec_write,
-	spec_ioctl,
-	spec_select,
-	spec_badop,
-	spec_nullop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_nullop,
-	spec_nullop,
-	spec_lock,
-	spec_unlock,
-	spec_badop,
-	spec_strategy,
+	spec_lookup,		/* lookup */
+	spec_badop,		/* create */
+	spec_badop,		/* mknod */
+	spec_open,		/* open */
+	spec_close,		/* close */
+	spec_ebadf,		/* access */
+	spec_ebadf,		/* getattr */
+	spec_ebadf,		/* setattr */
+	spec_read,		/* read */
+	spec_write,		/* write */
+	spec_ioctl,		/* ioctl */
+	spec_select,		/* select */
+	spec_badop,		/* mmap */
+	spec_nullop,		/* fsync */
+	spec_badop,		/* seek */
+	spec_badop,		/* remove */
+	spec_badop,		/* link */
+	spec_badop,		/* rename */
+	spec_badop,		/* mkdir */
+	spec_badop,		/* rmdir */
+	spec_badop,		/* symlink */
+	spec_badop,		/* readdir */
+	spec_badop,		/* readlink */
+	spec_badop,		/* abortop */
+	spec_nullop,		/* inactive */
+	spec_nullop,		/* reclaim */
+	spec_lock,		/* lock */
+	spec_unlock,		/* unlock */
+	spec_badop,		/* bmap */
+	spec_strategy,		/* strategy */
 };
 
 /*
@@ -307,7 +308,16 @@ spec_close(vp, flag, cred)
 }
 
 /*
- * Block device bad operation
+ * Special device failed operation
+ */
+spec_ebadf()
+{
+
+	return (EBADF);
+}
+
+/*
+ * Special device bad operation
  */
 spec_badop()
 {
@@ -317,7 +327,7 @@ spec_badop()
 }
 
 /*
- * Block device null operation
+ * Special device null operation
  */
 spec_nullop()
 {
