@@ -110,9 +110,8 @@ long tmin = LONG_MAX;		/* minimum round trip time */
 long tmax;			/* maximum round trip time */
 u_long tsum;			/* sum of all times, for doing average */
 
-u_long inet_addr();
-char *inet_ntoa(), *pr_addr();
-int catcher(), finish();
+char *pr_addr();
+void catcher(), finish();
 
 main(argc, argv)
 	int argc;
@@ -353,6 +352,7 @@ main(argc, argv)
  * launched exactly at 1-second intervals).  This does not affect the
  * quality of the delay and loss statistics.
  */
+void
 catcher()
 {
 	int waittime;
@@ -662,6 +662,7 @@ tvsub(out, in)
  * finish --
  *	Print out statistics, and give up.
  */
+void
 finish()
 {
 	(void)signal(SIGINT, SIG_IGN);

@@ -23,17 +23,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)umount.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)umount.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
-/*
- * umount
- */
 #include <sys/param.h>
-#include <stdio.h>
-#include <fstab.h>
 #include <sys/stat.h>
 #include <sys/mount.h>
+
 #ifdef NFS
 #include <sys/time.h>
 #include <sys/socket.h>
@@ -43,20 +39,23 @@ static char sccsid[] = "@(#)umount.c	5.15 (Berkeley) %G%";
 #include <rpc/pmap_clnt.h>
 #include <rpc/pmap_prot.h>
 #include <nfs/rpcv2.h>
-#endif /* NFS */
+#endif
+
+#include <fstab.h>
+#include <stdio.h>
+#include <string.h>
 
 #ifdef NFS
-extern int errno;
 int xdr_dir();
-char	*index();
 char *nfshost;
-#endif /* NFS */
+#endif
 
 int	vflag, all, errs, fake;
 int	fflag = MNT_NOFORCE;
-char	*rindex(), *getmntname();
-#define MNTON	1
-#define MNTFROM	2
+char	*getmntname();
+
+#define	MNTON	1
+#define	MNTFROM	2
 #define	MNTTYPE 3
 
 int *typelist, *maketypelist();
@@ -167,16 +166,15 @@ allocfsent(fs)
 {
 	register struct fstab *new;
 	register char *cp;
-	char *malloc();
 
 	new = (struct fstab *)malloc((unsigned)sizeof (*fs));
-	cp = malloc((unsigned)strlen(fs->fs_file) + 1);
+	cp = (char *)malloc((unsigned)strlen(fs->fs_file) + 1);
 	strcpy(cp, fs->fs_file);
 	new->fs_file = cp;
-	cp = malloc((unsigned)strlen(fs->fs_type) + 1);
+	cp = (char *)malloc((unsigned)strlen(fs->fs_type) + 1);
 	strcpy(cp, fs->fs_type);
 	new->fs_type = cp;
-	cp = malloc((unsigned)strlen(fs->fs_spec) + 1);
+	cp = (char *)malloc((unsigned)strlen(fs->fs_spec) + 1);
 	strcpy(cp, fs->fs_spec);
 	new->fs_spec = cp;
 	new->fs_passno = fs->fs_passno;
@@ -336,7 +334,6 @@ maketypelist(fslist)
 {
 	register char *nextcp;
 	register int *av, i;
-	char *malloc();
 
 	if (fslist == NULL)
 		return(NULL);

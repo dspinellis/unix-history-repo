@@ -15,10 +15,6 @@ char copyright[] =
 static char sccsid[] = "@(#)savecore.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
-/*
- * savecore
- */
-
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
@@ -521,7 +517,7 @@ log(level, msg, a1, a2)
 
 Perror(level, msg, s)
 	int level;
-	char *msg;
+	char *msg, *s;
 {
 	int oerrno = errno;
 	

@@ -59,7 +59,6 @@ main(argc, argv)
 	exit(stat);
 }
 
-static
 add(name, ignoreebusy)
 	char *name;
 	int ignoreebusy;
@@ -88,7 +87,6 @@ add(name, ignoreebusy)
 	return(0);
 }
 
-static
 usage()
 {
 	fprintf(stderr, "usage: swapon [-a] [special_file ...]\n");

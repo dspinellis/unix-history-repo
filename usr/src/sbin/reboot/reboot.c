@@ -15,9 +15,6 @@ char copyright[] =
 static char sccsid[] = "@(#)reboot.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
-/*
- * Reboot
- */
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/syslog.h>
@@ -109,6 +106,7 @@ main(argc, argv)
 	exit(1);
 }
 
+void
 dingdong()
 {
 	/* RRRIIINNNGGG RRRIIINNNGGG */
