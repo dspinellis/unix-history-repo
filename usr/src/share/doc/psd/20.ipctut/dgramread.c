@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dgramread.c	6.3 (Berkeley) %G%
+.\"	@(#)dgramread.c	6.4 (Berkeley) %G%
 .\"
 #include <sys/types.h>
 #include <sys/socket.h>
