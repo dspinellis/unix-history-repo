@@ -1293,9 +1293,12 @@ clean_ttys()
 				 || strcmp(old_getty, sp->se_getty) != 0
 				 || old_window && strcmp(old_window, sp->se_window) != 0
 				 || old_type && strcmp(old_type, sp->se_type) != 0
-				)
+				) {
 				/* Don't set SE_SHUTDOWN here */
+				sp->se_nspace = 0;
+				sp->se_started = 0;
 				kill(sp->se_process, SIGHUP);
+			}
 			if (old_getty)
 				free(old_getty);
 			if (old_getty)
