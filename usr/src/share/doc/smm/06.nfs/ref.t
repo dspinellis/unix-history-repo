@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)ref.t	5.1 (Berkeley) %G%
+.\"	@(#)ref.t	5.2 (Berkeley) %G%
 .\"
 .sh 1 "Bibliography"
 .ip [Baker91] 16
@@ -39,7 +39,7 @@ June 1990.
 Christopher. A. Kent, \fICache Coherence in Distributed Systems\fR,
 Research Report 87/4,
 Digital Equipment Corporation Western Research Laboratory, April 1987.
-.ip [Kent87] 16
+.ip [Kent87a] 16
 Christopher. A. Kent and Jeffrey C. Mogul,
 \fIFragmentation Considered Harmful\fR, Research Report 87/3,
 Digital Equipment Corporation Western Research Laboratory, Dec. 1987.
