@@ -14,29 +14,27 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spec_vnops.c	7.2 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "time.h"
+#include "user.h"
+#include "kernel.h"
 #include "conf.h"
 #include "buf.h"
 #include "vnode.h"
 #include "../ufs/inode.h"
 #include "stat.h"
-#include "uio.h"
 #include "errno.h"
 #include "malloc.h"
 
 int	blk_open(),
-	blk_access(),
 	blk_read(),
 	blk_write(),
 	blk_strategy(),
 	blk_ioctl(),
 	blk_select(),
-	blk_inactive(),
 	blk_lock(),
 	blk_unlock(),
 	blk_close(),
@@ -44,7 +42,9 @@ int	blk_open(),
 	blk_nullop();
 
 int	ufs_getattr(),
-	ufs_setattr();
+	ufs_setattr(),
+	ufs_access(),
+	ufs_inactive();
 
 struct vnodeops blk_vnodeops = {
 	blk_badop,
@@ -52,7 +52,7 @@ struct vnodeops blk_vnodeops = {
 	blk_badop,
 	blk_open,
 	blk_close,
-	blk_access,
+	ufs_access,
 	ufs_getattr,
 	ufs_setattr,
 	blk_read,
@@ -71,7 +71,7 @@ struct vnodeops blk_vnodeops = {
 	blk_badop,
 	blk_badop,
 	blk_badop,
-	blk_inactive,
+	ufs_inactive,
 	blk_lock,
 	blk_unlock,
 	blk_badop,
@@ -83,6 +83,7 @@ struct vnodeops blk_vnodeops = {
  * of special files to initialize and
  * validate before actual IO.
  */
+/* ARGSUSED */
 blk_open(vp, mode, cred)
 	register struct vnode *vp;
 	int mode;
@@ -114,13 +115,8 @@ blk_access(vp, mode, cred)
 	int mode;
 	struct ucred *cred;
 {
-	register struct inode *ip = VTOI(vp);
-	int error;
 
-	if ((ip->i_flag & ILOCKED) == 0)
-		printf("access called with %d not locked\n", ip->i_number);
-	error = iaccess(ip, mode, cred);
-	return (error);
+	return (iaccess(VTOI(vp), mode, cred));
 }
 
 /*
@@ -133,17 +129,16 @@ blk_read(vp, uio, offp, ioflag, cred)
 	int ioflag;
 	struct ucred *cred;
 {
-	register struct inode *ip = VTOI(vp);
 	int count, error;
 
-	if (vp->v_type == VBLK && ip)
-		ILOCK(ip);
+	if (vp->v_type == VBLK && vp->v_data)
+		VOP_LOCK(vp);
 	uio->uio_offset = *offp;
 	count = uio->uio_resid;
-	error = readblkvp(vp, uio, cred);
+	error = readblkvp(vp, uio, cred, ioflag);
 	*offp += count - uio->uio_resid;
-	if (vp->v_type == VBLK && ip)
-		IUNLOCK(ip);
+	if (vp->v_type == VBLK && vp->v_data)
+		VOP_UNLOCK(vp);
 	return (error);
 }
 
@@ -157,23 +152,23 @@ blk_write(vp, uio, offp, ioflag, cred)
 	int ioflag;
 	struct ucred *cred;
 {
-	register struct inode *ip = VTOI(vp);
 	int count, error;
 
-	if (vp->v_type == VBLK && ip)
-		ILOCK(ip);
+	if (vp->v_type == VBLK && vp->v_data)
+		VOP_LOCK(vp);
 	uio->uio_offset = *offp;
 	count = uio->uio_resid;
-	error = writeblkvp(vp, uio, cred);
+	error = writeblkvp(vp, uio, cred, ioflag);
 	*offp += count - uio->uio_resid;
-	if (vp->v_type == VBLK && ip)
-		IUNLOCK(ip);
+	if (vp->v_type == VBLK && vp->v_data)
+		VOP_UNLOCK(vp);
 	return (error);
 }
 
 /*
  * Device ioctl operation.
  */
+/* ARGSUSED */
 blk_ioctl(vp, com, data, fflag, cred)
 	struct vnode *vp;
 	register int com;
@@ -181,8 +176,7 @@ blk_ioctl(vp, com, data, fflag, cred)
 	int fflag;
 	struct ucred *cred;
 {
-	register struct inode *ip = VTOI(vp);
-	dev_t dev = ip->i_rdev;
+	dev_t dev = vp->v_rdev;
 
 	switch (vp->v_type) {
 
@@ -198,12 +192,12 @@ blk_ioctl(vp, com, data, fflag, cred)
 	}
 }
 
+/* ARGSUSED */
 blk_select(vp, which, cred)
 	struct vnode *vp;
 	int which;
 	struct ucred *cred;
 {
-	register struct inode *ip = VTOI(vp);
 	register dev_t dev;
 
 	switch (vp->v_type) {
@@ -212,7 +206,7 @@ blk_select(vp, which, cred)
 		return (1);		/* XXX */
 
 	case VCHR:
-		dev = ip->i_rdev;
+		dev = vp->v_rdev;
 		return (*cdevsw[major(dev)].d_select)(dev, which);
 	}
 }
@@ -247,30 +241,73 @@ blk_unlock(vp)
 	return (0);
 }
 
-blk_inactive(vp)
-	struct vnode *vp;
-{
-	struct inode *ip = VTOI(vp);
-	struct vnode *devvp = 0;
-	int error;
-
-	if (vp->v_count > 0)
-		return (0);
-	return (irele(ip));
-}
-
 /*
  * Device close routine
  */
+/* ARGSUSED */
 blk_close(vp, flag, cred)
-	struct vnode *vp;
+	register struct vnode *vp;
 	int flag;
 	struct ucred *cred;
 {
+	register struct inode *ip = VTOI(vp);
 	dev_t dev = vp->v_rdev;
-	int type = vp->v_type;
+	int (*cfunc)();
+	int error, mode;
 
-	return (closei(dev, type, flag));
+	if (vp->v_count > 1 && !(ip->i_flag & ILOCKED))
+		ITIMES(ip, &time, &time);
+
+	switch (vp->v_type) {
+
+	case VCHR:
+		if (vp->v_count > 1)
+			return (0);
+		cfunc = cdevsw[major(dev)].d_close;
+		mode = IFCHR;
+		break;
+
+	case VBLK:
+		/*
+		 * On last close of a block device (that isn't mounted)
+		 * we must invalidate any in core blocks, so that
+		 * we can, for instance, change floppy disks.
+		 */
+		bflush(dev);
+		binval(dev);
+		/*
+		 * We don't want to really close the device if it is still
+		 * in use. Since every use (buffer, inode, swap, cmap)
+		 * holds a reference to the vnode, and because we ensure
+		 * that there cannot be more than one vnode per device,
+		 * we need only check that we are down to the last
+		 * reference before closing.
+		 */
+		if (vp->v_count > 1)
+			return (0);
+		cfunc = bdevsw[major(dev)].d_close;
+		mode = IFBLK;
+		break;
+
+	default:
+		panic("blk_close: not special");
+	}
+
+	/* XXX what is this doing below the vnode op call */
+	if (setjmp(&u.u_qsave)) {
+		/*
+		 * If device close routine is interrupted,
+		 * must return so closef can clean up.
+		 */
+		error = EINTR;
+	} else
+		error = (*cfunc)(dev, flag, mode);
+	/*
+	 * Most device close routines don't return errors,
+	 * and dup2() doesn't work right on error.
+	 */
+	error = 0;		/* XXX */
+	return (error);
 }
 
 /*
