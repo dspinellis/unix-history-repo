@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)portal_vfsops.c	8.2 (Berkeley) %G%
+ *	@(#)portal_vfsops.c	8.3 (Berkeley) %G%
  *
  * $Id: portal_vfsops.c,v 1.5 1992/05/30 10:25:27 jsp Exp jsp $
  */
@@ -61,10 +61,8 @@ portal_mount(mp, path, data, ndp, p)
 	u_int size;
 	struct portalmount *fmp;
 	struct vnode *rvp;
-	struct sockaddr_un *unp;
 	struct file *fp;
 	struct socket *so;
-	char cfile[MAXPATHLEN];
 
 #ifdef PORTAL_DIAGNOSTIC
 	printf("portal_mount(mp = %x)\n", mp);
@@ -140,10 +138,9 @@ portal_unmount(mp, mntflags, p)
 	int mntflags;
 	struct proc *p;
 {
-	int error;
-	int flags = 0;
 	extern int doforce;
 	struct vnode *rootvp = VFSTOPORTAL(mp)->pm_root;
+	int error, flags = 0;
 
 #ifdef PORTAL_DIAGNOSTIC
 	printf("portal_unmount(mp = %x)\n", mp);
@@ -221,7 +218,6 @@ portal_root(mp, vpp)
 	struct vnode **vpp;
 {
 	struct vnode *vp;
-	int error;
 
 #ifdef PORTAL_DIAGNOSTIC
 	printf("portal_root(mp = %x)\n", mp);
@@ -253,12 +249,6 @@ portal_statfs(mp, sbp, p)
 	struct statfs *sbp;
 	struct proc *p;
 {
-	struct filedesc *fdp;
-	int lim;
-	int i;
-	int last;
-	int freefd;
-
 #ifdef PORTAL_DIAGNOSTIC
 	printf("portal_statfs(mp = %x)\n", mp);
 #endif
