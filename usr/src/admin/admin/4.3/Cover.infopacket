@@ -1,19 +1,11 @@
-.\" Copyright (c) 1986 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
-.\"
-.\"	@(#)Cover.infopacket	5.3 (Berkeley) %G%
-.\"
+.\" @(#)Cover.infopacket	5.4 (CSRG - distribution) %G%
 .so HEADERS
-.NH
-.LP
-.rs
+.FH
 .sp .75i
 .tl '''April 5, 1986'
 .LP
 Dear Colleague:
 .PP
-
 We are happy to send you information about our April
 1986 revision of the Fourth
 Berkeley Software Distribution.  The Fourth Berkeley Software
@@ -92,6 +84,10 @@ Installing and Operating 4.3BSD
 .R
 describes what is involved in running 4.3BSD.  This document will
 help you plan your operation's staffing.
+.IP \(bu
+.B
+Notes on the Microvax II support in the 4.3BSD Distribution.
+.R
 .SH
 How to obtain 4.3BSD
 .PP
@@ -100,23 +96,24 @@ All previous 4.2BSD licensees will be required to sign
 Addendum Number One to the revised Berkeley License Agreement (6/83).  The
 fee for the 4.3BSD update is $600.00.  For new licensees, we require 
 execution of the revised Berkeley License Agreement (4/86), 
-in which reference to the inclusion of 4.3BSD has been incorporated.  The
+in which reference to the inclusion of 4.3BSD has been incorporated.  
+In addition, foreign licensees must execute Addendum Number One for 
+Foreign Licensees. The
 fee for release 4.3BSD for new licensees is $1,000.00. 
 .PP
 Because we are a research and development organization and not a commercial
-organization, we make our research results available for a fee, which covers
-only our costs for the distribution.
+organization, we make our research results available for a license fee.
 We distribute only the whole system
 and cannot send individual pieces of the system.
 Because the software is distributed `As Is' and is partially derived
-from licensed material, we are required 
-to have a formal license arrangement with each
+from licensed material, we are required by the
+University of California to have a formal license arrangement with each
 organization to which we distribute. 
 All material is considered licensed material regardless of its
 availability from other sources which make such material publicly available.
-In addition, we are required to confirm the existence of your organization's
-Software Agreement with AT&T and to secure a copy of it before 4.3BSD
-can be shipped.
+In addition, we are required
+to secure a copy of the AT&T Software Agreement with your organization 
+and confirm it with AT&T before the software can be shipped.
 Finally, we ask that you supply us with the configuration
 of your system and identify the administrative and technical contacts.
 .PP
@@ -125,7 +122,7 @@ following material before the distribution can be sent:
 .IP \(bu
 \fBTwo\fR copies of the \fBcurrent\fR Software Agreement between your company or institution and
 AT&T (Western Electric) that authorize you as a source licensee for
-UNIX/32V; System III; System V, 1.0; or System V, 2.0.  Note that a complete copy of the
+UNIX/32V; System III; System V, 1.0; or System V, 2.0.  Note that a complete copy of the   
 agreement up to the Schedule is required, not 
 just the cover and/or signature page.
 Letters authorizing additional CPUs are not sufficient and not necessary 
@@ -154,20 +151,18 @@ returned to you after it has been executed on behalf of The Regents of the
 University of California along with Schedule A (a list of the material
 being licensed).
 .IP \(bu
-A check from a U.S. bank for $1,000.00 U.S. (for 4.3BSD) or $600.00 (for
-4.3BSD update) payable to 
-``The Regents of the University of California''
-must be received before the distribution can be sent.
-If you must issue a Purchase Order, please issue one that is blank-backed.
+A prepayment of $1000.00 U.S. (for 4.3BSD) or $600.00 
+(for update) must be received before
+the distribution can be sent.  Checks should be made
+payable to 
+``The Regents of the University of California.'' 
+If you must issue a Purchase Order, together with your prepayment, 
+please issue one that is blank-backed.
 If this is not possible, insert and initialize in the body of the Purchase
 Order the following clause: ``The terms and conditions of this Purchase
-Order are not accepted by The Regents of the University of California.
-The revised Berkeley License Agreement
-(4/86) governs.'' In the case of 4.2 licensees, substitute ``The terms and
-conditions of this Purchase Order are not accepted by The Regents
-of the University
-of California.  The revised Berkeley License Agreement (6/83)
-and Addendum Number One govern.''
+Order are not acceptable.  The revised Berkeley License Agreement
+(4/86) prevails.'' In the case of 4.2 licensees, substitute ``The revised
+Berkeley License Agreement (6/83) and Addendum Number One prevail.''
 .IP \(bu
 The Site Information Form and Equipment List completely filled out and dated.
 The signed Berkeley License Agreement will be sent to the person listed
@@ -199,13 +194,11 @@ we ask that organizations beyond the North American continent pay
 the collect shipping charges.
 .PP
 The most expedient way to insure that your full distribution is sent as quickly
-as possible is to include in a single package two copies
-of the completed and properly
+as possible is to include in a single package two copies of the completed and properly
 signed Berkeley License Agreement (\fBwithout modification\fR), two complete copies of
 your AT&T Software Agreement, the appropriate check properly made out to 
 ``The Regents of the University of California,'' and a completely filled out
-Site Information Form and Equipment List,
-and to send this single package to the address noted above.
+Site Information Form and Equipment List and to send this single package to the address noted above.
 .PP
 Please note that if you modify the 
 Berkeley License Agreement, you may experience
@@ -243,30 +236,28 @@ chooses not to redistribute internally, each entity
 may receive 4.3BSD from the distribution group by forwarding a letter from
 the parent organization to The Regents of the University of California
 authorizing this entity to receive 4.3BSD.
-The form of the authorization required is as follows:
+The form of the authorization should be:
 .RS
 .IP 
-``I authorize (entity's name), a (division, company) of (organization's name),
+I authorize (entity's name), a (division, company) of (organization's name),
 to receive a copy of 4.3BSD under the terms and conditions of the revised
-Berkeley License Agreement (4/86) for 4.3BSD 
+Berkeley License Agreement (4/86) for 4.3BSD  held
 between (organization's name) and The Regents of the University of California.
 I warrant that (entity's name) will abide by said Agreement,
 and that I have the authority to make this authorization on behalf of
 (organization's name).
-Please send a copy of 4.3BSD to
-(designate name and address of organization/department).''
+Please send a copy of 4.3BSD to (designate name and address of organization/department).
 .RE
 .sp
-In the case of 4.2 licensees, the above quoted language must be used except
-that the reference to ``Berkeley License Agreement (4/86) for 4.3BSD'' should
-be replaced by ``Berkeley License Agreement (6/83) and Addendum Number One for
-4.3BSD.''
-.sp
-The above authorizations must be signed by the same officeholder (or 
-replacement) who signed the 
-relevant Berkeley License Agreement.
+In the case of 4.2 licensees, substitute ``under the terms and conditions
+of the revised Berkeley License Agreement (6/83) and Addendum Number One
+for 4.3BSD held between (organization's name) and The Regents of the University
+of California.''
+The above authorization must be signed by the same officeholder (or 
+replacement)
+who signed the relevant Berkeley License Agreement.
 The cost of the distribution (or update)
-is applicable to each copy distributed.
+is unchanged.
 .RE
 .IP \(bu
 If your AT&T Software Agreement is with an individual entity within a large organization,
@@ -278,15 +269,18 @@ Special Cases
 .PP
 \fBUniversity of California Sites\fR.
 If you are a part of the University of California,
-\fByou must use the following procedure:\fR
-Ask Pam True (415) 642-6348 in Berkeley Campus Materiel Management
-for an application for an additional CPU 
-authorization under The Regents of the University
-of California's Software Agreement with AT&T.  We will receive the completed
-application from Materiel Management. In addition, the following items must
+the following requirements apply:
+In order to run 4.3BSD on any CPU, you must have a CPU authorization
+under the Regents of the University of California Software
+Agreement with AT&T.  This can be obtained by contacting
+Pam True on (415) 642-6348 in Berkeley Campus Materiel Management
+for an application. 
+A copy of this should be sent to us. If you are upgrading from 4.2BSD
+and do not have a new CPU, this is not necessary.  
+In addition, the following items must
 be sent to the Computer Systems Research Group:
-1) a letter signed by the Director or Head of Department requesting 4.3BSD,
-stating that you have read and understood the Berkeley
+1) a letter of authorization signed by the Director or Head of Department 
+requesting 4.3BSD, stating that you have read and understood the Berkeley
 License Agreement and that your organization will abide by it, 2)
 an IOC for $1,000.00 or $600.00 (update), and 3) a Site Information Form and
 Equipment List.
@@ -330,15 +324,9 @@ for 4.3BSD and ask that
 the Contracting Officer sign the Berkeley License
 Agreement for 4.3BSD. 
 The Contracting Officer should then return the signed 
-Berkeley License Agreement directly to the Computer Systems Research Group
-with a cover
+Berkeley License Agreement directly to the Computer Systems Research Group  with a cover
 letter stating that the contractor is hereby authorized to receive a copy
 of 4.3BSD.
-.SH
-Additional Copies of Documentation
-.PP
-If you wish additional copies of the documentation, please contact
-Penny Gee at (415) 642-5205.
 .SH
 A Special Note 
 .PP
@@ -355,7 +343,6 @@ If you have questions about the licensing process after reading
 this letter, you may call Pauline Schwartz at (415) 642-7780,
 write to her, or contact her via electronic mail at pauline@berkeley.edu. or
 ucbvax!pauline. 
-She will not be able to answer technical questions.
 .sp 2
 .ti +2.5i
 Sincerely yours,
@@ -365,3 +352,5 @@ Professor Domenico Ferrari
 .br
 .ti +2.5i
 Computer Systems Research Group
+
+
