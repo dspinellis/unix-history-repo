@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)table.c	1.12 (Berkeley) %G%";
+static char *sccsid ="@(#)table.c	1.13 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -45,7 +45,7 @@ SCONV,	INTAREG|FORCC,
 		"	cvtdf	AL,A1\n",
 
 SCONV,	INTAREG|FORCC,
-	SAREG|AWD,	ANYSIGNED|TUNSIGNED|TULONG,
+	SAREG|AWD,	ANYSIGNED,
 	SANY,	TFLOAT,
 		NAREG|NASL,	RESC1|RESCC,
 		"	cvtZLf	AL,TA1\n",
@@ -750,6 +750,16 @@ ASG OPFLOAT,	INAREG|INTAREG|FOREFF|FORCC,
 	SAREG|AWD,	TDOUBLE,
 		NAREG,	RLEFT|RESC1|RESCC,
 		"	cvtfd	AL,A1\n	OD2	AR,A1\n	cvtdf	A1,AL\n",
+
+ASG OPFLOAT,	INAREG|FOREFF|FORCC,
+	SAREG|AWD,	ANYFIXED,
+#ifndef SPRECC
+	SAREG|AWD,	TDOUBLE,		/* force FLOAT to register */
+#else
+	SAREG|AWD,	TFLOAT|TDOUBLE,
+#endif
+		NAREG,	RLEFT|RESCC,	/* usable() knows we need a reg pair */
+		"	ZG\n",
 
 OPFLOAT,	INAREG|INTAREG|FORCC,
 	STAREG,	TDOUBLE,
