@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ps.4	6.2 (Berkeley) %G%
+.\"	@(#)ps.4	6.3 (Berkeley) %G%
 .\"
 .TH PS 4 ""
 .UC 5
@@ -45,12 +45,12 @@ The next
 .I count
 longwords are the addresses in refresh memory where
 the refresh buffers lie.
-The driver will cycle thru these refresh buffers displaying them one by one
+The driver will cycle through these refresh buffers displaying them one by one
 on the screen.
 .TP
 PSIOAUTOMAP
 .br
-Start automatically passing the display file thru the matrix processor and
+Start automatically passing the display file through the matrix processor and
 into the refresh buffer.
 The argument is an address in user memory where the following data resides.
 The first longword is a
@@ -82,7 +82,7 @@ refresh the screen.
 PSIOSINGLEMAP
 .br
 Single step the matrix process.
-The driver does not automatically feed display files thru the matrix unit.
+The driver does not automatically feed display files through the matrix unit.
 .TP
 PSIOSINGLEBUFFER
 .br
