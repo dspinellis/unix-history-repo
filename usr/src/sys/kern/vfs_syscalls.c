@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.78.1.1 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.79 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -466,7 +466,7 @@ chdir(p, uap, retval)
 	struct nameidata nd;
 
 	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
-	if (error = chdirec(&nd))
+	if (error = chdirec(&nd, p))
 		return (error);
 	vrele(fdp->fd_cdir);
 	fdp->fd_cdir = nd.ni_vp;
@@ -491,7 +491,7 @@ chroot(p, uap, retval)
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
 	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
-	if (error = chdirec(&nd))
+	if (error = chdirec(&nd, p))
 		return (error);
 	if (fdp->fd_rdir != NULL)
 		vrele(fdp->fd_rdir);
