@@ -1,11 +1,9 @@
-/*	tftp.h	4.1	82/08/16	*/
+/*	tftp.h	4.2	83/06/11	*/
 
 /*
  * Trivial File Transfer Protocol (IEN-133)
  */
 #define	SEGSIZE		512		/* data segment size */
-#define	TIMEOUT		5		/* retransmits every 5 seconds */
-#define	MAXTIMEOUT	(5*TIMEOUT)	/* abort if no success by then */
 
 /*
  * Packet types.
