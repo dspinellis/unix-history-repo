@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_proc.c	7.8 (Berkeley) %G%
+ *	@(#)kern_proc.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -90,14 +90,16 @@ inferior(p)
 	return (1);
 }
 
+/*
+ * Locate a process by number
+ */
 struct proc *
 pfind(pid)
 	register pid;
 {
-	register struct proc *p;
+	register struct proc *p = pidhash[PIDHASH(pid)];
 
-	for (p = &proc[pidhash[PIDHASH(pid)]] ; 
-	     p != &proc[0]; p = &proc[p->p_idhash])
+	for (; p; p = p->p_hash)
 		if (p->p_pid == pid)
 			return (p);
 	return ((struct proc *)0);
@@ -114,7 +116,7 @@ pgfind(pgid)
 
 	for (; pgrp; pgrp = pgrp->pg_hforw)
 		if (pgrp->pg_id == pgid)
-			return(pgrp);
+			return (pgrp);
 	return ((struct pgrp *)0);
 }
 
