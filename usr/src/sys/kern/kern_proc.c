@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.8	%G%	*/
+/*	kern_proc.c	4.9	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -395,9 +395,6 @@ setregs()
 {
 	register int (**rp)();
 	register i;
-#ifdef UCBIPC
-	register struct port *pt;
-#endif UCBIPC
 	long sigmask;
 
 	for(rp = &u.u_signal[0], sigmask = 1L; rp < &u.u_signal[NSIG];
@@ -434,21 +431,8 @@ setregs()
 	u.u_ar0[PC] = u.u_exdata.ux_entloc + 2; /* skip over entry mask */
 	for(i=0; i<NOFILE; i++) {
 		if (u.u_pofile[i]&EXCLOSE) {
-#ifndef UCBIPC
 			closef(u.u_ofile[i]);
 			u.u_ofile[i] = NULL;
-#else UCBIPC
-			if (u.u_pofile[i]&ISPORT) {
-				pt = u.u_oport[i];
-				if (--pt->pt_count == 0)
-					ptclose(pt);
-				u.u_pofile[i] &= ~ISPORT;
-				u.u_oport[i] = NULL;
-			} else {
-				closef(u.u_ofile[i]);
-				u.u_ofile[i] = NULL;
-			}
-#endif UCBIPC
 			u.u_pofile[i] &= ~EXCLOSE;
 		}
 	}
@@ -485,9 +469,6 @@ exit(rv)
 	register int i;
 	register struct proc *p, *q;
 	register struct file *f;
-#ifdef UCBIPC
-	register struct port *pt;
-#endif UCBIPC
 	register int x;
 
 #ifdef PGINPROF
@@ -526,22 +507,9 @@ exit(rv)
 		p->p_flag &= ~SVFDONE;
 	}
 	for(i=0; i<NOFILE; i++) {
-#ifndef UCBIPC
 		f = u.u_ofile[i];
 		u.u_ofile[i] = NULL;
 		closef(f);
-#else UCBIPC
-		if (u.u_pofile[i]&ISPORT) {
-			pt = u.u_oport[i];
-			if (--pt->pt_count == 0)
-				ptclose(pt);
-			u.u_oport[i] = NULL;
-		} else {
-			f = u.u_ofile[i];
-			u.u_ofile[i] = NULL;
-			closef(f);
-		}
-#endif UCBIPC
 	}
 	plock(u.u_cdir);
 	iput(u.u_cdir);
@@ -723,6 +691,8 @@ fork1(isvfork)
 	 *  not su and too many procs owned; or
 	 *  not su and would take last slot.
 	 */
+	if (p2==NULL)
+		tablefull("proc");
 	if (p2==NULL || (u.u_uid!=0 && (p2==procNPROC-1 || a>MAXUPRC))) {
 		u.u_error = EAGAIN;
 		if (!isvfork) {
