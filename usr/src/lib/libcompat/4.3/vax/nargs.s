@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)nargs.s	5.1 (Berkeley) %G%";
+	.asciz	"@(#)nargs.s	5.2 (Berkeley) %G%"
 #endif not lint
 
 /* C library -- nargs */

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)frexp.s	5.1 (Berkeley) %G%";
+	.asciz	"@(#)frexp.s	5.2 (Berkeley) %G%"
 #endif not lint
 
 /* C library -- frexp(value, eptr) */

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)getgroups.s	5.1 (Berkeley) %G%";
+_sccsid:.asciz	"@(#)getgroups.s	5.2 (Berkeley) %G%"
 #endif not lint
 
 #include "SYS.h"

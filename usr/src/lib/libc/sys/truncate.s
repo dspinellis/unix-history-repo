@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)truncate.s	5.1 (Berkeley) %G%";
+_sccsid:.asciz	"@(#)truncate.s	5.2 (Berkeley) %G%"
 #endif not lint
 
 #include "SYS.h"

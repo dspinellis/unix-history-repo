@@ -5,10 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wait3.s	5.1 (Berkeley) %G%";
+_sccsid:.asciz	"@(#)wait3.s	5.2 (Berkeley) %G%"
 #endif not lint
 
-/*	@(#)wait3.s	5.1	(Berkeley)	%G%	*/
+/*	@(#)wait3.s	5.2	(Berkeley)	%G%	*/
 
 /*
  * C library -- wait3

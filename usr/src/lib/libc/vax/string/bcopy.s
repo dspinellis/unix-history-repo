@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)bcopy.s	5.1 (Berkeley) %G%";
+	.asciz	"@(#)bcopy.s	5.2 (Berkeley) %G%"
 #endif not lint
 
 /* bcopy(from, to, size) */
