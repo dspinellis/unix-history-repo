@@ -10,7 +10,7 @@
 # include <string.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)mime.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mime.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -82,7 +82,6 @@ mime8to7(mci, header, e, boundary)
 	size_t sectionsize, sectionhighbits;
 	char bbuf[128];
 	char buf[MAXLINE];
-	extern char *hvalue();
 
 	if (tTd(43, 1))
 	{

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.21 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -74,7 +74,6 @@ maketemp(from)
 	char *pbp;
 	char peekbuf[8];
 	char bufbuf[MAXLINE];
-	extern char *hvalue();
 	extern bool isheader();
 	extern char *index();
 
