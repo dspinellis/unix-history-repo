@@ -6,7 +6,7 @@
  *
  *	@(#)if_le.c	8.2 (Berkeley) %G%
  *
- * from: $Header: if_le.c,v 1.23 93/04/21 02:39:38 torek Exp $
+ * from: $Header: if_le.c,v 1.25 93/10/31 04:47:50 leres Locked $
  */
 
 #include "bpfilter.h"
@@ -159,7 +159,6 @@ leattach(parent, self, args)
 	struct ifnet *ifp = &sc->sc_if;
 	register struct bootpath *bp;
 	register int a, pri;
-#define	ISQUADALIGN(a) ((((long) a) & 0x3) == 0)
 
 	/* XXX the following declarations should be elsewhere */
 	extern void myetheraddr(u_char *);
@@ -175,8 +174,6 @@ leattach(parent, self, args)
 	    mapiodev(sa->sa_ra.ra_paddr, sizeof(struct lereg1));
 	ler2 = sc->sc_r2 = (volatile struct lereg2 *)
 	    dvma_malloc(sizeof(struct lereg2));
-if (!ISQUADALIGN(ler2))
-	printf("? not quad aligned (0x%x)\n", ler2);
 
 	myetheraddr(sc->sc_addr);
 	printf(": hardware address %s\n", ether_sprintf(sc->sc_addr));
@@ -196,13 +193,9 @@ if (!ISQUADALIGN(ler2))
 	ler2->ler2_padr[4] = sc->sc_addr[5];
 	ler2->ler2_padr[5] = sc->sc_addr[4];
 	a = LANCE_ADDR(&ler2->ler2_rmd);
-if (!ISQUADALIGN(a))
-	printf("rdra not quad aligned (0x%x)\n", a);
 	ler2->ler2_rlen = LE_RLEN | (a >> 16);
 	ler2->ler2_rdra = a;
 	a = LANCE_ADDR(&ler2->ler2_tmd);
-if (!ISQUADALIGN(a))
-	printf("tdra not quad aligned (0x%x)\n", a);
 	ler2->ler2_tlen = LE_TLEN | (a >> 16);
 	ler2->ler2_tdra = a;
 
@@ -272,6 +265,8 @@ lesetladrf(sc)
 
 	ler2->ler2_ladrf[0] = 0;
 	ler2->ler2_ladrf[1] = 0;
+	ler2->ler2_ladrf[2] = 0;
+	ler2->ler2_ladrf[3] = 0;
 	ifp->if_flags &= ~IFF_ALLMULTI;
 	ETHER_FIRST_MULTI(step, &sc->sc_ac, enm);
 	while (enm != NULL) {
@@ -287,8 +282,10 @@ lesetladrf(sc)
 			 * which the range is big enough to require all
 			 * bits set.)
 			 */
-			ler2->ler2_ladrf[0] = 0xffffffff;
-			ler2->ler2_ladrf[1] = 0xffffffff;
+			ler2->ler2_ladrf[0] = 0xffff;
+			ler2->ler2_ladrf[1] = 0xffff;
+			ler2->ler2_ladrf[2] = 0xffff;
+			ler2->ler2_ladrf[3] = 0xffff;
 			ifp->if_flags |= IFF_ALLMULTI;
 			return;
 		}
@@ -316,7 +313,7 @@ lesetladrf(sc)
 		crc = crc >> 26;
 
 		/* Turn on the corresponding bit in the filter. */
-		ler2->ler2_ladrf[crc >> 5] |= 1 << (crc & 0x1f);
+		ler2->ler2_ladrf[crc >> 4] |= 1 << (crc & 0xf);
 
 		ETHER_NEXT_MULTI(step, enm);
 	}
@@ -344,9 +341,6 @@ lereset(dev)
 	lesetladrf(sc);
 
 	/* init receive and transmit rings */
-a = LANCE_ADDR(&ler2->ler2_rbuf[0][0]);
-if (!ISQUADALIGN(a))
-	printf("rbuf not quad aligned (0x%x)\n", a);
 	for (i = 0; i < LERBUF; i++) {
 		a = LANCE_ADDR(&ler2->ler2_rbuf[i][0]);
 		ler2->ler2_rmd[i].rmd0 = a;
@@ -355,9 +349,6 @@ if (!ISQUADALIGN(a))
 		ler2->ler2_rmd[i].rmd2 = -LEMTU;
 		ler2->ler2_rmd[i].rmd3 = 0;
 	}
-a = LANCE_ADDR(&ler2->ler2_tbuf[0][0]);
-if (!ISQUADALIGN(a))
-	printf("tbuf not quad aligned (0x%x)\n", a);
 	for (i = 0; i < LETBUF; i++) {
 		a = LANCE_ADDR(&ler2->ler2_tbuf[i][0]);
 		ler2->ler2_tmd[i].tmd0 = a;
@@ -415,7 +406,7 @@ leinit(unit)
 	if ((ifp->if_flags & IFF_RUNNING) == 0) {
 		s = splimp();
 		ifp->if_flags |= IFF_RUNNING;
-		lereset((struct device *)sc);
+		lereset(&sc->sc_dev);
 	        lestart(ifp);
 		splx(s);
 	}
@@ -481,7 +472,7 @@ leintr(dev)
 		leerror(sc, csr0);
 		if (csr0 & LE_C0_MERR) {
 			sc->sc_merr++;
-			lereset((struct device *)sc);
+			lereset(&sc->sc_dev);
 			return (1);
 		}
 		if (csr0 & LE_C0_BABL)
@@ -494,12 +485,12 @@ leintr(dev)
 	}
 	if ((csr0 & LE_C0_RXON) == 0) {
 		sc->sc_rxoff++;
-		lereset((struct device *)sc);
+		lereset(&sc->sc_dev);
 		return (1);
 	}
 	if ((csr0 & LE_C0_TXON) == 0) {
 		sc->sc_txoff++;
-		lereset((struct device *)sc);
+		lereset(&sc->sc_dev);
 		return (1);
 	}
 	if (csr0 & LE_C0_RINT) {
@@ -538,7 +529,7 @@ err:
 		sc->sc_if.if_oerrors++;
 		if (tmd->tmd3 & (LE_T3_BUFF|LE_T3_UFLO)) {
 			sc->sc_uflo++;
-			lereset((struct device *)sc);
+			lereset(&sc->sc_dev);
 		} else if (tmd->tmd3 & LE_T3_LCOL)
 			sc->sc_if.if_collisions++;
 		else if (tmd->tmd3 & LE_T3_RTRY)
@@ -626,7 +617,7 @@ lerint(sc)
 			if ((rmd->rmd1_bits &
 			    (LE_R1_OWN|LE_R1_ERR|LE_R1_STP|LE_R1_ENP)) !=
 			    LE_R1_ENP) {
-				lereset((struct device *)sc);
+				lereset(&sc->sc_dev);
 				return;
 			}
 		} else {
@@ -921,7 +912,7 @@ leioctl(ifp, cmd, data)
 		if (((ifp->if_flags ^ sc->sc_iflags) & IFF_PROMISC) &&
 		    (ifp->if_flags & IFF_RUNNING)) {
 			sc->sc_iflags = ifp->if_flags;
-			lereset((struct device *)sc);
+			lereset(&sc->sc_dev);
 			lestart(ifp);
 		}
 		break;
@@ -938,7 +929,7 @@ leioctl(ifp, cmd, data)
 			 * Multicast list has changed; set the hardware
 			 * filter accordingly.
 			 */
-			lereset((struct device *)sc);
+			lereset(&sc->sc_dev);
 			error = 0;
 		}
 		break;
