@@ -9,6 +9,17 @@
 /*
  * Machine dependent constants for vax.
  */
+
+#ifndef ENDIAN
+/*
+ * Definitions for byte order,
+ * according to byte significance from low address to high.
+ */
+#define	LITTLE	1234		/* least-significant byte first (vax) */
+#define	BIG	4321		/* most-significant byte first */
+#define	PDP	3412		/* LSB first in word, MSW first in long (pdp) */
+#define	ENDIAN	LITTLE		/* byte order on vax */
+
 #define	NBPG	512		/* bytes/page */
 #define	PGOFSET	(NBPG-1)	/* byte offset into page */
 #define	PGSHIFT	9		/* LOG2(NBPG) */
@@ -48,9 +59,10 @@
 #ifdef KERNEL
 #ifndef LOCORE
 int	cpuspeed;
-#endif
 #define	DELAY(n)	{ register int N = cpuspeed * (n); while (--N > 0); }
+#endif
 
 #else KERNEL
 #define	DELAY(n)	{ register int N = (n); while (--N > 0); }
 #endif KERNEL
+#endif
