@@ -7,7 +7,7 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)mem.c	5.4 (Berkeley) %G%
+ *	@(#)mem.c	5.5 (Berkeley) %G%
  */
 
 /*
@@ -71,7 +71,7 @@ mmrw(dev, uio, rw)
 				goto fault;
 			*(int *)mmap = ctob(v) | PG_V |
 				(rw == UIO_READ ? PG_KR : PG_KW);
-			tlbflush();
+			load_cr3(u.u_pcb.pcb_ptd);
 			o = (int)uio->uio_offset & PGOFSET;
 			c = (u_int)(NBPG - ((int)iov->iov_base & PGOFSET));
 			c = MIN(c, (u_int)(NBPG - o));

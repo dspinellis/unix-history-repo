@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)trap.c	5.4 (Berkeley) %G%
+ *	@(#)trap.c	5.5 (Berkeley) %G%
  */
 
 /*
@@ -150,6 +150,8 @@ bit_sucker:
 #endif
 
 	case T_PAGEFLT:			/* allow page faults in kernel mode */
+		if (code & PGEX_P) goto bit_sucker;
+		/* fall into */
 	case T_PAGEFLT + USER:		/* page fault */
 		{	register u_int vp;
 			u_int ea;
@@ -157,7 +159,7 @@ bit_sucker:
 			ea = (u_int)rcr2();
 
 			/* out of bounds reference */
-			if (ea >= &Sysbase && code & PGEX_P) {
+			if (ea >= &Sysbase || code & PGEX_P) {
 				u.u_code = code + BUS_PAGE_FAULT;
 				i = SIGBUS;
 				break;
