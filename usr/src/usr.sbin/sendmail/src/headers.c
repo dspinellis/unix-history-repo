@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)headers.c	5.4 (Berkeley) %G%";
+static char	SccsId[] = "@(#)headers.c	5.4.1.1 (Berkeley) %G%";
 #endif not lint
 
 # include <errno.h>
@@ -113,6 +113,16 @@ chompheader(line, def)
 	{
 		if (strcmp(fvalue, CurEnv->e_from.q_paddr) == 0)
 			return (hi->hi_flags);
+	}
+
+	/* drop forged Sender: values */
+	p = "resent-sender";
+	if (!bitset(EF_RESENT, CurEnv->e_flags))
+		p += 7;
+	if (!def && !QueueRun && CurEnv->e_from.q_mailer == LocalMailer &&
+	    bitset(H_VALID, hi->hi_flags))
+	{
+		return (hi->hi_flags);
 	}
 
 	/* delete default value for this header */
