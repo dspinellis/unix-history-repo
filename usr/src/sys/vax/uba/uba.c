@@ -1,4 +1,4 @@
-/*	uba.c	3.5	%G%	*/
+/*	uba.c	3.6	%G%	*/
 
 #include "../h/param.h"
 #include "../h/map.h"
@@ -39,6 +39,7 @@ struct buf *bp;
 	npf = btoc(bp->b_bcount + o) + 1;
 	a = spl6();
 	while ((reg = malloc(ubamap, npf)) == 0) {
+		panic("ran out of uba map");
 		umrwant++;
 		sleep((caddr_t)ubamap, PSWP);
 	}
@@ -46,6 +47,7 @@ struct buf *bp;
 	bdp = 0;
 	if (bdpflg)
 		while ((bdp = malloc(bdpmap, 1)) == 0) {
+			panic("ran out of bdp's");
 			bdpwant++;
 			sleep((caddr_t)bdpmap, PSWP);
 		}
@@ -81,7 +83,6 @@ struct buf *bp;
 	return (ubinfo);
 }
 
-struct	buf ubabuf;
 /*
  * Non buffer unibus interface... set up a buffer and call ubasetup.
  */
@@ -89,22 +90,13 @@ uballoc(addr, bcnt, bdpflg)
 	caddr_t addr;
 	unsigned short bcnt;
 {
-	register int a, ubinfo;
+	struct buf ubabuf;
 
-	a = spl6();
-	while (ubabuf.b_flags & B_BUSY) {
-		ubabuf.b_flags |= B_WANTED;
-		sleep((caddr_t)&ubabuf, PRIUBA);
-	}
 	ubabuf.b_un.b_addr = addr;
 	ubabuf.b_flags = B_BUSY;
 	ubabuf.b_bcount = bcnt;
-	splx(a);
-	ubinfo = ubasetup(&ubabuf, bdpflg);
-	ubabuf.b_flags &= ~B_BUSY;
-	if (ubabuf.b_flags & B_WANTED)
-		wakeup((caddr_t)&ubabuf);
-	return (ubinfo);
+	/* that's all the fields ubasetup() needs */
+	return (ubasetup(&ubabuf, bdpflg));
 }
  
 ubafree(mr)
