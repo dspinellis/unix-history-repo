@@ -1,5 +1,5 @@
 /* ==== fd.c ============================================================
- * Copyright (c) 1993 by Chris Provenzano, proven@mit.edu
+ * Copyright (c) 1993, 1994 by Chris Provenzano, proven@mit.edu
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -84,6 +84,7 @@ void fd_init(void)
 	fd_kern_init(0);
 	fd_kern_init(1);
 	fd_kern_init(2);
+	printf ("Warning: threaded process may have changed open file descriptors\n");
 }
 
 /* ==========================================================================
@@ -363,6 +364,21 @@ int writev(int fd, const struct iovec *iov, int iovcnt)
 }
 
 /* ==========================================================================
+ * lseek()
+ */
+off_t lseek(int fd, off_t offset, int whence)
+{
+	int ret;
+
+	 if ((ret = fd_lock(fd, FD_RDWR)) == OK) {
+     	ret = fd_table[fd]->ops->seek(fd_table[fd]->fd,
+		  fd_table[fd]->flags, offset, whence); 
+        fd_unlock(fd, FD_RDWR);
+    }
+    return(ret);
+}
+
+/* ==========================================================================
  * close()
  *
  * The whole close procedure is a bit odd and needs a bit of a rethink.
@@ -404,6 +420,10 @@ static inline void fd_basic_dup(int fd, int newfd)
 
 /* ==========================================================================
  * dup2()
+ *
+ * Always lock the lower number fd first to avoid deadlocks.
+ * newfd must be locked by hand so it can be closed if it is open,
+ * or it won't be opened while dup is in progress.
  */
 int dup2(fd, newfd)
 {
@@ -411,29 +431,58 @@ int dup2(fd, newfd)
 	semaphore *lock;
 	int ret, flags;
 
-	if ((ret = fd_lock(fd, FD_RDWR)) == OK) {
-		/* Need to lock the newfd by hand */
-		if (newfd < dtablesize) {
+	if (newfd < dtablesize) {
+		if (fd < newfd) {
+			if ((ret = fd_lock(fd, FD_RDWR)) == OK) {
+				/* Need to lock the newfd by hand */
+				lock = &(fd_table[newfd]->lock);
+				while(SEMAPHORE_TEST_AND_SET(lock)) {
+					pthread_yield();
+				}
+
+				/* Is it inuse */
+				if (fd_basic_lock(newfd, FD_RDWR, lock) == OK) {
+					/* free it and check close status */
+					flags = fd_table[fd]->flags;
+					realfd = fd_table[fd]->fd;
+					if (fd_free(fd) == OK) {
+     					ret = fd_table[fd]->ops->close(realfd, flags);
+					} else {
+						/* Lots of work to do */
+					}
+				}
+				fd_basic_dup(fd, newfd);
+			}
+			fd_unlock(fd, FD_RDWR);
+		} else {
+			/* Need to lock the newfd by hand */
 			lock = &(fd_table[newfd]->lock);
 			while(SEMAPHORE_TEST_AND_SET(lock)) {
 				pthread_yield();
 			}
-
+			if ((ret = fd_lock(fd, FD_RDWR)) == OK) {
+			}
 			/* Is it inuse */
-			if (fd_basic_lock(newfd, FD_RDWR, lock) == OK) {
+			if ((ret = fd_basic_lock(newfd, FD_RDWR, lock)) == OK) {
 				/* free it and check close status */
 				flags = fd_table[fd]->flags;
 				realfd = fd_table[fd]->fd;
 				if (fd_free(fd) == OK) {
-     				ret = fd_table[fd]->ops->close(realfd, flags);
+   		  			ret = fd_table[fd]->ops->close(realfd, flags);
+				} else {
+					/* Lots of work to do */
 				}
+
+				fd_basic_dup(fd, newfd);
+				fd_unlock(fd, FD_RDWR);
 			}
-			fd_basic_dup(fd, newfd);
-				
+			SEMAPHORE_RESET(lock);
 		}
-		fd_unlock(fd, FD_RDWR);
+	} else {
+		ret = NOTOK;
 	}
 	return(ret);
+			
 }
 
 /* ==========================================================================

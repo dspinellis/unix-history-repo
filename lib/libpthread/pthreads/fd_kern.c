@@ -1,5 +1,5 @@
 /* ==== fd_kern.c ============================================================
- * Copyright (c) 1993 by Chris Provenzano, proven@mit.edu
+ * Copyright (c) 1993, 1994 by Chris Provenzano, proven@mit.edu
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,25 +45,29 @@
 #include <sys/time.h>
 #include <sys/uio.h>
 #include <stdarg.h>
+#include <signal.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <pthread/posix.h>
 
 /* ==========================================================================
+ * Variables used by both fd_kern_poll and fd_kern_wait
+ */
+static struct pthread *fd_wait_read, *fd_wait_write;
+static fd_set fd_set_read, fd_set_write;
+
+/* ==========================================================================
  * fd_kern_poll()
  *
- * Called only from context_switch(). The kernel must be locked
- * and interrupts must be turned of.
+ * Called only from context_switch(). The kernel must be locked.
  *
  * This function uses a linked list of waiting pthreads, NOT a queue.
  */ 
-static struct pthread *fd_wait_read, *fd_wait_write;
 static semaphore fd_wait_lock = SEMAPHORE_CLEAR;
-static fd_set fd_set_read, fd_set_write;
-static struct timeval zerotime = { 0, 0 };
 
-void fd_kern_poll(void)
+void fd_kern_poll()
 {
+	struct timeval __fd_kern_poll_timeout = { 0, 0 };
 	struct pthread **pthread;
 	semaphore *lock;
 	int count;
@@ -81,10 +85,11 @@ void fd_kern_poll(void)
 			FD_SET((*pthread)->fd, &fd_set_write);
 		}
 
-		while ((count = select(dtablesize, &fd_set_read, &fd_set_write,
-		  NULL, &zerotime)) < OK) {
-			if (count = -EINTR) {
-				continue;
+		if ((count = machdep_sys_select(dtablesize, &fd_set_read,
+		  &fd_set_write, NULL, &__fd_kern_poll_timeout)) < OK) {
+			if (count == -EINTR) {
+				SEMAPHORE_RESET(lock);
+				return;
 			}
 			PANIC();
 		}
@@ -120,6 +125,88 @@ void fd_kern_poll(void)
 		}
 	}
 	SEMAPHORE_RESET(lock);
+}
+
+/* ==========================================================================
+ * fd_kern_wait()
+ *
+ * Called when there is no active thread to run.
+ */
+extern struct timeval __fd_kern_wait_timeout;
+
+void fd_kern_wait()
+{
+	struct pthread **pthread;
+	sigset_t sig_to_block;
+	int count;
+
+	if (fd_wait_read || fd_wait_write) {
+		for (pthread = &fd_wait_read; *pthread; pthread = &((*pthread)->next)) {
+			FD_SET((*pthread)->fd, &fd_set_read);
+		}
+		for (pthread = &fd_wait_write; *pthread; pthread = &((*pthread)->next)) {
+			FD_SET((*pthread)->fd, &fd_set_write);
+		}
+
+		/* Turn off interrupts for real while we set the timer.  */
+
+		sigfillset(&sig_to_block);
+		sigprocmask(SIG_BLOCK, &sig_to_block, NULL);
+
+		machdep_unset_thread_timer(); 
+		__fd_kern_wait_timeout.tv_usec = 0;
+		__fd_kern_wait_timeout.tv_sec = 3600;
+
+		sigprocmask(SIG_UNBLOCK, &sig_to_block, NULL);
+
+		/*
+		 * There is a small but finite chance that an interrupt will
+		 * occure between the unblock and the select. Because of this
+		 * sig_handler_real() sets the value of __fd_kern_wait_timeout
+		 * to zero causing the select to do a poll instead of a wait.
+		 */
+
+		while ((count = machdep_sys_select(dtablesize, &fd_set_read,
+		  &fd_set_write, NULL, &__fd_kern_wait_timeout)) < OK) {
+			if (count == -EINTR) {
+				return;
+			}
+			PANIC();
+		}
+	
+		for (pthread = &fd_wait_read; count && *pthread; ) {
+			if (FD_ISSET((*pthread)->fd, &fd_set_read)) {
+				/* Get lock on thread */
+
+				(*pthread)->state = PS_RUNNING;
+				*pthread = (*pthread)->next;
+				count--;
+				continue;
+			} 
+			pthread = &((*pthread)->next);
+		}
+					
+		for (pthread = &fd_wait_write; count && *pthread; ) {
+			if (FD_ISSET((*pthread)->fd, &fd_set_write)) {
+				semaphore *plock;
+
+				/* Get lock on thread */
+				plock = &(*pthread)->lock;
+				if (!(SEMAPHORE_TEST_AND_SET(plock))) {
+					/* Thread locked, skip it. */
+					(*pthread)->state = PS_RUNNING;
+					*pthread = (*pthread)->next;
+					SEMAPHORE_RESET(plock);
+				}
+				count--;
+				continue;
+			} 
+			pthread = &((*pthread)->next);
+		}
+	} else {
+		/* No threads, waiting on I/O, do a sigsuspend */
+		sig_handler_pause();
+	}
 }
 
 /* ==========================================================================
@@ -279,7 +366,7 @@ int __fd_kern_writev(int fd, int flags, struct iovec *iov, int iovcnt)
  */
 int __fd_kern_fcntl(int fd, int flags, int cmd, int arg)
 {
-	machdep_sys_fcntl(fd, cmd, arg);
+	return(machdep_sys_fcntl(fd, cmd, arg));
 }
 
 /* ==========================================================================
@@ -287,7 +374,15 @@ int __fd_kern_fcntl(int fd, int flags, int cmd, int arg)
  */
 int __fd_kern_close(int fd, int flags)
 {
-	machdep_sys_close(fd);
+	return(machdep_sys_close(fd));
+}
+
+/* ==========================================================================
+ * lseek()
+ */
+int __fd_kern_lseek(int fd, int flags, off_t offset, int whence)
+{
+	return(machdep_sys_lseek(fd, offset, whence));
 }
 
 /*
@@ -298,7 +393,7 @@ extern machdep_sys_close();
 /* Normal file operations */
 static struct fd_ops __fd_kern_ops = {
 	__fd_kern_write, __fd_kern_read, __fd_kern_close, __fd_kern_fcntl,
-	__fd_kern_readv, __fd_kern_writev
+	__fd_kern_readv, __fd_kern_writev, __fd_kern_lseek
 };
 
 /* NFS file opperations */
@@ -351,7 +446,7 @@ printf("error %d stating new fd %d\n", errno, fd);
 				fd_table[fd]->ops = &(__fd_kern_ops);
 				fd_table[fd]->type = FD_FULL_DUPLEX;
 			}
-			fd_table[fd]->fd.i = fd_kern; 
+			fd_table[fd]->fd = fd_kern; 
 			return(fd);
 		}
 
@@ -376,14 +471,9 @@ void fd_kern_init(int fd)
 		machdep_sys_fcntl(fd, F_SETFL, fd_table[fd]->flags | __FD_NONBLOCK);
 		fd_table[fd]->ops 	= &(__fd_kern_ops);
 		fd_table[fd]->type 	= FD_HALF_DUPLEX;
-		fd_table[fd]->fd.i 	= fd;
+		fd_table[fd]->fd 	= fd;
 		fd_table[fd]->count = 1;
 
-		/* Only give one warning */
-		if (!(fd_kern_init_called++)) {
-			printf("Warning: threaded process may have changed open file ");
-		    printf("descriptors of parent\n");
-		}
 	}
 }
 
@@ -406,7 +496,7 @@ int socket(int af, int type, int protocol)
             /* Should fstat the file to determine what type it is */
             fd_table[fd]->ops 	= & __fd_kern_ops;
             fd_table[fd]->type 	= FD_FULL_DUPLEX;
-			fd_table[fd]->fd.i	= fd_kern;
+			fd_table[fd]->fd	= fd_kern;
         	fd_table[fd]->flags = 0;
             return(fd);
         }
@@ -461,9 +551,9 @@ int connect(int fd, const struct sockaddr *name, int namelen)
 				}
 
 				/* queue pthread for a FDW_WAIT */
+				pthread_run->fd = fd_table[fd]->fd.i;
 				pthread_run->next = fd_wait_write;
 				fd_wait_write = pthread_run;
-				pthread_run->fd = fd;
 				SEMAPHORE_RESET(lock);
 				reschedule(PS_FDW_WAIT);
 
@@ -490,11 +580,13 @@ int connect(int fd, const struct sockaddr *name, int namelen)
 int accept(int fd, struct sockaddr *name, int *namelen)
 {
 	semaphore *lock, *plock;
-	int ret;
+	int ret, fd_kern;
+
+
 
 	if ((ret = fd_lock(fd, FD_RDWR)) == OK) {
-		while ((ret = machdep_sys_accept(fd_table[fd]->fd, name, namelen)) < OK) {
-            if (pthread_run->error == -EWOULDBLOCK) {
+		while ((fd_kern = machdep_sys_accept(fd_table[fd]->fd, name, namelen)) < OK) {
+            if (fd_kern == -EWOULDBLOCK) {
 				/* Lock queue */
 				lock = &fd_wait_lock;
 				while (SEMAPHORE_TEST_AND_SET(lock)) {
@@ -508,16 +600,30 @@ int accept(int fd, struct sockaddr *name, int *namelen)
 				}
 
 				/* queue pthread for a FDR_WAIT */
+				pthread_run->fd = fd_table[fd]->fd.i;
+				pthread_run->next = fd_wait_write;
 				pthread_run->next = fd_wait_read;
 				fd_wait_read = pthread_run;
-				pthread_run->fd = fd;
 				SEMAPHORE_RESET(lock);
 				reschedule(PS_FDR_WAIT);
             } else {
-                break;
+				fd_unlock(fd, FD_RDWR);
+				return(fd_kern);
 			}
 		}
 		fd_unlock(fd, FD_RDWR);
+
+	 	if (!((ret = fd_allocate()) < OK)) {
+
+			/* This may be unnecessary */
+			machdep_sys_fcntl(fd_kern, F_SETFL, __FD_NONBLOCK);
+
+            /* Should fstat the file to determine what type it is */
+            fd_table[ret]->ops 		= & __fd_kern_ops;
+            fd_table[ret]->type 	= FD_FULL_DUPLEX;
+			fd_table[ret]->fd		= fd_kern;
+        	fd_table[ret]->flags 	= 0;
+		}
 	}
 	return(ret);
 }

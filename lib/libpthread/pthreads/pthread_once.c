@@ -1,4 +1,4 @@
-/* ==== pthread_attr.c =======================================================
+/* ==== pthread_once.c =======================================================
  * Copyright (c) 1993, 1994 by Chris Provenzano, proven@mit.edu
  * All rights reserved.
  *
@@ -29,68 +29,29 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF 
  * SUCH DAMAGE.
  *
- * Description : Pthread attribute functions.
+ * Description : pthread_once function.
  *
- *  1.00 93/11/04 proven
+ *  1.00 93/12/12 proven
  *      -Started coding this file.
  */
 
 #include <pthread.h>
-#include <errno.h>
-
-/* Currently we do no locking, should we just to be safe? CAP */
-/* ==========================================================================
- * pthread_attr_init()
- */
-int pthread_attr_init(pthread_attr_t *attr)
-{
-	memcpy(attr, &pthread_default_attr, sizeof(pthread_attr_t));
-	return(OK);
-}
 
 /* ==========================================================================
- * pthread_attr_destroy()
+ * pthread_once()
  */
-int pthread_attr_destroy(pthread_attr_t *attr)
-{
-	return(OK);
-}
+static pthread_mutex_t __pthread_once_mutex =  PTHREAD_MUTEX_INITIALIZER;
 
-/* ==========================================================================
- * pthread_attr_getstacksize()
- */
-int pthread_attr_getstacksize(pthread_attr_t *attr, size_t * stacksize)
+int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
 {
-	*stacksize = attr->stacksize_attr;
-	return(OK);
-}
-
-/* ==========================================================================
- * pthread_attr_setstacksize()
- */
-int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize)
-{
-	if (stacksize >= PTHREAD_STACK_MIN) {
-		attr->stacksize_attr = stacksize;
-		return(OK);
+	/* Check first for speed */
+	if (*once_control == PTHREAD_ONCE_INIT) {
+		pthread_mutex_lock(&__pthread_once_mutex);
+		if (*once_control == PTHREAD_ONCE_INIT) {
+			init_routine();
+			(*once_control)++;
+		}
+		pthread_mutex_unlock(&__pthread_once_mutex);
 	}
-	return(EINVAL);
-}
-
-/* ==========================================================================
- * pthread_attr_getstackaddr()
- */
-int pthread_attr_getstackaddr(pthread_attr_t *attr, void ** stackaddr)
-{
-	*stackaddr = attr->stackaddr_attr;
-	return(OK);
-}
-
-/* ==========================================================================
- * pthread_attr_setstackaddr()
- */
-int pthread_attr_setstackaddr(pthread_attr_t *attr, void * stackaddr)
-{
-	attr->stackaddr_attr = stackaddr;
 	return(OK);
 }

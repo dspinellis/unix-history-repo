@@ -1,5 +1,5 @@
 /* ==== signal.c ============================================================
- * Copyright (c) 1993 by Chris Provenzano, proven@mit.edu
+ * Copyright (c) 1993, 1994 by Chris Provenzano, proven@mit.edu
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,16 +35,27 @@
  *      -Started coding this file.
  */
 
-#include "pthread.h"
+#include <pthread.h>
 #include <signal.h>
+
+/*
+ * Time which select in fd_kern_wait() will sleep.
+ * If there are no threads to run we sleep for an hour or until
+ * we get an interrupt or an fd thats awakens. To make sure we
+ * don't miss an interrupt this variable gets reset too zero in
+ * sig_handler_real().
+ */
+struct timeval __fd_kern_wait_timeout = { 0, 0 };
 
 /*
  * Global for user-kernel lock, and blocked signals
  */
+static volatile	sigset_t sig_to_tryagain;
 static volatile	sigset_t sig_to_process;
 static volatile	int kernel_lock = 0;
 static volatile	int	sig_count = 0;
 
+static void sig_handler(int signal);
 static void set_thread_timer();
 void sig_prevent(void);
 void sig_resume(void);
@@ -58,24 +69,24 @@ void sig_resume(void);
  * to either return or have it return from machdep_save_state with a value
  * other than 0, this is for implementations which use setjmp/longjmp. 
  */
-void fd_kern_wait() {
-	fd_kern_poll();
-}
-
 static void context_switch()
 {
-	struct pthread **current, *next;
+	struct pthread **current, *next, *last;
+	semaphore *lock;
+	int count;
 
 	/* save state of current thread */
 	if (machdep_save_state()) {
 		return;
 	}
 
+	last = pthread_run;
 	if (pthread_run = pthread_queue_deq(&pthread_current_queue)) {
 		/* restore state of new current thread */
 		machdep_restore_state();
 		return;
 	}
+
 	/* Poll all the kernel fds */
 	fd_kern_poll();
 
@@ -88,46 +99,87 @@ context_switch_reschedule:;
 	 */
 	pthread_queue_init(&pthread_current_queue);
 	current = &(pthread_link_list);
+	count = 0;
+
 	while (*current) {
 		switch((*current)->state) {
 		case PS_RUNNING:
 			pthread_queue_enq(&pthread_current_queue, *current);
 			current = &((*current)->pll);
+			count++;
 			break;
 		case PS_DEAD:
-			/* Cleanup thread */
-			next = (*current)->pll;
-			pthread_cleanup(current);
-			*current = next;
+			/* Cleanup thread, unless we're using the stack */
+			if (((*current)->flags & PF_DETACHED) && (*current != last)) {
+				next = (*current)->pll;
+				lock = &((*current)->lock);
+				if (SEMAPHORE_TEST_AND_SET(lock)) {
+					/* Couldn't cleanup this time, try again later */
+					current = &((*current)->pll);
+				} else {
+					if (!((*current)->attr.stackaddr_attr)) {
+						free (machdep_pthread_cleanup(&((*current)->machdep_data)));
+					}
+					free (*current);
+					*current = next;
+				}
+			} else {
+				current = &((*current)->pll);
+			}
 			break;
 		default:
 			/* Should be on a different queue. Ignore. */
 			current = &((*current)->pll);
+			count++;
 			break;
 		}
 	}
 
-	/* Are there any threads at all */
-	if (!pthread_link_list) {
-		exit(0);
-	}
-
+	/* Are there any threads to run */
 	if (pthread_run = pthread_queue_deq(&pthread_current_queue)) {
         /* restore state of new current thread */
 		machdep_restore_state();
         return;
     }
 
-	/*
-	 * Okay, make sure the context switch timer is off, so we don't get any
-	 * SIG_VTALRM signals while waiting for a fd to unblock.
-	 */
-	/* machdep_unset_thread_timer();
-	sigdelset(&sig_to_process, SIGVTALRM); */
+	/* Are there any threads at all */
+	if (count) {
+		/*
+		 * Do a wait, timeout is set to a hour unless we get an interrupt
+		 * before the select in wich case it polls and returns. 
+		 */
+		fd_kern_wait();
 
-	/* Well have to unlock the kernel/then relock it but that should be ok */
-	fd_kern_wait();
-	goto context_switch_reschedule;
+		/* Check for interrupts, but ignore SIGVTALR */
+		sigdelset(&sig_to_process, SIGVTALRM); 
+
+		if (sig_to_process) {
+			/* Process interrupts */
+			sig_handler(0); 
+		}
+
+		goto context_switch_reschedule;
+
+	}
+	exit(0);
+}
+
+/* ==========================================================================
+ * sig_handler_pause()
+ * 
+ * Wait until a signal is sent to the process.
+ */
+void sig_handler_pause()
+{
+	sigset_t sig_to_block, sig_to_pause;
+
+	sigfillset(&sig_to_block);
+	sigemptyset(&sig_to_pause);
+	sigprocmask(SIG_BLOCK, &sig_to_block, NULL);
+	if (!sig_to_process) {
+		sigsuspend(&sig_to_pause);
+	}
+	sigprocmask(SIG_UNBLOCK, &sig_to_block, NULL);
 }
 
 /* ==========================================================================
@@ -165,7 +217,7 @@ static void set_thread_timer()
 		}
 		break;
 	case SCHED_IO:
-		if (last_sched_attr != SCHED_IO) {
+		if ((last_sched_attr != SCHED_IO) && (!sig_count)) {
 			machdep_set_thread_timer(&(pthread_run->machdep_data));
 		}
 		break;
@@ -173,6 +225,7 @@ static void set_thread_timer()
 		machdep_set_thread_timer(&(pthread_run->machdep_data));
 		break;
 	} 
+    last_sched_attr = pthread_run->attr.sched_attr;
 }
 
 /* ==========================================================================
@@ -182,7 +235,35 @@ static void set_thread_timer()
  */
 static void sig_handler(int sig)
 {
-	sig_handler_top:;
+
+	/*
+	 * First check for old signals, do one pass through and don't
+ 	 * check any twice.
+     */
+	if (sig_to_tryagain) {
+		if (sigismember(&sig_to_tryagain, SIGALRM)) {
+			switch (sleep_wakeup()) {
+			case 1:
+				/* Do the default action, no threads were sleeping */
+			case OK:
+				/* Woke up a sleeping thread */
+				sigdelset(&sig_to_tryagain, SIGALRM);
+				break;
+			case NOTOK:
+				/* Couldn't get appropriate locks, try again later */
+				break;
+			}
+		} else {
+			PANIC();
+		}
+	}
+		
+	/*
+	 * NOW, process signal that just came in, plus any pending on the
+	 * signal mask. All of these must be resolved.
+	 */
+
+sig_handler_top:;
 
 	switch(sig) {
 	case 0:
@@ -201,10 +282,19 @@ static void sig_handler(int sig)
 		context_switch_done();
 		break;
 	case SIGALRM:
-	/*	if (sleep_wakeup()) {
+		sigdelset(&sig_to_process, SIGALRM);
+		switch (sleep_wakeup()) {
+		case 1:
+			/* Do the default action, no threads were sleeping */
+		case OK:
+			/* Woke up a sleeping thread */
 			break;
-		} */
-		/* Do the defaul action no threads were sleeping */
+		case NOTOK:
+			/* Couldn't get appropriate locks, try again later */
+			sigaddset(&sig_to_tryagain, SIGALRM);
+			break;
+		} 
+		break;
 	default:
 		PANIC();
 	}
@@ -230,6 +320,7 @@ static void sig_handler(int sig)
 void sig_handler_real(int sig)
 {
 	if (kernel_lock) {
+		__fd_kern_wait_timeout.tv_sec = 0;
 		sigaddset(&sig_to_process, sig);
 		return;
 	}

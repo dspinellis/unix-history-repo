@@ -1,5 +1,5 @@
 /* ==== mutex.c ============================================================
- * Copyright (c) 1993 by Chris Provenzano, proven@mit.edu
+ * Copyright (c) 1993, 1994 by Chris Provenzano, proven@mit.edu
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@
  *      -Started coding this file.
  */
 
-#include "pthread.h"
+#include <pthread.h>
 #include <errno.h>
 
 /*

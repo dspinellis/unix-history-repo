@@ -1,5 +1,5 @@
 /* ==== file.c ============================================================
- * Copyright (c) 1993 by Chris Provenzano, proven@mit.edu
+ * Copyright (c) 1993, 1994 by Chris Provenzano, proven@mit.edu
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,14 +29,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF 
  * SUCH DAMAGE.
  *
- * Description : All the new stdio functions.
+ * Description : The locking functions for stdio.
  *
  *  1.00 93/09/04 proven
  *      -Started coding this file.
  */
 
-#include "pthread.h"
-#include <stdio.h> /* Remove this when the stdio library is done. */
+#include <pthread.h>
+#include <stdio.h>
 
 /* ==========================================================================
  * flockfile()
@@ -53,10 +53,40 @@ void flockfile(FILE *fp)
 	}
 
 	if (fd_table[fd]->r_owner != pthread_run) {
+		/* This might fail but POSIX doesn't give a damn. */
 		fd_basic_lock(fd, FD_RDWR, lock);
 	}
 	fd_table[fd]->lockcount++;
 	SEMAPHORE_RESET(lock);
+}
+
+/* ==========================================================================
+ * ftrylockfile()
+ */
+int ftrylockfile(FILE *fp)
+{
+	semaphore *lock;
+	int fd;
+
+	fd = fileno(fp);
+	lock = &(fd_table[fd]->lock);
+	while (SEMAPHORE_TEST_AND_SET(lock)) {
+		pthread_yield();
+	}
+
+	if (fd_table[fd]->r_owner != pthread_run) {
+		if (!(fd_table[fd]->r_owner && fd_table[fd]->w_owner)) {
+			fd_basic_lock(fd, FD_RDWR, lock);
+			fd = OK;
+		} else {
+			fd = NOTOK;
+		}
+	} else {
+		fd_table[fd]->lockcount++;
+		fd = OK;
+	}
+	SEMAPHORE_RESET(lock);
+	return(fd);
 }
 
 /* ==========================================================================

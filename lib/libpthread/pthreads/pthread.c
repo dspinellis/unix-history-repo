@@ -1,5 +1,5 @@
 /* ==== pthread.c ============================================================
- * Copyright (c) 1993 by Chris Provenzano, proven@mit.edu
+ * Copyright (c) 1993, 1994 by Chris Provenzano, proven@mit.edu
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,15 +55,9 @@ void pthread_init(void)
 {
 	struct machdep_pthread machdep_data = MACHDEP_PTHREAD_INIT;
 
-	/* Initialize the signal handler. */
-	sig_init();
-
-	/* Initialize the fd table. */
-	fd_init();
-
 	/* Initialize the first thread */
 	if (pthread_initial = (pthread_t)malloc(sizeof(struct pthread))) {
-		bcopy(machdep_data, &(pthread_initial->machdep_data), sizeof(machdep_data));
+		memcpy(&(pthread_initial->machdep_data), &machdep_data, sizeof(machdep_data));
 		pthread_initial->state = PS_RUNNING;
 		pthread_initial->queue = NULL;
 		pthread_initial->next = NULL;
@@ -74,23 +68,16 @@ void pthread_init(void)
 
 		pthread_link_list = pthread_initial;
 		pthread_run = pthread_initial;
+
+		/* Initialize the signal handler. */
+		sig_init();
+
+		/* Initialize the fd table. */
+		fd_init();
+
 		return;
 	}
 	PANIC();
-}
-
-/* ==========================================================================
- * pthread_cleanup()
- */
-void pthread_cleanup(pthread_t *thread)
-{
-	void *stack;
-
-	/* Check attr to see what needs cleanup. */
-	if (stack = (void *)machdep_pthread_cleanup(&((*thread)->machdep_data))) {
-		free(stack);
-	}
-	free(*thread);
 }
 
 /* ==========================================================================
@@ -120,24 +107,42 @@ int pthread_equal(pthread_t t1, pthread_t t2)
 
 /* ==========================================================================
  * pthread_exit()
- * 
- * Once this routine gets the lock it never gives it up.
- * Joining with a thread that has exited is not valid anymore, so
- * there now is no valid opperation that can be done to a thread once it
- * has done the pthread_exit().
- * It doesn't matter if a context switch occurs before yield is called
- * but after the state is set. 
  */
 void pthread_exit(void *status)
 {
-	semaphore *lock;
+	semaphore *lock, *plock;
+	pthread_t pthread;
 
 	lock = &pthread_run->lock;
 	if (SEMAPHORE_TEST_AND_SET(lock)) {
 		pthread_yield();
+	} 
+
+	/* Save return value */
+	pthread_run->ret = status;
+
+	/* First execute all cleanup handlers */
+	
+
+	/*
+	 * Are there any threads joined to this one,
+	 * if so wake them and let them detach this thread.
+	 */
+	if (pthread = pthread_queue_get(&(pthread_run->join_queue))) {
+		/* The current thread pthread_run can't be detached */
+		plock = &(pthread->lock);
+		while (SEMAPHORE_TEST_AND_SET(plock)) {
+			pthread_yield();
+		}
+		(void)pthread_queue_deq(&(pthread_run->join_queue));
+		pthread->state = PS_RUNNING;
+
+		/* Thread will unlock itself in pthread_join() */
 	}
-	pthread_run->state = PS_DEAD;
-	pthread_yield();
+
+	/* This thread will never run again */
+	reschedule(PS_DEAD);
+	PANIC();
 }
 
 /* ==========================================================================
