@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)glob.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.16 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -175,7 +175,11 @@ glob(pattern, flags, errfunc, pglob)
 			break;
 		case STAR:
 			pglob->gl_flags |= GLOB_MAGCHAR;
-			*bufnext++ = M_ALL;
+			/* collapse adjacent stars to one, 
+			 * to avoid exponential behavior
+			 */
+			if (bufnext == patbuf || bufnext[-1] != M_ALL)
+			    *bufnext++ = M_ALL;
 			break;
 		default:
 			*bufnext++ = CHAR(c);
@@ -415,9 +419,10 @@ match(name, pat, patend)
 		case M_ALL:
 			if (pat == patend)
 				return(1);
-			for (; *name != EOS; ++name)
-				if (match(name, pat, patend))
-					return(1);
+			do 
+			    if (match(name, pat, patend))
+				    return(1);
+			while (*name++ != EOS);
 			return(0);
 		case M_ONE:
 			if (*name++ == EOS)
