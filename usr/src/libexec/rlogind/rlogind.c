@@ -1,9 +1,3 @@
-
-/*
- *	$Source: /mit/kerberos/ucb/mit/rlogind/RCS/rlogind.c,v $
- *	$Header: rlogind.c,v 5.0 89/06/26 18:31:01 kfall Locked $
- */
-
 /*
  * Copyright (c) 1983, 1988 The Regents of the University of California.
  * All rights reserved.
@@ -28,9 +22,16 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.35 (Berkeley) 4/2/89";
+static char sccsid[] = "@(#)rlogind.c	5.37 (Berkeley) %G%";
 #endif /* not lint */
 
+#ifdef KERBEROS
+/* From:
+ *	$Source: /mit/kerberos/ucb/mit/rlogind/RCS/rlogind.c,v $
+ *	$Header: rlogind.c,v 5.0 89/06/26 18:31:01 kfall Locked $
+ */
+
+#endif
 /*
  * remote login server:
  *	\0
@@ -75,17 +76,9 @@ Key_schedule	schedule;
 int		encrypt = 0, retval, use_kerberos = 0, vacuous = 0;
 int		do_krb_login();
 
-#if	BSD > 43
-#define		ARGSTR			"lnkvx"
+#define		ARGSTR			"alnkvx"
 #else
-#define		ARGSTR			"nkvx"
-#endif
-#else
-#if	BSD > 43
-#define		ARGSTR			"ln"
-#else
-#define		ARGSTR			"n"
-#endif
+#define		ARGSTR			"aln"
 #endif	/* KERBEROS */
 
 char	*env[2];
@@ -94,6 +87,7 @@ char	lusername[NMAX+1], rusername[NMAX+1];
 static	char term[64] = "TERM=";
 #define	ENVSIZE	(sizeof("TERM=")-1)	/* skip null for concatenation */
 int	keepalive = 1;
+int	check_all = 0;
 
 #define	SUPERUSER(pwd)	((pwd)->pw_uid == 0)
 
@@ -107,9 +101,7 @@ main(argc, argv)
 	char **argv;
 {
 	extern int opterr, optind;
-#if	BSD > 43
 	extern int _check_rhosts_file;
-#endif
 	int ch;
 	int on = 1, fromlen;
 	struct sockaddr_in from;
@@ -119,11 +111,12 @@ main(argc, argv)
 	opterr = 0;
 	while ((ch = getopt(argc, argv, ARGSTR)) != EOF)
 		switch (ch) {
-#if	BSD > 43
+		case 'a':
+			check_all = 1;
+			break;
 		case 'l':
 			_check_rhosts_file = 0;
 			break;
-#endif
 		case 'n':
 			keepalive = 0;
 			break;
@@ -202,7 +195,7 @@ doit(f, fromp)
 		hp = &hostent;
 		hp->h_name = inet_ntoa(fromp->sin_addr);
 		hostok++;
-	} else if (local_domain(hp->h_name)) {
+	} else if (check_all || local_domain(hp->h_name)) {
 		/*
 		 * If name returned by gethostbyaddr is in our domain,
 		 * attempt to verify that we haven't been fooled by someone
@@ -706,16 +699,16 @@ do_krb_login(host, dest, encrypt)
 usage()
 {
 #ifdef	KERBEROS
-	syslog(LOG_ERR, "usage: rlogind [-k | -v] [-l] [-n]");
+	syslog(LOG_ERR, "usage: rlogind [-k | -v] [-a] [-l] [-n]");
 #else
-	syslog(LOG_ERR, "usage: rlogind [-l] [-n]");
+	syslog(LOG_ERR, "usage: rlogind [-a] [-l] [-n]");
 #endif
 }
 
 /*
  * Check whether host h is in our local domain,
- * as determined by the part of the name following
- * the first '.' in its name and in ours.
+ * defined as sharing the last two components of the domain part,
+ * or the entire domain part if the local domain has only one component.
  * If either name is unqualified (contains no '.'),
  * assume that the host is local, as it will be
  * interpreted as such.
@@ -724,11 +717,31 @@ local_domain(h)
 	char *h;
 {
 	char localhost[MAXHOSTNAMELEN];
-	char *p1, *p2 = index(h, '.');
+	char *p1, *p2, *topdomain();
 
+	localhost[0] = 0;
 	(void) gethostname(localhost, sizeof(localhost));
-	p1 = index(localhost, '.');
+	p1 = topdomain(localhost);
+	p2 = topdomain(h);
 	if (p1 == NULL || p2 == NULL || !strcasecmp(p1, p2))
 		return(1);
 	return(0);
+}
+
+char *
+topdomain(h)
+	char *h;
+{
+	register char *p;
+	char *maybe = NULL;
+	int dots = 0;
+
+	for (p = h + strlen(h); p >= h; p--) {
+		if (*p == '.') {
+			if (++dots == 2)
+				return (p);
+			maybe = p;
+		}
+	}
+	return (maybe);
 }
