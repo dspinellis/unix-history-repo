@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vfs_cluster.c	6.6 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	6.7 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -568,9 +568,7 @@ loop:
 
 /*
  * Pick up the device's error number and pass it to the user;
- * if there is an error but the number is 0 set a generalized
- * code.  Actually the latter is always true because devices
- * don't yet return specific errors.
+ * if there is an error but the number is 0 set a generalized code.
  */
 geterror(bp)
 	register struct buf *bp;
