@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)chgrp.1	6.2 (Berkeley) %G%
+.\"	@(#)chgrp.1	6.3 (Berkeley) %G%
 .\"
 .TH CHGRP 1 ""
 .UC 5
@@ -10,7 +10,9 @@
 chgrp \- change group
 .SH SYNOPSIS
 .B chgrp
-[ -f -R ]
+[
+.B -Rf
+]
 group file ...
 .SH DESCRIPTION
 .I Chgrp
@@ -26,7 +28,7 @@ The user invoking
 must belong
 to the specified group and be the owner of the file, or be the super-user.
 .PP
-No errors are reported when the
+No errors, except for usage errors, are reported when the
 .B \-f
 (force) option is given.
 .PP
@@ -38,9 +40,5 @@ recursively descends its directory arguments
 setting the specified group-ID.
 When symbolic links are encountered, their group is changed,
 but they are not traversed.
-.SH FILES
-/etc/group
 .SH "SEE ALSO"
-chown(2),
-passwd(5),
-group(5)
+chown(1), chown(2), passwd(5), group(5)
