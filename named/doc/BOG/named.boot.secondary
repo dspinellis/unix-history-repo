@@ -1,0 +1,35 @@
+.\" Copyright (c) 1986, 1988 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that this notice is preserved and that due credit is given
+.\" to the University of California at Berkeley. The name of the University
+.\" may not be used to endorse or promote products derived from this
+.\" software without specific prior written permission. This software
+.\" is provided ``as is'' without express or implied warranty.
+.\"
+.\"	@(#)named.boot.secondary	6.3 (Berkeley) 2/28/88
+.\"
+.sh 4 "Secondary Master Server"
+.(b L
+.TS
+l
+l s
+l.
+;
+; Boot file for Primary Master Name Server
+;
+.TE
+.TS
+l l l
+l
+l l l.
+; type	domain	source file or host
+;
+directory	/usr/local/domain
+secondary	Berkeley\fB.\fPEdu	128\fB.\fP32\fB.\fP0\fB.\fP4 128\fB.\fP32\fB.\fP0\fB.\fP10 ucbhosts.bak
+secondary	32\fB.\fP128\fB.\fPin-addr\fB.\fParpa	128\fB.\fP32\fB.\fP0\fB.\fP4 128\fB.\fP32\fB.\fP0\fB.\fP10 ucbhosts.rev.bak
+primary	0\fB.\fP0\fB.\fP127\fB.\fPin-addr\fB.\fParpa	named\fB.\fPlocal
+cache	\fB.\fP	root\fB.\fPcache
+.TE
+.)b

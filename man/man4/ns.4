@@ -1,0 +1,108 @@
+.\" Copyright (c) 1985 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)ns.4	1.4 (Berkeley) 2/14/89
+.\"
+.TH NS 4 "February 14, 1989"
+.UC 6
+.SH NAME
+ns \- Xerox Network Systems(tm) protocol family
+.SH SYNOPSIS
+\fBoptions NS\fP
+.br
+\fBoptions NSIP\fP
+.br
+\fBpseudo-device ns\fP
+.SH DESCRIPTION
+.IX  "ns device"  ""  "\fLns\fP \(em Xerox NS protocol family"
+The NS protocol family is a collection of protocols
+layered atop the
+.I Internet Datagram Protocol
+(IDP) transport layer, and using the Xerox NS address formats.
+The NS family provides protocol support for the
+SOCK_STREAM, SOCK_DGRAM, SOCK_SEQPACKET, and SOCK_RAW socket types; the
+SOCK_RAW interface is a debugging tool, allowing you to trace all packets
+entering, (or with toggling kernel variable, additionally leaving) the local
+host.
+.SH ADDRESSING
+NS addresses are 12 byte quantities, consisting of a 
+4 byte Network number, a 6 byte Host number and a 2 byte port number,
+all stored in network standard format.
+(on the VAX these are word and byte reversed; on the Sun they are not
+reversed).  The include file
+.RI < netns/ns.h >
+defines the NS address as a structure containing unions (for quicker
+comparisons).
+.PP
+Sockets in the Internet protocol family use the following
+addressing structure:
+.nf
+
+struct sockaddr_ns {
+	short		sns_family;
+	struct ns_addr	sns_addr;
+	char		sns_zero[2];
+};
+
+where an ns_addr is composed as follows:
+
+union ns_host {
+	u_char		c_host[6];
+	u_short		s_host[3];
+};
+
+union ns_net {
+	u_char		c_net[4];
+	u_short		s_net[2];
+};
+
+struct ns_addr {
+	union ns_net	x_net;
+	union ns_host	x_host;
+	u_short	x_port;
+};
+
+.fi
+Sockets may be created with an address of all zeroes to effect
+``wildcard'' matching on incoming messages.
+The local port address specified in a
+.IR bind (2)
+call is restricted to be greater than NSPORT_RESERVED
+(=3000, in <netns/ns.h>) unless the creating process is running
+as the super-user, providing a space of protected port numbers.
+.SH PROTOCOLS
+The NS protocol family supported by the operating system
+is comprised of
+the Internet Datagram Protocol (IDP)
+.IR idp (4),
+Error Protocol (available through IDP),
+and
+Sequenced Packet Protocol (SPP)
+.IR spp (4).
+.LP
+SPP is used to support the SOCK_STREAM and SOCK_SEQPACKET abstraction,
+while IDP is used to support the SOCK_DGRAM abstraction.
+The Error protocol is responded to by the kernel
+to handle and report errors in protocol processing;
+it is, however,
+only accessible to user programs through heroic actions.
+.SH SEE ALSO
+intro(3), byteorder(3), gethostbyname(3), getnetent(3),
+getprotoent(3), getservent(3), ns(3),
+intro(4), spp(4), idp(4), nsip(4)
+.br
+Internet Transport Protocols, Xerox Corporation document XSIS-028112
+.br
+An Advanced 4.3BSD Interprocess Communication Tutorial

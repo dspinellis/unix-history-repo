@@ -1,0 +1,65 @@
+.\" @(#)tk3270.1	1.0 6/27/86
+.TH TK3270 1 "6/27/86"
+.ds ]W UCB Computer Center
+.SH NAME
+tk3270 \- provide Tektronix 4014 graphics support for tn3270 in suntools environment
+.SH SYNOPSIS
+.B tk3270
+[ generic tool arguments ]
+.SH DESCRIPTION
+.I Tk3270
+provides graphics support for
+.IR tn3270 .
+Graphics programs on the remote host that output Tektronix 401X graphics
+commands in the Yale ASCII Terminal Communication System II transparent
+output mode will work with the
+.I tn3270/tk3270
+combination.
+.PP
+To use
+.IR tk3270 ,
+specify
+.I tk3270
+as the
+.I tn3270
+transparent mode
+.I transcom
+command.
+.PP
+When
+.I tn3270
+receives transparent mode output,
+.I tk3270
+will start up, generating
+a child process that reinvokes
+.I tk3270
+in the
+.I tektool
+environment (see
+.IR tektool (1)).
+The two processes communicate via the files /tmp/tkiXXXXXX and /tmp/tkoXXXXXX,
+where XXXXXX is the process id of the parent
+.B tk3270
+process.
+While Yale transparent mode is active, all terminal input and output occurs
+in the
+.I tektool
+window.
+When transparent mode ends, the
+.I tk3270
+processes stop, and the
+.I tektool
+window is ended.
+Terminal input and output then reverts to the original window running
+.IR tn3270 .
+.PP
+Generic tool arguments may be specified to control
+.I tektool
+window characteristics (see
+.IR tektool (1)).
+.SH FILES
+/tmp/tkiXXXXXX       input from tektool window
+.br
+/tmp/tkoXXXXXX       output to tektool window
+.SH SEE ALSO
+tn3270(1), suntools(1), tektool(1)

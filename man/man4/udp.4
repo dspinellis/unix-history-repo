@@ -1,0 +1,87 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)udp.4	6.3 (Berkeley) 2/14/89
+.\"
+.TH UDP 4 "February 14, 1989"
+.UC 5
+.SH NAME
+udp \- Internet User Datagram Protocol
+.SH SYNOPSIS
+.B #include <sys/socket.h>
+.br
+.B #include <netinet/in.h>
+.PP
+.B s = socket(AF_INET, SOCK_DGRAM, 0);
+.SH DESCRIPTION
+UDP is a simple, unreliable datagram protocol which is used
+to support the SOCK_DGRAM abstraction for the Internet
+protocol family.  UDP sockets are connectionless, and are
+normally used with the
+.I sendto 
+and
+.IR recvfrom 
+calls, though the
+.IR connect (2)
+call may also be used to fix the destination for future
+packets (in which case the 
+.IR recv (2)
+or
+.IR read (2)
+and 
+.IR send (2)
+or
+.IR write(2)
+system calls may be used).
+.PP
+UDP address formats are identical to those used by
+TCP. In particular UDP provides a port identifier in addition
+to the normal Internet address format.  Note that the UDP port
+space is separate from the TCP port space (i.e. a UDP port
+may not be \*(lqconnected\*(rq to a TCP port).  In addition broadcast
+packets may be sent (assuming the underlying network supports
+this) by using a reserved \*(lqbroadcast address\*(rq; this address
+is network interface dependent.
+.PP
+Options at the IP transport level may be used with UDP; see
+.IR ip (4).
+.SH DIAGNOSTICS
+A socket operation may fail with one of the following errors returned:
+.TP 15
+[EISCONN]
+when trying to establish a connection on a socket which
+already has one, or when trying to send a datagram with the destination
+address specified and the socket is already connected;
+.TP 15
+[ENOTCONN]
+when trying to send a datagram, but
+no destination address is specified, and the socket hasn't been
+connected;
+.TP 15
+[ENOBUFS]
+when the system runs out of memory for
+an internal data structure;
+.TP 15
+[EADDRINUSE]
+when an attempt
+is made to create a socket with a port which has already been
+allocated;
+.TP 15
+[EADDRNOTAVAIL]
+when an attempt is made to create a 
+socket with a network address for which no network interface
+exists.
+.SH SEE ALSO
+getsockopt(2), recv(2), send(2), socket(2), intro(4), inet(4), ip(4)

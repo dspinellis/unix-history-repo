@@ -1,8 +1,0 @@
-HOSTS = ( agate amber beryl coral garnet iris
-	  jade jasper lapis opal pearl populi
-	  rose ruby topaz zircon )
-
-FILES = ( /usr/lib/help/cat )
-
-${FILES} -> ${HOSTS}
-	install -R ;

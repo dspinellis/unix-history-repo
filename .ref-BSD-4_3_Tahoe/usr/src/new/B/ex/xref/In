@@ -1,6 +1,0 @@
-PUT {} IN text
-PUT 'Now is the time' IN text[1]
-PUT 'for all good men' IN text[2]
-PUT 'to come to the aid' IN text[3]
-PUT 'of the party' IN text[4]
-XREF text

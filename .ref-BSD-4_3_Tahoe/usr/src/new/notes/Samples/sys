@@ -1,3 +1,0 @@
-uicsovax:net.ALL,fa.ALL,rbe.ALL,general,to_uicsovax
-uiucdcs:net.ALL,fa.ALL,rbe.ALL,to_uiucdcs
-nf_sys:net.ALL,fa.ALL,rbe.ALL,general,to_nf::/usr/spool/notes/.utilities/newsinput

@@ -1,8 +1,0 @@
-auto-execute-command auto-fill-mode /tmp/Re\|/tmp/article
-auto-execute-command show-match .*\.[lchy]$\|.*\.lisp$\|.*\.scm$\|.*\.slisp
-auto-execute-command c-mode .*\.[chy]$
-auto-execute-command lisp-mode .*\.l$\|.*\.lisp$\|.*\.scm$\|.*\.slisp
-bind-to-key pause-jove ^[S
-bind-to-key pause-jove ^[s
-process-bind-to-key interrupt-process ^C
-process-bind-to-key process-newline ^M

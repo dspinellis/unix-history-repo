@@ -1,0 +1,46 @@
+.\" Copyright (c) 1986, 1988 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that this notice is preserved and that due credit is given
+.\" to the University of California at Berkeley. The name of the University
+.\" may not be used to endorse or promote products derived from this
+.\" software without specific prior written permission. This software
+.\" is provided ``as is'' without express or implied warranty.
+.\"
+.\"	@(#)root.cache	6.2 (Berkeley) 2/28/88
+.\"
+.sh 3 "root.cache"
+.(b L
+
+;
+;
+; Initial cache data for root domain servers.
+;
+
+.TS
+l l l l l. 
+\fB.\fP	99999999	IN	NS	SRI-NIC\fB.\fPARPA\fB.\fP
+	99999999	IN	NS	NS\fB.\fPNASA\fB.\fPGOV\fB.\fP
+	99999999	IN	NS	TERP\fB.\fPUMD\fB.\fPEDU\fB.\fP
+	99999999	IN	NS	A\fB.\fPISI\fB.\fPEDU\fB.\fP
+	99999999	IN	NS	BRL-AOS\fB.\fPARPA\fB.\fP
+	99999999	IN	NS	GUNTER-ADAM\fB.\fPARPA\fB.\fP
+	99999999	IN	NS	C\fB.\fPNYSER\fB.\fPNET\fB.\fP
+
+\fB.\fPT&
+l s s s s
+l l l l l\fB.\fP 
+;  Prep the cache (hotwire the addresses)\fB.\fP
+SRI-NIC\fB.\fPARPA\fB.\fP	99999999	IN	A	10\fB.\fP0\fB.\fP0\fB.\fP51
+SRI-NIC\fB.\fPARPA\fB.\fP	99999999	IN	A	26\fB.\fP0\fB.\fP0\fB.\fP73
+NS\fB.\fPNASA\fB.\fPGOV\fB.\fP	99999999	IN	A	128\fB.\fP102\fB.\fP16\fB.\fP10
+A\fB.\fPISI\fB.\fPEDU\fB.\fP	99999999	IN	A	26\fB.\fP3\fB.\fP0\fB.\fP103
+BRL-AOS\fB.\fPARPA\fB.\fP	99999999	IN	A	128\fB.\fP20\fB.\fP1\fB.\fP2
+BRL-AOS\fB.\fPARPA\fB.\fP	99999999	IN	A	192\fB.\fP5\fB.\fP25\fB.\fP82
+BRL-AOS\fB.\fPARPA\fB.\fP	99999999	IN	A	192\fB.\fP5\fB.\fP22\fB.\fP82
+GUNTER-ADAM\fB.\fPARPA\fB.\fP	99999999	IN	A	26\fB.\fP1\fB.\fP0\fB.\fP13
+C\fB.\fPNYSER\fB.\fPNET\fB.\fP	99999999	IN	A	128\fB.\fP213\fB.\fP5\fB.\fP17
+TERP\fB.\fPUMD\fB.\fPEDU\fB.\fP	99999999	IN	A	10\fB.\fP1\fB.\fP0\fB.\fP17
+.TE
+.)b

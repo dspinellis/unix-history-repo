@@ -1,0 +1,60 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)implogd.8	6.3 (Berkeley) 9/19/88
+.\"
+.TH IMPLOGD 8 "September 19, 1988"
+.UC 5
+.SH NAME
+implogd \- IMP logger process
+.SH SYNOPSIS
+.B /etc/implogd
+[
+.B \-d
+]
+.SH DESCRIPTION
+.I Implogd
+is program which logs error messages from the IMP,
+placing them in the file
+.IR /usr/adm/implog .
+.PP
+Entries in the file are variable length.  Each log
+entry has a fixed length header of the form:
+.PP
+.ta 0.5i 1.0i 1.5i
+.nf
+struct sockstamp {
+	short	sin_family;
+	u_short	sin_port;
+	struct	in_addr sin_addr;
+	time_t	sin_time;
+	int	sin_len;
+};
+.fi
+.PP
+followed, possibly, by the message received from the 
+IMP.  Each time the logging process is started up it
+places a time stamp entry in the file (a header with
+.I sin_len
+field set to 0).
+.PP
+The logging process will catch only those message from
+the IMP which are not processed by a protocol module,
+e.g. IP.  This implies the log should contain only
+status information such as ``IMP going down'' messages,
+``host down'' and other error messages,
+and, perhaps, stray NCP messages.
+.SH "SEE ALSO"
+imp(4), implog(8)

@@ -1,8 +1,0 @@
-set path=(/usr/dmd/bin $path)
-setenv DMD /usr/dmd
-setenv DMDSGS /usr/dmd
-alias pack "folder +inbox -pack"
-alias cur "scan +inbox last:-20"
-alias npi /usr/src/ucb/pascal/pi/a.out
-alias npx /usr/src/ucb/pascal/px/px
-alias npc 'pc -T0 -d'

@@ -1,8 +1,0 @@
-
-Outgoing UUCP:
-
-	user%host.bitnet@jade	-> us!host.bitnet!user
-
-Combine tcpldm and tcpm into one mailer with m4 definitions
-to break the two up.
-

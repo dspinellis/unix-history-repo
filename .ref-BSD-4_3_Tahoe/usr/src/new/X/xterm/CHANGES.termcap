@@ -1,6 +1,0 @@
-termcap version X10/6.4
-------- ------- -------
-
-This termcap contains the necessary modifications to access the status line
-(by sysline, for instance) and to activate the alternate screen buffer when
-entering vi.  Multiple insert and delete functions have been added.

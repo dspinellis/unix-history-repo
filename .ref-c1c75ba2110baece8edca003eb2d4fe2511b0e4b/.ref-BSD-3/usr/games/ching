@@ -1,8 +1,0 @@
-cd /usr/games/ching.d
-case $1 in
-	[6-9]*)	set H=$1;shift;;
-esac
-if	test $H
-then	phx $H | nroff $* macros -
-else	cno | phx | nroff $* macros -
-fi

@@ -1,0 +1,120 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)rwhod.8	6.3 (Berkeley) 9/19/88
+.\"
+.TH RWHOD 8 "September 19, 1988"
+.UC 5
+.SH NAME
+rwhod \- system status server
+.SH SYNOPSIS
+.B /etc/rwhod
+.SH DESCRIPTION
+.I Rwhod
+is the server which maintains the database used by the
+.IR rwho (1C)
+and
+.IR ruptime (1C)
+programs.  Its operation is predicated on the ability to
+.I broadcast
+messages on a network.
+.PP
+.I Rwhod
+operates as both a producer and consumer of status information.
+As a producer of information it periodically
+queries the state of the system and constructs
+status messages which are broadcast on a network.
+As a consumer of information, it listens for other
+.I rwhod
+servers' status messages, validating them, then recording
+them in a collection of files located in the directory
+.IR /usr/spool/rwho .
+.PP
+The server transmits and receives messages at the port indicated
+in the ``rwho'' service specification; see 
+.IR services (5).
+The messages sent and received, are of the form:
+.PP
+.nf
+.ta 0.5i 1.0i 1.5i
+struct	outmp {
+	char	out_line[8];		/* tty name */
+	char	out_name[8];		/* user id */
+	long	out_time;		/* time on */
+};
+.sp
+struct	whod {
+	char	wd_vers;
+	char	wd_type;
+	char	wd_fill[2];
+	int	wd_sendtime;
+	int	wd_recvtime;
+	char	wd_hostname[32];
+	int	wd_loadav[3];
+	int	wd_boottime;
+	struct	whoent {
+		struct	outmp we_utmp;
+		int	we_idle;
+	} wd_we[1024 / sizeof (struct whoent)];
+};
+.fi
+.PP
+All fields are converted to network byte order prior to
+transmission.  The load averages are as calculated by the
+.IR w (1)
+program, and represent load averages over the 5, 10, and 15 minute 
+intervals prior to a server's transmission; they are multiplied by 100
+for representation in an integer.  The host name
+included is that returned by the
+.IR gethostname (2)
+system call, with any trailing domain name omitted.
+The array at the end of the message contains information about
+the users logged in to the sending machine.  This information 
+includes the contents of the 
+.IR utmp (5)
+entry for each non-idle terminal line and a value indicating the
+time in seconds since a character was last received on the terminal line.
+.PP
+Messages received by the
+.I rwho
+server are discarded unless they originated at an
+.I rwho
+server's port.  In addition, if the host's name, as specified
+in the message, contains any unprintable ASCII characters, the
+message is discarded.  Valid messages received by
+.I rwhod
+are placed in files named
+.IR whod . hostname
+in the directory
+.IR /usr/spool/rwho .
+These files contain only the most recent message, in the
+format described above.
+.PP
+Status messages are generated approximately once every
+3 minutes.
+.I Rwhod
+performs an
+.IR nlist (3)
+on /vmunix every 30 minutes to guard against
+the possibility that this file is not the system
+image currently operating.
+.SH "SEE ALSO"
+rwho(1), ruptime(1)
+.SH BUGS
+There should be a way to relay status information between networks. 
+Status information should be sent only upon request rather than continuously.
+People often interpret the server dying
+or network communtication failures
+as a machine going down.

@@ -1,0 +1,104 @@
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)finger.1	6.5 (Berkeley) 9/20/88
+.\"
+.TH FINGER 1 "September 20, 1988"
+.UC 4
+.SH NAME
+finger \- user information lookup program
+.SH SYNOPSIS
+.B finger
+[
+options
+] name ...
+.SH DESCRIPTION
+By default
+.I finger
+lists the login name, full name, terminal name and write status
+(as a `*' before the terminal name if write permission is denied),
+idle time, login time, and office location and phone number
+(if they are known) for each current UNIX user.
+(Idle time is minutes if it is a single integer, hours and minutes if a ':'
+is present, or days and hours if a 'd' is present.)
+.PP
+A longer format also exists and is used by
+.I finger
+whenever a list of people's names is given.  (Account names as well as
+first and last names of users are accepted.)
+This format is multi-line, and includes all the information described above
+as well as the user's home
+directory and login shell, any plan which the person has placed in the file
+.I \&.plan
+in their home
+directory, and the project on which they are working from the file
+.I \&.project
+also in the home directory.
+.PP
+.I Finger
+may be used to lookup users on a remote machine.  The format is to specify
+the user as ``user@host.''  If the user name is left off, the
+standard format listing is provided on the remote machine.
+.PP
+.I Finger
+options include:
+.TP
+.B \-m
+Match arguments only on user name.
+.TP
+.B \-l
+Force long output format.
+.TP
+.B \-p
+Suppress printing of the
+.I \&.plan
+files
+.TP
+.B \-s
+Force short output format.
+.SH FILES
+.ta 2i
+/etc/utmp	who file
+.br
+/etc/passwd	for users names, offices, ...
+.br
+/usr/adm/lastlog	last login times
+.br
+~/.plan	plans
+.br
+~/.project	projects
+.SH "SEE ALSO"
+chfn(1), w(1), who(1)
+.SH AUTHOR
+Earl T. Cohen
+.SH BUGS
+Only the first line of the
+.I .project
+file is printed.
+.PP
+The encoding of the gcos field is UCB dependent \- it knows that an office
+`197MC' is `197M Cory Hall', and that `529BE' is `529B Evans Hall'.
+It also knows that a four digit office phone number should have a ``x2-''
+prepended.
+.PP
+There is no way to pass arguments to the remote machine as
+.I finger
+uses an internet standard port.
+.PP
+A user information data base is in the works and will radically alter
+the way the information that
+.I finger
+uses is stored.  Finger will require extensive modification when
+this is implemented.

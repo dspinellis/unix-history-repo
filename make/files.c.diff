@@ -1,0 +1,73 @@
+*** /tmp/d28415	Sat Jan 28 11:34:42 1989
+--- files.c	Mon Sep 19 20:49:37 1988
+***************
+*** 1,4 ****
+! static	char *sccsid = "@(#)files.c	4.17 (Berkeley) 87/12/21";
+  #include <fcntl.h>
+  
+  /* UNIX DEPENDENT PROCEDURES */
+--- 1,4 ----
+! static	char *sccsid = "@(#)files.c	4.18 (Berkeley) 88/09/13";
+  #include <fcntl.h>
+  
+  /* UNIX DEPENDENT PROCEDURES */
+***************
+*** 11,17 ****
+  #ifdef pwb
+  	".SUFFIXES : .L .out .o .c .f .e .r .y .yr .ye .l .s .z .x .t .h .cl",
+  #else
+! 	".SUFFIXES : .out .o .c .F .f .e .r .y .yr .ye .l .s .cl .p",
+  #endif
+  	"YACC=yacc",
+  	"YACCR=yacc -r",
+--- 11,17 ----
+  #ifdef pwb
+  	".SUFFIXES : .L .out .o .c .f .e .r .y .yr .ye .l .s .z .x .t .h .cl",
+  #else
+! 	".SUFFIXES : .out .o .c .F .f .e .r .y .yr .ye .l .s .cl .p .8 .7 .6 .5 .4 .3 .2 .1 .0",
+  #endif
+  	"YACC=yacc",
+  	"YACCR=yacc -r",
+***************
+*** 34,39 ****
+--- 34,40 ----
+  	"EFLAGS=",
+  	"FFLAGS=",
+  	"LOADLIBES=",
++ 	"NROFF=nroff",
+  #ifdef pwb
+  	"SCOMP=scomp",
+  	"SCFLAGS=",
+***************
+*** 129,134 ****
+--- 130,159 ----
+  	"\t$(LEX) $(LFLAGS) $<",
+  	"\t$(CC) $(CFLAGS) lex.yy.c $(LOADLIBES) -ll -o $@",
+  	"\trm lex.yy.c",
++ 
++ 	".8.0 :",
++ 	"\t$(NROFF) -man -h $< > $@",
++ 
++ 	".7.0 :",
++ 	"\t$(NROFF) -man -h $< > $@",
++ 
++ 	".6.0 :",
++ 	"\t$(NROFF) -man -h $< > $@",
++ 
++ 	".5.0 :",
++ 	"\t$(NROFF) -man -h $< > $@",
++ 
++ 	".4.0 :",
++ 	"\t$(NROFF) -man -h $< > $@",
++ 
++ 	".3.0 :",
++ 	"\t$(NROFF) -man -h $< > $@",
++ 
++ 	".2.0 :",
++ 	"\t$(NROFF) -man -h $< > $@",
++ 
++ 	".1.0 :",
++ 	"\t$(NROFF) -man -h $< > $@",
+  
+  	0 };
+  

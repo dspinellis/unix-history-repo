@@ -1,0 +1,65 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)gettable.8	6.3 (Berkeley) 9/20/88
+.\"
+.TH GETTABLE 8 "September 20, 1988"
+.UC 5
+.SH NAME
+gettable \- get NIC format host tables from a host 
+.SH SYNOPSIS
+.B /etc/gettable
+[
+.B \-v
+]
+.I host
+[ outfile ]
+.SH DESCRIPTION
+.I Gettable
+is a simple program used to obtain the NIC standard
+host tables from a ``nicname'' server.  The indicated
+.I host
+is queried for the tables.  The tables, if retrieved,
+are placed in the file
+.I outfile
+or by default,
+.IR hosts.txt .
+.PP
+The
+.B \-v
+option will get just the version number instead of the complete host table
+and put the output in the file
+.I outfile
+or by default,
+.IR hosts.ver .
+.PP
+.I Gettable
+operates by opening a TCP connection to the port indicated
+in the service specification for ``nicname''.  A request
+is then made for ``ALL'' names and the resultant information
+is placed in the output file.
+.PP
+.I Gettable
+is best used in conjunction with the
+.IR htable (8)
+program which converts the NIC standard file format to
+that used by the network library lookup routines.
+.SH "SEE ALSO"
+intro(3), htable(8), named(8)
+.SH BUGS
+If the name-domain system provided network name mapping well as host
+name mapping,
+.I gettable
+would no longer be needed.

@@ -1,0 +1,189 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)ifconfig.8	6.6 (Berkeley) 9/19/88
+.\"
+.TH IFCONFIG 8 "September 19, 1988"
+.UC 5
+.SH NAME
+ifconfig \- configure network interface parameters
+.SH SYOPNSIS
+.B /etc/ifconfig
+interface address_family
+[
+.I address
+[
+.I dest_address
+] ] [
+.I parameters
+]
+.br
+.B /etc/ifconfig
+interface
+[
+protocol_family
+]
+.SH DESCRIPTION
+.I Ifconfig
+is used to assign an address
+to a network interface and/or configure
+network interface parameters.
+.I Ifconfig
+must be used at boot time to define the network address
+of each interface present on a machine; it may also be used at
+a later time to redefine an interface's address
+or other operating parameters.  The
+.I interface
+parameter is a string of the form ``name unit'', e.g. ``en0''.
+.LP
+Since an interface may receive transmissions in differing protocols,
+each of which may require separate naming schemes, it is necessary
+to specify the
+.IR address_family ,
+which may change the interpretation of the remaining parameters.
+The address families currently supported are ``inet'' and ``ns''.
+.LP
+For the DARPA-Internet family,
+the address is either a host name present in the host name data
+base, 
+.IR hosts (5),
+or a DARPA Internet address expressed in the Internet standard
+``dot notation''.
+For the Xerox Network Systems(tm) family,
+addresses are 
+.IR net:a.b.c.d.e.f ,
+where
+.I net
+is the assigned network number (in decimal),
+and each of the six bytes of the host number,
+.I a
+through
+.IR f ,
+are specified in hexadecimal.
+The host number may be omitted on 10Mb/s Ethernet interfaces,
+which use the hardware physical address,
+and on interfaces other than the first.
+.PP
+The following parameters may be set with 
+.IR ifconfig :
+.TP 15
+.B up
+Mark an interface ``up''. 
+This may be used to enable an interface after an ``ifconfig down.''
+It happens automatically when setting the first address on an interface.
+If the interface was reset when previously marked down,
+the hardware will be re-initialized.
+.TP 15
+.B down
+Mark an interface ``down''.  When an interface is
+marked ``down'', the system will not attempt to
+transmit messages through that interface. 
+If possible, the interface will be reset to disable reception as well.
+This action does not automatically disable routes using the interface.
+.TP 15
+.B trailers
+Request the use of a ``trailer'' link level encapsulation when
+sending (default).
+If a network interface supports
+.IR trailers ,
+the system will, when possible, encapsulate outgoing
+messages in a manner which minimizes the number of
+memory to memory copy operations performed by the receiver.
+On networks that support the Address Resolution Protocol (see
+.IR arp (4P);
+currently, only 10 Mb/s Ethernet),
+this flag indicates that the system should request that other
+systems use trailers when sending to this host.
+Similarly, trailer encapsulations will be sent to other
+hosts that have made such requests.
+Currently used by Internet protocols only.
+.TP 15
+.B \-trailers
+Disable the use of a ``trailer'' link level encapsulation.
+.TP 15
+.B arp
+Enable the use of the Address Resolution Protocol in mapping
+between network level addresses and link level addresses (default). 
+This is currently implemented for mapping between DARPA Internet
+addresses and 10Mb/s Ethernet addresses.
+.TP 15
+.B \-arp
+Disable the use of the Address Resolution Protocol.
+.TP 15
+.BI metric " n"
+Set the routing metric of the interface to
+.IR n ,
+default 0.
+The routing metric is used by the routing protocol
+.RI ( routed (8c)).
+Higher metrics have the effect of making a route
+less favorable; metrics are counted as addition hops
+to the destination network or host.
+.TP 15
+.B debug
+Enable driver dependent debugging code; usually, this turns on
+extra console error logging.
+.TP 15
+.B \-debug
+Disable driver dependent debugging code.
+.TP 15
+.BI netmask " mask"
+(Inet only)
+Specify how much of the address to reserve for subdividing
+networks into sub-networks.
+The mask includes the network part of the local address
+and the subnet part, which is taken from the host field of the address.
+The mask can be specified as a single hexadecimal number
+with a leading 0x, with a dot-notation Internet address,
+or with a pseudo-network name listed in the network table
+.IR networks (5).
+The mask contains 1's for the bit positions in the 32-bit address
+which are to be used for the network and subnet parts,
+and 0's for the host part.
+The mask should contain at least the standard network portion,
+and the subnet field should be contiguous with the network
+portion.
+.TP 15
+.B dest_address
+Specify the address of the correspondent on the other end
+of a point to point link.
+.TP 15
+.B broadcast
+(Inet only)
+Specify the address to use to represent broadcasts to the
+network.
+The default broadcast address is the address with a host part of all 1's.
+.TP 15
+.B ipdst
+(NS only)
+This is used to specify an Internet host who is willing to receive
+ip packets encapsulating NS packets bound for a remote network.
+In this case, an apparent point to point link is constructed, and
+the address specified will be taken as the NS address and network
+of the destinee.
+.PP
+.I Ifconfig
+displays the current configuration for a network interface
+when no optional parameters are supplied.
+If a protocol family is specified,
+Ifconfig will report only the details specific to that protocol family.
+.PP
+Only the super-user may modify the configuration of a network interface.
+.SH DIAGNOSTICS
+Messages indicating the specified interface does not exit, the
+requested address is unknown, or the user is not privileged and
+tried to alter an interface's configuration.
+.SH "SEE ALSO"
+netstat(1), netintro(4), rc(8)

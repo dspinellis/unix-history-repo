@@ -1,1 +1,0 @@
-#define NYC 0

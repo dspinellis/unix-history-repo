@@ -1,0 +1,195 @@
+.\" Copyright (c) 1983, 1986 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)syslogd.8	6.6 (Berkeley) 9/19/88
+.\"
+.TH SYSLOGD 8 "September 19, 1988"
+.UC 5
+.SH NAME
+syslogd \- log systems messages
+.SH SYNOPSIS
+.B /etc/syslogd
+[
+.BI \-f configfile
+] [
+.BI \-m markinterval
+] [
+.B \-d
+]
+.SH DESCRIPTION
+.I Syslogd
+reads and logs messages into a set of files
+described by the configuration file
+/etc/syslog.conf.
+Each message is one line.
+A message can contain a priority code,
+marked by a number in angle braces
+at the beginning of the line.
+Priorities are defined in
+.RI < sys/syslog.h >.
+.I Syslogd
+reads from the UNIX domain socket
+.IR /dev/log ,
+from an Internet domain socket specified in
+.IR /etc/services ,
+and from the special device
+.I /dev/klog
+(to read kernel messages).
+.PP
+.I Syslogd
+configures when it starts up
+and whenever it receives a hangup signal.
+Lines in the configuration file have a
+.I selector
+to determine the message priorities to which the line applies
+and an
+.IR action .
+The
+.I action
+field are separated from the selector by one or more tabs.
+.PP
+Selectors are semicolon separated lists of priority specifiers.
+Each priority has a
+.I facility
+describing the part of the system that generated the message,
+a dot,
+and a
+.I level
+indicating the severity of the message.
+Symbolic names may be used.
+An asterisk selects all facilities.
+All messages of the specified level or higher (greater severity)
+are selected.
+More than one facility may be selected using commas to separate them.
+For example:
+.PP
+.ti +5
+*.emerg;mail,daemon.crit
+.PP
+Selects all facilities at the
+.I emerg
+level and the
+.I mail
+and
+.I daemon
+facilities at the
+.I crit
+level.
+.PP
+Known facilities and levels
+recognized by
+.I syslogd
+are those listed in
+.IR syslog (3)
+without the leading ``LOG_''.
+The additional facility
+``mark'' has a message at priority LOG_INFO sent to it every
+20 minutes
+(this may be changed with the
+.B \-m
+flag).
+The ``mark'' facility is not enabled by a facility field containing an asterisk.
+The level ``none'' may be used to disable a particular facility.
+For example,
+.PP
+.ti +5
+*.debug;mail.none
+.PP
+Sends all messages
+.I except
+mail messages to the selected file.
+.PP
+The second part of each line describes where the message is to be logged
+if this line is selected.
+There are four forms:
+.IP \(bu 3n
+A filename (beginning with a leading slash).
+The file will be opened in append mode.
+.IP \(bu 3n
+A hostname preceeded by an at sign (``@'').
+Selected messages are forwarded to the
+.I syslogd
+on the named host.
+.IP \(bu 3n
+A comma separated list of users.
+Selected messages are written to those users
+if they are logged in.
+.IP \(bu 3n
+An asterisk.
+Selected messages are written to all logged-in users.
+.PP
+Blank lines and lines beginning with `#' are ignored.
+.PP
+For example, the configuration file:
+.PP
+.nf
+.ta 4m +\w'*.alert,auth.warning'u+3
+	kern,mark.debug	/dev/console
+	*.notice;mail.info	/usr/spool/adm/syslog
+	*.crit	/usr/adm/critical
+	kern.err	@ucbarpa
+	*.emerg	*
+	*.alert	eric,kridle
+	*.alert;auth.warning	ralph
+.fi
+.PP
+logs all kernel messages
+and 20 minute marks onto the system console,
+all notice (or higher) level messages and all mail system messages
+except debug messages
+into the file /usr/spool/adm/syslog,
+and all critical messages
+into /usr/adm/critical;
+kernel messages of error severity or higher are forwarded
+to ucbarpa.
+All users will be informed of any emergency messages,
+the users ``eric'' and ``kridle''
+will be informed of any alert messages,
+and the user ``ralph''
+will be informed of any alert message,
+or any warning message (or higher)
+from the authorization system.
+.PP
+The flags are:
+.TP 0.5i
+.B \-f
+Specify an alternate configuration file.
+.TP
+.B \-m
+Select the number of minutes between mark messages.
+.TP
+.B \-d
+Turn on debugging.
+.PP
+.I Syslogd
+creates the file /etc/syslog.pid, if possible,
+containing a single line with its process id.
+This can be used to kill or reconfigure
+.I syslogd.
+.PP
+To bring
+.I syslogd
+down,
+it should be sent a terminate signal (e.g. kill \`cat /etc/syslog.pid\`).
+.SH FILES
+.ta \w'/etc/syslog.conf    'u
+.nf
+/etc/syslog.conf	the configuration file
+/etc/syslog.pid	the process id
+/dev/log	Name of the UNIX domain datagram log socket
+/dev/klog	The kernel log device
+.fi
+.SH SEE ALSO
+logger(1), syslog(3)

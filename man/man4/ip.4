@@ -1,0 +1,118 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)ip.4	6.3 (Berkeley) 2/14/89
+.\"
+.TH IP 4 "February 14, 1989"
+.UC 5
+.SH NAME
+ip \- Internet Protocol
+.SH SYNOPSIS
+.B #include <sys/socket.h>
+.br
+.B #include <netinet/in.h>
+.PP
+.B s = socket(AF_INET, SOCK_RAW, proto);
+.SH DESCRIPTION
+IP is the transport layer protocol used
+by the Internet protocol family.
+Options may be set at the IP level
+when using higher-level protocols that are based on IP
+(such as TCP and UDP).
+It may also be accessed
+through a \*(lqraw socket\*(rq when developing new protocols, or
+special purpose applications.
+.PP
+A single generic option is supported at the IP level, IP_OPTIONS,
+that may be used to provide IP options to be transmitted in the IP
+header of each outgoing packet.
+Options are set with
+.IR setsockopt (2)
+and examined with
+.IR getsockopt (2).
+The format of IP options to be sent is that specified by the IP protocol
+specification, with one exception:
+the list of addresses for Source Route options must include the first-hop
+gateway at the beginning of the list of gateways.
+The first-hop gateway address will be extracted from the option list
+and the size adjusted accordingly before use.
+IP options may be used with any socket type in the Internet family.
+.PP
+Raw IP sockets are connectionless,
+and are normally used with the
+.I sendto 
+and
+.I recvfrom 
+calls, though the
+.IR connect (2)
+call may also be used to fix the destination for future
+packets (in which case the 
+.IR read (2)
+or
+.IR recv (2)
+and 
+.IR write (2)
+or
+.IR send (2)
+system calls may be used).
+.PP
+If
+.I proto
+is 0, the default protocol IPPROTO_RAW is used for outgoing
+packets, and only incoming packets destined for that protocol
+are received.
+If
+.I proto
+is non-zero, that protocol number will be used on outgoing packets
+and to filter incoming packets.
+.PP
+Outgoing packets automatically have an IP header prepended to
+them (based on the destination address and the protocol
+number the socket is created with).
+Incoming packets are received with IP header and options intact.
+.SH DIAGNOSTICS
+A socket operation may fail with one of the following errors returned:
+.TP 15
+[EISCONN]
+when trying to establish a connection on a socket which
+already has one, or when trying to send a datagram with the destination
+address specified and the socket is already connected;
+.TP 15
+[ENOTCONN]
+when trying to send a datagram, but
+no destination address is specified, and the socket hasn't been
+connected;
+.TP 15
+[ENOBUFS]
+when the system runs out of memory for
+an internal data structure;
+.TP 15
+[EADDRNOTAVAIL]
+when an attempt is made to create a 
+socket with a network address for which no network interface
+exists.
+.PP
+The following errors specific to IP
+may occur when setting or getting IP options:
+.TP 15
+[EINVAL]
+An unknown socket option name was given.
+.TP 15
+[EINVAL]
+The IP option field was improperly formed;
+an option field was shorter than the minimum value
+or longer than the option buffer provided.
+.SH SEE ALSO
+getsockopt(2), send(2), recv(2), intro(4), icmp(4), inet(4)

@@ -1,5 +1,0 @@
-HOW'TO SAVE word AT line:
-	SHARE xtab
-	IF word not'in keys xtab:
-		PUT {} IN xtab[word]
-	INSERT line IN xtab[word]

@@ -1,3 +1,0 @@
-Rs does something funny with "echo ~/* | rs"; what is it.
-Consolidate some options with a format spec ala printf
-e.g. -f input_delim.output_delim.gutter.display_width.adjust.recycle.etc.

@@ -1,2 +1,0 @@
-#
-make "PRINT=ditroff -Pdp" print
