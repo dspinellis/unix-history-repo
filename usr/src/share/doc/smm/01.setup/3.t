@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)3.t	6.22 (Berkeley) %G%
+.\"	@(#)3.t	6.23 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -1640,6 +1640,27 @@ See
 .Xr ktrace (1)
 and
 .Xr kdump (1).
+.PP
+The system now has a database of file names,
+constructed once a week from
+.Xr cron .
+To find a file by name only,
+the command \fIlocate name\fP will look in the database for
+files that match the name.
+This command is much faster than the full filesystem traversal
+done by find:
+.DS
+find / \-name name \-print
+.DE
+.PP
+.Xr Find
+itself has two new options which are important to be aware of
+if you plan on using NFS.
+The ``fstype'' and ``prune'' options can be used together to prevent
+find from crossing NFS mount points.
+See
+.Pn /etc/daily
+for an example use.
 .NH 2
 Hints on converting from \*(Ps to \*(4B
 .PP
@@ -1694,9 +1715,12 @@ call on a unix domain socket should use the ``SUN_LEN'' macro from
 .Pn <sys/un.h> .
 One old way that was used:
 .DS
-addrlen  =  strlen(unaddr.sun_path)  +  sizeof(unaddr.sun_family);
+.ft CW
+addrlen = strlen(unaddr.sun_path) + sizeof(unaddr.sun_family);
 .DE
-no longer works as there is an additional field ``sun_len''.
+no longer works as there is an additional
+.Pn sun_len
+field.
 .PP
 The timezone conversion code uses data files installed in
 .Pn /usr/share/zoneinfo
@@ -1789,18 +1813,6 @@ The
 header that was in the user structure is no longer present.
 Locally-written debuggers that try to check the magic number
 will need to be changed.
-.PP
-The system now has a database of file names,
-constructed once a week from
-.Xr cron .
-To find a file by name only,
-the command \fIlocate name\fP will look in the database for
-files that match the name.
-This command is much faster than the full filesystem traversal
-done by find:
-.DS
-find / \-name name \-print
-.DE
 .PP
 Files may not be deleted from directories having the ``sticky'' (ISVTX) bit
 set in their modes
