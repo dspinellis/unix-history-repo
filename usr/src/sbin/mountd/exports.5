@@ -1,80 +1,121 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)exports.5	5.1 (Berkeley) %G%
+.\"     @(#)exports.5	5.2 (Berkeley) %G%
 .\"
-.TH EXPORTS 5 ""
-.UC 7
-.SH NAME
-exports \- define remote mount points for NFS mount requests
-.SH SYNOPSIS
-.B /etc/exports
-.SH DESCRIPTION
-.I Exports
+.Dd 
+.Dt EXPORTS 5
+.Os
+.Sh NAME
+.Nm exports
+.Nd define remote mount points for
+.Tn NFS
+mount requests
+.Sh SYNOPSIS
+.Nm exports
+.Sh DESCRIPTION
+The
+.Nm exports
+file
 specifies remote mount points for the
-.SM NFS
+.Tn NFS
 mount protocol per the
-.SM NFS
+.Tn NFS
 server specification; see
-``Network File System Protocol Specification, RFC1094''.
-.LP
+.%T "Network File System Protocol Specification \\*(tNRFC\\*(sP 1094" .
+.Pp
 Each line in the file specifies one remote mount point.
 The first field is the mount point directory path followed
 optionally by export options and specific hosts separated by white space.
 Only the first entry for a given local file system may specify the export
-options, since these are handled on a \fIper local file system\fR basis.
+options, since these are handled on a
+.Em per local file system
+basis.
 If no specific hosts are specified,
 the mount point is exported to all hosts.
-.LP
+.Pp
 The export options are as follows:
-.B \-root=<uid>
+.Sm off
+.Fl root No = Aq Sy uid
+.Sm on
 specifies how to map root's uid (default -2).
-The option \fB\-r\fR is synonyms for \fB\-root\fP
+The option
+.Fl r
+is synonyms for
+.Fl root
 in an effort to be backward compatible with older export file formats.
-.sp
-.B \-ro
+.Pp
+.Fl ro
 specifies that the file system should be exported Read-only
 (default Read/Write).
-The option \fB-o\fR is synonyms for \fB\-ro\fP
+The option
+.Fl o
+is synonyms for
+.Fl ro
 in an effort to be backward compatible with older export file formats.
-.LP
+.Pp
 For example:
-.RS
+.Bd -literal -offset indent
 /usr -root=0 rickers snowhite.cis.uoguelph.ca
-.br
 /usr/local 131.104.48.16
-.br
 /u -root=5
-.br
 /u2 -ro
-.RE
-.sp
-given that \fB/usr\fR, \fB/u\fR and \fB/u2\fR are
-local file system mount points, specifies the following:
-.RS
-\fB/usr\fR
-is exported to hosts \fIrickers\fR and \fIsnowhite.cis.uoguelph.ca\fR with
+.Ed
+.Pp
+Given that
+.Sy /usr ,
+.Sy /u
+and
+.Sy /u2
+are
+local file system mount points, the above example specifies the following:
+.Bd -filled -offset indent
+.Sy /usr
+is exported to hosts
+.Em rickers
+and
+.Em snowhite.cis.uoguelph.ca
+with
 root mapped to root.
-.br
-\fB/usr/local\fR
-is exported to host \fI131.104.48.16\fR with root mapped to root.
-.br
-\fB/u\fR
+.Pp
+.Sy /usr/local
+is exported to host
+.Em 131.104.48.16
+with root mapped to root.
+.Pp
+.Sy /u
 is exported to all hosts with root mapped to uid 5.
-.br
-\fB/u2\fR
+.Pp
+.Sy /u2
 is exported to all hosts Read-only with root mapped to -2.
-.RE
-.LP
-Note that \fB/usr/local -root=5\fR would have been incorrect,
-since \fB/usr\fR and \fB/usr/local\fR reside in the same local file system.
-.SH FILES
-/etc/exports
-.SH SEE ALSO
-.IR mountd (8),
-.IR nfsd (8),
-.IR showmount (8)
-.SH BUGS
+.Ed
+.Pp
+Note that
+.Dq Li "/usr/local -root=5"
+would have been incorrect,
+since
+.Sy /usr
+and
+.Sy /usr/local
+reside in the same local file system.
+.Sh FILES
+.Bl -tag -width /etc/exports -compact
+.It Pa /etc/exports
+The remote mount point file
+.Nm exports
+resides in
+.Pa /etc .
+.El
+.Sh SEE ALSO
+.Xr mountd 8 ,
+.Xr nfsd 8 ,
+.Xr showmount 8
+.Sh BUGS
 It would be nice if the export options were not tied to local mount points.
+.Sh HISTORY
+The
+.Nm
+file format is
+.Ud .
