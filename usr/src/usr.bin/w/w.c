@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -53,8 +53,8 @@ struct pr {
 int	nproc;
 
 struct	nlist nl[] = {
-	{ "_avenrun" },
-#define	X_AVENRUN	0
+	{ "_nproc" },
+#define	X_NPROC		0
 	{ "_boottime" },
 #define	X_BOOTTIME	1
 	{ "_proc" },
@@ -67,12 +67,10 @@ struct	nlist nl[] = {
 #define	X_USRPT		5
 	{ "_nswap" },
 #define	X_NSWAP		6
-	{ "_nproc" },
-#define	X_NPROC		7
 	{ "_dmmin" },
-#define	X_DMMIN		8
+#define	X_DMMIN		7
 	{ "_dmmax" },
-#define	X_DMMAX		9
+#define	X_DMMAX		8
 	{ "" },
 };
 
@@ -247,11 +245,9 @@ main(argc, argv)
 
 		/*
 		 * Print 1, 5, and 15 minute load averages.
-		 * (Found by looking in kernel for avenrun).
 		 */
 		printf(",  load average:");
-		lseek(kmem, (long)nl[X_AVENRUN].n_value, 0);
-		read(kmem, avenrun, sizeof(avenrun));
+		(void)getloadavg(avenrun, sizeof(avenrun) / sizeof(avenrun[0]));
 		for (i = 0; i < (sizeof(avenrun)/sizeof(avenrun[0])); i++) {
 			if (i > 0)
 				printf(",");
