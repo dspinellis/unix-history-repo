@@ -165,6 +165,18 @@ regular expression, and -1 if the compiled regular expression was
 invalid
 .Pq indicating an internal error .
 
+Note that
+.Nm re_comp
+and
+.Nm re_exec
+need the
+.Xr regexp 3
+library with the traditional
+.Pq V8
+function call interface rather than the new library as
+contained in the standard C library. The
+.Xr regexp 3
+library is also part of libcompat.a.
 
 .Sh RETURN VALUES
 The functions usually return with a negative value on error.
