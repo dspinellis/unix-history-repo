@@ -1,4 +1,4 @@
-/*	defs.h	4.16	85/02/25	*/
+/*	defs.h	4.17	85/06/03	*/
 
 /*
  * Internal data structure definitions for
@@ -28,7 +28,7 @@
  */
 #define	CHECK_INTERVAL	(1*60)
 
-#define	LOOPBACKNET	0177
+#define	LOOPBACKNET	0x7f000000	/* 127.0.0.0 */
 #define equal(a1, a2) \
 	(bcmp((caddr_t)(a1), (caddr_t)(a2), sizeof (struct sockaddr)) == 0)
 #define	min(a,b)	((a)>(b)?(b):(a))
