@@ -2,16 +2,16 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dh.4	4.1 (Berkeley) %G%
+.\"	@(#)dh.4	5.1 (Berkeley) %G%
 .\"
-.TH DH 4 4/1/81
+.TH DH 4 "27 July 1983"
 .UC 4
 .SH NAME
-dh, dm \- DH-11/DM-11 communications multiplexer
+dh \- DH-11/DM-11 communications multiplexer
 .SH SYNOPSIS
-device dh0 at uba0 csr 0160020 vector dhrint dhxint
+.B "device dh0 at uba0 csr 0160020 vector dhrint dhxint"
 .br
-device dm0 at uba0 csr 0170500 vector dmintr
+.B "device dm0 at uba0 csr 0170500 vector dmintr"
 .SH DESCRIPTION
 A dh-11 provides 16 communication lines; dm-11's may be optionally
 paired with dh-11's to provide modem control for the lines.
@@ -32,11 +32,9 @@ connected, and that the line should be treated as hard-wired with carrier
 always present.  Thus specifying ``flags 0x0004'' in the specification of dh0
 would cause line ttyh2 to be treated in this way.
 .PP
-If the Berknet line driver
-.IR bk (4)
-is included in the system, then the dh driver will use its input silos
-and poll for input at each clock tick (normally 1/50'th or 1/60'th of a
-second) rather than taking an interrupt on each input character.
+The dh driver normally uses input silos
+and polls for input at each clock tick (10 milliseconds)
+rather than taking an interrupt on each input character.
 .SH FILES
 /dev/tty[hi][0-9a-f]
 .br
@@ -50,12 +48,11 @@ error.  This occurs most frequently when the UNIBUS is heavily loaded
 and when devices which hog the bus (such as rk07's) are present.
 It is not serious.
 .PP
-\fBdh%d: silo overflow\fR.  The 64 character input silo overflowed
+\fBdh%d: silo overflow\fR.  The character input silo overflowed
 before it could be serviced.  This can happen if a hard error occurs
 when the CPU is running with elevated priority, as the system will
 then print a message on the console with interrupts disabled.  If the
 Berknet
-.IR net (1)
 is running on a
 .I dh
 line at high speed (e.g. 9600 baud), there is only 1/15th of a second of
