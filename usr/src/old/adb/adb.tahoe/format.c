@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)format.c	1.2 (Berkeley) %G%";
+static	char sccsid[] = "@(#)format.c	1.3 (Berkeley) %G%";
 #endif
 /*
  *
@@ -210,20 +210,31 @@ STRING		ifp;
 			printf("%-16D", wx); break;
 
 		    case 'f':
-			fw.d = 0;
-			fw.s[0] = w;
-			fw.s[1] = wx&0xffff;
-			printf("%-16.9f", fw.d);
-			dotinc=4; break;
+			if ((w & ~0xFFFF00FF) == 0x8000)
+				printf("(reserved oprnd)");
+			else {
+				fw.d = 0;
+				fw.s[0] = w;
+				fw.s[1] = wx&0xffff;
+				printf("%-16.9f", fw.d);
+			}
+			dotinc = 4;
+			break;
 
 		    case 'F':	/* may be done with one get call on TAHOE */
-			fw.s[0] = w;
-			fw.s[1] = wx&0xffff;
-			fw.s[2]=shorten(get(inkdot(4),itype));
-			fw.s[3]=shorten(get(inkdot(6),itype));
-			IF errflg THEN return(fp); FI
-			printf("%-32.18F", fw.d);
-			dotinc=8; break;
+			if ((w & ~0xFFFF00FF) == 0x8000)
+				printf("(reserved oprnd)");
+			else {
+				fw.s[2] = shorten(get(inkdot(4),itype));
+				fw.s[3] = shorten(get(inkdot(6),itype));
+				if (errflg)
+					return(fp);
+				fw.s[0] = w;
+				fw.s[1] = wx&0xffff;
+				printf("%-32.18F", fw.d);
+			}
+			dotinc = 8;
+			break;
 
 		    case 'n': case 'N':
 			printc('\n'); dotinc=0; break;
