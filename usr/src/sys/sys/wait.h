@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)wait.h	7.9 (Berkeley) %G%
+ *	@(#)wait.h	7.10 (Berkeley) %G%
  */
 
 /*
@@ -111,3 +111,15 @@ union wait {
 
 #define	WSTOPPED	_WSTOPPED
 #endif /* _POSIX_SOURCE */
+
+#if __STDC__ || c_plusplus
+pid_t wait(int *);
+pid_t waitpid(pid_t, int *, int);
+pid_t wait3(int *, int, struct rusage *);
+pid_t wait4(pid_t, int *, int, struct rusage *);
+#else
+pid_t wait();
+pid_t waitpid();
+pid_t wait3();
+pid_t wait4();
+#endif
