@@ -16,7 +16,7 @@ POPDIVERT
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	8.15 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	8.16 (Berkeley) %G%')
 
 #
 #  There are innumerable variations on the UUCP mailer.  It really
@@ -24,15 +24,15 @@ VERSIONID(`@(#)uucp.m4	8.15 (Berkeley) %G%')
 #
 
 # old UUCP mailer (two names)
-Muucp,		P=UUCP_MAILER_PATH, F=CONCAT(DFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=UUCP_MAX_SIZE,
+Muucp,		P=UUCP_MAILER_PATH, F=CONCAT(DFMhuU, UUCP_MAILER_FLAGS), S=12, R=22/42, M=UUCP_MAX_SIZE,
 		A=UUCP_MAILER_ARGS
-Muucp-old,	P=UUCP_MAILER_PATH, F=CONCAT(DFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=UUCP_MAX_SIZE,
+Muucp-old,	P=UUCP_MAILER_PATH, F=CONCAT(DFMhuU, UUCP_MAILER_FLAGS), S=12, R=22/42, M=UUCP_MAX_SIZE,
 		A=UUCP_MAILER_ARGS
 
 # smart UUCP mailer (handles multiple addresses) (two names)
-Msuucp,		P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=UUCP_MAX_SIZE,
+Msuucp,		P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuU, UUCP_MAILER_FLAGS), S=12, R=22/42, M=UUCP_MAX_SIZE,
 		A=UUCP_MAILER_ARGS
-Muucp-new,	P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=UUCP_MAX_SIZE,
+Muucp-new,	P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuU, UUCP_MAILER_FLAGS), S=12, R=22/42, M=UUCP_MAX_SIZE,
 		A=UUCP_MAILER_ARGS
 
 ifdef(`_MAILER_smtp_',
@@ -68,9 +68,24 @@ R$+				$: $U ! $1		prepend our name
 R! $+				$: $k ! $1		in case $U undefined
 
 #
-#  envelope and header recipient rewriting
+#  envelope recipient rewriting
 #
 S22
+
+# don't touch list:; syntax
+R$* :; <@>			$@ $1 :;
+
+R$* < @ $* . >			$1 < @ $2 >		strip trailing dots
+R$* < @ $j >			$1			strip local name
+R<@ $- . UUCP > : $+		$1 ! $2			convert to UUCP format
+R<@ $+ > : $+			$1 ! $2			convert to UUCP format
+R$* < @ $- . UUCP >		$2 ! $1			convert to UUCP format
+R$* < @ $+ >			$2 ! $1			convert to UUCP format
+
+#
+#  header recipient rewriting
+#
+S42
 
 # don't touch list:; syntax
 R$* :; <@>			$@ $1 :;
