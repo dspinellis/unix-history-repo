@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ttgeneric.c	3.10 83/08/17";
+static	char *sccsid = "@(#)ttgeneric.c	3.11 83/08/18";
 #endif
 
 #include "ww.h"
@@ -48,8 +48,6 @@ char gen_OS;
 char gen_BS;
 int gen_CO;
 int gen_LI;
-char gen_strings[1024];
-char *gen_strp = gen_strings;
 
 #define pc(c) putchar('c')
 #define ps(s) fputs((s), stdout)
