@@ -11,11 +11,11 @@ Dear Mary:
 .sp
 .pp
 This letter outlines the steps that we have taken
-to establish the Regent's copyright on the parts of the Fourth Berkeley
+to establish the Regents' copyright on the parts of the Fourth Berkeley
 Software Distribution (4.2BSD and 4.3BSD) that are derived from work
 done at the University of California, Berkeley.
 Briefly, we have inserted copyright notices into each of the separate
-source files for original Berkeley work and major Berkeley additions.
+source files which contain original Berkeley work and major Berkeley additions.
 The notices were inserted so
 that the copyright notice is included in the executable programs
 when they are compiled from the copyrighted source.
@@ -28,14 +28,14 @@ These changes were all completed in time for the
 .pp
 The copyright notices have been placed in each source file that was
 originally written at Berkeley, or which was rewritten or substantially
-modified at Berkeley such that the most of the program was of
+modified at Berkeley such that the majority of the program is of
 Berkeley origin.
 In addition, programs which have been modified to the extent that
 their function is significantly improved have been marked
 with the University copyright.
-This distinction requires somewhat less change than the 90% derivation
-that we discussed,
-but I believe it to be reasonable for those few programs that it covers.
+In the latter case, although there may be somewhat less than the 90%
+Berkeley derivation we discussed,
+I believe it to be reasonable for those few programs that it covers.
 Other programs that have not been modified,
 or have been less substantially modified at Berkeley,
 have not been marked as copyrighted.
@@ -48,18 +48,18 @@ code and thus require an AT&T license as well as a Berkeley license:
 .nf
 .in+1i
 .sp
-Copyright (c) 1980 Regents of the University of California.
+Copyright (c) 1983 Regents of the University of California.
 All rights reserved.  The Berkeley software License Agreement
 specifies the terms and conditions for redistribution.
 .sp
 .in -1i
 .fi
-The second is for programs that do not contain any AT&T code,
+The second is for programs that do not contain AT&T code,
 and thus require only that due credit be given to the University:
 .nf
 .in+1i
 .sp
-Copyright (c) 1980 Regents of the University of California.
+Copyright (c) 1983 Regents of the University of California.
 All rights reserved.
 .sp
 Redistribution and use in source and binary forms are permitted
@@ -81,7 +81,7 @@ one notice of the form
 .in +1i
 .sp
 char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\en\e
+"@(#) Copyright (c) 1983 Regents of the University of California.\en\e
  All rights reserved.\en";
 .sp
 .in -1i
@@ -100,15 +100,16 @@ We are now preparing
 to reclaim the copyright on the material that was distributed
 without copyright notices in 4.2BSD.
 We intend to send a letter, a draft
-of which is attached, to all the existing licensees of 4.2BSD and to AT&T.
+of which is attached, to all the existing licensees of 4.2BSD.
 This letter will require each licensee to insert the copyright notices
 in existing copies of the licensed material, and to similarly notify
 anyone to whom they have licensed 4.2BSD sources.
 To simplify the procedure,
-we will not distinguish between the files to contain the
-Berkeley-only copyright and the AT&T restricted copyright;
+we will not annotate the list of files to indicate which of the two copyright
+notices should be used; 
 instead we will instruct them to put the more restrictive
-copyright requiring an AT&T license in all the listed files.
+copyright requiring an AT&T license (appearing above as the first) 
+in all the listed files.
 I have not specifically addressed the question of binary-only
 redistributions of 4.2BSD, which would not include most of the
 files requiring modification.
