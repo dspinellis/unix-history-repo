@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)curses.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)curses.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -20,7 +20,16 @@ int	__noqch = 0;			/*
 					 * insert/delete line capabilities 
 					 * for quick change on refresh.
 					 */
-
+char	AM, BS, CA, DA, EO, HC, HZ, IN, MI, MS, NC, NS, OS,
+	PC, UL, XB, XN, XT, XS, XX;
+char	*AL, *BC, *BT, *CD, *CE, *CL, *CM, *CR, *CS, *DC, *DL,
+	*DM, *DO, *ED, *EI, *K0, *K1, *K2, *K3, *K4, *K5, *K6,
+	*K7, *K8, *K9, *HO, *IC, *IM, *IP, *KD, *KE, *KH, *KL,
+	*KR, *KS, *KU, *LL, *MA, *ND, *NL, *RC, *SC, *SE, *SF,
+	*SO, *SR, *TA, *TE, *TI, *UC, *UE, *UP, *US, *VB, *VS,
+	*VE, *al, *dl, *sf, *sr,
+	*AL_PARM, *DL_PARM, *UP_PARM, *DOWN_PARM, *LEFT_PARM,
+	*RIGHT_PARM;
 /*
  * Public.
  *
@@ -38,13 +47,3 @@ char	 GT;				/* Gtty indicates tabs. */
 char	 NONL;				/* Term can't hack LF doing a CR. */
 char	 UPPERCASE;			/* Terminal is uppercase only. */
 
-char	AM, BS, CA, DA, EO, HC, HZ, IN, MI, MS, NC, NS, OS,
-	PC, UL, XB, XN, XT, XS, XX;
-char	*AL, *BC, *BT, *CD, *CE, *CL, *CM, *CR, *CS, *DC, *DL,
-	*DM, *DO, *ED, *EI, *K0, *K1, *K2, *K3, *K4, *K5, *K6,
-	*K7, *K8, *K9, *HO, *IC, *IM, *IP, *KD, *KE, *KH, *KL,
-	*KR, *KS, *KU, *LL, *MA, *ND, *NL, *RC, *SC, *SE, *SF,
-	*SO, *SR, *TA, *TE, *TI, *UC, *UE, *UP, *US, *VB, *VS,
-	*VE, *al, *dl, *sf, *sr,
-	*AL_PARM, *DL_PARM, *UP_PARM, *DOWN_PARM, *LEFT_PARM,
-	*RIGHT_PARM;
