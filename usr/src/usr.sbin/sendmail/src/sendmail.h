@@ -7,7 +7,7 @@
 **  All rights reserved.  The Berkeley software License Agreement
 **  specifies the terms and conditions for redistribution.
 **
-**	@(#)sendmail.h	5.7 (Berkeley) %G%
+**	@(#)sendmail.h	5.8 (Berkeley) %G%
 */
 
 /*
@@ -19,7 +19,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.7		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.8		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -432,6 +432,7 @@ EXTERN bool	HoldErrs;	/* only output errors to transcript */
 EXTERN bool	NoConnect;	/* don't connect to non-local mailers */
 EXTERN bool	SuperSafe;	/* be extra careful, even if expensive */
 EXTERN bool	AutoRebuild;	/* auto-rebuild the alias database as needed */
+EXTERN bool	CheckAliases;	/* parse addresses during newaliases */
 EXTERN int	SafeAlias;	/* minutes to wait until @:@ in alias file */
 EXTERN time_t	TimeOut;	/* time until timeout */
 EXTERN FILE	*InChannel;	/* input connection */
