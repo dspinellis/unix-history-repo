@@ -10,13 +10,15 @@ PUSHDIVERT(-1)
 ifdef(`UUCP_MAILER_PATH',, `define(`UUCP_MAILER_PATH', /usr/bin/uux)')
 ifdef(`UUCP_MAILER_ARGS',, `define(`UUCP_MAILER_ARGS', `uux - -r -a$g -gC $h!rmail ($u)')')
 ifdef(`UUCP_MAILER_FLAGS',, `define(`UUCP_MAILER_FLAGS', `')')
-ifdef(`UUCP_MAX_SIZE',, `define(`UUCP_MAX_SIZE', 100000)')
+ifdef(`UUCP_MAILER_MAX',,
+	`define(`UUCP_MAILER_MAX',
+		`ifdef(`UUCP_MAX_SIZE', `UUCP_MAX_SIZE', 100000)')')
 POPDIVERT
 #####################################
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	8.21 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	8.22 (Berkeley) %G%')
 
 #
 #  There are innumerable variations on the UUCP mailer.  It really
@@ -24,24 +26,30 @@ VERSIONID(`@(#)uucp.m4	8.21 (Berkeley) %G%')
 #
 
 # old UUCP mailer (two names)
-Muucp,		P=UUCP_MAILER_PATH, F=CONCAT(DFMhuUd, UUCP_MAILER_FLAGS), S=12, R=22/42, M=UUCP_MAX_SIZE, T=X-UUCP/X-UUCP/X-Unix,
+Muucp,		P=UUCP_MAILER_PATH, F=CONCAT(DFMhuUd, UUCP_MAILER_FLAGS), S=12, R=22/42, M=UUCP_MAILER_MAX,
+		_OPTINS(`UUCP_MAILER_CHARSET', `C=', `, ')T=X-UUCP/X-UUCP/X-Unix,
 		A=UUCP_MAILER_ARGS
-Muucp-old,	P=UUCP_MAILER_PATH, F=CONCAT(DFMhuUd, UUCP_MAILER_FLAGS), S=12, R=22/42, M=UUCP_MAX_SIZE, T=X-UUCP/X-UUCP/X-Unix,
+Muucp-old,	P=UUCP_MAILER_PATH, F=CONCAT(DFMhuUd, UUCP_MAILER_FLAGS), S=12, R=22/42, M=UUCP_MAILER_MAX,
+		_OPTINS(`UUCP_MAILER_CHARSET', `C=', `, ')T=X-UUCP/X-UUCP/X-Unix,
 		A=UUCP_MAILER_ARGS
 
 # smart UUCP mailer (handles multiple addresses) (two names)
-Msuucp,		P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuUd, UUCP_MAILER_FLAGS), S=12, R=22/42, M=UUCP_MAX_SIZE, T=X-UUCP/X-UUCP/X-Unix,
+Msuucp,		P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuUd, UUCP_MAILER_FLAGS), S=12, R=22/42, M=UUCP_MAILER_MAX,
+		_OPTINS(`UUCP_MAILER_CHARSET', `C=', `, ')T=X-UUCP/X-UUCP/X-Unix,
 		A=UUCP_MAILER_ARGS
-Muucp-new,	P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuUd, UUCP_MAILER_FLAGS), S=12, R=22/42, M=UUCP_MAX_SIZE, T=X-UUCP/X-UUCP/X-Unix,
+Muucp-new,	P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuUd, UUCP_MAILER_FLAGS), S=12, R=22/42, M=UUCP_MAILER_MAX,
+		_OPTINS(`UUCP_MAILER_CHARSET', `C=', `, ')T=X-UUCP/X-UUCP/X-Unix,
 		A=UUCP_MAILER_ARGS
 
 ifdef(`_MAILER_smtp_',
 `# domain-ized UUCP mailer
-Muucp-dom,	P=UUCP_MAILER_PATH, F=CONCAT(mDFMhud, UUCP_MAILER_FLAGS), S=52/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), M=UUCP_MAX_SIZE, T=X-UUCP/X-UUCP/X-Unix,
+Muucp-dom,	P=UUCP_MAILER_PATH, F=CONCAT(mDFMhud, UUCP_MAILER_FLAGS), S=52/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), M=UUCP_MAILER_MAX,
+		_OPTINS(`UUCP_MAILER_CHARSET', `C=', `, ')T=X-UUCP/X-UUCP/X-Unix,
 		A=UUCP_MAILER_ARGS
 
 # domain-ized UUCP mailer with UUCP-style sender envelope
-Muucp-uudom,	P=UUCP_MAILER_PATH, F=CONCAT(mDFMhud, UUCP_MAILER_FLAGS), S=72/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), M=UUCP_MAX_SIZE, T=X-UUCP/X-UUCP/X-Unix,
+Muucp-uudom,	P=UUCP_MAILER_PATH, F=CONCAT(mDFMhud, UUCP_MAILER_FLAGS), S=72/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), M=UUCP_MAILER_MAX,
+		_OPTINS(`UUCP_MAILER_CHARSET', `C=', `, ')T=X-UUCP/X-UUCP/X-Unix,
 		A=UUCP_MAILER_ARGS')
 
 
