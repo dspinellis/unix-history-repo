@@ -1,4 +1,4 @@
-/*	param.h	3.9	%G%	*/
+/*	param.h	3.10	%G%	*/
 
 /*
  * tunable variables
@@ -190,6 +190,11 @@ typedef	int		time_t;
 typedef	int		label_t[14];
 typedef	short		dev_t;
 typedef	int		off_t;
+
+typedef	unsigned char	u_char;
+typedef	unsigned short	u_short;
+typedef	unsigned int	u_int;
+typedef	unsigned long	u_long;
 
 /*
  * Machine-dependent bits and macros
