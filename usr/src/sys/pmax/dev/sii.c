@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sii.c	7.3 (Berkeley) %G%
+ *	@(#)sii.c	7.4 (Berkeley) %G%
  *
  * from: $Header: /sprite/src/kernel/dev/ds3100.md/RCS/devSII.c,
  *	v 9.2 89/09/14 13:37:41 jhh Exp $ SPRITE (DECWRL)";
@@ -317,10 +317,6 @@ sii_StartCmd(sc, target)
 			(scsicmd->flags & SCSICMD_DATA_TO_DEVICE) ?
 			SII_DATA_OUT_PHASE : SII_DATA_IN_PHASE;
 		state->buf = scsicmd->buf;
-		if (state->buflen > SII_MAX_DMA_XFER_LENGTH &&
-		    (scsicmd->flags & SCSICMD_DATA_TO_DEVICE))
-			printf("sii_StartCmd: target %d dma %d\n",
-				target, state->buflen); /* XXX */
 	}
 
 #ifdef DEBUG
@@ -392,7 +388,7 @@ sii_StartCmd(sc, target)
 	 * (should happen soon or we would use interrupts).
 	 */
 	SII_WAIT_UNTIL(status, regs->cstat, status & (SII_CI | SII_DI),
-		SII_WAIT_COUNT/2, retval);
+		SII_WAIT_COUNT/4, retval);
 
 	/* check to see if we are connected OK */
 	if ((status & (SII_RST | SII_SCH | SII_STATE_MSK)) ==
@@ -472,7 +468,7 @@ sii_StartCmd(sc, target)
 	} else
 		error = EBUSY;	/* couldn't get the bus */
 #ifdef DEBUG
-	if (sii_debug > 0)
+	if (sii_debug > 1)
 		printf("sii_StartCmd: Couldn't select target %d error %d\n",
 			target, error);
 #endif
