@@ -1,0 +1,33 @@
+# This file is a shell script that supplies the information necessary
+# to tailor a template configure script into the configure script
+# appropriate for this directory.  For more information, check any
+# existing configure script.
+
+srctrigger=mmalloc.c
+srcname="mmalloc library"
+configdirs=""
+
+# per-host:
+
+case "${host}" in
+  mips-sgi-irix4)
+	host_makefile_frag=config/mh-irix4
+	;;
+  *-sun-sunos4*)
+	host_makefile_frag=config/mh-sunos4
+	;;
+  i[34]86-ncr-sysv4*)
+	host_makefile_frag=config/mh-ncr3000
+	;;
+  *-*-sysv4*|*-*-solaris*)
+	host_makefile_frag=config/mh-sysv4
+	;;
+esac
+
+# per-target:
+
+#
+# Local Variables:
+# fill-column: 131
+# End:
+#

@@ -1,0 +1,127 @@
+Fri Oct 23 01:50:52 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* configure.in:  Handle solaris same as sysv4.
+
+Thu Oct  1 23:34:20 1992  david d `zoo' zuhn  (zoo at cirdan.cygnus.com)
+
+	* configure.in: use cpu-vendor-os triple instead of nested cases
+
+Sun Aug 23 11:09:46 1992  Fred Fish  (fnf@cygnus.com)
+
+	* sbrk-sup.c (__mmalloc_brk_init):  Ensure base of sbrk'd region
+	is aligned.  Bug reported by Andrew Heybey (ath@lcs.mit.edu).
+
+Wed Aug 19 14:49:23 1992  Ian Lance Taylor  (ian@cygnus.com)
+
+	* Makefile.in: always create installation directories.
+
+Mon Jul 20 21:15:44 1992  Fred Fish  (fnf@cygnus.com)
+
+	* mrealloc.c:  Minor code format style changes for consistency.
+
+Fri Jul  3 20:25:30 1992  Fred Fish  (fnf@cygnus.com)
+
+	* attach.c, detach.c, mcalloc.c, mmalloc.c, mmtrace.c, mrealloc.c,
+	sbrk-sup.c:  Remove "(void)" casts from function calls where the
+	return value is ignored, in accordance with GNU coding standards.
+
+Tue Jun 30 16:44:41 1992  Fred Fish  (fnf@cygnus.com)
+
+	* mmalloc.h (struct mdesc):  Add FIXME comments to point out the
+	need to save some data on a per-process basis for mapped regions
+	that are shared.
+	* attach.c (reuse):  Update the morecore field for reused mapped
+	regions to be correct for the current process.
+
+Mon Jun 29 10:45:25 1992  Fred Fish  (fnf at cygnus.com)
+
+	* mmtrace.c:  Lint.
+
+Mon Jun 15 12:20:16 1992  Fred Fish  (fnf@cygnus.com)
+
+	* mmalloc.h (struct mdesc):  Change member "errno" to
+	"saved_errno" to avoid possible conflict with ANSI C environments,
+	where it is allowed to be a macro.
+	* config/mh-ncr3000 (INSTALL):  Don't use /usr/ucb/install,
+	it is broken on ncr 3000's.
+	* config/mh-ncr3000 (RANLIB):  Use RANLIB=true.
+
+Fri Jun 12 21:34:21 1992  John Gilmore  (gnu at cygnus.com)
+
+	* mmap-sup.c:  Avoid ANSI C "empty translation unit" idiocy.
+
+Tue Jun  9 17:29:04 1992  Fred Fish  (fnf@cygnus.com)
+
+	* config/{mh-ncr3000, mh-sysv4}:  Add definition for INSTALL using
+	/usr/ucb/install.
+
+Thu Apr 30 22:36:31 1992  Fred Fish  (fnf@cygnus.com)
+
+	* sbrk-sup.c (sbrk_morecore):  Fix sbrk() error return test.
+
+Mon Apr 20 21:03:30 1992  K. Richard Pixley  (rich@cygnus.com)
+
+	* Makefile.in: rework CFLAGS so that they can be passed from the
+	  command line.  remove MINUS_G.  Default CFLAGS to -g.
+
+Thu Apr 16 20:00:21 1992  Fred Fish  (fnf@cygnus.com)
+
+	* TODO:  New file.
+	* attach.c, mcalloc.c, mfree.c, mmalloc.c, mmalloc.h, mmap-sup.c,
+	mmcheck.c, mtrace.c, mrealloc.c, mvalloc.c, sbrk-sup.c:  Lint.
+
+Fri Apr 10 22:59:17 1992  Fred Fish  (fnf@cygnus.com)
+
+	* configure.in:  Recognize new ncr3000 config.
+	* config/mh-ncr3000:  New config file.
+	* Makefile.in (MINUS_G):  Add macro and default to -g.
+
+Wed Apr  8 09:34:53 1992  Fred Fish  (fnf@cygnus.com)
+
+	* mmalloc.c:  Minor fix to comment.
+	* mmalloc.texi:  Update to match actual implementation
+	* mmalloc.h (morecore):  Change prototype's 2nd arg to int.
+
+Tue Apr  7 22:16:09 1992  Fred Fish  (fnf@cygnus.com)
+
+	* mmalloc.h (size_t, CHAR_BIT):  Only redefine if not already
+	defined.
+
+Mon Apr  6 20:49:33 1992  Fred Fish  (fnf@cygnus.com)
+
+	* mmalloc.h:  Remove include of <stdlib.h>.  This also gets rid
+	of the ugly kludge installed on 1-Apr-92.
+
+Mon Apr  6 16:33:37 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* detach.c (mmalloc_detach):  Arg should be PTR, not void *.
+	Fixes complaints from non __STDC__ systems.
+
+Wed Apr  1 11:47:02 1992  Fred Fish  (fnf@cygnus.com)
+
+	* mcalloc.c, mfree.c, mmalloc.c, mrealloc.c:  Minor comment
+	change.
+	* mmalloc.h:  Add ugly kludge to band-aid over problems with
+	bogus vendor <stdlib.h> files.
+
+Sun Mar 29 12:41:31 1992  John Gilmore  (gnu at cygnus.com)
+
+	* attach.c, mmalloc.c, mmcheck.c:  Lint.
+
+Thu Mar 26 17:06:04 1992  Fred Fish  (fnf@cygnus.com)
+
+	* attach.c (reuse):  Explicitly discard return value of mmcheck.
+	* mmcheck.c (mmcheck):  Document requirements for installing
+	corruption checking hooks and set up to enforce restrictions.
+
+Tue Mar 24 23:41:10 1992  K. Richard Pixley  (rich@cygnus.com)
+
+	* config/mh-irix4: new file.
+
+	* Makefile.in: added standard targets, fixed install directories.
+
+Sat Mar 14 17:34:59 1992  Fred Fish  (fnf@cygnus.com)
+
+	* Initial release, incorporated into gdb.
+
+
