@@ -1,0 +1,132 @@
+
+
+
+MCOPY(1)                                                 MCOPY(1)
+
+
+NNAAMMEE
+       mcopy - copy MSDOS files to/from Unix
+
+SSYYNNOOPPSSIISS
+       mmccooppyy [ --ttnnvvmm ] sourcefile targetfile
+
+       mmccooppyy [ --ttnnvvmm ] sourcefile [ sourcefiles... ] targetdirec-
+       tory
+
+DDEESSCCRRIIPPTTIIOONN
+       _M_c_o_p_y copies the specified file  to  the  named  file,  or
+       copies  multiple files to the named directory.  The source
+       and target can be either MSDOS or Unix files.
+
+       The use of a drive letter designation on the MSDOS  files,
+       'a:'  for  example, determines the direction of the trans-
+       fer.  A missing drive  designation  implies  a  Unix  file
+       whose path starts in the current directory
+
+       _M_c_o_p_y will allow the following command line options:
+
+       tt      Text  file transfer.  _M_c_o_p_y will translate incoming
+              carriage return/line feeds to line feeds.
+
+       nn      No warning.  _M_c_o_p_y will  not  warn  the  user  when
+              overwriting an existing file.
+
+       vv      Verbose mode.
+
+       mm      Preserve the file modification time.
+
+       If  the  target  file already exists, and the -_n option is
+       not in effect, _m_c_o_p_y asks whether or not to overwrite  the
+       file.
+
+       MSDOS subdirectory names are supported with either the '/'
+       or '\' separator.  The use of the '\' separator  or  wild-
+       cards  will  require the names to be enclosed in quotes to
+       protect them from the shell.
+
+       The _m_c_d command may be used to establish  the  device  and
+       the  current working directory (relative to MSDOS), other-
+       wise the default is A:/.
+
+SSEEEE AALLSSOO
+       mcd(1), mread(1), mwrite(1)
+
+BBUUGGSS
+       Unlike MSDOS, the destination directory may nnoott  be  omit-
+       ted.
+
+       The '+' operator (append) from MSDOS is not supported.
+
+       No other _M_t_o_o_l_s command rreeqquuiirreess the use of a drive letter
+
+
+
+                              local                             1
+
+
+
+
+
+MCOPY(1)                                                 MCOPY(1)
+
+
+       designation on MSDOS files.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              local                             2
+
+

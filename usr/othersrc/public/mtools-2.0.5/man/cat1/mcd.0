@@ -1,0 +1,66 @@
+
+
+
+MCD(1)                                                     MCD(1)
+
+
+NNAAMMEE
+       mcd - change MSDOS directory
+
+SSYYNNOOPPSSIISS
+       mmccdd [ msdosdirectory ]
+
+DDEESSCCRRIIPPTTIIOONN
+       Without  arguments, _m_c_d will report the current device and
+       working directory.  Otherwise,  _m_c_d  changes  the  current
+       device  and current working directory relative to an MSDOS
+       filesystem.
+
+       The environmental variable MCWD may be used to locate  the
+       file where the device and current working directory infor-
+       mation is stored.  The default is '$HOME/.mcwd'.  Informa-
+       tion  in  this  file is ignored if the file is more than 6
+       hours old.
+
+       MSDOS subdirectory names are supported with either the '/'
+       or  '\'  separator.  The use of the '\' separator or wild-
+       cards will require the directory name to  be  enclosed  in
+       quotes to protect it from the shell.
+
+SSEEEE AALLSSOO
+       mdir(1)
+
+BBUUGGSS
+       MSDOS doesn't use CD to change to another device.
+
+       It may be wise to remove old .mcwd files at logout.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              local                             1
+
+

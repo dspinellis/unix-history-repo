@@ -1,0 +1,66 @@
+
+
+
+MWRITE(1)                                               MWRITE(1)
+
+
+NNAAMMEE
+       mwrite - low level write (copy) a Unix file to MSDOS
+
+SSYYNNOOPPSSIISS
+       mmwwrriittee [ --ttnnvvmm ] unixfile msdosfile
+
+       mmwwrriittee [ --ttnnvvmm ] unixfile [ unixfiles... ] msdosdirectory
+
+DDEESSCCRRIIPPTTIIOONN
+       In  the  first form, _m_w_r_i_t_e copies the specified Unix file
+       to the named MSDOS file.  The second form of  the  command
+       copies multiple Unix files to the named MSDOS directory.
+
+       _M_w_r_i_t_e will allow the following command line options:
+
+       tt      Text file transfer.  _M_w_r_i_t_e will translate incoming
+              line feeds to carriage return/line feeds.
+
+       nn      No warning.  _M_w_r_i_t_e will not  warn  the  user  when
+              overwriting an existing file.
+
+       vv      Verbose mode.  Display the new filename if the Unix
+              filename requires conversion.
+
+       mm      Preserve the file modification times.
+
+       If the target file already exists, and the  -_n  option  is
+       not in effect, _m_w_r_i_t_e asks whether or not to overwrite the
+       file.
+
+       Reasonable care is taken to create a valid MSDOS filename.
+       If  an  invalid  name is specified, _m_w_r_i_t_e will change the
+       name (and display the new name  if  the  verbose  mode  is
+       set).
+
+       MSDOS subdirectory names are are supported with either the
+       '/' or '\' separator.  The use of  the  '\'  separator  or
+       wildcards  will require the names to be enclosed in quotes
+       to protect them from the shell.
+
+       The _m_c_d command may be used to establish  the  device  and
+       the  current working directory (relative to MSDOS), other-
+       wise the default is A:/.
+
+SSEEEE AALLSSOO
+       mcd(1), mcopy(1), mread(1)
+
+BBUUGGSS
+       Unlike MSDOS, the destination directory may nnoott  be  omit-
+       ted.
+
+
+
+
+
+
+
+                              local                             1
+
+

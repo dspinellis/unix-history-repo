@@ -1,0 +1,132 @@
+
+
+
+MTOOLS(1)                                               MTOOLS(1)
+
+
+NNAAMMEE
+       Mtools  -  a  collection  of  tools for manipulating MSDOS
+       files
+
+SSYYNNOOPPSSIISS
+       mmaattttrriibb - change MSDOS file attribute flags
+       mmccdd - change MSDOS directory
+       mmccooppyy - copy MSDOS files to/from Unix
+       mmddeell - delete an MSDOS file
+       mmddiirr - display an MSDOS directory
+       mmffoorrmmaatt - add an MSDOS filesystem to a low-level formatted diskette
+       mmllaabbeell - make an MSDOS volume label
+       mmmmdd - make an MSDOS subdirectory
+       mmrrdd - remove an MSDOS subdirectory
+       mmrreeaadd - low level read (copy) an MSDOS file to Unix
+       mmrreenn - rename an existing MSDOS file
+       mmttyyppee - display contents of an MSDOS file
+       mmwwrriittee - low level write (copy) a Unix file to MSDOS
+
+DDEESSCCRRIIPPTTIIOONN
+       Mtools is a public domain collection of programs to  allow
+       Unix  systems  to  read, write, and manipulate files on an
+       MSDOS filesystem (typically  a  diskette).   Each  program
+       attempts  to  emulate  the  MSDOS  equivalent  command  as
+       closely as practical.
+
+       MSDOS filenames are optionally composed of a drive  letter
+       followed by a colon, a subdirectory, and a filename.  Sub-
+       directory names can use either the '/' or  '\'  separator.
+       The use of the '\' separator or wildcards will require the
+       names to be enclosed in quotes to protect  them  from  the
+       shell.
+
+       The  regular expression "pattern matching" routines follow
+       the Unix-style rules.  For example, '*' matches all  MSDOS
+       files  in  lieu  of '*.*'.  The archive, hidden, read-only
+       and system  attribute  bits  are  ignored  during  pattern
+       matching.
+
+       All  options  use  the  '-' (minus) flag, not '/' as you'd
+       expect in MSDOS.
+
+       The _m_c_d command is used to establish the  device  and  the
+       current  working directory (relative to the MSDOS filesys-
+       tem), otherwise the default is assumed to be A:/.
+
+SSEEEE AALLSSOO
+       mattrib(1), mcd(1), mdel(1), mformat(1), mrd(1),  mren(1),
+       mtype(1),  mcopy(1), mdir(1), mlabel(1), mmd(1), mread(1),
+       mwrite(1)
+
+BBUUGGSS
+       An unfortunate side effect  of  not  guessing  the  proper
+       device (when multiple disk capacities are supported) is an
+
+
+
+                              local                             1
+
+
+
+
+
+MTOOLS(1)                                               MTOOLS(1)
+
+
+       occasional error message from the  device  driver.   These
+       can be safely ignored.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              local                             2
+
+
