@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd1.c	3.21 84/04/08";
+static	char *sccsid = "@(#)lcmd1.c	3.22 84/04/08";
 #endif
 
 #include "defs.h"
@@ -14,6 +14,9 @@ struct lcmd_arg arg_window[] = {
 	{ "ncols",	2,	ARG_ANY },
 	{ "nlines",	2,	ARG_NUM },
 	{ "label",	1,	ARG_STR },
+	{ "shell",	1,	ARG_STR },
+	{ "pty",	1,	ARG_ANY },
+	{ "frame",	1,	ARG_ANY },
 	0
 };
 
@@ -22,16 +25,33 @@ register struct value *v, *a;
 {
 	int col, row, ncol, nrow, id, nline;
 	char *label;
+	char haspty, hasframe;
+	char *shf, **sh;
+	char *argv[sizeof shell / sizeof *shell];
 
 	if ((id = findid()) < 0)
 		return;
-	row = a->v_type != V_NUM ? 1 : a->v_num;
-	col = (++a)->v_type != V_NUM ? 0 : a->v_num;
-	nrow = (++a)->v_type != V_NUM ? wwnrow - row : a->v_num;
-	ncol = (++a)->v_type != V_NUM ? wwncol - col : a->v_num;
-	nline = (++a)->v_type == V_ERR ? nbufline : a->v_num;
-	label =  (++a)->v_type == V_ERR ? 0 : a->v_str;
-	if (openwin(id, row, col, nrow, ncol, nline, label) == 0)
+	row = a[0].v_type != V_NUM ? 1 : a[0].v_num;
+	col = a[1].v_type != V_NUM ? 0 : a[1].v_num;
+	nrow = a[2].v_type != V_NUM ? wwnrow - row : a[2].v_num;
+	ncol = a[3].v_type != V_NUM ? wwncol - col : a[3].v_num;
+	nline = a[4].v_type == V_ERR ? nbufline : a[4].v_num;
+	label =  a[5].v_type == V_ERR ? 0 : a[5].v_str;
+	if (a[6].v_type == V_STR) {
+		if (mkargv(a[6].v_str, argv, sizeof argv / sizeof *argv) < 0)
+			return;
+		sh = argv;
+		shf = *argv;
+	} else {
+		sh = shell;
+		shf = shellfile;
+	}
+	if ((haspty = vtobool(a + 7, 1, -1)) < 0)
+		return;
+	if ((hasframe = vtobool(a + 8, 1, -1)) < 0)
+		return;
+	if (openwin(id, row, col, nrow, ncol, nline, label,
+			haspty, hasframe, shf, sh) == 0)
 		return;
 	v->v_type = V_NUM;
 	v->v_num = id + 1;
@@ -300,4 +320,28 @@ char def, err;
 		return def;
 	}
 	/*NOTREACHED*/
+}
+
+mkargv(p, argv, n)
+register char *p;
+register char **argv;
+register n;
+{
+	while (--n > 0) {
+		for (; *p && (*p == ' ' || *p == '\t'); p++)
+			;
+		if (!*p)
+			break;
+		*argv++ = p;
+		for (; *p && *p != ' ' && *p != '\t'; p++)
+			;
+		if (*p)
+			*p++ = 0;
+	}
+	if (n == 0) {
+		error("Too many shell arguments.");
+		return -1;
+	}
+	*argv = 0;
+	return 0;
 }

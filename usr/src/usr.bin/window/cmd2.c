@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.28 84/04/08";
+static	char *sccsid = "@(#)cmd2.c	3.29 84/04/08";
 #endif
 
 #include "defs.h"
@@ -34,11 +34,12 @@ char *help_longcmd[] = {
 	":list                 List all windows.",
 	":nline lines          Set the default number of lines",
 	"                      in window text buffers.",
-	":source filename      Execute commands in ``filename''.",
+	":shell string         Set default shell program to ``string.''",
+	":source filename      Execute commands in ``filename.''",
 	":terse [off]          Turn on (or off) terse mode.",
 	":unset variable       Deallocate ``variable''.",
 	":variable             List all variables.",
-	":window row col nrow ncol [nline label]",
+	":window row col nrow ncol [nline label pty frame shell]",
 	"                      Open a window at ``row'', ``col''",
 	"                      of size ``nrow'', ``ncol'',",
 	"                      with ``nline'', and ``label''.",

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwiomux.c	3.9 84/03/06";
+static	char *sccsid = "@(#)wwiomux.c	3.10 84/04/08";
 #endif
 
 #include "ww.h"
@@ -35,14 +35,14 @@ wwiomux()
 	n = select(_wwdtablesize, imask,
 		(int *)0, (int *)0, (struct timeval *)0);
 	}
-	}
+			if (w->ww_ispty)
+				*p = c;
+		}
 	for (w = wwhead.ww_forw; w != &wwhead; w = w->ww_forw)
-		if (w->ww_pty >= 0 && w->ww_obc != 0 && !w->ww_stopped) {
-			n = wwwrite(w, w->ww_obp, w->ww_obc);
-			if (w->ww_obc -= n)
-				w->ww_obp += n;
-			else
-				w->ww_obp = w->ww_ob;
+		if (w->ww_pty >= 0 && w->ww_obq > w->ww_obp && !w->ww_stopped) {
+			n = wwwrite(w, w->ww_obp, w->ww_obq - w->ww_obp);
+			if ((w->ww_obp += n) == w->ww_obq)
+				w->ww_obq = w->ww_obp = w->ww_ob;
 			if (wwinterrupt())
 				return;
 			break;

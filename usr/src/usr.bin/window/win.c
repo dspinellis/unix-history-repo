@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)win.c	3.7 84/04/08";
+static	char *sccsid = "@(#)win.c	3.8 84/04/08";
 #endif
 
 #include "defs.h"
@@ -25,8 +25,10 @@ static	char *sccsid = "@(#)win.c	3.7 84/04/08";
  * Open a user window.
  */
 struct ww *
-openwin(id, row, col, nrow, ncol, nline, label)
+openwin(id, row, col, nrow, ncol, nline, label, haspty, hasframe, shf, sh)
 char *label;
+char haspty, hasframe;
+char *shf, **sh;
 {
 	register struct ww *w;
 
@@ -37,15 +39,18 @@ char *label;
 		error("Illegal window position.");
 		return 0;
 	}
-	if ((w = wwopen(WWO_PTY, nrow, ncol, row, col, nline)) == 0) {
-		error("%s.", wwerror());
+	w = wwopen(haspty ? WWO_PTY : WWO_SOCKET, nrow, ncol, row, col, nline);
+	if (w == 0) {
+		error("Can't open window: %s.", wwerror());
 		return 0;
 	}
 	w->ww_id = id;
 	window[id] = w;
-	w->ww_hasframe = 1;
+	w->ww_hasframe = hasframe;
 	w->ww_altpos.r = 1;
 	w->ww_altpos.c = 0;
+	if (!haspty)
+		w->ww_mapnl = 1;
 	if (label != 0 && setlabel(w, label) < 0)
 		error("No memory for label.");
 	wwcursor(w, 1);
@@ -59,9 +64,9 @@ char *label;
 	setselwin(w);
 	wwupdate();
 	wwflush();
-	if (wwspawn(w, shell, shellname, (char *)0) < 0) {
+	if (wwspawn(w, shf, sh) < 0) {
+		error("Can't execute %s: %s.", shf, wwerror());
 		c_close(w);
-		error("%s: %s.", shell, wwerror());
 		return 0;
 	}
 	return w;

@@ -1,8 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwopen.c	3.15 84/01/16";
+static	char *sccsid = "@(#)wwopen.c	3.16 84/04/08";
 #endif
 
 #include "ww.h"
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -17,6 +19,7 @@ wwopen(mode, id, nrow, ncol, row, col)
 		goto bad;
 	}
 	w->ww_pty = -1;
+	w->ww_socket = -1;
 
 	w = (struct ww *)calloc(sizeof (struct ww), 1);
 		goto bad;

@@ -1,4 +1,4 @@
-/*	@(#)ww.h	3.28 84/04/08		*/
+/*	@(#)ww.h	3.29 84/04/08		*/
 
 #include <sgtty.h>
 #include <setjmp.h>
@@ -84,9 +84,10 @@ union ww_char {
 
 	/* flags to wwopen() */
 #define WWO_PTY		0x01		/* want pty */
-#define WWO_REVERSE	0x02		/* make it all reverse video */
-#define WWO_GLASS	0x04		/* make it all glass */
-#define WWO_FRAME	0x08		/* this is a frame window */
+#define WWO_SOCKET	0x02		/* want socket pair */
+#define WWO_REVERSE	0x04		/* make it all reverse video */
+#define WWO_GLASS	0x08		/* make it all glass */
+#define WWO_FRAME	0x10		/* this is a frame window */
 
 	/* special ww_index value */
 #define WWX_NOBODY	NWW
@@ -130,5 +131,6 @@ extern int wwnrow, wwncol;		/* the screen size */
 #define wwflush()	Wrefresh(1)
 
 	/* quicky macros */
+#define wwbell()	write(1, "\7", 1)
 struct ww *wwopen();
 int wwchild();

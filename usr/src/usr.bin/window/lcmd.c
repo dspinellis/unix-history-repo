@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd.c	3.17 84/04/07";
+static	char *sccsid = "@(#)lcmd.c	3.18 84/04/08";
 #endif
 
 #include "defs.h"
@@ -16,6 +16,7 @@ int l_label();
 int l_list();
 int l_nline();
 int l_select();
+int l_shell();
 int l_source();
 int l_terse();
 int l_time();
@@ -31,6 +32,7 @@ struct lcmd_arg arg_foreground[];
 struct lcmd_arg arg_label[];
 struct lcmd_arg arg_nline[];
 struct lcmd_arg arg_select[];
+struct lcmd_arg arg_shell[];
 struct lcmd_arg arg_source[];
 struct lcmd_arg arg_terse[];
 struct lcmd_arg arg_time[];
@@ -51,6 +53,7 @@ struct lcmd_tab lcmd_tab[] = {
 	"list",		2,	l_list,		arg_null,
 	"nlines",	1,	l_nline,	arg_nline,
 	"select",	2,	l_select,	arg_select,
+	"shell",	2,	l_shell,	arg_shell,
 	"source",	2,	l_source,	arg_source,
 	"terse",	2,	l_terse,	arg_terse,
 	"time",		2,	l_time,		arg_time,

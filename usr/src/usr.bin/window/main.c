@@ -1,10 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.22 84/04/08";
+static	char *sccsid = "@(#)main.c	3.23 84/04/08";
 #endif
 
 #include "defs.h"
 #include <sys/signal.h>
 #include <stdio.h>
+#include "string.h"
 #include "char.h"
 
 #define next(a) (*++*(a) ? *(a) : (*++(a) ? *(a) : (char *)usage()))
@@ -62,12 +63,16 @@ char **argv;
 	}
 	nbufline = 48;				/* compatible */
 	escapec = ctrl(p);	
-	if ((shell = getenv("SHELL")) == 0)
-		shell = "/bin/csh";
-	if (shellname = rindex(shell, '/'))
-		shellname++;
+	if ((p = getenv("SHELL")) == 0)
+		p = "/bin/csh";
+	if ((shellfile = str_cpy(p)) == 0)
+		nomem();
+	if (p = rindex(shellfile, '/'))
+		p++;
 	else
-		shellname = shell;
+		p = shellfile;
+	shell[0] = p;
+	shell[1] = 0;
 #ifndef O_4_1A
 	gettimeofday(&starttime, &timezone);
 	if (wwinit() < 0) {
@@ -89,6 +94,7 @@ char **argv;
 	cmdwin->ww_mapnl = 1;
 	cmdwin->ww_nointr = 1;
 	cmdwin->ww_noupdate = 1;
+	cmdwin->ww_unctrl = 1;
 	if (terse)
 		Whide(cmdwin->ww_win);
 	wwsetcurwin(cmdwin);

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.28 84/04/08";
+static	char *sccsid = "@(#)cmd.c	3.29 84/04/08";
 #endif
 
 #include "defs.h"
@@ -139,7 +139,7 @@ docmd()
 					}
 				} else {
 					if (!terse)
-						wwputc(ctrl(g), cmdwin);
+						wwbell();
 					error("Type ? for help.");
 				}
 			}
