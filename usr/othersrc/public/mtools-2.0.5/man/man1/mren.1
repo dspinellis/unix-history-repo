@@ -1,0 +1,45 @@
+.TH MREN 1 local
+.SH NAME
+mren \- rename an existing MSDOS file
+.SH SYNOPSIS
+.B mren
+[
+.B -v
+] sourcefile targetfile
+.SH DESCRIPTION
+.I Mren
+renames an existing file on an MSDOS filesystem.
+.PP
+.I Mren
+will allow the following command line option:
+.TP
+.B v
+Verbose mode.  Display the new filename if the name supplied is
+invalid.
+.PP
+Reasonable care is taken to create a valid MSDOS filename.  If an invalid
+MSDOS target name is specified,
+.I mren
+will change the name (and prompt the user to accept or reject the new name
+if the verbose mode is set).
+.PP
+The path component of the target filename (if supplied) is ignored.  In
+other words, you may not use
+.I mren
+to move a file from one subdirectory to another.
+.PP 
+.I Mren
+may be used to rename directories.
+.PP
+MSDOS subdirectory names are supported with either the '/' or '\e\'
+separator.  The use of the '\e\' separator or wildcards will require the
+names to be enclosed in quotes to protect them from the shell.
+.PP
+The
+.I mcd
+command may be used to establish the device and the current working
+directory (relative to MSDOS), otherwise the default is A:/.
+.SH SEE ALSO
+mcd(1)
+.SH BUGS
+MSDOS can't use REN to rename directories.

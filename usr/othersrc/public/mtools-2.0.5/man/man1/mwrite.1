@@ -1,0 +1,65 @@
+.TH MWRITE 1 local
+.SH NAME
+mwrite \- low level write (copy) a Unix file to MSDOS
+.SH SYNOPSIS
+.B mwrite
+[
+.B -tnvm
+] unixfile msdosfile
+.PP
+.B mwrite
+[
+.B -tnvm
+] unixfile [ unixfiles... ] msdosdirectory
+.SH DESCRIPTION
+In the first form,
+.I mwrite
+copies the specified Unix file to the named MSDOS file.  The second form
+of the command copies multiple Unix files to the named MSDOS directory.
+.PP
+.I Mwrite
+will allow the following command line options:
+.TP
+.B t
+Text file transfer.
+.I Mwrite
+will translate incoming line feeds to carriage return/line feeds.
+.TP
+.B n
+No warning.
+.I Mwrite
+will not warn the user when overwriting an existing file.
+.TP
+.B v
+Verbose mode.  Display the new filename if the Unix filename requires
+conversion.
+.TP
+.B m
+Preserve the file modification times.
+.PP
+If the target file already exists, and the
+.I -n
+option is not in effect,
+.I mwrite
+asks whether or not to overwrite the file.
+.PP
+Reasonable care is taken to create a valid MSDOS filename.  If an
+invalid name is specified,
+.I mwrite
+will change the name (and display the new name if the verbose mode is
+set).
+.PP
+MSDOS subdirectory names are are supported with either the '/' or '\e\'
+separator.  The use of the '\e\' separator or wildcards will require the
+names to be enclosed in quotes to protect them from the shell.
+.PP
+The
+.I mcd
+command may be used to establish the device and the current working
+directory (relative to MSDOS), otherwise the default is A:/.
+.SH SEE ALSO
+mcd(1), mcopy(1), mread(1)
+.SH BUGS
+Unlike MSDOS, the destination directory may
+.B not
+be omitted.

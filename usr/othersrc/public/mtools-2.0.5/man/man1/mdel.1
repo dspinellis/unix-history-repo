@@ -1,0 +1,33 @@
+.TH MDEL 1 local
+.SH NAME
+mdel \- delete an MSDOS file
+.SH SYNOPSIS
+.B mdel
+[
+.B -v
+] msdosfile [ msdosfiles...  ]
+.SH DESCRIPTION
+.I Mdel
+deletes a file on an MSDOS filesystem.
+.PP
+.I Mdel
+will allow the following command line option:
+.TP
+.B v
+Verbose mode.  Echo the filenames as they are processed.
+.PP
+.I Mdel
+will ask for verification prior to removing a read\-only file.
+.PP
+MSDOS subdirectory names are supported with either the '/' or '\e\'
+separator.  The use of the '\e\' separator or wildcards will require the
+names to be enclosed in quotes to protect them from the shell.
+.PP
+The
+.I mcd
+command may be used to establish the device and the current working
+directory (relative to MSDOS), otherwise the default is A:/.
+.SH SEE ALSO
+mcd(1)
+.SH BUGS
+Allows multiple arguments, which does not follow the MSDOS convention.
