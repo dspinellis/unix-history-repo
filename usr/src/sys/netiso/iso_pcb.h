@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_pcb.h	7.5 (Berkeley) %G%
+ *	@(#)iso_pcb.h	7.6 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -58,6 +58,7 @@ struct isopcb {
 	caddr_t					isop_chan;		/* actually struct pklcb * */
 	u_short					isop_refcnt;		/* mult TP4 tpcb's -> here */
 	u_short					isop_lport;			/* MISLEADLING work var */
+	u_short					isop_tuba_cached;	/* for tuba address ref cnts */
 	int						isop_x25crud_len;	/* x25 call request ud */
 	char					isop_x25crud[MAXX25CRUDLEN];
 	struct ifaddr			*isop_ifa;		/* ESIS interface assoc w/sock */
