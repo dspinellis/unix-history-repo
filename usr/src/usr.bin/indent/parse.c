@@ -19,11 +19,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "./indent_globs.h";
-#include "./indent_codes.h";
+#include "./indent_globs.h"
+#include "./indent_codes.h"
 
 
 
@@ -160,7 +160,7 @@ parse(tk)
 	case_ind = ps.i_l_follow + ps.case_indent;	/* cases should be one
 							 * level down from
 							 * switch */
-	ps.i_l_follow + = ps.case_indent + 1;	/* statements should be two
+	ps.i_l_follow += ps.case_indent + 1;	/* statements should be two
 						 * levels in */
 	ps.search_brace = btype_2;
 	break;
