@@ -1,1 +1,0 @@
-#define NDH 2

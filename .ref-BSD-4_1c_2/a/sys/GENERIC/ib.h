@@ -1,1 +1,0 @@
-#define NIB 0
