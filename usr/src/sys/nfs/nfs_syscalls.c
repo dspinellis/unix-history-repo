@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_syscalls.c	7.22 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -37,7 +37,7 @@
 extern u_long nfs_prog, nfs_vers;
 extern int (*nfsrv_procs[NFS_NPROCS])();
 extern struct buf nfs_bqueue;
-extern int nfs_asyncdaemons;
+extern int nfs_numasync;
 extern struct proc *nfs_iodwant[NFS_MAXASYNCDAEMON];
 extern int nfs_tcpnodelay;
 struct mbuf *nfs_compress();
@@ -45,6 +45,7 @@ struct mbuf *nfs_compress();
 #define	TRUE	1
 #define	FALSE	0
 
+static int nfs_asyncdaemon[NFS_MAXASYNCDAEMON];
 static int compressreply[NFS_NPROCS] = {
 	FALSE,
 	TRUE,
@@ -286,8 +287,8 @@ async_daemon(p, uap, retval)
 	int *retval;
 {
 	register struct buf *bp, *dp;
+	register int i, myiod;
 	int error;
-	int myiod;
 
 	/*
 	 * Must be super user
@@ -297,28 +298,42 @@ async_daemon(p, uap, retval)
 	/*
 	 * Assign my position or return error if too many already running
 	 */
-	if (nfs_asyncdaemons > NFS_MAXASYNCDAEMON)
+	myiod = -1;
+	for (i = 0; i < NFS_MAXASYNCDAEMON; i++)
+		if (nfs_asyncdaemon[i] == 0) {
+			nfs_asyncdaemon[i]++;
+			myiod = i;
+			break;
+		}
+	if (myiod == -1)
 		return (EBUSY);
-	myiod = nfs_asyncdaemons++;
+	nfs_numasync++;
 	dp = &nfs_bqueue;
 	/*
 	 * Just loop around doin our stuff until SIGKILL
 	 */
 	for (;;) {
-		while (dp->b_actf == NULL) {
-			nfs_iodwant[myiod] = p;
-			if (error = tsleep((caddr_t)&nfs_iodwant[myiod],
-				PWAIT | PCATCH, "nfsidl", 0))
-				return (error);
+		while (dp->b_actf == NULL && error == 0) {
+			nfs_iodwant[myiod] = u.u_procp;
+			error = tsleep((caddr_t)&nfs_iodwant[myiod],
+				PWAIT | PCATCH, "nfsidl", 0);
+			nfs_iodwant[myiod] = (struct proc *)0;
 		}
-		/* Take one off the end of the list */
-		bp = dp->b_actl;
-		if (bp->b_actl == dp) {
-			dp->b_actf = dp->b_actl = (struct buf *)0;
-		} else {
-			dp->b_actl = bp->b_actl;
-			bp->b_actl->b_actf = dp;
+		while (dp->b_actf != NULL) {
+			/* Take one off the end of the list */
+			bp = dp->b_actl;
+			if (bp->b_actl == dp) {
+				dp->b_actf = dp->b_actl = (struct buf *)0;
+			} else {
+				dp->b_actl = bp->b_actl;
+				bp->b_actl->b_actf = dp;
+			}
+			(void) nfs_doio(bp);
 		}
-		(void) nfs_doio(bp);
+		if (error) {
+			nfs_asyncdaemon[myiod] = 0;
+			nfs_numasync--;
+			return (error);
+		}
 	}
 }

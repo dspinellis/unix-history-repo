@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.50 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.51 (Berkeley) %G%
  */
 
 /*
@@ -311,6 +311,8 @@ bdevvp(dev, vpp)
 	struct vnode *nvp;
 	int error;
 
+	if (dev == NODEV)
+		return (0);
 	error = getnewvnode(VT_NON, (struct mount *)0, &spec_vnodeops, &nvp);
 	if (error) {
 		*vpp = 0;
