@@ -1,10 +1,11 @@
 #ifndef lint
-static char *sccsid = "eqnbox.c	(CWI)	1.1	85/03/01";
-#endif
+static char sccsid[] = "@(#)eqnbox.c	2.1 (CWI) 85/07/18";
+#endif lint
 # include "e.h"
 
-eqnbox(p1, p2, lu) {
-	int b, h;
+eqnbox(p1, p2, lu)
+{
+	float b, h;
 	char *sh;
 
 	yyval = p1;
@@ -12,17 +13,16 @@ eqnbox(p1, p2, lu) {
 	eht[yyval] = h = b + max(eht[p1]-ebase[p1], 
 		eht[p2]-ebase[p2]);
 	ebase[yyval] = b;
-	if(dbg)printf(".\te:eb: S%d <- S%d S%d; b=%d, h=%d\n", 
-		yyval, p1, p2, b, h);
+	dprintf(".\tS%d <- %d %d; b=%g, h=%g\n", yyval, p1, p2, b, h);
 	if (rfont[p1] == ITAL && lfont[p2] == ROM)
-		sh = "\\|";
+		sh = "\\^";	/* was \| */
 	else
 		sh = "";
 	if (lu) {
-		printf(".nr %d \\w'\\s%d\\*(%d%s'\n", p1, ps, p1, sh);
-		printf(".ds %d \\h'|\\n(97u-\\n(%du'\\*(%d\n", p1, p1, p1);
+		printf(".nr %d \\w'\\*(%d%s'\n", p1, p1, sh);
+		printf(".ds %d \\h'|\\n(09u-\\n(%du'\\*(%d\n", p1, p1, p1);
 	}
 	printf(".as %d \"%s\\*(%d\n", yyval, sh, p2);
 	rfont[p1] = rfont[p2];
-	ofree(p2);
+	sfree(p2);
 }

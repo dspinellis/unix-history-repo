@@ -1,62 +1,76 @@
 #ifndef lint
-static char *sccsid = "font.c	(CWI)	1.1	85/03/01";
-#endif
+static char sccsid[] = "@(#)font.c	2.1 (CWI) 85/07/18";
+#endif lint
 # include "e.h"
 
-setfont(ch1) char ch1; {
-	/* use number '1', '2', '3' for roman, italic, bold */
+setfont(ch1)
+	char *ch1;
+{
 	yyval = ft;
-	if (ch1 == 'r' || ch1 == 'R')
-		ft = ROM;
-	else if (ch1 == 'i' || ch1 == 'I')
+	if (strcmp(ch1, "I") == 0) {	/* I and italic mean merely position 2 */
+		*ch1 = '2';
 		ft = ITAL;
-	else if (ch1 == 'b' || ch1 == 'B')
+	} else if (strcmp(ch1, "B") == 0) {	/* and similarly for B & bold */
+		*ch1 = '3';
 		ft = BLD;
-	else
-		ft = ch1;
-	printf(".ft %c\n", ft);
-	if(dbg)printf(".\tsetfont %c %c\n", ch1, ft);
+	} else if (strcmp(ch1, "R") == 0) {	/* and R and roman */
+		*ch1 = '1';
+		ft = ROM;
+	} else {
+		ft = ROM;	/* assume it's a roman style */
+	}
+	ftp++;
+	if (ftp >= &ftstack[10])
+		error(FATAL, "font stack overflow");
+	ftp->ft = ft;
+	if (ch1[1] == 0) {	/* 1-char name */
+		ftp->name[0] = *ch1;
+		ftp->name[1] = '\0';
+	} else
+		sprintf(ftp->name, "(%s", ch1);
+	dprintf(".\tsetfont %s %c\n", ch1, ft);
 }
 
-font(p1, p2) int p1, p2; {
+font(p1, p2)
+	int p1, p2;
+{
 		/* old font in p1, new in ft */
 	yyval = p2;
 	lfont[yyval] = rfont[yyval] = ft==ITAL ? ITAL : ROM;
-	if(dbg)printf(".\tb:fb: S%d <- \\f%c S%d \\f%c b=%d,h=%d,lf=%c,rf=%c\n", 
-		yyval, ft, p2, p1, ebase[yyval], eht[yyval], lfont[yyval], rfont[yyval]);
-	printf(".ds %d \\f%c\\*(%d\\f%c\n", 
-		yyval, ft, p2, p1);
+	ftp--;
 	ft = p1;
-	printf(".ft %c\n", ft);
 }
 
-fatbox(p) int p; {
-	int sh;
-
-	yyval = p;
-	sh = ps / 4;
-	nrwid(p, ps, p);
-	printf(".ds %d \\*(%d\\h'-\\n(%du+0.05m'\\*(%d\n", p, p, p, p);
-	if(dbg)printf(".\tfat %d, sh=0.05m\n", p, sh);
-}
-
-globfont() {
+globfont()
+{
 	char temp[20];
 
-	getstr(temp, 20);
+	getstr(temp, sizeof(temp));
 	yyval = eqnreg = 0;
-	gfont = temp[0];
-	switch (gfont) {
-	case 'r': case 'R':
-		gfont = '1';
-		break;
-	case 'i': case 'I':
-		gfont = '2';
-		break;
-	case 'b': case 'B':
-		gfont = '3';
-		break;
+	if (strcmp(temp, "I") == 0 || strncmp(temp, "it", 2) == 0) {
+		ft = ITAL;
+		strcpy(temp, "2");
+	} else if (strcmp(temp, "B") == 0 || strncmp(temp, "bo", 2) == 0) {
+		ft = BLD;
+		strcpy(temp, "3");
+	} else if (strcmp(temp, "R") == 0 || strncmp(temp, "ro", 2) == 0) {
+		ft = ROM;
+		strcpy(temp, "1");
+	} else { 
+		ft = ROM;	/* assume it's a roman style */
 	}
-	printf(".ft %c\n", gfont);
-	ft = gfont;
+	ftstack[0].ft = ft;
+	if (temp[1] == 0)	/* 1-char name */
+		strcpy(ftstack[0].name, temp);
+	else
+		sprintf(ftstack[0].name, "(%.2s", temp);
+}
+
+fatbox(p)
+	int p;
+{
+	yyval = p;
+	/* nrwid(p, ps, p); */
+	/* printf(".ds %d \\*(%d\\h'-\\n(%du+0.05m'\\*(%d\n", p, p, p, p); */
+	printf(".ds %d \\*(%d\\h'-\\w'\\*(%d'u+0.05m'\\*(%d\n", p, p, p, p);
 }
