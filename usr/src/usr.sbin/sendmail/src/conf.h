@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.30 (Berkeley) %G%
+ *	@(#)conf.h	8.31 (Berkeley) %G%
  */
 
 /*
@@ -108,6 +108,7 @@
 # ifdef _AIX3
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define FORK		fork	/* no vfork primitive available */
+# undef  SETPROCTITLE		/* setproctitle confuses AIX */
 # endif
 
 
