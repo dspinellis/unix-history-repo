@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	From: @(#)stdlib.h	5.13 (Berkeley) 6/4/91
- *	$Id$
+ *	$Id: stdlib.h,v 1.3 1994/03/16 20:29:53 wollman Exp $
  */
 
 #ifndef _STDLIB_H_
@@ -39,7 +39,7 @@
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
 #include <sys/types.h>
 #else
-#include <sys/ansi.h>
+#include <machine/ansi.h>
 #endif
 
 #ifdef	_WCHAR_T_
