@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_machdep.c 1.21 91/04/06$
  *
- *	@(#)vm_machdep.c	7.13 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.14 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -44,6 +44,9 @@ cpu_fork(p1, p2)
 	int offset;
 	extern caddr_t getsp();
 	extern char kstack[];
+
+	p2->p_md.md_regs = p1->p_md.md_regs;
+	p2->p_md.md_flags = (p1->p_md.md_flags & ~(MDP_AST|MDP_HPUXTRACE));
 
 	/*
 	 * Copy pcb and stack from proc p1 to p2. 
@@ -108,11 +111,11 @@ cpu_coredump(p, vp, cred)
 
 #ifdef HPUXCOMPAT
 	/*
-	 * BLETCH!  If we loaded from an HPUX format binary file
-	 * we have to dump an HPUX style user struct so that the
-	 * HPUX debuggers can grok it.
+	 * If we loaded from an HP-UX format binary file we dump enough
+	 * of an HP-UX style user struct so that the HP-UX debuggers can
+	 * grok it.
 	 */
-	if (p->p_addr->u_pcb.pcb_flags & PCB_HPUXBIN)
+	if (p->p_md.md_flags & MDP_HPUX)
 		return (hpuxdumpu(vp, cred));
 #endif
 	return (vn_rdwr(UIO_WRITE, vp, (caddr_t) p->p_addr, ctob(UPAGES),
