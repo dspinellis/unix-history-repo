@@ -25,7 +25,8 @@
 'de vF
 'ev 2
 'sp .35i
-'tl '\f2\\*(=M''Page % of \\*(=G\fP'
+'ie o 'tl '\f2\\*(=M''Page % of \\*(=G\fP'
+'el 'tl '\f2Page % of \\*(=G''\\*(=M\fP'
 'bp
 'ev
 'ft 1
