@@ -30,9 +30,12 @@
 
 /*
  * A dinode contains all the meta-data associated with a UFS file.
- * This structure defines the on-disk format of a dinode.
+ * This structure defines the on-disk format of a dinode. Since
+ * this structure describes an on-disk structure, all its fields
+ * are defined by types with precise widths.
  */
 
+typedef int32_t ufs_daddr_t;
 #define	NDADDR	12			/* Direct addresses in inode. */
 #define	NIADDR	3			/* Indirect addresses in inode. */
 
@@ -41,14 +44,17 @@ struct dinode {
 	int16_t		di_nlink;	/*   2: File link count. */
 	union {
 		u_int16_t oldids[2];	/*   4: Ffs: old user and group ids. */
-		ino_t	  inumber;	/*   4: Lfs: inode number. */
+		int32_t	  inumber;	/*   4: Lfs: inode number. */
 	} di_u;
 	u_int64_t	di_size;	/*   8: File byte count. */
-	struct timespec	di_atime;	/*  16: Last access time. */
-	struct timespec	di_mtime;	/*  24: Last modified time. */
-	struct timespec	di_ctime;	/*  32: Last inode change time. */
-	daddr_t		di_db[NDADDR];	/*  40: Direct disk blocks. */
-	daddr_t		di_ib[NIADDR];	/*  88: Indirect disk blocks. */
+	int32_t		di_atime;	/*  16: Last access time. */
+	int32_t		di_atimensec;	/*  20: Last access time. */
+	int32_t		di_mtime;	/*  24: Last modified time. */
+	int32_t		di_mtimensec;	/*  28: Last modified time. */
+	int32_t		di_ctime;	/*  32: Last inode change time. */
+	int32_t		di_ctimensec;	/*  36: Last inode change time. */
+	ufs_daddr_t	di_db[NDADDR];	/*  40: Direct disk blocks. */
+	ufs_daddr_t	di_ib[NIADDR];	/*  88: Indirect disk blocks. */
 	u_int32_t	di_flags;	/* 100: Status flags (chflags). */
 	int32_t		di_blocks;	/* 104: Blocks actually held. */
 	int32_t		di_gen;		/* 108: Generation number. */
@@ -69,7 +75,7 @@ struct dinode {
 #define	di_ouid		di_u.oldids[0]
 #define	di_rdev		di_db[0]
 #define	di_shortlink	di_db
-#define	MAXSYMLINKLEN	((NDADDR + NIADDR) * sizeof(daddr_t))
+#define	MAXSYMLINKLEN	((NDADDR + NIADDR) * sizeof(ufs_daddr_t))
 
 /* File permissions. */
 #define	IEXEC		0000100		/* Executable. */
