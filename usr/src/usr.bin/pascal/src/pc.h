@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)pc.h 1.8 %G%"; */
+/* static	char sccsid[] = "@(#)pc.h 1.9 %G%"; */
 
 #include <setjmp.h>
 
@@ -125,11 +125,15 @@ char	*enclosing[ DSPLYSZ ];
 #ifdef mc68000
     /*
      *	these magic numbers lifted from pcc/mac2defs
+     *	the offsets are for mapping data and address register numbers
+     *	to linear register numbers.  e.g. d2 ==> r2, and a2 ==> r10.
      */
-#   define	P2FP		14
+#   define	DATA_REG_OFFSET	0
+#   define	ADDR_REG_OFFSET 8
 #   define	P2FPNAME	"a6"
-#   define	P2AP		14
+#   define	P2FP		(ADDR_REG_OFFSET + 6)
 #   define	P2APNAME	"a6"
+#   define	P2AP		(ADDR_REG_OFFSET + 6)
 
     /*
      *	and still ...
