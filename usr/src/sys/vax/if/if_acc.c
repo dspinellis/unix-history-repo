@@ -1,4 +1,4 @@
-/*	if_acc.c	4.20	82/10/09	*/
+/*	if_acc.c	4.21	82/10/10	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -14,15 +14,17 @@
 #include "../h/buf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
-#include "../h/ubareg.h"
-#include "../h/ubavar.h"
-#include "../h/cpu.h"
-#include "../h/mtpr.h"
 #include "../h/vmmac.h"
+
 #include "../net/if.h"
-#include "../vaxif/if_acc.h"
 #include "../netimp/if_imp.h"
+
+#include "../vax/cpu.h"
+#include "../vax/mtpr.h"
+#include "../vaxif/if_acc.h"
 #include "../vaxif/if_uba.h"
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/ubavar.h"
 
 int     accprobe(), accattach(), accrint(), accxint();
 struct  uba_device *accinfo[NACC];
