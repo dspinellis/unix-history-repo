@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.176 (Berkeley) %G%
+ *	@(#)conf.h	8.177 (Berkeley) %G%
  */
 
 /*
@@ -1044,6 +1044,7 @@ typedef int		pid_t;
 */
 
 #ifdef NCR3000
+# include <sys/sockio.h>
 # define __svr4__
 # define IP_SRCROUTE	0	/* Something is broken with getsockopt() */
 # undef BSD
