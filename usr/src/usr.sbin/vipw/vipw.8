@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)vipw.8	6.3 (Berkeley) %G%
+.\"	@(#)vipw.8	6.4 (Berkeley) %G%
 .\"
 .TH VIPW 8 ""
 .UC 4
@@ -26,15 +26,20 @@ vipw \- edit the password file
 edits the password file while setting the appropriate locks,
 and does any necessary processing after the password file is unlocked.
 If the password file is already being edited, then you will be told
-to try again later.  The 
+to try again later.
+The 
 .I vi
 editor will be used unless the environment variable EDITOR indicates
 an alternate editor.  
+.PP
 .I Vipw
-performs a number of consistency checks on the password entry for
-.IR root ,
-and will not allow a password file with a ``mangled'' root entry
-to be installed.
+performs a number of consistency checks on the password entries,
+and will not allow a password file with a ``mangled'' entry to be
+installed.
+If
+.I vipw
+rejects the new password file, the user is prompted to re-enter
+the edit session.
 .PP
 Once the information has been verified,
 .I vipw
