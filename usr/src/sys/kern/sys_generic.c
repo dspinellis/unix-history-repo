@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_generic.c	7.5 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -325,7 +325,6 @@ retry:
 		goto done;
 	}
 	if ((u.u_procp->p_flag & SSEL) == 0 || nselcoll != ncoll) {
-		u.u_procp->p_flag &= ~SSEL;
 		splx(s);
 		goto retry;
 	}
@@ -348,6 +347,7 @@ retry:
 	splx(s);
 	goto retry;
 done:
+	u.u_procp->p_flag &= ~SSEL;
 #define	putbits(name, x) \
 	if (uap->name) { \
 		int error = copyout((caddr_t)&obits[x], (caddr_t)uap->name, \
