@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	5.16 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	5.17 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	5.16 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	5.17 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -563,6 +563,7 @@ _udbx_init()
 	}
 
 	UdbInitialized = TRUE;
+	errno = 0;
 	return EX_OK;
 
 	/*
