@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)sync.8	6.1 (Berkeley) %G%
+.\"	@(#)sync.8	6.2 (Berkeley) %G%
 .\"
 .TH SYNC 8 ""
 .UC 4
@@ -16,11 +16,20 @@ executes the
 .I sync
 system primitive.
 .I Sync
-can be called to insure all disk writes have been completed before the
+can be called to insure that all disk writes have been completed before the
 processor is halted in a way not suitably done by
 .IR reboot (8)
 or
 .IR halt (8).
+Generally, it is preferable to use
+.I reboot
+or
+.I halt
+to shut down the system,
+as they may perform additional actions
+such as resynchronizing the hardware clock
+and flushing internal caches before performing a final
+.IR sync .
 .PP
 See
 .IR sync (2)
