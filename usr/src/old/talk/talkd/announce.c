@@ -18,8 +18,6 @@ static char sccsid[] = "@(#)announce.c	5.1 (Berkeley) 6/6/85";
 #include <sys/wait.h>
 #include <errno.h>
 
-char *sprintf();
-
 extern int errno;
 extern char hostname[];
 int nofork = 0;		/* to be set from the debugger */
