@@ -1,0 +1,38 @@
+head     1.1;
+access   ;
+symbols  ;
+locks    ;
+comment  @@;
+
+
+1.1
+date     83.03.01.16.38.51;  author cooper;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Makefile for Courier library.
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@OBJS = client.o server.o misc.o
+CFLAGS = -O -DDEBUG
+DESTDIR = /usr/lib
+
+libcr.a:	$(OBJS)
+	-rm -f libcr.a
+	ar r libcr.a $(OBJS)
+	ranlib libcr.a
+
+install:	libcr.a
+	install -m 644 libcr.a $(DESTDIR)
+
+clean:
+	-rm -f *.o
+@
