@@ -1,4 +1,4 @@
-.\"	@(#)0.t	1.3	(Copyright 1986 M. K. McKusick)	86/12/04
+.\"	@(#)0.t	1.4	(Copyright 1986 M. K. McKusick)	86/12/04
 .rm CM
 .TL
 Directions of UNIX at Berkeley
