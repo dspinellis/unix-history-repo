@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)proc.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)proc.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -15,8 +15,21 @@ static char sccsid[] = "@(#)proc.c	5.4 (Berkeley) %G%";
  *
  * University of Utah CS Dept modification history:
  *
- * $Header: proc.c,v 5.3 85/09/30 23:21:07 donn Exp $
  * $Log:	proc.c,v $
+ * Revision 5.6  86/01/06  16:28:06  donn
+ * Sigh.  We can't commit to defining a symbol as a variable instead of a
+ * function based only on what we have seen through the declaration section;
+ * this was properly handled for normal variables but not for arguments.
+ * 
+ * Revision 5.5  86/01/01  21:59:17  donn
+ * Pick up CHARACTER*(*) declarations for variables which aren't dummy
+ * arguments, and complain about them.
+ * 
+ * Revision 5.4  85/12/20  19:18:35  donn
+ * Don't assume that dummy procedures of unknown type are functions of type
+ * undefined until the user (mis-)uses them that way -- they may also be
+ * subroutines.
+ * 
  * Revision 5.3  85/09/30  23:21:07  donn
  * Print space with prspace() in outlocvars() so that alignment is preserved.
  * 
@@ -483,7 +496,7 @@ prendproc();
 
 
 /*
-   manipulate argument lists (allocate argument slot positions)
+ * manipulate argument lists (allocate argument slot positions)
  * keep track of return types and labels
  */
 
@@ -563,8 +576,9 @@ for(p = ep->arglist ; p ; p = p->nextp)
 for(p = ep->arglist ; p ; p = p->nextp)
 	if(! (( q = (Namep) (p->datap) )->vdcldone) )
 		{
+		if(q->vclass == CLPROC && q->vtype == TYUNKNOWN)
+			continue;
 		impldcl(q);
-		q->vdcldone = YES;
 		if(q->vtype == TYCHAR)
 			{
 			if(q->vleng == NULL)	/* character*(*) */
@@ -1288,8 +1302,13 @@ else if(type < 0)	/* storage class set */
 	}
 else if(v->vtype == TYUNKNOWN)
 	{
-	if( (v->vtype = lengtype(type, length))==TYCHAR && length>=0)
-		v->vleng = ICON(length);
+	if( (v->vtype = lengtype(type, length))==TYCHAR )
+		{
+		if(length >= 0)
+			v->vleng = ICON(length);
+		else if(v->vstg != STGARG)
+			dclerr("adjustable length character variable that is not a dummy argument", v);
+		}
 	}
 else if(v->vtype!=type || (type==TYCHAR && v->vleng->constblock.const.ci!=length) )
 	dclerr("incompatible type declarations", v);
