@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.12 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.13 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.12 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.13 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -139,6 +139,16 @@ getrequests()
 
 	(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof on);
 	(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_KEEPALIVE, (char *)&on, sizeof on);
+
+#ifdef SO_RCVBUF
+	if (TcpRcvBufferSize > 0)
+	{
+		if (setsockopt(DaemonSocket, SOL_SOCKET, SO_RCVBUF,
+			       &TcpRcvBufferSize,
+			       sizeof(TcpRcvBufferSize)) < 0)
+			syserr("getrequests: setsockopt(SO_RCVBUF)");
+	}
+#endif
 
 	switch (DaemonAddr.sa.sa_family)
 	{
@@ -395,16 +405,6 @@ gothostent:
 				       &TcpSndBufferSize,
 				       sizeof(TcpSndBufferSize)) < 0)
 				syserr("makeconnection: setsockopt(SO_SNDBUF)");
-		}
-#endif
-
-#ifdef SO_RCVBUF
-		if (TcpRcvBufferSize > 0)
-		{
-			if (setsockopt(s, SOL_SOCKET, SO_RCVBUF,
-				       &TcpRcvBufferSize,
-				       sizeof(TcpRcvBufferSize)) < 0)
-				syserr("makeconnection: setsockopt(SO_RCVBUF)");
 		}
 #endif
 
