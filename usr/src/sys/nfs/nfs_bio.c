@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_bio.c	7.27 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.28 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -88,7 +88,7 @@ nfs_bioread(vp, uio, ioflag, cred)
 			np->n_flag &= ~NMODIFIED;
 			if ((nmp->nm_flag & NFSMNT_MYWRITE) == 0 ||
 			     vp->v_type != VREG)
-				vinvalbuf(vp, TRUE);
+				vinvalbuf(vp, TRUE, cred, uio->uio_procp);
 			np->n_attrstamp = 0;
 			np->n_direofoffset = 0;
 			if (error = VOP_GETATTR(vp, &vattr, cred, uio->uio_procp))
@@ -99,7 +99,7 @@ nfs_bioread(vp, uio, ioflag, cred)
 				return (error);
 			if (np->n_mtime != vattr.va_mtime.ts_sec) {
 				np->n_direofoffset = 0;
-				vinvalbuf(vp, TRUE);
+				vinvalbuf(vp, TRUE, cred, uio->uio_procp);
 				np->n_mtime = vattr.va_mtime.ts_sec;
 			}
 		}
@@ -116,14 +116,14 @@ nfs_bioread(vp, uio, ioflag, cred)
 		} while (error == NQNFS_EXPIRED);
 		if (error)
 			return (error);
-		if (QUADNE(np->n_lrev, np->n_brev) ||
+		if (np->n_lrev != np->n_brev ||
 		    ((np->n_flag & NMODIFIED) && vp->v_type == VDIR)) {
 			if (vp->v_type == VDIR) {
 				np->n_direofoffset = 0;
 				cache_purge(vp);
 			}
 			np->n_flag &= ~NMODIFIED;
-			vinvalbuf(vp, TRUE);
+			vinvalbuf(vp, TRUE, cred, uio->uio_procp);
 			np->n_brev = np->n_lrev;
 		}
 	    }
@@ -222,7 +222,7 @@ again:
 				return (error);
 			}
 			if ((np->n_flag & NQNFSNONCACHE) ||
-			    QUADNE(np->n_lrev, np->n_brev) ||
+			    np->n_lrev != np->n_brev ||
 			    ((np->n_flag & NMODIFIED) && vp->v_type == VDIR)) {
 				if (vp->v_type == VDIR) {
 					np->n_direofoffset = 0;
@@ -230,7 +230,7 @@ again:
 				}
 				brelse(bp);
 				np->n_flag &= ~NMODIFIED;
-				vinvalbuf(vp, TRUE);
+				vinvalbuf(vp, TRUE, cred, uio->uio_procp);
 				np->n_brev = np->n_lrev;
 				continue;
 			}
@@ -239,7 +239,7 @@ again:
 			np->n_direofoffset = 0;
 			brelse(bp);
 			np->n_flag &= ~NMODIFIED;
-			vinvalbuf(vp, TRUE);
+			vinvalbuf(vp, TRUE, cred, uio->uio_procp);
 			np->n_brev = np->n_lrev;
 			continue;
 		}
@@ -267,52 +267,61 @@ again:
  * Vnode op for write using bio
  */
 nfs_write (ap)
-	struct vop_write_args *ap;
+	struct vop_write_args /* {
+		struct vnode *a_vp;
+		struct uio *a_uio;
+		int  a_ioflag;
+		struct ucred *a_cred;
+	} */ *ap;
 {
 	USES_VOP_GETATTR;
 	register int biosize;
-	struct proc *p = ap->a_uio->uio_procp;
+	register struct uio *uio = ap->a_uio;
+	struct proc *p = uio->uio_procp;
+	register struct vnode *vp = ap->a_vp;
+	struct nfsnode *np = VTONFS(vp);
+	register struct ucred *cred = ap->a_cred;
+	int ioflag = ap->a_ioflag;
 	struct buf *bp;
-	struct nfsnode *np = VTONFS(ap->a_vp);
 	struct vattr vattr;
 	struct nfsmount *nmp;
 	daddr_t lbn, bn;
 	int n, on, error = 0;
 
 #ifdef DIAGNOSTIC
-	if (ap->a_uio->uio_rw != UIO_WRITE)
+	if (uio->uio_rw != UIO_WRITE)
 		panic("nfs_write mode");
-	if (ap->a_uio->uio_segflg == UIO_USERSPACE && ap->a_uio->uio_procp != curproc)
+	if (uio->uio_segflg == UIO_USERSPACE && uio->uio_procp != curproc)
 		panic("nfs_write proc");
 #endif
-	if (ap->a_vp->v_type != VREG)
+	if (vp->v_type != VREG)
 		return (EIO);
 	if (np->n_flag & NWRITEERR) {
 		np->n_flag &= ~NWRITEERR;
 		return (np->n_error);
 	}
-	if (ap->a_ioflag & (IO_APPEND | IO_SYNC)) {
+	if (ioflag & (IO_APPEND | IO_SYNC)) {
 		if (np->n_flag & NMODIFIED) {
 			np->n_flag &= ~NMODIFIED;
-			vinvalbuf(ap->a_vp, TRUE);
+			vinvalbuf(vp, TRUE, cred, p);
 		}
-		if (ap->a_ioflag & IO_APPEND) {
+		if (ioflag & IO_APPEND) {
 			np->n_attrstamp = 0;
-			if (error = VOP_GETATTR(ap->a_vp, &vattr, ap->a_cred, p))
+			if (error = VOP_GETATTR(vp, &vattr, cred, p))
 				return (error);
-			ap->a_uio->uio_offset = np->n_size;
+			uio->uio_offset = np->n_size;
 		}
 	}
-	nmp = VFSTONFS(ap->a_vp->v_mount);
-	if (ap->a_uio->uio_offset < 0)
+	nmp = VFSTONFS(vp->v_mount);
+	if (uio->uio_offset < 0)
 		return (EINVAL);
-	if (ap->a_uio->uio_resid == 0)
+	if (uio->uio_resid == 0)
 		return (0);
 	/*
 	 * Maybe this should be above the vnode op call, but so long as
 	 * file servers have no limits, i don't think it matters
 	 */
-	if (p && ap->a_uio->uio_offset + ap->a_uio->uio_resid >
+	if (p && uio->uio_offset + uio->uio_resid >
 	      p->p_rlimit[RLIMIT_FSIZE].rlim_cur) {
 		psignal(p, SIGXFSZ);
 		return (EFBIG);
@@ -331,34 +340,34 @@ nfs_write (ap)
 		 * If non-cachable, just do the rpc
 		 */
 		if ((nmp->nm_flag & NFSMNT_NQNFS) &&
-		    NQNFS_CKINVALID(ap->a_vp, np, NQL_WRITE)) {
+		    NQNFS_CKINVALID(vp, np, NQL_WRITE)) {
 			do {
-				error = nqnfs_getlease(ap->a_vp, NQL_WRITE, ap->a_cred, p);
+				error = nqnfs_getlease(vp, NQL_WRITE, cred, p);
 			} while (error == NQNFS_EXPIRED);
 			if (error)
 				return (error);
-			if (QUADNE(np->n_lrev, np->n_brev) ||
+			if (np->n_lrev != np->n_brev ||
 			    (np->n_flag & NQNFSNONCACHE)) {
-				vinvalbuf(ap->a_vp, TRUE);
+				vinvalbuf(vp, TRUE, cred, p);
 				np->n_brev = np->n_lrev;
 			}
 		}
 		if (np->n_flag & NQNFSNONCACHE)
-			return (nfs_writerpc(ap->a_vp, ap->a_uio, ap->a_cred));
+			return (nfs_writerpc(vp, uio, cred));
 		nfsstats.biocache_writes++;
-		lbn = ap->a_uio->uio_offset / biosize;
-		on = ap->a_uio->uio_offset & (biosize-1);
-		n = MIN((unsigned)(biosize - on), ap->a_uio->uio_resid);
-		if (ap->a_uio->uio_offset + n > np->n_size) {
-			np->n_size = ap->a_uio->uio_offset + n;
-			vnode_pager_setsize(ap->a_vp, (u_long)np->n_size);
+		lbn = uio->uio_offset / biosize;
+		on = uio->uio_offset & (biosize-1);
+		n = MIN((unsigned)(biosize - on), uio->uio_resid);
+		if (uio->uio_offset + n > np->n_size) {
+			np->n_size = uio->uio_offset + n;
+			vnode_pager_setsize(vp, (u_long)np->n_size);
 		}
 		bn = lbn * (biosize / DEV_BSIZE);
 again:
-		bp = getblk(ap->a_vp, bn, biosize);
+		bp = getblk(vp, bn, biosize);
 		if (bp->b_wcred == NOCRED) {
-			crhold(ap->a_cred);
-			bp->b_wcred = ap->a_cred;
+			crhold(cred);
+			bp->b_wcred = cred;
 		}
 
 		/*
@@ -379,21 +388,21 @@ again:
 		 * In case getblk() and/or bwrite() delayed us.
 		 */
 		if ((nmp->nm_flag & NFSMNT_NQNFS) &&
-		    NQNFS_CKINVALID(ap->a_vp, np, NQL_WRITE)) {
+		    NQNFS_CKINVALID(vp, np, NQL_WRITE)) {
 			do {
-				error = nqnfs_getlease(ap->a_vp, NQL_WRITE, ap->a_cred, p);
+				error = nqnfs_getlease(vp, NQL_WRITE, cred, p);
 			} while (error == NQNFS_EXPIRED);
 			if (error) {
 				brelse(bp);
 				return (error);
 			}
-			if (QUADNE(np->n_lrev, np->n_brev) ||
+			if (np->n_lrev != np->n_brev ||
 			    (np->n_flag & NQNFSNONCACHE)) {
-				vinvalbuf(ap->a_vp, TRUE);
+				vinvalbuf(vp, TRUE, cred, p);
 				np->n_brev = np->n_lrev;
 			}
 		}
-		if (error = uiomove(bp->b_un.b_addr + on, n, ap->a_uio)) {
+		if (error = uiomove(bp->b_un.b_addr + on, n, uio)) {
 			brelse(bp);
 			return (error);
 		}
@@ -416,7 +425,7 @@ again:
 		/*
 		 * If the lease is non-cachable or IO_SYNC do bwrite().
 		 */
-		if ((np->n_flag & NQNFSNONCACHE) || (ap->a_ioflag & IO_SYNC)) {
+		if ((np->n_flag & NQNFSNONCACHE) || (ioflag & IO_SYNC)) {
 			bp->b_proc = p;
 			bwrite(bp);
 		} else if ((n+on) == biosize &&
@@ -428,6 +437,6 @@ again:
 			bp->b_proc = (struct proc *)0;
 			bdwrite(bp);
 		}
-	} while (error == 0 && ap->a_uio->uio_resid > 0 && n != 0);
+	} while (error == 0 && uio->uio_resid > 0 && n != 0);
 	return (error);
 }
