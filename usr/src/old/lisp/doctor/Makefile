@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.6	(Berkeley)	%G%
+#	@(#)Makefile	4.7	(Berkeley)	%G%
 #
 all: doctor
 
@@ -11,7 +11,10 @@ doctor: FRC
 	liszt -mrq -o doctor doctor.l
 
 install: FRC
-	install -o bin -g bin -m 755 doctor ${DESTDIR}/usr/games/doctor
+	install -o games -g bin -m 700 doctor ${DESTDIR}/usr/games/hide
+	rm -f ${DESTDIR}/usr/games/doctor
+	ln -s ${DESTDIR}/usr/games/dm ${DESTDIR}/usr/games/doctor
+	chown games.bin ${DESTDIR}/usr/games/doctor
 
 clean: FRC
 	rm -f doctor core
