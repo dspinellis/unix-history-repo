@@ -1,4 +1,4 @@
-\"	@(#)intro.me	1.4 %G%
+\"	@(#)intro.me	1.5 %G%
 .ls 2
 .sh 1 "Programs to be Profiled"
 .pp
@@ -43,9 +43,8 @@ to that abstraction.
 The profile can be used to compare and assess the costs of
 various implementations.
 .pp
-The profiler can be compiled into a program without
-any prior planning on the part of the programmer.
-Depending on the ratio of subroutine calls to computation,
-it adds only five to thirty percent execution overhead to the profiled program.
-Finally, it produces no output until after the program finishes,
-and allows the program to be measured in its actual environment.
+The profiler can be linked into a program without
+special planning on the part of the programmer.
+The overhead for using \fBgprof\fP is low;
+both in terms of added execution time and the
+volume of profiling information recorded.
