@@ -1,4 +1,4 @@
-/*	@(#)shutdown.c	4.3 (Berkeley/Melbourne) 81/04/03	*/
+/*	@(#)shutdown.c	4.4 (Berkeley/Melbourne) 81/04/21	*/
 
 #include <stdio.h>
 #include <ctype.h>
@@ -329,6 +329,8 @@ time_t now;
 
 	tm = localtime(&now);
 	fp = fopen(LOGFILE, "a");
+	if (fp==0)
+		return;
 	fseek(fp, 0L, 2);
 	fprintf(fp, "%02d:%02d  %s %s %2d, %4d.  Shutdown:", tm->tm_hour,
 		tm->tm_min, days[tm->tm_wday], months[tm->tm_mon],
