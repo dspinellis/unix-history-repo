@@ -3,9 +3,9 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)fig3.2.n	5.2 (Berkeley) %G%
+.\"	@(#)fig3.2.n	5.3 (Berkeley) %G%
 .\"
-.FK
+.KF
 .TS
 center, box;
 cw(15).
