@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)man.conf.5	8.1 (Berkeley) %G%
+.\"	@(#)man.conf.5	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAN.CONF 5
@@ -22,7 +22,7 @@ commands
 search for manual pages or their database files as specified by the
 .Nm man.conf
 file.
-Manual pages are expected to be preformatted (see
+Manual pages are normally expected to be preformatted (see
 .Xr nroff 1 )
 and named with a trailing ``.0''.
 .Pp
@@ -31,46 +31,66 @@ The
 file contains two types of lines.
 .Pp
 The first type of line is a ``section'' line, which contains a
-section name followed by a directory path.
+section name followed by one or more directory paths.
+The directory paths may contain the normal shell globbing characters,
+including curly braces (``{}''); to escape a shell globbing character,
+precede it with a backslash (``\e'').
 Lines in this format specify that manual pages for the section
-may be found in the directory.
+may be found in the associated directories.
 .Pp
 Directories named with a trailing slash character (``/'') are expected
-to contain subdirectories (see the keyword ``_subdir'' below) instead
-of manual pages.
+to contain subdirectories of manual pages, (see the keyword ``_subdir''
+below) instead of manual pages.
 These subdirectories are searched instead of the directory.
 .Pp
-All directories (either explicitly specified or named with a trailing
-slash) may contain subdirectories.
-The
+Before searching any directory for a manual page, the
 .Xr man 1
-command
-automatically searches any subdirectory with the same name as the
-current machine type before the directory is searched.
+command always searches the subdirectory with the same name
+as the current machine type, if it exists.
 No specification of these subdirectories is necessary in the
 .Nm man.conf
 file.
 .Pp
 Section names are unrestricted except for the reserved words specified
-below; in general, however, it is best to avoid anything beginning with
-an underscore (``_'') in order to avoid future incompatibilities.
+below; in general, you should avoid anything with a leading underscore
+(``_'') to avoid future incompatibilities.
 .Pp
-The section named ``_default'' is the list of directories to be
-searched if no section is specified.
+The section named ``_default'' is the list of directories that will
+be searched if no section is specified by the user.
 .Pp
 The second type of line is preceded with a ``keyword''.
 The possible keywords and their meanings are as follows:
 .Pp
 .Bl -tag -width "_version"
+.It _build
+Man file names, regardless of their format, are expected to end in
+a ``.*'' pattern, i.e. a ``.'' followed by some suffix.
+The first field of a _build line lists a suffix globbing pattern which
+indicates files which need to be reformated or manipulated in
+some way before being displayed to the user.
+The rest of the line must be a shell command line, the standard
+output of which is the manual page in a format which may be directly
+displayed to the user.
+Any occurrences of the string ``%s'' in the latter part of the line
+will be replaced by the name of the file which is being reformatted.
 .It _subdir
 The list (in search order) of subdirectories which will be searched in
-any directory named with a trailing slash (``/'') character.  This
-list is also used when a path is specified by the
+any directory named with a trailing slash (``/'') character.
+This list is also used when a path is specified to the
+.Xr man 1
+utility by the user, using the
 .Ev MANPATH
-environment 
-variable or the
+environment variable or the
 .Fl M
-option.
+and
+.Fl m
+options.
+.It _suffix
+Man file names, regardless of their format are expected to end in
+a ``.*'' pattern, i.e. a ``.'' followed by some suffix.
+Each field of a _suffix line is a suffix globbing pattern which
+indicates files which do not need to be reformatted or manipulated
+in any way, but which may be directly displayed to the user.
 .It _version
 The version of the configuration file.
 .It _whatdb
@@ -82,9 +102,9 @@ and
 commands.
 .El
 .Pp
-Multiple specifications for all types of lines (except for ``_version'')
-are cumulative and the entries are used in the order listed in the file;
-multiple entries may be listed per line, as well.
+Multiple specifications for all types of lines are cumulative and the
+entries are used in the order listed in the file; multiple entries may
+be listed per line, as well.
 .Pp
 Empty lines or lines whose first non-whitespace character is a hash
 mark (``#'') are ignored.
@@ -94,39 +114,42 @@ Given the following
 file:
 .Bd -literal -offset indent
 _version	BSD.1
-_subdir		cat1 cat2 cat3
+_subdir		cat[123]
+_suffix		.0
+_build		.[1-9]	nroff -man %s
+_build		.tbl	tbl %s | nroff -man
 _default	/usr/share/man/
-sect3		/usr/share/man/cat3
+sect3		/usr/share/man/{old/,}cat3
 .Ed
 .Pp
-The default
-.Xr mktemp 3
-manual page should be stored in
-.Dq Pa /usr/share/man/cat3/mktemp.0 .
-Any
-.Tn VAX
-architecture specific version of it should be stored in
-.Dq Pa cat3/vax/mktemp.0 .
-.Pp
-The command
+By default, the command
 .Dq Li man mktemp
-would search the subdirectories
-.Dq Pa cat1
-.Dq Pa cat2 ,
+will search for
+``mktemp.<any_digit>'' and ``mktemp.tbl''
+in the directories
+.Dq Pa /usr/share/man/cat1 , 
+.Dq Pa /usr/share/man/cat2 , 
 and
-.Dq Pa cat3 ,
-in
-.Dq Pa /usr/share/man ,
-in that order, for
-.Dq Pa mktemp.0''.
-If a subdirectory with the same name as the current machine type
-existed in any of them, it would be searched as well.
+.Dq Pa /usr/share/man/cat3 .
+If on a machine of type ``vax'', the subdirectory ``vax'' in each
+directory would be searched as well, before the directory was
+searched.
+.Pp
+If ``mktemp.tbl'' was found first, the command
+.Dq Li tbl <manual page> | nroff -man
+would be run to build a man page for display to the user.
 .Pp
 The command
 .Dq Li man sect3 mktemp
-would only search
-.Dq Li /usr/share/man/cat3
-and any possible per machine subdirectory.
+would search the directories
+.Dq Pa /usr/share/man/old/cat3
+and
+.Dq Pa /usr/share/man/cat3 ,
+in that order, for
+the mktemp manual page.
+If a subdirectory with the same name as the current machine type
+existed in any of them, it would be searched as well, before each
+of them were searched.
 .Sh FILES
 .Bl -tag -width /etc/man.conf -compact
 .It Pa /etc/man.conf
