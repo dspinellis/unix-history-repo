@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	8.2 (Berkeley) %G%
+#	@(#)termcap.src	8.3 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -2615,7 +2615,7 @@ tvi912|912|920|tvi920|old televideo:\
 	:ct=\E3:st=\E1:do=^J:\
 	:al=33*\EE:le=^H:ce=\ET:cm=\E=%+ %+ :cl=^Z:co#80:dc=\EW:dl=33*\ER:ei=:\
 	:kb=^H:ku=^K:kd=^J:kl=^H:kr=^L:k0=^AI\r:k1=^A@\r:k2=^AA\r:k3=^AB\r:\
-	:bs:am:k4=^AC\r:k5=^AD\r:k6=^AE\r:k7=^AF\r:k8=^AG\r:k9=^AH\r:\
+	:cd=\Ey:bs:am:k4=^AC\r:k5=^AD\r:k6=^AE\r:k7=^AF\r:k8=^AG\r:k9=^AH\r:\
 	:ho=^^:im=:ic=\EQ:li#24:nd=^L:pt:se=\Ek:so=\Ej:up=^K:us=\El:ue=\Em:\
 	:ma=^K^P^L :sg#1:ug#1:if=/usr/share/tabset/stdcrt:
 # the 912 has a <funct> key that's like shift: <funct>8 xmits "^A8\r".
