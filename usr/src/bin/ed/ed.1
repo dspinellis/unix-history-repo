@@ -1,4 +1,4 @@
-.\"	@(#)ed.1	6.1 (Berkeley) %G%
+.\"	@(#)ed.1	6.1.1.1 (Berkeley) %G%
 .\"
 .TH ED 1 ""
 .AT 3
@@ -10,8 +10,6 @@ ed \- text editor
 .B ed
 [
 .B \-
-] [
-.B \-x
 ] [ name ]
 .SH DESCRIPTION
 .I Ed
@@ -27,11 +25,6 @@ command (see below)\| on the named file; that is to say,
 the file is read into
 .I ed's
 buffer so that it can be edited.
-If 
-.B \-x
-is present, an
-.I x
-command is simulated first to handle an encrypted file.
 The optional
 .B \-
 suppresses the printing
@@ -621,16 +614,6 @@ command is done,
 exiting the editor
 after the file is written.
 .TP 5
-x
-A key string is demanded from the standard input.
-Later
-.I r, e
-and
-.I w
-commands will encrypt and decrypt the text 
-with this key by the algorithm of 
-.IR crypt (1).
-An explicitly empty key turns off encryption.
 .RB (\| .\| +1)\|z	or,
 .br
 .ns
@@ -730,12 +713,3 @@ command mishandles DEL.
 The
 .I undo
 command causes marks to be lost on affected lines.
-.br
-The
-.I x
-command,
-.B -x
-option,
-and
-special treatment of hangups
-only work on UNIX.
