@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	8.6 (Berkeley) %G%
+ *	@(#)ffs_inode.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -135,6 +135,8 @@ ffs_truncate(ap)
 	int aflags, error, allerror;
 	off_t osize;
 
+	if (length < 0)
+		return (EINVAL);
 	oip = VTOI(ovp);
 	tv = time;
 	if (ovp->v_type == VLNK &&
