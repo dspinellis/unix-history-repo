@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vm_swap.c	7.8 (Berkeley) %G%
+ *	@(#)vm_swap.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -67,16 +67,23 @@ swstrategy(bp)
 		index = 0;
 	sp = &swdevt[index];
 	bp->b_dev = sp->sw_dev;
-	if (bp->b_dev == 0)
+	if (bp->b_vp == NULL || bp->b_dev == 0)
 		panic("swstrategy");
-	if (bp->b_vp)
-		brelvp(bp);
 	if (sp->sw_vp == NULL) {
 		bp->b_error |= B_ERROR;
 		biodone(bp);
 		return;
 	}
 	VHOLD(sp->sw_vp);
+	if ((bp->b_flags & B_READ) == 0) {
+		bp->b_vp->v_numoutput--;
+		if ((bp->b_vp->v_flag & VBWAIT) && bp->b_vp->v_numoutput <= 0) {
+			bp->b_vp->v_flag &= ~VBWAIT;
+			wakeup((caddr_t)&bp->b_vp->v_numoutput);
+		}
+		sp->sw_vp->v_numoutput++;
+	}
+	brelvp(bp);
 	bp->b_vp = sp->sw_vp;
 	VOP_STRATEGY(bp);
 }
