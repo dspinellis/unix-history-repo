@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
+ * Copyright (c) 1985 Sun Microsystems, Inc.
+ * Copyright (c) 1980 The Regents of the University of California.
  * Copyright (c) 1976 Board of Trustees of the University of Illinois.
  * All rights reserved.
  *
@@ -8,106 +9,60 @@
  * duplicated in all such forms and that any documentation,
  * advertising materials, and other materials related to such
  * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley and the University
- * of Illinois, Urbana.  The name of either
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
+ * by the University of California, Berkeley, the University of Illinois,
+ * Urbana, and Sun Microsystems, Inc.  The name of either University
+ * or Sun Microsystems may not be used to endorse or promote products
+ * derived from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)io.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)io.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
-/*
- * FILE NAME:
- *	io.c
- * PURPOSE:
- *	Contains routines to handle i/o related stuff for indent.
- * GLOBALS:
- *	None
- * FUNCTIONS:
- *	dump_line
- *	fill_buffer
- *	pad_output
- *	count_spaces
- *	eqin
- *	cmp
- *
- */
-/*-
- *
- *			  Copyright (C) 1976
- *				by the
- *			  Board of Trustees
- *				of the
- *			University of Illinois
- *
- *			 All rights reserved
- *
- *
- * NAME:
- *	dump_line
- *
- * FUNCTION:
- *	Does the actual printing of the stored up line
- *
- * ALGORITHM:
- *	For each of the label, code, and comment sections which are used on 
- *	this line:
- *
- *	1) Use pad_output to get the section aligned properly.
- *	2) write the section
- *
- *	The indentation level used for the code is set by ps.ind_level.  After
- *	printing, ps.ind_level is set to ps.i_l_follow.
- *
- *	An extra level of indentation is added if ps.ind_stmt is 1.  After 
- *	printing, ps.ind_stmt is set to 1 iff the line just printed has an
- *	unterminated, non-declaration statement.
- *
- * HISTORY:
- *	initial coding 	November 1976	D A Willcox of CAC
- *
- */
-#include "indent_globs.h"
+#include "indent_globs.h";
+#include <ctype.h>
 
 
-
-int         ff = 014;		/* used to write a form feed */
 int         comment_open;
 static      paren_target;
 
 dump_line()
 {				/* dump_line is the routine that actually
-				 * effects the printing of the new source.
-				 * It prints the label section, followed
-				 * by the code section with the
-				 * appropriate nesting level, followed by
-				 * any comments */
+				 * effects the printing of the new source. It
+				 * prints the label section, followed by the
+				 * code section with the appropriate nesting
+				 * level, followed by any comments */
     register int cur_col,
                 temp_col,
                 target_col;
+    static      not_first_line;
 
     if (ps.procname[0]) {
-	if (troff)
+	if (troff) {
+	    if (comment_open) {
+		comment_open = 0;
+		fprintf(output, ".*/\n");
+	    }
 	    fprintf(output, ".Pr \"%s\"\n", ps.procname);
+	}
 	ps.ind_level = 0;
 	ps.procname[0] = 0;
     }
     if (s_code == e_code && s_lab == e_lab && s_com == e_com) {
-	if (suppress_blanklines>0) suppress_blanklines--;
+	if (suppress_blanklines > 0)
+	    suppress_blanklines--;
 	else {
-	ps.bl_line = true;
-	n_real_blanklines++;
+	    ps.bl_line = true;
+	    n_real_blanklines++;
 	}
     }
     else if (!inhibit_formatting) {
 	suppress_blanklines = 0;
 	ps.bl_line = false;
-	if (prefix_blankline_requested)
+	if (prefix_blankline_requested && not_first_line)
 	    if (swallow_optional_blanklines) {
 		if (n_real_blanklines == 1)
 		    n_real_blanklines = 0;
@@ -121,8 +76,8 @@ dump_line()
 	n_real_blanklines = 0;
 	if (ps.ind_level == 0)
 	    ps.ind_stmt = 0;	/* this is a class A kludge. dont do
-				 * additional statement indentation if we
-				 * are at bracket level 0 */
+				 * additional statement indentation if we are
+				 * at bracket level 0 */
 
 	if (e_lab != s_lab || e_code != s_code)
 	    ++code_lines;	/* keep count of lines with code */
@@ -161,7 +116,7 @@ dump_line()
 	    }
 	    cur_col = pad_output(cur_col, target_col);
 	    for (p = s_code; p < e_code; p++)
-		if (*p == (char)0200)
+		if (*p == (char) 0200)
 		    fprintf(output, "%d", target_col * 7);
 		else
 		    putc(*p, output);
@@ -169,10 +124,11 @@ dump_line()
 	}
 	if (s_com != e_com)
 	    if (troff) {
+		int         all_here = 0;
 		register char *p;
 
 		if (e_com[-1] == '/' && e_com[-2] == '*')
-		    e_com -= 2;
+		    e_com -= 2, all_here++;
 		while (e_com > s_com && e_com[-1] == ' ')
 		    e_com--;
 		*e_com = 0;
@@ -180,25 +136,44 @@ dump_line()
 		while (*p == ' ')
 		    p++;
 		if (p[0] == '/' && p[1] == '*')
-		    p += 2;
+		    p += 2, all_here++;
 		else if (p[0] == '*')
 		    p += p[1] == '/' ? 2 : 1;
 		while (*p == ' ')
 		    p++;
 		if (*p == 0)
 		    goto inhibit_newline;
-		if (!comment_open) {
+		if (comment_open < 2 && ps.box_com) {
+		    comment_open = 0;
+		    fprintf(output, ".*/\n");
+		}
+		if (comment_open == 0) {
 		    if ('a' <= *p && *p <= 'z')
 			*p = *p + 'A' - 'a';
-		    if (s_code != e_code || s_lab != e_lab) {
-			fprintf(output, "\\c\n./* %dp 1 %dp\n",
-				ps.com_col * 7, target_col * 7);
+		    if (e_com - p < 50 && all_here == 2) {
+			register char *follow = p;
+			fprintf(output, "\n.nr C! \\w\1");
+			while (follow < e_com) {
+			    switch (*follow) {
+			    case '\n':
+				putc(' ', output);
+			    case 1:
+				break;
+			    case '\\':
+				putc('\\', output);
+			    default:
+				putc(*follow, output);
+			    }
+			    follow++;
+			}
+			putc(1, output);
 		    }
-		    else
-			fprintf(output, "./* %dp 0 %dp\n",
-				ps.com_col * 7, target_col * 7);
+		    fprintf(output, "\n./* %dp %d %dp\n",
+			    ps.com_col * 7,
+			    (s_code != e_code || s_lab != e_lab) - ps.box_com,
+			    target_col * 7);
 		}
-		comment_open = 1;
+		comment_open = 1 + ps.box_com;
 		while (*p) {
 		    if (*p == BACKSLASH)
 			putc(BACKSLASH, output);
@@ -210,23 +185,27 @@ dump_line()
 		register char *com_st = s_com;
 
 		target += ps.comment_delta;
+		while (*com_st == '\t')
+		    com_st++, target += 8;	/* ? */
 		while (target <= 0)
-		    if (*s_com == ' ')
-			target++, s_com++;
-		    else if (*s_com == '\t')
-			target = ((target - 1) & ~7) + 9, s_com++;
+		    if (*com_st == ' ')
+			target++, com_st++;
+		    else if (*com_st == '\t')
+			target = ((target - 1) & ~7) + 9, com_st++;
 		    else
 			target = 1;
-		if (cur_col > target) {	/* if comment cant fit on this
-					 * line, put it on next line */
+		if (cur_col > target) {	/* if comment cant fit on this line,
+					 * put it on next line */
 		    putc('\n', output);
 		    cur_col = 1;
 		    ++ps.out_lines;
 		}
+		while (e_com > com_st && isspace(e_com[-1]))
+		    e_com--;
 		cur_col = pad_output(cur_col, target);
 		if (!ps.box_com) {
-		    if (star_comment_cont && com_st[1] != '*')
-			if (com_st[1] == ' ' && com_st[0] == ' ')
+		    if (star_comment_cont && (com_st[1] != '*' || e_com <= com_st + 1))
+			if (com_st[1] == ' ' && com_st[0] == ' ' && e_com > com_st + 1)
 			    com_st[1] = '*';
 			else
 			    fwrite(" * ", com_st[0] == '\t' ? 2 : com_st[0] == '*' ? 1 : 3, 1, output);
@@ -251,13 +230,13 @@ inhibit_newline:
 	postfix_blankline_requested = 0;
     }
     ps.decl_on_line = ps.in_decl;	/* if we are in the middle of a
-					 * declaration, remember that fact
-					 * for proper comment indentation */
+					 * declaration, remember that fact for
+					 * proper comment indentation */
     ps.ind_stmt = ps.in_stmt & ~ps.in_decl;	/* next line should be
 						 * indented if we have not
-						 * completed this stmt and
-						 * if we are not in the
-						 * middle of a declaration */
+						 * completed this stmt and if
+						 * we are not in the middle of
+						 * a declaration */
     ps.use_ff = false;
     ps.dumped_decl_indent = 0;
     *(e_lab = s_lab) = '\0';	/* reset buffers */
@@ -266,10 +245,12 @@ inhibit_newline:
     ps.ind_level = ps.i_l_follow;
     ps.paren_level = ps.p_l_follow;
     paren_target = -ps.paren_indents[ps.paren_level - 1];
+    not_first_line = 1;
     return;
 };
 
-compute_code_target() {
+compute_code_target()
+{
     register    target_col = ps.ind_size * ps.ind_level + 1;
 
     if (ps.paren_level)
@@ -280,7 +261,7 @@ compute_code_target() {
 	    register    t = paren_target;
 
 	    if ((w = count_spaces(t, s_code) - max_col) > 0
-		&& count_spaces(target_col, s_code) <= max_col) {
+		    && count_spaces(target_col, s_code) <= max_col) {
 		t -= w + 1;
 		if (t > target_col)
 		    target_col = t;
@@ -296,27 +277,26 @@ compute_code_target() {
 compute_label_target()
 {
     return
-	ps.pcase ? (int) (case_ind * ps.ind_size) +1
+	ps.pcase ? (int) (case_ind * ps.ind_size) + 1
 	: *s_lab == '#' ? 1
-	: ps.ind_size * (ps.ind_level - label_offset) +1;
+	: ps.ind_size * (ps.ind_level - label_offset) + 1;
 }
 
 
 /*
- * Copyright (C) 1976 by the Board of Trustees of the University of
- * Illinois 
- *
- * All rights reserved 
- *
- *
- * NAME: fill_buffer 
- *
- * FUNCTION: Reads one block of input into input_buffer 
- *
- * HISTORY: initial coding 	November 1976	D A Willcox of CAC 1/7/77
- * A Willcox of CAC	Added check for switch back to partly full input
- * buffer from temporary buffer 
- *
+ * Copyright (C) 1976 by the Board of Trustees of the University of Illinois
+ * 
+ * All rights reserved
+ * 
+ * 
+ * NAME: fill_buffer
+ * 
+ * FUNCTION: Reads one block of input into input_buffer
+ * 
+ * HISTORY: initial coding 	November 1976	D A Willcox of CAC 1/7/77 A
+ * Willcox of CAC	Added check for switch back to partly full input
+ * buffer from temporary buffer
+ * 
  */
 int
 fill_buffer()
@@ -326,14 +306,13 @@ fill_buffer()
     register int i;
     register FILE *f = input;
 
-    if (bp_save != 0) {		/* there is a partly filled input buffer
-				 * left */
+    if (bp_save != 0) {		/* there is a partly filled input buffer left */
 	buf_ptr = bp_save;	/* dont read anything, just switch buffers */
 	buf_end = be_save;
 	bp_save = be_save = 0;
 	if (buf_ptr < buf_end)
-	    return;		/* only return if there is really
-				 * something in this buffer */
+	    return;		/* only return if there is really something in
+				 * this buffer */
     }
     p = in_buffer;
     buf_ptr = p;
@@ -358,7 +337,7 @@ fill_buffer()
 		while (*p == ' ' || *p == '\t')
 		    p++;
 		if (p[0] == 'I' && p[1] == 'N' && p[2] == 'D' && p[3] == 'E'
-		    && p[4] == 'N' && p[5] == 'T') {
+			&& p[4] == 'N' && p[5] == 'T') {
 		    p += 6;
 		    while (*p == ' ' || *p == '\t')
 			p++;
@@ -395,37 +374,36 @@ fill_buffer()
 };
 
 /*
- * Copyright (C) 1976 by the Board of Trustees of the University of
- * Illinois 
- *
- * All rights reserved 
- *
- *
- * NAME: pad_output 
- *
- * FUNCTION: Writes tabs and spaces to move the current column up to the
- * desired position. 
- *
- * ALGORITHM: Put tabs and/or blanks into pobuf, then write pobuf. 
- *
+ * Copyright (C) 1976 by the Board of Trustees of the University of Illinois
+ * 
+ * All rights reserved
+ * 
+ * 
+ * NAME: pad_output
+ * 
+ * FUNCTION: Writes tabs and spaces to move the current column up to the desired
+ * position.
+ * 
+ * ALGORITHM: Put tabs and/or blanks into pobuf, then write pobuf.
+ * 
  * PARAMETERS: current		integer		The current column target
- * nteger		The desired column 
- *
- * RETURNS: Integer value of the new column.  (If current >= target, no
- * action is taken, and current is returned. 
- *
- * GLOBALS: None 
- *
- * CALLS: write (sys) 
- *
- * CALLED BY: dump_line 
- *
- * HISTORY: initial coding 	November 1976	D A Willcox of CAC 
- *
+ * nteger		The desired column
+ * 
+ * RETURNS: Integer value of the new column.  (If current >= target, no action is
+ * taken, and current is returned.
+ * 
+ * GLOBALS: None
+ * 
+ * CALLS: write (sys)
+ * 
+ * CALLED BY: dump_line
+ * 
+ * HISTORY: initial coding 	November 1976	D A Willcox of CAC
+ * 
  */
-pad_output(current, target)	/* writes tabs and blanks (if necessary)
-				 * to get the current output position up
-				 * to the target column */
+pad_output(current, target)	/* writes tabs and blanks (if necessary) to
+				 * get the current output position up to the
+				 * target column */
     int         current;	/* the current column value */
     int         target;		/* position we want it at */
 {
@@ -449,32 +427,30 @@ pad_output(current, target)	/* writes tabs and blanks (if necessary)
 };
 
 /*
- * Copyright (C) 1976 by the Board of Trustees of the University of
- * Illinois 
- *
- * All rights reserved 
- *
- *
- * NAME: count_spaces 
- *
+ * Copyright (C) 1976 by the Board of Trustees of the University of Illinois
+ * 
+ * All rights reserved
+ * 
+ * 
+ * NAME: count_spaces
+ * 
  * FUNCTION: Find out where printing of a given string will leave the current
- * character position on output. 
- *
+ * character position on output.
+ * 
  * ALGORITHM: Run thru input string and add appropriate values to current
- * position. 
- *
- * RETURNS: Integer value of position after printing "buffer" starting in
- * column "current". 
- *
- * HISTORY: initial coding 	November 1976	D A Willcox of CAC 
- *
+ * position.
+ * 
+ * RETURNS: Integer value of position after printing "buffer" starting in column
+ * "current".
+ * 
+ * HISTORY: initial coding 	November 1976	D A Willcox of CAC
+ * 
  */
 int
 count_spaces(current, buffer)
-
 /*
  * this routine figures out where the character position will be after
- * printing the text in buffer starting at column "current" 
+ * printing the text in buffer starting at column "current"
  */
     int         current;
     char       *buffer;
@@ -487,32 +463,29 @@ count_spaces(current, buffer)
     for (buf = buffer; *buf != '\0'; ++buf) {
 	switch (*buf) {
 
-	    case '\n':
-	    case 014:		/* form feed */
-		cur = 1;
-		break;
+	case '\n':
+	case 014:		/* form feed */
+	    cur = 1;
+	    break;
 
-	    case '\t':
-		cur = ((cur - 1) & tabmask) + tabsize + 1;
-		break;
+	case '\t':
+	    cur = ((cur - 1) & tabmask) + tabsize + 1;
+	    break;
 
-	    case '':		/* this is a backspace */
-		--cur;
-		break;
+	case '':		/* this is a backspace */
+	    --cur;
+	    break;
 
-	    default:
-		++cur;
-		break;
+	default:
+	    ++cur;
+	    break;
 	}			/* end of switch */
     }				/* end of for loop */
     return (cur);
 };
 
-int	found_err;
 diag(level, msg, a, b)
 {
-    if (level)
-	found_err = 1;
     if (output == stdout) {
 	fprintf(stdout, "/**INDENT** %s@%d: ", level == 0 ? "Warning" : "Error", line_no);
 	fprintf(stdout, msg, a, b);
@@ -523,4 +496,95 @@ diag(level, msg, a, b)
 	fprintf(stderr, msg, a, b);
 	fprintf(stderr, "\n");
     }
+}
+
+writefdef(f, nm)
+    register struct fstate *f;
+{
+    fprintf(output, ".ds f%c %s\n.nr s%c %d\n",
+	    nm, f->font, nm, f->size);
+}
+
+char       *
+chfont(of, nf, s)
+    register struct fstate *of,
+               *nf;
+    char       *s;
+{
+    if (of->font[0] != nf->font[0]
+	    || of->font[1] != nf->font[1]) {
+	*s++ = '\\';
+	*s++ = 'f';
+	if (nf->font[1]) {
+	    *s++ = '(';
+	    *s++ = nf->font[0];
+	    *s++ = nf->font[1];
+	}
+	else
+	    *s++ = nf->font[0];
+    }
+    if (nf->size != of->size) {
+	*s++ = '\\';
+	*s++ = 's';
+	if (nf->size < of->size) {
+	    *s++ = '-';
+	    *s++ = '0' + of->size - nf->size;
+	}
+	else {
+	    *s++ = '+';
+	    *s++ = '0' + nf->size - of->size;
+	}
+    }
+    return s;
+}
+
+
+setfont(f)
+    register struct fstate *f;
+{
+    if (f->font[0] != ps.cfont.font[0]
+	    || f->font[1] != ps.cfont.font[1])
+	fprintf(output, f->font[1] ? "\\f(%s" : "\\f%s", f->font);
+    if (f->size != ps.cfont.size)
+	fprintf(output, "\\s%d", f->size);
+    ps.cfont = *f;
+}
+
+parsefont(f, s0)
+    register struct fstate *f;
+    char       *s0;
+{
+    register char *s = s0;
+    int         sizedelta = 0;
+    bzero(f, sizeof *f);
+    while (*s) {
+	if (isdigit(*s))
+	    f->size = f->size * 10 + *s - '0';
+	else if (isupper(*s))
+	    if (f->font[0])
+		f->font[1] = *s;
+	    else
+		f->font[0] = *s;
+	else if (*s == 'c')
+	    f->allcaps = 1;
+	else if (*s == '+')
+	    sizedelta++;
+	else if (*s == '-')
+	    sizedelta--;
+	else {
+	    fprintf(stderr, "indent: bad font specification: %s\n", s0);
+	    exit(1);
+	}
+	s++;
+    }
+    if (f->font[0] == 0)
+	f->font[0] = 'R';
+    if (bodyf.size == 0)
+	bodyf.size = 11;
+    if (f->size == 0)
+	f->size = bodyf.size + sizedelta;
+    else if (sizedelta > 0)
+	f->size += bodyf.size;
+    else
+	f->size = bodyf.size - f->size;
 }
