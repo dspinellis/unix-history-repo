@@ -384,7 +384,7 @@ rest:
 			printf(".bp\n");
 		}
 		while (fgets(buf, sizeof buf, stdin) != NULL) {
-			if (buf[0] == '\f') {
+			if (buf[0] == '\f' && buf[1] == '\n') {
 				printf(".bp\n");
 				continue;
 			}
@@ -424,6 +424,11 @@ putScp(os)
 		ps("'-F\n");
 skip:
 	while (*s) {
+		if (*s == '\f') {
+			ps("\n.bp\n");
+			s++;
+			continue;
+		}
 		if (index) {
 			if (*s == ' ' || *s == '\t') {
 				if (xfld == 0)	
