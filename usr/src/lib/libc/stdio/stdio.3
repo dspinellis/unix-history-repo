@@ -1,184 +1,236 @@
-.\" Copyright (c) 1990 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1990, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)stdio.3	6.5 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH STDIO 3 ""
-.UC 4
-.SH NAME
-stdio \- standard buffered input/output package
-.SH SYNOPSIS
-.B #include <stdio.h>
-.PP
-.SM
-.B FILE
-.B *stdin;
-.br
-.SM
-.B FILE
-.B *stdout;
-.br
-.SM
-.B FILE
-.B *stderr;
-.SH DESCRIPTION
-The functions described here constitute a user-level buffering scheme.
-The in-line macros
-.IR getc (3)
+.\"     @(#)stdio.3	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt STDIO 3
+.Os BSD 4
+.Sh NAME
+.Nm stdio
+.Nd standard input/output library functions
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Fd FILE *stdin;
+.Fd FILE *stdout;
+.Fd FILE *stderr;
+.Sh DESCRIPTION
+The standard
+.Tn I/O
+library provides a simple and efficient buffered stream
+.Tn I/O
+interface.
+Input and ouput is mapped into logical data streams
+and the physical
+.Tn I/O
+characteristics are concealed. The functions and macros are listed
+below; more information is available from the individual man pages.
+.Pp
+A stream is associated with an external file (which may be a physical
+device) by
+.Em opening
+a file, which may involve creating a new file. Creating an
+existing file causes its former contents to be discarded.
+If a file can support positioning requests (such as a disk file, as opposed
+to a terminal) then a
+.Em file position indicator
+associated with the stream is positioned at the start of the file (byte
+zero), unless the file is opened with appened mode. If append mode
+is used, the position indicator will be placed the end-of-file.
+The position indicator is maintained by subsequent reads, writes
+and positioning requests. All input occurs as if the characters
+were read by successive calls to the
+.Xr fgetc 3
+function; all ouput takes place as if all characters were
+read by successive calls to the
+.Xr fputc 3
+function.
+.Pp
+A file is disassociated from a stream by
+.Em closing
+the file.
+Ouput streams are flushed (any unwritten buffer contents are transfered
+to the host environment) before the stream is disassociated from the file.
+The value of a pointer to a
+.Dv FILE
+object is indeterminate after a file is closed (garbage).
+.Pp
+A file may be subsequently reopened, by the same or another program
+execution, and its contents reclaimed or modified (if it can be repositioned
+at the start).  If the main function returns to its original caller, or
+the
+.Xr exit 3
+function is called, all open files are closed (hence all output
+streams are flushed) before program termination.  Other methods
+of program termination, such as
+.Xr abort 3
+do not bother about closing files properly.
+.Pp
+At program startup, three text streams are predefined and need not be
+opened explicitly
+\(em
+.Em standard input 
+(for reading converntional input),
+\(em
+.Em standard output 
+(for writing converntional input),
 and
-.IR putc (3)
-handle characters quickly.
-The higher level routines in
-.I stdio
-all use
-.I getc
+.Em standard error
+(for writing diagnostic output).
+These streams are abbreviated
+.Em stdin , stdout
 and
-.IR putc ;
-they can be freely intermixed.
-.PP
-A file with associated buffering is called a
-.IR stream ,
-and is declared to be a pointer to a defined type
-.SM
-.BR FILE .
-.IR Fopen (3)
-and
-.IR funopen (3)
-create certain descriptive data for a stream
-and return a pointer to designate the stream in all further transactions.
-There are three normally open streams with constant pointers declared in
-the include file and associated with the standard open files:
-.TP 10n
-.B stdin
-standard input file
-.br
-.ns
-.TP
-.B stdout
-standard output file
-.br
-.ns
-.TP
-.B stderr
-standard error file
-.PP
-A constant `pointer'
-.SM
-.B NULL
-(0)
-designates no stream at all.
-.PP
-An integer constant
-.SM
-.B EOF
-(\-1) is returned upon end of file or error by integer functions that
-deal with streams.
-.PP
-Any routine that uses the standard input/output package
-must include the header file
-.RI < stdio.h > .
-The constants and functions listed here
-are declared in the include file and need no further declaration.
-The following are implemented as macros;
-these names may not be reused
-without first removing their current definitions with
-.BR #undef :
-BUFSIZ, EOF, FILENAME_MAX, FOPEN_MAX, L_cuserid, L_tmpnam, NULL,
-SEEK_END, SEEK_SET, SEE_CUR, TMP_MAX, clearerr, feof, ferror,
-fileno, fropen, fwopen, getc, getchar, putc, putchar, stderr,
-stdin, stdout.
-Function versions of the macro functions feof, ferror, clearerr, fileno,
-getc, getchar, putc, and putchar exist and will be used if the macros
-definitions are explicitly removed.
-.PP
+.Em stderr .
+When opened, the standard error stream
+is not fully buffered; the standard input and output streams are
+fully buffered if and only if the streams do not to refer to
+an interactive device.
+.Pp
 Output streams that refer to terminal devices
 are always line buffered by default;
 pending output to such streams is written automatically
 whenever an input stream that refers to a terminal device is read.
 In cases where a large amount of computation is done after printing
 part of a line on an output terminal, it is necessary to
-.IR fflush (3)
+.Xr fflush 3
 the standard output before going off and computing so that the output
 will appear.
-.SH "SEE ALSO"
-open(2), close(2), read(2), write(2)
-.br
-all of the manual entries listed below
-.SH "RETURN VALUE"
-The value
-.SM
-.B EOF
-is returned uniformly to indicate that a
-.SM
-.B FILE
-pointer has not been initialized with
-.IR fopen ,
-input (output) has been attempted on an output (input) stream, or a
-.SM
-.B FILE
-pointer designates corrupt or otherwise unintelligible
-.SM
-.B FILE
-data.
-.SH BUGS
+.Pp
+The
+.Nm stdio
+library is a part of the library
+.Xr libc
+and routines are automatically loaded as needed by the compilers
+.Xr cc 1
+and
+.Xr pc 1 .
+The
+.Tn SYNOPSIS
+sections of the following manual pages indicate which include files
+are to be used, what the compiler declaration for the function
+looks like and which external variables are of interest.
+.Pp
+The following are defined as macros;
+these names may not be re-used
+without first removing their current definitions with
+.Dv #undef :
+.Dv BUFSIZ ,
+.Dv EOF ,
+.Dv FILENAME_MAX ,
+.DV FOPEN_MAX ,
+.Dv L_cuserid ,
+.Dv L_ctermid ,
+.Dv L_tmpnam,
+.Dv NULL ,
+.Dv SEEK_END ,
+.Dv SEEK_SET ,
+.Dv SEE_CUR ,
+.Dv TMP_MAX ,
+.Dv clearerr ,
+.Dv feof ,
+.Dv ferror ,
+.Dv fileno ,
+.Dv fropen ,
+.Dv fwopen ,
+.Dv getc ,
+.Dv getchar ,
+.Dv putc ,
+.Dv putchar ,
+.Dv stderr ,
+.Dv stdin ,
+.Dv stdout .
+Function versions of the macro functions
+.Xr feof ,
+.Xr ferror ,
+.Xr clearerr ,
+.Xr fileno ,
+.Xr getc ,
+.Xr getchar ,
+.Xr putc ,
+and
+.Xr putchar
+exist and will be used if the macros
+definitions are explicitly removed.
+.Sh SEE ALSO
+.Xr open 2 ,
+.Xr close 2 ,
+.Xr read 2 ,
+.Xr write 2
+.Sh BUGS
 The standard buffered functions do not interact well with certain other
-library and system functions, especially \fIvfork\fP and \fIabort\fP.
-.SH "LIST OF FUNCTIONS"
-.sp 2
-.nf
-.ta \w'setlinebuf'u+2n +\w'setvbuf.3'u+10n
-\fIName\fP	\fIAppears on Page\fP	\fIDescription\fP
-.ta \w'setlinebuf'u+4n +\w'setvbuf.3'u+4n
-.sp 5p
-clearerr	ferror.3	stream status inquiries
-fclose	fclose.3	close a stream
-fdopen	fopen.3	open a stream
-feof	ferror.3	stream status inquiries
-ferror	ferror.3	stream status inquiries
-fflush	fflush.3	flush a stream
-fgetc	getc.3	get a character or word from a stream
-fgetline	fgetline.3	get a line from a stream
-fgetpos	fseek.3	reposition a stream
-fgets	fgets.3	get a line from a stream
-fileno	ferror.3	stream status inquiries
-fmemopen	fmemopen.3	open a block of memory as a stream
-fopen	fopen.3	open a stream
-fprintf	printf.3	formatted output conversion
-fpurge	fpurge.3	discard buffered stream data
-fputc	putc.3	put a character or word to a stream
-fputs	fputs.3	put a line to a stream
-fread	fread.3	stream binary input/output
-freopen	fopen.3	open a stream
-fscanf	scanf.3	formatted input conversion
-fseek	fseek.3	reposition a stream
-fsetpos	fseek.3	reposition a stream
-ftell	fseek.3	reposition a stream
-funopen	fopen.3	open a stream
-fwrite	fread.3	stream binary input/output
-getc	getc.3	get a character or word from a stream
-getchar	getc.3	get a character or word from a stream
-gets	fgets.3	get a line from a stream
-getw	getc.3	get a character or word from a stream
-printf	printf.3	formatted output conversion
-putc	putc.3	put a character or word to a stream
-putchar	putc.3	put a character or word to a stream
-puts	fputs.3	put a line to a stream
-putw	putc.3	put a character or word to a stream
-remove	remove.3	remove a file
-rewind	fseek.3	reposition a stream
-scanf	scanf.3	formatted input conversion
-setbuf	setvbuf.3	assign buffering to a stream
-setbuffer	setvbuf.3	assign buffering to a stream
-setlinebuf	setvbuf.3	assign buffering to a stream
-setvbuf	setvbuf.3	assign buffering to a stream
-snprintf	printf.3	formatted output conversion
-sprintf	printf.3	formatted output conversion
-tmpfile	tmpnam.3	create a temporary stream
-tmpnam	tmpnam.3	create a temporary file name
-ungetc	ungetc.3	push character back into input stream
-vfprintf	printf.3	formatted output conversion
-vprintf	printf.3	formatted output conversion
-vsnprintf	printf.3	formatted output conversion
-vsprintf	printf.3	formatted output conversion
-.fi
+library and system functions, especially
+.Xr vfork
+and
+.Xr abort .
+.Sh STANDARDS
+The
+.Nm stdio
+library conforms to
+.St -ansiC .
+.Sh LIST OF FUNCTIONS
+.Bl -column "Description"
+.Sy Function	Description
+clearerr	check and reset stream status
+fclose	close a stream
+fdopen	stream open functions
+feof	check and reset stream status
+ferror	check and reset stream status
+fflush	flush a stream
+fgetc	get next character or word from input stream
+fgetline	get a line from a stream
+fgetpos	reposition a stream
+fgets	get a line from a stream
+fileno	check and reset stream status
+fopen	stream open functions
+fprintf	formatted output conversion
+fpurge	flush a stream
+fputc	output a character or word to a stream
+fputs	output a line to a stream
+fread	binary stream input/output
+freopen	stream open functions
+fropen	open a stream
+fscanf	input format conversion
+fseek	reposition a stream
+fsetpos	reposition a stream
+ftell	reposition a stream
+funopen	open a stream
+fwopen	open a stream
+fwrite	binary stream input/output
+getc	get next character or word from input stream
+getchar	get next character or word from input stream
+gets	get a line from a stream
+getw	get next character or word from input stream
+mktemp	make temporary file name (unique)
+perror	system error messages
+printf	formatted output conversion
+putc	output a character or word to a stream
+putchar	output a character or word to a stream
+puts	output a line to a stream
+putw	output a character or word to a stream
+remove	remove directory entry
+rewind	reposition a stream
+scanf	input format conversion
+setbuf	stream buffering operations
+setbuffer	stream buffering operations
+setlinebuf	stream buffering operations
+setvbuf	stream buffering operations
+snprintf	formatted output conversion
+sprintf	formatted output conversion
+sscanf	input format conversion
+strerror	system error messages
+sys_errlist	system error messages
+sys_nerr	system error messages
+tempnam	temporary file routines
+tmpfile	temporary file routines
+tmpnam	temporary file routines
+ungetc	un-get character from input stream
+vfprintf	formatted output conversion
+vfscanf	input format conversion
+vprintf	formatted output conversion
+vscanf	input format conversion
+vsnprintf	formatted output conversion
+vsprintf	formatted output conversion
+vsscanf	input format conversion
+.El
