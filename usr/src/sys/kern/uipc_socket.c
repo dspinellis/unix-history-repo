@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.20	81/12/21	*/
+/*	uipc_socket.c	4.21	81/12/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -159,7 +159,8 @@ sostat(so, sb)
 {
 
 COUNT(SOSTAT);
-	return (EOPNOTSUPP);
+	bzero((caddr_t)sb, sizeof (*sb));		/* XXX */
+	return (0);					/* XXX */
 }
 
 /*
