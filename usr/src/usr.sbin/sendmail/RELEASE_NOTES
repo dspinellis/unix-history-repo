@@ -739,6 +739,33 @@ summary of the changes in that release.
 	Allow trusted users (those on a T line or in $=t) to use -bs without
 		an X-Authentication-Warning: added.  Suggested by Mark Thomas
 		of Mark G. Thomas Consulting.
+	Announce state of compile flags on -d0.1 (-d0.10 throws in the
+		OS-dependent defines).  The old semantic of -d0.1 to not
+		run the daemon in background has been moved to -d99.100,
+		and the old 52.5 flag (to avoid disconnect() from closing
+		all output files) has been moved to 52.100.  This makes
+		things more consistent (flags below .100 don't change
+		semantics) and separates out the backgrounding so that
+		IBM's SRC can be used.
+	If -t is used but no addresses are found in the header, give an
+		error message rather than just doing nothing.  Fix from
+		Motonori Nakamura.
+	On systems (like SunOS) where the effective gid is not necessarily
+		included in the group list returned by getgroups(), the
+		`restrictmailq' option could sometimes cause an authorized
+		user to not be able to use `mailq'.  Fix from Charles Hannum
+		of MIT.
+	Allow symbolic service names for [IPC] mailers.  Suggested by
+		Gerry Magennis of Logica International.
+	Add DontExpandCnames option to prevent $[ ... $] from expanding CNAMEs
+		when running DNS.  For example, if the name FTP.Foo.ORG is
+		a CNAME for Cruft.Foo.ORG, then when sitting on a machine in
+		the Foo.ORG domain a lookup of "FTP" returns "Cruft.Foo.ORG"
+		if this option is not set, or "FTP.Foo.ORG" if it is set.
+		This is technically illegal under RFC 822 and 1123, but the
+		IETF is moving toward legalizing it.  Note that turning on
+		this option is not sufficient to guarantee that a downstream
+		neighbor won't rewrite the address for you.
 	PORTABILITY FIXES:
 		Solaris 2 from Rob McMahon <cudcv@csv.warwick.ac.uk>.
 		System V Release 4 from Motonori Nakamura of Ritsumeikan
@@ -789,6 +816,7 @@ summary of the changes in that release.
 		AIX changes to allow setproctitle to work from Rainer Schöpf
 			of Zentrum für Datenverarbeitung der Universität
 			Mainz.
+		AIX changes for load average from Ed Ravin of NASA/Goddard.
 		SCO Unix from Chip Rosenthal of Unicom (code was using the
 			wrong statfs call).
 		ANSI C fixes from Adam Glass (NetBSD project).
@@ -831,6 +859,8 @@ summary of the changes in that release.
 		HP-UX 10.0 from John Beck of Hewlett-Packard.
 		Ultrix: allow -DBROKEN_RES_SEARCH=0 if you are using a
 			non-DEC resolver.  Suggested by Allan Johannesen.
+		UnixWare 2.0 fixes from Petr Lampa of the Technical
+			University of Brno (Czech Republic).
 	MAKEMAP: allow -d flag to allow insertion of duplicate aliases
 		in type ``btree'' maps.  The semantics of this are undefined
 		for regular maps, but it can be useful for the user database.
@@ -956,6 +986,11 @@ summary of the changes in that release.
 	CONFIG: change confCHECK_ALIASES to default to False -- it has poor
 		performance for large alias files, and this confused many
 		people.
+	CONFIG: Add confCF_VERSION to append local information to the
+		configuration version number displayed during SMTP startup.
+	CONFIG: fix some.newsgroup.usenet@local.host syntax (previously it
+		would only work when locally addressed.  Fix from
+		Edvard Tuinder of Cistron Internet Services.
 	NEW FILES:
 		cf/cf/cs-hpux10.mc
 		cf/cf/cs-solaris2.mc
@@ -996,7 +1031,7 @@ summary of the changes in that release.
 		src/Makefiles/Makefile.SunOS.5.3
 		src/Makefiles/Makefile.SunOS.5.4
 		src/Makefiles/Makefile.SunOS.5.5
-		src/Makefiles/Makefile.UNIX_SV.4.2.i386
+		src/Makefiles/Makefile.UNIX_SV.4.x.i386
 		src/Makefiles/Makefile.uts.systemV
 		src/mime.c
 		test/t_seteuid.c
