@@ -226,6 +226,7 @@ dumppacket(fd, dir, who, cp, size)
 {
 	register struct rip *msg = (struct rip *)cp;
 	register struct netinfo *n;
+	char *xns_nettoa();
 
 	if (msg->rip_cmd && ntohs(msg->rip_cmd) < RIPCMD_MAX)
 		fprintf(fd, "%s %s %s#%x", ripcmds[ntohs(msg->rip_cmd)],
@@ -246,8 +247,8 @@ dumppacket(fd, dir, who, cp, size)
 		for (; size > 0; n++, size -= sizeof (struct netinfo)) {
 			if (size < sizeof (struct netinfo))
 				break;
-			fprintf(fd, "\tnet %#x metric %d\n",
-			     ntohl(xnnet(n->rip_dst[0])),
+			fprintf(fd, "\tnet %s metric %d\n",
+			     xns_nettoa(n->rip_dst),
 			     ntohs(n->rip_metric));
 		}
 		break;
@@ -255,14 +256,27 @@ dumppacket(fd, dir, who, cp, size)
 	}
 }
 
+union ns_net_u net;
+
+char *
+xns_nettoa(val)
+union ns_net val;
+{
+	static char buf[100];
+	net.net_e = val;
+	sprintf(buf, "%lx", ntohl(net.long_e));
+	return (buf);
+}
+
+
 char *
 xns_ntoa(addr)
 struct ns_addr *addr;
 {
     static char buf[100];
 
-    sprintf(buf, "%x#%x:%x:%x:%x:%x:%x",
-	ntohl(xnnet(addr->x_net)),
+    sprintf(buf, "%s#%x:%x:%x:%x:%x:%x",
+	xns_nettoa(addr->x_net),
 	addr->x_host.c_host[0], addr->x_host.c_host[1], 
 	addr->x_host.c_host[2], addr->x_host.c_host[3], 
 	addr->x_host.c_host[4], addr->x_host.c_host[5]);
