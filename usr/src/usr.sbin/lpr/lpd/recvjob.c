@@ -1,4 +1,4 @@
-/*	recvjob.c	4.3	83/06/02	*/
+/*	recvjob.c	4.4	83/06/15	*/
 /*
  * Receive printer jobs from the network, queue them and
  * start the printer daemon.
@@ -30,7 +30,7 @@ recvjob()
 		LO = DEFLOCK;
 
 	(void) close(2);
-	(void) open(LF, FWRONLY|FAPPEND, 0);
+	(void) open(LF, O_WRONLY|O_APPEND);
 	if (chdir(SD) < 0)
 		fatal("cannot chdir to %s", SD);
 	if (stat(LO, &stb) == 0 && (stb.st_mode & 010)) {
@@ -123,7 +123,7 @@ readfile(file, size)
 	register int i, j, amt;
 	int fd, err;
 
-	fd = open(file, FWRONLY|FCREATE, FILMOD);
+	fd = open(file, O_WRONLY|O_CREAT, FILMOD);
 	if (fd < 0)
 		fatal("cannot create %s", file);
 	ack();

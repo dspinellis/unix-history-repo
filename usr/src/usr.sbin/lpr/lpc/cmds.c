@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	4.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -70,7 +70,7 @@ abortpr()
 		else
 			printf("\tprinting disabled\n");
 	} else if (errno == ENOENT) {
-		if ((fd = open(line, FWRONLY|FCREATE, 0760)) < 0)
+		if ((fd = open(line, O_WRONLY|O_CREAT, 0760)) < 0)
 			printf("\tcannot create lock file\n");
 		else {
 			(void) close(fd);
@@ -89,7 +89,7 @@ abortpr()
 		printf("\tcannot open lock file\n");
 		return;
 	}
-	if (!getline(fp) || flock(fileno(fp), FSHLOCK|FNBLOCK) == 0) {
+	if (!getline(fp) || flock(fileno(fp), LOCK_SH|LOCK_NB) == 0) {
 		(void) fclose(fp);
 		printf("\tno daemon to abort\n");
 		return;
@@ -293,7 +293,7 @@ disablepr()
 		else
 			printf("\tqueuing disabled\n");
 	} else if (errno == ENOENT) {
-		if ((fd = open(line, FWRONLY|FCREATE, 0670)) < 0)
+		if ((fd = open(line, O_WRONLY|O_CREAT, 0670)) < 0)
 			printf("\tcannot create lock file\n");
 		else {
 			(void) close(fd);
@@ -499,8 +499,8 @@ prstat()
 		printf("\t1 entry in spool area\n");
 	else
 		printf("\t%d entries in spool area\n", i);
-	fd = open(line, FRDONLY);
-	if (fd < 0 || flock(fd, FSHLOCK|FNBLOCK) == 0) {
+	fd = open(line, O_RDONLY);
+	if (fd < 0 || flock(fd, LOCK_SH|LOCK_NB) == 0) {
 		(void) close(fd);
 		printf("\tno daemon present\n");
 		return;
@@ -508,7 +508,9 @@ prstat()
 	(void) close(fd);
 	putchar('\t');
 	(void) sprintf(line, "%s/%s", SD, ST);
-	if ((fd = open(line, FRDONLY|FSHLOCK)) >= 0) {
+	fd = open(line, O_RDONLY);
+	if (fd >= 0) {
+		(void) flock(fd, LOCK_SH);
 		while ((i = read(fd, line, sizeof(line))) > 0)
 			(void) fwrite(line, 1, i, stdout);
 		(void) close(fd);
@@ -577,7 +579,7 @@ stoppr()
 		else
 			printf("\tprinting disabled\n");
 	} else if (errno == ENOENT) {
-		if ((fd = open(line, FWRONLY|FCREATE, 0760)) < 0)
+		if ((fd = open(line, O_WRONLY|O_CREAT, 0760)) < 0)
 			printf("\tcannot create lock file\n");
 		else {
 			(void) close(fd);

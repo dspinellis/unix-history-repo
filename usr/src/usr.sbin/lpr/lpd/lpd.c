@@ -1,4 +1,4 @@
-/*	lpd.c	4.4	83/06/02	*/
+/*	lpd.c	4.5	83/06/15	*/
 /*
  * lpd -- line printer daemon.
  *
@@ -41,7 +41,7 @@ static char	*logfile = DEFLOGF;
 static struct	sockaddr_in sin = { AF_INET };
 
 int	reapchild();
-char	*ntoa();
+char	*inet_ntoa();
 
 main(argc, argv)
 	int argc;
@@ -95,10 +95,10 @@ main(argc, argv)
 		exit(0);
 	for (f = 0; f < 3; f++)
 		(void) close(f);
-	(void) open("/dev/null", FRDONLY, 0);
-	(void) open("/dev/null", FWRONLY, 0);
-	(void) open(logfile, FWRONLY|FAPPEND, 0);
-	f = open("/dev/tty", FRDWR, 0);
+	(void) open("/dev/null", O_RDONLY);
+	(void) open("/dev/null", O_WRONLY);
+	(void) open(logfile, O_WRONLY|O_APPEND);
+	f = open("/dev/tty", O_RDWR);
 	if (f > 0) {
 		ioctl(f, TIOCNOTTY, 0);
 		(void) close(f);
@@ -126,7 +126,7 @@ main(argc, argv)
 	/*
 	 * Main loop: listen, accept, do a request, continue.
 	 */
-	sigset(SIGCHLD, reapchild);
+	signal(SIGCHLD, reapchild);
 	listen(f, 10);
 	for (;;) {
 		int s, len = sizeof(fromaddr);
@@ -139,7 +139,7 @@ main(argc, argv)
 			exit(1);
 		}
 		if (fork() == 0) {
-			sigset(SIGCHLD, SIG_IGN);
+			signal(SIGCHLD, SIG_IGN);
 			(void) close(f);
 			doit(s, &fromaddr);
 			exit(0);
@@ -197,7 +197,7 @@ doit(f, fromaddr)
 		fromaddr->sin_family);
 	if (hp == 0)
 		fatal("Host name for your address (%s) unknown",
-			ntoa(fromaddr->sin_addr));
+			inet_ntoa(fromaddr->sin_addr));
 	strcpy(fromb, hp->h_name);
 	from = fromb;
 	if (chkhost())
@@ -348,23 +348,6 @@ chkhost()
 	}
 	(void) fclose(hostf);
 	return(-1);
-}
-
-/*
- * Convert network-format internet address
- * to base 256 d.d.d.d representation.
- */
-static char *
-ntoa(in)
-	struct in_addr in;
-{
-	static char b[18];
-	register char *p;
-
-	p = (char *)&in;
-#define	UC(b)	(((int)b)&0xff)
-	sprintf(b, "%d.%d.%d.%d", UC(p[0]), UC(p[1]), UC(p[2]), UC(p[3]));
-	return (b);
 }
 
 /*VARARGS1*/
