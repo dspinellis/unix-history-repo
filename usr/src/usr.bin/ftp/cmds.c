@@ -16,13 +16,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * FTP User Program -- Command Routines.
  */
-#include "ftp_var.h"
+#include <sys/param.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 
 #include <arpa/ftp.h>
@@ -33,9 +35,8 @@ static char sccsid[] = "@(#)cmds.c	5.13 (Berkeley) %G%";
 #include <netdb.h>
 #include <ctype.h>
 #include <time.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
-#include <sys/param.h>
+
+#include "ftp_var.h"
 
 
 extern	char *globerr;
@@ -98,13 +99,16 @@ setpeer(argc, argv)
 		connected = 1;
 		if (autologin) {
 			int overbose;
+
 			(void) login(argv[1]);
 #if defined(unix) && NBBY == 8
 /*
  * this ifdef is to keep someone form "porting" this to an incompatible
  * system and not checking this out. This way they have to think about it.
  */
-			overbose = verbose, verbose = -1;
+			overbose = verbose;
+			if (debug == 0)
+				verbose = -1;
 			if (command("SYST") == COMPLETE && overbose) {
 				register char *cp, c;
 				cp = index(reply_string+4, ' ');
@@ -125,11 +129,12 @@ setpeer(argc, argv)
 			if (!strncmp(reply_string, "215 UNIX Type: L8", 17)) {
 				setbinary();
 				if (overbose)
-					printf("Using %s mode to transfer files.\n",
-						typename);
+				    printf("Using %s mode to transfer files.\n",
+					typename);
 			} else if (overbose && 
 			    !strncmp(reply_string, "215 TOPS20", 10)) {
-				printf("Remember to set tenex mode when transfering binary files from this machine.\n");
+				printf(
+"Remember to set tenex mode when transfering binary files from this machine.\n");
 			}
 			verbose = overbose;
 #endif /* unix */
@@ -503,7 +508,7 @@ getit(argc, argv, restartit, mode)
 usage:
 		printf("usage: %s remote-file [ local-file ]\n", argv[0]);
 		code = -1;
-		return 0;
+		return (0);
 	}
 	if (argc < 3) {
 		(void) strcat(line, " ");
@@ -517,7 +522,7 @@ usage:
 		goto usage;
 	if (!globulize(&argv[2])) {
 		code = -1;
-		return 0;
+		return (0);
 	}
 	if (loc && mcase) {
 		char *tp = argv[1], *tp2, tmpbuf[MAXPATHLEN];
@@ -538,26 +543,28 @@ usage:
 			argv[2] = tmpbuf;
 		}
 	}
-	if (loc && ntflag) {
+	if (loc && ntflag)
 		argv[2] = dotrans(argv[2]);
-	}
-	if (loc && mapflag) {
+	if (loc && mapflag)
 		argv[2] = domap(argv[2]);
-	}
 	if (restartit) {
 		struct stat stbuf;
 		int ret;
+
 		ret = stat(argv[2], &stbuf);
 		if (restartit == 1) {
 			if (ret < 0) {
 				perror(argv[2]);
-				return 0;
+				return (0);
 			}
 			restart_point = stbuf.st_size;
 		} else {
 			if (ret == 0) {
 				int overbose;
-				overbose = verbose; verbose = -1;
+
+				overbose = verbose;
+				if (debug == 0)
+					verbose = -1;
 				if (command("MDTM %s", argv[1]) == COMPLETE) {
 					int yy, mo, day, hour, min, sec;
 					struct tm *tm;
@@ -568,27 +575,27 @@ usage:
 					tm = gmtime(&stbuf.st_mtime);
 					tm->tm_mon++;
 					if (tm->tm_year > yy%100)
-						return 1;
+						return (1);
 					else if (tm->tm_year == yy%100) {
 						if (tm->tm_mon > mo)
-							return 1;
+							return (1);
 					} else if (tm->tm_mon == mo) {
 						if (tm->tm_mday > day)
-							return 1;
+							return (1);
 					} else if (tm->tm_mday == day) {
 						if (tm->tm_hour > hour)
-							return 1;
+							return (1);
 					} else if (tm->tm_hour == hour) {
 						if (tm->tm_min > min)
-							return 1;
+							return (1);
 					} else if (tm->tm_min == min) {
 						if (tm->tm_sec > sec)
-							return 1;
+							return (1);
 					}
 				} else {
 					fputs(reply_string, stdout);
 					verbose = overbose;
-					return 0;
+					return (0);
 				}
 			}
 		}
@@ -596,7 +603,7 @@ usage:
 
 	recvrequest("RETR", argv[2], argv[1], mode);
 	restart_point = 0;
-	return 0;
+	return (0);
 }
 
 mabort()
@@ -1160,7 +1167,7 @@ mls(argc, argv)
 			code = -1;
 			return;
 	}
-	cmd = argv[0][1] == 'n' ? "NLST" : "LIST";
+	cmd = argv[0][1] == 'l' ? "NLST" : "LIST";
 	mname = argv[0];
 	mflag = 1;
 	oldintr = signal(SIGINT, mabort);
@@ -1893,8 +1900,8 @@ restart(argc, argv)
 		printf("restart: offset not specified\n");
 	else {
 		restart_point = atol(argv[1]);
-		printf("restarting at %ld. execute get, put or append to initiate transfer\n",
-			restart_point);
+		printf("restarting at %ld. %s\n", restart_point,
+		    "execute get, put or append to initiate transfer");
 	}
 }
 
@@ -2016,7 +2023,9 @@ modtime(argc, argv)
 		code = -1;
 		return;
 	}
-	overbose = verbose; verbose = -1;
+	overbose = verbose;
+	if (debug == 0)
+		verbose = -1;
 	if (command("MDTM %s", argv[1]) == COMPLETE) {
 		int yy, mo, day, hour, min, sec;
 		sscanf(reply_string, "%*s %04d%02d%02d%02d%02d%02d", &yy, &mo,
