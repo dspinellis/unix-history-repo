@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.6 (Berkeley) %G%
+#	@(#)Makefile	7.7 (Berkeley) %G%
 
 DESTDIR=/
 STAND=	../../stand
@@ -19,7 +19,7 @@ DRIVERS=cga.c fd.c kbd.c wd.c
 SRCS=	boot.c bootxx.c conf.c confxx.c copy.c fd.c fdbootblk.c prf.c \
 	srt0.c wdbootblk.c ${DRIVERS} ${SASRC}
 LIBS=	${STAND}/obj/libsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
-SMLIBS=	${STAND}/obj/libsmsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
+SMLIBS=	${STAND}/smobj/libsmsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
 
 BOOTBLOCKS= wdboot bootwd fdboot bootfd
 DISKUTILS= boot copy cat ls
@@ -29,8 +29,8 @@ all: ${ALL}
 
 ${STAND}/obj/libsa.a:
 	cd ${STAND}; make
-${STAND}/obj/libsmsa.a:
-	cd ${STAND}; make LIB=smsa CFLAGS='-O -DSMALL'
+${STAND}/smobj/libsmsa.a:
+	cd ${STAND}; env MAKEOBJDIR=smobj make LIB=smsa CFLAGS='-O -DSMALL'
 
 libdrive.a: conf.o prf.o ${DRIVERS:.c=.o}
 	ar crv $@ $?
