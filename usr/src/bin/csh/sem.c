@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)sem.c	5.6 (Berkeley) %G%";
+static char *sccsid = "@(#)sem.c	5.7 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -31,22 +31,6 @@ execute(t, wanttty, pipein, pipeout)
 
 	if (t == 0)
 		return;
-#ifdef REMOVE_THIS 
-{ short x=t->t_dtyp;
-int flg = t->t_dflg;
-printf("execute: cmd=%s pid=%d t_dtyp=%s wanttty=%d ", t->t_dcom[0], getpid(), 
-	x == TCOM ? "TCOM" : x == TPAR ? "TPAR" : x == TFIL ? "TFIL" : 
-	x == TLST ? "TLST" : x == TOR ? "TOR" : x == TAND ? "TAND" : "UNKNOWN",
-	wanttty);
-if (flg&FAND) printf("FAND "); if (flg&FCAT) printf("FCAT ");
-if (flg&FPIN) printf("FPIN "); if (flg&FPOU) printf("FPOU ");
-if (flg&FPAR) printf("FPAR "); if (flg&FINT) printf("FINT ");
-if (flg&FDIAG) printf("FDIAG "); if (flg&FANY) printf("FANY ");
-if (flg&FHERE) printf("FHERE "); if (flg&FREDO) printf("FREDO ");
-if (flg&FNICE) printf("FNICE "); if (flg&FNOHUP) printf("FNOHUP ");
-if (flg&FTIME) printf("FTIME "); printf("\n");
-}
-#endif
 	if ((t->t_dflg & FAND) && wanttty > 0)
 		wanttty = 0;
 	switch (t->t_dtyp) {
@@ -136,18 +120,12 @@ if (flg&FTIME) printf("FTIME "); printf("\n");
 #endif
 			{ forked++; 
 			  if (wanttty >= 0 && !nosigchld) {
-#ifdef REMOVE_THIS
-				printf("(%d) blocking sigchld\n", getpid());
-#endif
 				osigmask = sigblock(sigmask(SIGCHLD));
 				nosigchld = 1;
 			  }
 
 			  pid = pfork(t, wanttty);
 			  if (pid == 0 && nosigchld) {
-#ifdef REMOVE_THIS
-				printf("%d unblocking sigchld after fork\n", getpid());
-#endif
 				sigsetmask(osigmask);
 				nosigchld = 0;
 			  }
@@ -170,9 +148,6 @@ if (flg&FTIME) printf("FTIME "); printf("\n");
 			 * exec's.
 			 */
 			if (wanttty >= 0 && !nosigchld && !noexec) {
-#ifdef REMOVE_THIS
-				printf("(%d) blocking sigchld\n", getpid());
-#endif
 				osigmask = sigblock(sigmask(SIGCHLD));
 				nosigchld = 1;
 			}
@@ -208,9 +183,6 @@ if (flg&FTIME) printf("FTIME "); printf("\n");
 				bool ignint = 0;
 
 				if (nosigchld) {
-#ifdef REMOVE_THIS
-					printf("%d unblocking sigchld after fork\n", getpid());
-#endif
 					sigsetmask(osigmask);
 					nosigchld = 0;
 				}
@@ -268,9 +240,6 @@ if (flg&FTIME) printf("FTIME "); printf("\n");
 				(void) close(pipein[1]);
 			}
 			if ((t->t_dflg & FPOU) == 0) {
-#ifdef REMOVE_THIS
-				printf("(%d) last command - should unblock sigchld? (%d)\n", getpid(), nosigchld);
-#endif
 				if (nosigchld) {
 #ifdef foobarbaz
 					printf("DID\n");
