@@ -1,4 +1,4 @@
-/*	kern_resource.c	4.6	82/02/27	*/
+/*	kern_resource.c	4.7	82/06/07	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -44,7 +44,7 @@ sysacct()
 			return;
 		}
 		acctp = ip;
-		irele(ip);
+		iunlock(ip);
 	}
 }
 
@@ -85,7 +85,7 @@ acct()
 	writei(ip);
 	if(u.u_error)
 		ip->i_size = siz;
-	irele(ip);
+	iunlock(ip);
 }
 
 /*

@@ -1,4 +1,4 @@
-/*	ufs_vnops.c	4.24	82/06/04	*/
+/*	ufs_vnops.c	4.25	82/06/07	*/
 
 #ifdef SIMFS
 #include "../h/sysrenam.h"
@@ -45,7 +45,7 @@ register struct inode **ipp;
 	}
 	if(access(ip, IEXEC))
 		goto bad;
-	irele(ip);
+	iunlock(ip);
 	if (*ipp) {
 		ilock(*ipp);
 		iput(*ipp);
@@ -124,7 +124,7 @@ open1(ip, mode, trf)
 		goto out;
 	if (trf == 1)
 		itrunc(ip);
-	irele(ip);
+	iunlock(ip);
 	if ((fp = falloc()) == NULL)
 		goto out;
 	fp->f_flag = mode&(FREAD|FWRITE);
@@ -198,7 +198,7 @@ link()
 	ip->i_nlink++;
 	ip->i_flag |= ICHG;
 	iupdat(ip, &time, &time, 1);
-	irele(ip);
+	iunlock(ip);
 	u.u_dirp = (caddr_t)uap->linkname;
 	xp = namei(uchar, 1, 0);
 	if (xp != NULL) {
