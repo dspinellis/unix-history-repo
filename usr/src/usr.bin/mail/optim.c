@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)optim.c	5.7 (Berkeley) %G%";
+static char *sccsid = "@(#)optim.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -45,10 +45,11 @@ netmap(name, from)
 	if (cp == nbuf)
 		return(name);
 	*++cp = 0;
-	strcat(nbuf, revarpa(name));
+	if ((cp = revarpa(name)) != NOSTR)
+		strcat(nbuf, cp);
 	optim(nbuf, ret);
 	cp = revarpa(ret);
-	if (!icequal(name, cp))
+	if (cp && !icequal(name, cp))
 		return(savestr(cp));
 	return(name);
 }
