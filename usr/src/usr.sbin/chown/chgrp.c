@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)chgrp.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)chgrp.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -49,7 +49,7 @@ main(argc, argv)
 			break;
 
 		default:
-			fatal(255, "unknown option: %s", *cp);
+			fatal(255, "unknown option: %c", *cp);
 			/*NOTREACHED*/
 		}
 		argv++, argc--;

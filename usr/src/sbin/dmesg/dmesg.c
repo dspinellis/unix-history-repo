@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dmesg.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)dmesg.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -66,8 +66,8 @@ char **argv;
 		done("Magic number wrong (namelist mismatch?)\n");
 	if (msgbuf.msg_bufx >= MSG_BSIZE)
 		msgbuf.msg_bufx = 0;
-	if (omsgbuf.msg_bufx >= MSG_BSIZE)
-		omsgbuf.msg_bufx = 0;
+	if (omesg.msg_bufx >= MSG_BSIZE)
+		omesg.msg_bufx = 0;
 	mstart = &msgbuf.msg_bufc[omesg.msg_bufx];
 	omp = &omesg.msg_bufc[msgbuf.msg_bufx];
 	mp = msgbufp = &msgbuf.msg_bufc[msgbuf.msg_bufx];
