@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)socket.h	7.10 (Berkeley) %G%
+ *	@(#)socket.h	7.11 (Berkeley) %G%
  */
 
 /*
@@ -205,3 +205,31 @@ struct omsghdr {
 	caddr_t	msg_accrights;		/* access rights sent/received */
 	int	msg_accrightslen;
 };
+
+#ifndef	KERNEL
+
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+int	accept __P((int, struct sockaddr *, int *));
+int	bind __P((int, const struct sockaddr *, int));
+int	connect __P((int, const struct sockaddr *, int));
+int	getpeername __P((int, struct sockaddr *, int *));
+int	getsockname __P((int, struct sockaddr *, int *));
+int	getsockopt __P((int, int, int, void *, int *));
+int	listen __P((int, int));
+int	recv __P((int, void *, int, int));
+int	recvfrom __P((int, void *, int, int,
+		struct sockaddr *, int *));
+int	recvmsg __P((int, const struct msghdr *, int));
+int	send __P((int, const void *, int, int));
+int	sendto __P((int, const void *, int, int,
+		const struct sockaddr *, int *));
+int	sendmsg __P((int, const struct msghdr *, int));
+int	setsockopt __P((int, int, int, const void *, int));
+int	shutdown __P((int, int));
+int	socket __P((int, int, int));
+int	socketpair __P((int, int, int, int *));
+__END_DECLS
+
+#endif	/* !KERNEL */
