@@ -1,4 +1,4 @@
-/*	ip_input.c	1.65	83/02/23	*/
+/*	ip_input.c	1.66	83/03/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -647,11 +647,14 @@ ip_forward(ip)
 	ip_stripoptions(ip, mopt);
 
 	/* last 0 here means no directed broadcast */
-	if ((error = ip_output(dtom(ip), mopt, (struct route *)0, 0)) == 0) {
+	error = ip_output(dtom(ip), mopt, (struct route *)0, 0);
+	if (error == 0) {
 		if (mcopy)
 			m_freem(mcopy);
 		return;
 	}
+	if (mcopy == NULL)
+		return;
 	ip = mtod(mcopy, struct ip *);
 	type = ICMP_UNREACH, code = 0;		/* need ``undefined'' */
 	switch (error) {
