@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs.h	8.4 (Berkeley) %G%
+ *	@(#)kernfs.h	8.5 (Berkeley) %G%
  */
 
 #define	_PATH_KERNFS	"/kern"		/* Default mountpoint */
@@ -26,5 +26,5 @@ struct kernfs_node {
 
 extern int (**kernfs_vnodeop_p)();
 extern struct vfsops kernfs_vfsops;
-extern struct vnode *rrootvp;
+extern dev_t rrootdev;
 #endif /* KERNEL */
