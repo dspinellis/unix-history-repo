@@ -15,13 +15,14 @@ static char copyright[] =
 #endif				/* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)test.c	1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)test.c	1.4 (Berkeley) %G%";
 #endif				/* not lint */
 
 #include <stdio.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <string.h>
 #include "operators.h"
 #include "extern.h"
 
@@ -496,6 +497,9 @@ posix_binary_op(argv)
 	if (c == OP_INT && int_tcheck(argv[0]) && int_tcheck(argv[2])) {
 		v[0].u.num = atol(argv[0]);
 		v[1].u.num = atol(argv[2]);
+	} else {
+		v[0].u.string = argv[0];
+		v[1].u.string = argv[2];
 	}
 	expr_operator(op, v, NULL);
 	return (v[0].u.num == 0);
