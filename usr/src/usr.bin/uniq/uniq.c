@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)uniq.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)uniq.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <errno.h>
@@ -105,7 +105,11 @@ done:	argc -= optind;
 
 	prevline = malloc(MAXLINELEN);
 	thisline = malloc(MAXLINELEN);
-	(void)fgets(prevline, MAXLINELEN, ifp);
+	if (prevline == NULL || thisline == NULL)
+		err("%s", strerror(errno));
+
+	if (fgets(prevline, MAXLINELEN, ifp) == NULL)
+		exit(0);
 
 	while (fgets(thisline, MAXLINELEN, ifp)) {
 		/* If requested get the chosen fields + character offsets. */
