@@ -1,4 +1,4 @@
-#	@(#)4.4todo	5.7 (Berkeley) %G%
+#	@(#)4.4todo	5.8 (Berkeley) %G%
 
 Target for alpha tape release: May 31.
 Target architectures: 386/486, HP300, Sparc, DECstation 3100/5000.
@@ -34,9 +34,15 @@ Routed update			Keith
 
 POSIX 1003.1 compatibility	Marc
 POSIX 1003.2 shell		Marc
-	command-line editor
-tty_subr.c			Marc/Mike
-hp300/dev/hil.c			Marc
+ (see ~marc/4.4/todo)
+	hard changes				1	1 mo
+	easy changes				1	1 mo
+POSIX 1003.2a shell		Marc
+	history/editing				1	3 weeks (in parallel)
+	aliases					3	1 week	(in parallel)
+
+tty streams			Marc/Mike	?	unknown
+clists (hp300/dev/hil.c)	Marc
 
 Bstreams			Mike
 Sparc port			Chris
