@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)events.c	1.5 (Berkeley) %G%";
+static	char sccsid[] = "@(#)events.c	1.6 (Berkeley) %G%";
 
 /*
  * Event/breakpoint managment.
@@ -827,6 +827,12 @@ Node p;
     return tp;
 }
 
+#define	cast(size, loc, val) \
+    switch (size) { \
+	case sizeof (char): *(char *)(loc) = (val); break; \
+	case sizeof (short): *(short *)(loc) = (val); break; \
+	default: *(int *)(loc) = (val); break; \
+    }
 /*
  * Print out the value of a variable if it has changed since the
  * last time we checked.
@@ -842,7 +848,12 @@ Node p;
 
     tp = findtrinfo(p);
     n = size(p->nodetype);
-    dread(buff, tp->traddr, n);
+    if (p->op == O_SYM and isreg(p->value.sym)) {
+	int regval = address(p->value.sym, nil);
+
+	cast(n, buff, regval);
+    } else
+	dread(buff, tp->traddr, n);
     if (tp->trvalue == nil) {
 	tp->trvalue = newarr(char, n);
 	mov(buff, tp->trvalue, n);

@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)symbols.c	1.14 (Berkeley) %G%";
+static	char sccsid[] = "@(#)symbols.c	1.15 (Berkeley) %G%";
 
 /*
  * Symbol management.
@@ -108,6 +108,7 @@ Symbol curfunc;
 #define isroutine(s) (Boolean) ( \
     s->class == FUNC or s->class == PROC \
 )
+#define isreg(s)	(s->level < 0)
 
 #define nosource(f) (not (f)->symvalue.funcv.src)
 #define isinline(f) ((f)->symvalue.funcv.inline)
@@ -498,7 +499,6 @@ Symbol s;
 #define isglobal(s)		(s->level == 1)
 #define islocaloff(s)		(s->level >= 2 and s->symvalue.offset < 0)
 #define isparamoff(s)		(s->level >= 2 and s->symvalue.offset >= 0)
-#define isreg(s)		(s->level < 0)
 
 public Address address(s, frame)
 Symbol s;
