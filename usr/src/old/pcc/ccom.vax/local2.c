@@ -1,5 +1,5 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.18 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.19 (Berkeley) %G%";
 # endif
 
 # include "pass2.h"
@@ -882,7 +882,7 @@ adrput( p ) register NODE *p; {
 			return;
 			}
 		if( r == AP ){  /* in the argument region */
-			if( p->tn.lval <= 0 || p->in.name[0] != '\0' ) werror( "bad arg temp" );
+			if( p->in.name[0] != '\0' ) werror( "bad arg temp" );
 			printf( CONFMT, p->tn.lval );
 			putstr( "(ap)" );
 			return;
