@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_send.c	6.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	6.16 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 /*
@@ -167,16 +167,22 @@ res_send(buf, buflen, answer, anslen)
 			if (s < 0)
 				s = socket(AF_INET, SOCK_DGRAM, 0);
 #if	BSD >= 43
-			if (connect(s, &_res.nsaddr_list[ns],
-			    sizeof(struct sockaddr)) < 0 ||
-			    send(s, buf, buflen, 0) != buflen) {
+			if (_res.nscount == 1) {
+				/*
+				 * Connect/Send is detrimental if you
+				 * are going to poll more than one server
+				 */
+				if (connect(s, &_res.nsaddr_list[ns],
+				    sizeof(struct sockaddr)) < 0 ||
+				    send(s, buf, buflen, 0) != buflen) {
 #ifdef DEBUG
-				if (_res.options & RES_DEBUG)
-					perror("connect");
+					if (_res.options & RES_DEBUG)
+						perror("connect");
 #endif DEBUG
-				continue;
-			}
-#else BSD
+					continue;
+				}
+			} else
+#endif BSD
 			if (sendto(s, buf, buflen, 0, &_res.nsaddr_list[ns],
 			    sizeof(struct sockaddr)) != buflen) {
 #ifdef DEBUG
@@ -185,7 +191,7 @@ res_send(buf, buflen, answer, anslen)
 #endif DEBUG
 				continue;
 			}
-#endif BSD
+
 			/*
 			 * Wait for reply
 			 */
