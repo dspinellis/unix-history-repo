@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.6 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -41,15 +41,18 @@ union_fixup(un)
 }
 
 static int
-union_lookup1(udvp, dvp, vpp, cnp)
+union_lookup1(udvp, dvpp, vpp, cnp)
 	struct vnode *udvp;
-	struct vnode *dvp;
+	struct vnode **dvpp;
 	struct vnode **vpp;
 	struct componentname *cnp;
 {
 	int error;
 	struct vnode *tdvp;
+	struct vnode *dvp;
 	struct mount *mp;
+
+	dvp = *dvpp;
 
 	/*
 	 * If stepping up the directory tree, check for going
@@ -58,18 +61,15 @@ union_lookup1(udvp, dvp, vpp, cnp)
 	 * hierarchy.
 	 */
 	if (cnp->cn_flags & ISDOTDOT) {
-		for (;;) {
+		while ((dvp != udvp) && (dvp->v_flag & VROOT)) {
 			/*
 			 * Don't do the NOCROSSMOUNT check
 			 * at this level.  By definition,
 			 * union fs deals with namespaces, not
 			 * filesystems.
 			 */
-			if ((dvp->v_flag & VROOT) == 0)
-				break;
-
 			tdvp = dvp;
-			dvp = dvp->v_mount->mnt_vnodecovered;
+			*dvpp = dvp = dvp->v_mount->mnt_vnodecovered;
 			vput(tdvp);
 			VREF(dvp);
 			VOP_LOCK(dvp);
@@ -153,7 +153,7 @@ union_lookup(ap)
 	 */
 	if (upperdvp) {
 		FIXUP(dun);
-		uerror = union_lookup1(um->um_uppervp, upperdvp,
+		uerror = union_lookup1(um->um_uppervp, &upperdvp,
 					&uppervp, cnp);
 		/*if (uppervp == upperdvp)
 			dun->un_flags |= UN_KLOCK;*/
@@ -190,7 +190,7 @@ union_lookup(ap)
 			saved_cred = cnp->cn_cred;
 			cnp->cn_cred = um->um_cred;
 		}
-		lerror = union_lookup1(um->um_lowervp, lowerdvp,
+		lerror = union_lookup1(um->um_lowervp, &lowerdvp,
 				&lowervp, cnp);
 		if (um->um_op == UNMNT_BELOW)
 			cnp->cn_cred = saved_cred;
