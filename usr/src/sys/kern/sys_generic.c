@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.3	82/07/24	*/
+/*	sys_generic.c	5.4	82/07/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -346,16 +346,15 @@ writei(ip)
 		dev = ip->i_dev;
 		fs = ip->i_fs;
 		bsize = fs->fs_bsize;
-	} else {
+	} else
 		bsize = BLKDEV_IOSIZE;
-	}
 	do {
 		lbn = u.u_offset / bsize;
 		on = u.u_offset % bsize;
 		n = MIN((unsigned)(bsize - on), u.u_count);
 		if (type != IFBLK) {
 			bn = fsbtodb(fs, bmap(ip, lbn, B_WRITE, (int)(on + n)));
-			if ((long)bn<0)
+			if (u.u_error || (long)bn<0)
 				return;
 			if(u.u_offset + n > ip->i_size &&
 			   (type == IFDIR || type == IFREG || type == IFLNK))
@@ -365,14 +364,11 @@ writei(ip)
 			size = bsize;
 			bn = lbn * (BLKDEV_IOSIZE/DEV_BSIZE);
 		}
-		if (bn) {
-			count = howmany(size, DEV_BSIZE);
-			for (i = 0; i < count; i += CLSIZE) {
-				if (mfind(dev, bn + i))
-					munhash(dev, bn + i);
-			}
-		}
-		if(n == bsize) 
+		count = howmany(size, DEV_BSIZE);
+		for (i = 0; i < count; i += CLSIZE)
+			if (mfind(dev, bn + i))
+				munhash(dev, bn + i);
+		if (n == bsize) 
 			bp = getblk(dev, bn, size);
 		else
 			bp = bread(dev, bn, size);
