@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)nlist.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)nlist.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -28,7 +28,7 @@ nlist(name, list)
 	fd = open(name, O_RDONLY, 0);
 	if (fd < 0)
 		return (-1);
-	n = _fdnlist(fd, list);
+	n = __fdnlist(fd, list);
 	(void)close(fd);
 	return (n);
 }
