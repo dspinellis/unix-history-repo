@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)c20.c	1.3 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)c20.c	1.4 (Berkeley/CCI) %G%";
 #endif
 
 /*
@@ -447,7 +447,7 @@ oplook()
 	register char *p,*p2;
 	register int t;
 	char tempop[20];
-	static struct optab OPNULL={"",0,0};
+	static struct optab OPNULL={"",NIL,0};
 
 	for (p=line, p2=tempop; *p && !isspace(*p); *p2++= *p++); *p2=0; p2=p;
 	while (isspace(*p2)) ++p2; curlp=p2;
@@ -548,7 +548,7 @@ iterate()
 			while ((p1=p->forw)!=0 && p1->op!=LABEL && p1->op!=DLABEL
 				&& p1->op!=EROU && p1->op!=END
 				&& p1->op!=ALIGN
-				&& p1->op!=0 && p1->op!=DATA) {
+				&& p1->op!=NIL && p1->op!=DATA) {
 				nchange++;
 				iaftbr++;
 				if (p1->ref)

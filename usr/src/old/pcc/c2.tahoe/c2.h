@@ -1,88 +1,26 @@
-/*	c2.h	1.2	86/07/27	*/
+/*	c2.h	1.3	86/08/14	*/
 
 /*
  * Header for object code improver
  */
 
 /* tokens */
-#define JBR	1
-#define CBR	2
-#define JMP	3
-#define LABEL	4
-#define DLABEL	5
-#define EROU	6
-#define JSW	7
-#define MOV	8
-#define CLR	9
-#define INC	10
-#define DEC	11
-#define TST	12
-#define PUSH	13
-#define CVT	14
-#define MOVZ	15
-#define CMP	16
-#define ADD	17
-#define SUB	18
-#define BIT	19
-#define AND	20
-#define OR	21
-#define XOR	22
-#define COM	23
-#define NEG	24
-#define EMUL	25
-#define MUL	26
-#define DIV	27
-#define EDIV	28
-#define SHAL	29
-#define SHAR	30
-#define SHL	31
-#define SHR	32
-#define CALLF	33
-#define CALLS	34
-#define CASE	35
-#define ADDA	36
-#define SUBA	37
-#define AOBLEQ	38
-#define AOBLSS	39
-#define MOVA	40
-#define PUSHA	41
-#define LDF	42
-#define LNF	43
-#define STF	44
-#define CMPF	45
-#define CMPF2	46
-#define TSTF	47
-#define PUSHD	48
-#define CVLF	49
-#define CVFL	50
-#define LDFD	51
-#define CVDF	52
-#define NEGF	53
-#define ADDF	54
-#define SUBF	55
-#define MULF	56
-#define DIVF	57
-#define SINF	58
-#define COSF	59
-#define ATANF	60
-#define LOGF	61
-#define SQRTF	62
-#define EXPF	63
-#define MOVBLK	64
-#define MFPR	65
-#define MTPR	66
-#define PROBE	67
-#define MOVO	68
-#define TEXT	69
-#define DATA	70
-#define BSS	71
-#define ALIGN	72
-#define END	73
-#define LGEN	74
-#define WGEN	75
-#define SET	76
-#define LCOMM	77
-#define COMM	78
+typedef	enum {
+	NIL,
+	JBR, CBR, JMP, LABEL, DLABEL, EROU, JSW,
+	MOV, CLR, INC, DEC, TST, PUSH, CVT, MOVZ,
+	CMP, ADD, SUB, BIT, AND, OR, XOR, COM,
+	NEG, EMUL, MUL, DIV, EDIV, SHAL, SHAR,
+	SHL, SHR, CALLF, CALLS, CASE, ADDA, SUBA,
+	AOBLEQ, AOBLSS, MOVA, PUSHA, LDF, LNF, STF,
+	CMPF, CMPF2, TSTF, PUSHD, CVLF, CVFL, LDFD,
+	CVDF, NEGF, ADDF, SUBF, MULF, DIVF, SINF,
+	COSF, ATANF, LOGF, SQRTF, EXPF, MOVBLK,
+	MFPR, MTPR, PROBE, MOVO, TEXT, DATA, BSS,
+	ALIGN, END, LGEN, WGEN, SET, LCOMM, COMM
+} OpCode;
+
+#define	ord(e)	((int)(e))
 
 #define	JEQ	0
 #define	JNE	1
@@ -96,9 +34,9 @@
 #define	JLO	10
 #define	JHI	11
 
-#define JBC 12
-#define JBS 13
-#define RET 14
+#define	JBC	12
+#define	JBS	13
+#define	RET	14
 
 #define	BYTE	1
 #define	WORD	2
@@ -111,6 +49,9 @@
 #define OPB	9
 #define OPX	10
 
+#define	has2ops(p)	(((p)->subop>>4) == OP2)
+#define	has3ops(p)	(((p)->subop>>4) == OP3)
+
 /* #define T(a,b) (a|((b)<<8)) NUXI problems */
 #define U(a,b) (a|((b)<<4))
 
@@ -118,12 +59,12 @@
 
 struct optab {
 	char	opstring[7];
-	char	opcod;
+	OpCode	opcod;
 	unsigned char	subopcod;
 } optab[];
 
 struct node {
-	char	op;
+	OpCode	op;
 	unsigned char	subop;
 	short	refc;
 	struct	node	*forw;
@@ -136,7 +77,7 @@ struct node {
 };
 
 struct intleavetab  {
-	char		op;
+	OpCode		op;
 	unsigned char	subop;
 	int		intleavect;
 } intltab[];
@@ -193,6 +134,8 @@ char	ccloc[C2_ASIZE];
 #define MAXAOBDISP	5000
 
 #define NUSE 6
+#define	tempreg(s,r)	((unsigned)((r)=isreg(s)) < NUSE)
+
 struct node *uses[NUSE + 7]; /* for backwards flow analysis */
 struct node *useacc; /* same for acc */
 char *lastrand; /* last operand of instruction */
