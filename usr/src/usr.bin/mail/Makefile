@@ -1,12 +1,12 @@
 #
 # Unix version 7.
 #
-# Sccs Id = "@(#)Makefile	2.9 %G%";
+# Sccs Id = "@(#)Makefile	2.10 %G%";
 #
 
 CFLAGS=-O -DVMUNIX -DV7
 XSTR=/usr/ucb/xstr
-DESTDIR=/usr/src
+DESTDIR=/
 CTAGS=/usr/ucb/ctags -w
 VPRINT=/usr/ucb/print
 CGRAF=/ja/rigel/rigel/bin/cgraf
@@ -52,7 +52,7 @@ mail.g:	$(SRCS)
 
 install:
 	install -s Mail ${DESTDIR}/usr/ucb
-	cp Mail.help* ${DESTDIR}/usr/lib
+	cp misc/Mail.help* ${DESTDIR}/usr/lib
 	cd ${DESTDIR}/usr/ucb; rm -f mail; ln Mail mail
 
 version.o:	version.c
@@ -95,7 +95,7 @@ print:	$S fmt.c
 	$(CGRAPH) > mail.g;
 	$(NMKINDEX) > mail.i;
 	$(DIRTCLOD) -x mail.i -p mail.g > mail.x
-	@$(VPRINT) makefile mail.x rcv.h def.h glob.h local.h v7.local.h \
+	@$(VPRINT) Makefile mail.x rcv.h def.h glob.h local.h v7.local.h \
 	    $(SRCS) fmt.c;
 
 wc:
