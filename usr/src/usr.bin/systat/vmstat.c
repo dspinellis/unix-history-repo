@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -236,12 +236,12 @@ labelkre()
 
 	clear();
 	mvprintw(STATROW, STATCOL + 4, "users    Load");
-	mvprintw(MEMROW, MEMCOL, "Mem     REAL    VIRTUAL ");
-	mvprintw(MEMROW + 1, MEMCOL, "      Tot Text  Tot Text");
+	mvprintw(MEMROW, MEMCOL, "Mem     REAL     VIRTUAL");
+	mvprintw(MEMROW + 1, MEMCOL, "      Tot Text   Tot Text");
 	mvprintw(MEMROW + 2, MEMCOL, "Act");
 	mvprintw(MEMROW + 3, MEMCOL, "All");
 
-	mvprintw(MEMROW + 1, MEMCOL + 27, "Free");
+	mvprintw(MEMROW + 1, MEMCOL + 28, "Free");
 
 	mvprintw(PAGEROW, PAGECOL, "        PAGING    SWAPING ");
 	mvprintw(PAGEROW + 1, PAGECOL, "        in  out   in  out ");
@@ -301,6 +301,7 @@ labelkre()
 #define Y(fld)	{t = s.fld; s.fld -= s1.fld; if(state == TIME) s1.fld = t;}
 #define Z(fld)	{t = s.nchstats.fld; s.nchstats.fld -= s1.nchstats.fld; \
 	if(state == TIME) s1.nchstats.fld = t;}
+#define MAXFAIL 5
 
 static	char cpuchar[CPUSTATES] = { '=' , '>', '-', ' ' };
 static	char cpuorder[CPUSTATES] = { CP_SYS, CP_USER, CP_NICE, CP_IDLE };
@@ -310,6 +311,7 @@ showkre()
 	float f1, f2;
 	int psiz, inttotal;
 	int i, l, c;
+	static int failcnt = 0;
 
 	for (i = 0; i < dk_ndrive; i++) {
 		X(dk_xfer); X(dk_seek); X(dk_wds); X(dk_time);
@@ -320,8 +322,20 @@ showkre()
 		X(time);
 		etime += s.time[i];
 	}
-	if (etime < 5.0)	/* < 5 ticks - ignore this trash */
+	if (etime < 5.0) {	/* < 5 ticks - ignore this trash */
+		if (failcnt++ >= MAXFAIL) {
+			clear();
+			mvprintw(2, 10, "The alternate system clock has died!");
+			mvprintw(3, 10, "Reverting to ``pigs'' display.");
+			move(CMDLINE, 0);
+			refresh();
+			failcnt = 0;
+			sleep(5);
+			command("pigs");
+		}
 		return;
+	}
+	failcnt = 0;
 	etime /= hertz;
 	inttotal = 0;
 	for (i = 0; i < nintr; i++) {
@@ -372,13 +386,13 @@ showkre()
 	mvaddstr(STATROW, STATCOL + 53, buf);
 	putint(total.t_arm/2, MEMROW + 2, MEMCOL + 4, 5);
 	putint(total.t_armtxt/2, MEMROW + 2, MEMCOL + 9, 5);
-	putint(total.t_avm/2, MEMROW + 2, MEMCOL + 14, 5);
-	putint(total.t_avmtxt/2, MEMROW + 2, MEMCOL + 19, 5);
+	putint(total.t_avm/2, MEMROW + 2, MEMCOL + 14, 6);
+	putint(total.t_avmtxt/2, MEMROW + 2, MEMCOL + 20, 5);
 	putint(total.t_rm/2, MEMROW + 3, MEMCOL + 4, 5);
 	putint(total.t_rmtxt/2, MEMROW + 3, MEMCOL + 9, 5);
-	putint(total.t_vm/2, MEMROW + 3, MEMCOL + 14, 5);
-	putint(total.t_vmtxt/2, MEMROW + 3, MEMCOL + 19, 5);
-	putint(total.t_free/2, MEMROW + 2, MEMCOL + 26, 5);
+	putint(total.t_vm/2, MEMROW + 3, MEMCOL + 14, 6);
+	putint(total.t_vmtxt/2, MEMROW + 3, MEMCOL + 20, 5);
+	putint(total.t_free/2, MEMROW + 2, MEMCOL + 27, 5);
 	putint(total.t_rq, PROCSROW + 1, PROCSCOL + 5, 3);
 	putint(total.t_pw, PROCSROW + 1, PROCSCOL + 8, 3);
 	putint(total.t_dw, PROCSROW + 1, PROCSCOL + 11, 3);
