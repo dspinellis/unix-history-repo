@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	8.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	8.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -75,8 +75,8 @@ extern char	*strerror __P((int));
 # define _PATH_MAILDIR	"/var/spool/mail"
 #endif
 
-#ifndef S_ISLNK
-# define S_ISLNK(mode)	(((mode) & _S_IFMT) == S_IFLNK)
+#ifndef S_ISREG
+# define S_ISREG(mode)	(((mode) & _S_IFMT) == S_IFREG)
 #endif
 
 int eval = EX_OK;			/* sysexits.h error value. */
@@ -264,9 +264,9 @@ tryagain:
 			unlockmbox();
 			return;
 		}
-	} else if (sb.st_nlink != 1 || S_ISLNK(sb.st_mode)) {
+	} else if (sb.st_nlink != 1 || !S_ISREG(sb.st_mode)) {
 		e_to_sys(errno);
-		warn("%s: linked file", path);
+		warn("%s: irregular file", path);
 		unlockmbox();
 		return;
 	} else if (sb.st_uid != pw->pw_uid) {
@@ -277,8 +277,8 @@ tryagain:
 		mbfd = open(path, O_APPEND|O_WRONLY, 0);
 		if (mbfd != -1 &&
 		    (fstat(mbfd, &fsb) || fsb.st_nlink != 1 ||
-		    S_ISLNK(fsb.st_mode) || sb.st_dev != fsb.st_dev ||
-		    sb.st_ino != fsb.st_ino) || sb.st_uid != fsb.st_uid) {
+		    !S_ISREG(fsb.st_mode) || sb.st_dev != fsb.st_dev ||
+		    sb.st_ino != fsb.st_ino || sb.st_uid != fsb.st_uid)) {
 			warn("%s: file changed after open", path);
 			(void)close(mbfd);
 			unlockmbox();
