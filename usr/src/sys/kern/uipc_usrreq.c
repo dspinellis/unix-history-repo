@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_usrreq.c	7.7 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -355,9 +355,13 @@ unp_bind(unp, nam)
 	int error;
 
 	ndp->ni_dirp = soun->sun_path;
-	if (unp->unp_inode != NULL || nam->m_len == MLEN)
+	if (unp->unp_inode != NULL)
 		return (EINVAL);
-	*(mtod(nam, caddr_t) + nam->m_len) = 0;
+	if (nam->m_len == MLEN) {
+		if (*(mtod(nam, caddr_t) + nam->m_len - 1) != 0)
+			return (EINVAL);
+	} else
+		*(mtod(nam, caddr_t) + nam->m_len) = 0;
 /* SHOULD BE ABLE TO ADOPT EXISTING AND wakeup() ALA FIFO's */
 	ndp->ni_nameiop = CREATE | FOLLOW;
 	ndp->ni_segflg = UIO_SYSSPACE;
@@ -395,9 +399,11 @@ unp_connect(so, nam)
 	int error;
 
 	ndp->ni_dirp = soun->sun_path;
-	if (nam->m_len + (nam->m_off - MMINOFF) == MLEN)
-		return (EMSGSIZE);
-	*(mtod(nam, caddr_t) + nam->m_len) = 0;
+	if (nam->m_data + nam->m_len == &nam->m_dat[MLEN]) {	/* XXX */
+		if (*(mtod(nam, caddr_t) + nam->m_len - 1) != 0)
+			return (EMSGSIZE);
+	} else
+		*(mtod(nam, caddr_t) + nam->m_len) = 0;
 	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_SYSSPACE;
 	ip = namei(ndp);
