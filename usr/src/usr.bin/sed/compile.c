@@ -10,11 +10,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compile.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)compile.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
-#include  <sys/stat.h>
+#include <sys/stat.h>
 
 #include <ctype.h>
 #include <errno.h>
@@ -31,8 +31,8 @@ static char sccsid[] = "@(#)compile.c	5.2 (Berkeley) %G%";
 static char	 *compile_addr __P((char *, struct s_addr *));
 static char	 *compile_delimited __P((char *, char *));
 static char	 *compile_flags __P((char *, struct s_subst *));
-static char	 *compile_re __P((char *, regex_t *, int));
-static char	 *compile_subst __P((char *, char **, size_t));
+static char	 *compile_re __P((char *, regex_t **, int));
+static char	 *compile_subst __P((char *, struct s_subst *));
 static char	 *compile_text __P((void));
 static char	 *compile_tr __P((char *, char **));
 static struct s_command
@@ -82,12 +82,15 @@ static struct s_format cmd_fmts[] = {
 	{'\0', 0, COMMENT},
 };
 
-/* The compiled program */
+/* Maximum number of parenthesized regular expressions found. */
+static int nsub_max;
+
+/* The compiled program. */
 struct s_command *prog;
 
 /*
  * Compile the program into prog.
- * Initialise appends
+ * Initialise appends.
  */
 void
 compile()
@@ -255,14 +258,11 @@ nonsel:		/* Now parse the command */
 			p = compile_re(p, &cmd->u.s->re, 0);
 			if (p == NULL)
 				err(COMPILE, "unterminated substitute pattern");
-			cmd->u.s->pmatch = xmalloc((cmd->u.s->re.re_nsub + 1) *
-			    sizeof(regmatch_t));
-			p--;
-			p = compile_subst(p,
-			    &cmd->u.s->new, cmd->u.s->re.re_nsub);
-			if (p == NULL)
-				err(COMPILE,
-"unterminated substitute replace in regular expression");
+			if (cmd->u.s->re != NULL &&
+			    nsub_max < cmd->u.s->re->re_nsub)
+				nsub_max = cmd->u.s->re->re_nsub;
+			--p;
+			p = compile_subst(p, cmd->u.s);
 			p = compile_flags(p, cmd->u.s);
 			EATSPACE();
 			if (*p == ';') {
@@ -312,11 +312,11 @@ compile_delimited(p, d)
 		err(COMPILE, "newline can not be used as a string delimiter");
 	while (*p) {
 		if (*p == '\\' && p[1] == c)
-				p++;
+			p++;
 		else if (*p == '\\' && p[1] == 'n') {
-				*d++ = '\n';
-				p += 2;
-				continue;
+			*d++ = '\n';
+			p += 2;
+			continue;
 		} else if (*p == c) {
 			*d = '\0';
 			return (p + 1);
@@ -327,26 +327,31 @@ compile_delimited(p, d)
 }
 
 /*
- * Get a regular expression.  P points to the delimeter of the regular
- * expression; d points a regexp pointer.  Newline and delimiter escapes
- * are processed; other escapes are ignored.
+ * Get a regular expression.  P points to the delimiter of the regular
+ * expression; repp points to the address of a regexp pointer.  Newline
+ * and delimiter escapes are processed; other escapes are ignored.
  * Returns a pointer to the first character after the final delimiter
- * or NULL in the case of a non terminated regular expression.
- * The regexp pointer is set to the compiled regular expression.
+ * or NULL in the case of a non terminated regular expression.  The regexp
+ * pointer is set to the compiled regular expression.
  * Cflags are passed to regcomp.
  */
 static char *
-compile_re(p, rep, cflags)
+compile_re(p, repp, cflags)
 	char *p;
-	regex_t *rep;
+	regex_t **repp;
 	int cflags;
 {
 	int eval;
 	char re[_POSIX2_LINE_MAX + 1];
 
 	p = compile_delimited(p, re);
-	if (p && (eval = regcomp(rep, re, cflags)) != 0)
-		err(COMPILE, "RE error: %s", strregerror(eval, rep));
+	if (p && strlen(re) == 0) {
+		*repp = NULL;
+		return (p);
+	}
+	*repp = xmalloc(sizeof(regex_t));
+	if (p && (eval = regcomp(*repp, re, cflags)) != 0)
+		err(COMPILE, "RE error: %s", strregerror(eval, *repp));
 	return (p);
 }
 
@@ -356,54 +361,60 @@ compile_re(p, rep, cflags)
  * expressions.
  */
 static char *
-compile_subst(p, res, nsub)
-	char *p, **res;
-	size_t nsub;
+compile_subst(p, s)
+	char *p;
+	struct s_subst *s;
 {
 	static char lbuf[_POSIX2_LINE_MAX + 1];
-	int asize, size;
-	char c, *text, *op, *s;
+	int asize, ref, size;
+	char c, *text, *op, *sp;
 
 	c = *p++;			/* Terminator character */
 	if (c == '\0')
 		return (NULL);
 
+	s->maxbref = 0;
+	s->linenum = linenum;
 	asize = 2 * _POSIX2_LINE_MAX + 1;
 	text = xmalloc(asize);
 	size = 0;
 	do {
-		op = s = text + size;
+		op = sp = text + size;
 		for (; *p; p++) {
 			if (*p == '\\') {
 				p++;
 				if (strchr("123456789", *p) != NULL) {
-					*s++ = '\\';
-					if (*p - '1' > nsub)
+					*sp++ = '\\';
+					ref = *p - '0';
+					if (s->maxbref < ref)
+						s->maxbref = ref;
+					if (s->re != NULL &&
+					    ref > s->re->re_nsub)
 						err(COMPILE,
-"\\%c not defined in regular expression (use \\1-\\%d)", *p, nsub + 1);
+"\\%c not defined in the RE", *p);
 				} else if (*p == '&')
-					*s++ = '\\';
+					*sp++ = '\\';
 			} else if (*p == c) {
 				p++;
-				*s++ = '\0';
-				size += s - op;
-				*res = xrealloc(text, size);
+				*sp++ = '\0';
+				size += sp - op;
+				s->new = xrealloc(text, size);
 				return (p);
 			} else if (*p == '\n') {
 				err(COMPILE,
 "unescaped newline inside substitute pattern");
-				return (NULL);
+				/* NOTREACHED */
 			}
-			*s++ = *p;
+			*sp++ = *p;
 		}
-		size += s - op;
+		size += sp - op;
 		if (asize - size < _POSIX2_LINE_MAX + 1) {
 			asize *= 2;
 			text = xmalloc(asize);
 		}
 	} while (cu_fgets(p = lbuf, sizeof(lbuf)));
-	err(COMPILE, "unterminated substitute pattern");
-	return (NULL);
+	err(COMPILE, "unterminated substitute in regular expression");
+	/* NOTREACHED */
 }
 
 /*
@@ -566,26 +577,19 @@ compile_addr(p, a)
 	char *p;
 	struct s_addr *a;
 {
-	regex_t *re;
 	char *end;
 
 	switch (*p) {
 	case '\\':				/* Context address */
-		re = xmalloc(sizeof(regex_t));
-		a->u.r = re;
-		p = compile_re(p + 1, re, REG_NOSUB);
-		if (p == NULL)
-			err(COMPILE, "unterminated regular expression");
-		a->type = AT_RE;
-		return (p);
+		++p;
+		/* FALLTHROUGH */
 	case '/':				/* Context address */
-		re = xmalloc(sizeof(regex_t));
-		a->u.r = re;
-		p = compile_re(p, a->u.r, REG_NOSUB);
+		p = compile_re(p, &a->u.r, REG_NOSUB);
 		if (p == NULL)
 			err(COMPILE, "unterminated regular expression");
 		a->type = AT_RE;
 		return (p);
+
 	case '$':				/* Last line */
 		a->type = AT_LAST;
 		return (p + 1);
@@ -652,6 +656,10 @@ fixuplabel(root, cp)
 
 	for (; cp; cp = cp->next)
 		switch (cp->code) {
+		case ':':
+			if (findlabel(cp, root))
+				err(COMPILE2, "duplicate label %s", cp->t);
+			break;
 		case 'a':
 		case 'r':
 			appendnum++;
@@ -667,12 +675,17 @@ fixuplabel(root, cp)
 			free(cp->t);
 			cp->u.c = cp2;
 			break;
+		case 's':
+			if (cp->u.s->re == NULL)
+				cp->u.s->pmatch = xmalloc((nsub_max + 1) *
+				    sizeof(regmatch_t));
+			else
+				cp->u.s->pmatch =
+				    xmalloc((cp->u.s->re->re_nsub + 1) *
+				    sizeof(regmatch_t));
+			break;
 		case '{':
 			fixuplabel(root, cp->u.c);
-			break;
-		case ':':
-			if (findlabel(cp, root))
-				err(COMPILE2, "duplicate label %s", cp->t);
 			break;
 		}
 }

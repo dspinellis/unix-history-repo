@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -49,9 +49,8 @@ static inline int	 applies __P((struct s_command *));
 static void		 cspace __P((SPACE *, char *, size_t, int));
 static void		 flush_appends __P((void));
 static void		 lputs __P((char *));
-static inline int	 match __P((struct s_addr *));
-static int		 regexec_check __P((regex_t *, const char *,
-			    int, regmatch_t[], int));
+static inline int	 regexec_e __P((regex_t *, const char *,
+			    size_t, regmatch_t [], int));
 static void		 regsub __P((regmatch_t *, char *, char *, SPACE *));
 static int		 substitute __P((struct s_command *));
 
@@ -63,6 +62,9 @@ static int lastaddr;		/* Set by applies if last address of a range. */
 static int sdone;		/* If any substitutes since last line input. */
 				/* Iov structure for 'w' commands. */
 static struct iovec iov[2] = { NULL, 0, "\n", 1 };
+
+static regex_t *defpreg;
+static size_t defnmatch;
 
 void
 process()
@@ -240,6 +242,15 @@ new:		if (!nflag && !pd)
 }
 
 /*
+ * TRUE if the address passed matches the current program state
+ * (lastline, linenumber, ps).
+ */
+#define	MATCH(a)							\
+	(a)->type == AT_RE ?						\
+	    regexec_e((a)->u.r, ps, 0, NULL, 0) :			\
+	    (a)->type == AT_LINE ? linenum == (a)->u.l : lastline
+
+/*
  * Return TRUE if the command applies to the current line.  Sets the inrange
  * flag to process ranges.  Interprets the non-select (``!'') flag.
  */
@@ -254,12 +265,12 @@ applies(cp)
 		r = 1;
 	else if (cp->a2)
 		if (cp->inrange) {
-			if (match(cp->a2)) {
+			if (MATCH(cp->a2)) {
 				cp->inrange = 0;
 				lastaddr = 1;
 			}
 			r = 1;
-		} else if (match(cp->a1)) {
+		} else if (MATCH(cp->a1)) {
 			/*
 			 * If the second address is a number less than or
 			 * equal to the line number first selected, only
@@ -275,36 +286,8 @@ applies(cp)
 		} else
 			r = 0;
 	else
-		r = match(cp->a1);
+		r = MATCH(cp->a1);
 	return (cp->nonsel ? ! r : r);
-}
-
-/*
- * Return TRUE if the address passed matches the current program
- * state (linenumber, ps, lastline)
- */
-static int inline
-match(a)
-	struct s_addr *a;
-{
-	int eval;
-
-	switch (a->type) {
-	case AT_RE:
-		switch (eval = regexec(a->u.r, ps, 0, NULL, 0)) {
-		case 0:
-			return (1);
-		case REG_NOMATCH:
-			return (0);
-		default:
-			err(FATAL, "RE error: %s", strregerror(eval, a->u.r));
-		}
-	case AT_LINE:
-		return (linenum == a->u.l);
-	case AT_LAST:
-		return (lastline);
-	}
-	/* NOTREACHED */
 }
 
 /*
@@ -318,14 +301,23 @@ substitute(cp)
 	struct s_command *cp;
 {
 	SPACE tspace;
-	static regex_t *re;
+	regex_t *re;
+	size_t nsub;
 	int n, re_off;
 	char *endp, *s;
 
 	s = ps;
-	re = &cp->u.s->re;
-	if (regexec_check(re,
-	    s, re->re_nsub + 1, cp->u.s->pmatch, 0) == REG_NOMATCH)
+	re = cp->u.s->re;
+	if (re == NULL) {
+		nsub = 1;
+		if (defpreg != NULL && cp->u.s->maxbref > defnmatch) {
+			linenum = cp->u.s->linenum;
+			err(COMPILE, "\\%d not defined in the RE",
+			    cp->u.s->maxbref);
+		}
+	} else
+		nsub = re->re_nsub + 1;
+	if (!regexec_e(re, s, nsub, cp->u.s->pmatch, 0))
 		return (0);
 
 	SS.len = 0;				/* Clean substitute space. */
@@ -343,16 +335,15 @@ substitute(cp)
 			regsub(cp->u.s->pmatch, s, cp->u.s->new, &SS);
 			/* Move past this match. */
 			s += cp->u.s->pmatch[0].rm_eo;
-		} while(regexec_check(re, s, re->re_nsub + 1,
-		    cp->u.s->pmatch, REG_NOTBOL) != REG_NOMATCH);
+		} while(regexec_e(re, s, nsub, cp->u.s->pmatch, REG_NOTBOL));
 		/* Copy trailing retained string. */
 		cspace(&SS, s, strlen(s), 0);
 		break;
 	default:				/* Nth occurrence */
 		while (--n) {
 			s += cp->u.s->pmatch[0].rm_eo;
-			if (regexec_check(re, s, re->re_nsub + 1,
-			    cp->u.s->pmatch, REG_NOTBOL) == REG_NOMATCH)
+			if (!regexec_e(re,
+			    s, nsub, cp->u.s->pmatch, REG_NOTBOL))
 				return (0);
 		}
 		/* FALLTHROUGH */
@@ -477,27 +468,33 @@ lputs(s)
 		err(FATAL, "stdout: %s", strerror(errno ? errno : EIO));
 }
 
-/*
- * Regexec with checking for errors
- */
-static int
-regexec_check(preg, string, nmatch, pmatch, eflags)
+static inline int
+regexec_e(preg, string, nmatch, pmatch, eflags)
 	regex_t *preg;
 	const char *string;
-	int nmatch;
+	size_t nmatch;
 	regmatch_t pmatch[];
 	int eflags;
 {
 	int eval;
 
-	switch (eval = regexec(preg, string, nmatch, pmatch, eflags)) {
-	case 0:
-		return (0);
-	case REG_NOMATCH:
-		return (REG_NOMATCH);
-	default:
-		err(FATAL, "RE error: %s", strregerror(eval, preg));
+	if (preg == NULL) {
+		if (defpreg == NULL)
+			err(FATAL, "first RE may not be empty");
+	} else {
+		defpreg = preg;
+		defnmatch = nmatch;
 	}
+
+	eval = regexec(defpreg,
+	    string, pmatch == NULL ? 0 : defnmatch, pmatch, eflags);
+	switch(eval) {
+	case 0:
+		return (1);
+	case REG_NOMATCH:
+		return (0);
+	}
+	err(FATAL, "RE error: %s", strregerror(eval, defpreg));
 	/* NOTREACHED */
 }
 
