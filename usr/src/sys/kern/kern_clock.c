@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.12	%G%	*/
+/*	kern_clock.c	4.13	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -316,7 +316,7 @@ timeout(fun, arg, tim)
 	}
 	p1->c_time -= t;
 	p2 = p1;
-	p3 = &callout[NCALL-2];
+	p3 = callout+(ncall-2);
 	while(p2->c_func != 0) {
 		if (p2 >= p3)
 			panic("timeout");
