@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.20 81/10/30 */
+/* tcp_usrreq.c 1.21 81/10/31 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -100,7 +100,10 @@ COUNT(TCP_USRREQ);
 		break;
 
 	case CLS_RWT:				/* 20 */
-		present_data(tp);
+		if ((tp->tc_flags&TC_FIN_RCVD) &&
+		    (tp->tc_flags&TC_USR_CLOSED) == 0 &&
+		    rcv_empty(tp))
+			to_user(tp, UCLOSED);
 		if (rcv_empty(tp)) {
 			tcp_close(tp, UCLOSED);
 			nstate = CLOSED;
@@ -121,7 +124,10 @@ COUNT(TCP_USRREQ);
 
 	case SSS_RCV:				/* 42 */
 		tcp_sndwin(tp);		/* send new window */
-		present_data(tp);
+		if ((tp->tc_flags&TC_FIN_RCVD) &&
+		    (tp->tc_flags&TC_USR_CLOSED) == 0 &&
+		    rcv_empty(tp))
+			to_user(tp, UCLOSED);
 		break;
 
 	case CLS_NSY:				/* 44 */
