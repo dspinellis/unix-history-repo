@@ -1,4 +1,4 @@
-#	Makefile	4.12	85/09/09
+#	Makefile	4.13	85/09/17
 #
 DESTDIR=
 CFLAGS=	-O
@@ -10,7 +10,7 @@ SUBDIR=	ansi apl bib courier cpm dsh help hyper icon jove learn mh \
 #
 # Special purpose software that requires custom installation
 #
-OPTDIR=	kermit mmdf news notes rn sumacc tn3270 umodem xns X
+OPTDIR=	dipress kermit mmdf news notes rn sumacc tn3270 umodem xns X
 
 all:	${SUBDIR}
 
