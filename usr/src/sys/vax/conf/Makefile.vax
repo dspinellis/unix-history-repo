@@ -1,4 +1,4 @@
-#	Makefile.vax	6.2	%G%
+#	Makefile.vax	6.3	%G%
 #
 # Makefile for 4.2 BSD
 #
@@ -67,6 +67,8 @@ autoconf.o tu.o: makefile
 clock.o machdep.o autoconf.o conf.o cons.o flp.o mba.o uba.o vaxcpu.o : makefile
 # depend on network configuration
 af.o : makefile
+# depend on maxusers
+assym.s: makefile
 
 assym.s: ../h/param.h ../machine/pte.h ../h/buf.h ../h/vmparam.h \
     ../h/vmmeter.h ../h/dir.h ../h/cmap.h ../h/map.h ../vaxuba/ubavar.h \
