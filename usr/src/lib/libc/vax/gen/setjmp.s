@@ -1,4 +1,4 @@
-/*	setjmp.s	4.2	83/06/28	*/
+/*	setjmp.s	4.3	83/06/30	*/
 
 /*
  * C library -- setjmp, longjmp
@@ -69,11 +69,12 @@ done:
 	jmp	*4(r1)			# done, return....
 
 botch:
-	pushl	$14
+	pushl	$msgend-msg
 	pushl	$msg
 	pushl	$2
 	calls	$3,_write
 	halt
 
-msg:	.byte	'l, 'o, 'n, 'g, 'j, 'm, 'p, ' , 'b, 'o, 't, 'c, 'h, 012
+msg:	.ascii	"longjmp botch\n"
+msgend:
 reiins:	rei
