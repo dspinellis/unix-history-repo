@@ -4,32 +4,32 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	5.5 (Berkeley) %G%
+ *	@(#)lfs_segment.c	5.6 (Berkeley) %G%
  */
 
-#ifdef LOGFS
-#include "param.h"
-#include "systm.h"
-#include "namei.h"
-#include "resourcevar.h"
-#include "kernel.h"
-#include "file.h"
-#include "stat.h"
-#include "buf.h"
-#include "proc.h"
-#include "conf.h"
-#include "vnode.h"
-#include "specdev.h"
-#include "fifo.h"
-#include "malloc.h"
-#include "mount.h"
-#include "../ufs/lockf.h"
-#include "../ufs/quota.h"
-#include "../ufs/inode.h"
-#include "../ufs/dir.h"
-#include "../ufs/ufsmount.h"
-#include "lfs.h"
-#include "lfs_extern.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/namei.h>
+#include <sys/resourcevar.h>
+#include <sys/kernel.h>
+#include <sys/file.h>
+#include <sys/stat.h>
+#include <sys/buf.h>
+#include <sys/proc.h>
+#include <sys/conf.h>
+#include <sys/vnode.h>
+#include <sys/specdev.h>
+#include <sys/fifo.h>
+#include <sys/malloc.h>
+#include <sys/mount.h>
+
+#include <ufs/quota.h>
+#include <ufs/inode.h>
+#include <ufs/dir.h>
+#include <ufs/ufsmount.h>
+
+#include <lfs/lfs.h>
+#include <lfs/lfs_extern.h>
 
 /*
  * Add a check so that if the segment is empty, you don't write it.
@@ -849,14 +849,14 @@ lfs_writesuper(fs)
  * Logical block number match routines used when traversing the dirty block
  * chain.
  */
-int
+static int
 match_data(bp)
 	BUF *bp;
 {
 	return (bp->b_lblkno >= 0);
 }
 
-int
+static int
 match_dindir(bp)
 	BUF *bp;
 {
@@ -875,7 +875,7 @@ match_dindir(bp)
  * Since we currently don't support triple indirect blocks, this gets
  * simpler, and we just look for block numbers less than -NIADDR.
  */
-int
+static int
 match_indir(bp)
 	BUF *bp;
 {
@@ -950,4 +950,3 @@ shellsort(bp_array, lb_array, nmemb)
 				} else
 					break;
 }
-#endif /* LOGFS */
