@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)scan.c	2.12 (Berkeley) %G%";
+static char *sccsid ="@(#)scan.c	2.13 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -307,7 +307,7 @@ lxinit(){
 
 	}
 
-int lxmatch;  /* character to be matched in char or string constant */
+int lxmatch = 0;  /* character to be matched in char or string constant */
 
 lxstr(ct){
 	/* match a string or character constant, up to lxmatch */
@@ -425,6 +425,7 @@ lxstr(ct){
 		if( i>(SZINT/SZCHAR) || ( (pflag||hflag)&&i>1) )
 			uerror( "too many characters in character constant" );
 		}
+	lxmatch = 0;	/* handshake with yylex() */
 	}
 
 lxcom(){
@@ -492,6 +493,11 @@ lxcom(){
 	}
 
 yylex(){
+	if (lxmatch != 0) {
+		/* recover from a syntax error that consumes a STRING token */
+		strflg = 1;
+		lxstr(0);
+	}
 	for(;;){
 
 		register lxchar;
