@@ -1,6 +1,6 @@
-/* unmount.s 4.1 82/12/04 */
+/* unmount.s 4.2 83/05/10 */
 
 #include "SYS.h"
 
-SYSCALL(unmount)
+SYSCALL(umount)
 	ret
