@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.39 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1473,18 +1473,11 @@ ni_map_open(map, mode)
 	if (tTd(38, 20))
 		printf("ni_map_open: %s\n", map->map_file);
 
-	p = strchr(map->map_file, '@');
-	if (p != NULL)
-	{
-		*p++ = '\0';
-		if (*p != '\0')
-			map->map_domain = p;
-	}
 	if (*map->map_file == '\0')
 		map->map_file = NETINFO_DEFAULT_DIR;
 
-	if (map->map_domain == NULL)
-		map->map_domain = NETINFO_DEFAULT_PROPERTY;
+	if (map->map_valcolnm == NULL)
+		map->map_valcolnm = NETINFO_DEFAULT_PROPERTY;
 
 	if (map->map_coldelim == '\0' && bitset(MF_ALIAS, map->map_mflags))
 		map->map_coldelim = ',';
