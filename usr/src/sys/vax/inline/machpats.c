@@ -1,7 +1,7 @@
 /* Copyright (c) 1984 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)machpats.c	1.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)machpats.c	1.3	(Berkeley)	%G%";
 #endif not lint
 
 #include "inline.h"
@@ -73,7 +73,7 @@ struct pats machine_ptab[] = {
 	movl	(sp)+,r0\n\
 	movc5	$0,(r3),$0,r0,(r3)\n" },
 
-	{ "3,_bzero\n",
+	{ "2,_bzero\n",
 "	movl	(sp)+,r3\n\
 	movl	(sp)+,r5\n\
 	movc5	$0,(r3),$0,r5,(r3)\n" },
