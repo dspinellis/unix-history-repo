@@ -1,4 +1,4 @@
-/*	boot.c	1.1	%G% */
+/*	boot.c	1.2	%G% */
 
 #include "../h/param.h"
 #include "../h/ino.h"
@@ -8,24 +8,57 @@
 #include "../h/vm.h"
 #include <a.out.h>
 #include "saio.h"
+#include <sys/reboot.h>
 
-char line[100];
+/*
+ * Boot program... arguments passed in r10 and r11 determine
+ * whether boot stops to ask for system name and which device
+ * boot comes from.
+ */
+
+/* Types in r10 specifying major device */
+char	devname[][2] = {
+	'h','p',	/* 0 = hp */
+	0,0,		/* 1 = ht */
+	'u','p',	/* 2 = up */
+	'r','k',	/* 3 = rk */
+};
+
+char line[100] = "xx(0,0)vmunix";
 
 main()
 {
-	int i;
+	register howto, devtype;	/* howto=r11, devtype=r10 */
+	int io, retry;
 
 	printf("\nBoot\n");
-	do {
-		printf(": "); gets(line);
-		i = open(line,0);
-	} while (i < 0);
-
-	copyunix(i);
+	if ((howto&RB_ASKNAME)==0) {
+		if (devtype>=0 && devtype<sizeof(devname)/2
+		    && devname[devtype][0]) {
+			line[0] = devname[devtype][0];
+			line[1] = devname[devtype][1];
+		} else {
+			printf("DID YOU MEAN ``BOOT ANY?'' (Bad devtype (r10=%x))\n", devtype);
+			howto = RB_SINGLE|RB_ASKNAME;
+		}
+	}
+	retry = 0;
+	for (;;) {
+		if (howto & RB_ASKNAME) {
+			printf(": ");
+			gets(line);
+		} else
+			printf(": %s\n", line);
+		io = open(line, 0);
+		if (io >= 0)
+			copyunix(howto, io);
+		if (++retry > 2)
+			howto = RB_SINGLE|RB_ASKNAME;
+	}
 }
 
-copyunix(io)
-register io;
+copyunix(howto, io)
+	register howto, io;
 {
 	struct exec x;
 	register int i;
