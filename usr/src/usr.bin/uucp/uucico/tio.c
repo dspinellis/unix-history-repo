@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tio.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)tio.c	4.5 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -146,7 +146,7 @@ FILE *fp1;
 	}
 	sprintf(text, "sent data %ld bytes %ld.%02d secs",
 				bytes, (long)t2.time, mil/10);
-	sysacct(bytes, t2.time - t1.time);
+	sysacct(bytes, t2.time);
 	DEBUG(1, "%s\n", text);
 	syslog(text);
 	return SUCCESS;

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)gio.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)gio.c	5.6 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -128,7 +128,7 @@ FILE *fp1;
 	}
 	sprintf(text, "sent data %ld bytes %ld.%02d secs",
 				bytes, (long)t2.time, mil/10);
-	sysacct(bytes, t2.time - t1.time);
+	sysacct(bytes, t2.time);
 	if (Retries > 0) 
 		sprintf((char *)text+strlen(text)," %d retries", Retries);
 	DEBUG(1, "%s\n", text);
@@ -182,7 +182,7 @@ FILE *fp2;
 	}
 	sprintf(text, "received data %ld bytes %ld.%02d secs",
 				bytes, (long)t2.time, mil/10);
-	sysacct(bytes, t2.time - t1.time);
+	sysacct(bytes, t2.time);
 	if (Retries > 0) 
 		sprintf((char *)text+strlen(text)," %d retries", Retries);
 	DEBUG(1, "%s\n", text);
