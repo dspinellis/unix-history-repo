@@ -8,7 +8,7 @@
  * User commands.
  */
 
-static char *SccsId = "@(#)cmd1.c	1.7 %G%";
+static char *SccsId = "@(#)cmd1.c	1.8 %G%";
 
 /*
  * Print the current active headings.
@@ -149,6 +149,8 @@ printhead(mesg)
 		dispc = 'N';
 	if ((mp->m_flag & (MREAD|MNEW)) == 0)
 		dispc = 'U';
+	if (mp->m_flag & MBOX)
+		dispc = 'M';
 	parse(headline, &hl, pbuf);
 	sprintf(wcount, " %d/%d", mp->m_lines, mp->m_size);
 	s = strlen(wcount);
@@ -340,6 +342,23 @@ stouch(msgvec)
 	for (ip = msgvec; *ip != 0; ip++) {
 		dot = &message[*ip-1];
 		dot->m_flag |= MTOUCH;
+		dot->m_flag &= ~MPRESERVE;
+	}
+	return(0);
+}
+
+/*
+ * Make sure all passed messages get mboxed.
+ */
+
+mboxit(msgvec)
+	int msgvec[];
+{
+	register int *ip;
+
+	for (ip = msgvec; *ip != 0; ip++) {
+		dot = &message[*ip-1];
+		dot->m_flag |= MTOUCH|MBOX;
 		dot->m_flag &= ~MPRESERVE;
 	}
 	return(0);
