@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_malloc.c	7.23 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.24 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -24,7 +24,7 @@ char *memname[] = INITKMEMNAMES;
 /*
  * Allocate a block of memory
  */
-qaddr_t
+void *
 malloc(size, type, flags)
 	unsigned long size;
 	int type, flags;
@@ -48,7 +48,7 @@ malloc(size, type, flags)
 	while (ksp->ks_memuse >= ksp->ks_limit) {
 		if (flags & M_NOWAIT) {
 			splx(s);
-			return (0);
+			return ((void *) NULL);
 		}
 		if (ksp->ks_limblocks < 65535)
 			ksp->ks_limblocks++;
@@ -65,7 +65,7 @@ malloc(size, type, flags)
 					   !(flags & M_NOWAIT));
 		if (va == NULL) {
 			splx(s);
-			return (0);
+			return ((void *) NULL);
 		}
 #ifdef KMEMSTATS
 		kbp->kb_total += kbp->kb_elmpercl;
@@ -117,7 +117,7 @@ out:
 out:
 #endif
 	splx(s);
-	return ((qaddr_t)va);
+	return ((void *) va);
 }
 
 #ifdef DIAGNOSTIC
@@ -134,7 +134,7 @@ long addrmask[] = { 0x00000000,
  */
 void
 free(addr, type)
-	caddr_t addr;
+	void *addr;
 	int type;
 {
 	register struct kmembuckets *kbp;
