@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.25 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.26 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.25 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.26 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -426,6 +426,7 @@ smtp(e)
 			}
 			e->e_flags &= ~EF_FATALERRS;
 			e->e_xfp = freopen(queuename(e, 'x'), "w", e->e_xfp);
+			id = e->e_id;
 
 			/* send to all recipients */
 			sendall(e, SM_DEFAULT);
@@ -436,7 +437,7 @@ smtp(e)
 
 			/* issue success if appropriate and reset */
 			if (Errors == 0 || HoldErrs)
-				message("250 Ok");
+				message("250 %s OK", id);
 			else
 				e->e_flags &= ~EF_FATALERRS;
 
