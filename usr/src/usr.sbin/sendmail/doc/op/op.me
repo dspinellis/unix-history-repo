@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.18 (Berkeley) %G%
+.\"	@(#)op.me	8.19 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.18
+Version 8.19
 .sp
 For Sendmail Version 8.6
 .)l
@@ -5135,6 +5135,38 @@ The effect is that anyone known in the database
 gets their outgoing mail stamped as
 .q user@CS.Berkeley.EDU ,
 but people not listed in the database use the local hostname.
+.sh 3 "Creating the database\**"
+.(f
+\**These instructions are known to be incomplete.
+A future version of the user database is planned
+including things such as finger service \*- and good documentation.
+.)f
+.pp
+The user database is built from a text file
+using the
+.i makemap
+utility
+(in the distribution in the makemap subdirectory).
+The text file is a series of lines corresponding to userdb records;
+each line has a key and a value separated by white space.
+The key is always in the format described above \*-
+for example:
+.(b
+eric:maildrop
+.)b
+This file is normally installed in a system directory;
+for example, it might be called
+.i /etc/userdb .
+To make the database version of the map, run the program:
+.(b
+makemap btree /etc/userdb.db < /etc/userdb
+.)b
+Then create a config file that uses this.
+For example, using the V8 M4 configuration, include the
+following line in your .mc file:
+.(b
+define(\`confUSERDB_SPEC\', /etc/userdb.db)
+.)b
 .sh 1 "OTHER CONFIGURATION"
 .pp
 There are some configuration changes that can be made by
@@ -6719,7 +6751,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.18
+.\"Version 8.19
 .\".ce 0
 .bp 2
 .ce
