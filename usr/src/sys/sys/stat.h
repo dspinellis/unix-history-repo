@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stat.h	8.10 (Berkeley) %G%
+ *	@(#)stat.h	8.11 (Berkeley) %G%
  */
 
 #ifndef _SYS_STAT_H_
@@ -45,9 +45,18 @@ struct stat {
 	uid_t	  st_uid;		/* user ID of the file's owner */
 	gid_t	  st_gid;		/* group ID of the file's group */
 	dev_t	  st_rdev;		/* device type */
+#ifndef _POSIX_SOURCE
 	struct	timespec st_atimespec;	/* time of last access */
 	struct	timespec st_mtimespec;	/* time of last data modification */
 	struct	timespec st_ctimespec;	/* time of last file status change */
+#else
+	time_t	  st_atime;		/* time of last access */
+	int32_t	  st_atimensec;		/* nsec of last access */
+	time_t	  st_mtime;		/* time of last data modification */
+	int32_t	  st_mtimensec;		/* nsec of last data modification */
+	time_t	  st_ctime;		/* time of last file status change */
+	int32_t	  st_ctimensec;		/* nsec of last file status change */
+#endif
 	off_t	  st_size;		/* file size, in bytes */
 	int64_t	  st_blocks;		/* blocks allocated for file */
 	u_int32_t st_blksize;		/* optimal blocksize for I/O */
@@ -56,9 +65,11 @@ struct stat {
 	int32_t	  st_lspare;
 	int64_t	  st_qspare[2];
 };
+#ifndef _POSIX_SOURCE
 #define st_atime st_atimespec.ts_sec
 #define st_mtime st_mtimespec.ts_sec
 #define st_ctime st_ctimespec.ts_sec
+#endif
 
 #define	S_ISUID	0004000			/* set user id on execution */
 #define	S_ISGID	0002000			/* set group id on execution */
