@@ -1,4 +1,4 @@
-#	@(#)Makefile	1.3 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 DIR=	smm/16.security
 SRCS=	security.ms
