@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setvbuf.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)setvbuf.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -26,8 +26,7 @@ setvbuf(fp, buf, mode, size)
 	register int mode;
 	register size_t size;
 {
-	if (buf == NULL)
-		size = 0;
+	register int ret, flags;
 
 	/*
 	 * Verify arguments.  The `int' limit on `size' is due to this
@@ -38,33 +37,54 @@ setvbuf(fp, buf, mode, size)
 		return (EOF);
 
 	/*
-	 * Write current buffer, if any; drop read count, if any.
-	 * Make sure putc() will not think fp is line buffered.
-	 * Free old buffer if it was from malloc().  Clear line and
-	 * non buffer flags, and clear malloc flag.
+	 * OK so far.  Write current buffer, if any; drop read count, if
+	 * any.  Make sure putc() will not think fp is line buffered.  Free
+	 * old buffer if it was from malloc().  Clear line and non-buffer
+	 * flags, and clear malloc flag.
 	 */
+	ret = 0;
 	(void) __sflush(fp);
 	fp->_r = 0;
 	fp->_lbfsize = 0;
-	if (fp->_flags & __SMBF)
+	flags = fp->_flags;
+	if (flags & __SMBF)
 		free((void *)fp->_bf._base);
-	fp->_flags &= ~(__SLBF|__SNBF|__SMBF);
+	flags &= ~(__SLBF | __SNBF | __SMBF);
+
+	if (size == 0)
+		buf = NULL;	/* we will make a real one later */
+	else if (buf == NULL) {
+		/*
+		 * Caller wants specific buffering mode and size but did
+		 * not provide a buffer.  Produce one of the given size.
+		 * If that fails, set the size to 0 and continue, so that
+		 * we will try again later with a system-supplied size
+		 * (failure here is probably from someone with the bogus
+		 * idea that larger is always better, asking for many MB),
+		 * but return EOF to indicate failure.
+		 */
+		if ((buf = malloc(size)) == NULL) {
+			ret = EOF;
+			size = 0;
+		} else
+			flags |= __SMBF;
+	}
 
 	/*
-	 * Now put back whichever flag is needed, and fix _lbfsize
-	 * if line buffered.  Ensure output flush on exit if the
-	 * stream will be buffered at all.
+	 * Now put back whichever flag is needed, and fix _lbfsize if line
+	 * buffered.  Ensure output flush on exit if the stream will be
+	 * buffered at all.
 	 */
 	switch (mode) {
 
 	case _IONBF:
-		fp->_flags |= __SNBF;
+		flags |= __SNBF;
 		fp->_bf._base = fp->_p = fp->_nbuf;
 		fp->_bf._size = 1;
 		break;
 
 	case _IOLBF:
-		fp->_flags |= __SLBF;
+		flags |= __SLBF;
 		fp->_lbfsize = -size;
 		/* FALLTHROUGH */
 
@@ -79,8 +99,9 @@ setvbuf(fp, buf, mode, size)
 	/*
 	 * Patch up write count if necessary.
 	 */
-	if (fp->_flags & __SWR)
-		fp->_w = fp->_flags & (__SLBF|__SNBF) ? 0 : size;
+	if (flags & __SWR)
+		fp->_w = flags & (__SLBF | __SNBF) ? 0 : size;
+	fp->_flags = flags;
 
-	return (0);
+	return (ret);
 }
