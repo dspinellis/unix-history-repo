@@ -1,5 +1,5 @@
 			SENDMAIL RELEASE NOTES
-	     @(#)RELEASE_NOTES	8.6.9.2 (Berkeley) %G%
+	     @(#)RELEASE_NOTES	8.6.9.3 (Berkeley) %G%
 
 This listing shows the version of the sendmail binary, the version
 of the sendmail configuration files, the date of release, and a
@@ -25,7 +25,8 @@ summary of the changes in that release.
 		sendmail -bs from inetd.  Based on code contributed by
 		Todd Miller (this problem was also reported by Guy Helmer
 		of Dakota State University).  This also fixes a related
-		problem reported by Liudvikas Bukys of Rochester University.
+		problem reported by Liudvikas Bukys of the University of
+		Rochester.
 	Parameterize "nroff -h" in all the Makefiles so people with
 		variant versions can use them easily.  Suggested by
 		Peter Collinson of Hillside Systems.
@@ -418,7 +419,7 @@ summary of the changes in that release.
 		when sending error messages.  This resulted in
 		"unexpected close" messages.  It should fix itself
 		on the following queue run.  Problem noted by
-		Liudvikas Bukys of Rochester University.
+		Liudvikas Bukys of the University of Rochester.
 	Include $k in $=k as documented in the Install & Op Guide.
 		This seems odd, but it was documented....  From
 		Michael Corrigan of UCSD.
