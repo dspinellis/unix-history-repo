@@ -3,12 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)bug.h	1.1 (Berkeley) 11/25/86
+ *	@(#)bug.h	5.5 (Berkeley) %G%
  */
 
-#define BUGS_HOME	"owner-bugs@ucbvax.BERKELEY.EDU"
+#define BUGS_HOME	"owner-bugs@ucbvax.Berkeley.EDU"
 #define BUGS_ID		"bugs"
-#define MAIL_CMD	"/usr/lib/sendmail -i -t -F \"Bugs Bunny\" -f owner-bugs@ucbvax.BERKELEY.EDU"
+#define MAIL_CMD	"/usr/lib/sendmail -i -t -F \"Bugs Bunny\" -f owner-bugs"
 
 /*
  * the METOO definition has the bugfiler exit with an error (-1) status
@@ -57,6 +57,7 @@ extern HEADER	mailhead[];
 #define RET_TAG		6		/* "Return-Path:" offset */
 #define SUBJ_TAG	7		/* "Subject:" offset */
 #define TO_TAG		8		/* "To:" offset */
+#define APPAR_TO_TAG	9		/* "Apparently-To:" offset */
 
 /* so sizeof doesn't return 0 */
 #include <sys/param.h>
