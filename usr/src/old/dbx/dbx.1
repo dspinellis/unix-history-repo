@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dbx.1	6.1 (Berkeley) %G%
+.\"	@(#)dbx.1	6.2 (Berkeley) %G%
 .\"
 .TH DBX 1 ""
 .UC 5
@@ -402,6 +402,21 @@ $mapaddrs
 Setting (unsetting) this variable causes \*(dB to start (stop)
 mapping addresses.
 As with ``$frame'', this is useful for kernel debugging.
+.sp 1
+.ti -5n
+$unsafecall
+.ti -5n
+$unsafeassign
+.br
+When ``$unsafecall'' is set,
+strict type checking is turned off for arguments to
+subroutine or function calls (\fIe.g.\fP in the \fBcall\fP statement).
+When ``$unsafeassign'' is set,
+strict type checking between the two sides
+of an \fBassign\fP statement is turned off.
+These variables should be used only with great care,
+because they severely limit \*(dB's usefulness
+for detecting errors.
 .in -8n
 .TP
 \fBunalias\fP \fIname\fP
@@ -542,3 +557,15 @@ static declarations that are separate entities for each file
 in which they are included.
 However, even with Modula-2 there is a substantial amount of duplication
 of symbol information necessary for inter-module type checking.
+.PP
+Some problems remain with the support for individual languages.
+Fortran problems include:
+inability to assign to logical, logical*2, complex
+and double complex variables;
+inability to represent parameter constants
+which are not type integer or real;
+peculiar representation for the values of dummy procedures
+(the value shown for a dummy procedure is actually
+the first few bytes of the procedure text;
+to find the location of the procedure,
+use ``&'' to take the address of the variable).
