@@ -3,7 +3,7 @@
 # include <sgtty.h>
 # include "sendmail.h"
 
-SCCSID(@(#)main.c	4.15		%G%);
+SCCSID(@(#)main.c	4.16		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -85,6 +85,12 @@ main(argc, argv, envp)
 		(void) close(i);
 	errno = 0;
 
+	/* set up the blank envelope */
+	BlankEnvelope.e_puthdr = putheader;
+	BlankEnvelope.e_putbody = putbody;
+	BlankEnvelope.e_xfp = NULL;
+	CurEnv = &BlankEnvelope;
+
 	/*
 	**  Do a quick prescan of the argument list.
 	**	We do this to find out if we can potentially thaw the
@@ -102,10 +108,9 @@ main(argc, argv, envp)
 			ConfFile = &p[2];
 			if (ConfFile[0] == '\0')
 				ConfFile = "sendmail.cf";
-			readconfig = safecf = FALSE;
+			safecf = FALSE;
 			setuid(getruid());
 			setgid(getrgid());
-			readcf(ConfFile, FALSE);
 			break;
 		}
 		else if (strncmp(p, "-bz", 3) == 0)
@@ -135,11 +140,6 @@ main(argc, argv, envp)
 # ifndef V6
 	FullName = getenv("NAME");
 # endif V6
-	/* set up the blank envelope */
-	BlankEnvelope.e_puthdr = putheader;
-	BlankEnvelope.e_putbody = putbody;
-	BlankEnvelope.e_xfp = NULL;
-	CurEnv = &BlankEnvelope;
 # ifdef LOG
 	openlog("sendmail", LOG_PID);
 # endif LOG
