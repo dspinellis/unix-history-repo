@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.57 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.58 (Berkeley) %G%
  */
 
 /*
@@ -843,16 +843,16 @@ void vclean(vp, flags)
 	 * If purging an active vnode, it must be unlocked, closed,
 	 * and deactivated before being reclaimed.
 	 */
-	(*(origops->vn_unlock))(vp);
+	(*(origops->vop_unlock))(vp);
 	if (active) {
 		if (flags & DOCLOSE)
-			(*(origops->vn_close))(vp, IO_NDELAY, NOCRED, p);
-		(*(origops->vn_inactive))(vp, p);
+			(*(origops->vop_close))(vp, IO_NDELAY, NOCRED, p);
+		(*(origops->vop_inactive))(vp, p);
 	}
 	/*
 	 * Reclaim the vnode.
 	 */
-	if ((*(origops->vn_reclaim))(vp))
+	if ((*(origops->vop_reclaim))(vp))
 		panic("vclean: cannot reclaim");
 	if (active)
 		vrele(vp);
