@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)col.1	6.7 (Berkeley) %G%
+.\"     @(#)col.1	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt COL 1
@@ -34,7 +34,7 @@ reads from standard input and writes to standard output.
 The options are as follows:
 .Bl -tag -width "-lnum"
 .It Fl b
-Do not output any backspaces \- print only the last character
+Do not output any backspaces, printing only the last character
 written to each column position.
 .It Fl f
 Forward half line feeds are permitted (``fine'' mode).
@@ -97,7 +97,4 @@ will display a warning message.
 A
 .Nm col
 command
-appeared in Version 6 AT&T UNIX.  The
-.Bx
-.Nm col
-is derived from code written by Michael Rendell.
+appeared in Version 6 AT&T UNIX.
