@@ -11,7 +11,7 @@
 #  Makefile is likely to require a lot of customization.  Read it over
 #  carefully before proceeding.
 #
-#	@(#)Makefile.Linux	8.11 (Berkeley) %G%
+#	@(#)Makefile.Linux	8.12 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -24,7 +24,7 @@ O=	-O
 # The really old (V7) DBM library is no longer supported.
 # See READ_ME for a description of how these flags interact.
 #
-DBMDEF=	-DNDBM
+DBMDEF=	-DNDBM -DNEWDB
 
 # environment definitions (e.g., -D_AIX3)
 ENVDEF=
@@ -38,7 +38,7 @@ INCDIRS=-I/usr/local/include
 LIBDIRS=-L/usr/local/lib
 
 # libraries required on your system
-LIBS=	-lgdbm
+LIBS=	-lgdbm -ldb
 
 # location of sendmail binary (usually /usr/sbin or /usr/lib)
 BINDIR=	${DESTDIR}/usr/sbin
