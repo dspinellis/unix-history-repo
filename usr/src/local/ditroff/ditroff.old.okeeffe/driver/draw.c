@@ -1,4 +1,4 @@
-/*	draw.c	1.3	83/11/01
+/*	draw.c	1.4	83/11/30
  *
  *	This file contains the functions for producing the graphics
  *   images in the canon/imagen driver for ditroff.
@@ -19,6 +19,7 @@
 #define  vmot(n)	vpos += n;
 #define  vgoto(n)	vpos = n;
 
+extern int output;
 extern int hpos;
 extern int vpos;
 extern int MAXX;
@@ -64,7 +65,7 @@ drawline(dh, dv)
 register int dh;
 register int dv;
 {
-    HGtline (hpos, vpos, hpos + dh, vpos + dv);
+    if (output) HGtline (hpos, vpos, hpos + dh, vpos + dv);
     hmot (dh);					/* new position is at */
     vmot (dv);					/* the end of the line */
 }
@@ -82,7 +83,7 @@ register int dv;
 drawcirc(d)
 register int d;
 {			/* 0.0 is the angle to sweep the arc: = full circle */
-    HGArc (hpos + d/2, vpos, hpos, vpos, 0.0);
+    if (output) HGArc (hpos + d/2, vpos, hpos, vpos, 0.0);
     hmot (d);			/* new postion is the right of the circle */
 }
 
@@ -91,8 +92,9 @@ register int d;
  | Routine:	drawellip (horizontal_diameter, vertical_diameter)
  |
  | Results:	Draws regular ellipses given the major "diameters."  It does
- |		so by drawing many small lines, every other pixel.  The ellipse
- |		formula:  ((x-x0)/hrad)**2 + ((y-y0)/vrad)**2 = 1 is used,
+ |		so by drawing many small lines, every ELLIPSEDX pixels (DX
+ |		defined here).  The ellipse formula:
+ |			((x-x0)/hrad)**2 + ((y-y0)/vrad)**2 = 1     is used,
  |		converting to:  y = y0 +- vrad * sqrt(1 - ((x-x0)/hrad)**2).
  |		The line segments are duplicated (mirrored) on either side of
  |		the horizontal "diameter".
@@ -101,6 +103,8 @@ register int d;
  |
  | Bugs:	Odd numbered horizontal axes are rounded up to even numbers.
  *----------------------------------------------------------------------------*/
+
+#define ELLIPSEDX	3
 
 drawellip(hd, vd)
 register int hd;
@@ -114,28 +118,34 @@ int vd;
     int bxsave, xsave, hdsave;	/* places to save things to be used over */
 
 
-    hd = 2 * ((hd + 1) / 2);	/* don't accept odd diameters */
-    if (hd < 2) hd = 2;		/* or dinky ones */
+    if (hd < ELLIPSEDX) {	/* don't draw tiny ellipses */
+	if (output) HGtline (hpos, vpos, hpos + hd, vpos);
+	hmot (hd);
+	return;
+    }
 
     bx = 4 * (hpos + hd);
     x = hpos;
     k1 = vd / (2.0 * hd);
-    k2 = hd * hd - 4 * (hpos + hd/2) * (hpos + hd/2);
+    k2 = hd * hd - (2 * hpos + hd) * (2 * hpos + hd);
 
+  if (output) {
     bxsave = bx;	/* remember the parameters that will change through */
-    xsave = x;		/*    the top half of the elipse, so the bottom half */
+    xsave = x;		/*    the top half of the ellipse so the bottom half */
     hdsave = hd;	/*    can be drawn later. */
 
     byte(ASPATH);		/* define drawing path */
-    word(hd / 2 + 1);
+    word((hd - 1) / ELLIPSEDX + 2);
     word(xbound(hpos));	/* start out at current position */
     word(ybound(vpos));
-    do {
-	x += 2;
+    while ((hd -= ELLIPSEDX) > 0) {
+	x += ELLIPSEDX;
 	word(xbound(x));
-	y = vpos + (int) (k1 * sqrt((double) (k2 + (bx -= 8) * x)));
+	y = vpos + (int) (k1 * sqrt((double) (k2 + (bx -= (4*ELLIPSEDX)) * x)));
 	word(ybound(y));
-    } while (hd -= 2);
+    }
+    word(xbound(hpos + hdsave));	/* end at right side */
+    word(ybound(vpos));
     byte(ADRAW);		/* now draw the top half */
     byte(15);
 
@@ -144,17 +154,20 @@ int vd;
     hd = hdsave;
 
     byte(ASPATH);		/* define drawing path */
-    word(hd / 2 + 1);
+    word((hd - 1) / ELLIPSEDX + 2);
     word(xbound(hpos));	/* start out at current position */
     word(ybound(vpos));
-    do {
-	x += 2;
+    while ((hd -= ELLIPSEDX) > 0) {
+	x += ELLIPSEDX;
 	word(xbound(x));
-	y = vpos - (int) (k1 * sqrt((double) (k2 + (bx -= 8) * x)));
+	y = vpos - (int) (k1 * sqrt((double) (k2 + (bx -= (4*ELLIPSEDX)) * x)));
 	word(ybound(y));
-    } while (hd -= 2);
+    }
+    word(xbound(hpos + hdsave));	/* end at right side */
+    word(ybound(vpos));
     byte(ADRAW);		/* now draw the bottom half */
     byte(15);
+  }
 
     hmot (hdsave);	/* end position is the right-hand side of the ellipse */
 }
@@ -187,7 +200,7 @@ register int pdv;
 				/* "normalize" and round */
     angle += (angle < 0.0)  ?  360.5 : 0.5;
 
-    HGArc(hpos + cdh, vpos + cdv, hpos, vpos, (int) angle);
+    if (output) HGArc(hpos + cdh, vpos + cdv, hpos, vpos, (int) angle);
     hmot(cdh + pdh);
     vmot(cdv + pdv);
 }
@@ -243,10 +256,12 @@ int pic;
     }
     npts--;	/* npts must point to the last coordinate in x and y */
 				/* now, actually DO the curve */
-    if (pic)
-	picurve(x, y, npts);
-    else
-	HGCurve(x, y, npts);
+    if (output) {
+	if (pic)
+	    picurve(x, y, npts);
+	else
+	    HGCurve(x, y, npts);
+    }
 }
 
 
@@ -702,7 +717,6 @@ int y1;
     int res2;
     int xinc;
     int yinc;
-    int slope;
 
 
     if (linmod == -1) {
@@ -719,13 +733,12 @@ int y1;
         yinc = -1;
         dy = -dy;
     }
-    slope = xinc*yinc;
     res1 = 0;
     res2 = 0;
     visible = 0;
     if (dx >= dy) 
         while (x0 != x1) {
-            if((((x0+slope*y0)&linmod)&&1)^visible) {
+            if(((x0&linmod)&&1)^visible) {
 	    	change(x0, y0, visible);
 		visible = !visible;
 	    }
@@ -739,7 +752,7 @@ int y1;
         } 
     else 
         while (y0 != y1) {
-            if((((x0+slope*y0)&linmod)&&1)^visible) {
+            if(((y0&linmod)&&1)^visible) {
 		change(x0, y0, visible);
 		visible = !visible;
 	    }
