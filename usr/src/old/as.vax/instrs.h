@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)instrs.h 4.4 %G%
+ *	@(#)instrs.h 4.5 %G%
  */
 /*
  *	Argument data types
@@ -60,16 +60,20 @@
 #define	A_AH	A_CONS(ACCA, TYPH)
 /*
  *	For real memory addresses, or register addresses [sic]
+ *
+ *	CHEAT! we just call these read access, since
+ *	registers are allowed. All field instruction, except insv,
+ *	are are read access fields.
  */
-#define	A_VB	A_CONS(ACCV, TYPB)
-#define	A_VW	A_CONS(ACCV, TYPW)
-#define	A_VL	A_CONS(ACCV, TYPL)
-#define	A_VQ	A_CONS(ACCV, TYPQ)
-#define	A_VO	A_CONS(ACCV, TYPO)
-#define	A_VF	A_CONS(ACCV, TYPF)
-#define	A_VD	A_CONS(ACCV, TYPD)
-#define	A_VG	A_CONS(ACCV, TYPG)
-#define	A_VH	A_CONS(ACCV, TYPH)
+#define	A_VB	A_CONS(ACCR, TYPB)
+#define	A_VW	A_CONS(ACCR, TYPW)
+#define	A_VL	A_CONS(ACCR, TYPL)
+#define	A_VQ	A_CONS(ACCR, TYPQ)
+#define	A_VO	A_CONS(ACCR, TYPO)
+#define	A_VF	A_CONS(ACCR, TYPF)
+#define	A_VD	A_CONS(ACCR, TYPD)
+#define	A_VG	A_CONS(ACCR, TYPG)
+#define	A_VH	A_CONS(ACCR, TYPH)
 /*
  *	For branch displacement
  */
