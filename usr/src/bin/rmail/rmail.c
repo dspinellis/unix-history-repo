@@ -11,7 +11,7 @@
 # include "useful.h"
 # include "conf.h"
 
-SCCSID(@(#)rmail.c	3.6	(Berkeley)	%G%);
+SCCSID(@(#)rmail.c	3.7	(Berkeley)	%G%);
 
 extern FILE *popen();
 extern char *index();
@@ -32,6 +32,7 @@ main(argc, argv)
 	char cmd[2000];
 	register char *cp;
 	register char *uf;	/* ptr into ufrom */
+	int i;
 
 # ifdef DEBUG
 	if (argc > 1 && strcmp(argv[1], "-T") == 0)
@@ -105,7 +106,12 @@ main(argc, argv)
 	fputs(lbuf, out);
 	while (fgets(lbuf, sizeof lbuf, stdin))
 		fputs(lbuf, out);
-	pclose(out);
+	i = pclose(out);
+	if ((i & 0377) != 0)
+	{
+		fprintf(stderr, "pclose: status 0%o\n", i);
+		exit(EX_OSERR);
+	}
 
-	exit(EX_OK);
+	exit((i >> 8) & 0377);
 }
