@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asparse.c 4.11 %G%";
+static char sccsid[] = "@(#)asparse.c 4.12 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -68,7 +68,7 @@ yyparse()
 	reg	struct	symtab	*p;
 	reg	struct	symtab	*stpt;
 
-		struct	strdesc	*stringp;	/*handles string lists*/
+		char	*stringp;	/*handles string lists*/
 
 		int	regno;		/*handles arguments*/
 		int	*ptrregno = &regno;
@@ -214,12 +214,10 @@ restlab:
 
    case IFILE:
 	shift;
-	stringp = (struct strdesc *)yylval;
+	stringp = (char *)yylval;
 	shiftover(STRING);
 	dotsname = &UDotsname[0];
-	movestr(dotsname, stringp->str,
-		stringp->str_lg >= 32? 32 :stringp->str_lg);
-	dotsname[stringp->str_lg] = '\0';
+	movestr(dotsname, stringp, min(STRLEN(stringp), sizeof(dotsname)));
 	break;
 
    case ILINENO:
@@ -424,19 +422,20 @@ restlab:
   ospace:
 	flushfield(NBPW/4);
 #ifdef UNIX
-	while (space_value > 96){
-		outs(strbuf[2].str, 96);
-		space_value -= 96;
+	{
+		static char spacebuf[128];
+		while (space_value > sizeof(spacebuf)){
+			outs(spacebuf, sizeof(spacebuf));
+			space_value -= sizeof(spacebuf);
+		}
+		outs(spacebuf, space_value);
 	}
-	outs(strbuf[2].str, space_value);
 #endif UNIX
 #ifdef VMS
 	dotp->e_xvalue += space_value;		/*bump pc*/
 	if (passno==2){
-	  if(*(strbuf[2].str)==0) {
-		puchar(vms_obj_ptr,81);		/* AUGR  */
-		pulong(vms_obj_ptr,space_value);/* incr  */
-	  } else yyerror("VMS, encountered non-0 .space");
+	  puchar(vms_obj_ptr,81);		/* AUGR  */
+	  pulong(vms_obj_ptr,space_value);/* incr  */
 	  if ((vms_obj_ptr-sobuf) > 400) {
 		write(objfil,sobuf,vms_obj_ptr-sobuf);
 		vms_obj_ptr=sobuf+1;		/*pur buf*/
@@ -478,23 +477,28 @@ restlab:
 	break;
 #endif UNIX
 
-   case IASCII:	/* .ascii [ <stringlist> ] */
+   case IASCII:		/* .ascii [ <stringlist> ] */
    case IASCIZ: 	/* .asciz [ <stringlist> ] */
 	auxval = val;
 	shift;
-
 	/*
 	 *	Code to consume a string list
 	 *
 	 *	stringlist: empty | STRING | stringlist STRING
 	 */
-	while (val ==  STRING){
+	while (val == STRING){
 		flushfield(NBPW/4);
 		if (bitoff)
-		  dotp->e_xvalue++;
-		stringp = (struct strdesc *)yylval;
+			dotp->e_xvalue++;
+		stringp = (char *)yylval;
+		/*
+		 *	utilize the string scanner cheat,
+		 *	where it appended a null byte on the string,
+		 *	but didn't charge it to STRLEN
+		 */
+		STRLEN(stringp) += (auxval == IASCIZ) ? 1 : 0;
 #ifdef UNIX
-		outs(stringp->str, stringp->str_lg);
+		outs(stringp, STRLEN(stringp));
 #endif UNIX
 #ifdef VMS
 		{
@@ -515,20 +519,6 @@ restlab:
 		shift;		/*over the STRING*/
 		if (val == CM)	/*could be a split string*/
 			shift;
-	}
-
-	if (auxval == IASCIZ){
-		flushfield(NBPW/4);
-#ifdef UNIX
-		outb(0);
-#endif UNIX
-#ifdef VMS
-		if (passno == 2) {
-			puchar(vms_obj_ptr,-1);
-			puchar(vms_obj_ptr,0);
-		}
-		dotp->e_xvalue += 1;
-#endif VMS
 	}
 	break;
 	
@@ -734,25 +724,29 @@ restlab:
 	(bytetoktype *)stabstart -= sizeof(bytetoktype);
 	shift;
 	if (auxval == ISTABSTR){
-		stringp = (struct strdesc *)yylval;
+		stringp = (char *)yylval;
 		shiftover(STRING);
 #ifndef FLEXNAMES
-		auxval = stringp->str_lg > NCPS ? NCPS : stringp->str_lg;
+		movestr(stpt->s_name, stringp, min(STRLEN(stringp), NCPS));
 #else
-		stringp->str[stringp->str_lg] = 0;
+		stpt->s_name = stringp;
+		/*
+		 *	We want the trailing null included in this string.
+		 *	We utilize the cheat the string scanner used,
+		 *	and merely increment the string length
+		 */
+		STRLEN(stringp) += 1;
 #endif
 		shiftover(CM);
 	} else {
-		stringp = &(strbuf[2]);
 #ifndef FLEXNAMES
-		auxval = NCPS;
+		static char nullstr[NCPS];
+		movestr(stpt->s_name, nullstr, NCPS);
+#else
+		static char nullstr[1];
+		stpt->s_name = savestr(nullstr, 1);
 #endif
 	}
-#ifndef FLEXNAMES
-	movestr(stpt->s_name, stringp->str, auxval);
-#else
-	stpt->s_name = savestr(stringp->str);
-#endif
 	goto tailstab;
 	break;
 

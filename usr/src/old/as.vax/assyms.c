@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)assyms.c 4.8 %G%";
+static char sccsid[] = "@(#)assyms.c 4.9 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -47,9 +47,7 @@ int	nlabels;	/* number of label entries */
  *	symbol storage in fixed hunks NCPS long when we allocate space
  *	for other symbol attributes.
  */
-#ifdef	FLEXNAMES
 struct	strpool		*strplhead = 0;
-#endif	FLEXNAMES
 
 symtabinit()
 {
@@ -57,9 +55,7 @@ symtabinit()
 	alloctail = 0;
 	nextsym = 0;
 	symsleft = 0;
-#ifdef FLEXNAMES
 	strpoolalloc();		/* get the first strpool storage area */
-#endif FLEXNAMES
 	htab = 0;
 	htaballoc();		/* get the first part of the hash table */
 }
@@ -227,7 +223,6 @@ struct symtab *symalloc()
 	return(nextsym++);
 }
 
-#ifdef FLEXNAMES
 strpoolalloc()
 {
 	register	struct	strpool	*new;
@@ -237,7 +232,6 @@ strpoolalloc()
 	new->str_next = strplhead;
 	strplhead = new;
 }
-#endif FLEXNAMES
 
 symcmp(Pptr, Qptr)
 	struct symtab **Pptr, **Qptr;
@@ -473,42 +467,39 @@ struct symtab **lookup(instflg)
 		*hp = symalloc();
 		hdallop->h_nused++;
 #ifndef FLEXNAMES
-		for(len = 0, from = yytext, to = (*hp)->s_name; (len<NCPS); len++)
- 			if ((*to++ = *from++) == '\0')
- 				break;
+		strncpy((*hp)->s_name, yytext, NCPS);
 #else FLEXNAMES
-		for (from = yytext, len = 1; *from++; len++)
+		for (from = yytext, len = 0; *from++; len++)
 			continue;
-		if (len >= (STRPOOLDALLOP - strplhead->str_nalloc))
-			strpoolalloc();
-		for ( (*hp)->s_name = to = strplhead->str_names + strplhead->str_nalloc, from = yytext;
-		     ( (*to++ = *from++) != '\0'); )
-			continue;
-		strplhead->str_nalloc += len;
+		/*
+		 *	save string and trailing null
+		 */
+		(*hp)->s_name = savestr(yytext, len + 1);
 #endif FLEXNAMES
 	}
 	return(hp);
 }	/*end of lookup*/
-
-#ifdef FLEXNAMES
-char *savestr(str)
-	char *str;
+/*
+ *	save a string str, length len in the string pool.
+ *	string known just by its length; can have or not have trailing nulls.
+ *
+ *	The length of the string occurs as a short just before
+ *	the character pointer returned.
+ */
+char *savestr(str, len)
+	char	*str;
+	int	len;
 {
-	register int len;
-	register char *from, *to;
-	char *res;
+	char	*res;
 
-	for (from = str, len = 1; *from++; len++)
-		continue;
-	if (len >= (STRPOOLDALLOP - strplhead->str_nalloc))
+	if (len + sizeof(lgtype) >= (STRPOOLDALLOP - strplhead->str_nalloc))
 		strpoolalloc();
-	for ( res = to = strplhead->str_names + strplhead->str_nalloc, from = str;
-		     ( (*to++ = *from++) != '\0'); )
-			continue;
-	strplhead->str_nalloc += len;
-	return (res);
+	res = strplhead->str_names + strplhead->str_nalloc;
+	plgtype(res, len);
+	movestr(res, str, len);
+	strplhead->str_nalloc += sizeof(lgtype) + len;
+	return(res);
 }
-#endif FLEXNAMES
 
 /*
  *	The relocation information is saved internally in an array of
@@ -551,7 +542,7 @@ outrel(xp, reloc_how)
 {
 	struct		relocation_info	reloc;
 	register	int	x_type_mask;	
-	int		pcrel;
+			int	pcrel;
 
 	x_type_mask = xp->e_xtype & ~XFORW;
 	pcrel = reloc_how & RELOC_PCREL;
@@ -662,7 +653,7 @@ int sizesymtab()
 /*
  *	We write out the flexible length character strings for  names
  *	in two stages.
- *	1)	We have always! maintain a fixed sized name list entry;
+ *	1)	We always! maintain a fixed sized name list entry;
  *	the string is indexed by a four byte quantity from the beginning
  *	of the string pool area.  Index 0 is reserved, and indicates
  *	that there is no associated string. The first valid index is 4.
@@ -707,11 +698,15 @@ int symwrite(symfile)
 
 #ifdef FLEXNAMES
 		name = sp->s_name;		/* save pointer */
-		if ( (sp->s_index = strlen(sp->s_name)) != 0){
+		/*
+		 *	the length of the symbol table string
+		 *	always includes the trailing null
+		 */
+		if (sp->s_name && (sp->s_index = STRLEN(sp->s_name))){
 			sp->s_nmx = stroff;	/* clobber pointer */
-			stroff += sp->s_index + 1;
+			stroff += sp->s_index;
 		} else {
-			sp->s_nmx = 0;		/* clobber pointer */
+			sp->s_nmx = 0;
 		}
 #endif
 		sp->s_type = (sp->s_ptype != 0) ? sp->s_ptype : (sp->s_type & (~XFORW));
@@ -739,9 +734,9 @@ int symwrite(symfile)
 			continue;
 		if ((sp->s_name[0] == 'L') && (sp->s_tag == LABELID) && !savelabels)
 			continue;
-		sp->s_index = strlen(sp->s_name);
-		if (sp->s_index)
-			bwrite(sp->s_name, sp->s_index + 1, symfile);
+		if (sp->s_name && (sp->s_index = STRLEN(sp->s_name))){
+			bwrite(sp->s_name, sp->s_index, symfile);
+		}
 	}
 #endif FLEXNAMES
 }

@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asscan1.c 4.3 %G%";
+static char sccsid[] = "@(#)asscan1.c 4.4 %G%";
 #endif not lint
 
 #include "asscanl.h"
@@ -125,14 +125,6 @@ inttoktype yylex()
 		case	VOID:	
 				goto top;
 		case 	STRING:
-				strptr = &strbuf[strno ^= 1];
-				strptr->str_lg = *((lgtype *)bufptr);
-				movestr(&strptr->str[0],
-					(char *)bufptr + sizeof(lgtype),
-					strptr->str_lg);
-				eatstrlg(bufptr);
-				yylval = (int)strptr;
-				break;
 		case 	ISTAB:
 		case	ISTABSTR:
 		case	ISTABNONE:
@@ -168,10 +160,10 @@ inttoktype yylex()
 				else
 					printf("IJXXX or INST0 or INSTn can't get into the itab\n");
 				break;
-		case	STRING:	printf("length %d ",
-					((struct strdesc *)yylval)->str_lg);
-				printf("value\"%s\"",
-					((struct strdesc *)yylval)->str);
+		case	STRING:	printf("length %d ", ((u_short *)yylval)[-1]);
+				printf("value\"%*s\"",
+					((u_short *)yylval)[-1],
+					(char *)yylval);
 				break;
 		}  		/*end of the debug switch*/
 		printf("\n");
@@ -301,13 +293,15 @@ buildskip(from, to)
 }
 
 movestr(to, from, lg)
-	register	char	*to, *from;
-	register	int	lg;
+	char	*to;	/* 4(ap) */ 
+	char	*from;	/* 8(ap) */
+	int	lg;	/* 12(ap) */
 {
-	if (lg <= 0) return;
-	do
-		*to++ = *from++;
-	while (--lg);
+	if (lg <= 0)
+		return;
+	;
+	asm("movc3	12(ap),*8(ap),*4(ap)");
+	;
 }
 
 new_dot_s(namep)
@@ -318,4 +312,9 @@ new_dot_s(namep)
 	dotsname = namep;
 	lineno = 1;
 	scanlineno = 1;
+}
+
+min(a, b)
+{
+	return(a < b ? a : b);
 }

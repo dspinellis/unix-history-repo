@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)asscan.h 4.7 %G%
+ *	@(#)asscan.h 4.8 %G%
  */
 /*
  *	The character scanner is called to fill up one token buffer
@@ -41,7 +41,7 @@ typedef int inttoktype;
 typedef char bytetoktype;
 
 typedef char *ptrall;			/*all uses will be type cast*/
-typedef short lgtype;			/*for storing length of strings or skiping*/
+typedef u_short lgtype;			/*for storing length of strings or skiping*/
 /*
  *	defintions for putting various typed values
  *	into the intermediate buffers
@@ -52,6 +52,7 @@ typedef short lgtype;			/*for storing length of strings or skiping*/
 #define	puchar(ptr,val)		*ptr++  = val
 
 #define	pshort(ptr,val)		*(short *)ptr=val,	ptr += sizeof(short)
+#define	plgtype(ptr,val)	*(lgtype *)ptr=val,	ptr += sizeof(lgtype)
 #define	pushort(ptr,val)	*(u_short *)ptr=val,	ptr += sizeof(short)
 #define	pint(ptr,val)		*(int *)ptr  = val,	ptr += sizeof(int)
 #define	puint(ptr,val)		*(u_int int *)ptr=val,	ptr += sizeof(int)
@@ -62,13 +63,13 @@ typedef short lgtype;			/*for storing length of strings or skiping*/
 
 #define	pptr(ptr,val)		*(int *)ptr  = (val),	ptr += sizeof(ptrall)
 #define	ptoken(ptr,val)		*ptr++  = val
-#define	pstrlg(ptr,val)		*(lgtype *)ptr  = val,	ptr += sizeof(short)
 #define	pskiplg(ptr,val)	*(lgtype *)ptr  = val,	ptr += sizeof(short)
 
 #define	gchar(val, ptr)		val = *ptr++
 #define	guchar(val, ptr)	val = *ptr++
 
 #define	gshort(val, ptr)	val = *(short *)ptr , ptr += sizeof (short)
+#define	glgtype(val, ptr)	val = *(lgtype *)ptr , ptr += sizeof (lgtype)
 #define	gushort(val, ptr)	val = *(u_short *)ptr , ptr += sizeof (short)
 #define	gint(val, ptr)		val = *(int *)ptr, ptr += sizeof (int)
 #define	guint(val, ptr)		val = *(u_int *)ptr, ptr += sizeof (int)
@@ -79,33 +80,15 @@ typedef short lgtype;			/*for storing length of strings or skiping*/
 
 #define	gptr(val, ptr)		val = *(int *)ptr, ptr += sizeof (ptrall)
 #define	gtoken(val, ptr)	val = *ptr++
-#define	gstrlg(val, ptr)	val = *(lgtype *)ptr, ptr += sizeof (short)
 #define	gskiplg(val, ptr)	val = *(lgtype *)ptr, ptr += sizeof (short)
-
 
 extern	ptrall tokptr;	/*the next token to consume, call by copy*/
 extern	ptrall tokub;	/*current upper bound in the current buffer*/
-
 /*
- *	Strings are known for their characters and for their length.
- *	We cannot use a normal zero termination byte, because strings
- *	can contain anything.
- *
- *	We have two "strings", so that an input string that is too long can be
- *	split across two string buffers, and not confuse the yacc grammar.
- *	(This is probably superflous)
- *
- *	We have a third string of nulls so that the .skip can be 
- *	handled in the same way as strings.
+ *	Strings are stored in the string pool; see strsave(str, length)
+ *	Strings are known by their length and values.
+ *	A string pointer points to the beginning of the value bytes;
+ *	the preceding two bytes are the length.
  */
-#define MAXSTRLG	4000
-
-struct strdesc {
-	unsigned short	str_lg;
-	char		str[MAXSTRLG];
-};
-
-extern	struct 	strdesc		strbuf[3];
-extern	struct 	strdesc		*strptr;	/*points to the current string*/
-extern	int			strno;		/*the current string being filled*/
-char	*savestr();
+#define	STRLEN(str)	(((lgtype *)str)[-1])
+char *savestr();
