@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cp.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cp.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -352,7 +352,7 @@ copy(argv, type, fts_options)
 					err(1, "%s", to.p_path);
 			} else if (!S_ISDIR(to_stat.st_mode)) {
 				errno = ENOTDIR;
-				err(1, "%s: %s", to.p_path);
+				err(1, "%s", to.p_path);
 			}
 			/*
 			 * If not -p and directory didn't exist, set it to be
