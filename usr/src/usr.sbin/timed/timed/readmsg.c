@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readmsg.c	1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)readmsg.c	1.4 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -133,7 +133,6 @@ struct timeval *intvl;
 		if (trace) {
 			fprintf(fd, "readmsg: wait: (%d %d)\n", 
 						rwait.tv_sec, rwait.tv_usec);
-			(void)fflush(fd);
 		}
 		ready = 1<<sock;
 		found = select(20, &ready, (int *)0, (int *)0, &rwait);
@@ -345,5 +344,4 @@ struct tsp *msg;
 		msg->tsp_time.tv_sec, 
 		msg->tsp_time.tv_usec, 
 		msg->tsp_name);
-	(void)fflush(fd);
 }
