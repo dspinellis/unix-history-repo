@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.55 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.56 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -163,14 +163,8 @@ lfs_update(vp, ta, tm, waitfor)
 		ip->i_ctime = time.tv_sec;
 	ip->i_flag &= ~(IUPD|IACC|ICHG|IMOD);
 
-	/*
-	 * XXX
-	 * I'm not real sure what to do here; once we have fsync and partial
-	 * segments working in the LFS context, this must be fixed to be
-	 * correct.  The contents of the inode have to be pushed back to
-	 * stable storage.
-	 */
-	return (0);
+	/* Push back the vnode and any dirty blocks it may have. */
+	return (waitfor ? lfs_vflush(vp) : 0);
 }
 
 /* Update segment usage information when removing a block. */
@@ -208,6 +202,7 @@ lfs_truncate(vp, length, flags)
 	register int i;
 	register daddr_t *daddrp;
 	struct buf *bp, *sup_bp;
+	struct ifile *ifp;
 	struct inode *ip;
 	struct lfs *fs;
 	INDIR a[NIADDR + 2], a_end[NIADDR + 2];
@@ -221,18 +216,28 @@ lfs_truncate(vp, length, flags)
 	printf("lfs_truncate\n");
 #endif
 	vnode_pager_setsize(vp, length);
+
 	ip = VTOI(vp);
+	fs = ip->i_lfs;
+
+	/* If truncating the file to 0, update the version number. */
+	if (length == 0) {
+		LFS_IENTRY(ifp, fs, ip->i_number, bp);
+		++ifp->if_version;
+		LFS_UBWRITE(bp);
+	}
+
 	/* If length is larger than the file, just update the times. */
 	if (ip->i_size <= length) {
 		ip->i_flag |= ICHG|IUPD;
 		return (lfs_update(vp, &time, &time, 1));
 	}
+
 	/*
 	 * Calculate index into inode's block list of last direct and indirect
 	 * blocks (if any) which we want to keep.  Lastblock is 0 when the
 	 * file is truncated to 0.
 	 */
-	fs = ip->i_lfs;
 	lastblock = lblkno(fs, length + fs->lfs_bsize - 1);
 	olastblock = lblkno(fs, ip->i_size + fs->lfs_bsize - 1) - 1;
 
