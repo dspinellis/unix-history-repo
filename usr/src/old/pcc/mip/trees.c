@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.10 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.11 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -671,7 +671,8 @@ conval( p, o, q ) register NODE *p, *q; {
 		p->tn.lval -= val;
 		break;
 	case MUL:
-		p->tn.lval *= val;
+		if ( u ) p->tn.lval *= (unsigned) val;
+		else p->tn.lval *= val;
 		break;
 	case DIV:
 		if( val == 0 ) uerror( "division by 0" );
@@ -1126,7 +1127,11 @@ tymatch(p)  register NODE *p; {
 	else if( t1==LONG || t2==LONG ) t = LONG;
 	else t = INT;
 
+#ifdef tahoe
+	if( asgop(o) ){
+#else
 	if( o == ASSIGN || o == CAST || o == RETURN ){
+#endif
 		tu = p->in.left->in.type;
 		t = t1;
 		}
@@ -1139,7 +1144,11 @@ tymatch(p)  register NODE *p; {
 	   are those involving FLOAT/DOUBLE, and those
 	   from LONG to INT and ULONG to UNSIGNED */
 
+#ifdef tahoe
+	if( t != t1 )
+#else
 	if( t != t1 && ! asgop(o) )
+#endif
 		p->in.left = makety( p->in.left, tu, 0, (int)tu );
 
 	if( t != t2 || o==CAST )
@@ -1532,6 +1541,7 @@ eprint( p, down, a, b ) register NODE *p; int *a, *b; {
 	}
 # endif
 
+#ifndef PRTDCON
 prtdcon( p ) register NODE *p; {
 	int o = p->in.op, i;
 
@@ -1549,6 +1559,7 @@ prtdcon( p ) register NODE *p; {
 		p->in.op = NAME;
 		}
 	}
+#endif PRTDCON
 
 
 int edebug = 0;
