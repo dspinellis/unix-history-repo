@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)0.t	6.7 (Berkeley) %G%
+.\"	@(#)0.t	6.8 (Berkeley) %G%
 .\"
 .if n .ND
 .TL
@@ -22,8 +22,8 @@ Computer Science Division
 Department of Electrical Engineering and Computer Science
 University of California, Berkeley
 Berkeley, CA  94720
-.EH 'PS1:6-%''4.3BSD Architecture Manual'
-.OH '4.3BSD Architecture Manual''PS1:6-%'
+.EH 'PSD:5-%''4.3BSD Architecture Manual'
+.OH '4.3BSD Architecture Manual''PSD:5-%'
 .AB
 .FS
 * UNIX is a trademark of Bell Laboratories.

@@ -1,13 +1,13 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)p0	6.4 (Berkeley) %G%
+.\"	@(#)p0	6.5 (Berkeley) %G%
 .\"
 .if n .ls 1
 .\" .TM 78-1273-9 39199 39199-11
 .\" .ND October 2, 1978
 .\" .old TM 75-1273-11 October 22, 1975
-.OH 'UNIX Programming \(em Second Edition''PS2:3-%'
-.EH 'PS2:3-%''UNIX Programming \(em Second Edition'
+.OH 'UNIX Programming \(em Second Edition''PSD:4-%'
+.EH 'PSD:4-%''UNIX Programming \(em Second Edition'
 .TL
 UNIX Programming \(em Second Edition
 .AU "MH 2C-518" 6021

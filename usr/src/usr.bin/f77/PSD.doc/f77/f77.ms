@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)f77.ms	5.5 (Berkeley) %G%
+.\"	@(#)f77.ms	5.6 (Berkeley) %G%
 .\"
 .rm CM
 .hw name-list
@@ -84,8 +84,8 @@ Revised September, 1985
 .\" the Table of Contents uses pages 2 and 3,
 .\" hence the document begins at page 4.
 .pn 4
-.EH 'PS1:2-%''A Portable Fortran 77 Compiler'
-.OH 'A Portable Fortran 77 Compiler''PS1:2-%'
+.EH 'PSD:8-%''A Portable Fortran 77 Compiler'
+.OH 'A Portable Fortran 77 Compiler''PSD:8-%'
 .bp
 .NH 0
 INTRODUCTION
