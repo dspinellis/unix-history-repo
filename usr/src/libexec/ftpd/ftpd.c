@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -80,7 +80,6 @@ int	debug;
 int	timeout = 900;    /* timeout after 15 minutes of inactivity */
 int	logging;
 int	guest;
-int	wtmp;
 int	type;
 int	form;
 int	stru;			/* avoid C keyword */
@@ -179,7 +178,6 @@ nextopt:
 	/*
 	 * Set up default state
 	 */
-	logged_in = 0;
 	data = -1;
 	type = TYPE_A;
 	form = FORM_N;
@@ -288,23 +286,19 @@ pass(passwd)
 		goto bad;
 	}
 
-	/* grab wtmp before chroot */
-	wtmp = open("/usr/adm/wtmp", O_WRONLY|O_APPEND);
-	if (guest && chroot(pw->pw_dir) < 0) {
-		reply(550, "Can't set guest privileges.");
-		if (wtmp >= 0) {
-			(void) close(wtmp);
-			wtmp = -1;
-		}
-		goto bad;
-	}
-	if (!guest)
-		reply(230, "User %s logged in.", pw->pw_name);
-	else
-		reply(230, "Guest login ok, access restrictions apply.");
-	logged_in = 1;
+	/* open wtmp before chroot */
 	(void)sprintf(ttyline, "ftp%d", getpid());
 	logwtmp(ttyline, pw->pw_name, remotehost);
+	logged_in = 1;
+
+	if (guest) {
+		if (chroot(pw->pw_dir) < 0) {
+			reply(550, "Can't set guest privileges.");
+			goto bad;
+		}
+		reply(230, "Guest login ok, access restrictions apply.");
+	} else
+		reply(230, "User %s logged in.", pw->pw_name);
 	seteuid(pw->pw_uid);
 	home = pw->pw_dir;		/* home dir for globbing */
 	return;
