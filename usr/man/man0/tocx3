@@ -1,0 +1,127 @@
+abort(3) abort: generate a fault.
+abort(3f) abort: terminate abruptly with memory image.
+abs(3) abs: integer absolute value.
+access(3f) access: determine accessability of a file.
+alarm(3f) alarm: execute a subroutine after a specified time.
+assert(3x) assert: program verification.
+atof(3) atof, atoi, atol: convert ASCII to numbers.
+bessel(3f) bessel functions: of two kinds for integer orders.
+bit(3f) bis, bic, setbit, bit: bit set, clear, test routines.
+bit(3f) and, or, xor, not: bitwise functions.
+bit(3f) rshift, lshift: bit shifting functions.
+bstring(3) bcopy, bcmp, bzero: byte string operations.
+byteorder(3n) htonl, htons, ntohl, ntohs: convert values between host and network byte order.
+chdir(3f) chdir: change default directory.
+crypt(3) crypt, setkey, encrypt: DES encryption.
+ctime(3) ctime, localtime, gmtime, asctime, timezone: convert date and time to ASCII.
+ctype(3) isalpha, isupper, islower, isdigit, isalnum, isspace, ispunct, isprint, iscntrl, isascii: character classification.
+curses(3x) curses: screen functions with ``optimal'' cursor motion.
+dbm(3x) dbminit, fetch, store, delete, firstkey, nextkey: data base subroutines.
+directory(3) opendir, readdir, telldir, seekdir, rewinddir, closedir: directory operations.
+ecvt(3) ecvt, fcvt, gcvt: output conversion.
+end(3) end, etext, edata: last locations in program.
+etime(3f) etime, dtime: return elapsed execution time.
+exit(3f) exit: terminate process with status.
+exp(3m) exp, log, log10, pow, sqrt: exponential, logarithm, power, square root.
+fclose(3s) fclose, fflush: close or flush a stream.
+fdate(3f) fdate: return date and time in an ASCII string.
+ferror(3s) feof, ferror, clearerr, fileno: stream status inquiries.
+floor(3m) fabs, floor, ceil: absolute value, floor, ceiling functions.
+flush(3f) flush: flush output to a logical unit.
+fopen(3s) fopen, freopen, fdopen: open a stream.
+fork(3f) fork: create a copy of this process.
+fread(3s) fread, fwrite: buffered binary input/output.
+frexp(3) frexp, ldexp, modf: split into mantissa and exponent.
+fseek(3f) fseek, ftell: reposition a file on a logical unit.
+fseek(3s) fseek, ftell, rewind: reposition a stream.
+gamma(3m) gamma: log gamma function.
+getarg(3f) getarg, iargc: command arguments to Fortran.
+getc(3f) getc, fgetc: get a character from a logical unit.
+getc(3s) getc, getchar, fgetc, getw: get character or word from stream.
+getdisk(3x) getdiskbyname: get disk description by its name.
+getenv(3) getenv: value for environment name.
+getenv(3f) getenv: get value of environment variables.
+getfsent(3) getfsent, getfsspec, getfsfile, setfsent, endfsent: get file system descriptor file entry.
+getgrent(3) getgrent, getgrgid, getgrnam, setgrent, endgrent: get group file entry.
+gethostent(3n) gethostent, gethostbyaddr, gethostbyname, sethostent, endhostent: get network host entry.
+getlog(3f) getlog: get user's login name.
+getlogin(3) getlogin: get login name.
+getnetent(3n) getnetent, getnetbyaddr, getnetbyname, setnetent, endnetent: get network entry.
+getpass(3) getpass: read a password.
+getpid(3f) getpid: get process id.
+getprotoent(3n) getprotoent, getprotobynumber, getprotobyname, setprotoent, endprotoent: get protocol entry.
+getpw(3) getpw: get name from uid.
+getpwent(3) getpwent, getpwuid, getpwnam, setpwent, endpwent: get password file entry.
+gets(3s) gets, fgets: get a string from a stream.
+getservent(3n) getservent, getservbyport, getservbyname, setservent, endservent: get protocol entry.
+getuid(3f) getuid, getgid: get user or group ID of the caller.
+getwd(3) getwd: get current working directory pathname.
+hypot(3m) hypot, cabs: Euclidean distance.
+idate(3f) idate, itime: return date or time in numerical form.
+index(3f) index, rindex, lnblnk, len: tell about character objects.
+inet(3n) inet_addr, inet_network, inet_makeaddr, inet_lnaof, inet_netof: Internet address manipulation routines.
+initgroups(3) initgroups: initialize group access list.
+intro(3) intro: introduction to library functions.
+intro(3f) intro: introduction to FORTRAN library functions.
+intro(3j) intro: summary of job control facilities.
+intro(3m) intro: introduction to mathematical library functions.
+intro(3n) intro: introduction to network library functions.
+intro(3s) stdio: standard buffered input/output package.
+j0(3m) j0, j1, jn, y0, y1, yn: bessel functions.
+jobs(3j) jobs: summary of job control facilities.
+kill(3f) kill: send a signal to a process.
+l3tol(3) l3tol, ltol3: convert between 3-byte integers and long integers.
+link(3f) link: make a link to an existing file.
+loc(3f) loc: return the address of an object.
+malloc(3) malloc, free, realloc, calloc: main memory allocator.
+mktemp(3) mktemp: make a unique file name.
+monitor(3) monitor, monstartup: prepare execution profile.
+nlist(3) nlist: get entries from name list.
+perror(3) perror, sys_errlist, sys_nerr: system error messages.
+perror(3f) perror, gerror, ierrno: get system error messages.
+plot(3x) plot: openpl, erase, label, line, circle, arc, move, cont, point, linemod, space, closepl: graphics interface.
+popen(3s) popen, pclose: initiate I/O to/from a process.
+printf(3s) printf, fprintf, sprintf: formatted output conversion.
+psignal(3) psignal, sys_siglist: system signal messages.
+putc(3f) putc, fputc: write a character to a fortran logical unit.
+putc(3s) putc, putchar, fputc, putw: put character or word on a stream.
+puts(3s) puts, fputs: put a string on a stream.
+qsort(3) qsort: quicker sort.
+qsort(3f) qsort: quick sort.
+rand(3) rand, srand: random number generator.
+rand(3f) rand, drand, irand: return random values.
+random(3) random, srandom: better random number generator
+random(3) initstate, setstate: routines for changing generators.
+range(3f) flmin, flmax, dflmin, dflmax, inmax: return extreme values.
+rcmd(3x) rcmd, rresvport, ruserok: routines for returning a stream to a remote command.
+regex(3) re_comp, re_exec: regular expression handler.
+rexec(3x) rexec: return stream to a remote command.
+scandir(3) scandir: scan a directory.
+scanf(3s) scanf, fscanf, sscanf: formatted input conversion.
+setbuf(3s) setbuf, setbuffer, setlinebuf: assign buffering to a stream.
+setjmp(3) setjmp, longjmp: non-local goto.
+signal(3f) signal: change the action for a signal.
+signal(3j) sigset, signal, sighold, sigignore, sigrelse, sigpause: manage signals.
+sigset(3j) sigset, signal, sighold, sigignore, sigrelse, sigpause: manage signals.
+sin(3m) sin, cos, tan, asin, acos, atan, atan2: trigonometric functions.
+sinh(3m) sinh, cosh, tanh: hyperbolic functions.
+sleep(3) sleep: suspend execution for interval.
+sleep(3f) sleep: sleep for awhile.
+stat(3f) stat, fstat: get file status.
+stdio(3s) stdio: standard buffered input/output package.
+string(3) strcat, strncat, strcmp, strncmp, strcpy, strncpy, strlen, index, rindex: string operations.
+swab(3) swab: swap bytes.
+syslog(3) syslog, openlog, closelog: control system log.
+system(3) system: issue a shell command.
+system(3f) system: execute a unix command.
+termcap(3x) tgetent, tgetnum, tgetflag, tgetstr, tgoto, tputs: terminal independent operation routines.
+time(3f) time, ctime, ltime, gmtime: return system time.
+traper(3f) traper: trap arithmetic errors.
+trapov(3f) trapov: trap and repair floating point overflow.
+ttynam(3f) ttynam, isatty: find name of a terminal port.
+ttyname(3) ttyname, isatty, ttyslot: find name of a terminal.
+ungetc(3s) ungetc: push character back into input stream.
+unlink(3f) unlink: remove a directory entry.
+valloc(3) valloc: aligned memory allocator.
+varargs(3) varargs: variable argument list.
+wait(3f) wait: wait for a process to terminate.
