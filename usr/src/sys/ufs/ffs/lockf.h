@@ -7,14 +7,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lockf.h	7.1 (Berkeley) %G%
+ *	@(#)lockf.h	7.2 (Berkeley) %G%
  */
 
 /*
- * The lockf structure is a kernel structure which contains all the
- * information associated with a byte range lock. The lockf structures
- * are linked into the inode structure. Locks are sorted by the starting
- * byte of the lock for efficiency.
+ * The lockf structure is a kernel structure which contains the information
+ * associated with a byte range lock.  The lockf structures are linked into
+ * the inode structure. Locks are sorted by the starting byte of the lock for
+ * efficiency.
  */
 struct lockf {
 	short	lf_flags;	 /* Lock semantics: F_POSIX, F_FLOCK, F_WAIT */
@@ -27,19 +27,27 @@ struct lockf {
 	struct	lockf *lf_block; /* The list of blocked locks */
 };
 
-/*
- * Maximum length of sleep chains to traverse to try and detect deadlock.
- */
+/* Maximum length of sleep chains to traverse to try and detect deadlock. */
 #define MAXDEPTH 50
 
-#ifdef	KERNEL
-/*
- * Public lock manipulation routines
- */
-extern struct lockf *lf_remove();	/* Remove a lock */
-extern struct lockf *lf_getblock();	/* Return the first blocking lock */
+__BEGIN_DECLS
+void	 lf_addblock __P((struct lockf *, struct lockf *));
+int	 lf_clearlock __P((struct lockf *));
+int	 lf_findoverlap __P((struct lockf *,
+	    struct lockf *, int, struct lockf ***, struct lockf **));
+struct lockf *
+	 lf_getblock __P((struct lockf *));
+int	 lf_getlock __P((struct lockf *, struct flock *));
+int	 lf_setlock __P((struct lockf *));
+void	 lf_split __P((struct lockf *, struct lockf *));
+void	 lf_wakelock __P((struct lockf *));
+__END_DECLS
 
-#ifdef	LOCKF_DEBUG
+#ifdef LOCKF_DEBUG
 extern int lockf_debug;
-#endif	LOCKF_DEBUG
-#endif	KERNEL
+
+__BEGIN_DECLS
+void	lf_print __P((char *, struct lockf *));
+void	lf_printlist __P((char *, struct lockf *));
+__END_DECLS
+#endif
