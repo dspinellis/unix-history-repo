@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)mkpasswd.c	4.1 (Berkeley) 83/12/05";
+static	char *sccsid = "@(#)mkpasswd.c	4.2 (Berkeley) 83/12/20";
 #endif
 
 #include <sys/file.h>
@@ -53,10 +53,10 @@ main(argc, argv)
 			printf("store %s, uid %d\n", pwd->pw_name, pwd->pw_uid);
 		key.dptr = pwd->pw_name;
 		key.dsize = strlen(pwd->pw_name);
-		dbmstore(dp, key, content);
+		dbmstore(dp, key, content, DB_INSERT);
 		key.dptr = (char *)&pwd->pw_uid;
 		key.dsize = sizeof (int);
-		dbmstore(dp, key, content);
+		dbmstore(dp, key, content, DB_INSERT);
 		entries++;
 		if (cp - buf > maxlen)
 			maxlen = cp - buf;
