@@ -1,0 +1,462 @@
+
+
+
+
+
+
+
+                  Release Notes on 386BSD
+                         W. Jolitz
+
+
+_3_8_6_B_S_D _R_e_l_e_a_s_e _0._0:
+
+     This  is 386BSD Release 0.0, the first edition from the
+386BSD project.  It comprises an entire and  complete  UNIX-
+like  operating system for the Intel 80386/486 based IBM PC,
+and is based almost entirely on the NET/2 release  from  the
+University  of  California, which contained much of the ear-
+lier freely redistributable  and  modifiable  386BSD  source
+code  done  by William F. Jolitz and contributed to the Uni-
+versity of California at Berkeley for distribution.
+
+     Originally conceived by Bill and Lynne Jolitz in  1989,
+the  386BSD project is an attempt to foster new research and
+development in operating systems and  networking  technology
+by broadening access to base technology. In cooperation with
+the University of California, an advanced  operating  system
+was  redesigned  by  William  F.  Jolitz  to  work on common
+386-based PC's for use by smaller colleges and other  groups
+that  did  not have the resources to otherwise obtain it. In
+addition, starting with the NET/2 release, this software has
+been released in a form that does not require license agree-
+ments, non-disclosure, or other controls  that  would  limit
+it's use in undergraduate teaching programs.
+
+     Unlike  NET/2,  386BSD  Release  0.0  is a complete and
+operational system, including  binaries  and  an  executable
+installation  system,  but  still  available  under the same
+"freely  redistributable"  terms  of  the   original   NET/2
+release.  Our  forthcoming  book  on the internals of 386BSD
+will complete the picture for educational and research  pro-
+grams  to make use of this technology with students with the
+necessary academic freedom.
+
+     We have been writing a series of articles about  386BSD
+that  have  appeared  in  _D_r. _D_o_b_b_s _J_o_u_r_n_a_l since January of
+1991. Future announcements, and information on 386BSD may be
+found  within  its covers. The DDJ BBS should have copies of
+binary and source code when available. Also, you can contact
+us via the magazine.
+
+_C_o_n_t_e_n_t_s:
+
+     Release 0.0 consists of:
+
+Source Distribution
+     A  collection  of  8  or  10 high-density floppy disks,
+     which is a multi-volume compressed TAR  format  archive
+     of the source language files with which to recreate the
+     system.    When   extracted,    the    files    consume
+
+
+338866BBSSDD RREELLEEAASSEE NNOOTTEESS          11                   MMaarrcchh 11999922
+
+
+
+
+
+
+
+
+
+
+     approximately  31 MB of space. In addition, at least 28
+     MB of space is taken up by  the  binary  files  created
+     when recompiling.
+
+Binary Distribution
+     A  collection of 6 or 8 high-density floppy disks, also
+     in compressed multi-volume  TAR  form,  containing  the
+     executable,  data, and documentation files of a working
+     386BSD  system,  including  C  and  C++  compilers  and
+     libraries.   When  extracted, the files occupy approxi-
+     mately 20 MB of disk space. Note that at least 5 MB  of
+     swap space, plus an operating reserve of another 10% of
+     the total accumulated disk space  mentioned  should  be
+     considered as minimum to operate this system.
+
+Distribution Installation Floppy System
+     A  single  floppy  system is provided, again on a high-
+     density diskette.  This  completely  standalone  system
+     manages  to  allow  a  potential 386/486 based PC to be
+     qualified for use with 386BSD, simply by attempting  to
+     boot it as an ordinary floppy. Once operational, it can
+     be used to configure the PC's hard disk  and  load  the
+     binary  floppy  distribution.  In addition, this floppy
+     provides a means to rescue and repair the  software  on
+     the hard disk in the event of a calamity.
+
+Difference Floppy
+     A  single  360 KB MS-DOS floppy containing all the dif-
+     ferences and new files necessary to make the NET/2 tape
+     operational,  for  those  who already have the tape and
+     wish to "do it themselves". It also  serves  to  illus-
+     trate  just  what  is  necessary to make the NET/2 tape
+     usable and worthwhile.
+
+     Release 0.0 does not contain any proprietary code,  nor
+any  encryption software. It was created from NET/2, GNU and
+other public software, and our creative minds.
+
+_S_c_o_p_e _a_n_d _G_o_a_l_s _o_f _t_h_i_s _R_e_l_e_a_s_e:
+
+     This release was motivated by the fact that  access  to
+386BSD  has not been provided to all interested parties on a
+timely basis by the University or other sources, as  we  had
+originally  intended.   Thus, we have done a minimalist ver-
+sion to demonstrate feasibility, provide accessibility,  and
+assure  our readers and supporters that this project will be
+finished, available to all, and  not  just  appropriated  by
+private  concerns.   Since  it is minimalist by design, many
+features, utilities and other functionality will  be  desir-
+able  to  add,  although the system is complete enough to be
+self-sufficient and self-developing.
+
+
+
+
+338866BBSSDD RREELLEEAASSEE NNOOTTEESS          22                   MMaarrcchh 11999922
+
+
+
+
+
+
+
+
+
+
+     In addition, we have not repaired numerous  known  bugs
+present  -- we have merely attempted to work around them and
+in spite of them. Also, new  subsystems  created  after  the
+NET/2  tape  and contributed to Berkeley have not been added
+back in, because we did not want to blur the distinctions of
+what is required to make NET/2 operational, and because CSRG
+will not allow us access to this contributed work,  although
+other  groups  have  been  allowed  access.  Future releases
+hopefully will remedy these nuisances. We  also  expect  the
+involvement  of  a  wider  community of users will aid us in
+improving future releases of 386BSD.
+
+_D_e_v_i_c_e_s _S_u_p_p_o_r_t_e_d _i_n _t_h_i_s _R_e_l_e_a_s_e:
+
+     This release is intended to support a  minimal  386/486
+SX/DX  ISA(ATBUS)  system,  with  the  traditional  hard and
+floppy disk controller (MFM,ESDI,IDE).  Also, the usual dis-
+play  adapters  (MDA/CGA/VGA/HGC)  are supported, along with
+the communications ports (COM).  Ethernet  controllers  sup-
+ported   are    Western   Digital  8003EB,  8003EBT,  8003S,
+WD8003SBT, 8013EBT, and Novell NE2000. Clones also appear to
+work quite well.  Tape drive support is available for QIC-02
+controllers as well, allowing use of 3M cartridges of QIC-60
+through QIC-150 format.
+
+     As  configured  on  the binary distribution, the system
+requires a floating point coprocessor  (387  of  any  make),
+hard  disk and controller, floppy disk drive (either 5.25 or
+3.5 high density only), and display adapter. If  the  serial
+port  or a Western Digital Ethernet card (port 0x280, IRQ 3,
+iomem 0xd000) is present, the system can make use of  it  as
+well.
+
+     It  is recommended that the system have at least 2MB of
+memory or more, but it will run on much smaller systems to a
+limited  degree  by paging (the C++ compiler uses about 1 MB
+of memory in operation).  A 4 MB system with an 200 MB+  IDE
+disk is a comfortable configuration, although by sharing the
+sources via NFS, networked systems with  40  MB  drives  are
+quite useful.
+
+_M_a_c_h_i_n_e_s _T_e_s_t_e_d:
+
+     At  the  moment,  this software has only been tested on
+the following configurations:
+
+Toshiba laptop clone, 386SX/387SX, 3MB RAM, VGA LCD(Cirrus),
+     Megahertz T2LL Ethernet, Conners CP3100 IDE 100MB drive.
+
+Compaq DeskPro, 386/387, 9MB RAM, Compaq VGA, ESDI Maxtor 8380 drive(type 38),
+     WD8003EBT Ethernet, Compaq QIC-150 cartridge drive.
+
+
+
+
+338866BBSSDD RREELLEEAASSEE NNOOTTEESS          33                   MMaarrcchh 11999922
+
+
+
+
+
+
+
+
+
+
+     Please fill out the enclosed registration form and sur-
+vey so we can add more to this test base list. It is expect-
+ed that all Compaq, Toshiba, Chips and Technology-based, and
+OPTI-based  systems should work with little trouble. See up-
+coming DDJ articles on installation troubles for further in-
+fo.   We  can be contacted for limited help with the system,
+but, realize that this work is currently unfunded and we can
+only devote a tiny amount of time to it. As a hint to fixing
+troubles, defeating options like shadow ram or RAM  BIOS  is
+an excellent place to start.
+
+_I_n_s_t_a_l_l_a_t_i_o_n _P_r_o_c_e_d_u_r_e_s:
+
+     Currently, the system does not coexist with MS-DOS, but
+requires the entire machine. SINCE IT IS STILL  EXPERIMENTAL
+SOFTWARE,  YOU  SHOULD  BE  PREPARED AT ANYTIME TO LOSE DISK
+DRIVE CONTENTS, so you had better save backup dumps  offline
+of any information you wish to be preserved (1 in 100 of you
+will do this, of course, but you were warned).
+
+     First, make a copy of all of  the  diskettes  and  save
+them away. Make many copies of the distribution installation
+diskette, and salt them away in various places, as it is im-
+possible to recover the system without one otherwise.
+
+     The  distribution  installation diskette has predefined
+shell variables that correspond to the device name  for  the
+floppy  drive  ($FD), the raw device name ($RFD), the amount
+of storage ($FTRK) per track (in kilobytes), and the disktab
+entry type ($FT). These are present to parameterize the dif-
+ferences between 3.5 inch and 5.25 inch versions of the boot
+floppy.
+
+     Format  the  drive, if it is not already. Determine the
+geometry (sectors/track, tracks/cylinder, number  of  cylin-
+ders,  etc),  and create a disktab entry describing the disk
+drive in the /etc/disktab file on the floppy.  This  can  be
+done by allowing the floppy to be written to (it defaults to
+disabling writing) by the command:
+
+mount -u $FD /
+
+     You can edit the file with the _e_l_v_i_s editor, a clone of
+the  encumbered  Berkeley _v_i text editor done by Steve Kirk-
+endall.  You may wish to use one of the existing disktab en-
+tries  as  a template for a new entry you are making. Please
+include any disktab entrys you make in the survey form so we
+can  include them in the next release.  Note: after you have
+written the disk, please execute the "sync" command so  that
+the file will be forced back to the diskette.
+
+     Next,  use  the  _d_i_s_k_l_a_b_e_l command to write a bootstrap
+and disk label data structure on the hard disk itself.  This
+
+
+338866BBSSDD RREELLEEAASSEE NNOOTTEESS          44                   MMaarrcchh 11999922
+
+
+
+
+
+
+
+
+
+
+will destroy any information present on the beginning cylin-
+der of the hard disk drive. A sample disklabel command:
+
+disklabel -r -w wd0 cp3100    (label winchester drive 0 as a conners 3100)
+disklabel -r wd0         (display the label on winchester drive 0)
+
+
+     Next, create empty filesystems for the root  (partition
+a  of  the  drive) and usr (partition h) with the _n_e_w_f_s com-
+mand:
+
+newfs wd0a     (root partition high level format)
+newfs wd0h     (usr partition high level format)
+
+
+     Mount the root partition and transfer the  contents  of
+the distribution installation floppy to the hard drive. This
+step frees up the floppy for use in loading the multi-volume
+distribution while running off the hard disk drive:
+
+mount /dev/wd0a /mnt  (associate the mnt directory with the new root filesystem)
+(cd /; tar -cf - .) | (cd /mnt; tar -xf -)   (copy floppy to hard disk)
+sync                          (flush out written blocks)
+
+     Reboot  the  system  by  the  traditional cntrl-alt-del
+three-fingered reset, and  remove  the  floppy  and  set  it
+aside.  The  system  should  now  come  up off the hard disk
+drive. Next, we load the distribution by inserting the first
+floppy (volume 1 of the binary distribution) and typing:
+
+mount /dev/wd0h /usr (make usr filesystem available, as it will also be loaded)
+mr $FTRK $RFD | tar -xzf -  (floppy extract compressed floppy archive)
+
+
+     A prompt will ask for successive floppies to be insert-
+ed into the drive.  At the conclusion,  the  "sync"  command
+should be used, and the system rebooted. The installation is
+now complete, and the same procedures may be  used  at  this
+point to extract the source distribution if desired.
+
+_O_p_e_r_a_t_i_o_n:
+
+     At  the  moment,  386BSD  comes up single user, and re-
+quires manual starting of the system  daemons,  as  well  as
+filesystem  checks. In use, one would minimally wish to type
+after booting:
+
+fsck -p
+mount -a
+update
+/etc/netstart
+
+
+
+
+338866BBSSDD RREELLEEAASSEE NNOOTTEESS          55                   MMaarrcchh 11999922
+
+
+
+
+
+
+
+
+
+
+     This will improve in forthcoming  versions  of  386BSD.
+Be  aware  that  the  user is running as the super-user, and
+care should be taken given the maximum privileges present.
+
+_K_n_o_w_n _b_u_g_s:
+
+     Many bugs and unimplemented portions of the system  ex-
+ist  and  can  be  annoying. The most irritating are the tty
+driver bugs that are  related  to  boundaries  in  the  ring
+buffers,  which cause the input queue to become truncated or
+wrapped, as well as freezing the input queue when a  transi-
+tion  to  RAW  mode  occurs  near a boundary (generally, the
+first time the command  "more"  prompts).  Usually,  hitting
+control-C clears this situation.
+
+     Sometimes,  an  endless  end-of-file  on input from the
+terminal occurs that may require the  system  to  be  reset.
+There  is  a pipe bug, believed to be in the block I/O code,
+that breaks large pipe transfers into ~3  KB  maximum  sized
+chunks.   Occasionally,  a  missing interrupt bug causes the
+system to  jam  waiting  for  an  interrupt  that  has  been
+botched.   Init  does  not handle signals and process groups
+correctly, nor does it support multiuser operation (you  can
+start  up other users by hand, or over the network as incom-
+ing terminal sessions!).  Execve will not run shell scripts,
+nor  will it work with arglists greater than 2 KB.  There is
+no facility for program debugging (e.g.  ptrace).   Raw  DMA
+transfers  to non-page aligned, non-consecutive within 64 KB
+physical boundaries don't work correctly.  The console  ter-
+minal emulator destroys screen contents occasionally.  A re-
+dundant swap free fragment bug is  present  under  intensive
+paging operations, and resource constipation due to hundreds
+of processes on tiny machines does occur.  Operation on less
+than  2MB  may  be  erratic or impossible due to a base page
+memory botch present.
+
+     All of these bugs are understood. Some of the fixes re-
+quire  redesign  while  others require code from the article
+series!, but we are sure more are present.  Bug  fixes  will
+be put into subsequent versions.
+
+_K_e_y _M_i_s_s_i_n_g _U_t_i_l_i_t_i_e_s:
+
+     Among  the  most  annoying  missing utilities are: awk,
+grep, sort, diff, test, and expr.  The utility software  has
+been cudgeled to ignore these for the moment, but eventually
+these must be rectified. All of  the  NET/2  utilities  have
+been  made  to work with 386BSD, including those not present
+in this release due to space considerations. You  will  find
+it  fairly  painless  to  add  software to this base system,
+which is still at heart a full 32-bit POSIX compliant  oper-
+ating system with program development environment.
+
+
+
+338866BBSSDD RREELLEEAASSEE NNOOTTEESS          66                   MMaarrcchh 11999922
+
+
+
+
+
+
+
+
+
+
+     Note  also  that  DES encryption and Kerberos have pur-
+posely been left off the system to allow  for  international
+use, as 386BSD incorporates software (such as NFS) which has
+been done by researchers in other countries and  contributed
+to  Berkeley.  For those international readers who have con-
+sidered obtaining the NET/2 tape from UCB, it might interest
+them  to know that an export license (GTDA) has been granted
+for a version of the NET/2 tape.
+
+_F_u_t_u_r_e
+
+     Your interest, involvement, and support in this project
+and  its  goals will determine the future of 386BSD and suc-
+cessive releases. We would like to take this  much  further,
+but  we  need  considerable assistance of all kinds to allow
+386BSD to grow further. We realize the shortcomings  of  Re-
+lease  0.0,  but  are intensely proud of what we have accom-
+plished in providing you with a chance  to  become  involved
+with a system that has enough tools to develop itself.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+338866BBSSDD RREELLEEAASSEE NNOOTTEESS          77                   MMaarrcchh 11999922
+
+
+

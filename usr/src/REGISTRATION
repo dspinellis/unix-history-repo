@@ -1,0 +1,462 @@
+
+
+
+
+
+
+
+                     386BSD RELEASE 0.0
+                     REGISTRATION FORM
+                         AND SURVEY
+
+
+     As of 1992, William F. Jolitz, the developer of 386BSD,
+will have spent three years working on  this  project,  from
+writing  the  initial 386BSD specification and supplying his
+own equipment to his present completion of the  first  UNEN-
+CUMBERED  SOURCE  BSD  SYSTEM  FOR  THE 386/486.  This first
+release, 386BSD Release 0.0, is based on the BSD  Networking
+2  Release  (June 1991) from the University of California at
+Berkeley, which already included much of the earlier  386BSD
+work that Bill had contributed to the University of Califor-
+nia for distribution to all interested  parties.   In  addi-
+tion,  Bill has made minimal changes to this release to make
+the system bootable and operational (see William  F.  Jolitz
+and  Lynne  Greer  Jolitz, _M_i_s_s_i_n_g _P_i_e_c_e_s, _D_r. _D_o_b_b_s _J_o_u_r_n_a_l
+May-June 1992).
+
+     386BSD Release 0.0 is  intended  by  the  developer  of
+386BSD  to be used for educational and research purposes. As
+such, the developer of this release is making  it  available
+to  the user at no charge, in order to encourage and facili-
+tate its use in research and education.  However, 386BSD has
+been a costly product to develop and maintain, and continues
+to consume enormous resources. As such, the user  may  elect
+to make a contribution to defray the cost of development and
+to demonstrate support of this project.
+
+     Should you with to make  a  contribution,  return  this
+form with your check or money order (suggested contribution:
+$50.00US binary and $100.00US source) to
+
+    Lynne Greer Jolitz
+    386BSD Registration
+    447 61ST Street
+    Oakland, CA. 94609  USA
+
+    +1-510-420-0174 FAX
+    ljolitz@cardio.ucsf.edu
+
+There is no mandatory payment required by the developer  for
+use  of  386BSD Release 0.0, nor will there be any mandatory
+payment required for the  use  of  any  future  releases  of
+386BSD  done  by  the developer.  However, your contribution
+would be greatly appreciated.
+
+     Due to the "free" nature of 386BSD Release 0.0, we can-
+not  provide  "on-demand" support. 386BSD is an experimental
+research system intended  for  exploration  and  study.  The
+inclusion of source code allows the creative and industrious
+student of operating systems to modify, correct, augment and
+
+
+338866BBSSDD RREEGGFFOORRMM                11                   MMaarrcchh 11999922
+
+
+
+
+
+
+
+
+
+
+otherwise  alter the system in any manner desired.  Reliance
+on 386BSD Release 0.0 for other than it's intended  purposes
+is specifically discouraged.
+
+     However,  ample  documentation is readily available and
+should be obtained.  For users who wish  to  understand  the
+386BSD system conceived by William F. Jolitz and Lynne Greer
+Jolitz, and developed by William F. Jolitz, we recommend the
+user  study  written  references such as the _P_o_r_t_i_n_g _U_N_I_X _t_o
+_t_h_e _3_8_6 series (beginning January 1991  _D_r.  _D_o_b_b_s  _J_o_u_r_n_a_l,
+USA  and  beginning  June  1991  _U_N_I_X  _M_a_g_a_z_i_n,  Germany) by
+William F. Jolitz and Lynne Greer Jolitz, as well  as  other
+books on UNIX and the on-line _3_8_6_B_S_D _U_s_e_r _M_a_n_u_a_l before use.
+A book discussing the internals  of  386BSD  by  William  F.
+Jolitz  and  Lynne  Greer  Jolitz  entitled  _3_8_6_B_S_D _f_r_o_m _t_h_e
+_I_n_s_i_d_e-_O_u_t will be available late 1992.
+
+     We do encourage feedback, however, on bug fixes,  prob-
+lems  and  solutions  which  arise during configuration, and
+improvements to 386BSD Release 0.0. These  changes  will  be
+incorporated  back  into the system, and made available once
+again to the 386BSD audience, to further  encourage  use  of
+this system.
+
+     Please  complete  and return this registration form and
+survey via email or regular mail, so we can add you  to  the
+list of 386BSD Release 0.0 users.
+
+
+
+
+    Thank you for your support.
+
+    Lynne Greer Jolitz
+    TeleMuse
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+338866BBSSDD RREEGGFFOORRMM                22                   MMaarrcchh 11999922
+
+
+
+
+
+
+
+
+
+
+____________________________________________________________
+
+
+                     386BSD RELEASE 0.0
+                     REGISTRATION FORM
+                         AND SURVEY
+
+
+     Please complete this registration form and  survey  and
+return it to:
+
+    Lynne Greer Jolitz
+    386BSD Registration
+    447 61ST Street
+    Oakland, CA. 94609  USA
+
+    +1-510-420-0174 FAX
+    ljolitz@cardio.ucsf.edu
+
+Should  you  wish  to  make  a monetary contribution, please
+attach check or money order and return with the registration
+form.
+
+_R_e_g_i_s_t_r_a_t_i_o_n _I_n_f_o_r_m_a_t_i_o_n:
+
+NAME:
+TITLE:
+FIRM:
+ADDRESS:
+COUNTRY:
+PHONE:
+FAX:
+EMAIL:
+
+
+1.   What type of site are you working at?
+
+         college/university
+         research lab
+         commercial
+         individual/consultant
+         other:
+
+
+2.   Do you have Internet access?
+
+3.   Do you work on (commercial/government/university/other)
+     projects?
+
+
+
+
+
+
+
+338866BBSSDD RREEGGFFOORRMM                33                   MMaarrcchh 11999922
+
+
+
+
+
+
+
+
+
+
+_3_8_6_B_S_D _I_n_t_e_r_e_s_t
+
+1.   Where  did   you   first   find   out   about   386BSD?
+     (email/magazine/other)
+
+
+
+
+2.   Did you obtain a copy of the NET/2 release (June 1991)?
+     If yes, what did you find useful?  what  did  you  find
+     lacking?    If   no,   why   not?   (too  expensive/not
+     bootable/not complete/other)
+
+
+
+
+3.   Where did you obtain 386BSD Release 0.0 ? boot  floppy?
+     binary? source?
+
+
+
+
+4.   Do you find the article series of use in learning about
+     386BSD?  What aspect of 386BSD would you like  to  read
+     more  about?  What  technical  areas should we cover in
+     more depth?
+
+
+
+
+_3_8_6_B_S_D _R_e_l_e_a_s_e _0._0 _U_s_a_g_e
+
+1.   What do you intend to use 336BSD Release 0.0 for?
+
+         development system
+         networking/gateway
+         individual research
+         personal work
+         replacement for MS-DOS
+         replacement for other UNIX
+         other:
+
+
+2.   What aspect of 386BSD most interests you?
+
+         source availability
+         binary availability
+         advanced operating system
+         advanced networking
+         other:
+
+
+
+
+
+338866BBSSDD RREEGGFFOORRMM                44                   MMaarrcchh 11999922
+
+
+
+
+
+
+
+
+
+
+3.   Would students be using this system? (yes/no)  If  yes,
+     would  386BSD be integrated into a course or lab study?
+
+
+
+
+4.   What aspects of 386BSD Release 0.0 do you most like?
+
+
+
+
+5.   What aspects of 386BSD Release 0.0 would  you  like  to
+     see improved?
+
+
+
+
+6    Would  you  like  to  help contribute to this effort to
+     facilitate further releases of 386BSD? (Check all  that
+     apply)
+
+         yes - software enhancements to 386BSD
+         yes - hardware loans for new software testing
+         yes - monetary contribution to 386BSD effort (see instructions)
+         yes - other items:
+         no
+
+
+_3_8_6_B_S_D _G_o_a_l_s
+
+     The  developer's  goal  for  386BSD  was  to provide an
+advanced operating system for educational and research  pur-
+poses on an inexpensive PC platform.  In 1990, CSRG expanded
+that goal to encompass an unencumbered release accessible to
+anyone.
+
+1.   Do  you  think  these  goals have now been met with the
+     release of 386BSD Release 0.0? Why or why not?
+
+
+
+
+2.   Do you think 386BSD Release 0.0 is a good idea? Why  or
+     why not?
+
+
+
+
+3.   Do you think that the article series is a good idea?
+
+
+
+
+
+
+338866BBSSDD RREEGGFFOORRMM                55                   MMaarrcchh 11999922
+
+
+
+
+
+
+
+
+
+
+4.   Do you think a book on 386BSD would be a good idea?
+
+
+
+
+_B_o_o_t _F_l_o_p_p_y
+
+1.   What  is  your  PC system configuration? Please be spe-
+     cific, as success can vary with a difference  in  manu-
+     facture date or variation.
+
+         386/486/387:
+         ISA/EISA/SCSI:
+         RAM size:
+         drive(s) type and size:
+         tape(s) type and size:
+         ethernet type:
+         graphics type:
+         serial type:
+         parallel type:
+         other:
+
+
+2.   Did  you  find  the correct disklabel or did you create
+     your own?  If you  created  your  own,  please  include
+     parameters.
+
+
+
+
+3.   Did it find all devices? What devices were not found?
+
+
+
+
+4.   Did  you  try  different  combinations of configuration
+     types? What combinations succeeded?  What  combinations
+     failed?
+
+
+
+
+5.   Shadow  RAM  should be disabled. Did your configuration
+     program allow you to do this? Did you have to alter the
+     configuration program in other ways?
+
+
+
+
+_D_o_w_n_l_o_a_d_i_n_g _t_h_e _S_y_s_t_e_m
+
+1.   What  mechanism did you use to download or transfer the
+     rest of the system? (floppy/tape/network/other)
+
+
+338866BBSSDD RREEGGFFOORRMM                66                   MMaarrcchh 11999922
+
+
+
+
+
+
+
+
+
+
+2.   Were you able to load the system onto the PC?  Did  you
+     have any problems?
+
+
+
+
+3.   After  booting  the  system  off the hard disk, did you
+     encounter any problems?
+
+
+
+
+_B_u_g_s
+
+1.   What bugs have you found in this system? Please  attach
+     any  pertinent  printouts  and  system messages. Please
+     also attach any bug fixes for others to use.
+
+
+
+
+_O_t_h_e_r _C_o_m_m_e_n_t_s
+
+1.   If you  have  any  suggestions  or  comments  regarding
+     386BSD  Release  0.0  or  our writings on this subject,
+     please take a moment and attach them.
+
+
+
+
+
+
+
+Thank you for completing this survey. Your input  will  help
+us in making 386BSD Release 0.0 more accessible and targeted
+to your needs.
+____________________________________________________________
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+338866BBSSDD RREEGGFFOORRMM                77                   MMaarrcchh 11999922
+
+
+
