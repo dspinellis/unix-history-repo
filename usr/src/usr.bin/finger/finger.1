@@ -1,4 +1,4 @@
-.\" Copyright (c) 1980 The Regents of the University of California.
+.\" Copyright (c) 1989 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" Redistribution and use in source and binary forms are permitted
@@ -11,9 +11,9 @@
 .\" from this software without specific prior written permission.
 .\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)finger.1	6.5 (Berkeley) %G%
+.\"	@(#)finger.1	6.6 (Berkeley) %G%
 .\"
 .TH FINGER 1 ""
 .UC 4
@@ -22,83 +22,102 @@ finger \- user information lookup program
 .SH SYNOPSIS
 .B finger
 [
-options
-] name ...
+.B -lmsp
+] [user [@host] ...]
 .SH DESCRIPTION
-By default
+The
 .I finger
-lists the login name, full name, terminal name and write status
-(as a `*' before the terminal name if write permission is denied),
-idle time, login time, and office location and phone number
-(if they are known) for each current UNIX user.
-(Idle time is minutes if it is a single integer, hours and minutes if a ':'
-is present, or days and hours if a 'd' is present.)
+command has two basic output formats providing essentially the same
+information.
 .PP
-A longer format also exists and is used by
+The
+.I -s
+option of
 .I finger
-whenever a list of people's names is given.  (Account names as well as
-first and last names of users are accepted.)
-This format is multi-line, and includes all the information described above
-as well as the user's home
-directory and login shell, any plan which the person has placed in the file
-.I \&.plan
-in their home
-directory, and the project on which they are working from the file
-.I \&.project
-also in the home directory.
+displays the user's login name, real name, terminal name and write
+status (as a ``*'' after the terminal name if write permission is
+denied), idle time, login time, office location and office phone
+number.
+.PP
+Idle time is in minutes if it is a single integer, hours and minutes
+if a ``:'' is present, or days if a ``d'' is present.
+Login time is displayed as month, day, hours and minutes, unless
+more than six months ago, in which case the year is displayed rather
+than the hours and minutes.
+.PP
+The
+.I -l
+option produces a multi-line format displaying all of the information
+described for the
+.I -s
+option as well as the user's home directory, login shell, and the
+contents of the files
+.I ``.plan''
+and
+.I ``.project''
+from the user's home directory.
+.PP
+If idle time is at least a minute and less than a day, it is
+presented in the form ``hh:mm''.
+Idle times greater than a day are presented as ``d day[s] hh:mm''.
+.PP
+If write permission is denied to the device, the phrase ``(messages
+off)'' is appended to the line containing the device name.
+One entry per user is displayed with the
+.IR -l
+option; if a user is logged on multiple times, terminal information
+is repeated once per login.
+.PP
+Additionally,
+.IR -l
+provides information regarding mail arrival and ``last read''
+time for the user.
+.PP
+The
+.I -p
+option prevents
+the
+.I -l
+option of
+.I finger
+from displaying the contents of the ``.plan'' and ``.project''
+files.
+.PP
+Note that some fields may be missing, in either format, if information
+is not available for them.
+.PP
+If no operands are specified,
+.I finger
+will print an entry for each user currently logged into the system.
+If no options are specified,
+.I finger
+defaults to the
+.I -l
+style output if operands are provided, otherwise to the
+.I -s
+style.
+.PP
+.I User
+is usually a login name; however, matching will also be done on the
+users' real names, unless the
+.I -m
+option is supplied.
+All name matching performed by
+.I finger
+is case insensitive.
 .PP
 .I Finger
-may be used to lookup users on a remote machine.  The format is to specify
-the user as ``user@host.''  If the user name is left off, the
-standard format listing is provided on the remote machine.
-.PP
-.I Finger
-options include:
-.TP
-.B \-m
-Match arguments only on user name.
-.TP
-.B \-l
-Force long output format.
-.TP
-.B \-p
-Suppress printing of the
-.I \&.plan
-files
-.TP
-.B \-s
-Force short output format.
-.SH FILES
-.ta 2i
-/etc/utmp	who file
-.br
-/etc/passwd	for users names, offices, ...
-.br
-/usr/adm/lastlog	last login times
-.br
-~/.plan	plans
-.br
-~/.project	projects
+may be used to look up users on a remote machine.
+The format is to specify a
+.I user
+as ``user@host'', or ``@host'', where the default output
+format for the former is the
+.I -l
+style, and the default output format for the latter is the
+.IR -s
+style.
+The
+.I -l
+option is the only option that may be passed to a remote machine.
 .SH "SEE ALSO"
-chfn(1), w(1), who(1)
-.SH AUTHOR
-Earl T. Cohen
-.SH BUGS
-Only the first line of the
-.I .project
-file is printed.
-.PP
-The encoding of the gcos field is UCB dependent \- it knows that an office
-`197MC' is `197M Cory Hall', and that `529BE' is `529B Evans Hall'.
-It also knows that a four digit office phone number should have a ``x2-''
-prepended.
-.PP
-There is no way to pass arguments to the remote machine as
-.I finger
-uses an internet standard port.
-.PP
-A user information data base is in the works and will radically alter
-the way the information that
-.I finger
-uses is stored.  Finger will require extensive modification when
-this is implemented.
+chpass(1), w(1), who(1), getpwent(3)
