@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_inode.c	7.10 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -169,6 +169,7 @@ loop:
 		ip->i_forw = ip;
 		ip->i_back = ip;
 		ip->i_number = 0;
+		ITOV(ip)->v_type = VNON;
 		INSFREE(ip);
 		iunlock(ip);
 		ip->i_flag = 0;
@@ -193,10 +194,11 @@ loop:
 	} else {
 again:
 		for (iq = bdevlisth; iq; iq = iq->i_devlst) {
-			if (dp->di_rdev != ITOV(iq)->v_rdev)
+			vp = ITOV(iq);
+			if (dp->di_rdev != vp->v_rdev)
 				continue;
 			igrab(iq);
-			if (dp->di_rdev != ITOV(iq)->v_rdev) {
+			if (dp->di_rdev != vp->v_rdev) {
 				iput(iq);
 				goto again;
 			}
@@ -207,6 +209,7 @@ again:
 			ip->i_forw = ip;
 			ip->i_back = ip;
 			ip->i_number = 0;
+			ITOV(ip)->v_type = VNON;
 			INSFREE(ip);
 			iunlock(ip);
 			ip->i_flag = 0;
@@ -218,7 +221,6 @@ again:
 			 * disk block.
 			 */
 			ip = iq;
-			vp = ITOV(iq);
 			tdip.di_ic = dp->di_ic;
 			brelse(bp);
 			error = iupdat(ip, &time, &time, 1);
