@@ -1,4 +1,4 @@
-/*	vdreg.h	1.3	86/01/20	*/
+/*	vdreg.h	1.4	86/07/31	*/
 
 /*
  * VDDC (Versabus Direct Disk Controller) definitions.
@@ -10,7 +10,8 @@
 #define	RD		0x80		/* Read Data */
 #define	FTR		0xc0		/* Full Track Read */
 #define	RAS		0x90		/* Read and Scatter */
-#define	C		0xa0		/* Compare */
+#define	RD_RAW		0x600		/* Read unformatted disk sector */
+#define	CMP		0xa0		/* Compare */
 #define	FTC		0xe0		/* Full Track Compare */
 #define	RHDE		0x180		/* Read Header, Data & ECC (not used) */
 #define	WD		0x00		/* Write Data */
@@ -140,6 +141,7 @@
 #define	CCF_STS	0x1		/* Sectors per Track Selectable */
 #define	CCF_EAV	0x2		/* Enable Auto Vector */
 #define	CCF_ERR	0x4		/* Enable Reset Register */
+#define CCF_DER 0x8		/* Disable Error Recovery */
 #define	CCF_XMD	0x60		/* XMD transfer mode (buss size) */
 #define	  XMD_8BIT  0x20	/*   Do only 8 bit transfers */
 #define	  XMD_16BIT 0x40	/*   Do only 16 bit transfers */
@@ -149,6 +151,7 @@
 #define	  BSZ_12WRD 0x100	/*   12 word transfer burst */
 #define	  BSZ_8WRD  0x200	/*   8 word transfer burst */
 #define	  BSZ_4WRD  0x300	/*   4 word transfer burst */
+#define CCF_SEN	0x400		/* Cylinder / track Skew ENable (for format) */
 #define	CCF_ENP	0x1000		/* ENable Parity */
 #define	CCF_EPE	0x2000		/* Enable Parity Errors */
 #define	CCF_EDE	0x10000		/* Error Detection Enable */
@@ -276,6 +279,7 @@ typedef struct {
 	long	nsurfaces;	/* # surfaces */
 	long	nsectors;	/* # sectors */
 	long	slip_sec;	/* # of slip sectors */
+	long	recovery;	/* recovery flags */
 } treset;
 
 /*
@@ -336,6 +340,10 @@ typedef struct {
 	u_short	data_tcf;	/* data transfer control register */
 	u_long	cdr_ccf;	/* controller configuration flags */
 	u_long	sec_size;	/* drive sector size */
+	u_short	cdr_unused0;
+	u_char	cyl_skew;	/* cylinder to cylinder skew factor */
+	u_char	trk_skew;	/* track to track skew factor */
+	u_long	cdr_unused1;
 	u_long	diag_flags;	/* diagnostic flag register */
 	u_long	diag_dump;	/* pointer for diagnostic addresses */
 } cdr;
@@ -347,10 +355,11 @@ typedef struct {
 
 /* drive types */
 #define	XSD	0
-#define	FUJ	1 		/* fujitsu */
+#define	FUJ	1 		/* Fujitsu 160 */
 #define	XFD	2		/* CDC 340Mb Winchester */
 #define	SMD	3		/* CDC 9766 or equivalent */
 #define	FSD	4
+#define	EGL	5		/* Fujitsu Eagle */
 
 /*
  * Drive logical partitions.
@@ -369,17 +378,20 @@ typedef struct {
 	int	rpm;			/* revolutions/minute */
 	int	nbits;			/* bits/track */
 	char	*type_name;		/* drive name */
+	char	*type_descrip;		/* drive description */
 	long	fmt_pat[16];		/* patterns to be used for formatting */
 	par_tab	partition[8];		/* partition tables */
 } fs_tab;
 
 /* physical information for known disk drives.  */
 #ifdef VDGENDATA
-long	vddcaddr[] = { 0xf2000, 0xf2100, 0xf2200, 0xf2300, 0 };
+long	vddcaddr[] =
+  { 0xf2000, 0xf2100, 0xf2200, 0xf2300, 0xf2400, 0xf2500, 0xf2600, 0xf2700, 0 };
 long	vdtimeout = 0;
 
 fs_tab	vdst[] = {
-	{512, 48, 24, 711, 0, 3600, 0,	"xsd",	/* 515 Mb FSD */
+	{512, 48, 24, 711, 0, 3600, 30240,	"xsd",
+	    "515 Mb Control Data Winchester drive",
 		{ 0x0264c993, 0x04c99326, 0x0993264c, 0x13264c98,
 		  0x264c9930, 0x4c993260, 0x993264c0, 0x3264c980,
 		  0x64c99300, 0xc9932600, 0x93264c00, 0x264c9800,
@@ -387,13 +399,25 @@ fs_tab	vdst[] = {
 		{{0,	 30528},	/* xsd0a cyl   0 - 52 */
 		{30528,	 30528},	/* xsd0b cyl  53 - 105 */
 		{61056,	 345600}, 	/* xsd0c cyl 106 - 705 */
-		{0,	 61056}, 	/* xsd0d cyl 709 - 710 (a & b) */
-		{0,	 406656},	/* xsd0e cyl   0 - 705 */
-		{30528,	 376128}, 	/* xsd0f cyl  53 - 705 (b & c) */
-		{61056,	 172800},	/* xsd0g cyl 106 - 405 (1/2 of c) */
-		{233856, 172800}}	/* xsd0h cyl 406 - 705 (1/2 of c) */
+		{118656, 288000}, 	/* xsd0d cyl 206 - 705 */
+		{176256, 230400},	/* xsd0e cyl 306 - 705 */
+		{233856, 172800}, 	/* xsd0f cyl 406 - 705 */
+		{291456, 115200},	/* xsd0g cyl 506 - 705 */
+		{349056, 57600}}	/* xsd0h cyl 606 - 705 */
 	},
-	{512, 64, 10, 823, 0, 3600, 0,	"fuj",	/* 360 Mb Fujitsu */
+	{512, 44, 20, 842, 0, 3961, 27720,	  "egl",
+	     "474 Mb Fujitsu Eagle drive",
+		{ 0x0264c993, 0x04c99326, 0x0993264c, 0x13264c98,
+		  0x264c9930, 0x4c993260, 0x993264c0, 0x3264c980,
+		  0x64c99300, 0xc9932600, 0x93264c00, 0x264c9800,
+		  0x4c993000, 0x99326000, 0x3264c000, 0x54c98000},
+		{{0,	26400},		/* egl0a */
+		{26400,	33000},		/* egl0b */
+		{59400,	308880},	/* egl0c */
+		{0,	367840}}	/* egl0d */
+	},
+	{512, 64, 10, 823, 0, 3600, 40960,	"fuj",	/* 360 Mb Fujitsu */
+	    "360 Mb Fujitsu Winchester drive",
 		{ 0x0264c993, 0x04c99326, 0x0993264c, 0x13264c98,
 		  0x264c9930, 0x4c993260, 0x993264c0, 0x3264c980,
 		  0x64c99300, 0xc9932600, 0x93264c00, 0x264c9800,
@@ -401,13 +425,14 @@ fs_tab	vdst[] = {
 		{{0,	 19200},	/* fuj0a cyl   0 - 59 */
 		{19200,	 24000},	/* fuj0b cyl  60 - 134 */
 		{43200,	 218560}, 	/* fuj0c cyl 135 - 817 */
-		{0,	 43200}, 	/* fuj0d cyl 821 - 822 (a & b) */
-		{0,	 261760},	/* fuj0e cyl   0 - 817 */
-		{19200,	 242560}, 	/* fuj0f cyl   0 - 134 (b & c) */
-		{43200,  109440},	/* fuj0g cyl 135 - 476 (1/2 of c) */
-		{152640, 109120}}	/* fug0h cyl 477 - 817 (1/2 of c) */
+		{79680,	 182080}, 	/* fuj0d cyl 249 - 817 */
+		{116160, 145600},	/* fuj0e cyl 363 - 817 */
+		{152640, 109120}, 	/* fuj0f cyl 477 - 817 */
+		{189120, 72640},	/* fuj0g cyl 591 - 817 */
+		{225600, 36160}}	/* fug0h cyl 705 - 817 */
 	},
-	{512, 32, 24, 711, 0, 3600, 0,	"xfd",	/* 340 Mb FSD */
+	{512, 32, 24, 711, 0, 3600, 20160,	"xfd",	/* 340 Mb FSD */
+	    "340 Mb Control Data Winchester drive",
 		{ 0x0d9b366c, 0x1b366cd8, 0x366cd9b0, 0x6cd9b360,
 		  0xd9b366c0, 0xb366cd80, 0x66cd9b00, 0xcd9b3600,
 		  0x9b366300, 0x366cd800, 0x6cd9b000, 0xd9b36000,
@@ -423,26 +448,30 @@ fs_tab	vdst[] = {
 		{{ 0,	 20352 },	/* xfd0a cyl   0 - 52 */
 		{ 20352, 20352 },	/* xfd0b cyl  53 - 105 */
 		{ 40704, 230400 },	/* xfd0c cyl 106 - 705 */
-		{ 0,	 40704 },	/* xfd0d cyl 709 - 710 (a & b) */
-		{ 0,	 271104 },	/* xfd0e cyl   0 - 705 */
-		{ 20352, 250752 },	/* xfd0f cyl  53 - 705 (b & c) */
-		{ 40704, 115200 },	/* xfd0g cyl 106 - 405 (1/2 of c) */
-		{ 155904,115200 }}	/* xfd0h cyl 406 - 705 (1/2 of c) */
+		{79104,	 192000},	/* xfd0d cyl 206 - 705 */
+		{117504, 153600},	/* xfd0e cyl 306 - 705 */
+		{155904, 115200},	/* xfd0f cyl 406 - 705 */
+		{194304, 76800},	/* xfd0g cyl 506 - 705 */
+		{232704, 38400}}	/* xfd0h cyl 606 - 705 */
 #endif
 	},
-	{512, 32, 19, 823, 0, 3600, 0,	"smd",	/* 300 Mb SMD */
+	{512, 32, 19, 823, 0, 3600, 20160,	"smd",	/* 300 Mb SMD */
+	    "300 Mb Control Data removable media drive",
 		{ 0x0d9b366c, 0x1b366cd8, 0x366cd9b0, 0x6cd9b360,
 		  0xd9b366c0, 0xb366cd80, 0x66cd9b00, 0xcd9b3600,
 		  0x9b366300, 0x366cd800, 0x6cd9b000, 0xd9b36000,
 		  0xb366c000, 0x66cd8000, 0xcd9b0000, 0x9b360000},
-		{{ 0,	 20064},	/* smd0a cyl   0-65 */
-		{ 20064, 13680},	/* smd0b cyl  66-110 */
-		{ 33744, 214928},	/* smd0c cyl 111-817 */
-		{ 248672,1520 },	/* smd0d cyl 818-822 */
-		{ 0,	 248672 },	/* smd0e cyl   0-817 */
-		{ 0,	 250192 }},	/* smd0f cyl   0-822 */
+		{{0,	 20064},	/* smd0a cyl   0-65 */
+		{20064, 13680},		/* smd0b cyl  66-110 */
+		{33744, 214928},	/* smd0c cyl 111-817 */
+		{69616,	 179056},	/* smd0d cyl 229 - 817 */
+		{105488, 143184},	/* smd0e cyl 347 - 817 */
+		{141360, 107312},	/* smd0f cyl 465 - 817 */
+		{177232, 71440},	/* smd0g cyl 583 - 817 */
+		{213104, 35568}}	/* smd0h cyl 701 - 817 */
 	},
-	{512, 32, 10, 823, 0, 3600, 0,	"fsd",	/* 160 Mb FSD */
+	{512, 32, 10, 823, 0, 3600, 20160,	"fsd",	/* 160 Mb FSD */
+	    "160 Mb Control Data Winchester drive",
 		{ 0x0d9b366c, 0x1b366cd8, 0x366cd9b0, 0x6cd9b360,
 		  0xd9b366c0, 0xb366cd80, 0x66cd9b00, 0xcd9b3600,
 		  0x9b366300, 0x366cd800, 0x6cd9b000, 0xd9b36000,
@@ -450,11 +479,11 @@ fs_tab	vdst[] = {
 		{{0,	 9600},		/* fsd0a cyl   0 -  59 */
 		{9600,	 12000},	/* fsd0b cyl  60 - 134 */
 		{21600,	 109280},	/* fsd0c cyl 135 - 817 */
-		{0,	 21600},	/* fsd0d cyl   0 - 134 (a & b) */
-		{0,	 130880},	/* fsd0e cyl   0 - 817 */
-		{9600,	 121280},	/* fsd0f cyl  60 - 817 (b & c) */
-		{21600,  54240},	/* fsd0g cyl 135 - 473 (1/2 of c) */
-		{75840,  55040}}	/* fsd0h cyl 474 - 817 (1/2 of c) */
+		{39840,	 91040},	/* fsd0d cyl 249 - 817 */
+		{58080,	 72800},	/* fsd0e cyl 363 - 817 */
+		{76320,	 54560},	/* fsd0f cyl 477 - 817 */
+		{94560,  36320},	/* fsd0g cyl 591 - 817 */
+		{112800, 18080}}	/* fsd0h cyl 705 - 817 */
 	}
 };
 
