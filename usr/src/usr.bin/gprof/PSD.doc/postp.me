@@ -1,4 +1,4 @@
-.\"	@(#)postp.me	1.15 (Berkeley) %G%
+.\"	@(#)postp.me	1.16 (Berkeley) %G%
 .\"
 .EQ
 delim $$
@@ -28,22 +28,7 @@ Each parent receives some fraction of a child's time.
 Thus time is charged to the
 caller in addition to being charged to the callee.
 .(z
-.TS
-center;
-c c c c c.
-8				9
-
-
-	3		7
-
-
-2		5		6
-
-
-	1		4
-
-
-.TE
+.so postp1.pic
 .ce 2
 Topological ordering
 Figure 1.
@@ -119,44 +104,14 @@ recursive.
 The topologically sorted graph after the cycle is collapsed is
 given in Figure 3.
 .(z
-.TS
-center;
-c c c c c.
-o				o
-
-
-	\(bu		\(bu
-
-
-o		o		o
-
-
-	o		o
-
-
-.TE
+.so postp2.pic
 .ce 2
 Cycle to be collapsed.
 Figure 2.
 .ce 0
 .)z
 .(z
-.TS
-center;
-c c c c c.
-7				8
-
-
-	\fI6\fP		\fI6\fP
-
-
-2		4		5
-
-
-	1		3
-
-
-.TE
+.so postp3.pic
 .ce 2
 Topological numbering after cycle collapsing.
 Figure 3.

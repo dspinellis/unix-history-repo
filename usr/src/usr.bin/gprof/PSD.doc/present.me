@@ -1,4 +1,5 @@
-\"	@(#)present.me	1.11	%G%
+.\"	@(#)present.me	1.12	(Berkeley)	%G%
+.\"
 .sh 1 "Data Presentation"
 .pp
 The data is presented to the user in two different formats.
@@ -101,19 +102,7 @@ Only the outside calls affect the propagation of time.
 .pp
 The following example is a typical fragment of a call graph.
 .(b
-.TS
-center;
-c c c.
-
-\s-1CALLER1\s+1		\s-1CALLER2\s+1
-
-
-	\s-1EXAMPLE\s+1
-
-
-\s-1SUB1\s+1	\s-1SUB2\s+1	\s-1SUB3\s+1
-
-.TE
+.so pres1.pic
 .)b
 The entry in the call graph profile listing for this example is
 shown in Figure 4.
@@ -236,19 +225,7 @@ of the program.
 For purposes of this example suppose that the call graph
 of the output portion of the program has the following structure:
 .(b
-.TS
-center;
-c c c.
-
-\s-1CALC1\s+1	\s-1CALC2\s+1	\s-1CALC3\s+1
-
-
-\s-1FORMAT1\s+1		\s-1FORMAT2\s+1
-
-
-	``\s-1WRITE\s+1''
-
-.TE
+.so pres2.pic
 .)b
 Initially you look through the \fBgprof\fR
 output for the system call ``\s-1WRITE\s+1''.
