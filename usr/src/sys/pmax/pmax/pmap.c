@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	7.7 (Berkeley) %G%
+ *	@(#)pmap.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -803,7 +803,7 @@ pmap_enter(pmap, va, pa, prot, wired)
 				 * just record page as dirty.
 				 */
 				npte = PG_M;
-				mem->clean = TRUE;
+				mem->clean = FALSE;
 			} else
 #ifdef ATTR
 				if ((pmap_attributes[atop(pa - KERNBASE)] &
@@ -908,7 +908,7 @@ pmap_enter(pmap, va, pa, prot, wired)
 	 * NOTE: we only support cache flush for read only text.
 	 */
 	if (prot == (VM_PROT_READ | VM_PROT_EXECUTE))
-		MachFlushICache(MACH_PHYS_TO_UNCACHED(pa), PAGE_SIZE);
+		MachFlushICache(MACH_PHYS_TO_CACHED(pa), PAGE_SIZE);
 
 	if (!pmap->pm_hash) {
 		register pt_entry_t *pte;
