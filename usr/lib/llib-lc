@@ -1,0 +1,106 @@
+	/* LINTLIBRARY */
+#include <stdio.h>
+#include <sgtty.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <time.h>
+int	errno;
+int	alarm(s) unsigned s; { return(s); }
+char	*brk(a) char *a; { return(a); }
+int	chdir(s) char *s; { return(0); }
+int	chmod(s, m) char *s; { return(0); }
+int	chown(s, u, g) char *s; { return(0); }
+int	close(f) { return(0); }
+int	creat(s, m) char *s; { return(0); }
+int	dup(f) { return(f); }
+	/* VARARGS */
+	execl(f, a) char *f, *a; {;}
+	execv(s, v) char *s, *v[]; {;}
+	exit(s) {;}
+int	fork() { return(0); }
+int	fstat(f, b) struct stat *b; { return(0); }
+int	getgid() { return(1); }
+int	getegid() { return(1); }
+int	getpid() { return(1); }
+int	getuid() { return(1); }
+int	geteuid() { return(1); }
+int	gtty(f, b) struct sgttyb *b; { return(0); }
+int	kill(p, s) { return(0); }
+int	link(a, b) char *a, *b; { return(0); }
+long	lseek(f, o, d) long o; { return(0); }
+int	mknod(n, m, a) char *n; { return(0); }
+char	*mktemp(p) char *p; { return(p);}
+int	mount(s, n, f) char *s, *n; { return(0); }
+int	nice(p) { return(0); }
+int	open(f, m) char *f; { return(0); }
+	pause() {;}
+int	pipe(f) int f[2]; { return(0); }
+	profil(b, s, o, i) char *b; {;}
+int	ptrace(r, p, a, d) { return(0); }
+int	read(f, b, l) char *b; { return(l); }
+char	*sbrk(i) { return((char *)0); }
+int	seek(f, o, p) { return(0); }
+int	setgid(g) { return(0); }
+int	setuid(u) { return(0); }
+int	(*signal(c, f))() int (*f)(); { return(f); }
+int	stat(s, b) char *s; struct stat *b; { return(0); }
+char	*strcat(a, b) char *a, *b; { ; }
+int	strcmp(a, b) char *a, *b; { return(1); }
+char	*strcpy(a, b) char *a, *b; { ; }
+int	strlen(s) char *s; { return(1); }
+int	stty(f, b) struct sgttyb *b; { return(0); }
+long	tell(f) { return((long)0); }
+int	system(s) char *s; { return(0); }
+time_t	time(t) time_t *t; { return( 0 );}
+int	unlink(s) char *s; { return(0); }
+int	wait(s) int *s; { return(1); }
+int	write(f, b, l) char *b; { return(l); }
+char	*calloc(n,s) unsigned n, s; { static char c[1]; return(c); }
+char	*malloc(n) unsigned n; {static char c; return(&c);}
+char	*realloc(p, n) char *p; unsigned n; { static char c; return(&c);}
+	free(p) char *p; {;}
+	fclose(f) FILE *f; {return(0);}
+	fflush(f) FILE *f; {return(0);}
+char	*fgets( s, l, f ) char *s; FILE *f; { return(s); }
+FILE	*fopen(s,m) char *s, *m; { return(stdin); }
+FILE	*freopen(s, m, f) char *s, *m; FILE *f; { return(stdin); }
+FILE	*fdopen(fd, m) char *m; { return(stdin);}
+	/* VARARGS */
+	fprintf( f, s ) FILE *f; char *s; {;}
+	fputs(s,f) char *s; FILE *f; {;}
+	fread( p, s, n, f ) char *p; FILE *f; {return(1);}
+	/* VARARGS */
+	fscanf( f, s ) FILE *f; char *s; {return(1);}
+int	fwrite( p, s, n, f ) char *p; FILE *f; {return(0);}
+	intss(){return(1); }
+	/* VARARGS */
+	printf( s ) char *s; {;}
+	rewind(f) FILE *f; {;}
+	/* VARARGS */
+	scanf( f ) char *f; {return(1); }
+	setbuf( f, b ) FILE *f; char *b; {;}
+	/* VARARGS */
+char	*sprintf( s, f ) char *s, *f; { return(s);}
+	/* VARARGS */
+	sscanf( s, f ) char *s, *f; { return(1); }
+	ungetc( c, f ) FILE *f; {  return(c); }
+char	*ctime(c) time_t *c;{ return(""); }
+struct	tm *localtime(c) time_t *c; { return localtime(c); }
+struct	tm *gmtime(c) time_t *c; { return gmtime(c); }
+char	*asctime(t) struct tm *t; { return(""); }
+	abort() {}
+int	abs(i) int i; { return(i); }
+double	atof(s) char *s; { return(1.); }
+char	*crypt(k,s) char *k, *s; { return(""); }
+	setkey(k) char *k; {}
+	encrypt(s, i) char *s; {}
+char	*ecvt(v, n, d, s) double v; int *d, *s; { return(""); }
+char	*fcvt(v, n, d, s) double v; int *d, *s; { return(""); }
+char	*gcvt(v, n, b) double v; char *b; { return(""); }
+	monitor(l, h, b, s, n) int (*l)(), (*h)(); short *b; {}
+	perror(s) char *s; {}
+#include <setjmp.h>
+	setjmp(e) jmp_buf e; { return(0); }
+	sleep(i) unsigned i; {}
+struct	_iobuf _iob[_NFILE];
+char	_ctype_[];
