@@ -5,9 +5,9 @@
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
- * %sccs.include.noredist.c%
+ * %sccs.include.redist.c%
  *
- *	@(#)srt0.c	7.2 (Berkeley) %G%
+ *	@(#)srt0.c	7.3 (Berkeley) %G%
  */
 
 /*
