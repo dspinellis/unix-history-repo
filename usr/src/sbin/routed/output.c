@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)output.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)output.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -69,6 +69,7 @@ supply(dst, flags, ifp)
 	int doinghost = 1, size;
 	int (*output)() = afswitch[dst->sa_family].af_output;
 	int (*sendsubnet)() = afswitch[dst->sa_family].af_sendsubnet;
+	int npackets = 0;
 
 	msg->rip_cmd = RIPCMD_RESPONSE;
 	msg->rip_vers = RIPVERSION;
@@ -100,6 +101,7 @@ again:
 			(*output)(s, flags, dst, size);
 			TRACE_OUTPUT(ifp, dst, size);
 			n = msg->rip_nets;
+			npackets++;
 		}
 		n->rip_dst = rt->rt_dst;
 		n->rip_dst.sa_family = htons(n->rip_dst.sa_family);
@@ -111,7 +113,7 @@ again:
 		base = nethash;
 		goto again;
 	}
-	if (n != msg->rip_nets) {
+	if (n != msg->rip_nets || npackets == 0) {
 		size = (char *)n - packet;
 		(*output)(s, flags, dst, size);
 		TRACE_OUTPUT(ifp, dst, size);
