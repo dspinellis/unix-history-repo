@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)signal.h	5.2 (Berkeley) %G%
+ *	@(#)signal.h	5.3 (Berkeley) %G%
  */
 
 #ifndef _USER_SIGNAL_H
@@ -27,7 +27,6 @@ extern char *sys_siglist[NSIG];
 
 __BEGIN_DECLS
 int	raise __P((int));
-void	(*signal __P((int, void (*) __P((int))))) __P((int));
 #ifndef	_ANSI_SOURCE
 int	kill __P((pid_t, int));
 int	sigaction __P((int, const struct sigaction *, struct sigaction *));
