@@ -1,10 +1,10 @@
-/*	dh.c	4.14	81/02/15	*/
+/*	dh.c	4.15	81/02/16	*/
 
 #include "dh.h"
 #if NDH11 > 0
+#define	DELAY(i)	{ register int j = i; while (--j > 0); }
 /*
  * DH-11 driver
- *
  * DOESNT HANDLE EXTENDED ADDRESS BITS.
  */
 
@@ -21,21 +21,16 @@
 #include "../h/clist.h"
 #include "../h/mx.h"
 
-/* This is to block the clock because we are using the silos */
-/* SHOULD RATHER QUEUE SOFTWARE INTERRUPT AT CLOCK TIME */
-#define	spl5	spl6
-
-#define	UBACVT(x,uban) (cbase[uban] + (short)((x)-(char *)cfree))
+#define	UBACVT(x,uban) (cbase[uban] + ((x)-(char *)cfree))
 
 int	dhcntrlr(), dhslave(), dhrint(), dhxint();
 struct	uba_dinfo *dhinfo[NDH11];
 u_short	dhstd[] = { 0 };
 struct	uba_driver dhdriver =
-	{ dhcntrlr, dhslave, (int (*)())0, 0, 0, dhstd, "dh", dhinfo };
+	{ dhcntrlr, dhslave, 0, 0, dhstd, "dh", dhinfo };
 
 struct	tty dh11[NDH11*16];
 int	dhact;
-int	dhisilo;
 int	ndh11	= NDH11*16;
 int	dhstart();
 int	ttrstrt();
@@ -54,24 +49,32 @@ int	cbase[MAXNUBA];
 #define	OPAR	040
 #define	HDUPLX	040000
 
-#define	MAINT	01000
-#define	IENAB	030100
-#define	NXM	02000
-#define	CLRNXM	0400
-#define	PERROR	010000
-#define	FRERROR	020000
-#define	OVERRUN	040000
-#define	XINT	0100000
-#define	RINT	0100
-#define	SSPEED	7	/* standard speed: 300 baud */
+/* Bits in dhcsr */
+#define	DH_TI	0100000		/* transmit interrupt */
+#define	DH_SI	0040000		/* storage interrupt */
+#define	DH_TIE	0020000		/* transmit interrupt enable */
+#define	DH_SIE	0010000		/* storage interrupt enable */
+#define	DH_MC	0004000		/* master clear */
+#define	DH_NXM	0002000		/* non-existant memory */
+#define	DH_MM	0001000		/* maintenance mode */
+#define	DH_CNI	0000400		/* clear non-existant memory interrupt */
+#define	DH_RI	0000200		/* receiver interrupt */
+#define	DH_RIE	0000100		/* receiver interrupt enable */
+
+#define	DH_IE	(DH_TIE|DH_SIE|DH_RIE)
+
+/* Bits in dhrcr */
+#define	DH_PE	010000		/* parity error */
+#define	DH_FE	020000		/* framing error */
+#define	DH_DO	040000		/* data overrun */
 
 /*
  * DM control bits
  */
-#define	TURNON	03	/* CD lead + line enable */
-#define	TURNOFF	01	/* line enable */
-#define	DTR	02	/* data terminal ready */
-#define	RQS	04	/* request to send */
+#define	DM_ON	03	/* CD lead + line enable */
+#define	DM_OFF	01	/* line enable */
+#define	DM_DTR	02	/* data terminal ready */
+#define	DM_RQS	04	/* request to send */
 
 /*
  * Software copy of last dhbar
@@ -81,42 +84,52 @@ short	dhsar[NDH11];
 struct device
 {
 	union {
-		short	dhcsr;
-		char	dhcsrl;
+		short	dhcsr;		/* control-status register */
+		char	dhcsrl;		/* low byte for line select */
 	} un;
-	short	dhnxch;
-	short	dhlpr;
-	unsigned short	dhcar;
-	short	dhbcr;
-	unsigned short	dhbar;
-	short	dhbreak;
-	short	dhsilo;
+	short	dhrcr;			/* receive character register */
+	short	dhlpr;			/* line parameter register */
+	u_short dhcar;			/* current address register */
+	short	dhbcr;			/* byte count register */
+	u_short	dhbar;			/* buffer active register */
+	short	dhbreak;		/* break control register */
+	short	dhsilo;			/* silo status register */
 };
 
+/*
+ * Routine for configuration to force a dh to interrupt.
+ * Set to transmit at 9600 baud, and cause a transmitter interrupt.
+ */
 dhcntrlr(ui, reg)
 	struct uba_dinfo *ui;
 	caddr_t reg;
 {
-	struct device *dhaddr = (struct device *)reg;
+	register int br, cvec;
+	register struct device *dhaddr = (struct device *)reg;
 	int i;
 
-	dhaddr->un.dhcsr = IENAB;
+	dhaddr->un.dhcsr = DH_TIE;
+	DELAY(5);
+	dhaddr->dhlpr = (B9600 << 10) | (B9600 << 6) | BITS7|PENABLE;
 	dhaddr->dhbcr = -1;
-	dhaddr->dhbar = 1;
 	dhaddr->dhcar = 0;
-	for (i = 0; i < 1000000; i++)
-		;
-	/* we should have had an interrupt */
+	dhaddr->dhbar = 1;
+	DELAY(100000);		/* wait 1/10'th of a sec for interrupt */
 	dhaddr->un.dhcsr = 0;
-	asm("cmpl r10,$0x200;beql 1f;subl2 $4,r10;1:;");
+	if (cvec && cvec != 0x200)
+		cvec -= 4;		/* transmit -> receive */
+	return (1);
 }
 
+/*
+ * Routine called to init slave tables.
+ */
 dhslave(ui, reg, slaveno)
 	struct uba_dinfo *ui;
 	caddr_t reg;
 {
 
-	/* could fill in local tables for the dh here */
+	/* no tables to set up */
 }
 
 /*
@@ -151,16 +164,19 @@ dhopen(dev, flag)
 		dh_ubinfo[ui->ui_ubanum] =
 		    uballoc(ui->ui_ubanum, (caddr_t)cfree,
 			512+NCLIST*sizeof(struct cblock), 0);
-		cbase[ui->ui_ubanum] = (short)dh_ubinfo[ui->ui_ubanum];
+		cbase[ui->ui_ubanum] = dh_ubinfo[ui->ui_ubanum]&0x3ffff;
+	}
+	if ((dhact&(1<<dh)) == 0) {
+		addr->un.dhcsr |= DH_IE;
+		addr->dhsilo = 16;
+		dhact |= (1<<dh);
 	}
 	splx(s);
-	addr->un.dhcsr |= IENAB;
-	dhact |= (1<<dh);
 	if ((tp->t_state&ISOPEN) == 0) {
 		ttychars(tp);
 		if (tp->t_ispeed == 0) {
-			tp->t_ispeed = SSPEED;
-			tp->t_ospeed = SSPEED;
+			tp->t_ispeed = B300;
+			tp->t_ospeed = B300;
 			tp->t_flags = ODDP|EVENP|ECHO;
 		}
 		dhparam(unit);
@@ -187,13 +203,9 @@ dhclose(dev, flag)
 	unit = minor(dev);
 	tp = &dh11[unit];
 	(*linesw[tp->t_line].l_close)(tp);
-	/*
-	 * Turn of the break bit in case somebody did a TIOCSBRK without
-	 * a TIOCCBRK.
-	 */
 	((struct device *)(tp->t_addr))->dhbreak &= ~(1<<(unit&017));
 	if (tp->t_state&HUPCLS || (tp->t_state&ISOPEN)==0)
-		dmctl(unit, TURNOFF, DMSET);
+		dmctl(unit, DM_OFF, DMSET);
 	ttyclose(tp);
 }
 
@@ -234,11 +246,15 @@ dhrint(dh)
 	register struct uba_dinfo *ui;
 	int s;
 
-	s = spl6();	/* see comment in clock.c */
 	ui = dhinfo[dh];
+	if (ui == 0) {
+		printf("stray dhrint %d\n", dh);
+		asm("halt");
+		return;
+	}
 	addr = (struct device *)ui->ui_addr;
 	tp0 = &dh11[dh*16];
-	while ((c = addr->dhnxch) < 0) {	/* char. present */
+	while ((c = addr->dhrcr) < 0) {	/* char. present */
 		tp = tp0 + ((c>>8)&017);
 		if (tp >= &dh11[NDH11*16])
 			continue;
@@ -246,28 +262,23 @@ dhrint(dh)
 			wakeup((caddr_t)tp);
 			continue;
 		}
-		if (c&PERROR)
+		if (c&DH_PE)
 			if ((tp->t_flags&(EVENP|ODDP))==EVENP
 			 || (tp->t_flags&(EVENP|ODDP))==ODDP )
 				continue;
-		if (c&OVERRUN)
+		if (c&DH_DO)
 			printf("O");
-		if (c&FRERROR)		/* break */
+		if (c&DH_FE)		/* break */
 			if (tp->t_flags&RAW)
 				c = 0;	/* null (for getty) */
 			else
-#ifdef IIASA
-				continue;
-#else
 				c = tun.t_intrc;
-#endif
 		if (tp->t_line == NETLDISC) {
 			c &= 0177;
 			BKINPUT(c, tp);
 		} else
 			(*linesw[tp->t_line].l_rint)(c,tp);
 	}
-	splx(s);
 }
 
 /*
@@ -295,10 +306,10 @@ dhioctl(dev, cmd, addr, flag)
 		((struct device *)(tp->t_addr))->dhbreak &= ~(1<<(unit&017));
 		break;
 	case TIOCSDTR:
-		dmctl(unit, DTR|RQS, DMBIS);
+		dmctl(unit, DM_DTR|DM_RQS, DMBIS);
 		break;
 	case TIOCCDTR:
-		dmctl(unit, DTR|RQS, DMBIC);
+		dmctl(unit, DM_DTR|DM_RQS, DMBIC);
 		break;
 	default:
 		u.u_error = ENOTTY;
@@ -320,13 +331,10 @@ dhparam(unit)
 	tp = &dh11[unit];
 	addr = (struct device *)tp->t_addr;
 	s = spl5();
-	addr->un.dhcsrl = (unit&017) | IENAB;
-	/*
-	 * Hang up line?
-	 */
+	addr->un.dhcsrl = (unit&017) | DH_IE;
 	if ((tp->t_ispeed)==0) {
 		tp->t_state |= HUPCLS;
-		dmctl(unit, TURNOFF, DMSET);
+		dmctl(unit, DM_OFF, DMSET);
 		return;
 	}
 	lpar = ((tp->t_ospeed)<<10) | ((tp->t_ispeed)<<6);
@@ -359,15 +367,13 @@ dhxint(dh)
 	register unit;
 	int s;
 
-	s = spl6();	/* block the clock */
 	ui = dhinfo[dh];
 	addr = (struct device *)ui->ui_addr;
-	addr->un.dhcsr &= (short)~XINT;
-	if (addr->un.dhcsr & NXM) {
-		asm("halt");
-		addr->un.dhcsr |= CLRNXM;
-		printf("dh clr NXM\n");
+	if (addr->un.dhcsr & DH_NXM) {
+		addr->un.dhcsr |= DH_CNI;
+		printf("dh%d NXM\n", ui->ui_ctlr);
 	}
+	addr->un.dhcsr &= (short)~DH_TI;
 	sbar = &dhsar[dh];
 	bar = *sbar & ~addr->dhbar;
 	unit = dh * 16; ttybit = 1;
@@ -380,9 +386,10 @@ dhxint(dh)
 			if (tp->t_state&FLUSH)
 				tp->t_state &= ~FLUSH;
 			else {
-				addr->un.dhcsrl = (unit&017)|IENAB;
+				addr->un.dhcsrl = (unit&017)|DH_IE;
 				ndflush(&tp->t_outq,
-				    (int)(short)addr->dhcar-
+				    /* SHOULD PASTE ON 16&17 BITS HERE */
+				    addr->dhcar-
 					UBACVT(tp->t_outq.c_cf,ui->ui_ubanum));
 			}
 			if (tp->t_line)
@@ -391,7 +398,6 @@ dhxint(dh)
 				dhstart(tp);
 		}
 	}
-	splx(s);
 }
 
 /*
@@ -435,7 +441,8 @@ dhstart(tp)
 		}
 	}
 	if (nch) {
-		addr->un.dhcsrl = (unit&017)|IENAB;
+		/* SHOULD PASTE ON BITS 16&17 HERE */
+		addr->un.dhcsrl = (unit&017)|DH_IE;
 		addr->dhcar = UBACVT(tp->t_outq.c_cf, 
 		    dhinfo[dh]->ui_ubanum);
 		addr->dhbcr = -nch;
@@ -450,7 +457,6 @@ out:
 
 /*
  * Stop output on a line.
- * Assume call is made at spl6.
  */
 /*ARGSUSED*/
 dhstop(tp, flag)
@@ -463,40 +469,12 @@ register struct tty *tp;
 	s = spl6();
 	if (tp->t_state & BUSY) {
 		unit = minor(tp->t_dev);
-		addr->un.dhcsrl = (unit&017) | IENAB;
+		addr->un.dhcsrl = (unit&017) | DH_IE;
 		if ((tp->t_state&TTSTOP)==0)
 			tp->t_state |= FLUSH;
 		addr->dhbcr = -1;
 	}
 	splx(s);
-}
-
-int	dhsilo = 16;
-/*
- * Silo control is fixed strategy
- * here, paralleling only option available
- * on DZ-11.
- */
-/*ARGSUSED*/
-dhtimer()
-{
-	register int dh;
-	register struct device *addr;
-	register struct uba_dinfo *ui;
-
-	dh = 0;
-	do {
-		ui = dhinfo[dh];
-		addr = (struct device *)ui->ui_addr;
-		if (dhact & (1<<dh)) {
-			if ((dhisilo & (1<<dh)) == 0) {
-				addr->dhsilo = dhsilo;
-				dhisilo |= 1<<dh;
-			}
-			dhrint(dh);
-		}
-		dh++;
-	} while (dh < NDH11);
 }
 
 /*
@@ -518,19 +496,19 @@ dhreset(uban)
 	dh_ubinfo[uban] = uballoc(uban, (caddr_t)cfree,
 	    512+NCLIST*sizeof (struct cblock), 0);
 	cbase[uban] = dh_ubinfo[uban]&0x3ffff;
-	dhisilo = 0;		/* conservative */
 	dh = 0;
 	for (dh = 0; dh < NDH11; dh++) {
 		ui = dhinfo[dh];
 		if (ui == 0 || ui->ui_alive == 0 || ui->ui_ubanum != uban)
 			continue;
-		((struct device *)ui->ui_addr)->un.dhcsr |= IENAB;
+		((struct device *)ui->ui_addr)->un.dhcsr |= DH_IE;
+		((struct device *)ui->ui_addr)->dhsilo = 16;
 		unit = dh * 16;
 		for (i = 0; i < 16; i++) {
 			tp = &dh11[unit];
 			if (tp->t_state & (ISOPEN|WOPEN)) {
 				dhparam(unit);
-				dmctl(unit, TURNON, DMSET);
+				dmctl(unit, DM_ON, DMSET);
 				tp->t_state &= ~BUSY;
 				dhstart(tp);
 			}
@@ -538,6 +516,14 @@ dhreset(uban)
 		}
 	}
 	dhtimer();
+}
+
+dhtimer()
+{
+	register int dh;
+
+	for (dh = 0; dh < NDH11; dh++)
+		dhrint(dh);
 }
 
 #if DHDM

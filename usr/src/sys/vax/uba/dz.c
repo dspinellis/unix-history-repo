@@ -1,7 +1,8 @@
-/*	dz.c	4.11	%G%	*/
+/*	dz.c	4.12	%G%	*/
 
 #include "dz.h"
 #if NDZ11 > 0
+#define	DELAY(i)	{ register int j = i; while (--j > 0); }
 /*
  *  DZ-11 Driver
  */
@@ -20,48 +21,34 @@
 #include "../h/file.h"
 #include "../h/mx.h"
 
-/*
- * When running dz's using only SAE (silo alarm) on input
- * it is necessary to call dzrint() at clock interrupt time.
- * This is unsafe unless spl5()s in tty code are changed to
- * spl6()s to block clock interrupts.  Note that the dh driver
- * currently in use works the same way as the dz, even though
- * we could try to more intelligently manage its silo.
- * Thus don't take this out if you have no dz's unless you
- * change clock.c and dhtimer().
- *
- * SHOULD RATHER QUEUE SOFTWARE INTERRUPT AT CLOCK TIME.
- */
-#define	spl5	spl6
- 
 int	dzcntrlr(), dzslave(), dzrint();
 struct	uba_dinfo *dzinfo[NDZ11];
 u_short	dzstd[] = { 0 };
 struct	uba_driver dzdriver =
-	{ dzcntrlr, dzslave, (int (*)())0, 0, 0, dzstd, "dz", dzinfo };
+	{ dzcntrlr, dzslave, 0, 0, dzstd, "dz", dzinfo };
 
-#define NDZ 	(NDZ11*8)
+#define	NDZ 	(NDZ11*8)
  
-#define BITS7	020
-#define BITS8	030
-#define TWOSB	040
-#define PENABLE	0100
-#define OPAR	0200
+#define	BITS7	020
+#define	BITS8	030
+#define	TWOSB	040
+#define	PENABLE	0100
+#define	OPAR	0200
 #define	CLR	020		/* Reset dz */
-#define MSE	040		/* Master Scan Enable */
-#define RIE	0100		/* Receiver Interrupt Enable */
+#define	MSE	040		/* Master Scan Enable */
+#define	RIE	0100		/* Receiver Interrupt Enable */
 #define	SAE	010000		/* Silo Alarm Enable */
-#define TIE	040000		/* Transmit Interrupt Enable */
-#define DZ_IEN	(MSE+RIE+TIE+SAE)
-#define PERROR	010000
-#define FRERROR	020000
+#define	TIE	040000		/* Transmit Interrupt Enable */
+#define	DZ_IEN	(MSE+RIE+TIE+SAE)
+#define	PERROR	010000
+#define	FRERROR	020000
 #define	OVERRUN	040000
-#define SSPEED	7		/* std speed = 300 baud */
+#define	SSPEED	7		/* std speed = 300 baud */
 
 #define	dzlpr	dzrbuf
-#define dzmsr	dzbrk
-#define ON	1
-#define OFF	0
+#define	dzmsr	dzbrk
+#define	ON	1
+#define	OFF	0
  
 int	dzstart();
 int	dzxint();
@@ -90,16 +77,16 @@ dzcntrlr(ui, reg)
 	struct uba_dinfo *ui;
 	caddr_t reg;
 {
-	int	i;		/* NB: NOT REGISTER */
-	struct	device *dzaddr = (struct device *)reg;
+	register int br, cvec;
+	register struct device *dzaddr = (struct device *)reg;
 
 	dzaddr->dzcsr = TIE|MSE;
 	dzaddr->dztcr = 1;		/* enable any line */
-	for (i = 0; i < 1000000; i++)
-		;
+	DELAY(100000);
 	dzaddr->dzcsr = CLR;		/* reset everything */
-	asm("cmpl r10,$0x200;beql 1f;subl2 $4,r10;1:;");
-	return(1);
+	if (cvec && cvec != 0x200)
+		cvec -= 4;
+	return (1);
 }
 
 dzslave(ui, reg, slaveno, uban)
@@ -210,42 +197,38 @@ dzrint(dz)
 	register int unit;
 	int s;
  
-	s = spl6();	/* see comment in clock.c */
-	/* as long as we are here, service them all */
-	for (unit = 0; unit < NDZ; unit += 8) {
-		if ((dzact & (1<<(unit>>3))) == 0)
+	if ((dzact & (1<<dz)) == 0)
+		return;
+	unit = dz * 8;
+	dzaddr = dzpdma[unit].p_addr;
+	tp0 = &dz_tty[unit];
+	while ((c = dzaddr->dzrbuf) < 0) {	/* char present */
+		tp = tp0 + ((c>>8)&07);
+		if (tp >= &dz_tty[dz_cnt])
 			continue;
-		dzaddr = dzpdma[unit].p_addr;
-		tp0 = &dz_tty[unit];
-		while ((c = dzaddr->dzrbuf) < 0) {	/* char present */
-			tp = tp0 + ((c>>8)&07);
-			if (tp >= &dz_tty[dz_cnt])
-				continue;
-			if ((tp->t_state & ISOPEN) == 0) {
-				wakeup((caddr_t)&tp->t_rawq);
-				continue;
-			}
-			if (c&FRERROR)
-				/* framing error = break */
-				if (tp->t_flags & RAW)
-					c = 0;		/* null for getty */
-				else
-					c = tun.t_intrc;
-			if (c&OVERRUN)
-				printf("o");
-			if (c&PERROR)	
-				/* parity error */
-				if (((tp->t_flags & (EVENP|ODDP)) == EVENP)
-				  || ((tp->t_flags & (EVENP|ODDP)) == ODDP))
-					continue;
-			if (tp->t_line == NETLDISC) {
-				c &= 0177;
-				BKINPUT(c, tp);
-			} else
-				(*linesw[tp->t_line].l_rint)(c, tp);
+		if ((tp->t_state & ISOPEN) == 0) {
+			wakeup((caddr_t)&tp->t_rawq);
+			continue;
 		}
+		if (c&FRERROR)
+			/* framing error = break */
+			if (tp->t_flags & RAW)
+				c = 0;		/* null for getty */
+			else
+				c = tun.t_intrc;
+		if (c&OVERRUN)
+			printf("o");
+		if (c&PERROR)	
+			/* parity error */
+			if (((tp->t_flags & (EVENP|ODDP)) == EVENP)
+			  || ((tp->t_flags & (EVENP|ODDP)) == ODDP))
+				continue;
+		if (tp->t_line == NETLDISC) {
+			c &= 0177;
+			BKINPUT(c, tp);
+		} else
+			(*linesw[tp->t_line].l_rint)(c, tp);
 	}
-	splx(s);
 }
  
 /*ARGSUSED*/
@@ -317,8 +300,8 @@ dzxint(tp)
 {
 	register struct pdma *dp;
 	register s;
-	s = spl6();	/* block the clock */
  
+	s = spl5();
 	dp = (struct pdma *)tp->t_addr;
 	tp->t_state &= ~BUSY;
 	if (tp->t_state & FLUSH)
@@ -386,7 +369,7 @@ dzstop(tp, flag)
 	register int s;
 
 	dp = (struct pdma *)tp->t_addr;
-	s = spl6();
+	s = spl5();
 	if (tp->t_state & BUSY) {
 		dp->p_end = dp->p_mem;
 		if ((tp->t_state&TTSTOP)==0)
@@ -448,8 +431,10 @@ dzscan()
 
 dztimer()
 {
+	int dz;
 
-	dzrint(0);
+	for (dz = 0; dz < NDZ11; dz++)
+		dzrint(dz);
 }
 
 /*
