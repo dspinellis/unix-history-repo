@@ -1,0 +1,5 @@
+cc -o proc proc.o token.o
+proc >proctab.c
+cc -O -c proctab.c
+cc -O -c freeze.c
+cc -O awk.g.o  awk.lx.o b.o main.o token.o tran.o lib.o run.o parse.o proctab.o freeze.o  -lm -o awk
