@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.65 (Berkeley) %G%
+ *	@(#)sendmail.h	8.66 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.65		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.66		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -112,7 +112,7 @@ struct address
 	char		*q_ruser;	/* real user name, or NULL if q_user */
 	char		*q_host;	/* host name */
 	struct mailer	*q_mailer;	/* mailer to use */
-	u_short		q_flags;	/* status flags, see below */
+	u_long		q_flags;	/* status flags, see below */
 	uid_t		q_uid;		/* user-id of receiver (if known) */
 	gid_t		q_gid;		/* group-id of receiver (if known) */
 	char		*q_home;	/* home dir (local mailer only) */
@@ -126,18 +126,24 @@ struct address
 
 typedef struct address ADDRESS;
 
-# define QDONTSEND	0x0001	/* don't send to this address */
-# define QBADADDR	0x0002	/* this address is verified bad */
-# define QGOODUID	0x0004	/* the q_uid q_gid fields are good */
-# define QPRIMARY	0x0008	/* set from argv */
-# define QQUEUEUP	0x0010	/* queue for later transmission */
-# define QSENT		0x0020	/* has been successfully delivered */
-# define QNOTREMOTE	0x0040	/* not an address for remote forwarding */
-# define QSELFREF	0x0080	/* this address references itself */
-# define QVERIFIED	0x0100	/* verified, but not expanded */
-# define QREPORT	0x0200	/* report this address in return message */
-# define QBOGUSSHELL	0x0400	/* this entry has an invalid shell listed */
-# define QUNSAFEADDR	0x0800	/* address aquired through an unsafe path */
+# define QDONTSEND	0x00000001	/* don't send to this address */
+# define QBADADDR	0x00000002	/* this address is verified bad */
+# define QGOODUID	0x00000004	/* the q_uid q_gid fields are good */
+# define QPRIMARY	0x00000008	/* set from argv */
+# define QQUEUEUP	0x00000010	/* queue for later transmission */
+# define QSENT		0x00000020	/* has been successfully delivered */
+# define QNOTREMOTE	0x00000040	/* address not for remote forwarding */
+# define QSELFREF	0x00000080	/* this address references itself */
+# define QVERIFIED	0x00000100	/* verified, but not expanded */
+# define QREPORT	0x00000200	/* report this addr in return message */
+# define QBOGUSSHELL	0x00000400	/* user has no valid shell listed */
+# define QUNSAFEADDR	0x00000800	/* address aquired via unsafe path */
+# define QPINGONSUCCESS	0x00001000	/* give return on successful delivery */
+# define QPINGONFAILURE	0x00002000	/* give return on failure */
+# define QPINGONDELAY	0x00004000	/* give return on message delay */
+# define QHASRETPARAM	0x00008000	/* RCPT command had RET argument */
+# define QNOBODYRETURN	0x00010000	/* don't return message body */
+# define QRELAYED	0x00020000	/* relayed to non-DSN aware mailer */
 
 # define NULLADDR	((ADDRESS *) NULL)
 # define QPSEUDO	000040	/* only on the list for verification */
@@ -305,6 +311,7 @@ MCI
 #define MCIF_MULTSTAT	0x0100		/* MAIL11V3: handles MULT status */
 #define MCIF_INHEADER	0x0200		/* currently outputing header */
 #define MCIF_CVT8TO7	0x0400		/* convert from 8 to 7 bits */
+#define MCIF_DSN	0x0800		/* DSN extension supported */
 
 /* states */
 #define MCIS_CLOSED	0		/* no traffic on this connection */
@@ -364,6 +371,7 @@ ENVELOPE
 	char		*e_statmsg;	/* stat msg (changes per delivery) */
 	char		*e_msgboundary;	/* MIME-style message part boundary */
 	char		*e_origrcpt;	/* original recipient (one only) */
+	char		*e_envid;	/* envelope id from MAIL FROM: line */
 	time_t		e_dtime;	/* time of last delivery attempt */
 	int		e_ntries;	/* number of delivery attempts */
 	dev_t		e_dfdev;	/* df file's device, for crash recov */

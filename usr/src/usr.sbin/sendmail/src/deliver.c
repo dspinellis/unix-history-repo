@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.102 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.103 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -851,6 +851,7 @@ deliver(e, firstto)
 			giveresponse(rcode, m, NULL, ctladdr, e);
 			if (rcode == EX_OK)
 				to->q_flags |= QSENT;
+			to->q_statdate = curtime();
 			continue;
 		}
 
@@ -1521,9 +1522,11 @@ tryhost:
 		{
 			to->q_flags |= QSENT;
 			e->e_nsent++;
-			if (e->e_receiptto != NULL &&
-			    bitnset(M_LOCALMAILER, m->m_flags))
+			if (bitnset(M_LOCALMAILER, m->m_flags) &&
+			    (e->e_receiptto != NULL ||
+			     bitset(QPINGONSUCCESS, to->q_flags)))
 			{
+				to->q_flags |= QREPORT;
 				fprintf(e->e_xfp, "%s... Successfully delivered\n",
 					to->q_paddr);
 			}
@@ -1589,6 +1592,8 @@ markfailure(e, q, rcode)
 		q->q_flags |= QBADADDR;
 		break;
 	}
+	q->q_statdate = curtime();
+	q->q_statmta = newstr(CurHostName);
 }
 /*
 **  ENDMAILER -- Wait for mailer to terminate.
@@ -2630,4 +2635,56 @@ hostsignature(m, host, e)
 	if (tTd(17, 1))
 		printf("hostsignature(%s) = %s\n", host, s->s_hostsig);
 	return s->s_hostsig;
+}
+/*
+**  SETSTATUS -- set the address status for return messages
+**
+**	Parameters:
+**		a -- the address to set.
+**		msg -- the text of the message, which must be in standard
+**			SMTP form (3 digits, a space, and a message).
+**
+**	Returns:
+**		none.
+*/
+
+setstatus(a, msg)
+	register ADDRESS *a;
+	char *msg;
+{
+	char buf[MAXLINE];
+
+	if (a->q_status != NULL)
+		free(a->q_status);
+	if (strlen(msg) > 4)
+	{
+		register char *p, *q;
+		int parenlev = 0;
+
+		strncpy(buf, msg, 4);
+		p = &buf[4];
+		*p++ = '(';
+		for (q = &msg[4]; *q != NULL; q++)
+		{
+			switch (*q)
+			{
+			  case '(':
+				parenlev++;
+				break;
+
+			  case ')':
+				if (parenlev > 0)
+					parenlev--;
+				else
+					*p++ = '\\';
+				break;
+			}
+			*p++ = *q;
+		}
+		while (parenlev-- >= 0)
+			*p++ = ')';
+		*p++ = '\0';
+		msg = buf;
+	}
+	a->q_status = newstr(msg);
 }

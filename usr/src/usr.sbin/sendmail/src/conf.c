@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.112 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.113 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -539,6 +539,7 @@ switch_map_find(service, maptype, mapreturn)
 		if (lk->actions[__NSW_UNAVAIL] == __NSW_RETURN)
 			mapreturn[MA_TRYAGAIN] |= 1 << svcno;
 		svcno++;
+		lk = lk->next;
 	}
 	return svcno;
 #endif
@@ -547,7 +548,9 @@ switch_map_find(service, maptype, mapreturn)
 	struct svcinfo *svcinfo;
 	int svc;
 
-	svc = getsvc();
+	svcinfo = getsvc();
+	if (svcinfo == NULL)
+		goto punt;
 	if (strcmp(service, "hosts") == 0)
 		svc = SVC_HOSTS;
 	else if (strcmp(service, "aliases") == 0)
@@ -579,8 +582,7 @@ switch_map_find(service, maptype, mapreturn)
 #endif
 
 		  case SVC_LAST:
-			svcno = SVC_PATHSIZE;
-			break;
+			return svcno;
 		}
 	}
 	return svcno;
@@ -625,8 +627,10 @@ switch_map_find(service, maptype, mapreturn)
 		fclose(fp);
 		return svcno;
 	}
+#endif
 
 	/* if the service file doesn't work, use an absolute fallback */
+  punt:
 	if (strcmp(service, "aliases") == 0)
 	{
 		maptype[0] = "files";
@@ -646,7 +650,6 @@ switch_map_find(service, maptype, mapreturn)
 		return svcno;
 	}
 	return -1;
-#endif
 }
 /*
 **  USERNAME -- return the user id of the logged in user.

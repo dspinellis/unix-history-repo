@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.42 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -74,9 +74,11 @@ dropenvelope(e)
 	register ENVELOPE *e;
 {
 	bool queueit = FALSE;
-	bool saveit = bitset(EF_FATALERRS, e->e_flags);
+	bool failure_return = FALSE;
+	bool success_return = FALSE;
 	register ADDRESS *q;
 	char *id = e->e_id;
+	bool return_no, return_yes;
 	char buf[MAXLINE];
 
 	if (tTd(50, 1))
@@ -112,19 +114,46 @@ dropenvelope(e)
 	*/
 
 	e->e_flags &= ~EF_QUEUERUN;
+	return_no = return_yes = FALSE;
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
 		if (bitset(QQUEUEUP, q->q_flags))
 			queueit = TRUE;
-		if (!bitset(QDONTSEND, q->q_flags) &&
-		    bitset(QBADADDR, q->q_flags))
+
+		/* see if a notification is needed */
+		if (bitset(QBADADDR, q->q_flags) &&
+		    bitset(QPINGONFAILURE, q->q_flags))
 		{
+			failure_return = TRUE;
 			if (q->q_owner == NULL &&
 			    strcmp(e->e_from.q_paddr, "<>") != 0)
 				(void) sendtolist(e->e_from.q_paddr, NULL,
 						  &e->e_errorqueue, e);
 		}
+		else if (bitset(QSENT, q->q_flags) &&
+		    bitnset(M_LOCALMAILER, q->q_mailer->m_flags) &&
+		    bitset(QPINGONSUCCESS, q->q_flags))
+		{
+			success_return = TRUE;
+		}
+		else
+			continue;
+
+		/* common code for error returns and return receipts */
+
+		/* test for returning the body */
+		if (!bitset(QHASRETPARAM, q->q_flags))
+		{
+			if (!bitset(EF_NORETURN, e->e_flags))
+				return_yes = TRUE;
+		}
+		else if (bitset(QNOBODYRETURN, q->q_flags))
+			return_no = TRUE;
+		else
+			return_yes = TRUE;
 	}
+	if (return_no && !return_yes)
+		e->e_flags |= EF_NORETURN;
 
 	/*
 	**  See if the message timed out.
@@ -141,7 +170,7 @@ dropenvelope(e)
 		e->e_message = newstr(buf);
 		message(buf);
 		e->e_flags |= EF_CLRQUEUE;
-		saveit = TRUE;
+		failure_return = TRUE;
 		fprintf(e->e_xfp, "Message could not be delivered for %s\n",
 			pintvl(TimeOuts.to_q_return[e->e_timeoutclass], FALSE));
 		fprintf(e->e_xfp, "Message will be deleted from queue\n");
@@ -169,7 +198,7 @@ dropenvelope(e)
 			e->e_message = newstr(buf);
 			message(buf);
 			e->e_flags |= EF_WARNING;
-			saveit = TRUE;
+			failure_return = TRUE;
 		}
 		fprintf(e->e_xfp,
 			"Warning: message still undelivered after %s\n",
@@ -183,15 +212,25 @@ dropenvelope(e)
 		}
 	}
 
+	if (tTd(50, 2))
+		printf("failure_return=%d success_return=%d queueit=%d\n",
+			failure_return, success_return, queueit);
+
 	/*
 	**  Send back return receipts as requested.
 	*/
 
+/*
 	if (e->e_receiptto != NULL && bitset(EF_SENDRECEIPT, e->e_flags)
 	    && !bitset(PRIV_NORECEIPTS, PrivacyFlags))
+*/
+	if (e->e_receiptto == NULL)
+		e->e_receiptto = e->e_from.q_paddr;
+	if (success_return && strcmp(e->e_receiptto, "<>") != 0)
 	{
 		auto ADDRESS *rlist = NULL;
 
+		e->e_flags |= EF_SENDRECEIPT;
 		(void) sendtolist(e->e_receiptto, NULLADDR, &rlist, e);
 		(void) returntosender("Return receipt", rlist, FALSE, e);
 	}
@@ -201,7 +240,7 @@ dropenvelope(e)
 	**  Arrange to send error messages if there are fatal errors.
 	*/
 
-	if (saveit && e->e_errormode != EM_QUIET)
+	if (failure_return && e->e_errormode != EM_QUIET)
 		savemail(e);
 
 	/*
@@ -225,7 +264,8 @@ dropenvelope(e)
 	    bitset(EF_CLRQUEUE, e->e_flags))
 	{
 		if (tTd(50, 1))
-			printf("\n===== Dropping [dq]f%s =====\n\n", e->e_id);
+			printf("\n===== Dropping [dq]f%s (queueit=%d, e_flags=%x) =====\n\n",
+				e->e_id, queueit, e->e_flags);
 		if (e->e_df != NULL)
 			xunlink(e->e_df);
 		xunlink(queuename(e, 'q'));

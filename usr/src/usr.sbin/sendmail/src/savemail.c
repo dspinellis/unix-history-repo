@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.36 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -457,6 +457,8 @@ returntosender(msg, returnq, sendbody, e)
 	SendBody = sendbody;
 	define('g', e->e_from.q_paddr, e);
 	define('u', NULL, e);
+
+	/* initialize error envelope */
 	ee = newenvelope(&errenvelope, e);
 	define('a', "\201b", ee);
 	define('r', "internal", ee);
@@ -505,8 +507,9 @@ returntosender(msg, returnq, sendbody, e)
 		(void) sprintf(buf, "%s.%ld/%s",
 			ee->e_id, curtime(), MyHostName);
 		ee->e_msgboundary = newstr(buf);
-		(void) sprintf(buf, "multipart/mixed; boundary=\"%s\"",
-					ee->e_msgboundary);
+		(void) sprintf(buf,
+			"multipart/report; report-type=delivery-status; boundary=\"%s\"",
+			ee->e_msgboundary);
 		addheader("Content-Type", buf, &ee->e_header);
 	}
 
@@ -661,13 +664,15 @@ errbody(mci, e, separator)
 		{
 			if (printheader)
 			{
-				putline("   ----- The following addresses had delivery problems -----",
+				putline("   ----- The following addresses have delivery notifications -----",
 					mci);
 				printheader = FALSE;
 			}
 			strcpy(buf, q->q_paddr);
 			if (bitset(QBADADDR, q->q_flags))
 				strcat(buf, "  (unrecoverable error)");
+			else if (bitset(QSENT, q->q_flags))
+				strcat(buf, "  (successfully delivered)");
 			else
 				strcat(buf, "  (transient failure)");
 			putline(buf, mci);
@@ -706,21 +711,142 @@ errbody(mci, e, separator)
 	errno = 0;
 
 	/*
+	**  Output machine-readable version.
+	*/
+
+	if (e->e_msgboundary != NULL)
+	{
+		putline("", mci);
+		(void) sprintf(buf, "--%s", e->e_msgboundary);
+		putline(buf, mci);
+		putline("Content-Type: message/delivery-status", mci);
+		putline("", mci);
+
+		/*
+		**  Output per-message information.
+		*/
+
+		/* Original-MTS-Type: is optional */
+
+		/* original envelope id from MAIL FROM: line */
+		if (e->e_parent->e_envid != NULL)
+		{
+			(void) sprintf(buf, "Original-Envelope-Id: %s",
+				e->e_parent->e_envid);
+			putline(buf, mci);
+		}
+
+		/* Final-MTS-Type: is optional (always INET?) */
+
+		/* Final-MTA: seems silly -- this is in the From: line */
+		(void) sprintf(buf, "Final-MTA: %s", MyHostName);
+		putline(buf, mci);
+
+		/*
+		**  Output per-address information.
+		*/
+
+		for (q = e->e_parent->e_sendqueue; q != NULL; q = q->q_next)
+		{
+			register ADDRESS *r;
+
+			if (!bitset(QBADADDR|QREPORT|QRELAYED, q->q_flags))
+				continue;
+			putline("", mci);
+
+			/* Rcpt: -- the name from the RCPT command */
+			for (r = q; r->q_alias != NULL; r = r->q_alias)
+				continue;
+			(void) sprintf(buf, "Rcpt: %s", r->q_paddr);
+			putline(buf, mci);
+
+			/* Action: -- what happened? */
+			if (bitset(QBADADDR, q->q_flags))
+				putline("Action: failed", mci);
+			else if (bitset(QQUEUEUP, q->q_flags))
+				putline("Action: delayed", mci);
+			else if (bitset(QRELAYED, q->q_flags))
+				putline("Action: relayed", mci);
+			else
+				putline("Action: delivered", mci);
+
+			/* Status: -- what _really_ happened? */
+			strcpy(buf, "Status: ");
+			if (q->q_status != NULL)
+				strcat(buf, q->q_status);
+			else if (bitset(QBADADDR, q->q_flags))
+				strcat(buf, "500");
+			else if (bitset(QQUEUEUP, q->q_flags))
+				strcat(buf, "400");
+			else if (bitset(QRELAYED, q->q_flags))
+				strcat(buf, "601");
+			else
+				strcat(buf, "200");
+			putline(buf, mci);
+
+			/* Date: -- fine granularity */
+			if (q->q_statdate == (time_t) 0L)
+				q->q_statdate = curtime();
+			(void) sprintf(buf, "Date: %s",
+				arpadate(ctime(&q->q_statdate)));
+			putline(buf, mci);
+
+			/* Final-Log-Id: -- why isn't this per-message? */
+			(void) sprintf(buf, "Final-Log-Id: %s", e->e_id);
+			putline(buf, mci);
+
+			/* Original-Rcpt: -- passed from on high */
+			if (q->q_orcpt != NULL)
+			{
+				(void) sprintf(buf, "Original-Rcpt: %s",
+					q->q_orcpt);
+				putline(buf, mci);
+			}
+
+			/* Final-Rcpt: -- if through alias */
+			if (q->q_alias != NULL)
+			{
+				(void) sprintf(buf, "Final-Rcpt: %s",
+					q->q_paddr);
+				putline(buf, mci);
+			}
+
+			/* Final-Status: -- same as Status?  XXX */
+
+			/* Remote-MTS-Type: -- always INET?  XXX */
+
+			/* Remote-MTA: -- who was I talking to? */
+			if (q->q_statmta != NULL)
+			{
+				(void) sprintf(buf, "Remote-MTA: %s",
+					q->q_statmta);
+				putline(buf, mci);
+			}
+
+			/* Remote-Rcpt: -- same as Final-Rcpt?  XXX */
+
+			/* Remote-Status: -- same as Final-Status?  XXX */
+		}
+	}
+
+	/*
 	**  Output text of original message
 	*/
 
-	if (bitset(EF_NORETURN, e->e_flags))
+	if (bitset(EF_NORETURN, e->e_parent->e_flags))
 		SendBody = FALSE;
 	putline("", mci);
 	if (e->e_parent->e_df != NULL)
 	{
-		if (SendBody)
-			putline("   ----- Original message follows -----\n", mci);
+		if (e->e_msgboundary == NULL)
+		{
+			if (SendBody)
+				putline("   ----- Original message follows -----\n", mci);
+			else
+				putline("   ----- Message header follows -----\n", mci);
+			(void) fflush(mci->mci_out);
+		}
 		else
-			putline("   ----- Message header follows -----\n", mci);
-		(void) fflush(mci->mci_out);
-
-		if (e->e_msgboundary != NULL)
 		{
 			putline("", mci);
 			(void) sprintf(buf, "--%s", e->e_msgboundary);
