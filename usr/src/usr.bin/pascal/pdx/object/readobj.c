@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)readobj.c 1.5 %G%";
+static char sccsid[] = "@(#)readobj.c 1.6 %G%";
 
 /*
  * Read in the namelist from the obj file.
@@ -17,7 +17,7 @@ static char sccsid[] = "@(#)readobj.c 1.5 %G%";
 #include "mappings/linetab.h"
 #include "objsym.rep"
 
-#define MAXSYMNO 2000
+#define MAXSYMNO 6000
 
 char *objname = "obj";
 
@@ -147,7 +147,7 @@ FILE *fp;
     for (i = 0; i < nlhdr.nsyms; i++) {
 	symno = getw(fp);
 	if (symno >= MAXSYMNO) {
-	    panic("symbol number too large");
+	    panic("symbol number too large (%d)", symno);
 	}
 	sym[symno] = readsym(fp);
     }
