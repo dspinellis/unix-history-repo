@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.20		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.21		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.20		%G%);
+SCCSID(@(#)usersmtp.c	3.21		%G%);
 
 /*
 **  SMTPINIT -- initialize SMTP.
@@ -98,7 +98,7 @@ smtpinit(m, pvp, ctladdr)
 	*/
 
 	expand("$g", buf, &buf[sizeof buf - 1], CurEnv);
-	smtpmessage("MAIL From: %s", canonname(buf));
+	smtpmessage("MAIL From: <%s>", canonname(buf));
 	r = reply();
 	if (r < 0 || REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
@@ -130,7 +130,7 @@ smtprcpt(to)
 	if (SmtpPid < 0)
 		return (SmtpErrstat);
 
-	smtpmessage("RCPT To: %s", canonname(to->q_user));
+	smtpmessage("RCPT To: <%s>", canonname(to->q_user));
 
 	r = reply();
 	if (r < 0 || REPLYTYPE(r) == 4)
