@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: trap.c 1.28 89/09/25$
+ * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.11 (Berkeley) %G%
+ *	@(#)trap.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -65,6 +65,23 @@ char	*trap_type[] = {
 };
 #define	TRAP_TYPES	(sizeof trap_type / sizeof trap_type[0])
 
+/*
+ * Size of various exception stack frames (minus the standard 8 bytes)
+ */
+short	exframesize[] = {
+	FMT0SIZE,	/* type 0 - normal (68020/030/040) */
+	FMT1SIZE,	/* type 1 - throwaway (68020/030/040) */
+	FMT2SIZE,	/* type 2 - normal 6-word (68020/030/040) */
+	-1,		/* type 3 - FP post-instruction (68040) */
+	-1, -1, -1,	/* type 4-6 - undefined */
+	-1,		/* type 7 - access error (68040) */
+	58,		/* type 8 - bus fault (68010) */
+	FMT9SIZE,	/* type 9 - coprocessor mid-instruction (68020/030) */
+	FMTASIZE,	/* type A - short bus fault (68020/030) */
+	FMTBSIZE,	/* type B - long bus fault (68020/030) */
+	-1, -1, -1, -1	/* type C-F - undefined */
+};
+
 #ifdef DEBUG
 int mmudebug = 0;
 #endif
@@ -112,8 +129,9 @@ dopanic:
 		 * that it may need to clean up stack frame.
 		 */
 copyfault:
+		frame.f_stackadj = exframesize[frame.f_format];
+		frame.f_format = frame.f_vector = 0;
 		frame.f_pc = (int) p->p_addr->u_pcb.pcb_onfault;
-		frame.f_stackadj = -1;
 		return;
 
 	case T_BUSERR+USER:	/* bus error */
@@ -148,7 +166,7 @@ copyfault:
 		i = SIGFPE;
 		break;
 
-	case T_FPERR+USER:		/* 68881 exceptions */
+	case T_FPERR+USER:	/* 68881 exceptions */
 	/*
 	 * We pass along the 68881 status register which locore stashed
 	 * in code for us.  Note that there is a possibility that the
@@ -297,7 +315,6 @@ copyfault:
 		int rv;
 		vm_prot_t ftype;
 		extern vm_map_t kernel_map;
-		unsigned nss;
 
 		/*
 		 * It is only a kernel address space fault iff:
@@ -324,29 +341,29 @@ copyfault:
 			goto dopanic;
 		}
 #endif
-		/*
-		 * XXX: rude hack to make stack limits "work"
-		 */
-		nss = 0;
-		if ((caddr_t)va >= vm->vm_maxsaddr && map != kernel_map) {
-			nss = clrnd(btoc(USRSTACK-(unsigned)va));
-			if (nss > btoc(p->p_rlimit[RLIMIT_STACK].rlim_cur)) {
-				rv = KERN_FAILURE;
-				goto nogo;
-			}
-		}
 		rv = vm_fault(map, va, ftype, FALSE);
+		/*
+		 * If this was a stack access we keep track of the maximum
+		 * accessed stack size.  Also, if vm_fault gets a protection
+		 * failure it is due to accessing the stack region outside
+		 * the current limit and we need to reflect that as an access
+		 * error.
+		 */
+		if ((caddr_t)va >= vm->vm_maxsaddr && map != kernel_map) {
+			if (rv == KERN_SUCCESS) {
+				unsigned nss;
+
+				nss = clrnd(btoc(USRSTACK-(unsigned)va));
+				if (nss > vm->vm_ssize)
+					vm->vm_ssize = nss;
+			} else if (rv == KERN_PROTECTION_FAILURE)
+				rv = KERN_INVALID_ADDRESS;
+		}
 		if (rv == KERN_SUCCESS) {
-			/*
-			 * XXX: continuation of rude stack hack
-			 */
-			if (nss > vm->vm_ssize)
-				vm->vm_ssize = nss;
 			if (type == T_MMUFLT)
 				return;
 			goto out;
 		}
-nogo:
 		if (type == T_MMUFLT) {
 			if (p->p_addr->u_pcb.pcb_onfault)
 				goto copyfault;
@@ -502,18 +519,8 @@ done:
 	 * if this is a child returning from fork syscall.
 	 */
 	p = curproc;
-	/*
-	 * XXX the check for sigreturn ensures that we don't
-	 * attempt to set up a call to a signal handler (sendsig) before
-	 * we have cleaned up the stack from the last call (sigreturn).
-	 * Allowing this seems to lock up the machine in certain scenarios.
-	 * What should really be done is to clean up the signal handling
-	 * so that this is not a problem.
-	 */
-#include "sys/syscall.h"
-	if (code != SYS_sigreturn)
-		while (i = CURSIG(p))
-			psig(i);
+	while (i = CURSIG(p))
+		psig(i);
 	p->p_pri = p->p_usrpri;
 	if (want_resched) {
 		/*
@@ -528,9 +535,8 @@ done:
 		setrq(p);
 		p->p_stats->p_ru.ru_nivcsw++;
 		swtch();
-		if (code != SYS_sigreturn)
-			while (i = CURSIG(p))
-				psig(i);
+		while (i = CURSIG(p))
+			psig(i);
 	}
 	if (p->p_stats->p_prof.pr_scale) {
 		int ticks;
