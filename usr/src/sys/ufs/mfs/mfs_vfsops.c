@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vfsops.c	7.2 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -70,6 +70,13 @@ mfs_mount(mp, path, data, ndp)
 	u_int size;
 	int error;
 
+	if (mp->m_flag & M_UPDATE) {
+		ump = VFSTOUFS(mp);
+		fs = ump->um_fs;
+		if (fs->fs_ronly && (mp->m_flag & M_RDONLY) == 0)
+			fs->fs_ronly = 0;
+		return (0);
+	}
 	if (error = copyin(data, (caddr_t)&args, sizeof (struct mfs_args)))
 		return (error);
 	if ((error = bdevvp(NODEV, &devvp)) != 0)
