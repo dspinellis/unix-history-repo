@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_malloc.c	7.30 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.31 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -23,18 +23,21 @@ char *memname[] = INITKMEMNAMES;
 
 #ifdef DIAGNOSTIC
 /*
- * This structure serves two purposes.
- * The first is to provide a set of masks to catch unaligned frees.
- * The second is to provide known text to copy into free objects so
- * that modifications after frees can be detected.
+ * This structure provides a set of masks to catch unaligned frees.
  */
-#define WEIRD_ADDR 0xdeadbeef
-long addrmask[] = { WEIRD_ADDR,
+long addrmask[] = { 0,
 	0x00000001, 0x00000003, 0x00000007, 0x0000000f,
 	0x0000001f, 0x0000003f, 0x0000007f, 0x000000ff,
 	0x000001ff, 0x000003ff, 0x000007ff, 0x00000fff,
 	0x00001fff, 0x00003fff, 0x00007fff, 0x0000ffff,
 };
+
+/*
+ * The WEIRD_ADDR is used as known text to copy into free objects so
+ * that modifications after frees can be detected.
+ */
+#define WEIRD_ADDR	0xdeadbeef
+#define MAX_COPY	32
 
 /*
  * Normally the first word of the structure is used to hold the list
@@ -70,7 +73,8 @@ malloc(size, type, flags)
 	int s;
 	caddr_t va, cp, savedlist;
 #ifdef DIAGNOSTIC
-	int i, copysize;
+	long *end, *lp;
+	int copysize;
 	short savedtype;
 #endif
 #ifdef KMEMSTATS
@@ -95,7 +99,7 @@ malloc(size, type, flags)
 	}
 #endif
 #ifdef DIAGNOSTIC
-	copysize = 1 << indx < sizeof addrmask ? 1 << indx : sizeof addrmask;
+	copysize = 1 << indx < MAX_COPY ? 1 << indx : MAX_COPY;
 #endif
 	if (kbp->kb_next == NULL) {
 		if (size > MAXALLOCSAVE)
@@ -141,7 +145,9 @@ malloc(size, type, flags)
 			 * Copy in known text to detect modification
 			 * after freeing.
 			 */
-			bcopy(addrmask, cp, copysize);
+			end = (long *)&cp[copysize];
+			for (lp = (long *)cp; lp < end; lp++)
+				*lp = WEIRD_ADDR;
 			freep->type = M_FREE;
 #endif /* DIAGNOSTIC */
 			if (cp <= va)
@@ -155,17 +161,17 @@ malloc(size, type, flags)
 #ifdef DIAGNOSTIC
 	freep = (struct freelist *)va;
 	savedtype = freep->type;
-	freep->type = ((struct freelist *)addrmask)->type;
-	freep->next = ((struct freelist *)addrmask)->next;
-	if (bcmp(addrmask, va, copysize)) {
-		copysize >>= 2;
-		for (i = 0; i < copysize && addrmask[i] == ((int *)va)[i]; i++)
+	freep->type = WEIRD_ADDR >> 16;
+	freep->next = (caddr_t)WEIRD_ADDR;
+	end = (long *)&va[copysize];
+	for (lp = (long *)va; lp < end; lp++) {
+		if (*lp == WEIRD_ADDR)
 			continue;
 		printf("%s %d of object 0x%x size %d %s %s (0x%x != 0x%x)\n",
-		    "Data modified on freelist: word", i, va, size,
-		    "previous type", memname[savedtype], ((int *)va)[i],
-		    addrmask[i]);
-		/* panic("malloc: data modified on freelist"); */
+		    "Data modified on freelist: word", lp - (long *)va,
+		    va, size, "previous type", memname[savedtype], *lp,
+		    WEIRD_ADDR);
+		break;
 	}
 	freep->spare0 = 0;
 #endif /* DIAGNOSTIC */
@@ -206,7 +212,7 @@ free(addr, type)
 	int s;
 #ifdef DIAGNOSTIC
 	caddr_t cp;
-	long alloc, copysize;
+	long *end, *lp, alloc, copysize;
 #endif
 #ifdef KMEMSTATS
 	register struct kmemstats *ksp = &kmemstats[type];
@@ -251,18 +257,12 @@ free(addr, type)
 	 * Check for multiple frees. Use a quick check to see if
 	 * it looks free before laboriously searching the freelist.
 	 */
-	copysize = size < sizeof addrmask ? size : sizeof addrmask;
 	if (freep->spare0 == WEIRD_ADDR) {
-		freep->type = ((struct freelist *)addrmask)->type;
-		freep->next = ((struct freelist *)addrmask)->next;
-		if (!bcmp(addrmask, addr, copysize)) {
-			for (cp = kbp->kb_next; cp; cp = *(caddr_t *)cp) {
-				if (addr == cp) {
-					printf("multiply freed item 0x%x\n",
-					    addr);
-					panic("free: duplicated free");
-				}
-			}
+		for (cp = kbp->kb_next; cp; cp = *(caddr_t *)cp) {
+			if (addr != cp)
+				continue;
+			printf("multiply freed item 0x%x\n", addr);
+			panic("free: duplicated free");
 		}
 	}
 	/*
@@ -271,7 +271,10 @@ free(addr, type)
 	 * so we can list likely culprit if modification is detected
 	 * when the object is reallocated.
 	 */
-	bcopy(addrmask, addr, copysize);
+	copysize = size < MAX_COPY ? size : MAX_COPY;
+	end = (long *)&((caddr_t)addr)[copysize];
+	for (lp = (long *)addr; lp < end; lp++)
+		*lp = WEIRD_ADDR;
 	freep->type = type;
 #endif /* DIAGNOSTIC */
 #ifdef KMEMSTATS
