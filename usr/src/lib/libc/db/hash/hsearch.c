@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hsearch.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)hsearch.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -51,11 +51,11 @@ ACTION	action;
 	return(NULL);
     }
 
-    key.data = item.key;
+    key.data = (u_char *)item.key;
     key.size = strlen(item.key) + 1;
 
     if ( action == ENTER ) {
-	val.data = item.data;
+	val.data = (u_char *)item.data;
 	val.size = strlen(item.data) + 1;
 	status = (dbp->put) ( dbp, &key, &val, R_NOOVERWRITE );
 	if ( status ) {
@@ -63,11 +63,11 @@ ACTION	action;
 	} 
     } else {
 	/* FIND */
-	status = (dbp->get) ( dbp, &key, &val );
+	status = (dbp->get) ( dbp, &key, &val, 0 );
 	if ( status ) {
 	    return ( NULL );
 	} else {
-	    item.data = val.data;
+	    item.data = (char *)val.data;
 	}
     }
     retval.key = item.key;
