@@ -1,5 +1,5 @@
-/* @(#)bcopy.s	4.2 %G% */
-/* bcopy(to, from, size) */
+/* @(#)bcopy.s	4.3 %G% */
+/* bcopy(from, to, size) */
 
 #include "DEFS.h"
 
