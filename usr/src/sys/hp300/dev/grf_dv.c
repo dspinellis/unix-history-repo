@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: grf_dv.c 1.1 90/07/09$
+ * from: Utah $Hdr: grf_dv.c 1.10 91/04/02$
  *
- *	@(#)grf_dv.c	7.3 (Berkeley) %G%
+ *	@(#)grf_dv.c	7.4 (Berkeley) %G%
  */
 
 #include "grf.h"
@@ -36,20 +36,41 @@
  */
 dv_init(gp, addr)
 	struct grf_softc *gp;
-	u_char *addr;
+	caddr_t addr;
 {
 	register struct dvboxfb *dbp;
 	struct grfinfo *gi = &gp->g_display;
 	int fboff;
+	extern caddr_t sctopa(), iomap();
 
 	dbp = (struct dvboxfb *) addr;
-	gi->gd_regaddr = (caddr_t) UNIOV(addr);
+	if (ISIIOVA(addr))
+		gi->gd_regaddr = (caddr_t) IIOP(addr);
+	else
+		gi->gd_regaddr = sctopa(vatosc(addr));
 	gi->gd_regsize = 0x20000;
 	gi->gd_fbwidth = (dbp->fbwmsb << 8) | dbp->fbwlsb;
 	gi->gd_fbheight = (dbp->fbhmsb << 8) | dbp->fbhlsb;
-	fboff = (dbp->fbomsb << 8) | dbp->fbolsb;
-	gi->gd_fbaddr = (caddr_t) (*(addr + fboff) << 16);
 	gi->gd_fbsize = gi->gd_fbwidth * gi->gd_fbheight;
+	fboff = (dbp->fbomsb << 8) | dbp->fbolsb;
+	gi->gd_fbaddr = (caddr_t) (*((u_char *)addr + fboff) << 16);
+	if (gi->gd_regaddr >= (caddr_t)DIOIIBASE) {
+		/*
+		 * For DIO II space the fbaddr just computed is the offset
+		 * from the select code base (regaddr) of the framebuffer.
+		 * Hence it is also implicitly the size of the register set.
+		 */
+		gi->gd_regsize = (int) gi->gd_fbaddr;
+		gi->gd_fbaddr += (int) gi->gd_regaddr;
+		gp->g_regkva = addr;
+		gp->g_fbkva = addr + gi->gd_regsize;
+	} else {
+		/*
+		 * For DIO space we need to map the seperate framebuffer.
+		 */
+		gp->g_regkva = addr;
+		gp->g_fbkva = iomap(gi->gd_fbaddr, gi->gd_fbsize);
+	}
 	gi->gd_dwidth = (dbp->dwmsb << 8) | dbp->dwlsb;
 	gi->gd_dheight = (dbp->dwmsb << 8) | dbp->dwlsb;
 	gi->gd_planes = 0;	/* ?? */
@@ -120,7 +141,7 @@ dv_mode(gp, cmd)
 	register struct dvboxfb *dbp;
 	int error = 0;
 
-	dbp = (struct dvboxfb *) IOV(gp->g_display.gd_regaddr);
+	dbp = (struct dvboxfb *) gp->g_regkva;
 	switch (cmd) {
 	case GM_GRFON:
 	  	dbp->dispen = 0x01;

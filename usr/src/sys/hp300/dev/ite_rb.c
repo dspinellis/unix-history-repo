@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: ite_rb.c 1.1 90/07/09$
+ * from: Utah $Hdr: ite_rb.c 1.16 91/01/21$
  *
- *	@(#)ite_rb.c	7.4 (Berkeley) %G%
+ *	@(#)ite_rb.c	7.5 (Berkeley) %G%
  */
 
 #include "ite.h"
@@ -44,9 +44,9 @@ rbox_init(ip)
 
 	/* XXX */
 	if (ip->regbase == 0) {
-		struct grfinfo *gi = &grf_softc[ip - ite_softc].g_display;
-		ip->regbase = IOV(gi->gd_regaddr);
-		ip->fbbase = IOV(gi->gd_fbaddr);
+		struct grf_softc *gp = &grf_softc[ip - ite_softc];
+		ip->regbase = gp->g_regkva;
+		ip->fbbase = gp->g_fbkva;
 	}
 
 	rb_waitbusy(REGADDR);

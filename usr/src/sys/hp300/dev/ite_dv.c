@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: ite_dv.c 1.1 90/07/09$
+ * from: Utah $Hdr: ite_dv.c 1.7 91/01/21$
  *
- *	@(#)ite_dv.c	7.4 (Berkeley) %G%
+ *	@(#)ite_dv.c	7.5 (Berkeley) %G%
  */
 
 #include "ite.h"
@@ -44,9 +44,9 @@ dvbox_init(ip)
 	
 	/* XXX */
 	if (ip->regbase == 0) {
-		struct grfinfo *gi = &grf_softc[ip - ite_softc].g_display;
-		ip->regbase = IOV(gi->gd_regaddr);
-		ip->fbbase = IOV(gi->gd_fbaddr);
+		struct grf_softc *gp = &grf_softc[ip - ite_softc];
+		ip->regbase = gp->g_regkva;
+		ip->fbbase = gp->g_fbkva;
 	}
 
 	dv_reset(REGADDR);

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: grf_gb.c 1.1 90/07/09$
+ * from: Utah $Hdr: grf_gb.c 1.16 91/04/02$
  *
- *	@(#)grf_gb.c	7.3 (Berkeley) %G%
+ *	@(#)grf_gb.c	7.4 (Berkeley) %G%
  */
 
 #include "grf.h"
@@ -46,28 +46,34 @@ u_char crtc_init_data[CRTC_DATA_LENGTH] = {
  */
 gb_init(gp, addr)
 	struct grf_softc *gp;
-	u_char *addr;
+	caddr_t addr;
 {
 	register struct gboxfb *gbp;
 	struct grfinfo *gi = &gp->g_display;
 	u_char *fbp, save;
 	int fboff;
+	extern caddr_t sctopa(), iomap();
 
 	gbp = (struct gboxfb *) addr;
-	gi->gd_regaddr = (caddr_t) UNIOV(addr);
+	if (ISIIOVA(addr))
+		gi->gd_regaddr = (caddr_t) IIOP(addr);
+	else
+		gi->gd_regaddr = sctopa(vatosc(addr));
 	gi->gd_regsize = 0x10000;
 	gi->gd_fbwidth = 1024;		/* XXX */
 	gi->gd_fbheight = 1024;		/* XXX */
-	fboff = (gbp->fbomsb << 8) | gbp->fbolsb;
-	gi->gd_fbaddr = (caddr_t) (*(addr + fboff) << 16);
 	gi->gd_fbsize = gi->gd_fbwidth * gi->gd_fbheight;
+	fboff = (gbp->fbomsb << 8) | gbp->fbolsb;
+	gi->gd_fbaddr = (caddr_t) (*((u_char *)addr + fboff) << 16);
+	gp->g_regkva = addr;
+	gp->g_fbkva = iomap(gi->gd_fbaddr, gi->gd_fbsize);
 	gi->gd_dwidth = 1024;		/* XXX */
 	gi->gd_dheight = 768;		/* XXX */
 	gi->gd_planes = 0;		/* how do we do this? */
 	/*
 	 * The minimal register info here is from the Gatorbox X driver.
 	 */
-	fbp = (u_char *) IOV(gi->gd_fbaddr);
+	fbp = (u_char *) gp->g_fbkva;
 	gbp->write_protect = 0;
 	gbp->interrupt = 4;		/** fb_enable ? **/
 	gbp->rep_rule = 3;		/* GXcopy */
@@ -113,7 +119,7 @@ gb_mode(gp, cmd)
 	struct gboxfb *gbp;
 	int error = 0;
 
-	gbp = (struct gboxfb *) IOV(gp->g_display.gd_regaddr);
+	gbp = (struct gboxfb *) gp->g_regkva;
 	switch (cmd) {
 	case GM_GRFON:
 		gbp->sec_interrupt = 1;
