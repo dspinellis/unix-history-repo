@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fs.h	7.15 (Berkeley) %G%
+ *	@(#)fs.h	7.16 (Berkeley) %G%
  */
 
 /*
@@ -103,10 +103,7 @@ struct csum {
 /*
  * Super block for a file system.
  */
-#define	FS_MAGIC	0x011954
-#define	FSOKAY		0x7c269d38
-struct	fs
-{
+struct fs {
 	struct	fs *fs_link;		/* linked list of file systems */
 	struct	fs *fs_rlink;		/*     used for incore super blocks */
 	daddr_t	fs_sblkno;		/* addr of super-block in filesys */
@@ -180,10 +177,12 @@ struct	fs
 	struct	csum *fs_csp[MAXCSBUFS];/* list of fs_cs info buffers */
 	long	fs_cpc;			/* cyl per cycle in postbl */
 	short	fs_opostbl[16][8];	/* old rotation block list head */
-	long	fs_sparecon[55];	/* reserved for future constants */
-	long	fs_state;		/* validate fs_clean field */
+	long	fs_sparecon[52];	/* reserved for future constants */
+	long	fs_inodefmt;		/* format of on-disk inodes */
+	u_quad_t fs_maxfilesize;	/* maximum representable file size */
 	quad_t	fs_qbmask;		/* ~fs_bmask - for use with quad size */
 	quad_t	fs_qfmask;		/* ~fs_fmask - for use with quad size */
+	long	fs_state;		/* validate fs_clean field */
 	long	fs_postblformat;	/* format of positional layout tables */
 	long	fs_nrpos;		/* number of rotaional positions */
 	long	fs_postbloff;		/* (short) rotation block list head */
@@ -192,6 +191,13 @@ struct	fs
 	u_char	fs_space[1];		/* list of blocks for each rotation */
 /* actually longer */
 };
+/*
+ * Filesystem idetification
+ */
+#define	FS_MAGIC	0x011954	/* the fast filesystem magic number */
+#define	FS_OKAY		0x7c269d38	/* superblock checksum */
+#define FS_42INODEFMT	-1		/* 4.2BSD inode format */
+#define FS_44INODEFMT	2		/* 4.4BSD inode format */
 /*
  * Preference for optimization.
  */
@@ -353,9 +359,9 @@ struct	ocg {
  * modulos and multiplications.
  */
 #define blkoff(fs, loc)		/* calculates (loc % fs->fs_bsize) */ \
-	((loc) & ~(fs)->fs_bmask)
+	((loc) & (fs)->fs_qbmask)
 #define fragoff(fs, loc)	/* calculates (loc % fs->fs_fsize) */ \
-	((loc) & ~(fs)->fs_fmask)
+	((loc) & (fs)->fs_qfmask)
 #define lblktosize(fs, blk)	/* calculates (blk * fs->fs_bsize) */ \
 	((blk) << (fs)->fs_bshift)
 #define lblkno(fs, loc)		/* calculates (loc / fs->fs_bsize) */ \
@@ -363,9 +369,9 @@ struct	ocg {
 #define numfrags(fs, loc)	/* calculates (loc / fs->fs_fsize) */ \
 	((loc) >> (fs)->fs_fshift)
 #define blkroundup(fs, size)	/* calculates roundup(size, fs->fs_bsize) */ \
-	(((size) + (fs)->fs_bsize - 1) & (fs)->fs_bmask)
+	(((size) + (fs)->fs_qbmask) & (fs)->fs_bmask)
 #define fragroundup(fs, size)	/* calculates roundup(size, fs->fs_fsize) */ \
-	(((size) + (fs)->fs_fsize - 1) & (fs)->fs_fmask)
+	(((size) + (fs)->fs_qfmask) & (fs)->fs_fmask)
 #define fragstoblks(fs, frags)	/* calculates (frags / fs->fs_frag) */ \
 	((frags) >> (fs)->fs_fragshift)
 #define blkstofrags(fs, blks)	/* calculates (blks * fs->fs_frag) */ \
