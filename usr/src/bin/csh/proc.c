@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)proc.c	4.13 (Berkeley) 84/08/31";
+static	char *sccsid = "@(#)proc.c	4.14 (Berkeley) 84/11/21";
 
 #include "sh.h"
 #include "sh.dir.h"
@@ -192,9 +192,6 @@ pjwait(pp)
 	int jobflags, reason, omask;
 	int (*old)();
 
-	if (setintr)
-		old = signal(SIGINT, SIG_IGN);
-
 	while (pp->p_pid != pp->p_jobid)
 		pp = pp->p_friends;
 	fp = pp;
@@ -244,8 +241,6 @@ pjwait(pp)
 	if (reason && exiterr)
 		exitstat();
 	pflush(pp);
-	if (setintr)
-		signal(SIGINT, old);
 }
 
 /*
