@@ -1,0 +1,440 @@
+.bp
+.ft B
+.DS C
+Appendix
+.DE
+.ft
+.NH
+Notation
+.PP
+In the following pages syntactic categories are in \fIitalics\fP;
+literals are in \fBbold\fP; material in brackets [\|] is optional.
+.NH
+Tokens
+.PP
+Tokens consist of keywords, identifiers, constants, operators,
+and separators.
+Token separators may be blanks, tabs or comments.
+Newline characters or semicolons separate statements.
+.NH 2
+Comments
+.PP
+Comments are introduced by the characters /* and terminated by
+*/.
+.NH 2
+Identifiers
+.PP
+There are three kinds of identifiers \- ordinary identifiers, array identifiers
+and function identifiers.
+All three types consist of single lower-case letters.
+Array identifiers are followed by square brackets, possibly
+enclosing an expression describing a subscript.
+Arrays are singly dimensioned and may contain up to 2048
+elements.
+Indexing begins at zero so an array may be indexed from 0 to 2047.
+Subscripts are truncated to integers.
+Function identifiers are followed by parentheses, possibly enclosing arguments.
+The three types of identifiers do not conflict;
+a program can have a variable named \fBx\fP,
+an array named \fBx\fP and a function named \fBx\fP, all of which are separate and
+distinct.
+.NH 2
+Keywords
+.PP
+The following are reserved keywords:
+.ft B
+.ta .5i 1.0i
+.nf
+	ibase	if
+	obase	break
+	scale	define
+	sqrt	auto
+	length	return
+	while	quit
+	for
+.fi
+.ft
+.NH 2
+Constants
+.PP
+Constants consist of arbitrarily long numbers
+with an optional decimal point.
+The hexadecimal digits \fBA\fP\-\fBF\fP are also recognized as digits with
+values 10\-15, respectively.
+.NH 1
+Expressions
+.PP
+The value of an expression is printed unless the main
+operator is an assignment.
+Precedence is the same as the order
+of presentation here, with highest appearing first.
+Left or right associativity, where applicable, is
+discussed with each operator.
+.bp
+.NH 2
+Primitive expressions
+.NH 3
+Named expressions
+.PP
+Named expressions are
+places where values are stored.
+Simply stated,
+named expressions are legal on the left
+side of an assignment.
+The value of a named expression is the value stored in the place named.
+.NH 4
+\fIidentifiers\fR
+.PP
+Simple identifiers are named expressions.
+They have an initial value of zero.
+.NH 4
+\fIarray-name\fP\|[\|\fIexpression\fP\|]
+.PP
+Array elements are named expressions.
+They have an initial value of zero.
+.NH 4
+\fBscale\fR, \fBibase\fR and \fBobase\fR
+.PP
+The internal registers
+\fBscale\fP, \fBibase\fP and \fBobase\fP are all named expressions.
+\fBscale\fP is the number of digits after the decimal point to be
+retained in arithmetic operations.
+\fBscale\fR has an initial value of zero.
+\fBibase\fP and \fBobase\fP are the input and output number
+radix respectively.
+Both \fBibase\fR and \fBobase\fR have initial values of 10.
+.NH 3
+Function calls
+.NH 4
+\fIfunction-name\fB\|(\fR[\fIexpression\fR\|[\fB,\|\fIexpression\|\fR.\|.\|.\|]\|]\fB)
+.PP
+A function call consists of a function name followed by parentheses
+containing a comma-separated list of
+expressions, which are the function arguments.
+A whole array passed as an argument is specified by the
+array name followed by empty square brackets.
+All function arguments are passed by
+value.
+As a result, changes made to the formal parameters have
+no effect on the actual arguments.
+If the function terminates by executing a return
+statement, the value of the function is
+the value of the expression in the parentheses of the return
+statement or is zero if no expression is provided
+or if there is no return statement.
+.NH 4
+sqrt\|(\|\fIexpression\fP\|)
+.PP
+The result is the square root of the expression.
+The result is truncated in the least significant decimal place.
+The scale of the result is
+the scale of the expression or the
+value of
+.ft B
+scale,
+.ft
+whichever is larger.
+.NH 4
+length\|(\|\fIexpression\fP\|)
+.PP
+The result is the total number of significant decimal digits in the expression.
+The scale of the result is zero.
+.NH 4
+scale\|(\|\fIexpression\fP\|)
+.PP
+The result is the scale of the expression.
+The scale of the result is zero.
+.NH 3
+Constants
+.PP
+Constants are primitive expressions.
+.NH 3
+Parentheses
+.PP
+An expression surrounded by parentheses is
+a primitive expression.
+The parentheses are used to alter the
+normal precedence.
+.NH 2
+Unary operators
+.PP
+The unary operators
+bind right to left.
+.NH 3
+\-\|\fIexpression\fP
+.PP
+The result is the negative of the expression.
+.NH 3
+++\|\fInamed-expression\fP
+.PP
+The named expression is
+incremented by one.
+The result is the value of the named expression after
+incrementing.
+.NH 3
+\-\-\|\fInamed-expression\fP
+.PP
+The named expression is
+decremented by one.
+The result is the value of the named expression after
+decrementing.
+.NH 3
+\fInamed-expression\fP\|++
+.PP
+The named expression is
+incremented by one.
+The result is the value of the named expression before
+incrementing.
+.NH 3
+\fInamed-expression\fP\|\-\-
+.PP
+The named expression is
+decremented by one.
+The result is the value of the named expression before
+decrementing.
+.NH 2
+Exponentiation operator
+.PP
+The exponentiation operator binds right to left.
+.NH 3
+\fIexpression\fP ^ \fIexpression\fP
+.PP
+The result is the first
+expression raised to the power of the
+second expression.
+The second expression must be an integer.
+If \fIa\fP
+is the scale of the left expression
+and \fIb\fP is the absolute value
+of the right expression,
+then the scale of the result is:
+.PP
+min\|(\|\fIa\(mub\fP,\|max\|(\|\fBscale\fP,\|\fIa\fP\|)\|)
+.NH 2
+Multiplicative operators
+.PP
+The operators *, /, % bind left to right.
+.NH 3
+\fIexpression\fP * \fIexpression\fP
+.PP
+The result is the product
+of the two expressions.
+If \fIa\fP and \fIb\fP are the
+scales of the two expressions,
+then the scale of the result is:
+.PP
+min\|(\|\fIa+b\fP,\|max\|(\|\fBscale\fP,\|\fIa\fP,\|\fIb\fP\|)\|)
+.NH 3
+\fIexpression\fP / \fIexpression\fP
+.PP
+The result is the quotient of the two expressions.
+The scale of the result is the value of \fBscale\fR.
+.NH 3
+\fIexpression\fP % \fIexpression\fP
+.PP
+The % operator produces the remainder of the division
+of the two expressions.
+More precisely,
+\fIa\fP%\fIb\fP is \fIa\fP\-\fIa\fP/\fIb\fP*\fIb\fP.
+.PP
+The scale of the result is the sum of the scale of
+the divisor and the value of
+.ft B
+scale
+.ft
+.NH 2
+Additive operators
+.PP
+The additive operators bind left to right.
+.NH 3
+\fIexpression\fP + \fIexpression\fP
+.PP
+The result is the sum of the two expressions.
+The scale of the result is
+the maximun of the scales of the expressions.
+.NH 3
+\fIexpression\fP \- \fIexpression\fP
+.PP
+The result is the difference of the two expressions.
+The scale of the result is the
+maximum of the scales of the expressions.
+.NH 2
+assignment operators
+.PP
+The assignment operators bind right to left.
+.NH 3
+\fInamed-expression\fP = \fIexpression\fP
+.PP
+This expression results in assigning the value of the expression
+on the right
+to the named expression on the left.
+.NH 3
+\fInamed-expression\fP =+ \fIexpression\fP
+.NH 3
+\fInamed-expression\fP =\- \fIexpression\fP
+.NH 3
+\fInamed-expression\fP =* \fIexpression\fP
+.NH 3
+\fInamed-expression\fP =/ \fIexpression\fP
+.NH 3
+\fInamed-expression\fP =% \fIexpression\fP
+.NH 3
+\fInamed-expression\fP =^ \fIexpression\fP
+.PP
+The result of the above expressions is equivalent
+to ``named expression = named expression OP expression'',
+where OP is the operator after the = sign.
+.NH 1
+Relations
+.PP
+Unlike all other operators, the relational operators
+are only valid as the object of an \fBif\fP, \fBwhile\fP,
+or inside a \fBfor\fP statement.
+.NH 2
+\fIexpression\fP < \fIexpression\fP
+.NH 2
+\fIexpression\fP > \fIexpression\fP
+.NH 2
+\fIexpression\fP <= \fIexpression\fP
+.NH 2
+\fIexpression\fP >= \fIexpression\fP
+.NH 2
+\fIexpression\fP == \fIexpression\fP
+.NH 2
+\fIexpression\fP != \fIexpression\fP
+.NH 1
+Storage classes
+.PP
+There are only two storage classes in BC, global and automatic
+(local).
+Only identifiers that are to be local to a function need be 
+declared with the \fBauto\fP command.
+The arguments to a function
+are local to the function.
+All other identifiers are assumed to be global
+and available to all functions.
+All identifiers, global and local, have initial values
+of zero.
+Identifiers declared as \fBauto\fP are allocated on entry to the function 
+and released on returning from the function.
+They therefore do not retain values between function calls.
+\fBauto\fP arrays are specified by the array name followed by empty square brackets.
+.PP
+Automatic variables in BC do not work in exactly the same way
+as in either C or PL/I.  On entry to a function, the old values of
+the names that appear as parameters and as automatic
+variables are pushed onto a stack.  
+Until return is made from the function, reference to these
+names refers only to the new values.
+.NH 1
+Statements
+.PP
+Statements must be separated by semicolon or newline.
+Except where altered by control statements, execution
+is sequential.
+.NH 2
+Expression statements
+.PP
+When a statement is an expression, unless
+the main operator is an assignment, the value
+of the expression is printed, followed by a newline character.
+.NH 2
+Compound statements
+.PP
+Statements may be grouped together and used when one statement is expected
+by surrounding them with { }.
+.NH 2
+Quoted string statements
+.PP
+"any string"
+.sp .5
+This statement prints the string inside the quotes.
+.NH 2
+If statements
+.sp .5
+\fBif\|(\|\fIrelation\fB\|)\|\fIstatement\fR
+.PP
+The substatement is executed if the relation is true.
+.NH 2
+While statements
+.sp .5
+\fBwhile\|(\|\fIrelation\fB\|)\|\fIstatement\fR
+.PP
+The statement is executed while the relation
+is true.
+The test occurs before each execution of the statement.
+.NH 2
+For statements
+.sp .5
+\fBfor\|(\|\fIexpression\fB; \fIrelation\fB; \fIexpression\fB\|)\|\fIstatement\fR
+.PP
+The for statement is the same as
+.nf
+.ft I
+	first-expression
+	\fBwhile\|(\fPrelation\|\fB) {\fP
+		statement
+		last-expression
+	}
+.ft R
+.fi
+.PP
+All three expressions must be present.
+.NH 2
+Break statements
+.sp .5
+\fBbreak\fP
+.PP
+\fBbreak\fP causes termination of a \fBfor\fP or \fBwhile\fP statement.
+.NH 2
+Auto statements
+.sp .5
+\fBauto \fIidentifier\fR\|[\|\fB,\fIidentifier\fR\|]
+.PP
+The auto statement causes the values of the identifiers to be pushed down.
+The identifiers can be ordinary identifiers or array identifiers.
+Array identifiers are specified by following the array name by empty square
+brackets.
+The auto statement must be the first statement
+in a function definition.
+.NH 2
+Define statements
+.sp .5
+.nf
+\fBdefine(\|\fR[\fIparameter\|\fR[\fB\|,\|\fIparameter\|.\|.\|.\|\fR]\|]\|\fB)\|{\fI
+	statements\|\fB}\fR
+.fi
+.PP
+The define statement defines a function.
+The parameters may
+be ordinary identifiers or array names.
+Array names must be followed by empty square brackets.
+.NH 2
+Return statements
+.sp .5
+\fBreturn\fP
+.sp .5
+\fBreturn(\fI\|expression\|\fB)\fR
+.PP
+The return statement causes termination of a function,
+popping of its auto variables, and
+specifies the result of the function.
+The first form is equivalent to \fBreturn(0)\fR.
+The result of the function is the result of the expression
+in parentheses.
+.NH 2
+Quit
+.PP
+The quit statement stops execution of a BC program and returns
+control to UNIX when it is first encountered.
+Because it is not treated as an executable statement,
+it cannot be used
+in a function definition or in an 
+.ft B
+if, for,
+.ft
+or
+.ft B
+while
+.ft
+statement.
