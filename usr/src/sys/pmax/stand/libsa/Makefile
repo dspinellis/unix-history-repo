@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.1 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 LIB=	sa
 SRCS=	alloc.c bcopy.c bzero.c close.c dev.c disklabel.c getfile.c \
