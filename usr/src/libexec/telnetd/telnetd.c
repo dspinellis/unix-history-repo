@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)telnetd.c	4.29 (Berkeley) %G%";
+static	char sccsid[] = "@(#)telnetd.c	4.30 (Berkeley) %G%";
 #endif
 
 /*
@@ -75,7 +75,7 @@ doit(f, who)
 	int f;
 	struct sockaddr_in *who;
 {
-	char *cp = line, *host, *ntoa();
+	char *cp = line, *host, *inet_ntoa();
 	int i, p, cc, t;
 	struct sgttyb b;
 	struct hostent *hp;
@@ -110,7 +110,7 @@ gotpty:
 	if (hp)
 		host = hp->h_name;
 	else
-		host = ntoa(who->sin_addr);
+		host = inet_ntoa(who->sin_addr);
 	if ((i = fork()) < 0)
 		fatalperror(f, "fork", errno);
 	if (i)
@@ -600,21 +600,4 @@ rmut()
 	line[strlen("/dev/")] = 'p';
 	chmod(line, 0666);
 	chown(line, 0, 0);
-}
-
-/*
- * Convert network-format internet address
- * to base 256 d.d.d.d representation.
- */
-char *
-ntoa(in)
-	struct in_addr in;
-{
-	static char b[18];
-	register char *p;
-
-	p = (char *)&in;
-#define	UC(b)	(((int)b)&0xff)
-	sprintf(b, "%d.%d.%d.%d", UC(p[0]), UC(p[1]), UC(p[2]), UC(p[3]));
-	return (b);
 }
