@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- * @(#)copy.c	7.3 (Berkeley) %G%
+ *	@(#)copy.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -13,13 +13,12 @@
  */
 main()
 {
-	int from, to;
-	char buffer[10240];
-	register int record;
 	extern int errno;
+	register int from, to, record;
+	char buffer[10240];
 
-	from = getdev("From", 0);
-	to = getdev("To", 1);
+	from = getfile("From", 0);
+	to = getfile("To", 1);
 	for (record = 0; ; record++) {
 		register int rcc, wcc;
 
@@ -53,20 +52,4 @@ main()
 	}
 	printf("Copy completed: %d records copied\n", record);
 	/* can't call exit here */
-}
-
-static
-getdev(prompt, mode)
-	char *prompt;
-	int mode;
-{
-	int i;
-	char buf[100];
-
-	do {
-		printf("%s: ", prompt);
-		gets(buf);
-		i = open(buf, mode);
-	} while (i <= 0);
-	return (i);
 }
