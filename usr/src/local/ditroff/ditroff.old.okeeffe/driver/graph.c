@@ -1,4 +1,4 @@
-/* graph.c	1.3	83/07/05
+/* graph.c	1.4	83/07/08
  *
  *	This file contains the functions for producing the graphics
  *   images in the varian/versatec drivers for ditroff.
@@ -12,6 +12,15 @@
 
 #define TRUE	1
 #define FALSE	0
+				/* imports from dver.c */
+#define  hmot(n)	hpos += n;
+#define  vmot(n)	vgoto(vpos + n);
+
+extern int hpos;
+extern int vpos;
+extern vgoto();
+extern point();
+
 #define MAXPOINTS 200	/* number of points legal for a curve */
 
 #define SOLID -1	/* line styles:  these are used as bit masks to */
@@ -22,21 +31,21 @@
 				/* constants... */
 #define  pi		3.14159265358979324
 #define  log2_10	3.3219280948873623
-				/* imports from dver.c */
-#define  hmot(n)	hpos += n;
-#define  vmot(n)	vgoto(vpos + n);
-
-extern int hpos;
-extern int vpos;
-extern vgoto();
-extern point();
-
 
 
 int	linethickness = 3;	/* number of pixels wide to make lines */
 int	linmod = SOLID;		/* type of line (SOLID, DOTTED, DASHED...) */
 
 
+
+/*----------------------------------------------------------------------------
+ * Routine:	drawline (horizontal_motion, vertical_motion)
+ *
+ * Results:	Draws a line of "linethickness" width and "linmod" style
+ *		from current (hpos, vpos) to (hpos + dh, vpos + dv).
+ *
+ * Side Efct:	Resulting position is at end of line (hpos + dh, vpos + dv)
+ *----------------------------------------------------------------------------*/
 
 drawline(dh, dv)
 register int dh;
@@ -48,28 +57,37 @@ register int dv;
 }
 
 
+/*----------------------------------------------------------------------------
+ * Routine:	drawcirc (diameter)
+ *
+ * Results:	Draws a circle with leftmost point at current (hpos, vpos)
+ *		with the given diameter d.
+ *
+ * Side Efct:	Resulting position is at (hpos + diameter, vpos)
+ *----------------------------------------------------------------------------*/
+
 drawcirc(d)
 register int d;
-{
+{			/* 0.0 is the angle to sweep the arc: = full circle */
     HGArc (hpos + d/2, vpos, hpos, vpos, 0.0);
     hmot (d);			/* new postion is the right of the circle */
 }
 
 
-/*******************************************************************************
- *
+/*----------------------------------------------------------------------------
  * Routine:	drawellip (horizontal_diameter, vertical_diameter)
  *
- *	This routine draws regular ellipses given the major diagonals.
- *	It does so by drawing many small lines, every other pixel.
+ * Results:	Draws regular ellipses given the major "diameters."  It does
+ *		so by drawing many small lines, every other pixel.  The ellipse
+ *		formula:  ((x-x0)/hrad)**2 + ((y-y0)/vrad)**2 = 1 is used,
+ *		converting to:  y = y0 +- vrad * sqrt(1 - ((x-x0)/hrad)**2).
+ *		The line segments are duplicated (mirrored) on either side of
+ *		the horizontal "diameter".
  *
- *	The ellipse formula:  ((x-x0)/hrad)**2 + ((y-y0)/vrad)**2 = 1
- *	is used, converting to y = f(x) and duplicating the lines about
- *	the vertical axis.
+ * Side Efct:	Resulting position is at (hpos + hd, vpos).
  *
- * Results:	The current position is at the rightmost point of the ellipse
- *
- ******************************************************************************/
+ * Bugs:	Odd numbered horizontal axes are rounded up to even numbers.
+ *----------------------------------------------------------------------------*/
 
 drawellip(hd, vd)
 register int hd;
@@ -83,7 +101,7 @@ int vd;
     int k2, oldy1, oldy2;	/* oldy? are last y points drawn to */
 
 
-    hd = 2 * ((hd + 1) / 2);	/* don't accept odd diagonals */
+    hd = 2 * ((hd + 1) / 2);	/* don't accept odd diameters */
 
     bx = 4 * (hpos + hd);
     x = hpos;
@@ -95,7 +113,7 @@ int vd;
     hmot (hd);		/* end position is the right-hand side of the ellipse */
 
     do {
-	yk = k1 * sqrt((double) (k2 + (bx -= 8) * (x += 2))) + 0.5;
+	yk = (int) (k1 * sqrt((double) (k2 + (bx -= 8) * (x += 2))));
 
 	HGtline (x-2, oldy1, x, y = vpos + yk);    /* top half of ellipse */
 	oldy1 = y;
@@ -104,6 +122,20 @@ int vd;
 
     } while (hd -= 2);
 }
+
+
+/*----------------------------------------------------------------------------
+ * Routine:	drawarc (xcenter, ycenter, xpoint, ypoint)
+ *
+ * Results:	Draws an arc starting at current (hpos, vpos).  Center is
+ *		at (hpos + cdh, vpos + cdv) and the terminating point is
+ *		at <center> + (pdh, pdv).  The angle between the lines
+ *		formed by the starting, ending, and center points is figured
+ *		first, then the points and angle are sent to HGArc for the
+ *		drawing.
+ *
+ * Side Efct:	Resulting position is at the last point of the arc.
+ *----------------------------------------------------------------------------*/
 
 drawarc (cdh, cdv, pdh, pdv)
 register int cdh;
@@ -125,21 +157,34 @@ register int pdv;
 }
 
 
+/*----------------------------------------------------------------------------
+ * Routine:	drawwig (character_buffer, file_pointer)
+ *
+ * Results:	Given the starting position, the motion list in buf, and any
+ *		extra characters from fp (terminated by a \n), drawwig sets
+ *		up a point list to make a spline from and calls HGCurve.
+ *
+ * Side Efct:	Resulting position is reached from adding successive motions
+ *		to the current position.
+ *
+ * Bugs:	This MAY not be the final spline maker (PIC expects different)
+ *----------------------------------------------------------------------------*/
+
 drawwig (buf, fp)
 char *buf;
 FILE *fp;
 {
-    register int len = strlen(buf);
-    register int i = 2;
-    register char *ptr = buf;
-    float x[MAXPOINTS], y[MAXPOINTS];
+    register int len = strlen(buf);	/* length of the string in "buf" */
+    register int i = 2;			/* point list index */
+    register char *ptr = buf;		/* "walking" pointer into buf */
+    float x[MAXPOINTS], y[MAXPOINTS];	/* point list */
 
     while (*ptr == ' ') ptr++;		/* skip any leading spaces */
     x[1] = (float) hpos;	/* the curve starts at the */
     y[1] = (float) vpos;	/* current position */
 
-    while (*ptr != '\n') {		/* curve commands end with a "cr" */
-	hmot(atoi(ptr));		/* convert to curve points */
+    while (*ptr != '\n') {		/* curve commands end with a '\n' */
+	hmot(atoi(ptr));		/* convert motion to curve points */
 	x[i] = (float) hpos;		/* and remember them */
 	while (isdigit(*++ptr));		/* skip number*/
 	while (*++ptr == ' ');		/* skip spaces 'tween numbers */
@@ -156,38 +201,40 @@ FILE *fp;
 	    fgets ((cop - 1), len - (cop - buf), fp);
 	    ptr = buf;
 	}
-
 	if (i < MAXPOINTS - 1) i++;	/* if too many points, forget some */
     }
-
     HGCurve(x, y, --i);		/* now, actually DO the curve */
 }
 
 
+/*----------------------------------------------------------------------------
+ * Routine:	line (xstart, ystart, xend, yend)
+ *
+ * Results:	Draws a one-pixel wide line from (x0, y0) to
+ *		(x1, y1) using point(x,y) to place the dots.
+ *----------------------------------------------------------------------------*/
 
 line(x0, y0, x1, y1)
-int x0, y0, x1, y1;
-
-/* This routine is called to draw a line from the point at (x0, y0) to (x1, y1).
- * The line is drawn using a variation of 
- */
-
+register int x0;
+register int y0;
+int x1;
+int y1;
 {
-    int dx, dy;
-    int xinc, yinc;
-    int res1;
+    register int dx;
+    register int dy;
+    register int res1;
     int res2;
+    int xinc;
+    int yinc;
     int slope;
 
     xinc = 1;
     yinc = 1;
-    if ((dx = x1-x0) < 0) 
-    {
+    if ((dx = x1-x0) < 0) {
         xinc = -1;
         dx = -dx;
     }
-    if ((dy = y1-y0) < 0) 
-    {
+    if ((dy = y1-y0) < 0) {
         yinc = -1;
         dy = -dy;
     }
@@ -195,11 +242,9 @@ int x0, y0, x1, y1;
     res1 = 0;
     res2 = 0;
     if (dx >= dy) 
-        while (x0 != x1) 
-        {
+        while (x0 != x1) {
             if((x0+slope*y0)&linmod) point(x0, y0);
-            if (res1 > res2) 
-            {
+            if (res1 > res2) {
                 res2 += dx - res1;
                 res1 = 0;
                 y0 += yinc;
@@ -208,11 +253,9 @@ int x0, y0, x1, y1;
             x0 += xinc;
         } 
     else 
-        while (y0 != y1) 
-        {
+        while (y0 != y1) {
             if((x0+slope*y0)&linmod) point(x0, y0);
-            if (res1 > res2) 
-            {
+            if (res1 > res2) {
                 res2 += dy - res1;
                 res1 = 0;
                 x0 += xinc;
@@ -224,6 +267,15 @@ int x0, y0, x1, y1;
 }
 
 
+/*----------------------------------------------------------------------------
+ * Routine:	HGArc (xcenter, ycenter, xstart, ystart, angle)
+ *
+ * Results:	This routine plots an arc centered about (cx, cy) counter
+ *		clockwise starting from the point (px, py) through 'angle'
+ *		degrees.  If angle is 0, a full circle is drawn.
+ *		It does so by calling RoundEnd (fat point maker) for points
+ *		along the circle with density depending on the circle's size.
+ *----------------------------------------------------------------------------*/
 
 HGArc(cx,cy,px,py,angle)
 register int cx;
@@ -231,12 +283,6 @@ register int cy;
 register int px;
 register int py;
 register int angle;
-
-/* This routine plots an arc centered about (cx, cy) counter clockwise for
- * the point (px, py) through 'angle' degrees.  If angle is 0, a full circle
- * is drawn.
- */
-
 {
     double xs, ys, resolution, epsilon, degreesperpoint, fullcircle;
     double t1, t2;
@@ -268,28 +314,32 @@ register int angle;
 }  /* end HGArc */
 
 
+/*----------------------------------------------------------------------------
+ * Routine:	RoundEnd (x, y, radius, filled_flag)
+ *
+ * Results:	Plots a filled (if requested) circle of the specified radius
+ *		centered about (x, y).
+ *----------------------------------------------------------------------------*/
+
 RoundEnd(x, y, radius, filled)
 int x, y, radius;
-int filled;                /* indicates whether the circle is filled */
-
-/* This routine plots a filled circle of the specified radius centered 
- * about (x, y).
- */
+int filled;
 
 {
     double xs, ys, epsilon;
     int i, j, k, extent, nx, ny;
     int cx, cy;
 
-    if (radius < 1)    /* too small to notice */
-    {
+
+    if (radius < 1) {	/* too small to notice */
         point(x, y);
         return;
     }
+
     xs = 0;
     ys = radius;
     epsilon = 1.0 / radius;
-    extent = pi * radius / 2;    /* 1/4 the circumference */
+    extent = pi * radius / 2.0;    /* 1/4 the circumference */
 
         /* Calculate the trajectory of the circle for 1/4 the circumference
          * and mirror appropriately to get the other three quadrants.
@@ -307,20 +357,15 @@ int filled;                /* indicates whether the circle is filled */
         ny = (int) (ys + y + 0.5);
         if (ny < y) ny = y;  /* 1st quadrant, should be positive */
 
-        if (filled == TRUE)
-        {       /* fill from center */
+        if (filled == TRUE) {	/* fill from center */
             cx = x;
             cy = y;
-        }
-        else
-        {       /* fill from perimeter only (no fill) */
+        } else {		/* fill from perimeter only (no fill) */
             cx = nx;
             cy = ny;
         }
-        for (j=cx; j<=nx; ++j)
-        {
-            for (k=cy; k<=ny; ++k)
-            {
+        for (j=cx; j<=nx; ++j) {
+            for (k=cy; k<=ny; ++k) {
                 point(j, k);
                 point(j, 2*y-k);
                 point(2*x-j, k);
@@ -331,192 +376,184 @@ int filled;                /* indicates whether the circle is filled */
 }  /* end RoundEnd */;
 
 
+/*----------------------------------------------------------------------------
+ * Routine:	Paramaterize (xpoints, ypoints, hparams, num_points)
+ *
+ * Results:	This routine calculates parameteric values for use in
+ *		calculating curves.  The parametric values are returned
+ *		in the array h.  The values are an approximation of
+ *		cumulative arc lengths of the curve (uses cord length).
+ *		For additional information, see paper cited below.
+ *----------------------------------------------------------------------------*/
 
 static Paramaterize(x, y, h, n)
-float x[MAXPOINTS], y[MAXPOINTS], h[MAXPOINTS];
+float x[MAXPOINTS];
+float y[MAXPOINTS];
+float h[MAXPOINTS];
 int n;
-/*     This routine calculates parameteric values for use in calculating
- * curves.  The parametric values are returned in the array u.  The values
- * are an approximation of cumulative arc lengths of the curve (uses cord
- * length).  For additional information, see paper cited below.
- */
-
 {
 	int i,j;
 	float u[MAXPOINTS];
 
-	for (i=1; i<=n; ++i)
-	{
-		u[i] = 0;
-		for (j=1; j<i; j++)
-		{
-			u[i] += sqrt(pow((double) (x[j+1] - x[j]),(double) 2.0)
-			         + pow((double) (y[j+1] - y[j]), (double) 2.0));
-		}
+
+	for (i=1; i<=n; ++i) {
+	    u[i] = 0;
+	    for (j=1; j<i; j++) {
+		u[i] += sqrt (pow((double) (x[j+1] - x[j]),(double) 2.0)
+			      + pow((double) (y[j+1] - y[j]), (double) 2.0));
+	    }
 	}
-	for (i=1; i<n; ++i)
-		h[i] = u[i+1] - u[i];
+	for (i=1; i<n; ++i)  h[i] = u[i+1] - u[i];
 }  /* end Paramaterize */
+
+
+/*----------------------------------------------------------------------------
+ * Routine:	PeriodicSpline (h, z, dz, d2z, d3z, npoints)
+ *
+ * Results:	This routine solves for the cubic polynomial to fit a
+ *		spline curve to the the points  specified by the list
+ *		of values.  The Curve generated is periodic.  The algorithms
+ *		for this curve are from the "Spline Curve Techniques" paper
+ *		cited below.
+ *----------------------------------------------------------------------------*/
 
 static PeriodicSpline(h, z, dz, d2z, d3z, npoints)
 float h[MAXPOINTS], z[MAXPOINTS];	/* Point list and paramaterization  */
 float dz[MAXPOINTS];			/* to return the 1st derivative */
 float d2z[MAXPOINTS], d3z[MAXPOINTS];	/* 2nd and 3rd derivatives */
 int npoints;				/* number of valid points */
-/*
- *     This routine solves for the cubic polynomial to fit a spline
- * curve to the the points  specified by the list of values.
- * The Curve generated is periodic.  The alogrithms for this 
- * curve are from the "Spline Curve Techniques" paper cited below.
- */
-
 {
 	float d[MAXPOINTS]; 
 	float deltaz[MAXPOINTS], a[MAXPOINTS], b[MAXPOINTS];
 	float c[MAXPOINTS], r[MAXPOINTS], s[MAXPOINTS];
 	int i;
 
-	            /* step 1 */
-	for (i=1; i<npoints; ++i)
-	{
-		if (h[i] != 0)
-			deltaz[i] = (z[i+1] - z[i]) / h[i];
-		else
-			deltaz[i] = 0;
+						/* step 1 */
+	for (i=1; i<npoints; ++i) {
+	    deltaz[i] = h[i] ? (z[i+1] - z[i]) / h[i] : 0;
 	}
 	h[0] = h[npoints-1];
 	deltaz[0] = deltaz[npoints-1];
 
-	            /* step 2 */
-	for (i=1; i<npoints-1; ++i)
-	{
-		d[i] = deltaz[i+1] - deltaz[i];
+						/* step 2 */
+	for (i=1; i<npoints-1; ++i) {
+	    d[i] = deltaz[i+1] - deltaz[i];
 	}
 	d[0] = deltaz[1] - deltaz[0];
 
-	            /* step 3a */
+						/* step 3a */
 	a[1] = 2 * (h[0] + h[1]);
 	b[1] = d[0];
 	c[1] = h[0];
-	for (i=2; i<npoints-1; ++i)
-	{
-		a[i] = 2 * (h[i-1] + h[i]) - pow((double) h[i-1], (double) 2.0)
-		            / a[i-1];
-		b[i] = d[i-1] - h[i-1] * b[i-1]/a[i-1];
-		c[i] = -h[i-1] * c[i-1]/a[i-1];
+	for (i=2; i<npoints-1; ++i) {
+	    a[i] = 2*(h[i-1]+h[i]) - pow ((double) h[i-1],(double)2.0) / a[i-1];
+	    b[i] = d[i-1] - h[i-1] * b[i-1]/a[i-1];
+	    c[i] = -h[i-1] * c[i-1]/a[i-1];
 	}
 
-	            /* step 3b */
+						/* step 3b */
 	r[npoints-1] = 1;
 	s[npoints-1] = 0;
-	for (i=npoints-2; i>0; --i)
-	{
-		r[i] = -(h[i] * r[i+1] + c[i])/a[i];
-		s[i] = (6 * b[i] - h[i] * s[i+1])/a[i];
+	for (i=npoints-2; i>0; --i) {
+	    r[i] = -(h[i] * r[i+1] + c[i])/a[i];
+	    s[i] = (6 * b[i] - h[i] * s[i+1])/a[i];
 	}
 
-	            /* step 4 */
+						/* step 4 */
 	d2z[npoints-1] = (6 * d[npoints-2] - h[0] * s[1] 
 	                   - h[npoints-1] * s[npoints-2]) 
 	                 / (h[0] * r[1] + h[npoints-1] * r[npoints-2] 
 	                    + 2 * (h[npoints-2] + h[0]));
-	for (i=1; i<npoints-1; ++i)
-	{
-		d2z[i] = r[i] * d2z[npoints-1] + s[i];
+	for (i=1; i<npoints-1; ++i) {
+	    d2z[i] = r[i] * d2z[npoints-1] + s[i];
 	}
 	d2z[npoints] = d2z[1];
 
-	            /* step 5 */
-	for (i=1; i<npoints; ++i)
-	{
-		dz[i] = deltaz[i] - h[i] * (2 * d2z[i] + d2z[i+1])/6;
-		if (h[i] != 0)
-			d3z[i] = (d2z[i+1] - d2z[i])/h[i];
-		else
-			d3z[i] = 0;
+						/* step 5 */
+	for (i=1; i<npoints; ++i) {
+	    dz[i] = deltaz[i] - h[i] * (2 * d2z[i] + d2z[i+1])/6;
+	    d3z[i] = h[i] ? (d2z[i+1] - d2z[i])/h[i] : 0;
 	}
 }  /* end PeriodicSpline */
 
+
+/*----------------------------------------------------------------------------
+ * Routine:	NaturalEndSpline (h, z, dz, d2z, d3z, npoints)
+ *
+ * Results:	This routine solves for the cubic polynomial to fit a
+ *		spline curve the the points  specified by the list of
+ *		values.  The alogrithms for this curve are from the
+ *		"Spline Curve Techniques" paper cited below.
+ *----------------------------------------------------------------------------*/
 
 static NaturalEndSpline(h, z, dz, d2z, d3z, npoints)
 float h[MAXPOINTS], z[MAXPOINTS];	/* Point list and parameterization */
 float dz[MAXPOINTS];			/* to return the 1st derivative */
 float d2z[MAXPOINTS], d3z[MAXPOINTS];	/* 2nd and 3rd derivatives */
 int npoints;				/* number of valid points */
-/*
- *     This routine solves for the cubic polynomial to fit a spline
- * curve the the points  specified by the list of values.  The alogrithms for
- * this curve are from the "Spline Curve Techniques" paper cited below.
- */
-
 {
 	float d[MAXPOINTS];
 	float deltaz[MAXPOINTS], a[MAXPOINTS], b[MAXPOINTS];
 	int i;
 
-	            /* step 1 */
-	for (i=1; i<npoints; ++i)
-	{
-		if (h[i] != 0)
-			deltaz[i] = (z[i+1] - z[i]) / h[i];
-		else
-			deltaz[i] = 0;
+						/* step 1 */
+	for (i=1; i<npoints; ++i) {
+	    deltaz[i] = h[i] ? (z[i+1] - z[i]) / h[i] : 0;
 	}
 	deltaz[0] = deltaz[npoints-1];
 
-	            /* step 2 */
-	for (i=1; i<npoints-1; ++i)
-	{
-		d[i] = deltaz[i+1] - deltaz[i];
+						/* step 2 */
+	for (i=1; i<npoints-1; ++i) {
+	    d[i] = deltaz[i+1] - deltaz[i];
 	}
 	d[0] = deltaz[1] - deltaz[0];
 
-	            /* step 3 */
+						/* step 3 */
 	a[0] = 2 * (h[2] + h[1]);
 	b[0] = d[1];
-	for (i=1; i<npoints-2; ++i)
-	{
-		a[i] = 2 * (h[i+1] + h[i+2]) - pow((double) h[i+1],(double) 2.0)
-		             / a[i-1];
-		b[i] = d[i+1] - h[i+1] * b[i-1]/a[i-1];
+	for (i=1; i<npoints-2; ++i) {
+	    a[i] = 2*(h[i+1]+h[i+2]) - pow((double) h[i+1],(double) 2.0)/a[i-1];
+	    b[i] = d[i+1] - h[i+1] * b[i-1]/a[i-1];
 	}
 
-	            /* step 4 */
+						/* step 4 */
 	d2z[npoints] = d2z[1] = 0;
-	for (i=npoints-1; i>1; --i)
-	{
-		d2z[i] = (6 * b[i-2] - h[i] *d2z[i+1])/a[i-2];
+	for (i=npoints-1; i>1; --i) {
+	    d2z[i] = (6 * b[i-2] - h[i] *d2z[i+1])/a[i-2];
 	}
 
-	            /* step 5 */
-	for (i=1; i<npoints; ++i)
-	{
-		dz[i] = deltaz[i] - h[i] * (2 * d2z[i] + d2z[i+1])/6;
-		if (h[i] != 0)
-			d3z[i] = (d2z[i+1] - d2z[i])/h[i];
-		else
-			d3z[i] = 0;
+						/* step 5 */
+	for (i=1; i<npoints; ++i) {
+	    dz[i] = deltaz[i] - h[i] * (2 * d2z[i] + d2z[i+1])/6;
+	    d3z[i] = h[i] ? (d2z[i+1] - d2z[i])/h[i] : 0;
 	}
 }  /* end NaturalEndSpline */
 
 
+/*----------------------------------------------------------------------------
+ * Routine:	HGCurve(xpoints, ypoints, num_points)
+ *
+ * Results:	This routine generates a smooth curve through a set of points.
+ *		The method used is the parametric spline curve on unit knot
+ *		mesh described in "Spline Curve Techniques" by Patrick
+ *		Baudelaire, Robert Flegal, and Robert Sproull -- Xerox Parc.
+ *----------------------------------------------------------------------------*/
+
 #define PointsPerInterval 32
 
 HGCurve(x, y, numpoints)
-float x[MAXPOINTS], y[MAXPOINTS];
+float x[MAXPOINTS];
+float y[MAXPOINTS];
 int numpoints;
-
-/*
- *    This routine generates a smooth curve through a set of points.  The 
- * method used is the parametric spline curve on unit knot mesh described
- * in "Spline Curve Techniques" by Patrick Baudelaire, Robert Flegal, and 
- * Robert Sproull -- Xerox Parc.
- */
 {
 	float h[MAXPOINTS], dx[MAXPOINTS], dy[MAXPOINTS];
 	float d2x[MAXPOINTS], d2y[MAXPOINTS], d3x[MAXPOINTS], d3y[MAXPOINTS];
-	float t, t2, t3, xinter, yinter;
-	int i, j, k, lx, ly, nx, ny;
+	float t, t2, t3;
+	register int j;
+	register int k;
+	register int nx;
+	register int ny;
+	int lx, ly,;
 
 
 	lx = (int) x[1];
@@ -528,97 +565,92 @@ int numpoints;
 	Paramaterize(x, y, h, numpoints);
 							/* closed curve */
 	if ((x[1] == x[numpoints]) && (y[1] == y[numpoints])) {
-		PeriodicSpline(h, x, dx, d2x, d3x, numpoints);
-		PeriodicSpline(h, y, dy, d2y, d3y, numpoints);
+	    PeriodicSpline(h, x, dx, d2x, d3x, numpoints);
+	    PeriodicSpline(h, y, dy, d2y, d3y, numpoints);
 	} else {
-		NaturalEndSpline(h, x, dx, d2x, d3x, numpoints);
-		NaturalEndSpline(h, y, dy, d2y, d3y, numpoints);
+	    NaturalEndSpline(h, x, dx, d2x, d3x, numpoints);
+	    NaturalEndSpline(h, y, dy, d2y, d3y, numpoints);
 	}
 
 	      /* generate the curve using the above information and 
 	       * PointsPerInterval vectors between each specified knot.
 	       */
 
-	for (j=1; j<numpoints; ++j)
-	{
-		if ((x[j] == x[j+1]) && (y[j] == y[j+1])) continue;
-		for (k=0; k<=PointsPerInterval; ++k)
-		{
-			t = (float) k * h[j] / (float) PointsPerInterval;
-			t2 = t * t;
-			t3 = t * t * t;
-			xinter = x[j] + t * dx[j] + t2 * d2x[j]/2
-			       + t3 * d3x[j]/6;
-			nx = (int) xinter;
-			yinter = y[j] + t * dy[j] + t2 * d2y[j]/2
-			       + t3 * d3y[j]/6;
-			ny = (int) yinter;
-			HGtline(lx, ly, nx, ny);
-			lx = nx;
-			ly = ny;
-		}  /* end for k */
+	for (j=1; j<numpoints; ++j) {
+	    if ((x[j] == x[j+1]) && (y[j] == y[j+1])) continue;
+	    for (k=0; k<=PointsPerInterval; ++k) {
+		t = (float) k * h[j] / (float) PointsPerInterval;
+		t2 = t * t;
+		t3 = t * t * t;
+		nx = (int) (x[j] + t * dx[j] + t2 * d2x[j]/2 + t3 * d3x[j]/6);
+		ny = (int) (y[j] + t * dy[j] + t2 * d2y[j]/2 + t3 * d3y[j]/6);
+		HGtline(lx, ly, nx, ny);
+		lx = nx;
+		ly = ny;
+	    }  /* end for k */
 	}  /* end for j */
 }  /* end HGCurve */
 
 
+/*----------------------------------------------------------------------------
+ * Routine:	HGtline(xstart, ystart, xend, yend)
+ *
+ * Results:	Draws a line of proper thickness by calling "line" numerous
+ *		times until the desired thickness is reached.
+ *----------------------------------------------------------------------------*/
 
 HGtline(x0, y0, x1, y1)
 register int x0;
 register int y0;
-register int x1;
-register int y1;
-/*
- *      This routine calls line repeatedly until the line is 
- * of the proper thickness.
- */
-
+int x1;
+int y1;
 {
+        register int xs;
+	register int xe;
+	register int ys;
+	register int ye;
         double morelen, theta, wx, wy, xx, xy;
-        int xs, xe, ys, ye;
         int addln, j, xdir, ydir, dx, dy;
 
+
         xdir = ydir = 1;
-        dx = x1 - x0;   /* calculate direction to move to  */
-        dy = y1 - y0;   /* move to draw additional lines if needed */
-        if (dx < 0 )       /* for extra thickness */
-        {
+        dx = x1 - x0;		/* calculate direction to move to  */
+        dy = y1 - y0;		/* move to draw additional lines if needed */
+        if (dx < 0 ) {		/* for extra thickness */
             dx = -dx;
             xdir = -1;
         }
-        if (dy < 0 )
-        {
+        if (dy < 0 ) {
             dy = -dy;
             ydir = -1;
         }
 
         morelen = linethickness / 2;
 	addln = (int) morelen;
-        RoundEnd(x0, y0, (int) morelen, TRUE);    /* add rounded end */
-        for (j=(-addln); j<=addln; ++j)
-        {
-                if (dy == 0) 
-                {
-                        xs = x0;
-                        xe = x1;
-                        ys = ye = y0 + j;
-                }
-                if (dx == 0)
-                {
-                       ys = y0;
-                       ye = y1;
-                       xs = xe = x0 + j;
-                }
-                if ((dx != 0) && (dy != 0))
-                {
-                       theta =  pi / 2.0 - atan( ((double) dx)/((double) dy) );
-                       wx = j * sin(theta);
-                       wy = j * cos(theta);
-                       xs = x0 + wx * xdir;
-                       ys = y0 - wy * ydir;
-                       xe = x1 + wx * xdir;
-                       ye = y1 - wy * ydir;
-                }
-                line(xs, ys, xe, ye);
+        RoundEnd (x0, y0, (int) morelen, TRUE);    /* add rounded end */
+
+        for (j=(-addln); j<=addln; ++j) {
+	    if (dy == 0) {
+		xs = x0;
+		xe = x1;
+		ys = ye = y0 + j;
+	    }
+	    if (dx == 0) {
+		ys = y0;
+		ye = y1;
+		xs = xe = x0 + j;
+	    }
+	    if ((dx != 0) && (dy != 0)) {
+		theta =  pi / 2.0 - atan( ((double) dx)/((double) dy) );
+		wx = j * sin(theta);
+		wy = j * cos(theta);
+		xs = x0 + wx * xdir;
+		ys = y0 - wy * ydir;
+		xe = x1 + wx * xdir;
+		ye = y1 - wy * ydir;
+	    }
+	    line(xs, ys, xe, ye);
         }  /* end for */
+
         RoundEnd(x1, y1, (int) morelen, TRUE);    /* add rounded end */
 }  /* end HGtline */
