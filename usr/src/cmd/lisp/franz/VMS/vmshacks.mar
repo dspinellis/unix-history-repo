@@ -1,0 +1,29 @@
+	.TITLE  VMSHACKS        Special stuff for VMS franz
+;+ ---
+;
+;	We put the special PSECT hacking here:
+;
+;- ---
+	.PSECT  ZZZZZZZZZEND,Long,Exe,Rd,Nowrt
+End::                                           ;Put "End" at end of image
+
+	.PSECT  $000_FIRSTALLOC,Long,Noexe,Rd,Wrt,Ovr,Gbl
+FirstAlloc::					;Define $000_Firstalloc PSECT
+	.LONG   ^X78				;This all comes from orderit.s
+	.BLKB   508
+
+;+ ---
+;	There are still some routines not yet defined in
+;	EUNICE.  Until they are, we make those calls go to
+;	a dummy system call routine which does nothing but
+;	return an error.
+;- ---
+	.PSECT  UNIX_CODE,Long,Exe,Rd,Nowrt
+
+Alarm::
+Kill::
+Pause::
+	.Entry  $$$Undef_Subrs,^M<>
+	MNEGL   #1,R0
+	RET
+	.END
