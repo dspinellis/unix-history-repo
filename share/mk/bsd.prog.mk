@@ -1,5 +1,5 @@
 #	from: @(#)bsd.prog.mk	5.26 (Berkeley) 6/25/91
-#	$Id: bsd.prog.mk,v 1.21 1994/04/19 17:16:00 jkh Exp $
+#	$Id: bsd.prog.mk,v 1.22 1994/06/07 15:49:24 csgr Exp $
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -10,6 +10,7 @@
 CFLAGS+=${COPTS}
 .if defined(DESTDIR)
 CFLAGS+= -I${DESTDIR}/usr/include
+CXXINCLUDES+= -I${DESTDIR}/usr/include/${CXX}
 .endif
 
 STRIP?=	-s

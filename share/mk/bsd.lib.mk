@@ -1,5 +1,5 @@
 #	from: @(#)bsd.lib.mk	5.26 (Berkeley) 5/2/91
-#	$Id: bsd.lib.mk,v 1.35 1994/05/27 03:02:17 jkh Exp $
+#	$Id: bsd.lib.mk,v 1.36 1994/05/28 09:50:56 csgr Exp $
 #
 
 .if exists(${.CURDIR}/../Makefile.inc)
@@ -13,6 +13,7 @@ SHLIB_MINOR != . ${.CURDIR}/shlib_version ; echo $$minor
 
 .if defined(DESTDIR)
 CFLAGS+= -I${DESTDIR}/usr/include
+CXXINCLUDES+= -I${DESTDIR}/usr/include/${CXX}
 .endif
 INSTALL?=	install
 LIBDIR?=	/usr/lib
