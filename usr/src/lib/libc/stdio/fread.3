@@ -35,6 +35,13 @@
 .\"
 .\"     @(#)fread.3	6.6 (Berkeley) 6/29/91
 .\"
+.\" PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+.\" --------------------         -----   ----------------------
+.\" CURRENT PATCH LEVEL:         1       00130
+.\" --------------------         -----   ----------------------
+.\"
+.\" 06 Apr 93	Sascha Wildner		Misc small fixes
+.\"
 .Dd June 29, 1991
 .Dt FREAD 3
 .Os
@@ -54,7 +61,7 @@ The function
 reads
 .Fa nmemb
 elements of data, each
-.Xr size
+.Fa size
 bytes long, from the stream pointed to by
 .Fa stream ,
 storing them at the location given by

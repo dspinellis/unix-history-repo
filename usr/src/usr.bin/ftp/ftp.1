@@ -31,6 +31,13 @@
 .\"
 .\"	@(#)ftp.1	6.18 (Berkeley) 7/30/91
 .\"
+.\" PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+.\" --------------------         -----   ----------------------
+.\" CURRENT PATCH LEVEL:         1       00130
+.\" --------------------         -----   ----------------------
+.\"
+.\" 06 Apr 93	Sascha Wildner		Misc small fixes
+.\"
 .Dd July 30, 1991
 .Dt FTP 1
 .Os BSD 4.2
@@ -360,7 +367,7 @@ If no local file is specified, or if
 is
 .Sq Fl ,
 the output is sent to the terminal.
-.It Ic macdefNs Ar macro-name
+.It Ic macdef Ar macro-name
 Define a macro.
 Subsequent lines are stored as the macro
 .Ar macro-name  ;

@@ -1,3 +1,11 @@
+.\"
+.\" PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+.\" --------------------         -----   ----------------------
+.\" CURRENT PATCH LEVEL:         1       00130
+.\" --------------------         -----   ----------------------
+.\"
+.\" 06 Apr 93	Sascha Wildner		Misc small fixes
+.\"
 .TH MAWK 1  "Jan 22 1992" "Version 1.1" "USER COMMANDS"
 .\" strings
 .ds ex \fIexpr\fR
@@ -68,7 +76,7 @@ is executed.
 
 .SH OPTIONS
 
-.TP \w'\-\fBv'+\w'\fIvar=value'u+2n
+.TP \w'\-\fBv'u+\w'\fIvar=value'u+2n
 \-\fBF \fIvalue
 sets the field separator, \fBFS\fR, to 
 .IR value .
@@ -92,7 +100,7 @@ prefaced with \-W.
 .B mawk 
 provides three:
 
-.TP \w'\-\fBv'+\w'\fIvar=value'u+2n
+.TP \w'\-\fBv'u+\w'\fIvar=value'u+2n
 \-\fBW \fRversion
 .B mawk
 writes its version and copyright
