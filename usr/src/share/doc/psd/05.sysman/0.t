@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	6.4 (Berkeley) %G%
+.\"	@(#)0.t	6.5 (Berkeley) %G%
 .\"
 .if n .ND
 .TL
@@ -78,57 +78,57 @@ TABLE OF CONTENTS
 .nf
 .nf
 \fB1.1.  Processes and protection\fP
-\0\0\0.1.  Host and process identifiers
-\0\0\0.2.  Process creation and termination
-\0\0\0.3.  User and group ids
-\0\0\0.4.  Process groups
+1.1.1.  Host and process identifiers
+1.1.2.  Process creation and termination
+1.1.3.  User and group ids
+1.1.4.  Process groups
 .LP
 .nf
 \fB1.2.  Memory management\fP
-\0\0\0.1.  Text, data and stack
-\0\0\0.2.  Mapping pages
-\0\0\0.3.  Page protection control
-\0\0\0.4.  Giving and getting advice
-\0\0\0.5.  Protection primitives
+1.2.1.  Text, data and stack
+1.2.2.  Mapping pages
+1.2.3.  Page protection control
+1.2.4.  Giving and getting advice
+1.2.5.  Protection primitives
 .LP
 .if t .sp .5v
 .nf
 \fB1.3.  Signals\fP
-\0\0\0.1.  Overview
-\0\0\0.2.  Signal types
-\0\0\0.3.  Signal handlers
-\0\0\0.4.  Sending signals
-\0\0\0.5.  Protecting critical sections
-\0\0\0.6.  Signal stacks
+1.3.1.  Overview
+1.3.2.  Signal types
+1.3.3.  Signal handlers
+1.3.4.  Sending signals
+1.3.5.  Protecting critical sections
+1.3.6.  Signal stacks
 .LP
 .if t .sp .5v
 .nf
 \fB1.4.  Timing and statistics\fP
-\0\0\0.1.  Real time
-\0\0\0.2.  Interval time
+1.4.1.  Real time
+1.4.2.  Interval time
 .LP
 .if t .sp .5v
 .nf
 \fB1.5.  Descriptors\fP
-\0\0\0.1.  The reference table
-\0\0\0.2.  Descriptor properties
-\0\0\0.3.  Managing descriptor references
-\0\0\0.4.  Multiplexing requests
-\0\0\0.5.  Descriptor wrapping
+1.5.1.  The reference table
+1.5.2.  Descriptor properties
+1.5.3.  Managing descriptor references
+1.5.4.  Multiplexing requests
+1.5.5.  Descriptor wrapping
 .LP
 .if t .sp .5v
 .nf
 \fB1.6.  Resource controls\fP
-\0\0\0.1.  Process priorities
-\0\0\0.2.  Resource utilization
-\0\0\0.3.  Resource limits
+1.6.1.  Process priorities
+1.6.2.  Resource utilization
+1.6.3.  Resource limits
 .LP
 .if t .sp .5v
 .nf
 \fB1.7.  System operation support\fP
-\0\0\0.1.   Bootstrap operations
-\0\0\0.2.   Shutdown operations
-\0\0\0.3.   Accounting
+1.7.1.   Bootstrap operations
+1.7.2.   Shutdown operations
+1.7.3.   Accounting
 .bp
 .LP
 .if t .sp .5v
@@ -139,65 +139,65 @@ TABLE OF CONTENTS
 .if t .sp .5v
 .nf
 \fB2.1.   Generic operations\fP
-\0\0\0.1.   Read and write
-\0\0\0.2.   Input/output control
-\0\0\0.3.   Non-blocking and asynchronous operations
+2.1.1.   Read and write
+2.1.2.   Input/output control
+2.1.3.   Non-blocking and asynchronous operations
 .LP
 .if t .sp .5v
 .nf
 \fB2.2.  File system\fP
-\0\0\0.1   Overview
-\0\0\0.2.  Naming
-\0\0\0.3.  Creation and removal
-\0\0\0.3.1.  Directory creation and removal
-\0\0\0.3.2.  File creation
-\0\0\0.3.3.  Creating references to devices
-\0\0\0.3.4.  Portal creation
-\0\0\0.3.6.  File, device, and portal removal
-\0\0\0.4.  Reading and modifying file attributes
-\0\0\0.5.  Links and renaming
-\0\0\0.6.  Extension and truncation
-\0\0\0.7.  Checking accessibility
-\0\0\0.8.  Locking
-\0\0\0.9.  Disc quotas
+2.2.1   Overview
+2.2.2.  Naming
+2.2.3.  Creation and removal
+2.2.3.1.  Directory creation and removal
+2.2.3.2.  File creation
+2.2.3.3.  Creating references to devices
+2.2.3.4.  Portal creation
+2.2.3.6.  File, device, and portal removal
+2.2.4.  Reading and modifying file attributes
+2.2.5.  Links and renaming
+2.2.6.  Extension and truncation
+2.2.7.  Checking accessibility
+2.2.8.  Locking
+2.2.9.  Disc quotas
 .LP
 .if t .sp .5v
 .nf
 \fB2.3.  Interprocess communication\fP
-\0\0\0.1.   Interprocess communication primitives
-\0\0\0.1.1.\0   Communication domains
-\0\0\0.1.2.\0   Socket types and protocols
-\0\0\0.1.3.\0   Socket creation, naming and service establishment
-\0\0\0.1.4.\0   Accepting connections
-\0\0\0.1.5.\0   Making connections
-\0\0\0.1.6.\0   Sending and receiving data
-\0\0\0.1.7.\0   Scatter/gather and exchanging access rights
-\0\0\0.1.8.\0   Using read and write with sockets
-\0\0\0.1.9.\0   Shutting down halves of full-duplex connections
-\0\0\0.1.10.\0  Socket and protocol options
-\0\0\0.2.   UNIX domain
-\0\0\0.2.1.    Types of sockets
-\0\0\0.2.2.    Naming
-\0\0\0.2.3.    Access rights transmission
-\0\0\0.3.   INTERNET domain
-\0\0\0.3.1.    Socket types and protocols
-\0\0\0.3.2.    Socket naming
-\0\0\0.3.3.    Access rights transmission
-\0\0\0.3.4.    Raw access
+2.3.1.   Interprocess communication primitives
+2.3.1.1.\0   Communication domains
+2.3.1.2.\0   Socket types and protocols
+2.3.1.3.\0   Socket creation, naming and service establishment
+2.3.1.4.\0   Accepting connections
+2.3.1.5.\0   Making connections
+2.3.1.6.\0   Sending and receiving data
+2.3.1.7.\0   Scatter/gather and exchanging access rights
+2.3.1.8.\0   Using read and write with sockets
+2.3.1.9.\0   Shutting down halves of full-duplex connections
+2.3.1.10.\0  Socket and protocol options
+2.3.2.   UNIX domain
+2.3.2.1.    Types of sockets
+2.3.2.2.    Naming
+2.3.2.3.    Access rights transmission
+2.3.3.   INTERNET domain
+2.3.3.1.    Socket types and protocols
+2.3.3.2.    Socket naming
+2.3.3.3.    Access rights transmission
+2.3.3.4.    Raw access
 .LP
 .if t .sp .5v
 .nf
 \fB2.4.  Terminals and devices\fP
-\0\0\0.1.   Terminals
-\0\0\0.1.1.    Terminal input
-\0\0\0.1.1.1     Input modes
-\0\0\0.1.1.2     Interrupt characters
-\0\0\0.1.1.3     Line editing
-\0\0\0.1.2.    Terminal output
-\0\0\0.1.3.    Terminal control operations
-\0\0\0.1.4.    Terminal hardware support
-\0\0\0.2.   Structured devices
-\0\0\0.3.   Unstructured devices
+2.4.1.   Terminals
+2.4.1.1.    Terminal input
+2.4.1.1.1     Input modes
+2.4.1.1.2     Interrupt characters
+2.4.1.1.3     Line editing
+2.4.1.2.    Terminal output
+2.4.1.3.    Terminal control operations
+2.4.1.4.    Terminal hardware support
+2.4.2.   Structured devices
+2.4.3.   Unstructured devices
 .LP
 .if t .sp .5v
 .nf
