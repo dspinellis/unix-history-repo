@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)getopt.3	6.8 (Berkeley) %G%
+.\"	@(#)getopt.3	6.9 (Berkeley) %G%
 .\"
 .TH GETOPT 3 ""
 .UC 6
@@ -149,9 +149,11 @@ char **argv;
 Written by Henry Spencer, working from a Bell Labs manual page.
 Modified by Keith Bostic to behave more like the System V version.
 .SH BUGS
-``-'' may be specified as an option letter, however it should never have
-an argument associated with it.  This allows getopt to be used with
-programs that think that ``-'' means standard input.
+``-'' may be specified as an option letter, however it should never
+have an argument associated with it.  This allows getopt to be used
+with programs that expect ``-'' as an option flag.  This practice is
+wrong, and should not be used in any current development, it is
+provided for backward compatibility \fBonly\fP.
 .PP
 Option arguments are allowed to begin with ``\-'';
 this is reasonable but reduces the amount of error checking possible.
