@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dumpfs.c	2.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumpfs.c	2.6 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -149,7 +149,7 @@ dumpcg(name, c)
 
 	printf("\ncg %d:\n", c);
 	lseek(0, fsbtodb(&afs, cgtod(&afs, c)) * DEV_BSIZE, 0);
-	i = lseek(0, 1, 0);
+	i = lseek(0, 0, 1);
 	if (read(0, (char *)&acg, afs.fs_bsize) != afs.fs_bsize) {
 		printf("dumpfs: %s: error reading cg\n", name);
 		return;
