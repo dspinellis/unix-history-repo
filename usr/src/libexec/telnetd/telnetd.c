@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -274,6 +274,9 @@ telnet(f, p)
 	net = f, pty = p;
 	ioctl(f, FIONBIO, &on);
 	ioctl(p, FIONBIO, &on);
+#if	defined(xxxSO_OOBINLINE)
+	setsockopt(net, SOL_SOCKET, SO_OOBINLINE, on, sizeof on);
+#endif	/* defined(xxxSO_OOBINLINE) */
 	signal(SIGTSTP, SIG_IGN);
 	signal(SIGCHLD, cleanup);
 	setpgrp(0, 0);
@@ -338,7 +341,7 @@ telnet(f, p)
 		 * Something to read from the network...
 		 */
 		if (FD_ISSET(net, &ibits)) {
-#if	!defined(IOCTL_TO_DO_UNIX_OOB_IN_TCP_WAY)
+#if	!defined(xxxSO_OOBINLINE)
 			/*
 			 * In 4.2 (and some early 4.3) systems, the
 			 * OOB indication and data handling in the kernel
@@ -392,9 +395,9 @@ telnet(f, p)
 			ncc = read(net, netibuf, sizeof (netibuf));
 		    }
 		    settimer(didnetreceive);
-#else	/* !defined(IOCTL_TO_DO_UNIX_OOB_IN_TCP_WAY) */
+#else	/* !defined(xxxSO_OOBINLINE)) */
 		    ncc = read(net, netibuf, sizeof (netibuf));
-#endif	/* !defined(IOCTL_TO_DO_UNIX_OOB_IN_TCP_WAY) */
+#endif	/* !defined(xxxSO_OOBINLINE)) */
 		    if (ncc < 0 && errno == EWOULDBLOCK)
 			ncc = 0;
 		    else {
@@ -508,9 +511,12 @@ telrcv()
 			 * interrupt.  Do this with a NULL or
 			 * interrupt char; depending on the tty mode.
 			 */
-			case BREAK:
 			case IP:
 				interrupt();
+				break;
+
+			case BREAK:
+				sendbrk();
 				break;
 
 			/*
@@ -765,6 +771,26 @@ interrupt()
 	}
 	*pfrontp++ = ioctl(pty, TIOCGETC, &tchars) < 0 ?
 		'\177' : tchars.t_intrc;
+}
+
+/*
+ * Send quit to process on other side of pty.
+ * If it is in raw mode, just write NULL;
+ * otherwise, write quit char.
+ */
+sendbrk()
+{
+	struct sgttyb b;
+	struct tchars tchars;
+
+	ptyflush();	/* half-hearted */
+	ioctl(pty, TIOCGETP, &b);
+	if (b.sg_flags & RAW) {
+		*pfrontp++ = '\0';
+		return;
+	}
+	*pfrontp++ = ioctl(pty, TIOCGETC, &tchars) < 0 ?
+		'\034' : tchars.t_quitc;
 }
 
 ptyflush()
