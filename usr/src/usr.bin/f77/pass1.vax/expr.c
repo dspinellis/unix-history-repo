@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid[] = "@(#)expr.c	5.1 (Berkeley) %G%";
+static char *sccsid[] = "@(#)expr.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -15,8 +15,17 @@ static char *sccsid[] = "@(#)expr.c	5.1 (Berkeley) %G%";
  *
  * University of Utah CS Dept modification history:
  *
- * Revision 3.13  85/05/13  16:40:37  mckusick
- * fix to copy character values into numerics (from donn@utah-cs)
+ * $Log:	expr.c,v $
+ * Revision 3.15  85/06/04  04:37:03  donn
+ * Changed mkprim() to force substring parameters to be integral types.
+ * 
+ * Revision 3.14  85/06/04  03:41:52  donn
+ * Change impldcl() to handle functions of type 'undefined'.
+ * 
+ * Revision 3.13  85/05/06  23:14:55  donn
+ * Changed mkconv() so that it calls mkaltemp() instead of mktemp() to get
+ * a temporary when converting character strings to integers; previously we
+ * were having problems because mkconv() was called after tempalloc().
  * 
  * Revision 3.12  85/03/18  08:07:47  donn
  * Fixes to help out with short integers -- if integers are by default short,
@@ -1639,8 +1648,8 @@ p->namep = (Namep) v;
 p->argsp = args;
 if(substr)
 	{
-	p->fcharp = (expptr) (substr->datap);
-	p->lcharp = (expptr) (substr->nextp->datap);
+	p->fcharp = mkconv(tyint, substr->datap);
+	p->lcharp = mkconv(tyint, substr->nextp->datap);
 	frchain(&substr);
 	}
 return( (expptr) p);
@@ -1754,8 +1763,9 @@ if(p->vtype == TYUNKNOWN)
 	if(type == TYUNKNOWN)
 		{
 		if(p->vclass == CLPROC)
-			return;
-		dclerr("attempt to use undefined variable", p);
+			dclerr("attempt to use function of undefined type", p);
+		else
+			dclerr("attempt to use undefined variable", p);
 		type = TYERROR;
 		leng = 1;
 		}
