@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 DEFS=	-DLIBC_SCCS
 CFLAGS=	-O ${DEFS}
@@ -48,15 +48,3 @@ clean:
 
 depend:
 	mkdep ${CFLAGS} ${SRCS}
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-gethostnamadr.o: gethostnamadr.c /usr/include/stdio.h /usr/include/netdb.h
-gethostnamadr.o: /usr/include/sys/file.h /usr/include/ndbm.h
-gethostnamadr.o: /usr/include/ctype.h
-gethostent.o: gethostent.c /usr/include/stdio.h /usr/include/sys/types.h
-gethostent.o: /usr/include/sys/socket.h /usr/include/netdb.h
-gethostent.o: /usr/include/ctype.h /usr/include/ndbm.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY

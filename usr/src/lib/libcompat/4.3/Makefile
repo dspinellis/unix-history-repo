@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 
 DEFS=	-DLIBC_SCCS
@@ -49,14 +49,3 @@ clean:
 
 depend:
 	mkdep ${CFLAGS} ${SRCS}
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-ecvt.o: ecvt.c
-gcvt.o: gcvt.c
-sibuf.o: sibuf.c /usr/include/stdio.h
-sobuf.o: sobuf.c /usr/include/stdio.h
-strout.o: strout.c /usr/include/stdio.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
