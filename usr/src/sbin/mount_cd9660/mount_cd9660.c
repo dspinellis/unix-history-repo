@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)mount_cd9660.c	8.2 (Berkeley) %G%
+ *      @(#)mount_cd9660.c	8.3 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -19,34 +19,39 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount_cd9660.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount_cd9660.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <stdio.h>
 #include <sys/param.h>
 #define CD9660
 #include <sys/mount.h>
 
+#include <errno.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+
 #define DEFAULT_ROOTUID	-2
 
 void
-usage ()
+usage()
 {
 
-	fprintf (stderr, "usage: mount_iso bdev dir\n");
-	exit (1);
+	fprintf(stderr,
+		"usage: mount_cd9660 [-F fsoptions] [-norrip] [-gen] [-extattr] special node\n");
+	exit(1);
 }
 		
 int
-main (argc, argv)
+main(argc, argv)
 	int argc;
 	char **argv;
 {
 	char *dev;
 	char *dir;
 	struct iso_args args;
-	int c;
-	int opts = 0, mntflags = 0;
+	int mntflags = 0, opts = 0;
 
 	argc--;
 	argv++;
@@ -82,10 +87,10 @@ main (argc, argv)
 		args.export.ex_flags = 0;
 	args.flags = opts;
 
-	if (mount (MOUNT_CD9660, dir, mntflags, &args) < 0) {
-		perror ("mount");
-		exit (1);
+	if (mount(MOUNT_CD9660, dir, mntflags, &args) < 0) {
+		(void)fprintf(stderr, "mount_cd9660: %s\n", strerror(errno));
+		exit(1);
 	}
 
-	exit (0);
+	exit(0);
 }
