@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)shutdown.c	4.9 (Berkeley) 81/06/11";
+static	char *sccsid = "@(#)shutdown.c	4.10 (Berkeley) 81/06/12";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -19,6 +19,7 @@ static	char *sccsid = "@(#)shutdown.c	4.9 (Berkeley) 81/06/11";
  *		Peter Lamb, Melbourne, 1980
  *		William Joy, Berkeley, 1981
  *		Michael Toy, Berkeley, 1981
+ *		Dave Presotto, Berkeley, 1981
  */
 #ifdef DEBUG
 #define LOGFILE "shutdown.log"
@@ -33,6 +34,7 @@ static	char *sccsid = "@(#)shutdown.c	4.9 (Berkeley) 81/06/11";
 #define SECONDS
 #define NLOG		20		/* no of args possible for message */
 #define	NOLOGTIME	5 MINUTES
+#define IGNOREUSER	"sleeper"
 
 int	do_nothing();
 time_t	getsdt();
@@ -159,7 +161,8 @@ main(argc,argv)
 		ufd = open("/etc/utmp",0);
 		nowtime = time((long *) 0);
 		while (read(ufd,&utmp,sizeof utmp)==sizeof utmp)
-		if (utmp.ut_name[0]) {
+		if (utmp.ut_name[0] &&
+		    strncmp(utmp.ut_name, IGNOREUSER, sizeof(utmp.ut_name))) {
 			strcpy(term, tpath);
 			strncat(term, utmp.ut_line, sizeof utmp.ut_line);
 			alarm(3);
