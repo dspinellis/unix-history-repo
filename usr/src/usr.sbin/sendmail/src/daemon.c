@@ -11,9 +11,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.68 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.48.1.1 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.68 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.48.1.1 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -25,6 +25,7 @@ static char sccsid[] = "@(#)daemon.c	8.68 (Berkeley) %G% (without daemon mode)";
 # include <arpa/inet.h>
 
 #if NAMED_BIND
+# include <arpa/nameser.h>
 # include <resolv.h>
 #endif
 
@@ -177,9 +178,9 @@ getrequests()
 			continue;
 		}
 
-		/* arrange to (re)open the socket if necessary */
 		if (refusingconnections)
 		{
+			/* start listening again */
 			(void) opendaemonsocket(FALSE);
 			setproctitle("accepting connections");
 			refusingconnections = FALSE;
@@ -188,10 +189,12 @@ getrequests()
 #ifdef XDEBUG
 		/* check for disaster */
 		{
+			register STAB *s;
 			char jbuf[MAXHOSTNAMELEN];
 
 			expand("\201j", jbuf, &jbuf[sizeof jbuf - 1], CurEnv);
-			if (!wordinclass(jbuf, 'w'))
+			if ((s = stab(jbuf, ST_CLASS, ST_FIND)) == NULL ||
+			    !bitnset('w', s->s_class))
 			{
 				dumpstate("daemon lost $j");
 				syslog(LOG_ALERT, "daemon process doesn't have $j in $=w; see syslog");
@@ -217,10 +220,6 @@ getrequests()
 		if (t < 0)
 		{
 			syserr("getrequests: accept");
-
-			/* arrange to re-open the socket next time around */
-			(void) close(DaemonSocket);
-			DaemonSocket = -1;
 			sleep(5);
 			continue;
 		}
@@ -245,7 +244,6 @@ getrequests()
 		{
 			char *p;
 			extern char *hostnamebyanyaddr();
-			extern void intsig();
 
 			/*
 			**  CHILD -- return to caller.
@@ -254,8 +252,6 @@ getrequests()
 			*/
 
 			(void) setsignal(SIGCHLD, SIG_DFL);
-			(void) setsignal(SIGHUP, intsig);
-			(void) close(DaemonSocket);
 			DisConnected = FALSE;
 
 			setproctitle("startup with %s",
@@ -275,6 +271,7 @@ getrequests()
 			}
 #endif
 
+			(void) close(DaemonSocket);
 			if ((InChannel = fdopen(t, "r")) == NULL ||
 			    (t = dup(t)) < 0 ||
 			    (OutChannel = fdopen(t, "w")) == NULL)
@@ -412,7 +409,6 @@ opendaemonsocket(firsttime)
 		}
 		return socksize;
 	} while (ntries++ < MAXOPENTRIES && transienterror(saveerrno));
-	syserr("!opendaemonsocket: server SMTP socket wedged: exiting");
 	finis();
 }
 /*
@@ -500,7 +496,7 @@ setdaemonoptions(p)
 #ifdef NETINET
 			  case AF_INET:
 				if (isascii(*v) && isdigit(*v))
-					DaemonAddr.sin.sin_addr.s_addr = htonl(inet_network(v));
+					DaemonAddr.sin.sin_addr.s_addr = inet_network(v);
 				else
 				{
 					register struct netent *np;
@@ -618,7 +614,6 @@ makeconnection(host, port, outfile, infile, usesecureport)
 	SOCKADDR addr;
 	int sav_errno;
 	int addrlen;
-	bool firstconnect;
 #if NAMED_BIND
 	extern int h_errno;
 #endif
@@ -653,17 +648,9 @@ makeconnection(host, port, outfile, infile, usesecureport)
 				hp = gethostbyname(&host[1]);
 				if (hp == NULL && p[-1] == '.')
 				{
-#if NAMED_BIND
-					int oldopts = _res.options;
-
-					_res.options &= ~(RES_DEFNAMES|RES_DNSRCH);
-#endif
 					p[-1] = '\0';
 					hp = gethostbyname(&host[1]);
 					p[-1] = '.';
-#if NAMED_BIND
-					_res.options = oldopts;
-#endif
 				}
 				*p = ']';
 				goto gothostent;
@@ -687,29 +674,20 @@ makeconnection(host, port, outfile, infile, usesecureport)
 		hp = gethostbyname(host);
 		if (hp == NULL && *p == '.')
 		{
-#if NAMED_BIND
-			int oldopts = _res.options;
-
-			_res.options &= ~(RES_DEFNAMES|RES_DNSRCH);
-#endif
 			*p = '\0';
 			hp = gethostbyname(host);
 			*p = '.';
-#if NAMED_BIND
-			_res.options = oldopts;
-#endif
 		}
 gothostent:
 		if (hp == NULL)
 		{
 #if NAMED_BIND
-			/* check for name server timeouts */
-			if (errno == ETIMEDOUT || h_errno == TRY_AGAIN ||
-			    (errno == ECONNREFUSED && UseNameServer))
-			{
-				mci->mci_status = "4.4.3";
+			if (errno == ETIMEDOUT || h_errno == TRY_AGAIN)
 				return (EX_TEMPFAIL);
-			}
+
+			/* if name server is specified, assume temp fail */
+			if (errno == ECONNREFUSED && UseNameServer)
+				return (EX_TEMPFAIL);
 #endif
 			return (EX_NOHOST);
 		}
@@ -720,7 +698,7 @@ gothostent:
 		  case AF_INET:
 			bcopy(hp->h_addr,
 				&addr.sin.sin_addr,
-				INADDRSZ);
+				sizeof addr.sin.sin_addr);
 			break;
 #endif
 
@@ -784,7 +762,6 @@ gothostent:
 		return EX_TEMPFAIL;
 #endif
 
-	firstconnect = TRUE;
 	for (;;)
 	{
 		if (tTd(16, 1))
@@ -837,17 +814,6 @@ gothostent:
 		if (connect(s, (struct sockaddr *) &addr, addrlen) >= 0)
 			break;
 
-		/* if running demand-dialed connection, try again */
-		if (DialDelay > 0 && firstconnect)
-		{
-			if (tTd(16, 1))
-				printf("Connect failed (%s); trying again...\n",
-					errstring(sav_errno));
-			firstconnect = FALSE;
-			sleep(DialDelay);
-			continue;
-		}
-
 		/* couldn't connect.... figure out why */
 		sav_errno = errno;
 		(void) close(s);
@@ -862,7 +828,7 @@ gothostent:
 			  case AF_INET:
 				bcopy(hp->h_addr_list[i++],
 				      &addr.sin.sin_addr,
-				      INADDRSZ);
+				      sizeof addr.sin.sin_addr);
 				break;
 #endif
 
@@ -909,15 +875,13 @@ gothostent:
 **		Adds numeric codes to $=w.
 */
 
-struct hostent *
+char **
 myhostname(hostbuf, size)
 	char hostbuf[];
 	int size;
 {
 	register struct hostent *hp;
 	extern struct hostent *gethostbyname();
-	extern bool getcanonname();
-	extern int h_errno;
 
 	if (gethostname(hostbuf, size) < 0)
 	{
@@ -925,37 +889,47 @@ myhostname(hostbuf, size)
 	}
 	hp = gethostbyname(hostbuf);
 	if (hp == NULL)
-		return NULL;
-	if (strchr(hp->h_name, '.') != NULL || strchr(hostbuf, '.') == NULL)
 	{
-		(void) strncpy(hostbuf, hp->h_name, size - 1);
-		hostbuf[size - 1] = '\0';
+		syserr("!My host name (%s) does not seem to exist!", hostbuf);
 	}
+	(void) strncpy(hostbuf, hp->h_name, size - 1);
+	hostbuf[size - 1] = '\0';
 
 #if NAMED_BIND
-	/*
-	**  If still no dot, try DNS directly (i.e., avoid NIS problems).
-	**  This ought to be driven from the configuration file, but
-	**  we are called before the configuration is read.  We could
-	**  check for an /etc/resolv.conf file, but that isn't required.
-	**  All in all, a bit of a mess.
-	*/
-
-	if (strchr(hostbuf, '.') == NULL &&
-	    !getcanonname(hostbuf, size, TRUE) &&
-	    h_errno == TRY_AGAIN)
+	/* if still no dot, try DNS directly (i.e., avoid NIS problems) */
+	if (strchr(hostbuf, '.') == NULL)
 	{
-		struct stat stbuf;
+		extern bool getcanonname();
+		extern int h_errno;
 
 		/* try twice in case name server not yet started up */
-		message("My unqualifed host name (%s) unknown to DNS; sleeping for retry",
-			hostbuf);
-		sleep(60);
-		if (!getcanonname(hostbuf, size, TRUE))
+		if (!getcanonname(hostbuf, size, TRUE) &&
+		    UseNameServer &&
+		    (h_errno != TRY_AGAIN ||
+		     (sleep(30), !getcanonname(hostbuf, size, TRUE))))
+		{
 			errno = h_errno + E_DNSBASE;
+			syserr("!My host name (%s) not known to DNS",
+				hostbuf);
+		}
 	}
 #endif
-	return (hp);
+
+	if (hp->h_addrtype == AF_INET && hp->h_length == 4)
+	{
+		register int i;
+
+		for (i = 0; hp->h_addr_list[i] != NULL; i++)
+		{
+			char ipbuf[100];
+
+			sprintf(ipbuf, "[%s]",
+				inet_ntoa(*((struct in_addr *) hp->h_addr_list[i])));
+			setclass('w', ipbuf);
+		}
+	}
+
+	return (hp->h_aliases);
 }
 /*
 **  GETAUTHINFO -- get the real host name asociated with a file descriptor
@@ -969,6 +943,8 @@ myhostname(hostbuf, size)
 **		The user@host information associated with this descriptor.
 */
 
+#if IDENTPROTO
+
 static jmp_buf	CtxAuthTimeout;
 
 static
@@ -977,25 +953,29 @@ authtimeout()
 	longjmp(CtxAuthTimeout, 1);
 }
 
+#endif
+
 char *
 getauthinfo(fd)
 	int fd;
 {
 	int falen;
 	register char *p;
+#if IDENTPROTO
 	SOCKADDR la;
 	int lalen;
 	register struct servent *sp;
 	int s;
 	int i;
 	EVENT *ev;
+#endif
 	static char hbuf[MAXNAME * 2 + 2];
 	extern char *hostnamebyanyaddr();
 	extern char RealUserName[];			/* main.c */
 
 	falen = sizeof RealHostAddr;
-	if (isatty(fd) || getpeername(fd, &RealHostAddr.sa, &falen) < 0 ||
-	    falen <= 0 || RealHostAddr.sa.sa_family == 0)
+	if (getpeername(fd, &RealHostAddr.sa, &falen) < 0 || falen <= 0 ||
+	    RealHostAddr.sa.sa_family == 0)
 	{
 		(void) sprintf(hbuf, "%s@localhost", RealUserName);
 		if (tTd(9, 1))
@@ -1009,6 +989,7 @@ getauthinfo(fd)
 		RealHostName = newstr(hostnamebyanyaddr(&RealHostAddr));
 	}
 
+#if IDENTPROTO
 	if (TimeOuts.to_ident == 0)
 		goto noident;
 
@@ -1114,20 +1095,16 @@ getauthinfo(fd)
 	while (isascii(*++p) && isspace(*p))
 		continue;
 
-	/* p now points to the authenticated name -- copy carefully */
-	for (i = 0; i < MAXNAME && *p != '\0'; p++)
-	{
-		if (isascii(*p) &&
-		    (isalnum(*p) || strchr("!#$%&'*+-./^_`{|}~", *p) != NULL))
-			hbuf[i++] = *p;
-	}
-	hbuf[i++] = '@';
-	strcpy(&hbuf[i], RealHostName == NULL ? "localhost" : RealHostName);
+	/* p now points to the authenticated name */
+	(void) sprintf(hbuf, "%s@%s",
+		p, RealHostName == NULL ? "localhost" : RealHostName);
 	goto finish;
 
 closeident:
 	(void) close(s);
 	clrevent(ev);
+
+#endif /* IDENTPROTO */
 
 noident:
 	if (RealHostName == NULL)
@@ -1177,7 +1154,7 @@ host_map_lookup(map, name, av, statp)
 	int *statp;
 {
 	register struct hostent *hp;
-	struct in_addr in_addr;
+	u_long in_addr;
 	char *cp;
 	int i;
 	register STAB *s;
@@ -1276,8 +1253,7 @@ host_map_lookup(map, name, av, statp)
 			*statp = EX_NOHOST;
 #endif
 			s->s_namecanon.nc_stat = *statp;
-			if ((*statp != EX_TEMPFAIL && *statp != EX_NOHOST) ||
-			    UseNameServer)
+			if (*statp != EX_TEMPFAIL || UseNameServer)
 				return NULL;
 
 			/*
@@ -1301,10 +1277,10 @@ host_map_lookup(map, name, av, statp)
 	if ((cp = strchr(name, ']')) == NULL)
 		return (NULL);
 	*cp = '\0';
-	in_addr.s_addr = inet_addr(&name[1]);
+	in_addr = inet_addr(&name[1]);
 
 	/* nope -- ask the name server */
-	hp = gethostbyaddr((char *)&in_addr, INADDRSZ, AF_INET);
+	hp = gethostbyaddr((char *)&in_addr, sizeof(struct in_addr), AF_INET);
 	s->s_namecanon.nc_errno = errno;
 #if NAMED_BIND
 	s->s_namecanon.nc_herrno = h_errno;
@@ -1349,6 +1325,7 @@ anynet_ntoa(sap)
 
 	switch (sap->sa.sa_family)
 	{
+#ifdef MAYBENEXTRELEASE		/*** UNTESTED *** UNTESTED *** UNTESTED ***/
 #ifdef NETUNIX
 	  case AF_UNIX:
 	  	if (sap->sunix.sun_path[0] != '\0')
@@ -1356,6 +1333,7 @@ anynet_ntoa(sap)
 	  	else
 	  		sprintf(buf, "[UNIX: localhost]");
 		return buf;
+#endif
 #endif
 
 #ifdef NETINET
@@ -1411,7 +1389,7 @@ hostnamebyanyaddr(sap)
 #ifdef NETINET
 	  case AF_INET:
 		hp = gethostbyaddr((char *) &sap->sin.sin_addr,
-			INADDRSZ,
+			sizeof sap->sin.sin_addr,
 			AF_INET);
 		break;
 #endif
@@ -1424,9 +1402,11 @@ hostnamebyanyaddr(sap)
 		break;
 #endif
 
+#ifdef MAYBENEXTRELEASE		/*** UNTESTED *** UNTESTED *** UNTESTED ***/
 	  case AF_UNIX:
 		hp = NULL;
 		break;
+#endif
 
 	  default:
 		hp = gethostbyaddr(sap->sa.sa_data,
