@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.140		%G%);
+SCCSID(@(#)deliver.c	3.141		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -889,14 +889,20 @@ giveresponse(stat, m, e)
 		extern char *sys_errlist[];
 		extern int sys_nerr;
 
-		(void) sprintf(buf, "%.3s ", SysExMsg[i]);
-		if (errno > 0 && errno < sys_nerr)
+		(void) strcpy(buf, SysExMsg[i]);
+		if (errno != 0)
 		{
-			(void) strcat(buf, sys_errlist[errno]);
-			(void) strcat(buf, " [deferred]");
+			(void) strcat(buf, ": ");
+			if (errno > 0 && errno < sys_nerr)
+				(void) strcat(buf, sys_errlist[errno]);
+			else
+			{
+				char xbuf[30];
+
+				(void) sprintf(xbuf, "Error %d", errno);
+				(void) strcat(buf, xbuf);
+			}
 		}
-		else
-			(void) strcat(buf, "deferred");
 		statmsg = buf;
 	}
 	else
@@ -932,6 +938,7 @@ giveresponse(stat, m, e)
 			free(e->e_message);
 		e->e_message = newstr(&statmsg[4]);
 	}
+	errno = 0;
 }
 /*
 **  LOGDELIVERY -- log the delivery in the system log

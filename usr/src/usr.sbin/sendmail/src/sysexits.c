@@ -1,7 +1,7 @@
 # include <sysexits.h>
 # include "useful.h"
 
-SCCSID(@(#)sysexits.c	3.5		%G%);
+SCCSID(@(#)sysexits.c	3.6		%G%);
 
 /*
 **  SYSEXITS.C -- error messages corresponding to sysexits.h
@@ -20,7 +20,7 @@ char	*SysExMsg[] =
 	/* 72 OSFILE */		"554 System file missing",
 	/* 73 CANTCREAT */	"550 Can't create output",
 	/* 74 IOERR */		"451 I/O error",
-	/* 75 TEMPFAIL */	"250 Temporary failure",
+	/* 75 TEMPFAIL */	"250 Deferred",
 	/* 76 PROTOCOL */	"554 Remote protocol error",
 };
 
