@@ -353,7 +353,7 @@ vector() {
 
 	fprintf(fp, "\
 #define BUILD_VECTORS \\\n\
-	BUILD_VECTOR(clk, 0,0,0, _high_imask, _hardclock,1,1,       al);\\\n");
+	BUILD_VECTOR(clk, 0,0,0, _high_imask, _timerintr,1,1,       al);\\\n");
 
 	count=1;
 	for (dp = dtab; dp != 0; dp = dp->d_next) {
