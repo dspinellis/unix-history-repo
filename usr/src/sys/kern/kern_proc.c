@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.26	82/04/19	*/
+/*	kern_proc.c	4.27	82/07/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -19,6 +19,7 @@
 #include "../h/psl.h"
 #include "../h/vlimit.h"
 #include "../h/file.h"
+#include "../h/quota.h"
 
 /*
  * exec system call, with and without environments.
@@ -518,6 +519,9 @@ exit(rv)
 	}
 	u.u_limit[LIM_FSIZE] = INFINITY;
 	acct();
+#ifdef QUOTA
+	qclean();
+#endif
 	vrelpt(u.u_procp);
 	vrelu(u.u_procp, 0);
 	(void) spl5();		/* hack for mem alloc race XXX */
@@ -544,6 +548,16 @@ done:
 	vmsadd(&((struct xproc *)p)->xp_vm, &u.u_cvm);
 	for (q = proc; q < procNPROC; q++)
 		if (q->p_pptr == p) {
+			if (q->p_osptr)
+				q->p_osptr->p_ysptr = q->p_ysptr;
+			if (q->p_ysptr)
+				q->p_ysptr->p_osptr = q->p_osptr;
+			if (proc[1].p_cptr)
+				proc[1].p_cptr->p_ysptr = q;
+			q->p_osptr = proc[1].p_cptr;
+			q->p_ysptr = NULL;
+			proc[1].p_cptr = q;
+
 			q->p_pptr = &proc[1];
 			q->p_ppid = 1;
 			wakeup((caddr_t)&proc[1]);
@@ -601,7 +615,7 @@ wait1(options, vp)
 	struct vtimes *vp;
 {
 	register f;
-	register struct proc *p;
+	register struct proc *p, *q;
 
 	f = 0;
 loop:
@@ -619,7 +633,16 @@ loop:
 			p->p_stat = NULL;
 			p->p_pid = 0;
 			p->p_ppid = 0;
+			if (q = p->p_ysptr)
+				q->p_osptr = p->p_osptr;
+			if (q = p->p_osptr)
+				q->p_ysptr = p->p_ysptr;
+			if ((q = p->p_pptr)->p_cptr == p)
+				q->p_cptr = p->p_osptr;
 			p->p_pptr = 0;
+			p->p_ysptr = 0;
+			p->p_osptr = 0;
+			p->p_cptr = 0;
 			p->p_sig = 0;
 			p->p_siga0 = 0;
 			p->p_siga1 = 0;
@@ -671,17 +694,32 @@ fork()
 fork1(isvfork)
 {
 	register struct proc *p1, *p2;
+#ifndef	QUOTA
 	register a;
 
 	a = 0;
+#else
+	if (u.u_quota != NOQUOT && u.u_quota->q_plim &&
+	    u.u_quota->q_cnt >= u.u_quota->q_plim) {
+		u.u_error = EPROCLIM;
+		return;
+	}
+#endif
 	p2 = NULL;
 	for (p1 = proc; p1 < procNPROC; p1++) {
+#ifdef QUOTA
+		if (p1->p_stat == NULL) {
+			p2 = p1;
+			break;
+		}
+#else
 		if (p1->p_stat==NULL && p2==NULL)
 			p2 = p1;
 		else {
 			if (p1->p_uid==u.u_uid && p1->p_stat!=NULL)
 				a++;
 		}
+#endif
 	}
 	/*
 	 * Disallow if
@@ -691,7 +729,11 @@ fork1(isvfork)
 	 */
 	if (p2==NULL)
 		tablefull("proc");
+#ifdef QUOTA
+	if (p2==NULL || (u.u_uid!=0 && p2==procNPROC-1)) {
+#else
 	if (p2==NULL || (u.u_uid!=0 && (p2==procNPROC-1 || a>MAXUPRC))) {
+#endif
 		u.u_error = EAGAIN;
 		if (!isvfork) {
 			(void) vsexpand(0, &u.u_cdmap, 1);
@@ -705,6 +747,9 @@ fork1(isvfork)
 		u.u_r.r_val2 = 1;  /* child */
 		u.u_start = time;
 		u.u_acflag = AFORK;
+#ifdef QUOTA
+		u.u_qflags &= ~QUF_LOGIN;
+#endif
 		return;
 	}
 	u.u_r.r_val1 = p2->p_pid;
