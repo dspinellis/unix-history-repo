@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.44	83/03/19	*/
+/*	uipc_syscalls.c	4.45	83/03/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -460,7 +460,7 @@ setsockopt()
 	}
 	if (uap->val) {
 		m = m_get(M_WAIT, MT_SOOPTS);
-		if (m == 0) {
+		if (m == NULL) {
 			u.u_error = ENOBUFS;
 			return;
 		}
@@ -597,6 +597,10 @@ getsockname()
 		return;
 	so = fp->f_socket;
 	m = m_getclr(M_WAIT, MT_SONAME);
+	if (m == NULL) {
+		u.u_error = ENOBUFS;
+		return;
+	}
 	u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_SOCKADDR, 0, m, 0);
 	if (u.u_error)
 		goto bad;
@@ -621,6 +625,8 @@ sockname(aname, name, namelen)
 	if (namelen > MLEN)
 		return (EINVAL);
 	m = m_get(M_WAIT, MT_SONAME);
+	if (m == NULL)
+		return (ENOBUFS);
 	m->m_len = namelen;
 	error = copyin(name, mtod(m, caddr_t), (u_int)namelen);
 	if (error)
