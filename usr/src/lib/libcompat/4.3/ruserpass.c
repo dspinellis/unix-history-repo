@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ruserpass.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)ruserpass.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -741,8 +741,9 @@ sreverse(sto, sfrom)
 	register int i;
 
 	i = strlen(sfrom);
-	while (i >= 0)
-		*sto++ = sfrom[i--];
+	while (i > 0)
+		*sto++ = sfrom[--i];
+	*sto = '\0';
 }
 
 static
