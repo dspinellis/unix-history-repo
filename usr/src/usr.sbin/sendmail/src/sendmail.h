@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.46 (Berkeley) %G%
+ *	@(#)sendmail.h	6.47 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.46		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.47		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -31,7 +31,6 @@ static char SmailSccsId[] =	"@(#)sendmail.h	6.46		%G%";
 # include <string.h>
 # include <time.h>
 # include <errno.h>
-# include <sys/types.h>
 
 # include "conf.h"
 # include "useful.h"
@@ -223,7 +222,9 @@ extern struct hdrinfo	HdrInfo[];
 **	will have their own envelope.
 */
 
-struct envelope
+# define ENVELOPE	struct envelope
+
+ENVELOPE
 {
 	HDR	*e_header;	/* head of header list */
 	long	e_msgpriority;	/* adjusted priority of this message */
@@ -239,8 +240,6 @@ struct envelope
 	int	(*e_putfunc)();	/* function used to put the message */
 	short	e_class;	/* message class (priority, junk, etc.) */
 };
-
-typedef struct envelope	ENVELOPE;
 
 /* values for e_flags */
 #define EF_OLDSTYLE	000001		/* use spaces (not commas) in hdrs */
@@ -399,7 +398,8 @@ extern STAB	*stab();
 struct event
 {
 	time_t		ev_time;	/* time of the function call */
-	int		(*ev_func)();	/* function to call */
+	int		(*ev_func)__P((int));
+					/* function to call */
 	int		ev_arg;		/* argument to ev_func */
 	int		ev_pid;		/* pid that set this event */
 	struct event	*ev_link;	/* link to next item */
@@ -610,22 +610,16 @@ EXTERN u_char	tTdvect[100];
 **  Declarations of useful functions
 */
 
-#if defined(__STDC__) && defined(_FORGIVING_CC_)
-#define P(protos)	protos
-#else
-#define P(protos)	()
-#endif
-
-extern ADDRESS	*parseaddr P((char *, ADDRESS *, int, char, char **, ENVELOPE *));
-extern char	*xalloc P((int));
-extern bool	sameaddr P((ADDRESS *, ADDRESS *));
-extern FILE	*dfopen P((char *, char *));
-extern EVENT	*setevent P((time_t, int(*)(), int));
-extern char	*sfgets P((char *, int, FILE *, time_t));
-extern char	*queuename P((ENVELOPE *, char));
-extern time_t	curtime P(());
-extern bool	transienterror P((int));
-extern char	*errstring P((int));
+extern ADDRESS	*parseaddr __P((char *, ADDRESS *, int, char, char **, ENVELOPE *));
+extern char	*xalloc __P((int));
+extern bool	sameaddr __P((ADDRESS *, ADDRESS *));
+extern FILE	*dfopen __P((char *, char *));
+extern EVENT	*setevent __P((time_t, int(*)(), int));
+extern char	*sfgets __P((char *, int, FILE *, time_t));
+extern char	*queuename __P((ENVELOPE *, char));
+extern time_t	curtime __P(());
+extern bool	transienterror __P((int));
+extern char	*errstring __P((int));
 
 /* ellipsis is a different case though */
 #ifdef __STDC__
