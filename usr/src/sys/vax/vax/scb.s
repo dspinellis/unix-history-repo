@@ -1,4 +1,6 @@
-/*	scb.s	6.1	83/08/01	*/
+/*	scb.s	4.16	83/08/11	*/
+
+#include "uba.h"
 
 /*
  * System control block
