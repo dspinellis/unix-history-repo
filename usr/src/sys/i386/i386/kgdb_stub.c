@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kgdb_stub.c	7.1 (Berkeley) %G%
+ *	@(#)kgdb_stub.c	7.2 (Berkeley) %G%
  */
 /*
  * "Stub" to allow remote cpu to debug over a serial line using gdb.
@@ -20,7 +20,6 @@ static char rcsid[] = "$Header: /u/donn/c/gdb/kernel/RCS/kgdb_stub.c,v 1.2 91/03
 #include "../include/cpu.h"
 #include "../include/psl.h"
 #include "../include/reg.h"
-#include "../include/frame.h"
 #include "buf.h"
 #include "cons.h"
 #include "errno.h"
@@ -504,12 +503,12 @@ kgdb_trap(int type, struct trapframe *frame)
 kgdb_acc(addr, len, rw)
 	caddr_t addr;
 {
-	extern char proc0paddr[], u[];		/* XXX! */
+	extern char proc0paddr[], kstack[];		/* XXX! */
 	extern char *kernel_map;		/* XXX! */
 
-	if (u <= addr && addr < u + UPAGES * NBPG)
+	if (kstack <= addr && addr < kstack + UPAGES * NBPG)
 		/*
-		 * Horrid hack -- the U area and kernel stack are mapped
+		 * Horrid hack -- the kernel stack is mapped
 		 * by the user page table, but we guarantee (?) their presence.
 		 */
 		return (1);
@@ -517,7 +516,7 @@ kgdb_acc(addr, len, rw)
 		return (kernacc(addr, len, rw));
 #if 0
 	if (addr < proc0paddr + UPAGES * NBPG  ||
-	    u <= addr && addr < u + UPAGES * NBPG)
+	    kstack <= addr && addr < kstack + UPAGES * NBPG)
 		return (1);
 #endif
 	return (0);
