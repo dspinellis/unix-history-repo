@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)linkaddr.3	5.2 (Berkeley) %G%
+.\"     @(#)linkaddr.3	8.1 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LINK_ADDR 3
@@ -33,40 +33,40 @@ The routine
 .Fn link_ntoa
 takes
 a link-level
-address and returns an
+addresses and returns
 .Tn ASCII
-string representing some of the information present,
-including the link level address itself, and the interface name
-or number, if present.
-This facility is experimental and is
-still subject to change.
+strings representing some of the information present
+(The link level address itself, and the interface name
+or number, if present.)
+This facility is still experimental, and had there been
+further development of the system would have been subject to change.
 .Pp
-For
-.Fn link_addr ,
-the string
-.Fa addr
-may contain
-an optional network interface identifier of the form
-.Dq "name unit-number" ,
+The syntax employed by
+.Fn link_addr
+is an optional network interface identifier (a string of the
+form
+.Dq name\ unit ,
 suitable for the first argument to
-.Xr ifconfig 4 ,
-followed in all cases by a colon and
-an interface address in the form of
-groups of hexadecimal digits
-separated by periods.
-Each group represents a byte of address;
-address bytes are filled left to right from
-low order bytes through high order bytes.
+.Xr ifconfig 4 )
+followed by a colon when the interface identifier is present,
+followed in all cases by a sequence of hexadecimal
+.Dq digits
+(optionally separated by periods),
+of the form:
+.Bd -filled -offset indent
+<name unit :> <hex digits>.<hex digits>.<hex digits>
+.Ed
 .Pp
-.\" A regular expression may make this format clearer:
-.\" .Bd -literal -offset indent
-.\" ([a-z]+[0-9]+:)?[0-9a-f]+(\e.[0-9a-f]+)*
-.\" .Ed
-.\" .Pp
-Thus
-.Li le0:8.0.9.13.d.30
-represents an ethernet address
-to be transmitted on the first Lance ethernet interface.
+Each pair of hexadecimal digits represents a byte
+with the leading digit indicating the higher-ordered bits.
+A period following an even number of bytes has no
+effect (but may be used to increase legitibility).
+A period following an odd number of bytes has the
+effective of filling the byte of address being translated
+to have its higher order bits filled with zeros.
+.Pp
+Thus le0:8.0.9.13.d.30 represents an ethernet address
+to be transmitted on the first lance ethernet interface.
 .Sh RETURN VALUES
 .Fn link_ntoa
 always returns a null terminated string.
@@ -86,20 +86,7 @@ functions appeared in
 .Sh BUGS
 The returned values for link_ntoa
 reside in a static memory area.
-.Pp
 The function
 .Fn link_addr
 should diagnose improperly formed input, and there should be an unambiguous
 way to recognize this.
-.Pp
-If the
-.Va sdl_len
-field of the link socket address
-.Fa sdl
-is 0,
-.Fn link_ntoa
-will not insert a colon before the interface address bytes.
-If this translated address is given to
-.Fn link_addr
-without inserting an initial colon,
-the latter will not interpret it correctly.
