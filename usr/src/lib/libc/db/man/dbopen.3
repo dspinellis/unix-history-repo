@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)dbopen.3	5.9 (Berkeley) %G%
+.\"	@(#)dbopen.3	5.10 (Berkeley) %G%
 .\"
 .TH DB 3  ""
 .UC 7
@@ -58,8 +58,6 @@ are as specified to the
 .IR open (2)
 routine, however, only the O_CREAT, O_EXCL, O_RDONLY, O_RDWR, O_TRUNC
 and O_WRONLY flags are meaningful.
-If entries are to be inserted into or deleted from a database file, it
-must be opened with the O_RDWR flag.
 The argument
 .I openinfo
 is a pointer to a access method specific structure described below.
@@ -183,6 +181,18 @@ structure referenced
 by
 .IR data .
 .IP
+Sequential key/data pair retrieval may begin at any time, and the
+position of the ``cursor'' is not affected by calls to the
+.IR delete ,
+.IR get ,
+.IR put ,
+or
+.I sync
+routines.
+Modifications to the database during a sequential scan will be reflected
+in the scan, i.e. records inserted behind the cursor will not be returned
+while records inserted in front of the cursor will be returned.
+.IP
 The flag value must be set to one of the following values:
 .RS
 .TP
@@ -224,7 +234,6 @@ If
 is set to R_NEXT the first time the
 .I seq
 routine is called, the first key/data pair of the database is returned.
-The order of retrieval of key/data pairs with duplicate keys is undefined.
 .TP
 R_PREV
 Retrieve the key/data pair immediately before the key/data pair most recently
@@ -232,7 +241,11 @@ retrieved using the
 .I seq
 routine.
 The cursor is moved to the returned key/data pair.
-The order of retrieval of key/data pairs with duplicate keys is undefined.
+If
+.I flag
+is set to R_PREV the first time the
+.I seq
+routine is called, the last key/data pair of the database is returned.
 (This implies that the access method has a implicit order which does
 not change.
 Applicable only to the
@@ -242,23 +255,16 @@ and
 access methods.)
 .RE
 .IP
-Sequential key/data pair retrieval may begin at any time.
-The position of the ``cursor'' is not affected by calls to the
-.IR delete ,
-.IR get ,
-.IR put ,
-or
-.I sync
-routines.
-It is undefined whether any modifications of the database during a
-sequential scan will be reflected in the scan.
-.IP
 .I Seq
 routines return -1 on error (setting
 .IR errno ),
-0 on success, 1 if there are no more key/data pairs available and 2 if
-the database file is a character special file and no complete key/data
-pairs are currently available.
+0 on success, 1 if there are no more key/data pairs available.
+If the
+.B RECNO
+access method is being used, and if the database file is a character special
+file and no complete key/data pairs are currently available, the
+.I seq
+routines return 2.
 .TP
 sync
 A pointer to a routine to flush any cached information to disk.
@@ -322,6 +328,8 @@ R_DUP
 If the key already exists in the file, create an entry with a duplicate
 key, i.e. one with the same key and different data as another entry.
 (This implies that keys are not required to be unique.)
+Note, the order of retrieval of key/data pairs with duplicate keys is
+undefined.
 .RE
 .TP
 psize
@@ -343,8 +351,8 @@ In addition, physical writes are delayed as long as possible, so a moderate
 cache can reduce the number of I/O operations significantly.
 Obviously, using a cache increases the likelihood of corruption or lost data
 if the system crashes while a tree is being modified, however, caching 10
-pages decreases (by between two and three orders of magnitude) the creation
-time of a large tree.
+pages decreases the creation time of a large tree by between two and three
+orders of magnitude.
 .TP
 compare
 Compare is a user defined comparison function.
@@ -411,11 +419,9 @@ The elements of this structure are defined as follows:
 .TP
 bsize
 .I Bsize
-defines the hash table bucket size, and is, by default, 1024 bytes.
-For tables with large data items, it may be preferable to increase the
-page size, and, conversely, applications doing exclusively in-memory hashing
-may want to use a very small bucket size, for example, 256, to minimize
-hash chain collisions.
+defines the hash table bucket size, and is, by default, 256 bytes.
+It may be preferable to increase the page size for disk-resident tables and
+tables with large data items.
 .TP
 cachesize
 A suggested maximum size, in bytes, of the memory cache.
@@ -427,7 +433,7 @@ ffactor
 indicates a desired density within the hash table.
 It is an approximation of the number of keys allowed to accumulate in any
 one bucket, determining when the hash table grows or shrinks.
-The default value is 5.
+The default value is 8.
 .TP
 hash
 .I Hash
@@ -602,10 +608,6 @@ between the version number of file and the software.
 A file used by one of the
 .I open
 routines is incorrectly formatted.
-.br
-<This
-.I errno
-does not currently exist.>
 .PP
 The
 .I close
