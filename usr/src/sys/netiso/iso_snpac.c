@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_snpac.c	8.1 (Berkeley) %G%
+ *	@(#)iso_snpac.c	8.2 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -460,7 +460,7 @@ snpac_fixdstandmask(nsellength)
  */
 snpac_ioctl (so, cmd, data)
 struct socket *so;
-int		cmd;	/* ioctl to process */
+u_long	cmd;	/* ioctl to process */
 caddr_t	data;	/* data for the cmd */
 {
 	register struct systype_req *rq = (struct systype_req *)data;
