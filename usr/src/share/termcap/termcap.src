@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.109 (Berkeley) %G%
+#	@(#)termcap.src	5.110 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -2894,11 +2894,11 @@ wyse-vp-nk|Wyse 50 in ADDS Viewpoint enhanced mode with cursor keys gone:\
 	:kl@:kr@:kd@:ku@:kh@:tc=wyse-vp:
 wyse925|Wyse-50 emulating tvi925:\
 	:xn@:tc=tvi925:
-# Wyse 60 in 24 row native mode, switches screens for vi and emacs.
+# Wyse 60 in 24 row native mode.
 # This termcap is a composite of entries submitted by Steve Van Domelen
 # (Wyse Tech, svd@bigboy.wyse.com) and Douglas Good (doug@cli.com).
 # Merged by Paul Vojta (vojta@math.berkeley.edu).
-wy60|wyse60|Wyse 60 in native mode:\
+w6|wy60|wyse60|Wyse 60 in native mode:\
 	:ae=\EH^C:al=4\EE:am:as=\EH^B:bl=^G:bs:bt=\EI:bw:cd=100\Ey:ce=\Et:\
 	:cl=100\E*:cm=\E=%+ %+ :co#80:ct=\E0:da:db:dc=11\EW:dl=5\ER:do=^J:\
 	:ds=\EF\r:ei=\Er:fs=\r:ho=^^:hs:if=/usr/share/tabset/std:im=\Eq:ip=3:\
@@ -2910,41 +2910,45 @@ wy60|wyse60|Wyse 60 in native mode:\
 	:ku=\EOA:l0=F1:l1=F2:l2=F3:l3=F4:l4=F5:l5=F6:l6=F7:l7=F8:l8=F9:l9=F10:\
 	:le=\b:li#24:ll=^^^K:mb=\EG2:me=\EG0:mh=\EGp:mi:mr=\EG4:ms:nd=\f:pf=^T:\
 	:po=^R:pt:rs=500\E~!\E~4\E`\:\EeF\Ee(\EwG:se=\EG0:sf=^J:so=\EGt:\
-	:sr=7\Ej:st=\E1:te=50^Z\Ew0:ti=50\Ew1:ts=\EF:ue=\EG0:up=^K:us=\EG8:
-#	Must delete uc= if using infocomp to translate
-wy60-w|wyse60-w|wyse 60 132-column:\
+	:sr=7\Ej:st=\E1:ts=\EF:ue=\EG0:up=^K:us=\EG8:
+#	Must delete tc= if using infocomp to translate
+w7|wy60-w|wyse60-w|wyse 60 132-column:\
 	:co#132:cm=\Ea%i%dR%dC:dc=16\EW:ip=5:\
 	:rs=500\E~!\E~4\EeF\E`;\Ee(\EwG:tc=wy60:
-#	From now on, page-switching is no longer possible
-wy60-25|wyse60-25|wyse 60 80-column 25-lines:\
-	:li#25:te:ti:\
+w8|wy60-25|wyse60-25|wyse 60 80-column 25-lines:\
+	:li#25:\
 	:rs=500\E~!\E~4\E`\:\EeG\Ee)\EwG:tc=wy60:
-wy60-25-w|wyse60-25-w|wyse 60 132-column 25-lines:\
-	:co#132:li#25:cm=\Ea%i%dR%dC:dc=16\EW:ip=5:te:ti:\
+w9|wy60-25-w|wyse60-25-w|wyse 60 132-column 25-lines:\
+	:co#132:li#25:cm=\Ea%i%dR%dC:dc=16\EW:ip=5:\
 	:rs=500\E~!\E~4\EeF\E`;\Ee)\EwG:tc=wy60:
-wy60-42|wyse60-42|wyse 60 80-column 42-lines:\
+wa|wy60-42|wyse60-42|wyse 60 80-column 42-lines:\
 	:li#42:al=11\EE:cd=260\Ey:cl=260\E*:cm=2\E=%+ %+ :dc=16\EW:\
-	:dl=11\ER:ip=5:sr=10\Ej:te:ti:\
+	:dl=11\ER:ip=5:sr=10\Ej:\
 	:rs=500\E~!\E~4\E`\:\EeF\Ee*\EwG:tc=wy60:
-wy60-42-w|wyse60-42-w|wyse 60 132-column 42-lines:\
+wb|wy60-42-w|wyse60-42-w|wyse 60 132-column 42-lines:\
 	:co#132:li#42:al=11\EE:cd=260\Ey:cl=260\E*:cm=2\Ea%i%dR%dC:dc=19\EW:\
-	:dl=11\ER:ho=2^^:ip=6:sr=10\Ej:te:ti:\
+	:dl=11\ER:ho=2^^:ip=6:sr=10\Ej:\
 	:rs=500\E~!\E~4\EeF\E`;\Ee*\EwG:tc=wy60:
-wy60-43|wyse60-43|wyse 60 80-column 43-lines:\
+wc|wy60-43|wyse60-43|wyse 60 80-column 43-lines:\
 	:li#43:al=11\EE:cd=260\Ey:cl=260\E*:cm=2\E=%+ %+ :dc=16\EW:\
-	:dl=11\ER:ip=5:sr=10\Ej:te:ti:\
+	:dl=11\ER:ip=5:sr=10\Ej:\
 	:rs=500\E~!\E~4\E`\:\EeF\Ee+\EwG:tc=wy60:
-wy60-43-w|wyse60-43-w|wyse 60 132-column 43-lines:\
+wd|wy60-43-w|wyse60-43-w|wyse 60 132-column 43-lines:\
 	:co#132:li#43:al=11\EE:cd=260\Ey:cl=260\E*:cm=2\Ea%i%dR%dC:dc=19\EW:\
-	:dl=11\ER:ho=2^^:ip=6:sr=10\Ej:te:ti:\
+	:dl=11\ER:ho=2^^:ip=6:sr=10\Ej:\
 	:rs=500\E~!\E~4\EeF\E`;\Ee+\EwG:tc=wy60:
 #	Not recommended at high baud rates
-wy60-vb|wyse60-vb|Wyse 60 visual bell:\
+we|wy60-vb|wyse60-vb|Wyse 60 visual bell:\
 	:vb=\E`8\E`9:\
 	:tc=wy60:
-wy60-w-vb|wy60-wvb|wyse60-wvb|Wyse 60 132-column visual bell:\
+wf|wy60-w-vb|wy60-wvb|wyse60-w-vb|Wyse 60 132-column visual bell:\
 	:vb=\E`8\E`9:\
 	:tc=wy60-w:
+#	The following switch screens for vi and emacs
+wx|wy60-s|wyse60-s|Wyse 60 with screen switching:\
+	:te=50^Z\Ew0:ti=50\Ew1:tc=wy60:
+wy|wy60-w-s|wyse60-w-s|Wyse 60 132-column with screen switching:\
+	:te=50^Z\Ew0:ti=50\Ew1:tc=wy60-w:
 #
 #	The Wyse 75 is a vt100 lookalike without advanced video.
 #
