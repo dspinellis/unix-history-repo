@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)bind.2	6.4 (Berkeley) %G%
+.\"	@(#)bind.2	6.5 (Berkeley) %G%
 .\"
 .TH BIND 2 ""
 .UC 5
@@ -37,10 +37,6 @@ Binding a name in the UNIX domain creates a socket in the file
 system that must be deleted by the caller when it is no longer
 needed (using
 .IR unlink (2)).
-The file created
-is a side-effect of the current implementation,
-and will not be created in future versions
-of the UNIX ipc domain.
 .PP
 The rules used in name binding vary between communication domains.
 Consult the manual entries in section 4 for detailed information.
@@ -75,7 +71,6 @@ The \fIname\fP parameter is not in a valid part of the user
 address space.
 .PP
 The following errors are specific to binding names in the UNIX domain.
-These errors may not apply in future versions of the UNIX ipc domain.
 .TP 15
 [ENOTDIR]
 A component of the path prefix is not a directory.
