@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.77 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.78 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1794,6 +1794,7 @@ prog_open(argv, pfd, e)
 		close(fileno(e->e_lockfp));
 
 	/* run as default user */
+	endpwent();
 	setgid(DefGid);
 	setuid(DefUid);
 
