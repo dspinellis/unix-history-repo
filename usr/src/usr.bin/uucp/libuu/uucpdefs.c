@@ -1,8 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)uucpdefs.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)uucpdefs.c	5.6 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
+#include "pathnames.h"
 
 char Progname[64];
 int Ifn, Ofn;
@@ -23,9 +24,9 @@ int IsTcpIp = 0;	/* 1 == TCP/IP connection, else 0.  kludge to suppress ioctl */
 char MaxGrade = '\177';
 char DefMaxGrade = '\177';
 int nologinflag = 0;
-char NOLOGIN[] = "/etc/nologin";
+char NOLOGIN[] = _PATH_NOLOGIN;
 
 /* Save some data space */
-char DEVNULL[] = "/dev/null";
+char DEVNULL[] = _PATH_DEVNULL;
 char CANTOPEN[] = "CAN'T OPEN";
 char _FAILED[] = "FAILED";

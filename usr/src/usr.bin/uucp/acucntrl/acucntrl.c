@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)acucntrl.c	5.15	(Berkeley) %G%";
+static char sccsid[] = "@(#)acucntrl.c	5.16	(Berkeley) %G%";
 #endif
 
 /*  acucntrl - turn around tty line between dialin and dialout
@@ -19,28 +19,28 @@ static char sccsid[] = "@(#)acucntrl.c	5.15	(Berkeley) %G%";
  * Operation:
  *   disable (i.e. setup for dialing out)
  *	(1) check input arguments
- *	(2) look in /etc/utmp to check that the line is not in use by another
+ *	(2) look in _PATH_UTMP to check that the line is not in use by another
  *	(3) disable modem control on terminal
  *	(4) check for carrier on device
  *	(5) change owner of device to real id
- *	(6) edit /etc/ttys,  changing the first character of the appropriate
+ *	(6) edit _PATH_TTYS, changing the first character of the appropriate
  *	    line to 0
  *	(7) send a hangup to process 1 to poke init to disable getty
- *	(8) post uid name in capitals in /etc/utmp to let world know device has
- *	    been grabbed
+ *	(8) post uid name in capitals in _PATH_UTMP to let world know device
+ *	    has been grabbed
  *	(9) make sure that DTR is on
  *
  *   enable (i.e.) restore for dialin
  *	(1) check input arguments
- *	(2) look in /etc/utmp to check that the line is not in use by another
+ *	(2) look in _PATH_UTMP to check that the line is not in use by another
  *	(3) make sure modem control on terminal is disabled
  *	(4) turn off DTR to make sure line is hung up
  *	(5) condition line: clear exclusive use and set hangup on close modes
  *	(6) turn on modem control
- *	(7) edit /etc/ttys,  changing the first character of the appropriate
+ *	(7) edit _PATH_TTYS, changing the first character of the appropriate
  *	    line to 1
  *	(8) send a hangup to process 1 to poke init to enable getty
- *	(9) clear uid name for /etc/utmp
+ *	(9) clear uid name for _PATH_UTMP
  */
 
 /* #define SENSECARRIER */
@@ -64,6 +64,7 @@ static char sccsid[] = "@(#)acucntrl.c	5.15	(Berkeley) %G%";
 #include <pwd.h>
 #include <stdio.h>
 #include <sys/file.h>
+#include "pathnames.h"
 
 #define NDZLINE	8	/* lines/dz */
 #define NDHLINE	16	/* lines/dh */
@@ -112,14 +113,13 @@ struct nlist nl[] = {
 #define ENABLE	1
 #define DISABLE	0
 
-char Etcutmp[] = "/etc/utmp";
-char Etcttys[] = "/etc/ttys";
+char Etcttys[] = _PATH_TTYS;
 #ifdef BSD4_3
 FILE *ttysfile, *nttysfile;
-char NEtcttys[] = "/etc/ttys.new";
+char NEtcttys[] = _PATH_NEWTTYS;
 extern long ftell();
 #endif BSD4_3
-char Devhome[] = "/dev";
+char Devhome[] = _PATH_DEV;
 
 char usage[] = "Usage: acucntrl {dis|en}able ttydX\n";
 
@@ -171,7 +171,7 @@ int argc; char *argv[];
 
 #ifdef vax
 	/* Get nlist info */
-	nlist("/vmunix", nl);
+	nlist(_PATH_UNIX, nl);
 #endif vax
 
 	/* Chdir to /dev */
@@ -202,9 +202,9 @@ int argc; char *argv[];
 	} while (*p++ && i<NAMSIZ);
 
 	/* check to see if line is being used */
-	if( (etcutmp = open(Etcutmp, 2)) < 0) {
+	if( (etcutmp = open(_PATH_UTMP, 2)) < 0) {
 		fprintf(stderr, "On open %s open: %s\n",
-			Etcutmp, sys_errlist[errno]);
+			_PATH_UTMP, sys_errlist[errno]);
 		exit(1);
 	}
 
@@ -364,11 +364,11 @@ char *device, *name;
 	strncpy(utmp.ut_line, device, LINSIZ);
 	strncpy(utmp.ut_name, name,  NAMSIZ);
 	if (lseek(etcutmp, utmploc, 0) < 0)
-		fprintf(stderr, "on lseek in /etc/utmp: %s",
-			sys_errlist[errno]);
+		fprintf(stderr, "on lseek in %s: %s",
+			_PATH_UTMP, sys_errlist[errno]);
 	if (write(etcutmp, (char *)&utmp, sizeof(utmp)) < 0)
-		fprintf(stderr, "on write in /etc/utmp: %s",
-			sys_errlist[errno]);
+		fprintf(stderr, "on write in %s: %s",
+			_PATH_UTMP, sys_errlist[errno]);
 }
 	
 /* poke process 1 and wait for it to do its thing */
@@ -398,11 +398,11 @@ char *uname, *device; int enable;
 	do {
 		sleep(1);
 		if (lseek(etcutmp, utmploc, 0) < 0)
-			fprintf(stderr, "On lseek in /etc/utmp: %s",
-				sys_errlist[errno]);
+			fprintf(stderr, "On lseek in %s: %s",
+				_PATH_UTMP, sys_errlist[errno]);
 		if (read(etcutmp, (char *)&utmp, sizeof utmp) < 0)
-			fprintf(stderr, "On read from /etc/utmp: %s",
-				sys_errlist[errno]);
+			fprintf(stderr, "On read from %s: %s",
+				_PATH_UTMP, sys_errlist[errno]);
 	} while (utmp.ut_name[0] != '\0' && --i > 0);
 }
 
@@ -460,7 +460,7 @@ char *device;
 	exit(1);
 }
 
-/* modify appropriate line in /etc/ttys to turn on/off the device */
+/* modify appropriate line in _PATH_TTYS to turn on/off the device */
 settys(enable)
 int enable;
 {
@@ -494,7 +494,8 @@ int enable;
 			cp++;
 	}
 	if (*cp == '\0') {
-		fprintf(stderr,"Badly formatted line in /etc/ttys:\n%s", lbuf);
+		fprintf(stderr,"Badly formatted line in %s:\n%s",
+		    _PATH_TTYS, lbuf);
 		exit(1);
 	}
 	c1 = *--cp;
@@ -503,7 +504,8 @@ int enable;
 	while (*cp && *cp != ' ' && *cp != '\t' && *cp != '\n')
 		cp++;
 	if (*cp == '\0') {
-		fprintf(stderr,"Badly formatted line in /etc/ttys:\n%s", lbuf);
+		fprintf(stderr,"Badly formatted line in %s:\n%s",
+		    _PATH_TTYS, lbuf);
 		exit(1);
 	}
 	c2 = *cp;
@@ -582,7 +584,7 @@ char *device;
 	exit(1);
 }
 
-/* modify appropriate line in /etc/ttys to turn on/off the device */
+/* modify appropriate line in _PATH_TTYS to turn on/off the device */
 settys(enable)
 int enable;
 {
@@ -657,8 +659,9 @@ char *ttyline; int enable;
 		return(-1);
 	}
 
-	if((kmem = open("/dev/kmem", 2)) < 0) {
-		fprintf(stderr, "/dev/kmem open: %s\n", sys_errlist[errno]);
+	if((kmem = open(_PATH_KMEM, 2)) < 0) {
+		fprintf(stderr, "%s open: %s\n", _PATH_KMEM,
+		    sys_errlist[errno]);
 		return(-1);
 	}
 

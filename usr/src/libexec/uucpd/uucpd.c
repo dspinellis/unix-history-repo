@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)uucpd.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)uucpd.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -42,9 +42,8 @@ static char sccsid[] = "@(#)uucpd.c	5.6 (Berkeley) %G%";
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 #include <pwd.h>
-#include <lastlog.h>
+#include "pathnames.h"
 
-char lastlog[] = "/usr/adm/lastlog";
 struct	sockaddr_in hisctladdr;
 int hisaddrlen = sizeof hisctladdr;
 struct	sockaddr_in myctladdr;
@@ -90,7 +89,7 @@ char **argv;
 	}
 	if (fork())
 		exit(0);
-	if ((s=open("/dev/tty", 2)) >= 0){
+	if ((s=open(_PATH_TTY, 2)) >= 0){
 		ioctl(s, TIOCNOTTY, (char *)0);
 		close(s);
 	}
@@ -222,7 +221,7 @@ dologout()
 #else  !BSDINETD
 	while ((pid=wait3(&status,WNOHANG,0)) > 0) {
 #endif !BSDINETD
-		wtmp = open("/usr/adm/wtmp", O_WRONLY|O_APPEND);
+		wtmp = open(_PATH_WTMP, O_WRONLY|O_APPEND);
 		if (wtmp >= 0) {
 			sprintf(utmp.ut_line, "uucp%.4d", pid);
 			SCPYN(utmp.ut_name, "");
@@ -253,7 +252,7 @@ struct sockaddr_in *sin;
 	} else
 		strncpy(remotehost, inet_ntoa(sin->sin_addr),
 		    sizeof (remotehost));
-	wtmp = open("/usr/adm/wtmp", O_WRONLY|O_APPEND);
+	wtmp = open(_PATH_WTMP, O_WRONLY|O_APPEND);
 	if (wtmp >= 0) {
 		/* hack, but must be unique and no tty line */
 		sprintf(line, "uucp%.4d", getpid());
@@ -264,7 +263,7 @@ struct sockaddr_in *sin;
 		(void) write(wtmp, (char *)&utmp, sizeof (utmp));
 		(void) close(wtmp);
 	}
-	if ((f = open(lastlog, 2)) >= 0) {
+	if ((f = open(_PATH_LASTLOG, O_RDWR)) >= 0) {
 		struct lastlog ll;
 
 		time(&ll.ll_time);

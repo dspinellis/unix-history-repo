@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)condevs.c	5.20	(Berkeley) %G%";
+static char sccsid[] = "@(#)condevs.c	5.21	(Berkeley) %G%";
 #endif
 
 extern int errno;
@@ -28,6 +28,7 @@ extern char *sys_errlist[];
  */
 
 #include "condevs.h"
+#include "pathnames.h"
 
 struct condev condevs[] = {
 	{ "DIR", "direct", diropn, nulldev, dircls },
@@ -195,7 +196,7 @@ register char *flds[];
 		return CF_NODEV;
 	}
 
-	sprintf(dcname, "/dev/%s", dev.D_line);
+	sprintf(dcname, "%s/%s", _PATH_DEV, dev.D_line);
 	if (setjmp(Sjbuf)) {
 		DEBUG(4, "Open timed out\n", CNULL);
 		delock(dev.D_line);
@@ -546,7 +547,7 @@ char *type, *dev;
 		DEBUG(4, " %s\n", dev);
 		close(fildes[0]);
 		close(0); close(1); close(2);
-		open("/dev/null",0);
+		open(_PATH_DEVNULL,0);
 		dup(fildes[1]); dup(fildes[1]);
 		setuid(geteuid());	/* for chown(uid()) in acu program */
 		execl(DIALINOUT, "acu", type, dev, Rmtname, (char *)0);
