@@ -1,6 +1,8 @@
 /*
  * Where the fields fall on the formatted screen used by tncomp, tnrecv,
  * and tnsend.
+ *
+ * @(#)tncomp.h	1.2 (Berkeley) %G%
  */
 
 #define	SEND_SEQUENCE		1
