@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ifconfig.c	4.5 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -31,8 +31,8 @@ struct	cmd {
 	{ "down",	-IFF_UP,	setifflags },
 	{ "trailers",	-IFF_NOTRAILERS,setifflags },
 	{ "-trailers",	IFF_NOTRAILERS,	setifflags },
-	{ "arp",	IFF_NOARP,	setifflags },
-	{ "-arp",	-IFF_NOARP,	setifflags },
+	{ "arp",	-IFF_NOARP,	setifflags },
+	{ "-arp",	IFF_NOARP,	setifflags },
 	{ "debug",	IFF_DEBUG,	setifflags },
 	{ "-debug",	-IFF_DEBUG,	setifflags },
 #ifdef notdef
@@ -105,9 +105,10 @@ setifflags(vname, value)
 
 	if (value < 0) {
 		value = -value;
-		ifr.ifr_flags = (flags &~ value);
+		flags &= ~value;
 	} else
-		ifr.ifr_flags |= value;
+		flags |= value;
+	ifr.ifr_flags = flags;
 	strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
 	if (ioctl(s, SIOCSIFFLAGS, (caddr_t)&ifr) < 0)
 		Perror(vname);
@@ -123,7 +124,7 @@ status()
 	sin = (struct sockaddr_in *)&ifr.ifr_addr;
 	printf("%s: %s ", name, inet_ntoa(sin->sin_addr));
 #define	IFFBITS \
-"\020\1UP\2BROADCAST\3DEBUG\4ROUTE\5POINTOPOINT\6NOTRAILERS\7RUNNING"
+"\020\1UP\2BROADCAST\3DEBUG\4ROUTE\5POINTOPOINT\6NOTRAILERS\7RUNNING\10NOARP"
 	printb("flags", flags, IFFBITS); putchar('\n');
 }
 
