@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -385,6 +385,8 @@ returntosender(msg, returnq, sendbody)
 	ee->e_puthdr = putheader;
 	ee->e_putbody = errbody;
 	ee->e_flags |= EF_RESPONSE;
+	if (!bitset(EF_OLDSTYLE, CurEnv->e_flags))
+		ee->e_flags &= ~EF_OLDSTYLE;
 	ee->e_sendqueue = returnq;
 	openxscript(ee);
 	for (q = returnq; q != NULL; q = q->q_next)
