@@ -2,15 +2,15 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)login.1	5.1 (Berkeley) %G%
+.\"	@(#)login.1	6.1 (Berkeley) %G%
 .\"
-.TH LOGIN 1 "1 April 1983"
+.TH LOGIN 1 ""
 .UC 4
 .SH NAME
 login \- sign on
 .SH SYNOPSIS
 .B login
-[ username ]
+[ \-p ] [ username ]
 .SH DESCRIPTION
 The
 .I login
@@ -51,11 +51,12 @@ Argument 0 of the command interpreter is \*(lq\-sh\*(rq, or
 more generally the name of the command interpreter with
 a leading dash (\*(lq\-\*(rq) prepended.
 .PP
-Login also initializes the
+Login also modifies the
 environment
 .IR environ (7)
 with information specifying home directory, command interpreter, terminal
 type (if available) and user name.
+The `-p' argument causes the environment to be preserved from getty.
 .PP
 If the file /etc/nologin exists
 .I login
@@ -84,8 +85,6 @@ and executed directly (without forking).
 /etc/nologin	stops logins
 .br
 \&.hushlogin	makes login quieter
-.br
-/etc/securetty	lists ttys that root may log in on
 .SH "SEE ALSO"
 init(8), getty(8), mail(1), passwd(1), passwd(5), environ(7),
 shutdown(8)
