@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tftp.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tftp.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /* Many bug fixes are from Jim Guyton <guyton@rand-unix> */
@@ -15,6 +15,7 @@ static char sccsid[] = "@(#)tftp.c	5.2 (Berkeley) %G%";
  */
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <sys/time.h>
 
 #include <netinet/in.h>
@@ -91,6 +92,26 @@ sendfile(fd, name, mode)
 		}
 		timeout = 0;
 		(void) setjmp(timeoutbuf);
+send_data:
+		/* Now, we flush anything pending to be read */
+		/* This is to try to keep in synch between the two sides */
+		while (1) {
+			int i, j = 0;
+			char rbuf[PKTSIZE];
+
+			(void) ioctl(f, FIONREAD, &i);
+			if (i) {
+				j++;
+				fromlen = sizeof from;
+				n = recvfrom(f, rbuf, sizeof (rbuf), 0,
+					(caddr_t)&from, &fromlen);
+			} else {
+				if (j && trace) {
+					printf("discarded %d packets\n", j);
+				}
+				break;
+			}
+		}
 		if (trace)
 			tpacket("sent", dp, size + 4);
 		n = sendto(f, dp, size + 4, 0, (caddr_t)&sin, sizeof (sin));
@@ -99,7 +120,7 @@ sendfile(fd, name, mode)
 			goto abort;
 		}
 		read_ahead(file, convert);
-		do {
+		for ( ; ; ) {
 			alarm(rexmtval);
 			do {
 				fromlen = sizeof (from);
@@ -122,7 +143,14 @@ sendfile(fd, name, mode)
 					ap->th_msg);
 				goto abort;
 			}
-		} while (ap->th_opcode != ACK || block != ap->th_block);
+			if (ap->th_opcode == ACK) {
+				if (ap->th_block == block) {
+					break;
+				} else if (ap->th_block == (block-1)) {
+					goto send_data;	/* resend packet */
+				}
+			}
+		}
 		if (block > 0)
 			amount += size;
 		block++;
@@ -171,6 +199,25 @@ recvfile(fd, name, mode)
 		timeout = 0;
 		(void) setjmp(timeoutbuf);
 send_ack:
+		/* Now, we flush anything pending to be read */
+		/* This is to try to keep in synch between the two sides */
+		while (1) {
+			int i, j = 0;
+			char rbuf[PKTSIZE];
+
+			(void) ioctl(f, FIONREAD, &i);
+			if (i) {
+				j++;
+				fromlen = sizeof from;
+				n = recvfrom(f, rbuf, sizeof (rbuf), 0,
+					(caddr_t)&from, &fromlen);
+			} else {
+				if (j && trace) {
+					printf("discarded %d packets\n", j);
+				}
+				break;
+			}
+		}
 		if (trace)
 			tpacket("sent", ap, size);
 		if (sendto(f, ackbuf, size, 0, (caddr_t)&sin,
