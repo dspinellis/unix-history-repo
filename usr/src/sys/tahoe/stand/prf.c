@@ -1,4 +1,4 @@
-/*	prf.c	1.3	88/03/02	*/
+/*	prf.c	1.4	88/03/03	*/
 /*	prf.c	4.3	81/05/05	*/
 
 #include "../machine/mtpr.h"
@@ -155,4 +155,19 @@ getchar()
 	if (c != '\b' && c != '\177')
 		putchar(c);
 	return (c);
+}
+
+trap(ps)
+	int ps;
+{
+	printf("Trap %o\n", ps);
+	for (;;)
+		;
+}
+
+uncache (addr)
+	char *addr;
+{
+	/* Return *(addr-0x4000); DIRTY assumes this address is valid */
+	mtpr(PDCS, addr);
 }
