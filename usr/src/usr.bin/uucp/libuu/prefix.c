@@ -1,6 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)prefix.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)prefix.c	5.3 (Berkeley) %G%";
 #endif
+
+/*LINTLIBRARY*/
 
 /*
  *	check s2 for prefix s1
