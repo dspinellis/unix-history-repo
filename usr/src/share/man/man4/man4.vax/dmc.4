@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dmc.4	5.1 (Berkeley) %G%
+.\"	@(#)dmc.4	6.1 (Berkeley) %G%
 .\"
-.TH DMC 4 "27 July 1983"
+.TH DMC 4 ""
 .UC 5
 .SH NAME
 dmc \- DEC DMC-11/DMR-11 point-to-point communications device
@@ -22,9 +22,33 @@ The
 interface driver also supports a DEC DMR-11 providing point-to-point
 communication running at data rates from 2.4 Kb/s to 1 Mb/s.
 DMR-11's are a more recent design and thus are preferred over DMC-11's.
+The NXMT and NRCV constants in the driver should be increased in this case,
+as the DMR can accept up to 64 transmit and receive buffers, as opposed
+to 7 for the DMC.
 .PP
-The host's address must be specified with an SIOCSIFADDR ioctl
+The configuration flags specify how to set up the device, 
+.br
+0 -- full duplex DDCMP
+.br
+1 -- DDCMP Maintence mode (generally useless)
+.br
+2 -- DDCMP Half Duplex, primary station
+.br
+3 -- DDCMP Half Duplex, secondary station
+.ti
+.PP
+Several device error counters are available via "adb", for
+more information see the adb script /usr/lib/adb/dmcstats, or the
+DMC11 technical manual.
+.PP
+The host's address must be specified with an SIOCSIFADDR ioctl,
+and the destination address specified with a SIOCSIFDSTADDR ioctl,
 before the interface will transmit or recive any packets.
+.SH ROUTING
+The driver places a HOST entry in the kernel routing tables for the
+address given in the SIOCSIFDSTADDR ioctl.  To use the DMC as a
+link between localnets, you must explicitly add the route with
+the route(8) command.
 .SH DIAGNOSTICS
 .BR "dmc%d: bad control %o" .
 A bad parameter was passed to the
@@ -36,15 +60,13 @@ An input packet was received which contained a type of
 address unknown to the driver.
 .PP
 .BR "DMC FATAL ERROR 0%o" .
+A fatal error in DDMCP occured, causing the device to be restarted.
 .PP
 .BR "DMC SOFT ERROR 0%o" .
+A non-fatal error in DDMCP has occured. 
 .PP
 .BR "dmc%d: af%d not supported" . 
 The interface was handed a message which has
 addresses formatted in an unsuitable address family.
 .SH SEE ALSO
 intro(4N), inet(4F)
-.SH BUGS
-Should allow multiple outstanding DMA requests, but due to
-the design of the current UNIBUS support routines this is
-very difficult.
