@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_descrip.c	7.7 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -289,15 +289,15 @@ ufalloc(want, result)
 	int *result;
 {
 
-	for (; want < NOFILE; want++)
+	for (; want < NOFILE; want++) {
 		if (u.u_ofile[want] == NULL) {
 			u.u_pofile[want] = 0;
 			if (want > u.u_lastfile)
 				u.u_lastfile = want;
-			if (result)
-				*result = want;
+			*result = want;
 			return (0);
 		}
+	}
 	return (EMFILE);
 }
 
