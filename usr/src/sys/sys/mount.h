@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	8.15 (Berkeley) %G%
+ *	@(#)mount.h	8.16 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -12,7 +12,7 @@
 #endif
 #include <sys/queue.h>
 
-typedef struct { long val[2]; } fsid_t;		/* file system id type */
+typedef struct { int32_t val[2]; } fsid_t;	/* file system id type */
 
 /*
  * File identifier.
@@ -30,7 +30,7 @@ struct fid {
  * file system statistics
  */
 
-#define MNAMELEN 90	/* length of buffer for returned name */
+#define	MNAMELEN	90	/* length of buffer for returned name */
 
 struct statfs {
 	short	f_type;			/* type of filesystem (see below) */
@@ -61,13 +61,13 @@ struct statfs {
 #define	MOUNT_LOFS	6	/* Loopback Filesystem */
 #define	MOUNT_FDESC	7	/* File Descriptor Filesystem */
 #define	MOUNT_PORTAL	8	/* Portal Filesystem */
-#define MOUNT_NULL	9	/* Minimal Filesystem Layer */
-#define MOUNT_UMAP	10	/* User/Group Identifer Remapping Filesystem */
-#define MOUNT_KERNFS	11	/* Kernel Information Filesystem */
-#define MOUNT_PROCFS	12	/* /proc Filesystem */
-#define MOUNT_AFS	13	/* Andrew Filesystem */
-#define MOUNT_CD9660	14	/* ISO9660 (aka CDROM) Filesystem */
-#define MOUNT_UNION	15	/* Union (translucent) Filesystem */
+#define	MOUNT_NULL	9	/* Minimal Filesystem Layer */
+#define	MOUNT_UMAP	10	/* User/Group Identifer Remapping Filesystem */
+#define	MOUNT_KERNFS	11	/* Kernel Information Filesystem */
+#define	MOUNT_PROCFS	12	/* /proc Filesystem */
+#define	MOUNT_AFS	13	/* Andrew Filesystem */
+#define	MOUNT_CD9660	14	/* ISO9660 (aka CDROM) Filesystem */
+#define	MOUNT_UNION	15	/* Union (translucent) Filesystem */
 #define	MOUNT_MAXTYPE	15
 
 #define INITMOUNTNAMES { \
@@ -274,7 +274,7 @@ struct mfs_args {
 	char	*fspec;			/* name to export for statfs */
 	struct	export_args export;	/* if exported MFSes are supported */
 	caddr_t	base;			/* base of file system in memory */
-	u_long size;			/* size of file system */
+	u_long	size;			/* size of file system */
 };
 #endif /* MFS */
 
@@ -283,14 +283,13 @@ struct mfs_args {
  * Arguments to mount ISO 9660 filesystems.
  */
 struct iso_args {
-	char *fspec;			/* block special device to mount */
+	char	*fspec;			/* block special device to mount */
 	struct	export_args export;	/* network export info */
-	int flags;			/* mounting flags, see below */
-
+	int	flags;			/* mounting flags, see below */
 };
-#define ISOFSMNT_NORRIP		0x00000001 /* disable Rock Ridge Ext.*/
-#define ISOFSMNT_GENS		0x00000002 /* enable generation numbers */
-#define ISOFSMNT_EXTATT		0x00000004 /* enable extended attributes */
+#define	ISOFSMNT_NORRIP	0x00000001	/* disable Rock Ridge Ext.*/
+#define	ISOFSMNT_GENS	0x00000002	/* enable generation numbers */
+#define	ISOFSMNT_EXTATT	0x00000004	/* enable extended attributes */
 #endif /* CD9660 */
 
 #ifdef NFS
@@ -324,7 +323,6 @@ struct nfs_args {
 	char		*hostname;	/* server's name */
 };
 
-
 /*
  * NFS mount option flags
  */
@@ -332,7 +330,7 @@ struct nfs_args {
 #define	NFSMNT_WSIZE		0x00000002  /* set write size */
 #define	NFSMNT_RSIZE		0x00000004  /* set read size */
 #define	NFSMNT_TIMEO		0x00000008  /* set initial timeout */
-#define	NFSMNT_RETRANS		0x00000010  /* set number of request retrys */
+#define	NFSMNT_RETRANS		0x00000010  /* set number of request retries */
 #define	NFSMNT_MAXGRPS		0x00000020  /* set maximum grouplist size */
 #define	NFSMNT_INT		0x00000040  /* allow interrupts on hard mount */
 #define	NFSMNT_NOCONN		0x00000080  /* Don't Connect the socket */

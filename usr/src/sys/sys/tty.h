@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty.h	8.6 (Berkeley) %G%
+ *	@(#)tty.h	8.7 (Berkeley) %G%
  */
 
 #include <sys/termios.h>
@@ -39,7 +39,7 @@ struct tty {
 	long	t_cancc;		/* Canonical queue statistics. */
 	struct	clist t_outq;		/* Device output queue. */
 	long	t_outcc;		/* Output queue statistics. */
-	char	t_line;			/* Interface to device drivers. */
+	u_char	t_line;			/* Interface to device drivers. */
 	dev_t	t_dev;			/* Device. */
 	int	t_state;		/* Device and driver (TS*) state. */
 	int	t_flags;		/* Tty flags. */
@@ -162,7 +162,7 @@ int	 unputc __P((struct clist *q));
 
 int	 nullmodem __P((struct tty *tp, int flag));
 int	 tputchar __P((int c, struct tty *tp));
-int	 ttioctl __P((struct tty *tp, int com, void *data, int flag));
+int	 ttioctl __P((struct tty *tp, u_long com, void *data, int flag));
 int	 ttread __P((struct tty *tp, struct uio *uio, int flag));
 void	 ttrstrt __P((void *tp));
 int	 ttselect __P((dev_t device, int rw, struct proc *p));

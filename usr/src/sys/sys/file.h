@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)file.h	8.2 (Berkeley) %G%
+ *	@(#)file.h	8.3 (Berkeley) %G%
  */
 
 #include <sys/fcntl.h>
@@ -34,7 +34,7 @@ struct file {
 					    struct ucred *cred));
 		int	(*fo_write)	__P((struct file *fp, struct uio *uio,
 					    struct ucred *cred));
-		int	(*fo_ioctl)	__P((struct file *fp, int com,
+		int	(*fo_ioctl)	__P((struct file *fp, u_long com,
 					    caddr_t data, struct proc *p));
 		int	(*fo_select)	__P((struct file *fp, int which,
 					    struct proc *p));

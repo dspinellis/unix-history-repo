@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)socketvar.h	8.1 (Berkeley) %G%
+ *	@(#)socketvar.h	8.2 (Berkeley) %G%
  */
 
 #include <sys/select.h>			/* for struct selinfo */
@@ -175,7 +175,8 @@ extern	char netio[], netcon[], netcls[];
  */
 int	soo_read __P((struct file *fp, struct uio *uio, struct ucred *cred));
 int	soo_write __P((struct file *fp, struct uio *uio, struct ucred *cred));
-int	soo_ioctl __P((struct file *fp, int com, caddr_t data, struct proc *p));
+int	soo_ioctl __P((struct file *fp, u_long cmd, caddr_t data,
+	    struct proc *p));
 int	soo_select __P((struct file *fp, int which, struct proc *p));
 int 	soo_close __P((struct file *fp, struct proc *p));
 #endif

@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)disk.h	8.1 (Berkeley) %G%
+ *	@(#)disk.h	8.2 (Berkeley) %G%
  *
  * from: $Header: disk.h,v 1.5 92/11/19 04:33:03 torek Exp $ (LBL)
  */
@@ -46,7 +46,7 @@ struct dkdriver {
 #ifdef notyet
 	int	(*d_open) __P((dev_t dev, int ifmt, int, struct proc *));
 	int	(*d_close) __P((dev_t dev, int, int ifmt, struct proc *));
-	int	(*d_ioctl) __P((dev_t dev, int cmd, caddr_t data, int fflag,
+	int	(*d_ioctl) __P((dev_t dev, u_long cmd, caddr_t data, int fflag,
 				struct proc *));
 	int	(*d_dump) __P((dev_t));
 	void	(*d_start) __P((struct buf *, daddr_t));

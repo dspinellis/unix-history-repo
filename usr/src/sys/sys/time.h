@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)time.h	8.2 (Berkeley) %G%
+ *	@(#)time.h	8.3 (Berkeley) %G%
  */
 
 #ifndef _SYS_TIME_H_
@@ -81,7 +81,11 @@ struct clockinfo {
 	int	profhz;		/* profiling clock frequency */
 };
 
-#ifndef KERNEL
+#ifdef KERNEL
+int	itimerfix __P((struct timeval *tv));
+int	itimerdecr __P((struct itimerval *itp, int usec));
+void	microtime __P((struct timeval *tv));
+#else /* !KERNEL */
 #include <time.h>
 
 #ifndef _POSIX_SOURCE
