@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)sem.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)sem.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -187,8 +187,9 @@ execute(t, wanttty, pipein, pipeout)
 				if (t->t_dflg & FNOHUP)
 					(void) signal(SIGHUP, SIG_IGN);
 				if (t->t_dflg & FNICE)
-					(void) setpriority(PRIO_PROCESS,
-						0, t->t_nice);
+					(void) setpriority(PRIO_PROCESS, 0,
+			    		    getpriority(PRIO_PROCESS, 0)
+					    + t->t_nice);
 			}
 
 		    }
