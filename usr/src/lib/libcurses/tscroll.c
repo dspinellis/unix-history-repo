@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tscroll.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)tscroll.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -40,9 +40,10 @@ __tscroll(cap, n)
 	const char *cap;
 	int n;
 {
+	static char result[MAXRETURNSIZE];
 	register char *dp;
 	register int c;
-	char *cp, result[MAXRETURNSIZE];
+	char *cp;
 
 	if (cap == NULL) {
 toohard:
