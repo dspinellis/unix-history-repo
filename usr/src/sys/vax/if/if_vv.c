@@ -1,4 +1,4 @@
-/*	if_vv.c	4.14	83/02/21	*/
+/*	if_vv.c	4.15	83/05/01	*/
 
 #include "vv.h"
 
@@ -309,8 +309,7 @@ retry:
 	addr->vvicsr = VV_STE | VV_DEN | VV_ENB | VV_LPB;
 
 	/* let flag timers fire so ring will initialize */
-	sleep((caddr_t) &lbolt, PZERO);
-	sleep((caddr_t) &lbolt, PZERO);
+	DELAY(2000000);
 
 	addr->vvocsr = VV_RST | VV_CPB;	/* clear packet buffer */
 	ubainfo = vs->vs_ifuba.ifu_w.ifrw_info;
