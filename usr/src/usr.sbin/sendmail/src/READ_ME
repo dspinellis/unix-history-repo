@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.61.1.1 (Berkeley) %G%
+#	@(#)READ_ME	8.81 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -805,6 +805,11 @@ Amdahl UTS 2.1.5
 	See sendmail/contrib/AmdahlUTS.patch for the patches necessary
 	to get BIND 4.9 compiled for UTS.
 
+UnixWare 2.0
+	According to Alexander Kolbasov <sasha@unitech.gamma.ru>,
+	the m4 on UnixWare 2.0 (still in Beta) will core dump on the
+	config files.  GNU m4 and the m4 from UnixWare 1.x both work.
+
 Non-DNS based sites
 	This version of sendmail always tries to connect to the Domain
 	Name System (DNS) to resolve names, regardless of the setting
@@ -942,4 +947,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.61.1.1, last update %G% 12:52:33)
+(Version 8.81, last update %G% 19:21:42)
