@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	8.10 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	8.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -610,9 +610,9 @@ ufs_dirbadentry(dp, ep, entryoffsetinblock)
 	}
 	if (ep->d_name[i])
 		goto bad;
-	return (ep->d_name[i]);
+	return (0);
 bad:
-	return(1);
+	return (1);
 }
 
 /*
@@ -806,7 +806,7 @@ ufs_dirremove(dvp, cnp)
 
 	if (cnp->cn_flags & DOWHITEOUT) {
 		/*
-		 * First entry in block: set d_ino to zero.
+		 * Whiteout entry: set d_ino to WINO.
 		 */
 		if (error =
 		    VOP_BLKATOFF(dvp, (off_t)dp->i_offset, (char **)&ep, &bp))
