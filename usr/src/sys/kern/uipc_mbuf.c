@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.32	82/03/13	*/
+/*	uipc_mbuf.c	1.33	82/05/18	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -56,7 +56,7 @@ COUNT(M_CLALLOC);
 			m->m_next = mclfree;
 			mclfree = m;
 			m += CLBYTES / sizeof (*m);
-			nmclfree++;
+			mbstat.m_clfree++;
 		}
 		mbstat.m_clusters += ncl;
 		splx(s);
@@ -66,10 +66,10 @@ COUNT(M_CLALLOC);
 		for (i = ncl * CLBYTES / sizeof (*m); i > 0; i--) {
 			m->m_off = 0;
 			m->m_free = 0;
+			mbstat.m_mbufs++;
 			(void) m_free(m);
 			m++;
 		}
-		mbstat.m_clusters += ncl;
 		break;
 	}
 	return ((caddr_t)m);
@@ -90,8 +90,6 @@ m_expand()
 {
 
 COUNT(M_EXPAND);
-	if (mbstat.m_bufs >= mbstat.m_hiwat)
-		return (0);
 	if (m_clalloc(1, MPG_MBUFS) == 0)
 		goto steal;
 	return (1);
@@ -109,10 +107,10 @@ m_reserve(mbufs)
 	int mbufs;
 {
 
-	if (mbstat.m_lowat + (mbufs>>1) > (NMBCLUSTERS-32) * CLBYTES) 
+	if (mbstat.m_mbcommitted + mbufs >
+	      (nmbclusters * NMBPCL) * MBUFOVERALLOCFRACTION)
 		return (0);
-	mbstat.m_hiwat += mbufs;
-	mbstat.m_lowat = mbstat.m_hiwat >> 1;
+	mbstat.m_mbcommitted += mbufs;
 	return (1);
 }
 
@@ -120,8 +118,7 @@ m_release(mbufs)
 	int mbufs;
 {
 
-	mbstat.m_hiwat -= mbufs;
-	mbstat.m_lowat = mbstat.m_hiwat >> 1;
+	mbstat.m_mbcommitted -= mbufs;
 }
 
 /*
