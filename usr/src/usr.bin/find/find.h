@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)find.h	5.1 (Berkeley) %G%
+ *	@(#)find.h	5.2 (Berkeley) %G%
  */
 
 /* node definition */
@@ -79,6 +79,6 @@ typedef struct _plandata {
 #define	T_USER		28
 #define	T_XDEV		29
 
-extern int errno;
-extern int ftsoptions, output_specified;
+extern int ftsoptions;
+extern int isdeprecated, isdepth, isoutput, isrelative, isstopdnx;
 char *emalloc();
