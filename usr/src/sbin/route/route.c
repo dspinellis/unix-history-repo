@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)route.c	4.7 83/05/05";
+static char sccsid[] = "@(#)route.c	4.8 (Berkeley) 83/08/21";
 #endif
 
 #include <sys/types.h>
@@ -217,6 +217,11 @@ getaddr(s, sin)
 	struct netent *np;
 	u_long val;
 
+	if (strcmp(s, "default") == 0) {
+		sin->sin_family = AF_INET;
+		sin->sin_addr = inet_makeaddr(0, INADDR_ANY);
+		return;
+	}
 	hp = gethostbyname(s);
 	if (hp) {
 		sin->sin_family = hp->h_addrtype;
