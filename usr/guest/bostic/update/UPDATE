@@ -1,0 +1,1 @@
+lib/libc/net/res_mkquery:	remove CQUERYM and CQUERYU cases from switch
