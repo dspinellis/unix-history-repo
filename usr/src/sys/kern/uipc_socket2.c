@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.35	83/01/13	*/
+/*	uipc_socket2.c	4.36	83/05/01	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -66,6 +66,7 @@ soisconnected(so)
 			panic("soisconnected");
 		soqinsque(head, so, 1);
 		wakeup((caddr_t)&head->so_timeo);
+		sorwakeup(head);
 	}
 	so->so_state &= ~(SS_ISCONNECTING|SS_ISDISCONNECTING);
 	so->so_state |= SS_ISCONNECTED;
