@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vmparam.h	7.1 (Berkeley) %G%
+ *	@(#)vmparam.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -153,8 +153,5 @@
  */
 #define	LOTSOFMEM	2
 
-/*
- * BEWARE THIS DEFINITION WORKS ONLY WITH COUNT OF 1
- */
-#define	mapin(pte, v, pfnum, count, prot) \
-	(*(int *)(pte) = (pfnum) | (prot), mtpr(TBIS, ptob(v)))
+#define	mapin(pte, v, pfnum, prot) \
+	(*(int *)(pte) = (pfnum) | (prot), mtpr(TBIS, v))
