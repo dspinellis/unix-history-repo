@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)savecore.c	4.7.1.2 (Berkeley) 82/10/24";
+static	char *sccsid = "@(#)savecore.c	4.9 (Berkeley) 82/10/24";
 /*
  * savecore
  */
@@ -8,7 +8,6 @@ static	char *sccsid = "@(#)savecore.c	4.7.1.2 (Berkeley) 82/10/24";
 #include <sys/param.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
-#include <sys/fs.h>
 #include <time.h>
 
 #define	DAY	(60L*60L*24L)
@@ -104,19 +103,7 @@ main(argc, argv)
 		perror(dirname);
 		exit(1);
 	}
-
 	read_kmem();
-	if (dump_exists()) {
-		(void) time(&now);
-		check_kmem();
-		log_entry();
-		if (get_crashtime() && check_space()) {
-			save_core();
-			clear_dump();
-		} else
-			exit(1);
-	}
-	return 0;
 }
 
 int
@@ -129,32 +116,6 @@ dump_exists()
 	Lseek(dumpfd, (off_t)(dumplo + ok(nl[X_DOADUMP].n_value)), 0);
 	Read(dumpfd, (char *)&word, sizeof word);
 	close(dumpfd);
-	
-	return (word == DUMPMAG);
-}
-
-clear_dump()
-{
-	register int dumpfd;
-	int zero = 0;
-
-	dumpfd = Open(ddname, 1);
-	Lseek(dumpfd, (off_t)(dumplo + ok(nl[X_DOADUMP].n_value)), 0);
-	Write(dumpfd, (char *)&zero, sizeof zero);
-	close(dumpfd);
-}
-
-int
-dump_exists()
-{
-	register int dumpfd;
-	int word;
-
-	dumpfd = Open(ddname, 0);
-	Lseek(dumpfd, (off_t)(dumplo + ok(nl[X_DOADUMP].n_value)), 0);
-	Read(dumpfd, (char *)&word, sizeof word);
-	close(dumpfd);
-	
 	return (word == DUMPMAG);
 }
 
@@ -174,15 +135,10 @@ find_dev(dev, type)
 	register dev_t dev;
 	register int type;
 {
-	register DIR *dfd = opendir("/dev");
-	struct direct *dir;
 	struct stat statb;
-	static char devname[MAXPATHLEN + 1];
 	char *dp;
 
 	strcpy(devname, "/dev/");
-	while ((dir = readdir(dfd))) {
-		strcpy(devname + 5, dir->d_name);
 		if (stat(devname, &statb)) {
 			perror(devname);
 			continue;
@@ -190,13 +146,11 @@ find_dev(dev, type)
 		if ((statb.st_mode&S_IFMT) != type)
 			continue;
 		if (dev == statb.st_rdev) {
-			closedir(dfd);
 			dp = (char *)malloc(strlen(devname)+1);
 			strcpy(dp, devname);
 			return dp;
 		}
 	}
-	closedir(dfd);
 	fprintf(stderr, "Can't find device %d,%d\n", major(dev), minor(dev));
 	exit(1);
 	/*NOTREACHED*/
@@ -265,12 +219,6 @@ check_kmem() {
 	FILE *fp;
 	register char *cp;
 
-}
-
-check_kmem() {
-	FILE *fp;
-	register char *cp;
-
 	if ((fp = fopen(ddname, "r")) == NULL) {
 		perror(ddname);
 		exit(1);
@@ -301,7 +249,6 @@ get_crashtime()
 
 	if (system)
 		return (1);
-	dumpfd = Open(ddname, 0);
 	Lseek(dumpfd, (off_t)(dumplo + ok(nl[X_TIME].n_value)), 0);
 	Read(dumpfd, (char *)&dumptime, sizeof dumptime);
 	close(dumpfd);
@@ -347,15 +294,7 @@ check_space()
 	Lseek(dfd, (long)(SBLOCK * DEV_BSIZE), 0);
 	Read(dfd, (char *)&fs, sizeof fs);
 	close(dfd);
-	/*
-	 * Minimum free space is in terms of kilobytes.
-	 * We ignore the "percent free space to be maintained"
-	 * parameter in the super block in the believe that a
-	 * crash dump is more important than the (temporary)
-	 * degradation in performance one might experience.
-	 */
-	freespace = (fs.fs_cstotal.cs_nbfree * fs.fs_bsize +
-			fs.fs_cstotal.cs_nffree * fs.fs_fsize) / 1024;
+	freespace = fs.fs_cstotal.cs_nbfree * fs.fs_bsize / 1024;
 	if (read_number("minfree") > freespace) {
 		fprintf(stderr, "Dump omitted, not enough space on device\n");
 		return (0);
@@ -393,8 +332,6 @@ save_core()
 
 	bounds = read_number("bounds");
 	ifd = Open(system?system:"/vmunix", 0);
-	sprintf(cp, "vmunix.%d", bounds);
-	ofd = Create(path(cp), 0644);
 	while((n = Read(ifd, cp, BUFSIZ)) > 0)
 		Write(ofd, cp, n);
 	close(ifd);
