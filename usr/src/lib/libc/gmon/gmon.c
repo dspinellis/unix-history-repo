@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)gmon.c	1.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)gmon.c	1.6 (Berkeley) %G%";
 
 #include <stdio.h>
 
@@ -87,6 +87,7 @@ static struct tostruct	*tos = 0;
 static unsigned short	tolimit = 0;
 static char		*s_lowpc = 0;
 static char		*s_highpc = 0;
+static unsigned long	s_textsize = 0;
 
 static int	ssiz;
 static int	*sbuf;
@@ -97,35 +98,41 @@ _mstartup(lowpc, highpc)
     char	*lowpc;
     char	*highpc;
 {
-    int		monsize;
-    char	*buffer;
-    int		textsize;
-    char	*sbrk();
+    int			monsize;
+    char		*buffer;
+    char		*sbrk();
+    unsigned long	limit;
 
     s_lowpc = lowpc;
     s_highpc = highpc;
-    textsize = ( (char *) highpc - (char *) lowpc );
-    monsize = textsize + sizeof(struct phdr);
+    s_textsize = highpc - lowpc;
+    monsize = s_textsize + sizeof(struct phdr);
     buffer = sbrk( monsize );
     if ( buffer == (char *) -1 ) {
 	write( 2 , MSG , sizeof(MSG) );
 	return;
     }
-    froms = (unsigned short *) sbrk( textsize );
+    froms = (unsigned short *) sbrk( s_textsize );
     if ( froms == (unsigned short *) -1 ) {
 	write( 2 , MSG , sizeof(MSG) );
 	froms = 0;
 	return;
     }
-    tos = (struct tostruct *) sbrk(textsize);
+    tos = (struct tostruct *) sbrk(s_textsize);
     if ( tos == (struct tostruct *) -1 ) {
 	write( 2 , MSG , sizeof(MSG) );
 	froms = 0;
 	tos = 0;
 	return;
     }
-    tolimit = textsize / sizeof(struct tostruct);
     tos[0].link = 0;
+    limit = s_textsize / sizeof(struct tostruct);
+	/*
+	 *	tolimit is what mcount checks to see if
+	 *	all the data structures are ready!!!
+	 *	make sure it won't overflow.
+	 */
+    tolimit = limit > 65534 ? 65534 : limit;
     monitor( lowpc , highpc , buffer , monsize );
 }
 
@@ -135,7 +142,6 @@ _mcleanup()
     int		fromindex;
     char	*frompc;
     int		toindex;
-    int		textsize;
 
     monitor( (int (*)()) 0 );
     fd = fopen( "gmon.out" , "w" );
@@ -147,8 +153,7 @@ _mcleanup()
 	fprintf( stderr , "[mcleanup] sbuf 0x%x ssiz %d\n" , sbuf , ssiz );
 #   endif DEBUG
     fwrite( sbuf , 1 , ssiz , fd );
-    textsize = s_highpc - s_lowpc;
-    for ( fromindex = 0 ; fromindex < textsize>>1 ; fromindex++ ) {
+    for ( fromindex = 0 ; fromindex < s_textsize>>1 ; fromindex++ ) {
 	if ( froms[fromindex] == 0 ) {
 	    continue;
 	}
@@ -197,7 +202,7 @@ mcount()
 	 *	check that we are profiling
 	 *	and that we aren't recursively invoked.
 	 */
-    if ( tos == 0 ) {
+    if ( tolimit == 0 ) {
 	goto out;
     }
     if ( profiling ) {
@@ -209,10 +214,11 @@ mcount()
 	 *	for example:	signal catchers get called from the stack,
 	 *			not from text space.  too bad.
 	 */
-    if ( (char *) frompcindex < s_lowpc || (char *) frompcindex > s_highpc ) {
+    frompcindex = (unsigned short *) ( (long) frompcindex - (long) s_lowpc );
+    if ( (unsigned long) frompcindex > s_textsize ) {
 	goto done;
     }
-    frompcindex = &froms[ ( (long) frompcindex - (long) s_lowpc ) >> 1 ];
+    frompcindex = &froms[ ( (long) frompcindex ) >> 1 ];
     if ( *frompcindex == 0 ) {
 	*frompcindex = ++tos[0].link;
 	if ( *frompcindex >= tolimit ) {
@@ -252,10 +258,9 @@ out:
     asm( "#undef _mcount");
 
 overflow:
+    tolimit = 0;
 #   define	TOLIMIT	"mcount: tos overflow\n"
     write( 2 , TOLIMIT , sizeof( TOLIMIT ) );
-    tos = 0;
-    froms = 0;
     goto out;
 }
 
