@@ -1,0 +1,8 @@
+# Host: Pyramid under OSx 4.0 (4.2bsd).
+
+#msg If you don't compile GDB with GCC, you'll need to add
+#msg ALLOCA=alloca.o and ALLOCA1=alloca.o to the Makefile.
+#msg 
+
+XDEPFILES= pyr-xdep.o infptrace.o inftarg.o fork-child.o
+XM_FILE= xm-pyr.h
