@@ -1,0 +1,123 @@
+Thu May 27 08:19:00 1982 by jkf
+	fixed bug in d-fixnump which caused liszt to assume too often that
+	arguments are all fixnums
+	(now: version 8.08)
+	
+Wed May 12 13:46:03 1982 by jkf
+	new declaration scheme died when the object being declared
+	was a list. e.g (declare (fixnum (foo fixnum flonum)).
+	Fixed declare-handler so that cases like this are ignored.
+	(now: version 8.07)
+
+Fri May  7 19:28:04 1982 by jkf
+	allow (function (nlambda ()...)) and (function (lambda () ..))
+	(now: version 8.06)
+
+Thu May  6 15:03:50 1982 by jkf
+	support local declarations.  They are stacked on g-decls.
+	localf and macarray don't fit in too well, they should
+	be fixed.  
+	fixnum declarations now have meaning.  They will allow the
+	compiler to convert from functions like 'add1' to 1+.
+	'declare' is now a function in the compiler so declarations
+	may be fasl'ed in.
+
+Thu Apr 22 20:48:25 1982 by jkf
+	#' returns a symbol now, instead of the getd of the symbol.
+	This was required for maclisp compatibility.
+	(now: version 8.05)
+
+Wed Apr 21 07:50:41 1982 by jkf
+	load in init file before compiling.  look in . first, then $HOME.
+	look for .liszt.o, .lisztrc.l, lisztrc.o, lisztrc.l
+	
+	Upon interrupt, remove temp file and exit
+	(now: version 8.04)
+
+Mon Apr 12 23:22:37 1982 by jkf
+	open code 'function'.  Now it will cause another function to be
+	  generated and compiled and the function call returns the
+	  bcd header for the newly created function
+	liszt-process-forms may be filled with forms to compile while 
+	  compiling a form.  Unlike liszt-eof-forms, liszt-process-forms
+	  are compiled at the next opportunity.
+	(now: version 8.03)
+	
+Wed Mar 31 08:47:46 1982 by jkf
+	fixed bug in which (> (or nil 9) 0) would return true. cc-eq
+	now rebinds g-trueop and g-falseop. (now: version 8.02)
+	
+Wed Mar 31 08:24:27 1982 by jkf
+	added a new file to liszt: lversion.l   It is not sccsed and it 
+	just contains the version number.  This will allow the version
+    	number to be changed with ease whenever a modification is made.
+	start it at 8.01  (now: version 8.01)
+
+Fri Mar 19 11:17:12 1982 by jkf
+	did distribution. (now: version 8.00)
+
+Fri Feb 19 09:56:50 1982 by jkf
+	fixed e-docomment so that newlines in the comment will not
+	cause assembler problems [io.l]
+
+Wed Feb 17 12:46:24 1982 by jkf
+	to version 8.0 (to correspond with Opus 38)
+	
+Wed Feb 10 21:28:41 1982 by jkf
+	fixed a bug in the return function and a possible bug in go.
+	both bugs have to do with returning or going through a
+	catch or errset, which is a pretty strange thing to do anyway.
+	The fix was to keep track of the number of catches and errsets
+	before the prog to be returned from or gone into.
+	I modified d-pushframe to always push 3 args, so we can know
+	how long each frame we pop will be.
+Sat Dec  5 11:58:36 1981 by jkf
+	open coded boole (mods to decl.l and funa.l).  used the open
+	coding capability of fixnums.
+	Added three internal functions fixnum-BitXor, fixnum-BitAndNot
+	fixnum-BitOr, which are the three functions which the vax
+	can do.
+Mon Oct 26 21:15:36 1981 by jkf
+	fixed bug in d-supercxr (funa.l) which made this function
+	(cond ((setq y (cxr n zip)) (print 'hi))
+	      (t (print 'lo)))
+	always prints 'hi'.  The problem was that only jump on true was
+	checked if the value of a cxr was stored somewhere.  In the case
+	above we want to jump on nil.
+	
+Sat Oct 24 16:41:03 1981 by jkf
+	-*- to version 7.1 -*-
+	Added the 'a' option to liszt, which if set will cause a 
+	special form to be output after a function is defined. that special
+	form will put a 'fcn-info' property on the function's property 
+	list.  the form of the fcn-info property is
+	 (argdesc compileinfo)
+	argdesc may be nil or (x . y), the later meaning that there are a 
+	minumum of x args required and a maximum of y.  Currently lexprs
+	just put 'nil' there, but soon I will introduce a way to declare
+	min and max args for lexprs via a declare.  The compileinfo
+	is a string saying what file this came from and when it was
+	compiled.
+	
+Wed Oct 21 20:19:53 1981 by jkf
+	added functions <&, =&, and >& which are fixnum only
+	versions of <,= and >.  
+	
+Tue Oct 20 22:14:41 1981 by jkf
+	fix < and > compiling so that they are only open coded if
+	we can be sure that both operands are fixnums.  For now this
+	amounts to checking that one of the operands is a fixnum.
+	We should augment to this check also for type declarations.
+	
+Sat Oct 17 11:47:50 1981 by jkf
+	since most fixnums are in the range 0 to 1023 we can probably
+	win by doing inline checking in that range.  Thus I've added
+	the function d-fixnumbox which does an inline reboxing if
+	the number is between 0 and 1023 and otherwise calls qnewint.
+	The file changed was fixnum.l
+	
+Thu Oct  8 23:35:34 1981 by jkf
+	added cc-= to open code = if possible.  It looks for a fixnum
+	as one of the arguments and converts the = expression to 
+	(eq (cdr ..) (cdr ..)) which should do the trick.
+	
