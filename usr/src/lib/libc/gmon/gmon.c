@@ -6,10 +6,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gmon.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)gmon.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/kinfo.h>
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -17,8 +20,6 @@ static char sccsid[] = "@(#)gmon.c	5.8 (Berkeley) %G%";
 
 #include "gmon.h"
 
-extern mcount() asm ("mcount");
-extern mcount2() asm ("mcount2");
 extern char *minbrk asm ("minbrk");
 
     /*
@@ -47,6 +48,8 @@ monstartup(lowpc, highpc)
     int			monsize;
     char		*buffer;
     register int	o;
+    struct clockinfo	clockinfo;
+    int			size;
 
 	/*
 	 *	round lowpc and highpc to multiples of the density we're using
@@ -62,12 +65,12 @@ monstartup(lowpc, highpc)
     monsize = (s_textsize / HISTFRACTION) + sizeof(struct phdr);
     buffer = sbrk( monsize );
     if ( buffer == (char *) -1 ) {
-	write( 2 , MSG , sizeof(MSG) - 1 );
+	write( 2 , MSG , sizeof(MSG) );
 	return;
     }
     froms = (unsigned short *) sbrk( s_textsize / HASHFRACTION );
     if ( froms == (unsigned short *) -1 ) {
-	write( 2 , MSG , sizeof(MSG) - 1 );
+	write( 2 , MSG , sizeof(MSG) );
 	froms = 0;
 	return;
     }
@@ -79,7 +82,7 @@ monstartup(lowpc, highpc)
     }
     tos = (struct tostruct *) sbrk( tolimit * sizeof( struct tostruct ) );
     if ( tos == (struct tostruct *) -1 ) {
-	write( 2 , MSG , sizeof(MSG) - 1 );
+	write( 2 , MSG , sizeof(MSG) );
 	froms = 0;
 	tos = 0;
 	return;
@@ -91,15 +94,44 @@ monstartup(lowpc, highpc)
     ( (struct phdr *) buffer ) -> lpc = lowpc;
     ( (struct phdr *) buffer ) -> hpc = highpc;
     ( (struct phdr *) buffer ) -> ncnt = ssiz;
+    ( (struct phdr *) buffer ) -> version = GMONVERSION;
     monsize -= sizeof(struct phdr);
     if ( monsize <= 0 )
 	return;
     o = highpc - lowpc;
     if( monsize < o )
+#ifndef hp300
 	s_scale = ( (float) monsize / o ) * SCALE_1_TO_1;
+#else /* avoid floating point */
+    {
+	int quot = o / monsize;
+
+	if (quot >= 0x10000)
+		s_scale = 1;
+	else if (quot >= 0x100)
+		s_scale = 0x10000 / quot;
+	else if (o >= 0x800000)
+		s_scale = 0x1000000 / (o / (monsize >> 8));
+	else
+		s_scale = 0x1000000 / ((o << 8) / monsize);
+    }
+#endif
     else
 	s_scale = SCALE_1_TO_1;
     moncontrol(1);
+    size = sizeof( clockinfo );
+    if ( getkerninfo( KINFO_CLOCKRATE , &clockinfo , &size , 0 ) < 0 ) {
+	/*
+	 * Best guess
+	 */
+	clockinfo.profhz = hertz();
+    } else if ( clockinfo.profhz == 0 ) {
+	if ( clockinfo.hz != 0 )
+	    clockinfo.profhz = clockinfo.hz;
+	else
+	    clockinfo.profhz = hertz();
+    }
+    ( (struct phdr *) buffer ) -> profrate = clockinfo.profhz;
 }
 
 _mcleanup()
@@ -142,114 +174,6 @@ _mcleanup()
     close( fd );
 }
 
-asm(".text; .globl mcount; mcount: pushl 16(fp); calls $1,mcount2; rsb");
-
-mcount2(frompcindex, selfpc)
-	register unsigned short		*frompcindex;
-	register char			*selfpc;
-{
-	register struct tostruct	*top;
-	register struct tostruct	*prevtop;
-	register long			toindex;
-
-	/*
-	 *	check that we are profiling
-	 *	and that we aren't recursively invoked.
-	 */
-	if (profiling)
-		return;
-	profiling++;
-	/*
-	 *	check that frompcindex is a reasonable pc value.
-	 *	for example:	signal catchers get called from the stack,
-	 *			not from text space.  too bad.
-	 */
-	frompcindex = (unsigned short *)((long)frompcindex - (long)s_lowpc);
-	if ((unsigned long)frompcindex > s_textsize) {
-		goto done;
-	}
-	frompcindex =
-	    &froms[((long)frompcindex) / (HASHFRACTION * sizeof(*froms))];
-	toindex = *frompcindex;
-	if (toindex == 0) {
-		/*
-		 *	first time traversing this arc
-		 */
-		toindex = ++tos[0].link;
-		if (toindex >= tolimit) {
-			goto overflow;
-		}
-		*frompcindex = toindex;
-		top = &tos[toindex];
-		top->selfpc = selfpc;
-		top->count = 1;
-		top->link = 0;
-		goto done;
-	}
-	top = &tos[toindex];
-	if (top->selfpc == selfpc) {
-		/*
-		 *	arc at front of chain; usual case.
-		 */
-		top->count++;
-		goto done;
-	}
-	/*
-	 *	have to go looking down chain for it.
-	 *	top points to what we are looking at,
-	 *	prevtop points to previous top.
-	 *	we know it is not at the head of the chain.
-	 */
-	for (; /* goto done */; ) {
-		if (top->link == 0) {
-			/*
-			 *	top is end of the chain and none of the chain
-			 *	had top->selfpc == selfpc.
-			 *	so we allocate a new tostruct
-			 *	and link it to the head of the chain.
-			 */
-			toindex = ++tos[0].link;
-			if (toindex >= tolimit) {
-				goto overflow;
-			}
-			top = &tos[toindex];
-			top->selfpc = selfpc;
-			top->count = 1;
-			top->link = *frompcindex;
-			*frompcindex = toindex;
-			goto done;
-		}
-		/*
-		 *	otherwise, check the next arc on the chain.
-		 */
-		prevtop = top;
-		top = &tos[top->link];
-		if (top->selfpc == selfpc) {
-			/*
-			 *	there it is.
-			 *	increment its count
-			 *	move it to the head of the chain.
-			 */
-			top->count++;
-			toindex = prevtop->link;
-			prevtop->link = top->link;
-			top->link = *frompcindex;
-			*frompcindex = toindex;
-			goto done;
-		}
-
-	}
-done:
-	profiling--;
-	return;
-
-overflow:
-	profiling++; /* halt further profiling */
-#   define	TOLIMIT	"mcount: tos overflow\n"
-	write(2, TOLIMIT, sizeof(TOLIMIT) - 1);
-	return;
-}
-
 /*
  * Control profiling
  *	profiling is what mcount checks to see if
@@ -268,4 +192,24 @@ moncontrol(mode)
 	profil((char *)0, 0, 0, 0);
 	profiling = 3;
     }
+}
+
+    /*
+     *	discover the tick frequency of the machine
+     *	if something goes wrong, we return 0, an impossible hertz.
+     */
+
+hertz()
+{
+	struct itimerval tim;
+
+	tim.it_interval.tv_sec = 0;
+	tim.it_interval.tv_usec = 1;
+	tim.it_value.tv_sec = 0;
+	tim.it_value.tv_usec = 0;
+	setitimer(ITIMER_REAL, &tim, 0);
+	setitimer(ITIMER_REAL, 0, &tim);
+	if (tim.it_interval.tv_usec < 2)
+		return(0);
+	return (1000000 / tim.it_interval.tv_usec);
 }
