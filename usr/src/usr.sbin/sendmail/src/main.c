@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.66 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.67 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -754,7 +754,6 @@ main(argc, argv, envp)
 				continue;
 			do
 			{
-				extern char **prescan();
 				char pvpbuf[PSBUFSIZE];
 
 				pvp = prescan(++p, ',', pvpbuf, &delimptr);
@@ -819,8 +818,6 @@ main(argc, argv, envp)
 			strcat(dtype, "+SMTP");
 		if (QueueIntvl != 0)
 		{
-			extern char *pintvl();
-
 			strcat(dtype, "+queueing@");
 			strcat(dtype, pintvl(QueueIntvl, TRUE));
 		}

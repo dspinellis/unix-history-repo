@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.41 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -99,7 +99,6 @@ sendtolist(list, ctladdr, sendq, e)
 	while (al != NULL)
 	{
 		register ADDRESS *a = al;
-		extern ADDRESS *recipient();
 
 		al = a->q_next;
 		a = recipient(a, sendq, e);
@@ -132,8 +131,6 @@ sendtolist(list, ctladdr, sendq, e)
 **	Side Effects:
 **		none.
 */
-
-extern ADDRESS *getctladdr();
 
 ADDRESS *
 recipient(a, sendq, e)

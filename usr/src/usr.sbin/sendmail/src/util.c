@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	6.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	6.19 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -494,7 +494,6 @@ dfopen(filename, omode, cmode)
 	if (fd >= 0 && fstat(fd, &st) >= 0 && S_ISREG(st.st_mode))
 	{
 		int locktype;
-		extern bool lockfile();
 
 		/* lock the file to avoid accidental conflicts */
 		if ((omode & O_ACCMODE) != O_RDONLY)

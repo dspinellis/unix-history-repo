@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)macro.c	6.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)macro.c	6.8 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -30,13 +30,13 @@ char	*Macro[128];
 **		none.
 */
 
+void
 	register char *q;
 	bool skipping;		/* set if conditionally skipping output */
 	bool recurse = FALSE;	/* set if recursion required */
 	int i;
 	int iflev;		/* if nesting level */
 	char xbuf[BUFSIZ];
-	extern char *macvalue();
 
 	if (tTd(35, 24))
 	{
@@ -193,6 +193,7 @@ char	*Macro[128];
 **		are available.
 */
 
+void
 define(n, v, e)
 	char n;
 	char *v;

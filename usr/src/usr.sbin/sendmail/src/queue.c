@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.57 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.58 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.57 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.58 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -66,7 +66,6 @@ queueup(df)
 	register char *p;
 	MAILER nullmailer;
 	char buf[MAXLINE], tf[MAXLINE];
-	extern char *macvalue();
 
 	/*
 	**  Create control file.
@@ -86,8 +85,6 @@ queueup(df)
 		/* get a locked tf file */
 		for (i = 100; --i >= 0; )
 		{
-			extern bool lockfile();
-
 			fd = open(tf, O_CREAT|O_WRONLY|O_EXCL, FileMode);
 			if (fd < 0)
 			{
@@ -233,7 +230,6 @@ printctladdr(a, tfp)
 	uid_t uid;
 	static ADDRESS *lastctladdr;
 	static uid_t lastuid;
-	extern ADDRESS *getctladdr();
 
 	/* initialization */
 	if (a == NULL || tfp == NULL)
@@ -294,10 +290,8 @@ ENVELOPE	QueueEnvelope;		/* the queue run envelope */
 runqueue(forkflag)
 	bool forkflag;
 {
-	extern bool shouldqueue();
 	register ENVELOPE *e;
 	extern ENVELOPE BlankEnvelope;
-	extern ENVELOPE *newenvelope();
 
 	/*
 	**  If no work will ever be selected, don't even bother reading
@@ -391,7 +385,6 @@ runqueue(forkflag)
 	while (WorkQ != NULL)
 	{
 		WORK *w = WorkQ;
-		extern bool shouldqueue();
 
 		WorkQ = WorkQ->w_next;
 
@@ -496,7 +489,6 @@ orderq(doall)
 	{
 		FILE *cf;
 		char lbuf[MAXNAME];
-		extern bool shouldqueue();
 		extern bool strcontainedin();
 
 		/* is this an interesting entry? */
@@ -775,10 +767,8 @@ readqf(e)
 	char *bp;
 	char qf[20];
 	char buf[MAXLINE];
-	extern char *fgetfolded();
 	extern long atol();
 	extern ADDRESS *setctluser();
-	extern bool lockfile();
 
 	/*
 	**  Read and process the file.
@@ -1054,8 +1044,6 @@ printqueue()
 		int flags = 0;
 		char message[MAXLINE];
 		char bodytype[MAXNAME];
-		extern bool shouldqueue();
-		extern bool lockfile();
 
 		f = fopen(w->w_name, "r");
 		if (f == NULL)
@@ -1189,7 +1177,6 @@ queuename(e, type)
 	time_t now;
 	struct tm *tm;
 	static char buf[MAXNAME];
-	extern bool lockfile();
 
 	if (e->e_id == NULL)
 	{
