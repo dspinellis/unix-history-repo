@@ -1,0 +1,147 @@
+.\" $Revision: 1.11 $
+.TH EXPIRE.CTL 5
+.SH NAME
+expire.ctl \- control file for Usenet article expiration
+.SH DESCRIPTION
+The file
+.\" =()<.I @<_PATH_EXPIRECTL>@>()=
+.I /var/spool/news/data/expire.ctl
+is the default control file for the
+.IR expire (8)
+program, which reads it at start-up.
+Blank lines and lines beginning with a number sign (``#'') are ignored.
+All other lines should be in one of two formats.
+.PP
+The first format specifies how long to keep a record of fully-expired
+articles.
+This is useful when a newsfeed intermittently offers older news that
+is not kept around very long.
+(The case of very old news is handled by the ``\-c'' flag of
+.IR innd (8).)
+There should only be one line in this format, which looks like this:
+.RS
+/remember/:days
+.RE
+Where
+.I days
+is a floating-point number that specifies the upper limit to remember
+a Message-ID, even if the article has already expired.
+(It does not affect article expirations.)
+.PP
+Most of the lines in the file will consist of five colon-separated fields,
+as follows:
+.RS
+.nf
+pattern:modflag:keep:default:purge
+.fi
+.RE
+The
+.I pattern
+field is comma-separated set of single
+.IR wildmat (3)-style
+patterns that specify the newsgroups to which the rest of the line applies.
+Since the file is interpreted in order, the most general patterns
+should be specified first, and the most specific patterns should be
+specified last.
+.PP
+The
+.I modflag
+field can be used to further limit newsgroups to which the line applies,
+and should be chosen from the following set:
+.RS
+.nf
+M	Only moderated groups
+U	Only unmoderated groups
+A	All groups
+.fi
+.RE
+.PP
+The next three fields are used to determine how long an article
+should be kept.
+Each field should be either a number of days (fractions like ``8.5'' are
+allowed) or the word ``never.''
+The most common use is to specify the default value for how long an
+article should be kept.
+The first and third fields \(em
+.I keep
+and
+.I purge
+\(em specify the boundaries within which an Expires
+header will be honored.
+They are ignored if an article has no Expires header.
+The fields are specified in the file as ``lower-bound default upper-bound,''
+and they are explained in this order.
+Since most articles do not have explicit expiration dates, however,
+the second field tends to be the most important one.
+.PP
+The
+.I keep
+field specifies how many days an article should be kept before it will
+be removed.
+No article in the newsgroup will be removed if it has been filed
+for less then
+.I keep
+days, regardless of any expiration date.
+If this field is the word ``never'' then an article cannot have been kept
+for enough days so it will never be expired.
+.PP
+The
+.I default
+field specifies how long to keep an article if no Expires header
+is present.
+If this field is the word ``never'' then articles without explicit
+expiration dates will never be expired.
+.PP
+The
+.I purge
+field specifies the upper bound on how long an article can be kept.
+No article will be kept longer then the number of days specified by this
+field.
+All articles will be removed after then have been kept for
+.I purge
+days.
+If
+.I purge
+is the word ``never'' then the article will never be deleted.
+.PP
+It is often useful to honor the expiration headers in articles, especially
+those in moderated groups.
+To do this, set
+.I keep
+to zero,
+.I default
+to whatever value you wish, and
+.I purge
+to never.
+To ignore any Expires header, set all three fields to the same value.
+.PP
+There must be exactly one line with a
+.I pattern
+of ``*'' and a
+.I modflags
+of ``A'' \(em this matches all groups and is used to set the expiration
+default.
+It should be the first expiration line.
+.PP
+For example,
+.RS
+.nf
+##  How long to keep expired history
+/remember/:5
+##  Most things stay for two weeks
+*:A:14:14:14
+##  Believe expiration dates in moderated groups, up to six weeks
+*:M:1:30:42
+##  Keep local stuff for a long time
+foo.*:A:30:30:30
+.fi
+.RE
+.SH HISTORY
+Written by Rich $alz <rsalz@uunet.uu.net> for InterNetNews.
+.de R$
+This is revision \\$3, dated \\$4.
+..
+.R$ $Id: expire.ctl.5,v 1.11 1993/01/29 16:42:42 rsalz Exp $
+.SH "SEE ALSO"
+expire(8),
+wildmat(3).

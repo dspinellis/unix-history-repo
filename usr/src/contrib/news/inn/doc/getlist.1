@@ -1,0 +1,90 @@
+.\" $Revision: 1.3 $
+.TH GETLIST 1
+.SH NAME
+getlist \- get a list from an NNTP server
+.SH SYNOPSIS
+.I getlist
+[
+.BI \-h " host"
+]
+[
+.I list
+[
+.I pattern
+[
+.I types
+]
+]
+]
+.SH DESCRIPTION
+The
+.I getlist
+program obtains a list from an NNTP server and sends
+it to standard output.
+.PP
+The
+.B list
+may be one of
+.IR active ,
+.IR active.times ,
+.IR distributions ,
+or
+.IR newsgroups .
+These values request the
+.IR active (5),
+.IR active.times ,
+.\" =()<.IR @<_PATH_NEWSLIB>@/distributions ,>()=
+.IR /var/spool/news/data/distributions ,
+or
+.\" =()<.I @<_PATH_NEWSLIB>@/newsgroups>()=
+.I /var/spool/news/data/newsgroups
+files, respectively.
+.PP
+If the ``\-h'' flag is used, then the program connects to the server
+on the specified host.
+The default is to connect to the server specified in the
+.IR inn.conf (5)
+file.
+.PP
+If the
+.I list
+parameter is
+.IR active ,
+then the 
+.I pattern
+and
+.I types
+parameters may be used to limit the output.
+When
+.I pattern
+is used, only active lines with groups that match according to
+.IR wildmat (3)
+are printed.
+When
+.I types
+is also given, only active lines that have a fourth field starting
+with a character found in
+.I types
+are printed.
+.PP
+For example, the following command will obtain the one-line descriptions
+of all newsgroups found on UUNET:
+.RS
+getlist -h news.uu.net newsgroups
+.RE
+.PP
+The following line lists all groups where local postings are permitted,
+are moderated or aliased:
+.RS
+getlist active '*' ym=
+.RE
+.PP
+Note that the listing files other than the active file is a common
+extension to the NNTP protocol and may not be available on all servers.
+.SH HISTORY
+Written by Landon Curt Noll <chongo@toad.com> for InterNetNews.
+.de R$
+This is revision \\$3, dated \\$4.
+..
+.SH "SEE ALSO"
+active(5), nnrpd(8), wildmat(3).
