@@ -1,8 +1,8 @@
-.\" Copyright (c) 1980 Regents of the University of California.
+.\" Copyright (c) 1980, 1987 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)whatis.1	6.3 (Berkeley) %G%
+.\"	@(#)whatis.1	6.4 (Berkeley) %G%
 .\"
 .TH WHATIS 1 ""
 .UC 4
@@ -10,25 +10,24 @@
 whatis \- describe what a command is
 .SH SYNOPSIS
 .B whatis
+[
+.B -M
+.I path
+]
 command ...
 .SH DESCRIPTION
-.I Whatis
-looks up a given command and gives the header line from the manual section.
-You can then run the 
-.IR man (1)
-command to get more information.
-If the line starts `name(section) ...' you can do
-`man section name' to get the documentation for it.
-Try `whatis ed' and then you should do `man 1 ed' to get the manual.
+\fIWhatis\fP looks up a given command and gives the header line from the
+manual page.  You can then use the \fIman\fP(1) command to get more
+information.
 .PP
-.I Whatis
-is actually just the
-.B \-f
-option to the
-.IR man (1)
-command.
+Normally \fIwhatis\fP checks in a standard location (/usr/man) for its
+database ``whatis''.  This can be changed by supplying a \fIpath\fP (a
+la the Bourne shell) with the \fB-M\fP flag.  This search path must be
+a colon (``:'') separated list of directories which \fIwhatis\fP will
+search for files named ``whatis''.  The path can also be set with the
+environmental variable \fIMANPATH\fP.
 .SH FILES
 .DT
-/usr/man/whatis	Data base
+/usr/man/whatis		data base
 .SH "SEE ALSO"
-man(1), catman(8)
+apropos(1), man(1)
