@@ -1,34 +1,54 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1980, 1992 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)netcmds.c	5.5 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)netcmds.c	5.6 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * Common network command support routines.
  */
-#include "systat.h"
-#include <ctype.h>
-
+#include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/mbuf.h>
 #include <sys/protosw.h>
 
 #include <net/route.h>
+#include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
 #include <netinet/in_pcb.h>
 
+#include <netdb.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include "systat.h"
+#include "extern.h"
+
 #define	streq(a,b)	(strcmp(a,b)==0)
 
-static void changeitems(), showprotos(), showports(), showhosts();
-static int selectproto(), selectport(), selecthost();
+static	struct hitem {
+	struct	in_addr addr;
+	int	onoff;
+} *hosts;
 
+int nports, nhosts, protos;
+
+static void changeitems __P((char *, int));
+static int selectproto __P((char *));
+static void showprotos __P((void));
+static int selectport __P((long, int));
+static void showports __P((void));
+static int selecthost __P((struct in_addr *, int));
+static void showhosts __P((void));
+
+int
 netcmd(cmd, args)
 	char *cmd, *args;
 {
@@ -43,8 +63,8 @@ netcmd(cmd, args)
 	}
 	if (prefix(cmd, "reset")) {
 		selectproto(0);
-		selecthost(0);
-		selectport(-1);
+		selecthost(0, 0);
+		selectport(-1, 0);
 		return (1);
 	}
 	if (prefix(cmd, "show")) {
@@ -67,6 +87,7 @@ netcmd(cmd, args)
 	}
 	return (0);
 }
+
 
 static void
 changeitems(args, onoff)
@@ -172,6 +193,7 @@ selectport(port, onoff)
 	return (1);
 }
 
+int
 checkport(inp)
 	register struct inpcb *inp;
 {
@@ -202,11 +224,6 @@ showports()
 	}
 }
 
-static	struct hitem {
-	struct	in_addr addr;
-	int	onoff;
-} *hosts;
-
 static int
 selecthost(in, onoff)
 	struct in_addr *in;
@@ -236,6 +253,7 @@ selecthost(in, onoff)
 	return (1);
 }
 
+int
 checkhost(inp)
 	register struct inpcb *inp;
 {
@@ -256,9 +274,9 @@ showhosts()
 	struct hostent *hp;
 
 	for (p = hosts; p < hosts+nhosts; p++) {
-		hp = gethostbyaddr(&p->addr, sizeof (p->addr), AF_INET);
+		hp = gethostbyaddr((char *)&p->addr, sizeof (p->addr), AF_INET);
 		if (!p->onoff)
 			addch('!');
-		printw("%s ", hp ? hp->h_name : inet_ntoa(p->addr));
+		printw("%s ", hp ? hp->h_name : (char *)inet_ntoa(p->addr));
 	}
 }
