@@ -1,18 +1,8 @@
-/*
+/*-
  * Copyright (c) 1980, 1987, 1988 The Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
@@ -22,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.55 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.56 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -59,6 +49,9 @@ static char sccsid[] = "@(#)login.c	5.55 (Berkeley) %G%";
  * be patched on machines where it's too small.
  */
 int	timeout = 300;
+#ifdef KERBEROS
+int	notickets = 1;
+#endif
 
 struct	passwd *pwd;
 int	failures;
@@ -69,7 +62,7 @@ struct	tchars tc = {
 	CINTR, CQUIT, CSTART, CSTOP, CEOT, CBRK
 };
 struct	ltchars ltc = {
-	CSUSP, CDSUSP, CRPRNT, CFLUSH, CWERASE, CLNEXT
+	CSUSP, CDSUSP, CRPRNT, CDISCARD, CWERASE, CLNEXT
 };
 
 char *months[] =
@@ -84,7 +77,7 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int errno, optind;
+	extern int optind;
 	extern char *optarg, **environ;
 	struct timeval tp;
 	struct tm *ttp;
@@ -94,13 +87,14 @@ main(argc, argv)
 	register int ch;
 	register char *p;
 	int ask, fflag, hflag, pflag, rflag, cnt;
-	int quietlog, passwd_req, ioctlval, timedout();
-	char *domain, *salt, *ttyn, *pp;
+	int quietlog, passwd_req, ioctlval, rval;
+	char *domain, *salt, *ttyn;
 	char tbuf[MAXPATHLEN + 2], tname[sizeof(_PATH_TTY) + 10];
 	char localhost[MAXHOSTNAMELEN];
 	char *ctime(), *ttyname(), *stypeof(), *crypt(), *getpass();
 	time_t time();
 	off_t lseek();
+	void timedout();
 
 	(void)signal(SIGALRM, timedout);
 	(void)alarm((u_int)timeout);
@@ -191,6 +185,8 @@ main(argc, argv)
 	argv += optind;
 	if (*argv) {
 		username = *argv;
+		if (strlen(username) > UT_NAMESIZE)
+			username[UT_NAMESIZE] = '\0';
 		ask = 0;
 	} else
 		ask = 1;
@@ -249,18 +245,21 @@ main(argc, argv)
 		(void)strcpy(tbuf, username);
 		if (pwd = getpwnam(username))
 			salt = pwd->pw_passwd;
-		else
-			salt = "xx";
+		else {
+			/* take up the right amount of time */
+			(void)crypt(getpass("Password:"), "xx");
+			goto faked;
+		}
 
 		/* if user not super-user, check for disabled logins */
-		if (pwd == NULL || pwd->pw_uid)
+		if (pwd->pw_uid)
 			checknologin();
 
 		/*
 		 * Disallow automatic login to root; if not invoked by
 		 * root, disallow if the uid's differ.
 		 */
-		if (fflag && pwd) {
+		if (fflag) {
 			passwd_req =
 #ifndef	KERBEROS
 			     pwd->pw_uid == 0 ||
@@ -272,7 +271,7 @@ main(argc, argv)
 		 * If no pre-authentication and a password exists
 		 * for this user, prompt for one and verify it.
 		 */
-		if (!passwd_req || (pwd && !*pwd->pw_passwd))
+		if (!passwd_req || !*pwd->pw_passwd)
 			break;
 
 		/*
@@ -294,16 +293,14 @@ main(argc, argv)
 			continue;
 		}
 
-		setpriority(PRIO_PROCESS, 0, -4);
-		pp = getpass("Password:");
-		p = crypt(pp, salt);
-		setpriority(PRIO_PROCESS, 0, 0);
+		(void)setpriority(PRIO_PROCESS, 0, -4);
+		p = getpass("Password:");
 
-		(void) bzero(pp, strlen(pp));
-		if (pwd && !strcmp(p, pwd->pw_passwd))
+		bzero(p, strlen(p));
+		if (!rval)
 			break;
 
-		(void)printf("Login incorrect\n");
+faked:		(void)printf("Login incorrect\n");
 		failures++;
 		/* we allow 10 tries, but after 3 we start backing off */
 		if (++cnt > 3) {
@@ -319,6 +316,9 @@ main(argc, argv)
 	/* committed to login -- turn off timeout */
 	(void)alarm((u_int)0);
 
+	/* reset priority */
+	(void)setpriority(PRIO_PROCESS, 0, 0);
+
 	/* paranoia... */
 	endpwent();
 
@@ -329,7 +329,6 @@ main(argc, argv)
 		pwd->pw_dir = "/";
 		(void)printf("Logging in with home = \"/\".\n");
 	}
-
 #define	TWOWEEKS	(14*24*60*60)
 	if (pwd->pw_change || pwd->pw_expire)
 		(void)gettimeofday(&tp, (struct timezone *)NULL);
@@ -385,7 +384,7 @@ main(argc, argv)
 	{
 		struct utmp utmp;
 
-		bzero((char *)&utmp, sizeof(utmp));
+		bzero((void *)&utmp, sizeof(utmp));
 		(void)time(&utmp.ut_time);
 		strncpy(utmp.ut_name, username, sizeof(utmp.ut_name));
 		if (hostname)
@@ -431,6 +430,11 @@ main(argc, argv)
 			    tty, hostname);
 		else
 			syslog(LOG_NOTICE, "ROOT LOGIN ON %s", tty);
+
+#ifdef KERBEROS
+	if (!quietlog && notickets == 1)
+		(void)printf("Warning: no Kerberos tickets issued.\n");
+#endif
 
 	if (!quietlog) {
 		struct stat st;
@@ -490,6 +494,7 @@ getloginname()
 	}
 }
 
+void
 timedout()
 {
 	(void)fprintf(stderr, "Login timed out after %d seconds\n", timeout);
@@ -564,7 +569,7 @@ dolastlog(quiet)
 			}
 			(void)lseek(fd, (off_t)pwd->pw_uid * sizeof(ll), L_SET);
 		}
-		bzero((char *)&ll, sizeof(ll));
+		bzero((void *)&ll, sizeof(ll));
 		(void)time(&ll.ll_time);
 		strncpy(ll.ll_line, tty, sizeof(ll.ll_line));
 		if (hostname)
@@ -597,23 +602,6 @@ stypeof(ttyid)
 	struct ttyent *t;
 
 	return(ttyid && (t = getttynam(ttyid)) ? t->ty_type : UNKNOWN);
-}
-
-getstr(buf, cnt, err)
-	char *buf, *err;
-	int cnt;
-{
-	char ch;
-
-	do {
-		if (read(0, &ch, sizeof(ch)) != sizeof(ch))
-			exit(1);
-		if (--cnt < 0) {
-			(void)fprintf(stderr, "%s too long\r\n", err);
-			sleepexit(1);
-		}
-		*buf++ = ch;
-	} while (ch);
 }
 
 sleepexit(eval)
