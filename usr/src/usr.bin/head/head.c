@@ -1,4 +1,19 @@
-static char *sccsid = "@(#)head.c	4.2 (Berkeley) %G%";
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif not lint
+
+#ifndef lint
+static char sccsid[] = "@(#)head.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 #include <stdio.h>
 /*
  * head - give the first few lines of a stream or of each of a set of files
