@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_open.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_open.c	8.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -88,11 +88,13 @@ __rec_open(fname, flags, mode, openinfo, dflags)
 		t->bt_rfd = rfd;
 	t->bt_rcursor = 0;
 
-	/*
-	 * In 4.4BSD stat(2) returns true for ISSOCK on pipes.  Until
-	 * then, this is fairly close.  Pipes are read-only.
-	 */
 	if (fname != NULL) {
+		/*
+		 * In 4.4BSD, stat(2) returns true for ISSOCK on pipes.
+		 * Unfortunately, that's not portable, so we use lseek
+		 * and check the errno values.
+		 */
+		errno = 0;
 		if (lseek(rfd, (off_t)0, SEEK_CUR) == -1 && errno == ESPIPE) {
 			switch (flags & O_ACCMODE) {
 			case O_RDONLY:
