@@ -36,7 +36,7 @@
 
 
 
-SCCSID(@(#)conf.c	3.49		%G%);
+SCCSID(@(#)conf.c	3.50		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -56,8 +56,8 @@ struct hdrinfo	HdrInfo[] =
 	"full-name",		H_ACHECK,		M_FULLNAME,
 	"to",			H_ADDR|H_RCPT,		0,
 	"cc",			H_ADDR|H_RCPT,		0,
-	"bcc",			H_ADDR|H_ACHECK|H_RCPT,	0,
-	"message-id",		H_CHECK,		M_MSGID,
+	"bcc",			H_ADDR|H_RCPT,		0,
+	"message-id",		0,			0,
 	"message",		H_EOH,			0,
 	"text",			H_EOH,			0,
 	"posted-date",		0,			0,
@@ -108,6 +108,7 @@ int	DefGid =	1;		/* ditto for gid */
 time_t	TimeOut =	3*24*60*60L;	/* default timeout for queue files */
 char	*TextTimeOut =	"three days";	/* text of above for error messages */
 int	ReadTimeout =	10*60;		/* timeout on external reads */
+int	LogLevel =	2;		/* default logging level */
 
 
 
