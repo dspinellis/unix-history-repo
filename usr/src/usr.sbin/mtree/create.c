@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)create.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)create.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -140,7 +140,7 @@ cwalk(parent, tail)
 extern mode_t dmode;				/* default directory mode */
 extern mode_t fmode;				/* default file mode */
 uid_t uid, gid;					/* default owner, group */
-
+u_int type;
 pwalk(level, tabs)
 	ENTRY *level;
 	int tabs;
@@ -155,7 +155,7 @@ pwalk(level, tabs)
 			(void)putchar('\t');
 		(void)printf("%s", level->name);
 		label = 0;
-		if ((ip = &level->info)->type != F_FILE) {
+		if ((ip = &level->info)->type != type) {
 			LABEL;
 			(void)printf("type=%s", ftype(ip->type));
 		}
@@ -266,5 +266,11 @@ shostats()
 		}
 	(void)printf("/set group=%u\n", gid);
 	(void)printf("/set nlink=1\n");
-	(void)printf("/set type=%s\n\n", dflag ? "dir" : "file");
+	if (dflag) {
+		type = F_DIR;
+		(void)printf("/set type=dir\n\n");
+	} else {
+		type = F_FILE;
+		(void)printf("/set type=file\n\n");
+	}
 }
