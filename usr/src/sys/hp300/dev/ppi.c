@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ppi.c	8.1 (Berkeley) %G%
+ *	@(#)ppi.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -325,7 +325,7 @@ again:
 
 ppiioctl(dev, cmd, data, flag)
 	dev_t dev;
-	int cmd;
+	u_long cmd;
 	caddr_t data;
 	int flag;
 {

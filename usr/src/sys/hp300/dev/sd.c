@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	8.5 (Berkeley) %G%
+ *	@(#)sd.c	8.6 (Berkeley) %G%
  */
 
 /*
@@ -996,7 +996,7 @@ sdwrite(dev, uio, flags)
 int
 sdioctl(dev, cmd, data, flag, p)
 	dev_t dev;
-	int cmd;
+	u_long cmd;
 	caddr_t data;
 	int flag;
 	struct proc *p;

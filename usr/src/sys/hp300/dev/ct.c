@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ct.c	8.2 (Berkeley) %G%
+ *	@(#)ct.c	8.3 (Berkeley) %G%
  */
 
 #include "ct.h"
@@ -38,6 +38,7 @@
 #define EOFS	128
 
 int	ctinit(), ctstart(), ctgo(), ctintr();
+void	ctstrategy();
 struct	driver ctdriver = {
 	ctinit, "ct", ctstart, ctgo, ctintr,
 };
@@ -358,6 +359,7 @@ again:
 		brelse(nbp);
 }
 
+void
 ctstrategy(bp)
 	register struct buf *bp;
 {
@@ -771,8 +773,9 @@ ctwrite(dev, uio)
 /*ARGSUSED*/
 ctioctl(dev, cmd, data, flag)
 	dev_t dev;
-	int cmd, flag;
+	u_long cmd;
 	caddr_t data;
+	int flag;
 {
 	register struct mtop *op;
 	register int cnt;
