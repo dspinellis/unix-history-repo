@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)nameser.h	5.3 (Berkeley) %G%
+ *	@(#)nameser.h	5.4 (Berkeley) %G%
  */
 
 /*
@@ -94,7 +94,7 @@
 
 typedef struct {
 	u_short	id;		/* query identification number */
-#ifdef BIT_ZERO_ON_LEFT
+#if defined (sun) || defined (gould) || defined (BIT_ZERO_ON_LEFT)
 	/* Bit zero on left:  Gould and similar architectures */
 			/* fields in third byte */
 	u_char	qr:1;		/* response flag */
@@ -102,24 +102,29 @@ typedef struct {
 	u_char	aa:1;		/* authoritive answer */
 	u_char	tc:1;		/* truncated message */
 	u_char	rd:1;		/* recursion desired */
-			/* fields in forth byte */
+			/* fields in fourth byte */
 	u_char	ra:1;		/* recursion available */
 	u_char	pr:1;		/* primary server required (non standard) */
 	u_char	unused:2;	/* unused bits */
 	u_char	rcode:4;	/* response code */
 #else
-	/* Bit zero on right:  VAX, PDP-11, etc */
+#if defined (vax) || defined (BIT_ZERO_ON_RIGHT)
+	/* Bit zero on right:  VAX */
 			/* fields in third byte */
 	u_char	rd:1;		/* recursion desired */
 	u_char	tc:1;		/* truncated message */
 	u_char	aa:1;		/* authoritive answer */
 	u_char	opcode:4;	/* purpose of message */
 	u_char	qr:1;		/* response flag */
-			/* fields in forth byte */
+			/* fields in fourth byte */
 	u_char	rcode:4;	/* response code */
 	u_char	unused:2;	/* unused bits */
 	u_char	pr:1;		/* primary server required (non standard) */
 	u_char	ra:1;		/* recursion available */
+#else
+	/* you must determine what the correct bit order is for your compiler */
+	UNDEFINED_BIT_ORDER;
+#endif
 #endif
 			/* remaining bytes */
 	u_short	qdcount;	/* number of question entries */
