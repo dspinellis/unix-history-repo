@@ -1,0 +1,4 @@
+./"pageq.prev"16t"pageq.next"16t"hashq.prev"16t"hashq.next"n4X
++/"listq.prev"16t"listq.next"16t"object"16t"offset"n4X
++/"wirecnt"8t"flags"8t"clean"16t"flags"nxxDx
++/"phys_addr"16t"page_lock"16t"unlock_req"nXXX
