@@ -52,6 +52,7 @@ int		encrypt = 0;
 char		krb_realm[REALM_SZ];
 CREDENTIALS	cred;
 Key_schedule	schedule;
+int		use_kerberos = 1;
 #endif	/* KERBEROS */
 
 # ifndef TIOCPKT_WINDOW
@@ -181,7 +182,16 @@ another:
 		fprintf(stderr, "Who are you?\n");
 		exit(1);
 	}
+#ifdef	KERBEROS
+	sp = getservbyname("klogin", "tcp");
+	if(sp == NULL) {
+		use_kerberos = 0;
+		old_warning("klogin service unknown");
+		sp = getservbyname("login", "tcp");
+	}
+#else
 	sp = getservbyname("login", "tcp");
+#endif
 	if (sp == 0) {
 		fprintf(stderr, "rlogin: login/tcp: unknown service\n");
 		exit(2);
@@ -199,40 +209,52 @@ another:
 	oldmask = sigblock(sigmask(SIGURG) | sigmask(SIGUSR1));
 
 #ifdef	KERBEROS
-	rem = KSUCCESS;
-	if(krb_realm[0] == '\0') {
-		rem = get_krbrlm(krb_realm, 1);
-	}
-	if(rem == KSUCCESS) {
-		if(encrypt) {
-			rem = krcmd_mutual(
-				&host, sp->s_port,
-				name ? name : pwd->pw_name, term,
-				0, krb_realm,
-				&cred, schedule
-			);
+try_connect:
+	if(use_kerberos) {
+		rem = KSUCCESS;
+		if(krb_realm[0] == '\0') {
+			rem = get_krbrlm(krb_realm, 1);
+		}
+		if(rem == KSUCCESS) {
+			if(encrypt) {
+				rem = krcmd_mutual(
+					&host, sp->s_port,
+					name ? name : pwd->pw_name, term,
+					0, krb_realm,
+					&cred, schedule
+				);
+			} else {
+				rem = krcmd(
+			    		&host, sp->s_port,
+					name ? name : pwd->pw_name, term,
+					0, krb_realm
+				);
+			}
 		} else {
-			rem = krcmd(
-			    	&host, sp->s_port,
-			    	name ? name : pwd->pw_name, term,
-			    	0, krb_realm
+			fprintf(
+				stderr,
+				"rlogin: Kerberos error getting local realm %s\n",
+				krb_err_txt[rem]
 			);
+			exit(1);
+		}
+		if((rem < 0) && errno == ECONNREFUSED) {
+			use_kerberos = 0;
+			old_warning("remote host doesn't support Kerberos");
+			goto try_connect;
 		}
 	} else {
-		fprintf(
-			stderr,
-			"rlogin: Kerberos error getting local realm %s\n",
-			krb_err_txt[rem]
-		);
-		exit(1);
+		if(encrypt) {
+			fprintf(stderr, "The -x flag requires Kerberos authencation\n");
+			exit(1);
+		}
+        	rem = rcmd(&host, sp->s_port, pwd->pw_name,
+	    		name ? name : pwd->pw_name, term, 0);
 	}
-
-#else	/* !KERBEROS */
-
-        rem = rcmd(&host, sp->s_port, pwd->pw_name,
-	    name ? name : pwd->pw_name, term, 0);
-
-#endif	/* KERBEROS */
+#else
+       	rem = rcmd(&host, sp->s_port, pwd->pw_name,
+    		name ? name : pwd->pw_name, term, 0);
+#endif
 
 	if(rem < 0) 
 		exit(1);
@@ -757,4 +779,10 @@ lostpeer()
 	(void) signal(SIGPIPE, SIG_IGN);
 	prf("\007Connection closed.");
 	done(1);
+}
+
+old_warning(str)
+	char	*str;
+{
+	prf("Warning: %s, using standard rlogin", str);
 }
