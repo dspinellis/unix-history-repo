@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_input.c	7.17 (Berkeley) %G%
+ *	@(#)ip_input.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -56,10 +56,12 @@ int	ipsendredirects = IPSENDREDIRECTS;
 #endif
 int	ipforwarding = IPFORWARDING;
 int	ipsendredirects = IPSENDREDIRECTS;
-#ifdef DEBUG
+#ifdef DIAGNOSTIC
 int	ipprintfs = 0;
 #endif
 
+extern	struct domain inetdomain;
+extern	struct protosw inetsw[];
 u_char	ip_protox[IPPROTO_MAX];
 int	ipqmaxlen = IFQ_MAXLEN;
 struct	in_ifaddr *in_ifaddr;			/* first inet address */
@@ -456,6 +458,13 @@ insert:
 	m = dtom(ip);
 	m->m_len += (ip->ip_hl << 2);
 	m->m_data -= (ip->ip_hl << 2);
+	/* some debugging cruft by sklower, below, will go away soon */
+	if (m->m_flags & M_PKTHDR) { /* XXX this should be done elsewhere */
+		register int plen = 0;
+		for (t = m; m; m = m->m_next)
+			plen += m->m_len;
+		t->m_pkthdr.len = plen;
+	}
 	return ((struct ip *)ip);
 
 dropfrag:
@@ -774,7 +783,7 @@ save_rte(option, dst)
 	unsigned olen;
 
 	olen = option[IPOPT_OLEN];
-#ifdef DEBUG
+#ifdef DIAGNOSTIC
 	if (ipprintfs)
 		printf("save_rte: olen %d\n", olen);
 #endif
@@ -815,7 +824,7 @@ ip_srcroute()
 	/* length is (nhops+1)*sizeof(addr) + sizeof(nop + srcrt header) */
 	m->m_len = ip_nhops * sizeof(struct in_addr) + sizeof(struct in_addr) +
 	    OPTSIZ;
-#ifdef DEBUG
+#ifdef DIAGNOSTIC
 	if (ipprintfs)
 		printf("ip_srcroute: nhops %d mlen %d", ip_nhops, m->m_len);
 #endif
@@ -825,11 +834,11 @@ ip_srcroute()
 	 */
 	p = &ip_srcrt.route[ip_nhops - 1];
 	*(mtod(m, struct in_addr *)) = *p--;
-#ifdef DEBUG
+#ifdef DIAGNOSTIC
 	if (ipprintfs)
 		printf(" hops %X", ntohl(*mtod(m, struct in_addr *)));
 	if (ipprintfs)
-		printf(" hops %X", ntohl(*mtod(m, struct in_addr *)));
+		printf(" hops %X", ntohl(mtod(m, struct in_addr *)->s_addr));
 #endif
 
 	/*
@@ -847,9 +856,9 @@ ip_srcroute()
 	 * reversing the path (pointers are now aligned).
 	 */
 	while (p >= ip_srcrt.route) {
-#ifdef DEBUG
+#ifdef DIAGNOSTIC
 		if (ipprintfs)
-			printf(" %X", ntohl(*q));
+			printf(" %X", ntohl(q->s_addr));
 #endif
 		*q++ = *p--;
 	}
@@ -864,9 +873,9 @@ ip_srcroute()
 	 * Last hop goes to final destination.
 	 */
 	*q = ip_srcrt.dst;
-#ifdef DEBUG
+#ifdef DIAGNOSTIC
 	if (ipprintfs)
-		printf(" %X\n", ntohl(*q));
+		printf(" %X\n", ntohl(q->s_addr));
 #endif
 	return (m);
 }
@@ -936,7 +945,7 @@ ip_forward(m, srcrt)
 	struct in_addr dest;
 
 	dest.s_addr = 0;
-#ifdef DEBUG
+#ifdef DIAGNOSTIC
 	if (ipprintfs)
 		printf("forward: src %x dst %x ttl %x\n", ip->ip_src,
 			ip->ip_dst, ip->ip_ttl);
@@ -1021,7 +1030,7 @@ ip_forward(m, srcrt)
 			    code = ICMP_REDIRECT_HOST;
 		    else
 			    code = ICMP_REDIRECT_NET;
-#ifdef DEBUG
+#ifdef DIAGNOSTIC
 		    if (ipprintfs)
 		        printf("redirect (%d) to %x\n", code, dest.s_addr);
 #endif
