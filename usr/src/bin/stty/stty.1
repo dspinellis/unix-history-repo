@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)stty.1	4.1 (Berkeley) %G%
+.\"	@(#)stty.1	5.1 (Berkeley) %G%
 .\"
-.TH STTY 1 5/11/81
+.TH STTY 1 "11 May 1981"
 .UC 4
 .SH NAME
 stty \- set terminal options
@@ -273,11 +273,7 @@ Set terminal baud rate to the number given, if possible.
 .PP
 A teletype driver which supports the job control processing of
 .IR csh (1)
-as introduced in
-.IR newcsh (1)
-and more functionality that the basic driver is introduced in
-.IR newtty (4)
-and fully described in
+and more functionality than the basic driver is fully described in
 .IR tty (4).
 The following options apply only to it.
 .TP 10
@@ -437,31 +433,31 @@ teletype driver
 and are not normally changed.
 .TP 10
 .BI susp \ c\fR
-set suspend process character to \fIc\fR (default control Z.)
+set suspend process character to \fIc\fR (default control Z).
 .br
 .ns
 .TP 10
 .BI dsusp \ c\fR
-set delayed suspend process character to \fIc\fR (default control Y.)
+set delayed suspend process character to \fIc\fR (default control Y).
 .br
 .ns
 .TP 10
 .BI rprnt \ c\fR
-set reprint line character to \fIc\fR (default control R.)
+set reprint line character to \fIc\fR (default control R).
 .br
 .ns
 .TP 10
 .BI flush \ c\fR
-set flush output character to \fIc\fR (default control O.)
+set flush output character to \fIc\fR (default control O).
 .br
 .ns
 .TP 10
 .BI werase \ c\fR
-set word erase character to \fIc\fR (default control W.)
+set word erase character to \fIc\fR (default control W).
 .br
 .ns
 .TP 10
 .BI lnext \ c\fR
-set literal next character to \fIc\fR (default control V.)
+set literal next character to \fIc\fR (default control V).
 .SH "SEE ALSO"
-ioctl(2), tabs(1), tset(1), newtty(4), tty(4)
+ioctl(2), tabs(1), tset(1), tty(4)
