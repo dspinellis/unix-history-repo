@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)gprof.c	1.16 (Berkeley) %G%";
+    static	char *sccsid = "@(#)gprof.c	1.17 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -472,7 +472,7 @@ asgnsamples()
     /* read samples and assign to namelist symbols */
     scale = highpc - lowpc;
     scale /= nsamples;
-    for (i=0; i < nsamples; i++) {
+    for (i = 0, j = 0; i < nsamples; i++) {
 	ccnt = samples[i];
 	if (ccnt == 0)
 		continue;
@@ -486,7 +486,7 @@ asgnsamples()
 	    }
 #	endif DEBUG
 	totime += time;
-	for (j=0; j<nname; j++) {
+	for (j = j - 1; j < nname; j++) {
 	    svalue0 = nl[j].value / sizeof(UNIT);
 	    svalue1 = nl[j+1].value / sizeof(UNIT);
 	    if (pch < svalue0)
