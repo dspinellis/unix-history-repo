@@ -5,15 +5,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)master.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)master.c	1.2 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
 #include <protocols/timed.h>
 #include <setjmp.h>
-
-#define OFF	0
-#define ON	1
 
 extern struct sockaddr_in from;
 extern struct sockaddr_in server;
@@ -61,13 +58,14 @@ master()
 	char *strcpy();
 	struct tsp *readmsg();
 	struct tsp *answer, *acksend();
+	char *olddate;
 
 #ifdef MEASURE
 	fi = "/usr/adm/timed.masterlog";
 	fp = fopen(fi, "w");
 #endif
 
-	syslog(LOG_ERR, "timed: THIS MACHINE IS MASTER\n");
+	syslog(LOG_INFO, "THIS MACHINE IS MASTER");
 	if (trace)
 		fprintf(fd, "THIS MACHINE IS MASTER\n");
 
@@ -109,24 +107,23 @@ loop:
 				to.tsp_time.tv_sec = mytime.tv_sec;
 				answer = acksend(&to, hp[ind].name, TSP_ACK);
 				if (answer == NULL) {
-					syslog(LOG_ERR, "timed: ERROR ON SETTIME machine: %s\n", hp[ind].name);
+					syslog(LOG_ERR, "ERROR ON SETTIME machine: %s", hp[ind].name);
 					slvcount--;
 				}
-				pollingtime = 0;
 			}
 			break;
 		case TSP_SLAVEUP:
 			(void) addmach(msg->tsp_name);
-			pollingtime = 0;
 			break;
 		case TSP_DATE:
 			saveaddr = from;
 			msg->tsp_time.tv_usec = 0;
+			olddate = date();
 			(void)gettimeofday(&time, &tzone);
 			time.tv_sec += msg->tsp_time.tv_sec;
 			time.tv_sec++;
 			(void)settimeofday(&time, &tzone);
-			syslog(LOG_ERR, "timed: date changed to: %s\n", date());
+			syslog(LOG_NOTICE, "date changed from: %s", olddate);
 			msg->tsp_type = TSP_DATEACK;
 			msg->tsp_vers = TSPVERSION;
 			(void)strcpy(msg->tsp_name, hostname);
@@ -134,7 +131,7 @@ loop:
 			length = sizeof(struct sockaddr_in);
 			if (sendto(sock, (char *)msg, sizeof(struct tsp), 0,
 						&saveaddr, length) < 0) {
-				syslog(LOG_ERR, "timed: sendto: %m");
+				syslog(LOG_ERR, "sendto: %m");
 				exit(1);
 			}
 			spreadtime();
@@ -143,17 +140,21 @@ loop:
 		case TSP_DATEREQ:
 			ind = findhost(msg->tsp_name);
 			if (ind < 0) { 
-				syslog(LOG_ERR, "timed: error on DATEREQ\n");
-				break;
+			    syslog(LOG_ERR,
+				"DATEREQ from uncontrolled machine");
+			    break;
 			}
 			if (hp[ind].seq !=  msg->tsp_seq) {
 				hp[ind].seq = msg->tsp_seq;
 				msg->tsp_time.tv_usec = 0;
+				olddate = date();
 				(void)gettimeofday(&time, &tzone);
 				time.tv_sec += msg->tsp_time.tv_sec;
 				time.tv_sec++;
 				(void)settimeofday(&time, &tzone);
-				syslog(LOG_ERR, "timed: date changed to: %s\n", date());
+				syslog(LOG_NOTICE,
+				    "date changed by %s from: %s",
+				    msg->tsp_name, olddate);
 				spreadtime();
 				pollingtime = 0;
 			}
@@ -166,7 +167,7 @@ loop:
 			length = sizeof(struct sockaddr_in);
 			if (sendto(sock, (char *)msg, sizeof(struct tsp), 0,
 						&from, length) < 0) {
-				syslog(LOG_ERR, "timed: sendto: %m");
+				syslog(LOG_ERR, "sendto: %m");
 				exit(1);
 			}
 			break;
@@ -185,7 +186,7 @@ loop:
 			if (trace) {
 				fprintf(fd, "Tracing ended on: %s\n", date());
 				(void)fflush(fd);
-				(void)close((int)fd);
+				(void)fclose(fd);
 			}
 			trace = OFF;
 			break;
@@ -195,7 +196,7 @@ loop:
 			server = from;
 			answer = acksend(&to, msg->tsp_name, TSP_ACK);
 			if (answer == NULL) {
-				syslog(LOG_ERR, "timed: election error\n");
+				syslog(LOG_ERR, "election error");
 			} else {
 				(void) addmach(msg->tsp_name);
 			}
@@ -216,13 +217,14 @@ loop:
 								TSP_MASTERACK);
 				if (answer == NULL)
 					break;
-				(void) addmach(answer->tsp_name);
 				to.tsp_type = TSP_QUIT;
 				server = from;
 				msg = acksend(&to, answer->tsp_name, 
 								TSP_MASTERACK);
 				if (msg == NULL) {
-					syslog(LOG_ERR, "timed: error on sending QUIT\n");
+					syslog(LOG_ERR, "error on sending QUIT");
+				} else {
+					(void) addmach(answer->tsp_name);
 				}
 			}
 			masterup();
@@ -239,7 +241,7 @@ loop:
 		case TSP_QUIT:
 			/* become slave */
 #ifdef MEASURE
-			(void)close((int)fp);
+			(void)fclose(fp);
 #endif
 			longjmp(jmpenv, 2);
 			break;
@@ -267,7 +269,7 @@ synch()
 	struct timeval tack;
 #ifdef MEASURE
 #define MAXLINES	8
-	static int lines;
+	static int lines = 1;
 	struct timeval start, end;
 #endif
 	int measure();
@@ -296,7 +298,7 @@ synch()
 			tack.tv_sec = 0;
 			tack.tv_usec = 100000;
 			if ((measure_status = measure(&tack, ON)) < 0) {
-				syslog(LOG_ERR, "timed: measure: %m\n");
+				syslog(LOG_ERR, "measure: %m");
 				exit(1);
 			}
 			hp[i].delta = measure_delta;
@@ -338,7 +340,6 @@ synch()
 spreadtime()
 {
 	int i;
-	struct timeval mytime;
 	struct tsp to;
 	struct tsp *answer, *acksend();
 
@@ -346,13 +347,11 @@ spreadtime()
 		bcopy((char *)&hp[i].addr, (char *)&(server.sin_addr.s_addr), 
 						hp[i].length); 
 		to.tsp_type = TSP_SETTIME;
-		to.tsp_time.tv_usec = 0;
 		(void)strcpy(to.tsp_name, hostname);
-		(void)gettimeofday(&mytime, (struct timezone *)0);
-		to.tsp_time.tv_sec = mytime.tv_sec;
+		(void)gettimeofday(&to.tsp_time, (struct timezone *)0);
 		answer = acksend(&to, hp[i].name, TSP_ACK);
 		if (answer == NULL) {
-			syslog(LOG_ERR, "timed: ERROR ON SETTIME machine: %s\n", hp[i].name);
+			syslog(LOG_ERR, "ERROR ON SETTIME machine: %s", hp[i].name);
 		}
 	}
 }
@@ -390,20 +389,20 @@ char *name;
 	if (ret < 0) {
 		hptmp = gethostbyname(name);
 		if (hptmp == NULL) {
-			syslog(LOG_ERR, "timed: gethostbyname: %m\n");
+			syslog(LOG_ERR, "gethostbyname: %m");
 			exit(1);
 		}
 		hp[slvcount].length = hptmp->h_length;
 		bcopy((char *)hptmp->h_addr, (char *)&hp[slvcount].addr, 
 						hptmp->h_length); 
-		hp[slvcount].name = (char *)malloc(32);
-		(void)strcpy(hp[slvcount].name, hptmp->h_name);
+		hp[slvcount].name = (char *)malloc(MAXHOSTNAMELEN);
+		(void)strcpy(hp[slvcount].name, name);
 		hp[slvcount].seq = 0;
 		ret = slvcount;
 		if (slvcount < NHOSTS)
 			slvcount++;
 		else {
-			syslog(LOG_EMERG, "timed: no more slots in host table\n");
+			syslog(LOG_ALERT, "no more slots in host table");
 		}
 	} else {
 		/* need to clear sequence number anyhow */
