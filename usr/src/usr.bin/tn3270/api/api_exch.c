@@ -4,6 +4,8 @@
 
 static int sock;		/* Socket number */
 
+static char whoarewe[40] = "";
+
 static char ibuffer[40], *ibuf_next, *ibuf_last;
 #define	IBUFADDED(i)		ibuf_last += (i)
 #define	IBUFAVAILABLE()		(ibuf_last -ibuf_next)
@@ -29,7 +31,8 @@ outflush()
 
     if (length != 0) {
 	if (write(sock, OBUFFER(), length) != length) {
-	    perror("writing to API client");
+	    fprintf(stderr, "(API %s) ", whoarewe);
+	    perror("write");
 	    return -1;
 	}
 	OBUFRESET();
@@ -54,7 +57,13 @@ int count;
     }
     while (count) {
 	if ((i = read(sock, IBUFFER(), count)) < 0) {
-	    perror("reading from API client");
+	    fprintf(stderr, "(API %s) ", whoarewe);
+	    perror("read");
+	    return -1;
+	}
+	if (i == 0) {
+	    /* Reading past end-of-file */
+	    fprintf(stderr, "(API %s) End of file read\r\n", whoarewe);
 	    return -1;
 	}
 	count -= i;
@@ -134,7 +143,8 @@ char
 	    return -1;
 	}
 	if (write(sock, location, length) != length) {
-	    perror("writing to API client");
+	    fprintf(stderr, "(API %s) ", whoarewe);
+	    perror("write");
 	    return -1;
 	}
     }
@@ -167,7 +177,8 @@ char
     }
     while (length) {
 	if ((i = read(sock, location, length)) < 0) {
-	    perror("reading from API client");
+	    fprintf(stderr, "(API %s) ", whoarewe);
+	    perror("read");
 	    return -1;
 	}
 	length -= i;
@@ -177,10 +188,12 @@ char
 }
 
 int
-api_exch_init(sock_number)
+api_exch_init(sock_number, ourname)
 int sock_number;
+char *ourname;
 {
     sock = sock_number;
+    strcpy(whoarewe, ourname);		/* For error messages */
 
     IBUFRESET();
     OBUFRESET();
