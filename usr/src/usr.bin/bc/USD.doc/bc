@@ -1,6 +1,8 @@
-.\"	@(#)bc	5.1 (Berkeley) %G%
+.\"	@(#)bc	6.1 (Berkeley) %G%
 .\"
-.RP
+.EH 'USD:6-%''BC \- An Arbitrary Precision Desk-Calculator Language'
+.OH 'BC \- An Arbitrary Precision Desk-Calculator Language''USD:6-%'
+.\".RP
 .TL
 BC \- An Arbitrary Precision Desk-Calculator Language
 .AU
@@ -78,11 +80,15 @@ The simplest kind of statement is an arithmetic expression
 on a line by itself.
 For instance, if you type in the line:
 .DS
+.ft B
 142857 + 285714
+.ft P
 .DE
 the program responds immediately with the line
 .DS
+.ft B
 428571
+.ft P
 .DE
 The operators \-, *, /, %, and ^ can also be used; they
 indicate subtraction, multiplication, division, remaindering, and
@@ -95,7 +101,9 @@ Any term in an expression may be prefixed by a minus sign to
 indicate that it is to be negated (the `unary' minus sign).
 The expression
 .DS
+.ft B
 7+\-3
+.ft P
 .DE
 is interpreted to mean that \-3 is to be added to 7.
 .PP
@@ -110,22 +118,29 @@ performed from right to left and the other operators
 from left to right.
 The two expressions
 .DS
+.ft B
 a^b^c  and  a^(b^c)
+.ft P
 .DE
 are equivalent, as are the two expressions
 .DS
+.ft B
 a*b*c  and  (a*b)*c
+.ft P
 .DE
 BC shares with Fortran and C the undesirable convention that
 .DS
-a/b*c  is equivalent to  (a/b)*c
+\fBa/b*c\fP  is equivalent to  \fB(a/b)*c\fP
+.ft P
 .DE
 .PP
 Internal storage registers to hold numbers have single lower-case
 letter names.  The value of an expression can be assigned to
 a register in the usual way.  The statement
 .DS
+.ft B
 x = x + 3
+.ft P
 .DE
 has the effect of increasing by three the value of the contents of the
 register named x.
@@ -137,12 +152,16 @@ There is a built-in square root function whose
 result is truncated to an integer (but see scaling below).
 The lines
 .DS
+.ft B
 x = sqrt(191)
 x
+.ft P
 .DE
 produce the printed result
 .DS
+.ft B
 13
+.ft P
 .DE
 .SH
 Bases
@@ -152,18 +171,24 @@ The contents of `ibase', initially set to 10,
 determines the base used for interpreting numbers read in.
 For example, the lines
 .DS
+.ft B
 ibase = 8
 11
+.ft P
 .DE
 will produce the output line
 .DS
+.ft B
 9
+.ft P
 .DE
 and you are all set up to do octal to decimal conversions.
 Beware, however of trying to change the input base back
 to decimal by typing
 .DS
+.ft B
 ibase = 10
+.ft P
 .DE
 Because the number 10 is interpreted as octal, this statement will
 have no effect.
@@ -174,7 +199,9 @@ and are
 interpreted as digits having values 10\-15 respectively.
 The statement
 .DS
+.ft B
 ibase = A
+.ft P
 .DE
 will change you back to decimal input base no matter what the
 current input base is.
@@ -186,12 +213,16 @@ numbers in bases less than 1 and greater than 16.
 The contents of `obase', initially set to 10, are used as the base for output
 numbers.  The lines
 .DS
+.ft B
 obase = 16
 1000
+.ft P
 .DE
 will produce the output line
 .DS
+.ft B
 3E8
+.ft P
 .DE
 which is to be interpreted as a 3-digit hexadecimal number.
 Very large output bases are permitted, and they are sometimes useful.
@@ -261,11 +292,15 @@ The internal quantities `scale', `ibase', and `obase' can be
 used in expressions just like other variables.
 The line
 .DS
+.ft B
 scale = scale + 1
+.ft P
 .DE
 increases the value of `scale' by one, and the line
 .DS
+.ft B
 scale
+.ft P
 .DE
 causes the current value of `scale' to be printed.
 .PP
@@ -286,7 +321,9 @@ Twenty-six different defined functions are permitted
 in addition to the twenty-six variable names.
 The line
 .DS
+.ft B
 	define a(x){
+.ft P
 .DE
 begins the definition of a function with one argument.
 This line must be followed by one or more statements,
@@ -297,8 +334,10 @@ statement is executed or when the end of the function is reached.
 The return statement can take either
 of the two forms
 .DS
+.ft B
 return
 return(x)
+.ft P
 .DE
 In the first case, the value of the function is 0, and in
 the second, the value of the expression in parentheses.
@@ -306,7 +345,9 @@ the second, the value of the expression in parentheses.
 Variables used in the function can be declared as automatic
 by a statement of the form
 .DS
+.ft B
 auto x,y,z
+.ft P
 .DE
 There can be only one `auto' statement in a function and it must
 be the first statement in the definition.
@@ -322,11 +363,13 @@ with the single exception that they are given a value
 on entry to the function.
 An example of a function definition is
 .DS
+.ft B
 	define a(x,y){
 		auto z
 		z = x*y
 		return(z)
 	}
+.ft P
 .DE
 The value of this function, when called, will be the
 product of its
@@ -347,11 +390,15 @@ a
 .ft
 above has been defined, then the line
 .DS
+.ft B
 a(7,3.14)
+.ft P
 .DE
 would cause the result 21.98 to be printed and the line
 .DS
+.ft B
 x = a(a(3,4),5)
+.ft P
 .DE
 would cause the value of x to become 60.
 .SH
@@ -377,9 +424,11 @@ An array name may be used as an argument to a function,
 or may be declared as automatic in
 a function definition by the use of empty brackets:
 .DS
+.ft B
 f(a[\|])
 define f(a[\|])
 auto a[\|]
+.ft P
 .DE
 When an array name is so used, the whole contents of the array
 are copied for the use of the function, and thrown away on exit
@@ -396,31 +445,37 @@ a compound statement consisting of a collection of
 statements enclosed in braces.
 They are written in the following way
 .DS
+.ft B
 if(relation) statement
 while(relation) statement
 for(expression1; relation; expression2) statement
+.ft P
 .DE
 or
 .DS
+.ft B
 if(relation) {statements}
 while(relation) {statements}
 for(expression1; relation; expression2) {statements}
+.ft P
 .DE
 .PP
 A relation in one of the control statements is an expression of the form
 .DS
+.ft B
 x>y
+.ft P
 .DE
 where  two expressions are related by one of the six relational
-operators <, >, <=, >=, ==, or !=.
-The relation ==
-stands for `equal to' and != stands for `not equal to'.
+operators \fS <, >, <=, >=, ==, or !=.\fP
+The relation \fS==\fP
+stands for `equal to' and \fS!=\fP stands for `not equal to'.
 The meaning of the remaining relational operators is
 clear.
 .PP
-BEWARE of using = instead of == in a relational.  Unfortunately,
+BEWARE of using \fS=\fP instead of \fS==\fP in a relational.  Unfortunately,
 both of them are legal, so you will not get a diagnostic
-message, but = really will not do a comparison.
+message, but \fS=\fP really will not do a comparison.
 .PP
 The `if' statement causes execution of its range
 if and only if the relation is true.
@@ -440,21 +495,27 @@ Then `expression2' is executed.  The relation is tested, and so on.
 The typical use of the `for' statement is for a controlled iteration,
 as in the statement
 .DS
+.ft B
 for(i=1; i<=10; i=i+1) i
+.ft P
 .DE
 which will print the integers from 1 to 10.
 Here are some examples of the use of the control statements.
 .DS
+.ft B
 define f(n){
 auto i, x
 x=1
 for(i=1; i<=n; i=i+1) x=x*i
 return(x)
 }
+.ft P
 .DE
 The line
 .DS
+.ft B
 	f(a)
+.ft P
 .DE
 will print
 .ft I
@@ -469,17 +530,20 @@ Here is the definition of a function which will
 compute values of the binomial coefficient
 (m and n are assumed to be positive integers).
 .DS
+.ft B
 define b(n,m){
 auto x, j
 x=1
 for(j=1; j<=m; j=j+1) x=x*(n\-j+1)/j
 return(x)
 }
+.ft P
 .DE
 The following function computes values of the exponential function
 by summing the appropriate series
 without regard for possible truncation errors:
 .DS
+.ft B
 scale = 20
 define e(x){
 	auto a, b, c, d, n
@@ -497,6 +561,7 @@ define e(x){
 		d = c
 	}
 }
+.ft P
 .DE
 .SH
 Some Details
@@ -511,7 +576,9 @@ If an assignment statement is parenthesized, it then has
 a value and it can be used anywhere that an expression can.
 For example, the line
 .DS
+.ft B
 (x=y+17)
+.ft P
 .DE
 not only makes the indicated assignment, but also prints the
 resulting value.
@@ -519,7 +586,9 @@ resulting value.
 Here is an example of a use of the value of an
 assignment statement even when it is not parenthesized.
 .DS
+.ft B
 x = a[i=i+1]
+.ft P
 .DE
 causes a value to be assigned to x and also increments i
 before it is used as a subscript.
@@ -528,6 +597,7 @@ The following constructs work in BC in exactly the same manner
 as they do in the C language.  Consult the appendix or the
 C manuals [2] for their exact workings.
 .DS
+.ft B
 .ta 2i
 x=y=z  is the same as	x=(y=z)
 x =+ y	x = x+y
@@ -540,6 +610,7 @@ x++	(x=x+1)\-1
 x\-\-	(x=x\-1)+1
 ++x	x = x+1
 \-\-x	x = x\-1
+.ft P
 .DE
 Even if you don't intend to use the constructs,
 if you type one inadvertently, something correct but unexpected
@@ -548,7 +619,9 @@ may happen.
 WARNING!  In some of these constructions, spaces are
 significant.
 There is a real difference between
-x=\-y and x= \-y.
+.ft B
+x =\-  y and x= \-y.
+.ft P
 The first replaces x by x\-y and the second by \-y.
 .SH
 Three Important Things
@@ -561,7 +634,9 @@ of PL/I.  Comments begin with `/*' and end with `*/'.
 3. There is a library of math functions which may be obtained by
 typing at command level
 .DS
+.ft B
 bc \-l
+.ft P
 .DE
 This command will load a set of library functions
 which, at the time of writing, consists of sine (named `s'),
@@ -575,7 +650,9 @@ is discussed elsewhere [3].
 .PP
 If you type
 .DS
+.ft B
 bc file ...
+.ft P
 .DE
 BC will read and execute the named file or files before accepting
 commands from the keyboard.  In this way, you may load your
