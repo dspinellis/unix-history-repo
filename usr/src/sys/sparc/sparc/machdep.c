@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	8.1 (Berkeley) %G%
+ *	@(#)machdep.c	8.2 (Berkeley) %G%
  *
- * from: $Header: machdep.c,v 1.41 93/05/27 04:39:05 torek Exp $
+ * from: $Header: machdep.c,v 1.42 93/09/29 05:40:34 torek Exp $
  */
 
 #include <sys/param.h>
@@ -195,15 +195,9 @@ cpu_startup()
 	bufinit();
 
 	/*
-	 * Configure the system.
+	 * Configure the system.  The cpu code will turn on the cache.
 	 */
 	configure();
-
-	/*
-	 * Turn on the cache (do after configuration due to a bug in
-	 * some versions of the SPARC chips -- this info from Gilmore).
-	 */
-	cache_enable();
 }
 
 /*
