@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* sccsid[] = "@(#)h00vars.h 1.8 %G%"; */
+/* sccsid[] = "@(#)h00vars.h 1.9 %G%"; */
 
 #include <stdio.h>
 #include "whoami.h"
@@ -127,3 +127,10 @@ extern long		_filefre;	/* last used entry in _actfile */
 extern struct iorechd	input;
 extern struct iorechd	output;
 extern struct iorechd	_err;
+
+/*
+ * seek pointer struct for TELL, SEEK extensions
+ */
+struct seekptr {
+	long	cnt;
+};
