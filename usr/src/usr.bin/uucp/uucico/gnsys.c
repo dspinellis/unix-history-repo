@@ -1,6 +1,13 @@
+/*-
+ * Copyright (c) 1985 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)gnsys.c	5.6	(Berkeley) %G%";
-#endif
+static char sccsid[] = "@(#)gnsys.c	5.7 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "uucp.h"
 #ifdef	NDIR

@@ -1,6 +1,13 @@
+/*-
+ * Copyright (c) 1985 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)condevs.c	5.21	(Berkeley) %G%";
-#endif
+static char sccsid[] = "@(#)condevs.c	5.22 (Berkeley) %G%";
+#endif /* not lint */
 
 extern int errno;
 extern char *sys_errlist[];

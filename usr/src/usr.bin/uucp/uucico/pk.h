@@ -1,4 +1,11 @@
-/*	@(#)pk.h	5.6	(Berkeley)	%G%	*/
+/*-
+ * Copyright (c) 1985 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)pk.h	5.7 (Berkeley) %G%
+ */
 
 struct header {
 	char	sync;
