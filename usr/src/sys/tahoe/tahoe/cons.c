@@ -1,4 +1,4 @@
-/*	cons.c	1.2	86/01/05	*/
+/*	cons.c	1.3	86/11/03	*/
 /*	Minor device 0 is the CP itself.
 /*	  No real read/writes can be done to him.
 /*	Minor 1 is the console terminal.
@@ -21,6 +21,7 @@
 #include "systm.h"
 
 #include "../tahoe/cp.h"
+#include "../tahoe/cpu.h"
 #include "../tahoe/mtpr.h"
 
 int	cnrestart();
