@@ -17,7 +17,11 @@
  */
 
 #include <stdio.h>
+#if	defined(unix)
 #include <strings.h>
+#else	/* defined(unix) */
+#include <string.h>
+#endif	/* defined(unix) */
 #include <ctype.h>
 #include "../ascii/ascebc.h"
 #include "../ctlr/ebc_disp.h"
@@ -26,7 +30,7 @@
 #include "dohits.h"
 
 
-void
+int
 main(argc, argv)
 int	argc;
 char	*argv[];
@@ -98,4 +102,5 @@ char	*argv[];
 	printf("} },\n");
     }
     printf("};\n");
+    return 0;
 }

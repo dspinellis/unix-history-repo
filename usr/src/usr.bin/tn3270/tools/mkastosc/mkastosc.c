@@ -17,9 +17,14 @@
  */
 
 #include <stdio.h>
+#if	defined(unix)
 #include <strings.h>
+#else	/* defined(unix) */
+#include <string.h>
+#endif	/* defined(unix) */
 #include <ctype.h>
 
+#include "../general.h"
 #define	LETS_SEE_ASCII
 #include "../keyboard/m4.out"
 #undef	LETS_SEE_ASCII
@@ -30,8 +35,12 @@
 
 #include "dohits.h"
 
+static struct tbl {
+    char *shift;
+    int	scancode;
+} tbl[128];
 
-void
+int
 main(argc, argv)
 int	argc;
 char	*argv[];
@@ -46,10 +55,7 @@ char	*argv[];
     struct Hits *Ph;
     TC_Ascii_t *TC;
     struct thing *this;
-    struct {
-	char *shift;
-	int	scancode;
-    } tbl[128], *Pt;
+    struct tbl *Pt;
     static char *shiftof[] = { "normal", "shifted", "alted", "shiftalted" };
     char *aidfile = 0, *fcnfile = 0;
 
@@ -168,4 +174,6 @@ char	*argv[];
 	printf("\t/* 0x%x - %s */\n", asciicode, TC->tc_name);
     }
     printf("};\n");
+
+    return 0;
 }
