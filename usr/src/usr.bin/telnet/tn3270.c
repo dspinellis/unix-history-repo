@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tn3270.c	1.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)tn3270.c	1.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -210,38 +210,6 @@ register int	count;			/* how much to send */
     }
     return(origCount);
 }
-
-/* EmptyTerminal - called to make sure that the terminal buffer is empty.
- *			Note that we consider the buffer to run all the
- *			way to the kernel (thus the select).
- */
-
-void
-EmptyTerminal()
-{
-#if	defined(unix)
-    fd_set	o;
-
-    FD_ZERO(&o);
-#endif	/* defined(unix) */
-
-    if (TTYBYTES() == 0) {
-#if	defined(unix)
-	FD_SET(tout, &o);
-	(void) select(tout+1, (fd_set *) 0, &o, (fd_set *) 0,
-			(struct timeval *) 0);	/* wait for TTLOWAT */
-#endif	/* defined(unix) */
-    } else {
-	while (TTYBYTES()) {
-	    ttyflush(0);
-#if	defined(unix)
-	    FD_SET(tout, &o);
-	    (void) select(tout+1, (fd_set *) 0, &o, (fd_set *) 0,
-				(struct timeval *) 0);	/* wait for TTLOWAT */
-#endif	/* defined(unix) */
-	}
-    }
-}
 
 
 /*
@@ -320,53 +288,6 @@ char c;
     }
 }
 #endif	/* ((!defined(NOT43)) || defined(PUTCHAR)) */
-
-void
-SetForExit()
-{
-    setconnmode();
-    if (In3270) {
-	Finish3270();
-    }
-    setcommandmode();
-    fflush(stdout);
-    fflush(stderr);
-    if (In3270) {
-	StopScreen(1);
-    }
-    setconnmode();
-    setcommandmode();
-}
-
-void
-Exit(returnCode)
-int returnCode;
-{
-    SetForExit();
-    exit(returnCode);
-}
-
-void
-ExitString(string, returnCode)
-char *string;
-int returnCode;
-{
-    SetForExit();
-    fwrite(string, 1, strlen(string), stderr);
-    exit(returnCode);
-}
-
-#if defined(MSDOS)
-void
-ExitPerror(string, returnCode)
-char *string;
-int returnCode;
-{
-    SetForExit();
-    perror(string);
-    exit(returnCode);
-}
-#endif /* defined(MSDOS) */
 
 void
 SetIn3270()
