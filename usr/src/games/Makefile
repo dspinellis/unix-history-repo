@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.3	(Berkeley)	%G%
+#	@(#)Makefile	4.4	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -10,7 +10,7 @@ WORK=	aard ddl mpu
 # Programs that live in subdirectories, and have makefiles of their own.
 #
 SUBDIR=	adventure backgammon boggle compat cribbage doctor fortune \
-	mille monop snake
+	mille monop quiz snake zork
 
 # Shell scripts that need only be installed and are never removed.
 #
@@ -19,7 +19,7 @@ SUBDIR=	adventure backgammon boggle compat cribbage doctor fortune \
 # C programs that live in the current directory and do not need
 # explicit make lines.
 #
-STD=	arithmetic btlgammon banner bcd chess fish number quiz wump zork
+STD=	arithmetic btlgammon banner bcd chess fish number wump
 
 # C programs that live in the current directory and need explicit make lines.
 #
@@ -95,14 +95,9 @@ chess: /usr/include/stdio.h
 fish: fish.c
 fish: /usr/include/stdio.h
 number: number.c
-quiz: quiz.c
-quiz: /usr/include/stdio.h
-quiz: /usr/include/signal.h
 wump: wump.c
 wump: /usr/include/stdio.h
 wump: /usr/include/sgtty.h
-zork: zork.c
-zork: /usr/include/stdio.h
 canfield: canfield.c
 canfield: /usr/include/curses.h
 canfield: /usr/include/ctype.h
