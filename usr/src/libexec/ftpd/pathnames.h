@@ -4,9 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	5.2 (Berkeley) %G%
+ *	@(#)pathnames.h	5.3 (Berkeley) %G%
  */
 
 #include <paths.h>
 
-#define	_PATH_FTPUSERS	"/etc/ftpusers"
+#define	_PATH_FTPUSERS		"/etc/ftpusers"
+#define	_PATH_FTPWELCOME	"/etc/ftpwelcome"
+#define	_PATH_FTPLOGINMESG	"/etc/motd"
