@@ -7,10 +7,8 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)autoconf.c	5.2 (Berkeley) %G%
+ *	@(#)autoconf.c	5.3 (Berkeley) %G%
  */
-
-/*	autoconf.c	1.13	87/04/02	*/
 
 /*
  * Setup the system to run on the current machine.
