@@ -1,4 +1,4 @@
-/*	locore.s	4.72	82/10/31	*/
+/*	locore.s	4.73	82/11/03	*/
 
 #include "../vax/mtpr.h"
 #include "../vax/trap.h"
@@ -334,7 +334,7 @@ alltraps:
 	rei
 
 SCBVEC(syscall):
-	pushl	$SYSCALL
+	pushl	$T_SYSCALL
 	mfpr	$USP,-(sp); calls $0,_syscall; mtpr (sp)+,$USP
 	incl	_cnt+V_SYSCALL
 	addl2	$8,sp			# pop type, code

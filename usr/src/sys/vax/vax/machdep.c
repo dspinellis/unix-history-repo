@@ -1,4 +1,4 @@
-/*	machdep.c	4.69	82/10/31	*/
+/*	machdep.c	4.70	82/11/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -727,3 +727,16 @@ microtime(tvp)
 	splx(s);
 }
 #endif
+
+physstrat(bp, strat, prio)
+	struct buf *bp;
+	int (*strat)(), prio;
+{
+	int s;
+
+	(*strat)(bp);
+	s = spl6();
+	while ((bp->b_flags & B_DONE) == 0)
+		sleep((caddr_t)bp, prio);
+	splx(s);
+}
