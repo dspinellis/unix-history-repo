@@ -12,7 +12,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pow.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)pow.c	4.4 (Berkeley) %G%";
 #endif not lint
 
 /* POW(X,Y)  
@@ -86,6 +86,9 @@ static char sccsid[] = "@(#)pow.c	4.3 (Berkeley) %G%";
 #ifdef VAX	/* VAX D format */
 #include <errno.h>
 extern errno;
+static long	NaN_[] = {0x8000, 0x0};
+#define NaN	(*(double *) NaN_)
+
 /* double static */
 /* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
 /* ln2lo  =  1.6465949582897081279E-12   , Hex  2^-39   *  .E7BCD5E4F1D9CC */
@@ -141,8 +144,10 @@ double x,y;
 	else {			/* return NAN */
 #ifdef VAX
 	    errno = EDOM;
-#endif
+	    return (NaN);
+#else
 	    return(zero/zero);
+#endif
 	}
 }
 
