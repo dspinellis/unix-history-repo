@@ -2,6 +2,7 @@ pmax/pmax/autoconf.c		standard
 pmax/pmax/clock.c		standard
 pmax/pmax/conf.c		standard
 pmax/pmax/cons.c		standard
+pmax/pmax/fp.s			standard
 pmax/pmax/in_cksum.c		optional inet
 pmax/pmax/machdep.c		standard config-dependent
 pmax/pmax/mem.c			standard
