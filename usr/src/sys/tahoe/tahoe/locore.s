@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.18 (Berkeley) %G%
+ *	@(#)locore.s	7.19 (Berkeley) %G%
  */
 
 #include "tahoe/include/mtpr.h"
@@ -329,6 +329,10 @@ SCBVEC(netintr):
 1:
 #endif
 #ifdef INET
+	bbc	$NETISR_ARP,_netisr,1f	
+	andl2	$~(1<<NETISR_ARP),_netisr
+	callf	$4,_arpintr	
+1:
 	bbc	$NETISR_IP,_netisr,1f	
 	andl2	$~(1<<NETISR_IP),_netisr
 	callf	$4,_ipintr	
