@@ -1,4 +1,4 @@
-/*	kern_fork.c	6.5	84/08/29	*/
+/*	kern_fork.c	6.6	85/05/27	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -210,7 +210,7 @@ again:
 	/*
 	 * Increase reference counts on shared objects.
 	 */
-	for (n = 0; n < NOFILE; n++) {
+	for (n = 0; n <= u.u_lastfile; n++) {
 		fp = u.u_ofile[n];
 		if (fp == NULL)
 			continue;
