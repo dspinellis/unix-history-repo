@@ -1,3 +1,6 @@
+#	@(#)stats	7.2 (Berkeley) %G%
+#
+# disk statistics
 
 define dstat
 	set $op=(struct sdop *)&($arg0[$arg2])
