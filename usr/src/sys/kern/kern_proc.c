@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_proc.c	7.4 (Berkeley) %G%
+ *	@(#)kern_proc.c	7.3 (Berkeley) 10/18/88
  */
 
 #include "param.h"
@@ -117,18 +117,19 @@ pgmv(p, pgid, mksess)
 	register struct pgrp *pgrp = pgfind(pgid);
 	register struct proc **pp = &p->p_pgrp->pg_mem;
 	register struct proc *cp;
+	struct pgrp *opgrp;
 	register n;
 
 	if (pgrp && mksess)	/* firewalls */
-		panic("pgmv: setsid into non-empty pgrp %d\n", pgid);
+		panic("pgmv: setsid into non-empty pgrp");
 	if (SESS_LEADER(p))
-		panic("pgmv: session leader attempted setpgrp\n");
-	if (!pgrp) {
+		panic("pgmv: session leader attempted setpgrp");
+	if (pgrp == NULL) {
 		/*
 		 * new process group
 		 */
 		if (p->p_pid != pgid)
-			panic("pgmv: new pgrp and pid != pgid\n");
+			panic("pgmv: new pgrp and pid != pgid");
 		MALLOC(pgrp, struct pgrp *, sizeof(struct pgrp), M_PGRP,
 		       M_WAITOK);
 		if (mksess) {
@@ -143,7 +144,7 @@ pgmv(p, pgid, mksess)
 			pgrp->pg_session = sess;
 			if (p != u.u_procp)
 				panic("pgmv: mksession and p != u.u_procp");
-			u.u_ttyp = 0;
+			u.u_ttyp = NULL;
 			u.u_ttyd = 0;
 		} else {
 			pgrp->pg_session = p->p_session;
@@ -171,13 +172,14 @@ pgmv(p, pgid, mksess)
 			*pp = p->p_pgrpnxt;
 			goto done;
 		}
-	panic("pgmv: can't find p on old pgrp\n");
+	panic("pgmv: can't find p on old pgrp");
 done:
 	/*
 	 * link into new one
 	 */
 	p->p_pgrpnxt = pgrp->pg_mem;
 	pgrp->pg_mem = p;
+	opgrp = p->p_pgrp;
 	p->p_pgrp = pgrp;
 	/*
 	 * adjust eligibility of affected pgrps to participate in job control
@@ -190,8 +192,8 @@ done:
 	/*
 	 * old pgrp empty?
 	 */
-	if (!p->p_pgrp->pg_mem)
-		pgdelete(p->p_pgrp);
+	if (!opgrp->pg_mem)
+		pgdelete(opgrp);
 }
 
 /*
@@ -208,7 +210,7 @@ pgrm(p)
 			*pp = p->p_pgrpnxt;
 			goto done;
 		}
-	panic("pgrm: can't find p in pgrp\n");
+	panic("pgrm: can't find p in pgrp");
 done:
 	if (!p->p_pgrp->pg_mem)
 		pgdelete(p->p_pgrp);
@@ -228,7 +230,7 @@ pgdelete(pgrp)
 			*pgp = pgrp->pg_hforw;
 			goto done;
 		}
-	panic("pgdelete: can't find pgrp on hash chain\n");
+	panic("pgdelete: can't find pgrp on hash chain");
 done:
 	if (--pgrp->pg_session->s_count == 0)
 		FREE(pgrp->pg_session, M_SESSION);
