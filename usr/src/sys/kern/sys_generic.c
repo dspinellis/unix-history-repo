@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.27	82/12/21	*/
+/*	sys_generic.c	5.28	82/12/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -350,7 +350,7 @@ uiomove(cp, n, rw, uio)
 			else
 				error = copyin(iov->iov_base, cp, cnt);
 			if (error)
-				return (error);
+				return (EFAULT);	/* XXX */
 			break;
 
 		case 1:
