@@ -120,8 +120,8 @@ FRC:
 tn3270:	telnet.o tn3270.a
 	${CC} ${CFLAGS} -o tn3270 telnet.o tn3270.a $(LIBCURSES) $(LIBTERM)
 
-mset:	mset.o ascii/map3270.o
-	${CC} ${CFLAGS} -o mset mset.o ascii/map3270.o
+mset:	mset.o ascii/map3270.o ascii/astosc.o
+	${CC} ${CFLAGS} -o mset mset.o ascii/map3270.o ascii/astosc.o
 
 telnet.o:	$(TNMAIN)
 	$(CC) $(CFLAGS) -DTN3270 -c $(TNMAIN)
@@ -191,4 +191,4 @@ thisdepend:
 
 telnet.o: ctlr/screen.h general/globals.h telnet.ext ctlr/options.ext
 telnet.o: ctlr/outbound.ext ascii/termin.ext general/general.h
-ascii/mset.o: state.h m4.out ../general/globals.h map3270.ext
+ascii/mset.o: state.h ../general/globals.h map3270.ext
