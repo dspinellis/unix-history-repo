@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pp.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pp.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -235,7 +235,7 @@ indent1(in)
 	if (profile == 0)
 		while (i >= 8) {
 			putchar('\t');
-			i =- 8;
+			i -= 8;
 		}
 	while (i > 0) {
 		putchar(' ');
@@ -290,7 +290,7 @@ ppgoin(lv)
 ppgoout(lv)
 {
 
-	pplev[lv] =- unit;
+	pplev[lv] -= unit;
 	if (pplev[lv] < 0)
 		panic("pplev");
 }
@@ -376,7 +376,7 @@ pptab()
 /*
 	if (outcol > i + 8) {
 		ppnl();
-		i =+ 8;
+		i += 8;
 	}
 */
 	do
