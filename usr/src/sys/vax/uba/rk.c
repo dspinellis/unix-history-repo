@@ -1,4 +1,5 @@
-/*	rk.c	4.41	82/05/19	*/
+#define	RKDEBUG
+/*	rk.c	4.40	82/06/05	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -356,7 +357,7 @@ rkdgo(um)
 {
 	register struct rkdevice *rkaddr = (struct rkdevice *)um->um_addr;
 
-	um->um_tab.b_active++;	/* should now be 2 */
+	um->um_tab.b_active = 2;	/* should now be 2 */
 	rkaddr->rkba = um->um_ubinfo;
 	rkaddr->rkcs1 = um->um_cmd|((um->um_ubinfo>>8)&0x300);
 }
@@ -376,6 +377,7 @@ rkintr(rk11)
 	sc->sc_wticks = 0;
 	sc->sc_softas = 0;
 	if (um->um_tab.b_active == 2 || sc->sc_recal) {
+		um->um_tab.b_active = 1;
 		dp = um->um_tab.b_actf;
 		bp = dp->b_actf;
 		ui = rkdinfo[dkunit(bp)];
@@ -559,7 +561,6 @@ rkecc(ui, flag)
 	cn += tn/st->ntrak;
 	tn %= st->ntrak;
 	ubapurge(um);
-	um->um_tab.b_active = 2;	/* Either complete or continuing... */
 	switch (flag) {
 	case ECC:
 		{
@@ -636,6 +637,7 @@ rkecc(ui, flag)
 	cmd |= (ubaddr >> 8) & 0x300;
 	cmd |= rktypes[ui->ui_type];
 	rk->rkcs1 = cmd;
+	um->um_tab.b_active = 2;	/* continuing */
 	um->um_tab.b_errcnt = 0;	/* error has been corrected */
 	return (1);
 }
