@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	1.16 (Berkeley) %G%
+#	@(#)Makefile	1.17 (Berkeley) %G%
 #
 
 # The following is the telnet makefile.  The sources are down one level
@@ -33,9 +33,6 @@ INCLUDES=	-ISource
 #			[!]@hop1@hop2...[@|:]dst
 #		Leading ! means strict source route.
 #
-# NOSTRNCASECMP	Define this if you do not have strncasecmp() in
-#		your C libarary.
-#
 # USE_TERMIO	Define this if you have System V termio structures.
 #		What is here is how things are on Cray computers.
 #
@@ -43,8 +40,14 @@ INCLUDES=	-ISource
 #		that was in 4.3BSD.  This is a good thing to have
 #		around for talking to older systems.
 #
+# NOSTRNCASECMP	Define this if you do not have strncasecmp() in
+#		your C libarary.
+#
+# strrchr=rindex Define this if you do not have strrchr() in your
+#		C libaray (but you do have rindex...)
+#
 
-DEFINES= -DTERMCAP -DSRCRT -DKLUDGELINEMODE
+DEFINES= -DTERMCAP -DSRCRT -DKLUDGELINEMODE -DUSE_TERMIO
 
 #
 # LIBS should be set to any libraries that need to be included,
@@ -56,7 +59,7 @@ LIBS=	-ltermcap
 LIBPATH= /lib/libc.a /usr/lib/libtermcap.a
 
 SRCS=	commands.c main.c network.c ring.c \
-	sys_bsd.c sys_dos.c telnet.c terminal.c \
+	sys_bsd.c telnet.c terminal.c \
 	tn3270.c utilities.c
 
 CFLAGS=	-O ${INCLUDES} ${DEFINES}
@@ -65,9 +68,25 @@ ALLHC=	${SRCS} \
 	Source/defines.h Source/externs.h Source/fdset.h Source/general.h \
 	Source/ring.h Source/types.h
 
-OBJS=	commands.o main.o network.o ring.o sys_bsd.o sys_dos.o \
+OBJS=	commands.o main.o network.o ring.o sys_bsd.o \
 	telnet.o terminal.o tn3270.o utilities.o
 MAN=	telnet.0
+
+#
+# 4.4BSD
+#		DEST=${DESTDIR}/usr/bin
+#
+# 4.3BSD
+#		DEST=${DESTDIR}/usr/ucb
+#
+DEST=${DESTDIR}/usr/bin
+
+#
+# These next three lines are not needed in 4.4BSD
+#
+# .SUFFIXES: .0 .1
+# .1.0:
+# 	nroff -man -h $< > $@
 
 all: telnet
 
@@ -92,7 +111,7 @@ depend: FRC ${SRCS}
 	mkdep ${CFLAGS} `make clist`
 
 install: ${MAN} FRC
-	install -s -o bin -g bin -m 755 telnet ${DESTDIR}/usr/bin
+	install -s -o bin -g bin -m 755 telnet ${DEST}
 	install -c -o bin -g bin -m 444 telnet.0 ${DESTDIR}/usr/man/cat1
 
 lint: FRC ${SRCS}
