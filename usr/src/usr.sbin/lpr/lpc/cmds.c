@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	4.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -37,10 +37,10 @@ abort(argc, argv)
 	while (--argc) {
 		printer = *++argv;
 		if ((status = pgetent(line, printer)) < 0) {
-			printf("cannot open printer description file");
+			printf("cannot open printer description file\n");
 			continue;
 		} else if (status == 0) {
-			printf("unknown printer %s", printer);
+			printf("unknown printer %s\n", printer);
 			continue;
 		}
 		abortpr();
@@ -71,7 +71,7 @@ abortpr()
 			printf("\tprinting disabled\n");
 	} else if (errno == ENOENT) {
 		if ((fd = open(line, FWRONLY|FCREATE, 0760)) < 0)
-			printf("\tcannot create lock file");
+			printf("\tcannot create lock file\n");
 		else {
 			(void) close(fd);
 			printf("\tprinting disabled\n");
@@ -130,10 +130,10 @@ clean(argc, argv)
 	while (--argc) {
 		printer = *++argv;
 		if ((status = pgetent(line, printer)) < 0) {
-			printf("cannot open printer description file");
+			printf("cannot open printer description file\n");
 			continue;
 		} else if (status == 0) {
-			printf("unknown printer %s", printer);
+			printf("unknown printer %s\n", printer);
 			continue;
 		}
 		cleanpr();
@@ -200,10 +200,10 @@ enable(argc, argv)
 	while (--argc) {
 		printer = *++argv;
 		if ((status = pgetent(line, printer)) < 0) {
-			printf("cannot open printer description file");
+			printf("cannot open printer description file\n");
 			continue;
 		} else if (status == 0) {
-			printf("unknown printer %s", printer);
+			printf("unknown printer %s\n", printer);
 			continue;
 		}
 		enablepr();
@@ -227,7 +227,7 @@ enablepr()
 	 */
 	if (stat(line, &stbuf) >= 0) {
 		if (chmod(line, stbuf.st_mode & 0767) < 0)
-			printf("\tcannot enable queuing");
+			printf("\tcannot enable queuing\n");
 		else
 			printf("\tqueuing enabled\n");
 	}
@@ -262,10 +262,10 @@ disable(argc, argv)
 	while (--argc) {
 		printer = *++argv;
 		if ((status = pgetent(line, printer)) < 0) {
-			printf("cannot open printer description file");
+			printf("cannot open printer description file\n");
 			continue;
 		} else if (status == 0) {
-			printf("unknown printer %s", printer);
+			printf("unknown printer %s\n", printer);
 			continue;
 		}
 		disablepr();
@@ -343,10 +343,10 @@ restart(argc, argv)
 	while (--argc) {
 		printer = *++argv;
 		if ((status = pgetent(line, printer)) < 0) {
-			printf("cannot open printer description file");
+			printf("cannot open printer description file\n");
 			continue;
 		} else if (status == 0) {
-			printf("unknown printer %s", printer);
+			printf("unknown printer %s\n", printer);
 			continue;
 		}
 		startpr(0);
@@ -383,10 +383,10 @@ start(argc, argv)
 	while (--argc) {
 		printer = *++argv;
 		if ((status = pgetent(line, printer)) < 0) {
-			printf("cannot open printer description file");
+			printf("cannot open printer description file\n");
 			continue;
 		} else if (status == 0) {
-			printf("unknown printer %s", printer);
+			printf("unknown printer %s\n", printer);
 			continue;
 		}
 		startpr(1);
@@ -446,10 +446,10 @@ status(argc, argv)
 	while (--argc) {
 		printer = *++argv;
 		if ((status = pgetent(line, printer)) < 0) {
-			printf("cannot open printer description file");
+			printf("cannot open printer description file\n");
 			continue;
 		} else if (status == 0) {
-			printf("unknown printer %s", printer);
+			printf("unknown printer %s\n", printer);
 			continue;
 		}
 		prstat();
@@ -546,10 +546,10 @@ stop(argc, argv)
 	while (--argc) {
 		printer = *++argv;
 		if ((status = pgetent(line, printer)) < 0) {
-			printf("cannot open printer description file");
+			printf("cannot open printer description file\n");
 			continue;
 		} else if (status == 0) {
-			printf("unknown printer %s", printer);
+			printf("unknown printer %s\n", printer);
 			continue;
 		}
 		stoppr();
