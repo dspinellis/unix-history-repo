@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)parse.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)parse.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -224,7 +224,9 @@ syn0(p1, p2, flags)
 			if (p->word[1] == '&')
 				continue;
 			t1 = syn1(p1, p, flags);
-			if (t1->t_dtyp == TLST) {
+    			if (t1->t_dtyp == TLST ||
+    			    t1->t_dtyp == TAND ||
+    			    t1->t_dtyp == TOR) {
 				t = (struct command *) calloc(1, sizeof (*t));
 				t->t_dtyp = TPAR;
 				t->t_dflg = FAND|FINT;
