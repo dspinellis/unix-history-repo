@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)output.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)output.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -239,17 +239,12 @@ error(s)
 	putstr(return_to_continue);
 	so_exit();
 
-#if ONLY_RETURN
-	while ((c = getchr()) != '\n' && c != '\r')
-		bell();
-#else
 	c = getchr();
 	if (c != '\n' && c != '\r' && c != ' ' && c != READ_INTR)
 	{
 		buf[0] = c;
 		first_cmd = buf;
 	}
-#endif
 	lower_left();
 
 	if (strlen(s) + sizeof(return_to_continue) + 
