@@ -1,13 +1,22 @@
 /*
- * @(#)if_dmv.h	7.1 (Berkeley) %G%
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *	@(#)if_dmv.h	7.2 (Berkeley) %G%
+ *
  * DMV-11 Driver
  *
  * Qbus Sync DDCMP interface - DMV operated in full duplex, point to point mode
  *
- * Derived from 4.3 release if_dmc.h rev. 6.4 dated 6/8/85
- * 
- * Bob Kridle
- * mt Xinu
+ * Written by Bob Kridle of Mt Xinu
+ * starting from if_dmc.h version 6.4 dated 6/8/85 
  */
 
 struct dmvdevice {
@@ -58,8 +67,6 @@ struct dmvdevice {
  * bytes.  The next two bytes encapsulate packet type.
  */
 struct dmv_header {
-/*	Lets try without this first for dmv - rk
-	char	dmv_buf[8];	/* space for uba on vax */
 	short	dmv_type;	/* encapsulate packet type */
 };
 
