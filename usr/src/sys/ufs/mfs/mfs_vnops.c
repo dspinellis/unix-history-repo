@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vnops.c	7.29 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.30 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -326,9 +326,11 @@ mfs_inactive(vp, p)
 	struct vnode *vp;
 	struct proc *p;
 {
+	register struct mfsnode *mfsp = VTOMFS(vp);
 
-	if (VTOMFS(vp)->mfs_buflist != (struct buf *)(-1))
-		panic("mfs_inactive: not inactive");
+	if (mfsp->mfs_buflist && mfsp->mfs_buflist != (struct buf *)(-1))
+		panic("mfs_inactive: not inactive (mfs_buflist %x)",
+			mfsp->mfs_buflist);
 	return (0);
 }
 
