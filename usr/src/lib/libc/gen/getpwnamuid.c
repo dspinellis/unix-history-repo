@@ -1,4 +1,4 @@
-/*	getpwnamuid.c	4.1	83/12/02	*/
+/*	getpwnamuid.c	4.2	83/12/20	*/
 
 #include <stdio.h>
 #include <pwd.h>
@@ -49,6 +49,8 @@ getpwnam(nam)
 
         if ((db = ndbmopen(PASSWD, O_RDONLY)) == (DBM *)0)
                 return ((struct passwd *)NULL);
+	if (flock(db->db_dirf, LOCK_SH) < 0)
+                return ((struct passwd *)NULL);
         key.dptr = nam;
         key.dsize = strlen(nam);
 	pw = fetchpw(key);
@@ -64,6 +66,8 @@ getpwuid(uid)
 	register struct passwd *pw;
 
         if ((db = ndbmopen(PASSWD, O_RDONLY)) == (DBM *)0)
+                return ((struct passwd *)NULL);
+	if (flock(db->db_dirf, LOCK_SH) < 0)
                 return ((struct passwd *)NULL);
         key.dptr = (char *) &uid;
         key.dsize = sizeof uid;
