@@ -1,4 +1,4 @@
-/*	kern_synch.c	4.16	82/01/24	*/
+/*	kern_synch.c	4.17	82/07/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -11,6 +11,7 @@
 #include "../h/pte.h"
 #include "../h/inline.h"
 #include "../h/mtpr.h"
+#include "../h/quota.h"
 
 #define SQSIZE 0100	/* Must be power of 2 */
 #define HASH(x)	(( (int) x >> 5) & (SQSIZE-1))
@@ -95,14 +96,18 @@ tsleep(chan, pri, seconds)
 {
 	label_t lqsav;
 	register struct proc *pp;
-	register sec, n, rval;
+	register sec, n, rval, sov;
 
 	pp = u.u_procp;
 	n = spl7();
 	sec = 0;
 	rval = 0;
+	sov = 0;
 	if (pp->p_clktim && pp->p_clktim<seconds)
-		seconds = 0;
+		if (pri > PZERO)
+			seconds = 0;
+		else
+			sov++;
 	if (seconds) {
 		pp->p_flag |= STIMO;
 		sec = pp->p_clktim-seconds;
@@ -122,7 +127,12 @@ tsleep(chan, pri, seconds)
 	bcopy((caddr_t)lqsav, (caddr_t)u.u_qsav, sizeof (label_t));
 	if (sec > 0)
 		pp->p_clktim += sec;
-	else
+	else if (sov) {
+		if ((pp->p_clktim += sec) <= 0) {
+			pp->p_clktim = 0;
+			psignal(pp, SIGALRM);
+		}
+	} else
 		pp->p_clktim = 0;
 	splx(n);
 	return (rval);
@@ -311,6 +321,9 @@ retry:
 	 * Make a proc table entry for the new process.
 	 */
 	rip = u.u_procp;
+#ifdef QUOTA
+	(rpp->p_quota = rip->p_quota)->q_cnt++;
+#endif
 	rpp->p_stat = SIDL;
 	rpp->p_clktim = 0;
 	rpp->p_flag = SLOAD | (rip->p_flag & (SPAGI|SNUSIG));
@@ -326,6 +339,12 @@ retry:
 	rpp->p_pid = mpid;
 	rpp->p_ppid = rip->p_pid;
 	rpp->p_pptr = rip;
+	rpp->p_osptr = rip->p_cptr;
+	if (rip->p_cptr)
+		rip->p_cptr->p_ysptr = rpp;
+	rpp->p_ysptr = NULL;
+	rpp->p_cptr = NULL;
+	rip->p_cptr = rpp;
 	rpp->p_time = 0;
 	rpp->p_cpu = 0;
 	rpp->p_siga0 = rip->p_siga0;
