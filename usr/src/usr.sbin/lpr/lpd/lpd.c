@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpd.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpd.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -49,8 +49,7 @@ static char sccsid[] = "@(#)lpd.c	5.10 (Berkeley) %G%";
 
 int	lflag;				/* log requests flag */
 
-int	reapchild();
-int	mcleanup();
+void mcleanup(), reapchild();
 
 main(argc, argv)
 	int argc;
@@ -126,7 +125,8 @@ main(argc, argv)
 	signal(SIGTERM, mcleanup);
 	sun.sun_family = AF_UNIX;
 	strcpy(sun.sun_path, _PATH_SOCKETNAME);
-	if (bind(funix, &sun, strlen(sun.sun_path) + 2) < 0) {
+	if (bind(funix,
+	     (struct sockaddr *)&sun, strlen(sun.sun_path) + 2) < 0) {
 		syslog(LOG_ERR, "ubind: %m");
 		exit(1);
 	}
@@ -149,7 +149,7 @@ main(argc, argv)
 		}
 		sin.sin_family = AF_INET;
 		sin.sin_port = sp->s_port;
-		if (bind(finet, &sin, sizeof(sin), 0) < 0) {
+		if (bind(finet, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
 			syslog(LOG_ERR, "bind: %m");
 			mcleanup();
 		}
@@ -170,10 +170,12 @@ main(argc, argv)
 		}
 		if (readfds & (1 << funix)) {
 			domain = AF_UNIX, fromlen = sizeof(fromunix);
-			s = accept(funix, &fromunix, &fromlen);
+			s = accept(funix,
+			    (struct sockaddr *)&fromunix, &fromlen);
 		} else if (readfds & (1 << finet)) {
 			domain = AF_INET, fromlen = sizeof(frominet);
-			s = accept(finet, &frominet, &fromlen);
+			s = accept(finet,
+			    (struct sockaddr *)&frominet, &fromlen);
 		}
 		if (s < 0) {
 			if (errno != EINTR)
@@ -199,14 +201,16 @@ main(argc, argv)
 	}
 }
 
+void
 reapchild()
 {
 	union wait status;
 
-	while (wait3(&status, WNOHANG, 0) > 0)
+	while (wait3((int *)&status, WNOHANG, 0) > 0)
 		;
 }
 
+void
 mcleanup()
 {
 	if (lflag)
@@ -381,7 +385,8 @@ chkhost(f)
 	f->sin_port = ntohs(f->sin_port);
 	if (f->sin_family != AF_INET || f->sin_port >= IPPORT_RESERVED)
 		fatal("Malformed from address");
-	hp = gethostbyaddr(&f->sin_addr, sizeof(struct in_addr), f->sin_family);
+	hp = gethostbyaddr((char *)&f->sin_addr,
+	    sizeof(struct in_addr), f->sin_family);
 	if (hp == 0)
 		fatal("Host name for your address (%s) unknown",
 			inet_ntoa(f->sin_addr));

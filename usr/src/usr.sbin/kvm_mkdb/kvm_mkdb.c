@@ -12,11 +12,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kvm_mkdb.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_mkdb.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <sys/user.h>
 #include <fcntl.h>
 #include <ndbm.h>
 #include <errno.h>
