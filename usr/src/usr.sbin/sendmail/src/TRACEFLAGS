@@ -4,7 +4,7 @@
 0, 44	util.c		printav	print address of each string
 1	main.c		main	print from person
 2	main.c		finis
-3	conf.c		getla
+3	conf.c		getla, shouldqueue
 4	conf.c		enoughspace
 5	clock.c		setevent, clrevent, tick
 6	savemail.c	savemail, returntosender
