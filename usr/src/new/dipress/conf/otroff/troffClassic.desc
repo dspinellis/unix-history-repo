@@ -1,0 +1,9 @@
+# TroffClassic
+#
+# specify the name mapping from the IP metrics file to Troff metrics format
+#
+Xerox XC1-1-1 TroffClassic		ftR    troffClassic.map
+Xerox XC1-1-1 TroffClassic-italic	ftI    troffClassic.map
+Xerox XC1-1-1 TroffClassic-bold		ftB    troffClassic.map
+Xerox XC1-1-1 TroffMath			ftS    troffMath.map
+Xerox XC1-1-1 TroffMathExtra		ftS1   troffMathExtra.map
