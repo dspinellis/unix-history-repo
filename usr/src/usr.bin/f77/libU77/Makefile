@@ -1,5 +1,5 @@
 # Makefile for f77 system lib, libU77.a
-# @(#)Makefile	1.4 (Berkeley) %G%
+# @(#)Makefile	1.5 (Berkeley) %G%
 
 CFLAGS	      = -O
 
@@ -59,7 +59,6 @@ OBJS	      = access_.o \
 		putc_.o \
 		qsort_.o \
 		rename_.o \
-		signal_.o \
 		sleep_.o \
 		stat_.o \
 		symlnk_.o \
@@ -116,7 +115,6 @@ SRCS	      = access_.c \
 		putc_.c \
 		qsort_.c \
 		rename_.c \
-		signal_.c \
 		sleep_.c \
 		stat_.c \
 		symlnk_.c \
