@@ -31,7 +31,9 @@
 .\"
 .\"     @(#)slattach.8	6.4 (Berkeley) 3/16/91
 .\"
-.Dd March 16, 1991
+.\"	$Header: /b/source/CVS/src/sbin/slattach/slattach.8,v 1.4 1993/04/08 04:15:41 cgd Exp $
+.\"
+.Dd April 4, 1993
 .Dt SLATTACH 8
 .Os BSD 4.3
 .Sh NAME
@@ -39,7 +41,12 @@
 .Nd attach serial lines as network interfaces
 .Sh SYOPNSIS
 .Nm Slattach
-.Ar ttyname Op Ar baudrate
+.Op \-a
+.Op \-c
+.Op \-h
+.Op \-n
+.Op \-s baudrate
+.Ar ttyname 
 .Sh DESCRIPTION
 .Nm Slattach
 is used to assign a tty line to a network interface,
@@ -47,6 +54,22 @@ and to define the network source and destination addresses.
 The following operands are supported by
 .Nm slattach :
 .Bl -tag -width Ar
+.It Ar \-a
+Autoenable the VJ header compression option, if the other end of the link
+is capable of VJ header compression then it will be used otherwise normal
+headers will be used.
+.It Ar \-c
+Enables the VJ header compression option.  Note that both ends of the link
+must be able to use VJ header compression for this to work.
+.It Ar \-h
+Turn on cts/rts style flow control on the slip port, by default no flow
+control is done.
+.It Ar \-n
+Throw away ICMP packets.  The slip interface will ignore ICMP packets
+to prevent slow lines being saturated by ICMP responses.
+.It Ar \-s baudrate
+Specifies the speed of the connection. If not specified, the
+default of 9600 is used.
 .It Ar ttyname
 Specifies the name of the tty device.
 .Ar Ttyname
@@ -54,9 +77,6 @@ should be a string of the form
 .Ql ttyXX ,
 or
 .Ql /dev/ttyXX .
-.It Ar baudrate
-Specifies the speed of the connection. If not specified, the
-default of 9600 is used.
 .El
 .Pp
 Only the super-user may attach a network interface.
@@ -72,7 +92,7 @@ is the name that is shown by
 .Sh EXAMPLES
 .Bd -literal -offset indent -compact
 slattach ttyh8
-slattach /dev/tty01 4800
+slattach \-s 4800 /dev/tty01
 .Ed
 .Sh DIAGNOSTICS
 Messages indicating the specified interface does not exit, the

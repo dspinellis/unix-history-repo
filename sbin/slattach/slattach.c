@@ -34,6 +34,22 @@
  * SUCH DAMAGE.
  */
 
+/*
+** Hacks to support "-a|c|n" flags on the command line which enalbe VJ
+** header compresion and disable ICMP.  I use getopt to deal witht that
+** stuff because I'm a lazy sob, I can't spell, and that's OK.
+**
+** If this is good all rights go to B & L Jolitz, otherwise send your
+** comments to Reagan (/dev/null).
+**
+** nerd@percival.rain.com (Michael Galassi) 92.09.03
+**
+** Hacked to change from sgtty to POSIX termio style serial line control
+** and added flag to enable cts/rts style flow control.
+**
+** blymn@awadi.com.au (Brett Lymn) 93.04.04
+*/
+
 #ifndef lint
 char copyright[] =
 "@(#) Copyright (c) 1988 Regents of the University of California.\n\
@@ -42,63 +58,139 @@ char copyright[] =
 
 #ifndef lint
 static char sccsid[] = "@(#)slattach.c	4.6 (Berkeley) 6/1/90";
+static char rcsid[] = "$Header: /b/source/CVS/src/sbin/slattach/slattach.c,v 1.5 1993/04/28 23:13:37 cgd Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <sgtty.h>
+#include <sys/ioctl.h>
+#include <termios.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <net/if.h>
+#include <net/if_slvar.h>
 #include <netdb.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <paths.h>
 
 #define DEFAULT_BAUD	9600
-int	slipdisc = SLIPDISC;
 
-char	devname[32];
-char	hostname[MAXHOSTNAMELEN];
+static char usage_str[] = "\
+usage: %s [-a ][-c ][-n ][-s <speed> ]<device>\n\
+	-a -- autoenable VJ compression\n\
+	-c -- enable VJ compression\n\
+	-n -- throw out ICMP packets\n\
+	-h -- turn on cts/rts style flow control\n\
+	-s -- baud rate (default 9600)\n";
 
-main(argc, argv)
-	int argc;
-	char *argv[];
+int main(int argc, char **argv)
 {
-	register int fd;
-	register char *dev = argv[1];
-	struct sgttyb sgtty;
-	int	speed;
+	struct termios tty;
+	int option;
+	int fd;
+	char devname[32];
+	char *dev = (char *)0;
+	int slipdisc = SLIPDISC;
+	int speed = DEFAULT_BAUD;
+	int slflags = 0;
+	int flow_control = 0;	/* extra flags to enable hardware flow cont. */
 
-	if (argc < 2 || argc > 3) {
-		fprintf(stderr, "usage: %s ttyname [baudrate]\n", argv[0]);
+	extern char *optarg;
+	extern int optind;
+
+	while ((option = getopt(argc, argv, "achns:")) != EOF) {
+		switch (option) {
+		case 'a':
+			slflags |= SC_AUTOCOMP;
+			slflags &= ~SC_COMPRESS;
+			break;
+		case 'c':
+			slflags |= SC_COMPRESS;
+			slflags &= ~SC_AUTOCOMP;
+			break;
+		case 'h':
+			flow_control |= CRTSCTS;
+			break;
+		case 'n':
+			slflags |= SC_NOICMP;
+			break;
+		case 's':
+			speed = atoi(optarg);
+			break;
+		case '?':
+		default:
+			fprintf(stderr, usage_str, argv[0]);
+			exit(1);
+		}
+	}
+
+	if (optind == argc - 1)
+		dev = argv[optind];
+
+
+	if (dev == (char *)0) {
+		fprintf(stderr, usage_str, argv[0]);
+		exit(2);
+	}
+
+	if ((speed = findspeed(speed)) == 0) {
+		fprintf(stderr, "unknown speed");
 		exit(1);
 	}
-	speed = argc == 3 ? findspeed(atoi(argv[2])) : findspeed(DEFAULT_BAUD);
-	if (speed == 0) {
-		fprintf(stderr, "unknown speed %s", argv[2]);
-		exit(1);
-	}
+
 	if (strncmp(_PATH_DEV, dev, sizeof(_PATH_DEV) - 1)) {
-		(void)sprintf(devname, "%s/%s", _PATH_DEV, dev);
+		strcpy(devname, _PATH_DEV);
+		strcat(devname, "/");
+		strncat(devname, dev, 10);
 		dev = devname;
 	}
+
 	if ((fd = open(dev, O_RDWR | O_NDELAY)) < 0) {
 		perror(dev);
 		exit(1);
 	}
-	sgtty.sg_flags = RAW | ANYP;
-	sgtty.sg_ispeed = sgtty.sg_ospeed = speed;
-	if (ioctl(fd, TIOCSETP, &sgtty) < 0) {
-		perror("ioctl(TIOCSETP)");
+
+	tty.c_iflag = 0;
+	tty.c_oflag = 0;
+	tty.c_cflag = CREAD | CS8 | flow_control;
+	tty.c_lflag = 0;
+	tty.c_cc[VMIN] = 1; /* wait for one char */
+	tty.c_cc[VTIME] = 0; /* wait forever for a char */
+	if (ioctl(fd, TIOCSETA, &tty) < 0) {
+		perror("ioctl(TIOCSETA)");
+		close(fd);
 		exit(1);
 	}
+
+	if (ioctl(fd, TIOCSDTR) < 0) {
+                perror("ioctl(TIOCSDTR)");
+                close(fd);
+                exit(1);
+        }
+
+	cfsetispeed(&tty, speed);
+	cfsetospeed(&tty, speed);
+	if (tcsetattr(fd, TCSADRAIN, &tty) < 0) {
+		perror("tcsetattr");
+		close(fd);
+		exit(1);
+	}
+
 	if (ioctl(fd, TIOCSETD, &slipdisc) < 0) {
 		perror("ioctl(TIOCSETD)");
+		close(fd);
+		exit(1);
+	}
+
+	if (ioctl(fd, SLIOCSFLAGS, &slflags) < 0) {
+		perror("ioctl(SLIOCSFLAGS)");
+		close(fd);
 		exit(1);
 	}
 
 	if (fork() > 0)
 		exit(0);
+
 	for (;;)
 		sigpause(0L);
 }
@@ -160,13 +252,12 @@ struct sg_spds {
 	{ 0, 0 }
 };
 
-findspeed(speed)
-	register int speed;
+int findspeed(int speed)
 {
-	register struct sg_spds *sp;
+	struct sg_spds *sp = spds;
 
-	sp = spds;
-	while (sp->sp_val && sp->sp_val != speed)
+	while ((sp->sp_val != 0) && (sp->sp_val != speed))
 		sp++;
+
 	return (sp->sp_name);
 }
