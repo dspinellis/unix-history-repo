@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static	char sccsid[] = "@(#)f77.c	5.5 (Berkeley) %G%";
+static	char sccsid[] = "@(#)f77.c	5.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -759,11 +759,8 @@ obj = setdoto(s);
 		if( sys(buff) )
 			rmf(optzfname);
 		else
-			{
-			sprintf(buff,"mv %s %s", optzfname, asmpass2);
-			if( sys(buff) )
+			if (rename(optzfname, asmpass2))
 				fatal("can't rename optimizer output file");
-			}
 		}
 #	endif
 #endif
