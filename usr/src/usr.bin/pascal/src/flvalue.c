@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static char sccsid[] = "@(#)flvalue.c 1.12 %G%";
+static char sccsid[] = "@(#)flvalue.c 1.13 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -11,6 +11,7 @@ static char sccsid[] = "@(#)flvalue.c 1.12 %G%";
 #   include "pc.h"
 #   include "pcops.h"
 #endif PC
+#include "tmps.h"
 
     /*
      *	flvalue generates the code to either pass on a formal routine,

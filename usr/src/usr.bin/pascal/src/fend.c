@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fend.c 1.20 %G%";
+static char sccsid[] = "@(#)fend.c 1.21 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -8,6 +8,7 @@ static char sccsid[] = "@(#)fend.c 1.20 %G%";
 #include "opcode.h"
 #include "objfmt.h"
 #include "align.h"
+#include "tmps.h"
 
 /*
  * this array keeps the pxp counters associated with
@@ -168,7 +169,7 @@ funcend(fp, bundle, endline)
 	    /*
 	     *	ask second pass to allocate known locals
 	     */
-	putlbracket( ftnno , -sizes[ cbn ].om_max );
+	putlbracket(ftnno, &sizes[cbn]);
 	fp_entrycode(&eecookie);
 #endif PC
 	if ( monflg ) {

@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pccaseop.c 1.10 %G%";
+static	char sccsid[] = "@(#)pccaseop.c 1.11 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -12,6 +12,7 @@ static	char sccsid[] = "@(#)pccaseop.c 1.10 %G%";
 #include "objfmt.h"
 #include "pcops.h"
 #include "pc.h"
+#include "tmps.h"
 
     /*
      *	structure for a case: 

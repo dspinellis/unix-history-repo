@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fdec.c 1.22 %G%";
+static char sccsid[] = "@(#)fdec.c 1.23 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -8,6 +8,7 @@ static char sccsid[] = "@(#)fdec.c 1.22 %G%";
 #include "opcode.h"
 #include "objfmt.h"
 #include "align.h"
+#include "tmps.h"
 
 /*
  * this array keeps the pxp counters associated with
@@ -90,16 +91,13 @@ funcbody(fp)
 	struct nl *fp;
 {
 	register struct nl *q, *p;
-	struct nl	*functemp;
 
 	cbn++;
 	if (cbn >= DSPLYSZ) {
 		error("Too many levels of function/procedure nesting");
 		pexit(ERRS);
 	}
-	sizes[cbn].om_max = sizes[cbn].curtmps.om_off = -DPOFF1;
-	sizes[cbn].reg_max = -1;
-	sizes[cbn].curtmps.reg_off = 0;
+	tmpinit(cbn);
 	gotos[cbn] = NIL;
 	errcnt[cbn] = syneflg;
 	parts[ cbn ] = NIL;
@@ -129,16 +127,9 @@ funcbody(fp)
 #		ifdef PC
 		    q = fp -> ptr[ NL_FVAR ];
 		    if (q -> type != NIL ) {
-			functemp = tmpalloc(
-					leven(
-					    roundup(
-						(int)lwidth(q -> type),
-						(long)align(q -> type))),
-					q -> type, NOREG);
-			if ( q -> ptr[NL_OFFS] != functemp->value[NL_OFFS] )
-			    panic("func var");
+			sizes[cbn].curtmps.om_off = q -> value[NL_OFFS];
+			sizes[cbn].om_max = q -> value[NL_OFFS];
 		    }
-		    q -> extra_flags |= functemp -> extra_flags;
 #		endif PC
 	}
 #	ifdef PTREE
@@ -237,7 +228,7 @@ level1()
 #	endif PC
 
 	cbn++;
-	sizes[cbn].om_max = sizes[cbn].curtmps.om_off = -DPOFF1;
+	tmpinit(cbn);
 	gotos[cbn] = NIL;
 	errcnt[cbn] = syneflg;
 	parts[ cbn ] = NIL;

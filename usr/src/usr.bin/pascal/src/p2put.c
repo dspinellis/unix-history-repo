@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)p2put.c 1.12 %G%";
+static	char sccsid[] = "@(#)p2put.c 1.13 %G%";
 
     /*
      *	functions to help pi put out
@@ -15,6 +15,7 @@ static	char sccsid[] = "@(#)p2put.c 1.12 %G%";
 #include	"pcops.h"
 #include	"pc.h"
 #include	"align.h"
+#include	"tmps.h"
 
     /*
      *	mash into f77's format
@@ -80,26 +81,34 @@ putprintf( format , incomplete , arg1 , arg2 , arg3 , arg4 , arg5 )
     /*
      *	emit a left bracket operator to pcstream
      *	with function number, the maximum temp register, and total local bytes
-     *	until i figure out how to use them, regs 0 .. 11 are free.
-     *	one idea for one reg is to save the display pointer on block entry
      */
-putlbracket( ftnno , localbytes )
-    int	ftnno;
-    int	localbytes;
-    {
-#	define	MAXTP2REG	11
+putlbracket(ftnno, sizesp)
+    int		ftnno;
+    struct om	*sizesp;
+{
+    int	maxtempreg;	
+    int	alignedframesize;
 
-	p2word( TOF77( P2FLBRAC , MAXTP2REG , ftnno ) );
-	p2word( roundup(BITSPERBYTE * localbytes, BITSPERBYTE * A_STACK));
-#	ifdef DEBUG
-	    if ( opt( 'k' ) ) {
-		fprintf( stdout
-			, "P2FLBRAC | %3d | %d	" , MAXTP2REG , ftnno );
-		fprintf( stdout , "%d\n"
-			, BITSPERBYTE * localbytes );
-	    }
-#	endif
-    }
+#   ifdef vax
+	maxtempreg = sizesp->curtmps.next_avail[REG_GENERAL];
+#   endif vax
+#   ifdef mc68000
+	    /*
+	     *	this is a5 and d7 mashed together.
+	     */
+	maxtempreg = (5 << 4) | (7);
+#   endif mc68000
+    alignedframesize =
+	roundup(BITSPERBYTE * -sizesp->curtmps.om_off, BITSPERBYTE * A_STACK);
+    p2word( TOF77( P2FLBRAC , maxtempreg , ftnno ) );
+    p2word(alignedframesize);
+#   ifdef DEBUG
+	if ( opt( 'k' ) ) {
+	    fprintf(stdout, "P2FLBRAC | %3d | %d	%d\n",
+		maxtempreg, ftnno, alignedframesize);
+	}
+#   endif
+}
 
     /*
      *	emit a right bracket operator

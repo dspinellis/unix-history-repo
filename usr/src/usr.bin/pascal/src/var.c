@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)var.c 1.14 %G%";
+static char sccsid[] = "@(#)var.c 1.15 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -11,6 +11,7 @@ static char sccsid[] = "@(#)var.c 1.14 %G%";
 #   include	"pc.h"
 #   include	"pcops.h"
 #endif PC
+#include "tmps.h"
 
 /*
  * Declare variables of a var part.  DPOFF1 is

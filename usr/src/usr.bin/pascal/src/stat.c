@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)stat.c 1.9 %G%";
+static char sccsid[] = "@(#)stat.c 1.10 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -10,6 +10,7 @@ static char sccsid[] = "@(#)stat.c 1.9 %G%";
 #   include "pcops.h"
 #   include "pc.h"
 #endif PC
+#include "tmps.h"
 
 int cntstat;
 short cnts = 3;
