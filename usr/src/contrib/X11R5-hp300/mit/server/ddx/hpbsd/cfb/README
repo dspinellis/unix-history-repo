@@ -1,0 +1,33 @@
+
+	"cfb" Beta version - 8 July 1987
+
+Written by:
+
+	Stuart Marks		Sun Microsystems
+
+With help from:
+
+	David Rosenthal		Sun Microsystems
+	Jack Palevich		Hewlett-Packard
+	Bob Leichner		Hewlett-Packard
+
+This directory contains an analogue of "mfb" for memory color framebuffers.
+It can be configured to support a number of different devices:
+
+	-	They must be organised as packed pixels,  not planewise.
+	-	They must have fewer than 32 bits per pixel.
+
+The code has been tested only on displays with a pixel size of 8 bits,
+both with all 8 planes implemented (Sun) and less than 8 planes implemented (HP).
+As distributed,  it is set up for 8-bit pixels with all 8 planes implemented.
+If your display is different,  see maskbits.h.
+
+The code is intended to be highly portable,  and to use as much as possible of the
+"mi" code.  As a result,  it is very slow.  But we believe it should be very
+easy to port.  We believe that the code only ever accesses the framebuffer 32 bits
+wide at 4-byte aligned addresses.
+
+As delivered,  the code supports a PseudoColor visual.  By defining STATIC_COLOR,
+you can configure it (and the .../sun directory) to support a StaticColor visual
+instead.  This has proved useful in testing the server.
+
