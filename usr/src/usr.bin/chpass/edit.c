@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)edit.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)edit.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -33,9 +33,14 @@ edit(pw)
 		pw_edit(1);
 		if (stat(tempname, &end))
 			pw_error(tempname, 1, 1);
-		if (begin.st_mtime == end.st_mtime) {
+		/*
+		 * Some editors O_TRUNC the file when they write it out.  This
+		 * can result in an empty file with a changed modified time if
+		 * the file system is out of space.
+		 */
+		if (end.st_size == 0 || begin.st_mtime == end.st_mtime) {
 			(void)fprintf(stderr, "chpass: no changes made\n");
-			pw_error((char *)NULL, 0, 0);
+			pw_error(NULL, 0, 0);
 		}
 		if (verify(pw))
 			break;
