@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.34 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -104,7 +104,7 @@ _doprnt(fmt0, argp, fp)
 		if (!ch)
 			return (cnt);
 
-		flags = dprec = fpprec = width = 0;
+		flags = 0; dprec = 0; fpprec = 0; width = 0;
 		prec = -1;
 		sign = '\0';
 
@@ -406,8 +406,9 @@ cvt(number, prec, flags, signp, fmtch, startp, endp)
 	char *signp, *startp, *endp;
 {
 	register char *p, *t;
-	double fract, integer, tmp, modf();
+	register double fract;
 	int dotrim, expcnt, gformat;
+	double integer, tmp, modf();
 	char *exponent(), *round();
 
 	dotrim = expcnt = gformat = 0;
