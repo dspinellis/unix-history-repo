@@ -1,6 +1,6 @@
-# Copy
+# Copyright (c) 1982 Regents of the University of California
 #
-# static char sccsid[] = "@(#)cerror.s 1.2 %G%";
+# static char sccsid[] = "@(#)cerror.s 1.3 %G%";
 #
 # modified version of cerror
 #
