@@ -1,0 +1,77 @@
+Date: 17 Apr 85 15:45:42 EST (Wed)
+From: Martin David Connor <mdc@MIT-HTVAX.ARPA>
+
+    Date: Sat, 13 Apr 85 16:28:15 est
+    From: Richard M. Stallman <rms@mit-prep>
+
+    Can you help this person?  Also, can you give me the rest of ledit
+    to distribute, plus some info on how to use it?
+
+I have put the files "ledit.l" and "leditcfns.c" on prep:~mdc.
+Much to my disgust ledit.l relied on some bogus little package of
+functions on HT, so I had to massage it a bit.
+
+To get it to work, one must:
+
+   - Compile leditcfns.c with something like:
+
+     cc leditcfns.c
+
+   - Edit ledit.l, changing the line beginning "(cfasl" to 
+     have the right pathname for the cfns file you compiled in
+     the last step.
+
+   - Compile ledit.l with:
+
+     liszt ledit.l
+
+Then put the following lines in your .lisprc file:
+
+    ;load in functions for emacs interface
+    (load "//src//mdc//ledit//ledit")   ; Location of Ledit library
+    (set-proc-str "%gnumacs")		; Name of editor
+
+Then you can use ^E <RETURN> to get from LISP back to gnumacs.
+
+Here is the part of my .emacs file that pertains to ledit.
+
+    ;;; Set up ledit mode
+    (setq ledit-go-to-lisp-string "%lisp")
+    (setq lisp-mode-hook 'ledit-from-lisp-mode)
+
+    Date: Sat, 13 Apr 85 11:26:32 cst
+    From: neves@wisc-ai.arpa (David Neves)
+
+    This is a documentation question.
+    I cannot figure out how to use Ledit.  I suspect I need some
+    function on the Franz Lisp end of things to go to Emacs and read in
+    the temporary file.  Is this true?  Is the Lisp job started within
+    Emacs or outside of emacs?  I'm just plain confused.  Perhaps a couple
+    of words from someone in the know would help.
+
+    A related question.  I have been using a shell buffer when interacting
+    with Lisp (ie. put a definition in the kill buffer and then yank it
+    into the shell buffer to redefine it).  This is nice but tends to fill
+    up the shell buffer with lots of code (I'd rather keep calls to functions
+    in the shell and not the functions themselves).
+    My question:  Is using the shell buffer "better" than ledit?  Am I using
+    it in the best way (i.e. copying definitions from an edit buffer to the
+    shell buffer)?    -Thanks, David Neves
+
+I have found that ledit works well for doing programming development
+when you are changing lots of little pieces of a file and don't wish
+to recompile the whole file.  Of course M-X Compile is very nice for
+calling up a liszt on a buffer and watching it in the another window.
+Of course the interface of something like NIL is even better because
+you can compile your function directly into your lisp.  But since NIL
+doesn't run under Unix, this is probably the next best thing.
+
+I have tried the 2 window method (shell in lower window, lisp code in
+upper), and have found it a little awkward.  It does have certain
+advantages, but most of the time, I get be fine using M-C-D to save a
+defun for lisp, and C-X Z to jump back to LISP.  C-E RETURN from lisp 
+is also mnemonic for getting back to gnumacs.
+
+I hope this helps somewhat.
+
+
