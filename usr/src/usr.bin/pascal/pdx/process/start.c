@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)start.c 1.6 %G%";
+static char sccsid[] = "@(#)start.c 1.7 %G%";
 
 /*
  * Begin execution.
@@ -77,8 +77,6 @@ char *infile, *outfile;
 	if (objsize != 0) {
 	    addbp(lastaddr(), END_BP, NIL, NIL, NIL, 0);
 	}
-    } else {
-	panic("could not start program");
     }
 }
 
