@@ -8,10 +8,6 @@
 **	Defines the configuration of this installation.
 **
 **	Compilation Flags:
-**		HASARPA -- set if this machine has a connection to
-**			the Arpanet.
-**		HASUUCP -- set if this machine has a connection to
-**			the UUCP network.
 **		NETV6MAIL -- set if you want to use "v6mail" that
 **			comes with the Berkeley network.  Normally
 **			/bin/mail will work fine, but around Berkeley
@@ -23,12 +19,10 @@
 **			the two systems.  If you are running a funny
 **			system, e.g., V6 with long tty names, this
 **			should be checked carefully.
-**		DUMBMAIL -- set if your /bin/mail doesn't have the
-**			-d flag.
 **
 **	Configuration Variables:
 **		Mailer -- a table of mailers known to the system.
-**			The fields are:
+**			This should be fairly static.  The fields are:
 **			- the pathname of the mailer.
 **			- a list of flags describing the properties
 **			  of this mailer:
@@ -77,11 +71,7 @@
 **			  "local" (and hence are stripped off) for
 **			  this mailer.
 **			- An argument vector to be passed to the
-**			  mailer with the following substitutions:
-**			   $f - the from person name.
-**			   $u - the target user name.
-**			   $h - the target user host.
-**			   $c - the hop count.
+**			  mailer; this is macro substituted.
 **			>>>>>>>>>> Entry zero must be for the local
 **			>> NOTE >> mailer and entry one must be for
 **			>>>>>>>>>> the shell.
@@ -98,59 +88,13 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.12	%G%";
+static char SccsId[] = "@(#)conf.c	3.13	%G%";
 
 
 # include <whoami.h>		/* definitions of machine id's at berkeley */
 
 # ifdef BERKELEY
-
 # define NETV6MAIL		/* use /usr/net/bin/v6mail for local delivery */
-
-/* Specific Configurations for Berkeley Machines */
-
-/* Berkeley people: mail changes to ingvax:eric or they will be lost! */
-
-# ifdef ING70
-# include "c.ing70.h"
-# endif ING70
-
-# ifdef INGVAX
-# include "c.ingvax.h"
-# endif INGVAX
-
-# ifdef CSVAX
-# include "c.csvax.h"
-# endif CSVAX
-
-# ifdef ARPAVAX
-# include "c.arpavax.h"
-# endif ARPAVAX
-
-# ifdef CORY
-# include "c.cory.h"
-# endif CORY
-
-# ifdef ONYX
-# include "c.onyx.h"
-# endif ONYX
-
-# ifdef IMAGE
-# include "c.image.h"
-# endif IMAGE
-
-# ifdef ESVAX
-# include "c.esvax.h"
-# endif ESVAX
-
-# ifdef EECS40
-# include "c.eecs40.h"
-# endif EECS40
-
-# else BERKELEY
-
-# define HASUUCP		/* default to having UUCP net */
-
 # endif BERKELEY
 
 
