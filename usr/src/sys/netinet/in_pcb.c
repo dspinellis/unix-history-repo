@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.41	83/07/25	*/
+/*	in_pcb.c	4.42	83/07/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -132,8 +132,11 @@ in_pcbconnect(inp, nam)
 	    inp->inp_lport,
 	    0))
 		return (EADDRINUSE);
-	if (inp->inp_laddr.s_addr == INADDR_ANY)
+	if (inp->inp_laddr.s_addr == INADDR_ANY) {
+		if (inp->inp_lport == 0)
+			in_pcbbind(inp, (struct mbuf *)0);
 		inp->inp_laddr = ifaddr->sin_addr;
+	}
 	inp->inp_faddr = sin->sin_addr;
 	inp->inp_fport = sin->sin_port;
 	return (0);
