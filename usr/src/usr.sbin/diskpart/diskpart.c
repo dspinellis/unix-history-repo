@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)diskpart.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)diskpart.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -317,9 +317,9 @@ main(argc, argv)
 struct disklabel disk;
 
 struct	field {
-	char	*f_name;
-	char	*f_defaults;
-	u_long	*f_location;
+	char		*f_name;
+	char		*f_defaults;
+	u_int32_t	*f_location;
 } fields[] = {
 	{ "sector size",		"512",	&disk.d_secsize },
 	{ "#sectors/track",		0,	&disk.d_nsectors },
