@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.26 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.27 (Berkeley) %G%
  */
 
 /*
@@ -1037,6 +1037,7 @@ nfs_readdir(vp, uiop, cred)
 	register u_long *p;
 	register caddr_t cp;
 	register long t1;
+	long tlen;
 	caddr_t bpos, dpos, cp2;
 	u_long xid;
 	int error = 0;
@@ -1079,8 +1080,13 @@ nfs_readdir(vp, uiop, cred)
 			goto nfsmout;
 		}
 		dp->d_namlen = (u_short)len;
-		len = nfsm_rndup(len);
-		nfsm_adv(len);
+		nfsm_adv(len);		/* Point past name */
+		tlen = nfsm_rndup(len);
+		if (tlen != len) {	/* If name not on rounded boundary */
+			*dpos = '\0';	/* Null-terminate */
+			nfsm_adv(tlen - len);
+			len = tlen;
+		}
 		nfsm_disecton(p, u_long *, 2*NFSX_UNSIGNED);
 		off = fxdr_unsigned(off_t, *p);
 		*p++ = 0;		/* Ensures null termination of name */
