@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)bpf.h	7.3 (Berkeley) %G%
+ *      @(#)bpf.h	7.4 (Berkeley) %G%
  *
  * @(#) $Header: bpf.h,v 1.24 91/10/27 21:22:32 mccanne Exp $ (LBL)
  */
@@ -23,6 +23,7 @@
 
 #define BPF_MAXINSNS 512
 #define BPF_MAXBUFSIZE 0x8000
+#define BPF_MINBUFSIZE 32
 
 /*
  *  Structure for BIOCSETF.
@@ -39,6 +40,25 @@ struct bpf_stat {
 	u_int bs_recv;		/* number of packets received */
 	u_int bs_drop;		/* number of packets dropped */
 };
+
+/*
+ * Struct return by BIOCVERSION.  This represents the version number of 
+ * the filter language described by the instruction encodings below.
+ * bpf understands a program iff kernel_major == filter_major &&
+ * kernel_minor >= filter_minor, that is, if the value returned by the
+ * running kernel has the same major number and a minor number equal
+ * equal to or less than the filter being downloaded.  Otherwise, the
+ * results are undefined, meaning an error may be returned or packets
+ * may be accepted haphazardly.
+ * It has nothing to do with the source code version.
+ */
+struct bpf_version {
+	u_short bv_major;
+	u_short bv_minor;
+};
+/* Current version number. */
+#define BPF_MAJOR_VERSION 1
+#define BPF_MINOR_VERSION 1
 
 /*
  * BPF ioctls
@@ -60,6 +80,7 @@ struct bpf_stat {
 #define BIOCGRTIMEOUT	_IOR(B,110, struct timeval)
 #define BIOCGSTATS	_IOR(B,111, struct bpf_stat)
 #define BIOCIMMEDIATE	_IOW(B,112, u_int)
+#define BIOCVERSION	_IOR(B,113, struct bpf_version)
 #else
 #define	BIOCGBLEN	_IOR('B',102, u_int)
 #define	BIOCSBLEN	_IOWR('B',102, u_int)
@@ -73,6 +94,7 @@ struct bpf_stat {
 #define BIOCGRTIMEOUT	_IOR('B',110, struct timeval)
 #define BIOCGSTATS	_IOR('B',111, struct bpf_stat)
 #define BIOCIMMEDIATE	_IOW('B',112, u_int)
+#define BIOCVERSION	_IOR('B',113, struct bpf_version)
 #endif
 
 /*
@@ -113,7 +135,7 @@ struct bpf_hdr {
 /*
  * The instruction encondings.
  */
-/* classes <2:0> */
+/* instruction classes */
 #define BPF_CLASS(code) ((code) & 0x07)
 #define		BPF_LD		0x00
 #define		BPF_LDX		0x01
