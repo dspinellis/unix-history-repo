@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.90	83/03/27	*/
+/*	tcp_input.c	1.91	83/03/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -704,8 +704,10 @@ dropafterack:
 	return;
 
 dropwithreset:
-	if (om)
+	if (om) {
 		(void) m_free(om);
+		om = 0;
+	}
 	/*
 	 * Generate a RST, dropping incoming segment.
 	 * Make ACK acceptable to originator of segment.
