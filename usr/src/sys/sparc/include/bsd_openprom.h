@@ -7,9 +7,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bsd_openprom.h	7.1 (Berkeley) %G%
+ *	@(#)bsd_openprom.h	7.2 (Berkeley) %G%
  *
- * from: $Header: bsd_openprom.h,v 1.2 92/07/10 06:26:12 torek Exp $
+ * from: $Header: bsd_openprom.h,v 1.3 92/09/09 00:41:33 leres Exp $
  */
 
 /*
@@ -184,10 +184,10 @@ struct promvec {
 
 	/* Miscellany. */
 	void	(*pv_reboot)(char *bootstr);
-	void	(*pv_printf)(char *fmt, ...);
+	void	(*pv_printf)(const char *fmt, ...);
 	void	(*pv_abort)(void);	/* L1-A abort */
 	int	*pv_ticks;		/* Ticks since last reset */
-	void	(*pv_halt)(void);	/* Halt! */
+	__dead void (*pv_halt)(void);	/* Halt! */
 	void	(**pv_synchook)(void);	/* "sync" command hook */
 
 	/*
