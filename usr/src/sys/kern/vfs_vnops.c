@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_vnops.c	8.3 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -363,6 +363,8 @@ vn_ioctl(fp, com, data, p)
 	case VBLK:
 		error = VOP_IOCTL(vp, com, data, fp->f_flag, p->p_ucred, p);
 		if (error == 0 && com == TIOCSCTTY) {
+			if (p->p_session->s_ttyvp)
+				vrele(p->p_session->s_ttyvp);
 			p->p_session->s_ttyvp = vp;
 			VREF(vp);
 		}
