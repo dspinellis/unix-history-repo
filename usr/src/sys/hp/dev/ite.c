@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: ite.c 1.24 92/01/21$
+ * from: Utah $Hdr: ite.c 1.28 92/12/20$
  *
- *	@(#)ite.c	7.14 (Berkeley) %G%
+ *	@(#)ite.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -44,6 +44,13 @@
 #define clr_attr(ip, attr)	((ip)->attribute &= ~(attr))
 
 /*
+ * No need to raise SPL above the HIL (the only thing that can
+ * affect our state.
+ */
+#include <hp/dev/hilreg.h>
+#define splite()		splhil()
+
+/*
  * # of chars are output in a single itestart() call.
  * If this is too big, user processes will be blocked out for
  * long periods of time while we are emptying the queue in itestart().
@@ -56,8 +63,7 @@ struct  tty *kbd_tty = NULL;
 struct	tty ite_tty[NITE];
 struct  ite_softc ite_softc[NITE];
 
-void	itestart();
-extern	void ttrstrt __P((void *));
+void	itestart(), iterestart();
 extern	struct tty *constty;
 
 /*
@@ -66,6 +72,19 @@ extern	struct tty *constty;
  * Size is based on a 68x128 display, which is currently our largest.
  */
 u_char  console_attributes[0x2200];
+
+#define ite_erasecursor(ip, sp)	{ \
+	if ((ip)->flags & ITE_CURSORON) \
+		(*(sp)->ite_cursor)((ip), ERASE_CURSOR); \
+}
+#define ite_drawcursor(ip, sp) { \
+	if ((ip)->flags & ITE_CURSORON) \
+		(*(sp)->ite_cursor)((ip), DRAW_CURSOR); \
+}
+#define ite_movecursor(ip, sp) { \
+	if ((ip)->flags & ITE_CURSORON) \
+		(*(sp)->ite_cursor)((ip), MOVE_CURSOR); \
+}
 
 /*
  * Perform functions necessary to setup device as a terminal emulator.
@@ -116,7 +135,8 @@ iteinit(dev)
 	ip->cursory = 0;
 
 	(*ip->isw->ite_init)(ip);
-	(*ip->isw->ite_cursor)(ip, DRAW_CURSOR);
+	ip->flags |= ITE_CURSORON;
+	ite_drawcursor(ip, ip->isw);
 
 	ip->attribute = 0;
 	if (ip->attrbuf == NULL)
@@ -144,8 +164,10 @@ iteoff(dev, flag)
 	if ((ip->flags & ITE_ACTIVE) == 0)
 		return;
 	if ((flag & 1) ||
-	    (ip->flags & (ITE_INGRF|ITE_ISCONS|ITE_INITED)) == ITE_INITED)
+	    (ip->flags & (ITE_INGRF|ITE_ISCONS|ITE_INITED)) == ITE_INITED) {
 		(*ip->isw->ite_deinit)(ip);
+		ip->flags &= ~ITE_CURSORON;
+	}
 	if ((flag & 2) == 0)
 		ip->flags &= ~ITE_ACTIVE;
 }
@@ -253,13 +275,30 @@ iteioctl(dev, cmd, addr, flag, p)
 }
 
 void
+iterestart(tp)
+	register struct tty *tp;
+{
+	register int s = splite();
+
+	tp->t_state &= ~TS_TIMEOUT;
+	itestart(tp);
+	splx(s);
+}
+
+void
 itestart(tp)
 	register struct tty *tp;
 {
 	register int cc, s;
 	int hiwat = 0;
+	struct ite_softc *ip;
 
-	s = spltty();
+	/*
+	 * (Potentially) lower priority.  We only need to protect ourselves
+	 * from keyboard interrupts since that is all that can affect the
+	 * state of our tty (kernel printf doesn't go through this routine).
+	 */
+	s = splite();
 	if (tp->t_state & (TS_TIMEOUT|TS_BUSY|TS_TTSTOP)) {
 		splx(s);
 		return;
@@ -274,33 +313,34 @@ itestart(tp)
 		selwakeup(&tp->t_wsel);
 	}
 	/*
-	 * Limit the amount of output we do in one burst
-	 * to prevent hogging the CPU.
+	 * Handle common (?) case
 	 */
-	if (cc > iteburst) {
-		hiwat++;
-		cc = iteburst;
-	}
-	while (--cc >= 0) {
-		register int c;
-
-		c = getc(&tp->t_outq);
+	if (cc == 1) {
+		iteputchar(getc(&tp->t_outq), tp->t_dev);
+	} else if (cc) {
 		/*
-		 * iteputchar() may take a long time and we don't want to
-		 * block all interrupts for long periods of time.  Since
-		 * there is no need to stay at high priority while outputing
-		 * the character (since we don't have to worry about
-		 * interrupts), we don't.  We just need to make sure that
-		 * we don't reenter iteputchar, which is guarenteed by the
-		 * earlier setting of TS_BUSY.
+		 * Limit the amount of output we do in one burst
+		 * to prevent hogging the CPU.
 		 */
-		splx(s);
-		iteputchar(c, tp->t_dev);
-		spltty();
-	}
-	if (hiwat) {
-		tp->t_state |= TS_TIMEOUT;
-		timeout(ttrstrt, tp, 1);
+		if (cc > iteburst) {
+			hiwat++;
+			cc = iteburst;
+		}
+		/*
+		 * Turn off cursor while we output multiple characters.
+		 * Saves a lot of expensive window move operations.
+		 */
+		ip = &ite_softc[UNIT(tp->t_dev)];
+		ite_erasecursor(ip, ip->isw);
+		ip->flags &= ~ITE_CURSORON;
+		while (--cc >= 0)
+			iteputchar(getc(&tp->t_outq), tp->t_dev);
+		ip->flags |= ITE_CURSORON;
+		ite_drawcursor(ip, ip->isw);
+		if (hiwat) {
+			tp->t_state |= TS_TIMEOUT;
+			timeout(iterestart, tp, 1);
+		}
 	}
 	tp->t_state &= ~TS_BUSY;
 	splx(s);
@@ -395,7 +435,7 @@ doesc:
 				ip->cury = min(ip->pos, ip->rows-1);
 				ip->pos = 0;
 				ip->escape = 0;
-				(*sp->ite_cursor)(ip, MOVE_CURSOR);
+				ite_movecursor(ip, sp);
 				clr_attr(ip, ATTR_INV);
 				break;
 
@@ -409,7 +449,7 @@ doesc:
 				ip->curx = min(ip->pos, ip->cols-1);
 				ip->pos = 0;
 				ip->escape = 0;
-				(*sp->ite_cursor)(ip, MOVE_CURSOR);
+				ite_movecursor(ip, sp);
 				clr_attr(ip, ATTR_INV);
 				break;
 
@@ -473,7 +513,7 @@ doesc:
 				ip->curx -= n;
 			} else
 				ip->curx = 0;
-			(*sp->ite_cursor)(ip, MOVE_CURSOR);
+			ite_movecursor(ip, sp);
 			ip->escape = 0;
 			return;
 
@@ -493,11 +533,12 @@ doesc:
 		case 'B':			/* cursor down 1 line */
 			if (++ip->cury == ip->rows) {
 				--ip->cury;
+				ite_erasecursor(ip, sp);
 				(*sp->ite_scroll)(ip, 1, 0, 1, SCROLL_UP);
 				ite_clrtoeol(ip, sp, ip->cury, 0);
 			}
 			else
-				(*sp->ite_cursor)(ip, MOVE_CURSOR);
+				ite_movecursor(ip, sp);
 			clr_attr(ip, ATTR_INV);
 			ip->escape = 0;
 			return;
@@ -510,7 +551,7 @@ doesc:
 		case 'A':			/* cursor up 1 line */
 			if (ip->cury > 0) {
 				ip->cury--;
-				(*sp->ite_cursor)(ip, MOVE_CURSOR);
+				ite_movecursor(ip, sp);
 			}
 			ip->escape = 0;
 			clr_attr(ip, ATTR_INV);
@@ -543,14 +584,14 @@ doesc:
 
 		case 'h':			/* home key */
 			ip->cury = ip->curx = 0;
-			(*sp->ite_cursor)(ip, MOVE_CURSOR);
+			ite_movecursor(ip, sp);
 			ip->escape = 0;
 			return;
 
 		case 'D':			/* left arrow key */
 			if (ip->curx > 0) {
 				ip->curx--;
-				(*sp->ite_cursor)(ip, MOVE_CURSOR);
+				ite_movecursor(ip, sp);
 			}
 			ip->escape = 0;
 			return;
@@ -578,18 +619,18 @@ ignore:
 
 		if (++ip->cury == ip->rows) {
 			--ip->cury;
+			ite_erasecursor(ip, sp);
 			(*sp->ite_scroll)(ip, 1, 0, 1, SCROLL_UP);
 			ite_clrtoeol(ip, sp, ip->cury, 0);
-		}
-		else
-			(*sp->ite_cursor)(ip, MOVE_CURSOR);
+		} else
+			ite_movecursor(ip, sp);
 		clr_attr(ip, ATTR_INV);
 		break;
 
 	case '\r':
 		if (ip->curx) {
 			ip->curx = 0;
-			(*sp->ite_cursor)(ip, MOVE_CURSOR);
+			ite_movecursor(ip, sp);
 		}
 		break;
 	
@@ -597,14 +638,14 @@ ignore:
 		if (--ip->curx < 0)
 			ip->curx = 0;
 		else
-			(*sp->ite_cursor)(ip, MOVE_CURSOR);
+			ite_movecursor(ip, sp);
 		break;
 
 	case '\t':
 		if (ip->curx < TABEND(unit)) {
 			n = TABSIZE - (ip->curx & (TABSIZE - 1));
 			ip->curx += n;
-			(*sp->ite_cursor)(ip, MOVE_CURSOR);
+			ite_movecursor(ip, sp);
 		} else
 			itecheckwrap(ip, sp);
 		break;
@@ -626,10 +667,9 @@ ignore:
 		if ((ip->attribute & ATTR_INV) || attrtest(ip, ATTR_INV)) {
 			attrset(ip, ATTR_INV);
 			(*sp->ite_putc)(ip, c, ip->cury, ip->curx, ATTR_INV);
-		}			
-		else
+		} else
 			(*sp->ite_putc)(ip, c, ip->cury, ip->curx, ATTR_NOR);
-		(*sp->ite_cursor)(ip, DRAW_CURSOR);
+		ite_drawcursor(ip, sp);
 		itecheckwrap(ip, sp);
 		break;
 	}
@@ -644,45 +684,55 @@ itecheckwrap(ip, sp)
 		clr_attr(ip, ATTR_INV);
 		if (++ip->cury == ip->rows) {
 			--ip->cury;
+			ite_erasecursor(ip, sp);
 			(*sp->ite_scroll)(ip, 1, 0, 1, SCROLL_UP);
 			ite_clrtoeol(ip, sp, ip->cury, 0);
 			return;
 		}
 	}
-	(*sp->ite_cursor)(ip, MOVE_CURSOR);
+	ite_movecursor(ip, sp);
 }
 
 ite_dchar(ip, sp)
      register struct ite_softc *ip;
      register struct itesw *sp;
 {
-	(*sp->ite_scroll)(ip, ip->cury, ip->curx + 1, 1, SCROLL_LEFT);
-	attrmov(ip, ip->cury, ip->curx + 1, ip->cury, ip->curx,
-		1, ip->cols - ip->curx - 1);
+	if (ip->curx < ip->cols - 1) {
+		ite_erasecursor(ip, sp);
+		(*sp->ite_scroll)(ip, ip->cury, ip->curx + 1, 1, SCROLL_LEFT);
+		attrmov(ip, ip->cury, ip->curx + 1, ip->cury, ip->curx,
+			1, ip->cols - ip->curx - 1);
+	}
 	attrclr(ip, ip->cury, ip->cols - 1, 1, 1);
 	(*sp->ite_putc)(ip, ' ', ip->cury, ip->cols - 1, ATTR_NOR);
-	(*sp->ite_cursor)(ip, DRAW_CURSOR);
+	ite_drawcursor(ip, sp);
 }
 
 ite_ichar(ip, sp)
      register struct ite_softc *ip;
      register struct itesw *sp;
 {
-	(*sp->ite_scroll)(ip, ip->cury, ip->curx, 1, SCROLL_RIGHT);
-	attrmov(ip, ip->cury, ip->curx, ip->cury, ip->curx + 1,
-		1, ip->cols - ip->curx - 1);
+	if (ip->curx < ip->cols - 1) {
+		ite_erasecursor(ip, sp);
+		(*sp->ite_scroll)(ip, ip->cury, ip->curx, 1, SCROLL_RIGHT);
+		attrmov(ip, ip->cury, ip->curx, ip->cury, ip->curx + 1,
+			1, ip->cols - ip->curx - 1);
+	}
 	attrclr(ip, ip->cury, ip->curx, 1, 1);
 	(*sp->ite_putc)(ip, ' ', ip->cury, ip->curx, ATTR_NOR);
-	(*sp->ite_cursor)(ip, DRAW_CURSOR);
+	ite_drawcursor(ip, sp);
 }
 
 ite_dline(ip, sp)
      register struct ite_softc *ip;
      register struct itesw *sp;
 {
-	(*sp->ite_scroll)(ip, ip->cury + 1, 0, 1, SCROLL_UP);
-	attrmov(ip, ip->cury + 1, 0, ip->cury, 0,
-		ip->rows - ip->cury - 1, ip->cols);
+	if (ip->cury < ip->rows - 1) {
+		ite_erasecursor(ip, sp);
+		(*sp->ite_scroll)(ip, ip->cury + 1, 0, 1, SCROLL_UP);
+		attrmov(ip, ip->cury + 1, 0, ip->cury, 0,
+			ip->rows - ip->cury - 1, ip->cols);
+	}
 	ite_clrtoeol(ip, sp, ip->rows - 1, 0);
 }
 
@@ -690,9 +740,12 @@ ite_iline(ip, sp)
      register struct ite_softc *ip;
      register struct itesw *sp;
 {
-	(*sp->ite_scroll)(ip, ip->cury, 0, 1, SCROLL_DOWN);
-	attrmov(ip, ip->cury, 0, ip->cury + 1, 0,
-		ip->rows - ip->cury - 1, ip->cols);
+	if (ip->cury < ip->rows - 1) {
+		ite_erasecursor(ip, sp);
+		(*sp->ite_scroll)(ip, ip->cury, 0, 1, SCROLL_DOWN);
+		attrmov(ip, ip->cury, 0, ip->cury + 1, 0,
+			ip->rows - ip->cury - 1, ip->cols);
+	}
 	ite_clrtoeol(ip, sp, ip->cury, 0);
 }
 
@@ -703,7 +756,7 @@ ite_clrtoeol(ip, sp, y, x)
 {
 	(*sp->ite_clear)(ip, y, x, 1, ip->cols - x);
 	attrclr(ip, y, x, 1, ip->cols - x);
-	(*sp->ite_cursor)(ip, DRAW_CURSOR);
+	ite_drawcursor(ip, sp);
 }
 
 ite_clrtoeos(ip, sp)
@@ -712,7 +765,7 @@ ite_clrtoeos(ip, sp)
 {
 	(*sp->ite_clear)(ip, ip->cury, 0, ip->rows - ip->cury, ip->cols);
 	attrclr(ip, ip->cury, 0, ip->rows - ip->cury, ip->cols);
-	(*sp->ite_cursor)(ip, DRAW_CURSOR);
+	ite_drawcursor(ip, sp);
 }
 
 /*
