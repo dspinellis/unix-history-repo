@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.3	(Berkeley)	83/05/27
+#	@(#)Makefile	4.4	(Berkeley)	83/05/27
 #
 DESTDIR=
 CFLAGS=	# -O
@@ -40,7 +40,7 @@ ${PROG}: ${OBJS} ${HDRS}
 ${OBJS}:
 	cc ${CFLAGS} -c $*.c
 
-tags:	./tags $(SRCS)
+tags:	tags $(SRCS)
 	ctags $(SRCS)
 
 install: ${PROG}
