@@ -2,7 +2,7 @@
 # include <sgtty.h>
 # include <signal.h>
 
-static char	SccsId[] =	"@(#)cpr.c	1.1.1.1		%G%";
+static char	SccsId[] =	"@(#)cpr.c	1.2		%G%";
 
 /*
 **  CPR -- print on concept 108
@@ -51,23 +51,8 @@ main(argc, argv)
 copyfile()
 {
 	char buf[200];
-	register char *p;
-	extern char *index();
-
 	while (fgets(buf, sizeof buf, stdin) != NULL)
-	{
-		p = index(buf, '\n');
-		if (p == NULL)
-			continue;
-		*p = '\r';
-		printf("\033 5%s\033|", buf);
-		if (getack() < 0)
-		{
-			fprintf(stderr, "Lost printer\n");
-			cleanterm();
-		}
-		fputs("\n", stdout);
-	}
+		fputs(buf, stdout);
 }
 
 setupterm()
@@ -84,10 +69,19 @@ setupterm()
 	tbuf.sg_flags |= CBREAK;
 	stty(1, &tbuf);
 	tbuf.sg_flags = oldflags;
+	fputs("\033Y$", stdout);
+	if (getack() >= 0)
+		return;
+	fprintf(stderr, "Cannot attach printer\n");
+	resetmodes();
+	exit(1);
 }
 
 cleanterm()
 {
+	printf("\033Y0");
+	getack();
+	fflush(stdout);
 	resetmodes();
 	exit(0);
 }
