@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	5.30 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	5.31 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	5.30 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	5.31 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -362,8 +362,6 @@ smtp()
 			break;
 
 		  case CMDHELP:		/* help -- give user info */
-			if (*p == '\0')
-				p = "SMTP";
 			help(p);
 			break;
 
@@ -503,8 +501,12 @@ help(topic)
 		return;
 	}
 
+	if (topic == NULL || *topic == '\0')
+		topic = "smtp";
+	else
+		makelower(topic);
+
 	len = strlen(topic);
-	makelower(topic);
 	noinfo = TRUE;
 
 	while (fgets(buf, sizeof buf, hf) != NULL)
