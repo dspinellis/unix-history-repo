@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)gets.c	7.1 (Berkeley) %G%
+ *	@(#)gets.c	7.2 (Berkeley) %G%
  */
 
 gets(buf)
@@ -37,8 +37,17 @@ gets(buf)
 			if (lp > buf)
 				--lp;
 			break;
+		case 'r'&037: {
+			register char *p;
+
+			putchar('\n');
+			for (p = buf; p < lp; ++p)
+				putchar(*p);
+			break;
+		}
 		case '@':
 		case 'u'&037:
+		case 'w'&037:
 			lp = buf;
 			putchar('\n');
 			break;
