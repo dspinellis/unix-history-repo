@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)ld.c 4.2 %G%";
+static	char sccsid[] = "@(#)ld.c 4.3 %G%";
 /*
  * ld - string table version for VAX
  */
@@ -897,7 +897,8 @@ middle()
 		switch (sp->n_type & (N_TYPE+N_EXT)) {
 
 		case N_EXT+N_UNDF:
-			errlev |= 01;
+			if (arflag == 0)
+				errlev |= 01;
 			if ((arflag==0 || dflag) && sp->n_value==0) {
 				if (sp==p_end || sp==p_etext || sp==p_edata)
 					continue;
