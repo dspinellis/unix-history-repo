@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)file.c	4.16 (Berkeley) %G%";
+static	char sccsid[] = "@(#)file.c	4.17 (Berkeley) %G%";
 #endif
 /*
  * file - determine type of file
@@ -57,7 +57,6 @@ char **argv;
 			int l = strlen(p);
 			if (l>0)
 				p[l-1] = '\0';
-			printf("%s:	", p);
 			type(p);
 			if (ifile>=0)
 				close(ifile);
@@ -65,7 +64,6 @@ char **argv;
 		exit(1);
 	}
 	while(argc > 1) {
-		printf("%s:	", argv[1]);
 		type(argv[1]);
 		fflush(stdout);
 		argc--;
@@ -89,6 +87,7 @@ char *file;
 		fprintf(stderr, "file: %s: %s\n", file, strerror(errno));
 		return;
 	}
+	printf("%s:\t", file);
 	switch (mbuf.st_mode & S_IFMT) {
 
 	case S_IFLNK:
