@@ -1,8 +1,8 @@
 #!/bin/csh -f
 #
-#	@(#)updatedb.csh	4.3	(Berkeley)	83/07/21
+#	@(#)updatedb.csh	4.4	(Berkeley)	83/07/21
 #
-set SRCHPATHS = "/usr /bin /etc /lib"	# directories to be put in the database
+set SRCHPATHS = "/"			# directories to be put in the database
 set LIBDIR = /usr/lib/find		# for subprograms
 set FINDHONCHO = root			# for error messages
 set FCODES = /usr/lib/find/find.codes	# the database 
