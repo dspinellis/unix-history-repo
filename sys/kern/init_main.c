@@ -40,7 +40,7 @@
  * 26 May 93	Holger Veit		Remove hard coded escapes
  *		Rodney W. Grimes	Added two more \n to clean up output
  */
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/kern/init_main.c,v 1.3 1993/08/27 02:10:18 rgrimes Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/kern/init_main.c,v 1.4 1993/09/10 05:53:10 nate Exp $";
 
 #include "param.h"
 #include "filedesc.h"
@@ -119,7 +119,7 @@ main()
 	startrtclock();
 	consinit();
 
-	printf("\n%s  [1.%s]\n", bsd_version, version+9);
+	printf("\n%s  [1.0.%s]\n", bsd_version, version+9);
 	printf("%s", copyright);
 
 	vm_mem_init();
