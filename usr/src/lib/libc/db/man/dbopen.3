@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)dbopen.3	5.17 (Berkeley) %G%
+.\"	@(#)dbopen.3	5.18 (Berkeley) %G%
 .\"
 .TH DB 3 ""
 .UC 7
@@ -136,6 +136,9 @@ The address and length of the data associated with the specified
 .I key
 are returned in the structure referenced by
 .IR data .
+The address and length of the key used to enter the data into the database
+are returned in the structure referenced by
+.IR key .
 .I Get
 routines return -1 on error (setting
 .IR errno ),
