@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prf.c	6.10 (Berkeley) %G%
+ *	@(#)subr_prf.c	6.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -75,14 +75,16 @@ uprintf(fmt, x1)
 	char *fmt;
 	unsigned x1;
 {
+#ifdef notdef
 	register struct proc *p;
+#endif
 	register struct tty *tp;
 
 	if ((tp = u.u_ttyp) == NULL)
 		return;
 #ifdef notdef
 	if (tp->t_pgrp && (p = pfind(tp->t_pgrp)))
-		if (p->p_uid != u.u_uid)
+		if (p->p_uid != u.u_uid)	/* doesn't account for setuid */
 			return;
 #endif
 	(void)ttycheckoutq(tp, 1);
