@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_buf.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_buf.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /******************************************************************************
@@ -141,7 +141,12 @@ BUFHEAD	*prev_bp;
     u_short	oaddr;
     SEGMENT	segp;
 
-    if ( hashp->nbufs ) {
+    bp = LRU;
+    /* 
+	If LRU buffer is pinned, the buffer pool is too small.
+	We need to allocate more buffers
+    */
+    if ( hashp->nbufs || (bp->flags & BUF_PIN) ) {
 	/* Allocate a new one */
 	bp = (BUFHEAD *)malloc ( sizeof (struct _bufhead) );
 	if ( !bp || !(bp->page = (char *)malloc ( hashp->BSIZE )) ) {
@@ -150,64 +155,69 @@ BUFHEAD	*prev_bp;
 	hashp->nbufs--;
     } else {
 	/* Kick someone out */
-	bp = LRU;
 	BUF_REMOVE( bp );
 	/* 
-	    Set oaddr before __put_page so that you get it 
-	    before bytes are swapped
+	    If this is an overflow page with addr 0, it's already
+	    been flushed back in an overflow chain and initialized
 	*/
-	shortp = (u_short *)bp->page;
-	oaddr = shortp[shortp[0]-1];
-	if ( (bp->flags & BUF_MOD) && 
-	     __put_page(bp->page, bp->addr, (int)IS_BUCKET(bp->flags), 0) ) {
-	    return(NULL);
-	}
-	/* 
-	    Update the pointer to this page (i.e. invalidate it).
-
-	    If this is a new file (i.e. we created it at open time), 
-	    make sure that we mark pages which have been written to 
-	    disk so we retrieve them from disk later, rather than
-	    allocating new pages.
-	*/
-
-	if ( IS_BUCKET(bp->flags)) {
-	    segment_ndx = bp->addr & ( hashp->SGSIZE - 1 );
-
-	    segp = hashp->dir[bp->addr >> hashp->SSHIFT];
-
-	    assert(segp != NULL);
-
-	    if ( hashp->new_file && 
-		 ((bp->flags & BUF_MOD) || ISDISK(segp[segment_ndx])) ) {
-		segp[segment_ndx] = (BUFHEAD *)BUF_DISK;
-	    } else segp[segment_ndx] = NULL;
-	}
-
-	/*
-	    Since overflow pages can only be access by means of
-	    their bucket, free overflow pages associated with this
-	    bucket.
-	*/
-	for ( xbp = bp; xbp->ovfl; ) {
-
-	    next_xbp = xbp->ovfl;
-	    xbp->ovfl = 0;
-	    xbp = next_xbp;
-
-	    /* Check that ovfl pointer is up date */
-	    if ( IS_BUCKET(xbp->flags) || (oaddr != xbp->addr) ) break;
-
-	    shortp = (u_short *)xbp->page;
-	    oaddr = shortp[shortp[0]-1];	/* set before __put_page */
-	    if ( (xbp->flags & BUF_MOD) &&
-		__put_page ( xbp->page, xbp->addr, 0, 0 ) ) {
+	if ( (bp->addr != 0) || (bp->flags & BUF_BUCKET) ) {
+	    /* 
+		Set oaddr before __put_page so that you get it 
+		before bytes are swapped
+	    */
+	    shortp = (u_short *)bp->page;
+	    oaddr = shortp[shortp[0]-1];
+	    if ( (bp->flags & BUF_MOD) && 
+		 __put_page(bp->page, bp->addr, (int)IS_BUCKET(bp->flags), 0) ) {
 		return(NULL);
 	    }
-	    xbp->addr = 0;
-	    xbp->flags = 0;
-	    BUF_REMOVE ( xbp );
-	    LRU_INSERT ( xbp );
+	    /* 
+		Update the pointer to this page (i.e. invalidate it).
+
+		If this is a new file (i.e. we created it at open time), 
+		make sure that we mark pages which have been written to 
+		disk so we retrieve them from disk later, rather than
+		allocating new pages.
+	    */
+
+	    if ( IS_BUCKET(bp->flags)) {
+		segment_ndx = bp->addr & ( hashp->SGSIZE - 1 );
+
+		segp = hashp->dir[bp->addr >> hashp->SSHIFT];
+
+		assert(segp != NULL);
+
+		if ( hashp->new_file && 
+		     ((bp->flags & BUF_MOD) || ISDISK(segp[segment_ndx])) ) {
+		    segp[segment_ndx] = (BUFHEAD *)BUF_DISK;
+		} else segp[segment_ndx] = NULL;
+	    }
+
+	    /*
+		Since overflow pages can only be access by means of
+		their bucket, free overflow pages associated with this
+		bucket.
+	    */
+	    for ( xbp = bp; xbp->ovfl; ) {
+
+		next_xbp = xbp->ovfl;
+		xbp->ovfl = 0;
+		xbp = next_xbp;
+
+		/* Check that ovfl pointer is up date */
+		if ( IS_BUCKET(xbp->flags) || (oaddr != xbp->addr) ) break;
+
+		shortp = (u_short *)xbp->page;
+		oaddr = shortp[shortp[0]-1];	/* set before __put_page */
+		if ( (xbp->flags & BUF_MOD) &&
+		    __put_page ( xbp->page, xbp->addr, 0, 0 ) ) {
+		    return(NULL);
+		}
+		xbp->addr = 0;
+		xbp->flags = 0;
+		BUF_REMOVE ( xbp );
+		LRU_INSERT ( xbp );
+	    }
 	}
     }
 
