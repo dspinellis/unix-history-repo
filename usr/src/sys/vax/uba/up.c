@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)up.c	7.3 (Berkeley) %G%
+ *	@(#)up.c	7.4 (Berkeley) %G%
  */
 
 #include "up.h"
@@ -23,6 +23,8 @@
 #include "systm.h"
 #include "dkstat.h"
 #include "dkbad.h"
+#include "ioctl.h"
+#include "disklabel.h"
 #include "buf.h"
 #include "conf.h"
 #include "dir.h"
@@ -608,8 +610,9 @@ upintr(sc21)
 					return;
 			}
 	hard:
-			harderr(bp, "up");
-			printf("cn=%d tn=%d sn=%d cs2=%b er1=%b er2=%b\n",
+			diskerr(bp, "up", "hard error", LOG_PRINTF, -1,
+			    (struct disklabel *)0);
+			printf(" cn=%d tn=%d sn=%d cs2=%b er1=%b er2=%b\n",
 			        upaddr->updc, ((upaddr->upda)>>8)&077,
 			        (upaddr->upda)&037,
 				upaddr->upcs2, UPCS2_BITS,
@@ -794,8 +797,9 @@ upecc(ui, flag)
 		npf--;
 		reg--;
 		mask = up->upec2;
-		log(LOG_WARNING, "up%d%c: soft ecc sn%d\n", upunit(bp->b_dev),
-			'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
+		diskerr(bp, "up", "soft ecc", LOG_WARNING, npf,
+		    (struct disklabel *)0);
+		addlog("\n");
 		/*
 		 * Flush the buffered data path, and compute the
 		 * byte and bit position of the error.  The variable i

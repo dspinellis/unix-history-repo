@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rl.c	7.3 (Berkeley) %G%
+ *	@(#)rl.c	7.4 (Berkeley) %G%
  */
 
 #include "rl.h"
@@ -17,6 +17,8 @@
 #include "systm.h"
 #include "dkstat.h"
 #include "dkbad.h"
+#include "ioctl.h"
+#include "disklabel.h"
 #include "buf.h"
 #include "conf.h"
 #include "dir.h"
@@ -445,8 +447,9 @@ rlintr(rl21)
 			/*
 			 * After 10 retries give up.
 			 */
-			harderr(bp, "rl");
-			printf("cs=%b mp=%b\n", err, RLCS_BITS,
+			diskerr(bp, "rl", "hard error", LOG_PRINTF, -1,
+			    (struct disklabel *)0);
+			printf(" cs=%b mp=%b\n", err, RLCS_BITS,
 			    status, RLER_BITS);
 			bp->b_flags |= B_ERROR;
 		} else

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)idc.c	7.3 (Berkeley) %G%
+ *	@(#)idc.c	7.4 (Berkeley) %G%
  */
 
 #include "rb.h"
@@ -23,8 +23,6 @@ int	*trp = idctrb;
  * TODO:
  *	ecc
  */
-#include "../machine/pte.h"
-
 #include "param.h"
 #include "systm.h"
 #include "buf.h"
@@ -33,6 +31,8 @@ int	*trp = idctrb;
 #include "user.h"
 #include "map.h"
 #include "vm.h"
+#include "ioctl.h"
+#include "disklabel.h"
 #include "dkstat.h"
 #include "cmap.h"
 #include "dkbad.h"
@@ -40,6 +40,7 @@ int	*trp = idctrb;
 #include "kernel.h"
 #include "syslog.h"
 
+#include "../machine/pte.h"
 #include "../vax/cpu.h"
 #include "ubareg.h"
 #include "ubavar.h"
@@ -498,8 +499,9 @@ top:
 				bp->b_flags |= B_ERROR;
 			} else if (++um->um_tab.b_errcnt > 28 || er&IDC_HARD) {
 hard:
-				harderr(bp, "rb");
-				printf("csr=%b ds=%b\n", er, IDCCSR_BITS, ds, 
+				diskerr(bp, "rb", "hard error", LOG_PRINTF, -1,
+				    (struct disklabel *)0);
+				printf(" csr=%b ds=%b\n", er, IDCCSR_BITS, ds, 
 				    ui->ui_type?IDCRB80DS_BITS:IDCRB02DS_BITS);
 				bp->b_flags |= B_ERROR;
 			} else if (er & IDC_DCK) {
@@ -686,9 +688,8 @@ idcecc(ui)
 	tn = idc_softc.sc_trk;
 	sn = idc_softc.sc_sect;
 	um->um_tab.b_active = 1;	/* Either complete or continuing... */
-	log(LOG_WARNING, "rb%d%c: soft ecc sn%d\n", idcunit(bp->b_dev),
-	    'a'+(minor(bp->b_dev)&07),
-	    (cn*st->ntrak + tn) * st->nsect + sn + npf);
+	diskerr(bp, "rb", "soft ecc", LOG_WARNING, npf, (struct disklabel *)0);
+	addlog("\n");
 	mask = idc->idceccpat;
 	i = idc->idceccpos - 1;		/* -1 makes 0 origin */
 	bit = i&07;
