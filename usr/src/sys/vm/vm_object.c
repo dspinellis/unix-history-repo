@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_object.c	7.3 (Berkeley) %G%
+ *	@(#)vm_object.c	7.4 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -394,7 +394,7 @@ again:
 		    p->offset >= start && p->offset < end) {
 			if (p->clean && pmap_is_modified(VM_PAGE_TO_PHYS(p)))
 				p->clean = FALSE;
-			pmap_remove_all(VM_PAGE_TO_PHYS(p));
+			pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_NONE);
 			if (!p->clean) {
 				p->busy = TRUE;
 				object->paging_in_progress++;
@@ -535,10 +535,8 @@ void vm_object_pmap_copy(object, start, end)
 	p = (vm_page_t) queue_first(&object->memq);
 	while (!queue_end(&object->memq, (queue_entry_t) p)) {
 		if ((start <= p->offset) && (p->offset < end)) {
-			if (!p->copy_on_write) {
-				pmap_copy_on_write(VM_PAGE_TO_PHYS(p));
-				p->copy_on_write = TRUE;
-			}
+			pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_READ);
+			p->copy_on_write = TRUE;
 		}
 		p = (vm_page_t) queue_next(&p->listq);
 	}
@@ -566,9 +564,8 @@ void vm_object_pmap_remove(object, start, end)
 	vm_object_lock(object);
 	p = (vm_page_t) queue_first(&object->memq);
 	while (!queue_end(&object->memq, (queue_entry_t) p)) {
-		if ((start <= p->offset) && (p->offset < end)) {
-			pmap_remove_all(VM_PAGE_TO_PHYS(p));
-		}
+		if ((start <= p->offset) && (p->offset < end))
+			pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_NONE);
 		p = (vm_page_t) queue_next(&p->listq);
 	}
 	vm_object_unlock(object);
@@ -762,9 +759,8 @@ void vm_object_copy(src_object, src_offset, size,
 	 */
 	p = (vm_page_t) queue_first(&src_object->memq);
 	while (!queue_end(&src_object->memq, (queue_entry_t) p)) {
-		if ((new_start <= p->offset) && (p->offset < new_end)) {
+		if ((new_start <= p->offset) && (p->offset < new_end))
 			p->copy_on_write = TRUE;
-		}
 		p = (vm_page_t) queue_next(&p->listq);
 	}
 
@@ -1278,7 +1274,7 @@ void vm_object_page_remove(object, start, end)
 	while (!queue_end(&object->memq, (queue_entry_t) p)) {
 		next = (vm_page_t) queue_next(&p->listq);
 		if ((start <= p->offset) && (p->offset < end)) {
-			pmap_remove_all(VM_PAGE_TO_PHYS(p));
+			pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_NONE);
 			vm_page_lock_queues();
 			vm_page_free(p);
 			vm_page_unlock_queues();
