@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)last.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)last.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -42,10 +42,6 @@ static char sccsid[] = "@(#)last.c	5.12 (Berkeley) %G%";
 
 static struct utmp	buf[1024];		/* utmp read buffer */
 
-#define	HMAX	sizeof(buf[0].ut_host)		/* size of utmp host field */
-#define	LMAX	sizeof(buf[0].ut_line)		/* size of utmp tty field */
-#define	NMAX	sizeof(buf[0].ut_name)		/* size of utmp name field */
-
 typedef struct arg {
 	char	*name;				/* argument */
 #define	HOST_TYPE	-2
@@ -58,7 +54,7 @@ ARG	*arglist;				/* head of linked list */
 
 typedef struct ttytab {
 	long	logout;				/* log out time */
-	char	tty[LMAX + 1];			/* terminal name */
+	char	tty[UT_LINESIZE + 1];		/* terminal name */
 	struct ttytab	*next;			/* linked list pointer */
 } TTY;
 TTY	*ttylist;				/* head of linked list */
@@ -160,10 +156,11 @@ wtmp()
 				for (T = ttylist; T; T = T->next)
 					T->logout = -bp->ut_time;
 				currentout = -bp->ut_time;
-				crmsg = strncmp(bp->ut_name, "shutdown", NMAX) ? "crash" : "shutdown";
+				crmsg = strncmp(bp->ut_name, "shutdown",
+				    UT_NAMESIZE) ? "crash" : "shutdown";
 				if (want(bp, NO)) {
 					ct = ctime(&bp->ut_time);
-					printf("%-*.*s  %-*.*s %-*.*s %10.10s %5.5s \n", NMAX, NMAX, bp->ut_name, LMAX, LMAX, bp->ut_line, HMAX, HMAX, bp->ut_host, ct, ct + 11);
+					printf("%-*.*s  %-*.*s %-*.*s %10.10s %5.5s \n", UT_NAMESIZE, UT_NAMESIZE, bp->ut_name, UT_LINESIZE, UT_LINESIZE, bp->ut_line, UT_HOSTSIZE, UT_HOSTSIZE, bp->ut_host, ct, ct + 11);
 					if (maxrec && !--maxrec)
 						return;
 				}
@@ -177,7 +174,7 @@ wtmp()
 			    && !bp->ut_line[1]) {
 				if (want(bp, NO)) {
 					ct = ctime(&bp->ut_time);
-					printf("%-*.*s  %-*.*s %-*.*s %10.10s %5.5s \n", NMAX, NMAX, bp->ut_name, LMAX, LMAX, bp->ut_line, HMAX, HMAX, bp->ut_host, ct, ct + 11);
+					printf("%-*.*s  %-*.*s %-*.*s %10.10s %5.5s \n", UT_NAMESIZE, UT_NAMESIZE, bp->ut_name, UT_LINESIZE, UT_LINESIZE, bp->ut_line, UT_HOSTSIZE, UT_HOSTSIZE, bp->ut_host, ct, ct + 11);
 					if (maxrec && !--maxrec)
 						return;
 				}
@@ -190,12 +187,12 @@ wtmp()
 					T = addtty(bp->ut_line);
 					break;
 				}
-				if (!strncmp(T->tty, bp->ut_line, LMAX))
+				if (!strncmp(T->tty, bp->ut_line, UT_LINESIZE))
 					break;
 			}
 			if (bp->ut_name[0] && want(bp, YES)) {
 				ct = ctime(&bp->ut_time);
-				printf("%-*.*s  %-*.*s %-*.*s %10.10s %5.5s ", NMAX, NMAX, bp->ut_name, LMAX, LMAX, bp->ut_line, HMAX, HMAX, bp->ut_host, ct, ct + 11);
+				printf("%-*.*s  %-*.*s %-*.*s %10.10s %5.5s ", UT_NAMESIZE, UT_NAMESIZE, bp->ut_name, UT_LINESIZE, UT_LINESIZE, bp->ut_line, UT_HOSTSIZE, UT_HOSTSIZE, bp->ut_host, ct, ct + 11);
 				if (!T->logout)
 					puts("  still logged in");
 				else {
@@ -248,15 +245,15 @@ want(bp, check)
 	for (step = arglist; step; step = step->next)
 		switch(step->type) {
 		case HOST_TYPE:
-			if (!strncasecmp(step->name, bp->ut_host, HMAX))
+			if (!strncasecmp(step->name, bp->ut_host, UT_HOSTSIZE))
 				return(YES);
 			break;
 		case TTY_TYPE:
-			if (!strncmp(step->name, bp->ut_line, LMAX))
+			if (!strncmp(step->name, bp->ut_line, UT_LINESIZE))
 				return(YES);
 			break;
 		case USER_TYPE:
-			if (!strncmp(step->name, bp->ut_name, NMAX))
+			if (!strncmp(step->name, bp->ut_name, UT_NAMESIZE))
 				return(YES);
 			break;
 	}
@@ -302,7 +299,7 @@ addtty(ttyname)
 	}
 	cur->next = ttylist;
 	cur->logout = currentout;
-	bcopy(ttyname, cur->tty, LMAX);
+	bcopy(ttyname, cur->tty, UT_LINESIZE);
 	return(ttylist = cur);
 }
 
