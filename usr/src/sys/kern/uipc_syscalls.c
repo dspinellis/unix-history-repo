@@ -2,7 +2,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_syscalls.c	7.24 (Berkeley) %G%
+ *	@(#)uipc_syscalls.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -22,6 +22,9 @@
 /*
  * System call interface to the socket abstraction.
  */
+#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
+#define COMPAT_OLDSOCK
+#endif
 
 extern	struct fileops socketops;
 
@@ -94,7 +97,7 @@ listen(p, uap, retval)
 	return (solisten((struct socket *)fp->f_data, uap->backlog));
 }
 
-#ifdef COMPAT_43
+#ifdef COMPAT_OLDSOCK
 accept(p, uap, retval)
 	struct proc *p;
 	struct args {
@@ -124,7 +127,7 @@ oaccept(p, uap, retval)
 	uap->compat_43 = 1;
 	return (accept1(p, uap, retval));
 }
-#else /* COMPAT_43 */
+#else /* COMPAT_OLDSOCK */
 
 #define	accept1	accept
 #endif
@@ -135,7 +138,7 @@ accept1(p, uap, retval)
 		int	s;
 		caddr_t	name;
 		int	*anamelen;
-#ifdef COMPAT_43
+#ifdef COMPAT_OLDSOCK
 		int	compat_43;
 #endif
 	} *uap;
@@ -194,7 +197,7 @@ accept1(p, uap, retval)
 	nam = m_get(M_WAIT, MT_SONAME);
 	(void) soaccept(so, nam);
 	if (uap->name) {
-#ifdef COMPAT_43
+#ifdef COMPAT_OLDSOCK
 		if (uap->compat_43)
 			mtod(nam, struct osockaddr *)->sa_family =
 			    mtod(nam, struct sockaddr *)->sa_family;
@@ -339,7 +342,7 @@ sendto(p, uap, retval)
 	msg.msg_iov = &aiov;
 	msg.msg_iovlen = 1;
 	msg.msg_control = 0;
-#ifdef COMPAT_43
+#ifdef COMPAT_OLDSOCK
 	msg.msg_flags = 0;
 #endif
 	aiov.iov_base = uap->buf;
@@ -347,7 +350,7 @@ sendto(p, uap, retval)
 	return (sendit(p, uap->s, &msg, uap->flags, retval));
 }
 
-#ifdef COMPAT_43
+#ifdef COMPAT_OLDSOCK
 osend(p, uap, retval)
 	struct proc *p;
 	register struct args {
@@ -437,7 +440,7 @@ sendmsg(p, uap, retval)
 	    (unsigned)(msg.msg_iovlen * sizeof (struct iovec)))))
 		goto done;
 	msg.msg_iov = iov;
-#ifdef COMPAT_43
+#ifdef COMPAT_OLDSOCK
 	msg.msg_flags = 0;
 #endif
 	error = sendit(p, uap->s, &msg, uap->flags, retval);
@@ -487,7 +490,7 @@ sendit(p, s, mp, flags, retsize)
 		to = 0;
 	if (mp->msg_control) {
 		if (mp->msg_controllen < sizeof(struct cmsghdr)
-#ifdef COMPAT_43
+#ifdef COMPAT_OLDSOCK
 		    && mp->msg_flags != MSG_COMPAT
 #endif
 		) {
@@ -497,7 +500,7 @@ sendit(p, s, mp, flags, retsize)
 		if (error = sockargs(&control, mp->msg_control,
 		    mp->msg_controllen, MT_CONTROL))
 			goto bad;
-#ifdef COMPAT_43
+#ifdef COMPAT_OLDSOCK
 		if (mp->msg_flags == MSG_COMPAT) {
 			register struct cmsghdr *cm;
 
@@ -548,7 +551,7 @@ bad:
 	return (error);
 }
 
-#ifdef COMPAT_43
+#ifdef COMPAT_OLDSOCK
 orecvfrom(p, uap, retval)
 	struct proc *p;
 	struct args {
@@ -599,7 +602,7 @@ recvfrom(p, uap, retval)
 	return (recvit(p, uap->s, &msg, (caddr_t)uap->fromlenaddr, retval));
 }
 
-#ifdef COMPAT_43
+#ifdef COMPAT_OLDSOCK
 orecv(p, uap, retval)
 	struct proc *p;
 	register struct args {
@@ -693,7 +696,7 @@ recvmsg(p, uap, retval)
 		       M_WAITOK);
 	} else
 		iov = aiov;
-#ifdef COMPAT_43
+#ifdef COMPAT_OLDSOCK
 	msg.msg_flags = uap->flags &~ MSG_COMPAT;
 #else
 	msg.msg_flags = uap->flags;
@@ -777,7 +780,7 @@ recvit(p, s, mp, namelenp, retsize)
 		if (len <= 0 || from == 0)
 			len = 0;
 		else {
-#ifdef COMPAT_43
+#ifdef COMPAT_OLDSOCK
 			if (mp->msg_flags & MSG_COMPAT)
 				mtod(from, struct osockaddr *)->sa_family =
 				    mtod(from, struct sockaddr *)->sa_family;
@@ -792,7 +795,7 @@ recvit(p, s, mp, namelenp, retsize)
 		mp->msg_namelen = len;
 		if (namelenp &&
 		    (error = copyout((caddr_t)&len, namelenp, sizeof (int)))) {
-#ifdef COMPAT_43
+#ifdef COMPAT_OLDSOCK
 			if (mp->msg_flags & MSG_COMPAT)
 				error = 0;	/* old recvfrom didn't check */
 			else
@@ -801,7 +804,7 @@ recvit(p, s, mp, namelenp, retsize)
 		}
 	}
 	if (mp->msg_control) {
-#ifdef	COMPAT_43
+#ifdef COMPAT_OLDSOCK
 		/*
 		 * We assume that old recvmsg calls won't receive access
 		 * rights and other control info, esp. as control info
@@ -980,7 +983,7 @@ free1:
 /*
  * Get socket name.
  */
-#ifdef COMPAT_43
+#ifdef COMPAT_OLDSOCK
 getsockname(p, uap, retval)
 	struct proc *p;
 	struct args {
@@ -1010,7 +1013,7 @@ ogetsockname(p, uap, retval)
 	uap->compat_43 = 1;
 	return (getsockname1(p, uap, retval));
 }
-#else /* COMPAT_43 */
+#else /* COMPAT_OLDSOCK */
 
 #define	getsockname1	getsockname
 #endif
@@ -1022,7 +1025,7 @@ getsockname1(p, uap, retval)
 		int	fdes;
 		caddr_t	asa;
 		int	*alen;
-#ifdef COMPAT_43
+#ifdef COMPAT_OLDSOCK
 		int	compat_43;
 #endif
 	} *uap;
@@ -1045,7 +1048,7 @@ getsockname1(p, uap, retval)
 		goto bad;
 	if (len > m->m_len)
 		len = m->m_len;
-#ifdef COMPAT_43
+#ifdef COMPAT_OLDSOCK
 	if (uap->compat_43)
 		mtod(m, struct osockaddr *)->sa_family =
 		    mtod(m, struct sockaddr *)->sa_family;
@@ -1062,7 +1065,7 @@ bad:
 /*
  * Get name of peer for connected socket.
  */
-#ifdef COMPAT_43
+#ifdef COMPAT_OLDSOCK
 getpeername(p, uap, retval)
 	struct proc *p;
 	struct args {
@@ -1092,7 +1095,7 @@ ogetpeername(p, uap, retval)
 	uap->compat_43 = 1;
 	return (getpeername1(p, uap, retval));
 }
-#else /* COMPAT_43 */
+#else /* COMPAT_OLDSOCK */
 
 #define	getpeername1	getpeername
 #endif
@@ -1104,7 +1107,7 @@ getpeername1(p, uap, retval)
 		int	fdes;
 		caddr_t	asa;
 		int	*alen;
-#ifdef COMPAT_43
+#ifdef COMPAT_OLDSOCK
 		int	compat_43;
 #endif
 	} *uap;
@@ -1129,7 +1132,7 @@ getpeername1(p, uap, retval)
 		goto bad;
 	if (len > m->m_len)
 		len = m->m_len;
-#ifdef COMPAT_43
+#ifdef COMPAT_OLDSOCK
 	if (uap->compat_43)
 		mtod(m, struct osockaddr *)->sa_family =
 		    mtod(m, struct sockaddr *)->sa_family;
@@ -1151,7 +1154,7 @@ sockargs(mp, buf, buflen, type)
 	int error;
 
 	if ((u_int)buflen > MLEN) {
-#ifdef COMPAT_43
+#ifdef COMPAT_OLDSOCK
 		if (type == MT_SONAME && (u_int)buflen <= 112)
 			buflen = MLEN;		/* unix domain compat. hack */
 		else
@@ -1170,7 +1173,7 @@ sockargs(mp, buf, buflen, type)
 	if (type == MT_SONAME) {
 		register struct sockaddr *sa = mtod(m, struct sockaddr *);
 
-#if defined(COMPAT_43) && BYTE_ORDER != BIG_ENDIAN
+#if defined(COMPAT_OLDSOCK) && BYTE_ORDER != BIG_ENDIAN
 		if (sa->sa_family == 0 && sa->sa_len < AF_MAX)
 			sa->sa_family = sa->sa_len;
 #endif
