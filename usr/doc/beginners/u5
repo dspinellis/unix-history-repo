@@ -1,0 +1,177 @@
+.SH
+V.  UNIX READING LIST
+.SH
+General:
+.LP
+K. L. Thompson and D. M. Ritchie,
+.IT The
+.ul
+.UC UNIX
+.ul
+Programmer's Manual,
+Bell Laboratories, 1978.
+Lists commands,
+system routines and interfaces, file formats,
+and some of the maintenance procedures.
+You can't live without this,
+although you will probably only need to read section 1.
+.LP
+.ul
+Documents for Use with the
+.ul
+.UC UNIX
+.ul
+Time-sharing System.
+Volume 2 of the Programmer's Manual.
+This contains more extensive descriptions
+of major commands,
+and tutorials and reference manuals.
+All of the papers listed below are in it,
+as are descriptions of most of the programs
+mentioned above.
+.LP
+D. M. Ritchie and K. L. Thompson,
+``The
+.UC UNIX
+Time-sharing System,''
+CACM, July 1974.
+An overview of the system,
+for people interested in operating systems.
+Worth reading by anyone who programs.
+Contains a remarkable number of one-sentence observations
+on how to do things right.
+.LP
+The Bell System Technical Journal
+(BSTJ)
+Special Issue on 
+.UC UNIX ,
+July/August, 1978,
+contains many papers describing recent developments,
+and some retrospective material.
+.LP
+The 2nd International Conference on Software Engineering
+(October, 1976)
+contains several 
+papers describing the use of the
+Programmer's Workbench
+.UC PWB ) (
+version of
+.UC UNIX .
+.SH
+Document Preparation:
+.LP
+B. W. Kernighan,
+``A Tutorial Introduction to the
+.UC UNIX
+Text Editor''
+and
+``Advanced Editing on
+.UC UNIX ,''
+Bell Laboratories, 1978.
+Beginners need the introduction;
+the advanced material will help you get the most
+out of the editor.
+.LP
+M. E. Lesk,
+``Typing Documents on
+.UC UNIX ,''
+Bell Laboratories, 1978.
+Describes the
+.UL \-ms
+macro package, which isolates the novice
+from the vagaries of
+.UL nroff
+and
+.UL troff ,
+and takes care of most formatting situations.
+If this specific package isn't available on your system,
+something similar probably is.
+The most likely alternative is the
+.UC PWB/UNIX
+macro package
+.UL \-mm ;
+see your local guru if you use
+.UC PWB/UNIX .
+.LP
+B. W. Kernighan and L. L. Cherry,
+``A System for Typesetting Mathematics,''
+Bell Laboratories Computing Science Tech. Rep. 17.
+.LP
+M. E. Lesk,
+``Tbl \(em A Program to Format Tables,''
+Bell Laboratories CSTR 49, 1976.
+.LP
+J. F. Ossanna, Jr.,
+``NROFF/TROFF User's Manual,''
+Bell Laboratories CSTR 54, 1976.
+.UL troff
+is the basic formatter used by
+.UL \-ms ,
+.UL eqn
+and
+.UL tbl .
+The reference manual is indispensable
+if you are going to write or maintain these
+or similar programs.
+But start with:
+.LP
+B. W. Kernighan,
+``A TROFF Tutorial,''
+Bell Laboratories, 1976.
+An attempt to unravel the intricacies of
+.UL troff .
+.SH
+Programming:
+.LP
+B. W. Kernighan and D. M. Ritchie,
+.ul
+The C Programming Language,
+Prentice-Hall, 1978.
+Contains a tutorial introduction,
+complete discussions of all language features,
+and the reference manual.
+.LP
+B. W. Kernighan and D. M. Ritchie,
+.UC UNIX \& ``
+Programming,''
+Bell Laboratories, 1978.
+Describes how to interface with the system from C programs:
+I/O calls, signals, processes.
+.LP
+S. R. Bourne,
+``An Introduction to the
+.UC UNIX
+Shell,''
+Bell Laboratories, 1978.
+An introduction and reference manual for the Version 7 shell.
+Mandatory reading if you intend to make effective use
+of the programming power
+of this shell.
+.LP
+S. C. Johnson,
+``Yacc \(em Yet Another Compiler-Compiler,''
+Bell Laboratories CSTR 32, 1978.
+.LP
+M. E. Lesk,
+``Lex \(em A Lexical Analyzer Generator,''
+Bell Laboratories CSTR 39, 1975.
+.LP
+S. C. Johnson,
+``Lint, a C Program Checker,''
+Bell Laboratories CSTR 65, 1977.
+.LP
+S. I. Feldman,
+``MAKE \(em A Program for Maintaining Computer Programs,''
+Bell Laboratories CSTR 57, 1977.
+.LP
+J. F. Maranzano and S. R. Bourne,
+``A Tutorial Introduction to ADB,''
+Bell Laboratories CSTR 62, 1977.
+An introduction to a powerful but complex debugging tool.
+.LP
+S. I. Feldman and P. J. Weinberger,
+``A Portable Fortran 77 Compiler,''
+Bell Laboratories, 1978.
+A full Fortran 77 for
+.UC UNIX
+systems.

@@ -1,0 +1,22 @@
+.SH
+Acknowledgement
+.PP
+I am grateful to Ted Dolotta
+for his careful reading and valuable suggestions.
+.SH
+References
+.IP [1]
+Brian W. Kernighan,
+.ul
+A Tutorial Introduction to the UNIX Text Editor,
+Bell Laboratories internal memorandum.
+.IP [2]
+Brian W. Kernighan,
+.ul
+UNIX For Beginners,
+Bell Laboratories internal memorandum.
+.IP [3]
+Ken L. Thompson and Dennis M. Ritchie,
+.ul
+The UNIX Programmer's Manual.
+Bell Laboratories.
