@@ -2,11 +2,37 @@
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.
  *
- * %sccs.include.redist.c%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recvjob.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)recvjob.c	5.18 (Berkeley) 8/6/92";
 #endif /* not lint */
 
 /*
@@ -17,51 +43,56 @@ static char sccsid[] = "@(#)recvjob.c	5.17 (Berkeley) %G%";
 #include <sys/mount.h>
 #include <sys/stat.h>
 
+#include <unistd.h>
 #include <signal.h>
 #include <fcntl.h>
 #include <dirent.h>
 #include <syslog.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "lp.h"
 #include "lp.local.h"
 #include "extern.h"
 #include "pathnames.h"
 
-char	*sp = "";
 #define ack()	(void) write(1, sp, 1);
 
-char    tfname[40];		/* tmp copy of cf before linking */
-char    dfname[40];		/* data files */
-int	minfree;		/* keep at least minfree blocks available */
+static char	 dfname[40];	/* data files */
+static int	 minfree;       /* keep at least minfree blocks available */
+static char	*sp = "";
+static char	 tfname[40];	/* tmp copy of cf before linking */
 
-static int        readjob __P((void));
-static int        readfile __P((char *, int));
-static int        noresponse __P((void));
 static int        chksize __P((int));
 static void       frecverr __P((const char *, ...));
-static int        read_number __P((char *));
+static int        noresponse __P((void));
 static void       rcleanup __P((int));
+static int        read_number __P((char *));
+static int        readfile __P((char *, int));
+static int        readjob __P((void));
 
 
-int
+void
 recvjob()
 {
 	struct stat stb;
-	char *bp = pbuf;
 	int status;
 
 	/*
 	 * Perform lookup for printer name or abbreviation
 	 */
-	if ((status = pgetent(line, printer)) < 0)
+	if ((status = cgetent(&bp, printcapdb, printer)) == -2)
 		frecverr("cannot open printer description file");
-	else if (status == 0)
+	else if (status == -1)
 		frecverr("unknown printer %s", printer);
-	if ((LF = pgetstr("lf", &bp)) == NULL)
+	else if (status == -3)
+		fatal("potential reference loop detected in printcap file");
+	
+	if (cgetstr(bp, "lf", &LF) == -1)
 		LF = _PATH_CONSOLE;
-	if ((SD = pgetstr("sd", &bp)) == NULL)
+	if (cgetstr(bp, "sd", &SD) == -1)
 		SD = _PATH_DEFSPOOL;
-	if ((LO = pgetstr("lo", &bp)) == NULL)
+	if (cgetstr(bp, "lo", &LO) == -1)
 		LO = DEFLOCK;
 
 	(void) close(2);			/* set up log file */

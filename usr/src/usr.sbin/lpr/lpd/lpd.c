@@ -2,7 +2,33 @@
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.
  *
- * %sccs.include.redist.c%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
 
 #ifndef lint
@@ -12,7 +38,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpd.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpd.c	5.16 (Berkeley) 8/6/92";
 #endif /* not lint */
 
 /*
@@ -46,18 +72,23 @@ static char sccsid[] = "@(#)lpd.c	5.15 (Berkeley) %G%";
 
 #include <sys/param.h>
 #include <sys/wait.h>
-
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/stat.h>
 #include <netinet/in.h>
-#include <netdb.h>
 
+#include <netdb.h>
+#include <unistd.h>
 #include <syslog.h>
 #include <signal.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <dirent.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
 #include "lp.h"
 #include "lp.local.h"
 #include "pathnames.h"
@@ -77,11 +108,13 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	int f, funix, finet, options = 0, defreadfds, fromlen;
+	int f, funix, finet, options, fromlen;
+	fd_set defreadfds;
 	struct sockaddr_un un, fromunix;
 	struct sockaddr_in sin, frominet;
 	int omask, lfd;
 
+	options = 0;
 	gethostname(host, sizeof(host));
 	name = argv[0];
 
@@ -153,7 +186,8 @@ main(argc, argv)
 		exit(1);
 	}
 	sigsetmask(omask);
-	defreadfds = 1 << funix;
+	FD_ZERO(&defreadfds);
+	FD_SET(funix, &defreadfds);
 	listen(funix, 5);
 	finet = socket(AF_INET, SOCK_STREAM, 0);
 	if (finet >= 0) {
@@ -175,26 +209,28 @@ main(argc, argv)
 			syslog(LOG_ERR, "bind: %m");
 			mcleanup(0);
 		}
-		defreadfds |= 1 << finet;
+		FD_SET(finet, &defreadfds);	
 		listen(finet, 5);
 	}
 	/*
 	 * Main loop: accept, do a request, continue.
 	 */
 	for (;;) {
-		int domain, nfds, s, readfds = defreadfds;
+		int domain, nfds, s;
+		fd_set readfds;
 
+		FD_COPY(&defreadfds, &readfds);
 		nfds = select(20, &readfds, 0, 0, 0);
 		if (nfds <= 0) {
 			if (nfds < 0 && errno != EINTR)
 				syslog(LOG_WARNING, "select: %m");
 			continue;
 		}
-		if (readfds & (1 << funix)) {
+		if (FD_ISSET(funix, &readfds)) {
 			domain = AF_UNIX, fromlen = sizeof(fromunix);
 			s = accept(funix,
 			    (struct sockaddr *)&fromunix, &fromlen);
-		} else if (readfds & (1 << finet)) {
+		} else /* if (FD_ISSET(finet, &readfds)) */  {
 			domain = AF_INET, fromlen = sizeof(frominet);
 			s = accept(finet,
 			    (struct sockaddr *)&frominet, &fromlen);
@@ -377,16 +413,15 @@ doit()
 static void
 startup()
 {
-	char buf[BUFSIZ];
+	char *buf;
 	register char *cp;
 	int pid;
-
-	printer = buf;
 
 	/*
 	 * Restart the daemons.
 	 */
-	while (getprent(buf) > 0) {
+	while (cgetnext(&buf, printcapdb) > 0) {
+		printer = buf;
 		for (cp = buf; *cp; cp++)
 			if (*cp == '|' || *cp == ':') {
 				*cp = '\0';
@@ -397,7 +432,7 @@ startup()
 			mcleanup(0);
 		}
 		if (!pid) {
-			endprent();
+			cgetclose();
 			printjob();
 		}
 	}
@@ -414,7 +449,6 @@ chkhost(f)
 {
 	register struct hostent *hp;
 	register FILE *hostf;
-	register char *cp, *sp;
 	int first = 1;
 	extern char *inet_ntoa();
 
