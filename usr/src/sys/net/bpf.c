@@ -89,13 +89,6 @@ static void	catchpacket();
 static int	bpf_setif();
 static int	bpf_initd();
 
-/*
- * The default filter accepts the maximum number of bytes from each packet.
- */
-struct bpf_insn bpf_default_filter[] = {
-	BPF_STMT(RetOp, -1),
-};
-
 static int
 bpf_movein(uio, linktype, mp, sockp)
 	register struct uio *uio;
@@ -274,7 +267,6 @@ bpfopen(dev, flag)
 	} else
 		/* Mark "free" and do most initialization. */
 		bzero((char *)d, sizeof(*d));
-	d->bd_filter = bpf_default_filter;
 	splx(s);
 
 	error = bpf_initd(d);
@@ -308,8 +300,7 @@ bpfclose(dev, flag)
 	if (d->bd_fbuf)
 		free(d->bd_fbuf, M_DEVBUF);
 	free(d->bd_sbuf, M_DEVBUF);
-
-	if (d->bd_filter != bpf_default_filter)
+	if (d->bd_filter)
 		free((caddr_t)d->bd_filter, M_DEVBUF);
 	
 	D_MARKFREE(d);
@@ -687,11 +678,11 @@ bpf_setf(d, fp)
 	if (fp->bf_insns == 0) {
 		if (fp->bf_len != 0)
 			return (EINVAL);
-		d->bd_filter = bpf_default_filter;
 		s = splimp();
+		d->bd_filter = 0;
 		reset_d(d);
 		splx(s);
-		if (old != bpf_default_filter)
+		if (old != 0)
 			free((caddr_t)old, M_DEVBUF);
 		return (0);
 	}
@@ -705,11 +696,11 @@ bpf_setf(d, fp)
 		return (EINVAL);
 	
 	if (bpf_validate(fcode, (int)flen)) {
-		d->bd_filter = fcode;
 		s = splimp();
+		d->bd_filter = fcode;
 		reset_d(d);
 		splx(s);
-		if (old != bpf_default_filter)
+		if (old != 0)
 			free((caddr_t)old, M_DEVBUF);
 
 		return (0);
@@ -872,7 +863,11 @@ bpf_tap(arg, pkt, pktlen)
 	bp = (struct bpf_if *)arg;
 	for (d = bp->bif_dlist; d != 0; d = d->bd_next) {
 		++d->bd_rcount;
-		slen = bpf_filter(d->bd_filter, pkt, pktlen, pktlen);
+		if (d->bd_filter) 
+			slen = bpf_filter(d->bd_filter, pkt, pktlen, pktlen);
+		else 
+			slen = (u_int)-1;
+
 		if (slen != 0)
 			catchpacket(d, pkt, pktlen, slen, (void (*)())bcopy);
 	}
@@ -954,7 +949,10 @@ bpf_mtap(arg, m0)
 	}
 	for (d = bp->bif_dlist; d != 0; d = d->bd_next) {
 		++d->bd_rcount;
-		slen = bpf_filter(d->bd_filter, cp, pktlen, slen);
+		if (d->bd_filter)
+			slen = bpf_filter(d->bd_filter, cp, pktlen, slen);
+		else
+			slen = (u_int)-1;
 		if (slen != 0)
 			catchpacket(d, (u_char *)m0, pktlen, slen,
 				    bpf_m_copydata);
@@ -1112,7 +1110,7 @@ bpfattach(driverp, ifp, devp)
 	printf("bpf: %s%d attached\n", ifp->if_name, ifp->if_unit);
 }
 
-/* XXX This routine goes in net/if.c. */
+/* XXX This routine belongs in net/if.c. */
 /*
  * Set/clear promiscuous mode on interface ifp based on the truth value`
  * of pswitch.  The calls are reference counted so that only the first
