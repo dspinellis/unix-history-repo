@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)logger.c	6.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)logger.c	6.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -44,7 +44,7 @@ main(argc, argv)
 	extern int optind;
 	int pri = LOG_NOTICE;
 	int ch, logflags = 0;
-	char *tag, buf[200], *getlogin();
+	char *tag, buf[1024], *getlogin();
 
 	tag = NULL;
 	while ((ch = getopt(argc, argv, "f:ip:t:")) != EOF)
@@ -81,30 +81,23 @@ main(argc, argv)
 		register char *p, *endp;
 		int len;
 
-		for (p = buf, endp = buf + sizeof(buf) - 1;;) {
+		for (p = buf, endp = buf + sizeof(buf) - 2; *argv;) {
 			len = strlen(*argv);
-			if (p + len < endp && p > buf) {
-				*--p = '\0';
+			if (p + len > endp && p > buf) {
 				syslog(pri, "%s", buf);
 				p = buf;
 			}
-			if (len > sizeof(buf) - 1) {
+			if (len > sizeof(buf) - 1)
 				syslog(pri, "%s", *argv++);
-				if (!--argc)
-					break;
-			} else {
+			else {
+				if (p != buf)
+					*p++ = ' ';
 				bcopy(*argv++, p, len);
-				p += len;
-				if (!--argc)
-					break;
-				*p++ = ' ';
-				*--p = '\0';
+				*(p += len) = '\0';
 			}
 		}
-		if (p != buf) {
-			*p = '\0';
+		if (p != buf)
 			syslog(pri, "%s", buf);
-		}
 		exit(0);
 	}
 
