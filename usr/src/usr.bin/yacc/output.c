@@ -44,6 +44,7 @@ output()
     free_parser();
     output_debug();
     output_stype();
+    if (rflag) write_section(tables);
     write_section(header);
     output_trailing_text();
     write_section(body);
@@ -66,7 +67,7 @@ output_rule_data()
     {
 	if (j >= 10)
 	{
-	    ++outline;
+	    if (!rflag) ++outline;
 	    putc('\n', output_file);
 	    j = 1;
 	}
@@ -75,7 +76,7 @@ output_rule_data()
 
         fprintf(output_file, "%5d,", symbol_value[rlhs[i]]);
     }
-    outline += 2;
+    if (!rflag) outline += 2;
     fprintf(output_file, "\n};\n");
 
     fprintf(output_file, "short yylen[] = {%42d,", 2);
@@ -85,7 +86,7 @@ output_rule_data()
     {
 	if (j >= 10)
 	{
-	    ++outline;
+	    if (!rflag) ++outline;
 	    putc('\n', output_file);
 	    j = 1;
 	}
@@ -94,7 +95,7 @@ output_rule_data()
 
         fprintf(output_file, "%5d,", rrhs[i + 1] - rrhs[i] - 1);
     }
-    outline += 2;
+    if (!rflag) outline += 2;
     fprintf(output_file, "\n};\n");
 }
 
@@ -113,7 +114,7 @@ output_yydefred()
 	    ++j;
 	else
 	{
-	    ++outline;
+	    if (!rflag) ++outline;
 	    putc('\n', output_file);
 	    j = 1;
 	}
@@ -121,7 +122,7 @@ output_yydefred()
 	fprintf(output_file, "%5d,", (defred[i] ? defred[i] - 2 : 0));
     }
 
-    outline += 2;
+    if (!rflag) outline += 2;
     fprintf(output_file, "\n};\n");
 }
 
@@ -253,7 +254,7 @@ goto_actions()
     {
 	if (j >= 10)
 	{
-	    ++outline;
+	    if (!rflag) ++outline;
 	    putc('\n', output_file);
 	    j = 1;
 	}
@@ -265,7 +266,7 @@ goto_actions()
 	save_column(i, k);
     }
 
-    outline += 2;
+    if (!rflag) outline += 2;
     fprintf(output_file, "\n};\n");
     FREE(state_count);
 }
@@ -525,9 +526,9 @@ int vector;
 
 		newmax = maxtable;
 		do { newmax += 200; } while (newmax <= loc);
-		table = (short *) realloc(table, newmax*sizeof(short));
+		table = (short *) REALLOC(table, newmax*sizeof(short));
 		if (table == 0) no_space();
-		check = (short *) realloc(check, newmax*sizeof(short));
+		check = (short *) REALLOC(check, newmax*sizeof(short));
 		if (check == 0) no_space();
 		for (l  = maxtable; l < newmax; ++l)
 		{
@@ -576,7 +577,7 @@ output_base()
     {
 	if (j >= 10)
 	{
-	    ++outline;
+	    if (!rflag) ++outline;
 	    putc('\n', output_file);
 	    j = 1;
 	}
@@ -586,7 +587,7 @@ output_base()
 	fprintf(output_file, "%5d,", base[i]);
     }
 
-    outline += 2;
+    if (!rflag) outline += 2;
     fprintf(output_file, "\n};\nshort yyrindex[] = {%39d,",
 	    base[nstates]);
 
@@ -595,7 +596,7 @@ output_base()
     {
 	if (j >= 10)
 	{
-	    ++outline;
+	    if (!rflag) ++outline;
 	    putc('\n', output_file);
 	    j = 1;
 	}
@@ -605,7 +606,7 @@ output_base()
 	fprintf(output_file, "%5d,", base[i]);
     }
 
-    outline += 2;
+    if (!rflag) outline += 2;
     fprintf(output_file, "\n};\nshort yygindex[] = {%39d,",
 	    base[2*nstates]);
 
@@ -614,7 +615,7 @@ output_base()
     {
 	if (j >= 10)
 	{
-	    ++outline;
+	    if (!rflag) ++outline;
 	    putc('\n', output_file);
 	    j = 1;
 	}
@@ -624,7 +625,7 @@ output_base()
 	fprintf(output_file, "%5d,", base[i]);
     }
 
-    outline += 2;
+    if (!rflag) outline += 2;
     fprintf(output_file, "\n};\n");
     FREE(base);
 }
@@ -637,7 +638,7 @@ output_table()
     register int j;
 
     ++outline;
-    fprintf(output_file, "#define YYTABLESIZE %d\n", high);
+    fprintf(code_file, "#define YYTABLESIZE %d\n", high);
     fprintf(output_file, "short yytable[] = {%40d,", table[0]);
 
     j = 10;
@@ -645,7 +646,7 @@ output_table()
     {
 	if (j >= 10)
 	{
-	    ++outline;
+	    if (!rflag) ++outline;
 	    putc('\n', output_file);
 	    j = 1;
 	}
@@ -655,7 +656,7 @@ output_table()
 	fprintf(output_file, "%5d,", table[i]);
     }
 
-    outline += 2;
+    if (!rflag) outline += 2;
     fprintf(output_file, "\n};\n");
     FREE(table);
 }
@@ -674,7 +675,7 @@ output_check()
     {
 	if (j >= 10)
 	{
-	    ++outline;
+	    if (!rflag) ++outline;
 	    putc('\n', output_file);
 	    j = 1;
 	}
@@ -684,7 +685,7 @@ output_check()
 	fprintf(output_file, "%5d,", check[i]);
     }
 
-    outline += 2;
+    if (!rflag) outline += 2;
     fprintf(output_file, "\n};\n");
     FREE(check);
 }
@@ -733,14 +734,14 @@ output_defines()
 	s = symbol_name[i];
 	if (is_C_identifier(s))
 	{
-	    fprintf(output_file, "#define ");
+	    fprintf(code_file, "#define ");
 	    if (dflag) fprintf(defines_file, "#define ");
 	    c = *s;
 	    if (c == '"')
 	    {
 		while ((c = *++s) != '"')
 		{
-		    putc(c, output_file);
+		    putc(c, code_file);
 		    if (dflag) putc(c, defines_file);
 		}
 	    }
@@ -748,19 +749,19 @@ output_defines()
 	    {
 		do
 		{
-		    putc(c, output_file);
+		    putc(c, code_file);
 		    if (dflag) putc(c, defines_file);
 		}
 		while (c = *++s);
 	    }
 	    ++outline;
-	    fprintf(output_file, " %d\n", symbol_value[i]);
+	    fprintf(code_file, " %d\n", symbol_value[i]);
 	    if (dflag) fprintf(defines_file, " %d\n", symbol_value[i]);
 	}
     }
 
     ++outline;
-    fprintf(output_file, "#define YYERRCODE %d\n", symbol_value[1]);
+    fprintf(code_file, "#define YYERRCODE %d\n", symbol_value[1]);
 
     if (dflag && unionized)
     {
@@ -781,23 +782,23 @@ output_stored_text()
 
     fclose(text_file);
     text_file = fopen(text_file_name, "r");
-    if (text_file == NULL) open_error(text_file_name);
+    if (text_file == NULL)
+	open_error(text_file_name);
     in = text_file;
-    out = output_file;
     if ((c = getc(in)) == EOF)
 	return;
-    if (c == '\n') ++outline;
+    out = code_file;
+    if (c ==  '\n')
+	++outline;
     putc(c, out);
     while ((c = getc(in)) != EOF)
     {
-	if (c == '\n') ++outline;
+	if (c == '\n')
+	    ++outline;
 	putc(c, out);
     }
     if (!lflag)
-    {
-	++outline;
-	fprintf(out, line_format, outline + 1, output_file_name);
-    }
+	fprintf(out, line_format, ++outline + 1, code_file_name);
 }
 
 
@@ -807,27 +808,33 @@ output_debug()
     char **symnam, *s;
 
     ++outline;
-    fprintf(output_file, "#define YYFINAL %d\n", final_state);
+    fprintf(code_file, "#define YYFINAL %d\n", final_state);
     outline += 3;
-    fprintf(output_file, "#ifndef YYDEBUG\n#define YYDEBUG %d\n#endif\n",
+    fprintf(code_file, "#ifndef YYDEBUG\n#define YYDEBUG %d\n#endif\n",
 	    tflag);
+    if (rflag)
+	fprintf(output_file, "#ifndef YYDEBUG\n#define YYDEBUG %d\n#endif\n",
+		tflag);
 
     max = 0;
     for (i = 2; i < ntokens; ++i)
 	if (symbol_value[i] > max)
 	    max = symbol_value[i];
     ++outline;
-    fprintf(output_file, "#define YYMAXTOKEN %d\n", max);
+    fprintf(code_file, "#define YYMAXTOKEN %d\n", max);
 
     symnam = (char **) MALLOC((max+1)*sizeof(char *));
     if (symnam == 0) no_space();
+
+    /* Note that it is  not necessary to initialize the element		*/
+    /* symnam[max].							*/
     for (i = 0; i < max; ++i)
 	symnam[i] = 0;
     for (i = ntokens - 1; i >= 2; --i)
 	symnam[symbol_value[i]] = symbol_name[i];
     symnam[0] = "end-of-file";
 
-    ++outline;
+    if (!rflag) ++outline;
     fprintf(output_file, "#if YYDEBUG\nchar *yyname[] = {");
     j = 80;
     for (i = 0; i <= max; ++i)
@@ -839,21 +846,18 @@ output_debug()
 		k = 7;
 		while (*++s != '"')
 		{
+		    ++k;
 		    if (*s == '\\')
 		    {
 			k += 2;
 			if (*++s == '\\')
-			    k += 2;
-			else
 			    ++k;
 		    }
-		    else
-			++k;
 		}
 		j += k;
 		if (j > 80)
 		{
-		    ++outline;
+		    if (!rflag) ++outline;
 		    putc('\n', output_file);
 		    j = k;
 		}
@@ -881,7 +885,7 @@ output_debug()
 		    j += 7;
 		    if (j > 80)
 		    {
-			++outline;
+			if (!rflag) ++outline;
 			putc('\n', output_file);
 			j = 7;
 		    }
@@ -892,22 +896,18 @@ output_debug()
 		    k = 5;
 		    while (*++s != '\'')
 		    {
+			++k;
 			if (*s == '\\')
 			{
 			    k += 2;
-			    ++s;
 			    if (*++s == '\\')
-				k += 2;
-			    else
 				++k;
 			}
-			else
-			    ++k;
 		    }
 		    j += k;
 		    if (j > 80)
 		    {
-			++outline;
+			if (!rflag) ++outline;
 			putc('\n', output_file);
 			j = k;
 		    }
@@ -935,7 +935,7 @@ output_debug()
 		j += k;
 		if (j > 80)
 		{
-		    ++outline;
+		    if (!rflag) ++outline;
 		    putc('\n', output_file);
 		    j = k;
 		}
@@ -949,18 +949,18 @@ output_debug()
 	    j += 2;
 	    if (j > 80)
 	    {
-		++outline;
+		if (!rflag) ++outline;
 		putc('\n', output_file);
 		j = 2;
 	    }
 	    fprintf(output_file, "0,");
 	}
     }
-    outline += 2;
+    if (!rflag) outline += 2;
     fprintf(output_file, "\n};\n");
     FREE(symnam);
 
-    ++outline;
+    if (!rflag) ++outline;
     fprintf(output_file, "char *yyrule[] = {\n");
     for (i = 2; i < nrules; ++i)
     {
@@ -1007,11 +1007,11 @@ output_debug()
 	    else
 		fprintf(output_file, " %s", s);
 	}
-	++outline;
+	if (!rflag) ++outline;
 	fprintf(output_file, "\",\n");
     }
 
-    outline += 2;
+    if (!rflag) outline += 2;
     fprintf(output_file, "};\n#endif\n");
 }
 
@@ -1021,7 +1021,7 @@ output_stype()
     if (!unionized && ntags == 0)
     {
 	outline += 3;
-	fprintf(output_file, "#ifndef YYSTYPE\ntypedef int YYSTYPE;\n#endif\n");
+	fprintf(code_file, "#ifndef YYSTYPE\ntypedef int YYSTYPE;\n#endif\n");
     }
 }
 
@@ -1029,23 +1029,27 @@ output_stype()
 output_trailing_text()
 {
     register int c, last;
+    register FILE *in, *out;
 
     if (line == 0)
 	return;
 
+    in = input_file;
+    out = code_file;
     c = *cptr;
     if (c == '\n')
     {
 	++lineno;
-	if ((c = getc(input_file)) == EOF)
+	if ((c = getc(in)) == EOF)
 	    return;
 	if (!lflag)
 	{
 	    ++outline;
-	    fprintf(output_file, line_format, lineno, input_file_name);
+	    fprintf(out, line_format, lineno, input_file_name);
 	}
-	if (c == '\n') ++outline;
-	putc(c, output_file);
+	if (c == '\n')
+	    ++outline;
+	putc(c, out);
 	last = c;
     }
     else
@@ -1053,64 +1057,66 @@ output_trailing_text()
 	if (!lflag)
 	{
 	    ++outline;
-	    fprintf(output_file, line_format, lineno, input_file_name);
+	    fprintf(out, line_format, lineno, input_file_name);
 	}
-	do { putc(c, output_file); } while ((c = *++cptr) != '\n');
+	do { putc(c, out); } while ((c = *++cptr) != '\n');
 	++outline;
-	putc('\n', output_file);
+	putc('\n', out);
 	last = '\n';
     }
 
-    while ((c = getc(input_file)) != EOF)
+    while ((c = getc(in)) != EOF)
     {
-	if (c == '\n') ++outline;
-	putc(c, output_file);
+	if (c == '\n')
+	    ++outline;
+	putc(c, out);
 	last = c;
     }
 
     if (last != '\n')
     {
 	++outline;
-	putc('\n', output_file);
+	putc('\n', out);
     }
     if (!lflag)
-    {
-	++outline;
-	fprintf(output_file, line_format, outline + 1, output_file_name);
-    }
+	fprintf(out, line_format, ++outline + 1, code_file_name);
 }
 
 
 output_semantic_actions()
 {
     register int c, last;
+    register FILE *out;
 
     fclose(action_file);
     action_file = fopen(action_file_name, "r");
-    if (action_file == NULL) open_error(action_file_name);
+    if (action_file == NULL)
+	open_error(action_file_name);
 
     if ((c = getc(action_file)) == EOF)
 	return;
+
+    out = code_file;
     last = c;
-    if (c == '\n') ++outline;
-    putc(c, output_file);
+    if (c == '\n')
+	++outline;
+    putc(c, out);
     while ((c = getc(action_file)) != EOF)
     {
-	if (c == '\n') ++outline;
-	putc(c, output_file);
+	if (c == '\n')
+	    ++outline;
+	putc(c, out);
 	last = c;
     }
 
     if (last != '\n')
     {
 	++outline;
-	putc('\n', output_file);
+	putc('\n', out);
     }
+
     if (!lflag)
-    {
-	++outline;
-	fprintf(output_file, line_format, outline + 1, output_file_name);
-    }
+	fprintf(out, line_format, ++outline + 1, code_file_name);
 }
 
 
