@@ -1,4 +1,4 @@
-/*	in_pcb.c	6.4	84/11/14	*/
+/*	in_pcb.c	6.5	84/11/27	*/
 
 #include "param.h"
 #include "systm.h"
@@ -62,7 +62,7 @@ in_pcbbind(inp, nam)
 	}
 	lport = sin->sin_port;
 	if (lport) {
-		u_short aport = htons(lport);
+		u_short aport = ntohs(lport);
 		int wild = 0;
 
 		/* GROSS */
