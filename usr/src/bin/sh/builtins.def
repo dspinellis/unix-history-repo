@@ -8,7 +8,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)builtins.def	8.1 (Berkeley) %G%
+#	@(#)builtins.def	8.2 (Berkeley) %G%
 
 #
 # This file lists all the builtin commands.  The first column is the name
@@ -38,6 +38,7 @@ exitcmd		exit
 expcmd		exp let
 exportcmd	export readonly
 #exprcmd	expr test [
+falsecmd	false
 histcmd		fc
 fgcmd -j	fg
 getoptscmd	getopts

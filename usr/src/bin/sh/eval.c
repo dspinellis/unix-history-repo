@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)eval.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)eval.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -887,6 +887,11 @@ returncmd(argc, argv)  char **argv; {
 		skipcount = 1;
 	}
 	return ret;
+}
+
+
+falsecmd(argc, argv) char **argv; {
+	return 1;
 }
 
 
