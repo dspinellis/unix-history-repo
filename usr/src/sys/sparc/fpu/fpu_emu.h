@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fpu_emu.h	7.2 (Berkeley) %G%
+ *	@(#)fpu_emu.h	7.3 (Berkeley) %G%
  *
- * from: $Header: fpu_emu.h,v 1.2 92/06/17 05:41:31 torek Exp $
+ * from: $Header: fpu_emu.h,v 1.3 92/11/26 01:30:54 torek Exp $
  */
 
 /*
