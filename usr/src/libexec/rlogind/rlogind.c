@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.52 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.53 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -461,10 +461,10 @@ cleanup()
 	p = line + sizeof(_PATH_DEV) - 1;
 	if (logout(p))
 		logwtmp(p, "", "");
-	(void)chmod(line, DEFFILEMODE);
+	(void)chmod(line, 0666);
 	(void)chown(line, 0, 0);
 	*p = 'p';
-	(void)chmod(line, DEFFILEMODE);
+	(void)chmod(line, 0666);
 	(void)chown(line, 0, 0);
 	shutdown(netf, 2);
 	exit(1);
