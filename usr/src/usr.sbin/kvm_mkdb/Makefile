@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	kvm_mkdb
 SRCS=	kvm_mkdb.c nlist.c testdb.c
