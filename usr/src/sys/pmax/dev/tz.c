@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tz.c	7.7 (Berkeley) %G%
+ *	@(#)tz.c	7.8 (Berkeley) %G%
  *
  * from: $Header: /sprite/src/kernel/dev/RCS/devSCSITape.c,
  *	v 8.14 89/07/31 17:26:13 mendel Exp $ SPRITE (Berkeley)
@@ -104,8 +104,10 @@ tzprobe(sd)
 	sc->sc_buf.b_flags = B_BUSY | B_READ;
 	sc->sc_buf.b_bcount = sizeof(inqbuf);
 	sc->sc_buf.b_un.b_addr = (caddr_t)&inqbuf;
-	sc->sc_buf.av_forw = (struct buf *)0;
-	sc->sc_tab.b_actf = sc->sc_tab.b_actl = &sc->sc_buf;
+	sc->sc_buf.b_actf = (struct buf *)0;
+	sc->sc_buf.b_actb = &sc->sc_tab.b_actf;
+	sc->sc_tab.b_actf = &sc->sc_buf;
+	sc->sc_tab.b_actb = &sc->sc_buf.b_actf;
 	tzstart(sd->sd_unit);
 	if (biowait(&sc->sc_buf) ||
 	    (i = sizeof(inqbuf) - sc->sc_buf.b_resid) < 5)
@@ -120,8 +122,10 @@ tzprobe(sd)
 	sc->sc_buf.b_flags = B_BUSY | B_READ;
 	sc->sc_buf.b_bcount = 0;
 	sc->sc_buf.b_un.b_addr = (caddr_t)0;
-	sc->sc_buf.av_forw = (struct buf *)0;
-	sc->sc_tab.b_actf = sc->sc_tab.b_actl = &sc->sc_buf;
+	sc->sc_buf.b_actf = (struct buf *)0;
+	sc->sc_buf.b_actb = &sc->sc_tab.b_actf;
+	sc->sc_tab.b_actf = &sc->sc_buf;
+	sc->sc_tab.b_actb = &sc->sc_buf.b_actf;
 	tzstart(sd->sd_unit);
 	(void) biowait(&sc->sc_buf);
 
@@ -235,8 +239,10 @@ tzcommand(dev, command, code, count, data)
 	}
 	sc->sc_buf.b_bcount = data ? count : 0;
 	sc->sc_buf.b_un.b_addr = data;
-	sc->sc_buf.av_forw = (struct buf *)0;
-	sc->sc_tab.b_actf = sc->sc_tab.b_actl = &sc->sc_buf;
+	sc->sc_buf.b_actf = (struct buf *)0;
+	sc->sc_buf.b_actb = &sc->sc_tab.b_actf;
+	sc->sc_tab.b_actf = &sc->sc_buf;
+	sc->sc_tab.b_actb = &sc->sc_buf.b_actf;
 	tzstart(sc->sc_sd->sd_unit);
 	error = biowait(&sc->sc_buf);
 	sc->sc_flags &= ~TZF_ALTCMD;	/* force use of sc_cdb */
@@ -321,6 +327,7 @@ tzdone(unit, error, resid, status)
 {
 	register struct tz_softc *sc = &tz_softc[unit];
 	register struct buf *bp = sc->sc_tab.b_actf;
+	register struct buf *dp;
 	extern int cold;
 
 	if (bp == NULL) {
@@ -329,11 +336,13 @@ tzdone(unit, error, resid, status)
 	}
 	if (sc->sc_flags & TZF_SENSEINPROGRESS) {
 		sc->sc_flags &= ~TZF_SENSEINPROGRESS;
-		sc->sc_tab.b_actf = bp = bp->b_actf;	/* remove sc_errbuf */
+		*bp->b_actb = dp = bp->b_actf;	/* remove sc_errbuf */
 #ifdef DIAGNOSTIC
-		if (bp == 0)
+		if (!dp)
 			panic("tzdone");
 #endif
+		dp->b_actb = bp->b_actb;
+		bp = dp;
 
 		if (error || (status & SCSI_STATUS_CHECKCOND)) {
 			printf("tz%d: error reading sense data: error %d scsi status 0x%x\n",
@@ -376,8 +385,25 @@ tzdone(unit, error, resid, status)
 						unit, sc->sc_blklen, resid);
 					break;
 				}
+				if (resid < 0) {
+					/*
+					 * Variable length records but
+					 * attempted to read less than a
+					 * full record.
+					 */
+					tprintf(sc->sc_ctty,
+						"tz%d: Partial Read of Variable Length Tape Block, expected %d read %d\n",
+						unit, bp->b_bcount - resid,
+						bp->b_bcount);
+					bp->b_resid = 0;
+					break;
+				}
 				if (sp->fileMark)
 					sc->sc_flags |= TZF_SEENEOF;
+				/*
+				 * Attempting to read more than a record is
+				 * OK. Just record how much was actually read.
+				 */
 				bp->b_flags &= ~B_ERROR;
 				bp->b_error = 0;
 				bp->b_resid = resid;
@@ -419,11 +445,13 @@ tzdone(unit, error, resid, status)
 			scsiGroup0Cmd(SCSI_REQUEST_SENSE, sc->sc_sd->sd_slave,
 				0, sizeof(sc->sc_sense.sense),
 				(ScsiGroup0Cmd *)sc->sc_cdb.cdb);
-			sc->sc_errbuf.b_flags = B_BUSY | B_READ;
+			sc->sc_errbuf.b_flags = B_BUSY | B_PHYS | B_READ;
 			sc->sc_errbuf.b_bcount = sizeof(sc->sc_sense.sense);
 			sc->sc_errbuf.b_un.b_addr = (caddr_t)sc->sc_sense.sense;
-			sc->sc_errbuf.av_forw = bp;
-			sc->sc_tab.b_actf = &sc->sc_errbuf;
+			sc->sc_errbuf.b_actf = bp;
+			sc->sc_errbuf.b_actb = bp->b_actb;
+			*bp->b_actb = &sc->sc_errbuf;
+			bp->b_actb = &sc->sc_errbuf.b_actf;
 			tzstart(unit);
 			return;
 		}
@@ -432,7 +460,11 @@ tzdone(unit, error, resid, status)
 		bp->b_resid = resid;
 	}
 
-	sc->sc_tab.b_actf = bp->b_actf;
+	if (dp = bp->b_actf)
+		dp->b_actb = bp->b_actb;
+	else
+		sc->sc_tab.b_actb = bp->b_actb;
+	*bp->b_actb = dp;
 	biodone(bp);
 	if (sc->sc_tab.b_actf)
 		tzstart(unit);
@@ -467,7 +499,7 @@ tzopen(dev, flags, type, p)
 
 	/* clear UNIT_ATTENTION */
 	error = tzcommand(dev, SCSI_TEST_UNIT_READY, 0, 0, 0);
-	if (error) {
+	while (error) {
 		ScsiClass7Sense *sp = (ScsiClass7Sense *)sc->sc_sense.sense;
 
 		/* return error if last error was not UNIT_ATTENTION */
@@ -724,14 +756,12 @@ tzstrategy(bp)
 		biodone(bp);
 		return;
 	}
-	bp->av_forw = NULL;
+	bp->b_actf = NULL;
 	dp = &sc->sc_tab;
 	s = splbio();
-	if (dp->b_actf == NULL)
-		dp->b_actf = bp;
-	else
-		dp->b_actl->av_forw = bp;
-	dp->b_actl = bp;
+	bp->b_actb = dp->b_actb;
+	*dp->b_actb = bp;
+	dp->b_actb = &bp->b_actf;
 	if (dp->b_active == 0) {
 		dp->b_active = 1;
 		tzstart(unit);

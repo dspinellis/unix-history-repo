@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rz.c	7.7 (Berkeley) %G%
+ *	@(#)rz.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -62,7 +62,7 @@ struct	size {
  * the G partition.  As usual, the C partition covers the entire disk
  * (including the boot area).
  */
-struct size rzdefaultpart[MAXPARTITIONS] = {
+static struct size rzdefaultpart[MAXPARTITIONS] = {
 	        0,   16384,	/* A */
 	    16384,   65536,	/* B */
 	        0,       0,	/* C */
@@ -173,8 +173,8 @@ rzprobe(sd)
 	sc->sc_buf.b_flags = B_BUSY | B_PHYS | B_READ;
 	sc->sc_buf.b_bcount = sizeof(inqbuf);
 	sc->sc_buf.b_un.b_addr = (caddr_t)&inqbuf;
-	sc->sc_buf.av_forw = (struct buf *)0;
-	sc->sc_tab.b_actf = sc->sc_tab.b_actl = &sc->sc_buf;
+	sc->sc_buf.b_actf = (struct buf *)0;
+	sc->sc_tab.b_actf = &sc->sc_buf;
 	rzstart(sd->sd_unit);
 	if (biowait(&sc->sc_buf) ||
 	    (i = sizeof(inqbuf) - sc->sc_buf.b_resid) < 5)
@@ -199,8 +199,8 @@ rzprobe(sd)
 		sc->sc_buf.b_flags = B_BUSY | B_PHYS | B_READ;
 		sc->sc_buf.b_bcount = 0;
 		sc->sc_buf.b_un.b_addr = (caddr_t)0;
-		sc->sc_buf.av_forw = (struct buf *)0;
-		sc->sc_tab.b_actf = sc->sc_tab.b_actl = &sc->sc_buf;
+		sc->sc_buf.b_actf = (struct buf *)0;
+		sc->sc_tab.b_actf = &sc->sc_buf;
 
 		sc->sc_cmd.cmd = sc->sc_cdb.cdb;
 		sc->sc_cmd.cmdlen = sc->sc_cdb.len;
@@ -246,8 +246,8 @@ rzprobe(sd)
 			sc->sc_buf.b_flags = B_BUSY | B_PHYS | B_READ;
 			sc->sc_buf.b_bcount = 0;
 			sc->sc_buf.b_un.b_addr = (caddr_t)0;
-			sc->sc_buf.av_forw = (struct buf *)0;
-			sc->sc_tab.b_actf = sc->sc_tab.b_actl = &sc->sc_buf;
+			sc->sc_buf.b_actf = (struct buf *)0;
+			sc->sc_tab.b_actf = &sc->sc_buf;
 			rzstart(sd->sd_unit);
 			if (biowait(&sc->sc_buf))
 				goto bad;
@@ -264,8 +264,8 @@ rzprobe(sd)
 	sc->sc_buf.b_flags = B_BUSY | B_PHYS | B_READ;
 	sc->sc_buf.b_bcount = sizeof(capbuf);
 	sc->sc_buf.b_un.b_addr = (caddr_t)capbuf;
-	sc->sc_buf.av_forw = (struct buf *)0;
-	sc->sc_tab.b_actf = sc->sc_tab.b_actl = &sc->sc_buf;
+	sc->sc_buf.b_actf = (struct buf *)0;
+	sc->sc_tab.b_actf = &sc->sc_buf;
 	rzstart(sd->sd_unit);
 	if (biowait(&sc->sc_buf) || sc->sc_buf.b_resid != 0)
 		goto bad;
@@ -429,10 +429,10 @@ rzstrategy(bp)
 {
 	register int unit = rzunit(bp->b_dev);
 	register int part = rzpart(bp->b_dev);
-	register u_long bn, sz;
 	register struct rz_softc *sc = &rz_softc[unit];
 	register struct partition *pp = &sc->sc_label.d_partitions[part];
-	register int s;
+	register daddr_t bn;
+	register long sz, s;
 
 	if (sc->sc_format_pid) {
 		if (sc->sc_format_pid != curproc->p_pid) {
@@ -442,21 +442,21 @@ rzstrategy(bp)
 		bp->b_cylin = 0;
 	} else {
 		bn = bp->b_blkno;
-		sz = (bp->b_bcount + DEV_BSIZE - 1) >> DEV_BSHIFT;
-		if (bn + sz > pp->p_size) {
+		sz = howmany(bp->b_bcount, DEV_BSIZE);
+		if ((unsigned)bn + sz > pp->p_size) {
+			sz = pp->p_size - bn;
 			/* if exactly at end of disk, return an EOF */
-			if (bn == pp->p_size) {
+			if (sz == 0) {
 				bp->b_resid = bp->b_bcount;
 				goto done;
 			}
 			/* if none of it fits, error */
-			if (bn >= pp->p_size) {
+			if (sz < 0) {
 				bp->b_error = EINVAL;
 				goto bad;
 			}
 			/* otherwise, truncate */
-			sz = pp->p_size - bn;
-			bp->b_bcount = sz << DEV_BSHIFT;
+			bp->b_bcount = dbtob(sz);
 		}
 		/* check for write to write protected label */
 		if (bn + pp->p_offset <= LABELSECTOR &&
@@ -569,7 +569,7 @@ rzdone(unit, error, resid, status)
 		dk_busy &= ~(1 << sd->sd_dk);
 	if (sc->sc_flags & RZF_SENSEINPROGRESS) {
 		sc->sc_flags &= ~RZF_SENSEINPROGRESS;
-		sc->sc_tab.b_actf = bp = bp->av_forw;	/* remove sc_errbuf */
+		sc->sc_tab.b_actf = bp = bp->b_actf;	/* remove sc_errbuf */
 
 		if (error || (status & SCSI_STATUS_CHECKCOND)) {
 #ifdef DEBUG
@@ -615,7 +615,7 @@ rzdone(unit, error, resid, status)
 			sc->sc_errbuf.b_flags = B_BUSY | B_PHYS | B_READ;
 			sc->sc_errbuf.b_bcount = sizeof(sc->sc_sense.sense);
 			sc->sc_errbuf.b_un.b_addr = (caddr_t)sc->sc_sense.sense;
-			sc->sc_errbuf.av_forw = bp;
+			sc->sc_errbuf.b_actf = bp;
 			sc->sc_tab.b_actf = &sc->sc_errbuf;
 			rzstart(unit);
 			return;
@@ -625,7 +625,7 @@ rzdone(unit, error, resid, status)
 		bp->b_resid = resid;
 	}
 
-	sc->sc_tab.b_actf = bp->av_forw;
+	sc->sc_tab.b_actf = bp->b_actf;
 	biodone(bp);
 	if (sc->sc_tab.b_actf)
 		rzstart(unit);
@@ -850,18 +850,17 @@ rzioctl(dev, cmd, data, flag, p)
 		/* set the current disk label */
 		if (!(flag & FWRITE))
 			return (EBADF);
-		return (setdisklabel(&sc->sc_label,
+		error = setdisklabel(&sc->sc_label,
 			(struct disklabel *)data,
-			(sc->sc_flags & RZF_WLABEL) ? 0 : sc->sc_openpart));
+			(sc->sc_flags & RZF_WLABEL) ? 0 : sc->sc_openpart);
+		return (error);
 
-#if 0
 	case DIOCGPART:
 		/* return the disk partition data */
 		((struct partinfo *)data)->disklab = &sc->sc_label;
 		((struct partinfo *)data)->part =
 			&sc->sc_label.d_partitions[rzpart(dev)];
 		return (0);
-#endif
 
 	case DIOCWLABEL:
 		if (!(flag & FWRITE))
