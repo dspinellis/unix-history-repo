@@ -1,0 +1,462 @@
+
+
+
+CO(1)                  BSD Reference Manual                 CO(1)
+
+
+NNAAMMEE
+       co - check out RCS revisions
+
+SSYYNNOOPPSSIISS
+       ccoo [_o_p_t_i_o_n_s] _f_i_l_e ...
+
+DDEESSCCRRIIPPTTIIOONN
+       ccoo  retrieves  a revision from each RCS file and stores it
+       into the corresponding working file.
+
+       Pathnames matching an RCS suffix  denote  RCS  files;  all
+       others   denote   working  files.   Names  are  paired  as
+       explained in ccii(1).
+
+       Revisions of an RCS file may  be  checked  out  locked  or
+       unlocked.    Locking   a   revision  prevents  overlapping
+       updates.  A revision checked out for reading or processing
+       (e.g.,  compiling) need not be locked.  A revision checked
+       out for editing and later checkin must normally be locked.
+       Checkout  with locking fails if the revision to be checked
+       out is currently locked by another user.  (A lock  may  be
+       broken  with rrccss(1).)  Checkout with locking also requires
+       the caller to be on the  access  list  of  the  RCS  file,
+       unless  he  is  the owner of the file or the superuser, or
+       the access list is empty.  Checkout without locking is not
+       subject to accesslist restrictions, and is not affected by
+       the presence of locks.
+
+       A revision is selected by options for revision  or  branch
+       number,  checkin  date/time,  author,  or state.  When the
+       selection options are applied in combination, ccoo retrieves
+       the  latest  revision that satisfies all of them.  If none
+       of the selection options is specified,  ccoo  retrieves  the
+       latest revision on the default branch (normally the trunk,
+       see the --bb option of rrccss(1)).  A revision or branch number
+       may  be attached to any of the options --ff, --II, --ll, --MM, --pp,
+       --qq, --rr, or --uu.  The options --dd (date), --ss (state), and  --ww
+       (author)  retrieve  from  a  single  branch,  the _s_e_l_e_c_t_e_d
+       branch, which is either specified by one of --ff,,  ...,  --uu,
+       or the default branch.
+
+       A ccoo command applied to an RCS file with no revisions cre-
+       ates a zero-length working file.  ccoo always performs  key-
+       word substitution (see below).
+
+OOPPTTIIOONNSS
+       --rr[_r_e_v]
+              retrieves  the latest revision whose number is less
+              than or equal to _r_e_v_.  If _r_e_v  indicates  a  branch
+              rather than a revision, the latest revision on that
+              branch is retrieved.  If _r_e_v is omitted, the latest
+
+
+
+GNU                         1991/08/19                          1
+
+
+
+
+
+
+
+
+CO(1)                  BSD Reference Manual                 CO(1)
+
+
+              revision  on  the default branch (see the --bb option
+              of rrccss(1)) is retrieved.  If _r_e_v is  $$,  ccoo  deter-
+              mines  the  revision  number from keyword values in
+              the working file.  Otherwise, a  revision  is  com-
+              posed  of  one  or  more numeric or symbolic fields
+              separated by periods.  The numeric equivalent of  a
+              symbolic  field  is specified with the --nn option of
+              the commands ccii(1) and rrccss(1).
+
+       --ll[_r_e_v]
+              same as --rr, except that it also locks the retrieved
+              revision for the caller.
+
+       --uu[_r_e_v]
+              same  as  --rr,  except that it unlocks the retrieved
+              revision if it was locked by the caller.  If _r_e_v is
+              omitted,  --uu  retrieves  the revision locked by the
+              caller, if there is one;  otherwise,  it  retrieves
+              the latest revision on the default branch.
+
+       --ff[_r_e_v]
+              forces  the overwriting of the working file; useful
+              in connection with --qq.  See also FILE MODES  below.
+
+       --kkkkvv   Generate  keyword  strings  using the default form,
+              e.g. $$RReevviissiioonn:: 55..77 $$ for the RReevviissiioonn keyword.   A
+              locker's  name  is  inserted  in  the  value of the
+              HHeeaaddeerr, IIdd, and LLoocckkeerr keyword strings  only  as  a
+              file  is  being  locked,  i.e.  by ccii --ll and ccoo --ll.
+              This is the default.
+
+       --kkkkvvll  Like --kkkkvv, except that a locker's  name  is  always
+              inserted if the given revision is currently locked.
+
+       --kkkk    Generate only keyword  names  in  keyword  strings;
+              omit their values.  See KEYWORD SUBSTITUTION below.
+              For example, for the RReevviissiioonn keyword, generate the
+              string  $$RReevviissiioonn$$  instead  of  $$RReevviissiioonn::  55..77 $$.
+              This option is useful to ignore differences due  to
+              keyword substitution when comparing different revi-
+              sions of a file.
+
+       --kkoo    Generate the old keyword  string,  present  in  the
+              working  file  just  before it was checked in.  For
+              example, for the  RReevviissiioonn  keyword,  generate  the
+              string $$RReevviissiioonn:: 11..11 $$ instead of $$RReevviissiioonn:: 55..77 $$
+              if that is how the string appeared  when  the  file
+              was checked in.  This can be useful for binary file
+              formats that cannot tolerate any  changes  to  sub-
+              strings  that  happen  to  take the form of keyword
+              strings.
+
+
+
+GNU                         1991/08/19                          2
+
+
+
+
+
+
+
+
+CO(1)                  BSD Reference Manual                 CO(1)
+
+
+       --kkvv    Generate only keyword values for  keyword  strings.
+              For example, for the RReevviissiioonn keyword, generate the
+              string 55..77 instead of $$RReevviissiioonn:: 55..77 $$.   This  can
+              help  generate files in programming languages where
+              it  is  hard  to  strip  keyword  delimiters   like
+              $$RReevviissiioonn:: $$  from a string.  However, further key-
+              word substitution cannot be performed once the key-
+              word  names  are  removed, so this option should be
+              used with care.  Because of this danger  of  losing
+              keywords,  this  option cannot be combined with --ll,
+              and the owner write permission of the working  file
+              is turned off; to edit the file later, check it out
+              again without --kkvv.
+
+       --pp[_r_e_v]
+              prints the retrieved revision on the standard  out-
+              put  rather  than  storing  it in the working file.
+              This option is useful when ccoo is part of a pipe.
+
+       --qq[_r_e_v]
+              quiet mode; diagnostics are not printed.
+
+       --II[_r_e_v]
+              interactive mode; the user is  prompted  and  ques-
+              tioned  even  if the standard input is not a termi-
+              nal.
+
+       --dd_d_a_t_e retrieves  the  latest  revision  on  the  selected
+              branch  whose  checkin  date/time  is  less than or
+              equal to _d_a_t_e_.  The date and time may be  given  in
+              free  format.   The  time  zone LLTT stands for local
+              time; other common time zone names are  understood.
+              For  example, the following _d_a_t_es are equivalent if
+              local time is January 11, 1990, 8pm  Pacific  Stan-
+              dard  Time, eight hours west of Coordinated Univer-
+              sal Time (UTC):
+
+                     88::0000 ppmm lltt
+                     44::0000 AAMM,, JJaann.. 1122,, 11999900           note: default is UTC
+                     11999900//0011//1122 0044::0000::0000              RCS date format
+                     TThhuu JJaann 1111 2200::0000::0000 11999900 LLTT      output of ccttiimmee(3) + LLTT
+                     TThhuu JJaann 1111 2200::0000::0000 PPSSTT 11999900     output of ddaattee(1)
+                     FFrrii JJaann 1122 0044::0000::0000 GGMMTT 11999900
+                     TThhuu,, 1111 JJaann 11999900 2200::0000::0000 --00880000
+                     FFrrii--JJSSTT,, 11999900,, 11ppmm JJaann 1122
+                     1122--JJaannuuaarryy--11999900,, 0044::0000--WWEETT
+
+              Most fields in the date and time may be  defaulted.
+              The  default  time zone is UTC.  The other defaults
+              are determined in the order year, month, day, hour,
+              minute, and second (most to least significant).  At
+
+
+
+GNU                         1991/08/19                          3
+
+
+
+
+
+
+
+
+CO(1)                  BSD Reference Manual                 CO(1)
+
+
+              least one of these fields must  be  provided.   For
+              omitted fields that are of higher significance than
+              the highest provided field, the time zone's current
+              values  are assumed.  For all other omitted fields,
+              the lowest possible values are assumed.  For  exam-
+              ple, the date 2200,, 1100::3300 defaults to 10:30:00 UTC of
+              the 20th of the UTC time zone's current  month  and
+              year.   The date/time must be quoted if it contains
+              spaces.
+
+       --MM[_r_e_v]
+              Set the modification time on the new  working  file
+              to be the date of the retrieved revision.  Use this
+              option with care; it can confuse mmaakkee(1).
+
+       --ss_s_t_a_t_e
+              retrieves  the  latest  revision  on  the  selected
+              branch whose state is set to _s_t_a_t_e_.
+
+       --ww[_l_o_g_i_n]
+              retrieves  the  latest  revision  on  the  selected
+              branch which was checked in by the user with  login
+              name  _l_o_g_i_n_.  If the argument _l_o_g_i_n is omitted, the
+              caller's login is assumed.
+
+       --jj_j_o_i_n_l_i_s_t
+              generates a new revision which is the join  of  the
+              revisions  on  _j_o_i_n_l_i_s_t_.   This  option  is largely
+              obsoleted by rrccssmmeerrggee(1) but is retained for  back-
+              wards compatibility.
+
+              The  _j_o_i_n_l_i_s_t is a comma-separated list of pairs of
+              the form _r_e_v_2::_r_e_v_3_, where _r_e_v_2 and _r_e_v_3  are  (sym-
+              bolic  or  numeric) revision numbers.  For the ini-
+              tial such pair, _r_e_v_1 denotes the revision  selected
+              by  the  above  options --ff,, ..., --ww.  For all other
+              pairs, _r_e_v_1 denotes the revision generated  by  the
+              previous  pair.   (Thus,  the  output  of  one join
+              becomes the input to the next.)
+
+              For each pair, ccoo joins  revisions  _r_e_v_1  and  _r_e_v_3
+              with  respect to _r_e_v_2_.  This means that all changes
+              that transform _r_e_v_2 into _r_e_v_1 are applied to a copy
+              of  _r_e_v_3_.   This is particularly useful if _r_e_v_1 and
+              _r_e_v_3 are the ends of two branches that have _r_e_v_2 as
+              a  common  ancestor.  If _r_e_v_1<_r_e_v_2<_r_e_v_3 on the same
+              branch, joining generates a new revision  which  is
+              like _r_e_v_3_, but with all changes that lead from _r_e_v_1
+              to _r_e_v_2 undone.  If changes from _r_e_v_2 to _r_e_v_1 over-
+              lap  with  changes  from  _r_e_v_2  to _r_e_v_3_, ccoo reports
+              overlaps as described in mmeerrggee(1).
+
+
+
+GNU                         1991/08/19                          4
+
+
+
+
+
+
+
+
+CO(1)                  BSD Reference Manual                 CO(1)
+
+
+              For the initial pair, _r_e_v_2  may  be  omitted.   The
+              default  is  the  common  ancestor.   If any of the
+              arguments indicate branches, the  latest  revisions
+              on  those branches are assumed.  The options --ll and
+              --uu lock or unlock _r_e_v_1_.
+
+       --VV_n    Emulate RCS version _n_, where _n may be 33, 44,  or  55.
+              This  may  be  useful  when interchanging RCS files
+              with others who are running older versions of  RCS.
+              To see which version of RCS your correspondents are
+              running, have them invoke rrlloogg on an RCS  file;  if
+              none  of  the first few lines of output contain the
+              string bbrraanncchh:: it is version 3; if the dates' years
+              have  just  two digits, it is version 4; otherwise,
+              it is version 5.  An RCS file generated while  emu-
+              lating  version 3 will lose its default branch.  An
+              RCS revision generated while emulating version 4 or
+              earlier  will have a timestamp that is off by up to
+              13 hours.  A  revision  extracted  while  emulating
+              version 4 or earlier will contain dates of the form
+              _y_y//_m_m//_d_d instead of _y_y_y_y//_m_m//_d_d and may also contain
+              different  white  space  in  the  substitution  for
+              $$LLoogg$$.
+
+       --xx_s_u_f_f_i_x_e_s
+              Use _s_u_f_f_i_x_e_s to characterize RCS files.  See  ccii(1)
+              for details.
+
+KKEEYYWWOORRDD SSUUBBSSTTIITTUUTTIIOONN
+       Strings  of  the form $$_k_e_y_w_o_r_d$$ and $$_k_e_y_w_o_r_d::_._._.$$ embedded
+       in the text are replaced with strings of  the  form  $$_k_e_y_-
+       _w_o_r_d::_v_a_l_u_e$$  where  _k_e_y_w_o_r_d  and  _v_a_l_u_e  are  pairs listed
+       below.  Keywords may be embedded  in  literal  strings  or
+       comments to identify a revision.
+
+       Initially,  the user enters strings of the form $$_k_e_y_w_o_r_d$$_.
+       On checkout, ccoo replaces these strings with strings of the
+       form $$_k_e_y_w_o_r_d::_v_a_l_u_e$$_.  If a revision containing strings of
+       the latter form is checked back in, the value fields  will
+       be  replaced  during the next checkout.  Thus, the keyword
+       values are automatically updated on checkout.  This  auto-
+       matic substitution can be modified by the --kk options.
+
+       Keywords and their corresponding values:
+
+       $$AAuutthhoorr$$
+              The login name of the user who checked in the revi-
+              sion.
+
+       $$DDaattee$$ The date and time (UTC) the  revision  was  checked
+              in.
+
+
+
+GNU                         1991/08/19                          5
+
+
+
+
+
+
+
+
+CO(1)                  BSD Reference Manual                 CO(1)
+
+
+       $$HHeeaaddeerr$$
+              A  standard  header containing the full pathname of
+              the RCS file, the revision number, the date  (UTC),
+              the  author, the state, and the locker (if locked).
+
+       $$IIdd$$   Same as $$HHeeaaddeerr$$, except that the RCS  filename  is
+              without a path.
+
+       $$LLoocckkeerr$$
+              The  login name of the user who locked the revision
+              (empty if not locked).
+
+       $$LLoogg$$  The log message supplied during  checkin,  preceded
+              by  a header containing the RCS filename, the revi-
+              sion  number,  the  author,  and  the  date  (UTC).
+              Existing  log  messages are _n_o_t replaced.  Instead,
+              the new log message is  inserted  after  $$LLoogg::...$$.
+              This  is  useful for accumulating a complete change
+              log in a source file.
+
+       $$RRCCSSffiillee$$
+              The name of the RCS file without a path.
+
+       $$RReevviissiioonn$$
+              The revision number assigned to the revision.
+
+       $$SSoouurrccee$$
+              The full pathname of the RCS file.
+
+       $$SSttaattee$$
+              The state assigned to  the  revision  with  the  --ss
+              option of rrccss(1) or ccii(1).
+
+FFIILLEE MMOODDEESS
+       The working file inherits the read and execute permissions
+       from the RCS file.  In addition, the owner  write  permis-
+       sion  is  turned  on,  unless  --kkvv  is  set or the file is
+       checked out unlocked and locking is  set  to  strict  (see
+       rrccss(1)).
+
+       If a file with the name of the working file exists already
+       and has write permission, ccoo aborts the  checkout,  asking
+       beforehand  if  possible.  If the existing working file is
+       not writable or --ff is given, the working file  is  deleted
+       without asking.
+
+FFIILLEESS
+       ccoo  accesses files much as ccii(1) does, except that it does
+       not need to read the working file.
+
+
+
+
+
+GNU                         1991/08/19                          6
+
+
+
+
+
+
+
+
+CO(1)                  BSD Reference Manual                 CO(1)
+
+
+EENNVVIIRROONNMMEENNTT
+       RRCCSSIINNIITT
+              options prepended to the argument  list,  separated
+              by spaces.  See ccii(1) for details.
+
+DDIIAAGGNNOOSSTTIICCSS
+       The  RCS  pathname, the working pathname, and the revision
+       number retrieved are written  to  the  diagnostic  output.
+       The exit status is zero if and only if all operations were
+       successful.
+
+IIDDEENNTTIIFFIICCAATTIIOONN
+       Author: Walter F. Tichy.
+       Revision Number: 5.7; Release Date: 1991/08/19.
+       Copyright (C) 1982, 1988, 1989 by Walter F. Tichy.
+       Copyright (C) 1990, 1991 by Paul Eggert.
+
+SSEEEE AALLSSOO
+       ci(1), ctime(3), date(1), ident(1), make(1), rcs(1), rcsd-
+       iff(1), rcsintro(1), rcsmerge(1), rlog(1), rcsfile(5)
+       Walter  F.  Tichy,  RCS--A  System  for  Version  Control,
+       _S_o_f_t_w_a_r_e_-_-_P_r_a_c_t_i_c_e  _&  _E_x_p_e_r_i_e_n_c_e  1155,  7   (July   1985),
+       637-654.
+
+LLIIMMIITTSS
+       Links to the RCS and working files are not preserved.
+
+       There  is  no way to selectively suppress the expansion of
+       keywords, except by writing them  differently.   In  nroff
+       and troff, this is done by embedding the null-character \\&&
+       into the keyword.
+
+BBUUGGSS
+       The --dd option sometimes gets confused, and accepts no date
+       before 1970.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GNU                         1991/08/19                          7
+
+
+
+
+

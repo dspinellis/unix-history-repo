@@ -1,0 +1,198 @@
+
+
+
+RLOG(1)                BSD Reference Manual               RLOG(1)
+
+
+NNAAMMEE
+       rlog  - print log messages and other information about RCS
+       files
+
+SSYYNNOOPPSSIISS
+       rrlloogg [ _o_p_t_i_o_n_s ] _f_i_l_e ...
+
+DDEESSCCRRIIPPTTIIOONN
+       rrlloogg prints information about RCS files.
+
+       Pathnames matching an RCS suffix  denote  RCS  files;  all
+       others   denote   working  files.   Names  are  paired  as
+       explained in ccii(1).
+
+       rrlloogg prints the following information for each  RCS  file:
+       RCS  pathname, working pathname, head (i.e., the number of
+       the latest revision on the trunk), default branch,  access
+       list, locks, symbolic names, suffix, total number of revi-
+       sions, number of  revisions  selected  for  printing,  and
+       descriptive  text.   This  is  followed by entries for the
+       selected revisions in reverse chronological order for each
+       branch.   For  each revision, rrlloogg prints revision number,
+       author, date/time, state, number  of  lines  added/deleted
+       (with  respect  to  the  previous revision), locker of the
+       revision (if any), and log message.  All  times  are  dis-
+       played  in  Coordinated  Universal  Time  (UTC).   Without
+       options, rrlloogg prints complete  information.   The  options
+       below restrict this output.
+
+       --LL  Ignore RCS files that have no locks set.  This is con-
+           venient in combination with --hh, --ll, and --RR.
+
+       --RR  Print only the name of the RCS file.  This  is  conve-
+           nient  for  translating a working pathname into an RCS
+           pathname.
+
+       --hh  Print only the RCS pathname, working  pathname,  head,
+           default  branch,  access  list, locks, symbolic names,
+           and suffix.
+
+       --tt  Print the same as --hh, plus the descriptive text.
+
+       --bb  Print information about the revisions on  the  default
+           branch, normally the highest branch on the trunk.
+
+       --dd_d_a_t_e_s
+           Print  information  about  revisions  with  a  checkin
+           date/time  in  the  ranges  given  by  the  semicolon-
+           separated list of _d_a_t_e_s.  A range of the form _d_1<<_d_2 or
+           _d_2>>_d_1  selects  the  revisions  that  were   deposited
+           between  _d_1  and _d_2 inclusive.  A range of the form <<_d
+
+
+
+GNU                         1991/08/22                          1
+
+
+
+
+
+
+
+
+RLOG(1)                BSD Reference Manual               RLOG(1)
+
+
+           or _d>> selects all revisions dated  _d  or  earlier.   A
+           range of the form _d<< or >>_d selects all revisions dated
+           _d or later.  A range of the form _d selects the single,
+           latest  revision  dated  _d  or earlier.  The date/time
+           strings _d, _d_1, and _d_2 are in the free format explained
+           in  ccoo(1).   Quoting is normally necessary, especially
+           for << and >>.  Note that the separator is a  semicolon.
+
+       --ll[_l_o_c_k_e_r_s]
+           Print  information  about  locked  revisions only.  In
+           addition, if the comma-separated list _l_o_c_k_e_r_s of login
+           names is given, ignore all locks other than those held
+           by the _l_o_c_k_e_r_s.  For  example,  rrlloogg --LL --RR --llwwfftt RRCCSS//**
+           prints the name of RCS files locked by the user wwfftt.
+
+       --rr[_r_e_v_i_s_i_o_n_s]
+           prints information about revisions given in the comma-
+           separated list _r_e_v_i_s_i_o_n_s of revisions and  ranges.   A
+           range  _r_e_v_1::_r_e_v_2  means  revisions _r_e_v_1 to _r_e_v_2 on the
+           same branch, ::_r_e_v means revisions from  the  beginning
+           of  the branch up to and including _r_e_v, and _r_e_v:: means
+           revisions starting with _r_e_v to the end of  the  branch
+           containing  _r_e_v.   An  argument that is a branch means
+           all revisions on that branch.   A  range  of  branches
+           means  all revisions on the branches in that range.  A
+           branch followed by a .. means the  latest  revision  in
+           that  branch.   A  bare --rr with no _r_e_v_i_s_i_o_n_s means the
+           latest revision on the default  branch,  normally  the
+           trunk.
+
+       --ss_s_t_a_t_e_s
+           prints   information   about   revisions  whose  state
+           attributes match one of the states given in the comma-
+           separated list _s_t_a_t_e_s.
+
+       --ww[_l_o_g_i_n_s]
+           prints information about revisions checked in by users
+           with login names appearing in the comma-separated list
+           _l_o_g_i_n_s.   If  _l_o_g_i_n_s  is  omitted, the user's login is
+           assumed.
+
+       --VV_n Emulate RCS version _n when generating logs.  See ccoo(1)
+           for more.
+
+       --xx_s_u_f_f_i_x_e_s
+           Use _s_u_f_f_i_x_e_s to characterize RCS files.  See ccii(1) for
+           details.
+
+       rrlloogg prints the intersection  of  the  revisions  selected
+       with  the options --dd, --ll, --ss, and --ww, intersected with the
+       union of the revisions selected by --bb and --rr.
+
+
+
+GNU                         1991/08/22                          2
+
+
+
+
+
+
+
+
+RLOG(1)                BSD Reference Manual               RLOG(1)
+
+
+EEXXAAMMPPLLEESS
+           rrlloogg  --LL  --RR  RRCCSS//**
+           rrlloogg  --LL  --hh  RRCCSS//**
+           rrlloogg  --LL  --ll  RRCCSS//**
+           rrlloogg  RRCCSS//**
+
+       The first command prints the names of all RCS files in the
+       subdirectory  RRCCSS  that  have  locks.   The second command
+       prints the headers of those files, and  the  third  prints
+       the headers plus the log messages of the locked revisions.
+       The last command prints complete information.
+
+EENNVVIIRROONNMMEENNTT
+       RRCCSSIINNIITT
+              options prepended to the argument  list,  separated
+              by spaces.  See ccii(1) for details.
+
+DDIIAAGGNNOOSSTTIICCSS
+       The exit status is zero if and only if all operations were
+       successful.
+
+IIDDEENNTTIIFFIICCAATTIIOONN
+       Author: Walter F. Tichy.
+       Revision Number: 5.3; Release Date: 1991/08/22.
+       Copyright (C) 1982, 1988, 1989 by Walter F. Tichy.
+       Copyright (C) 1990, 1991 by Paul Eggert.
+
+SSEEEE AALLSSOO
+       ci(1), co(1), ident(1), rcs(1),  rcsdiff(1),  rcsintro(1),
+       rcsmerge(1), rcsfile(5)
+       Walter  F.  Tichy,  RCS--A  System  for  Version  Control,
+       _S_o_f_t_w_a_r_e_-_-_P_r_a_c_t_i_c_e  _&  _E_x_p_e_r_i_e_n_c_e  1155,  7   (July   1985),
+       637-654.
+
+BBUUGGSS
+       The separator for revision ranges in the --rr option used to
+       be -- instead of ::, but this leads to confusion  when  sym-
+       bolic  names  contain --.  For backwards compatibility rrlloogg
+       --rr still supports the old -- separator, but it warns  about
+       this obsolete use.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GNU                         1991/08/22                          3
+
+
+
+
+

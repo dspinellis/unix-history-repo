@@ -1,0 +1,264 @@
+
+
+
+RCSFILE(5)           BSD Programmer's Manual           RCSFILE(5)
+
+
+NNAAMMEE
+       rcsfile - format of RCS file
+
+DDEESSCCRRIIPPTTIIOONN
+       An RCS file's contents are described by the grammar below.
+
+       The text is free format: space, backspace,  tab,  newline,
+       vertical  tab,  form  feed,  and  carriage return (collec-
+       tively,  _w_h_i_t_e  _s_p_a_c_e)  have  no  significance  except  in
+       strings.  However, an RCS file must end in a newline char-
+       acter.
+
+       Strings are enclosed by @@.  If a string contains a  @@,  it
+       must  be doubled; otherwise, strings may contain arbitrary
+       binary data.
+
+       The meta syntax uses the following conventions: `|'  (bar)
+       separates  alternatives;  `{'  and  `}'  enclose  optional
+       phrases; `{' and `}*' enclose phrases that may be repeated
+       zero or more times; `{' and '}+' enclose phrases that must
+       appear at least once and may be repeated; Terminal symbols
+       are in bboollddffaaccee; nonterminal symbols are in _i_t_a_l_i_c_s.
+
+       _r_c_s_t_e_x_t    ::=  _a_d_m_i_n {_d_e_l_t_a}* _d_e_s_c {_d_e_l_t_a_t_e_x_t}*
+
+       _a_d_m_i_n      ::=  hheeaadd       {_n_u_m};;
+                       { bbrraanncchh   {_n_u_m};; }
+                       aacccceessss     {_i_d}*;;
+                       ssyymmbboollss    {_i_d :: _n_u_m}*;;
+                       lloocckkss      {_i_d :: _n_u_m}*;;  {ssttrriicctt  ;;}
+                       { ccoommmmeenntt  {_s_t_r_i_n_g};; }
+                       { eexxppaanndd   {_s_t_r_i_n_g};; }
+                       { _n_e_w_p_h_r_a_s_e }*
+
+       _d_e_l_t_a      ::=  _n_u_m
+                       ddaattee       _n_u_m;;
+                       aauutthhoorr     _i_d;;
+                       ssttaattee      {_i_d};;
+                       bbrraanncchheess   {_n_u_m}*;;
+                       nneexxtt       {_n_u_m};;
+                       { _n_e_w_p_h_r_a_s_e }*
+
+       _d_e_s_c       ::=  ddeesscc       _s_t_r_i_n_g
+
+       _d_e_l_t_a_t_e_x_t  ::=  _n_u_m
+                       lloogg        _s_t_r_i_n_g
+                       { _n_e_w_p_h_r_a_s_e }*
+                       tteexxtt       _s_t_r_i_n_g
+
+       _n_u_m        ::=  {_d_i_g_i_t{..}}+
+
+
+
+
+GNU                         1991/08/19                          1
+
+
+
+
+
+
+
+
+RCSFILE(5)           BSD Programmer's Manual           RCSFILE(5)
+
+
+       _d_i_g_i_t      ::=  00 | 11 | ... | 99
+
+       _i_d         ::=  _l_e_t_t_e_r{_i_d_c_h_a_r}*
+
+       _l_e_t_t_e_r     ::=  any letter
+
+       _i_d_c_h_a_r     ::=  any visible graphic character except _s_p_e_c_i_a_l
+
+       _s_p_e_c_i_a_l    ::=  $$ | ,, | .. | :: | ;; | @@
+
+       _s_t_r_i_n_g     ::=  @@{any character, with @@ doubled}*@@
+
+       _n_e_w_p_h_r_a_s_e  ::=  _i_d _w_o_r_d* ;;
+
+       _w_o_r_d       ::=  _i_d | _n_u_m | _s_t_r_i_n_g | ::
+
+       Identifiers  are  case  sensitive.   Keywords are in lower
+       case only.  The sets of keywords and identifiers may over-
+       lap.   In most environments RCS uses the ISO 8859/1 encod-
+       ing: letters are octal codes  101-132,  141-172,  300-326,
+       330-366  and 370-377, visible graphic characters are codes
+       041-176 and 240-377, and white space characters are  codes
+       010-015 and 040.
+
+       The  _n_e_w_p_h_r_a_s_e productions in the grammar are reserved for
+       future extensions to the format of  RCS  files.   No  _n_e_w_-
+       _p_h_r_a_s_e will begin with any keyword already in use.
+
+       The _d_e_l_t_a nodes form a tree.  All nodes whose numbers con-
+       sist of a single pair (e.g., 2.3, 2.1, 1.3, etc.)  are  on
+       the  trunk, and are linked through the nneexxtt field in order
+       of decreasing numbers.  The hheeaadd field in the  _a_d_m_i_n  node
+       points  to  the  head of that sequence (i.e., contains the
+       highest pair).  The bbrraanncchh node in the  admin  node  indi-
+       cates the default branch (or revision) for most RCS opera-
+       tions.  If empty, the default branch is the highest branch
+       on the trunk.
+
+       All  _d_e_l_t_a nodes whose numbers consist of 2_n fields (_nP=2)
+       (e.g., 3.1.1.1, 2.1.2.2, etc.)   are  linked  as  follows.
+       All nodes whose first 2_n-1 number fields are identical are
+       linked through the nneexxtt field in order of increasing  num-
+       bers.  For each such sequence, the _d_e_l_t_a node whose number
+       is identical to the first 2_n-2 number fields of the deltas
+       on  that sequence is called the branchpoint.  The bbrraanncchheess
+       field of a node contains a list  of  the  numbers  of  the
+       first  nodes  of  all  sequences for which it is a branch-
+       point.  This list is ordered in increasing numbers.
+
+
+
+
+
+
+GNU                         1991/08/19                          2
+
+
+
+
+
+
+
+
+RCSFILE(5)           BSD Programmer's Manual           RCSFILE(5)
+
+
+       Example:
+
+                                  Head
+                                    |
+                                    |
+                                    v                        / \
+                                ---------                   /   \
+          / \          / \      |       |      / \         /     \
+         /   \        /   \     |  2.1  |     /   \       /       \
+        /     \      /     \    |       |    /     \     /         \
+       /1.2.1.3\    /1.3.1.1\   |       |   /1.2.2.2\   /1.2.2.1.1.1\
+       ---------    ---------   ---------   ---------   -------------
+           ^            ^           |           ^             ^
+           |            |           |           |             |
+           |            |           v           |             |
+          / \           |       ---------      / \            |
+         /   \          |       \  1.3  /     /   \           |
+        /     \         ---------\     /     /     \-----------
+       /1.2.1.1\                  \   /     /1.2.2.1\
+       ---------                   \ /      ---------
+           ^                        |           ^
+           |                        |           |
+           |                        v           |
+           |                    ---------       |
+           |                    \  1.2  /       |
+           ----------------------\     /---------
+                                  \   /
+                                   \ /
+                                    |
+                                    |
+                                    v
+                                ---------
+                                \  1.1  /
+                                 \     /
+                                  \   /
+                                   \ /
+
+                        Fig. 1: A revision tree
+
+
+IIDDEENNTTIIFFIICCAATTIIOONN
+       Author:  Walter  F.   Tichy,   Purdue   University,   West
+       Lafayette, IN, 47907.
+       Revision Number: 5.1; Release Date: 1991/08/19.
+       Copyright (C) 1982, 1988, 1989 by Walter F. Tichy.
+       Copyright (C) 1990, 1991 by Paul Eggert.
+
+SSEEEE AALLSSOO
+       ci(1),  co(1),  ident(1), rcs(1), rcsdiff(1), rcsmerge(1),
+       rlog(1),
+       Walter  F.  Tichy,  RCS--A  System  for  Version  Control,
+
+
+
+GNU                         1991/08/19                          3
+
+
+
+
+
+
+
+
+RCSFILE(5)           BSD Programmer's Manual           RCSFILE(5)
+
+
+       _S_o_f_t_w_a_r_e_-_-_P_r_a_c_t_i_c_e   _&   _E_x_p_e_r_i_e_n_c_e  1155,  7  (July  1985),
+       637-654.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GNU                         1991/08/19                          4
+
+
+
+
+

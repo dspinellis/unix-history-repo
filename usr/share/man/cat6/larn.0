@@ -1,0 +1,87 @@
+LARN(6)                      BSD Reference Manual                      LARN(6)
+
+NNAAMMEE
+     llaarrnn - exploring the caverns of Larn
+
+SSYYNNOOPPSSIISS
+     llaarrnn [--rr] [--HH _n_u_m_b_e_r] [--nn] [--hh] [--oo _o_p_t_s_f_i_l_e]
+
+DDEESSCCRRIIPPTTIIOONN
+     LLaarrnn is a fantasy games in which your child has contracted a strange dis-
+     ease, and none of your home remedies seem to have any effect.  You set
+     out to find a remedy in a limited amount of time, and to collect gold
+     along the way of course!
+
+     The options are:
+
+     --rr    The --rr option restores a checkpointed game after it has died.
+
+     --HH    The --HH option sets the hardness of the game.
+
+     --nn    The --nn option suppresses the welcome message at start up, putting
+           you directly into the game.
+
+     --hh    The --hh option prints the command line options.
+
+     --oo    The --oo option specifies a different options file than _~_/_._l_a_r_n_o_p_t_s.
+
+CCOOMMMMAANNDDSS
+     These are the movement commands:
+
+     h move to the left       H run left                  . stay here
+     j move down              J run down                  Z teleport yourself
+     k move up                K run up                    c cast a spell
+     l move to the right      L run right                 r read a scroll
+     y move northwest         Y run northwest             q quaff a potion
+     u move northeast         U run northeast             W wear armor
+     b move southwest         B run southwest             T take off armor
+     n move southeast         N run southeast             w wield a weapon
+     ^ identify a trap        g give present pack weight  P give tax status
+     d drop an item           i inventory your pockets    Q quit the game
+     v print program version  S save the game             D list all items found
+     ? this help screen       A create diagnostic file    e eat something
+                              (wizards only)
+
+OOPPTTIIOONNSS FFIILLEE
+     The file _~_/_._l_a_r_n_o_p_t_s may be used to set a few options for LLaarrnn.. A se-
+     quence of words terminated by whitespace is used to specify options.
+
+          WWoorrdd                        MMeeaanniinngg
+
+     bold-objects                Select bold display of objects.
+     inverse-objects             Select inverse video display of objects.
+     no-introduction             Do not display intro message.
+     enable-checkpointing        Turn on periodic checkpointing.
+     no-beep                     Disable beeping of the terminal.
+     male                        Choose your sex to be a man.
+     female                      Choose your sex to be a woman.
+     name: "your name"           Choose your playing name.
+     monster: "monst name"       Choose a name for a monster.
+     savefile: "save-file-name"  Define what the savegame filename will be.
+
+     Your name and monster names must be enclosed in double quotation marks
+     and may be up to 34 characters long.  Longer names are truncated.  Any-
+     thing enclosed in quotation marks is considered one word, and must be
+     separated from other words by whitespace.
+
+SSPPEECCIIAALL NNOOTTEESS
+     When ddrrooppppiinngg ggoolldd, if you type '*' as your amount, all your gold gets
+     dropped.  In general, typing in '*' means all of what your interested in.
+     This is true when visiting the bank, or when contributing at altars.
+
+     You can get out of the store, trading post, school, or home by hitting
+     <<eesscc>>.
+
+     When casting a spell, if you need a list of spells you can cast, type DD
+     as the first letter of your spell.  The available list of spells will be
+     shown, after which you may enter the spell code.  This only works on the
+     1st letter of the spell you are casting.
+
+AAUUTTHHOORR
+     Noah Morgan
+
+FFIILLEESS
+     /var/games/larn.scores  Score file.
+     ~/.larnopts             Options file.
+
+4.4BSD                          August 1, 1991                               2

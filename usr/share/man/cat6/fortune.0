@@ -1,0 +1,87 @@
+FORTUNE(6)                   BSD Reference Manual                   FORTUNE(6)
+
+NNAAMMEE
+     ffoorrttuunnee - print a random, hopefully interesting, adage
+
+SSYYNNOOPPSSIISS
+     ffoorrttuunnee [--aaeeffiilloossww] [--mm _p_a_t_t_e_r_n] [[_N_%] _f_i_l_e_/_d_i_r_/_a_l_l]
+
+DDEESSCCRRIIPPTTIIOONN
+     When ffoorrttuunnee is run with no arguments it prints out a random epigram.
+     Epigrams are divided into several categories, where each category is sub-
+     divided into those which are potentially offensive and those which are
+     not.  The options are as follows:
+
+     --aa    Choose from all lists of maxims, both offensive and not.  (See the
+           --oo option for more information on offensive fortunes.)
+
+     --ee    Consider all fortune files to be of equal size (see discussion be-
+           low on multiple files).
+
+     --ff    Print out the list of files which would be searched, but don't
+           print a fortune.
+
+     --ll    Long dictums only.
+
+     --mm    Print out all fortunes which match the regular expression _p_a_t_t_e_r_n.
+           See regex(3) for a description of patterns.
+
+     --oo    Choose only from potentially offensive aphorisms.  PPlleeaassee,, pplleeaassee,,
+           pplleeaassee rreeqquueesstt aa ppootteennttiiaallllyy ooffffeennssiivvee ffoorrttuunnee iiff aanndd oonnllyy iiff yyoouu
+           bbeelliieevvee,, ddeeeepp ddoowwnn iinn yyoouurr hheeaarrtt,, tthhaatt yyoouu aarree wwiilllliinngg ttoo bbee ooff--
+           ffeennddeedd..  ((AAnndd tthhaatt iiff yyoouu aarree,, yyoouu''llll jjuusstt qquuiitt uussiinngg --oo rraatthheerr
+           tthhaann ggiivvee uuss ggrriieeff aabboouutt iitt,, ookkaayy??))
+
+                 ... let us keep in mind the basic governing philosophy of The
+                 Brotherhood, as handsomely summarized in these words: we be-
+                 lieve in healthy, hearty laughter -- at the expense of the
+                 whole human race, if needs be.  Needs be.
+                             --H. Allen Smith, "Rude Jokes"
+
+     --ss    Short apothegms only.
+
+     --ii    Ignore case for --mm patterns.
+
+     --ww    Wait before termination for an amount of time calculated from the
+           number of characters in the message.  This is useful if it is exe-
+           cuted as part of the logout procedure to guarantee that the message
+           can be read before the screen is cleared.
+
+     The user may specify alternate sayings.  You can specify a specific file,
+     a directory which contains one or more files, or the special word _a_l_l
+     which says to use all the standard databases.  Any of these may be pre-
+     ceded by a percentage, which is a number _N between 0 and 100 inclusive,
+     followed by a _%. If it is, there will be a _N percent probability that an
+     adage will be picked from that file or directory.  If the percentages do
+     not sum to 100, and there are specifications without percentages, the re-
+     maining percent will apply to those files and/or directories, in which
+     case the probability of selecting from one of them will be based on their
+     relative sizes.
+
+     As an example, given two databases _f_u_n_n_y and _n_o_t_-_f_u_n_n_y, with _f_u_n_n_y twice
+     as big, saying
+
+           fortune funny not-funny
+
+
+     will get you fortunes out of _f_u_n_n_y two-thirds of the time.  The command
+
+           fortune 90% funny 10% not-funny
+
+     will pick out 90% of its fortunes from _f_u_n_n_y (the ``10% not-funny'' is
+     unnecessary, since 10% is all that's left).  The --ee option says to con-
+     sider all files equal; thus
+
+           fortune -e
+
+     is equivalent to
+
+           fortune 50% funny 50% notEm -funny
+
+FFIILLEESS
+     /usr/share/games/fortune
+
+SSEEEE AALLSSOO
+     regex(3),  regcmp(3),  strfile(8)
+
+4th Berkeley Distribution        May 31, 1993                                2

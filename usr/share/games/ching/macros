@@ -1,0 +1,91 @@
+.ds N6 Six
+.ds N9 Nine
+.ds L1 at the beginning
+.ds L2 in the second place
+.ds L3 in the third place
+.ds L4 in the fourth place
+.ds L5 in the fifth place
+.ds L6 at the top
+.ds GR ()
+.ds CR []
+.ds BL \(em\(em\ \(em\(em
+.ds SL \(em\(em\(em\(em\(em
+.ds T1 Ch\'ien\ The Creative, Heaven
+.ds T2 Sun\ \ \ \ The Gentle, Wind
+.ds T3 Li\ \ \ \ \ The Clinging, Flame
+.ds T4 K\o'^e'n\ \ \ \ Keeping Still, Mountain
+.ds T5 Tui\ \ \ \ The Joyous, Lake
+.ds T6 K\'an\ \ \ The Abysmal, Water
+.ds T7 Ch\o'^e'n\ \ \ The Arousing, Thunder
+.ds T8 K\'un\ \ \ The Receptive, Earth
+.de H
+.ds LH The Lines
+.in 0
+.ta 0.5i 1.0i 1.5i 2.0i
+.na
+.nf
+.sp 2
+\\$1.	\\$2 / \\$3
+..
+.de X
+.sp
+.XX \\$1 "above" "\\*(T\\$1"
+.XX \\$2 "below" "\\*(T\\$2"
+..
+.de XX
+.ie \\$1>4 	\\*(BL
+.el 	\\*(SL
+.ie (\\$1-1%4)>1 	\\*(BL\\c
+.el 	\\*(SL\\c
+	\\$2	\\$3
+.ie \\$1%2 	\\*(SL
+.el 	\\*(BL
+..
+.de J
+.in 0
+.sp
+The Judgement
+.na
+.nf
+.in 0.5i
+.sp
+..
+.de I
+.in 0
+.sp
+The Image
+.na
+.nf
+.sp
+.in 0.5i
+..
+.de LX
+.in 0.5i
+.ti -0.5i
+.if '\\$3'G' \\{\\
+\\*(GR	\\$1 \\$2 means:\\}
+.if '\\$3'C' \\{\\
+\\*(CR	\\$1 \\$2 means:\\}
+.if '\\$3'' \\{\\
+	\\$1 \\$2 means:\\}
+..
+.de L
+.if !'\\*(LH'' \\{\\
+.in 0
+.sp
+\\*(LH
+.rm LH
+.in 0.5i\\}
+.sp
+.LX "\\*(N\\$2" "\\*(L\\$1" \\$3
+.na
+.nf
+..
+.de LA
+.sp
+.if '\\$1'6' .LX "When all the lines are" "sixes, it"
+.if '\\$1'9' .LX "When all the lines are" "nines, it"
+.na
+.nf
+..
+.po 0.5i

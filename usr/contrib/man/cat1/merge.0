@@ -1,0 +1,66 @@
+
+
+
+MERGE(1)               BSD Reference Manual              MERGE(1)
+
+
+NNAAMMEE
+       merge - three-way file merge
+
+SSYYNNOOPPSSIISS
+       mmeerrggee  [  --LL  _l_a_b_e_l_1  [  --LL _l_a_b_e_l_3 ] ] [ --pp ] [ --qq ] _f_i_l_e_1
+       _f_i_l_e_2 _f_i_l_e_3
+
+DDEESSCCRRIIPPTTIIOONN
+       mmeerrggee incorporates all changes that  lead  from  _f_i_l_e_2  to
+       _f_i_l_e_3  into  _f_i_l_e_1.  The result goes to standard output if
+       --pp is present, into _f_i_l_e_1 otherwise.  mmeerrggee is useful  for
+       combining  separate changes to an original.  Suppose _f_i_l_e_2
+       is the original, and both _f_i_l_e_1 and  _f_i_l_e_3  are  modifica-
+       tions of _f_i_l_e_2.  Then mmeerrggee combines both changes.
+
+       An  overlap occurs if both _f_i_l_e_1 and _f_i_l_e_3 have changes in
+       a common segment of lines.  On a  few  older  hosts  where
+       ddiiffff33  does  not  support  the  --EE  option, mmeerrggee does not
+       detect overlaps, and merely  supplies  the  changed  lines
+       from  _f_i_l_e_3_.  On most hosts, if overlaps occur, mmeerrggee out-
+       puts a message  (unless  the  --qq  option  is  given),  and
+       includes  both  alternatives  in the result.  The alterna-
+       tives are delimited as follows:
+
+              <<<<<<<<<<<<<< _f_i_l_e_1
+              _l_i_n_e_s _i_n _f_i_l_e_1
+              ==============
+              _l_i_n_e_s _i_n _f_i_l_e_3
+              >>>>>>>>>>>>>> _f_i_l_e_3
+
+       If there are overlaps, the user should edit the result and
+       delete  one  of  the  alternatives.   If the --LL _l_a_b_e_l_1 and
+       --LL _l_a_b_e_l_3 options are given,  the  labels  are  output  in
+       place of the names _f_i_l_e_1 and _f_i_l_e_3 in overlap reports.
+
+DDIIAAGGNNOOSSTTIICCSS
+       Exit  status  is 0 for no overlaps, 1 for some overlaps, 2
+       for trouble.
+
+IIDDEENNTTIIFFIICCAATTIIOONN
+       Author: Walter F. Tichy.
+       Revision Number: 5.3; Release Date: 1991/02/28.
+       Copyright (C) 1982, 1988, 1989 by Walter F. Tichy.
+       Copyright (C) 1990, 1991 by Paul Eggert.
+
+SSEEEE AALLSSOO
+       diff3(1), diff(1), rcsmerge(1), co(1).
+
+
+
+
+
+
+
+GNU                         1991/02/28                          1
+
+
+
+
+

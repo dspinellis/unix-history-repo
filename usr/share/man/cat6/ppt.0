@@ -1,0 +1,21 @@
+BCD(6)                       BSD Reference Manual                       BCD(6)
+
+NNAAMMEE
+     bbccdd, pppptt, mmoorrssee - reformat input as punch cards, paper tape or morse code
+
+SSYYNNOOPPSSIISS
+     bbccdd [_s_t_r_i_n_g _._._.]
+     pppptt [_s_t_r_i_n_g _._._.]
+     mmoorrssee [--ss _s_t_r_i_n_g _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     The commands bbccdd, pppptt and mmoorrssee reads the given input and reformats it in
+     the form of punched cards, paper tape or morse code respectively.  Ac-
+     ceptable input are command line arguments or the standard input.
+
+     Available option:
+
+     --ss    The --ss option for morse produces dots and dashes rather than words.
+
+FFIILLEESS
+4.4BSD                           May 31, 1993                                1

@@ -1,0 +1,89 @@
+TETRIS(6)                    BSD Reference Manual                    TETRIS(6)
+
+NNAAMMEE
+     tteettrriiss - the game of tetris
+
+SSYYNNOOPPSSIISS
+     tteettrriiss [--ss] [--kk _k_e_y_s] [--ll _l_e_v_e_l]
+
+DDEESSCCRRIIPPTTIIOONN
+     The tteettrriiss command runs display-based game which must be played on a CRT
+     terminal.  The object is to fit the shapes together forming complete
+     rows, which then vanish.  When the shapes fill up to the top, the game
+     ends.  You can optionally select a level of play, or custom-select con-
+     trol keys.
+
+     The default level of play is 2.
+
+     The default control keys are as follows:
+
+           j        move left
+           k        rotate 1/4 turn counterclockwise
+           l        move right
+           <space>  drop
+           p        pause
+           q        quit
+
+     The options are as follows:
+
+     --kk      The default control keys can be changed using the --kk --ooppttiioonn.. The
+             _k_e_y_s argument must have the six keys in order, and, remember to
+             quote any space or tab characters from the shell.  For example:
+
+                   tetris -l 2 -k 'jkl pq'
+
+             will play the default games, i.e. level 2 and with the default
+             control keys.  The current key settings are displayed at the bot-
+             tom of the screen during play.
+
+     --ll      Select a level of play.
+
+     --ss      Display the top scores.
+
+PPLLAAYY
+     At the start of the game, a shape will appear at the top of the screen,
+     falling one square at a time.  The speed at which it falls is determined
+     directly by the level: if you select level 2, the blocks will fall twice
+     per second; at level 9, they fall 9 times per second.  (As the game goes
+     on, things speed up, no matter what your initial selection.)  When this
+     shape ``touches down'' on the bottom of the field, another will appear at
+     the top.
+
+     You can move shapes to the left or right, rotate them counterclockwise,
+     or drop them to the bottom by pressing the appropriate keys.  As you fit
+     them together, completed horizontal rows vanish, and any blocks above
+     fall down to fill in.  When the blocks stack up to the top of the screen,
+     the game is over.
+
+SSCCOORRIINNGG
+     You get one point for every block you fit into the stack, and one point
+     for every space a block falls when you hit the drop key.  (Dropping the
+     blocks is therefore a good way to increase your score.)  Your total score
+     is the product of the level of play and your accumulated points -- 200
+     points on level 3 gives you a score of 600.  Each player gets at most one
+     entry on any level, for a total of nine scores in the high scores file.
+     Players who no longer have accounts are limited to one score.  Also,
+     scores over 5 years old are expired.  The exception to these conditions
+     is that the highest score on a given level is _a_l_w_a_y_s kept, so that fol-
+     lowing generations can pay homage to those who have wasted serious
+     amounts of time.
+
+     The score list is produced at the end of the game.  The printout includes
+     each player's overall ranking, name, score, and how many points were
+     scored on what level.  Scores which are the highest on a given level are
+     marked with asterisks ``*''.
+
+FFIILLEESS
+     /var/games/tetris.scores    high score file
+
+BBUUGGSS
+     The higher levels are unplayable without a fast terminal connection.
+
+AAUUTTHHOORRSS
+     Adapted from a 1989 International Obfuscated C Code Contest winner by
+     Chris Torek and Darren F. Provine.
+
+     Manual adapted from the original entry written by Nancy L. Tinkham and
+     Darren F. Provine.
+
+4.4BSD                           May 31, 1993                                2
