@@ -3,13 +3,18 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tcp_subr.c	7.13.1.1 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -290,9 +295,7 @@ tcp_ctlinput(cmd, sa)
 	case PRC_REDIRECT_HOST:
 	case PRC_REDIRECT_TOSNET:
 	case PRC_REDIRECT_TOSHOST:
-#if BSD>=43
 		in_pcbnotify(&tcb, &sin->sin_addr, 0, in_rtchange);
-#endif
 		break;
 
 	default:
@@ -302,15 +305,6 @@ tcp_ctlinput(cmd, sa)
 			tcp_notify);
 	}
 }
-
-#if BSD<43
-/* XXX fake routine */
-tcp_abort(inp)
-	struct inpcb *inp;
-{
-	return;
-}
-#endif
 
 /*
  * When a source quench is received, close congestion window
