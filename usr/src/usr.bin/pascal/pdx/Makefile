@@ -1,6 +1,6 @@
-#/* Copyright (c) 1982 Regents of the University of California */
+# Copyright (c) 1982 Regents of the University of California
 #
-# static char sccsid[] = "@(#)Makefile 1.4 1/23/82";
+#	@(#)Makefile	1.9	(Berkeley)	%G%
 #
 # make file for pdx
 #
