@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)stty.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)stty.c	5.13 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -203,7 +203,7 @@ struct {
 	{{ "stop", "stop", "xoff" },	VSTOP,	CSTOP, },
 	{{ "start", "star", "xon" },	VSTART,	CSTART, },
 	{{ "lnext", "lnxt" },		VLNEXT,	CLNEXT, },
-	{{ "flusho", "fls", "flush" },	VFLUSHO, CFLUSHO, },
+	{{ "discard", "disc", },	VDISCARD, CDISCARD, },
 	{{ "reprint", "rpnt", "rprnt" },	VREPRINT, CREPRINT, },
 	{{ "info", "info" },		VINFO, CINFO, },
 	0
