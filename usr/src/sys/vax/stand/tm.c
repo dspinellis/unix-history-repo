@@ -1,4 +1,4 @@
-/*	tm.c	4.10	83/03/02	*/
+/*	tm.c	4.11	83/07/01	*/
 
 /*
  * TM11/TE??
@@ -66,6 +66,7 @@ retry:
 		tmaddr->tmcs = com | func | TM_GO;
 	for (;;) {
 		word = tmaddr->tmcs;
+		DELAY(100);
 		if (word & TM_CUR)
 			break;
 	}
@@ -99,11 +100,13 @@ tmquiet(tmaddr)
 	register word;
 	for (;;) {
 		word = tmaddr->tmcs;
+		DELAY(100);
 		if (word&TM_CUR)
 			break;
 	}
 	for (;;) {
 		word = tmaddr->tmer;
+		DELAY(100);
 		if ((word&TMER_TUR) && (word&TMER_SDWN)==0)
 			break;
 	}
