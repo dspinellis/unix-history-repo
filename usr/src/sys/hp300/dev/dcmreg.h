@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: dcmreg.h 1.3 89/08/23$
+ * from: Utah $Hdr: dcmreg.h 1.1 90/07/09$
  *
- *	@(#)dcmreg.h	7.3 (Berkeley) %G%
+ *	@(#)dcmreg.h	7.4 (Berkeley) %G%
  */
 
 struct dcmdevice {	   /* host address, only odd bytes addressed */
@@ -59,12 +59,14 @@ struct dcmdevice {	   /* host address, only odd bytes addressed */
 		u_char	pad2;
 		volatile u_char	dcm_baud;
 	} dcm_data[4];			/* Configuration registers	8e20 */
-	u_char  dcm_pad7;
-	volatile u_char  dcm_mdmin;	/* Modem in			8e31 */
-	u_char  dcm_pad8;
-	volatile u_char  dcm_mdmout;	/* Modem out			8e33 */
-	u_char  dcm_pad9;
-	volatile u_char  dcm_mdmmsk;	/* Modem mask			8e35 */
+	struct	modemreg {
+		u_char	pad0;
+		volatile u_char  mdmin;		/* Modem in		8e31 */
+		u_char  pad1;
+		volatile u_char  mdmout;	/* Modem out		8e33 */
+		u_char  pad2;
+		volatile u_char  mdmmsk;	/* Modem mask		8e35 */
+	} dcm_modem0;
 	struct  {
 		u_char pad1;
 		volatile u_char dcm_data;
@@ -75,7 +77,14 @@ struct dcmdevice {	   /* host address, only odd bytes addressed */
 	} dcm_icrtab[4];		/* Interrupt data		8e3e */
 	u_char  dcm_pad10;
 	volatile u_char  dcm_stcon;	/* Self test condition		8e47 */
-	u_char  dcm_pad11[0x98];	/* Undef SR regs	8e48-8edf */
+	struct modemreg dcm_modem1;	/* 638 Modem port1		8e48 */
+	struct modemreg dcm_modem2;	/* 638 Modem port2		8e4e */
+	struct modemreg dcm_modem3;	/* 638 Modem port3		8e54 */
+	u_char	dcm_pad11;
+	volatile u_char	dcm_modemchng;	/* 638 Modem change mask	8e5b */
+	u_char	dcm_pad12;
+	volatile u_char	dcm_modemintr;	/* 638 Modem interrupt mask	8e5d */
+	u_char  dcm_pad13[0x82];	/* Undef Shared Ram	8e5e-8edf */
 	struct	dcmtfifo {
 	    u_char  ptr_pad1;
 	    volatile u_char  data_char;

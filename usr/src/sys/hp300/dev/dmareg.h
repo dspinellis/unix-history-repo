@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dmareg.h	7.1 (Berkeley) %G%
+ *	@(#)dmareg.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -89,24 +89,24 @@ struct	dmareg {
 #define	DMA_STAT(dc)	dc->sc_Bhwaddr->dmaB_stat
 
 #if defined(HP320)
-#define	DMA_ARM(dc, ix)	\
+#define	DMA_ARM(dc)	\
 	if (dc->sc_type == DMA_B) { \
 		register struct dmaBdevice *dma = dc->sc_Bhwaddr; \
-		dma->dmaB_addr = dc->sc_addr[ix]; \
-		dma->dmaB_count = dc->sc_count[ix] - 1; \
+		dma->dmaB_addr = dc->sc_cur->dc_addr; \
+		dma->dmaB_count = dc->sc_cur->dc_count - 1; \
 		dma->dmaB_cmd = dc->sc_cmd; \
 	} else { \
 		register struct dmadevice *dma = dc->sc_hwaddr; \
-		dma->dma_addr = dc->sc_addr[ix]; \
-		dma->dma_count = dc->sc_count[ix] - 1; \
+		dma->dma_addr = dc->sc_cur->dc_addr; \
+		dma->dma_count = dc->sc_cur->dc_count - 1; \
 		dma->dma_cmd = dc->sc_cmd; \
 	}
 #else
-#define	DMA_ARM(dc, ix)	\
+#define	DMA_ARM(dc)	\
 	{ \
 		register struct dmadevice *dma = dc->sc_hwaddr; \
-		dma->dma_addr = dc->sc_addr[ix]; \
-		dma->dma_count = dc->sc_count[ix] - 1; \
+		dma->dma_addr = dc->sc_cur->dc_addr; \
+		dma->dma_count = dc->sc_cur->dc_count - 1; \
 		dma->dma_cmd = dc->sc_cmd; \
 	}
 #endif
