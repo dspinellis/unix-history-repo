@@ -1,5 +1,5 @@
 #ifndef	lint
-static char *sccsid = "@(#)find.c	4.14 (Berkeley) %G%";
+static char *sccsid = "@(#)find.c	4.15 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -962,13 +962,11 @@ getname(uid)
 	register struct passwd *pw;
 	struct passwd *getpwent();
 	register int cp;
-#ifndef	NO_PW_STAYOPEN
 	extern int _pw_stayopen;
 
 	_pw_stayopen = 1;
-#endif
 
-#if	((NUID) & ((NUID) - 1) != 0)
+#if	(((NUID) & ((NUID) - 1)) != 0)
 	cp = uid % (NUID);
 #else
 	cp = uid & ((NUID) - 1);
