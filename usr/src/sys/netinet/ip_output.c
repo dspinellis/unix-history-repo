@@ -1,8 +1,9 @@
-/* ip_output.c 1.7 81/10/31 */
+/* ip_output.c 1.8 81/10/31 */
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
 #include "../h/socket.h"
+#include "../inet/cksum.h"
 #include "../inet/inet.h"
 #include "../inet/inet_systm.h"
 #include "../inet/imp.h"
@@ -20,8 +21,8 @@ ip_output(mp)
 	int hlen, adj, max, len, off;
 
 COUNT(IP_OUTPUT);
-	p = (struct ip *)((int)mp + mp->m_off); /* -> ip header */
-	hlen = sizeof (struct ip);               /* header length */
+	p = mtod(mp, struct ip *);
+	hlen = sizeof (struct ip);
 
 	/*
 	 * Fill in and byte swap ip header.
@@ -80,27 +81,26 @@ COUNT(IP_OUTPUT);
 	}
 }
 
-ip_send(p)
-	struct ip *p;
+ip_send(ip)
+	register struct ip *ip;		/* known to be r11 */
 {
 	register struct mbuf *m;
 	register struct imp *l;
+	register int hlen = ip->ip_hl << 2;
 	int s;
 COUNT(IP_SEND);
 
-	m = dtom(p);
+	m = dtom(ip);
 	l = (struct imp *)((int)m + m->m_off - L1822);
-	if ((l->i_shost = p->ip_src.s_host) == 0)
-		l->i_shost = 253;
-	if ((l->i_dhost = p->ip_dst.s_host) == 0)
-		l->i_dhost = 253;
+	l->i_shost = ip->ip_src.s_host;
+	l->i_dhost = ip->ip_dst.s_host;
 	l->i_type = IPTYPE;
-	p->ip_sum = 0;
-	p->ip_len = htons(p->ip_len);
-	p->ip_id = htons(p->ip_id);
-	p->ip_off = htons(p->ip_off);
-	p->ip_sum = cksum(m, sizeof(struct ip));
-	m->m_off -= L1822;              /* -> 1822 leader */
+	ip->ip_sum = 0;
+	ip->ip_len = htons(ip->ip_len);
+	ip->ip_id = htons(ip->ip_id);
+	ip->ip_off = htons(ip->ip_off);
+	CKSUM_IPSET(m, ip, r11, hlen);
+	m->m_off -= L1822;
 	m->m_len += L1822;
 	m->m_act = NULL;
 #ifndef IMPLOOP
