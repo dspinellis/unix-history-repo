@@ -1,4 +1,4 @@
-/*	ffs_inode.c	6.12	85/02/11	*/
+/*	ffs_inode.c	6.13	85/03/13	*/
 
 #include "param.h"
 #include "systm.h"
@@ -272,7 +272,7 @@ irele(ip)
 {
 	int mode;
 
-	if (ip->i_count == 1) {
+	if (ip->i_count == 1 && ip->i_fs->fs_ronly != 0) {
 		ip->i_flag |= ILOCKED;
 		if (ip->i_nlink <= 0) {
 			itrunc(ip, (u_long)0);
