@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)comsat.c	4.4 82/11/17";
+static	char *sccsid = "@(#)comsat.c	4.5 82/12/23";
 #endif
 
 #include <sys/types.h>
@@ -23,7 +23,7 @@ static	char *sccsid = "@(#)comsat.c	4.4 82/11/17";
 
 #define MAXUTMP 100		/* down from init */
 
-struct	sockaddr_in sin = { AF_INET, IPPORT_BIFFUDP };
+struct	sockaddr_in sin = { AF_INET };
 extern	errno;
 
 struct	utmp utmp[100];
@@ -67,9 +67,6 @@ char **argv;
 		perror("socket");
 		exit(1);
 	}
-#if vax || pdp11
-	sp->s_port = htons((u_short)sp->s_port);
-#endif
 	sin.sin_port = sp->s_port;
 	if (bind(s, &sin, sizeof (sin), 0) < 0) {
 		perror("bind");
