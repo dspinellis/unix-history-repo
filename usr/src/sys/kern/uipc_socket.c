@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket.c	7.24 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -369,7 +369,8 @@ restart:
 				if (top == 0) {
 					len = min(MCLBYTES - max_hdr, resid);
 					m->m_data += max_hdr;
-				}
+				} else
+					len = min(MCLBYTES, resid);
 #endif
 				space -= MCLBYTES;
 			} else {
@@ -586,12 +587,17 @@ restart:
 		if ((flags & MSG_PEEK) == 0)
 			m->m_nextpkt = nextrecord;
 		type = m->m_type;
+		if (type == MT_OOBDATA)
+			flags |= MSG_OOB;
 	}
 	moff = 0;
 	offset = 0;
-	while (m && m->m_type == type && uio->uio_resid > 0 && error == 0) {
-		if (m->m_type == MT_OOBDATA)
-			flags |= MSG_OOB;
+	while (m && uio->uio_resid > 0 && error == 0) {
+		if (m->m_type == MT_OOBDATA) {
+			if (type != MT_OOBDATA)
+				break;
+		} else if (type == MT_OOBDATA)
+			break;
 #ifdef DIAGNOSTIC
 		else if (m->m_type != MT_DATA && m->m_type != MT_HEADER)
 			panic("receive 3");
