@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -45,8 +45,8 @@ struct nlist nl[] = {
 	{ "_Syssize" },
 #define	N_IFNET		9
 	{ "_ifnet" },
-#define	N_HOSTS		10
-	{ "_hosts" },
+#define	N_IMP		10
+	{ "_imp_softc" },
 #define	N_RTHOST	11
 	{ "_rthost" },
 #define	N_RTNET		12
@@ -71,6 +71,8 @@ struct nlist nl[] = {
 	{ "_spp_istat"},
 #define N_NSERR		22
 	{ "_ns_errstat"},
+#define N_NIMP		23
+	{ "_nimp"},
 
     /* BBN Internet protocol implementation */
 #define	N_TCP		23
@@ -326,6 +328,10 @@ use:
 			printf("%s: no stats routine\n", tp->pr_name);
 		exit(0);
 	}
+	if (hflag) {
+		hostpr(nl[N_IMP].n_value, nl[N_NIMP].n_value);
+		exit(0);
+	}
 	/*
 	 * Keep file descriptors open to avoid overhead
 	 * of open/close on each call to get* routines.
@@ -334,10 +340,6 @@ use:
 	setnetent(1);
 	if (iflag) {
 		intpr(interval, nl[N_IFNET].n_value);
-		exit(0);
-	}
-	if (hflag) {
-		hostpr(nl[N_HOSTS].n_value);
 		exit(0);
 	}
 	if (rflag) {
@@ -383,6 +385,8 @@ use:
     if ((af == AF_UNIX || af == AF_UNSPEC) && !sflag)
 	    unixpr((off_t)nl[N_NFILE].n_value, (off_t)nl[N_FILE].n_value,
 		(struct protosw *)nl[N_UNIXSW].n_value);
+    if (af == AF_UNSPEC && sflag)
+	impstats(nl[N_IMP].n_value, nl[N_NIMP].n_value);
     exit(0);
 }
 
