@@ -9,7 +9,7 @@
 #	<kim@grendel.lut.fi> -- I haven't tested this myself.  It may
 #	work on other SVR4 ports.
 #
-#	@(#)Makefile.SVR4	8.1 (Berkeley) %G%
+#	@(#)Makefile.SVR4	8.2 (Berkeley) %G%
 #
 
 # make sure the shell constructs below use the right shell
@@ -101,10 +101,10 @@ install-sendmail: sendmail
 	${INSTALL} -c -o ${BINOWN} -g ${BINGRP} -m 444 sendmail.hf ${HFDIR}
 
 # doesn't actually install them -- you may want to install pre-nroff versions
-install-docs: aliases.0 newaliases.0 sendmail.0
+install-docs: aliases.0 mailq.0 newaliases.0 sendmail.0
 
 clean:
-	rm -f ${OBJS} sendmail aliases.0 newaliases.0 sendmail.0
+	rm -f ${OBJS} sendmail aliases.0 mailq.0 newaliases.0 sendmail.0
 
 # dependencies
 #   gross overkill, and yet still not quite enough....
