@@ -1,5 +1,5 @@
 /*
- *	@(#)emulate.s	6.1 (Berkeley) %G%
+ *	@(#)emulate.s	6.2 (Berkeley) %G%
  */
 
 #ifdef VAX630
@@ -177,14 +177,14 @@ Lmatchc_out:
 	.globl	_EMspanc
 _EMspanc:
 	argl(2,r1)		# (2) string address == r1
-	argl(3,r2)		# (3) table address == r2
-	argub(4,r3)		# (4) character-mask == r3
+	argl(3,r3)		# (3) table address == r3
+	argub(4,r2)		# (4) character-mask == r2
 	arguw(1,r0)		# (1) string length == r0
 	jeql	Lspanc_out
 Lspanc_loop:
 	movzbl	(r1),r11
-	mcomb	(r2)[r11],r11
-	bicb3	r11,r3,r11
+	mcomb	(r3)[r11],r11
+	bicb3	r11,r2,r11
 	jeql	Lspanc_out
 	incl	r1
 	decl	r0
@@ -199,14 +199,14 @@ Lspanc_out:
 	.globl	_EMscanc
 _EMscanc:
 	argl(2,r1)		# (2) string address == r1
-	argl(3,r2)		# (3) table address == r2
-	argub(4,r3)		# (4) character-mask == r3
+	argl(3,r3)		# (3) table address == r3
+	argub(4,r2)		# (4) character-mask == r2
 	arguw(1,r0)		# (1) string length == r0
 	jeql	Lscanc_out
 Lscanc_loop:
 	movzbl	(r1),r11
-	mcomb	(r2)[r11],r11
-	bicb3	r11,r3,r11
+	mcomb	(r3)[r11],r11
+	bicb3	r11,r2,r11
 	jneq	Lscanc_out
 	incl	r1
 	decl	r0
@@ -230,6 +230,7 @@ Lskpc_loop:
 	cmpb	(r1)+,r11
 	jeql	Lskpc_loop
 	decl	r1
+	tstl	r0
 Lskpc_out:
 	savepsl
 	return
@@ -248,6 +249,7 @@ Llocc_loop:
 	cmpb	(r1)+,r11
 	jneq	Llocc_loop
 	decl	r1
+	tstl	r0
 Llocc_out:
 	savepsl
 	return
