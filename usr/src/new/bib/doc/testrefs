@@ -1,0 +1,164 @@
+%A Timothy A. Budd
+%T Referemce File Formats
+%I UATR 82-1
+%D 1982
+
+%A Brian W. Kernighan
+%A Lorinda L. Cherry
+%T A System for Typesetting Mathematics
+%J CACM
+%V 18
+%N 3
+%D MAR 1978
+%P 151-156
+%K eqn
+
+%A Software\ Research\ Associates
+%T Software Engineering Automated Tools Index
+%I S\&RA
+%C San Francisco, CA
+%D 1982
+
+%A M. E. Lesk
+%T Tbl - A Program to Format Tables
+%J Unix Programmers Manual, Vol 2A
+
+%A M. E. Lesk
+%T Some Applicates of Inverted Indexes on the UNIX System
+%R Bell Laboratories Computing Scienc Technical Report 69
+%D JUN 1978
+%K refer
+
+%A Alfred V. Aho
+%A Jeffrey D. Ullman
+%T Principles of Compiler Design
+%I Addison-Wesley
+%D 1977
+%K dragon
+
+%A R. E. Griswold
+%A J. F. Poage
+%A I. P. Polonsky
+%T The SNOBOL4 Programming Language
+%I PRHALL
+%D second edition 1971
+
+%A R. Colt Hoare
+%T A Tour through the Island of Elba
+%I (no listed publisher)
+%C London
+%D 1814
+
+%A Dennie Van\ Tassel
+%T Program Style, Design, Efficiency,
+%I PRHALL
+%D 1978
+%W tab
+%K testing debugging
+
+%A M. A. Harrison
+%A W. L. Ruzzo
+%A J. D. Ullman
+%T Protection in Operating Systems
+%J CACM
+%V 19
+%N 8
+%P 461-471
+%D AUG 1976
+%K hru
+
+%A M. Bishop
+%A L. Snyder
+%T The Transfer of Information and Authority
+in a Protection System
+%J Proceedings of the 7th SOSP
+%P 45-54
+%D 1979
+
+%A John B. Goodenough
+%T A Survey of Program Testing Issues
+%B Research Directions in Software Technology
+%E Peter Wegner
+%I MIT Press
+%P 316-340
+%D 1979
+
+%A R. J. Lipton
+%A L. Snyder
+%T On Synchronization and Security
+%E R. A. DeMillo
+%E D. P. Dobkin
+%E A. K. Jones
+%E R. J. Lipton
+%B Foundations of Secure Computation
+%P 367-388
+%I ACPRESS
+%D 1978
+
+%A C.A.R. Hoare
+%T Procedures and parameters: An axiomatic approach
+%B Symposium on semantics of algorithmic languages
+%E E. Engeler
+%P 102-116
+%S Lecture Notes in Mathematics
+%V 188
+%I Springer-Verlag
+%C Berlin-Heidelberg-New York
+%D 1971
+
+%A A. Girard
+%A J-C Rault
+%T A Programming Technique for Software Reliability
+%B Symposium on Software Reliability
+%I IEEE
+%C Montvale, New Jersey
+%D 1977
+%O (Cited in Glib [32])
+
+%E R. A. DeMillo
+%E D. P. Dobkin
+%E A. K. Jones
+%E R. J. Lipton
+%T Foundations of Secure Computation
+%I ACPRESS
+%D 1978
+%K book
+
+%A T. A. Budd
+%T An APL Complier
+%R UATR 81-17
+%D 1981
+
+%A Douglas Baldwin
+%A Frederick Sayward
+%T Heuristics for Determining Equivalence of Program Mutations
+%R Technical Report Number 161
+%I Yale University
+%D 1979
+
+%A Martin Brooks
+%T Automatic Generation of Test Data for
+Recursive Programs Having Simple Errors
+%I PhD Thesis, Stanford University
+%D 1980
+
+%A A. Snyder
+%T A Portable Compiler for the Language C
+%R Master's Thesis
+%I M.I.T.
+%D 1974
+
+%F BHS--
+%A Timothy A. Budd
+%A Robert Hess
+%A Frederick G. Sayward
+%T User's Guide for the EXPER Mutation Analysis system
+%O (Yale university, memo)
+
+%E I. M. Editor
+%T Book with no author
+%D 1066
+
+%I SDIT
+%T Bullitun of the South Dakota Institute of Technology
+%D 1946
