@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)case.c 1.1 %G%";
+static	char sccsid[] = "@(#)case.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -81,7 +81,7 @@ caseop(r)
 	 * Allocate case table space
 	 */
 	ctab = i = malloc(n * sizeof *ctab);
-	if (i == -1) {
+	if (i == 0) {
 		error("Ran out of memory (case)");
 		pexit(DIED);
 	}

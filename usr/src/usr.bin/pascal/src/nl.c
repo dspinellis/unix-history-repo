@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)nl.c 1.3 %G%";
+static	char sccsid[] = "@(#)nl.c 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -680,11 +680,11 @@ defnl(sym, cls, typ, val)
 	if (nlp >= nlact->nls_high) {
 		i = NLINC;
 		cp = malloc(NLINC * sizeof *nlp);
-		if (cp == -1) {
+		if (cp == 0) {
 			i = NLINC / 2;
 			cp = malloc((NLINC / 2) * sizeof *nlp);
 		}
-		if (cp == -1) {
+		if (cp == 0) {
 			error("Ran out of memory (defnl)");
 			pexit(DIED);
 		}

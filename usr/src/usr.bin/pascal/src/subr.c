@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)subr.c 1.2 %G%";
+static	char sccsid[] = "@(#)subr.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -113,8 +113,8 @@ calloc(num, size)
 	register int p1, *p2, nbyte;
 
 	nbyte = (num*size+( ( sizeof ( int ) ) - 1 ) ) & ~( ( sizeof ( int ) ) - 1 );
-	if ((p1 = malloc(nbyte)) == -1 || p1==0)
-		return (-1);
+	if ((p1 = malloc(nbyte)) == 0)
+		return (0);
 	p2 = p1;
 	nbyte /= sizeof ( int );
 	do {

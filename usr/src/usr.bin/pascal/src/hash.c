@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)hash.c 1.1 %G%";
+static	char sccsid[] = "@(#)hash.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -136,7 +136,7 @@ int *hash(s, save)
 	for (htp = htab; htp < &htab[MAXHASH]; htp++) {
 		if (htp->ht_low == NIL) {
 			cp = (char *) calloc(sizeof ( int * ), HASHINC);
-			if (cp == -1) {
+			if (cp == 0) {
 				yerror("Ran out of memory (hash)");
 				pexit(DIED);
 			}
