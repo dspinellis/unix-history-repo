@@ -1,9 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)uucpname.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)uucpname.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <sys/stat.h>
+
+/*LINTLIBRARY*/
 
 #ifdef	GETMYHNAME
 #include <UNET/unetio.h>
@@ -18,6 +20,7 @@ static char sccsid[] = "@(#)uucpname.c	5.3 (Berkeley) %G%";
 /* Compile in 'sysname' as found in standard(!) include file */
 #include <whoami.h>
 #endif
+char Myfullname[64];
 
 /*
  *	uucpname(name)		get the uucp name
@@ -27,7 +30,7 @@ static char sccsid[] = "@(#)uucpname.c	5.3 (Berkeley) %G%";
 uucpname(name)
 register char *name;
 {
-	register char *s, *d;
+	register char *s;
 
 	/*
 	 * Since some UNIX systems do not honor the set-user-id bit
@@ -47,16 +50,15 @@ register char *name;
 
 #ifdef GETHOSTNAME
 	if (s == NULL || *s == '\0') {
-		char hostname[32];
 #ifdef VMS
-		int i = sizeof(hostname);
+		int i = sizeof(Myfullname);
 #endif VMS
 
-		s = hostname;
+		s = Myfullname;
 #ifdef VMS
-		if(gethostname(hostname, &i) == -1) {
+		if(gethostname(Myfullname, &i) == -1) {
 #else !VMS
-		if(gethostname(hostname, sizeof(hostname)) == -1) {
+		if(gethostname(Myfullname, sizeof(Myfullname)) == -1) {
 #endif !VMS
 			DEBUG(1, "gethostname", _FAILED);
 			s = NULL;
@@ -69,10 +71,12 @@ register char *name;
 	if (s == NULL || *s == '\0') {
 		struct utsname utsn;
 
-		s = utsn.nodename;
 		if (uname(&utsn) == -1) {
 			DEBUG(1, "uname", _FAILED);
 			s = NULL;
+		} else {
+			strncpy(Myfullname, utsn.nodename, sizeof Myfullname);
+			s = Myfullname;
 		}
 	}
 #endif
@@ -80,10 +84,9 @@ register char *name;
 #ifdef	WHOAMI
 	/* Use fake gethostname() routine */
 	if (s == NULL || *s == '\0') {
-		char fakehost[32];
 
-		s = fakehost;
-		if (fakegethostname(fakehost, sizeof(fakehost)) == -1) {
+		s = Myfullname;
+		if (fakegethostname(Myfullname, sizeof(Myfullname)) == -1) {
 			DEBUG(1, "whoami search", _FAILED);
 			s = NULL;
 		}
@@ -101,19 +104,20 @@ register char *name;
 	/* uucp name is stored in /etc/uucpname or /local/uucpname */
 	if (s == NULL || *s == '\0') {
 		FILE *uucpf;
-		char stmp[10];
 
-		s = stmp;
+		s = Myfullname;
 		if (((uucpf = fopen("/etc/uucpname", "r")) == NULL &&
 		     (uucpf = fopen("/local/uucpname", "r")) == NULL) ||
-			fgets(s, 8, uucpf) == NULL) {
+			fgets(Myfullname, sizeof Myfullname, uucpf) == NULL) {
 				DEBUG(1, "uuname search", _FAILED);
 				s = NULL;
-		} else {
-			for (d = stmp; *d && *d != '\n' && d < stmp + 8; d++)
-				;
-			*d = '\0';
 		}
+		if (s == Myfullname) {
+			register char *p;
+			p = index(s, '\n');
+			if (p)
+				*p = '\0';
+  		}
 		if (uucpf != NULL)
 			fclose(uucpf);
 	}
@@ -122,8 +126,10 @@ register char *name;
 #ifdef	GETMYHNAME
 	/* Use 3Com's getmyhname() routine */
 	if (s == NULL || *s == '\0') {
-		if ((s == getmyhname()) == NULL)
+		if ((s = getmyhname()) == NULL)
 			DEBUG(1, "getmyhname", _FAILED);
+		else
+			strncpy(Myfullname, s, sizeof Myfullname);
 	}
 #endif
 
@@ -144,24 +150,22 @@ register char *name;
 	}
 
 	/*
-	 * save entire name for TCP/IP verification
-	 */
-
-	strcpy(Myfullname, s);
-
-	/*
 	 * copy uucpname back to caller-supplied buffer,
-	 * truncating to 7 characters.
-	 * Also set up subdirectory names, if subdirs are being used.
+	 * truncating to MAXBASENAME characters.
+	 * Also set up subdirectory names
+	 * Truncate names at '.' if found to handle cases like
+	 * seismo.arpa being returned by gethostname().
+	 * uucp sites should not have '.' in their name anyway
 	 */
-	d = name;
-	while ((*d = *s++) && d < name + 7)
-		d++;
-	*(name + 7) = '\0';
+	strncpy(name, s, MAXBASENAME);
+	name[MAXBASENAME] = '\0';
+	s = index(name, '.');
+	if (s != NULL)
+		*s = '\0';
 	DEBUG(1, "My uucpname = %s\n", name);
 
-	sprintf(DLocal, "D.%s", name);
-	sprintf(DLocalX, "D.%sX", name);
+	sprintf(DLocal, "D.%.*s", SYSNSIZE, name);
+	sprintf(DLocalX, "D.%.*sX", SYSNSIZE, name);
 }
 
 #ifdef	WHOAMI
