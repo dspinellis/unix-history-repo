@@ -3,47 +3,54 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.2 (Berkeley) %G%
+#	@(#)Makefile	7.3 (Berkeley) %G%
 #
 # Put the ../h stuff near the end so that subroutine definitions win when
 # there is a struct tag with the same name (eg., vmmeter).  The real
 # solution would probably be for ctags to generate "struct vmmeter" tags.
-CTAGS=	ctags
-SRCS =	../net/*.[ch] ../netimp/*.[ch] ../netinet/*.[ch] \
-	../netns/*.[ch] ../sys/*.[ch] ../vaxif/*.[ch]  ../vaxmba/*.[ch] \
-	../vaxuba/*.[ch] \
-	../vax/autoconf.c ../vax/clock.c ../vax/clock.h ../vax/conf.c \
-	../vax/cons.c ../vax/cons.h ../vax/cpu.h ../vax/cpudata.c \
-	../vax/dkbad.c ../vax/dkio.h ../vax/flp.c ../vax/flp.h \
-	../vax/frame.h \
-	../vax/genassym.c ../vax/in_cksum.c ../vax/machdep.c \
-	../vax/machparam.h ../vax/mem.c \
-	../vax/mem.h ../vax/mscp.h ../vax/mtpr.h ../vax/nexus.h \
-	../vax/pcb.h ../vax/psl.h ../vax/pte.h ../vax/pup_cksum.c \
-	../vax/reg.h \
-	../vax/rpb.h ../vax/rpb.s ../vax/rsp.h ../vax/scb.h \
-	../vax/scb.s \
-	../vax/swapgeneric.c ../vax/sys_machdep.c ../vax/trap.c \
-	../vax/trap.h \
-	../vax/tu.c ../vax/ufs_machdep.c ../vax/vm_machdep.c \
-	../vax/vmparam.h \
-	../h/*.h 
+CTAGS=	/usr/ucb/ctags
 
-DIRS =	h net netimp netinet netns vax vaxif vaxmba vaxuba
+TVAX=	../vax/tags
+SVAX=	../net/*.[ch] ../netimp/*.[ch] ../netinet/*.[ch] ../netns/*.[ch] \
+	../sys/*.[ch] ../vaxif/*.[ch]  ../vaxmba/*.[ch] ../vaxuba/*.[ch] \
+	../vax/*.[ch] ../h/*.h
+AVAX=	../vax/*.s
+
+TTAHOE=	../tahoe/tags
+STAHOE=	../net/*.[ch] ../netimp/*.[ch] ../netinet/*.[ch] ../netns/*.[ch] \
+	../sys/*.[ch] ../tahoeif/*.[ch]  ../tahoevba/*.[ch] ../tahoe/*.[ch] \
+	../h/*.h
+ATAHOE=	../tahoe/*.s
+
+DGEN=	h sys net netimp netinet netns
+DVAX=	vaxif vaxmba vaxuba
+DTAHOE=	tahoeif tahoevba
 
 all:
 	@echo "make tags or links only"
 
 tags: FRC
-	mv tags tags.old
-	-cp ../machine/astags tags
-	${CTAGS} -at ${SRCS}
-	sort -o tags.new tags
-	mv tags.new tags
-	rm -f tags.old
+	-mv ${TVAX} ${TVAX}.old
+	${CTAGS} -atf ${TVAX} ${SVAX}
+	/usr/bin/egrep "^SCBVEC(.*)|^ENTRY(.*)|^JSBENTRY(.*)" ${AVAX} | \
+/bin/sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \1 /^\2(\3\4$$/;" \
+		>> ${TVAX}
+	/usr/bin/sort -o ${TVAX} ${TVAX}
+	rm -f ${TVAX}.old
+	-mv ${TTAHOE} ${TTAHOE}.old
+	${CTAGS} -atf ${TTAHOE} ${STAHOE}
+	/usr/bin/egrep "^SCBVEC(.*)|^ENTRY(.*)|^JSBENTRY(.*)" ${ATAHOE} | \
+/bin/sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \1 /^\2(\3\4$$/;" \
+		>> ${TTAHOE}
+	/usr/bin/sort -o ${TTAHOE} ${TTAHOE}
+	rm -f ${TTAHOE}.old
 
 links:
-	-for i in ${DIRS}; do rm -f ../$$i/tags; \
-	ln -s ../sys/tags ../$$i/tags; done
+	-for i in ${DVAX}; do rm -f ../$$i/tags; \
+	ln -s ../vax/tags ../$$i/tags; done
+	-for i in ${DTAHOE}; do rm -f ../$$i/tags; \
+	ln -s ../tahoe/tags ../$$i/tags; done
+	-for i in ${DGEN}; do rm -f ../$$i/tags; \
+	ln -s ../machine/tags ../$$i/tags; done
 
 FRC:
