@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	4.11	81/08/12	*/
+/*	vfs_syscalls.c	4.12	81/11/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -28,23 +28,16 @@ fstat()
 
 	uap = (struct a *)u.u_ap;
 	fp = getf(uap->fdes);
-	if(fp == NULL)
+	if (fp == NULL)
 		return;
-	if (fp->f_flag&FPORT) {
-		ptstat(fp);
-		return;
-	}
-#ifdef BBNNET
-	if (fp->f_flag&FNET) {
-	    	u.u_error = EINVAL;
-		return;
-	}
-#endif
-	stat1(fp->f_inode, uap->sb);
+	if (fp->f_flag & FSOCKET)
+		sostat(fp->f_socket);
+	else
+		stat1(fp->f_inode, uap->sb);
 }
 
 /*
- * the stat system call.
+ * Stat system call.
  */
 stat()
 {
@@ -56,7 +49,7 @@ stat()
 
 	uap = (struct a *)u.u_ap;
 	ip = namei(uchar, 0);
-	if(ip == NULL)
+	if (ip == NULL)
 		return;
 	stat1(ip, uap->sb);
 	iput(ip);
@@ -67,8 +60,8 @@ stat()
  * get the inode and pass appropriate parts back.
  */
 stat1(ip, ub)
-register struct inode *ip;
-struct stat *ub;
+	register struct inode *ip;
+	struct stat *ub;
 {
 	register struct dinode *dp;
 	register struct buf *bp;
@@ -76,7 +69,7 @@ struct stat *ub;
 
 	IUPDAT(ip, &time, &time, 0);
 	/*
-	 * first copy from inode table
+	 * First copy from inode table
 	 */
 	ds.st_dev = ip->i_dev;
 	ds.st_ino = ip->i_number;
@@ -87,7 +80,7 @@ struct stat *ub;
 	ds.st_rdev = (dev_t)ip->i_un.i_rdev;
 	ds.st_size = ip->i_size;
 	/*
-	 * next the dates in the disk
+	 * Next the dates in the disk
 	 */
 	bp = bread(ip->i_dev, itod(ip->i_number));
 	dp = bp->b_un.b_dino;
@@ -101,7 +94,7 @@ struct stat *ub;
 }
 
 /*
- * the dup system call.
+ * Dup system call.
  */
 dup()
 {
@@ -116,7 +109,7 @@ dup()
 	m = uap->fdes & ~077;
 	uap->fdes &= 077;
 	fp = getf(uap->fdes);
-	if(fp == NULL)
+	if (fp == NULL)
 		return;
 	if ((m&0100) == 0) {
 		if ((i = ufalloc()) < 0)
@@ -127,13 +120,9 @@ dup()
 			u.u_error = EBADF;
 			return;
 		}
-		if (u.u_vrpages[i]) {
-			u.u_error = ETXTBSY;
-			return;
-		}
 		u.u_r.r_val1 = i;
 	}
-	if (i!=uap->fdes) {
+	if (i != uap->fdes) {
 		if (u.u_ofile[i]!=NULL)
 			closef(u.u_ofile[i]);
 		u.u_ofile[i] = fp;
@@ -142,9 +131,10 @@ dup()
 }
 
 /*
- * the mount system call.
+ * Mount system call.
  */
-smount() {
+smount()
+{
 	dev_t dev;
 	register struct inode *ip;
 	register struct mount *mp;
@@ -160,31 +150,31 @@ smount() {
 
 	uap = (struct a *)u.u_ap;
 	dev = getmdev();
-	if(u.u_error)
+	if (u.u_error)
 		return;
 	u.u_dirp = (caddr_t)uap->freg;
 	ip = namei(uchar, 0);
-	if(ip == NULL)
+	if (ip == NULL)
 		return;
-	if(ip->i_count!=1 || (ip->i_mode&(IFBLK&IFCHR))!=0)
+	if (ip->i_count!=1 || (ip->i_mode&IFMT) != IFDIR)
 		goto out;
 	smp = NULL;
-	for(mp = &mount[0]; mp < &mount[NMOUNT]; mp++) {
-		if(mp->m_bufp != NULL) {
-			if(dev == mp->m_dev)
+	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++) {
+		if (mp->m_bufp != NULL) {
+			if (dev == mp->m_dev)
 				goto out;
 		} else
-		if(smp == NULL)
+		if (smp == NULL)
 			smp = mp;
 	}
 	mp = smp;
-	if(mp == NULL)
+	if (mp == NULL)
 		goto out;
 	(*bdevsw[major(dev)].d_open)(dev, !uap->ronly);
-	if(u.u_error)
+	if (u.u_error)
 		goto out;
 	bp = bread(dev, SUPERB);
-	if(u.u_error) {
+	if (u.u_error) {
 		brelse(bp);
 		goto out1;
 	}
@@ -205,7 +195,7 @@ smount() {
 	*cp = 0;
 	brelse(bp);
 	ip->i_flag |= IMOUNT;
-	prele(ip);
+	irele(ip);
 	return;
 
 out:
@@ -229,19 +219,19 @@ sumount()
 	};
 
 	dev = getmdev();
-	if(u.u_error)
+	if (u.u_error)
 		return;
 	xumount(dev);	/* remove unused sticky files from text table */
 	update();
-	for(mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
-		if(mp->m_bufp != NULL && dev == mp->m_dev)
+	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
+		if (mp->m_bufp != NULL && dev == mp->m_dev)
 			goto found;
 	u.u_error = EINVAL;
 	return;
 
 found:
 	stillopen = 0;
-	for(ip = inode; ip < inodeNINODE; ip++)
+	for (ip = inode; ip < inodeNINODE; ip++)
 		if (ip->i_number != 0 && dev == ip->i_dev) {
 			u.u_error = EBUSY;
 			return;
@@ -250,7 +240,7 @@ found:
 			stillopen++;
 	ip = mp->m_inodp;
 	ip->i_flag &= ~IMOUNT;
-	plock(ip);
+	ilock(ip);
 	iput(ip);
 	if ((bp = getblk(dev, SUPERB)) != mp->m_bufp)
 		panic("umount");
@@ -279,12 +269,12 @@ getmdev()
 	if (!suser())
 		return(NODEV);
 	ip = namei(uchar, 0);
-	if(ip == NULL)
+	if (ip == NULL)
 		return(NODEV);
-	if((ip->i_mode&IFMT) != IFBLK)
+	if ((ip->i_mode&IFMT) != IFBLK)
 		u.u_error = ENOTBLK;
 	dev = (dev_t)ip->i_un.i_rdev;
-	if(major(dev) >= nblkdev)
+	if (major(dev) >= nblkdev)
 		u.u_error = ENXIO;
 	iput(ip);
 	return(dev);
