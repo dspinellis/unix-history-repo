@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -26,7 +26,7 @@ static char sccsid[] = "@(#)df.c	5.28 (Berkeley) %G%";
 #include <unistd.h>
 
 int	 bread __P((long, char *, int));
-char	*getbsize __P((char *, int *, int *));
+char	*getbsize __P((char *, int *, long *));
 char	*getmntpt __P((char *));
 void	 prtstat __P((struct statfs *, long));
 void	 ufs_df __P((char *, long));
@@ -153,7 +153,8 @@ prtstat(sfsp, maxwidth)
 	register struct statfs *sfsp;
 	long maxwidth;
 {
-	static int blocksize, headerlen, timesthrough;
+	static long blocksize;
+	static int headerlen, timesthrough;
 	static char *header;
 	long used, availblks, inodes;
 
