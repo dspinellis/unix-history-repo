@@ -1,14 +1,15 @@
-/*	@(#)reject.c	4.1	%G%	*/
+/*	@(#)reject.c	4.2	%G%	*/
 
 # include <stdio.h>
-extern struct {int *yyaa, *yybb; int *yystops;} *yylstate [], **yylsp, **yyolsp;
-yyreject ()
-{
 extern FILE *yyout, *yyin;
 extern int yyprevious , *yyfnd;
 extern char yyextra[];
 extern char yytext[];
 extern int yyleng;
+extern struct {int *yyaa, *yybb; int *yystops;} *yylstate [], **yylsp, **yyolsp;
+
+yyreject ()
+{
 for( ; yylsp < yyolsp; yylsp++)
 	yytext[yyleng++] = yyinput();
 if (*yyfnd > 0)

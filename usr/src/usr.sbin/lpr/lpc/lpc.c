@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)lpc.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpc.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -86,8 +86,6 @@ cmdscanner(top)
 	int top;
 {
 	register struct cmd *c;
-	extern struct cmd cmdtab[];
-	extern int help();
 
 	if (!top)
 		putchar('\n');
@@ -118,6 +116,8 @@ cmdscanner(top)
 	}
 	longjmp(toplevel, 0);
 }
+
+extern struct cmd cmdtab[];
 
 struct cmd *
 getcmd(name)

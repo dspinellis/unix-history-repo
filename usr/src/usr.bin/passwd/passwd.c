@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.31 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -223,19 +223,19 @@ replace(dp, pwd)
 		return;
 
 	cp = buf;
-#define	COMPACT(e)	tp = pwd->pw_/**/e; while (*cp++ = *tp++);
-	COMPACT(name);
-	COMPACT(passwd);
+#define	COMPACT(e)	tp = pwd->e; while (*cp++ = *tp++);
+	COMPACT(pw_name);
+	COMPACT(pw_passwd);
 	bcopy((char *)&pwd->pw_uid, cp, sizeof (int));
 	cp += sizeof (int);
 	bcopy((char *)&pwd->pw_gid, cp, sizeof (int));
 	cp += sizeof (int);
 	bcopy((char *)&pwd->pw_quota, cp, sizeof (int));
 	cp += sizeof (int);
-	COMPACT(comment);
-	COMPACT(gecos);
-	COMPACT(dir);
-	COMPACT(shell);
+	COMPACT(pw_comment);
+	COMPACT(pw_gecos);
+	COMPACT(pw_dir);
+	COMPACT(pw_shell);
 	content.dptr = buf;
 	content.dsize = cp - buf;
 	key.dptr = pwd->pw_name;
