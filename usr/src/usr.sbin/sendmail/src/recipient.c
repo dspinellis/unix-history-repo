@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.54 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.55 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -117,8 +117,22 @@ sendtolist(list, ctladdr, sendq, e)
 		    (firstone && *p == '\0' && bitset(QPRIMARY, ctladdr->q_flags)))
 			a->q_flags |= QPRIMARY;
 
-		if (ctladdr != NULL && sameaddr(ctladdr, a))
-			ctladdr->q_flags |= QSELFREF;
+		/* arrange to inherit attributes from parent */
+		if (ctladdr != NULL)
+		{
+			/* self reference test */
+			if (sameaddr(ctladdr, a))
+				ctladdr->q_flags |= QSELFREF;
+
+			/* full name */
+			if (a->q_fullname == NULL)
+				a->q_fullname = ctladdr->q_fullname;
+
+			/* various flag bits */
+			a->q_flags &= ~QINHERITEDBITS;
+			a->q_flags |= ctladdr->q_flags & QINHERITEDBITS;
+		}
+
 		al = a;
 		firstone = FALSE;
 	}
@@ -130,18 +144,6 @@ sendtolist(list, ctladdr, sendq, e)
 
 		al = a->q_next;
 		a = recipient(a, sendq, e);
-
-		/* arrange to inherit attributes from parent */
-		if (ctladdr != NULL)
-		{
-			/* full name */
-			if (a->q_fullname == NULL)
-				a->q_fullname = ctladdr->q_fullname;
-
-			/* various flag bits */
-			a->q_flags &= ~QINHERITEDBITS;
-			a->q_flags |= ctladdr->q_flags & QINHERITEDBITS;
-		}
 		naddrs++;
 	}
 
