@@ -1,6 +1,6 @@
 .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 3.8'DRAFT'Last Mod %G%'
+.fo 'Version 3.9'DRAFT'Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -26,7 +26,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.8
+Version 3.9
 .)l
 .sp 3
 .pp
@@ -594,11 +594,12 @@ as the message sits in the queue.
 The initial priority depends on the message class
 and the size of the message.
 .ip M
-Macro definition.
-In certain cases,
-it is necessary to pass a macro definition
-through from the queue creation
-to the queue run.
+A message.
+This line is printed by the
+.i mailq
+command,
+and is generally used to store status information.
+It can contain any text.
 .pp
 As an example,
 the following is a queue file sent to
@@ -2955,10 +2956,27 @@ This mailer is expensive to connect to,
 so try to avoid connecting normally;
 any necessary connection will occur during a queue run.
 .ip X
-This mailer wants to run the full SMTP protocol,
-including limiting line lengths,
-putting <CRLF> on the end of lines,
-etc.
+This mailer want to use the hidden dot algorithm
+as specified in RFC821;
+basically,
+any line beginning with a dot
+will have an extra dot prepended
+(to be stripped at the other end).
+This insures that lines in the message containing a dot
+will not terminate the message prematurely.
+.ip L
+Limit the line lengths as specified in RFC821.
+.ip R
+Terminate lines with CRLF
+(Carriage Return/Line Feed)
+rather than newline.
+.ip P
+Use the return-path in the SMTP
+.q "MAIL FROM:"
+command
+rather than just the return address;
+although this is required in RFC821,
+many hosts do not process return paths properly.
 .ip I
 This mailer will be speaking SMTP
 to another
@@ -3490,7 +3508,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.8
+Version 3.9
 .ce 0
 .bp 1
 .ce
