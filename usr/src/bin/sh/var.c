@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)var.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)var.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -63,7 +63,9 @@ const struct varinit varinit[] = {
 	{&vmail,	VSTRFIXED|VTEXTFIXED|VUNSET,	"MAIL="},
 	{&vmpath,	VSTRFIXED|VTEXTFIXED|VUNSET,	"MAILPATH="},
 	{&vpath,	VSTRFIXED|VTEXTFIXED,		"PATH=:/bin:/usr/bin"},
-	{&vps1,	VSTRFIXED|VTEXTFIXED,		"PS1=$ "},
+	/* 
+	 * vps1 depends on uid
+	 */
 	{&vps2,	VSTRFIXED|VTEXTFIXED,		"PS2=> "},
 #if ATTY
 	{&vterm,	VSTRFIXED|VTEXTFIXED|VUNSET,	"TERM="},
@@ -73,17 +75,9 @@ const struct varinit varinit[] = {
 
 struct var *vartab[VTABSIZE];
 
-#ifdef __STDC__
-STATIC void unsetvar(char *);
-STATIC struct var **hashvar(char *);
-STATIC int varequal(char *, char *);
-#else
-STATIC void unsetvar();
-STATIC struct var **hashvar();
-STATIC int varequal();
-#endif
-
-
+STATIC void unsetvar __P((char *));
+STATIC struct var **hashvar __P((char *));
+STATIC int varequal __P((char *, char *));
 
 /*
  * Initialize the varable symbol tables and import the environment
@@ -118,9 +112,6 @@ initvar() {
 
 	for (ip = varinit ; (vp = ip->var) != NULL ; ip++) {
 		if ((vp->flags & VEXPORT) == 0) {
-			if ((strncmp(ip->text, "PS1=", 4) == 0) &&
-			    getuid() == 0)
-				ip->text = "PS1=# ";
 			vpp = hashvar(ip->text);
 			vp->next = *vpp;
 			*vpp = vp;
@@ -128,7 +119,16 @@ initvar() {
 			vp->flags = ip->flags;
 		}
 	}
-
+	/*
+	 * PS1 depends on uid
+	 */
+	if ((vps1.flags & VEXPORT) == 0) {
+		vpp = hashvar("PS1=");
+		vps1.next = *vpp;
+		*vpp = &vps1;
+		vps1.text = getuid() ? "PS1=$ " : "PS1=# ";
+		vps1.flags = VSTRFIXED|VTEXTFIXED;
+	}
 }
 
 /*
