@@ -1,4 +1,4 @@
-/*	machdep.c	6.9	84/09/05	*/
+/*	machdep.c	6.10	84/12/20	*/
 
 #include "reg.h"
 #include "pte.h"
@@ -509,13 +509,20 @@ memerr()
 #endif
 #if VAX730
 		case M730: {
-			register int mcreg = mcr->mc_reg[1];
+			struct mcr amcr;
 
-			if (mcreg & M730_CRD) {
-				struct mcr amcr;
-				amcr.mc_reg[0] = mcr->mc_reg[0];
-				printf("mcr%d: soft ecc addr %x syn %x\n",
-				    m, M730_ADDR(&amcr), M730_SYN(&amcr));
+			/*
+			 * Must be careful on the 730 not to use invalid
+			 * instructions in I/O space, so make a copy;
+			 */
+			amcr.mc_reg[0] = mcr->mc_reg[0];
+			amcr.mc_reg[1] = mcr->mc_reg[1];
+			if (M730_ERR(&amcr)) {
+				printf("mcr%d: %s",
+				    m, (amcr.mc_reg[1] & M730_UNCORR) ?
+				    "hard error" : "soft ecc");
+				printf(" addr %x syn %x\n",
+				    M730_ADDR(&amcr), M730_SYN(&amcr));
 				M730_INH(mcr);
 			}
 			break;
@@ -621,9 +628,6 @@ boot(paniced, arghowto)
 		(void) splnet();
 		printf("syncing disks... ");
 		update();
-#ifdef notdef
-		DELAY(10000000);
-#else
 		{ register struct buf *bp;
 		  int iter, nbusy;
 
@@ -635,9 +639,9 @@ boot(paniced, arghowto)
 			if (nbusy == 0)
 				break;
 			printf("%d ", nbusy);
+			DELAY(40000 * iter);
 		  }
 		}
-#endif
 		printf("done\n");
 	}
 	splx(0x1f);			/* extreme priority */
@@ -724,7 +728,8 @@ char *mc780[] = {
 	0,		0,		"ib tbuf par",	0,
 	"ib rds",	"ib rd timo",	0,		"ib cache par"
 };
-#define	MC750_TBPAR	4
+#define MC750_TBERR	2		/* type code of cp tbuf par */
+#define	MC750_TBPAR	4		/* tbuf par bit in mcesr */
 #endif
 #if VAX730
 #define	NMC730	12
@@ -824,16 +829,18 @@ machinecheck(cmcf)
 #if VAX750
 	case VAX_750: {
 		register struct mc750frame *mcf = (struct mc750frame *)cmcf;
+		int mcsr = mfpr(MCSR);
+
+		mtpr(TBIA, 0);
+		mtpr(MCESR, 0xf);
 		printf("\tva %x errpc %x mdr %x smr %x rdtimo %x tbgpar %x cacherr %x\n",
 		    mcf->mc5_va, mcf->mc5_errpc, mcf->mc5_mdr, mcf->mc5_svmode,
 		    mcf->mc5_rdtimo, mcf->mc5_tbgpar, mcf->mc5_cacherr);
 		printf("\tbuserr %x mcesr %x pc %x psl %x mcsr %x\n",
 		    mcf->mc5_buserr, mcf->mc5_mcesr, mcf->mc5_pc, mcf->mc5_psl,
-		    mfpr(MCSR));
-		mtpr(MCESR, 0xf);
-		if ((mcf->mc5_mcesr&0xf) == MC750_TBPAR) {
+		    mcsr);
+		if (type == MC750_TBERR && (mcf->mc5_mcesr&0xe) == MC750_TBPAR){
 			printf("tbuf par: flushing and returning\n");
-			mtpr(TBIA, 0);
 			return;
 		}
 		break;
