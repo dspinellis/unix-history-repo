@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	4.8 83/01/07";
+static char sccsid[] = "@(#)rlogind.c	4.9 83/01/18";
 #endif
 
 #include <stdio.h>
@@ -18,9 +18,9 @@ static char sccsid[] = "@(#)rlogind.c	4.8 83/01/07";
 #include <netdb.h>
 
 extern	errno;
+int	reapchild();
 struct	passwd *getpwnam();
 char	*crypt(), *rindex(), *index(), *malloc();
-int	options = SO_ACCEPTCONN|SO_KEEPALIVE;
 struct	sockaddr_in sin = { AF_INET };
 /*
  * remote login server:
@@ -33,8 +33,7 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	union wait status;
-	int f, debug = 0;
+	int f, options = SO_KEEPALIVE;
 	struct sockaddr_in from;
 	struct servent *sp;
 
@@ -61,6 +60,10 @@ main(argc, argv)
 	sin.sin_port = sp->s_port;
 	argc--, argv++;
 	if (argc > 0 && !strcmp(argv[0], "-d")) {
+		options |= SO_DEBUG;
+		argc--, argv++;
+	}
+	if (argc > 0) {
 		int port = atoi(argv[0]);
 
 		if (port < 0) {
@@ -75,26 +78,41 @@ main(argc, argv)
 		perror("rlogind: socket");
 		exit(1);
 	}
+	if (options & SO_DEBUG)
+		if (setsockopt(f, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
+			perror("rlogind: setsockopt (SO_DEBUG)");
+#ifdef notdef
+	if (setsockopt(f, SOL_SOCKET, SO_KEEPALIVE, 0, 0) < 0)
+		perror("rlogind: setsocktopt (SO_KEEPALIVE)");
+#endif
 	if (bind(f, &sin, sizeof (sin), 0) < 0) {
 		perror("rlogind: bind");
 		exit(1);
 	}
+	signal(SIGCHLD, reapchild);
 	listen(f, 10);
 	for (;;) {
 		int s, len = sizeof (from);
 
 		s = accept(f, &from, &len, 0);
 		if (s < 0) {
+			if (errno == EINTR)
+				continue;
 			perror("rlogind: accept");
-			sleep(1);
 			continue;
 		}
 		if (fork() == 0)
 			doit(s, &from);
 		close(s);
-		while (wait3(status, WNOHANG, 0) > 0)
-			continue;
 	}
+}
+
+reapchild()
+{
+	union wait status;
+
+	while (wait3(&status, WNOHANG, 0) > 0)
+		;
 }
 
 char	locuser[32], remuser[32];
