@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)savax.h	7.2 (Berkeley) %G%
+ *	@(#)savax.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -26,10 +26,16 @@ int	cpu;		/* see <sys/cpu.h> */
 
 #define	MAXNMBA	8
 #define	MAXNUBA	8
+#define	MAXNKDB 2
 struct	mba_regs **mbaddr;
 int	mbaact;
-caddr_t	*umaddr;
+caddr_t	*uioaddr;
 struct	uba_regs **ubaddr;
+
+#ifdef VAX8200
+caddr_t	kdbaddr[MAXNKDB];
+int	nkdb;
+#endif
 
 #define	UNITTOMBA(unit)		((unit)>>3)
 #define	UNITTODRIVE(unit)	((unit)&07)
@@ -39,8 +45,9 @@ struct	uba_regs **ubaddr;
 
 #define	UNITTOUBA(unit)		((unit)>>3)
 #define	ubauba(unit)		(ubaddr[UNITTOUBA(unit)])
-#define	ubamem(unit, off)	(umaddr[UNITTOUBA(unit)] + \
-					(0760000 | ubdevreg(off)))
+
+/* compute an I/O page physical address from a 16/18/22-bit bus address */
+#define	ubamem(unit, off)	(uioaddr[UNITTOUBA(unit)] + ubdevreg(off))
 
 /*
  * RM03/5 (4-byte header plus CRC) format information:

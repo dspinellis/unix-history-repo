@@ -3,16 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	7.3 (Berkeley) %G%
+ *	@(#)conf.c	7.4 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
-
-#include "../vaxmba/mbareg.h"
+#include "param.h"
+#include "inode.h"
+#include "fs.h"
 
 #include "saio.h"
 
@@ -93,7 +91,7 @@ noioctl(io, cmd, arg)
 #define	HP		"hp"
 int	hpstrategy(), hpopen(), hpioctl();
 #else
-#define	HP		""
+#define	HP		0
 #define	hpstrategy	nodev
 #define	hpopen		nodev
 #define	hpioctl		noioctl
@@ -105,7 +103,7 @@ int	rastrategy(), raopen(), raioctl();
 #define	RB		"rb"
 int	idcstrategy(), idcopen(), idcioctl();
 #else
-#define	RB		""
+#define	RB		0
 #define	idcstrategy	nodev
 #define	idcopen		nodev
 #define	idcioctl	noioctl
@@ -124,11 +122,11 @@ int	htstrategy(), htopen(), htclose();
 int	mtstrategy(), mtopen(), mtclose();
 
 #else massbus vax
-#define	HT		""
+#define	HT		0
 #define	htstrategy	nodev
 #define	htopen		nodev
 #define	htclose		nodev
-#define	MT		""
+#define	MT		0
 #define	mtstrategy	nodev
 #define	mtopen		nodev
 #define	mtclose		nodev
@@ -136,46 +134,63 @@ int	mtstrategy(), mtopen(), mtclose();
 
 #define	UT		"ut"
 int	utstrategy(), utopen(), utclose();
+#define	TMSCP		"tms"
+int	tmscpstrategy(), tmscpopen(), tmscpclose();
 #else BOOT
-#define	TM		""
+#define	TM		0
 #define	tmstrategy	nodev
 #define	tmopen		nodev
 #define	tmclose		nodev
-#define	TS		""
+#define	TS		0
 #define	tsstrategy	nodev
 #define	tsopen		nodev
 #define	tsclose		nodev
-#define	HT		""
+#define	HT		0
 #define	htstrategy	nodev
 #define	htopen		nodev
 #define	htclose		nodev
-#define	MT		""
+#define	MT		0
 #define	mtstrategy	nodev
 #define	mtopen		nodev
 #define	mtclose		nodev
-#define	UT		""
+#define	UT		0
 #define	utstrategy	nodev
 #define	utopen		nodev
 #define	utclose		nodev
+#define	TMSCP		0
+#define	tmscpstrategy	nodev
+#define	tmscpopen	nodev
+#define	tmscpclose	nodev
+#endif BOOT
+
+#ifdef VAX8200
+#define	KRA		"kra"
+int	krastrategy(), kraopen(), kraioctl();
+#else
+#define	KRA		0
+#define	krastrategy	nodev
+#define	kraopen		nodev
+#define	kraioctl	noioctl
 #endif
 
 struct devsw devsw[] = {
-	{ HP,	hpstrategy,	hpopen,	nullsys,	hpioctl }, /* 0 = hp */
-	{ HT,	htstrategy,	htopen,	htclose,	noioctl }, /* 1 = ht */
-	{ "up",	upstrategy,	upopen,	nullsys,	upioctl }, /* 2 = up */
-	{ "hk",	rkstrategy,	rkopen,	nullsys,	rkioctl }, /* 3 = hk */
-	{ "",	nodev,		nodev,	nullsys,	noioctl }, /* 4 = sw */
-	{ TM,	tmstrategy,	tmopen,	tmclose,	noioctl }, /* 5 = tm */
-	{ TS,	tsstrategy,	tsopen,	tsclose,	noioctl }, /* 6 = ts */
-	{ MT,	mtstrategy,	mtopen,	mtclose,	noioctl }, /* 7 = mt */
-	{ "",	nodev,		nodev,	nullsys,	noioctl }, /* 8 = tu */
-	{ "ra",	rastrategy,	raopen,	nullsys,	raioctl }, /* 9 = ra */
-	{ UT,	utstrategy,	utopen,	utclose,	noioctl }, /* 10 = ut */
-	{ RB,	idcstrategy,	idcopen,nullsys,	idcioctl },/* 11 = rb */
-	{ "",	nodev,		nodev,	nullsys,	noioctl }, /* 12 = uu */
-	{ "",	nodev,		nodev,	nullsys,	noioctl }, /* 13 = rx */
-	{ "rl",	rlstrategy,	rlopen,	nullsys,	rlioctl }, /* 14 = rl */
-	{ 0, 0, 0, 0, 0 },
+	{ HP,	hpstrategy,	hpopen,	nullsys, hpioctl }, /* 0 = hp */
+	{ HT,	htstrategy,	htopen,	htclose, noioctl }, /* 1 = ht */
+	{ "up",	upstrategy,	upopen,	nullsys, upioctl }, /* 2 = up */
+	{ "hk",	rkstrategy,	rkopen,	nullsys, rkioctl }, /* 3 = hk */
+	{ 0,	nodev,		nodev,	nullsys, noioctl }, /* 4 = sw */
+	{ TM,	tmstrategy,	tmopen,	tmclose, noioctl }, /* 5 = tm */
+	{ TS,	tsstrategy,	tsopen,	tsclose, noioctl }, /* 6 = ts */
+	{ MT,	mtstrategy,	mtopen,	mtclose, noioctl }, /* 7 = mt */
+	{ 0,	nodev,		nodev,	nullsys, noioctl }, /* 8 = tu */
+	{ "ra",	rastrategy,	raopen,	nullsys, raioctl }, /* 9 = ra */
+	{ UT,	utstrategy,	utopen,	utclose, noioctl }, /* 10 = ut */
+	{ RB,	idcstrategy,	idcopen,nullsys, idcioctl },/* 11 = rb */
+	{ 0,	nodev,		nodev,	nullsys, noioctl }, /* 12 = uu */
+	{ 0,	nodev,		nodev,	nullsys, noioctl }, /* 13 = rx */
+	{ "rl",	rlstrategy,	rlopen,	nullsys, rlioctl }, /* 14 = rl */
+	{ TMSCP,tmscpstrategy,tmscpopen,tmscpclose,noioctl},/* 15 = tmscp */
+	{ KRA,	krastrategy,	kraopen,nullsys, kraioctl}, /* 16 = kra */
 };
 
-int	ndevs = (sizeof(devsw) / sizeof(devsw[0]) - 1);
+int	ndevs = (sizeof(devsw) / sizeof(devsw[0]));

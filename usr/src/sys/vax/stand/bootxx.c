@@ -3,16 +3,16 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)bootxx.c	7.2 (Berkeley) %G%
+ *	@(#)bootxx.c	7.3 (Berkeley) %G%
  */
 
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
-#include "../h/vm.h"
+#include "param.h"
+#include "inode.h"
+#include "fs.h"
+#include "vm.h"
+#include "reboot.h"
 #include <a.out.h>
 #include "saio.h"
-#include "../h/reboot.h"
 
 char bootprog[] = "boot";
 extern	unsigned opendev;

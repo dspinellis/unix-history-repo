@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)confxx.c	7.2 (Berkeley) %G%
+ *	@(#)confxx.c	7.3 (Berkeley) %G%
  */
 
 #include "machine/pte.h"
@@ -20,7 +20,7 @@ devread(io)
 
 	io->i_flgs |= F_RDDATA;
 	io->i_error = 0;
-	cc = (*devsw[io->i_ino.i_dev].dv_strategy)(io, READ);
+	cc = (*devsw[0].dv_strategy)(io, READ);
 	io->i_flgs &= ~F_TYPEMASK;
 	return (cc);
 }
@@ -32,7 +32,7 @@ devwrite(io)
 
 	io->i_flgs |= F_WRDATA;
 	io->i_error = 0;
-	cc = (*devsw[io->i_ino.i_dev].dv_strategy)(io, WRITE);
+	cc = (*devsw[0].dv_strategy)(io, WRITE);
 	io->i_flgs &= ~F_TYPEMASK;
 	return (cc);
 }
@@ -41,14 +41,14 @@ devopen(io)
 	register struct iob *io;
 {
 
-	return (*devsw[io->i_ino.i_dev].dv_open)(io);
+	return (*devsw[0].dv_open)(io);
 }
 
 devclose(io)
 	register struct iob *io;
 {
 
-	(*devsw[io->i_ino.i_dev].dv_close)(io);
+	(*devsw[0].dv_close)(io);
 }
 
 devioctl(io, cmd, arg)
@@ -57,7 +57,7 @@ devioctl(io, cmd, arg)
 	caddr_t arg;
 {
 
-	return ((*devsw[io->i_ino.i_dev].dv_ioctl)(io, cmd, arg));
+	return ((*devsw[0].dv_ioctl)(io, cmd, arg));
 }
 
 /*ARGSUSED*/
@@ -83,7 +83,6 @@ int	xxstrategy(), xxopen(), xxioctl();
 
 struct devsw devsw[] = {
 	{ "XX",	xxstrategy,	xxopen,		nullsys,	xxioctl },
-	{ 0, 0, 0, 0, 0 }
 };
 
-int	ndevs = (sizeof(devsw) / sizeof(devsw[0]) - 1);
+int	ndevs = (sizeof(devsw) / sizeof(devsw[0]));

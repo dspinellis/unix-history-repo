@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)up.c	7.2 (Berkeley) %G%
+ *	@(#)up.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -18,9 +18,10 @@
 #include "dkbad.h"
 #include "vmmac.h"
 
-#include "vax/pte.h"
-#include "vaxuba/upreg.h"
-#include "vaxuba/ubareg.h"
+#include "../vax/pte.h"
+
+#include "../vaxuba/upreg.h"
+#include "../vaxuba/ubareg.h"
 
 #include "saio.h"
 #include "savax.h"
@@ -111,6 +112,7 @@ upopen(io)
 	st = &upst[sc->type];
 	io->i_boff = st->off[io->i_boff] * st->nspc;
 	io->i_flgs &= ~F_TYPEMASK;
+	return (0);
 }
 
 upstrategy(io, func)
@@ -118,13 +120,16 @@ upstrategy(io, func)
 {
 	int cn, tn, sn, o;
 	register unit = io->i_unit;
-	daddr_t bn;
+	register daddr_t bn;
 	int recal, info, waitdry;
 	register struct updevice *upaddr =
 	    (struct updevice *)ubamem(unit, ubastd[0]);
 	struct up_softc *sc = &up_softc[unit];
 	register struct st *st = &upst[sc->type];
-	int doprintf = 0, error, rv = io->i_cc;
+	int error, rv = io->i_cc;
+#ifndef SMALL
+	int doprintf = 0;
+#endif
 
 	sectsiz = SECTSIZ;
 	if (io->i_flgs & (F_HDR|F_HCHECK))
@@ -149,9 +154,11 @@ restart:
 	o = io->i_cc + (upaddr->upwc * sizeof (short));
 	upaddr->upba = info + o;
 	bn = io->i_bn + o / sectsiz;
+#ifndef SMALL
 	if (doprintf && sc->debug & (UPF_ECCDEBUG|UPF_BSEDEBUG))
 		printf("wc=%d o=%d i_bn=%d bn=%d\n",
 			upaddr->upwc, o, io->i_bn, bn);
+#endif
 	while((upaddr->upds & UPDS_DRY) == 0)
 		;
 	if (upstart(io, bn) != 0) {
@@ -275,7 +282,9 @@ success:
 #define	rounddown(x, y)	(((x) / (y)) * (y))
 	upaddr->upwc = rounddown(upaddr->upwc, sectsiz / sizeof (short));
 	if (upaddr->upwc) {
+#ifndef SMALL
 		doprintf++;
+#endif
 		goto restart;
 	}
 done:

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)srt0.c	7.3 (Berkeley) %G%
+ *	@(#)srt0.c	7.4 (Berkeley) %G%
  */
 
 #include "../vax/mtpr.h"
@@ -29,25 +29,58 @@
 	.set	HIGH,31		# mask for total disable
 
 entry:	.globl	entry
-	.word	0x0
+	nop; nop			# .word	0x0101
 	mtpr	$HIGH,$IPL		# just in case
+
 #ifdef REL
+	# we need to do special stuff on microvax II
+	mfpr	$SID,r0
+	cmpzv	$24,$8,r0,$VAX_630
+	bneq	1f
+
+	/*
+	 * Were we booted by VMB?  If so, r11 is not boothowto,
+	 * but rather the address of the `Extended RPB' (see KA630
+	 * User's Manual, pp 3-21).  These tests were devised by
+	 * richl@tektronix, 11/10/87.
+	 */
+	cmpl	(r11),r11		# if boothowto, r11 will be small
+	bneq	1f			# and these will not fault
+	cmpl	4(r11),$0
+	bneq	1f
+	cmpl	8(r11),$-1
+	bneq	1f
+	tstl	0xc(r11)
+	bneq	1f
+
+	/*
+	 * Booted by VMB: get flags from extended rpb.
+	 * We can only guess at the boot device (here ra(0,0)).
+	 */
+	movl	0x30(r11),r11
+	movl	$9,r10			# device = ra(0,0)
+1:
 	movl	$RELOC,sp
 #else
 	movl	$RELOC-0x2400,sp
 #endif
 start:
+#ifndef REL
+	/*
+	 * Clear bss segment
+	 */
 	movl	aedata,r0
 clr:
 	clrl	(r0)+
 	cmpl	r0,sp
 	jlss	clr
-#ifdef REL
-	movc3	aedata,*$0,(sp)
-/*
- * Reclear bss segment separately from text and data
- * since movc3 can't move more than 64K bytes
- */
+#else
+	/*
+	 * `entry' below generates a pc-relative reference to the
+	 * code, so this works no matter where we are now.
+	 * Clear bss segment *after* moving text and data.
+	 */
+	movc3	aedata,entry,(sp)
 dclr:
 	clrl	(r3)+
 	cmpl	r3,$_end
@@ -115,6 +148,10 @@ _badaddr:
 	.word	5f-0b		# 2 is 750
 	.word	5f-0b		# 3 is 730
 	.word	6f-0b		# 4 is 8600
+	.word	5f-0b		# 5 is 8200
+	.word	1f-0b		# 6 is 8800
+	.word	1f-0b		# 7 is 610
+	.word	5f-0b		# 8 is 630
 5:
 	mtpr	$0xf,$MCESR
 	brb	1f
@@ -127,3 +164,41 @@ _badaddr:
 	addl2	(sp)+,sp		# discard mchchk trash
 	movab	2b,(sp)
 	rei
+
+/*
+ * Short assembly versions of strcmp, strcpy, and strlen
+ * that do not use special instructions.
+ */
+	.globl	_strcmp
+_strcmp:
+	.word	0
+	movq	4(ap),r0
+0:	cmpb	(r0),(r1)+
+	bneq	1f
+	tstb	(r0)+
+	bneq	0b
+	clrl	r0
+	ret
+1:	cvtbl	(r0),r0
+	cvtbl	-(r1),r1
+	subl2	r1,r0
+	ret
+
+	.globl	_strcpy
+_strcpy:
+	.word	0
+	movq	4(ap),r0
+0:	movb	(r1)+,(r0)+
+	bneq	0b
+	movl	4(ap),r0
+	ret
+
+	.globl	_strlen
+_strlen:
+	.word	0
+	movl	4(ap),r0
+0:	tstb	(r0)+
+	bneq	0b
+	decl	r0
+	subl2	4(ap),r0
+	ret

@@ -1,5 +1,5 @@
 
-/*	@(#)tmscp.c	7.1 (Berkeley) %G% */
+/*	@(#)tmscp.c	7.2 (Berkeley) %G% */
 
 /****************************************************************
  *                                                              *
@@ -43,14 +43,14 @@ static char *sccsid = "@(#)tmscp.c	1.5	(ULTRIX)	4/18/86";
  * ------------------------------------------------------------------------
  */
  
-#include "../machine/pte.h"
  
-#include "../h/param.h"
-#include "../h/gnode.h"
-#include "../h/devio.h"
- 
+#include "param.h"
+#include "inode.h"
+#include "fs.h"
+
+#include "../vax/pte.h"
+
 #include "savax.h"
- 
 #include "saio.h"
  
 /*
@@ -155,8 +155,8 @@ tmscpopen(io)
 		tmscp.tmscp_cmd.mscp_cntflgs = 0;
 		if (tmscpcmd(M_OP_STCON, 0) == 0)
 			{
-			_stop("tms: open error, STCON");
-			return;
+			printf("tms: open error, STCON\n");
+			return (EIO);
 			}
 		tmscp_offline = 0;
 		}
@@ -168,13 +168,15 @@ tmscpopen(io)
 		{
 		if ((mp = tmscpcmd(M_OP_ONLIN, 0)) == 0)
 			{
-			_stop("tms: open error, ONLIN");
-			return;
+			_stop("tms: open error, ONLIN\n");
+			return (EIO);
 			}
 		tms_offline[tmscp.tmscp_cmd.mscp_unit] = 0;
 		}
-	if (io->i_boff < 0 || io->i_boff > 3)
-		_stop("tms: bad offset");
+	if (io->i_boff < 0 || io->i_boff > 3) {
+		printf("tms: bad offset\n");
+		return (EUNIT);
+	}
 	else if (io->i_boff > 0)
 		/*
 		 * Skip forward the appropriate number of files on the tape.
@@ -184,6 +186,7 @@ tmscpopen(io)
 		tmscpcmd(M_OP_REPOS, 0);
 		tmscp.tmscp_cmd.mscp_tmkcnt = 0;
 		}
+	return (0);
 }
  
  

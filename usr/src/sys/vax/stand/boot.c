@@ -3,16 +3,17 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)boot.c	7.5 (Berkeley) %G%
+ *	@(#)boot.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "inode.h"
 #include "fs.h"
 #include "vm.h"
+#include "reboot.h"
+
 #include <a.out.h>
 #include "saio.h"
-#include "reboot.h"
 
 /*
  * Boot program... arguments passed in r10 and r11 determine
@@ -40,7 +41,7 @@ main()
 #else
 	if ((howto & RB_ASKNAME) == 0) {
 		type = (devtype >> B_TYPESHIFT) & B_TYPEMASK;
-		if ((unsigned)type < ndevs && devsw[type].dv_name[0])
+		if ((unsigned)type < ndevs && devsw[type].dv_name)
 			strcpy(line, UNIX);
 		else
 			howto |= RB_SINGLE|RB_ASKNAME;
@@ -58,7 +59,9 @@ main()
 			printf(": %s\n", line);
 		io = open(line, 0);
 		if (io >= 0) {
+#ifdef VAX750
 			loadpcs();
+#endif
 			copyunix(howto, opendev, io);
 			close(io);
 			howto |= RB_SINGLE|RB_ASKNAME;
@@ -130,6 +133,7 @@ shread:
 	return;
 }
 
+#ifdef VAX750
 /* 750 Patchable Control Store magic */
 
 #include "../vax/mtpr.h"
@@ -151,7 +155,6 @@ loadpcs()
 	union cpusid sid;
 	char pcs[100];
 	char *cp;
-	char *index();
 
 	sid.cpusid = mfpr(SID);
 	if (sid.cpuany.cp_type!=VAX_750 || sid.cpu750.cp_urev<95 || pcsdone)
@@ -215,3 +218,4 @@ loadpcs()
 	printf("new rev level=%d\n", sid.cpu750.cp_urev);
 	pcsdone = 1;
 }
+#endif

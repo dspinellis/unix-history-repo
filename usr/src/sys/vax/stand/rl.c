@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rl.c	7.1 (Berkeley) %G%
+ *	@(#)rl.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -11,9 +11,9 @@
  */
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
+#include "param.h"
+#include "inode.h"
+#include "fs.h"
 
 #include "../vaxuba/rlreg.h"
 #include "../vaxuba/ubareg.h"
@@ -40,9 +40,14 @@ rlopen(io)
 	register struct rl_stat *st = &rl_stat[0];
 	register int ctr = 0;
 
-	if (rl_off[io->i_boff] == -1 ||
-	    io->i_boff < 0 || io->i_boff > 7)
-		_stop("rl bad unit");
+	if (badaddr((char *)rladdr, sizeof(short))) {
+		printf("nonexistent device\n");
+		return (ENXIO);
+	}
+	if ((unsigned)io->i_boff > 7 || rl_off[io->i_boff] == -1) {
+		printf("rl bad unit\n");
+		return (EUNIT);
+	}
 
 	/*
 	 * DEC reports that:
@@ -60,13 +65,17 @@ rlopen(io)
 		rladdr->rlda.getstat = RL_RESET;
 		rladdr->rlcs = (io->i_unit <<8) | RL_GETSTAT; /* Get status*/
 		rlwait(rladdr);
-	} while( (rladdr->rlmp.getstat&RLMP_STATUS) != RLMP_STATOK && ++ctr<8 );
+	} while ((rladdr->rlmp.getstat&RLMP_STATUS) != RLMP_STATOK && ++ctr<8);
 
-	if ((rladdr->rlcs & RL_DE) || (ctr >= 8))
-		_stop("rl unit does not respond");
+	if ((rladdr->rlcs & RL_DE) || (ctr >= 8)) {
+		printf("rl unit does not respond\n");
+		return (EUNIT);
+	}
 
-	if ((rladdr->rlmp.getstat & RLMP_DT) == 0 )	/* NO RL01'S */
-		_stop("rl01 unit not supported");
+	if ((rladdr->rlmp.getstat & RLMP_DT) == 0) {	/* NO RL01'S */
+		printf("rl01 unit not supported\n");
+		return (EUNIT);
+	}
 
 	/* Determine disk posistion */
 	rladdr->rlcs = (io->i_unit << 8) | RL_RHDR;
@@ -78,6 +87,7 @@ rlopen(io)
 
 	/* byte offset for cylinder desired */
 	io->i_boff = rl_off[io->i_boff] * NRLBPSC * NRLTRKS * NRLSECT;
+	return (0);
 }
 
 rlstrategy(io, func)

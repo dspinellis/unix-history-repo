@@ -3,23 +3,24 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.6 (Berkeley) %G%
+#	@(#)Makefile	7.7 (Berkeley) %G%
 #
 DESTDIR=/
 INCPATH=-I. -I../h
 CFLAGS=	-O ${COPTS} 
-COPTS=	${INCPATH} -DSTANDALONE -DCOMPAT_42 -DVAX780 -DVAX750 -DVAX730 -DVAX8600
+COPTS=	${INCPATH} -DSTANDALONE -DCOMPAT_42 \
+	-DVAX8600 -DVAX780 -DVAX750 -DVAX730 -DVAX630
 730OPTS=-O ${INCPATH} -DSTANDALONE -DCOMPAT_42 -DVAX730
 RELOC=	70000
 
 SRCS=	boot.c bootxx.c format.c copy.c drtest.c \
 	sys.c conf.c prf.c machdep.c \
 	autoconf.c hp.c hpmaptype.c ht.c idc.c mba.c mt.c rk.c \
-	rl.c tm.c ts.c up.c upmaptype.c uba.c uda.c ut.c \
+	rl.c tm.c tmscp.c ts.c up.c upmaptype.c uba.c uda.c ut.c \
 	drtest.c format.c ../vax/dkbad.c
 DUMMIES= confxx.c
 DRIVERS=autoconf.o hp.o hpmaptype.o ht.o idc.o mba.o mt.o \
-	rk.o rl.o tm.o ts.o \
+	rk.o rl.o tm.o tmscp.o ts.o \
 	up.o upmaptype.o uba.o uda.o ut.o
 # These drivers don't have ecc correction and bad sector forwarding;
 # they are placed in the file system boot area for 750's.  If your
@@ -262,23 +263,10 @@ install: ${ALL}
 	cp ../floppy/drtest ../cassette/drtest.750
 	cp ../floppy/drtest ../consolerl/drtest
 	cp bootup boothk boothp bootra bootrl ${DESTDIR}/usr/mdec
+	ln ${DESTDIR}/usr/mdec/bootra ${DESTDIR}/usr/mdec/bootrd
 
 depend:
-	for i in ${SRCS} ${DUMMIES}; do \
-	    cc -M ${INCPATH} $$i | \
-	    awk ' { if ($$1 != prev) { print rec; rec = $$0; prev = $$1; } \
-		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
-		else rec = rec " " $$2 } } \
-		END { print rec } ' >> makedep; done
-	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
-	echo '$$r makedep' >>eddep
-	echo 'w' >>eddep
-	cp Makefile Makefile.bak
-	ed - Makefile < eddep
-	rm eddep makedep
-	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
-	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
-	echo '# see make depend above' >> Makefile
+	mkdep ${INCPATH} -DSTANDALONE ${SRCS} ${DUMMIES}
 
 # DO NOT DELETE THIS LINE -- make depend uses it
 
