@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.26 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.27 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.26 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.27 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -93,6 +93,8 @@ char	*RealHostName = NULL;		/* verified hostname, set in daemon.c */
 
 static char	*skipword();
 
+#define REALHOSTNAME	(RealHostName == NULL ? "localhost" : RealHostName)
+
 smtp(e)
 	register ENVELOPE *e;
 {
@@ -121,10 +123,10 @@ smtp(e)
 		(void) dup2(fileno(OutChannel), fileno(stdout));
 	}
 	settime(e);
-	CurHostName = RealHostName;
+	CurHostName = REALHOSTNAME;
 	CurSmtpClient = macvalue('_', e);
 	if (CurSmtpClient == NULL)
-		CurSmtpClient = RealHostName;
+		CurSmtpClient = CurHostName;
 
 	setproctitle("server %s startup", CurSmtpClient);
 	expand("\201e", inp, &inp[sizeof inp], e);
@@ -250,7 +252,7 @@ smtp(e)
 			{
 				/* set sending host to our known value */
 				if (sendinghost == NULL)
-					sendinghost = RealHostName;
+					sendinghost = REALHOSTNAME;
 
 				if (bitset(PRIV_NEEDMAILHELO, PrivacyFlags))
 				{
@@ -275,19 +277,19 @@ smtp(e)
 			/* fork a subprocess to process this command */
 			if (runinchild("SMTP-MAIL", e) > 0)
 				break;
+			p = REALHOSTNAME;
 			if (!gothello)
 			{
 				auth_warning(e,
-					"Host %s didn't use HELO protocol",
-					RealHostName);
+					"Host %s didn't use HELO protocol", p);
 			}
 #ifdef PICKY_HELO_CHECK
-			if (strcasecmp(sendinghost, RealHostName) != 0 &&
-			    (strcasecmp(RealHostName, "localhost") != 0 ||
+			if (strcasecmp(sendinghost, p) != 0 &&
+			    (strcasecmp(p, "localhost") != 0 ||
 			     strcasecmp(sendinghost, MyHostName) != 0))
 			{
 				auth_warning(e, "Host %s claimed to be %s",
-					RealHostName, sendinghost);
+					p, sendinghost);
 			}
 #endif
 
@@ -700,7 +702,7 @@ smtp(e)
 			if (LogLevel > 0)
 				syslog(LOG_CRIT,
 				    "\"%s\" command from %s (%s)",
-				    c->cmdname, RealHostName,
+				    c->cmdname, REALHOSTNAME,
 				    anynet_ntoa(&RealHostAddr));
 # endif
 			/* FALL THROUGH */
