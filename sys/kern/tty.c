@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.21 1994/03/02 20:28:48 guido Exp $
+ *	$Id: tty.c,v 1.22 1994/03/20 20:06:04 davidg Exp $
  */
 
 #include "param.h"
@@ -846,6 +846,9 @@ ttymodem(tp, flag)
 				psignal(tp->t_session->s_leader, SIGHUP);
 			ttyflush(tp, FREAD|FWRITE);
 			return (0);
+		} else {
+			wakeup((caddr_t)tp->t_raw);
+			wakeup((caddr_t)tp->t_out);
 		}
 	} else {
 		/*
@@ -853,6 +856,7 @@ ttymodem(tp, flag)
 		 */
 		tp->t_state |= TS_CARR_ON;
 		ttwakeup(tp);
+		wakeup((caddr_t)tp->t_out);
 	}
 	return (1);
 }
@@ -867,14 +871,20 @@ nullmodem(tp, flag)
 	int flag;
 {
 	
-	if (flag)
+	if (flag) {
 		tp->t_state |= TS_CARR_ON;
-	else {
+		ttwakeup(tp);
+		wakeup((caddr_t)tp->t_out);
+	} else {
 		tp->t_state &= ~TS_CARR_ON;
 		if ((tp->t_cflag&CLOCAL) == 0) {
 			if (tp->t_session && tp->t_session->s_leader)
 				psignal(tp->t_session->s_leader, SIGHUP);
+			ttyflush(tp, FREAD|FWRITE);
 			return (0);
+		} else {
+			wakeup((caddr_t)tp->t_raw);
+			wakeup((caddr_t)tp->t_out);
 		}
 	}
 	return (1);
