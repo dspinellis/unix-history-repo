@@ -4,7 +4,7 @@
 # table of font 0302 with master 10 and unitwidth 10
 # Note: ascender and descender info generated automatically
 #
-name FS
+name fs
 internalname 302
 charset
 \|	33	0	0	0	spacewidth is 66 decipoints
