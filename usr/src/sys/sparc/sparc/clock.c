@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clock.c	7.3 (Berkeley) %G%
+ *	@(#)clock.c	7.4 (Berkeley) %G%
  *
- * from: $Header: clock.c,v 1.14 92/07/07 05:34:08 leres Exp $ (LBL)
+ * from: $Header: clock.c,v 1.17 92/11/26 03:04:47 torek Exp $ (LBL)
  */
 
 /*
@@ -35,9 +35,6 @@
 #include <vm/vm.h>
 
 #include <machine/autoconf.h>
-#ifdef notdef
-#include <machine/psl.h>
-#endif
 
 #include <sparc/sparc/clockreg.h>
 #include <sparc/sparc/intreg.h>
@@ -51,18 +48,34 @@
  * This is symmetric about the point 512, or statvar/2, and thus averages
  * to that value (assuming uniform random numbers).
  */
-static int statvar = 1024;
-static int statmin;		/* statclock interval - 1/2*variance */
+/* XXX fix comment to match value */
+int statvar = 8192;
+int statmin;			/* statclock interval - 1/2*variance */
 
+static int clockmatch __P((struct device *, struct cfdata *, void *));
 static void clockattach __P((struct device *, struct device *, void *));
-struct cfdriver clockcd =
-    { NULL, "eeprom", matchbyname, clockattach,
-      DV_DULL, sizeof(struct device) };
 
+struct cfdriver clockcd =
+    { NULL, "clock", clockmatch, clockattach, DV_DULL, sizeof(struct device) };
+
+static int timermatch __P((struct device *, struct cfdata *, void *));
 static void timerattach __P((struct device *, struct device *, void *));
 struct cfdriver timercd =
-    { NULL, "counter-timer", matchbyname, timerattach, DV_DULL,
-      sizeof(struct device) };
+    { NULL, "timer", timermatch, timerattach, DV_DULL, sizeof(struct device) };
+
+/*
+ * The OPENPROM calls the clock the "eeprom", so we have to have our
+ * own special match function to call it the "clock".
+ */
+static int
+clockmatch(parent, cf, aux)
+	struct device *parent;
+	struct cfdata *cf;
+	void *aux;
+{
+
+	return (strcmp("eeprom", ((struct romaux *)aux)->ra_name) == 0);
+}
 
 /* ARGSUSED */
 static void
@@ -74,7 +87,7 @@ clockattach(parent, self, aux)
 	register struct clockreg *cl;
 	struct romaux *ra = aux;
 
-	printf(": %s\n", getpropstring(ra->ra_node, "model"));
+	printf(": %s (eeprom)\n", getpropstring(ra->ra_node, "model"));
 	/*
 	 * We ignore any existing virtual address as we need to map
 	 * this read-only and make it read-write only temporarily,
@@ -91,6 +104,19 @@ clockattach(parent, self, aux)
 	h |= cl->cl_idprom.id_hostid[0];
 	hostid = h;
 	clockreg = cl;
+}
+
+/*
+ * The OPENPROM calls the timer the "counter-timer".
+ */
+static int
+timermatch(parent, cf, aux)
+	struct device *parent;
+	struct cfdata *cf;
+	void *aux;
+{
+
+	return (strcmp("counter-timer", ((struct romaux *)aux)->ra_name) == 0);
 }
 
 /* ARGSUSED */
