@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.17 (Berkeley) %G%
+#	@(#)Makefile	4.18 (Berkeley) %G%
 #
 #
 # The system has two monitoring schemes, utilizing either ``prof''
@@ -24,11 +24,11 @@
 # not include these strings one must add -Dlint to DEFS below.
 #
 # There are two possible methods of doing host name look up.  They are
-# to use the nameserver or /etc/hosts. HOSTLOOKUP defines which method
+# to use the name server or /etc/hosts. HOSTLOOKUP defines which method
 # is to be compiled into libc  :
 #								     
 #	defining HOSTLOOKUP to be "named", compiles the         
-#	host lookup routines that use the BIND nameserver.
+#	host lookup routines that use the BIND name server.
 #
 #	defining HOSTLOOKUP to be "hosttable", compiles
 #	the host lookup routines that use /etc/hosts.
