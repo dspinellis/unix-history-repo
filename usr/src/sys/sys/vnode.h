@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vnode.h	7.22 (Berkeley) %G%
+ *	@(#)vnode.h	7.23 (Berkeley) %G%
  */
 
 /*
@@ -175,9 +175,17 @@ struct vnodeops {
 struct specinfo {
 	struct	vnode **si_hashchain;
 	struct	vnode *si_specnext;
+	long	si_flags;
 	dev_t	si_rdev;
 };
+/*
+ * Exported shorthand
+ */
 #define v_rdev v_specinfo->si_rdev
+/*
+ * Flags for specinfo
+ */
+#define	SI_MOUNTEDON	0x0001	/* block special device is mounted on */
 
 /*
  * flags for ioflag
