@@ -40,6 +40,7 @@ int xstate;
 int count;
 int icount;
 char *input;
+FILE *exprfile;
 
 long	lnum;
 int	bflag;
@@ -56,7 +57,7 @@ long	tln;
 int	nsucc;
 
 int	f;
-int	fname;
+char	*fname;
 %}
 
 %%
@@ -162,7 +163,10 @@ yylex() {
 nextch() {
 	register char c;
 	if (fflag) {
-		if ((c = getc(stdin)) == EOF) return(0);
+		if ((c = getc(exprfile)) == EOF) {
+			fclose(exprfile);
+			return(0);
+		}
 	}
 	else c = *input++;
 	return(c);
@@ -463,7 +467,9 @@ out:
 	if (argc<=0)
 		exit(2);
 	if (fflag) {
-		if (freopen(fname = *argv, "r", stdin) == NULL) {
+		fname = *argv;
+		exprfile = fopen(fname, "r");
+		if (exprfile == (FILE *)NULL) {
 			fprintf(stderr, "egrep: can't open %s\n", fname);
 			exit(2);
 		}
