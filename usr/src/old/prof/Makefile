@@ -1,44 +1,49 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1987 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	4.3	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	4.4 (Berkeley) %G%
 #
 # If you don't want to plot, take out the -Dplot and the loader
 # reference to plot.a
 CFLAGS=	-O -Dplot
 LIBC=	/lib/libc.a
 SRCS=	prof.c
-OBJS=	prof.o
+OBJS=
+MAN=	prof.0
 
 all: prof
 
-prof: ${OBJS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${OBJS} -lplot
+prof: ${LIBC}
+	${CC} -o $@ ${CFLAGS} $@.c -lplot
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core prof
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 prof ${DESTDIR}/usr/bin/prof
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-prof.o: prof.c /usr/include/stdio.h /usr/include/sys/types.h
-prof.o: /usr/include/sys/stat.h /usr/include/a.out.h /usr/include/sys/exec.h
-prof.o: /usr/include/sys/time.h /usr/include/time.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
