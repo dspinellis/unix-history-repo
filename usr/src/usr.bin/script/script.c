@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)script.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)script.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -79,9 +79,15 @@ main(argc, argv)
 	if (shell == NULL)
 		shell = _PATH_BSHELL;
 
-	getmaster();
+	(void) tcgetattr(0, &tt);
+	(void) ioctl(0, TIOCGWINSZ, (char *)&win);
+	if (openpty(&master, &slave, NULL, &tt, &win) == -1) {
+		perror("openpty");
+		exit(1);
+	}
+
 	printf("Script started, file is %s\n", fname);
-	fixtty();
+	fixtty();	/* go raw */
 
 	(void) signal(SIGCHLD, finish);
 	child = fork();
@@ -152,22 +158,10 @@ dooutput()
 
 doshell()
 {
-	int t;
 
-	/***
-	t = open(_PATH_TTY, O_RDWR);
-	if (t >= 0) {
-		(void) ioctl(t, TIOCNOTTY, (char *)0);
-		(void) close(t);
-	}
-	***/
-	getslave();
-	(void) close(master);
+	close(master);
 	(void) fclose(fscript);
-	(void) dup2(slave, 0);
-	(void) dup2(slave, 1);
-	(void) dup2(slave, 2);
-	(void) close(slave);
+	login_tty(slave);
 	execl(shell, "sh", "-i", 0);
 	perror(shell);
 	fail();
@@ -205,55 +199,4 @@ done()
 		printf("Script done, file is %s\n", fname);
 	}
 	exit(0);
-}
-
-getmaster()
-{
-	char *pty, *bank, *cp;
-	struct stat stb;
-
-	pty = &line[strlen("/dev/ptyp")];
-	for (bank = "pqrs"; *bank; bank++) {
-		line[strlen("/dev/pty")] = *bank;
-		*pty = '0';
-		if (stat(line, &stb) < 0)
-			break;
-		for (cp = "0123456789abcdef"; *cp; cp++) {
-			*pty = *cp;
-			master = open(line, O_RDWR);
-			if (master >= 0) {
-				char *tp = &line[strlen("/dev/")];
-				int ok;
-
-				/* verify slave side is usable */
-				*tp = 't';
-				ok = access(line, R_OK|W_OK) == 0;
-				*tp = 'p';
-				if (ok) {
-					(void) tcgetattr(0, &tt);
-				    	(void) ioctl(0, TIOCGWINSZ, 
-						(char *)&win);
-					return;
-				}
-				(void) close(master);
-			}
-		}
-	}
-	fprintf(stderr, "Out of pty's\n");
-	fail();
-}
-
-getslave()
-{
-
-	line[strlen("/dev/")] = 't';
-	slave = open(line, O_RDWR);
-	if (slave < 0) {
-		perror(line);
-		fail();
-	}
-	(void) tcsetattr(slave, TCSAFLUSH, &tt);
-	(void) ioctl(slave, TIOCSWINSZ, (char *)&win);
-	(void) setsid();
-	(void) ioctl(slave, TIOCSCTTY, 0);
 }
