@@ -7,31 +7,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ls.h	5.13 (Berkeley) %G%
+ *	@(#)ls.h	5.14 (Berkeley) %G%
  */
-
-typedef struct _lsstruct {
-	char *name;			/* file name */
-	int len;			/* file name length */
-	struct stat lstat;		/* lstat(2) for file */
-} LS;
 
 /*
  * Specify maximum width of flags output. Determined from flags_from_fid
  * routine in print.c
  */
-#define FLAGSWIDTH 10
-
-/*
- * overload -- we probably have to save blocks and/or maxlen with the lstat
- * array, so tabdir() stuffs it into unused fields in the first stat structure.
- * If there's ever a type larger than u_long, fix this.  Any calls to qsort
- * must save and restore the values.
- */
-#define	st_btotal	st_spare1
-#define	st_maxlen	st_spare2
-
-extern int errno;
+#define FLAGSWIDTH	10
+	
+#define NO_PRINT	1
 
 extern int f_accesstime;	/* use time of last access */
 extern int f_group;		/* show group ownership of a file */
