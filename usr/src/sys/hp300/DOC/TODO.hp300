@@ -4,6 +4,11 @@
    everything.
 
 2. Copy/clear primitives could be tuned.
+   What is best is highly CPU and cache dependent.  One thing to look
+   at are the copyin/copyout primitives.  Rather than looping using
+   MOVS instructions, you could map an entire page at a time and use
+   bcopy, MOVE16, or whatever.  This would lose big on the VAC models
+   however.
 
 3. Sendsig/sigreturn are pretty bogus.
    Currently we can call a signal handler even if an excpetion
@@ -29,9 +34,18 @@
    (some would say that is hardly a limit) or divide it into two
    pieces.
 
-6. Better time keeping.
-   We could use the second timer on the chip to monitor the interval
-   timer ("clock") and detect lost "ticks".
+6. Create a 32-bit timer.
+   Timers 2 and 3 on the MC6840 clock chip can be concatonated together to
+   get a 32-bit countdown timer.  There are at least three uses for this:
+   1. Monitoring the interval timer ("clock") to detect lost "ticks".
+      (Idea from Scott Marovich)
+   2. Implement the DELAY macro properly instead of approximating with
+      the current "while (--count);" loop.  Because of caches, the current
+      method is potentially way off.
+   3. Export as a user-mappable timer for high-precision (4us) timing.
+   Note that by doing this we can no longer use timer 3 as a separate
+   statistics/profiling timer.  Should be able to compile-time (runtime?)
+   select between the two.
 
 7. Conditional MMU code sould be restructured.
    Right now it reflects the evolutionary path of the code: 320/350 MMU
@@ -43,13 +57,14 @@
    impact).  MMU code should probably not be ifdef'ed on model type, but
    rather on more relevant tags (e.g. MMU_HP, MMU_MOTO).
 
-8. DELAY() is not even close to right.
-   Should use a timer on the clock chip instead of approximating with a
-   "while (--count);" loop.  Because of caches, the latter is potentially
-   way off.
-
-9. Redo cache handling.
+8. Redo cache handling.
    There are way too many routines which are specific to particular
    cache types.  We should be able to come up with a more coherent
    scheme (though HP 68k boxes have just about every caching scheme
    imaginable: internal/external, physical/virtual, writeback/writethrough)
+   See, for example, Wheeler and Bershad in ASPLOS 92.
+
+9. 1-1 mapping of physical memory into kernel VA space.
+   This would make the pmap physical copy/zero primitives and the mem.c
+   code easier if not slightly more efficient (cache-inhibit?).  Could use
+   a TTR on the 030.  However, this could eat up a lot of KVA space.
