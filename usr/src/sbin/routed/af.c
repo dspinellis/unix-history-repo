@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)af.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)af.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "defs.h"
@@ -108,6 +108,9 @@ inet_checkhost(sin)
 		return (0);
 	if (i != 0 && (i & 0xff000000) == 0)
 		return (0);
+	for (i = 0; i < sizeof(sin->sin_zero)/sizeof(sin->sin_zero[0]); i++)
+		if (sin->sin_zero[i])
+			return (0);
 	return (1);
 }
 
