@@ -5,7 +5,7 @@ LIB=	util
 CFLAGS+=-DLIBC_SCCS -I/sys
 SRCS=	daemon.c getloadavg.c kvm.c login.c login_tty.c logout.c logwtmp.c \
 	pty.c pwcache.c config.c
-MAN3=	getloadavg.3 pwcache.3
+MAN3=	getloadavg.3 pwcache.3 config_open.3 daemon.3
 
 MLINKS+=pwcache.3 user_from_uid.3 \
 	pwcache.3 group_from_gid.3 \
