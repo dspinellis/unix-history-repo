@@ -1,4 +1,4 @@
-/*	mba.c	4.6	82/12/17	*/
+/*	mba.c	4.7	83/01/16	*/
 
 #include "../machine/pte.h"
 
@@ -9,6 +9,7 @@
 
 #include "../vax/mtpr.h"
 #include "../vaxmba/mbareg.h"
+#include "../vaxmba/hpreg.h"
 
 #include "saio.h"
 #include "savax.h"
@@ -34,10 +35,47 @@ mbastart(io, func)
 	mba->mba_sr = -1;
 	mba->mba_bcr = -io->i_cc;
 	mba->mba_var = vaddr;
-	if (func == WRITE)
-		drv->mbd_cs1 = MB_WCOM | MB_GO;
+	switch (io->i_flgs & F_TYPEMASK) {
+
+	case F_RDDATA:			/* standard read */
+		drv->mbd_cs1 = MB_RCOM|MB_GO;
+		return(0);
+
+	case F_WRDATA:			/* standard write */
+		drv->mbd_cs1 = MB_WCOM|MB_GO;
+		return(0);
+
+	/* the following commands apply to disks only */
+
+	case F_HDR|F_RDDATA:	
+		drv->mbd_cs1 = HP_RHDR|HP_GO;
+		break;
+
+	case F_HDR|F_WRDATA:
+		drv->mbd_cs1 = HP_WHDR|HP_GO;
+		break;
+
+	case F_CHECK|F_WRDATA:
+	case F_CHECK|F_RDDATA:
+		drv->mbd_cs1 = HP_WCDATA|HP_GO;
+		break;
+
+	case F_HCHECK|F_WRDATA:
+	case F_HCHECK|F_RDDATA:
+		drv->mbd_cs1 = HP_WCHDR|HP_GO;
+		break;
+
+	default:
+error:
+		io->i_error = ECMD;
+		io->i_flgs &= ~F_TYPEMASK;
+		return (1);
+	}
+
+	if ((drv->mbd_dt & MBDT_TAP) == 0)
+		return (0);
 	else
-		drv->mbd_cs1 = MB_RCOM | MB_GO;
+		goto error;		/* if not a disk : error */
 }
 
 mbainit(mbanum)
