@@ -1,4 +1,4 @@
-/*	ubavar.h	4.18	81/03/09	*/
+/*	ubavar.h	4.19	81/08/31	*/
 
 /*
  * This file contains definitions related to the kernel structures
@@ -42,6 +42,7 @@ struct	uba_hd {
 	int	uh_bdpfree;		/* free bdp's */
 	int	uh_hangcnt;		/* number of ticks hung */
 	int	uh_zvcnt;		/* number of 0 vectors */
+	int	uh_errcnt;		/* number of errors */
 	short	uh_users;		/* transient bdp use count */
 	short	uh_xclu;		/* an rk07 is using this uba! */
 #define	UAMSIZ	25
