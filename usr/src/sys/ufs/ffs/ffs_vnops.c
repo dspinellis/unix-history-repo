@@ -119,14 +119,12 @@ copen(mode, arg, fname)
 	register struct inode *ip;
 	register struct file *fp;
 	register struct nameidata *ndp = &u.u_nd;
-	int i;
+	int indx;
 
-#ifdef notdef
-	if ((mode&(FREAD|FWRITE)) == 0) {
-		u.u_error = EINVAL;
+	fp = falloc();
+	if (fp == NULL)
 		return;
-	}
-#endif
+	indx = u.u_r.r_val1;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = fname;
 	if (mode&FCREAT) {
@@ -137,16 +135,15 @@ copen(mode, arg, fname)
 		ip = namei(ndp);
 		if (ip == NULL) {
 			if (u.u_error)
-				return;
+				goto bad1;
 			ip = maknode(arg&07777&(~ISVTX), ndp);
 			if (ip == NULL)
-				return;
+				goto bad1;
 			mode &= ~FTRUNC;
 		} else {
 			if (mode&FEXCL) {
 				u.u_error = EEXIST;
-				iput(ip);
-				return;
+				goto bad;
 			}
 			mode &= ~FCREAT;
 		}
@@ -154,7 +151,7 @@ copen(mode, arg, fname)
 		ndp->ni_nameiop = LOOKUP | FOLLOW;
 		ip = namei(ndp);
 		if (ip == NULL)
-			return;
+			goto bad1;
 	}
 	if ((ip->i_mode & IFMT) == IFSOCK) {
 		u.u_error = EOPNOTSUPP;
@@ -173,9 +170,6 @@ copen(mode, arg, fname)
 			}
 		}
 	}
-	fp = falloc();
-	if (fp == NULL)
-		goto bad;
 	if (mode&FTRUNC)
 		itrunc(ip, (u_long)0);
 	IUNLOCK(ip);
@@ -183,23 +177,22 @@ copen(mode, arg, fname)
 	fp->f_type = DTYPE_INODE;
 	fp->f_ops = &inodeops;
 	fp->f_data = (caddr_t)ip;
-	i = u.u_r.r_val1;
 	if (setjmp(&u.u_qsave)) {
 		if (u.u_error == 0)
 			u.u_error = EINTR;
-		u.u_ofile[i] = NULL;
+		u.u_ofile[indx] = NULL;
 		closef(fp);
 		return;
 	}
 	u.u_error = openi(ip, mode);
 	if (u.u_error == 0)
 		return;
-	u.u_ofile[i] = NULL;
-	fp->f_count--;
-	irele(ip);
-	return;
+	ILOCK(ip);
 bad:
 	iput(ip);
+bad1:
+	u.u_ofile[indx] = NULL;
+	fp->f_count--;
 }
 
 /*
