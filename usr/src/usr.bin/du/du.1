@@ -1,7 +1,8 @@
-.\"	@(#)du.1	4.1 (Berkeley) %G%
+.\"	@(#)du.1	5.1 (Berkeley) %G%
 .\"
-.TH DU 1 
+.TH DU 1 "17 March 1982"
 .AT 3
+.UC 4
 .SH NAME
 du \- summarize disk usage
 .SH SYNOPSIS
@@ -13,9 +14,9 @@ du \- summarize disk usage
 ] [ name ... ]
 .SH DESCRIPTION
 .I Du
-gives the number of blocks contained in all files
-and (recursively) directories within each specified directory or
-file
+gives the number of kilobytes contained in all files
+and, recursively, directories within each specified
+directory or file
 .IR name .
 If
 .I name
@@ -23,11 +24,11 @@ is missing,
 `\fB.\fR'
 is used.
 .PP
-The optional argument
+The argument
 .B \-s
 causes only the grand total to
 be given.
-The optional argument
+The argument
 .B \-a
 causes an entry to be generated
 for each file.
