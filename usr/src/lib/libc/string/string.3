@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)string.3	6.6 (Berkeley) %G%
+.\"	@(#)string.3	6.7 (Berkeley) %G%
 .\"
 .TH STRING 3 ""
 .UC 4
@@ -48,13 +48,14 @@ strncpy(char *dst, const char *src, size_t count);
 char *
 strerror(int errno);
 
+size_t
 strlen(const char *s);
 
 char *
 strpbrk(const char *s, const char *charset);
 
 char *
-strsep(char *stringp, const char *delim);
+strsep(char **stringp, const char *delim);
 
 size_t
 strspn(const char *s, const char *charset);
