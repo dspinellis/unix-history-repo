@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)mount_cd9660.c	8.5 (Berkeley) %G%
+ *      @(#)mount_cd9660.c	8.6 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -19,12 +19,12 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount_cd9660.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount_cd9660.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#define CD9660
 #include <sys/mount.h>
+#include <sys/../isofs/cd9660/cd9660_mount.h>
 
 #include <err.h>
 #include <stdlib.h>
@@ -61,7 +61,7 @@ main(argc, argv)
 			opts |= ISOFSMNT_GENS;
 			break;
 		case 'o':
-			getmntopts(optarg, mopts, &mntflags);
+			getmntopts(optarg, mopts, &mntflags, 0);
 			break;
 		case 'r':
 			opts |= ISOFSMNT_NORRIP;
@@ -89,7 +89,7 @@ main(argc, argv)
 		args.export.ex_flags = 0;
 	args.flags = opts;
 
-	if (mount(MOUNT_CD9660, dir, mntflags, &args) < 0)
+	if (mount("cd9660", dir, mntflags, &args) < 0)
 		err(1, NULL);
 	exit(0);
 }

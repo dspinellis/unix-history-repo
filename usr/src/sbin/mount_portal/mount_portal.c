@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount_portal.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount_portal.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -82,7 +82,7 @@ main(argc, argv)
 	while ((ch = getopt(argc, argv, "o:")) != EOF) {
 		switch (ch) {
 		case 'o':
-			getmntopts(optarg, mopts, &mntflags);
+			getmntopts(optarg, mopts, &mntflags, 0);
 			break;
 		default:
 			error = 1;
@@ -130,7 +130,7 @@ main(argc, argv)
 	sprintf(tag, "portal:%d", getpid());
 	args.pa_config = tag;
 
-	rc = mount(MOUNT_PORTAL, mountpt, mntflags, &args);
+	rc = mount("portal", mountpt, mntflags, &args);
 	if (rc < 0)
 		err(1, NULL);
 
