@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_subs.c	7.9 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -26,8 +26,8 @@
  * copy data between mbuf chains and uio lists.
  */
 #include "strings.h"
-#include "types.h"
 #include "param.h"
+#include "systm.h"
 #include "user.h"
 #include "proc.h"
 #include "mount.h"
@@ -486,7 +486,7 @@ nfsm_strtmbuf(mb, bpos, cp, siz)
 /*
  * Called once to initialize data structures...
  */
-nfsinit()
+nfs_init()
 {
 	register int i;
 
@@ -577,7 +577,7 @@ static char *nfs_unixauth(cr)
  */
 
 /*
- * Load the attribute cache (that lives in the nfsnode table) with
+ * Load the attribute cache (that lives in the nfsnode entry) with
  * the values on the mbuf list and
  * Iff vap not NULL
  *    copy the attributes to *vaper
@@ -590,8 +590,13 @@ nfs_loadattrcache(vp, mdp, dposp, vaper)
 {
 	register struct vattr *vap;
 	register struct nfsv2_fattr *fp;
+	extern struct vnodeops spec_nfsv2nodeops;
 	nfsm_vars;
 	struct nfsnode *np;
+	enum vtype type;
+	dev_t rdev;
+	struct timeval mtime;
+	struct vnode *nvp;
 
 	md = *mdp;
 	dpos = *dposp;
@@ -599,9 +604,45 @@ nfs_loadattrcache(vp, mdp, dposp, vaper)
 	if (error = nfsm_disct(&md, &dpos, NFSX_FATTR, t1, TRUE, &cp2))
 		return (error);
 	fp = (struct nfsv2_fattr *)cp2;
+	type = nfstov_type(fp->fa_type);
+	rdev = fxdr_unsigned(dev_t, fp->fa_rdev);
+	fxdr_time(&fp->fa_mtime, &mtime);
+	/*
+	 * If v_type == VNON it is a new node, so fill in the v_type,
+	 * n_mtime fields. Check to see if it represents a special 
+	 * device, and if so, check for a possible alias. Once the
+	 * correct vnode has been obtained, fill in the rest of the
+	 * information.
+	 */
 	np = VTONFS(vp);
+	if (vp->v_type == VNON) {
+		vp->v_type = type;
+		if (vp->v_type == VCHR || vp->v_type == VBLK) {
+			vp->v_rdev = rdev;
+			vp->v_op = &spec_nfsv2nodeops;
+			if (nvp = checkalias(vp, vp->v_mount)) {
+				/*
+				 * Reinitialize aliased node.
+				 */
+				np = VTONFS(nvp);
+				np->n_vnode = nvp;
+				np->n_flag = NLOCKED;
+				bcopy((caddr_t)&VTONFS(vp)->n_fh,
+					(caddr_t)&np->n_fh, NFSX_FH);
+				insque(np, nfs_hash(&np->n_fh));
+				np->n_attrstamp = 0;
+				np->n_sillyrename = (struct sillyrename *)0;
+				/*
+				 * Discard unneeded vnode
+				 */
+				vput(vp);
+				vp = nvp;
+			}
+		}
+		np->n_mtime = mtime.tv_sec;
+	}
 	vap = &np->n_vattr;
-	vap->va_type = nfstov_type(fp->fa_type);
+	vap->va_type = type;
 	vap->va_mode = nfstov_mode(fp->fa_mode);
 	vap->va_nlink = fxdr_unsigned(u_short, fp->fa_nlink);
 	vap->va_uid = fxdr_unsigned(uid_t, fp->fa_uid);
@@ -611,35 +652,17 @@ nfs_loadattrcache(vp, mdp, dposp, vaper)
 		np->n_size = vap->va_size;
 	vap->va_size1 = 0;		/* OR -1 ?? */
 	vap->va_blocksize = fxdr_unsigned(long, fp->fa_blocksize);
-	vap->va_rdev = fxdr_unsigned(dev_t, fp->fa_rdev);
+	vap->va_rdev = rdev;
 	vap->va_bytes = fxdr_unsigned(long, fp->fa_blocks) * vap->va_blocksize;
 	vap->va_bytes1 = 0;
 	vap->va_fsid = fxdr_unsigned(long, fp->fa_fsid);
 	vap->va_fileid = fxdr_unsigned(long, fp->fa_fileid);
 	fxdr_time(&fp->fa_atime, &vap->va_atime);
-	fxdr_time(&fp->fa_mtime, &vap->va_mtime);
 	fxdr_time(&fp->fa_ctime, &vap->va_ctime);
+	vap->va_mtime = mtime;
 	vap->va_gen = 0;
 	vap->va_flags = 0;
 	np->n_attrstamp = time.tv_sec;
-	/*
-	 * If v_type == VNON it is a new node, so fill in the v_type,
-	 * n_mtime fields. For v_type == VCHR also set the vnode ops
-	 * and v_rdev fields.
-	 */
-	if (vp->v_type == VNON) {
-		vp->v_type = vap->va_type;
-		np->n_mtime = vap->va_mtime.tv_sec;
-		/*
-		 * Handling special files...
-		 * For VCHR, use the nfs_node, but with the nfsv2chr_vnodeops
-		 * that are a mix of nfs and blk vnode ops.
-		 */
-		if (vp->v_type == VCHR) {
-			vp->v_rdev = vap->va_rdev;
-			vp->v_op = &nfsv2chr_vnodeops;
-		}
-	}
 	*dposp = dpos;
 	*mdp = md;
 	if (vaper != NULL) {
