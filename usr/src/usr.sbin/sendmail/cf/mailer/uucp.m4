@@ -16,7 +16,7 @@ POPDIVERT
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	8.10 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	8.11 (Berkeley) %G%')
 
 #
 #  There are innumerable variations on the UUCP mailer.  It really
@@ -60,6 +60,8 @@ R$* < @ $* . >			$1 < @ $2 >		strip trailing dots
 R$* < @ $=w >			$1			strip local name
 R$* < @ $- . UUCP >		$2 ! $1			convert to UUCP format
 R$* < @ $+ >			$2 ! $1			convert to UUCP format
+R$&h ! $+ ! $+			$@ $1 ! $2		$h!...!user => ...!user
+R$&h ! $+			$@ $&h ! $1		$h!user => $h!user
 R$+				$: $U ! $1		prepend our name
 R! $+				$: $k ! $1		in case $U undefined
 
@@ -75,6 +77,10 @@ R$* < @ $* . >			$1 < @ $2 >		strip trailing dots
 R$* < @ $j >			$1			strip local name
 R$* < @ $- . UUCP >		$2 ! $1			convert to UUCP format
 R$* < @ $+ >			$2 ! $1			convert to UUCP format
+R$&h ! $+ ! $+			$@ $1 ! $2		$h!...!user => ...!user
+R$&h ! $+			$@ $&h ! $1		$h!user => $h!user
+R$+				$: $U ! $1		prepend our name
+R! $+				$: $k ! $1		in case $U undefined
 
 
 ifdef(`_MAILER_smtp_',
@@ -94,17 +100,26 @@ R$*				$@ $>11 $1
 #
 S72
 
-R$+				$: $>12 $1		uucp-ify
-R$=w ! $+			$2			prepare for following
-R$-.$+ ! $+			$@ $1.$2 ! $3		already got domain
+# handle error address as a special case
+R<@>				$n			errors to mailer-daemon
+
+# do not qualify list:; syntax
+R$* :; <@>			$@ $1 :;
+
+R$* < @ $* . >			$1 < @ $2 >		strip trailing dots
+R$* < @ $=w >			$1			strip local name
+R$* < @ $- . UUCP >		$2 ! $1			convert to UUCP format
+R$* < @ $+ >			$@ $2 ! $1		convert to UUCP format
+
+R$&h ! $+ ! $+			$@ $1 ! $2		$h!...!user => ...!user
+R$&h ! $+			$@ $&h ! $1		$h!user => $h!user
 R$+				$: $M ! $1		prepend masquerade name
 R! $+				$: $j ! $1		in case $M undefined')
 
 
 PUSHDIVERT(4)
 # resolve locally connected UUCP links
-R< @ $=Z . UUCP. > : $+		$#uucp-dom $@ $1 $: $2	@host.UUCP: ...
-R$+ < @ $=Z . UUCP. >		$#uucp-dom $@ $2 $: $1	user@host.UUCP
+R$* < @ $=Z . UUCP. > $*	$#uucp-uudom $@ $1 $: $1 < @ $2 .UUCP. > $3	@host.UUCP: ...
 R< @ $=Y . UUCP. > : $+		$#uucp-new $@ $1 $: $2	@host.UUCP: ...
 R$+ < @ $=Y . UUCP. >		$#uucp-new $@ $2 $: $1	user@host.UUCP
 R< @ $=U . UUCP. > : $+		$#uucp-old $@ $1 $: $2	@host.UUCP: ...
