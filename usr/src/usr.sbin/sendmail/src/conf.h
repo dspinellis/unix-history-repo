@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.181 (Berkeley) %G%
+ *	@(#)conf.h	8.182 (Berkeley) %G%
  */
 
 /*
@@ -498,24 +498,24 @@ typedef int		pid_t;
 
 
 /*
-**  386BSD / FreeBSD 1.0E / NetBSD (all architectures, all versions)
+**  FreeBSD / NetBSD (all architectures, all versions)
 **
-**  4.3BSD clone, closer to 4.4BSD
+**  4.3BSD clone, closer to 4.4BSD	for FreeBSD 1.x and NetBSD 0.9x
+**  4.4BSD-Lite based			for FreeBSD 2.x and NetBSD 1.x
 **
 **	See also BSD defines.
 */
 
-#if defined(__386BSD__) || defined(__FreeBSD__) || defined(__NetBSD__)
+#if defined(__FreeBSD__) || defined(__NetBSD__)
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASSETSID	1	/* has the setsid(2) POSIX syscall */
 # define USESETEUID	1	/* has useable seteuid(2) call */
-# ifdef __NetBSD__
-#  define HASUNAME	1	/* has uname(2) syscall */
-# endif
+# define HASUNAME	1	/* has uname(2) syscall */
 # include <sys/cdefs.h>
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
 # define BSD4_4_SOCKADDR	/* has sa_len */
 # define NETLINK		/* supports AF_LINK */
+# define GIDSET_T	gid_t
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_SUBR
 # endif
