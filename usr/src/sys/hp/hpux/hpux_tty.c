@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_tty.c 1.14 93/08/05$
  *
- *	@(#)hpux_tty.c	8.3 (Berkeley) %G%
+ *	@(#)hpux_tty.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -440,7 +440,7 @@ struct ohpuxsgtty_args {
 	int	fdes;
 	caddr_t	cmarg;
 };
-ohpuxgtty(p, uap, retval)
+compat_43_hpuxgtty(p, uap, retval)
 	struct proc *p;
 	struct ohpuxsgtty_args *uap;
 	int *retval;
@@ -449,7 +449,7 @@ ohpuxgtty(p, uap, retval)
 	return (getsettty(p, uap->fdes, HPUXTIOCGETP, uap->cmarg));
 }
 
-ohpuxstty(p, uap, retval)
+compat_43_hpuxstty(p, uap, retval)
 	struct proc *p;
 	struct ohpuxsgtty_args *uap;
 	int *retval;
