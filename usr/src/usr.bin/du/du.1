@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)du.1	6.11 (Berkeley) %G%
+.\"     @(#)du.1	6.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DU 1
@@ -37,11 +37,12 @@ system call, i.e. 512-byte blocks.
 If the
 .Fl k
 flag is specified, the number displayed is the number of 1024-byte
-blocks with partial blocks rounded up.
+blocks.
+Partial numbers of blocks are rounded up.
 .It Fl s
 Generate only the grand total.
 .It Fl x
-Don't traverse any mount points.
+Filesystem mount points are not traversed.
 .El
 .Pp
 If
