@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_loop.c	6.6 (Berkeley) %G%
+ *	@(#)if_loop.c	6.7 (Berkeley) %G%
  */
 
 /*
@@ -17,14 +17,19 @@
 #include "errno.h"
 #include "ioctl.h"
 
+#ifdef	BBNNET
+#define INET
+#endif
 #include "../net/if.h"
 #include "../net/netisr.h"
 #include "../net/route.h"
 
-#include "in.h"
-#include "in_systm.h"
-#include "ip.h"
-#include "ip_var.h"
+#ifdef	INET
+#include "../netinet/in.h"
+#include "../netinet/in_systm.h"
+#include "../netinet/ip.h"
+#include "../netinet/ip_var.h"
+#endif
 
 #ifdef vax
 #include "../vax/mtpr.h"
@@ -43,7 +48,6 @@ int	looutput(), loioctl();
 loattach()
 {
 	register struct ifnet *ifp = &loif;
-	register struct sockaddr_in *sin;
 
 	ifp->if_name = "lo";
 	ifp->if_mtu = LOMTU;
@@ -54,12 +58,32 @@ loattach()
 
 looutput(ifp, m0, dst)
 	struct ifnet *ifp;
-	struct mbuf *m0;
+	register struct mbuf *m0;
 	struct sockaddr *dst;
 {
-	int s = splimp();
+	int s;
 	register struct ifqueue *ifq;
+	struct mbuf *m;
 
+	/*
+	 * Place interface pointer before the data
+	 * for the receiving protocol.
+	 */
+	if (m0->m_off <= MMAXOFF &&
+	    m0->m_off >= MMINOFF + sizeof(struct ifnet *)) {
+		m0->m_off -= sizeof(struct ifnet *);
+		m0->m_len += sizeof(struct ifnet *);
+	} else {
+		MGET(m, M_DONTWAIT, MT_HEADER);
+		if (m == (struct mbuf *)0)
+			return (ENOBUFS);
+		m->m_off = MMINOFF;
+		m->m_len = sizeof(struct ifnet *);
+		m->m_next = m0;
+		m0 = m;
+	}
+	*(mtod(m0, struct ifnet **)) = ifp;
+	s = splimp();
 	ifp->if_opackets++;
 	switch (dst->sa_family) {
 
