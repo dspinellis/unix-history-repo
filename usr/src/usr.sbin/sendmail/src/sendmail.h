@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.8 (Berkeley) %G%
+ *	@(#)sendmail.h	6.9 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.8		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.9		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -45,7 +45,6 @@ static char SmailSccsId[] =	"@(#)sendmail.h	6.8		%G%";
 # endif /* DAEMON */
 
 
-# define PSBUFSIZE	(MAXNAME + MAXATOM)	/* size of prescan buffer */
 
 
 /*
