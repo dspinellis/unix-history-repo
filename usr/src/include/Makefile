@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.15 (Berkeley) 86/10/13
+#	@(#)Makefile	5.16 (Berkeley) 87/03/04
 #
 # Doing a make install builds /usr/include
 #
@@ -22,7 +22,7 @@ STD=	a.out.h ar.h assert.h ctype.h curses.h ndbm.h disktab.h \
 	fcntl.h fstab.h grp.h lastlog.h math.h memory.h mp.h mtab.h \
 	netdb.h nlist.h pcc.h pwd.h ranlib.h resolv.h setjmp.h \
 	sgtty.h stab.h stdio.h string.h strings.h struct.h syscall.h \
-	sysexits.h time.h ttyent.h utmp.h varargs.h vfont.h
+	sysexits.h time.h ttyent.h tzfile.h utmp.h varargs.h vfont.h
 LINKS=	errno.h signal.h syslog.h
 #ifdef vax
 #MACHINE=vax
