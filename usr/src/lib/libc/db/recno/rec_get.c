@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_get.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_get.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -55,9 +55,12 @@ __rec_get(dbp, key, data, flags)
 	 * original file.
 	 */
 	t = dbp->internal;
-	if (nrec > t->bt_nrecs && (ISSET(t, BTF_RINMEM) ||
-	    (status = t->bt_irec(t, nrec)) != RET_SUCCESS))
+	if (nrec > t->bt_nrecs) {
+		if (ISSET(t, BTF_EOF | BTF_RINMEM))
+			return (RET_SPECIAL);
+		if ((status = t->bt_irec(t, nrec)) != RET_SUCCESS)
 			return (status);
+	}
 
 	--nrec;
 	if ((e = __rec_search(t, nrec, SEARCH)) == NULL)
@@ -89,9 +92,6 @@ __rec_fpipe(t, top)
 	int ch;
 	char *p;
 
-	if (t->bt_reof)
-		return (RET_SPECIAL);
-
 	data.data = t->bt_dbuf;
 	data.size = t->bt_reclen;
 
@@ -113,7 +113,7 @@ __rec_fpipe(t, top)
 			break;
 	}
 	if (nrec < top) {
-		t->bt_reof = 1;
+		SET(t, BTF_EOF);
 		return (RET_SPECIAL);
 	}
 	return (RET_SUCCESS);
@@ -141,9 +141,6 @@ __rec_vpipe(t, top)
 	int bval, ch;
 	char *p;
 
-	if (t->bt_reof)
-		return (RET_SPECIAL);
-
 	bval = t->bt_bval;
 	for (nrec = t->bt_nrecs; nrec < top; ++nrec) {
 		for (p = t->bt_dbuf, sz = t->bt_dbufsz;; *p++ = ch, --sz) {
@@ -168,7 +165,7 @@ __rec_vpipe(t, top)
 			break;
 	}
 	if (nrec < top) {
-		t->bt_reof = 1;
+		SET(t, BTF_EOF);
 		return (RET_SPECIAL);
 	}
 	return (RET_SUCCESS);
@@ -195,10 +192,7 @@ __rec_fmap(t, top)
 	size_t len;
 	char *p;
 
-	if (t->bt_reof)
-		return (RET_SPECIAL);
-
-	sp = t->bt_smap;
+	sp = t->bt_cmap;
 	ep = t->bt_emap;
 	data.data = t->bt_dbuf;
 	data.size = t->bt_reclen;
@@ -210,7 +204,7 @@ __rec_fmap(t, top)
 	}
 	for (nrec = t->bt_nrecs; nrec < top; ++nrec) {
 		if (sp >= ep) {
-			t->bt_reof = 1;
+			SET(t, BTF_EOF);
 			return (RET_SPECIAL);
 		}
 		len = t->bt_reclen;
@@ -219,7 +213,7 @@ __rec_fmap(t, top)
 		if (__rec_iput(t, nrec, &data, 0) != RET_SUCCESS)
 			return (RET_ERROR);
 	}
-	t->bt_smap = sp;
+	t->bt_cmap = sp;
 	return (RET_SUCCESS);
 }
 
@@ -243,16 +237,13 @@ __rec_vmap(t, top)
 	recno_t nrec;
 	int bval;
 
-	if (t->bt_reof)
-		return (RET_SPECIAL);
-
-	sp = t->bt_smap;
+	sp = t->bt_cmap;
 	ep = t->bt_emap;
 	bval = t->bt_bval;
 
 	for (nrec = t->bt_nrecs; nrec < top; ++nrec) {
 		if (sp >= ep) {
-			t->bt_reof = 1;
+			SET(t, BTF_EOF);
 			return (RET_SPECIAL);
 		}
 		for (data.data = sp; sp < ep && *sp != bval; ++sp);
@@ -261,6 +252,6 @@ __rec_vmap(t, top)
 			return (RET_ERROR);
 		++sp;
 	}
-	t->bt_smap = sp;
+	t->bt_cmap = sp;
 	return (RET_SUCCESS);
 }
