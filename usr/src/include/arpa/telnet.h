@@ -1,4 +1,4 @@
-/*	telnet.h	4.4	82/03/16	*/
+/*	telnet.h	4.5	85/03/24	*/
 /*
  * Definitions for the TELNET protocol.
  */
@@ -45,6 +45,8 @@
 #define	TELOPT_BM	19	/* byte macro */
 #define	TELOPT_DET	20	/* data entry terminal */
 #define	TELOPT_SUPDUP	21	/* supdup protocol */
+/* 22-23 are assigned */
+#define	TELOPT_TTYPE	24	/* terminal type */
 #define TELOPT_EXOPL	255	/* extended-options-list */
 
 #ifdef TELCMDS
@@ -55,11 +57,12 @@ char *telcmds[] = {
 #endif
 
 #ifdef TELOPTS
-char *telopts[] = {
+#define	NTELOPTS	25
+char *telopts[NTELOPTS] = {
 	"BINARY", "ECHO", "RCP", "SUPPRESS GO AHEAD", "NAME",
 	"STATUS", "TIMING MARK", "RCTE", "NAOL", "NAOP",
 	"NAOCRD", "NAOHTS", "NAOHTD", "NAOFFD", "NAOVTS",
 	"NAOVTD", "NAOLFD", "EXTEND ASCII", "LOGOUT", "BYTE MACRO",
-	"DATA ENTRY TERMINAL", "SUPDUP"
+	"DATA ENTRY TERMINAL", "SUPDUP", "#22", "#23", "TTYPE",
 };
 #endif
