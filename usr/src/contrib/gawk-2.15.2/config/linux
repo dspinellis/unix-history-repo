@@ -1,0 +1,3 @@
+Configure file for Linux 0.98.pl4 (with gcc 2.2.2d7)
+DOPRNT_MISSING	1
+SRANDOM_PROTO		1
