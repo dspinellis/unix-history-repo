@@ -1,4 +1,4 @@
-/*	param.h	4.21	82/08/24	*/
+/*	param.h	4.22	82/10/10	*/
 
 /*
  * Tunable variables which do not usually vary per system.
@@ -46,6 +46,9 @@
 #ifndef	NSIG
 #include <signal.h>
 #endif
+
+#define	ISSIG(p)	((p)->p_sig && \
+	((p)->p_flag&STRC || ((p)->p_sig &~ (p)->p_ignsig)) && issig())
 
 /*
  * Return values from tsleep().

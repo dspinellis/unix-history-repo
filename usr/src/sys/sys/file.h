@@ -1,4 +1,4 @@
-/*	file.h	4.12	82/08/10	*/
+/*	file.h	4.13	82/10/10	*/
 
 #ifdef KERNEL
 /*
@@ -77,3 +77,10 @@ struct	file *falloc();
 #define	FTYPE_CDEV	0x2000	/* character special device */
 #define	FTYPE_DIR	0x4000	/* directory */
 #define	FTYPE_BDEV	0x8000	/* block special device */
+
+#define	GETF(fp, fd) { \
+	if ((unsigned)(fd) >= NOFILE || ((fp) = u.u_ofile[fd]) == NULL) { \
+		u.u_error = EBADF; \
+		return; \
+	} \
+}

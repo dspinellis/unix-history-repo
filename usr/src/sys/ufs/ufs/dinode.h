@@ -1,4 +1,4 @@
-/*	dinode.h	4.14	82/08/10	*/
+/*	dinode.h	4.15	82/10/10	*/
 
 /*
  * The I node is the focus of all file activity in UNIX.
@@ -98,7 +98,7 @@ struct	inode *namei();
 #endif
 
 /* flags */
-#define	ILOCK		0x1		/* inode is locked */
+#define	ILOCKED		0x1		/* inode is locked */
 #define	IUPD		0x2		/* file has been modified */
 #define	IACC		0x4		/* inode access time to be updated */
 #define	IMOUNT		0x8		/* inode is mounted on */
@@ -123,3 +123,24 @@ struct	inode *namei();
 #define	IREAD		0400		/* read, write, execute permissions */
 #define	IWRITE		0200
 #define	IEXEC		0100
+
+#define	ILOCK(ip) { \
+	while ((ip)->i_flag & ILOCKED) { \
+		(ip)->i_flag |= IWANT; \
+		sleep((caddr_t)(ip), PINOD); \
+	} \
+	(ip)->i_flag |= ILOCKED; \
+}
+
+#define	IUNLOCK(ip) { \
+	(ip)->i_flag &= ~ILOCKED; \
+	if ((ip)->i_flag&IWANT) { \
+		(ip)->i_flag &= ~IWANT; \
+		wakeup((caddr_t)(ip)); \
+	} \
+}
+
+#define	IUPDAT(ip, t1, t2, waitfor) { \
+	if (ip->i_flag&(IUPD|IACC|ICHG)) \
+		iupdat(ip, t1, t2, waitfor); \
+}
