@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)signal.3	8.1 (Berkeley) %G%
+.\"     @(#)signal.3	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SIGNAL 3
@@ -131,7 +131,7 @@ func() remains installed after a signal has been delivered.
 .Ef
 .Pp
 For some system calls, if a signal is caught while the call is
-executing and the call is permaturely terminated,
+executing and the call is prematurely terminated,
 the call is automatically restarted.
 (The handler is installed using the
 .Dv SA_RESTART

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)mkdir.2	8.1 (Berkeley) %G%
+.\"     @(#)mkdir.2	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MKDIR 2
@@ -57,21 +57,11 @@ The named file resides on a read-only file system.
 .It Bq Er EEXIST
 The named file exists.
 .It Bq Er ENOSPC
-The directory in which the entry for the new directory is being placed
-cannot be extended because there is no space left on the file
-system containing the directory.
-.It Bq Er ENOSPC
-The new directory cannot be created because there
-there is no space left on the file
-system that will contain the directory.
+The new directory cannot be created because there is no space left
+on the file system that will contain the directory.
 .It Bq Er ENOSPC
 There are no free inodes on the file system on which the
 directory is being created.
-.It Bq Er EDQUOT
-The directory in which the entry for the new directory
-is being placed cannot be extended because the
-user's quota of disk blocks on the file system
-containing the directory has been exhausted.
 .It Bq Er EDQUOT
 The new directory cannot be created because the user's
 quota of disk blocks on the file system that will

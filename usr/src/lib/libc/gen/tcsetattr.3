@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tcsetattr.3	8.1 (Berkeley) %G%
+.\"	@(#)tcsetattr.3	8.2 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt TCSETATTR 3
@@ -203,7 +203,7 @@ should be used when changing parameters that affect output.
 .It Fa TCSAFLUSH
 The change occurs after all output written to
 .Fa fd
-has been transmitted to the terminal
+has been transmitted to the terminal.
 Additionally, any input that has been received but not read is discarded.
 .It Fa TCSASOFT
 If this value is
@@ -231,7 +231,7 @@ the output baud rate.
 .Pp
 If
 .Nm tcsetattr
-is unable able to make any of the requested changes, it returns -1 and
+is unable to make any of the requested changes, it returns -1 and
 sets errno.
 Otherwise, it makes all of the requested changes it can.
 If the specified input and output baud rates differ and are a combination

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getsockopt.2	8.1 (Berkeley) %G%
+.\"     @(#)getsockopt.2	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETSOCKOPT 2
@@ -223,7 +223,7 @@ is set to a convenient size for network efficiency, often 1024.
 .Dv SO_RCVLOWAT
 is an option to set the minimum count for input operations.
 In general, receive calls will block until any (non-zero) amount of data
-is received, then return with smaller of the amount available or the amount
+is received, then return with the smaller of the amount available or the amount
 requested.
 The default value for
 .Dv SO_RCVLOWAT

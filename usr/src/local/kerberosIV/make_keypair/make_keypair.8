@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)make_keypair.8	8.1 (Berkeley) %G%
+.\"	@(#)make_keypair.8	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAKE_KEYPAIR 8
@@ -24,7 +24,7 @@ is used to create pairs of
 keys for
 each
 .Ar hostname .
-The keys are used by priviledged programs such as
+The keys are used by privileged programs such as
 .Xr register 1
 to make remote updates to the Kerberos database without
 having to have first acquired a Kerberos ticket granting ticket
@@ -34,11 +34,11 @@ The keys created by
 are placed (by hand) in the filesystems of the
 kerberos server in
 .Pa /etc/kerberosIV/register_keys ,
-and in the root directory on the clients.
+and in the root directory of the clients.
 For example, the file
 .Pa /.update.key128.32.130.3
 would
-contain a copy of the key on the client with
+contain a copy of the key of the client with
 IP address 128.32.130.3.
 These keys provide a shared secret which may be used to establish
 a secure channel between the client hosts and the Kerberos server.

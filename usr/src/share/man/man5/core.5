@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)core.5	8.2 (Berkeley) %G%
+.\"     @(#)core.5	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CORE 5
@@ -16,14 +16,14 @@
 .Sh DESCRIPTION
 A small number of signals which cause abnormal termination of a process
 also cause a record of the process's in-core state to be written
-to disk for later examination by one of the aviailable debuggers.
+to disk for later examination by one of the available debuggers.
 (See
 .Xr sigaction 2 . )
 This memory image is written to a file named
 .Nm programname.core
 in the working directory;
 provided the terminated process had write permission in the directory,
-and provided the abnormality did not caused
+and provided the abnormality did not cause
 a system crash.
 (In this event, the decision to save the core file is arbitrary, see
 .Xr savecore 8 . )

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)tunefs.8	8.1 (Berkeley) %G%
+.\"     @(#)tunefs.8	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TUNEFS 8
@@ -70,7 +70,7 @@ users will be unable to allocate files until enough files have
 been deleted to get under the higher threshold.
 .It Fl o Ar optimize_preference
 The file system can either try to minimize the time spent
-allocating blocks, or it can attempt minimize the space
+allocating blocks, or it can attempt to minimize the space
 fragmentation on the disk.
 If the value of minfree (see above) is less than 10%,
 then the file system should optimize for space to avoid

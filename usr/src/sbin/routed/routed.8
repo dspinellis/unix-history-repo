@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)routed.8	8.1 (Berkeley) %G%
+.\"     @(#)routed.8	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ROUTED 8
@@ -203,7 +203,7 @@ any routing information transmitted.
 Active gateways are treated equally to network
 interfaces.  Routing information is distributed
 to the gateway and if no routing information is
-received for a period of the time, the associated
+received for a period of time, the associated
 route is deleted.
 Gateways marked
 .Em external
@@ -284,8 +284,6 @@ rather then using a static routing table of passive gateways.
 .Tn EGP
 is required in order to provide routes for local networks to the rest
 of the Internet system.
-Sites needing assistance with such configurations
-should contact the Computer Systems Research Group at Berkeley.
 .Sh FILES
 .Bl -tag -width /etc/gateways -compact
 .It Pa /etc/gateways

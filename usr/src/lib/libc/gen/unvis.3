@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)unvis.3	8.1 (Berkeley) %G%
+.\"     @(#)unvis.3	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt UNVIS 3
@@ -72,7 +72,7 @@ start decoding a stream of bytes, first initialize an integer
 to zero.  Call
 .Fn unvis
 with each successive byte, along with a pointer
-to this integer, and a pointer to an destination character.
+to this integer, and a pointer to a destination character.
 The
 .Xr unvis
 function
@@ -91,7 +91,7 @@ be passed in again.
 A valid sequence was detected, but no character was produced.  This
 return code is necessary to indicate a logical break between characters.
 .It Dv  UNVIS_SYNBAD
-An invalid esacpe sequence was detected, or the decoder is in an
+An invalid escape sequence was detected, or the decoder is in an
 unknown state.  The decoder is placed into the starting state.
 .El
 .Pp

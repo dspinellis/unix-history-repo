@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)update.8	8.1 (Berkeley) %G%
+.\"	@(#)update.8	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt UPDATE 8
@@ -18,7 +18,7 @@ The
 .Nm update
 command helps protect the integrity of disk volumes
 by flushing
-voliatile cached filesystem data
+volatile cached filesystem data
 to disk at thirty second intervals.
 .Nm Update
 uses the
@@ -36,7 +36,7 @@ when the system goes multi-user.
 .Xr rc 8 ,
 .Xr sync 8
 .Sh BUGS
-It is possible on some systems, that a
+It is possible on some systems that a
 .Xr sync
 occuring simultaneously with a crash may cause
 file system damage. See

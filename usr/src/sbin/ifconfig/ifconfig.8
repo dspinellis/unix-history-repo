@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ifconfig.8	8.1 (Berkeley) %G%
+.\"     @(#)ifconfig.8	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt IFCONFIG 8
@@ -149,7 +149,7 @@ Higher metrics have the effect of making a route
 less favorable; metrics are counted as addition hops
 to the destination network or host.
 .It Cm netmask Ar mask
-(Inet and Iso)
+(Inet and ISO)
 Specify how much of the address to reserve for subdividing
 networks into sub-networks.
 The mask includes the network part of the local address
@@ -177,7 +177,7 @@ taken to be the
 (Network Entity Title).
 The default value is 1, which is conformant to US
 .Tn GOSIP .
-When an iso address is set in an ifconfig command,
+When an ISO address is set in an ifconfig command,
 it is really the
 .Tn NSAP
 which is being specified.
@@ -187,7 +187,7 @@ For example, in
 specified in the
 .Tn ISO NSAP
 to be assigned to the interface.
-There is some evidence that a number different 1 may be useful
+There is some evidence that a number different from 1 may be useful
 for
 .Tn AFI
 37 type addresses.

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)newfs.8	8.1 (Berkeley) %G%
+.\"     @(#)newfs.8	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt NEWFS 8
@@ -68,7 +68,7 @@ The following options define the general layout policies.
 Causes the file system parameters to be printed out
 without really creating the file system.
 .It Fl O
-Creates an 4.3BSD format filesystem.
+Creates a 4.3BSD format filesystem.
 This options is primarily used to build root filesystems
 that can be understood by older boot ROMs.
 .It Fl b Ar block-size
@@ -87,7 +87,7 @@ The file system can either be instructed to try to minimize the time spent
 allocating blocks, or to try to minimize the space fragmentation on the disk.
 If the value of minfree (see above) is less than 10%,
 the default is to optimize for space;
-if the value of minfree greater than or equal to 10%,
+if the value of minfree is greater than or equal to 10%,
 the default is to optimize for time.
 See
 .Xr tunefs 8
@@ -138,7 +138,7 @@ created (for example on a write-once disk).
 Note that changing any of these values from their
 defaults will make it impossible for 
 .Xr fsck
-to find the alternate superblocks if the standard super block is lost.
+to find the alternate superblocks if the standard superblock is lost.
 .It Fl r Ar revolutions/minute
 The speed of the disk in revolutions per minute.
 .It Fl S Ar sector-size

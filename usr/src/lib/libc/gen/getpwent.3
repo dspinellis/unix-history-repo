@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getpwent.3	8.1 (Berkeley) %G%
+.\"     @(#)getpwent.3	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETPWENT 3
@@ -86,7 +86,7 @@ up subsequent accesses for all of the routines.
 as it doesn't close its file descriptors by default.)
 .Pp
 It is dangerous for long-running programs to keep the file descriptors
-open the database will become out of date if it is updated while the
+open as the database will become out of date if it is updated while the
 program is running.
 .Pp
 The
@@ -104,7 +104,7 @@ closes any open files.
 These routines have been written to ``shadow'' the password file, e.g.
 allow only certain programs to have access to the encrypted password.
 If the process which calls them has an effective uid of 0, the encrypted
-password will be returned, otherwise, the password field of the retuned
+password will be returned, otherwise, the password field of the returned
 structure will point to the string
 .Ql * .
 .Sh RETURN VALUES
