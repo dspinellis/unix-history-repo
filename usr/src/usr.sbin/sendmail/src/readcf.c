@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.28 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -688,6 +688,7 @@ makemailer(line)
 	m = (struct mailer *) xalloc(sizeof *m);
 	bzero((char *) m, sizeof *m);
 	m->m_eol = "\n";
+	m->m_uid = m->m_gid = 0;
 
 	/* collect the mailer name */
 	for (p = line; *p != '\0' && *p != ',' && !(isascii(*p) && isspace(*p)); p++)
@@ -780,6 +781,59 @@ makemailer(line)
 
 		  case 'D':		/* working directory */
 			m->m_execdir = newstr(p);
+			break;
+
+		  case 'U':		/* user id */
+			if (isascii(*p) && !isdigit(*p))
+			{
+				char *q = p;
+				struct passwd *pw;
+
+				while (isascii(*p) && isalnum(*p))
+					p++;
+				while (isascii(*p) && isspace(*p))
+					*p++ = '\0';
+				if (*p != '\0')
+					*p++ = '\0';
+				pw = getpwnam(q);
+				if (pw == NULL)
+					syserr("readcf: mailer U= flag: unknown user %s", q);
+				else
+				{
+					m->m_uid = pw->pw_uid;
+					m->m_gid = pw->pw_gid;
+				}
+			}
+			else
+			{
+				auto char *q;
+
+				m->m_uid = strtol(p, &q, 0);
+				p = q;
+			}
+			while (isascii(*p) && isspace(*p))
+				p++;
+			if (*p == '\0')
+				break;
+			if (isascii(*p) && !isdigit(*p))
+			{
+				char *q = p;
+				struct group *gr;
+
+				while (isascii(*p) && isalnum(*p))
+					p++;
+				*p++ = '\0';
+				gr = getgrnam(q);
+				if (gr == NULL)
+					syserr("readcf: mailer U= flag: unknown group %s", q);
+				else
+					m->m_gid = gr->gr_gid;
+			}
+			else
+			{
+				m->m_gid = strtol(p, NULL, 0);
+			}
+			setbitn(M_SPECIFIC_UID, m->m_flags);
 			break;
 		}
 
