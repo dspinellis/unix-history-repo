@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)main.c	1.7 (Berkeley) %G%";
+static	char sccsid[] = "@(#)main.c	1.8 (Berkeley) %G%";
 
 /*
  * Debugger main routine.
@@ -68,6 +68,7 @@ String argv[];
     catcherrs();
     onsyserr(EINTR, nil);
     setbuf(stdout, outbuf);
+    setlinebuf(stderr);
     printf("dbx version %d of %s.\nType 'help' for help.\n",
 	versionNumber, date);
     fflush(stdout);
@@ -92,6 +93,12 @@ String argv[];
 	restoretty(stdout, &ttyinfo);
     }
     signal(SIGINT, catchintr);
+    if (isterm(stdin)) {
+	    printf("(%s) ", cmdname);
+	    fflush(stdout);
+    }
+    endshellmode();		/* after an error longjmp */
+    startaliasing();
     yyparse();
     putchar('\n');
     quit(0);
@@ -342,11 +349,7 @@ char c;
 	    break;
 
 	case 'l':
-#   	    ifdef LEXDEBUG
 		lexdebug = true;
-#	    else
-		fatal("\"-l\" only applicable when compiled with LEXDEBUG");
-#	    endif
 	    break;
 
 	default:
@@ -362,14 +365,14 @@ public savetty(f, t)
 File f;
 Ttyinfo *t;
 {
-    gtty(fileno(f), t);
+    ioctl(fileno(f), TIOCGETP, t);
 }
 
 public restoretty(f, t)
 File f;
 Ttyinfo *t;
 {
-    stty(fileno(f), t);
+    ioctl(fileno(f), TIOCSETN, t);
 }
 
 /*
