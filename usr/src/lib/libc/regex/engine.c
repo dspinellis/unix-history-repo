@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)engine.c	5.3 (Berkeley) %G%
+ *	@(#)engine.c	5.4 (Berkeley) %G%
  */
 
 /*
@@ -60,8 +60,6 @@ struct match {
 	states empty;		/* empty set of states */
 };
 
-#include "engine.ih"
-
 #ifdef REDEBUG
 #define	SP(t, s, c)	print(m, t, s, c, stdout)
 #define	AT(t, p1, p2, s1, s2)	at(m, t, p1, p2, s1, s2)
@@ -72,10 +70,24 @@ struct match {
 #define	NOTE(s)	/* nothing */
 #endif
 
+static uchar	*backref
+	__P((struct match *, uchar *, uchar *, sopno, sopno, sopno));
+static uchar	*dissect __P((struct match *, uchar *, uchar *, sopno, sopno));
+static states	 expand __P((struct re_guts *, int, int, states, int, int));
+static uchar	*fast __P((struct match *, uchar *, uchar *, sopno, sopno));
+static int	 matcher
+	__P((struct re_guts *, uchar *, size_t, regmatch_t[], int));
+static uchar	*slow __P((struct match *, uchar *, uchar *, sopno, sopno));
+static states	 step __P((struct re_guts *, int, int, states, u_int, states));
+
+#ifdef REDEBUG
+static void  at __P((struct match *, char *, uchar *, uchar *, sopno, stopno));
+static char *pchar __P((int));
+static void  print __P((struct match *, char *, states, u_int, FILE *));
+#endif
+
 /*
  - matcher - the actual matching engine
- == static int matcher(register struct re_guts *g, uchar *string, \
- ==	size_t nmatch, regmatch_t pmatch[], int eflags);
  */
 static int			/* 0 success, REG_NOMATCH failure */
 matcher(g, string, nmatch, pmatch, eflags)
@@ -238,8 +250,6 @@ int eflags;
 
 /*
  - dissect - figure out what matched what, no back references
- == static uchar *dissect(register struct match *m, uchar *start, \
- ==	uchar *stop, sopno startst, sopno stopst);
  */
 static uchar *			/* == stop (success) always */
 dissect(m, start, stop, startst, stopst)
@@ -422,8 +432,6 @@ sopno stopst;
 
 /*
  - backref - figure out what matched what, figuring in back references
- == static uchar *backref(register struct match *m, uchar *start, \
- ==	uchar *stop, sopno startst, sopno stopst, sopno lev);
  */
 static uchar *			/* == stop (success) or NULL (failure) */
 backref(m, start, stop, startst, stopst, lev)
@@ -602,8 +610,6 @@ sopno lev;			/* PLUS nesting level */
 
 /*
  - fast - step through the string at top speed
- == static uchar *fast(register struct match *m, uchar *start, \
- ==	uchar *stop, sopno startst, sopno stopst);
  */
 static uchar *			/* where tentative match ended, or NULL */
 fast(m, start, stop, startst, stopst)
@@ -669,8 +675,6 @@ sopno stopst;
 
 /*
  - slow - step through the string more deliberately
- == static uchar *slow(register struct match *m, uchar *start, \
- ==	uchar *stop, sopno startst, sopno stopst);
  */
 static uchar *			/* where it ended */
 slow(m, start, stop, startst, stopst)
@@ -733,8 +737,6 @@ sopno stopst;
 
 /*
  - expand - return set of states reachable from an initial set
- == static states expand(register struct re_guts *g, int start, \
- ==	int stop, register states st, int atbol, int ateol);
  */
 static states
 expand(g, start, stop, st, atbol, ateol)
@@ -834,8 +836,6 @@ int ateol;			/* just before \n or \0? (for EOL) */
 
 /*
  - step - map set of states reachable before char to set reachable after
- == static states step(register struct re_guts *g, int start, int stop, \
- ==	register states bef, uchar ch, register states aft);
  */
 static states
 step(g, start, stop, bef, ch, aft)
@@ -843,7 +843,7 @@ register struct re_guts *g;
 int start;			/* start state within strip */
 int stop;			/* state after stop state within strip */
 register states bef;		/* states reachable before */
-uchar ch;
+u_int ch;
 register states aft;		/* states already known reachable after */
 {
 	register cset *cs;
@@ -938,17 +938,13 @@ register states aft;		/* states already known reachable after */
 #ifdef REDEBUG
 /*
  - print - print a set of states
- == #ifdef REDEBUG
- == static void print(struct match *m, char *caption, states st, \
- ==	uchar ch, FILE *d);
- == #endif
  */
 static void
 print(m, caption, st, ch, d)
 struct match *m;
 char *caption;
 states st;
-uchar ch;
+u_int ch;
 FILE *d;
 {
 	register struct re_guts *g = m->g;
@@ -971,10 +967,6 @@ FILE *d;
 
 /* 
  - at - print current situation
- == #ifdef REDEBUG
- == static void at(struct match *m, char *title, uchar *start, uchar *stop, \
- ==						sopno startst, stopno stopst);
- == #endif
  */
 static void
 at(m, title, start, stop, startst, stopst)
@@ -997,9 +989,6 @@ sopno stopst;
 #define	PCHARDONE	/* never again */
 /*
  - pchar - make a character printable
- == #ifdef REDEBUG
- == static char *pchar(int ch);
- == #endif
  *
  * Is this identical to regchar() over in debug.c?  Well, yes.  But a
  * duplicate here avoids having a debugging-capable regexec.o tied to

@@ -8,11 +8,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)regerror.c	5.2 (Berkeley) %G%
+ *	@(#)regerror.c	5.3 (Berkeley) %G%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)regerror.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)regerror.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -25,23 +25,6 @@ static char sccsid[] = "@(#)regerror.c	5.2 (Berkeley) %G%";
 
 #include "utils.h"
 
-/*
- = #define	REG_NOMATCH	 1
- = #define	REG_BADPAT	 2
- = #define	REG_ECOLLATE	 3
- = #define	REG_ECTYPE	 4
- = #define	REG_EESCAPE	 5
- = #define	REG_ESUBREG	 6
- = #define	REG_EBRACK	 7
- = #define	REG_EPAREN	 8
- = #define	REG_EBRACE	 9
- = #define	REG_BADBR	10
- = #define	REG_ERANGE	11
- = #define	REG_ESPACE	12
- = #define	REG_BADRPT	13
- = #define	REG_EMPTY	14
- = #define	REG_ASSERT	15
- */
 static struct rerr {
 	int code;
 	char *name;
@@ -67,8 +50,6 @@ static struct rerr {
 
 /*
  - regerror - the interface to error numbers
- = extern size_t regerror(int errcode, const regex_t *preg, char *errbuf, \
- =							size_t errbuf_size);
  */
 /* ARGSUSED */
 size_t
