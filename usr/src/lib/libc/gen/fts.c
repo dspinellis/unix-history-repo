@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.24 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -66,8 +66,8 @@ fts_open(argv, options, compar)
 	parent->fts_level = FTS_ROOTPARENTLEVEL;
 
 	/* Allocate/initialize root(s). */
-	maxlen = -1;
-	for (root = NULL, nitems = 0; *argv; ++argv, ++nitems) {
+	for (root = NULL, maxlen = nitems = 0; *argv; ++argv, ++nitems) {
+		/* Don't allow zero-length paths. */
 		if (!(len = strlen(*argv))) {
 			errno = ENOENT;
 			goto mem2;
@@ -102,16 +102,19 @@ fts_open(argv, options, compar)
 
 	/*
 	 * Allocate a dummy pointer and make fts_read think that we've just
-	 * finished the node before the root(s); set p->fts_info to FTS_NS
+	 * finished the node before the root(s); set p->fts_info to FTS_INIT
 	 * so that everything about the "current" node is ignored.
 	 */
 	if ((sp->fts_cur = fts_alloc(sp, "", 0)) == NULL)
 		goto mem2;
 	sp->fts_cur->fts_link = root;
-	sp->fts_cur->fts_info = FTS_NS;
+	sp->fts_cur->fts_info = FTS_INIT;
 
-	/* Start out with at least 1K+ of path space. */
-	if (!fts_path(sp, MAX(maxlen, MAXPATHLEN)))
+	/*
+	 * Start out with at least 1K+ of path space, but enough, in any
+	 * case, to hold the user's paths.
+	 */
+	if (!fts_path(sp, MAX(maxlen + 1, MAXPATHLEN)))
 		goto mem3;
 
 	/*
@@ -205,8 +208,8 @@ fts_close(sp)
 }
 
 /*
- * Special case a root of "/" so that slashes aren't appended causing
- * paths to be written as "//foo".
+ * Special case a root of "/" so that slashes aren't appended which would
+ * cause paths to be written as "//foo".
  */
 #define	NAPPEND(p) \
 	(p->fts_level == FTS_ROOTLEVEL && p->fts_pathlen == 1 && \
@@ -273,7 +276,7 @@ fts_read(sp)
 		 */
 		if (sp->fts_child) {
 			if (CHDIR(sp, p->fts_accpath)) {
-				p->fts_parent->fts_cderr = errno;
+				p->fts_parent->fts_errno = errno;
 				for (p = sp->fts_child; p; p = p->fts_link)
 					p->fts_accpath =
 					    p->fts_parent->fts_accpath;
@@ -356,9 +359,9 @@ name:		t = sp->fts_path + NAPPEND(p->fts_parent);
 	 * has to be reset to 0 so that if the user does an FTS_AGAIN, it all
 	 * works.
 	 */
-	if (p->fts_cderr) {
-		errno = p->fts_cderr;
-		p->fts_cderr = 0;
+	if (p->fts_errno) {
+		errno = p->fts_errno;
+		p->fts_errno = 0;
 		p->fts_info = FTS_ERR;
 	} else
 		p->fts_info = FTS_DP;
@@ -392,13 +395,21 @@ fts_children(sp)
 	p = sp->fts_cur;
 
 	/*
-	 * Set errno to 0 so that user can tell the difference between an
-	 * error and a directory without entries.  If not a directory being
-	 * visited in *pre-order*, or we've already had fatal errors, return
-	 * immediately.
+	 * Errno set to 0 so user can distinguish empty directory from
+	 * an error.
 	 */
 	errno = 0;
-	if (ISSET(FTS_STOP) || p->fts_info != FTS_D && p->fts_info != FTS_DNR)
+
+	/* Fatal errors stop here. */
+	if (ISSET(FTS_STOP))
+		return (NULL);
+
+	/* Return logical hierarchy of user's arguments. */
+	if (p->fts_info == FTS_INIT)
+		return (p->fts_link);
+
+	 /* If not a directory being visited in pre-order, stop here. */
+	if (p->fts_info != FTS_D && p->fts_info != FTS_DNR)
 		return (NULL);
 
 	/* Free up any previous child list. */
@@ -489,7 +500,7 @@ fts_build(sp, type)
 	if (nlinks || type == BREAD)
 		if (FCHDIR(sp, dirfd(dirp))) {
 			if (type == BREAD)
-				cur->fts_cderr = errno;
+				cur->fts_errno = errno;
 			descend = nlinks = 0;
 			cderr = 1;
 		} else {
@@ -614,12 +625,15 @@ fts_stat(sp, p, follow)
 	register FTSENT *p;
 	int follow;
 {
+	register FTSENT *t;
+	register dev_t dev;
+	register ino_t ino;
 	int saved_errno;
 
 	/*
 	 * If doing a logical walk, or application requested FTS_FOLLOW, do
 	 * a stat(2).  If that fails, check for a non-existent symlink.  If
-	 * fail, return the errno from the stat call.
+	 * fail, set the errno from the stat call.
 	 */
 	if (ISSET(FTS_LOGICAL) || follow) {
 		if (stat(p->fts_accpath, &p->fts_statb)) {
@@ -628,11 +642,12 @@ fts_stat(sp, p, follow)
 				errno = 0;
 				return (FTS_SLNONE);
 			} 
-			errno = saved_errno;
+			p->fts_errno = saved_errno;
 			bzero(&p->fts_statb, sizeof(struct stat));
 			return (FTS_NS);
 		}
 	} else if (lstat(p->fts_accpath, &p->fts_statb)) {
+		p->fts_errno = errno;
 		bzero(&p->fts_statb, sizeof(struct stat));
 		return (FTS_NS);
 	}
@@ -644,10 +659,6 @@ fts_stat(sp, p, follow)
 	 * be worthwhile.
 	 */
 	if (S_ISDIR(p->fts_statb.st_mode)) {
-		register FTSENT *t;
-		register dev_t dev;
-		register ino_t ino;
-
 		dev = p->fts_statb.st_dev;
 		ino = p->fts_statb.st_ino;
 		for (t = p->fts_parent; t->fts_level >= FTS_ROOTLEVEL;
@@ -720,7 +731,7 @@ fts_alloc(sp, name, len)
 	p->fts_namelen = len;
 	p->fts_path = sp->fts_path;
 	p->fts_instr = FTS_NOINSTR;
-	p->fts_cderr = 0;
+	p->fts_errno = 0;
 	p->fts_number = 0;
 	p->fts_pointer = NULL;
 	return (p);
