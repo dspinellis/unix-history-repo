@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_usrreq.c	7.2 (Berkeley) %G%
+ *	@(#)pk_usrreq.c	7.3 (Berkeley) %G%
  */
 
 #include "../h/param.h"
@@ -44,27 +44,26 @@ struct	x25_packet *pk_template ();
  *
  */
 
-pk_usrreq (so, req, m, nam, rights)
+pk_usrreq (so, req, m, nam, control)
 struct socket *so;
 int req;
 register struct mbuf *m, *nam;
-struct mbuf *rights;
+struct mbuf *control;
 {
 	register struct pklcd *lcp = (struct pklcd *) so -> so_pcb;
 	register struct x25_packet *xp;
-	register int s = splnet (), error = 0;
+	register int error = 0;
 
-#ifdef BSD4_3
-	if (req == PRU_CONTROL) {
-		error = pk_control(so, (int)m, (caddr_t)nam,
-			(struct ifnet *)rights);
-		splx (s);
-		return (error);
+	if (req == PRU_CONTROL)
+		return (pk_control(so, (int)m, (caddr_t)nam,
+			(struct ifnet *)control));
+	if (control && control->m_len) {
+		error = EINVAL;
+		goto release;
 	}
-#endif
-	if (rights && rights -> m_len) {
-		splx (s);
-		return (EINVAL);
+	if (lcp == NULL && req != PRU_ATTACH) {
+		error = EINVAL;
+		goto release;
 	}
 
 /*
@@ -72,10 +71,7 @@ struct mbuf *rights;
 		req, (struct x25_packet *)0);
 */
 
-	if (lcp == NULL && req != PRU_ATTACH) {
-		splx (s);
 		return (EINVAL);
-	}
 
 	switch (req) {
 	/* 
@@ -250,12 +246,14 @@ struct mbuf *rights;
 	default: 
 		panic ("pk_usrreq");
 	}
-
-	splx (s);
+release:
+	if (control != NULL)
+		m_freem(control);
+	if (m != NULL)
+		m_freem(m);
 	return (error);
 }
 
-#ifdef BSD4_3
 /*ARGSUSED*/
 pk_control (so, cmd, data, ifp)
 struct socket *so;
@@ -265,8 +263,9 @@ register struct ifnet *ifp;
 {
 	register struct ifreq *ifr = (struct ifreq *)data;
 	register struct ifaddr *ifa = 0;
-	register int error, s;
-	struct sockaddr oldaddr;
+	register struct x25_ifaddr *ia = 0;
+	int error, s;
+	unsigned n;
 
 	/*
 	 * Find address for this interface, if it exists.
@@ -276,11 +275,12 @@ register struct ifnet *ifp;
 			if (ifa->ifa_addr.sa_family == AF_CCITT)
 				break;
 
+	ia = (struct x25_ifaddr *)ifa;
 	switch (cmd) {
 	case SIOCGIFADDR:
 		if (ifa == 0)
 			return (EADDRNOTAVAIL);
-		ifr -> ifr_addr = ifa->ifa_addr;
+		ifr->ifr_addr = *(struct sockaddr *)ia->ia_xc;
 		return (0);
 
 	case SIOCSIFADDR:
@@ -290,39 +290,51 @@ register struct ifnet *ifp;
 		if (ifp == 0)
 			panic("pk_control");
 		if (ifa == (struct ifaddr *)0) {
-			register struct ifaddr *ia;
 			register struct mbuf *m;
 
 			m = m_getclr(M_WAIT, MT_IFADDR);
 			if (m == (struct mbuf *)NULL)
 				return (ENOBUFS);
-			ia = mtod(m, struct ifaddr *);
+			ia = mtod(m, struct x25_ifaddr *);
 			if (ifa = ifp->if_addrlist) {
 				for ( ; ifa->ifa_next; ifa = ifa->ifa_next)
 					;
-				ifa->ifa_next = ia;
+				ifa->ifa_next = &ia->ia_ifa;
 			} else
-				ifp->if_addrlist = ia;
-			ifa = ia;
+				ifp->if_addrlist = &ia->ia_ifa;
+			ifa = &ia->ia_ifa;
 			ifa->ifa_ifp = ifp;
+			ifa->ifa_addr = (struct sockaddr *)&ia->ia_addr;
+			ifa->ifa_netmask = (struct sockaddr *)&ia->ia_sockmask;
 		}
-		oldaddr = ifa->ifa_addr;
-		s = splimp();
-		ifa->ifa_addr = ifr->ifr_addr;
+		ia->ia_xcp = (struct x25config *) &(ifr->ifr_addr);
+		if (ia->ia_chan && (ia->ia_maxlcn != ia->xcp->xc_maxlcn)) {
+			free((caddr_t)ia->ia_chan, M_IFADDR);
+			ia->ia_ia_chan = 0;
+		}
+		n = ia->ia_maxlcn * sizeof(struct pklcd *);
+		if (ia->ia_chan == 0)
+		    ia->ia_chan = (struct pklcd **) malloc(n, M_IFADDR);
+		if (ia->ia_chan)
+			bzero((caddr_t)ia->ia_chan, n);
+		else
+			return (ENOBUFS);
 		/*
 		 * Give the interface a chance to initialize if this
 		 * is its first address, and to validate the address.
 		 */
-		if (ifp->if_ioctl && (error = (*ifp->if_ioctl)(ifp, SIOCSIFADDR, ifa))) {
-			splx(s);
-			ifa->ifa_addr = oldaddr;
-			return (error);
-		}
+		s = splimp();
+		if (ifp->if_ioctl)
+			error = (*ifp->if_ioctl)(ifp, SIOCSIFADDR, ifa)));
 		splx(s);
+		if (error == 0) {
+			ia->ia_xc = *ia->ia_xcp;
 #ifndef WATERLOO
-		(void) pk_accton ();
+			(void) pk_accton ();
 #endif
-		return (0);
+		}
+		ia->ia_xcp = &ia->ia_xc;
+		return (error);
 
 	default:
 		if (ifp == 0 || ifp->if_ioctl == 0)
@@ -330,7 +342,6 @@ register struct ifnet *ifp;
 		return ((*ifp->if_ioctl)(ifp, cmd, data));
 	}
 }
-#endif
 
 /*
  * Do an in-place conversion of an "old style"
@@ -434,7 +445,7 @@ register struct mbuf *m;
 			xp -> q_bit = 1;
 		xp -> packet_type |= (*cp & 0x40) >> 2;		/* XXX */
 		m -> m_len--;
-		m -> m_off++;
+		m -> m_data++;
 	}
 	len = m -> m_len;
 	while (m -> m_next) {
@@ -446,12 +457,7 @@ register struct mbuf *m;
 		return (EMSGSIZE);
 	}
 
-#ifdef BSD4_3
  	sbappendrecord (&lcp -> lcd_so -> so_snd, m0);
-#else
-	m -> m_act = (struct mbuf *) 1;
-	sbappend (&lcp -> lcd_so -> so_snd, m0);
-#endif
 	lcp -> lcd_template = 0;
 	lcp -> lcd_txcnt++;
 	pk_output (lcp);
