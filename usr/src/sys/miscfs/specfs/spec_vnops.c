@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spec_vnops.c	7.10 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -28,56 +28,56 @@
 #include "stat.h"
 #include "errno.h"
 
-int	blk_lookup(),
-	blk_open(),
-	blk_read(),
-	blk_write(),
-	blk_strategy(),
-	blk_ioctl(),
-	blk_select(),
-	blk_lock(),
-	blk_unlock(),
-	blk_close(),
-	blk_badop(),
-	blk_nullop();
+int	spec_lookup(),
+	spec_open(),
+	spec_read(),
+	spec_write(),
+	spec_strategy(),
+	spec_ioctl(),
+	spec_select(),
+	spec_lock(),
+	spec_unlock(),
+	spec_close(),
+	spec_badop(),
+	spec_nullop();
 
-struct vnodeops blk_vnodeops = {
-	blk_lookup,
-	blk_badop,
-	blk_badop,
-	blk_open,
-	blk_close,
-	blk_badop,
-	blk_badop,
-	blk_badop,
-	blk_read,
-	blk_write,
-	blk_ioctl,
-	blk_select,
-	blk_badop,
-	blk_nullop,
-	blk_badop,
-	blk_badop,
-	blk_badop,
-	blk_badop,
-	blk_badop,
-	blk_badop,
-	blk_badop,
-	blk_badop,
-	blk_badop,
-	blk_badop,
-	blk_nullop,
-	blk_nullop,
-	blk_lock,
-	blk_unlock,
-	blk_badop,
-	blk_strategy,
+struct vnodeops spec_vnodeops = {
+	spec_lookup,
+	spec_badop,
+	spec_badop,
+	spec_open,
+	spec_close,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_read,
+	spec_write,
+	spec_ioctl,
+	spec_select,
+	spec_badop,
+	spec_nullop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_nullop,
+	spec_nullop,
+	spec_lock,
+	spec_unlock,
+	spec_badop,
+	spec_strategy,
 };
 
 /*
  * Trivial lookup routine that always fails.
  */
-blk_lookup(vp, ndp)
+spec_lookup(vp, ndp)
 	struct vnode *vp;
 	struct nameidata *ndp;
 {
@@ -93,7 +93,7 @@ blk_lookup(vp, ndp)
  * validate before actual IO.
  */
 /* ARGSUSED */
-blk_open(vp, mode, cred)
+spec_open(vp, mode, cred)
 	register struct vnode *vp;
 	int mode;
 	struct ucred *cred;
@@ -122,7 +122,7 @@ blk_open(vp, mode, cred)
 /*
  * Vnode op for read
  */
-blk_read(vp, uio, offp, ioflag, cred)
+spec_read(vp, uio, offp, ioflag, cred)
 	register struct vnode *vp;
 	struct uio *uio;
 	off_t *offp;
@@ -145,7 +145,7 @@ blk_read(vp, uio, offp, ioflag, cred)
 /*
  * Vnode op for write
  */
-blk_write(vp, uio, offp, ioflag, cred)
+spec_write(vp, uio, offp, ioflag, cred)
 	register struct vnode *vp;
 	struct uio *uio;
 	off_t *offp;
@@ -169,7 +169,7 @@ blk_write(vp, uio, offp, ioflag, cred)
  * Device ioctl operation.
  */
 /* ARGSUSED */
-blk_ioctl(vp, com, data, fflag, cred)
+spec_ioctl(vp, com, data, fflag, cred)
 	struct vnode *vp;
 	register int com;
 	caddr_t data;
@@ -187,13 +187,13 @@ blk_ioctl(vp, com, data, fflag, cred)
 		return ((*bdevsw[major(dev)].d_ioctl)(dev, com, data, fflag));
 
 	default:
-		panic("blk_ioctl");
+		panic("spec_ioctl");
 		/* NOTREACHED */
 	}
 }
 
 /* ARGSUSED */
-blk_select(vp, which, cred)
+spec_select(vp, which, cred)
 	struct vnode *vp;
 	int which;
 	struct ucred *cred;
@@ -214,7 +214,7 @@ blk_select(vp, which, cred)
 /*
  * Just call the device strategy routine
  */
-blk_strategy(bp)
+spec_strategy(bp)
 	register struct buf *bp;
 {
 	(*bdevsw[major(bp->b_dev)].d_strategy)(bp);
@@ -224,14 +224,14 @@ blk_strategy(bp)
 /*
  * At the moment we do not do any locking.
  */
-blk_lock(vp)
+spec_lock(vp)
 	struct vnode *vp;
 {
 
 	return (0);
 }
 
-blk_unlock(vp)
+spec_unlock(vp)
 	struct vnode *vp;
 {
 
@@ -242,7 +242,7 @@ blk_unlock(vp)
  * Device close routine
  */
 /* ARGSUSED */
-blk_close(vp, flag, cred)
+spec_close(vp, flag, cred)
 	register struct vnode *vp;
 	int flag;
 	struct ucred *cred;
@@ -284,7 +284,7 @@ blk_close(vp, flag, cred)
 		break;
 
 	default:
-		panic("blk_close: not special");
+		panic("spec_close: not special");
 	}
 
 	if (setjmp(&u.u_qsave)) {
@@ -301,17 +301,17 @@ blk_close(vp, flag, cred)
 /*
  * Block device bad operation
  */
-blk_badop()
+spec_badop()
 {
 
-	panic("blk_badop called");
+	panic("spec_badop called");
 	/* NOTREACHED */
 }
 
 /*
  * Block device null operation
  */
-blk_nullop()
+spec_nullop()
 {
 
 	return (0);
