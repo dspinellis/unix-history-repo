@@ -9,6 +9,8 @@
 #include <whoami.h>
 #include <sysexits.h>
 
+static char SccsId[] = "@(#)mail.local.c	1.2	%G%";
+
 #define DELIVERMAIL	"/etc/delivermail"
 
 
@@ -22,11 +24,13 @@
 #define	LSIZE	256
 #define	MAXLET	300	/* maximum number of letters */
 #define	MAILMODE (~0644)		/* mode of created mail */
+# ifndef DELIVERMAIL
 #define	RMAIL	"/usr/net/bin/sendberkmail"
 #define LOCNAM1	"csvax"
 #define LOCNAM2	"ucbvax"
 #define LOCNAM3	"vax"
 #define LOCNAM4	"v"
+# endif
 
 char	line[LSIZE];
 char	resp[LSIZE];
@@ -597,6 +601,7 @@ skip:
 	exit(0);
 }
 
+# ifndef DELIVERMAIL
 /*
  * Send mail on the Berkeley network.
  * Sorry Bill, sendrmt() is so awful we just gave up.
@@ -618,6 +623,7 @@ sendberkmail(n, name, fromaddr)
 	pclose(cmdf);
 	return(9);
 }
+# endif
 
 usage()
 {
@@ -636,16 +642,19 @@ char *fromaddr;
 	struct passwd *pw, *getpwnam();
 	struct stat statb;
 
+# ifndef DELIVERMAIL
 	stripfx(LOCNAM1, &name);
 	stripfx(LOCNAM2, &name);
 	stripfx(LOCNAM3, &name);
 	stripfx(LOCNAM4, &name);
 	if(*name == ':')name++;		/* skip colon in to-name */
-	for(p=name; *p!=':' &&*p!='\0'; p++);
+	for(p=name; *p!=':' && *p!='!' && *p!='^' &&*p!='\0'; p++);
 	/* if(*p == ':') return(sendrmt(n, name, RMAIL)); */
 	if (*p == ':')
 		return(sendberkmail(n, name, fromaddr));
-	else if (strcmp(name, "msgs") == 0) return(sendrmt(n, "-s", "/usr/ucb/msgs"));
+	else if (*p=='\0' && strcmp(name, "msgs") == 0)
+		return(sendrmt(n, "-s", "/usr/ucb/msgs"));
+# endif
 	for(p=name; *p!='!'&&*p!='^' &&*p!='\0'; p++)
 		;
 	if (*p == '!'|| *p=='^')
@@ -804,6 +813,7 @@ register char *s, *p;
 	*s = '\0';
 	return(p);
 }
+# ifndef DELIVERMAIL
 /*
 	stripfx(prefix string, pointer to string)
 
@@ -822,3 +832,4 @@ stripfx(pfx, name)
 		return;
 	*name = cp;
 }
+# endif
