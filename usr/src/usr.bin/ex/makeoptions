@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)makeoptions	6.5 (Berkeley) %G%
+#	@(#)makeoptions	6.6 (Berkeley) %G%
 #
 
 #
@@ -20,7 +20,7 @@ ex - $TMP1 <<'%'
 	q
 '%'
 shift
-cc -E $* $TMP1 > $TMP2
+cpp $* $TMP1 > $TMP2
 ex - $TMP2 <<'X'
 	" delete all preprocessor output (# line, etc)
 	g/^# /d
@@ -49,7 +49,7 @@ ex - $TMP2 <<'X'
 .
 	$s/e[ 	].*[ 	]/e	NOPTS	/
 	0a
-	/*  sccs id   @(#)  ex_vars.h  @(#)makeoptions	6.5 %G%  */
+	/*  sccs id   @(#)  ex_vars.h  @(#)makeoptions	6.6 %G%  */
 .
 	w! ex_vars.h
 	q
