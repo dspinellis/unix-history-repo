@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode_pager.c	7.1 (Berkeley) %G%
+ *	@(#)vnode_pager.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -17,22 +17,25 @@
  *
  * TODO:
  *	pageouts
+ *	fix credential use (uses current process credentials now)
  */
 #include "vnodepager.h"
 #if NVNODEPAGER > 0
 
 #include "param.h"
-#include "user.h"
+#include "proc.h"
 #include "malloc.h"
 #include "vnode.h"
 #include "uio.h"
 #include "mount.h"
-#include "queue.h"
 
-#include "../vm/vm_param.h"
-#include "../vm/vm_pager.h"
-#include "../vm/vm_page.h"
-#include "../vm/vnode_pager.h"
+#include "vm_param.h"
+#include "lock.h"
+#include "queue.h"
+#include "vm_prot.h"
+#include "vm_object.h"
+#include "vm_page.h"
+#include "vnode_pager.h"
 
 queue_head_t	vnode_pager_list;	/* list of managed vnodes */
 
@@ -103,7 +106,7 @@ vnode_pager_alloc(handle, size, prot)
 		/*
 		 * And an object of the appropriate size
 		 */
-		if (VOP_GETATTR(vp, &vattr, u.u_cred) == 0) {
+		if (VOP_GETATTR(vp, &vattr, curproc->p_ucred) == 0) {
 			object = vm_object_allocate(round_page(vattr.va_size));
 			vm_object_enter(object, pager);
 			vm_object_setpager(object, pager, 0, TRUE);
@@ -131,10 +134,10 @@ vnode_pager_alloc(handle, size, prot)
 		 * cache if found and also gain a reference to the object.
 		 */
 		object = vm_object_lookup(pager);
+#ifdef DEBUG
 		vnp = (vn_pager_t)pager->pg_data;
+#endif
 	}
-	if (prot & VM_PROT_EXECUTE)
-		vp->v_flag |= VTEXT;		/* XXX */
 #ifdef DEBUG
 	if (vpagerdebug & VDB_ALLOC)
 		printf("vnode_pager_setup: vp %x sz %x pager %x object %x\n",
@@ -159,7 +162,7 @@ vnode_pager_dealloc(pager)
 		vp->v_flag &= ~VTEXT;
 #if 0
 		/* can hang if done at reboot on NFS FS */
-		(void) VOP_FSYNC(vp, u.u_cred);
+		(void) VOP_FSYNC(vp, curproc->p_ucred);
 #endif
 		vrele(vp);
 	}
@@ -425,9 +428,9 @@ vnode_pager_io(vnp, m, rw)
 		       vnp->vnp_vp, kva, foff, size);
 #endif
 	if (rw == UIO_READ)
-		error = VOP_READ(vnp->vnp_vp, &auio, 0, u.u_cred);
+		error = VOP_READ(vnp->vnp_vp, &auio, 0, curproc->p_ucred);
 	else
-		error = VOP_WRITE(vnp->vnp_vp, &auio, 0, u.u_cred);
+		error = VOP_WRITE(vnp->vnp_vp, &auio, 0, curproc->p_ucred);
 #ifdef DEBUG
 	if (vpagerdebug & VDB_IO) {
 		if (error || auio.uio_resid)
