@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcproc.c 1.11 %G%";
+static	char sccsid[] = "@(#)pcproc.c 1.12 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -492,7 +492,7 @@ pcproc(r)
 						field = 1;
 				}
 				format[0] = ' ';
-				fmtstart = 0;
+				fmtstart = 1;
 				break;
 			case TSTR:
 				constval( alv );

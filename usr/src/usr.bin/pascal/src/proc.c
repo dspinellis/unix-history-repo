@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)proc.c 1.13 %G%";
+static char sccsid[] = "@(#)proc.c 1.14 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -439,7 +439,7 @@ proc(r)
 						field = 1;
 				}
 				format[0] = ' ';
-				fmtstart = 0;
+				fmtstart = 1;
 				break;
 			case TSTR:
 				constval( alv );
