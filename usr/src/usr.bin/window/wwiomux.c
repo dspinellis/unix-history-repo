@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwiomux.c	3.15 %G%";
+static char sccsid[] = "@(#)wwiomux.c	3.16 %G%";
 #endif
 
 /*
@@ -19,7 +19,8 @@ extern int _wwdtablesize;
  * The idea is to copy window outputs to the terminal, via the
  * display package.  We try to give the top most window highest
  * priority.  The only return condition is when there is keyboard
- * input, which is serviced asynchronously by wwrint().
+ * input or when a child process dies which are serviced by signal
+ * catchers (wwrint() and wwchild()).
  * When there's nothing to do, we sleep in a select().
  * This can be done better with interrupt driven io.  But that's
  * not supported on ptys, yet.
@@ -42,17 +43,5 @@ wwiomux()
 	n = select(_wwdtablesize, imask,
 		(int *)0, (int *)0, (struct timeval *)0);
 	}
-			if (w->ww_ispty)
-				*p = c;
-		}
-	for (w = wwhead.ww_forw; w != &wwhead; w = w->ww_forw)
-		if (w->ww_pty >= 0 && w->ww_obq > w->ww_obp && !w->ww_stopped) {
-			n = wwwrite(w, w->ww_obp, w->ww_obq - w->ww_obp);
-			if ((w->ww_obp += n) == w->ww_obq)
-				w->ww_obq = w->ww_obp = w->ww_ob;
-			if (wwinterrupt())
-				return;
-			break;
-		}
-	goto loop;
+	}
 }
