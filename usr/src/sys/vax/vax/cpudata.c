@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cpudata.c	7.1 (Berkeley) %G%
+ *	@(#)cpudata.c	7.2 (Berkeley) %G%
  */
 
 #include "pte.h"
@@ -20,9 +20,10 @@
  */
 
 /*
- * These are the (fixed) addresses of the (last 8k bytes of)
- * unibus memory for each of the possible unibus adapters.  Note that the
- * unibus memory addresses are actually indexed by the unibus adapter type code.
+ * These are the (fixed) physical addresses of the
+ * unibus memory for each of the possible unibus adapters.
+ * Note that on some machines the unibus memory addresses
+ * are actually indexed by the unibus adapter type code.
  */
 #if VAX8600
 caddr_t umaddr8600a[4] = {
@@ -50,11 +51,6 @@ caddr_t	umaddr730[1] = {
 	(caddr_t) UMEM730
 };
 #endif
-#if VAX630
-caddr_t	umaddr630[1] = {
-	(caddr_t) UMEM630
-};
-#endif
 
 /*
  * Information to patch around the stupidity of configuration
@@ -77,45 +73,40 @@ short	nexty730[NNEX730] = {
 
 #if VAX8600
 struct nexusconnect sbi8600[] = {
-	{ NNEX8600, NEXA8600, umaddr8600a, NBDP8600, 1, 0 },
-	{ NNEX8600, NEXB8600, umaddr8600b, NBDP8600, 1, 0 },
+	{ NNEX8600, NEXA8600, DW780, NBDP8600, umaddr8600a, 0 },
+	{ NNEX8600, NEXB8600, DW780, NBDP8600, umaddr8600b, 0 },
 };
 struct iobus io8600[] = {
 	{ IO_ABUS, IOA8600(0), IOAMAPSIZ, (caddr_t)&sbi8600[0] },
 	{ IO_ABUS, IOA8600(1), IOAMAPSIZ, (caddr_t)&sbi8600[1] },
 };
 #endif
-#if VAX630
-short	nexty630[NNEX630] = {
-	NEX_UBA0,
-};
-#endif
 
 #if VAX780
 struct nexusconnect sbi780 = {
-	NNEX780, NEX780, umaddr780, NBDP780, 1, 0,
+	NNEX780, NEX780, DW780, NBDP780, umaddr780, 0,
 };
 struct iobus io780[] = { IO_SBI780, 0, 0, (caddr_t)&sbi780 };
 #endif
 
 #if VAX750
 struct nexusconnect cmi750 = {
-	NNEX750, NEX750, umaddr750, NBDP750, 0, nexty750,
+	NNEX750, NEX750, DW750, NBDP750, umaddr750, nexty750,
 };
 struct iobus io750[] = { IO_CMI750, 0, 0, (caddr_t)&cmi750 };
 #endif
 
 #if VAX730
 struct nexusconnect xxx730 = {
-	NNEX730, NEX730, umaddr730, NBDP730, 0, nexty730,
+	NNEX730, NEX730, DW730, NBDP730, umaddr730, nexty730,
 };
 struct iobus io730[] = { IO_XXX730, 0, 0, (caddr_t)&xxx730 };
 #endif
 #if VAX630
-struct nexusconnect xxx630 = {
-	NNEX630, NEX630, umaddr630, NBDP630, 0, nexty630,
+struct qbus qbus630 = {
+	QBA, QBAPAGES, QBAMAP630, (caddr_t)QMEM630, (caddr_t)QIOPAGE630
 };
-struct iobus io630[] = { IO_QBUS, 0, 0, (caddr_t)&xxx630 };
+struct iobus io630[] = { IO_QBUS, 0, 0, (caddr_t)&qbus630 };
 #endif
 
 

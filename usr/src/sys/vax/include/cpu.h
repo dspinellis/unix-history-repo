@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cpu.h	7.1 (Berkeley) %G%
+ *	@(#)cpu.h	7.2 (Berkeley) %G%
  */
 
 #ifndef LOCORE
@@ -79,6 +79,13 @@ struct	percpu {
 	struct	iobus *pc_io;		/* descriptions of IO adaptors */
 };
 
+/*
+ * Generic description of an I/O "adaptor"
+ * (any top-level I/O bus visible to software
+ * and requiring autoconfiguration).
+ * The remainder of the description
+ * is pointed to by io_details.
+ */
 struct iobus {
 	int	io_type;		/* io adaptor types */
 	caddr_t	io_addr;		/* phys address of IO adaptor */
@@ -92,16 +99,24 @@ struct iobus {
 struct nexusconnect {
 	short	psb_nnexus;		/* number of nexus slots */
 	struct	nexus *psb_nexbase;	/* base of nexus space */
-/* we should be able to have just one address for the unibus memories */
-/* and calculate successive addresses by adding to the base, but the 750 */
-/* doesn't obey the sensible rule: uba1 has a lower address than uba0! */
-	caddr_t	*psb_umaddr;		/* unibus memory addresses */
+	short	psb_ubatype;		/* type of "unibus adaptor" */
 	short	psb_nubabdp;		/* number of bdp's per uba */
-	short	psb_haveubasr;		/* have uba status register */
+	caddr_t	*psb_umaddr;		/* "unibus" memory addresses */
 /* the 750 has some slots which don't promise to tell you their types */
 /* if this pointer is non-zero, then you get the type from this array */
 /* rather than from the (much more sensible) low byte of the config register */
 	short	*psb_nextype;		/* botch */
+};
+
+/*
+ * Description of a Q-bus configuration.
+ */
+struct qbus {
+	int	qb_type;		/* type of "unibus adaptor" */
+	int	qb_memsize;		/* size of (used) memory, pages */
+	struct	pte *qb_map;		/* base of map registers */
+	caddr_t	qb_maddr;		/* "unibus" memory address */
+	caddr_t	qb_iopage;		/* "unibus" IO page address */
 };
 
 #ifdef KERNEL

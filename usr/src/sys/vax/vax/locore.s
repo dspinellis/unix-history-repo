@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.1 (Berkeley) %G%
+ *	@(#)locore.s	7.2 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -159,7 +159,7 @@ SCBVEC(mba0int):
 	rei
 #endif
 
-#if defined(VAX780) || defined(VAX8600)
+#ifdef DW780
 /*
  * Registers for the uba handling code
  */
@@ -723,13 +723,19 @@ _/**/mname:	.globl	_/**/mname;		\
 
 	SYSMAP(UMBAbeg	,umbabeg	,0		)
 	SYSMAP(Nexmap	,nexus		,16*MAXNNEXUS	)
-	SYSMAP(UMEMmap	,umem		,UBAPAGES*NUBA	)
+	SYSMAP(UMEMmap	,umem		,(UBAPAGES+UBAIOPAGES)*NUBA	)
+#if VAX8600
 	SYSMAP(Ioamap	,ioa		,MAXNIOA*IOAMAPSIZ/NBPG	)
-	SYSMAP(UMBAend	,umbaend	,0		)
+#endif
 #if VAX630
 	SYSMAP(Clockmap	,cldevice	,1		)
 	SYSMAP(Ka630map	,ka630cpu	,1		)
+#include "qv.h"
+#if NQV > 0
+	SYSMAP(QVmap	,qvmem		,512*NQV	)
 #endif
+#endif
+	SYSMAP(UMBAend	,umbaend	,0		)
 
 	SYSMAP(Usrptmap	,usrpt		,USRPTSIZE+CLSIZE )
 

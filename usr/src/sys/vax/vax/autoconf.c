@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.1 (Berkeley) %G%
+ *	@(#)autoconf.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -47,8 +47,6 @@
  * the machine.
  */
 int	cold;		/* if 1, still working on cold-start */
-int	nexnum;		/* current nexus number */
-int	nsbi;		/* current sbi number */
 int	dkn;		/* number of iostat dk numbers assigned so far */
 int	cpuspeed = 1;	/* relative cpu speed */
 
@@ -132,6 +130,11 @@ configure()
 	asm("halt");
 }
 
+#if VAX8600 || VAX780 || VAX750 || VAX730
+int	nexnum;		/* current nexus number */
+int	nsbi;		/* current sbi number */
+#endif
+
 /*
  * Probe the main IO bus(es).
  * The percpu structure gives us a handle on the addresses and/or types.
@@ -147,11 +150,16 @@ probeio(pcpu)
 
 		switch (iob->io_type) {
 
-#if VAX780 || VAX750 || VAX730 || VAX630
+#if VAX630
+		case IO_QBUS:
+			probeqbus((struct qbus *)iob->io_details);
+			break;
+#endif
+
+#if VAX780 || VAX750 || VAX730
 		case IO_SBI780:
 		case IO_CMI750:
 		case IO_XXX730:
-		case IO_QBUS:
 			probenexi((struct nexusconnect *)iob->io_details);
 			break;
 #endif
@@ -211,6 +219,7 @@ probe_Abus(ioanum, iob)
 }
 #endif
 
+#if VAX8600 || VAX780 || VAX750 || VAX730
 /*
  * Probe nexus space, finding the interconnects
  * and setting up and probing mba's and uba's for devices.
@@ -270,17 +279,8 @@ probenexi(pnc)
 				setscbnex(ubaintv[numuba]);
 #endif
 			i = nexcsr.nex_type - NEX_UBA0;
-			unifind((struct uba_regs *)nxv, (struct uba_regs *)nxp,
-			    umem[numuba], pnc->psb_umaddr[i], UMEMmap[numuba],
-			    pnc->psb_haveubasr);
-#if defined(VAX780) || defined(VAX8600)
-			if ((cpu == VAX_780) || (cpu == VAX_8600))
-				((struct uba_regs *)nxv)->uba_cr =
-				    UBACR_IFS|UBACR_BRIE|
-				    UBACR_USEFIE|UBACR_SUEFIE|
-				    (((struct uba_regs *)nxv)->uba_cr&0x7c000000);
-#endif
-			numuba++;
+			probeuba((struct uba_regs *)nxv, (struct uba_regs *)nxp,
+			    pnc->psb_umaddr[i]);
 			break;
 
 		case NEX_DR32:
@@ -370,6 +370,18 @@ unconfig:
 	if (numuba > NUBA)
 		numuba = NUBA;
 }
+
+setscbnex(fn)
+	int (*fn)();
+{
+	register struct scb *scbp = &scb;
+
+	scbp = (struct scb *)((caddr_t)scbp + nsbi * 512);
+	scbp->scb_ipl14[nexnum] = scbp->scb_ipl15[nexnum] =
+	    scbp->scb_ipl16[nexnum] = scbp->scb_ipl17[nexnum] =
+		scbentry(fn, SCB_ISTACK);
+}
+#endif
 
 #if NMBA > 0
 struct	mba_device *mbaconfig();
@@ -507,17 +519,94 @@ fixctlrmask()
 		*phys(ud->ud_probe, short *) &= ~0xc00;
 }
 
+#if VAX630
+/*
+ * Configure a Q-bus.
+ */
+probeqbus(qb)
+	struct qbus *qb;
+{
+	register struct uba_hd *uhp = &uba_hd[numuba];
+
+	ioaccess(qb->qb_map, Nexmap[0], qb->qb_memsize * sizeof (struct pte));
+	uhp->uh_type = qb->qb_type;
+	uhp->uh_uba = (struct uba_regs *)0xc0000000;   /* no uba adaptor regs */
+	uhp->uh_mr = (struct pte *)&nexus[0];
+	/*
+	 * The map registers start right at 20088000 on the
+	 * ka630, so we have to subtract out the 2k offset to make the
+	 * pointers work..
+	 */
+	uhp->uh_physuba = (struct uba_regs *)(((u_long)qb->qb_map)-0x800);
+
+	uhp->uh_memsize = qb->qb_memsize;
+	ioaccess(qb->qb_maddr, UMEMmap[numuba], uhp->uh_memsize * NBPG);
+	uhp->uh_mem = umem[numuba];
+
+	/*
+	 * The I/O page is mapped to the 8K of the umem address space
+	 * immediately after the memory section that is mapped.
+	 */
+	ioaccess(qb->qb_iopage, UMEMmap[numuba] + uhp->uh_memsize,
+	    UBAIOPAGES * NBPG);
+	uhp->uh_iopage = umem[numuba] + (uhp->uh_memsize * NBPG);
+
+	unifind(uhp, qb->qb_iopage);
+}
+#endif
+
+probeuba(vubp, pubp, pumem)
+	struct uba_regs *vubp, *pubp;
+	caddr_t pumem;
+{
+	register struct uba_hd *uhp = &uba_hd[numuba];
+	caddr_t vumem;
+
+	/*
+	 * Save virtual and physical addresses of adaptor.
+	 */
+	switch (cpu) {
+#ifdef DW780
+	case VAX_8600:
+	case VAX_780:
+		uhp->uh_type = DW780;
+		break;
+#endif
+#ifdef DW750
+	case VAX_750:
+		uhp->uh_type = DW750;
+		break;
+#endif
+#ifdef DW730
+	case VAX_730:
+		uhp->uh_type = DW730;
+		break;
+#endif
+	default:
+		panic("unknown UBA type");
+		/*NOTREACHED*/
+	}
+	uhp->uh_uba = vubp;
+	uhp->uh_physuba = pubp;
+	uhp->uh_mr = vubp->uba_map;
+	uhp->uh_memsize = UBAPAGES;
+
+	ioaccess(pumem, UMEMmap[numuba], (UBAPAGES + UBAIOPAGES) * NBPG);
+	uhp->uh_mem = umem[numuba];
+	uhp->uh_iopage = umem[numuba] + (uhp->uh_memsize * NBPG);
+
+	unifind(uhp, pumem + (uhp->uh_memsize * NBPG));
+}
+
 /*
  * Find devices on a UNIBUS.
  * Uses per-driver routine to set <br,cvec> into <r11,r10>,
  * and then fills in the tables, with help from a per-driver
  * slave initialization routine.
  */
-unifind(vubp, pubp, vumem, pumem, memmap, haveubasr)
-	struct uba_regs *vubp, *pubp;
-	caddr_t vumem, pumem;
-	struct pte *memmap;
-	int haveubasr;
+unifind(uhp0, pumem)
+	struct uba_hd *uhp0;
+	caddr_t pumem;
 {
 #ifndef lint
 	register int br, cvec;			/* MUST BE r11, r10 */
@@ -531,46 +620,35 @@ unifind(vubp, pubp, vumem, pumem, memmap, haveubasr)
 #endif
 	register struct uba_device *ui;
 	register struct uba_ctlr *um;
+	register struct uba_hd *uhp = uhp0;
 	u_short *reg, *ap, addr;
-	struct uba_hd *uhp;
 	struct uba_driver *udp;
 	int i, (**ivec)();
 	caddr_t ualloc, zmemall();
 	extern int catcher[256];
-
-#if VAX630
-	/*
-	 * The map registers start right at 20088000 on the
-	 * ka630, so we have to subtract out the 2k offset to make the
-	 * pointers work..
-	 */
-	if (cpu == VAX_630) {
-		vubp = (struct uba_regs *)(((u_long)vubp)-0x800);
-		pubp = (struct uba_regs *)(((u_long)pubp)-0x800);
-	}
+#ifdef DW780
+	struct uba_regs *vubp = uhp->uh_uba;
 #endif
+
 	/*
 	 * Initialize the UNIBUS, by freeing the map
 	 * registers and the buffered data path registers
 	 */
-	uhp = &uba_hd[numuba];
 	uhp->uh_map = (struct map *)calloc(UAMSIZ * sizeof (struct map));
 	ubainitmaps(uhp);
 
 	/*
-	 * Save virtual and physical addresses
-	 * of adaptor, and allocate and initialize
-	 * the UNIBUS interrupt vector.
-	 */
-	uhp->uh_uba = vubp;
-	uhp->uh_physuba = pubp;
-	/*
+	 * Allocate and initialize space
+	 * for the UNIBUS interrupt vectors.
 	 * On the 8600, can't use UNIvec;
 	 * the vectors for the second SBI overlap it.
 	 */
+#if	VAX8600
 	if (cpu == VAX_8600)
 		uhp->uh_vec = (int(**)())calloc(512);
-	else if (numuba == 0)
+	else
+#endif
+	if (numuba == 0)
 		uhp->uh_vec = UNIvec;
 #if NUBA > 1
 	else if (numuba == 1)
@@ -588,20 +666,8 @@ unifind(vubp, pubp, vumem, pumem, memmap, haveubasr)
 	 */
 	uhp->uh_lastiv = 0x200;
 
-#if VAX630
-	/*
-	 * Kludge time again. The q22 memory and device reg. address spaces
-	 * are not physically contiguous, so we need 2 loops to map them
-	 * into contiguous virtual space.
-	 */
-	if (cpu == VAX_630) {
-		ioaccess(pumem, memmap, (UBAPAGES-16)*NBPG);
-		ioaccess(0x20000000, memmap+(UBAPAGES-16), 16*NBPG);
-	} else
-#endif
-		ioaccess(pumem, memmap, UBAPAGES * NBPG);
-#if defined(VAX780) || defined(VAX8600)
-	if (haveubasr) {
+#ifdef DW780
+	if (uhp->uh_type == DW780) {
 		vubp->uba_sr = vubp->uba_sr;
 		vubp->uba_cr = UBACR_IFS|UBACR_BRIE;
 	}
@@ -632,10 +698,9 @@ unifind(vubp, pubp, vumem, pumem, memmap, haveubasr)
 	 * for devices which will need to dma
 	 * output to produce an interrupt.
 	 */
-	*(int *)(&vubp->uba_map[0]) = UBAMR_MRV;
+	*(int *)(&uhp->uh_mr[0]) = UBAMR_MRV;
 
-#define	ubaoff(off)	((off)&0x1fff)
-#define	ubaddr(off)	(u_short *)((int)vumem + (ubaoff(off)|0x3e000))
+#define	ubaddr(uhp, off)    (u_short *)((int)(uhp)->uh_iopage + ubdevreg(off))
 	/*
 	 * Check each unibus mass storage controller.
 	 * For each one which is potentially on this uba,
@@ -654,21 +719,21 @@ unifind(vubp, pubp, vumem, pumem, memmap, haveubasr)
 		 */
 	    for (ap = udp->ud_addr; addr || (addr = *ap++); addr = 0) {
 
-		if (ualloc[ubaoff(addr)])
+		if (ualloc[ubdevreg(addr)])
 			continue;
-		reg = ubaddr(addr);
+		reg = ubaddr(uhp, addr);
 		if (badaddr((caddr_t)reg, 2))
 			continue;
-#if defined(VAX780) || defined(VAX8600)
-		if (haveubasr && vubp->uba_sr) {
+#ifdef DW780
+		if (uhp->uh_type == DW780 && vubp->uba_sr) {
 			vubp->uba_sr = vubp->uba_sr;
 			continue;
 		}
 #endif
 		cvec = 0x200;
 		i = (*udp->ud_probe)(reg, um->um_ctlr, um);
-#if defined(VAX780) || defined(VAX8600)
-		if (haveubasr && vubp->uba_sr) {
+#ifdef DW780
+		if (uhp->uh_type == DW780 && vubp->uba_sr) {
 			vubp->uba_sr = vubp->uba_sr;
 			continue;
 		}
@@ -735,21 +800,21 @@ unifind(vubp, pubp, vumem, pumem, memmap, haveubasr)
 
 	    for (ap = udp->ud_addr; addr || (addr = *ap++); addr = 0) {
 		
-		if (ualloc[ubaoff(addr)])
+		if (ualloc[ubdevreg(addr)])
 			continue;
-		reg = ubaddr(addr);
+		reg = ubaddr(uhp, addr);
 		if (badaddr((caddr_t)reg, 2))
 			continue;
-#if defined(VAX780) || defined(VAX8600)
-		if (haveubasr && vubp->uba_sr) {
+#ifdef DW780
+		if (uhp->uh_type == DW780 && vubp->uba_sr) {
 			vubp->uba_sr = vubp->uba_sr;
 			continue;
 		}
 #endif
 		cvec = 0x200;
 		i = (*udp->ud_probe)(reg, ui);
-#if defined(VAX780) || defined(VAX8600)
-		if (haveubasr && vubp->uba_sr) {
+#ifdef DW780
+		if (uhp->uh_type == DW780 && vubp->uba_sr) {
 			vubp->uba_sr = vubp->uba_sr;
 			continue;
 		}
@@ -768,7 +833,7 @@ unifind(vubp, pubp, vumem, pumem, memmap, haveubasr)
 		}
 		printf("vec %o, ipl %x\n", cvec, br);
 		while (--i >= 0)
-			ualloc[ubaoff(addr+i)] = 1;
+			ualloc[ubdevreg(addr+i)] = 1;
 		ui->ui_hd = &uba_hd[numuba];
 		for (ivec = ui->ui_intr; *ivec; ivec++) {
 			ui->ui_hd->uh_vec[cvec/4] =
@@ -786,6 +851,14 @@ unifind(vubp, pubp, vumem, pumem, memmap, haveubasr)
 		break;
 	    }
 	}
+
+#ifdef DW780
+	if (uhp->uh_type == DW780)
+		uhp->uh_uba->uba_cr = UBACR_IFS | UBACR_BRIE |
+		    UBACR_USEFIE | UBACR_SUEFIE |
+		    (uhp->uh_uba->uba_cr & 0x7c000000);
+#endif
+	numuba++;
 
 #ifdef	AUTO_DEBUG
 	printf("Unibus allocation map");
@@ -816,17 +889,6 @@ unifind(vubp, pubp, vumem, pumem, memmap, haveubasr)
 	wmemfree(ualloc, 8*1024);
 }
 
-setscbnex(fn)
-	int (*fn)();
-{
-	register struct scb *scbp = &scb;
-
-	scbp = (struct scb *)((caddr_t)scbp + nsbi * 512);
-	scbp->scb_ipl14[nexnum] = scbp->scb_ipl15[nexnum] =
-	    scbp->scb_ipl16[nexnum] = scbp->scb_ipl17[nexnum] =
-		scbentry(fn, SCB_ISTACK);
-}
-
 /*
  * Make an IO register area accessible at physical address physa
  * by mapping kernel ptes starting at pte.
@@ -836,7 +898,7 @@ ioaccess(physa, pte, size)
 	register struct pte *pte;
 	int size;
 {
-	register int i = btop(size);
+	register int i = btoc(size);
 	register unsigned v = btop(physa);
 	
 	do
