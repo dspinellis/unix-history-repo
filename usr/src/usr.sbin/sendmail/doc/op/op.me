@@ -4,12 +4,12 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	5.16 (Berkeley) %G%
+.\"	@(#)op.me	5.17 (Berkeley) %G%
 .\"
 .\" eqn % | troff -me
 .\"if n .ls 2
 .\".he 'Sendmail Installation and Operation Guide''%'
-.\".fo 'Version 5.16''Last Mod %G%'
+.\".fo 'Version 5.17''Last Mod %G%'
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
 .oh 'Sendmail Installation and Operation Guide''SMM:07-%'
 .nr si 3n
@@ -40,7 +40,7 @@ Eric Allman
 University of California, Berkeley
 Mammoth Project
 .sp
-Version 5.16
+Version 5.17
 .sp
 For Sendmail Version 5.61
 .)l
@@ -207,7 +207,7 @@ Just be sure to correctly fill in the
 .q blanks
 as shown in the instructions in the configuration file.
 Then install the file as
-.i /usr/lib/sendmail.cf .
+.i /var/sendmail.cf .
 .pp
 If you are running a larger or more complex site, it
 is to your advantage to read the
@@ -287,13 +287,13 @@ cd src
 make clean
 make install
 .)b
-.sh 3 "/usr/lib/sendmail.cf"
+.sh 3 "/etc/sendmail.cf"
 .pp
 The configuration file
 that you created earlier
-should be installed in /usr/lib/sendmail.cf:
+should be installed in /etc/sendmail.cf:
 .(b
-cp cf/\fIsystem\fP.cf /usr/lib/sendmail.cf
+cp cf/\fIsystem\fP.cf /etc/sendmail.cf
 .)b
 .sh 3 "/usr/ucb/newaliases"
 .pp
@@ -307,18 +307,18 @@ This can just be a link to
 rm \-f /usr/ucb/newaliases
 ln /usr/lib/sendmail /usr/ucb/newaliases
 .)b
-.sh 3 "/usr/spool/mqueue"
+.sh 3 "/var/spool/mqueue"
 .pp
 The directory
-.i /usr/spool/mqueue
+.i /var/spool/mqueue
 should be created to hold the mail queue.
 This directory should be mode 755
 and owned by root.
-.sh 3 "/usr/lib/aliases*"
+.sh 3 "/etc/aliases*"
 .pp
 The system aliases are held in three files.
 The file
-.q /usr/lib/aliases
+.q /etc/aliases
 is the master copy.
 A sample is given in
 .q lib/aliases
@@ -326,7 +326,7 @@ which includes some aliases which
 .i must
 be defined:
 .(b
-cp lib/aliases /usr/lib/aliases
+cp lib/aliases /etc/aliases
 .)b
 You should extend this file with any aliases that are apropos to your system.
 .pp
@@ -336,28 +336,28 @@ looks at a version of these files maintained by the
 .i dbm \|(3)
 routines.
 These are stored in
-.q /usr/lib/aliases.dir
+.q /etc/aliases.dir
 and
-.q /usr/lib/aliases.pag.
+.q /etc/aliases.pag.
 These can initially be created as empty files,
 but they will have to be initialized promptly.
 These should be mode 644:
 .(b
-cp /dev/null /usr/lib/aliases.dir
-cp /dev/null /usr/lib/aliases.pag
-chmod 644 /usr/lib/aliases.*
+cp /dev/null /etc/aliases.dir
+cp /dev/null /etc/aliases.pag
+chmod 644 /etc/aliases.*
 newaliases
 .)b
-.sh 3 "/usr/lib/sendmail.fc"
+.sh 3 "/etc/sendmail.fc"
 .pp
 If you intend to install the frozen version of the configuration file
 (for quick startup)
-you should create the file /usr/lib/sendmail.fc
+you should create the file /etc/sendmail.fc
 and initialize it.
 This step may be safely skipped.
 .(b
-cp /dev/null /usr/lib/sendmail.fc
-/usr/lib/sendmail \-bz
+cp /dev/null /etc/sendmail.fc
+/etc/sendmail \-bz
 .)b
 .sh 3 "/etc/rc"
 .pp
@@ -376,7 +376,7 @@ as appropriate)
 in the area where it is starting up the daemons:
 .(b
 if [ \-f /usr/lib/sendmail ]; then
-	(cd /usr/spool/mqueue; rm \-f [lnx]f*)
+	(cd /var/spool/mqueue; rm \-f [lnx]f*)
 	/usr/lib/sendmail \-bd \-q30m &
 	echo \-n ' sendmail' >/dev/console
 fi
@@ -412,15 +412,15 @@ It should be copied from
 .(b
 cp lib/sendmail.hf /usr/lib
 .)b
-.sh 3 "/usr/lib/sendmail.st"
+.sh 3 "/etc/sendmail.st"
 .pp
 If you wish to collect statistics
 about your mail traffic,
 you should create the file
-.q /usr/lib/sendmail.st :
+.q /etc/sendmail.st :
 .(b
-cp /dev/null /usr/lib/sendmail.st
-chmod 666 /usr/lib/sendmail.st
+cp /dev/null /etc/sendmail.st
+chmod 666 /etc/sendmail.st
 .)b
 This file does not grow.
 It is printed with the program
@@ -462,7 +462,7 @@ flag:
 /usr/lib/sendmail \-bz
 .)b
 This creates the file
-.i /usr/lib/sendmail.fc
+.i /etc/sendmail.fc
 (\c
 .q "frozen configuration" ).
 This file is an image of
@@ -470,7 +470,7 @@ This file is an image of
 data space after reading in the configuration file.
 If this file exists,
 it is used instead of
-.i /usr/lib/sendmail.cf
+.i /etc/sendmail.cf
 .i sendmail.fc
 must be rebuilt manually every time
 .i sendmail.cf
@@ -712,7 +712,7 @@ The old queue can be run later when the offending host returns to service.
 To do this,
 it is acceptable to move the entire queue directory:
 .(b
-cd /usr/spool
+cd /var/spool
 mv mqueue omqueue; mkdir mqueue; chmod 755 mqueue
 .)b
 You should then kill the existing daemon
@@ -722,7 +722,7 @@ and create a new daemon.
 To run the old mail queue,
 run the following command:
 .(b
-/usr/lib/sendmail \-oQ/usr/spool/omqueue \-q
+/usr/lib/sendmail \-oQ/var/spool/omqueue \-q
 .)b
 The
 .b \-oQ
@@ -738,14 +738,14 @@ flag to watch what is going on.
 When the queue is finally emptied,
 you can remove the directory:
 .(b
-rmdir /usr/spool/omqueue
+rmdir /var/spool/omqueue
 .)b
 .sh 2 "The Alias Database"
 .pp
 The alias database exists in two forms.
 One is a text form,
 maintained in the file
-.i /usr/lib/aliases.
+.i /etc/aliases.
 The aliases are of the form
 .(b
 name: name1, name2, ...
@@ -753,7 +753,7 @@ name: name1, name2, ...
 Only local names may be aliased;
 e.g.,
 .(b
-eric@mit-xx: eric@berkeley.EDU
+eric@prep.ai.MIT.EDU: eric@CS.Berkeley.EDU
 .)b
 will not have the desired effect.
 Aliases may be continued by starting any continuation lines
@@ -767,9 +767,9 @@ The second form is processed by the
 .i dbm \|(3)
 library.
 This form is in the files
-.i /usr/lib/aliases.dir
+.i /etc/aliases.dir
 and
-.i /usr/lib/aliases.pag.
+.i /etc/aliases.pag.
 This is the form that
 .i sendmail
 actually uses to resolve aliases.
@@ -895,6 +895,25 @@ unix-wizards
 due to the inclusion of
 .q nosuchuser
 on the list.
+.sh 2 "User Information Database"
+.pp
+If you have a version of
+.i sendmail
+with the user information database
+compiled in,
+and you have specified one or more databases using the
+.b U
+option,
+the databases will be searched for a
+.i user :maildrop
+entry.
+If found, the mail will be sent to the specified address.
+.pp
+If the first token passed to user part of the
+.q local
+mailer is an at sign,
+the at sign will be stripped off
+and this step will be skipped.
 .sh 2 "Per-User Forwarding (.forward Files)"
 .pp
 As an alternative to the alias database,
@@ -1056,7 +1075,7 @@ flag; for example,
 uses the configuration file
 .i test.cf
 instead of the default
-.i /usr/lib/sendmail.cf.
+.i /etc/sendmail.cf.
 If the
 .b \-C
 flag has no value
@@ -1415,7 +1434,7 @@ rather than to the user sending the mail.
 .pp
 At Berkeley
 we have the alias database
-(/usr/lib/aliases*)
+(/etc/aliases*)
 mode 644.
 While this is not as flexible as if the database
 were more 666, it avoids potential security problems
@@ -1428,9 +1447,9 @@ is represented by the two files
 .i aliases.dir
 and
 .i aliases.pag
-(both in /usr/lib).
+(both in /etc).
 The mode on these files should match the mode
-on /usr/lib/aliases.
+on /etc/aliases.
 If
 .i aliases
 is writable
@@ -3470,7 +3489,7 @@ must fit within this limit.
 .ip "MAXNAME [256]"
 The maximum length of any name,
 such as a host or a user name.
-.ip "MAXFIELD [2500]"
+.ip "MAXFIELD [4096]"
 The maximum total length of any header field,
 including continuation lines.
 .ip "MAXPV [40]"
@@ -3488,6 +3507,9 @@ or by counting the number of trace fields
 .q Received:
 lines)
 in the message header.
+This can be reset with the
+.b h
+option.
 .ip "MAXATOM [100]"
 The maximum number of atoms
 (tokens)
@@ -3520,6 +3542,8 @@ that will be passed to subordinate mailers.
 .ip "QUEUESIZE [600]"
 The maximum number of entries that will be processed
 in a single queue run.
+.ip "MAXMXHOSTS [10]"
+The maximum number of MX records we will accept for any single host.
 .lp
 A number of other compilation options exist.
 These specify whether or not specific code should be compiled in.
@@ -3540,6 +3564,12 @@ the new version of the DBM library
 that allows multiple databases will be used.
 .q DBM
 must also be set.
+.ip NEWDB
+If set, use the new database package from Berkeley (from 4.4BSD).
+This package is substantially faster than DBM or NDBM.
+If NEWDB and DBM are both set,
+sendmail will read old DBM files,
+but will create and use NEWDB files.
 .ip DEBUG
 If set, debugging information is compiled in.
 To actually get the debugging output,
@@ -3595,6 +3625,19 @@ array to indicate its current status.
 This can be used in conjunction with the
 .i ps
 command to find out just what it's up to.
+.ip LOCKF
+Use System V
+.b lockf
+instead of Berkeley
+.b flock .
+Due to brain damage in
+.b lockf ,
+this should never be used unless absolutely necessary.
+.ip USERDB
+Include the Berkeley user information database package.
+This adds a new level of local name expansion
+between aliasing and forwarding.
+It also uses the NEWDB package.
 .uh "Configuration in src/conf.c"
 .pp
 Not all header semantics are defined in the configuration file.
@@ -3850,6 +3893,50 @@ of the message in the error return.
 The actual use of this routine is highly dependent on the
 implementation,
 and use should be limited.
+.pp
+The routine
+.i getla
+should return an approximation of the current system load average
+as an integer.
+There are four versions included on compilation flags.
+You can force one version in the Makefile using the
+.i cc
+option
+.b \-DLA_TYPE= \c
+.i type ,
+where
+.i type
+is:
+.ip LA_INT
+The kernel stores the load average in the kernel as an array of long integers.
+The actual values are scaled by a factor FSCALE
+(default 256).
+.ip LA_FLOAT
+The kernel stores the load average in the kernel as an array of
+double precision floats.
+.ip LA_SUBR
+Call the
+.i getloadavg
+routine to get the load average as an array of doubles.
+.ip LA_ZERO
+Always return zero as the load average.
+This is the fallback case.
+.lp
+If type
+.sm LA_INT
+or
+.sm LA_FLOAT
+is specified,
+you may also need to specify
+.sm _PATH_UNIX
+(the path to your system binary)
+and
+.sm LA_AVENRUN
+(the name of the variable containing the load average in the kernel;
+usually
+.q _avenrun
+or
+.q avenrun ).
 .uh "Configuration in src/daemon.c"
 .pp
 The file
@@ -3892,37 +3979,33 @@ This program is equivalent to using the
 .b \-bp
 flag to
 .i sendmail .
-.ip /usr/lib/sendmail.cf
+.ip /etc/sendmail.cf
 The configuration file,
 in textual form.
-.ip /usr/lib/sendmail.fc
+.ip /etc/sendmail.fc
 The configuration file
 represented as a memory image.
 .ip /usr/lib/sendmail.hf
 The SMTP help file.
-.ip /usr/lib/sendmail.st
+.ip /etc/sendmail.st
 A statistics file; need not be present.
-.ip /usr/lib/aliases
+.ip /etc/aliases
 The textual version of the alias file.
-.ip /usr/lib/aliases.{pag,dir}
+.ip /etc/aliases.{pag,dir}
 The alias file in
 .i dbm \|(3)
 format.
-.ip /usr/spool/mqueue
+.ip /var/spool/mqueue
 The directory in which the mail queue
 and temporary files reside.
-.ip /usr/spool/mqueue/qf*
+.ip /var/spool/mqueue/qf*
 Control (queue) files for messages.
-.ip /usr/spool/mqueue/df*
+.ip /var/spool/mqueue/df*
 Data files.
-.ip /usr/spool/mqueue/lf*
-Lock files
-.ip /usr/spool/mqueue/tf*
+.ip /var/spool/mqueue/tf*
 Temporary versions of the qf files,
 used during queue file rebuild.
-.ip /usr/spool/mqueue/nf*
-A file used when creating a unique id.
-.ip /usr/spool/mqueue/xf*
+.ip /var/spool/mqueue/xf*
 A transcript of the current session.
 .\".ro
 .\".ls 1
@@ -3940,7 +4023,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 5.16
+.\"Version 5.17
 .\".ce 0
 .pn 2
 .bp
