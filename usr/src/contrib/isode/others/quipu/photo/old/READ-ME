@@ -1,0 +1,37 @@
+PHOTOGRAPHS in the QUIPU directory service.
+
+Use pr2pe to convert sunview pixrect files into `pe' files.
+
+Currently there are 5 picture display processes defined:-
+Xphoto   - Display photo in X11 windoow environment
+sunphoto - Display photo in sunview environment
+ttyphoto - Display photo on a simple terminal
+hexphoto - Display photo in hex !!!
+t4014	 - Display on Tetronix 4014 (emulating !) terminals.
+
+Each can be tested with the file "sk"
+e.g. ttyphoto < sk
+
+Display for other devices can be easily added.
+Take a copy of template.c, and supply the 5 routines defined.
+Look at sunview.c hexphoto.c ttyphoto.c t4014.c and winx.c examples.
+Then compile using:
+cc -o myphoto d_main.o decode.o build_trees.o interface.o myphoto.o
+
+To get the QUIPU interfaces to call these routine when a photo is loaded, an
+entry of the form
+photo falco ttyphoto
+is needed in your dsaptailor file.
+This will tell the interfaces to use the program `typhoto' if your 
+terminal type (determined from the TERM environment variable) is `falco'.
+
+ttyphoto's output can be modified with 4 environment variables:
+
+photo_scale: 	set to `small' (default), `medium' or `large'.
+photo_invert:	set true or false.
+photo_equal:    false - display photo as is.
+		true - apply histogram equalisation to try and improve quality.
+		edge -  Used `edges by expansion' to try to get a better photo
+photo_mapping:  This must contain a 16 charcter string.
+		The string is used to create the greyscale.
+Suggestions as to how to improve `ttyphoto' are welcome.
