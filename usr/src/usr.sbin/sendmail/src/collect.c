@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -40,7 +40,7 @@ collect(smtpmode, e)
 {
 	register FILE *tf;
 	bool ignrdot = smtpmode ? FALSE : IgnrDot;
-	char buf[MAXFIELD], buf2[MAXFIELD];
+	char buf[MAXLINE], buf2[MAXLINE];
 	register char *workbuf, *freebuf;
 	register int workbuflen;
 	extern char *hvalue();
@@ -70,7 +70,7 @@ collect(smtpmode, e)
 	**  Try to read a UNIX-style From line
 	*/
 
-	if (sfgets(buf, MAXFIELD, InChannel) == NULL)
+	if (sfgets(buf, MAXLINE, InChannel) == NULL)
 		goto readerr;
 	fixcrlf(buf, FALSE);
 # ifndef NOTUNIX
@@ -79,7 +79,7 @@ collect(smtpmode, e)
 		if (!flusheol(buf, InChannel))
 			goto readerr;
 		eatfrom(buf, e);
-		if (sfgets(buf, MAXFIELD, InChannel) == NULL)
+		if (sfgets(buf, MAXLINE, InChannel) == NULL)
 			goto readerr;
 		fixcrlf(buf, FALSE);
 	}
@@ -115,7 +115,7 @@ collect(smtpmode, e)
 		/* get the rest of this field */
 		for (;;)
 		{
-			if (sfgets(freebuf, MAXFIELD, InChannel) == NULL)
+			if (sfgets(freebuf, MAXLINE, InChannel) == NULL)
 				goto readerr;
 
 			/* is this a continuation line? */
@@ -178,7 +178,7 @@ collect(smtpmode, e)
 	if (*workbuf == '\0')
 	{
 		/* throw away a blank line */
-		if (sfgets(buf, MAXFIELD, InChannel) == NULL)
+		if (sfgets(buf, MAXLINE, InChannel) == NULL)
 			goto readerr;
 	}
 	else if (workbuf == buf2)	/* guarantee `buf' contains data */
@@ -212,7 +212,7 @@ collect(smtpmode, e)
 		fputs("\n", tf);
 		if (ferror(tf))
 			tferror(tf, e);
-	} while (sfgets(buf, MAXFIELD, InChannel) != NULL);
+	} while (sfgets(buf, MAXLINE, InChannel) != NULL);
 
 readerr:
 	if (fflush(tf) != 0)

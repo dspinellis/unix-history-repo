@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	5.35 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	5.36 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	5.35 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	5.36 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -167,15 +167,27 @@ punt:		mxhosts[0] = strcpy(hostbuf, host);
 	}
 	return(nmx);
 }
-
-/*
- * Use query type of ANY if possible (NoWildcardMX), which will
- * find types CNAME, A, and MX, and will cause all existing records
- * to be cached by our local server.  If there is (might be) a
- * wildcard MX record in the local domain or its parents that are
- * searched, we can't use ANY; it would cause fully-qualified names
- * to match as names in a local domain.
- */
+/*
+**  GETCANONNAME -- get the canonical name for named host
+**
+**	Parameters:
+**		host -- a buffer containing the name of the host.
+**			This is a value-result parameter.
+**		hbsize -- the size of the host buffer.
+**
+**	Returns:
+**		TRUE -- if the host matched.
+**		FALSE -- otherwise.
+**
+**	Notes:
+**		Use query type of ANY if possible (NoWildcardMX), which
+**		will find types CNAME, A, and MX, and will cause all
+**		existing records to be cached by our local server.  If
+**		there is (might be) a wildcard MX record in the local
+**		domain or its parents that are searched, we can't use
+**		ANY; it would cause fully-qualified names to match as
+**		names in a local domain.
+*/
 
 bool
 getcanonname(host, hbsize)
