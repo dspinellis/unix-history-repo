@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.76		%G%);
+SCCSID(@(#)parseaddr.c	3.77		%G%);
 
 /*
 **  PARSEADDR -- Parse an address
@@ -796,7 +796,8 @@ buildaddr(tv, a)
 		syserr("buildaddr: no user");
 		return (NULL);
 	}
-	cataddr(++tv, buf, sizeof buf);
+	rewrite(++tv, 4);
+	cataddr(tv, buf, sizeof buf);
 	a->q_user = buf;
 
 	return (a);
