@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)autoconf.c	8.1 (Berkeley) %G%
+ *	@(#)autoconf.c	8.2 (Berkeley) %G%
  *
- * from: $Header: autoconf.c,v 1.32 93/05/28 03:55:59 torek Exp $ (LBL)
+ * from: $Header: autoconf.c,v 1.35 93/09/27 00:50:04 torek Exp $ (LBL)
  */
 
 #include <sys/param.h>
@@ -412,11 +412,20 @@ mainbus_attach(parent, dev, aux)
 	struct romaux ra;
 	static const char *const special[] = {
 		/* find these first (end with empty string) */
-		"memory-error", "eeprom", "counter-timer", "",
+		"eeprom",
+		"counter-timer",
+		"memory-error",
+		"",
 
 		/* ignore these (end with NULL) */
-		"options", "packages", "openprom", "memory", "virtual-memory",
-		"interrupt-enable", NULL
+		"aliases",
+		"interrupt-enable",
+		"memory",
+		"openprom",
+		"options",
+		"packages",
+		"virtual-memory",
+		NULL
 	};
 
 	printf("\n");
@@ -695,6 +704,7 @@ nextsibling(node)
 	return (promvec->pv_nodeops->no_nextnode(node));
 }
 
+#ifdef RCONSOLE
 /* Pass a string to the FORTH PROM to be interpreted */
 void
 rominterpret(s)
@@ -706,6 +716,35 @@ rominterpret(s)
 	else
 		promvec->pv_fortheval.v2_eval(s);
 }
+
+/*
+ * Try to figure out where the PROM stores the cursor row & column
+ * variables.  Returns nonzero on error.
+ */
+int
+romgetcursoraddr(rowp, colp)
+	register int **rowp, **colp;
+{
+	char buf[100];
+
+	/*
+	 * line# and column# are global in older proms (rom vector < 2)
+	 * and in some newer proms.  They are local in version 2.9.  The
+	 * correct cutoff point is unknown, as yet; we use 2.9 here.
+	 */
+	if (promvec->pv_romvec_vers < 2 || promvec->pv_printrev < 0x00020009)
+		sprintf(buf,
+		    "' line# >body >user %x ! ' column# >body >user %x !",
+		    rowp, colp);
+	else
+		sprintf(buf,
+		    "stdout @ is my-self addr line# %x ! addr column# %x !",
+		    rowp, colp);
+	*rowp = *colp = NULL;
+	rominterpret(buf);
+	return (*rowp == NULL || *colp == NULL);
+}
+#endif
 
 volatile void
 romhalt()
@@ -894,9 +933,6 @@ gotswap:
 #ifdef NFS
 	case DV_IFNET:
 		mountroot = nfs_mountroot;
-#ifdef LBL
-		lbl_diskless_setup();
-#endif
 		return;
 #endif
 
