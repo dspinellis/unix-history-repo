@@ -1,7 +1,8 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
 BUILD=	redist.c redist.sh redist.man redist.gas
-STD=	386.c contrib hdrs kern libc libs libs.cci main make man sh src
+STD=	386.c att.man contrib hdrs kern libc libs libs.cci main make \
+	man sh src
 
 all: ${BUILD}
 
