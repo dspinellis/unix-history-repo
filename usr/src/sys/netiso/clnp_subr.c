@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_subr.c,v 5.1 89/02/09 16:20:46 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_subr.c,v $ */
-/*	@(#)clnp_subr.c	7.7 (Berkeley) %G% */
+/*	@(#)clnp_subr.c	7.8 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_subr.c,v 5.1 89/02/09 16:20:46 hagens Exp $";
@@ -341,9 +341,9 @@ struct snpa_hdr		*inbound_shp;	/* subnetwork header of inbound packet */
 	 */
 	if (len <= SN_MTU(ifp)) {
 		iso_gen_csum(m, CLNP_CKSUM_OFF, (int)clnp->cnf_hdr_len);
-		(void) (*ifp->if_output)(ifp, m, next_hop);
+		(void) (*ifp->if_output)(ifp, m, next_hop, route.ro_rt);
 	} else {
-		(void) clnp_fragment(ifp, m, next_hop, len, seg_off, /* flags */0);
+		(void) clnp_fragment(ifp, m, next_hop, len, seg_off, /* flags */0, route.ro_rt);
 	}
 	
 done:
@@ -475,7 +475,7 @@ clnp_route(dst, ro, flags, first_hop, ifa)
 		if ((*ifa = (struct iso_ifaddr *)ro->ro_rt->rt_ifa) == 0)
 			panic("clnp_route");
 	if (first_hop) {
-		if (ro->ro_rt->rt_flags & (RTF_GATEWAY|RTF_HOST))
+		if (ro->ro_rt->rt_flags & RTF_GATEWAY)
 			*first_hop = ro->ro_rt->rt_gateway;
 		else
 			*first_hop = (struct sockaddr *)&ro->ro_dst;
