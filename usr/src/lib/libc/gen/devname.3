@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)devname.3	8.1 (Berkeley) %G%
+.\"     @(#)devname.3	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DEVNAME 3
@@ -27,9 +27,11 @@ and a file type matching the one encoded in
 .Fa type
 which must be one of S_IFBLK or S_IFCHR.
 If no device matches the specified values, or no information is
-available, the string
-.Dq ??
-is returned.
+available, NULL is returned.
+.Pp
+The traditional display for applications when no device is
+found is the string
+.Dq ?? .
 .Sh SEE ALSO
 .Xr stat 2 ,
 .Xr dev_mkdb 8
