@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)test.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)test.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -116,7 +116,7 @@ main(argc, argv)
 	case 2:				/* % test op arg */
 		opname = argv[1];
 		if (IS_BANG(opname))
-			return (*argv[2] == '\0') ? 1 : 0;
+			return (*argv[2] == '\0') ? 0 : 1;
 		else {
 			ret_val = posix_unary_op(&argv[1]);
 			if (ret_val >= 0)
