@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: autoconf.c 1.31 91/01/21$
  *
- *	@(#)autoconf.c	7.5 (Berkeley) %G%
+ *	@(#)autoconf.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -33,6 +33,8 @@
 
 #include <machine/cpu.h>
 #include <pmax/dev/device.h>
+#include <pmax/pmax/pmaxtype.h>
+#include <pmax/pmax/turbochannel.h>
 
 /*
  * The following several variables are related to
@@ -42,6 +44,8 @@
 int	cold = 1;	/* if 1, still working on cold-start */
 int	dkn;		/* number of iostat dk numbers assigned so far */
 int	cpuspeed = 30;	/* approx # instr per usec. */
+extern	int pmax_boardtype;
+extern	tc_option_t tc_slot_info[TC_MAX_LOGICAL_SLOTS];
 
 /*
  * Determine mass storage and memory configuration for a machine.
@@ -53,11 +57,19 @@ configure()
 	register struct pmax_ctlr *cp;
 	register struct scsi_device *dp;
 	register struct driver *drp;
-#ifdef DS5000
 	register int i;
-#endif
 
 	/* print what type of CPU and FPU we have */
+
+	/*
+	 * for some reason the Pmax has an R2000 cpu with an implementation
+	 * level of 2 and DEC's R3000s are level 2 as well?
+	 */
+	if (pmax_boardtype == DS_PMAX) {
+		cpu.cpu.cp_imp = MIPS_R2000;
+		fpu.cpu.cp_imp = MIPS_R2010;
+	}
+
 	switch (cpu.cpu.cp_imp) {
 	case MIPS_R2000:
 		printf("cpu0 (MIPS R2000 revision %d.%d)\n",
@@ -103,28 +115,35 @@ configure()
 
 	/* probe and initialize controllers */
 	for (cp = pmax_cinit; drp = cp->pmax_driver; cp++) {
-#ifdef DS3100
-		if (!(*drp->d_init)(cp))
-			continue;
-#endif
+		switch (pmax_boardtype) {
+		case DS_PMAX:
+			if (cp->pmax_addr == (char *)QUES)
+				continue;
+			if (!(*drp->d_init)(cp))
+				continue;
+			break;
 #ifdef DS5000
-		/*
-		 * If the device is still in an unknown slot,
-		 * then it was not found by tc_find_all_options().
-		 */
-		if (cp->pmax_addr == (char *)QUES)
-			continue;
-		if (!(*drp->d_init)(cp))
-			continue;
-		if (drp->d_intr && (i = cp->pmax_pri) >= 0) {
-			if (intr_tab[i].func)
-				printf("%s: slot %d already in use\n",
-					drp->d_name, i);
-			intr_tab[i].func = drp->d_intr;
-			intr_tab[i].unit = cp->pmax_unit;
-			tc_enable_interrupt(i, 1);
-		}
-#endif
+		case DS_3MAX:
+		case DS_3MIN:
+		case DS_MAXINE:
+			/*
+			 * If the device is still in an unknown slot,
+			 * then it was not found by tc_find_all_options().
+			 */
+			if (cp->pmax_addr == (char *)QUES)
+				continue;
+			if (!(*drp->d_init)(cp))
+				continue;
+			if (drp->d_intr && (i = cp->pmax_pri) >= 0) {
+				if (tc_slot_info[i].intr)
+					printf("%s: slot %d already in use\n",
+						drp->d_name, i);
+				tc_slot_info[i].intr = drp->d_intr;
+				tc_slot_info[i].unit = cp->pmax_unit;
+			}
+			break;
+#endif /* DS5000 */
+		};
 
 		cp->pmax_alive = 1;
 

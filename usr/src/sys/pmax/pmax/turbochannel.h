@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)turbochannel.h	7.1 (Berkeley) %G%
+ *	@(#)turbochannel.h	7.2 (Berkeley) %G%
  */
 
 /* 
@@ -50,6 +50,12 @@
  */
 
 /*
+ * Max conceivable number of slots on the TC
+ */
+#define	TC_MAX_SLOTS		8
+#define	TC_MAX_LOGICAL_SLOTS	12
+
+/*
  * Address map specifications for any TC option
  * These are offset from the option's base address
  */
@@ -86,9 +92,12 @@ typedef struct {
 	u_char	present;			/* and do we handle it */
 	u_char	slot_size;			/* how many TC slots */
 	u_char	rom_width;			/* bytewide or.. */
+	u_char	unit;				/* Device unit number */
 	char	module_name[TC_ROM_LLEN+1];	/* ROM name */
 	char	module_id[TC_ROM_LLEN * 2+1];	/* vendor and rev */
-	caddr_t	module_address;			/* TC starting address */
+	u_long		k1seg_address;		/* TC starting address */
+	char		*driver_name;		/* software name */
+	void		(*intr)();		/* interrupt routine */
 } tc_option_t;
 
 

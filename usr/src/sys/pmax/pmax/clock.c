@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  *
- *	@(#)clock.c	7.5 (Berkeley) %G%
+ *	@(#)clock.c	7.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -33,6 +33,8 @@
  * Resettodr restores the time of day hardware after a time change.
  */
 
+volatile struct chiptime *Mach_clock_addr;
+
 /*
  * Start the real-time and statistics clocks. Leave stathz 0 since there
  * are no other timers available.
@@ -45,7 +47,7 @@ cpu_initclocks()
 	tick = 15625;		/* number of micro-seconds between interrupts */
 	hz = 1000000 / 15625;	/* 64 Hz */
 	tickadj = 240000 / (60000000 / 15625);
-	c = (volatile struct chiptime *)MACH_CLOCK_ADDR;
+	c = Mach_clock_addr;
 	c->rega = REGA_TIME_BASE | SELECTED_RATE;
 	c->regb = REGB_PER_INT_ENA | REGB_DATA_MODE | REGB_HOURS_FORMAT;
 }
@@ -92,7 +94,7 @@ inittodr(base)
 	} else
 		badbase = 0;
 
-	c = (volatile struct chiptime *)MACH_CLOCK_ADDR;
+	c = Mach_clock_addr;
 	/* don't read clock registers while they are being updated */
 	s = splclock();
 	while ((c->rega & REGA_UIP) == 1)
@@ -185,7 +187,7 @@ resettodr()
 	min = t / 60;
 	sec = t % 60;
 
-	c = (volatile struct chiptime *)MACH_CLOCK_ADDR;
+	c = Mach_clock_addr;
 	s = splclock();
 	t = c->regb;
 	c->regb = t | REGB_SET_TIME;
