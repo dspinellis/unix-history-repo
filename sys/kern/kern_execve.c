@@ -446,7 +446,7 @@ dont_bother:
 	bsize -= dsize;
 
 	/* map text & data in file, as being "paged in" on demand */
-	rv = vm_mmap(&vs->vm_map, &addr, tsize+dsize, VM_PROT_ALL,
+	rv = vm_mmap(&vs->vm_map, &addr, tsize+dsize, VM_PROT_ALL, VM_PROT_DEFAULT,
 		MAP_FILE|MAP_COPY|MAP_FIXED, (caddr_t)ndp->ni_vp, foff);
 	if (rv)
 		goto exec_abort;

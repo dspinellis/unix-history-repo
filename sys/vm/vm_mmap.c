@@ -133,6 +133,7 @@ smmap(p, uap, retval)
 	struct vnode *vp;
 	vm_offset_t addr;
 	vm_size_t size;
+	vm_prot_t maxprot;
 	vm_prot_t prot;
 	caddr_t handle;
 	int mtype, error;
@@ -205,10 +206,25 @@ smmap(p, uap, retval)
 		     (uap->prot & PROT_WRITE) && (fp->f_flag & FWRITE) == 0))
 			return(EACCES);
 		handle = (caddr_t)vp;
-	} else if (uap->fd != -1)
+		/*
+		 * PATCH GVR 25-03-93
+		 * Map protections to MACH style
+		 */
+		if(uap->flags & MAP_SHARED) {
+			maxprot = VM_PROT_EXECUTE;
+			if (fp->f_flag & FREAD)
+				maxprot |= VM_PROT_READ;
+			if (fp->f_flag & FWRITE)
+				maxprot |= VM_PROT_WRITE;
+		} else
+			maxprot = VM_PROT_ALL;
+	} else if (uap->fd != -1) {
+		maxprot = VM_PROT_ALL;
 		handle = (caddr_t)fp;
-	else
+	} else {
+		maxprot = VM_PROT_ALL;
 		handle = NULL;
+	}
 	/*
 	 * Map protections to MACH style
 	 */
@@ -220,7 +236,7 @@ smmap(p, uap, retval)
 	if (uap->prot & PROT_EXEC)
 		prot |= VM_PROT_EXECUTE;
 
-	error = vm_mmap(&p->p_vmspace->vm_map, &addr, size, prot,
+	error = vm_mmap(&p->p_vmspace->vm_map, &addr, size, prot, maxprot,
 			flags, handle, (vm_offset_t)uap->pos);
 	if (error == 0)
 		*retval = (int) addr;
@@ -437,11 +453,12 @@ mincore(p, uap, retval)
  *	MAP_FILE: a vnode pointer
  *	MAP_ANON: NULL or a file pointer
  */
-vm_mmap(map, addr, size, prot, flags, handle, foff)
+vm_mmap(map, addr, size, prot, maxprot, flags, handle, foff)
 	register vm_map_t map;
 	register vm_offset_t *addr;
 	register vm_size_t size;
 	vm_prot_t prot;
+	vm_prot_t maxprot;
 	register int flags;
 	caddr_t handle;		/* XXX should be vp */
 	vm_offset_t foff;
@@ -660,10 +677,22 @@ vm_mmap(map, addr, size, prot, flags, handle, foff)
 	 * entirely correct.  Maybe the maximum protection should be based
 	 * on the object permissions where it makes sense (e.g. a vnode).
 	 *
-	 * Changed my mind: leave max prot at VM_PROT_ALL.
+	 * XXX Changed my mind: leave max prot at VM_PROT_ALL.
+	 * PATCH GVR 25-03-93:
+	 * Changed again: indeed set maximum protection based on
+	 * object permissions.
 	 */
-	if (prot != VM_PROT_ALL) {
 		rv = vm_map_protect(map, *addr, *addr+size, prot, FALSE);
+		if (rv != KERN_SUCCESS) {
+			(void) vm_deallocate(map, *addr, size);
+			goto out;
+		}
+	/*
+	 * We only need to set max_protection in case it's
+	 * unequal to its default, which is VM_PROT_DEFAULT.
+	 */
+	if(maxprot != VM_PROT_DEFAULT) {
+		rv = vm_map_protect(map, *addr, *addr+size, maxprot, TRUE);
 		if (rv != KERN_SUCCESS) {
 			(void) vm_deallocate(map, *addr, size);
 			goto out;

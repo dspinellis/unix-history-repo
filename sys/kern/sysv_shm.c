@@ -185,7 +185,7 @@ shmget(p, uap, retval)
 		shmh->shmh_kva = 0;
 		shmh->shmh_id = (caddr_t)(0xc0000000|rval);	/* XXX */
 		error = vm_mmap(shm_map, &shmh->shmh_kva, ctob(size),
-				VM_PROT_ALL, MAP_ANON, shmh->shmh_id, 0);
+				VM_PROT_ALL, VM_PROT_DEFAULT, MAP_ANON, shmh->shmh_id, 0);
 		if (error) {
 			free((caddr_t)shmh, M_SHM);
 			shp->shm_perm.mode = 0;
@@ -357,7 +357,7 @@ shmat(p, uap, retval)
 		flags |= MAP_FIXED;
 	else
 		uva = (caddr_t)0x1000000;	/* XXX */
-	error = vm_mmap(&p->p_vmspace->vm_map, &uva, (vm_size_t)size, prot,
+	error = vm_mmap(&p->p_vmspace->vm_map, &uva, (vm_size_t)size, prot, VM_PROT_DEFAULT,
 	    flags, ((struct shmhandle *)shp->shm_handle)->shmh_id, 0);
 	if (error)
 		return(error);
