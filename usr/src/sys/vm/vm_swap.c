@@ -14,14 +14,14 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vm_swap.c	7.11 (Berkeley) %G%
+ *	@(#)vm_swap.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "buf.h"
 #include "conf.h"
-#include "user.h"
+#include "syscontext.h"
 #include "vnode.h"
 #include "specdev.h"
 #include "map.h"
@@ -83,47 +83,48 @@ swstrategy(bp)
  * which must be in the swdevsw.  Return EBUSY
  * if already swapping on this device.
  */
-swapon()
-{
-	struct a {
+/* ARGSUSED */
+swapon(p, uap, retval)
+	struct proc *p;
+	struct args {
 		char	*name;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	register struct vnode *vp;
-	dev_t dev;
 	register struct swdevt *sp;
 	register struct nameidata *ndp = &u.u_nd;
+	dev_t dev;
+	int error;
 
-	if (u.u_error = suser(u.u_cred, &u.u_acflag))
-		return;
+	if (error = suser(u.u_cred, &u.u_acflag))
+		RETURN (error);
 	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->name;
-	if (u.u_error = namei(ndp))
-		return;
+	if (error = namei(ndp))
+		RETURN (error);
 	vp = ndp->ni_vp;
 	if (vp->v_type != VBLK) {
 		vrele(vp);
-		u.u_error = ENOTBLK;
-		return;
+		RETURN (ENOTBLK);
 	}
 	dev = (dev_t)vp->v_rdev;
 	if (major(dev) >= nblkdev) {
 		vrele(vp);
-		u.u_error = ENXIO;
-		return;
+		RETURN (ENXIO);
 	}
 	for (sp = &swdevt[0]; sp->sw_dev; sp++)
 		if (sp->sw_dev == dev) {
 			if (sp->sw_freed) {
 				vrele(vp);
-				u.u_error = EBUSY;
-				return;
+				RETURN (EBUSY);
 			}
 			u.u_error = swfree(sp - swdevt);
-			return;
+			RETURN (0);
 		}
 	vrele(vp);
-	u.u_error = EINVAL;
+	RETURN (EINVAL);
 }
 
 #ifdef SECSIZE
