@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.59 (Berkeley) %G%
+		@(#)README	8.60 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -1292,8 +1292,11 @@ confUSE_ERRORS_TO*	UserErrorsTo	[False] Use the Errors-To: header to deliver
 					of the envelope/header distinction.
 confLOG_LEVEL		LogLevel	[9] Log level.
 confME_TOO		MeToo		Include sender in group expansions.
-confCHECK_ALIASES	CheckAliases	[True] Check RHS of aliases when
-					running newaliases.
+confCHECK_ALIASES	CheckAliases	[False] Check RHS of aliases when
+					running newaliases.  Since this does
+					DNS lookups on every address, it can
+					slow down the alias rebuild process
+					considerably on large alias files.
 confOLD_STYLE_HEADERS*	OldStyleHeaders	[True] Assume that headers without
 					special chars are old style.
 confDAEMON_OPTIONS	DaemonPortOptions
