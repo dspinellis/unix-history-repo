@@ -15,14 +15,13 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	5.20 (Berkeley) %G%";
 #endif not lint
 
 #include <pwd.h>
 #include <grp.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <fcntl.h>
 #include <sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
@@ -34,7 +33,7 @@ static char sccsid[] = "@(#)mountd.c	5.19 (Berkeley) %G%";
 #include <sys/signal.h>
 #include <stdio.h>
 #include <string.h>
-#include <syslog.h>
+#include <sys/syslog.h>
 #include <netdb.h>
 #include <rpc/rpc.h>
 #include <rpc/pmap_clnt.h>
@@ -74,8 +73,7 @@ struct exportlist {
 	char		*ex_fsdir;
 };
 /* ex_flag bits */
-#define	EX_DONEDEL	0x2
-#define	EX_LINKED	0x4
+#define	EX_LINKED	0x1
 
 struct netmsk {
 	u_long	nt_net;
@@ -522,12 +520,13 @@ get_exportlist()
 	struct exportlist **epp;
 	struct dirlist *dirhead;
 	struct stat sb;
-	struct statfs fsb;
+	struct statfs fsb, *fsp;
 	struct hostent *hpe;
 	struct ucred anon;
+	struct ufs_args targs;
 	char *cp, *endcp, *dirp;
 	char savedc;
-	int len, has_host, exflags, got_nondir, dirplen;
+	int len, has_host, exflags, got_nondir, dirplen, num, i;
 
 	/*
 	 * First, get rid of the old list
@@ -547,6 +546,25 @@ get_exportlist()
 		free_grp(tgrp);
 	}
 	grphead = (struct grouplist *)0;
+
+	/*
+	 * And delete exports that are in the kernel for all local
+	 * file systems.
+	 * XXX: Should know how to handle all local exportable file systems
+	 *      instead of just MOUNT_UFS.
+	 */
+	num = getmntinfo(&fsp, MNT_WAIT);
+	for (i = 0; i < num; i++) {
+		if (fsp->f_type == MOUNT_UFS) {
+			targs.fspec = (char *)0;
+			targs.exflags = MNT_DELEXPORT;
+			if (mount(fsp->f_type, fsp->f_mntonname,
+			    fsp->f_flags | MNT_UPDATE, (caddr_t)&targs) < 0)
+				syslog(LOG_ERR, "Can't del exports %s",
+				       fsp->f_mntonname);
+		}
+		fsp++;
+	}
 
 	/*
 	 * Read in the exports file and build the list, calling
@@ -785,7 +803,7 @@ getexp_err(ep, grp)
  */
 struct exportlist *
 ex_search(fsid)
-	quad *fsid;
+	fsid_t *fsid;
 {
 	register struct exportlist *ep;
 
@@ -1285,7 +1303,7 @@ do_mount(ep, grp, exflags, anoncrp, dirp, dirplen, fsb)
 	int done;
 	char savedc;
 	struct sockaddr_in sin, imask;
-	struct ufs_args args, targs;
+	struct ufs_args args;
 	u_long net;
 
 	args.fspec = 0;
@@ -1347,47 +1365,16 @@ do_mount(ep, grp, exflags, anoncrp, dirp, dirplen, fsb)
 				*cp = savedc;
 			return (1);
 		};
-		if ((ep->ex_flag & EX_DONEDEL) == 0) {
-			/*
-			 * first time for fs, so must send a MNT_DELEXPORT
-			 * to clear the old export list held in the kernel
-			 * for this fs.
-			 */
-			targs.fspec = 0;
-			targs.exflags = MNT_DELEXPORT;
-			while (mount(MOUNT_UFS, dirp,
-			       fsb->f_flags | MNT_UPDATE, &targs) < 0) {
-				if (debug)
-					fprintf(stderr,
-					    "tried [%s][%d]\n",
-					    dirp,errno);
-				if (cp)
-					*cp-- = savedc;
-				else
-					cp = dirp + dirplen - 1;
-				if (opt_flags & OP_ALLDIRS) {
-					syslog(LOG_ERR, "Not root dir");
-					return (1);
-				}
-				/* back up over the last component */
-				while (*cp == '/' && cp > dirp)
-					cp--;
-				while (*(cp - 1) != '/' && cp > dirp)
-					cp--;
-				if (cp == dirp) {
-					if (debug)
-						fprintf(stderr,"mnt unsucc\n");
-					syslog(LOG_ERR,
-					    "Can't export %s", dirp);
-					return (1);
-				}
-				savedc = *cp;
-				*cp = '\0';
-			}
-			ep->ex_flag |= EX_DONEDEL;
-		}
-		while (mount(MOUNT_UFS, dirp,
-		       fsb->f_flags | MNT_UPDATE, &args) < 0) {
+
+		/*
+		 * XXX:
+		 * Maybe I should just use the fsb->f_mntonname path instead
+		 * of looping back up the dirp to the mount point??
+		 * Also, needs to know how to export all types of local
+		 * exportable file systems and not just MOUNT_UFS.
+		 */
+		while (mount(fsb->f_type, dirp,
+		       fsb->f_flags | MNT_UPDATE, (caddr_t)&args) < 0) {
 			if (cp)
 				*cp-- = savedc;
 			else
