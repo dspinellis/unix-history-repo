@@ -355,8 +355,10 @@ prttime(tim, tail)
 		printf(" %2d:", tim/60);
 		tim %= 60;
 		printf("%02d", tim);
-	} else if (tim >= 0)
+	} else if (tim > 0)
 		printf("    %2d", tim);
+	else
+		printf("      ");
 	printf("%s", tail);
 }
 
