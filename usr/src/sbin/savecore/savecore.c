@@ -1,5 +1,5 @@
 /*
- *	savecore.c	4.2	81/04/03
+ *	savecore.c	4.3	81/04/14
  * savecore dirname
  *	Written by Michael Toy (UCB)
  *	Program meant to be called from the /etc/rc file for saving the
@@ -100,6 +100,7 @@ register int type;
 	struct direct dir;
 	struct stat statb;
 	static char devname[DIRSIZ + 1];
+	char *dp;
 
 	strcpy(devname, "/dev/");
 	while(Read(dfd, &dir, sizeof dir) > 0)
@@ -117,7 +118,9 @@ register int type;
 			if (dev == statb.st_rdev)
 			{
 				close(dfd);
-				return devname;
+				dp = malloc(strlen(devname)+1);
+				strcpy(dp, devname);
+				return dp;
 			}
 		}
 	}
@@ -316,12 +319,13 @@ read_kmem()
 	Lseek(dumpfd, dumplo + ok(nl[X_TIME].n_value), 0);
 	Write(dumpfd, &clobber, sizeof clobber);
 	close(dumpfd);
+	if (dumptime == 0)
+		return FALSE;
 	printf("System went down at %s", ctime(&dumptime));
 	if (dumptime < now - LEEWAY || dumptime > now + LEEWAY) {
 		printf("Dump time is unreasonable\n");
 		return FALSE;
 	} else {
-		printf("Dump time ok.\n");
 		return TRUE;
 	}
 }
@@ -423,7 +427,8 @@ save_core()
 	ifd = Open(ddname, 0);
 	ofd = Create(path(sprintf(cp, "vmcore.%d", bounds)), 0666);
 	Lseek(ifd, dumplo, 0);
-	printf("Vmcore should be %d bytes long\n", NBPG * physmem);
+	printf("Saving %d bytes of image in vmcore.%d\n",
+	    NBPG * physmem, bounds);
 	while(physmem > 0)
 	{
 		n = Read(ifd, cp, BUFSIZ);
