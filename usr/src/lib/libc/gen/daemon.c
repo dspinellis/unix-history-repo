@@ -6,10 +6,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)daemon.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)daemon.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/file.h>
+#include <sys/fcntl.h>
+#include <unistd.h>
+#include <paths.h>
 
 daemon(nochdir, noclose)
 	int nochdir, noclose;
@@ -24,12 +26,12 @@ daemon(nochdir, noclose)
 	if (!nochdir)
 		(void) chdir("/");
 	if (!noclose) {
-		int devnull = open("/dev/null", O_RDWR, 0);
+		int devnull = open(_PATH_DEVNULL, O_RDWR, 0);
 
 		if (devnull != -1) {
-			(void) dup2(devnull, 0);
-			(void) dup2(devnull, 1);
-			(void) dup2(devnull, 2);
+			(void) dup2(devnull, STDIN_FILENO);
+			(void) dup2(devnull, STDOUT_FILENO);
+			(void) dup2(devnull, STDERR_FILENO);
 			if (devnull > 2)
 				(void) close(devnull);
 		}
