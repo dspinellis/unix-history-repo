@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trap.c	7.9 (Berkeley) %G%
+ *	@(#)trap.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -217,7 +217,10 @@ syscall(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 	register struct proc *p = u.u_procp;
 	struct timeval syst;
 	int error, opc;
-	int args[8], rval[2];
+	struct args {
+		int i[8];
+	} args;
+	int rval[2];
 
 #ifdef lint
 	r0 = 0; r0 = r0; r1 = 0; r1 = r1;
@@ -251,22 +254,22 @@ syscall(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 	else
 		callp = &sysent[code];
 	if ((i = callp->sy_narg * sizeof (int)) &&
-	    (error = copyin(params, (caddr_t)args, (u_int)i)) != 0) {
+	    (error = copyin(params, (caddr_t)&args, (u_int)i)) != 0) {
 		locr0[R0] = error;
 		locr0[PS] |= PSL_C;	/* carry bit */
 #ifdef KTRACE
 		if (KTRPOINT(p, KTR_SYSCALL))
-			ktrsyscall(p->p_tracep, code, callp->sy_narg, args);
+			ktrsyscall(p->p_tracep, code, callp->sy_narg, args.i);
 #endif
 		goto done;
 	}
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_SYSCALL))
-		ktrsyscall(p->p_tracep, code, callp->sy_narg, args);
+		ktrsyscall(p->p_tracep, code, callp->sy_narg, args.i);
 #endif
 	rval[0] = 0;
 	rval[1] = locr0[R1];
-	error = (*callp->sy_call)(u.u_procp, args, rval);
+	error = (*callp->sy_call)(u.u_procp, &args, rval);
 	if (error == ERESTART)
 		pc = opc;
 	else if (error != EJUSTRETURN) {
