@@ -42,12 +42,6 @@
  */
 
 /*
- * If ENEMY is #defined, a list of restricted login names is checked
- * in the file 'enemy'.  These names are listed, one per line, with
- * no trailing blanks.
- */
-
-/*
  * The scoreboard file is updated when someone dies, and keeps track
  * of the highest character to date for that login.
  * Being purged from the character file does not cause the scoreboard
@@ -111,10 +105,6 @@ double	dtemp;			/* for temporary calculations */
 
     initialstate();		/* init globals */
 
-#ifdef ENEMY
-    checkenemy();		/* check if denied access */
-#endif
-
     /* process arguments */
     while (--argc && (*++argv)[0] == '-')
 	switch ((*argv)[1])
@@ -138,7 +128,7 @@ double	dtemp;			/* for temporary calculations */
 		/*NOTREACHED*/
 
 	    case 'S':	/* set 'Wizard' */
-		Wizard = (getuid() == UID);
+		Wizard = !getuid();
 		break;
 
 	    case 'x':	/* examine */
@@ -153,13 +143,6 @@ double	dtemp;			/* for temporary calculations */
 	    case 'b':	/* scoreboard */
 		scorelist();
 		cleanup(TRUE);
-		/*NOTREACHED*/
-
-	    case 'h':	/* help */
-		cleanup(FALSE);
-		strcpy(Databuf, "cat ");
-		system(strcat(Databuf, _PATH_HELP));
-		exit(0);
 		/*NOTREACHED*/
 		}
 
@@ -740,55 +723,6 @@ bool	hasmoved = FALSE;	/* set if player has moved */
 	}
 }
 /**/
-#ifdef	ENEMY
-/************************************************************************
-/
-/ FUNCTION NAME: checkenemy()
-/
-/ FUNCTION: check login name against enemy list
-/
-/ AUTHOR: E. A. Estes, 12/4/85
-/
-/ ARGUMENTS: none
-/
-/ RETURN VALUE: none
-/
-/ MODULES CALLED: fopen(), fgets(), strcmp(), fclose(), printf(), cleanup()
-/
-/ GLOBAL INPUTS: *Login, Databuf[]
-/
-/ GLOBAL OUTPUTS: none
-/
-/ DESCRIPTION:
-/	The enemy file has a list of login names which are denied
-/	access to Phantasia.
-/	We scan this list and exit if the current login name is
-/	found in the list.
-/
-/************************************************************************/
-
-checkenemy()
-{
-FILE	*fp;		/* to open enemy file */
-
-    /* check hit list of restricted accounts */
-    if ((fp = fopen(_PATH_ENEMY, "r")) != NULL)
-	{
-	while (fgets(Databuf, SZ_DATABUF, fp) != NULL)
-	    if (strcmp(Login, Databuf) == 0)
-		{
-		printf ("The Phantasia privileges for the account \"%s\" have been revoked.\n", Login);
-		printf ("Mail comments to %s.\n", WIZARD);
-		fclose(fp);
-		cleanup(TRUE);
-		/*NOTREACHED*/
-		}
-	fclose (fp);
-	}
-}
-#endif
-
-/**/
 /************************************************************************
 /
 / FUNCTION NAME: titlelist()
@@ -979,7 +913,7 @@ int	ch;			/* input */
 		    clear();
 		    addstr("Your character did not exit normally last time.\n");
 		    addstr("If you think you have good cause to have your character saved,\n");
-		    printw("you may quit and mail your reason to '%s'.\n", WIZARD);
+		    printw("you may quit and mail your reason to 'root'.\n");
 		    addstr("Otherwise, continuing spells certain death.\n");
 		    addstr("Do you want to quit ? ");
 		    ch = getanswer("YN", FALSE);
