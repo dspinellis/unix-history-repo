@@ -1,7 +1,0 @@
-troff   $* m.mac m0
-tbl m0a | troff   $* m.mac -
-tbl m[1234] | troff   $* m.mac -
-troff   $* m.mac m5
-troff   $* m.mac table1
-troff   $* m.mac table2
-troff  $* m.mac add

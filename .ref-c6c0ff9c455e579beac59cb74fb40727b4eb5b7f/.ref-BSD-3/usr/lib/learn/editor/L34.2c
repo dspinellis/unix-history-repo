@@ -1,9 +1,0 @@
-#print
-Does [abc] match 'a'? Answer "yes" or "no"?
-#copyin
-#user
-#uncopyin
-#match yes
-#log
-#next
-34.2d 5

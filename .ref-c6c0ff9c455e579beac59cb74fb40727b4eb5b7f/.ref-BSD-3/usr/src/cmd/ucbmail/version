@@ -1,3 +1,0 @@
-date >/tmp/$$
-ed - /tmp/$$ < :versfix
-rm /tmp/$$
