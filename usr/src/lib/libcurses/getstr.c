@@ -3,7 +3,7 @@
 /*
  *	This routine gets a string starting at (_cury,_curx)
  *
- * %G% (Berkeley) @(#)getstr.c	1.4
+ * @(#)getstr.c	1.5 (Berkeley) %G%
  */
 wgetstr(win,str)
 reg WINDOW	*win; 
