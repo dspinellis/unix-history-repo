@@ -1,0 +1,31 @@
+cc -c -S -DVAX780 -DVAX750 -DVAX730 mba.c
+/lib/c2 -i mba.s | as -o mba.o
+rm mba.s
+cc -c -S -DVAX780 -DVAX750 -DVAX730 mt.c
+/lib/c2 -i mt.s | as -o mt.o
+rm mt.s
+ar crv /usr/lib/libsa.a mba.o mt.o
+r - mba.o
+r - mt.o
+ranlib /usr/lib/libsa.a
+ld -N -T 70000 relsrt0.o boot.o bootconf.o -lsa -lc
+cp a.out b.out; strip b.out; dd if=b.out of=boot ibs=32 skip=1; rm b.out
+311+1 records in
+19+1 records out
+ld -N srt0.o cat.o -lsa -lc
+cp a.out b.out; strip b.out; dd if=b.out of=cat ibs=32 skip=1; rm b.out
+409+1 records in
+25+1 records out
+ld -N srt0.o ls.o -lsa -lc
+cp a.out b.out; strip b.out; dd if=b.out of=ls ibs=32 skip=1; rm b.out
+412+1 records in
+25+1 records out
+ld -N srt0.o icheck.o -lsa -lc
+cp a.out b.out; strip b.out; dd if=b.out of=icheck ibs=32 skip=1; rm b.out
+504+1 records in
+31+1 records out
+ld -N srt0.o mkfs.o -lsa -lc
+ld:/usr/lib/libsa.a(ht.o): premature EOF
+*** Error code 4
+
+Stop.
