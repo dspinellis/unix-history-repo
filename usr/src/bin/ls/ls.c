@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ls.c	4.1 82/03/05";
+static	char *sccsid = "@(#)ls.c	4.2 82/03/05";
 #endif
 
 /*
@@ -135,11 +135,11 @@ main(argc, argv)
 	}
 	fp0 = fp;
 	for (i = 0; i < argc; i++) {
-		if (gstat(fp, *argv, 1, (int *)0) == 0)
-			continue;
-		fp->fname = *argv;
-		fp->fflags |= ISARG;
-		fp++;
+		if (gstat(fp, *argv, 1, (int *)0)) {
+			fp->fname = *argv;
+			fp->fflags |= ISARG;
+			fp++;
+		}
 		argv++;
 	}
 	fplast = fp;
@@ -285,6 +285,7 @@ gstat(fp, file, statarg, pnkb)
 			fprintf(stderr, "%s not found\n", file);
 			return (0);
 		}
+		fp->fsize = stb.st_size;
 		switch (stb.st_mode & S_IFMT) {
 
 		case S_IFDIR:
@@ -309,7 +310,6 @@ gstat(fp, file, statarg, pnkb)
 		fp->fnl = stb.st_nlink;
 		fp->fuid = stb.st_uid;
 		fp->fgid = stb.st_gid;
-		fp->fsize = stb.st_size;
 		if (uflg)
 			fp->fmtime = stb.st_atime;
 		else if (cflg)
