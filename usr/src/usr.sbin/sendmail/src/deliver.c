@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.147 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.148 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2367,7 +2367,7 @@ putbody(mci, e, separator)
 
 			if (pbp > peekbuf)
 				c = *--pbp;
-			else if ((c = fgetc(e->e_dfp)) == EOF)
+			else if ((c = getc(e->e_dfp)) == EOF)
 				break;
 			if (bitset(MCIF_7BIT, mci->mci_flags))
 				c &= 0x7f;
@@ -2410,20 +2410,20 @@ putbody(mci, e, separator)
 				{
 					fprintf(TrafficLogFile, "%05d >>> ", getpid());
 					if (padc != EOF)
-						fputc(padc, TrafficLogFile);
+						putc(padc, TrafficLogFile);
 					for (xp = buf; xp < bp; xp++)
-						fputc(*xp, TrafficLogFile);
+						putc(*xp, TrafficLogFile);
 					if (c == '\n')
 						fputs(mci->mci_mailer->m_eol,
 						      TrafficLogFile);
 				}
 				if (padc != EOF)
 				{
-					fputc(padc, mci->mci_out);
+					putc(padc, mci->mci_out);
 					pos++;
 				}
 				for (xp = buf; xp < bp; xp++)
-					fputc(*xp, mci->mci_out);
+					putc(*xp, mci->mci_out);
 				if (c == '\n')
 				{
 					fputs(mci->mci_mailer->m_eol,
@@ -2489,7 +2489,7 @@ putch:
 					continue;
 				}
 				if (TrafficLogFile != NULL)
-					fputc(c, TrafficLogFile);
+					putc(c, TrafficLogFile);
 				putc(c, mci->mci_out);
 				pos++;
 				ostate = c == '\n' ? OS_HEAD : OS_INLINE;
