@@ -1,4 +1,4 @@
-/* @(#)graphics3.c	1.2	%G%
+/* @(#)graphics3.c	1.3	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <sys/timeb.h>
 #include <signal.h>
+#include <time.h>
 
 /* imports from graphics1.c */
 
@@ -103,16 +104,19 @@ int *py;			/* Address of word to hold y-coorinate */
 
 {
     int button;
+    struct timeval selectpoll;
     static unsigned long time, lastime = 0;
     struct timeb tp;
     static char line1[100];
 
+    selectpoll.tv_sec = 0l;
+    selectpoll.tv_usec = 0l;
     while (TRUE)
     {
 
 #ifndef SIGTINT
         button = 1 << fileno(stream);
-        if (select(20, &button, 0, 0) <= 0) return -4;
+        if (select(20, &button, 0, 0, &selectpoll) <= 0) return -4;
 #endif
 
 	if (fgets(line1, 99, stream) == NULL) return -1;
