@@ -1,15 +1,15 @@
 	/* LINTLIBRARY */
 /*
- *	@(#)llib-port	1.5	(Berkeley)	%G%
+ *	@(#)llib-port	1.6	(Berkeley)	%G%
  */
 #include <stdio.h>
 	exit(s) {;}
 long	lseek(f, o, d) long o; { return(0); }
 char	*mktemp(p) char *p; { return(p);}
-int	(*signal(c, f))() int (*f)(); { return(f); }
+void	(*signal(c, f))() void (*f)(); { return(f); }
 char	*strcat(a, b) char *a, *b; { ; }
 int	strcmp(a, b) char *a, *b; { return(1); }
-char	*strcpy(a, b) char *a, *b; { ; }
+char	*strcpy(a, b) char *a, *b; { return(a); }
 int	strlen(s) char *s; { return(1); }
 long	tell(f) { return((long)0); }
 long	time(t) long *t; { return(0);}
