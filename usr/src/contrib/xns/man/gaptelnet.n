@@ -1,0 +1,98 @@
+.TH GAPTELNET 1 Cornell
+.\" $Header: gaptelnet.n,v 1.2 86/12/15 11:26:16 jqj Exp $
+.UC 4
+.SH NAME
+gaptelnet \- User Interface to the XNS GAP Protocol
+.SH SYNOPSIS
+.B gaptelnet [host [connection-type]]
+.SH DESCRIPTION
+.I Gaptelnet
+is used to create a virtual terminal session
+with another host using the XNS Gateway Access Protocol,
+version 3.
+Thus, it can be used to communicate with a Xerox server running Services
+8.0, with an XDE workstation running RemoteExec.bcd, with a Xerox ITS, 
+with a Berkeley UNIX system running GAP3d,
+etc.
+.PP
+If
+.I gaptelnet
+is invoked without arguments, it enters command mode,
+indicated by its prompt (\fBgaptelnet>\fR).
+In this mode, it accepts and executes the commands listed below.
+If it is invoked with arguments, it performs an
+.I open
+command (see below) with those arguments.
+.PP
+Once a connection has been opened,
+.I gaptelnet
+enters input mode.
+In this mode, text typed is sent to the remote host.  
+.CO
+To issue
+.I gaptelnet
+commands when in input mode, precede them with the
+.I gaptelnet
+escape character (initially ^]).
+When in command mode, the normal 
+terminal editing conventions are available.
+Only enough of each command to uniquely identify it is
+needed.
+.TP 
+.BI open " host [connection-type]"
+opens a connection to the named host.  If a connection type
+is not specified, 
+.I gaptelnet
+attempts to contact a GAP server as a system administration service.
+Alternatives for connection-type include ``sa'', ``exec'' (for remote
+executive'', and ``its'' (for interactive terminal service).
+The host specification may be either a host name (e.g.
+``CornellS1'' or ``gvax:computer science:cornell-univ'')
+or an XNS address.  If domain and organization are unspecified,
+they default using
+.IR CH.addrs .
+.TP
+.B close
+closes a TELNET session and returns to command mode.
+.TP
+.B quit
+closes any open TELNET session and exits 
+.IR gaptelnet .
+.TP
+.B z
+suspends
+.IR gaptelnet .
+This command only works when the user is using the 
+.IR csh (1).
+.TP
+.BI escape " [escape-char]"
+sets the 
+.I gaptelnet
+escape character.  Control characters may
+be specified as 
+.B \e^ 
+followed by a single
+letter (e.g., <control-x> is ^X).
+.TP
+.B status
+prints the current status of 
+.IR gaptelnet .
+This includes who one is connected to, 
+the state of debugging, escape character, etc.
+.TP
+.B debug
+toggles socket level debugging.
+.TP
+.BI ? [command]
+gets help.  Without arguments,
+.I gaptelnet
+prints a help summary.
+If a command is specified, 
+.I gaptelnet
+prints the help information available about the command only.
+.PP
+This implementation
+is very simple because
+.IR rlogin (1C)
+is the standard mechanism used to communicate locally 
+with hosts.
