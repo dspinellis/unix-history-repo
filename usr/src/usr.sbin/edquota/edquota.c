@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)edquota.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)edquota.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -52,6 +52,7 @@ struct quotause {
 	long	flags;
 	struct	dqblk dqblk;
 	char	fsname[MAXPATHLEN + 1];
+	char	qfname[1];	/* actually longer */
 } *getprivs();
 #define	FOUND	0x01
 
@@ -187,10 +188,10 @@ getprivs(id, quotatype)
 	int quotatype;
 {
 	register struct fstab *fs;
-	char qfilename[MAXPATHLEN + 1];
 	register struct quotause *qup, *quptail;
 	struct quotause *quphead;
-	int qcmd, fd;
+	int qcmd, qupsize, fd;
+	char *qfpathname;
 	static int warned = 0;
 	extern int errno;
 
@@ -198,24 +199,35 @@ getprivs(id, quotatype)
 	quphead = (struct quotause *)0;
 	qcmd = QCMD(Q_GETQUOTA, quotatype);
 	while (fs = getfsent()) {
-		if (!hasquota(fs->fs_mntops, quotatype))
+		if (strcmp(fs->fs_vfstype, "ufs"))
 			continue;
-		sprintf(qfilename, "%s/%s.%s", fs->fs_file, qfname,
-		    qfextension[quotatype]);
-		if ((fd = open(qfilename, O_RDWR|O_CREAT, 0640)) < 0) {
-			perror(qfilename);
+		if (!hasquota(fs, quotatype, &qfpathname))
 			continue;
-		}
-		if ((qup = (struct quotause *)malloc(sizeof *qup)) == NULL) {
+		qupsize = sizeof(*qup) + strlen(qfpathname);
+		if ((qup = (struct quotause *)malloc(qupsize)) == NULL) {
 			fprintf(stderr, "edquota: out of memory\n");
 			exit(2);
 		}
-		if (quotactl(qfilename, qcmd, id, &qup->dqblk) != 0) {
+		if (quotactl(fs->fs_file, qcmd, id, &qup->dqblk) != 0) {
 	    		if (errno == EOPNOTSUPP && !warned) {
 				warned++;
 				fprintf(stderr, "Warning: %s\n",
 				    "Quotas are not compiled into this kernel");
 				sleep(3);
+			}
+			if ((fd = open(qfpathname, O_RDONLY)) < 0) {
+				fd = open(qfpathname, O_RDWR|O_CREAT, 0640);
+				if (fd < 0 && errno != ENOENT) {
+					perror(qfpathname);
+					free(qup);
+					continue;
+				}
+				fprintf(stderr, "Creating quota file %s\n",
+				    qfpathname);
+				sleep(3);
+				(void) fchown(fd, getuid(),
+				    getentry(quotagroup, GRPQUOTA));
+				(void) fchmod(fd, 0640);
 			}
 			lseek(fd, (long)(id * sizeof(struct dqblk)), L_SET);
 			switch (read(fd, &qup->dqblk, sizeof(struct dqblk))) {
@@ -233,13 +245,14 @@ getprivs(id, quotatype)
 
 			default:		/* ERROR */
 				fprintf(stderr, "edquota: read error in ");
-				perror(qfilename);
+				perror(qfpathname);
 				close(fd);
 				free(qup);
 				continue;
 			}
+			close(fd);
 		}
-		close(fd);
+		strcpy(qup->qfname, qfpathname);
 		strcpy(qup->fsname, fs->fs_file);
 		if (quphead == NULL)
 			quphead = qup;
@@ -261,23 +274,20 @@ putprivs(id, quotatype, quplist)
 	struct quotause *quplist;
 {
 	register struct quotause *qup;
-	char qfilename[MAXPATHLEN + 1];
 	int qcmd, fd;
 
 	qcmd = QCMD(Q_SETQUOTA, quotatype);
 	for (qup = quplist; qup; qup = qup->next) {
-		sprintf(qfilename, "%s/%s.%s", qup->fsname, qfname,
-		    qfextension[quotatype]);
-		if (quotactl(qfilename, qcmd, id, &qup->dqblk) == 0)
+		if (quotactl(qup->fsname, qcmd, id, &qup->dqblk) == 0)
 			continue;
-		if ((fd = open(qfilename, O_WRONLY)) < 0) {
-			perror(qfilename);
+		if ((fd = open(qup->qfname, O_WRONLY)) < 0) {
+			perror(qup->qfname);
 		} else {
 			lseek(fd, (long)id * (long)sizeof (struct dqblk), 0);
 			if (write(fd, &qup->dqblk, sizeof (struct dqblk)) !=
 			    sizeof (struct dqblk)) {
 				fprintf(stderr, "edquota: ");
-				perror(qfilename);
+				perror(qup->qfname);
 			}
 			close(fd);
 		}
@@ -656,26 +666,37 @@ alldigits(s)
 /*
  * Check to see if a particular quota is to be enabled.
  */
-hasquota(options, type)
-	char *options;
+hasquota(fs, type, qfnamep)
+	register struct fstab *fs;
 	int type;
+	char **qfnamep;
 {
 	register char *opt;
-	char buf[BUFSIZ];
-	char *strtok();
+	char *cp, *index(), *strtok();
 	static char initname, usrname[100], grpname[100];
+	static char buf[BUFSIZ];
 
 	if (!initname) {
 		sprintf(usrname, "%s%s", qfextension[USRQUOTA], qfname);
 		sprintf(grpname, "%s%s", qfextension[GRPQUOTA], qfname);
 		initname = 1;
 	}
-	strcpy(buf, options);
+	strcpy(buf, fs->fs_mntops);
 	for (opt = strtok(buf, ","); opt; opt = strtok(NULL, ",")) {
+		if (cp = index(opt, '='))
+			*cp++ = '\0';
 		if (type == USRQUOTA && strcmp(opt, usrname) == 0)
-			return(1);
+			break;
 		if (type == GRPQUOTA && strcmp(opt, grpname) == 0)
-			return(1);
+			break;
 	}
-	return (0);
+	if (!opt)
+		return (0);
+	if (cp) {
+		*qfnamep = cp;
+		return (1);
+	}
+	(void) sprintf(buf, "%s/%s.%s", fs->fs_file, qfname, qfextension[type]);
+	*qfnamep = buf;
+	return (1);
 }
