@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.41 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.42 (Berkeley) %G%
  */
 
 /*
@@ -96,10 +96,10 @@ __sysctl(p, uap, retval)
 	case CTL_FS:
 		fn = fs_sysctl;
 		break;
+#endif
 	case CTL_MACHDEP:
 		fn = cpu_sysctl;
 		break;
-#endif
 #ifdef DEBUG
 	case CTL_DEBUG:
 		fn = debug_sysctl;
