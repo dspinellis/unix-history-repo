@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)spp_usrreq.c	6.15 (Berkeley) %G%
+ *	@(#)spp_usrreq.c	6.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -565,8 +565,9 @@ spp_output(cb, m0)
 		/*
 		 * Fill in mbuf with extended SP header
 		 * and addresses and length put into network format.
+		 * Long align so prepended ip headers will work on Gould.
 		 */
-		m->m_off = MMAXOFF - sizeof (struct spidp);
+		m->m_off = MMAXOFF - sizeof (struct spidp) - 2;
 		m->m_len = sizeof (struct spidp);
 		m->m_next = m0;
 		si = mtod(m, struct spidp *);
@@ -615,7 +616,7 @@ spp_output(cb, m0)
 	 */
 	{
 		register struct sockbuf *sb2 = &so->so_rcv;
-		int credit = ((sb2->sb_mbmax - sb2->sb_mbcnt) /
+		int credit = ((((int)sb2->sb_mbmax) - (int)sb2->sb_mbcnt) /
 						((short)cb->s_mtu));
 		int alo = cb->s_ack + (credit > 0 ? credit : 0) - 1;
 
@@ -1051,11 +1052,6 @@ spp_usrreq(so, req, m, nam, rights)
 		(void) spp_output(cb, (struct mbuf *) 0);
 		break;
 
-	case PRU_SEND:
-		error = spp_output(cb, m);
-		m = NULL;
-		break;
-
 	case PRU_ABORT:
 		(void) spp_drop(cb, ECONNABORTED);
 		break;
@@ -1078,11 +1074,12 @@ spp_usrreq(so, req, m, nam, rights)
 
 	case PRU_SENDOOB:
 		if (sbspace(&so->so_snd) < -512) {
-			m_freem(m);
 			error = ENOBUFS;
 			break;
 		}
 		cb->s_oobflags |= SF_SOOB;
+		/* fall into */
+	case PRU_SEND:
 		error = spp_output(cb, m);
 		m = NULL;
 		break;
