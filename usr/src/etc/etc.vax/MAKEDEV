@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)MAKEDEV	4.11	%G%
+#	@(#)MAKEDEV	4.12	%G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices (for 730 must be followed by tu0 & tu1)
