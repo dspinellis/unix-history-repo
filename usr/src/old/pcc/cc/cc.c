@@ -1,5 +1,5 @@
 /* USE <wait.h> */
-static	char sccsid[] = "@(#)cc.c 3.1 %G%";
+static	char sccsid[] = "@(#)cc.c 3.2 %G%";
 /*
  * cc - front end for C compiler
  */
@@ -22,7 +22,8 @@ char	*outfile;
 char	*savestr(), *strspl(), *setsuf();
 int	idexit();
 char	**av, **clist, **llist, **plist;
-int	cflag, eflag, gflag, oflag, pflag, sflag, wflag, cps8, exflag, proflag;
+int	cflag, eflag, gflag, oflag, pflag, sflag, wflag, Rflag, exflag, proflag;
+int	cps8;
 char	*dflag;
 int	exfail;
 char	*chpass;
@@ -72,6 +73,9 @@ main(argc, argv)
 					exit(8);
 				}
 			}
+			continue;
+		case 'R':
+			Rflag++;
 			continue;
 		case 'O':
 			oflag++;
@@ -226,9 +230,12 @@ main(argc, argv)
 	assemble:
 		cunlink(tmp1); cunlink(tmp2); cunlink(tmp4);
 		av[0] = "as"; av[1] = "-o"; av[2] = setsuf(clist[i], 'o');
-		av[3] = assource; na = 4;
+		na = 3;
+		if (Rflag)
+			av[na++] = "-R";
 		if (dflag)
 			av[na++] = dflag;
+		av[na++] = assource;
 		av[na] = 0;
 		if (callsys(as, av) > 1) {
 			cflag++;
