@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: locore.s 1.66 92/12/22$
  *
- *	@(#)locore.s	8.1 (Berkeley) %G%
+ *	@(#)locore.s	8.2 (Berkeley) %G%
  */
 
 /*
@@ -1429,11 +1429,10 @@ ENTRY(longjmp)
 	rts
 
 /*
- * The following primitives manipulate the run queues.
- * _whichqs tells which of the 32 queues _qs
- * have processes in them.  Setrq puts processes into queues, Remrq
- * removes them from queues.  The running process is on no queue,
- * other processes are on a queue related to p->p_pri, divided by 4
+ * The following primitives manipulate the run queues.  _whichqs tells which
+ * of the 32 queues _qs have processes in them.  Setrunqueue puts processes
+ * into queues, Remrq removes them from queues.  The running process is on
+ * no queue, other processes are on a queue related to p->p_pri, divided by 4
  * actually to shrink the 0-127 range of priorities into the 32 available
  * queues.
  */
@@ -1442,11 +1441,11 @@ ENTRY(longjmp)
 	.globl	_curproc,_want_resched
 
 /*
- * Setrq(p)
+ * Setrunqueue(p)
  *
  * Call should be made at spl6(), and p->p_stat should be SRUN
  */
-ENTRY(setrq)
+ENTRY(setrunqueue)
 	movl	sp@(4),a0
 	tstl	a0@(P_RLINK)
 	jeq	Lset1
@@ -1470,7 +1469,7 @@ Lset1:
 	rts
 
 Lset2:
-	.asciz	"setrq"
+	.asciz	"setrunqueue"
 	.even
 
 /*
