@@ -8,7 +8,7 @@
 # include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)util.c	3.40		%G%);
+SCCSID(@(#)util.c	3.41		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -266,10 +266,10 @@ xputs(s)
 			putchar('\\');
 			c &= 0177;
 		}
-		if (iscntrl(c))
+		if (c < 040 || c >= 0177)
 		{
 			putchar('^');
-			c |= 0100;
+			c ^= 0100;
 		}
 		putchar(c);
 	}
@@ -550,7 +550,7 @@ putline(l, fp, m)
 				fputc('.', fp);
 			fputs(l, fp);
 			fputc('!', fp);
-			fputs(crlf(m), fp);
+			fputs(m->m_eol, fp);
 			*q = svchar;
 			l = q;
 		}
@@ -561,7 +561,7 @@ putline(l, fp, m)
 		if (l[0] == '.' && bitset(M_XDOT, m->m_flags))
 			fputc('.', fp);
 		fputs(l, fp);
-		fputs(crlf(m), fp);
+		fputs(m->m_eol, fp);
 		*p = svchar;
 		l = p;
 		if (*l == '\n')

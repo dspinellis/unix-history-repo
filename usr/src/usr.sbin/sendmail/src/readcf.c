@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.49		%G%);
+SCCSID(@(#)readcf.c	3.50		%G%);
 
 /*
 **  READCF -- read control file.
@@ -318,17 +318,15 @@ fileclass(class, filename, fmt)
 **  MAKEMAILER -- define a new mailer.
 **
 **	Parameters:
-**		line -- description of mailer.  This is in tokens
-**			separated by white space.  The fields are:
-**			* the name of the mailer, as refered to
-**			  in the rewriting rules.
-**			* the pathname of the program to fork to
-**			  execute it.
-**			* the options needed by this program.
-**			* the macro string needed to translate
-**			  a local "from" name to one that can be
-**			  returned to this machine.
-**			* the argument vector (a series of parameters).
+**		line -- description of mailer.  This is in labeled
+**			fields.  The fields are:
+**			   P -- the path to the mailer
+**			   F -- the flags associated with the mailer
+**			   A -- the argv for this mailer
+**			   S -- the sender rewriting set
+**			   R -- the recipient rewriting set
+**			   E -- the eol string
+**			The first word is the canonical name of the mailer.
 **		safe -- set if this is a safe configuration file.
 **
 **	Returns:
@@ -338,90 +336,211 @@ fileclass(class, filename, fmt)
 **		enters the mailer into the mailer table.
 */
 
-# define SETWORD \
-		{ \
-			while (*p != '\0' && isspace(*p)) \
-				p++; \
-			q = p; \
-			while (*p != '\0' && !isspace(*p)) \
-				p++; \
-			if (*p != '\0') \
-				*p++ = '\0'; \
-		}
-
 makemailer(line, safe)
 	char *line;
 	bool safe;
 {
 	register char *p;
-	register char *q;
 	register struct mailer *m;
 	register STAB *s;
 	int i;
-	char *mname;
-	char *mpath;
-	u_long mopts;
-	short mrset, msset;
-	char *margv[MAXPV + 1];
+	char fcode;
 	extern u_long mfencode();
 	extern int NextMailer;
+	extern char **makeargv();
+	extern char *munchstring();
+	extern char *DelimChar;
 
+	/* allocate a mailer and set up defaults */
+	m = (struct mailer *) xalloc(sizeof *m);
+	bzero((char *) m, sizeof *m);
+	m->m_mno = NextMailer;
+	m->m_eol = "\n";
+
+	/* collect the mailer name */
+	for (p = line; *p != '\0' && *p != ',' && !isspace(*p); p++)
+		continue;
+	if (*p != '\0')
+		*p++ = '\0';
+	m->m_name = newstr(line);
+
+	/* now scan through and assign info from the fields */
+	while (*p != '\0')
+	{
+		while (*p != '\0' && (*p == ',' || isspace(*p)))
+			p++;
+
+		/* p now points to field code */
+		fcode = *p;
+		while (*p != '\0' && *p != '=' && *p != ',')
+			p++;
+		if (*p++ != '=')
+		{
+			syserr("`=' expected");
+			return;
+		}
+		while (isspace(*p))
+			p++;
+
+		/* p now points to the field body */
+		p = munchstring(p);
+
+		/* install the field into the mailer struct */
+		switch (fcode)
+		{
+		  case 'P':		/* pathname */
+			m->m_mailer = newstr(p);
+			break;
+
+		  case 'F':		/* flags */
+			m->m_flags = mfencode(p);
+			if (!safe)
+				m->m_flags &= ~M_RESTR;
+			break;
+
+		  case 'S':		/* sender rewriting ruleset */
+		  case 'R':		/* recipient rewriting ruleset */
+			i = atoi(p);
+			if (i < 0 || i >= MAXRWSETS)
+			{
+				syserr("invalid rewrite set, %d max", MAXRWSETS);
+				return;
+			}
+			if (fcode == 'S')
+				m->m_s_rwset = i;
+			else
+				m->m_r_rwset = i;
+			break;
+
+		  case 'E':		/* end of line string */
+			m->m_eol = newstr(p);
+			break;
+
+		  case 'A':		/* argument vector */
+			m->m_argv = makeargv(p);
+			break;
+		}
+
+		p = DelimChar;
+	}
+
+	/* now store the mailer away */
 	if (NextMailer >= MAXMAILERS)
 	{
 		syserr("too many mailers defined (%d max)", MAXMAILERS);
 		return;
 	}
-
-	/* collect initial information */
-	p = line;
-	SETWORD;
-	mname = q;
-	SETWORD;
-	mpath = q;
-	SETWORD;
-	mopts = mfencode(q);
-	if (!safe)
-		mopts &= ~M_RESTR;
-	SETWORD;
-	msset = atoi(q);
-	SETWORD;
-	mrset = atoi(q);
-
-	if (*p == '\0')
-	{
-		syserr("invalid M line in configuration file");
-		return;
-	}
-	if (msset >= MAXRWSETS || mrset >= MAXRWSETS)
-	{
-		syserr("readcf: line %d: invalid rewrite set, %d max",
-			LineNumber, MAXRWSETS);
-		return;
-	}
-
-	/* allocate a mailer */
-	m = (struct mailer *) xalloc(sizeof *m);
-	m->m_name = newstr(mname);
-	m->m_mailer = newstr(mpath);
-	m->m_flags = mopts;
-	m->m_r_rwset = mrset;
-	m->m_s_rwset = msset;
-	m->m_mno = NextMailer;
 	Mailer[NextMailer++] = m;
-
-	/* collect the argument vector */
-	for (i = 0; i < MAXPV - 1 && *p != '\0'; i++)
-	{
-		SETWORD;
-		margv[i] = newstr(q);
-	}
-	margv[i++] = NULL;
-
-	/* save the argv */
-	m->m_argv = (char **) xalloc(sizeof margv[0] * i);
-	bmove((char *) margv, (char *) m->m_argv, sizeof margv[0] * i);
 	s = stab(m->m_name, ST_MAILER, ST_ENTER);
 	s->s_mailer = m;
+}
+/*
+**  MUNCHSTRING -- translate a string into internal form.
+**
+**	Parameters:
+**		p -- the string to munch.
+**
+**	Returns:
+**		the munched string.
+**
+**	Side Effects:
+**		Sets "DelimChar" to point to the string that caused us
+**		to stop.
+*/
+
+char *
+munchstring(p)
+	register char *p;
+{
+	register char *q;
+	bool backslash = FALSE;
+	bool quotemode = FALSE;
+	static char buf[MAXLINE];
+	extern char *DelimChar;
+
+	for (q = buf; *p != '\0'; p++)
+	{
+		if (backslash)
+		{
+			/* everything is roughly literal */
+			switch (*p)
+			{
+			  case 'r':		/* carriage return */
+				*q++ = '\r';
+				continue;
+
+			  case 'n':		/* newline */
+				*q++ = '\n';
+				continue;
+
+			  case 'f':		/* form feed */
+				*q++ = '\f';
+				continue;
+
+			  case 'b':		/* backspace */
+				*q++ = '\b';
+				continue;
+			}
+			*q++ = *p;
+			backslash = FALSE;
+		}
+		else
+		{
+			if (*p == '\\')
+				backslash = TRUE;
+			else if (*p == '"')
+				quotemode = !quotemode;
+			else if (quotemode || *p != ',')
+				*q++ = *p;
+			else
+				break;
+		}
+	}
+
+	DelimChar = p;
+	*q++ = '\0';
+	return (buf);
+}
+/*
+**  MAKEARGV -- break up a string into words
+**
+**	Parameters:
+**		p -- the string to break up.
+**
+**	Returns:
+**		a char **argv (dynamically allocated)
+**
+**	Side Effects:
+**		munges p.
+*/
+
+char **
+makeargv(p)
+	register char *p;
+{
+	char *q;
+	int i;
+	char **avp;
+	char *argv[MAXPV + 1];
+
+	/* take apart the words */
+	i = 0;
+	while (*p != '\0' && i < MAXPV)
+	{
+		q = p;
+		while (*p != '\0' && !isspace(*p))
+			p++;
+		while (isspace(*p))
+			*p++ = '\0';
+		argv[i++] = newstr(q);
+	}
+	argv[i++] = NULL;
+
+	/* now make a copy of the argv */
+	avp = (char **) xalloc(sizeof *avp * i);
+	bmove((char *) argv, (char *) avp, sizeof *avp * i);
+
+	return (avp);
 }
 /*
 **  PRINTRULES -- print rewrite rules (for debugging)
@@ -498,7 +617,6 @@ struct optlist	OptList[] =
 	'n',	M_NHDR,
 	'P',	M_RPATH,
 	'p',	M_FROMPATH,
-	'R',	M_CRLF,
 	'r',	M_ROPT,
 	'S',	M_RESTR,
 	's',	M_STRIPQ,
@@ -520,8 +638,6 @@ mfencode(p)
 	{
 		for (o = OptList; o->opt_name != '\0' && o->opt_name != *p; o++)
 			continue;
-		if (o->opt_name == '\0')
-			syserr("bad mailer option %c", *p);
 		opts |= o->opt_value;
 		p++;
 	}
