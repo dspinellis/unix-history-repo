@@ -3,43 +3,30 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)dmesg.8	6.4 (Berkeley) %G%
+.\"     @(#)dmesg.8	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DMESG 8
 .Os BSD 4
 .Sh NAME
 .Nm dmesg
-.Nd "collect system diagnostic messages to form error log"
+.Nd "display the system message buffer"
 .Sh SYNOPSIS
 .Nm dmesg
-.Op Fl 
+.Op Fl M Ar core
+.Op Fl N Ar system
 .Sh DESCRIPTION
-.Sy N.B.:
 .Nm Dmesg
-is obsoleted by
-.Xr syslogd 8
-for maintenance of the system error log.
+displays the contents of the system message buffer.
 .Pp
-.Nm Dmesg
-looks in a system buffer for recently printed diagnostic messages
-and prints them on the standard output.
-The messages are those printed or logged
-by the system when errors occur.
-.Pp
-Available option:
+The options are as follows:
 .Bl -tag -width Ds
-.It Fl
-.Nm Dmesg
-computes (incrementally) the new messages since the last time it
-was run and places these on the standard output.
-.El
-.Sh FILES
-.Bl -tag -width /var/log/msgbuf -compact
-.It Pa /var/log/msgbuf
-scratch file for memory of
-.Ql Fl
-option
+.It Fl M
+Extract values associated with the name list from the specified core
+instead of the default ``/dev/kmem''.
+.It Fl N
+Extract the name list from the specified system instead of the default
+``/vmunix''.
 .El
 .Sh SEE ALSO
 .Xr syslogd 8
