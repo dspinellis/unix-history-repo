@@ -1,4 +1,4 @@
-/*	ip_icmp.c	4.15	82/04/25	*/
+/*	ip_icmp.c	4.16	82/05/02	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -16,7 +16,7 @@
  * routines to turnaround packets back to the originator, and
  * host table maintenance routines.
  */
-int	icmpprintfs = 1;
+int	icmpprintfs = 0;
 
 /*
  * Generate an error packet of type error
@@ -207,7 +207,7 @@ COUNT(ICMP_REFLECT);
 	icmp_send(ip);
 }
 
-int	generateicmpmsgs = 0;
+int	generateicmpmsgs = 1;
 
 /*
  * Send an icmp packet back to the ip level,
