@@ -1,29 +1,17 @@
-#	@(#)README	7.5 (Berkeley) %G%
+#	@(#)README	7.6 (Berkeley) %G%
 
-The file system is reasonably stable, but incomplete.  There is no cleaner
-on the 4.4BSD-Alpha tape.  Therefore, LFS is currently a "write-once" file
-system.  The cleaner system calls are all implemented and appear to work,
-although there are places where performance can be improved dramatically
-(see comments in lfs_syscalls.c).
+The file system is reasonably stable, but incomplete.  There are
+places where cleaning performance can be improved dramatically (see
+comments in lfs_syscalls.c).  For details on the implementation,
+performance and why garbage collection always wins, see Dr. Margo
+Seltzer's thesis available for anonymous ftp from toe.cs.berkeley.edu,
+in the directory pub/personal/margo/thesis.ps.Z, or the January 1993
+USENIX paper.
 
 Missing Functionality:
-	We currently do no block accounting when blocks are written.  Since
-	allocation is not performed until blocks in the buffer cache are
-	written to disk, it is possible to return success on a write, only
-	to discover later that there is insufficient space get the block
-	on disk.
-
-	We intend to support multiple block sizes rather than fragments.
-	This is not implemented.
-
-	Since blocks are laid out contiguously, we can miss rotations reading
-	sequentially.  We need to read in contiguous blocks to avoid that.
-	See McVoy's Winter 1991 Usenix paper for details on how to do that.
+	Multiple block sizes and/or fragments are not yet implemented.
 
 ----------
-Design Details (a more complete design has been submitted to the January 1993
-Usenix Conference):
-
 The disk is laid out in segments.  The first segment starts 8K into the
 disk (the first 8K is used for boot information).  Each segment is composed
 of the following:
