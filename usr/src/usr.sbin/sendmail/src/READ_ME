@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.37 (Berkeley) %G%
+#	@(#)READ_ME	8.38 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -444,31 +444,6 @@ BSDI (BSD/386) 1.0, NetBSD 0.9, FreeBSD 1.0
 	copy ../contrib/oldbind.compat.c into src and add
 	oldbind.compat.o to OBJADD in the Makefile.
 
-Linux
-	From: Karl London <karl@borg.demon.co.uk>
-	Subject: Little bit to add to a readme for Linux for 8.6
-	Date: Fri, 10 Sep 1993 20:16:05 +0100 (BST)
-
-	Below is a copy of a section of the /usr/include/unistd.h from
-	linux libc-4.4.1 which needs changing because of a bug in the
-	header files. Should be fixed for future releases..
-
-	Karl
-
-	The #if 0 and #endif are new!!
-
-	-------
-
-	   If OPTS begins with `--', then non-option arguments
-	   are treated as arguments to the option '\0'.
-	   This behavior is specific to the GNU `getopt'.  */
-	#if 0
-	extern int getopt __P ((int __argc, char *__const * __argv,
-				__const char *__opts));
-	#endif
-	extern int opterr;
-	extern int optind;
-
 A/UX
 	Date: Tue, 12 Oct 1993 18:28:28 -0400 (EDT)
 	From: "Eric C. Hagberg" <hagberg@med.cornell.edu>
@@ -676,4 +651,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.37, last update %G% 19:57:57)
+(Version 8.38, last update %G% 10:52:41)
