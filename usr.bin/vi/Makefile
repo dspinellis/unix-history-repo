@@ -1,4 +1,5 @@
 #	@(#)Makefile	8.30 (Berkeley) 3/22/94
+#	$Id$
 
 PROG=	nvi
 #CFLAGS=-g -DDEBUG
@@ -8,6 +9,8 @@ CFLAGS+=-I. -I${.CURDIR} -I${.CURDIR}/ex -I${.CURDIR}/vi
 .PATH:	${.CURDIR}/docs ${.CURDIR}/ex ${.CURDIR}/sex ${.CURDIR}/vi \
 	${.CURDIR}/svi ${.CURDIR}/xaw
 #CLEANFILES+=ex
+MAN1+=	vi.1
+MLINKS+=vi.1 nvi.1
 
 # General sources.
 SRCS=	ascii.c cut.c delete.c exf.c intr.c line.c log.c main.c \
