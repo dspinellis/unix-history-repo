@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)sysctl.h	7.2 (Berkeley) %G%
+ *	@(#)sysctl.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -36,35 +36,18 @@
 #define	KINFO_PROC_UID	(KINFO_PROC|5)	/* by effective uid */
 #define	KINFO_PROC_RUID	(KINFO_PROC|6)	/* by real uid */
 
-/* 
- * proc ops return arrays of augmented proc structures
- */
-struct kinfo_proc {
-	struct	proc kp_proc;		/* proc structure */
-	struct	eproc {
-		struct	proc *e_paddr;		/* address of proc */
-		struct	session *e_sess;	/* session pointer */
-		pid_t	e_pgid;		/* process group id */
-		short	e_jobc;		/* job control counter */
-		dev_t	e_tdev;		/* controlling tty */
-		pid_t	e_tpgid;		/* tty process group id */
-		struct	session *e_tsess;	/* tty session pointer */
-#define	WMESGLEN	7
-		char	e_wmesg[WMESGLEN+1];	/* wchan message */
-		size_t	e_xsize;		/* text size */
-		short	e_xrssize;		/* text rss */
-		short	e_xccount;		/* text references */
-		short	e_xswrss;
-		long	e_spare[8];
-	} kp_eproc;
-};
 /*
  * Routing table
  */
 #define ki_af(x)		(((x)&0x00ff0000) >> 16)
-#define KINFO_RT	(1<<8)
+#define KINFO_RT		(1<<8)
 #define KINFO_RT_DUMP	(KINFO_RT|1)	/* dump; may limit to a.f. */
 #define KINFO_RT_FLAGS	(KINFO_RT|2)	/* by flags, e.g. RESOLVING */
+
+/*
+ * vnodes
+ */
+#define	KINFO_VNODE		(2<<8)
 
 /*
  * Locking and stats
