@@ -1,0 +1,22 @@
+% Test a tilted halftone screen.
+
+4 0 { dup mul exch dup mul add 1 exch sub } setscreen
+
+4 0
+ { exch abs exch abs   2 copy le { exch } if
+   exch 1 sub dup mul exch dup mul add 1 exch sub
+ } setscreen
+
+36 36 scale
+0 1 9
+ { /y exch def
+   0 1 9
+    { /x exch def
+      x y moveto
+      1 0 rlineto 0 1 rlineto -1 0 rlineto closepath
+      y 10 mul x add 100 div setgray
+      fill
+    } for
+  } for
+
+showpage quit
