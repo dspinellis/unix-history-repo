@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_alloc.c	7.13 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -155,8 +155,6 @@ realloccg(ip, lbprev, bpref, osize, nsize, bpp)
 	brealloc(bp, nsize);
 	bp->b_flags |= B_DONE;
 	bzero(bp->b_un.b_addr + osize, (unsigned)nsize - osize);
-	ip->i_blocks += btodb(nsize - osize);
-	ip->i_flag |= IUPD|ICHG;
 	/*
 	 * Check for extension in the existing location.
 	 */
@@ -164,6 +162,8 @@ realloccg(ip, lbprev, bpref, osize, nsize, bpp)
 	if (bno = fragextend(ip, cg, (long)bprev, osize, nsize)) {
 		if (bp->b_blkno != bno)
 			panic("bad blockno");
+		ip->i_blocks += btodb(nsize - osize);
+		ip->i_flag |= IUPD|ICHG;
 		*bpp = bp;
 		return (0);
 	}
