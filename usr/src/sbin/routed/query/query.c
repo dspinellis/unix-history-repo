@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)query.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)query.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -16,7 +16,7 @@ static char sccsid[] = "@(#)query.c	5.1 (Berkeley) %G%";
 #include <errno.h>
 #include <stdio.h>
 #include <netdb.h>
-#include "../protocol.h"
+#include <protocols/routed.h>
 
 #define	WTIME	5		/* Time to wait for responses */
 
@@ -127,7 +127,8 @@ rip_input(from, size)
 		return;
 	hp = gethostbyaddr(&from->sin_addr, sizeof (struct in_addr), AF_INET);
 	name = hp == 0 ? "???" : hp->h_name;
-	printf("from %s(%s):\n", name, inet_ntoa(from->sin_addr));
+	printf("%d bytes from %s(%s):\n", size, name,
+		inet_ntoa(from->sin_addr));
 	size -= sizeof (int);
 	n = msg->rip_nets;
 	while (size > 0) {
@@ -180,9 +181,6 @@ timeout()
 
 /*
  * Return the possible subnetwork number from an internet address.
- * If the address is of the form of a subnet address (most significant
- * bit of the host part is set), believe the subnet exists.
- * Otherwise, return the network number.
  * SHOULD FIND OUT WHETHER THIS IS A LOCAL NETWORK BEFORE LOOKING
  * INSIDE OF THE HOST PART.  We can only believe this if we have other
  * information (e.g., we can find a name for this number).
@@ -192,16 +190,10 @@ inet_subnetof(in)
 {
 	register u_long i = ntohl(in.s_addr);
 
-	if (IN_CLASSA(i)) {
-		if (IN_SUBNETA(i))
-			return ((i & IN_CLASSA_SUBNET) >> IN_CLASSA_SUBNSHIFT);
-		else
-			return ((i & IN_CLASSA_NET) >> IN_CLASSA_NSHIFT);
-	} else if (IN_CLASSB(i)) {
-		if (IN_SUBNETB(i))
-			return ((i & IN_CLASSB_SUBNET) >> IN_CLASSB_SUBNSHIFT);
-		else
-			return ((i & IN_CLASSB_NET) >> IN_CLASSB_NSHIFT);
-	} else
+	if (IN_CLASSA(i))
+		return ((i & IN_CLASSB_NET) >> IN_CLASSB_NSHIFT);
+	else if (IN_CLASSB(i))
 		return ((i & IN_CLASSC_NET) >> IN_CLASSC_NSHIFT);
+	else
+		return ((i & 0xffffffc0) >> 28);
 }
