@@ -650,8 +650,12 @@ int	count;				/* how much data there is */
 	    if (c == AID_CLEAR) {
 		LocalClearScreen();	/* Side effect is to clear 3270 */
 	    }
-	    UnLocked = 0;
+	    OiaOnlineA(0);
+	    OiaTWait(1);
+	    OiaInsert(0);
 	    InsertMode = 0;		/* just like a 3278 */
+	    OiaSystemLocked(1);
+	    UnLocked = 0;
 	    AidByte = c;
 	    HadAid = 1;
 	    SendToIBM();
@@ -698,6 +702,10 @@ int	count;				/* how much data there is */
 						|| c == DISP_AMPERSAND) {
 			UnLocked = 0;
 			InsertMode = 0;
+			OiaOnlineA(0);
+			OiaTWait(1);
+			OiaSystemLocked(1);
+			OiaInsert(0);
 			if (c == DISP_AMPERSAND) {
 			    TurnOnMdt(i);	/* Only for & type */
 			    AidByte = AID_ENTER;
@@ -759,10 +767,16 @@ int	count;				/* how much data there is */
 		break;
 
 	    case FCN_RESET:
-		InsertMode = 0;
+		if (InsertMode) {
+		    InsertMode = 0;
+		    OiaInsert(0);
+		}
 		break;
 	    case FCN_MASTER_RESET:
-		InsertMode = 0;
+		if (InsertMode) {
+		    InsertMode = 0;
+		    OiaInsert(0);
+		}
 		RefreshScreen();
 		break;
 #endif	/* !defined(PURE3274) */
@@ -793,6 +807,7 @@ int	count;				/* how much data there is */
 
 	    case FCN_INSRT:
 		InsertMode = !InsertMode;
+		OiaInsert(InsertMode);
 		break;
 
 	    case FCN_HOME:
