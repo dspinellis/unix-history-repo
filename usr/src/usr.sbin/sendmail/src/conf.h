@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.194 (Berkeley) %G%
+ *	@(#)conf.h	8.195 (Berkeley) %G%
  */
 
 /*
@@ -381,6 +381,22 @@ extern long	dgux_inet_addr();
 # define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
 # ifndef IDENTPROTO
 #  define IDENTPROTO	0	/* pre-4.4 TCP/IP implementation is broken */
+# endif
+#endif
+
+
+/*
+**  OSF/1 for KSR.
+**
+**      Contributed by Todd C. Miller <Todd.Miller@cs.colorado.edu>
+*/
+
+#ifdef __ksr__
+# define __osf__	1       /* get OSF/1 defines below */
+# define FORK		fork    /* no vfork primitive available */
+# define _PATH_VENDOR_CF	"/var/adm/sendmail/sendmail.cf"
+# ifndef TZ_TYPE
+#  define TZ_TYPE	TZ_TZNAME	/* use tzname[] vector */
 # endif
 #endif
 
