@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)cltp_usrreq.c	7.3 (Berkeley) %G%
+ *	@(#)cltp_usrreq.c	7.4 (Berkeley) %G%
  */
 
 #ifndef CLTPOVAL_SRC /* XXX -- till files gets changed */
@@ -257,7 +257,8 @@ cltp_usrreq(so, req, m, nam, control)
 	if (req == PRU_CONTROL)
 		return (iso_control(so, (int)m, (caddr_t)nam,
 			(struct ifnet *)control));
-	if (isop == NULL && req != PRU_ATTACH) {
+	if ((isop == NULL && req != PRU_ATTACH) ||
+	    (control && control->m_len)) {
 		error = EINVAL;
 		goto release;
 	}
@@ -383,6 +384,8 @@ cltp_usrreq(so, req, m, nam, control)
 		panic("cltp_usrreq");
 	}
 release:
+	if (control != NULL)
+		m_freem(control);
 	if (m != NULL)
 		m_freem(m);
 	return (error);
