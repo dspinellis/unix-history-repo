@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)files.c	4.12 (Berkeley) 86/01/09";
+static	char *sccsid = "@(#)files.c	4.13 (Berkeley) 86/07/24";
 #include <fcntl.h>
 
 /* UNIX DEPENDENT PROCEDURES */
@@ -547,7 +547,7 @@ fread( (char *) &objhead, sizeof(objhead), 1, arfd);
 if (N_BADMAG(objhead))
 	fatal1("%s is not an object module", arfname);
 skip = objhead.a_text + objhead.a_data;
-#if defined(vax) || defined(sun)
+#ifndef pdp11
 skip += objhead.a_trsize + objhead.a_drsize;
 #else
 if(! objhead.a_flag )
