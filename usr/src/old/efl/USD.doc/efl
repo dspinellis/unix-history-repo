@@ -1,10 +1,12 @@
-.\"	@(#)efl	5.1 (Berkeley) %G%
+.\"	@(#)efl	6.1 (Berkeley) %G%
 .\"
+.EH 'PS2:6-%''The Programming Language EFL'
+.OH 'The Programming Language EFL''PS2:6-%'
 .ds [[ \fR\z[\h'.15m'[\fP
 .ds ]] \fR\z]\h'.15m']\fP
 .ND "4 June 1979"
 . .TM 79-1273-6 39199 39199-11
-.RP
+.\".RP
 .TL
 The Programming Language EFL
 .AU "MH 2C-570" 2059
