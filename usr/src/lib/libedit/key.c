@@ -9,7 +9,7 @@
  */
 
 #if !defined(lint) && !defined(SCCSID)
-static char sccsid[] = "@(#)key.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)key.c	5.3 (Berkeley) %G%";
 #endif /* not lint && not SCCSID */
 
 /*
@@ -322,14 +322,25 @@ node__try(ptr, str, val, ntype)
 	    node__put(ptr->next);	/* lose longer keys with this prefix */
 	    ptr->next = NULL;
 	}
+	switch (ptr->type) {
+	case XK_CMD:
+	    break;
+	case XK_STR:
+	case XK_EXE:
+	    if (ptr->val.str)
+		el_free((ptr_t) ptr->val.str);
+	    break;
+	default:
+	    abort();
+	    break;
+	}
+
 	switch (ptr->type = ntype) {
 	case XK_CMD:
 	    ptr->val = *val;
 	    break;
 	case XK_STR:
 	case XK_EXE:
-	    if (ptr->val.str)
-		el_free((ptr_t) ptr->val.str);
 	    ptr->val.str = strdup(val->str);
 	    break;
 	default:
