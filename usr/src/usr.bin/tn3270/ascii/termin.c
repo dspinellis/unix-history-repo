@@ -37,7 +37,7 @@ static	char	sccsid[] = "@(#)termin.c	3.1  10/29/86";
 #include "../telnet.ext"
 #include "termin.ext"
 
-#include "../apilib/astosc.h"
+#include "../api/astosc.h"
 #include "state.h"
 
 #include "../general/globals.h"

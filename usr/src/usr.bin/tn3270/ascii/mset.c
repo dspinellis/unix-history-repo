@@ -39,7 +39,7 @@ static	char	sccsid[] = "@(#)mset.c	3.1  10/29/86";
 #include "../ctlr/function.h"
 
 #include "state.h"
-#include "../apilib/astosc.h"
+#include "../api/astosc.h"
 
 #include "../general/globals.h"
 #include "map3270.ext"

@@ -123,8 +123,8 @@ depend:
 # DO NOT DELETE THIS LINE
 
 map3270$O: state.h ../general/globals.h map3270.ext default.map
-mset$O: ../ctlr/function.h state.h ../apilib/astosc.h ../general/globals.h
+mset$O: ../ctlr/function.h state.h ../api/astosc.h ../general/globals.h
 mset$O: map3270.ext
 termin$O: ../general/general.h ../ctlr/function.h ../ctlr/inbound.ext
-termin$O: ../ctlr/outbound.ext ../telnet.ext termin.ext ../apilib/astosc.h
-termin$O: state.h ../general/globals.h
+termin$O: ../ctlr/outbound.ext ../telnet.ext termin.ext ../api/astosc.h state.h
+termin$O: ../general/globals.h
