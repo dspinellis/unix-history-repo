@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scc.c	8.1 (Berkeley) %G%
+ *	@(#)scc.c	8.2 (Berkeley) %G%
  */
 
 /* 
@@ -173,7 +173,6 @@ sccprobe(cp)
 		pdp->p_addr = (void *)cp->pmax_addr;
 		pdp->p_arg = (int)tp;
 		pdp->p_fcn = (void (*)())0;
-		tp->t_addr = (caddr_t)pdp;
 		tp->t_dev = (dev_t)((cp->pmax_unit << 1) | cntr);
 		pdp++, tp++;
 	}
@@ -311,7 +310,6 @@ sccopen(dev, flag, mode, p)
 	if (sc->scc_pdma[line].p_addr == (void *)0)
 		return (ENXIO);
 	tp = &scc_tty[minor(dev)];
-	tp->t_addr = (caddr_t)&sc->scc_pdma[line];
 	tp->t_oproc = sccstart;
 	tp->t_param = sccparam;
 	tp->t_dev = dev;
@@ -611,7 +609,7 @@ sccintr(unit)
 		chan = (rr2 == SCC_RR2_A_XMIT_DONE) ?
 			SCC_CHANNEL_A : SCC_CHANNEL_B;
 		tp = &scc_tty[unit | chan];
-		dp = (struct pdma *)tp->t_addr;
+		dp = &sc->scc_pdma[chan];
 		if (dp->p_mem < dp->p_end) {
 			SCC_WRITE_DATA(regs, chan, *dp->p_mem++);
 			MachEmptyWriteBuffer();
@@ -750,9 +748,9 @@ sccstart(tp)
 	u_char temp;
 	int s, sendone;
 
-	dp = (struct pdma *)tp->t_addr;
-	regs = (scc_regmap_t *)dp->p_addr;
 	sc = &scc_softc[SCCUNIT(tp->t_dev)];
+	dp = &sc->scc_pdma[SCCLINE(tp->t_dev)];
+	regs = (scc_regmap_t *)dp->p_addr;
 	s = spltty();
 	if (tp->t_state & (TS_TIMEOUT|TS_BUSY|TS_TTSTOP))
 		goto out;
@@ -831,9 +829,11 @@ sccstop(tp, flag)
 	register struct tty *tp;
 {
 	register struct pdma *dp;
+	register struct scc_softc *sc;
 	register int s;
 
-	dp = (struct pdma *)tp->t_addr;
+	sc = &scc_softc[SCCUNIT(tp->t_dev)];
+	dp = &sc->scc_pdma[SCCLINE(tp->t_dev)];
 	s = spltty();
 	if (tp->t_state & TS_BUSY) {
 		dp->p_end = dp->p_mem;
@@ -919,8 +919,8 @@ scc_modem_intr(dev)
 
 	sc = &scc_softc[SCCUNIT(dev)];
 	tp = &scc_tty[minor(dev)];
-	regs = (scc_regmap_t *)((struct pdma *)tp->t_addr)->p_addr;
 	chan = SCCLINE(dev);
+	regs = (scc_regmap_t *)sc->scc_pdma[chan].p_addr;
 	if (chan == SCC_CHANNEL_A)
 		return;
 	s = spltty();

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sii.c	8.1 (Berkeley) %G%
+ *	@(#)sii.c	8.2 (Berkeley) %G%
  *
  * from: $Header: /sprite/src/kernel/dev/ds3100.md/RCS/devSII.c,
  *	v 9.2 89/09/14 13:37:41 jhh Exp $ SPRITE (DECWRL)";
@@ -373,8 +373,8 @@ sii_StartCmd(sc, target)
 			(volatile u_short *)SII_BUF_ADDR, 6);
 		regs->slcsr = target;
 		regs->dmctrl = 0;
-		regs->dmaddrl = ((unsigned)SII_BUF_ADDR >> 1);
-		regs->dmaddrh = ((unsigned)SII_BUF_ADDR >> 17) & 03;
+		regs->dmaddrl = ((u_short)SII_BUF_ADDR >> 1);
+		regs->dmaddrh = ((u_short)SII_BUF_ADDR >> 17) & 03;
 		regs->dmlotc = 6;
 		regs->comm = SII_DMA | SII_INXFER | SII_SELECT | SII_ATN |
 			SII_CON | SII_MSG_OUT_PHASE;
@@ -1458,8 +1458,8 @@ sii_GetByte(regs, phase)
 			regs->cstat, regs->dstat, regs->comm); /* XXX */
 		regs->dstat = SII_DNE;
 	}
-	regs->dmaddrl = ((unsigned)SII_BUF_ADDR >> 1);
-	regs->dmaddrh = ((unsigned)SII_BUF_ADDR >> 17) & 03;
+	regs->dmaddrl = ((u_short)SII_BUF_ADDR >> 1);
+	regs->dmaddrh = ((u_short)SII_BUF_ADDR >> 17) & 03;
 	regs->dmlotc = 1;
 	regs->comm = SII_DMA | SII_INXFER | state | phase;
 	MachEmptyWriteBuffer();
@@ -1509,8 +1509,8 @@ sii_DoSync(regs, state)
 	sii_buf[2] = SCSI_SYNCHRONOUS_XFER;
 	sii_buf[4] = len;
 	CopyToBuffer((u_short *)sii_buf, (volatile u_short *)SII_BUF_ADDR, 5);
-	regs->dmaddrl = ((unsigned)SII_BUF_ADDR >> 1);
-	regs->dmaddrh = ((unsigned)SII_BUF_ADDR >> 17) & 03;
+	regs->dmaddrl = ((u_short)SII_BUF_ADDR >> 1);
+	regs->dmaddrh = ((u_short)SII_BUF_ADDR >> 17) & 03;
 	regs->dmlotc = 5;
 	regs->comm = SII_DMA | SII_INXFER | SII_ATN |
 		(regs->cstat & SII_STATE_MSK) | SII_MSG_OUT_PHASE;

@@ -22,7 +22,7 @@
  * from: $Header: /sprite/src/kernel/vm/ds3100.md/vmPmaxAsm.s,
  *	v 1.1 89/07/10 14:27:41 nelson Exp $ SPRITE (DECWRL)
  *
- *	@(#)locore.s	8.3 (Berkeley) %G%
+ *	@(#)locore.s	8.4 (Berkeley) %G%
  */
 
 /*
@@ -400,9 +400,14 @@ nomatch:
 END(bcmp)
 
 /*
+ * memcpy(to, from, len)
  * {ov}bcopy(from, to, len)
  */
-LEAF(bcopy)
+LEAF(memcpy)
+	move	v0, a0			# swap from and to
+	move	a0, a1
+	move	a1, v0
+ALEAF(bcopy)
 ALEAF(ovbcopy)
 	addu	t0, a0, a2		# t0 = end of s1 region
 	sltu	t1, a1, t0
@@ -414,74 +419,74 @@ ALEAF(ovbcopy)
 	ble	a2, zero, 2f
 	addu	t1, a1, a2		# t1 = end of to region
 1:
-	lb	v0, -1(t0)		# copy bytes backwards,
+	lb	v1, -1(t0)		# copy bytes backwards,
 	subu	t0, t0, 1		#   doesnt happen often so do slow way
 	subu	t1, t1, 1
 	bne	t0, a0, 1b
-	sb	v0, 0(t1)
+	sb	v1, 0(t1)
 2:
 	j	ra
 	nop
 forward:
 	bne	t2, zero, smallcpy	# do a small bcopy
-	xor	v0, a0, a1		# compare low two bits of addresses
-	and	v0, v0, 3
+	xor	v1, a0, a1		# compare low two bits of addresses
+	and	v1, v1, 3
 	subu	a3, zero, a1		# compute # bytes to word align address
-	beq	v0, zero, aligned	# addresses can be word aligned
+	beq	v1, zero, aligned	# addresses can be word aligned
 	and	a3, a3, 3
 
 	beq	a3, zero, 1f
 	subu	a2, a2, a3		# subtract from remaining count
-	lwr	v0, 0(a0)		# get next 4 bytes (unaligned)
-	lwl	v0, 3(a0)
+	lwr	v1, 0(a0)		# get next 4 bytes (unaligned)
+	lwl	v1, 3(a0)
 	addu	a0, a0, a3
-	swr	v0, 0(a1)		# store 1, 2, or 3 bytes to align a1
+	swr	v1, 0(a1)		# store 1, 2, or 3 bytes to align a1
 	addu	a1, a1, a3
 1:
-	and	v0, a2, 3		# compute number of words left
-	subu	a3, a2, v0
-	move	a2, v0
+	and	v1, a2, 3		# compute number of words left
+	subu	a3, a2, v1
+	move	a2, v1
 	addu	a3, a3, a0		# compute ending address
 2:
-	lwr	v0, 0(a0)		# copy words a0 unaligned, a1 aligned
-	lwl	v0, 3(a0)
+	lwr	v1, 0(a0)		# copy words a0 unaligned, a1 aligned
+	lwl	v1, 3(a0)
 	addu	a0, a0, 4
 	addu	a1, a1, 4
 	bne	a0, a3, 2b
-	sw	v0, -4(a1)
+	sw	v1, -4(a1)
 	b	smallcpy
 	nop
 aligned:
 	beq	a3, zero, 1f
 	subu	a2, a2, a3		# subtract from remaining count
-	lwr	v0, 0(a0)		# copy 1, 2, or 3 bytes to align
+	lwr	v1, 0(a0)		# copy 1, 2, or 3 bytes to align
 	addu	a0, a0, a3
-	swr	v0, 0(a1)
+	swr	v1, 0(a1)
 	addu	a1, a1, a3
 1:
-	and	v0, a2, 3		# compute number of whole words left
-	subu	a3, a2, v0
-	move	a2, v0
+	and	v1, a2, 3		# compute number of whole words left
+	subu	a3, a2, v1
+	move	a2, v1
 	addu	a3, a3, a0		# compute ending address
 2:
-	lw	v0, 0(a0)		# copy words
+	lw	v1, 0(a0)		# copy words
 	addu	a0, a0, 4
 	addu	a1, a1, 4
 	bne	a0, a3, 2b
-	sw	v0, -4(a1)
+	sw	v1, -4(a1)
 smallcpy:
 	ble	a2, zero, 2f
 	addu	a3, a2, a0		# compute ending address
 1:
-	lbu	v0, 0(a0)		# copy bytes
+	lbu	v1, 0(a0)		# copy bytes
 	addu	a0, a0, 1
 	addu	a1, a1, 1
 	bne	a0, a3, 1b
-	sb	v0, -1(a1)
+	sb	v1, -1(a1)
 2:
 	j	ra
-	move	v0, zero
-END(bcopy)
+	nop
+END(memcpy)
 
 /*
  * Copy a null terminated string within the kernel address space.
