@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)nlist.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)nlist.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -102,7 +102,7 @@ create_knlist(name, db)
 			error("put");
 
 		if (strcmp((char *)key.data, VRS_SYM) == 0) {
-			off_t cur_off, voff;
+			long cur_off, voff;
 #ifndef KERNTEXTOFF
 #define KERNTEXTOFF KERNBASE
 #endif
