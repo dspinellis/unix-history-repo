@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)dprog.c	4.2	(Berkeley)	82/11/06";
+static char sccsid[] = "@(#)dprog.c	4.3	(Berkeley)	89/05/11";
 #endif not lint
 
 /*
@@ -13,6 +13,7 @@ static char sccsid[] = "@(#)dprog.c	4.2	(Berkeley)	82/11/06";
 
 #include <stdio.h>
 #include <ctype.h>
+#include "pathnames.h"
 
 #define	MAXSIZ 6500
 #define QSIZE 650
@@ -98,7 +99,7 @@ char *argv[];
 		}
 out:
 	if(nflag){
-		wordf = fopen(DICT,"r");
+		wordf = fopen(_PATH_DICT,"r");
 		if(wordf == NULL){
 			fprintf(stderr,"diction: can't open default dictionary\n");
 			exit(2);

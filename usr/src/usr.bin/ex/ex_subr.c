@@ -5,13 +5,14 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_subr.c	7.11 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_subr.c	7.12 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
 #include "ex_re.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
+#include "pathnames.h"
 
 /*
  * Random routines, in alphabetical order.
@@ -898,7 +899,7 @@ preserve()
 	if (pid == 0) {
 		close(0);
 		dup(tfile);
-		execl(EXPRESERVE, "expreserve", (char *) 0);
+		execl(_PATH_EXPRESERVE, "expreserve", (char *) 0);
 		ex_exit(1);
 	}
 	waitfor();

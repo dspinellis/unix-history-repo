@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)crypt.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)crypt.c	4.4 (Berkeley) %G%";
 
 /*
  *	A one-rotor machine designed along the lines of Enigma
@@ -7,6 +7,7 @@ static char *sccsid = "@(#)crypt.c	4.3 (Berkeley) %G%";
 
 #define ECHO 010
 #include <stdio.h>
+#include "pathnames.h"
 #define ROTORSZ 256
 #define MASK 0377
 char	t1[ROTORSZ];
@@ -35,8 +36,7 @@ char *pw;
 		close(1);
 		dup(pf[0]);
 		dup(pf[1]);
-		execl("/usr/lib/makekey", "-", 0);
-		execl("/lib/makekey", "-", 0);
+		execl(_PATH_MAKEKEY, "-", 0);
 		exit(1);
 	}
 	write(pf[1], buf, 10);

@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -54,7 +54,7 @@ static char sccsid[] = "@(#)fstat.c	5.17 (Berkeley) %G%";
 #include <nlist.h>
 #include <pwd.h>
 #include <strings.h>
-#include "pathnames.h"
+#include <paths.h>
 
 #ifdef	ULTRIX
 		/* UFS -> GFS */
@@ -215,7 +215,7 @@ getu()
 		if (read(swap, (char *)&user.user, sizeof(struct user))
 		    != sizeof(struct user)) {
 			VP("fstat: can't read u for pid %d from %s\n",
-			    mproc->p_pid, _PATH_SWAP);
+			    mproc->p_pid, _PATH_DRUM);
 			return(0);
 		}
 		return(1);
@@ -224,7 +224,7 @@ getu()
 	(void)lseek(kmem, (off_t)pteaddr, L_SET);
 	if (read(kmem, (char *)&apte, sizeof(apte)) != sizeof(apte)) {
 		VP("fstat: can't read indir pte to get u for pid %d from %s\n",
-		    mproc->p_pid, _PATH_SWAP);
+		    mproc->p_pid, _PATH_DRUM);
 		return(0);
 	}
 	(void)lseek(mem, (off_t)ctob(apte.pg_pfnum+1) - (UPAGES+CLSIZE)
@@ -602,9 +602,9 @@ openfiles()
 		    strerror(errno), _PATH_MEM);
 		exit(1);
 	}
-	if ((swap = open(_PATH_SWAP, O_RDONLY, 0)) < 0) {
+	if ((swap = open(_PATH_DRUM, O_RDONLY, 0)) < 0) {
 		(void)fprintf(stderr, "fstat: %s: %s\n",
-		    strerror(errno), _PATH_SWAP);
+		    strerror(errno), _PATH_DRUM);
 		exit(1);
 	}
 }

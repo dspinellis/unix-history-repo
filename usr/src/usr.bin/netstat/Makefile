@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -36,7 +36,7 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g kmem -m 2755 netstat ${DESTDIR}/usr/ucb/netstat
+	install -s -o bin -g kmem -m 2755 netstat ${DESTDIR}/usr/bin
 	install -c -o bin -g bin -m 444 netstat.0 ${DESTDIR}/usr/man/cat1
 
 lint: ${SRCS}

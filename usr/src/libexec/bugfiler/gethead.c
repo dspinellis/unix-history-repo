@@ -16,12 +16,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gethead.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethead.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <bug.h>
 #include <sys/stat.h>
 #include <stdio.h>
+#include "pathnames.h"
 
 static int	chk1(), pbuf();
 
@@ -58,7 +59,7 @@ gethead(redist)
 		int	fd;
 		char	*distf;
 
-		distf = "/tmp/BUG_XXXXXX";
+		distf = _PATH_TMP;
 		if (!(fd = mkstemp(distf)) || !(dfp = fdopen(fd, "w+")))
 			error("can't create redistribution file %s.", distf);
 		/* disappear after last reference is closed */

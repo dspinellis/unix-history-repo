@@ -16,10 +16,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "tip.h"
+#include "pathnames.h"
+
 /*
  * tip
  *
@@ -808,7 +810,7 @@ expand(name)
 	if ((pid = vfork()) == 0) {
 		Shell = value(SHELL);
 		if (Shell == NOSTR)
-			Shell = "/bin/sh";
+			Shell = _PATH_BSHELL;
 		close(pivec[0]);
 		close(1);
 		dup(pivec[1]);

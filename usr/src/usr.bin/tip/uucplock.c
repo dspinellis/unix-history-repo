@@ -16,18 +16,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)uucplock.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)uucplock.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/file.h>
 #include <sys/dir.h>
 #include <errno.h>
-
-/* pick the directory naming scheme you are using */
-
-#define LOCKDIRNAME	"/usr/spool/uucp/LCK..%s"	/**/
-/* #define LOCKDIRNAME	"/usr/spool/uucp/LCK/LCK..%s"	/**/
+#include "pathnames.h"
 
 /* 
  * uucp style locking routines
@@ -40,10 +36,10 @@ uu_lock(ttyname)
 {
 	extern int errno;
 	int fd, pid;
-	char tbuf[sizeof(LOCKDIRNAME) + MAXNAMLEN];
+	char tbuf[sizeof(_PATH_LOCKDIRNAME) + MAXNAMLEN];
 	off_t lseek();
 
-	(void)sprintf(tbuf, LOCKDIRNAME, ttyname);
+	(void)sprintf(tbuf, _PATH_LOCKDIRNAME, ttyname);
 	fd = open(tbuf, O_RDWR|O_CREAT|O_EXCL, 0660);
 	if (fd < 0) {
 		/*
@@ -90,8 +86,8 @@ uu_lock(ttyname)
 uu_unlock(ttyname)
 	char *ttyname;
 {
-	char tbuf[sizeof(LOCKDIRNAME) + MAXNAMLEN];
+	char tbuf[sizeof(_PATH_LOCKDIRNAME) + MAXNAMLEN];
 
-	(void)sprintf(tbuf, LOCKDIRNAME, ttyname);
+	(void)sprintf(tbuf, _PATH_LOCKDIRNAME, ttyname);
 	return(unlink(tbuf));
 }

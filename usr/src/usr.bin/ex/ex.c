@@ -11,13 +11,14 @@ char *copyright =
 #endif not lint
 
 #ifndef lint
-static char *sccsid = "@(#)ex.c	7.6.1.1 (Berkeley) %G%";
+static char *sccsid = "@(#)ex.c	7.7 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
 #include "ex_tty.h"
+#include "pathnames.h"
 
 #ifdef TRACE
 #ifdef	vms
@@ -256,6 +257,12 @@ main(ac, av)
 				defwind = 10*defwind + *cp - '0';
 			break;
 
+#ifdef CRYPT
+		case 'x':
+			/* -x: encrypted mode */
+			xflag = 1;
+			break;
+#endif
 
 		default:
 			smerror("Unknown option %s\n", av[0]);
@@ -274,6 +281,12 @@ main(ac, av)
 		ac--, av++;
 	}
 
+#ifdef CRYPT
+	if(xflag){
+		key = getpass(KEYPROMPT);
+		kflag = crinit(key, perm);
+	}
+#endif
 
 	/*
 	 * If we are doing a recover and no filename
@@ -286,8 +299,8 @@ main(ac, av)
 		if (ac == 0) {
 			ppid = 0;
 			setrupt();
-			execl(EXRECOVER, "exrecover", "-r", 0);
-			filioerr(EXRECOVER);
+			execl(_PATH_EXRECOVER, "exrecover", "-r", 0);
+			filioerr(_PATH_EXRECOVER);
 			ex_exit(1);
 		}
 		CP(savedfile, *av++), ac--;
@@ -466,6 +479,12 @@ init()
 	for (i = 0; i <= 'z'-'a'+1; i++)
 		names[i] = 1;
 	anymarks = 0;
+#ifdef CRYPT
+        if(xflag) {
+                xtflag = 1;
+                makekey(key, tperm);
+        }
+#endif
 }
 
 /*

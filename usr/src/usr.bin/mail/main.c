@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -190,7 +190,7 @@ Usage: mail [-iInv] [-s subject] [-c cc-addr] [-b bcc-addr] to-addr ...\n\
 	rcvmode = !to;
 	spreserve();
 	if (!nosrc)
-		load(MASTER);
+		load(_PATH_MASTER_RC);
 	/*
 	 * Expand returns a savestr, but load only uses the file name
 	 * for fopen, so it's save to do this.

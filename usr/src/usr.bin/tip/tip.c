@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tip.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)tip.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -32,6 +32,7 @@ static char sccsid[] = "@(#)tip.c	5.8 (Berkeley) %G%";
  *  cu phone-number [-s speed] [-l line] [-a acu]
  */
 #include "tip.h"
+#include "pathnames.h"
 
 /*
  * Baud rate mapping table
@@ -139,7 +140,7 @@ notnumber:
 	 *   in the right order, so force it here
 	 */
 	if ((PH = getenv("PHONES")) == NOSTR)
-		PH = "/etc/phones";
+		PH = _PATH_PHONES;
 	vinit();				/* init variables */
 	setparity("even");			/* set the parity table */
 	if ((i = speed(number(value(BAUDRATE)))) == NULL) {

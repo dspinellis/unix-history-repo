@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)temp.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)temp.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -27,23 +27,29 @@ static char sccsid[] = "@(#)temp.c	5.11 (Berkeley) %G%";
  * Give names to all the temporary files that we will need.
  */
 
-char	tempMail[14];
-char	tempQuit[14];
-char	tempEdit[14];
-char	tempSet[14];
-char	tempResid[14];
-char	tempMesg[14];
+char	tempMail[24];
+char	tempQuit[24];
+char	tempEdit[24];
+char	tempSet[24];
+char	tempResid[24];
+char	tempMesg[24];
 
 tinit()
 {
 	register char *cp;
 
-	mktemp(strcpy(tempMail, "/tmp/RsXXXXXX"));
-	mktemp(strcpy(tempResid, "/tmp/RqXXXXXX"));
-	mktemp(strcpy(tempQuit, "/tmp/RmXXXXXX"));
-	mktemp(strcpy(tempEdit, "/tmp/ReXXXXXX"));
-	mktemp(strcpy(tempSet, "/tmp/RxXXXXXX"));
-	mktemp(strcpy(tempMesg, "/tmp/RxXXXXXX"));
+	strcpy(tempMail, _PATH_TMP);
+	mktemp(strcat(tempMail, "/RsXXXXXX"));
+	strcpy(tempResid, _PATH_TMP);
+	mktemp(strcat(tempResid, "/RqXXXXXX"));
+	strcpy(tempQuit, _PATH_TMP);
+	mktemp(strcat(tempQuit, "/RmXXXXXX"));
+	strcpy(tempEdit, _PATH_TMP);
+	mktemp(strcat(tempEdit, "/ReXXXXXX"));
+	strcpy(tempSet, _PATH_TMP);
+	mktemp(strcat(tempSet, "/RxXXXXXX"));
+	strcpy(tempMesg, _PATH_TMP);
+	mktemp(strcat(tempMesg, "/RxXXXXXX"));
 
 	/*
 	 * It's okay to call savestr in here because main will

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd3.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd3.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -42,7 +42,7 @@ shell(str)
 	if (bangexp(cmd) < 0)
 		return 1;
 	if ((shell = value("SHELL")) == NOSTR)
-		shell = SHELL;
+		shell = _PATH_CSHELL;
 	(void) run_command(shell, 0, -1, -1, "-c", cmd, NOSTR);
 	(void) signal(SIGINT, sigint);
 	printf("!\n");
@@ -60,7 +60,7 @@ dosh(str)
 	char *shell;
 
 	if ((shell = value("SHELL")) == NOSTR)
-		shell = SHELL;
+		shell = _PATH_CSHELL;
 	(void) run_command(shell, 0, -1, -1, NOSTR);
 	(void) signal(SIGINT, sigint);
 	putchar('\n');
@@ -130,8 +130,8 @@ help()
 	register c;
 	register FILE *f;
 
-	if ((f = fopen(HELPFILE, "r")) == NULL) {
-		perror(HELPFILE);
+	if ((f = fopen(_PATH_HELP, "r")) == NULL) {
+		perror(_PATH_HELP);
 		return(1);
 	}
 	while ((c = getc(f)) != EOF)

@@ -1,9 +1,13 @@
-#! /bin/sh
+#!/bin/sh -
 #
-#	@(#)suggest.sh	4.4	(Berkeley)	82/11/06
+# Copyright (c) 1988 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)suggest.sh	5.2 (Berkeley) %G%
 #
 trap 'rm $$; exit' 1 2 3 15
-D=/usr/lib/explain.d
+D=/usr/share/dict/explain.d
 while echo "phrase?";read x
 do
 cat >$$ <<dn

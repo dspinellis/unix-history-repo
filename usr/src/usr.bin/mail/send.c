@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)send.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)send.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -320,10 +320,10 @@ mail1(hp, printheaders)
 		goto out;
 	}
 	if (pid == 0) {
-		if (access(POSTAGE, 0) == 0) {
+		if (access(_PATH_MAIL_LOG, 0) == 0) {
 			FILE *postage;
 
-			if ((postage = fopen(POSTAGE, "a")) != NULL) {
+			if ((postage = fopen(_PATH_MAIL_LOG, "a")) != NULL) {
 				fprintf(postage, "%s %d %ld\n", myname,
 				    count(to), fsize(mtf));
 				(void) fclose(postage);
@@ -335,7 +335,7 @@ mail1(hp, printheaders)
 		if ((cp = value("sendmail")) != NOSTR)
 			cp = expand(cp);
 		else
-			cp = SENDMAIL;
+			cp = _PATH_SENDMAIL;
 		execv(cp, namelist);
 		perror(cp);
 		_exit(1);

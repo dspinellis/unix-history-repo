@@ -16,16 +16,16 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	3.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	3.36 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
 #include <sys/signal.h>
+#include <paths.h>
 #include <stdio.h>
 #include "string.h"
 #include "char.h"
 #include "local.h"
-#include "pathnames.h"
 
 #define next(a) (*++*(a) ? *(a) : (*++(a) ? *(a) : (char *)usage()))
 

@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
@@ -38,7 +38,7 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o root -g bin -m 4755 rlogin ${DESTDIR}/usr/ucb/rlogin
+	install -s -o root -g bin -m 4755 rlogin ${DESTDIR}/usr/bin
 	install -c -o bin -g bin -m 444 rlogin.0 ${DESTDIR}/usr/man/cat1
 
 lint: ${SRCS}

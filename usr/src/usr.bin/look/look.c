@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)look.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)look.c	4.7 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -19,6 +19,7 @@ static char sccsid[] = "@(#)look.c	4.6 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <stdio.h>
 #include <ctype.h>
+#include "pathnames.h"
 
 #define	EOS		'\0'
 #define	MAXLINELEN	250
@@ -32,7 +33,7 @@ main(argc, argv)
 {
 	extern char	*optarg;
 	extern int	optind;
-	static char	*filename = "/usr/share/dict/words";
+	static char	*filename = _PATH_WORDS;
 	register off_t	bot, mid, top;
 	register int	c;
 	struct stat	sb;

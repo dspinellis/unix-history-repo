@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd1.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd1.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -291,7 +291,7 @@ type1(msgvec, doign, page)
 		if (page || nlines > (*cp ? atoi(cp) : realscreenheight)) {
 			cp = value("PAGER");
 			if (cp == NULL || *cp == '\0')
-				cp = MORE;
+				cp = _PATH_MORE;
 			obuf = Popen(cp, "w");
 			if (obuf == NULL) {
 				perror(cp);

@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	1.12 (Berkeley) %G%
+#	@(#)Makefile	1.13 (Berkeley) %G%
 #
 
 # The following is the telnet makefile.  The sources are down one level
@@ -59,7 +59,7 @@ depend: FRC ${SRCS}
 	mkdep ${CFLAGS} `make clist`
 
 install: FRC
-	install -s -o bin -g bin -m 755 telnet ${DESTDIR}/usr/ucb/telnet
+	install -s -o bin -g bin -m 755 telnet ${DESTDIR}/usr/bin
 
 lint: FRC ${SRCS}
 	lint ${CFLAGS} `make clist`
@@ -68,49 +68,3 @@ tags: FRC ${SRCS}
 	ctags `make hclist`
 
 FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-commands.o: Source/commands.c /usr/include/sys/types.h
-commands.o: /usr/include/sys/socket.h /usr/include/netinet/in.h
-commands.o: /usr/include/signal.h /usr/include/machine/trap.h
-commands.o: /usr/include/netdb.h /usr/include/ctype.h
-commands.o: /usr/include/arpa/telnet.h Source/ring.h Source/externs.h
-commands.o: /usr/include/stdio.h /usr/include/setjmp.h Source/defines.h
-commands.o: Source/types.h
-main.o: Source/main.c /usr/include/sys/types.h Source/ring.h Source/externs.h
-main.o: /usr/include/stdio.h /usr/include/setjmp.h Source/defines.h
-network.o: Source/network.c /usr/include/sys/types.h /usr/include/sys/socket.h
-network.o: /usr/include/sys/time.h /usr/include/time.h /usr/include/errno.h
-network.o: /usr/include/arpa/telnet.h Source/ring.h Source/defines.h
-network.o: Source/externs.h /usr/include/stdio.h /usr/include/setjmp.h
-network.o: Source/fdset.h
-ring.o: Source/ring.c /usr/include/stdio.h /usr/include/errno.h
-ring.o: /usr/include/sys/types.h /usr/include/sys/ioctl.h
-ring.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-ring.o: /usr/include/sys/socket.h Source/ring.h Source/general.h
-sys_bsd.o: Source/sys_bsd.c /usr/include/sys/ioctl.h
-sys_bsd.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-sys_bsd.o: /usr/include/sys/types.h /usr/include/sys/time.h /usr/include/time.h
-sys_bsd.o: /usr/include/sys/socket.h /usr/include/signal.h
-sys_bsd.o: /usr/include/machine/trap.h /usr/include/errno.h Source/ring.h
-sys_bsd.o: Source/fdset.h Source/defines.h Source/externs.h
-sys_bsd.o: /usr/include/stdio.h /usr/include/setjmp.h Source/types.h
-sys_dos.o: Source/sys_dos.c
-telnet.o: Source/telnet.c /usr/include/sys/types.h /usr/include/curses.h
-telnet.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-telnet.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-telnet.o: /usr/include/arpa/telnet.h /usr/include/strings.h Source/ring.h
-telnet.o: Source/defines.h Source/externs.h /usr/include/stdio.h
-telnet.o: /usr/include/setjmp.h Source/types.h Source/general.h
-telnet.o: /usr/include/varargs.h
-terminal.o: Source/terminal.c /usr/include/arpa/telnet.h
-terminal.o: /usr/include/sys/types.h Source/ring.h Source/externs.h
-terminal.o: /usr/include/stdio.h /usr/include/setjmp.h Source/types.h
-tn3270.o: Source/tn3270.c Source/fdset.h
-utilities.o: Source/utilities.c /usr/include/arpa/telnet.h
-utilities.o: /usr/include/sys/types.h /usr/include/ctype.h Source/ring.h
-utilities.o: Source/externs.h /usr/include/stdio.h /usr/include/setjmp.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY

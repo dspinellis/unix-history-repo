@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ruptime.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ruptime.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -40,7 +40,6 @@ struct hs {
 struct	whod awhod;
 
 #define	WHDRSIZE	(sizeof (awhod) - sizeof (awhod.wd_we))
-#define	RWHODIR		"/usr/spool/rwho"
 #define	down(h)		(now - (h)->hs_wd->wd_recvtime > 11 * 60)
 
 time_t	now;
@@ -88,8 +87,8 @@ main(argc, argv)
 			exit(1);
 		}
 
-	if (chdir(RWHODIR) || (dirp = opendir(".")) == NULL) {
-		perror(RWHODIR);
+	if (chdir(_PATH_RWHODIR) || (dirp = opendir(".")) == NULL) {
+		perror(_PATH_RWHODIR);
 		exit(1);
 	}
 	while (dp = readdir(dirp)) {

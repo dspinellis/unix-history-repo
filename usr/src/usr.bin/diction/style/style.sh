@@ -1,9 +1,9 @@
 #! /bin/sh
 #
-#	@(#)style.sh	4.5	(Berkeley)	82/11/06
+#	@(#)style.sh	4.6	(Berkeley)	89/05/11
 #
-L=/usr/lib
-B=/usr/bin
+L=/usr/libexec
+B=/usr/ucb
 echo " " $*
 sflag=-s
 eflag=
