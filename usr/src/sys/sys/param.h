@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.14 (Berkeley) %G%
+ *	@(#)param.h	7.15 (Berkeley) %G%
  */
 
 #define	BSD	199003		/* system version (year & month) */
@@ -40,7 +40,6 @@
 #define	PUSER	50
 #define	PRIMASK	0x0ff
 #define	PCATCH	0x100		/* or'd with pri for tsleep to check signals */
-#define	PABORT	0x200		/* or'd with pri for tsleep to longjmp XXX */
 
 #define	NZERO	0
 
