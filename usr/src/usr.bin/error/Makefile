@@ -1,49 +1,57 @@
 #
-# Copyright (c) 1980 Regents of the University of California.
+# Copyright (c) 1987 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3	(Berkeley)	%G%
 #
-#
-#	error.h			error header file
-#	errorinput.c		does all of the input, and canonicalizes errors
-#	errorpi.c		canonicalizes pi errors
-#	errormain.c		main
-#	errorsubr.c		does grotty subroutine work
-#	errorfilter.c		"greps" out unwanted messages
-#	errortouch.c		touches all mentioned files
-#
+CFLAGS=	-O -DDEBUG
+LIBC=	/lib/libc.a
+SRCS=	errormain.c errorinput.c errorpi.c errorsubr.c errorfilter.c \
+	errortouch.c
+OBJS=	errormain.o errorinput.o errorpi.o errorsubr.o errorfilter.o \
+	errortouch.o
 
-HDRS = error.h
-PHDRS = $(HDRS)
-SRCS = errormain.c errorinput.c errorpi.c errorsubr.c errorfilter.c errortouch.c
-PSRCS = $(SRCS)
-OBJS = errormain.o errorinput.o errorpi.o errorsubr.o errorfilter.o errortouch.o
+all: error
 
-DFLAGS = -DDEBUG
-CFLAGS =  -O $(DFLAGS)
+error:	${OBJS} ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${OBJS}
 
-LINTFLAGS = $(DFLAGS)
+clean: FRC
+	rm -f ${OBJS} core error
 
-error:	$(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o error
+depend: FRC
+	mkdep ${CFLAGS} ${SRCS}
 
-$(OBJS): $(HDRS)
+install: FRC
+	install -s -o bin -g bin -m 755 error ${DESTDIR}/usr/ucb/error
 
-install:
-	install -s error $(DESTDIR)/usr/ucb
+lint: FRC
+	lint ${CFLAGS} ${SRCS}
 
-clean:
-	rm -f error $(OBJS)
+tags: FRC
+	ctags ${SRCS}
 
-lint:	
-	lint $(LINTFLAGS) $(SRCS)
+FRC:
 
-psrcs:
-	echo $(PHDRS) $(PSRCS)
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
 
-print:
-	print $(PHDRS) $(PSRCS)
+errormain.o: errormain.c /usr/include/stdio.h /usr/include/ctype.h
+errormain.o: /usr/include/signal.h
+errormain.o:error.h
+errorinput.o: errorinput.c /usr/include/stdio.h /usr/include/ctype.h
+errorinput.o:error.h
+errorpi.o: errorpi.c /usr/include/stdio.h /usr/include/ctype.h
+errorpi.o:error.h
+errorsubr.o: errorsubr.c /usr/include/stdio.h /usr/include/ctype.h
+errorsubr.o:error.h
+errorfilter.o: errorfilter.c /usr/include/stdio.h /usr/include/ctype.h
+errorfilter.o: /usr/include/pwd.h
+errorfilter.o:error.h
+errortouch.o: errortouch.c /usr/include/stdio.h /usr/include/ctype.h
+errortouch.o: /usr/include/sys/types.h /usr/include/sys/stat.h
+errortouch.o: /usr/include/signal.h
+errortouch.o:error.h
 
-depend:
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
