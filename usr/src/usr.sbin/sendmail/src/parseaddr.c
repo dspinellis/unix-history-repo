@@ -7,10 +7,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.58 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.58.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
+
+static int	callsubr __P((char **, int, ENVELOPE *));
 
 /*
 **  PARSEADDR -- Parse an address
@@ -1146,41 +1148,13 @@ rewrite(pvp, ruleset, reclevel, e)
 		*/
 
 		if (**npvp == CALLSUBR)
-		{
-			int stat;
+		rstat = callsubr(npvp, reclevel, e);
 
-			if (npvp[1] == NULL)
-			{
-				syserr("parseaddr: NULL subroutine call in ruleset %d, rule %d",
-					ruleset, ruleno);
-				*pvp = NULL;
-			}
-			else
-			{
-				int ruleset;
-				STAB *s;
+		/* copy vector back into original space */
+		for (avp = npvp; *avp++ != NULL; )
+			continue;
+		bcopy(npvp, pvp, (avp - npvp) * sizeof *avp);
 
-				bcopy((char *) &npvp[2], (char *) pvp,
-					(int) (avp - npvp - 2) * sizeof *avp);
-				if (tTd(21, 3))
-					printf("-----callsubr %s\n", npvp[1]);
-				s = stab(npvp[1], ST_RULESET, ST_FIND);
-				if (s == NULL)
-					ruleset = atoi(npvp[1]);
-				else
-					ruleset = s->s_ruleset;
-				stat = rewrite(pvp, ruleset, reclevel, e);
-				if (rstat == EX_OK || stat == EX_TEMPFAIL)
-					rstat = stat;
-				if (*pvp != NULL && (**pvp & 0377) == CANONNET)
-				rwr = NULL;
-			}
-		}
-		else
-		{
-			bcopy((char *) npvp, (char *) pvp,
-				(int) (avp - npvp) * sizeof *avp);
-		}
 		if (tTd(21, 4))
 		{
 			printf("rewritten as:");
@@ -1195,6 +1169,70 @@ rewrite(pvp, ruleset, reclevel, e)
 	}
 
 	return rstat;
+}
+/*
+**  CALLSUBR -- call subroutines in rewrite vector
+**
+**	Parameters:
+**		pvp -- pointer to token vector.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		pvp is modified.
+*/
+
+static int
+callsubr(pvp, reclevel, e)
+	char **pvp;
+	int reclevel;
+	ENVELOPE *e;
+{
+	char **rvp;
+	int subr;
+	int stat;
+	STAB *s;
+
+	for (; *pvp != NULL; pvp++)
+	{
+		if ((**pvp & 0377) == CALLSUBR && pvp[1] != NULL)
+			break;
+	}
+	if (*pvp == NULL)
+		return EX_OK;
+
+	if (tTd(21, 3))
+		printf("-----callsubr %s\n", pvp[1]);
+
+	s = stab(pvp[1], ST_RULESET, ST_FIND);
+	if (s == NULL)
+		subr = atoi(pvp[1]);
+	else
+		subr = s->s_ruleset;
+
+	/*
+	**  Take care of possible inner calls.
+	*/
+
+	stat = callsubr(&pvp[2], reclevel, e);
+	if (stat != EX_OK)
+		return stat;
+
+	/*
+	**  Move vector up over calling opcode.
+	*/
+
+	for (rvp = &pvp[2]; *rvp != NULL; rvp++)
+		rvp[-2] = rvp[0];
+	rvp[-2] = NULL;
+
+	/*
+	**  Call inferior ruleset.
+	*/
+
+	stat = rewrite(pvp, subr, reclevel, e);
+	return stat;
 }
 /*
 **  BUILDADDR -- build address from token vector.
