@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.58 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.59 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -440,9 +440,7 @@ main(argc, argv, envp)
 			  case MD_TEST:
 			  case MD_INITALIAS:
 			  case MD_PRINT:
-#ifdef MAYBE_NEXT_RELEASE
 			  case MD_ARPAFTP:
-#endif
 				OpMode = j;
 				break;
 
@@ -888,13 +886,28 @@ main(argc, argv, envp)
 			  case '#':
 				continue;
 
-#ifdef MAYBENEXTRELEASE
-			  case 'C':		/* try crackaddr */
+			  case '?':		/* try crackaddr */
 			  	q = crackaddr(&buf[1]);
 			  	xputs(q);
 			  	printf("\n");
 			  	continue;
-#endif
+
+			  case '.':		/* config-style settings */
+				switch (buf[1])
+				{
+				  case 'D':
+					define(buf[2], &buf[3], CurEnv);
+					break;
+
+				  case 'C':
+					setclass(buf[2], &buf[3]);
+					break;
+
+				  default:
+					printf("Unknown config command %s", buf);
+					break;
+				  }
+				  continue;
 			}
 
 			for (p = buf; isascii(*p) && isspace(*p); p++)
