@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.34 (Berkeley) %G%
+ *	@(#)vnode.h	7.35 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -35,7 +35,7 @@ enum vtagtype	{ VT_NON, VT_UFS, VT_NFS, VT_MFS };
  * is used rather than a union structure to cut down on the
  * number of header files that must be included.
  */
-#define VN_MAXPRIVATE	188
+#define	VN_MAXPRIVATE	188
 
 struct vnode {
 	u_long		v_flag;			/* vnode flags (see below) */
@@ -63,11 +63,11 @@ struct vnode {
 	enum vtagtype	v_tag;			/* type of underlying data */
 	char v_data[VN_MAXPRIVATE];		/* private data for fs */
 };
-#define v_mountedhere v_un.vu_mountedhere
-#define v_socket v_un.vu_socket
-#define v_vmdata v_un.vu_vmdata
-#define v_specinfo v_un.vu_specinfo
-#define v_fifoinfo v_un.vu_fifoinfo
+#define	v_mountedhere	v_un.vu_mountedhere
+#define	v_socket	v_un.vu_socket
+#define	v_vmdata	v_un.vu_vmdata
+#define	v_specinfo	v_un.vu_specinfo
+#define	v_fifoinfo	v_un.vu_fifoinfo
 
 /*
  * vnode flags.
@@ -118,147 +118,69 @@ struct vattr {
 /*
  * Operations on vnodes.
  */
-struct file;
 struct flock;
 struct nameidata;
+
 struct vnodeops {
-	int	(*vn_lookup)__P((
-			struct vnode *vp,
-			struct nameidata *ndp,
-			struct proc *p));
-	int	(*vn_create)__P((
-			struct nameidata *ndp,
-			struct vattr *vap,
-			struct proc *p));
-	int	(*vn_mknod)__P((
-			struct nameidata *ndp,
-			struct vattr *vap,
-			struct ucred *cred,
-			struct proc *p));
-	int	(*vn_open)__P((
-			struct vnode *vp,
-			int mode,
-			struct ucred *cred,
-			struct proc *p));
-	int	(*vn_close)__P((
-			struct vnode *vp,
-			int fflag,
-			struct ucred *cred,
-			struct proc *p));
-	int	(*vn_access)__P((
-			struct vnode *vp,
-			int mode,
-			struct ucred *cred,
-			struct proc *p));
-	int	(*vn_getattr)__P((
-			struct vnode *vp,
-			struct vattr *vap,
-			struct ucred *cred,
-			struct proc *p));
-	int	(*vn_setattr)__P((
-			struct vnode *vp,
-			struct vattr *vap,
-			struct ucred *cred,
-			struct proc *p));
-	int	(*vn_read)__P((
-			struct vnode *vp,
-			struct uio *uio,
-			int ioflag,
-			struct ucred *cred));
-	int	(*vn_write)__P((
-			struct vnode *vp,
-			struct uio *uio,
-			int ioflag,
-			struct ucred *cred));
-	int	(*vn_ioctl)__P((
-			struct vnode *vp,
-			int command,
-			caddr_t data,
-			int fflag,
-			struct ucred *cred,
-			struct proc *p));
-	int	(*vn_select)__P((
-			struct vnode *vp,
-			int which,
-			int fflags,
-			struct ucred *cred,
-			struct proc *p));
-	int	(*vn_mmap)__P((
-			struct vnode *vp,
-			int fflags,
-			struct ucred *cred,
-			struct proc *p));
-	int	(*vn_fsync)__P((
-			struct vnode *vp,
-			int fflags,
-			struct ucred *cred,
-			int waitfor,
-			struct proc *p));
-	int	(*vn_seek)__P((
-			struct vnode *vp,
-			off_t oldoff,
-			off_t newoff,
-			struct ucred *cred));
-	int	(*vn_remove)__P((
-			struct nameidata *ndp,
-			struct proc *p));
-	int	(*vn_link)__P((
-			struct vnode *vp,
-			struct nameidata *ndp,
-			struct proc *p));
-	int	(*vn_rename)__P((
-			struct nameidata *fndp,
-			struct nameidata *tdnp,
-			struct proc *p));
-	int	(*vn_mkdir)__P((
-			struct nameidata *ndp,
-			struct vattr *vap,
-			struct proc *p));
-	int	(*vn_rmdir)__P((
-			struct nameidata *ndp,
-			struct proc *p));
-	int	(*vn_symlink)__P((
-			struct nameidata *ndp,
-			struct vattr *vap,
-			char *target,
-			struct proc *p));
-	int	(*vn_readdir)__P((
-			struct vnode *vp,
-			struct uio *uio,
-			struct ucred *cred,
-			int *eofflagp));
-	int	(*vn_readlink)__P((
-			struct vnode *vp,
-			struct uio *uio,
-			struct ucred *cred));
-	int	(*vn_abortop)__P((
-			struct nameidata *ndp));
-	int	(*vn_inactive)__P((
-			struct vnode *vp,
-			struct proc *p));
-	int	(*vn_reclaim)__P((
-			struct vnode *vp));
-	int	(*vn_lock)__P((
-			struct vnode *vp));
-	int	(*vn_unlock)__P((
-			struct vnode *vp));
-	int	(*vn_bmap)__P((
-			struct vnode *vp,
-			daddr_t bn,
-			struct vnode **vpp,
-			daddr_t *bnp));
-	int	(*vn_strategy)__P((
-			struct buf *bp));
-	int	(*vn_print)__P((
-			struct vnode *vp));
-	int	(*vn_islocked)__P((
-			struct vnode *vp));
-	int	(*vn_advlock)__P((
-			struct vnode *vp,
-			caddr_t id,
-			int op,
-			struct flock *fl,
-			int flags));
+	int	(*vn_lookup)	__P((struct vnode *vp, struct nameidata *ndp,
+				    struct proc *p));
+	int	(*vn_create)	__P((struct nameidata *ndp, struct vattr *vap,
+				    struct proc *p));
+	int	(*vn_mknod)	__P((struct nameidata *ndp, struct vattr *vap,
+				    struct ucred *cred, struct proc *p));
+	int	(*vn_open)	__P((struct vnode *vp, int mode,
+				    struct ucred *cred, struct proc *p));
+	int	(*vn_close)	__P((struct vnode *vp, int fflag,
+				    struct ucred *cred, struct proc *p));
+	int	(*vn_access)	__P((struct vnode *vp, int mode,
+				    struct ucred *cred, struct proc *p));
+	int	(*vn_getattr)	__P((struct vnode *vp, struct vattr *vap,
+				    struct ucred *cred,
+				    struct proc *p));
+	int	(*vn_setattr)	__P((struct vnode *vp, struct vattr *vap,
+				    struct ucred *cred, struct proc *p));
+	int	(*vn_read)	__P((struct vnode *vp, struct uio *uio,
+				    int ioflag, struct ucred *cred));
+	int	(*vn_write)	__P((struct vnode *vp, struct uio *uio,
+				    int ioflag, struct ucred *cred));
+	int	(*vn_ioctl)	__P((struct vnode *vp, int command,
+				    caddr_t data, int fflag,
+				    struct ucred *cred, struct proc *p));
+	int	(*vn_select)	__P((struct vnode *vp, int which, int fflags,
+				    struct ucred *cred, struct proc *p));
+	int	(*vn_mmap)	__P((struct vnode *vp, int fflags,
+				    struct ucred *cred, struct proc *p));
+	int	(*vn_fsync)	__P((struct vnode *vp, int fflags,
+				    struct ucred *cred, int waitfor,
+				    struct proc *p));
+	int	(*vn_seek)	__P((struct vnode *vp, off_t oldoff,
+				    off_t newoff, struct ucred *cred));
+	int	(*vn_remove)	__P((struct nameidata *ndp, struct proc *p));
+	int	(*vn_link)	__P((struct vnode *vp, struct nameidata *ndp,
+				    struct proc *p));
+	int	(*vn_rename)	__P((struct nameidata *fndp,
+				    struct nameidata *tdnp, struct proc *p));
+	int	(*vn_mkdir)	__P((struct nameidata *ndp, struct vattr *vap,
+				    struct proc *p));
+	int	(*vn_rmdir)	__P((struct nameidata *ndp, struct proc *p));
+	int	(*vn_symlink)	__P((struct nameidata *ndp, struct vattr *vap,
+				    char *target, struct proc *p));
+	int	(*vn_readdir)	__P((struct vnode *vp, struct uio *uio,
+				    struct ucred *cred, int *eofflagp));
+	int	(*vn_readlink)	__P((struct vnode *vp, struct uio *uio,
+				    struct ucred *cred));
+	int	(*vn_abortop)	__P((struct nameidata *ndp));
+	int	(*vn_inactive)	__P((struct vnode *vp, struct proc *p));
+	int	(*vn_reclaim)	__P((struct vnode *vp));
+	int	(*vn_lock)	__P((struct vnode *vp));
+	int	(*vn_unlock)	__P((struct vnode *vp));
+	int	(*vn_bmap)	__P((struct vnode *vp, daddr_t bn,
+				    struct vnode **vpp, daddr_t *bnp));
+	int	(*vn_strategy)	__P((struct buf *bp));
+	int	(*vn_print)	__P((struct vnode *vp));
+	int	(*vn_islocked)	__P((struct vnode *vp));
+	int	(*vn_advlock)	__P((struct vnode *vp, caddr_t id, int op,
+				    struct flock *fl, int flags));
 };
 
 /* Macros to call the vnode ops */
@@ -300,9 +222,9 @@ struct vnodeops {
 /*
  * flags for ioflag
  */
-#define IO_UNIT		0x01		/* do I/O as atomic unit */
-#define IO_APPEND	0x02		/* append write to end */
-#define IO_SYNC		0x04		/* do I/O synchronously */
+#define	IO_UNIT		0x01		/* do I/O as atomic unit */
+#define	IO_APPEND	0x02		/* append write to end */
+#define	IO_SYNC		0x04		/* do I/O synchronously */
 #define	IO_NODELOCKED	0x08		/* underlying node already locked */
 #define	IO_NDELAY	0x10		/* FNDELAY flag set in file table */
 
@@ -319,62 +241,30 @@ struct vnodeops {
 /*
  * Token indicating no attribute value yet assigned
  */
-#define VNOVAL	((unsigned)0xffffffff)
+#define	VNOVAL	((unsigned)0xffffffff)
 
 #ifdef KERNEL
 /*
  * public vnode manipulation functions
  */
-int 	vn_open __P((			/* open vnode */
-		struct nameidata *ndp,
-		struct proc *p,
-		int fmode,
-		int cmode));
-int 	vn_rdwr __P((			/* read or write vnode */
-		enum uio_rw rw,
-		struct vnode *vp,
-		caddr_t base,
-		int len,
-		off_t offset,
-		enum uio_seg segflg,
-		int ioflg,
-		struct ucred *cred,
-		int *aresid,
-		struct proc *p));
-int	vn_read __P((			/* read a vnode into a uio structure */
-		struct file *fp,
-		struct uio *uio,
-		struct ucred *cred));
-int	vn_write __P((			/* write a vnode from a uio structure */
-		struct file *fp,
-		struct uio *uio,
-		struct ucred *cred));
-int	vn_ioctl __P((			/* do an ioctl operation on a vnode */
-		struct file *fp,
-		int com,
-		caddr_t data,
-		struct proc *p));
-int	vn_select __P((			/* do a select operation on a vnode */
-		struct file *fp,
-		int which,
-		struct proc *p));
-int 	vn_close __P((			/* close vnode */
-		struct file *fp,
-		struct proc *p));
-int 	getnewvnode __P((		/* allocate a new vnode */
-		enum vtagtype tag,
-		struct mount *mp,
-		struct vnodeops *vops,
-		struct vnode **vpp));
-int 	bdevvp __P((			/* allocate a new special dev vnode */
-		int dev,		/* XXX should be type dev_t, not int */
-		struct vnode **vpp));
-struct 	vnode *checkalias __P((		/* check for special device aliases */
-		struct vnode *vp,
-		int nvp_rdev,		/* XXX should be type dev_t, not int */
-		struct mount *mp));
-void 	vattr_null __P((		/* set attributes to null */
-		struct vattr *vap));
+int 	vn_open __P((struct nameidata *ndp, struct proc *p, int fmode,
+	    int cmode));
+int 	vn_rdwr __P((enum uio_rw rw, struct vnode *vp, caddr_t base,
+	    int len, off_t offset, enum uio_seg segflg, int ioflg,
+	    struct ucred *cred, int *aresid, struct proc *p));
+int	vn_read __P((struct file *fp, struct uio *uio, struct ucred *cred));
+int	vn_write __P((struct file *fp, struct uio *uio, struct ucred *cred));
+int	vn_ioctl __P((struct file *fp, int com, caddr_t data, struct proc *p));
+int	vn_select __P((struct file *fp, int which, struct proc *p));
+int 	vn_close __P(( struct file *fp, struct proc *p));
+int 	getnewvnode __P((enum vtagtype tag, struct mount *mp,
+	    struct vnodeops *vops, struct vnode **vpp));
+int 	bdevvp __P((int dev, struct vnode **vpp));
+	/* check for special device aliases */
+	/* XXX nvp_rdev should be type dev_t, not int */
+struct 	vnode *checkalias __P((struct vnode *vp, int nvp_rdev,
+	    struct mount *mp));
+void 	vattr_null __P((struct vattr *vap));
 int 	vcount __P((struct vnode *vp));	/* total references to a device */
 int 	vget __P((struct vnode *vp));	/* get first reference to a vnode */
 void 	vref __P((struct vnode *vp));	/* increase reference to a vnode */
@@ -391,18 +281,18 @@ void 	vgoneall __P((struct vnode *vp));/* recycle vnode and all its aliases */
 #define	DOCLOSE		0x0004		/* vclean: close active files */
 
 #ifndef DIAGNOSTIC
-#define VREF(vp)    (vp)->v_usecount++	/* increase reference to a vnode */
-#define VHOLD(vp)   (vp)->v_holdcnt++	/* increase buf or page ref to vnode */
-#define HOLDRELE(vp) (vp)->v_holdcnt--	/* decrease buf or page ref to vnode */
-#define	VATTR_NULL(vap) *(vap) = va_null /* initialize a vattr stucture */
+#define	VREF(vp)	(vp)->v_usecount++	/* increase reference */
+#define	VHOLD(vp)	(vp)->v_holdcnt++	/* increase buf or page ref */
+#define	HOLDRELE(vp)	(vp)->v_holdcnt--	/* decrease buf or page ref */
+#define	VATTR_NULL(vap)	(*(vap) = va_null)	/* initialize a vattr */
 #else /* DIAGNOSTIC */
-#define VREF(vp)    vref(vp)
-#define VHOLD(vp)   vhold(vp)
-#define HOLDRELE(vp) holdrele(vp)
-#define	VATTR_NULL(vap) vattr_null(vap)
+#define	VREF(vp)	vref(vp)
+#define	VHOLD(vp)	vhold(vp)
+#define	HOLDRELE(vp)	holdrele(vp)
+#define	VATTR_NULL(vap)	vattr_null(vap)
 #endif
 
-#define	NULLVP	((struct vnode *)0)
+#define	NULLVP	((struct vnode *)NULL)
 
 /*
  * Global vnode data.
