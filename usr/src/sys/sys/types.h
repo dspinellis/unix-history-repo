@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)types.h	7.24 (Berkeley) %G%
+ *	@(#)types.h	7.25 (Berkeley) %G%
  */
 
 #ifndef _TYPES_H_
@@ -13,28 +13,31 @@
 /* Machine type dependent parameters. */
 #include <machine/endian.h>
 
+#ifndef _POSIX_SOURCE
 typedef	unsigned char	u_char;
 typedef	unsigned short	u_short;
 typedef	unsigned int	u_int;
 typedef	unsigned long	u_long;
 typedef	unsigned short	ushort;		/* Sys V compatibility */
+#endif
 
-typedef	unsigned long long u_quad_t;
-typedef	long long quad_t;
-typedef	quad_t * qaddr_t;
-typedef	char *	caddr_t;		/* core address */
-typedef	long	daddr_t;		/* disk address */
-typedef	u_long	dev_t;			/* device number */
-typedef	u_long	ino_t;			/* inode number */
-typedef	quad_t	off_t;			/* file offset */
-typedef	u_short	nlink_t;		/* link count */
-typedef	long	swblk_t;		/* swap offset */
-typedef	long	segsz_t;		/* segment size */
-typedef	u_long	uid_t;			/* user id */
-typedef	u_long	gid_t;			/* group id */
-typedef	short	pid_t;			/* process id */
-typedef	u_short	mode_t;			/* permissions */
-typedef u_long	fixpt_t;		/* fixed point number */
+typedef	unsigned long long u_quad_t;	/* quads */
+typedef	long long	quad_t;
+typedef	quad_t *	qaddr_t;
+
+typedef	char *		caddr_t;	/* core address */
+typedef	long		daddr_t;	/* disk address */
+typedef	unsigned long	dev_t;		/* device number */
+typedef unsigned long	fixpt_t;	/* fixed point number */
+typedef	unsigned long	gid_t;		/* group id */
+typedef	unsigned long	ino_t;		/* inode number */
+typedef	unsigned short	mode_t;		/* permissions */
+typedef	unsigned short	nlink_t;	/* link count */
+typedef	quad_t		off_t;		/* file offset */
+typedef	short		pid_t;		/* process id */
+typedef	long		segsz_t;	/* segment size */
+typedef	long		swblk_t;	/* swap offset */
+typedef	unsigned long	uid_t;		/* user id */
 
 #ifndef _POSIX_SOURCE
 #define	major(x)	((int)(((u_int)(x) >> 8)&0xff))	/* major number */
