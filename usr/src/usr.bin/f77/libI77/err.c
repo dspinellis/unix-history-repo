@@ -1,5 +1,5 @@
 /*
-char id_err[] = "@(#)err.c	1.14";
+char id_err[] = "@(#)err.c	1.15";
  *
  * file i/o error and initialization routines
  */
