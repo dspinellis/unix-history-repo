@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)ncheck.c	1.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)ncheck.c	1.3 (Berkeley) %G%";
 /*
  * ncheck -- obtain file names from reading filesystem
  */
@@ -37,7 +37,8 @@ long	atol();
 struct htab *lookup();
 
 main(argc, argv)
-char *argv[];
+	int argc;
+	char *argv[];
 {
 	register i;
 	long n;
@@ -77,9 +78,10 @@ char *argv[];
 }
 
 check(file)
-char *file;
+	char *file;
 {
-	register i, j, c;
+	register int i, j, c;
+	int nfiles;
 
 	fi = open(file, 0);
 	if(fi < 0) {
@@ -91,6 +93,18 @@ char *file;
 	printf("%s:\n", file);
 	sync();
 	bread(SBLOCK, (char *)&sblock, sizeof(sblock));
+	if (sblock.fs_magic != FS_MAGIC) {
+		printf("%s: not a file system\n", file);
+		nerror++;
+		return;
+	}
+	nfiles = sblock.fs_ipg * sblock.fs_ncg;
+	if (nfiles > 65535) {
+		printf("%s: %d is a preposterous number of files\n",
+		    file, nfiles);
+		nerror++;
+		return;
+	}
 	ino = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		bread(cgimin(c, &sblock), (char *)itab,
@@ -122,7 +136,7 @@ char *file;
 }
 
 pass1(ip)
-register struct dinode *ip;
+	register struct dinode *ip;
 {
 	if((ip->di_mode & IFMT) != IFDIR) {
 		if (sflg==0 || nxfile>=NB)
@@ -136,7 +150,7 @@ register struct dinode *ip;
 }
 
 pass2(ip)
-register struct dinode *ip;
+	register struct dinode *ip;
 {
 	struct direct dbuf[NDIR];
 	long doff;
@@ -179,7 +193,7 @@ register struct dinode *ip;
 }
 
 pass3(ip)
-register struct dinode *ip;
+	register struct dinode *ip;
 {
 	struct direct dbuf[NDIR];
 	long doff;
@@ -228,7 +242,7 @@ register struct dinode *ip;
 }
 
 dotname(dp)
-register struct direct *dp;
+	register struct direct *dp;
 {
 
 	if (dp->d_name[0]=='.')
@@ -238,7 +252,8 @@ register struct direct *dp;
 }
 
 pname(i, lev)
-ino_t i;
+	ino_t i;
+	int lev;
 {
 	register struct htab *hp;
 
@@ -258,7 +273,8 @@ ino_t i;
 
 struct htab *
 lookup(i, ef)
-ino_t i;
+	ino_t i;
+	int ef;
 {
 	register struct htab *hp;
 
@@ -279,12 +295,13 @@ ino_t i;
 }
 
 bread(bno, buf, cnt)
-daddr_t bno;
-char *buf;
+	daddr_t bno;
+	char *buf;
+	int cnt;
 {
 	register i;
 
-	lseek(fi, bno*BSIZE, 0);
+	lseek(fi, bno*FSIZE, 0);
 	if (read(fi, buf, cnt) != cnt) {
 		fprintf(stderr, "ncheck: read error %d\n", bno);
 		for(i=0; i<BSIZE; i++)
@@ -294,6 +311,7 @@ char *buf;
 
 daddr_t
 bmap(i)
+	int i;
 {
 	daddr_t ibuf[NINDIR];
 
