@@ -1,5 +1,5 @@
 /*
-char	id_tapeio[] = "@(#)tapeio.c	1.1";
+char	id_tapeio[] = "@(#)tapeio.c	1.2";
  *
  * tapeio - tape device specific I/O routines
  *
@@ -14,6 +14,10 @@ char	id_tapeio[] = "@(#)tapeio.c	1.1";
 
 #include <ctype.h>
 #include <sys/ioctl.h>
+#ifndef	MTIOCGET		/* 4.1+ defines this in ... */
+#include <sys/types.h>
+#include <sys/mtio.h>
+#endif
 #include "../libI77/f_errno.h"
 
 #define	TU_NAMESIZE	22
@@ -35,6 +39,10 @@ struct tunits {
 #define	TU_WRITING	0x20
 #define	TU_EOT		0x40
 #define	TU_RDATA	0x80
+
+#ifdef	MTWEOF			/* this implies 4.1+ ... */
+struct mtget	mtget;		/* controller status */
+#endif
 
 /*
  * Open a tape unit for I/O
@@ -400,7 +408,12 @@ long	*tlu, *fileno, *recno, *err, *eof, *eot, *tcsr;
 	*err = (long)((tu->tu_flags & TU_ERR) != 0);
 	*eof = (long)((tu->tu_flags & TU_EOF) != 0);
 	*eot = (long)((tu->tu_flags & TU_EOT) != 0);
+#ifdef	MTWEOF			/* implies 4.1+ system */
+	ioctl(tu->tu_fd, MTIOCGET, &mtget);
+	*tcsr = (long)mtget.mt_dsreg & 0xffff;
+#else
 	ioctl(tu->tu_fd, MTIOCGET, &csr);
 	*tcsr = (long)csr;
+#endif
 	return(0L);
 }
