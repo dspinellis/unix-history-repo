@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -701,10 +701,12 @@ main(argc, argv, envp)
 
 	if (OpMode == MD_TEST)
 	{
-		bool terminal = isatty(fileno(stdin));
 		char buf[MAXLINE];
 
-		if (terminal)
+		if (isatty(fileno(stdin)))
+			Verbose = TRUE;
+
+		if (Verbose)
 		{
 			printf("ADDRESS TEST MODE (ruleset 3 NOT automatically invoked)\n");
 			printf("Enter <ruleset> <address>\n");
@@ -716,12 +718,12 @@ main(argc, argv, envp)
 			extern char *DelimChar;
 			extern bool invalidaddr();
 
-			if (terminal)
+			if (Verbose)
 				printf("> ");
 			(void) fflush(stdout);
 			if (fgets(buf, sizeof buf, stdin) == NULL)
 				finis();
-			if (!terminal)
+			if (!Verbose)
 				printf("> %s", buf);
 			if (buf[0] == '#')
 				continue;
