@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)mount_cd9660.c	8.1 (Berkeley) %G%
+ *      @(#)mount_cd9660.c	8.2 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -19,12 +19,12 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount_cd9660.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount_cd9660.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
 #include <sys/param.h>
-#define ISOFS
+#define CD9660
 #include <sys/mount.h>
 
 #define DEFAULT_ROOTUID	-2
@@ -82,7 +82,7 @@ main (argc, argv)
 		args.export.ex_flags = 0;
 	args.flags = opts;
 
-	if (mount (MOUNT_ISOFS, dir, mntflags, &args) < 0) {
+	if (mount (MOUNT_CD9660, dir, mntflags, &args) < 0) {
 		perror ("mount");
 		exit (1);
 	}
