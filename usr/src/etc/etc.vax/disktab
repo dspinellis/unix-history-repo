@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)disktab	4.8 (Berkeley) %G%
+#	@(#)disktab	4.9 (Berkeley) %G%
 #
 # Disk geometry and partition layout tables. 
 # Key:
@@ -138,8 +138,8 @@ rk07|RK07|DEC RK07:\
 	:pa#15884:ba#8192:fa#1024:\
 	:pb#10032:pc#53790:\
 	:pd#15884:bd#8192:fd#1024:\
-	:pf#11880:bf#4096:ff#1024:\
-	:pg#27786:bg#4096:fg#512:
+	:pf#11792:bf#4096:ff#1024:\
+	:pg#27698:bg#4096:fg#512:
 #
 # Disks normally on up
 #
