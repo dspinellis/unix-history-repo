@@ -3,11 +3,26 @@
 /*
  * make it look like the whole window has been changed.
  *
- * %G% (Berkeley) @(#)touchwin.c	1.1
+ * %G% (Berkeley) @(#)touchwin.c	1.2
  */
 touchwin(win)
 reg WINDOW	*win;
 {
+	reg WINDOW	*wp;
+
+	do_touch(win);
+	for (wp = win->_nextp; wp != win; wp = wp->_nextp)
+		do_touch(wp);
+}
+
+/*
+ * do_touch:
+ *	Touch the window
+ */
+static
+do_touch(win)
+reg WINDOW	*win; {
+
 	reg int		y, maxy, maxx;
 
 	maxy = win->_maxy;
