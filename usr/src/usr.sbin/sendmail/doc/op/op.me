@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.13 (Berkeley) %G%
+.\"	@(#)op.me	6.14 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.13
+Version 6.14
 .sp
-For Sendmail Version 6.24
+For Sendmail Version 6.25
 .)l
 .sp 2
 .pp
@@ -1816,6 +1816,45 @@ If you create a directory such as /var/forward,
 it should be mode 1777
 (that is, the sticky bit should be set).
 Users should create the files mode 644.
+.sh 2 "Free Space"
+.pp
+On systems that have hte
+.i statfs (2)
+system call,
+you can specify a minimum number of free blocks on the queue filesystem
+using the
+.b b
+option.
+If there are fewer than the indicated number of blocks free
+on the filesystem on which the queue is mounted
+the SMTP server will reject mail
+with the
+452 error code.
+This invites the SMTP client to try again later.
+.pp
+Beware of setting this option too high;
+it can cause rejection of email
+when that mail would be processed without difficulty.
+.sh 2 "Privacy Flags"
+.pp
+The
+.b p
+option allows you to set certain
+``privacy''
+flags.
+Actually, many of them don't give you any extra privacy,
+rather just insisting that client SMTP servers
+use the HELO command
+before using certain commands.
+.pp
+The option takes a series of flag names;
+the final privacy is the inclusive or of those flags.
+For example:
+.(b
+Ob needmailhelo, noexpn
+.)b
+insists that the HELO command be used before a MAIL command is accepted
+and disables the EXPN command.
 .sh 1 "THE WHOLE SCOOP ON THE CONFIGURATION FILE"
 .pp
 This section describes the configuration file
@@ -1976,7 +2015,15 @@ and
 .b $]
 is looked up using the
 .i gethostent \|(3)
-routines and replaced by the canonical name.
+routines and replaced by the canonical name\**.
+.(f
+\**This is actually
+completely equivalent
+to $(host \fIhostname\fP$).
+In particular, a
+.b $:
+default can be used.
+.)f
 For example,
 .q $[csam$]
 might become
@@ -2882,6 +2929,15 @@ If no file is specified,
 use
 .i aliases
 in the current directory.
+.ip b\fIN\fP
+Insist on at least
+.i N
+blocks free on the filesystem that holds the queue files
+before accepting email via SMTP.
+If there is insufficient space
+.i sendmail
+gives a 452 response
+to the MAIL command.
 .ip B\fIc\fP
 Set the blank substitution character to
 .i c .
@@ -3073,6 +3129,24 @@ it will be assumed that commas already exist.
 If this flag is not on,
 only commas delimit names.
 Headers are always output with commas between the names.
+.ip p\fI\|opt,opt,...\fP
+Set the privacy
+.i opt ions.
+``Privacy'' is really a misnomer;
+many of these are just a way of insisting on stricter adherance
+to the SMTP protocol.
+The
+.i opt ions
+can be selected from:
+.(b
+public	Allow open access
+needmailhelo	Insist on HELO command before MAIL
+needexpnhelo	Insist on HELO command before EXPN
+noexpn	Disallow EXPN entirely
+needvrfyhelo	Insist on HELO command before VRFY
+novrfy	Disallow VRFY entirely
+goaway	Disallow essentially all status queries
+.)b
 .ip P\fIpostmaster\fP
 If set,
 copies of error messages will be sent to the named
@@ -4277,11 +4351,19 @@ This is the default if SYSTEM5 is
 defined or if you are on HPUX.
 .ip HASUNAME
 Set this if you have the
-.i uname()
+.i uname (2)
 system call (or corresponding library routine).
 Set by default if
 SYSTEM5
 is set.
+.ip HASSTATFS
+Set this if you have the
+.i statfs (2)
+system call.
+This will allow you to give a temporary failure
+message to incoming SMTP email
+when you are low on disk space.
+It is set by default on 4.4 BSD and OSF/1 systems.
 .ip LA_TYPE
 The load average type.
 Details are described below.
@@ -5049,6 +5131,18 @@ This version puts quotes around such names.
 .pp
 Several names have been built in to the $@ portion of the $#error
 mailer.
+.sh 2 "SMTP VRFY Doesn't Expand"
+.pp
+Previous versions of
+.i sendmail
+treated VRFY and EXPN the same.
+In this version,
+VRFY doesn't expand aliases or follow .forward files.
+.pp
+As an optimization, if you run with your default delivery mode being
+queue-only,
+the RCPT command will also not chase aliases and .forward files.
+It will chase them when it processes the queue.
 .sh 2 "Portability and Security Enhancements"
 .pp
 A number of internal changes have been made to enhance portability.
@@ -5432,7 +5526,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.13
+.\"Version 6.14
 .\".ce 0
 .pn 2
 .bp
