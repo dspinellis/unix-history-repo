@@ -1,0 +1,106 @@
+.\" Copyright (c) 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)tcsendbreak.3	1.1 (Berkeley) %G%
+.\"
+.LP
+.B "Synopsis"
+.nf
+#include <termios.h>
+
+int tcsendbreak(int fildes, int duration);
+int tcdrain(int fildes);
+
+int tcflush(int fildes, int queue_selector);
+int tcflow(int fildes, int action);
+.fi
+.LP
+.B "Description"
+.LP
+If the terminal is using asynchronous serial data transmission, the
+tcsendbreak() function shall cause transmission of a continuous stream of
+zero-valued bits for a specific duration.  If duration is zero, it shall
+cause transmission of zero-valued bits for at least 0.25 seconds, and not
+more that 0.5 seconds.
+.PP
+The tcdrain() function shall wait until all output written to the object
+referred to by fildes has been transmitted.
+.PP
+Upon successful completion, the tcflush() function shall have discarded
+any data written to the object referred to by fildes but not transmitted,
+or data received but not read, depending on the value of queue_selector:
+.nf
+    (1)  If queue_selector is TCIFLUSH, it shall flush data received but
+         not read.
+
+    (2)  If queue_selector is TCOFLUSH, it shall flush data written but
+         not transmitted.
+
+    (3)  If queue_selector is TCIOFLUSH, it shall flush both data
+         received but not read, and data written but not transmitted.
+.fi
+.PP
+The tcflow() function shall suspend transmission or reception of data on
+the object referred to by fildes, depending on the value of action:
+.nf
+    (1)  If action is TCOOFF, it shall suspend output.
+
+    (2)  If action is TCOON, it shall restart suspended output.
+
+    (3)  If action is TCIOFF, the system shall transmit a STOP character,
+         which is intended to cause the terminal device to stop
+         transmitting data to the system.  (See the description of IXOFF
+         in "Input Modes".)
+
+    (4)  If action is TCION, the system shall transmit a START character,
+         which is intended to cause the terminal device to start
+         transmitting data to the system.  (See the description of IXOFF
+         in "Input Modes".)
+.fi
+.LP
+.B "Returns"
+.LP
+Upon successful completion, a value of zero is returned.  Otherwise, a
+value of -1 is returned and errno is set to indicate the error.
+.LP
+.B "Errors"
+.LP
+If any of the following conditions occur, the tcsendbreak() function
+shall return -1 and set errno to the corresponding value:
+.nf
+   [EBADF]       The fildes argument is not a valid file descriptor.
+
+   [ENOTTY]      The file associated with fildes is not a terminal.
+.fi
+.PP
+If any of the following conditions occur, the tcdrain() function shall
+return -1 and set errno to the corresponding value:
+.nf
+   [EBADF]       The fildes argument is not a valid file descriptor.
+
+   [EINTR]       A signal interrupted the tcdrain() function.
+
+   [ENOTTY]      The file associated with fildes is not a terminal.
+.fi
+.PP
+If any of the following conditions occur, the tcflush() function shall
+return -1 and set errno to the corresponding value:
+.nf
+   [EBADF]       The fildes argument is not a valid file descriptor.
+
+   [EINVAL]      The queue_selector argument is not a proper value.
+
+   [ENOTTY]      The file associated with fildes is not a terminal.
+.fi
+.PP
+If any of the following conditions occur, the tcflow() function shall
+return -1 and set errno to the corresponding value:
+.nf
+   [EBADF]       The fildes argument is not a valid file descriptor.
+
+   [EINVAL]      The action argument is not a proper value.
+
+   [ENOTTY]      The file associated with fildes is not a terminal.
+.fi
