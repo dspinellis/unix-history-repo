@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.5 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -164,7 +164,8 @@ extern char nfsiobuf[MAXPHYS+NBPG];
 struct map nfsmap[NFS_MSIZ];
 enum vtype v_type[NFLNK+1];
 struct buf nfs_bqueue;		/* Queue head for nfsiod's */
-int nfs_iodwant = 0;
+int nfs_asyncdaemons = 0;
+struct proc *nfs_iodwant[MAX_ASYNCDAEMON];
 static int nfsmap_want = 0;
 
 /*
@@ -256,16 +257,22 @@ nfs_close(vp, fflags, cred)
 {
 	struct nfsnode *np = VTONFS(vp);
 	dev_t dev;
-	int error;
+	int error = 0;
 
 	nfs_lock(vp);
-	if (vp->v_type == VREG && (np->n_flag & NMODIFIED)) {
-		np->n_flag &= ~NMODIFIED;
-		nfs_blkflush(vp, (daddr_t)0, np->n_size, TRUE);
+	if (vp->v_type == VREG && ((np->n_flag & NMODIFIED) ||
+	   ((np->n_flag & NBUFFERED) && np->n_sillyrename))) {
+		np->n_flag &= ~(NMODIFIED|NBUFFERED);
+		error = nfs_blkflush(vp, (daddr_t)0, np->n_size, TRUE);
+		if (np->n_flag & NWRITEERR) {
+			np->n_flag &= ~NWRITEERR;
+			if (!error)
+				error = np->n_error ? np->n_error : EIO;
+		}
 	}
 	nfs_unlock(vp);
 	if (vp->v_type != VCHR || vp->v_count > 1)
-		return (0);
+		return (error);
 	dev = vp->v_rdev;
 	/* XXX what is this doing below the vnode op call */
 	if (setjmp(&u.u_qsave)) {
@@ -371,7 +378,7 @@ nfs_lookup(vp, ndp)
 	flag = ndp->ni_nameiop & OPFLAG;
 	wantparent = ndp->ni_nameiop & (LOCKPARENT|WANTPARENT);
 #ifndef notyet
-	if (error = cache_lookup(ndp)) {
+	if ((error = cache_lookup(ndp)) && error != ENOENT) {
 		struct vattr vattr;
 		int vpid;
 
@@ -394,14 +401,19 @@ nfs_lookup(vp, ndp)
 			nfs_unlock(vp);
 		}
 		if (vpid == vdp->v_id &&
-		   !nfs_getattr(vp, &vattr, ndp->ni_cred)) {
+		   !nfs_getattr(vdp, &vattr, ndp->ni_cred)) {
 			nfsstats.lookupcache_hits++;
+			if (vdp->v_type == VNON) {
+				vdp->v_type = vattr.va_type;
+				VTONFS(vdp)->n_mtime = vattr.va_mtime.tv_sec;
+			}
 			return (0);
 		}
 		nfs_nput(vdp);
 		nfs_lock(vp);
 		ndp->ni_vp = (struct vnode *)0;
 	}
+	error = 0;
 	nfsstats.lookupcache_misses++;
 #endif
 	nfsstats.rpccnt[NFSPROC_LOOKUP]++;
@@ -657,15 +669,41 @@ nfs_create(ndp, vap)
 
 /*
  * nfs file remove call
+ * To try and make nfs semantics closer to vfs semantics, a file that has
+ * other references to the vnode is renamed instead of removed and then
+ * removed later on the last close.
+ * Unfortunately you must flush the buffer cache and cmap to get rid of
+ * all extraneous vnode references before you check the reference cnt.
+ * 1 - If the file could have blocks in the buffer cache
+ *	  flush them out and invalidate them
+ *	  mpurge the vnode to flush out cmap references
+ *	  (This is necessary to update the vnode ref cnt as well as sensible
+ *	   for actual removes, to free up the buffers)
+ * 2 - If v_count > 1
+ *	  If a rename is not already in the works
+ *	     call nfs_sillyrename() to set it up
+ *     else
+ *	  do the remove rpc
  */
 nfs_remove(ndp)
 	register struct nameidata *ndp;
 {
+	register struct vnode *vp = ndp->ni_vp;
+	register struct nfsnode *np = VTONFS(ndp->ni_vp);
 	nfsm_vars;
 
-	if (ndp->ni_vp->v_count > 1)
-		error = nfs_sillyrename(ndp, REMOVE);
-	else {
+	if (vp->v_type == VREG) {
+		if (np->n_flag & (NMODIFIED|NBUFFERED)) {
+			np->n_flag &= ~(NMODIFIED|NBUFFERED);
+			nfs_blkflush(vp, (daddr_t)0, np->n_size, TRUE);
+		}
+		if (np->n_flag & NPAGEDON)
+			mpurge(vp);	/* In case cmap entries still ref it */
+	}
+	if (vp->v_count > 1) {
+		if (!np->n_sillyrename)
+			error = nfs_sillyrename(ndp, REMOVE);
+	} else {
 		nfsstats.rpccnt[NFSPROC_REMOVE]++;
 		nfsm_reqhead(nfs_procids[NFSPROC_REMOVE], ndp->ni_cred,
 			NFSX_FH+NFSX_UNSIGNED+nfsm_rndup(ndp->ni_dent.d_namlen));
@@ -690,7 +728,6 @@ nfs_removeit(ndp)
 {
 	nfsm_vars;
 
-printf("in removeit\n");
 	nfsstats.rpccnt[NFSPROC_REMOVE]++;
 	nfsm_reqhead(nfs_procids[NFSPROC_REMOVE], ndp->ni_cred,
 		NFSX_FH+NFSX_UNSIGNED+nfsm_rndup(ndp->ni_dent.d_namlen));
@@ -698,7 +735,6 @@ printf("in removeit\n");
 	nfsm_strtom(ndp->ni_dent.d_name, ndp->ni_dent.d_namlen, NFS_MAXNAMLEN);
 	nfsm_request(ndp->ni_dvp);
 	nfsm_reqdone;
-printf("eo removeit err=%d\n",error);
 	return (error);
 }
 
@@ -1031,6 +1067,7 @@ nfs_sillyrename(ndp, flag)
 	short pid;
 
 	np = VTONFS(ndp->ni_dvp);
+	cache_purge(ndp->ni_dvp);
 	MALLOC(sp, struct sillyrename *, sizeof (struct sillyrename),
 		M_TEMP, M_WAITOK);
 	sp->s_flag = flag;
@@ -1130,28 +1167,43 @@ nfs_strategy(bp)
 	register struct buf *bp;
 {
 	register struct buf *dp;
+	register int i;
 	struct proc *rp;
 	int error = 0;
+	int fnd = 0;
 
 	/*
 	 * If an i/o daemon is waiting
 	 * queue the request, wake it up and wait for completion
 	 * otherwise just do it ourselves
 	 */
-	if (nfs_iodwant) {
-		dp = &nfs_bqueue;
-		if (dp->b_actf == NULL) {
-			dp->b_actl = bp;
-			bp->b_actf = dp;
-		} else {
-			dp->b_actf->b_actl = bp;
-			bp->b_actf = dp->b_actf;
+	for (i = 0; i < nfs_asyncdaemons; i++) {
+		if (rp = nfs_iodwant[i]) {
+			/*
+			 * Ensure that the async_daemon is still waiting here
+			 */
+			if (rp->p_stat != SSLEEP ||
+			    rp->p_wchan != ((caddr_t)&nfs_iodwant[i])) {
+				nfs_iodwant[i] = (struct proc *)0;
+				continue;
+			}
+			dp = &nfs_bqueue;
+			if (dp->b_actf == NULL) {
+				dp->b_actl = bp;
+				bp->b_actf = dp;
+			} else {
+				dp->b_actf->b_actl = bp;
+				bp->b_actf = dp->b_actf;
+			}
+			dp->b_actf = bp;
+			bp->b_actl = dp;
+			fnd++;
+			nfs_iodwant[i] = (struct proc *)0;
+			wakeup((caddr_t)&nfs_iodwant[i]);
+			break;
 		}
-		dp->b_actf = bp;
-		bp->b_actl = dp;
-		nfs_iodwant = 0;
-		wakeup((caddr_t)&nfs_iodwant);
-	} else
+	}
+	if (!fnd)
 		error = nfs_doio(bp);
 	return (error);
 }
@@ -1172,6 +1224,7 @@ nfs_doio(bp)
 	register caddr_t vaddr;
 	register struct uio *uiop;
 	register struct vnode *vp;
+	struct nfsnode *np;
 	struct ucred *cr;
 	int npf, npf2;
 	int reg;
@@ -1208,6 +1261,7 @@ nfs_doio(bp)
 	 * and a guess at a group
 	 */
 	if (bp->b_flags & B_PHYS) {
+		VTONFS(vp)->n_flag |= NPAGEDON;
 		bp->b_rcred = cr = crget();
 		rp = (bp->b_flags & B_DIRTY) ? &proc[2] : bp->b_proc;
 		cr->cr_uid = rp->p_uid;
@@ -1260,6 +1314,11 @@ nfs_doio(bp)
 	} else {
 		uiop->uio_rw = UIO_WRITE;
 		bp->b_error = error = nfs_writerpc(vp, uiop, &off, bp->b_wcred);
+		if (error) {
+			np = VTONFS(vp);
+			np->n_error = error;
+			np->n_flag |= NWRITEERR;
+		}
 		bp->b_dirtyoff = bp->b_dirtyend = 0;
 	}
 	if (error)
@@ -1296,7 +1355,7 @@ nfs_fsync(vp, fflags, cred)
 	nfs_lock(vp);
 	if (np->n_flag & NMODIFIED) {
 		np->n_flag &= ~NMODIFIED;
-		error = nfs_blkflush(vp, (daddr_t)0, VTONFS(vp)->n_size, FALSE);
+		error = nfs_blkflush(vp, (daddr_t)0, np->n_size, FALSE);
 	}
 	nfs_unlock(vp);
 	return (error);

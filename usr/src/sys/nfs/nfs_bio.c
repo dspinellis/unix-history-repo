@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_bio.c	7.1 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -55,15 +55,17 @@ nfs_read(vp, uio, offp, ioflag, cred)
 
 	if (!(ioflag & IO_NODELOCKED))
 		nfs_lock(vp);
-	uio->uio_offset = *offp;
 	/*
 	 * Avoid caching directories. Once everything is using getdirentries()
 	 * this will never happen anyhow.
 	 */
 	if (vp->v_type == VDIR) {
 		error = nfs_readrpc(vp, uio, offp, cred);
-		goto out;
+		if (!(ioflag & IO_NODELOCKED))
+			nfs_unlock(vp);
+		return (error);
 	}
+	uio->uio_offset = *offp;
 	count = uio->uio_resid;
 	if (uio->uio_rw != UIO_READ)
 		panic("nfs_read mode");
@@ -89,7 +91,7 @@ nfs_read(vp, uio, offp, ioflag, cred)
 	 */
 	if (np->n_flag & NMODIFIED) {
 		np->n_flag &= ~NMODIFIED;
-		if (error = nfs_blkflush(vp, (daddr_t)0, np->n_size, FALSE))
+		if (error = nfs_blkflush(vp, (daddr_t)0, np->n_size, TRUE))
 			goto out;
 		if (error = nfs_getattr(vp, &vattr, cred))
 			goto out;
@@ -99,12 +101,13 @@ nfs_read(vp, uio, offp, ioflag, cred)
 		if (error = nfs_getattr(vp, &vattr, cred))
 			goto out;
 		if (np->n_mtime != vattr.va_mtime.tv_sec) {
-			if (error = nfs_blkflush(vp, (daddr_t)0, np->n_size, FALSE))
+			if (error = nfs_blkflush(vp, (daddr_t)0, np->n_size, TRUE))
 				goto out;
 			np->n_size = vattr.va_size;
 			np->n_mtime = vattr.va_mtime.tv_sec;
 		}
 	}
+	np->n_flag |= NBUFFERED;
 	do {
 		lbn = uio->uio_offset >> NFS_BIOSHIFT;
 		on = uio->uio_offset & (NFS_BIOSIZE-1);
@@ -139,7 +142,7 @@ nfs_read(vp, uio, offp, ioflag, cred)
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
 out:
 	*offp = uio->uio_offset;
-	if ((ioflag & IO_NODELOCKED) == 0)
+	if (!(ioflag & IO_NODELOCKED))
 		nfs_unlock(vp);
 	return (error);
 }
@@ -194,7 +197,7 @@ nfs_write(vp, uio, offp, ioflag, cred)
 		error = EFBIG;
 		goto out;
 	}
-	np->n_flag |= NMODIFIED;
+	np->n_flag |= (NMODIFIED|NBUFFERED);
 	do {
 		lbn = uio->uio_offset >> NFS_BIOSHIFT;
 		on = uio->uio_offset & (NFS_BIOSIZE-1);

@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_syscalls.c	7.2 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -42,7 +42,8 @@
 extern u_long nfs_prog, nfs_vers;
 extern int (*nfsrv_procs[NFS_NPROCS])();
 extern struct buf nfs_bqueue;
-extern int nfs_iodwant;
+extern int nfs_asyncdaemons;
+extern struct proc *nfs_iodwant[MAX_ASYNCDAEMON];
 struct file *getsock();
 
 /*
@@ -199,31 +200,37 @@ nfssvc()
 	}
 }
 
-#ifndef notyet
 /*
  * Nfs pseudo system call for asynchronous i/o daemons.
  * These babies just pretend to be disk interrupt service routines
- * for client nfs. They are mainly here for read ahead
+ * for client nfs. They are mainly here for read ahead/write behind.
  * Never returns unless it fails or gets killed
  */
 async_daemon()
 {
 	register struct buf *bp, *dp;
 	int error;
+	int myiod;
 
 	/*
 	 * Must be super user
 	 */
 	if (error = suser(u.u_cred, &u.u_acflag))
 		RETURN (error);
+	/*
+	 * Assign my position or return error if too many already running
+	 */
+	if (nfs_asyncdaemons > MAX_ASYNCDAEMON)
+		RETURN (EBUSY);
+	myiod = nfs_asyncdaemons++;
 	dp = &nfs_bqueue;
 	/*
-	 * Just loop arround doin our stuff until SIGKILL
+	 * Just loop around doin our stuff until SIGKILL
 	 */
 	for (;;) {
 		while (dp->b_actf == NULL) {
-			nfs_iodwant++;
-			sleep((caddr_t)&nfs_iodwant, PZERO+1);
+			nfs_iodwant[myiod] = u.u_procp;
+			sleep((caddr_t)&nfs_iodwant[myiod], PZERO+1);
 		}
 		/* Take one off the end of the list */
 		bp = dp->b_actl;
@@ -236,4 +243,3 @@ async_daemon()
 		(void) nfs_doio(bp);
 	}
 }
-#endif

@@ -31,6 +31,8 @@
 #define	NFS_WSIZE	8192	/* Max. write data size <= 8192 */
 #define	NFS_RSIZE	8192	/* Max. read data size <= 8192 */
 #define	MAX_READDIR	NFS_RSIZE	/* Max. size of directory read */
+#define	MAX_ASYNCDAEMON	20	/* Max. number of async_daemons runnable */
+#define	NMOD(a)		((a) % nfs_asyncdaemons)
 
 /*
  * Nfs outstanding request list element
@@ -44,6 +46,7 @@ struct nfsreq {
 	struct vnode	*r_vp;
 	int		r_msiz;
 	u_long		r_xid;
+	u_long		r_inaddr;
 	u_long		r_retry;
 	u_long		r_timeout;
 	u_long		r_timer;

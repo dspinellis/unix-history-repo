@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vfsops.c	7.4 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -151,6 +151,7 @@ mountnfs(argp, mp, saddr, pth, hst)
 		goto bad;
 	if (error = soconnect(nmp->nm_so, saddr))
 		goto bad;
+printf("sosnd=0x%x sorcv=0x%x\n",&nmp->nm_so->so_snd,&nmp->nm_so->so_rcv);
 	if ((argp->flags & NFSMNT_TIMEO) && argp->timeo >= 1)
 		nmp->nm_timeo = argp->timeo;
 	else
@@ -266,11 +267,10 @@ nfs_unmount(mp, flags)
 	 */
 	s = splnet();
 	rep = nfsreqh.r_next;
-	while (rep) {
+	while (rep && rep != &nfsreqh) {
 		if (rep->r_mntp == nmp) {
 			rep->r_prev->r_next = rep2 = rep->r_next;
-			if (rep->r_next != NULL)
-				rep->r_next->r_prev = rep->r_prev;
+			rep->r_next->r_prev = rep->r_prev;
 			m_freem(rep->r_mreq);
 			if (rep->r_mrep != NULL)
 				m_freem(rep->r_mrep);

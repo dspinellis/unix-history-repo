@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_subs.c	7.7 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -28,6 +28,8 @@
 #include "strings.h"
 #include "types.h"
 #include "param.h"
+#include "user.h"
+#include "proc.h"
 #include "mount.h"
 #include "../ufs/dir.h"
 #include "time.h"
@@ -67,6 +69,7 @@ static u_long nfs_xid = 1;
 static char *rpc_unixauth;
 extern long hostid;
 extern enum vtype v_type[NFLNK+1];
+extern struct proc *nfs_iodwant[MAX_ASYNCDAEMON];
 extern struct map nfsmap[NFS_MSIZ];
 
 /* Function ret types */
@@ -501,6 +504,9 @@ nfsinit()
 	/* Loop thru nfs procids */
 	for (i = 0; i < NFS_NPROCS; i++)
 		nfs_procids[i] = txdr_unsigned(i);
+	/* Ensure async daemons disabled */
+	for (i = 0; i < MAX_ASYNCDAEMON; i++)
+		nfs_iodwant[i] = (struct proc *)0;
 	v_type[0] = VNON;
 	v_type[1] = VREG;
 	v_type[2] = VDIR;
@@ -732,6 +738,10 @@ nfs_namei(ndp, fhp, len, mdp, dposp)
 		vput(dp);
 		return (ENOTDIR);
 	}
+	/*
+	 * Must set current directory here to avoid confusion in namei()
+	 * called from rename()
+	 */
 	ndp->ni_cdir = dp;
 	ndp->ni_rdir = (struct vnode *)0;
 
@@ -895,4 +905,3 @@ nfsrv_fhtovp(fhp, lockflag, vpp, cred)
 		VOP_UNLOCK(*vpp);
 	return (0);
 }
-
