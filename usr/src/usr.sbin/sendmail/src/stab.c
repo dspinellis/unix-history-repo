@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)stab.c	4.1		%G%);
+SCCSID(@(#)stab.c	4.2		%G%);
 
 /*
 **  STAB -- manage the symbol table
@@ -96,7 +96,7 @@ stab(name, type, op)
 
 	/* make new entry */
 	s = (STAB *) xalloc(sizeof *s);
-	clear((char *) s, sizeof *s);
+	bzero((char *) s, sizeof *s);
 	s->s_name = newstr(name);
 	makelower(s->s_name);
 	s->s_type = type;

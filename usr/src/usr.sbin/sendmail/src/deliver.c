@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	4.7		%G%);
+SCCSID(@(#)deliver.c	4.8		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -806,7 +806,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		(void) close(mpvect[0]);
 		if (!bitnset(M_RESTR, m->m_flags))
 		{
-			if (ctladdr->q_uid == 0)
+			if (ctladdr == NULL || ctladdr->q_uid == 0)
 			{
 				(void) setgid(DefGid);
 				(void) setuid(DefUid);

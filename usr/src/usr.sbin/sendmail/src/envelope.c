@@ -3,7 +3,7 @@
 #include "sendmail.h"
 #include <sys/stat.h>
 
-SCCSID(@(#)envelope.c	4.5		%G%);
+SCCSID(@(#)envelope.c	4.6		%G%);
 
 /*
 **  NEWENVELOPE -- allocate a new envelope
@@ -33,8 +33,8 @@ newenvelope(e)
 	parent = CurEnv;
 	if (e == CurEnv)
 		parent = e->e_parent;
-	clear((char *) e, sizeof *e);
-	bmove((char *) &CurEnv->e_from, (char *) &e->e_from, sizeof e->e_from);
+	bzero((char *) e, sizeof *e);
+	bcopy((char *) &CurEnv->e_from, (char *) &e->e_from, sizeof e->e_from);
 	e->e_parent = parent;
 	e->e_ctime = curtime();
 	e->e_puthdr = putheader;
@@ -44,7 +44,7 @@ newenvelope(e)
 	while (bh != NULL)
 	{
 		*nhp = (HDR *) xalloc(sizeof *bh);
-		bmove((char *) bh, (char *) *nhp, sizeof *bh);
+		bcopy((char *) bh, (char *) *nhp, sizeof *bh);
 		bh = bh->h_link;
 		nhp = &(*nhp)->h_link;
 	}

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	4.6.1.1		%G%);
+SCCSID(@(#)parseaddr.c	4.7		%G%);
 
 /*
 **  PARSEADDR -- Parse an address
@@ -496,8 +496,6 @@ rewrite(pvp, ruleset)
 	register char **rvp;		/* rewrite vector pointer */
 	register struct match *mlp;	/* cur ptr into mlist */
 	register struct rewrite *rwr;	/* pointer to current rewrite rule */
-	int subr;			/* subroutine number if >= 0 */
-	bool dolookup;			/* do host aliasing */
 	struct match mlist[MAXMATCH];	/* stores match on LHS */
 	char *npvp[MAXATOM+1];		/* temporary space for rebuild */
 	extern bool sameword();
@@ -665,24 +663,16 @@ rewrite(pvp, ruleset)
 			rwr = NULL;
 
 		/* substitute */
-		dolookup = FALSE;
 		for (avp = npvp; *rvp != NULL; rvp++)
 		{
 			register struct match *m;
 			register char **pp;
 
 			rp = *rvp;
-
-			/* check to see if we should do a lookup */
-			if (*rp == MATCHLOOKUP)
-				dolookup = TRUE;
-
-			/* see if there is substitution here */
 			if (*rp != MATCHREPL)
 			{
 				if (avp >= &npvp[MAXATOM])
 				{
-				  toolong:
 					syserr("rewrite: expansion too long");
 					return;
 				}
@@ -692,6 +682,11 @@ rewrite(pvp, ruleset)
 
 			/* substitute from LHS */
 			m = &mlist[rp[1] - '1'];
+			if (m >= mlp)
+			{
+				syserr("rewrite: ruleset %d: replacement out of bounds", ruleset);
+				return;
+			}
 # ifdef DEBUG
 			if (tTd(21, 15))
 			{
@@ -710,62 +705,29 @@ rewrite(pvp, ruleset)
 			while (pp <= m->last)
 			{
 				if (avp >= &npvp[MAXATOM])
-					goto toolong;
+				{
+					syserr("rewrite: expansion too long");
+					return;
+				}
 				*avp++ = *pp++;
 			}
 		}
 		*avp++ = NULL;
-
-		/*
-		**  Do hostname lookup if requested.
-		*/
-
-		if (dolookup)
+		if (**npvp == CALLSUBR)
 		{
-			extern char **maphost();
-
-			rvp = maphost(npvp);
-		}
-		else
-			rvp = npvp;
-
-		/*
-		**  See if this is a subroutine call.
-		*/
-
-		if (**rvp == CALLSUBR)
-		{
-			subr = atoi(*++rvp);
-			rvp++;
-		}
-		else
-			subr = -1;
-
-		/*
-		**  Copy result back to original string.
-		*/
-
-		for (avp = pvp; *rvp != NULL; rvp++)
-			*avp++ = *rvp;
-		*avp = NULL;
-
-		/*
-		**  If this specified a subroutine, call it.
-		*/
-
-		if (subr >= 0)
-		{
+			bcopy((char *) &npvp[2], (char *) pvp,
+				(avp - npvp - 2) * sizeof *avp);
 # ifdef DEBUG
 			if (tTd(21, 3))
-				printf("-----callsubr %s\n", subr);
+				printf("-----callsubr %s\n", npvp[1]);
 # endif DEBUG
-			rewrite(pvp, subr);
+			rewrite(pvp, atoi(npvp[1]));
 		}
-
-		/*
-		**  Done with rewriting this pass.
-		*/
-
+		else
+		{
+			bcopy((char *) npvp, (char *) pvp,
+				(avp - npvp) * sizeof *avp);
+		}
 # ifdef DEBUG
 		if (tTd(21, 4))
 		{
@@ -809,7 +771,7 @@ buildaddr(tv, a)
 
 	if (a == NULL)
 		a = (ADDRESS *) xalloc(sizeof *a);
-	clear((char *) a, sizeof *a);
+	bzero((char *) a, sizeof *a);
 
 	/* figure out what net/mailer to use */
 	if (**tv != CANONNET)

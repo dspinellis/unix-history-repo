@@ -6,7 +6,7 @@
 # include <ctype.h>
 # include "sendmail.h"
 
-SCCSID(@(#)util.c	4.6		%G%);
+SCCSID(@(#)util.c	4.7		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -174,7 +174,7 @@ copyplist(list, copycont)
 	vp++;
 
 	newvp = (char **) xalloc((vp - list) * sizeof *vp);
-	bmove((char *) list, (char *) newvp, (vp - list) * sizeof *vp);
+	bcopy((char *) list, (char *) newvp, (vp - list) * sizeof *vp);
 
 	if (copycont)
 	{
@@ -332,27 +332,6 @@ sameword(a, b)
 		b++;
 	}
 	return (FALSE);
-}
-/*
-**  CLEAR -- clear a block of memory
-**
-**	Parameters:
-**		p -- location to clear.
-**		l -- number of bytes to clear.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		none.
-*/
-
-clear(p, l)
-	register char *p;
-	register int l;
-{
-	while (l-- > 0)
-		*p++ = 0;
 }
 /*
 **  BUILDFNAME -- build full name from gecos style entry.

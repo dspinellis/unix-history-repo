@@ -2,7 +2,7 @@
 # include "sendmail.h"
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	4.7		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	4.8		%G%	(w/o daemon mode));
 #else
 
 #include <sys/socket.h>
@@ -10,7 +10,7 @@ SCCSID(@(#)daemon.c	4.7		%G%	(w/o daemon mode));
 #include <netdb.h>
 #include <sys/wait.h>
 
-SCCSID(@(#)daemon.c	4.7		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	4.8		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -187,8 +187,16 @@ getrequests()
 			if (hp != NULL)
 				(void) sprintf(buf, "%s.%s", hp->h_name, NetName);
 			else
-				/* this should produce a dotted quad */
-				(void) sprintf(buf, "%lx", otherend.sin_addr.s_addr);
+			{
+				extern char *inet_ntoa();
+
+				/* produce a dotted quad */
+				(void) sprintf(buf, "[%s]",
+					inet_ntoa(otherend.sin_addr));
+			}
+
+			/* should we check for illegal connection here? XXX */
+
 			RealHostName = newstr(buf);
 
 			(void) close(DaemonSocket);
@@ -301,7 +309,7 @@ makeconnection(host, port, outfile, infile)
 
 		if (hp == NULL)
 			return (EX_NOHOST);
-		bmove(hp->h_addr, (char *) &SendmailAddress.sin_addr, hp->h_length);
+		bcopy(hp->h_addr, (char *) &SendmailAddress.sin_addr, hp->h_length);
 	}
 
 	/*
@@ -378,6 +386,7 @@ makeconnection(host, port, outfile, infile)
 		  case EHOSTUNREACH:
 		  case ENETUNREACH:
 			/* there are others, I'm sure..... */
+			CurEnv->e_flags &= ~EF_FATALERRS;
 			return (EX_TEMPFAIL);
 
 		  case EPERM:
