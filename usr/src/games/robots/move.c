@@ -6,11 +6,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)move.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)move.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
-# include	"robots.h"
-# include	<ctype.h>
+#include <sys/ttydefaults.h>
+#include <ctype.h>
+#include "robots.h"
 
 # define	ESC	'\033'
 
@@ -143,13 +144,13 @@ teleport:
 			refresh();
 			flush_in();
 			goto ret;
-		  case CTRL(L):
+		  case CTRL('L'):
 			wrefresh(curscr);
 			break;
 		  case EOF:
 			break;
 		  default:
-			putchar(CTRL(G));
+			putchar(CTRL('G'));
 			reset_count();
 			fflush(stdout);
 			break;
@@ -214,7 +215,7 @@ int	dy, dx;
 			refresh();
 		}
 		else {
-			putchar(CTRL(G));
+			putchar(CTRL('G'));
 			reset_count();
 		}
 		return FALSE;
