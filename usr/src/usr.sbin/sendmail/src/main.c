@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.49 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.50 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -1341,7 +1341,7 @@ obsolete(argv)
 		/* skip over options that do have a value */
 		op = strchr(OPTIONS, ap[1]);
 		if (op != NULL && *++op == ':' && ap[2] == '\0' &&
-		    argv[1] != NULL && argv[1][0] != '-')
+		    ap[1] != 'd' && argv[1] != NULL && argv[1][0] != '-')
 		{
 			argv++;
 			continue;
