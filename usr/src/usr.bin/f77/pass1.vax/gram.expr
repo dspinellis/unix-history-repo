@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)gram.expr	5.1 (Berkeley) %G%
+ *	@(#)gram.expr	5.2 (Berkeley) %G%
  */
 
 /*
@@ -14,6 +14,13 @@
  * University of Utah CS Dept modification history:
  *
  * $Log:	gram.expr,v $
+ * Revision 5.2  85/12/21  07:26:39  donn
+ * Permit CHARACTER*(4) in function declarations by eliminating parentheses
+ * more appropriately.
+ * 
+ * Revision 5.1  85/08/10  03:47:25  donn
+ * 4.3 alpha
+ * 
  * Revision 3.2  85/02/15  19:08:53  donn
  * Put OPPAREN operators in trees when not optimizing as well as when
  * optimizing -- this allows '(1)' to produce a writable temporary instead
@@ -42,7 +49,7 @@ funargs:  expr
 
 expr:	  uexpr
 	| SLPAR expr SRPAR
-		{ if (parstate != INDCL)
+		{ if (parstate > INDCL)
 			$$ = mkexpr(OPPAREN, $2, ENULL);
 		  else $$ = $2;
 		}
@@ -153,7 +160,7 @@ complex_const:  SLPAR uexpr SCOMMA uexpr SRPAR
 
 fexpr:	  unpar_fexpr
 	| SLPAR fexpr SRPAR
-		{ if (optimflag && parstate != INDCL)
+		{ if (optimflag && parstate > INDCL)
 			$$ = mkexpr(OPPAREN, $2, ENULL);
 		  else $$ = $2;
 		}
