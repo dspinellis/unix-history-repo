@@ -1,4 +1,4 @@
-/*	if_de.c	6.5	84/04/04	*/
+/*	if_de.c	6.6	84/07/16	*/
 #include "de.h"
 #if NDE > 0
 
@@ -534,6 +534,7 @@ deread(ds, ifrw, len)
 	struct ether_header *eh;
     	struct mbuf *m;
 	int off, resid;
+	int s;
 	register struct ifqueue *inq;
 
 	/*
@@ -589,12 +590,15 @@ deread(ds, ifrw, len)
 		return;
 	}
 
+	s = splimp();
 	if (IF_QFULL(inq)) {
 		IF_DROP(inq);
+		splx(s);
 		m_freem(m);
 		return;
 	}
 	IF_ENQUEUE(inq, m);
+	splx(s);
 }
 
 /*
