@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ethersubr.c	7.10 (Berkeley) %G%
+ *	@(#)if_ethersubr.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -105,7 +105,7 @@ ether_output(ifp, m0, dst, rt)
  		bcopy((caddr_t)&(((struct sockaddr_ns *)dst)->sns_addr.x_host),
 		    (caddr_t)edst, sizeof (edst));
 		if (!bcmp((caddr_t)edst, (caddr_t)&ns_thishost, sizeof(edst)))
-			return (looutput(&loif, m, dst));
+			return (looutput(ifp, m, dst, rt));
 		if ((ifp->if_flags & IFF_SIMPLEX) && (*edst & 1))
 			mcopy = m_copy(m, 0, (int)M_COPYALL);
 		goto gottype;
@@ -116,7 +116,6 @@ ether_output(ifp, m0, dst, rt)
 		struct	llc *l;
 
 	iso_again:
-		iso_etherout();
 		if (rt && rt->rt_gateway && (rt->rt_flags & RTF_UP)) {
 			if (rt->rt_flags & RTF_GATEWAY) {
 				if (rt->rt_llinfo) {
@@ -138,6 +137,17 @@ ether_output(ifp, m0, dst, rt)
 					(char *)edst, &snpalen)) > 0)
 			goto bad; /* Not Resolved */
 	iso_resolved:
+		if ((ifp->if_flags & IFF_SIMPLEX) && (*edst & 1) &&
+		    (mcopy = m_copy(m, 0, (int)M_COPYALL))) {
+			M_PREPEND(mcopy, sizeof (*eh), M_DONTWAIT);
+			if (mcopy) {
+				eh = mtod(mcopy, struct ether_header *);
+				bcopy((caddr_t)edst,
+				      (caddr_t)eh->ether_dhost, sizeof (edst));
+				bcopy((caddr_t)ac->ac_enaddr,
+				      (caddr_t)eh->ether_shost, sizeof (edst));
+			}
+		}
 		M_PREPEND(m, 3, M_DONTWAIT);
 		if (m == NULL)
 			return (0);
@@ -191,6 +201,8 @@ gottrailertype:
 	m0->m_next = 0;
 
 gottype:
+	if (mcopy)
+		(void) looutput(ifp, mcopy, dst, rt);
 	/*
 	 * Add local net header.  If no space in first mbuf,
 	 * allocate another.
@@ -207,11 +219,11 @@ gottype:
  	bcopy((caddr_t)edst, (caddr_t)eh->ether_dhost, sizeof (edst));
  	bcopy((caddr_t)ac->ac_enaddr, (caddr_t)eh->ether_shost,
 	    sizeof(eh->ether_shost));
+	s = splimp();
 	/*
 	 * Queue message on interface, and start output if interface
 	 * not yet active.
 	 */
-	s = splimp();
 	if (IF_QFULL(&ifp->if_snd)) {
 		IF_DROP(&ifp->if_snd);
 		splx(s);
@@ -222,16 +234,12 @@ gottype:
 	if ((ifp->if_flags & IFF_OACTIVE) == 0)
 		(*ifp->if_start)(ifp);
 	splx(s);
-	if (mcopy)
-		(void) looutput(&loif, mcopy, dst);
 	ifp->if_obytes += len + sizeof (struct ether_header);
 	if (edst[0] & 1)
 		ifp->if_omcasts++;
 	return (error);
 
 bad:
-	if (mcopy)
-		m_freem(mcopy);
 	if (m)
 		m_freem(m);
 	return (error);
@@ -290,6 +298,8 @@ ether_input(ifp, eh, m)
 		    if ((l->llc_dsap == LLC_ISO_LSAP) &&
 			(l->llc_ssap == LLC_ISO_LSAP)) {
 				/* LSAP for ISO */
+			if (m->m_pkthdr.len > eh->ether_type)
+				m_adj(m, eh->ether_type - m->m_pkthdr.len);
 			m->m_data += 3;		/* XXX */
 			m->m_len -= 3;		/* XXX */
 			m->m_pkthdr.len -= 3;	/* XXX */
@@ -379,4 +389,3 @@ ether_sprintf(ap)
 	*--cp = 0;
 	return (etherbuf);
 }
-iso_etherout() {}
