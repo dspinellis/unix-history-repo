@@ -43,6 +43,15 @@ descend(parentino, inumber)
 		if (reply("FIX") == 1)
 			inodirty();
 	}
+	if ((dp->di_size & (DIRBLKSIZ - 1)) != 0) {
+		pwarn("DIRECTORY %s: LENGTH %d NOT MULTIPLE OF %d",
+			pathname, dp->di_size, DIRBLKSIZ);
+		dp->di_size = roundup(dp->di_size, DIRBLKSIZ);
+		if (preen)
+			printf(" (ADJUSTED)\n");
+		if (preen || reply("ADJUST") == 1)
+			inodirty();
+	}
 	curino.id_type = DATA;
 	curino.id_func = parentino->id_func;
 	curino.id_parent = parentino->id_number;
@@ -74,12 +83,14 @@ dirscan(idesc)
 		bcopy((char *)dp, dbuf, dsize);
 		idesc->id_dirp = (DIRECT *)dbuf;
 		if ((n = (*idesc->id_func)(idesc)) & ALTERED) {
-			if (getblk(&fileblk, idesc->id_blkno, blksiz) != NULL) {
+			getblk(&fileblk, idesc->id_blkno, blksiz);
+			if (fileblk.b_errs != NULL) {
+				n &= ~ALTERED;
+			} else {
 				bcopy(dbuf, (char *)dp, dsize);
 				dirty(&fileblk);
 				sbdirty();
-			} else
-				n &= ~ALTERED;
+			}
 		}
 		if (n & STOP) 
 			return (n);
@@ -98,7 +109,8 @@ fsck_readdir(idesc)
 	long size, blksiz;
 
 	blksiz = idesc->id_numfrags * sblock.fs_fsize;
-	if (getblk(&fileblk, idesc->id_blkno, blksiz) == NULL) {
+	getblk(&fileblk, idesc->id_blkno, blksiz);
+	if (fileblk.b_errs != NULL) {
 		idesc->id_filesize -= blksiz - idesc->id_loc;
 		return NULL;
 	}
@@ -428,11 +440,13 @@ expanddir(dp)
 	dp->di_db[lastbn] = newblk;
 	dp->di_size += sblock.fs_bsize;
 	dp->di_blocks += btodb(sblock.fs_bsize);
-	if (getblk(&fileblk, dp->di_db[lastbn + 1],
-	    dblksize(&sblock, dp, lastbn + 1)) == NULL)
+	getblk(&fileblk, dp->di_db[lastbn + 1],
+	    dblksize(&sblock, dp, lastbn + 1));
+	if (fileblk.b_errs != NULL)
 		goto bad;
 	bcopy(dirblk.b_buf, firstblk, DIRBLKSIZ);
-	if (getblk(&fileblk, newblk, sblock.fs_bsize) == NULL)
+	getblk(&fileblk, newblk, sblock.fs_bsize);
+	if (fileblk.b_errs != NULL)
 		goto bad;
 	bcopy(firstblk, dirblk.b_buf, DIRBLKSIZ);
 	for (cp = &dirblk.b_buf[DIRBLKSIZ];
@@ -440,8 +454,9 @@ expanddir(dp)
 	     cp += DIRBLKSIZ)
 		bcopy((char *)&emptydir, cp, sizeof emptydir);
 	dirty(&fileblk);
-	if (getblk(&fileblk, dp->di_db[lastbn + 1],
-	    dblksize(&sblock, dp, lastbn + 1)) == NULL)
+	getblk(&fileblk, dp->di_db[lastbn + 1],
+	    dblksize(&sblock, dp, lastbn + 1));
+	if (fileblk.b_errs != NULL)
 		goto bad;
 	bcopy((char *)&emptydir, dirblk.b_buf, sizeof emptydir);
 	pwarn("NO SPACE LEFT IN %s", pathname);
@@ -475,7 +490,8 @@ allocdir(parent, request)
 	dirhead.dot_ino = ino;
 	dirhead.dotdot_ino = parent;
 	dp = ginode(ino);
-	if (getblk(&fileblk, dp->di_db[0], sblock.fs_fsize) == NULL) {
+	getblk(&fileblk, dp->di_db[0], sblock.fs_fsize);
+	if (fileblk.b_errs != NULL) {
 		freeino(ino);
 		return (0);
 	}
