@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)4.t	6.10 (Berkeley) %G%
+.\"	@(#)4.t	6.11 (Berkeley) %G%
 .\"
 .ds LH "Installing/Operating \*(4B
 .ds CF \*(Dy
@@ -58,6 +58,7 @@ ufs		local filesystems broken down as follows
 	lfs	log-based filesystem
 	mfs	memory based filesystem
 nfs		Sun-compatible network filesystem
+dev		generic device drivers (SCSI, vnode, concatenated disk)
 .TE
 .LP
 The networking code is organized by protocol
@@ -489,7 +490,7 @@ If we had a second disk, we would place
 .Pn /usr
 in \*(Dk1g.
 We would put user files in \*(Dk0g, calling the filesystem
-.Pn /a .
+.Pn /var/users .
 We would put the
 .Pn /var
 filesystem in \*(Dk1a.
@@ -504,23 +505,25 @@ to get the swap interleaved, and
 would then contain
 .TS
 center;
-l l l l n n.
+lfC lfC l l n n.
 /dev/\*(Dk0a	/	ufs	rw	1	1
 /dev/\*(Dk0b	none	swap	sw	0	0
 /dev/\*(Dk0b	/tmp	mfs	rw,-s=14000,-b=8192,-f=1024,-T=sd660	0	0
-/dev/\*(Dk0g	/a	ufs	rw	1	2
 /dev/\*(Dk1a	/var	ufs	rw	1	2
+/dev/\*(Dk0g	/var/users	ufs	rw	1	2
 /dev/\*(Dk1b	none	swap	sw	0	0
 /dev/\*(Dk1g	/usr	ufs	ro	1	2
 .TE
 We could set
 .Pn /var
-to be symbolic link into the user filesystem and
+to be symbolic link into the
+.Pn /usr
+filesystem and
 keep a backup copy of the root
 filesystem in the \*(Dk1a disk partition.
 .PP
 To make the
-.Pn /a
+.Pn /var/users
 filesystem we would do:
 .DS
 \fB#\fP \fIcd /dev\fP
@@ -528,8 +531,8 @@ filesystem we would do:
 \fB#\fP \fIdisklabel -wr \*(Dk1 "disk type" "disk name"\fP
 \fB#\fP \fInewfs \*(Dk1g\fP
 (information about filesystem prints out)
-\fB#\fP \fImkdir /a\fP
-\fB#\fP \fImount /dev/\*(Dk1g /a\fP
+\fB#\fP \fImkdir /var/users\fP
+\fB#\fP \fImount /dev/\*(Dk1g /var/users\fP
 .DE
 .NH 2
 Configuring terminals
@@ -574,7 +577,10 @@ the terminal type (found in
 .Pn /usr/share/misc/termcap ),
 and optional status information describing if the terminal is
 enabled or not and if it is ``secure'' (i.e. the super user should
-be allowed to login on the line).  All fields are character strings
+be allowed to login on the line).
+If the console is marked as ``insecure'',
+then the root password is required to bring the machine up single-user.
+All fields are character strings
 with entries requiring embedded white space enclosed in double
 quotes.
 Thus a newly added terminal
@@ -628,7 +634,9 @@ from \fBoff\fP to \fBon\fP and sending a hangup signal to
 .PP
 Note that if a special file is inaccessible when
 .Xr init
-tries to create a process for it, init will log a message to the
+tries to create a process for it,
+.Xr init
+will log a message to the
 system error logging process (see
 .Xr syslogd (8))
 and try to reopen the terminal every minute, reprinting the warning
@@ -685,7 +693,8 @@ site you must simply select a site name, then edit the file
 /etc/netstart
 .DE
 The first lines in
-.Pn /etc/netstart use a variable to set the hostname,
+.Pn /etc/netstart
+use a variable to set the hostname,
 .DS
 hostname=\fImysitename\fP
 /bin/hostname $hostname
@@ -712,7 +721,7 @@ l l.
 /usr/bin/lpq	spooling queue examination program
 /usr/bin/lprm	program to delete jobs from a queue
 /usr/bin/lpr	program to enter a job in a printer queue
-/etc/printcap	printer configuration and capability data base
+/etc/printcap	printer configuration and capability database
 /usr/sbin/lpd	line printer daemon, scans spooling queues
 /usr/sbin/lpc	line printer control program
 /etc/hosts.lpd	list of host allowed to use the printers
@@ -721,11 +730,11 @@ l l.
 .PP
 The file
 .Pn /etc/printcap
-is a master data base describing line
+is a master database describing line
 printers directly attached to a machine and, also, printers
 accessible across a network.  The manual page
 .Xr printcap (5)
-describes the format of this data base and also
+describes the format of this database and also
 shows the default values for such things as the directory
 in which spooling is performed.  The line printer system handles
 multiple printers, multiple spooling queues, local and remote

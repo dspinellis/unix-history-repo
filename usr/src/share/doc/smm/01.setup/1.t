@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.t	6.5 (Berkeley) %G%
+.\"	@(#)1.t	6.6 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -25,23 +25,25 @@ Thus, the most straightforward procedure for upgrading a System V
 system is to perform a full bootstrap.
 .PP
 The full bootstrap procedure
-is outlined in chapter 2; the process starts with copying a filesystem
+is outlined in section 2; the process starts with copying a filesystem
 image onto a new disk.
 This filesystem is then booted and used to extract the remainder of the
 system binaries and sources from the archives on the tape(s).
 .PP
 The technique for upgrading a \*(Ps system is described
-in chapter 3 of this document.
+in section 3 of this document.
 The upgrade procedure involves extracting a new set of system binaries
-onto new root and /usr filesystems and local
+onto new root and
+.Pn /usr
+filesystems and local
 configuration files are merged into the new system.
 User filesystems may be upgraded in place.
 Most \*(Ps binaries may be used with \*(4B in the course
 of the conversion.
 It is desirable to recompile local sources after the conversion,
 as the new compiler (GCC) provides superior code optimization.
-Consult section 3 for a description of the differences
-between \*(4B and \*(Ps.
+Consult section 3.5 for a description of the differences
+between \*(Ps and \*(4B.
 .NH 2
 Distribution format
 .PP
@@ -53,20 +55,17 @@ The distribution comes in two formats:
 .PP
 If you have the facilities, we \fBstrongly\fP recommend copying the
 magnetic tape(s) in the distribution kit to guard against disaster.
-The tapes contain some 1024-byte records followed by many
-10240-byte records.  There are interspersed tape marks;
-end-of-tape is signaled by a double end-of-file.  The first file
-on the tape is a disk image of the root filesystem.
-Following the disk-image root file is a full dump of the root filesystem
-(see
-.Xr dump (8)\**).
+The tapes contain 20480-byte records.
+There are interspersed tape marks;
+end-of-tape is signaled by a double end-of-file.
+The first file on the tape is architecture dependent.
+Additional files on the tape(s)
+contain tape archive images of the system binaries and sources (see
+.Xr tar (1)\**).
 .FS
 References of the form \fIX\fP(Y) mean the entry named
 \fIX\fP in section Y of the ``UNIX Programmer's Manual''.
 .FE
-Additional files on the tape(s)
-contain tape archive images of the system binaries and sources (see
-.Xr tar (1)).
 See the tape label for a description of the contents
 and format of each individual tape.
 .NH 2
@@ -76,19 +75,23 @@ Device names have a different syntax depending on whether you are talking
 to the standalone system or a running UNIX kernel.
 The standalone system syntax is currently architecture dependent and is
 described in the various architecture specific sections.
-When not running standalone, devices are available via files in
-the ``/dev/'' directory.
+When not running standalone, devices are available via files in the
+.Pn /dev/
+directory.
 The file name typically encodes the device type, its logical unit and
 a partition within that unit.
-For example, ``/dev/sd2b'' refers to the second partition (``b'') of
-SCSI (``sd'') drive number ``2'', while ``/dev/rmt0'' refers to 9-track
-tape (``mt'') unit ``0''.
+For example,
+.Pn /dev/sd2b
+refers to the second partition (``b'') of
+SCSI (``sd'') drive number ``2'', while
+.Pn /dev/rmt0
+refers to 9-track tape (``mt'') unit ``0''.
 .PP
 The mapping of physical addressing information (e.g. controller, target)
 to a logical unit number is dependent on the system configuration.
 In all simple cases, where only a single controller is present, a drive
 with physical unit number 0 (e.g., as determined by its unit
-specification (either unit plug or other selection mechanism)
+specification, either unit plug or other selection mechanism)
 will be called unit 0 in its UNIX file name.
 This is not, however, strictly
 necessary, since the system has a level of indirection in this naming.
@@ -100,7 +103,8 @@ topology, and to make reconfiguration after hardware failure easier.
 Each UNIX physical disk is divided into at most 8 logical disk partitions,
 each of which may occupy any consecutive cylinder range on the physical
 device.  The cylinders occupied by the 8 partitions for each drive type
-are specified initially in the disk description file /etc/disktab
+are specified initially in the disk description file
+.Pn /etc/disktab
 (c.f.
 .Xr disktab (5)).
 The partition information and description of the
@@ -122,10 +126,12 @@ the system makes the device byte addressable and you can write
 a single byte in the middle of the disk.  The system will read
 out the data from the disk sector, insert the byte you gave it
 and put the modified data back.  The disks with the names
-``/dev/xx0[a-h]'', etc., are block devices.
+.Pn /dev/xx0[a-h] ,
+etc., are block devices.
 There are also raw devices available.
-These have names like ``/dev/rxx0[a-h]'', the
-``r'' here standing for ``raw''.
+These have names like
+.Pn /dev/rxx0[a-h] ,
+the ``r'' here standing for ``raw''.
 Raw devices bypass the buffer cache and use DMA directly to/from
 the program's I/O buffers;
 they are normally restricted to full-sector transfers.
@@ -139,7 +145,7 @@ The block devices are used to mount filesystems,
 or when operating on a mounted filesystem such as the root.
 .PP
 You should be aware that it is sometimes important whether to use
-the character device (for efficiency) or not (because it wouldn't
+the character device (for efficiency) or not (because it would not
 work, e.g. to write a single byte in the middle of a sector).
-Don't change the instructions by using the wrong type of device
+Do not change the instructions by using the wrong type of device
 indiscriminately.
