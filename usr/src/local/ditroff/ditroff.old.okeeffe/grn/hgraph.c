@@ -1,4 +1,4 @@
-/*	hgraph.c	1.6	(Berkeley) 83/10/07
+/*	hgraph.c	1.7	(Berkeley) 83/10/12
  *
  *     This file contains the graphics routines for converting gremlin
  * pictures to troff input.
@@ -105,13 +105,21 @@ ELT *element;
 HGPutText(justify,pnt,string)
 int justify;
 POINT pnt;
-char string[];
+register char *string;
 {
     int savelasty = lasty;		/* vertical motion for text is to be */
 					/*   ignored.  save current y here */
 
     printf(".nr g8 \\n(.d\n");		/* save current vertical position. */
-    printf(".ds g9 \"%s\n", string);	/* define string containing the text. */
+    printf(".ds g9 \"");		/* define string containing the text. */
+    while (*string) {					/* put out the string */
+	if (*string == '\\' && *(string+1) == '\\') {	/* one character at a */
+	    printf("\\\\\\");				/* time replacing //  */
+	    string++;					/* by //// to prevent */
+	}						/* interpretation at  */
+	printf("%c", *(string++));			/* printout time */
+    }
+    printf("\n");
     tmove(&pnt);			/* move to positioning point */
     switch (justify) {
 					/* local vertical motions */
@@ -131,15 +139,15 @@ char string[];
 					/* local horizontal motions */
 	 case BOTCENT:
         case CENTCENT:
-	 case TOPCENT:	printf("\\h'-\\w'\\*(g9'u/2u'");	/* back half */
+	 case TOPCENT:	printf("\\h-\\w\\*(g9u/2u");	/* back half */
 			break;
 
         case BOTRIGHT:
        case CENTRIGHT:
-        case TOPRIGHT:	printf("\\h'-\\w'\\*(g9'u'");		/* back whole */
+        case TOPRIGHT:	printf("\\h-\\w\\*(g9u");	/* back whole */
     }
 
-    printf("\\*(g9\n");			/* now print the text. */
+    printf("\\&\\*(g9\n");	/* now print the text. */
     printf(".sp |\\n(g8u\n");	/* restore vertical position */
     lasty = savelasty;		/* vertical position restored to where it was */
     lastx = xleft;		/*   before text, also horizontal is at left */
