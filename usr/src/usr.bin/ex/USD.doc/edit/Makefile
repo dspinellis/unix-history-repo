@@ -1,10 +1,10 @@
-#	@(#)Makefile	6.2 (Berkeley) %G%
+#	@(#)Makefile	6.3 (Berkeley) %G%
 
-DIR=	usd/14.edit
+DIR=	usd/11.edit
 SRCS=	edittut.ms
 MACROS=	-msU
 
-paper.${PRINTER}: ${SRCS}
+paper.ps: ${SRCS}
 	${TBL} ${SRCS} | ${ROFF} > ${.TARGET}
 
 # index for versatec is different from the one in edit.tut

@@ -1,9 +1,9 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)g0	6.2 (Berkeley) %G%
+.\"	@(#)g0	6.3 (Berkeley) %G%
 .\"
-.EH 'USD:27-%''Typesetting Mathematics _ User\'s Guide'
-.OH 'Typesetting Mathematics _ User\'s Guide''USD:27-%'
+.EH 'USD:24-%''Typesetting Mathematics _ User\'s Guide'
+.OH 'Typesetting Mathematics _ User\'s Guide''USD:24-%'
 .EQ
 delim $$
 .EN

@@ -1,10 +1,10 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
-DIR=	usd/27.eqnguide
+DIR=	usd/24.eqnguide
 SRCS=	g.mac g0 g1 g2 g3 g4 g5
 MACROS=	-msU
 
-paper.${PRINTER}: ${SRCS}
+paper.ps: ${SRCS}
 	${EQN} ${SRCS} | ${ROFF} > ${.TARGET}
 
 .include <bsd.doc.mk>

@@ -1,9 +1,9 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)rm0	6.2 (Berkeley) %G%
+.\"	@(#)rm0	6.3 (Berkeley) %G%
 .\"
-.EH 'USD:32-%''Writing Tools - the STYLE and DICTION Programs'
-.OH 'Writing Tools - the STYLE and DICTION Programs''USD:32-%'
+.EH 'USD:29-%''Writing Tools - the STYLE and DICTION Programs'
+.OH 'Writing Tools - the STYLE and DICTION Programs''USD:29-%'
 .\".RP
 .\".TM 79-1271-13 39199 39199-11
 .TL

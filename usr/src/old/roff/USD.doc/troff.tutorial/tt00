@@ -1,9 +1,9 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)tt00	6.2 (Berkeley) %G%
+.\"	@(#)tt00	6.3 (Berkeley) %G%
 .\"
-.EH 'USD:25-%''A TROFF Tutorial'
-.OH 'A TROFF Tutorial''USD:25-%'
+.EH 'USD:22-%''A TROFF Tutorial'
+.OH 'A TROFF Tutorial''USD:22-%'
 .\".RP
 .....TM 76-1273-7 39199 39199-11
 .TL

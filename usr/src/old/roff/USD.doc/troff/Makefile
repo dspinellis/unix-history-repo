@@ -1,6 +1,6 @@
-#	@(#)Makefile	6.4 (Berkeley) %G%
+#	@(#)Makefile	6.5 (Berkeley) %G%
 
-DIR=	usd/24.troff
+DIR=	usd/21.troff
 INTRO=	m0
 TUTOR=	m0a
 PAPER=	m1 m2 m3 m4
@@ -9,28 +9,26 @@ APNDX2=	table1
 APNDX3=	table2
 MACROS=	m.mac
 
-paper.${PRINTER}: intro.${PRINTER} tutor.${PRINTER} apndx1.${PRINTER} \
-	apndx2.${PRINTER} apndx3.${PRINTER}
+paper.ps: intro.ps tutor.ps apndx1.ps apndx2.ps apndx3.ps
 	${TBL} ${PAPER} | ${ROFF} > ${.TARGET}
 
-intro.${PRINTER}: ${INTRO}
+intro.ps: ${INTRO}
 	${ROFF} ${INTRO} > ${.TARGET}
 
-tutor.${PRINTER}: ${TUTOR}
+tutor.ps: ${TUTOR}
 	${TBL} ${TUTOR} | ${ROFF} > ${.TARGET}
 
-apndx1.${PRINTER}: ${APNDX1}
+apndx1.ps: ${APNDX1}
 	${ROFF} ${APNDX1} > ${.TARGET}
 
-apndx2.${PRINTER}: ${APNDX2}
+apndx2.ps: ${APNDX2}
 	${ROFF} ${APNDX2} > ${.TARGET}
 
-apndx3.${PRINTER}: ${APNDX3}
+apndx3.ps: ${APNDX3}
 	${ROFF} ${APNDX3} > ${.TARGET}
 
 clean:
-	rm -f intro.${PRINTER} tutor.${PRINTER} paper.${PRINTER} \
-	    apndx1.${PRINTER} apndx2.${PRINTER} apndx3.${PRINTER} \
+	rm -f intro.ps tutor.ps paper.ps apndx1.ps apndx2.ps apndx3.ps \
 	    *.spell errs Errs make.out
 
 spell: ${INTRO} ${TUTOR} ${PAPER} ${APNDX1} ${APNDX2} ${APNDX3}

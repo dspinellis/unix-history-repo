@@ -1,9 +1,9 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)ms	6.2 (Berkeley) %G%
+.\"	@(#)ms	6.3 (Berkeley) %G%
 .\"
-.EH 'USD:20-%''Using the \-ms Macros with Troff and Nroff'
-.OH 'Using the \-ms Macros with Troff and Nroff''USD:20-%'
+.EH 'USD:17-%''Using the \-ms Macros with Troff and Nroff'
+.OH 'Using the \-ms Macros with Troff and Nroff''USD:17-%'
 .\".RP
 ....TM 76-1274-16 39199 39199-11
 ....ND October 8, 1976
