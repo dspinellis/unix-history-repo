@@ -1,0 +1,20 @@
+/*
+ * External variables for the library
+ *
+ * @(#)curses.ext	1.1 (Berkeley) %G%
+ */
+
+/* LINTLIBRARY */
+
+# include	"curses.h"
+# include	"unctrl.h"
+
+extern bool	_echoit, _rawmode, My_term, _endwin;
+
+extern char	ttytype[], *_unctrl[];
+
+extern int	_tty_ch, LINES, COLS;
+
+extern SGTTY	_tty;
+
+char		_putchar();
