@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)ttcharset	8.1 (Berkeley) %G%
+.\"	@(#)ttcharset	8.2 (Berkeley) %G%
 .\"
 .bp
 .tr __
@@ -41,15 +41,14 @@ The following are special-font characters:
 \(is	\\(is	\(pd	\\(pd	\(if	\\(if	\(sr	\\(sr	
 \(sb	\\(sb	\(sp	\\(sp	\(cu	\\(cu	\(ca	\\(ca	
 \(ib	\\(ib	\(ip	\\(ip	\(mo	\\(mo	\(es	\\(es	
-\(aa	\\(aa	\(ga	\\(ga	\(ci	\\(ci	\(bs	\\(bs	
+\(aa	\\(aa	\(ga	\\(ga	\(ci	\\(ci	\(**	\\(**	
 \(sc	\\(sc	\(dd	\\(dd	\(lh	\\(lh	\(rh	\\(rh	
 \(lt	\\(lt	\(rt	\\(rt	\(lc	\\(lc	\(rc	\\(rc	
 \(lb	\\(lb	\(rb	\\(rb	\(lf	\\(lf	\(rf	\\(rf	
 \(lk	\\(lk	\(rk	\\(rk	\(bv	\\(bv	\(ts	\\(ts	
 \(br	\\(br	\(or	\\(or	\(ul	\\(ul	\(rn	\\(rn	
-\(**	\\(**
 .sp
-.in0
+.in 0
 .ps 9
 .fi
 These
