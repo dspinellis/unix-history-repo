@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dump.h	5.11 (Berkeley) %G%
+ *	@(#)dump.h	5.12 (Berkeley) %G%
  */
 
 #define	NI		16
@@ -152,3 +152,15 @@ void	sigsegv();
 void	sigsys();
 void	sigalrm();
 void	sigterm();
+
+/*
+ * Compatibility with old systems.
+ */
+#ifndef __STDC__
+#include <sys/file.h>
+#define _PATH_FSTAB	"/etc/fstab"
+typedef int (*sig_t)();
+extern char *strdup();
+extern char *ctime();
+extern int errno;
+#endif
