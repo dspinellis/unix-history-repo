@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 # Doing a make install builds /usr/include
 #
@@ -29,6 +29,7 @@ MACHDEP=${MACHINE} vaxif vaxmba vaxuba
 NETDIRS=net netimp netinet netpup
 SYSDIRS=${NETDIRS} stand ${MACHDEP}
 SHARED=	symlinks
+TAGSFILE=tags
 
 all:
 
@@ -73,4 +74,11 @@ copies:
 	chmod 775 ${DESTDIR}/usr/include/sys;
 	(cd /sys/h; tar cf - *.h | (cd ${DESTDIR}/usr/include/sys; tar xpf -))
 
+tags:
+	cwd=/usr/include; \
+	for i in ${STD} ${LINKS}; do \
+		ctags -a -f ${TAGSFILE} $$cwd/$$i; \
+	done
+
 clean:
+	rm -f tags

@@ -1,7 +1,10 @@
-#	Makefile	4.1	83/06/27
+#	Makefile	4.2	85/05/30
 #
 CFLAGS=	-O -DCM_N -DCM_GT -DCM_B -DCM_D
 LD = ld
+SRCS=	termcap.c tgoto.c tputs.c
+OBJS=	termcap.o tgoto.o tputs.o
+TAGSFILE=tags
 
 .c.o:
 	$(CC) $(CFLAGS) -c -p $*.c
@@ -10,13 +13,9 @@ LD = ld
 	$(LD) $(LDFLAGS) -X -r $*.o
 	mv a.out $*.o
 
-termcap.a termcap_p.a: termcap.o tgoto.o tputs.o
-	ar cr termcap.a termcap.o tgoto.o tputs.o
-	cd profiled; ar cr ../termcap_p.a termcap.o tgoto.o tputs.o
-
-clean:
-	-rm -f *.o profiled/*.o
-	-rm -f termcap.a termcap_p.a
+termcap.a termcap_p.a: ${OBJS}
+	ar cr termcap.a ${OBJS}
+	cd profiled; ar cr ../termcap_p.a ${OBJS}
 
 install: termcap.a termcap_p.a
 	install -c termcap.a ${DESTDIR}/usr/lib/libtermcap.a
@@ -27,6 +26,16 @@ install: termcap.a termcap_p.a
 	-rm -f ${DESTDIR}/usr/lib/libtermlib_p.a
 	ln ${DESTDIR}/usr/lib/libtermcap_p.a ${DESTDIR}/usr/lib/libtermlib_p.a
 	ranlib ${DESTDIR}/usr/lib/libtermcap_p.a
+
+tags:
+	cwd=`pwd`; \
+	for i in ${SRCS}; do \
+		ctags -a -f ${TAGSFILE} $$cwd/$$i; \
+	done
+
+clean:
+	-rm -f *.o profiled/*.o
+	-rm -f termcap.a termcap_p.a
 
 VGRIND=	csh /usr/ucb/vgrind
 vgrind:
