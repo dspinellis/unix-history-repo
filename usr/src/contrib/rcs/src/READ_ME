@@ -1,0 +1,61 @@
+RCS release 3 is still available for free, if you retrieve it yourself over
+the UUCP or ARPA net.  If you need a tape, there is a handlig charge of
+$100.  In both cases, we need a signed copy of the non-disclosure form
+below, executed by the person who handles your Unix licenses.  Upon receipt
+of the completed form, we will send you detailed instructions on how to
+retrieve RCS.  If you also include the handling charge, we will mail a tape
+with RCS instead.
+
+The whole package consists of RCS proper, the manual pages for it, and
+modified versions of the Unix commands diff and diff3.  If you need more
+information on RCS before getting it, read "Design, Implementation, and
+Evaluation of a Revision Control System", by Walter Tichy, in Proc. of the
+6th Int'l Conference on Software Engineering, Sept. 1982, IEEE.
+
+
+
+Walter Tichy
+(tichy@cs.purdue.edu, decvax!purdue!tichy)
+===========================================================================
+
+
+To:   Walter Tichy
+      Department of Computer Science
+      Purdue University
+      West Lafayette, IN 47907
+
+From: <Name>
+      <Name and address of your lab or institution>
+      <reliable network address; without it I can't send the instructions>
+      <phone number>
+
+
+<Date>
+
+
+By this letter, we agree to the following:
+
+1. RCS will be used internally only.
+
+2. RCS will not be distributed in any form or by any means without prior
+   written permission by the author, Walter Tichy.
+
+3. There are no warranties, express or implied, with regard to materials
+   provided.  Accordingly, Purdue assumes no obligation to provide any
+   assistance of any kind whatsoever, or to furnish any additional
+   materials.
+
+4. Copyright notices and Purdue markings will be preserved in all
+   materials originally or substantially provided by Purdue.
+
+5. Purdue will be given credit where appropriate.
+
+
+It is understood that if we decide to incorporate RCS into a product,
+we have to come to a separate licensing arrangement with the author.
+
+
+
+                               <Name>
+                               <Position>
+
