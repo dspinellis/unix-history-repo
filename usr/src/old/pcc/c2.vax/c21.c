@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)c21.c 4.22 %G%";
+static	char sccsid[] = "@(#)c21.c 4.23 %G%";
 #endif
 /* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
 
@@ -637,7 +637,8 @@ register struct node *p;
 					uses[r2]=uses[r]; uses[r]=0;
 				}
 				(void) redun3(p,0);
-				newcode(p); redunm++; flow=r;
+				newcode(p); redunm++;
+				return(p);	/* avoid stale uses[] data */
 			} else splitrand(p);
 		}
 	} else if (p->op==MOV && (p->forw->op==CVT || p->forw->op==MOVZ)
