@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)c21.c 4.20 %G%";
+static	char sccsid[] = "@(#)c21.c 4.21 %G%";
 #endif
 /* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
 
@@ -19,7 +19,7 @@ int bitsize[] = {	/* index by type codes */
 	8,		/* 1	BYTE */
 	16,		/* 2	WORD */
 	32,		/* 3	LONG */
-	32,		/* 4	FFLOAT /
+	32,		/* 4	FFLOAT */
 	64,		/* 5	DFLOAT */
 	64,		/* 6	QUAD */
 	0,		/* 7	OP2 */
@@ -577,6 +577,12 @@ register struct node *p;
 	struct node *olduse=0;
 	splitrand(p);
 	if (p->op!=PUSH && p->subop && 0<=(r=isreg(lastrand)) && r<NUSE && uses[r]==p->forw) {
+	if ((p->op==CVT || p->op==MOVZ)
+		&& (p->forw->op==CVT || p->forw->op==MOVZ)
+		&& p->forw->subop&0xf
+		&& compat(p->subop,p->forw->subop)
+		&& !source(cp1=regs[RT1])
+		&& !indexa(cp1)) goto movit;
 	if (equtype(p->subop,regs[r][0])
 	|| ((p->op==CVT || p->op==MOVZ)
 			 && 0xf&regs[r][0] && compat(0xf&(p->subop>>4),regs[r][0]))) {
