@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)server.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)server.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -733,7 +733,7 @@ recvf(cmd, type)
 			errno = ENOTDIR;
 		} else if (errno == ENOENT && (mkdir(target, mode) == 0 ||
 		    chkparent(target) == 0 && mkdir(target, mode) == 0)) {
-			if (chog(target, owner, group, mode) == 0)
+			if (fchog(-1, target, owner, group, mode) == 0)
 				ack();
 			return;
 		}
@@ -774,7 +774,7 @@ recvf(cmd, type)
 		if (symlink(buf, new) < 0) {
 			if (errno != ENOENT || chkparent(new) < 0 ||
 			    symlink(buf, new) < 0)
-				goto badn;
+				goto badnew1;
 		}
 		mode &= 0777;
 		if (opts & COMPARE) {
@@ -795,7 +795,7 @@ recvf(cmd, type)
 	if ((f = creat(new, mode)) < 0) {
 		if (errno != ENOENT || chkparent(new) < 0 ||
 		    (f = creat(new, mode)) < 0)
-			goto badn;
+			goto badnew1;
 	}
 
 	ack();
@@ -825,70 +825,62 @@ recvf(cmd, type)
 			wrerr++;
 		}
 	}
-	(void) close(f);
 	if (response() < 0) {
 		err();
-		(void) unlink(new);
-		return;
+		goto badnew2;
 	}
-	if (wrerr) {
-		error("%s:%s: %s\n", host, new, strerror(errno));
-		(void) unlink(new);
-		return;
-	}
+	if (wrerr)
+		goto badnew1;
 	if (opts & COMPARE) {
 		FILE *f1, *f2;
 		int c;
 
 		if ((f1 = fopen(target, "r")) == NULL)
-			goto badt;
+			goto badtarget;
 		if ((f2 = fopen(new, "r")) == NULL) {
-		badn:
-			error("%s:%s: %s\n", host, new, strerror(errno));
-			(void) unlink(new);
-			return;
+badnew1:		error("%s:%s: %s\n", host, new, strerror(errno));
+			goto badnew2;
 		}
 		while ((c = getc(f1)) == getc(f2))
 			if (c == EOF) {
 				(void) fclose(f1);
 				(void) fclose(f2);
-				(void) unlink(new);
 				ack();
-				return;
+				goto badnew2;
 			}
 		(void) fclose(f1);
 		(void) fclose(f2);
 		if (opts & VERIFY) {
-		differ:
-			(void) unlink(new);
-			buf[0] = '\0';
+differ:			buf[0] = '\0';
 			(void) sprintf(buf + 1, "need to update: %s\n",target);
 			(void) write(rem, buf, strlen(buf + 1) + 1);
-			return;
+			goto badnew2;
 		}
 	}
 
 	/*
 	 * Set last modified time
 	 */
-	tvp[0].tv_sec = stb.st_atime;	/* old atime from target */
+	tvp[0].tv_sec = time(0);
 	tvp[0].tv_usec = 0;
 	tvp[1].tv_sec = mtime;
 	tvp[1].tv_usec = 0;
-	if (utimes(new, tvp) < 0) {
-		note("%s:utimes failed %s: %s\n", host, new, strerror(errno));
-	}
-	if (chog(new, owner, group, mode) < 0) {
+	if (utimes(new, tvp) < 0)
+		note("%s: utimes failed %s: %s\n", host, new, strerror(errno));
+
+	if (fchog(f, new, owner, group, mode) < 0) {
+badnew2:	(void) close(f);
 		(void) unlink(new);
 		return;
 	}
-fixup:
-	if (rename(new, target) < 0) {
-badt:
-		error("%s:%s: %s\n", host, target, strerror(errno));
+	(void) close(f);
+
+fixup:	if (rename(new, target) < 0) {
+badtarget:	error("%s:%s: %s\n", host, target, strerror(errno));
 		(void) unlink(new);
 		return;
 	}
+
 	if (opts & COMPARE) {
 		buf[0] = '\0';
 		(void) sprintf(buf + 1, "updated %s\n", target);
@@ -984,7 +976,8 @@ chkparent(name)
 /*
  * Change owner, group and mode of file.
  */
-chog(file, owner, group, mode)
+fchog(fd, file, owner, group, mode)
+	int fd;
 	char *file, *owner, *group;
 	int mode;
 {
@@ -1034,16 +1027,11 @@ chog(file, owner, group, mode)
 		mode &= ~02000;
 		gid = -1;
 	}
-ok:
-	if (userid)
-		setreuid(userid, 0);
-	if (chown(file, uid, gid) < 0 ||
-	    (mode & 07000) && chmod(file, mode) < 0) {
-		note("%s: chown or chmod failed: file %s:  %s",
-			     host, file, strerror(errno));
-	}
-	if (userid)
-		setreuid(0, userid);
+ok:	if (fd != -1 && fchown(fd, uid, gid) < 0 || chown(file, uid, gid) < 0)
+		note("%s: %s chown: %s", host, file, strerror(errno));
+	else if (mode & 07000 &&
+	   (fd != -1 && fchmod(fd, mode) < 0 || chmod(file, mode) < 0))
+		note("%s: %s chmod: %s", host, file, strerror(errno));
 	return(0);
 }
 
