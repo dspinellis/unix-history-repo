@@ -111,9 +111,9 @@ SMC Elite Ultra
 
 2.3. Misc
 
-Various 2 and 4 port serial/parallel cards.
+AST 4 port serial card using shared IRQ.
 
-Simple (AST-like) multiport serial cards.
+ARNET 8 port serial card using shared IRQ.
 
 BOCA ATIO66 6 port serial card using shared IRQ.
 
@@ -296,4 +296,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.30 1994/05/05 14:28:37 jkh Exp $
+$Id: RELNOTES.FreeBSD,v 1.31 1994/05/06 01:28:05 jkh Exp $
