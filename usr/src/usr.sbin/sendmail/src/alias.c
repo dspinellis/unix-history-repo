@@ -10,7 +10,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.35 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -374,11 +374,16 @@ aliaswait(map, ext, isopen)
 		/* database is out of date */
 		if (AutoRebuild && stb.st_ino != 0 && stb.st_uid == geteuid())
 		{
+			bool oldSuprErrs;
+
 			message("auto-rebuilding alias database %s", buf);
+			oldSuprErrs = SuprErrs;
+			SuprErrs = TRUE;
 			if (isopen)
 				map->map_class->map_close(map);
 			rebuildaliases(map, TRUE);
 			isopen = map->map_class->map_open(map, O_RDONLY);
+			SuprErrs = oldSuprErrs;
 		}
 		else
 		{
