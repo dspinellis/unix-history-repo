@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.15 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -35,9 +35,6 @@ static char sccsid[] = "@(#)telnetd.c	5.14 (Berkeley) %G%";
 #include <netdb.h>
 #include <syslog.h>
 #include <ctype.h>
-
-#define	BELL	'\07'
-#define BANNER	"\r\n\r\n4.3 BSD UNIX (%s)\r\n\r\r\n\r%s"
 
 #define	OPT_DONT	0		/* don't do this option */
 #define	OPT_WONT	0		/* won't do this option */
@@ -69,6 +66,9 @@ char	*neturg = 0;		/* one past last bye of urgent data */
 	/* the remote system seems to NOT be an old 4.2 */
 int	not42 = 1;
 
+
+char BANNER1[] = "\r\n\r\n4.3 BSD UNIX (",
+    BANNER2[] = ")\r\n\r\0\r\n\r\0";
 
 char	subbuffer[100], *subpointer, *subend;	/* buffer for sub-options */
 #define	SB_CLEAR()	subpointer = subbuffer;
@@ -296,6 +296,7 @@ doit(f, who)
 	    envinit[0] = terminaltype;
 	    envinit[1] = 0;
 	}
+	netip = netibuf;
 
 	for (c = 'p'; c <= 's'; c++) {
 		struct stat stb;
@@ -450,10 +451,19 @@ telnet(f, p)
 
 	/*
 	 * Show banner that getty never gave.
+	 *
+	 * The banner includes some null's (for TELNET CR disambiguation),
+	 * so we have to be somewhat complicated.
 	 */
+
 	gethostname(hostname, sizeof (hostname));
-	sprintf(nfrontp, BANNER, hostname, "");
-	nfrontp += strlen(nfrontp);
+
+	bcopy(BANNER1, nfrontp, sizeof BANNER1 -1);
+	nfrontp += sizeof BANNER1 - 1;
+	bcopy(hostname, nfrontp, strlen(hostname));
+	nfrontp += strlen(hostname);
+	bcopy(BANNER2, nfrontp, sizeof BANNER2 -1);
+	nfrontp += sizeof BANNER2 - 1;
 
 	/*
 	 * Call telrcv() once to pick up anything received during
