@@ -1,6 +1,6 @@
 /* @(#)user.h 2.1 3/25/82 */
 
-/*	user.h	4.13	82/06/25	*/
+/*	user.h	4.14	82/07/16	*/
 
 #ifdef KERNEL
 #include "../h/pcb.h"
@@ -122,8 +122,11 @@ struct	user
 #ifdef notdef
 	unsigned u_vsave;		/* saved previous fault page number */
 #endif
-	int	u_stack[1];
+	struct	quota	*u_quota;	/* user's quota structure */
+	int	u_qflags;		/* per process quota flags */
+	int	u_pflags;		/* per process other sorts of flags */
 
+	int	u_stack[1];
 					/*
 					 * kernel stack per user
 					 * extends from u + UPAGES*512
