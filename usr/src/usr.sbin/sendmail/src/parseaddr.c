@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.64		%G%);
+SCCSID(@(#)parseaddr.c	3.65		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -470,7 +470,7 @@ rewrite(pvp, ruleset)
 	char *npvp[MAXATOM+1];		/* temporary space for rebuild */
 	extern bool sameword();
 
-	if (Mode == MD_TEST || tTd(21, 2))
+	if (OpMode == MD_TEST || tTd(21, 2))
 	{
 		printf("rewrite: ruleset %2d   input:", ruleset);
 		printav(pvp);
@@ -704,7 +704,7 @@ rewrite(pvp, ruleset)
 		}
 	}
 
-	if (Mode == MD_TEST || tTd(21, 2))
+	if (OpMode == MD_TEST || tTd(21, 2))
 	{
 		printf("rewrite: ruleset %2d returns:", ruleset);
 		printav(pvp);

@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.133		%G%);
+SCCSID(@(#)main.c	3.134		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -153,7 +153,7 @@ main(argc, argv)
 		(void) signal(SIGHUP, intsig);
 	(void) signal(SIGTERM, intsig);
 	OldUmask = umask(0);
-	Mode = MD_DEFAULT;
+	OpMode = MD_DELIVER;
 	MotherPid = getpid();
 # ifndef V6
 	FullName = getenv("NAME");
@@ -182,23 +182,39 @@ main(argc, argv)
 	if (p++ == NULL)
 		p = *av;
 	if (strcmp(p, "newaliases") == 0)
-		setoption('b', "i", FALSE, TRUE);
+		OpMode = MD_INITALIAS;
 	else if (strcmp(p, "mailq") == 0)
-		setoption('b', "p", FALSE, TRUE);
+		OpMode = MD_PRINT;
 	while (--ac > 0 && (p = *++av)[0] == '-')
 	{
 		switch (p[1])
 		{
-		  case 'a':	/* arpanet format */
-			ArpaMode = TRUE;
-			if (p[2] == 's')
+		  case 'b':	/* operations mode */
+			switch (p[2])
 			{
-				/* running smtp */
-# ifdef SMTP
-				Smtp = TRUE;
-# else SMTP
+			  case MD_DAEMON:
+# ifndef DAEMON
+				syserr("Daemon mode not implemented");
+				break;
+# endif DAEMON
+			  case MD_SMTP:
+# ifndef SMTP
 				syserr("I don't speak SMTP");
+				break;
 # endif SMTP
+			  case MD_ARPAFTP:
+			  case MD_DELIVER:
+			  case MD_VERIFY:
+			  case MD_TEST:
+			  case MD_INITALIAS:
+			  case MD_PRINT:
+			  case MD_FREEZE:
+				OpMode = p[2];
+				break;
+
+			  default:
+				syserr("Invalid operation mode %c", p[2]);
+				break;
 			}
 			break;
 
@@ -294,7 +310,6 @@ main(argc, argv)
 			break;
 
 			/* compatibility flags */
-		  case 'b':	/* operations mode */
 		  case 'c':	/* connect to non-local mailers */
 		  case 'e':	/* error message disposition */
 		  case 'i':	/* don't let dot stop me */
@@ -310,7 +325,7 @@ main(argc, argv)
 
 # ifdef DBM
 		  case 'I':	/* initialize alias DBM file */
-			setoption('b', "i", FALSE, TRUE);
+			OpMode = MD_INITALIAS;
 			break;
 # endif DBM
 		}
@@ -324,12 +339,12 @@ main(argc, argv)
 
 	if (pass <= 1)
 	{
-		if (!safecf || Mode == MD_FREEZE || !thaw())
+		if (!safecf || OpMode == MD_FREEZE || !thaw())
 			readcf(ConfFile, safecf);
 		else
 			goto crackargs;
 	}
-	switch (Mode)
+	switch (OpMode)
 	{
 	  case MD_FREEZE:
 		freeze();
@@ -346,7 +361,13 @@ main(argc, argv)
 
 	/* do heuristic mode adjustment */
 	if (Verbose)
-		setoption('b', "a", TRUE, FALSE);
+	{
+		/* turn off noconnect option */
+		setoption('c', "F", TRUE, FALSE);
+
+		/* turn on interactive delivery */
+		setoption('d', "", TRUE, FALSE);
+	}
 
 	/* our name for SMTP codes */
 	(void) expand("$i", ibuf, &ibuf[sizeof ibuf - 1]);
@@ -376,9 +397,9 @@ main(argc, argv)
 	**  Initialize aliases.
 	*/
 
-	initaliases(AliasFile, Mode == MD_INITALIAS);
+	initaliases(AliasFile, OpMode == MD_INITALIAS);
 # ifdef DBM
-	if (Mode == MD_INITALIAS)
+	if (OpMode == MD_INITALIAS)
 		exit(EX_OK);
 # endif DBM
 
@@ -410,7 +431,7 @@ main(argc, argv)
 	**  If test mode, read addresses from stdin and process.
 	*/
 
-	if (Mode == MD_TEST)
+	if (OpMode == MD_TEST)
 	{
 		char buf[MAXLINE];
 
@@ -462,7 +483,7 @@ main(argc, argv)
 	**		during startup.
 	*/
 
-	if (Mode == MD_DAEMON || QueueIntvl != 0)
+	if (OpMode == MD_DAEMON || QueueIntvl != 0)
 	{
 		if (!tTd(0, 1))
 		{
@@ -494,7 +515,7 @@ main(argc, argv)
 		if (queuemode)
 		{
 			runqueue(TRUE);
-			if (Mode != MD_DAEMON)
+			if (OpMode != MD_DAEMON)
 				for (;;)
 					pause();
 		}
@@ -503,6 +524,7 @@ main(argc, argv)
 		getrequests();
 
 		/* at this point we are in a child: reset state */
+		OpMode = MD_SMTP;
 		dropenvelope(CurEnv);
 		CurEnv->e_id = CurEnv->e_qf = CurEnv->e_df = NULL;
 		FatalErrors = FALSE;
@@ -515,7 +537,7 @@ main(argc, argv)
 	**  If collecting stuff from the queue, go start doing that.
 	*/
 
-	if (queuemode && Mode != MD_DAEMON)
+	if (queuemode && OpMode != MD_DAEMON)
 	{
 		runqueue(FALSE);
 		finis();
@@ -531,7 +553,7 @@ main(argc, argv)
 	**  commands.  This will never return.
 	*/
 
-	if (Smtp)
+	if (OpMode == MD_SMTP)
 		smtp();
 # endif SMTP
 
@@ -541,11 +563,13 @@ main(argc, argv)
 
 	setsender(from);
 
-	if (Mode != MD_DAEMON && ac <= 0 && !GrabTo)
+	if (OpMode != MD_DAEMON && ac <= 0 && !GrabTo)
 	{
 		usrerr("Usage: /etc/sendmail [flags] addr...");
 		finis();
 	}
+	if (OpMode == MD_VERIFY)
+		SendMode = SM_VERIFY;
 
 	/*
 	**  Process Hop count.
@@ -578,62 +602,9 @@ main(argc, argv)
 
 	DontSend = FALSE;
 	CurEnv->e_to = NULL;
-	if (Mode != MD_VERIFY || GrabTo)
+	if (OpMode != MD_VERIFY || GrabTo)
 		collect(FALSE);
 	errno = 0;
-
-	/*
-	**  If we don't want to wait around for actual delivery, this
-	**  is a good time to fork off.
-	**	We have examined what we can without doing actual
-	**		delivery, so we will inform our caller of
-	**		whatever we can now.
-	**	Since the parent process will go away immediately,
-	**		the child will be caught by init.
-	**	If the fork fails, we will just continue in the
-	**		parent; this is perfectly safe, albeit
-	**		slower than it must be.
-	*/
-
-# ifdef QUEUE
-	if (Mode == MD_QUEUE)
-	{
-		register ADDRESS *q;
-
-		for (q = CurEnv->e_sendqueue; q != NULL; q = q->q_next)
-		{
-			if (!bitset(QDONTSEND, q->q_flags))
-			{
-				CurEnv->e_to = q->q_paddr;
-				message(Arpa_Info, "queued");
-				if (LogLevel > 4)
-					logdelivery("queued");
-			}
-			CurEnv->e_to = NULL;
-		}
-	}
-	if (Mode == MD_QUEUE || Mode == MD_FORK ||
-	    (Mode != MD_VERIFY && SuperSafe))
-		queueup(CurEnv, TRUE);
-
-	if (Mode == MD_FORK)
-	{
-		if (fork() > 0)
-		{
-			/* parent -- quit */
-			exit(ExitStat);
-		}
-# ifdef LOG
-		if (LogLevel > 11)
-			syslog(LOG_DEBUG, "background delivery, pid=%d", getpid());
-# endif LOG
-	}
-	else if (Mode == MD_QUEUE)
-	{
-		CurEnv->e_df = CurEnv->e_qf = NULL;
-		CurEnv->e_dontqueue = TRUE;
-		finis();
-	}
 
 	initsys();
 
@@ -661,14 +632,14 @@ main(argc, argv)
 	**	If verifying, just ack.
 	*/
 
-	sendall(CurEnv, Mode == MD_VERIFY);
+	sendall(CurEnv, SendMode);
 
 	/*
 	** All done.
 	*/
 
 	CurEnv->e_to = NULL;
-	if (Mode != MD_VERIFY)
+	if (OpMode != MD_VERIFY)
 		poststats(StatFile);
 	finis();
 }
@@ -948,7 +919,7 @@ setsender(from)
 	**	Getlogin can return errno != 0 on non-errors.
 	*/
 
-	if (!Smtp && !QueueRun)
+	if (OpMode != MD_SMTP && !QueueRun)
 	{
 		errno = 0;
 		p = getlogin();
@@ -967,7 +938,7 @@ setsender(from)
 		pw = getpwnam(p);
 		if (pw == NULL)
 		{
-			if (!Smtp && !QueueRun)
+			if (OpMode != MD_SMTP && !QueueRun)
 				syserr("Who are you? (name=%s)", p);
 			p = NULL;
 		}
@@ -1065,7 +1036,7 @@ initsys()
 	**	tucked away in the transcript).
 	*/
 
-	if (Mode == MD_DAEMON && QueueRun)
+	if (OpMode == MD_DAEMON && QueueRun)
 		OutChannel = Xscript;
 
 	/*
