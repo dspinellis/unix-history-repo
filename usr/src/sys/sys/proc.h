@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)proc.h	7.32 (Berkeley) %G%
+ *	@(#)proc.h	7.33 (Berkeley) %G%
  */
 
 #ifndef _PROC_H_
@@ -218,10 +218,10 @@ struct	prochd {
 
 int	whichqs;		/* bit mask summarizing non-empty qs's */
 
-int	sleep __P((caddr_t chan, int pri));
-int	tsleep __P((caddr_t chan, int pri, char *wmesg, int timo));
+int	sleep __P((void *chan, int pri));
+int	tsleep __P((void *chan, int pri, char *wmesg, int timo));
 int	unsleep __P((struct proc *));
-int	wakeup __P((caddr_t));
+int	wakeup __P((void *chan));
 int	setrun __P((struct proc *));
 int	setpri __P((struct proc *));
 
