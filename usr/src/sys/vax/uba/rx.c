@@ -1,17 +1,14 @@
-/*	rx.c	4.8	83/03/28	*/
+/*	rx.c	4.9	83/03/29	*/
 
 #include "rx.h"
 #if NFX > 0
 /*
  * RX02 floppy disk device driver
  *
- * -- WARNING, NOT THOROUGHLY TESTED --
  */
 
 /*
  * TODO:
- *    -	Make the driver recognize when the drive subsystem 
- * 	has been turned off, so it can initialize the controller. 
  *    - Make it possible to access blocks containing less than
  *	512 bytes properly.
  *
@@ -179,7 +176,6 @@ rxclose(dev, flag)
 	sc->sc_flags &= ~RXF_OPEN;
 	sc->sc_csbits = 0;
 	rxwstart = 0;
-	printf("rxclose: dev=0x%x\n", dev);
 }
 
 rxstrategy(bp)
@@ -319,7 +315,16 @@ loop:
 	if (bp->b_bcount > NBPS)
 		bp->b_bcount = NBPS;
 	rxc->rxc_tocnt = 0;
-	if (bp->b_flags&B_CTRL) {			/* format */
+	if (rxaddr->rxcs == 0x800) {
+		/*
+		 * Simulated check for 'volume valid', check
+		 * if the drive unit has been powered down
+		 */
+		rxaddr->rxcs = RX_INIT;
+		while((rxaddr->rxcs&RX_DONE) == 0)
+			;
+	}
+	if (bp->b_flags&B_CTRL) {				/* format */
 		rxc->rxc_state = RXS_FORMAT;
 		rxaddr->rxcs = RX_FORMAT | sc->sc_csbits;
 		while ((rxaddr->rxcs&RX_TREQ) == 0)
@@ -328,12 +333,7 @@ loop:
 		return;
 	}
 
-	if (bp->b_flags&B_WRITE) {
-		rxc->rxc_state = RXS_FILL;			/* write */
-		um->um_cmd = RX_FILL;
-		(void) ubago(rxdinfo[unit]);
-
-	} else {
+	if (bp->b_flags&B_READ) {
 		rxmap(bp, &sector, &track);			/* read */
 		rxc->rxc_state = RXS_READ;
 		rxaddr->rxcs = RX_READ | sc->sc_csbits;
@@ -343,9 +343,15 @@ loop:
 		while ((rxaddr->rxcs&RX_TREQ) == 0)
 			;
 		rxaddr->rxdb = (u_short)track;
+	} else {
+		rxc->rxc_state = RXS_FILL;			/* write */
+		um->um_cmd = RX_FILL;
+		(void) ubago(rxdinfo[unit]);
 	}
+#ifdef RXDEBUG
 	printf("rxstart: flgs=0x%x, unit=%d, tr=%d, sc=%d, bl=%d, cnt=%d\n", 
 		bp->b_flags, unit, track, sector, bp->b_blkno, bp->b_bcount);
+#endif
 }
 
 rxdgo(um)
@@ -393,8 +399,10 @@ rxintr(ctlr)
 	rxc = &rx_ctlr[um->um_ctlr];
 	rxc->rxc_tocnt = 0;
 	er = &rxerr[unit];
+#ifdef RXDEBUG
 	printf("rxintr: dev=0x%x, state=0x%x, status=0x%x\n", 
 		bp->b_dev, rxc->rxc_state, rxaddr->rxcs);
+#endif
 	if ((rxaddr->rxcs & RX_ERR) &&
 	    rxc->rxc_state != RXS_RDSTAT && rxc->rxc_state != RXS_RDERR)
 		goto error;
@@ -437,7 +445,7 @@ rxintr(ctlr)
 	case RXS_RDSTAT:
 		if (rxaddr->rxdb&RXES_READY)
 			goto rderr;
-		bp->b_error = EBUSY;
+		bp->b_error = EIO;
 		bp->b_flags |= B_ERROR;
 		goto done;
 
@@ -459,6 +467,7 @@ rxintr(ctlr)
 			MASKREG(er->rxxt[0]));
 		printf("errstatus: 0x%x, 0x%x, 0x%x, 0x%x\n", er->rxxt[0],
 			er->rxxt[1], er->rxxt[2], er->rxxt[3]);
+		bp = bp->b_back;		/* kludge, see 'rderr:' */
 		goto done;
 
 	default:
@@ -488,7 +497,7 @@ error:
 		goto giveup;
 	rxaddr->rxcs = RX_INIT;
 	/* no way to get an interrupt for "init done", so just wait */
-	while ((rxaddr->rxdb&RX_DONE) == 0)
+	while ((rxaddr->rxcs&RX_DONE) == 0)
 		;
 retry:
 	/*
@@ -512,7 +521,7 @@ giveup:
 	 * which one doesn't give a density error.
 	 */
 	if (rxaddr->rxdb & RXES_DENERR) {
-		bp->b_error = EIO;
+		bp->b_error = ENODEV;
 		bp->b_flags |= B_ERROR;
 		goto done;
 	}
@@ -531,6 +540,8 @@ rderr:
 	bp->b_error = EIO;
 	bp->b_flags |= B_ERROR;
 	ubadone(um);
+	erxbuf[unit].b_back = bp;	/* kludge to save the buffer pointer */
+					/* while processing the error */
 	er->rxcs = rxaddr->rxcs;
 	er->rxdb = rxaddr->rxdb;
 	bp = &erxbuf[unit];
@@ -619,7 +630,7 @@ rxreset(uban)
 		rx_ctlr[ctlr].rxc_state = RXS_IDLE;
 		rxaddr = (struct rxdevice *)um->um_addr;
 		rxaddr->rxcs = RX_INIT;
-		while ((rxaddr->rxdb&RX_DONE) == 0)
+		while ((rxaddr->rxcs&RX_DONE) == 0)
 			;
 		rxstart(um);
 	}
