@@ -1,0 +1,12 @@
+1a
+%beginstrip%
+.
+g/%beginstrip%/d
+i
+.\" This version has had comments stripped; an unstripped version is available.
+.
++,$g/[.	]\\".*/s///
+g/[ 	][ 	]*$/s///
+g/^$/d
+w
+q
