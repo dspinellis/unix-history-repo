@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass2.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass2.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -205,6 +205,8 @@ pass2check(idesc)
 	proto.d_ino = idesc->id_number;
 	if (newinofmt)
 		proto.d_type = DT_DIR;
+	else
+		proto.d_type = 0;
 	proto.d_namlen = 1;
 	(void)strcpy(proto.d_name, ".");
 	entrysize = DIRSIZ(0, &proto);
@@ -237,6 +239,8 @@ chk1:
 	proto.d_ino = inp->i_parent;
 	if (newinofmt)
 		proto.d_type = DT_DIR;
+	else
+		proto.d_type = 0;
 	proto.d_namlen = 2;
 	(void)strcpy(proto.d_name, "..");
 	entrysize = DIRSIZ(0, &proto);
