@@ -1,0 +1,36 @@
+.pa 1
+.he 'POW (III)'1/15/73'POW (III)'
+.ti 0
+NAME		pow -- floating exponentiation x^y
+.sp
+.ti 0
+SYNOPSIS	movf	x,fr0
+.br
+movf	y,fr1
+.br
+jsr	pc,pow
+.br
+movf	fr0,...
+.sp
+.ti 0
+DESCRIPTION	The
+value of x^y (i.e. x\uy\d) is returned in fr0.
+
+0^x returns zero for all x.
+
+(-x)^y returns a result only if y is an integer.
+
+.ti 0
+FILES		kept in /lib/liba.a
+.sp
+.ti 0
+SEE ALSO	exp(III), log(III)
+.sp
+.ti 0
+DIAGNOSTICS	The
+carry bit is set on return in case of overflow or in case of
+0^0 or
+(-x)^y for y non-integer.
+.sp
+.ti 0
+BUGS		--
