@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.18 (Berkeley) %G%
+#	@(#)Makefile.inc	8.1 (Berkeley) %G%
 
 # machine-independent stdlib sources
 .PATH: ${.CURDIR}/${MACHINE}/stdlib ${.CURDIR}/stdlib
