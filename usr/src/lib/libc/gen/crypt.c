@@ -1,4 +1,4 @@
-/* @(#)crypt.c	4.1 (Berkeley) %G% */
+/* @(#)crypt.c	4.2 (Berkeley) %G% */
 /*
  * This program implements the
  * Proposed Federal Information Processing
@@ -92,6 +92,21 @@ static	char	D[28];
 static	char	KS[16][48];
 
 /*
+ * The E bit-selection table.
+ */
+static	char	E[48];
+static	char	e[] = {
+	32, 1, 2, 3, 4, 5,
+	 4, 5, 6, 7, 8, 9,
+	 8, 9,10,11,12,13,
+	12,13,14,15,16,17,
+	16,17,18,19,20,21,
+	20,21,22,23,24,25,
+	24,25,26,27,28,29,
+	28,29,30,31,32, 1,
+};
+
+/*
  * Set up the key schedule from the key.
  */
 
@@ -138,22 +153,10 @@ char *key;
 			KS[i][j+24] = D[PC2_D[j]-28-1];
 		}
 	}
-}
 
-/*
- * The E bit-selection table.
- */
-static	char	E[48];
-static	char	e[] = {
-	32, 1, 2, 3, 4, 5,
-	 4, 5, 6, 7, 8, 9,
-	 8, 9,10,11,12,13,
-	12,13,14,15,16,17,
-	16,17,18,19,20,21,
-	20,21,22,23,24,25,
-	24,25,26,27,28,29,
-	28,29,30,31,32, 1,
-};
+	for(i=0;i<48;i++)
+		E[i] = e[i];
+}
 
 /*
  * The 8 selection functions.
@@ -329,6 +332,7 @@ char *salt;
 	register i, j, c;
 	int temp;
 	static char block[66], iobuf[16];
+
 	for(i=0; i<66; i++)
 		block[i] = 0;
 	for(i=0; (c= *pw) && i<64; pw++){
@@ -341,9 +345,6 @@ char *salt;
 	
 	for(i=0; i<66; i++)
 		block[i] = 0;
-
-	for(i=0;i<48;i++)
-		E[i] = e[i];
 
 	for(i=0;i<2;i++){
 		c = *salt++;
