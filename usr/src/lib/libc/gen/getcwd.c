@@ -1,4 +1,4 @@
-/*	@(#)getcwd.c	4.3	(Berkeley)	%G%	*/
+/*	@(#)getcwd.c	4.4	(Berkeley)	%G%	*/
 
 /*
  * Getwd
@@ -9,6 +9,8 @@
 
 #define	dot	"."
 #define	dotdot	".."
+
+#define	prexit(s)	{ strcpy(np, s); return (NULL); }
 
 static	char *name;
 
@@ -35,21 +37,21 @@ getwd(np)
 		if (d.st_ino==rino && d.st_dev==rdev)
 			goto done;
 		if ((file = opendir(dotdot)) == NULL)
-			prexit("getwd: cannot open ..\n");
+			prexit("getwd: cannot open ..");
 		fstat(file->dd_fd, &dd);
 		if (chdir(dotdot) < 0)
-			prexit("getwd: cannot chdir to ..\n");
+			prexit("getwd: cannot chdir to ..");
 		if (d.st_dev == dd.st_dev) {
 			if(d.st_ino == dd.st_ino)
 				goto done;
 			do
 				if ((dir = readdir(file)) == NULL)
-					prexit("getwd: read error in ..\n");
+					prexit("getwd: read error in ..");
 			while (dir->d_ino != d.st_ino);
 		} else
 			do {
 				if ((dir = readdir(file)) == NULL)
-					prexit("getwd: read error in ..\n");
+					prexit("getwd: read error in ..");
 				stat(dir->d_name, &dd);
 			} while(dd.st_ino != d.st_ino || dd.st_dev != d.st_dev);
 		closedir(file);
@@ -58,7 +60,7 @@ getwd(np)
 done:
 	name--;
 	if (chdir(name) < 0)
-		prexit("getwd: can't change back\n");
+		prexit("getwd: can't change back");
 	return (name);
 }
 
@@ -78,11 +80,4 @@ cat()
 	name[off] = 0;
 	for(--i; i>=0; --i)
 		name[i] = dir->d_name[i];
-}
-
-prexit(cp)
-	char *cp;
-{
-	write(2, cp, strlen(cp));
-	exit(1);
 }
