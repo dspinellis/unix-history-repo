@@ -6,7 +6,7 @@
 # include <log.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	1.8	%G%";
+static char SccsId[] = "@(#)deliver.c	1.9	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -207,7 +207,7 @@ deliver(to, editfcn)
 			if (dup(pvect[0]) < 0)
 			{
 				syserr("Cannot dup to zero!");
-				exit(EX_OSERR);
+				_exit(EX_OSERR);
 			}
 			close(pvect[0]);
 			close(pvect[1]);
@@ -234,7 +234,7 @@ deliver(to, editfcn)
 		execv(m->m_mailer, pvp);
 		/* syserr fails because log is closed */
 		/* syserr("Cannot exec %s", m->m_mailer); */
-		exit(EX_UNAVAILABLE);
+		_exit(EX_UNAVAILABLE);
 	}
 
 	/* arrange to write out header message if error */
