@@ -1,5 +1,5 @@
 /*
-char id_util[] = "@(#)util.c	1.1";
+char id_util[] = "@(#)util.c	1.2";
  *
  * utility routines
  */

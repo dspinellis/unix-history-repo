@@ -1,5 +1,5 @@
 /*
-char id_sfe[] = "@(#)sfe.c	1.1";
+char id_sfe[] = "@(#)sfe.c	1.2";
  *
  * sequential formatted external routines
  */
@@ -23,7 +23,7 @@ s_rsfe(a) cilist *a; /* start */
 	doned= rd_ned;
 	donewrec = dorevert = doend = x_rnew;
 	dotab = x_tab;
-	if(pars_f(fmtbuf)) err(errflag,100,"read sfe")
+	if(pars_f(fmtbuf)) err(errflag,F_ERFMT,"read sfe")
 	fmt_bg();
 	return(OK);
 }
@@ -68,15 +68,15 @@ c_sfe(a,flag) cilist *a; /* check */
 	errflag = a->cierr;
 	endflag = a->ciend;
 	lunit = a->ciunit;
-	if(not_legal(lunit)) err(errflag,101,"sfe");
+	if(not_legal(lunit)) err(errflag,F_ERUNIT,"sfe");
 	curunit = p = &units[lunit];
 	if(!p->ufd && (n=fk_open(flag,SEQ,FMT,(ftnint)lunit)) )
 		err(errflag,n,"sfe")
 	cf = curunit->ufd;
 	elist = YES;
 	lfname = curunit->ufnm;
-	if(!p->ufmt) err(errflag,102,"sfe")
-	if(p->url) err(errflag,105,"sfe")
+	if(!p->ufmt) err(errflag,F_ERNOFIO,"sfe")
+	if(p->url) err(errflag,F_ERNOSIO,"sfe")
 	cursor=recpos=scale=reclen=0;
 	radix = 10;
 	signit = YES;
@@ -107,7 +107,7 @@ s_wsfe(a) cilist *a;	/*start*/
 	doend = x_wend;
 	dorevert = donewrec = x_wnew;
 	dotab = x_tab;
-	if(pars_f(fmtbuf)) err(errflag,100,"write sfe")
+	if(pars_f(fmtbuf)) err(errflag,F_ERFMT,"write sfe")
 	fmt_bg();
 	return(OK);
 }
@@ -141,7 +141,7 @@ x_tab()
 {	int n;
 	if(reclen < recpos) reclen = recpos;
 	if(curunit->useek)
-	{	if((recpos+cursor) < 0) return(107);
+	{	if((recpos+cursor) < 0) return(F_ERBREC);
 		n = reclen - recpos;	/* distance to eor, n>=0 */
 		if((cursor-n) > 0)
 		{	fseek(cf,(long)n,1);  /* find current eor */
@@ -155,13 +155,13 @@ x_tab()
 		}
 	}
 	else
-		if(cursor < 0) return(120);	/* cant go back */
+		if(cursor < 0) return(F_ERSEEK);   /* can't go back */
 	while(cursor--)
 	{	if(reading)
 		{	n = (*getn)();
 			if(n=='\n')
 			{	(*ungetn)(n,cf);
-				return(110);
+				return(F_EREREC);
 			}
 			if(n==EOF) return(EOF);
 		}

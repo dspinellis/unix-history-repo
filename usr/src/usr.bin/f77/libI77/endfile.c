@@ -1,5 +1,5 @@
 /*
-char id_endfile[] = "@(#)endfile.c	1.1";
+char id_endfile[] = "@(#)endfile.c	1.2";
  *
  * endfile
  */
@@ -16,9 +16,9 @@ f_end(a) alist *a;
 	elist = NO;
 	errflag = a->aerr;
 	lunit = a->aunit;
-	if (not_legal(lunit)) err(errflag,101,endf)
+	if (not_legal(lunit)) err(errflag,F_ERUNIT,endf)
 	b = &units[lunit];
-	if(!b->ufd) err(errflag,114,endf)
+	if(!b->ufd) err(errflag,F_ERNOPEN,endf)
 	if(b->uend) return(0);
 	lfname = b->ufnm;
 	b->uend = YES;
@@ -56,13 +56,13 @@ t_runc(b,flag) unit *b; ioflag flag;
 		{
 			execl("/bin/cp","cp",nm,b->ufnm,0);
 			execl("/usr/bin/cp","cp",nm,b->ufnm,0);
-			fatal(119,"no cp for trunc");
+			fatal(F_ERSYS,"no cp for trunc");
 		}
 		wait(&m);
-		if(m) err(flag,111,endf);
+		if(m) err(flag,F_ERTRUNC,endf);
 		fclose(tmp);
 		unlink(nm);
 		return(OK);
 	}
-	err(flag,111,endf);
+	err(flag,F_ERTRUNC,endf);
 }

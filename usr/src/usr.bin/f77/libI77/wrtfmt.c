@@ -1,11 +1,11 @@
 /*
-char id_wrtfmt[] = "@(#)wrtfmt.c	1.1";
+char id_wrtfmt[] = "@(#)wrtfmt.c	1.2";
  *
  * formatted write routines
  */
 
 #include "fio.h"
-#include "fmt.h"
+#include "format.h"
 
 extern char *icvt();
 
@@ -36,7 +36,7 @@ w_ed(p,ptr,len) char *ptr; struct syl *p; ftnlen len;
 	case F:
 		return(wrt_F(ptr,p->p1,p->p2,len));
 	default:
-		return(errno=100);
+		return(errno=F_ERFMT);
 	}
 }
 
@@ -67,7 +67,7 @@ w_ned(p,ptr) char *ptr; struct syl *p;
 	case H:
 		return(wrt_H(p->p1,p->p2));
 	default:
-		return(errno=100);
+		return(errno=F_ERFMT);
 	}
 }
 

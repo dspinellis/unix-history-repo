@@ -1,5 +1,5 @@
 /*
-char id_dolio[] = "@(#)dolio.c	1.1";
+char id_dolio[] = "@(#)dolio.c	1.2";
  *
  * list directed i/o common routines
  */
@@ -17,7 +17,7 @@ c_le(a,flag) cilist *a;
 	errflag = a->cierr;
 	endflag = a->ciend;
 	lunit = a->ciunit;
-	if(not_legal(lunit)) err(errflag,101,fmtbuf)
+	if(not_legal(lunit)) err(errflag,F_ERUNIT,fmtbuf)
 	curunit = &units[lunit];
 	if(!curunit->ufd && (n=fk_open(flag,SEQ,FMT,(ftnint)lunit)))
 		err(errflag,n,fmtbuf)
@@ -26,8 +26,8 @@ c_le(a,flag) cilist *a;
 	lfname = curunit->ufnm;
 	scale=recpos=cursor=0;
 	cplus=cblank=NO;
-	if(!curunit->ufmt) err(errflag,102,fmtbuf)
-	if(curunit->url) err(errflag,105,fmtbuf)
+	if(!curunit->ufmt) err(errflag,F_ERNOFIO,fmtbuf)
+	if(curunit->url) err(errflag,F_ERNOSIO,fmtbuf)
 	return(OK);
 }
 

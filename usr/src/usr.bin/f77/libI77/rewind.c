@@ -1,5 +1,5 @@
 /*
-char id_rewind[] = "@(#)rewind.c	1.1";
+char id_rewind[] = "@(#)rewind.c	1.2";
  *
  * rewind.c  -  f77 file rewind
  */
@@ -15,12 +15,12 @@ f_rew(a) alist *a;
 	external = YES;			/* for err */
 	lunit = a->aunit;
 	errflag = a->aerr;
-	if(not_legal(lunit)) err(errflag,101,"rewind")
+	if(not_legal(lunit)) err(errflag,F_ERUNIT,"rewind")
 	b = &units[lunit];
 	if(!b->ufd && (n=fk_open(READ,SEQ,FMT,(ftnint)lunit)) )
 		err(errflag,n,"rewind")
 	lfname = b->ufnm;
-	if(!b->useek) err(errflag,106,"rewind")
+	if(!b->useek) err(errflag,F_ERNOBKSP,"rewind")
 	b->uend = NO;
 	if(b->uwrt)
 		if(n=t_runc(b,errflag)) return(n);

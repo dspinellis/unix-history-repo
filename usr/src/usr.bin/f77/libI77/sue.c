@@ -1,5 +1,5 @@
 /*
-char id_sue[] = "@(#)sue.c	1.1";
+char id_sue[] = "@(#)sue.c	1.2";
  *
  * sequential unformatted external read/write routines
  */
@@ -49,16 +49,16 @@ c_sue(a,flag) cilist *a;
 	errflag = a->cierr;
 	endflag = a->ciend;
 	lunit = a->ciunit;
-	if(not_legal(lunit)) err(errflag,101,sue)
+	if(not_legal(lunit)) err(errflag,F_ERUNIT,sue)
 	curunit = &units[lunit];
 	if(!curunit->ufd && (n=fk_open(flag,SEQ,UNF,(ftnint)lunit)))
 		err(errflag,n,sue)
 	cf = curunit->ufd;
 	elist = YES;
 	lfname = curunit->ufnm;
-	if(curunit->ufmt) err(errflag,103,sue)
-	if(curunit->url) err(errflag,105,sue)
-	if(!curunit->useek) err(errflag,120,sue)
+	if(curunit->ufmt) err(errflag,F_ERNOUIO,sue)
+	if(curunit->url) err(errflag,F_ERNOSIO,sue)
+	if(!curunit->useek) err(errflag,F_ERSEEK,sue)
 	return(OK);
 }
 

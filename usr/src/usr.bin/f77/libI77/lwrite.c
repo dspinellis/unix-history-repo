@@ -1,5 +1,5 @@
 /*
-char id_lwrite[] = "@(#)lwrite.c	1.1";
+char id_lwrite[] = "@(#)lwrite.c	1.2";
  *
  * list directed write
  */
@@ -81,7 +81,7 @@ l_write(number,ptr,len,type) ftnint *number,type; flex *ptr; ftnlen len;
 			ERR(lwrt_A((char *)ptr,len));
 			break;
 		default:
-			fatal(119,"unknown type in lwrite");
+			fatal(F_ERSYS,"unknown type in lwrite");
 		}
 		ptr = (flex *)((char *)ptr + len);
 	}

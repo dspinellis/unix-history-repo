@@ -1,5 +1,5 @@
 /*
-char id_lread[] = "@(#)lread.c	1.1";
+char id_lread[] = "@(#)lread.c	1.2";
  *
  * list directed read
  */
@@ -176,7 +176,7 @@ get_repet()
 		lcount = (int)lc;
 		if(GETC(ch)!='*')
 			if(leof) return(EOF);
-			else return(109);
+			else return(F_ERREPT);
 	}
 	else
 	{	lcount = 1;
@@ -195,7 +195,7 @@ l_R(flg) int flg;
 	da=rd_int(&a);	/* repeat count ? */
 	if(GETC(ch)=='*')
 	{
-		if (a <= 0.) return(122);
+		if (a <= 0.) return(F_ERNREP);
 		lcount=(int)a;
 		db=rd_int(&b);	/* whole part of number */
 	}
@@ -259,7 +259,7 @@ l_C()
 {	int ch,n;
 	if(lr_comm()) return(OK);
 	if(n=get_repet()) return(n);		/* get repeat count */
-	if(GETC(ch)!='(') err(errflag,112,"no (")
+	if(GETC(ch)!='(') err(errflag,F_ERLIO,"no (")
 	while(isblnk(GETC(ch)));
 	(*ungetn)(ch,cf);
 	l_R(0);		/* get real part */
@@ -267,7 +267,7 @@ l_C()
 	if(t_sep()) return(EOF);
 	l_R(0);		/* get imag part */
 	while(isblnk(GETC(ch)));
-	if(ch!=')') err(errflag,112,"no )")
+	if(ch!=')') err(errflag,F_ERLIO,"no )")
 	ltype = TYCOMPLEX;
 	return(OK);
 }
@@ -295,7 +295,7 @@ l_L()
 			return(OK);
 		}
 		else if(ch==EOF) return(EOF);
-		else	err(errflag,112,"logical not T or F");
+		else	err(errflag,F_ERLIO,"logical not T or F");
 	}
 	ltype=TYLOGICAL;
 	while(!issep(GETC(ch)) && !isblnk(ch) && ch!='\n' && ch!=EOF);
@@ -322,7 +322,7 @@ l_CHAR()
 	if(lchar!=NULL) free(lchar);
 	size=BUFSIZE-1;
 	p=lchar=(char *)malloc(BUFSIZE);
-	if(lchar==NULL) err(errflag,113,lrd)
+	if(lchar==NULL) err(errflag,F_ERSPACE,lrd)
 	for(i=0;;)
 	{	while( ( (quote && GETC(ch)!=quote) ||
 			(!quote && !issep(GETC(ch)) && !isblnk(ch) ) )
@@ -333,7 +333,7 @@ l_CHAR()
 		newone:
 			size += BUFSIZE;
 			lchar=(char *)realloc(lchar, size+1);
-			if(lchar==NULL) err(errflag,113,lrd)
+			if(lchar==NULL) err(errflag,F_ERSPACE,lrd)
 			p=lchar+i-1;
 			*p++ = ch;
 		}

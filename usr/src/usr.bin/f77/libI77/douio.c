@@ -1,5 +1,5 @@
 /*
-char id_douio[] = "@(#)douio.c	1.1";
+char id_douio[] = "@(#)douio.c	1.2";
  *
  * unformatted external i/o
  */
@@ -15,7 +15,7 @@ do_us(number,ptr,len) ftnint *number; ftnlen len; char *ptr;  /* sequential */
 	{
 		recpos += *number * len;
 		if (recpos > reclen)
-			err(errflag,110,eor);
+			err(errflag,F_EREREC,eor);
 
 		if (fread(ptr,(int)len,(int)(*number),cf) != *number)
 			return(due_err(uio));
@@ -40,7 +40,7 @@ do_ud(number,ptr,len) ftnint *number; ftnlen len; char *ptr;  /* direct */
 {
 	recpos += *number * len;
 	if(recpos > curunit->url && curunit->url!=1)
-		err(errflag,110,eor);
+		err(errflag,F_EREREC,eor);
 	if(reading)
 	{
 		if (fread(ptr, (int)len, (int)(*number), cf) != *number)

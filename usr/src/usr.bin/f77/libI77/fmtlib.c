@@ -1,5 +1,5 @@
 /*
-char id_fmtlib[] = "@(#)fmtlib.c	1.1";
+char id_fmtlib[] = "@(#)fmtlib.c	1.2";
  *
  * integer to ascii conversion
  */

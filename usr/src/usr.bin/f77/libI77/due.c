@@ -1,5 +1,5 @@
 /*
-char id_due[] = "@(#)due.c	1.1";
+char id_due[] = "@(#)due.c	1.2";
  *
  * direct unformatted external i/o
  */
@@ -37,15 +37,15 @@ c_due(a,flag) cilist *a;
 	errflag = a->cierr;
 	endflag = a->ciend;
 	lunit = a->ciunit;
-	if(not_legal(lunit)) err(errflag,101,due);
+	if(not_legal(lunit)) err(errflag,F_ERUNIT,due);
 	curunit = &units[lunit];
 	if (!curunit->ufd && (n=fk_open(flag,DIR,UNF,(ftnint)lunit)) )
 		err(errflag,n,due)
 	cf = curunit->ufd;
 	elist = YES;
 	lfname = curunit->ufnm;
-	if (curunit->ufmt) err(errflag,103,due)
-	if (!curunit->useek || !curunit->url) err(errflag,104,due)
+	if (curunit->ufmt) err(errflag,F_ERNOUIO,due)
+	if (!curunit->useek || !curunit->url) err(errflag,F_ERNODIO,due)
 	if (fseek(cf, (long)((a->cirec-1)*curunit->url), 0) < 0)
 		return(due_err(due));
 	else
