@@ -14,11 +14,11 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 CFLAGS=	-O
 
-SUBDIR=	pi pc0 px pxp pdx utilities
+SUBDIR=	pi pc0 px pxp pdx man utilities
 
 all clean cleandir install lint tags:
 	for i in eyacc ${SUBDIR}; do \
