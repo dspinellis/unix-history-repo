@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)tftpd.c	4.12 (Berkeley) %G%";
+static	char sccsid[] = "@(#)tftpd.c	4.13 (Berkeley) %G%";
 #endif
 
 /*
@@ -48,9 +48,6 @@ main()
 	}
 	from.sin_family = AF_INET;
 	alarm(0);
-#ifdef do_it_right_and_use_a_new_port
-	if (fork())
-		exit(0);
 	close(0);
 	close(1);
 	peer = socket(AF_INET, SOCK_DGRAM, 0);
@@ -62,13 +59,6 @@ main()
 		perror("tftpd: bind");
 		exit(1);
 	}
-#else
-	/*
-	 * The current 4.2 tftp client neglects to switch its destination
-	 * port after the first ACK.
-	 */
-	peer = 0;
-#endif
 	if (connect(peer, (caddr_t)&from, sizeof(from)) < 0) {
 		perror("tftpd: connect");
 		exit(1);
