@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chmod.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)chmod.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -33,10 +33,11 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	register FTS *ftsp;
-	register FTSENT *p;
-	register int oct, omode;
+	FTS *ftsp;
+	FTSENT *p;
 	mode_t *set;
+	long val;
+	int oct, omode;
 	int Hflag, Lflag, Pflag, Rflag, ch, fflag, fts_options, hflag, rval;
 	char *ep, *mode;
 
@@ -109,9 +110,15 @@ done:	argv += optind;
 
 	mode = *argv;
 	if (*mode >= '0' && *mode <= '7') {
-		omode = (int)strtol(mode, &ep, 8);
-		if (omode < 0 || *ep)
+		errno = 0;
+		val = strtol(mode, &ep, 8);
+		if (val > INT_MAX || val < 0)
+			errno = ERANGE;
+		if (errno)
+			err(1, "invalid file mode: %s", mode);
+		if (*ep)
 			errx(1, "invalid file mode: %s", mode);
+		omode = val;
 		oct = 1;
 	} else {
 		if ((set = setmode(mode)) == NULL)
