@@ -1,4 +1,4 @@
-/*	init_main.c	4.16	81/05/12	*/
+/*	init_main.c	4.17	81/08/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -221,6 +221,8 @@ binit()
 		nswdev++;
 	if (nswdev == 0)
 		panic("binit");
+	if (nswdev > 1)
+		nswap = (nswap/DMMAX)*DMMAX;
 	nswap *= nswdev;
 	maxpgio *= nswdev;
 	swfree(0);
