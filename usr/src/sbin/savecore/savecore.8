@@ -2,19 +2,21 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)savecore.8	4.1 (Berkeley) %G%
+.\"	@(#)savecore.8	5.1 (Berkeley) %G%
 .\"
-.TH SAVECORE 8 4/28/81
+.TH SAVECORE 8 4/28/83
 .UC 4
 .SH NAME
 savecore \- save a core dump of the operating system
 .SH SYNOPSIS
-.B savecore
+.B /etc/savecore
 .I dirname
+[
+.I system
+]
 .SH DESCRIPTION
-.PP
 .I Savecore
-is meant to be called at the end of the /etc/rc file.  Its function
+is meant to be called near the end of the /etc/rc file.  Its function
 is to save the core dump of the system (assuming one was made) and to
 write a reboot message in the shutdown log.
 .PP
@@ -42,9 +44,14 @@ also writes a reboot message in the shut down log.  If the system crashed
 as a result of a panic,
 .I savecore
 records the panic string in the shut down log too.
+.PP
+If the core dump was from a system other than /vmunix, the name
+of that system must be supplied as
+.IR sysname .
 .SH FILES
 .DT
-/usr/adm/shutdownlog	Shut down log
+/usr/adm/shutdownlog	shut down log
 .br
-/vmunix			Current UNIX
+/vmunix		current UNIX
 .SH BUGS
+Can be fooled into thinking a core dump is the wrong size.
