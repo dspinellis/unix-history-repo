@@ -3,10 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_print.c	7.6 (Berkeley) %G%
+ *	@(#)kdb_print.c	7.7 (Berkeley) %G%
  */
 
+#include "machine/mtpr.h"
+#undef ISP
 #include "../kdb/defs.h"
+#undef CTRL
+#include "tty.h"
 
 char	*BADRAD;
 
@@ -166,9 +170,13 @@ printtrace(modif)
 			}
 		break;
 
-	case 'l':
+	case 'l': {
+		struct pte savemmap;
+		extern char vmmap[];
+
+		savemmap = mmap[0];
 		for (p = allproc; p; p = p->p_nxt) {
-			printf("%X pid %5d %c", p, p->p_pid,
+			printf("%X pid %5d %5d %c", p, p->p_pid, p->p_ppid,
 				p->p_stat == SSLEEP ? 'S' :
 				p->p_stat == SRUN ? 'R':
 				p->p_stat == SIDL ? 'I':
@@ -177,9 +185,41 @@ printtrace(modif)
 				printf(" wait ");
 				psymoff((long)p->p_wchan, ISYM, "");
 			}
+			if ((p->p_flag & SLOAD) && p->p_addr) {
+				int i;
+				*(int *)mmap = *(int *)p->p_addr;
+				mtpr(TBIS, vmmap);
+#define U	((struct user *)vmmap)
+#ifdef not_until_uarea_completely_mapped
+				if (U->u_ttyp)
+					printf(" ctty %x ", U->u_ttyp);
+#endif
+				printf(" %.8s ", U->u_comm);
+#undef U
+			}
+
 			printc(EOR);
 		}
+		mmap[0] = savemmap;
+		mtpr(TBIS, vmmap);
 		break;
+	}
+
+	case 't':	/* XXX - debug */
+		if (adrflg) {
+		      printf("dev       state  rawq   canq  outq  lwat hwat\n");
+
+#define T	((struct tty *)adrval)	
+			printf("%x  %x %d %d %d %d %d\n", T->t_dev, 
+				T->t_state, T->t_rawq.c_cc, 
+				T->t_canq.c_cc, T->t_outq.c_cc,
+				T->t_lowat, T->t_hiwat);
+	       printf(" &rawq    &canq      &outq    &outq.c_cf  &rawq.c_cf\n");
+	       		printf(" %x %x  %x %x %x \n", &T->t_rawq, 
+				&T->t_canq, &T->t_outq, &T->t_outq.c_cf, 
+				&T->t_rawq.c_cf);
+#undef T
+		}
 
 	default:
 		error(BADMOD);
