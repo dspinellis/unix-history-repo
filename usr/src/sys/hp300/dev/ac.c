@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: ac.c 1.5 92/01/21$
  *
- *	@(#)ac.c	7.3 (Berkeley) %G%
+ *	@(#)ac.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -29,18 +29,16 @@
 #include <sys/param.h>
 #include <sys/buf.h>
 #include <sys/errno.h>
+#include <sys/time.h>
+#include <sys/ucred.h>
+#include <sys/proc.h>
+#include <vm/vm.h>
 #include <sys/user.h>
 #include <sys/ioctl.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>
-#include <sys/time.h>
-#include <sys/ucred.h>
-#include <sys/proc.h>
-
-#include <vm/vm.h>
 
 #include <hp/dev/device.h>
-
 #include <hp300/dev/scsireg.h>
 #include <hp300/dev/acioctl.h>
 #include <hp300/dev/acvar.h>
