@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_close.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_close.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -75,10 +75,6 @@ __bt_close(dbp)
  *
  * Returns:
  *	RET_SUCCESS, RET_ERROR.
- *
- * XXX
- * Currently don't handle a key marked for deletion when the tree is synced.
- * Should copy the page and write it out instead of the real page.
  */
 int
 __bt_sync(dbp)
@@ -86,23 +82,41 @@ __bt_sync(dbp)
 {
 	BTREE *t;
 	int status;
+	PAGE *h;
+	void *p;
 
 	t = dbp->internal;
 
-	if (ISSET(t, BTF_INMEM))
+	if (ISSET(t, BTF_INMEM) || ISSET(t, BTF_RDONLY))
 		return (RET_SUCCESS);
-
-	if (ISSET(t, BTF_RDONLY)) {
-		errno = EPERM;
-		return (RET_ERROR);
-	}
 
 	if (ISSET(t, BTF_METADIRTY) && bt_meta(t) == RET_ERROR)
 		return (RET_ERROR);
 
-	if ((status = mpool_sync(t->bt_mp)) == RET_SUCCESS) {
+	/*
+	 * Nastiness.  If the cursor has been marked for deletion, but not
+	 * actually deleted, we have to make a copy of the page, delete the
+	 * key/data item, sync the file, and then restore the original page
+	 * contents.
+	 */
+	if (ISSET(t, BTF_DELCRSR)) {
+		if ((h = mpool_get(t->bt_mp, t->bt_bcursor.pgno, 0)) == NULL)
+			return (RET_ERROR);
+		if ((p = malloc(t->bt_psize)) == NULL) {
+			mpool_put(t->bt_mp, h, 0);
+			return (RET_ERROR);
+		}
+		bcopy(h, p, t->bt_psize);
+		if (__bt_dleaf(t, h, t->bt_bcursor.index) == RET_ERROR)
+			goto ecrsr;
+	}
+		
+	if ((status = mpool_sync(t->bt_mp)) == RET_SUCCESS)
 		UNSET(t, BTF_MODIFIED);
-		return (RET_SUCCESS);
+ecrsr:	if (ISSET(t, BTF_DELCRSR)) {
+		bcopy(p, h, t->bt_psize);
+		free(p);
+		mpool_put(t->bt_mp, h, 0);
 	}
 	return (status);
 }
@@ -126,14 +140,14 @@ bt_meta(t)
 	if ((p = mpool_get(t->bt_mp, P_META, 0)) == NULL)
 		return (RET_ERROR);
 
-	/* Fill in meta structure -- lorder MUST be host-independent. */
+	/* Fill in metadata -- lorder is host-independent. */
 	m.m_magic = BTREEMAGIC;
 	m.m_version = BTREEVERSION;
 	m.m_psize = t->bt_psize;
-	m.m_free = 0;		/* XXX */
+	m.m_free = 0;           		/* XXX */
 	m.m_nrecs = t->bt_nrecs;
 	m.m_flags = t->bt_flags & SAVEMETA;
-	m.m_lorder = (u_long)htonl((long)t->bt_lorder);
+	m.m_lorder = htonl((long)t->bt_lorder);
 
 	if (t->bt_lorder != BYTE_ORDER) {
 		BLSWAP(m.m_magic);
