@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)eval.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)eval.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <signal.h>
@@ -259,7 +259,7 @@ out:
 STATIC void
 evalloop(n)
 	union node *n;
-	{
+{
 	int status;
 
 	loopnest++;
@@ -295,8 +295,8 @@ skipping:	  if (evalskip == SKIPCONT && --skipcount <= 0) {
 
 STATIC void
 evalfor(n)
-	union node *n;
-	{
+    union node *n;
+{
 	struct arglist arglist;
 	union node *argp;
 	struct strlist *sp;
@@ -398,7 +398,7 @@ evalsubshell(n, flags)
 STATIC void
 expredir(n)
 	union node *n;
-	{
+{
 	register union node *redir;
 
 	for (redir = n ; redir ; redir = redir->nfile.next) {
@@ -434,7 +434,7 @@ expredir(n)
 STATIC void
 evalpipe(n)
 	union node *n;
-	{
+{
 	struct job *jp;
 	struct nodelist *lp;
 	int pipelen;
@@ -501,7 +501,7 @@ void
 evalbackcmd(n, result)
 	union node *n;
 	struct backcmd *result;
-	{
+{
 	int pip[2];
 	struct job *jp;
 	struct stackmark smark;		/* unnecessary */
@@ -832,7 +832,7 @@ out:
 STATIC void
 prehash(n)
 	union node *n;
-	{
+{
 	struct cmdentry entry;
 
 	if (n->type == NCMD && n->ncmd.args)
@@ -858,7 +858,11 @@ bltincmd(argc, argv)
 	char **argv; 
 {
 	listsetvar(cmdenviron);
-	return 0;
+	/* 
+	 * Preserve exitstatus of a previous possible redirection
+	 * as POSIX mandates 
+	 */
+	return exitstatus;
 }
 
 
