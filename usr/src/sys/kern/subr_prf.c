@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.22	82/10/10	*/
+/*	subr_prf.c	4.23	82/10/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -169,10 +169,19 @@ printn(n, b, touser)
 panic(s)
 	char *s;
 {
+#if sun
+	register int *a5;
+#endif
 	int bootopt = RB_AUTOBOOT;
 
 	if (panicstr)
 		bootopt |= RB_NOSYNC;
+#if sun
+	else {
+		asm("movl a6, a5");
+		traceback(a5, a5);
+	}
+#endif
 	panicstr = s;
 	printf("panic: %s\n", s);
 	boot(RB_PANIC, bootopt);
@@ -224,8 +233,14 @@ putchar(c, touser)
 		}
 		return;
 	}
+#if vax
 #include "../vax/mtpr.h"		/* XXX */
-	if (c != '\0' && c != '\r' && c != 0177 && mfpr(MAPEN)) {
+#endif
+	if (c != '\0' && c != '\r' && c != 0177
+#if vax
+	    && mfpr(MAPEN)
+#endif
+	    ) {
 		if (msgbuf.msg_magic != MSG_MAGIC) {
 			msgbuf.msg_bufx = 0;
 			msgbuf.msg_magic = MSG_MAGIC;
