@@ -4,7 +4,7 @@
 # include "sendmail.h"
 # include <sys/file.h>
 
-SCCSID(@(#)main.c	3.152		%G%);
+SCCSID(@(#)main.c	3.153		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -367,9 +367,14 @@ main(argc, argv)
 
 	if (OpMode == MD_PRINT)
 	{
+#ifdef QUEUE
 		dropenvelope(CurEnv);
 		printqueue();
 		exit(EX_OK);
+#else QUEUE
+		usrerr("No queue to print");
+		finis();
+#endif QUEUE
 	}
 
 	/*
