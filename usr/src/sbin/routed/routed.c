@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)routed.c	4.20 82/06/21";
+static char sccsid[] = "@(#)routed.c	4.21 %G%";
 #endif
 
 /*
@@ -311,23 +311,30 @@ gwkludge()
 {
 	struct sockaddr_in dst, gate;
 	FILE *fp;
-	char buf[BUFSIZ];
+	char *dname, *gname, *qual, buf[BUFSIZ];
 	struct interface *ifp;
 	int metric;
 
 	fp = fopen("/etc/gateways", "r");
 	if (fp == NULL)
 		return;
+	qual = buf; dname = buf + 64; gname = buf + ((BUFSIZ - 64) / 2);
 	bzero((char *)&dst, sizeof (dst));
 	bzero((char *)&gate, sizeof (gate));
 	dst.sin_family = gate.sin_family = AF_INET;
 	/* format: dst XX gateway XX metric DD [passive]\n */
 #define	readentry(fp) \
-	fscanf((fp), "dst %x gateway %x metric %d %s\n", \
-	&dst.sin_addr.s_addr, &gate.sin_addr.s_addr, &metric, buf)
+	fscanf((fp), "dst %s gateway %s metric %d %s\n", \
+		dname, gname, &metric, qual)
 	for (;;) {
 		if (readentry(fp) == EOF)
 			break;
+		dst.sin_addr.s_addr = rhost(&dname);
+		if (dst.sin_addr.s_addr == -1)
+			continue;
+		gate.sin_addr.s_addr = rhost(&gname);
+		if (gate.sin_addr.s_addr == -1)
+			continue;
 		ifp = (struct interface *)malloc(sizeof (*ifp));
 		bzero((char *)ifp, sizeof (*ifp));
 		ifp->int_flags = IFF_REMOTE;
@@ -337,7 +344,7 @@ gwkludge()
 			ifp->int_flags |= IFF_POINTOPOINT;
 			ifp->int_dstaddr = *((struct sockaddr *)&dst);
 		}
-		if (strcmp(buf, "passive") == 0)
+		if (strcmp(qual, "passive") == 0)
 			ifp->int_flags |= IFF_PASSIVE;
 		else
 			/* assume no duplicate entries */
