@@ -1,5 +1,5 @@
 #
-#	@(#)rc	5.10 (Berkeley) %G%
+#	@(#)rc	5.11 (Berkeley) %G%
 #
 
 HOME=/; export HOME
@@ -83,8 +83,8 @@ quotacheck -a -p					>/dev/console 2>&1
 			echo ' done.'			>/dev/console
 quotaon -a						>/dev/console 2>&1
 
-# build ps data base
-ps -U							>/dev/console 2>&1
+# build kvm database
+kvm_mkdb						>/dev/console 2>&1
 
 chmod 666 /dev/tty[pqrs]*
 
