@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 /* From:
@@ -252,6 +252,7 @@ doit(fromp)
 		 * in a remote net; look up the name and check that this
 		 * address corresponds to the name.
 		 */
+		hostname = hp->h_name;
 #ifdef	KERBEROS
 		if (!use_kerberos)
 #endif
