@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)runtime.tahoe.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)runtime.tahoe.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: runtime.c,v 1.5 84/12/26 10:41:52 linton Exp $";
@@ -26,7 +26,6 @@ static char rcsid[] = "$Header: runtime.c,v 1.5 84/12/26 10:41:52 linton Exp $";
 #include "eval.h"
 #include "operators.h"
 #include "object.h"
-#include <sys/param.h>
 
 #ifndef public
 #include "machine.h"
