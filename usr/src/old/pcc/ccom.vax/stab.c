@@ -5,7 +5,7 @@
  * symbolic debugging information into the object file.
  */
 
-static char *sccsid ="@(#)stab.c	1.3 (Berkeley) %G%";
+static char *sccsid ="@(#)stab.c	1.4 (Berkeley) %G%";
 
 #include "mfile1"
 
@@ -27,7 +27,10 @@ static char *sccsid ="@(#)stab.c	1.3 (Berkeley) %G%";
 #define NILINDEX -1
 #define FORWARD -2
 
-typedef enum { false, true } Boolean;
+typedef int Boolean;
+
+#define false 0
+#define true 1
 
 extern int ddebug;
 extern int gdebug;
@@ -289,6 +292,9 @@ private inittypes()
     t = builtintype(UNDEF);
     printf("\t.stabs\t\"void:t%d=%d", t, t);
     geninfo(nil);
+    t = builtintype(FARG);
+    printf("\t.stabs\t\"???:t%d=%d", t, t_int);
+    geninfo(nil);
 }
 
 /*
@@ -451,7 +457,7 @@ register struct symtab *p;
 		if (ISFTN(p->stype)) {
 		    printf("\",0x%x,0,%d,_%s\n", N_FUN, bsize(p), p->sname);
 		} else {
-		    printf("\",0x%x,0,%d,_%s\n", N_GSYM, bsize(p), p->sname);
+		    printf("\",0x%x,0,%d,0\n", N_GSYM, bsize(p));
 		}
 		break;
 
