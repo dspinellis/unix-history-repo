@@ -1,7 +1,11 @@
-#	$Id: Makefile,v 1.5 1993/10/30 17:24:36 paul Exp $
+#	$Id: Makefile,v 1.6 1993/10/31 03:43:07 paul Exp $
 
 LIB=	gcc
 NOPROFILE=
+#INSTALL_PIC_ARCHIVE=
+#SHLIB_MAJOR= 0
+#SHLIB_MINOR= 0
+
 
 CFLAGS+=-I${.CURDIR}/../lib -I${.CURDIR}/../${MACHINE}
 
