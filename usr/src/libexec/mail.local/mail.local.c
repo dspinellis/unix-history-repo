@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	4.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	4.23 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -274,7 +274,7 @@ printmail(argc, argv)
 				continue;
 			}
 			for (p = resp+1; (p = getarg(lfil, p)) != NULL; )
-				if (!sendrmt(j, lfil, "/bin/mail"))
+				if (!sendmail(j, lfil, my_name))
 					flg++;
 			if (flg)
 				print = 0;
@@ -382,6 +382,9 @@ copylet(n, f, type)
 
 	case ORDINARY:
 		putc(ch, f);
+		break;
+
+	case ZAP:
 		break;
 
 	default:
@@ -531,18 +534,17 @@ char **argv;
 	fclose(tmpf);
 }
 
-sendrmt(n, name, rcmd)
+sendrmt(n, name)
 char *name;
-char *rcmd;
 {
 	FILE *rmf, *popen();
 	register char *p;
 	char rsys[64], cmd[64];
-	register local, pid;
+	register pid;
 	int sts;
 
-	local = 0;
-	if (index(name, '^')) {
+#ifdef notdef
+	if (any('^', name)) {
 		while (p = index(name, '^'))
 			*p = '!';
 		if (strncmp(name, "researc", 7)) {
@@ -552,15 +554,12 @@ char *rcmd;
 			goto skip;
 		}
 	}
-	if (*name=='!')
-		name++;
-	for(p=rsys; *name!='!'; *p++ = *name++)
-		if (*name=='\0') {
-			local++;
-			break;
-		}
+#endif
+	for (p=rsys; *name!='!'; *p++ = *name++)
+		if (*name=='\0')
+			return(0);	/* local address, no '!' */
 	*p = '\0';
-	if ((!local && *name=='\0') || (local && *rsys=='\0')) {
+	if (name[1]=='\0') {
 		printf("null name\n");
 		return(0);
 	}
@@ -577,17 +576,13 @@ skip:
 		return(!sts);
 	}
 	setuid(getuid());
-	if (local)
-		sprintf(cmd, "%s %s", rcmd, rsys);
-	else {
-		if (index(name+1, '!'))
-			sprintf(cmd, "uux - %s!rmail \\(%s\\)", rsys, name+1);
-		else
-			sprintf(cmd, "uux - %s!rmail %s", rsys, name+1);
-	}
+	if (any('!', name+1))
+		sprintf(cmd, "uux - %s!rmail \\(%s\\)", rsys, name+1);
+	else
+		sprintf(cmd, "uux - %s!rmail %s", rsys, name+1);
 	if ((rmf=popen(cmd, "w")) == NULL)
 		exit(1);
-	copylet(n, rmf, local ? !strcmp(rcmd, "/bin/mail") ? FORWARD : ORDINARY : REMOTE);
+	copylet(n, rmf, REMOTE);
 	exit(pclose(rmf) != 0);
 }
 
@@ -638,8 +633,10 @@ sendmail(n, name, fromaddr)
 #endif
 	char buf[128];
 
-	if (any(name, "!^"))
-		return (sendrmt(n, name, 0));
+	if (*name=='!')
+		name++;
+	if (any('!', name))
+		return (sendrmt(n, name));
 	if ((pw = getpwnam(name)) == NULL) {
 		printf("mail: can't send to %s\n", name);
 		return(0);
