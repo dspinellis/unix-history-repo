@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_open.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_open.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -67,15 +67,14 @@ __rec_open(fname, flags, mode, openinfo)
 	 */
 	t = dbp->internal;
 	if (openinfo) {
-		if (openinfo->flags & R_FIXEDLEN)
+		if (openinfo->flags & R_FIXEDLEN) {
 			t->bt_flags |= BTF_FIXEDLEN;
-
-		t->bt_reclen = openinfo->reclen;
-		if (t->bt_reclen == 0) {
-			errno = EINVAL;
-			goto err;
+			t->bt_reclen = openinfo->reclen;
+			if (t->bt_reclen == 0) {
+				errno = EINVAL;
+				goto err;
+			}
 		}
-
 		t->bt_bval = openinfo->bval;
 	} else
 		t->bt_bval = '\n';
@@ -101,8 +100,8 @@ __rec_open(fname, flags, mode, openinfo)
 			errno = EFBIG;
 			goto err;
 		}
-		if ((t->bt_smap = mmap(NULL,
-		    (size_t)sb.st_size, PROT_READ, 0, rfd, (off_t)0)) == -1)
+		if ((t->bt_smap = mmap(NULL, (size_t)sb.st_size,
+		    PROT_READ, 0, rfd, (off_t)0)) == (caddr_t)-1)
 			goto err;
 		t->bt_emap = t->bt_smap + sb.st_size;
 		t->bt_rfd = rfd;
