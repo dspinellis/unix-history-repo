@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cpp.c	1.15 %G%";
+static char sccsid[] = "@(#)cpp.c	1.16 %G%";
 #endif lint
 
 #ifdef FLEXNAMES
@@ -8,6 +8,7 @@ static char sccsid[] = "@(#)cpp.c	1.15 %G%";
 #define	NCPS	8
 #endif
 
+# include "sys/param.h"
 # include "stdio.h"
 # include "ctype.h"
 /* C command
@@ -1241,39 +1242,7 @@ main(argc,argv)
 # if unix
 	ysysloc=stsym("unix");
 # endif
-# if gcos
-	ysysloc=stsym ("gcos");
-# endif
-# if ibm
-	ysysloc=stsym ("ibm");
-# endif
-# if pdp11
-	varloc=stsym("pdp11");
-# endif
-# if vax
-	varloc=stsym("vax");
-# endif
-# if tahoe
-	varloc=stsym("tahoe");
-# endif
-# if interdata
-	varloc=stsym ("interdata");
-# endif
-# if tss
-	varloc=stsym ("tss");
-# endif
-# if os
-	varloc=stsym ("os");
-# endif
-# if mert
-	varloc=stsym ("mert");
-# endif
-# if mc68000
-	varloc=stsym("mc68000");
-# endif
-# if sun
-	varloc=stsym("sun");
-# endif
+	ysysloc=stsym(MACHINE);
 	ulnloc=stsym ("__LINE__");
 	uflloc=stsym ("__FILE__");
 
