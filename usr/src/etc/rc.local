@@ -1,7 +1,7 @@
 #
 # site-specific startup actions, daemons
 #
-#	@(#)rc.local	5.2 (Berkeley) %G%
+#	@(#)rc.local	5.3 (Berkeley) %G%
 #
 
 strings /vmunix | grep UNIX >/tmp/t1
@@ -9,12 +9,9 @@ tail +2 /etc/motd >>/tmp/t1
 mv /tmp/t1 /etc/motd
 chmod 666 /etc/motd
 
-echo -n			starting local daemons:			>/dev/console
-#if [ -f /usr/sbin/timed ]; then
-#	timed -M &			echo -n ' timed'	>/dev/console
-#fi
-if [ -f /usr/sbin/sendmail ]; then
-	(cd /var/spool/mqueue; rm -f lf*)
-	/usr/sbin/sendmail -bd -q30m; echo -n ' sendmail'	>/dev/console
-fi
-				echo '.'			>/dev/console
+echo -n 'starting local daemons:'
+
+# Kerberos runs ONLY on the Kerberos server machine
+#echo -n ' kerberos';	kerberos >> /var/log/kerberos.log &
+
+echo '.'
