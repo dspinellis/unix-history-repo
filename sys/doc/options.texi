@@ -10,7 +10,7 @@
 @c %**end of header
 
 @ifinfo
-$Id: options.texi,v 1.3 1994/04/21 22:19:21 wollman Exp $
+$Id: options.texi,v 1.4 1994/05/25 19:56:48 wollman Exp $
 
 This file documents the configuration options available in the FreeBSD
 operating system.
@@ -558,6 +558,12 @@ This option controls the wait time between successive @samp{sync}
 operations run by the @samp{update} system process (pid 3).  This option
 will be replaced by run-time configuration in a future release of
 FreeBSD.
+
+@item options DUMMY_NOPS
+@findex DUMMY_NOPS
+@cindex Fast i/o bus operations
+This option controls the use of real Nops for bus operations.
+This might break on older systems so should be used with care.
 
 @end table
 
