@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.26 (Berkeley) %G%
+.\"	@(#)op.me	8.27 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.26
+Version 8.27
 .sp
 For Sendmail Version 8.6
 .)l
@@ -550,15 +550,13 @@ The format of this file is detailed in later sections
 of this document.
 .sh 3 "/usr/\*(SB/newaliases"
 .pp
-If you are running delivermail,
-it is critical that the
+The
 .i newaliases
-command be replaced.
-This can just be a link to
+command should just be a link to
 .i sendmail :
 .(b
 rm \-f /usr/\*(SB/newaliases
-ln /usr/\*(SD/sendmail /usr/\*(SB/newaliases
+ln \-s /usr/\*(SD/sendmail /usr/\*(SB/newaliases
 .)b
 This can be installed in whatever search path you prefer
 for your system.
@@ -1048,11 +1046,7 @@ it checks to insure that this entry exists\**.
 .q a
 option is required in the configuration
 for this action to occur.
-This should normally be specified
-unless you are running
-.i delivermail
-in parallel with
-.i sendmail.
+This should normally be specified.
 .)f
 .sh 3 "List owners"
 .pp
@@ -2334,7 +2328,7 @@ The
 .b $)
 syntax is a more general form of lookup;
 it uses a named map instead of an implicit map.
-If no lookup is found, the indicted
+If no lookup is found, the indicated
 .i default
 is inserted;
 if no default is specified and no lookup matches,
@@ -2397,12 +2391,21 @@ the
 may be a colon-separated list of hosts
 that are searched in order for the first working address
 (exactly like MX records).
+The
+.i user
+is later rewritten by the mailer-specific envelope rewriting set
+and assigned to the
+.b $u
+macro.
 .pp
+Normally, a ruleset that matches is retried,
+that is,
+the ruleset loops until it fails.
 A RHS may also be preceded by a
 .b $@
 or a
 .b $:
-to control evaluation.
+to change this behavior.
 A
 .b $@
 prefix causes the ruleset to return with the remainder of the RHS
@@ -3062,6 +3065,21 @@ The class
 is set to be the same as
 .b $k ,
 that is, the UUCP node name.
+.pp
+.i Sendmail
+can be compiled to allow a
+.i scanf (3)
+string on the
+.b F
+line.
+This lets you do simplistic parsing of text files.
+For example, to read all the user names in your system
+.i /etc/passwd
+file into a class, use
+.(b
+FL/etc/passwd %[^:]
+.)b
+which reads every line up to the first colon.
 .sh 3 "M \*- define mailer"
 .pp
 Programs and interfaces to mailers
@@ -3651,7 +3669,7 @@ and then in
 .ip k\fIN\fP
 The maximum number of open connections that will be cached at a time.
 The default is one.
-This delays closing the the current connection until
+This delays closing the current connection until
 either this invocation of
 .i sendmail
 needs to connect to another host
@@ -3747,6 +3765,7 @@ novrfy	Disallow VRFY entirely
 restrictmailq	Restrict mailq command
 restrictqrun	Restrict \-q command line flag
 goaway	Disallow essentially all SMTP status queries
+authwarnings	Put X-Authentication-Warning: headers in messages
 .)b
 The
 .q goaway
@@ -3760,6 +3779,9 @@ can print the queue.
 If queue runs are restricted,
 only root and the owner of the queue directory
 can run the queue.
+Authentication Warnings add warnings about various conditions
+that may indicate attempts to spoof the mail system,
+such as using an non-standard queue directory.
 .ip P\fIpostmaster\fP
 If set,
 copies of error messages will be sent to the named
@@ -3846,7 +3868,7 @@ always instantiate the queue file,
 even if you are going to attempt immediate delivery.
 .i Sendmail
 always instantiates the queue file
-before returning control the the client
+before returning control the client
 under any circumstances.
 .ip S\fIfile\fP
 Log statistics in the named
@@ -4118,6 +4140,21 @@ Version level five configuration files
 change the default definition of
 .b $w
 to be just the first component of the hostname.
+.pp
+The
+.b V
+line may have an optional
+.b / \c
+.i vendor
+to indicate that this configuration file uses modifications
+specific to a particular vendor\**.
+.(f
+\**And of course, vendors are encouraged to add themselves
+to the list of recognized vendors by editing the routine
+.i setvendor
+in
+.i conf.c .
+.)f
 .sh 3 "K \*- key file declaration"
 .pp
 Special maps can be defined using the line:
@@ -4218,7 +4255,7 @@ library,
 and the third requires that
 .i sendmail
 be compiled with NIS support.
-All four accept as arguments the some optional flags
+All four accept as arguments the same optional flags
 and a filename
 (or a mapname for NIS;
 the filename is the root of the database path,
@@ -4569,7 +4606,7 @@ This would require that each host
 know exactly where each network connection is,
 possibly including the names of each host on that network.
 As long as the site remains small
-and the the configuration remains relatively static,
+and the configuration remains relatively static,
 the update problem will probably not be too great.
 .sh 4 "Single host"
 .pp
@@ -4881,8 +4918,10 @@ To: wnj@monet.CS.Berkeley.EDU, mckusick@vangogh.CS.Berkeley.EDU
 .i "if and only if"
 the
 .q C
-flag is defined in the mailer corresponding to
-.q eric@vangogh.CS.Berkeley.EDU.
+flag is defined in the mailer resolved to
+by running
+.q eric@vangogh.CS.Berkeley.EDU
+through rulesets 3 and 0.
 .pp
 Other flags are described
 in Appendix C.
@@ -5247,7 +5286,7 @@ The pathname of the sendmail.pid file.
 The load average type.
 Details are described below.
 .lp
-The are four built-in ways of computing the load average.
+The are several built-in ways of computing the load average.
 .i Sendmail
 tries to auto-configure them based on imperfect guesses;
 you can select one using the
@@ -5269,6 +5308,8 @@ The actual values are scaled by a factor FSCALE
 .ip LA_FLOAT
 The kernel stores the load average in the kernel as an array of
 double precision floats.
+.ip LA_MACH
+Use MACH-style load averages.
 .ip LA_SUBR
 Call the
 .i getloadavg
@@ -5946,7 +5987,7 @@ This version avoids that use.
 However, for compatibility with RFC 822,
 you can set option `7' to get seven bit stripping.
 .pp
-Individual mailers can still produce seven bit out put using the
+Individual mailers can still produce seven bit output using the
 `7' mailer flag.
 .sh 2 "User Database"
 .pp
@@ -6454,9 +6495,7 @@ for debugging mailer problems.
 This produces a lot of data very quickly and should be used sparingly.
 .pp
 There are a number of options that may be specified as
-primitive flags
-(provided for compatibility with
-.i delivermail ).
+primitive flags.
 These are the e, i, m, and v options.
 Also,
 the f option
@@ -6740,7 +6779,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.26
+.\"Version 8.27
 .\".ce 0
 .bp 2
 .rs
