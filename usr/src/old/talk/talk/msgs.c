@@ -28,6 +28,7 @@ static	struct itimerval itimer;
 static	struct timeval wait = { MSG_INTERVAL , 0};
 static	struct timeval undo = { LONG_TIME, 0};
 	
+void
 disp_msg()
 {
 
@@ -40,7 +41,7 @@ start_msgs()
 	message(current_state);
 	signal(SIGALRM, disp_msg);
 	itimer.it_value = itimer.it_interval = wait;
-	setitimer(ITIMER_REAL, &itimer, (struct timerval *)0);
+	setitimer(ITIMER_REAL, &itimer, (struct itimerval *)0);
 }
 
 end_msgs()
@@ -49,5 +50,5 @@ end_msgs()
 	signal(SIGALRM, SIG_IGN);
 	timerclear(&itimer.it_value);
 	timerclear(&itimer.it_interval);
-	setitimer(ITIMER_REAL, &itimer, (struct timerval *)0);
+	setitimer(ITIMER_REAL, &itimer, (struct itimerval *)0);
 }

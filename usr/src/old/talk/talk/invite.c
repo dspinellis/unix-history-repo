@@ -143,12 +143,14 @@ send_delete()
 	 */
 	msg.id_num = remote_id;
 	daemon_addr.sin_addr = his_machine_addr;
-	if (sendto(ctl_sockt, &msg, sizeof(CTL_MSG), 0, &daemon_addr,
+	if (sendto(ctl_sockt, &msg, sizeof(CTL_MSG), 0,
+	    (struct sockaddr *)&daemon_addr,
 	    sizeof(daemon_addr)) != sizeof(CTL_MSG))
 		perror("send_delete remote");
 	msg.id_num = local_id;
 	daemon_addr.sin_addr = my_machine_addr;
-	if (sendto(ctl_sockt, &msg, sizeof(CTL_MSG), 0, &daemon_addr,
+	if (sendto(ctl_sockt, &msg, sizeof(CTL_MSG), 0,
+	    (struct sockaddr *)&daemon_addr,
 	    sizeof(daemon_addr)) != sizeof(CTL_MSG))
 		perror("send_delete local");
 }

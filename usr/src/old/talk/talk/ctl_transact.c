@@ -48,7 +48,8 @@ ctl_transact(target, msg, type, response)
 		/* keep sending the message until a response is obtained */
 		do {
 			cc = sendto(ctl_sockt, (char *)&msg, sizeof(CTL_MSG), 0,
-				&daemon_addr, sizeof(daemon_addr));
+			    (struct sockaddr *)&daemon_addr,
+			    sizeof(daemon_addr));
 			if (cc != sizeof(CTL_MSG)) {
 				if (errno == EINTR)
 					continue;

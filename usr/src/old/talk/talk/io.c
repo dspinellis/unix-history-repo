@@ -15,6 +15,7 @@ static char sccsid[] = "@(#)io.c	5.1 (Berkeley) 6/6/85";
  */
 
 #include "talk.h"
+#include <sys/ioctl.h>
 #include <stdio.h>
 #include <errno.h>
 #include <sys/time.h>

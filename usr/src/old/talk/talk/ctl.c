@@ -41,10 +41,10 @@ open_sockt()
     sockt = socket(AF_INET, SOCK_STREAM, 0);
     if (sockt <= 0)
 	p_error("Bad socket");
-    if (bind(sockt, &my_addr, sizeof(my_addr)) != 0)
+    if (bind(sockt, (struct sockaddr *)&my_addr, sizeof(my_addr)) != 0)
 	p_error("Binding local socket");
     length = sizeof(my_addr);
-    if (getsockname(sockt, &my_addr, &length) == -1)
+    if (getsockname(sockt, (struct sockaddr *)&my_addr, &length) == -1)
 	p_error("Bad address for socket");
 }
 
@@ -58,10 +58,10 @@ open_ctl()
     ctl_sockt = socket(AF_INET, SOCK_DGRAM, 0);
     if (ctl_sockt <= 0)
 	p_error("Bad socket");
-    if (bind(ctl_sockt, &ctl_addr, sizeof(ctl_addr)) != 0)
+    if (bind(ctl_sockt, (struct sockaddr *)&ctl_addr, sizeof(ctl_addr)) != 0)
 	p_error("Couldn't bind to control socket");
     length = sizeof(ctl_addr);
-    if (getsockname(ctl_sockt, &ctl_addr, &length) == -1)
+    if (getsockname(ctl_sockt, (struct sockaddr *)&ctl_addr, &length) == -1)
 	p_error("Bad address for ctl socket");
 }
 
