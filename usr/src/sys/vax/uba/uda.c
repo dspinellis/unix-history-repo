@@ -1,5 +1,5 @@
 /*
- *	@(#)uda.c	6.20 (Berkeley) %G%
+ *	@(#)uda.c	6.21 (Berkeley) %G%
  */
 
 /************************************************************************
@@ -86,6 +86,15 @@ struct size {
 	0,	0,		/* F=blk 412490 thru end */
 	-1,	25916,		/* G=blk 49324 thru 131403 */
 	0,	0,		/* H=blk 131404 thru end */
+}, ra53_sizes[8] = {
+	15884,	0,
+	33440,	15884,
+	-1,	0,
+	0,	0,
+	33440,	0,
+	-1,	33440,
+	-1,	15884,
+	-1,	49324,
 }, ra60_sizes[8] = {
 	15884,	0,		/* A=sectors 0 thru 15883 */
 	33440,	15884,		/* B=sectors 15884 thru 49323 */
@@ -217,6 +226,13 @@ udprobe(reg, ctlr)
 	udaddr = (struct udadevice *) reg;
 
 	sc->sc_ivec = (uba_hd[numuba].uh_lastiv -= 4);
+#if VAX630
+	if (cpu == VAX_630) {
+		br = 0x15;
+		cvec = sc->sc_ivec;
+ 		return(sizeof (struct udadevice));
+	}
+#endif
 	udaddr->udaip = 0;              /* start initialization */
 
 	cur_time = mfpr(TODR);			/* Time of day */
@@ -608,6 +624,7 @@ loop:
 		break;
 
 	case VAX_730:
+	case VAX_630:
 		i = UBA_CANTWAIT;
 		break;
 	}
@@ -682,6 +699,9 @@ udintr(d)
 #ifdef	DEBUG
 	printd10("udintr: state %d, udasa %o\n", sc->sc_state, udaddr->udasa);
 #endif	
+#ifdef VAX630
+	(void) spl5();
+#endif
 	switch (sc->sc_state) {
 	case S_IDLE:
 		printf("uda%d: random interrupt ignored\n", d);
@@ -904,6 +924,9 @@ udrsp(um, ud, sc, i)
 			switch((int)(mp->mscp_mediaid & 0x7f)){
 			case    25:
 				ra_info[ui->ui_unit].ra_sizes = ra25_sizes;
+				break;
+			case    53:
+				ra_info[ui->ui_unit].ra_sizes = ra53_sizes;
 				break;
 			case    60:
 				ra_info[ui->ui_unit].ra_sizes = ra60_sizes;
