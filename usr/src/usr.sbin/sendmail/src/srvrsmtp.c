@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.41 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.42 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.41 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.42 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -112,10 +112,9 @@ smtp(e)
 	}
 	settime(e);
 	CurHostName = RealHostName;
-	setproctitle("srvrsmtp %s", CurHostName);
+	setproctitle("srvrsmtp %s startup", CurHostName);
 	expand("\201e", inp, &inp[sizeof inp], e);
 	message("220 %s", inp);
-	SmtpPhase = "startup";
 	protocol = NULL;
 	sendinghost = macvalue('s', e);
 	gothello = FALSE;
@@ -140,6 +139,8 @@ smtp(e)
 		(void) fflush(stdout);
 
 		/* read the input line */
+		SmtpPhase = "srvrsmtp cmd read";
+		setproctitle("srvrsmtp %s cmd read", CurHostName);
 		p = sfgets(inp, sizeof inp, InChannel, TimeOuts.to_nextcommand);
 
 		/* handle errors */
@@ -164,6 +165,11 @@ smtp(e)
 		/* echo command to transcript */
 		if (e->e_xfp != NULL)
 			fprintf(e->e_xfp, "<<< %s\n", inp);
+
+		if (e->e_id == NULL)
+			setproctitle("%s: %s", CurHostName, inp);
+		else
+			setproctitle("%s %s: %s", e->e_id, CurHostName, inp);
 
 		/* break off command */
 		for (p = inp; isascii(*p) && isspace(*p); p++)
@@ -204,7 +210,6 @@ smtp(e)
 				protocol = "SMTP";
 				SmtpPhase = "HELO";
 			}
-			setproctitle("%s: %s", CurHostName, inp);
 			sendinghost = newstr(p);
 			if (strcasecmp(p, RealHostName) != 0)
 			{
@@ -358,7 +363,6 @@ smtp(e)
 				break;
 			}
 			SmtpPhase = "RCPT";
-			setproctitle("%s %s: %s", e->e_id, CurHostName, inp);
 			if (setjmp(TopFrame) > 0)
 			{
 				e->e_flags &= ~EF_FATALERRS;
@@ -411,7 +415,6 @@ smtp(e)
 
 			/* collect the text of the message */
 			SmtpPhase = "collect";
-			setproctitle("%s %s: %s", e->e_id, CurHostName, inp);
 			collect(TRUE, a != NULL, e);
 			if (Errors != 0)
 				break;
@@ -514,7 +517,6 @@ smtp(e)
 			}
 			if (runinchild(vrfy ? "SMTP-VRFY" : "SMTP-EXPN", e) > 0)
 				break;
-			setproctitle("%s: %s", CurHostName, inp);
 #ifdef LOG
 			if (LogLevel > 5)
 				syslog(LOG_INFO, "%s: %s", CurHostName, inp);
@@ -761,6 +763,7 @@ runinchild(label, e)
 			auto int st;
 
 			/* parent -- wait for child to complete */
+			setproctitle("srvrsmtp %s child wait", CurHostName);
 			st = waitfor(childpid);
 			if (st == -1)
 				syserr("%s: lost child", label);

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.24 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.25 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.24 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.25 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -101,7 +101,6 @@ smtpinit(m, mci, e)
 		break;
 	}
 
-	SmtpPhase = mci->mci_phase = "user open";
 	mci->mci_state = MCIS_OPENING;
 
 	/*
