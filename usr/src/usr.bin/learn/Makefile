@@ -1,9 +1,20 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1987 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	4.9	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	4.10 (Berkeley) %G%
 #
 # Flag BSD4_2 means 4.2 or later.
 CFLAGS=	-O -DBSD4_2
@@ -13,25 +24,28 @@ SRCS=	copy.c dounit.c getlesson.c learn.c list.c mem.c makpipe.c maktee.c \
 	mysys.c selsub.c selunit.c start.c whatnow.c wrapup.c
 OBJS=	copy.o dounit.o getlesson.o learn.o list.o mem.o makpipe.o maktee.o \
 	mysys.o selsub.o selunit.o start.o whatnow.o wrapup.o
+LESSONS=C editor eqn files macros morefiles
+MAN=	learn.0
 
 all: learn lrntee lcount getline.o getnum.o
 
 learn: ${OBJS} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${OBJS}
 
-lcount: lcount.c ${LIBC}
-	${CC} ${CFLAGS} -o $@ lcount.c
+lcount lrntee: ${LIBC}
+	${CC} ${CFLAGS} -o $@ $@.c
 
-lrntee: lrntee.c ${LIBC}
-	${CC} ${CFLAGS} -o $@ lrntee.c
-
-clean: FRC
+clean:
 	rm -f ${OBJS} core learn lrntee lcount getline.o getnum.o
 
-depend: FRC
-	mkdep ${CFLAGS} ${SRCS} lcount.c lrntee.c getline.c getnum.c
+cleandir: clean
+	rm -f ${MAN} tags .depend
 
-install: FRC
+depend: ${SRCS}
+	mkdep -p ${CFLAGS} lcount.c lrntee.c
+	mkdep -a ${CFLAGS} ${SRCS} getline.c getnum.c
+
+install: ${MAN}
 	install -c -s -o bin -g bin -m 755 learn ${DESTDIR}/usr/bin/learn
 	install -s -o bin -g bin -m 755 learn ${LLIB}/learn
 	install -s -o bin -g bin -m 755 lrntee ${LLIB}/lrntee
@@ -42,42 +56,27 @@ install: FRC
 	install -c -o bin -g bin -m 644 getline.c ${LLIB}/../C/getline.c
 	install -c -o bin -g bin -m 644 getnum.c ${LLIB}/../C/getnum.c
 	chmod 755 ${LLIB}/../*/Init
+	-[ -d ${DESTDIR}/usr/lib/learn ] || mkdir ${DESTDIR}/usr/lib/learn
+	-[ -d ${DESTDIR}/usr/lib/learn/log ] || mkdir ${DESTDIR}/usr/lib/learn/log
+	-[ -d ${DESTDIR}/usr/lib/learn/bin ] || mkdir ${DESTDIR}/usr/lib/learn/bin
+	chmod 755 ${DESTDIR}/usr/lib/learn ${DESTDIR}/usr/lib/learn/log \
+		${DESTDIR}/usr/lib/learn/bin
+	chown root.staff ${DESTDIR}/usr/lib/learn ${DESTDIR}/usr/lib/learn/log \
+		${DESTDIR}/usr/lib/learn/bin
+	install -c -o bin -g bin -m 644 learnlib/Linfo ${DESTDIR}/usr/lib/learn/Linfo
+	install -c -o bin -g bin -m 644 learnlib/Xinfo ${DESTDIR}/usr/lib/learn/Xinfo
+	cd learnlib; tar cf - ${LESSONS} | (cd ${DESTDIR}/usr/lib/learn; tar xpf -);
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 	lint ${CFLAGS} lcount.c
 	lint ${CFLAGS} lrntee.c
 	lint ${CFLAGS} getline.c getnum.c
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
 	ctags -a lcount.c
 	ctags -a lrntee.c
 	ctags -a getline.c getnum.c
 	sort -o tags tags
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-copy.o: copy.c /usr/include/stdio.h /usr/include/signal.h lrnref.h
-dounit.o: dounit.c /usr/include/stdio.h lrnref.h
-getlesson.o: getlesson.c /usr/include/stdio.h lrnref.h
-learn.o: learn.c /usr/include/stdio.h lrnref.h /usr/include/signal.h
-list.o: list.c /usr/include/stdio.h lrnref.h /usr/include/signal.h
-mem.o: mem.c /usr/include/stdio.h lrnref.h
-makpipe.o: makpipe.c /usr/include/stdio.h
-maktee.o: maktee.c /usr/include/stdio.h /usr/include/signal.h lrnref.h
-mysys.o: mysys.c /usr/include/stdio.h /usr/include/signal.h
-selsub.o: selsub.c /usr/include/stdio.h /usr/include/sys/types.h
-selsub.o: /usr/include/sys/stat.h lrnref.h /usr/include/sys/dir.h
-selunit.o: selunit.c /usr/include/stdio.h lrnref.h
-start.o: start.c /usr/include/stdio.h lrnref.h /usr/include/sys/types.h
-start.o: /usr/include/sys/dir.h
-whatnow.o: whatnow.c /usr/include/stdio.h lrnref.h
-wrapup.o: wrapup.c /usr/include/signal.h /usr/include/stdio.h lrnref.h
-lcount.o: lcount.c /usr/include/stdio.h
-lrntee.o: lrntee.c
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
