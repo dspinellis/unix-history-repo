@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vfsops.c	7.23 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.24 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -87,6 +87,7 @@ ufs_mountroot()
 	mp->m_op = &ufs_vfsops;
 	mp->m_flag = 0;
 	mp->m_exroot = 0;
+	mp->m_mounth = (struct vnode *)0;
 	error = mountfs(rootvp, mp);
 	if (error) {
 		free((caddr_t)mp, M_MOUNT);
@@ -309,6 +310,7 @@ out:
  * Make a filesystem operational.
  * Nothing to do at the moment.
  */
+/* ARGSUSED */
 ufs_start(mp, flags)
 	struct mount *mp;
 	int flags;
@@ -326,13 +328,11 @@ ufs_unmount(mp, flags)
 {
 	register struct ufsmount *ump;
 	register struct fs *fs;
-	dev_t dev;
 	int error, ronly;
 
 	if (flags & MNT_FORCE)
 		return (EINVAL);
 	ump = VFSTOUFS(mp);
-	dev = ump->um_dev;
 #ifdef QUOTA
 	if ((error = iflush(dev, mp->m_qinod)) && !forcibly)
 #else
@@ -340,12 +340,12 @@ ufs_unmount(mp, flags)
 #endif
 		return (error);
 #ifdef QUOTA
-	(void)closedq(ump);
+	(void) closedq(ump);
 	/*
 	 * Here we have to iflush again to get rid of the quota inode.
 	 * A drag, but it would be ugly to cheat, & this doesn't happen often.
 	 */
-	(void)iflush(dev, (struct inode *)NULL);
+	(void) iflush(mp, (struct inode *)NULL);
 #endif
 	fs = ump->um_fs;
 	ronly = !fs->fs_ronly;
@@ -362,15 +362,19 @@ ufs_root(mp, vpp)
 	struct mount *mp;
 	struct vnode **vpp;
 {
-	struct inode tip, *ip;
+	register struct inode *ip;
+	struct inode *nip;
+	struct vnode tvp;
 	int error;
 
-	tip.i_dev = VFSTOUFS(mp)->um_dev;
-	tip.i_vnode.v_mount = mp;
-	error = iget(&tip, (ino_t)ROOTINO, &ip);
+	tvp.v_mount = mp;
+	ip = VTOI(&tvp);
+	ip->i_vnode = &tvp;
+	ip->i_dev = VFSTOUFS(mp)->um_dev;
+	error = iget(ip, (ino_t)ROOTINO, &nip);
 	if (error)
 		return (error);
-	*vpp = ITOV(ip);
+	*vpp = ITOV(nip);
 	return (0);
 }
 
@@ -417,6 +421,7 @@ ufs_sync(mp, waitfor)
 	struct mount *mp;
 	int waitfor;
 {
+	register struct vnode *vp;
 	register struct inode *ip;
 	register struct ufsmount *ump = VFSTOUFS(mp);
 	register struct fs *fs;
@@ -448,13 +453,13 @@ ufs_sync(mp, waitfor)
 	/*
 	 * Write back each (modified) inode.
 	 */
-	for (ip = inode; ip < inodeNINODE; ip++) {
-		if (ip->i_devvp != ump->um_devvp ||
-		    (ip->i_flag & ILOCKED) != 0 || ITOV(ip)->v_count == 0 ||
+	for (vp = mp->m_mounth; vp; vp = vp->v_mountf) {
+		ip = VTOI(vp);
+		if ((ip->i_flag & ILOCKED) != 0 || ITOV(ip)->v_count == 0 ||
 		    (ip->i_flag & (IMOD|IACC|IUPD|ICHG)) == 0)
 			continue;
 		ILOCK(ip);
-		VREF(ITOV(ip));
+		VREF(vp);
 		error = iupdat(ip, &time, &time, waitfor == MNT_WAIT);
 		iput(ip);
 	}
@@ -568,7 +573,9 @@ ufs_fhtovp(mp, fhp, vpp)
 {
 	register struct ufid *ufhp;
 	register struct fs *fs;
-	struct inode tip, *ip;
+	register struct inode *ip;
+	struct inode *nip;
+	struct vnode tvp;
 	int error;
 
 	ufhp = (struct ufid *)fhp;
@@ -578,12 +585,15 @@ ufs_fhtovp(mp, fhp, vpp)
 		*vpp = (struct vnode *)0;
 		return (EINVAL);
 	}
-	tip.i_dev = VFSTOUFS(mp)->um_dev;
-	tip.i_vnode.v_mount = mp;
-	if (error = iget(&tip, ufhp->ufid_ino, &ip)) {
+	tvp.v_mount = mp;
+	ip = VTOI(&tvp);
+	ip->i_vnode = &tvp;
+	ip->i_dev = VFSTOUFS(mp)->um_dev;
+	if (error = iget(ip, ufhp->ufid_ino, &nip)) {
 		*vpp = (struct vnode *)0;
 		return (error);
 	}
+	ip = nip;
 	if (ip->i_mode == 0) {
 		iput(ip);
 		*vpp = (struct vnode *)0;
