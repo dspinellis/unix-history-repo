@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	3.26 %G%";
+static char sccsid[] = "@(#)main.c	3.27 %G%";
 #endif
 
 #include "defs.h"
@@ -86,7 +86,7 @@ char **argv;
 		wwnewtty.ww_tchars.t_startc = wwoldtty.ww_tchars.t_startc;
 	}
 	if (debug || xflag)
-		(void) wwsettty(0, &wwnewtty);
+		(void) wwsettty(0, &wwnewtty, &wwoldtty);
 
 	if ((cmdwin = wwopen(WWO_REVERSE, 1, wwncol, 0, 0, 0)) == 0) {
 		(void) wwflush();

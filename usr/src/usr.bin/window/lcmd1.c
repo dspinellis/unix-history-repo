@@ -18,7 +18,7 @@ struct lcmd_arg arg_window[] = {
 	{ "pty",	1,	ARG_ANY },
 	{ "frame",	1,	ARG_ANY },
 	{ "mapnl",	1,	ARG_ANY },
-	{ "shell",	1,	ARG_ANY|ARG_LIST },
+	{ "shell",	1,	ARG_STR|ARG_LIST },
 	0
 };
 
@@ -55,13 +55,8 @@ register struct value *a;
 		return;
 	if ((++a)->v_type != V_ERR) {
 		for (pp = argv; a->v_type != V_ERR &&
-		     pp < &argv[sizeof argv/sizeof *argv-1]; pp++, a++) {
-			if (a->v_type == V_NUM && p_convstr(a->v_num) < 0) {
-				p_memerror();
-				return;
-			}
+		     pp < &argv[sizeof argv/sizeof *argv-1]; pp++, a++)
 			*pp = a->v_str;
-		}
 		*pp = 0;
 		shf = *(sh = argv);
 		if (*sh = rindex(shf, '/'))
@@ -354,28 +349,4 @@ char def, err;
 		return def;
 	}
 	/*NOTREACHED*/
-}
-
-mkargv(p, argv, n)
-register char *p;
-register char **argv;
-register n;
-{
-	while (--n > 0) {
-		for (; *p && (*p == ' ' || *p == '\t'); p++)
-			;
-		if (!*p)
-			break;
-		*argv++ = p;
-		for (; *p && *p != ' ' && *p != '\t'; p++)
-			;
-		if (*p)
-			*p++ = 0;
-	}
-	if (n == 0) {
-		error("Too many shell arguments.");
-		return -1;
-	}
-	*argv = 0;
-	return 0;
 }

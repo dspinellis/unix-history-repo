@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwinit.c	3.21 %G%";
+static char sccsid[] = "@(#)wwinit.c	3.22 %G%";
 #endif
 
 #include "ww.h"
@@ -49,8 +49,7 @@ wwinit()
 	wwnewtty.ww_lmode = wwoldtty.ww_lmode | LLITOUT;
 	wwnewtty.ww_ldisc = wwoldtty.ww_ldisc;
 	wwnewtty.ww_fflags = wwoldtty.ww_fflags | FASYNC;
-
-	if (wwsettty(0, &wwnewtty) < 0)
+	if (wwsettty(0, &wwnewtty, &wwoldtty) < 0)
 		goto bad;
 
 	if ((wwterm = getenv("TERM")) == 0) {
@@ -158,7 +157,7 @@ bad:
 	 * Don't bother to free storage.  We're supposed
 	 * to exit when wwinit fails anyway.
 	 */
-	(void) wwsettty(0, &wwoldtty);
+	(void) wwsettty(0, &wwoldtty, &wwnewtty);
 	(void) signal(SIGIO, SIG_DFL);
 	(void) sigsetmask(s);
 	return -1;

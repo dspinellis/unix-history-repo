@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwsuspend.c	3.5 %G%";
+static char sccsid[] = "@(#)wwsuspend.c	3.6 %G%";
 #endif
 
 #include "ww.h"
@@ -15,7 +15,7 @@ wwsuspend()
 	(void) signal(SIGTSTP, SIG_DFL);
 	(void) kill(0, SIGTSTP);
 	(void) signal(SIGTSTP, SIG_IGN);
-	(void) wwsettty(0, &wwnewtty);
+	(void) wwsettty(0, &wwnewtty, &wwoldtty);
 	(*tt.tt_init)();
 	wwredraw();
 	(void) signal(SIGTSTP, oldsig);

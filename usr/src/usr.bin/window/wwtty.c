@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwtty.c	3.7 %G%";
+static char sccsid[] = "@(#)wwtty.c	3.8 %G%";
 #endif
 
 #include "ww.h"
@@ -26,8 +26,13 @@ bad:
 	return -1;
 }
 
-wwsettty(d, t)
-register struct ww_tty *t;
+/*
+ * Set the modes of tty 'd' to 't'
+ * 'o' is the current modes.  We set the line discipline only if
+ * it changes, to avoid unnecessary flushing of typeahead.
+ */
+wwsettty(d, t, o)
+register struct ww_tty *t, *o;
 {
 	if (ioctl(d, (int)TIOCSETN, (char *)&t->ww_sgttyb) < 0)
 		goto bad;
@@ -37,7 +42,8 @@ register struct ww_tty *t;
 		goto bad;
 	if (ioctl(d, (int)TIOCLSET, (char *)&t->ww_lmode) < 0)
 		goto bad;
-	if (ioctl(d, (int)TIOCSETD, (char *)&t->ww_ldisc) < 0)
+	if ((o == 0 || t->ww_ldisc != o->ww_ldisc) &&
+	    ioctl(d, (int)TIOCSETD, (char *)&t->ww_ldisc) < 0)
 		goto bad;
 	if (fcntl(d, F_SETFL, t->ww_fflags) < 0)
 		goto bad;
