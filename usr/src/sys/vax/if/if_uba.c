@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_uba.c	6.7 (Berkeley) %G%
+ *	@(#)if_uba.c	6.8 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -92,6 +92,7 @@ if_ubaminit(ifu, uban, hlen, nmr, ifr, nr, ifw, nw)
 			ifw[nw].ifw_wmap[i] = ifw[nw].ifw_mr[i];
 		ifw[nw].ifw_xswapd = 0;
 		ifw[nw].ifw_flags = IFRW_W;
+		ifw[nw].ifw_nmr = nmr;
 	}
 	return (1);
 bad:
@@ -306,7 +307,7 @@ restor_xmtbuf(ifw)
 {
 	register i;
 
-	for (i = 0; i < IF_MAXNUBAMR; i++)
+	for (i = 0; i < ifw->ifw_nmr; i++)
 		ifw->ifw_wmap[i] = ifw->ifw_mr[i];
 }
 

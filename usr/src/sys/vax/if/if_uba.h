@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_uba.h	6.4 (Berkeley) %G%
+ *	@(#)if_uba.h	6.5 (Berkeley) %G%
  */
 
 /*
@@ -67,6 +67,7 @@ struct ifxmt {
 	struct	pte ifw_wmap[IF_MAXNUBAMR];	/* base pages for output */
 	struct	mbuf *ifw_xtofree;		/* pages being dma'd out */
 	short	ifw_xswapd;			/* mask of clusters swapped */
+	short	ifw_nmr;			/* number of entries in wmap */
 };
 #define	ifw_addr	ifrw.ifrw_addr
 #define	ifw_bdp		ifrw.ifrw_bdp
