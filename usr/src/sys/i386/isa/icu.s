@@ -1,19 +1,19 @@
 /*-
- * Copyright (c) 1989, 1990 William F. Jolitz.
  * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
- * %sccs.include.redist.c%
+ * %sccs.include.386.c%
  *
- *	@(#)icu.s	7.3 (Berkeley) %G%
+ *	@(#)icu.s	7.4 (Berkeley) %G%
  */
 
 /*
  * AT/386
  * Vector interrupt control section
+ * Copyright (C) 1989,90 W. Jolitz
  */
 
 	.data
@@ -39,53 +39,47 @@ _isa_intr:	.space	16*4
 doreti:
 	cli
 	popl	%ebx			# remove intr number
+	nop
 	popl	%eax			# get previous priority
+	nop
 	# now interrupt frame is a trap frame!
 	movw	%ax,%cx
 	movw	%ax,_cpl
 	orw	_imen,%ax
-	NOP
 	outb	%al,$ IO_ICU1+1		# re-enable intr?
-	NOP
 	movb	%ah,%al
-	NOP
 	outb	%al,$ IO_ICU2+1
-	NOP
-	inb	$0x84,%al
 
-	andw	$0xffff,%cx	
+	# andw	$0xffff,%cx	
 	cmpw	$0,%cx			# returning to zero?
 	je	1f
 
-	pop	%es			# nope, going to non-zero level
-	pop	%ds
-	popa
+2:	popl	%es			# nope, going to non-zero level
+	nop
+	popl	%ds
+	nop
+	popal
+	nop
 	addl	$8,%esp
 	iret
 
 1:	cmpl	$0,_netisr		# check for softint s/traps
-	jne	1f
+	je	2b
 
-	pop	%es			# none, going back to base pri
-	pop	%ds
-	popa
-	addl	$8,%esp
-	iret
-	
 #include "../net/netisr.h"
 
 1:
 
 #define DONET(s, c)	; \
 	.globl	c ;  \
-	movl	$ s ,%eax ; 	\
-	btrl	%eax,_netisr ;  \
+	btrl	$ s ,_netisr ;  \
 	jnb	1f ; \
 	call	c ; \
 1:
 
 	call	_splnet
 	pushl	%eax
+
 
 	DONET(NETISR_RAW,_rawintr)
 #ifdef INET
@@ -105,21 +99,17 @@ doreti:
 	DONET(NETISR_CCITT,_hdintr)
 #endif
 
+	/* restore interrupt state, but don't turn them on just yet */
+	cli
 	popl	%eax
+	nop
 	movw	%ax,_cpl
 	orw	_imen,%ax
-	NOP
 	outb	%al,$ IO_ICU1+1		# re-enable intr?
-	NOP
 	movb	%ah,%al
-	NOP
 	outb	%al,$ IO_ICU2+1
-	NOP
-	inb	$0x84,%al
 
-	# btrl	$ NETISR_SCLK,_netisr
-	movl	$ NETISR_SCLK,%eax	# stupid assembler, as usual
-	btrl	%eax,_netisr
+	btrl	$ NETISR_SCLK,_netisr
 	jnb	1f
 	# back to an interrupt frame for a moment
 	call	_splsoftclock
@@ -127,23 +117,26 @@ doreti:
 	pushl	$0xff	# dummy intr
 	call	_softclock
 	popl	%eax
+	nop
 	call	_splx
 	popl	%eax
+	nop
 
 	jmp	2f
 
-	/* 1:	btrl	$NETISR_AST,_netisr*/
 1:
 	cmpw	$0x1f,13*4(%esp)	# to user?
 	jne	2f			# nope, leave
-	movl	$ NETISR_AST,%eax	# stupid assembler, as usual
-	btrl	%eax,_netisr
+	btrl	$ NETISR_AST ,_netisr
 	jnb	2f
 	call	_trap
 
 2:	pop	%es
+	nop
 	pop	%ds
+	nop
 	popal
+	nop
 	addl	$8,%esp
 	iret
 
@@ -163,14 +156,9 @@ _splclock:
 	movw	%ax,%dx
 	# orw	_imen,%ax		# mask off those not enabled yet
 	movw	%ax,%cx
-	NOP
 	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
 	movb	%ah,%al
-	NOP
 	outb	%al,$ IO_ICU2+1
-	NOP
-	inb	$0x84,%al
 	movzwl	_cpl,%eax		# return old priority
 	movw	%dx,_cpl		# set new priority level
 	sti				# enable interrupts
@@ -184,14 +172,9 @@ _spltty:
 	movw	%ax,%dx
 	orw	_imen,%ax		# mask off those not enabled yet
 	movw	%ax,%cx
-	NOP
 	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
 	movb	%ah,%al
-	NOP
 	outb	%al,$ IO_ICU2+1
-	NOP
-	inb	$0x84,%al
 	movzwl	_cpl,%eax		# return old priority
 	movw	%dx,_cpl		# set new priority level
 	sti				# enable interrupts
@@ -207,14 +190,9 @@ _splnet:
 	movw	%ax,%dx
 	orw	_imen,%ax		# mask off those not enabled yet
 	movw	%ax,%cx
-	NOP
 	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
 	movb	%ah,%al
-	NOP
 	outb	%al,$ IO_ICU2+1
-	NOP
-	inb	$0x84,%al
 	movzwl	_cpl,%eax		# return old priority
 	movw	%dx,_cpl		# set new priority level
 	sti				# enable interrupts
@@ -228,14 +206,9 @@ _splbio:
 	movw	%ax,%dx
 	orw	_imen,%ax		# mask off those not enabled yet
 	movw	%ax,%cx
-	NOP
 	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
 	movb	%ah,%al
-	NOP
 	outb	%al,$ IO_ICU2+1
-	NOP
-	inb	$0x84,%al
 	movzwl	_cpl,%eax		# return old priority
 	movw	%dx,_cpl		# set new priority level
 	sti				# enable interrupts
@@ -249,14 +222,9 @@ _splsoftclock:
 	movw	%ax,%dx
 	orw	_imen,%ax		# mask off those not enabled yet
 	movw	%ax,%cx
-	NOP
 	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
 	movb	%ah,%al
-	NOP
 	outb	%al,$ IO_ICU2+1
-	NOP
-	inb	$0x84,%al
 	movzwl	_cpl,%eax		# return old priority
 	movw	%dx,_cpl		# set new priority level
 	sti				# enable interrupts
@@ -272,34 +240,40 @@ _spl0:
 	orw	_netmask,%ax		# mask off those network devices
 	movw	%ax,_cpl		# set new priority level
 	orw	_imen,%ax		# mask off those not enabled yet
-	NOP
 	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
 	movb	%ah,%al
-	NOP
 	outb	%al,$ IO_ICU2+1
-	NOP
-	inb	$0x84,%al
 	sti				# enable interrupts
 
 	DONET(NETISR_RAW,_rawintr)
 #ifdef INET
 	DONET(NETISR_IP,_ipintr)
+	DONET(NETISR_ARP,_arpintr)
 #endif
+#ifdef IMP
+	DONET(NETISR_IMP,_impintr)
+#endif
+#ifdef NS
+	DONET(NETISR_NS,_nsintr)
+#endif
+#ifdef ISO
+	DONET(NETISR_ISO,_clnlintr)
+#endif
+#ifdef CCITT
+	DONET(NETISR_CCITT,_hdintr)
+#endif
+
 	cli				# disable interrupts
 	popl	_cpl			# save old priority
+	nop
+
 	movw	$0,%ax			# set new priority level
 	movw	%ax,%dx
 	orw	_imen,%ax		# mask off those not enabled yet
 	movw	%ax,%cx
-	NOP
 	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
 	movb	%ah,%al
-	NOP
 	outb	%al,$ IO_ICU2+1
-	NOP
-	inb	$0x84,%al
 	movzwl	_cpl,%eax		# return old priority
 	movw	%dx,_cpl		# set new priority level
 	sti				# enable interrupts
@@ -315,211 +289,13 @@ _splx:
 
 	orw	_imen,%ax		# mask off those not enabled yet
 	movw	%ax,%cx
-	NOP
 	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
 	movb	%ah,%al
-	NOP
 	outb	%al,$ IO_ICU2+1
-	NOP
-	inb	$0x84,%al
 	movzwl	_cpl,%eax		# return old priority
 	movw	%dx,_cpl		# set new priority level
 	sti				# enable interrupts
 	ret
-
-#ifdef notyet
-	.globl	_iml8			# mask off all but irq0-1
-_iml8:
-	cli				# disable interrupts
-	movw	$0xfffc,%ax		# set new priority level
-	movw	%ax,%dx
-	orw	_imen,%ax		# mask off those not enabled yet
-	movw	%ax,%cx
-	NOP
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
-	movb	%ah,%al
-	NOP
-	outb	%al,$ IO_ICU2+1
-	NOP
-	movzwl	_cpl,%eax		# return old priority
-	movw	%dx,_cpl		# set new priority level
-	sti				# enable interrupts
-	ret
-
-	.globl	_iml10			# mask off all but irq0-1,8-9
-_iml10:
-	cli				# disable interrupts
-	movw	$0xfcf8,%ax		# set new priority level
-	movw	%ax,%dx
-	orw	_imen,%ax		# mask off those not enabled yet
-	movw	%ax,%cx
-	NOP
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
-	movb	%ah,%al
-	NOP
-	outb	%al,$ IO_ICU2+1
-	NOP
-	movzwl	_cpl,%eax		# return old priority
-	movw	%dx,_cpl		# set new priority level
-	sti				# enable interrupts
-	ret
-
-	.globl	_iml11			# mask off all but irq0-1,8-10
-_iml11:
-	cli				# disable interrupts
-	movw	$0xf8f8,%ax		# set new priority level
-	movw	%ax,%dx
-	orw	_imen,%ax		# mask off those not enabled yet
-	movw	%ax,%cx
-	NOP
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
-	movb	%ah,%al
-	NOP
-	outb	%al,$ IO_ICU2+1
-	NOP
-	movzwl	_cpl,%eax		# return old priority
-	movw	%dx,_cpl		# set new priority level
-	sti				# enable interrupts
-	ret
-
-	.globl	_iml12			# mask off all but irq0-1,8-11
-_iml12:
-	cli				# disable interrupts
-	movw	$0xf0f8,%ax		# set new priority level
-	movw	%ax,%dx
-	orw	_imen,%ax		# mask off those not enabled yet
-	movw	%ax,%cx
-	NOP
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
-	movb	%ah,%al
-	NOP
-	outb	%al,$ IO_ICU2+1
-	NOP
-	movzwl	_cpl,%eax		# return old priority
-	movw	%dx,_cpl		# set new priority level
-	sti				# enable interrupts
-	ret
-
-	.globl	_iml13			# mask off all but irq0-1,8-12
-_iml13:
-	cli				# disable interrupts
-	movw	$0xe0f8,%ax		# set new priority level
-	movw	%ax,%dx
-	orw	_imen,%ax		# mask off those not enabled yet
-	movw	%ax,%cx
-	NOP
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
-	movb	%ah,%al
-	NOP
-	outb	%al,$ IO_ICU2+1
-	NOP
-	movzwl	_cpl,%eax		# return old priority
-	movw	%dx,_cpl		# set new priority level
-	sti				# enable interrupts
-	ret
-
-	.globl	_iml15			# mask off all but irq0-1,8-14
-_iml15:
-	cli				# disable interrupts
-	movw	$0x80f8,%ax		# set new priority level
-	movw	%ax,%dx
-	orw	_imen,%ax		# mask off those not enabled yet
-	movw	%ax,%cx
-	NOP
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
-	movb	%ah,%al
-	NOP
-	outb	%al,$ IO_ICU2+1
-	NOP
-	movzwl	_cpl,%eax		# return old priority
-	movw	%dx,_cpl		# set new priority level
-	sti				# enable interrupts
-	ret
-
-	.globl	_iml3			# mask off all but irq0-1,8-15
-_iml3:
-	cli				# disable interrupts
-	movw	$0x00f8,%ax		# set new priority level
-	movw	%ax,%dx
-	orw	_imen,%ax		# mask off those not enabled yet
-	movw	%ax,%cx
-	NOP
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
-	movb	%ah,%al
-	NOP
-	outb	%al,$ IO_ICU2+1
-	NOP
-	movzwl	_cpl,%eax		# return old priority
-	movw	%dx,_cpl		# set new priority level
-	sti				# enable interrupts
-	ret
-
-	.globl	_iml4			# mask off all but irq0-1,8-15,3
-_iml4:
-	cli				# disable interrupts
-	movw	$0x00f0,%ax		# set new priority level
-	movw	%ax,%dx
-	orw	_imen,%ax		# mask off those not enabled yet
-	movw	%ax,%cx
-	NOP
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
-	movb	%ah,%al
-	NOP
-	outb	%al,$ IO_ICU2+1
-	NOP
-	movzwl	_cpl,%eax		# return old priority
-	movw	%dx,_cpl		# set new priority level
-	sti				# enable interrupts
-	ret
-
-	.globl	_iml5			# mask off all but irq0-1,8-15,3-4
-_iml5:
-	cli				# disable interrupts
-	movw	$0x00e0,%ax		# set new priority level
-	movw	%ax,%dx
-	orw	_imen,%ax		# mask off those not enabled yet
-	movw	%ax,%cx
-	NOP
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
-	movb	%ah,%al
-	NOP
-	outb	%al,$ IO_ICU2+1
-	NOP
-	movzwl	_cpl,%eax		# return old priority
-	movw	%dx,_cpl		# set new priority level
-	sti				# enable interrupts
-	ret
-
-	.globl	_iml6			# mask off all but irq0-1,8-15,3-5
-_iml6:
-	cli				# disable interrupts
-	movw	$0x00c0,%ax		# set new priority level
-	movw	%ax,%dx
-	orw	_imen,%ax		# mask off those not enabled yet
-	movw	%ax,%cx
-	NOP
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	NOP
-	movb	%ah,%al
-	NOP
-	outb	%al,$ IO_ICU2+1
-	NOP
-	movzwl	_cpl,%eax		# return old priority
-	movw	%dx,_cpl		# set new priority level
-	sti				# enable interrupts
-	ret
-
-#endif	notyet
 
 	/* hardware interrupt catcher (IDT 32 - 47) */
 	.globl	_isa_strayintr
