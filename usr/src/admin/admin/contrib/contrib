@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.36 (Berkeley) %G%
+.\"	@(#)contrib	5.37 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -26,7 +26,7 @@ UUNET Technologies Inc.
 .fi
 .sp 2
 The following are people and organizations that have provided a
-large subsystem.
+large subsystem for the BSD releass.
 .sp
 .TS
 l l.
