@@ -3,8 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rindex_.c	5.1	%G%
- */
+ *	@(#)rindex_.c	5.2	%G%
+ *
  * find last occurrence of substring in string
  *
  * calling sequence:
