@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)csfix.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)csfix.c	6.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -104,6 +104,8 @@ reformat()
 	flagee[cp - line] = 0;
 	printf("\\l'\\w`%s`u-\\w`w `u\\&\\(rh'", flagee);
 	flagee[cp - line] = c;
+	if (c == '\0')
+		c = flagee[cp - line - 1];
 	printf("\\l'(\\w`%c`u-\\w`^`u)/2 '", c);
 	printf("\\(ua");
 	printf("\\l'(\\w`%c`u-\\w`^`u)/2 '", c);
