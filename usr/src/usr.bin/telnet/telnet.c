@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)telnet.c	4.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	4.10 (Berkeley) %G%";
 /*
  * User telnet program.
  */
@@ -112,16 +112,18 @@ main(argc, argv)
 		command(1);
 }
 
-struct	hostent *host;
+char	*hostname;
+char	hnamebuf[32];
 
 tn(argc, argv)
 	int argc;
 	char *argv[];
 {
 	register int c;
+	register struct hostent *host;
 
 	if (connected) {
-		printf("?Already connected to %s\n", host->h_name);
+		printf("?Already connected to %s\n", hostname);
 		return;
 	}
 	if (argc < 2) {
@@ -137,11 +139,18 @@ tn(argc, argv)
 		return;
 	}
 	host = gethostbyname(argv[1]);
-	if (host == 0) {
-		printf("%s: unknown host\n", argv[1]);
-		return;
+	if (host) {
+		bcopy(host->h_addr, &sin.sin_addr, host->h_length);
+		hostname = host->h_name;
+	} else {
+		sin.sin_addr.s_addr = inet_addr(argv[1]);
+		if (sin.sin_addr.s_addr == -1) {
+			printf("%s: unknown host\n", argv[1]);
+			return;
+		}
+		strcpy(hnamebuf, argv[1]);
+		hostname = hnamebuf;
 	}
-	bcopy(host->h_addr, &sin.sin_addr, host->h_length);
 	sin.sin_port = sp->s_port;
 	if (argc == 3) {
 		sin.sin_port = atoi(argv[2]);
@@ -178,7 +187,7 @@ tn(argc, argv)
 status()
 {
 	if (connected)
-		printf("Connected to %s.\n", host->h_name);
+		printf("Connected to %s.\n", hostname);
 	else
 		printf("No connection.\n");
 	printf("Escape character is '%s'.\n", control(escape));
@@ -739,7 +748,7 @@ netflush(fd)
 	if (n < 0) {
 		if (errno != ENOBUFS && errno != EWOULDBLOCK) {
 			mode(0);
-			perror(host->h_name);
+			perror(hostname);
 			close(fd);
 			longjmp(peerdied, -1);
 			/*NOTREACHED*/
