@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dh.c	6.15 (Berkeley) %G%
+ *	@(#)dh.c	6.16 (Berkeley) %G%
  */
 
 #include "dh.h"
@@ -212,13 +212,21 @@ dhopen(dev, flag)
 	}
 	splx(s);
 	/*
-	 * If this is first open, initialze tty state to default.
+	 * If this is first open, initialize tty state to default.
 	 */
 	if ((tp->t_state&TS_ISOPEN) == 0) {
 		ttychars(tp);
-		tp->t_ispeed = ISPEED;
-		tp->t_ospeed = ISPEED;
-		tp->t_flags = IFLAGS;
+#ifndef PORTSELECTOR
+		if (tp->t_ispeed == 0) {
+#else
+			tp->t_state |= TS_HUPCLS;
+#endif PORTSELECTOR
+			tp->t_ispeed = ISPEED;
+			tp->t_ospeed = ISPEED;
+			tp->t_flags = IFLAGS;
+#ifndef PORTSELECTOR
+		}
+#endif PORTSELECTOR
 		dhparam(unit);
 	}
 	/*
