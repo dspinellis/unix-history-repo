@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.2	5.1 (Berkeley) %G%
+.\"	@(#)intro.2	6.1 (Berkeley) %G%
 .\"
-.TH INTRO 2 "12 February 1983"
+.TH INTRO 2 ""
 .UC 4
 .de en
 .HP
@@ -165,11 +165,10 @@ Customary configuration limit is 20 per process.
 The file mentioned in an
 .I ioctl
 is not a terminal or one of the other
-devices to which these calls apply.
+devices to which this call applies.
 .en 26 ETXTBSY "Text file busy
 An attempt to execute a pure-procedure
-program which is currently open for writing
-(or reading!).
+program which is currently open for writing.
 Also an attempt to open for writing a pure-procedure
 program that is being executed.
 .en 27 EFBIG "File too large
@@ -299,9 +298,18 @@ A path name lookup involved more than 8 symbolic links.
 .en 63 ENAMETOOLONG "File name too long"
 A component of a path name exceeded 255 characters, or an entire
 path name exceeded 1023 characters.
-.en 64 ENOTEMPTY "Directory not empty"
+.en 64 EHOSTDOWN "Host is down"
+A socket operation failed because the destination host was down.
+.en 65 EHOSTUNREACH "Host is unreachable"
+A socket operation was attempted to an unreachable host.
+.en 66 ENOTEMPTY "Directory not empty"
 A directory with entries other than \*(lq.\*(rq and \*(lq..\*(rq
 was supplied to a remove directory or rename call.
+...en 67 EPROCLIM "Too many processes"
+...en 68 EUSERS "Too many users"
+.en 69 EDQUOT "Disc quota exceeded"
+A file creation or write operation failed because the hard limit
+for that resource had been reached.
 .SH DEFINITIONS
 .TP 5
 Process ID
