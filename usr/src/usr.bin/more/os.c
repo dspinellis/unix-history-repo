@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)os.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)os.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -174,16 +174,13 @@ intread()
 	longjmp(read_label, 1);
 }
 
-#if GET_TIME
 	public long
 get_time()
 {
-	long t;
+	time_t time();
 
-	time(&t);
-	return (t);
+	return(time((long *)NULL));
 }
-#endif
 
 /*
  * Expand a filename, substituting any environment variables, etc.

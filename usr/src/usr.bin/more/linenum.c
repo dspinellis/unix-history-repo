@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)linenum.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)linenum.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -248,9 +248,7 @@ find_linenum(pos)
 	register int lno;
 	register int loopcount;
 	POSITION cpos;
-#if GET_TIME
 	long startime;
-#endif
 
 	if (!linenums)
 		/*
@@ -289,9 +287,7 @@ find_linenum(pos)
 	 * traversing fewer bytes in the file.
 	 */
 	flush();
-#if GET_TIME
 	startime = get_time();
-#endif
 	if (p == &anchor || pos - p->prev->pos < p->pos - pos)
 	{
 		/*
@@ -309,7 +305,6 @@ find_linenum(pos)
 			cpos = forw_raw_line(cpos);
 			if (sigs || cpos == NULL_POSITION)
 				return (0);
-#if GET_TIME
 			if (loopcount >= 0 && ++loopcount > 100)
 			{
 				loopcount = 0;
@@ -319,13 +314,6 @@ find_linenum(pos)
 					loopcount = -1;
 				}
 			}
-#else
-			if (loopcount >= 0 && ++loopcount > LONGLOOP)
-			{
-				longloopmessage();
-				loopcount = -1;
-			}
-#endif
 		}
 		lnloop = 0;
 		/*
@@ -350,7 +338,6 @@ find_linenum(pos)
 			cpos = back_raw_line(cpos);
 			if (sigs || cpos == NULL_POSITION)
 				return (0);
-#if GET_TIME
 			if (loopcount >= 0 && ++loopcount > 100)
 			{
 				loopcount = 0;
@@ -360,13 +347,6 @@ find_linenum(pos)
 					loopcount = -1;
 				}
 			}
-#else
-			if (loopcount >= 0 && ++loopcount > LONGLOOP)
-			{
-				longloopmessage();
-				loopcount = -1;
-			}
-#endif
 		}
 		lnloop = 0;
 	}
