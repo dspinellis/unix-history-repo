@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)param.h	5.10 (Berkeley) %G%
+ *	@(#)param.h	5.11 (Berkeley) %G%
  */
 
 /*
@@ -21,7 +21,8 @@
  * data types (int, long, ...).   The result is u_int and must be cast to
  * any desired pointer type.
  */
-#define	ALIGN(p)	(((u_int)(p) + 3) &~ 3)
+#define	ALIGNBYTES	3
+#define	ALIGN(p)	(((u_int)(p) + ALIGNBYTES) &~ ALIGNBYTES)
 
 #define	NBPG		4096		/* bytes/page */
 #define	PGOFSET		(NBPG-1)	/* byte offset into page */
