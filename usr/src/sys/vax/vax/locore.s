@@ -1,4 +1,4 @@
-/*	locore.s	6.12	84/07/31	*/
+/*	locore.s	6.13	84/08/12	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
@@ -884,31 +884,39 @@ ENTRY(copystr, R6)
  * Copy specified amount of data from user space into the kernel
  * Copyin(from, to, len)
  */
+	.align	1
 JSBENTRY(Copyin)
 	movl	12(sp),r0		# copy length
 	blss	ersb
-	movl	4(sp),r1		# copy user address
-	cmpl	$NBPG,r0		# probing one page or less ?
-	bgeq	cishort			# yes
-ciloop:
-	prober	$3,$NBPG,(r1)		# bytes accessible ?
-	beql	ersb			# no
-	addl2	$NBPG,r1		# incr user address ptr
-	acbl	$NBPG+1,$-NBPG,r0,ciloop	# reduce count and loop
-cishort:
+	movl	4(sp),r1		# r1 = user src address
+	movl	8(sp),r3		# r3 = kernel dest addr
+	cmpl	$(NBPG*CLSIZE),r0	# probing one page or less ?
+	bleq	1f			# no
 	prober	$3,r0,(r1)		# bytes accessible ?
 	beql	ersb			# no
-	movl	4(sp),r1
-	movl	8(sp),r3
-	jbr	2f
-1:
-	subl2	r0,12(sp)
 	movc3	r0,(r1),(r3)
+	clrl	r0			#redundant
+	rsb
+1:
+	bicl3	$~(NBPG*CLSIZE-1),r1,r0	# r0 = bytes on first page
+	subl3	r0,$(NBPG*CLSIZE),r0
+	addl2	$(NBPG*CLSIZE),r0	# plus one additional full page
+	jbr	2f
+
+ciloop:
+	movc3	r0,(r1),(r3)
+	movl	$(2*NBPG*CLSIZE),r0	# next amount to move
 2:
-	movzwl	$65535,r0
-	cmpl	12(sp),r0
-	jgtr	1b
-	movc3	12(sp),(r1),(r3)
+	cmpl	r0,12(sp)
+	bleq	3f
+	movl	12(sp),r0
+3:
+	prober	$3,r0,(r1)		# bytes accessible ?
+	beql	ersb			# no
+	subl2	r0,12(sp)		# last move?
+	bneq	ciloop			# no
+
+	movc3	r0,(r1),(r3)
 	clrl	r0			#redundant
 	rsb
 
@@ -920,62 +928,75 @@ ersb:
  * Copy specified amount of data from kernel to the user space
  * Copyout(from, to, len)
  */
+	.align	1
 JSBENTRY(Copyout)
-	movl	12(sp),r0		# get count
+	movl	12(sp),r0		# copy length
 	blss	ersb
-	movl	8(sp),r1		# get user address
-	cmpl	$NBPG,r0		# can do in one probew?
-	bgeq	coshort			# yes
-coloop:
-	probew	$3,$NBPG,(r1)		# bytes accessible?
-	beql	ersb			# no 
-	addl2	$NBPG,r1		# increment user address
-	acbl	$NBPG+1,$-NBPG,r0,coloop	# reduce count and loop
-coshort:
-	probew	$3,r0,(r1)		# bytes accessible?
+	movl	4(sp),r1		# r1 = kernel src address
+	movl	8(sp),r3		# r3 = user dest addr
+	cmpl	$(NBPG*CLSIZE),r0	# moving one page or less ?
+	bleq	1f			# no
+	probew	$3,r0,(r3)		# bytes writeable?
 	beql	ersb			# no
-	movl	4(sp),r1
-	movl	8(sp),r3
-	jbr	2f
-1:
-	subl2	r0,12(sp)
 	movc3	r0,(r1),(r3)
+	clrl	r0			#redundant
+	rsb
+1:
+	bicl3	$~(NBPG*CLSIZE-1),r3,r0	# r0 = bytes on first page
+	subl3	r0,$(NBPG*CLSIZE),r0
+	addl2	$(NBPG*CLSIZE),r0	# plus one additional full page
+	jbr	2f
+
+coloop:
+	movc3	r0,(r1),(r3)
+	movl	$(2*NBPG*CLSIZE),r0	# next amount to move
 2:
-	movzwl	$65535,r0
-	cmpl	12(sp),r0
-	jgtr	1b
-	movc3	12(sp),(r1),(r3)
-	clrl	r0				#redundant
+	cmpl	r0,12(sp)
+	bleq	3f
+	movl	12(sp),r0
+3:
+	probew	$3,r0,(r3)		# bytes writeable?
+	beql	ersb			# no
+	subl2	r0,12(sp)		# last move?
+	bneq	coloop			# no
+
+	movc3	r0,(r1),(r3)
+	clrl	r0			#redundant
 	rsb
 
 /*
  * non-local goto's
  */
+	.align	1
 JSBENTRY(Setjmp)
-	movq	r6,(r0)+
-	movq	r8,(r0)+
-	movq	r10,(r0)+
-	movq	r12,(r0)+
-	addl3	$4,sp,(r0)+
-	movl	(sp),(r0)
+	movl	fp,(r0)+	# current stack frame
+	movl	(sp),(r0)	# resuming pc
 	clrl	r0
 	rsb
 
+#define PCLOC 16
+	.align	1
 JSBENTRY(Longjmp)
-	movq	(r0)+,r6
-	movq	(r0)+,r8
-	movq	(r0)+,r10
-	movq	(r0)+,r12
-	movl	(r0)+,r1
-	cmpl	r1,sp				# must be a pop
-	bgequ	lj2
-	pushab	lj1
+	movl	(r0)+,newfp	# must save parameters in memory as all
+	movl	(r0),newpc	# registers may be clobbered.
+1:
+	cmpl	fp,newfp	# are we there yet?
+	bgequ	2f		# yes
+	moval	1b,PCLOC(fp)	# redirect return pc to us!
+	ret			# pop next frame
+2:
+	beql	3f		# did we miss our frame?
+	pushab	4f		# yep ?!?
 	calls	$1,_panic
-lj2:
-	movl	r1,sp
-	jmp	*(r0)				# ``rsb''
+3:
+	movl	newpc,r0	# all done, just return to the `setjmp'
+	jmp	(r0)		# ``rsb''
 
-lj1:	.asciz	"longjmp"
+	.data
+newpc:	.space	4
+newfp:	.space	4
+4:	.asciz	"longjmp"
+	.text
 
 	.globl	_whichqs
 	.globl	_qs
@@ -1001,6 +1022,7 @@ lj1:	.asciz	"longjmp"
  *
  * Call should be made at spl6(), and p->p_stat should be SRUN
  */
+	.align	1
  JSBENTRY(Setrq)
 	tstl	P_RLINK(r0)		## firewall: p->p_rlink must be 0
 	beql	set1			##
@@ -1022,6 +1044,7 @@ set3:	.asciz	"setrq"
  *
  * Call should be made at spl6().
  */
+	.align	1
  JSBENTRY(Remrq)
 	movzbl	P_PRI(r0),r1
 	ashl	$-2,r1,r1
@@ -1070,6 +1093,7 @@ badsw:	pushab	sw0
 /*
  * Swtch(), using fancy VAX instructions
  */
+	.align	1
 JSBENTRY(Swtch)
 	movl	$1,_noproc
 	incl	_cnt+V_SWTCH
@@ -1125,6 +1149,7 @@ res1:
 /*
  * {fu,su},{byte,word}, all massaged by asm.sed to jsb's
  */
+	.align	1
 JSBENTRY(Fuword)
 	prober	$3,$4,(r0)
 	beql	fserr
@@ -1134,12 +1159,14 @@ fserr:
 	mnegl	$1,r0
 	rsb
 
+	.align	1
 JSBENTRY(Fubyte)
 	prober	$3,$1,(r0)
 	beql	fserr
 	movzbl	(r0),r0
 	rsb
 
+	.align	1
 JSBENTRY(Suword)
 	probew	$3,$4,(r0)
 	beql	fserr
@@ -1147,6 +1174,7 @@ JSBENTRY(Suword)
 	clrl	r0
 	rsb
 
+	.align	1
 JSBENTRY(Subyte)
 	probew	$3,$1,(r0)
 	beql	fserr
@@ -1289,19 +1317,16 @@ Fastreclaim:
 	bicl2	$1,r3			# v = clbase(btop(virtaddr)); 
 	movl	_u+U_PROCP,r5		# p = u.u_procp 
 					# from vtopte(p, v) ...
+	movl	$1,r2			# type = CTEXT;
 	cmpl	r3,P_TSIZE(r5)
-	jgequ	2f			# if (isatsv(p, v)) {
+	jlssu	1f			# if (isatsv(p, v)) {
+	addl3	P_TSIZE(r5),P_DSIZE(r5),r0
+	cmpl	r3,r0
+	jgequ	2f
+	clrl	r2			#	type = !CTEXT;
+1:
 	ashl	$2,r3,r4
 	addl2	P_P0BR(r5),r4		#	tptopte(p, vtotp(p, v));
-	movl	$1,r2			#	type = CTEXT;
-	jbr	3f
-2:
-	subl3	P_SSIZE(r5),$(0x400000-UPAGES),r0
-	cmpl	r3,r0
-	jgequ	2f			# } else if (isadsv(p, v)) {
-	ashl	$2,r3,r4
-	addl2	P_P0BR(r5),r4		#	dptopte(p, vtodp(p, v));
-	clrl	r2			#	type = !CTEXT;
 	jbr	3f
 2:
 	cvtwl	P_SZPT(r5),r4		# } else (isassv(p, v)) {
