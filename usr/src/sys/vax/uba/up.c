@@ -1,4 +1,4 @@
-/*	up.c	4.14	81/02/15	*/
+/*	up.c	4.15	81/02/16	*/
 
 #include "up.h"
 #if NSC21 > 0
@@ -69,17 +69,10 @@ int	upRDIST = _upRDIST;
 int	upcntrlr(), upslave(), updgo(), upintr();
 struct	uba_minfo *upminfo[NSC21];
 struct	uba_dinfo *updinfo[NUP];
-struct	uba_minfo up_minfo[NSC21];
-	/* there is no reason for this to be a global structure, it
-	   is only known/used locally, it would be better combined
-	   with up_softc - but that would mean I would have to alter
-	   more than I want to just now. Similarly, there is no longer
-	   any real need for upminfo, but the code still uses it so ...
-	*/
 
-extern	u_short	upstd[];
+u_short	upstd[] = { 0776700, 0774400, 0776300 };
 struct	uba_driver updriver =
-	{ upcntrlr, upslave, updgo, 4, 0, upstd, "up", updinfo };
+	{ upcntrlr, upslave, updgo, 0, upstd, "up", updinfo, upminfo };
 struct	buf	uputab[NUP];
 
 struct	upst {
@@ -117,17 +110,17 @@ upcntrlr(um, reg)
 	struct uba_minfo *um;
 	caddr_t reg;
 {
+	register int br, cvec;
+
 	((struct device *)reg)->upcs1 |= (IE|RDY);
-	return(1);			/* just assume it is us (for now) */
+	return (1);
 }
 
-upslave(ui, reg, slaveno, uban)
+upslave(ui, reg, slaveno)
 	struct uba_dinfo *ui;
 	caddr_t reg;
 {
 	register struct device *upaddr = (struct device *)reg;
-	register struct uba_minfo *um;
-	register int sc21;
 
 	upaddr->upcs1 = 0;		/* conservative */
 	upaddr->upcs2 = slaveno;
@@ -135,31 +128,6 @@ upslave(ui, reg, slaveno, uban)
 		upaddr->upcs1 = DCLR|GO;
 		return (0);
 	}
-	/*** we should check device type (return 0 if we don't like it) ***/
-	/*** and set type index in ui->ui_type, but we KNOW all we are  ***/
-	/*** going to see at the minute is a 9300, and the index for a  ***/
-	/*** 9300 is 0, which is the value already in ui->ui_type, so ..***/
-
-	um = &up_minfo[0];
-	for (sc21 = 0; sc21 < NSC21; sc21++) {
-		if (um->um_alive == 0) {	/* this is a new ctrlr */
-			um->um_addr = reg;
-			um->um_ubanum = uban;
-			um->um_num = sc21;	/* not needed after up_softc
-						   combined with um ???  */
-			um->um_alive = 1;
-			upminfo[sc21] = um;	/* just till upminfo vanishes */
-			goto found;
-		}
-		if (um->um_addr == reg && um->um_ubanum == uban)
-			goto found;
-		um++;
-	}
-	return(0);				/* too many sc21's */
-
-    found:
-	ui->ui_mi = um;
-
 	if (upwstart == 0) {
 		timeout(upwatch, (caddr_t)0, HZ);
 		upwstart++;
@@ -231,7 +199,7 @@ upustart(ui)
 	/* dont confuse controller by giving SEARCH while dt in progress */
 	um = ui->ui_mi;
 	if (um->um_tab.b_active) {
-		up_softc[um->um_num].sc_softas |= 1<<ui->ui_slave;
+		up_softc[um->um_ctlr].sc_softas |= 1<<ui->ui_slave;
 		return (0);
 	}
 	if (dp->b_active)
@@ -321,7 +289,7 @@ loop:
 	upaddr = (struct device *)ui->ui_addr;
 	if ((upaddr->upcs2 & 07) != dn)
 		upaddr->upcs2 = dn;
-	up_softc[um->um_num].sc_info =
+	up_softc[um->um_ctlr].sc_info =
 	    ubasetup(ui->ui_ubanum, bp, UBA_NEEDBDP|UBA_CANTWAIT);
 	/*
 	 * If drive is not present and on-line, then
@@ -340,7 +308,7 @@ loop:
 			bp->b_flags |= B_ERROR;
 			iodone(bp);
 			/* A funny place to do this ... */
-			ubarelse(ui->ui_ubanum, &up_softc[um->um_num].sc_info);
+			ubarelse(ui->ui_ubanum, &up_softc[um->um_ctlr].sc_info);
 			goto loop;
 		}
 		printf("-- came back\n");
@@ -362,9 +330,9 @@ loop:
 	 */
 	upaddr->updc = bp->b_cylin;
 	upaddr->upda = (tn << 8) + sn;
-	upaddr->upba = up_softc[um->um_num].sc_info;
+	upaddr->upba = up_softc[um->um_ctlr].sc_info;
 	upaddr->upwc = -bp->b_bcount / sizeof (short);
-	cmd = (up_softc[um->um_num].sc_info >> 8) & 0x300;
+	cmd = (up_softc[um->um_ctlr].sc_info >> 8) & 0x300;
 	if (bp->b_flags & B_READ)
 		cmd |= IE|RCOM|GO;
 	else
@@ -409,7 +377,7 @@ upintr(sc21)
 	int needie = 1;
 
 	(void) spl6();
-	up_softc[um->um_num].sc_wticks = 0;
+	up_softc[um->um_ctlr].sc_wticks = 0;
 	if (um->um_tab.b_active) {
 		if ((upaddr->upcs1 & RDY) == 0) {
 			printf("!RDY: cs1 %o, ds %o, wc %d\n", upaddr->upcs1,
@@ -472,13 +440,13 @@ upintr(sc21)
 				if (upustart(ui))
 					needie = 0;
 		}
-		up_softc[um->um_num].sc_softas &= ~(1<<ui->ui_slave);
-		ubarelse(ui->ui_ubanum, &up_softc[um->um_num].sc_info);
+		up_softc[um->um_ctlr].sc_softas &= ~(1<<ui->ui_slave);
+		ubarelse(ui->ui_ubanum, &up_softc[um->um_ctlr].sc_info);
 	} else {
 		if (upaddr->upcs1 & TRE)
 			upaddr->upcs1 = TRE;
 	}
-	as |= up_softc[um->um_num].sc_softas;
+	as |= up_softc[um->um_ctlr].sc_softas;
 	for (unit = 0; unit < NUP; unit++) {
 		if ((ui = updinfo[unit]) == 0 || ui->ui_mi != um)
 			continue;
@@ -532,7 +500,7 @@ upecc(ui)
 	 * O is offset within a memory page of the first byte transferred.
 	 */
 	npf = btop((up->upwc * sizeof(short)) + bp->b_bcount) - 1;
-	reg = btop(up_softc[um->um_num].sc_info&0x3ffff) + npf;
+	reg = btop(up_softc[um->um_ctlr].sc_info&0x3ffff) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	printf("%D ", bp->b_blkno+npf);
 	prdev("ECC", bp->b_dev);
@@ -547,7 +515,7 @@ upecc(ui)
 	 * is the byte offset in the transfer, the variable byte
 	 * is the offset from a page boundary in main memory.
 	 */
-	ubp->uba_dpr[(up_softc[um->um_num].sc_info>>28)&0x0f] |= UBA_BNE;
+	ubp->uba_dpr[(up_softc[um->um_ctlr].sc_info>>28)&0x0f] |= UBA_BNE;
 	i = up->upec1 - 1;		/* -1 makes 0 origin */
 	bit = i&07;
 	i = (i&~07)>>3;
@@ -620,9 +588,9 @@ upreset(uban)
 		}
 		um->um_tab.b_active = 0;
 		um->um_tab.b_actf = um->um_tab.b_actl = 0;
-		if (up_softc[um->um_num].sc_info) {
-			printf("<%d>", (up_softc[um->um_num].sc_info>>28)&0xf);
-			ubarelse(um->um_ubanum, &up_softc[um->um_num].sc_info);
+		if (up_softc[um->um_ctlr].sc_info) {
+			printf("<%d>", (up_softc[um->um_ctlr].sc_info>>28)&0xf);
+			ubarelse(um->um_ubanum, &up_softc[um->um_ctlr].sc_info);
 		}
 		((struct device *)(um->um_addr))->upcs2 = CLR;
 		for (unit = 0; unit < NUP; unit++) {
