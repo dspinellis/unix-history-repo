@@ -1,4 +1,4 @@
-#	@(#)KABOSU	7.2 (Berkeley) %G%
+#	@(#)KABOSU	7.3 (Berkeley) %G%
 #
 
 machine		"luna68k"
@@ -21,6 +21,7 @@ options		SWAPPAGER,VNODEPAGER,DEVPAGER
 options		DEBUG
 options		DIAGNOSTIC
 options		DEBUGPRINT
+options		KGDB,"KGDBDEV=12*256+0","KGDBRATE=9600"
 options		HPFPLIB		# floating point emulation for MC68040
 
 config		vmunix root on sd0 swap on sd0b and sd1b
