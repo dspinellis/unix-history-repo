@@ -1,38 +1,247 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1989 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)vfs_syscalls.c	7.6 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)vfs_syscalls.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "dir.h"
-#include "user.h"
+#include "syscontext.h"
 #include "kernel.h"
 #include "file.h"
 #include "stat.h"
-#include "inode.h"
-#include "fs.h"
-#include "buf.h"
-#include "proc.h"
-#include "quota.h"
-#include "uio.h"
-#include "socket.h"
-#include "socketvar.h"
+#include "vnode.h"
+#include "../ufs/inode.h"
 #include "mount.h"
+#include "proc.h"
+#include "uio.h"
+#include "malloc.h"
 
-extern	struct fileops inodeops;
-struct	file *getinode();
+/*
+ * Virtual File System System Calls
+ */
+
+/*
+ * mount system call
+ */
+mount()
+{
+	register struct a {
+		int	type;
+		char	*dir;
+		int	flags;
+		caddr_t	data;
+	} *uap = (struct a *)u.u_ap;
+	register struct nameidata *ndp = &u.u_nd;
+	struct vnode *vp;
+	struct mount *mp;
+	int error;
+
+	/*
+	 * Must be super user
+	 */
+	if (error = suser(u.u_cred, &u.u_acflag))
+		RETURN (error);
+	/*
+	 * Get vnode to be covered
+	 */
+	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = uap->dir;
+	if (error = namei(ndp))
+		RETURN (error);
+	vp = ndp->ni_vp;
+	if (vp->v_count != 1) {
+		vput(vp);
+		RETURN (EBUSY);
+	}
+	if (vp->v_type != VDIR) {
+		vput(vp);
+		RETURN (ENOTDIR);
+	}
+	if (uap->type > MOUNT_MAXTYPE ||
+	    vfssw[uap->type] == (struct vfsops *)0) {
+		vput(vp);
+		RETURN (ENODEV);
+	}
+
+	/*
+	 * Mount the filesystem.
+	 */
+	mp = (struct mount *)malloc((u_long)sizeof(struct mount),
+		M_MOUNT, M_WAITOK);
+	mp->m_op = vfssw[uap->type];
+	mp->m_flag = 0;
+	mp->m_exroot = 0;
+	error = vfs_add(vp, mp, uap->flags);
+	if (!error)
+		error = VFS_MOUNT(mp, uap->dir, uap->data, ndp);
+	cache_purge(vp);
+	VOP_UNLOCK(vp);
+	if (!error) {
+		vfs_unlock(mp);
+	} else {
+		vfs_remove(mp);
+		free((caddr_t)mp, M_MOUNT);
+		vrele(vp);
+	}
+	RETURN (error);
+}
+
+/*
+ * Unmount system call.
+ *
+ * Note: unmount takes a path to the vnode mounted on as argument,
+ * not special file (as before).
+ */
+unmount()
+{
+	struct a {
+		char	*pathp;
+		int	flags;
+	} *uap = (struct a *)u.u_ap;
+	register struct vnode *vp;
+	register struct mount *mp;
+	register struct nameidata *ndp = &u.u_nd;
+	struct vnode *coveredvp;
+	int error;
+
+	/*
+	 * Must be super user
+	 */
+	if (error = suser(u.u_cred, &u.u_acflag))
+		RETURN (error);
+
+	ndp->ni_nameiop = LOOKUP | LOCKLEAF | FOLLOW;
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = uap->pathp;
+	if (error = namei(ndp))
+		RETURN (error);
+	vp = ndp->ni_vp;
+	/*
+	 * Must be the root of the filesystem
+	 */
+	if ((vp->v_flag & VROOT) == 0) {
+		vput(vp);
+		RETURN (EINVAL);
+	}
+	mp = vp->v_mount;
+	vput(vp);
+	/*
+	 * Do the unmount.
+	 */
+	coveredvp = mp->m_vnodecovered;
+	if (error = vfs_lock(mp))
+		RETURN (error);
+
+	xumount(mp);		/* remove unused sticky files from text table */
+	cache_purgevfs(mp);	/* remove cache entries for this file sys */
+	VFS_SYNC(mp, MNT_WAIT);
+
+	error = VFS_UNMOUNT(mp, uap->flags);
+	if (error) {
+		vfs_unlock(mp);
+	} else {
+		vrele(coveredvp);
+		vfs_remove(mp);
+		free((caddr_t)mp, M_MOUNT);
+	}
+	RETURN (error);
+}
+
+/*
+ * Sync system call.
+ * Sync each mounted filesystem.
+ */
+sync()
+{
+	register struct mount *mp;
+
+	mp = rootfs;
+	do {
+		if ((mp->m_flag & M_RDONLY) == 0)
+			VFS_SYNC(mp, MNT_NOWAIT);
+		mp = mp->m_next;
+	} while (mp != rootfs);
+}
+
+/*
+ * get filesystem statistics
+ */
+statfs()
+{
+	struct a {
+		char *path;
+		struct statfs *buf;
+	} *uap = (struct a *)u.u_ap;
+	register struct vnode *vp;
+	register struct nameidata *ndp = &u.u_nd;
+	struct statfs sb;
+	int error;
+
+	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = uap->path;
+	if (error = namei(ndp))
+		RETURN (error);
+	vp = ndp->ni_vp;
+	if (error = VFS_STATFS(vp->v_mount, &sb))
+		goto out;
+	error = copyout((caddr_t)&sb, (caddr_t)uap->buf, sizeof(sb));
+out:
+	vput(vp);
+	RETURN (error);
+}
+
+fstatfs()
+{
+	struct a {
+		int fd;
+		struct statfs *buf;
+	} *uap = (struct a *)u.u_ap;
+	struct file *fp;
+	struct statfs sb;
+	int error;
+
+	if (error = getvnode(uap->fd, &fp))
+		RETURN (error);
+	if (error = VFS_STATFS(((struct vnode *)fp->f_data)->v_mount, &sb))
+		RETURN (error);
+	RETURN (copyout((caddr_t)&sb, (caddr_t)uap->buf, sizeof(sb)));
+}
 
 /*
  * Change current working directory (``.'').
  */
 chdir()
 {
+	struct a {
+		char	*fname;
+	} *uap = (struct a *)u.u_ap;
+	register struct nameidata *ndp = &u.u_nd;
+	int error;
 
-	chdirec(&u.u_cdir);
+	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = uap->fname;
+	if (error = chdirec(ndp))
+		RETURN (error);
+	vrele(u.u_cdir);
+	u.u_cdir = ndp->ni_vp;
+	RETURN (0);
 }
 
 /*
@@ -40,44 +249,44 @@ chdir()
  */
 chroot()
 {
+	struct a {
+		char	*fname;
+	} *uap = (struct a *)u.u_ap;
+	register struct nameidata *ndp = &u.u_nd;
+	int error;
 
-	if (u.u_error = suser(u.u_cred, &u.u_acflag))
-		return;
-	chdirec(&u.u_rdir);
+	if (error = suser(u.u_cred, &u.u_acflag))
+		RETURN (error);
+	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = uap->fname;
+	if (error = chdirec(ndp))
+		RETURN (error);
+	vrele(u.u_rdir);
+	u.u_rdir = ndp->ni_vp;
+	RETURN (0);
 }
 
 /*
  * Common routine for chroot and chdir.
  */
-chdirec(ipp)
-	register struct inode **ipp;
+chdirec(ndp)
+	register struct nameidata *ndp;
 {
-	register struct inode *ip;
-	struct a {
-		char	*fname;
-	} *uap = (struct a *)u.u_ap;
-	register struct nameidata *ndp = &u.u_nd;
+	struct vnode *vp;
+	int error;
 
-	ndp->ni_nameiop = LOOKUP | FOLLOW;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	ip = namei(ndp);
-	if (ip == NULL)
-		return;
-	if ((ip->i_mode&IFMT) != IFDIR) {
-		u.u_error = ENOTDIR;
-		goto bad;
-	}
-	if (access(ip, IEXEC))
-		goto bad;
-	IUNLOCK(ip);
-	if (*ipp)
-		irele(*ipp);
-	*ipp = ip;
-	return;
-
-bad:
-	iput(ip);
+	if (error = namei(ndp))
+		return (error);
+	vp = ndp->ni_vp;
+	if (vp->v_type != VDIR)
+		error = ENOTDIR;
+	else
+		error = vn_access(vp, VEXEC, ndp->ni_cred);
+	VOP_UNLOCK(vp);
+	if (error)
+		vrele(vp);
+	return (error);
 }
 
 /*
@@ -90,8 +299,12 @@ open()
 		int	mode;
 		int	crtmode;
 	} *uap = (struct a *) u.u_ap;
+	struct nameidata *ndp = &u.u_nd;
 
-	copen(uap->mode-FOPEN, uap->crtmode, uap->fname);
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = uap->fname;
+	RETURN (copen(uap->mode-FOPEN, uap->crtmode &~ u.u_cmask, ndp,
+		&u.u_r.r_val1));
 }
 
 /*
@@ -103,8 +316,12 @@ creat()
 		char	*fname;
 		int	fmode;
 	} *uap = (struct a *)u.u_ap;
+	struct nameidata *ndp = &u.u_nd;
 
-	copen(FWRITE|FCREAT|FTRUNC, uap->fmode, uap->fname);
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = uap->fname;
+	RETURN (copen(FWRITE|FCREAT|FTRUNC, uap->fmode &~ u.u_cmask, ndp,
+		&u.u_r.r_val1));
 }
 
 /*
@@ -112,88 +329,33 @@ creat()
  * Check permissions, allocate an open file structure,
  * and call the device open routine if any.
  */
-copen(mode, arg, fname)
-	register int mode;
-	int arg;
-	caddr_t fname;
+copen(fmode, cmode, ndp, resultfd)
+	int fmode, cmode;
+	struct nameidata *ndp;
+	int *resultfd;
 {
-	register struct inode *ip;
 	register struct file *fp;
-	register struct nameidata *ndp = &u.u_nd;
-	int indx;
+	struct file *nfp;
+	int indx, error;
+	extern struct fileops vnops;
 
-	fp = falloc();
-	if (fp == NULL)
-		return;
-	indx = u.u_r.r_val1;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = fname;
-	if (mode&FCREAT) {
-		if (mode & FEXCL)
-			ndp->ni_nameiop = CREATE;
-		else
-			ndp->ni_nameiop = CREATE | FOLLOW;
-		ip = namei(ndp);
-		if (ip == NULL) {
-			if (u.u_error)
-				goto bad1;
-			ip = maknode(arg&07777&(~ISVTX), ndp);
-			if (ip == NULL)
-				goto bad1;
-			mode &= ~FTRUNC;
-		} else {
-			if (mode&FEXCL) {
-				u.u_error = EEXIST;
-				goto bad;
-			}
-			mode &= ~FCREAT;
-		}
-	} else {
-		ndp->ni_nameiop = LOOKUP | FOLLOW;
-		ip = namei(ndp);
-		if (ip == NULL)
-			goto bad1;
-	}
-	if ((ip->i_mode & IFMT) == IFSOCK) {
-		u.u_error = EOPNOTSUPP;
-		goto bad;
-	}
-	if ((mode&FCREAT) == 0) {
-		if (mode&FREAD)
-			if (access(ip, IREAD))
-				goto bad;
-		if (mode&(FWRITE|FTRUNC)) {
-			if (access(ip, IWRITE))
-				goto bad;
-			if ((ip->i_mode&IFMT) == IFDIR) {
-				u.u_error = EISDIR;
-				goto bad;
-			}
-		}
-	}
-	if (mode&FTRUNC)
-		itrunc(ip, (u_long)0);
-	IUNLOCK(ip);
-	fp->f_flag = mode&FMASK;
-	fp->f_type = DTYPE_INODE;
-	fp->f_ops = &inodeops;
-	fp->f_data = (caddr_t)ip;
-	if (setjmp(&u.u_qsave)) {
-		if (u.u_error == 0)
-			u.u_error = EINTR;
+	if (error = falloc(&nfp, &indx))
+		return (error);
+	fp = nfp;
+	u.u_r.r_val1 = indx;	/* XXX for fdopen() */
+	if (error = vn_open(ndp, fmode, (cmode & 07777) &~ ISVTX)) {
 		u.u_ofile[indx] = NULL;
-		closef(fp);
-		return;
+		crfree(fp->f_cred);
+		fp->f_count--;
+		return (error);
 	}
-	u.u_error = openi(ip, mode);
-	if (u.u_error == 0)
-		return;
-	ILOCK(ip);
-bad:
-	iput(ip);
-bad1:
-	u.u_ofile[indx] = NULL;
-	fp->f_count--;
+	fp->f_flag = fmode & FMASK;
+	fp->f_type = DTYPE_VNODE;
+	fp->f_ops = &vnops;
+	fp->f_data = (caddr_t)ndp->ni_vp;
+	if (resultfd)
+		*resultfd = indx;
+	return (0);
 }
 
 /*
@@ -201,46 +363,52 @@ bad1:
  */
 mknod()
 {
-	register struct inode *ip;
 	register struct a {
 		char	*fname;
 		int	fmode;
 		int	dev;
 	} *uap = (struct a *)u.u_ap;
 	register struct nameidata *ndp = &u.u_nd;
+	register struct vnode *vp;
+	struct vattr vattr;
+	int error;
 
-	if (u.u_error = suser(u.u_cred, &u.u_acflag))
-		return;
-	ndp->ni_nameiop = CREATE;
+	if (error = suser(u.u_cred, &u.u_acflag))
+		RETURN (error);
+	ndp->ni_nameiop = CREATE | LOCKPARENT;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
-	ip = namei(ndp);
-	if (ip != NULL) {
-		u.u_error = EEXIST;
+	if (error = namei(ndp))
+		RETURN (error);
+	vp = ndp->ni_vp;
+	if (vp != NULL) {
+		error = EEXIST;
 		goto out;
 	}
-	if (u.u_error)
-		return;
-	ip = maknode(uap->fmode, ndp);
-	if (ip == NULL)
-		return;
-	switch (ip->i_mode & IFMT) {
+	vattr_null(&vattr);
+	switch (uap->fmode & IFMT) {
 
 	case IFMT:	/* used by badsect to flag bad sectors */
+		vattr.va_type = VBAD;
+		break;
 	case IFCHR:
+		vattr.va_type = VCHR;
+		break;
 	case IFBLK:
-		if (uap->dev) {
-			/*
-			 * Want to be able to use this to make badblock
-			 * inodes, so don't truncate the dev number.
-			 */
-			ip->i_rdev = uap->dev;
-			ip->i_flag |= IACC|IUPD|ICHG;
-		}
+		vattr.va_type = VBLK;
+		break;
+	default:
+		error = EINVAL;
+		goto out;
 	}
-
+	vattr.va_mode = (uap->fmode & 07777) &~ u.u_cmask;
+	vattr.va_rdev = uap->dev;
 out:
-	iput(ip);
+	if (error)
+		VOP_ABORTOP(ndp);
+	else
+		error = VOP_MKNOD(ndp, &vattr, ndp->ni_cred);
+	RETURN (error);
 }
 
 /*
@@ -248,56 +416,43 @@ out:
  */
 link()
 {
-	register struct inode *ip, *xp;
 	register struct a {
 		char	*target;
 		char	*linkname;
 	} *uap = (struct a *)u.u_ap;
 	register struct nameidata *ndp = &u.u_nd;
+	register struct vnode *vp, *xp;
+	int error;
 
 	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->target;
-	ip = namei(ndp);	/* well, this routine is doomed anyhow */
-	if (ip == NULL)
-		return;
-	if ((ip->i_mode&IFMT) == IFDIR &&
-	    (u.u_error = suser(u.u_cred, &u.u_acflag))) {
-		iput(ip);
-		return;
-	}
-	if (ip->i_nlink == LINK_MAX - 1) {
-		u.u_error = EMLINK;
-		iput(ip);
-		return;
-	}
-	ip->i_nlink++;
-	ip->i_flag |= ICHG;
-	iupdat(ip, &time, &time, 1);
-	IUNLOCK(ip);
-	ndp->ni_nameiop = CREATE;
-	ndp->ni_segflg = UIO_USERSPACE;
+	if (error = namei(ndp))
+		RETURN (error);
+	vp = ndp->ni_vp;
+	if (vp->v_type == VDIR &&
+	    (error = suser(u.u_cred, &u.u_acflag)))
+		goto out1;
+	ndp->ni_nameiop = CREATE | LOCKPARENT;
 	ndp->ni_dirp = (caddr_t)uap->linkname;
-	xp = namei(ndp);
+	if (error = namei(ndp))
+		goto out1;
+	xp = ndp->ni_vp;
 	if (xp != NULL) {
-		u.u_error = EEXIST;
-		iput(xp);
+		error = EEXIST;
 		goto out;
 	}
-	if (u.u_error)
-		goto out;
-	if (ndp->ni_pdir->i_dev != ip->i_dev) {
-		iput(ndp->ni_pdir);
-		u.u_error = EXDEV;
-		goto out;
-	}
-	u.u_error = direnter(ip, ndp);
+	xp = ndp->ni_dvp;
+	if (vp->v_mount != xp->v_mount)
+		error = EXDEV;
 out:
-	if (u.u_error) {
-		ip->i_nlink--;
-		ip->i_flag |= ICHG;
-	}
-	irele(ip);
+	if (error)
+		VOP_ABORTOP(ndp);
+	else
+		error = VOP_LINK(vp, ndp);
+out1:
+	vrele(vp);
+	RETURN (error);
 }
 
 /*
@@ -305,43 +460,40 @@ out:
  */
 symlink()
 {
-	register struct a {
+	struct a {
 		char	*target;
 		char	*linkname;
 	} *uap = (struct a *)u.u_ap;
-	register struct inode *ip;
-	register char *tp;
-	register c, nc;
 	register struct nameidata *ndp = &u.u_nd;
+	register struct vnode *vp;
+	struct vattr vattr;
+	char *target;
+	int error;
 
-	tp = uap->target;
-	nc = 0;
-	while (c = fubyte(tp)) {
-		if (c < 0) {
-			u.u_error = EFAULT;
-			return;
-		}
-		tp++;
-		nc++;
-	}
-	ndp->ni_nameiop = CREATE;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->linkname;
-	ip = namei(ndp);
-	if (ip) {
-		iput(ip);
-		u.u_error = EEXIST;
-		return;
+	MALLOC(target, char *, MAXPATHLEN, M_NAMEI, M_WAITOK);
+	if (error = copyinstr(uap->target, target, MAXPATHLEN, (u_int *)0))
+		goto out1;
+	ndp->ni_nameiop = CREATE | LOCKPARENT;
+	if (error = namei(ndp))
+		goto out1;
+	vp = ndp->ni_vp;
+	if (vp) {
+		error = EEXIST;
+		goto out;
 	}
-	if (u.u_error)
-		return;
-	ip = maknode(IFLNK | 0777, ndp);
-	if (ip == NULL)
-		return;
-	u.u_error = rdwri(UIO_WRITE, ip, uap->target, nc, (off_t)0, 0,
-	    (int *)0);
-	/* handle u.u_error != 0 */
-	iput(ip);
+	vp = ndp->ni_dvp;
+	vattr_null(&vattr);
+	vattr.va_mode = 0777 &~ u.u_cmask;
+out:
+	if (error)
+		VOP_ABORTOP(ndp);
+	else
+		error = VOP_SYMLINK(ndp, &vattr, target);
+out1:
+	FREE(target, M_NAMEI);
+	RETURN (error);
 }
 
 /*
@@ -354,38 +506,34 @@ unlink()
 	struct a {
 		char	*fname;
 	} *uap = (struct a *)u.u_ap;
-	register struct inode *ip, *dp;
 	register struct nameidata *ndp = &u.u_nd;
+	register struct vnode *vp;
+	int error;
 
-	ndp->ni_nameiop = DELETE | LOCKPARENT;
+	ndp->ni_nameiop = DELETE | LOCKPARENT | LOCKLEAF;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
-	ip = namei(ndp);
-	if (ip == NULL)
-		return;
-	dp = ndp->ni_pdir;
-	if ((ip->i_mode&IFMT) == IFDIR &&
-	    (u.u_error = suser(u.u_cred, &u.u_acflag)))
+	if (error = namei(ndp))
+		RETURN (error);
+	vp = ndp->ni_vp;
+	if (vp->v_type == VDIR &&
+	    (error = suser(u.u_cred, &u.u_acflag)))
 		goto out;
 	/*
 	 * Don't unlink a mounted file.
 	 */
-	if (ip->i_dev != dp->i_dev) {
-		u.u_error = EBUSY;
+	if (vp->v_flag & VROOT) {
+		error = EBUSY;
 		goto out;
 	}
-	if (ip->i_flag&ITEXT)
-		xrele(ip);	/* try once to free text */
-	if (dirremove(ndp)) {
-		ip->i_nlink--;
-		ip->i_flag |= ICHG;
-	}
+	if (vp->v_flag & VTEXT)
+		xrele(vp);	/* try once to free text */
 out:
-	if (dp == ip)
-		irele(ip);
+	if (error)
+		VOP_ABORTOP(ndp);
 	else
-		iput(ip);
-	iput(dp);
+		error = VOP_REMOVE(ndp);
+	RETURN (error);
 }
 
 /*
@@ -395,16 +543,18 @@ lseek()
 {
 	register struct file *fp;
 	register struct a {
-		int	fd;
+		int	fdes;
 		off_t	off;
 		int	sbase;
 	} *uap = (struct a *)u.u_ap;
+	struct vattr vattr;
+	int error;
 
-	GETF(fp, uap->fd);
-	if (fp->f_type != DTYPE_INODE) {
-		u.u_error = ESPIPE;
-		return;
-	}
+	if ((unsigned)uap->fdes >= NOFILE ||
+	    (fp = u.u_ofile[uap->fdes]) == NULL)
+		RETURN (EBADF);
+	if (fp->f_type != DTYPE_VNODE)
+		RETURN (ESPIPE);
 	switch (uap->sbase) {
 
 	case L_INCR:
@@ -412,7 +562,10 @@ lseek()
 		break;
 
 	case L_XTND:
-		fp->f_offset = uap->off + ((struct inode *)fp->f_data)->i_size;
+		if (error = VOP_GETATTR((struct vnode *)fp->f_data,
+		    &vattr, u.u_cred))
+			RETURN (error);
+		fp->f_offset = uap->off + vattr.va_size;
 		break;
 
 	case L_SET:
@@ -420,10 +573,10 @@ lseek()
 		break;
 
 	default:
-		u.u_error = EINVAL;
-		return;
+		RETURN (EINVAL);
 	}
 	u.u_r.r_off = fp->f_offset;
+	RETURN (0);
 }
 
 /*
@@ -431,34 +584,42 @@ lseek()
  */
 saccess()
 {
-	register svuid, svgid;
-	register struct inode *ip;
 	register struct a {
 		char	*fname;
 		int	fmode;
 	} *uap = (struct a *)u.u_ap;
 	register struct nameidata *ndp = &u.u_nd;
+	register struct vnode *vp;
+	int error, mode, svuid, svgid;
 
 	svuid = u.u_uid;
 	svgid = u.u_gid;
 	u.u_uid = u.u_ruid;
 	u.u_gid = u.u_rgid;
-	ndp->ni_nameiop = LOOKUP | FOLLOW;
+	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
-	ip = namei(ndp);
-	if (ip != NULL) {
-		if ((uap->fmode&R_OK) && access(ip, IREAD))
-			goto done;
-		if ((uap->fmode&W_OK) && access(ip, IWRITE))
-			goto done;
-		if ((uap->fmode&X_OK) && access(ip, IEXEC))
-			goto done;
-done:
-		iput(ip);
+	if (error = namei(ndp))
+		goto out1;
+	vp = ndp->ni_vp;
+	/*
+	 * fmode == 0 means only check for exist
+	 */
+	if (uap->fmode) {
+		mode = 0;
+		if (uap->fmode & R_OK)
+			mode |= VREAD;
+		if (uap->fmode & W_OK)
+			mode |= VWRITE;
+		if (uap->fmode & X_OK)
+			mode |= VEXEC;
+		error = vn_access(vp, mode, u.u_cred);
 	}
+	vput(vp);
+out1:
 	u.u_uid = svuid;
 	u.u_gid = svgid;
+	RETURN (error);
 }
 
 /*
@@ -482,23 +643,25 @@ lstat()
 stat1(follow)
 	int follow;
 {
-	register struct inode *ip;
 	register struct a {
 		char	*fname;
 		struct stat *ub;
 	} *uap = (struct a *)u.u_ap;
-	struct stat sb;
 	register struct nameidata *ndp = &u.u_nd;
+	struct stat sb;
+	int error;
 
-	ndp->ni_nameiop = LOOKUP | follow;
+	ndp->ni_nameiop = LOOKUP | LOCKLEAF | follow;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
-	ip = namei(ndp);
-	if (ip == NULL)
-		return;
-	(void) ino_stat(ip, &sb);
-	iput(ip);
-	u.u_error = copyout((caddr_t)&sb, (caddr_t)uap->ub, sizeof (sb));
+	if (error = namei(ndp))
+		RETURN (error);
+	error = vn_stat(ndp->ni_vp, &sb);
+	vput(ndp->ni_vp);
+	if (error)
+		RETURN (error);
+	error = copyout((caddr_t)&sb, (caddr_t)uap->ub, sizeof (sb));
+	RETURN (error);
 }
 
 /*
@@ -506,30 +669,40 @@ stat1(follow)
  */
 readlink()
 {
-	register struct inode *ip;
 	register struct a {
 		char	*name;
 		char	*buf;
 		int	count;
 	} *uap = (struct a *)u.u_ap;
 	register struct nameidata *ndp = &u.u_nd;
-	int resid;
+	register struct vnode *vp;
+	struct iovec aiov;
+	struct uio auio;
+	int error;
 
-	ndp->ni_nameiop = LOOKUP;
+	ndp->ni_nameiop = LOOKUP | LOCKLEAF;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->name;
-	ip = namei(ndp);
-	if (ip == NULL)
-		return;
-	if ((ip->i_mode&IFMT) != IFLNK) {
-		u.u_error = EINVAL;
+	if (error = namei(ndp))
+		RETURN (error);
+	vp = ndp->ni_vp;
+	if (vp->v_type != VLNK) {
+		error = EINVAL;
 		goto out;
 	}
-	u.u_error = rdwri(UIO_READ, ip, uap->buf, uap->count, (off_t)0, 0,
-	    &resid);
+	aiov.iov_base = uap->buf;
+	aiov.iov_len = uap->count;
+	auio.uio_iov = &aiov;
+	auio.uio_iovcnt = 1;
+	auio.uio_offset = 0;
+	auio.uio_rw = UIO_READ;
+	auio.uio_segflg = UIO_USERSPACE;
+	auio.uio_resid = uap->count;
+	error = VOP_READLINK(vp, &auio, ndp->ni_cred);
 out:
-	iput(ip);
-	u.u_r.r_val1 = uap->count - resid;
+	vput(vp);
+	u.u_r.r_val1 = uap->count - auio.uio_resid;
+	RETURN (error);
 }
 
 /*
@@ -537,16 +710,31 @@ out:
  */
 chmod()
 {
-	struct inode *ip;
 	struct a {
 		char	*fname;
 		int	fmode;
 	} *uap = (struct a *)u.u_ap;
+	register struct nameidata *ndp = &u.u_nd;
+	register struct vnode *vp;
+	struct vattr vattr;
+	int error;
 
-	if ((ip = owner(uap->fname, FOLLOW)) == NULL)
-		return;
-	u.u_error = chmod1(ip, uap->fmode);
-	iput(ip);
+	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = uap->fname;
+	vattr_null(&vattr);
+	vattr.va_mode = uap->fmode & 07777;
+	if (error = namei(ndp))
+		RETURN (error);
+	vp = ndp->ni_vp;
+	if (vp->v_mount->m_flag & M_RDONLY) {
+		error = EROFS;
+		goto out;
+	}
+	error = VOP_SETATTR(vp, &vattr, ndp->ni_cred);
+out:
+	vput(vp);
+	RETURN (error);
 }
 
 /*
@@ -558,44 +746,25 @@ fchmod()
 		int	fd;
 		int	fmode;
 	} *uap = (struct a *)u.u_ap;
-	register struct inode *ip;
-	register struct file *fp;
+	struct vattr vattr;
+	struct vnode *vp;
+	struct file *fp;
+	int error;
 
-	fp = getinode(uap->fd);
-	if (fp == NULL)
-		return;
-	ip = (struct inode *)fp->f_data;
-	if (u.u_uid != ip->i_uid &&
-	    (u.u_error = suser(u.u_cred, &u.u_acflag)))
-		return;
-	ILOCK(ip);
-	u.u_error = chmod1(ip, uap->fmode);
-	IUNLOCK(ip);
-}
-
-/*
- * Change the mode on a file.
- * Inode must be locked before calling.
- */
-chmod1(ip, mode)
-	register struct inode *ip;
-	register int mode;
-{
-
-	if (ip->i_fs->fs_ronly)
-		return (EROFS);
-	ip->i_mode &= ~07777;
-	if (u.u_uid) {
-		if ((ip->i_mode & IFMT) != IFDIR)
-			mode &= ~ISVTX;
-		if (!groupmember(ip->i_gid))
-			mode &= ~ISGID;
+	if (error = getvnode(uap->fd, &fp))
+		RETURN (error);
+	vattr_null(&vattr);
+	vattr.va_mode = uap->fmode & 07777;
+	vp = (struct vnode *)fp->f_data;
+	VOP_LOCK(vp);
+	if (vp->v_mount->m_flag & M_RDONLY) {
+		error = EROFS;
+		goto out;
 	}
-	ip->i_mode |= mode&07777;
-	ip->i_flag |= ICHG;
-	if (ip->i_flag&ITEXT && (ip->i_mode&ISVTX)==0)
-		xrele(ip);
-	return (0);
+	error = VOP_SETATTR(vp, &vattr, fp->f_cred);
+out:
+	VOP_UNLOCK(vp);
+	RETURN (error);
 }
 
 /*
@@ -603,22 +772,33 @@ chmod1(ip, mode)
  */
 chown()
 {
-	struct inode *ip;
 	struct a {
 		char	*fname;
 		int	uid;
 		int	gid;
 	} *uap = (struct a *)u.u_ap;
 	register struct nameidata *ndp = &u.u_nd;
+	register struct vnode *vp;
+	struct vattr vattr;
+	int error;
 
-	ndp->ni_nameiop = LOOKUP | NOFOLLOW;
+	ndp->ni_nameiop = LOOKUP | NOFOLLOW | LOCKLEAF;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
-	ip = namei(ndp);
-	if (ip == NULL)
-		return;
-	u.u_error = chown1(ip, uap->uid, uap->gid);
-	iput(ip);
+	vattr_null(&vattr);
+	vattr.va_uid = uap->uid;
+	vattr.va_gid = uap->gid;
+	if (error = namei(ndp))
+		RETURN (error);
+	vp = ndp->ni_vp;
+	if (vp->v_mount->m_flag & M_RDONLY) {
+		error = EROFS;
+		goto out;
+	}
+	error = VOP_SETATTR(vp, &vattr, ndp->ni_cred);
+out:
+	vput(vp);
+	RETURN (error);
 }
 
 /*
@@ -631,67 +811,26 @@ fchown()
 		int	uid;
 		int	gid;
 	} *uap = (struct a *)u.u_ap;
-	register struct inode *ip;
-	register struct file *fp;
+	struct vattr vattr;
+	struct vnode *vp;
+	struct file *fp;
+	int error;
 
-	fp = getinode(uap->fd);
-	if (fp == NULL)
-		return;
-	ip = (struct inode *)fp->f_data;
-	ILOCK(ip);
-	u.u_error = chown1(ip, uap->uid, uap->gid);
-	IUNLOCK(ip);
-}
-
-/*
- * Perform chown operation on inode ip;
- * inode must be locked prior to call.
- */
-chown1(ip, uid, gid)
-	register struct inode *ip;
-	int uid, gid;
-{
-#ifdef QUOTA
-	register long change;
-#endif
-
-	if (ip->i_fs->fs_ronly)
-		return (EROFS);
-	if (uid == -1)
-		uid = ip->i_uid;
-	if (gid == -1)
-		gid = ip->i_gid;
-	/*
-	 * If we don't own the file, are trying to change the owner
-	 * of the file, or are not a member of the target group,
-	 * the caller must be superuser or the call fails.
-	 */
-	if ((u.u_uid != ip->i_uid || uid != ip->i_uid ||
-	    !groupmember((gid_t)gid)) &&
-	    (u.u_error = suser(u.u_cred, &u.u_acflag)))
-		return (u.u_error);
-#ifdef QUOTA
-	if (ip->i_uid == uid)		/* this just speeds things a little */
-		change = 0;
-	else
-		change = ip->i_blocks;
-	(void) chkdq(ip, -change, 1);
-	(void) chkiq(ip->i_dev, ip, ip->i_uid, 1);
-	dqrele(ip->i_dquot);
-#endif
-	ip->i_uid = uid;
-	ip->i_gid = gid;
-	ip->i_flag |= ICHG;
-	if (u.u_ruid != 0)
-		ip->i_mode &= ~(ISUID|ISGID);
-#ifdef QUOTA
-	ip->i_dquot = inoquota(ip);
-	(void) chkdq(ip, change, 1);
-	(void) chkiq(ip->i_dev, (struct inode *)NULL, (uid_t)uid, 1);
-	return (u.u_error);		/* should == 0 ALWAYS !! */
-#else
-	return (0);
-#endif
+	if (error = getvnode(uap->fd, &fp))
+		RETURN (error);
+	vattr_null(&vattr);
+	vattr.va_uid = uap->uid;
+	vattr.va_gid = uap->gid;
+	vp = (struct vnode *)fp->f_data;
+	VOP_LOCK(vp);
+	if (vp->v_mount->m_flag & M_RDONLY) {
+		error = EROFS;
+		goto out;
+	}
+	error = VOP_SETATTR(vp, &vattr, fp->f_cred);
+out:
+	VOP_UNLOCK(vp);
+	RETURN (error);
 }
 
 utimes()
@@ -700,31 +839,31 @@ utimes()
 		char	*fname;
 		struct	timeval *tptr;
 	} *uap = (struct a *)u.u_ap;
-	register struct inode *ip;
+	register struct nameidata *ndp = &u.u_nd;
+	register struct vnode *vp;
 	struct timeval tv[2];
+	struct vattr vattr;
+	int error;
 
-	if ((ip = owner(uap->fname, FOLLOW)) == NULL)
-		return;
-	if (ip->i_fs->fs_ronly) {
-		u.u_error = EROFS;
-		iput(ip);
-		return;
+	if (error = copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof (tv)))
+		RETURN (error);
+	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = uap->fname;
+	vattr_null(&vattr);
+	vattr.va_atime = tv[0];
+	vattr.va_mtime = tv[1];
+	if (error = namei(ndp))
+		RETURN (error);
+	vp = ndp->ni_vp;
+	if (vp->v_mount->m_flag & M_RDONLY) {
+		error = EROFS;
+		goto out;
 	}
-	u.u_error = copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof (tv));
-	if (u.u_error == 0) {
-		ip->i_flag |= IACC|IUPD|ICHG;
-		iupdat(ip, &tv[0], &tv[1], 0);
-	}
-	iput(ip);
-}
-
-/*
- * Flush any pending I/O.
- */
-sync()
-{
-
-	update();
+	error = VOP_SETATTR(vp, &vattr, ndp->ni_cred);
+out:
+	vput(vp);
+	RETURN (error);
 }
 
 /*
@@ -736,24 +875,29 @@ truncate()
 		char	*fname;
 		off_t	length;
 	} *uap = (struct a *)u.u_ap;
-	struct inode *ip;
 	register struct nameidata *ndp = &u.u_nd;
+	register struct vnode *vp;
+	struct vattr vattr;
+	int error;
 
-	ndp->ni_nameiop = LOOKUP | FOLLOW;
+	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
-	ip = namei(ndp);
-	if (ip == NULL)
-		return;
-	if (access(ip, IWRITE))
-		goto bad;
-	if ((ip->i_mode&IFMT) == IFDIR) {
-		u.u_error = EISDIR;
-		goto bad;
+	vattr_null(&vattr);
+	vattr.va_size = uap->length;
+	if (error = namei(ndp))
+		RETURN (error);
+	vp = ndp->ni_vp;
+	if (vp->v_type == VDIR) {
+		error = EISDIR;
+		goto out;
 	}
-	itrunc(ip, (u_long)uap->length);
-bad:
-	iput(ip);
+	if (error = vn_access(vp, VWRITE, ndp->ni_cred))
+		goto out;
+	error = VOP_SETATTR(vp, &vattr, ndp->ni_cred);
+out:
+	vput(vp);
+	RETURN (error);
 }
 
 /*
@@ -765,20 +909,29 @@ ftruncate()
 		int	fd;
 		off_t	length;
 	} *uap = (struct a *)u.u_ap;
-	struct inode *ip;
+	struct vattr vattr;
+	struct vnode *vp;
 	struct file *fp;
+	int error;
 
-	fp = getinode(uap->fd);
-	if (fp == NULL)
-		return;
-	if ((fp->f_flag&FWRITE) == 0) {
-		u.u_error = EINVAL;
-		return;
+	if (error = getvnode(uap->fd, &fp))
+		RETURN (error);
+	if ((fp->f_flag & FWRITE) == 0)
+		RETURN (EINVAL);
+	vattr_null(&vattr);
+	vattr.va_size = uap->length;
+	vp = (struct vnode *)fp->f_data;
+	VOP_LOCK(vp);
+	if (vp->v_type == VDIR) {
+		error = EISDIR;
+		goto out;
 	}
-	ip = (struct inode *)fp->f_data;
-	ILOCK(ip);
-	itrunc(ip, (u_long)uap->length);
-	IUNLOCK(ip);
+	if (error = vn_access(vp, VWRITE, fp->f_cred))
+		goto out;
+	error = VOP_SETATTR(vp, &vattr, fp->f_cred);
+out:
+	VOP_UNLOCK(vp);
+	RETURN (error);
 }
 
 /*
@@ -789,43 +942,17 @@ fsync()
 	struct a {
 		int	fd;
 	} *uap = (struct a *)u.u_ap;
-	struct inode *ip;
 	struct file *fp;
+	int error;
 
-	fp = getinode(uap->fd);
-	if (fp == NULL)
-		return;
-	ip = (struct inode *)fp->f_data;
-	ILOCK(ip);
-	if (fp->f_flag&FWRITE)
-		ip->i_flag |= ICHG;
-	syncip(ip);
-	IUNLOCK(ip);
+	if (error = getvnode(uap->fd, &fp))
+		RETURN (error);
+	error = VOP_FSYNC((struct vnode *)fp->f_data, fp->f_flag, fp->f_cred);
+	RETURN (error);
 }
 
 /*
  * Rename system call.
- * 	rename("foo", "bar");
- * is essentially
- *	unlink("bar");
- *	link("foo", "bar");
- *	unlink("foo");
- * but ``atomically''.  Can't do full commit without saving state in the
- * inode on disk which isn't feasible at this time.  Best we can do is
- * always guarantee the target exists.
- *
- * Basic algorithm is:
- *
- * 1) Bump link count on source while we're linking it to the
- *    target.  This also insure the inode won't be deleted out
- *    from underneath us while we work (it may be truncated by
- *    a concurrent `trunc' or `open' for creation).
- * 2) Link source to destination.  If destination already exists,
- *    delete it first.
- * 3) Unlink source reference to inode if still around. If a
- *    directory was moved and the parent of the destination
- *    is different from the source, patch the ".." entry in the
- *    directory.
  *
  * Source and destination must either both be directories, or both
  * not be directories.  If target is a directory, it must be empty.
@@ -836,334 +963,64 @@ rename()
 		char	*from;
 		char	*to;
 	} *uap = (struct a *)u.u_ap;
-	register struct inode *ip, *xp, *dp;
-	struct dirtemplate dirbuf;
-	int doingdirectory = 0, oldparent = 0, newparent = 0;
+	register struct vnode *tvp, *fvp, *tdvp;
 	register struct nameidata *ndp = &u.u_nd;
-	int error = 0;
+	struct nameidata tond;
+	int error;
 
-	ndp->ni_nameiop = DELETE | LOCKPARENT;
+	ndp->ni_nameiop = DELETE | WANTPARENT;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->from;
-	ip = namei(ndp);
-	if (ip == NULL)
-		return;
-	dp = ndp->ni_pdir;
-	if ((ip->i_mode&IFMT) == IFDIR) {
-		register struct direct *d;
-
-		d = &ndp->ni_dent;
-		/*
-		 * Avoid ".", "..", and aliases of "." for obvious reasons.
-		 */
-		if ((d->d_namlen == 1 && d->d_name[0] == '.') ||
-		    (d->d_namlen == 2 && bcmp(d->d_name, "..", 2) == 0) ||
-		    (dp == ip) || (ip->i_flag & IRENAME)) {
-			iput(dp);
-			if (dp == ip)
-				irele(ip);
-			else
-				iput(ip);
-			u.u_error = EINVAL;
-			return;
+	if (error = namei(ndp))
+		RETURN (error);
+	fvp = ndp->ni_vp;
+	bzero((caddr_t)&tond, sizeof(tond));
+	tond.ni_nameiop = RENAME | LOCKPARENT | LOCKLEAF | NOCACHE;
+	tond.ni_segflg = UIO_USERSPACE;
+	tond.ni_dirp = uap->to;
+	tond.ni_cdir = ndp->ni_cdir;
+	tond.ni_cdir->v_count++;
+	tond.ni_rdir = ndp->ni_rdir;
+	if (tond.ni_rdir)
+		tond.ni_rdir->v_count++;
+	tond.ni_cred = ndp->ni_cred;
+	crhold(tond.ni_cred);
+	error = namei(&tond);
+	tdvp = tond.ni_dvp;
+	tvp = tond.ni_vp;
+	if (tvp != NULL) {
+		if (fvp->v_type == VDIR && tvp->v_type != VDIR) {
+			error = EISDIR;
+			goto out;
+		} else if (fvp->v_type != VDIR && tvp->v_type == VDIR) {
+			error = ENOTDIR;
+			goto out;
 		}
-		ip->i_flag |= IRENAME;
-		oldparent = dp->i_number;
-		doingdirectory++;
 	}
-	iput(dp);
-
-	/*
-	 * 1) Bump link count while we're moving stuff
-	 *    around.  If we crash somewhere before
-	 *    completing our work, the link count
-	 *    may be wrong, but correctable.
-	 */
-	ip->i_nlink++;
-	ip->i_flag |= ICHG;
-	iupdat(ip, &time, &time, 1);
-	IUNLOCK(ip);
-
-	/*
-	 * When the target exists, both the directory
-	 * and target inodes are returned locked.
-	 */
-	ndp->ni_nameiop = CREATE | LOCKPARENT | NOCACHE;
-	ndp->ni_dirp = (caddr_t)uap->to;
-	xp = namei(ndp);
-	if (u.u_error) {
-		error = u.u_error;
+	if (error) {
+		VOP_ABORTOP(ndp);
+		goto out1;
+	}
+	if (fvp->v_mount != tdvp->v_mount) {
+		error = EXDEV;
 		goto out;
 	}
-	dp = ndp->ni_pdir;
-	/*
-	 * If ".." must be changed (ie the directory gets a new
-	 * parent) then the source directory must not be in the
-	 * directory heirarchy above the target, as this would
-	 * orphan everything below the source directory. Also
-	 * the user must have write permission in the source so
-	 * as to be able to change "..". We must repeat the call 
-	 * to namei, as the parent directory is unlocked by the
-	 * call to checkpath().
-	 */
-	if (oldparent != dp->i_number)
-		newparent = dp->i_number;
-	if (doingdirectory && newparent) {
-		if (access(ip, IWRITE))
-			goto bad;
-		do {
-			dp = ndp->ni_pdir;
-			if (xp != NULL)
-				iput(xp);
-			u.u_error = checkpath(ip, dp);
-			if (u.u_error)
-				goto out;
-			xp = namei(ndp);
-			if (u.u_error) {
-				error = u.u_error;
-				goto out;
-			}
-		} while (dp != ndp->ni_pdir);
-	}
-	/*
-	 * 2) If target doesn't exist, link the target
-	 *    to the source and unlink the source. 
-	 *    Otherwise, rewrite the target directory
-	 *    entry to reference the source inode and
-	 *    expunge the original entry's existence.
-	 */
-	if (xp == NULL) {
-		if (dp->i_dev != ip->i_dev) {
-			error = EXDEV;
-			goto bad;
-		}
-		/*
-		 * Account for ".." in new directory.
-		 * When source and destination have the same
-		 * parent we don't fool with the link count.
-		 */
-		if (doingdirectory && newparent) {
-			dp->i_nlink++;
-			dp->i_flag |= ICHG;
-			iupdat(dp, &time, &time, 1);
-		}
-		error = direnter(ip, ndp);
-		if (error)
-			goto out;
-	} else {
-		if (xp->i_dev != dp->i_dev || xp->i_dev != ip->i_dev) {
-			error = EXDEV;
-			goto bad;
-		}
-		/*
-		 * Short circuit rename(foo, foo).
-		 */
-		if (xp->i_number == ip->i_number)
-			goto bad;
-		/*
-		 * If the parent directory is "sticky", then the user must
-		 * own the parent directory, or the destination of the rename,
-		 * otherwise the destination may not be changed (except by
-		 * root). This implements append-only directories.
-		 */
-		if ((dp->i_mode & ISVTX) && u.u_uid != 0 &&
-		    u.u_uid != dp->i_uid && xp->i_uid != u.u_uid) {
-			error = EPERM;
-			goto bad;
-		}
-		/*
-		 * Target must be empty if a directory
-		 * and have no links to it.
-		 * Also, insure source and target are
-		 * compatible (both directories, or both
-		 * not directories).
-		 */
-		if ((xp->i_mode&IFMT) == IFDIR) {
-			if (!dirempty(xp, dp->i_number) || xp->i_nlink > 2) {
-				error = ENOTEMPTY;
-				goto bad;
-			}
-			if (!doingdirectory) {
-				error = ENOTDIR;
-				goto bad;
-			}
-			cacheinval(dp);
-		} else if (doingdirectory) {
-			error = EISDIR;
-			goto bad;
-		}
-		dirrewrite(dp, ip, ndp);
-		if (u.u_error) {
-			error = u.u_error;
-			goto bad1;
-		}
-		/*
-		 * Adjust the link count of the target to
-		 * reflect the dirrewrite above.  If this is
-		 * a directory it is empty and there are
-		 * no links to it, so we can squash the inode and
-		 * any space associated with it.  We disallowed
-		 * renaming over top of a directory with links to
-		 * it above, as the remaining link would point to
-		 * a directory without "." or ".." entries.
-		 */
-		xp->i_nlink--;
-		if (doingdirectory) {
-			if (--xp->i_nlink != 0)
-				panic("rename: linked directory");
-			itrunc(xp, (u_long)0);
-		}
-		xp->i_flag |= ICHG;
-		iput(xp);
-		xp = NULL;
-	}
-
-	/*
-	 * 3) Unlink the source.
-	 */
-	ndp->ni_nameiop = DELETE | LOCKPARENT;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->from;
-	xp = namei(ndp);
-	if (xp != NULL)
-		dp = ndp->ni_pdir;
-	else
-		dp = NULL;
-	/*
-	 * Insure that the directory entry still exists and has not
-	 * changed while the new name has been entered. If the source is
-	 * a file then the entry may have been unlinked or renamed. In
-	 * either case there is no further work to be done. If the source
-	 * is a directory then it cannot have been rmdir'ed; its link
-	 * count of three would cause a rmdir to fail with ENOTEMPTY.
-	 * The IRENAME flag insures that it cannot be moved by another
-	 * rename.
-	 */
-	if (xp != ip) {
-		if (doingdirectory)
-			panic("rename: lost dir entry");
-	} else {
-		/*
-		 * If the source is a directory with a
-		 * new parent, the link count of the old
-		 * parent directory must be decremented
-		 * and ".." set to point to the new parent.
-		 */
-		if (doingdirectory && newparent) {
-			dp->i_nlink--;
-			dp->i_flag |= ICHG;
-			error = rdwri(UIO_READ, xp, (caddr_t)&dirbuf,
-				sizeof (struct dirtemplate), (off_t)0, 1,
-				(int *)0);
-			if (error == 0) {
-				if (dirbuf.dotdot_namlen != 2 ||
-				    dirbuf.dotdot_name[0] != '.' ||
-				    dirbuf.dotdot_name[1] != '.') {
-					printf("rename: mangled dir\n");
-				} else {
-					dirbuf.dotdot_ino = newparent;
-					(void) rdwri(UIO_WRITE, xp,
-					    (caddr_t)&dirbuf,
-					    sizeof (struct dirtemplate),
-					    (off_t)0, 1, (int *)0);
-					cacheinval(dp);
-				}
-			}
-		}
-		if (dirremove(ndp)) {
-			xp->i_nlink--;
-			xp->i_flag |= ICHG;
-		}
-		xp->i_flag &= ~IRENAME;
-		if (error == 0)		/* XXX conservative */
-			error = u.u_error;
-	}
-	if (dp)
-		iput(dp);
-	if (xp)
-		iput(xp);
-	irele(ip);
-	if (error)
-		u.u_error = error;
-	return;
-
-bad:
-	iput(dp);
-bad1:
-	if (xp)
-		iput(xp);
+	if (fvp == tdvp || fvp == tvp)
+		error = EINVAL;
 out:
-	ip->i_nlink--;
-	ip->i_flag |= ICHG;
-	irele(ip);
-	if (error)
-		u.u_error = error;
-}
-
-/*
- * Make a new file.
- */
-struct inode *
-maknode(mode, ndp)
-	int mode;
-	register struct nameidata *ndp;
-{
-	register struct inode *ip;
-	register struct inode *pdir = ndp->ni_pdir;
-	ino_t ipref;
-
-	if ((mode & IFMT) == IFDIR)
-		ipref = dirpref(pdir->i_fs);
-	else
-		ipref = pdir->i_number;
-	ip = ialloc(pdir, ipref, mode);
-	if (ip == NULL) {
-		iput(pdir);
-		return (NULL);
+	if (error) {
+		VOP_ABORTOP(&tond);
+		VOP_ABORTOP(ndp);
+	} else {
+		error = VOP_RENAME(ndp, &tond);
 	}
-#ifdef QUOTA
-	if (ip->i_dquot != NODQUOT)
-		panic("maknode: dquot");
-#endif
-	ip->i_flag |= IACC|IUPD|ICHG;
-	if ((mode & IFMT) == 0)
-		mode |= IFREG;
-	ip->i_mode = mode & ~u.u_cmask;
-	ip->i_nlink = 1;
-	ip->i_uid = u.u_uid;
-	ip->i_gid = pdir->i_gid;
-	if (ip->i_mode & ISGID && !groupmember(ip->i_gid) &&
-	    (u.u_error = suser(u.u_cred, &u.u_acflag)))
-		ip->i_mode &= ~ISGID;
-#ifdef QUOTA
-	ip->i_dquot = inoquota(ip);
-#endif
-
-	/*
-	 * Make sure inode goes to disk before directory entry.
-	 */
-	iupdat(ip, &time, &time, 1);
-	u.u_error = direnter(ip, ndp);
-	if (u.u_error) {
-		/*
-		 * Write error occurred trying to update directory
-		 * so must deallocate the inode.
-		 */
-		ip->i_nlink = 0;
-		ip->i_flag |= ICHG;
-		iput(ip);
-		return (NULL);
-	}
-	return (ip);
+out1:
+	vrele(tond.ni_cdir);
+	if (tond.ni_rdir)
+		vrele(tond.ni_rdir);
+	crfree(tond.ni_cred);
+	RETURN (error);
 }
-
-/*
- * A virgin directory (no blushing please).
- */
-struct dirtemplate mastertemplate = {
-	0, 12, 1, ".",
-	0, DIRBLKSIZ - 12, 2, ".."
-};
 
 /*
  * Mkdir system call
@@ -1174,108 +1031,26 @@ mkdir()
 		char	*name;
 		int	dmode;
 	} *uap = (struct a *)u.u_ap;
-	register struct inode *ip, *dp;
-	struct dirtemplate dirtemplate;
 	register struct nameidata *ndp = &u.u_nd;
+	register struct vnode *vp;
+	struct vattr vattr;
+	int error;
 
-	ndp->ni_nameiop = CREATE;
+	ndp->ni_nameiop = CREATE | LOCKPARENT;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->name;
-	ip = namei(ndp);
-	if (u.u_error)
-		return;
-	if (ip != NULL) {
-		iput(ip);
-		u.u_error = EEXIST;
-		return;
+	if (error = namei(ndp))
+		RETURN (error);
+	vp = ndp->ni_vp;
+	if (vp != NULL) {
+		VOP_ABORTOP(ndp);
+		RETURN (EEXIST);
 	}
-	dp = ndp->ni_pdir;
-	uap->dmode &= 0777;
-	uap->dmode |= IFDIR;
-	/*
-	 * Must simulate part of maknode here
-	 * in order to acquire the inode, but
-	 * not have it entered in the parent
-	 * directory.  The entry is made later
-	 * after writing "." and ".." entries out.
-	 */
-	ip = ialloc(dp, dirpref(dp->i_fs), uap->dmode);
-	if (ip == NULL) {
-		iput(dp);
-		return;
-	}
-#ifdef QUOTA
-	if (ip->i_dquot != NODQUOT)
-		panic("mkdir: dquot");
-#endif
-	ip->i_flag |= IACC|IUPD|ICHG;
-	ip->i_mode = uap->dmode & ~u.u_cmask;
-	ip->i_nlink = 2;
-	ip->i_uid = u.u_uid;
-	ip->i_gid = dp->i_gid;
-#ifdef QUOTA
-	ip->i_dquot = inoquota(ip);
-#endif
-	iupdat(ip, &time, &time, 1);
-
-	/*
-	 * Bump link count in parent directory
-	 * to reflect work done below.  Should
-	 * be done before reference is created
-	 * so reparation is possible if we crash.
-	 */
-	dp->i_nlink++;
-	dp->i_flag |= ICHG;
-	iupdat(dp, &time, &time, 1);
-
-	/*
-	 * Initialize directory with "."
-	 * and ".." from static template.
-	 */
-	dirtemplate = mastertemplate;
-	dirtemplate.dot_ino = ip->i_number;
-	dirtemplate.dotdot_ino = dp->i_number;
-	u.u_error = rdwri(UIO_WRITE, ip, (caddr_t)&dirtemplate,
-		sizeof (dirtemplate), (off_t)0, 1, (int *)0);
-	if (u.u_error) {
-		dp->i_nlink--;
-		dp->i_flag |= ICHG;
-		goto bad;
-	}
-	if (DIRBLKSIZ > ip->i_fs->fs_fsize)
-		panic("mkdir: blksize");     /* XXX - should grow with bmap() */
-	else
-		ip->i_size = DIRBLKSIZ;
-	/*
-	 * Directory all set up, now
-	 * install the entry for it in
-	 * the parent directory.
-	 */
-	u.u_error = direnter(ip, ndp);
-	dp = NULL;
-	if (u.u_error) {
-		ndp->ni_nameiop = LOOKUP | NOCACHE;
-		ndp->ni_segflg = UIO_USERSPACE;
-		ndp->ni_dirp = uap->name;
-		dp = namei(ndp);
-		if (dp) {
-			dp->i_nlink--;
-			dp->i_flag |= ICHG;
-		}
-	}
-bad:
-	/*
-	 * No need to do an explicit itrunc here,
-	 * irele will do this for us because we set
-	 * the link count to 0.
-	 */
-	if (u.u_error) {
-		ip->i_nlink = 0;
-		ip->i_flag |= ICHG;
-	}
-	if (dp)
-		iput(dp);
-	iput(ip);
+	vattr_null(&vattr);
+	vattr.va_type = VDIR;
+	vattr.va_mode = (uap->dmode & 0777) &~ u.u_cmask;
+	error = VOP_MKDIR(ndp, &vattr);
+	RETURN (error);
 }
 
 /*
@@ -1286,94 +1061,74 @@ rmdir()
 	struct a {
 		char	*name;
 	} *uap = (struct a *)u.u_ap;
-	register struct inode *ip, *dp;
 	register struct nameidata *ndp = &u.u_nd;
+	register struct vnode *vp;
+	int error;
 
-	ndp->ni_nameiop = DELETE | LOCKPARENT;
+	ndp->ni_nameiop = DELETE | LOCKPARENT | LOCKLEAF;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->name;
-	ip = namei(ndp);
-	if (ip == NULL)
-		return;
-	dp = ndp->ni_pdir;
+	if (error = namei(ndp))
+		RETURN (error);
+	vp = ndp->ni_vp;
+	if (vp->v_type != VDIR) {
+		error = ENOTDIR;
+		goto out;
+	}
 	/*
 	 * No rmdir "." please.
 	 */
-	if (dp == ip) {
-		irele(dp);
-		iput(ip);
-		u.u_error = EINVAL;
-		return;
-	}
-	if ((ip->i_mode&IFMT) != IFDIR) {
-		u.u_error = ENOTDIR;
+	if (ndp->ni_dvp == vp) {
+		error = EINVAL;
 		goto out;
 	}
 	/*
-	 * Don't remove a mounted on directory.
+	 * Don't unlink a mounted file.
 	 */
-	if (ip->i_dev != dp->i_dev) {
-		u.u_error = EBUSY;
-		goto out;
-	}
-	/*
-	 * Verify the directory is empty (and valid).
-	 * (Rmdir ".." won't be valid since
-	 *  ".." will contain a reference to
-	 *  the current directory and thus be
-	 *  non-empty.)
-	 */
-	if (ip->i_nlink != 2 || !dirempty(ip, dp->i_number)) {
-		u.u_error = ENOTEMPTY;
-		goto out;
-	}
-	/*
-	 * Delete reference to directory before purging
-	 * inode.  If we crash in between, the directory
-	 * will be reattached to lost+found,
-	 */
-	if (dirremove(ndp) == 0)
-		goto out;
-	dp->i_nlink--;
-	dp->i_flag |= ICHG;
-	cacheinval(dp);
-	iput(dp);
-	dp = NULL;
-	/*
-	 * Truncate inode.  The only stuff left
-	 * in the directory is "." and "..".  The
-	 * "." reference is inconsequential since
-	 * we're quashing it.  The ".." reference
-	 * has already been adjusted above.  We've
-	 * removed the "." reference and the reference
-	 * in the parent directory, but there may be
-	 * other hard links so decrement by 2 and
-	 * worry about them later.
-	 */
-	ip->i_nlink -= 2;
-	itrunc(ip, (u_long)0);
-	cacheinval(ip);
+	if (vp->v_flag & VROOT)
+		error = EBUSY;
 out:
-	if (dp)
-		iput(dp);
-	iput(ip);
+	if (error)
+		VOP_ABORTOP(ndp);
+	else
+		error = VOP_RMDIR(ndp);
+	RETURN (error);
 }
 
-struct file *
-getinode(fdes)
-	int fdes;
+/*
+ * Read a block of directory entries in a file system independent format
+ */
+getdirentries()
 {
+	register struct a {
+		int	fd;
+		char	*buf;
+		unsigned count;
+		long	*basep;
+	} *uap = (struct a *)u.u_ap;
 	struct file *fp;
+	struct uio auio;
+	struct iovec aiov;
+	int error;
 
-	if ((unsigned)fdes >= NOFILE || (fp = u.u_ofile[fdes]) == NULL) {
-		u.u_error = EBADF;
-		return ((struct file *)0);
-	}
-	if (fp->f_type != DTYPE_INODE) {
-		u.u_error = EINVAL;
-		return ((struct file *)0);
-	}
-	return (fp);
+	if (error = getvnode(uap->fd, &fp))
+		RETURN (error);
+	if ((fp->f_flag & FREAD) == 0)
+		RETURN (EBADF);
+	aiov.iov_base = uap->buf;
+	aiov.iov_len = uap->count;
+	auio.uio_iov = &aiov;
+	auio.uio_iovcnt = 1;
+	auio.uio_rw = UIO_READ;
+	auio.uio_segflg = UIO_USERSPACE;
+	auio.uio_resid = uap->count;
+	if (error = VOP_READDIR((struct vnode *)fp->f_data, &auio,
+	    &(fp->f_offset), fp->f_cred))
+		RETURN (error);
+	error = copyout((caddr_t)&fp->f_offset, (caddr_t)uap->basep,
+		sizeof(long));
+	u.u_r.r_val1 = uap->count - auio.uio_resid;
+	RETURN (error);
 }
 
 /*
@@ -1387,4 +1142,19 @@ umask()
 
 	u.u_r.r_val1 = u.u_cmask;
 	u.u_cmask = uap->mask & 07777;
+	RETURN (0);
+}
+
+getvnode(fdes, fpp)
+	struct file **fpp;
+	int fdes;
+{
+	struct file *fp;
+
+	if ((unsigned)fdes >= NOFILE || (fp = u.u_ofile[fdes]) == NULL)
+		return (EBADF);
+	if (fp->f_type != DTYPE_VNODE)
+		return (EINVAL);
+	*fpp = fp;
+	return (0);
 }
