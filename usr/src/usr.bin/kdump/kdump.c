@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kdump.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)kdump.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -25,10 +25,15 @@ static char sccsid[] = "@(#)kdump.c	8.3 (Berkeley) %G%";
 #define KERNEL
 #include <sys/errno.h>
 #undef KERNEL
-#include <vis.h>
+
+#include <err.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <vis.h>
+
 #include "ktrace.h"
 
 int timestamp, decimal, fancy = 1, tail, maxdata;
@@ -37,18 +42,17 @@ struct ktr_header ktr_header;
 
 #define eqs(s1, s2)	(strcmp((s1), (s2)) == 0)
 
+int
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	extern int optind;
-	extern char *optarg;
 	int ch, ktrlen, size;
 	register void *m;
 	int trpoints = ALL_POINTS;
 
-	while ((ch = getopt(argc,argv,"f:dlm:nRTt:")) != EOF)
-		switch((char)ch) {
+	while ((ch = getopt(argc, argv, "f:dlm:nRTt:")) != -1)
+		switch (ch) {
 		case 'f':
 			tracefile = optarg;
 			break;
@@ -72,12 +76,8 @@ main(argc, argv)
 			break;
 		case 't':
 			trpoints = getpoints(optarg);
-			if (trpoints < 0) {
-				(void)fprintf(stderr,
-				    "kdump: unknown trace point in %s\n",
-				    optarg);
-				exit(1);
-			}
+			if (trpoints < 0)
+				errx(1, "unknown trace point in %s", optarg);
 			break;
 		default:
 			usage();
@@ -89,36 +89,23 @@ main(argc, argv)
 		usage();
 
 	m = (void *)malloc(size = 1025);
-	if (m == NULL) {
-		(void)fprintf(stderr, "kdump: %s.\n", strerror(ENOMEM));
-		exit(1);
-	}
-	if (!freopen(tracefile, "r", stdin)) {
-		(void)fprintf(stderr,
-		    "kdump: %s: %s.\n", tracefile, strerror(errno));
-		exit(1);
-	}
+	if (m == NULL)
+		errx(1, "%s", strerror(ENOMEM));
+	if (!freopen(tracefile, "r", stdin))
+		err(1, "%s", tracefile);
 	while (fread_tail(&ktr_header, sizeof(struct ktr_header), 1)) {
 		if (trpoints & (1<<ktr_header.ktr_type))
 			dumpheader(&ktr_header);
-		if ((ktrlen = ktr_header.ktr_len) < 0) {
-			(void)fprintf(stderr,
-			    "kdump: bogus length 0x%x\n", ktrlen);
-			exit(1);
-		}
+		if ((ktrlen = ktr_header.ktr_len) < 0)
+			errx(1, "bogus length 0x%x", ktrlen);
 		if (ktrlen > size) {
 			m = (void *)realloc(m, ktrlen+1);
-			if (m == NULL) {
-				(void)fprintf(stderr,
-				    "kdump: %s.\n", strerror(ENOMEM));
-				exit(1);
-			}
+			if (m == NULL)
+				errx(1, "%s", strerror(ENOMEM));
 			size = ktrlen;
 		}
-		if (ktrlen && fread_tail(m, ktrlen, 1) == 0) {
-			(void)fprintf(stderr, "kdump: data too short.\n");
-			exit(1);
-		}
+		if (ktrlen && fread_tail(m, ktrlen, 1) == 0)
+			errx(1, "data too short");
 		if ((trpoints & (1<<ktr_header.ktr_type)) == 0)
 			continue;
 		switch (ktr_header.ktr_type) {
@@ -343,7 +330,7 @@ ktrgenio(ktr, len)
 		datalen = maxdata;
 	(void)printf("       \"");
 	col = 8;
-	for (;datalen > 0; datalen--, dp++) {
+	for (; datalen > 0; datalen--, dp++) {
 		(void) vis(visbuf, *dp, VIS_CSTYLE, *(dp+1));
 		cp = visbuf;
 		/*
@@ -379,19 +366,10 @@ ktrgenio(ktr, len)
 	(void)printf("\"\n");
 }
 
-char *signames[] = {
-	"NULL", "HUP", "INT", "QUIT", "ILL", "TRAP", "IOT",	/*  1 - 6  */
-	"EMT", "FPE", "KILL", "BUS", "SEGV", "SYS",		/*  7 - 12 */
-	"PIPE", "ALRM",  "TERM", "URG", "STOP", "TSTP",		/* 13 - 18 */
-	"CONT", "CHLD", "TTIN", "TTOU", "IO", "XCPU",		/* 19 - 24 */
-	"XFSZ", "VTALRM", "PROF", "WINCH", "29", "USR1",	/* 25 - 30 */
-	"USR2", NULL,						/* 31 - 32 */
-};
-
 ktrpsig(psig)
 	struct ktr_psig *psig;
 {
-	(void)printf("SIG%s ", signames[psig->signo]);
+	(void)printf("SIG%s ", sys_signame[psig->signo]);
 	if (psig->action == SIG_DFL)
 		(void)printf("SIG_DFL\n");
 	else
@@ -403,7 +381,7 @@ ktrcsw(cs)
 	struct ktr_csw *cs;
 {
 	(void)printf("%s %s\n", cs->out ? "stop" : "resume",
-		cs->user ? "user" : "kernel");
+	    cs->user ? "user" : "kernel");
 }
 
 usage()
