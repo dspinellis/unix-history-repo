@@ -1,13 +1,13 @@
 /*-
- * Copyright (c) 1991 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)jobs.h	5.3 (Berkeley) %G%
+ *	@(#)jobs.h	8.1 (Berkeley) %G%
  */
 
 /* Mode argument to forkshell.  Don't change FORK_FG or FORK_BG. */

@@ -1,13 +1,13 @@
 /*-
- * Copyright (c) 1991 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)parser.h	5.3 (Berkeley) %G%
+ *	@(#)parser.h	8.1 (Berkeley) %G%
  */
 
 /* control characters in argument strings */
