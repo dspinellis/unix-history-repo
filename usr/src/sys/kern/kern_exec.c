@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exec.c	7.19 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -390,11 +390,11 @@ badarg:
 	 */
 	u.u_acflag &= ~AFORK;
 	if (indir)
-		bcopy((caddr_t)cfname, (caddr_t)u.u_comm, MAXCOMLEN);
+		bcopy((caddr_t)cfname, (caddr_t)u.u_procp->p_comm, MAXCOMLEN);
 	else {
 		if (ndp->ni_dent.d_namlen > MAXCOMLEN)
 			ndp->ni_dent.d_namlen = MAXCOMLEN;
-		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)u.u_comm,
+		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)u.u_procp->p_comm,
 		    (unsigned)(ndp->ni_dent.d_namlen + 1));
 	}
 bad:
