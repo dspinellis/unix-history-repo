@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mount.8	6.2 (Berkeley) %G%
+.\"	@(#)mount.8	6.3 (Berkeley) %G%
 .\"
 .TH MOUNT 8 ""
 .UC 4
@@ -10,9 +10,9 @@
 mount, umount \- mount and dismount file systems
 .SH SYNOPSIS
 .nf
-.B mount [-arw]
-.B mount [-rw] special | node
-.B mount [-rw] special node
+.B mount [-afrw]
+.B mount [-frw] special | node
+.B mount [-frw] special node
 .PP
 .B umount [-a]
 .B umount special | node
@@ -20,13 +20,14 @@ mount, umount \- mount and dismount file systems
 .SH DESCRIPTION
 .I Mount
 announces to the system that a removable file system is present on the
-block device \fIspecial\fP.  The file \fInode\fP must exist already; it
-must be a directory (unless the root of the mounted file system is not
-a directory). It becomes the name of the newly mounted root. The optional
-arguments \fI-r\fP and \fI-w\fP indicate that the file system is to be
-mounted read-only or read-write, respectively.  If either \fIspecial\fP
-or \fIfile\fP are not provided, the appropriate information is taken
-from the \fIfstab\fP file.
+block device \fIspecial\fP.  The file \fInode\fP must exist already and
+it must be a directory.  It becomes the name of the newly mounted root.
+The optional arguments \fI-r\fP and \fI-w\fP indicate that the file
+system is to be mounted read-only or read-write, respectively.  If
+either \fIspecial\fP or \fIfile\fP are not provided, the appropriate
+information is taken from the \fIfstab\fP file.  The \fI-f\fP option
+causes everything to be done except for the actual system call; if it's
+not obvious, this ``fakes'' mounting the file system.
 .PP
 .I Umount
 announces to the system that the removable file system \fInode\fP
