@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)compress.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)compress.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /* 
@@ -1337,7 +1337,8 @@ foreground()
 
 onintr ( )
 {
-    unlink ( ofname );
+    if (!zcat_flg)
+	unlink ( ofname );
     exit ( 1 );
 }
 
