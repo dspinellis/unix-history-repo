@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)random.c	4.2	(Berkeley)	83/01/02";
+static char sccsid[] = "@(#)random.c	4.3	(Berkeley)	84/04/16";
 #endif
 
 #include	<stdio.h>
@@ -142,7 +142,7 @@ static  long		*rptr			= &randtbl[ 1 ];
  * the front and rear pointers have wrapped.
  */
 
-static  long		*state			= &randtbl[ -1 ];
+static  long		*state			= &randtbl[ 1 ];
 
 static  int		rand_type		= TYPE_3;
 static  int		rand_deg		= DEG_3;
