@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.7 (Berkeley) %G%
+.\"	@(#)contrib	5.8 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -104,7 +104,7 @@ db(3) (btree support)	Mike Olson
 db(3) (hashing support)	Margo Seltzer
 des(1)	Phil Karn, Jim Gillogly
 	 and Richard Outerbridge
-disklabel(8)	Symmetric Computer Systems
+disklable(8)	Symmetric Computer Systems
 du(1)	Chris Newcomb
 emacs(1)	Richard Stallman
 factor(6)	Landon Curt Noll
