@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)eval.c	1.13 (Berkeley) %G%";
+static	char sccsid[] = "@(#)eval.c	1.14 (Berkeley) %G%";
 
 /*
  * Tree evaluation.
@@ -466,7 +466,7 @@ register Node p;
 	    break;
 
 	case O_CATCH:
-	    psigtrace(process, p->value.lcon, true);
+	    catchsigs(p->value.arg[0]);
 	    break;
 
 	case O_EDIT:
@@ -496,7 +496,7 @@ register Node p;
 	    break;
 
 	case O_IGNORE:
-	    psigtrace(process, p->value.lcon, false);
+	    ignoresigs(p->value.arg[0]);
 	    break;
 
 	case O_RETURN:
@@ -1185,6 +1185,46 @@ public help()
     puts("list <line>, <line>    - list source lines");
     puts("gripe                  - send mail to the person in charge of dbx");
     puts("quit                   - exit dbx");
+}
+
+/*
+ * Mark one or more signals to be
+ * intercepted by the debugger.
+ */
+private catchsigs(p)
+register Node p;
+{
+
+    if (p == nil) {
+	printsigscaught(process);
+	return;
+    }
+    while (p != nil) {
+	eval(p->value.arg[0]);
+	psigtrace(process, popsmall(p->value.arg[0]->nodetype), true);
+	p = p->value.arg[1];
+    }
+}
+
+/*
+ * Mark one or more signals to
+ * be ignored by the debugger
+ * (and automatically passed through
+ * to the running process).
+ */
+private ignoresigs(p)
+register Node p;
+{
+
+    if (p == nil) {
+	printsigsignored(process);
+	return;
+    }
+    while (p != nil) {
+	eval(p->value.arg[0]);
+	psigtrace(process, popsmall(p->value.arg[0]->nodetype), false);
+	p = p->value.arg[1];
+    }
 }
 
 /*
