@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)rwhod.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -86,7 +86,7 @@ main()
 	struct sockaddr_in from;
 	struct stat st;
 	char path[64];
-	int addr, on = 1;
+	int on = 1;
 	char *cp;
 	extern char *index();
 
@@ -300,11 +300,19 @@ onalrm()
 			}
 		utmpent = we - mywd.wd_we;
 	}
+
+	/*
+	 * The test on utmpent looks silly---after all, if no one is
+	 * logged on, why worry about efficiency?---but is useful on
+	 * (e.g.) compute servers.
+	 */
+	if (utmpent && chdir("/dev")) {
+		syslog(LOG_ERR, "chdir(/dev): %m");
+		exit(1);
+	}
 	we = mywd.wd_we;
 	for (i = 0; i < utmpent; i++) {
-		char path[64];
-		(void) sprintf(path, "/dev/%s", we->we_utmp.out_line);
-		if (stat(path, &stb) >= 0)
+		if (stat(we->we_utmp.out_line, &stb) >= 0)
 			we->we_idle = htonl(now - stb.st_atime);
 		we++;
 	}
@@ -319,13 +327,16 @@ onalrm()
 	for (np = neighbors; np != NULL; np = np->n_next)
 		(void) sendto(s, (char *)&mywd, cc, 0,
 			np->n_addr, np->n_addrlen);
+	if (utmpent && chdir(RWHODIR)) {
+		syslog(LOG_ERR, "chdir(%s): %m", RWHODIR);
+		exit(1);
+	}
 done:
 	(void) alarm(AL_INTERVAL);
 }
 
 getkmem()
 {
-	struct nlist *nlp;
 	static ino_t vmunixino;
 	static time_t vmunixctime;
 	struct stat sb;
