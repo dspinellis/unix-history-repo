@@ -3,8 +3,7 @@
  */
 
 #include "oia.h"
-
-OIA OperatorInformationArea;
+#include "../general/globals.h"
 
 static int
     Insert,
@@ -47,7 +46,7 @@ int	onoff;
     } else {
 	OperatorInformationArea.insert = 0;
     }
-    ScreenOIA(&OperatorInformationArea);
+    ScreenOIA();
 }
 
 OiaSystemLocked(onoff)
@@ -58,7 +57,7 @@ int	onoff;
     if ((PWait == 0) && (TWait == 0)) {
 	OiaXArea(X_AREA_SYSTEM);
     }
-    ScreenOIA(&OperatorInformationArea);
+    ScreenOIA();
 }
 
 OiaPWait(onoff)
@@ -75,7 +74,7 @@ int	onoff;
 	    OiaXArea(X_AREA_NULL);
 	}
     }
-    ScreenOIA(&OperatorInformationArea);
+    ScreenOIA();
 }
 
 OiaTWait(onoff)
@@ -97,7 +96,7 @@ int	onoff;
     } else {
 	OperatorInformationArea.online = 0;
     }
-    ScreenOIA(&OperatorInformationArea);
+    ScreenOIA();
 }
 
 OiaReady3274(onoff)
@@ -110,7 +109,7 @@ int	onoff;
     } else {
 	OperatorInformationArea.ready = 0;
     }
-    ScreenOIA(&OperatorInformationArea);
+    ScreenOIA();
 }
 
 OiaMyJob(onoff)
@@ -123,5 +122,5 @@ int	onoff;
     } else {
 	OperatorInformationArea.ownership = 0;
     }
-    ScreenOIA(&OperatorInformationArea);
+    ScreenOIA();
 }
