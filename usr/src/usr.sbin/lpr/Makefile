@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.1	(Berkeley)	82/12/03
+#	@(#)Makefile	4.2	(Berkeley)	82/12/25
 #
 # makefile for line printer spooling system
 #
@@ -50,10 +50,10 @@ lpr.o lpd.o lpq.o lprm.o lpdrestart.o: lp.local.h
 lpd.o lpq.o getqueue.o: getqueue.h
 
 install: all
-	cp lpd ${LIBDIR}/lpd
-	cp lpq ${BINDIR}/lpq
-	cp lprm ${BINDIR}/lprm
-	cp lpr ${BINDIR}/lpr
+	install lpd ${LIBDIR}/lpd
+	install lpq ${BINDIR}/lpq
+	install lprm ${BINDIR}/lprm
+	install lpr ${BINDIR}/lpr
 #	rm -f ${BINDIR}/opr ${BINDIR}/print
 #	ln ${BINDIR}/lpr ${BINDIR}/print
 #	ln ${BINDIR}/lpr ${BINDIR}/opr
