@@ -6,7 +6,7 @@
  */
 
 #if !defined(lint) && defined(LIBC_SCCS)
-static char sccsid[] = "@(#)gmon.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)gmon.c	5.16 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -14,11 +14,8 @@ static char sccsid[] = "@(#)gmon.c	5.15 (Berkeley) %G%";
 #include <sys/gmon.h>
 #include <sys/sysctl.h>
 
-#ifdef DEBUG
 #include <stdio.h>
 #include <fcntl.h>
-#endif
-
 #include <unistd.h>
 
 extern char *minbrk asm ("minbrk");
@@ -31,6 +28,10 @@ static int	s_scale;
 
 #define ERR(s) write(2, s, sizeof(s))
 
+void	moncontrol __P((int));
+static int hertz __P((void));
+
+void
 monstartup(lowpc, highpc)
 	u_long lowpc;
 	u_long highpc;
@@ -95,6 +96,7 @@ monstartup(lowpc, highpc)
 	moncontrol(1);
 }
 
+void
 _mcleanup()
 {
 	int fd;
@@ -106,9 +108,12 @@ _mcleanup()
 	struct gmonparam *p = &_gmonparam;
 	struct gmonhdr gmonhdr, *hdr;
 	struct clockinfo clockinfo;
-	int mib[2], size;
+	int mib[2];
+	size_t size;
+#ifdef DEBUG
 	int log, len;
 	char buf[200];
+#endif
 
 	if (p->state == GMON_PROF_ERROR)
 		ERR("_mcleanup: tos overflow\n");
@@ -129,7 +134,7 @@ _mcleanup()
 	}
 
 	moncontrol(0);
-	fd = creat("gmon.out", 0666);
+	fd = open("gmon.out", O_CREAT|O_TRUNC|O_WRONLY, 0666);
 	if (fd < 0) {
 		perror("mcount: gmon.out");
 		return;
@@ -182,6 +187,7 @@ _mcleanup()
  *	profiling is what mcount checks to see if
  *	all the data structures are ready.
  */
+void
 moncontrol(mode)
 	int mode;
 {
@@ -203,6 +209,7 @@ moncontrol(mode)
  * discover the tick frequency of the machine
  * if something goes wrong, we return 0, an impossible hertz.
  */
+static int
 hertz()
 {
 	struct itimerval tim;
