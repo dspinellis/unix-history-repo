@@ -1,4 +1,4 @@
-This is file $Id: TODO,v 1.2 1993/10/16 19:16:46 rgrimes Exp $
+This is file $Id: TODO,v 1.3 1994/01/11 21:28:28 ats Exp $
 
 1. add support for "soft" configuration network devices
 2. split console driver into kbd/vga/other drivers
@@ -7,3 +7,7 @@ This is file $Id: TODO,v 1.2 1993/10/16 19:16:46 rgrimes Exp $
 5. fd.c: missing controller queue, no unit start, abysmal
 6. kbd needs to turn scancodes into keyindexs with state map, then look
    through multinational scan map for foreign keyboards.
+7. the return value for the xxxattach driver routines should be checked
+   in isa.c.
+8. For the Toshiba 1 network card, the init code fails. Needs to be
+   fixed, if someone uses this card. 
