@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.57 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.58 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -43,6 +43,7 @@ static char sccsid[] = "@(#)recipient.c	8.57 (Berkeley) %G%";
 /* q_flags bits inherited from ctladdr */
 #define QINHERITEDBITS	(QPINGONSUCCESS|QPINGONFAILURE|QPINGONDELAY|QHAS_RET_PARAM|QRET_HDRS)
 
+int
 sendtolist(list, ctladdr, sendq, aliaslevel, e)
 	char *list;
 	ADDRESS *ctladdr;
@@ -216,7 +217,8 @@ recipient(a, sendq, aliaslevel, e)
 	/* break aliasing loops */
 	if (aliaslevel > MAXRCRSN)
 	{
-		usrerr("554 aliasing/forwarding loop broken");
+		usrerr("554 aliasing/forwarding loop broken (%d aliases deep; %d max",
+			aliaslevel, MAXRCRSN);
 		return (a);
 	}
 

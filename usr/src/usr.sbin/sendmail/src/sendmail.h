@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.75 (Berkeley) %G%
+ *	@(#)sendmail.h	8.76 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.75		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.76		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -91,9 +91,11 @@ struct address
 	char		*q_owner;	/* owner of q_alias */
 	struct address	*q_tchain;	/* temporary use chain */
 	char		*q_orcpt;	/* ORCPT parameter from RCPT TO: line */
-	char		*q_status;	/* status code & message for DSNs */
-	time_t		q_statdate;	/* date of status message */
-	char		*q_statmta;	/* MTA generating this message */
+	char		*q_status;	/* status code for DSNs */
+	char		*q_fstatus;	/* final status code for DSNs */
+	char		*q_rstatus;	/* remote status message for DSNs */
+	time_t		q_statdate;	/* date of status messages */
+	char		*q_statmta;	/* MTA generating q_rstatus */
 };
 
 typedef struct address ADDRESS;
@@ -134,6 +136,7 @@ struct mailer
 {
 	char	*m_name;	/* symbolic name of this mailer */
 	char	*m_mailer;	/* pathname of the mailer to use */
+	char	*m_mtstype;	/* type of this MTS */
 	BITMAP	m_flags;	/* status flags, see below */
 	short	m_mno;		/* mailer number internally */
 	char	**m_argv;	/* template argument vector */
@@ -826,6 +829,7 @@ extern void		commaize __P((HDR *, char *, int, MCI *, ENVELOPE *));
 extern char		*hvalue __P((char *, HDR *));
 extern char		*defcharset __P((ENVELOPE *));
 extern bool		emptyaddr __P((ADDRESS *));
+extern int		sendtolist __P((char *, ADDRESS *, ADDRESS **, int, ENVELOPE *));
 
 /* ellipsis is a different case though */
 #ifdef __STDC__
