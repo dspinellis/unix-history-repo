@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)find.1	6.16 (Berkeley) %G%
+.\"     @(#)find.1	6.17 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FIND 1
@@ -446,6 +446,15 @@ This is not the case.
 .Pp
 The second reason is that traversing file trees with names beginning with
 a dash, exclamation point or left parenthesis was impossible.
+.Pp
+Historic implementations of the 
+.Ic exec
+and
+.Ic ok
+primaries did not replace the string ``{}'' in the utility name or the
+utility arguments unless it appeared without any other characters.
+This version replaces it no matter where in the utility name or arguments
+it appears.
 .Sh BUGS
 The special characters used by
 .Nm find
