@@ -1,9 +1,9 @@
-.\" Copyright (c) 1990, 1991, 1993
+.\" Copyright (c) 1990, 1991, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)split.1	8.2 (Berkeley) %G%
+.\"	@(#)split.1	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SPLIT 1
@@ -13,61 +13,54 @@
 .Nd split a file into pieces
 .Sh SYNOPSIS
 .Nm split
-.Op Fl Ns Ar number
-.Op Fl b Ar number
+.Op Fl b Ar byte_count[k|m]
+.Op Fl l Ar line_count
 .Op Ar file Op Ar name
 .Sh DESCRIPTION
 The
 .Nm split
 utility reads the given
 .Ar file
-and splits it up into smaller files of 1000 lines each.
+(or standard input if no file is specified)
+and breaks it up into files of 1000 lines each.
 .Pp
 The options are as follows:
-.Bl -tag -width "XXXnumber"
-.It Fl number
+.Bl -tag -width Ds
+.It Fl b
+Create smaller files
+.Ar byte_count
+bytes in length.
+If
+.Dq Li k
+is appended to the number, the file is split into
+.Ar byte_count
+kilobyte pieces.
+If
+.Dq Li m
+is appended to the number, the file is split into
+.Ar byte_count
+megabyte pieces.
+.It Fl l
 Create smaller files
 .Ar n
 lines in length.
-.It Fl b
-Create smaller files
-.Ar number
-bytes in length.
 .El
 .Pp
-Available operands:
-.Bl -tag -width name
-.It Ar file
-A pathname specifying the
-.Ar file 
-to be split.
-If no
-.Ar file
-operand is given, or if a file operand of
-.Dq Li \&-
-is given,
-.Nm split
-reads from the standard input.
-.It Ar name
+If additional arguments are specified, the first is used as the name
+of the input file which is to be split.
+If a second additional argument is specified, it is used as a prefix
+for the names of the files into which the file is split.
+In this case, each file into which the file is split is named by the
+prefix followed by a lexically ordered suffix in the range of 
+.Dq Li aa-zz .
+.Pp
 If the
 .Ar name
-operand is given,
-the output files will begin with the prefix
-.Ar name
-and each sequential portion of the split file receives a lexically
-ordered suffix in the range of 
-.Bq Em aa-zz .
-If the operand
-.Ar name
-is not specified, a default prefix of
-.Em x
-is used, and files are named from
-.Dq xaa
-to
-.Dq zzz .
-.Pp
+argument is not specified, the file is split into lexically ordered
+files named in the range of
+.Dq Li xaa-zzz .
 .Sh BUGS
-If you provide
+For historical reasons, if you specify
 .Ar name ,
 .Nm split
 can only create 676 separate
