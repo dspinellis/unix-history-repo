@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_lock.c	8.12 (Berkeley) %G%
+ *	@(#)kern_lock.c	8.13 (Berkeley) %G%
  */
 
 #include <sys/param.h>
