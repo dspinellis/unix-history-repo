@@ -1,4 +1,4 @@
-/*	autoconf.c	1.14	87/06/22	*/
+/*	autoconf.c	1.15	87/06/30	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -355,12 +355,13 @@ vbmapalloc(npf, ppte, putl)
 	caddr_t *putl;
 {
 
-	if (vbcur + npf*NBPG >= (caddr_t)&vbend)
-		panic("vbmapalloc");
+	if (vbcur + npf*NBPG > (caddr_t)&vbend)
+		return (0);
 	*ppte = &VBmap[vbx];
 	*putl = vbcur;
 	vbx += npf;
 	vbcur += npf*NBPG;
+	return (1);
 }
 
 caddr_t	vbmcur = (caddr_t)&vmem1;
@@ -376,13 +377,14 @@ vbmemalloc(npf, addr, ppte, putl)
 	caddr_t *putl;
 {
 
-	if (vbmcur + npf*NBPG >= (caddr_t)&vmemend)
-		panic("vbmemalloc");
+	if (vbmcur + npf*NBPG > (caddr_t)&vmemend)
+		return (0);
 	*ppte = &VMEMmap1[vbmx];
 	*putl = vbmcur;
 	vbmx += npf;
 	vbmcur += npf*NBPG;
 	vbaccess(*ppte, addr, npf);		/* map i/o space */
+	return (1);
 }
 
 /*
