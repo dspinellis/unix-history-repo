@@ -90,12 +90,12 @@ route_output(m, so)
 	register struct rtentry *rt = 0;
 	struct rtentry *saved_nrt = 0;
 	struct sockaddr *dst = 0, *gate = 0, *netmask = 0, *genmask = 0;
-	struct sockaddr *ifpaddr = 0, *ifaaddr;
+	struct sockaddr *ifpaddr = 0, *ifaaddr = 0;
 	caddr_t cp, lim;
 	int len, error = 0;
 	struct ifnet *ifp = 0;
-	struct	ifaddr *ifa;
-	extern struct ifaddr *ifaof_ifpforaddr(), *ifa_ifwithroute();
+	struct ifaddr *ifa = 0;
+	struct ifaddr *ifaof_ifpforaddr(), *ifa_ifwithroute();
 
 #define senderr(e) { error = e; goto flush;}
 	if (m == 0 || m->m_len < sizeof(long))
@@ -142,6 +142,10 @@ route_output(m, so)
 	}
 	if ((rtm->rtm_addrs & RTA_IFP) && cp < lim)  {
 		ifpaddr = (struct sockaddr *)cp;
+		ADVANCE(cp, ifpaddr);
+	}
+	if ((rtm->rtm_addrs & RTA_IFA) && cp < lim)  {
+		ifaaddr = (struct sockaddr *)cp;
 	}
 	switch (rtm->rtm_type) {
 	case RTM_ADD:
@@ -168,8 +172,12 @@ route_output(m, so)
 		rt = rtalloc1(dst, 0);
 		if (rt == 0)
 			senderr(ESRCH);
-		if (((struct radix_node *)rt)->rn_dupedkey) {
-			if (netmask == 0 && rtm->rtm_type != RTM_GET)
+		if (rtm->rtm_type != RTM_GET) {
+			if (Bcmp(dst, rt_key(rt), dst->sa_len) != 0)
+				senderr(ESRCH);
+			if (rt->rt_nodes->rn_dupedkey &&
+			    (netmask == 0 ||
+			     Bcmp(netmask, rt_mask(rt), netmask->sa_len)))
 				senderr(ETOOMANYREFS);
 		}
 		switch(rtm->rtm_type) {
@@ -248,32 +256,31 @@ route_output(m, so)
 			if (gate &&
 			    (gate->sa_len > (len = rt->rt_gateway->sa_len)))
 				senderr(EDQUOT);
-			if (rt->rt_ifa && rt->rt_ifa->ifa_rtrequest)
-				rt->rt_ifa->ifa_rtrequest(RTM_DELETE, rt, gate);
 			/* new gateway could require new ifaddr, ifp;
 			   flags may also be different; ifp may be specified
 			   by ll sockaddr when protocol address is ambiguous */
-			if (ifpaddr &&
-			    (ifa = ifa_ifwithnet(ifpaddr)) &&
-			    (ifp = ifa->ifa_ifp) &&
-			    (ifa = ifaof_ifpforaddr(gate, ifp))) {
-				     /* We got it */
-			} else {
-			    ifa = 0; ifp = 0;
+			if (ifpaddr && (ifa = ifa_ifwithnet(ifpaddr)) &&
+			    (ifp = ifa->ifa_ifp))
+				ifa = ifaof_ifpforaddr(ifaaddr ? ifaaddr : gate,
+							ifp);
+			else if ((ifaaddr && (ifa = ifa_ifwithaddr(ifaaddr))) ||
+				 (ifa = ifa_ifwithroute(rt->rt_flags,
+							rt_key(rt), gate)))
+				ifp = ifa->ifa_ifp;
+			if (ifa) {
+				register struct ifaddr *oifa = rt->rt_ifa;
+				if (oifa != ifa) {
+				    if (oifa && oifa->ifa_rtrequest)
+					oifa->ifa_rtrequest(RTM_DELETE,
+								rt, gate);
+				    rt->rt_ifa = ifa;
+				    rt->rt_ifp = ifp;
+				}
 			}
 			if (gate)
 				Bcopy(gate, rt->rt_gateway, len);
-			rt_setmetrics(rtm->rtm_inits,
-				&rtm->rtm_rmx, &rt->rt_rmx);
-			if (ifa == 0)
-			    ifa = ifa_ifwithroute(rt->rt_flags, rt_key(rt),
-						gate);
-			if (ifa) {
-				if (rt->rt_ifa != ifa) {
-				    rt->rt_ifa = ifa;
-				    rt->rt_ifp = ifa->ifa_ifp;
-				}
-			}
+			rt_setmetrics(rtm->rtm_inits, &rtm->rtm_rmx,
+					&rt->rt_rmx);
 			if (rt->rt_ifa && rt->rt_ifa->ifa_rtrequest)
 			       rt->rt_ifa->ifa_rtrequest(RTM_ADD, rt, gate);
 			if (genmask)
