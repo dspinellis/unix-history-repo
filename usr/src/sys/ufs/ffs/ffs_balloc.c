@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_balloc.c	7.7 (Berkeley) %G%
+ *	@(#)ffs_balloc.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -24,6 +24,7 @@
 #include "proc.h"
 #include "file.h"
 #include "vnode.h"
+#include "../ufs/quota.h"
 #include "../ufs/inode.h"
 #include "../ufs/fs.h"
 
