@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ctype.h	5.6 (Berkeley) %G%
+ *	@(#)ctype.h	5.7 (Berkeley) %G%
  */
 
 #ifndef _CTYPE_H_
@@ -19,7 +19,7 @@
 #define	_X	0x40
 #define	_B	0x80
 
-extern char __ctype_[], __maplower[], __mapupper[];
+extern char __ctype[], __maplower[], __mapupper[];
 
 #define	isalnum(c)	((__ctype + 1)[c] & (_U|_L|_N))
 #define	isalpha(c)	((__ctype + 1)[c] & (_U|_L))
