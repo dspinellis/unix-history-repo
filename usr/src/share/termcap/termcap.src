@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.86 (Berkeley) %G%
+#	@(#)termcap.src	5.87 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -427,7 +427,9 @@ Ie|ibmmono|ibmconsole|ibm5151|IBM workstation monochrome:\
 	:ts=\Ej\EY8%+ \Eo:fs=\Ek:ds=\Ej\EY8\40\EI\Ek:es:hs:sb:tc=ibm3101:
 If|ibmega-c|ibm5154-c|IBM Enhanced Color Display color termcap:\
 	:se=\EB:so=\EF\Ef3;:ue=\EB:us=\EF\Ef2;:tc=ibmconsole:
-Ig|hft|hft-c|ibm8512|ibm8513|IBM High Function Terminal:\
+#from marc pawliger--marc@ibminet.awdpa.ibm.com
+#also in /usr/lpp/bos/bsdsysadmin.
+Ig|hft-c|ibm8512|ibm8513|IBM High Function Terminal:\
 	:co#80:li#25:am:ht:\
 	:cm=\E[%i%d;%dH:ti=\E[20;4l\E[?7h\Eb:te=\E[20h:\
 	:nd=\E[C:up=\E[A:do=^J:ho=\E[H:\
@@ -443,6 +445,19 @@ Ig|hft|hft-c|ibm8512|ibm8513|IBM High Function Terminal:\
 	:k1=\E[001q:k2=\E[002q:k3=\E[003q:k4=\E[004q:k5=\E[005q:\
 	:k6=\E[006q:k7=\E[007q:k8=\E[008q:k9=\E[009q:k0=\E[010q:\
 	:is=\Eb\E[m^O\E[?7h:rs=\Eb\E[m^O\E[?7h\E[H\E[J:
+Ih|hft|AIWS High Function Terminal:\
+	:al=\E[L:cr=^M:do=^J:sf=^J:bl=^G:am:le=^H:cd=\E[J:\
+	:ce=\E[K:cl=\E[H\E[2J:cm=\E[%i%d;%dH:co#80:li#25:\
+	:dc=\E[P:dl=\E[M:ho=\E[H:\
+	:ic=\E[@:im=\E6:ei=\E6:\
+	:md=\E[1m:mr=\E[7m:mb=\E[5m:mk=\E[8m:me=\E[0m:\
+	:ku=\E[A:kd=\E[B:kl=\E[D:kr=\E[C:kh=\E[H:kb=^H:\
+	:nd=\E[C:ta=^I:up=\E[A:xo:\
+	:ue=\E[m:us=\E[4m:se=\E[m:so=\E[7m:\
+	:kP=\E[159q:kN=\E[153q:\
+	:k1=\E[001q:k2=\E[002q:k3=\E[003q:k4=\E[004q:\
+	:k5=\E[005q:k6=\E[006q:k7=\E[007q:k8=\E[008q:\
+	:k9=\E[009q:ka=\E[010q:
 # # --------------------------------
 #
 # M: MISCELLANEOUS TERMINALS
