@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)spec.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)spec.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -35,6 +35,7 @@ spec()
 	int c_cur, c_next;
 	char buf[2048];
 
+	root = NULL;
 	bzero(&ginfo, sizeof(ginfo));
 	c_cur = c_next = 0;
 	for (lineno = 1; fgets(buf, sizeof(buf), stdin);
@@ -63,6 +64,9 @@ spec()
 		if (!*p || *p == '#')
 			continue;
 
+#ifdef DEBUG
+		(void)fprintf(stderr, "line %d: {%s}\n", lineno, p);
+#endif
 		if (c_cur) {
 			set(p, centry);
 			continue;
