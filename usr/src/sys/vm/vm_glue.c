@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_glue.c	7.20 (Berkeley) %G%
+ *	@(#)vm_glue.c	7.21 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -253,8 +253,7 @@ vm_init_limits(p)
         p->p_rlimit[RLIMIT_STACK].rlim_max = MAXSSIZ;
         p->p_rlimit[RLIMIT_DATA].rlim_cur = DFLDSIZ;
         p->p_rlimit[RLIMIT_DATA].rlim_max = MAXDSIZ;
-	p->p_rlimit[RLIMIT_RSS].rlim_cur = p->p_rlimit[RLIMIT_RSS].rlim_max =
-		ptoa(cnt.v_free_count);
+	p->p_rlimit[RLIMIT_RSS].rlim_cur = ptoa(cnt.v_free_count);
 }
 
 #include <vm/vm_pageout.h>
