@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)shutdown.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)shutdown.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -62,7 +62,7 @@ main(argc, argv)
 	extern int optind;
 	register char *p, *endp;
 	int arglen, ch, len, readstdin;
-	struct passwd *pw, *getpwuid();
+	struct passwd *pw;
 	char *strcat(), *getlogin();
 	uid_t geteuid();
 
