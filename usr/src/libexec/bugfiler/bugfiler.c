@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	4.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)bugfiler.c	4.14 (Berkeley) %G%";
 #endif
 
 /*
@@ -427,10 +427,10 @@ chkindex(hp)
 	if (debug)
 		printf("chkindex(%s)\n", hp->h_info);
 	/*
-	 * Strip of leading "/", "usr/", or "src/".
+	 * Strip of leading "/", ".", "usr/", or "src/".
 	 */
 	cp1 = hp->h_info;
-	while (*cp1 == '/')
+	while (*cp1 == '/' || *cp1 == '.')
 		cp1++;
 	while (substr(cp1, "usr/") || substr(cp1, "src/"))
 		cp1 += 4;
