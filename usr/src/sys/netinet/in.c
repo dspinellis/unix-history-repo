@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)in.c	7.13 (Berkeley) %G%
+ *	@(#)in.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -377,7 +377,9 @@ in_control(so, cmd, data, ifp)
 		break;
 
 	case SIOCAIFADDR:
-		maskIsNew = 0; hostIsNew = 1; error = u.u_error;
+		maskIsNew = 0;
+		hostIsNew = 1;
+		error = 0;
 		if (ia->ia_addr.sin_family == AF_INET) {
 			if (ifra->ifra_addr.sin_len == 0) {
 				ifra->ifra_addr = ia->ia_addr;
@@ -390,7 +392,7 @@ in_control(so, cmd, data, ifp)
 			in_ifscrub(ifp, ia);
 			ia->ia_sockmask = ifra->ifra_mask;
 			ia->ia_subnetmask =
-					ntohl(ia->ia_sockmask.sin_addr.s_addr);
+			     ntohl(ia->ia_sockmask.sin_addr.s_addr);
 			maskIsNew = 1;
 		}
 		if ((ifp->if_flags & IFF_POINTOPOINT) &&
@@ -400,7 +402,7 @@ in_control(so, cmd, data, ifp)
 			maskIsNew  = 1; /* We lie; but the effect's the same */
 		}
 		if (ifra->ifra_addr.sin_family == AF_INET &&
-					    (hostIsNew || maskIsNew))
+		    (hostIsNew || maskIsNew))
 			error = in_ifinit(ifp, ia, &ifra->ifra_addr, 0);
 		if ((ifp->if_flags & IFF_BROADCAST) &&
 		    (ifra->ifra_broadaddr.sin_family == AF_INET))
@@ -416,19 +418,18 @@ in_control(so, cmd, data, ifp)
 			       (ifa->ifa_next != (struct ifaddr *)ia))
 				    ifa = ifa->ifa_next;
 			if (ifa->ifa_next)
-			    ifa->ifa_next = ((struct ifaddr *)ia)->ifa_next;
+				ifa->ifa_next = ((struct ifaddr *)ia)->ifa_next;
 			else
 				printf("Couldn't unlink inifaddr from ifp\n");
 		}
 		oia = ia;
-		if (oia == (ia = in_ifaddr)) {
+		if (oia == (ia = in_ifaddr))
 			in_ifaddr = ia->ia_next;
-		} else {
-			while (ia->ia_next && (ia->ia_next != oia)) {
+		else {
+			while (ia->ia_next && (ia->ia_next != oia))
 				ia = ia->ia_next;
-			}
 			if (ia->ia_next)
-			    ia->ia_next = oia->ia_next;
+				ia->ia_next = oia->ia_next;
 			else
 				printf("Didn't unlink inifadr from list\n");
 		}
