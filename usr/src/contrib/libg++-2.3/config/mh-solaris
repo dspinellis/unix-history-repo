@@ -1,0 +1,13 @@
+# Makefile changes for Suns running Solaris 2
+
+SYSV = -DSYSV
+RANLIB = true
+INSTALL = cp
+CFLAGS = -g 
+
+# if you're using Sun's C compiler, add -xs to the CFLAGS line
+
+# X11 
+OPENWINHOME = /usr/openwin
+X11_INCLUDE_FLAGS = -I$(OPENWINHOME)/include
+X11_LIB_FLAGS = -L$(OPENWINHOME)/lib
