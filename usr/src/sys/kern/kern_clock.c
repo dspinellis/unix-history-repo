@@ -1,4 +1,4 @@
-/*	%H%	3.18	kern_clock.c	*/
+/*	%H%	3.19	kern_clock.c	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -182,7 +182,7 @@ out:
 		runrun++;
 		wakeup((caddr_t)&lbolt);
 		for(pp = &proc[0]; pp < &proc[NPROC]; pp++)
-		if (pp->p_stat && pp->p_stat<SZOMB) {
+		if (pp->p_stat && pp->p_stat!=SZOMB) {
 			if(pp->p_time != 127)
 				pp->p_time++;
 			if(pp->p_clktim)
