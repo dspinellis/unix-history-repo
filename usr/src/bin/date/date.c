@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)date.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)date.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -51,7 +51,7 @@ main(argc, argv)
 
 	tz.tz_dsttime = tz.tz_minuteswest = 0;
 	rflag = 0;
-	while ((ch = getopt(argc, argv, "d:nr:ut:")) != EOF)
+	while ((ch = getopt(argc, argv, "d:nr:ut:")) != -1)
 		switch((char)ch) {
 		case 'd':		/* daylight savings time */
 			tz.tz_dsttime = atoi(optarg) ? 1 : 0;
@@ -90,7 +90,7 @@ main(argc, argv)
 	if (!rflag && time(&tval) == -1)
 		err(1, "time");
 
-	format = "%a %b %e %H:%M:%S %Z %Y\n";
+	format = "%a %b %e %H:%M:%S %Z %Y";
 
 	/* allow the operands in any order */
 	if (*argv && **argv == '+') {
@@ -107,7 +107,7 @@ main(argc, argv)
 		format = *argv + 1;
 
 	(void)strftime(buf, sizeof(buf), format, localtime(&tval));
-	(void)printf("%s", buf);
+	(void)printf("%s\n", buf);
 	exit(retval);
 }
 
