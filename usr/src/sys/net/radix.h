@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)radix.h	8.1 (Berkeley) %G%
+ *	@(#)radix.h	8.1.1.1 (Berkeley) %G%
  */
 
 #ifndef _RADIX_H_
@@ -15,7 +15,7 @@
  */
 
 struct radix_node {
-	struct	radix_mask *rn_mklist;	/* list of masks contained in subtree */
+	struct	radix_node *rn_mklist;	/* list of masks contained in subtree */
 	struct	radix_node *rn_p;	/* parent */
 	short	rn_b;			/* bit offset; -1-index(netmask) */
 	char	rn_bmask;		/* node: mask for bit test*/
@@ -49,28 +49,6 @@ struct radix_node {
 #define rn_l rn_u.rn_node.rn_L
 #define rn_r rn_u.rn_node.rn_R
 
-/*
- * Annotations to tree concerning potential routes applying to subtrees.
- */
-
-extern struct radix_mask {
-	short	rm_b;			/* bit offset; -1-index(netmask) */
-	char	rm_unused;		/* cf. rn_bmask */
-	u_char	rm_flags;		/* cf. rn_flags */
-	struct	radix_mask *rm_mklist;	/* more masks to try */
-	caddr_t	rm_mask;		/* the mask */
-	int	rm_refs;		/* # of references to this struct */
-} *rn_mkfreelist;
-
-#define MKGet(m) {\
-	if (rn_mkfreelist) {\
-		m = rn_mkfreelist; \
-		rn_mkfreelist = (m)->rm_mklist; \
-	} else \
-		R_Malloc(m, struct radix_mask *, sizeof (*(m))); }\
-
-#define MKFree(m) { (m)->rm_mklist = rn_mkfreelist; rn_mkfreelist = (m);}
-
 struct radix_node_head {
 	struct	radix_node *rnh_treetop;
 	int	rnh_addrsize;		/* permit, but not require fixed keys */
@@ -91,6 +69,19 @@ struct radix_node_head {
 		__P((void *v, struct radix_node_head *head));
 	int	(*rnh_walktree)			/* traverse tree */
 		__P((struct radix_node_head *head, int (*f)(), void *w));
+/* mapping stuff */
+	struct	radix_index_table  {
+		short	limit;
+		short	offset;
+	}	*rnh_table;			/* how to re-order the bits */
+	int	rnh_offset;			/* for martialed keys */
+	int	(*rnh_bits_matched)		/* used in matching, insert */
+		__P((void *trial, void *ref,
+		     struct radix_node_head *head, int masklen));
+	int	(*rnh_set_mask)			/* used in insertion */
+		__P((int index,
+		     struct radix_node *rn, struct radix_node_head *rnh));
+/* the treetop itself */
 	struct	radix_node rnh_nodes[3];	/* empty tree for common case */
 };
 
@@ -106,6 +97,7 @@ struct radix_node_head {
 #define Bzero(p, n) bzero((caddr_t)(p), (unsigned)(n));
 #define R_Malloc(p, t, n) (p = (t) malloc((unsigned long)(n), M_RTABLE, M_DONTWAIT))
 #define Free(p) free((caddr_t)p, M_RTABLE);
+#endif /*KERNEL*/
 
 void	 rn_init __P((void));
 int	 rn_inithead __P((void **, int));
@@ -121,7 +113,16 @@ struct radix_node
 	 *rn_match __P((void *, struct radix_node_head *)),
 	 *rn_newpair __P((void *, int, struct radix_node[2])),
 	 *rn_search __P((void *, struct radix_node *)),
-	 *rn_search_m __P((void *, struct radix_node *, void *));
+	 *rn_search_unmapped __P((void *, struct radix_node_head *));
 
-#endif /*KERNEL*/
+int	 rn_set_unmapped_mask
+		__P((int, struct radix_node *, struct radix_node_head *)),
+	 rn_set_mapped_mask
+		__P((int, struct radix_node *, struct radix_node_head *)),
+	 rn_mapped_bits_matched
+		__P((void *, void *, struct radix_node_head *, int)),
+	 rn_unmapped_bits_matched
+		__P((void *, void *, struct radix_node_head *, int));
+					
+
 #endif /* _RADIX_H_ */
