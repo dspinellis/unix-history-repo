@@ -3,7 +3,7 @@
 #	   tree: distribution tree: /, /usr, /var
 #	   date: Wed Jul 15 13:40:13 1992
 #
-#	@(#)4.4BSD.dist	5.24 (Berkeley) %G%
+#	@(#)4.4BSD.dist	5.25 (Berkeley) %G%
 
 /set type=dir uname=root gname=wheel mode=0755
 # .
@@ -1050,38 +1050,6 @@ quiz.db
 ..
 
 # ./usr/share/games
-..
-
-# ./usr/share/groff
-groff
-
-# ./usr/share/groff/eign
-eign
-# ./usr/share/groff/eign
-..
-
-# ./usr/share/groff/font
-font
-# ./usr/share/groff/font
-..
-
-# ./usr/share/groff/tmac
-tmac
-
-# ./usr/share/groff/tmac/mdoc
-mdoc
-# ./usr/share/groff/tmac/mdoc
-..
-
-# ./usr/share/groff/tmac/mm
-mm
-# ./usr/share/groff/tmac/mm
-..
-
-# ./usr/share/groff/tmac
-..
-
-# ./usr/share/groff
 ..
 
 # ./usr/share/groff_font
