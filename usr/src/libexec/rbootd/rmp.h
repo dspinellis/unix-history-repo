@@ -12,7 +12,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rmp.h	5.1 (Berkeley) %G%
+ *	@(#)rmp.h	8.1 (Berkeley) %G%
  *
  * Utah $Hdr: rmp.h 3.1 92/07/06$
  * Author: Jeff Forys, University of Utah CSS

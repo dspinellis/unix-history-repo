@@ -12,14 +12,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	5.2 (Berkeley) %G%
+ *	@(#)conf.c	8.1 (Berkeley) %G%
  *
  * Utah $Hdr: conf.c 3.1 92/07/06$
  * Author: Jeff Forys, University of Utah CSS
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
