@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)param.c	7.20 (Berkeley) %G%
+ *	@(#)param.c	7.21 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -16,7 +16,7 @@
 #include "sys/callout.h"
 #include "sys/clist.h"
 #include "sys/mbuf.h"
-#include "ufs/quota.h"
+#include "ufs/ufs/quota.h"
 #include "sys/kernel.h"
 #ifdef SYSVSHM
 #include "machine/vmparam.h"
