@@ -1,4 +1,4 @@
-/*	tcp_output.c	6.4	84/10/18	*/
+/*	tcp_output.c	6.5	84/10/19	*/
 
 #include "param.h"
 #include "systm.h"
@@ -168,12 +168,16 @@ send:
 	 * unless TCP set to not do any options.
 	 */
 	if (tp->t_state < TCPS_ESTABLISHED) {
+		int mss;
+
 		if (tp->t_flags&TF_NOOPT)
+			goto noopt;
+		mss = MIN(so->so_rcv.sb_hiwat / 2, tcp_mss(tp));
+		if (mss <= IP_MSS - sizeof(struct tcpiphdr))
 			goto noopt;
 		opt = tcp_initopt;
 		optlen = sizeof (tcp_initopt);
-		*(u_short *)(opt + 2) = MIN(so->so_rcv.sb_hiwat / 2, 1024);
-		*(u_short *)(opt + 2) = htons(*(u_short *)(opt + 2));
+		*(u_short *)(opt + 2) = htons(mss);
 	} else {
 		if (tp->t_tcpopt == 0)
 			goto noopt;

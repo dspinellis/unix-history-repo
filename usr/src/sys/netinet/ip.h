@@ -1,4 +1,4 @@
-/*	ip.h	6.3	84/05/22	*/
+/*	ip.h	6.4	84/10/19	*/
 
 /*
  * Definitions for internet protocol version 4.
@@ -90,3 +90,5 @@ struct	ip_timestamp {
 #define	MAXTTL		255		/* maximum time to live (seconds) */
 #define	IPFRAGTTL	15		/* time to live for frag chains */
 #define	IPTTLDEC	1		/* subtracted when forwarding */
+
+#define	IP_MSS		576		/* default maximum segment size */
