@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mbuf.h	7.4 (Berkeley) %G%
+ *	@(#)mbuf.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -141,11 +141,14 @@ struct mbuf {
  * Mbuf statistics.
  */
 struct mbstat {
-	short	m_mbufs;	/* mbufs obtained from page pool */
-	short	m_clusters;	/* clusters obtained from page pool */
-	short	m_clfree;	/* free clusters */
-	short	m_drops;	/* times failed to find space */
-	short	m_mtypes[256];	/* type specific mbuf allocations */
+	u_long	m_mbufs;	/* mbufs obtained from page pool */
+	u_long	m_clusters;	/* clusters obtained from page pool */
+	u_long	m_space;	/* interface pages obtained from page pool */
+	u_long	m_clfree;	/* free clusters */
+	u_long	m_drops;	/* times failed to find space */
+	u_long	m_wait;		/* times waited for space */
+	u_long	m_drain;	/* times drained protocols for space */
+	u_short	m_mtypes[256];	/* type specific mbuf allocations */
 };
 
 #ifdef	KERNEL
