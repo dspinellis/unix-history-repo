@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)raw_ip.c	8.3 (Berkeley) %G%
+ *	@(#)raw_ip.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -75,8 +75,9 @@ rip_input(m)
 		if (last) {
 			struct mbuf *n;
 			if (n = m_copy(m, 0, (int)M_COPYALL)) {
-				if (sbappendaddr(&last->so_rcv, &ripsrc,
-				    n, (struct mbuf *)0) == 0)
+				if (sbappendaddr(&last->so_rcv,
+				    (struct sockaddr *)&ripsrc, n,
+				    (struct mbuf *)0) == 0)
 					/* should notify about lost packet */
 					m_freem(n);
 				else
@@ -86,7 +87,7 @@ rip_input(m)
 		last = inp->inp_socket;
 	}
 	if (last) {
-		if (sbappendaddr(&last->so_rcv, &ripsrc,
+		if (sbappendaddr(&last->so_rcv, (struct sockaddr *)&ripsrc,
 		    m, (struct mbuf *)0) == 0)
 			m_freem(m);
 		else
