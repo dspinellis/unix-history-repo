@@ -34,12 +34,12 @@
  */
 
 struct queue_entry {
-	void	*next;		/* next element */
-	void	**prev;		/* address of previous next element */
+	void	*qe_next;	/* next element */
+	void	**qe_prev;	/* address of previous next element */
 };
 
 struct list_entry {
-	void	*next;		/* next element */
+	void	*le_next;	/* next element */
 };
 
 /*
@@ -50,46 +50,49 @@ struct list_entry {
 /*
  * Queue functions.
  */
-#define	queue_init(head)	((head)->next = 0, (head)->prev = &(head)->next)
+#define	queue_init(head) { \
+	(head)->qe_next = 0; \
+	(head)->qe_prev = &(head)->qe_next; \
+}
 
 #define queue_enter_tail(head, elm, type, field) { \
-	(elm)->field.next = 0; \
-	(elm)->field.prev = (head)->prev; \
-	*(head)->prev = (elm); \
-	(head)->prev = &(elm)->field.next; \
+	(elm)->field.qe_next = 0; \
+	(elm)->field.qe_prev = (head)->qe_prev; \
+	*(head)->qe_prev = (elm); \
+	(head)->qe_prev = &(elm)->field.qe_next; \
 }
 
 #define queue_enter_head(head, elm, type, field) { \
 	type queue_ptr; \
-	if (queue_ptr = (head)->next) \
-		queue_ptr->field.prev = &(elm)->field.next; \
+	if (queue_ptr = (head)->qe_next) \
+		queue_ptr->field.qe_prev = &(elm)->field.qe_next; \
 	else \
-		(head)->prev = &(elm)->field.next; \
-	(head)->next = (elm); \
-	(elm)->field.next = queue_ptr; \
-	(elm)->field.prev = &(head)->next; \
+		(head)->qe_prev = &(elm)->field.qe_next; \
+	(head)->qe_next = (elm); \
+	(elm)->field.qe_next = queue_ptr; \
+	(elm)->field.qe_prev = &(head)->qe_next; \
 }
 
 #define queue_insert_after(head, listelm, elm, type, field) { \
 	type queue_ptr; \
-	if (queue_ptr = (listelm)->next) \
-		queue_ptr->field.prev = &(elm)->field.next; \
+	if (queue_ptr = (listelm)->qe_next) \
+		queue_ptr->field.qe_prev = &(elm)->field.qe_next; \
 	else \
-		(head)->prev = &(elm)->field.next; \
-	(listelm)->next = (elm); \
-	(elm)->field.next = queue_ptr; \
-	(elm)->field.prev = &(listelm)->next; \
+		(head)->qe_prev = &(elm)->field.qe_next; \
+	(listelm)->qe_next = (elm); \
+	(elm)->field.qe_next = queue_ptr; \
+	(elm)->field.qe_prev = &(listelm)->qe_next; \
 }
 
 #define queue_remove(head, elm, type, field) { \
 	type queue_ptr; \
-	if (queue_ptr = (elm)->field.next) \
-		queue_ptr->field.prev = (elm)->field.prev; \
+	if (queue_ptr = (elm)->field.qe_next) \
+		queue_ptr->field.qe_prev = (elm)->field.qe_prev; \
 	else \
-		(head)->prev = (elm)->field.prev; \
-	*(elm)->field.prev = queue_ptr; \
-	(elm)->field.next = NOLIST; \
-	(elm)->field.prev = NOLIST; \
+		(head)->qe_prev = (elm)->field.qe_prev; \
+	*(elm)->field.qe_prev = queue_ptr; \
+	(elm)->field.qe_next = NOLIST; \
+	(elm)->field.qe_prev = NOLIST; \
 }
 
 /*
@@ -97,29 +100,29 @@ struct list_entry {
  */
 #define list_enter_head(head, elm, type, field) { \
 	type queue_ptr; \
-	if (queue_ptr = (head)->next) \
-		queue_ptr->field.prev = &(elm)->field.next; \
-	(head)->next = (elm); \
-	(elm)->field.next = queue_ptr; \
-	(elm)->field.prev = &(head)->next; \
+	if (queue_ptr = (head)->le_next) \
+		queue_ptr->field.qe_prev = &(elm)->field.qe_next; \
+	(head)->le_next = (elm); \
+	(elm)->field.qe_next = queue_ptr; \
+	(elm)->field.qe_prev = &(head)->le_next; \
 }
 
 #define list_insert_after(listelm, elm, type, field) { \
 	type queue_ptr; \
-	if (queue_ptr = (listelm)->next) \
-		queue_ptr->field.prev = &(elm)->field.next; \
-	(listelm)->next = (elm); \
-	(elm)->field.next = queue_ptr; \
-	(elm)->field.prev = &(listelm)->next; \
+	if (queue_ptr = (listelm)->qe_next) \
+		queue_ptr->field.qe_prev = &(elm)->field.qe_next; \
+	(listelm)->qe_next = (elm); \
+	(elm)->field.qe_next = queue_ptr; \
+	(elm)->field.qe_prev = &(listelm)->qe_next; \
 }
 
 #define list_remove(elm, type, field) { \
 	type queue_ptr; \
-	if (queue_ptr = (elm)->field.next) \
-		queue_ptr->field.prev = (elm)->field.prev; \
-	*(elm)->field.prev = queue_ptr; \
-	(elm)->field.next = NOLIST; \
-	(elm)->field.prev = NOLIST; \
+	if (queue_ptr = (elm)->field.qe_next) \
+		queue_ptr->field.qe_prev = (elm)->field.qe_prev; \
+	*(elm)->field.qe_prev = queue_ptr; \
+	(elm)->field.qe_next = NOLIST; \
+	(elm)->field.qe_prev = NOLIST; \
 }
 
 #endif	/* !_QUEUE_H_ */
