@@ -13,7 +13,7 @@ netdecnet/tp_usrreq.c	optional decnet
 netimp/if_imp.c		optional imp inet
 netimp/if_imphost.c	optional imp inet
 netinet/if_ether.c	optional ether inet
-netinet/if_loop.c	optional loop inet device-driver
+netinet/if_loop.c	optional loop inet
 netinet/in.c		optional inet
 netinet/in_pcb.c	optional inet
 netinet/in_proto.c	optional inet
@@ -58,11 +58,11 @@ sys/sys_process.c	standard
 sys/sys_socket.c	standard
 sys/sys_xxx.c		standard
 sys/tty.c		standard
-sys/tty_bk.c		optional bk device-driver
+sys/tty_bk.c		optional bk
 sys/tty_conf.c		standard
 sys/tty_pty.c		optional pty
 sys/tty_subr.c		standard
-sys/tty_tb.c		optional tb device-driver
+sys/tty_tb.c		optional tb
 sys/tty_tty.c		standard
 sys/tty_xxx.c		standard
 sys/ufs_alloc.c		standard
