@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)snake.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)snake.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -27,9 +27,12 @@ static char sccsid[] = "@(#)snake.c	5.10 (Berkeley) %G%";
  */
 
 #include <sys/param.h>
+
+#include <errno.h>
 #include <fcntl.h>
 #include <pwd.h>
-#include <errno.h>
+#include <time.h>
+
 #include "snake.h"
 #include "pathnames.h"
 
@@ -71,7 +74,6 @@ char **argv;
 	extern char *optarg;
 	extern int optind;
 	int ch, i, j, k;
-	time_t time();
 	long atol();
 	void stop();
 
