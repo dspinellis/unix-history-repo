@@ -1,4 +1,4 @@
-/*	mba.c	4.8	83/01/27	*/
+/*	mba.c	4.9	83/02/18	*/
 
 #include "../machine/pte.h"
 
@@ -35,9 +35,8 @@ mbastart(io, func)
 	mba->mba_sr = -1;
 	mba->mba_bcr = -io->i_cc;
 	mba->mba_var = vaddr;
-	if (io->i_flgs&F_SSI) {
+	if (io->i_flgs&F_SSI)
 		drv->mbd_of |= HPOF_SSEI;
-	}
 	switch (io->i_flgs & F_TYPEMASK) {
 
 	case F_RDDATA:			/* standard read */
@@ -69,16 +68,14 @@ mbastart(io, func)
 		break;
 
 	default:
-error:
-		io->i_error = ECMD;
-		io->i_flgs &= ~F_TYPEMASK;
-		return (1);
+		goto error;
 	}
-
 	if ((drv->mbd_dt & MBDT_TAP) == 0)
 		return (0);
-	else
-		goto error;		/* if not a disk : error */
+error:
+	io->i_error = ECMD;
+	io->i_flgs &= ~F_TYPEMASK;
+	return (1);
 }
 
 mbainit(mbanum)
