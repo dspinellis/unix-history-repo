@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_open.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_open.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -80,11 +80,12 @@ __rec_open(fname, flags, mode, openinfo)
 		t->bt_bval = '\n';
 
 	t->bt_flags = BTF_RECNO;
+	t->bt_reof = 0;
 
 	/*
- 	 * In 4.4BSD stat(2) returns true for ISSOCK on pipes.  Until then,
-	 * this is fairly close.  Pipes are read-only.
- 	 */
+	 * In 4.4BSD stat(2) returns true for ISSOCK on pipes.  Until
+	 * then, this is fairly close.  Pipes are read-only.
+	 */
 	if (lseek(rfd, 0L, SEEK_CUR) == -1 && errno == ESPIPE) {
 		SET(t, BTF_RDONLY);
 		if ((t->bt_rfp = fdopen(rfd, "r")) == NULL)
@@ -95,11 +96,16 @@ __rec_open(fname, flags, mode, openinfo)
 			goto err;
 		if (!(flags & (O_RDWR | O_WRONLY)))
 			SET(t, BTF_RDONLY);
-		if ((t->bt_smap = mmap(NULL, sb.st_size, PROT_READ, MAP_FILE,
-		    rfd, (off_t)0)) == NULL)
+		if (sb.st_size > INT_MAX) {
+			errno = EFBIG;
+			goto err;
+		}
+		if ((t->bt_smap = mmap(NULL, (int)sb.st_size,
+		    PROT_READ, MAP_FILE, rfd, (off_t)0)) == NULL)
 			goto err;
 		t->bt_emap = t->bt_smap + sb.st_size;
 		t->bt_rfd = rfd;
+		t->bt_rfp = NULL;
 		t->bt_irec = ISSET(t, BTF_FIXEDLEN) ? __rec_fmap : __rec_vmap;
 	}
 
