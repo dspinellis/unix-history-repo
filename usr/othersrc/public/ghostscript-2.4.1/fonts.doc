@@ -1,0 +1,219 @@
+   Copyright (C) 1990, 1991 Aladdin Enterprises.  All rights reserved.
+   Distributed by Free Software Foundation, Inc.
+
+This file is part of Ghostscript.
+
+Ghostscript is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
+to anyone for the consequences of using it or for whether it serves any
+particular purpose or works at all, unless he says so in writing.  Refer
+to the Ghostscript General Public License for full details.
+
+Everyone is granted permission to copy, modify and redistribute
+Ghostscript, but only under the conditions described in the Ghostscript
+General Public License.  A copy of this license is supposed to have been
+given to you along with Ghostscript so you can know your rights and
+responsibilities.  It should be in a file named COPYING.  Among other
+things, the copyright notice and this notice must be preserved on all
+copies.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+This file, fonts.doc, describes the fonts and font facilities supplied
+with Ghostscript.
+
+For an overview of Ghostscript and a list of the documentation files, see
+README.
+
+Ghostscript fonts
+-----------------
+
+The fonts included with Ghostscript come in several parts:
+
+	- Font data in files *.gsf: each file defines one (transformable)
+	  font specified in outline form.
+
+	- BuildChar procedures in gs_fonts.ps: these provide the
+	  algorithms for interpreting the data in the .gsf files.
+
+	- The Fontmap file: this relates Ghostscript font names to .gsf
+          file names. 
+
+Currently, the fonts supplied with Ghostscript are based on various public
+domain bitmap fonts, mostly the ones supplied with the X11 distribution
+from MIT, and on the public domain Hershey fonts.  The fonts are
+distributed in the file `ghostscript-N.NNfonts.tar.Z'.  The bitmap-derived
+fonts include the usual Helvetica, Times-Roman, and so on; see the file
+`Fontmap' for the complete list, in the usual roman, italic, bold, and
+bold italic styles (for the most part).  The Hershey fonts, on the other
+hand, are quite different from traditional ones; the file `hershey.doc'
+describes them in more detail.
+
+There is also a single rather heavy home-grown font called Ugly.  This
+font is the file `uglyr.gsf' in the Ghostscript source distribution.
+
+The file gs_fonts.ps, which is loaded as part of Ghostscript
+initialization, arranges to load fonts on demand using the information
+from Fontmap.  If you want to preload all of the known fonts, invoke the
+procedure
+	loadallfonts
+This is not done by default, since the fonts occupy about 50K each and there
+are a lot of them.
+
+Ghostscript fonts are actually ordinary Ghostscript programs: they use the
+extension .gsf instead of .ps simply to be informative.  This convention
+is only embodied in the Fontmap file: there is no code that knows about
+it.
+
+If you want to try out the fonts, prfont.ps contains code for printing a
+sampler.  Load this program, by including it in the gs command line or by
+invoking
+	(prfont.ps) run
+and then to produce a sampler of a particular font, invoke
+	/fontName DoFont
+e.g.
+	/Times-Roman DoFont
+
+
+Contents of fonts
+-----------------
+
+A Ghostscript font is a dictionary with a standard set of keys as follows.
+The keys marked with a * have the same meanings as in P*stScr*pt fonts;
+those marked with # have the same meanings as in Adobe Type 1 fonts.  Note
+that FontName is required; StrokeWidth is required for all stroked or
+outlined fonts; and Metrics is not currently supported.
+
+*	- FontMatrix <array>: the transformation from character
+	  coordinates to user coordinates.
+
+*	- FontType <integer>: the type of the font, either 1 or 3.
+
+*	- FontBBox <array>: the bounding box of the font.
+
+*	- Encoding <array>: the map from character codes to character
+	  names.
+
+*	- FontName <name>: the name of the font.
+
+*	- PaintType <integer>: an indication of how to interpret the
+	  character description from CharInfo.
+
+*	- StrokeWidth <number>: the stroke width for outline fonts.
+
+*	- FontInfo <dictionary>: additional information about the font
+	  (optional, not used by the standard Ghostscript software).
+
+*	- UniqueID <integer>: a unique number identifying the font.
+
+*	- BuildChar <procedure>: the procedure for showing a character
+	  (not required in type 1 fonts).
+
+#	- CharStrings <dictionary>: the map from character names to character
+	  descriptions (relevant only in type 1 fonts).
+
+#	- Private <dictionary>: additional information used by the
+	  algorithms for rendering outlines fonts (relevant only in type 1
+	  fonts).
+
+The format of values in the CharStrings and Private dictionaries are
+described in the Adobe Type 1 Font Format book.
+
+Adding your own fonts
+---------------------
+
+The program bdftops.ps (and invoking shell script bdftops.bat or bdftops)
+converts these bitmap files to Ghostscript input, using the Ghostscript
+``type1imagepath'' operator to convert the bitmaps into outlines.
+
+If you want to add fonts of your own, you need to do two things.  First,
+edit Fontmap to include an entry for your new font at the end.  The format
+for entries is documented in the Fontmap file.  Second, you need to
+prepare the .gsf file.  If you are converting a file from BDF format, the
+Ghostscript distribution already includes a program for doing this: run
+the shell command
+	bdftops <BDF_file_name> [<AFM_file1_name> ...] <your_gsf_file_name>
+	  <font_name> <uniqueID> [<encoding_name>]
+e.g.,
+	bdftops pzdr.bdf ZapfDingbats.afm pzdr.gsf ZapfDingbats 4100000
+You may find it helpful to read, and to add an entry to, the fonts.mak
+file, which is a makefile for converting the standard Ghostscript fonts.
+
+There is a similar utility to convert files from .PFB form to plain text
+.gsf form.  Run the shell command
+	pfbtogs <.PFB_file_name> <gsf_file_name>
+e.g.,
+	pfbtogs timesrmn.pfb ptmr.gsf
+Files in .PFA form can be used directly by Ghostscript -- no conversion is
+required, just an entry in Fontmap.
+
+Starting in release 2.4, Ghostscript can also use .PFB fonts directly: you
+don't have to run pfbtogs, just put the .PFB file in the Fontmap.
+
+Precompiling fonts
+------------------
+
+You can compile any font into C and link it into the Ghostscript
+executable.  This doesn't have any effect on rendering speed, but it
+eliminates the time for loading the font dynamically.
+
+The utility for precompiling fonts is called font2c.  (Note that font2c is
+actually a PostScript program, so you must have some version of
+Ghostscript already running to be able to run font2c.)  For example, to
+precompile the Times-Roman font,
+	font2c Times-Roman timesrmn.c
+where the first argument is the font name and the second is the name of
+the .c file.  (You can use any file name you want, as long as it ends in
+.c.  It doesn't have to be limited to 8 characters, unless your operating
+system requires this.)
+
+Besides running font2c, you must edit the makefile so that the file will
+be compiled from C to machine code, and linked into the executable.
+First, you must add the compiled fonts "feature" to your platform-specific
+makefile.  On MS-DOS systems, you edit turboc.mak, tbcplus.mak, or
+watc.mak; on Unix systems, you edit makefile.  (The situation on VMS
+systems that do not use `make' is too complicated to describe here;
+contact Aladdin Enterprises for assistance.)  Find the definition of
+FEATURE_DEVS in the makefile, e.g.,
+	FEATURE_DEVS=filter.dev dps.dev
+Add ccfonts.dev on the end, e.g.,
+	FEATURE_DEVS=filter.dev dps.dev ccfonts.dev
+
+Next, you must add the specific fonts to the generic makefile.  On MS-DOS
+systems, you edit gs.mak; on Unix systems, you edit makefile.  Find the
+line in the relevant makefile that says
+	ccfonts_=ugly.$(OBJ) cour.$(OBJ)
+Edit this to add your compiled font file names, e.g.,
+	ccfonts_=ugly.$(OBJ) cour.$(OBJ) timesrmn.$(OBJ)
+Then find the line that says
+	$(SHP)gsaddmod ccfonts -oper font_Ugly font_Courier
+Add your own fonts to the end of this line.  If the line gets too long,
+add another line of the same form, e.g.,
+	$(SHP)gsaddmod ccfonts -oper font_Ugly font_Courier
+	$(SHP)gsaddmod ccfonts -oper font_Times_Roman
+Notice that you must replace `-' by `_' in the font name.  Now find the
+lines that say
+	ugly.$(OBJ): ugly.c $(CCFONT)
+
+	cour.$(OBJ): cour.c $(CCFONT)
+Add a similar line for each font, separating these lines from each other
+by a blank line.  In our example,
+	ugly.$(OBJ): ugly.c $(CCFONT)
+
+	cour.$(OBJ): cour.c $(CCFONT)
+
+	timesrmn.$(OBJ): timesrmn.c $(CCFONT)
+
+Finally, run `make'.  The executable will now include the fonts you added.
+They will be present in FontDirectory when Ghostscript starts up.
+
+Fonts that have been precompiled and linked in this way do not need to
+appear in the Fontmap, although if they do appear there, no harm is done.
+
+Because of RAM and compiler limitations, you shouldn't use compiled fonts
+on MS-DOS systems unless you are using a 32-bit compiler such as Watcom
+C/386 or djgpp.
+
+Note that ugly.c and cour.c are not supplied with the Ghostscript fileset,
+since they are quite large and can easily be recreated using the font2c
+program as described above.
