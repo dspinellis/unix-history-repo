@@ -1,7 +1,7 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)pccaseop.c 2.1 %G%";
+static char sccsid[] = "@(#)pccaseop.c 2.2 %G%";
 #endif
 
 #include "whoami.h"
@@ -265,7 +265,7 @@ directsw( ctab , count )
 	     *
 	     *	subl2	to make r0 a 0-origin byte offset.
 	     *	cmpl	check against upper limit.
-	     *	blssu	error if out of bounds.
+	     *	jlssu	error if out of bounds.
 	     *	ashl	to make r0 a 0-origin long offset,
 	     *	jmp	and indirect through it.
 	     */
@@ -273,7 +273,7 @@ directsw( ctab , count )
 	    putprintf("	cmpl	$%d,%s", 0,
 			(int) (ctab[count].cconst - ctab[1].cconst),
 			(int) FORCENAME);
-	    putprintf("	blssu	%s%d", 0, (int) LABELPREFIX, ctab[0].clabel);
+	    putprintf("	jlssu	%s%d", 0, (int) LABELPREFIX, ctab[0].clabel);
 	    putprintf("	ashl	$2,%s,%s", 0, (int) FORCENAME, (int) FORCENAME);
 	    putprintf("	jmp	*%s%d(%s)", 0,
 		    (int) LABELPREFIX, fromlabel, (int) FORCENAME);
