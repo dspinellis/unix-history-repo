@@ -1,4 +1,5 @@
-/*	up.c	4.41	82/01/17	*/
+#define UPECCDEBUG
+/*	up.c	4.39	81/05/11	*/
 
 #include "up.h"
 #if NSC > 0
@@ -68,6 +69,15 @@ struct	size
 #else
 	213760,	155,
 #endif
+}, am_sizes[8] = {
+	15884,	0,		/* A=cyl 0 thru 31 */
+	33440,	32,		/* B=cyl 32 thru 97 */
+	524288,	0,		/* C=cyl 0 thru 1023 */
+	0,	0,
+	0,	0,
+	0,	0,
+	181760,	668,		/* G=cyl 668 thru 1022 */
+	291346,	98,		/* H=cyl 98 thru 667 */
 };
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
 
@@ -97,6 +107,7 @@ struct	upst {
 	32,	19,	32*19,	823,	up_sizes,	/* 9300/cdc */
 /* 9300 actually has 815 cylinders... */
 	32,	10,	32*10,	823,	fj_sizes,	/* fujitsu 160m */
+	32,	16,	32*16,	1024,	am_sizes,	/* fujitsu 160m */
 };
 
 u_char	up_offset[16] = {
@@ -126,7 +137,6 @@ upprobe(reg)
 
 #ifdef lint	
 	br = 0; cvec = br; br = cvec;
-	upintr(0);
 #endif
 	((struct updevice *)reg)->upcs1 = UP_IE|UP_RDY;
 	DELAY(10);
@@ -168,6 +178,8 @@ upattach(ui)
 	upaddr->uphr = UPHR_MAXTRAK;
 	if (upaddr->uphr == 9)
 		ui->ui_type = 1;		/* fujitsu hack */
+	else if (upaddr->uphr == 15)
+		ui->ui_type = 2;		/* ampex hack */
 	upaddr->upcs2 = UPCS2_CLR;
 /*
 	upaddr->uphr = UPHR_MAXCYL;
@@ -188,7 +200,6 @@ upstrategy(bp)
 	register struct buf *dp;
 	int xunit = minor(bp->b_dev) & 07;
 	long bn, sz;
-	int s;
 
 	sz = (bp->b_bcount+511) >> 9;
 	unit = dkunit(bp);
@@ -202,7 +213,7 @@ upstrategy(bp)
 	    (bn = dkblock(bp))+sz > st->sizes[xunit].nblocks)
 		goto bad;
 	bp->b_cylin = bn/st->nspc + st->sizes[xunit].cyloff;
-	s = spl5();
+	(void) spl5();
 	dp = &uputab[ui->ui_unit];
 	disksort(dp, bp);
 	if (dp->b_active == 0) {
@@ -211,7 +222,7 @@ upstrategy(bp)
 		if (bp->b_actf && bp->b_active == 0)
 			(void) upstart(ui->ui_mi);
 	}
-	splx(s);
+	(void) spl0();
 	return;
 
 bad:
