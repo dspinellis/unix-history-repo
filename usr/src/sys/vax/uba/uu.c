@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uu.c	7.2 (Berkeley) %G%
+ *	@(#)uu.c	7.3 (Berkeley) %G%
  */
 
 #include "uu.h"
@@ -37,6 +37,7 @@
 #include "kernel.h"
 #include "errno.h"
 #include "file.h"
+#include "tsleep.h"
 
 #include "../vax/cpu.h"
 #include "../vax/nexus.h"
@@ -167,7 +168,7 @@ uuopen(dev, flag)
 	 * and wait for things to settle down.
 	 */
 	uureset(ctlr);
-	sleep((caddr_t)uuc, PZERO+1);
+	tsleep((caddr_t)uuc, PZERO+1, SLP_UU_OPN, 0);
 	uitab[ctlr].b_active = NULL;
 	if (uuc->tu_state != TUS_IDLE) {
 		uuc->tu_state = TUS_INIT1;

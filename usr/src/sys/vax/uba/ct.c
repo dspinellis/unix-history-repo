@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ct.c	7.2 (Berkeley) %G%
+ *	@(#)ct.c	7.3 (Berkeley) %G%
  */
 
 #include "ct.h"
@@ -23,6 +23,7 @@
 #include "dir.h"
 #include "user.h"
 #include "kernel.h"
+#include "tsleep.h"
 
 #include "ubareg.h"
 #include "ubavar.h"
@@ -134,9 +135,9 @@ ctwrite(dev, uio)
 	while ((c = uwritec(uio)) >= 0) {
 		s = spl5();
 		while (sc->sc_oq.c_cc > CATHIWAT)
-			sleep((caddr_t)&sc->sc_oq, PCAT);
+			tsleep((caddr_t)&sc->sc_oq, PCAT, SLP_PCAT_OUT, 0);
 		while (putc(c, &sc->sc_oq) < 0)
-			sleep((caddr_t)&lbolt, PCAT);
+			tsleep((caddr_t)&lbolt, PCAT, SLP_PCAT_CLIST, 0);
 		if ( ! (sc->sc_state & CT_RUNNING) )
 			ctintr(dev);
 		splx(s);

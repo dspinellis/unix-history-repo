@@ -1,4 +1,4 @@
-/* @(#)vs.c	7.3 (MIT) %G% */
+/* @(#)vs.c	7.4 (MIT) %G% */
  /****************************************************************************
  *									    *
  *  Copyright (c) 1983, 1984 by						    *
@@ -34,6 +34,7 @@
 #include "map.h"
 #include "kernel.h"
 #include "ioctl.h"
+#include "tsleep.h"
 
 #include "vsio.h" 
 
@@ -319,7 +320,7 @@ register caddr_t addr;
 		if ((ret = vsb->vsioa.status) == 0) {
 			vsp->vs_nextgo.fparm_all = ((struct vs_fparm *) addr)->fparm_all;
 			do {
-				sleep((caddr_t) vsp, VSWAITPRI);
+				tsleep((caddr_t) vsp, VSWAITPRI, SLP_VS_WAIT, 0);
 			} while (vsp->vs_nextgo.fparm_all);
 			ret = vsp->vs_status;
 		} else {
@@ -338,7 +339,7 @@ register caddr_t addr;
 		/* wait for user I/O operation to complete */
 		s = spl5();
 		while (vsb->vsioa.status == 0) {
-			sleep((caddr_t) vsp, VSWAITPRI);
+			tsleep((caddr_t) vsp, VSWAITPRI, SLP_VS_USRWAIT, 0);
 		}
 		splx(s);
 		return (0);
@@ -379,7 +380,8 @@ register caddr_t addr;
 		vsaddr->vs_irr = 0;
 		vsaddr->vs_csr0 &= ~VS_FCN;	/* clear bits */
 		vsaddr->vs_csr0 |= (VS_IE | (VS_START << VS_FCSHIFT) | VS_GO);
-		sleep((caddr_t) vsp, VSWAITPRI);	/* synchronous */
+		/* synchronous */
+		tsleep((caddr_t) vsp, VSWAITPRI, SLP_VS_START, 0);
 		splx(s);
 		return(vsError(vsp));
 
@@ -388,7 +390,7 @@ register caddr_t addr;
 		vsaddr->vs_irr = 0;
 		vsaddr->vs_csr0 &= ~VS_FCN;
 		vsaddr->vs_csr0 |= (VS_IE | (VS_ABORT << VS_FCSHIFT) | VS_GO);
-		sleep((caddr_t) vsp, VSWAITPRI);
+		tsleep((caddr_t) vsp, VSWAITPRI, SLP_VS_ABORT, 0);
 		splx(s);
 		return(vsError(vsp));
 
@@ -397,7 +399,7 @@ register caddr_t addr;
 		vsaddr->vs_irr = 0;
 		vsaddr->vs_csr0 &= ~VS_FCN;
 		vsaddr->vs_csr0 |= (VS_IE | (VS_PWRUP << VS_FCSHIFT) | VS_GO);
-		sleep((caddr_t) vsp, VSWAITPRI);
+		tsleep((caddr_t) vsp, VSWAITPRI, SLP_VS_PWRUP, 0);
 		splx(s);
 		return(vsError(vsp));
 
@@ -407,7 +409,7 @@ register caddr_t addr;
 		vsaddr->vs_csr0 &= ~VS_FCN;
 		func = *(int *)addr == VSIO_ON ? VS_ENABBA : VS_DISBBA;
 		vsaddr->vs_csr0 |= (VS_IE | (func << VS_FCSHIFT) | VS_GO);
-		sleep((caddr_t) vsp, VSWAITPRI);
+		tsleep((caddr_t) vsp, VSWAITPRI, SLP_VS_IOBCTL, 0);
 		splx(s);
 		return(vsError(vsp));
 
@@ -417,7 +419,7 @@ register caddr_t addr;
 			vsaddr->vs_csr0 &= ~VS_XMIT_ON;
 		else
 			vsaddr->vs_csr0 |= (VS_IE | VS_XMIT_ON);
-		sleep((caddr_t) vsp, VSWAITPRI);
+		tsleep((caddr_t) vsp, VSWAITPRI, SLP_VS_FIB, 0);
 		splx(s);
 		return(vsError(vsp));
 
@@ -427,7 +429,7 @@ register caddr_t addr;
 		vsaddr->vs_csr0 &= ~VS_FCN;
 		func = *(int *)addr == VS_FIB_FINITE ? VS_FINITE : VS_INFINITE;
 		vsaddr->vs_csr0 |= (VS_IE | (func << VS_FCSHIFT) | VS_GO);
-		sleep((caddr_t) vsp, VSWAITPRI);
+		tsleep((caddr_t) vsp, VSWAITPRI, SLP_VS_FIBRET, 0);
 		splx(s);
 		return(vsError(vsp));
 
@@ -749,7 +751,7 @@ dev_t dev;
 #endif
 	s = spl5();
 	vsaddr->vs_csr0 |= (VS_IE | VS_XMIT_ON);	/* turn link on */
-	sleep((caddr_t) vsp, VSWAITPRI);
+	tsleep((caddr_t) vsp, VSWAITPRI, SLP_VS_INITF, 0);
 	splx(s);
 #ifdef VSSBO
 	if (!vsp->linkAvail) {
@@ -792,7 +794,7 @@ int retry;
 		vsaddr->vs_irr = 0;
 		vsaddr->vs_csr0 &= ~VS_FCN;
 		vsaddr->vs_csr0 |= (VS_IE | (VS_INIT << VS_FCSHIFT) | VS_GO);
-		sleep((caddr_t) vsp, VSWAITPRI);
+		tsleep((caddr_t) vsp, VSWAITPRI, SLP_VS_INITDEV, 0);
 		splx(s);
 		if (vsp->inited)
 			break;

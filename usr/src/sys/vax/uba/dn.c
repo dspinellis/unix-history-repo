@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dn.c	7.3 (Berkeley) %G%
+ *	@(#)dn.c	7.4 (Berkeley) %G%
  */
 
 #include "dn.h"
@@ -21,6 +21,7 @@
 #include "map.h"
 #include "conf.h"
 #include "uio.h"
+#include "tsleep.h"
 
 #include "ubavar.h"
 
@@ -141,17 +142,17 @@ dnwrite(dev, uio)
 	while ((*dnreg & (PWI|ACR|DSS)) == 0 && cc >= 0) {
 		(void) spl4();
 		if ((*dnreg & PND) == 0 || cc == 0)
-			sleep((caddr_t)dnreg, DNPRI);
+			tsleep((caddr_t)dnreg, DNPRI, SLP_DN_REG, 0);
 		else switch(*cp) {
 		
 		case '-':
-			sleep((caddr_t)&lbolt, DNPRI);
-			sleep((caddr_t)&lbolt, DNPRI);
+			tsleep((caddr_t)&lbolt, DNPRI, SLP_DN_PAUSE, 0);
+			tsleep((caddr_t)&lbolt, DNPRI, SLP_DN_PAUSE, 0);
 			break;
 
 		case 'f':
 			*dnreg &= ~CRQ;
-			sleep((caddr_t)&lbolt, DNPRI);
+			tsleep((caddr_t)&lbolt, DNPRI, SLP_DN_PAUSE, 0);
 			*dnreg |= CRQ;
 			break;
 
@@ -176,7 +177,7 @@ dnwrite(dev, uio)
 				break;
 		dial:
 			*dnreg = (*cp << 8) | (IENABLE|MENABLE|DPR|CRQ);
-			sleep((caddr_t)dnreg, DNPRI);
+			tsleep((caddr_t)dnreg, DNPRI, SLP_DN_REG, 0);
 		}
 		cp++, cc--;
 		spl0();

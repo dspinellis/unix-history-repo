@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dhu.c	7.7 (Berkeley) %G%
+ *	@(#)dhu.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -21,7 +21,6 @@
  */
 #include "machine/pte.h"
 
-#include "bk.h"
 #include "param.h"
 #include "conf.h"
 #include "dir.h"
@@ -35,6 +34,7 @@
 #include "vm.h"
 #include "kernel.h"
 #include "syslog.h"
+#include "tsleep.h"
 
 #include "uba.h"
 #include "ubareg.h"
@@ -263,7 +263,7 @@ dhuopen(dev, flag)
 	while (!(flag&O_NONBLOCK) && !(tp->t_cflag&CLOCAL) &&
 	       (tp->t_state & TS_CARR_ON) == 0) {
 		tp->t_state |= TS_WOPEN;
-		sleep((caddr_t)&tp->t_rawq, TTIPRI);
+		tsleep((caddr_t)&tp->t_rawq, TTIPRI, SLP_DHU_OPN, 0);
 	}
 	(void) splx(s);
 	return ((*linesw[tp->t_line].l_open)(dev, tp));

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ps.c	7.2 (Berkeley) %G%
+ *	@(#)ps.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -31,6 +31,7 @@
 #include "dir.h"
 #include "user.h"
 #include "uio.h"
+#include "tsleep.h"
 
 #include "ubareg.h"
 #include "ubavar.h"
@@ -325,7 +326,8 @@ psioctl(dev, cmd, data, flag)
 		(void) spl5();
 		psp->ps_refresh.waiting = 1;
 		while (psp->ps_refresh.waiting)
-			sleep(&psp->ps_refresh.waiting, PSPRI);
+			tsleep(&psp->ps_refresh.waiting, PSPRI,
+				SLP_PS_REFRESH, 0);
 		(void) spl0();
 		if (cmd == PSIOSTOPREFRESH)
 			psp->ps_refresh.mode = STOPPED_RF;
@@ -344,7 +346,7 @@ psioctl(dev, cmd, data, flag)
 		(void) spl5();
 		psp->ps_map.waiting = 1;
 		while (psp->ps_map.waiting)
-			sleep(&psp->ps_map.waiting, PSPRI);
+			tsleep(&psp->ps_map.waiting, PSPRI, SLP_PS_MAP, 0);
 		(void) spl0();
 		break;
 
