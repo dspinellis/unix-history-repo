@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	7.34 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.35 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -975,7 +975,7 @@ sigexit(p, sig)
 
 /*
  * Create a core dump.
- * The file name is "core.progname.pid".
+ * The file name is "core.progname".
  * Core dumps are not created if the process is setuid.
  */
 coredump(p)
@@ -988,7 +988,7 @@ coredump(p)
 	struct vattr vattr;
 	int error, error1;
 	struct nameidata nd;
-	char name[MAXCOMLEN+12];	/* core.progname.pid */
+	char name[MAXCOMLEN+6];	/* core.progname */
 
 	if (pcred->p_svuid != pcred->p_ruid ||
 	    pcred->p_svgid != pcred->p_rgid)
@@ -996,7 +996,7 @@ coredump(p)
 	if (ctob(UPAGES + vm->vm_dsize + vm->vm_ssize) >=
 	    p->p_rlimit[RLIMIT_CORE].rlim_cur)
 		return (EFAULT);
-	sprintf(name, "core.%s.%d", p->p_comm, p->p_pid);
+	sprintf(name, "core.%s", p->p_comm);
 	nd.ni_dirp = name;
 	nd.ni_segflg = UIO_SYSSPACE;
 	if (error = vn_open(&nd, p, O_CREAT|FWRITE, 0644))
@@ -1039,7 +1039,7 @@ coredump(p)
 out:
 	VOP_UNLOCK(vp);
 	error1 = vn_close(vp, FWRITE, cred, p);
-	if (!error)
+	if (error == 0)
 		error = error1;
 	return (error);
 }
