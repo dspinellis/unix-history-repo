@@ -1,10 +1,12 @@
-/*	fatal.h	1.1	88/12/22	*/
+/*	fatal.h	1.2	88/12/22	*/
+
+#include <setjmp.h>
 
 extern int Fflags;
 extern char *Ffile;
 extern int Fvalue;
 extern int (*Ffunc)();
-extern int Fjmp[10];
+extern jmp_buf Fjmp;
 
 #define FTLMSG 0100000
 #define FTLCLN 0040000
