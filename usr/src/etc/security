@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)security	5.23 (Berkeley) %G%
+#	@(#)security	5.24 (Berkeley) %G%
 #
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
@@ -406,23 +406,12 @@ fi
 
 # Check for block and character disk devices that are readable or writeable
 # or not owned by root.operator.
-egrep '^b' $LIST > $TMP1
-egrep '^c.*/rdk[0-9][0-9]*[a-h]$'  $LIST >> $TMP1
-egrep '^c.*/rfd[0-9][0-9]*[a-h]$'  $LIST >> $TMP1
-egrep '^c.*/rhd[0-9][0-9]*[a-h]$'  $LIST >> $TMP1
-egrep '^c.*/rhk[0-9][0-9]*[a-h]$'  $LIST >> $TMP1
-egrep '^c.*/rhp[0-9][0-9]*[a-h]$'  $LIST >> $TMP1
-egrep '^c.*/rjb[0-9][0-9]*[a-h]$'  $LIST >> $TMP1
-egrep '^c.*/rkra[0-9][0-9]*[a-h]$' $LIST >> $TMP1
-egrep '^c.*/rra[0-9][0-9]*[a-h]$'  $LIST >> $TMP1
-egrep '^c.*/rrb[0-9][0-9]*[a-h]$'  $LIST >> $TMP1
-egrep '^c.*/rrd[0-9][0-9]*[a-h]$'  $LIST >> $TMP1
-egrep '^c.*/rrl[0-9][0-9]*[a-h]$'  $LIST >> $TMP1
-egrep '^c.*/rrx[0-9][0-9]*[a-h]$'  $LIST >> $TMP1
-egrep '^c.*/rrz[0-9][0-9]*[a-h]$'  $LIST >> $TMP1
-egrep '^c.*/rsd[0-9][0-9]*[a-h]$'  $LIST >> $TMP1
-egrep '^c.*/rup[0-9][0-9]*[a-h]$'  $LIST >> $TMP1
-egrep '^c.*/rwd[0-9][0-9]*[a-h]$'  $LIST >> $TMP1
+>$TMP1
+DISKLIST="dk fd hd hk hp jb kra ra rb rd rl rx rz sd up wd"
+for i in $DISKLIST; do
+	egrep "^b.*/${i}[0-9][0-9]*[a-h]$"  $LIST >> $TMP1
+	egrep "^c.*/r${i}[0-9][0-9]*[a-h]$"  $LIST >> $TMP1
+done
 
 awk '$3 != "root" || $4 != "operator" || $1 !~ /.rw-r-----/ \
 	{ printf("Disk %s is user %s, group %s, permissions %s.\n", \
