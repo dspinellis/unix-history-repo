@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)memccpy.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)memccpy.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <string.h>
@@ -14,12 +14,21 @@ static char sccsid[] = "@(#)memccpy.c	5.5 (Berkeley) %G%";
 
 void *
 memccpy(t, f, c, n)
-	register const unsigned char *t, *f;
-	register unsigned char c;
+	void *t;
+	const void *f;
+	int c;
 	register size_t n;
 {
-	while (--n >= 0)
-		if ((*t++ = *f++) == c)
-			return (t);
+
+	if (n) {
+		register unsigned char *t;
+		register const unsigned char *f;
+		register unsigned char ch = c;
+
+		do {
+			if ((*t++ = *f++) == c)
+				return (t);
+		} while (--n != 0);
+	}
 	return (0);
 }
