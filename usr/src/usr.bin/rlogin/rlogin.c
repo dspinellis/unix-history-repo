@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	4.6 82/12/05";
+static char sccsid[] = "@(#)rlogin.c	4.7 82/12/25";
 #endif
 
 #include <sys/types.h>
@@ -89,7 +89,7 @@ another:
 	cp = getenv("TERM");
 	if (cp)
 		strcpy(term, cp);
-	if (gtty(0, &ttyb)==0) {
+	if (ioctl(0, TIOCGETP, &ttyb)==0) {
 		strcat(term, "/");
 		strcat(term, speeds[ttyb.sg_ospeed]);
 	}
@@ -116,25 +116,23 @@ usage:
 int	child;
 int	done();
 
-char	tkill, terase;	/* current input kill & erase */
-char	defkill, deferase, defflags;
-
-struct	tchars deftchars;
-struct	tchars notchars = { -1, -1, CTRL(q), CTRL(s), -1, -1 };
-struct	ltchars defltchars;
-struct	ltchars noltchars = { -1, -1, -1, -1, -1, -1 };
+int	defflags;
+struct	ttychars deftc;
+struct	ttychars notc = {
+	-1,	-1,	-1,	-1,	-1,
+	-1,	-1,	-1,	-1,	-1,
+	-1,	-1,	-1,	-1
+};
 
 doit()
 {
-	struct sgttyb stbuf;
 	int exit();
 
-	ioctl(0, TIOCGETP, (char *)&stbuf);
-	defkill = stbuf.sg_kill;
-	deferase = stbuf.sg_erase;
-	defflags = stbuf.sg_flags & (ECHO | CRMOD);
-	ioctl(0, TIOCGETC, (char *)&deftchars);
-	ioctl(0, TIOCGLTC, (char *)&defltchars);
+	ioctl(0, TIOCGET, (char *)&defflags);
+	defflags &= ECHO | CRMOD;
+	ioctl(0, TIOCCGET, (char *)&deftc);
+	notc.tc_startc = deftc.tc_startc;
+	notc.tc_stopc = deftc.tc_stopc;
 	signal(SIGINT, exit);
 	signal(SIGHUP, exit);
 	signal(SIGQUIT, exit);
@@ -145,7 +143,6 @@ doit()
 	}
 	signal(SIGINT, SIG_IGN);
 	if (child == 0) {
-		signal(SIGPIPE, SIG_IGN);
 		reader();
 		prf("\007Lost connection.");
 		exit(3);
@@ -204,20 +201,21 @@ top:
 				c &= 0177;
 		} else {
 			if (c == 0177)
-				c = tkill;
+				c = deftc.tc_kill;
 			if (c == '\r' || c == '\n') {
-				switch (b[1]) {
+				char cmdc = b[1];
 
-				case '.':
-				case CTRL(d):
+				if (cmdc == '.' || cmdc == deftc.tc_eofc) {
 					write(0, CRLF, sizeof(CRLF));
 					return;
-
-				case CTRL(z):
+				}
+				if (cmdc == deftc.tc_suspc ||
+				    cmdc == deftc.tc_dsuspc) {
 					write(0, CRLF, sizeof(CRLF));
 					mode(0);
 					signal(SIGCHLD, SIG_IGN);
-					kill(0, SIGTSTP);
+					kill(cmdc == deftc.tc_suspc ?
+					  0 : getpid(), SIGTSTP);
 					signal(SIGCHLD, done);
 					mode(1);
 					goto top;
@@ -229,12 +227,12 @@ top:
 			write(1, &c, 1);
 		}
 		*p++ = c;
-		if (c == terase) {
+		if (c == deftc.tc_erase) {
 			p -= 2; 
 			if (p < b)
 				goto top;
 		}
-		if (c == tkill || c == 0177 || c == CTRL(d) ||
+		if (c == deftc.tc_kill || c == 0177 || c == deftc.tc_eofc ||
 		    c == '\r' || c == '\n')
 			goto top;
 	}
@@ -258,14 +256,14 @@ oob()
 	}
 	recv(rem, &mark, 1, SOF_OOB);
 	if (mark & TIOCPKT_NOSTOP) {
-		notchars.t_stopc = -1;
-		notchars.t_startc = -1;
-		ioctl(0, TIOCSETC, (char *)&notchars);
+		notc.tc_stopc = -1;
+		notc.tc_startc = -1;
+		ioctl(0, TIOCCSET, (char *)&notc);
 	}
 	if (mark & TIOCPKT_DOSTOP) {
-		notchars.t_stopc = CTRL(s);
-		notchars.t_startc = CTRL(q);
-		ioctl(0, TIOCSETC, (char *)&notchars);
+		notc.tc_stopc = deftc.tc_stopc;
+		notc.tc_startc = deftc.tc_startc;
+		ioctl(0, TIOCCSET, (char *)&notc);
 	}
 }
 
@@ -293,34 +291,29 @@ reader()
 
 mode(f)
 {
-	struct sgttyb stbuf;
+	struct ttychars *tc;
+	int flags;
 
-	ioctl(0, TIOCGETP, (char *)&stbuf);
-	if (f == 0) {
-		stbuf.sg_flags &= ~CBREAK;
-		stbuf.sg_flags |= defflags;
-		ioctl(0, TIOCSETC, (char *)&deftchars);
-		ioctl(0, TIOCSLTC, (char *)&defltchars);
-		stbuf.sg_kill = defkill;
-		stbuf.sg_erase = deferase;
+	ioctl(0, TIOCGET, (char *)&flags);
+	switch (f) {
+
+	case 0:
+		flags &= ~CBREAK;
+		flags |= defflags;
+		tc = &deftc;
+		break;
+
+	case 1:
+		flags |= CBREAK;
+		flags &= ~defflags;
+		tc = &notc;
+		break;
+
+	default:
+		return;
 	}
-	if (f == 1) {
-		stbuf.sg_flags |= CBREAK;
-		stbuf.sg_flags &= ~(ECHO|CRMOD);
-		ioctl(0, TIOCSETC, (char *)&notchars);
-		ioctl(0, TIOCSLTC, (char *)&noltchars);
-		stbuf.sg_kill = -1;
-		stbuf.sg_erase = -1;
-	}
-	if (f == 2) {
-		stbuf.sg_flags &= ~CBREAK;
-		stbuf.sg_flags &= ~(ECHO|CRMOD);
-		ioctl(0, TIOCSETC, (char *)&deftchars);
-		ioctl(0, TIOCSLTC, (char *)&defltchars);
-		stbuf.sg_kill = -1;
-		stbuf.sg_erase = -1;
-	}
-	ioctl(0, TIOCSETN, (char *)&stbuf);
+	ioctl(0, TIOCSET, (char *)&flags);
+	ioctl(0, TIOCCSET, (char *)tc);
 }
 
 /*VARARGS*/
