@@ -118,12 +118,14 @@ if_attach(ifp)
 		}
 		ifnet_addrs = q;
 	}
+#if defined(INET) && NETHER > 0
 	/* XXX -- Temporary fix before changing 10 ethernet drivers */
 	if (ifp->if_output == ether_output) {
 		ifp->if_type = IFT_ETHER;
 		ifp->if_addrlen = 6;
 		ifp->if_hdrlen = 14;
 	}
+#endif
 	/*
 	 * create a Link Level name for this device
 	 */
