@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)makefile	3.4 (Berkeley) %G%
+#	@(#)makefile	3.5 (Berkeley) %G%
 #
 
 # Makefile for tn3270 and friends...
@@ -120,7 +120,7 @@ LIBTERM		= -ltermlib
 #PC_LIBTERM	=
 
 # The source files...
-ALLH =
+ALLH =	telnet.ext
 
 MSMAIN = ascii/mset.c
 
@@ -162,8 +162,8 @@ FRC:
 	for i in ${SUBDIR}; \
 		do (cd $$i; make ${MFLAGS} "CFLAGS=${CFLAGS}"); done
 
-tn3270$X:	telnet/telnet ${SUBLIB} api/apilib.a
-	${CC} ${CFLAGS} -o tn3270 telnet/telnet \
+tn3270$X:	telnet/telprog.o ${SUBLIB} api/apilib.a
+	${CC} ${CFLAGS} -o tn3270 telnet/telprog.o \
 		$L ${SUBLIB} api/apilib.a $(LIBCURSES) $(LIBTERM)
 
 #PC_tn3270$X:
