@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)fort.c	4.4 (Berkeley) %G%";
+static char *sccsid ="@(#)fort.c	4.5 (Berkeley) %G%";
 #endif lint
 
 # define FORT
@@ -76,9 +76,9 @@ lcread( cp, n ) char *cp; {
 # ifndef NOLCCOPY
 lccopy( n ) register n; {
 	register i;
-	static char fbuf[128];
+	static char fbuf[BUFSIZ];
 	if( n > 0 ){
-		if( n > 32 ) cerror( "lccopy asked to copy too much" );
+		if( n > BUFSIZ/4 ) cerror( "lccopy asked to copy too much" );
 		if( fread( fbuf, 4, n, lrd ) != n ) cerror( "intermediate file read error" );
 		for( i=4*n; fbuf[i-1] == '\0' && i>0; --i ) { /* VOID */ }
 		if( i ) {
