@@ -1,4 +1,4 @@
-/*	param.h	1.5	87/01/16	*/
+/*	param.h	1.6	87/01/16	*/
 
 /*
  * Machine dependent constants for TAHOE.
@@ -27,16 +27,21 @@ u_short	ntohs(), htons();
 u_long	ntohl(), htonl();
 #endif
 
-#define	NBPG	1024		/* bytes/page */
-#define	PGOFSET	(NBPG-1)	/* byte offset into page */
-#define	PGSHIFT	10		/* LOG2(NBPG) */
+#define	NBPG		1024		/* bytes/page */
+#define	PGOFSET		(NBPG-1)	/* byte offset into page */
+#define	PGSHIFT		10		/* LOG2(NBPG) */
+#define	NPTEPG		(NBPG/(sizeof (struct pte)))
+
+#define	DEV_BSIZE	1024
+#define	DEV_BSHIFT	10		/* log2(DEV_BSIZE) */
+#define BLKDEV_IOSIZE	1024		/* NBPG for physical controllers */
 
 #define	CLSIZE		1
 #define	CLSIZELOG2	0
 
-#define	SSIZE	2			/* initial stack size/NBPG */
-#define	SINCR	2			/* increment of stack/NBPG */
-#define	UPAGES	6			/* pages of u-area (2 stack pages) */
+#define	SSIZE		2		/* initial stack size/NBPG */
+#define	SINCR		2		/* increment of stack/NBPG */
+#define	UPAGES		6		/* pages of u-area (2 stack pages) */
 
 #define	MAXCKEY	255		/* maximal allowed code key */
 #define	MAXDKEY	255		/* maximal allowed data key */
@@ -60,6 +65,19 @@ u_long	ntohl(), htonl();
 
 /* bytes to clicks */
 #define	btoc(x)	((((unsigned)(x)+NBPG-1) >> PGSHIFT))
+
+#define	btodb(bytes)	 		/* calculates (bytes / DEV_BSIZE) */ \
+	((unsigned)(bytes) >> DEV_BSHIFT)
+#define	dbtob(db)			/* calculates (db * DEV_BSIZE) */ \
+	((unsigned)(db) << DEV_BSHIFT)
+
+/*
+ * Map a ``block device block'' to a file system block.
+ * This should be device dependent, and will be if we
+ * add an entry to cdevsw/bdevsw for that purpose.
+ * For now though just use DEV_BSIZE.
+ */
+#define	bdbtofsb(bn)	((bn) / (BLKDEV_IOSIZE/DEV_BSIZE))
 
 /*
  * Macros to decode processor status word.

@@ -3,22 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.2 (Berkeley) %G%
+ *	@(#)param.h	7.3 (Berkeley) %G%
  */
 
 #define	BSD	43		/* 4.3 * 10, as cpp doesn't do floats */
 #define BSD4_3	1
-
-/*
- * Machine type dependent parameters.
- */
-#ifdef KERNEL
-#include "../machine/machparam.h"
-#else
-#include <machine/machparam.h>
-#endif
-
-#define	NPTEPG		(NBPG/(sizeof (struct pte)))
 
 /*
  * Machine-independent constants
@@ -31,6 +20,7 @@
 #define	CANBSIZ	256		/* max size of typewriter line */
 #define	NCARGS	20480		/* # characters in exec arglist */
 #define	NGROUPS	16		/* max number groups */
+#define MAXHOSTNAMELEN	64	/* maximum hostname size */
 
 #define	NOGROUP	65535		/* marker for empty group set member */
 
@@ -50,6 +40,14 @@
 
 #define	NZERO	0
 
+#ifndef KERNEL
+#include	<sys/types.h>
+#else
+#ifndef LOCORE
+#include	"types.h"
+#endif
+#endif
+
 /*
  * Signals
  */
@@ -63,6 +61,15 @@
 	((p)->p_sig && ((p)->p_flag&STRC || \
 	 ((p)->p_sig &~ ((p)->p_sigignore | (p)->p_sigmask))) && issig())
 
+/*
+ * Machine type dependent parameters.
+ */
+#ifdef KERNEL
+#include "../machine/machparam.h"
+#else
+#include <machine/machparam.h>
+#endif
+
 #define	NBPW	sizeof(int)	/* number of bytes in an integer */
 
 #define	NULL	0
@@ -72,7 +79,7 @@
 /*
  * Clustering of hardware pages on machines with ridiculously small
  * page sizes is done here.  The paging subsystem deals with units of
- * CLSIZE pte's describing NBPG (from vm.h) pages each.
+ * CLSIZE pte's describing NBPG (from machine/machparam.h) pages each.
  *
  * NOTE: SSIZE, SINCR and UPAGES must be multiples of CLSIZE
  */
@@ -97,14 +104,6 @@
 #define	CBSIZE	(CBLOCK - sizeof(struct cblock *))	/* data chars/clist */
 #define	CROUND	(CBLOCK - 1)				/* clist rounding */
 
-#ifndef KERNEL
-#include	<sys/types.h>
-#else
-#ifndef LOCORE
-#include	"types.h"
-#endif
-#endif
-
 /*
  * File system parameters and macros.
  *
@@ -125,30 +124,7 @@
  * speed of ``fsck''.
  */
 #define	MAXBSIZE	8192
-#if defined(vax) || defined(sun)
-#define	DEV_BSIZE	512
-#define	DEV_BSHIFT	9		/* log2(DEV_BSIZE) */
-#define BLKDEV_IOSIZE	2048
-#endif
-#if defined(tahoe)
-#define	DEV_BSIZE	1024
-#define	DEV_BSHIFT	10		/* log2(DEV_BSIZE) */
-#define BLKDEV_IOSIZE	1024		/* NBPG for physical controllers */
-#endif
 #define MAXFRAG 	8
-
-#define	btodb(bytes)	 		/* calculates (bytes / DEV_BSIZE) */ \
-	((unsigned)(bytes) >> DEV_BSHIFT)
-#define	dbtob(db)			/* calculates (db * DEV_BSIZE) */ \
-	((unsigned)(db) << DEV_BSHIFT)
-
-/*
- * Map a ``block device block'' to a file system block.
- * This should be device dependent, and will be after we
- * add an entry to cdevsw for that purpose.  For now though
- * just use DEV_BSIZE.
- */
-#define	bdbtofsb(bn)	((bn) / (BLKDEV_IOSIZE/DEV_BSIZE))
 
 /*
  * MAXPATHLEN defines the longest permissable path length
@@ -185,8 +161,3 @@
 #define	howmany(x, y)	(((x)+((y)-1))/(y))
 #endif
 #define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))
-
-/*
- * Maximum size of hostname recognized and stored in the kernel.
- */
-#define MAXHOSTNAMELEN	64

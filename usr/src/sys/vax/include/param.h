@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.3 (Berkeley) %G%
+ *	@(#)param.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -33,17 +33,22 @@ u_short	ntohs(), htons();
 u_long	ntohl(), htonl();
 #endif
 
-#define	NBPG	512		/* bytes/page */
-#define	PGOFSET	(NBPG-1)	/* byte offset into page */
-#define	PGSHIFT	9		/* LOG2(NBPG) */
+#define	NBPG		512		/* bytes/page */
+#define	PGOFSET		(NBPG-1)	/* byte offset into page */
+#define	PGSHIFT		9		/* LOG2(NBPG) */
+#define	NPTEPG		(NBPG/(sizeof (struct pte)))
+
+#define	DEV_BSIZE	512
+#define	DEV_BSHIFT	9		/* log2(DEV_BSIZE) */
+#define BLKDEV_IOSIZE	2048
 
 #define	CLSIZE		2
 #define	CLSIZELOG2	1
 
-#define	SSIZE	4		/* initial stack size/NBPG */
-#define	SINCR	4		/* increment of stack/NBPG */
+#define	SSIZE		4		/* initial stack size/NBPG */
+#define	SINCR		4		/* increment of stack/NBPG */
 
-#define	UPAGES	10		/* pages of u-area */
+#define	UPAGES		10		/* pages of u-area */
 
 /*
  * Some macros for units conversion
@@ -62,6 +67,19 @@ u_long	ntohl(), htonl();
 
 /* bytes to clicks */
 #define	btoc(x)	((((unsigned)(x)+511)>>9))
+
+#define	btodb(bytes)	 		/* calculates (bytes / DEV_BSIZE) */ \
+	((unsigned)(bytes) >> DEV_BSHIFT)
+#define	dbtob(db)			/* calculates (db * DEV_BSIZE) */ \
+	((unsigned)(db) << DEV_BSHIFT)
+
+/*
+ * Map a ``block device block'' to a file system block.
+ * This should be device dependent, and will be if we
+ * add an entry to cdevsw/bdevsw for that purpose.
+ * For now though just use DEV_BSIZE.
+ */
+#define	bdbtofsb(bn)	((bn) / (BLKDEV_IOSIZE/DEV_BSIZE))
 
 /*
  * Macros to decode processor status word.
