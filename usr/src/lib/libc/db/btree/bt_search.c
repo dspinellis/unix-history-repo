@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_search.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_search.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -47,6 +47,7 @@ __bt_search(t, key, exactp)
 	pgno_t pg;
 	static EPG e;
 
+	BT_CLR(t);
 	for (pg = P_ROOT;;) {
 		if ((h = mpool_get(t->bt_mp, pg, 0)) == NULL)
 			return (NULL);
