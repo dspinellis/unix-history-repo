@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)m2	8.1 (Berkeley) %G%
+.\"	@(#)m2	8.2 (Berkeley) %G%
 .\"
 .tr |
 .rm mx
@@ -198,6 +198,7 @@ provided there is a next page.
 The distance to the next trap position is available in the \fB.t\fR register;
 if there are no traps between the current position and the bottom of the page,
 the distance returned is the distance to the page bottom.
+.sp
 .pg
 A macro-invocation trap effective in the current diversion may be planted using \fBdt\fR.
 The \fB.t\fR register works in a diversion; if there is no subsequent trap a \fIlarge\fR

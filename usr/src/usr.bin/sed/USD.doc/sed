@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)sed	8.1 (Berkeley) %G%
+.\"	@(#)sed	8.2 (Berkeley) %G%
 .\"
 .EH 'USD:15-%''SED \(em A Non-interactive Text Editor'
 .OH 'SED \(em A Non-interactive Text Editor''USD:15-%'
@@ -524,6 +524,7 @@ deleted entirely; <text> will still be written to the output.
 The <text> is not scanned for address matches, and no editing
 commands are attempted on it.
 It does not cause any change in the line-number counter.
+.ne 1i
 .if t .sp .5
 .nf
 .in -.5i
