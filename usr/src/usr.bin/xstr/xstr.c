@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)xstr.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)xstr.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -98,15 +98,17 @@ main(argc, argv)
 	exit(0);
 }
 
+char linebuf[BUFSIZ];
+
 process(name)
 	char *name;
 {
 	char *cp;
-	char linebuf[BUFSIZ];
 	register int c;
 	register int incomm = 0;
+	int ret;
 
-	printf("char\txstr[];\n");
+	printf("extern char\txstr[];\n");
 	for (;;) {
 		if (fgets(linebuf, sizeof linebuf, stdin) == NULL) {
 			if (ferror(stdin)) {
@@ -127,7 +129,9 @@ process(name)
 		case '"':
 			if (incomm)
 				goto def;
-			printf("(&xstr[%d])", (int) yankstr(&cp));
+			if ((ret = (int) yankstr(&cp)) == -1)
+				goto out;
+			printf("(&xstr[%d])", ret);
 			break;
 
 		case '\'':
@@ -161,6 +165,7 @@ def:
 			break;
 		}
 	}
+out:
 	if (ferror(stdout))
 		perror("x.c"), onintr();
 }
@@ -186,8 +191,18 @@ yankstr(cpp)
 			c = *cp++;
 			if (c == 0)
 				break;
-			if (c == '\n')
+			if (c == '\n') {
+				if (fgets(linebuf, sizeof linebuf, stdin) 
+				    == NULL) {
+					if (ferror(stdin)) {
+						perror("x.c");
+						exit(3);
+					}
+					return(-1);
+				}
+				cp = linebuf;
 				continue;
+			}
 			for (tp = "b\bt\tr\rn\nf\f\\\\\"\""; ch = *tp++; tp++)
 				if (c == ch) {
 					c = *tp;
@@ -330,8 +345,6 @@ found(new, off, str)
 	off_t off;
 	char *str;
 {
-	register char *cp;
-
 	if (vflg == 0)
 		return;
 	if (!new)
