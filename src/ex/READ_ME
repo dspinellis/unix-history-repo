@@ -1,0 +1,23 @@
+Sun Apr  8 16:32:57 PST 1979
+
+There are 2 skeletal makefiles: makefile.v6 which I made from
+the local makefile.CORY, and makefile.v7 which I made from makefile.VAX.
+
+If you wish to change pathnames or some such, then look at ex_tune.h.
+Conditional compilation flags:
+	-DTRACE		for debugging (wont then fit on an 11)
+	-DV6		for version 6, using raw (v7 uses cbreak)
+	-DCHDIR		compile in undocumented old chdir (cd) command
+	-DLISP		compile in lisp hacks
+	-DUCVISUAL	compile in code to handle \ escapes for visual on
+			upper case only terminals.  gross.
+
+Ex means to avoid stdio like the plague, only needing a printf which
+prints through putchar and thus needs doprnt.s from the library.
+SOMEONE AT SOME POINT REVERSED THE ORDER OF THE ARGS TO STROUT SO BE
+SURE THAT THE 11PRINTF.C ORDER IS CORRECT.  IF NOT USE PRINTF.C.
+
+Ex is very large, but should fit (barely) on an 11/70.  If there isn't at
+least 1K bytes of text space left you have dragged in something which isnt
+necessary.  You should not be dragging in stdio.  Look at the tail of
+a "nm -ng" to see what is going on if this happens.
