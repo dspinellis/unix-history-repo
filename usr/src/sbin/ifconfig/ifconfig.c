@@ -1,6 +1,19 @@
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	4.10 (Berkeley) %G%";
-#endif
+char copyright[] =
+"@(#) Copyright (c) 1983 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif not lint
+
+#ifndef lint
+static char sccsid[] = "@(#)ifconfig.c	4.11 (Berkeley) %G%";
+#endif not lint
+
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -16,15 +29,24 @@ static char sccsid[] = "@(#)ifconfig.c	4.10 (Berkeley) %G%";
 
 struct	ifreq ifr;
 struct	sockaddr_in sin = { AF_INET };
+struct	sockaddr_in broadaddr;
+struct	sockaddr_in netmask = { AF_INET };
 char	name[30];
+int	flags;
 int	setaddr;
+int	setmask;
+int	setbroadaddr;
 int	s;
+extern	int errno;
 
-int	setifflags(), setifaddr(), setifdstaddr();
+int	setifflags(), setifaddr(), setifdstaddr(), setifnetmask();
+int	setifbroadaddr();
+
+#define	NEXTARG		0xffffff
 
 struct	cmd {
 	char	*c_name;
-	int	c_parameter;
+	int	c_parameter;		/* NEXTARG means next argv */
 	int	(*c_func)();
 } cmds[] = {
 	{ "up",		IFF_UP,		setifflags } ,
@@ -33,15 +55,19 @@ struct	cmd {
 	{ "-trailers",	IFF_NOTRAILERS,	setifflags },
 	{ "arp",	-IFF_NOARP,	setifflags },
 	{ "-arp",	IFF_NOARP,	setifflags },
+#ifdef IFF_LOCAL
 	{ "local",	IFF_LOCAL,	setifflags },
 	{ "-local",	-IFF_LOCAL,	setifflags },
+#endif
 	{ "debug",	IFF_DEBUG,	setifflags },
 	{ "-debug",	-IFF_DEBUG,	setifflags },
 #ifdef notdef
-#define	EN_SWABIPS	0x100
+#define	EN_SWABIPS	0x1000
 	{ "swabips",	EN_SWABIPS,	setifflags },
 	{ "-swabips",	-EN_SWABIPS,	setifflags },
 #endif
+	{ "netmask",	NEXTARG,	setifnetmask },
+	{ "broadcast",	NEXTARG,	setifbroadaddr },
 	{ 0,		0,		setifaddr },
 	{ 0,		0,		setifdstaddr },
 };
@@ -54,6 +80,7 @@ main(argc, argv)
 	if (argc < 2) {
 		fprintf(stderr, "usage: ifconfig interface %s %s %s\n",
 		    "[ address [ dest_addr ] ] [ up ] [ down ]",
+		    "[ netmask mask ]",
 		    "[ trailers | -trailers ]",
 		    "[ arp | -arp ]");
 		exit(1);
@@ -70,6 +97,13 @@ main(argc, argv)
 		Perror("ioctl (SIOCGIFFLAGS)");
 		exit(1);
 	}
+	flags = ifr.ifr_flags;
+	strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
+	if (ioctl(s, SIOCGIFNETMASK, (caddr_t)&ifr) < 0) {
+		if (errno != EADDRNOTAVAIL)
+			Perror("ioctl (SIOCGIFNETMASK)");
+	} else
+		netmask.sin_addr = ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr;
 	argc--, argv++;
 	if (argc == 0) {
 		status();
@@ -83,15 +117,39 @@ main(argc, argv)
 				break;
 		if (p->c_name == 0 && setaddr)
 			p++;	/* got src, do dst */
-		if (p->c_func)
-			(*p->c_func)(*argv, p->c_parameter);
+		if (p->c_func) {
+			if (p->c_parameter == NEXTARG) {
+				(*p->c_func)(argv[1]);
+				argc--, argv++;
+			} else
+				(*p->c_func)(*argv, p->c_parameter);
+		}
 		argc--, argv++;
+	}
+	if (setmask || setaddr) {
+		/*
+		 * If setting the address and not the mask,
+		 * clear any existing mask and the kernel will then
+		 * assign the default.  If setting both,
+		 * set the mask first, so the address will be
+		 * interpreted correctly.
+		 */
+		strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
+		ifr.ifr_addr = *(struct sockaddr *)&netmask;
+		if (ioctl(s, SIOCSIFNETMASK, (caddr_t)&ifr) < 0)
+			Perror("ioctl (SIOCSIFNETMASK)");
 	}
 	if (setaddr) {
 		strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
 		ifr.ifr_addr = *(struct sockaddr *) &sin;
 		if (ioctl(s, SIOCSIFADDR, (caddr_t)&ifr) < 0)
 			Perror("ioctl (SIOCSIFADDR)");
+	}
+	if (setbroadaddr) {
+		strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
+		ifr.ifr_addr = *(struct sockaddr *)&broadaddr;
+		if (ioctl(s, SIOCSIFBRDADDR, (caddr_t)&ifr) < 0)
+			Perror("ioctl (SIOCSIFBRDADDR)");
 	}
 	exit(0);
 }
@@ -111,18 +169,31 @@ setifaddr(addr, param)
 	setaddr++;
 }
 
+setifnetmask(addr)
+	char *addr;
+{
+
+	getaddr(addr, &netmask);
+	setmask++;
+}
+
+setifbroadaddr(addr)
+	char *addr;
+{
+	getaddr(addr, &broadaddr);
+	setbroadaddr++;
+}
+
 /*ARGSUSED*/
 setifdstaddr(addr, param)
 	char *addr;
 	int param;
 {
-	int flags = ifr.ifr_flags;
 
 	getaddr(addr, (struct sockaddr_in *)&ifr.ifr_dstaddr);
 	strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
 	if (ioctl(s, SIOCSIFDSTADDR, (caddr_t)&ifr) < 0)
 		Perror("ioctl (SIOCSIFDSTADDR)");
-	ifr.ifr_flags = flags;
 }
 
 setifflags(vname, value)
@@ -132,10 +203,11 @@ setifflags(vname, value)
 
 	if (value < 0) {
 		value = -value;
-		ifr.ifr_flags &= ~value;
+		flags &= ~value;
 	} else
-		ifr.ifr_flags |= value;
+		flags |= value;
 	strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
+	ifr.ifr_flags = flags;
 	if (ioctl(s, SIOCSIFFLAGS, (caddr_t)&ifr) < 0)
 		Perror(vname);
 }
@@ -143,24 +215,42 @@ setifflags(vname, value)
 status()
 {
 	struct sockaddr_in *sin;
-	int flags = ifr.ifr_flags;
 
 	strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
-	if (ioctl(s, SIOCGIFADDR, (caddr_t)&ifr) < 0)
-		Perror("ioctl (SIOCGIFADDR)");
+	if (ioctl(s, SIOCGIFADDR, (caddr_t)&ifr) < 0) {
+		if (errno == EADDRNOTAVAIL)
+			bzero((char *)&ifr.ifr_addr, sizeof(ifr.ifr_addr));
+		else
+			Perror("ioctl (SIOCGIFADDR)");
+	}
 	sin = (struct sockaddr_in *)&ifr.ifr_addr;
 	printf("%s: %s ", name, inet_ntoa(sin->sin_addr));
 	if (flags & IFF_POINTOPOINT) {
 		strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
-		if (ioctl(s, SIOCGIFDSTADDR, (caddr_t)&ifr) < 0)
-			Perror("ioctl (SIOCGIFDSTADDR)");
+		if (ioctl(s, SIOCGIFDSTADDR, (caddr_t)&ifr) < 0) {
+			if (errno == EADDRNOTAVAIL)
+			    bzero((char *)&ifr.ifr_addr, sizeof(ifr.ifr_addr));
+			else
+			    Perror("ioctl (SIOCGIFDSTADDR)");
+		}
 		sin = (struct sockaddr_in *)&ifr.ifr_dstaddr;
 		printf("--> %s ", inet_ntoa(sin->sin_addr));
 	}
+	printf("netmask %x ", ntohl(netmask.sin_addr.s_addr));
 #define	IFFBITS \
 "\020\1UP\2BROADCAST\3DEBUG\4ROUTE\5POINTOPOINT\6NOTRAILERS\7RUNNING\10NOARP\
 \11LOCAL"
 	printb("flags", flags, IFFBITS); putchar('\n');
+	if (flags & IFF_BROADCAST) {
+		strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
+		if (ioctl(s, SIOCGIFBRDADDR, (caddr_t)&ifr) < 0) {
+			if (errno == EADDRNOTAVAIL)
+				return;
+			Perror("ioctl (SIOCGIFADDR)");
+		}
+		sin = (struct sockaddr_in *)&ifr.ifr_addr;
+		printf("broadcast: %s\n", inet_ntoa(sin->sin_addr));
+	}
 }
 
 Perror(cmd)
@@ -196,6 +286,12 @@ getaddr(s, sin)
 	struct netent *np;
 	int val;
 
+	sin->sin_family = AF_INET;
+	val = inet_addr(s);
+	if (val != -1) {
+		sin->sin_addr.s_addr = val;
+		return;
+	}
 	hp = gethostbyname(s);
 	if (hp) {
 		sin->sin_family = hp->h_addrtype;
@@ -206,17 +302,6 @@ getaddr(s, sin)
 	if (np) {
 		sin->sin_family = np->n_addrtype;
 		sin->sin_addr = inet_makeaddr(np->n_net, INADDR_ANY);
-		return;
-	}
-	sin->sin_family = AF_INET;
-	val = inet_addr(s);
-	if (val != -1) {
-		sin->sin_addr.s_addr = val;
-		return;
-	}
-	val = inet_network(s);
-	if (val != -1) {
-		sin->sin_addr = inet_makeaddr(val, INADDR_ANY);
 		return;
 	}
 	fprintf(stderr, "%s: bad value\n", s);
