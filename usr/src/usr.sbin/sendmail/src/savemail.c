@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.37		%G%);
+SCCSID(@(#)savemail.c	3.38		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -33,6 +33,11 @@ savemail()
 	extern char *ttypath();
 	static int exclusive;
 	typedef int (*fnptr)();
+
+# ifdef DEBUG
+	if (Debug)
+		printf("\nsavemail: exclusive %d\n", exclusive);
+# endif DEBUG
 
 	if (exclusive++ || CurEnv->e_class <= PRI_JUNK)
 		return;
@@ -128,6 +133,9 @@ savemail()
 	**	should save the message in dead.letter so that the
 	**	poor person doesn't have to type it over again --
 	**	and we all know what poor typists programmers are.
+	**	However, if we are running a "smart" protocol, we don't
+	**	bother to return the message, since the other end is
+	**	expected to handle that.
 	*/
 
 	if (ArpaMode)
@@ -145,8 +153,6 @@ savemail()
 		syserr("Can't return mail to %s", CurEnv->e_from.q_paddr);
 # ifdef DEBUG
 		p = "/usr/tmp";
-# else
-		p = NULL;
 # endif
 	}
 	if (p != NULL && TempFile != NULL)
