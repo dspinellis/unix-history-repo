@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -1486,8 +1486,8 @@ globulize(cpp)
 		*cpp = *globbed++;
 		/* don't waste too much memory */
 		if (*globbed) {
-			blkfree(globbed);
-			free((char *)globbed);
+			blkfree(*globbed);
+			free((char *)*globbed);
 		}
 	}
 	return (1);
