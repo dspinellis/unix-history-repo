@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_loop.c	7.20 (Berkeley) %G%
+ *	@(#)if_loop.c	7.21 (Berkeley) %G%
  */
 
 /*
@@ -51,10 +51,16 @@
 struct	ifnet loif;
 int	looutput(), loioctl();
 
-loattach()
+/* ARGSUSED */
+void
+loopattach(n)
+	int n;
 {
 	register struct ifnet *ifp = &loif;
 
+#ifdef lint
+	n = n;			/* Highlander: there can only be one... */
+#endif
 	ifp->if_name = "lo";
 	ifp->if_mtu = LOMTU;
 	ifp->if_flags = IFF_LOOPBACK | IFF_MULTICAST;
