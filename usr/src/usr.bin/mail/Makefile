@@ -1,7 +1,7 @@
 #
 # Unix version 7.
 #
-# Sccs Id = "@(#)Makefile	2.7 %G%";
+# Sccs Id = "@(#)Makefile	2.8 %G%";
 #
 
 CFLAGS=-O -DVMUNIX -DV7
@@ -17,10 +17,11 @@ LIBES=-ljobs
 ED=-ed
 AS=-as
 RM=-rm
-OBJS=aux.o cmd1.o cmd2.o cmd3.o cmdtab.o collect.o config.o edit.o fio.o \
+OBJS=version.o aux.o cmd1.o cmd2.o cmd3.o cmdtab.o collect.o \
+	config.o edit.o fio.o \
 	getname.o head.o v7.local.o lock.o lex.o list.o main.o \
 	names.o optim.o popen.o quit.o send.o strings.o temp.o tty.o \
-	vars.o version.o errlst.o str.o
+	vars.o errlst.o str.o
 
 SRCS=aux.c cmd1.c cmd2.c cmd3.c cmdtab.c collect.c config.c edit.c fio.c \
 	getname.c head.c v7.local.c lock.c lex.c list.c main.c \
@@ -53,6 +54,9 @@ install:
 	install -s Mail ${DESTDIR}/usr/ucb
 	cp Mail.help* ${DESTDIR}/usr/lib
 	cd ${DESTDIR}/usr/ucb; rm -f mail; ln Mail mail
+
+version.o:	version.c
+	$(CC) -c -R version.c
 
 $S:
 	sccs get $@;
