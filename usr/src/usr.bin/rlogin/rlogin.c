@@ -11,13 +11,14 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
  * rlogin - remote login
  */
 #include <sys/types.h>
+#include <sys/errno.h>
 #include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
@@ -29,6 +30,7 @@ static char sccsid[] = "@(#)rlogin.c	5.7 (Berkeley) %G%";
 #include <errno.h>
 #include <pwd.h>
 #include <signal.h>
+#include <setjmp.h>
 #include <netdb.h>
 
 # ifndef TIOCPKT_WINDOW
@@ -180,12 +182,15 @@ doit(oldmask)
 	child = fork();
 	if (child == -1) {
 		perror("rlogin: fork");
-		done();
+		done(1);
 	}
 	if (child == 0) {
 		mode(1);
 		sigsetmask(oldmask);
-		reader();
+		if (reader() == 0) {
+			prf("Connection closed.");
+			exit(0);
+		}
 		sleep(1);
 		prf("\007Connection closed.");
 		exit(3);
@@ -195,16 +200,17 @@ doit(oldmask)
 	signal(SIGCHLD, catchild);
 	writer();
 	prf("Closed connection.");
-	done();
+	done(0);
 }
 
-done()
+done(status)
+	int status;
 {
 
 	mode(0);
 	if (child > 0 && kill(child, SIGKILL) >= 0)
 		wait((int *)0);
-	exit(0);
+	exit(status);
 }
 
 /*
@@ -234,7 +240,7 @@ again:
 	 * if the child (reader) dies, just quit
 	 */
 	if (pid < 0 || pid == child && !WIFSTOPPED(status))
-		done();
+		done(status.w_termsig | status.w_retcode);
 	goto again;
 }
 
@@ -293,6 +299,7 @@ writer()
 			break;
 		}
 		bol = c == defkill || c == deftc.t_eofc ||
+		    c == deftc.t_intrc || c == defltc.t_suspc ||
 		    c == '\r' || c == '\n';
 	}
 }
@@ -359,37 +366,57 @@ sendwindow()
 	(void) write(rem, obuf, sizeof(obuf));
 }
 
+/*
+ * reader: read from remote: line -> 1
+ */
+#define	READING	1
+#define	WRITING	2
+
+char	rcvbuf[8 * 1024];
+int	rcvcnt;
+int	rcvstate;
+jmp_buf	rcvtop;
+
 oob()
 {
-	int out = 1+1, atmark;
+	int out = FWRITE, atmark, n;
+	int rcvd = 0;
 	char waste[BUFSIZ], mark;
 	struct sgttyb sb;
-	static int didnotify = 0;
 
-	ioctl(1, TIOCFLUSH, (char *)&out);
-	for (;;) {
-		int rv;
-		if (ioctl(rem, SIOCATMARK, &atmark) < 0) {
-			perror("ioctl");
-			break;
-		}
-		if (atmark)
-			break;
-		rv = read(rem, waste, sizeof (waste));
-		if (rv <= 0)
-			break;
+	while (recv(rem, &mark, 1, MSG_OOB) < 0)
+		switch (errno) {
+		
+		case EWOULDBLOCK:
+			/*
+			 * Urgent data not here yet.
+			 * It may not be possible to send it yet
+			 * if we are blocked for output
+			 * and our input buffer is full.
+			 */
+			if (rcvcnt < sizeof(rcvbuf)) {
+				n = read(rem, rcvbuf + rcvcnt,
+					sizeof(rcvbuf) - rcvcnt);
+				if (n <= 0)
+					return;
+				rcvd += n;
+			} else {
+				n = read(rem, waste, sizeof(waste));
+				if (n <= 0)
+					return;
+			}
+			continue;
+				
+		default:
+			return;
 	}
-	recv(rem, &mark, 1, MSG_OOB);
-	if (didnotify == 0 && (mark & TIOCPKT_WINDOW)) {
+	if (mark & TIOCPKT_WINDOW) {
 		/*
 		 * Let server know about window size changes
 		 */
 		kill(getppid(), SIGURG);
-		didnotify = 1;
 	}
-	if (eight)
-		return;
-	if (mark & TIOCPKT_NOSTOP) {
+	if (!eight && (mark & TIOCPKT_NOSTOP)) {
 		ioctl(0, TIOCGETP, (char *)&sb);
 		sb.sg_flags &= ~CBREAK;
 		sb.sg_flags |= RAW;
@@ -398,7 +425,7 @@ oob()
 		notc.t_startc = -1;
 		ioctl(0, TIOCSETC, (char *)&notc);
 	}
-	if (mark & TIOCPKT_DOSTOP) {
+	if (!eight && (mark & TIOCPKT_DOSTOP)) {
 		ioctl(0, TIOCGETP, (char *)&sb);
 		sb.sg_flags &= ~RAW;
 		sb.sg_flags |= CBREAK;
@@ -407,6 +434,36 @@ oob()
 		notc.t_startc = deftc.t_startc;
 		ioctl(0, TIOCSETC, (char *)&notc);
 	}
+	if (mark & TIOCPKT_FLUSHWRITE) {
+		ioctl(1, TIOCFLUSH, (char *)&out);
+		for (;;) {
+			if (ioctl(rem, SIOCATMARK, &atmark) < 0) {
+				perror("ioctl");
+				break;
+			}
+			if (atmark)
+				break;
+			n = read(rem, waste, sizeof (waste));
+			if (n <= 0)
+				break;
+		}
+		/*
+		 * Don't want any pending data to be output,
+		 * so clear the recv buffer.
+		 * If we were hanging on a write when interrupted,
+		 * don't want it to restart.  If we were reading,
+		 * restart anyway.
+		 */
+		rcvcnt = 0;
+		longjmp(rcvtop, 1);
+	}
+	/*
+	 * If we filled the receive buffer while a read was pending,
+	 * longjmp to the top to restart appropriately.  Don't abort
+	 * a pending write, however, or we won't know how much was written.
+	 */
+	if (rcvd && rcvstate == READING)
+		longjmp(rcvtop, 1);
 }
 
 /*
@@ -414,22 +471,35 @@ oob()
  */
 reader()
 {
-	char rb[BUFSIZ];
-	register int cnt;
+	int pid = getpid();
+	int n, remaining;
+	char *bufp = rcvbuf;
 
 	signal(SIGTTOU, SIG_IGN);
-	{ int pid = getpid();
-	  fcntl(rem, F_SETOWN, pid); }
+	fcntl(rem, F_SETOWN, pid);
+	(void) setjmp(rcvtop);
 	for (;;) {
-		cnt = read(rem, rb, sizeof (rb));
-		if (cnt == 0)
-			break;
-		if (cnt < 0) {
+		while ((remaining = rcvcnt - (bufp - rcvbuf)) > 0) {
+			rcvstate = WRITING;
+			n = write(1, bufp, remaining);
+			if (n < 0) {
+				if (errno != EINTR)
+					return;
+				continue;
+			}
+			bufp += n;
+		}
+		bufp = rcvbuf;
+		rcvcnt = 0;
+		rcvstate = READING;
+		rcvcnt = read(rem, rcvbuf, sizeof (rcvbuf));
+		if (rcvcnt == 0)
+			return (0);
+		if (rcvcnt < 0) {
 			if (errno == EINTR)
 				continue;
-			break;
+			return (-1);
 		}
-		write(1, rb, cnt);
 	}
 }
 
@@ -488,5 +558,5 @@ lostpeer()
 {
 	signal(SIGPIPE, SIG_IGN);
 	prf("\007Connection closed.");
-	done();
+	done(1);
 }
