@@ -1,12 +1,11 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.18 %G%";
+static char sccsid[] = "@(#)interp.c 1.19 %G%";
 
 #include <math.h>
 #include "whoami.h"
 #include "objfmt.h"
 #include "vars.h"
-#include "panics.h"
 #include "h02opcs.h"
 #include "machdep.h"
 #include "libpc.h"
@@ -312,7 +311,7 @@ interpreter(base)
 			continue;
 		case O_LINO:
 			if (_dp->stp->tos != pushsp((long)(0)))
-				panic(PSTKNEMP);
+				ERROR("Panic: stack not empty between statements\n");
 			_lino = *pc.cp++;	/* set line number */
 			if (_lino == 0)
 				_lino = *pc.sp++;
@@ -355,8 +354,7 @@ interpreter(base)
 			tl = pop4();
 			tl1 = pop4();
 		cmplong:
-			tl2 = *pc.cp++;
-			switch (tl2) {
+			switch (*pc.cp++) {
 			case releq:
 				push2(tl1 == tl);
 				continue;
@@ -376,7 +374,8 @@ interpreter(base)
 				push2(tl1 >= tl);
 				continue;
 			default:
-				panic(PSYSTEM);
+				ERROR("Panic: bad relation %d to REL4*\n",
+				    *(pc.cp - 1));
 				continue;
 			}
 		case O_RELG:
@@ -404,7 +403,7 @@ interpreter(base)
 				tb = RELSGE(tl, tcp + tl1, tcp);
 				break;
 			default:
-				panic(PSYSTEM);
+				ERROR("Panic: bad relation %d to RELG*\n", tl2);
 				break;
 			}
 			popsp(tl1 << 1);
@@ -434,7 +433,7 @@ interpreter(base)
 				tb = RELTGE(tl1, tcp + tl1, tcp);
 				break;
 			default:
-				panic(PSYSTEM);
+				ERROR("Panic: bad relation %d to RELT*\n", tl2);
 				break;
 			}
 			popsp(tl1 << 1);
@@ -480,7 +479,8 @@ interpreter(base)
 				push2(td1 >= td);
 				continue;
 			default:
-				panic(PSYSTEM);
+				ERROR("Panic: bad relation %d to REL8*\n",
+				    *(pc.cp - 1));
 				continue;
 			}
 		case O_AND:
@@ -1067,7 +1067,11 @@ interpreter(base)
 			continue;
 		case O_HALT:
 			pc.cp++;
-			panic(PHALT);
+			if (_nodump == TRUE)
+				psexit(0);
+			fputs("\nCall to procedure halt\n", stderr);
+			backtrace("Halted");
+			psexit(0);
 			continue;
 		case O_PXPBUF:
 			pc.cp++;
@@ -1635,7 +1639,7 @@ interpreter(base)
 			push4(TRUNC(pop8()));
 			continue;
 		default:
-			panic(PBADOP);
+			ERROR("Panic: bad op code\n");
 			continue;
 		}
 	}
