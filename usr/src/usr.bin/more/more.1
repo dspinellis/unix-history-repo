@@ -16,7 +16,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)more.1	5.9 (Berkeley) %G%
+.\"	@(#)more.1	5.10 (Berkeley) %G%
 .\"
 .TH MORE 1
 .SH NAME
@@ -155,7 +155,8 @@ marks the current position with that letter.
 Followed by any lowercase letter, returns to the position which
 was previously marked with that letter.
 Followed by another single quote, returns to the postion at
-which the last "large" movement command was executed.
+which the last "large" movement command was executed, or the
+beginning of the file if no such movements have occurred.
 All marks are lost when a new file is examined.
 .PP
 .IP /pattern

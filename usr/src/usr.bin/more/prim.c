@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)prim.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)prim.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -531,17 +531,21 @@ gomark(c)
 {
 	off_t pos;
 
-	if (c == '\'')
+	if (c == '\'') {
 		pos = marks[LASTMARK];
-	else if (badmark(c))
-		return;
-	else 
+		if (pos == NULL_POSITION)
+			pos = 0;
+	}
+	else {
+		if (badmark(c))
+			return;
 		pos = marks[c-'a'];
-
-	if (pos == NULL_POSITION)
-		error("mark not set");
-	else
-		jump_loc(pos);
+		if (pos == NULL_POSITION) {
+			error("mark not set");
+			return;
+		}
+	}
+	jump_loc(pos);
 }
 
 /*
