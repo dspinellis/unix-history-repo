@@ -1,21 +1,25 @@
-#	Makefile	4.15	86/02/01
+#	Makefile	4.16	86/02/12
 #
 DESTDIR=
 CFLAGS=	-O
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR=	ansi apl bib courier cpm dsh help hyper icon jove learn mh \
+SUBDIR=	ansi apl bib courier cpm dsh help hyper icon jove kermit learn mh \
 	mkmf patch rcs sccstorcs spms sunrpc tac tools
 #
-# Special purpose software that requires custom installation
+# Special purpose software that requires custom installation,
+# or may not be needed by all sites
 #
-OPTDIR=	B dipress kermit mmdf news notes pathalias rn sumacc umodem xns X
+OPTDIR=	B dipress mmdf news notes pathalias rn sumacc umodem xns X
 
 all:	${SUBDIR}
 
 ${SUBDIR}: FRC
 	cd $@; make ${MFLAGS}
+
+${OPTDIR}: FRC
+	cd $@; make ${MFLAGS} all
 
 install:
 	-for i in ${SUBDIR}; do \
@@ -23,5 +27,6 @@ install:
 
 clean:
 	-for i in ${SUBDIR}; do (echo $$i; cd $$i; make ${MFLAGS} clean); done
+	-for i in ${OPTDIR}; do (echo $$i; cd $$i; make ${MFLAGS} clean); done
 
 FRC:
