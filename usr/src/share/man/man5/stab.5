@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)stab.5	4.1 (Berkeley) %G%
+.\"	@(#)stab.5	5.1 (Berkeley) %G%
 .\"
-.TH STAB 5
+.TH STAB 5 "1 April 1983"
 .UC 4
 .SH NAME
 stab \- symbol table types
@@ -14,8 +14,8 @@ stab \- symbol table types
 .I Stab.h
 defines some values of the n_type field of the symbol table of a.out files.
 These are the types for permanent symbols (i.e. not local labels, etc.)
-used by the debugger
-.IR sdb (1)
+used by the old debugger
+.I sdb
 and the Berkeley Pascal compiler
 .IR pc (1).
 Symbol table entries can be produced by the
@@ -35,7 +35,9 @@ The loader promises to preserve the order of symbol table entries produced
 by
 .I .stab
 directives.
-As described in a.out(5), an element of the symbol table
+As described in
+.IR a.out (5),
+an element of the symbol table
 consists of the following structure:
 .PP
 .nf
@@ -61,7 +63,7 @@ struct nlist {
 The low bits of the n_type field are used to place a symbol into
 at most one segment, according to 
 the following masks, defined in
-.BR <a.out.h> .
+.RI < a.out.h >.
 A symbol can be in none of these segments by having none of these segment
 bits set.
 .PP
@@ -83,7 +85,7 @@ bits set.
 .fi
 .PP
 The n_value field of a symbol is relocated by the linker,
-.IR ld (5)
+.IR ld (1)
 as an address within the appropriate segment.
 N_value fields of symbols not in any segment are unchanged by the linker.
 In addition, the linker will discard certain symbols, according to rules
@@ -106,8 +108,8 @@ of its own, unless the n_type field has one of the following bits set:
 This allows up to 112 (7 \(** 16) symbol types, split between the various
 segments.
 Some of these have already been claimed.
-The symbolic debugger,
-.IR sdb (1),
+The old symbolic debugger,
+.IR sdb ,
 uses the following n_type values:
 .PP
 .nf
@@ -133,7 +135,7 @@ uses the following n_type values:
 #define	N_LENG	0xfe	/* second stab entry with length information */
 .fi
 .PP
-where the comments give the
+where the comments give
 .I sdb
 conventional use for
 .IR .stab s
@@ -208,12 +210,14 @@ compiled files:
 	8	global procedure
 	9	external function
 	10	external procedure
+	11	library variable
+	12	library routine
 .fi
 .SH "SEE ALSO"
-as(1), ld(1), sdb(1), a.out(5)
+as(1), ld(1), dbx(1), a.out(5)
 .SH BUGS
 .PP
-.IR Sdb (1)
+.I Sdb
 assumes that a symbol of type N_GSYM with name
 .I name
 is located at address
