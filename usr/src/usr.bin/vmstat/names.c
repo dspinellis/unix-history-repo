@@ -4,10 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)names.c	5.7 (Berkeley) %G%
+ *	@(#)names.c	5.8 (Berkeley) %G%
  */
 
-#if !defined(hp300) && !defined(tahoe) && !defined(vax) && !defined(luna68k)
+#if !defined(hp300) && !defined(tahoe) && !defined(vax) && \
+	!defined(luna68k) && !defined(mips)
 char *defdrives[] = { 0 };
 #endif
 
@@ -176,3 +177,40 @@ read_names()
 	return(1);
 }
 #endif /* sun */
+
+#if defined(mips)
+#include <pmax/dev/device.h>
+
+char *defdrives[] = { "rz0", "rz1", "rz2", "rz3", "rz4", "rz5", "rz6", 0 };
+
+int
+read_names()
+{
+	register char *p;
+	register u_long sp;
+	static char buf[BUFSIZ];
+	struct scsi_device sdev;
+	struct driver hdrv;
+	char name[10];
+
+	sp = namelist[X_SCSI_DINIT].n_value;
+	if (sp == 0) {
+		(void)fprintf(stderr, "disk init info not in namelist\n");
+		return (0);
+	}
+	p = buf;
+	for (;; sp += sizeof sdev) {
+		(void)kvm_read(kd, sp, &sdev, sizeof sdev);
+		if (sdev.sd_driver == 0)
+			break;
+		if (sdev.sd_dk < 0 || sdev.sd_alive == 0 ||
+		    sdev.sd_cdriver == 0)
+			continue;
+		(void)kvm_read(kd, (u_long)sdev.sd_driver, &hdrv, sizeof hdrv);
+		(void)kvm_read(kd, (u_long)hdrv.d_name, name, sizeof name);
+		dr_name[sdev.sd_dk] = p;
+		p += sprintf(p, "%s%d", name, sdev.sd_unit) + 1;
+	}
+	return (1);
+}
+#endif /* mips */
