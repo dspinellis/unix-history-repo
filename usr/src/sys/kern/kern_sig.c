@@ -4,16 +4,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	7.27 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.28 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
 #include "param.h"
-/*#include "signalvar.h" */
-#include "user.h"		/* XXX */
+#include "signalvar.h"
+#include "resourcevar.h"
 #include "vnode.h"
 #include "proc.h"
-#include "kinfo_proc.h"
 #include "systm.h"
 #include "timeb.h"
 #include "times.h"
@@ -25,7 +24,9 @@
 #include "wait.h"
 #include "ktrace.h"
 
-#include "../vm/vm_param.h"
+#include "vm/vm.h"
+#include "kinfo_proc.h"
+#include "user.h"		/* for coredump */
 
 /*
  * Can process p, with pcred pc, send the signal signo to process q?
@@ -522,11 +523,7 @@ trapsignal(p, sig, code)
 			ktrpsig(p->p_tracep, sig, ps->ps_sigact[sig], 
 				p->p_sigmask, code);
 #endif
-#if	defined(i386)
-		sendsig(ps->ps_sigact[sig], sig, p->p_sigmask, code, 0x100);
-#else
 		sendsig(ps->ps_sigact[sig], sig, p->p_sigmask, code);
-#endif
 		p->p_sigmask |= ps->ps_catchmask[sig] | mask;
 	} else {
 		ps->ps_code = code;	/* XXX for core dump/debugger */
@@ -714,7 +711,7 @@ psignal(p, sig)
 		 * other than kicking ourselves if we are running.
 		 * It will either never be noticed, or noticed very soon.
 		 */
-		if (p == curproc && !noproc)
+		if (p == curproc)
 			aston();
 		goto out;
 	}
@@ -782,7 +779,8 @@ issig(p)
 			/*
 			 * If the traced bit got turned off,
 			 * go back up to the top to rescan signals.
-			 * This ensures that p_sig* and u_signal are consistent.
+			 * This ensures that p_sig* and ps_sigact
+			 * are consistent.
 			 */
 			if ((p->p_flag&STRC) == 0)
 				continue;
@@ -891,11 +889,7 @@ stop(p)
  * from the current set of pending signals.
  */
 void
-#if defined(i386)
-psig(sig, flags)
-#else
 psig(sig)
-#endif
 	register int sig;
 {
 	register struct proc *p = curproc;
@@ -919,16 +913,8 @@ psig(sig)
 		/*
 		 * Default action, where the default is to kill
 		 * the process.  (Other cases were ignored above.)
-		 * Mark the accounting record with the signal termination.
-		 * If dumping core, save the signal number for the debugger.
 		 */
-		p->p_acflag |= AXSIG;
-		if (sigprop[sig] & SA_CORE) {
-			ps->ps_sig = sig;
-			if (coredump(p) == 0)
-				sig |= WCOREFLAG;
-		}
-		exit(p, W_EXITCODE(0, sig));
+		sigexit(p, sig);
 		/* NOTREACHED */
 	} else {
 		/*
@@ -956,12 +942,32 @@ psig(sig)
 		p->p_sigmask |= ps->ps_catchmask[sig] | mask;
 		(void) spl0();
 		p->p_stats->p_ru.ru_nsignals++;
-#if	defined(i386)
-		sendsig(action, sig, returnmask, 0, flags);
-#else
 		sendsig(action, sig, returnmask, 0);
-#endif
 	}
+}
+
+/*
+ * Force the current process to exit with the specified
+ * signal, dumping core if appropriate.  We bypass the normal
+ * tests for masked and caught signals, allowing unrecoverable
+ * failures to terminate the process without changing signal state.
+ * Mark the accounting record with the signal termination.
+ * If dumping core, save the signal number for the debugger.
+ * Calls exit and does not return.
+ */
+sigexit(p, sig)
+	register struct proc *p;
+	int sig;
+{
+
+	p->p_acflag |= AXSIG;
+	if (sigprop[sig] & SA_CORE) {
+		p->p_sigacts->ps_sig = sig;
+		if (coredump(p) == 0)
+			sig |= WCOREFLAG;
+	}
+	exit(p, W_EXITCODE(0, sig));
+	/* NOTREACHED */
 }
 
 /*
@@ -1002,6 +1008,8 @@ coredump(p)
 	vattr.va_size = 0;
 	VOP_SETATTR(vp, &vattr, cred);
 	p->p_acflag |= ACORE;
+	bcopy(p, &u.u_kproc.kp_proc, sizeof(struct proc));
+	fill_eproc(p, &u.u_kproc.kp_eproc);
 #ifdef HPUXCOMPAT
 	/*
 	 * BLETCH!  If we loaded from an HPUX format binary file
