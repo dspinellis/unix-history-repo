@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ncheck.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)ncheck.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -131,6 +131,7 @@ check(file)
 	nhent = 0;
 	(void) printf("%s:\n", file);
 	sync();
+	dev_bsize = 1;
 	bread(SBOFF, (char *)&sblock, (long)SBSIZE);
 	if (sblock.fs_magic != FS_MAGIC) {
 		(void) printf("%s: not a file system\n", file);
