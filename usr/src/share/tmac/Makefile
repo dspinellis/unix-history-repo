@@ -1,6 +1,7 @@
-#	@(#)Makefile	6.7 (Berkeley) %G%
+#	@(#)Makefile	6.8 (Berkeley) %G%
 
-FILES=	tmac.an tmac.r tmac.doc tmac.andoc
+FILES=	tmac.an.old tmac.r tmac.doc tmac.andoc
+LINKS=	${BINDIR}/tmac/tmac.andoc ${BINDIR}/tmac/tmac.an
 NOOBJ=	noobj
 
 # old macros not currently installed...
@@ -11,5 +12,6 @@ all clean cleandir depend lint tags:
 install:
 	install -c -o ${BINOWN} -g ${BINOWN} -m 444 ${FILES} \
 	    ${DESTDIR}${BINDIR}/tmac
+	ln ${LINKS}
 
 .include <bsd.prog.mk>
