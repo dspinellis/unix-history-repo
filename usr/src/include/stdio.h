@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdio.h	5.26 (Berkeley) %G%
+ *	@(#)stdio.h	8.1 (Berkeley) %G%
  */
 
 #ifndef	_STDIO_H_

@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1986, 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)syslog.h	7.24 (Berkeley) %G%
+ *	@(#)syslog.h	8.1 (Berkeley) %G%
  */
 
 #define	_PATH_LOG	"/dev/log"

@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1983, 1989 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1983, 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)routed.h	5.3 (Berkeley) %G%
+ *	@(#)routed.h	8.1 (Berkeley) %G%
  */
 
 #ifndef _ROUTED_H_

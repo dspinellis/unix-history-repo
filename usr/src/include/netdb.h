@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1980, 1983, 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1980, 1983, 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *      @(#)netdb.h	5.17 (Berkeley) %G%
+ *      @(#)netdb.h	8.1 (Berkeley) %G%
  *	$Id: netdb.h,v 4.9.1.2 1993/05/17 09:59:01 vixie Exp $
  * -
  * Portions Copyright (c) 1993 by Digital Equipment Corporation.

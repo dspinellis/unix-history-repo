@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stddef.h	5.8 (Berkeley) %G%
+ *	@(#)stddef.h	8.1 (Berkeley) %G%
  */
 
 #ifndef _STDDEF_H_

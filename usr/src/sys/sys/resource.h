@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)resource.h	7.9 (Berkeley) %G%
+ *	@(#)resource.h	8.1 (Berkeley) %G%
  */
 
 #ifndef _RESOURCE_H_

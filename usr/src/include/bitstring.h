@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bitstring.h	5.5 (Berkeley) %G%
+ *	@(#)bitstring.h	8.1 (Berkeley) %G%
  */
 
 #ifndef _BITSTRING_H_

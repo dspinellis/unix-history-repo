@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clist.h	7.3 (Berkeley) %G%
+ *	@(#)clist.h	8.1 (Berkeley) %G%
  */
 
 struct cblock {

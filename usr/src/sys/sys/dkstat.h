@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dkstat.h	7.6 (Berkeley) %G%
+ *	@(#)dkstat.h	8.1 (Berkeley) %G%
  */
 
 #define	CP_USER		0

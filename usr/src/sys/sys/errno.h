@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1986, 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)errno.h	7.14 (Berkeley) %G%
+ *	@(#)errno.h	8.1 (Berkeley) %G%
  */
 
 #ifndef KERNEL

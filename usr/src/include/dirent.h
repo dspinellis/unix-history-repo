@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dirent.h	5.19 (Berkeley) %G%
+ *	@(#)dirent.h	8.1 (Berkeley) %G%
  */
 
 #ifndef _DIRENT_H_

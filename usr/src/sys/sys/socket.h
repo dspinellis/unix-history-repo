@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982,1985,1986,1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1993, 1982198519861988
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)socket.h	7.23 (Berkeley) %G%
+ *	@(#)socket.h	8.1 (Berkeley) %G%
  */
 
 #ifndef _SOCKET_H_

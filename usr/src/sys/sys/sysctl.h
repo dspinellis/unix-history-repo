@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 1989, 1993 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Mike Karels at Berkeley Software Design, Inc.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sysctl.h	7.28 (Berkeley) %G%
+ *	@(#)sysctl.h	8.1 (Berkeley) %G%
  */
 
 #ifndef _SYS_SYSCTL_H_

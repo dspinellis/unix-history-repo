@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1991 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mpool.h	5.3 (Berkeley) %G%
+ *	@(#)mpool.h	8.1 (Berkeley) %G%
  */
 
 /*

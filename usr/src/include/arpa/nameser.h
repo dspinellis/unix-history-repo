@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1983, 1989 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1983, 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *      @(#)nameser.h	5.28 (Berkeley) %G%
+ *      @(#)nameser.h	8.1 (Berkeley) %G%
  * -
  * Portions Copyright (c) 1993 by Digital Equipment Corporation.
  * 

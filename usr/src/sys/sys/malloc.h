@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1987 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1987, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)malloc.h	7.34 (Berkeley) %G%
+ *	@(#)malloc.h	8.1 (Berkeley) %G%
  */
 
 #ifndef _MALLOC_H_

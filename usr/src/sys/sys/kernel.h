@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernel.h	7.11 (Berkeley) %G%
+ *	@(#)kernel.h	8.1 (Berkeley) %G%
  */
 
 /* Global variables for the kernel. */

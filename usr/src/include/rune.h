@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rune.h	5.1 (Berkeley) %G%
+ *	@(#)rune.h	8.1 (Berkeley) %G%
  */
 
 #ifndef	_RUNE_H_
