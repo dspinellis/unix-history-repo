@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 1989, 1993
+ * Copyright (c) 1989, 1993, 1995
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)config.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)config.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -96,6 +96,8 @@ config(fname)
 			TAILQ_INSERT_TAIL(&tp->list, ep, q);
 		}
 	}
+
+	fclose(cfp);
 }
 
 /*
