@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)htable.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)htable.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -525,6 +525,7 @@ savegateway(namelist, net, addr, metric)
 	gp->g_metric = metric;
 	if (metric == 1)
 		gp->g_dst = gp;
+	return (gp);
 }
 
 connectedto(net)
