@@ -13,9 +13,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.34 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.35 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.34 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.35 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -24,6 +24,11 @@ static char sccsid[] = "@(#)daemon.c	6.34 (Berkeley) %G% (without daemon mode)";
 # include <netdb.h>
 # include <sys/wait.h>
 # include <sys/time.h>
+
+#ifdef NAMED_BIND
+# include <arpa/nameser.h>
+# include <resolv.h>
+#endif
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -815,6 +820,14 @@ hostnamebyanyaddr(sap)
 {
 	register struct hostent *hp;
 
+#ifdef NAMED_BIND
+	int saveretry;
+
+	/* shorten name server timeout to avoid higher level timeouts */
+	saveretry = _res.retry;
+	_res.retry = 3;
+#endif /* NAMED_BIND */
+
 	switch (sap->sa.sa_family)
 	{
 #ifdef NETINET
@@ -839,6 +852,10 @@ hostnamebyanyaddr(sap)
 			   sap->sa.sa_family);
 		break;
 	}
+
+#ifdef NAMED_BIND
+	_res.retry = saveretry;
+#endif /* NAMED_BIND */
 
 	if (hp != NULL)
 		return hp->h_name;
