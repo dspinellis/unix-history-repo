@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cat.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)cat.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -214,13 +214,11 @@ raw_cat(fd)
 		}
 	}
 	while ((nr = read(fd, buf, bsize)) > 0)
-		for (off = 0; off < nr;) {
+		for (off = 0; off < nr; nr -= nw, off += nw)
 			if ((nw = write(fileno(stdout), buf + off, nr)) < 0) {
 				perror("cat: stdout");
 				return(1);
 			}
-			off += nw;
-		}
 	if (nr < 0) {
 		(void)fprintf(stderr, "cat: %s: %s\n", filename,
 		    strerror(errno));
