@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vm_machdep.c	7.2 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -169,8 +169,8 @@ pagemove(from, to, size)
 
 	if (size % CLBYTES)
 		panic("pagemove");
-	fpte = &Sysmap[btop(from - 0x80000000)];
-	tpte = &Sysmap[btop(to - 0x80000000)];
+	fpte = kvtopte(from);
+	tpte = kvtopte(to);
 	while (size > 0) {
 		*tpte++ = *fpte;
 		*(int *)fpte++ = 0;
