@@ -1,4 +1,4 @@
-#	Makefile	4.2	83/07/03
+#	Makefile	4.3	83/07/10
 #
 # Doing a make install builds /usr/include
 #
@@ -16,7 +16,7 @@ SUBDIRS=arpa
 STD=	a.out.h ar.h assert.h ctype.h curses.h dbm.h \
 	disktab.h dumprestor.h fcntl.h fstab.h getty.h grp.h \
 	lastlog.h math.h mp.h mtab.h netdb.h nlist.h pwd.h ranlib.h \
-	setjmp.h sgtty.h stab.h stdio.h string.h \
+	setjmp.h sgtty.h stab.h stdio.h strings.h \
 	struct.h syscall.h sysexits.h syslog.h utmp.h varargs.h vfont.h
 LINKS=	errno.h signal.h
 MACHINE=vax
