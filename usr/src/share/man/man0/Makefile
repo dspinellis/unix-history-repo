@@ -2,7 +2,7 @@
 # Copyright (c) 1986, 1993 Regents of the University of California.
 # All rights reserved.
 #
-#	@(#)Makefile	6.3 (Berkeley) %G%
+#	@(#)Makefile	6.4 (Berkeley) %G%
 #
 SRCS=	man1 man2 man3 man4 man5 man6 man7 man8
 
@@ -42,7 +42,7 @@ title.prm.${PRINTER}: title.prm ptxx
 	${TROFF} title.prm >title.prm.${PRINTER}
 
 ptxx:
-	tocrc
+	./tocrc
 
 clean:
 	rm -f title.urm.[PT]* preface.[PT]* intro.[PT]* toc.[PT]* ptx.[PT]* \
