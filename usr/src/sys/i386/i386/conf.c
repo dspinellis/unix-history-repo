@@ -5,9 +5,9 @@
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
- * %sccs.include.386.c%
+ * %sccs.include.redist.c%
  *
- *	@(#)conf.c	5.6 (Berkeley) %G%
+ *	@(#)conf.c	5.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -99,7 +99,10 @@ struct bdevsw	bdevsw[] =
 };
 int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 
-int	cnopen(),cnclose(),cnread(),cnwrite(),cnioctl();
+int	cnopen(),cnclose(),cnread(),cnwrite(),cnioctl(),cnselect();
+
+int	pcopen(),pcclose(),pcread(),pcwrite(),pcioctl();
+extern	struct tty pccons;
 
 int	cttyopen(), cttyread(), cttywrite(), cttyioctl(), cttyselect();
 
@@ -151,7 +154,7 @@ struct cdevsw	cdevsw[] =
 {
 	{ cnopen,	cnclose,	cnread,		cnwrite,	/*0*/
 	  cnioctl,	nullop,		nullop,		NULL,
-	  ttselect,	enodev,		NULL },
+	  cnselect,	enodev,		NULL },
 	{ cttyopen,	nullop,		cttyread,	cttywrite,	/*1*/
 	  cttyioctl,	nullop,		nullop,		NULL,
 	  cttyselect,	enodev,		NULL },
@@ -182,6 +185,9 @@ struct cdevsw	cdevsw[] =
 	{ xdopen,	xdclose,	xdread,		xdwrite,	/*B*/
 	  xdioctl,	enodev,		nullop,		NULL,
 	  seltrue,	enodev,		xdstrategy },
+	{ pcopen,	pcclose,	pcread,		pcwrite,	/*C*/
+	  pcioctl,	nullop,		nullop,		&pccons,
+	  ttselect,	enodev,		NULL },
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
