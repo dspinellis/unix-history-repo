@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -191,28 +191,31 @@ doit(f, fromp)
 	if (use_kerberos) {
 		retval = do_krb_login(hp->h_name, fromp, encrypt);
 		write(f, &c, 1);
-		if (retval == 0)
+		if (retval == 0 && hostok)
 			authenticated++;
 		else if (retval > 0)
 			fatal(f, krb_err_txt[retval]);
+		else if(!hostok)
+			fatal(f, "krlogind: Host address mismatch.\r\n");
 	} else
 #ifndef OLD_LOGIN
-	if (fromp->sin_family != AF_INET ||
-	    fromp->sin_port >= IPPORT_RESERVED ||
-	    fromp->sin_port < IPPORT_RESERVED/2) {
-		syslog(LOG_NOTICE, "Connection from %s on illegal port",
-			inet_ntoa(fromp->sin_addr));
-		fatal(f, "Permission denied");
-	}
-	write(f, "", 1);
-#endif
-
-	if (do_rlogin(hp->h_name) == 0) {
-		if (hostok)
-			authenticated++;
-		else
-			write(f, "rlogind: Host address mismatch.\r\n",
-			    sizeof("rlogind: Host address mismatch.\r\n") - 1);
+	{
+	    if (fromp->sin_family != AF_INET ||
+	        fromp->sin_port >= IPPORT_RESERVED ||
+	        fromp->sin_port < IPPORT_RESERVED/2) {
+		    syslog(LOG_NOTICE, "Connection from %s on illegal port",
+			    inet_ntoa(fromp->sin_addr));
+		    fatal(f, "Permission denied");
+	    }
+	    write(f, "", 1);
+    
+	    if (do_rlogin(hp->h_name) == 0) {
+		    if (hostok)
+			    authenticated++;
+		    else
+			    write(f, "rlogind: Host address mismatch.\r\n",
+			     sizeof("rlogind: Host address mismatch.\r\n") - 1);
+	    }
 	}
 
 	for (c = 'p'; c <= 's'; c++) {
