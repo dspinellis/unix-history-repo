@@ -1,13 +1,15 @@
-/*	pup_proto.c	5.1	82/07/31	*/
+/*	pup_proto.c	5.2	82/08/01	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
 #include "../h/protosw.h"
+#include "../h/domain.h"
 
 /*
  * PUP-I protocol family: raw interface
  */
 int	rpup_output();
+extern	int raw_usrreq();
 
 struct protosw pupsw[] = {
 { SOCK_RAW,	PF_PUP,		0,		PR_ATOMIC|PR_ADDR,
