@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)addbytes.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)addbytes.c	5.6 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -34,10 +34,10 @@ waddbytes(win, bytes, count)
 		c = *bytes++;
 		switch (c) {
 		case '\t':
-			SYNCH_IN;
+			SYNCH_OUT;
 			if (waddbytes(win, blanks, 8 - (x % 8)) == ERR)
 				return (ERR);
-			SYNCH_OUT;
+			SYNCH_IN;
 			break;
 
 		default:
@@ -59,16 +59,17 @@ waddbytes(win, bytes, count)
 					win->_firstch[y] = newx;
 				else if (newx > win->_lastch[y])
 					win->_lastch[y] = newx;
-#ifdef __TRACE
+#ifdef DEBUG
 	__TRACE("ADDBYTES: change gives f/l: %d/%d [%d/%d]\n",
-	    win->_firstch[y], win->_lastch[y], win->_firstch[y] - win->_ch_off,
+	    win->_firstch[y], win->_lastch[y],
+	    win->_firstch[y] - win->_ch_off,
 	    win->_lastch[y] - win->_ch_off);
 #endif
 			}
 			win->_y[y][x++] = c;
-			if (x >= win->_maxx) {
+			if (x > win->_maxx) {
 				x = 0;
-newline:			if (++y >= win->_maxy)
+newline:			if (++y > win->_maxy)
 					if (win->_scroll) {
 						SYNCH_OUT;
 						scroll(win);
