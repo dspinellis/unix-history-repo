@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.180 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.181 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -2187,6 +2187,11 @@ vsprintf(s, fmt, ap)
 #  define _PATH_SHELLS	"/etc/shells"
 # endif
 
+# ifdef _AIX3
+#  include <userconf.h>
+#  include <usersec.h>
+# endif
+
 char	*DefaultUserShells[] =
 {
 	"/bin/sh",		/* standard shell */
@@ -2243,11 +2248,27 @@ usershellok(shell)
 	endusershell();
 	return p != NULL;
 #else
+# ifdef _AIX3
+	auto char *v;
+# endif
 	register FILE *shellf;
 	char buf[MAXLINE];
 
 	if (shell == NULL || shell[0] == '\0')
 		return TRUE;
+
+# ifdef _AIX3
+	/* naturally IBM has a "better" idea..... */
+	if (getconfattr(SC_SYS_LOGIN, SC_SHELLS, &v, SEC_LIST) == 0)
+	{
+		while (v != NULL && *v != '\0')
+		{
+			if (strcmp(v, shell) == 0 || strcmp(v, WILDCARD_SHELL) == 0)
+				return TRUE;
+			v += strlen(v) + 1;
+		}
+	}
+# endif
 
 	shellf = fopen(_PATH_SHELLS, "r");
 	if (shellf == NULL)
