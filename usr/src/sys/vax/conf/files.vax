@@ -13,7 +13,8 @@ vax/kdb_opset.c		optional kdb
 vax/ns_cksum.c		optional ns
 vax/machdep.c		standard config-dependent
 vax/mem.c		standard
-vax/mscp.c		optional genmscp
+vax/mscp.c		optional uda
+vax/mscp.c		optional kra
 vax/sys_machdep.c	standard
 vax/trap.c		standard
 vax/tu.c		standard
