@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ruptime.c	4.9 83/05/03";
+static char sccsid[] = "@(#)ruptime.c	4.10 83/05/05";
 #endif
 
 #include <sys/param.h>
@@ -20,6 +20,7 @@ struct	whod awhod;
 int	hscmp(), ucmp(), lcmp(), tcmp();
 
 #define	WHDRSIZE	(sizeof (awhod) - sizeof (awhod.wd_we))
+#define	RWHODIR		"/usr/spool/rwho"
 
 char	*interval();
 int	now;
