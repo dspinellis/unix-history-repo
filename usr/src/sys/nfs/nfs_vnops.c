@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.29 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.30 (Berkeley) %G%
  */
 
 /*
@@ -38,6 +38,7 @@
 #include "file.h"
 #include "conf.h"
 #include "vnode.h"
+#include "text.h"
 #include "map.h"
 #include "nfsv2.h"
 #include "nfs.h"
@@ -415,10 +416,15 @@ nfs_lookup(vp, ndp)
 			nfs_unlock(vp);
 		}
 		if (!error) {
-			if (vpid == vdp->v_id &&
-			   !nfs_getattr(vdp, &vattr, ndp->ni_cred)) {
+			if (vpid == vdp->v_id) {
+			   if (!nfs_getattr(vdp, &vattr, ndp->ni_cred) &&
+			       vattr.va_ctime.tv_sec == VTONFS(vdp)->n_ctime) {
 				nfsstats.lookupcache_hits++;
 				return (0);
+			   } else {
+				cache_purge(vdp);
+				nfs_nput(vdp);
+			   }
 			} else {
 				nfs_nput(vdp);
 			}
@@ -534,8 +540,10 @@ nfsmout:
 	if (vp == newvp || (lockparent && *ndp->ni_next == '\0'))
 		nfs_lock(vp);
 	ndp->ni_vp = newvp;
-	if (error == 0 && ndp->ni_makeentry)
+	if (error == 0 && ndp->ni_makeentry) {
+		np->n_ctime = np->n_vattr.va_ctime.tv_sec;
 		cache_enter(ndp);
+	}
 	return (error);
 }
 
@@ -1359,6 +1367,7 @@ nfs_doio(bp)
 	struct iovec io;
 
 	vp = bp->b_vp;
+	np = VTONFS(vp);
 	uiop = &uio;
 	uiop->uio_iov = &io;
 	uiop->uio_iovcnt = 1;
@@ -1371,7 +1380,7 @@ nfs_doio(bp)
 	 * and a guess at a group
 	 */
 	if (bp->b_flags & B_PHYS) {
-		VTONFS(vp)->n_flag |= NPAGEDON;
+		np->n_flag |= NPAGEDON;
 		bp->b_rcred = cr = crget();
 		rp = (bp->b_flags & B_DIRTY) ? &proc[2] : bp->b_proc;
 		cr->cr_uid = rp->p_uid;
@@ -1424,6 +1433,15 @@ nfs_doio(bp)
 			uiop->uio_rw = UIO_READ;
 			nfsstats.read_physios++;
 			bp->b_error = error = nfs_readrpc(vp, uiop, bp->b_rcred);
+			/*
+			 * If a text file has been modified since it was exec'd
+			 * blow the process' out of the water. This is the
+			 * closest we can come to "Text File Busy" in good old
+			 * stateless nfs.
+			 */
+			if ((vp->v_flag & VTEXT) &&
+			    (vp->v_text->x_mtime != np->n_vattr.va_mtime.tv_sec))
+				xinval(vp);
 		} else {
 			uiop->uio_rw = UIO_WRITE;
 			nfsstats.write_physios++;
@@ -1457,7 +1475,6 @@ nfs_doio(bp)
 			nfsstats.write_bios++;
 			bp->b_error = error = nfs_writerpc(vp, uiop, bp->b_wcred);
 			if (error) {
-				np = VTONFS(vp);
 				np->n_error = error;
 				np->n_flag |= NWRITEERR;
 			}
