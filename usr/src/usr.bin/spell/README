@@ -1,4 +1,4 @@
-#	@(#)README	1.8 (Berkeley) %G%
+#	@(#)README	8.1 (Berkeley) %G%
 
 All files and subdirectories of /usr/share/dict are recommended for
 rdisting except web2 and web2a (because of their size), and some of
