@@ -223,7 +223,7 @@ lfs_truncate(vp, length, flags, cred)
 	int flags;
 	struct ucred *cred;
 {
-	register INDIR *ap;
+	register INDIR *inp;
 	register int i;
 	register daddr_t *daddrp;
 	struct buf *bp, *sup_bp;
@@ -315,14 +315,14 @@ lfs_truncate(vp, length, flags, cred)
 			/* NOTREACHED */
 #endif
 		default:			/* Chain of indirect blocks. */
-			ap = a + --depth;
-			if (ap->in_off > 0 && lbn != lastblock) {
-				lbn -= ap->in_off < lbn - lastblock ?
-				    ap->in_off : lbn - lastblock;
+			inp = a + --depth;
+			if (inp->in_off > 0 && lbn != lastblock) {
+				lbn -= inp->in_off < lbn - lastblock ?
+				    inp->in_off : lbn - lastblock;
 				break;
 			}
-			for (; depth && (ap->in_off == 0 || lbn == lastblock);
-			    --ap, --depth) {
+			for (; depth && (inp->in_off == 0 || lbn == lastblock);
+			    --inp, --depth) {
 				/*
 				 * XXX
 				 * The indirect block may not yet exist, so
@@ -330,22 +330,22 @@ lfs_truncate(vp, length, flags, cred)
 				 * it.
 				 */
 				if (bread(vp,
-				    ap->in_lbn, fs->lfs_bsize, NOCRED, &bp))
+				    inp->in_lbn, fs->lfs_bsize, NOCRED, &bp))
 					panic("lfs_truncate: bread bno %d",
-					    ap->in_lbn);
-				daddrp = bp->b_un.b_daddr + ap->in_off;
-				for (i = ap->in_off;
+					    inp->in_lbn);
+				daddrp = bp->b_un.b_daddr + inp->in_off;
+				for (i = inp->in_off;
 				    i++ <= a_end[depth].in_off;) {
 					daddr = *daddrp++;
 					SEGDEC;
 				}
 				a_end[depth].in_off = NINDIR(fs) - 1;
-				if (ap->in_off == 0)
+				if (inp->in_off == 0)
 					brelse (bp);
 				else {
-					bzero(bp->b_un.b_daddr + ap->in_off,
+					bzero(bp->b_un.b_daddr + inp->in_off,
 					    fs->lfs_bsize - 
-					    ap->in_off * sizeof(daddr_t));
+					    inp->in_off * sizeof(daddr_t));
 					LFS_UBWRITE(bp);
 				}
 			}
