@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwgets.c	3.6 84/04/08";
+static	char *sccsid = "@(#)wwgets.c	3.7 84/04/09";
 #endif
 
 #include "ww.h"
@@ -51,5 +51,5 @@ struct ww *w;
 	register i;
 
 	for (i = strlen(unctrl(c)); --i >= 0;)
-		wwwrite(w, "\b \b", 3);
+		(void) wwwrite(w, "\b \b", 3);
 }
