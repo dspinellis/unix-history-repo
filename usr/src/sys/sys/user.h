@@ -2,19 +2,9 @@
  * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * %sccs.include.redist.c%
  *
- *	@(#)user.h	7.9 (Berkeley) %G%
+ *	@(#)user.h	7.10 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -45,7 +35,6 @@ struct	user {
 /* syscall parameters, results and catches */
 	int	u_arg[8];		/* arguments to current system call */
 	int	*u_ap;			/* pointer to arglist */
-	label_t	u_qsave;		/* for non-local gotos on interrupts */
 	union {				/* syscall return values */
 		struct	{
 			int	R_val1;
@@ -56,17 +45,12 @@ struct	user {
 		off_t	r_off;
 		time_t	r_time;
 	} u_r;
-	char	u_error;		/* return error code */
-	char	u_eosys;		/* special action on end of syscall */
+	int	u_error;		/* return error code */
 
 /* 1.1 - processes and protection */
-#define	u_ruid	u_procp->p_ruid		/* real user id - XXX */
-#define	u_rgid	u_procp->p_rgid		/* real group id - XXX */
 #define u_cred u_nd.ni_cred
 #define u_uid	u_cred->cr_uid		/* effective user id */
 #define u_gid	u_cred->cr_gid		/* effective group id */
-#define u_ngroups u_cred->cr_ngroups	/* number of group id's */
-#define u_groups u_cred->cr_groups	/* list of effective grp id's */
 
 /* 1.2 - memory management */
 	size_t	u_tsize;		/* text size (clicks) */
@@ -79,6 +63,7 @@ struct	user {
 	label_t u_ssave;		/* label variable for swapping */
 	size_t	u_odsize, u_ossize;	/* for (clumsy) expansion swaps */
 	time_t	u_outime;		/* user time at last sample */
+	struct	mapmem *u_mmap;		/* list of mapped memory regions */
 
 /* 1.3 - signal management */
 	sig_t	u_signal[NSIG];		/* disposition of signals */
@@ -118,8 +103,6 @@ struct	user {
 
 /* 1.6 - resource controls */
 	struct	rlimit u_rlimit[RLIM_NLIMITS];
-	struct	quota *u_quota;		/* user's quota structure */
-	int	u_qflags;		/* per process quota flags */
 
 /* namei & co. */
 	struct	nameidata u_nd;
