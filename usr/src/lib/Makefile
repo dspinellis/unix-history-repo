@@ -1,8 +1,14 @@
-#	@(#)Makefile	5.25.1.1 (Berkeley) %G%
+#	@(#)Makefile	5.26 (Berkeley) %G%
 
-# Missing: libcompat libdbm libmp libplot
+SUBDIR=	libc libcurses libcompat libdbm libm libmp libplot \
+	libresolv librpc/rpc libtelnet libterm libutil liby
 
-SUBDIR=	csu.${MACHINE} libc libcurses libm \
-	libresolv librpc/rpc libterm libutil liby
+.if	${MACHINE} == "tahoe"
+SUBDIR+=csu.tahoe.pcc
+.elif	${MACHINE} == "vax"
+SUBDIR+=csu.vax.pcc
+.else
+SUBDIR+=csu.${MACHINE}
+.endif
 
 .include <bsd.subdir.mk>
