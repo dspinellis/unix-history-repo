@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_conf.c	7.1 (Berkeley) %G%
+ *	@(#)vfs_conf.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -43,6 +43,10 @@ extern	struct vfsops ufs_vfsops;
 extern	struct vfsops nfs_vfsops;
 #endif
 
+#ifdef MFS
+extern	struct vfsops mfs_vfsops;
+#endif
+
 struct vfsops *vfssw[] = {
 	(struct vfsops *)0,	/* 0 = MOUNT_NONE */
 	&ufs_vfsops,		/* 1 = MOUNT_UFS */
@@ -51,5 +55,10 @@ struct vfsops *vfssw[] = {
 #else
 	(struct vfsops *)0,
 #endif
-	(struct vfsops *)0,	/* 3 = MOUNT_PC */
+#ifdef MFS
+	&mfs_vfsops,		/* 3 = MOUNT_MFS */
+#else
+	(struct vfsops *)0,
+#endif
+	(struct vfsops *)0,	/* 4 = MOUNT_PC */
 };
