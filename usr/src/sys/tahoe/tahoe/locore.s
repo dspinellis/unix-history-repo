@@ -1,4 +1,4 @@
-/*	locore.s	1.5	86/01/23	*/
+/*	locore.s	1.6	86/01/23	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -270,6 +270,7 @@ nofault: .space	4			# bus error non-local goto label
 SCBVEC(buserr):
 	CHECK_SFE(12)
 	SAVE_FPSTAT(12)
+	incl	_intrcnt+I_BUSERR	# keep stats...
 	pushl	r0			# must save
 	andl3	24(sp),$ERRCD,r0	# grab pushed MER value
 	cmpl	r0,$APE			# address parity error?
@@ -347,25 +348,33 @@ SCBVEC(netintr):
 SCBVEC(cnrint):
 	CHECK_SFE(4)
 	SAVE_FPSTAT(4); PUSHR; 
-	pushl $CPCONS; callf $8,_cnrint; incl _cnt+V_INTR
+	pushl $CPCONS; callf $8,_cnrint;
+	incl	_intrcnt+I_CNR
+	incl	_cnt+V_INTR
 	POPR; REST_FPSTAT;
 	rei
 SCBVEC(cnxint):
 	CHECK_SFE(4)
 	SAVE_FPSTAT(4); PUSHR; 
-	pushl $CPCONS; callf $8,_cnxint; incl _cnt+V_INTR
+	pushl $CPCONS; callf $8,_cnxint;
+	incl	_intrcnt+I_CNX
+	incl	_cnt+V_INTR
 	POPR; REST_FPSTAT;
 	rei
 SCBVEC(rmtrint):
 	CHECK_SFE(4)
 	SAVE_FPSTAT(4); PUSHR; 
-	pushl $CPREMOT; callf $8,_cnrint; incl _cnt+V_INTR
+	pushl $CPREMOT; callf $8,_cnrint;
+	incl	_intrcnt+I_RMTR
+	incl	_cnt+V_INTR
 	POPR; REST_FPSTAT;
 	rei
 SCBVEC(rmtxint):
 	CHECK_SFE(4)
 	SAVE_FPSTAT(4); PUSHR; 
-	pushl $CPREMOT; callf $8,_cnxint; incl _cnt+V_INTR
+	pushl $CPREMOT; callf $8,_cnxint;
+	incl	_intrcnt+I_RMTX
+	incl	_cnt+V_INTR
 	POPR; REST_FPSTAT;
 	rei
 
@@ -380,6 +389,7 @@ SCBVEC(hardclock):
 	SAVE_FPSTAT(4); PUSHR
 	PUSHPCPSL			# push pc and psl
 	callf	$12,_hardclock		# hardclock(pc,psl)
+	incl	_intrcnt+I_CLOCK
 	incl	_cnt+V_INTR		## temp so not to break vmstat -= HZ
 	POPR; REST_FPSTAT
 	rei
@@ -388,6 +398,7 @@ SCBVEC(softclock):
 	SAVE_FPSTAT(4); PUSHR;
 	PUSHPCPSL				# push pc and psl
 	callf	$12,_softclock			# softclock(pc,psl)
+	incl	_cnt+V_SOFT
 	POPR; REST_FPSTAT
 	rei
 
