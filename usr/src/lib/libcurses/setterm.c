@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setterm.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)setterm.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/ioctl.h>
@@ -19,8 +19,8 @@ static char sccsid[] = "@(#)setterm.c	8.1 (Berkeley) %G%";
 static void zap __P((void));
 
 static char	*sflags[] = {
-		/*       am   bs   da   eo   hc   hz   in   mi   ms  */
-			&AM, &BS, &DA, &EO, &HC, &HZ, &IN, &MI, &MS,
+		/*       am   bs   da   eo   hc   in   mi   ms  */
+			&AM, &BS, &DA, &EO, &HC, &IN, &MI, &MS,
 		/*	 nc   ns   os   ul   xb   xn   xt   xs   xx  */
 			&NC, &NS, &OS, &UL, &XB, &XN, &XT, &XS, &XX
 		};
@@ -147,7 +147,7 @@ zap()
 #endif
 	tmp[2] = '\0';
 
-	namp = "ambsdaeohchzinmimsncnsosulxbxnxtxsxx";
+	namp = "ambsdaeohcinmimsncnsosulxbxnxtxsxx";
 	fp = sflags;
 	do {
 		*tmp = *namp;
