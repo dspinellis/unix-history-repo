@@ -6,10 +6,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dr_4.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)dr_4.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "externs.h"
+#include "extern.h"
 
 ungrap(from, to)
 register struct ship *from, *to;

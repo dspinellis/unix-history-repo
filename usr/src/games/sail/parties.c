@@ -6,10 +6,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parties.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)parties.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "externs.h"
+#include "extern.h"
 
 meleeing(from, to)
 struct ship *from;

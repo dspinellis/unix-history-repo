@@ -6,12 +6,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sync.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)sync.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "externs.h"
 #include <sys/file.h>
-#include <sys/errno.h>
+#include <errno.h>
+#include "extern.h"
 
 #define BUFSIZE 4096
 
