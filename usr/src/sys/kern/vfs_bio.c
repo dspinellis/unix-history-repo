@@ -1,6 +1,5 @@
-/*	vfs_bio.c	3.2	%H%	*/
+/*	vfs_bio.c	3.3	%H%	*/
 
-int	distrust = 1;		/* TEST */
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dir.h"
@@ -259,24 +258,6 @@ register struct buf *bp;
 	splx(s);
 }
 
-/* HASHING IS A GUN LIKE CHANGE, THIS IS THE SAFETY */
-struct buf *
-oincore(dev, blkno)
-	dev_t dev;
-	daddr_t blkno;
-{
-	register struct buf *bp;
-	register struct buf *dp;
-	register int dblkno = fsbtodb(blkno);
-
-	dp = bdevsw[major(dev)].d_tab;
-	for (bp=dp->b_forw; bp != dp; bp = bp->b_forw)
-		if (bp->b_blkno==dblkno && bp->b_dev==dev &&
-		    bp >= buf && bp < &buf[NBUF])
-			return (bp);
-	return ((struct buf *)0);
-}
-
 /*
  * See if the block is associated with some buffer
  * (mainly to avoid getting hung up on a wait in breada)
@@ -290,15 +271,8 @@ daddr_t blkno;
 
 	for (bp = &buf[bufhash[BUFHASH(blkno)]]; bp != &buf[-1];
 	    bp = &buf[bp->b_hlink])
-		if (bp->b_blkno == dblkno && bp->b_dev == dev) {
-			if (distrust)
-			if (oincore(dev, blkno) != bp)		/* TEST */
-				panic("incore 1");		/* TEST */
+		if (bp->b_blkno == dblkno && bp->b_dev == dev)
 			return (1);
-		}
-	if (distrust)
-	if (oincore(dev, blkno))				/* TEST */
-		panic("incore 2");				/* TEST */
 	return (0);
 }
 
@@ -333,9 +307,6 @@ daddr_t blkno;
 	    bp = &buf[bp->b_hlink]) {
 		if (bp->b_blkno != dblkno || bp->b_dev != dev)
 			continue;
-		if (distrust)
-		if (bp != oincore(dev, blkno))		/* TEST */
-			panic("getblk 1");		/* TEST */
 		VOID spl6();
 		if (bp->b_flags&B_BUSY) {
 			bp->b_flags |= B_WANTED;
@@ -357,9 +328,6 @@ daddr_t blkno;
 		bp->b_flags |= B_CACHE;
 		return(bp);
 	}
-	if (distrust)
-	if (oincore(dev, blkno))		/* TEST */
-		panic("getblk 2");		/* TEST */
 	if (major(dev) >= nblkdev)
 		panic("blkdev");
 	dp = bdevsw[major(dev)].d_tab;
