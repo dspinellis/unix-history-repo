@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)fns.doc	1.4 (Berkeley) %G%
+.\"     @(#)fns.doc	1.5 (Berkeley) %G%
 .\"
 .Ds
 .Fn addch "char ch" \(dg
@@ -747,23 +747,23 @@ are output to the current \*y position of the window specified by
 specification of a window, rather than the use of the default
 .Vn stdscr.\fP
 .Ds
-.Fn waddch "WINDOW *win" "char ch" ,
-.Fn waddstr "WINDOW *win" "char *str" ,
-.Fn wclear "WINDOW *win" , 
-.Fn wclrtobot "WINDOW *win" , 
-.Fn wclrtoeol "WINDOW *win" , 
-.Fn wdelch "WINDOW *win" , 
-.Fn wdeleteln "WINDOW *win" ,
-.Fn werase "WINDOW *win" ,
-.Fn wgetch "WINDOW *win" ,
-.Fn wgetstr "WINDOW *win" "char *str" ,
+.Fn waddch "WINDOW *win" "char ch" 
+.Fn waddstr "WINDOW *win" "char *str" 
+.Fn wclear "WINDOW *win"  
+.Fn wclrtobot "WINDOW *win"  
+.Fn wclrtoeol "WINDOW *win"  
+.Fn wdelch "WINDOW *win"  
+.Fn wdeleteln "WINDOW *win" 
+.Fn werase "WINDOW *win" 
+.Fn wgetch "WINDOW *win" 
+.Fn wgetstr "WINDOW *win" "char *str" 
 .Fn winch "WINDOW *win" \(dg
-.Fn winsch "WINDOW *win" "char c" ,
-.Fn winsertln "WINDOW *win" ,
-.Fn wmove "WINDOW *win" "int y" int x" ,
-.Fn wprintw "WINDOW *win" "char *fmt" "..." ,
-.Fn wrefresh "WINDOW *win" ,
-.Fn wscanw "WINDOW *win" "char *fmt" "..." ,
-.Fn wstandend "WINDOW *win" ,
-.Fn wstandout "WINDOW *win" .
+.Fn winsch "WINDOW *win" "char c" 
+.Fn winsertln "WINDOW *win" 
+.Fn wmove "WINDOW *win" "int y" int x" 
+.Fn wprintw "WINDOW *win" "char *fmt" "..." 
+.Fn wrefresh "WINDOW *win" 
+.Fn wscanw "WINDOW *win" "char *fmt" "..." 
+.Fn wstandend "WINDOW *win" 
+.Fn wstandout "WINDOW *win"
 .Dg
