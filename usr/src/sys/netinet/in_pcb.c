@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in_pcb.c	7.2 (Berkeley) %G%
+ *	@(#)in_pcb.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -145,8 +145,9 @@ in_pcbconnect(inp, nam)
 		 */
 		ro = &inp->inp_route;
 		if (ro->ro_rt &&
-		    satosin(&ro->ro_dst)->sin_addr.s_addr !=
-		    sin->sin_addr.s_addr) {
+		    (satosin(&ro->ro_dst)->sin_addr.s_addr !=
+			sin->sin_addr.s_addr || 
+		    inp->inp_socket->so_options & SO_DONTROUTE)) {
 			RTFREE(ro->ro_rt);
 			ro->ro_rt = (struct rtentry *)0;
 		}
@@ -171,8 +172,12 @@ in_pcbconnect(inp, nam)
 				if (ia->ia_ifp == ifp)
 					break;
 		if (ia == 0) {
+			int fport = sin->sin_port;
+
+			sin->sin_port = 0;
 			ia = (struct in_ifaddr *)
 			    ifa_ifwithdstaddr((struct sockaddr *)sin);
+			sin->sin_port = fport;
 			if (ia == 0)
 				ia = in_iaonnetof(in_netof(sin->sin_addr));
 			if (ia == 0)
