@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1983, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -20,7 +20,7 @@ static char sccsid[] = "@(#)tables.c	5.11 (Berkeley) %G%";
 #include "defs.h"
 #include <sys/ioctl.h>
 #include <errno.h>
-#include <syslog.h>
+#include <sys/syslog.h>
 
 #ifndef DEBUG
 #define	DEBUG	0
@@ -62,6 +62,8 @@ again:
 	return (0);
 }
 
+struct sockaddr wildcard;	/* zero valued cookie for wildcard searches */
+
 /*
  * Find a route to dst as the kernel would.
  */
@@ -102,6 +104,15 @@ again:
 		match = afswitch[af].af_netmatch;
 		goto again;
 	}
+#ifdef notyet
+	/*
+	 * Check for wildcard gateway, by convention network 0.
+	 */
+	if (dst != &wildcard) {
+		dst = &wildcard, hash = 0;
+		goto again;
+	}
+#endif
 	return (0);
 }
 
@@ -149,7 +160,7 @@ rtadd(dst, gate, metric, state)
 		rt->rt_flags |= RTF_GATEWAY;
 	rt->rt_metric = metric;
 	insque(rt, rh);
-	TRACE_ACTION(ADD, rt);
+	TRACE_ACTION("ADD", rt);
 	/*
 	 * If the ioctl fails because the gateway is unreachable
 	 * from this host, discard the entry.  This should only
@@ -164,7 +175,7 @@ rtadd(dst, gate, metric, state)
 			   (*afswitch[gate->sa_family].af_format)(gate));
 		perror("SIOCADDRT");
 		if (errno == ENETUNREACH) {
-			TRACE_ACTION(DELETE, rt);
+			TRACE_ACTION("DELETE", rt);
 			remque(rt);
 			free((char *)rt);
 		}
@@ -176,7 +187,7 @@ rtchange(rt, gate, metric)
 	struct sockaddr *gate;
 	short metric;
 {
-	int add = 0, delete = 0, metricchanged = 0;
+	int add = 0, delete = 0;
 	struct rtentry oldroute;
 
 	if ((rt->rt_state & RTS_INTERNAL) == 0) {
@@ -196,22 +207,20 @@ rtchange(rt, gate, metric)
 		else if (rt->rt_metric == HOPCNT_INFINITY)
 			add++;
 	}
-	if (metric != rt->rt_metric)
-		metricchanged++;
-	if (delete || metricchanged)
-		TRACE_ACTION(CHANGE FROM, rt);
-	if ((rt->rt_state & RTS_INTERFACE) && delete) {
-		rt->rt_state &= ~RTS_INTERFACE;
-		if (add)
-			rt->rt_flags |= RTF_GATEWAY;
-		if (metric > rt->rt_metric && delete &&
-		    (rt->rt_state & RTS_INTERNAL) == 0)
-			syslog(LOG_ERR,
-				"changing route from interface %s (timed out)",
-				rt->rt_ifp->int_name);
-	}
+	if (!equal(&rt->rt_router, gate)) {
+		TRACE_ACTION("CHANGE FROM ", rt);
+	} else if (metric != rt->rt_metric)
+		TRACE_NEWMETRIC(rt, metric);
 	if (delete)
 		oldroute = rt->rt_rt;
+	if ((rt->rt_state & RTS_INTERFACE) && delete) {
+		rt->rt_state &= ~RTS_INTERFACE;
+		rt->rt_flags |= RTF_GATEWAY;
+		if (metric > rt->rt_metric && delete)
+			syslog(LOG_ERR, "%s route to interface %s (timed out)",
+			    add? "changing" : "deleting",
+			    rt->rt_ifp->int_name);
+	}
 	if (add) {
 		rt->rt_router = *gate;
 		rt->rt_ifp = if_ifwithdstaddr(&rt->rt_router);
@@ -220,8 +229,8 @@ rtchange(rt, gate, metric)
 	}
 	rt->rt_metric = metric;
 	rt->rt_state |= RTS_CHANGED;
-	if (add || metricchanged)
-		TRACE_ACTION(CHANGE TO, rt);
+	if (add)
+		TRACE_ACTION("CHANGE TO   ", rt);
 	if (add && install)
 		if (ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0)
 			perror("SIOCADDRT");
@@ -234,13 +243,17 @@ rtdelete(rt)
 	struct rt_entry *rt;
 {
 
-	if ((rt->rt_state & (RTS_INTERFACE|RTS_INTERNAL)) == RTS_INTERFACE)
-		syslog(LOG_ERR, "deleting route to interface %s (timed out)",
-			rt->rt_ifp->int_name);
-	TRACE_ACTION(DELETE, rt);
-	if (install && (rt->rt_state & (RTS_INTERNAL | RTS_EXTERNAL)) == 0 &&
-	    ioctl(s, SIOCDELRT, (char *)&rt->rt_rt))
-		perror("SIOCDELRT");
+	TRACE_ACTION("DELETE", rt);
+	if (rt->rt_metric < HOPCNT_INFINITY) {
+	    if ((rt->rt_state & (RTS_INTERFACE|RTS_INTERNAL)) == RTS_INTERFACE)
+		syslog(LOG_ERR,
+		    "deleting route to interface %s? (timed out?)",
+		    rt->rt_ifp->int_name);
+	    if (install &&
+		(rt->rt_state & (RTS_INTERNAL | RTS_EXTERNAL)) == 0 &&
+		ioctl(s, SIOCDELRT, (char *)&rt->rt_rt))
+		    perror("SIOCDELRT");
+	}
 	remque(rt);
 	free((char *)rt);
 }
@@ -257,9 +270,10 @@ again:
 	for (rh = base; rh < &base[ROUTEHASHSIZ]; rh++) {
 		rt = rh->rt_forw;
 		for (; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
-			if (rt->rt_state & RTS_INTERFACE)
+			if (rt->rt_state & RTS_INTERFACE ||
+			    rt->rt_metric >= HOPCNT_INFINITY)
 				continue;
-			TRACE_ACTION(DELETE, rt);
+			TRACE_ACTION("DELETE", rt);
 			if ((rt->rt_state & (RTS_INTERNAL|RTS_EXTERNAL)) == 0 &&
 			    ioctl(s, SIOCDELRT, (char *)&rt->rt_rt))
 				perror("SIOCDELRT");
@@ -270,7 +284,7 @@ again:
 		base = nethash;
 		goto again;
 	}
-	hup(s);
+	exit(s);
 }
 
 /*
