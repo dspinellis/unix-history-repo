@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)delch.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)delch.c	5.14 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
+#include <string.h>
 
 /*
  * wdelch --
