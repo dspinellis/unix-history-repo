@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.88		%G%);
+SCCSID(@(#)main.c	3.89		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -478,6 +478,7 @@ main(argc, argv)
 				syserr("daemon: cannot fork");
 			if (i != 0)
 				exit(0);
+			MotherPid = getpid();
 		}
 # ifdef QUEUE
 		if (queuemode)
