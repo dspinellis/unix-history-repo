@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)whoami.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)whoami.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -20,7 +20,7 @@ static char sccsid[] = "@(#)whoami.c	5.4 (Berkeley) %G%";
 
 main()
 {
-	struct passwd *p, *getpwuid();
+	struct passwd *p;
 	uid_t uid;
 
 	uid = geteuid();
