@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_swap.c	7.24 (Berkeley) %G%
+ *	@(#)vm_swap.c	7.25 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -15,9 +15,10 @@
 #include <sys/namei.h>
 #include <sys/dmap.h>		/* XXX */
 #include <sys/vnode.h>
-#include <sys/specdev.h>
 #include <sys/map.h>
 #include <sys/file.h>
+
+#include <miscfs/specfs/specdev.h>
 #include "stat.h"
 
 /*

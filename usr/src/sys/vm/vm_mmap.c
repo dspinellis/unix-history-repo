@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	7.16 (Berkeley) %G%
+ *	@(#)vm_mmap.c	7.17 (Berkeley) %G%
  */
 
 /*
@@ -23,10 +23,11 @@
 #include <sys/filedesc.h>
 #include <sys/proc.h>
 #include <sys/vnode.h>
-#include <sys/specdev.h>
 #include <sys/file.h>
 #include <sys/mman.h>
 #include <sys/conf.h>
+
+#include <miscfs/specfs/specdev.h>
 
 #include <vm/vm.h>
 #include <vm/vm_pager.h>
