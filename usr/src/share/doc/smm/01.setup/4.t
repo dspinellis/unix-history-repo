@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)4.t	8.1 (Berkeley) %G%
+.\"	@(#)4.t	6.18 (Berkeley) %G%
 .\"
 .ds LH "Installing/Operating \*(4B
 .ds CF \*(Dy
@@ -368,6 +368,29 @@ and
 .Xr uucp (1)
 use this system call so that the binary images are site
 independent.
+.PP
+You will also need to edit
+.Pn /etc/netstart
+to do the network interface initialization using
+.Xr ifconfig (8).
+If you are not sure how to do this, see sections 5.1, 5.2, and 5.3.
+If you are not running a routing daemon and have
+more than one Ethernet in your environment
+you will need to set up a default route;
+see section 5.4 for details.
+Before bringing your system up multiuser,
+you should ensure that the networking is properly configured.
+The network is started by running
+.Pn /etc/netstart .
+Once started, you should test connectivity using
+.Xr ping (8).
+You should first test connectivity to yourself, 
+then another host on your Ethernet,
+and finally a host on another Ethernet.
+The
+.Xr netstat (8)
+program can be used to inspect and debug
+your routes; see section 5.4.
 .Sh 2 "Setting up the line printer system"
 .PP
 The line printer system consists of at least
