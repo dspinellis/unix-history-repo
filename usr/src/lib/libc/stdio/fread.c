@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fread.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)fread.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -33,7 +33,7 @@ fread(buf, size, count, fp)
 	total = resid;
 	p = buf;
 	while (resid > (r = fp->_r)) {
-		(void) bcopy((void *)fp->_p, (void *)p, (size_t)r);
+		(void)memcpy((void *)p, (void *)fp->_p, (size_t)r);
 		fp->_p += r;
 		/* fp->_r = 0 ... done in __srefill */
 		p += r;
@@ -43,7 +43,7 @@ fread(buf, size, count, fp)
 			return ((total - resid) / size);
 		}
 	}
-	(void) bcopy((void *)fp->_p, (void *)p, resid);
+	(void)memcpy((void *)p, (void *)fp->_p, resid);
 	fp->_r -= resid;
 	fp->_p += resid;
 	return (count);
