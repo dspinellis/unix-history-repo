@@ -24,6 +24,7 @@
  */
 #define	DEFLP		"lp"
 #define DEFLOCK		"lock"
+#define DEFSTAT		"status"
 #define	DEFSPOOL	"/usr/spool/lpd"
 #define	DEFDAEMON	"/usr/lib/lpd"
 #define	DEFLOGF		"/dev/console"
@@ -32,6 +33,7 @@
 #define DEFBINDIR	"/usr/ucb"
 #define	DEFMX		1000
 #define DEFFF		"\f"
+#define DEFUID		1
 
 /*
  * Some utilities used by lpd

@@ -55,7 +55,7 @@
 
 char lpr_id[] = "~|^`lpr.c:\t4.2\t1 May 1981\n";
 
-/*	lpr.c	4.6	83/01/05	*/
+/*	lpr.c	4.7	83/01/07	*/
 /*
  *      lpr -- off line print
  *              also known as print
@@ -234,10 +234,10 @@ main(argc, argv)
 	if (argc == 1)
 		copy(0, " ");
 	else while (--argc) {
-		if (test(arg = *++argv))
+		if ((i = test(arg = *++argv)) < 0)
 			continue;	/* file unreasonable */
 
-		if (lflag && linked(arg)) {
+		if (i && lflag && linked(arg)) {
 			if (prflag)
 				card('T', title ? title : arg);
 			for (i = 0;i < ncopies; i++)
@@ -246,8 +246,7 @@ main(argc, argv)
 			card('N', arg);
 			dfname[inchar]++;
 			nact++;
-		}
-		else {
+		} else {
 			if ((f = open(arg, 0)) < 0) {
 				printf("%s: cannot open %s\n", name, arg);
 				continue;
@@ -471,7 +470,7 @@ out()
 
 /*
  * Test to see if this is a printable file.
- * Return -1 if it is not, else 0
+ * Return -1 if it is not, 1 if it's publically readable, else 0
  */
 test(file)
 	char *file;
@@ -526,6 +525,8 @@ test(file)
 		}
 		*cp = '/';
 	}
+	if (statb.st_mode & 04)
+		return(1);
 	return(0);
 
 error1:
@@ -584,28 +585,24 @@ chkprinter(s)
  */
 mktemps()
 {
-	register int fd, len;
+	register int c, len;
 	int n;
 	char buf[BUFSIZ], *mktemp();
+	FILE *fp;
 
 	(void) sprintf(buf, "%s/.seq", SD);
-	if ((fd = open(buf, 2)) < 0) {
-		n = umask(0);
-		fd = creat(buf, FILMOD);
-		(void) umask(n);
-		if (fd < 0) {
-			printf("%s: cannot create %s\n", name, buf);
-			exit(1);
-		}
-		n = 1;
-	}
-	else {
-		if (flock(fd, FEXLOCK)) {
+	if ((fp = fopen(buf, "r+")) == NULL) {
+		printf("%s: cannot create %s\n", name, buf);
+		exit(1);
+	} else {
+		setbuf(fp, buf);
+		if (flock(fileno(fp), FEXLOCK)) {
 			printf("%s: cannot lock %s\n", name, buf);
 			exit(1);
 		}
-		if (read(fd, (char *)&n, sizeof(n)) != sizeof(n))
-			n = 1;
+		n = 0;
+		while ((c = getc(fp)) >= '0' && c <= '9')
+			n = n * 10 + (c - '0');
 	}
 	len = strlen(SD) + strlen(host) + 8;
 	tfname = mktemp("tf", n, len);
@@ -613,9 +610,9 @@ mktemps()
 	dfname = mktemp("df", n, len);
 	inchar = strlen(SD) + 3;
 	n = (n + 1) % 1000;
-	(void) lseek(fd, 0L, 0);
-	(void) write(fd, &n, sizeof(n));
-	(void) close(fd);
+	(void) fseek(fp, 0L, 0);
+	fprintf(fp, "%d\n", n);
+	(void) fclose(fp);
 }
 
 /*
