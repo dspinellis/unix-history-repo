@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ttgeneric.c	3.13 83/08/23";
+static	char *sccsid = "@(#)ttgeneric.c	3.14 83/08/24";
 #endif
 
 #include "ww.h"
@@ -203,9 +203,9 @@ register char row, col;
 	if (gen_row == row && gen_col == col)
 		return;
 	if (!gen_MI && gen_insert)
-		gen_setinsert(0);
+		gen_setinsert1(0);
 	if (!gen_MS && gen_modes)
-		gen_setmodes(0);
+		gen_setmodes1(0);
 	if (gen_row == row) {
 		if (gen_col == col)
 			return;
