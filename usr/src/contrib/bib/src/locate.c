@@ -1,6 +1,7 @@
 #ifndef lint
 static char sccsid[] = "@(#)locate.c	2.2	%G%";
 #endif not lint
+#
 
 # include   "stdio.h"
 # include   "streams.h"
@@ -8,7 +9,7 @@ static char sccsid[] = "@(#)locate.c	2.2	%G%";
 # define    maxrefs      200
 
 struct reftype{
-    char reffile[64];		/* rrh: still may be too short */
+    char reffile[maxstr];
     long int start, length;
     };
 
@@ -16,7 +17,6 @@ char *malloc();
 char *rindex();
 char *stripkeys();
 int   fetchref();
-int fileflag;
 
 /*  locate(keys, name, max_klen, common):
         Returns a string containing all references pointed to by name
@@ -32,7 +32,6 @@ int  max_klen;          /* max key length */
     static  FILE *index = NULL;
     static  long int i_size;            /* size of index                   */
     static  char oldtext[maxstr];       /* oldtext is the path to stream   */
-    static  char workbuf[10240];	/* work buffer */
     static  FILE *text = NULL;		/*  text.  if it is a relative     */
     static  int  pathlen;		/*  path, it is relative to index  */
 					/*  directory.                     */
@@ -139,8 +138,17 @@ int  max_klen;          /* max key length */
             refcnt= copied;
         }
 
-    /* copy refs into the work buffer */
-        next= workbuf;
+    total= 0;
+    for (i=0; i<refcnt; i++)    total += refs[i].length+1;
+
+    allrefs= malloc(total+1);
+    if (allrefs==NULL)
+    {   fprintf(stderr, "locate: insufficient space for references\n");
+	exit(1);
+    }
+
+    /* copy refs into allrefs */
+        next= allrefs;
         for (i=0; i<refcnt; i++)
         {   /*  open text */
                 if (strcmp(oldtext,refs[i].reffile) != 0)
@@ -162,24 +170,10 @@ int  max_klen;          /* max key length */
                     }
                 }
             fseek(text, refs[i].start, 0);
-	    {
-		register char *from;
-		if (fileflag){
-			from = oldtext;
-			while(*next++ = *from++) /*VOID*/ ;
-			next[-1] = '\n';
-		}
-	    }
             for (j=0; j<refs[i].length; j++)    *next++ = getc(text);
             *next++ = '\n';
         }
         *next = NULL;
-    allrefs = malloc(strlen(workbuf) + 1);
-    if (allrefs == NULL) {
-	fprintf(stderr, "No space left for allrefs\n");
-	exit(1);
-    }
-    strcpy(allrefs, workbuf);
     return(allrefs);
 }
 
@@ -222,6 +216,6 @@ struct reftype *ref;
     if (cntl=='\n') {return (0);}
     if (cntl==':')  fscanf(stream, "%s", oldfile);
     strcpy(ref->reffile, oldfile);
-    fscanf(stream, "%ld/%ld", &ref->start, &ref->length);
+    fscanf(stream, "%D/%D", &ref->start, &ref->length);
     return(1);
 }
