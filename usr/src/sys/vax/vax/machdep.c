@@ -1,4 +1,4 @@
-/*	machdep.c	4.48	81/12/09	*/
+/*	machdep.c	4.49	82/01/16	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -494,15 +494,26 @@ boot(paniced, arghowto)
 
 #ifdef lint
 	howto = 0; devtype = 0;
-	printf("howto %d, devtype %d\n", howto, devtype);
+	printf("howto %d, devtype %d\n", arghowto, devtype);
 #endif
+	(void) spl4();
 	howto = arghowto;
 	if ((howto&RB_NOSYNC)==0 && waittime < 0 && bfreelist[0].b_forw) {
+		register int cnt;
+		register struct buf *bp;
+		int iter, nbusy;
 		waittime = 0;
-		update();
+		update(1);
 		printf("syncing disks... ");
-		while (++waittime <= 5)
-			sleep((caddr_t)&lbolt, PZERO);
+		for (iter = 0; iter < 10; iter++) {
+			nbusy = 0;
+			for (bp = &buf[nbuf]; --bp >= buf; )
+				if (bp->b_flags & B_BUSY)
+					nbusy++;
+			if (nbusy == 0)
+				break;
+			printf("%d ", nbusy);
+		}
 		printf("done\n");
 	}
 	splx(0x1f);			/* extreme priority */
@@ -513,8 +524,10 @@ boot(paniced, arghowto)
 		for (;;)
 			;
 	} else {
-		if (paniced == RB_PANIC)
-			doadump();
+		if (paniced == RB_PANIC) {
+			doadump();		/* TXDB_BOOT's itsself */
+			/*NOTREACHED*/
+		}
 		tocons(TXDB_BOOT);
 	}
 #if defined(VAX750) || defined(VAX7ZZ)

@@ -1,4 +1,4 @@
-/*	locore.s	4.59	82/01/12	*/
+/*	locore.s	4.60	82/01/16	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -7,6 +7,7 @@
 #include "../h/cpu.h"
 #include "../h/nexus.h"
 #include "../h/ubareg.h"
+#include "../h/cons.h"
 
 #include "dz.h"
 #include "mba.h"
@@ -67,6 +68,10 @@ _doadump:
 	pushr	$0x3fff
 	calls	$0,_dumpsys
 1:
+	mfpr	$TXCS,r0
+	bitl	$TXCS_RDY,r0
+	beql	1b
+	mtpr	$TXDB_BOOT,$TXDB
 	halt
 
 /*
