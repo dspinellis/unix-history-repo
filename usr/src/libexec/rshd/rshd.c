@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -24,6 +24,7 @@ static char sccsid[] = "@(#)rshd.c	5.8 (Berkeley) %G%";
 #include <sys/ioctl.h>
 #include <sys/param.h>
 #include <sys/socket.h>
+#include <sys/file.h>
 #include <sys/time.h>
 
 #include <netinet/in.h>
@@ -168,6 +169,10 @@ doit(f, fromp)
 	if (pwd->pw_passwd != 0 && *pwd->pw_passwd != '\0' &&
 	    ruserok(hostname, pwd->pw_uid == 0, remuser, locuser) < 0) {
 		error("Permission denied.\n");
+		exit(1);
+	}
+	if (!access("/etc/nologin", F_OK)) {
+		error("Logins currently disabled.\n");
 		exit(1);
 	}
 	(void) write(2, "\0", 1);
