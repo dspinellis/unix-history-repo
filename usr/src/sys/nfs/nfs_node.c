@@ -7,22 +7,21 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_node.c	7.29 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.30 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
 #include "proc.h"
 #include "mount.h"
 #include "vnode.h"
-#include "errno.h"
+#include "kernel.h"
+#include "malloc.h"
+
 #include "nfsv2.h"
 #include "nfs.h"
 #include "nfsnode.h"
 #include "nfsmount.h"
-#include "kernel.h"
-#include "malloc.h"
 
 /* The request list head */
 extern struct nfsreq nfsreqh;
@@ -223,14 +222,13 @@ nfs_lock(vp)
 
 	while (np->n_flag & NLOCKED) {
 		np->n_flag |= NWANT;
-		if (np->n_lockholder == u.u_procp->p_pid)
+		if (np->n_lockholder == curproc->p_pid)
 			panic("locking against myself");
-		np->n_lockwaiter = u.u_procp->p_pid;
+		np->n_lockwaiter = curproc->p_pid;
 		(void) tsleep((caddr_t)np, PINOD, "nfslock", 0);
 	}
 	np->n_lockwaiter = 0;
-	np->n_lockholder = u.u_procp->p_pid;
-	u.u_spare[0]++;
+	np->n_lockholder = curproc->p_pid;
 	np->n_flag |= NLOCKED;
 }
 
@@ -245,7 +243,6 @@ nfs_unlock(vp)
 	if ((np->n_flag & NLOCKED) == 0)
 		vprint("nfs_unlock: unlocked nfsnode", vp);
 	np->n_lockholder = 0;
-	u.u_spare[0]--;
 	np->n_flag &= ~NLOCKED;
 	if (np->n_flag & NWANT) {
 		np->n_flag &= ~NWANT;

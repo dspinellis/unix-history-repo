@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_srvcache.c	7.9 (Berkeley) %G%
+ *	@(#)nfs_srvcache.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -17,7 +17,6 @@
  */
 
 #include "param.h"
-#include "user.h"
 #include "vnode.h"
 #include "mount.h"
 #include "kernel.h"
@@ -25,7 +24,9 @@
 #include "mbuf.h"
 #include "socket.h"
 #include "socketvar.h"
+
 #include "../netinet/in.h"
+
 #include "nfsm_subs.h"
 #include "nfsv2.h"
 #include "nfsrvcache.h"

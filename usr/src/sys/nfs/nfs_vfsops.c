@@ -7,25 +7,25 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	7.25 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "conf.h"
 #include "ioctl.h"
 #include "signal.h"
-#include "user.h"
 #include "proc.h"
 #include "vnode.h"
 #include "mount.h"
-#include "errno.h"
 #include "buf.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "systm.h"
+
 #include "../net/if.h"
 #include "../net/route.h"
 #include "../netinet/in.h"
+
 #include "nfsv2.h"
 #include "nfsnode.h"
 #include "nfsmount.h"
@@ -98,7 +98,7 @@ nfs_statfs(mp, sbp)
 	cred->cr_ngroups = 1;
 	nfsm_reqhead(nfs_procids[NFSPROC_STATFS], cred, NFSX_FH);
 	nfsm_fhtom(vp);
-	nfsm_request(vp, NFSPROC_STATFS, u.u_procp, 0);
+	nfsm_request(vp, NFSPROC_STATFS, curproc, 0);
 	nfsm_disect(sfp, struct nfsv2_statfs *, NFSX_STATFS);
 	sbp->f_type = MOUNT_NFS;
 	sbp->f_flags = nmp->nm_flag;
