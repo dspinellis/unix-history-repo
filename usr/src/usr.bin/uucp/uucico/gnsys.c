@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)gnsys.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)gnsys.c	5.5	%G%";
 #endif
 
 #include "uucp.h"
@@ -25,21 +25,16 @@ static char sccsid[] = "@(#)gnsys.c	5.4 (Berkeley) %G%";
  *		SUCCESS  -  no more names
  *		FAIL  -  bad directory
  */
-
 gnsys(sname, dir, pre)
 char *sname, *dir, pre;
 {
-	register char *s, *p1, *p2;
-	char px[3];
+	register DIR *dirp;
+	register struct direct *dentp;
 	static char *list[LSIZE];
-	static int nitem=0, n=0, base=0;
-	char systname[NAMESIZE], filename[NAMESIZE];
-	DIR *dirp;
+	static int nitem = 0, n = 0, base = 0;
+	char systname[NAMESIZE];
 
 retry:
-	px[0] = pre;
-	px[1] = '.';
-	px[2] = '\0';
 	if (nitem == base) {
 		/* get list of systems with work */
 		int i;
@@ -47,21 +42,21 @@ retry:
 		ASSERT(dirp != NULL, "BAD DIRECTORY", dir, 0);
 		for (i = base; i < LSIZE; i++)
 			list[i] = NULL;
-		while (gnamef(dirp, filename) != 0) {
-			if (!prefix(px, filename))
+		while (dentp = readdir(dirp)) {
+			register char *s, *p1, *p2;
+			if (dentp->d_name[0] != pre || dentp->d_name[1] != '.')
 				continue;
-			p2 = filename + strlen(filename)
-				- WSUFSIZE;
-			p1 = filename + strlen(px);
+			p2 = dentp->d_name + dentp->d_namlen - WSUFSIZE;
+			p1 = dentp->d_name + 2;
 			for(s = systname; p1 <= p2; p1++)
 				*s++ = *p1;
 			*s = '\0';
 			if (systname[0] == '\0')
 				continue;
 			nitem = srchst(systname, list, nitem);
-			if (LSIZE <= nitem) break;
+			if (LSIZE <= nitem)
+				break;
 		}
-
 		closedir(dirp);
 	}
 
@@ -71,7 +66,7 @@ retry:
 				free(list[n]);
 		return SUCCESS;
 	}
-	while(nitem > n) {
+	while (nitem > n) {
 		/* We only have at most a SYSNSIZE character site name encoded
 		 * in the file. However, we would like to use the full sitename
 		 * if possible. If the number of chars in list[n] is < SYSNSIZE
@@ -113,7 +108,6 @@ retry:
  *	return codes:
  *		n - the number of items in the list
  */
-
 srchst(name, list, n)
 char *name;
 register char **list;
