@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: mem.c 1.13 89/10/08$
+ * from: Utah $Hdr: mem.c 1.14 90/10/12$
  *
- *	@(#)mem.c	7.4 (Berkeley) %G%
+ *	@(#)mem.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -64,9 +64,9 @@ mmrw(dev, uio, flags)
 			if (v >= 0xFFFFFFFC || v < lowram)
 				return (EFAULT);
 #endif
-			pmap_enter(pmap_kernel(), vmmap, v,
-				uio->uio_rw == UIO_READ ? VM_PROT_READ : VM_PROT_WRITE,
-				TRUE);
+			pmap_enter(pmap_kernel(), vmmap, trunc_page(v),
+				uio->uio_rw == UIO_READ ?
+				   VM_PROT_READ : VM_PROT_WRITE, TRUE);
 			o = (int)uio->uio_offset & PGOFSET;
 			c = (u_int)(NBPG - ((int)iov->iov_base & PGOFSET));
 			c = MIN(c, (u_int)(NBPG - o));
