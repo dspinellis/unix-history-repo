@@ -1,0 +1,19 @@
+Bug?
+	update after scroll in non-full width window
+
+Misc:
+	Look at why WWU_MAJOR is set so often
+	Cursor movements shouldn't use wwwrite().
+	ww_ob should be baudrate dependent.
+	tt_ob should be malloc()ed in ttinit().
+
+Better error reporting.
+	Wwerrstr.
+
+Multiple selected windows
+
+Stopped children.
+
+ttgeneric:
+	deal with xn and other ugly flags
+	use the m? strings in termcap.
