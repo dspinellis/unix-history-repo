@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.40	83/01/22	*/
+/*	in_pcb.c	4.41	83/07/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -174,6 +174,20 @@ in_setsockaddr(inp, nam)
 	sin->sin_family = AF_INET;
 	sin->sin_port = inp->inp_lport;
 	sin->sin_addr = inp->inp_laddr;
+}
+
+in_setpeeraddr(inp, nam)
+	register struct inpcb *inp;
+	struct mbuf *nam;
+{
+	register struct sockaddr_in *sin = mtod(nam, struct sockaddr_in *);
+	
+	nam->m_len = sizeof (*sin);
+	sin = mtod(nam, struct sockaddr_in *);
+	bzero((caddr_t)sin, sizeof (*sin));
+	sin->sin_family = AF_INET;
+	sin->sin_port = inp->inp_fport;
+	sin->sin_addr = inp->inp_faddr;
 }
 
 /*

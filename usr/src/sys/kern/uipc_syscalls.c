@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.47	83/06/14	*/
+/*	uipc_syscalls.c	4.48	83/07/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -725,6 +725,50 @@ getsockname()
 		return;
 	}
 	u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_SOCKADDR, 0, m, 0);
+	if (u.u_error)
+		goto bad;
+	if (len > m->m_len)
+		len = m->m_len;
+	u.u_error = copyout(mtod(m, caddr_t), (caddr_t)uap->asa, (u_int)len);
+	if (u.u_error)
+		goto bad;
+	u.u_error = copyout((caddr_t)&len, (caddr_t)uap->alen, sizeof (len));
+bad:
+	m_freem(m);
+}
+
+/*
+ * Get name of peer for connected socket.
+ */
+getpeername()
+{
+	register struct a {
+		int	fdes;
+		caddr_t	asa;
+		int	*alen;
+	} *uap = (struct a *)u.u_ap;
+	register struct file *fp;
+	register struct socket *so;
+	struct mbuf *m;
+	int len;
+
+	fp = getsock(uap->fdes);
+	if (fp == 0)
+		return;
+	so = (struct socket *)fp->f_data;
+	if ((so->so_state & SS_ISCONNECTED) == 0) {
+		u.u_error = ENOTCONN;
+		return;
+	}
+	m = m_getclr(M_WAIT, MT_SONAME);
+	if (m == NULL) {
+		u.u_error = ENOBUFS;
+		return;
+	}
+	u.u_error = copyin((caddr_t)uap->alen, (caddr_t)&len, sizeof (len));
+	if (u.u_error)
+		return;
+	u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_PEERADDR, 0, m, 0);
 	if (u.u_error)
 		goto bad;
 	if (len > m->m_len)
