@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -50,13 +50,13 @@ install:
 		mv ${DESTDIR}/bin/newcp ${DESTDIR}/bin/cp;
 	rm -f ${DESTDIR}/bin/mv; cp mv ${DESTDIR}/bin/mv; rm -f mv; \
 		strip ${DESTDIR}/bin/mv
-	for i in ${SUBDIR}; do \
+	-for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
-	for i in ${SCRIPT}; do (install -c $$i.sh ${DESTDIR}/bin/$$i); done
-	for i in ${STD} ${NSTD}; do (install -s $$i ${DESTDIR}/bin/$$i); done
-	for i in ${SETUID}; do (chown root ${DESTDIR}/bin/$$i; \
+	-for i in ${SCRIPT}; do (install -c $$i.sh ${DESTDIR}/bin/$$i); done
+	-for i in ${STD} ${NSTD}; do (install -s $$i ${DESTDIR}/bin/$$i); done
+	-for i in ${SETUID}; do (chown root ${DESTDIR}/bin/$$i; \
 		chmod 4755 ${DESTDIR}/bin/$$i); done
-	for i in ${KMEM}; do (chgrp kmem ${DESTDIR}/bin/$$i; \
+	-for i in ${KMEM}; do (chgrp kmem ${DESTDIR}/bin/$$i; \
 		chmod 2755 ${DESTDIR}/bin/$$i); done
 	rm -f ${DESTDIR}/bin/[; ln ${DESTDIR}/bin/test ${DESTDIR}/bin/[
 	rm -f ${DESTDIR}/bin/e; ln ${DESTDIR}/bin/ed ${DESTDIR}/bin/e
