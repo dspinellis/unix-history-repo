@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)up.c	7.2 (Berkeley) %G%
+ *	@(#)up.c	7.3 (Berkeley) %G%
  */
 
 #include "up.h"
@@ -147,7 +147,6 @@ u_char	up_offset[16] = {
 	0, 0, 0, 0
 };
 
-struct	buf	rupbuf[NUP];
 struct 	buf	bupbuf[NUP];
 struct	dkbad	upbad[NUP];
 
@@ -219,7 +218,7 @@ upmaptype(ui)
 			break;
 		}
 	if (st->nsect == 0)
-		printf("up%d: uphr=%x\n", ui->ui_slave, upaddr->uphr);
+		printf(": uphr=%x", ui->ui_slave, upaddr->uphr);
 	if (type == 0) {
 		upaddr->uphr = UPHR_MAXCYL;
 		if (upaddr->uphr == 822)
@@ -738,28 +737,6 @@ doattn:
 			needie = 0;
 	if (needie)
 		upaddr->upcs1 = UP_IE;
-}
-
-upread(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int unit = upunit(dev);
-
-	if (unit >= NUP)
-		return (ENXIO);
-	return (physio(upstrategy, &rupbuf[unit], dev, B_READ, minphys, uio));
-}
-
-upwrite(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int unit = upunit(dev);
-
-	if (unit >= NUP)
-		return (ENXIO);
-	return (physio(upstrategy, &rupbuf[unit], dev, B_WRITE, minphys, uio));
 }
 
 /*

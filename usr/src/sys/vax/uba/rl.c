@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rl.c	7.2 (Berkeley) %G%
+ *	@(#)rl.c	7.3 (Berkeley) %G%
  */
 
 #include "rl.h"
@@ -96,8 +96,6 @@ struct	RL02 {
 } rl02 = {
 	20,	2,	40,	512,	20*512,	rl02_sizes /* rl02/DEC*/
 };
-
-struct	buf	rrlbuf[NRL];
 
 #define	b_cylin b_resid		/* Last seek as CYL<<1 | HD */
 
@@ -558,28 +556,6 @@ rlwait(rladdr)
 
 	while ((rladdr->rlcs & RL_CRDY) == 0)
 		;
-}
-
-rlread(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int unit = rlunit(dev);
-
-	if (unit >= NRL)
-		return (ENXIO);
-	return (physio(rlstrategy, &rrlbuf[unit], dev, B_READ, minphys, uio));
-}
-
-rlwrite(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int unit = rlunit(dev);
-
-	if (unit >= NRL)
-		return (ENXIO);
-	return (physio(rlstrategy, &rrlbuf[unit], dev, B_WRITE, minphys, uio));
 }
 
 /*

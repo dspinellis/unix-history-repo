@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)idc.c	7.2 (Berkeley) %G%
+ *	@(#)idc.c	7.3 (Berkeley) %G%
  */
 
 #include "rb.h"
@@ -115,8 +115,6 @@ struct	idcst {
 	256, NRB02SECT, NRB02TRK, NRB02SECT*NRB02TRK, NRB02CYL,	rb02_sizes,
 	512, NRB80SECT, NRB80TRK, NRB80SECT*NRB80TRK, NRB80CYL,	rb80_sizes,
 };
-
-struct	buf ridcbuf[NRB];
 
 #define	b_cylin	b_resid
 
@@ -664,28 +662,6 @@ idcwait(addr, n)
 		for (i = 10; i; i--)
 			;
 	return (n);
-}
-
-idcread(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int unit = idcunit(dev);
-
-	if (unit >= NRB)
-		return (ENXIO);
-	return (physio(idcstrategy, &ridcbuf[unit], dev, B_READ, minphys, uio));
-}
-
-idcwrite(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int unit = idcunit(dev);
-
-	if (unit >= NRB)
-		return (ENXIO);
-	return (physio(idcstrategy, &ridcbuf[unit], dev, B_WRITE, minphys, uio));
 }
 
 idcecc(ui)
