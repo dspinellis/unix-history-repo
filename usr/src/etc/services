@@ -1,7 +1,7 @@
 #
 # Network services, Internet style
 #
-#	@(#)services	5.6 (Berkeley) %G%
+#	@(#)services	5.7 (Berkeley) %G%
 #
 echo		7/tcp
 echo		7/udp
@@ -25,6 +25,10 @@ whois		43/tcp		nicname
 domain		53/tcp		nameserver	# name-domain server
 domain		53/udp		nameserver
 mtp		57/tcp				# deprecated
+# Bootp experimental (sellgren@vangogh)
+bootps          67/udp                          # bootp server
+bootpc          68/udp                          # bootp client
+#
 tftp		69/udp
 rje		77/tcp		netrjs
 finger		79/tcp
