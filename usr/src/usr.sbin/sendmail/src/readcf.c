@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	6.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	6.38 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1401,11 +1401,11 @@ makemapentry(line)
 
 	/* enter the map */
 	map = stab(mapname, ST_MAP, ST_ENTER);
-	map->s_map.map_class = class->s_mapclass;
+	map->s_map.map_class = &class->s_mapclass;
 	map->s_map.map_mname = newstr(mapname);
 
-	if ((*class->s_mapclass->map_parse)(&map->s_map, p))
-		map->s_map.map_flags |= MF_VALID;
+	if ((*class->s_mapclass.map_parse)(&map->s_map, p))
+		map->s_map.map_mflags |= MF_VALID;
 }
 /*
 **  SETTIMEOUTS -- parse and set timeout values

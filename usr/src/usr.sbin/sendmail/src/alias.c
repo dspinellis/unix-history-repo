@@ -11,7 +11,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	6.46 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	6.47 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -150,17 +150,15 @@ aliaslookup(name, e)
 	register int dbno;
 	register MAP *map;
 	register char *p;
-	char *nullargv[1];
 
-	nullargv[0] = NULL;
 	for (dbno = 0; dbno < NAliasDBs; dbno++)
 	{
 		auto int stat;
 
 		map = &AliasDB[dbno];
-		if (!bitset(MF_VALID, map->map_flags))
+		if (!bitset(MF_OPEN, map->map_mflags))
 			continue;
-		p = (*map->map_class->map_lookup)(map, name, nullargv, &stat);
+		p = (*map->map_class->map_lookup)(map, name, NULL, &stat);
 		if (p != NULL)
 			return p;
 	}
@@ -216,7 +214,7 @@ setalias(spec)
 		else
 		{
 			class = "implicit";
-			map->map_flags = MF_OPTIONAL;
+			map->map_mflags = MF_OPTIONAL;
 		}
 
 		/* find end of spec */
@@ -232,12 +230,17 @@ setalias(spec)
 			if (tTd(27, 1))
 				printf("Unknown alias class %s\n", class);
 		}
+		else if (!bitset(MCF_ALIASOK, s->s_mapclass.map_cflags))
+		{
+			syserr("setalias: map class %s can't handle aliases",
+				class);
+		}
 		else
 		{
-			map->map_class = s->s_mapclass;
+			map->map_class = &s->s_mapclass;
 			if (map->map_class->map_parse(map, spec))
 			{
-				map->map_flags |= MF_VALID;
+				map->map_mflags |= MF_VALID|MF_ALIAS;
 				NAliasDBs++;
 			}
 		}
@@ -261,8 +264,6 @@ setalias(spec)
 **		if ~NDBM: reads the aliases into the symbol table.
 */
 
-# define DBMMODE	0644
-
 initaliases(rebuild, e)
 	bool rebuild;
 	register ENVELOPE *e;
@@ -270,17 +271,28 @@ initaliases(rebuild, e)
 	int dbno;
 	register MAP *map;
 
+	CurEnv = e;
 	for (dbno = 0; dbno < NAliasDBs; dbno++)
 	{
 		map = &AliasDB[dbno];
+		if (!bitset(MF_VALID, map->map_mflags))
+			continue;
 
 		if (tTd(27, 2))
 			printf("initaliases(%s:%s)\n",
 				map->map_class->map_cname, map->map_file);
 
+		/* if already open, close it (for nested open) */
+		if (bitset(MF_OPEN, map->map_mflags))
+		{
+			map->map_class->map_close(map);
+			map->map_mflags &= ~(MF_OPEN|MF_WRITABLE);
+		}
+
 		if (rebuild)
 		{
-			rebuildaliases(map, FALSE, e);
+			if (bitset(MCF_REBUILDABLE, map->map_class->map_cflags))
+				rebuildaliases(map, FALSE);
 		}
 		else
 		{
@@ -290,12 +302,12 @@ initaliases(rebuild, e)
 					printf("%s:%s: valid\n",
 						map->map_class->map_cname,
 						map->map_file);
-				map->map_flags |= MF_VALID;
-				aliaswait(map, e);
+				map->map_mflags |= MF_OPEN;
 			}
 			else if (tTd(27, 4))
 				printf("%s:%s: invalid: %s\n",
-					map->map_class->map_cname, map->map_file,
+					map->map_class->map_cname,
+					map->map_file,
 					errstring(errno));
 		}
 	}
@@ -306,9 +318,9 @@ initaliases(rebuild, e)
 **	This can decide to reopen or rebuild the alias file
 */
 
-aliaswait(map, e)
+aliaswait(map, ext)
 	MAP *map;
-	ENVELOPE *e;
+	char *ext;
 {
 	int atcnt;
 	time_t mtime;
@@ -316,7 +328,8 @@ aliaswait(map, e)
 	char buf[MAXNAME];
 
 	if (tTd(27, 3))
-		printf("aliaswait\n");
+		printf("aliaswait(%s:%s)\n",
+			map->map_class->map_cname, map->map_file);
 
 	atcnt = SafeAlias * 2;
 	if (atcnt > 0)
@@ -341,20 +354,29 @@ aliaswait(map, e)
 	}
 
 	/* see if we need to go into auto-rebuild mode */
-	if (map->map_class->map_rebuild == NULL ||
-	    stat(map->map_file, &stb) < 0)
+	if (!bitset(MCF_REBUILDABLE, map->map_class->map_cflags))
+	{
+		if (tTd(27, 3))
+			printf("aliaswait: not rebuildable\n");
 		return;
+	}
+	if (stat(map->map_file, &stb) < 0)
+	{
+		if (tTd(27, 3))
+			printf("aliaswait: no source file\n");
+		return;
+	}
 	mtime = stb.st_mtime;
 	(void) strcpy(buf, map->map_file);
-	if (map->map_class->map_ext != NULL)
-		(void) strcat(buf, map->map_class->map_ext);
+	if (ext != NULL)
+		(void) strcat(buf, ext);
 	if (stat(buf, &stb) < 0 || stb.st_mtime < mtime || atcnt < 0)
 	{
 		/* database is out of date */
 		if (AutoRebuild && stb.st_ino != 0 && stb.st_uid == geteuid())
 		{
 			message("auto-rebuilding alias database %s", buf);
-			rebuildaliases(map, TRUE, e);
+			rebuildaliases(map, TRUE);
 		}
 		else
 		{
@@ -373,7 +395,6 @@ aliaswait(map, e)
 **	Parameters:
 **		map -- the database to rebuild.
 **		automatic -- set if this was automatically generated.
-**		e -- current envelope.
 **
 **	Returns:
 **		none.
@@ -383,15 +404,14 @@ aliaswait(map, e)
 **		DBM or DB version.
 */
 
-rebuildaliases(map, automatic, e)
+rebuildaliases(map, automatic)
 	register MAP *map;
 	bool automatic;
-	register ENVELOPE *e;
 {
 	FILE *af;
 	void (*oldsigint)();
 
-	if (map->map_class->map_rebuild == NULL)
+	if (!bitset(MCF_REBUILDABLE, map->map_class->map_cflags))
 		return;
 
 #ifdef LOG
@@ -410,7 +430,6 @@ rebuildaliases(map, automatic, e)
 		if (tTd(27, 1))
 			printf("Can't open %s: %s\n",
 				map->map_file, errstring(errno));
-		map->map_flags &= ~MF_VALID;
 		errno = 0;
 		return;
 	}
@@ -434,18 +453,26 @@ rebuildaliases(map, automatic, e)
 
 	oldsigint = signal(SIGINT, SIG_IGN);
 
-	map->map_class->map_open(map, O_RDWR);
-	if (bitset(MF_VALID, map->map_flags))
+	if (map->map_class->map_open(map, O_RDWR))
 	{
-		map->map_class->map_rebuild(map, af, automatic);
-		readaliases(map, af, automatic, e);
+		map->map_mflags |= MF_OPEN|MF_WRITABLE;
+		readaliases(map, af, automatic);
+	}
+	else
+	{
+		if (tTd(27, 1))
+			printf("Can't create database for %s: %s\n",
+				map->map_file, errstring(errno));
+		if (!automatic)
+			syserr("Cannot create database for alias file %s",
+				map->map_file);
 	}
 
 	/* close the file, thus releasing locks */
 	fclose(af);
 
 	/* add distinguished entries and close the database */
-	if (bitset(MF_VALID, map->map_flags))
+	if (bitset(MF_OPEN, map->map_mflags))
 		map->map_class->map_close(map);
 
 	/* restore the old signal */
@@ -461,7 +488,6 @@ rebuildaliases(map, automatic, e)
 **		map -- the alias database descriptor.
 **		af -- file to read the aliases from.
 **		automatic -- set if this was an automatic rebuild.
-**		e -- the current envelope.
 **
 **	Returns:
 **		none.
@@ -471,11 +497,10 @@ rebuildaliases(map, automatic, e)
 **		Optionally, builds the .dir & .pag files.
 */
 
-readaliases(map, af, automatic, e)
+readaliases(map, af, automatic)
 	register MAP *map;
 	FILE *af;
 	int automatic;
-	register ENVELOPE *e;
 {
 	register char *p;
 	char *lhs;
@@ -617,7 +642,7 @@ readaliases(map, af, automatic, e)
 						p++;
 					if (*p == '\0')
 						break;
-					if (parseaddr(p, &bl, -1, ',', &delimptr, e) == NULL)
+					if (parseaddr(p, &bl, -1, ',', &delimptr, CurEnv) == NULL)
 						usrerr("553 %s... bad address", p);
 					p = delimptr;
 				}
@@ -671,7 +696,7 @@ readaliases(map, af, automatic, e)
 			longest = rhssize;
 	}
 
-	e->e_to = NULL;
+	CurEnv->e_to = NULL;
 	FileName = NULL;
 	if (Verbose || !automatic)
 		message("%s: %d aliases, longest %d bytes, %d bytes total",

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.58 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.59 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -249,6 +249,82 @@ setupmailers()
 	strcpy(buf, "*include*, P=/dev/null, F=su, A=INCLUDE");
 	makemailer(buf);
 }
+/*
+**  SETUPMAPS -- set up map classes
+*/
+
+#define MAPDEF(name, ext, flags, parse, open, close, lookup, store) \
+	{ \
+		extern bool parse __P((MAP *, char *)); \
+		extern bool open __P((MAP *, int)); \
+		extern void close __P((MAP *)); \
+		extern char *lookup __P((MAP *, char *, char **, int *)); \
+		extern void store __P((MAP *, char *, char *)); \
+		s = stab(name, ST_MAPCLASS, ST_ENTER); \
+		s->s_mapclass.map_cname = name; \
+		s->s_mapclass.map_ext = ext; \
+		s->s_mapclass.map_cflags = flags; \
+		s->s_mapclass.map_parse = parse; \
+		s->s_mapclass.map_open = open; \
+		s->s_mapclass.map_close = close; \
+		s->s_mapclass.map_lookup = lookup; \
+		s->s_mapclass.map_store = store; \
+	}
+
+setupmaps()
+{
+	register STAB *s;
+
+#ifdef NEWDB
+	MAPDEF("hash", ".db", MCF_ALIASOK|MCF_REBUILDABLE,
+		map_parseargs, hash_map_open, db_map_close,
+		db_map_lookup, db_map_store);
+	MAPDEF("btree", ".db", MCF_ALIASOK|MCF_REBUILDABLE,
+		map_parseargs, bt_map_open, db_map_close,
+		db_map_lookup, db_map_store);
+#endif
+
+#ifdef NDBM
+	MAPDEF("dbm", ".dir", MCF_ALIASOK|MCF_REBUILDABLE,
+		map_parseargs, ndbm_map_open, ndbm_map_close,
+		ndbm_map_lookup, ndbm_map_store);
+#endif
+
+#ifdef NIS
+	MAPDEF("nis", NULL, MCF_ALIASOK,
+		map_parseargs, nis_map_open, nis_map_close,
+		nis_map_lookup, nis_map_store);
+#endif
+
+	MAPDEF("stab", NULL, MCF_ALIASOK|MCF_ALIASONLY,
+		map_parseargs, stab_map_open, stab_map_close,
+		stab_map_lookup, stab_map_store);
+
+	MAPDEF("implicit", NULL, MCF_ALIASOK|MCF_ALIASONLY|MCF_REBUILDABLE,
+		map_parseargs, impl_map_open, impl_map_close,
+		impl_map_lookup, impl_map_store);
+
+	/* host DNS lookup */
+	MAPDEF("host", NULL, 0,
+		host_map_init, null_map_open, null_map_close,
+		host_map_lookup, null_map_store);
+
+	/* dequote map */
+	MAPDEF("dequote", NULL, 0,
+		dequote_init, null_map_open, null_map_close,
+		dequote_map, null_map_store);
+
+#if 0
+# ifdef USERDB
+	/* user database */
+	MAPDEF("udb", ".db", 0,
+		udb_map_parse, null_map_open, null_map_close,
+		udb_map_lookup, null_map_store);
+# endif
+#endif
+}
+
+#undef MAPDEF
 /*
 **  GETRUID -- get real user id (V7)
 */

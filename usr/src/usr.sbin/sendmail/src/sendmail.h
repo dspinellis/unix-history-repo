@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.65 (Berkeley) %G%
+ *	@(#)sendmail.h	6.66 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.65		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.66		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -491,7 +491,7 @@ MAP
 {
 	MAPCLASS	*map_class;	/* the class of this map */
 	char		*map_mname;	/* name of this map */
-	int		map_flags;	/* flags, see below */
+	int		map_mflags;	/* flags, see below */
 	char		*map_file;	/* the (nominal) filename */
 	void		*map_db1;	/* the open database ptr */
 	void		*map_db2;	/* an "extra" database pointer */
@@ -508,6 +508,7 @@ MAP
 # define MF_MATCHONLY	0x0010		/* don't use the map value */
 # define MF_OPEN	0x0020		/* this entry is open */
 # define MF_WRITABLE	0x0040		/* open for writing */
+# define MF_ALIAS	0x0080		/* this is an alias file */
 # define MF_IMPL_HASH	0x1000		/* implicit: underlying hash database */
 # define MF_IMPL_NDBM	0x2000		/* implicit: underlying NDBM database */
 
@@ -520,19 +521,23 @@ MAPCLASS
 {
 	char	*map_cname;		/* name of this map class */
 	char	*map_ext;		/* extension for database file */
+	short	map_cflags;		/* flag bits, see below */
 	bool	(*map_parse)__P((MAP *, char *));
 					/* argument parsing function */
 	char	*(*map_lookup)__P((MAP *, char *, char **, int *));
 					/* lookup function */
 	void	(*map_store)__P((MAP *, char *, char *));
 					/* store function */
-	void	(*map_rebuild)__P((MAP *, FILE *, int));
-					/* rebuild function */
 	bool	(*map_open)__P((MAP *, int));
 					/* open function */
 	void	(*map_close)__P((MAP *));
 					/* close function */
 };
+
+/* bit values for map_cflags */
+#define MCF_ALIASOK	0x0001		/* can be used for aliases */
+#define MCF_ALIASONLY	0x0002		/* usable only for aliases */
+#define MCF_REBUILDABLE	0x0004		/* can rebuild alias files */
 /*
 **  Symbol table definitions
 */
@@ -548,7 +553,7 @@ struct symtab
 		ADDRESS		*sv_addr;	/* pointer to address header */
 		MAILER		*sv_mailer;	/* pointer to mailer */
 		char		*sv_alias;	/* alias */
-		MAPCLASS	*sv_mapclass;	/* mapping function class */
+		MAPCLASS	sv_mapclass;	/* mapping function class */
 		MAP		sv_map;		/* mapping function */
 		char		*sv_hostsig;	/* host signature */
 		MCI		sv_mci;		/* mailer connection info */

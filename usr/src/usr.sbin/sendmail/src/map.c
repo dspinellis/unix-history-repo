@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	6.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	6.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -41,10 +41,6 @@ static char sccsid[] = "@(#)map.c	6.14 (Berkeley) %G%";
 **
 **	void map_store(MAP *map, char *key, char *value)
 **		Store the key:value pair in the map.
-**
-**	void map_rebuild(MAP *map, FILE *fp, int automatic)
-**		Rebuild the map.  If automatic is set, this is an
-**		auto-rebuild.
 **
 **	bool map_open(MAP *map, int mode)
 **		Open the map for the indicated mode.  Return TRUE if it
@@ -88,19 +84,19 @@ map_parseargs(map, ap)
 		switch (*++p)
 		{
 		  case 'N':
-			map->map_flags |= MF_INCLNULL;
+			map->map_mflags |= MF_INCLNULL;
 			break;
 
 		  case 'o':
-			map->map_flags |= MF_OPTIONAL;
+			map->map_mflags |= MF_OPTIONAL;
 			break;
 
 		  case 'f':
-			map->map_flags |= MF_NOFOLDCASE;
+			map->map_mflags |= MF_NOFOLDCASE;
 			break;
 
 		  case 'm':
-			map->map_flags |= MF_MATCHONLY;
+			map->map_mflags |= MF_MATCHONLY;
 			break;
 
 		  case 'a':
@@ -283,15 +279,20 @@ ndbm_map_open(map, mode)
 	if (tTd(27, 2))
 		printf("ndbm_map_open(%s, %d)\n", map->map_file, mode);
 
+	if (mode == O_RDWR)
+		mode |= O_CREAT|O_TRUNC;
+
 	/* open the database */
 	dbm = dbm_open(map->map_file, mode, DBMMODE);
 	if (dbm == NULL)
 	{
-		if (!bitset(MF_OPTIONAL, map->map_flags))
+		if (!bitset(MF_OPTIONAL, map->map_mflags))
 			syserr("Cannot open DBM database %s", map->map_file);
 		return FALSE;
 	}
 	map->map_db1 = (void *) dbm;
+	if (mode == O_RDONLY && bitset(MF_ALIAS, map->map_mflags))
+		aliaswait(map, ".dir");
 	return TRUE;
 }
 
@@ -315,7 +316,7 @@ ndbm_map_lookup(map, name, av, statp)
 
 	key.dptr = name;
 	key.dsize = strlen(name);
-	if (!bitset(MF_NOFOLDCASE, map->map_flags))
+	if (!bitset(MF_NOFOLDCASE, map->map_mflags))
 	{
 		if (key.dsize > sizeof keybuf - 1)
 			key.dsize = sizeof keybuf - 1;
@@ -323,14 +324,14 @@ ndbm_map_lookup(map, name, av, statp)
 		makelower(keybuf);
 		key.dptr = keybuf;
 	}
-	if (bitset(MF_INCLNULL, map->map_flags))
+	if (bitset(MF_INCLNULL, map->map_mflags))
 		key.dsize++;
 	(void) lockfile(dbm_dirfno((DBM *) map->map_db1), map->map_file, LOCK_SH);
 	val = dbm_fetch((DBM *) map->map_db1, key);
 	(void) lockfile(dbm_dirfno((DBM *) map->map_db1), map->map_file, LOCK_UN);
 	if (val.dptr == NULL)
 		return NULL;
-	if (bitset(MF_MATCHONLY, map->map_flags))
+	if (bitset(MF_MATCHONLY, map->map_mflags))
 		av = NULL;
 	return map_rewrite(map, val.dptr, val.dsize, av);
 }
@@ -359,7 +360,7 @@ ndbm_map_store(map, lhs, rhs)
 	data.dsize = strlen(rhs);
 	data.dptr = rhs;
 
-	if (bitset(MF_INCLNULL, map->map_flags))
+	if (bitset(MF_INCLNULL, map->map_mflags))
 	{
 		key.dsize++;
 		data.dsize++;
@@ -377,41 +378,14 @@ ndbm_map_store(map, lhs, rhs)
 
 
 /*
-**  DBM_MAP_REBUILD -- rebuild DBM database
-*/
-
-void
-ndbm_map_rebuild(map, fp, automatic)
-	register MAP *map;
-	FILE *fp;
-	int automatic;
-{
-	register DBM *db;
-	int i;
-	char buf[MAXNAME];
-
-	if (tTd(27, 2))
-		printf("ndbm_map_rebuild(%s)\n", map->map_file);
-
-	db = dbm_open(map->map_file, O_RDWR|O_CREAT|O_TRUNC, DBMMODE);
-	if (db == NULL)
-	{
-		syserr("ndbm_map_rebuild: cannot create %s", buf);
-		return;
-	}
-	map->map_db1 = (void *) db;
-	map->map_flags |= MF_WRITABLE|MF_VALID;
-}
-
-/*
-**  NDBM_ACLOSE -- close the database
+**  NDBM_MAP_CLOSE -- close the database
 */
 
 void
 ndbm_map_close(map)
 	register MAP  *map;
 {
-	if (bitset(MF_WRITABLE, map->map_flags))
+	if (bitset(MF_WRITABLE, map->map_mflags))
 	{
 #ifdef YPCOMPAT
 		char buf[200];
@@ -451,15 +425,20 @@ bt_map_open(map, mode)
 	if (tTd(27, 2))
 		printf("bt_map_open(%s, %d)\n", map->map_file, mode);
 
+	if (mode == O_RDWR)
+		mode |= O_CREAT|O_TRUNC;
+
 	(void) sprintf(buf, "%s.db", map->map_file);
 	db = dbopen(buf, mode, 0644, DB_BTREE, NULL);
 	if (db == NULL)
 	{
-		if (!bitset(MF_OPTIONAL, map->map_flags))
+		if (!bitset(MF_OPTIONAL, map->map_mflags))
 			syserr("Cannot open BTREE database %s", map->map_file);
 		return FALSE;
 	}
 	map->map_db2 = (void *) db;
+	if (mode == O_RDONLY && bitset(MF_ALIAS, map->map_mflags))
+		aliaswait(map, ".db");
 	return TRUE;
 }
 
@@ -479,15 +458,20 @@ hash_map_open(map, mode)
 	if (tTd(27, 2))
 		printf("hash_map_open(%s, %d)\n", map->map_file, mode);
 
+	if (mode == O_RDWR)
+		mode |= O_CREAT|O_TRUNC;
+
 	(void) sprintf(buf, "%s.db", map->map_file);
 	db = dbopen(buf, mode, 0644, DB_HASH, NULL);
 	if (db == NULL)
 	{
-		if (!bitset(MF_OPTIONAL, map->map_flags))
+		if (!bitset(MF_OPTIONAL, map->map_mflags))
 			syserr("Cannot open HASH database %s", map->map_file);
 		return FALSE;
 	}
 	map->map_db2 = (void *) db;
+	if (mode == O_RDONLY && bitset(MF_ALIAS, map->map_mflags))
+		aliaswait(map, ".db");
 	return TRUE;
 }
 
@@ -514,13 +498,13 @@ db_map_lookup(map, name, av, statp)
 		key.size = sizeof keybuf - 1;
 	key.data = keybuf;
 	bcopy(name, keybuf, key.size + 1);
-	if (!bitset(MF_NOFOLDCASE, map->map_flags))
+	if (!bitset(MF_NOFOLDCASE, map->map_mflags))
 		makelower(keybuf);
-	if (bitset(MF_INCLNULL, map->map_flags))
+	if (bitset(MF_INCLNULL, map->map_mflags))
 		key.size++;
 	if (((DB *) map->map_db2)->get((DB *) map->map_db2, &key, &val, 0) != 0)
 		return NULL;
-	if (bitset(MF_MATCHONLY, map->map_flags))
+	if (bitset(MF_MATCHONLY, map->map_mflags))
 		av = NULL;
 	return map_rewrite(map, val.data, val.size, av);
 }
@@ -550,7 +534,7 @@ db_map_store(map, lhs, rhs)
 	data.size = strlen(rhs);
 	data.data = rhs;
 
-	if (bitset(MF_INCLNULL, map->map_flags))
+	if (bitset(MF_INCLNULL, map->map_mflags))
 	{
 		key.size++;
 		data.size++;
@@ -568,36 +552,6 @@ db_map_store(map, lhs, rhs)
 
 
 /*
-**  HASH_MAP_REBUILD -- rebuild hash database
-*/
-
-void
-db_map_rebuild(map, fp, automatic, e)
-	register MAP *map;
-	FILE *fp;
-	int automatic;
-	ENVELOPE *e;
-{
-	register DB *db;
-	char buf[MAXNAME];
-
-	if (tTd(27, 2))
-		printf("hash_map_rebuild(%s)\n", map->map_file);
-
-	(void) strcpy(buf, map->map_file);
-	(void) strcat(buf, ".db");
-	db = dbopen(buf, O_RDWR|O_CREAT|O_TRUNC, DBMMODE, DB_HASH, NULL);
-	if (db == NULL)
-	{
-		syserr("hash_map_rebuild: cannot create %s", buf);
-		return;
-	}
-	map->map_db2 = db;
-	map->map_flags |= MF_WRITABLE|MF_VALID;
-}
-
-
-/*
 **  DB_MAP_CLOSE -- add distinguished entries and close the database
 */
 
@@ -608,9 +562,9 @@ db_map_close(map)
 	register DB *db = map->map_db2;
 
 	if (tTd(27, 9))
-		printf("db_map_close(%s, %x)\n", map->map_file, map->map_flags);
+		printf("db_map_close(%s, %x)\n", map->map_file, map->map_mflags);
 
-	if (bitset(MF_WRITABLE, map->map_flags))
+	if (bitset(MF_WRITABLE, map->map_mflags))
 	{
 		/* write out the distinguished alias */
 		db_map_store(map, "@", "@");
@@ -642,6 +596,12 @@ nis_map_open(map, mode)
 	if (tTd(27, 2))
 		printf("nis_map_open(%s)\n", map->map_file);
 
+	if (mode != O_RDONLY)
+	{
+		errno = ENODEV;
+		return FALSE;
+	}
+
 	if (map->map_domain == NULL)
 		yp_get_default_domain(&map->map_domain);
 
@@ -649,7 +609,7 @@ nis_map_open(map, mode)
 	yperr = yp_master(map->map_domain, map->map_file, &master);
 	if (yperr == 0)
 		return TRUE;
-	if (!bitset(MF_OPTIONAL, map->map_flags))
+	if (!bitset(MF_OPTIONAL, map->map_mflags))
 		syserr("Cannot bind to domain %s: %s", map->map_domain,
 			yperr_string(yperr));
 	return FALSE;
@@ -712,26 +672,26 @@ nis_map_lookup(map, name, av, statp)
 	if (buflen > sizeof keybuf - 1)
 		buflen = sizeof keybuf - 1;
 	bcopy(name, keybuf, buflen + 1);
-	if (!bitset(MF_NOFOLDCASE, map->map_flags))
+	if (!bitset(MF_NOFOLDCASE, map->map_mflags))
 		makelower(keybuf);
-	if (bitset(MF_INCLNULL, map->map_flags))
+	if (bitset(MF_INCLNULL, map->map_mflags))
 		buflen++;
 	yperr = yp_match(map->map_domain, map->map_file, keybuf, buflen,
 		     &vp, &vsize);
 	if (yperr != 0)
 	{
 		if (yperr != YPERR_KEY && yperr != YPERR_BUSY)
-			map->map_flags &= ~MF_VALID;
+			map->map_mflags &= ~MF_VALID;
 		return NULL;
 	}
-	if (bitset(MF_MATCHONLY, map->map_flags))
+	if (bitset(MF_MATCHONLY, map->map_mflags))
 		av = NULL;
 	return map_rewrite(map, val.dptr, val.dsize, av);
 }
 
 
 /*
-**  NIS_ASTORE
+**  NIS_MAP_STORE
 */
 
 void
@@ -743,24 +703,9 @@ nis_map_store(map, lhs, rhs)
 	/* nothing */
 }
 
-/*
-**  NIS_AREBUILD
-*/
-
-void
-nis_map_rebuild(map, fp, automatic, e)
-	MAP *map;
-	FILE *fp;
-	int automatic;
-	ENVELOPE *e;
-{
-	if (tTd(27, 2))
-		printf("nis_map_rebuild(%s)\n", map->map_file);
-}
-
 
 /*
-**  NIS_ACLOSE
+**  NIS_MAP_CLOSE
 */
 
 void
@@ -777,7 +722,7 @@ nis_map_close(map)
 
 
 /*
-**  STAB_ALOOKUP -- look up alias in symbol table
+**  STAB_MAP_LOOKUP -- look up alias in symbol table
 */
 
 char *
@@ -798,7 +743,7 @@ stab_map_lookup(map, name)
 
 
 /*
-**  STAB_ASTORE -- store in symtab (actually using during init, not rebuild)
+**  STAB_MAP_STORE -- store in symtab (actually using during init, not rebuild)
 */
 
 void
@@ -815,7 +760,12 @@ stab_map_store(map, lhs, rhs)
 
 
 /*
-**  STAB_AINIT -- initialize (reads data file)
+**  STAB_MAP_OPEN -- initialize (reads data file)
+**
+**	This is a wierd case -- it is only intended as a fallback for
+**	aliases.  For this reason, opens for write (only during a
+**	"newaliases") always fails, and opens for read open the
+**	actual underlying text file instead of the database.
 */
 
 bool
@@ -829,35 +779,17 @@ stab_map_open(map, mode)
 		printf("stab_map_open(%s)\n", map->map_file);
 
 	if (mode != O_RDONLY)
+	{
+		errno = ENODEV;
 		return FALSE;
+	}
 
-	af = fopen(map->map_file, "r");
-	if (af == NULL)
-		return FALSE;
 	return TRUE;
 }
 
 
 /*
-**  STAB_AREBUILD -- rebuild alias file
-*/
-
-void
-stab_map_rebuild(map, fp, automatic, e)
-	MAP *map;
-	FILE *fp;
-	int automatic;
-	ENVELOPE *e;
-{
-	if (tTd(27, 2))
-		printf("stab_map_rebuild(%s)\n", map->map_file);
-
-	map->map_flags |= MF_WRITABLE|MF_VALID;
-}
-
-
-/*
-**  STAB_ACLOSE -- close symbol table (???)
+**  STAB_MAP_CLOSE -- close symbol table (???)
 */
 
 void
@@ -874,7 +806,7 @@ stab_map_close(map)
 
 
 /*
-**  IMPL_ALOOKUP -- lookup in best open database
+**  IMPL_MAP_LOOKUP -- lookup in best open database
 */
 
 char *
@@ -888,18 +820,18 @@ impl_map_lookup(map, name, av, pstat)
 		printf("impl_map_lookup(%s)\n", name);
 
 #ifdef NEWDB
-	if (bitset(MF_IMPL_HASH, map->map_flags))
+	if (bitset(MF_IMPL_HASH, map->map_mflags))
 		return db_map_lookup(map, name, av, pstat);
 #endif
 #ifdef NDBM
-	if (bitset(MF_IMPL_NDBM, map->map_flags))
+	if (bitset(MF_IMPL_NDBM, map->map_mflags))
 		return ndbm_map_lookup(map, name, av, pstat);
 #endif
 	return stab_map_lookup(map, name, av, pstat);
 }
 
 /*
-**  IMPL_ASTORE -- store in open databases
+**  IMPL_MAP_STORE -- store in open databases
 */
 
 void
@@ -909,11 +841,11 @@ impl_map_store(map, lhs, rhs)
 	char *rhs;
 {
 #ifdef NEWDB
-	if (bitset(MF_IMPL_HASH, map->map_flags))
+	if (bitset(MF_IMPL_HASH, map->map_mflags))
 		db_map_store(map, lhs, rhs);
 #endif
 #ifdef NDBM
-	if (bitset(MF_IMPL_NDBM, map->map_flags))
+	if (bitset(MF_IMPL_NDBM, map->map_mflags))
 		ndbm_map_store(map, lhs, rhs);
 #endif
 	stab_map_store(map, lhs, rhs);
@@ -940,206 +872,84 @@ impl_map_open(map, mode)
 	}
 
 #ifdef NEWDB
+	map->map_mflags |= MF_IMPL_HASH;
 	if (hash_map_open(map, mode))
 	{
-		map->map_flags |= MF_IMPL_HASH;
-		return TRUE;
+#if defined(NDBM) && defined(YPCOMPAT)
+		if (mode == O_RDONLY || access("/var/yp/Makefile", R_OK) == 0)
+#endif
+			return TRUE;
 	}
+	else
+		map->map_mflags &= ~MF_IMPL_HASH;
 #endif
 #ifdef NDBM
+	map->map_mflags |= MF_IMPL_NDBM;
 	if (ndbm_map_open(map, mode))
 	{
-		map->map_flags |= MF_IMPL_NDBM;
 		return TRUE;
 	}
+	else
+		map->map_mflags &= ~MF_IMPL_NDBM;
 #endif
 
+#if !defined(NEWDB) && !defined(NDBM)
 	if (Verbose)
 		message("WARNING: cannot open alias database %s", map->map_file);
-
-	if (stab_map_open(map, mode))
-	{
-		return TRUE;
-	}
-
-	return FALSE;
-}
-
-/*
-**  IMPL_AREBUILD -- rebuild alias database
-*/
-
-void
-impl_map_rebuild(map, fp, automatic, e)
-	MAP *map;
-	FILE *fp;
-	int automatic;
-	ENVELOPE *e;
-{
-#ifdef NEWDB
-	DB *ndb;
-	char buf[MAXNAME];
 #endif
 
-	if (tTd(27, 2))
-		printf("impl_map_rebuild(%s)\n", map->map_file);
-
-#ifdef NEWDB
-	(void) strcpy(buf, map->map_file);
-	(void) strcat(buf, ".db");
-	ndb = dbopen(buf, O_RDWR|O_CREAT|O_TRUNC, DBMMODE, DB_HASH, NULL);
-	if (ndb == NULL)
-	{
-		syserr("rebuildaliases: cannot create %s", buf);
-	}
-	else
-	{
-		map->map_db2 = ndb;
-		map->map_flags |= MF_IMPL_HASH;
-#if defined(NDBM) && defined(YPCOMPAT)
-		if (access("/var/yp/Makefile", R_OK) != 0)
-#endif
-			goto readem;
-	}
-#endif
-
-#ifdef NDBM
-	map->map_db1 = (void *) dbm_open(map->map_file, O_RDWR|O_CREAT|O_TRUNC, DBMMODE);
-	if (map->map_db1 == NULL)
-	{
-		syserr("rebuildaliases: cannot create %s.{pag,dir}",
-			map->map_file);
-	}
-	else
-	{
-		map->map_flags |= MF_IMPL_NDBM;
-	}
-#endif
-
-	if (!bitset(MF_IMPL_HASH|MF_IMPL_NDBM, map->map_flags))
-		return;
-
-  readem:
-	map->map_flags |= MF_WRITABLE|MF_VALID;
+	return stab_map_open(map, mode);
 }
 
 
 /*
-**  IMPL_ACLOSE -- close any open database(s)
+**  IMPL_MAP_CLOSE -- close any open database(s)
 */
 
 void
-impl_map_close(map, e)
+impl_map_close(map)
 	MAP *map;
-	ENVELOPE *e;
 {
 #ifdef NEWDB
-	if (bitset(MF_IMPL_HASH, map->map_flags))
-		db_map_close(map, e);
+	if (bitset(MF_IMPL_HASH, map->map_mflags))
+	{
+		db_map_close(map);
+		map->map_mflags &= ~MF_IMPL_HASH;
+	}
 #endif
 
 #ifdef NDBM
-	if (bitset(MF_IMPL_NDBM, map->map_flags))
-		ndbm_map_close(map, e);
+	if (bitset(MF_IMPL_NDBM, map->map_mflags))
+	{
+		ndbm_map_close(map);
+		map->map_mflags &= ~MF_IMPL_NDBM;
+	}
 #endif
 }
 /*
-**  SETUPALIASES -- set up aliases classes
+**  NULL stubs
 */
 
-extern bool	host_map_init __P((MAP *, char *));
-extern char	*host_map_lookup __P((MAP *, char *, char **, int *));
-
-extern bool	dequote_init __P((MAP *, char *));
-extern char	*dequote_map __P((MAP *, char *, char **, int *));
-
-#if 0
-extern bool	udb_map_parse __P((MAP *, char *));
-extern char	*udb_map_lookup __P((MAP *, char *, char **, int *));
-#endif
-
-static MAPCLASS	MapClasses[] =
+bool
+null_map_open(map, mode)
+	MAP *map;
+	int mode;
 {
-#ifdef NEWDB
-	{
-		"hash",		".db",	map_parseargs,
-		db_map_lookup,		db_map_store,
-		db_map_rebuild,		hash_map_open,	db_map_close,
-	},
+	return TRUE;
+}
 
-	{
-		"btree",	".db",	map_parseargs,
-		db_map_lookup,		db_map_store,
-		db_map_rebuild,		bt_map_open,	db_map_close,
-	},
-#endif
-
-#ifdef NDBM
-	{
-		"dbm",		".dir",	map_parseargs,
-		ndbm_map_lookup,	ndbm_map_store,
-		ndbm_map_rebuild,	ndbm_map_open,	ndbm_map_close,
-	},
-#endif
-
-#ifdef NIS
-	{
-		"nis",		NULL,	map_parseargs,
-		nis_map_lookup,		NULL,
-		NULL,			nis_map_open,	nis_map_close,
-	},
-#endif
-
-	{
-		"stab",		NULL,	map_parseargs,
-		stab_map_lookup,	stab_map_store,
-		NULL,			stab_map_open,	stab_map_close,
-	},
-
-	{
-		"implicit",	NULL,	map_parseargs,
-		impl_map_lookup,	impl_map_store,
-		impl_map_rebuild,	impl_map_open,	impl_map_close,
-	},
-
-	/* host DNS lookup */
-	{
-		"host",		NULL,	host_map_init,
-		host_map_lookup,	NULL,
-		NULL,			NULL,		NULL,
-	},
-
-	/* dequote map */
-	{
-		"dequote",	NULL,	dequote_init,
-		dequote_map,		NULL,
-		NULL,			NULL,		NULL,
-	},
-
-#if 0
-# ifdef USERDB
-	/* user database */
-	{
-		"udb",		".db",	udb_map_parse,
-		udb_map_lookup,		NULL,
-		NULL,			NULL,		NULL,
-	},
-# endif
-#endif
-
-	{
-		NULL
-	}
-};
-
-setupmaps()
+void
+null_map_close(map)
+	MAP *map;
 {
-	register MAPCLASS *mc;
-	register STAB *s;
+	return;
+}
 
-	for (mc = MapClasses; mc->map_cname != NULL; mc++)
-	{
-		s = stab(mc->map_cname, ST_MAPCLASS, ST_ENTER);
-		s->s_mapclass = mc;
-	}
+void
+null_map_store(map, key, val)
+	MAP *map;
+	char *key;
+	char *val;
+{
+	return;
 }
