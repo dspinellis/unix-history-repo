@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.52 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.53 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -78,7 +78,6 @@ dropenvelope(e)
 	bool success_return = FALSE;
 	register ADDRESS *q;
 	char *id = e->e_id;
-	bool return_no, return_yes;
 	char buf[MAXLINE];
 
 	if (tTd(50, 1))
@@ -114,7 +113,6 @@ dropenvelope(e)
 	*/
 
 	e->e_flags &= ~EF_QUEUERUN;
-	return_no = return_yes = FALSE;
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
 		if (bitset(QQUEUEUP, q->q_flags))
@@ -141,21 +139,13 @@ dropenvelope(e)
 			success_return = TRUE;
 		}
 		else
-			continue;
-
-		/* common code for error returns and return receipts */
-
-		/* test for returning the body */
-		if (bitset(QHAS_RET_PARAM, q->q_flags))
 		{
-			if (bitset(QRET_HDRS, q->q_flags))
-				return_no = TRUE;
-			else
-				return_yes = TRUE;
+			continue;
 		}
 	}
-	if (return_no && !return_yes)
-		e->e_flags |= EF_NORETURN;
+
+	if (e->e_class < 0)
+		e->e_flags |= EF_NO_BODY_RETN;
 
 	/*
 	**  See if the message timed out.
@@ -258,7 +248,7 @@ dropenvelope(e)
 
 		e->e_flags |= EF_SENDRECEIPT;
 		(void) sendtolist(e->e_receiptto, NULLADDR, &rlist, 0, e);
-		(void) returntosender("Return receipt", rlist, return_yes, e);
+		(void) returntosender("Return receipt", rlist, FALSE, e);
 	}
 	e->e_flags &= ~EF_SENDRECEIPT;
 
@@ -267,7 +257,7 @@ dropenvelope(e)
 	*/
 
 	if (failure_return && e->e_errormode != EM_QUIET)
-		savemail(e, return_yes || (!return_no && e->e_class >= 0));
+		savemail(e, !bitset(EF_NO_BODY_RETN, e->e_flags));
 
 	/*
 	**  Arrange to send warning messages to postmaster as requested.

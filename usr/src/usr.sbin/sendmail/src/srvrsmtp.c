@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.56 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.57 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.56 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.57 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -407,56 +407,7 @@ smtp(e)
 					printf("MAIL: got arg %s=\"%s\"\n", kp,
 						vp == NULL ? "<null>" : vp);
 
-				if (strcasecmp(kp, "size") == 0)
-				{
-					if (vp == NULL)
-					{
-						usrerr("501 SIZE requires a value");
-						/* NOTREACHED */
-					}
-# ifdef __STDC__
-					msize = strtoul(vp, (char **) NULL, 10);
-# else
-					msize = strtol(vp, (char **) NULL, 10);
-# endif
-				}
-				else if (strcasecmp(kp, "body") == 0)
-				{
-					if (vp == NULL)
-					{
-						usrerr("501 BODY requires a value");
-						/* NOTREACHED */
-					}
-					if (strcasecmp(vp, "8bitmime") == 0)
-					{
-						SevenBitInput = FALSE;
-					}
-					else if (strcasecmp(vp, "7bit") == 0)
-					{
-						SevenBitInput = TRUE;
-					}
-					else
-					{
-						usrerr("501 Unknown BODY type %s",
-							vp);
-						/* NOTREACHED */
-					}
-					e->e_bodytype = newstr(vp);
-				}
-				else if (strcasecmp(kp, "envid") == 0)
-				{
-					if (vp == NULL)
-					{
-						usrerr("501 ENVID requires a value");
-						/* NOTREACHED */
-					}
-					e->e_envid = newstr(vp);
-				}
-				else
-				{
-					usrerr("501 %s parameter unrecognized", kp);
-					/* NOTREACHED */
-				}
+				mail_esmtp_args(kp, vp, e);
 			}
 
 			if (MaxMessageSize > 0 && msize > MaxMessageSize)
@@ -807,6 +758,90 @@ skipword(p, w)
 	return (p);
 }
 /*
+**  MAIL_ESMTP_ARGS -- process ESMTP arguments from MAIL line
+**
+**	Parameters:
+**		kp -- the parameter key.
+**		vp -- the value of that parameter.
+**		e -- the envelope.
+**
+**	Returns:
+**		none.
+*/
+
+mail_esmtp_args(kp, vp, e)
+	char *kp;
+	char *vp;
+	ENVELOPE *e;
+{
+	if (strcasecmp(kp, "size") == 0)
+	{
+		if (vp == NULL)
+		{
+			usrerr("501 SIZE requires a value");
+			/* NOTREACHED */
+		}
+# ifdef __STDC__
+		msize = strtoul(vp, (char **) NULL, 10);
+# else
+		msize = strtol(vp, (char **) NULL, 10);
+# endif
+	}
+	else if (strcasecmp(kp, "body") == 0)
+	{
+		if (vp == NULL)
+		{
+			usrerr("501 BODY requires a value");
+			/* NOTREACHED */
+		}
+		if (strcasecmp(vp, "8bitmime") == 0)
+		{
+			SevenBitInput = FALSE;
+		}
+		else if (strcasecmp(vp, "7bit") == 0)
+		{
+			SevenBitInput = TRUE;
+		}
+		else
+		{
+			usrerr("501 Unknown BODY type %s",
+				vp);
+			/* NOTREACHED */
+		}
+		e->e_bodytype = newstr(vp);
+	}
+	else if (strcasecmp(kp, "envid") == 0)
+	{
+		if (vp == NULL)
+		{
+			usrerr("501 ENVID requires a value");
+			/* NOTREACHED */
+		}
+		e->e_envid = newstr(vp);
+	}
+	else if (strcasecmp(kp, "ret") == 0)
+	{
+		if (vp == NULL)
+		{
+			usrerr("501 RET requires a value");
+			/* NOTREACHED */
+		}
+		e->e_flags |= EF_RET_PARAM;
+		if (strcasecmp(vp, "hdrs") == 0)
+			e->e_flags |= EF_NO_BODY_RETN;
+		else if (strcasecmp(vp, "full") != 0)
+		{
+			usrerr("501 Bad argument \"%s\" to RET", vp);
+			/* NOTREACHED */
+		}
+	}
+	else
+	{
+		usrerr("501 %s parameter unrecognized", kp);
+		/* NOTREACHED */
+	}
+}
+/*
 **  RCPT_ESMTP_ARGS -- process ESMTP arguments from RCPT line
 **
 **	Parameters:
@@ -854,22 +889,6 @@ rcpt_esmtp_args(a, kp, vp, e)
 					vp);
 				/* NOTREACHED */
 			}
-		}
-	}
-	else if (strcasecmp(kp, "ret") == 0)
-	{
-		if (vp == NULL)
-		{
-			usrerr("501 RET requires a value");
-			/* NOTREACHED */
-		}
-		a->q_flags |= QHAS_RET_PARAM;
-		if (strcasecmp(vp, "hdrs") == 0)
-			a->q_flags |= QRET_HDRS;
-		else if (strcasecmp(vp, "full") != 0)
-		{
-			usrerr("501 Bad argument \"%s\" to RET", vp);
-			/* NOTREACHED */
 		}
 	}
 	else if (strcasecmp(kp, "orcpt") == 0)

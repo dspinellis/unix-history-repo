@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.38 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.39 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.38 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.39 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -218,7 +218,6 @@ tryhelo:
 /*
 **  ESMTP_CHECK -- check to see if this implementation likes ESMTP protocol
 **
-**
 **	Parameters:
 **		line -- the response line.
 **		firstline -- set if this is the first line of the reply.
@@ -238,11 +237,21 @@ esmtp_check(line, firstline, m, mci, e)
 	register MCI *mci;
 	ENVELOPE *e;
 {
-	while ((line = strchr(++line, 'E')) != NULL)
+	register char *l;
+
+	for (l = line; (l = strchr(++l, 'E')) != NULL; )
 	{
-		if (strncmp(line, "ESMTP ", 6) == 0)
+		if (strncmp(l, "ESMTP ", 6) == 0)
 		{
 			mci->mci_flags |= MCIF_ESMTP;
+			break;
+		}
+	}
+	for (l = line; (l = strchr(++l, '8')) != NULL; )
+	{
+		if (strncmp(l, "8BIT OK", 7) == 0)
+		{
+			mci->mci_flags |= MCIF_8BITOK;
 			break;
 		}
 	}
@@ -293,7 +302,7 @@ helo_options(line, firstline, m, mci, e)
 	}
 	else if (strcasecmp(line, "expn") == 0)
 		mci->mci_flags |= MCIF_EXPN;
-	else if (strcasecmp(line, "x-dsn-1") == 0)
+	else if (strcasecmp(line, "x-dsn-3") == 0)
 		mci->mci_flags |= MCIF_DSN;
 }
 /*
@@ -365,6 +374,16 @@ smtpmailfrom(m, mci, e)
 		{
 			strcat(optbuf, " ENVID=");
 			strcat(optbuf, e->e_envid);
+		}
+
+		/* RET= parameter */
+		if (bitset(EF_RET_PARAM, e->e_flags))
+		{
+			strcat(optbuf, " RET=");
+			if (bitset(EF_NO_BODY_RETN, e->e_flags))
+				strcat(optbuf, "HDRS");
+			else
+				strcat(optbuf, "FULL");
 		}
 	}
 
@@ -500,16 +519,6 @@ smtprcpt(to, m, mci, e)
 		}
 		if (firstone)
 			strcat(optbuf, "NEVER");
-
-		/* RET= parameter */
-		if (bitset(QHAS_RET_PARAM, to->q_flags))
-		{
-			strcat(optbuf, " RET=");
-			if (bitset(QRET_HDRS, to->q_flags))
-				strcat(optbuf, "HDRS");
-			else
-				strcat(optbuf, "FULL");
-		}
 
 		/* ORCPT= parameter */
 		if (to->q_orcpt != NULL)

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.140 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.141 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -854,8 +854,10 @@ ttypath()
 **	message should be given using "usrerr" and 0 should
 **	be returned.
 **
-**	EF_NORETURN can be set in e->e_flags to suppress the return-to-sender
-**	function; this should be done on huge messages.
+**	EF_NO_BODY_RETN can be set in e->e_flags to suppress the
+**	body during the return-to-sender function; this should be done
+**	on huge messages.  This bit may already be set by the ESMTP
+**	protocol.
 **
 **	Parameters:
 **		to -- the person being sent to.
@@ -890,7 +892,7 @@ checkcompat(to, e)
 	    to->q_mailer == s->s_mailer)
 	{
 		usrerr("553 No ARPA mail through this machine: see your system administration");
-		/* e->e_flags |= EF_NORETURN; to supress return copy */
+		/* e->e_flags |= EF_NO_BODY_RETN; to supress body on return */
 		return (EX_UNAVAILABLE);
 	}
 # endif /* EXAMPLE_CODE */

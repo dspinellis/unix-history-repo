@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.130 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.131 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -839,7 +839,7 @@ deliver(e, firstto)
 
 		if (m->m_maxsize != 0 && e->e_msgsize > m->m_maxsize)
 		{
-			e->e_flags |= EF_NORETURN;
+			e->e_flags |= EF_NO_BODY_RETN;
 			usrerr("552 Message is too large; %ld bytes max", m->m_maxsize);
 			giveresponse(EX_UNAVAILABLE, m, NULL, ctladdr, xstart, e);
 			continue;
@@ -1475,7 +1475,7 @@ tryhost:
 				rcode, mci->mci_state, firstsig);
 			rcode = EX_SOFTWARE;
 		}
-		else if (rcode == EX_TEMPFAIL && curhost != NULL && *curhost != '\0')
+		else if (curhost != NULL && *curhost != '\0')
 		{
 			/* try next MX site */
 			goto tryhost;
