@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)err.c	3.35		%G%);
+SCCSID(@(#)err.c	3.36		%G%);
 
 /*
 **  SYSERR -- Print error message.
@@ -52,6 +52,7 @@ syserr(fmt, a, b, c, d, e)
 			ExitStat = EX_OSERR;
 	}
 
+	/* insure that we have a queue id for logging */
 	(void) queuename(CurEnv, '\0');
 # ifdef LOG
 	if (LogLevel > 0)
@@ -232,6 +233,13 @@ fmtmsg(eb, to, num, fmt, a, b, c, d, e)
 		del = ' ';
 	(void) sprintf(eb, "%3.3s%c", num, del);
 	eb += 4;
+
+	/* output the file name and line number */
+	if (FileName != NULL)
+	{
+		(void) sprintf(eb, "%s: line %d: ", FileName, LineNumber);
+		eb += strlen(eb);
+	}
 
 	/* output the "to" person */
 	if (to != NULL && to[0] != '\0')

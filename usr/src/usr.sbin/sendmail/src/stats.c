@@ -1,8 +1,43 @@
 # include "sendmail.h"
 
-SCCSID(@(#)stats.c	3.4		%G%);
+SCCSID(@(#)stats.c	3.5		%G%);
 
 /*
+**  Statistics structure.
+*/
+
+struct statistics
+{
+	time_t	stat_itime;		/* file initialization time */
+	short	stat_size;		/* size of this structure */
+	long	stat_nf[MAXMAILERS];	/* # msgs from each mailer */
+	long	stat_bf[MAXMAILERS];	/* kbytes from each mailer */
+	long	stat_nt[MAXMAILERS];	/* # msgs to each mailer */
+	long	stat_bt[MAXMAILERS];	/* kbytes to each mailer */
+};
+
+struct statistics	Stat;
+extern long		kbytes();	/* for _bf, _bt */
+/*
+**  MARKSTATS -- mark statistics
+*/
+
+markstats(e, to)
+	register ENVELOPE *e;
+	register ADDRESS *to;
+{
+	if (to == NULL)
+	{
+		Stat.stat_nf[e->e_from.q_mailer->m_mno]++;
+		Stat.stat_bf[e->e_from.q_mailer->m_mno] += kbytes(CurEnv->e_msgsize);
+	}
+	else
+	{
+		Stat.stat_nt[to->q_mailer->m_mno]++;
+		Stat.stat_bt[to->q_mailer->m_mno] += kbytes(CurEnv->e_msgsize);
+	}
+}
+/*
 **  POSTSTATS -- post statistics in the statistics file
 **
 **	Parameters:

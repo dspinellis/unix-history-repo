@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)macro.c	3.17		%G%);
+SCCSID(@(#)macro.c	3.18		%G%);
 
 char	*Macro[128];
 
@@ -14,23 +14,22 @@ char	*Macro[128];
 **			of the last usable position in buf.
 **
 **	Returns:
-**		End of interpolated output.
+**		none.
 **
 **	Side Effects:
 **		none.
+**
+**	Bugs:
+**		The handling of $$ (to get one dollar) is rather bizarre,
+**			especially if there should be another macro
+**			expansion in the same string.
 */
 
-char *
-expand(s, buf, buflim)
-	register char *s;
-	register char *buf;
-	char *buflim;
-{
 	register char *q;
-	char xbuf[BUFSIZ];
-	register char *xp = xbuf;
 	bool skipping;		/* set if conditionally skipping output */
 	bool gotone = FALSE;	/* set if any expansion done */
+	char xbuf[BUFSIZ];
+	register char *xp = xbuf;
 	extern char *macvalue();
 
 # ifdef DEBUG
@@ -73,8 +72,10 @@ expand(s, buf, buflim)
 
 		  case '$':		/* macro interpolation */
 			c = *++s;
+			if (c == '$')
+				break;
 			q = Macro[c & 0177];
-			if (q == NULL && c != '$')
+			if (q == NULL)
 				continue;
 			gotone = TRUE;
 			break;
@@ -93,7 +94,7 @@ expand(s, buf, buflim)
 				*xp++ = c;
 				break;
 			}
-			if (*q == NULL)
+			if (*q == '\0')
 				break;
 			*xp++ = *q++;
 		}
@@ -117,8 +118,6 @@ expand(s, buf, buflim)
 	for (q = buf, xp = xbuf; xp != '\0' && q < buflim-1; )
 		*q++ = *xp++;
 	*q = '\0';
-
-	return (q);
 }
 /*
 **  DEFINE -- define a macro.
@@ -128,6 +127,7 @@ expand(s, buf, buflim)
 **	Parameters:
 **		n -- the macro name.
 **		v -- the macro value.
+**		e -- the envelope to store the definition in.
 **
 **	Returns:
 **		none.
@@ -177,9 +177,10 @@ expand(s, buf, buflim)
 **		are available.
 */
 
-define(n, v)
+define(n, v, e)
 	char n;
 	char *v;
+	register ENVELOPE *e;
 {
 # ifdef DEBUG
 	if (tTd(35, 3))

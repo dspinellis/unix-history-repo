@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	3.47		%G%);
+SCCSID(@(#)recipient.c	3.48		%G%);
 
 /*
 **  SENDTO -- Designate a send list.
@@ -77,7 +77,7 @@ sendto(list, ctladdr, sendq)
 			a->q_flags |= QPRIMARY;
 
 		/* put on send queue or suppress self-reference */
-		if (ctladdr != NULL && sameaddr(ctladdr, a, FALSE))
+		if (ctladdr != NULL && sameaddr(ctladdr, a))
 			selfref = TRUE;
 		else
 			al = a;
@@ -189,7 +189,7 @@ recipient(a, sendq)
 
 	for (pq = sendq; (q = *pq) != NULL; pq = &q->q_next)
 	{
-		if (!ForceMail && sameaddr(q, a, FALSE))
+		if (!ForceMail && sameaddr(q, a))
 		{
 # ifdef DEBUG
 			if (tTd(26, 1))
@@ -209,8 +209,6 @@ recipient(a, sendq)
 	/* add address on list */
 	*pq = a;
 	a->q_next = NULL;
-	if (DontSend)
-		a->q_flags |= QDONTSEND;
 
 	/*
 	**  Alias the name and handle :include: specs.
@@ -260,7 +258,7 @@ recipient(a, sendq)
 			    (*p = '\0', !safefile(buf, getruid(), S_IWRITE|S_IEXEC)))
 			{
 				a->q_flags |= QBADADDR;
-				giveresponse(EX_CANTCREAT, TRUE, m);
+				giveresponse(EX_CANTCREAT, m);
 			}
 		}
 		else
@@ -273,7 +271,7 @@ recipient(a, sendq)
 			if (pw == NULL)
 			{
 				a->q_flags |= QBADADDR;
-				giveresponse(EX_NOUSER, TRUE, m);
+				giveresponse(EX_NOUSER, m);
 			}
 			else
 			{
@@ -302,6 +300,9 @@ recipient(a, sendq)
 **
 **	This looks a lot like getpwnam, except that it may want to
 **	do some fancier pattern matching in /etc/passwd.
+**
+**	This routine contains most of the time of many sendmail runs.
+**	It deserves to be optimized.
 **
 **	Parameters:
 **		name -- the name to match against.
@@ -430,6 +431,8 @@ include(fname, msg, ctladdr, sendq)
 	char buf[MAXLINE];
 	register FILE *fp;
 	char *oldto = CurEnv->e_to;
+	char *oldfilename = FileName;
+	int oldlinenumber = LineNumber;
 
 	fp = fopen(fname, "r");
 	if (fp == NULL)
@@ -449,6 +452,8 @@ include(fname, msg, ctladdr, sendq)
 	}
 
 	/* read the file -- each line is a comma-separated list. */
+	FileName = fname;
+	LineNumber = 0;
 	while (fgets(buf, sizeof buf, fp) != NULL)
 	{
 		register char *p = index(buf, '\n');
@@ -465,6 +470,8 @@ include(fname, msg, ctladdr, sendq)
 	}
 
 	(void) fclose(fp);
+	FileName = oldfilename;
+	LineNumber = oldlinenumber;
 }
 /*
 **  SENDTOARGV -- send to an argument vector.

@@ -1,22 +1,14 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.54		%G%);
+SCCSID(@(#)collect.c	3.55		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
 **
 **	Creates a temporary file name and copies the standard
-**	input to that file.  While it is doing it, it looks for
-**	"From:" and "Sender:" fields to use as the from-person
-**	(but only if the -a flag is specified).  It prefers to
-**	to use the "Sender:" field.
-**
-**	MIT seems to like to produce "Sent-By:" fields instead
-**	of "Sender:" fields.  We used to catch this, but it turns
-**	out that the "Sent-By:" field doesn't always correspond
-**	to someone real ("___057", for instance), as required by
-**	the protocol.  So we limp by.....
+**	input to that file.  Leading UNIX-style "From" lines are
+**	stripped off (after important information is extracted).
 **
 **	Parameters:
 **		sayok -- if set, give an ARPANET style message
@@ -82,7 +74,8 @@ collect(sayok)
 	**	and prepended with ">" in the body.
 	*/
 
-	for (; !feof(InChannel); !feof(InChannel) && fgets(buf, MAXFIELD, InChannel) != NULL)
+	for (; !feof(InChannel); !feof(InChannel) &&
+				 fgets(buf, MAXFIELD, InChannel) != NULL)
 	{
 		register char c;
 		extern bool isheader();
@@ -140,9 +133,9 @@ collect(sayok)
 	**  Collect the body of the message.
 	*/
 
-	for (; !feof(InChannel); !feof(InChannel) && fgets(buf, sizeof buf, InChannel) != NULL)
+	for (; !feof(InChannel); !feof(InChannel) &&
+				 fgets(buf, sizeof buf, InChannel) != NULL)
 	{
-		register int i;
 		register char *bp = buf;
 
 		fixcrlf(buf, TRUE);
@@ -152,7 +145,7 @@ collect(sayok)
 			break;
 
 		/* check for transparent dot */
-		if (OpMode == MD_SMTP && *bp == '.')
+		if (OpMode == MD_SMTP && !IgnrDot && bp[0] == '.' && bp[1] == '.')
 			bp++;
 
 # ifndef NOTUNIX
@@ -169,8 +162,7 @@ collect(sayok)
 		**  file, and insert a newline if missing.
 		*/
 
-		i = strlen(bp);
-		CurEnv->e_msgsize += i + 1;
+		CurEnv->e_msgsize += strlen(bp) + 1;
 		fputs(bp, tf);
 		fputs("\n", tf);
 		if (ferror(tf))
@@ -193,7 +185,7 @@ collect(sayok)
 	**	Examples are who is the from person & the date.
 	*/
 
-	eatheader();
+	eatheader(CurEnv);
 
 	/*
 	**  Add an Apparently-To: line if we have no recipient lines.
@@ -217,10 +209,6 @@ collect(sayok)
 			addheader("apparently-to", q->q_paddr, CurEnv);
 		}
 	}
-
-	/* check for hop count overflow */
-	if (HopCount > MAXHOP)
-		syserr("Too many hops (%d max); probably forwarding loop", MAXHOP);
 
 	if ((TempFile = fopen(CurEnv->e_df, "r")) == NULL)
 		syserr("Cannot reopen %s", CurEnv->e_df);
@@ -314,9 +302,9 @@ eatfrom(fm)
 		q = xalloc(25);
 		strncpy(q, p, 25);
 		q[24] = '\0';
-		define('d', q);
+		define('d', q, CurEnv);
 		q = arpadate(q);
-		define('a', newstr(q));
+		define('a', newstr(q), CurEnv);
 	}
 }
 

@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.140		%G%);
+SCCSID(@(#)main.c	3.141		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -25,82 +25,18 @@ SCCSID(@(#)main.c	3.140		%G%);
 **	server mechanism).
 **
 **	Usage:
-**		/etc/sendmail [flags] addr ...
+**		/usr/lib/sendmail [flags] addr ...
 **
-**	Positional Parameters:
-**		addr -- the address to deliver the mail to.  There
-**			can be several.
-**
-**	Flags:
-**		-f name		The mail is from "name" -- used for
-**				the header in local mail, and to
-**				deliver reports of failures to.
-**		-r name		Same as -f; however, this flag is
-**				reserved to indicate special processing
-**				for remote mail delivery as needed
-**				in the future.  So, network servers
-**				should use -r.
-**		-Ffullname	Select what the full-name should be
-**				listed as.
-**		-a		This mail should be in ARPANET std
-**				format (obsolete version).
-**		-as		Speak SMTP.
-**		-n		Don't do aliasing.  This might be used
-**				when delivering responses, for
-**				instance.
-**		-dN		Run with debugging set to level N.
-**		-em		Mail back a response if there was an
-**				error in processing.  This should be
-**				used when the origin of this message
-**				is another machine.
-**		-ew		Write back a response if the user is
-**				still logged in, otherwise, act like
-**				-em.
-**		-eq		Don't print any error message (just
-**				return exit status).
-**		-ep		(default)  Print error messages
-**				normally.
-**		-ee		Send BerkNet style errors.  This
-**				is equivalent to MailBack except
-**				that it has gives zero return code
-**				(unless there were errors during
-**				returning).  This used to be
-**				"EchoBack", but you know how the old
-**				software bounces.
-**		-m		In group expansion, send to the
-**				sender also (stands for the Mail metoo
-**				option.
-**		-i		Do not terminate mail on a line
-**				containing just dot.
-**		-s		Save UNIX-like "From" lines on the
-**				front of messages.
-**		-v		Give blow-by-blow description of
-**				everything that happens.
-**		-t		Read "to" addresses from message.
-**				Looks at To:, Cc:, and Bcc: lines.
-**		-I		Initialize the DBM alias files from
-**				the text format files.
-**		-Cfilename	Use alternate configuration file.
-**		-Afilename	Use alternate alias file.
-**		-DXvalue	Define macro X to have value.
-**		-bv		Verify addresses only.
-**		-bd		Run as a daemon.  Berkeley 4.2 only.
-**		-bf		Fork after address verification.
-**		-bq		Queue up for later delivery.
-**		-ba		Process mail completely.
-**
-**	Return Codes:
-**		As defined in <sysexits.h>.
-**
-**		These codes are actually returned from the auxiliary
-**		mailers; it is their responsibility to make them
-**		correct.
-**
-**	Compilation Flags:
-**		LOG -- if set, everything is logged.
+**		See the associated documentation for details.
 **
 **	Author:
-**		Eric Allman, UCB/INGRES
+**		Eric Allman, UCB/INGRES (until 10/81)
+**			     Britton-Lee, Inc., purveyors of fine
+**				database computers (from 11/81)
+**		The support of the INGRES Project and Britton-Lee is
+**			gratefully acknowledged.  Britton-Lee in
+**			particular had absolutely nothing to gain from
+**			my involvement in this project.
 */
 
 
@@ -285,7 +221,7 @@ main(argc, argv)
 					break;
 				}
 			}
-			HopCount = atoi(p);
+			CurEnv->e_hopcount = atoi(p);
 			break;
 		
 		  case 'n':	/* don't alias */
@@ -398,10 +334,8 @@ main(argc, argv)
 	*/
 
 	initaliases(AliasFile, OpMode == MD_INITALIAS);
-# ifdef DBM
 	if (OpMode == MD_INITALIAS)
 		exit(EX_OK);
-# endif DBM
 
 # ifdef DEBUG
 	if (tTd(0, 15))
@@ -484,7 +418,6 @@ main(argc, argv)
 	}
 # endif QUEUE
 
-#ifdef DAEMON
 	/*
 	**  If a daemon, wait for a request.
 	**	getrequests will always return in a child.
@@ -511,6 +444,7 @@ main(argc, argv)
 			/* disconnect from our controlling tty */
 			disconnect(FALSE);
 		}
+
 # ifdef QUEUE
 		if (queuemode)
 		{
@@ -520,17 +454,17 @@ main(argc, argv)
 					pause();
 		}
 # endif QUEUE
-		checkerrors(CurEnv);
+		dropenvelope(CurEnv);
+
+#ifdef DAEMON
 		getrequests();
 
 		/* at this point we are in a child: reset state */
 		OpMode = MD_SMTP;
-		dropenvelope(CurEnv);
-		CurEnv->e_id = CurEnv->e_df = NULL;
-		CurEnv->e_flags &= ~EF_FATALERRS;
+		(void) newenvelope(CurEnv);
 		openxscrpt();
-	}
 #endif DAEMON
+	}
 	
 # ifdef SMTP
 	/*
@@ -549,7 +483,7 @@ main(argc, argv)
 	initsys();
 	setsender(from);
 
-	if (OpMode != MD_DAEMON && ac <= 0 && !GrabTo)
+	if (OpMode != MD_ARPAFTP && ac <= 0 && !GrabTo)
 	{
 		usrerr("Usage: /etc/sendmail [flags] addr...");
 		finis();
@@ -558,24 +492,9 @@ main(argc, argv)
 		SendMode = SM_VERIFY;
 
 	/*
-	**  Process Hop count.
-	**	The Hop count tells us how many times this message has
-	**	been processed by sendmail.  If it exceeds some
-	**	fairly large threshold, then we assume that we have
-	**	an infinite forwarding loop and die.
-	*/
-
-	if (++HopCount > MAXHOP)
-		syserr("Infinite forwarding loop (%s->%s)", CurEnv->e_from.q_paddr, *av);
-
-	/*
 	**  Scan argv and deliver the message to everyone.
-	**	Actually, suppress delivery if we are taking To:
-	**	lines from the message.
 	*/
 
-	if (GrabTo)
-		DontSend = TRUE;
 	sendtoargv(av);
 
 	/* if we have had errors sofar, arrange a meaningful exit stat */
@@ -586,51 +505,37 @@ main(argc, argv)
 	**  Read the input mail.
 	*/
 
-	DontSend = FALSE;
 	CurEnv->e_to = NULL;
 	if (OpMode != MD_VERIFY || GrabTo)
 		collect(FALSE);
 	errno = 0;
 
-	initsys();
-
 	/* collect statistics */
-	Stat.stat_nf[CurEnv->e_from.q_mailer->m_mno]++;
-	Stat.stat_bf[CurEnv->e_from.q_mailer->m_mno] += kbytes(CurEnv->e_msgsize);
-
-	/*
-	**  Arrange that the person who is sending the mail
-	**  will not be expanded (unless explicitly requested).
-	*/
+	if (OpMode != MD_VERIFY)
+		markstats(CurEnv, (ADDRESS *) NULL);
 
 # ifdef DEBUG
 	if (tTd(1, 1))
 		printf("From person = \"%s\"\n", CurEnv->e_from.q_paddr);
 # endif DEBUG
 
-	CurEnv->e_from.q_flags |= QDONTSEND;
-	if (!MeToo)
-		recipient(&CurEnv->e_from, &CurEnv->e_sendqueue);
-	CurEnv->e_to = NULL;
-
 	/*
 	**  Actually send everything.
 	**	If verifying, just ack.
 	*/
 
+	CurEnv->e_from.q_flags |= QDONTSEND;
+	CurEnv->e_to = NULL;
 	sendall(CurEnv, SendMode);
 
 	/*
 	** All done.
 	*/
 
-	CurEnv->e_to = NULL;
-	if (OpMode != MD_VERIFY)
-		poststats(StatFile);
 	finis();
 }
 /*
-**  SETFROM -- set the person who this message is from
+**  SETSENDER -- set the person who this message is from
 **
 **	Under certain circumstances allow the user to say who
 **	s/he is (using -f or -r).  These are:
@@ -651,10 +556,8 @@ main(argc, argv)
 **	ourselves.
 **
 **	Parameters:
-**		from -- the person it is from.
-**		realname -- the actual person executing sendmail.
-**			If NULL, then take whoever we previously
-**			thought was the from person.
+**		from -- the person we would like to believe this message
+**			is from, as specified on the command line.
 **
 **	Returns:
 **		none.
@@ -663,22 +566,52 @@ main(argc, argv)
 **		sets sendmail's notion of who the from person is.
 */
 
-setfrom(from, realname)
+setsender(from)
 	char *from;
-	char *realname;
 {
 	register char **pvp;
-	char frombuf[MAXNAME];
+	register struct passwd *pw = NULL;
+	char *realname = NULL;
+	char buf[MAXNAME];
+	extern char *macvalue();
 	extern char **prescan();
-	extern char *index();
-
-	if (realname == NULL)
-		realname = CurEnv->e_from.q_paddr;
 
 # ifdef DEBUG
-	if (tTd(1, 1))
-		printf("setfrom(%s, %s)\n", from, realname);
+	if (tTd(45, 1))
+		printf("setsender(%s)\n", from);
 # endif DEBUG
+
+	/*
+	**  Figure out the real user executing us.
+	**	Username can return errno != 0 on non-errors.
+	*/
+
+	if (QueueRun || OpMode == MD_SMTP || OpMode == MD_ARPAFTP)
+		realname = from;
+	if (realname == NULL || realname[0] == '\0')
+	{
+		extern char *username();
+
+		realname = username();
+		errno = 0;
+	}
+	if (realname == NULL || realname[0] == '\0')
+	{
+		extern struct passwd *getpwuid();
+
+		pw = getpwuid(getruid());
+		if (pw != NULL)
+			realname = pw->pw_name;
+	}
+	if (realname == NULL || realname[0] == '\0')
+	{
+		syserr("Who are you?");
+		realname = "root";
+	}
+
+	/*
+	**  Determine if this real person is allowed to alias themselves.
+	*/
 
 	if (from != NULL)
 	{
@@ -704,12 +637,54 @@ setfrom(from, realname)
 	}
 	else
 		FromFlag = TRUE;
+	CurEnv->e_from.q_flags |= QDONTSEND;
 	SuprErrs = FALSE;
+
+	if (pw == NULL && CurEnv->e_from.q_mailer == LocalMailer)
+	{
+		extern struct passwd *getpwnam();
+
+		pw = getpwnam(CurEnv->e_from.q_user);
+	}
+
+	/*
+	**  Process passwd file entry.
+	*/
+
+	if (pw != NULL)
+	{
+		/* extract home directory */
+		CurEnv->e_from.q_home = newstr(pw->pw_dir);
+
+		/* run user's .mailcf file */
+		define('z', CurEnv->e_from.q_home, CurEnv);
+		expand("$z/.mailcf", buf, &buf[sizeof buf - 1], CurEnv);
+		if (safefile(buf, getruid(), S_IREAD))
+			readcf(buf, FALSE);
+
+		/* if the user has given fullname already, don't redefine */
+		if (FullName == NULL)
+			FullName = macvalue('x', CurEnv);
+		if (FullName[0] == '\0')
+			FullName = NULL;
+
+		/* extract full name from passwd file */
+		if (FullName == NULL && pw->pw_gecos != NULL)
+		{
+			buildfname(pw->pw_gecos, CurEnv->e_from.q_user, buf);
+			if (buf[0] != '\0')
+				FullName = newstr(buf);
+		}
+		if (FullName != NULL)
+			define('x', FullName, CurEnv);
+	}
+
+#ifndef V6
+	if (CurEnv->e_from.q_home == NULL)
+		CurEnv->e_from.q_home = getenv("HOME");
+#endif V6
 	CurEnv->e_from.q_uid = getuid();
 	CurEnv->e_from.q_gid = getgid();
-# ifndef V6
-	CurEnv->e_from.q_home = getenv("HOME");
-# endif V6
 	if (CurEnv->e_from.q_uid != 0)
 	{
 		DefUid = CurEnv->e_from.q_uid;
@@ -729,8 +704,8 @@ setfrom(from, realname)
 	}
 	rewrite(pvp, 3);
 	rewrite(pvp, 1);
-	cataddr(pvp, frombuf, sizeof frombuf);
-	define('f', newstr(frombuf));
+	cataddr(pvp, buf, sizeof buf);
+	define('f', newstr(buf), CurEnv);
 
 	/* save the domain spec if this mailer wants it */
 	if (bitset(M_CANONICAL, CurEnv->e_from.q_mailer->m_flags))
@@ -785,21 +760,19 @@ trusteduser(user)
 finis()
 {
 	CurEnv = &MainEnvelope;
+	CurEnv->e_to = NULL;
 
 # ifdef DEBUG
 	if (tTd(2, 1))
 		printf("\n====finis: stat %d e_flags %o\n", ExitStat, CurEnv->e_flags);
 # endif DEBUG
 
-	/*
-	**  Clean up temp files.
-	*/
+	/* clean up temp files */
 
+	/* post statistics */
+	poststats(StatFile);
 
-	/*
-	**  And exit.
-	*/
-
+	/* and exit */
 # ifdef LOG
 	if (LogLevel > 11)
 		syslog(LOG_DEBUG, "finis, pid=%d", getpid());
@@ -809,7 +782,8 @@ finis()
 /*
 **  INTSIG -- clean up on interrupt
 **
-**	This just arranges to call finis.
+**	This just arranges to exit.  It pessimises in that it
+**	may resend a message.
 **
 **	Parameters:
 **		none.
@@ -818,13 +792,14 @@ finis()
 **		none.
 **
 **	Side Effects:
-**		Arranges to not unlink the qf and df files.
+**		Unlocks the current job.
 */
 
 intsig()
 {
-	CurEnv->e_df = NULL;
-	finis();
+	FileName = NULL;
+	unlockqueue(CurEnv);
+	exit(EX_OK);
 }
 /*
 **  OPENXSCRPT -- Open transcript file
@@ -839,7 +814,7 @@ intsig()
 **		none
 **
 **	Side Effects:
-**		Open the transcript file.
+**		Creates the transcript file.
 */
 
 openxscrpt()
@@ -852,107 +827,6 @@ openxscrpt()
 		syserr("Can't create %s", p);
 	else
 		(void) chmod(p, 0644);
-}
-/*
-**  SETSENDER -- set sendmail's idea of the sender.
-**
-**	Parameters:
-**		from -- the person we would like to believe this
-**			is from.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		Sets the idea of the sender.
-*/
-
-setsender(from)
-	char *from;
-{
-	register char *p;
-	extern char *getlogin();
-	register struct passwd *pw;
-	char *realname;
-	char cfbuf[40];
-	bool nofullname;
-	extern char *macvalue();
-
-	/*
-	**  Figure out the real user executing us.
-	**	Getlogin can return errno != 0 on non-errors.
-	*/
-
-	if (OpMode != MD_SMTP && !QueueRun)
-	{
-		errno = 0;
-		p = getlogin();
-		errno = 0;
-		nofullname = (from != NULL);
-	}
-	else
-	{
-		p = from;
-		nofullname = FALSE;
-	}
-	if (p != NULL && p[0] != '\0')
-	{
-		extern struct passwd *getpwnam();
-
-		pw = getpwnam(p);
-		if (pw == NULL)
-		{
-			if (OpMode != MD_SMTP && !QueueRun)
-				syserr("Who are you? (name=%s)", p);
-			p = NULL;
-		}
-	}
-	if (p == NULL || p[0] == '\0')
-	{
-		extern struct passwd *getpwuid();
-		int uid;
-
-		nofullname = TRUE;
-		uid = getruid();
-		pw = getpwuid(uid);
-		if (pw == NULL)
-			syserr("Who are you? (uid=%d)", uid);
-		else
-			p = pw->pw_name;
-	}
-	if (p == NULL || p[0] == '\0' || pw == NULL)
-		finis();
-
-	realname = p;
-
-	/*
-	**  Process passwd file entry.
-	*/
-
-	/* run user's .mailcf file */
-	define('z', pw->pw_dir);
-	(void) expand("$z/.mailcf", cfbuf, &cfbuf[sizeof cfbuf - 1]);
-	if (!nofullname && safefile(cfbuf, getruid(), S_IREAD))
-		readcf(cfbuf, FALSE);
-
-	/* if the user has given fullname already, don't redefine */
-	if (FullName == NULL)
-		FullName = macvalue('x', CurEnv);
-
-	/* extract full name from passwd file */
-	if (!nofullname && (FullName == NULL || FullName[0] == '\0') &&
-	    pw != NULL && pw->pw_gecos != NULL)
-	{
-		char nbuf[MAXNAME];
-
-		buildfname(pw->pw_gecos, realname, nbuf);
-		if (nbuf[0] != '\0')
-			FullName = newstr(nbuf);
-	}
-	if (FullName != NULL && FullName[0] != '\0')
-		define('x', FullName);
-
-	setfrom(from, realname);
 }
 /*
 **  INITSYS -- initialize instantiation of system
@@ -1009,29 +883,29 @@ initsys()
 
 	/* process id */
 	(void) sprintf(pbuf, "%d", getpid());
-	define('p', pbuf);
+	define('p', pbuf, CurEnv);
 
 	/* hop count */
-	(void) sprintf(cbuf, "%d", HopCount);
-	define('c', cbuf);
+	(void) sprintf(cbuf, "%d", CurEnv->e_hopcount);
+	define('c', cbuf, CurEnv);
 
 	/* time as integer, unix time, arpa time */
 	now = curtime();
 	tm = gmtime(&now);
 	(void) sprintf(tbuf, "%02d%02d%02d%02d%02d", tm->tm_year, tm->tm_mon,
 			tm->tm_mday, tm->tm_hour, tm->tm_min);
-	define('t', tbuf);
+	define('t', tbuf, CurEnv);
 	(void) strcpy(dbuf, ctime(&now));
 	*index(dbuf, '\n') = '\0';
 	if (macvalue('d', CurEnv) == NULL)
-		define('d', dbuf);
+		define('d', dbuf, CurEnv);
 	p = newstr(arpadate(dbuf));
 	if (macvalue('a', CurEnv) == NULL)
-		define('a', p);
-	define('b', p);
+		define('a', p, CurEnv);
+	define('b', p, CurEnv);
 
 	/* version */
-	define('v', Version);
+	define('v', Version, CurEnv);
 
 	/* tty name */
 	if (macvalue('y', CurEnv) == NULL)
@@ -1042,7 +916,7 @@ initsys()
 			if (rindex(p, '/') != NULL)
 				p = rindex(p, '/') + 1;
 			(void) strcpy(ybuf, p);
-			define('y', ybuf);
+			define('y', ybuf, CurEnv);
 		}
 	}
 }
@@ -1092,13 +966,13 @@ initmacros()
 	{
 		buf[0] = m->metaval;
 		buf[1] = '\0';
-		define(m->metaname, newstr(buf));
+		define(m->metaname, newstr(buf), CurEnv);
 	}
 	buf[0] = MATCHREPL;
 	buf[2] = '\0';
 	for (c = '0'; c <= '9'; c++)
 	{
 		buf[1] = c;
-		define(c, newstr(buf));
+		define(c, newstr(buf), CurEnv);
 	}
 }
