@@ -1,0 +1,47 @@
+.TH AR 5 
+.SH NAME
+ar \- archive (library) file format
+.SH SYNOPSIS
+.B #include <ar.h>
+.SH DESCRIPTION
+The archive command
+.I ar
+is used to combine several files into
+one.
+Archives are used mainly as libraries to be searched
+by the link-editor
+.I ld.
+.PP
+A file produced by
+.I ar
+has a magic number at the start,
+followed by the constituent files, each preceded by a file header.
+The magic number and header layout as described in the
+include file are:
+.RS
+.PP
+.nf
+.ta \w'#define 'u +\w'ARMAG 'u
+.so /usr/include/ar.h
+.fi
+.RE
+.LP
+The name is a null-terminated string; the date is in the
+form of
+.IR time (2);
+the user ID and group ID are numbers; the mode is a bit pattern
+per
+.IR chmod (2);
+the size is counted in bytes.
+.PP
+Each file begins on a word boundary;
+a null byte is inserted between files if necessary.
+Nevertheless the size given reflects the
+actual size of the file exclusive of padding.
+.PP
+Notice there is no provision for empty areas in an archive
+file.
+.SH "SEE ALSO"
+ar(1), ld(1), nm(1)
+.SH BUGS
+Coding user and group IDs as characters is a botch.
