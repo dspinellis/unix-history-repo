@@ -1,4 +1,4 @@
-/*	ad.c	4.2	82/06/26	*/
+/*	ad.c	4.2	82/07/15	*/
 
 #include "ad.h"
 #if NAD > 0
@@ -47,6 +47,7 @@ adprobe(reg)
 	adaddr->ad_csr = AD_IENABLE | AD_START;
 	DELAY(40000);
 	adaddr->ad_csr = 0;
+	return (sizeof (struct addevice));
 }
 
 adattach(ui)

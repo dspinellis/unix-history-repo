@@ -1,6 +1,6 @@
 #define	RKDEBUG
 #define RKBDEBUG
-/*	rk.c	4.41	82/06/14	*/
+/*	rk.c	4.42	82/07/15	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -125,7 +125,7 @@ rkprobe(reg)
 	((struct rkdevice *)reg)->rkcs1 = RK_CDT|RK_IE|RK_CRDY;
 	DELAY(10);
 	((struct rkdevice *)reg)->rkcs1 = RK_CDT;
-	return (1);
+	return (sizeof (struct rkdevice));
 }
 
 rkslave(ui, reg)

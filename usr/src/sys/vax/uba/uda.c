@@ -1,4 +1,4 @@
-/*	uda.c	4.5	82/05/27	*/
+/*	uda.c	4.6	82/07/15	*/
 
 #include "ra.h"
 #if NUDA > 0
@@ -120,7 +120,7 @@ udprobe(reg, ctlr)
 	/* SHOULD CHECK THAT IT REALLY IS A UDA */
 	br = 0x15;
 	cvec = sc->sc_ivec = (uba_hd[numuba].uh_lastiv -= 4);
-	return(1);
+	return(sizeof (struct udadevice));
 }
 
 udslave(ui, reg)

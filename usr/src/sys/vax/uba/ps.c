@@ -1,4 +1,4 @@
-/*	ps.c	4.1	82/06/26	*/
+/*	ps.c	4.2	82/07/15	*/
 
 /*
  * Evans and Sutherland Picture System 2 driver
@@ -108,6 +108,7 @@ psprobe(reg)
 	psaddr->ps_data = 01;
 	psaddr->ps_iostat = 0;
 	psaddr->ps_iostat = PSRESET;
+	return (sizeof (struct psdevice));
 }
 
 /*ARGSUSED*/

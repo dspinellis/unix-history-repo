@@ -1,4 +1,4 @@
-/*	up.c	4.55	82/06/14	*/
+/*	up.c	4.56	82/07/15	*/
 
 #include "up.h"
 #if NSC > 0
@@ -149,7 +149,7 @@ upprobe(reg)
 	((struct updevice *)reg)->upcs1 = UP_IE|UP_RDY;
 	DELAY(10);
 	((struct updevice *)reg)->upcs1 = 0;
-	return (1);
+	return (sizeof (struct updevice));
 }
 
 upslave(ui, reg)

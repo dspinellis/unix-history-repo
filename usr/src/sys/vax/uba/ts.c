@@ -1,4 +1,4 @@
-/*	ts.c	4.24	82/07/13	*/
+/*	ts.c	4.25	82/07/15	*/
 
 #include "ts.h"
 #if NTS > 0
@@ -121,7 +121,7 @@ tsprobe(reg)
 	/* IT'S TOO HARD TO MAKE THIS THING INTERRUPT JUST TO FIND ITS VECTOR */
 	cvec = ((unsigned)reg) & 07 ? 0260 : 0224;
 	br = 0x15;
-	return (1);
+	return (sizeof (struct tsdevice));
 }
 
 /*

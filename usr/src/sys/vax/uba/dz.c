@@ -1,4 +1,4 @@
-/*	dz.c	4.38	82/05/19	*/
+/*	dz.c	4.39	82/07/15	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -122,7 +122,7 @@ struct device {
 #define dzlcs	dzun.dz32.dzlcs0
 #define	dzbrk	dzmsr
 #define dzlnen	dzun.dz32.dzlnen0
-#define dzmtsr	dzun.dz32.dztbuf0;
+#define dzmtsr	dzun.dz32.dztbuf0
 
 #define dzwait(x)	while (((x)->dzlcs & DZ_ACK) == 0)
 
@@ -174,7 +174,7 @@ dzprobe(reg)
 	dzaddr->dzcsr = DZ_CLR|DZ_32;		/* reset everything */
 	if (cvec && cvec != 0x200)
 		cvec -= 4;
-	return (1);
+	return (sizeof (struct device));
 }
 
 dzattach(ui)
