@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.27 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -31,6 +31,9 @@ static char sccsid[] = "@(#)vfprintf.c	5.26 (Berkeley) %G%";
 #define	ARG() \
 	_ulong = flags&LONGINT ? va_arg(argp, long) : \
 	    flags&SHORTINT ? va_arg(argp, short) : va_arg(argp, int);
+
+#define	todigit(c)	((c) - '0')
+#define	tochar(n)	((n) + '0')
 
 /* have to deal with the negative buffer count kludge */
 #define	NEGATIVE_COUNT_KLUDGE
@@ -112,7 +115,7 @@ rflag:		switch (*++fmt) {
 			else if (isascii(*fmt) && isdigit(*fmt)) {
 				n = 0;
 				do {
-					n = 10 * n + *fmt - '0';
+					n = 10 * n + todigit(*fmt);
 				} while (isascii(*++fmt) && isdigit(*fmt));
 				--fmt;
 			}
@@ -130,7 +133,7 @@ rflag:		switch (*++fmt) {
 		case '5': case '6': case '7': case '8': case '9':
 			n = 0;
 			do {
-				n = 10 * n + *fmt - '0';
+				n = 10 * n + todigit(*fmt);
 			} while (isascii(*++fmt) && isdigit(*fmt));
 			width = n;
 			--fmt;
@@ -349,11 +352,11 @@ _cvt(number, prec, flags, fmtch, padc, sign, startp, endp)
 	u_char fmtch;
 	char padc, *sign, *startp, *endp;
 {
-	register char *p;
+	register char *p, *t;
 	register int expcnt, format;
 	double fract, integer, tmp, modf();
 	int decpt;
-	char *savep;
+	char *savep, exponent[MAXEXP];
 
 	if (prec == -1)
 		prec = DEFPREC;
@@ -393,17 +396,15 @@ _cvt(number, prec, flags, fmtch, padc, sign, startp, endp)
 	p = endp - 1;
 	fract = modf(number, &integer);
 	if (integer) {
-		register char *p2;
-
 		/* get integer part of number; count decimal places */
 		for (; integer; ++expcnt) {
 			tmp = modf(integer / 10, &integer);
-			*p-- = (int)((tmp + .03) * 10) + '0';
+			*p-- = tochar((int)((tmp + .03) * 10));
 		}
 
 		/* copy, in reverse order, to start of buffer */
-		p2 = startp;
-		*p2++ = *++p;
+		t = startp;
+		*t++ = *++p;
 
 		/*
 		 * if the format is g/G, and the resulting exponent will be
@@ -420,19 +421,19 @@ _cvt(number, prec, flags, fmtch, padc, sign, startp, endp)
 					--prec;
 			}
 			if (decpt)
-				*p2++ = '.';
-			for (; ++p < endp && prec; --prec, *p2++ = *p);
+				*t++ = '.';
+			for (; ++p < endp && prec; --prec, *t++ = *p);
 
 			/* precision ran out, round */
 			if (p < endp) {
 				if (*p > '4') {
-					for (savep = p2--;; *p2-- = '0') {
-						if (*p2 == '.')
-							--p2;
-						if (++*p2 <= '9')
+					for (savep = t--;; *t-- = '0') {
+						if (*t == '.')
+							--t;
+						if (++*t <= '9')
 							break;
 					}
-					p2 = savep;
+					t = savep;
 				}
 				fract = 0;
 			}
@@ -442,29 +443,29 @@ _cvt(number, prec, flags, fmtch, padc, sign, startp, endp)
 		 * zeroes, note, have to round first.
 		 */
 		else if (format&GFORMAT) {
-			for (; ++p < endp && prec; --prec, *p2++ = *p);
+			for (; ++p < endp && prec; --prec, *t++ = *p);
 			/* precision ran out; round and then add zeroes */
 			if (p < endp) {
 				if (*p > '4') {
-					for (savep = p2--; ++*p2 > '9';
-					    *p2-- = '0');
-					p2 = savep;
+					for (savep = t--; ++*t > '9';
+					    *t-- = '0');
+					t = savep;
 				}
 				do {
-					*p2++ = '0';
+					*t++ = '0';
 				} while (++p < endp);
 				fract = 0;
 			}
 			if (decpt)
-				*p2++ = '.';
+				*t++ = '.';
 		}
 		/* f format */
 		else {
-			for (; ++p < endp; *p2++ = *p);
+			for (; ++p < endp; *t++ = *p);
 			if (decpt)
-				*p2++ = '.';
+				*t++ = '.';
 		}
-		p = p2;
+		p = t;
 	}
 	/*
 	 * if no fraction, the number was zero, and if no precision, can't
@@ -490,7 +491,7 @@ _cvt(number, prec, flags, fmtch, padc, sign, startp, endp)
 					--expcnt;
 					continue;
 				}
-				*p++ = (int)tmp + '0';
+				*p++ = tochar((int)tmp);
 				break;
 			}
 		else
@@ -517,7 +518,7 @@ _cvt(number, prec, flags, fmtch, padc, sign, startp, endp)
 	/* finish out requested precision */
 	while (fract && prec-- > 0) {
 		fract = modf(fract * 10, &tmp);
-		*p++ = (int)tmp + '0';
+		*p++ = tochar((int)tmp);
 	}
 	while (prec-- > 0)
 		*p++ = '0';
@@ -565,8 +566,18 @@ _cvt(number, prec, flags, fmtch, padc, sign, startp, endp)
 		}
 		else
 			*p++ = '+';
-		*p++ = expcnt / 10 + '0';
-		*p++ = expcnt % 10 + '0';
+		t = exponent + MAXEXP;
+		if (expcnt > 9) {
+			do {
+				*--t = tochar(expcnt % 10);
+			} while ((expcnt /= 10) > 9);
+			*--t = tochar(expcnt);
+			for (; t < exponent + MAXEXP; *p++ = *t++);
+		}
+		else {
+			*p++ = '0';
+			*p++ = tochar(expcnt);
+		}
 	}
 	return(p);
 }
