@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_usrreq.c	7.28 (Berkeley) %G%
+ *	@(#)tp_usrreq.c	7.29 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -219,7 +219,8 @@ restart:
 	if ((inflags & MSG_PEEK) == 0) {
 		n = *nn;
 		*nn = n->m_act;
-		sb->sb_cc -= m->m_len;
+		for (; n; n = m_free(n)) 
+			sbfree(sb, n);
 	}
 
 release:
