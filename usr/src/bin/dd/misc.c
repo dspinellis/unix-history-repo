@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -36,9 +36,8 @@ summary(notused)
 		secs = 1;
 	/* Use snprintf(3) so that we don't reenter stdio(3). */
 	(void)snprintf(buf, sizeof(buf),
-	    "%u+%u records in\n%u+%u records out\n%u bytes transferred in %u secs (%u bytes/sec)\n",
-	    st.in_full, st.in_part, st.out_full, st.out_part, st.bytes,
-	    secs, st.bytes / secs);
+	    "%u+%u records in\n%u+%u records out\n",
+	    st.in_full, st.in_part, st.out_full, st.out_part);
 	(void)write(STDERR_FILENO, buf, strlen(buf));
 	if (st.swab) {
 		(void)snprintf(buf, sizeof(buf), "%u odd length swab %s\n",
@@ -50,6 +49,10 @@ summary(notused)
 		     st.trunc, (st.trunc == 1) ? "block" : "blocks");
 		(void)write(STDERR_FILENO, buf, strlen(buf));
 	}
+	(void)snprintf(buf, sizeof(buf),
+	    "%u bytes transferred in %u secs (%u bytes/sec)\n",
+	    st.bytes, secs, st.bytes / secs);
+	(void)write(STDERR_FILENO, buf, strlen(buf));
 }
 
 /* ARGSUSED */
