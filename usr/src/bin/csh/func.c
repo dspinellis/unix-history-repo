@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)func.c	5.10 (Berkeley) %G%";
+static char *sccsid = "@(#)sh.func.c	5.10 (Berkeley) 11/20/89";
 #endif
 
 #include "sh.h"
@@ -341,7 +341,7 @@ doforeach(v)
 		bferr("Words not ()'ed");
 	v++;
 	gflag = 0, tglob(v);
-	v = glob(v);
+	v = globall(v);
 	if (v == 0)
 		bferr("No match");
 	nwp = (struct whyle *) calloc(1, sizeof *nwp);
@@ -724,7 +724,7 @@ echo(sep, v)
 		return;
 	gflag = 0, tglob(v);
 	if (gflag) {
-		v = glob(v);
+		v = globall(v);
 		if (v == 0)
 			bferr("No match");
 	} else
@@ -1102,7 +1102,7 @@ doeval(v)
 		return;
 	gflag = 0, tglob(v);
 	if (gflag) {
-		gv = v = glob(v);
+		gv = v = globall(v);
 		gargv = 0;
 		if (v == 0)
 			error("No match");
