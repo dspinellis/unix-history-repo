@@ -8,24 +8,20 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stinger.h	7.2 (Berkeley) %G%
+ *	@(#)stinger.h	7.3 (Berkeley) %G%
  */
 
 /*
  * stinger.h -- Stinger Kernel Interface Definitions
- * by A.Fujita, MAR-14-1992
- *
- * This file should be remade.
+ *   remade by A.Fujita, JAN-12-1993
  */
 
-#include <machine/rdvar.h>
-#include <machine/memory.h>
-
 struct KernInter {
-	caddr_t	  maxaddr;
-	struct prgmem prg;
-	int	  argc;
-	char	**argv;
-	struct rd_partition *rd;
+	caddr_t	maxaddr;
+	u_int	dipsw;
+	int	plane;
 };
 
+extern struct KernInter KernInter;
+
+#define	KIFF_DIPSW_NOBM		0x0002		/* not use bitmap display as console */
