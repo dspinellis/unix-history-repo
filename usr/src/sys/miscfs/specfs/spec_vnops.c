@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	7.55 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.56 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -530,7 +530,8 @@ spec_close(ap)
 		 * if the reference count is 2 (this last descriptor
 		 * plus the session), release the reference from the session.
 		 */
-		if (vp == ap->a_p->p_session->s_ttyvp && vcount(vp) == 2) {
+		if (vcount(vp) == 2 && ap->a_p &&
+		    vp == ap->a_p->p_session->s_ttyvp) {
 			vrele(vp);
 			ap->a_p->p_session->s_ttyvp = NULL;
 		}
