@@ -1,4 +1,4 @@
-/*	machdep.c	3.2	%H%	*/
+/*	machdep.c	3.3	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -22,7 +22,7 @@ int	icode[] =
 	0x2ffe110b,	/* $exec; brb .; "/ */
 	0x2f637465,	/* etc/ */
 	0x74696e69,	/* init */
-	0x006d762e,	/* .vm";  0 */
+	0x00000000,	/* \0\0\0";  0 */	/* was .vm" */
 	0x00000014,	/* [&"init", */
 	0x00000000,	/* 0] */
 };
