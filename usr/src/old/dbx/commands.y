@@ -5,10 +5,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)commands.y	5.3 (Berkeley) %G%
+ *	@(#)commands.y	5.4 (Berkeley) %G%
  */
 
-static char rcsid[] = "$Header: commands.y,v 1.5 84/12/26 10:38:41 linton Exp $";
+static char rcsid[] = "$Header: commands.y,v 1.2 87/08/19 15:18:53 mike Exp $";
 
 /*
  * Yacc grammar for debugger commands.
@@ -698,7 +698,7 @@ list_command:
 {
 	$$ = build(O_LIST,
 	    build(O_LCON, (long) cursrcline),
-	    build(O_LCON, (long) cursrcline + 9)
+	    build(O_LCON, (long) cursrcline + srcwindowlen() - 1)
 	);
 }
 |
@@ -714,7 +714,7 @@ list_command:
 |
     LIST opt_qual_symbol
 {
-	$$ = build(O_LIST, $2);
+	$$ = build(O_LIST, $2, $2);
 }
 ;
 integer_list:
