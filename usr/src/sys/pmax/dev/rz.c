@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rz.c	7.1 (Berkeley) %G%
+ *	@(#)rz.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -710,18 +710,14 @@ rzdone(unit, error, resid, status)
 			 */
 			sc->sc_sense.sense[0] = 0x70;
 			sc->sc_sense.sense[2] = SCSI_CLASS7_NO_SENSE;
-		} else if (!cold
-#ifdef DEBUG
-			|| (rzdebug & RZB_ERROR)
-#endif
-		) {
+		} else if (!cold) {
 			printf("rz%d: ", unit);
 			scsiPrintSense((ScsiClass7Sense *)sc->sc_sense.sense,
 				sizeof(sc->sc_sense.sense) - resid);
 		}
 	} else if (error || (status & SCSI_STATUS_CHECKCOND)) {
 #ifdef DEBUG
-		if (rzdebug & RZB_ERROR)
+		if (!cold && (rzdebug & RZB_ERROR))
 			printf("rz%d: error %d scsi status 0x%x\n",
 				unit, error, status);
 #endif
