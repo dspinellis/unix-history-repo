@@ -1,4 +1,4 @@
-/*	hp.c	4.30	81/03/09	*/
+/*	hp.c	4.31	81/03/11	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -7,10 +7,6 @@
  *
  * TODO:
  *	check RM80 skip sector handling, esp when ECC's occur later
- *	add reading of bad sector information and disk layout from sector 1
- *	add bad sector forwarding code
- *	check interaction with tape driver on same mba
- *	check multiple drive handling
  *	check offset recovery handling
  *	see if DCLR and/or RELEASE set attention status
  */
