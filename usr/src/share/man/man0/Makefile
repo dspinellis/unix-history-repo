@@ -2,7 +2,7 @@
 # Copyright (c) 1986, 1993 Regents of the University of California.
 # All rights reserved.
 #
-#	@(#)Makefile	6.5 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 #
 SRCS=	man1 man2 man3 man4 man5 man6 man7 man8
 
