@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	8.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	8.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -136,7 +136,6 @@ struct {
 	{ MNT_LOCAL, "local" },
 	{ MNT_QUOTA, "quota" },
 	{ MNT_ROOTFS, "rootfs" },
-	{ MNT_USER, "user" },
 	{ MNT_UPDATE, "update" },
 	{ MNT_DELEXPORT },
 	{ MNT_UPDATE, "update" },
