@@ -1,4 +1,4 @@
-/*	if_ace.c	1.3	86/01/12	*/
+/*	if_ace.c	1.4	86/01/20	*/
 
 /*
  * ACC VERSAbus Ethernet controller
@@ -40,15 +40,6 @@
 #include "../tahoeif/if_acereg.h"
 #include "../tahoevba/vbavar.h"
 
-/*
- * Configuration table, for 2 units (should be defined by config)
- */
-extern	char ace0utl[], ace1utl[];			/* dpm */
-char	*acemap[]= { ace0utl, ace1utl };
-extern	struct pte ACE0map[], ACE1map[];
-struct	pte *ACEmap[] = { ACE0map, ACE1map };
-caddr_t	ACEmapa[] = { (caddr_t)0xfff80000, (caddr_t)0xfff90000 };
-
 /* station address */
 char	ace_station[6] = { ~0x8, ~0x0, ~0x3, ~0x0, ~0x0, ~0x1 };
 /* multicast hash table initializer */
@@ -63,9 +54,7 @@ int	aceprobe(), aceattach(), acerint(), acecint();
 struct	vba_device *aceinfo[NACE];
 long	acestd[] = { 0x0ff0000, 0xff0100, 0 };
 struct	vba_driver acedriver =
-	{ aceprobe, 0,aceattach,0,acestd,"ace",aceinfo,"v/eiu",0 };
-	
-#define	ACEUNIT(x)	minor(x)
+    { aceprobe, 0, aceattach, 0, acestd, "ace", aceinfo, "v/eiu", 0 };
 
 int	aceinit(), aceoutput(), aceioctl(), acereset();
 struct	mbuf *aceget();
@@ -81,7 +70,6 @@ struct	ace_softc {
 	struct	arpcom is_ac;		/* Ethernet common part	*/
 #define	is_if	is_ac.ac_if		/* network-visible interface */
 #define	is_addr	is_ac.ac_enaddr		/* hardware Ethernet address */
-	char	*is_dpm;
 	short	is_flags;
 #define	ACEF_OACTIVE	0x1		/* output is active */
 #define	ACEF_RCVPENDING	0x2		/* start rcv in acecint	*/
@@ -95,6 +83,8 @@ struct	ace_softc {
 	short	is_xcnt;		/* count xmitted segments to be acked 
 					   by the controller */
 	long	is_ivec;		/* autoconfig interrupt vector base */
+	struct	pte *is_map;		/* pte map for dual ported memory */
+	caddr_t	is_dpm;			/* address of mapped memory */
 } ace_softc[NACE];
 extern	struct ifnet loif;
 
@@ -148,8 +138,7 @@ aceattach(ui)
 	ifp->if_name = "ace";
 	ifp->if_mtu = ETHERMTU;
 	/*
-	 * Set station's addresses, multicast
-	 * hash table, and initialize dual ported memory.
+	 * Set station's addresses and multicast hash table.
 	 */
 	ace_station[5] = ~(unit + 1);
 	acesetetaddr(unit, addr, ace_station);
@@ -159,7 +148,11 @@ aceattach(ui)
 		movow(wp++, ace_hash[i]); 
 	movow(&addr->bcastena[0], ~0xffff); 
 	movow(&addr->bcastena[1], ~0xffff);
-	aceclean(unit);
+	/*
+	 * Allocate and map dual ported VERSAbus memory.
+	 */
+	vbmemalloc(32, (caddr_t)ui->ui_flags, &is->is_map, &is->is_dpm);
+
 	ifp->if_init = aceinit;
 	ifp->if_output = aceoutput;
 	ifp->if_ioctl = aceioctl;
@@ -228,10 +221,10 @@ aceinit(unit)
 		DELAY(10000);
 
 		/*
-		 * clean up dpm since the controller might
-		 * jumble dpm after reset
+		 * Clean up dpm since the controller might
+		 * jumble dpm after reset.
 		 */
-		aceclean(unit);
+		acesetup(unit);
 		movow(&addr->csr, CSR_GO);
 		Csr = addr->csr;
 		if (Csr & CSR_ACTIVE) {
@@ -245,7 +238,7 @@ aceinit(unit)
 		splx(s);
 	}
 	if (is->is_if.if_snd.ifq_head)
-		aceStart(unit);
+		acestart(unit);
 }
 
 /*
@@ -254,28 +247,33 @@ aceinit(unit)
  * and map it to the interface before starting the output.
  *
  */
-acestart(dev)
-	dev_t dev;
+acestart(unit)
+	int unit;
 {
 	register struct tx_segment *txs;
 	register long len;
 	register int s;
-	int unit = ACEUNIT(dev);
 	register struct ace_softc *is = &ace_softc[unit];
 	struct mbuf *m;
 	short retries;
 
+	if (is->is_flags & ACEF_OACTIVE)
+		return;
+	is->is_flags |= ACEF_OACTIVE;
 again:
 	txs = (struct tx_segment*)(is->is_dpm + (is->is_txnext << 11));
 	if (txs->tx_csr & TCS_TBFULL) {
 		is->is_stats.tx_busy++;
+		is->is_flags &= ~ACEF_OACTIVE;
 		return;
 	}
 	s = splimp();
 	IF_DEQUEUE(&is->is_if.if_snd, m);
 	splx(s);
-	if (m == 0)
+	if (m == 0) {
+		is->is_flags &= ~ACEF_OACTIVE;
 		return;
+	}
 	len = aceput(unit, txs->tx_data, m);
 	retries = txs->tx_csr & TCS_RTC;
 	if (retries > 0)
@@ -319,7 +317,7 @@ acecint(unit)
 		    unit, is->is_xcnt);
 		is->is_xcnt = 0;
 		if (is->is_if.if_snd.ifq_head)
-			aceStart(unit);
+			acestart(unit);
 		return;
 	}
 	is->is_xcnt--;
@@ -336,7 +334,7 @@ acecint(unit)
 			is->is_eoctr = is->is_segboundry; 
 	} 
 	if (is->is_if.if_snd.ifq_head)
-		aceStart(unit);
+		acestart(unit);
 }
 
 /*
@@ -612,7 +610,7 @@ gottype:
 	}
 	IF_ENQUEUE(&ifp->if_snd, m);
 	splx(s);
-	aceStart(ifp->if_unit);
+	acestart(ifp->if_unit);
 	return (mcopy ? looutput(&loif, mcopy, dst) : 0);
 qfull:
 	m0 = m;
@@ -622,18 +620,6 @@ bad:
 	if (mcopy)
 		m_freem(mcopy);
 	return (error);
-}
-
-aceStart(unit)
-	int unit;
-{
-	register struct ace_softc *is = &ace_softc[unit];
-
-	if (is->is_flags & ACEF_OACTIVE)
-		return;
-	is->is_flags |= ACEF_OACTIVE;
-	acestart((dev_t)unit);
-	is->is_flags &= ~ACEF_OACTIVE;
 }
 
 /*
@@ -882,22 +868,19 @@ aceioctl(ifp, cmd, data)
 	return (error);
 }
 
-aceclean(unit)
+acesetup(unit)
 	int unit;
 {
 	register struct ace_softc *is = &ace_softc[unit];
-	register struct vba_device *ui = aceinfo[unit];
-	register struct acedevice *addr = (struct acedevice *)ui->ui_addr;
-	register short i;
 	register char *pData1;
+	register short i;
+	struct acedevice *addr;
 
-	vbaaccess(ACEmap[unit], ACEmapa[unit], ACEBPTE);
-	is->is_dpm = acemap[unit];		/* init dpm */
-	bzero((char *)is->is_dpm, 16384*2);
-
+	bzero(is->is_dpm, 16384*2);
 	is->is_currnd = 49123;
+	addr = (struct acedevice *)aceinfo[unit]->ui_addr;
 	is->is_segboundry = (addr->segb >> 11) & 0xf;
-	pData1 = (char*)((int)is->is_dpm + (is->is_segboundry << 11));
+	pData1 = is->is_dpm + (is->is_segboundry << 11);
 	for (i = SEG_MAX + 1 - is->is_segboundry; --i >= 0;) {
 		acebakoff(is, (struct tx_segment *)pData1, 15);
 		pData1 += sizeof (struct tx_segment);
