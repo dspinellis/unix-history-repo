@@ -95,6 +95,8 @@ clean:
 	cd pc2; make clean
 
 print: picture
-	@pr READ_ME makefile picture
+	@pr READ_ME Makefile picture
 	@ls -l | pr
 	@pr pix.c pmerge.c pxref.p pc.c pc3.h pc3.c
+
+depend:
