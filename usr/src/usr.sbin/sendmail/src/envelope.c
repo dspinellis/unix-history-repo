@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -462,20 +462,18 @@ setsender(from, e)
 	if (from == NULL || parseaddr(from, &e->e_from, 1, '\0', e) == NULL)
 	{
 		/* log garbage addresses for traceback */
-		if (from != NULL)
-		{
 # ifdef LOG
-			if (LogLevel >= 1)
-			    if (realname == from && RealHostName != NULL)
-				syslog(LOG_NOTICE,
-				    "from=%s unparseable, received from %s",
-				    from, RealHostName);
-			    else
-				syslog(LOG_NOTICE,
-				    "Unparseable username %s wants from=%s",
-				    realname, from);
-# endif LOG
+		if (from != NULL && LogLevel >= 1)
+		{
+			char *host = RealHostName;
+
+			if (host == NULL)
+				host = MyHostName;
+			syslog(LOG_NOTICE,
+				"from=%s unparseable, received from %s@%s",
+				from, realname, host);
 		}
+# endif LOG
 		from = newstr(realname);
 		if (parseaddr(from, &e->e_from, 1, '\0', e) == NULL &&
 		    parseaddr("postmaster", &e->e_from, 1, '\0', e) == NULL)

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	5.44 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	5.45 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	5.44 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	5.45 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -824,7 +824,7 @@ readqf(e)
 		if (Verbose)
 			printf("%s: locked\n", e->e_id);
 # ifdef LOG
-		if (LogLevel > 9)
+		if (LogLevel > 10)
 			syslog(LOG_DEBUG, "%s: locked", e->e_id);
 # endif LOG
 		(void) fclose(qfp);
