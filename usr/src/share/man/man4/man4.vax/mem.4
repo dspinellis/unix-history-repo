@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mem.4	4.1 (Berkeley) %G%
+.\"	@(#)mem.4	5.1 (Berkeley) %G%
 .\"
-.TH MEM 4 
+.TH MEM 4 "9 February 1983"
 .UC 4
 .SH NAME
 mem, kmem \- main memory
@@ -42,9 +42,10 @@ on an 11/750 I/O space addresses are of the form fxxxxx(16); on all VAX'en
 per-process data f\&or the current process is at virtual
 7f\&f\&f\&f\&000(16).
 .SH FILES
-/dev/mem,
+/dev/mem
+.br
 /dev/kmem
 .SH BUGS
 On PDP11's and VAX's, memory files are accessed one byte
-at a time, an inappropiate method for some
+at a time, an inappropriate method for some
 device registers.
