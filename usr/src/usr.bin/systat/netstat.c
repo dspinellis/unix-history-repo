@@ -6,13 +6,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)netstat.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)netstat.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * netstat
  */
-
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
@@ -96,7 +95,7 @@ closenetstat(w)
 
 	endhostent();
 	endnetent();
-	p = netcb.ni_forw;
+	p = (struct netinfo *)netcb.ni_forw;
 	while (p != (struct netinfo *)&netcb) {
 		if (p->ni_line != -1)
 			lastrow--;
@@ -221,12 +220,14 @@ enter(inp, so, state, proto)
 			break;
 	}
 	if (p == (struct netinfo *)&netcb) {
-		p = (struct netinfo *)malloc(sizeof (*p));
-		if (p == 0) {
+		if ((p = malloc(sizeof(*p))) == NULL) {
 			error("Out of memory");
 			return;
 		}
-		insque(p, &netcb);
+		p->ni_prev = (struct netinfo *)&netcb;
+		p->ni_forw = netcb.ni_forw;
+		netcb.ni_forw->ni_prev = p;
+		netcb.ni_forw = p;
 		p->ni_line = -1;
 		p->ni_laddr = inp->inp_laddr;
 		p->ni_lport = inp->inp_lport;
@@ -290,8 +291,9 @@ shownetstat()
 			}
 		lastrow--;
 		q = p->ni_forw;
-		remque(p);
-		free((char *)p);
+		p->ni_prev->ni_forw = p->ni_forw;
+		p->ni_forw->ni_prev = p->ni_prev;
+		free(p);
 		p = q;
 	}
 	/*
