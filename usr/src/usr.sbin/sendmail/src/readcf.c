@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.109 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.110 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -2226,6 +2226,12 @@ strtorwset(p, endp, stabmode)
 		while (*p != '\0' && isascii(*p) &&
 		       (isalnum(*p) || strchr("-_$", *p) != NULL))
 			p++;
+		if (q == p || !isalpha(*q))
+		{
+			/* no valid characters */
+			syserr("invalid ruleset name: \"%.20s\"", q);
+			return -1;
+		}
 		while (isascii(*p) && isspace(*p))
 			*p++ = '\0';
 		delim = *p;
