@@ -1,0 +1,39 @@
+GROUP(5)                    BSD Programmer's Manual                   GROUP(5)
+
+NNAAMMEE
+     ggrroouupp - format of the group permissions file
+
+DDEESSCCRRIIPPTTIIOONN
+     The file <_/_e_t_c_/_g_r_o_u_p> consists of newline separated ASCII records, one
+     per group, containing four colon `:' separated fields. These fields are
+     as follows:
+           group     Name of the group.
+           passwd    Group's _e_n_c_r_y_p_t_e_d password.
+           gid       The group's decimal ID.
+           member    Group members.
+
+     The _g_r_o_u_p field is the group name used for granting file access to users
+     who are members of the group.  The _g_i_d field is the number associated
+     with the group name.  They should both be unique across the system (and
+     often across a group of systems) since they control file access.  The
+     _p_a_s_s_w_d field is an optional _e_n_c_r_y_p_t_e_d password.  This field is rarely
+     used and an asterisk is normally placed in it rather than leaving it
+     blank.  The _m_e_m_b_e_r field contains the names of users granted the priv-
+     iledges of _g_r_o_u_p. The member names are separated by commas with out
+     spaces or newlines.  A user is automatically in a group if that group was
+     specified in their _/_e_t_c_/_p_a_s_s_w_d entry and does not need to be added to
+     that group in the _/_e_t_c_/_g_r_o_u_p _f_i_l_e_.
+
+FFIILLEESS
+     /etc/group
+
+SSEEEE AALLSSOO
+     setgroups(2),  initgroups(3),  crypt(3),  passwd(1),  passwd(5)
+
+BBUUGGSS
+     The passwd(1) command does not change the ggrroouupp passwords.
+
+HHIISSTTOORRYY
+     A ggrroouupp file format appeared in Version 6 AT&T UNIX.
+
+4.4BSD                           June 5, 1993                                1

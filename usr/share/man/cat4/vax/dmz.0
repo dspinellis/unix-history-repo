@@ -1,0 +1,56 @@
+DMZ(4)            BSD Programmer's Manual (VAX Architecture)            DMZ(4)
+
+NNAAMMEE
+     ddmmzz - DMZ-32 terminal multiplexor
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee ddmmzz00 aatt uubbaa?? ccssrr 00116600554400 vveeccttoorr ddmmzzrriinnttaa ddmmzzxxiinnttaa ddmmzzrriinnttbb
+           ddmmzzxxiinnttbb ddmmzzrriinnttcc ddmmzzxxiinnttcc
+
+DDEESSCCRRIIPPTTIIOONN
+     The ddmmzz device provides 24 lines of asynchronous serial line support.
+     Modem control on all ports is available as an option for the H3014 dis-
+     tribution panel.
+
+     An optional argument _f_l_a_g_s may be supplied with the device specification
+     for ddmmzz in the config file indicating that the line corresponding to bit
+     number _i is not properly connected, and should be treated as hard-wired
+     with carrier always present.  Thus specifying `flags 0x000004' for dmz0
+     would cause line _t_t_y_a_2 to be treated in this way.
+
+     Normal I/O control parameters for individual lines are managed by
+     ioctl(2) calls.  Line speeds (there are 16 choices for the DMZ) may be
+     initiated via getty(8) and stty(1) or may be communicated by other pro-
+     grams which utilize ioctl such as ifcongif(8),  see tty(4).
+
+     The ddmmzz driver normally enables the input silos with a short timeout (30
+     milliseconds); this allows multiple characters to be received per inter-
+     rupt during periods of high-speed input.
+
+FFIILLEESS
+     /dev/tty[abcefg][0-9a-n]
+
+DDIIAAGGNNOOSSTTIICCSS
+     ddmmzz%%dd:: NNXXMM lliinnee %%dd..  No response from the UNIBUS on a DMA transfer within
+     a timeout period.  This is often followed by a UNIBUS adapter error.
+     This occurs most frequently when the UNIBUS is heavily loaded and when
+     devices which hog the bus (such as RK07s) are present.  It is not seri-
+     ous.
+
+     ddmmzz%%dd:: ssiilloo oovveerrffllooww..  The character input silo overflowed before it
+     could be serviced.  This can happen if a hard error occurs when the CPU
+     is running with elevated priority, as the system will then print a mes-
+     sage on the console with interrupts disabled.  It is not serious.
+
+SSEEEE AALLSSOO
+     tty(4)
+
+HHIISSTTOORRYY
+     The ddmmzz driver appeared in 4.3BSD.
+
+BBUUGGSS
+     It should be possible to set the silo timeout with a configuration file
+     option, as the value is a trade-off between efficiency and response time
+     for flow control and character echo.
+
+4.2 Berkeley Distribution        June 5, 1993                                1

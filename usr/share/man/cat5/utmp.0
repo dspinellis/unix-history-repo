@@ -1,0 +1,85 @@
+UTMP(5)                     BSD Programmer's Manual                    UTMP(5)
+
+NNAAMMEE
+     uuttmmpp, wwttmmpp, llaassttlloogg - login records
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uuttmmpp..hh>>
+
+DDEESSCCRRIIPPTTIIOONN
+     The file <_u_t_m_p_._h> declares the structures used to record information
+     about current users in the file uuttmmpp, logins and logouts in the file
+     wwttmmpp, and last logins in the file llaassttlloogg. The time stamps of date
+     changes, shutdowns and reboots are also logged in the wwttmmpp file.
+
+     These files can grow rapidly on busy systems, daily or weekly rotation is
+     recommended.  If any of these files do not exist, it is not created.
+     These files must be created manually and are normally maintained in ei-
+     ther the script _/_e_t_c_/_d_a_i_l_y or the script _/_e_t_c_/_w_e_e_k_l_y. (See cron(8).)
+
+           #define _PATH_UTMP      "/var/run/utmp"
+           #define _PATH_WTMP      "/var/log/wtmp"
+           #define _PATH_LASTLOG   "/var/log/lastlog"
+
+           #define UT_NAMESIZE     8
+           #define UT_LINESIZE     8
+           #define UT_HOSTSIZE     16
+
+           struct lastlog {
+                   time_t  ll_time;
+                   char    ll_line[UT_LINESIZE];
+                   char    ll_host[UT_HOSTSIZE];
+           };
+
+           struct utmp {
+                   char    ut_line[UT_LINESIZE];
+                   char    ut_name[UT_NAMESIZE];
+                   char    ut_host[UT_HOSTSIZE];
+                   long    ut_time;
+           };
+
+     Each time a user logs in, the login program looks up the user's UID in
+     the file llaassttlloogg.. If it is found, the timestamp of the last time the user
+     logged in, the terminal line and the hostname are written to the standard
+     output. (Providing the login is not _q_u_i_e_t, see login(1).)  The login pro-
+     gram then records the new login time in the file llaassttlloogg.
+
+     After the new _l_a_s_t_l_o_g record is written , the file uuttmmpp is opened and the
+     _u_t_m_p record for the user inserted.  This record remains there until the
+     user logs out at which time it is deleted.  The uuttmmpp file is used by the
+     programs rwho(1),  users(1),  w(1),  and who(1).
+
+     Next, the login program opens the file wwttmmpp, and appends the user's _u_t_m_p
+     record.  The same _u_t_m_p record, with an updated time stamp is later ap-
+     pended to the file when the user logs out. (See init(8).)  The wwttmmpp file
+     is used by the programs last(1) and ac(8).
+
+     In the event of a date change, a shutdown or reboot, the following items
+     are logged in the wwttmmpp file.
+
+     reboot
+     shutdown    A system reboot or shutdown has been initiated.  The charac-
+                 ter `~' is placed in the field _u_t___l_i_n_e, and reboot or
+                 shutdown in the field _u_t___n_a_m_e. (See shutdown(8) and
+                 reboot(8).)
+
+
+     date        The system time has been manually or automatically updated.
+                 (See date(1).)  The command name date is recorded in the
+                 field _u_t___n_a_m_e. In the field _u_t___l_i_n_e, the character `{' indi-
+                 cates the time prior to the change, and the character `|' in-
+                 dicates the new time.
+
+FFIILLEESS
+     /var/run/utmp     The uuttmmpp ffiillee..
+     /var/log/wtmp     The wwttmmpp ffiillee..
+     /var/log/lastlog  The llaassttlloogg ffiillee..
+
+SSEEEE AALLSSOO
+     last(1),  login(1),  who(1),  ac(8),  init(8)
+
+HHIISSTTOORRYY
+     A uuttmmpp and wwttmmpp file format appeared in Version 6 AT&T UNIX.  The llaassttlloogg
+     file format appeared in 3.0BSD.
+
+4th Berkeley Distribution        June 5, 1993                                2

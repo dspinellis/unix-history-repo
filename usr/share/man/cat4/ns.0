@@ -1,0 +1,84 @@
+NS(4)                       BSD Programmer's Manual                      NS(4)
+
+NNAAMMEE
+     nnss - Xerox Network Systems(tm) protocol family
+
+SSYYNNOOPPSSIISS
+     ooppttiioonnss NNSS
+     ooppttiioonnss NNSSIIPP
+     ppsseeuuddoo--ddeevviiccee nnss
+
+DDEESSCCRRIIPPTTIIOONN
+     The NS protocol family is a collection of protocols layered atop the
+     _I_n_t_e_r_n_e_t _D_a_t_a_g_r_a_m _P_r_o_t_o_c_o_l (IDP) transport layer, and using the Xerox NS
+     address formats.  The NS family provides protocol support for the
+     SOCK_STREAM, SOCK_DGRAM, SOCK_SEQPACKET, and SOCK_RAW socket types; the
+     SOCK_RAW interface is a debugging tool, allowing you to trace all packets
+     entering, (or with toggling kernel variable, additionally leaving) the
+     local host.
+
+AADDDDRREESSSSIINNGG
+     NS addresses are 12 byte quantities, consisting of a 4 byte Network num-
+     ber, a 6 byte Host number and a 2 byte port number, all stored in network
+     standard format.  (on the VAX these are word and byte reversed; on the
+     Sun they are not reversed).  The include file <_n_e_t_n_s_/_n_s_._h> defines the NS
+     address as a structure containing unions (for quicker comparisons).
+
+     Sockets in the Internet protocol family use the following addressing
+     structure:
+
+           struct sockaddr_ns {
+                   short           sns_family;
+                   struct ns_addr  sns_addr;
+                   char            sns_zero[2];
+           };
+
+     where an _n_s___a_d_d_r is composed as follows:
+
+           union ns_host {
+                   u_char          c_host[6];
+                   u_short         s_host[3];
+           };
+
+           union ns_net {
+                   u_char          c_net[4];
+                   u_short         s_net[2];
+           };
+
+           struct ns_addr {
+                   union ns_net    x_net;
+                   union ns_host   x_host;
+                   u_short x_port;
+           };
+
+     Sockets may be created with an address of all zeroes to effect
+     ``wildcard'' matching on incoming messages.  The local port address spec-
+     ified in a bind(2) call is restricted to be greater than NSPORT_RESERVED
+     (=3000, in <_n_e_t_n_s_/_n_s_._h>) unless the creating process is running as the
+     super-user, providing a space of protected port numbers.
+
+PPRROOTTOOCCOOLLSS
+     The NS protocol family supported by the operating system is comprised of
+     the Internet Datagram Protocol (IDP) idp(4),  Error Protocol (available
+     through IDP), and Sequenced Packet Protocol (SPP) spp(4).
+
+
+     SPP is used to support the SOCK_STREAM and SOCK_SEQPACKET abstraction,
+     while IDP is used to support the SOCK_DGRAM abstraction.  The Error pro-
+     tocol is responded to by the kernel to handle and report errors in proto-
+     col processing; it is, however, only accessible to user programs through
+     heroic actions.
+
+SSEEEE AALLSSOO
+     intro(3),  byteorder(3),  gethostbyname(3),  getnetent(3),
+     getprotoent(3),  getservent(3),  ns(3),  intro(4),  spp(4),  idp(4),
+     nsip(4)
+
+     _I_n_t_e_r_n_e_t _T_r_a_n_s_p_o_r_t _P_r_o_t_o_c_o_l_s, Xerox Corporation document XSIS, 028112.
+
+     _A_n _A_d_v_a_n_c_e_d _4_._3 _B_S_D _I_n_t_e_r_p_r_o_c_e_s_s _C_o_m_m_u_n_i_c_a_t_i_o_n _T_u_t_o_r_i_a_l.
+
+HHIISSTTOORRYY
+     The nnss protocol family appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 5, 1993                                2

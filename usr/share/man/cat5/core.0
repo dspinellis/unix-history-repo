@@ -1,0 +1,38 @@
+CORE(5)                     BSD Programmer's Manual                    CORE(5)
+
+NNAAMMEE
+     ccoorree - memory image file format
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ppaarraamm..hh>>
+
+DDEESSCCRRIIPPTTIIOONN
+     A small number of signals which cause abnormal termination of a process
+     also cause a record of the process's in-core state to be written to disk
+     for later examination by one of the aviailable debuggers.  (See
+     sigaction(2).)  This memory image is written to a file named ccoorree in the
+     working directory; provided the terminated process had write permission
+     in the directory, and provided the abnormality did not caused a system
+     crash.  (In this event, the decision to save the core file is arbitrary,
+     see savecore(8).)
+
+     The maximum size of a ccoorree file is limited by setrlimit(2).  Files which
+     would be larger than the limit are not created.
+
+     The ccoorree file consists of the _u. area, whose size (in pages) is defined
+     by the UPAGES manifest in the <_s_y_s_/_p_a_r_a_m_._h> file.  The _u. area starts
+     with a _u_s_e_r structure as given in <_s_y_s_/_u_s_e_r_._h>. The remainder of the ccoorree
+     file consists of the data pages followed by the stack pages of the pro-
+     cess image.  The amount of data space image in the ccoorree file is given (in
+     pages) by the variable _u___d_s_i_z_e in the _u. area.  The amount of stack image
+     in the core file is given (in pages) by the variable _u___s_s_i_z_e in the _u.
+     area.  The size of a ``page'' is given by the constant NBPG (also from
+     <_s_y_s_/_p_a_r_a_m_._h>).
+
+SSEEEE AALLSSOO
+     adb(1),  dbx(1),  gdb(1),  kgdb(1),  sigaction(2),  setrlimit(2)
+
+HHIISSTTOORRYY
+     A ccoorree file format appeared in Version 6 AT&T UNIX.
+
+4th Berkeley Distribution        June 5, 1993                                1

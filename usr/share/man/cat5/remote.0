@@ -1,0 +1,103 @@
+REMOTE(5)                   BSD Programmer's Manual                  REMOTE(5)
+
+NNAAMMEE
+     rreemmoottee - remote host description file
+
+DDEESSCCRRIIPPTTIIOONN
+     The systems known by tip(1) and their attributes are stored in an ASCII
+     file which is structured somewhat like the termcap(5) file.  Each line in
+     the file provides a description for a single system.  Fields are separat-
+     ed by a colon (``:'').  Lines ending in a \ character with an immediately
+     following newline are continued on the next line.
+
+     The first entry is the name(s) of the host system.  If there is more than
+     one name for a system, the names are separated by vertical bars.  After
+     the name of the system comes the fields of the description.  A field name
+     followed by an `=' sign indicates a string value follows.  A field name
+     followed by a `#' sign indicates a following numeric value.
+
+     Entries named ``tip*'' and ``cu*'' are used as default entries by tip,
+     and the cu interface to tip,  as follows.  When tip is invoked with only
+     a phone number, it looks for an entry of the form ``tip300'', where 300
+     is the baud rate with which the connection is to be made.  When the cu
+     interface is used, entries of the form ``cu300'' are used.
+
+CCAAPPAABBIILLIITTIIEESS
+     Capabilities are either strings (str), numbers (num), or boolean flags
+     (bool).  A string capability is specified by _c_a_p_a_b_i_l_i_t_y_=_v_a_l_u_e; for exam-
+     ple, ``dv=/dev/harris''.  A numeric capability is specified by
+     _c_a_p_a_b_i_l_i_t_y_#_v_a_l_u_e; for example, ``xa#99''.  A boolean capability is speci-
+     fied by simply listing the capability.
+
+     aatt      (str) Auto call unit type.
+
+     bbrr      (num) The baud rate used in establishing a connection to the re-
+             mote host.  This is a decimal number.  The default baud rate is
+             300 baud.
+
+     ccmm      (str) An initial connection message to be sent to the remote
+             host.  For example, if a host is reached through port selector,
+             this might be set to the appropriate sequence required to switch
+             to the host.
+
+     ccuu      (str) Call unit if making a phone call.  Default is the same as
+             the `dv' field.
+
+     ddii      (str) Disconnect message sent to the host when a disconnect is
+             requested by the user.
+
+     dduu      (bool) This host is on a dial-up line.
+
+     ddvv      (str) UNIX device(s) to open to establish a connection.  If this
+             file refers to a terminal line, tip(1) attempts to perform an ex-
+             clusive open on the device to insure only one user at a time has
+             access to the port.
+
+     eell      (str) Characters marking an end-of-line.  The default is NULL.
+             `~' escapes are only recognized by tip after one of the charac-
+             ters in `el', or after a carriage-return.
+
+     ffss      (str) Frame size for transfers.  The default frame size is equal
+             to BUFSIZ.
+
+     hhdd      (bool) The host uses half-duplex communication, local echo should
+
+
+             be performed.
+
+     iiee      (str) Input end-of-file marks.  The default is NULL.
+
+     ooee      (str) Output end-of-file string.  The default is NULL. When tip
+             is transferring a file, this string is sent at end-of-file.
+
+     ppaa      (str) The type of parity to use when sending data to the host.
+             This may be one of ``even'', ``odd'', ``none'', ``zero'' (always
+             set bit 8 to zero), ``one'' (always set bit 8 to 1).  The default
+             is even parity.
+
+     ppnn      (str) Telephone number(s) for this host.  If the telephone number
+             field contains an @ sign, tip searches the file _/_e_t_c_/_p_h_o_n_e_s file
+             for a list of telephone numbers; (See phones(5).)
+
+     ttcc      (str) Indicates that the list of capabilities is continued in the
+             named description.  This is used primarily to share common capa-
+             bility information.
+
+     Here is a short example showing the use of the capability continuation
+     feature:
+
+     UNIX-1200:\
+     :dv=/dev/cau0:el=^D^U^C^S^Q^O@:du:at=ventel:ie=#$%:oe=^D:br#1200:
+     arpavax|ax:\
+     :pn=7654321%:tc=UNIX-1200
+
+FFIILLEESS
+     /etc/remote  The rreemmoottee host description file resides in _/_e_t_c.
+
+SSEEEE AALLSSOO
+     tip(1),  phones(5)
+
+HHIISSTTOORRYY
+     The rreemmoottee file format appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 5, 1993                                2

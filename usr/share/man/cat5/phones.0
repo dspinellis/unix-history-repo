@@ -1,0 +1,31 @@
+PHONES(5)                   BSD Programmer's Manual                  PHONES(5)
+
+NNAAMMEE
+     pphhoonneess - remote host phone number data base
+
+DDEESSCCRRIIPPTTIIOONN
+     The file _/_e_t_c_/_p_h_o_n_e_s contains the system-wide private phone numbers for
+     the tip(1) program.  This file is normally unreadable, and so may contain
+     privileged information.  The format of the file is a series of lines of
+     the form: <system-name>[ \t]*<phone-number>.  The system name is one of
+     those defined in the remote(5) file and the phone number is constructed
+     from any sequence of characters terminated only by ``,'' or the end of
+     the line.  The ``='' and ``*'' characters are indicators to the auto call
+     units to pause and wait for a second dial tone (when going through an ex-
+     change).  The ``='' is required by the DF02-AC and the ``*'' is required
+     by the BIZCOMP 1030.
+
+     Only one phone number per line is permitted.  However, if more than one
+     line in the file contains the same system name tip(1) will attempt to di-
+     al each one in turn, until it establishes a connection.
+
+FFIILLEESS
+     /etc/phones
+
+SSEEEE AALLSSOO
+     tip(1),  remote(5)
+
+HHIISSTTOORRYY
+     The pphhoonneess file appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 5, 1993                                1

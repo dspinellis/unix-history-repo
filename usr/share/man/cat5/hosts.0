@@ -1,0 +1,47 @@
+HOSTS(5)                    BSD Programmer's Manual                   HOSTS(5)
+
+NNAAMMEE
+     hhoossttss - host name data base
+
+DDEESSCCRRIIPPTTIIOONN
+     The hhoossttss file contains information regarding the known hosts on the net-
+     work.  For each host a single line should be present with the following
+     information:
+
+           official host name
+           Internet address
+           aliases
+
+     Items are separated by any number of blanks and/or tab characters.  A
+     ``#'' indicates the beginning of a comment; characters up to the end of
+     the line are not interpreted by routines which search the file.
+
+     When using the name server named(8),  this file provides a backup when
+     the name server is not running.  For the name server, it is suggested
+     that only a few addresses be included in this file.  These include  ad-
+     dress for the local interfaces that ifconfig(8) needs at boot time and a
+     few machines on the local network.
+
+     This file may be created from the official host data base maintained at
+     the Network Information Control Center (NIC), though local changes may be
+     required to bring it up to date regarding unofficial aliases and/or un-
+     known hosts.  As the data base maintained at NIC is incomplete, use of
+     the name server is recommend for sites on the DARPA Internet.
+
+     Network addresses are specified in the conventional ``.'' (dot) notation
+     using the inet_addr(3) routine from the Internet address manipulation li-
+     brary, inet(3).  Host names may contain any printable character other
+     than a field delimiter, newline, or comment character.
+
+FFIILLEESS
+     /etc/hosts  The hhoossttss file resides in _/_e_t_c.
+
+SSEEEE AALLSSOO
+     gethostbyname(3),  ifconfig(8),  named(8)
+
+     _N_a_m_e _S_e_r_v_e_r _O_p_e_r_a_t_i_o_n_s _G_u_i_d_e _f_o_r _B_I_N_D.
+
+HHIISSTTOORRYY
+     The hhoossttss file format appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 5, 1993                                1

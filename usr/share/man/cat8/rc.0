@@ -1,0 +1,42 @@
+RC(8)                     BSD System Manager's Manual                    RC(8)
+
+NNAAMMEE
+     rrcc - command script for auto-reboot and daemons
+
+SSYYNNOOPPSSIISS
+     rrcc
+     rrcc..llooccaall
+
+DDEESSCCRRIIPPTTIIOONN
+     RRcc is the command script which controls the automatic reboot and rrcc..llooccaall
+     is the script holding commands which are pertinent only to a specific
+     site.
+
+     When an automatic reboot is in progress, rrcc is invoked with the argument
+     _a_u_t_o_b_o_o_t. The first portion of rrcc runs an fsck(8) with option --pp to
+     ``preen'' all the disks of minor inconsistencies resulting from the last
+     system shutdown and to check for serious inconsistencies caused by hard-
+     ware or software failure.  If this auto-check and repair succeeds, then
+     the second part of rrcc is run.
+
+     The second part of rrcc, which is run after a auto-reboot succeeds and also
+     if rrcc is invoked when a single user shell terminates (see init(8)),
+     starts all the daemons on the system, preserves editor files and clears
+     the scratch directory _/_t_m_p.
+
+     RRcc..llooccaall is executed immediately before any other commands after a suc-
+     cessful fsck.  Normally, the first commands placed in the rrcc..llooccaall file
+     define the machine's name, using hostname(1),  and save any possible core
+     image that might have been generated as a result of a system crash, with
+     savecore(8).  The latter command is included in the rrcc..llooccaall file because
+     the directory in which core dumps are saved is usually site specific.
+
+     Following tradition, the startup files rrcc and rrcc..llooccaall reside in _/_e_t_c.
+
+SSEEEE AALLSSOO
+     init(8),  reboot(8),  savecore(8)
+
+HHIISSTTOORRYY
+     The rrcc command appeared in 4.0BSD.
+
+4th Berkeley Distribution        June 5, 1993                                1

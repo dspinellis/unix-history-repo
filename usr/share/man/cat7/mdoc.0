@@ -1,0 +1,219 @@
+MDOC(7)                      BSD Reference Manual                      MDOC(7)
+
+NNAAMMEE
+     mmddoocc - quick reference guide for the --mmddoocc macro package
+
+SSYYNNOOPPSSIISS
+     ggrrooffff --mm_d_o_c _f_i_l_e_s _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     The --mmddoocc package is a set of content-based and domain-based macros used
+     to format the BSD man pages.  The macro names and their meanings are
+     listed below for quick reference; for a detailed explanation on using the
+     package, see the tutorial sampler mdoc.samples(7).
+
+     The macros are described in two groups, the first includes the structural
+     and physical page layout macros.  The second contains the manual and gen-
+     eral text domain macros which differentiate the --mmddoocc package from other
+     troff formatting packages.
+
+PPAAGGEE SSTTRRUUCCTTUURREE DDOOMMAAIINN
+   TTiittllee MMaaccrrooss
+     To create a valid manual page, these three macros, in this order, are re-
+     quired:
+     .Dd   _M_o_n_t_h _d_a_y_, _y_e_a_r                       Document date.
+     .Dt   _D_O_C_U_M_E_N_T___T_I_T_L_E _[_s_e_c_t_i_o_n_] _[_v_o_l_u_m_e_]     Title, in upper case.
+     .Os   _O_P_E_R_A_T_I_N_G___S_Y_S_T_E_M _[_v_e_r_s_i_o_n_/_r_e_l_e_a_s_e_]    Operating system (BSD).
+
+   PPaaggee LLaayyoouutt MMaaccrrooss
+     Section headers, paragraph breaks, lists and displays.
+     .Sh   Section Headers.  Valid headers, in the order of presentation:
+           _N_A_M_E           Name section, should include the `.Nm' or `.Fn' and
+                          the `.Nd' macros.
+           _S_Y_N_O_P_S_I_S       Usage.
+           _D_E_S_C_R_I_P_T_I_O_N    General description, should include options and pa-
+                          rameters.
+           _R_E_T_U_R_N _V_A_L_U_E_S  Sections two and three function calls.
+           _E_N_V_I_R_O_N_M_E_N_T    Describe environment variables.
+           _F_I_L_E_S          Files associated with the subject.
+           _E_X_A_M_P_L_E_S       Examples and suggestions.
+           _D_I_A_G_N_O_S_T_I_C_S    Normally used for section four device interface di-
+                          agnostics.
+           _E_R_R_O_R_S         Sections two and three error and signal handling.
+           _S_E_E _A_L_S_O       Cross references and citations.
+           _S_T_A_N_D_A_R_D_S      Conformance to standards if applicable.
+           _H_I_S_T_O_R_Y        If a standard is not applicable, the history of the
+                          subject should be given.
+           _B_U_G_S           Gotchas and caveats.
+           _o_t_h_e_r          Customized headers may be added at the authors dis-
+                          cretion.
+     .Ss   Subsection Headers.
+     .Pp   Paragraph Break.  Vertical space (one line).
+     .D1   (D-one) Display-one Indent and display one text line.
+     .Dl   (D-ell) Display-one literal.  Indent and display one line of liter-
+           al text.
+     .Bd   Begin-display block.  Display options:
+           --rraaggggeedd          Unjustified (ragged edges).
+           --ffiilllleedd          Justified.
+           --lliitteerraall         Literal text or code.
+           --ffiillee _n_a_m_e       Read in named _f_i_l_e and display.
+           --ooffffsseett _s_t_r_i_n_g   Offset display.  Acceptable _s_t_r_i_n_g values:
+                            _l_e_f_t        Align block on left (default).
+                            _c_e_n_t_e_r      Approximate center margin.
+                            _i_n_d_e_n_t      Six constant width spaces (a tab).
+
+
+                            _i_n_d_e_n_t_-_t_w_o  Two tabs.
+                            _r_i_g_h_t       Left aligns block 2 inches from right.
+                            _x_xnn         Where _x_x is a number from 4nn to 99nn.
+                            _A_a          Where _A_a is a callable macro name.
+                            _s_t_r_i_n_g      The width of _s_t_r_i_n_g is used.
+     .Ed   End-display (matches .Bd).
+     .Bl   Begin-list.  Create lists or columns. Options:
+           _L_i_s_t_-_t_y_p_e_s
+                 --bbuulllleett    Bullet Item List
+                 --iitteemm      Unlabeled List
+                 --eennuumm      Enumerated List
+                 --ttaagg       Tag Labeled List
+                 --ddiiaagg      Diagnostic List
+                 --hhaanngg      Hanging Labeled List
+                 --oohhaanngg     Overhanging Labeled List
+                 --iinnsseett     Inset or Run-on Labeled List
+           List-parameters
+                 --ooffffsseett    (All lists.) See `.Bd' begin-display above.
+                 --wwiiddtthh     (--ttaagg and --hhaanngg lists only.)  See `.Bd'.
+                 --ccoommppaacctt   (All lists.)  Suppresses blank lines.
+     .El   End-list.
+     .It   List item.
+
+MMAANNUUAALL AANNDD GGEENNEERRAALL TTEEXXTT DDOOMMAAIINN MMAACCRROOSS
+     The manual and general text domain macros are special in that most of
+     them are parsed for callable macros for example:
+
+           .Op Fl s Ar file   Produces [--ss _f_i_l_e]
+
+     In this example, the option enclosure macro `.Op' is parsed, and calls
+     the callable content macro `Fl' which operates on the argument `s' and
+     then calls the callable content macro `Ar' which operates on the argument
+     `file'. Some macros may be callable, but are not parsed and vice versa.
+     These macros are indicated in the _p_a_r_s_e_d and _c_a_l_l_a_b_l_e columns below.
+
+     Unless stated, manual domain macros share a common syntax:
+
+           .Va argument [ . , ; : ( ) [ ] argument ... ]
+
+     NNoottee: Opening and closing punctuation characters are only recognized as
+     such if they are presented one at a time.  The string `),' is not recog-
+     nized as punctuation and will be output with a leading white space and in
+     what ever font the calling macro uses.  The the argument list `] ) ,' is
+     recognized as three sequential closing punctuation characters and a lead-
+     ing white space is not output between the characters and the previous ar-
+     gument (if any).  The special meaning of a punctuation character may be
+     escaped with the string `\&'. For example the following string,
+
+           .Ar file1 , file2 , file3 ) .   Produces _f_i_l_e_1, _f_i_l_e_2, _f_i_l_e_3).
+
+   MMaannuuaall DDoommaaiinn MMaaccrrooss
+     _N_a_m_e    _P_a_r_s_e_d    _C_a_l_l_a_b_l_e     _D_e_s_c_r_i_p_t_i_o_n
+     Ad      Yes       Yes          Address. (This macro may be deprecated.)
+     Ar      Yes       Yes          Command line argument.
+     Cd      No        No           Configuration declaration (section four
+                                    only).
+     Cm      Yes       Yes          Command line argument modifier.
+     Dv      Yes       Yes          Defined variable (source code).
+     Er      Yes       Yes          Error number (source code).
+     Ev      Yes       Yes          Environment variable.
+     Fa      Yes       Yes          Function argument.
+     Fd      Yes       Yes          Function declaration.
+     Fn      Yes       Yes          Function call (also .Fo and .Fc).
+     Ic      Yes       Yes          Interactive command.
+
+
+     Li      Yes       Yes          Literal text.
+     Nm      Yes       Yes          Command name.
+     Op      Yes       Yes          Option (also .Oo and .Oc).
+     Ot      Yes       Yes          Old style function type (Fortran only).
+     Pa      Yes       Yes          Pathname or file name.
+     St      Yes       Yes          Standards (-p1003.2, -p1003.1 or -ansiC)
+     Va      Yes       Yes          Variable name.
+     Vt      Yes       Yes          Variable type (Fortran only).
+     Xr      Yes       Yes          Manual Page Cross Reference.
+
+   GGeenneerraall TTeexxtt DDoommaaiinn MMaaccrrooss
+     _N_a_m_e    _P_a_r_s_e_d    _C_a_l_l_a_b_l_e     _D_e_s_c_r_i_p_t_i_o_n
+     %A      Yes       No           Reference author.
+     %B      Yes       Yes          Reference book title.
+     %C      No        No           Reference place of publishing (city).
+     %D      No        No           Reference date.
+     %J      Yes       Yes          Reference journal title.
+     %N      No        No           Reference issue number.
+     %O      No        No           Reference optional information.
+     %P      No        No           Reference page number(s).
+     %R      No        No           Reference report Name.
+     %T      Yes       Yes          Reference article title.
+     %V      No        No           Reference volume.
+     Ac      Yes       Yes          Angle close quote.
+     Ao      Yes       Yes          Angle open quote.
+     Aq      Yes       Yes          Angle quote.
+     At      No        No           AT&T UNIX
+     Bc      Yes       Yes          Bracket close quote.
+     Bf      No        No           Begin font mode.
+     Bo      Yes       Yes          Bracket open quote.
+     Bq      Yes       Yes          Bracket quote.
+     Bx      Yes       Yes          Bx.
+     Db      No        No           Debug (default is "off")
+     Dc      Yes       Yes          Double close quote.
+     Do      Yes       Yes          Double open quote.
+     Dq      Yes       Yes          Double quote.
+     Ec      Yes       Yes          Enclose string close quote.
+     Ef      No        No           End font mode.
+     Em      Yes       Yes          Emphasis (traditional English).
+     Eo      Yes       Yes          Enclose string open quote.
+     No      Yes       Yes          Normal text (no-op).
+     Ns      Yes       Yes          No space.
+     Pc      Yes       Yes          Parenthesis close quote.
+     Pf      Yes       No           Prefix string.
+     Po      Yes       Yes          Parenthesis open quote.
+     Pq      Yes       Yes          Parentheses quote.
+     Qc      Yes       Yes          Strait Double close quote.
+     Ql      Yes       Yes          Quoted literal.
+     Qo      Yes       Yes          Strait Double open quote.
+     Qq      Yes       Yes          Strait Double quote.
+     Re      No        No           Reference start.
+     Rs      No        No           Reference start.
+     Sc      Yes       Yes          Single close quote.
+     So      Yes       Yes          Single open quote.
+     Sq      Yes       Yes          Single quote.
+     Sm      No        No           Space mode (default is "on")
+     Sx      Yes       Yes          Section Cross Reference.
+     Sy      Yes       Yes          Symbolic (traditional English).
+     Tn      Yes       Yes          Trade or type name (small Caps).
+     Ux      Yes       Yes          Ux
+     Xc      Yes       Yes          Extend argument list close.
+     Xo      Yes       Yes          Extend argument list close.
+
+     Macro names ending in `q' quote remaining items on the argument list.
+     Macro names ending in `o' begin a quote which may span more than one line
+     of input and are close quoted with the matching macro name ending in `c'.
+     Enclosure macros may be nested and are limited to eight arguments.
+
+     Note: the extended argument list macros (`.Xo', `.Xc') and the function
+     enclosure macros (`.Fo', `.Fc') are irregular.  The extended list macros
+     are used when the number of macro arguments would exceed the troff limi-
+     tation of nine arguments.
+
+CCOONNFFIIGGUURRAATTIIOONN
+     For site specific configuration of the macro package, see the file
+     _/_u_s_r_/_s_r_c_/_s_h_a_r_e_/_t_m_a_c_/_R_E_A_D_M_E.
+
+FFIILLEESS
+     tmac.doc          Manual and general text domain macros.
+     tmac.doc-common   Common structural macros and definitions.
+     tmac.doc-nroff    Site dependent nroff style file.
+     tmac.doc-ditroff  Site dependent troff style file.
+     tmac.doc-syms     Special defines (such as the standards macro).
+
+SSEEEE AALLSSOO
+     mdoc.samples(7)
+
+4.4BSD                           June 9, 1993                                4

@@ -1,0 +1,59 @@
+UDP(4)                      BSD Programmer's Manual                     UDP(4)
+
+NNAAMMEE
+     uuddpp - Internet User Datagram Protocol
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ssoocckkeett..hh>>
+     ##iinncclluuddee <<nneettiinneett//iinn..hh>>
+
+     _i_n_t
+     ssoocckkeett(_A_F___I_N_E_T, _S_O_C_K___D_G_R_A_M, _0);
+
+DDEESSCCRRIIPPTTIIOONN
+     UDP is a simple, unreliable datagram protocol which is used to support
+     the SOCK_DGRAM abstraction for the Internet protocol family.  UDP sockets
+     are connectionless, and are normally used with the sendto and recvfrom
+     calls, though the connect(2) call may also be used to fix the destination
+     for future packets (in which case the recv(2) or read(2) and send(2) or
+     write(2) system calls may be used).
+
+     UDP address formats are identical to those used by TCP. In particular UDP
+     provides a port identifier in addition to the normal Internet address
+     format.  Note that the UDP port space is separate from the TCP port space
+     (i.e. a UDP port may not be ``connected'' to a TCP port).  In addition
+     broadcast packets may be sent (assuming the underlying network supports
+     this) by using a reserved ``broadcast address''; this address is network
+     interface dependent.
+
+     Options at the IP transport level may be used with UDP; see ip(4).
+
+DDIIAAGGNNOOSSTTIICCSS
+     A socket operation may fail with one of the following errors returned:
+
+     [EISCONN]        when trying to establish a connection on a socket which
+                      already has one, or when trying to send a datagram with
+                      the destination address specified and the socket is al-
+                      ready connected;
+
+     [ENOTCONN]       when trying to send a datagram, but no destination ad-
+                      dress is specified, and the socket hasn't been connect-
+                      ed;
+
+     [ENOBUFS]        when the system runs out of memory for an internal data
+                      structure;
+
+     [EADDRINUSE]     when an attempt is made to create a socket with a port
+                      which has already been allocated;
+
+     [EADDRNOTAVAIL]  when an attempt is made to create a socket with a net-
+                      work address for which no network interface exists.
+
+SSEEEE AALLSSOO
+     getsockopt(2),  recv(2),  send(2),  socket(2),  intro(4),  inet(4),
+     ip(4)
+
+HHIISSTTOORRYY
+     The uuddpp protocol appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 5, 1993                                1

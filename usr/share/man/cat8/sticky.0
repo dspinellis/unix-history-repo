@@ -1,0 +1,47 @@
+STICKY(8)                 BSD System Manager's Manual                STICKY(8)
+
+NNAAMMEE
+     ssttiicckkyy - sticky text and append-only directories
+
+DDEESSCCRRIIPPTTIIOONN
+     A special file mode, called the _s_t_i_c_k_y _b_i_t (mode S_ISVTX), is used to in-
+     dicate special treatment for shareable executable files and directories.
+     See chmod(2) or the file _/_u_s_r_/_i_n_c_l_u_d_e_/_s_y_s_/_s_t_a_t_._h for an explanation of
+     file modes.
+
+SSTTIICCKKYY TTEEXXTT EEXXEECCUUTTAABBLLEE FFIILLEESS
+     An executable shareable file whose sticky bit is set will not be immedi-
+     ately discarded from swap space after execution.  The kernel will hoard
+     the text segment of the file for future reuse and avoid having to reload
+     the program.  Shareable text segments are normally placed in a least-
+     frequently-used cache after use, and thus the `sticky bit' has little ef-
+     fect on commonly-used text images.
+
+     Sharable executable files are created with the --nn and --zz options of the
+     loader ld(1).
+
+     Only the super-user can set the sticky bit on a sharable executable file.
+
+SSTTIICCKKYY DDIIRREECCTTOORRIIEESS
+     A directory whose `sticky bit' is set becomes an append-only directory,
+     or, more accurately, a directory in which the deletion of files is re-
+     stricted.  A file in a sticky directory may only be removed or renamed by
+     a user if the user has write permission for the directory and the user is
+     the owner of the file, the owner of the directory, or the super-user.
+     This feature is usefully applied to directories such as _/_t_m_p which must
+     be publicly writable but should deny users the license to arbitrarily
+     delete or rename each others' files.
+
+     Any user may create a sticky directory.  See chmod(1) for details about
+     modifying file modes.
+
+BBUUGGSS
+     Since the text areas of sticky text executables are stashed in the swap
+     area, abuse of the feature can cause a system to run out of swap.
+
+     Neither open(2) nor mkdir(2) will create a file with the sticky bit set.
+
+HHIISSTTOORRYY
+     A ssttiicckkyy command appeared in Version 32V AT&T UNIX.
+
+4th Berkeley Distribution        June 5, 1993                                1

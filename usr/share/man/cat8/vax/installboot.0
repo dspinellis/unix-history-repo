@@ -1,0 +1,32 @@
+INSTALLBOOT(8)            BSD System Manager's Manual           INSTALLBOOT(8)
+
+NNAAMMEE
+     iinnssttaallllbboooott - installs a boot program in a file system
+
+SSYYNNOOPPSSIISS
+     iinnssttaallllbboooott _b_o_o_t_b_l_o_c_k _b_o_o_t_p_r_o_g _s_p_e_c_i_a_l
+
+DDEESSCCRRIIPPTTIIOONN
+     Installboot concatentates _b_o_o_t_b_l_o_c_k and _b_o_o_t_p_r_o_g and writes at most
+     BBSIZE bytes (from <_s_y_s_/_f_s_._h>) of them on the first bytes of _s_p_e_c_i_a_l.
+
+FFIILLEESS
+     /usr/mdec/??boot   boot blocks
+     /usr/mdec/boot??   boot programs
+
+SSEEEE AALLSSOO
+     newfs(8),  dd(1)
+
+EEXXAAMMPPLLEESS
+           cd /usr/mdec
+           installboot raboot bootra /dev/ra0a
+
+BBUUGGSS
+     There is no convenient way to determine the names of the boot blocks and
+     boot programs without _a _p_r_i_o_r_i knowledge of one's make of disk.
+
+HHIISSTTOORRYY
+     The iinnssttaallllbboooott command appeared in 4.3BSD-Tahoe. This manual page was
+     written by Geoff Collyer.
+
+4.3-Tahoe Berkeley Distribution  June 5, 1993                                1

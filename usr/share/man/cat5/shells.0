@@ -1,0 +1,24 @@
+SHELLS(5)                   BSD Programmer's Manual                  SHELLS(5)
+
+NNAAMMEE
+     sshheellllss - shell database
+
+DDEESSCCRRIIPPTTIIOONN
+     The sshheellllss file contains a list of the shells on the system.  For each
+     shell a single line should be present, consisting of the shell's path,
+     relative to root.
+
+     A hash mark (``#'') indicates the beginning of a comment; subsequent
+     characters up to the end of the line are not interpreted by the routines
+     which search the file.  Blank lines are also ignored.
+
+FFIILLEESS
+     /etc/shells  The sshheellllss file resides in _/_e_t_c.
+
+SSEEEE AALLSSOO
+     getusershell(3)
+
+HHIISSTTOORRYY
+     The sshheellllss file format appeared in 4.3BSD-Tahoe.
+
+4.2 Berkeley Distribution        June 5, 1993                                1

@@ -1,0 +1,28 @@
+MEM(4)           BSD Programmer's Manual (SPARC Architecture)           MEM(4)
+
+NNAAMMEE
+     mmeemm, kkmmeemm - main memory
+
+DDEESSCCRRIIPPTTIIOONN
+     The file //ddeevv//mmeemm is an interface to the physical memory of the computer.
+     Byte offsets in this file are interpreted as physical memory addresses.
+     Reading and writing this file is equivalent to reading and writing memory
+     itself.  An error will be returned if an attempt is made to reference an
+     offset outside of //ddeevv//mmeemm.
+
+     Kernel virtual memory is accessed via the file //ddeevv//kkmmeemm in the same man-
+     ner as //ddeevv//mmeemm. Only kernel virtual addresses that are currently mapped
+     to memory are allowed.
+
+SSPPAARRCC
+     On the SPARC, physical memory may be discontiguous; kernel virtual memory
+     begins at 0xf8000000.
+
+FFIILLEESS
+     /dev/mem
+     /dev/kmem
+
+HHIISSTTOORRYY
+     The files mmeemm and kkmmeemm appeared in Version 6 AT&T UNIX.
+
+4.4BSD                           June 5, 1993                                1
