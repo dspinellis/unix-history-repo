@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -145,7 +145,7 @@ ckfini()
 
 	flush(&dfile, &fileblk);
 	flush(&dfile, &sblk);
-	if (dev_bsize && sblk.b_bno != SBOFF / dev_bsize &&
+	if (havesb && sblk.b_bno != SBOFF / dev_bsize &&
 	    !preen && reply("UPDATE STANDARD SUPERBLOCK")) {
 		sblk.b_bno = SBOFF / dev_bsize;
 		sbdirty();
@@ -179,7 +179,7 @@ bread(fcp, buf, blk, size)
 	for (cp = buf, i = 0; i < size; i += secsize, cp += secsize) {
 		if (read(fcp->rfdes, cp, secsize) < 0) {
 			lseek(fcp->rfdes, blk * dev_bsize + i + secsize, 0);
-			if (secsize != dev_bsize)
+			if (secsize != dev_bsize && dev_bsize != 1)
 				printf(" %d (%d),",
 				    (blk * dev_bsize + i) / secsize,
 				    blk + i / dev_bsize);
