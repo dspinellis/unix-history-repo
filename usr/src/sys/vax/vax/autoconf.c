@@ -1,4 +1,4 @@
-/*	autoconf.c	6.9	85/03/08	*/
+/*	autoconf.c	6.10	85/04/17	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -746,8 +746,8 @@ swapconf()
 	}
 	if (!cold)			/* in case called for mba device */
 		return;
-	if (dumplo == 0)
-		dumplo = swdevt[0].sw_nblks - MAXDUMP;
+	if (dumplo == 0 && bdevsw[major(dumpdev)].d_psize)
+		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - MAXDUMP;
 	if (dumplo < 0)
 		dumplo = 0;
 }
