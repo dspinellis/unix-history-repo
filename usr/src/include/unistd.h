@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)unistd.h	5.4 (Berkeley) %G%
+ *	@(#)unistd.h	5.5 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
@@ -34,7 +34,7 @@ u_int		 alarm __P((u_int));
 int		 chdir __P((const char *));
 int		 chown __P((const char *, uid_t, gid_t));
 int		 close __P((int));
-char		*cuserid __P((const char *));
+char		*cuserid __P((char *));
 int		 dup __P((int));
 int		 dup2 __P((int, int));
 int		 execl __P((const char *, const char *, ...));
@@ -70,7 +70,7 @@ int		 setuid __P((uid_t));
 u_int		 sleep __P((u_int));
 long		 sysconf __P((int));			/* not yet */
 pid_t		 tcgetpgrp __P((int));
-pid_t		 tcsetpgrp __P((int, pid_t));
+int		 tcsetpgrp __P((int, pid_t));
 char		*ttyname __P((int));
 int		 unlink __P((const char *));
 ssize_t		 write __P((int, const void *, size_t));
@@ -106,7 +106,7 @@ int	 ftruncate __P((int, off_t));
 int	 getdtablesize __P((void));
 long	 gethostid __P((void));
 int	 gethostname __P((char *, int));
-mode_t	 getmode __P((const mode_t *, mode_t));
+mode_t	 getmode __P((const void *, mode_t));
 int	 getpagesize __P((void));
 char	*getpass __P((const char *));
 char	*getusershell __P((void));
@@ -129,7 +129,7 @@ int	 readlink __P((const char *, char *, int));
 int	 reboot __P((int));
 void	 remque __P((struct qelem *));
 int	 revoke __P((const char *));
-int	 rresvport __P((const int *));
+int	 rresvport __P((int *));
 int	 ruserok __P((const char *, int, const char *, const char *));
 char	*sbrk __P((int));
 int	 select __P((int, fd_set *, fd_set *, fd_set *, struct timeval *));
@@ -140,7 +140,7 @@ void	 sethostid __P((long));
 int	 sethostname __P((const char *, int));
 void	 setkey __P((const char *));
 int	 setlogin __P((const char *));
-mode_t	 setmode __P((const char *));
+void	*setmode __P((const char *));
 int	 setpgrp __P((pid_t pid, pid_t pgrp));	/* obsoleted by setpgid() */
 int	 setregid __P((int, int));
 int	 setreuid __P((int, int));
