@@ -19,10 +19,10 @@ LOCAL DOLPTR	dolh;
 CHAR	flagadr[10];
 
 CHAR	flagchar[] = {
-	'x',	'n',	'v',	't',	's',	'i',	'e',	'r',	'k',	'u',	0
+	'x',	'n',	'v',	't',	's',	'i',	'e',	'r',	'k',	'u',	'b',	0
 };
 INT	flagval[]  = {
-	execpr,	noexec,	readpr,	oneflg,	stdflg,	intflg,	errflg,	rshflg,	keyflg,	setflg,	0
+	execpr,	noexec,	readpr,	oneflg,	stdflg,	intflg,	errflg,	rshflg,	keyflg,	setflg,	batchflg, 0
 };
 
 /* ========	option handling	======== */
@@ -53,6 +53,11 @@ INT	options(argc,argv)
 			FI
 		OD
 		argp[1]=argp[0]; argc--;
+	FI
+
+	IF !(flags&batchflg) ANDF (getuid()!=geteuid() ORF getgid()!=getegid())
+	THEN
+		failed("sh","Permission denied");
 	FI
 
 	/* set up $- */
