@@ -1,4 +1,4 @@
-/*	defs.h	4.2	83/06/10	*/
+/*	defs.h	4.3	85/02/13	*/
 
 #
 /*
@@ -216,6 +216,7 @@ MSG		devnull;
 #define		execpr	04000
 #define		readpr	010000
 #define		keyflg	020000
+#define		batchflg	040000
 INT		flags;
 
 /* error exits from various parts of shell */
