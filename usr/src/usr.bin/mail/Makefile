@@ -1,7 +1,7 @@
 #
 # Unix version 7.
 #
-# Sccs Id = "@(#)Makefile	2.3.2.3 %G%";
+# Sccs Id = "@(#)Makefile	2.3.2.4 %G%";
 #
 
 CFLAGS=-O -DVMUNIX -DV7
@@ -24,7 +24,7 @@ OBJS=aux.o cmd1.o cmd2.o cmd3.o cmdtab.o collect.o config.o edit.o fio.o \
 
 SRCS=aux.c cmd1.c cmd2.c cmd3.c cmdtab.c collect.c config.c edit.c fio.c \
 	getname.c head.c v7.local.c lock.c optim.c names.c lex.c list.c main.c \
-	quit.c send.c strings.c temp.c tty.c vars.c errlst.c
+	quit.c send.c strings.c temp.c tty.c vars.c errlst.c version.c
 
 HDRS=rcv.h configdefs.h def.h glob.h v7.local.h local.h
 
@@ -64,7 +64,6 @@ clean:
 	$(RM) -f *.o
 	rm -f Mail a.out fmt x.c xs.c tags core
 	cp /dev/null strings
-	cp /dev/null version.c
 
 lint:
 	lint $(CFLAGS) $(SRCS)
@@ -90,12 +89,6 @@ errlst.o: errlst.c
 	${CC} -E ${CFLAGS} errlst.c | ${XSTR} -c -
 	${CC} ${CFLAGS} -R -c x.c
 	mv x.o errlst.o
-
-#
-# Make the version file.  /tmp is always changing.
-#
-version.c: #	/tmp
-	/bin/sh version > version.c
 
 print:	$S fmt.c
 	$(CGRAPH) > mail.g;
