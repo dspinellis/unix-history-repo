@@ -1,16 +1,11 @@
+/* driver.c	(Berkeley)	1.2	83/08/09	*/
 #include <stdio.h>
 #include <ctype.h>
-
-#define	DEV202	1
-#define	DEVAPS	2
-#define	DEVCAT	3
-#define	DEV450	4
-int	devtype	= DEV202;
 
 float	deltx;	/* max x value in output, for scaling */
 float	delty;	/* max y value in output, for scaling */
 int	dbg	= 0;
-int	res	= 972;	/* 202 is default */
+int	res	= 200;	/* versatec/varian is default */
 FILE	*fin;	/* input file pointer */
 char	*cmdname;
 int	crop	= 1;	/* trim off exterior white space if non-zero */
@@ -43,10 +38,8 @@ char **argv;
 		case 'T':
 			if (strcmp(&argv[1][2], "aps") == 0) {
 				res = 720;
-				devtype = DEVAPS;
 			} else if (strcmp(&argv[1][2], "cat") == 0) {
 				res = 432;
-				devtype = DEVCAT;
 			}
 			break;
 		case 'c':

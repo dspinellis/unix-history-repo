@@ -1,6 +1,14 @@
+/* main.c	(Berkeley)	1.2	83/08/09	*/
 #include	<stdio.h>
 #include	"pic.h"
 #include	"y.tab.h"
+#include	"dev.h"
+
+
+#define DEVDIR	"/usr/lib/font"		/* place to look up device files */
+
+char	*devdir = DEVDIR;
+char	*dev = "var";			/* default typesetter is varian */
 
 struct	obj	*objlist[MAXOBJ];	/* store the elements here */
 int	nobj	= 0;
@@ -30,28 +38,10 @@ int	synerr	= 0;
 char	*cmdname;
 int	crop	= 1;	/* trim off exterior white space if non-zero */
 extern int	useDline;	/* if set, use \D for all lines */
+int	res;		/* resolution of output device (dots/inch) */
+int	DX;		/* smallest change in X, and Y for output device */
+int	DY;
 
-/* You may want to change this if you don't have a 202... */
-
-#ifdef	APS
-	int	devtype	= DEVAPS;
-	int	res	= 723;
-	int	DX	= 3;
-	int	DY	= 3;
-#else
-	int	devtype	= DEVVER;
-	int	res	= 200;	/* default is 202 */
-	int	DX	= 1;	/* used only for old-style troff */
-	int	DY	= 1;
-#endif
-
-/* mandatory values for graphic systems CAT: */
-/*
-int	devtype = DEVCAT;
-int	res	= 432;
-int	DX = 3;
-int	DY = 3;
-*/
 
 float	hshift	= 0;	/* move this far left for text (in em's) */
 float	vshift	= 0.2;	/* this far down */
@@ -72,25 +62,11 @@ main(argc, argv)
 	cmdname = argv[0];
 	while (argc > 1 && *argv[1] == '-') {
 		switch (argv[1][1]) {
+		case 'F':
+			devdir = &argv[1][2];
+			break;
 		case 'T':
-			if (strcmp(&argv[1][2], "aps") == 0) {
-				res = 723;
-				devtype = DEVAPS;
-				DX = DY = 1;
-			} else if (strcmp(&argv[1][2], "cat") == 0) {
-				res = 432;
-				devtype = DEVCAT;
-				DX = DY = 3;
-			} else if (strcmp(&argv[1][2], "ver") == 0) {
-				res = 200;
-				devtype = DEVVER;
-				DX = DY = 1;
-			} else if (strcmp(&argv[1][2], "450") == 0) {
-				res = 240;
-				devtype = DEV450;
-			} else {
-				res = atoi(&argv[1][2]);
-			}
+			dev = &argv[1][2];
 			break;
 		case 'd':
 			dbg = 1;
@@ -102,6 +78,8 @@ main(argc, argv)
 		argc--;
 		argv++;
 	}
+
+	fileinit();
 	setdefaults();
 	if (argc <= 1) {
 		yyin = stdin;
@@ -118,6 +96,26 @@ main(argc, argv)
 		}
 	exit(0);
 }
+
+
+fileinit()
+{
+	int fin;
+	struct dev device;
+	char temp[100];
+
+	sprintf(temp, "%s/dev%s/DESC.out", devdir, dev);
+	if ((fin = open(temp, 0)) < 0) {
+	    fprintf(stderr, "can't open tables for %s\n", temp);
+	    exit(1);
+	}
+	read(fin, &device, sizeof(struct dev));
+	res = device.res;
+	DX = device.hor;
+	DY = device.vert;
+	close(fin);
+}
+
 
 static struct {
 	char *name;

@@ -1,3 +1,4 @@
+/* pic.h	(Berkeley)	1.2	83/08/09	*/
 #define	dprintf	if(dbg)printf
 
 #define	HEAD1	1
@@ -18,11 +19,6 @@
 #define	MAXOBJ	1200
 #define	MAXTEXT	1200
 #define	SYMTAB	200
-#define	DEV202	1
-#define	DEVAPS	2
-#define	DEVCAT	3
-#define	DEV450	4
-#define	DEVVER	5
 
 /* these have to be like so, so that we can write */
 /* things like R & V, etc. */
@@ -101,7 +97,7 @@ extern	float	deltx, delty;
 extern	int	lineno;
 extern	int	synerr;
 extern	int	crop;
-extern	int	devtype, res, DX, DY;
+extern	int	res, DX, DY;
 
 extern	float	sxmin, sxmax, symin, symax;
 extern	float	xmin, ymin, xmax, ymax;
