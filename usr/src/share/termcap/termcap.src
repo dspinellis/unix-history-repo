@@ -1,7 +1,8 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.39 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.40 (Berkeley) %G%
 #	John Kunze, Berkeley
+#	Craig Leres, Berkeley
 #
 # Please mail changes to (arpanet):  termcap@berkeley
 # See DESCRIPTION section for information about contents.
