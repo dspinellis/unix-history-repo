@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_imp.c	7.8 (Berkeley) %G%
+ *	@(#)if_imp.c	7.9 (Berkeley) %G%
  */
 
 #include "imp.h"
@@ -162,8 +162,9 @@ impinput(unit, m)
 	 * Pull the interface pointer out of the mbuf
 	 * and save for later; adjust mbuf to look at rest of data.
 	 */
-	ifp = *(mtod(m, struct ifnet **));
-	IF_ADJ(m);
+if ((m->m_flags && M_PKTHDR) == 0)
+panic("No header in impinput");
+	ifp = m->m_pkthdr.rcvif;
 	/* verify leader length. */
 	if (m->m_len < sizeof(struct control_leader) &&
 	    (m = m_pullup(m, sizeof(struct control_leader))) == 0)
@@ -211,7 +212,9 @@ impinput(unit, m)
 
 		case IMPLINK_IP:
 			m->m_len -= sizeof(struct imp_leader);
-			m->m_off += sizeof(struct imp_leader);
+			if (m->m_flags & M_PKTHDR)
+				m->m_pkthdr.len -= sizeof(struct imp_leader);
+			m->m_data += sizeof(struct imp_leader);
 			schednetisr(NETISR_IP);
 			inq = &ipintrq;
 			break;
@@ -399,25 +402,6 @@ impinput(unit, m)
 
 	if (inq == &impintrq)
 		schednetisr(NETISR_IMP);
-	/*
-	 * Re-insert interface pointer in the mbuf chain
-	 * for the next protocol up.
-	 */
-	if (M_HASCL(m) && (mtod(m, int) & CLOFSET) < sizeof(struct ifnet *)) {
-		struct mbuf *n;
-
-		MGET(n, M_DONTWAIT, MT_HEADER);
-		if (n == 0)
-			goto drop;
-		n->m_next = m;
-		m = n;
-		m->m_len = 0;
-		m->m_off = MMINOFF + sizeof(struct ifnet  *);
-	}
-	m->m_off -= sizeof(struct ifnet *);
-	m->m_len += sizeof(struct ifnet *);
-	*(mtod(m, struct ifnet **)) = ifp;
-
 	s = splimp();
 	if (!IF_QFULL(inq)) {
 		IF_ENQUEUE(inq, m);
@@ -544,19 +528,7 @@ impoutput(ifp, m0, dst)
 		 * first mbuf, allocate another.  If that should fail, we
 		 * drop this sucker.
 		 */
-		if (m->m_off > MMAXOFF ||
-		    MMINOFF + sizeof(struct imp_leader) > m->m_off) {
-			MGET(m, M_DONTWAIT, MT_HEADER);
-			if (m == 0) {
-				error = ENOBUFS;
-				goto drop;
-			}
-			m->m_next = m0;
-			m->m_len = sizeof(struct imp_leader);
-		} else {
-			m->m_off -= sizeof(struct imp_leader);
-			m->m_len += sizeof(struct imp_leader);
-		}
+		M_PREPEND(m, sizeof(struct imp_leadr), M_DONTWAIT);
 		imp = mtod(m, struct imp_leader *);
 		imp->il_format = IMP_NFF;
 		imp->il_mtype = IMPTYPE_DATA;
