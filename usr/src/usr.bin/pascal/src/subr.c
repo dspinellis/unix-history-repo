@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)subr.c 1.4 %G%";
+static	char sccsid[] = "@(#)subr.c 1.5 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -38,7 +38,7 @@ togopt(c)
 gettime( filename )
     char *filename;
 {
-#include <stat.h>
+#include <sys/stat.h>
 	struct stat stb;
 
 	stat(filename, &stb);
