@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vnops.c	7.26 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.27 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -18,7 +18,9 @@
 #include <sys/malloc.h>
 
 #include <machine/vmparam.h>
+#if defined(tahoe)
 #include <machine/mtpr.h>
+#endif
 
 #include <ufs/mfs/mfsnode.h>
 #include <ufs/mfs/mfsiom.h>
