@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quotaon.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)quotaon.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -210,7 +210,7 @@ readonly(fs)
 		printf("%s: not mounted\n", fs->fs_file);
 		return (1);
 	}
-	if (fsbuf.f_flags & M_RDONLY) {
+	if (fsbuf.f_flags & MNT_RDONLY) {
 		printf("%s: mounted read-only\n", fs->fs_file);
 		return (1);
 	}
