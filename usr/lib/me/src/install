@@ -1,0 +1,41 @@
+#
+if ($#argv < 1) then
+	echo 'Usage: install <-me file list>'
+	exit
+endif
+echo stripping and installing $*
+foreach i ($*)
+	echo ${i}:
+	ed $i << 'EOF'
+1a
+%beginstrip%
+.
+g/%beginstrip%/d
+i
+.\" This version has had comments stripped; an unstripped version is available.
+.
++,$g/[.	]\\".*/s///
+g/[ 	][ 	]*$/s///
+g/^$/d
+g/\\n@/d
+w _mac_temp_
+q
+'EOF'
+	if ($i == tmac.e) then
+		if (-d /usr/lib/tmac) then
+			cp _mac_temp_ /usr/lib/tmac/tmac.e
+		else
+			cp _mac_temp_ /usr/lib/tmac.e
+		endif
+	else
+		cp _mac_temp_ /usr/lib/me/$i
+	endif
+	rm _mac_temp_
+	if (-e /usr/lib/me/src && $cwd != /usr/lib/me/src) then
+		rm -f /usr/lib/me/src/$i
+		cp $i /usr/lib/me/src/$i
+	endif
+end
+cp revisions /usr/lib/me/revisions
+echo	"Done"
+exit
