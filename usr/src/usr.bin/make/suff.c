@@ -1,19 +1,33 @@
+/*
+ * Copyright (c) 1988, 1989, 1990 The Regents of the University of California.
+ * Copyright (c) 1988, 1989 by Adam de Boor
+ * Copyright (c) 1989 by Berkeley Softworks
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Adam de Boor.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)suff.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
+
 /*-
  * suff.c --
  *	Functions to maintain suffix lists and find implicit dependents
  *	using suffix transformation rules
- *
- * Copyright (c) 1988, 1989 by the Regents of the University of California
- * Copyright (c) 1988, 1989 by Adam de Boor
- * Copyright (c) 1989 by Berkeley Softworks
- *
- * Permission to use, copy, modify, and distribute this
- * software and its documentation for any non-commercial purpose
- * and without fee is hereby granted, provided that the above copyright
- * notice appears in all copies.  The University of California,
- * Berkeley Softworks and Adam de Boor make no representations about
- * the suitability of this software for any purpose.  It is provided
- * "as is" without express or implied warranty.
  *
  * Interface:
  *	Suff_Init 	    	Initialize all things to do with suffixes.
@@ -58,9 +72,6 @@
  *	    	  	    	bottom-most node added to the graph or NILGNODE
  *	    	  	    	if the target had no implicit sources.
  */
-#ifndef lint
-static char     *rcsid = "$Id: suff.c,v 1.68 89/11/14 13:44:09 adam Exp $ SPRITE (Berkeley)";
-#endif lint
 
 #include    	  <stdio.h>
 #include	  "make.h"

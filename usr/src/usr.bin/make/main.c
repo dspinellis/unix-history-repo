@@ -1,19 +1,39 @@
+/*
+ * Copyright (c) 1988, 1989, 1990 The Regents of the University of California.
+ * Copyright (c) 1988, 1989 by Adam de Boor
+ * Copyright (c) 1989 by Berkeley Softworks
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Adam de Boor.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1989 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
+
 /*-
  * main.c --
  *	The main file for this entire program. Exit routines etc
  *	reside here.
- *
- * Copyright (c) 1988, 1989 by the Regents of the University of California
- * Copyright (c) 1988, 1989 by Adam de Boor
- * Copyright (c) 1989 by Berkeley Softworks
- *
- * Permission to use, copy, modify, and distribute this
- * software and its documentation for any non-commercial purpose
- * and without fee is hereby granted, provided that the above copyright
- * notice appears in all copies.  The University of California,
- * Berkeley Softworks and Adam de Boor make no representations about
- * the suitability of this software for any purpose.  It is provided
- * "as is" without express or implied warranty.
  *
  * Utility functions defined in this file:
  *	Main_ParseArgLine   	Takes a line of arguments, breaks them and
@@ -36,9 +56,6 @@
  *	    	  	    	errors which occured, as passed to it, and
  *	    	  	    	exiting.
  */
-#ifndef lint
-static char     *rcsid = "$Id: main.c,v 1.67 89/11/14 13:44:02 adam Exp $ SPRITE (Berkeley)";
-#endif lint
 
 #include    <stdio.h>
 #ifdef Sprite
