@@ -1,6 +1,7 @@
+
 /* Copyright (c) 1982 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)process.rep 1.2 %G%"; */
+/* static char sccsid[] = "@(#)process.rep 1.2 1/18/82"; */
 
 /*
  * This file defines the representation of a process.
@@ -10,7 +11,11 @@
 #define STOPPED 0177
 #define FINISHED 0
 
+#ifdef vax
 #define NREG 12			/* maximum number of saved registers */
+#else
+#define NREG 14			/* maximum number of saved registers */
+#endif
 #define CSIZE 101		/* size of instruction cache */
 
 /*
