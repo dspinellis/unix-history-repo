@@ -1,4 +1,4 @@
-/*	dz.c	3.14	%G%	*/
+/*	dz.c	3.15	%G%	*/
 
 /*
  *  DZ-11 Driver
@@ -253,7 +253,7 @@ dev_t dev;
 	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr);
 	if (cmd == 0)
 		return;
-	if (ttioccomm(cmd, tp, addr, dev)) {
+	if (ttioctl(cmd, tp, addr, dev, flag)) {
 		if (cmd==TIOCSETP || cmd==TIOCSETN)
 			dzparam(minor(dev));
 	} else switch(cmd) {
