@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)state.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)state.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -1494,8 +1494,8 @@ doclientstat()
 	clientstat(TELOPT_LINEMODE, WILL, 0);
 }
 
-#define	ADD(c)	 *ncp++ = c;
-#define	ADD_DATA(c) { *ncp++ = c; if (c == SE) *ncp++ = c; }
+#define	ADD(c)	 *ncp++ = c
+#define	ADD_DATA(c) { *ncp++ = c; if (c == SE || c == IAC) *ncp++ = c; }
 	void
 send_status()
 {
@@ -1524,14 +1524,10 @@ send_status()
 		if (my_want_state_is_will(i)) {
 			ADD(WILL);
 			ADD_DATA(i);
-			if (i == IAC)
-				ADD(IAC);
 		}
 		if (his_want_state_is_will(i)) {
 			ADD(DO);
 			ADD_DATA(i);
-			if (i == IAC)
-				ADD(IAC);
 		}
 	}
 
@@ -1546,15 +1542,14 @@ send_status()
 		ADD(SE);
 
 		if (restartany >= 0) {
-			ADD(SB)
+			ADD(SB);
 			ADD(TELOPT_LFLOW);
 			if (restartany) {
 				ADD(LFLOW_RESTART_ANY);
 			} else {
 				ADD(LFLOW_RESTART_XON);
 			}
-			ADD(SE)
-			ADD(SB);
+			ADD(SE);
 		}
 	}
 
@@ -1567,8 +1562,6 @@ send_status()
 		ADD(TELOPT_LINEMODE);
 		ADD(LM_MODE);
 		ADD_DATA(editmode);
-		if (editmode == IAC)
-			ADD(IAC);
 		ADD(SE);
 
 		ADD(SB);
