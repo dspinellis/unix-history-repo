@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)Locore.c	7.1 (Berkeley) %G%
+ *	@(#)Locore.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -134,6 +134,9 @@ lowinit()
 	if (rmget((struct map *)0, 0, 0) == 0)
 		return;
 	dumpflag = 0; dumpflag = dumpflag;
+#ifdef KADB
+	bootesym = 0; bootesym = bootesym;
+#endif
 #if !defined(GPROF)
 	cp = (caddr_t)&etext;
 	cp = cp;
