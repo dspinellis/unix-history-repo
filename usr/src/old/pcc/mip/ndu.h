@@ -1,4 +1,4 @@
-/*	ndu.h	4.1	85/03/19	*/
+/*	ndu.h	4.2	87/12/10	*/
 
 /*
  * This file defines the basic tree node data structure for the PCC.
@@ -60,8 +60,8 @@ union ndu {
 	 */
 	struct {			/* DCON node */
 		int	op;
-		TWORD	type;
 		int	cdim;
+		TWORD	type;
 		int	csiz;
 		double	dval;
 	} dpn;
@@ -71,8 +71,8 @@ union ndu {
 	 */
 	struct {			/* FCON node */
 		int	op;
-		TWORD	type;
 		int	cdim;
+		TWORD	type;
 		int	csiz;
 		float	fval;
 	} fpn;
