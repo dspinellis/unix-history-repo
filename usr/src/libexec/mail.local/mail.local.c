@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -307,10 +307,11 @@ usage()
 	err("usage: mail.local [-f from] user ...");
 }
 
-void
 #if __STDC__
+__dead void
 err(const char *fmt, ...)
 #else
+void
 err(fmt, va_alist)
 	const char *fmt;
 	va_dcl
