@@ -111,8 +111,7 @@ lines(fp, off)
 	} *lines;
 	register int ch;
 	register char *p;
-	u_int blen, cnt, recno;
-	int wrap;
+	int blen, cnt, recno, wrap;
 	char *sp;
 
 	if ((lines = malloc(off * sizeof(*lines))) == NULL)
