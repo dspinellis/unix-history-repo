@@ -29,119 +29,133 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"     @(#)vi.1	8.7 (Berkeley) 1/23/94
+.\"     @(#)vi.1	8.3 (Berkeley) 3/19/94
 .\"
-.Dd "January 23, 1994"
+.Dd "March 19, 1994"
 .Dt EX/VI 1
 .Os
-.Sh Name
+.Sh NAME
 .Nm ex, vi, view
 .Nd text editors
 .Sh SYNOPSIS
-.Nm vi
-.Op Fl eFlRv
-.Op Fl c Ar command
+.Nm \&ex
+.Op Fl eFlRsv
+.Op Fl c Ar cmd
 .Op Fl r Ar file
 .Op Fl t Ar tag
 .Op Fl w Ar size
-.Op Fl x Ar aw
-.br
+.Op Fl x Ar \&aw
+.Op Ar "file ..."
+.Nm \&vi
+.Op Fl eFlRv
+.Op Fl c Ar cmd
+.Op Fl r Ar file
+.Op Fl t Ar tag
+.Op Fl w Ar size
+.Op Fl x Ar \&aw
+.Op Ar "file ..."
 .Nm view
 .Op Fl eFlRv
-.Op Fl c Ar command
+.Op Fl c Ar cmd
 .Op Fl r Ar file
 .Op Fl t Ar tag
 .Op Fl w Ar size
-.Op Fl x Ar aw
-.br
-.Nm ex
-.Op Fl eFlRsv
-.Op Fl c Ar command
-.Op Fl r Ar file
-.Op Fl t Ar tag
-.Op Fl w Ar size
-.Op Fl x Ar aw
+.Op Fl x Ar \&aw
+.Op Ar "file ..."
 .Sh DESCRIPTION
-.Nm "Ex"
+.Nm \&Vi
+is a screen oriented text editor.
+.Nm \&Ex
 is a line-oriented text editor.
-.Nm Vi
-is a screen oriented text editor, based on
-.Nm ex .
+.Nm \&Ex
+and
+.Nm \&vi
+are different interfaces to the same program,
+and it is possible to switch back and forth during an edit session.
 .Nm View
-is the same as using the
+is the equivalent of using the
 .Fl R
 (read-only) option of
-.Nm vi .
-.Nm "Ex"
-and
-.Nm vi
-are really different interfaces to the same program,
-and it is possible to switch back and forth during the same edit session.
+.Nm \&vi .
 .Pp
 This manual page is the one provided with the
-.Nm nex
-and
-.Nm nvi
-versions of the vi text editors.
-.Nm Nex
-and
-.Nm nvi
+.Nm ex/vi
+versions of the
+.Nm ex/vi
+text editors.
+.Nm Ex/vi
 are intended as bug-for-bug compatible replacements for the original
 Fourth Berkeley Software Distribution (4BSD)
-.Nm ex
+.Nm \&ex
 and
-.Nm vi
+.Nm \&vi
 programs.
+For the rest of this manual page,
+.Nm ex/vi
+is used only when it's necessary to distinguish it from the historic
+implementations of
+.Nm ex/vi .
+.Pp
+This manual page is intended for users already familiar with
+.Nm ex/vi .
+Anyone else should almost certainly read a good tutorial on the
+editor before this manual page.
+If you're in an unfamiliar environment, and you absolutely have to
+get work done immediately, read the section near the end of this
+manual page, entitled FAST STARTUP.
+It's probably enough to get you going.
 .Pp
 The following options are available:
-.Bl -tag -width indent
+.Bl -tag -width Ds 
 .It Fl c
 Execute
-.Ar command
+.Ar cmd
 immediately after starting the edit session.
-Useful for initial positioning in the file, but
-.Ar command
+Particularly useful for initial positioning in the file, however
+.Ar cmd
 is not limited to positioning commands.
 This is the POSIX 1003.2 interface for the historic
-.Dq "+command"
+.Dq "+cmd"
 syntax.
-.Nm Nex/nvi
+.Nm Ex/vi
 supports both the old and new syntax.
 .It Fl e
-Start editing in ex mode, as if the command name was
-.Nm ex .
+Start editing in ex mode, as if the command name were
+.Nm \&ex .
 .It Fl F
 Don't copy the entire file when first starting to edit.
-(The default is to make a copy in case someone else tries to edit
-the file too.)
+(The default is to make a copy in case someone else modifies
+the file during your edit session.)
 .It Fl l
 List the files that may be recovered using the
 .Fl r
 option of
-.Nm vi .
-This is the new interface for the historic
+.Nm \&vi .
+This is the new interface for the historic syntax of the
 .Fl r
-without a file argument syntax.
-.Nm Nex/nvi
+option without a file argument.
+.Nm Ex/vi
 supports both the old and new syntax.
 .It Fl R
 Start editing in read-only mode, as if the command name was
-.Nm view .
+.Nm view ,
+or the readonly option was set.
 .It Fl r
 Recover the specified file.
 .It Fl s
 Enter batch mode; applicable only to
-.Nm ex
+.Nm \&ex
 edit sessions.
 Batch mode is useful when running
-.Nm ex
+.Nm \&ex
 scripts.
-Prompts, informative messages and other user oriented things are
-turned off.
+Prompts, informative messages and other user oriented message
+are turned off,
+and no startup files or environmental variables are read.
 This is the POSIX 1003.2 interface for the historic
-.Fl \-
-syntax.
-.Nm Nex/nvi
+.Dq \&\-
+argument.
+.Nm \&Ex/vi
 supports both the old and new syntax.
 .It Fl t
 Start editing at the specified tag.
@@ -151,206 +165,235 @@ Start editing at the specified tag.
 Set the initial window size to the specified number of lines.
 .It Fl v
 Start editing in vi mode, as if the command name was
-.Nm vi
+.Nm \&vi
 or
 .Nm view .
 .It Fl x
 Reserved for X11 interfaces.
-Not currently implemented.
-.Sh ADDITIONAL FEATURES
-This manual page is the one distributed with the
-.Nm nvi
-and
-.Nm nex
-reimplementations of
-.Nm ex/vi .
-There are a few additional features in
-.Nm nex/nvi .
-.Bl -tag -width indent
-.It "8-bit clean data, large lines, files"
-.Nm Nvi/nex
-will edit any format file.
-Line lengths are limited by available memory,
-and file sizes are limited by available disk space.
-The command
-.Dq "^Vx[0-9A-Fa-f]* ,"
-in input mode, will insert any
-legal character value into the text.
-.It "Split screens"
-The command
-.Dq ":sp[lit] [file ...]"
-splits the screen in vi mode.
-The key
-.Dq "^W"
-switches between the foreground screens,
-and the
-.Dq ":resize count"
-command can be used to grow or shrink any
-particular screen.
-.It "Background and foreground screens"
-The command
-.Dq ":bg"
-backgrounds the current screen,
-and the command
-.Dq ":fg [file]"
-foregrounds the backgrounded screeen
-that is editing the specified file, or, by default, the first background
-screen on the queue.
-The command
-.Dq ":di[splay] s[creens]"
-lists the background screens.
-.It "Shell screens"
-The command
-.Dq ":sc[ript] [file ...]"
-runs a shell in the screen.
-Editing is unchanged, with the exception that a <carriage-return>
-enters the current line (stripped of any prompt) as input to the
-shell.
-.It "Tag stacks"
-Tags are now maintained in a stack.
-The command
-.Dq "^T"
-returns to the previous tag location.
-The command
-.Dq ":tagpop [number \| file]"
-returns to the most recent tag
-location by default, or, optionally to a specific tag number in the
-tag stack, or the most recent tag from the specified file.
-Use the command
-.Dq ":di[splay] t[ags]"
-to view the tags stack.
-The command
-.Dq ":tagtop"
-returns to the top of the tag stack.
-.It "New displays"
-The command
-.Dq ":di[splay] b[uffers] \| s[creens] \| t[ags]"
-can be
-used to display, respectively, the current cut buffers,
-the backgrounded screens, and the tags stack.
-.It "Infinite undo"
-The changes made during an edit session may be rolled backward and
-forward.
-A '.' command immediately after a 'u' command continues either forward
-or backward depending on whether the 'u' command was an undo or a redo.
-.It "Usage information"
-The command
-.Dq ":exu[sage [cmd]"
-and
-.Dq "viu[sage] [key]"
-provide usage
-information for all of the ex and vi commands by default, or, optionally,
-for a specific command or key.
-.It "Extended regular expressions"
-The
-.Dq ":set extended"
-command treats search and other command regular
-expressions as extended (egrep(1) style) regular expressions.
-.It "Word search"
-The command
-.Dq "^A"
-searches for the word referenced by the cursor.
-.It "Number increment"
-The command
-.Dq "#"
-increments the number referenced by the cursor.
-.It "Previous file"
-The command
-.Dq ":prev[ious][!]"
-edits the previous file from the
-argument list.
-.It "Left-Right scrolling"
-The command
-.Dq ":set leftright"
-makes
-.Nm nvi
-do left-right screen scrolling, instead of the traditional
-.Nm vi
-line wrapping.
-.Sh RECOVERY
-There is no recovery program for nvi, nor does it run setuid.
-Users may recover any file which they may read, and the superuser
-may recover any edit session.
+.Em "No X11 support is currently implemented."
+.El
 .Pp
-Edit sessions are backed by files in
-.Pa /var/tmp/vi.recover ,
-and are named
-.Dq "vi.XXXX" ,
-where
-.Dq "XXXX"
-is a number related to the process id.
-When a file is first modified, a second file, which contains an
-email message for the user, is created, and is named
-.Dq "recover.XXXX" ,
-where, again,
-.Dq "XXXX"
-is associated with the process id.
-Both files are removed at the end of a normal edit session,
-but will remain if the edit session is abnormally terminated
-or the user enters the ex/vi
-.Dq "preserve"
+.Nm Ex/vi
+exit 0 on success, and greater than 0 if an error occurs.
+.Sh ENVIRONMENTAL VARIABLES
+.Bl -tag -width XXXX -compact
+.It Ev COLUMNS
+The number of columns on the screen.
+This value overrides any system or terminal specific values.
+If the COLUMNS environmental variable is not set when
+.Nm ex/vi
+runs, or the
+.Sy columns
+option is explicitly reset by the user,
+.Nm ex/vi
+enters the value into the environment.
+.It Ev EXINIT
+A list of
+.Nm \&ex
+startup commands.
+.It Ev HOME
+The user's home directory, used as the initial directory path
+for the startup
+.Pa $HOME/.exrc
+file.
+This value is also used as the default directory for the
+.Nm \&vi
+.Sy \&cd
 command.
-The use of the
-.Pa /var/tmp
-directory may be changed setting the option
-.Dq "recdir"
-in the user's or system startup information.
+.It Ev LINES
+The number of rows on the screen.
+This value overrides any system or terminal specific values.
+If the LINES environmental variable is not set when
+.Nm ex/vi
+runs, or the
+.Sy lines
+option is explicitly reset by the user,
+.Nm ex/vi
+enters the value into the environment.
+.It Ev SHELL
+The user's shell of choice (see also the
+.Sy shell
+option).
+.It Ev TERM
+The user's terminal type.
+The default is the type
+.Dq unknown .
+If the TERM environmental variable is not set when
+.Nm ex/vi
+runs, or the
+.Sy term
+option is explicitly reset by the user,
+.Nm ex/vi
+enters the value into the environment.
+.It Ev TMPDIR
+The location used to stored temporary files (see also the
+.Sy directory
+option).
+.El
+.Sh SET OPTIONS
+#include <set.opt.roff>
+.Sh FAST STARTUP
+This section will tell you the minimum amount that you need to
+do simple editing tasks using
+.Nm \&vi .
+If you've never used any screen editor before, you're likely to have
+problems even with this simple introduction.
+In that case you should find someone that already knows
+.Nm \&vi
+and have them walk you through this section.
 .Pp
-The recovery directory should have the
-.Dq "sticky-bit"
-set so that only the owners of files may remove them.
-If this is not possible on the system, then a pseudo-user should
-own the recovery directory.
-The recovery directory must be both read and write-able by
-any user.
+.Nm \&Vi
+is a screen editor.
+This means that it takes up almost the entire screen, displaying part
+of the file on each screen line, except for the last line of the screen.
+The last line of the screen is used for you to give commands to
+.Nm \&vi ,
+and for
+.Nm \&vi
+to give information to you.
 .Pp
-The recovery file has all of the necessary information in it to enable the
-user to recover the edit session.
-In addition, it has all of the necessary email headers for sendmail.
-When the system is rebooted, all of the files in
-.Pa /var/tmp/vi.recover
-named
-.Dq "recover.XXXX"
-should be sent by email,
-using the
-.Fl t
-flag of sendmail (or a similar mechanism in other mailers).
-A simple way to do this is to insert the following script into your
-rc.local (or other startup) file:
-.sp
-.ne 7v
-.Bd -literal -offset indent -compact
-# Recover nvi editor files.
-virecovery=/var/tmp/vi.recover/recover.*
-if [ "$virecovery" != "/var/tmp/vi.recover/recover.*" ]; then
-	echo 'Recovering vi editor sessions'
-	for i in $virecovery; do
-		sendmail -t < $i
-	done
-fi
-.Ed
+The other fact that you need to understand is that
+.Nm \&vi
+is a modeful editor, i.e. you are either entering text or you
+are executing commands, and you have to be in the right mode
+to do one or the other.
+You will be in command mode when you first start editing a file.
+There are commands that switch you into input mode.
+There is only one key that takes you out of input mode,
+and that is the <escape> key.
+(Key names are written using less-than and greater-than signs, e.g.
+<escape> means the
+.Dq escape
+key, usually labeled
+.Dq esc
+on your terminal's keyboard.)
+If you're ever confused as to which mode you're in,
+keep entering the <escape> key until
+.Nm \&vi
+beeps at you.
+(Generally,
+.Nm \&vi
+will beep at you if you try and do something that's not allowed.
+It will also display error messages.)
 .Pp
-If
-.Nm nex/nvi
-receives a hangup (SIGHUP) signal, it will email the recovery
-information to the user itself.
+To start editing a file, enter the command
+.Dq Li "vi file_name<carriage-return>" .
+The command you should enter as soon as you start editing is
+.Dq Li ":set verbose showmode<carriage-return>" .
+This will make the editor give you verbose error messages and display
+the current mode at the bottom of the screen.
 .Pp
-If you don't have the sendmail program on your system, the source file
-.Pa nvi/recover.c
-will have to be modified to use your mail delivery programs.
+The commands to move around the file are:
+.Bl -tag -width XXXX -compact
+.It Sy h
+Move the cursor left one character.
+.It Sy j
+Move the cursor down one line.
+.It Sy k
+Move the cursor up one line.
+.It Sy l
+Move the cursor right one character.
+.It Sy <cursor-arrows>
+The cursor arrow keys should work, too.
+.It Sy /text<carriage-return>
+Search for the string
+.Dq text
+in the file, and move the cursor to its first character.
+.El
+.Pp
+The commands to enter new text are:
+.Bl -tag -width XXXX -compact
+.It Sy a
+Append new text,
+.Em after
+the cursor.
+.It Sy i
+Insert new text,
+.Em before
+the cursor.
+.It Sy o
+Open a new line below the line the cursor is on, and start
+entering text.
+.It Sy O
+Open a new line above the line the cursor is on, and start
+entering text.
+.It Sy <escape>
+Once you've entered input mode using the one of the
+.Sy \&a ,
+.Sy \&i ,
+.Sy \&O ,
+or 
+.Sy \&o
+commands, use
+.Sy <escape>
+to quit entering text and return to command mode.
+.El
+.Pp
+The commands to copy text are:
+.Bl -tag -width XXXX -compact
+.It Sy yy
+Copy the line the cursor is on.
+.It Sy p
+Append the copied line after the line the cursor is on.
+.El
+.Pp
+The commands to delete text are:
+.Bl -tag -width XXXX -compact
+.It Sy dd
+Delete the line the cursor is on.
+.It Sy x
+Delete the character the cursor is on.
+.El
+.Pp
+The commands to write the file are:
+.Bl -tag -width XXXX -compact
+.It Sy :w<carriage-return>
+Write the file back to the file with the name that you originally used
+as an argument on the
+.Nm \&vi
+command line.
+.It Sy :w file_name<carriage-return>
+Write the file back to the file with the name
+.Dq file_name .
+.El
+.Pp
+The commands to quit editing and exit the editor are:
+.Bl -tag -width XXXX -compact
+.It Sy :q<carriage-return>
+Quit editing and leave vi (if you've modified the file, but not
+saved your changes,
+.Nm \&vi
+will refuse to quit).
+.It Sy :q!<carriage-return>
+Quit, discarding any modifications that you may have made.
+.El
+.Pp
+One final caution.
+Unusual characters can take up more than one column on the screen,
+and long lines can take up more than a single screen line.
+The above commands work on
+.Dq physical
+characters and lines, i.e. they affect the entire line no matter
+how many screen lines it takes up and the entire character no matter
+how many screen columns it takes up.
 .Sh BUGS
-This man page is woefully incomplete.
-.Pp
-Many and varied.
 See the file
-.Pa nvi/docs/bugs.current
+.Pa vi/docs/bugs.current
 for a list of the known bugs in this version.
 .Sh FILES
-.Bl -tag -width XXXX/var/tmp/vi.recover -compact
+.Bl -tag -width /var/tmp/vi.recover -compact
+.It Pa /bin/sh
+The default user shell.
+.It Pa /etc/vi.exrc
+System-wide vi startup file.
 .It Pa /tmp
-Storage for temporary files.
+Temporary file directory.
 .It Pa /var/tmp/vi.recover
-Storage for recovery files.
+Recovery file directory.
+.It Pa $HOME/.exrc
+user's home directory startup file.
+.It Pa .exrc
+local directory startup file.
 .El
 .Sh SEE ALSO
 .Xr ctags 1 ,
@@ -370,36 +413,39 @@ found in the
 found in the
 .Dq "UNIX User's Manual Supplementary Documents" .
 .sp
-.Dq "Ex Reference Manual (Version 3.7)" ,
+.Dq "\&Ex Reference Manual (Version 3.7)" ,
 found in the
 .Dq "UNIX User's Manual Supplementary Documents" .
 .Pp
 .Nm Nroff/troff
 source for the previous three documents are distributed with
-.Nm nex/nvi
+.Nm ex/vi
 in the
-.Pa nvi/docs/USD.doc
+.Pa vi/docs/USD.doc
 directory of the
-.Nm nex/nvi
+.Nm ex/vi
 source code.
 .sp
 The files
-.Dq "autowrite" ,
-.Dq "input" ,
+.Dq autowrite ,
+.Dq input ,
+.Dq quoting ,
 and
-.Dq "quoting" ,
+.Dq structures ,
 found in the
-.Pa nvi/docs
+.Pa vi/docs/internals
 directory of the
-.Nm nex/nvi
+.Nm ex/vi
 source code.
 .Sh HISTORY
 The
-.Nm nex/nvi
-replacements for
 .Nm ex/vi
-first appeared in 4.4BSD.
+replacements for the
+.Nm ex/vi
+editor first appeared in 4.4BSD.
 .Sh STANDARDS
-.Nm Nex/nvi
-is fairly close to IEEE Std1003.2 (``POSIX''), but it's
-not there yet.
+.Nm \&Ex/vi
+is close to IEEE Std1003.2 (``POSIX'').
+That document differs from historical
+.Nm ex/vi
+practice in several places; there are changes to be made on both sides.

@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1993, 1994
+ * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,24 +30,27 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)args.h	8.4 (Berkeley) 3/16/94
+ *	@(#)compat.h	8.16 (Berkeley) 3/8/94
  */
+
+#ifndef	_COMPAT_H_
+#define	_COMPAT_H_
+
+#include <sys/types.h>
 
 /*
- * Structure for building "argc/argv" vector of arguments.
- *
- * !!!
- * All arguments are nul terminated as well as having an associated length.
- * The argument vector is NOT necessarily NULL terminated.  The proper way
- * to check the number of arguments is to use the argc value in the EXCMDARG
- * structure or to walk the array until an ARGS structure with a length of 0
- * is found.
+ * If your system doesn't typedef the following basic integral types,
+ * change the 0 to a 1, and change the values as necessary.
  */
-typedef struct _args {
-	CHAR_T	*bp;		/* Argument. */
-	size_t	 blen;		/* Buffer length. */
-	size_t	 len;		/* Argument length. */
+typedef	char		   	   int8_t;
+typedef	unsigned char		 u_int8_t;
+typedef	short			  int16_t;
+typedef	unsigned short		u_int16_t;
+typedef	int			  int32_t;
+typedef	unsigned int		u_int32_t;
+#ifdef WE_DONT_NEED_QUADS
+typedef	long long		  int64_t;
+typedef	unsigned long long	u_int64_t;
+#endif
 
-#define	A_ALLOCATED	0x01	/* If allocated space. */
-	u_char	 flags;
-} ARGS;
+#endif /* !_COMPAT_H_ */
