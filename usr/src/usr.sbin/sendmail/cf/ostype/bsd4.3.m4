@@ -8,5 +8,6 @@ divert(-1)
 #
 
 divert(0)
-VERSIONID(`@(#)bsd4.3.m4	8.1 (Berkeley) %G%')
+VERSIONID(`@(#)bsd4.3.m4	8.2 (Berkeley) %G%')
 define(`QUEUE_DIR', /usr/spool/mqueue)dnl
+define(`UUCP_MAILER_ARGS', `uux - -r -z -a$f $h!rmail ($u)')dnl
