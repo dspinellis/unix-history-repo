@@ -1,4 +1,4 @@
-/*	common.c	4.4	83/05/27	*/
+/*	common.c	4.5	83/06/02	*/
 /*
  * Routines and data common to all the line printer functions.
  */
@@ -60,6 +60,7 @@ getport(rhost)
 	struct servent *sp;
 	struct sockaddr_in sin;
 	int s, timo = 1, lport = IPPORT_RESERVED - 1;
+	int err;
 
 	/*
 	 * Get the host address and port number to connect to.
@@ -85,13 +86,14 @@ retry:
 	if (s < 0)
 		return(-1);
 	if (connect(s, (caddr_t)&sin, sizeof(sin), 0) < 0) {
+		err = errno;
+		(void) close(s);
+		errno = err;
 		if (errno == EADDRINUSE) {
-			close(s);
 			lport--;
 			goto retry;
 		}
 		if (errno == ECONNREFUSED && timo <= 16) {
-			(void) close(s);
 			sleep(timo);
 			timo *= 2;
 			goto retry;
@@ -112,16 +114,15 @@ rresvport(alport)
 	s = socket(AF_INET, SOCK_STREAM, 0);
 	if (s < 0)
 		return(-1);
-	for (;;) {
+	for (; *alport > IPPORT_RESERVED/2; (*alport)--) {
 		sin.sin_port = htons((u_short) *alport);
 		if (bind(s, (caddr_t)&sin, sizeof(sin), 0) >= 0)
 			return(s);
 		if (errno != EADDRINUSE && errno != EADDRNOTAVAIL)
-			return(-1);
-		(*alport)--;
-		if (*alport == IPPORT_RESERVED/2)
-			return(-1);
+			break;
 	}
+	(void) close(s);
+	return(-1);
 }
 
 /*
@@ -171,7 +172,7 @@ getq(namelist)
 	if ((dirp = opendir(".")) == NULL)
 		return(-1);
 	if (fstat(dirp->dd_fd, &stbuf) < 0)
-		return(-1);
+		goto errdone;
 
 	/*
 	 * Estimate the array size by taking the size of the directory file
@@ -180,7 +181,7 @@ getq(namelist)
 	arraysz = (stbuf.st_size / 24);
 	queue = (struct queue **)malloc(arraysz * sizeof(struct queue *));
 	if (queue == NULL)
-		return(-1);
+		goto errdone;
 
 	nitems = 0;
 	while ((d = readdir(dirp)) != NULL) {
@@ -190,7 +191,7 @@ getq(namelist)
 			continue;	/* Doesn't exist */
 		q = (struct queue *)malloc(sizeof(time_t)+strlen(d->d_name)+1);
 		if (q == NULL)
-			return(-1);
+			goto errdone;
 		q->q_time = stbuf.st_mtime;
 		strcpy(q->q_name, d->d_name);
 		/*
@@ -201,7 +202,7 @@ getq(namelist)
 			queue = (struct queue **)realloc((char *)queue,
 				(stbuf.st_size/12) * sizeof(struct queue *));
 			if (queue == NULL)
-				return(-1);
+				goto errdone;
 		}
 		queue[nitems-1] = q;
 	}
@@ -210,6 +211,10 @@ getq(namelist)
 		qsort(queue, nitems, sizeof(struct queue *), compar);
 	*namelist = queue;
 	return(nitems);
+
+errdone:
+	closedir(dirp);
+	return(-1);
 }
 
 /*
