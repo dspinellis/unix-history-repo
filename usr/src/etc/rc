@@ -1,4 +1,4 @@
-#	@(#)rc	5.27 (Berkeley) %G%
+#	@(#)rc	5.28 (Berkeley) %G%
 
 # System startup script run by init on autoboot
 # or after single-user.
@@ -71,7 +71,7 @@ mount -a -t nfs >/dev/null 2>&1 &	# XXX shouldn't need background
 rm -f /etc/nologin
 rm -f /var/spool/uucp/LCK.*
 rm -f /var/spool/uucp/STST/*
-(cd /var/run && { rm -rf -- *; cp /dev/null utmp; chmod 644 utmp; })
+(cd /var/run && { rm -rf -- *; install -c -m 664 -g utmp /dev/null utmp; })
 
 echo -n 'starting system logger'
 rm -f /dev/log
