@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm_hp300.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_hp300.c	5.18 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -745,7 +745,7 @@ kvm_getargs(p, up)
 #ifndef NEWVM
 	struct dblock db;
 #endif
-	char *file;
+	const char *file;
 	int stkoff = 0;
 
 #if defined(NEWVM) && defined(hp300)
