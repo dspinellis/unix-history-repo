@@ -1,0 +1,151 @@
+% run this through LaTeX
+
+\input lcustom
+\draftfalse
+\input version
+
+\documentstyle[12pt,DScustom,sfwmac]{article}
+\setcounter{page}{0}
+\pagestyle{empty}
+
+\begin{document}
+
+\title{The Rand MH Message Handling System:\\
+	Myths about MH}
+\author{Marshall T.~Rose\\
+	Northrop Research and Technology Center\\
+	One~Research Park\\
+	Palos Verdes Peninsula, CA  90274}
+\date{\ifdraft \versiondate/\\ Version \versiontag/\else \today\fi}
+\maketitle
+\footnotetext[0]{\hskip -\parindent
+This document (version \versiontag/)
+was \LaTeX set \today\ with \fmtname\ v\fmtversion.}%
+
+\begin{abstract}
+\noindent Mail handlers, like text editors, text formatters,
+programming languages, and computer-communication network technologies,
+have become the basis of religious wars.
+Although the UCI version of the Rand Message Handling System is well beloved
+(and deservedly so) by its disciples,
+there remain those who spread non-truths about \MH/.
+This document seeks to set the record straight.
+
+Of course,
+the gentle reader should understand that the author uses this forum primarily
+as a non-violent release of hostility.
+Note however,
+that this document is not a case of ``me against them''.
+Rather it is a case of ``us against them''.
+There are a lot of \MH/ supporters,
+though
+I don't pretend that this paper represents anyone's views other than my own.
+Furthermore,
+I only write like this when I'm upset.
+As such,
+this paper shouldn't be taken {\em too\/} seriously.
+\end{abstract}
+
+\bop\pagestyle{plain}\pagenumbering{arabic}
+
+\section*	{The Plain Facts}
+I really hate writing, especially documentation.
+I don't mind having written so much, but I don't like writing.
+
+To put the reader in the right mood,
+let us recall the words of Lord John Whorfin:
+
+\begin{verse}
+Sealed with a curse,\\
+\qquad as sharp as a knife;\\
+doomed is your soul,\\
+\qquad and damned is your life.
+\end{verse}
+
+This is my standard response to people who want more documentation on \MH/.
+The \MH/ documentation set is way too large as it is.
+
+Now with that out of the way,
+onto the plain facts.
+
+\begin{enumerate}
+\item	Speed versus Performance\hbreak
+For some reason,
+people think that \MH/ is {\em slow}.
+This is not true.
+
+It is true that \MH/ is {\em slower\/} than some monolithic user agents.
+The reason for this is that since each \MH/ command is a \unix/ program,
+there is a larger initial cost for running each \MH/ program.
+Of course,
+once an \MH/ program has loaded its state information,
+it can execute quite quickly.
+In particular,
+a lot of time has gone into tuning \MH/ towards fast execution.
+(Everyone owes a hearty thanks to Van Jacobson who did most of this work.)
+
+It is important to distinguish between how fast a system runs,
+what work that system does,
+and the ratio between the two.
+Although \MH/ may not be fast,
+it does perform well.
+
+\item	Hardware/Software Dependencies\hbreak
+For some reason,
+people think that \MH/ is riddled with \vax/, \bsd/~\unix/, and/or \SendMail/
+dependencies.
+Nothing could be further from the truth.
+
+\MH/ does run on all \bsd/ releases of \unix/ since 4.1\bsd/.
+It also runs on V7~\unix/ and various \xenix/ variants of \unix/.
+Recently, the \MH/ distribution has taken to supporting the AT\&T variant of
+\unix/, System~5.
+\MH/ does not have support for System~3.
+If someone would like to port \MH/ to System~3,
+please let me know.
+
+\MH/ does run on Digital Equipment Corporation's \vax/-family of computers
+(providing that host is running a \unix/ mentioned above).
+It also runs on a large number of other hosts,
+such as SUNs, Integrated Solutions, Pyramid-90x's, Gould FireBreather's, 
+ALTOS's, 3B2's, \pdp/-11's, and so on.
+
+\MH/ does run with \SendMail/ as its message transport agent.
+It also runs with \MMDFI/ and \MMDFII/,
+and provides it's own stand-alone delivery system with \UUCP/ support
+(e.g., \pgm{rmail\/}).
+Furthermore,
+if your host can make an SMTP connection to another host,
+you don't even need to use any of these programs.
+You can simply instruct \MH/ to open an SMTP connection,
+using a flexible search-list of service hosts (and network),
+to any service host accepting mail.
+The bottom line is that \MH/ can really run with any 822--based message
+transport agent.
+
+\item	The BBoards channel and distribution lists\hbreak
+For some reason,
+people think that the UCI BBoards facility is good only for local receipt of
+BBoards.
+It is true that the UCI BBoards facility provides excellent support for local
+BBoard subscribers.
+However,
+the UCI BBoards facility also supports continued distribution.
+
+The BBoards channel does both local delivery and remote distribution for lists.
+For local delivery,
+it delivers messages into maildrops in a spool area.
+In addition,
+it allows the \MH/ user to shorten the typein of distribution list addresses.
+For remote distribution,
+it does the usual list exploding and error trapping.
+\end{enumerate}
+
+\section*	{The End}
+That's it for now.
+
+\bibliography{myths}
+
+\showsummary
+
+\end{document}
