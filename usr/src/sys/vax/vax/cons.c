@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cons.c	7.11 (Berkeley) %G%
+ *	@(#)cons.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -67,14 +67,16 @@ cnopen(dev, flag)
 }
 
 /*ARGSUSED*/
-cnclose(dev)
+cnclose(dev, flag, mode, p)
 	dev_t dev;
+	int flag, mode;
+	struct proc *p;
 {
 	register struct tty *tp = &cons;
 
 	if (consops && minor(dev) == 0)
-		return ((*consops->d_close)(dev));
-	(*linesw[tp->t_line].l_close)(tp);
+		return ((*consops->d_close)(dev, flag, mode, p));
+	(*linesw[tp->t_line].l_close)(tp, flag);
 	ttyclose(tp);
 	return (0);
 }
