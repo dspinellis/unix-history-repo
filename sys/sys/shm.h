@@ -91,4 +91,20 @@ struct	shmid_ds	*shmsegs;
 struct	shminfo		shminfo;
 #endif
 
+#ifndef KERNEL
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+
+int shmsys __P((int, ...));
+
+int shmat  __P((int, caddr_t, int));
+int shmget __P((key_t, int, int));
+int shmctl __P((int, int, caddr_t));
+int shmdt  __P((caddr_t));
+
+__END_DECLS
+
+#endif
+
 #endif /* !_SHM_H_ */
