@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)resolver.3	1.7 (Berkeley) %G%
+.\"	@(#)resolver.3	1.8 (Berkeley) %G%
 .\"
-.TH RESOLVER 3 "15 November 1985"
+.TH RESOLVER 3 ""
 .UC 4
 .SH NAME
 res_mkquery, res_send, res_init, dn_comp, dn_expand \- resolver routines
@@ -61,17 +61,20 @@ res_mkquery, res_send, res_init, dn_comp, dn_expand \- resolver routines
 .br
 .B int  length;
 .SH DESCRIPTION
-These routines are used for making, sending and interpreting packets to
-Internet domain name servers. Global information that is used by the
+These routines are used for making, sending and interpreting packets
+for use with Internet domain name servers.
+Global information that is used by the
 resolver routines is kept in the variable
 .IR _res .
-Most of the values have reasonable defaults and can be ignored. Options
+Most of the values have reasonable defaults and can be ignored.
+Options
 stored in
 .I _res.options
 are defined in
 .I resolv.h
-and are as follows. Options are a simple bit mask and are or'ed in to
-enable.
+and are as follows.
+Options are stored a simple bit mask containing the bitwise ``or''
+of the options enabled.
 .IP RES_INIT
 True if the initial name server address and default domain name are
 initialized (i.e.,
@@ -81,11 +84,12 @@ has been called).
 Print debugging messages.
 .IP RES_AAONLY
 Accept authoritative answers only.
-.I Res_send
-will continue until it finds an authoritative answer or finds an error.
+With this option,
+.I res_send
+should continue until it finds an authoritative answer or finds an error.
 Currently this is not implemented.
 .IP RES_USEVC
-Use TCP connections for queries instead of UDP.
+Use TCP connections for queries instead of UDP datagrams.
 .IP RES_STAYOPEN
 Used with RES_USEVC to keep the TCP connection open between
 queries.
@@ -94,19 +98,31 @@ UDP should be the normal mode used.
 .IP RES_IGNTC
 Unused currently (ignore truncation errors, i.e., don't retry with TCP).
 .IP RES_RECURSE
-Set the recursion desired bit in queries. This is the default.
+Set the recursion-desired bit in queries.
+This is the default.
 (
 .I res_send
 does not do iterative queries and expects the name server
 to handle recursion.)
 .IP RES_DEFNAMES
-Append the default domain name to single label queries. This is the default.
+If set,
+.I res_mkquery
+will append the default domain name to single-component names
+(those that do not contain a dot).
+This is the default.
+.IP RES_DNSRCH
+If this option is set,
+the standard host lookup routine
+.IR gethostbyname (3)
+will search for host names in the current domain and in parent domains; see
+.IR hostname (7).
 .PP
 .I Res_init
 .PP
 reads the initialization file to get the default
 domain name and the Internet address of the initial hosts
-running the name server. If this line does not exist, the host running
+running the name server.
+If this line does not exist, the host running
 the resolver is tried.
 .I Res_mkquery
 makes a standard query message and places it in
@@ -119,13 +135,14 @@ larger than
 is usually QUERY but can be any of the query types defined in
 .IR nameser.h .
 .I Dname
-is the domain name. If
+is the domain name.
+If
 .I dname
 consists of a single label and the RES_DEFNAMES flag is enabled
-(the default),
-.I dname
-will be appended with the current domain name. The current
-domain name is defined in a system file and can be overridden
+(the default), the current domain name will be appended to
+.IR dname .
+The current domain name is defined by the hostname
+or is specified in a system file; it can be overridden
 by the environment variable LOCALDOMAIN.
 .I Newrr
 is currently unused but is intended for making update messages.
@@ -135,7 +152,8 @@ sends a query to name servers and returns an answer.
 It will call
 .I res_init
 if RES_INIT is not set, send the query to the local name server, and
-handle timeouts and retries. The length of the message is returned or
+handle timeouts and retries.
+The length of the message is returned, or
 \-1 if there were errors.
 .PP
 .I Dn_expand
@@ -171,11 +189,15 @@ labels inserted into the message by
 as the name is compressed.
 If
 .I dnptr
-is NULL, we don't try to compress names. If
+is NULL, names are not compressed.
+If
 .I lastdnptr
-is NULL, we don't update the list.
+is NULL, the list of labels is not updated.
 .SH FILES
-/etc/resolv.conf see resolver(5)
+/etc/resolv.conf	see resolver(5)
 .SH "SEE ALSO"
-named(8), resolver(5), RFC882, RFC883, RFC973, RFC974,
+gethostbyname(3), named(8), resolver(5), hostname(7),
+.br
+RFC882, RFC883, RFC973, RFC974,
+.br
 SMM:11 Name Server Operations Guide for BIND
