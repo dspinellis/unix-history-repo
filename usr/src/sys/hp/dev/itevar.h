@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: itevar.h 1.14 92/01/21$
+ * from: Utah $Hdr: itevar.h 1.15 92/12/20$
  *
- *	@(#)itevar.h	7.3 (Berkeley) %G%
+ *	@(#)itevar.h	7.4 (Berkeley) %G%
  */
 
 #define UNIT(dev)       minor(dev)
@@ -66,6 +66,7 @@ struct ite_softc {
 #define ITE_ISCONS	0x08	/* device is console */
 #define ITE_ACTIVE	0x10	/* device is being used as ITE */
 #define ITE_INGRF	0x20	/* device in use as non-ITE */
+#define ITE_CURSORON	0x40	/* cursor being tracked */
 
 #define attrloc(ip, y, x) \
 	(ip->attrbuf + ((y) * ip->cols) + (x))
