@@ -1,0 +1,34 @@
+TIME(3)                     BSD Programmer's Manual                    TIME(3)
+
+NNAAMMEE
+     ttiimmee - get time of day
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+
+     _t_i_m_e___t
+     ttiimmee(_t_i_m_e___t _*_t_l_o_c);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ttiimmee() function returns the value of time in seconds since 0 hours, 0
+     minutes, 0 seconds, January 1, 1970, Coordinated Universal Time.
+
+     A copy of the time value may be saved to the area indicated by the point-
+     er _t_l_o_c. If _t_l_o_c is a NULL pointer, no value is stored.
+
+     Upon successful completion, ttiimmee() returns the value of time.  Otherwise
+     a value of ((_t_i_m_e___t) -1) is returned and the global variable _e_r_r_n_o is set
+     to indicate the error.
+
+EERRRROORRSS
+     The following error codes may be set in _e_r_r_n_o:
+
+     [EFAULT]  An argument address referenced invalid memory.
+
+SSEEEE AALLSSOO
+     gettimeofday(2),  ctime(3)
+
+HHIISSTTOORRYY
+     A ttiimmee() function appeared in Version 6 AT&T UNIX.
+
+4th Berkeley Distribution        June 4, 1993                                1

@@ -1,0 +1,90 @@
+STRMODE(3)                  BSD Programmer's Manual                 STRMODE(3)
+
+NNAAMMEE
+     ssttrrmmooddee - convert inode status information into a symbolic string
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttrriinngg..hh>>
+
+     _v_o_i_d
+     ssttrrmmooddee(_m_o_d_e___t _m_o_d_e, _c_h_a_r _*_b_p);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssttrrmmooddee() function converts a file _m_o_d_e (the type and permission in-
+     formation associated with an inode, see stat(2))  into a symbolic string
+     which is stored in the location referenced by _b_p. This stored string is
+     eleven characters in length plus a trailing NULL.
+
+     The first character is the inode type, and will be one of the following:
+
+           -     regular file
+           b     block special
+           c     character special
+           d     directory
+           l     symbolic link
+           p     fifo
+           s     socket
+           ?     unknown inode type
+
+     The next nine characters encode three sets of permissions, in three char-
+     acters each.  The first three characters are the permissions for the own-
+     er of the file, the second three for the group the file belongs to, and
+     the third for the ``other'', or default, set of users.
+
+     Permission checking is done as specifically as possible.  If read permis-
+     sion is denied to the owner of a file in the first set of permssions, the
+     owner of the file will not be able to read the file.  This is true even
+     if the owner is in the file's group and the group permissions allow read-
+     ing or the ``other'' permissions allow reading.
+
+     If the first character of the three character set is an ``r'', the file
+     is readable for that set of users; if a dash ``-'', it is not readable.
+
+     If the second character of the three character set is a ``w'', the file
+     is writable for that set of users; if a dash ``-'', it is not writable.
+
+     The third character is the first of the following characters that apply:
+
+     S     If the character is part of the owner permissions and the file is
+           not executable or the directory is not searchable, by the owner,
+           and the set-user-id bit is set.
+
+     S     If the character is part of the group permissions and the file is
+           not executable or the directory is not searchable, by the group,
+           and the set-group-id bit is set.
+
+     T     If the character is part of the other permissions and the file is
+           not executable or the directory is not searchable, by others, and
+           the ``sticky'' (S_ISVTX) bit is set.
+
+     s     If the character is part of the owner permissions and the file is
+           executable or the directory searchable, by the owner, and the set-
+           user-id bit is set.
+
+     s     If the character is part of the group permissions and the file is
+           executable or the directory searchable, by the group, and the set-
+
+           group-id bit is set.
+
+     t     If the character is part of the other permissions and the file is
+           executable or the directory searchable, by others, and the
+           ``sticky'' (S_ISVTX) bit is set.
+
+     x     The file is executable or the directory is searchable.
+
+     -     None of the above apply.
+
+     The last character is a plus sign ``+'' if any there are any alternate or
+     additional access control methods associated with the inode, otherwise it
+     will be a space.
+
+RREETTUURRNN VVAALLUUEESS
+     The ssttrrmmooddee() function always returns 0.
+
+SSEEEE AALLSSOO
+     chmod(1),  find(1),  stat(2),  getmode(3),  setmode(3)
+
+HHIISSTTOORRYY
+     The ssttrrmmooddee() function first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                2

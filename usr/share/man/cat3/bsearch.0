@@ -1,0 +1,37 @@
+BSEARCH(3)                  BSD Programmer's Manual                 BSEARCH(3)
+
+NNAAMMEE
+     bbsseeaarrcchh - binary search of a sorted table
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     _v_o_i_d _*
+     bbsseeaarrcchh(_c_o_n_s_t _v_o_i_d _*_k_e_y, _c_o_n_s_t _v_o_i_d _*_b_a_s_e, _s_i_z_e___t _n_m_e_m_b, _s_i_z_e___t _s_i_z_e,
+             _i_n_t _(_*_c_o_m_p_a_r_) _(_c_o_n_s_t _v_o_i_d _*_, _c_o_n_s_t _v_o_i_d _*_));
+
+DDEESSCCRRIIPPTTIIOONN
+     The bbsseeaarrcchh() function searches an array of _n_m_e_m_b objects, the inital
+     member of which is pointed to by _b_a_s_e, for a member that matches the ob-
+     ject pointed to by _k_e_y. The size of each member of the array is specified
+     by _s_i_z_e.
+
+     The contents of the array should be in ascending sorted order according
+     to the comparison function referenced by _c_o_m_p_a_r. The _c_o_m_p_a_r routine is
+     expected to have two two arguments which point to the _k_e_y object and to
+     an array member, in that order, and should return an integer less than,
+     equal to, or greater than zero if the _k_e_y object is found, respectively,
+     to be less than, to match, or be greater than the array member.
+
+RREETTUURRNN VVAALLUUEESS
+     The bbsseeaarrcchh() function returns a pointer to a matching member of the ar-
+     ray, or a null pointer if no match is found.  If two members compare as
+     equal, which member is matched is unspecified.
+
+SSEEEE AALLSSOO
+     db(3),  lsearch(3),  qsort(3),
+
+SSTTAANNDDAARRDDSS
+     The bbsseeaarrcchh() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

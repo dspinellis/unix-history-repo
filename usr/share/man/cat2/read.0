@@ -1,0 +1,94 @@
+READ(2)                     BSD Programmer's Manual                    READ(2)
+
+NNAAMMEE
+     rreeaadd, rreeaaddvv - read input
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//uuiioo..hh>>
+
+     _s_s_i_z_e___t
+     rreeaadd(_i_n_t _d, _v_o_i_d _*_b_u_f, _s_i_z_e___t _n_b_y_t_e_s);
+
+     _i_n_t
+     rreeaaddvv(_i_n_t _d, _s_t_r_u_c_t _i_o_v_e_c _*_i_o_v, _i_n_t _i_o_v_c_n_t);
+
+DDEESSCCRRIIPPTTIIOONN
+     RReeaadd() attempts to read _n_b_y_t_e_s of data from the object referenced by the
+     descriptor _d into the buffer pointed to by _b_u_f. RReeaaddvv() performs the same
+     action, but scatters the input data into the _i_o_v_c_n_t buffers specified by
+     the members of the _i_o_v array: iov[0], iov[1], ..., iov[iovcnt-1].
+
+     For rreeaaddvv(), the _i_o_v_e_c structure is defined as
+           struct iovec {
+                   void *iov_base;
+                   int iov_len;
+           };
+
+     Each _i_o_v_e_c entry specifies the base address and length of an area in mem-
+     ory where data should be placed.  RReeaaddvv() will always fill an area com-
+     pletely before proceeding to the next.
+
+     On objects capable of seeking, the rreeaadd() starts at a position given by
+     the pointer associated with _d (see lseek(2)).  Upon return from rreeaadd(),
+     the pointer is incremented by the number of bytes actually read.
+
+     Objects that are not capable of seeking always read from the current po-
+     sition.  The value of the pointer associated with such an object is unde-
+     fined.
+
+     Upon successful completion, rreeaadd() and rreeaaddvv() return the number of bytes
+     actually read and placed in the buffer.  The system guarantees to read
+     the number of bytes requested if the descriptor references a normal file
+     that has that many bytes left before the end-of-file, but in no other
+     case.
+
+RREETTUURRNN VVAALLUUEESS
+     If successful, the number of bytes actually read is returned. Upon read-
+     ing end-of-file, zero is returned.  Otherwise, a -1 is returned and the
+     global variable _e_r_r_n_o is set to indicate the error.
+
+EERRRROORRSS
+     RReeaadd() and rreeaaddvv() will succeed unless:
+
+     [EBADF]       _D is not a valid file or socket descriptor open for read-
+                   ing.
+
+     [EFAULT]      _B_u_f points outside the allocated address space.
+
+     [EIO]         An I/O error occurred while reading from the file system.
+
+     [EINTR]       A read from a slow device was interrupted before any data
+                   arrived by the delivery of a signal.
+
+
+     [EINVAL]      The pointer associated with _d was negative.
+
+     [EAGAIN]      The file was marked for non-blocking I/O, and no data were
+                   ready to be read.
+
+     In addition, rreeaaddvv() may return one of the following errors:
+
+     [EINVAL]      _I_o_v_c_n_t was less than or equal to 0, or greater than 16.
+
+     [EINVAL]      One of the _i_o_v___l_e_n values in the _i_o_v array was negative.
+
+     [EINVAL]      The sum of the _i_o_v___l_e_n values in the _i_o_v array overflowed a
+                   32-bit integer.
+
+     [EFAULT]      Part of the _i_o_v points outside the process's allocated ad-
+                   dress space.
+
+SSEEEE AALLSSOO
+     dup(2),  fcntl(2),  open(2),  pipe(2),  select(2),  socket(2),  socket-
+     pair(2)
+
+SSTTAANNDDAARRDDSS
+     RReeaadd() is expected to conform to IEEE Std 1003.1-1988 (``POSIX'').
+
+HHIISSTTOORRYY
+     The rreeaaddvv() function call appeared in 4.2BSD. A rreeaadd function call ap-
+     peared in Version 6 AT&T UNIX.
+
+4th Berkeley Distribution        June 4, 1993                                2

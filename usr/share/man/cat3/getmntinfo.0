@@ -1,0 +1,47 @@
+GETMNTINFO(3)               BSD Programmer's Manual              GETMNTINFO(3)
+
+NNAAMMEE
+     ggeettmmnnttiinnffoo - get information about mounted file systems
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ppaarraamm..hh>>
+     ##iinncclluuddee <<ssyyss//uuccrreedd..hh>>
+     ##iinncclluuddee <<ssyyss//mmoouunntt..hh>>
+
+     _i_n_t
+     ggeettmmnnttiinnffoo(_s_t_r_u_c_t _s_t_a_t_f_s _*_*_m_n_t_b_u_f_p, _i_n_t _f_l_a_g_s);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ggeettmmnnttiinnffoo() function returns an array of statfs structures describ-
+     ing each currently mounted file system (see statfs(2)).
+
+     The ggeettmmnnttiinnffoo() function passes its _f_l_a_g_s parameter transparently to
+     getfsstat(2).
+
+RREETTUURRNN VVAALLUUEESS
+     On successful completion, ggeettmmnnttiinnffoo() returns a count of the number of
+     elements in the array.  The pointer to the array is stored into _m_n_t_b_u_f_p.
+
+     If an error occurs, zero is returned and the external variable _e_r_r_n_o is
+     set to indicate the error.  Although the pointer _m_n_t_b_u_f_p will be unmodi-
+     fied, any information previously returned by ggeettmmnnttiinnffoo() will be lost.
+
+EERRRROORRSS
+     The ggeettmmnnttiinnffoo() function may fail and set errno for any of the errors
+     specified for the library routines getfsstat(2) or malloc(3).
+
+SSEEEE AALLSSOO
+     getfsstat(2),  statfs(2),  mount(2),  mount(8)
+
+HHIISSTTOORRYY
+     The ggeettmmnnttiinnffoo() function first appeared in 4.4BSD.
+
+BBUUGGSS
+     The ggeettmmnnttiinnffoo() function writes the array of structures to an internal
+     static object and returns a pointer to that object. Subsequent calls to
+     ggeettmmnnttiinnffoo() will modify the same object.
+
+     The memory allocated by ggeettmmnnttiinnffoo() cannot be free(2)'d  by the applica-
+     tion.
+
+4.4BSD                           June 9, 1993                                1

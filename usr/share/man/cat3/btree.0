@@ -1,0 +1,264 @@
+
+
+
+BTREE(3)             BSD Programmer's Manual             BTREE(3)
+
+
+NNAAMMEE
+       btree - btree database access method
+
+SSYYNNOOPPSSIISS
+       ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+       ##iinncclluuddee <<ddbb..hh>>
+
+DDEESSCCRRIIPPTTIIOONN
+       The  routine  _d_b_o_p_e_n  is the library interface to database
+       files.  One of the supported file formats is btree  files.
+       The  general description of the database access methods is
+       in _d_b_o_p_e_n(3), this manual page describes  only  the  btree
+       specific information.
+
+       The btree data structure is a sorted, balanced tree struc-
+       ture storing associated key/data pairs.
+
+       The btree access method specific data  structure  provided
+       to  _d_b_o_p_e_n  is  defined in the <db.h> include file as fol-
+       lows:
+
+       typedef struct {
+              u_long flags;
+              u_int cachesize;
+              int maxkeypage;
+              int minkeypage;
+              int psize;
+              int (*compare)(const DBT *key1, const DBT *key2);
+              int (*prefix)(const DBT *key1, const DBT *key2);
+              int lorder;
+       } BTREEINFO;
+
+       The elements of this structure are as follows:
+
+       flags  The flag value is specified by _o_r'ing  any  of  the
+              following values:
+
+              R_DUP  Permit duplicate keys in the tree, i.e. per-
+                     mit insertion if  the  key  to  be  inserted
+                     already  exists  in  the  tree.  The default
+                     behavior, as described in _d_b_o_p_e_n(3),  is  to
+                     overwrite  a  matching  key when inserting a
+                     new key or to fail if the R_NOOVERWRITE flag
+                     is  specified.  The R_DUP flag is overridden
+                     by  the  R_NOOVERWRITE  flag,  and  if   the
+                     R_NOOVERWRITE flag is specified, attempts to
+                     insert duplicate keys  into  the  tree  will
+                     fail.
+
+                     If the database contains duplicate keys, the
+                     order of  retrieval  of  key/data  pairs  is
+
+
+
+4.4BSD                    July 19, 1993                         1
+
+
+
+
+
+
+
+
+BTREE(3)             BSD Programmer's Manual             BTREE(3)
+
+
+                     undefined  if  the _g_e_t routine is used, how-
+                     ever, _s_e_q routine calls  with  the  R_CURSOR
+                     flag  set  will  always  return  the logical
+                     ``first'' of any group of duplicate keys.
+
+       cachesize
+              A suggested maximum size (in bytes) of  the  memory
+              cache.  This value is oonnllyy advisory, and the access
+              method will allocate more memory rather than  fail.
+              Since  every  search  examines the root page of the
+              tree, caching the most recently used pages substan-
+              tially improves access time.  In addition, physical
+              writes are delayed as long as possible, so a moder-
+              ate  cache  can reduce the number of I/O operations
+              significantly.  Obviously, using a cache  increases
+              (but  only  increases) the likelihood of corruption
+              or lost data if the system crashes while a tree  is
+              being  modified.   If  _c_a_c_h_e_s_i_z_e  is  0 (no size is
+              specified) a default cache is used.
+
+       psize  Page size is the size (in bytes) of the pages  used
+              for  nodes  in  the tree.  The minimum page size is
+              512 bytes and the maximum page  size  is  64K.   If
+              _p_s_i_z_e  is 0 (no page size is specified) a page size
+              is chosen based on the underlying file  system  I/O
+              block size.
+
+       lorder The  byte order for integers in the stored database
+              metadata.  The number should represent the order as
+              an  integer; for example, big endian order would be
+              the number 4,321.  If _l_o_r_d_e_r  is  0  (no  order  is
+              specified) the current host order is used.
+
+       maxkeypage
+              Not currently used.
+
+       minkeypage
+              The  minimum number of keys which will be stored on
+              any single page.  This value is used  to  determine
+              which  keys  will be stored on overflow pages, i.e.
+              if a key or data item is longer than  the  pagesize
+              divided  by the minkeypage value, it will be stored
+              on overflow pages instead of in  the  page  itself.
+              If  _m_i_n_k_e_y_p_a_g_e  is  0 (no minimum number of keys is
+              specified) a value of 2 is used.
+
+       compare
+              Compare is the key comparison  function.   It  must
+              return  an  integer less than, equal to, or greater
+              than zero if the first key argument  is  considered
+              to  be respectively less than, equal to, or greater
+
+
+
+4.4BSD                    July 19, 1993                         2
+
+
+
+
+
+
+
+
+BTREE(3)             BSD Programmer's Manual             BTREE(3)
+
+
+              than the second key argument.  The same  comparison
+              function must be used on a given tree every time it
+              is opened.  If _c_o_m_p_a_r_e is NULL (no comparison func-
+              tion  is  specified),  the  keys are compared lexi-
+              cally,  with  shorter  keys  considered  less  than
+              longer keys.
+
+       prefix Prefix is the prefix comparison function.  If spec-
+              ified, this routine must return the number of bytes
+              of  the  second key argument which are necessary to
+              determine that it is greater  than  the  first  key
+              argument.   If  the  keys are equal, the key length
+              should be returned.  Note, the usefulness  of  this
+              routine  is  very data dependent, but, in some data
+              sets can produce significantly reduced  tree  sizes
+              and  search  times.   If  _p_r_e_f_i_x is NULL (no prefix
+              function is specified), aanndd no comparison  function
+              is  specified, a default lexical comparison routine
+              is used.  If _p_r_e_f_i_x is NULL and a  comparison  rou-
+              tine is specified, no prefix comparison is done.
+
+       If  the  file  already exists (and the O_TRUNC flag is not
+       specified), the values specified for the parameters flags,
+       lorder  and  psize are ignored in favor of the values used
+       when the tree was created.
+
+       Forward sequential scans of a tree are from the least  key
+       to the greatest.
+
+       Space freed up by deleting key/data pairs from the tree is
+       never reclaimed, although it is  normally  made  available
+       for reuse.  This means that the btree storage structure is
+       grow-only.  The only  solutions  are  to  avoid  excessive
+       deletions,  or  to create a fresh tree periodically from a
+       scan of an existing one.
+
+       Searches, insertions, and deletions in a  btree  will  all
+       complete  in  O  lg  base N where base is the average fill
+       factor.  Often, inserting ordered data into btrees results
+       in  a low fill factor.  This implementation has been modi-
+       fied to make ordered insertion the best case, resulting in
+       a much better than normal page fill factor.
+
+SSEEEE AALLSSOO
+       _d_b_o_p_e_n(3), _h_a_s_h(3), _m_p_o_o_l(3), _r_e_c_n_o(3)
+
+       _T_h_e  _U_b_i_q_u_i_t_o_u_s  _B_-_t_r_e_e,  Douglas Comer, ACM Comput. Surv.
+       11, 2 (June 1979), 121-138.
+
+       _P_r_e_f_i_x _B_-_t_r_e_e_s, Bayer and Unterauer, ACM  Transactions  on
+       Database Systems, Vol. 2, 1 (March 1977), 11-26.
+
+
+
+4.4BSD                    July 19, 1993                         3
+
+
+
+
+
+
+
+
+BTREE(3)             BSD Programmer's Manual             BTREE(3)
+
+
+       _T_h_e  _A_r_t  _o_f  _C_o_m_p_u_t_e_r  _P_r_o_g_r_a_m_m_i_n_g  _V_o_l_.  _3_:  _S_o_r_t_i_n_g _a_n_d
+       _S_e_a_r_c_h_i_n_g, D.E. Knuth, 1968, pp 471-480.
+
+BBUUGGSS
+       Only big and little endian byte order is supported.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4.4BSD                    July 19, 1993                         4
+
+
+
+
+

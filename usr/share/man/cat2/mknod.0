@@ -1,0 +1,84 @@
+MKNOD(2)                    BSD Programmer's Manual                   MKNOD(2)
+
+NNAAMMEE
+     mmkknnoodd - make a special file node
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     mmkknnoodd(_c_o_n_s_t _c_h_a_r _*_p_a_t_h, _m_o_d_e___t _m_o_d_e, _d_e_v___t _d_e_v);
+
+DDEESSCCRRIIPPTTIIOONN
+     The device special file _p_a_t_h is created with the major and minor device
+     numbers extracted from _m_o_d_e_. The access permissions of _p_a_t_h are descen-
+     dant from the umask(2) of the parent process.
+
+     If _m_o_d_e indicates a block or character special file, _d_e_v is a configura-
+     tion dependent specification of a character or block I/O device and the
+     superblock of the device.  If _m_o_d_e does not indicate a block special or
+     character special device, _d_e_v is ignored.
+
+     MMkknnoodd() requires super-user privileges.
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion a value of 0 is returned.  Otherwise, a value
+     of -1 is returned and _e_r_r_n_o is set to indicate the error.
+
+EERRRROORRSS
+     MMkknnoodd() will fail and the file will be not created if:
+
+     [ENOTDIR]     A component of the path prefix is not a directory.
+
+     [EINVAL]      The pathname contains a character with the high-order bit
+                   set.
+
+     [ENAMETOOLONG]
+                   A component of a pathname exceeded 255 characters, or an
+                   entire path name exceeded 1023 characters.
+
+     [ENOENT]      A component of the path prefix does not exist.
+
+     [EACCES]      Search permission is denied for a component of the path
+                   prefix.
+
+     [ELOOP]       Too many symbolic links were encountered in translating the
+                   pathname.
+
+     [EPERM]       The process's effective user ID is not super-user.
+
+     [EPERM]       The pathname contains a character with the high-order bit
+                   set.
+
+     [EIO]         An I/O error occurred while making the directory entry or
+                   allocating the inode.
+
+     [ENOSPC]      The directory in which the entry for the new node is being
+                   placed cannot be extended because there is no space left on
+                   the file system containing the directory.
+
+     [ENOSPC]      There are no free inodes on the file system on which the
+                   node is being created.
+
+     [EDQUOT]      The directory in which the entry for the new node is being
+                   placed cannot be extended because the user's quota of disk
+                   blocks on the file system containing the directory has been
+
+                   exhausted.
+
+     [EDQUOT]      The user's quota of inodes on the file system on which the
+                   node is being created has been exhausted.
+
+     [EROFS]       The named file resides on a read-only file system.
+
+     [EEXIST]      The named file exists.
+
+     [EFAULT]      _P_a_t_h points outside the process's allocated address space.
+
+SSEEEE AALLSSOO
+     chmod(2),  stat(2),  umask(2)
+
+HHIISSTTOORRYY
+     A mmkknnoodd function call appeared in Version 6 AT&T UNIX.
+
+4th Berkeley Distribution        June 4, 1993                                2

@@ -1,0 +1,16 @@
+SIGSTACK(2)                 BSD Programmer's Manual                SIGSTACK(2)
+
+NNAAMMEE
+     ssiiggssttaacckk - set and/or get signal stack context
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssiiggssttaacckk() function has been deprecated in favor of the interface de-
+     scribed in sigaltstack(2).
+
+SSEEEE AALLSSOO
+     sigaltstack(2)
+
+HHIISSTTOORRYY
+     The ssiiggssttaacckk function call appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 4, 1993                                1

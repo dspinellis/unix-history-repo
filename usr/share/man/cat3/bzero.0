@@ -1,0 +1,22 @@
+BZERO(3)                    BSD Programmer's Manual                   BZERO(3)
+
+NNAAMMEE
+     bbzzeerroo - write zeroes to a byte string
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttrriinngg..hh>>
+
+     _v_o_i_d
+     bbzzeerroo(_v_o_i_d _*_b, _s_i_z_e___t _l_e_n);
+
+DDEESSCCRRIIPPTTIIOONN
+     The bbzzeerroo() function writes _l_e_n zero bytes to the string _b. If _l_e_n is ze-
+     ro, bbzzeerroo() does nothing.
+
+SSEEEE AALLSSOO
+     memset(3),  swab(3)
+
+HHIISSTTOORRYY
+     A bbzzeerroo() function appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 4, 1993                                1

@@ -1,0 +1,26 @@
+TOUPPER(3)                  BSD Programmer's Manual                 TOUPPER(3)
+
+NNAAMMEE
+     ttoouuppppeerr - lower case to upper case letter conversion
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ccttyyppee..hh>>
+
+     _i_n_t
+     ttoouuppppeerr(_i_n_t _c);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ttoouuppppeerr() function converts a lower-case letter to the corresponding
+     upper-case letter.  If the argument is a lower-case letter, the ttoouuppppeerr()
+     function returns the corresponding upper-case letter if there is one;
+     otherwise the argument is returned unchanged.
+
+SSEEEE AALLSSOO
+     isascii(3),  isalnum(3),  isalpha(3),  iscntrl(3),  isdigit(3),
+     isgraph(3),  islower(3),  isprint(3),  ispunct(3),  isspace(3),
+     isupper(3),  isxdigit(3),  toascii(3),  toupper(3),  stdio(3) ascii(7)
+
+SSTTAANNDDAARRDDSS
+     The ttoolloowweerr() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

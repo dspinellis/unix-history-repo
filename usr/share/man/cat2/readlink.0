@@ -1,0 +1,54 @@
+READLINK(2)                 BSD Programmer's Manual                READLINK(2)
+
+NNAAMMEE
+     rreeaaddlliinnkk - read value of a symbolic link
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     rreeaaddlliinnkk(_c_o_n_s_t _c_h_a_r _*_p_a_t_h, _c_h_a_r _*_b_u_f, _i_n_t _b_u_f_s_i_z);
+
+DDEESSCCRRIIPPTTIIOONN
+     RReeaaddlliinnkk() places the contents of the symbolic link _p_a_t_h in the buffer
+     _b_u_f, which has size _b_u_f_s_i_z. RReeaaddlliinnkk does not append a NUL character to
+     _b_u_f.
+
+RREETTUURRNN VVAALLUUEESS
+     The call returns the count of characters placed in the buffer if it suc-
+     ceeds, or a -1 if an error occurs, placing the error code in the global
+     variable _e_r_r_n_o.
+
+EERRRROORRSS
+     RReeaaddlliinnkk() will fail if:
+
+     [ENOTDIR]     A component of the path prefix is not a directory.
+
+     [EINVAL]      The pathname contains a character with the high-order bit
+                   set.
+
+     [ENAMETOOLONG]
+                   A component of a pathname exceeded 255 characters, or an
+                   entire path name exceeded 1023 characters.
+
+     [ENOENT]      The named file does not exist.
+
+     [EACCES]      Search permission is denied for a component of the path
+                   prefix.
+
+     [ELOOP]       Too many symbolic links were encountered in translating the
+                   pathname.
+
+     [EINVAL]      The named file is not a symbolic link.
+
+     [EIO]         An I/O error occurred while reading from the file system.
+
+     [EFAULT]      _B_u_f extends outside the process's allocated address space.
+
+SSEEEE AALLSSOO
+     stat(2),  lstat(2),  symlink(2) symlink(7),
+
+HHIISSTTOORRYY
+     The rreeaaddlliinnkk function call appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 4, 1993                                1

@@ -1,0 +1,20 @@
+MUNMAP(2)                   BSD Programmer's Manual                  MUNMAP(2)
+
+NNAAMMEE
+     mmuunnmmaapp - remove a mapping
+
+SSYYNNOOPPSSIISS
+     mmuunnmmaapp(_c_a_d_d_r___t _a_d_d_r, _s_i_z_e___t _l_e_n);
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmuunnmmaapp() system call deletes the mappings for the specified address
+     range, and causes further references to addresses within the range to
+     generate invalid memory references.
+
+SSEEEE AALLSSOO
+     msync(2),  madvise(2),  mprotect(2),  mincore(2)
+
+HHIISSTTOORRYY
+     The mmuunnmmaapp() function first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                1

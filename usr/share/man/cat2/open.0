@@ -1,0 +1,152 @@
+OPEN(2)                     BSD Programmer's Manual                    OPEN(2)
+
+NNAAMMEE
+     ooppeenn - open or create a file for reading or writing
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ffccnnttll..hh>>
+
+     _i_n_t
+     ooppeenn(_c_o_n_s_t _c_h_a_r _*_p_a_t_h, _i_n_t _f_l_a_g_s, _m_o_d_e___t _m_o_d_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     The file name specified by _p_a_t_h is opened for reading and/or writing as
+     specified by the argument _f_l_a_g_s and the file descriptor returned to the
+     calling process.  The _f_l_a_g_s argument may indicate the file is to be cre-
+     ated if it does not exist (by specifying the O_CREAT flag), in which case
+     the file is created with mode _m_o_d_e as described in chmod(2) and modified
+     by the process' umask value (see umask(2)).
+
+     The flags specified are formed by _o_r _A_p _i_n_g the following values
+
+           O_RDONLY        open for reading only
+           O_WRONLY        open for writing only
+           O_RDWR          open for reading and writing
+           O_NONBLOCK      do not block on open
+           O_APPEND        append on each write
+           O_CREAT         create file if it does not exist
+           O_TRUNC         truncate size to 0
+           O_EXCL          error if create and file exists
+           O_SHLOCK        atomically obtain a shared lock
+           O_EXLOCK        atomically obtain an exclusive lock
+
+     Opening a file with O_APPEND set causes each write on the file to be ap-
+     pended to the end.  If O_TRUNC is specified and the file exists, the file
+     is truncated to zero length.  If O_EXCL is set with O_CREAT and the file
+     already exists, ooppeenn() returns an error.  This may be used to implement a
+     simple exclusive access locking mechanism.  If O_EXCL is set and the last
+     component of the pathname is a symbolic link, ooppeenn() will fail even if
+     the symbolic link points to a non-existent name.  If the O_NONBLOCK flag
+     is specified and the ooppeenn() call would result in the process being
+     blocked for some reason (e.g., waiting for carrier on a dialup line),
+     ooppeenn() returns immediately.  The first time the process attempts to per-
+     form I/O on the open file it will block (not currently implemented).
+
+     When opening a file, a lock with flock(2) semantics can be obtained by
+     setting O_SHLOCK for a shared lock, or O_EXLOCK for an exclusive lock.
+     If creating a file with O_CREAT, the request for the lock will never fail
+     (provided that the underlying filesystem supports locking).
+
+     If successful, ooppeenn() returns a non-negative integer, termed a file de-
+     scriptor.  It returns -1 on failure.  The file pointer used to mark the
+     current position within the file is set to the beginning of the file.
+
+     When a new file is created it is given the group of the directory which
+     contains it.
+
+     The new descriptor is set to remain open across execve system calls; see
+     close(2) and fcntl(2).
+
+     The system imposes a limit on the number of file descriptors open simul-
+     taneously by one process.  Getdtablesize(2) returns the current system
+     limit.
+
+EERRRROORRSS
+
+     The named file is opened unless:
+
+     [ENOTDIR]     A component of the path prefix is not a directory.
+
+     [ENAMETOOLONG]
+                   A component of a pathname exceeded 255 characters, or an
+                   entire path name exceeded 1023 characters.
+
+     [ENOENT]      O_CREAT is not set and the named file does not exist.
+
+     [ENOENT]      A component of the path name that must exist does not ex-
+                   ist.
+
+     [EACCES]      Search permission is denied for a component of the path
+                   prefix.
+
+     [EACCES]      The required permissions (for reading and/or writing) are
+                   denied for the given flags.
+
+     [EACCES]      O_CREAT is specified, the file does not exist, and the di-
+                   rectory in which it is to be created does not permit writ-
+                   ing.
+
+     [ELOOP]       Too many symbolic links were encountered in translating the
+                   pathname.
+
+     [EISDIR]      The named file is a directory, and the arguments specify it
+                   is to be opened for writing.
+
+     [EROFS]       The named file resides on a read-only file system, and the
+                   file is to be modified.
+
+     [EMFILE]      The process has already reached its limit for open file de-
+                   scriptors.
+
+     [ENFILE]      The system file table is full.
+
+     [ENXIO]       The named file is a character special or block special
+                   file, and the device associated with this special file does
+                   not exist.
+
+     [EINTR]       The ooppeenn operation was interrupted by a signal.
+
+     [EOPNOTSUPP]  O_SHLOCK or O_EXLOCK is specified but the underlying
+                   filesystem does not support locking.
+
+     [ENOSPC]      O_CREAT is specified, the file does not exist, and the di-
+                   rectory in which the entry for the new file is being placed
+                   cannot be extended because there is no space left on the
+                   file system containing the directory.
+
+     [ENOSPC]      O_CREAT is specified, the file does not exist, and there
+                   are no free inodes on the file system on which the file is
+                   being created.
+
+     [EDQUOT]      O_CREAT is specified, the file does not exist, and the di-
+                   rectory in which the entry for the new file is being placed
+                   cannot be extended because the user's quota of disk blocks
+                   on the file system containing the directory has been ex-
+                   hausted.
+
+     [EDQUOT]      O_CREAT is specified, the file does not exist, and the us-
+                   er's quota of inodes on the file system on which the file
+                   is being created has been exhausted.
+
+     [EIO]         An I/O error occurred while making the directory entry or
+
+                   allocating the inode for O_CREAT.
+
+     [ETXTBSY]     The file is a pure procedure (shared text) file that is be-
+                   ing executed and the ooppeenn() call requests write access.
+
+     [EFAULT]      _P_a_t_h points outside the process's allocated address space.
+
+     [EEXIST]      O_CREAT and O_EXCL were specified and the file exists.
+
+     [EOPNOTSUPP]  An attempt was made to open a socket (not currently imple-
+                   mented).
+
+SSEEEE AALLSSOO
+     chmod(2),  close(2),  dup(2),  getdtablesize(2),  lseek(2),  read(2),
+     write(2),  umask(2)
+
+HHIISSTTOORRYY
+     An ooppeenn function call appeared in Version 6 AT&T UNIX.
+
+4th Berkeley Distribution        June 4, 1993                                3

@@ -1,0 +1,45 @@
+IOCTL(2)                    BSD Programmer's Manual                   IOCTL(2)
+
+NNAAMMEE
+     iiooccttll - control device
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//iiooccttll..hh>>
+
+     _i_n_t
+     iiooccttll(_i_n_t _d, _u_n_s_i_g_n_e_d _l_o_n_g _r_e_q_u_e_s_t, _c_h_a_r _*_a_r_g_p);
+
+DDEESSCCRRIIPPTTIIOONN
+     The iiooccttll() function manipulates the underlying device parameters of spe-
+     cial files.  In particular, many operating characteristics of character
+     special files (e.g. terminals) may be controlled with iiooccttll() requests.
+     The argument _d must be an open file descriptor.
+
+     An  ioctl _r_e_q_u_e_s_t has encoded in it whether the argument is an ``in'' pa-
+     rameter or ``out'' parameter, and the size of the argument _a_r_g_p in bytes.
+     Macros and defines used in specifying an ioctl _r_e_q_u_e_s_t are located in the
+     file <_s_y_s_/_i_o_c_t_l_._h>.
+
+RREETTUURRNN VVAALLUUEESS
+     If an error has occurred, a value of -1 is returned and _e_r_r_n_o is set to
+     indicate the error.
+
+EERRRROORRSS
+     IIooccttll() will fail:
+
+     [EBADF]   _d is not a valid descriptor.
+
+     [ENOTTY]  _d is not associated with a character special device.
+
+     [ENOTTY]  The specified request does not apply to the kind of object that
+               the descriptor _d references.
+
+     [EINVAL]  _R_e_q_u_e_s_t or _a_r_g_p is not valid.
+
+SSEEEE AALLSSOO
+     mt(1),  execve(2),  fcntl(2),  tty(4),  intro(4)
+
+HHIISSTTOORRYY
+     An iiooccttll function call appeared in Version 7 AT&T UNIX.
+
+4th Berkeley Distribution        June 4, 1993                                1

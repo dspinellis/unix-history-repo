@@ -1,0 +1,24 @@
+GETDTABLESIZE(2)            BSD Programmer's Manual           GETDTABLESIZE(2)
+
+NNAAMMEE
+     ggeettddttaabblleessiizzee - get descriptor table size
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     ggeettddttaabblleessiizzee(_v_o_i_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     Each process has a fixed size descriptor table, which is guaranteed to
+     have at least 20 slots.  The entries in the descriptor table are numbered
+     with small integers starting at 0.  The call ggeettddttaabblleessiizzee() returns the
+     size of this table.
+
+SSEEEE AALLSSOO
+     close(2),  dup(2),  open(2),  select(2)
+
+HHIISSTTOORRYY
+     The ggeettddttaabblleessiizzee function call appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 4, 1993                                1

@@ -1,0 +1,462 @@
+
+
+
+DBOPEN(3)            BSD Programmer's Manual            DBOPEN(3)
+
+
+NNAAMMEE
+       dbopen - database access methods
+
+SSYYNNOOPPSSIISS
+       ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+       ##iinncclluuddee <<lliimmiittss..hh>>
+       ##iinncclluuddee <<ddbb..hh>>
+
+       DDBB **
+       ddbbooppeenn((ccoonnsstt cchhaarr **ffiillee,, iinntt ffllaaggss,, iinntt mmooddee,, DDBBTTYYPPEE ttyyppee,,
+            ccoonnsstt vvooiidd **ooppeenniinnffoo));;
+
+DDEESSCCRRIIPPTTIIOONN
+       _D_b_o_p_e_n  is  the  library interface to database files.  The
+       supported file formats are btree,  hashed  and  UNIX  file
+       oriented.   The  btree  format  is  a  representation of a
+       sorted, balanced tree structure.  The hashed format is  an
+       extensible,  dynamic hashing scheme.  The flat-file format
+       is a byte  stream  file  with  fixed  or  variable  length
+       records.  The formats and file format specific information
+       are described in detail in their respective  manual  pages
+       _b_t_r_e_e(3), _h_a_s_h(3) and _r_e_c_n_o(3).
+
+       Dbopen opens _f_i_l_e for reading and/or writing.  Files never
+       intended to be preserved on disk may be created by setting
+       the file parameter to NULL.
+
+       The  _f_l_a_g_s  and  _m_o_d_e  _a_r_g_u_m_e_n_t_s  are  as specified to the
+       _o_p_e_n(2)  routine,  however,  only  the  O_CREAT,   O_EXCL,
+       O_EXLOCK, O_RDONLY, O_RDWR, O_SHLOCK and O_TRUNC flags are
+       meaningful.  (Note, opening a database  file  O_WRONLY  is
+       not possible.)
+
+       The  _t_y_p_e  argument  is  of type DBTYPE (as defined in the
+       <db.h> include file) and may be set to  DB_BTREE,  DB_HASH
+       or DB_RECNO.
+
+       The  _o_p_e_n_i_n_f_o  argument  is  a pointer to an access method
+       specific structure described in the access method's manual
+       page.   If  _o_p_e_n_i_n_f_o  is NULL, each access method will use
+       defaults appropriate for the system and the access method.
+
+       _D_b_o_p_e_n  returns a pointer to a DB structure on success and
+       NULL on error.  The DB structure is defined in the  <db.h>
+       include file, and contains at least the following fields:
+
+       typedef struct {
+              DBTYPE type;
+              int (*close)(const DB *db);
+              int (*del)(const DB *db, const DBT *key, u_int flags);
+              int (*fd)(const DB *db);
+
+
+
+4.4 Berkeley Distribution  June 4, 1993                         1
+
+
+
+
+
+
+
+
+DBOPEN(3)            BSD Programmer's Manual            DBOPEN(3)
+
+
+              int (*get)(const DB *db, DBT *key, DBT *data, u_int flags);
+              int (*put)(const DB *db, DBT *key, const DBT *data,
+                   u_int flags);
+              int (*sync)(const DB *db, u_int flags);
+              int (*seq)(const DB *db, DBT *key, DBT *data, u_int flags);
+       } DB;
+
+       These elements describe a database type and a set of func-
+       tions performing various actions.  These functions take  a
+       pointer  to  a  structure as returned by _d_b_o_p_e_n, and some-
+       times one or more pointers to key/data  structures  and  a
+       flag value.
+
+       type   The  type of the underlying access method (and file
+              format).
+
+       close  A pointer to a routine to flush any cached informa-
+              tion  to  disk,  free  any allocated resources, and
+              close the underlying file(s).  Since key/data pairs
+              may  be  cached in memory, failing to sync the file
+              with a _c_l_o_s_e or _s_y_n_c function may result in  incon-
+              sistent or lost information.  _C_l_o_s_e routines return
+              -1 on error (setting _e_r_r_n_o) and 0 on success.
+
+       del    A pointer to a routine  to  remove  key/data  pairs
+              from the database.
+
+              The  parameter  _f_l_a_g  may  be  set to the following
+              value:
+
+              R_CURSOR
+                     Delete the record referenced by the  cursor.
+                     The  cursor  must  have previously been ini-
+                     tialized.
+
+              _D_e_l_e_t_e routines return -1 on error (setting _e_r_r_n_o),
+              0 on success, and 1 if the specified _k_e_y was not in
+              the file.
+
+       fd     A  pointer  to  a  routine  which  returns  a  file
+              descriptor   representative   of   the   underlying
+              database.  A file descriptor referencing  the  same
+              file  will  be returned to all processes which call
+              _d_b_o_p_e_n with the same _f_i_l_e name.  This file descrip-
+              tor  may  be  safely  used  as  a  argument  to the
+              _f_c_n_t_l(2) and _f_l_o_c_k(2) locking functions.  The  file
+              descriptor  is  not necessarily associated with any
+              of the underlying files used by the access  method.
+              No  file  descriptor  is  available  for  in memory
+              databases.  _F_d routines return -1 on error (setting
+              _e_r_r_n_o), and the file descriptor on success.
+
+
+
+4.4 Berkeley Distribution  June 4, 1993                         2
+
+
+
+
+
+
+
+
+DBOPEN(3)            BSD Programmer's Manual            DBOPEN(3)
+
+
+       get    A  pointer  to a routine which is the interface for
+              keyed retrieval from the database.  The address and
+              length  of  the  data associated with the specified
+              _k_e_y are returned in  the  structure  referenced  by
+              _d_a_t_a.   _G_e_t  routines  return  -1 on error (setting
+              _e_r_r_n_o), 0 on success, and 1 if the _k_e_y was  not  in
+              the file.
+
+       put    A  pointer  to a routine to store key/data pairs in
+              the database.
+
+              The parameter _f_l_a_g may be set to one of the follow-
+              ing values:
+
+              R_CURSOR
+                     Replace  the key/data pair referenced by the
+                     cursor.  The  cursor  must  have  previously
+                     been initialized.
+
+              R_IAFTER
+                     Append  the  data immediately after the data
+                     referenced by _k_e_y, creating a  new  key/data
+                     pair.   The  record  number  of the appended
+                     key/data pair is returned in the _k_e_y  struc-
+                     ture.   (Applicable  only  to  the  DB_RECNO
+                     access method.)
+
+              R_IBEFORE
+                     Insert the data immediately before the  data
+                     referenced  by  _k_e_y, creating a new key/data
+                     pair.  The record  number  of  the  inserted
+                     key/data  pair is returned in the _k_e_y struc-
+                     ture.   (Applicable  only  to  the  DB_RECNO
+                     access method.)
+
+              R_NOOVERWRITE
+                     Enter  the new key/data pair only if the key
+                     does not previously exist.
+
+              R_SETCURSOR
+                     Store the key/data pair, setting or initial-
+                     izing  the  position of the cursor to refer-
+                     ence it.  (Applicable only to  the  DB_BTREE
+                     and DB_RECNO access methods.)
+
+              R_SETCURSOR  is available only for the DB_BTREE and
+              DB_RECNO access methods because it implies that the
+              keys  have an inherent order which does not change.
+
+              R_IAFTER and R_IBEFORE are available only  for  the
+              DB_RECNO access method because they each imply that
+
+
+
+4.4 Berkeley Distribution  June 4, 1993                         3
+
+
+
+
+
+
+
+
+DBOPEN(3)            BSD Programmer's Manual            DBOPEN(3)
+
+
+              the access method is able to create new keys.  This
+              is  only  true if the keys are ordered and indepen-
+              dent, record numbers for example.
+
+              The default behavior of  the  _p_u_t  routines  is  to
+              enter  the  new key/data pair, replacing any previ-
+              ously existing key.
+
+              _P_u_t routines return -1 on error (setting _e_r_r_n_o),  0
+              on success, and 1 if the R_NOOVERWRITE _f_l_a_g was set
+              and the key already exists in the file.
+
+       seq    A pointer to a routine which is the  interface  for
+              sequential   retrieval   from  the  database.   The
+              address and length of the key are returned  in  the
+              structure  referenced  by  _k_e_y, and the address and
+              length of the data are returned  in  the  structure
+              referenced by _d_a_t_a.
+
+              Sequential key/data pair retrieval may begin at any
+              time, and the position of  the  ``cursor''  is  not
+              affected  by  calls  to  the _d_e_l, _g_e_t, _p_u_t, or _s_y_n_c
+              routines.  Modifications to the database  during  a
+              sequential scan will be reflected in the scan, i.e.
+              records inserted behind  the  cursor  will  not  be
+              returned  while  records  inserted  in front of the
+              cursor will be returned.
+
+              The flag value mmuusstt be set to one of the  following
+              values:
+
+              R_CURSOR
+                     The  data  associated with the specified key
+                     is returned.  This differs from the _g_e_t rou-
+                     tines  in  that  it  sets or initializes the
+                     cursor to the location of the key  as  well.
+                     (Note,  for  the DB_BTREE access method, the
+                     returned key is  not  necessarily  an  exact
+                     match  for  the specified key.  The returned
+                     key is the  smallest  key  greater  than  or
+                     equal  to the specified key, permitting par-
+                     tial key matches and range searches.)
+
+              R_FIRST
+                     The first key/data pair of the  database  is
+                     returned,  and the cursor is set or initial-
+                     ized to reference it.
+
+              R_LAST The last key/data pair of  the  database  is
+                     returned,  and the cursor is set or initial-
+                     ized to reference it.  (Applicable  only  to
+
+
+
+4.4 Berkeley Distribution  June 4, 1993                         4
+
+
+
+
+
+
+
+
+DBOPEN(3)            BSD Programmer's Manual            DBOPEN(3)
+
+
+                     the DB_BTREE and DB_RECNO access methods.)
+
+              R_NEXT Retrieve the key/data pair immediately after
+                     the cursor.  If the cursor is not  yet  set,
+                     this is the same as the R_FIRST flag.
+
+              R_PREV Retrieve   the   key/data  pair  immediately
+                     before the cursor.  If the cursor is not yet
+                     set,  this  is  the same as the R_LAST flag.
+                     (Applicable  only  to   the   DB_BTREE   and
+                     DB_RECNO access methods.)
+
+              R_LAST  and  R_PREV  are  available  only  for  the
+              DB_BTREE and DB_RECNO access methods  because  they
+              each  imply  that  the  keys have an inherent order
+              which does not change.
+
+              _S_e_q routines return -1 on error (setting _e_r_r_n_o),  0
+              on  success  and  1  if there are no key/data pairs
+              less than or greater than the specified or  current
+              key.   If the DB_RECNO access method is being used,
+              and if the database file  is  a  character  special
+              file  and  no complete key/data pairs are currently
+              available, the _s_e_q routines return 2.
+
+       sync   A pointer to a routine to flush any cached informa-
+              tion  to  disk.  If the database is in memory only,
+              the _s_y_n_c routine has no effect and will always suc-
+              ceed.
+
+              The flag value may be set to the following value:
+
+              R_RECNOSYNC
+                     If the DB_RECNO access method is being used,
+                     this flag causes the sync routine  to  apply
+                     to  the btree file which underlies the recno
+                     file, not the recno file itself.   (See  the
+                     _b_f_n_a_m_e field of the _r_e_c_n_o(3) manual page for
+                     more information.)
+
+              _S_y_n_c routines return -1 on  error  (setting  _e_r_r_n_o)
+              and 0 on success.
+
+KKEEYY//DDAATTAA PPAAIIRRSS
+       Access to all file types is based on key/data pairs.  Both
+       keys and data are represented by the following data struc-
+       ture:
+
+       typedef struct {
+              void *data;
+              size_t size;
+
+
+
+4.4 Berkeley Distribution  June 4, 1993                         5
+
+
+
+
+
+
+
+
+DBOPEN(3)            BSD Programmer's Manual            DBOPEN(3)
+
+
+       } DBT;
+
+       The elements of the DBT structure are defined as follows:
+
+       data   A pointer to a byte string.
+
+       size   The length of the byte string.
+
+       Key  and data byte strings may reference strings of essen-
+       tially unlimited length although any two of them must  fit
+       into  available  memory  at  the  same time.  It should be
+       noted that the access methods provide no guarantees  about
+       byte string alignment.
+
+EERRRROORRSS
+       The  _d_b_o_p_e_n  routine may fail and set _e_r_r_n_o for any of the
+       errors specified for the library routines _o_p_e_n(2) and _m_a_l_-
+       _l_o_c(3) or the following:
+
+       [EFTYPE]
+              A file is incorrectly formatted.
+
+       [EINVAL]
+              A  parameter has been specified (hash function, pad
+              byte etc.) that is incompatible  with  the  current
+              file  specification  or which is not meaningful for
+              the function (for example, use of the cursor  with-
+              out  prior  initialization)  or there is a mismatch
+              between the version number of file  and  the  soft-
+              ware.
+
+       The  _c_l_o_s_e  routines may fail and set _e_r_r_n_o for any of the
+       errors  specified  for  the  library  routines   _c_l_o_s_e(2),
+       _r_e_a_d(2), _w_r_i_t_e(2), _f_r_e_e(3), or _f_s_y_n_c(2).
+
+       The  _d_e_l, _g_e_t, _p_u_t and _s_e_q routines may fail and set _e_r_r_n_o
+       for any of the errors specified for the  library  routines
+       _r_e_a_d(2), _w_r_i_t_e(2), _f_r_e_e(3) or _m_a_l_l_o_c(3).
+
+       The  _f_d  routines will fail and set _e_r_r_n_o to ENOENT for in
+       memory databases.
+
+       The _s_y_n_c routines may fail and set _e_r_r_n_o for  any  of  the
+       errors specified for the library routine _f_s_y_n_c(2).
+
+SSEEEE AALLSSOO
+       _b_t_r_e_e(3), _h_a_s_h(3), _m_p_o_o_l(3), _r_e_c_n_o(3)
+
+BBUUGGSS
+       The typedef DBT is a mnemonic for ``data base thang'', and
+       was used because noone could think of  a  reasonable  name
+
+
+
+4.4 Berkeley Distribution  June 4, 1993                         6
+
+
+
+
+
+
+
+
+DBOPEN(3)            BSD Programmer's Manual            DBOPEN(3)
+
+
+       that wasn't already used.
+
+       The  file  descriptor  interface  is  a  kluge and will be
+       deleted in a future version of the interface.
+
+       None of the access methods provide any form of  concurrent
+       access, locking, or transactions.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4.4 Berkeley Distribution  June 4, 1993                         7
+
+
+
+
+

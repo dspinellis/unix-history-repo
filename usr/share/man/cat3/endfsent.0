@@ -1,0 +1,76 @@
+GETFSENT(3)                 BSD Programmer's Manual                GETFSENT(3)
+
+NNAAMMEE
+     ggeettffsseenntt, ggeettffssssppeecc, ggeettffssffiillee, sseettffsseenntt, eennddffsseenntt - get file system de-
+     scriptor file entry
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ffssttaabb..hh>>
+
+     _f_s_t_a_b _*
+     ggeettffsseenntt(_v_o_i_d);
+
+     _s_t_r_u_c_t _f_s_t_a_b _*
+     ggeettffssssppeecc(_c_o_n_s_t _c_h_a_r _*_s_p_e_c);
+
+     _s_t_r_u_c_t _f_s_t_a_b _*
+     ggeettffssffiillee(_c_o_n_s_t _c_h_a_r _*_f_i_l_e);
+
+     _i_n_t
+     sseettffsseenntt(_v_o_i_d);
+
+     _v_o_i_d
+     eennddffsseenntt(_v_o_i_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ggeettffsseenntt(), ggeettffssssppeecc(), and ggeettffssffiillee() functions each return a
+     pointer to an object with the following structure containing the broken-
+     out fields of a line in the file system description file, <_f_s_t_a_b_._h>.
+
+           struct fstab {
+                   char    *fs_spec;       /* block special device name */
+                   char    *fs_file;       /* file system path prefix */
+                   char    *fs_vfstype;    /* type of file system */
+                   char    *fs_mntops;     /* comma separated mount options */
+                   char    *fs_type;       /* rw, ro, sw, or xx */
+                   int     fs_freq;        /* dump frequency, in days */
+                   int     fs_passno;      /* pass number on parallel dump */
+           };
+
+     The fields have meanings described in fstab(5).
+
+     The sseettffsseenntt() function opens the file (closing any previously opened
+     file) or rewinds it if it is already open.
+
+     The eennddffsseenntt() function closes the file.
+
+     The ggeettffssssppeecc() and ggeettffssffiillee() functions search the entire file (opening
+     it if necessary) for a matching special file name or file system file
+     name.
+
+     For programs wishing to read the entire database, ggeettffsseenntt() reads the
+     next entry (opening the file if necessary).
+
+     All entries in the file with a type field equivalent to FSTAB_XX are ig-
+     nored.
+
+RREETTUURRNN VVAALLUUEESS
+     The ggeettffsseenntt(), ggeettffssssppeecc(), and ggeettffssffiillee() functions return a null
+     pointer (0) on EOF or error.  The sseettffsseenntt() function returns 0 on fail-
+     ure, 1 on success.  The eennddffsseenntt() function returns nothing.
+
+FFIILLEESS
+     /etc/fstab
+
+SSEEEE AALLSSOO
+     fstab(5)
+
+HHIISSTTOORRYY
+     The ggeettffsseenntt() function appeared in 4.0BSD; the eennddffsseenntt(), ggeettffssffiillee(),
+     ggeettffssssppeecc(), and sseettffsseenntt() functions appeared in 4.3BSD.
+
+BBUUGGSS
+     These functions use static data storage; if the data is needed for future
+     use, it should be copied before any subsequent calls overwrite it.
+
+4th Berkeley Distribution        June 4, 1993                                2

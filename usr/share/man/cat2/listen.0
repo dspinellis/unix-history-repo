@@ -1,0 +1,47 @@
+LISTEN(2)                   BSD Programmer's Manual                  LISTEN(2)
+
+NNAAMMEE
+     lliisstteenn - listen for connections on a socket
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ssoocckkeett..hh>>
+
+     _i_n_t
+     lliisstteenn(_i_n_t _s, _i_n_t _b_a_c_k_l_o_g);
+
+DDEESSCCRRIIPPTTIIOONN
+     To accept connections, a socket is first created with socket(2),  a will-
+     ingness to accept incoming connections and a queue limit for incoming
+     connections are specified with lliisstteenn(), and then the connections are ac-
+     cepted with accept(2).  The lliisstteenn() call applies only to sockets of type
+     SOCK_STREAM or SOCK_SEQPACKET.
+
+     The _b_a_c_k_l_o_g parameter defines the maximum length the queue of pending
+     connections may grow to.  If a connection request arrives with the queue
+     full the client may receive an error with an indication of ECONNREFUSED,
+     or, if the underlying protocol supports retransmission, the request may
+     be ignored so that retries may succeed.
+
+RREETTUURRNN VVAALLUUEESS
+     A 0 return value indicates success; -1 indicates an error.
+
+EERRRROORRSS
+     LLiisstteenn(_w_i_l_l, _f_a_i_l, _i_f_:)
+
+     [EBADF]       The argument _s is not a valid descriptor.
+
+     [ENOTSOCK]    The argument _s is not a socket.
+
+     [EOPNOTSUPP]  The socket is not of a type that supports the operation
+                   lliisstteenn().
+
+SSEEEE AALLSSOO
+     accept(2),  connect(2),  socket(2)
+
+BBUUGGSS
+     The _b_a_c_k_l_o_g is currently limited (silently) to 5.
+
+HHIISSTTOORRYY
+     The lliisstteenn function call appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 4, 1993                                1

@@ -1,0 +1,210 @@
+GLOB(3)                     BSD Programmer's Manual                    GLOB(3)
+
+NNAAMMEE
+     gglloobb, gglloobbffrreeee - generate pathnames matching a pattern
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<gglloobb..hh>>
+
+     _i_n_t
+     gglloobb(_c_o_n_s_t _c_h_a_r _*_p_a_t_t_e_r_n, _i_n_t _f_l_a_g_s,
+             _c_o_n_s_t _i_n_t _(_*_e_r_r_f_u_n_c_)_(_c_o_n_s_t _c_h_a_r _*_, _i_n_t_), _g_l_o_b___t _*_p_g_l_o_b);
+
+     _v_o_i_d
+     gglloobbffrreeee(_g_l_o_b___t _*_p_g_l_o_b);
+
+DDEESSCCRRIIPPTTIIOONN
+     The gglloobb() function is a pathname generator that implements the rules for
+     file name pattern matching used by the shell.
+
+     The include file _g_l_o_b_._h defines the structure type _g_l_o_b___t, which contains
+     at least the following fields:
+
+     typedef struct {
+             int gl_pathc;           /* count of total paths so far */
+             int gl_matchc;          /* count of paths matching pattern */
+             int gl_offs;            /* reserved at beginning of gl_pathv */
+             int gl_flags;           /* returned flags */
+             char **gl_pathv;        /* list of paths matching pattern */
+     } glob_t;
+
+     The argument _p_a_t_t_e_r_n is a pointer to a pathname pattern to be expanded.
+     The gglloobb() argument matches all accessible pathnames against the pattern
+     and creates a list of the pathnames that match.  In order to have access
+     to a pathname, gglloobb() requires search permission on every component of a
+     path except the last and read permission on each directory of any file-
+     name component of _p_a_t_t_e_r_n that contains any of the special characters
+     `*', `?' or `['.
+
+     The gglloobb() argument stores the number of matched pathnames into the
+     _g_l___p_a_t_h_c field, and a pointer to a list of pointers to pathnames into the
+     _g_l___p_a_t_h_v field.  The first pointer after the last pathname is NULL. If
+     the pattern does not match any pathnames, the returned number of matched
+     paths is set to zero.
+
+     It is the caller's responsibility to create the structure pointed to by
+     _p_g_l_o_b. The gglloobb() function allocates other space as needed, including the
+     memory pointed to by _g_l___p_a_t_h_v.
+
+     The argument _f_l_a_g_s is used to modify the behavior of gglloobb().  The value
+     of _f_l_a_g_s is the bitwise inclusive OR of any of the following values de-
+     fined in _g_l_o_b_._h:
+
+     GLOB_APPEND      Append pathnames generated to the ones from a previous
+                      call (or calls) to gglloobb().  The value of _g_l___p_a_t_h_c will
+                      be the total matches found by this call and the previous
+                      call(s).  The pathnames are appended to, not merged with
+                      the pathnames returned by the previous call(s).  Between
+                      calls, the caller must not change the setting of the
+                      GLOB_DOOFFS flag, nor change the value of _g_l___o_f_f_s when
+                      GLOB_DOOFFS is set, nor (obviously) call gglloobbffrreeee() for
+                      _p_g_l_o_b.
+
+     GLOB_DOOFFS      Make use of the _g_l___o_f_f_s field.  If this flag is set,
+                      _g_l___o_f_f_s is used to specify how many NULL pointers to
+                      prepend to the beginning of the _g_l___p_a_t_h_v field.  In oth-
+                      er words, _g_l___p_a_t_h_v will point to _g_l___o_f_f_s NULL pointers,
+                      followed by _g_l___p_a_t_h_c pathname pointers, followed by a
+                      NULL pointer.
+
+     GLOB_ERR         Causes gglloobb() to return when it encounters a directory
+                      that it cannot open or read.  Ordinarily, gglloobb() contin-
+                      ues to find matches.
+
+     GLOB_MARK        Each pathname that is a directory that matches _p_a_t_t_e_r_n
+                      has a slash appended.
+
+     GLOB_NOCHECK     If _p_a_t_t_e_r_n does not match any pathname, then gglloobb() re-
+                      turns a list consisting of only _p_a_t_t_e_r_n, with the number
+                      of total pathnames is set to 1, and the number of
+                      matched pathnames set to 0.  If GLOB_QUOTE is set, its
+                      effect is present in the pattern returned.
+
+     GLOB_NOSORT      By default, the pathnames are sorted in ascending ASCII
+                      order; this flag prevents that sorting (speeding up
+                      gglloobb()).
+
+     The following values may also be included in _f_l_a_g_s, however, they are
+     non-standard extensions to IEEE Std1003.2 (``POSIX'').
+
+     GLOB_ALTDIRFUNC  The following additional fields in the pglob structure
+                      have been initialized with alternate functions for glob
+                      to use to open, read, and close directories and to get
+                      stat information on names found in those directories.
+
+                              void *(*gl_opendir)(const char * name);
+                              struct dirent *(*gl_readdir)(void *);
+                              void (*gl_closedir)(void *);
+                              int (*gl_lstat)(const char *name, struct stat *st);
+                              int (*gl_stat)(const char *name, struct stat *st);
+
+                      This extension is provided to allow programs such as re-
+                      store(8) to provide globbing from directories stored on
+                      tape.
+
+     GLOB_BRACE       Pre-process the pattern string to expand `{pat,pat,...}'
+                      strings like csh(1.)The pattern  `{}' is left unexpanded
+                      for historical reasons (Csh(1) does the same thing to
+                      ease typing of find(1) patterns).
+
+     GLOB_MAGCHAR     Set by the gglloobb() function if the pattern included glob-
+                      bing characters.  See the description of the usage of
+                      the _g_l___m_a_t_c_h_c structure member for more details.
+
+     GLOB_NOMAGIC     Is the same as GLOB_NOCHECK but it only appends the
+                      _p_a_t_t_e_r_n if it does not contain any of the special char-
+                      acters ``*'', ``?'' or ``[''.  GLOB_NOMAGIC is provided
+                      to simplify implementing the historic csh(1) globbing
+                      behavior and should probably not be used anywhere else.
+
+     GLOB_QUOTE       Use the backslash (`\') character for quoting: every oc-
+                      currence of a backslash followed by a character in the
+                      pattern is replaced by that character, avoiding any spe-
+                      cial interpretation of the character.
+
+     GLOB_TILDE       Expand patterns that start with `~' to user name home
+                      directories.
+
+     If, during the search, a directory is encountered that cannot be opened
+     or read and _e_r_r_f_u_n_c is non-NULL, gglloobb() calls _(_*_e_r_r_f_u_n_c_)_(_p_a_t_h_, _e_r_r_n_o_).
+     This may be unintuitive: a pattern like `*/Makefile' will try to stat(2)
+     `foo/Makefile' even if `foo' is not a directory, resulting in a call to
+     _e_r_r_f_u_n_c. The error routine can suppress this action by testing for ENOENT
+     and ENOTDIR; however, the GLOB_ERR flag will still cause an immediate re-
+     turn when this happens.
+
+     If _e_r_r_f_u_n_c returns non-zero, gglloobb() stops the scan and returns GLOB_ABEND
+     after setting _g_l___p_a_t_h_c and _g_l___p_a_t_h_v to reflect any paths already matched.
+     This also happens if an error is encountered and GLOB_ERR is set in
+     _f_l_a_g_s, regardless of the return value of _e_r_r_f_u_n_c, if called.  If GLOB_ERR
+     is not set and either _e_r_r_f_u_n_c is NULL or _e_r_r_f_u_n_c returns zero, the error
+     is ignored.
+
+     The gglloobbffrreeee() function frees any space associated with _p_g_l_o_b from a pre-
+     vious call(s) to gglloobb().
+
+RREETTUURRNN VVAALLUUEESS
+     On successful completion, gglloobb() returns zero.  In addition the fields of
+     _p_g_l_o_b contain the values described below:
+
+     _g_l___p_a_t_h_c      contains the total number of matched pathnames so far.
+                   This includes other matches from previous invocations of
+                   gglloobb() if GLOB_APPEND was specified.
+
+     _g_l___m_a_t_c_h_c     contains the number of matched pathnames in the current in-
+                   vocation of gglloobb().
+
+     _g_l___f_l_a_g_s      contains a copy of the _f_l_a_g_s parameter with the bit
+                   GLOB_MAGCHAR set if _p_a_t_t_e_r_n contained any of the special
+                   characters ``*'', ``?'' or ``['', cleared if not.
+
+     _g_l___p_a_t_h_v      contains a pointer to a NULL-terminated list of matched
+                   pathnames.  However, if _g_l___p_a_t_h_c is zero, the contents of
+                   _g_l___p_a_t_h_v are undefined.
+
+     If gglloobb() terminates due to an error, it sets errno and returns one of
+     the following non-zero constants, which are defined in the include file
+     <_g_l_o_b_._h>:
+
+     GLOB_NOSPACE  An attempt to allocate memory failed.
+
+     GLOB_ABEND    The scan was stopped because an error was encountered and
+                   either GLOB_ERR was set or _(_*_e_r_r_f_u_n_c_)_(_) returned non-zero.
+
+     The arguments _p_g_l_o_b_-_>_g_l___p_a_t_h_c and _p_g_l_o_b_-_>_g_l___p_a_t_h_v are still set as speci-
+     fied above.
+
+SSEEEE AALLSSOO
+     sh(1),  fnmatch(3),  wordexp(3),  regexp(3)
+
+SSTTAANNDDAARRDDSS
+     The gglloobb() function is expected to be IEEE Std1003.2 (``POSIX'') compati-
+     ble with the exception that the flags GLOB_ALTDIRFUNC, GLOB_BRACE
+     GLOB_MAGCHAR, GLOB_NOMAGIC, GLOB_QUOTE, and GLOB_TILDE, and the fields
+     _g_l___m_a_t_c_h_c and _g_l___f_l_a_g_s should not be used by applications striving for
+     strict POSIX conformance.
+
+EEXXAAMMPPLLEE
+     A rough equivalent of `ls -l *.c *.h' can be obtained with the following
+     code:
+
+           GLOB_t g;
+
+           g.gl_offs = 2;
+           glob("*.c", GLOB_DOOFFS, NULL, &g);
+           glob("*.h", GLOB_DOOFFS | GLOB_APPEND, NULL, &g);
+           g.gl_pathv[0] = "ls";
+           g.gl_pathv[1] = "-l";
+           execvp("ls", g.gl_pathv);
+
+HHIISSTTOORRYY
+     The gglloobb() and gglloobbffrreeee() functions first appeared in 4.4BSD.
+
+BBUUGGSS
+     Patterns longer than MAXPATHLEN may cause unchecked errors.
+
+     The gglloobb() argument may fail and set errno for any of the errors speci-
+     fied for the library routines stat(2),  closedir(3),  opendir(3),
+     readdir(3),  malloc(3),  and free(3).
+
+4.4BSD                           June 9, 1993                                4

@@ -1,0 +1,33 @@
+STRCAT(3)                   BSD Programmer's Manual                  STRCAT(3)
+
+NNAAMMEE
+     ssttrrccaatt - concatenate strings
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttrriinngg..hh>>
+
+     _c_h_a_r _*
+     ssttrrccaatt(_c_h_a_r _*_s, _c_o_n_s_t _c_h_a_r _*_a_p_p_e_n_d);
+
+     _c_h_a_r _*
+     ssttrrnnccaatt(_c_h_a_r _*_s, _c_o_n_s_t _c_h_a_r _*_a_p_p_e_n_d, _s_i_z_e___t _c_o_u_n_t);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssttrrccaatt() and ssttrrnnccaatt() functions append a copy of the null-terminated
+     string _a_p_p_e_n_d to the end of the null-terminated string _s, then add a ter-
+     minating `\0'. The string _s must have sufficient space to hold the re-
+     sult.
+
+     The ssttrrnnccaatt() function appends not more than _c_o_u_n_t characters.
+
+RREETTUURRNN VVAALLUUEESS
+     The ssttrrccaatt() and ssttrrnnccaatt() functions return the pointer _s.
+
+SSEEEE AALLSSOO
+     bcopy(3),  memccpy(3),  memcpy(3),  memmove(3),  strcpy(3)
+
+SSTTAANNDDAARRDDSS
+     The ssttrrccaatt() and ssttrrnnccaatt() functions conform to ANSI C X3.159-1989
+     (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

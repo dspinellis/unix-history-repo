@@ -1,0 +1,48 @@
+KILLPG(2)                   BSD Programmer's Manual                  KILLPG(2)
+
+NNAAMMEE
+     kkiillllppgg - send signal to a process group
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssiiggnnaall..hh>>
+
+     _i_n_t
+     kkiillllppgg(_p_i_d___t _p_g_r_p, _i_n_t _s_i_g);
+
+DDEESSCCRRIIPPTTIIOONN
+     KKiillllppgg() sends the signal _s_i_g to the process group _p_g_r_p. See sigaction(2)
+     for a list of signals.  If _p_g_r_p is 0, kkiillllppgg() sends the signal to the
+     sending process's process group.
+
+     The sending process and members of the process group must have the same
+     effective user ID, or the sender must be the super-user.  As a single
+     special case the continue signal SIGCONT may be sent to any process that
+     is a descendant of the current process.
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion, a value of 0 is returned.  Otherwise, a value
+     of -1 is returned and the global variable _e_r_r_n_o is set to indicate the
+     error.
+
+EERRRROORRSS
+     KKiillllppgg() will fail and no signal will be sent if:
+
+     [EINVAL]      _S_i_g is not a valid signal number.
+
+     [ESRCH]       No process can be found in the process group specified by
+                   _p_g_r_p.
+
+     [ESRCH]       The process group was given as 0 but the sending process
+                   does not have a process group.
+
+     [EPERM]       The sending process is not the super-user and one or more
+                   of the target processes has an effective user ID different
+                   from that of the sending process.
+
+SSEEEE AALLSSOO
+     kill(2),  getpgrp(2),  sigaction(2)
+
+HHIISSTTOORRYY
+     The kkiillllppgg function call appeared in 4.0BSD.
+
+4th Berkeley Distribution        June 2, 1993                                1

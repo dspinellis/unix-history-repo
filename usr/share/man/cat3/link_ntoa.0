@@ -1,0 +1,57 @@
+LINK_ADDR(3)                BSD Programmer's Manual               LINK_ADDR(3)
+
+NNAAMMEE
+     lliinnkk__aaddddrr, lliinnkk__nnttooaa - elementary address specification routines for link
+     level access
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//ssoocckkeett..hh>>
+     ##iinncclluuddee <<nneett//iiff__ddll..hh>>
+
+     _v_o_i_d
+     lliinnkk__aaddddrr(_c_o_n_s_t _c_h_a_r _*_a_d_d_r, _s_t_r_u_c_t _s_o_c_k_a_d_d_r___d_l _*_s_d_l);
+
+     _c_h_a_r _*
+     lliinnkk__nnttooaa(_c_o_n_s_t _s_t_r_u_c_t _s_o_c_k_a_d_d_r___d_l _*_s_d_l);
+
+DDEESSCCRRIIPPTTIIOONN
+     The routine lliinnkk__aaddddrr() interprets character strings representing link-
+     level addresses, returning binary information suitable for use in system
+     calls.  The routine lliinnkk__nnttooaa() takes a link-level address and returns an
+     ASCII string representing some of the information present, including the
+     link level address itself, and the interface name or number, if present.
+     This facility is experimental and is still subject to change.
+
+     For lliinnkk__aaddddrr(), the string _a_d_d_r may contain an optional network inter-
+     face identifier of the form ``name unit-number'', suitable for the first
+     argument to ifconfig(4),  followed in all cases by a colon and an inter-
+     face address in the form of groups of hexadecimal digits separated by pe-
+     riods.  Each group represents a byte of address; address bytes are filled
+     left to right from low order bytes through high order bytes.
+
+     Thus le0:8.0.9.13.d.30 represents an ethernet address to be transmitted
+     on the first Lance ethernet interface.
+
+RREETTUURRNN VVAALLUUEESS
+     lliinnkk__nnttooaa() always returns a null terminated string.  lliinnkk__aaddddrr() has no
+     return value.  (See _B_U_G_S.)
+
+SSEEEE AALLSSOO
+     iso(4),
+
+HHIISSTTOORRYY
+     The lliinnkk__aaddddrr() and lliinnkk__nnttooaa() functions appeared in 4.3BSD-Reno.
+
+BBUUGGSS
+     The returned values for link_ntoa reside in a static memory area.
+
+     The function lliinnkk__aaddddrr() should diagnose improperly formed input, and
+     there should be an unambiguous way to recognize this.
+
+     If the _s_d_l___l_e_n field of the link socket address _s_d_l is 0, lliinnkk__nnttooaa()
+     will not insert a colon before the interface address bytes.  If this
+     translated address is given to lliinnkk__aaddddrr() without inserting an initial
+     colon, the latter will not interpret it correctly.
+
+4.4BSD                           June 4, 1993                                1

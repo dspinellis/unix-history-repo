@@ -1,0 +1,108 @@
+MULTIBYTE(3)                BSD Programmer's Manual               MULTIBYTE(3)
+
+NNAAMMEE
+     mmbblleenn, mmbbssttoowwccss, mmbbttoowwcc, wwccssttoommbbss, wwccttoommbb - multibyte character support
+     for C
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     _i_n_t
+     mmbblleenn(_c_o_n_s_t _c_h_a_r _*_m_b_c_h_a_r, _i_n_t _n_b_y_t_e_s);
+
+     _s_i_z_e___t
+     mmbbssttoowwccss(_w_c_h_a_r___t _*_w_c_s_t_r_i_n_g, _c_o_n_s_t _c_h_a_r _*_m_b_s_t_r_i_n_g, _s_i_z_e___t _n_w_c_h_a_r_s);
+
+     _i_n_t
+     mmbbttoowwcc(_w_c_h_a_r___t _*_w_c_h_a_r_p, _c_o_n_s_t _c_h_a_r _*_m_b_c_h_a_r, _s_i_z_e___t _n_b_y_t_e_s);
+
+     _s_i_z_e___t
+     wwccssttoommbbss(_c_h_a_r _*_m_b_s_t_r_i_n_g, _c_o_n_s_t _w_c_h_a_r___t _*_w_c_s_t_r_i_n_g, _s_i_z_e___t _n_b_y_t_e_s);
+
+     _i_n_t
+     wwccttoommbb(_c_h_a_r _*_m_b_c_h_a_r, _w_c_h_a_r___t _w_c_h_a_r);
+
+DDEESSCCRRIIPPTTIIOONN
+     The basic elements of some written natural languages such as Chinese can-
+     not be represented uniquely with single C _c_h_a_rs. The C standard supports
+     two different ways of dealing with extended natural language encodings,
+     _w_i_d_e characters and _m_u_l_t_i_b_y_t_e characters.  Wide characters are an inter-
+     nal representation which allows each basic element to map to a single ob-
+     ject of type _w_c_h_a_r___t. Multibyte characters are used for input and output
+     and code each basic element as a sequence of C _c_h_a_rs. Individual basic
+     elements may map into one or more (up to MB_CHAR_MAX) bytes in a multi-
+     byte character.
+
+     The current locale (setlocale(3))  governs the interpretation of wide and
+     multibyte characters.  The locale category LC_CTYPE specifically controls
+     this interpretation.  The _w_c_h_a_r___t type is wide enough to hold the largest
+     value in the wide character representations for all locales.
+
+     Multibyte strings may contain `shift' indicators to switch to and from
+     particular modes within the given representation.  If explicit bytes are
+     used to signal shifting, these are not recognized as separate characters
+     but are lumped with a neighboring character.  There is always a distin-
+     guished `initial' shift state.  The mmbbssttoowwccss() and wwccssttoommbbss() functions
+     assume that multibyte strings are interpreted starting from the initial
+     shift state.  The mmbblleenn(), mmbbttoowwcc() and wwccttoommbb() functions maintain stat-
+     ic shift state internally.  A call with a null _m_b_c_h_a_r pointer returns
+     nonzero if the current locale requires shift states, zero otherwise; if
+     shift states are required, the shift state is reset to the initial state.
+     The internal shift states are undefined after a call to sseettllooccaallee() with
+     the LC_CTYPE or LC_ALL categories.
+
+     For convenience in processing, the wide character with value 0 (the null
+     wide character) is recognized as the wide character string terminator,
+     and the character with value 0 (the null byte) is recognized as the
+     multibyte character string terminator.  Null bytes are not permitted
+     within multibyte characters.
+
+     The mmbblleenn() function computes the length in bytes of a multibyte charac-
+     ter _m_b_c_h_a_r. Up to _n_b_y_t_e_s bytes are examined.
+
+     The mmbbttoowwcc() function converts a multibyte character _m_b_c_h_a_r into a wide
+     character and stores the result in the object pointed to by _w_c_h_a_r_p_. Up to
+     _n_b_y_t_e_s bytes are examined.
+
+     The wwccttoommbb() function converts a wide character _w_c_h_a_r into a multibyte
+     character and stores the result in _m_b_c_h_a_r. The object pointed to by
+     _m_b_c_h_a_r must be large enough to accommodate the multibyte character.
+
+     The mmbbssttoowwccss() function converts a multibyte character string _m_b_s_t_r_i_n_g
+     into a wide character string _w_c_s_t_r_i_n_g. No more than _n_w_c_h_a_r_s wide charac-
+     ters are stored.  A terminating null wide character is appended if there
+     is room.
+
+     The wwccssttoommbbss() function converts a wide character string _w_c_s_t_r_i_n_g into a
+     multibyte character string _m_b_s_t_r_i_n_g. Up to _n_b_y_t_e_s bytes are stored in
+     _m_b_s_t_r_i_n_g. Partial multibyte characters at the end of the string are not
+     stored.  The multibyte character string is null terminated if there is
+     room.
+
+RREETTUURRNN VVAALLUUEESS
+     If multibyte characters are not supported in the current locale, all of
+     these functions will return -1 if characters can be processed, otherwise
+     0.
+
+     If _m_b_c_h_a_r is NULL, the mmbblleenn(), mmbbttoowwcc() and wwccttoommbb() functions return
+     nonzero if shift states are supported, zero otherwise.  If _m_b_c_h_a_r is
+     valid, then these functions return the number of bytes processed in
+     _m_b_c_h_a_r, or -1 if no multibyte character could be recognized or converted.
+
+     The mmbbssttoowwccss() function returns the number of wide characters converted,
+     not counting any terminating null wide character.  The wwccssttoommbbss() func-
+     tion returns the number of bytes converted, not counting any terminating
+     null byte.  If any invalid multibyte characters are encountered, both
+     functions return -1.
+
+SSEEEE AALLSSOO
+     euc(4),  mbrune(3),  rune(3),  setlocale(3),  utf2(4)
+
+SSTTAANNDDAARRDDSS
+     The mmbblleenn(), mmbbssttoowwccss(), mmbbttoowwcc(), wwccssttoommbbss() and wwccttoommbb() functions con-
+     form to ANSI C X3.159-1989 (``ANSI C '').
+
+BBUUGGSS
+     The current implementation does not support shift states.
+
+4.4BSD                           June 4, 1993                                2

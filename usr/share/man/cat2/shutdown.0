@@ -1,0 +1,36 @@
+SHUTDOWN(2)                 BSD Programmer's Manual                SHUTDOWN(2)
+
+NNAAMMEE
+     sshhuuttddoowwnn - shut down part of a full-duplex connection
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ssoocckkeett..hh>>
+
+     _i_n_t
+     sshhuuttddoowwnn(_i_n_t _s, _i_n_t _h_o_w);
+
+DDEESSCCRRIIPPTTIIOONN
+     The sshhuuttddoowwnn() call causes all or part of a full-duplex connection on the
+     socket associated with _s to be shut down.  If _h_o_w is 0, further receives
+     will be disallowed.  If _h_o_w is 1, further sends will be disallowed.  If
+     _h_o_w is 2, further sends and receives will be disallowed.
+
+DDIIAAGGNNOOSSTTIICCSS
+     A 0 is returned if the call succeeds, -1 if it fails.
+
+EERRRROORRSS
+     The call succeeds unless:
+
+     [EBADF]     _S is not a valid descriptor.
+
+     [ENOTSOCK]  _S is a file, not a socket.
+
+     [ENOTCONN]  The specified socket is not connected.
+
+SSEEEE AALLSSOO
+     connect(2),  socket(2)
+
+HHIISSTTOORRYY
+     The sshhuuttddoowwnn function call appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 4, 1993                                1

@@ -1,0 +1,25 @@
+DEVNAME(3)                  BSD Programmer's Manual                 DEVNAME(3)
+
+NNAAMMEE
+     ddeevvnnaammee - get device name
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     _c_h_a_r _*
+     ddeevvnnaammee(_d_e_v___t _d_e_v, _m_o_d_e___t _t_y_p_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ddeevvnnaammee() function returns a pointer to the name of the block or
+     character device in ``_/_d_e_v'' with a device number of _d_e_v, and a file type
+     matching the one encoded in _t_y_p_e which must be one of S_IFBLK or S_IFCHR.
+     If no device matches the specified values, or no information is avail-
+     able, the string ``??'' is returned.
+
+SSEEEE AALLSSOO
+     stat(2),  dev_mkdb(8)
+
+HHIISSTTOORRYY
+     The ddeevvnnaammee function call appeared in 4.4BSD.
+
+4.4BSD                           June 4, 1993                                1

@@ -1,0 +1,198 @@
+
+
+
+RECNO(3)             BSD Programmer's Manual             RECNO(3)
+
+
+NNAAMMEE
+       recno - record number database access method
+
+SSYYNNOOPPSSIISS
+       ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+       ##iinncclluuddee <<ddbb..hh>>
+
+DDEESSCCRRIIPPTTIIOONN
+       The  routine  _d_b_o_p_e_n  is the library interface to database
+       files.  One of the supported file formats is record number
+       files.   The  general  description  of the database access
+       methods is in _d_b_o_p_e_n(3), this manual page  describes  only
+       the recno specific information.
+
+       The  record  number  data  structure is either variable or
+       fixed-length  records  stored  in  a   flat-file   format,
+       accessed  by  the logical record number.  The existence of
+       record number five implies the existence  of  records  one
+       through four, and the deletion of record number one causes
+       record number five to be renumbered to record number four,
+       as  well  as the cursor, if positioned after record number
+       one, to shift down one record.
+
+       The recno access method specific data  structure  provided
+       to  _d_b_o_p_e_n  is  defined in the <db.h> include file as fol-
+       lows:
+
+       typedef struct {
+              u_long flags;
+              u_int cachesize;
+              int psize;
+              int lorder;
+              size_t reclen;
+              u_char bval;
+              char *bfname;
+       } RECNOINFO;
+
+       The elements of this structure are defined as follows:
+
+       bval   The delimiting byte to be used to mark the end of a
+              record  for  variable-length  records,  and the pad
+              character for fixed-length records.  If no value is
+              specified,  newlines  (``\n'') are used to mark the
+              end of  variable-length  records  and  fixed-length
+              records are padded with spaces.
+
+       cachesize
+              A  suggested  maximum size, in bytes, of the memory
+              cache.  This value is oonnllyy advisory, and the access
+              method  will allocate more memory rather than fail.
+              If _c_a_c_h_e_s_i_z_e is  0 (no size is specified) a default
+
+
+
+4.4 Berkeley Distribution July 19, 1993                         1
+
+
+
+
+
+
+
+
+RECNO(3)             BSD Programmer's Manual             RECNO(3)
+
+
+              cache is used.
+
+       psize  The recno access method stores the in-memory copies
+              of its records in a btree.  This value is the  size
+              (in  bytes)  of  the  pages  used for nodes in that
+              tree.  If _p_s_i_z_e is 0 (no page size is specified)  a
+              page  size  is  chosen based on the underlying file
+              system I/O  block  size.   See  _b_t_r_e_e(3)  for  more
+              information.
+
+       bfname The recno access method stores the in-memory copies
+              of its records in a btree.  If bfname is  non-NULL,
+              it  specifies  the  name  of  the btree file, as if
+              specified as the file name for a dbopen of a  btree
+              file.
+
+       flags  The  flag  value  is specified by _o_r'ing any of the
+              following values:
+
+              R_FIXEDLEN
+                     The  records  are  fixed-length,  not   byte
+                     delimited.   The  structure  element  _r_e_c_l_e_n
+                     specifies the length of the record, and  the
+                     structure  element  _b_v_a_l  is used as the pad
+                     character.
+
+              R_NOKEY
+                     In the interface specified  by  _d_b_o_p_e_n,  the
+                     sequential  record  retrieval  fills in both
+                     the caller's key and  data  structures.   If
+                     the  R_NOKEY  flag  is specified, the _c_u_r_s_o_r
+                     routines are not required to fill in the key
+                     structure.   This  permits  applications  to
+                     retrieve records at the end of files without
+                     reading all of the intervening records.
+
+              R_SNAPSHOT
+                     This  flag  requires  that a snapshot of the
+                     file be taken when _d_b_o_p_e_n is called, instead
+                     of  permitting  any unmodified records to be
+                     read from the original file.
+
+       lorder The byte order for integers in the stored  database
+              metadata.  The number should represent the order as
+              an integer; for example, big endian order would  be
+              the  number  4,321.   If  _l_o_r_d_e_r  is 0 (no order is
+              specified) the current host order is used.
+
+       reclen The length of a fixed-length record.
+
+       The data part of the  key/data  pair  used  by  the  recno
+
+
+
+4.4 Berkeley Distribution July 19, 1993                         2
+
+
+
+
+
+
+
+
+RECNO(3)             BSD Programmer's Manual             RECNO(3)
+
+
+       access  method  is  the same as other access methods.  The
+       key is different.  The _d_a_t_a field of the key should  be  a
+       pointer  to  a memory location of type _r_e_c_n_o___t, as defined
+       in the <db.h> include file.  This  type  is  normally  the
+       largest  unsigned integral type available to the implemen-
+       tation.  The _s_i_z_e field of the key should be the  size  of
+       that type.
+
+       In the interface specified by _d_b_o_p_e_n, using the _p_u_t inter-
+       face to create a new record will  cause  the  creation  of
+       multiple,  empty records if the record number is more than
+       one greater than  the  largest  record  currently  in  the
+       database.
+
+SSEEEE AALLSSOO
+       _d_b_o_p_e_n(3), _h_a_s_h(3), _m_p_o_o_l(3), _r_e_c_n_o(3)
+
+       _D_o_c_u_m_e_n_t  _P_r_o_c_e_s_s_i_n_g  _i_n  _a  _R_e_l_a_t_i_o_n_a_l  _D_a_t_a_b_a_s_e  _S_y_s_t_e_m,
+       Michael  Stonebraker,  Heidi  Stettner,   Joseph   Kalash,
+       Antonin  Guttman,  Nadene  Lynn,  Memorandum  No.  UCB/ERL
+       M82/32, May 1982.
+
+BBUUGGSS
+       Only big and little endian byte order is supported.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4.4 Berkeley Distribution July 19, 1993                         3
+
+
+
+
+

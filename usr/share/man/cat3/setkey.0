@@ -1,0 +1,106 @@
+CRYPT(3)                    BSD Programmer's Manual                   CRYPT(3)
+
+NNAAMMEE
+     ccrryypptt, sseettkkeeyy, eennccrryypptt, ddeess__sseettkkeeyy, ddeess__cciipphheerr - DES encryption
+
+SSYYNNOOPPSSIISS
+     _c_h_a_r
+     **ccrryypptt(_c_o_n_s_t _c_h_a_r _*_k_e_y, _c_o_n_s_t _c_h_a_r _*_s_e_t_t_i_n_g);
+
+     _i_n_t
+     sseettkkeeyy(_c_h_a_r _*_k_e_y);
+
+     _i_n_t
+     eennccrryypptt(_c_h_a_r _*_b_l_o_c_k, _i_n_t _f_l_a_g);
+
+     _i_n_t
+     ddeess__sseettkkeeyy(_c_o_n_s_t _c_h_a_r _*_k_e_y);
+
+     _i_n_t
+     ddeess__cciipphheerr(_c_o_n_s_t _c_h_a_r _*_i_n, _c_h_a_r _*_o_u_t, _l_o_n_g _s_a_l_t, _i_n_t _c_o_u_n_t);
+
+DDEESSCCRRIIPPTTIIOONN
+     The crypt function performs password encryption.  It is derived from the
+     NBS Data Encryption Standard.  Additional code has been added to deter
+     key search attempts.  The first argument to ccrryypptt is a NUL-terminated
+     string (normally a password typed by a user).  The second is a character
+     array, 9 bytes in length, consisting of an underscore (``_'') followed by
+     4 bytes of iteration count and 4 bytes of salt.  Both the iteration _c_o_u_n_t
+     and the _s_a_l_t are encoded with 6 bits per character, least significant
+     bits first.  The values 0 to 63 are encoded by the characters ``./0-9A-
+     Za-z'', respectively.
+
+     The _s_a_l_t is used to induce disorder in to the DES algorithm in one of
+     16777216 possible ways (specifically, if bit _i of the _s_a_l_t is set then
+     bits _i and _i_+_2_4 are swapped in the DES ``E'' box output).  The _k_e_y is di-
+     vided into groups of 8 characters (a short final group is null-padded)
+     and the low-order 7 bits of each each character (56 bits per group) are
+     used to form the DES key as follows: the first group of 56 bits becomes
+     the initial DES key.  For each additional group, the XOR of the group
+     bits and the encryption of the DES key with itself becomes the next DES
+     key.  Then the final DES key is used to perform _c_o_u_n_t cumulative encryp-
+     tions of a 64-bit constant.  The value returned is a NUL-terminated
+     string, 20 bytes in length, consisting of the _s_e_t_t_i_n_g followed by the en-
+     coded 64-bit encryption.
+
+     For compatibility with historical versions of crypt(3),  the _s_e_t_t_i_n_g may
+     consist of 2 bytes of salt, encoded as above, in which case an iteration
+     _c_o_u_n_t of 25 is used, fewer perturbations of DES are available, at most 8
+     characters of _k_e_y are used, and the returned value is a NUL-terminated
+     string 13 bytes in length.
+
+     The functions, eennccrryypptt(), sseettkkeeyy(), ddeess__sseettkkeeyy() and ddeess__cciipphheerr() allow
+     limited access to the DES algorithm itself.  The _k_e_y argument to sseettkkeeyy()
+     is a 64 character array of binary values (numeric 0 or 1).  A 56-bit key
+     is derived from this array by dividing the array into groups of 8 and ig-
+     noring the last bit in each group.
+
+     The eennccrryypptt() argument _b_l_o_c_k is also a 64 character array of binary val-
+     ues.  If the value of _f_l_a_g is 0, the argument _b_l_o_c_k is encrypted, other-
+     wise it is decrypted.  The encryption or decryption is returned in the
+     original array _b_l_o_c_k after using the key specified by sseettkkeeyy() to process
+     it.
+
+     The ddeess__sseettkkeeyy() and ddeess__cciipphheerr() functions are faster but less portable
+     than sseettkkeeyy() and eennccrryypptt().  The argument to ddeess__sseettkkeeyy() is a character
+     array of length 8.  The _l_e_a_s_t significant bit in each character is ig-
+     nored and the next 7 bits of each character are concatenated to yield a
+     56-bit key.  The function ddeess__cciipphheerr() encrypts (or decrypts if _c_o_u_n_t is
+     negative) the 64-bits stored in the 8 characters at _i_n using abs(3) of
+     _c_o_u_n_t iterations of DES and stores the 64-bit result in the 8 characters
+     at _o_u_t. The _s_a_l_t specifies perturbations to DES as described above.
+
+     The function ccrryypptt() returns a pointer to the encrypted value on success
+     and NULL on failure.  The functions sseettkkeeyy(), eennccrryypptt(), ddeess__sseettkkeeyy(),
+     and ddeess__cciipphheerr() return 0 on success and 1 on failure.  Historically, the
+     functions sseettkkeeyy() and eennccrryypptt() did not return any value.  They have
+     been provided return values primarily to distinguish implementations
+     where hardware support is provided but not available or where the DES en-
+     cryption is not available due to the usual political silliness.
+
+SSEEEE AALLSSOO
+     login(1),  passwd(1),  getpass(3),  passwd(5)
+
+
+     Wayne Patterson, _M_a_t_h_e_m_a_t_i_c_a_l _C_r_y_p_t_o_l_o_g_y _f_o_r _C_o_m_p_u_t_e_r _S_c_i_e_n_t_i_s_t_s _a_n_d
+     _M_a_t_h_e_m_a_t_i_c_i_a_n_s, ISBN 0-8476-7438-X, 1987.
+
+     R. Morris, and Ken Thompson, "Password Security: A Case History",
+     _C_o_m_m_u_n_i_c_a_t_i_o_n_s _o_f _t_h_e _A_C_M, vol. 22, pp. 594-597, Nov. 1979.
+
+     M.E. Hellman, "DES will be Totally Insecure within Ten Years", _I_E_E_E
+     _S_p_e_c_t_r_u_m, vol. 16, pp. 32-39, July 1979.
+
+HHIISSTTOORRYY
+     A rotor-based ccrryypptt() function appeared in Version 6 AT&T UNIX.  The cur-
+     rent style ccrryypptt() first appeared in Version 7 AT&T UNIX.
+
+BBUUGGSS
+     Dropping the _l_e_a_s_t significant bit in each character of the argument to
+     ddeess__sseettkkeeyy() is ridiculous.
+
+     The ccrryypptt() function leaves its result in an internal static object and
+     returns a pointer to that object.  Subsequent calls to ccrryypptt() will modi-
+     fy the same object.
+
+4.4BSD                           June 4, 1993                                2

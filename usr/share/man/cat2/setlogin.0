@@ -1,0 +1,66 @@
+GETLOGIN(2)                 BSD Programmer's Manual                GETLOGIN(2)
+
+NNAAMMEE
+     ggeettllooggiinn, sseettllooggiinn - get/set login name
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _c_h_a_r _*
+     ggeettllooggiinn(_v_o_i_d);
+
+     _i_n_t
+     sseettllooggiinn(_c_o_n_s_t _c_h_a_r _*_n_a_m_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ggeettllooggiinn() routine returns the login name of the user associated with
+     the current session, as previously set by sseettllooggiinn().  The name is nor-
+     mally associated with a login shell at the time a session is created, and
+     is inherited by all processes descended from the login shell.  (This is
+     true even if some of those processes assume another user ID, for example
+     when su(1) is used.)
+
+     SSeettllooggiinn() sets the login name of the user associated with the current
+     session to _n_a_m_e. This call is restricted to the super-user, and is nor-
+     mally used only when a new session is being created on behalf of the
+     named user (for example, at login time, or when a remote shell is in-
+     voked).
+
+RREETTUURRNN VVAALLUUEESS
+     If a call to ggeettllooggiinn() succeeds, it returns a pointer to a null-
+     terminated string in a static buffer.  If the name has not been set, it
+     returns NULL. If a call to sseettllooggiinn() succeeds, a value of 0 is returned.
+     If sseettllooggiinn() fails, a value of -1 is returned and an error code is
+     placed in the global location _e_r_r_n_o.
+
+EERRRROORRSS
+     The following errors may be returned by these calls:
+
+     [EFAULT]      The _n_a_m_e parameter gave an invalid address.
+
+     [EINVAL]      The _n_a_m_e parameter pointed to a string that was too long.
+                   Login names are limited to MAXLOGNAME (from <_s_y_s_/_p_a_r_a_m_._h>)
+                   characters, currently 12.
+
+     [EPERM]       The caller tried to set the login name and was not the su-
+                   per-user.
+
+SSEEEE AALLSSOO
+     setsid(2)
+
+BBUUGGSS
+     Login names are limited in length by sseettllooggiinn().  However, lower limits
+     are placed on login names elsewhere in the system (UT_NAMESIZE in
+     <_u_t_m_p_._h>).
+
+     In earlier versions of the system, ggeettllooggiinn() failed unless the process
+     was associated with a login terminal.  The current implementation (using
+     sseettllooggiinn()) allows getlogin to succeed even when the process has no con-
+     trolling terminal.  In earlier versions of the system, the value returned
+     by ggeettllooggiinn() could not be trusted without checking the user ID.
+     Portable programs should probably still make this check.
+
+HHIISSTTOORRYY
+     The ggeettllooggiinn() function first appeared in 4.4BSD.
+
+4.2 Berkeley Distribution        June 9, 1993                                1

@@ -1,0 +1,135 @@
+GETHOSTBYNAME(3)            BSD Programmer's Manual           GETHOSTBYNAME(3)
+
+NNAAMMEE
+     ggeetthhoossttbbyynnaammee, ggeetthhoossttbbyyaaddddrr, ggeetthhoosstteenntt, sseetthhoosstteenntt, eennddhhoosstteenntt, hheerrrroorr
+     - get network host entry
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<nneettddbb..hh>>
+     eexxtteerrnn ssttrruucctt hh__eerrrrnnoo;;
+
+     _s_t_r_u_c_t _h_o_s_t_e_n_t _*
+     ggeetthhoossttbbyynnaammee(_c_h_a_r _*_n_a_m_e);
+
+     _s_t_r_u_c_t _h_o_s_t_e_n_t _*
+     ggeetthhoossttbbyyaaddddrr(_c_h_a_r _*_a_d_d_r, _i_n_t _l_e_n, _i_n_t _t_y_p_e);
+
+     _s_t_r_u_c_t _h_o_s_t_e_n_t _*
+     ggeetthhoosstteenntt(_v_o_i_d);
+
+     sseetthhoosstteenntt(_i_n_t _s_t_a_y_o_p_e_n);
+
+     eennddhhoosstteenntt(_v_o_i_d);
+
+     hheerrrroorr(_c_h_a_r _*_s_t_r_i_n_g);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ggeetthhoossttbbyynnaammee() and ggeetthhoossttbbyyaaddddrr() functions each return a pointer
+     to an object with the following structure describing an internet host
+     referenced by name or by address, respectively.  This structure contains
+     either the information obtained from the name server, named(8),  or bro-
+     ken-out fields from a line in _/_e_t_c_/_h_o_s_t_s. If the local name server is not
+     running these routines do a lookup in _/_e_t_c_/_h_o_s_t_s.
+
+     struct  hostent {
+             char    *h_name;        /* official name of host */
+             char    **h_aliases;    /* alias list */
+             int     h_addrtype;     /* host address type */
+             int     h_length;       /* length of address */
+             char    **h_addr_list;  /* list of addresses from name server */
+     };
+     #define h_addr  h_addr_list[0]  /* address, for backward compatibility */
+
+     The members of this structure are:
+
+     _h___n_a_m_e       Official name of the host.
+
+     _h___a_l_i_a_s_e_s    A zero terminated array of alternate names for the host.
+
+     _h___a_d_d_r_t_y_p_e   The type of address being returned; currently always
+                  AF_INET.
+
+     _h___l_e_n_g_t_h     The length, in bytes, of the address.
+
+     _h___a_d_d_r___l_i_s_t  A zero terminated array of network addresses for the host.
+                  Host addresses are returned in network byte order.
+
+     _h___a_d_d_r       The first address in _h___a_d_d_r___l_i_s_t; this is for backward com-
+                  patiblity.
+
+                  When using the nameserver, ggeetthhoossttbbyynnaammee() will search for
+                  the named host in the current domain and its parents unless
+                  the name ends in a dot.  If the name contains no dot, and if
+                  the environment variable ``HOSTALIASES'' contains the name
+                  of an alias file, the alias file will first be searched for
+                  an alias matching the input name.  See hostname(7) for the
+                  domain search procedure and the alias file format.
+
+                  The sseetthhoosstteenntt() function may be used to request the use of
+                  a connected TCP socket for queries.  If the _s_t_a_y_o_p_e_n flag is
+                  non-zero, this sets the option to send all queries to the
+                  name server using TCP and to retain the connection after
+                  each call to ggeetthhoossttbbyynnaammee() or ggeetthhoossttbbyyaaddddrr().  Otherwise,
+                  queries are performed using UDP datagrams.
+
+                  The eennddhhoosstteenntt() function closes the TCP connection.
+
+FFIILLEESS
+     /etc/hosts
+
+DDIIAAGGNNOOSSTTIICCSS
+     Error return status from ggeetthhoossttbbyynnaammee() and ggeetthhoossttbbyyaaddddrr() is indicated
+     by return of a null pointer.  The external integer _h___e_r_r_n_o may then be
+     checked to see whether this is a temporary failure or an invalid or un-
+     known host.  The routine hheerrrroorr() can be used to print an error message
+     describing the failure.  If its argument _s_t_r_i_n_g is non-NULL, it is print-
+     ed, followed by a colon and a space.  The error message is printed with a
+     trailing newline.
+
+     The variable _h___e_r_r_n_o can have the following values:
+
+     HOST_NOT_FOUND  No such host is known.
+
+     TRY_AGAIN       This is usually a temporary error and means that the lo-
+                     cal server did not receive a response from an authorita-
+                     tive server.  A retry at some later time may succeed.
+
+     NO_RECOVERY     Some unexpected server failure was encountered.  This is
+                     a non-recoverable error.
+
+     NO_DATA         The requested name is valid but does not have an IP ad-
+                     dress; this is not a temporary error.  This means that
+                     the name is known to the name server but there is no ad-
+                     dress associated with this name.  Another type of request
+                     to the name server using this domain name will result in
+                     an answer; for example, a mail-forwarder may be regis-
+                     tered for this domain.
+
+SSEEEE AALLSSOO
+     resolver(3),  hosts(5),  hostname(7),  named(8)
+
+CCAAVVEEAATT
+     The ggeetthhoosstteenntt() function is defined, and sseetthhoosstteenntt() and eennddhhoosstteenntt()
+     are redefined, when libc(3) is built to use only the routines to lookup
+     in _/_e_t_c_/_h_o_s_t_s and not the name server.
+
+     The ggeetthhoosstteenntt() function reads the next line of _/_e_t_c_/_h_o_s_t_s, opening the
+     file if necessary.
+
+     The sseetthhoosstteenntt() function opens and/or rewinds the file _/_e_t_c_/_h_o_s_t_s. If
+     the _s_t_a_y_o_p_e_n argument is non-zero, the file will not be closed after each
+     call to ggeetthhoossttbbyynnaammee() or ggeetthhoossttbbyyaaddddrr().
+
+     The eennddhhoosstteenntt() function closes the file.
+
+HHIISSTTOORRYY
+     The hheerrrroorr() function appeared in 4.3BSD. The eennddhhoosstteenntt(),
+     ggeetthhoossttbbyyaaddddrr(), ggeetthhoossttbbyynnaammee(), ggeetthhoosstteenntt(), and sseetthhoosstteenntt() func-
+     tions appeared in 4.2BSD.
+
+BBUUGGSS
+     These functions use static data storage; if the data is needed for future
+     use, it should be copied before any subsequent calls overwrite it.  Only
+     the Internet address format is currently understood.
+
+4.2 Berkeley Distribution        June 4, 1993                                3

@@ -1,0 +1,138 @@
+RESOLVER(3)                 BSD Programmer's Manual                RESOLVER(3)
+
+NNAAMMEE
+     rreess__qquueerryy, rreess__sseeaarrcchh, rreess__mmkkqquueerryy, rreess__sseenndd, rreess__iinniitt, ddnn__ccoommpp,
+     ddnn__eexxppaanndd - resolver routines
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<nneettiinneett//iinn..hh>>
+     ##iinncclluuddee <<aarrppaa//nnaammeesseerr..hh>>
+     ##iinncclluuddee <<rreessoollvv..hh>>
+
+     rreess__qquueerryy(_c_h_a_r _*_d_n_a_m_e, _i_n_t _c_l_a_s_s, _i_n_t _t_y_p_e, _u___c_h_a_r _*_a_n_s_w_e_r, _i_n_t _a_n_s_l_e_n);
+
+     rreess__sseeaarrcchh(_c_h_a_r _*_d_n_a_m_e, _i_n_t _c_l_a_s_s, _i_n_t _t_y_p_e, _u___c_h_a_r _*_a_n_s_w_e_r, _i_n_t _a_n_s_l_e_n);
+
+     rreess__mmkkqquueerryy(_i_n_t _o_p, _c_h_a_r _*_d_n_a_m_e, _i_n_t _c_l_a_s_s, _i_n_t _t_y_p_e, _c_h_a_r _*_d_a_t_a,
+             _i_n_t _d_a_t_a_l_e_n, _s_t_r_u_c_t _r_r_e_c _*_n_e_w_r_r, _c_h_a_r _*_b_u_f, _i_n_t _b_u_f_l_e_n);
+
+     rreess__sseenndd(_c_h_a_r _*_m_s_g, _i_n_t _m_s_g_l_e_n, _c_h_a_r _*_a_n_s_w_e_r, _i_n_t _a_n_s_l_e_n);
+
+     rreess__iinniitt();
+
+     ddnn__ccoommpp(_c_h_a_r _*_e_x_p___d_n, _c_h_a_r _*_c_o_m_p___d_n, _i_n_t _l_e_n_g_t_h, _c_h_a_r _*_*_d_n_p_t_r_s,
+             _c_h_a_r _*_*_l_a_s_t_d_n_p_t_r);
+
+     ddnn__eexxppaanndd(_u___c_h_a_r _*_m_s_g, _u___c_h_a_r _*_e_o_m_o_r_i_g, _u___c_h_a_r _*_c_o_m_p___d_n, _u___c_h_a_r _*_e_x_p___d_n,
+             _i_n_t _l_e_n_g_t_h);
+
+DDEESSCCRRIIPPTTIIOONN
+     These routines are used for making, sending and interpreting query and
+     reply messages with Internet domain name servers.
+
+     Global configuration and state information that is used by the resolver
+     routines is kept in the structure ___r_e_s. Most of the values have reason-
+     able defaults and can be ignored.  Options stored in ___r_e_s_._o_p_t_i_o_n_s are de-
+     fined in _r_e_s_o_l_v_._h and are as follows.  Options are stored as a simple bit
+     mask containing the bitwise ``or'' of the options enabled.
+
+     RES_INIT      True if the initial name server address and default domain
+                   name are initialized (i.e., rreess__iinniitt() has been called).
+
+     RES_DEBUG     Print debugging messages.
+
+     RES_AAONLY    Accept authoritative answers only.  With this option,
+                   rreess__sseenndd() should continue until it finds an authoritative
+                   answer or finds an error.  Currently this is not implement-
+                   ed.
+
+     RES_USEVC     Use TCP connections for queries instead of UDP datagrams.
+
+     RES_STAYOPEN  Used with RES_USEVC to keep the TCP connection open between
+                   queries.  This is useful only in programs that regularly do
+                   many queries.  UDP should be the normal mode used.
+
+     RES_IGNTC     Unused currently (ignore truncation errors, i.e., don't
+                   retry with TCP).
+
+     RES_RECURSE   Set the recursion-desired bit in queries.  This is the de-
+                   fault.  (rreess__sseenndd() does not do iterative queries and ex-
+                   pects the name server to handle recursion.)
+
+     RES_DEFNAMES  If set, rreess__sseeaarrcchh() will append the default domain name to
+                   single-component names (those that do not contain a dot).
+
+                   This option is enabled by default.
+
+     RES_DNSRCH    If this option is set, rreess__sseeaarrcchh() will search for host
+                   names in the current domain and in parent domains; see
+                   hostname(7).  This is used by the standard host lookup rou-
+                   tine gethostbyname(3).  This option is enabled by default.
+
+     The rreess__iinniitt() routine reads the configuration file (if any; see
+     resolver(5))  to get the default domain name, search list and the Inter-
+     net address of the local name server(s).  If no server is configured, the
+     host running the resolver is tried.  The current domain name is defined
+     by the hostname if not specified in the configuration file; it can be
+     overridden by the environment variable LOCALDOMAIN. Initialization nor-
+     mally occurs on the first call to one of the following routines.
+
+     The rreess__qquueerryy() function provides an interface to the server query mecha-
+     nism.  It constructs a query, sends it to the local server, awaits a re-
+     sponse, and makes preliminary checks on the reply.  The query requests
+     information of the specified _t_y_p_e and _c_l_a_s_s for the specified fully-
+     qualified domain name _d_n_a_m_e. The reply message is left in the _a_n_s_w_e_r
+     buffer with length _a_n_s_l_e_n supplied by the caller.
+
+     The rreess__sseeaarrcchh() routine makes a query and awaits a response like
+     rreess__qquueerryy(), but in addition, it implements the default and search rules
+     controlled by the RES_DEFNAMES and RES_DNSRCH options.  It returns the
+     first successful reply.
+
+     The remaining routines are lower-level routines used by rreess__qquueerryy().  The
+     rreess__mmkkqquueerryy() function constructs a standard query message and places it
+     in _b_u_f. It returns the size of the query, or -1 if the query is larger
+     than _b_u_f_l_e_n. The query type _o_p is usually QUERY, but can be any of the
+     query types defined in <_a_r_p_a_/_n_a_m_e_s_e_r_._h>. The domain name for the query is
+     given by _d_n_a_m_e. _N_e_w_r_r is currently unused but is intended for making up-
+     date messages.
+
+     The rreess__sseenndd() routine sends a pre-formatted query and returns an answer.
+     It will call rreess__iinniitt() if RES_INIT is not set, send the query to the lo-
+     cal name server, and handle timeouts and retries.  The length of the re-
+     ply message is returned, or -1 if there were errors.
+
+     The ddnn__ccoommpp() function compresses the domain name _e_x_p___d_n and stores it in
+     _c_o_m_p___d_n. The size of the compressed name is returned or -1 if there were
+     errors.  The size of the array pointed to by _c_o_m_p___d_n is given by _l_e_n_g_t_h.
+     The compression uses an array of pointers _d_n_p_t_r_s to previously-compressed
+     names in the current message.  The first pointer points to to the begin-
+     ning of the message and the list ends with NULL. The limit to the array
+     is specified by _l_a_s_t_d_n_p_t_r. A side effect of ddnn__ccoommpp() is to update the
+     list of pointers for labels inserted into the message as the name is com-
+     pressed.  If _d_n_p_t_r is NULL, names are not compressed. If _l_a_s_t_d_n_p_t_r is
+     NULL, the list of labels is not updated.
+
+     The ddnn__eexxppaanndd() entry expands the compressed domain name _c_o_m_p___d_n to a
+     full domain name The compressed name is contained in a query or reply
+     message; _m_s_g is a pointer to the beginning of the message.  The uncom-
+     pressed name is placed in the buffer indicated by _e_x_p___d_n which is of size
+     _l_e_n_g_t_h. The size of compressed name is returned or -1 if there was an er-
+     ror.
+
+FFIILLEESS
+     /etc/resolv.conf The configuration file see resolver(5).
+
+SSEEEE AALLSSOO
+     gethostbyname(3),  named(8),  resolver(5),  hostname(7),
+
+     _R_F_C_1_0_3_2, _R_F_C_1_0_3_3, _R_F_C_1_0_3_4, _R_F_C_1_0_3_5, _R_F_C_9_7_4
+
+
+     _N_a_m_e _S_e_r_v_e_r _O_p_e_r_a_t_i_o_n_s _G_u_i_d_e _f_o_r _B_I_N_D.
+
+HHIISSTTOORRYY
+     The rreess__qquueerryy function appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 4, 1993                                3

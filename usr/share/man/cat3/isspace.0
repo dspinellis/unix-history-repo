@@ -1,0 +1,30 @@
+ISSPACE(3)                  BSD Programmer's Manual                 ISSPACE(3)
+
+NNAAMMEE
+     iissssppaaccee - white-space character test
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ccttyyppee..hh>>
+
+     _i_n_t
+     iissssppaaccee(_i_n_t _c);
+
+DDEESSCCRRIIPPTTIIOONN
+     The iissssppaaccee() function tests for the standard white-space characters.  In
+     the ASCII character set, this includes the following characters:
+
+
+     011 ht        012 nl        013 vt        014 np        015 cr
+     040 sp
+
+RREETTUURRNN VVAALLUUEESS
+     The iissssppaaccee() function returns zero if the character tests false and re-
+     turns non-zero if the character tests true.
+
+SSEEEE AALLSSOO
+     ctype(3),  ascii(7)
+
+SSTTAANNDDAARRDDSS
+     The iissssppaaccee() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

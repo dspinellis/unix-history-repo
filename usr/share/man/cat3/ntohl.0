@@ -1,0 +1,40 @@
+BYTEORDER(3)                BSD Programmer's Manual               BYTEORDER(3)
+
+NNAAMMEE
+     hhttoonnll, hhttoonnss, nnttoohhll, nnttoohhss - convert values between host and network byte
+     order
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ppaarraamm..hh>>
+
+     _u___l_o_n_g
+     hhttoonnll(_u___l_o_n_g _h_o_s_t_l_o_n_g);
+
+     _u___s_h_o_r_t
+     hhttoonnss(_u___s_h_o_r_t _h_o_s_t_s_h_o_r_t);
+
+     _u___l_o_n_g
+     nnttoohhll(_u___l_o_n_g _n_e_t_l_o_n_g);
+
+     _u___s_h_o_r_t
+     nnttoohhss(_u___s_h_o_r_t _n_e_t_s_h_o_r_t);
+
+DDEESSCCRRIIPPTTIIOONN
+     These routines convert 16 and 32 bit quantities between network byte or-
+     der and host byte order.  On machines which have a byte order which is
+     the same as the network order, routines are defined as null macros.
+
+     These routines are most often used in conjunction with Internet addresses
+     and ports as returned by gethostbyname(3) and getservent(3).
+
+SSEEEE AALLSSOO
+     gethostbyname(3),  getservent(3)
+
+HHIISSTTOORRYY
+     The bbyytteeoorrddeerr functions appeared in 4.2BSD.
+
+BBUUGGSS
+     On the VAX bytes are handled backwards from most everyone else in the
+     world.  This is not expected to be fixed in the near future.
+
+4.2 Berkeley Distribution        June 4, 1993                                1

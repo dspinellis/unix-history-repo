@@ -1,0 +1,90 @@
+CHFLAGS(2)                  BSD Programmer's Manual                 CHFLAGS(2)
+
+NNAAMMEE
+     cchhffllaaggss, ffcchhffllaaggss - set file flags
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ssttaatt..hh>>
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     cchhffllaaggss(_c_o_n_s_t _c_h_a_r _*_p_a_t_h, _u___l_o_n_g _f_l_a_g_s);
+
+     _i_n_t
+     ffcchhffllaaggss(_i_n_t _f_d, _u___l_o_n_g _f_l_a_g_s);
+
+DDEESSCCRRIIPPTTIIOONN
+     The file whose name is given by _p_a_t_h or referenced by the descriptor _f_d
+     has its flags changed to _f_l_a_g_s.
+
+     The flags specified are formed by _o_r'ing the following values
+
+           UF_NODUMP     Do not dump the file.
+           UF_IMMUTABLE  The file may not be changed.
+           UF_APPEND     The file may only be appended to.
+           SF_IMMUTABLE  The file may not be changed.
+           SF_APPEND     The file may only be appended to.
+
+     The ``UF_IMMUTABLE'' and ``UF_APPEND'' flags may be set or unset by ei-
+     ther the owner of a file or the super-user.
+
+     The ``SF_IMMUTABLE'' and ``SF_APPEND'' flags may only be set or unset by
+     the super-user.  They may be set at any time, but normally may only be
+     unset when the system is in single-user mode.  (See init(8) for details.)
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion, a value of 0 is returned.  Otherwise, -1 is
+     returned and the global variable _e_r_r_n_o is set to indicate the error.
+
+EERRRROORRSS
+     CChhffllaaggss() will fail it:
+
+     [ENOTDIR]     A component of the path prefix is not a directory.
+
+     [EINVAL]      The pathname contains a character with the high-order bit
+                   set.
+
+     [ENAMETOOLONG]
+                   A component of a pathname exceeded 255 characters, or an
+                   entire path name exceeded 1023 characters.
+
+     [ENOENT]      The named file does not exist.
+
+     [EACCES]      Search permission is denied for a component of the path
+                   prefix.
+
+     [ELOOP]       Too many symbolic links were encountered in translating the
+                   pathname.
+
+     [EPERM]       The effective user ID does not match the owner of the file
+                   and the effective user ID is not the super-user.
+
+     [EROFS]       The named file resides on a read-only file system.
+
+     [EFAULT]      _P_a_t_h points outside the process's allocated address space.
+
+
+     [EIO]         An I/O error occurred while reading from or writing to the
+                   file system.
+
+     FFcchhffllaaggss() will fail if:
+
+     [EBADF]       The descriptor is not valid.
+
+     [EINVAL]      _F_d refers to a socket, not to a file.
+
+     [EPERM]       The effective user ID does not match the owner of the file
+                   and the effective user ID is not the super-user.
+
+     [EROFS]       The file resides on a read-only file system.
+
+     [EIO]         An I/O error occurred while reading from or writing to the
+                   file system.
+
+SSEEEE AALLSSOO
+     chflags(1,) init(8)
+
+HHIISSTTOORRYY
+     The cchhffllaaggss and ffcchhffllaaggss functions first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                2

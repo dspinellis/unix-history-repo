@@ -1,0 +1,95 @@
+TMPFILE(3)                  BSD Programmer's Manual                 TMPFILE(3)
+
+NNAAMMEE
+     tteemmppnnaamm, ttmmppffiillee, ttmmppnnaamm - temporary file routines
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     _F_I_L_E _*
+     ttmmppffiillee(_v_o_i_d);
+
+     _c_h_a_r _*
+     ttmmppnnaamm(_c_h_a_r _*_s_t_r);
+
+     _c_h_a_r _*
+     tteemmppnnaamm(_c_o_n_s_t _c_h_a_r _*_t_m_p_d_i_r, _c_o_n_s_t _c_h_a_r _*_p_r_e_f_i_x);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ttmmppffiillee() function returns a pointer to a stream associated with a
+     file descriptor returned by the routine mkstemp(3).  The created file is
+     unlinked before ttmmppffiillee() returns, causing the file to be automatically
+     deleted when the last reference to it is closed.  The file is opened with
+     the access value `w+'.
+
+     The ttmmppnnaamm() function returns a pointer to a file name, in the P_tmpdir
+     directory, which did not reference an existing file at some indeterminate
+     point in the past.  P_tmpdir is defined in the include file <_s_t_d_i_o_._h>. If
+     the argument _s is non-NULL, the file name is copied to the buffer it ref-
+     erences.  Otherwise, the file name is copied to a static buffer.  In ei-
+     ther case, ttmmppnnaamm() returns a pointer to the file name.
+
+     The buffer referenced by _s is expected to be at least L_tmpnam bytes in
+     length.  L_tmpnam is defined in the include file <_s_t_d_i_o_._h>.
+
+     The tteemmppnnaamm() function is similar to ttmmppnnaamm(), but provides the ability
+     to specify the directory which will contain the temporary file and the
+     file name prefix.
+
+     The environment variable TMPDIR (if set), the argument _d_i_r (if non-NULL),
+     the directory P_tmpdir, and the directory _/_t_m_p are tried, in the listed
+     order, as directories in which to store the temporary file.
+
+     The argument _p_r_e_f_i_x, if non-NULL, is used to specify a file name prefix,
+     which will be the first part of the created file name.  TTeemmppnnaamm() allo-
+     cates memory in which to store the file name; the returned pointer may be
+     used as a subsequent argument to free(3).
+
+RREETTUURRNN VVAALLUUEESS
+     The ttmmppffiillee() function returns a pointer to an open file stream on suc-
+     cess, and a NULL pointer on error.
+
+     The ttmmppnnaamm() and tteemmppffiillee() functions return a pointer to a file name on
+     success, and a NULL pointer on error.
+
+EERRRROORRSS
+     The ttmmppffiillee() function may fail and set the global variable _e_r_r_n_o for any
+     of the errors specified for the library functions fdopen(3) or
+     mkstemp(3).
+
+     The ttmmppnnaamm() function may fail and set _e_r_r_n_o for any of the errors speci-
+     fied for the library function mktemp(3).
+
+     The tteemmppnnaamm() function may fail and set _e_r_r_n_o for any of the errors spec-
+     ified for the library functions malloc(3) or mktemp(3).
+
+SSEEEE AALLSSOO
+     mkstemp(3),  mktemp(3)
+
+SSTTAANNDDAARRDDSS
+     The ttmmppffiillee() and ttmmppnnaamm() functions conform to ANSI C X3.159-1989
+     (``ANSI C '').
+
+BBUUGGSS
+     These interfaces are provided for System V and ANSI compatibility only.
+     The mkstemp(3) interface is strongly preferred.
+
+     There are four important problems with these interfaces (as well as with
+     the historic mktemp(3) interface).  First, there is an obvious race be-
+     tween file name selection and file creation and deletion.  Second, most
+     historic implementations provide only a limited number of possible tempo-
+     rary file names (usually 26) before file names will start being recycled.
+     Third, the System V implementations of these functions (and of mktemp)
+     use the access(2) function to determine whether or not the temporary file
+     may be created.  This has obvious ramifications for setuid or setgid pro-
+     grams, complicating the portable use of these interfaces in such pro-
+     grams.  Finally, there is no specification of the permissions with which
+     the temporary files are created.
+
+     This implementation does not have these flaws, but portable software can-
+     not depend on that.  In particular, the ttmmppffiillee() interface should not be
+     used in software expected to be used on other systems if there is any
+     possibility that the user does not wish the temporary file to be publicly
+     readable and writable.
+
+4.4BSD                           June 4, 1993                                2

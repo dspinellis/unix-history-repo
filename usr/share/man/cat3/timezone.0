@@ -1,0 +1,24 @@
+TIMEZONE(3)                 BSD Programmer's Manual                TIMEZONE(3)
+
+NNAAMMEE
+     ttiimmeezzoonnee - return the timezone abbreviation
+
+SSYYNNOOPPSSIISS
+     _c_h_a_r _*
+     ttiimmeezzoonnee(_i_n_t _z_o_n_e, _i_n_t _d_s_t);
+
+DDEESSCCRRIIPPTTIIOONN
+     TThhiiss iinntteerrffaaccee iiss ffoorr ccoommppaattiibbiilliittyy oonnllyy;; iitt iiss iimmppoossssiibbllee ttoo rreelliiaabbllyy
+     mmaapp ttiimmeezzoonnee''ss aarrgguummeennttss ttoo aa ttiimmee zzoonnee aabbbbrreevviiaattiioonn..  SSeeee ccttiimmee((33))..
+
+     The ttiimmeezzoonnee() function returns a pointer to a time zone abbreviation for
+     the specifed _z_o_n_e and _d_s_t values.  _Z_o_n_e is the number of minutes west of
+     GMT and _d_s_t is non-zero if daylight savings time is in effect.
+
+SSEEEE AALLSSOO
+     ctime(3)
+
+HHIISSTTOORRYY
+     A ttiimmeezzoonnee() function appeared in Version 7 AT&T UNIX.
+
+4.4BSD                           June 4, 1993                                1

@@ -1,0 +1,92 @@
+UNVIS(3)                    BSD Programmer's Manual                   UNVIS(3)
+
+NNAAMMEE
+     uunnvviiss, ssttrruunnvviiss - decode a visual representation of characters
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<vviiss..hh>>
+
+     _i_n_t
+     uunnvviiss(_u___c_h_a_r _*_c_p, _u___c_h_a_r _c, _i_n_t _*_a_s_t_a_t_e, _i_n_t _f_l_a_g);
+
+     _i_n_t
+     ssttrruunnvviiss(_c_h_a_r _*_d_s_t, _c_h_a_r _*_s_r_c);
+
+DDEESSCCRRIIPPTTIIOONN
+     The uunnvviiss() and ssttrruunnvviiss() functions are used to decode a visual repre-
+     sentation of characters, as produced by the vis(3) function, back into
+     the original form.  Unvis is called with successive characters in _c until
+     a valid sequence is recognized, at which time the decoded character is
+     available at the character pointed to by _c_p. Strunvis decodes the charac-
+     ters pointed to by _s_r_c into the buffer pointed to by _d_s_t.
+
+     The ssttrruunnvviiss() function simply copies _s_r_c to _d_s_t, decoding any escape se-
+     quences along the way, and returns the number of characters placed into
+     _d_s_t, or -1 if an invalid escape sequence was detected.  The size of _d_s_t
+     should be equal to the size of _s_r_c (that is, no expansion takes place
+     during decoding).
+
+     The uunnvviiss() function implements a state machine that can be used to de-
+     code an arbitrary stream of bytes.  All state associated with the bytes
+     being decoded is stored outside the uunnvviiss() function (that is, a pointer
+     to the state is passed in), so calls decoding different streams can be
+     freely intermixed.  To start decoding a stream of bytes, first initialize
+     an integer to zero.  Call uunnvviiss() with each successive byte, along with a
+     pointer to this integer, and a pointer to an destination character.  The
+     unvis function has several return codes that must be handled properly.
+     They are:
+
+     0 (zero)         Another character is necessary; nothing has been recog-
+                      nized yet.
+
+     UNVIS_VALID      A valid character has been recognized and is available
+                      at the location pointed to by cp.
+
+     UNVIS_VALIDPUSH  A valid character has been recognized and is available
+                      at the location pointed to by cp; however, the character
+                      currently passed in should be passed in again.
+
+     UNVIS_NOCHAR     A valid sequence was detected, but no character was pro-
+                      duced.  This return code is necessary to indicate a log-
+                      ical break between characters.
+
+     UNVIS_SYNBAD     An invalid esacpe sequence was detected, or the decoder
+                      is in an unknown state.  The decoder is placed into the
+                      starting state.
+
+     When all bytes in the stream have been processed, call uunnvviiss() one more
+     time with flag set to UNVIS_END to extract any remaining character (the
+     character passed in is ignored).
+
+     The following code fragment illustrates a proper use of uunnvviiss().
+
+           int state = 0;
+           char out;
+
+           while ((ch = getchar()) != EOF) {
+           again:
+                   switch(unvis(&out, ch, &state, 0)) {
+                   case 0:
+                   case UNVIS_NOCHAR:
+                           break;
+                   case UNVIS_VALID:
+                           (void) putchar(out);
+                           break;
+                   case UNVIS_VALIDPUSH:
+                           (void) putchar(out);
+                           goto again;
+                   case UNVIS_SYNBAD:
+                           (void)fprintf(stderr, "bad sequence!0);
+                   exit(1);
+                   }
+           }
+           if (unvis(&out, (char)0, &state, UNVIS_END) == UNVIS_VALID)
+                   (void) putchar(out);
+
+SSEEEE AALLSSOO
+     vis(1)
+
+HHIISSTTOORRYY
+     The uunnvviiss function first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                2

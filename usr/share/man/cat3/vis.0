@@ -1,0 +1,120 @@
+VIS(3)                      BSD Programmer's Manual                     VIS(3)
+
+NNAAMMEE
+     vviiss - visually encode characters
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<vviiss..hh>>
+
+     _c_h_a_r _*
+     vviiss(_c_h_a_r _*_d_s_t, _c_h_a_r _c, _i_n_t _f_l_a_g, _c_h_a_r _n_e_x_t_c);
+
+     _i_n_t
+     ssttrrvviiss(_c_h_a_r _*_d_s_t, _c_h_a_r _*_s_r_c, _i_n_t _f_l_a_g);
+
+     _i_n_t
+     ssttrrvviissxx(_c_h_a_r _*_d_s_t, _c_h_a_r _*_s_r_c, _i_n_t _l_e_n, _i_n_t _f_l_a_g);
+
+DDEESSCCRRIIPPTTIIOONN
+     The vviiss() function copies into _d_s_t a string which represents the charac-
+     ter _c. If _c needs no encoding, it is copied in unaltered.  The string is
+     null terminated, and a pointer to the end of the string is returned.  The
+     maximum length of any encoding is four characters (not including the
+     trailing NULL); thus, when encoding a set of characters into a buffer,
+     the size of the buffer should be four times the number of characters en-
+     coded, plus one for the trailing NULL. The flag parameter is used for al-
+     tering the default range of characters considered for encoding and for
+     altering the visual representation.  The additional character, _n_e_x_t_c, is
+     only used when selecting the VIS_CSTYLE encoding format (explained be-
+     low).
+
+     The ssttrrvviiss() and ssttrrvviissxx() functions copy into _d_s_t a visual representa-
+     tion of the string _s_r_c. The ssttrrvviiss() function encodes characters from _s_r_c
+     up to the first NULL. The ssttrrvviissxx() function encodes exactly _l_e_n charac-
+     ters from _s_r_c (this is useful for encoding a block of data that may con-
+     tain NULL's). Both forms NULL terminate _d_s_t. The size of _d_s_t must be four
+     times the number of characters encoded from _s_r_c (plus one for the NULL).
+     Both forms return the number of characters in dst (not including the
+     trailing NULL).
+
+     The encoding is a unique, invertible representation comprised entirely of
+     graphic characters; it can be decoded back into the original form using
+     the unvis(3) or strunvis(3) functions.
+
+     There are two parameters that can be controlled: the range of characters
+     that are encoded, and the type of representation used.  By default, all
+     non-graphic characters.  except space, tab, and newline are encoded.
+     (See isgraph(3).)  The following flags alter this:
+
+     VIS_SP      Also encode space.
+
+     VIS_TAB
+                 Also encode tab.
+
+     VIS_NL      Also encode newline.
+
+     VIS_WHITE   Synonym for VIS_SP | VIS_TAB | VIS_NL.
+
+     VIS_SAFE    Only encode "unsafe" characters.  Unsafe means control char-
+                 acters which may cause common terminals to perform unexpected
+                 functions.  Currently this form allows space, tab, newline,
+                 backspace, bell, and return - in addition to all graphic
+                 characters - unencoded.
+
+     There are three forms of encoding.  All forms use the backslash character
+     `\' to introduce a special sequence; two backslashes are used to repre-
+
+     sent a real backslash.  These are the visual formats:
+
+     (default)   Use an `M' to represent meta characters (characters with the
+                 8th bit set), and use carat `^' to represent control charac-
+                 ters see (iscntrl(3)).  The following formats are used:
+
+                 \^C    Represents the control character `C'. Spans characters
+                        `\000' through `\037', and `\177' (as `\^?').
+
+                 \M-C   Represents character `C' with the 8th bit set.  Spans
+                        characters `\241' through `\376'.
+
+                 \M^C   Represents control character `C' with the 8th bit set.
+                        Spans characters `\200' through `\237', and `\377' (as
+                        `\M^?').
+
+                 \040   Represents ASCII space.
+
+                 \240   Represents Meta-space.
+
+     VIS_CSTYLE  Use C-style backslash sequences to represent standard non-
+                 printable characters.  The following sequences are used to
+                 represent the indicated characters:
+
+                       \a - BEL (007)
+                       \b - BS (010)
+                       \f - NP (014)
+                       \n - NL (012)
+                       \r - CR (015)
+                       \t - HT (011)
+                       \v - VT (013)
+                       \0 - NUL (000)
+
+                 When using this format, the nextc parameter is looked at to
+                 determine if a NULL character can be encoded as `\0' instead
+                 of `\000'. If _n_e_x_t_c is an octal digit, the latter representa-
+                 tion is used to avoid ambiguity.
+
+     VIS_OCTAL   Use a three digit octal sequence.  The form is `\ddd' where _d
+                 represents an octal digit.
+
+     There is one additional flag, VIS_NOSLASH, which inhibits the doubling of
+     backslashes and the backslash before the default format (that is, control
+     characters are represented by `^C' and meta characters as `M-C'). With
+     this flag set, the encoding is ambiguous and non-invertible.
+
+SSEEEE AALLSSOO
+     unvis(1),  unvis(3) strunvis(3)
+
+HHIISSTTOORRYY
+     These functions first appeared in 4.4BSD.
+
+
+4.4BSD                           June 9, 1993                                2

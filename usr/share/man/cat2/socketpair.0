@@ -1,0 +1,49 @@
+SOCKETPAIR(2)               BSD Programmer's Manual              SOCKETPAIR(2)
+
+NNAAMMEE
+     ssoocckkeettppaaiirr - create a pair of connected sockets
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//ssoocckkeett..hh>>
+
+     _i_n_t
+     ssoocckkeettppaaiirr(_i_n_t _d, _i_n_t _t_y_p_e, _i_n_t _p_r_o_t_o_c_o_l, _i_n_t _*_s_v);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssoocckkeettppaaiirr() call creates an unnamed pair of connected sockets in the
+     specified domain _d, of the specified _t_y_p_e, and using the optionally spec-
+     ified _p_r_o_t_o_c_o_l. The descriptors used in referencing the new sockets are
+     returned in _s_v[0] and _s_v[1]. The two sockets are indistinguishable.
+
+DDIIAAGGNNOOSSTTIICCSS
+     A 0 is returned if the call succeeds, -1 if it fails.
+
+EERRRROORRSS
+     The call succeeds unless:
+
+     [EMFILE]          Too many descriptors are in use by this process.
+
+     [EAFNOSUPPORT]    The specified address family is not supported on this
+                       machine.
+
+     [EPROTONOSUPPORT]
+                       The specified protocol is not supported on this ma-
+                       chine.
+
+     [EOPNOSUPPORT]    The specified protocol does not support creation of
+                       socket pairs.
+
+     [EFAULT]          The address _s_v does not specify a valid part of the
+                       process address space.
+
+SSEEEE AALLSSOO
+     read(2),  write(2),  pipe(2)
+
+BBUUGGSS
+     This call is currently implemented only for the UNIX domain.
+
+HHIISSTTOORRYY
+     The ssoocckkeettppaaiirr function call appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 4, 1993                                1

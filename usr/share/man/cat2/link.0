@@ -1,0 +1,88 @@
+LINK(2)                     BSD Programmer's Manual                    LINK(2)
+
+NNAAMMEE
+     lliinnkk - make a hard file link
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     lliinnkk(_c_o_n_s_t _c_h_a_r _*_n_a_m_e_1, _c_o_n_s_t _c_h_a_r _*_n_a_m_e_2);
+
+DDEESSCCRRIIPPTTIIOONN
+     The lliinnkk() function call atomically creates the specified directory entry
+     (hard link) _n_a_m_e_2 with the attributes of the underlying object pointed at
+     by _n_a_m_e_1 If the link is successful: the link count of the underlying ob-
+     ject is incremented; _n_a_m_e_1 and _n_a_m_e_2 share equal access and rights to the
+     underlying object.
+
+     If _n_a_m_e_1 is removed, the file _n_a_m_e_2 is not deleted and the link count of
+     the underlying object is decremented.
+
+     _N_a_m_e_1 must exist for the hard link to succeed and both _n_a_m_e_1 and _n_a_m_e_2
+     must be in the same file system.  Unless the caller is the super-user,
+     _n_a_m_e_1 may not be a directory.
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion, a value of 0 is returned.  Otherwise, a value
+     of -1 is returned and _e_r_r_n_o is set to indicate the error.
+
+EERRRROORRSS
+     LLiinnkk() will fail and no link will be created if: are true:
+
+     [ENOTDIR]     A component of either path prefix is not a directory.
+
+     [EINVAL]      Either pathname contains a character with the high-order
+                   bit set.
+
+     [ENAMETOOLONG]
+                   A component of either pathname exceeded 255 characters, or
+                   entire length of either path name exceeded 1023 characters.
+
+     [ENOENT]      A component of either path prefix does not exist.
+
+     [EACCES]      A component of either path prefix denies search permission.
+
+     [EACCES]      The requested link requires writing in a directory with a
+                   mode that denies write permission.
+
+     [ELOOP]       Too many symbolic links were encountered in translating one
+                   of the pathnames.
+
+     [ENOENT]      The file named by _n_a_m_e_1 does not exist.
+
+     [EEXIST]      The link named by _n_a_m_e_2 does exist.
+
+     [EPERM]       The file named by _n_a_m_e_1 is a directory and the effective
+                   user ID is not super-user.
+
+     [EXDEV]       The link named by _n_a_m_e_2 and the file named by _n_a_m_e_1 are on
+                   different file systems.
+
+     [ENOSPC]      The directory in which the entry for the new link is being
+                   placed cannot be extended because there is no space left on
+
+
+                   the file system containing the directory.
+
+     [EDQUOT]      The directory in which the entry for the new link is being
+                   placed cannot be extended because the user's quota of disk
+                   blocks on the file system containing the directory has been
+                   exhausted.
+
+     [EIO]         An I/O error occurred while reading from or writing to the
+                   file system to make the directory entry.
+
+     [EROFS]       The requested link requires writing in a directory on a
+                   read-only file system.
+
+     [EFAULT]      One of the pathnames specified is outside the process's al-
+                   located address space.
+
+SSEEEE AALLSSOO
+     symlink(2),  unlink(2)
+
+SSTTAANNDDAARRDDSS
+     LLiinnkk() is expected to conform to IEEE Std 1003.1-1988 (``POSIX'').
+
+4th Berkeley Distribution        June 4, 1993                                2

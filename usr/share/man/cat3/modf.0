@@ -1,0 +1,27 @@
+MODF(3)                     BSD Programmer's Manual                    MODF(3)
+
+NNAAMMEE
+     mmooddff - extract signed integral and fractional values from floating-point
+     number
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<mmaatthh..hh>>
+
+     _d_o_u_b_l_e
+     mmooddff(_d_o_u_b_l_e _v_a_l_u_e, _d_o_u_b_l_e _*_i_p_t_r);
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmooddff() function breaks the argument _v_a_l_u_e into integral and fraction-
+     al parts, each of which has the same sign as the argument.  It stores the
+     integral part as a _d_o_u_b_l_e in the object pointed to by _i_p_t_r.
+
+RREETTUURRNN VVAALLUUEESS
+     The mmooddff() function returns the signed fractional part of _v_a_l_u_e.
+
+SSEEEE AALLSSOO
+     frexp(3),  ldexp(3),  math(3)
+
+SSTTAANNDDAARRDDSS
+     The mmooddff() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

@@ -1,0 +1,41 @@
+FREAD(3)                    BSD Programmer's Manual                   FREAD(3)
+
+NNAAMMEE
+     ffrreeaadd, ffwwrriittee - binary stream input/output
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     _i_n_t
+     ffrreeaadd(_v_o_i_d _*_p_t_r, _s_i_z_e___t _s_i_z_e, _s_i_z_e___t _n_m_e_m_b, _F_I_L_E _*_s_t_r_e_a_m);
+
+     _i_n_t
+     ffwwrriittee(_v_o_i_d _*_p_t_r, _s_i_z_e___t _s_i_z_e, _s_i_z_e___t _n_m_e_m_b, _F_I_L_E _*_s_t_r_e_a_m);
+
+DDEESSCCRRIIPPTTIIOONN
+     The function ffrreeaadd() reads _n_m_e_m_b objects, each size bytes long, from the
+     stream pointed to by _s_t_r_e_a_m, storing them at the location given by _p_t_r.
+
+     The function ffwwrriittee() writes _n_m_e_m_b objects, each _s_i_z_e bytes long, to the
+     stream pointed to by _s_t_r_e_a_m, obtaining them from the location given by
+     _p_t_r.
+
+RREETTUURRNN VVAALLUUEESS
+     The functions ffrreeaadd() and ffwwrriittee() advance the file position indicator
+     for the stream by the number of bytes read or written.  They return the
+     number of objects read or written.  If an error occurs, or the end-of-
+     file is reached, the return value is a short object count (or zero).
+
+     The function ffrreeaadd() does not distinguish between end-of-file and error,
+     and callers must use feof(3) and ferror(3) to determine which occurred.
+     The function ffwwrriittee() returns a value less than _n_m_e_m_b only if a write er-
+     ror has occurred.
+
+SSEEEE AALLSSOO
+     read(2),  write(2)
+
+SSTTAANNDDAARRDDSS
+     The functions ffrreeaadd() and ffwwrriittee() conform to ANSI C X3.159-1989 (``ANSI
+     C '').
+
+4.4BSD                           June 4, 1993                                1

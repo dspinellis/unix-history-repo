@@ -1,0 +1,39 @@
+FPUTS(3)                    BSD Programmer's Manual                   FPUTS(3)
+
+NNAAMMEE
+     ffppuuttss, ppuuttss - output a line to a stream
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     _i_n_t
+     ffppuuttss(_c_o_n_s_t _c_h_a_r _*_s_t_r, _F_I_L_E _*_s_t_r_e_a_m);
+
+     _i_n_t
+     ppuuttss(_c_o_n_s_t _c_h_a_r _*_s_t_r);
+
+DDEESSCCRRIIPPTTIIOONN
+     The function ffppuuttss() writes the string pointed to by _s_t_r to the stream
+     pointed to by _s_t_r_e_a_m.
+
+     The function ppuuttss() writes the string _s_t_r, and a terminating newline
+     character, to the stream _s_t_d_o_u_t.
+
+RREETTUURRNN VVAALLUUEESS
+     The ffppuuttss() function returns 0 on success and EOF on error; ppuuttss() re-
+     turns a nonnegative integer on success and EOF on error.
+
+EERRRROORRSS
+     [EBADF]  The _s_t_r_e_a_m supplied is not a writable stream.
+
+     The functions ffppuuttss() and ppuuttss() may also fail and set _e_r_r_n_o for any of
+     the errors specified for the routines write(2).
+
+SSEEEE AALLSSOO
+     putc(3),  ferror(3),  stdio(3)
+
+SSTTAANNDDAARRDDSS
+     The functions ffppuuttss() and ppuuttss() conform to ANSI C X3.159-1989 (``ANSI C
+     '').
+
+4.4BSD                           June 4, 1993                                1

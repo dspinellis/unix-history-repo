@@ -1,0 +1,112 @@
+GETPWENT(3)                 BSD Programmer's Manual                GETPWENT(3)
+
+NNAAMMEE
+     ggeettppwweenntt, ggeettppwwnnaamm, ggeettppwwuuiidd, sseettppaasssseenntt, sseettppwweenntt, eennddppwweenntt - password
+     database operations
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ppwwdd..hh>>
+
+     _s_t_r_u_c_t _p_a_s_s_w_d _*
+     ggeettppwweenntt(_v_o_i_d);
+
+     _s_t_r_u_c_t _p_a_s_s_w_d _*
+     ggeettppwwnnaamm(_c_o_n_s_t _c_h_a_r _*_l_o_g_i_n);
+
+     _s_t_r_u_c_t _p_a_s_s_w_d _*
+     ggeettppwwuuiidd(_u_i_d___t _u_i_d);
+
+     _i_n_t
+     sseettppaasssseenntt(_i_n_t _s_t_a_y_o_p_e_n);
+
+     _i_n_t
+     sseettppwweenntt(_v_o_i_d);
+
+     _v_o_i_d
+     eennddppwweenntt(_v_o_i_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     These functions operate on the password database file which is described
+     in passwd(5).  Each entry in the database is defined by the structure
+     _p_a_s_s_w_d found in the include file <_p_w_d_._h>:
+
+           struct passwd {
+                   char    *pw_name;       /* user name */
+                   char    *pw_passwd;     /* encrypted password */
+                   uid_t   pw_uid;         /* user uid */
+                   gid_t   pw_gid;         /* user gid */
+                   time_t  pw_change;      /* password change time */
+                   char    *pw_class;      /* user access class */
+                   char    *pw_gecos;      /* Honeywell login info */
+                   char    *pw_dir;        /* home directory */
+                   char    *pw_shell;      /* default shell */
+                   time_t  pw_expire;      /* account expiration */
+           };
+
+     The functions ggeettppwwnnaamm() and ggeettppwwuuiidd() search the password database for
+     the given login name or user uid, respectively, always returning the
+     first one encountered.
+
+     The ggeettppwweenntt() function sequentially reads the password database and is
+     intended for programs that wish to process the complete list of users.
+
+     The sseettppaasssseenntt() function accomplishes two purposes.  First, it causes
+     ggeettppwweenntt() to ``rewind'' to the beginning of the database.  Additionally,
+     if _s_t_a_y_o_p_e_n is non-zero, file descriptors are left open, significantly
+     speeding up subsequent accesses for all of the routines.  (This latter
+     functionality is unnecessary for ggeettppwweenntt() as it doesn't close its file
+     descriptors by default.)
+
+     It is dangerous for long-running programs to keep the file descriptors
+     open the database will become out of date if it is updated while the pro-
+     gram is running.
+
+
+     The sseettppwweenntt() function is identical to sseettppaasssseenntt() with an argument of
+     zero.
+
+     The eennddppwweenntt() function closes any open files.
+
+     These routines have been written to ``shadow'' the password file, e.g.
+     allow only certain programs to have access to the encrypted password.  If
+     the process which calls them has an effective uid of 0, the encrypted
+     password will be returned, otherwise, the password field of the retuned
+     structure will point to the string `*'.
+
+RREETTUURRNN VVAALLUUEESS
+     The functions ggeettppwweenntt(), ggeettppwwnnaamm(), and ggeettppwwuuiidd(), return a valid
+     pointer to a passwd structure on success and a null pointer if end-of-
+     file is reached or an error occurs.  The functions sseettppaasssseenntt() and
+     sseettppwweenntt() return 0 on failure and 1 on success.  The eennddppwweenntt() function
+     has no return value.
+
+FFIILLEESS
+     /var/db/pwd.db      The insecure password database file
+     /var/db/spwd.db     The secure password database file
+     /etc/master.passwd  The current password file
+     /etc/passwd         A Version 7 format password file
+
+SSEEEE AALLSSOO
+     getlogin(3),  getgrent(3),  passwd(5),  pwd_mkdb(8),  vipw(8)
+
+HHIISSTTOORRYY
+     The ggeettppwweenntt, ggeettppwwnnaamm, ggeettppwwuuiidd, sseettppwweenntt,, and eennddppwweenntt functions ap-
+     peared in Version 7 AT&T UNIX.  The sseettppaasssseenntt function appeared in
+     4.3BSD-Reno.
+
+BBUUGGSS
+     The functions ggeettppwweenntt(), ggeettppwwnnaamm(), and ggeettppwwuuiidd(), leave their results
+     in an internal static object and return a pointer to that object. Subse-
+     quent calls to the same function will modify the same object.
+
+     The routines ggeettppwweenntt(), eennddppwweenntt(), sseettppaasssseenntt(), and sseettppwweenntt() are
+     fairly useless in a networked environment and should be avoided, if pos-
+     sible.
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     The historic function setpwfile(3),  which allowed the specification of
+     alternate password databases, has been deprecated and is no longer avail-
+     able.
+
+4.4BSD                           June 4, 1993                                2

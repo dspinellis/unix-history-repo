@@ -1,0 +1,31 @@
+NLIST(3)                    BSD Programmer's Manual                   NLIST(3)
+
+NNAAMMEE
+     nnlliisstt - retrieve symbol table name list from an executable file
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<nnlliisstt..hh>>
+
+     _i_n_t
+     nnlliisstt(_c_o_n_s_t _c_h_a_r _*_f_i_l_e_n_a_m_e, _s_t_r_u_c_t _n_l_i_s_t _*_n_l);
+
+DDEESSCCRRIIPPTTIIOONN
+     The nnlliisstt() function retrieves name list entries from the symbol table of
+     an exectutable file. (See a.out(5).)  The argument _n_l is set to reference
+     the beginning of the list.  The list is preened of binary and invalid da-
+     ta; if an entry in the name list is valid, the _n___t_y_p_e and _n___v_a_l_u_e for the
+     entry are copied into the list referenced by _n_l. No other data is copied.
+     The last entry in the list is always NULL.
+
+RREETTUURRNN VVAALLUUEESS
+     The number of invalid entries is returned if successful; otherwise, if
+     the file _f_i_l_e_n_a_m_e does not exist or is not exectuable, the returned value
+     is -1.
+
+SSEEEE AALLSSOO
+     a.out(5)
+
+HHIISSTTOORRYY
+     A nnlliisstt() function appeared in Version 6 AT&T UNIX.
+
+4th Berkeley Distribution        June 4, 1993                                1

@@ -1,0 +1,59 @@
+CHROOT(2)                   BSD Programmer's Manual                  CHROOT(2)
+
+NNAAMMEE
+     cchhrroooott - change root directory
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     cchhrroooott(_c_o_n_s_t _c_h_a_r _*_d_i_r_n_a_m_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     _D_i_r_n_a_m_e is the address of the pathname of a directory, terminated by an
+     ASCII NUL.  CChhrroooott() causes _d_i_r_n_a_m_e to become the root directory, that
+     is, the starting point for path searches of pathnames beginning with `/'.
+
+     In order for a directory to become the root directory a process must have
+     execute (search) access for that directory.
+
+     It should be noted that cchhrroooott() has no effect on the process's current
+     directory.
+
+     This call is restricted to the super-user.
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion, a value of 0 is returned.  Otherwise, a value
+     of -1 is returned and _e_r_r_n_o is set to indicate an error.
+
+EERRRROORRSS
+     CChhrroooott() will fail and the root directory will be unchanged if:
+
+     [ENOTDIR]  A component of the path name is not a directory.
+
+     [EINVAL]   The pathname contains a character with the high-order bit set.
+
+     [ENAMETOOLONG]
+                A component of a pathname exceeded 255 characters, or an en-
+                tire path name exceeded 1023 characters.
+
+     [ENOENT]   The named directory does not exist.
+
+     [EACCES]   Search permission is denied for any component of the path
+                name.
+
+     [ELOOP]    Too many symbolic links were encountered in translating the
+                pathname.
+
+     [EFAULT]   _P_a_t_h points outside the process's allocated address space.
+
+     [EIO]      An I/O error occurred while reading from or writing to the
+                file system.
+
+SSEEEE AALLSSOO
+     chdir(2)
+
+HHIISSTTOORRYY
+     The cchhrroooott function call appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 4, 1993                                1

@@ -1,0 +1,28 @@
+STRRCHR(3)                  BSD Programmer's Manual                 STRRCHR(3)
+
+NNAAMMEE
+     ssttrrrrcchhrr - locate character in string
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttrriinngg..hh>>
+
+     _c_h_a_r _*
+     ssttrrrrcchhrr(_c_o_n_s_t _c_h_a_r _*_s, _i_n_t _c);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssttrrrrcchhrr() function locates the last occurrence of _c (converted to a
+     char) in the string _s. If _c is `\0', ssttrrrrcchhrr() locates the terminating
+     `\0'.
+
+RREETTUURRNN VVAALLUUEESS
+     The ssttrrrrcchhrr() function returns a pointer to the character, or a null
+     pointer if _c does not occur anywhere in _s.
+
+SSEEEE AALLSSOO
+     index(3),  memchr(3),  rindex(3),  strchr(3),  strcspn(3),  strpbrk(3),
+     strsep(3),  strspn(3),  strstr(3),  strtok(3)
+
+SSTTAANNDDAARRDDSS
+     The ssttrrrrcchhrr() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

@@ -1,0 +1,24 @@
+TOASCII(3)                  BSD Programmer's Manual                 TOASCII(3)
+
+NNAAMMEE
+     ttooaasscciiii - convert a byte to 7-bit ASCII
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ccttyyppee..hh>>
+
+     _i_n_t
+     ttooaasscciiii(_i_n_t _c);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ttooaasscciiii() function strips all but the low 7 bits from a letter, in-
+     cluding parity or other marker bits.
+
+RREETTUURRNN VVAALLUUEESS
+     The ttooaasscciiii() function always returns a valid ASCII character.
+
+SSEEEE AALLSSOO
+     isascii(3),  isalnum(3),  isalpha(3),  iscntrl(3),  isdigit(3),
+     isgraph(3),  islower(3),  isprint(3),  ispunct(3),  isspace(3),
+     isupper(3),  isxdigit(3),  tolower(3),  toupper(3),  stdio(3),  ascii(7)
+
+4.4BSD                           June 4, 1993                                1

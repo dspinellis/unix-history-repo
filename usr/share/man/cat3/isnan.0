@@ -1,0 +1,29 @@
+ISINF(3)                    BSD Programmer's Manual                   ISINF(3)
+
+NNAAMMEE
+     iissiinnff, iissnnaann - test for infinity or not-a-number (_N_a_N)
+
+SSYYNNOOPPSSIISS
+     _i_n_t
+     iissiinnff(_d_o_u_b_l_e);
+
+     _i_n_t
+     iissnnaann(_d_o_u_b_l_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     The iissnniinnff() function returns 1 if the number is ``infinity'', otherwise
+     0.
+
+     The iissnnaann() function returns 1 if the number is ``_N_a_N'', otherwise 0.
+
+SSEEEE AALLSSOO
+     math(3)
+
+     _I_E_E_E _S_t_a_n_d_a_r_d _f_o_r _B_i_n_a_r_y _F_l_o_a_t_i_n_g_-_P_o_i_n_t _A_r_i_t_h_m_e_t_i_c, Std 754-1985, ANSI.
+
+BBUUGGSS
+     Neither the VAX nor the Tahoe floating point have distinguished values
+     for either infinity or not-a-number.  These routines always return 0 on
+     those architectures.
+
+4.4BSD                           June 4, 1993                                1

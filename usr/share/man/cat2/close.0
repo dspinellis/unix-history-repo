@@ -1,0 +1,57 @@
+CLOSE(2)                    BSD Programmer's Manual                   CLOSE(2)
+
+NNAAMMEE
+     cclloossee - delete a descriptor
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     cclloossee(_i_n_t _d);
+
+DDEESSCCRRIIPPTTIIOONN
+     The cclloossee() call deletes a descriptor from the per-process object refer-
+     ence table.  If this is the last reference to the underlying object, the
+     object will be deactivated.  For example, on the last close of a file the
+     current _s_e_e_k pointer associated with the file is lost; on the last close
+     of a socket(2) associated naming information and queued data are discard-
+     ed; on the last close of a file holding an advisory lock the lock is re-
+     leased (see further flock(2)).
+
+     When a process exits, all associated file descriptors are freed, but
+     since there is a limit on active descriptors per processes, the cclloossee()
+     function call is useful when a large quanitity of file descriptors are
+     being handled.
+
+     When a process forks (see fork(2)),  all descriptors for the new child
+     process reference the same objects as they did in the parent before the
+     fork.  If a new process is then to be run using execve(2),  the process
+     would normally inherit these descriptors.  Most of the descriptors can be
+     rearranged with dup2(2) or deleted with cclloossee() before the execve is at-
+     tempted, but if some of these descriptors will still be needed if the ex-
+     ecve fails, it is necessary to arrange for them to be closed if the ex-
+     ecve succeeds.  For this reason, the call ``fcntl(d, F_SETFD, 1)'' is
+     provided, which arranges that a descriptor will be closed after a suc-
+     cessful execve; the call ``fcntl(d, F_SETFD, 0)'' restores the default,
+     which is to not close the descriptor.
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion, a value of 0 is returned.  Otherwise, a value
+     of -1 is returned and the global integer variable _e_r_r_n_o is set to indi-
+     cate the error.
+
+EERRRROORRSS
+     CClloossee() will fail if:
+
+     [EBADF]       _D is not an active descriptor.
+
+     [EINTR]       An interupt was received.
+
+SSEEEE AALLSSOO
+     accept(2),  flock(2),  open(2),  pipe(2),  socket(2),  socketpair(2),
+     execve(2),  fcntl(2)
+
+SSTTAANNDDAARRDDSS
+     CClloossee() conforms to IEEE Std 1003.1-1988 (``POSIX'').
+
+4th Berkeley Distribution        June 4, 1993                                1

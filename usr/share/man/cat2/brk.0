@@ -1,0 +1,61 @@
+BRK(2)                      BSD Programmer's Manual                     BRK(2)
+
+NNAAMMEE
+     bbrrkk, ssbbrrkk - change data segment size
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+
+     _c_h_a_r
+     **bbrrkk(_c_o_n_s_t _c_h_a_r _*_a_d_d_r);
+
+     _c_h_a_r _*
+     **ssbbrrkk(_i_n_t _i_n_c_r);
+
+DDEESSCCRRIIPPTTIIOONN
+     TThhee bbrrkk aanndd ssbbrrkk ffuunnccttiioonnss aarree hhiissttoorriiccaall ccuurriioossiittiieess lleefftt oovveerr ffrroomm eeaarr--
+     lliieerr ddaayyss bbeeffoorree tthhee aaddvveenntt ooff vviirrttuuaall mmeemmoorryy mmaannaaggeemmeenntt..   The bbrrkk()
+     function sets the break or lowest address of a process's data segment
+     (unilitialized data) to _a_d_d_r (immediately above bss).  Data addressing is
+     restricted between _a_d_d_r and the lowest stack pointer to the stack seg-
+     ment.  Memory is allocated by _b_r_k in page size pieces; if _a_d_d_r is not
+     evenly divisible by the system page size, it is increased to the next
+     page boundary.
+
+     The current value of the program break is reliably returned by
+     ``sbrk(0)'' (see also end(3)).  The getrlimit(2) system call may be used
+     to determine the maximum permissible size of the _d_a_t_a segment; it will
+     not be possible to set the break beyond the _r_l_i_m___m_a_x value returned from
+     a call to getrlimit,  e.g.  ``qetext + rlp->rlim_max.'' (see end(3) for
+     the definition of _e_t_e_x_t).
+
+RREETTUURRNN VVAALLUUEESS
+     BBrrkk returns a pointer to the new end of memory if successful; otherwise
+     -1 with _e_r_r_n_o set to indicate why the allocation failed.  The ssbbrrkk re-
+     turns a pointer to the base of the new storage if successful; otherwise
+     -1 with _e_r_r_n_o set to indicate why the allocation failed.
+
+EERRRROORRSS
+     Sbrk will fail and no additional memory will be allocated if one of the
+     following are true:
+
+     [ENOMEM]  The limit, as set by setrlimit(2),  was exceeded.
+
+     [ENOMEM]  The maximum possible size of a data segment (compiled into the
+               system) was exceeded.
+
+     [ENOMEM]  Insufficient space existed in the swap area to support the ex-
+               pansion.
+
+SSEEEE AALLSSOO
+     execve(2),  getrlimit(2),  malloc(3),  end(3)
+
+BBUUGGSS
+     Setting the break may fail due to a temporary lack of swap space.  It is
+     not possible to distinguish this from a failure caused by exceeding the
+     maximum size of the data segment without consulting getrlimit.
+
+HHIISSTTOORRYY
+     A bbrrkk function call appeared in Version 7 AT&T UNIX.
+
+4th Berkeley Distribution        June 4, 1993                                1

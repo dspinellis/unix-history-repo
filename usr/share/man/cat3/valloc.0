@@ -1,0 +1,31 @@
+VALLOC(3)                   BSD Programmer's Manual                  VALLOC(3)
+
+NNAAMMEE
+     vvaalllloocc - aligned memory allocation function
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _c_h_a_r _*
+     vvaalllloocc(_u_n_s_i_g_n_e_d _s_i_z_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     VVaalllloocc iiss oobbssoolleetteedd bbyy tthhee ccuurrrreenntt vveerrssiioonn ooff mmaalllloocc((33)),, wwhhiicchh aalliiggnnss
+     ppaaggee--ssiizzeedd aanndd llaarrggeerr aallllooccaattiioonnss..
+
+     The vvaalllloocc() function allocates _s_i_z_e bytes aligned on a page boundary.
+     It is implemented by calling malloc(3) with a slightly larger request,
+     saving the true beginning of the block allocated, and returning a proper-
+     ly aligned pointer.
+
+RREETTUURRNN VVAALLUUEESS
+     The vvaalllloocc() function returns a pointer to the allocated space if suc-
+     cessful; otherwise a null pointer is returned
+
+HHIISSTTOORRYY
+     The vvaalllloocc() function appeared in 3.0BSD.
+
+BBUUGGSS
+     A _v_f_r_e_e function has not been implemented.
+
+3rd Berkeley Distribution        June 4, 1993                                1

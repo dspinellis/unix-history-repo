@@ -1,0 +1,34 @@
+FCLOSE(3)                   BSD Programmer's Manual                  FCLOSE(3)
+
+NNAAMMEE
+     ffcclloossee - close a stream
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     _i_n_t
+     ffcclloossee(_F_I_L_E _*_s_t_r_e_a_m);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ffcclloossee() function dissociates the named _s_t_r_e_a_m from its underlying
+     file or set of functions.  If the stream was being used for output, any
+     buffered data is written first, using fflush(3).
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion 0 is returned.  Otherwise, EOF is returned and
+     the global variable _e_r_r_n_o is set to indicate the error.  In either case
+     no further access to the stream is possible.
+
+EERRRROORRSS
+     [EBADF]  The argument _s_t_r_e_a_m is not an open stream.
+
+     The ffcclloossee() function may also fail and set _e_r_r_n_o for any of the errors
+     specified for the routines close(2) or fflush(3).
+
+SSEEEE AALLSSOO
+     close(2),  fflush(3),  fopen(3),  setbuf(3)
+
+SSTTAANNDDAARRDDSS
+     The ffcclloossee() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

@@ -1,0 +1,36 @@
+UMASK(2)                    BSD Programmer's Manual                   UMASK(2)
+
+NNAAMMEE
+     uummaasskk - set file creation mode mask
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ssttaatt..hh>>
+
+     _m_o_d_e___t
+     uummaasskk(_m_o_d_e___t _n_u_m_a_s_k);
+
+DDEESSCCRRIIPPTTIIOONN
+     The uummaasskk() routine sets the process's file mode creation mask to _n_u_m_a_s_k
+     and returns the previous value of the mask.  The 9 low-order access per-
+     mission bits of _n_u_m_a_s_k are used by system calls, including open(2),
+     mkdir(2),  and mkfifo(2),  to turn off corresponding bits requested in
+     file mode.  (See chmod(2)).  This clearing allows each user to restrict
+     the default access to his files.
+
+     The default mask value is S_IWGRP|S_IWOTH (022, write access for the own-
+     er only).  Child processes inherit the mask of the calling process.
+
+RREETTUURRNN VVAALLUUEESS
+     The previous value of the file mode mask is returned by the call.
+
+EERRRROORRSS
+     The uummaasskk() function is always successful.
+
+SSEEEE AALLSSOO
+     chmod(2),  mknod(2),  open(2)
+
+SSTTAANNDDAARRDDSS
+     The uummaasskk() function call is expected to conform to IEEE Std 1003.1-1988
+     (``POSIX'').
+
+4th Berkeley Distribution        June 4, 1993                                1

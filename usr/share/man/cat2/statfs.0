@@ -1,0 +1,93 @@
+STATFS(2)                   BSD Programmer's Manual                  STATFS(2)
+
+NNAAMMEE
+     ssttaattffss - get file system statistics
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ppaarraamm..hh>>
+     ##iinncclluuddee <<ssyyss//mmoouunntt..hh>>
+
+     _i_n_t
+     ssttaattffss(_c_o_n_s_t _c_h_a_r _*_p_a_t_h, _s_t_r_u_c_t _s_t_a_t_f_s _*_b_u_f);
+
+     _i_n_t
+     ffssttaattffss(_i_n_t _f_d, _s_t_r_u_c_t _s_t_a_t_f_s _*_b_u_f);
+
+DDEESSCCRRIIPPTTIIOONN
+     SSttaattffss() returns information about a mounted file system.  _P_a_t_h is the
+     path name of any file within the mounted filesystem.  _B_u_f is a pointer to
+     a ssttaattffss() structure defined as follows:
+
+     typedef quad fsid_t;
+
+     #define MNAMELEN 32     /* length of buffer for returned name */
+
+     struct statfs {
+     short   f_type;           /* type of filesystem (see below) */
+     short   f_flags;          /* copy of mount flags */
+     long    f_bsize;          /* fundamental file system block size */
+     long    f_iosize;         /* optimal transfer block size */
+     long    f_blocks;         /* total data blocks in file system */
+     long    f_bfree;          /* free blocks in fs */
+     long    f_bavail;         /* free blocks avail to non-superuser */
+     long    f_files;          /* total file nodes in file system */
+     long    f_ffree;          /* free file nodes in fs */
+     fsid_t  f_fsid;           /* file system id */
+     long    f_spare[6];       /* spare for later */
+     char    f_mntonname[MNAMELEN];    /* mount point */
+     char    f_mntfromname[MNAMELEN];  /* mounted filesystem */
+     };
+     /*
+     * File system types.
+     */
+     #define MOUNT_UFS       1
+     #define MOUNT_NFS       2
+     #define MOUNT_MFS       3
+     #define MOUNT_PC        4
+
+     Fields that are undefined for a particular file system are set to -1.
+     FFssttaattffss() returns the same information about an open file referenced by
+     descriptor _f_d.
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion, a value of 0 is returned.  Otherwise, -1 is
+     returned and the global variable _e_r_r_n_o is set to indicate the error.
+
+EERRRROORRSS
+     SSttaattffss() fails if one or more of the following are true:
+
+     [ENOTDIR]      A component of the path prefix of _P_a_t_h is not a directory.
+
+     [EINVAL]       _p_a_t_h contains a character with the high-order bit set.
+
+     [ENAMETOOLONG]
+                    The length of a component of _p_a_t_h exceeds 255 characters,
+
+                    or the length of _p_a_t_h exceeds 1023 characters.
+
+     [ENOENT]       The file referred to by _p_a_t_h does not exist.
+
+     [EACCES]       Search permission is denied for a component of the path
+                    prefix of _p_a_t_h.
+
+     [ELOOP]        Too many symbolic links were encountered in translating
+                    _p_a_t_h.
+
+     [EFAULT]       _B_u_f or _p_a_t_h points to an invalid address.
+
+     [EIO]          An I/O error occurred while reading from or writing to the
+                    file system.
+
+     FFssttaattffss() fails if one or both of the following are true:
+
+     [EBADF]        _F_d is not a valid open file descriptor.
+
+     [EFAULT]       _B_u_f points to an invalid address.
+
+     [EIO]          An I/O error occurred while reading from or writing to the
+                    file system.
+
+HHIISSTTOORRYY
+     The ssttaattffss function first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                2

@@ -1,0 +1,65 @@
+STRTOUL(3)                  BSD Programmer's Manual                 STRTOUL(3)
+
+NNAAMMEE
+     ssttrrttoouull,, ssttrrttoouuqq - convert a string to an unsigned long or uquad_t
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+     ##iinncclluuddee <<lliimmiittss..hh>>
+
+     _u_n_s_i_g_n_e_d _l_o_n_g
+     ssttrrttoouull(_c_o_n_s_t _c_h_a_r _*_n_p_t_r, _c_h_a_r _*_*_e_n_d_p_t_r, _i_n_t _b_a_s_e);
+
+
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+     ##iinncclluuddee <<lliimmiittss..hh>>
+
+     _u___q_u_a_d___t
+     ssttrrttoouuqq(_c_o_n_s_t _c_h_a_r _*_n_p_t_r, _c_h_a_r _*_*_e_n_d_p_t_r, _i_n_t _b_a_s_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssttrrttoouull() function converts the string in _n_p_t_r to an _u_n_s_i_g_n_e_d _l_o_n_g
+     value.  The ssttrrttoouuqq() function converts the string in _n_p_t_r to a _u___q_u_a_d___t
+     value.  The conversion is done according to the given _b_a_s_e, which must be
+     between 2 and 36 inclusive, or be the special value 0.
+
+     The string may begin with an arbitrary amount of white space (as deter-
+     mined by isspace(3))  followed by a single optional `+' or `-' sign.  If
+     _b_a_s_e is zero or 16, the string may then include a `0x' prefix, and the
+     number will be read in base 16; otherwise, a zero _b_a_s_e is taken as 10
+     (decimal) unless the next character is `0', in which case it is taken as
+     8 (octal).
+
+     The remainder of the string is converted to an _u_n_s_i_g_n_e_d _l_o_n_g value in the
+     obvious manner, stopping at the end of the string or at the first charac-
+     ter that does not produce a valid digit in the given base.  (In bases
+     above 10, the letter `A' in either upper or lower case represents 10, `B'
+     represents 11, and so forth, with `Z' representing 35.)
+
+     If _e_n_d_p_t_r is non nil, ssttrrttoouull() stores the address of the first invalid
+     character in _*_e_n_d_p_t_r. If there were no digits at all, however, ssttrrttoouull()
+     stores the original value of _n_p_t_r in _*_e_n_d_p_t_r. (Thus, if _*_n_p_t_r is not `\0'
+     but _*_*_e_n_d_p_t_r is `\0' on return, the entire string was valid.)
+
+RREETTUURRNN VVAALLUUEESS
+     The ssttrrttoouull() function returns either the result of the conversion or, if
+     there was a leading minus sign, the negation of the result of the conver-
+     sion, unless the original (non-negated) value would overflow; in the lat-
+     ter case, ssttrrttoouull() returns ULONG_MAX and sets the global variable _e_r_r_n_o
+     to ERANGE.
+
+EERRRROORRSS
+     [ERANGE]  The given string was out of range; the value converted has been
+               clamped.
+
+SSEEEE AALLSSOO
+     strtol(3)
+
+SSTTAANNDDAARRDDSS
+     The ssttrrttoouull() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+BBUUGGSS
+     Ignores the current locale.
+
+4.4BSD                           June 4, 1993                                1

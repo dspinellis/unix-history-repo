@@ -1,0 +1,27 @@
+MADVISE(2)                  BSD Programmer's Manual                 MADVISE(2)
+
+NNAAMMEE
+     mmaaddvviissee - give advise about use of memory
+
+SSYYNNOOPPSSIISS
+     mmaaddvviissee(_c_a_d_d_r___t _a_d_d_r, _i_n_t _l_e_n, _i_n_t _b_e_h_a_v);
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmaaddvviissee() system call allows a process that has knowledge of its mem-
+     ory behavior to describe it to the system.  The known behaviors are given
+     in _<_s_y_s_/_m_m_a_n_._h_>:
+
+     #define MADV_NORMAL     0       /* no further special treatment */
+     #define MADV_RANDOM     1       /* expect random page references */
+     #define MADV_SEQUENTIAL 2       /* expect sequential references */
+     #define MADV_WILLNEED   3       /* will need these pages */
+     #define MADV_DONTNEED   4       /* don't need these pages */
+     #define MADV_SPACEAVAIL 5       /* insure that resources are reserved */
+
+SSEEEE AALLSSOO
+     msync(2),  munmap(2),  mprotect(2),  mincore(2)
+
+HHIISSTTOORRYY
+     The mmaaddvviissee function first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                1
