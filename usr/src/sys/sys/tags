@@ -1,0 +1,2056 @@
+ACCUNIT	../vaxif/if_acc.c	/^#define	ACCUNIT(x)	minor(x)$/
+ADDDOMAIN	../sys/uipc_domain.c	/^#define	ADDDOMAIN(x)	{ \\$/
+ADUNIT	../vaxuba/ad.c	/^#define ADUNIT(dev) (minor(dev))$/
+ALLOC	../sys/vm_text.c	/^#define	ALLOC(xp) { \\$/
+ARPTAB_HASH	../netinet/if_ether.c	/^#define	ARPTAB_HASH(a) \\$/
+ARPTAB_LOOK	../netinet/if_ether.c	/^#define	ARPTAB_LOOK(at,addr) { \\$/
+BASEPRI	../vax/machparam.h	/^#define	BASEPRI(ps)	(((ps) & PSL_IPL) == 0)$/
+BKINPUT	../h/bkmac.h	/^#define	BKINPUT(c, tp) { \\$/
+BUFHASH	../h/buf.h	/^#define	BUFHASH(dev, dblkno)	\\$/
+BUMPTIME	../sys/kern_clock.c	/^#define BUMPTIME(t, usec) { \\$/
+CLEARINT	../vaxuba/npreg.h	/^#define CLEARINT(x)	{unsign16 y; y = RCSR2(x->ioba/
+CMHASH	../h/cmap.h	/^#define	CMHASH(bn)	((bn)&(CMHSIZ-1))$/
+CSSUNIT	../vaxif/if_css.c	/^#define CSSUNIT(x)      minor(x)$/
+CTRL	../h/ttychars.h	/^#define	CTRL(c)	('c'&037)$/
+CTUNIT	../vaxuba/ct.c	/^#define	CTUNIT(dev)	(minor(dev))$/
+Copyin	../vax/locore.s	/^JSBENTRY(Copyin)$/
+Copyout	../vax/locore.s	/^JSBENTRY(Copyout)$/
+DELAY	../vax/machparam.h	/^#define	DELAY(n)	{ register int N = cpuspeed * (n)/
+DEQUEUE	../vaxif/if_dmc.c	/^#define DEQUEUE(head, tail) \\$/
+DHU_RX_LINE	../vaxuba/dhureg.h	/^#define	DHU_RX_LINE(rbuf)	(((rbuf) & DHU_RB_RLN) >/
+DHU_SELECT	../vaxuba/dhureg.h	/^#define DHU_SELECT(unit)	((unit) & DHU_CS_IAP)$/
+DHU_TX_LINE	../vaxuba/dhureg.h	/^#define	DHU_TX_LINE(csrh)	((csrh) & DHU_CSH_TLN)$/
+DIRSIZ	../h/dir.h	/^#define DIRSIZ(dp) \\$/
+DMFL_UNIT	../vaxuba/dmf.c	/^#define	DMFL_UNIT(d)	(minor(d)&0xF)	\/* up to 16 DM/
+DMZ	../vaxuba/dmzreg.h	/^#define	DMZ(a)		(a\/24)$/
+DNREG	../vaxuba/dn.c	/^#define DNREG(dev)	((dev)&03)$/
+DNUNIT	../vaxuba/dn.c	/^#define DNUNIT(dev)	(minor(dev)>>2)$/
+DQHASH	../sys/quota_kern.c	/^#define	DQHASH(uid, dev) \\$/
+ENUNIT	../vaxif/if_en.c	/^#define	ENUNIT(x)	minor(x)$/
+EVROUND	../vaxuba/vs.c	/^#define EVROUND(x)	((x) & (VSMAXEVQ - 1))$/
+FD_CLR	../h/types.h	/^#define	FD_CLR(n, p)	((p)->fds_bits[(n)\/NFDBITS] &/
+FD_ISSET	../h/types.h	/^#define	FD_ISSET(n, p)	((p)->fds_bits[(n)\/NFDBITS]/
+FD_SET	../h/types.h	/^#define	FD_SET(n, p)	((p)->fds_bits[(n)\/NFDBITS] |/
+FD_ZERO	../h/types.h	/^#define FD_ZERO(p)	bzero((char *)(p), sizeof(*(p))/
+FREE_AT_HEAD	../sys/vm_text.c	/^#define FREE_AT_HEAD(xp) { \\$/
+FREE_AT_TAIL	../sys/vm_text.c	/^#define FREE_AT_TAIL(xp) { \\$/
+FUNCTMAP	../vaxuba/npreg.h	/^#define FUNCTMAP(x)	(((x) << 6) | 077) \/* Maps use/
+Fastreclaim	../vax/locore.s	/^Fastreclaim:$/
+Fubyte	../vax/locore.s	/^JSBENTRY(Fubyte)$/
+Fuword	../vax/locore.s	/^JSBENTRY(Fuword)$/
+GETF	../h/file.h	/^#define	GETF(fp, fd) { \\$/
+H	../h/vmmac.h	/^#define	H(pte)	((struct hpte *)(pte))$/
+HASH	../sys/kern_synch.c	/^#define HASH(x)	(( (int) x >> 5) & (SQSIZE-1))$/
+HDHUNIT	../vaxif/if_hdh.c	/^#define	HDHUNIT(x)	minor(x)$/
+HIWORD	../vaxuba/npreg.h	/^#define HIWORD(X)	(((ushort *)&(X))[1])$/
+HOSTHASH	../netimp/if_imphost.h	/^#define	HOSTHASH(a)	((((a).s_addr>>24)+(a).s_addr)/
+HOST_DEQUE	../netimp/if_imphost.h	/^#define	HOST_DEQUE(hp, m) { \\$/
+HOST_ENQUE	../netimp/if_imphost.h	/^#define	HOST_ENQUE(hp, m) { \\$/
+HPWAIT	../vaxmba/hp.c	/^#define HPWAIT(mi, addr) (hpwait(mi))$/
+HTUNIT	../vaxmba/ht.c	/^#define HTUNIT(dev)	(tutoht[TUUNIT(dev)])$/
+HYRHASH	../vaxif/if_hy.h	/^#define HYRHASH(x) (((x) ^ ((x) >> 16)) % HYRSIZE)/
+HYS_ABNORMAL	../vaxif/if_hyreg.h	/^#define	HYS_ABNORMAL(x)	(((x)->hyd_csr & S_C) != 0/
+HYS_DONE	../vaxif/if_hyreg.h	/^#define	HYS_DONE(x)	(((x)->hyd_csr & (S_ERROR|S_B|/
+HYS_ERROR	../vaxif/if_hyreg.h	/^#define	HYS_ERROR(x)	(((x)->hyd_csr & S_ERROR) != /
+HYS_NORMAL	../vaxif/if_hyreg.h	/^#define	HYS_NORMAL(x)	(((x)->hyd_csr & S_B) != 0)	/
+HYS_RECVDATA	../vaxif/if_hyreg.h	/^#define	HYS_RECVDATA(x)	(((x)->hyd_csr & S_A) != 0/
+IA_SIN	../netinet/in_var.h	/^#define	IA_SIN(ia) ((struct sockaddr_in *)(&((stru/
+IA_SNS	../netns/ns_if.h	/^#define	IA_SNS(ia) ((struct sockaddr_ns *)(&((stru/
+ICMP_ADVLEN	../netinet/ip_icmp.h	/^#define	ICMP_ADVLEN(p)	(8 + ((p)->icmp_ip.ip_hl <</
+IF_ADJ	../net/if.h	/^#define	IF_ADJ(m) { \\$/
+IF_DEQUEUE	../net/if.h	/^#define	IF_DEQUEUE(ifq, m) { \\$/
+IF_DEQUEUEIF	../net/if.h	/^#define	IF_DEQUEUEIF(ifq, m, ifp) { \\$/
+IF_DROP	../net/if.h	/^#define	IF_DROP(ifq)		((ifq)->ifq_drops++)$/
+IF_ENQUEUE	../net/if.h	/^#define	IF_ENQUEUE(ifq, m) { \\$/
+IF_PREPEND	../net/if.h	/^#define	IF_PREPEND(ifq, m) { \\$/
+IF_QFULL	../net/if.h	/^#define	IF_QFULL(ifq)		((ifq)->ifq_len >= (ifq)->i/
+IKUNIT	../vaxuba/ik.c	/^#define IKUNIT(dev) (minor(dev))$/
+ILOCK	../h/inode.h	/^#define	ILOCK(ip) { \\$/
+ILUNIT	../vaxif/if_il.c	/^#define	ILUNIT(x)	minor(x)$/
+INOHASH	../sys/ufs_inode.c	/^#define	INOHASH(dev,ino)	(((dev)+(ino))&(INOHSZ-1)/
+INOPB	../h/fs.h	/^#define	INOPB(fs)	((fs)->fs_inopb)$/
+INOPF	../h/fs.h	/^#define	INOPF(fs)	((fs)->fs_inopb >> (fs)->fs_frag/
+INTNI	../vaxuba/npreg.h	/^#define INTNI(x)	(WCSR1(x->iobase,0xFF))$/
+IN_CLASSA	../netinet/in.h	/^#define	IN_CLASSA(i)		(((long)(i) & 0x80000000) ==/
+IN_CLASSB	../netinet/in.h	/^#define	IN_CLASSB(i)		(((long)(i) & 0xc0000000) ==/
+IN_CLASSC	../netinet/in.h	/^#define	IN_CLASSC(i)		(((long)(i) & 0xc0000000) ==/
+IPOPT_CLASS	../netinet/ip.h	/^#define	IPOPT_CLASS(o)		((o)&0x60)$/
+IPOPT_COPIED	../netinet/ip.h	/^#define	IPOPT_COPIED(o)		((o)&0x80)$/
+IPOPT_NUMBER	../netinet/ip.h	/^#define	IPOPT_NUMBER(o)		((o)&0x1f)$/
+IS	../vax/scb.s	/^#define	IS(a)	.long	_X\/**\/a+INTSTK$/
+ISSIG	../h/param.h	/^#define	ISSIG(p) \\$/
+ITIMES	../h/inode.h	/^#define	ITIMES(ip, t1, t2) { \\$/
+IUNLOCK	../h/inode.h	/^#define	IUNLOCK(ip) { \\$/
+IUPDAT	../h/inode.h	/^#define	IUPDAT(ip, t1, t2, waitfor) { \\$/
+IXC_MAP	../vaxif/if_ix.h	/^#define IXC_MAP(a)	(((a) << 6) | 0100077)$/
+Idle:	../vax/locore.s	/^idle Idle: idle:$/
+KS	../vax/scb.s	/^#define	KS(a)	.long	_X\/**\/a$/
+LEAPYEAR	../vax/clock.h	/^#define	LEAPYEAR(year)	((year)%4==0)	\/* good till /
+LINE	../vaxuba/dmzreg.h	/^#define	LINE(a)		((a%24)%8)$/
+LOG_MASK	../h/syslog.h	/^#define	LOG_MASK(pri)	(1 << (pri))		\/* mask for on/
+LOG_UPTO	../h/syslog.h	/^#define	LOG_UPTO(pri)	((1 << ((pri)+1)) - 1)	\/* al/
+LOWORD	../vaxuba/npreg.h	/^#define LOWORD(X)	(((ushort *)&(X))[0])$/
+LPACHANNEL	../vaxuba/lpa.c	/^#define LPACHANNEL(dev)	((dev) & 077)$/
+LPADEVICE	../vaxuba/lpa.c	/^#define LPADEVICE(dev)	(((dev) >> 6) & 03)$/
+LPAUNIT	../vaxuba/lpa.c	/^#define LPAUNIT(dev)	0$/
+LPUNIT	../vaxuba/lp.c	/^#define LPUNIT(dev)	(minor(dev) >> 3)$/
+Longjmp	../vax/locore.s	/^JSBENTRY(Longjmp)$/
+M730_ADDR	../vax/mem.h	/^#define	M730_ADDR(mcr)	(((mcr)->mc_reg[0] >> 8) & /
+M730_ENA	../vax/mem.h	/^#define	M730_ENA(mcr)	((mcr)->mc_reg[1] = (M730_MM/
+M730_ERR	../vax/mem.h	/^#define	M730_ERR(mcr)	((mcr)->mc_reg[1] & (M730_UN/
+M730_INH	../vax/mem.h	/^#define	M730_INH(mcr)	((mcr)->mc_reg[1] = M730_MME/
+M730_SYN	../vax/mem.h	/^#define	M730_SYN(mcr)	((mcr)->mc_reg[0] & 0x7f)$/
+M750_ADDR	../vax/mem.h	/^#define	M750_ADDR(mcr)	(((mcr)->mc_reg[0] >> 9) & /
+M750_ENA	../vax/mem.h	/^#define	M750_ENA(mcr)	((mcr)->mc_reg[0] = (M750_UN/
+M750_ERR	../vax/mem.h	/^#define	M750_ERR(mcr)	((mcr)->mc_reg[0] & (M750_UN/
+M750_INH	../vax/mem.h	/^#define	M750_INH(mcr)	((mcr)->mc_reg[1] = 0)$/
+M750_SYN	../vax/mem.h	/^#define	M750_SYN(mcr)	((mcr)->mc_reg[0] & 0x7f)$/
+M780C_ADDR	../vax/mem.h	/^#define	M780C_ADDR(mcr)	(((mcr)->mc_reg[2] >> 8) &/
+M780C_ENA	../vax/mem.h	/^#define	M780C_ENA(mcr)	\\$/
+M780C_ERR	../vax/mem.h	/^#define	M780C_ERR(mcr)	\\$/
+M780C_INH	../vax/mem.h	/^#define	M780C_INH(mcr)	\\$/
+M780C_SYN	../vax/mem.h	/^#define	M780C_SYN(mcr)	((mcr)->mc_reg[2] & 0xff)$/
+M780EL_ADDR	../vax/mem.h	/^#define	M780EL_ADDR(mcr)	(((mcr)->mc_reg[2] >> 11)/
+M780EL_ENA	../vax/mem.h	/^#define	M780EL_ENA(mcr)	\\$/
+M780EL_ERR	../vax/mem.h	/^#define	M780EL_ERR(mcr)	\\$/
+M780EL_INH	../vax/mem.h	/^#define	M780EL_INH(mcr)	\\$/
+M780EL_SYN	../vax/mem.h	/^#define	M780EL_SYN(mcr)	((mcr)->mc_reg[2] & 0x7f)$/
+M780EU_ADDR	../vax/mem.h	/^#define	M780EU_ADDR(mcr)	(((mcr)->mc_reg[3] >> 11)/
+M780EU_ENA	../vax/mem.h	/^#define	M780EU_ENA(mcr)	\\$/
+M780EU_ERR	../vax/mem.h	/^#define	M780EU_ERR(mcr)	\\$/
+M780EU_INH	../vax/mem.h	/^#define	M780EU_INH(mcr)	\\$/
+M780EU_SYN	../vax/mem.h	/^#define	M780EU_SYN(mcr)	((mcr)->mc_reg[3] & 0x7f)$/
+M8600_ADDR	../vax/mem.h	/^#define M8600_ADDR(mear) ((mear) & 0x3ffffffc)$/
+M8600_ARRAY	../vax/mem.h	/^#define M8600_ARRAY(mear) (((mear) >> 22) & 0x0f)$/
+M8600_HRDERR	../vax/mem.h	/^#define M8600_HRDERR(mdecc) ((mdecc) & 0x580000)$/
+M8600_MEMERR	../vax/mem.h	/^#define M8600_MEMERR(mdecc) ((mdecc) & 0x780000)$/
+M8600_SYN	../vax/mem.h	/^#define M8600_SYN(mdecc) (((mdecc) >> 9) & 0x3f)$/
+MASKREG	../vaxmba/hp.c	/^#define	MASKREG(reg)	((reg)&0xffff)$/
+MAX	../h/param.h	/^#define	MAX(a,b) (((a)>(b))?(a):(b))$/
+MAXBPG	../h/fs.h	/^#define	MAXBPG(fs) \\$/
+MCLALLOC	../h/mbuf.h	/^#define	MCLALLOC(m, i) \\$/
+MCLFREE	../h/mbuf.h	/^#define	MCLFREE(m) { \\$/
+MCLGET	../h/mbuf.h	/^#define	MCLGET(m) \\$/
+MFREE	../h/mbuf.h	/^#define	MFREE(m, n) \\$/
+MGET	../h/mbuf.h	/^#define	MGET(m, i, t) \\$/
+MIN	../h/param.h	/^#define	MIN(a,b) (((a)<(b))?(a):(b))$/
+MLOCK	../h/vmmac.h	/^#define MLOCK(c) { \\$/
+MTOCL	../h/mbuf.h	/^#define	MTOCL(m)	((struct mbuf *)(mtod((m), int)&~/
+MTUNIT	../vaxmba/mt.c	/^#define MTUNIT(dev)	(mutomt[MUUNIT(dev)])$/
+MUNLOCK	../h/vmmac.h	/^#define MUNLOCK(c) { \\$/
+MUUNIT	../vaxmba/mt.c	/^#define	MUUNIT(dev)	(minor(dev)&03)$/
+M_HASCL	../h/mbuf.h	/^#define	M_HASCL(m)	((m)->m_off >= MSIZE)$/
+Mgenassym	../vax/genassym.c	/^main()$/
+Minit_main	../sys/init_main.c	/^main(firstaddr)$/
+NHASH	../sys/ufs_namei.c	/^#define	NHASH(h, i, d)	((unsigned)((h) + (i) + 13 /
+NINDIR	../h/fs.h	/^#define	NINDIR(fs)	((fs)->fs_nindir)$/
+NPCONN	../vaxuba/npreg.h	/^#define NPCONN(a)	((minor(a)) & 0x03)$/
+NPDELAY	../vaxuba/npreg.h	/^#define NPDELAY(N)	{register int n = (N) >> 1; whi/
+NPUNIT	../vaxuba/npreg.h	/^#define NPUNIT(a)	((minor(a) >> 4) & 0x0F)$/
+NSPB	../h/fs.h	/^#define	NSPB(fs)	((fs)->fs_nspf << (fs)->fs_fragsh/
+NSPF	../h/fs.h	/^#define	NSPF(fs)	((fs)->fs_nspf)$/
+OCTET	../vaxuba/dmzreg.h	/^#define	OCTET(a)	((a%24)\/8)$/
+PCLUNIT	../vaxif/if_pcl.c	/^#define	PCLUNIT(x)	minor(x)$/
+PHYSOFF	../sys/sys_process.c	/^#define	PHYSOFF(p, o) \\$/
+PIDHASH	../h/proc.h	/^#define	PIDHASH(pid)	((pid) & (PIDHSZ - 1))$/
+PORTNUM	../vaxif/if_hy.h	/^#define PORTNUM(p)	(((p)->hys_gen_status >> 6) & 0/
+PROTOMASK	../vaxuba/npreg.h	/^#define PROTOMASK(x)	( 1 << (x) )$/
+PSUNIT	../vaxuba/ps.c	/^#define	PSUNIT(dev)	(minor(dev))$/
+PSWAIT	../vaxuba/ps.c	/^#define PSWAIT(psaddr) { \\$/
+QEUNIT	../vaxif/if_qe.c	/^#define	QEUNIT(x)	minor(x)$/
+QHASH	../sys/quota_kern.c	/^#define	QHASH(uid)	((unsigned)(uid) & (NQHASH-1))$/
+QUEUE_AT_HEAD	../vaxif/if_dmc.c	/^#define	QUEUE_AT_HEAD(qp, head, tail) \\$/
+QUEUE_AT_TAIL	../vaxif/if_dmc.c	/^#define QUEUE_AT_TAIL(qp, head, tail) \\$/
+RCSR0	../vaxuba/npreg.h	/^#define	RCSR0(x)	((x)->CSR0)$/
+RCSR1	../vaxuba/npreg.h	/^#define	RCSR1(x)	((x)->CSR1)$/
+RCSR2	../vaxuba/npreg.h	/^#define	RCSR2(x)	((x)->CSR2)$/
+RCSR3	../vaxuba/npreg.h	/^#define	RCSR3(x)	((x)->CSR3)$/
+RESET	../vaxuba/npreg.h	/^#define RESET(x) 	(WCSR3(x->iobase,0xff))$/
+RESTORPSADDR	../vaxuba/ps.c	/^#define RESTORPSADDR(psaddr, savepsaddr) { \\$/
+ROUND16	../vaxuba/npreg.h	/^#define ROUND16(x)	(((x) + 15) & (~0x0F)) \/* Round/
+ROUNDDOWN	../h/gprof.h	/^#define ROUNDDOWN(x,y)	(((x)\/(y))*(y))$/
+ROUNDUP	../h/gprof.h	/^#define ROUNDUP(x,y)	((((x)+(y)-1)\/(y))*(y))$/
+RTFREE	../net/route.h	/^#define	RTFREE(rt) \\$/
+RTHASHMOD	../net/route.h	/^#define RTHASHMOD(h)	((h) & (RTHASHSIZ - 1))$/
+RXUNIT	../vaxuba/rx.c	/^#define	RXUNIT(dev)	(minor(dev)>>3)$/
+Remrq	../vax/locore.s	/^ JSBENTRY(Remrq)$/
+Resume	../vax/locore.s	/^JSBENTRY(Resume)$/
+SAVEPSADDR	../vaxuba/ps.c	/^#define SAVEPSADDR(psaddr, savepsaddr) { \\$/
+SEQ_GEQ	../netinet/tcp_seq.h	/^#define	SEQ_GEQ(a,b)	((int)((a)-(b)) >= 0)$/
+SEQ_GT	../netinet/tcp_seq.h	/^#define	SEQ_GT(a,b)	((int)((a)-(b)) > 0)$/
+SEQ_LEQ	../netinet/tcp_seq.h	/^#define	SEQ_LEQ(a,b)	((int)((a)-(b)) <= 0)$/
+SEQ_LT	../netinet/tcp_seq.h	/^#define	SEQ_LT(a,b)	((int)((a)-(b)) < 0)$/
+SI	../netns/spidp.h	/^#define SI(x)	((struct spidp *)x)$/
+SSEQ_GEQ	../netns/spp_var.h	/^#define	SSEQ_GEQ(a,b)	(((short)((a)-(b))) >= 0)$/
+SSEQ_GT	../netns/spp_var.h	/^#define	SSEQ_GT(a,b)	(((short)((a)-(b))) > 0)$/
+SSEQ_LEQ	../netns/spp_var.h	/^#define	SSEQ_LEQ(a,b)	(((short)((a)-(b))) <= 0)$/
+SSEQ_LT	../netns/spp_var.h	/^#define	SSEQ_LT(a,b)	(((short)((a)-(b))) < 0)$/
+STOP	../vax/scb.s	/^#define	STOP(a)	.long	_X\/**\/a+HALT$/
+Setjmp	../vax/locore.s	/^JSBENTRY(Setjmp)$/
+Setrq	../vax/locore.s	/^ JSBENTRY(Setrq)$/
+Subyte	../vax/locore.s	/^JSBENTRY(Subyte)$/
+Suword	../vax/locore.s	/^JSBENTRY(Suword)$/
+Swtch	../vax/locore.s	/^JSBENTRY(Swtch)$/
+TCPS_HAVERCVDFIN	../netinet/tcp_fsm.h	/^#define	TCPS_HAVERCVDFIN(s)	((s) >= TCPS_TIME_WAIT/
+TCPS_HAVERCVDSYN	../netinet/tcp_fsm.h	/^#define	TCPS_HAVERCVDSYN(s)	((s) >= TCPS_SYN_RECEI/
+TCPT_RANGESET	../netinet/tcp_timer.h	/^#define	TCPT_RANGESET(tv, value, tvmin, tvmax) { \\/
+TCP_REASS	../netinet/tcp_input.c	/^#define	TCP_REASS(tp, ti, m, so, flags) { \\$/
+TEUNIT	../vaxuba/tm.c	/^#define	TEUNIT(dev)	(minor(dev)&03)$/
+TJUNIT	../vaxuba/ut.c	/^#define	TJUNIT(dev)	(minor(dev)&03)$/
+TMSCPCTLR	../vaxuba/tmscp.c	/^#define TMSCPCTLR(dev)	(utoctlr[TMSUNIT(dev)])$/
+TMSUNIT	../vaxuba/tmscp.c	/^#define	TMSUNIT(dev)	(minor(dev)&03)$/
+TMUNIT	../vaxuba/tm.c	/^#define	TMUNIT(dev)	(tetotm[TEUNIT(dev)])$/
+TRACER	../vaxuba/lpa.c	/^#	define TRACER(x)	printf(x)$/
+TRACERN	../vaxuba/lpa.c	/^#	define TRACERN(x, d)	printf(x, d)$/
+TSUNIT	../vaxuba/ts.c	/^#define	TSUNIT(dev)	(minor(dev)&03)$/
+TTHIWAT	../h/tty.h	/^#define	TTHIWAT(tp)	tthiwat[(tp)->t_ospeed&TTMASK]/
+TTLOWAT	../h/tty.h	/^#define	TTLOWAT(tp)	ttlowat[(tp)->t_ospeed&TTMASK]/
+TUUNIT	../vaxmba/ht.c	/^#define	TUUNIT(dev)	(minor(dev)&03)$/
+UBACVT	../vaxuba/dh.c	/^#define	UBACVT(x, uban)		(cbase[uban] + ((x)-(char/
+UBAI_ADDR	../vaxuba/ubavar.h	/^#define	UBAI_ADDR(i)	((int)((i)&0x3ffff))	\/* uba a/
+UBAI_BDP	../vaxuba/ubavar.h	/^#define	UBAI_BDP(i)	((int)(((unsigned)(i))>>28))$/
+UBAI_BOFF	../vaxuba/ubavar.h	/^#define	UBAI_BOFF(i)	((int)((i)&0x1ff))$/
+UBAI_MR	../vaxuba/ubavar.h	/^#define	UBAI_MR(i)	((int)((i)>>9)&0x1ff)$/
+UBAI_NMR	../vaxuba/ubavar.h	/^#define	UBAI_NMR(i)	((int)((i)>>18)&0x3ff)$/
+UBAPURGE	../vaxuba/ubareg.h	/^#define	UBAPURGE(uba, bdp) { \\$/
+UBA_PURGE750	../vaxuba/ubareg.h	/^#define	UBA_PURGE750(uba, bdp) { \\$/
+UBA_PURGE780	../vaxuba/ubareg.h	/^#define	UBA_PURGE780(uba, bdp) \\$/
+UIOCCMD	../h/ioctl.h	/^#define		UIOCCMD(n)	_IO(u, n)		\/* usr cntl op "n" /
+UMEM750	../vaxuba/ubareg.h	/^#define	UMEM750(i)	((u_short *)(0xfc0000-(i)*0x400/
+UMEM780	../vaxuba/ubareg.h	/^#define	UMEM780(i)	((u_short *)(0x20100000+(i)*0x4/
+UMEMA8600	../vaxuba/ubareg.h	/^#define	UMEMA8600(i)	((u_short *)(0x20100000+(i)*0/
+UMEMB8600	../vaxuba/ubareg.h	/^#define	UMEMB8600(i)	((u_short *)(0x22100000+(i)*0/
+UNIT	../vaxuba/dhu.c	/^#define	UNIT(x)	(minor(x))$/
+UNIcpy	../vax/mem.c	/^UNIcpy(uniadd, usradd, n, rw)$/
+USERMODE	../vax/machparam.h	/^#define	USERMODE(ps)	(((ps) & PSL_CURMOD) == PSL_C/
+UTUNIT	../vaxuba/ut.c	/^#define UTUNIT(dev)	(tjtout[TJUNIT(dev)])$/
+VAUNIT	../vaxuba/va.c	/^#define	VAUNIT(dev)	(minor(dev))$/
+VPUNIT	../vaxuba/vp.c	/^#define	VPUNIT(dev)	(minor(dev))$/
+VSUNIT	../vaxuba/vs.c	/^#define	VSUNIT(dev)	(minor(dev))$/
+VVUNIT	../vaxif/if_vv.c	/^#define	VVUNIT(x)	minor(x)$/
+WCSR0	../vaxuba/npreg.h	/^#define	WCSR0(x,y)	((x)->CSR0 = y)$/
+WCSR1	../vaxuba/npreg.h	/^#define	WCSR1(x,y)	((x)->CSR1 = y)$/
+WCSR2	../vaxuba/npreg.h	/^#define	WCSR2(x,y)	((x)->CSR2 = y)$/
+WCSR3	../vaxuba/npreg.h	/^#define	WCSR3(x,y)	((x)->CSR3 = y)$/
+WIFEXITED	../h/wait.h	/^#define WIFEXITED(x)	((x).w_stopval != WSTOPPED &&/
+WIFSIGNALED	../h/wait.h	/^#define WIFSIGNALED(x)	((x).w_stopval != WSTOPPED /
+WIFSTOPPED	../h/wait.h	/^#define WIFSTOPPED(x)	((x).w_stopval == WSTOPPED)$/
+XUNLOCK	../sys/vm_text.c	/^#define	XUNLOCK(xp) { \\$/
+X_LOCK	../sys/vm_text.c	/^#define X_LOCK(xp) { \\$/
+Xp	../sys/vm_pt.c	/^#define	Xp(a)	t = p->a; p->a = q->a; q->a = t;$/
+Xpp	../sys/vm_pt.c	/^#define	Xpp(a)	tp = p->a; p->a = q->a; q->a = tp;$/
+Xu	../sys/vm_pt.c	/^#define	Xu(a)	t = up->u_pcb.a; up->u_pcb.a = uq ->/
+Xup	../sys/vm_pt.c	/^#define	Xup(a)	tp = up->u_pcb.a; up->u_pcb.a = uq /
+_IO	../h/ioctl.h	/^#define	_IO(x,y)	(IOC_VOID|('x'<<8)|y)$/
+_IOR	../h/ioctl.h	/^#define	_IOR(x,y,t)	(IOC_OUT|((sizeof(t)&IOCPARM_M/
+_IOW	../h/ioctl.h	/^#define	_IOW(x,y,t)	(IOC_IN|((sizeof(t)&IOCPARM_MA/
+_IOWR	../h/ioctl.h	/^#define	_IOWR(x,y,t)	(IOC_INOUT|((sizeof(t)&IOCPAR/
+accattach	../vaxif/if_acc.c	/^accattach(ui)$/
+accept	../sys/uipc_syscalls.c	/^accept()$/
+access	../sys/ufs_fio.c	/^access(ip, mode)$/
+accinit	../vaxif/if_acc.c	/^accinit(unit)$/
+accinputreset	../vaxif/if_acc.c	/^accinputreset(addr, unit)$/
+accprobe	../vaxif/if_acc.c	/^accprobe(reg)$/
+accreset	../vaxif/if_acc.c	/^accreset(unit, uban)$/
+accrint	../vaxif/if_acc.c	/^accrint(unit)$/
+accstart	../vaxif/if_acc.c	/^accstart(dev)$/
+acct	../sys/kern_acct.c	/^acct()$/
+accxint	../vaxif/if_acc.c	/^accxint(unit)$/
+adattach	../vaxuba/ad.c	/^adattach(ui)$/
+adclose	../vaxuba/ad.c	/^adclose(dev)$/
+addupc	../vax/locore.s	/^ENTRY(addupc, 0)$/
+adintr	../vaxuba/ad.c	/^adintr(dev)$/
+adioctl	../vaxuba/ad.c	/^adioctl(dev, cmd, addr, flag)$/
+adjtime	../sys/kern_time.c	/^adjtime()$/
+adopen	../vaxuba/ad.c	/^adopen(dev)$/
+adprobe	../vaxuba/ad.c	/^adprobe(reg)$/
+adreset	../vaxuba/ad.c	/^adreset(uban)$/
+alloc	../sys/ufs_alloc.c	/^alloc(ip, bpref, size)$/
+allocbuf	../vax/ufs_machdep.c	/^allocbuf(tp, size)$/
+alloccg	../sys/ufs_alloc.c	/^alloccg(ip, cg, bpref, size)$/
+alloccgblk	../sys/ufs_alloc.c	/^alloccgblk(fs, cgp, bpref)$/
+anycl	../h/vmmac.h	/^#define	anycl(pte,fld)	((pte)->fld)$/
+arpinput	../netinet/if_ether.c	/^arpinput(ac, m)$/
+arpioctl	../netinet/if_ether.c	/^arpioctl(cmd, data)$/
+arpresolve	../netinet/if_ether.c	/^arpresolve(ac, m, destip, desten, usetrailers)$/
+arptfree	../netinet/if_ether.c	/^arptfree(at)$/
+arptimer	../netinet/if_ether.c	/^arptimer()$/
+arptnew	../netinet/if_ether.c	/^arptnew(addr)$/
+arpwhohas	../netinet/if_ether.c	/^arpwhohas(ac, addr)$/
+astoff	../vax/pcb.h	/^#define	astoff() \\$/
+aston	../vax/pcb.h	/^#define	aston() \\$/
+ave	../h/vmmac.h	/^#define	ave(smooth, cnt, time) \\$/
+b_to_q	../sys/tty_subr.c	/^b_to_q(cp, cc, q)$/
+badaddr	../vax/locore.s	/^_badaddr:$/
+badblock	../sys/ufs_subr.c	/^badblock(fs, bn)$/
+baddr	../sys/ufs_bio.c	/^baddr(dev, blkno, size)$/
+bawrite	../sys/ufs_bio.c	/^bawrite(bp)$/
+bcmp	../sys/subr_xxx.c	/^bcmp(s1, s2, len)$/
+bdbtofsb	../h/param.h	/^#define	bdbtofsb(bn)	((bn) \/ (BLKDEV_IOSIZE\/DEV_BS/
+bdwrite	../sys/ufs_bio.c	/^bdwrite(bp)$/
+bflush	../sys/ufs_bio.c	/^bflush(dev)$/
+bfree	../vax/ufs_machdep.c	/^bfree(bp)$/
+bhinit	../sys/init_main.c	/^bhinit()$/
+bind	../sys/uipc_syscalls.c	/^bind()$/
+binit	../sys/init_main.c	/^binit()$/
+binshash	../h/buf.h	/^#define	binshash(bp, dp) { \\$/
+binsheadfree	../h/buf.h	/^#define	binsheadfree(bp, dp) { \\$/
+binstailfree	../h/buf.h	/^#define	binstailfree(bp, dp) { \\$/
+binval	../sys/ufs_bio.c	/^binval(dev)$/
+biodone	../sys/ufs_bio.c	/^biodone(bp)$/
+biowait	../sys/ufs_bio.c	/^biowait(bp)$/
+bkclose	../sys/tty_bk.c	/^bkclose(tp)$/
+bkinput	../sys/tty_bk.c	/^bkinput(c, tp)$/
+bkioctl	../sys/tty_bk.c	/^bkioctl(tp, cmd, data, flag)$/
+bkopen	../sys/tty_bk.c	/^bkopen(dev, tp)$/
+bkread	../sys/tty_bk.c	/^bkread(tp, uio)$/
+blkatoff	../sys/ufs_namei.c	/^blkatoff(ip, offset, res)$/
+blkflush	../sys/ufs_bio.c	/^blkflush(dev, blkno, size)$/
+blkmap	../h/fs.h	/^#define blkmap(fs, map, loc) \\$/
+blknum	../h/fs.h	/^#define blknum(fs, fsb)		\/* calculates rounddown(f/
+blkoff	../h/fs.h	/^#define blkoff(fs, loc)		\/* calculates (loc % fs->/
+blkpref	../sys/ufs_alloc.c	/^blkpref(ip, lbn, indx, bap)$/
+blkroundup	../h/fs.h	/^#define blkroundup(fs, size)	\/* calculates roundup/
+blksize	../h/fs.h	/^#define blksize(fs, ip, lbn) \\$/
+blkstofrags	../h/fs.h	/^#define blkstofrags(fs, blks)	\/* calculates (blks /
+bmap	../sys/ufs_bmap.c	/^bmap(ip, bn, rwflg, size)$/
+boot	../vax/machdep.c	/^boot(paniced, arghowto)$/
+bread	../sys/ufs_bio.c	/^bread(dev, blkno, size)$/
+breada	../sys/ufs_bio.c	/^breada(dev, blkno, size, rablkno, rabsize)$/
+brealloc	../sys/ufs_bio.c	/^brealloc(bp, size)$/
+brelse	../sys/ufs_bio.c	/^brelse(bp)$/
+bremfree	../h/buf.h	/^#define	bremfree(bp) { \\$/
+bremhash	../h/buf.h	/^#define	bremhash(bp) { \\$/
+bswinit	../sys/init_main.c	/^bswinit()$/
+btoc	../vax/machparam.h	/^#define	btoc(x)	((((unsigned)(x)+511)>>9))$/
+btodb	../h/param.h	/^#define	btodb(bytes)	 		\/* calculates (bytes \/ DEV/
+btokmx	../h/vmmac.h	/^#define	btokmx(b)	(((b) - usrpt) \/ NPTEPG)$/
+btop	../h/vmmac.h	/^#define	btop(x)		(((unsigned)(x)) >> PGSHIFT)$/
+bufstats	../sys/ufs_subr.c	/^bufstats()$/
+bwrite	../sys/ufs_bio.c	/^bwrite(bp)$/
+cacheinval	../h/inode.h	/^#define cacheinval(ip)	\\$/
+cacheinvalall	../sys/ufs_namei.c	/^cacheinvalall()$/
+calloc	../sys/subr_xxx.c	/^calloc(size)$/
+catcher	../vax/locore.s	/^_catcher:$/
+catq	../sys/tty_subr.c	/^catq(from, to)$/
+cbtocylno	../h/fs.h	/^#define cbtocylno(fs, bno) \\$/
+cbtorpos	../h/fs.h	/^#define cbtorpos(fs, bno) \\$/
+cfreemem	../sys/subr_xxx.c	/^cfreemem(cp, size)$/
+cgbase	../h/fs.h	/^#define	cgbase(fs, c)	((daddr_t)((fs)->fs_fpg * (c/
+cgdmin	../h/fs.h	/^#define	cgdmin(fs, c)	(cgstart(fs, c) + (fs)->fs_d/
+cgimin	../h/fs.h	/^#define	cgimin(fs, c)	(cgstart(fs, c) + (fs)->fs_i/
+cgsblock	../h/fs.h	/^#define	cgsblock(fs, c)	(cgstart(fs, c) + (fs)->fs/
+cgstart	../h/fs.h	/^#define cgstart(fs, c) \\$/
+cgtod	../h/fs.h	/^#define	cgtod(fs, c)	(cgstart(fs, c) + (fs)->fs_cb/
+chdir	../sys/ufs_syscalls.c	/^chdir()$/
+chdirec	../sys/ufs_syscalls.c	/^chdirec(ipp)$/
+checkpage	../sys/vm_page.c	/^checkpage(hand, whichhand)$/
+checkpath	../sys/ufs_namei.c	/^checkpath(source, target)$/
+chgprot	../vax/vm_machdep.c	/^chgprot(addr, tprot)$/
+chkdq	../sys/quota_ufs.c	/^chkdq(ip, change, force)$/
+chkiq	../sys/quota_ufs.c	/^chkiq(dev, ip, uid, force)$/
+chksize	../vax/vm_machdep.c	/^chksize(ts, ids, uds, ss)$/
+chmod	../sys/ufs_syscalls.c	/^chmod()$/
+chmod1	../sys/ufs_syscalls.c	/^chmod1(ip, mode)$/
+chown	../sys/ufs_syscalls.c	/^chown()$/
+chown1	../sys/ufs_syscalls.c	/^chown1(ip, uid, gid)$/
+chroot	../sys/ufs_syscalls.c	/^chroot()$/
+cinit	../sys/init_main.c	/^cinit()$/
+claligned	../h/param.h	/^#define	claligned(x)	((((int)(x))&CLOFSET)==0)$/
+clbase	../h/param.h	/^#define	clbase(i)	(i)$/
+cleanup	../sys/vm_page.c	/^cleanup()$/
+clear_lcn	../vaxif/if_ddn.c	/^static void clear_lcn(ds, dc)$/
+clearseg	../vax/locore.s	/^ENTRY(clearseg, 0)$/
+clkwrap	../vax/clock.h	/^#define	clkwrap()	(((unsigned)mfpr(TODR) - TODRZER/
+close	../sys/kern_descrip.c	/^close()$/
+closedq	../sys/quota_kern.c	/^closedq(mp)$/
+closef	../sys/kern_descrip.c	/^closef(fp)$/
+clrbit	../h/param.h	/^#define	clrbit(a,i)	((a)[(i)\/NBBY] &= ~(1<<((i)%NB/
+clrblock	../sys/ufs_subr.c	/^clrblock(fs, cp, h)$/
+clrbuf	../h/buf.h	/^#define	clrbuf(bp) { \\$/
+clrnd	../h/param.h	/^#define	clrnd(i)	(i)$/
+cltom	../h/mbuf.h	/^#define	cltom(x) ((struct mbuf *)((int)mbutl + ((x/
+cmtopg	../h/cmap.h	/^#define	cmtopg(x)	((((x)-1) * CLSIZE) + firstfree)/
+cnclose	../vax/cons.c	/^cnclose(dev)$/
+cnioctl	../vax/cons.c	/^cnioctl(dev, cmd, addr, flag)$/
+cnopen	../vax/cons.c	/^cnopen(dev, flag)$/
+cnputc	../vax/cons.c	/^cnputc(c)$/
+cnread	../vax/cons.c	/^cnread(dev, uio)$/
+cnrfl	../vax/flp.c	/^cnrfl(c)$/
+cnrint	../vax/cons.c	/^cnrint(dev)$/
+cnstart	../vax/cons.c	/^cnstart(tp)$/
+cnwrite	../vax/cons.c	/^cnwrite(dev, uio)$/
+cnxint	../vax/cons.c	/^cnxint(dev)$/
+compat	../sys/init_sysent.c	/^#define	compat(n, name)	n, o\/**\/name$/
+compress	../sys/kern_acct.c	/^compress(t, ut)$/
+configure	../vax/autoconf.c	/^configure()$/
+connect	../sys/uipc_syscalls.c	/^connect()$/
+convert_ip_addr	../vaxif/if_ddn.c	/^static boolean convert_ip_addr(ip_addr, x25addr)$/
+convert_x25_addr	../vaxif/if_ddn.c	/^static int convert_x25_addr(x25addr)$/
+conxfl	../vax/flp.c	/^conxfl()$/
+copen	../sys/ufs_syscalls.c	/^copen(mode, arg, fname)$/
+copyin	../vax/locore.s	/^JSBENTRY(Copyin)$/
+copyinstr	../vax/locore.s	/^ENTRY(copyinstr, R6)$/
+copyout	../vax/locore.s	/^JSBENTRY(Copyout)$/
+copyoutstr	../vax/locore.s	/^ENTRY(copyoutstr, R6)$/
+copyseg	../vax/locore.s	/^ENTRY(copyseg, 0)$/
+copystr	../vax/locore.s	/^ENTRY(copystr, R6)$/
+core	../sys/kern_sig.c	/^core()$/
+creat	../sys/ufs_syscalls.c	/^creat()$/
+cssattach	../vaxif/if_css.c	/^cssattach(ui)$/
+cssinit	../vaxif/if_css.c	/^cssinit(unit)$/
+cssprobe	../vaxif/if_css.c	/^cssprobe(reg)$/
+cssreset	../vaxif/if_css.c	/^cssreset(unit, uban)$/
+cssrint	../vaxif/if_css.c	/^cssrint(unit)$/
+cssstart	../vaxif/if_css.c	/^cssstart(dev)$/
+cssxint	../vaxif/if_css.c	/^cssxint(unit)$/
+ctattach	../vaxuba/ct.c	/^ctattach(ui)$/
+ctclose	../vaxuba/ct.c	/^ctclose(dev)$/
+ctintr	../vaxuba/ct.c	/^ctintr(dev)$/
+ctob	../vax/machparam.h	/^#define	ctob(x)	((x)<<9)$/
+ctod	../vax/machparam.h	/^#define	ctod(x)	(x)$/
+ctopen	../vaxuba/ct.c	/^ctopen(dev)$/
+ctopt	../h/vmmac.h	/^#define	ctopt(x)	(((x)+NPTEPG-1)\/NPTEPG)$/
+ctos	../vax/machparam.h	/^#define	ctos(x)	(x)$/
+ctprobe	../vaxuba/ct.c	/^ctprobe(reg)$/
+ctwrite	../vaxuba/ct.c	/^ctwrite(dev, uio)$/
+dblksize	../h/fs.h	/^#define dblksize(fs, dip, lbn) \\$/
+dbtob	../h/param.h	/^#define	dbtob(db)			\/* calculates (db * DEV_BSIZE)/
+dbtofsb	../h/fs.h	/^#define	dbtofsb(fs, b)	((b) >> (fs)->fs_fsbtodb)$/
+ddn_data	../vaxif/if_ddn.c	/^static void ddn_data(unit, chan, cc, rcnt)$/
+ddn_iorq	../vaxif/if_ddn.c	/^static void ddn_iorq(ds, dc, len, func)$/
+ddn_start	../vaxif/if_ddn.c	/^static void ddn_start(ds, dc)$/
+ddn_supr	../vaxif/if_ddn.c	/^static void ddn_supr(unit, chan, cc)$/
+ddnattach	../vaxif/if_ddn.c	/^ddnattach(ui)$/
+ddninit	../vaxif/if_ddn.c	/^ddninit(unit)$/
+ddnintr	../vaxif/if_ddn.c	/^ddnintr(unit)$/
+ddnioctl	../vaxif/if_ddn.c	/^ddnioctl(ifp, cmd, data)$/
+ddnoutput	../vaxif/if_ddn.c	/^ddnoutput(ifp, m0, dst)$/
+ddnprobe	../vaxif/if_ddn.c	/^ddnprobe(reg)$/
+ddnreset	../vaxif/if_ddn.c	/^ddnreset(unit, uban)$/
+ddntimer	../vaxif/if_ddn.c	/^int ddntimer(unit)$/
+de_setaddr	../vaxif/if_de.c	/^de_setaddr(physaddr, unit)$/
+deattach	../vaxif/if_de.c	/^deattach(ui)$/
+decode_ring	../vaxif/if_ddn.c	/^static boolean decode_ring(p)$/
+deinit	../vaxif/if_de.c	/^deinit(unit)$/
+deintr	../vaxif/if_de.c	/^deintr(unit)$/
+deioctl	../vaxif/if_de.c	/^deioctl(ifp, cmd, data)$/
+delquota	../sys/quota_kern.c	/^delquota(q)$/
+deoutput	../vaxif/if_de.c	/^deoutput(ifp, m0, dst)$/
+deprobe	../vaxif/if_de.c	/^deprobe(reg)$/
+deread	../vaxif/if_de.c	/^deread(ds, ifrw, len)$/
+derecv	../vaxif/if_de.c	/^derecv(unit)$/
+dereset	../vaxif/if_de.c	/^dereset(unit, uban)$/
+destart	../vaxif/if_de.c	/^destart(unit)$/
+dewait	../vaxif/if_de.c	/^dewait(ui, fn)$/
+dhattach	../vaxuba/dh.c	/^dhattach(ui)$/
+dhclose	../vaxuba/dh.c	/^dhclose(dev, flag)$/
+dhioctl	../vaxuba/dh.c	/^dhioctl(dev, cmd, data, flag)$/
+dhopen	../vaxuba/dh.c	/^dhopen(dev, flag)$/
+dhparam	../vaxuba/dh.c	/^dhparam(unit)$/
+dhprobe	../vaxuba/dh.c	/^dhprobe(reg)$/
+dhread	../vaxuba/dh.c	/^dhread(dev, uio)$/
+dhreset	../vaxuba/dh.c	/^dhreset(uban)$/
+dhrint	../vaxuba/dh.c	/^dhrint(dh)$/
+dhstart	../vaxuba/dh.c	/^dhstart(tp)$/
+dhstop	../vaxuba/dh.c	/^dhstop(tp, flag)$/
+dhtimer	../vaxuba/dh.c	/^dhtimer()$/
+dhuattach	../vaxuba/dhu.c	/^dhuattach(ui)$/
+dhuclose	../vaxuba/dhu.c	/^dhuclose(dev, flag)$/
+dhuioctl	../vaxuba/dhu.c	/^dhuioctl(dev, cmd, data, flag)$/
+dhumctl	../vaxuba/dhu.c	/^dhumctl(dev, bits, how)$/
+dhuopen	../vaxuba/dhu.c	/^dhuopen(dev, flag)$/
+dhuparam	../vaxuba/dhu.c	/^dhuparam(unit)$/
+dhuprobe	../vaxuba/dhu.c	/^dhuprobe(reg)$/
+dhuread	../vaxuba/dhu.c	/^dhuread(dev, uio)$/
+dhureset	../vaxuba/dhu.c	/^dhureset(uban)$/
+dhurint	../vaxuba/dhu.c	/^dhurint(dhu)$/
+dhustart	../vaxuba/dhu.c	/^dhustart(tp)$/
+dhustop	../vaxuba/dhu.c	/^dhustop(tp, flag)$/
+dhutodm	../vaxuba/dhu.c	/^dhutodm(bits)$/
+dhuwrite	../vaxuba/dhu.c	/^dhuwrite(dev, uio)$/
+dhuxint	../vaxuba/dhu.c	/^dhuxint(dhu)$/
+dhwrite	../vaxuba/dh.c	/^dhwrite(dev, uio)$/
+dhxint	../vaxuba/dh.c	/^dhxint(dh)$/
+dirbad	../sys/ufs_namei.c	/^dirbad(ip, offset, how)$/
+dirbadentry	../sys/ufs_namei.c	/^dirbadentry(ep, entryoffsetinblock)$/
+dirempty	../sys/ufs_namei.c	/^dirempty(ip, parentino)$/
+direnter	../sys/ufs_namei.c	/^direnter(ip, ndp)$/
+dirpref	../sys/ufs_alloc.c	/^dirpref(fs)$/
+dirremove	../sys/ufs_namei.c	/^dirremove(ndp)$/
+dirrewrite	../sys/ufs_namei.c	/^dirrewrite(dp, ip, ndp)$/
+dirty	../vax/pte.h	/^#define	dirty(pte)	((pte)->pg_fod == 0 && (pte)->p/
+dirtycl	../h/vmmac.h	/^#define	dirtycl(pte)	dirty(pte)$/
+discquota	../sys/quota_kern.c	/^discquota(uid, ip)$/
+disksort	../sys/ufs_dsort.c	/^disksort(dp, bp)$/
+distcl	../h/vmmac.h	/^#define	distcl(pte)$/
+distpte	../sys/vm_pt.c	/^distpte(xp, tp, dpte)$/
+dmapsize	../sys/vm_page.c	/^dmapsize(dmin, dmax)$/
+dmattach	../vaxuba/dh.c	/^dmattach(ui)$/
+dmcattach	../vaxif/if_dmc.c	/^dmcattach(ui)$/
+dmcinit	../vaxif/if_dmc.c	/^dmcinit(unit)$/
+dmcioctl	../vaxif/if_dmc.c	/^dmcioctl(ifp, cmd, data)$/
+dmcload	../vaxif/if_dmc.c	/^dmcload(sc, type, w0, w1)$/
+dmcoutput	../vaxif/if_dmc.c	/^dmcoutput(ifp, m0, dst)$/
+dmcprobe	../vaxif/if_dmc.c	/^dmcprobe(reg)$/
+dmcreset	../vaxif/if_dmc.c	/^dmcreset(unit, uban)$/
+dmcrestart	../vaxif/if_dmc.c	/^dmcrestart(unit)$/
+dmcrint	../vaxif/if_dmc.c	/^dmcrint(unit)$/
+dmcstart	../vaxif/if_dmc.c	/^dmcstart(dev)$/
+dmctl	../vaxuba/dh.c	/^dmctl(dev, bits, how)$/
+dmcwatch	../vaxif/if_dmc.c	/^dmcwatch()$/
+dmcxint	../vaxif/if_dmc.c	/^dmcxint(unit)$/
+dmfattach	../vaxuba/dmf.c	/^dmfattach(ui)$/
+dmfclose	../vaxuba/dmf.c	/^dmfclose(dev, flag)$/
+dmfdaint	../vaxuba/dmf.c	/^dmfdaint()$/
+dmfdbint	../vaxuba/dmf.c	/^dmfdbint()$/
+dmfioctl	../vaxuba/dmf.c	/^dmfioctl(dev, cmd, data, flag)$/
+dmflclose	../vaxuba/dmf.c	/^dmflclose(dev, flag)$/
+dmflint	../vaxuba/dmf.c	/^dmflint(dmf)$/
+dmflopen	../vaxuba/dmf.c	/^dmflopen(dev, flag)$/
+dmflout	../vaxuba/dmf.c	/^dmflout(dev, cp, n)$/
+dmflwrite	../vaxuba/dmf.c	/^dmflwrite(dev, uio)$/
+dmfmctl	../vaxuba/dmf.c	/^dmfmctl(dev, bits, how)$/
+dmfopen	../vaxuba/dmf.c	/^dmfopen(dev, flag)$/
+dmfparam	../vaxuba/dmf.c	/^dmfparam(unit)$/
+dmfprobe	../vaxuba/dmf.c	/^dmfprobe(reg, ctlr)$/
+dmfread	../vaxuba/dmf.c	/^dmfread(dev, uio)$/
+dmfreset	../vaxuba/dmf.c	/^dmfreset(uban)$/
+dmfrint	../vaxuba/dmf.c	/^dmfrint(dmf)$/
+dmfsrint	../vaxuba/dmf.c	/^dmfsrint()$/
+dmfstart	../vaxuba/dmf.c	/^dmfstart(tp)$/
+dmfstop	../vaxuba/dmf.c	/^dmfstop(tp, flag)$/
+dmfsxint	../vaxuba/dmf.c	/^dmfsxint()$/
+dmftodm	../vaxuba/dmf.c	/^dmftodm(bits)$/
+dmfwrite	../vaxuba/dmf.c	/^dmfwrite(dev, uio)$/
+dmfxint	../vaxuba/dmf.c	/^dmfxint(dmf)$/
+dmintr	../vaxuba/dh.c	/^dmintr(dm)$/
+dmopen	../vaxuba/dh.c	/^dmopen(dev)$/
+dmprobe	../vaxuba/dh.c	/^dmprobe(reg)$/
+dmtodhu	../vaxuba/dhu.c	/^dmtodhu(bits)$/
+dmtodmf	../vaxuba/dmf.c	/^dmtodmf(bits)$/
+dmtodmz	../vaxuba/dmz.c	/^dmtodmz(bits)$/
+dmtodz	../vaxuba/dz.c	/^dmtodz(bits)$/
+dmzattach	../vaxuba/dmz.c	/^dmzattach(ui)$/
+dmzclose	../vaxuba/dmz.c	/^dmzclose(device, flag)$/
+dmzioctl	../vaxuba/dmz.c	/^dmzioctl(device, command, data, flag)$/
+dmzmctl	../vaxuba/dmz.c	/^dmzmctl(unit, bits, how)$/
+dmzopen	../vaxuba/dmz.c	/^dmzopen(device, flag)$/
+dmzparam	../vaxuba/dmz.c	/^dmzparam(unit)$/
+dmzprobe	../vaxuba/dmz.c	/^dmzprobe(reg)$/
+dmzread	../vaxuba/dmz.c	/^dmzread(device, uio)$/
+dmzreset	../vaxuba/dmz.c	/^dmzreset(uban)$/
+dmzrint	../vaxuba/dmz.c	/^dmzrint(controller, octet)$/
+dmzrinta	../vaxuba/dmz.c	/^dmzrinta(controller)$/
+dmzrintb	../vaxuba/dmz.c	/^dmzrintb(controller)$/
+dmzrintc	../vaxuba/dmz.c	/^dmzrintc(controller)$/
+dmzstart	../vaxuba/dmz.c	/^dmzstart(tp)$/
+dmzstop	../vaxuba/dmz.c	/^dmzstop(tp, flag)$/
+dmztodm	../vaxuba/dmz.c	/^dmztodm(rms, lcr)$/
+dmzwrite	../vaxuba/dmz.c	/^dmzwrite(device, uio)$/
+dmzxint	../vaxuba/dmz.c	/^dmzxint(controller, octet)$/
+dmzxinta	../vaxuba/dmz.c	/^dmzxinta(controller)$/
+dmzxintb	../vaxuba/dmz.c	/^dmzxintb(controller)$/
+dmzxintc	../vaxuba/dmz.c	/^dmzxintc(controller)$/
+dnattach	../vaxuba/dn.c	/^dnattach(ui)$/
+dnclose	../vaxuba/dn.c	/^dnclose(dev, flag)$/
+dnintr	../vaxuba/dn.c	/^dnintr(dev)$/
+dnopen	../vaxuba/dn.c	/^dnopen(dev, flag)$/
+dnprobe	../vaxuba/dn.c	/^dnprobe(reg)$/
+dnwrite	../vaxuba/dn.c	/^dnwrite(dev, uio)$/
+doadump	../vax/locore.s	/^_doadump:$/
+domaininit	../sys/uipc_domain.c	/^domaininit()$/
+donice	../sys/kern_resource.c	/^donice(p, n)$/
+dorti	../vax/machdep.c	/^dorti()$/
+dowarn	../sys/quota_sys.c	/^dowarn(q, dev)$/
+dpageout	../sys/vm_page.c	/^dpageout(p, dp, n)$/
+dptopte	../h/vmmac.h	/^#define	dptopte(p, i)		((p)->p_p0br + ((p)->p_tsiz/
+dptov	../h/vmmac.h	/^#define	dptov(p, i)	((unsigned)(stoc(ctos((p)->p_t/
+dqalloc	../sys/quota_kern.c	/^dqalloc(uid, dev)$/
+dqp	../sys/quota_subr.c	/^dqp(q, dev)$/
+dqrele	../sys/quota_kern.c	/^dqrele(dq)$/
+dtob	../vax/machparam.h	/^#define	dtob(x)	((x)<<9)$/
+dtoc	../vax/machparam.h	/^#define	dtoc(x)	(x)$/
+dtog	../h/fs.h	/^#define	dtog(fs, d)	((d) \/ (fs)->fs_fpg)$/
+dtogd	../h/fs.h	/^#define	dtogd(fs, d)	((d) % (fs)->fs_fpg)$/
+dtom	../h/mbuf.h	/^#define	dtom(x)		((struct mbuf *)((int)x & ~(MSIZE/
+dumpsys	../vax/machdep.c	/^dumpsys()$/
+dup	../sys/kern_descrip.c	/^dup()$/
+dup2	../sys/kern_descrip.c	/^dup2()$/
+dupit	../sys/kern_descrip.c	/^dupit(fd, fp, flags)$/
+dzattach	../vaxuba/dz.c	/^dzattach(ui)$/
+dzclose	../vaxuba/dz.c	/^dzclose(dev, flag)$/
+dzdma	../vax/locore.s	/^dzdma:$/
+dzioctl	../vaxuba/dz.c	/^dzioctl(dev, cmd, data, flag)$/
+dzmctl	../vaxuba/dz.c	/^dzmctl(dev, bits, how)$/
+dzopen	../vaxuba/dz.c	/^dzopen(dev, flag)$/
+dzparam	../vaxuba/dz.c	/^dzparam(unit)$/
+dzprobe	../vaxuba/dz.c	/^dzprobe(reg)$/
+dzread	../vaxuba/dz.c	/^dzread(dev, uio)$/
+dzreset	../vaxuba/dz.c	/^dzreset(uban)$/
+dzrint	../vaxuba/dz.c	/^dzrint(dz)$/
+dzscan	../vaxuba/dz.c	/^dzscan()$/
+dzstart	../vaxuba/dz.c	/^dzstart(tp)$/
+dzstop	../vaxuba/dz.c	/^dzstop(tp, flag)$/
+dztimer	../vaxuba/dz.c	/^dztimer()$/
+dztodm	../vaxuba/dz.c	/^dztodm(bits)$/
+dzwait	../vaxuba/dz.c	/^#define dzwait(x)	while (((x)->dzlcs & DZ_ACK) == /
+dzwrite	../vaxuba/dz.c	/^dzwrite(dev, uio)$/
+dzxint	../vaxuba/dz.c	/^dzxint(tp)$/
+ec_setaddr	../vaxif/if_ec.c	/^ec_setaddr(physaddr,unit)$/
+ecattach	../vaxif/if_ec.c	/^ecattach(ui)$/
+eccollide	../vaxif/if_ec.c	/^eccollide(unit)$/
+ecget	../vaxif/if_ec.c	/^ecget(ecbuf, totlen, off0, ifp)$/
+ecinit	../vaxif/if_ec.c	/^ecinit(unit)$/
+ecioctl	../vaxif/if_ec.c	/^ecioctl(ifp, cmd, data)$/
+ecoutput	../vaxif/if_ec.c	/^ecoutput(ifp, m0, dst)$/
+ecprobe	../vaxif/if_ec.c	/^ecprobe(reg, ui)$/
+ecput	../vaxif/if_ec.c	/^ecput(ecbuf, m)$/
+ecread	../vaxif/if_ec.c	/^ecread(unit)$/
+ecreset	../vaxif/if_ec.c	/^ecreset(unit, uban)$/
+ecrint	../vaxif/if_ec.c	/^ecrint(unit)$/
+ecstart	../vaxif/if_ec.c	/^ecstart(unit)$/
+ecubamem	../vaxif/if_ec.c	/^ecubamem(ui, uban)$/
+ecxint	../vaxif/if_ec.c	/^ecxint(unit)$/
+enattach	../vaxif/if_en.c	/^enattach(ui)$/
+encollide	../vaxif/if_en.c	/^encollide(unit)$/
+endocoll	../vaxif/if_en.c	/^endocoll(unit)$/
+eninit	../vaxif/if_en.c	/^eninit(unit)$/
+enioctl	../vaxif/if_en.c	/^enioctl(ifp, cmd, data)$/
+enoutput	../vaxif/if_en.c	/^enoutput(ifp, m0, dst)$/
+enprobe	../vaxif/if_en.c	/^enprobe(reg)$/
+enreset	../vaxif/if_en.c	/^enreset(unit, uban)$/
+enrint	../vaxif/if_en.c	/^enrint(unit)$/
+enstart	../vaxif/if_en.c	/^enstart(dev)$/
+enswab	../vaxif/if_en.c	/^enswab(from, to, n)$/
+entergroup	../sys/kern_prot.c	/^entergroup(gid)$/
+enxint	../vaxif/if_en.c	/^enxint(unit)$/
+errinfo	../vaxuba/tmscp.c	/^errinfo(st)$/
+ether_sprintf	../netinet/if_ether.c	/^ether_sprintf(ap)$/
+ex_setaddr	../vaxif/if_ex.c	/^ex_setaddr(physaddr, unit)$/
+exattach	../vaxif/if_ex.c	/^exattach(ui)$/
+excdint	../vaxif/if_ex.c	/^excdint(unit)$/
+exconfig	../vaxif/if_ex.c	/^exconfig(ui, itype)$/
+execv	../sys/kern_exec.c	/^execv()$/
+execve	../sys/kern_exec.c	/^execve()$/
+exgetcbuf	../vaxif/if_ex.c	/^exgetcbuf(xs)$/
+exhangrcv	../vaxif/if_ex.c	/^exhangrcv(unit)$/
+exinit	../vaxif/if_ex.c	/^exinit(unit)$/
+exioctl	../vaxif/if_ex.c	/^exioctl(ifp, cmd, data)$/
+exit	../sys/kern_exit.c	/^exit(rv)$/
+exoutput	../vaxif/if_ex.c	/^exoutput(ifp, m0, dst)$/
+expand	../sys/vm_proc.c	/^expand(change, region)$/
+exprobe	../vaxif/if_ex.c	/^exprobe(reg)$/
+exrecv	../vaxif/if_ex.c	/^exrecv(unit, bp)$/
+exreset	../vaxif/if_ex.c	/^exreset(unit, uban)$/
+exstart	../vaxif/if_ex.c	/^exstart(unit)$/
+exwatch	../vaxif/if_ex.c	/^exwatch(unit)$/
+falloc	../sys/kern_descrip.c	/^falloc()$/
+fchmod	../sys/ufs_syscalls.c	/^fchmod()$/
+fchown	../sys/ufs_syscalls.c	/^fchown()$/
+fcntl	../sys/kern_descrip.c	/^fcntl()$/
+ffs	../sys/subr_xxx.c	/^ffs(mask)$/
+fgetown	../sys/kern_descrip.c	/^fgetown(fp, valuep)$/
+filter	../sys/kern_synch.c	/^#define	filter(loadav) ((2 * (loadav)) \/ (2 * (loa/
+fioctl	../sys/kern_descrip.c	/^fioctl(fp, cmd, value)$/
+fixctlrmask	../vax/autoconf.c	/^fixctlrmask()$/
+flclose	../vax/flp.c	/^flclose(dev, flag)$/
+flock	../sys/kern_descrip.c	/^flock()$/
+flopen	../vax/flp.c	/^flopen(dev, flag)$/
+floperation	../vax/flp.c	/^floperation(rw, uio)$/
+flread	../vax/flp.c	/^flread(dev, uio)$/
+flstart	../vax/flp.c	/^flstart()$/
+flwrite	../vax/flp.c	/^flwrite(dev, uio)$/
+fodkluster	../sys/vm_page.c	/^fodkluster(p, v0, pte0, pkl, dev, pbn)$/
+forceclose	../sys/sys_inode.c	/^forceclose(dev)$/
+fork	../sys/kern_fork.c	/^fork()$/
+fork1	../sys/kern_fork.c	/^fork1(isvfork)$/
+fragacct	../sys/ufs_subr.c	/^fragacct(fs, fragmap, fraglist, cnt)$/
+fragextend	../sys/ufs_alloc.c	/^fragextend(ip, cg, bprev, osize, nsize)$/
+fragnum	../h/fs.h	/^#define fragnum(fs, fsb)	\/* calculates (fsb % fs->/
+fragoff	../h/fs.h	/^#define fragoff(fs, loc)	\/* calculates (loc % fs->/
+fragroundup	../h/fs.h	/^#define fragroundup(fs, size)	\/* calculates roundu/
+fragstoblks	../h/fs.h	/^#define fragstoblks(fs, frags)	\/* calculates (frag/
+free	../sys/ufs_alloc.c	/^free(ip, bno, size)$/
+freespace	../h/fs.h	/^#define freespace(fs, percentreserved) \\$/
+fs_cs	../h/fs.h	/^#define fs_cs(fs, indx) \\$/
+fsbtodb	../h/fs.h	/^#define fsbtodb(fs, b)	((b) << (fs)->fs_fsbtodb)$/
+fserr	../sys/ufs_alloc.c	/^fserr(fs, cp)$/
+fset	../sys/kern_descrip.c	/^fset(fp, bit, value)$/
+fsetown	../sys/kern_descrip.c	/^fsetown(fp, value)$/
+fstat	../sys/kern_descrip.c	/^fstat()$/
+fsync	../sys/ufs_syscalls.c	/^fsync()$/
+ftruncate	../sys/ufs_syscalls.c	/^ftruncate()$/
+fubyte	../vax/locore.s	/^JSBENTRY(Fubyte)$/
+fuword	../vax/locore.s	/^JSBENTRY(Fuword)$/
+gatherstats	../sys/kern_clock.c	/^gatherstats(pc, ps)$/
+getblk	../sys/ufs_bio.c	/^getblk(dev, blkno, size)$/
+getc	../sys/tty_subr.c	/^getc(p)$/
+getchar	../vax/swapgeneric.c	/^getchar()$/
+getdlim	../sys/quota_sys.c	/^getdlim(q, dev, addr)$/
+getdopt	../sys/kern_descrip.c	/^getdopt()$/
+getdtablesize	../sys/kern_descrip.c	/^getdtablesize()$/
+geteblk	../sys/ufs_bio.c	/^geteblk(size)$/
+geterror	../sys/ufs_bio.c	/^geterror(bp)$/
+getf	../sys/kern_descrip.c	/^getf(f)$/
+getfs	../sys/ufs_subr.c	/^getfs(dev)$/
+getfsx	../sys/ufs_subr.c	/^getfsx(dev)$/
+getgid	../sys/kern_prot.c	/^getgid()$/
+getgroups	../sys/kern_prot.c	/^getgroups()$/
+gethostid	../sys/kern_xxx.c	/^gethostid()$/
+gethostname	../sys/kern_xxx.c	/^gethostname()$/
+getinode	../sys/ufs_syscalls.c	/^getinode(fdes)$/
+getitimer	../sys/kern_time.c	/^getitimer()$/
+getmdev	../sys/ufs_mount.c	/^getmdev(pdev, fname)$/
+getmemc	../vax/vm_machdep.c	/^getmemc(addr)$/
+getnewbuf	../sys/ufs_bio.c	/^getnewbuf()$/
+getpagesize	../sys/kern_mman.c	/^getpagesize()$/
+getpeername	../sys/uipc_syscalls.c	/^getpeername()$/
+getpgrp	../sys/kern_prot.c	/^getpgrp()$/
+getpid	../sys/kern_prot.c	/^getpid()$/
+getpriority	../sys/kern_resource.c	/^getpriority()$/
+getquota	../sys/quota_kern.c	/^getquota(uid, lookuponly, nodq)$/
+getrlimit	../sys/kern_resource.c	/^getrlimit()$/
+getrusage	../sys/kern_resource.c	/^getrusage()$/
+gets	../vax/swapgeneric.c	/^gets(cp)$/
+getsock	../sys/uipc_syscalls.c	/^getsock(fdes)$/
+getsockname	../sys/uipc_syscalls.c	/^getsockname()$/
+getsockopt	../sys/uipc_syscalls.c	/^getsockopt()$/
+gettimeofday	../sys/kern_time.c	/^gettimeofday()$/
+getuid	../sys/kern_prot.c	/^getuid()$/
+getvtimes	../sys/kern_xxx.c	/^getvtimes(aru, avt)$/
+getw	../sys/tty_subr.c	/^getw(p)$/
+getxfile	../sys/kern_exec.c	/^getxfile(ip, ep, nargc, uid, gid)$/
+groupmember	../sys/kern_prot.c	/^groupmember(gid)$/
+grow	../sys/kern_mman.c	/^grow(sp)$/
+gsignal	../sys/kern_sig.c	/^gsignal(pgrp, sig)$/
+gtcodecode	../sys/tty_tb.c	/^gtcodecode(cp, tbpos)$/
+hardclock	../sys/kern_clock.c	/^hardclock(pc, ps)$/
+harderr	../sys/subr_prf.c	/^harderr(bp, cp)$/
+hashalloc	../sys/ufs_alloc.c	/^hashalloc(ip, cg, pref, size, allocator)$/
+hdh_data	../vaxif/if_hdh.c	/^hdh_data(unit, lcn, cc, rcnt)$/
+hdh_iorq	../vaxif/if_hdh.c	/^hdh_iorq(unit, lcn, len, func)$/
+hdh_supr	../vaxif/if_hdh.c	/^hdh_supr(unit, lcn, cc)$/
+hdhattach	../vaxif/if_hdh.c	/^hdhattach(ui)$/
+hdhinit	../vaxif/if_hdh.c	/^hdhinit(unit)$/
+hdhintr	../vaxif/if_hdh.c	/^hdhintr(unit)$/
+hdhprobe	../vaxif/if_hdh.c	/^hdhprobe(reg)$/
+hdhreset	../vaxif/if_hdh.c	/^hdhreset(unit, uban)$/
+hdhstart	../vaxif/if_hdh.c	/^hdhstart(dev)$/
+hostdeque	../netimp/if_imphost.c	/^hostdeque(hp)$/
+hostenter	../netimp/if_imphost.c	/^hostenter(addr)                 $/
+hostfree	../netimp/if_imphost.c	/^hostfree(hp)                               $/
+hostlookup	../netimp/if_imphost.c	/^hostlookup(addr)$/
+hostrelease	../netimp/if_imphost.c	/^hostrelease(hp)$/
+hostreset	../netimp/if_imphost.c	/^hostreset(net)	    $/
+hostslowtimo	../netimp/if_imphost.c	/^hostslowtimo()$/
+howmany	../h/param.h	/^#define	howmany(x, y)	(((x)+((y)-1))\/(y))$/
+hpattach	../vaxmba/hp.c	/^hpattach(mi, slave)$/
+hpdtint	../vaxmba/hp.c	/^hpdtint(mi, mbsr)$/
+hpdump	../vaxmba/hp.c	/^hpdump(dev)$/
+hpecc	../vaxmba/hp.c	/^hpecc(mi, flag)$/
+hpioctl	../vaxmba/hp.c	/^hpioctl(dev, cmd, data, flag)$/
+hpmaptype	../vaxmba/hp.c	/^hpmaptype(mi)$/
+hpopen	../vaxmba/hp.c	/^hpopen(dev)$/
+hpread	../vaxmba/hp.c	/^hpread(dev, uio)$/
+hpsize	../vaxmba/hp.c	/^hpsize(dev)$/
+hpstart	../vaxmba/hp.c	/^hpstart(mi)$/
+hpstrategy	../vaxmba/hp.c	/^hpstrategy(bp)$/
+hpunit	../vaxmba/hp.c	/^#define hpunit(dev)	(minor(dev) >> 3)$/
+hpustart	../vaxmba/hp.c	/^hpustart(mi)$/
+hpwait	../vaxmba/hp.c	/^hpwait(mi)$/
+hpwrite	../vaxmba/hp.c	/^hpwrite(dev, uio)$/
+htattach	../vaxmba/ht.c	/^htattach(mi)$/
+htclose	../vaxmba/ht.c	/^htclose(dev, flag)$/
+htcommand	../vaxmba/ht.c	/^htcommand(dev, com, count)$/
+htdtint	../vaxmba/ht.c	/^htdtint(mi, mbsr)$/
+htdump	../vaxmba/ht.c	/^htdump()$/
+htdwrite	../vaxmba/ht.c	/^htdwrite(dbuf, num, htaddr, mp)$/
+hteof	../vaxmba/ht.c	/^hteof(htaddr)$/
+htioctl	../vaxmba/ht.c	/^htioctl(dev, cmd, data, flag)$/
+htndtint	../vaxmba/ht.c	/^htndtint(mi)$/
+htonl	../netinet/in.h	/^#define	htonl(x)	(x)$/
+htons	../netinet/in.h	/^#define	htons(x)	(x)$/
+htopen	../vaxmba/ht.c	/^htopen(dev, flag)$/
+htphys	../vaxmba/ht.c	/^htphys(dev, uio)$/
+htread	../vaxmba/ht.c	/^htread(dev, uio)$/
+htslave	../vaxmba/ht.c	/^htslave(mi, ms, sn)$/
+htstrategy	../vaxmba/ht.c	/^htstrategy(bp)$/
+htustart	../vaxmba/ht.c	/^htustart(mi)$/
+htwait	../vaxmba/ht.c	/^htwait(htaddr)$/
+htwrite	../vaxmba/ht.c	/^htwrite(dev, uio)$/
+hyact	../vaxif/if_hy.c	/^hyact(ui)$/
+hyattach	../vaxif/if_hy.c	/^hyattach(ui)$/
+hycancel	../vaxif/if_hy.c	/^hycancel(ui)$/
+hyinit	../vaxif/if_hy.c	/^hyinit(unit)$/
+hyint	../vaxif/if_hy.c	/^hyint(unit)$/
+hyioctl	../vaxif/if_hy.c	/^hyioctl(ifp, cmd, data)$/
+hylog	../vaxif/if_hy.c	/^hylog(code, len, ptr)$/
+hyoutput	../vaxif/if_hy.c	/^hyoutput(ifp, m0, dst)$/
+hyprintdata	../vaxif/if_hy.c	/^hyprintdata(cp, len)$/
+hyprobe	../vaxif/if_hy.c	/^hyprobe(reg)$/
+hyrecvdata	../vaxif/if_hy.c	/^hyrecvdata(ui, hym, len)$/
+hyreset	../vaxif/if_hy.c	/^hyreset(unit, uban)$/
+hyroute	../vaxif/if_hy.c	/^hyroute(ifp, dest, hym)$/
+hystart	../vaxif/if_hy.c	/^hystart(ui, cmd, count, ubaddr)$/
+hywatch	../vaxif/if_hy.c	/^hywatch(unit)$/
+hyxmitdata	../vaxif/if_hy.c	/^hyxmitdata(ui)$/
+hzto	../sys/kern_clock.c	/^hzto(tv)$/
+ialloc	../sys/ufs_alloc.c	/^ialloc(pip, ipref, mode)$/
+ialloccg	../sys/ufs_alloc.c	/^ialloccg(ip, cg, ipref, mode)$/
+icmp_error	../netinet/ip_icmp.c	/^icmp_error(oip, type, code, ifp, dest)$/
+icmp_input	../netinet/ip_icmp.c	/^icmp_input(m, ifp)$/
+icmp_reflect	../netinet/ip_icmp.c	/^icmp_reflect(ip, ifp)$/
+icmp_send	../netinet/ip_icmp.c	/^icmp_send(ip, opts)$/
+idcattach	../vaxuba/idc.c	/^idcattach(ui)$/
+idcdgo	../vaxuba/idc.c	/^idcdgo(um)$/
+idcdump	../vaxuba/idc.c	/^idcdump(dev)$/
+idcecc	../vaxuba/idc.c	/^idcecc(ui)$/
+idcintr	../vaxuba/idc.c	/^idcintr(idc)$/
+idcopen	../vaxuba/idc.c	/^idcopen(dev)$/
+idcprobe	../vaxuba/idc.c	/^idcprobe(reg)$/
+idcread	../vaxuba/idc.c	/^idcread(dev, uio)$/
+idcreset	../vaxuba/idc.c	/^idcreset(uban)$/
+idcsize	../vaxuba/idc.c	/^idcsize(dev)$/
+idcslave	../vaxuba/idc.c	/^idcslave(ui, reg)$/
+idcstart	../vaxuba/idc.c	/^idcstart(um)$/
+idcstrategy	../vaxuba/idc.c	/^idcstrategy(bp)$/
+idcunit	../vaxuba/idc.c	/^#define idcunit(dev)	(minor(dev) >> 3)$/
+idcustart	../vaxuba/idc.c	/^idcustart(ui)$/
+idcwait	../vaxuba/idc.c	/^idcwait(addr, n)$/
+idcwatch	../vaxuba/idc.c	/^idcwatch()$/
+idcwrite	../vaxuba/idc.c	/^idcwrite(dev, uio)$/
+idp_abort	../netns/idp_usrreq.c	/^idp_abort(nsp)$/
+idp_ctlinput	../netns/ns_input.c	/^idp_ctlinput(cmd, arg)$/
+idp_ctloutput	../netns/idp_usrreq.c	/^idp_ctloutput(req, so, level, name, value)$/
+idp_do_route	../netns/ns_input.c	/^idp_do_route(src, ro)$/
+idp_drop	../netns/idp_usrreq.c	/^idp_drop(nsp, errno)$/
+idp_forward	../netns/ns_input.c	/^idp_forward(idp)$/
+idp_input	../netns/idp_usrreq.c	/^idp_input(m, nsp, ifp)$/
+idp_output	../netns/idp_usrreq.c	/^idp_output(nsp, m0)$/
+idp_raw_usrreq	../netns/idp_usrreq.c	/^idp_raw_usrreq(so, req, m, nam, rights)$/
+idp_undo_route	../netns/ns_input.c	/^idp_undo_route(ro)$/
+idp_usrreq	../netns/idp_usrreq.c	/^idp_usrreq(so, req, m, nam, rights)$/
+idpip_input	../netns/ns_ip.c	/^idpip_input(m, ifp)$/
+if_attach	../net/if.c	/^if_attach(ifp)$/
+if_down	../net/if.c	/^if_down(ifp)$/
+if_rubaget	../vaxif/if_uba.h	/^#define	if_rubaget(ifu, totlen, off0, ifp) \\$/
+if_slowtimo	../net/if.c	/^if_slowtimo()$/
+if_ubaalloc	../vaxif/if_uba.c	/^if_ubaalloc(ifu, ifrw, nmr)$/
+if_ubaget	../vaxif/if_uba.c	/^if_ubaget(ifu, ifr, totlen, off0, ifp)$/
+if_ubainit	../vaxif/if_uba.h	/^#define	if_ubainit(ifuba, uban, hlen, nmr) \\$/
+if_ubaminit	../vaxif/if_uba.c	/^if_ubaminit(ifu, uban, hlen, nmr, ifr, nr, ifw, nw/
+if_ubaput	../vaxif/if_uba.c	/^if_ubaput(ifu, ifw, m)$/
+if_wubaput	../vaxif/if_uba.h	/^#define	if_wubaput(ifu, m) \\$/
+ifa_ifwithaddr	../net/if.c	/^ifa_ifwithaddr(addr)$/
+ifa_ifwithaf	../net/if.c	/^ifa_ifwithaf(af)$/
+ifa_ifwithdstaddr	../net/if.c	/^ifa_ifwithdstaddr(addr)$/
+ifa_ifwithnet	../net/if.c	/^ifa_ifwithnet(addr)$/
+ifconf	../net/if.c	/^ifconf(cmd, data)$/
+ifind	../sys/ufs_inode.c	/^ifind(dev, ino)$/
+ifinit	../net/if.c	/^ifinit()$/
+ifioctl	../net/if.c	/^ifioctl(so, cmd, data)$/
+iflush	../sys/ufs_inode.c	/^iflush(dev, iq)$/
+ifptoia	../netinet/ip_icmp.c	/^ifptoia(ifp)$/
+ifree	../sys/ufs_alloc.c	/^ifree(ip, ino, mode)$/
+ifubareset	../net/if.c	/^ifubareset(uban)$/
+ifunit	../net/if.c	/^ifunit(name)$/
+iget	../sys/ufs_inode.c	/^iget(dev, fs, ino)$/
+igrab	../sys/ufs_inode.c	/^igrab(ip)$/
+ihinit	../sys/ufs_inode.c	/^ihinit()$/
+ikattach	../vaxuba/ik.c	/^ikattach(ui)$/
+ikclose	../vaxuba/ik.c	/^ikclose(dev)$/
+ikintr	../vaxuba/ik.c	/^ikintr(dev)$/
+ikioctl	../vaxuba/ik.c	/^ikioctl(dev, cmd, data, flag)$/
+ikminphys	../vaxuba/ik.c	/^ikminphys(bp)$/
+ikopen	../vaxuba/ik.c	/^ikopen(dev)$/
+ikprobe	../vaxuba/ik.c	/^ikprobe(reg)$/
+ikread	../vaxuba/ik.c	/^ikread(dev, uio)$/
+ikreset	../vaxuba/ik.c	/^ikreset(uban)$/
+ikstart	../vaxuba/ik.c	/^ikstart(ui)$/
+ikstrategy	../vaxuba/ik.c	/^ikstrategy(bp)$/
+ikwrite	../vaxuba/ik.c	/^ikwrite(dev, uio)$/
+il_setaddr	../vaxif/if_il.c	/^il_setaddr(physaddr, unit)$/
+ilattach	../vaxif/if_il.c	/^ilattach(ui)$/
+ilcint	../vaxif/if_il.c	/^ilcint(unit)$/
+ilinit	../vaxif/if_il.c	/^ilinit(unit)$/
+ilioctl	../vaxif/if_il.c	/^ilioctl(ifp, cmd, data)$/
+ilock	../sys/ufs_inode.c	/^ilock(ip)$/
+iloutput	../vaxif/if_il.c	/^iloutput(ifp, m0, dst)$/
+ilprobe	../vaxif/if_il.c	/^ilprobe(reg)$/
+ilreset	../vaxif/if_il.c	/^ilreset(unit, uban)$/
+ilrint	../vaxif/if_il.c	/^ilrint(unit)$/
+ilstart	../vaxif/if_il.c	/^ilstart(dev)$/
+iltotal	../vaxif/if_il.c	/^iltotal(is)$/
+ilwait	../vaxif/if_il.c	/^ilwait(ui, op)$/
+ilwatch	../vaxif/if_il.c	/^ilwatch(unit)$/
+imax	../sys/subr_xxx.c	/^imax(a, b)$/
+imin	../sys/subr_xxx.c	/^imin(a, b)$/
+imp_addr_to_leader	../netimp/if_imp.c	/^imp_addr_to_leader(imp, a)$/
+imp_leader_to_addr	../netimp/if_imp.c	/^imp_leader_to_addr(ap, ip, ifp)$/
+impattach	../netimp/if_imp.c	/^impattach(ui, reset)$/
+impdown	../netimp/if_imp.c	/^impdown(sc)$/
+impinit	../netimp/if_imp.c	/^impinit(unit)$/
+impinput	../netimp/if_imp.c	/^impinput(unit, m)$/
+impintr	../netimp/if_imp.c	/^impintr()$/
+impioctl	../netimp/if_imp.c	/^impioctl(ifp, cmd, data)$/
+impmsg	../netimp/if_imp.c	/^impmsg(sc, fmt, a1, a2, a3)$/
+impnoops	../netimp/if_imp.c	/^impnoops(sc)             $/
+impoutput	../netimp/if_imp.c	/^impoutput(ifp, m0, dst)$/
+impsnd	../netimp/if_imp.c	/^impsnd(ifp, m)             $/
+in_arpinput	../netinet/if_ether.c	/^in_arpinput(ac, m)$/
+in_broadcast	../netinet/in.c	/^in_broadcast(in)$/
+in_cksum	../vax/in_cksum.c	/^in_cksum(m, len)$/
+in_control	../netinet/in.c	/^in_control(so, cmd, data, ifp)$/
+in_iaonnetof	../netinet/in.c	/^in_iaonnetof(net)$/
+in_ifinit	../netinet/in.c	/^in_ifinit(ifp, ia, sin)$/
+in_lnaof	../netinet/in.c	/^in_lnaof(in)$/
+in_localaddr	../netinet/in.c	/^in_localaddr(in)$/
+in_losing	../netinet/in_pcb.c	/^in_losing(inp)$/
+in_makeaddr	../netinet/in.c	/^in_makeaddr(net, host)$/
+in_netof	../netinet/in.c	/^in_netof(in)$/
+in_pcballoc	../netinet/in_pcb.c	/^in_pcballoc(so, head)$/
+in_pcbbind	../netinet/in_pcb.c	/^in_pcbbind(inp, nam)$/
+in_pcbconnect	../netinet/in_pcb.c	/^in_pcbconnect(inp, nam)$/
+in_pcbdetach	../netinet/in_pcb.c	/^in_pcbdetach(inp)$/
+in_pcbdisconnect	../netinet/in_pcb.c	/^in_pcbdisconnect(inp)$/
+in_pcblookup	../netinet/in_pcb.c	/^in_pcblookup(head, faddr, fport, laddr, lport, fla/
+in_pcbnotify	../netinet/in_pcb.c	/^in_pcbnotify(head, dst, errno, notify)$/
+in_rtchange	../netinet/in_pcb.c	/^in_rtchange(inp)$/
+in_setpeeraddr	../netinet/in_pcb.c	/^in_setpeeraddr(inp, nam)$/
+in_setsockaddr	../netinet/in_pcb.c	/^in_setsockaddr(inp, nam)$/
+inc	../vaxuba/lpa.c	/^#define inc(v)		(sc->v = ((sc->v + 1) % sc->sc_nbu/
+incore	../sys/ufs_bio.c	/^incore(dev, blkno)$/
+indirtrunc	../sys/ufs_inode.c	/^indirtrunc(ip, bn, lastbn, level)$/
+inet_hash	../netinet/in.c	/^inet_hash(sin, hp)$/
+inet_netmatch	../netinet/in.c	/^inet_netmatch(sin1, sin2)$/
+inferior	../sys/kern_proc.c	/^inferior(p)$/
+initcpu	../vax/machdep.c	/^initcpu()$/
+initp1br	../h/vmmac.h	/^#define	initp1br(x)	((x) - P1PAGES)$/
+inittodr	../vax/clock.c	/^inittodr(base)$/
+ino_clone	../sys/sys_inode.c	/^ino_clone()$/
+ino_close	../sys/sys_inode.c	/^ino_close(fp)$/
+ino_ioctl	../sys/sys_inode.c	/^ino_ioctl(fp, com, data)$/
+ino_lock	../sys/sys_inode.c	/^ino_lock(fp, cmd)$/
+ino_rw	../sys/sys_inode.c	/^ino_rw(fp, rw, uio)$/
+ino_select	../sys/sys_inode.c	/^ino_select(fp, which)$/
+ino_stat	../sys/sys_inode.c	/^ino_stat(ip, sb)$/
+ino_unlock	../sys/sys_inode.c	/^ino_unlock(fp, kind)$/
+inoquota	../sys/quota_ufs.c	/^inoquota(ip)$/
+insque	../h/systm.h	/^#define	insque(q,p)	_insque((caddr_t)q,(caddr_t)p)/
+intotcpcb	../netinet/tcp_var.h	/^#define	intotcpcb(ip)	((struct tcpcb *)(ip)->inp_p/
+ioaccess	../vax/autoconf.c	/^ioaccess(physa, pte, size)$/
+ioctl	../sys/sys_generic.c	/^ioctl()$/
+ip_ctloutput	../netinet/ip_output.c	/^ip_ctloutput(op, so, level, optname, m)$/
+ip_deq	../netinet/ip_input.c	/^ip_deq(p)$/
+ip_dooptions	../netinet/ip_input.c	/^ip_dooptions(ip, ifp)$/
+ip_drain	../netinet/ip_input.c	/^ip_drain()$/
+ip_enq	../netinet/ip_input.c	/^ip_enq(p, prev)$/
+ip_forward	../netinet/ip_input.c	/^ip_forward(ip, ifp)$/
+ip_freef	../netinet/ip_input.c	/^ip_freef(fp)$/
+ip_init	../netinet/ip_input.c	/^ip_init()$/
+ip_insertoptions	../netinet/ip_output.c	/^ip_insertoptions(m, opt, phlen)$/
+ip_optcopy	../netinet/ip_output.c	/^ip_optcopy(ip, jp, off)$/
+ip_output	../netinet/ip_output.c	/^ip_output(m, opt, ro, flags)$/
+ip_pcbopts	../netinet/ip_output.c	/^ip_pcbopts(pcbopt, m)$/
+ip_reass	../netinet/ip_input.c	/^ip_reass(ip, fp)$/
+ip_rtaddr	../netinet/ip_input.c	/^ip_rtaddr(dst)$/
+ip_slowtimo	../netinet/ip_input.c	/^ip_slowtimo()$/
+ip_srcroute	../netinet/ip_input.c	/^ip_srcroute()$/
+ip_stripoptions	../netinet/ip_input.c	/^ip_stripoptions(ip, mopt)$/
+ipintr	../netinet/ip_input.c	/^ipintr()$/
+iptime	../netinet/ip_icmp.c	/^iptime()$/
+iput	../sys/ufs_inode.c	/^iput(ip)$/
+irele	../sys/ufs_inode.c	/^irele(ip)$/
+isadpte	../h/vmmac.h	/^#define	isadpte(p, pte)		(!isaspte(p, pte) && !isa/
+isadsv	../h/vmmac.h	/^#define	isadsv(p, v)	((v) >= stoc(ctos((p)->p_tsiz/
+isaspte	../h/vmmac.h	/^#define	isaspte(p, pte)		((pte) > sptopte(p, (p)->/
+isassv	../h/vmmac.h	/^#define	isassv(p, v)	((v) >= BTOPUSRSTACK - (p)->p/
+isatpte	../h/vmmac.h	/^#define	isatpte(p, pte)		((pte) < dptopte(p, 0))$/
+isatsv	../h/vmmac.h	/^#define	isatsv(p, v)	((v) < (p)->p_tsize)$/
+isbad	../vax/dkbad.c	/^isbad(bt, cyl, trk, sec)$/
+isblock	../sys/ufs_subr.c	/^isblock(fs, cp, h)$/
+isclr	../h/param.h	/^#define	isclr(a,i)	(((a)[(i)\/NBBY] & (1<<((i)%NBBY/
+isset	../h/param.h	/^#define	isset(a,i)	((a)[(i)\/NBBY] & (1<<((i)%NBBY)/
+issig	../sys/kern_sig.c	/^issig()$/
+itimerdecr	../sys/kern_time.c	/^itimerdecr(itp, usec)$/
+itimerfix	../sys/kern_time.c	/^itimerfix(tv)$/
+itod	../h/fs.h	/^#define	itod(fs, x) \\$/
+itog	../h/fs.h	/^#define	itog(fs, x)	((x) \/ (fs)->fs_ipg)$/
+itoo	../h/fs.h	/^#define	itoo(fs, x)	((x) % INOPB(fs))$/
+itrunc	../sys/ufs_inode.c	/^itrunc(oip, length)$/
+iunlock	../sys/ufs_inode.c	/^iunlock(ip)$/
+iupdat	../sys/ufs_inode.c	/^iupdat(ip, ta, tm, waitfor)$/
+kernacc	../vax/locore.s	/^ ENTRY(kernacc, 0)$/
+kgattach	../vaxuba/kgclock.c	/^kgattach(ui)$/
+kgclock	../vaxuba/kgclock.c	/^kgclock(dev, r0, r1, r2, r3, r4 ,r5, pc, ps)$/
+kgprobe	../vaxuba/kgclock.c	/^kgprobe(reg)$/
+kill	../sys/kern_sig.c	/^kill()$/
+killpg	../sys/kern_sig.c	/^killpg()$/
+killpg1	../sys/kern_sig.c	/^killpg1(signo, pgrp, all)$/
+klok	../sys/vm_page.c	/^klok(pte, rw)$/
+kluster	../sys/vm_page.c	/^kluster(p, v, pte0, rw, pkl, klsize, bn0)$/
+kmcopy	../sys/vm_pt.c	/^kmcopy(to, from, count)$/
+kmstartup	../sys/subr_mcount.c	/^kmstartup()$/
+kmxtob	../h/vmmac.h	/^#define	kmxtob(a)	(usrpt + (a) * NPTEPG)$/
+lblkno	../h/fs.h	/^#define lblkno(fs, loc)		\/* calculates (loc \/ fs->/
+leavegroup	../sys/kern_prot.c	/^leavegroup(gid)$/
+link	../sys/ufs_syscalls.c	/^link()$/
+listen	../sys/uipc_syscalls.c	/^listen()$/
+loadav	../sys/vm_sched.c	/^loadav(avg, n)$/
+loattach	../net/if_loop.c	/^loattach()$/
+locate_x25_lcn	../vaxif/if_ddn.c	/^static struct ddn_cb *locate_x25_lcn(ds, ip_addr)$/
+locc	../sys/ufs_subr.c	/^locc(mask, size, cp)$/
+log	../sys/subr_prf.c	/^log(level, fmt, x1)$/
+logclose	../sys/subr_log.c	/^logclose(dev, flag)$/
+logioctl	../sys/subr_log.c	/^logioctl(com, data, flag)$/
+logopen	../sys/subr_log.c	/^logopen(dev)$/
+logpri	../sys/subr_prf.c	/^logpri(level)$/
+logread	../sys/subr_log.c	/^logread(dev, uio)$/
+logselect	../sys/subr_log.c	/^logselect(dev, rw)$/
+logwakeup	../sys/subr_log.c	/^logwakeup()$/
+loioctl	../net/if_loop.c	/^loioctl(ifp, cmd, data)$/
+longjmp	../vax/locore.s	/^JSBENTRY(Longjmp)$/
+looutput	../net/if_loop.c	/^looutput(ifp, m0, dst)$/
+lpaattach	../vaxuba/lpa.c	/^lpaattach(ui)$/
+lpaclose	../vaxuba/lpa.c	/^lpaclose(dev, flag)$/
+lpacmd	../vaxuba/lpa.c	/^lpacmd(bp, lpaaddr, sc, ubanum)$/
+lpadmdt	../vaxuba/lpa.c	/^lpadmdt(lpaaddr, sc, ubanum, uio)$/
+lpaiintr	../vaxuba/lpa.c	/^lpaiintr(unit)$/
+lpaioctl	../vaxuba/lpa.c	/^lpaioctl(dev, cmd, data, flag)$/
+lpamcode	../vaxuba/lpa.c	/^lpamcode(lpaaddr, sc, uio)$/
+lpaointr	../vaxuba/lpa.c	/^lpaointr(unit)$/
+lpaopen	../vaxuba/lpa.c	/^lpaopen(dev, flag)$/
+lpaprobe	../vaxuba/lpa.c	/^lpaprobe(reg)$/
+lparead	../vaxuba/lpa.c	/^lparead(dev, uio)$/
+lpareset	../vaxuba/lpa.c	/^lpareset(uban)$/
+lpattach	../vaxuba/lp.c	/^lpattach(ui)$/
+lpawait	../vaxuba/lpa.c	/^lpawait(lpaaddr, sc)$/
+lpawrite	../vaxuba/lpa.c	/^lpawrite(dev, uio)$/
+lpcanon	../vaxuba/lp.c	/^lpcanon(dev, c)$/
+lpclose	../vaxuba/lp.c	/^lpclose(dev, flag)$/
+lpintr	../vaxuba/lp.c	/^lpintr(lp11)$/
+lpopen	../vaxuba/lp.c	/^lpopen(dev, flag)$/
+lpoutput	../vaxuba/lp.c	/^lpoutput(dev, c)$/
+lpprobe	../vaxuba/lp.c	/^lpprobe(reg)$/
+lpreset	../vaxuba/lp.c	/^lpreset(uban)$/
+lptout	../vaxuba/lp.c	/^lptout(dev)$/
+lpwrite	../vaxuba/lp.c	/^lpwrite(dev, uio)$/
+lseek	../sys/ufs_syscalls.c	/^lseek()$/
+lstat	../sys/ufs_syscalls.c	/^lstat()$/
+m_adj	../sys/uipc_mbuf.c	/^m_adj(mp, len)$/
+m_cat	../sys/uipc_mbuf.c	/^m_cat(m, n)$/
+m_clalloc	../sys/uipc_mbuf.c	/^m_clalloc(ncl, how, canwait)$/
+m_copy	../sys/uipc_mbuf.c	/^m_copy(m, off, len)$/
+m_expand	../sys/uipc_mbuf.c	/^m_expand(canwait)$/
+m_free	../sys/uipc_mbuf.c	/^m_free(m)$/
+m_freem	../sys/uipc_mbuf.c	/^m_freem(m)$/
+m_get	../sys/uipc_mbuf.c	/^m_get(canwait, type)$/
+m_getclr	../sys/uipc_mbuf.c	/^m_getclr(canwait, type)$/
+m_more	../sys/uipc_mbuf.c	/^m_more(canwait, type)$/
+m_pgfree	../sys/uipc_mbuf.c	/^m_pgfree(addr, n)$/
+m_pullup	../sys/uipc_mbuf.c	/^m_pullup(n, len)$/
+machinecheck	../vax/machdep.c	/^machinecheck(cmcf)$/
+madvise	../sys/kern_mman.c	/^madvise()$/
+major	../h/types.h	/^#define	major(x)	((int)(((unsigned)(x)>>8)&0377))$/
+make_x25_call	../vaxif/if_ddn.c	/^static boolean make_x25_call(ds, dc)$/
+makedev	../h/types.h	/^#define	makedev(x,y)	((dev_t)(((x)<<8) | (y)))$/
+maknode	../sys/ufs_syscalls.c	/^maknode(mode, ndp)$/
+mapin	../vax/vm_machdep.c	/^mapin(pte, v, pfnum, count, prot)$/
+mapioctl	../vax/sys_machdep.c	/^mapioctl(cmd)$/
+mapout	../vax/vm_machdep.c	/^mapout(pte, size)$/
+mapsearch	../sys/ufs_alloc.c	/^mapsearch(fs, cgp, bpref, allocsiz)$/
+maptouser	../vaxuba/uba.c	/^maptouser(vaddress)$/
+max	../sys/subr_xxx.c	/^max(a, b)$/
+mbaconfig	../vax/autoconf.c	/^mbaconfig(ni, type)$/
+mbaddtape	../vaxmba/mba.c	/^mbaddtape(mi, drive)$/
+mbafind	../vax/autoconf.c	/^mbafind(nxv, nxp)$/
+mbainit	../vaxmba/mba.c	/^mbainit(mp)$/
+mbasetup	../vaxmba/mba.c	/^mbasetup(mi)$/
+mbclrattn	../vaxmba/mbavar.h	/^#define	mbclrattn(mi)	((mi)->mi_mba->mba_drv[0].mb/
+mbinit	../sys/uipc_mbuf.c	/^mbinit()$/
+mbintr	../vaxmba/mba.c	/^mbintr(mbanum)$/
+mbstart	../vaxmba/mba.c	/^mbstart(mhp)$/
+mbunit	../vaxmba/mba.c	/^#define mbunit(dev)	(minor(dev) >> 3)$/
+mbustart	../vaxmba/mba.c	/^mbustart(mi)$/
+mcount	../sys/subr_mcount.c	/^mcount()$/
+memall	../sys/vm_mem.c	/^memall(pte, size, p, type)$/
+memenable	../vax/machdep.c	/^memenable()$/
+memerr	../vax/machdep.c	/^memerr()$/
+memfree	../sys/vm_mem.c	/^memfree(pte, size, detach)$/
+meminit	../sys/vm_mem.c	/^meminit(first, last)$/
+memlog	../vax/machdep.c	/^memlog (m, mcr)$/
+mfind	../sys/vm_mem.c	/^mfind(dev, bn)$/
+mhash	../sys/vm_mem.c	/^mhash(c, dev, bn)$/
+microtime	../vax/machdep.c	/^microtime(tvp)$/
+min	../sys/subr_xxx.c	/^min(a, b)$/
+mincore	../sys/kern_mman.c	/^mincore()$/
+minor	../h/types.h	/^#define	minor(x)	((int)((x)&0377))$/
+minphys	../sys/vm_swp.c	/^minphys(bp)$/
+minvaph	../vaxuba/va.c	/^minvaph(bp)$/
+minvpph	../vaxuba/vp.c	/^minvpph(bp)$/
+mkdir	../sys/ufs_syscalls.c	/^mkdir()$/
+mknod	../sys/ufs_syscalls.c	/^mknod()$/
+mlock	../sys/vm_mem.c	/^mlock(c)$/
+mmread	../vax/mem.c	/^mmread(dev, uio)$/
+mmrw	../vax/mem.c	/^mmrw(dev, uio, rw)$/
+mmwrite	../vax/mem.c	/^mmwrite(dev, uio)$/
+mountfs	../sys/ufs_mount.c	/^mountfs(dev, ronly, ip)$/
+mprotect	../sys/kern_mman.c	/^mprotect()$/
+mpurge	../sys/vm_mem.c	/^mpurge(mdev)$/
+mremap	../sys/kern_mman.c	/^mremap()$/
+mtattach	../vaxmba/mt.c	/^mtattach(mi)$/
+mtclose	../vaxmba/mt.c	/^mtclose(dev, flag)$/
+mtcommand	../vaxmba/mt.c	/^mtcommand(dev, com, count)$/
+mtcreset	../vaxmba/mt.c	/^void mtcreset(mtaddr)$/
+mtdtint	../vaxmba/mt.c	/^mtdtint(mi, mbsr)$/
+mtdump	../vaxmba/mt.c	/^mtdump()$/
+mtdwrite	../vaxmba/mt.c	/^mtdwrite(dbuf, num, mtaddr, mp)$/
+mteof	../vaxmba/mt.c	/^mteof(mtaddr)$/
+mtintfail	../vaxmba/mt.c	/^mtintfail(sc)$/
+mtioctl	../vaxmba/mt.c	/^mtioctl(dev, cmd, data, flag)$/
+mtndtint	../vaxmba/mt.c	/^mtndtint(mi)$/
+mtocl	../h/mbuf.h	/^#define	mtocl(x) (((int)x - (int)mbutl) >> CLSHIFT/
+mtod	../h/mbuf.h	/^#define	mtod(x,t)	((t)((int)(x) + (x)->m_off))$/
+mtopen	../vaxmba/mt.c	/^mtopen(dev, flag)$/
+mtphys	../vaxmba/mt.c	/^mtphys(dev, uio)$/
+mtread	../vaxmba/mt.c	/^mtread(dev, uio)$/
+mtslave	../vaxmba/mt.c	/^mtslave(mi, ms, sn)$/
+mtstart	../vaxmba/mt.c	/^mtstart(mi)$/
+mtstrategy	../vaxmba/mt.c	/^mtstrategy(bp)$/
+mtustart	../vaxmba/mt.c	/^mtustart(mi)$/
+mtwait	../vaxmba/mt.c	/^mtwait(mtaddr)$/
+mtwrite	../vaxmba/mt.c	/^mtwrite(dev, uio)$/
+munhash	../sys/vm_mem.c	/^munhash(dev, bn)$/
+munlink	../sys/vm_mem.c	/^munlink(c)$/
+munlock	../sys/vm_mem.c	/^munlock(c)$/
+munmap	../sys/kern_mman.c	/^munmap()$/
+munmapfd	../sys/kern_mman.c	/^munmapfd(fd)$/
+mwait	../sys/vm_mem.c	/^mwait(c)$/
+namei	../sys/ufs_namei.c	/^namei(ndp)$/
+nchinit	../sys/ufs_namei.c	/^nchinit()$/
+nchinval	../sys/ufs_namei.c	/^nchinval(dev)$/
+ndflush	../sys/tty_subr.c	/^ndflush(q, cc)$/
+ndqb	../sys/tty_subr.c	/^ndqb(q, flag)$/
+newproc	../sys/kern_fork.c	/^newproc(isvfork)$/
+newptes	../vax/vm_machdep.c	/^newptes(pte, v, size)$/
+nextc	../sys/tty_subr.c	/^nextc(p, cp)$/
+nodev	../sys/subr_xxx.c	/^nodev()$/
+nosys	../vax/trap.c	/^nosys()$/
+notavail	../h/buf.h	/^#define	notavail(bp) { \\$/
+ns_control	../netns/ns.c	/^ns_control(so, cmd, data, ifp)$/
+ns_echo	../netns/ns_error.c	/^ns_echo(idp)$/
+ns_err_input	../netns/ns_error.c	/^ns_err_input(m)$/
+ns_err_x	../netns/ns_error.h	/^#define ns_err_x(c) (((c)&0x200) ? ((c) - 0x200 + /
+ns_error	../netns/ns_error.c	/^ns_error(om, type, param)$/
+ns_hash	../netns/ns.c	/^ns_hash(sns, hp)$/
+ns_hosteq	../netns/ns.h	/^#define ns_hosteq(s,t) (ns_hosteqnh((s).x_host,(t)/
+ns_hosteqnh	../netns/ns.h	/^#define ns_hosteqnh(s,t) ((s).s_host[0] == (t).s_h/
+ns_iaonnetof	../netns/ns.c	/^ns_iaonnetof(dst)$/
+ns_ifinit	../netns/ns.c	/^ns_ifinit(ifp, ia, sns)$/
+ns_init	../netns/ns_input.c	/^ns_init()$/
+ns_neteq	../netns/ns.h	/^#define ns_neteq(a,b) ns_neteqnn((a).x_net, (b).x_/
+ns_neteqnn	../netns/ns.h	/^#define ns_neteqnn(a,b) (((a).s_net[0]==(b).s_net[/
+ns_netmatch	../netns/ns.c	/^ns_netmatch(sns1, sns2)$/
+ns_netof	../netns/ns.h	/^#define ns_netof(a) (*(long *) & ((a).x_net)) \/* X/
+ns_nullhost	../netns/ns.h	/^#define ns_nullhost(x) (((x).x_host.s_host[0]==0) /
+ns_output	../netns/ns_output.c	/^ns_output(m0, ro, flags)$/
+ns_pcballoc	../netns/ns_pcb.c	/^ns_pcballoc(so, head)$/
+ns_pcbbind	../netns/ns_pcb.c	/^ns_pcbbind(nsp, nam)$/
+ns_pcbconnect	../netns/ns_pcb.c	/^ns_pcbconnect(nsp, nam)$/
+ns_pcbdetach	../netns/ns_pcb.c	/^ns_pcbdetach(nsp)$/
+ns_pcbdisconnect	../netns/ns_pcb.c	/^ns_pcbdisconnect(nsp)$/
+ns_pcblookup	../netns/ns_pcb.c	/^ns_pcblookup(faddr, lport, wildp)$/
+ns_pcbnotify	../netns/ns_pcb.c	/^ns_pcbnotify(dst, errno, notify, param)$/
+ns_printhost	../netns/ns_error.c	/^ns_printhost(p)$/
+ns_rtchange	../netns/ns_pcb.c	/^ns_rtchange(nsp)$/
+ns_setpeeraddr	../netns/ns_pcb.c	/^ns_setpeeraddr(nsp, nam)$/
+ns_setsockaddr	../netns/ns_pcb.c	/^ns_setsockaddr(nsp, nam)$/
+ns_watch_output	../netns/ns_input.c	/^ns_watch_output(m, ifp)$/
+nsintr	../netns/ns_input.c	/^nsintr()$/
+nsip_ctlinput	../netns/ns_ip.c	/^nsip_ctlinput(cmd, sa)$/
+nsip_free	../netns/ns_ip.c	/^nsip_free(ifp)$/
+nsip_route	../netns/ns_ip.c	/^nsip_route(m)$/
+nsip_rtchange	../netns/ns_ip.c	/^nsip_rtchange(dst)$/
+nsipattach	../netns/ns_ip.c	/^nsipattach()$/
+nsipioctl	../netns/ns_ip.c	/^nsipioctl(ifp, cmd, data)$/
+nsipoutput	../netns/ns_ip.c	/^nsipoutput(ifn, m0, dst)$/
+nstime	../netns/ns_error.c	/^nstime()$/
+nstosppcb	../netns/spp_var.h	/^#define	nstosppcb(np)	((struct sppcb *)(np)->nsp_p/
+ntohl	../netinet/in.h	/^#define	ntohl(x)	(x)$/
+ntohs	../netinet/in.h	/^#define	ntohs(x)	(x)$/
+null_hash	../net/af.c	/^null_hash(addr, hp)$/
+null_init	../net/af.c	/^null_init()$/
+null_netmatch	../net/af.c	/^null_netmatch(a1, a2)$/
+nulldev	../sys/subr_xxx.c	/^nulldev()$/
+nullioctl	../sys/tty_conf.c	/^nullioctl(tp, cmd, data, flags)$/
+nullmodem	../sys/tty.c	/^nullmodem(tp, flag)$/
+numfrags	../h/fs.h	/^#define numfrags(fs, loc)	\/* calculates (loc \/ fs-/
+nz	../sys/vm_sched.c	/^#define	nz(x)	(x != 0 ? x : 1)$/
+oalarm	../sys/kern_xxx.c	/^oalarm()$/
+obreak	../sys/kern_mman.c	/^obreak()$/
+ofstat	../sys/ufs_xxx.c	/^ofstat()$/
+oftime	../sys/kern_xxx.c	/^oftime()$/
+onice	../sys/kern_xxx.c	/^onice()$/
+opause	../sys/kern_clock.c	/^opause()$/
+open	../sys/ufs_syscalls.c	/^open()$/
+opendq	../sys/quota_kern.c	/^opendq(mp, fname)$/
+openi	../sys/sys_inode.c	/^openi(ip, mode)$/
+osetgid	../sys/kern_xxx.c	/^osetgid()$/
+osetpgrp	../sys/kern_xxx.c	/^osetpgrp()$/
+osetuid	../sys/kern_xxx.c	/^osetuid()$/
+osigcleanup	../vax/machdep.c	/^osigcleanup()$/
+ossig	../sys/kern_xxx.c	/^ossig()$/
+ostat	../sys/ufs_xxx.c	/^ostat()$/
+ostat1	../sys/ufs_xxx.c	/^ostat1(ip, ub)$/
+ostime	../sys/kern_xxx.c	/^ostime()$/
+otime	../sys/kern_xxx.c	/^otime()$/
+otimes	../sys/kern_xxx.c	/^otimes()$/
+outime	../sys/ufs_xxx.c	/^outime()$/
+outofmem	../h/vmmac.h	/^#define	outofmem()	wakeup((caddr_t)&proc[2]);$/
+ovadvise	../sys/kern_mman.c	/^ovadvise()$/
+ovlimit	../sys/kern_xxx.c	/^ovlimit()$/
+ovtimes	../sys/kern_xxx.c	/^ovtimes()$/
+owait	../sys/kern_xxx.c	/^owait()$/
+owner	../sys/ufs_fio.c	/^owner(fname, follow)$/
+pack	../h/trace.h	/^#define	pack(a,b)	((a)<<16)|(b)$/
+pagein	../sys/vm_page.c	/^pagein(virtaddr, dlyu)$/
+pagemove	../vax/vm_machdep.c	/^pagemove(from, to, size)$/
+pageout	../sys/vm_page.c	/^pageout()$/
+panic	../sys/subr_prf.c	/^panic(s)$/
+pcbb	../h/vmmac.h	/^#define	pcbb(p)		((p)->p_addr[0].pg_pfnum)$/
+pclattach	../vaxif/if_pcl.c	/^pclattach(ui)$/
+pclinit	../vaxif/if_pcl.c	/^pclinit(unit)$/
+pclioctl	../vaxif/if_pcl.c	/^pclioctl(ifp, cmd, data)$/
+pcloutput	../vaxif/if_pcl.c	/^pcloutput(ifp, m, dst)$/
+pclprobe	../vaxif/if_pcl.c	/^pclprobe(reg)$/
+pclreset	../vaxif/if_pcl.c	/^pclreset(unit, uban)$/
+pclrint	../vaxif/if_pcl.c	/^pclrint(unit)$/
+pclstart	../vaxif/if_pcl.c	/^pclstart(dev)$/
+pclxint	../vaxif/if_pcl.c	/^pclxint(unit)$/
+pfctlinput	../sys/uipc_domain.c	/^pfctlinput(cmd, sa)$/
+pffasttimo	../sys/uipc_domain.c	/^pffasttimo()$/
+pffindproto	../sys/uipc_domain.c	/^pffindproto(family, protocol, type)$/
+pffindtype	../sys/uipc_domain.c	/^pffindtype(family, type)$/
+pfind	../sys/kern_proc.c	/^pfind(pid)$/
+pfslowtimo	../sys/uipc_domain.c	/^pfslowtimo()$/
+pgtocm	../h/cmap.h	/^#define	pgtocm(x)	(((int) ((x)-firstfree) \/ CLSIZE/
+pgtrace	../sys/vm_page.c	/^#define	pgtrace(e)	trace(e,v,u.u_procp->p_pid)$/
+physio	../sys/vm_swp.c	/^physio(strat, bp, dev, rw, mincnt, uio)$/
+physstrat	../vax/machdep.c	/^physstrat(bp, strat, prio)$/
+pipe	../sys/uipc_syscalls.c	/^pipe()$/
+poldecode	../sys/tty_tb.c	/^poldecode(cp, polpos)$/
+pqinit	../sys/kern_proc.c	/^pqinit()$/
+prf	../sys/subr_prf.c	/^prf(fmt, adx, flags, ttyp)$/
+printbyte	../netimp/if_imp.c	/^printbyte(cp, n)$/
+printf	../sys/subr_prf.c	/^printf(fmt, x1)$/
+printleader	../netimp/if_imp.c	/^printleader(routine, ip)$/
+printn	../sys/subr_prf.c	/^printn(n, b, flags, ttyp)$/
+printstate	../vax/rsp.h	/^#define	printstate(state) \\$/
+probe_Abus	../vax/autoconf.c	/^probe_Abus(ioanum, iob)$/
+probeio	../vax/autoconf.c	/^probeio(pcpu)$/
+probenexi	../vax/autoconf.c	/^probenexi(pnc)$/
+procdup	../sys/vm_proc.c	/^procdup(p, isvfork)$/
+procxmt	../sys/sys_process.c	/^procxmt()$/
+profil	../sys/kern_clock.c	/^profil()$/
+prt_addr	../vaxif/if_ddn.c	/^static void prt_addr(addr)$/
+prt_bytes	../vaxif/if_ddn.c	/^static void prt_bytes(bp, cnt)$/
+psattach	../vaxuba/ps.c	/^psattach(ui)$/
+psclockintr	../vaxuba/ps.c	/^psclockintr(dev)$/
+psclose	../vaxuba/ps.c	/^psclose(dev)$/
+psdbswitch	../vaxuba/ps.c	/^psdbswitch(psp, psaddr)$/
+psdeviceintr	../vaxuba/ps.c	/^psdeviceintr(dev)$/
+psdmaintr	../vaxuba/ps.c	/^psdmaintr(dev)$/
+psextsync	../vaxuba/ps.c	/^psextsync(PC, PS)$/
+psig	../sys/kern_sig.c	/^psig()$/
+psignal	../sys/kern_sig.c	/^psignal(p, sig)$/
+psioctl	../vaxuba/ps.c	/^psioctl(dev, cmd, data, flag)$/
+psmapnext	../vaxuba/ps.c	/^psmapnext(psp, psaddr)$/
+psmapstart	../vaxuba/ps.c	/^psmapstart(dfaddr, psp, psaddr)$/
+psmapstop	../vaxuba/ps.c	/^psmapstop(psaddr, psp, request)$/
+psopen	../vaxuba/ps.c	/^psopen(dev)$/
+psprobe	../vaxuba/ps.c	/^psprobe(reg)$/
+psread	../vaxuba/ps.c	/^psread(dev, uio)$/
+psreset	../vaxuba/ps.c	/^psreset(uban)$/
+psrfnext	../vaxuba/ps.c	/^psrfnext(psp, psaddr)$/
+psrfstart	../vaxuba/ps.c	/^psrfstart(dfaddr, last, psp, psaddr)$/
+psrfstop	../vaxuba/ps.c	/^psrfstop(psaddr, psp)$/
+pssetmapbounds	../vaxuba/ps.c	/^pssetmapbounds(psp, psaddr)$/
+pssystemintr	../vaxuba/ps.c	/^pssystemintr(dev)$/
+pswrite	../vaxuba/ps.c	/^pswrite(dev, uio)$/
+ptcclose	../sys/tty_pty.c	/^ptcclose(dev)$/
+ptcopen	../sys/tty_pty.c	/^ptcopen(dev, flag)$/
+ptcread	../sys/tty_pty.c	/^ptcread(dev, uio)$/
+ptcselect	../sys/tty_pty.c	/^ptcselect(dev, rw)$/
+ptcwakeup	../sys/tty_pty.c	/^ptcwakeup(tp, flag)$/
+ptcwrite	../sys/tty_pty.c	/^ptcwrite(dev, uio)$/
+ptetodp	../h/vmmac.h	/^#define	ptetodp(p, pte)		(((pte) - (p)->p_p0br) - /
+ptetosp	../h/vmmac.h	/^#define	ptetosp(p, pte)		(((p)->p_addr - (pte)) - /
+ptetotp	../h/vmmac.h	/^#define	ptetotp(p, pte)		((pte) - (p)->p_p0br)$/
+ptetov	../sys/vm_subr.c	/^ptetov(p, pte)$/
+ptexpand	../sys/vm_pt.c	/^ptexpand(change, ods, oss)$/
+ptob	../h/vmmac.h	/^#define	ptob(x)		((caddr_t)((x) << PGSHIFT))$/
+ptrace	../sys/sys_process.c	/^ptrace()$/
+ptsclose	../sys/tty_pty.c	/^ptsclose(dev)$/
+ptsopen	../sys/tty_pty.c	/^ptsopen(dev, flag)$/
+ptsread	../sys/tty_pty.c	/^ptsread(dev, uio)$/
+ptsstart	../sys/tty_pty.c	/^ptsstart(tp)$/
+ptsstop	../sys/tty_pty.c	/^ptsstop(tp, flush)$/
+ptswrite	../sys/tty_pty.c	/^ptswrite(dev, uio)$/
+ptyioctl	../sys/tty_pty.c	/^ptyioctl(dev, cmd, data, flag)$/
+putc	../sys/tty_subr.c	/^putc(c, p)$/
+putchar	../sys/subr_prf.c	/^putchar(c, flags, tp)$/
+putdq	../sys/quota_kern.c	/^putdq(mp, dq, free)$/
+putmemc	../vax/vm_machdep.c	/^putmemc(addr, val)$/
+putw	../sys/tty_subr.c	/^putw(c, p)$/
+q_to_b	../sys/tty_subr.c	/^q_to_b(q, cp, cc)$/
+qclean	../sys/quota_subr.c	/^qclean()$/
+qe_setaddr	../vaxif/if_qe.c	/^qe_setaddr(physaddr, unit)$/
+qeattach	../vaxif/if_qe.c	/^qeattach(ui)$/
+qeinit	../vaxif/if_qe.c	/^qeinit(unit)$/
+qeinitdesc	../vaxif/if_qe.c	/^qeinitdesc(rp, addr, len)$/
+qeintr	../vaxif/if_qe.c	/^qeintr(unit)$/
+qeioctl	../vaxif/if_qe.c	/^qeioctl(ifp, cmd, data)$/
+qeoutput	../vaxif/if_qe.c	/^qeoutput(ifp, m0, dst)$/
+qeprobe	../vaxif/if_qe.c	/^qeprobe(reg)$/
+qeread	../vaxif/if_qe.c	/^qeread(sc, ifrw, len)$/
+qereset	../vaxif/if_qe.c	/^qereset(unit, uban)$/
+qerestart	../vaxif/if_qe.c	/^qerestart(sc)$/
+qerint	../vaxif/if_qe.c	/^qerint(unit)$/
+qesetup	../vaxif/if_qe.c	/^qesetup( sc )$/
+qestart	../vaxif/if_qe.c	/^qestart(dev)$/
+qetint	../vaxif/if_qe.c	/^qetint(unit)$/
+qewatch	../vaxif/if_qe.c	/^qewatch()$/
+qfind	../sys/quota_kern.c	/^qfind(uid)$/
+qquota	../sys/quota_sys.c	/^qquota()$/
+qsetuid	../sys/quota_sys.c	/^qsetuid(uid, noquota)$/
+qstart	../sys/quota_subr.c	/^qstart(q)$/
+qsync	../sys/quota_sys.c	/^qsync(dev)$/
+qtinit	../sys/quota_kern.c	/^qtinit()$/
+qwarn	../sys/quota_subr.c	/^qwarn(dq)$/
+raw_attach	../net/raw_cb.c	/^raw_attach(so, proto)$/
+raw_bind	../net/raw_cb.c	/^raw_bind(so, nam)$/
+raw_connaddr	../net/raw_cb.c	/^raw_connaddr(rp, nam)$/
+raw_ctlinput	../net/raw_usrreq.c	/^raw_ctlinput(cmd, arg)$/
+raw_detach	../net/raw_cb.c	/^raw_detach(rp)$/
+raw_disconnect	../net/raw_cb.c	/^raw_disconnect(rp)$/
+raw_init	../net/raw_usrreq.c	/^raw_init()$/
+raw_input	../net/raw_usrreq.c	/^raw_input(m0, proto, src, dst)$/
+raw_usrreq	../net/raw_usrreq.c	/^raw_usrreq(so, req, m, nam, rights)$/
+rawintr	../net/raw_usrreq.c	/^rawintr()$/
+rcv_xmtbuf	../vaxif/if_uba.c	/^rcv_xmtbuf(ifw)$/
+rdwri	../sys/sys_inode.c	/^rdwri(rw, ip, base, len, offset, segflg, aresid)$/
+read	../sys/sys_generic.c	/^read()$/
+readlink	../sys/ufs_syscalls.c	/^readlink()$/
+readv	../sys/sys_generic.c	/^readv()$/
+realitexpire	../sys/kern_time.c	/^realitexpire(p)$/
+realloccg	../sys/ufs_alloc.c	/^realloccg(ip, bprev, bpref, osize, nsize)$/
+reboot	../sys/kern_xxx.c	/^reboot()$/
+recv	../sys/uipc_syscalls.c	/^recv()$/
+recvfrom	../sys/uipc_syscalls.c	/^recvfrom()$/
+recvit	../sys/uipc_syscalls.c	/^recvit(s, mp, flags, namelenp, rightslenp)$/
+recvmsg	../sys/uipc_syscalls.c	/^recvmsg()$/
+remque	../h/systm.h	/^#define	remque(q)	_remque((caddr_t)q)$/
+remrq	../vax/locore.s	/^ JSBENTRY(Remrq)$/
+rename	../sys/ufs_syscalls.c	/^rename()$/
+resettodr	../vax/clock.c	/^resettodr()$/
+restor_xmtbuf	../vaxif/if_uba.c	/^restor_xmtbuf(ifw)$/
+resuba	../vax/sys_machdep.c	/^resuba()$/
+resume	../vax/locore.s	/^JSBENTRY(Resume)$/
+rewinddir	../h/dir.h	/^#define rewinddir(dirp)	seekdir((dirp), (long)0)$/
+rexit	../sys/kern_exit.c	/^rexit()$/
+rhy_output	../vaxif/raw_hy.c	/^rhy_output(m, so)$/
+rimp_output	../netimp/raw_imp.c	/^rimp_output(m, so)$/
+rip_ctloutput	../netinet/raw_ip.c	/^rip_ctloutput(op, so, level, optname, m)$/
+rip_input	../netinet/raw_ip.c	/^rip_input(m)$/
+rip_output	../netinet/raw_ip.c	/^rip_output(m0, so)$/
+rkattach	../vaxuba/rk.c	/^rkattach(ui)$/
+rkdgo	../vaxuba/rk.c	/^rkdgo(um)$/
+rkdump	../vaxuba/rk.c	/^rkdump(dev)$/
+rkecc	../vaxuba/rk.c	/^rkecc(ui, flag)$/
+rkintr	../vaxuba/rk.c	/^rkintr(rk11)$/
+rkopen	../vaxuba/rk.c	/^rkopen(dev)$/
+rkprobe	../vaxuba/rk.c	/^rkprobe(reg)$/
+rkread	../vaxuba/rk.c	/^rkread(dev, uio)$/
+rkreset	../vaxuba/rk.c	/^rkreset(uban)$/
+rksize	../vaxuba/rk.c	/^rksize(dev)$/
+rkslave	../vaxuba/rk.c	/^rkslave(ui, reg)$/
+rkstart	../vaxuba/rk.c	/^rkstart(um)$/
+rkstrategy	../vaxuba/rk.c	/^rkstrategy(bp)$/
+rkunit	../vaxuba/rk.c	/^#define rkunit(dev)	(minor(dev) >> 3)$/
+rkustart	../vaxuba/rk.c	/^rkustart(ui)$/
+rkwait	../vaxuba/rk.c	/^rkwait(addr)$/
+rkwatch	../vaxuba/rk.c	/^rkwatch()$/
+rkwrite	../vaxuba/rk.c	/^rkwrite(dev, uio)$/
+rlattach	../vaxuba/rl.c	/^rlattach(ui)$/
+rldgo	../vaxuba/rl.c	/^rldgo(um)$/
+rldump	../vaxuba/rl.c	/^rldump(dev)$/
+rlintr	../vaxuba/rl.c	/^rlintr(rl21)$/
+rlopen	../vaxuba/rl.c	/^rlopen(dev)$/
+rlprobe	../vaxuba/rl.c	/^rlprobe(reg)$/
+rlread	../vaxuba/rl.c	/^rlread(dev, uio)$/
+rlreset	../vaxuba/rl.c	/^rlreset(uban)$/
+rlsize	../vaxuba/rl.c	/^rlsize(dev)$/
+rlslave	../vaxuba/rl.c	/^rlslave(ui, reg)$/
+rlstart	../vaxuba/rl.c	/^rlstart(um)$/
+rlstrategy	../vaxuba/rl.c	/^rlstrategy(bp)$/
+rlunit	../vaxuba/rl.c	/^#define rlunit(dev)	(minor(dev) >> 3)$/
+rlustart	../vaxuba/rl.c	/^rlustart(ui)$/
+rlwait	../vaxuba/rl.c	/^rlwait(rladdr)$/
+rlwatch	../vaxuba/rl.c	/^rlwatch()$/
+rlwrite	../vaxuba/rl.c	/^rlwrite(dev, uio)$/
+rmalloc	../sys/subr_rmap.c	/^rmalloc(mp, size)$/
+rmdir	../sys/ufs_syscalls.c	/^rmdir()$/
+rmfree	../sys/subr_rmap.c	/^rmfree(mp, size, addr)$/
+rmget	../sys/subr_rmap.c	/^rmget(mp, size, addr)$/
+rminit	../sys/subr_rmap.c	/^rminit(mp, size, addr, name, mapsize)$/
+roundrobin	../sys/kern_synch.c	/^roundrobin()$/
+roundup	../h/param.h	/^#define	roundup(x, y)	((((x)+((y)-1))\/(y))*(y))$/
+rqinit	../sys/kern_synch.c	/^rqinit()$/
+rtalloc	../net/route.c	/^rtalloc(ro)$/
+rtfree	../net/route.c	/^rtfree(rt)$/
+rtinit	../net/route.c	/^rtinit(dst, gateway, cmd, flags)$/
+rtioctl	../net/route.c	/^rtioctl(cmd, data)$/
+rtredirect	../net/route.c	/^rtredirect(dst, gateway, flags, src)$/
+rtrequest	../net/route.c	/^rtrequest(req, entry)$/
+ruadd	../sys/kern_resource.c	/^ruadd(ru, ru2)$/
+rwip	../sys/sys_inode.c	/^rwip(ip, uio, rw)$/
+rwuio	../sys/sys_generic.c	/^rwuio(uio, rw)$/
+rxattach	../vaxuba/rx.c	/^rxattach(ui)$/
+rxclose	../vaxuba/rx.c	/^rxclose(dev, flag)$/
+rxdgo	../vaxuba/rx.c	/^rxdgo(um)$/
+rxformat	../vaxuba/rx.c	/^rxformat(dev)$/
+rxintr	../vaxuba/rx.c	/^rxintr(ctlr)$/
+rxioctl	../vaxuba/rx.c	/^rxioctl(dev, cmd, data, flag)$/
+rxmap	../vaxuba/rx.c	/^rxmap(bp, psector, ptrack)$/
+rxopen	../vaxuba/rx.c	/^rxopen(dev, flag)$/
+rxprobe	../vaxuba/rx.c	/^rxprobe (reg)$/
+rxpurge	../vaxuba/rx.c	/^rxpurge(um)$/
+rxread	../vaxuba/rx.c	/^rxread(dev, uio)$/
+rxreset	../vaxuba/rx.c	/^rxreset(uban)$/
+rxslave	../vaxuba/rx.c	/^rxslave(ui, reg)$/
+rxstart	../vaxuba/rx.c	/^rxstart(um)$/
+rxstrategy	../vaxuba/rx.c	/^rxstrategy(bp)$/
+rxustart	../vaxuba/rx.c	/^rxustart(ui)$/
+rxwatch	../vaxuba/rx.c	/^rxwatch()$/
+rxwrite	../vaxuba/rx.c	/^rxwrite(dev, uio)$/
+saccess	../sys/ufs_syscalls.c	/^saccess()$/
+satons_addr	../netns/ns.h	/^#define satons_addr(sa)	(((struct sockaddr_ns *)&(/
+save_rte	../netinet/ip_input.c	/^save_rte(option, dst)$/
+sballoc	../h/socketvar.h	/^#define	sballoc(sb, m) { \\$/
+sbappend	../sys/uipc_socket2.c	/^sbappend(sb, m)$/
+sbappendaddr	../sys/uipc_socket2.c	/^sbappendaddr(sb, asa, m0, rights0)$/
+sbappendrecord	../sys/uipc_socket2.c	/^sbappendrecord(sb, m0)$/
+sbappendrights	../sys/uipc_socket2.c	/^sbappendrights(sb, m0, rights)$/
+sbcompress	../sys/uipc_socket2.c	/^sbcompress(sb, m, n)$/
+sbdrop	../sys/uipc_socket2.c	/^sbdrop(sb, len)$/
+sbdroprecord	../sys/uipc_socket2.c	/^sbdroprecord(sb)$/
+sbflush	../sys/uipc_socket2.c	/^sbflush(sb)$/
+sbfree	../h/socketvar.h	/^#define	sbfree(sb, m) { \\$/
+sblock	../h/socketvar.h	/^#define sblock(sb) { \\$/
+sbrelease	../sys/uipc_socket2.c	/^sbrelease(sb)$/
+sbreserve	../sys/uipc_socket2.c	/^sbreserve(sb, cc)$/
+sbrk	../sys/kern_mman.c	/^sbrk()$/
+sbselqueue	../sys/uipc_socket2.c	/^sbselqueue(sb)$/
+sbspace	../h/socketvar.h	/^#define	sbspace(sb) \\$/
+sbunlock	../h/socketvar.h	/^#define	sbunlock(sb) { \\$/
+sbupdate	../sys/ufs_mount.c	/^sbupdate(mp)$/
+sbwait	../sys/uipc_socket2.c	/^sbwait(sb)$/
+sbwakeup	../sys/uipc_socket2.c	/^sbwakeup(sb)$/
+scale60	../sys/kern_xxx.c	/^scale60(tvp)$/
+scanc	../sys/ufs_subr.c	/^scanc(size, cp, table, mask)$/
+scbentry	../vax/scb.h	/^#define	scbentry(f, how)		((int (*)())(((int)f)+ho/
+sched	../sys/vm_sched.c	/^sched()$/
+schedcpu	../sys/kern_synch.c	/^schedcpu()$/
+schednetisr	../net/netisr.h	/^#define	schednetisr(anisr)	{ netisr |= 1<<(anisr);/
+schedpaging	../sys/vm_sched.c	/^schedpaging()$/
+select	../sys/sys_generic.c	/^select()$/
+selscan	../sys/sys_generic.c	/^selscan(ibits, obits, nfd)$/
+seltrue	../sys/sys_generic.c	/^seltrue(dev, flag)$/
+selwakeup	../sys/sys_generic.c	/^selwakeup(p, coll)$/
+send	../sys/uipc_syscalls.c	/^send()$/
+send_restart	../vaxif/if_ddn.c	/^static void send_restart(ds)$/
+send_supr	../vaxif/if_ddn.c	/^static void send_supr(ds, cmd, p1, p2)$/
+sendit	../sys/uipc_syscalls.c	/^sendit(s, mp, flags)$/
+sendmsg	../sys/uipc_syscalls.c	/^sendmsg()$/
+sendsig	../vax/machdep.c	/^sendsig(p, sig, mask)$/
+sendto	../sys/uipc_syscalls.c	/^sendto()$/
+setbit	../h/param.h	/^#define	setbit(a,i)	((a)[(i)\/NBBY] |= 1<<((i)%NBBY/
+setblock	../sys/ufs_subr.c	/^setblock(fs, cp, h)$/
+setconf	../vax/swapgeneric.c	/^setconf()$/
+setdlim	../sys/quota_sys.c	/^setdlim(q, dev, addr)$/
+setdopt	../sys/kern_descrip.c	/^setdopt()$/
+setduse	../sys/quota_sys.c	/^setduse(q, dev, addr)$/
+setgroups	../sys/kern_prot.c	/^setgroups()$/
+sethostid	../sys/kern_xxx.c	/^sethostid()$/
+sethostname	../sys/kern_xxx.c	/^sethostname()$/
+setitimer	../sys/kern_time.c	/^setitimer()$/
+setjmp	../vax/locore.s	/^JSBENTRY(Setjmp)$/
+setp0br	../h/vmmac.h	/^#define	setp0br(x)	(u.u_pcb.pcb_p0br = (x), mtpr(P/
+setp0lr	../h/vmmac.h	/^#define	setp0lr(x)	(u.u_pcb.pcb_p0lr = \\$/
+setp1br	../h/vmmac.h	/^#define	setp1br(x)	(u.u_pcb.pcb_p1br = (x), mtpr(P/
+setp1lr	../h/vmmac.h	/^#define	setp1lr(x)	(u.u_pcb.pcb_p1lr = (x), mtpr(P/
+setpgrp	../sys/kern_prot.c	/^setpgrp()$/
+setpri	../sys/kern_synch.c	/^setpri(pp)$/
+setpriority	../sys/kern_resource.c	/^setpriority()$/
+setquota	../sys/quota_sys.c	/^setquota()$/
+setredzone	../vax/vm_machdep.c	/^setredzone(pte, vaddr)$/
+setregid	../sys/kern_prot.c	/^setregid()$/
+setregs	../vax/machdep.c	/^setregs(entry)$/
+setreuid	../sys/kern_prot.c	/^setreuid()$/
+setrlimit	../sys/kern_resource.c	/^setrlimit()$/
+setroot	../vax/autoconf.c	/^setroot()$/
+setrq	../vax/locore.s	/^ JSBENTRY(Setrq)$/
+setrun	../sys/kern_synch.c	/^setrun(p)$/
+setscbnex	../vax/autoconf.c	/^setscbnex(fn)$/
+setsigvec	../sys/kern_sig.c	/^setsigvec(sig, sv)$/
+setsockopt	../sys/uipc_syscalls.c	/^setsockopt()$/
+setsoftnet	../net/netisr.h	/^#define	setsoftnet()	mtpr(SIRR, 12)$/
+setthetime	../sys/kern_time.c	/^setthetime(tv)$/
+settimeofday	../sys/kern_time.c	/^settimeofday()$/
+settprot	../vax/vm_machdep.c	/^settprot(tprot)$/
+setwarn	../sys/quota_sys.c	/^setwarn(q, dev, addr)$/
+shutdown	../sys/uipc_syscalls.c	/^shutdown()$/
+sigblock	../sys/kern_sig.c	/^sigblock()$/
+sigmask	../h/signal.h	/^#define sigmask(m)	(1 << ((m)-1))$/
+signal	../h/signal.h	/^int	(*signal())();$/
+sigpause	../sys/kern_sig.c	/^sigpause()$/
+sigreturn	../vax/machdep.c	/^sigreturn()$/
+sigsetmask	../sys/kern_sig.c	/^sigsetmask()$/
+sigstack	../sys/kern_sig.c	/^sigstack()$/
+sigvec	../sys/kern_sig.c	/^sigvec()$/
+sizeof	../netinet/udp_usrreq.c	/^int	udp_recvspace = 4 * (1024+sizeof(struct sockad/
+skpc	../sys/ufs_subr.c	/^skpc(mask, size, cp)$/
+sl_btom	../net/if_sl.c	/^sl_btom(sc, len, ifp)$/
+slattach	../net/if_sl.c	/^slattach()$/
+slclose	../net/if_sl.c	/^slclose(tp)$/
+sleep	../sys/kern_synch.c	/^sleep(chan, pri)$/
+slinit	../net/if_sl.c	/^slinit(sc)$/
+slinput	../net/if_sl.c	/^slinput(c, tp)$/
+slioctl	../net/if_sl.c	/^slioctl(ifp, cmd, data)$/
+slopen	../net/if_sl.c	/^slopen(dev, tp)$/
+sloutput	../net/if_sl.c	/^sloutput(ifp, m, dst)$/
+slstart	../net/if_sl.c	/^slstart(tp)$/
+sltioctl	../net/if_sl.c	/^sltioctl(tp, cmd, data, flag)$/
+smmap	../sys/kern_mman.c	/^smmap()$/
+smount	../sys/ufs_mount.c	/^smount()$/
+snd_supr	../vaxif/if_hdh.c	/^snd_supr(unit, msg, len)$/
+soabort	../sys/uipc_socket.c	/^soabort(so)$/
+soaccept	../sys/uipc_socket.c	/^soaccept(so, nam)$/
+sobind	../sys/uipc_socket.c	/^sobind(so, nam)$/
+socantrcvmore	../sys/uipc_socket2.c	/^socantrcvmore(so)$/
+socantsendmore	../sys/uipc_socket2.c	/^socantsendmore(so)$/
+sockargs	../sys/uipc_syscalls.c	/^sockargs(aname, name, namelen, type)$/
+socket	../sys/uipc_syscalls.c	/^socket()$/
+socketpair	../sys/uipc_syscalls.c	/^socketpair()$/
+soclose	../sys/uipc_socket.c	/^soclose(so)$/
+soconnect	../sys/uipc_socket.c	/^soconnect(so, nam)$/
+soconnect2	../sys/uipc_socket.c	/^soconnect2(so1, so2)$/
+socreate	../sys/uipc_socket.c	/^socreate(dom, aso, type, proto)$/
+sodisconnect	../sys/uipc_socket.c	/^sodisconnect(so)$/
+sofree	../sys/uipc_socket.c	/^sofree(so)$/
+softclock	../sys/kern_clock.c	/^softclock(pc, ps)$/
+sogetopt	../sys/uipc_socket.c	/^sogetopt(so, level, optname, mp)$/
+sohasoutofband	../sys/uipc_socket.c	/^sohasoutofband(so)$/
+soisconnected	../sys/uipc_socket2.c	/^soisconnected(so)$/
+soisconnecting	../sys/uipc_socket2.c	/^soisconnecting(so)$/
+soisdisconnected	../sys/uipc_socket2.c	/^soisdisconnected(so)$/
+soisdisconnecting	../sys/uipc_socket2.c	/^soisdisconnecting(so)$/
+solisten	../sys/uipc_socket.c	/^solisten(so, backlog)$/
+sonewconn	../sys/uipc_socket2.c	/^sonewconn(head)$/
+soo_close	../sys/sys_socket.c	/^soo_close(fp)$/
+soo_ioctl	../sys/sys_socket.c	/^soo_ioctl(fp, cmd, data)$/
+soo_rw	../sys/sys_socket.c	/^soo_rw(fp, rw, uio)$/
+soo_select	../sys/sys_socket.c	/^soo_select(fp, which)$/
+soo_stat	../sys/sys_socket.c	/^soo_stat(so, ub)$/
+soqinsque	../sys/uipc_socket2.c	/^soqinsque(head, so, q)$/
+soqremque	../sys/uipc_socket2.c	/^soqremque(so, q)$/
+soreadable	../h/socketvar.h	/^#define	soreadable(so) \\$/
+soreceive	../sys/uipc_socket.c	/^soreceive(so, aname, uio, flags, rightsp)$/
+soreserve	../sys/uipc_socket2.c	/^soreserve(so, sndcc, rcvcc)$/
+sorflush	../sys/uipc_socket.c	/^sorflush(so)$/
+sorwakeup	../h/socketvar.h	/^#define	sorwakeup(so)	sowakeup((so), &(so)->so_rcv/
+sosend	../sys/uipc_socket.c	/^sosend(so, nam, uio, flags, rights)$/
+sosendallatonce	../h/socketvar.h	/^#define	sosendallatonce(so) \\$/
+sosetopt	../sys/uipc_socket.c	/^sosetopt(so, level, optname, m0)$/
+soshutdown	../sys/uipc_socket.c	/^soshutdown(so, how)$/
+sotoinpcb	../netinet/in_pcb.h	/^#define	sotoinpcb(so)	((struct inpcb *)(so)->so_pc/
+sotonspcb	../netns/ns_pcb.h	/^#define	sotonspcb(so)		((struct nspcb *)((so)->so_/
+sotorawcb	../net/raw_cb.h	/^#define	sotorawcb(so)		((struct rawcb *)(so)->so_p/
+sotosppcb	../netns/spp_var.h	/^#define	sotosppcb(so)	(nstosppcb(sotonspcb(so)))$/
+sototcpcb	../netinet/tcp_var.h	/^#define	sototcpcb(so)	(intotcpcb(sotoinpcb(so)))$/
+sotounpcb	../h/unpcb.h	/^#define	sotounpcb(so)	((struct unpcb *)((so)->so_p/
+sowakeup	../sys/uipc_socket2.c	/^sowakeup(so, sb)$/
+sowriteable	../h/socketvar.h	/^#define	sowriteable(so) \\$/
+sowwakeup	../h/socketvar.h	/^#define	sowwakeup(so)	sowakeup((so), &(so)->so_snd/
+spgrp	../sys/kern_proc.c	/^spgrp(top)$/
+spl_enet	../vaxif/if_enreg.h	/^#define	spl_enet()	spl5()$/
+spltu	../vax/tu.c	/^#define	spltu()	((cpu == VAX_750) ? spl7() : spl4(/
+spp_abort	../netns/spp_usrreq.c	/^spp_abort(nsp)$/
+spp_close	../netns/spp_usrreq.c	/^spp_close(cb)$/
+spp_ctlinput	../netns/spp_usrreq.c	/^spp_ctlinput(cmd, arg)$/
+spp_ctloutput	../netns/spp_usrreq.c	/^spp_ctloutput(req, so, level, name, value)$/
+spp_disconnect	../netns/spp_usrreq.c	/^spp_disconnect(cb)$/
+spp_drop	../netns/spp_usrreq.c	/^spp_drop(cb, errno)$/
+spp_fasttimo	../netns/spp_usrreq.c	/^spp_fasttimo()$/
+spp_fixmtu	../netns/spp_usrreq.c	/^spp_fixmtu(nsp)$/
+spp_init	../netns/spp_usrreq.c	/^spp_init()$/
+spp_input	../netns/spp_usrreq.c	/^spp_input(m, nsp, ifp)$/
+spp_output	../netns/spp_usrreq.c	/^spp_output(cb, m0)$/
+spp_reass	../netns/spp_usrreq.c	/^spp_reass(cb, si)$/
+spp_setpersist	../netns/spp_usrreq.c	/^spp_setpersist(cb)$/
+spp_slowtimo	../netns/spp_usrreq.c	/^spp_slowtimo()$/
+spp_template	../netns/spp_usrreq.c	/^spp_template(cb)$/
+spp_timers	../netns/spp_usrreq.c	/^spp_timers(cb, timer)$/
+spp_trace	../netns/spp_debug.c	/^spp_trace(act, ostate, sp, si, req)$/
+spp_usrclosed	../netns/spp_usrreq.c	/^spp_usrclosed(cb)$/
+spp_usrreq	../netns/spp_usrreq.c	/^spp_usrreq(so, req, m, nam, rights)$/
+spp_usrreq_sp	../netns/spp_usrreq.c	/^spp_usrreq_sp(so, req, m, nam, rights)$/
+sptopte	../h/vmmac.h	/^#define	sptopte(p, i)		((p)->p_addr - (1 + (i)))$/
+sptov	../h/vmmac.h	/^#define	sptov(p, i)	((unsigned)(BTOPUSRSTACK - 1 -/
+sstk	../sys/kern_mman.c	/^sstk()$/
+start	../vax/locore.s	/^start:$/
+start_chn	../vaxif/if_ddn.c	/^static void start_chn(ds)$/
+startkgclock	../vaxuba/kgclock.c	/^startkgclock()$/
+startrtclock	../vax/clock.c	/^startrtclock()$/
+startup	../vax/machdep.c	/^startup(firstaddr)$/
+stat	../sys/ufs_syscalls.c	/^stat()$/
+stat1	../sys/ufs_syscalls.c	/^stat1(follow)$/
+stoc	../vax/machparam.h	/^#define	stoc(x)	(x)$/
+stop	../sys/kern_sig.c	/^stop(p)$/
+strlen	../sys/subr_xxx.c	/^strlen(s1)$/
+subyte	../vax/locore.s	/^JSBENTRY(Subyte)$/
+supr_msg	../vaxif/if_ddn.c	/^static void supr_msg(ds, p)$/
+suser	../sys/ufs_fio.c	/^suser()$/
+suword	../vax/locore.s	/^JSBENTRY(Suword)$/
+swap	../sys/vm_swp.c	/^swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pf/
+swapconf	../vax/autoconf.c	/^swapconf()$/
+swapin	../sys/vm_swap.c	/^swapin(p)$/
+swapon	../sys/vm_sw.c	/^swapon()$/
+swapout	../sys/vm_swap.c	/^swapout(p, ds, ss)$/
+swappable	../sys/vm_sched.c	/^#define	swappable(p) \\$/
+swdone	../sys/vm_swp.c	/^swdone(bp)$/
+swdspt	../sys/vm_swap.c	/^swdspt(p, utl, rdwri)$/
+swfree	../sys/vm_sw.c	/^swfree(index)$/
+swkill	../sys/vm_swp.c	/^swkill(p, rout)$/
+swpexpand	../sys/vm_drum.c	/^swpexpand(ds, ss, dmp, smp)$/
+swpt	../sys/vm_swap.c	/^swpt(rdwri, p, doff, a, n)$/
+swread	../sys/vm_sw.c	/^swread(dev, uio)$/
+swstrategy	../sys/vm_sw.c	/^swstrategy(bp)$/
+swtch	../vax/locore.s	/^JSBENTRY(Swtch)$/
+swwrite	../sys/vm_sw.c	/^swwrite(dev, uio)$/
+syioctl	../sys/tty_tty.c	/^syioctl(dev, cmd, addr, flag)$/
+symlink	../sys/ufs_syscalls.c	/^symlink()$/
+sync	../sys/ufs_syscalls.c	/^sync()$/
+syncip	../sys/ufs_subr.c	/^syncip(ip)$/
+syopen	../sys/tty_tty.c	/^syopen(dev, flag)$/
+syread	../sys/tty_tty.c	/^syread(dev, uio)$/
+sysacct	../sys/kern_acct.c	/^sysacct()$/
+syscall	../vax/trap.c	/^syscall(sp, type, code, pc, psl)$/
+syselect	../sys/tty_tty.c	/^syselect(dev, flag)$/
+sywrite	../sys/tty_tty.c	/^sywrite(dev, uio)$/
+tablefull	../sys/subr_prf.c	/^tablefull(tab)$/
+tbclose	../sys/tty_tb.c	/^tbclose(tp)$/
+tbdecode	../sys/tty_tb.c	/^tbdecode(cp, tbpos)$/
+tbhresdecode	../sys/tty_tb.c	/^tbhresdecode(cp, tbpos)$/
+tbinput	../sys/tty_tb.c	/^tbinput(c, tp)$/
+tbioctl	../sys/tty_tb.c	/^tbioctl(tp, cmd, data, flag)$/
+tbiscl	../vax/machdep.c	/^tbiscl(v)$/
+tblresdecode	../sys/tty_tb.c	/^tblresdecode(cp, tbpos)$/
+tbopen	../sys/tty_tb.c	/^tbopen(dev, tp)$/
+tbread	../sys/tty_tb.c	/^tbread(tp, uio)$/
+tcp_attach	../netinet/tcp_usrreq.c	/^tcp_attach(so)$/
+tcp_canceltimers	../netinet/tcp_timer.c	/^tcp_canceltimers(tp)$/
+tcp_close	../netinet/tcp_subr.c	/^tcp_close(tp)$/
+tcp_ctlinput	../netinet/tcp_subr.c	/^tcp_ctlinput(cmd, sa)$/
+tcp_ctloutput	../netinet/tcp_usrreq.c	/^tcp_ctloutput(op, so, level, optname, mp)$/
+tcp_disconnect	../netinet/tcp_usrreq.c	/^tcp_disconnect(tp)$/
+tcp_dooptions	../netinet/tcp_input.c	/^tcp_dooptions(tp, om, ti)$/
+tcp_drain	../netinet/tcp_subr.c	/^tcp_drain()$/
+tcp_drop	../netinet/tcp_subr.c	/^tcp_drop(tp, errno)$/
+tcp_fasttimo	../netinet/tcp_timer.c	/^tcp_fasttimo()$/
+tcp_init	../netinet/tcp_subr.c	/^tcp_init()$/
+tcp_input	../netinet/tcp_input.c	/^tcp_input(m0)$/
+tcp_mss	../netinet/tcp_input.c	/^tcp_mss(tp)$/
+tcp_newtcpcb	../netinet/tcp_subr.c	/^tcp_newtcpcb(inp)$/
+tcp_output	../netinet/tcp_output.c	/^tcp_output(tp)$/
+tcp_pulloutofband	../netinet/tcp_input.c	/^tcp_pulloutofband(so, ti)$/
+tcp_quench	../netinet/tcp_subr.c	/^tcp_quench(inp)$/
+tcp_rcvseqinit	../netinet/tcp_seq.h	/^#define	tcp_rcvseqinit(tp) \\$/
+tcp_reass	../netinet/tcp_input.c	/^tcp_reass(tp, ti)$/
+tcp_respond	../netinet/tcp_subr.c	/^tcp_respond(tp, ti, ack, seq, flags)$/
+tcp_sendseqinit	../netinet/tcp_seq.h	/^#define	tcp_sendseqinit(tp) \\$/
+tcp_setpersist	../netinet/tcp_output.c	/^tcp_setpersist(tp)$/
+tcp_slowtimo	../netinet/tcp_timer.c	/^tcp_slowtimo()$/
+tcp_template	../netinet/tcp_subr.c	/^tcp_template(tp)$/
+tcp_timers	../netinet/tcp_timer.c	/^tcp_timers(tp, timer)$/
+tcp_trace	../netinet/tcp_debug.c	/^tcp_trace(act, ostate, tp, ti, req)$/
+tcp_usrclosed	../netinet/tcp_usrreq.c	/^tcp_usrclosed(tp)$/
+tcp_usrreq	../netinet/tcp_usrreq.c	/^tcp_usrreq(so, req, m, nam, rights)$/
+timeout	../sys/kern_clock.c	/^timeout(fun, arg, t)$/
+timerclear	../h/time.h	/^#define	timerclear(tvp)		(tvp)->tv_sec = (tvp)->tv/
+timercmp	../h/time.h	/^#define	timercmp(tvp, uvp, cmp)	\\$/
+timerisset	../h/time.h	/^#define	timerisset(tvp)		((tvp)->tv_sec || (tvp)->/
+timevaladd	../sys/kern_time.c	/^timevaladd(t1, t2)$/
+timevalfix	../sys/kern_time.c	/^timevalfix(t1)$/
+timevalsub	../sys/kern_time.c	/^timevalsub(t1, t2)$/
+tmattach	../vaxuba/tm.c	/^tmattach(ui)$/
+tmclose	../vaxuba/tm.c	/^tmclose(dev, flag)$/
+tmcommand	../vaxuba/tm.c	/^tmcommand(dev, com, count)$/
+tmdgo	../vaxuba/tm.c	/^tmdgo(um)$/
+tmdump	../vaxuba/tm.c	/^tmdump()$/
+tmdwrite	../vaxuba/tm.c	/^tmdwrite(dbuf, num, addr, up)$/
+tmeof	../vaxuba/tm.c	/^tmeof(addr)$/
+tmintr	../vaxuba/tm.c	/^tmintr(tm11)$/
+tmioctl	../vaxuba/tm.c	/^tmioctl(dev, cmd, data, flag)$/
+tmopen	../vaxuba/tm.c	/^tmopen(dev, flag)$/
+tmphys	../vaxuba/tm.c	/^tmphys(dev, uio)$/
+tmprobe	../vaxuba/tm.c	/^tmprobe(reg)$/
+tmread	../vaxuba/tm.c	/^tmread(dev, uio)$/
+tmreset	../vaxuba/tm.c	/^tmreset(uban)$/
+tmreverseop	../vaxuba/tmreg.h	/^#define	tmreverseop(cmd)		((cmd)==TM_SREV || (cmd)/
+tmscpattach	../vaxuba/tmscp.c	/^tmscpattach (ui)$/
+tmscpclose	../vaxuba/tmscp.c	/^tmscpclose(dev, flag)$/
+tmscpcmd	../vaxuba/tmscp.c	/^tmscpcmd(op, tmscpp, tmscpaddr)$/
+tmscpcommand	../vaxuba/tmscp.c	/^tmscpcommand (dev, com, count)$/
+tmscpdump	../vaxuba/tmscp.c	/^tmscpdump(dev)$/
+tmscpgetcp	../vaxuba/tmscp.c	/^tmscpgetcp(um)$/
+tmscpinit	../vaxuba/tmscp.c	/^tmscpinit (d)$/
+tmscpintr	../vaxuba/tmscp.c	/^tmscpintr (d)$/
+tmscpioctl	../vaxuba/tmscp.c	/^tmscpioctl(dev, cmd, data, flag)$/
+tmscpopen	../vaxuba/tmscp.c	/^tmscpopen(dev, flag)$/
+tmscpprobe	../vaxuba/tmscp.c	/^tmscpprobe(reg, ctlr)$/
+tmscpread	../vaxuba/tmscp.c	/^tmscpread(dev, uio)$/
+tmscpreset	../vaxuba/tmscp.c	/^tmscpreset (uban)$/
+tmscprsp	../vaxuba/tmscp.c	/^tmscprsp(um, tm, sc, i)$/
+tmscpslave	../vaxuba/tmscp.c	/^tmscpslave (ui, reg)$/
+tmscpstart	../vaxuba/tmscp.c	/^tmscpstart(um)$/
+tmscpstrategy	../vaxuba/tmscp.c	/^tmscpstrategy (bp)$/
+tmscpwrite	../vaxuba/tmscp.c	/^tmscpwrite(dev, uio)$/
+tmserror	../vaxuba/tmscp.c	/^tmserror(um, mp)$/
+tmseteof	../vaxuba/tm.c	/^tmseteof(bp)$/
+tmslave	../vaxuba/tm.c	/^tmslave(ui, reg)$/
+tmstart	../vaxuba/tm.c	/^tmstart(um)$/
+tmstrategy	../vaxuba/tm.c	/^tmstrategy(bp)$/
+tmtimer	../vaxuba/tm.c	/^tmtimer(dev)$/
+tmwait	../vaxuba/tm.c	/^tmwait(addr)$/
+tmwrite	../vaxuba/tm.c	/^tmwrite(dev, uio)$/
+tocons	../vax/machdep.c	/^tocons(c)$/
+tprintf	../sys/subr_prf.c	/^tprintf(tp, fmt, x1)$/
+tptopte	../h/vmmac.h	/^#define	tptopte(p, i)		((p)->p_p0br + (i))$/
+tptov	../h/vmmac.h	/^#define	tptov(p, i)	((unsigned)(i))$/
+trace	../vaxuba/idc.c	/^#define	trace(a,b) {*trp++ = *(int*)a; *trp++ = (i/
+trace1	../sys/vm_mon.c	/^trace1(args)$/
+trap	../vax/trap.c	/^trap(sp, type, code, pc, psl)$/
+truncate	../sys/ufs_syscalls.c	/^truncate()$/
+tsattach	../vaxuba/ts.c	/^tsattach(ui)$/
+tsclose	../vaxuba/ts.c	/^tsclose(dev, flag)$/
+tscommand	../vaxuba/ts.c	/^tscommand(dev, com, count)$/
+tsdgo	../vaxuba/ts.c	/^tsdgo(um)$/
+tsdump	../vaxuba/ts.c	/^tsdump()$/
+tsdwrite	../vaxuba/ts.c	/^tsdwrite(dbuf, num, addr, up)$/
+tseof	../vaxuba/ts.c	/^tseof(addr)$/
+tsinit	../vaxuba/ts.c	/^tsinit(unit)$/
+tsintr	../vaxuba/ts.c	/^tsintr(ts11)$/
+tsioctl	../vaxuba/ts.c	/^tsioctl(dev, cmd, data, flag)$/
+tsopen	../vaxuba/ts.c	/^tsopen(dev, flag)$/
+tsphys	../vaxuba/ts.c	/^tsphys(dev, uio)$/
+tsprobe	../vaxuba/ts.c	/^tsprobe(reg)$/
+tsread	../vaxuba/ts.c	/^tsread(dev, uio)$/
+tsreset	../vaxuba/ts.c	/^tsreset(uban)$/
+tsseteof	../vaxuba/ts.c	/^tsseteof(bp)$/
+tsslave	../vaxuba/ts.c	/^tsslave(ui, reg)$/
+tsstart	../vaxuba/ts.c	/^tsstart(um)$/
+tsstrategy	../vaxuba/ts.c	/^tsstrategy(bp)$/
+tswait	../vaxuba/ts.c	/^tswait(addr)$/
+tswrite	../vaxuba/ts.c	/^tswrite(dev, uio)$/
+ttbreakc	../sys/tty.c	/^ttbreakc(c, tp)$/
+ttioctl	../sys/tty.c	/^ttioctl(tp, com, data, flag)$/
+ttnread	../sys/tty.c	/^ttnread(tp)$/
+ttread	../sys/tty.c	/^ttread(tp, uio)$/
+ttrstrt	../sys/tty.c	/^ttrstrt(tp)$/
+ttselect	../sys/tty.c	/^ttselect(dev, rw)$/
+ttstart	../sys/tty.c	/^ttstart(tp)$/
+ttwakeup	../sys/tty.c	/^ttwakeup(tp)$/
+ttwrite	../sys/tty.c	/^ttwrite(tp, uio)$/
+ttyblock	../sys/tty.c	/^ttyblock(tp)$/
+ttychars	../sys/tty.c	/^ttychars(tp)$/
+ttycheckoutq	../sys/tty.c	/^ttycheckoutq(tp, wait)$/
+ttyclose	../sys/tty.c	/^ttyclose(tp)$/
+ttyecho	../sys/tty.c	/^ttyecho(c, tp)$/
+ttyflush	../sys/tty.c	/^ttyflush(tp, rw)$/
+ttyinput	../sys/tty.c	/^ttyinput(c, tp)$/
+ttylclose	../sys/tty.c	/^ttylclose(tp)$/
+ttymodem	../sys/tty.c	/^ttymodem(tp, flag)$/
+ttyopen	../sys/tty.c	/^ttyopen(dev, tp)$/
+ttyout	../sys/tty.c	/^ttyout(cp, tp)$/
+ttyoutput	../sys/tty.c	/^ttyoutput(c, tp)$/
+ttypend	../sys/tty.c	/^ttypend(tp)$/
+ttyretype	../sys/tty.c	/^ttyretype(tp)$/
+ttyrub	../sys/tty.c	/^ttyrub(c, tp)$/
+ttyrubo	../sys/tty.c	/^ttyrubo(tp, cnt)$/
+ttywait	../sys/tty.c	/^ttywait(tp)$/
+ttywflush	../sys/tty.c	/^ttywflush(tp)$/
+tu_pee	../vaxuba/uu.c	/^tu_pee(cp)$/
+tu_restart	../vax/tu.c	/^tu_restart()$/
+tu_vee	../vaxuba/uu.c	/^tu_vee(cp)$/
+tuchk	../vaxuba/uu.c	/^tuchk(word, cp, n)$/
+tuclose	../vax/tu.c	/^tuclose(dev, flag)$/
+tudma	../vax/locore.s	/^tudma:$/
+tuopen	../vax/tu.c	/^tuopen(dev, flag)$/
+tureset	../vax/tu.c	/^tureset()$/
+turintr	../vax/tu.c	/^turintr()$/
+tustart	../vax/tu.c	/^tustart()$/
+tustrategy	../vax/tu.c	/^tustrategy(bp)$/
+tuwake	../vax/tu.c	/^tuwake(bp)$/
+tuwatch	../vax/tu.c	/^tuwatch()$/
+tuxintr	../vax/tu.c	/^tuxintr()$/
+uaccess	../sys/vm_subr.c	/^uaccess(p, map, uarea)$/
+uaddr	../h/vmmac.h	/^#define	uaddr(p)	(&((p)->p_p0br[(p)->p_szpt * NPTE/
+ubadone	../vaxuba/uba.c	/^ubadone(um)$/
+ubaerror	../vaxuba/uba.c	/^ubaerror(uban, uh, ipl, uvec, uba)$/
+ubago	../vaxuba/uba.c	/^ubago(ui)$/
+ubainit	../vaxuba/uba.c	/^ubainit(uba)$/
+ubainitmaps	../vaxuba/uba.c	/^ubainitmaps(uhp)$/
+uballoc	../vaxuba/uba.c	/^uballoc(uban, addr, bcnt, flags)$/
+ubamem	../vaxuba/uba.c	/^ubamem(uban, addr, npg, doalloc)$/
+ubameminit	../vaxuba/uba.c	/^ubameminit(uban)$/
+ubapurge	../vaxuba/uba.c	/^ubapurge(um)$/
+ubarelse	../vaxuba/uba.c	/^ubarelse(uban, amr)$/
+ubareset	../vaxuba/uba.c	/^ubareset(uban)$/
+ubasetup	../vaxuba/uba.c	/^ubasetup(uban, bp, flags)$/
+ubdevreg	../vaxuba/ubareg.h	/^#define	ubdevreg(addr)	(0760000|((addr)&017777))$/
+udattach	../vaxuba/uda.c	/^udattach(ui)$/
+udcmd	../vaxuba/uda.c	/^udcmd(op, udp, udaddr)$/
+uddump	../vaxuba/uda.c	/^uddump(dev)$/
+uderror	../vaxuba/uda.c	/^uderror(um, mp)$/
+udgetcp	../vaxuba/uda.c	/^udgetcp(um)$/
+udinit	../vaxuba/uda.c	/^udinit(d)$/
+udintr	../vaxuba/uda.c	/^udintr(d)$/
+udopen	../vaxuba/uda.c	/^udopen(dev, flag)$/
+udp_ctlinput	../netinet/udp_usrreq.c	/^udp_ctlinput(cmd, sa)$/
+udp_init	../netinet/udp_usrreq.c	/^udp_init()$/
+udp_input	../netinet/udp_usrreq.c	/^udp_input(m0, ifp)$/
+udp_notify	../netinet/udp_usrreq.c	/^udp_notify(inp)$/
+udp_output	../netinet/udp_usrreq.c	/^udp_output(inp, m0)$/
+udp_usrreq	../netinet/udp_usrreq.c	/^udp_usrreq(so, req, m, nam, rights)$/
+udprobe	../vaxuba/uda.c	/^udprobe(reg, ctlr)$/
+udread	../vaxuba/uda.c	/^udread(dev, uio)$/
+udreset	../vaxuba/uda.c	/^udreset(uban)$/
+udrsp	../vaxuba/uda.c	/^udrsp(um, ud, sc, i)$/
+udsize	../vaxuba/uda.c	/^udsize(dev)$/
+udslave	../vaxuba/uda.c	/^udslave(ui, reg)$/
+udstart	../vaxuba/uda.c	/^udstart(um)$/
+udstrategy	../vaxuba/uda.c	/^udstrategy(bp)$/
+udunit	../vaxuba/uda.c	/^#define udunit(dev)	(minor(dev) >> 3)$/
+udwrite	../vaxuba/uda.c	/^udwrite(dev, uio)$/
+ufalloc	../sys/kern_descrip.c	/^ufalloc(i)$/
+ufavail	../sys/kern_descrip.c	/^ufavail()$/
+uiomove	../sys/kern_subr.c	/^uiomove(cp, n, rw, uio)$/
+uipc_usrreq	../sys/uipc_usrreq.c	/^uipc_usrreq(so, req, m, nam, rights)$/
+umask	../sys/ufs_syscalls.c	/^umask()$/
+umount	../sys/ufs_mount.c	/^umount()$/
+unifind	../vax/autoconf.c	/^unifind(vubp, pubp, vumem, pumem, memmap, haveubas/
+unlink	../sys/ufs_syscalls.c	/^unlink()$/
+unmaptouser	../vaxuba/uba.c	/^unmaptouser(vaddress)$/
+unmount1	../sys/ufs_mount.c	/^unmount1(fname, forcibly)$/
+unp_abort	../sys/uipc_usrreq.c	/^unp_abort(unp)$/
+unp_attach	../sys/uipc_usrreq.c	/^unp_attach(so)$/
+unp_bind	../sys/uipc_usrreq.c	/^unp_bind(unp, nam)$/
+unp_connect	../sys/uipc_usrreq.c	/^unp_connect(so, nam)$/
+unp_connect2	../sys/uipc_usrreq.c	/^unp_connect2(so, so2)$/
+unp_detach	../sys/uipc_usrreq.c	/^unp_detach(unp)$/
+unp_discard	../sys/uipc_usrreq.c	/^unp_discard(fp)$/
+unp_disconnect	../sys/uipc_usrreq.c	/^unp_disconnect(unp)$/
+unp_dispose	../sys/uipc_usrreq.c	/^unp_dispose(m)$/
+unp_drain	../sys/uipc_usrreq.c	/^unp_drain()$/
+unp_drop	../sys/uipc_usrreq.c	/^unp_drop(unp, errno)$/
+unp_externalize	../sys/uipc_usrreq.c	/^unp_externalize(rights)$/
+unp_gc	../sys/uipc_usrreq.c	/^unp_gc()$/
+unp_internalize	../sys/uipc_usrreq.c	/^unp_internalize(rights)$/
+unp_mark	../sys/uipc_usrreq.c	/^unp_mark(fp)$/
+unp_scan	../sys/uipc_usrreq.c	/^unp_scan(m0, op)$/
+unp_usrclosed	../sys/uipc_usrreq.c	/^unp_usrclosed(unp)$/
+unputc	../sys/tty_subr.c	/^unputc(p)$/
+unselect	../sys/sys_generic.c	/^unselect(p)$/
+unsleep	../sys/kern_synch.c	/^unsleep(p)$/
+untimeout	../sys/kern_clock.c	/^untimeout(fun, arg)$/
+upattach	../vaxuba/up.c	/^upattach(ui)$/
+update	../sys/ufs_subr.c	/^update()$/
+updatepri	../sys/kern_synch.c	/^updatepri(p)$/
+updgo	../vaxuba/up.c	/^updgo(um)$/
+updump	../vaxuba/up.c	/^updump(dev)$/
+upecc	../vaxuba/up.c	/^upecc(ui, flag)$/
+upintr	../vaxuba/up.c	/^upintr(sc21)$/
+upmaptype	../vaxuba/up.c	/^upmaptype(ui)$/
+upopen	../vaxuba/up.c	/^upopen(dev)$/
+upprobe	../vaxuba/up.c	/^upprobe(reg)$/
+upread	../vaxuba/up.c	/^upread(dev, uio)$/
+upreset	../vaxuba/up.c	/^upreset(uban)$/
+uprintf	../sys/subr_prf.c	/^uprintf(fmt, x1)$/
+upsize	../vaxuba/up.c	/^upsize(dev)$/
+upslave	../vaxuba/up.c	/^upslave(ui, reg)$/
+upstart	../vaxuba/up.c	/^upstart(um)$/
+upstrategy	../vaxuba/up.c	/^upstrategy(bp)$/
+upunit	../vaxuba/up.c	/^#define upunit(dev)	(minor(dev) >> 3)$/
+upustart	../vaxuba/up.c	/^upustart(ui)$/
+upwatch	../vaxuba/up.c	/^upwatch()$/
+upwrite	../vaxuba/up.c	/^upwrite(dev, uio)$/
+ureadc	../sys/kern_subr.c	/^ureadc(c, uio)$/
+useracc	../vax/locore.s	/^ENTRY(useracc, 0)$/
+utattach	../vaxuba/ut.c	/^utattach(ui)$/
+utclose	../vaxuba/ut.c	/^utclose(dev, flag)$/
+utcommand	../vaxuba/ut.c	/^utcommand(dev, com, count)$/
+utdgo	../vaxuba/ut.c	/^utdgo(um)$/
+utdump	../vaxuba/ut.c	/^utdump()$/
+utdwrite	../vaxuba/ut.c	/^utdwrite(dbuf, num, addr, up)$/
+uteof	../vaxuba/ut.c	/^uteof(addr)$/
+utimes	../sys/ufs_syscalls.c	/^utimes()$/
+utintr	../vaxuba/ut.c	/^utintr(ut11)$/
+utioctl	../vaxuba/ut.c	/^utioctl(dev, cmd, data, flag)$/
+utopen	../vaxuba/ut.c	/^utopen(dev, flag)$/
+utphys	../vaxuba/ut.c	/^utphys(dev, uio)$/
+utprobe	../vaxuba/ut.c	/^utprobe(reg)$/
+utread	../vaxuba/ut.c	/^utread(dev, uio)$/
+utreset	../vaxuba/ut.c	/^utreset(uban)$/
+utslave	../vaxuba/ut.c	/^utslave(ui, reg)$/
+utstart	../vaxuba/ut.c	/^utstart(um)$/
+utstrategy	../vaxuba/ut.c	/^utstrategy(bp)$/
+uttimer	../vaxuba/ut.c	/^uttimer(dev)$/
+utwait	../vaxuba/ut.c	/^utwait(addr)$/
+utwrite	../vaxuba/ut.c	/^utwrite(dev, uio)$/
+uu_restart	../vaxuba/uu.c	/^uu_restart(ctlr, ui)$/
+uuattach	../vaxuba/uu.c	/^uuattach(ui)$/
+uuclose	../vaxuba/uu.c	/^uuclose(dev, flag)$/
+uudma	../vax/locore.s	/^uudma:$/
+uuioctl	../vaxuba/uu.c	/^uuioctl(dev, cmd, data, flag)$/
+uuopen	../vaxuba/uu.c	/^uuopen(dev, flag)$/
+uuprobe	../vaxuba/uu.c	/^uuprobe(reg)$/
+uureset	../vaxuba/uu.c	/^uureset(ctlr)$/
+uurintr	../vaxuba/uu.c	/^uurintr(ctlr)$/
+uustart	../vaxuba/uu.c	/^uustart(ui)$/
+uustrategy	../vaxuba/uu.c	/^uustrategy(bp)$/
+uuwake	../vaxuba/uu.c	/^uuwake(bp)$/
+uuwatch	../vaxuba/uu.c	/^uuwatch()$/
+uuxintr	../vaxuba/uu.c	/^uuxintr(ctlr)$/
+uwritec	../sys/kern_subr.c	/^uwritec(uio)$/
+vaattach	../vaxuba/va.c	/^vaattach(ui)$/
+vaclose	../vaxuba/va.c	/^vaclose(dev)$/
+vacmd	../vaxuba/va.c	/^vacmd(dev, vcmd)$/
+vadgo	../vaxuba/va.c	/^vadgo(um)$/
+vadopio	../vaxuba/va.c	/^vadopio(dev, cmd)$/
+vaintr	../vaxuba/va.c	/^vaintr(dev)$/
+vaioctl	../vaxuba/va.c	/^vaioctl(dev, cmd, data, flag)$/
+vaopen	../vaxuba/va.c	/^vaopen(dev)$/
+vaprobe	../vaxuba/va.c	/^vaprobe(reg)$/
+vareset	../vaxuba/va.c	/^vareset(uban)$/
+vaselect	../vaxuba/va.c	/^vaselect()$/
+vaslave	../vaxuba/va.c	/^vaslave(ui, reg)$/
+vastart	../vaxuba/va.c	/^vastart(um)$/
+vastrategy	../vaxuba/va.c	/^vastrategy(bp)$/
+vatimo	../vaxuba/va.c	/^vatimo(dev)$/
+vawrite	../vaxuba/va.c	/^vawrite(dev, uio)$/
+vdoualarm	../vax/sys_machdep.c	/^vdoualarm(arg)$/
+vfork	../sys/kern_fork.c	/^vfork()$/
+vgetpt	../sys/vm_pt.c	/^vgetpt(p, pmemall)$/
+vgetswu	../sys/vm_pt.c	/^vgetswu(p, utl)$/
+vgetu	../sys/vm_pt.c	/^vgetu(p, palloc, map, newu, oldu)$/
+vgetvm	../sys/vm_proc.c	/^vgetvm(ts, ds, ss)$/
+vhangup	../sys/sys_inode.c	/^vhangup()$/
+vinifod	../sys/vm_subr.c	/^vinifod(pte, fileno, ip, bfirst, count)$/
+vinitpt	../sys/vm_pt.c	/^vinitpt(p)$/
+vmaccess	../sys/vm_subr.c	/^vmaccess(ppte0, vaddr, size0)$/
+vmdup	../sys/vm_proc.c	/^vmdup(p, pte, v, count, type)$/
+vmemall	../sys/vm_mem.c	/^vmemall(pte, size, p, type)$/
+vmemfree	../sys/vm_mem.c	/^vmemfree(pte, count)$/
+vmfltmon	../sys/vm_mon.c	/^vmfltmon(hist, atime, amin, res, nmax)$/
+vminit	../sys/vm_page.c	/^vminit()$/
+vmmeter	../sys/vm_sched.c	/^vmmeter()$/
+vmsizmon	../sys/vm_mon.c	/^vmsizmon()$/
+vmtime	../vax/machdep.c	/^vmtime(otime, olbolt, oicr)$/
+vmtotal	../sys/vm_sched.c	/^vmtotal()$/
+vpasspt	../sys/vm_pt.c	/^vpasspt(p, q, up, uq, umap)$/
+vpassvm	../sys/vm_proc.c	/^vpassvm(p, q, up, uq, umap)$/
+vpattach	../vaxuba/vp.c	/^vpattach(ui)$/
+vpclose	../vaxuba/vp.c	/^vpclose(dev)$/
+vpintr	../vaxuba/vp.c	/^vpintr(dev)$/
+vpioctl	../vaxuba/vp.c	/^vpioctl(dev, cmd, data, flag)$/
+vpopen	../vaxuba/vp.c	/^vpopen(dev)$/
+vpprobe	../vaxuba/vp.c	/^vpprobe(reg)$/
+vpreset	../vaxuba/vp.c	/^vpreset(uban)$/
+vpselect	../vaxuba/vp.c	/^vpselect()$/
+vpstart	../vaxuba/vp.c	/^vpstart(dev)$/
+vpstrategy	../vaxuba/vp.c	/^vpstrategy(bp)$/
+vptimo	../vaxuba/vp.c	/^vptimo(dev)$/
+vpwait	../vaxuba/vp.c	/^vpwait(dev)$/
+vpwrite	../vaxuba/vp.c	/^vpwrite(dev, uio)$/
+vrelpt	../sys/vm_pt.c	/^vrelpt(p)$/
+vrelswu	../sys/vm_pt.c	/^vrelswu(p, utl)$/
+vrelu	../sys/vm_pt.c	/^vrelu(p, swapu)$/
+vrelvm	../sys/vm_proc.c	/^vrelvm()$/
+vsError	../vaxuba/vs.c	/^vsError(vsp)$/
+vsFiberNudge	../vaxuba/vs.c	/^vsFiberNudge(dev)$/
+vsInitDev	../vaxuba/vs.c	/^vsInitDev(dev, retry)$/
+vsInitFiber	../vaxuba/vs.c	/^vsInitFiber(dev)$/
+vsInitNudge	../vaxuba/vs.c	/^vsInitNudge(dev)$/
+vsattach	../vaxuba/vs.c	/^vsattach(uip)$/
+vschunk	../sys/vm_drum.c	/^vschunk(p, base, size, type, dmp)$/
+vsclose	../vaxuba/vs.c	/^vsclose(dev)$/
+vsexpand	../sys/vm_drum.c	/^vsexpand(vssize, dmp, canshrink)$/
+vsintr	../vaxuba/vs.c	/^vsintr(dev)$/
+vsioctl	../vaxuba/vs.c	/^vsioctl(dev, cmd, addr, flag)$/
+vslock	../sys/vm_mem.c	/^vslock(base, count)$/
+vsopen	../vaxuba/vs.c	/^vsopen(dev, flag)$/
+vsprobe	../vaxuba/vs.c	/^vsprobe(reg)$/
+vsread	../vaxuba/vs.c	/^vsread(dev,uio)$/
+vsreset	../vaxuba/vs.c	/^vsreset(uban)$/
+vsselect	../vaxuba/vs.c	/^vsselect(dev, rw)$/
+vsswap	../sys/vm_drum.c	/^vsswap(p, pte, type, vsbase, vscount, dmp)$/
+vstodb	../sys/vm_drum.c	/^vstodb(vsbase, vssize, dmp, dbp, rev)$/
+vsunlock	../sys/vm_mem.c	/^vsunlock(base, count, rw)$/
+vswrite	../vaxuba/vs.c	/^vswrite(dev, uio)$/
+vsxalloc	../sys/vm_drum.c	/^vsxalloc(xp)$/
+vsxfree	../sys/vm_drum.c	/^vsxfree(xp, ts)$/
+vtod	../sys/vm_drum.c	/^vtod(p, v, dmap, smap)$/
+vtodp	../h/vmmac.h	/^#define	vtodp(p, v)	((int)((v) - stoc(ctos((p)->p_/
+vtopte	../sys/vm_subr.c	/^vtopte(p, v)$/
+vtosp	../h/vmmac.h	/^#define	vtosp(p, v)	((int)(BTOPUSRSTACK - 1 - (v))/
+vtotp	../h/vmmac.h	/^#define	vtotp(p, v)	((int)(v))$/
+vtrace	../vax/sys_machdep.c	/^vtrace()$/
+vusize	../sys/vm_pt.c	/^vusize(p, utl)$/
+vvattach	../vaxif/if_vv.c	/^vvattach(ui)$/
+vvidentify	../vaxif/if_vv.c	/^vvidentify(unit)$/
+vvinit	../vaxif/if_vv.c	/^vvinit(unit)$/
+vvioctl	../vaxif/if_vv.c	/^vvioctl(ifp, cmd, data)$/
+vvoutput	../vaxif/if_vv.c	/^vvoutput(ifp, m0, dst)$/
+vvprobe	../vaxif/if_vv.c	/^vvprobe(reg)$/
+vvprt_hdr	../vaxif/if_vv.c	/^vvprt_hdr(s, v)$/
+vvreset	../vaxif/if_vv.c	/^vvreset(unit, uban)$/
+vvrint	../vaxif/if_vv.c	/^vvrint(unit)$/
+vvstart	../vaxif/if_vv.c	/^vvstart(dev)$/
+vvwatchdog	../vaxif/if_vv.c	/^vvwatchdog(unit)$/
+vvxint	../vaxif/if_vv.c	/^vvxint(unit)$/
+wait	../sys/kern_exit.c	/^wait()$/
+wait1	../sys/kern_exit.c	/^wait1(options, ru)$/
+wakeup	../sys/kern_synch.c	/^wakeup(chan)$/
+wmemall	../sys/vm_mem.c	/^wmemall(pmemall, n)$/
+wmemfree	../sys/vm_mem.c	/^wmemfree(va, n)$/
+write	../sys/sys_generic.c	/^write()$/
+writev	../sys/sys_generic.c	/^writev()$/
+x25_init	../vaxif/if_ddn.c	/^static void x25_init(ds)$/
+xalloc	../sys/vm_text.c	/^xalloc(ip, ep, pagi)$/
+xccdec	../sys/vm_text.c	/^xccdec(xp, p)$/
+xdetach	../sys/vm_text.c	/^xdetach(xp, p)$/
+xfree	../sys/vm_text.c	/^xfree()$/
+xinit	../sys/vm_text.c	/^xinit()$/
+xlink	../sys/vm_text.c	/^xlink(p)$/
+xlock	../sys/vm_text.c	/^xlock(xp)$/
+xrele	../sys/vm_text.c	/^xrele(ip)$/
+xrepl	../sys/vm_text.c	/^xrepl(p, q)$/
+xumount	../sys/vm_text.c	/^xumount(dev)$/
+xunlink	../sys/vm_text.c	/^xunlink(p)$/
+xunlock	../sys/vm_text.c	/^xunlock(xp)$/
+xuntext	../sys/vm_text.c	/^xuntext(xp)$/
+xwait	../sys/vm_text.c	/^xwait(xp)$/
+zapcl	../h/vmmac.h	/^#define	zapcl(pte,fld)	(pte)->fld$/
+zmemall	../sys/vm_mem.c	/^zmemall(pmemall, n)$/
