@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)f.t	6.5 (Berkeley) %G%
+.\"	@(#)f.t	6.6 (Berkeley) %G%
 .\"
 .nr H2 1
 .\".ds RH Acknowledgements
@@ -60,8 +60,8 @@ International Organization for Standardization.
 ISO/TC 97/SC 16 N 719.  August 1981.
 .IP [Joy86] 20
 Joy, W.; Fabry, R.; Leffler, S.; McKusick, M.; and Karels, M.;
-Berkeley Software Architecture Manual, 4.3BSD Edition.
-\fIUNIX Programmer's Supplementary Documents\fP, Vol. 1 (PS1:6).
+Berkeley Software Architecture Manual, 4.4BSD Edition.
+\fIUNIX Programmer's Supplementary Documents\fP, Vol. 1 (PSD:5).
 Computer Systems Research Group,
 University of California, Berkeley.
 May, 1986.
