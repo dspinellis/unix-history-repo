@@ -7,7 +7,7 @@
 **  All rights reserved.  The Berkeley software License Agreement
 **  specifies the terms and conditions for redistribution.
 **
-**	@(#)conf.h	5.1.1.1 (Berkeley) %G%
+**	@(#)conf.h	5.3 (Berkeley) %G%
 */
 
 /*

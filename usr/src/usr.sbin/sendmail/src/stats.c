@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)stats.c	5.4.1.1 (Berkeley) %G%";
+static char	SccsId[] = "@(#)stats.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 # include "sendmail.h"
@@ -42,15 +42,18 @@ markstats(e, to)
 {
 	if (to == NULL)
 	{
-		/* if is possible to get mail from an unparseable address,
-		   in this case, the q_mailer field is null, so that the
-		   indirection below causes a dereference of a NULL pointer.
+
+		/*
+		**  If is possible to get mail from an unparseable address,
+		**  in this case, the q_mailer field is null, so that the
+		**  indirection below causes a dereference of a NULL pointer.
 		*/
+
 		if (e->e_from.q_mailer != NULL )
 		{
 			Stat.stat_nf[e->e_from.q_mailer->m_mno]++;
 			Stat.stat_bf[e->e_from.q_mailer->m_mno] +=
-				kbytes(CurEnv->e_msgsize);
+				KBYTES(CurEnv->e_msgsize);
 		}
 	}
 	else

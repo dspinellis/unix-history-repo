@@ -16,12 +16,12 @@
 
 # ifndef SMTP
 # ifndef lint
-static char	SccsId[] = "@(#)usersmtp.c	5.3.1.1 (Berkeley) %G%	(no SMTP)";
+static char	SccsId[] = "@(#)usersmtp.c	5.5 (Berkeley) %G%	(no SMTP)";
 # endif not lint
 # else SMTP
 
 # ifndef lint
-static char	SccsId[] = "@(#)usersmtp.c	5.3.1.1 (Berkeley) %G%";
+static char	SccsId[] = "@(#)usersmtp.c	5.5 (Berkeley) %G%";
 # endif not lint
 
 
