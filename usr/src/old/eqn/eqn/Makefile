@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 COMMON=	../common_source
 CFLAGS=	-O -I. -I${COMMON}
@@ -33,6 +33,9 @@ all: eqn
 
 eqn: ${OBJS} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${OBJS}
+
+eqn.0:
+	eqn eqn.1 | nroff -h -man > $@
 
 e.c: ${COMMON}/e.y
 	${YACC} ${YFLAGS} ${COMMON}/e.y
