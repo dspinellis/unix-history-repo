@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mksyntax.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mksyntax.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -124,6 +124,8 @@ main() {
 		if (digit[i] != '0' + i)
 			digit_contig = 0;
 	}
+
+	fputs("#include <sys/cdefs.h>\n", hfile);
 
 	/* Generate the #define statements in the header file */
 	fputs("/* Syntax classes */\n", hfile);

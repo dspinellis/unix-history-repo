@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nodes.c.pat	5.1 (Berkeley) %G%
+ *	@(#)nodes.c.pat	5.2 (Berkeley) %G%
  */
 
 /*
@@ -23,7 +23,11 @@
 
 int funcblocksize;		/* size of structures in function */
 int funcstringsize;		/* size of strings in node */
+#ifdef __STDC__
 pointer funcblock;		/* block to allocate function from */
+#else
+char *funcblock;		/* block to allocate function from */
+#endif
 char *funcstring;		/* block to allocate strings from */
 
 %SIZES
