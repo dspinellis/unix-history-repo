@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)sigprocmask.2	6.1 (Berkeley) %G%
+.\"	@(#)sigprocmask.2	6.2 (Berkeley) %G%
 .\"
 .TH SIGPROCMASK 2 ""
 .UC 7
@@ -20,7 +20,7 @@ sigprocmask \- manipulate current signal mask
 .B mask = sigmask(signum)
 .SH DESCRIPTION
 The
-.I sigsetmask
+.I sigprocmask
 function examines and/or the current signal mask (those signals
 that are blocked from delivery).
 Signals are blocked if they are members of the current signal mask set.
@@ -28,7 +28,7 @@ Signals are blocked if they are members of the current signal mask set.
 If
 .I set
 is not null, the action of
-.I sigsetmask
+.I sigprocmask
 depends on the value of the parameter
 .IR how .
 The signal mask is changed as a function of the specified
