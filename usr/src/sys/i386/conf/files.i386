@@ -1,9 +1,12 @@
 i386/i386/autoconf.c	standard device-driver
 i386/i386/conf.c		standard
-i386/isa/cons.c		optional cn device-driver
+i386/i386/cons.c		standard
+i386/isa/pccons.c	optional pc device-driver
 i386/isa/clock.c	standard
 i386/i386/kdb_machdep.c	optional kadb
 i386/i386/kdb_opset.c	optional kadb
+i386/i386/kgdb_stub.c	optional kgdb
+i386/i386/kgdb_glue.c	optional kgdb
 i386/i386/in_cksum.c	optional inet
 i386/i386/machdep.c		standard config-dependent
 i386/i386/mem.c		standard
