@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.125 (Berkeley) %G%
+ *	@(#)conf.h	8.126 (Berkeley) %G%
  */
 
 /*
@@ -324,8 +324,8 @@ extern long	dgux_inet_addr();
 /*
 **  OSF/1 for Intel Paragon.
 **
-**	Contributed by Jeff A. Earickson <jeff@ithaca.ccs.ornl.gov>
-**	of Oak Ridge National Lab.
+**	Contributed by Jeff A. Earickson <jeff@ssd.intel.com>
+**	of Intel Scalable Systems Divison.
 */
 
 #ifdef __PARAGON__
