@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ut.c	7.10 (Berkeley) %G%
+ *	@(#)ut.c	7.11 (Berkeley) %G%
  */
 
 #include "tj.h"
@@ -20,11 +20,13 @@
 #include "systm.h"
 #include "buf.h"
 #include "conf.h"
+#include "errno.h"
 #include "file.h"
 #include "map.h"
 #include "ioctl.h"
 #include "mtio.h"
 #include "cmap.h"
+#include "time.h"
 #include "uio.h"
 #include "kernel.h"
 #include "syslog.h"

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tm.c	7.12 (Berkeley) %G%
+ *	@(#)tm.c	7.13 (Berkeley) %G%
  */
 
 #include "te.h"
@@ -23,6 +23,7 @@
 #include "buf.h"
 #include "conf.h"
 #include "user.h"
+#include "file.h"
 #include "map.h"
 #include "vm.h"
 #include "ioctl.h"

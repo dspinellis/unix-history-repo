@@ -1,4 +1,4 @@
-/*	@(#)tmscp.c	7.13 (Berkeley) %G% */
+/*	@(#)tmscp.c	7.14 (Berkeley) %G% */
 
 #ifndef lint
 static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
@@ -126,6 +126,7 @@ static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
 #include "systm.h"
 #include "buf.h"
 #include "conf.h"
+#include "errno.h"
 #include "file.h"
 #include "map.h"
 #include "vm.h"
