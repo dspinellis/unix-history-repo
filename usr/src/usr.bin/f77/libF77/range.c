@@ -29,7 +29,11 @@ flmax_()
 #if	vax
 	n.i = 0xffff7fff;
 #else	vax
+#if	tahoe
+	n.i = 0x7fffffffL;
+#else	tahoe
 	UNKNOWN MACHINE!
+#endif	tahoe
 #endif	vax
 #endif	pdp11
 	return(n.f);
@@ -47,7 +51,12 @@ dflmax_()
 	n.j[0] = 0xffff7fff;
 	n.j[1] = 0xffffffff;
 #else	vax
+#if	tahoe
+	n.j[0] = 0x7fffffffL;
+	n.j[1] = 0xffffffffL;
+#else	tahoe
 	UNKNOWN MACHINE!
+#endif	tahoe
 #endif	vax
 #endif	pdp11
 	return(n.d);
@@ -63,7 +72,11 @@ flmin_()
 #if	vax
 	n.i = 0x00000080;
 #else	vax
+#if	tahoe
+	n.i = 0x00800000L;
+#else	tahoe
 	UNKNOWN MACHINE!
+#endif	tahoe
 #endif	vax
 #endif	pdp11
 	return(n.f);
@@ -81,7 +94,12 @@ dflmin_()
 	n.j[0] = 0x00000080;
 	n.j[1] = 0;
 #else	vax
+#if	tahoe
+	n.j[0] = 0x00800000L;
+	n.j[1] = 0;
+#else	tahoe
 	UNKNOWN MACHINE!
+#endif	tahoe
 #endif	vax
 #endif	pdp11
 	return(n.d);
@@ -104,7 +122,11 @@ ffrac_()
 #if	vax
 	n.i = 0x00003500;
 #else	vax
+#if	tahoe
+	n.i = 0x35000000L;
+#else	tahoe
 	UNKNOWN MACHINE!
+#endif	tahoe
 #endif	vax
 #endif	pdp11
 	return(n.f);
@@ -122,7 +144,12 @@ dffrac_()
 	n.j[0] = 0x00002500;
 	n.j[1] = 0;
 #else	vax
+#if	tahoe
+	n.j[0] = 0x25000000L;
+	n.j[1] = 0;
+#else	tahoe
 	UNKNOWN MACHINE!
+#endif	tahoe
 #endif	vax
 #endif	pdp11
 	return(n.d);
