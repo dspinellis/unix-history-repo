@@ -1,0 +1,32 @@
+.TH CHOWN 2 
+.SH NAME
+chown \- change owner and group of a file
+.SH SYNOPSIS
+.B chown(name, owner, group)
+.br
+.B char *name;
+.SH DESCRIPTION
+The file
+whose name is given by the null-terminated string pointed
+to by
+.I name
+has its
+.I owner
+and 
+.I group
+changed as specified.
+Only the super-user may
+execute this call,
+because if users were able to give files away,
+they could defeat the (nonexistent)
+file-space accounting procedures.
+.SH "SEE ALSO"
+chown(1), passwd(5)
+.SH DIAGNOSTICS
+Zero is returned if the owner is changed;
+\-1 is returned
+on illegal owner changes.
+.SH "ASSEMBLER (PDP-11)"
+(chown = 16.)
+.br
+.B sys chown; name; owner; group
