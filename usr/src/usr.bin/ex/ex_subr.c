@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_subr.c	7.3	%G%";
+static char *sccsid = "@(#)ex_subr.c	7.4	%G%";
 #include "ex.h"
 #include "ex_re.h"
 #include "ex_tty.h"
@@ -979,3 +979,4 @@ onsusp()
 		vrepaint(cursor);
 	}
 }
+#endif
