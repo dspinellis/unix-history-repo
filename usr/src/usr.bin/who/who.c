@@ -11,94 +11,89 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)who.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)who.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
  * who
  */
 
-#include <sys/param.h>
+#include <stdio.h>
 #include <utmp.h>
 #include <pwd.h>
-#include <stdio.h>
-#include <strings.h>
 #include <ctype.h>
 
-#define NMAX	sizeof(utmp.ut_name)
-#define LMAX	sizeof(utmp.ut_line)
-#define HMAX	sizeof(utmp.ut_host)
+#define NMAX sizeof(utmp.ut_name)
+#define LMAX sizeof(utmp.ut_line)
+#define	HMAX sizeof(utmp.ut_host)
 
-static struct utmp	utmp;		/* read buffer */
+struct	utmp utmp;
+struct	passwd *pw;
+struct	passwd *getpwuid();
 
-main(argc,argv)
-int	argc;
-char	**argv;
+char	*ttyname(), *rindex(), *ctime(), *strcpy();
+
+main(argc, argv)
+	int argc;
+	char **argv;
 {
-	register FILE	*fp;			/* utmp file pointer */
-	register char	*tp,			/* tty name */
-			*fname;			/* utmp file name */
-	struct passwd	*pw,			/* user passwd structure */
-			*getpwuid();
-	char	hostname[MAXHOSTNAMELEN],	/* host name */
-		*ttyname();
-	uid_t	getuid();
-	long	time();
+	register char *tp, *s;
+	register FILE *fi;
 
-	switch(argc) {
-		case 2:
-			fname = argv[1];
-			break;
-		case 3:
-			if (!(tp = ttyname(0))) {
-				/*
-				 * no tty -- use best guess from passwd file.
-				 * next line is a kludge, but as of now getuid
-				 * returns a "uid_t" and getpwuid takes an int.
-				 */
-				pw = getpwuid((int)getuid());
-				strncpy(utmp.ut_name,pw ? pw->pw_name : "?",NMAX);
-				strcpy(utmp.ut_line,"tty??");
-				time(&utmp.ut_time);
-				putline();
-				exit(0);
-			}
-			tp = rindex(tp,'/') + 1;
-			if (gethostname(hostname,sizeof(hostname)) == -1) {
-				perror("gethostname");
-				exit(1);
-			}
-		case 1:
-			fname = "/etc/utmp";
-			break;
-		default:
-			fputs("usage: who [ utmp_file ]\nor who am i\n",stderr);
-			exit(1);
+	s = "/etc/utmp";
+	if(argc == 2)
+		s = argv[1];
+	if (argc == 3) {
+		tp = ttyname(0);
+		if (tp)
+			tp = rindex(tp, '/') + 1;
+		else {	/* no tty - use best guess from passwd file */
+			strcpy(utmp.ut_line, "tty??");
+			guess();
+			exit(0);
+		}
 	}
-	if (!(fp = fopen(fname,"r"))) {
-		perror(fname);
+	if ((fi = fopen(s, "r")) == NULL) {
+		puts("who: cannot open utmp");
 		exit(1);
 	}
-	while (fread((char *)&utmp,sizeof(utmp),1,fp) == 1)
+	while (fread((char *)&utmp, sizeof(utmp), 1, fi) == 1) {
 		if (argc == 3) {
-			if (!strcmp(utmp.ut_line,tp)) {
-				printf("%s!",hostname);
-				putline();
-				exit(0);
-			}
-		}
-		else if (argc != 1 || *utmp.ut_name)
+			if (strcmp(utmp.ut_line, tp))
+				continue;
 			putline();
+			exit(0);
+		}
+		if (utmp.ut_name[0] == '\0' && argc == 1)
+			continue;
+		putline();
+	}
+	if (argc == 3) {
+		strncpy(utmp.ut_line, tp, sizeof(utmp.ut_line));
+		guess();
+	}
+	exit(0);
 }
 
 putline()
 {
-	register char	*cbuf;
-	char	*ctime();
+	register char *cbuf;
 
-	cbuf = ctime(&utmp.ut_time) + 4;
-	printf("%-*.*s %-*.*s%.12s",NMAX,NMAX,utmp.ut_name,LMAX,LMAX,utmp.ut_line,cbuf);
-	if (*utmp.ut_host)
-		printf("\t(%.*s)",HMAX,utmp.ut_host);
+	printf("%-*.*s %-*.*s",
+		NMAX, NMAX, utmp.ut_name,
+		LMAX, LMAX, utmp.ut_line);
+	cbuf = ctime(&utmp.ut_time);
+	printf("%.12s", cbuf+4);
+	if (utmp.ut_host[0])
+		printf("\t(%.*s)", HMAX, utmp.ut_host);
 	putchar('\n');
+}
+
+guess()
+{
+
+	pw = getpwuid(getuid());
+	strncpy(utmp.ut_name, pw ? pw->pw_name : "?", NMAX);
+	time(&utmp.ut_time);
+	putline();
 }
