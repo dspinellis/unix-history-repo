@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 # 'sccom' is a C compiler that does single precision computations in
 # single precision rather than double precision.
@@ -13,14 +13,13 @@ SRCS=	allo.c code.c common.c local.c local2.c match.c optim.c order.c \
 OBJS+=	cgram.o rodata.o
 NOMAN=	noman
 .PATH:	${CCOM} ${MIP}
-CLEANFILES+=cgram.c gram.in rodata.c pcctokens pcclocal.h
+CLEANFILES+=cgram.c rodata.c pcctokens pcclocal.h
 
 cgram.o: cgram.c
 	${CC} ${CFLAGS} -c cgram.c
 
 rodata.c cgram.c: ${MIP}/cgram.y pcctokens
-	cat pcctokens ${MIP}/cgram.y > gram.in
-	${YACC} gram.in
+	cat pcctokens ${MIP}/cgram.y | ${YACC} /dev/stdin
 	yyfix rodata.c
 	mv y.tab.c cgram.c
 
