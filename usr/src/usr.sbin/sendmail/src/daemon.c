@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	5.50 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.51 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	5.50 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.51 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -117,7 +117,7 @@ getrequests()
 	  severe:
 # ifdef LOG
 		if (LogLevel > 0)
-# endif LOG
+# endif /* LOG */
 		finis();
 	}
 
@@ -196,7 +196,7 @@ makeconnection(host, port, mci, usesecureport)
 	if (host[0] == '[')
 	{
 		long hid;
-		register char *p = index(host, ']');
+		register char *p = strchr(host, ']');
 
 		if (p != NULL)
 		{
@@ -453,7 +453,7 @@ maphostname(hbuf, hbsize, avp)
 		else
 			return NULL;
 	}
-	if ((cp = index(strcpy(ptr, hbuf), ']')) == NULL)
+	if ((cp = strchr(strcpy(ptr, hbuf), ']')) == NULL)
 		return (NULL);
 	*cp = '\0';
 	in_addr = inet_addr(&ptr[1]);
@@ -470,7 +470,7 @@ maphostname(hbuf, hbsize, avp)
 	return hbuf;
 }
 
-# else DAEMON
+# else /* DAEMON */
 /* code for systems without sophisticated networking */
 
 /*
@@ -527,4 +527,4 @@ maphostname(hbuf, hbsize, avp)
 	return NULL;
 }
 
-#endif DAEMON
+#endif /* DAEMON */

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	5.49 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	5.50 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	5.49 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	5.50 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -326,7 +326,7 @@ queueup(e, queueall, announce)
 	/* save log info */
 	if (LogLevel > 15)
 		syslog(LOG_DEBUG, "%s: queueup, qf=%s, df=%s\n", e->e_id, qf, e->e_df);
-# endif LOG
+# endif /* LOG */
 	fflush(tfp);
 	return;
 }
@@ -409,9 +409,9 @@ runqueue(forkflag)
 			/* parent -- pick up intermediate zombie */
 #ifndef SIGCHLD
 			(void) waitfor(pid);
-#else SIGCHLD
+#else /* SIGCHLD */
 			(void) signal(SIGCHLD, reapchild);
-#endif SIGCHLD
+#endif /* SIGCHLD */
 			if (QueueIntvl != 0)
 				(void) setevent(QueueIntvl, runqueue, TRUE);
 			return;
@@ -420,9 +420,9 @@ runqueue(forkflag)
 #ifndef SIGCHLD
 		if (fork() != 0)
 			exit(EX_OK);
-#else SIGCHLD
+#else /* SIGCHLD */
 		(void) signal(SIGCHLD, SIG_DFL);
-#endif SIGCHLD
+#endif /* SIGCHLD */
 	}
 
 	setproctitle("running queue: %s", QueueDir);
@@ -431,7 +431,7 @@ runqueue(forkflag)
 	if (LogLevel > 11)
 		syslog(LOG_DEBUG, "runqueue %s, pid=%d, forkflag=%d",
 			QueueDir, getpid(), forkflag);
-# endif LOG
+# endif /* LOG */
 
 	/*
 	**  Release any resources used by the daemon code.
@@ -439,7 +439,7 @@ runqueue(forkflag)
 
 # ifdef DAEMON
 	clrdaemon();
-# endif DAEMON
+# endif /* DAEMON */
 
 	/*
 	**  Create ourselves an envelope
@@ -743,7 +743,7 @@ dowork(w, e)
 		if (LogLevel > 12)
 			syslog(LOG_DEBUG, "%s: dowork, pid=%d", e->e_id,
 			       getpid());
-# endif LOG
+# endif /* LOG */
 
 		/* don't use the headers from sendmail.cf... */
 		e->e_header = NULL;
@@ -843,7 +843,7 @@ readqf(e)
 			syslog(LOG_ALERT, "%s: bogus queue file, uid=%d, mode=%o",
 				e->e_id, st.st_uid, st.st_mode);
 		}
-# endif LOG
+# endif /* LOG */
 		fclose(qfp);
 		return FALSE;
 	}
@@ -862,7 +862,7 @@ readqf(e)
 # ifdef LOG
 		if (LogLevel > 10)
 			syslog(LOG_DEBUG, "%s: locked", e->e_id);
-# endif LOG
+# endif /* LOG */
 		(void) fclose(qfp);
 		return FALSE;
 	}
@@ -1085,7 +1085,7 @@ printqueue()
 	}
 }
 
-# endif QUEUE
+# endif /* QUEUE */
 /*
 **  QUEUENAME -- build a file name in the queue directory for this envelope.
 **
@@ -1185,7 +1185,7 @@ queuename(e, type)
 # ifdef LOG
 		if (LogLevel > 16)
 			syslog(LOG_DEBUG, "%s: assigned id", e->e_id);
-# endif LOG
+# endif /* LOG */
 	}
 
 	if (type == '\0')
@@ -1220,7 +1220,7 @@ unlockqueue(e)
 # ifdef LOG
 	if (LogLevel > 19)
 		syslog(LOG_DEBUG, "%s: unlock", e->e_id);
-# endif LOG
+# endif /* LOG */
 	if (!tTd(51, 4))
 		xunlink(queuename(e, 'x'));
 

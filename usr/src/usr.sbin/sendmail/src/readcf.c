@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	5.47 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	5.48 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -142,7 +142,7 @@ readcf(cfname)
 					/* delete preceeding white space */
 					while (isspace(*p) && p > buf)
 						p--;
-					if ((e = index(++p, '\n')) != NULL)
+					if ((e = strchr(++p, '\n')) != NULL)
 						(void) strcpy(p, e);
 					else
 						p[0] = p[1] = '\0';
@@ -424,9 +424,9 @@ fileclass(class, filename, fmt, safe)
 		if (sscanf(buf, fmt, wordbuf) != 1)
 			continue;
 		p = wordbuf;
-# else SCANF
+# else /* SCANF */
 		p = buf;
-# endif SCANF
+# endif /* SCANF */
 
 		/*
 		**  Break up the match into words.
@@ -829,7 +829,7 @@ setoption(opt, val, sticky)
 		  case SM_QUEUE:	/* queue only */
 #ifndef QUEUE
 			syserr("need QUEUE to set -odqueue");
-#endif QUEUE
+#endif /* QUEUE */
 			/* fall through..... */
 
 		  case SM_DELIVER:	/* do everything */

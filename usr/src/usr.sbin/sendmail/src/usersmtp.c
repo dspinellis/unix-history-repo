@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	5.23 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.24 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	5.23 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.24 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -458,9 +458,9 @@ reply(m, mci, e)
 			if (errno == 0)
 # ifdef ECONNRESET
 				errno = ECONNRESET;
-# else ECONNRESET
+# else /* ECONNRESET */
 				errno = EPIPE;
-# endif ECONNRESET
+# endif /* ECONNRESET */
 
 			message(Arpa_TSyserr, "reply: read error");
 			/* if debugging, pause so we can see state */
@@ -468,14 +468,14 @@ reply(m, mci, e)
 				pause();
 # ifdef LOG
 			syslog(LOG_INFO, "%s", &MsgBuf[4]);
-# endif LOG
+# endif /* LOG */
 			mci->mci_state = MCIS_ERROR;
 			smtpquit(m, mci, e);
 			return (-1);
 		}
 		fixcrlf(SmtpReplyBuffer, TRUE);
 
-		if (e->e_xfp != NULL && index("45", SmtpReplyBuffer[0]) != NULL)
+		if (e->e_xfp != NULL && strchr("45", SmtpReplyBuffer[0]) != NULL)
 		{
 			/* serious error -- log the previous command */
 			if (SmtpMsgBuffer[0] != '\0')
@@ -545,4 +545,4 @@ smtpmessage(f, m, mci, a, b, c)
 			m == NULL ? "\r\n" : m->m_eol);
 }
 
-# endif SMTP
+# endif /* SMTP */

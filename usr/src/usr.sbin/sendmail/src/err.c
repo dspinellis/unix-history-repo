@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -72,7 +72,7 @@ syserr(fmt, a, b, c, d, e)
 		syslog(LOG_CRIT, "%s: SYSERR: %s",
 			CurEnv->e_id == NULL ? "NOQUEUE" : CurEnv->e_id,
 			&MsgBuf[4]);
-# endif LOG
+# endif /* LOG */
 	errno = 0;
 	if (QuickAbort)
 		longjmp(TopFrame, 2);
@@ -112,7 +112,7 @@ usrerr(fmt, a, b, c, d, e)
 		syslog(LOG_NOTICE, "%s: %s",
 			CurEnv->e_id == NULL ? "NOQUEUE" : CurEnv->e_id,
 			&MsgBuf[4]);
-# endif LOG
+# endif /* LOG */
 
 	if (QuickAbort)
 		longjmp(TopFrame, 1);
@@ -322,7 +322,7 @@ errstring(errno)
 	static char buf[100];
 # ifdef SMTP
 	extern char *SmtpPhase;
-# endif SMTP
+# endif /* SMTP */
 
 # ifdef DAEMON
 # ifdef ETIMEDOUT

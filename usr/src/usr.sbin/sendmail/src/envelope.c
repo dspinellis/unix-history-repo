@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -90,7 +90,7 @@ dropenvelope(e)
 		syslog(LOG_DEBUG, "dropenvelope, id=%s, flags=%o, pid=%d",
 				  e->e_id == NULL ? "(none)" : e->e_id,
 				  e->e_flags, getpid());
-#endif LOG
+#endif /* LOG */
 
 	/* we must have an id to remove disk files */
 	if (e->e_id == NULL)
@@ -140,9 +140,9 @@ dropenvelope(e)
 	{
 #ifdef QUEUE
 		queueup(e, FALSE, FALSE);
-#else QUEUE
+#else /* QUEUE */
 		syserr("dropenvelope: queueup");
-#endif QUEUE
+#endif /* QUEUE */
 	}
 
 	/* now unlock the job */
@@ -229,7 +229,7 @@ initsys(e)
 #ifdef TTYNAME
 	static char ybuf[10];			/* holds tty id */
 	register char *p;
-#endif TTYNAME
+#endif /* TTYNAME */
 	extern char *ttyname();
 	extern char *macvalue();
 	extern char Version[];
@@ -274,13 +274,13 @@ initsys(e)
 		p = ttyname(2);
 		if (p != NULL)
 		{
-			if (rindex(p, '/') != NULL)
-				p = rindex(p, '/') + 1;
+			if (strrchr(p, '/') != NULL)
+				p = strrchr(p, '/') + 1;
 			(void) strcpy(ybuf, p);
 			define('y', ybuf, e);
 		}
 	}
-#endif TTYNAME
+#endif /* TTYNAME */
 }
 /*
 **  SETTIME -- set the current time.
@@ -313,7 +313,7 @@ settime(e)
 			tm->tm_mday, tm->tm_hour, tm->tm_min);
 	define('t', tbuf, e);
 	(void) strcpy(dbuf, ctime(&now));
-	*index(dbuf, '\n') = '\0';
+	*strchr(dbuf, '\n') = '\0';
 	if (macvalue('d', e) == NULL)
 		define('d', dbuf, e);
 	p = newstr(arpadate(dbuf));
@@ -346,7 +346,7 @@ openxscript(e)
 # ifdef LOG
 	if (LogLevel > 19)
 		syslog(LOG_DEBUG, "%s: openx%s", e->e_id, e->e_xfp == NULL ? "" : " (no)");
-# endif LOG
+# endif /* LOG */
 	if (e->e_xfp != NULL)
 		return;
 	p = queuename(e, 'x');
@@ -451,7 +451,7 @@ setsender(from, e)
 		extern bool trusteduser();
 
 		if (!trusteduser(realname) && getuid() != geteuid() &&
-		    index(from, '!') == NULL && getuid() != 0)
+		    strchr(from, '!') == NULL && getuid() != 0)
 		{
 			/* network sends -r regardless (why why why?) */
 			/* syserr("%s, you cannot use the -f flag", realname); */
@@ -474,7 +474,7 @@ setsender(from, e)
 				"from=%s unparseable, received from %s@%s",
 				from, realname, host);
 		}
-# endif LOG
+# endif /* LOG */
 		from = newstr(realname);
 		if (parseaddr(from, &e->e_from, 1, '\0', e) == NULL &&
 		    parseaddr("postmaster", &e->e_from, 1, '\0', e) == NULL)

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/param.h>
@@ -56,7 +56,7 @@ chompheader(line, def, e)
 	if (def && *p == '?')
 	{
 		/* have some */
-		register char *q = index(p + 1, *p);
+		register char *q = strchr(p + 1, *p);
 		
 		if (q != NULL)
 		{
@@ -72,7 +72,7 @@ chompheader(line, def, e)
 
 	/* find canonical name */
 	fname = p;
-	p = index(p, ':');
+	p = strchr(p, ':');
 	if (p == NULL)
 	{
 		syserr("chompheader: syntax error, line \"%s\"", line);
@@ -151,8 +151,8 @@ chompheader(line, def, e)
 
 	/* hack to see if this is a new format message */
 	if (!def && bitset(H_RCPT|H_FROM, h->h_flags) &&
-	    (index(fvalue, ',') != NULL || index(fvalue, '(') != NULL ||
-	     index(fvalue, '<') != NULL || index(fvalue, ';') != NULL))
+	    (strchr(fvalue, ',') != NULL || strchr(fvalue, '(') != NULL ||
+	     strchr(fvalue, '<') != NULL || strchr(fvalue, ';') != NULL))
 	{
 		e->e_flags &= ~EF_OLDSTYLE;
 	}
@@ -328,7 +328,7 @@ eatheader(e)
 			}
 			syslog(LOG_INFO, "%s: message-id=%s", e->e_id, p);
 		}
-#endif LOG
+#endif /* LOG */
 	}
 	if (tTd(32, 1))
 		printf("----------------------------\n");
@@ -396,7 +396,7 @@ eatheader(e)
 		    e->e_id, e->e_from.q_paddr, e->e_msgsize,
 		    e->e_class, name);
 	}
-# endif LOG
+# endif /* LOG */
 }
 /*
 **  PRIENCODE -- encode external priority names into internal values.
@@ -568,7 +568,7 @@ crackaddr(addr)
 
 
 		/* check for characters that may have to be quoted */
-		if (index(".'@,;:[]", c) != NULL)
+		if (strchr(".'@,;:[]", c) != NULL)
 		{
 			/*
 			**  If these occur as the phrase part of a <>
@@ -738,7 +738,7 @@ putheader(fp, m, e)
 			register char *nlp;
 
 			(void) sprintf(obuf, "%s: ", capitalize(h->h_field));
-			while ((nlp = index(p, '\n')) != NULL)
+			while ((nlp = strchr(p, '\n')) != NULL)
 			{
 				*nlp = '\0';
 				(void) strcat(obuf, p);

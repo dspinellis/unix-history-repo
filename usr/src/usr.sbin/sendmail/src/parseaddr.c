@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -574,7 +574,7 @@ toktype(c)
 		return (ATM);
 	if (isspace(c) || c == ')')
 		return (SPC);
-	if (iscntrl(c) || index(buf, c) != NULL)
+	if (iscntrl(c) || strchr(buf, c) != NULL)
 		return (OPR);
 	return (ATM);
 }

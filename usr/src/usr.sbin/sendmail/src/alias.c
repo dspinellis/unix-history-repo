@@ -29,12 +29,12 @@
 
 #ifndef lint
 #ifdef NEWDB
-static char sccsid[] = "@(#)alias.c	5.37 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	5.38 (Berkeley) %G% (with NEWDB)";
 #else
 #ifdef DBM
-static char sccsid[] = "@(#)alias.c	5.37 (Berkeley) %G% (with DBM)";
+static char sccsid[] = "@(#)alias.c	5.38 (Berkeley) %G% (with DBM)";
 #else
-static char sccsid[] = "@(#)alias.c	5.37 (Berkeley) %G% (without DBM)";
+static char sccsid[] = "@(#)alias.c	5.38 (Berkeley) %G% (without DBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -340,14 +340,14 @@ initaliases(aliasfile, init, e)
 #ifdef LOG
 			if (LogLevel >= 7)
 				syslog(LOG_INFO, "rebuilding alias database");
-#endif LOG
+#endif /* LOG */
 		}
 		else
 		{
 #ifdef LOG
 			if (LogLevel >= 7)
 				syslog(LOG_INFO, "alias database out of date");
-#endif LOG
+#endif /* LOG */
 			message(Arpa_Info, "Warning: alias database out of date");
 		}
 	}
@@ -368,12 +368,12 @@ initaliases(aliasfile, init, e)
 			syslog(LOG_NOTICE, "alias database %srebuilt by %s",
 				automatic ? "auto" : "", username());
 		}
-#endif LOG
+#endif /* LOG */
 		readaliases(aliasfile, TRUE, e);
 	}
-# else DBM
+# else /* DBM */
 	readaliases(aliasfile, init, e);
-# endif DBM
+# endif /* DBM */
 }
 /*
 **  READALIASES -- read and process the alias file.
@@ -451,7 +451,7 @@ readaliases(aliasfile, init, e)
 		errno = 0;
 		return;
 	}
-# endif DBM
+# endif /* DBM */
 
 	/*
 	**  If initializing, create the new DBM files.
@@ -512,7 +512,7 @@ readaliases(aliasfile, init, e)
 		int lhssize, rhssize;
 
 		LineNumber++;
-		p = index(line, '\n');
+		p = strchr(line, '\n');
 		if (p != NULL)
 			*p = '\0';
 		switch (line[0])
@@ -673,7 +673,7 @@ readaliases(aliasfile, init, e)
 # endif
 		}
 		else
-# endif DBM
+# endif /* DBM */
 		{
 			s = stab(al.q_user, ST_ALIAS, ST_ENTER);
 			s->s_alias = newstr(rhs);
@@ -708,7 +708,7 @@ readaliases(aliasfile, init, e)
 		/* restore the old signal */
 		(void) signal(SIGINT, oldsigint);
 	}
-# endif DBM
+# endif /* DBM */
 
 	/* closing the alias file drops the lock */
 	(void) fclose(af);
@@ -720,7 +720,7 @@ readaliases(aliasfile, init, e)
 	if (LogLevel >= 8)
 		syslog(LOG_INFO, "%d aliases, longest %d bytes, %d bytes total",
 			naliases, longest, bytes);
-# endif LOG
+# endif /* LOG */
 }
 /*
 **  FORWARD -- Try to forward mail

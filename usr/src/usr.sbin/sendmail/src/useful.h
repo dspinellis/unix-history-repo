@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)useful.h	4.6 (Berkeley) %G%
+ *	@(#)useful.h	4.7 (Berkeley) %G%
  */
 
 # include <sys/types.h>
@@ -16,7 +16,7 @@ typedef char	bool;
 
 # ifndef NULL
 # define NULL	0
-# endif NULL
+# endif /* NULL */
 
 /* bit hacking */
 # define bitset(bit, word)	(((word) & (bit)) != 0)
@@ -35,23 +35,13 @@ typedef char	bool;
 		fprintf(stderr, "assertion botch: %s:%d: ", __FILE__, __LINE__);\
 		fprintf(stderr, msg, parm);\
 	}
-# else NASSERT
+# else /* NASSERT */
 # define ASSERT(expr, msg, parm)
-# endif NASSERT
+# endif /* NASSERT */
 
 /* sccs id's */
 # ifndef lint
 # define SCCSID(arg)	static char SccsId[] = "arg";
-# else lint
+# else /* lint */
 # define SCCSID(arg)
 # endif lint
-
-/* define the types of some common functions */
-extern char	*strcpy(), *strncpy();
-extern char	*strcat(), *strncat();
-extern char	*malloc();
-extern char	*index(), *rindex();
-extern int	errno;
-extern time_t	time();
-extern char	*ctime();
-extern char	*getenv();

@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	5.19 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	5.20 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	5.19 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	5.20 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -434,7 +434,7 @@ _udbx_init()
 		if (*p == '\0')
 			break;
 		spec = p;
-		p = index(p, ',');
+		p = strchr(p, ',');
 		if (p != NULL)
 			*p++ = '\0';
 
@@ -592,20 +592,20 @@ _udb_parsespec(udbspec, opt, maxopts)
 	register char *spec_end;
 	register int optnum;
 
-	spec_end = index(udbspec, ':');
+	spec_end = strchr(udbspec, ':');
 	for (optnum = 0; optnum < maxopts && (spec = spec_end) != NULL; optnum++)
 	{
 		register char *p;
 
 		while (isspace(*spec))
 			spec++;
-		spec_end = index(spec, ':');
+		spec_end = strchr(spec, ':');
 		if (spec_end != NULL)
 			*spec_end++ = '\0';
 
 		opt[optnum].name = spec;
 		opt[optnum].val = NULL;
-		p = index(spec, '=');
+		p = strchr(spec, '=');
 		if (p != NULL)
 			opt[optnum].val = ++p;
 	}
