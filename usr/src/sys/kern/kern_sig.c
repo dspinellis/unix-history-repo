@@ -1,4 +1,4 @@
-/*	kern_sig.c	5.22	83/06/21	*/
+/*	kern_sig.c	5.23	83/06/24	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -151,7 +151,6 @@ sigpause()
 sigstack()
 {
 	register struct a {
-		caddr_t	asp;
 		struct	sigstack *nss;
 		struct	sigstack *oss;
 	} *uap = (struct a *)u.u_ap;
