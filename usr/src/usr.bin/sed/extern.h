@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.5 (Berkeley) %G%
+ *	@(#)extern.h	5.6 (Berkeley) %G%
  */
 
 extern struct s_command *prog;
@@ -21,13 +21,14 @@ extern int lastline;
 extern int aflag, eflag, nflag;
 extern char *fname;
 
+void	 cfclose __P((struct s_command *, struct s_command *));
 void	 compile __P((void));
+void	 cspace __P((SPACE *, char *, size_t, enum e_spflag));
 char	*cu_fgets __P((char *, int));
 void	 err __P((int, const char *, ...));
 int	 mf_fgets __P((SPACE *, enum e_spflag));
 void	 process __P((void));
+char 	*strnchr __P((const char *, int c, size_t));
 char	*strregerror __P((int, regex_t *));
 void	*xmalloc __P((u_int));
 void	*xrealloc __P((void *, u_int));
-void	 cfclose __P((struct s_command *, struct s_command *));
-void	 cspace __P((SPACE *, char *, size_t, enum e_spflag));

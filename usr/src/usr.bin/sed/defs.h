@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)defs.h	5.3 (Berkeley) %G%
+ *	@(#)defs.h	5.4 (Berkeley) %G%
  */
 
 /*
@@ -48,7 +48,7 @@ struct s_subst {
 
 /*
  * An internally compiled command.
- * Initialy, label references are stored in u.t, on a second pass they
+ * Initialy, label references are stored in t, on a second pass they
  * are updated to pointers.
  */
 struct s_command {
@@ -64,6 +64,7 @@ struct s_command {
 	char code;				/* Command code */
 	u_int nonsel:1;				/* True if ! */
 	u_int inrange:1;			/* True if in range */
+	u_int lused:1;				/* True if label used. */
 };
 
 /*
@@ -89,11 +90,11 @@ enum e_args {
 struct s_appends {
 	enum {AP_STRING, AP_FILE} type;
 	char *s;
+	size_t len;
 };
 
 enum e_spflag {
 	APPEND,					/* Append to the contents. */
-	APPENDNL,				/* Append, with newline. */
 	REPLACE,				/* Replace the contents. */
 };
 
