@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mci.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mci.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -84,7 +84,8 @@ mci_cache(mci)
 #ifdef LOG
 	if (tTd(91, 100))
 		syslog(LOG_DEBUG, "%s: mci_cache: caching %x (%s) in slot %d",
-			CurEnv->e_id, mci, mci->mci_host, mcislot - MciCache);
+			CurEnv->e_id ? CurEnv->e_id : "NOQUEUE",
+			mci, mci->mci_host, mcislot - MciCache);
 #endif
 
 	*mcislot = mci;
@@ -174,7 +175,8 @@ mci_uncache(mcislot, doquit)
 #ifdef LOG
 	if (tTd(91, 100))
 		syslog(LOG_DEBUG, "%s: mci_uncache: uncaching %x (%s) from slot %d (%d)",
-			CurEnv->e_id, mci, mci->mci_host, mcislot - MciCache, doquit);
+			CurEnv->e_id ? CurEnv->e_id : "NOQUEUE",
+			mci, mci->mci_host, mcislot - MciCache, doquit);
 #endif
 
 	if (doquit)
