@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tail.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)tail.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -184,8 +184,10 @@ obsolete(argv)
 			 * output style characters.
 			 */
 			t = *argv + len - 1;
-			if (*t == 'f' || *t == 'r')
-				*p++ = *t--;
+			if (*t == 'f' || *t == 'r') {
+				*p++ = *t;
+				*t-- = '\0';
+			}
 			switch(*t) {
 			case 'b':
 				*p++ = 'b';
