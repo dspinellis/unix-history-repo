@@ -8,7 +8,7 @@ divert(-1)
 #
 
 include(`../m4/cf.m4')
-VERSIONID(@(#)mail.eecs.mc	2.3 (Berkeley) %G%)
+VERSIONID(@(#)mail.eecs.mc	2.4 (Berkeley) %G%)
 OSTYPE(hpux)dnl
 DOMAIN(cs.hidden)dnl
 MAILER(local)dnl
@@ -20,7 +20,7 @@ DDBerkeley.EDU
 CF CS ucbarpa arpa ucbernie ernie renoir
 
 LOCAL_RULE_0
-R< @ $=F . $D . > : $*		$@ $>7 $1		@here:... -> ...
+R< @ $=F . $D . > : $*		$@ $>7 $2		@here:... -> ...
 R$* $=O $* < @ $=F . $D . >	$@ $>7 $1 $2 $3		...@here -> ...
 
 R$* < @ $=F . $D . >		$#local $: $1		use UDB
