@@ -16,7 +16,7 @@ POPDIVERT
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	8.9 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	8.10 (Berkeley) %G%')
 
 #
 #  There are innumerable variations on the UUCP mailer.  It really
@@ -61,6 +61,7 @@ R$* < @ $=w >			$1			strip local name
 R$* < @ $- . UUCP >		$2 ! $1			convert to UUCP format
 R$* < @ $+ >			$2 ! $1			convert to UUCP format
 R$+				$: $U ! $1		prepend our name
+R! $+				$: $k ! $1		in case $U undefined
 
 #
 #  envelope and header recipient rewriting
@@ -94,9 +95,10 @@ R$*				$@ $>11 $1
 S72
 
 R$+				$: $>12 $1		uucp-ify
-R $=w ! $+			$2			prepare for following
-R $+				$: $M ! $1		prepend masquerade name
-R ! $+				$: $j ! $1		in case $M undefined')
+R$=w ! $+			$2			prepare for following
+R$-.$+ ! $+			$@ $1.$2 ! $3		already got domain
+R$+				$: $M ! $1		prepend masquerade name
+R! $+				$: $j ! $1		in case $M undefined')
 
 
 PUSHDIVERT(4)
