@@ -7,7 +7,7 @@
 #
 #  This has been tested on NEWS-OS 6.0.3
 #
-#	@(#)Makefile.NEWS-OS.6.x	8.1 (Berkeley) %G%
+#	@(#)Makefile.NEWS-OS.6.x	8.2 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -26,7 +26,9 @@ CC=	/bin/cc
 DBMDEF=	-DNDBM -DNIS
 
 # environment definitions (e.g., -D_AIX3)
-ENVDEF= -DSYSLOG_BUFSIZE=256	# if you have a problem on syslog buffer size
+# define SYSLOG_BUFSIZE=256 if you have a problem on syslog buffer size
+# define SPT_TYPE=SPT_NONE if you are using NEWS-OS 6.0.1
+ENVDEF= -DSYSLOG_BUFSIZE=256 # -DSPT_TYPE=SPT_NONE
 
 # see also conf.h for additional compilation flags
 
@@ -85,7 +87,7 @@ sysexits.h:
 
 ndbm.o:
 	if [ ! -f /usr/include/ndbm.h ]; then \
-		ln -n /usr/ucbinclude/ndbm.h .; \
+		ln -s /usr/ucbinclude/ndbm.h .; \
 	fi; \
 	if [ -f /usr/lib/libndbm.a ]; then \
 		ar x /usr/lib/libndbm.a ndbm.o; \
@@ -93,20 +95,21 @@ ndbm.o:
 		ar x /usr/ucblib/libucb.a ndbm.o; \
 	fi; \
 
-
-NROFF=	nroff -h
+#NROFF=	nroff -h
+NROFF=	groff -Tascii
+MANDOC=	-mandoc
 
 aliases.0: aliases.5
-	${NROFF} -mandoc aliases.5 > aliases.0
+	${NROFF} ${MANDOC} aliases.5 > aliases.0
 
 mailq.0: mailq.1
-	${NROFF} -mandoc mailq.1 > mailq.0
+	${NROFF} ${MANDOC} mailq.1 > mailq.0
 
 newaliases.0: newaliases.1
-	${NROFF} -mandoc newaliases.1 > newaliases.0
+	${NROFF} ${MANDOC} newaliases.1 > newaliases.0
 
 sendmail.0: sendmail.8
-	${NROFF} -mandoc sendmail.8 > sendmail.0
+	${NROFF} ${MANDOC} sendmail.8 > sendmail.0
 
 install: install-sendmail install-docs
 

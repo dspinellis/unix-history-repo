@@ -5,7 +5,7 @@
 #  old make program (I recommend that you get and port the new make if you
 #  are going to be doing any signficant work on sendmail).
 #
-#	@(#)Makefile.LUNA	8.1 (Berkeley) %G%
+#	@(#)Makefile.LUNA	8.2 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -50,7 +50,7 @@ HFDIR=	${DESTDIR}/usr/lib
 OBJADD=
 
 # additional pseudo-sources needed
-BEFORE= dirent.h stddef.h stdlib.h unistd.h limits.h time.h
+BEFORE= dirent.h stddef.h stdlib.h unistd.h limits.h time.h sys/time.h
 
 ###################  end of user configuration flags  ######################
 
@@ -91,6 +91,13 @@ time.h:
 	echo "#define _LOCAL_TIME_H_" >> time.h
 	cat /usr/include/time.h >> time.h
 	echo "#endif" >> time.h
+
+sys/time.h:
+	-mkdir sys
+	echo "#ifndef _LOCAL_SYS_TIME_H_" > sys/time.h
+	echo "#define _LOCAL_SYS_TIME_H_" >> sys/time.h
+	cat /usr/include/sys/time.h >> sys/time.h
+	echo "#endif" >> sys/time.h
 
 NROFF=	nroff -h
 
