@@ -1,4 +1,4 @@
-/*	protosw.h	6.3	84/08/21	*/
+/*	protosw.h	6.4	85/03/07	*/
 
 /*
  * Protocol switch table.
@@ -145,6 +145,30 @@ char	*prcrequests[] = {
 	"FRAG-UNREACH", "SRCFAIL-UNREACH", "NET-REDIRECT", "HOST-REDIRECT",
 	"TOSNET-REDIRECT", "TOSHOST-REDIRECT", "TX-INTRANS", "TX-REASS",
 	"PARAMPROB"
+};
+#endif
+
+/*
+ * The arguments to ctloutput are:
+ *	(*protosw[].pr_ctloutput)(req, so, level, optname, optval);
+ * req is one of the actions listed below, so is a (struct socket *),
+ * level is an indication of which protocol layer the option is intended.
+ * optname is a protocol dependent socket option request,
+ * optval is a pointer to a mbuf-chain pointer, for value-return results.
+ * The protocol is responsible for disposal of the mbuf chain *optval
+ * if supplied,
+ * the caller is responsible for any space held by *optval, when returned.
+ * A non-zero return from usrreq gives an
+ * UNIX error number which should be passed to higher level software.
+ */
+#define	PRCO_GETOPT	0
+#define	PRCO_SETOPT	1
+
+#define	PRCO_NCMDS	2
+
+#ifdef PRCOREQUESTS
+char	*prcorequests[] = {
+	"GETOPT", "SETOPT",
 };
 #endif
 
