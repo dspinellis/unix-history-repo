@@ -1,6 +1,6 @@
 Hello, Emacs, this is an -*- Indented-Text -*- file!
 
-$Id: Changes,v 1.1 1994/03/30 20:36:31 wollman Exp $
+$Id: Changes,v 1.2 1994/04/02 22:15:18 wollman Exp $
 
 This file is intended to keep track of important kernel and user
 changes in FreeBSD between releases.  Entries are in reverse
@@ -8,6 +8,8 @@ chronological order; userids can be decoded with the chart at the end
 of this file.
 
 Since 1.1 BETA:
+- Fixed bugs in truncating mapped files.  (dyson/davidg)
+
 - A new version of the interrupt-handler glue code has been added, which
   is faster and architecturally cleaner than the previous version.  The
   beginnings of better profiling support have also been added.  (bde/davidg)
