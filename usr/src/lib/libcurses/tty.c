@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tty.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)tty.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdlib.h>
@@ -223,7 +223,7 @@ endwin()
 			tputs(SE, 0, __cputchar);
 			curscr->flags &= ~__WSTANDOUT;
 		}
-		__mvcur(curscr->cury, curscr->cury, curscr->maxy - 1, 0, 0);
+		__mvcur(curscr->cury, curscr->curx, curscr->maxy - 1, 0, 0);
 	}
 
 	(void)tputs(VE, 0, __cputchar);
