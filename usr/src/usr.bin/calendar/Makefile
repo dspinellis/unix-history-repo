@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.8 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	calendar
 
