@@ -6,12 +6,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sqrt.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)sqrt.c	4.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "e.h"
 
-sqrt(p2) int p2; {
+eqsqrt(p2) int p2; {
 #ifndef NEQN
 	int nps;
 

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)e.y	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)e.y	4.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "e.h"
@@ -72,7 +72,7 @@ box	: box OVER box	{ boverb($1, $3); }
 	| size box	%prec SIZE	{ size($1, $2); }
 	| font box	%prec FONT	{ font($1, $2); }
 	| FAT box	{ fatbox($2); }
-	| SQRT box	{ sqrt($2); }
+	| SQRT box	{ eqsqrt($2); }
 	| lpile '{' list '}'	{ lpile('L', $1, ct); ct = $1; }
 	| cpile '{' list '}'	{ lpile('C', $1, ct); ct = $1; }
 	| rpile '{' list '}'	{ lpile('R', $1, ct); ct = $1; }
