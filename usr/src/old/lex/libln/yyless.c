@@ -1,4 +1,4 @@
-/*	@(#)yyless.c	4.1	%G%	*/
+/*	@(#)yyless.c	4.2	%G%	*/
 
 yyless(x)
 {
@@ -10,7 +10,7 @@ lastch = yytext+yyleng;
 if (x>=0 && x <= yyleng)
 	ptr = x + yytext;
 else
-	ptr = x;
+	ptr = (char *) x;
 while (lastch > ptr)
 	yyunput(*--lastch);
 *lastch = 0;
