@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)arff.c	4.12 (Berkeley) 82/12/23";
+static	char sccsid[] = "@(#)arff.c	4.13 (Berkeley) 83/04/22";
 #endif
 
 #include <sys/types.h>
@@ -103,7 +103,6 @@ main(argc, argv)
 
 	if (argc < 2)
 		usage();
-	cp = argv[1];
 	for (cp = argv[1]; *cp; cp++)
 		switch (*cp) {
 
@@ -367,6 +366,11 @@ rt_init()
 	if (!flag(c)) {
 		lread(6*RT_BLOCK, 2*RT_BLOCK, (char *)&rt_dir[0]);
 		dirnum = rt_dir[0].rt_axhead.rt_numseg;
+		/* check for blank/uninitialized diskette */
+		if (dirnum <= 0) {
+			fprintf(stderr,"arff: bad directory format\n");
+			exit(1);
+		}
 		if (dirnum > RT_DIRSIZE) {
 			fprintf(stderr,"arff: too many directory segments\n");
 			exit(1);
@@ -816,20 +820,18 @@ scrunch()
 
 	for (segnum = 0; segnum != -1;
 	     segnum = rt_dir[segnum].rt_axhead.rt_nxtseg - 1) {
-		dirdirty = 0;
 		for (de = rt_dir[segnum].rt_ents; de <= rt_curend[segnum]; de++)
 			if (de->rt_stat == RT_NULL &&
-			    de[1].rt_stat == RT_NULL) {
+			    (de+1)->rt_stat == RT_NULL) {
 				(de+1)->rt_len += de->rt_len;
-				for (workp = de; workp < rt_curend[segnum]; workp++)
+				for (workp=de; workp<rt_curend[segnum]; workp++)
 					*workp = workp[1];
 				de--;
 				rt_curend[segnum]--;
 				rt_nleft++;
-				dirdirty = 1;
 			}
-		if (dirdirty)
-			lwrite((6+segnum*2)*RT_BLOCK, 2*RT_BLOCK,
-				(char *)&rt_dir[segnum]);
+		lwrite((6+segnum*2)*RT_BLOCK, 2*RT_BLOCK,
+			(char *)&rt_dir[segnum]);
 	}
+	dirdirty = 0;
 }
