@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  *	from: @(#)swap_pager.c	7.4 (Berkeley) 5/7/91
- *	$Id: swap_pager.c,v 1.6 1993/11/29 14:50:27 ache Exp $
+ *	$Id: swap_pager.c,v 1.7 1993/12/19 00:55:56 wollman Exp $
  */
 
 /*
@@ -46,9 +46,6 @@
  *	Add multiprocessor locks
  *	Deal with async writes in a better fashion
  */
-
-#include "swappager.h"
-#if NSWAPPAGER > 0
 
 #include "param.h"
 #include "proc.h"
@@ -913,4 +910,3 @@ printf("error %d blkno %d sz %d ", bp->b_error, bp->b_blkno, bp->b_bcount);
 	thread_wakeup((int) &vm_pages_needed);
 	splx(s);
 }
-#endif
