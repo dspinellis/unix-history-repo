@@ -1,5 +1,5 @@
 #ifndef LINT
-static char *sccsid="@(#)showtc.c	1.2	(Berkeley) %G%";
+static char *sccsid="@(#)showtc.c	1.3	(Berkeley) %G%";
 #endif
 
 /*
@@ -17,7 +17,9 @@ static char *sccsid="@(#)showtc.c	1.2	(Berkeley) %G%";
 **	[ent]	display specific entry. tc= will be expanded.
 **
 ** David L. Wasley, U.C.Berkeley
-** Modified for 4.1c by Kevin Layer
+** Kevin Layer: modified for 4.1c and misc changes.
+** Kevin Layer: added the printing of terminal capabilities
+**	in `human' readable form (like that in "man 5 termcap").
 */
 
 #include <stdio.h>
@@ -36,6 +38,109 @@ struct TcName {
 	char	name_buf[124];
 	long	file_pos;
 } tcNames[NOENTRIES];
+
+#define NOCAPS	94
+
+struct Caps {
+	char	*cap;
+	char	*desc;
+} capList[NOCAPS] =
+{
+	"ae",	"End alternate character set",
+	"al",	"Add new blank line",
+	"am",	"Has automatic margins",
+	"as",	"Start alternate character set",
+	"bc",	"Backspace if not ^H",
+	"bs",	"Can backspace with ^H",
+	"bt",	"Back tab",
+	"bw",	"Backspace wraps from col 0 to last col",
+	"CC",	"Command char in prototype if settable",
+	"cd",	"Clear to end of display",
+	"ce",	"Clear to end of line",
+	"ch",	"Like cm, but horizontal motion only",
+	"cl",	"Clear screen",
+	"cm",	"Cursor motion",
+	"co",	"Number of columns in a line",
+	"cr",	"Carriage return, (default ^M)",
+	"cs",	"Change scrolling region (vt100), like cm",
+	"cv",	"Like ch but vertical only.",
+	"da",	"Display may be retained above",
+	"dB",	"Number of millisec of bs delay needed",
+	"db",	"Display may be retained below",
+	"dC",	"Number of millisec of cr delay needed",
+	"dc",	"Delete character",
+	"dF",	"Number of millisec of ff delay needed",
+	"dl",	"Delete line",
+	"dm",	"Start Delete mode",
+	"dN",	"Number of millisec of nl delay needed",
+	"do",	"Down one line",
+	"dT",	"Number of millisec of tab delay needed",
+	"ed",	"End delete mode",
+	"ei",	"End insert mode;give \":ei=:\" if ic",
+	"eo",	"Can erase overstrikes with a blank",
+	"ff",	"Hardcopy page eject (default ^L)",
+	"fs",	"From status line sequence",
+	"hc",	"Hardcopy terminal",
+	"hd",	"Half-line down (forward 1/2 lf)",
+	"ho",	"Home cursor (if no cm)",
+	"hs",	"Has 25th status line",
+	"hu",	"Half-line up (reverse 1/2 lf)",
+	"hz",	"Hazeltine; can't print ~'s",
+	"ic",	"Insert character",
+	"if",	"Name of file containing is",
+	"im",	"Start insert mode;give \":im=:\" if ic",
+	"in",	"Insert mode distinguishes nulls on display",
+	"ip",	"Insert pad after character inserted",
+	"is",	"Initialization string",
+	"kb",	"Sent by backspace key",
+	"kd",	"Sent down arrow key",
+	"ke",	"Out of \"keypad transmit\" mode",
+	"kh",	"Sent by home key",
+	"kl",	"Sent by left arrow key",
+	"kn",	"Number of \"other\" keys",
+	"ko",	"Tc entries for other non-function keys",
+	"kr",	"Sent by right arrow key",
+	"ks",	"Put in \"keypad transmit\" mode",
+	"ku",	"Sent by up arrow key",
+	"li",	"Number of lines on screen or page",
+	"ll",	"Last line, first column (if no cm)",
+	"ma",	"Arrow key map, used by vi V2 only",
+	"mi",	"Safe to move while in insert mode",
+	"ml",	"Memory lock on above cursor.",
+	"ms",	"Ok to move while in standout/underline mode",
+	"mu",	"Memory unlock (turn off memory lock).",
+	"nc",	"No working CR (DM2500,H2000)",
+	"nd",	"Non-destructive space (cursor right)",
+	"nl",	"Newline character (default \\n)",
+	"ns",	"Is a CRT but doesn't scroll.",
+	"os",	"Terminal overstrikes",
+	"pc",	"Pad character (rather than null)",
+	"pt",	"Has hardware tabs (may need to use is)",
+	"se",	"End stand out mode",
+	"sf",	"Scroll forwards",
+	"sg",	"Number of blank chars left by so/se",
+	"so",	"Begin stand out mode",
+	"sr",	"Scroll reverse (backwards)",
+	"ta",	"Tab (other than ^I or with padding)",
+	"tc",	"Entry of similar terminal - must be last",
+	"te",	"String to end programs that use cm",
+	"ti",	"String to begin programs that use cm",
+	"ts",	"To status line sequence",
+	"uc",	"Underscore one char and move past it",
+	"ue",	"End underscore mode",
+	"ug",	"Number of blank chars left by us or ue",
+	"ul",	"Underlines, though no overstrike",
+	"up",	"Upline (cursor up)",
+	"us",	"Start underscore mode",
+	"vb",	"Visible bell (may not move cursor)",
+	"ve",	"Sequence to end open/visual mode",
+	"vs",	"Sequence to start open/visual mode",
+	"xb",	"Beehive (f1=escape, f2=ctrl C)",
+	"xn",	"A newline is ignored after a wrap (Concept)",
+	"xr",	"Return acts like ce \\r \\n (Delta Data)",
+	"xs",	"Standout not erased by writing over it (HP 264?)",
+	"xt",	"Destructive tabs, magic so char (Teleray 1061)"
+};
 
 #ifdef DEBUG
 int		Dflag = NO;
@@ -350,6 +455,7 @@ prnt_ent(buf)
 	register char	*buf;
 {
 	register char	*name;
+	char		*getdesc();
 	char		*caps[256];
 	register char	**cp;
 	register char	**tp;
@@ -421,9 +527,11 @@ prnt_ent(buf)
 	printf("%s\n", name);
 	for (cp = caps; *cp; cp++)
 		if (sflag)
-			printf("	%s\n", *cp);
+			printf("%-45s %s\n", getdesc(*cp), *cp);
 		else
-			printf("%2.2s	%s\n", name, *cp);
+		{
+			printf("%2.2s  %-45s %s\n", name, getdesc(*cp), *cp);
+		}
 	(void) putchar('\n');
 }
 
@@ -555,4 +663,16 @@ find_name(name, tn, len)
 		tn++;
 	}
 	return((struct TcName *)0);
+}
+
+char *
+getdesc(key)
+	char		*key;
+{
+	register int	i;
+
+	for (i = 0; i <= NOCAPS; i++)
+		if (strncmp(key, capList[i].cap, 2) == 0)
+			return (capList[i].desc);
+	return("Unknown capability");
 }
