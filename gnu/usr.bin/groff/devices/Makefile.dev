@@ -42,6 +42,11 @@ cleandir:
 	cd ${.CURDIR}; rm -rf obj;
 .endif
 
+.if !target(maninstall)
+maninstall:
+	@echo -n
+.endif
+
 .if !target(install)
 install:
 	-if test ! -d $(DESTDIR)$(DEVICEDIR); then \
