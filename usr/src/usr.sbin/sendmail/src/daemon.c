@@ -21,9 +21,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	5.30 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.31 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	5.30 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.31 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -166,7 +166,7 @@ getrequests()
 		/* see if we are rejecting connections */
 		while ((la = getla()) > RefuseLA)
 		{
-			setproctitle("rejecting connections: load average: %.2f", la);
+			setproctitle("rejecting connections: load average: %.2f", (double)la);
 			sleep(5);
 		}
 
