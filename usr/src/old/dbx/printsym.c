@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printsym.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)printsym.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: printsym.c,v 1.5 84/12/26 10:41:28 linton Exp $";
@@ -516,7 +516,7 @@ Symbol t;
 
 	default:
 	    if (t->language == nil or t->language == primlang) {
-		(*language_op(findlanguage(".s"), L_PRINTVAL))(t);
+		(*language_op(findlanguage(".c"), L_PRINTVAL))(t);
 	    } else {
 		(*language_op(t->language, L_PRINTVAL))(t);
 	    }
