@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.8	81/11/22	*/
+/*	uipc_socket2.c	4.9	81/11/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -131,7 +131,6 @@ sbwakeup(sb)
 {
 
 	if (sb->sb_sel) {
-		printf("sb %x\n", sb);
 		selwakeup(sb->sb_sel, sb->sb_flags & SB_COLL);
 		sb->sb_sel = 0;
 		sb->sb_flags &= ~SB_COLL;
@@ -189,7 +188,6 @@ sbappend(sb, m)
 		np = &n->m_next;
 	}
 	while (m) {
-/*
 		if (n && n->m_off <= MMAXOFF && m->m_off <= MMAXOFF &&
 		   (int)n->m_act == 0 && (int)m->m_act == 0 &&
 		   (n->m_off + n->m_len + m->m_len) <= MMAXOFF) {
@@ -200,14 +198,12 @@ sbappend(sb, m)
 			m = m_free(m);
 			continue;
 		}
-*/
 		sballoc(sb, m);
 		*np = m;
 		n = m;
 		np = &n->m_next;
 		m = m->m_next;
 	}
-	nullchk("sbappend", sb->sb_mb);
 }
 
 sbappendaddr(sb, asa, m0)
@@ -219,7 +215,6 @@ sbappendaddr(sb, asa, m0)
 	register struct mbuf *m;
 	register int len = sizeof (struct sockaddr);
 
-	printf("sbappendaddr %x asa %x ", sb, asa);
 	m = m0;
 	if (m == 0)
 		panic("sbappendaddr");
@@ -231,18 +226,11 @@ sbappendaddr(sb, asa, m0)
 		}
 		m = m->m_next;
 	}
-	printf(": sb_cc %d sb_hiwat %d sb_mbcnt %d sb_mbmax %d sbspace %d: ",
-	    sb->sb_cc, sb->sb_hiwat, sb->sb_mbcnt, sb->sb_mbmax,
-	    sbspace(sb));
-	if (len > sbspace(sb)) {
-		printf("no space\n");
+	if (len > sbspace(sb))
 		return (0);
-	}
 	m = m_get(0);
-	if (m == 0) {
-		printf("no mbufs\n");
+	if (m == 0)
 		return (0);
-	}
 	m->m_off = MMINOFF;
 	m->m_len = sizeof (struct sockaddr);
 	msa = mtod(m, struct sockaddr *);
@@ -250,7 +238,6 @@ sbappendaddr(sb, asa, m0)
 	m->m_act = (struct mbuf *)1;
 	sbappend(sb, m);
 	sbappend(sb, m0);
-	printf("inserted: sb_cc now %d\n", sb->sb_cc);
 	return (1);
 }
 
@@ -294,5 +281,4 @@ sbdrop(sb, len)
 		}
 	}
 	sb->sb_mb = m;
-	nullchk("sbdrop", sb->sb_mb);
 }
