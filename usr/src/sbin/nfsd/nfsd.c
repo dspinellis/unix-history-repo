@@ -15,7 +15,7 @@ static char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsd.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsd.c	8.7 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -193,12 +193,12 @@ main(argc, argv, envp)
 
 	if (debug == 0) {
 		daemon(0, 0);
+		(void)signal(SIGHUP, SIG_IGN);
 		(void)signal(SIGINT, SIG_IGN);
 		(void)signal(SIGQUIT, SIG_IGN);
+		(void)signal(SIGSYS, nonfs);
 		(void)signal(SIGTERM, SIG_IGN);
-		(void)signal(SIGHUP, SIG_IGN);
 	}
-	(void)signal(SIGSYS, nonfs);
 	(void)signal(SIGCHLD, reapchild);
 
 	if (reregister) {
