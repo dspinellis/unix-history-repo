@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -32,79 +32,69 @@ static char sccsid[] = "@(#)man.c	5.13 (Berkeley) %G%";
 #define	NO	0
 #define	YES	1
 
-static int	nomore,			/* copy file to stdout */
-		where;			/* just tell me where */
 static char	*command,		/* command buffer */
 		*defpath,		/* default search path */
 		*locpath,		/* local search path */
 		*machine,		/* machine type */
 		*manpath,		/* current search path */
 		*newpath,		/* new search path */
-		*pager;			/* requested pager */
+		*pager,			/* requested pager */
+		how;			/* how to display */
+
+#define	ALL	0x1			/* show all man pages */
+#define	CAT	0x2			/* copy file to stdout */
+#define	WHERE	0x4			/* just tell me where */
 
 main(argc, argv)
 	int argc;
 	register char **argv;
 {
-	char **arg_start, **arg, *getenv(), *malloc(), *strcpy();
+	extern char *optarg;
+	extern int optind;
+	int ch;
+	char *getenv(), *malloc();
 
-	arg_start = argv;
-	for (--argc, ++argv; argc && (*argv)[0] == '-'; --argc, ++argv)
-		switch((*argv)[1]) {
-		case 0:			/* just write to stdout */
-			nomore = YES;
+	while ((ch = getopt(argc, argv, "-M:P:afkw")) != EOF)
+		switch((char)ch) {
+		case '-':
+			how |= CAT;
 			break;
 		case 'M':
 		case 'P':		/* backward compatibility */
-			if ((*argv)[2])
-				defpath = *argv + 2;
-			else {
-				if (argc < 2) {
-					fprintf(stderr, "%s: missing path\n", *argv);
-					exit(1);
-				}
-				--argc;
-				defpath = *++argv;
-			}
+			defpath = optarg;
+			break;
+		case 'a':
+			how |= ALL;
 			break;
 		/*
 		 * "man -f" and "man -k" are backward contemptible,
 		 * undocumented ways of calling whatis(1) and apropos(1).
-		 * Just strip out the flag argument and jump.
 		 */
 		case 'f':
-			for (arg = argv; arg[0] = arg[1]; ++arg);
-			*arg_start = "whatis";
-			execvp(*arg_start, arg_start);
-			fputs("whatis: Command not found.\n", stderr);
-			exit(1);
+			jump(argv, "-f", "whatis");
+			/*NOTREACHED*/
 		case 'k':
-			for (arg = argv; *arg = arg[1]; ++arg);
-			*arg_start = "apropos";
-			execvp(*arg_start, arg_start);
-			fputs("apropos: Command not found.\n", stderr);
-			exit(1);
+			jump(argv, "-k", "apropos");
+			/*NOTREACHED*/
 		/*
 		 * Deliberately undocumented; really only useful when
 		 * you're moving man pages around.  Not worth adding.
 		 */
 		case 'w':
-			where = YES;
+			how |= WHERE | ALL;
 			break;
 		case '?':
 		default:
-			fprintf(stderr, "man: illegal option -- %c\n", (*argv)[1]);
-			goto usage;
+			usage();
 		}
+	argv += optind;
 
-	if (!argc) {
-usage:		fputs("usage: man [-] [-M path] [section] title ...\n", stderr);
-		exit(1);
-	}
+	if (!*argv)
+		usage();
 
-	if (!nomore)
+	if (!(how & CAT))
 		if (!isatty(1))
-			nomore = YES;
+			how |= CAT;
 		else if (pager = getenv("PAGER")) {
 			register char *p;
 
@@ -214,9 +204,10 @@ argtest:		if (!*++argv) {
 			res = manual(section, *argv);
 		else {
 			res = manual(list1, *argv);
-			res += manual(list2, *argv);
+			if (!res || (how & ALL))
+				res += manual(list2, *argv);
 		}
-		if (!res && !where) {
+		if (!res && !(how & WHERE)) {
 			if (manpath == locpath)
 				if (section)
 					fprintf(stderr, "No entry for %s in the %s section of the local manual.\n", *argv, section->msg);
@@ -263,12 +254,14 @@ manual(section, name)
 				if (access(fname, R_OK))
 					continue;
 			}
-			if (where)
+			if (how & WHERE)
 				printf("man: found in %s.\n", fname);
-			else if (nomore)
+			else if (how & CAT)
 				cat(fname);
 			else
 				add(fname);
+			if (!(how & ALL))
+				return(1);
 			res = 1;
 		}
 		if (!end)
@@ -402,4 +395,37 @@ getsect(s)
 		}
 	}
 	return((DIR *)NULL);
+}
+
+/*
+ * jump --
+ *	strip out flag argument and jump
+ */
+static
+jump(argv, flag, name)
+	char **argv, *name;
+	register char *flag;
+{
+	register char **arg;
+
+	argv[0] = name;
+	for (arg = argv + 1; *arg; ++arg)
+		if (!strcmp(*arg, flag))
+			break;
+	for (; *arg; ++arg)
+		arg[0] = arg[1];
+	execvp(name, argv);
+	fprintf(stderr, "%s: Command not found.\n", name);
+	exit(1);
+}
+
+/*
+ * usage --
+ *	print usage and die
+ */
+static
+usage()
+{
+	fputs("usage: man [-] [-a] [-M path] [section] title ...\n", stderr);
+	exit(1);
 }
