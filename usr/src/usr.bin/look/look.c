@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)look.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)look.c	4.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -54,9 +54,8 @@ main(argc, argv)
 	argc -= optind;
 
 	switch(argc) {
-	case 1:	/* if nothing set, default to dictionary order and folding */
-		if (!dict && !fold)
-			dict = fold = YES;
+	case 1:	/* if default file, set to dictionary order and folding */
+		dict = fold = YES;
 		break;
 	case 2:
 		filename = argv[1];
