@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)malloc.3	6.3 (Berkeley) %G%
+.\"	@(#)malloc.3	6.4 (Berkeley) %G%
 .\"
 .TH MALLOC 3  ""
 .UC 4
@@ -65,6 +65,14 @@ to
 .I size
 bytes and returns a pointer to the (possibly moved) block.
 The contents will be unchanged up to the lesser of the new and old sizes.
+If
+.I ptr
+is null,
+.I realloc
+simply returns the value of
+.I malloc
+called with an argument of
+.IR size .
 .PP
 In order to be compatible with older versions,
 .I realloc
