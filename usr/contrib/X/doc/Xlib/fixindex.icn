@@ -1,0 +1,75 @@
+# transform raw index entries into new macros
+#
+#	features include:  merging page numbers and suppressing duplicates
+#			   sorting out major headings from minor
+#
+# the (pre-sorted) input is of the form
+#	<page-number><tab><major name><tab><minor name>
+#
+
+
+record LineState(PageNum, Major, Minor)
+
+procedure main()
+	local pageList, old, new
+
+	old := LineState()
+	new := LineState()
+	split(old) | return
+	pageList := old.PageNum
+
+	if old.Minor ~== "" then
+	    write(".Ib \"", old.Major, "\"")
+
+	while split(new) do {
+	    if old.Major == new.Major then
+		if old.Minor == new.Minor then {
+		    if old.PageNum ~= new.PageNum then
+			pageList ||:= "," || new.PageNum }
+		else {
+		    WriteEntry(old, pageList)
+		    pageList := new.PageNum }
+	    else {
+		WriteEntry(old, pageList)
+		pageList := new.PageNum
+
+		if new.Minor ~== "" then 
+		    write(".Ib \"", new.Major, "\"") }
+
+	    AssignRecord(new, old) }		# new -> old
+
+	WriteEntry(old, pageList)
+ end
+
+
+procedure split(state)
+	static tabChar,
+	       digits
+	initial { tabChar := cset("\t");
+		  digits := cset("0123456789") }
+
+	read() | fail ? {
+	    state.PageNum := tab(many(digits))
+	    tab(many(tabChar))
+	    state.Major := tab(upto(tabChar)) | tab(0)
+	    tab(many(tabChar))
+	    state.Minor := tab(0) }
+
+	return
+end
+
+
+procedure WriteEntry(state, pageList)
+	if state.Minor == "" then
+	    write(".I> \"", state.Major, "\" \"", pageList, "\"")
+	else
+	    write(".I< \"", state.Major, "\" \"", state.Minor, 
+					"\" \"", pageList, "\"")
+ end
+
+
+procedure AssignRecord(a, b)
+	b.Major := a.Major
+	b.Minor := a.Minor
+	b.PageNum := a.PageNum
+end
