@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fgetln.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)fgetln.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -102,7 +102,7 @@ fgetline(fp, lenp)
 		 */
 		if (__slbexpand(fp, len + OPTIMISTIC))
 			goto error;
-		(void)bcopy((void *)fp->_p, (void *)(fp->_lb._base + off),
+		(void)memcpy((void *)(fp->_lb._base + off), (void *)fp->_p,
 		    len - off);
 		off = len;
 		if (__srefill(fp))
@@ -116,7 +116,7 @@ fgetline(fp, lenp)
 		len += diff;
 		if (__slbexpand(fp, len))
 			goto error;
-		(void)bcopy((void *)fp->_p, (void *)(fp->_lb._base + off),
+		(void)memcpy((void *)(fp->_lb._base + off), (void *)fp->_p,
 		    diff);
 		fp->_r -= diff;
 		fp->_p = p;
