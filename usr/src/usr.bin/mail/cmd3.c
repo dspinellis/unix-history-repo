@@ -9,7 +9,7 @@
  * Still more user commands.
  */
 
-static char *SccsId = "@(#)cmd3.c	1.7 %G%";
+static char *SccsId = "@(#)cmd3.c	1.8 %G%";
 
 /*
  * Process a shell escape by saving signals, ignoring signals,
@@ -199,7 +199,7 @@ respond(msgvec)
 	}
 	mp = &message[msgvec[0] - 1];
 	dot = mp;
-	rcv = nameof(mp);
+	rcv = nameof(mp, 1);
 	strcpy(buf, "");
 	cp = hfield("to", mp);
 	if (cp != NOSTR)
@@ -221,6 +221,7 @@ respond(msgvec)
 	head.h_subject = hfield("subject", mp);
 	if (head.h_subject == NOSTR)
 		head.h_subject = hfield("subj", mp);
+	head.h_subject = reedit(head.h_subject);
 	head.h_cc = NOSTR;
 	cp = hfield("cc", mp);
 	if (cp != NOSTR) {
@@ -232,6 +233,29 @@ respond(msgvec)
 	head.h_bcc = NOSTR;
 	mail1(&head);
 	return(0);
+}
+
+/*
+ * Modify the subject we are replying to to begin with Re: if
+ * it does not already.
+ */
+
+char *
+reedit(subj)
+	char *subj;
+{
+	char sbuf[10];
+	register char *newsubj;
+
+	if (subj == NOSTR)
+		return(NOSTR);
+	strncpy(sbuf, subj, 3);
+	sbuf[3] = 0;
+	if (icequal(sbuf, "re:"))
+		return(subj);
+	newsubj = salloc(strlen(subj) + 6);
+	sprintf(newsubj, "Re:  %s", subj);
+	return(newsubj);
 }
 
 /*
@@ -603,7 +627,7 @@ Respond(msgvec)
 	for (s = 0, ap = msgvec; *ap != 0; ap++) {
 		mp = &message[*ap - 1];
 		dot = mp;
-		s += strlen(nameof(mp)) + 1;
+		s += strlen(nameof(mp, 1)) + 1;
 	}
 	if (s == 0)
 		return(0);
@@ -611,7 +635,7 @@ Respond(msgvec)
 	head.h_to = cp;
 	for (ap = msgvec; *ap != 0; ap++) {
 		mp = &message[*ap - 1];
-		cp = copy(nameof(mp), cp);
+		cp = copy(nameof(mp, 1), cp);
 		*cp++ = ' ';
 	}
 	*--cp = 0;
@@ -620,7 +644,7 @@ Respond(msgvec)
 	head.h_seq = 0;
 	if (subject == NOSTR)
 		subject = hfield("subj", mp);
-	head.h_subject = subject;
+	head.h_subject = reedit(subject);
 	if (subject != NOSTR)
 		head.h_seq++;
 	head.h_cc = NOSTR;
