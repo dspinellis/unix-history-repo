@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.38 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -662,9 +662,9 @@ fprintlog(f, flags, msg)
 			int e = errno;
 			(void) close(f->f_file);
 			/*
-			 * Check for EBADF on TTY's due to vhangup() XXX
+			 * Check for errors on TTY's due to loss of tty
 			 */
-			if (e == EBADF && f->f_type != F_FILE) {
+			if ((e == EIO || e == EBADF) && f->f_type != F_FILE) {
 				f->f_file = open(f->f_un.f_fname,
 				    O_WRONLY|O_APPEND, 0);
 				if (f->f_file < 0) {
