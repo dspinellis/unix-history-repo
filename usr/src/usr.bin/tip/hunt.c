@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)hunt.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)hunt.c	4.8 (Berkeley) %G%";
 #endif
 
 #include "tip.h"
@@ -45,6 +45,10 @@ hunt(name)
 			FD = open(cp, O_RDWR);
 		}
 		alarm(0);
+		if (FD < 0) {
+			perror(cp);
+			deadfl = 1;
+		}
 		if (!deadfl) {
 			ioctl(FD, TIOCEXCL, 0);
 			ioctl(FD, TIOCHPCL, 0);
