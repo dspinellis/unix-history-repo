@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#       @(#)makesendmail	8.19 (Berkeley) %G%
+#       @(#)makesendmail	8.20 (Berkeley) %G%
 #
 
 #
@@ -34,19 +34,16 @@ in
   9000/*)	arch=`echo $arch | sed -e 's/9000.//' -e 's/..$/xx/'`;;
 esac
 
-# tweak operating system type
+# tweak operating system type and release
 case $os
 in
   DYNIX-ptx)	os=PTX;;
   Paragon*)	os=Paragon;;
+  HP-UX)	rel=`echo $rel | sed -e 's/^[^.]*\.0*//'`;;
 esac
 
-# tweak operating system release
-case $os
-in
-  HP-UX)	rbase=`echo $rel | sed -e 's/^[^.]*\.0*//' -e 's/\..*//'`;;
-  *)		rbase=`echo $rel | sed -e 's/\..*//'`
-esac
+# get "base part" of operating system release
+rbase=`echo $rel | sed -e 's/\..*//'`
 
 # heuristic tweaks to clean up names
 if [ "$os" = "unix" ]
