@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)init_main.c	7.8 (Berkeley) %G%
+ *	@(#)init_main.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -88,6 +88,10 @@ main(firstaddr)
 		panic("no space to craft zero'th session");
 	pg->pg_session->s_count = 1;
 	pg->pg_session->s_leader = 0;
+#ifdef KTRACE
+	p->p_tracep = NULL;
+	p->p_traceflag = 0;
+#endif
 	/*
 	 * These assume that the u. area is always mapped 
 	 * to the same virtual address. Otherwise must be
