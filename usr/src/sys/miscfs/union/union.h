@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union.h	8.5 (Berkeley) %G%
+ *	@(#)union.h	8.6 (Berkeley) %G%
  */
 
 struct union_args {
@@ -48,6 +48,7 @@ struct union_node {
 	struct vnode	        *un_uppervp;	/* overlaying object */
 	struct vnode	        *un_lowervp;	/* underlying object */
 	struct vnode		*un_dirvp;	/* Parent dir of uppervp */
+	struct vnode		*un_pvp;	/* Parent vnode */
 	char			*un_path;	/* saved component name */
 	int			un_hash;	/* saved un_path hash value */
 	int			un_openl;	/* # of opens on lowervp */
