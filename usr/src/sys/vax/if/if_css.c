@@ -1,4 +1,4 @@
-/*      if_css.c     4.6     82/12/17     */
+/*      if_css.c     4.7     82/12/22     */
 
 #include "css.h"
 
@@ -91,7 +91,6 @@ cssprobe(reg)
         register int br, cvec;          /* r11, r10 value-result */
         register struct cssdevice *addr = (struct cssdevice *)reg;
 
-COUNT(CSSPROBE);
 #ifdef lint
         br = 0; cvec = br; br = cvec;
         cssrint(0); cssxint(0);
@@ -129,7 +128,6 @@ cssattach(ui)
                 struct  impcb ifimp_impcb;
         } *ifimp;
 
-COUNT(CSSATTACH);
         if ((ifimp = (struct ifimpcb *)impattach(ui, cssreset)) == 0)
                 panic("cssattach");             /* XXX */
         sc->css_if = &ifimp->ifimp_if;
@@ -153,7 +151,6 @@ cssreset(unit, uban)
         register struct uba_device *ui;
         struct css_softc *sc;
 
-COUNT(CSSCLR);
         if (unit >= NCSS || (ui = cssinfo[unit]) == 0 || ui->ui_alive == 0 ||
             ui->ui_ubanum != uban)
                 return;
@@ -175,7 +172,6 @@ cssinit(unit)
         register struct cssdevice *addr;
         int x, info;
 
-COUNT(CSSINIT);
 	if (unit >= NCSS || (ui = cssinfo[unit]) == 0 || ui->ui_alive == 0) {
 		printf("css%d: not alive\n", unit);
 		return(0);
@@ -261,7 +257,6 @@ cssstart(dev)
         struct mbuf *m;
         u_short cmd;
 
-COUNT(CSSSTART);
         if (sc->css_ic->ic_oactive)
                 goto restart;
         
@@ -302,7 +297,6 @@ cssxint(unit)
         register struct css_softc *sc = &css_softc[unit];
         register struct cssdevice *addr;
 
-COUNT(CSSXINT);
         addr = (struct cssdevice *)ui->ui_addr;
         if (sc->css_ic->ic_oactive == 0) {
                 printf("css%d: stray output interrupt csr=%b\n",
@@ -336,7 +330,6 @@ cssrint(unit)
         struct mbuf *m;
         int len, info;
 
-COUNT(CSSRINT);
         sc->css_if->if_ipackets++;
 
         /*
