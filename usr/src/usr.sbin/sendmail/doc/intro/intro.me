@@ -21,7 +21,7 @@ Berkeley, California  94720
 .(f
 This is
 .if \n(DR draft
-version 3.8,
+version 3.9,
 last modified on %G%.
 .if \n(DR Please do not distribute this version without permission
 .if \n(DR of the author.
@@ -32,6 +32,96 @@ implements a general internetwork mail routing facility,
 featuring aliasing and forwarding,
 automatic routing to network gateways,
 and flexible configuration.
+.pp
+In the early days of computer networking,
+the problems of identification and communication
+were quite simple by today's standards.
+Each node on the network
+would have an address,
+and resources could be identified
+with a host-resource pair;
+in particular,
+the mail system could refer to users
+using a host-username pair.
+Host names and numbers had to be administered by a central authority,
+but usernames could be assigned locally to each host.
+One early example is the ARPANET.
+However, access to the ARPANET is limited,
+and the connection cost is high.
+Many alternative networks appeared,
+such as the Berkeley Network,
+the UUCP network,
+and the CHAOS network.
+Each network defined its own standards
+for resource identification.
+.pp
+As networks grew,
+they eventually touched.
+Certain special cases could be handled trivially
+by ad hoc techniques,
+as when one computer hung off another by a link,
+or by providing network names that appeared local to hosts
+on other networks,
+as with the Ethernet at Xerox PARC.
+The internet was born.
+.pp
+Internet topology became more complex with time.
+Two networks might touch
+in more than one place,
+and the rapid expansion of networks
+created a serious database update problem.
+Since all the address syntaxes were created arbitrarily,
+considerable confusion reigned.
+Some networks required point-to-point routing,
+which simplifies the database update problem
+since only adjacent hosts must be entered
+into the system tables,
+while others used end-to-end routing.
+Some networks used a left-associative syntax
+and others used a right-associative syntax:
+ambiguity raised its ugly head.
+.pp
+Internet proposals came to the rescue.
+Basically, these proposed expanding the address pairs
+to address triples,
+comprised of network-host-resource.
+Network numbers would be universally agreed upon,
+and hosts could be assigned in the old way
+on each network.
+But these proposals all tended to be far-reaching
+and fundamentally incompatible with the old networks.
+Protocols and proposals met to do battle.
+And there was the issue of assigning network numbers:
+there had to be a central clearing house,
+and any networks that might ever touch
+had to be given their very own number.
+Naturally, not everyone who thought they deserved a number
+got one.
+.pp
+Which brings us to today.
+Although it will be nice when everyone everywhere
+has a unique network number,
+it cannot be expected very soon.
+The old, stupid networks take time to die,
+and bureaucratic inertia is still the rule.
+.pp
+.i Sendmail
+is intended to help bridge the gap
+between the totally ad hoc world
+of networks that know nothing of each other
+and the clean, tightly-coupled world
+of unique network numbers.
+It uses old arbitrary address syntaxes
+and resolves ambiguities using heuristics
+specified by the system administrator
+who creates the configuration file.
+It helps guide the conversion of message formats
+between disparate networks.
+In short,
+.i sendmail
+is glue that holds the world together
+until the new world is ready to be inhabited.
+.sp
 .pp
 Section 1 discusses the design goals for
 .i sendmail .
