@@ -1,5 +1,5 @@
 /*-
- *	@(#)READ_ME	8.4 (Berkeley) %G%
+ *	@(#)READ_ME	8.5 (Berkeley) %G%
  */
 
 			SENDMAIL RELEASE 8
@@ -19,9 +19,9 @@ The latest version of sendmail is kept on FTP.CS.Berkeley.EDU, directory
 
 The sendmail manual pages use contemporary Berkeley troff macros.  If
 your system does not process these manual pages, you can pick up the
-new macros in a BSD Net/2 FTP site (e.g. 
-ftp.uu.net:/systems/unix/bsd-unix/share/me/strip.sed and
-ftp.uu.net:/systems/unix/bsd-unix/share/tmac/* )
+new macros in a BSD Net/2 FTP site (e.g.  on FTP.UU.NET, the files
+/systems/unix/bsd-sources/share/tmac/me/strip.sed and
+/systems/unix/bsd-sources/share/tmac/*).
 
 The strip.sed file is only used in installation.
 
