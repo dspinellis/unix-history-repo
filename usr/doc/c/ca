@@ -1,0 +1,561 @@
+.pn 26
+.fp 3 G
+'tr ^\|
+'hc $
+'tr @
+'ll 6.5i
+'ps 10
+.ds op \s6\d\fIopt\fP\u\s10
+.ds * \fR\v'.2'*\fP\v'-.2'
+.ds ~ \v'.5'\s14~\s10\v'-.5'
+'vs 11p
+.de pg
+.sp .4
+.ti 1
+..
+.de et
+.sp .2
+.ft R
+.ti 1
+..
+.de dp
+.sp .7
+.ne \\$1
+.ft I
+.nf
+..
+.de ed
+.fi
+.br
+.ft R
+..
+.de ul
+.sp 1.5
+.ne 4
+.ft G
+..
+.de ms
+.sp  1
+.ne 4
+..
+.de fo
+'bp
+..
+.de he
+.po 0
+.tl '-'''
+.po
+'sp 0.5i
+.ft I
+.if o .tl '''C  Reference  Manual - %'
+.if e .tl 'C  Reference  Manual - %'''
+.ft
+'sp 0.4i
+..
+.de bG
+.br
+.fp 3 G
+.ft G
+..
+.de eG
+.br
+.ft R
+..
+.de it
+.ft I
+\\$1
+.ft R
+..
+.de bd
+.ft G
+\\$1
+.ft R
+..
+.de se
+.br
+.ft I
+..
+.wh 0 he
+.wh -1i fo
+.sp 2
+.ce
+REFERENCES
+.sp 1.5
+.ta 2
+.tc @
+.in 2
+.ti 0
+1.	Johnson, S. C., and Kernighan, B. W.
+``The Programming Language B.'' Comp. Sci. Tech. Rep. #8., Bell Laboratories,
+1972.
+.sp .6
+.ti 0
+2.	Ritchie, D. M., and Thompson, K. L.
+``The \s8UNIX\s10 Time-sharing System.''
+C. ACM \fG7, \fR17, July, 1974, pp. 365-375.
+.sp .6
+.ti 0
+3.	Peterson, T. G., and Lesk, M. E.
+``A User's Guide to the C Language on the IBM 370.''
+Internal Memorandum, Bell Laboratories, 1974.
+.sp .6
+.ti 0
+4.	Thompson, K. L., and Ritchie, D. M.
+.ft I
+\s8UNIX\s10 Programmer's Manual.
+.ft R
+Bell Laboratories, 1973.
+.sp .7
+.ti 0
+5.	Lesk, M. E., and Barres, B. A.
+``The \s8GCOS\s10 C Library.''
+Internal memorandum, Bell Laboratories,
+1974.
+.sp .7
+.to 0
+.ti 0
+6.	Kernighan, B. W.  ``Programming in C\(mi A Tutorial.''
+Unpublished internal memorandum,
+Bell Laboratories, 1974.
+.in 0
+.bp
+.sp 1.5
+.ce 2
+APPENDIX 1
+.sp .3
+Syntax Summary
+.sp 1.5
+.ta .5i 1i 1.5i 2i 2.5i
+.in 3
+1.  Expressions.
+.sp 1
+.dp 4
+	expression:
+		primary
+		\**\fI expression
+		\fG&\fI expression
+		\fG\(mi\fI expression
+		\fG!\fI expression
+		\*~ expression
+		\fR++\fI lvalue
+		\fR\(mi\(mi\fI lvalue
+		lvalue \fR++\fI
+		lvalue \fR\(mi\(mi\fI
+		\fGsizeof \fIexpression
+		expression binop expression
+		expression \fG?\fI expression \fG:\fI expression
+		lvalue asgnop expression
+		expression \fG,\fI expression
+.ed
+.dp 6
+	primary:
+		identifier
+		constant
+		string
+		\fG( \fIexpression \fG)\fI
+		\fIprimary \fG( \fIexpression-list\*(op \fG)\fI
+		primary \fG[\fI expression \fG]\fI
+		lvalue \fG. \fIidentifier
+		primary \fG\(em> \fIidentifier
+.ed
+.dp 2
+	lvalue:
+		identifier
+		primary \fG[ \fIexpression \fG]\fI
+		lvalue \fG. \fIidentifier
+		primary \fG\(em>\fI identifier
+		\** \fI expression
+		\fG(  \fIlvalue  \fG)\fR
+.ed
+.fi
+.sp .7
+The primary-expression operators
+.dp
+.ft G
+	(^)  [^]  .  \(em>
+.sp .5
+.ed
+have highest priority and group left-to-right.
+The unary operators
+.dp
+.ft G
+	\*  &  \(mi  !  \*~  \fR++  \(mi\(mi  \fGsizeof
+.ed
+.sp .5
+have priority below the primary operators
+but higher than any binary operator,
+and group right-to-left.
+Binary operators and the conditional operator
+all group left-to-right, and have priority
+decreasing
+as indicated:
+.dp
+.ft I
+	binop:
+.ft G
+		\**    /    %
+		+    \(mi
+		>>    <<
+		<    >    <=    >=
+		==    !=
+		&
+.tr ^^
+		^
+.tr ^\|
+		\(or
+		&&
+		\(or\(or
+		?  :
+.tr ^^
+.sp .4
+.fi
+.ft R
+Assignment operators all have the same
+priority, and all group right-to-left.
+.dp 3
+.ft I
+	asgnop:
+.ft G
+		=  =+  =\(mi  =\**  =/  =%  =>>  =<<  =&  =^  =\(or
+.ed
+.tr ^\|
+.sp .4
+.ft R
+The comma operator has the lowest priority, and groups left-to-right.
+.sp .7
+2.  Declarations.
+.dp 2
+	declaration:
+		decl-specifiers declarator-list\*(op  \fG;
+.ed
+.dp 5
+	decl-specifiers:
+		type-specifier
+		sc-specifier
+		type-specifier sc-specifier
+		sc-specifier type-specifier
+.ed
+.dp 4
+	sc-specifier:
+.ft G
+		auto
+		static
+		extern
+		register
+.ed
+.dp 6
+	type-specifier:
+		\fGint
+		\fGchar
+		\fGfloat
+		\fGdouble
+		struct { \fItype-decl-list }\fG
+		struct \fIidentifier { type-decl-list }\fG
+		struct \fIidentifier\fG
+.ed
+.dp 2
+	declarator-list:
+		declarator
+		declarator \fG,\fI declarator-list
+.ed
+.dp 6
+	declarator:
+		identifier
+		\** \fIdeclarator
+		declarator \fG( )\fI
+		declarator \fG[\fI constant-expression\*(op \fG]\fI
+		\fG( \fIdeclarator \fG)
+.ed
+.dp 2
+	type-decl-list:
+		type-declaration
+		type-declaration type-decl-list
+.ed
+.dp 2
+	type-declaration:
+		type-specifier declarator-list  \fG;
+.ed
+.sp 1.5
+3. Statements.
+.dp 1
+	statement:
+		expression \fG;
+.se
+		{ \fIstatement-list }
+.se
+		\fGif ( \fIexpression \fG) \fIstatement
+.se
+		\fGif ( \fI expression \fG) \fIstatement \fGelse \fIstatement
+.se
+		\fGwhile ( \fIexpression \fG) \fIstatement
+.se
+		\fGfor ( \fIexpression\*(op \fG; \fIexpression\*(op \fG; \fIexpression\*(op \fG) statement
+.se
+		\fGswitch ( \fIexpression \fG) \fIstatement
+.se
+		\fGcase \fIconstant-expression \fG:\fI statement
+.se
+		\fGdefault : \fIstatement
+.se
+		\fGbreak ;
+.se
+		\fGcontinue ;
+.se
+.ft G
+		return ;
+.se
+.ft G
+		return ( \fIexpression \fG) ;
+.se
+.ft G
+		goto \fIexpression \fG;
+.se
+		\fIidentifier \fG: \fIstatement
+.se
+		\fG;
+.ed
+.dp 2
+	statement-list:
+		statement
+		statement statement-list
+.sp 1.5
+.ft R
+4.  External definitions.
+.dp 2
+	program:
+		external-definition
+		external-definition program
+.dp 2
+	external-definition:
+		function-definition
+		data-definition
+.ed
+.dp 2
+	function-definition:
+		type-specifier\*(op \fIfunction-declarator function-body
+.ed
+.dp 2
+	function-declarator:
+		declarator \fG( \fI parameter-list\*(op \fG)
+.ed
+.dp 1
+	parameter-list:
+		identifier
+		identifier \fG,\fI parameter-list
+.ed
+.dp 1
+	function-body:
+		type-decl-list function-statement
+.ed
+.dp 2
+	function-statement:
+		{ declaration-list\*(op statement-list }
+.ed
+.dp 2
+	data-definition:
+		\fGextern\fI\*(op type-specifier\*(op init-declarator-list\*(op \fG;
+.ed
+.dp 2
+	init-declarator-list:
+		init-declarator
+		init-declarator \fG,\fI init-declarator-list
+.ed
+.dp 2
+	init-declarator:
+		declarator initializer\*(op
+.ed
+.dp 5
+	initializer:
+		constant
+		{ constant-expression-list }
+.ed
+.dp 5
+	constant-expression-list:
+		constant-expression
+		constant-expression \fG,\fI constant-expression-list
+.ed
+.dp 2
+	constant-expression:
+		expression
+.ed
+.sp .4
+5.  Preprocessor
+.dp 1
+	\fG# define \fIidentifier token-string
+.ed
+.dp 1
+	\fG# include "\fIfilename^\fG"
+.ed
+.in 0
+.bp
+.ds s \\s8
+.ds n \\s10
+.ft R
+.fi
+.sp 1
+.ce 2
+APPENDIX 2
+Implementation Peculiarities
+.sp 2
+This Appendix briefly summarizes the differences between the implementations
+of C on the \*sPDP\*n-11 under \*sUNIX\*n and on the
+\*sHIS\*n 6070 under \*sGCOS\*n;
+it includes some known bugs
+in each implementation.
+Each entry is keyed by an indicator as follows:
+.sp
+.ta .4i .8i
+.nf
+	h	hard to fix
+	g	\*sGCOS\*n version should probably be changed
+	u	\*sUNIX\*n version should probably be changed
+	d	Inherent difference likely to remain
+.sp
+.fi
+This list was prepared by M. E. Lesk, S. C. Johnson,
+E. N. Pinson, and the author.
+.sp 2
+.fi
+.ta .4i 1.2i
+.in 1.2i
+.ti0
+.ft I
+A. Bugs or differences from C language specifications
+.ft R
+.sp
+.ti0
+hg	A.1)	\*sGCOS\*n does not do type conversions in ``?:''.
+.ti0
+hg	A.2)	\*sGCOS\*n has a bug in \fGint\fR and \fGreal\fR comparisons; the numbers
+are compared by subtraction, and the difference must not overflow.
+.ti 0
+g	A.3)	When \fIx\fR is a \fGfloat\fR, the construction ``test ? \(mix : x''
+is illegal on \*sGCOS\*n.
+.ti0
+hg	A.4)	``p1\(mi>p2 =+ 2'' causes a compiler error, where p1 and p2 are pointers.
+.ti0
+u	A.5)	On \*sUNIX\*n, the expression in a \fGreturn\fR statement is \fInot\fR
+converted to the type of the function, as promised.
+.ti0
+hug	A.6)	\fGentry\fR statement is not implemented at all.
+.sp
+.ne 5
+.ft I
+.ti0
+.ft I
+B. Implementation differences
+.ft R
+.sp
+.ti0
+d	B.1)	Sizes of character constants differ; \*sUNIX\*n: 2, \*sGCOS\*n: 4.
+.ti0
+d	B.2)	Table sizes in compilers differ.
+.ti0
+d	B.3)	\fGchar\fRs and \fGint\fRs have different sizes;
+\fGchar\fRs are 8 bits on \*sUNIX\*n, 9 on \*sGCOS\*n; words are 16 bits
+on \*sUNIX\*n and 36 on \*sGCOS\*n.
+There are corresponding differences in representations of
+\fGfloat\fRs and \fGdouble\fRs.
+.ti0
+d	B.4)	Character arrays stored left to right in a word
+in \*sGCOS\*n, right to left in \*sUNIX\*n.
+.ti0
+g	B.5)	Passing of floats and doubles differs;
+\*sUNIX\*n passes on stack, \*sGCOS\*n passes pointer (hidden to normal user).
+.ti0
+g	B.6)	Structures and strings are aligned on a word
+boundary in \*sUNIX\*n, not aligned in \*sGCOS\*n.
+.ti0
+g	B.7)	\*sGCOS\*n preprocessor supports #rename, #escape;
+\*sUNIX\*n has only #define, #include.
+.ti0
+u	B.8)	Preprocessor is not invoked on \*sUNIX\*n unless first
+character of file is ``#''.
+.ti0
+u	B.9)	The external definition ``static int .^.^.''
+is legal on \*sGCOS\*n, but gets a diagnostic on \*sUNIX\*n.
+(On \*sGCOS\*n it means an identifier global to the
+routines in the file but invisible to routines
+compiled separately.)
+.ti 0
+g	B.10)	A compound statement on \*sGCOS\*n must contain one ``;''
+but on \*sUNIX\*n may be empty.
+.ti 0
+g	B.11)	On \*sGCOS\*n case distinctions in identifiers and keywords are
+ignored; on \*sUNIX\*n case is significant everywhere,
+with keywords in lower case.
+.sp
+.ne 5
+.ti0
+.ft I
+C. Syntax Differences
+.ft R
+.sp
+.ti0
+g	C.1)	\*sUNIX\*n allows broader classes of initialization;
+on \*sGCOS\*n an initializer must be a constant, name, or string.
+Similarly,
+\*sGCOS\*n is much stickier about wanting braces
+around initializers and in particular they must be present
+for array initialization.
+.ti0
+g	C.2)	``int extern'' illegal on \*sGCOS\*n; must have ``extern int''
+(storage class before type).
+.ti0
+g	C.3)	Externals on \*sGCOS\*n must have a type (not defaulted
+to \fGint\fR).
+.ti0
+u	C.4)	\*sGCOS\*n allows initialization of internal \fGstatic\fR
+(same syntax as for external definitions).
+.ti0
+g	C.5)	integer\(mi>... is not allowed on \*sGCOS\*n.
+.ti0
+g	C.6)	Some operators on pointers are illegal on \*sGCOS\*n (<, >).
+.ti0
+g	C.7)	\fGregister\fR storage class means something on \*sUNIX\*n,
+but is not accepted on \*sGCOS\*n.
+.ti0
+g	C.8)	Scope holes: ``int x; f^(^^)^{int x;}'' is illegal on
+\*sUNIX\*n but defines two variables on \*sGCOS\*n.
+.ti0
+g	C.9)	When function names are used as arguments on \*sUNIX\*n,
+either ``fname'' or ``&fname'' may be used to get a pointer to the function;
+on \*sGCOS\*n ``&fname'' generates a doubly-indirect pointer.
+(Note that both are wrong since the ``&''
+is supposed to be supplied for free.)
+.sp
+.ne 5
+.ti0
+.ft I
+D. Operating System Dependencies
+.sp
+.ft R
+.ti0
+d	D.1)	\*sGCOS\*n allocates external scalars by SYMREF;
+\*sUNIX\*n allocates external scalars as labelled common;
+as a result there may be many
+uninitialized external definitions of the same variable
+on \*sUNIX\*n but only one on \*sGCOS\*n.
+.ti0
+d	D.2)	External names differ in allowable length and
+character set;
+on \*sUNIX\*n, 7 characters and both cases; on \*sGCOS\*n
+6 characters and only one case.
+.sp
+.ne 5
+.ft I
+.ti0
+E. Semantic Differences
+.ft R
+.sp
+.ti0
+hg	E.1)	``int i, *p; p=i; i=p;'' does nothing on \*sUNIX\*n,
+does something on \*sGCOS\*n (destroys right half of i) .
+.ti0
+d	E.2)	``>>'' means arithmetic shift on \*sUNIX\*n, logical on \*sGCOS\*n.
+.ti0
+d	E.3)	When a \fGchar\fR is converted to integer, the result is always
+positive on \*sGCOS\*n but can be negative on \*sUNIX\*n.
+.ti0
+d	E.4)	Arguments of subroutines are evaluated left-to-right
+on \*sGCOS\*n, right-to-left on \*sUNIX\*n.
