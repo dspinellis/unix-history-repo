@@ -2,15 +2,19 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)nice.3	4.1 (Berkeley) %G%
+.\"	@(#)nice.3	5.1 (Berkeley) %G%
 .\"
-.TH NICE 2 
+.TH NICE 3C "1 April 1983"
 .UC 4
 .SH NAME
 nice \- set program priority
 .SH SYNOPSIS
 .B nice(incr)
 .SH DESCRIPTION
+.ft B
+This interface is obsoleted by setpriority(2).
+.ft R
+.PP
 The scheduling
 priority of the process is augmented by
 .IR incr .
@@ -37,10 +41,4 @@ should be called successively with arguments
 then 0 (to maintain compatibility with previous versions
 of this call).
 .SH "SEE ALSO"
-nice(1), fork(2), renice(8)
-.SH "ASSEMBLER (PDP-11)"
-(nice = 34.)
-.br
-(priority in r0)
-.br
-.B sys nice
+nice(1), setpriority(2), fork(2), renice(8)
