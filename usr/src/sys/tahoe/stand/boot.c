@@ -1,4 +1,4 @@
-/*	boot.c	1.5	86/12/18	*/
+/*	boot.c	1.6	87/04/02	*/
 
 #include "../machine/mtpr.h"
 
@@ -17,97 +17,54 @@
  * boot comes from.
  */
 
-/* Types in r10 specifying major device */
-char	devname[][2] = {
-	0, 0,		/* 0 = ud */
-	'd','k',	/* 1 = vd/dk */
-	0, 0,		/* 2 = xp */
-	'c','y',	/* 3 = cy */
-};
-#define	MAXTYPE	(sizeof(devname) / sizeof(devname[0]))
 #define	DEV_DFLT	1		/* vd/dk */
 
-#define	UNIX	"vmunix"
+#define	UNIX	"/vmunix"
 char line[100];
 
 int	retry = 0;
+extern	unsigned opendev;
+extern	unsigned bootdev;
 
 main()
 {
-	register dummy;		/* skip r12 */
-	register howto, devtype;	/* howto=r11, devtype=r10 */
-	int io, i;
-	register type, part, unit;
-	register char *cp;
-	long atol();
-
+	register char *cp;		/* skip r12 */
+	register unsigned howto, devtype;	/* howto=r11, devtype=r10 */
+	int io, type;
 
 #ifdef lint
 	howto = 0; devtype = 0;
 #endif
+	if ((devtype & B_MAGICMASK) != B_DEVMAGIC)
+		devtype = DEV_DFLT << B_TYPESHIFT;	/* unit, partition 0 */
+	bootdev = devtype;
+	printf("\nBoot\n");
 #ifdef JUSTASK
 	howto = RB_ASKNAME|RB_SINGLE;
 #else
-	if ((devtype & B_MAGICMASK) != B_DEVMAGIC)
-		devtype = DEV_DFLT << B_TYPESHIFT;	/* unit, partition 0 */
-	type = (devtype >> B_TYPESHIFT) & B_TYPEMASK;
-	unit = (devtype >> B_UNITSHIFT) & B_UNITMASK;
-	unit += 8 * ((devtype >> B_ADAPTORSHIFT) & B_ADAPTORMASK);
-	part = (devtype >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
 	if ((howto & RB_ASKNAME) == 0) {
-		if (type >= 0 && type <= MAXTYPE && devname[type][0]) {
-			cp = line;
-			*cp++ = devname[type][0];
-			*cp++ = devname[type][1];
-			*cp++ = '(';
-			if (unit >= 10)
-				*cp++ = unit / 10 + '0';
-			*cp++ = unit % 10 + '0';
-			*cp++ = ',';
-			if (part >= 10)
-				*cp++ = part / 10 + '0';
-			*cp++ = part % 10 + '0';
-			*cp++ = ')';
-			strcpy(cp, UNIX);
-		} else
-			howto = RB_SINGLE|RB_ASKNAME;
+		type = (devtype >> B_TYPESHIFT) & B_TYPEMASK;
+		if ((unsigned)type < ndevs && devsw[type].dv_name[0])
+			strcpy(line, UNIX);
+		else
+			howto |= RB_SINGLE|RB_ASKNAME;
 	}
 #endif
 	for (;;) {
-		printf("\nBoot\n");
 		if (howto & RB_ASKNAME) {
 			printf(": ");
 			gets(line);
+			if (line[0] == 0) {
+				strcpy(line, UNIX);
+				printf(": %s\n", line);
+			}
 		} else
 			printf(": %s\n", line);
 		io = open(line, 0);
 		if (io >= 0) {
-			if (howto & RB_ASKNAME) {
-				/*
-				 * Build up devtype register to pass on to
-				 * booted program.
-				 */ 
-				cp = line;
-				for (i = 0; i <= MAXTYPE; i++)
-					if ((devname[i][0] == cp[0]) && 
-					    (devname[i][1] == cp[1]))
-					    	break;
-				if (i <= MAXTYPE) {
-					devtype = i << B_TYPESHIFT;
-					cp += 3;
-					i = *cp++ - '0';
-					if (*cp >= '0' && *cp <= '9')
-						i = i * 10 + *cp++ - '0';
-					cp++;
-					devtype |= ((i % 8) << B_UNITSHIFT);
-					devtype |= ((i / 8) << B_ADAPTORSHIFT);
-					devtype |= atol(cp) << B_PARTITIONSHIFT;
-				}
-			}
-			devtype |= B_DEVMAGIC;
-			copyunix(howto, devtype, io);
+			copyunix(howto, opendev, io);
 			close(io);
-			howto = RB_SINGLE|RB_ASKNAME;
+			howto |= RB_SINGLE|RB_ASKNAME;
 		}
 		if (++retry > 2)
 			howto |= RB_SINGLE|RB_ASKNAME;
@@ -125,8 +82,10 @@ copyunix(howto, devtype, io)
 
 	i = read(io, (char *)&x, sizeof x);
 	if (i != sizeof x ||
-	    (x.a_magic != 0407 && x.a_magic != 0413 && x.a_magic != 0410))
-		_stop("Bad format\n");
+	    (x.a_magic != 0407 && x.a_magic != 0413 && x.a_magic != 0410)) {
+		printf("Bad format\n");
+		return;
+	}
 	printf("%d", x.a_text);
 	if (x.a_magic == 0413 && lseek(io, 0x400, 0) == -1)
 		goto shread;
@@ -173,5 +132,6 @@ copyunix(howto, devtype, io)
 	(*((int (*)()) x.a_entry))();
 	return;
 shread:
-	_stop("Short read\n");
+	printf("Short read\n");
+	return;
 }
