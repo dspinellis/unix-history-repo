@@ -1,4 +1,4 @@
-#	@(#)special	8.1 (Berkeley) %G%
+#	@(#)special	8.2 (Berkeley) %G%
 #
 # Hand-crafted mtree specification for the dangerous files.
 #
@@ -53,7 +53,7 @@ weekly		type=file mode=0644 uname=root gname=wheel
 
 root		type=dir mode=0755 uname=root gname=wheel
 .cshrc		type=file mode=0644 uname=root gname=wheel
-.klogin		type=file mode=0644 uname=root gname=wheel
+.klogin		type=file mode=0600 uname=root gname=wheel
 .login		type=file mode=0644 uname=root gname=wheel
 .profile	type=file mode=0644 uname=root gname=wheel
 .rhosts		type=file mode=0600 uname=root gname=wheel
