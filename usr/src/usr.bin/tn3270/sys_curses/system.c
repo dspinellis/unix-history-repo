@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)system.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)system.c	4.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -44,6 +44,7 @@ extern int errno;
 #include <netdb.h>
 #include <signal.h>
 #include <stdio.h>
+#include <string.h>
 #include <pwd.h>
 
 #include "../general/general.h"
@@ -568,13 +569,13 @@ shell_continue()
 }
 
 
-static int
-child_died()
+static void
+child_died(code)
 {
     union wait status;
     register int pid;
 
-    while ((pid = wait3(&status, WNOHANG, (struct rusage *)0)) > 0) {
+    while ((pid = wait3((int *)&status, WNOHANG, (struct rusage *)0)) > 0) {
 	if (pid == shell_pid) {
 	    char inputbuffer[100];
 	    extern void setconnmode();
@@ -623,7 +624,7 @@ char	*argv[];
 
     /* First, create verification file. */
     do {
-	keyname = mktemp("/tmp/apiXXXXXX");
+	keyname = mktemp(strdup("/tmp/apiXXXXXX"));
 	fd = open(keyname, O_RDWR|O_CREAT|O_EXCL, IREAD|IWRITE);
     } while ((fd == -1) && (errno == EEXIST));
 
