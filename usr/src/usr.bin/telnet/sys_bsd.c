@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_bsd.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_bsd.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -59,19 +59,19 @@ extern struct termio new_tc;
 #  ifdef TCSETS
 #   define	TCSANOW		TCSETS
 #   define	TCSADRAIN	TCSETSW
-#   define	tcgetattr(f, t) ioctl(f, TCGETS, t)
+#   define	tcgetattr(f, t) ioctl(f, TCGETS, (char *)t)
 #  else
 #   ifdef TCSETA
 #    define	TCSANOW		TCSETA
 #    define	TCSADRAIN	TCSETAW
-#    define	tcgetattr(f, t) ioctl(f, TCGETA, t)
+#    define	tcgetattr(f, t) ioctl(f, TCGETA, (char *)t)
 #   else
 #    define	TCSANOW		TIOCSETA
 #    define	TCSADRAIN	TIOCSETAW
-#    define	tcgetattr(f, t) ioctl(f, TIOCGETA, t)
+#    define	tcgetattr(f, t) ioctl(f, TIOCGETA, (char *)t)
 #   endif
 #  endif
-#  define	tcsetattr(f, a, t) ioctl(f, a, t)
+#  define	tcsetattr(f, a, t) ioctl(f, a, (char *)t)
 #  define	cfgetospeed(ptr)	((ptr)->c_cflag&CBAUD)
 #  ifdef CIBAUD
 #   define	cfgetispeed(ptr)	(((ptr)->c_cflag&CIBAUD) >> IBSHIFT)
@@ -84,6 +84,7 @@ extern struct termio new_tc;
 static fd_set ibits, obits, xbits;
 
 
+    void
 init_sys()
 {
     tout = fileno(stdout);
@@ -96,16 +97,18 @@ init_sys()
 }
 
 
+    int
 TerminalWrite(buf, n)
-char	*buf;
-int	n;
+    char *buf;
+    int  n;
 {
     return write(tout, buf, n);
 }
 
+    int
 TerminalRead(buf, n)
-char	*buf;
-int	n;
+    char *buf;
+    int  n;
 {
     return read(tin, buf, n);
 }
@@ -114,7 +117,7 @@ int	n;
  *
  */
 
-int
+    int
 TerminalAutoFlush()
 {
 #if	defined(LNOFLSH)
@@ -142,9 +145,9 @@ extern int kludgelinemode;
  *	1	Do add this character
  */
 
-int
+    int
 TerminalSpecialChars(c)
-int	c;
+    int	c;
 {
     void xmitAO(), xmitEL(), xmitEC(), intp(), sendbrk();
 
@@ -188,7 +191,7 @@ int	c;
  * Flush output to the terminal
  */
  
-void
+    void
 TerminalFlushOutput()
 {
 #ifdef	TIOCFLUSH
@@ -198,7 +201,7 @@ TerminalFlushOutput()
 #endif
 }
 
-void
+    void
 TerminalSaveState()
 {
 #ifndef	USE_TERMIO
@@ -240,9 +243,9 @@ TerminalSaveState()
 #endif	/* USE_TERMIO */
 }
 
-cc_t *
+    cc_t *
 tcval(func)
-register int func;
+    register int func;
 {
     switch(func) {
     case SLC_IP:	return(&termIntChar);
@@ -283,7 +286,7 @@ register int func;
     }
 }
 
-void
+    void
 TerminalDefaultChars()
 {
 #ifndef	USE_TERMIO
@@ -347,9 +350,9 @@ TerminalRestoreState()
  */
 
 
-void
+    void
 TerminalNewMode(f)
-register int f;
+    register int f;
 {
     static int prevmode = 0;
 #ifndef	USE_TERMIO
@@ -362,6 +365,7 @@ register int f;
 #endif	/* USE_TERMIO */
     int onoff;
     int old;
+    cc_t esc;
 
     globalmode = f&~MODE_FORCE;
     if (prevmode == f)
@@ -384,14 +388,14 @@ register int f;
     old = ttyflush(SYNCHing|flushout);
     if (old < 0 || old > 1) {
 #ifdef	USE_TERMIO
-	tcgetattr(tin, (char *)&tmp_tc);
+	tcgetattr(tin, &tmp_tc);
 #endif	/* USE_TERMIO */
 	do {
 	    /*
 	     * Wait for data to drain, then flush again.
 	     */
 #ifdef	USE_TERMIO
-	    tcsetattr(tin, TCSADRAIN, (char *)&tmp_tc);
+	    tcsetattr(tin, TCSADRAIN, &tmp_tc);
 #endif	/* USE_TERMIO */
 	    old = ttyflush(SYNCHing|flushout);
 	} while (old < 0 || old > 1);
@@ -414,9 +418,8 @@ register int f;
 #else
 	tmp_tc.c_lflag |= ECHO;
 	tmp_tc.c_oflag |= ONLCR;
-# ifdef notdef
-	tmp_tc.c_iflag |= ICRNL;
-# endif
+	if (crlf)
+		tmp_tc.c_iflag |= ICRNL;
 #endif
     } else {
 #ifndef	USE_TERMIO
@@ -425,7 +428,8 @@ register int f;
 	tmp_tc.c_lflag &= ~ECHO;
 	tmp_tc.c_oflag &= ~ONLCR;
 # ifdef notdef
-	tmp_tc.c_iflag &= ~ICRNL;
+	if (crlf)
+		tmp_tc.c_iflag &= ~ICRNL;
 # endif
 #endif
     }
@@ -518,7 +522,7 @@ register int f;
 
     if (f&MODE_LIT_ECHO) {
 #ifndef USE_TERMIO
-	sb.sg_flags &= ~CTLECH;
+	lmode &= ~LCTLECH;
 #else
 # ifdef	ECHOCTL
 	tmp_tc.c_lflag &= ~ECHOCTL;
@@ -526,7 +530,7 @@ register int f;
 #endif
     } else {
 #ifndef USE_TERMIO
-	sb.sg_flags |= CTLECH;
+	lmode |= LCTLECH;
 #else
 # ifdef	ECHOCTL
 	tmp_tc.c_lflag |= ECHOCTL;
@@ -600,21 +604,22 @@ register int f;
 	 * If the VEOL character is already set, then use VEOL2,
 	 * otherwise use VEOL.
 	 */
-	if ((tmp_tc.c_cc[VEOL] != escape)
+	esc = (rlogin != _POSIX_VDISABLE) ? rlogin : escape;
+	if ((tmp_tc.c_cc[VEOL] != esc)
 # ifdef	VEOL2
-	    && (tmp_tc.c_cc[VEOL2] != escape)
+	    && (tmp_tc.c_cc[VEOL2] != esc)
 # endif
-	   ) {
+	    ) {
 		if (tmp_tc.c_cc[VEOL] == (cc_t)(_POSIX_VDISABLE))
-			tmp_tc.c_cc[VEOL] = escape;
+		    tmp_tc.c_cc[VEOL] = esc;
 # ifdef	VEOL2
 		else if (tmp_tc.c_cc[VEOL2] == (cc_t)(_POSIX_VDISABLE))
-			tmp_tc.c_cc[VEOL2] = escape;
+		    tmp_tc.c_cc[VEOL2] = esc;
 # endif
 	}
 #else
 	if (tc.t_brkc == (cc_t)(_POSIX_VDISABLE))
-		tc.t_brkc = escape;
+		tc.t_brkc = esc;
 #endif
     } else {
 #ifdef	SIGINFO
@@ -654,6 +659,7 @@ register int f;
 	ioctl(tin, FIOASYNC, (char *)&onoff);
     }
 #endif	/* defined(TN3270) */
+
 }
 
 #ifndef	B19200
@@ -681,16 +687,18 @@ struct termspeeds {
 	{ 38400, B38400 }, { -1,    B38400 }
 };
 
-void
+    void
 TerminalSpeeds(ispeed, ospeed)
-long *ispeed;
-long *ospeed;
+    long *ispeed;
+    long *ospeed;
 {
     register struct termspeeds *tp;
     register long in, out;
 
-    in = cfgetispeed(&old_tc);
     out = cfgetospeed(&old_tc);
+    in = cfgetispeed(&old_tc);
+    if (in == 0)
+	in = out;
 
     tp = termspeeds;
     while ((tp->speed != -1) && (tp->value < in))
@@ -703,9 +711,9 @@ long *ospeed;
     *ospeed = tp->speed;
 }
 
-int
+    int
 TerminalWindowSize(rows, cols)
-long *rows, *cols;
+    long *rows, *cols;
 {
 #ifdef	TIOCGWINSZ
     struct winsize ws;
@@ -719,36 +727,34 @@ long *rows, *cols;
     return 0;
 }
 
-int
+    int
 NetClose(fd)
-int	fd;
+    int	fd;
 {
     return close(fd);
 }
 
 
-void
+    void
 NetNonblockingIO(fd, onoff)
-int
-	fd,
-	onoff;
+    int fd;
+    int onoff;
 {
     ioctl(fd, FIONBIO, (char *)&onoff);
 }
 
 #if	defined(TN3270)
-void
+    void
 NetSigIO(fd, onoff)
-int
-	fd,
-	onoff;
+    int fd;
+    int onoff;
 {
     ioctl(fd, FIOASYNC, (char *)&onoff);	/* hear about input */
 }
 
-void
+    void
 NetSetPgrp(fd)
-int fd;
+    int fd;
 {
     int myPid;
 
@@ -761,19 +767,19 @@ int fd;
  * Various signal handling routines.
  */
 
-/* ARGSUSED */
-static SIG_FUNC_RET
+    /* ARGSUSED */
+    static SIG_FUNC_RET
 deadpeer(sig)
-int sig;
+    int sig;
 {
 	setcommandmode();
 	longjmp(peerdied, -1);
 }
 
-/* ARGSUSED */
-static SIG_FUNC_RET
+    /* ARGSUSED */
+    static SIG_FUNC_RET
 intr(sig)
-int sig;
+    int sig;
 {
     if (localchars) {
 	intp();
@@ -783,10 +789,10 @@ int sig;
     longjmp(toplevel, -1);
 }
 
-/* ARGSUSED */
-static SIG_FUNC_RET
+    /* ARGSUSED */
+    static SIG_FUNC_RET
 intr2(sig)
-int sig;
+    int sig;
 {
     if (localchars) {
 #ifdef	KLUDGELINEMODE
@@ -800,21 +806,23 @@ int sig;
 }
 
 #ifdef	SIGTSTP
-/* ARGSUSED */
-static SIG_FUNC_RET
+    /* ARGSUSED */
+    static SIG_FUNC_RET
 susp(sig)
-int sig;
+    int sig;
 {
+    if ((rlogin != _POSIX_VDISABLE) && rlogin_susp())
+	return;
     if (localchars)
 	sendsusp();
 }
 #endif
 
 #ifdef	SIGWINCH
-/* ARGSUSED */
-static SIG_FUNC_RET
+    /* ARGSUSED */
+    static SIG_FUNC_RET
 sendwin(sig)
-int sig;
+    int sig;
 {
     if (connected) {
 	sendnaws();
@@ -823,10 +831,10 @@ int sig;
 #endif
 
 #ifdef	SIGINFO
-/* ARGSUSED */
-static SIG_FUNC_RET
+    /* ARGSUSED */
+    static SIG_FUNC_RET
 ayt(sig)
-int sig;
+    int sig;
 {
     if (connected)
 	sendayt();
@@ -836,7 +844,7 @@ int sig;
 #endif
 
 
-void
+    void
 sys_telnet_init()
 {
     (void) signal(SIGINT, intr);
@@ -881,9 +889,9 @@ sys_telnet_init()
  *	The return value is 1 if something happened, 0 if not.
  */
 
-int
+    int
 process_rings(netin, netout, netex, ttyin, ttyout, poll)
-int poll;		/* If 0, then block until something to do */
+    int poll;		/* If 0, then block until something to do */
 {
     register int c;
 		/* One wants to be a bit careful about setting returnValue

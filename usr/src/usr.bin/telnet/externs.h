@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)externs.h	5.1 (Berkeley) %G%
+ *	@(#)externs.h	5.2 (Berkeley) %G%
  */
 
 #ifndef	BSD
@@ -40,6 +40,11 @@ typedef unsigned char cc_t;
 # endif
 #endif
 
+#ifndef	NO_STRING_H
+#include <string.h>
+#endif
+#include <strings.h>
+
 #ifndef	_POSIX_VDISABLE
 # ifdef sun
 #  include <sys/param.h>	/* pick up VDISABLE definition, mayby */
@@ -47,7 +52,7 @@ typedef unsigned char cc_t;
 # ifdef VDISABLE
 #  define _POSIX_VDISABLE VDISABLE
 # else
-#  define _POSIX_VDISABLE ((unsigned char)'\377')
+#  define _POSIX_VDISABLE ((cc_t)'\377')
 # endif
 #endif
 
@@ -55,11 +60,17 @@ typedef unsigned char cc_t;
 
 extern int errno;		/* outside this world */
 
-extern char
-    *strcat(),
-    *strcpy();			/* outside this world */
+#if	!defined(P)
+# ifdef	__STDC__
+#  define	P(x)	x
+# else
+#  define	P(x)	()
+# endif
+#endif
 
 extern int
+    autologin,		/* Autologin enabled */
+    eight,		/* use eight bit mode (binary in and/or out */
     flushout,		/* flush output */
     connected,		/* Are we connected to the other side? */
     globalmode,		/* Mode tty should be in */
@@ -80,9 +91,6 @@ extern int
     dontlecho,		/* do we suppress local echoing right now? */
     crmod,
     netdata,		/* Print out network data flow */
-#ifdef	KERBEROS
-    kerberized,		/* Try to use Kerberos */
-#endif
     prettydump,		/* Print "netdata" output in user readable format */
 #if	defined(unix)
 #if	defined(TN3270)
@@ -94,6 +102,7 @@ extern int
     debug;			/* Debug level */
 
 extern cc_t escape;	/* Escape to command mode */
+extern cc_t rlogin;	/* Rlogin mode escape character */
 #ifdef	KLUDGELINEMODE
 extern cc_t echoc;	/* Toggle local echoing */
 #endif
@@ -108,6 +117,10 @@ extern char
     wont[],
     options[],		/* All the little options */
     *hostname;		/* Who are we connected to? */
+#if	defined(ENCRYPT)
+extern void (*encrypt_output) P((unsigned char *, int));
+extern int (*decrypt_input) P((int));
+#endif
 
 /*
  * We keep track of each side of the option negotiation.
@@ -177,41 +190,73 @@ extern FILE
 extern unsigned char
     NetTraceFile[];	/* Name of file where debugging output goes */
 extern void
-    SetNetTrace();	/* Function to change where debugging goes */
+    SetNetTrace P((char *));	/* Function to change where debugging goes */
 
 extern jmp_buf
     peerdied,
     toplevel;		/* For error conditions. */
 
 extern void
-    command(),
-#if	!defined(NOT43)
-    dosynch(),
-#endif	/* !defined(NOT43) */
-    get_status(),
-    Dump(),
-    init_3270(),
-    printoption(),
-    printsub(),
-    sendnaws(),
-    setconnmode(),
-    setcommandmode(),
-    setneturg(),
-    sys_telnet_init(),
-    telnet(),
-    TerminalFlushOutput(),
-    TerminalNewMode(),
-    TerminalRestoreState(),
-    TerminalSaveState(),
-    tninit(),
-    upcase(),
-    willoption(),
-    wontoption();
+    command P((int, char *, int)),
+    Dump P((int, unsigned char *, int)),
+    init_3270 P((void)),
+    printoption P((char *, int, int)),
+    printsub P((int, unsigned char *, int)),
+    sendnaws P((void)),
+    setconnmode P((int)),
+    setcommandmode P((void)),
+    setneturg P((void)),
+    sys_telnet_init P((void)),
+    telnet P((char *)),
+    tel_enter_binary P((int)),
+    TerminalFlushOutput P((void)),
+    TerminalNewMode P((int)),
+    TerminalRestoreState P((void)),
+    TerminalSaveState P((void)),
+    tninit P((void)),
+    upcase P((char *)),
+    willoption P((int)),
+    wontoption P((int));
 
-#if	defined(NOT43)
+extern void
+    lm_will P((unsigned char *, int)),
+    lm_wont P((unsigned char *, int)),
+    lm_do P((unsigned char *, int)),
+    lm_dont P((unsigned char *, int)),
+    lm_mode P((unsigned char *, int, int));
+
+extern void
+    slc_init P((void)),
+    slcstate P((void)),
+    slc_mode_export P((void)),
+    slc_mode_import P((int)),
+    slc_import P((int)),
+    slc_export P((void)),
+    slc P((unsigned char *, int)),
+    slc_check P((void)),
+    slc_start_reply P((void)),
+    slc_add_reply P((int, int, int)),
+    slc_end_reply P((void));
 extern int
-    dosynch();
-#endif	/* defined(NOT43) */
+    slc_update P((void));
+
+extern void
+    env_opt P((unsigned char *, int)),
+    env_opt_start P((void)),
+    env_opt_start_info P((void)),
+    env_opt_add P((unsigned char *)),
+    env_opt_end P((int));
+
+extern unsigned char
+    *env_default P((int)),
+    *env_getvalue P((unsigned char *));
+
+extern int
+    get_status P((void)),
+    dosynch P((void));
+
+extern cc_t
+    *tcval P((int));
 
 #ifndef	USE_TERMIO
 
@@ -378,8 +423,8 @@ extern char
     *transcom;		/* Transparent command */
 
 extern int
-    settranscom();
+    settranscom P((int, char**));
 
 extern void
-    inputAvailable();
+    inputAvailable P((void));
 #endif	/* defined(TN3270) */

@@ -3,22 +3,153 @@
 This is a distribution of both client and server telnet.  These programs
 have been compiled on:
 			telnet	telnetd
-	BSD 4.4		  X	  X
+	BSD 4.3 Reno	  X	  X
 	UNICOS 5.1	  X	  X
 	UNICOS 6.0	  X	  X
+	UNICOS 6.1	  X	  X
+	UNICOS 7.0	  X	  X
 	SunOs 3.5	  X	  X (no linemode in server)
-	SunOs 4.0.3c	  X	  X (no linemode in server)
 	SunOs 4.1	  X	  X (no linemode in server)
 	DYNIX V3.0.17.9	  X	  X (no linemode in server)
 	Ultrix 3.1	  X	  X (no linemode in server)
-	Ultrix 4.0	  X	    (server compiles, but doesn't
-					work with /bin/csh)
+	Ultrix 4.0	  X	  X (no linemode in server)
 
 In addition, previous versions have been compiled on the following
 machines, but were not available for testing this version.
 			telnet	telnetd
+	SunOs 4.0.3c	  X	  X (no linemode in server)
 	BSD 4.3		  X  	  X (no linemode in server)
 	DYNIX V3.0.12	  X	  X (no linemode in server)
+
+Februrary 22, 1991:
+
+    Features:
+
+	This version of telnet/telnetd has support for both
+	the AUTHENTICATION and ENCRYPTION options.  The
+	AUTHENTICATION option is fairly well defined, and
+	an option number has been assigned to it.  The
+	ENCRYPTION option is still in a state of flux; an
+	option number has NOT been assigned to it yet.
+	The code is provided in this release for experimental
+	and testing purposes.
+
+	The telnet "send" command can now be used to send
+	do/dont/will/wont commands, with any telnet option
+	name.  The rules for when do/dont/will/wont are sent
+	are still followed, so just because the user requests
+	that one of these be sent doesn't mean that it will
+	be sent...
+
+	The telnet "getstatus" command no longer requires
+	that option printing be enabled to see the response
+	to the "DO STATUS" command.
+
+	A -n flag has been added to telnetd to disable
+	keepalives.
+
+	A new telnet command, "auth" has been added (if
+	AUTHENTICATE is defined).  It has four sub-commands,
+	"status", "debug", "disable", "enable" and "help".
+
+	A new telnet command, "encrypt" has been added (if
+	ENCRYPT is defined).  It has many sub-commands:
+	"enable", "type", "start", "stop", "input",
+	"-input", "output", "-output", "status", "auto",
+	"verbose", "debug", and "help".
+
+	An "rlogin" interface has been added.  If the program
+	is named "rlogin", or the "-r" flag is given, then
+	an rlogin type of interface will be used.
+		~.	Terminates the session
+		~<susp> Suspend the session
+		~^]	Escape to telnet command mode
+		~~	Pass through the ~.
+	    BUG: If you type the rlogin escape character
+		 in the middle of a line while in rlogin
+		 mode, you cannot erase it or any characters
+		 before it.  Hopefully this can be fixed
+		 in a future release...
+
+    General changes:
+
+	A "libtelnet.a" has now been created.  This libraray
+	contains code that is common to both telnet and
+	telnetd.  This is also where library routines that
+	are needed, but are not in the standard C library,
+	are placed.
+
+	The makefiles have been re-done.  All of the site
+	specific configuration information has now been put
+	into a single "Config.generic" file, in the top level
+	directory.  Changing this one file will take care of
+	all three subdirectories.  Also, to add a new/local
+	definition, a "Config.local" file may be created
+	at the top level; if that file exists, the subdirectories
+	will use that file instead of "Config.generic".
+
+	Many 1-2 line functions in commands.c have been
+	removed, and just inserted in-line, or replaced
+	with a macro.
+
+    Bug Fixes:
+
+	The non-termio code in both telnet and telnetd was
+	setting/clearing CTLECH in the sg_flags word.  This
+	was incorrect, and has been changed to set/clear the
+	LCTLECH bit in the local mode word.
+
+	The SRCRT #define has been removed.  If IP_OPTIONS
+	and IPPROTO_IP are defined on the system, then the
+	source route code is automatically enabled.
+
+	The NO_GETTYTAB #define has been removed; there
+	is a compatability routine that can be built into
+	libtelnet to achive the same results.
+
+	The server, telnetd, has been switched to use getopt()
+	for parsing the argument list.
+
+	The code for getting the input/output speeds via
+	cfgetispeed()/cfgetospeed() was still not quite
+	right in telnet.  Posix says if the ispeed is 0,
+	then it is really equal to the ospeed.
+
+	The suboption processing code in telnet now has
+	explicit checks to make sure that we received
+	the entire suboption (telnetd was already doing this).
+
+	The telnet code for processing the terminal type
+	could cause a core dump if an existing connection
+	was closed, and a new connection opened without
+	exiting telnet.
+
+	Telnetd was doing a TCSADRAIN when setting the new
+	terminal settings;  This is not good, because it means
+	that the tcsetattr() will hang waiting for output to
+	drain, and telnetd is the only one that will drain
+	the output...  The fix is to use TCSANOW which does
+	not wait.
+
+	Telnetd was improperly setting/clearing the ISTRIP
+	flag in the c_lflag field, it should be using the
+	c_iflag field. 
+
+	When the child process of telnetd was opening the
+	slave side of the pty, it was re-setting the EXTPROC
+	bit too early, and some of the other initialization
+	code was wiping it out.  This would cause telnetd
+	to go out of linemode and into single character mode.
+
+	One instance of leaving linemode in telnetd forgot
+	to send a WILL ECHO to the client, the net result
+	would be that the user would see double character
+	echo.
+
+	If the MODE was being changed several times very
+	quickly, telnetd could get out of sync with the
+	state changes and the returning acks; and wind up
+	being left in the wrong state.
 
 September 14, 1990:
 
@@ -281,6 +412,18 @@ Questions/comments go to
 
 README:	You are reading it.
 
+Config.generic:
+	This file contains all the OS specific definitions.  It
+	has pre-definitions for many common system types, and is
+	in standard makefile fromat.  See the comments at the top
+	of the file for more information.
+
+Config.local:
+	This is not part of the distribution, but if this file exists,
+	it is used instead of "Config.generic".  This allows site
+	specific configuration without having to modify the distributed
+	"Config.generic" file.
+
 kern.diff:
 	This file contains the diffs for the changes needed for the
 	kernel to support LINEMODE is the server.  These changes are
@@ -334,6 +477,10 @@ telnet.state:
 	with option negotiation loops.  The algorithm that is
 	used is described in this file.
 
+tmac.doc:
+	Macros for use in formatting the man pages on non-4.3Reno
+	systems.
+
 telnet:
 	This directory contains the client code.  No kernel changes are
 	needed to use this code.
@@ -341,6 +488,10 @@ telnet:
 telnetd:
 	This directory contains the server code.  If LINEMODE or KLUDGELINEMODE
 	are defined, then the kernel modifications listed above are needed.
+
+libtelnet:
+	This directory contains code that is common to both the client
+	and the server.
 
 arpa:
 	This directory has a new <arpa/telnet.h>
@@ -401,6 +552,15 @@ The following TELNET options are supported:
 		This functionality can be done through the ENVIRON
 		option, it is added here for completeness.
 
-Look at the Makefile for comments about #define paramaters that need
-to be set up for your individual site.  There are also several Makefiles
-for various systems that these have been compiled on.
+	AUTHENTICATION:
+		This option is currently being defined by the IETF
+		Telnet Working Group, and an RFC has not yet been
+		issued.  The basic framework is pretty much decided,
+		but the definitions for the specific authentication
+		schemes is still in a state of flux.
+
+	ENCRYPT:
+		This option is currently being defined by the IETF
+		Telnet Working Group, and an RFC has not yet been
+		issued.  The draft RFC is still in a state of flux,
+		so this code may change in the future.
