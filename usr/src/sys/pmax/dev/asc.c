@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)asc.c	7.3 (Berkeley) %G%
+ *	@(#)asc.c	7.4 (Berkeley) %G%
  */
 
 /* 
@@ -208,21 +208,21 @@ typedef struct script {
 #define	SCRIPT_MATCH(ir, csr)		((ir) | (ASC_PHASE(csr) << 8))
 
 /* forward decls of script actions */
-int	script_nop();			/* when nothing needed */
-int	asc_end();			/* all come to an end */
-int	asc_get_status();		/* get status from target */
-int	asc_dma_in();			/* start reading data from target */
-int	asc_last_dma_in();		/* cleanup after all data is read */
-int	asc_resume_in();		/* resume data in after a message */
-int	asc_resume_dma_in();		/* resume DMA after a disconnect */
-int	asc_dma_out();			/* send data to target via dma */
-int	asc_last_dma_out();		/* cleanup after all data is written */
-int	asc_resume_out();		/* resume data out after a message */
-int	asc_resume_dma_out();		/* resume DMA after a disconnect */
-int	asc_sendsync();			/* negotiate sync xfer */
-int	asc_replysync();		/* negotiate sync xfer */
-int	asc_msg_in();			/* process a message byte */
-int	asc_disconnect();		/* process an expected disconnect */
+static int	script_nop();		/* when nothing needed */
+static int	asc_end();		/* all come to an end */
+static int	asc_get_status();	/* get status from target */
+static int	asc_dma_in();		/* start reading data from target */
+static int	asc_last_dma_in();	/* cleanup after all data is read */
+static int	asc_resume_in();	/* resume data in after a message */
+static int	asc_resume_dma_in();	/* resume DMA after a disconnect */
+static int	asc_dma_out();		/* send data to target via dma */
+static int	asc_last_dma_out();	/* cleanup after all data is written */
+static int	asc_resume_out();	/* resume data out after a message */
+static int	asc_resume_dma_out();	/* resume DMA after a disconnect */
+static int	asc_sendsync();		/* negotiate sync xfer */
+static int	asc_replysync();	/* negotiate sync xfer */
+static int	asc_msg_in();		/* process a message byte */
+static int	asc_disconnect();	/* process an expected disconnect */
 
 /* Define the index into asc_scripts for various state transitions */
 #define	SCRIPT_DATA_IN		0
@@ -382,7 +382,7 @@ typedef struct scsi_state {
 struct asc_softc {
 	asc_regmap_t	*regs;		/* chip address */
 	volatile int	*dmar;		/* DMA address register address */
-	volatile u_char	*buff;		/* RAM buffer address */
+	u_char		*buff;		/* RAM buffer address */
 	int		myid;		/* SCSI ID of this interface */
 	int		myidmask;	/* ~(1 << myid) */
 	int		state;		/* current SCSI connection state */
@@ -431,7 +431,7 @@ asc_probe(cp)
 	 */
 	asc->regs = (asc_regmap_t *)(cp->pmax_addr + ASC_OFFSET_53C94);
 	asc->dmar = (volatile int *)(cp->pmax_addr + ASC_OFFSET_DMAR);
-	asc->buff = (volatile u_char *)(cp->pmax_addr + ASC_OFFSET_RAM);
+	asc->buff = (u_char *)(cp->pmax_addr + ASC_OFFSET_RAM);
 
 	asc->state = ASC_STATE_IDLE;
 	asc->target = -1;
