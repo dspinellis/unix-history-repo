@@ -1,8 +1,8 @@
-/*	ip_output.c	1.36	82/10/09	*/
+/*	ip_output.c	1.37	82/10/13	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
-#include "../h/mtpr.h"
+#include "../vax/mtpr.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../netinet/in.h"

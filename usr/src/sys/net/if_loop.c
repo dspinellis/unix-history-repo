@@ -1,4 +1,4 @@
-/*	if_loop.c	4.14	82/10/09	*/
+/*	if_loop.c	4.15	82/10/13	*/
 
 /*
  * Loopback interface driver for protocol testing and timing.
@@ -14,7 +14,7 @@
 #include "../net/netisr.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
-#include "../h/mtpr.h"
+#include "../vax/mtpr.h"
 #include "../net/route.h"
 #include <errno.h>
 
