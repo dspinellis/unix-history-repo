@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_cluster.c	8.2 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -26,8 +26,8 @@ struct buf *cluster_newbuf __P((struct vnode *, struct buf *, long, daddr_t,
 	    daddr_t, long, int));
 struct buf *cluster_rbuild __P((struct vnode *, u_quad_t, struct buf *,
 	    daddr_t, daddr_t, long, int, long));
-void	    cluster_wbuild __P((struct vnode *, struct buf *, long size,
-	    daddr_t start_lbn, int len, daddr_t lbn));
+void	    cluster_wbuild __P((struct vnode *, struct buf *, long,
+	    daddr_t, int, daddr_t));
 
 /*
  * We could optimize this by keeping track of where the last read-ahead
@@ -105,7 +105,8 @@ cluster_read(vp, filesize, lblkno, size, cred, bpp)
 	if (lblkno != vp->v_lastr + 1 && lblkno != 0)
 		vp->v_ralen = max(vp->v_ralen >> 1, 1);
 	else if ((ioblkno + 1) * size < filesize && !alreadyincore &&
-	    !(error = VOP_BMAP(vp, ioblkno, NULL, &blkno, &num_ra))) {
+	    !(error = VOP_BMAP(vp, ioblkno, NULL, &blkno, &num_ra)) &&
+	    blkno != -1) {
 		/*
 		 * Reading sequentially, and the next block is not in the
 		 * cache.  We are going to try reading ahead. If this is
@@ -126,8 +127,8 @@ cluster_read(vp, filesize, lblkno, size, cred, bpp)
 			/* Case 5: check how many blocks to read ahead */
 			++ioblkno;
 			if ((ioblkno + 1) * size > filesize ||
-			    (error = VOP_BMAP(vp,
-			    ioblkno, NULL, &blkno, &num_ra)))
+			    (error = VOP_BMAP(vp, ioblkno, NULL, &blkno,
+			    &num_ra)) || blkno == -1)
 				goto skip_readahead;
 			flags |= B_ASYNC;
 			if (num_ra)
@@ -297,6 +298,7 @@ cluster_callback(bp)
 	struct buf **tbp;
 	long bsize;
 	caddr_t cp;
+
 	daddr_t	daddr;
 	b_save = (struct cluster_save *)(bp->b_saveaddr);
 	bp->b_saveaddr = b_save->bs_saveaddr;
@@ -381,15 +383,15 @@ cluster_write(bp, filesize)
 		if ((lbn + 1) * bp->b_bcount == filesize)
 			/* End of file, make cluster as large as possible */
 			clen = MAXBSIZE / vp->v_mount->mnt_stat.f_iosize - 1;
-		else if (VOP_BMAP(vp, lbn, NULL, &bp->b_blkno, &clen)) {
+		else if (VOP_BMAP(vp, lbn, NULL, &bp->b_blkno, &clen) ||
+			    bp->b_blkno == -1) {
 			bawrite(bp);
 			vp->v_clen = 0;
 			vp->v_lasta = bp->b_blkno;
 			vp->v_cstart = lbn + 1;
 			vp->v_lastw = lbn;
 			return;
-		} else
-			clen = 0;
+		}
                 vp->v_clen = clen;
                 if (clen == 0) {		/* I/O not contiguous */
 			vp->v_cstart = lbn + 1;
