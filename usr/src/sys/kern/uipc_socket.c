@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.72	83/03/15	*/
+/*	uipc_socket.c	4.73	83/03/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -687,12 +687,14 @@ soioctl(so, cmd, data)
 	/* interface parameter requests */
 	case SIOCSIFADDR:
 	case SIOCSIFFLAGS:
+	case SIOCSIFDSTADDR:
 		if (!suser())
 			return (u.u_error);
 		return (ifrequest(cmd, data));
 
 	case SIOCGIFADDR:
 	case SIOCGIFFLAGS:
+	case SIOCGIFDSTADDR:
 		return (ifrequest(cmd, data));
 
 	case SIOCGIFCONF:
