@@ -7,7 +7,7 @@
  * ~ escapes.
  */
 
-static char *SccsId = "@(#)collect.c	2.9 %G%";
+static char *SccsId = "@(#)collect.c	2.10 %G%";
 
 #include "rcv.h"
 #include <sys/stat.h>
@@ -676,7 +676,6 @@ err:
  * the message temporary.  The flag argument is 'm' if we
  * should shift over and 'f' if not.
  */
-
 forward(ms, obuf, f)
 	char ms[];
 	FILE *obuf;
@@ -707,7 +706,7 @@ forward(ms, obuf, f)
 				return(-1);
 			}
 		} else
-			if (send(&message[*ip-1], obuf) < 0) {
+			if (send(&message[*ip-1], obuf, 0) < 0) {
 				perror(tempMail);
 				return(-1);
 			}
