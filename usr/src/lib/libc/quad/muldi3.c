@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)muldi3.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)muldi3.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include "longlong.h"
@@ -39,7 +39,7 @@ __muldi3 (u, v)
 static void 
 bmul (a, b, c, m, n)
     unsigned short *a, *b, *c;
-    size_t m, n;
+    unsigned long m, n;
 {
   int i, j;
   unsigned short *d;
