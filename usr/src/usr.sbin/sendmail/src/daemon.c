@@ -1,17 +1,19 @@
 /*
+ * Copyright (c) 1983 Eric P. Allman
  * Copyright (c) 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
- *
- *  Sendmail
- *  Copyright (c) 1983  Eric P. Allman
- *  Berkeley, California
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #include <errno.h>
@@ -20,9 +22,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	5.25 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.26 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	5.25 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.26 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
