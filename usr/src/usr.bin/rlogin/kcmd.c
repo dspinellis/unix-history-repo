@@ -7,7 +7,7 @@
 
 #ifndef lint
 static char Xsccsid[] = "derived from @(#)rcmd.c 5.17 (Berkeley) 6/27/88";
-static char sccsid[] = "@(#)kcmd.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)kcmd.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -84,9 +84,11 @@ kcmd(sock, ahost, rport, locuser, remuser, cmd, fd2p, ticket, service, realm,
 	strcpy(host_save, hp->h_name);
 	*ahost = host_save;
 
+#ifdef KERBEROS
 	/* If realm is null, look up from table */
 	if (realm == NULL || realm[0] == '\0')
 		realm = krb_realmofhost(host_save);
+#endif /* KERBEROS */
 
 	oldmask = sigblock(sigmask(SIGURG));
 	for (;;) {
@@ -203,6 +205,7 @@ kcmd(sock, ahost, rport, locuser, remuser, cmd, fd2p, ticket, service, realm,
 			goto bad2;
 		}
 	}
+#ifdef KERBEROS
 	if ((status = krb_sendauth(authopts, s, ticket, service, *ahost,
 			       realm, (unsigned long) getpid(), msg_data,
 			       cred, schedule,
@@ -210,6 +213,7 @@ kcmd(sock, ahost, rport, locuser, remuser, cmd, fd2p, ticket, service, realm,
 			       faddr,
 			       "KCMDV0.1")) != KSUCCESS)
 		goto bad2;
+#endif /* KERBEROS */
 
 	(void) write(s, remuser, strlen(remuser)+1);
 	(void) write(s, cmd, strlen(cmd)+1);
