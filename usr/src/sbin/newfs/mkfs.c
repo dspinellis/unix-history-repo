@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	2.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	2.4 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -734,6 +734,7 @@ wtfs(bno, size, bf)
 	}
 }
 
+#ifndef STANDALONE
 /*
  * copy a block
  */
@@ -743,6 +744,7 @@ bcopy(from, to, size)
 {
 	asm("	movc3	12(ap),*4(ap),*8(ap)");
 }
+#endif
 
 /*
  * check if a block is available
@@ -767,7 +769,11 @@ isblock(fs, cp, h)
 		mask = 0x01 << (h & 0x7);
 		return ((cp[h >> 3] & mask) == mask);
 	default:
+#ifdef STANDALONE
+		printf("isblock bad fs_frag %d\n", fs->fs_frag);
+#else
 		fprintf(stderr, "isblock bad fs_frag %d\n", fs->fs_frag);
+#endif
 		return;
 	}
 }
@@ -794,7 +800,11 @@ clrblock(fs, cp, h)
 		cp[h >> 3] &= ~(0x01 << (h & 0x7));
 		return;
 	default:
+#ifdef STANDALONE
+		printf("clrblock bad fs_frag %d\n", fs->fs_frag);
+#else
 		fprintf(stderr, "clrblock bad fs_frag %d\n", fs->fs_frag);
+#endif
 		return;
 	}
 }
@@ -821,7 +831,11 @@ setblock(fs, cp, h)
 		cp[h >> 3] |= (0x01 << (h & 0x7));
 		return;
 	default:
+#ifdef STANDALONE
+		printf("setblock bad fs_frag %d\n", fs->fs_frag);
+#else
 		fprintf(stderr, "setblock bad fs_frag %d\n", fs->fs_frag);
+#endif
 		return;
 	}
 }
