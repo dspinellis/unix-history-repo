@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -120,7 +120,6 @@ dropenvelope(e)
 			    strcmp(e->e_from.q_paddr, "<>") != 0)
 				(void) sendtolist(e->e_from.q_paddr, NULL,
 						  &e->e_errorqueue, e);
-			saveit = TRUE;
 		}
 	}
 
@@ -196,6 +195,19 @@ dropenvelope(e)
 
 	if (saveit && e->e_errormode != EM_QUIET)
 		savemail(e);
+
+	/*
+	**  Arrange to send warning messages to postmaster as requested.
+	*/
+
+	if (bitset(EF_PM_NOTIFY, e->e_flags) && PostMasterCopy != NULL &&
+	    !bitset(EF_RESPONSE, e->e_flags))
+	{
+		auto ADDRESS *rlist = NULL;
+
+		(void) sendtolist(PostMasterCopy, (ADDRESS *) NULL, &rlist, e);
+		(void) returntosender(e->e_message, rlist, FALSE, e);
+	}
 
 	/*
 	**  Instantiate or deinstantiate the queue.

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -242,16 +242,7 @@ savemail(e)
 			**  You really shouldn't need this.
 			*/
 
-			if (PostMasterCopy != NULL)
-			{
-				auto ADDRESS *rlist = NULL;
-
-				(void) sendtolist(PostMasterCopy,
-						  (ADDRESS *) NULL,
-						  &rlist, e);
-				(void) returntosender(e->e_message,
-						      rlist, FALSE, e);
-			}
+			e->e_flags |= EF_PM_NOTIFY;
 
 			q = e->e_errorqueue;
 			if (q == NULL)
@@ -617,15 +608,19 @@ errbody(fp, m, e)
 					fp, m);
 				printheader = FALSE;
 			}
-			if (q->q_alias != NULL)
-				strcpy(buf, q->q_alias->q_paddr);
-			else
-				strcpy(buf, q->q_paddr);
+			strcpy(buf, q->q_paddr);
 			if (bitset(QBADADDR, q->q_flags))
-				strcat(buf, "  (hard error -- address deleted)");
+				strcat(buf, "  (unrecoverable error)");
 			else
-				strcat(buf, "  (temporary failure -- will retry)");
+				strcat(buf, "  (transient failure)");
 			putline(buf, fp, m);
+			if (q->q_alias != NULL)
+			{
+				strcpy(buf, "    (expanded from: ");
+				strcat(buf, q->q_alias->q_paddr);
+				strcat(buf, ")");
+				putline(buf, fp, m);
+			}
 		}
 	}
 	if (!printheader)
