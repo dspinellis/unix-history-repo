@@ -1,0 +1,7 @@
+cc -I../h -I../ctlmod -O -c IIn_ret.c
+cc -I../h -I../ctlmod -O -c IIconvert.c
+ar rvu libq.a IIn_ret.o IIconvert.o
+r - IIn_ret.o
+r - IIconvert.o
+chmod 664 libq.a
+ranlib libq.a
