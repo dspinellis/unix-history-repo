@@ -1,4 +1,4 @@
-.\"	@(#)Cover.alpha	1.7 (Berkeley) %G%
+.\"	@(#)Cover.alpha	1.7.1.1 (Berkeley) %G%
 .\" use -ms
 .\"
 .so HEADERS
@@ -45,7 +45,7 @@ we cannot provide help with installation
 of this software on other systems, although we are, of course, interested
 in hearing of problems that you encounter.
 .PP
-We are planning on releasing two versions of the software, 4.4BSD-Encumbered
+We are releasing two versions of the software, 4.4BSD-Encumbered
 and 4.4BSD-Lite.
 The 4.4BSD-Encumbered distribution is available only to sites
 with UNIX/32V\(dg, System III, or System V
@@ -57,39 +57,36 @@ source licenses with USL/AT&T.
 The 4.4BSD-Encumbered distribution is a complete distribution in the style of
 4.3BSD and contains the complete source for the Berkeley Distribution.
 .PP
-The 4.4BSD-Lite distribution will be a distribution that
+The 4.4BSD-Lite distribution is a distribution that
 is copyrighted by the University of California
 and others, but may be freely redistributed.
-It will be available to anyone and requires no previous license, either from
+It is available to anyone and requires no previous license, either from
 USL/AT&T or The Regents of the University of California.
-Its license agreement and content will be similar to that of the two BSD
+Its license agreement is similar to that of the two BSD
 Networking Releases.
-The 4.4BSD-Lite distribution will contain only a few additional programs
+The 4.4BSD-Lite distribution contains only a few additional programs
 and no additional kernel files from the Second Networking
 release done in June 1991.
-However,
-it will contain support for additional architectures
-and will have many bug fixes and performance enhancements.
-The distribution will include both software developed at Berkeley
-and also much of software contributed by authors outside Berkeley.
+However, it does contain support for additional architectures
+and has many bug fixes and performance enhancements.
+The distribution includes both software developed at Berkeley
+and also much software contributed by authors outside Berkeley.
 .PP
-Only the 4.4BSD-Encumbered distribution is available at this time.
-The 4.4BSD-Lite distribution is not available at this time;
-we will send out a mailing to notify you when it is available.
-.\" .PP
-.\" Because the 4.4BSD-Lite distribution is a partial-source
-.\" distribution, it is not possible to compile or run it
-.\" without a pre-existing system that is already installed and running.
-.\" It includes source code and manual pages for the C library
-.\" and about three-fourths of the utilities contained in
-.\" the 4.4BSD-Encumbered distribution.
-.\" Additionally, the 4.4BSD-Lite distribution includes source code for most
-.\" of the 4.4BSD kernel, including machine support for the six architectures
-.\" described below.
-.\" The kernel source code is not complete for any architecture.
-.\" Specifically, the kernel support for executing files, doing physical I/O,
-.\" managing the buffer cache, handling process tracing and doing accounting
-.\" is not included in 4.4BSD-Lite.
+Because the 4.4BSD-Lite distribution is a partial-source
+distribution, it is not possible to compile or run it
+without a pre-existing system that is already installed and running.
+It includes source code and manual pages for the C library
+and about three-fourths of the utilities contained in
+the 4.4BSD-Encumbered distribution.
+.\" An approximate list of the included and excluded utilities is provided
+.\" in the attached utilities list.
+Additionally, the 4.4BSD-Lite distribution includes source code for most
+of the 4.4BSD kernel, including machine support for the six architectures
+described below.
+The kernel source code is not complete for any architecture.
+Specifically, the kernel support for executing files, doing physical I/O,
+managing the buffer cache, handling process tracing and doing accounting
+is not included in 4.4BSD-Lite.
 .PP
 The enclosed information is designed to serve two purposes.  The first
 purpose is to acquaint you with the details of our distribution so you
@@ -103,7 +100,7 @@ or one 8mm Exabyte cassette only.
 The 4.4BSD-Encumbered distribution contains complete source
 as well as binaries for
 the HP9000/300 series of workstations.
-The 4.4BSD-Lite distribution will contain only freely redistributable sources.
+The 4.4BSD-Lite distribution contains only freely redistributable sources.
 As the sources do not comprise a complete system,
 no binaries will be included.
 .PP
@@ -355,15 +352,14 @@ We thank you for your support over the years, your funding, and,
 of course, the software you've contributed to make the BSD system
 what it is today!
 .SH
-How to obtain 4.4BSD-Encumbered
+How to obtain 4.4BSD-Encumbered or 4.4BSD-Lite
 .PP
-To obtain 4.4BSD-Encumbered
-.\" or 4.4BSD-Lite
-we require execution of the Berkeley License Agreement (6/92).
+To obtain 4.4BSD-Encumbered or 4.4BSD-Lite
+we require execution of the appropriate Berkeley License Agreement (6/92).
 In addition, foreign licensees must execute Addendum Number One for 
 Foreign Licensees in ordering 4.4BSD-Encumbered.
-The fee is $2000.00 for 4.4BSD-Encumbered.
-.\" and $1000.00 for 4.4BSD-Lite.
+The fee is $2000.00 for 4.4BSD-Encumbered and
+$1000.00 for 4.4BSD-Lite.
 .PP
 Because we are a research and development organization
 and not a commercial organization,
@@ -442,37 +438,37 @@ bug fixes and the availability of future BSD distributions.
 Please note that we cannot ship to post office boxes;
 therefore, please have the technical contact's address
 supplied without use of a post office box.
-.\" .PP
-.\" For 4.4BSD-Lite, we must receive from your organization the following
-.\" material before the distribution can be sent:
-.\" .IP \(bu
-.\" Two original signed and executed copies of the
-.\" 4.4BSD-Lite License Agreements (6/92) with Exhibit A
-.\" by an authorized official of your company or institution.
-.\" One signed copy will be returned to you after it has been
-.\" executed by The Regents of the University of California.
-.\" .IP \(bu
-.\" A check from a U.S. bank for $1000.00 payable to
-.\" ``The Regents of the University of California,
-.\" Computer Systems Research Group.''
-.\" If you must issue a Purchase Order,
-.\" please issue one that is blank-backed.
-.\" If this is not possible, insert and initial in the body
-.\" of the Purchase Order the following clause:
-.\" ``The terms and conditions of this Purchase Order are not
-.\" accepted by The Regents of the University of California.
-.\" The 4.4BSD-Lite License Agreement (6/92) prevails.''
-.\" .IP \(bu
-.\" The attached Site Information Form completely filled out.
-.\" Your copy of the signed 4.4BSD-Lite License Agreement will be
-.\" sent to the person listed as the administrative contact.
-.\" The distribution itself will be sent to the technical contact.
-.\" All information is kept confidential;
-.\" it is for our use in notifying you of important
-.\" bug fixes and the availability of future BSD distributions.
-.\" Please note that we cannot ship to post office boxes;
-.\" therefore, please have the technical contact's address
-.\" supplied without use of a post office box.
+.PP
+For 4.4BSD-Lite, we must receive from your organization the following
+material before the distribution can be sent:
+.IP \(bu
+Two original signed and executed copies of the
+4.4BSD-Lite License Agreements (6/92) with Exhibit A
+by an authorized official of your company or institution.
+One signed copy will be returned to you after it has been
+executed by The Regents of the University of California.
+.IP \(bu
+A check from a U.S. bank for $1000.00 payable to
+``The Regents of the University of California,
+Computer Systems Research Group.''
+If you must issue a Purchase Order,
+please issue one that is blank-backed.
+If this is not possible, insert and initial in the body
+of the Purchase Order the following clause:
+``The terms and conditions of this Purchase Order are not
+accepted by The Regents of the University of California.
+The 4.4BSD-Lite License Agreement (6/92) prevails.''
+.IP \(bu
+The attached Site Information Form completely filled out.
+Your copy of the signed 4.4BSD-Lite License Agreement will be
+sent to the person listed as the administrative contact.
+The distribution itself will be sent to the technical contact.
+All information is kept confidential;
+it is for our use in notifying you of important
+bug fixes and the availability of future BSD distributions.
+Please note that we cannot ship to post office boxes;
+therefore, please have the technical contact's address
+supplied without use of a post office box.
 .PP
 .sp 2
 A checklist is included to aid you in assembling this material.
@@ -506,7 +502,7 @@ package two original copies of the appropriate
 Berkeley License Agreement completed
 and properly signed (\fBwithout modification\fR),
 two complete copies of your AT&T Software Agreement
-.\" (only for 4.4BSD-Encumbered),
+(only for 4.4BSD-Encumbered),
 the appropriate check properly made out to 
 ``The Regents of the University of California,
 Computer Systems Research Group'' and a completely filled out
@@ -529,8 +525,8 @@ scheduled to be released at year's end or soon thereafter.
 The advantage in ordering the upgrade at the time of ordering the
 alpha release is that there will not be additional licensing costs.
 .PP
-.\" If one wishes to order the 4.4BSD-Lite and upgrade,
-.\" the total fee will be $1,400.00.
+If one wishes to order the 4.4BSD-Lite and upgrade,
+the total fee will be $1,400.00.
 If one wishes to order the 4.4BSD-Encumbered and upgrade,
 the total fee will be $2,400.00.
 For those who choose not to order the upgrade now,
@@ -558,8 +554,8 @@ License Agreement (6/92) and that your organization
 will abide by it;
 2) an IOC for $2,000.00; and
 3) a Site Information Form.
-.\" The same requirements apply to 4.4BSD-Lite, except for the
-.\" difference in fee ($1000.00 for 4.4BSD-Lite).
+The same requirements apply to 4.4BSD-Lite, except for the
+difference in fee ($1000.00 for 4.4BSD-Lite).
 .PP
 \fBGovernment Agencies and Government Contractors\fR.
 .IP \(bu
@@ -595,11 +591,11 @@ Berkeley License Agreement (6/92) directly to the
 Computer Systems Research Group with a cover
 letter stating that the contractor is hereby authorized
 to receive a copy of 4.4BSD-Encumbered.
-.\" .IP \(bu
-.\" For those government agencies who wish to obtain 4.4BSD-Lite,
-.\" we need two original copies of
-.\" the Berkeley License Agreement (6/92) for 4.4BSD-Lite
-.\" executed by an authorized official of that agency.
+.IP \(bu
+For those government agencies who wish to obtain 4.4BSD-Lite,
+we need two original copies of
+the Berkeley License Agreement (6/92) for 4.4BSD-Lite
+executed by an authorized official of that agency.
 .SH
 A Special Note 
 .PP
