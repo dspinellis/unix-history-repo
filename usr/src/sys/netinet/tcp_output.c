@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_output.c	7.8 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -162,9 +162,14 @@ again:
 	 * next expected input.)  If the difference is 35% or more of the
 	 * maximum possible window, then want to send a window update to peer.
 	 */
-	if (win > 0 &&
-	    ((100*(win-(tp->rcv_adv-tp->rcv_nxt))/so->so_rcv.sb_hiwat) >= 35))
-		goto send;
+	if (win > 0) {
+		int adv = win - (tp->rcv_adv - tp->rcv_nxt);
+
+		if (100 * adv / so->so_rcv.sb_hiwat >= 35)
+			goto send;
+		if (adv >= 2 * tp->t_maxseg && so->so_rcv.sb_cc == 0)
+			goto send;
+	}
 
 	/*
 	 * TCP window updates are not reliable, rather a polling protocol
@@ -261,9 +266,6 @@ send:
 			optlen = sizeof (tcp_initopt);
 			*(u_short *)(opt + 2) = htons(mss);
 		}
-	} else if (tp->t_tcpopt) {
-		opt = mtod(tp->t_tcpopt, u_char *);
-		optlen = tp->t_tcpopt->m_len;
 	}
 	if (opt) {
 		m0 = m->m_next;
@@ -363,11 +365,11 @@ send:
 		 */
 		if (tp->t_timer[TCPT_REXMT] == 0 &&
 		    tp->snd_nxt != tp->snd_una) {
-			TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
-			  ((tp->t_srtt >> 2) + tp->t_rttvar) >> 1,
-			  TCPTV_MIN, TCPTV_REXMTMAX);
-			tp->t_rxtshift = 0;
-			tp->t_timer[TCPT_PERSIST] = 0;
+			tp->t_timer[TCPT_REXMT] = tp->t_rxtcur;
+			if (tp->t_timer[TCPT_PERSIST]) {
+				tp->t_timer[TCPT_PERSIST] = 0;
+				tp->t_rxtshift = 0;
+			}
 		}
 	} else
 		if (SEQ_GT(tp->snd_nxt + len, tp->snd_max))

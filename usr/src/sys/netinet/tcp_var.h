@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_var.h	7.3 (Berkeley) %G%
+ *	@(#)tcp_var.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -19,7 +19,8 @@ struct tcpcb {
 	short	t_state;		/* state of this connection */
 	short	t_timer[TCPT_NTIMERS];	/* tcp timers */
 	short	t_rxtshift;		/* log(2) of rexmt exp. backoff */
-	struct	mbuf *t_tcpopt;		/* tcp options */
+	short	t_rxtcur;		/* current retransmit value */
+	short	t_unused;		/* XXX */
 	u_short	t_maxseg;		/* maximum segment size */
 	char	t_force;		/* 1 if forcing out a byte */
 	u_char	t_flags;
