@@ -17,7 +17,7 @@ static char sccsid[] = "@(#)rlogin.c	5.10 (Berkeley) %G%";
 /*
  * rlogin - remote login
  */
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/errno.h>
 #include <sys/file.h>
 #include <sys/socket.h>
@@ -51,7 +51,18 @@ char	term[256] = "network";
 extern	int errno;
 int	lostpeer();
 int	dosigwinch = 0;
+#ifndef sigmask
+#define sigmask(m)	(1 << ((m)-1))
+#endif
+#ifdef sun
+struct	ttysize winsize;
+struct winsize {
+	unsigned short ws_row, ws_col;
+	unsigned short ws_xpixel, ws_ypixel;
+};
+#else sun
 struct	winsize winsize;
+#endif sun
 int	sigwinch(), oob();
 
 main(argc, argv)
@@ -122,7 +133,11 @@ another:
 		strcat(term, "/");
 		strcat(term, speeds[ttyb.sg_ospeed]);
 	}
+#ifdef sun
+	(void) ioctl(0, TIOCGSIZE, &winsize);
+#else sun
 	(void) ioctl(0, TIOCGWINSZ, &winsize);
+#endif sun
 	signal(SIGPIPE, lostpeer);
 	signal(SIGURG, oob);
 	oldmask = sigblock(sigmask(SIGURG));
@@ -336,6 +351,19 @@ stop(cmdc)
 	sigwinch();			/* check for size changes */
 }
 
+#ifdef sun
+sigwinch()
+{
+	struct ttysize ws;
+
+	if (dosigwinch && ioctl(0, TIOCGSIZE, &ws) == 0 &&
+	    bcmp(&ws, &winsize, sizeof (ws))) {
+		winsize = ws;
+		sendwindow();
+	}
+}
+
+#else sun
 sigwinch()
 {
 	struct winsize ws;
@@ -346,6 +374,7 @@ sigwinch()
 		sendwindow();
 	}
 }
+#endif
 
 /*
  * Send the window size to the server via the magic escape
@@ -359,10 +388,17 @@ sendwindow()
 	obuf[1] = 0377;
 	obuf[2] = 's';
 	obuf[3] = 's';
+#ifdef sun
+	wp->ws_row = htons(winsize.ts_lines);
+	wp->ws_col = htons(winsize.ts_cols);
+	wp->ws_xpixel = 0;
+	wp->ws_ypixel = 0;
+#else sun
 	wp->ws_row = htons(winsize.ws_row);
 	wp->ws_col = htons(winsize.ws_col);
 	wp->ws_xpixel = htons(winsize.ws_xpixel);
 	wp->ws_ypixel = htons(winsize.ws_ypixel);
+#endif sun
 	(void) write(rem, obuf, sizeof(obuf));
 }
 
@@ -375,6 +411,7 @@ sendwindow()
 char	rcvbuf[8 * 1024];
 int	rcvcnt;
 int	rcvstate;
+int	ppid;
 jmp_buf	rcvtop;
 
 oob()
@@ -414,7 +451,7 @@ oob()
 		/*
 		 * Let server know about window size changes
 		 */
-		kill(getppid(), SIGURG);
+		kill(ppid, SIGURG);
 	}
 	if (!eight && (mark & TIOCPKT_NOSTOP)) {
 		ioctl(0, TIOCGETP, (char *)&sb);
@@ -471,12 +508,17 @@ oob()
  */
 reader()
 {
+#if !defined(BSD) || BSD < 43
+	int pid = -getpid();
+#else
 	int pid = getpid();
+#endif
 	int n, remaining;
 	char *bufp = rcvbuf;
 
 	signal(SIGTTOU, SIG_IGN);
 	fcntl(rem, F_SETOWN, pid);
+	ppid = getppid();
 	(void) setjmp(rcvtop);
 	for (;;) {
 		while ((remaining = rcvcnt - (bufp - rcvbuf)) > 0) {
@@ -498,6 +540,7 @@ reader()
 		if (rcvcnt < 0) {
 			if (errno == EINTR)
 				continue;
+			perror("read");
 			return (-1);
 		}
 	}
@@ -560,3 +603,4 @@ lostpeer()
 	prf("\007Connection closed.");
 	done(1);
 }
+
