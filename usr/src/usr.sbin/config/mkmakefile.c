@@ -1,5 +1,5 @@
 /*
- * mkmakefile.c	1.7	81/03/31
+ * mkmakefile.c	1.8	81/04/03
  *	Functions in this file build the makefile from the files list
  *	and the information in the config table
  */
@@ -324,6 +324,7 @@ do_load(f)
 register FILE *f;
 {
     register struct file_list *fl;
+    register bool first = TRUE;
 
     for (fl = conf_list; fl != NULL; fl = fl->f_next)
     {
@@ -331,8 +332,14 @@ register FILE *f;
 		fl->f_needs, fl->f_fn);
 	fprintf(f, "\t@echo loading %s\n\t@rm -f %s\n\t",
 		fl->f_needs, fl->f_needs);
+	if (first)
+	{
+		first = FALSE;
+		fprintf(f, "\t@sh ../conf/newvers.sh\n");
+		fprintf(f, "\t@cc $(COPTS) -c vers.c\n");
+	}
 	fprintf(f,
-	    "@ld -n -o %s -e start -x -T 80000000 locore.o ${OBJS} ioconf.o param.o swap%s.o\n",
+	    "@ld -n -o %s -e start -x -T 80000000 locore.o ${OBJS} vers.o ioconf.o param.o swap%s.o\n",
 	    fl->f_needs, fl->f_fn);
 	fprintf(f, "\t@echo rearranging symbols\n");
 	fprintf(f, "\t@-symorder ../sys/symbols.sort %s\n", fl->f_needs);
