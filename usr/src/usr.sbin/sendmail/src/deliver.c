@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.64 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.65 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1677,6 +1677,12 @@ mailfile(filename, ctladdr, e)
 	register FILE *f;
 	register int pid;
 	int mode;
+
+	if (tTd(11, 1))
+	{
+		printf("mailfile %s\n  ctladdr=", filename);
+		printaddr(ctladdr, FALSE);
+	}
 
 	/*
 	**  Fork so we can change permissions here.
