@@ -1,0 +1,8 @@
+./"hc"16t"flags"n2X
++/"dq"n
+.$<<devqueue
++/"sq"n
+.$<<devqueue
++/"ba"16t"type"n2X
++/"addr"16t"count"16t"curcount"nX2D
++,<9-1$<hpib
