@@ -1,4 +1,4 @@
-/*	uba.c	4.46	82/06/26	*/
+/*	uba.c	4.47	82/07/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -541,24 +541,35 @@ ubaremap(uban, ubinfo, addr)
  * and clears the map registers for the block.
  *
  * Arguments are the Unibus number, the Unibus address of the memory
- * block, and its size in blocks of 512 bytes.
+ * block, its size in blocks of 512 bytes, and a flag indicating whether
+ * to allocate the unibus space form the resource map or whether it already
+ * has been.
  *
- * Returns addr if successful, 0 if not.
+ * Returns > 0 if successful, 0 if not.
  */
 
-ubamem(uban, addr, size)
+ubamem(uban, addr, size, alloc)
 {
 	register struct uba_hd *uh = &uba_hd[uban];
 	register int *m;
 	register int i, a, s;
 
-	s = spl6();
-	a = rmget(uh->uh_map, size, addr>>9);
-	splx(s);
+	if (alloc) {
+		s = spl6();
+		a = rmget(uh->uh_map, size, (addr>>9)+1); /* starts at ONE! */
+		splx(s);
+	} else
+		a = (addr>>9)+1;
 	if (a) {
-		m = (int *) &uh->uh_uba->uba_map[a];
+		m = (int *) &uh->uh_uba->uba_map[a-1];
 		for (i=0; i<size; i++)
 			*m++ = 0;	/* All off, especially 'valid' */
+#if VAX780
+		if (cpu == VAX_780) {		/* map disable */
+			i = (addr+size*512+8191)/8192;
+			uh->uh_uba->uba_cr |= i<<26;
+		}
+#endif
 	}
 	return(a);
 }

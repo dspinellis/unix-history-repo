@@ -1,4 +1,4 @@
-/*	if_ecreg.h	4.2	82/06/26	*/
+/*	if_ecreg.h	4.3	82/07/21	*/
 
 /*
  * 3Com Ethernet controller registers.
@@ -19,6 +19,7 @@ struct ecdevice {
 #define	EC_PIE		0x1000		/* Parity interrupt enable (read) */
 #define	EC_ADATA	0x0f00		/* address/filtering */
 #define	EC_RDONE	0x0080		/* receive done */
+#define	EC_MDISAB	0x0080		/* memory disable */
 #define	EC_RINTEN	0x0040		/* receive interrupt enable */
 #define	EC_RCLR		0x0020		/* clear RDONE bit */
 #define	EC_RWBN		0x0010		/* submit buffer for receive */

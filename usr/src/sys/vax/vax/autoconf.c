@@ -1,4 +1,4 @@
-/*	autoconf.c	4.40	82/07/15	*/
+/*	autoconf.c	4.41	82/07/21	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -159,7 +159,8 @@ probenexus(pcpu)
 			if (cpu == VAX_780)
 				((struct uba_regs *)nxv)->uba_cr =
 				    UBACR_IFS|UBACR_BRIE|
-				    UBACR_USEFIE|UBACR_SUEFIE;
+				    UBACR_USEFIE|UBACR_SUEFIE|
+				    (((struct uba_regs *)nxv)->uba_cr&0x7c000000);
 #endif
 			numuba++;
 			break;
