@@ -1,4 +1,4 @@
-/*	if_en.c	4.49	82/04/01	*/
+/*	if_en.c	4.50	82/04/04	*/
 
 #include "en.h"
 #include "imp.h"
@@ -58,7 +58,7 @@ struct	en_softc {
 	struct	ifuba es_ifuba;		/* UNIBUS resources */
 	short	es_delay;		/* current output delay */
 	short	es_mask;		/* mask for current output delay */
-	u_char	es_lastx;		/* host last transmitted to */
+	short	es_lastx;		/* host last transmitted to */
 	short	es_oactive;		/* is output active? */
 	short	es_olen;		/* length of last output */
 } en_softc[NEN];
@@ -176,7 +176,9 @@ eninit(unit)
 	if_rtinit(&es->es_if, RTF_DIRECT|RTF_UP);
 }
 
+int	enalldelay = 0;
 int	enlastdel = 25;
+int	enlastmask = (~0) << 5;
 
 /*
  * Start or restart output on interface.
@@ -215,14 +217,17 @@ COUNT(ENSTART);
 
 	/*
 	 * Ethernet cannot take back-to-back packets (no
-	 * buffering in interface.  To avoid overrunning
-	 * receiver, enforce a small delay (about 1ms) in interface
-	 * on successive packets sent to same host.
+	 * buffering in interface.  To help avoid overrunning
+	 * receivers, enforce a small delay (about 1ms) in interface:
+	 *	* between all packets when enalldelay
+	 *	* whenever last packet was broadcast
+	 *	* whenever this packet is to same host as last packet
 	 */
-	if (es->es_lastx && es->es_lastx == dest)
+	if (enalldelay || es->es_lastx == 0 || es->es_lastx == dest) {
 		es->es_delay = enlastdel;
-	else
-		es->es_lastx = dest;
+		es->es_mask = enlastmask;
+	}
+	es->es_lastx = dest;
 
 restart:
 	/*
@@ -269,7 +274,7 @@ COUNT(ENXINT);
 		es->es_ifuba.ifu_xtofree = 0;
 	}
 	if (es->es_if.if_snd.ifq_head == 0) {
-		es->es_lastx = 0;
+		es->es_lastx = 256;		/* putatively illegal */
 		return;
 	}
 	enstart(unit);
@@ -335,7 +340,7 @@ enrint(unit)
 	struct endevice *addr = (struct endevice *)eninfo[unit]->ui_addr;
 	register struct en_header *en;
     	struct mbuf *m;
-	int len;
+	int len, plen; short resid;
 	register struct ifqueue *inq;
 	int off;
 COUNT(ENRINT);
@@ -355,11 +360,19 @@ COUNT(ENRINT);
 	}
 
 	/*
+	 * Calculate input data length.
 	 * Get pointer to ethernet header (in input buffer).
 	 * Deal with trailer protocol: if type is PUP trailer
 	 * get true type from first 16-bit word past data.
 	 * Remember that type was trailer by setting off.
 	 */
+	resid = addr->en_iwc;
+	if (resid)
+		resid |= 0176000;
+	len = (((sizeof (struct en_header) + ENMTU) >> 1) + resid) << 1;
+	len -= sizeof (struct en_header);
+	if (len >= ENMTU)
+		goto setup;			/* sanity */
 	en = (struct en_header *)(es->es_ifuba.ifu_r.ifrw_addr);
 #define	endataaddr(en, off, type)	((type)(((caddr_t)((en)+1)+(off))))
 	if (en->en_type >= ENPUP_TRAIL &&
@@ -368,49 +381,26 @@ COUNT(ENRINT);
 		if (off >= ENMTU)
 			goto setup;		/* sanity */
 		en->en_type = *endataaddr(en, off, u_short *);
+		resid = *(endataaddr(en, off+2, u_short *));
+		if (off + resid > len)
+			goto setup;		/* sanity */
+		len = off + resid;
 	} else
 		off = 0;
-
-	/*
-	 * Attempt to infer packet length from type;
-	 * can't deal with packet if can't infer length.
-	 */
-	switch (en->en_type) {
-
-#ifdef INET
-	case ENPUP_IPTYPE:
-		len = htons((u_short)endataaddr(en,
-			off ? off + sizeof (u_short) : 0, struct ip *)->ip_len);
-		break;
-#endif
-#ifdef PUP
-	case ENPUP_PUPTYPE:
-		len = endataaddr(en, off ? off + sizeof (u_short) : 0,
-			struct pup_header *)->pup_length;
-		break;
-#endif
-		
-	default:
-		printf("en%d: unknown pkt type 0x%x\n", unit, en->en_type);
-		goto setup;
-	}
-	if (off)
-		len += sizeof (u_short);
 	if (len == 0)
 		goto setup;
-
 	/*
 	 * Pull packet off interface.  Off is nonzero if packet
 	 * has trailing header; if_rubaget will then force this header
 	 * information to be at the front, but we still have to drop
-	 * the two-byte type which is at the front of any trailer data.
+	 * the type and length which are at the front of any trailer data.
 	 */
 	m = if_rubaget(&es->es_ifuba, len, off);
 	if (m == 0)
 		goto setup;
 	if (off) {
-		m->m_off += sizeof (u_short);
-		m->m_len -= sizeof (u_short);
+		m->m_off += 2 * sizeof (u_short);
+		m->m_len -= 2 * sizeof (u_short);
 	}
 	switch (en->en_type) {
 
@@ -473,11 +463,12 @@ COUNT(ENOUTPUT);
 		dest = ((struct sockaddr_in *)dst)->sin_addr.s_addr >> 24;
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		if (off > 0 && (off & 0x1ff) == 0 &&
-		    m->m_off >= MMINOFF + sizeof (u_short)) {
+		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
 			type = ENPUP_TRAIL + (off>>9);
-			m->m_off -= sizeof (u_short);
-			m->m_len += sizeof (u_short);
+			m->m_off -= 2 * sizeof (u_short);
+			m->m_len += 2 * sizeof (u_short);
 			*mtod(m, u_short *) = ENPUP_IPTYPE;
+			*(mtod(m, u_short *) + 1) = m->m_len;
 			goto gottrailertype;
 		}
 		type = ENPUP_IPTYPE;
@@ -487,15 +478,6 @@ COUNT(ENOUTPUT);
 #ifdef PUP
 	case AF_PUP:
 		dest = ((struct sockaddr_pup *)dst)->spup_addr.pp_host;
-		off = mtod(m, struct pup_header *)->pup_length - m->m_len;
-		if (off > 0 && (off & 0x1ff) == 0 &&
-		    m->m_off >= MMINOFF + sizeof (u_short)) {
-			type = ENPUP_TRAIL + (off>>9);
-			m->m_off -= sizeof (u_short);
-			m->m_len += sizeof (u_short);
-			*mtod(m, u_short *) = ENPUP_PUPTYPE;
-			goto gottrailertype;
-		}
 		type = ENPUP_PUPTYPE;
 		off = 0;
 		goto gottype;
