@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)user.h	7.18 (Berkeley) %G%
+ *	@(#)user.h	7.19 (Berkeley) %G%
  */
 
 #include <machine/pcb.h>
@@ -23,13 +23,14 @@
 
 
 /*
- * Per process structure containing data that
- * isn't needed in core when the process is swapped out.
+ * Per process structure containing data that isn't needed in core
+ * when the process isn't running (esp. when swapped out).
+ * This structure may or may not be at the same kernel address
+ * in all processes.
  */
  
 struct	user {
 	struct	pcb u_pcb;
-	label_t	u_ssave;		/* label variable for swapping XXX */
 
 	struct	sigacts u_sigacts;	/* p_sigacts points here (use it!) */
 	struct	pstats u_stats;		/* p_stats points here (use it!) */
@@ -53,9 +54,7 @@ struct	user {
 #define	U_sig	u_sigacts.ps_sig
 #define	U_code	u_sigacts.ps_code
 
-#ifdef KERNEL
-extern	struct user u;
-#else
+#ifndef KERNEL
 #define	u_ar0	U_ar0
 #define	u_tsize	U_tsize
 #define	u_dsize	U_dsize
