@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_close.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_close.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -54,10 +54,6 @@ __rec_close(dbp)
  *
  * Returns:
  *	RET_SUCCESS, RET_ERROR.
- *
- * XXX
- * Currently don't handle a key marked for deletion when the tree is synced.
- * Should copy the page and write it out instead of the real page.
  */
 int
 __rec_sync(dbp)
@@ -72,20 +68,16 @@ __rec_sync(dbp)
 
 	t = dbp->internal;
 
-	if (ISSET(t, BTF_INMEM) || NOTSET(t, BTF_MODIFIED))
+	if (ISSET(t, BTF_INMEM) || ISSET(t, BTF_RDONLY) ||
+	    NOTSET(t, BTF_MODIFIED))
 		return (RET_SUCCESS);
 
-	if (ISSET(t, BTF_RDONLY)) {
-		errno = EPERM;
-		return (RET_ERROR);
-	}
-
-	/* Suck any remaining records into the tree. */
+	/* Read any remaining records into the tree. */
 	if (t->bt_irec(t, MAX_REC_NUMBER) == RET_ERROR)
 		return (RET_ERROR);
 
 	/* Rewind the file descriptor. */
-	if (lseek(t->bt_rfd, (off_t)0, SEEK_SET) != 0L)
+	if (lseek(t->bt_rfd, (off_t)0, SEEK_SET) != 0)
 		return (RET_ERROR);
 
 	iov[1].iov_base = "\n";
@@ -106,7 +98,7 @@ __rec_sync(dbp)
 	t->bt_rcursor = scursor;
 	if (status == RET_ERROR)
 		return (RET_ERROR);
-	if ((off = lseek(t->bt_rfd, (off_t)0, SEEK_CUR)) == -1)
+	if ((off = lseek(t->bt_rfd, (off_t)0, SEEK_CUR)) != 0)
 		return (RET_ERROR);
 	if (ftruncate(t->bt_rfd, off))
 		return (RET_ERROR);
