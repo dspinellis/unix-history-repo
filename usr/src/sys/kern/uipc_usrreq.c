@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	6.8	84/08/21	*/
+/*	uipc_usrreq.c	6.9	84/08/27	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -278,6 +278,7 @@ unp_detach(unp)
 {
 	
 	if (unp->unp_inode) {
+		unp->unp_inode->i_socket = 0;
 		irele(unp->unp_inode);
 		unp->unp_inode = 0;
 	}
@@ -593,7 +594,8 @@ unp_dispose(m)
 {
 	int unp_discard();
 
-	unp_scan(m, unp_discard);
+	if (m)
+		unp_scan(m, unp_discard);
 }
 
 unp_scan(m0, op)
@@ -603,7 +605,7 @@ unp_scan(m0, op)
 	register struct mbuf *m;
 	register struct file **rp;
 	register int i;
-	int qfds = 0;
+	int qfds;
 
 	while (m0) {
 		for (m = m0; m; m = m->m_next)
@@ -614,10 +616,8 @@ unp_scan(m0, op)
 					(*op)(*rp++);
 				break;		/* XXX, but saves time */
 			}
-		m0 = m0->m_next;
+		m0 = m0->m_act;
 	}
-	if (qfds == 0)
-		panic("unp_gcscan");
 }
 
 unp_mark(fp)
