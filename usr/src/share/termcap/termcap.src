@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.108 (Berkeley) %G%
+#	@(#)termcap.src	5.109 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -3251,7 +3251,7 @@ liswb|apple lisa console display, white on black:\
 # underline modes have been added.  Note: this entry describes the "native"
 # capabilities of the PC monochrome display, without ANY emulation; most
 # communications packages (but NOT PC/IX connect) do some kind of emulation.
-ibmpc|ibm pc PC/IX:\
+pc|ibmpc|ibm pc PC/IX:\
 	:li#24:co#80:am:bs:bw:eo:\
 	:cd=\E[J:ce=\E[K:cl=\Ec:cm=\E[%i%2;%2H:do=\E[B:ho=\E[;H:\
 	:nd=\E[C:up=\E[A:so=\E[7m:se=\E[0m:us=\E[4m:ue=\E[0m:
