@@ -1,12 +1,10 @@
 .\" Copyright (c) 1983, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)gcore.1	6.4 (Berkeley) %G%
+.\"	@(#)gcore.1	6.5 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt GCORE 1
 .Os BSD 4.2
@@ -24,14 +22,16 @@ suitable for use with
 or
 .Xr dbx  1  .
 .Sh FILES
-.Dw core.<process-id>
-.Di L
-.Dp Pa core.<process-id>
+.Bl -tag -width core.<process-id> -compact
+.It Pa core.<process-id>
 core images
-.Dp
+.El
 .Sh HISTORY
-.Nm Gcore
-appeared in 4.2 BSD.
+The
+.Nm gcore
+command
+appeared in
+.Bx 4.2 .
 .Sh BUGS
 Paging activity that occurs while
 .Nm gcore
