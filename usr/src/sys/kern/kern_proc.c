@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.18	82/01/19	*/
+/*	kern_proc.c	4.19	82/01/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -557,8 +557,7 @@ done:
 			}
 			/*
 			 * Protect this process from future
-			 * tty signals, clear TSTP/TTIN/TTOU if pending,
-			 * and set SDETACH bit on procs.
+			 * tty signals, clear TSTP/TTIN/TTOU if pending.
 			 */
 			(void) spgrp(q, -1);
 		}
