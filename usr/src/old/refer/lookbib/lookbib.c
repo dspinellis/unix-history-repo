@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)lookbib.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)lookbib.c	4.3 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -32,8 +32,8 @@ char **argv;
 		sprintf (s, "%s", argv[1]);
 		if (access(s, 0) == -1) {
 			perror(s);
-			fputs("\tNeither index file %s.ia ", s, stderr);
-			fputs("nor reference file %s found\n", s, stderr);
+			fprintf(stderr, "\tNeither index file %s.ia ", s);
+			fprintf(stderr, "nor reference file %s found\n", s);
 			exit(1);
 		}
 	}
