@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tt.h	3.24 (Berkeley) %G%
+ *	@(#)tt.h	3.25 (Berkeley) %G%
  */
 
 /*
@@ -59,6 +59,7 @@ struct tt {
 	char tt_availmodes;		/* the display modes supported */
 	char tt_wrap;			/* has auto wrap around */
 	char tt_retain;			/* can retain below (db flag) */
+	short tt_padc;			/* the pad character */
 	int tt_ntoken;			/* number of compression tokens */
 	int tt_token_min;		/* minimun token size */
 	int tt_token_max;		/* maximum token size */
@@ -67,8 +68,17 @@ struct tt {
 
 		/* the frame characters */
 	short *tt_frame;
+
+		/* the output routine */
+	int (*tt_flush)();
 };
 struct tt tt;
+
+/*
+ * tt_padc is used by the compression routine.
+ * It is a short to allow the driver to indicate that there is no padding.
+ */
+#define TT_PADC_NONE 0x100
 
 /*
  * List of terminal drivers.
@@ -104,11 +114,11 @@ int tttputc();
  * These variables have different meanings from the ww_ob* variables.
  * But I'm too lazy to think up different names.
  */
-char tt_ob[512];
+char *tt_ob;
 char *tt_obp;
 char *tt_obe;
 #define ttputc(c)	(tt_obp < tt_obe ? (*tt_obp++ = (c)) \
-				: (ttflush(), *tt_obp++ = (c)))
+				: ((*tt.tt_flush)(), *tt_obp++ = (c)))
 
 /*
  * Convenience macros for the drivers

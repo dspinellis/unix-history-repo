@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)xx.c	3.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)xx.c	3.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -28,8 +28,8 @@ xxinit()
 	if (ttinit() < 0)
 		return -1;
 	xxbufsize = tt.tt_nrow * tt.tt_ncol * 2;
-	/* xcinit may choose to change xxbufsize */
-	if (tt.tt_ntoken > 0 && xcinit() < 0)
+	/* ccinit may choose to change xxbufsize */
+	if (tt.tt_ntoken > 0 && ccinit() < 0)
 		return -1;
 	xxbuf = malloc((unsigned) xxbufsize * sizeof *xxbuf);
 	if (xxbuf == 0) {
@@ -45,7 +45,7 @@ xxstart()
 {
 	(*tt.tt_start)();
 	if (tt.tt_ntoken > 0)
-		xcstart();
+		ccstart();
 	xxreset();			/* might be a restart */
 }
 
@@ -59,8 +59,10 @@ xxend()
 	if (tt.tt_scroll_down)
 		(*tt.tt_scroll_down)(1);
 	(*tt.tt_move)(tt.tt_nrow - 1, 0);
+	if (tt.tt_ntoken > 0)
+		ccend();
 	(*tt.tt_end)();
-	ttflush();
+	(*tt.tt_flush)();
 }
 
 struct xx *
