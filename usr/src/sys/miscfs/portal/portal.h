@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)portal.h	1.1 (Berkeley) %G%
+ *	@(#)portal.h	1.2 (Berkeley) %G%
  *
  * $Id: portal.h,v 1.3 1992/05/30 10:05:24 jsp Exp jsp $
  */
@@ -19,10 +19,11 @@ struct portal_args {
 };
 
 struct portal_cred {
-	uid_t		pcr_uid;	/* From ucred */
-	gid_t		pcr_gid;	/* From ucred */
+	int		pcr_flag;		/* File open mode */
+	uid_t		pcr_uid;		/* From ucred */
+	short		pcr_ngroups;		/* From ucred */
+	gid_t		pcr_groups[NGROUPS];	/* From ucred */
 };
-
 
 #ifdef KERNEL
 struct portalmount {
