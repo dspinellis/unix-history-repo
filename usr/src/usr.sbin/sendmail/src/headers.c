@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.11 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -44,6 +44,7 @@ chompheader(line, def, e)
 	struct hdrinfo *hi;
 	bool cond = FALSE;
 	BITMAP mopts;
+	char buf[MAXNAME];
 	extern ADDRESS *sendto();
 
 	if (tTd(31, 6))
@@ -126,6 +127,30 @@ chompheader(line, def, e)
 		    (strcmp(fvalue, e->e_from.q_paddr) == 0 ||
 		     strcmp(fvalue, e->e_from.q_user) == 0))
 			return (hi->hi_flags);
+#ifdef MAYBENEXTRELEASE		/* XXX UNTESTED XXX UNTESTED XXX UNTESTED XXX */
+#ifdef USERDB
+		else
+		{
+			auto ADDRESS a;
+			char *fancy;
+			extern char *crackaddr();
+			extern char *udbsender();
+
+			fancy = crackaddr(fvalue);
+			if (parseaddr(fvalue, &a, RF_COPYNONE, '\0', NULL, e) != NULL &&
+			    a.q_mailer == LocalMailer &&
+			    (p = udbsender(a.q_user)) != NULL)
+			{
+				char *oldg = macvalue('g', e);
+
+				define('g', p, e);
+				expand(fancy, buf, &buf[sizeof buf], e);
+				define('g', oldg, e);
+				fvalue = buf;
+			}
+		}
+#endif
+#endif
 	}
 
 	/* drop forged Sender: values */
