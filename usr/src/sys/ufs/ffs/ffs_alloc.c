@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	7.37 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	7.38 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -12,6 +12,7 @@
 #include <sys/buf.h>
 #include <sys/proc.h>
 #include <sys/vnode.h>
+#include <sys/mount.h>
 #include <sys/kernel.h>
 #include <sys/syslog.h>
 
@@ -285,15 +286,19 @@ nospace:
  *   2) quadradically rehash into other cylinder groups, until an
  *      available inode is located.
  */
-ffs_valloc (ap)
-	struct vop_valloc_args *ap;
+ffs_valloc(ap)
+	struct vop_valloc_args /* {
+		struct vnode *a_pvp;
+		int a_mode;
+		struct ucred *a_cred;
+		struct vnode **a_vpp;
+	} */ *ap;
 {
-	USES_VOP_VFREE;
-	USES_VOP_VGET;
 	register struct vnode *pvp = ap->a_pvp;
 	register struct inode *pip;
 	register struct fs *fs;
 	register struct inode *ip;
+	mode_t mode = ap->a_mode;
 	ino_t ino, ipref;
 	int cg, error;
 	
@@ -303,24 +308,24 @@ ffs_valloc (ap)
 	if (fs->fs_cstotal.cs_nifree == 0)
 		goto noinodes;
 
-	if ((ap->a_mode & IFMT) == IFDIR)
+	if ((mode & IFMT) == IFDIR)
 		ipref = ffs_dirpref(fs);
 	else
 		ipref = pip->i_number;
 	if (ipref >= fs->fs_ncg * fs->fs_ipg)
 		ipref = 0;
 	cg = itog(fs, ipref);
-	ino = (ino_t)ffs_hashalloc(pip, cg, (long)ipref, ap->a_mode, ffs_ialloccg);
+	ino = (ino_t)ffs_hashalloc(pip, cg, (long)ipref, mode, ffs_ialloccg);
 	if (ino == 0)
 		goto noinodes;
-	error = FFS_VGET(pvp->v_mount, ino, ap->a_vpp);
+	error = VFS_VGET(pvp->v_mount, ino, ap->a_vpp);
 	if (error) {
-		VOP_VFREE(pvp, ino, ap->a_mode);
+		VOP_VFREE(pvp, ino, mode);
 		return (error);
 	}
 	ip = VTOI(*ap->a_vpp);
 	if (ip->i_mode) {
-		printf("ap->a_mode = 0%o, inum = %d, fs = %s\n",
+		printf("mode = 0%o, inum = %d, fs = %s\n",
 		    ip->i_mode, ip->i_number, fs->fs_fsmnt);
 		panic("ffs_valloc: dup alloc");
 	}
@@ -993,21 +998,26 @@ ffs_blkfree(ip, bno, size)
  * The specified inode is placed back in the free map.
  */
 int
-ffs_vfree (ap)
-	struct vop_vfree_args *ap;
+ffs_vfree(ap)
+	struct vop_vfree_args /* {
+		struct vnode *a_pvp;
+		ino_t a_ino;
+		int a_mode;
+	} */ *ap;
 {
 	register struct fs *fs;
 	register struct cg *cgp;
 	register struct inode *pip;
+	ino_t ino = ap->a_ino;
 	struct buf *bp;
 	int error, cg;
 
 	pip = VTOI(ap->a_pvp);
 	fs = pip->i_fs;
-	if ((u_int)ap->a_ino >= fs->fs_ipg * fs->fs_ncg)
-		panic("ifree: range: dev = 0x%x, ap->a_ino = %d, fs = %s\n",
-		    pip->i_dev, ap->a_ino, fs->fs_fsmnt);
-	cg = itog(fs, ap->a_ino);
+	if ((u_int)ino >= fs->fs_ipg * fs->fs_ncg)
+		panic("ifree: range: dev = 0x%x, ino = %d, fs = %s\n",
+		    pip->i_dev, ino, fs->fs_fsmnt);
+	cg = itog(fs, ino);
 #ifdef SECSIZE
 	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize,
 	    fs->fs_dbsize);
@@ -1025,16 +1035,16 @@ ffs_vfree (ap)
 		return (0);
 	}
 	cgp->cg_time = time.tv_sec;
-	ap->a_ino %= fs->fs_ipg;
-	if (isclr(cg_inosused(cgp), ap->a_ino)) {
-		printf("dev = 0x%x, ap->a_ino = %d, fs = %s\n",
-		    pip->i_dev, ap->a_ino, fs->fs_fsmnt);
+	ino %= fs->fs_ipg;
+	if (isclr(cg_inosused(cgp), ino)) {
+		printf("dev = 0x%x, ino = %d, fs = %s\n",
+		    pip->i_dev, ino, fs->fs_fsmnt);
 		if (fs->fs_ronly == 0)
 			panic("ifree: freeing free inode");
 	}
-	clrbit(cg_inosused(cgp), ap->a_ino);
-	if (ap->a_ino < cgp->cg_irotor)
-		cgp->cg_irotor = ap->a_ino;
+	clrbit(cg_inosused(cgp), ino);
+	if (ino < cgp->cg_irotor)
+		cgp->cg_irotor = ino;
 	cgp->cg_cs.cs_nifree++;
 	fs->fs_cstotal.cs_nifree++;
 	fs->fs_cs(fs, cg).cs_nifree++;
