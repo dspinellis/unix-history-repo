@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.61	83/04/06	*/
+/*	kern_proc.c	4.62	83/05/18	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -50,8 +50,8 @@ gethostname()
 	register u_int len;
 
 	len = uap->len;
-	if (len > hostnamelen)
-		len = hostnamelen;
+	if (len > hostnamelen + 1)
+		len = hostnamelen + 1;
 	u.u_error = copyout((caddr_t)hostname, (caddr_t)uap->hostname, len);
 }
 
@@ -68,9 +68,9 @@ sethostname()
 		u.u_error = EINVAL;
 		return;
 	}
-	hostnamelen = uap->len + 1;
+	hostnamelen = uap->len;
 	u.u_error = copyin((caddr_t)uap->hostname, hostname, uap->len);
-	hostname[uap->len] = 0;
+	hostname[hostnamelen] = 0;
 }
 
 /*
@@ -600,7 +600,7 @@ exit(rv)
 	qclean();
 #endif
 #ifdef sun
-	ctxfree(&u);
+	ctxfree(u.u_procp);
 #endif
 	vrelpt(u.u_procp);
 	vrelu(u.u_procp, 0);
