@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.53 (Berkeley) %G%
+.\"	@(#)op.me	8.54 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.53
+Version 8.54
 .sp
 For Sendmail Version 8.7
 .)l
@@ -1338,17 +1338,23 @@ The Errors-To: header is official deprecated
 and will go away in a future release.
 .sh 3 "Apparently-To:"
 .pp
+RFC 822 requires at least one recipient field
+(To:, Cc:, or Bcc: line)
+in every message.
 If a message comes in with no recipients listed in the message
-(in a To:, Cc:, or Bcc: line)
 then
 .i sendmail
-will add an
+will adjust the header based on the
+.q NoRecipientAction
+option.
+One of the possible actions is to add an
 .q "Apparently-To:"
 header line for any recipients it is aware of.
 This is not put in as a standard recipient line
 to warn any recipients that the list is not complete.
 .pp
-At least one recipient line is required under RFC 822.
+The Apparently-To: header is non-standard
+and is deprecated.
 .sh 3 "Precedence"
 .pp
 The Precedence: header can be used as a crude control of message priority.
@@ -4218,15 +4224,6 @@ Set the blank substitution character to
 .i c .
 Unquoted spaces in addresses are replaced by this character.
 Defaults to space (i.e., no change is made).
-.ip BrokenSmtpPeers
-[no short name]
-If set, don't use a two-line SMTP greeting message;
-this breaks some SMTP clients who might try to send mail to you.
-If you set this, it is recommended that you include the word
-``ESMTP''
-somewhere in the
-.b $e
-macro so that other sendmails will use ESMTP instead of SMTP.
 .ip CheckAliases
 [n]
 Validate the RHS of aliases when rebuilding the alias database.
@@ -7405,7 +7402,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.53
+.\"Version 8.54
 .\".ce 0
 .bp 2
 .rs
