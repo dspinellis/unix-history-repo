@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)resume.c 1.6 %G%";
+static char sccsid[] = "@(#)resume.c 1.7 %G%";
 
 /*
  * resume execution, first setting appropriate registers
@@ -141,8 +141,8 @@ LOCAL choose()
 {
     register int c;
 
-    if (!isatty(fileno(stdin))) {
-	if (!isatty(fileno(stderr)) || freopen("/dev/tty", "r", stdin) == NIL) {
+    if (!isterm(stdin)) {
+	if (!isterm(stderr) || freopen("/dev/tty", "r", stdin) == NIL) {
 	    unsetsigtraces(process);
 	    pcont(process);
 	    quit(process->exitval);
