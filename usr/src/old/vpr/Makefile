@@ -1,12 +1,16 @@
 DESTDIR=
 CFLAGS=-O 
-SOURCES=sidebyside.c vcat.c vpac.c vpd.c vpf.c vpq.c vpr.c vprm.c vsort.c
-OBJS=sidebyside vcat vpac vad vpd vpf vpq vpr vprm vsort rvcat rvsort
+SOURCES=sidebyside.c vcat.c vpac.c vpd.c vpf.c \
+	vfontinfo.c vpq.c vpr.c vprm.c vsort.c
+OBJS=sidebyside vcat vpac vad vpd vpf \
+	vfontinfo vpq vpr vprm vsort rvcat rvsort
 
 all:	$(OBJS)
 
 sidebyside: sidebyside.c
 	cc -O -o sidebyside sidebyside.c
+vfontinfo: vfontinfo.c
+	cc -O -o vfontinfo vfontinfo.c
 vcat: vcat.c
 	cc -O -o vcat vcat.c
 vpac: vpac.c
@@ -45,6 +49,7 @@ install: all
 	install -c vtroff.sh ${DESTDIR}/usr/ucb/vtroff
 	install -s rvsort ${DESTDIR}/usr/lib/rvsort
 	install -s rvcat ${DESTDIR}/usr/lib/rvcat
+	install -s vfontinfo ${DESTDIR}/usr/lib/vfontinfo
 
 clean:
 	rm -f ${OBJS}
