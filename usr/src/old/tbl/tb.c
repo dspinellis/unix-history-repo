@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tb.c	4.4 %G%";
+static char sccsid[] = "@(#)tb.c	4.5 %G%";
 #endif
 
  /* tb.c: check which entries exist, also storage allocation */
@@ -74,9 +74,9 @@ if (tpcount<0 || thisvec+n > tpvecs[tpcount]+MAXCHS)
 	if (thisvec == 0)
 		error("no space for vectors");
 	}
-tp=thisvec;
+tp=(int *)thisvec;
 thisvec+=n;
-for(q=tp; q<thisvec; q++)
+for(q=tp; q<(int *)thisvec; q++)
 	*q=0;
 return(tp);
 }
