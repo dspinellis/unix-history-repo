@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)swapgeneric.c	7.2 (Berkeley) %G%
+ *	@(#)swapgeneric.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -49,7 +49,7 @@ setconf()
 {
 	register struct vba_device *ui;
 	register struct genericconf *gc;
-	register char *cp;
+	register char *cp, *gp;
 	int unit, swaponroot = 0;
 
 	if (rootdev != NODEV)
@@ -61,8 +61,8 @@ retry:
 		printf("root device? ");
 		gets(name);
 		for (gc = genericconf; gc->gc_driver; gc++)
-			if (gc->gc_name[0] == name[0] &&
-			    gc->gc_name[1] == name[1])
+		    for (cp = name, gp = gc->gc_name; *cp == *gp; cp++, gp++)
+			if (*gp == 0)
 				goto gotit;
 		printf("use dk%%d\n");
 		goto retry;
