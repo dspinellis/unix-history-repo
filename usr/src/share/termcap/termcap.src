@@ -31,6 +31,13 @@
 #
 #	@(#)termcap.src	5.88 (Berkeley) 4/30/91
 #
+# 
+#  PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+#  --------------------         -----   ----------------------
+#  CURRENT PATCH LEVEL:         1       00156
+#  --------------------         -----   ----------------------
+# 
+#  27 Apr 93	Bruce Evans		A real termcap entry for pc3
 
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -3219,7 +3226,61 @@ pc|ibmpc|ibm pc PC/IX:\
 	:cd=\E[J:ce=\E[K:cl=\Ec:cm=\E[%i%2;%2H:do=\E[B:ho=\E[;H:\
 	:nd=\E[C:up=\E[A:so=\E[7m:se=\E[0m:us=\E[4m:ue=\E[0m:
 pc3|ibmpc3|IBM PC 386BSD Console:\
-        :li#25:tc=pc:
+	:DO=\E[%dB:\
+	:K1=\E[H:\
+	:K2=\E[I:\
+	:K3=\E[E:\
+	:K4=\E[F:\
+	:K5=\E[G:\
+	:LE=\E[%dD:\
+	:RI=\E[%dC:\
+	:UP=\E[%dA:\
+	:am:\
+	:bl=^G:\
+	:bs:\
+	:cb=\E[1K:\
+	:cd=\E[J:\
+	:ce=\E[K:\
+	:cl=\E[H\E[J:\
+	:cm=\E[%i%d;%dH:\
+	:co#80:\
+	:cr=^M:\
+	:do=^J:\
+	:ho=\E[H:\
+	:is=\E[m:\
+	:k0=\E[V:\
+	:k1:\E[M:\
+	:k2:\E[N:\
+	:k3:\E[O:\
+	:k4:\E[P:\
+	:k5:\E[Q:\
+	:k6:\E[R:\
+	:k7:\E[S:\
+	:k8:\E[T:\
+	:k9:\E[U:\
+	:kD=\177:\
+	:kH=\E[F:\
+	:kN=\E[G:\
+	:kP=\E[I:\
+	:kb=\177:\
+	:kd=\E[B:\
+	:kh=\E[H:\
+	:kl=\E[D:\
+	:kr=\E[C:\
+	:ku=\E[A:\
+	:le=^H:\
+	:li#25:\
+	:ms:\
+	:nd=\E[C:\
+	:rs=\E[m:\
+	:se=\E[m:\
+	:sf=\E[S:\
+	:so=\E[7;1r\E[7m:\
+	:sr=\E[T:\
+	:ta=^I:\
+	:te=\E[m:\
+	:ti=\E[m:\
+	:up=\E[A:
 zk|ibmx|ibmpcx|IBM PC xenix console display:\
 	:al=\E[L:am:bs:cd=\E[J:ce=\E[K:cl=^L:cm=\E[%d;%dH:co#80:\
 	:dc=\E[P:dl=\E[M:do=\E[B:ei=:ho=\E[H:ic=\E[@:im=:li#25:\
