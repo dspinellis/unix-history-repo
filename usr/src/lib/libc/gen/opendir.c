@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)opendir.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)opendir.c	8.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -78,6 +78,7 @@ __opendir2(name, flags)
 		int space = 0;
 		char *buf = 0;
 		char *ddptr = 0;
+		char *ddeptr;
 		int n;
 		struct dirent **dpv;
 
@@ -112,6 +113,7 @@ __opendir2(name, flags)
 			}
 		} while (n > 0);
 
+		ddeptr = ddptr;
 		flags |= __DTF_READALL;
 
 		/*
@@ -146,14 +148,14 @@ __opendir2(name, flags)
 		for (dpv = 0;;) {
 			n = 0;
 			ddptr = buf;
-			while (ddptr < buf + len) {
+			while (ddptr < ddeptr) {
 				struct dirent *dp;
 
 				dp = (struct dirent *) ddptr;
 				if ((int)dp & 03)
 					break;
 				if ((dp->d_reclen <= 0) ||
-				    (dp->d_reclen > (buf + len + 1 - ddptr)))
+				    (dp->d_reclen > (ddeptr + 1 - ddptr)))
 					break;
 				ddptr += dp->d_reclen;
 				if (dp->d_fileno) {
