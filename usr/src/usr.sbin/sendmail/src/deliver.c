@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.137		%G%);
+SCCSID(@(#)deliver.c	3.138		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -496,6 +496,7 @@ dofork()
 **		editfcn -- function to pipe it through.
 **		ctladdr -- an address pointer controlling the
 **			user/groupid etc. of the mailer.
+**		crlf -- set if we want CRLF on the end of lines.
 **
 **	Returns:
 **		exit status of mailer.
@@ -505,12 +506,13 @@ dofork()
 */
 
 sendoff(m, pvp, editfcn, ctladdr)
-sendoff(e, m, pvp, ctladdr)
+sendoff(e, m, pvp, ctladdr, crlf)
 	register ENVELOPE *e;
 	MAILER *m;
 	char **pvp;
 	int (*editfcn)();
 	ADDRESS *ctladdr;
+	bool crlf;
 {
 	auto FILE *mfile;
 	auto FILE *rfile;

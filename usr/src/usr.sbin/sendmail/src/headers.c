@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.41		%G%);
+SCCSID(@(#)headers.c	3.42		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -488,6 +488,7 @@ crackaddr(addr)
 **		fp -- file to put it on.
 **		m -- mailer to use.
 **		e -- envelope to use.
+**		crlf -- if set, output CRLF on the end of lines.
 **
 **	Returns:
 **		none.
@@ -496,7 +497,7 @@ crackaddr(addr)
 **		none.
 */
 
-putheader(fp, m, e)
+putheader(fp, m, e, crlf)
 	register FILE *fp;
 	register MAILER *m;
 	register ENVELOPE *e;
@@ -533,13 +534,13 @@ putheader(fp, m, e)
 
 			if (bitset(H_FROM, h->h_flags))
 				oldstyle = FALSE;
-			commaize(h, p, fp, oldstyle, m);
+			commaize(h, p, fp, oldstyle, m, crlf);
 		}
 		else
 		{
 			/* vanilla header line */
 			(void) sprintf(obuf, "%s: %s\n", capitalize(h->h_field), p);
-			putline(obuf, fp, fullsmtp);
+			putline(obuf, fp, crlf, fullsmtp);
 		}
 	}
 }
@@ -553,6 +554,7 @@ putheader(fp, m, e)
 **		oldstyle -- TRUE if this is an old style header.
 **		m -- a pointer to the mailer descriptor.  If NULL,
 **			don't transform the name at all.
+**		crlf -- set if we want CRLF's on the end of lines.
 **
 **	Returns:
 **		none.
@@ -561,12 +563,13 @@ putheader(fp, m, e)
 **		outputs "p" to file "fp".
 */
 
-commaize(h, p, fp, oldstyle, m)
+commaize(h, p, fp, oldstyle, m, crlf)
 	register HDR *h;
 	register char *p;
 	FILE *fp;
 	bool oldstyle;
 	register MAILER *m;
+	bool crlf;
 {
 	register char *obp;
 	int opos;
@@ -663,8 +666,11 @@ commaize(h, p, fp, oldstyle, m)
 			opos += 2;
 		if (opos > 78 && !firstone)
 		{
-			(void) sprintf(obp, ",\n");
-			putline(obuf, fp, fullsmtp);
+			fputc(',', obp);
+			if (crlf)
+				fputc('\r', obp);
+			fputc('\n', obp);
+			putline(obuf, fp, crlf, fullsmtp);
 			obp = obuf;
 			(void) sprintf(obp, "        ");
 			obp += strlen(obp);
@@ -687,7 +693,7 @@ commaize(h, p, fp, oldstyle, m)
 		*p = savechar;
 	}
 	(void) strcpy(obp, "\n");
-	putline(obuf, fp, fullsmtp);
+	putline(obuf, fp, crlf, fullsmtp);
 }
 /*
 **  ISATWORD -- tell if the word we are pointing to is "at".

@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.53		%G%);
+SCCSID(@(#)savemail.c	3.54		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -273,6 +273,7 @@ errhdr(fp, m, xdot)
 	register struct mailer *m;
 	bool xdot;
 	register ENVELOPE *e;
+	bool crlf;
 {
 	char buf[MAXLINE];
 	register FILE *xfile;
@@ -303,7 +304,7 @@ errhdr(fp, m, xdot)
 		if (e->e_xfp != NULL)
 			(void) fflush(e->e_xfp);
 		while (fgets(buf, sizeof buf, xfile) != NULL)
-			putline(buf, fp, fullsmtp);
+			putline(buf, fp, crlf, fullsmtp);
 		(void) fclose(xfile);
 	}
 	errno = 0;
@@ -360,7 +361,7 @@ errhdr(fp, m, xdot)
 		{
 			fprintf(fp, "\n  ----- Message header follows -----\n");
 			(void) fflush(fp);
-			putheader(fp, m, e->e_parent);
+			putheader(fp, m, e->e_parent, crlf);
 		}
 	}
 	else
