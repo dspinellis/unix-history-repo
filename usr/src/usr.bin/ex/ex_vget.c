@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_vget.c	6.5 %G%";
+static char *sccsid = "@(#)ex_vget.c	6.6 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -628,6 +628,7 @@ vgetcnt()
 fastpeekkey()
 {
 	int trapalarm();
+	int (*Oint)();
 	register int c;
 
 	/*
@@ -645,6 +646,7 @@ fastpeekkey()
 	if (trace)
 		fprintf(trace,"\nfastpeekkey: ",c);
 #endif
+	Oint = signal(SIGINT, trapalarm);
 	if (value(TIMEOUT) && inopen >= 0) {
 		signal(SIGALRM, trapalarm);
 #ifdef MDEBUG
@@ -673,10 +675,12 @@ fastpeekkey()
 	if (trace)
 		fprintf(trace,"[fpk:%o]",c);
 #endif
+	signal(SIGINT,Oint);
 	return(c);
 }
 
 trapalarm() {
 	alarm(0);
-	longjmp(vreslab,1);
+	if (vcatch)
+		longjmp(vreslab,1);
 }
