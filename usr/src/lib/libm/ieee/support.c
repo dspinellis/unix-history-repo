@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)support.c	1.1 (Berkeley) 5/23/85; 1.2 (ucb.elefunt) %G%";
+"@(#)support.c	1.1 (Berkeley) 5/23/85; 1.3 (ucb.elefunt) %G%";
 #endif not lint
 
 /* 
@@ -133,7 +133,7 @@ double x;
 #endif
 
 #ifdef VAX
-        return( ((*px & mexp)>>gap) - bias);
+        return (int)(((*px&mexp)>>gap)-bias);
 #else /* IEEE */
         if( (k= *px & mexp ) != mexp )
             if ( k != 0 )
