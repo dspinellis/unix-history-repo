@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	8.4 (Berkeley) %G%
+ *	@(#)spec_vnops.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -141,7 +141,7 @@ spec_open(ap)
 				if ((bdev = chrtoblk(dev)) != NODEV &&
 				    vfinddev(bdev, VBLK, &bvp) &&
 				    bvp->v_usecount > 0 &&
-				    (error = ufs_mountedon(bvp)))
+				    (error = vfs_mountedon(bvp)))
 					return (error);
 				if (iskmemdev(dev))
 					return (EPERM);
@@ -166,7 +166,7 @@ spec_open(ap)
 		 * Do not allow opens of block devices that are
 		 * currently mounted.
 		 */
-		if (error = ufs_mountedon(vp))
+		if (error = vfs_mountedon(vp))
 			return (error);
 		return ((*bdevsw[maj].d_open)(dev, ap->a_mode, S_IFBLK, ap->a_p));
 	}
