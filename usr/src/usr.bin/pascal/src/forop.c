@@ -2,7 +2,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)forop.c	2.1	(Berkeley)	84/02/08";
+static char sccsid[] = "@(#)forop.c	2.2	(Berkeley)	85/03/20";
 #endif
 
 #include	"whoami.h"
@@ -12,7 +12,7 @@ static char sccsid[] = "@(#)forop.c	2.1	(Berkeley)	84/02/08";
 #include	"objfmt.h"
 #ifdef PC
 #    include	"pc.h"
-#    include	"pcops.h"
+#    include	<pcc.h>
 #endif PC
 #include	"tmps.h"
 #include	"tree_ty.h"
@@ -184,7 +184,7 @@ nogood:
 		 * compute and save the initial expression
 		 */
 	    putRV((char *) 0 , cbn , initnlp -> value[ NL_OFFS ] ,
-		    initnlp -> extra_flags , P2INT );
+		    initnlp -> extra_flags , PCCT_INT );
 #	endif PC
 #	ifdef OBJ
 	    (void) put(2, O_LV | cbn<<8+INDX, initnlp -> value[ NL_OFFS ] );
@@ -200,14 +200,14 @@ nogood:
 	    goto byebye;
 	}
 #	ifdef PC
-	    sconv(p2type(inittype), P2INT);
-	    putop( P2ASSIGN , P2INT );
+	    sconv(p2type(inittype), PCCT_INT);
+	    putop( PCC_ASSIGN , PCCT_INT );
 	    putdot( filename , line );
 		/*
 		 * compute and save the termination expression
 		 */
 	    putRV((char *) 0 , cbn , termnlp -> value[ NL_OFFS ] ,
-		    termnlp -> extra_flags , P2INT );
+		    termnlp -> extra_flags , PCCT_INT );
 #	endif PC
 #	ifdef OBJ
 	    (void) gen(O_AS2, O_AS2, sizeof(long), width(inittype));
@@ -226,20 +226,20 @@ nogood:
 	    goto byebye;
 	}
 #	ifdef PC
-	    sconv(p2type(termtype), P2INT);
-	    putop( P2ASSIGN , P2INT );
+	    sconv(p2type(termtype), PCCT_INT);
+	    putop( PCC_ASSIGN , PCCT_INT );
 	    putdot( filename , line );
 		/*
 		 * we can skip the loop altogether if !( init <= term )
 		 */
 	    after = (int) getlab();
 	    putRV((char *) 0 , cbn , initnlp -> value[ NL_OFFS ] ,
-		    initnlp -> extra_flags , P2INT );
+		    initnlp -> extra_flags , PCCT_INT );
 	    putRV((char *) 0 , cbn , termnlp -> value[ NL_OFFS ] ,
-		    termnlp -> extra_flags , P2INT );
-	    putop( ( tree_node->tag == T_FORU ? P2LE : P2GE ) , P2INT );
-	    putleaf( P2ICON , after , 0 , P2INT, (char *) 0 );
-	    putop( P2CBRANCH , P2INT );
+		    termnlp -> extra_flags , PCCT_INT );
+	    putop( ( tree_node->tag == T_FORU ? PCC_LE : PCC_GE ) , PCCT_INT );
+	    putleaf( PCC_ICON , after , 0 , PCCT_INT, (char *) 0 );
+	    putop( PCC_CBRANCH , PCCT_INT );
 	    putdot( filename , line );
 		/*
 		 * okay, so we have to execute the loop body,
@@ -250,7 +250,7 @@ nogood:
 	    if (opt('t')) {
 		precheck(fortype, "_RANG4", "_RSNG4");
 		putRV((char *) 0, cbn, termnlp -> value[NL_OFFS],
-		    termnlp -> extra_flags, P2INT);
+		    termnlp -> extra_flags, PCCT_INT);
 		postcheck(fortype, nl+T4INT);
 		putdot(filename, line);
 	    }
@@ -263,14 +263,14 @@ nogood:
 	    if (opt('t')) {
 		precheck(fortype, "_RANG4", "_RSNG4");
 		putRV((char *) 0, cbn, initnlp -> value[NL_OFFS],
-		    initnlp -> extra_flags, P2INT);
+		    initnlp -> extra_flags, PCCT_INT);
 		postcheck(fortype, nl+T4INT);
 	    } else {
 		putRV((char *) 0, cbn, initnlp -> value[NL_OFFS],
-		    initnlp -> extra_flags, P2INT);
+		    initnlp -> extra_flags, PCCT_INT);
 	    }
-	    sconv(P2INT, forp2type);
-	    putop(P2ASSIGN, forp2type);
+	    sconv(PCCT_INT, forp2type);
+	    putop(PCC_ASSIGN, forp2type);
 	    putdot(filename, line);
 		/*
 		 * put down the label at the top of the loop
@@ -284,7 +284,7 @@ nogood:
 	    (void) lvalue(lhs, NOUSE, RREQ);
 	    putRV((char *) 0, cbn, shadownlp -> value[NL_OFFS],
 		    shadownlp -> extra_flags, forp2type);
-	    putop(P2ASSIGN, forp2type);
+	    putop(PCC_ASSIGN, forp2type);
 	    putdot(filename, line);
 #	endif PC
 #	ifdef OBJ
@@ -358,26 +358,26 @@ nogood:
 #	ifdef PC
 	    if ( opt( 'p' ) ) {
 		if ( opt('t') ) {
-		    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+		    putleaf( PCC_ICON , 0 , 0 , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR )
 			    , "_LINO" );
-		    putop( P2UNARY P2CALL , P2INT );
+		    putop( PCCOM_UNARY PCC_CALL , PCCT_INT );
 		    putdot( filename , line );
 		} else {
-		    putRV( STMTCOUNT , 0 , 0 , NGLOBAL , P2INT );
-		    putleaf( P2ICON , 1 , 0 , P2INT , (char *) 0 );
-		    putop( P2ASG P2PLUS , P2INT );
+		    putRV( STMTCOUNT , 0 , 0 , NGLOBAL , PCCT_INT );
+		    putleaf( PCC_ICON , 1 , 0 , PCCT_INT , (char *) 0 );
+		    putop( PCCOM_ASG PCC_PLUS , PCCT_INT );
 		    putdot( filename , line );
 		}
 	    }
 	    /*rvalue( lhs_node , NIL , RREQ );*/
 	    putRV( (char *) 0 , cbn , shadownlp -> value[ NL_OFFS ] ,
 		    shadownlp -> extra_flags , forp2type );
-	    sconv(forp2type, P2INT);
+	    sconv(forp2type, PCCT_INT);
 	    putRV( (char *) 0 , cbn , termnlp -> value[ NL_OFFS ] ,
-		    termnlp -> extra_flags , P2INT );
-	    putop( ( tree_node->tag == T_FORU ? P2LT : P2GT ) , P2INT );
-	    putleaf( P2ICON , after , 0 , P2INT , (char *) 0 );
-	    putop( P2CBRANCH , P2INT );
+		    termnlp -> extra_flags , PCCT_INT );
+	    putop( ( tree_node->tag == T_FORU ? PCC_LT : PCC_GT ) , PCCT_INT );
+	    putleaf( PCC_ICON , after , 0 , PCCT_INT , (char *) 0 );
+	    putop( PCC_CBRANCH , PCCT_INT );
 	    putdot( filename , line );
 		/*
 		 * okay, so we have to do it again,
@@ -391,11 +391,11 @@ nogood:
 	    /*rvalue( lhs_node , NIL , RREQ );*/
 	    putRV( (char *) 0 , cbn , shadownlp -> value[ NL_OFFS ] ,
 		    shadownlp -> extra_flags , forp2type );
-	    sconv(forp2type, P2INT);
-	    putleaf( P2ICON , 1 , 0 , P2INT , (char *) 0 );
-	    putop( ( tree_node->tag == T_FORU ? P2PLUS : P2MINUS ) , P2INT );
-	    sconv(P2INT, forp2type);
-	    putop( P2ASSIGN , forp2type );
+	    sconv(forp2type, PCCT_INT);
+	    putleaf( PCC_ICON , 1 , 0 , PCCT_INT , (char *) 0 );
+	    putop( ( tree_node->tag == T_FORU ? PCC_PLUS : PCC_MINUS ) , PCCT_INT );
+	    sconv(PCCT_INT, forp2type);
+	    putop( PCC_ASSIGN , forp2type );
 	    putdot( filename , line );
 		/*
 		 * and do it all again

@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static char sccsid[] = "@(#)pccaseop.c 2.2 %G%";
+static char sccsid[] = "@(#)pccaseop.c 2.3 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -10,7 +10,7 @@ static char sccsid[] = "@(#)pccaseop.c 2.2 %G%";
 #include "0.h"
 #include "tree.h"
 #include "objfmt.h"
-#include "pcops.h"
+#include <pcc.h>
 #include "pc.h"
 #include "tmps.h"
 
@@ -25,7 +25,7 @@ struct ct {
 };
 
     /*
-     *	the P2FORCE operator puts its operand into a register.
+     *	the PCC_FORCE operator puts its operand into a register.
      *	these to keep from thinking of it as r0 all over.
      */
 #define	FORCENAME	"r0"
@@ -104,11 +104,12 @@ pccaseop( tcase )
 	exprctype = p2type( exprtype );
 	exprnlp = tmpalloc( sizeof (long) , nl + T4INT , NOREG );
 	putRV( 0 , cbn , exprnlp -> value[ NL_OFFS ] ,
-			exprnlp -> extra_flags , P2INT );
+			exprnlp -> extra_flags , PCCT_INT );
 	(void) rvalue( (int *) tcase[2] , NIL , RREQ );
 	sconv(exprctype, P2INT);
-	putop( P2ASSIGN , P2INT );
-	putop( P2FORCE , P2INT );
+	sconv((int) exprctype, (int) PCCT_INT);
+	putop( PCC_ASSIGN , PCCT_INT );
+	putop( PCC_FORCE , PCCT_INT );
 	putdot( filename , line );
 	swlabel = getlab();
 	putjbr( swlabel );
@@ -192,10 +193,10 @@ pccaseop( tcase )
 	 *	default action is to call error
 	 */
     putlab( ctab[0].clabel );
-    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_CASERNG" );
+    putleaf( PCC_ICON , 0 , 0 , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR ) , "_CASERNG" );
     putRV( 0 , cbn , exprnlp -> value[ NL_OFFS ] ,
-		    exprnlp -> extra_flags , P2INT );
-    putop( P2CALL , P2INT );
+		    exprnlp -> extra_flags , PCCT_INT );
+    putop( PCC_CALL , PCCT_INT );
     putdot( filename , line );
 	/*
 	 *  sort the cases

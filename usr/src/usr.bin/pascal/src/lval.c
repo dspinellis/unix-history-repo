@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)lval.c 2.1 %G%";
+static char sccsid[] = "@(#)lval.c 2.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -9,7 +9,7 @@ static char sccsid[] = "@(#)lval.c 2.1 %G%";
 #include "objfmt.h"
 #ifdef PC
 #   include	"pc.h"
-#   include	"pcops.h"
+#   include	<pcc.h>
 #endif PC
 
 extern	int flagwas;
@@ -376,7 +376,7 @@ arycod(np, el)
 		    }
 #		    ifdef PC
 			postcheck(p, ap);
-			sconv(p2type(ap),P2INT);
+			sconv(p2type(ap),PCCT_INT);
 #		    endif PC
 		}
 		if (incompat(ap, p->type, el[1])) {
@@ -440,7 +440,8 @@ arycod(np, el)
 			sub *= w;
 			if (sub != 0) {
 			    putleaf( P2ICON , sub , 0 , P2INT , 0 );
-			    putop(P2PLUS, ADDTYPE(p2type(np->type), P2PTR));
+			    putleaf( PCC_ICON , (int) sub , 0 , PCCT_INT , (char *) 0 );
+			    putop(PCC_PLUS, PCCM_ADDTYPE(p2type(np->type), PCCTM_PTR));
 			}
 			el = el[2];
 			continue;
@@ -449,24 +450,24 @@ arycod(np, el)
 			/*
 			 *	if conformant array, subtract off lower bound
 			 */
-			putop( P2MUL , P2INT );
+			putop( PCC_MUL , PCCT_INT );
 		    } else {
 			if ( p -> range[ 0 ] != 0 ) {
-			    putleaf( P2ICON , (int) p -> range[0] , 0 , P2INT , (char *) 0 );
-			    putop( P2MINUS , P2INT );
+			    putleaf( PCC_ICON , (int) p -> range[0] , 0 , PCCT_INT , (char *) 0 );
+			    putop( PCC_MINUS , PCCT_INT );
 			}
 			    /*
 			     *	multiply by the width of the elements
 			     */
 			if ( w != 1 ) {
-			    putleaf( P2ICON , w , 0 , P2INT , (char *) 0 );
-			    putop( P2MUL , P2INT );
+			    putleaf( PCC_ICON , w , 0 , PCCT_INT , (char *) 0 );
+			    putop( PCC_MUL , PCCT_INT );
 			}
 		    }
 			/*
 			 *	and add it to the base address
 			 */
-		    putop( P2PLUS , ADDTYPE( p2type( np -> type ) , P2PTR ) );
+		    putop( PCC_PLUS , PCCM_ADDTYPE( p2type( np -> type ) , PCCTM_PTR ) );
 #		endif PC
 		el = el[2];
 	}

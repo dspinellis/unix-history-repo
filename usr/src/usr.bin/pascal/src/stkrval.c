@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)stkrval.c 2.1 %G%";
+static char sccsid[] = "@(#)stkrval.c 2.2 %G%";
 #endif
 
 #include "whoami.h"
@@ -10,7 +10,7 @@ static char sccsid[] = "@(#)stkrval.c 2.1 %G%";
 #include "opcode.h"
 #include "objfmt.h"
 #ifdef PC
-#   include "pcops.h"
+#   include <pcc.h>
 #endif PC
 #include "tree_ty.h"
 
@@ -62,7 +62,7 @@ stkrval(r, contype , required )
 		    (void) put(2, O_CON14, 0);
 #		endif OBJ
 #		ifdef PC
-		    putleaf( P2ICON , 0 , 0 , P2INT , (char *) 0 );
+		    putleaf( PCC_ICON , 0 , 0 , PCCT_INT , (char *) 0 );
 #		endif PC
 		return (nl+TNIL);
 
@@ -92,7 +92,7 @@ stkrval(r, contype , required )
 #			ifdef PC
 			    q = rvalue( r , contype , (int) required );
 			    if (isa(q, "sbci")) {
-				sconv(p2type(q),P2INT);
+				sconv(p2type(q),PCCT_INT);
 			    }
 			    return q;
 #			endif PC
@@ -132,9 +132,9 @@ ind:
 #			endif OBJ
 #			ifdef PC
 			    if ( required == RREQ ) {
-				putop( P2UNARY P2MUL , p2type( q ) );
+				putop( PCCOM_UNARY PCC_MUL , p2type( q ) );
 				if (isa(q,"sbci")) {
-				    sconv(p2type(q),P2INT);
+				    sconv(p2type(q),PCCT_INT);
 				}
 			    }
 			    return q;
@@ -188,7 +188,7 @@ cstrng:
 				(void) put(2, O_CONC4, (int)p->value[0]);
 #			    endif OBJ
 #			    ifdef PC
-				putleaf(P2ICON, p -> value[0], 0, P2INT, 
+				putleaf(PCC_ICON, p -> value[0], 0, PCCT_INT, 
 						(char *) 0);
 #			    endif PC
 			    return(q);
@@ -228,7 +228,7 @@ cstrng:
 #			ifdef PC
 			    q = rvalue( r , contype , (int) required );
 			    if (isa(q,"sbci")) {
-				sconv(p2type(q),P2INT);
+				sconv(p2type(q),PCCT_INT);
 			    }
 			    return q;
 #			endif PC
@@ -267,7 +267,7 @@ cstrng:
 #			ifdef PC
 			    p = pcfunccod( r );
 			    if (isa(p,"sbci")) {
-				sconv(p2type(p),P2INT);
+				sconv(p2type(p),PCCT_INT);
 			    }
 #			endif PC
 			return (p);
@@ -308,7 +308,7 @@ cstrng:
 #		endif OBJ
 #		ifdef PC
 		    if (isa(p,"sbci")) {
-			sconv(p2type(p),P2INT);
+			sconv(p2type(p),PCCT_INT);
 		    }
 #		endif PC
 		return (p);
@@ -345,7 +345,7 @@ conint:
 				(void) put(2, O_CON24, (short)l);
 #			    endif OBJ
 #			    ifdef PC
-				putleaf( P2ICON , (short) l , 0 , P2INT , 
+				putleaf( PCC_ICON , (short) l , 0 , PCCT_INT , 
 						(char *) 0 );
 #			    endif PC
 				return(nl+T4INT);
@@ -354,7 +354,7 @@ conint:
 			    (void) put(2, O_CON4, l); 
 #			endif OBJ
 #			ifdef PC
-			    putleaf( P2ICON , (int) l , 0 , P2INT , (char *) 0 );
+			    putleaf( PCC_ICON , (int) l , 0 , PCCT_INT , (char *) 0 );
 #			endif PC
 			return (nl+T4INT);
 	
@@ -382,7 +382,7 @@ conint:
 				    (void) put(2, O_CONC4, cp[0]);
 #				endif OBJ
 #				ifdef PC
-				    putleaf( P2ICON , cp[0] , 0 , P2INT , 
+				    putleaf( PCC_ICON , cp[0] , 0 , PCCT_INT , 
 						(char *) 0 );
 #				endif PC
 				return(nl+T1CHAR);

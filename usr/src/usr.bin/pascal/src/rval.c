@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)rval.c 2.2 %G%";
+static char sccsid[] = "@(#)rval.c 2.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -9,7 +9,7 @@ static char sccsid[] = "@(#)rval.c 2.2 %G%";
 #include "objfmt.h"
 #ifdef PC
 #   include	"pc.h"
-#   include "pcops.h"
+#   include <pcc.h>
 #endif PC
 #include "tmps.h"
 
@@ -32,11 +32,11 @@ short nssetline = 0;
 				"_RELSLE" , "_RELSGE"
 			    };
     long	relops[] =  {	
-				P2EQ , P2NE ,
-				P2LT , P2GT ,
-				P2LE , P2GE 
+				PCC_EQ , PCC_NE ,
+				PCC_LT , PCC_GT ,
+				PCC_LE , PCC_GE 
 			    };
-    long	mathop[] =  {	P2MUL , P2PLUS , P2MINUS };
+    long	mathop[] =  {	PCC_MUL , PCC_PLUS , PCC_MINUS };
     char	*setop[] =  {	"_MULT" , "_ADDT" , "_SUBT" };
 #endif PC
 /*
@@ -190,7 +190,7 @@ ind:
 #			    endif OBJ
 #			    ifdef PC
 				if ( required == RREQ ) {
-				    putop( P2UNARY P2MUL , p2type( q ) );
+				    putop( PCCOM_UNARY PCC_MUL , p2type( q ) );
 				}
 #			    endif PC
 			    return (q);
@@ -243,8 +243,6 @@ cstrng:
 					put(2, O_CONC, (int)p->value[0]);
 #				    endif OBJ
 #				    ifdef PC
-					putleaf( P2ICON , p -> value[0] , 0
-						, P2CHAR , 0 );
 #				    endif PC
 				    return (q);
 			    }
@@ -289,8 +287,6 @@ cstrng:
 					put(2, O_CON2, (short)p->range[0]);
 #				    endif OBJ
 #				    ifdef PC
-					putleaf( P2ICON , (short) p -> range[0]
-						, 0 , P2SHORT , 0 );
 #				    endif PC
 				    break;
 			    case 1:
@@ -298,8 +294,6 @@ cstrng:
 					put(2, O_CON1, p->value[0]);
 #				    endif OBJ
 #				    ifdef PC
-					putleaf( P2ICON , p -> value[0] , 0
-						, P2CHAR , 0 );
 #				    endif PC
 				    break;
 			    default:
@@ -362,8 +356,8 @@ cstrng:
 			}
 			postcset( r , &csetd );
 		    } else {
-			putleaf( P2ICON , 0 , 0
-				, ADDTYPE( P2FTN | P2INT , P2PTR )
+			putleaf( PCC_ICON , 0 , 0
+				, PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR )
 				, "_CTTOT" );
 			/*
 			 *	allocate a temporary and use it
@@ -371,14 +365,15 @@ cstrng:
 			tempnlp = tmpalloc(lwidth(csetd.csettype),
 				csetd.csettype, NOREG);
 			putLV( 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
-				tempnlp -> extra_flags , P2PTR|P2STRTY );
+				tempnlp -> extra_flags , PCCTM_PTR|PCCT_STRTY );
 			setran( ( csetd.csettype ) -> type );
 			putleaf( P2ICON , set.lwrb , 0 , P2INT , 0 );
-			putop( P2LISTOP , P2INT );
-			putleaf( P2ICON , set.uprbp , 0 , P2INT , 0 );
-			putop( P2LISTOP , P2INT );
+			putleaf( PCC_ICON , set.lwrb , 0 , PCCT_INT , (char *) 0 );
+			putop( PCC_CM , PCCT_INT );
+			putleaf( PCC_ICON , set.uprbp , 0 , PCCT_INT , (char *) 0 );
+			putop( PCC_CM , PCCT_INT );
 			postcset( r , &csetd );
-			putop( P2CALL , P2INT );
+			putop( PCC_CALL , PCCT_INT );
 		    }
 		    return csetd.csettype;
 #		endif PC
@@ -402,11 +397,11 @@ cstrng:
 #		    endif OBJ
 #		    ifdef PC
 			if (isa(q, "i")) {
-			    sconv(p2type(q), P2INT);
-			    putop( P2UNARY P2MINUS, P2INT);
+			    sconv(p2type(q), PCCT_INT);
+			    putop( PCCOM_UNARY PCC_MINUS, PCCT_INT);
 			    return nl+T4INT;
 			}
-			putop( P2UNARY P2MINUS, P2DOUBLE);
+			putop( PCCOM_UNARY PCC_MINUS, PCCT_DOUBLE);
 			return nl+TDOUBLE;
 #		    endif PC
 		}
@@ -424,9 +419,9 @@ cstrng:
 		    put(1, O_NOT);
 #		endif OBJ
 #		ifdef PC
-		    sconv(p2type(q), P2INT);
-		    putop( P2NOT , P2INT);
-		    sconv(P2INT, p2type(q));
+		    sconv(p2type(q), PCCT_INT);
+		    putop( PCC_NOT , PCCT_INT);
+		    sconv(PCCT_INT, p2type(q));
 #		endif PC
 		return (nl+T1BOOL);
 
@@ -434,11 +429,11 @@ cstrng:
 	case T_OR:
 		p = rvalue(r[2], NIL , RREQ );
 #		ifdef PC
-		    sconv(p2type(p),P2INT);
+		    sconv(p2type(p),PCCT_INT);
 #		endif PC
 		p1 = rvalue(r[3], NIL , RREQ );
 #		ifdef PC
-		    sconv(p2type(p1),P2INT);
+		    sconv(p2type(p1),PCCT_INT);
 #		endif PC
 		if (p == NIL || p1 == NIL)
 			return (NIL);
@@ -459,7 +454,8 @@ cstrng:
 			 * to force evaluation of all the expressions.
 			 */
 		    putop( r[ 0 ] == T_AND ? P2AND : P2OR , P2INT );
-		    sconv(P2INT, p2type(p));
+		    putop( r->tag == T_AND ? PCC_AND : PCC_OR , PCCT_INT );
+		    sconv(PCCT_INT, p2type(p));
 #		endif PC
 		return (nl+T1BOOL);
 
@@ -473,9 +469,9 @@ cstrng:
 			 *	force these to be doubles for the divide
 			 */
 		    p = rvalue( r[ 2 ] , NIL , RREQ );
-		    sconv(p2type(p), P2DOUBLE);
+		    sconv(p2type(p), PCCT_DOUBLE);
 		    p1 = rvalue( r[ 3 ] , NIL , RREQ );
-		    sconv(p2type(p1), P2DOUBLE);
+		    sconv(p2type(p1), PCCT_DOUBLE);
 #		endif PC
 		if (p == NIL || p1 == NIL)
 			return (NIL);
@@ -491,7 +487,7 @@ cstrng:
 		    return gen(NIL, r[0], width(p), width(p1));
 #		endif OBJ
 #		ifdef PC
-		    putop( P2DIV , P2DOUBLE );
+		    putop( PCC_DIV , PCCT_DOUBLE );
 		    return nl + TDOUBLE;
 #		endif PC
 
@@ -569,9 +565,9 @@ cstrng:
 			}
 		    }
 		    if ( isa( p1 , "t" ) ) {
-			putleaf( P2ICON , 0 , 0
-			    , ADDTYPE( ADDTYPE( P2PTR | P2STRTY , P2FTN )
-					, P2PTR )
+			putleaf( PCC_ICON , 0 , 0
+			    , PCCM_ADDTYPE( PCCM_ADDTYPE( PCCTM_PTR | PCCT_STRTY , PCCTM_FTN )
+					, PCCTM_PTR )
 			    , setop[ r[0] - T_MULT ] );
 			    return NIL;
 			}
@@ -580,10 +576,10 @@ cstrng:
 			     */
 			tempnlp = tmpalloc(lwidth(contype), contype, NOREG);
 			putLV( 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
-				tempnlp -> extra_flags , P2PTR|P2STRTY );
+				tempnlp -> extra_flags , PCCTM_PTR|PCCT_STRTY );
 			p = rvalue( r[2] , contype , LREQ );
 			if ( isa( p , "t" ) ) {
-			    putop( P2LISTOP , P2INT );
+			    putop( PCC_CM , PCCT_INT );
 			    if ( p == NLNIL || p1 == NLNIL ) {
 				return NIL;
 			    }
@@ -592,11 +588,11 @@ cstrng:
 				error("Set types of operands of %s must be identical", opname);
 				return NIL;
 			    }
-			    putop( P2LISTOP , P2INT );
-			    putleaf( P2ICON , lwidth( p1 ) / sizeof( long ) , 0
-				    , P2INT , 0 );
-			    putop( P2LISTOP , P2INT );
-			    putop( P2CALL , P2PTR | P2STRTY );
+			    putop( PCC_CM , PCCT_INT );
+			    putleaf( PCC_ICON , (int) (lwidth(p1)) / sizeof( long ) , 0
+				    , PCCT_INT , (char *) 0 );
+			    putop( PCC_CM , PCCT_INT );
+			    putop( PCC_CALL , PCCTM_PTR | PCCT_STRTY );
 			    return p;
 			}
 		    }
@@ -628,11 +624,11 @@ cstrng:
 	case T_DIV:
 		p = rvalue(r[2], NIL , RREQ );
 #		ifdef PC
-		    sconv(p2type(p), P2INT);
+		    sconv(p2type(p), PCCT_INT);
 #		endif PC
 		p1 = rvalue(r[3], NIL , RREQ );
 #		ifdef PC
-		    sconv(p2type(p1), P2INT);
+		    sconv(p2type(p1), PCCT_INT);
 #		endif PC
 		if (p == NLNIL || p1 == NLNIL)
 			return (NIL);
@@ -714,8 +710,8 @@ cstrng:
 #		ifdef PC
 		    c1 = classify( p1 );
 		    if ( c1 == TSET || c1 == TSTR || c1 == TREC ) {
-			putleaf( P2ICON , 0 , 0
-				, ADDTYPE( P2FTN | P2INT , P2PTR )
+			putleaf( PCC_ICON , 0 , 0
+				, PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR )
 				, c1 == TSET  ? relts[ r[0] - T_EQ ]
 					      : relss[ r[0] - T_EQ ] );
 			    /*
@@ -755,13 +751,13 @@ cstrng:
 			if ( p == NIL ) {
 			    return NIL;
 			}
-			putop( P2LISTOP , P2INT );
+			putop( PCC_CM , PCCT_INT );
 			p1 = rvalue( r[ 3 ] , p , LREQ );
 			if ( p1 == NIL ) {
 			    return NIL;
 			}
-			putop( P2LISTOP , P2INT );
-			putop( P2CALL , P2INT );
+			putop( PCC_CM , PCCT_INT );
+			putop( PCC_CALL , PCCT_INT );
 		    } else {
 			    /*
 			     *	the easy (scalar or error) case
@@ -782,7 +778,8 @@ cstrng:
 			}
 			tuac(p1, p, &rettype, &ctype);
 			putop( relops[ r[0] - T_EQ ] , P2INT );
-			sconv(P2INT, P2CHAR);
+			putop((int) relops[ r->tag - T_EQ ] , PCCT_INT );
+			sconv(PCCT_INT, PCCT_CHAR);
 		    }
 #		endif PC
 		c = classify(p);
@@ -887,20 +884,20 @@ nonident:
 #		ifdef PC
 		    if (rt != NIL && rt[0] == T_CSET) {
 			if ( precset( rt , NIL , &csetd ) ) {
-			    putleaf( P2ICON , 0 , 0
-				    , ADDTYPE( P2FTN | P2INT , P2PTR )
+			    putleaf( PCC_ICON , 0 , 0
+				    , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR )
 				    , "_IN" );
 			} else {
-			    putleaf( P2ICON , 0 , 0
-				    , ADDTYPE( P2FTN | P2INT , P2PTR )
+			    putleaf( PCC_ICON , 0 , 0
+				    , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR )
 				    , "_INCT" );
 			}
 			p1 = csetd.csettype;
 			if (p1 == NIL)
 			    return NIL;
 		    } else {
-			putleaf( P2ICON , 0 , 0
-				, ADDTYPE( P2FTN | P2INT , P2PTR )
+			putleaf( PCC_ICON , 0 , 0
+				, PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR )
 				, "_IN" );
 			codeoff();
 			p1 = rvalue(r[3], NIL , LREQ );
@@ -929,26 +926,28 @@ nonident:
 #		ifdef PC
 		    if ( rt == NIL || rt[0] != T_CSET ) {
 			putleaf( P2ICON , set.lwrb , 0 , P2INT , 0 );
-			putop( P2LISTOP , P2INT );
-			putleaf( P2ICON , set.uprbp , 0 , P2INT , 0 );
-			putop( P2LISTOP , P2INT );
+			putleaf( PCC_ICON , set.lwrb , 0 , PCCT_INT , (char *) 0 );
+			putop( PCC_CM , PCCT_INT );
+			putleaf( PCC_ICON , set.uprbp , 0 , PCCT_INT , (char *) 0 );
+			putop( PCC_CM , PCCT_INT );
 			p1 = rvalue( r[3] , NIL , LREQ );
 			if ( p1 == NIL ) {
 			    return NIL;
 			}
-			putop( P2LISTOP , P2INT );
+			putop( PCC_CM , PCCT_INT );
 		    } else if ( csetd.comptime ) {
 			putleaf( P2ICON , set.lwrb , 0 , P2INT , 0 );
-			putop( P2LISTOP , P2INT );
-			putleaf( P2ICON , set.uprbp , 0 , P2INT , 0 );
-			putop( P2LISTOP , P2INT );
+			putleaf( PCC_ICON , set.lwrb , 0 , PCCT_INT , (char *) 0 );
+			putop( PCC_CM , PCCT_INT );
+			putleaf( PCC_ICON , set.uprbp , 0 , PCCT_INT , (char *) 0 );
+			putop( PCC_CM , PCCT_INT );
 			postcset( r[3] , &csetd );
-			putop( P2LISTOP , P2INT );
+			putop( PCC_CM , PCCT_INT );
 		    } else {
 			postcset( r[3] , &csetd );
 		    }
-		    putop( P2CALL , P2INT );
-		    sconv(P2INT, P2CHAR);
+		    putop( PCC_CALL , PCCT_INT );
+		    sconv(PCCT_INT, PCCT_CHAR);
 #		endif PC
 		return (nl+T1BOOL);
 	default:

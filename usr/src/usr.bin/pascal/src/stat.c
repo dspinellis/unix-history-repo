@@ -1,13 +1,13 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)stat.c 2.1 %G%";
+static char sccsid[] = "@(#)stat.c 2.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
 #include "tree.h"
 #include "objfmt.h"
 #ifdef PC
-#   include "pcops.h"
+#   include <pcc.h>
 #   include "pc.h"
 #endif PC
 #include "tmps.h"
@@ -174,9 +174,9 @@ inccnt( counter )
 	    put(2, O_COUNT, counter );
 #	endif OBJ
 #	ifdef PC
-	    putRV( PCPCOUNT , 0 , counter * sizeof (long) , NGLOBAL , P2INT );
-	    putleaf( P2ICON , 1 , 0 , P2INT , 0 );
-	    putop( P2ASG P2PLUS , P2INT );
+	    putRV( PCPCOUNT , 0 , counter * sizeof (long) , NGLOBAL , PCCT_INT );
+	    putleaf( PCC_ICON , 1 , 0 , PCCT_INT , (char *) 0 );
+	    putop( PCCOM_ASG PCC_PLUS , PCCT_INT );
 	    putdot( filename , line );
 #	endif PC
     }
@@ -203,14 +203,14 @@ putline()
 	    }
 	    if ( opt( 'p' ) ) {
 		if ( opt('t') ) {
-		    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+		    putleaf( PCC_ICON , 0 , 0 , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR )
 			    , "_LINO" );
-		    putop( P2UNARY P2CALL , P2INT );
+		    putop( PCCOM_UNARY PCC_CALL , PCCT_INT );
 		    putdot( filename , line );
 		} else {
-		    putRV( STMTCOUNT , 0 , 0 , NGLOBAL , P2INT );
-		    putleaf( P2ICON , 1 , 0 , P2INT , 0 );
-		    putop( P2ASG P2PLUS , P2INT );
+		    putRV( STMTCOUNT , 0 , 0 , NGLOBAL , PCCT_INT );
+		    putleaf( PCC_ICON , 1 , 0 , PCCT_INT , (char *) 0 );
+		    putop( PCCOM_ASG PCC_PLUS , PCCT_INT );
 		    putdot( filename , line );
 		}
 	    }
@@ -248,7 +248,7 @@ withop(s)
 #		endif OBJ
 #		ifdef PC
 		    putRV( 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
-			    tempnlp -> extra_flags , P2PTR|P2STRTY );
+			    tempnlp -> extra_flags , PCCTM_PTR|PCCT_STRTY );
 #		endif PC
 		r = lvalue(p[1], MOD , LREQ );
 		if (r == NIL)
@@ -267,7 +267,7 @@ withop(s)
 		    put(1, PTR_AS);
 #		endif OBJ
 #		ifdef PC
-		    putop( P2ASSIGN , P2PTR|P2STRTY );
+		    putop( PCC_ASSIGN , PCCTM_PTR|PCCT_STRTY );
 		    putdot( filename , line );
 #		endif PC
 	}
@@ -474,20 +474,20 @@ asgnop1(r, p)
 		    case TSCAL:
 			    postcheck(p, p1);
 			    sconv(p2type(p1), p2type(p));
-			    putop( P2ASSIGN , p2type( p ) );
+			    putop( PCC_ASSIGN , p2type( p ) );
 			    putdot( filename , line );
 			    break;
 		    case TPTR:
-			    putop( P2ASSIGN , p2type( p ) );
+			    putop( PCC_ASSIGN , p2type( p ) );
 			    putdot( filename , line );
 			    break;
 		    case TDOUBLE:
 			    sconv(p2type(p1), p2type(p));
-			    putop( P2ASSIGN , p2type( p ) );
+			    putop( PCC_ASSIGN , p2type( p ) );
 			    putdot( filename , line );
 			    break;
 		    default:
-			    putstrop(P2STASG, ADDTYPE(p2type(p), P2PTR),
+			    putstrop(PCC_STASG, PCCM_ADDTYPE(p2type(p), PCCTM_PTR),
 					lwidth(p), align(p));
 			    putdot( filename , line );
 			    break;
@@ -511,14 +511,14 @@ pcasgconf(r, p)
 
 	if (r == (ASG_NODE *) TR_NIL || p == NLNIL)
 		return NLNIL;
-	putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR) , "_blkcpy" );
+	putleaf( PCC_ICON , 0 , 0 , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR) , "_blkcpy" );
 	p1 = rvalue( r->rhs_expr , p , LREQ );
 	if (p1 == NLNIL)
 		return NLNIL;
 	p = lvalue( r->lhs_var , MOD|ASGN|NOUSE , LREQ );
 	if (p == NLNIL)
 		return NLNIL;
-	putop(P2LISTOP, P2INT);
+	putop(PCC_CM, PCCT_INT);
 		/* upper bound */
 	p1 = p->chain->nptr[1];
 	putRV(p1->symbol, (p1->nl_block & 037), p1->value[0],
@@ -527,17 +527,17 @@ pcasgconf(r, p)
 	p1 = p->chain->nptr[0];
 	putRV(p1->symbol, (p1->nl_block & 037), p1->value[0],
 	    p1->extra_flags, p2type( p1 ) );
-	putop( P2MINUS, P2INT );
+	putop( PCC_MINUS, PCCT_INT );
 		/* add one */
-	putleaf(P2ICON, 1, 0, P2INT, 0);
-	putop( P2PLUS, P2INT );
+	putleaf(PCC_ICON, 1, 0, PCCT_INT, 0);
+	putop( PCC_PLUS, PCCT_INT );
 		/* and multiply by the width */
 	p1 = p->chain->nptr[2];
 	putRV(p1->symbol, (p1->nl_block & 037), p1->value[0],
 	    p1->extra_flags, p2type( p1 ) );
-	putop( P2MUL , P2INT );
-	putop(P2LISTOP, P2INT);
-	putop(P2CALL, P2INT);
+	putop( PCC_MUL , PCCT_INT );
+	putop(PCC_CM, PCCT_INT);
+	putop(PCC_CALL, PCCT_INT);
 	putdot( filename , line);
 	return p;
 }
@@ -580,7 +580,8 @@ ifop(r)
 #	ifdef PC
 	    l1 = getlab();
 	    putleaf( P2ICON , l1 , 0 , P2INT , 0 );
-	    putop( P2CBRANCH , P2INT );
+	    putleaf( PCC_ICON , l1 , 0 , PCCT_INT , (char *) 0 );
+	    putop( PCC_CBRANCH , PCCT_INT );
 	    putdot( filename , line );
 #	endif PC
 	putcnt();
@@ -645,7 +646,8 @@ whilop(r)
 #	endif OBJ
 #	ifdef PC
 	    putleaf( P2ICON , l2 , 0 , P2INT , 0 );
-	    putop( P2CBRANCH , P2INT );
+	    putleaf( PCC_ICON , (int) l2 , 0 , PCCT_INT , (char *) 0 );
+	    putop( PCC_CBRANCH , PCCT_INT );
 	    putdot( filename , line );
 #	endif PC
 	putcnt();
@@ -690,7 +692,8 @@ repop(r)
 #	endif OBJ
 #	ifdef PC
 	    putleaf( P2ICON , l , 0 , P2INT , 0 );
-	    putop( P2CBRANCH , P2INT );
+	    putleaf( PCC_ICON , l , 0 , PCCT_INT , (char *) 0 );
+	    putop( PCC_CBRANCH , PCCT_INT );
 	    putdot( filename , line );
 #	endif PC
 	if (goc != gocnt)

@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)lab.c 2.1 %G%";
+static char sccsid[] = "@(#)lab.c 2.2 %G%";
 #endif
 
 #include "whoami.h"
@@ -11,7 +11,7 @@ static char sccsid[] = "@(#)lab.c 2.1 %G%";
 #include "objfmt.h"
 #ifdef PC
 #   include	"pc.h"
-#   include	"pcops.h"
+#   include	<pcc.h>
 #endif PC
 #include "tree_ty.h"
 
@@ -182,27 +182,27 @@ gotoop(s)
 		     *	will be in its stack frame.
 		     */
 		parts[ bn ] |= NONLOCALGOTO;
-		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+		putleaf( PCC_ICON , 0 , 0 , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR )
 			, "_PCLOSE" );
 		if ( bn > 1 ) {
 		    p = lookup( enclosing[ bn - 1 ] );
 		    sprintf( extname, "%s%d+%d",
 			FRAME_SIZE_LABEL, p -> value[NL_ENTLOC], sizeof(int));
 		    p = lookup(s);
-		    putLV( extname , bn , 0 , NNLOCAL , P2PTR | P2CHAR );
+		    putLV( extname , bn , 0 , NNLOCAL , PCCTM_PTR | PCCT_CHAR );
 		} else {
 		    putLV((char *) 0 , bn , -( DPOFF1 + sizeof( int ) ) , LOCALVAR ,
-			P2PTR | P2CHAR );
+			PCCTM_PTR | PCCT_CHAR );
 		}
-		putop( P2CALL , P2INT );
+		putop( PCC_CALL , PCCT_INT );
 		putdot( filename , line );
-		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+		putleaf( PCC_ICON , 0 , 0 , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR )
 			, "_longjmp" );
-		putLV((char *) 0 , bn , GOTOENVOFFSET , NLOCAL , P2PTR|P2STRTY );
+		putLV((char *) 0 , bn , GOTOENVOFFSET , NLOCAL , PCCTM_PTR|PCCT_STRTY );
 		extlabname( extname , p -> symbol , bn );
-		putLV( extname , 0 , 0 , NGLOBAL , P2PTR|P2STRTY );
-		putop( P2LISTOP , P2INT );
-		putop( P2CALL , P2INT );
+		putLV( extname , 0 , 0 , NGLOBAL , PCCTM_PTR|PCCT_STRTY );
+		putop( PCC_CM , PCCT_INT );
+		putop( PCC_CALL , PCCT_INT );
 		putdot( filename , line );
 	    }
 #	endif PC
