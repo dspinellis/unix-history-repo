@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.63 91/04/24$
  *
- *	@(#)machdep.c	7.16 (Berkeley) %G%
+ *	@(#)machdep.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1091,6 +1091,10 @@ badbaddr(addr)
 netintr()
 {
 #ifdef INET
+	if (netisr & (1 << NETISR_ARP)) {
+		netisr &= ~(1 << NETISR_ARP);
+		arpintr();
+	}
 	if (netisr & (1 << NETISR_IP)) {
 		netisr &= ~(1 << NETISR_IP);
 		ipintr();
