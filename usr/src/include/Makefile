@@ -1,4 +1,4 @@
-#	Makefile	4.11	85/03/12
+#	Makefile	4.12	85/03/19
 #
 # Doing a make install builds /usr/include
 #
@@ -14,8 +14,8 @@
 DESTDIR=
 SUBDIRS=arpa pascal
 STD=	a.out.h ar.h assert.h ctype.h curses.h dbm.h ndbm.h \
-	disktab.h dumprestor.h fcntl.h fstab.h grp.h \
-	lastlog.h math.h mp.h mtab.h nameser.h netdb.h nlist.h ptrace.h pwd.h \
+	disktab.h dumprestor.h fcntl.h fstab.h grp.h lastlog.h \
+	math.h mp.h mtab.h nameser.h netdb.h nlist.h pcc.h ptrace.h pwd.h \
 	ranlib.h resolv.h setjmp.h sgtty.h stab.h stdio.h strings.h \
 	struct.h syscall.h sysexits.h ttyent.h utmp.h varargs.h vfont.h
 LINKS=	errno.h signal.h syslog.h
