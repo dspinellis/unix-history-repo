@@ -1,4 +1,4 @@
-/*	conf.c	4.26	81/03/09	*/
+/*	conf.c	4.27	81/03/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -189,7 +189,7 @@ int	mcread();
 char	*mcwrite();
 
 #include "pty.h"
-#if WANTPTY > 0
+#if NPTY > 0
 int	ptsopen(), ptsclose(), ptsread(), ptswrite();
 int	ptcopen(), ptcclose(), ptcread(), ptcwrite();
 int	ptyioctl();
