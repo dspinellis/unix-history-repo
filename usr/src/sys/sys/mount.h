@@ -232,10 +232,10 @@ extern struct	vfsops *vfssw[];	/* mount filesystem type switch table */
 
 __BEGIN_DECLS
 int	fstatfs __P((int, struct statfs *));
-int	getfh __P((const char *, struct fhandle_t *));
-int	getfsstat __P((struct statfs **, long, int));
+int	getfh __P((const char *, fhandle_t *));
+int	getfsstat __P((struct statfs *, long, int));
 int	getmntinfo __P((struct statfs **, int));
-int	mount __P((int, const char *, int, caddr_t));
+int	mount __P((int, const char *, int, void *));
 int	statfs __P((const char *, struct statfs *));
 int	unmount __P((const char *, int));
 __END_DECLS
