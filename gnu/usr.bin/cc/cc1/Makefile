@@ -10,9 +10,14 @@ YFLAGS=
 NOMAN=		noman
 
 .if exists(${.CURDIR}/../lib/obj)
-LDADD=  -L${.CURDIR}/../lib/obj -lgcc2
+LDADD=	-L${.CURDIR}/../lib/obj -lgcc2
+DPADD=	${.CURDIR}/../lib/obj/libgcc2.a
 .else
-LDADD=  -L${.CURDIR}/../lib/ -lgcc2
+LDADD=	-L${.CURDIR}/../lib/ -lgcc2
+DPADD=	${.CURDIR}/../lib/libgcc2.a
 .endif
+
+LDADD+=	-lgnumalloc
+DPADD+=	${LIBGNUMALLOC}
 
 .include <bsd.prog.mk>
