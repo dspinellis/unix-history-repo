@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.6 83/08/17	
+ *	@(#)ww.h	3.7 83/08/18	
  */
 
 #include <stdio.h>
@@ -140,10 +140,10 @@ int wwnupdate, wwntouched, wwnmiss;
 
 	/* the window virtual terminal */
 #define WWT_TERM	"TERM=window"
-#define WWT_TERMCAP	"TERMCAP=WW|window|window package:\
+#define WWT_TERMCAP	"WW|window|window package:\
 	:cr=^M:nl=^J:bl=^G:\
-	:al=\\EL:am:le=^H:bs:cd=\\EJ:ce=\\EK:cl=\\EE:cm=\\EY%%+ %%+ :\
-	:co#%d:dc=\\EN:dl=\\EM:do=\\EB:ei=\\EO:ho=\\EH:li#%d:im=\\E@:mi:\
+	:al=\\EL:am:le=^H:bs:cd=\\EJ:ce=\\EK:cl=\\EE:cm=\\EY%+ %+ :\
+	:da:db:dc=\\EN:dl=\\EM:do=\\EB:ei=\\EO:ho=\\EH:im=\\E@:mi:\
 	:nd=\\EC:ta=^I:pt:up=\\EA:"
 #define WWT_REV		"se=\\Eq:so=\\Ep:"
 #define WWT_UL		"ue=\\Es:us=\\Er:"
