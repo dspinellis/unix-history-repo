@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_timer.c	7.9 (Berkeley) %G%
+ *	@(#)tcp_timer.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -183,8 +183,30 @@ tcp_timers(tp, timer)
 		 * data accumulated, this "slow start" keeps us from
 		 * dumping all that data as back-to-back packets (which
 		 * might overwhelm an intermediate gateway).
+		 *
+		 * There are two phases to the opening: Initially we
+		 * open by one mss on each ack.  This makes the window
+		 * size increase exponentially with time.  If the
+		 * window is larger than the path can handle, this
+		 * exponential growth results in dropped packet(s)
+		 * almost immediately.  To get more time between 
+		 * drops but still "push" the network to take advantage
+		 * of improving conditions, we switch from exponential
+		 * to linear window opening at some threshhold size.
+		 * For a threshhold, we use half the current window
+		 * size, truncated to a multiple of the mss.
+		 *
+		 * (the minimum cwnd that will give us exponential
+		 * growth is 2 mss.  We don't allow the threshhold
+		 * to go below this.)
 		 */
+		{
+		u_int win = MIN(tp->snd_wnd, tp->snd_cwnd) / 2 / tp->t_maxseg;
+		if (win < 2)
+			win = 2;
 		tp->snd_cwnd = tp->t_maxseg;
+		tp->snd_ssthresh = win * tp->t_maxseg;
+		}
 		(void) tcp_output(tp);
 		break;
 
