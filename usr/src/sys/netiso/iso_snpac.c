@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_snpac.c	7.19 (Berkeley) %G%
+ *	@(#)iso_snpac.c	7.20 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -217,7 +217,7 @@ iso_setmcasts(ifp, req)
 	int		doreset = 0;
 
 	bzero((caddr_t)&ifr, sizeof(ifr));
-	for (cpp = (caddr_t *)addrlist; *cpp; cpp+) {
+	for (cpp = (caddr_t *)addrlist; *cpp; cpp++) {
 		bcopy(*cpp, (caddr_t)ifr.ifr_addr.sa_data, 6);
 		if (req == RTM_ADD)
 			if (ether_addmulti(&ifr, (struct arpcom *)ifp) == ENETRESET)
