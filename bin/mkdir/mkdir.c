@@ -39,6 +39,7 @@ char copyright[] =
 
 #ifndef lint
 static char sccsid[] = "@(#)mkdir.c	5.7 (Berkeley) 5/31/90";
+static char rcsid[] = "$Header: /b/source/CVS/src/bin/mkdir/mkdir.c,v 1.4 1993/07/20 22:27:08 jtc Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -46,21 +47,41 @@ static char sccsid[] = "@(#)mkdir.c	5.7 (Berkeley) 5/31/90";
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 extern int errno;
+extern void *setmode();
+extern mode_t getmode();
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int optind;
 	int ch, exitval, pflag;
+	void *set;
+	mode_t mode, dir_mode;
+
+	/* default file mode is a=rwx (777) with selected permissions
+	   removed in accordance with the file mode creation mask.
+	   For intermediate path name components, the mode is the default
+	   modified by u+wx so that the subdirectories can always be 
+	   created. */
+	mode = 0777 & ~umask(0);
+	dir_mode = mode | S_IWUSR | S_IXUSR;
 
 	pflag = 0;
-	while ((ch = getopt(argc, argv, "p")) != EOF)
+	while ((ch = getopt(argc, argv, "pm:")) != EOF)
 		switch(ch) {
 		case 'p':
 			pflag = 1;
+			break;
+		case 'm':
+			if ((set = setmode(optarg)) == NULL) {
+				(void)fprintf(stderr,
+					"mkdir: invalid file mode.\n");
+				exit(1);
+			}
+			mode = getmode (set, S_IRWXU | S_IRWXG | S_IRWXO);
 			break;
 		case '?':
 		default:
@@ -69,50 +90,53 @@ main(argc, argv)
 
 	if (!*(argv += optind))
 		usage();
-
-	for (exitval = 0; *argv; ++argv)
+	
+	for (exitval = 0; *argv; ++argv) {
 		if (pflag)
-			exitval |= build(*argv);
-		else if (mkdir(*argv, 0777) < 0) {
+			exitval |= build(*argv, mode, dir_mode);
+		else if (mkdir(*argv, mode) < 0) {
 			(void)fprintf(stderr, "mkdir: %s: %s\n",
 			    *argv, strerror(errno));
 			exitval = 1;
 		}
+	}
 	exit(exitval);
 }
 
-build(path)
+/*
+ * build -- create directories.  
+ *	mode     - file mode of terminal directory
+ *	dir_mode - file mode of intermediate directories
+ */
+build(path, mode, dir_mode)
 	char *path;
+	mode_t mode;
+	mode_t dir_mode;
 {
 	register char *p;
 	struct stat sb;
-	int create, ch;
+	int ch;
 
-	for (create = 0, p = path;; ++p)
+	for (p = path;; ++p) {
 		if (!*p || *p  == '/') {
 			ch = *p;
 			*p = '\0';
 			if (stat(path, &sb)) {
-				if (errno != ENOENT || mkdir(path, 0777) < 0) {
+				if (errno != ENOENT || mkdir(path, (ch) ? dir_mode : mode) < 0) {
 					(void)fprintf(stderr, "mkdir: %s: %s\n",
 					    path, strerror(errno));
 					return(1);
 				}
-				create = 1;
 			}
 			if (!(*p = ch))
 				break;
 		}
-	if (!create) {
-		(void)fprintf(stderr, "mkdir: %s: %s\n", path,
-		    strerror(EEXIST));
-		return(1);
 	}
 	return(0);
 }
 
 usage()
 {
-	(void)fprintf(stderr, "usage: mkdir [-p] dirname ...\n");
+	(void)fprintf(stderr, "usage: mkdir [-p] [-m mode] dirname ...\n");
 	exit(1);
 }
