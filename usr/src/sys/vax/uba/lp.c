@@ -1,4 +1,4 @@
-/*	lp.c	6.2	84/08/02	*/
+/*	lp.c	6.3	84/08/22	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -100,10 +100,10 @@ lpopen(dev, flag)
 	dev_t dev;
 	int flag;
 {
-	register int unit;
 	register struct lpdevice *lpaddr;
 	register struct lp_softc *sc;
 	register struct uba_device *ui;
+	register int unit, s;
 
 	if ((unit = LPUNIT(dev)) >= NLP ||
 	    (sc = &lp_softc[unit])->sc_state&OPEN ||
@@ -115,12 +115,12 @@ lpopen(dev, flag)
 	sc->sc_state |= OPEN;
 	sc->sc_inbuf = geteblk(512);
 	sc->sc_flags = minor(dev) & 07;
-	(void) spl4();
+	s = spl4();
 	if ((sc->sc_state&TOUT) == 0) {
 		sc->sc_state |= TOUT;
 		timeout(lptout, (caddr_t)dev, 10*hz);
 	}
-	(void) spl0();
+	splx(s);
 	lpcanon(dev, '\f');
 	return (0);
 }
@@ -162,8 +162,8 @@ lpcanon(dev, c)
 	dev_t dev;
 	register int c;
 {
-	register int logcol, physcol;
 	register struct lp_softc *sc = &lp_softc[LPUNIT(dev)];
+	register int logcol, physcol, s;
 
 	if (sc->sc_flags&CAP) {
 		register c2;
@@ -222,10 +222,10 @@ lpcanon(dev, c)
 		/* fall into ... */
 
 	case '\r':
+		s = spl4();
 		logcol = 0;
-		(void) spl4();
 		lpintr(LPUNIT(dev));
-		(void) spl0();
+		splx(s);
 		break;
 
 	case '\b':
@@ -259,15 +259,16 @@ lpoutput(dev, c)
 	int c;
 {
 	register struct lp_softc *sc = &lp_softc[LPUNIT(dev)];
+	int s;
 
 	if (sc->sc_outq.c_cc >= LPHWAT) {
-		(void) spl4();
+		s = spl4();
 		lpintr(LPUNIT(dev));				/* unchoke */
 		while (sc->sc_outq.c_cc >= LPHWAT) {
 			sc->sc_state |= ASLP;		/* must be ERROR */
 			sleep((caddr_t)sc, LPPRI);
 		}
-		(void) spl0();
+		splx(s);
 	}
 	while (putc(c, &sc->sc_outq))
 		sleep((caddr_t)&lbolt, LPPRI);
