@@ -1,11 +1,11 @@
-.\" Copyright (c) 1989, 1991, 1993
+.\" Copyright (c) 1989, 1991, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Guido van Rossum.
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)glob.3	8.2 (Berkeley) %G%
+.\"     @(#)glob.3	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GLOB 3
@@ -180,11 +180,11 @@ initialized with alternate functions for glob to use to open, read,
 and close directories and to get stat information on names found
 in those directories.
 .Bd -literal
-	void *(*gl_opendir)(const char * name);
-	struct dirent *(*gl_readdir)(void *);
-	void (*gl_closedir)(void *);
-	int (*gl_lstat)(const char *name, struct stat *st);
-	int (*gl_stat)(const char *name, struct stat *st);
+void *(*gl_opendir)(const char * name);
+struct dirent *(*gl_readdir)(void *);
+void (*gl_closedir)(void *);
+int (*gl_lstat)(const char *name, struct stat *st);
+int (*gl_stat)(const char *name, struct stat *st);
 .Ed
 .Pp
 This extension is provided to allow programs such as
@@ -353,10 +353,24 @@ The arguments
 and
 .Fa pglob\->gl_pathv
 are still set as specified above.
+.Sh EXAMPLE
+A rough equivalent of
+.Ql "ls -l *.c *.h"
+can be obtained with the
+following code:
+.Bd -literal -offset indent
+glob_t g;
+
+g.gl_offs = 2;
+glob("*.c", GLOB_DOOFFS, NULL, &g);
+glob("*.h", GLOB_DOOFFS | GLOB_APPEND, NULL, &g);
+g.gl_pathv[0] = "ls";
+g.gl_pathv[1] = "-l";
+execvp("ls", g.gl_pathv);
+.Ed
 .Sh SEE ALSO
 .Xr sh 1 ,
 .Xr fnmatch 3 ,
-.Xr wordexp 3 ,
 .Xr regexp 3
 .Sh STANDARDS
 The
@@ -379,21 +393,6 @@ and
 should not be used by applications striving for strict
 .Tn POSIX
 conformance.
-.Sh EXAMPLE
-A rough equivalent of
-.Ql "ls -l *.c *.h"
-can be obtained with the
-following code:
-.Bd -literal -offset indent
-glob_t g;
-
-g.gl_offs = 2;
-glob("*.c", GLOB_DOOFFS, NULL, &g);
-glob("*.h", GLOB_DOOFFS | GLOB_APPEND, NULL, &g);
-g.gl_pathv[0] = "ls";
-g.gl_pathv[1] = "-l";
-execvp("ls", g.gl_pathv);
-.Ed
 .Sh HISTORY
 The
 .Fn glob
