@@ -1,4 +1,4 @@
-/*	if_imp.c	4.31	82/05/06	*/
+/*	if_imp.c	4.32	82/05/14	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -556,6 +556,8 @@ start:
  * Part of host-IMP initialization procedure.
  * (Should return success/failure, but noone knows
  * what to do with this, so why bother?)
+ * This routine is always called at splimp, so we don't
+ * protect the call to IF_PREPEND.
  */
 impnoops(sc)             
 	register struct imp_softc *sc;
@@ -576,9 +578,7 @@ COUNT(IMPNOOPS);
 		cp->dl_format = IMP_NFF;
                 cp->dl_link = i;
                 cp->dl_mtype = IMPTYPE_NOOP;
-		x = splimp();
 		IF_PREPEND(&sc->imp_if.if_snd, m);
-		splx(x);
 	}
 	if (sc->imp_cb.ic_oactive == 0)
 		(*sc->imp_cb.ic_start)(sc->imp_if.if_unit);
