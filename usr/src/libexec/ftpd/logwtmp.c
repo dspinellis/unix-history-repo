@@ -7,16 +7,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)logwtmp.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)logwtmp.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/stat.h>
+
 #include <fcntl.h>
 #include <utmp.h>
 #include <unistd.h>
+#include <stdio.h>
 #include <string.h>
+#include "extern.h"
 
 static int fd = -1;
 
@@ -25,13 +28,12 @@ static int fd = -1;
  * after first call, for use with ftp (which may chroot
  * after login, but before logout).
  */
+void
 logwtmp(line, name, host)
 	char *line, *name, *host;
 {
 	struct utmp ut;
 	struct stat buf;
-	time_t time();
-	char *strncpy();
 
 	if (fd < 0 && (fd = open(_PATH_WTMP, O_WRONLY|O_APPEND, 0)) < 0)
 		return;

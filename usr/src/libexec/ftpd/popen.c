@@ -10,16 +10,18 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)popen.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/wait.h>
+
 #include <signal.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "extern.h"
 
 /*
  * Special version of popen which avoids call to shell.  This insures noone
@@ -37,7 +39,6 @@ ftpd_popen(program, type)
 	FILE *iop;
 	int argc, gargc, pdes[2], pid;
 	char **pop, *argv[100], *gargv[1000], *vv[2];
-	extern char **ftpglob(), **copyblk();
 
 	if (*type != 'r' && *type != 'w' || type[1])
 		return(NULL);
@@ -113,6 +114,7 @@ pfree:	for (argc = 1; argv[argc] != NULL; argc++) {
 	return(iop);
 }
 
+int
 ftpd_pclose(iop)
 	FILE *iop;
 {
