@@ -3,12 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_ctype.c	7.2 (Berkeley) %G%
+ *	@(#)kdb_ctype.c	7.3 (Berkeley) %G%
  */
 
 #include	<ctype.h>
 
-char _ctype_[1 + 256] = {
+char __ctype[1 + 256] = {
 	0,
 	_C,	_C,	_C,	_C,	_C,	_C,	_C,	_C,
 	_C,	_C|_S,	_C|_S,	_C|_S,	_C|_S,	_C|_S,	_C,	_C,
