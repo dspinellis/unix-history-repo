@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_descrip.c	7.30 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.31 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -301,11 +301,54 @@ close(p, uap, retval)
 	return (closef(fp, p));
 }
 
+#ifdef COMPAT_43
 /*
  * Return status information about a file descriptor.
  */
 /* ARGSUSED */
 fstat(p, uap, retval)
+	struct proc *p;
+	register struct args {
+		int	fd;
+		struct	ostat *sb;
+	} *uap;
+	int *retval;
+{
+	register struct filedesc *fdp = p->p_fd;
+	register struct file *fp;
+	struct stat ub;
+	struct ostat oub;
+	int error;
+
+	if ((unsigned)uap->fd >= fdp->fd_nfiles ||
+	    (fp = fdp->fd_ofiles[uap->fd]) == NULL)
+		return (EBADF);
+	switch (fp->f_type) {
+
+	case DTYPE_VNODE:
+		error = vn_stat((struct vnode *)fp->f_data, &ub, p);
+		break;
+
+	case DTYPE_SOCKET:
+		error = soo_stat((struct socket *)fp->f_data, &ub);
+		break;
+
+	default:
+		panic("fstat");
+		/*NOTREACHED*/
+	}
+	cvtstat(&ub, &oub);
+	if (error == 0)
+		error = copyout((caddr_t)&oub, (caddr_t)uap->sb, sizeof (oub));
+	return (error);
+}
+#endif /* COMPAT_43 */
+
+/*
+ * Return status information about a file descriptor.
+ */
+/* ARGSUSED */
+fqstat(p, uap, retval)
 	struct proc *p;
 	register struct args {
 		int	fd;
