@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include "restore.h"
@@ -33,6 +33,8 @@ static char	*map;
 static char	lnkbuf[MAXPATHLEN + 1];
 static int	pathlen;
 
+int		Bcvt;		/* Swap Bytes (for CCI or sun) */
+static int	Qcvt;		/* Swap quads (for sun) */
 /*
  * Set up an input source
  */
@@ -237,7 +239,7 @@ again:
 			    "Unless you know which volume your",
 			    " file(s) are on you should start\n",
 			    "with the last volume and work",
-			    " towards the first.\n");
+			    " towards towards the first.\n");
 		} else {
 			fprintf(stderr, "You have read volumes");
 			strcpy(tbf, ": ");
@@ -749,7 +751,7 @@ readhdr(b)
 gethead(buf)
 	struct s_spcl *buf;
 {
-	long i;
+	long i, *j;
 	union u_ospcl {
 		char dummy[TP_BSIZE];
 		struct	s_ospcl {
@@ -780,8 +782,18 @@ gethead(buf)
 
 	if (!cvtflag) {
 		readtape((char *)buf);
-		if (buf->c_magic != NFS_MAGIC || checksum((int *)buf) == FAIL)
-			return(FAIL);
+		if (buf->c_magic != NFS_MAGIC) {
+			if (swabl(buf->c_magic) != NFS_MAGIC)
+				return (FAIL);
+			if (!Bcvt) {
+				vprintf(stdout, "Note: Doing Byte swapping\n");
+				Bcvt = 1;
+			}
+		}
+		if (checksum((int *)buf) == FAIL)
+			return (FAIL);
+		if (Bcvt)
+			swabst("8l4s31l", (char *)buf);
 		goto good;
 	}
 	readtape((char *)(&u_ospcl.s_ospcl));
@@ -811,6 +823,18 @@ gethead(buf)
 	buf->c_magic = NFS_MAGIC;
 
 good:
+	j = buf->c_dinode.di_ic.ic_size.val;
+	i = j[1];
+	if (buf->c_dinode.di_size == 0 &&
+	    (buf->c_dinode.di_mode & IFMT) == IFDIR && Qcvt==0) {
+		if (*j || i) {
+			printf("Note: Doing Quad swapping\n");
+			Qcvt = 1;
+		}
+	}
+	if (Qcvt) {
+		j[1] = *j; *j = i;
+	}
 	switch (buf->c_type) {
 
 	case TS_CLRI:
@@ -966,9 +990,18 @@ checksum(b)
 
 	j = sizeof(union u_spcl) / sizeof(int);
 	i = 0;
-	do
-		i += *b++;
-	while (--j);
+	if(!Bcvt) {
+		do
+			i += *b++;
+		while (--j);
+	} else {
+		/* What happens if we want to read restore tapes
+			for a 16bit int machine??? */
+		do 
+			i += swabl(*b++);
+		while (--j);
+	}
+			
 	if (i != CHECKSUM) {
 		fprintf(stderr, "Checksum error %o, inode %d file %s\n", i,
 			curfile.ino, curfile.name);
@@ -986,3 +1019,34 @@ msg(cp, a1, a2, a3)
 	fprintf(stderr, cp, a1, a2, a3);
 }
 #endif RRESTORE
+
+swabst(cp, sp)
+register char *cp, *sp;
+{
+	int n = 0;
+	char c;
+	while(*cp) {
+		switch (*cp) {
+		case '0': case '1': case '2': case '3': case '4':
+		case '5': case '6': case '7': case '8': case '9':
+			n = (n * 10) + (*cp++ - '0');
+			continue;
+		
+		case 's': case 'w': case 'h':
+			c = sp[0]; sp[0] = sp[1]; sp[1] = c;
+			sp++;
+			break;
+
+		case 'l':
+			c = sp[0]; sp[0] = sp[3]; sp[3] = c;
+			c = sp[2]; sp[2] = sp[1]; sp[1] = c;
+			sp += 3;
+		}
+		sp++; /* Any other character, like 'b' counts as byte. */
+		if (n <= 1) {
+			n = 0; cp++;
+		} else
+			n--;
+	}
+}
+swabl(x) { unsigned long l = x; swabst("l", (char *)&l); return l; }
