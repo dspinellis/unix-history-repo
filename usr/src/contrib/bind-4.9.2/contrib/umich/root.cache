@@ -1,0 +1,19 @@
+;------------------------------------------------------------------------
+;	cache pre-load		(U-M)		10/1/1991
+;------------------------------------------------------------------------ 
+.                       999999  IN      NS      NS.NIC.DDN.MIL.
+                        999999  IN      NS      KAVA.NISC.SRI.COM.
+                        999999  IN      NS      AOS.BRL.MIL.
+                        999999  IN      NS      C.NYSER.NET.
+                        999999  IN      NS      TERP.UMD.EDU.
+                        999999  IN      NS      NS.NASA.GOV.
+                        999999  IN      NS      NIC.NORDU.NET.
+;------------------------------------------------------------------------ 
+NS.NIC.DDN.MIL.         999999  IN      A           192.112.36.4
+KAVA.NISC.SRI.COM.      999999  IN      A           192.33.33.24
+AOS.BRL.MIL.            999999  IN      A           192.5.25.82
+C.NYSER.NET.            999999  IN      A           192.33.4.12
+TERP.UMD.EDU.           999999  IN      A           128.8.10.90
+NS.NASA.GOV.            999999  IN      A           128.102.16.10
+NS.NASA.GOV.            999999  IN      A           192.52.195.10
+NIC.NORDU.NET.          999999  IN      A           192.36.148.17
