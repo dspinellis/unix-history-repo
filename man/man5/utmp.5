@@ -1,0 +1,23 @@
+.pa 1
+.he 'UTMP (V)'3/15/72'UTMP (V)'
+.ti 0
+NAME		/tmp/utmp  -- user information
+.sp
+.ti 0
+DESCRIPTION	This
+file allows one to discover information about who is currently
+using UNIX.
+The file is binary; each entry is 16(10) bytes long.
+The first eight bytes contain a user's login name or
+are null if the table slot is unused.
+The low order byte of the next word contains the last
+character of a typewriter name.
+The next two words contain the user's login time.
+The last word is unused.
+
+This file resides in directory /tmp.
+.sp
+.ti 0
+SEE ALSO	/etc/init, which maintains the file;
+.br
+who(I), which interprets it.
