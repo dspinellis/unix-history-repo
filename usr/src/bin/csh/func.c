@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)func.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)func.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -33,11 +33,13 @@ static void	islogin __P((void));
 static void	reexecute __P((struct command *));
 static void	preread __P((void));
 static void	doagain __P((void));
+static char    *isrchx __P((int));
+static void	search __P((int, int, Char *));
 static int	getword __P((Char *));
 static int	keyword __P((Char *));
-static void	Unsetenv __P((Char *));
 static void	toend __P((void));
 static void	xecho __P((int, Char **));
+static void	Unsetenv __P((Char *));
 
 struct biltins *
 isbfunc(t)
@@ -300,9 +302,17 @@ dogoto(v, t)
     Char **v;
     struct command *t;
 {
-    register struct whyle *wp;
     Char   *lp;
 
+    gotolab(lp = globone(v[1], G_ERROR));
+    xfree((ptr_t) lp);
+}
+
+void
+gotolab(lab)
+    Char *lab;
+{
+    register struct whyle *wp;
     /*
      * While we still can, locate any unknown ends of existing loops. This
      * obscure code is the WORST result of the fact that we don't really parse.
@@ -315,8 +325,7 @@ dogoto(v, t)
 	}
 	else
 	    bseek(&wp->w_end);
-    search(T_GOTO, 0, lp = globone(v[1], G_ERROR));
-    xfree((ptr_t) lp);
+    search(T_GOTO, 0, lab);
     /*
      * Eliminate loops which were exited.
      */
@@ -819,11 +828,15 @@ wfree()
     for (; whyles; whyles = nwp) {
 	register struct whyle *wp = whyles;
 	nwp = wp->w_next;
-	if (wp->w_start.type != F_SEEK || wp->w_end.type != F_SEEK) 
+	if (wp->w_start.type != F_SEEK)
 	    break;
-	if (o.f_seek >= wp->w_start.f_seek && 
-	    (wp->w_end.f_seek == 0 || o.f_seek < wp->w_end.f_seek))
-	    break;
+	if (wp->w_end.type != I_SEEK) {
+	    if (wp->w_end.type != F_SEEK)
+		break;
+	    if (o.f_seek >= wp->w_start.f_seek && 
+		(wp->w_end.f_seek == 0 || o.f_seek < wp->w_end.f_seek))
+		break;
+	}
 	if (wp->w_fe0)
 	    blkfree(wp->w_fe0);
 	if (wp->w_fename)
