@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ld.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ld.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -549,8 +549,6 @@ delexit()
 
 	bflush();
 	unlink("l.out");
-	if (delarg==0 && Aflag==0)
-		chmod(ofilename, ofilemode);
 	/*
 	 * We have to insure that the last block of the data segment
 	 * is allocated a full pagesize block. If the underlying
@@ -563,8 +561,11 @@ delexit()
 	size = round(stbuf.st_size, pagesize);
 	if (!rflag && size > stbuf.st_size) {
 		lseek(biofd, size - 1, 0);
-		write(biofd, &c, 1);
+		if (write(biofd, &c, 1) != 1)
+			delarg |= 4;
 	}
+	if (delarg==0 && Aflag==0)
+		(void) chmod(ofilename, ofilemode);
 	exit (delarg);
 }
 
@@ -1982,7 +1983,7 @@ top:
 			put = cnt;
 		bp->b_nleft -= put;
 		to = bp->b_ptr;
-		asm("movc3 r8,(r11),(r7)");
+		bcopy(p, to, put);
 		bp->b_ptr += put;
 		p += put;
 		cnt -= put;
