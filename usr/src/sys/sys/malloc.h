@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)malloc.h	7.1 (Berkeley) %G%
+ *	@(#)malloc.h	7.2 (Berkeley) %G%
  */
 
 #define KMEMSTATS
@@ -30,6 +30,10 @@
 #define	M_SOOPTS	10	/* socket options */
 #define	M_SONAME	11	/* socket name */
 #define M_NAMEI		12	/* namei path name buffer */
+#define M_GPROF		13	/* kernel profiling buffer */
+#define M_IOCTLOPS	14	/* ioctl data buffer */
+#define M_SUPERBLK	15	/* super block data */
+#define M_TEMP		16	/* misc temporary data buffers */
 #define M_LAST		50
 
 struct kmemstats {
