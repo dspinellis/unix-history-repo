@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.14 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.15 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -39,13 +39,21 @@ define(`_RELAY_', `confRELAY_MAILER')dnl	for readability only
 #   local info   #
 ##################
 
-CP.
-
 Cwlocalhost
 ifdef(`USE_CW_FILE',
 `# file containing names of hosts for which we receive email
 Fw`'confCW_FILE',
 	`dnl')
+ifdef(`confDOMAIN_NAME', `
+# my official domain name
+Dj`'confDOMAIN_NAME',
+	`dnl')
+
+ifdef(`_NULL_CLIENT_ONLY_',
+`include(../m4/nullrelay.m4)m4exit',
+	`dnl')
+
+CP.
 
 ifdef(`UUCP_RELAY',
 `# UUCP relay host
@@ -71,11 +79,9 @@ DF`'FAX_RELAY
 CPFAX
 
 ')dnl
-ifdef(`SMART_HOST',
-`# "Smart" UUCP relay host
-DS`'SMART_HOST
+# "Smart" relay host (may be null)
+DS`'ifdef(`SMART_HOST', SMART_HOST)
 
-')dnl
 ifdef(`MAILER_TABLE',
 `# Mailer table (overriding domains)
 Kmailertable MAILER_TABLE
@@ -92,10 +98,6 @@ DR`'ifdef(`LOCAL_RELAY', LOCAL_RELAY)
 # who gets all local email traffic ($R has precedence for unqualified names)
 DH`'ifdef(`MAIL_HUB', MAIL_HUB)
 
-ifdef(`confDOMAIN_NAME',
-`# my official domain name
-Dj`'confDOMAIN_NAME',
-	`dnl')
 # who I masquerade as (can be $j)
 DM`'ifdef(`MASQUERADE_NAME', MASQUERADE_NAME, $j)
 
@@ -511,9 +513,9 @@ R$* < @ [ $+ ] > $*	$#_SMTP_ $@ [$2] $: $1 @ [$2] $3	still numeric: send',
 	`dnl')
 
 # now delete the local info -- note $=O to find characters that cause forwarding
-R$* < @ > $*		$@ $>_SET_97_ $1			user@ => user
-R< @ $=w . > : $*	$@ $>_SET_97_ $2			@here:... -> ...
-R$* $=O $* < @ $=w . >	$@ $>_SET_97_ $1 $2 $3			...@here -> ...
+R$* < @ > $*		$@ $>_SET_97_ $1		user@ => user
+R< @ $=w . > : $*	$@ $>_SET_97_ $2		@here:... -> ...
+R$* $=O $* < @ $=w . >	$@ $>_SET_97_ $1 $2 $3		...@here -> ...
 
 # handle local hacks
 R$*			$: $>_SET_98_ $1
@@ -577,17 +579,13 @@ R$+ . USENET		$#usenet $: $1',
 ifdef(`_LOCAL_RULES_',
 `# figure out what should stay in our local mail system
 R$* < @ $* > $*		$#smtp $@ $2 $: $1 @ $2 $3		user@host.domain')')
-ifdef(`SMART_HOST',
-`# pass names that still have a host to a smarthost
+# pass names that still have a host to a smarthost (if defined)
 R$* < @ $* > $*		$: $>_SET_95_ < $S > $1 < @ $2 > $3	glue on smarthost name
-R< $- : $+ > $*		$# $1 $@ $2 $: $3		if non-null, use it
-R< $+ > $*		$#suucp $@ $1 $: $2		if non-null, use it
-R<> $*			$: $1				else strip off gunk',
 
-`# deal with other remote names
+# deal with other remote names
 ifdef(`_MAILER_smtp_',
 `R$* < @$* > $*		$#_SMTP_ $@ $2 $: $1 < @ $2 > $3		user@host.domain',
-`R$* < @$* > $*		$#error $@NOHOST $: Unrecognized host name $2')')
+`R$* < @$* > $*		$#error $@NOHOST $: Unrecognized host name $2')
 
 ifdef(`_OLD_SENDMAIL_',
 `# forward remaining names to local relay, if any
