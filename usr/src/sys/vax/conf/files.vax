@@ -6,6 +6,7 @@ vax/cpudata.c		standard
 vax/dkbad.c		standard
 vax/flp.c		standard
 vax/in_cksum.c		optional inet
+vax/ns_cksum.c		optional ns
 vax/machdep.c		standard config-dependent
 vax/mem.c		standard
 vax/pup_cksum.c		optional pup
@@ -21,7 +22,8 @@ vaxif/if_css.c		optional css imp device-driver
 vaxif/if_de.c		optional de device-driver
 vaxif/if_dmc.c		optional dmc device-driver
 vaxif/if_ec.c		optional ec device-driver
-vaxif/if_en.c		optional en inet device-driver
+vaxif/if_en.c		optional en device-driver
+vaxif/if_ex.c		optional ex device-driver
 vaxif/if_hy.c		optional hy device-driver
 vaxif/if_il.c		optional il device-driver
 vaxif/if_pcl.c		optional pcl device-driver
@@ -39,8 +41,6 @@ vaxuba/dhu.c		optional dhu device-driver
 vaxuba/dmf.c		optional dmf device-driver
 vaxuba/dn.c		optional dn device-driver
 vaxuba/dz.c		optional dz device-driver
-vaxuba/gpib.c		optional gpib device-driver
-vaxuba/ib.c		optional ib device-driver
 vaxuba/kgclock.c	optional kg device-driver
 vaxuba/idc.c		optional rb device-driver
 vaxuba/ik.c		optional ik device-driver
