@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mt.4	6.1 (Berkeley) %G%
+.\"	@(#)mt.4	6.2 (Berkeley) %G%
 .\"
 .TH MT 4 ""
 .UC 4
@@ -56,3 +56,7 @@ non-raw tape was used in the access it is closed.
 .SH BUGS
 If any non-data error is encountered on non-raw tape,
 it refuses to do anything more until closed.
+.PP
+Because 800 bpi tapes are not supported, the numbering of minor devices
+is inconsistent with triple-density tape units.
+Unit 0 is drive 0, 1600 bpi.
