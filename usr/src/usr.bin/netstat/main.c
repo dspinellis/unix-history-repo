@@ -88,10 +88,12 @@ struct nlist nl[] = {
 /* internet protocols */
 extern	int protopr(), bbnprotopr();
 extern	int tcp_stats(), udp_stats(), ip_stats(), icmp_stats();
+/* ns protocols */
 extern	int tcpstats(), udpstats(), ipstats(), icmpstats(), rdpstats();
 extern	int nsprotopr();
 extern	int spp_stats(), idp_stats(), nserr_stats();
 
+#define NULLPROTOX	((struct protox *) 0)
 struct protox {
 	u_char	pr_index;		/* index into nlist of cb head */
 	u_char	pr_sindex;		/* index into nlist of stat block */
@@ -154,26 +156,29 @@ int	hflag;
 int	iflag;
 int	mflag;
 int	nflag;
+int	pflag;
 int	rflag;
 int	sflag;
 int	tflag;
-int	fflag;
 int	interval;
 char	*interface;
 int	unit;
-char	usage[] = "[ -Aaihmnrst ] [-f address_family] [-I interface] [ interval ] [ system ] [ core ]";
+char	usage[] = "[ -Aaihmnrst ] [-f family] [-p proto] [-I interface] [ interval ] [ system ] [ core ]";
 
 int	af = AF_UNSPEC;
+
+extern	char *malloc();
+extern	off_t lseek();
 
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int i;
 	char *cp, *name;
 	register struct protoent *p;
-	register struct protox *tp;
-
+	register struct protox *tp;	/* for printing cblocks & stats */
+	struct protox *name2protox();	/* for -p */
+	
 	name = argv[0];
 	argc--, argv++;
   	while (argc > 0 && **argv == '-') {
@@ -218,6 +223,19 @@ main(argc, argv)
 
 		case 'u':
 			af = AF_UNIX;
+			break;
+
+		case 'p':
+			argv++;
+			argc--;
+			if (argc == 0)
+				goto use;
+			if ((tp = name2protox(*argv)) == NULLPROTOX) {
+				fprintf(stderr, "%s: unknown or uninstrumented protocol\n",
+					*argv);
+				exit(10);
+			}
+			pflag++;
 			break;
 
 		case 'f':
@@ -289,15 +307,23 @@ use:
 		off = nl[N_SYSMAP].n_value & 0x7fffffff;
 		lseek(kmem, off, 0);
 		nl[N_SYSSIZE].n_value *= 4;
-		Sysmap = (struct pte *)malloc(nl[N_SYSSIZE].n_value);
+		Sysmap = (struct pte *)malloc((u_int)nl[N_SYSSIZE].n_value);
 		if (Sysmap == 0) {
 			perror("Sysmap");
 			exit(1);
 		}
-		read(kmem, Sysmap, nl[N_SYSSIZE].n_value);
+		read(kmem, (char *)Sysmap, (int)nl[N_SYSSIZE].n_value);
 	}
 	if (mflag) {
-		mbpr(nl[N_MBSTAT].n_value);
+		mbpr((off_t)nl[N_MBSTAT].n_value);
+		exit(0);
+	}
+	if (pflag) {
+		if (tp->pr_stats)
+			(*tp->pr_stats)(nl[tp->pr_sindex].n_value, 
+				tp->pr_name);
+		else
+			printf("%s: no stats routine\n", tp->pr_name);
 		exit(0);
 	}
 	/*
@@ -316,10 +342,11 @@ use:
 	}
 	if (rflag) {
 		if (sflag)
-			rt_stats(nl[N_RTSTAT].n_value);
+			rt_stats((off_t)nl[N_RTSTAT].n_value);
 		else
-			routepr(nl[N_RTHOST].n_value, nl[N_RTNET].n_value,
-				nl[N_RTHASHSIZE].n_value);
+			routepr((off_t)nl[N_RTHOST].n_value, 
+				(off_t)nl[N_RTNET].n_value,
+				(off_t)nl[N_RTHASHSIZE].n_value);
 		exit(0);
 	}
     if (af == AF_INET || af == AF_UNSPEC) {
@@ -354,18 +381,19 @@ use:
 	}
     }
     if ((af == AF_UNIX || af == AF_UNSPEC) && !sflag)
-	    unixpr(nl[N_NFILE].n_value, nl[N_FILE].n_value,
-		nl[N_UNIXSW].n_value);
+	    unixpr((off_t)nl[N_NFILE].n_value, (off_t)nl[N_FILE].n_value,
+		(struct protosw *)nl[N_UNIXSW].n_value);
     exit(0);
 }
 
 /*
  * Seek into the kernel for a value.
  */
+off_t
 klseek(fd, base, off)
-	int fd, base, off;
+	int fd, off;
+	off_t base;
 {
-
 	if (kflag) {
 		/* get kernel pte */
 #ifdef vax
@@ -373,7 +401,7 @@ klseek(fd, base, off)
 #endif
 		base = ctob(Sysmap[btop(base)].pg_pfnum) + (base & PGOFSET);
 	}
-	lseek(fd, base, off);
+	return (lseek(fd, base, off));
 }
 
 char *
@@ -382,4 +410,53 @@ plural(n)
 {
 
 	return (n != 1 ? "s" : "");
+}
+
+/*
+ * Find the protox for the given "well-known" name.
+ */
+struct protox *
+knownname(name)
+	char *name;
+{
+	struct protox *tp;
+	
+	for (tp = protox; tp->pr_name; tp++)
+		if (strcmp(tp->pr_name, name) == 0)
+			return(tp);
+	for (tp = nsprotox; tp->pr_name; tp++)
+		if (strcmp(tp->pr_name, name) == 0)
+			return(tp);
+	return(NULLPROTOX);
+}
+
+/*
+ * Find the protox corresponding to name.
+ */
+struct protox *
+name2protox(name)
+	char *name;
+{
+	struct protox *tp;
+	char **alias;			/* alias from p->aliases */
+	struct protoent *p;
+	
+	/*
+	 * Try to find the name in the list of "well-known" names. If that
+	 * fails, check if name is an alias for an Internet protocol.
+	 */
+	if (tp = knownname(name))
+		return(tp);
+		
+	setprotoent(1);			/* make protocol lookup cheaper */
+	while (p = getprotoent()) {
+		/* assert: name not same as p->name */
+		for (alias = p->p_aliases; *alias; alias++)
+			if (strcmp(name, *alias) == 0) {
+				endprotoent();
+				return(knownname(p->p_name));
+			}
+	}
+	endprotoent();
+	return(NULLPROTOX);
 }
