@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.22 (Berkeley) %G%
+#	@(#)Makefile	5.23 (Berkeley) %G%
 #
 # C Shell with process control; VM/UNIX VAX Makefile
 # Bill Joy UC Berkeley; Jim Kulp IIASA, Austria
@@ -6,8 +6,7 @@
 # To profile, put -DPROF in DEFS and -pg in CFLAGS, and recompile.
 
 PROG=	csh
-CFLAGS+=-fcombine-regs -fstrength-reduce -DFILEC -DNLS -DSHORT_STRINGS \
-	-DTERMIOS -I.
+CFLAGS+=-fcombine-regs -fstrength-reduce -DFILEC -DNLS -DSHORT_STRINGS -I.
 SRCS=	alloc.c char.c const.c csh.c dir.c dol.c err.c exec.c exp.c file.c \
 	func.c glob.c hist.c init.c lex.c misc.c parse.c print.c printf.c \
 	proc.c sem.c set.c str.c time.c
@@ -37,6 +36,6 @@ const.h: const.c
 	    sed -e 's/Char \([a-zA-Z0-9_]*\)\(.*\)/extern Char \1[];/' | \
 	    sort >> $@
 
-.depend: err.h const.h
+.depend: const.h err.h
 
 .include <bsd.prog.mk>
