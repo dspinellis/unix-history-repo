@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.59	82/06/20	*/
+/*	tcp_usrreq.c	1.60	82/07/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -70,7 +70,8 @@ tcp_usrreq(so, req, m, addr)
 		tcp_acounts[tp->t_state][req]++;
 #endif
 		ostate = tp->t_state;
-	}
+	} else
+		ostate = 0;
 	switch (req) {
 
 	/*
@@ -230,7 +231,6 @@ tcp_usrreq(so, req, m, addr)
 			tp->t_oobseq++;
 			tp->t_oobc = *mtod(m, caddr_t);
 			tp->t_oobmark = tp->snd_una + so->so_snd.sb_cc;
-printf("sendoob seq now %x oobc %x\n", tp->t_oobseq, tp->t_oobc);
 			tp->t_oobflags |= TCPOOB_NEEDACK;
 			/* what to do ...? */
 			if (error = tcp_output(tp))
@@ -289,21 +289,30 @@ tcp_attach(so, sa)
 	struct inpcb *inp;
 	int error;
 
-	error = in_pcbattach(so, &tcb,
-	    tcp_sendspace, tcp_recvspace, (struct sockaddr_in *)sa);
+	error = in_pcbreserve(so, tcp_sendspace, tcp_recvspace);
 	if (error)
-		return (error);
+		goto bad;
+	error = in_pcballoc(so, &tcb);
+	if (error)
+		goto bad2;
 	inp = (struct inpcb *)so->so_pcb;
+	if (sa || ((so->so_options & SO_ACCEPTCONN) == 0 && so->so_head == 0)) {
+		error = in_pcbbind(inp, sa);
+		if (error)
+			goto bad2;
+	}
 	tp = tcp_newtcpcb(inp);
-	if (so->so_options & SO_ACCEPTCONN) {
-		if (tp == 0) {
-			in_pcbdetach(inp);
-			return (ENOBUFS);
-		}
-		tp->t_state = TCPS_LISTEN;
-	} else
-		tp->t_state = TCPS_CLOSED;
+	if (tp == 0) {
+		error = ENOBUFS;
+		goto bad2;
+	}
+	tp->t_state =
+	    (so->so_options & SO_ACCEPTCONN) ? TCPS_LISTEN : TCPS_CLOSED;
 	return (0);
+bad2:
+	in_pcbdetach(inp);
+bad:
+	return (error);
 }
 
 /*

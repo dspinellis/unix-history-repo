@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.71	82/06/30	*/
+/*	tcp_input.c	1.72	82/07/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -154,6 +154,16 @@ tcp_input(m0)
 		ostate = tp->t_state;
 		tcp_saveti = *ti;
 	}
+	if (so->so_options & SO_ACCEPTCONN) {
+		so = sonewconn(so);
+		if (so == 0)
+			goto drop;
+		inp = (struct inpcb *)so->so_pcb;
+		inp->inp_laddr = ti->ti_dst;
+		inp->inp_lport = ti->ti_dport;
+		tp = intotcpcb(inp);
+		tp->t_state = TCPS_LISTEN;
+	}
 
 	/*
 	 * Segment received on connection.
@@ -258,8 +268,6 @@ tcp_input(m0)
 		tcp_rcvseqinit(tp);
 		tp->t_flags |= TF_ACKNOW;
 		if (SEQ_GT(tp->snd_una, tp->iss)) {
-			if (so->so_options & SO_ACCEPTCONN)
-				so->so_state |= SS_CONNAWAITING;
 			soisconnected(so);
 			tp->t_state = TCPS_ESTABLISHED;
 			(void) tcp_reass(tp, (struct tcpiphdr *)0);
@@ -351,7 +359,7 @@ trimthenstep6:
 	 * If a segment is received on a connection after the
 	 * user processes are gone, then RST the other end.
 	 */
-	if (so->so_state & SS_USERGONE) {
+	if (so->so_state & SS_NOFDREF) {
 		tcp_close(tp);
 		tp = 0;
 		goto dropwithreset;
@@ -370,19 +378,6 @@ trimthenstep6:
 	if (tiflags&TH_RST) switch (tp->t_state) {
 
 	case TCPS_SYN_RECEIVED:
-		if (inp->inp_socket->so_options & SO_ACCEPTCONN) {
-			/* a miniature tcp_close, but invisible to user */
-			(void) m_free(dtom(tp->t_template));
-			(void) m_free(dtom(tp));
-			inp->inp_ppcb = 0;
-			tp = tcp_newtcpcb(inp);
-			tp->t_state = TCPS_LISTEN;
-			inp->inp_faddr.s_addr = 0;
-			inp->inp_fport = 0;
-			inp->inp_laddr.s_addr = 0;	/* not quite right */
-			tp = 0;
-			goto drop;
-		}
 		tcp_drop(tp, ECONNREFUSED);
 		tp = 0;
 		goto drop;
@@ -437,8 +432,6 @@ trimthenstep6:
 		if (SEQ_LT(tp->snd_nxt, tp->snd_una))
 			tp->snd_nxt = tp->snd_una;
 		tp->t_timer[TCPT_REXMT] = 0;
-		if (so->so_options & SO_ACCEPTCONN)
-			so->so_state |= SS_CONNAWAITING;
 		soisconnected(so);
 		tp->t_state = TCPS_ESTABLISHED;
 		(void) tcp_reass(tp, (struct tcpiphdr *)0);
@@ -608,9 +601,8 @@ step6:
 		 * but if two URG's are pending at once, some out-of-band
 		 * data may creep in... ick.
 		 */
-		if (ti->ti_urp <= ti->ti_len) {
+		if (ti->ti_urp <= ti->ti_len)
 			tcp_pulloutofband(so, ti);
-		}
 	}
 
 	/*
