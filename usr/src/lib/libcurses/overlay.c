@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)overlay.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)overlay.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 # include	"curses.ext"
@@ -37,12 +37,6 @@ reg WINDOW	*win1, *win2; {
 # endif
 	if (starty >= endy || startx >= endx)
 		return;
-	x = endx - startx;
-	for (y = starty; y < endy; y++) {
-		bcopy(&win1->_y[y - win1->_begy][startx - win1->_begx],
-		      &win2->_y[y - win2->_begy][startx - win2->_begx], x);
-		touchline(win2, y, startx - win2->_begx, endx - win2->_begx);
-	}
 	y1 = starty - win1->_begy;
 	y2 = starty - win2->_begy;
 	for (y = starty; y < endy; y++, y1++, y2++) {
