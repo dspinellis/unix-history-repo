@@ -1,46 +1,59 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Chris Torek.
-.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)strchr.3	5.2 (Berkeley) %G%
+.\"     @(#)strchr.3	5.2 (Berkeley) %G%
 .\"
-.TH STRCHR 3 ""
-.UC 7
-.SH NAME
-strchr \- locate character in string
-.SH SYNOPSIS
-.nf
-.ft B
-#include <string.h>
-
-char *
-strchr(const char *s, int c);
-.ft R
-.fi
-.SH DESCRIPTION
-.B Strchr
-returns a pointer to the first occurrence of
-.I c
-(converted to a
-.BR char )
-in the null-terminated string
-.IR s ,
-or NULL if
-.I c
-does not occur anywhere in
-.IR s .
+.Dd 
+.Dt STRCHR 3
+.Os
+.Sh NAME
+.Nm strchr
+.Nd locate character in string
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft char *
+.Fn strchr "const char *s" "int c"
+.Sh DESCRIPTION
+The
+.Fn strchr
+function locates the first occurence of
+.Ar c
+in the string pointed to by
+.Ar s .
+The terminating
+.Dv NUL
+character is considered part of the string.
 If
-.I c
-is '\e0',
-.B strchr
-locates the terminating '\e0'.
-.SH SEE ALSO
-index(3), memchr(3), rindex(3), strcspn(3), strpbrk(3), strrchr(3),
-strsep(3), strspn(3), strstr(3), strtok(3)
-.SH STANDARDS
-.B Strchr
-conforms to ANSI X3.159-1989 (``ANSI C'').
+.Fa c
+is
+.Ql \e0 ,
+.Fn strchr
+locates the terminating
+.Ql \e0 .
+.Sh RETURN VALUES
+The function
+.Fn strchr
+returns a pointer to the located character, or
+.Dv NULL
+if the character does not appear in the string.
+.Sh SEE ALSO
+.Xr index 3 ,
+.Xr memchr 3 ,
+.Xr rindex 3 ,
+.Xr strcspn 3 ,
+.Xr strpbrk 3 ,
+.Xr strrchr 3 ,
+.Xr strsep 3 ,
+.Xr strspn 3 ,
+.Xr strstr 3 ,
+.Xr strtok 3
+.Sh STANDARDS
+The
+.Fn strchr
+function
+conforms to
+.St -ansiC .
