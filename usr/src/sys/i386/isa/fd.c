@@ -1,5 +1,3 @@
-#include "fd.h"
-#if NFD > 0
 /*-
  * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
@@ -9,12 +7,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fd.c	7.2 (Berkeley) %G%
+ *	@(#)fd.c	7.3 (Berkeley) %G%
  */
 
-/****************************************************************************/
-/*                               fd driver                                  */
-/****************************************************************************/
+#include "fd.h"
+#if NFD > 0
+
 #include "param.h"
 #include "dkbad.h"
 #include "systm.h"

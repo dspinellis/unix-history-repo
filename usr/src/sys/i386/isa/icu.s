@@ -1,4 +1,5 @@
 /*-
+ * Copyright (c) 1989, 1990 William F. Jolitz.
  * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
  *
@@ -7,13 +8,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)icu.s	7.1 (Berkeley) %G%
+ *	@(#)icu.s	7.2 (Berkeley) %G%
  */
 
 /*
  * AT/386
  * Vector interrupt control section
- * Copyright (C) 1989,90 W. Jolitz
  */
 
 	.data

@@ -1,18 +1,22 @@
-#include "ne.h"
-#if NNE > 0
 /*-
- * NE2000 Ethernet driver
- * Copyright (C) 1990,91 W. Jolitz
+ * Copyright (c) 1990, 1991 William F. Jolitz.
  * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ne.c	7.3 (Berkeley) %G%
+ *	@(#)if_ne.c	7.4 (Berkeley) %G%
+ */
+
+/*
+ * NE2000 Ethernet driver
  *
  * Parts inspired from Tim Tucker's if_wd driver for the wd8003,
  * insight on the ne2000 gained from Robert Clements PC/FTP driver.
  */
+
+#include "ne.h"
+#if NNE > 0
 
 #include "param.h"
 #include "systm.h"
