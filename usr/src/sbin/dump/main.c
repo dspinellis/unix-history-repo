@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.7 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.8 (Berkeley) %G%";
 #include "dump.h"
 
 int	notify = 0;	/* notify operator flag */
@@ -31,16 +31,6 @@ main(argc, argv)
 	incno = '9';
 	uflag = 0;
 	arg = "u";
-#ifdef RDUMP
-	if (argc < 2) {
-		printf("usage: rdump machine ");
-		Exit(X_ABORT);
-	}
-	host = argv[1];
-	argv++, argc--;
-	if (rmthost(host) == 0)
-		Exit(X_ABORT);
-#endif
 	if(argc > 1) {
 		argv++;
 		argc--;
@@ -119,7 +109,19 @@ main(argc, argv)
 		argc--;
 		disk = *argv;
 	}
-
+#ifdef RDUMP
+	{ char *index();
+	  host = tape;
+	  tape = index(host, ':');
+	  if (tape == 0) {
+		msg("need keyletter ``f'' and device ``host:tape''");
+		exit(1);
+	  }
+	  *tape++ = 0;
+	  if (rmthost(host) == 0)
+		exit(X_ABORT);
+	}
+#endif
 	if (signal(SIGHUP, sighup) == SIG_IGN)
 		signal(SIGHUP, SIG_IGN);
 	if (signal(SIGTRAP, sigtrap) == SIG_IGN)
@@ -155,11 +157,9 @@ main(argc, argv)
 	msg("Dumping %s ", disk);
 	if (dt != 0)
 		msgtail("(%s) ", dt->fs_file);
-#ifdef RDUMP
 	msgtail("to %s", tape);
+#ifdef RDUMP
 	msgtail(" on host %s\n", host);
-#else
-	msgtail("to %s\n", tape);
 #endif
 
 	fi = open(disk, 0);
