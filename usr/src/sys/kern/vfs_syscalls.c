@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.40 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	8.41 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -556,8 +556,12 @@ getfsstat(p, uap, retval)
 			 */
 			if (((SCARG(uap, flags) & MNT_NOWAIT) == 0 ||
 			    (SCARG(uap, flags) & MNT_WAIT)) &&
-			    (error = VFS_STATFS(mp, sp, p)))
+			    (error = VFS_STATFS(mp, sp, p))) {
+				simple_lock(&mountlist_slock);
+				nmp = mp->mnt_list.cqe_next;
+				vfs_unbusy(mp, p);
 				continue;
+			}
 			sp->f_flags = mp->mnt_flag & MNT_VISFLAGMASK;
 			if (error = copyout((caddr_t)sp, sfsp, sizeof(*sp)))
 				return (error);
