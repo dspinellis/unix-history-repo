@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	5.4 (Berkeley) %G%
+ *	@(#)lfs_segment.c	5.5 (Berkeley) %G%
  */
 
 #ifdef LOGFS
@@ -133,8 +133,6 @@ loop:
 	lfs_writesum(fs);
 	if (do_ckp)
 		lfs_writesuper(fs);
-printf("After writesuper returning\n");
-
 	return (0);
 }
 
@@ -157,7 +155,9 @@ lfs_biocallback(bp)
 		reassignbuf(bp, bp->b_vp);
 	brelse(bp);
 
+#ifdef SEGWRITE
 printf("callback: buffer: %x iocount %d\n", bp, fs->lfs_iocount);
+#endif
 	if (fs->lfs_iocount == 0)
 		panic("lfs_biocallback: zero iocount\n");
 
@@ -322,8 +322,6 @@ lfs_newseg(fs)
 	SEGSUM *ssp;
 	daddr_t lbn, *lbnp;
 
-printf("lfs_newseg: new segment %x\n", fs->lfs_nextseg);
-
 	sp = malloc(sizeof(SEGMENT), M_SEGMENT, M_WAITOK);
 	sp->nextp = NULL;
 	sp->cbpp = sp->bpp =
@@ -376,8 +374,6 @@ lfs_newsum(fs, sp)
 	SEGSUM *ssp;
 	int nblocks;
 
-printf("lfs_newsum\n");
-
 	lfs_endsum(fs, sp, 1);
 
 	/* Allocate a new buffer if necessary. */
@@ -416,8 +412,10 @@ printf("lfs_newsum\n");
 		    sp->sbp->b_un.b_addr + fs->lfs_bsize - LFS_SUMMARY_SIZE;
 		sp->sum_addr += (fs->lfs_bsize - LFS_SUMMARY_SIZE) / DEV_BSIZE;
 
+#ifdef SEGWRITE
 		printf("alloc summary: bp %x, lblkno %x, bp index %d\n",
 		    sp->sbp, sp->sbp->b_lblkno, fs->lfs_ssize - nblocks);
+#endif
 	} else {
 		sp->segsum -= LFS_SUMMARY_SIZE;
 		sp->sum_addr -= LFS_SUMMARY_SIZE / DEV_BSIZE;
@@ -480,7 +478,6 @@ lfs_updatemeta(fs, sp, ip, lbp, bpp, nblocks)
 
 	if (nblocks == 0)
 		return;
-printf("lfs_updatemeta of %d blocks\n", nblocks);
 
 	/* Sort the blocks and add disk addresses */
 	shellsort(bpp, lbp, nblocks);
@@ -493,7 +490,6 @@ printf("lfs_updatemeta of %d blocks\n", nblocks);
 
 	for (lbpp = bpp, i = 0; i < nblocks; ++i, ++lbpp) {
 		lbn = lbp[i];
-printf("lfs_updatemeta: block %d\n", lbn);
 		if (error = lfs_bmap(ip, lbn, &daddr))
 			panic("lfs_updatemeta: lfs_bmap");
 
@@ -502,11 +498,9 @@ printf("lfs_updatemeta: block %d\n", lbn);
 			segup = fs->lfs_segtab + datosn(fs, daddr);
 			segup->su_lastmod = time.tv_sec;
 #ifdef DIAGNOSTIC
-			if (segup->su_nbytes < fs->lfs_bsize) {
-				printf("lfs: negative bytes (segment %d)\n",
+			if (segup->su_nbytes < fs->lfs_bsize)
+				panic("lfs: negative bytes (segment %d)\n",
 				    segup - fs->lfs_segtab);
-				panic("lfs: negative bytes in segment\n");
-			}
 #endif
 			segup->su_nbytes -= fs->lfs_bsize;
 		}
@@ -524,8 +518,10 @@ printf("lfs_updatemeta: block %d\n", lbn);
 
 		if (lbn < 0)
 			if (lbn < -NIADDR) {
+#ifdef META
 				printf("meta: update indirect block %d\n",
 				    D_INDIR);
+#endif
 				BREAD(D_INDIR);
 				bp->b_un.b_daddr[-lbn % NINDIR(fs)] =
 				    (*lbpp)->b_blkno;
@@ -535,14 +531,18 @@ printf("lfs_updatemeta: block %d\n", lbn);
 		} else if (lbn < NDADDR) {
 			ip->i_db[lbn] = (*lbpp)->b_blkno;
 		} else if ((lbn -= NDADDR) < NINDIR(fs)) {
+#ifdef META
 			printf("meta: update indirect block %d\n", S_INDIR);
+#endif
 			BREAD(S_INDIR);
 			bp->b_un.b_daddr[lbn] = (*lbpp)->b_blkno;
 			lfs_bwrite(bp);
 		} else if ((lbn =
 		    (lbn - NINDIR(fs)) / NINDIR(fs)) < NINDIR(fs)) {
 			iblkno = -(lbn + NIADDR + 1);
+#ifdef META
 			printf("meta: update indirect block %d\n", iblkno);
+#endif
 			BREAD(iblkno);
 			bp->b_un.b_daddr[lbn % NINDIR(fs)] = (*lbpp)->b_blkno;
 			lfs_bwrite(bp);
@@ -564,7 +564,6 @@ lfs_writeckp(fs, sp)
 	daddr_t *lbp;
 	int bytes_needed, i;
 
-printf("lfs_writeckp\n");
 	/*
 	 * This will write the dirty ifile blocks, but not the segusage
 	 * table nor the ifile inode.
@@ -636,7 +635,6 @@ lfs_writefile(fs, sp, vp, do_ckp)
 	ino_t inum;
 
 	inum = VTOI(vp)->i_number;
-	printf("lfs_writefile: node %d\n", inum);
 
 	if (vp->v_dirtyblkhd != NULL) {
 		if (sp->seg_bytes_left < fs->lfs_bsize) {
@@ -659,8 +657,10 @@ lfs_writefile(fs, sp, vp, do_ckp)
 		}
 
 		fip = sp->fip;
-		printf("lfs_writefile: adding %d blocks\n", fip->fi_nblocks);
 
+#ifdef META
+		printf("lfs_writefile: adding %d blocks\n", fip->fi_nblocks);
+#endif
 		/*
 		 * If this is the ifile, always update the file count as we'll
 		 * be adding the segment usage information even if we didn't
@@ -693,7 +693,6 @@ lfs_writeinode(fs, sp, ip)
 	daddr_t next_addr;
 	int nblocks;
 
-printf("lfs_writeinode\n");
 	/* Allocate a new inode block if necessary. */
 	if (sp->ibp == NULL) {
 		/* Allocate a new segment if necessary. */
@@ -715,9 +714,6 @@ printf("lfs_writeinode\n");
 
 		/* Set remaining space counter. */
 		sp->seg_bytes_left -= fs->lfs_bsize;
-
-		printf("alloc inode: bp %x, lblkno %x, bp index %d\n",
-		    sp->sbp, sp->sbp->b_lblkno, fs->lfs_ssize - nblocks);
 	}
 
 	/* Copy the new inode onto the inode page. */
@@ -754,7 +750,6 @@ lfs_writeseg(fs, sp)
 	int i, nblocks, s, (*strategy) __P((BUF *));
 	void *pmeta;
 
-printf("lfs_writeseg\n");
 	/* Update superblock segment address. */
 	fs->lfs_lastseg = sntoda(fs, sp->seg_number);
 
@@ -806,13 +801,15 @@ lfs_writesum(fs)
 	SEGMENT *next_sp, *sp;
 	int (*strategy) __P((BUF *));
 
-printf("lfs_writesum\n");
 	strategy =
 	    VFSTOUFS(fs->lfs_ivnode->v_mount)->um_devvp->v_op->vop_strategy;
 	for (sp = fs->lfs_seglist; sp; sp = next_sp) {
 		bp = *(sp->cbpp - 1);
 		(strategy)(bp);
 		biowait(bp);
+		bp->b_vp = NULL;		/* No associated vnode. */
+		brelse(bp);
+
 		next_sp = sp->nextp;
 		free(sp->bpp, M_SEGMENT);
 		free(sp, M_SEGMENT);
@@ -828,27 +825,24 @@ lfs_writesuper(fs)
 	BUF *bp;
 	int (*strategy) __P((BUF *));
 
-printf("lfs_writesuper\n");
+	strategy =
+	    VFSTOUFS(fs->lfs_ivnode->v_mount)->um_devvp->v_op->vop_strategy;
+
 	/* Checksum the superblock and copy it into a buffer. */
 	fs->lfs_cksum = cksum(fs, sizeof(LFS) - sizeof(fs->lfs_cksum));
 	bp = lfs_newbuf(fs, fs->lfs_sboffs[0], LFS_SBPAD);
 	bcopy(fs, bp->b_un.b_lfs, sizeof(LFS));
 
-	/* Write the first superblock. */
-	strategy =
-	    VFSTOUFS(fs->lfs_ivnode->v_mount)->um_devvp->v_op->vop_strategy;
+	/* Write the first superblock (wait). */
 	(strategy)(bp);
 	biowait(bp);
 
-	/* Write the second superblock. */
+	/* Write the second superblock (don't wait). */
 	bp->b_flags &= ~B_DONE;
+	bp->b_flags |= B_ASYNC;
+	bp->b_vp = NULL;			/* No associated vnode. */
 	bp->b_blkno = bp->b_lblkno = fs->lfs_sboffs[1];
 	(strategy)(bp);
-
-	bp->b_vp = NULL;			/* No associated vnode. */
-	biowait(bp);
-	brelse(bp);
-printf("lfs_writesuper is returning\n");
 }
 
 /*
