@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)link.2	8.2 (Berkeley) %G%
+.\"     @(#)link.2	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LINK 2
@@ -99,6 +99,7 @@ are on different file systems.
 The directory in which the entry for the new link is being placed
 cannot be extended because there is no space left on the file
 system containing the directory.
+.ne 3v
 .It Bq Er EDQUOT
 The directory in which the entry for the new link
 is being placed cannot be extended because the
