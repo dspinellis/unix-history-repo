@@ -1,4 +1,4 @@
-/*	tty_pty.c	6.10	85/04/17	*/
+/*	tty_pty.c	6.11	85/06/07	*/
 
 /*
  * Pseudo-teletype Driver
@@ -343,8 +343,7 @@ ptcselect(dev, rw)
 
 	case FWRITE:
 		if ((tp->t_state&TS_ISOPEN) &&
-		    (((pti->pt_flags&PF_REMOTE) && tp->t_canq.c_cc) ||
-		    (tp->t_rawq.c_cc + tp->t_canq.c_cc < TTYHOG - 2))) {
+		    ((pti->pt_flags&PF_REMOTE) == 0 || tp->t_canq.c_cc == 0)) {
 			splx(s);
 			return (1);
 		}
