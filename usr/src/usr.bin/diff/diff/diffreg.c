@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffreg.c 4.5 %G%";
+static	char sccsid[] = "@(#)diffreg.c 4.6 %G%";
 
 #include "diff.h"
 /*
@@ -137,8 +137,8 @@ diffreg()
 	if (stb1.st_size != stb2.st_size)
 		goto notsame;
 	for (;;) {
-		i = fread(buf1, BUFSIZ, 1, f1);
-		j = fread(buf2, BUFSIZ, 1, f2);
+		i = fread(buf1, 1, BUFSIZ, f1);
+		j = fread(buf2, 1, BUFSIZ, f2);
 		if (i < 0 || j < 0 || i != j)
 			goto notsame;
 		if (i == 0 && j == 0) {
@@ -778,7 +778,7 @@ asciifile(f)
 	register char *cp;
 
 	fseek(f, (long)0, 0);
-	cnt = fread(buf, BUFSIZ, 1, f);
+	cnt = fread(buf, 1, BUFSIZ, f);
 	if (cnt >= sizeof (struct exec)) {
 		struct exec hdr;
 		hdr = *(struct exec *)buf;
