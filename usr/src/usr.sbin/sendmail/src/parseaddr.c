@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.29 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -918,10 +918,15 @@ rewrite(pvp, ruleset)
 
 				if (map->s_map.map_app != NULL)
 					bsize -= strlen(map->s_map.map_app);
+				if (tTd(60, 1))
+					printf("map_lookup(%s, %s) => ",
+						mapname, buf);
 				replac = (*map->s_map.map_class->map_lookup)(&map->s_map,
 						buf, sizeof buf - 1, argvect);
 				if (replac != NULL && map->s_map.map_app != NULL)
 					strcat(replac, map->s_map.map_app);
+				if (tTd(60, 1))
+					printf("%s\n", replac ? replac : "NOT FOUND");
 			}
 			else
 				replac = NULL;
