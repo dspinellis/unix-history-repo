@@ -1,4 +1,4 @@
-/*	dz.c	3.2	%H%	*/
+/*	dz.c	3.3	%H%	*/
 
 /*
  *  DZ-11 Driver
@@ -29,10 +29,12 @@
 #define OPAR	0200
 #define MSE	040		/* Master Scan Enable */
 #define RIE	0100		/* Receiver Interrupt Enable */
-#define TIE	040000		/* Transmit interrupt enable */
-#define DZ_IEN	(MSE+RIE+TIE)
+#define	SAE	010000		/* Silo Alarm Enable */
+#define TIE	040000		/* Transmit Interrupt Enable */
+#define DZ_IEN	(MSE+RIE+TIE+SAE)
 #define PERROR	010000
 #define FRERROR	020000
+#define	OVERRUN	040000
 #define SSPEED	7		/* std speed = 300 baud */
 
  
@@ -46,6 +48,7 @@ int	dzxint();
 int	ttrstrt();
 struct	tty dz_tty[NDZ];
 int	dz_cnt = { NDZ };
+int	dzact;
 
 struct device {
 	short	dzcsr;
@@ -160,32 +163,41 @@ dzwrite(d)
 	(*linesw[tp->t_line].l_write)(tp);
 }
  
+/*ARGSUSED*/
 dzrint(dev)
 {
 	register struct tty *tp;
 	register int c;
 	register struct device *dzaddr;
+	register struct tty *tp0;
  
-	dzaddr = dzpdma[dev*8].p_addr;
-	while ((c = dzaddr->dzrbuf) < 0) {	/* char present */
-		tp = &dz_tty[((c>>8)&07)|(dev<<3)];
-		if (tp >= &dz_tty[dz_cnt])
+	/* as long as we are here, service them all */
+	for (dev = 0; dev < NDZ; dev += 8) {
+		if ((dzact & (1<<(dev>>3))) == 0)
 			continue;
-		if ((tp->t_state & ISOPEN) == 0) {
-			wakeup((caddr_t)&tp->t_rawq);
-			continue;
-		}
-		if (c & FRERROR)
-			/* framing error = break */
-			if (tp->t_flags & RAW)
-				c = 0;		/* null for getty */
-			else
-				c = 0177;	/* DEL = interrupt */
-		if (c & PERROR)	
-			/* parity error */
-			if (((tp->t_flags & (EVENP|ODDP)) == EVENP)
-			  || ((tp->t_flags & (EVENP|ODDP)) == ODDP))
+		dzaddr = dzpdma[dev].p_addr;
+		tp0 = &dz_tty[dev];
+		while ((c = dzaddr->dzrbuf) < 0) {	/* char present */
+			tp = tp0 + ((c>>8)&07);
+			if (tp >= &dz_tty[dz_cnt])
 				continue;
+			if ((tp->t_state & ISOPEN) == 0) {
+				wakeup((caddr_t)&tp->t_rawq);
+				continue;
+			}
+			if (c&FRERROR)
+				/* framing error = break */
+				if (tp->t_flags & RAW)
+					c = 0;		/* null for getty */
+				else
+					c = 0177;	/* DEL = interrupt */
+			if (c&OVERRUN)
+				printf("o");
+			if (c&PERROR)	
+				/* parity error */
+				if (((tp->t_flags & (EVENP|ODDP)) == EVENP)
+				  || ((tp->t_flags & (EVENP|ODDP)) == ODDP))
+					continue;
 #ifdef BERKNET
 			if (tp->t_line == BNETLDIS) {
 				c &= 0177;
@@ -193,6 +205,7 @@ dzrint(dev)
 			} else
 #endif
 				(*linesw[tp->t_line].l_rint)(c, tp);
+		}
 	}
 }
  
@@ -223,6 +236,7 @@ dzparam(dev)
 	tp = &dz_tty[dev];
 	dzaddr = dzpdma[dev].p_addr;
 	dzaddr->dzcsr = DZ_IEN;
+	dzact |= (1<<(dev>>3));
 	if (tp->t_ispeed == 0) {
 		dzmodem(dev, OFF);		/* hang up line */
 		return;
@@ -363,4 +377,10 @@ dzscan()
 		}
 	}
 	timeout(dzscan, (caddr_t)0, 2*HZ);
+}
+
+dztimer()
+{
+
+	dzrint(0);
 }
