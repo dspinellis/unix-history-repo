@@ -1,0 +1,81 @@
+##############################################################################
+#    Instructions to Make, for compilation of standalone-MTS library
+#
+#	@(MHWARNING)
+##############################################################################
+
+# The following entries were inserted during MH configuration
+OPTIONS=	@(MHOPTIONS) -I..
+
+CC	=	cc
+@BEGIN: OPTIM
+CFLAGS	=	-O    $(OPTIONS)
+@END: OPTIM
+@BEGIN: DEBUG
+CFLAGS	=	      $(OPTIONS)
+@END: DEBUG
+LINT	=	lint
+LFLAGS	=	-bhu $(OPTIONS)
+LLIBS	=	
+
+LIB	=	mhmts.a
+
+CFILES	=	hosts.c netmail.c uucp.c
+OFILES	=	hosts.o netmail.o uucp.o
+
+
+@BEGIN: OPTIM
+##############################################################################
+#	Generation Rules
+##############################################################################
+.c.o:;		$(CC) $(CFLAGS) -c $*.c
+@BEGIN: NEWLOAD
+		-ld -x -r $@
+		mv a.out $@
+@END: NEWLOAD
+@BEGIN: OLDLOAD
+		cc -s -o $@
+@END: OLDLOAD
+
+
+@END: OPTIM
+##############################################################################
+#	Here it is...
+##############################################################################
+
+all:		$(LIB)
+depend:;
+lint:		l-mhmts
+
+$(LIB):		$(OFILES)
+		-mv $@ z$@
+@BEGIN: RANLIB
+		ar r $@ $(OFILES); ranlib $@
+@END: RANLIB
+@BEGIN: LORDER
+		ar r $@ `lorder $(OFILES) | tsort`
+@END: LORDER
+		-rm -f ../libmts.a
+		ln $@ ../libmts.a
+		-rm -f ../llib-lmts
+		ln llib-lmhmts ../llib-lmts
+		-@ls -l $@
+		-@echo "standalone-MTS library built normally"
+
+l-mhmts:;	$(LINT) $(LFLAGS) $(CFILES) $(LLIBS)
+
+hosts.o:	Makefile
+netmail.o:	Makefile
+uucp.o:		Makefile
+
+
+##############################################################################
+#	Miscellaneous tasks
+##############################################################################
+
+distribution:   clean
+
+clean:		unclean
+		-rm -f *.o $(LIB) z$(LIB) ../libmts.a ../llib-lmts
+
+unclean:;	-rm -f _* :* core
