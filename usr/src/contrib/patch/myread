@@ -1,0 +1,18 @@
+ans='!'
+while expr "X$ans" : "X!" >/dev/null; do
+    read ans
+    case "$ans" in
+    !)
+	sh
+	echo " "
+	echo -n "$rp "
+	;;
+    !*)
+	set `expr "X$ans" : "X!\(.*\)$"`
+	sh -c "$*"
+	echo " "
+	echo -n "$rp "
+	;;
+    esac
+done
+rp='Your answer:'
