@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	6.9 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	6.10 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	6.9 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	6.10 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -370,12 +370,19 @@ getcanonname(host, hbsize)
 				return FALSE;
 			}
 
-			if (h_errno == HOST_NOT_FOUND)
+			if (h_errno != HOST_NOT_FOUND)
 			{
-				/* definitely no data for this address */
-				dp++;
-				qtype = T_ANY; 		/* just in case */
-				continue;
+				/* might have another type of interest */
+				if (qtype == T_ANY)
+				{
+					qtype = T_A;
+					continue;
+				}
+				else if (qtype == T_A && !gotmx)
+				{
+					qtype = T_MX;
+					continue;
+				}
 			}
 
 			if (mxmatch != NULL)
@@ -383,6 +390,10 @@ getcanonname(host, hbsize)
 				/* we matched before -- use that one */
 				break;
 			}
+
+			/* otherwise, try the next name */
+			dp++;
+			qtype = T_ANY;
 			continue;
 		}
 		else if (tTd(8, 8))
