@@ -743,10 +743,9 @@ out:
  */
 issig()
 {
-	register struct proc *p;
+	register struct proc *p = u.u_procp;		/* XXX */
 	register int sig, mask;
 
-	p = u.u_procp;
 	for (;;) {
 		mask = p->p_sig &~ p->p_sigmask;
 		if (p->p_flag&SVFORK)
@@ -773,7 +772,7 @@ issig()
 			do {
 				stop(p);
 				swtch();
-			} while (!procxmt() && p->p_flag&STRC);
+			} while (!procxmt(p) && p->p_flag&STRC);
 
 			/*
 			 * If the traced bit got turned off,
@@ -951,7 +950,7 @@ psig(sig)
 			if (core() == 0)
 				sig |= WCOREFLAG;
 		}
-		exit(W_EXITCODE(0, sig));
+		exit(p, W_EXITCODE(0, sig));
 		/* NOTREACHED */
 	} while (sig = CURSIG(p));
 }
@@ -995,7 +994,10 @@ core()
 		return (EFAULT);
 	}
 #ifdef MAPMEM
-	mmcore();
+	if (error = mmcore(p)) {
+		vput(vp);
+		return (error);
+	}
 #endif
 	VATTR_NULL(&vattr);
 	vattr.va_size = 0;

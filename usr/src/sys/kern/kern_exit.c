@@ -20,7 +20,10 @@
 #include "param.h"
 #include "systm.h"
 #include "map.h"
-#include "user.h"
+#include "ioctl.h"
+#include "tty.h"
+#undef RETURN
+#include "syscontext.h"
 #include "kernel.h"
 #include "proc.h"
 #include "buf.h"
@@ -28,8 +31,6 @@
 #include "vm.h"
 #include "file.h"
 #include "vnode.h"
-#include "ioctl.h"
-#include "tty.h"
 #include "syslog.h"
 #include "malloc.h"
 
@@ -41,14 +42,16 @@
 /*
  * Exit system call: pass back caller's arg
  */
-rexit()
-{
-	struct a {
+/* ARGSUSED */
+rexit(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int	rval;
 	} *uap;
+	int *retval;
+{
 
-	uap = (struct a *)u.u_ap;
-	exit(W_EXITCODE(uap->rval, 0));
+	RETURN (exit(p, W_EXITCODE(uap->rval, 0)));
 }
 
 /*
@@ -58,17 +61,17 @@ rexit()
  * Wake up parent and init processes,
  * and dispose of children.
  */
-exit(rv)
+exit(p, rv)
+	struct proc *p;
 	int rv;
 {
 	register int i;
-	register struct proc *p, *q, *nq;
+	register struct proc *q, *nq;
 	register struct proc **pp;
 
 #ifdef PGINPROF
 	vmsizmon();
 #endif
-	p = u.u_procp;
 	MALLOC(p->p_ru, struct rusage *, sizeof(struct rusage),
 		M_ZOMBIE, M_WAITOK);
 	p->p_flag &= ~(STRC|SULOCK);
@@ -88,7 +91,7 @@ exit(rv)
 	if ((p->p_flag & SVFORK) == 0) {
 #ifdef MAPMEM
 		if (u.u_mmap)
-			mmexit();
+			(void) mmexit(p);
 #endif
 		vrelvm();
 	} else {
@@ -152,8 +155,8 @@ exit(rv)
 	 * using the pages which are about to be freed...
 	 * vrelu will block memory allocation by raising ipl.
 	 */
-	vrelu(u.u_procp, 0);
-	vrelpt(u.u_procp);
+	vrelu(p, 0);
+	vrelpt(p);
 	if (*p->p_prev = p->p_nxt)		/* off allproc queue */
 		p->p_nxt->p_prev = p->p_prev;
 	if (p->p_nxt = zombproc)		/* onto zombproc */
@@ -221,15 +224,17 @@ done:
 }
 
 #ifdef COMPAT_43
-owait()
-{
-	register struct a {
+owait(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int	pid;
 		int	*status;
 		int	options;
 		struct	rusage *rusage;
 		int	compat;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 
 	if ((u.u_ar0[PS] & PSL_ALLCC) != PSL_ALLCC) {
 		uap->options = 0;
@@ -241,21 +246,23 @@ owait()
 	uap->pid = WAIT_ANY;
 	uap->status = 0;
 	uap->compat = 1;
-	u.u_error = wait1();
+	RETURN (wait1(p, uap, retval));
 }
 
-wait4()
-{
-	register struct a {
+wait4(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int	pid;
 		int	*status;
 		int	options;
 		struct	rusage *rusage;
 		int	compat;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 
 	uap->compat = 0;
-	u.u_error = wait1();
+	RETURN (wait1(p, uap, retval));
 }
 #else
 #define	wait1	wait4
@@ -268,9 +275,9 @@ wait4()
  * Look also for stopped (traced) children,
  * and pass back status from them.
  */
-wait1()
-{
-	register struct a {
+wait1(q, uap, retval)
+	register struct proc *q;
+	register struct args {
 		int	pid;
 		int	*status;
 		int	options;
@@ -278,17 +285,18 @@ wait1()
 #ifdef COMPAT_43
 		int compat;
 #endif
-	} *uap = (struct a *)u.u_ap;
-	register f;
-	register struct proc *p, *q;
+	} *uap;
+	int retval[];
+{
+	register int f;
+	register struct proc *p;
 	int status, error;
 
-	q = u.u_procp;
 	if (uap->pid == 0)
 		uap->pid = -q->p_pgid;
 #ifdef notyet
 	if (uap->options &~ (WUNTRACED|WNOHANG))
-		return (EINVAL);
+		RETURN (EINVAL);
 #endif
 loop:
 	f = 0;
@@ -298,21 +306,21 @@ loop:
 			continue;
 		f++;
 		if (p->p_stat == SZOMB) {
-			u.u_r.r_val1 = p->p_pid;
+			retval[0] = p->p_pid;
 #ifdef COMPAT_43
 			if (uap->compat)
-				u.u_r.r_val2 = p->p_xstat;
+				retval[1] = p->p_xstat;
 			else
 #endif
 			if (uap->status) {
 				status = p->p_xstat;	/* convert to int */
 				if (error = copyout((caddr_t)&status,
 				    (caddr_t)uap->status, sizeof(status)))
-					return (error);
+					RETURN (error);
 			}
 			if (uap->rusage && (error = copyout((caddr_t)p->p_ru,
 			    (caddr_t)uap->rusage, sizeof (struct rusage))))
-				return (error);
+				RETURN (error);
 			pgrm(p);			/* off pgrp */
 			p->p_xstat = 0;
 			ruadd(&u.u_cru, p->p_ru);
@@ -343,15 +351,15 @@ loop:
 			p->p_flag = 0;
 			p->p_wchan = 0;
 			p->p_cursig = 0;
-			return (0);
+			RETURN (0);
 		}
 		if (p->p_stat == SSTOP && (p->p_flag & SWTED) == 0 &&
 		    (p->p_flag & STRC || uap->options & WUNTRACED)) {
 			p->p_flag |= SWTED;
-			u.u_r.r_val1 = p->p_pid;
+			retval[0] = p->p_pid;
 #ifdef COMPAT_43
 			if (uap->compat) {
-				u.u_r.r_val2 = W_STOPCODE(p->p_cursig);
+				retval[1] = W_STOPCODE(p->p_cursig);
 				error = 0;
 			} else
 #endif
@@ -361,16 +369,16 @@ loop:
 				    (caddr_t)uap->status, sizeof(status));
 			} else
 				error = 0;
-			return (error);
+			RETURN (error);
 		}
 	}
 	if (f == 0)
-		return (ECHILD);
+		RETURN (ECHILD);
 	if (uap->options & WNOHANG) {
-		u.u_r.r_val1 = 0;
-		return (0);
+		retval[0] = 0;
+		RETURN (0);
 	}
-	if (error = tsleep((caddr_t)u.u_procp, PWAIT | PCATCH, "wait", 0))
-		return (error);
+	if (error = tsleep((caddr_t)q, PWAIT | PCATCH, "wait", 0))
+		RETURN (error);
 	goto loop;
 }
