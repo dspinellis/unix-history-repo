@@ -1,4 +1,4 @@
-/* brk.s 4.3 83/08/22 */
+/* brk.s 4.3 83/10/06 */
 
 #include "SYS.h"
 
@@ -6,6 +6,8 @@
 
 	.globl	curbrk
 	.globl	minbrk
+ENTRY(_brk)
+	jbr	ok
 
 ENTRY(brk)
 	cmpl	4(ap),minbrk
