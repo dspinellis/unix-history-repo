@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_expr.c	7.4 (Berkeley) %G%
+ *	@(#)kdb_expr.c	7.5 (Berkeley) %G%
  */
 
 #include "../kdb/defs.h"
@@ -202,7 +202,6 @@ static
 getnum()
 {
 	register base,d,frpt;
-	union { float r; long i;} real;
 
 	if (!isdigit(lastc))
 		return (0);
@@ -230,14 +229,14 @@ getnum()
 		}
 	}
 	if (lastc=='.' && (base==10 || expv==0)) {
-		real.r=expv; frpt=0; base=10;
+		frpt=0; base=10;
 		while (isdigit(readchar())) {
-			real.r *= base; frpt++;
-			real.r += lastc-'0';
+			if (frpt)
+				continue;
+			frpt++;
+			if (lastc - '0' >= 5)
+				expv++;
 		}
-		while (frpt--)
-			real.r /= base;
-		expv = real.i;
 	}
 	peekc=lastc;
 	return (1);
