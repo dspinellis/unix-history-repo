@@ -1,4 +1,4 @@
-/*	locore.s	4.56	81/11/08	*/
+/*	locore.s	4.57	81/11/26	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -170,9 +170,9 @@ SCBVEC(softclock):
 	POPR; 
 	rei
 #ifdef INET
-SCBVEC(netintr):
+SCBVEC(ipintr):
 	PUSHR
-	calls $0,_netintr
+	calls $0,_ipintr
 	POPR
 	rei
 #endif
