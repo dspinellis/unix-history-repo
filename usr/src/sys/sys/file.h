@@ -4,19 +4,21 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)file.h	7.8 (Berkeley) %G%
+ *	@(#)file.h	7.9 (Berkeley) %G%
  */
 
+#ifdef KERNEL
 #include <sys/fcntl.h>
 #include <sys/unistd.h>
 
-#ifdef KERNEL
 /*
  * Kernel descriptor table entry;
  * one for each open kernel vnode and socket.
  */
 struct file {
-	int	f_flag;		/* see below */
+	struct	file *f_filef;	/* list of active files */
+	struct	file **f_fileb;	/* list of active files */
+	short	f_flag;		/* see fcntl.h */
 #define	DTYPE_VNODE	1	/* file */
 #define	DTYPE_SOCKET	2	/* communications endpoint */
 	short	f_type;		/* descriptor type */
@@ -45,11 +47,12 @@ struct file {
 				struct file *fp,
 				struct proc *p));
 	} *f_ops;
-	caddr_t	f_data;		/* inode */
 	off_t	f_offset;
+	caddr_t	f_data;		/* vnode or socket */
 };
 
-struct file *file, *fileNFILE;
-int nfile;
+extern struct file *filehead;	/* head of list of open files */
+extern int maxfiles;		/* kernel limit on number of open files */
+extern int nfiles;		/* actual number of open files */
 
 #endif /* KERNEL */
