@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)printf.c	5.4 (Berkeley) %G%
+ *	@(#)printf.c	5.5 (Berkeley) %G%
  */
 
 /*
@@ -31,6 +31,7 @@
  */
 
 #include <sys/cdefs.h>
+#include <sys/types.h>
 
 /*
  * Note that stdarg.h and the ANSI style va_start macro is used for both
@@ -148,7 +149,8 @@ kprintn(ul, base)
 	unsigned long ul;
 	int base;
 {
-	char *p, buf[11];			/* hold 2^32 in base 8 */
+					/* hold a long in base 8 */
+	char *p, buf[(sizeof(long) * NBBY / 3) + 1];
 
 	p = buf;
 	do {
