@@ -1655,7 +1655,8 @@ ufs_advlock(vp, id, op, fl, flags)
 int
 ufs_vinit(mntp, specops, fifoops, vpp)
 	struct mount *mntp;
-	struct vnodeops *specops, *fifoops;
+	int (**specops)();
+	int (**fifoops)();
 	struct vnode **vpp;
 {
 	struct inode *ip, *nip;
