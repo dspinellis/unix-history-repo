@@ -1,7 +1,7 @@
 /*
  * Style guide for BSD's KNF (Kernel Normal Form).
  *
- *	@(#)style	1.6 (Berkeley) %G%
+ *	@(#)style	1.7 (Berkeley) %G%
  */
 
 /*
@@ -174,6 +174,8 @@ function(a1, a2, a3, a4)
 	 * style function declarations can go on the same line.  ANSI style
 	 * function declarations should go in the include file "externs.h".
 	 * If a line overflows reuse the type keyword.
+	 *
+	 * In general, don't initialize variables in the declarations.
 	 */
 	extern u_char one;
 	extern char two;
@@ -225,45 +227,4 @@ usage()
 	 */
 	(void)fprintf(stderr, "usage: f [-ab]\n");
 	exit(1);
-}
-
-/*
- * Error routines can be tricky.  The following works in most cases, and
- * can be easily adapted per program.  It allows both:
- *
- *	if ((fp = fopen(file, "r")) == NULL)
- *		err("%s: %s", file, strerror(errno));
- * and:
- *	if ((p = malloc(sizeof(int))) == NULL)
- *		err("%s", strerror(errno));
- *
- * Never use perror(3).
- */
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-void
-#if __STDC__
-err(const char *fmt, ...)
-#else
-err(fmt, va_alist)
-	char *fmt;
-        va_dcl
-#endif
-{
-	va_list ap;
-#if __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	(void)fprintf(stderr, "program_name: ");
-	(void)vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	(void)fprintf(stderr, "\n");
-	exit(1);
-	/* NOTREACHED */
 }
