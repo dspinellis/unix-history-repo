@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	5.24 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	5.25 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	5.24 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	5.25 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -249,7 +249,7 @@ loop:
  * Skip over a compressed domain name. Return the size or -1.
  */
 __dn_skipname(comp_dn, eom)
-	const u_char *comp_dn, *eom;
+	u_char *comp_dn, *eom;
 {
 	register u_char *cp;
 	register int n;
