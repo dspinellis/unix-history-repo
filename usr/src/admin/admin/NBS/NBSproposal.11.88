@@ -1,4 +1,4 @@
-.\"	@(#)NBSproposal.11.88	1.5	88/12/22
+.\"	@(#)NBSproposal.11.88	1.6	89/01/05
 .\" *troff -ms
 .de CO
 .br
@@ -306,7 +306,7 @@ We currently expect receipt of an NFS implementation from Apollo
 that uses a different system interface; if feasible, we will adapt it
 to our file system interface. 
 .NH 2
-System Security Audit
+System Security
 .PP
 The recent invasion of the ARPANET by a quickly reproducing worm
 highlighted the need for a thorough review of the access
@@ -335,8 +335,8 @@ This documentation will cover such topics as file and directory ownership
 and access, network and server configuration,
 and control of privileged operations such as file system backups.
 .PP
-In addition, we have been discussing possible plans for response
-to emergencies such as the recent worm attack with DARPA.
+In addition, we have been discussing with DARPA possible plans for response
+to emergencies such as the recent worm attack.
 We believe that a plan such as the proposed Computer Emergency Response
 Team (CERT) can respond to such attacks effectively, and intend to cooperate
 with such a plan.
@@ -403,7 +403,7 @@ in the clear over wide-area networks.
 .NH
 Milestones
 .PP
-The first four points outlined above are already underway.
+The first four efforts outlined above are already underway.
 We expect that we will have working prototypes early in 1989.
 When the prototypes are moderately stable and functional,
 we will produce a test release that we will distribute to
@@ -414,6 +414,14 @@ resulting in another test release.
 Otherwise, we will incorporate feedback from the testing
 and produce a revised distribution by the end of the period
 covered by this proposal.
+.PP
+The security work described above has already been started informally,
+and will be conducted more thoroughly at the start of the period covered
+by this proposal.
+We will distribute the changes to the servers electronically
+as groups of servers are completed, with immediate distribution
+of fixes for serious problems.
+We will also incorporate all such changes into following releases.
 .br
 .ne 10
 .NH
@@ -435,7 +443,7 @@ its performance and functionality.
 .IP \(bu
 Implementation of a standard interface to file systems
 so that multiple local and remote file systems can be supported.
-Pursue the acquisition and integration
+We will pursue the acquisition and integration
 of a public domain implementation of Sun's NFS.
 .IP \(bu
 Audit of the system
@@ -443,7 +451,8 @@ utilities to check for and eliminate unintended system access mechanisms,
 and to complete conformance with the Internet Host Requirements
 when that standard is released.
 .IP \(bu
-Find, evaluate, and incorporate an authentication mechanism into the system.
+Identification, evaluation, and incorporation of an authentication mechanism
+into the system.
 .br
 .ne 10
 .NH
@@ -451,7 +460,7 @@ Deliverables
 .PP
 We are planning to implement prototypes for each of these
 outlined areas of work over the period of this proposal.
-We plan to do an informal release
+We will do an informal release
 to interested developers during the proposal period.
 In particular, the informal release will be made available
 to the group at Mt Xinu that is producing a commercially
