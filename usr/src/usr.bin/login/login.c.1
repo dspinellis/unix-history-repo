@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)login.c.1	4.19 82/11/14";
+static	char *sccsid = "@(#)login.c.1	4.20 82/12/21";
 /*
  * login [ name ]
  * login -r
@@ -26,7 +26,7 @@ char	qlog[]  =	".hushlogin";
 char	securetty[] =	"/etc/securetty";
 char	maildir[30] =	"/usr/spool/mail/";
 char	lastlog[] =	"/usr/adm/lastlog";
-struct	passwd nouser = {"", "nope"};
+struct	passwd nouser = {"", "nope", -1, -1, -1, "", "", "", "" };
 struct	sgttyb ttyb;
 struct	utmp utmp;
 char	minusnam[16] = "-";
@@ -54,20 +54,10 @@ char	*rindex();
 char	*stypeof();
 extern	char **environ;
 
-#define	CTRL(c)	('c'&037)
-#define	CERASE	'#'
-#define	CEOT	CTRL(d)
-#define	CKILL	'@'
-#define	CQUIT	034		/* FS, cntl shift L */
-#define	CINTR	0177		/* DEL */
-#define	CSTOP	CTRL(s)
-#define	CSTART	CTRL(q)
-#define	CBRK	0377
-struct	tchars tc = {
-	CINTR, CQUIT, CSTART, CSTOP, CEOT, CBRK
-};
-struct	ltchars ltc = {
-	CTRL(z), CTRL(y), CTRL(r), CTRL(o), CTRL(w), CTRL(v)
+struct	ttychars tc = {
+	CERASE,	CKILL,	CINTR,	CQUIT,	CSTART,
+	CSTOP,	CEOF,	CBRK,	CSUSP,	CDSUSP,
+	CRPRNT,	CFLUSH,	CWERASE,CLNEXT
 };
 
 int	rflag;
@@ -143,11 +133,11 @@ abnormal:
 		rflag = -1;
 	}
 normal:
-	ioctl(0, TIOCLSET, &zero);
+	ioctl(0, TIOCLSET, &zero);	/* XXX */
 	ioctl(0, TIOCNXCL, 0);
 	ioctl(0, FIONBIO, &zero);
 	ioctl(0, FIOASYNC, &zero);
-	gtty(0, &ttyb);
+	ioctl(0, TIOCGETP, &ttyb);	/* XXX */
 	if (rflag) {
 		char *cp = index(term, '/');
 		if (cp) {
@@ -161,11 +151,8 @@ normal:
 		}
 		ttyb.sg_flags = ECHO|CRMOD|ANYP|XTABS;
 	}
-	ttyb.sg_erase = CERASE;
-	ttyb.sg_kill = CKILL;
-	stty(0, &ttyb);
-	ioctl(0, TIOCSETC, &tc);
-	ioctl(0, TIOCSLTC, &ltc);
+	ioctl(0, TIOCSETP, &ttyb);	/* XXX */
+	ioctl(0, TIOCCSET, &tc);
 	for (t=3; t<20; t++)
 		close(t);
 	ttyn = ttyname(0);
@@ -181,7 +168,7 @@ normal:
 			argc = 0;
 		}
 		if (rflag) {
-			strcpy(utmp.ut_name, lusername);
+			SCPYN(utmp.ut_name, lusername);
 			if (rflag == -1)
 				rflag = 0;
 		} else
@@ -297,7 +284,7 @@ normal:
 		close(f);
 	}
 	chown(ttyn, pwd->pw_uid, pwd->pw_gid);
-	chmod(ttyn, 622);
+	chmod(ttyn, 0622);
 	setgid(pwd->pw_gid);
 	strncpy(name, utmp.ut_name, NMAX);
 	name[NMAX] = '\0';
