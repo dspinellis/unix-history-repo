@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_overflow.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_overflow.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -122,7 +122,7 @@ __ovfl_put(t, dbt, pg)
 	plen = t->bt_psize - BTDATAOFF;
 	for (last = NULL, p = dbt->data, sz = dbt->size;;
 	    p = (char *)p + plen, last = h) {
-		if ((h = mpool_new(t->bt_mp, &npg)) == NULL)
+		if ((h = __bt_new(t, &npg)) == NULL)
 			return (RET_ERROR);
 
 		h->pgno = npg;
@@ -183,12 +183,11 @@ __ovfl_delete(t, p)
 	}
 
 	/* Step through the chain, calling the free routine for each page. */
-	plen = t->bt_psize - BTDATAOFF;
-	for (;; sz -= plen) {
-		if (sz >= plen)
-			break;
+	for (plen = t->bt_psize - BTDATAOFF;; sz -= plen) {
 		pg = h->nextpg;
-		/* XXX mpool_free(t->bt_mp, h->pgno); */
+		__bt_free(t, h);
+		if (sz <= plen)
+			break;
 		if ((h = mpool_get(t->bt_mp, pg, 0)) == NULL)
 			return (RET_ERROR);
 	}
