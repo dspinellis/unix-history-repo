@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)field.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)field.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -154,11 +154,7 @@ p_save(p, pw, ep)
 	struct passwd *pw;
 	struct entry *ep;
 {
-	if (!*p) {
-		fprintf(stderr, "chpass: empty field.");
-		return(1);
-	}
-	if (!(ep->save = strdup(p))) {
+	if (*p && !(ep->save = strdup(p))) {
 		fprintf(stderr, "chpass: can't save entry");
 		return(1);
 	}
