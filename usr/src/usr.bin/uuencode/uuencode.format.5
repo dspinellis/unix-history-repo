@@ -1,16 +1,16 @@
-.\"	@(#)uuencode.format.5	4.1 (Berkeley) %G%
+.\"	@(#)uuencode.format.5	5.1 (Berkeley) %G%
 .\"
-.TH UUENCODE 5 6/1/80
+.TH UUENCODE 5 "1 June 1980"
 .AT 3
 .SH NAME
 uuencode \- format of an encoded uuencode file
 .SH DESCRIPTION
 Files output by
-.I uuencode(1)
+.I uuencode(1C)
 consist of a header line,
 followed by a number of body lines,
 and a trailer line.
-.I Uudecode(1)
+.I Uudecode(1C)
 will ignore any lines preceding the header or
 following the trailer.
 Lines preceding a header must not, of course,
@@ -47,5 +47,5 @@ The body is terminated by a line with a count of zero.
 This line consists of one ASCII space.
 .PP
 The trailer line consists of \*(lqend\*(rq on a line by itself.
-.SH SEE\ ALSO
-uuencode(1), uudecode(1), uusend(1), uucp(1), mail(1)
+.SH "SEE ALSO"
+uuencode(1C), uudecode(1C), uusend(1C), uucp(1C), mail(1)
