@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static	char sccsid[] = "@(#)nl.c 2.1 %G%";
+static	char sccsid[] = "@(#)nl.c 2.2 %G%";
 #endif
 
 #include "whoami.h"
@@ -779,16 +779,12 @@ nlcopy(p)
 	struct nl *p;
 {
 	register struct nl *p1, *p2;
-	register int i;
 
 	p1 = p;
-	p = p2 = defnl((char *) 0, 0, NLNIL, 0);
-	i = (sizeof *p)/(sizeof (int));
-	do
-		*p2++ = *p1++;
-	while (--i);
-	p->chain = NIL;
-	return (p);
+	p2 = defnl((char *) 0, 0, NLNIL, 0);
+	*p2 = *p1;
+	p2->chain = NLNIL;
+	return (p2);
 }
 
 /*
