@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)mpool.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mpool.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -270,9 +270,9 @@ mpool_close(mp)
 	/* Free up any space allocated to the lru pages. */
 	for (b = mp->lru.cprev; b != (BKT *)&mp->lru; b = next) {
 		next = b->cprev;
-		free(b->page);
 		free(b);
 	}
+	free(mp);
 	return (RET_SUCCESS);
 }
 
