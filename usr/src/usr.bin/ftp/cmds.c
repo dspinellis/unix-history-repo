@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -213,6 +213,7 @@ put(argc, argv)
 	char *argv[];
 {
 	char *cmd;
+	char *oldargv1;
 
 	if (argc == 2)
 		argc++, argv[2] = argv[1];
@@ -239,8 +240,15 @@ usage:
 	}
 	if (argc < 3) 
 		goto usage;
+	oldargv1 = argv[1];
 	if (!globulize(&argv[1]))
 		return;
+	/*
+	 * If "globulize" modifies argv[1], and argv[2] is a copy of
+	 * the old argv[1], make it a copy of the new argv[1].
+	 */
+	if (argv[1] != oldargv1 && argv[2] == oldargv1)
+		argv[2] = argv[1];
 	cmd = (argv[0][0] == 'a') ? "APPE" : "STOR";
 	sendrequest(cmd, argv[1], argv[2]);
 }
@@ -736,45 +744,32 @@ shell(argc, argv)
 			close(pid);
 		signal(SIGINT, SIG_DFL);
 		signal(SIGQUIT, SIG_DFL);
+		shell = getenv("SHELL");
+		if (shell == NULL)
+			shell = "/bin/sh";
+		namep = rindex(shell,'/');
+		if (namep == NULL)
+			namep = shell;
 		if (argc <= 1) {
-			shell = getenv("SHELL");
-			if (shell == NULL)
-				shell = "/bin/sh";
-			namep = rindex(shell,'/');
-			if (namep == NULL)
-				namep = shell;
-			strcpy(shellnam,"-");
-			strcat(shellnam, ++namep);
-			if (strcmp(namep, "sh") != 0)
-				shellnam[0] = '+';
 			if (debug) {
 				printf ("%s\n", shell);
 				fflush (stdout);
 			}
-			execl(shell, shellnam, 0);
-			perror(shell);
-			exit(1);
-		}
-		cpp = &argv[1];
-		if (argc > 2) {
-			if ((gargs = glob(cpp)) != NULL)
-				cpp = gargs;
-			if (globerr != NULL) {
-				printf("%s\n", globerr);
-				exit(1);
-			}
-		}
-		if (debug) {
-			register char **zip = cpp;
+			execl(shell, shell, (char *)0);
+		} else {
+			char *args[4];	/* "sh" "-c" <command> NULL */
 
-			printf("%s", *zip);
-			while (*++zip != NULL)
-				printf(" %s", *zip);
-			printf("\n");
-			fflush(stdout);
+			args[0] = shell;
+			args[1] = "-c";
+			args[2] = argv[1];
+			args[3] = NULL;
+			if (debug) {
+				printf("%s -c %s\n", shell, argv[1]);
+				fflush(stdout);
+			}
+			execv(shell, args);
 		}
-		execvp(argv[1], cpp);
-		perror(argv[1]);
+		perror(shell);
 		exit(1);
 	}
 	if (pid > 0)

@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -35,13 +35,14 @@ static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
 int	intr();
 int	lostpeer();
 extern	char *home;
+char	*getlogin();
 
 main(argc, argv)
 	char *argv[];
 {
 	register char *cp;
 	int top;
-	struct passwd *pw;
+	struct passwd *pw = NULL;
 	char homedir[MAXPATHLEN];
 
 	sp = getservbyname("ftp", "tcp");
@@ -103,7 +104,9 @@ main(argc, argv)
 	/*
 	 * Set up the home directory in case we're globbing.
 	 */
-	pw = getpwnam(getlogin());
+	cp = getlogin();
+	if (cp != NULL)
+		pw = getpwnam(cp);
 	if (pw == NULL)
 		pw = getpwuid(getuid());
 	if (pw != NULL) {
@@ -198,6 +201,8 @@ cmdscanner(top)
 		if (line[0] == 0)
 			break;
 		makeargv();
+		if (margc == 0)
+			continue;
 		c = getcmd(margv[0]);
 		if (c == (struct cmd *)-1) {
 			printf("?Ambiguous command\n");
@@ -217,7 +222,6 @@ cmdscanner(top)
 		if (c->c_handler != help)
 			break;
 	}
-	longjmp(toplevel, 0);
 }
 
 struct cmd *
@@ -261,8 +265,23 @@ makeargv()
 	argp = margv;
 	stringbase = line;		/* scan from first of buffer */
 	argbase = argbuf;		/* store from first of buffer */
-	while (*argp++ = slurpstring())
+	while (*stringbase == ' ' || *stringbase == '\t')
+		stringbase++;		/* skip initial white space */
+	if (*stringbase == '!') {	/* handle shell escapes specially */
+		stringbase++;
+		*argp++ = "!";		/* command name is "!" */
 		margc++;
+		while (*stringbase == ' ' || *stringbase == '\t')
+			stringbase++;		/* skip white space */
+		if (*stringbase != '\0') {
+			*argp++ = stringbase;	/* argument is entire command string */
+			margc++;
+		}
+		*argp++ = NULL;
+	} else {
+		while (*argp++ = slurpstring())
+			margc++;
+	}
 }
 
 /*
@@ -278,10 +297,6 @@ slurpstring()
 	register char *ap = argbase;
 	char *tmp = argbase;		/* will return this if token found */
 
-	if (*sb == '!') {		/* recognize ! as a token for shell */
-		stringbase++;
-		return ("!");
-	}
 S0:
 	switch (*sb) {
 
@@ -385,7 +400,8 @@ help(argc, argv)
 		for (i = 0; i < lines; i++) {
 			for (j = 0; j < columns; j++) {
 				c = cmdtab + j * lines + i;
-				printf("%s", c->c_name);
+				if (c->c_name)
+					printf("%s", c->c_name);
 				if (c + lines >= &cmdtab[NCMDS]) {
 					printf("\n");
 					break;

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -191,23 +191,8 @@ getreply(expecteof)
 				originalcode = code;
 			continue;
 		}
-		if (expecteof || empty(cin))
-			return (n - '0');
+		return (n - '0');
 	}
-}
-
-empty(f)
-	FILE *f;
-{
-	long mask;
-	struct timeval t;
-
-	if (f->_cnt > 0)
-		return (0);
-	mask = (1 << fileno(f));
-	t.tv_sec = t.tv_usec = 0;
-	(void) select(20, &mask, 0, 0, &t);
-	return (mask == 0);
 }
 
 jmp_buf	sendabort;
@@ -224,6 +209,7 @@ sendrequest(cmd, local, remote)
 	FILE *fin, *dout, *popen();
 	int (*closefunc)(), pclose(), fclose(), (*oldintr)();
 	char buf[BUFSIZ];
+	int expectingreply = 0;
 	long bytes = 0, hashbytes = sizeof (buf);
 	register int c, d;
 	struct stat st;
@@ -236,9 +222,15 @@ sendrequest(cmd, local, remote)
 	if (strcmp(local, "-") == 0)
 		fin = stdin;
 	else if (*local == '|') {
-		fin = popen(local + 1, "r");
+		/*
+		 * Advance local so further uses just yield file name
+		 * thus later references for error messages need not check
+		 * for '|' special case.
+	 	 */
+		local += 1;
+		fin = popen(local, "r");
 		if (fin == NULL) {
-			perror(local + 1);
+			perror(local);
 			goto bad;
 		}
 		closefunc = pclose;
@@ -263,6 +255,7 @@ sendrequest(cmd, local, remote)
 	} else
 		if (command("%s", cmd) != PRELIM)
 			goto bad;
+	expectingreply++;	/* got preliminary reply, expecting final reply */
 	dout = dataconn("w");
 	if (dout == NULL)
 		goto bad;
@@ -325,10 +318,13 @@ sendrequest(cmd, local, remote)
 	}
 	gettimeofday(&stop, (struct timezone *)0);
 	if (closefunc != NULL)
-		(*closefunc)(fin);
+		(*closefunc)(fin), closefunc = NULL;
 	(void) fclose(dout);
-	(void) getreply(0);
 done:
+	if (expectingreply) {
+		(void) getreply(0);
+		expectingreply = 0;
+	}
 	signal(SIGINT, oldintr);
 	if (bytes > 0 && verbose)
 		ptransfer("sent", bytes, &start, &stop);
@@ -337,7 +333,8 @@ bad:
 	if (data >= 0)
 		(void) close(data), data = -1;
 	if (closefunc != NULL && fin != NULL)
-		(*closefunc)(fin);
+		(*closefunc)(fin), closefunc = NULL;
+	bytes = 0;	/* so we don't print a message if the transfer was aborted */
 	goto done;
 }
 
@@ -355,6 +352,7 @@ recvrequest(cmd, local, remote, mode)
 	FILE *fout, *din, *popen();
 	int (*closefunc)(), pclose(), fclose(), (*oldintr)();
 	char buf[BUFSIZ];
+	int expectingreply = 0;
 	long bytes = 0, hashbytes = sizeof (buf);
 	register int c, d;
 	struct timeval start, stop;
@@ -365,14 +363,19 @@ recvrequest(cmd, local, remote, mode)
 	oldintr = signal(SIGINT, abortrecv);
 	if (strcmp(local, "-") && *local != '|')
 		if (access(local, 2) < 0) {
-			char *dir = rindex(local, '/');
+			if (errno == ENOENT) {
+				char *dir = rindex(local, '/');
 
-			if (dir != NULL)
-				*dir = 0;
-			d = access(dir ? local : ".", 2);
-			if (dir != NULL)
-				*dir = '/';
-			if (d < 0) {
+				if (dir != NULL)
+					*dir = 0;
+				d = access(dir ? local : ".", 2);
+				if (dir != NULL)
+					*dir = '/';
+				if (d < 0) {
+					perror(local);
+					goto bad;
+				}
+			} else {
 				perror(local);
 				goto bad;
 			}
@@ -385,17 +388,23 @@ recvrequest(cmd, local, remote, mode)
 	} else
 		if (command("%s", cmd) != PRELIM)
 			goto bad;
+	expectingreply++;	/* got preliminary reply, expecting final reply */
 	if (strcmp(local, "-") == 0)
 		fout = stdout;
 	else if (*local == '|') {
-		fout = popen(local + 1, "w");
+		/*
+		 * Advance local over '|' so don't need to check for
+		 * '|' special case any further.
+		 */
+		local += 1;
+		fout = popen(local, "w");
 		closefunc = pclose;
 	} else {
 		fout = fopen(local, mode);
 		closefunc = fclose;
 	}
 	if (fout == NULL) {
-		perror(local + 1);
+		perror(local);
 		goto bad;
 	}
 	din = dataconn("r");
@@ -463,9 +472,12 @@ recvrequest(cmd, local, remote, mode)
 	gettimeofday(&stop, (struct timezone *)0);
 	(void) fclose(din);
 	if (closefunc != NULL)
-		(*closefunc)(fout);
-	(void) getreply(0);
+		(*closefunc)(fout), closefunc = NULL;
 done:
+	if (expectingreply) {
+		(void) getreply(0);
+		expectingreply = 0;
+	}
 	signal(SIGINT, oldintr);
 	if (bytes > 0 && verbose)
 		ptransfer("received", bytes, &start, &stop);
@@ -475,6 +487,7 @@ bad:
 		(void) close(data), data = -1;
 	if (closefunc != NULL && fout != NULL)
 		(*closefunc)(fout);
+	bytes = 0;	/* so we don't print a message if the transfer was aborted */
 	goto done;
 }
 
@@ -504,7 +517,7 @@ noport:
 	}
 	if (!sendport)
 		if (setsockopt(data, SOL_SOCKET, SO_REUSEADDR, &on, sizeof (on)) < 0) {
-			perror("ftp: setsockopt (resuse address)");
+			perror("ftp: setsockopt (reuse address)");
 			goto bad;
 		}
 	if (bind(data, (char *)&data_addr, sizeof (data_addr), 0) < 0) {
