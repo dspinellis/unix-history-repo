@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	7.31 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.32 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -14,7 +14,6 @@
 #include "tty.h"
 #include "time.h"
 #include "resource.h"
-#include "user.h"
 #include "kernel.h"
 #include "proc.h"
 #include "buf.h"
@@ -23,14 +22,14 @@
 #include "vnode.h"
 #include "syslog.h"
 #include "malloc.h"
+#include "resourcevar.h"
 
 #ifdef COMPAT_43
 #include "machine/reg.h"
 #include "machine/psl.h"
 #endif
 
-#include "vm/vm_param.h"
-#include "vm/vm_map.h"
+#include "vm/vm.h"
 #include "vm/vm_kern.h"
 
 /*
@@ -72,7 +71,7 @@ exit(p, rv)
 	 * If parent is waiting for us to exit or exec,
 	 * SPPWAIT is set; we will wakeup the parent below.
 	 */
-	p->p_flag &= ~(STRC|SULOCK|SPPWAIT);
+	p->p_flag &= ~(STRC|SPPWAIT);
 	p->p_flag |= SWEXIT;
 	p->p_sigignore = ~0;
 	p->p_sig = 0;
@@ -143,7 +142,7 @@ p->p_vmspace = 0;
 	p->p_prev = &zombproc;
 	zombproc = p;
 	p->p_stat = SZOMB;
-	noproc = 1;
+	curproc = NULL;
 	for (pp = &pidhash[PIDHASH(p->p_pid)]; *pp; pp = &(*pp)->p_hash)
 		if (*pp == p) {
 			*pp = p->p_hash;
