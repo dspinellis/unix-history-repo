@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)sysconf.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysconf.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -18,6 +18,18 @@ static char sccsid[] = "@(#)sysconf.c	5.1 (Berkeley) %G%";
 #include <errno.h>
 #include <unistd.h>
 
+/*
+ * sysconf --
+ *	get configurable system variables.
+ *
+ * XXX
+ * POSIX 1003.1 (ISO/IEC 9945-1, 4.8.1.3) states that the variable values
+ * not change during the lifetime of the calling process.  This would seem
+ * to require that any change to system limits kill all running processes.
+ * A workaround might be to cache the values when they are first retrieved
+ * and then simply return the cached value on subsequent calls.  This is
+ * less useful than returning up-to-date values, however.
+ */
 long
 sysconf(name)
 	int name;
@@ -26,41 +38,50 @@ sysconf(name)
 	size_t len;
 	int mib[2], value;
 
+	len = sizeof(value);
+
 	switch (name) {
+/* 1003.1 */
 	case _SC_ARG_MAX:
 		mib[0] = CTL_KERN;
 		mib[1] = KERN_ARGMAX;
 		break;
 	case _SC_CHILD_MAX:
 		mib[0] = CTL_KERN;
-		mib[1] = KERN_MAXPROC;
+		mib[1] = KERN_MAXUPROC;
 		break;
 	case _SC_CLK_TCK:
+		return (CLK_TCK);
+	case _SC_JOB_CONTROL:
 		mib[0] = CTL_KERN;
-		mib[1] = KERN_CLOCKRATE;
-		len = sizeof(struct clockinfo);
-		return (sysctl(mib, 2,
-		    &clk, &len, NULL, 0) == -1 ? -1 : clk.hz);
+		mib[1] = KERN_JOB_CONTROL;
+		goto yesno;
 	case _SC_NGROUPS_MAX:
 		mib[0] = CTL_KERN;
 		mib[1] = KERN_NGROUPS;
 		break;
 	case _SC_OPEN_MAX:
 		mib[0] = CTL_KERN;
-		mib[1] = KERN_MAXFILES;
+		mib[1] = KERN_MAXUFILES;
 		break;
-	case _SC_JOB_CONTROL:
-		mib[0] = CTL_KERN;
-		mib[1] = KERN_JOB_CONTROL;
+	case _SC_STREAM_MAX:
+		mib[0] = CTL_USER;
+		mib[1] = USER_STREAM_MAX;
+		break;
+	case _SC_TZNAME_MAX:
+		mib[0] = CTL_USER;
+		mib[1] = USER_TZNAME_MAX;
 		break;
 	case _SC_SAVED_IDS:
 		mib[0] = CTL_KERN;
 		mib[1] = KERN_SAVED_IDS;
-		break;
+		goto yesno;
 	case _SC_VERSION:
 		mib[0] = CTL_KERN;
 		mib[1] = KERN_POSIX1;
 		break;
+
+/* 1003.2 */
 	case _SC_BC_BASE_MAX:
 		mib[0] = CTL_USER;
 		mib[1] = USER_BC_BASE_MAX;
@@ -100,31 +121,43 @@ sysconf(name)
 	case _SC_2_C_BIND:
 		mib[0] = CTL_USER;
 		mib[1] = USER_POSIX2_C_BIND;
-		break;
+		goto yesno;
 	case _SC_2_C_DEV:
 		mib[0] = CTL_USER;
 		mib[1] = USER_POSIX2_C_DEV;
-		break;
+		goto yesno;
+	case _SC_2_CHAR_TERM:
+		mib[0] = CTL_USER;
+		mib[1] = USER_POSIX2_CHAR_TERM;
+		goto yesno;
 	case _SC_2_FORT_DEV:
 		mib[0] = CTL_USER;
 		mib[1] = USER_POSIX2_FORT_DEV;
-		break;
+		goto yesno;
 	case _SC_2_FORT_RUN:
 		mib[0] = CTL_USER;
 		mib[1] = USER_POSIX2_FORT_RUN;
-		break;
+		goto yesno;
 	case _SC_2_LOCALEDEF:
 		mib[0] = CTL_USER;
 		mib[1] = USER_POSIX2_LOCALEDEF;
-		break;
+		goto yesno;
 	case _SC_2_SW_DEV:
 		mib[0] = CTL_USER;
 		mib[1] = USER_POSIX2_SW_DEV;
+		goto yesno;
+	case _SC_2_UPE:
+		mib[0] = CTL_USER;
+		mib[1] = USER_POSIX2_UPE;
+yesno:		if (sysctl(mib, 2, &value, &len, NULL, 0) == -1)
+			return (-1);
+		if (value == 0)
+			return (-1);
+		return (value);
 		break;
 	default:
 		errno = EINVAL;
 		return (-1);
 	}
-	len = sizeof(value);
 	return (sysctl(mib, 2, &value, &len, NULL, 0) == -1 ? -1 : value); 
 }
