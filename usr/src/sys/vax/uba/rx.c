@@ -1,4 +1,4 @@
-/*	rx.c	4.18	83/05/11	*/
+/*	rx.c	4.19	83/05/21	*/
 
 #include "rx.h"
 #if NFX > 0
@@ -235,7 +235,7 @@ rxstrategy(bp)
 	if (ui == 0 || ui->ui_alive == 0) 
 		goto bad;
 	sc = &rx_softc[unit];
-	if (bp->b_blkno < 0 || (bp->b_blkno * DEV_BSIZE) > RXSIZE )
+	if (bp->b_blkno < 0 || dbtob(bp->b_blkno) > RXSIZE)
 		goto bad;
 	if (sc->sc_flags & RXF_BAD) {
 		bp->b_error = EIO;
@@ -315,7 +315,7 @@ rxmap(bp, psector, ptrack)
 	register int lt, ls, ptoff;
 	struct rx_softc *sc = &rx_softc[RXUNIT(bp->b_dev)];
 
-	ls = ( bp->b_blkno * DEV_BSIZE + ( sc->sc_offset - sc->sc_resid ))/NBPS;
+	ls = (dbtob(bp->b_blkno) + (sc->sc_offset - sc->sc_resid)) / NBPS;
 	lt = ls / 26;
 	ls %= 26;
 	/*
@@ -797,7 +797,7 @@ rxioctl(dev, cmd, data, flag)
 	case RXIOC_FORMAT:
 		if ((flag&FWRITE) == 0)
 			return (EBADF);
-		if (sc->sc_open > 1 )
+		if (sc->sc_open > 1)
 			return (EBUSY);
 		if (*(int *)data)
 			sc->sc_csbits |= RX_DDEN;
