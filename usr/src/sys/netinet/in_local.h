@@ -1,4 +1,4 @@
-/*	in_local.h	4.1	83/03/13	*/
+/*	in_local.h	4.2	83/03/13	*/
 
 /*
  * Internet definitions and variables
@@ -34,5 +34,5 @@
 #define	CLASSA_LOCALHOSTMAP(h, in) \
 	(in) & 0x800000 ? (h) & ~0xef0000 : (h)
 #define	CLASSB_LOCALHOSTMAP(h, in) \
-	(in) & 0x8000 ? (n) & ~0xef00 : (h)
+	(in) & 0x8000 ? (h) & ~0xef00 : (h)
 #define	CLASSC_LOCALHOSTMAP(h, in)	(h)
