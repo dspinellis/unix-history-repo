@@ -9,7 +9,7 @@
  * experiences (good or bad) with these elementary function codes, using
  * the sendbug(8) program, to the authors.
  *
- *	@(#)math.h	5.4 (Berkeley) %G%
+ *	@(#)math.h	5.5 (Berkeley) %G%
  */
 
 #ifndef	_MATH_H_
@@ -18,11 +18,11 @@
 #if defined(vax) || defined(tahoe)
 #define	HUGE_VAL	1.701411733192644270e38
 #else
-#define	HUGE_VAL	1e500	/* positive infinity */
+#define	HUGE_VAL	1e500		/* positive infinity */
 #endif
 
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
-#define	HUGE		HUGE_VAL
+#define	HUGE	HUGE_VAL
 #endif
 
 #include <sys/cdefs.h>
@@ -66,9 +66,9 @@ int	finite __P((double));
 double	hypot __P((double, double));
 #if defined(vax) || defined(tahoe)
 double	infnan __P((int));
-#else
-int	isnan __P((double));
 #endif
+int	isinf __P((double));
+int	isnan __P((double));
 double	j0 __P((double));
 double	j1 __P((double));
 double	jn __P((int, double));
