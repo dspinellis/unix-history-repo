@@ -1,4 +1,4 @@
-/*
+/*	dip.c	1.2	(Berkeley)	83/09/14
  *	dip
  *	driver for impress/imagen canon laser printer
  */
@@ -26,7 +26,7 @@ Dt ...\n	draw operation 't':
 	D~ x y x y ...	wiggly line by x,y then x,y ...
 nb a	end of line (information only -- no action needed)
 	b = space before line, a = after
-p	new page begins -- set v to 0
+pn	new page begins -- set v to 0
 #...\n	comment
 x ...\n	device control functions:
 	x i	init
@@ -47,148 +47,170 @@ x ...\n	device control functions:
 #include	<signal.h>
 #include	<math.h>
 #include	<ctype.h>
-#include	<sys/time.h>
 #include	"dev.h"
 #include	"canon.h"
-#include	"glyph.h"
+#include	"rst.h"
 
-#define abs(n)  ((n) >= 0 ? (n) : -(n))
 
-#define	NFONT	10
-#define	RES	240		/* resolution of canon */
-
-int	xx, yy;
-int	inputarea	= 5;	/* input area = 5 * 8k bytes */
-int	rotate	= 0;	/* 0 => portrait, 1 => landscape */
-int	output	= 0;	/* do we do output at all? */
-int	pageno	= -1;	/* output page number */
-int	nolist	= 0;	/* output page list if > 0 */
-int	olist[20];	/* pairs of page numbers */
-
-struct dev dev;
-struct font *fontbase[NFONT+1];
-short	*pstab;
-int	nsizes	= 1;
-int	nfonts;
-int	smnt;	/* index of first special font */
-int	nchtab;
-char	*chname;
-short	*chtab;
-char	*fitab[NFONT+1];
-char	*widthtab[NFONT+1];	/* widtab would be a better name */
-char	*codetab[NFONT+1];	/* device codes */
+/* #define  DEBUGABLE	/* whether or not it'll accept the -d option */
+#define  abs(n)		((n) >= 0 ? (n) : -(n))
+#define  hmot(n)	hpos += n
+#define  hgoto(n)	hpos = n
+#define  vmot(n)	vpos += n
+#define  vgoto(n)	vpos = n
 
 #define	FATAL	1
 #define	BMASK	0377
-int	dbg	= 0;
-int	res	= 240;		/* input assumed computed according to this resolution */
-				/* initial value to avoid 0 divide */
-FILE	*tf	= NULL;		/* output file pointer */
-char	*tempfile;
-char	*fontdir	= "/usr/lib/font";
-char	*bitdir		= "/usr/src/local/ditroff/troff/devcan";
-char	*acctfile	= "/usr/adm/dipacct";
-int	acctpages	= 0;
-int	copies		= 1;
-char	*username	= "???";
-char	*getlogin();
-extern char devname[];
+#define	NFONT	30		/* maximum forever */
 
-FILE *fp	= stdin;	/* input file pointer */
-extern int DX, DY, maxdots;
+#define FONTDIR	"/usr/lib/font";
+#define BITDIR	"/usr/local/lib/ifontt";
+
+				/* BOTTOMTHRESH and DELTATHRESH are used to */
+				/* search through the glyphs downloaded to */
+				/* determine which ones to keep and which to */
+				/* dump.  They're tested against BOTTOMTHRESH */
+				/* first, then if THAT doesn't release enough */
+				/* space, DELTATHRESH is added until it is. */
+#define BOTTOMTHRESH	16
+#define DELTATHRESH	16
+#define MEMSIZE	70000		/* amount of memory inside imagen */
+#define BUFFER	20000		/* imagen memory set aside for page buffer */
+#define CHARRAY	128		/* size of character use count array */
+
+int	MAXX = (RES*8+RES/3);	/* size of the page... (not 8-1/2" x 11", */
+int	MAXY = (RES*10+RES/2+RES/4);		/*  but 8-1/3" x 10-3/4") */
+
+int	output	= 0;		/* do we do output at all? */
+int	pageno	= -1;		/* output page number */
+int	nolist	= 0;		/* output page list if > 0 */
+int	olist[20];		/* pairs of page numbers */
+
+struct dev dev;
+struct font *fontbase[NFONT+1];
+short *	pstab;
+int	nsizes = 1;
+int	nfonts;
+int	nchtab;
+char *	chname;
+short *	chtab;
+unsigned char *	fitab[NFONT+1];		/* legal characters for each font */
+unsigned char *	widtab[NFONT+1];	/* width table for each font */
+unsigned char *	codetab[NFONT+1];	/* device code translation */
+char *	fontname[NFONT+1];		/* what font is on what position? */
+
+#ifdef DEBUGABLE
+int	dbg	= 0;
+#endif
+
+FILE *	tf = stdout;		/* output file pointer */
+char *	fontdir = FONTDIR;
+char *	bitdir = BITDIR;
+FILE *	fp = stdin;		/* input file pointer */
+
+int	totglyph= 0;		/* total space used by glyphs sent down */
+int	maxglyph= MEMSIZE - BUFFER;		/* maximum space for glyphs */
+
+int	size = 1;
+int	font = 1;
+int	family;
+int	hpos;		/* current horizontal position (left = 0) */
+int	vpos;		/* current vertical position (down positive) */
+int	lastw	= 0;	/* width of last input character */
+extern int linethickness;	/* line drawing pars:  Thickness (pixels) */
+extern int style;		/*   and type (SOLID, DOTTED, . . . ) */
+
+typedef struct {
+	int	font;
+	int	size;
+	unsigned char chused[CHARRAY];	/* test array - character downloaded? */
+	glyph_dir *glyph;		/* array of character descriptions */
+	unsigned char *cdp;		/* char data pointer */
+} fontset;
+
+fontset	*fs;			/* A global pointer to the current family */
+fontset fontdata[NFONT+1];	/* table of family data descripters */
+
+int	lastsize	= -1;
+int	lastfont	= -1;
+int	lastx		= -1;
+int	lasty		= -1;
+int	lastfam		= -1;
+
+
 
 main(argc, argv)
 char *argv[];
 {
-	char buf[BUFSIZ];
+	int i;
 	char *mktemp();
-	int cleanup();
+	char *operand();
 
-	username = getlogin();
-	while (argc > 1 && argv[1][0] == '-') {
-		switch (argv[1][1]) {
-		case 'c':
-			copies = atoi(&argv[1][2]);
-			break;
-		case 'r':
-			rotate = !rotate;
-			break;
-		case 't':
-			tf = stdout;
+	while (--argc > 0 && **++argv == '-') {
+		switch ((*argv)[1]) {
+		case 'F':
+			fontdir = operand(&argc, &argv);
 			break;
 		case 'f':
-			bitdir = argv[2];
-			argv++;
-			argc--;
+			bitdir = operand(&argc, &argv);
 			break;
 		case 'o':
-			outlist(&argv[1][2]);
-			break;
-		case 'i':	/* set input area parameter */
-			inputarea = atoi(&argv[1][2]);
-			if (inputarea < 1)
-				inputarea = 1;
-			else if (inputarea > 5)
-				inputarea = 5;
-			break;
-		case 'p':	/* pixels of resolution */
-			DX = DY = atoi(&argv[1][2]);
-			if (DX == 0)
-				DX = DY = 1;
-			break;
-		case 'n':	/* number of dots in object */
-			maxdots = atoi(&argv[1][2]);
-			if (maxdots <= 0)
-				maxdots = 32000;
+			outlist(operand(&argc, &argv));
 			break;
 		case 'b':
-			fprintf(stderr, "It's never busy!");
-			exit(0);
+			if ((i = atoi(operand(&argc, &argv))) < 1000) i = 1000;
+			else if (i > MEMSIZE - 1000) i = MEMSIZE - 1000;
+			maxglyph = MEMSIZE - i; 
 			break;
+#ifdef DEBUGABLE
 		case 'd':
-			dbg = atoi(&argv[1][2]);
-			if (dbg == 0) dbg = 1;
-			tf = stdout;
+			dbg = atoi(operand(&argc, &argv));
+			if (dbg == 0) error (FATAL, "no debug value");
 			break;
+#endif
 		}
-		argc--;
-		argv++;
 	}
 
-	tempfile = mktemp("/tmp/dipXXXXX");
-	if (tf != stdout) {
-		if ((tf = fopen(tempfile, "w")) == NULL) {
-			error(FATAL, "can't open temporary file %s", tempfile);
-		}
-		signal(SIGINT, cleanup);
-		signal(SIGHUP, cleanup);
-		signal(SIGQUIT, cleanup);
-	}
-
-	if (argc <= 1)
+	if (argc < 1)
 		conv(stdin);
 	else
-		while (--argc > 0) {
-			if (strcmp(*++argv, "-") == 0)
+		while (argc-- > 0) {
+			if (strcmp(*argv, "-") == 0)
 				fp = stdin;
 			else if ((fp = fopen(*argv, "r")) == NULL)
 				error(FATAL, "can't open %s", *argv);
 			conv(fp);
 			fclose(fp);
+			argv++;
 		}
-/*	banner(username); */
+
 	t_wrapup();
-	fclose(tf);
-/*	sprintf(buf, "ipr -p %d %s 0</dev/null 1>/dev/null 2>&1 &",
-		pageno, tempfile);					*/
-	buf[0] = '\0';
-	if(dbg){fprintf(stderr, "executing %s\n", buf); done();}
-	if (tf != stdout) {
-		system(buf);
-		account();
-	}
-	done();
+	exit(0);
 }
+
+
+/*----------------------------------------------------------------------------*
+ | Routine:	char  * operand (& argc,  & argv)
+ |
+ | Results:	returns address of the operand given with a command-line
+ |		option.  It uses either "-Xoperand" or "-X operand", whichever
+ |		is present.  The program is terminated if no option is present.
+ |
+ | Side Efct:	argc and argv are updated as necessary.
+ *----------------------------------------------------------------------------*/
+
+char *operand(argcp, argvp)
+int * argcp;
+char ***argvp;
+{
+	if ((**argvp)[2]) return(**argvp + 2); /* operand immediately follows */
+	if ((--*argcp) <= 0) {			/* no operand */
+	    fprintf (stderr, "command-line option operand missing.\n");
+	    exit(1);
+	}
+	return(*(++(*argvp)));			/* operand next word */
+}
+
 
 outlist(s)	/* process list of page numbers to be printed */
 char *s;
@@ -221,10 +243,13 @@ char *s;
 			s++;
 	}
 	olist[nolist] = 0;
+#ifdef DEBUGABLE
 	if (dbg)
 		for (i=0; i<nolist; i += 2)
 			printf("%3d %3d\n", olist[i], olist[i+1]);
+#endif
 }
+
 
 in_olist(n)	/* is n in olist? */
 int n;
@@ -239,11 +264,13 @@ int n;
 	return(0);
 }
 
+
 conv(fp)
 register FILE *fp;
 {
-	register int c, k;
-	int m, n, i, n1, m1;
+	register int c;
+	register int k;
+	int m, n, n1, m1;
 	char str[100], buf[300];
 
 	while ((c = getc(fp)) != EOF) {
@@ -270,7 +297,7 @@ register FILE *fp;
 			switch (buf[0]) {
 			case 'l':	/* draw a line */
 				sscanf(buf+1, "%d %d", &n, &m);
-				t_line(n, m, ".");
+				drawline(n, m, ".");
 				break;
 			case 'c':	/* circle */
 				sscanf(buf+1, "%d", &n);
@@ -287,11 +314,17 @@ register FILE *fp;
 			case 'g':	/* gremlin curve */
 			case '~':	/* wiggly line */
 				drawwig(buf+1);
+				break;
 			case 't':
+				sscanf(buf+1, "%d", &n);
+				drawthick(n);
+				break;
 			case 's':
+				sscanf(buf+1, "%d", &n);
+				drawstyle(n);
 				break;
 			default:
-				error(FATAL, "unknown drawing function %s", buf);
+				error(FATAL, "unknown drawing function %s",buf);
 				break;
 			}
 			break;
@@ -342,7 +375,7 @@ register FILE *fp;
 		case 'n':	/* end of line */
 			while (getc(fp) != '\n')
 				;
-			t_newline();
+			hpos = 0;
 			break;
 		case '#':	/* comment */
 			while (getc(fp) != '\n')
@@ -353,10 +386,11 @@ register FILE *fp;
 			break;
 		default:
 			error(!FATAL, "unknown input character %o %c", c, c);
-			done();
+			exit(0);
 		}
 	}
 }
+
 
 devcntrl(fp)	/* interpret device control functions */
 FILE *fp;
@@ -371,19 +405,13 @@ FILE *fp;
 		t_init(0);
 		break;
 	case 'T':	/* device name */
-		fscanf(fp, "%s", devname);
-		break;
 	case 't':	/* trailer */
-		t_trailer();
-		break;
 	case 'p':	/* pause -- can restart */
-		t_reset('p');
-		break;
 	case 's':	/* stop */
-		t_reset('s');
 		break;
 	case 'r':	/* resolution assumed when prepared */
-		fscanf(fp, "%d", &res);
+		fscanf(fp, "%d", &n);
+		if (n!=RES) error(FATAL,"Input computed with wrong resolution");
 		break;
 	case 'f':	/* font used */
 		fscanf(fp, "%d %s", &n, str);
@@ -407,18 +435,23 @@ FILE *fp;
 			break;
 }
 
+
 fileinit()	/* read in font and code files, etc. */
 {
-	int i, fin, nw;
-	char *malloc(), *filebase, *p;
-	char temp[60];
+	register int i;
+	register int fin;
+	register int nw;
+	register unsigned char *filebase;
+	register unsigned char *p;
+	unsigned char *malloc();
+	char temp[100];
 
-	/* open table for device,
-	 * read in resolution, size info, font info, etc.
-	 * and set params
-	 */
+		/* open table for device,
+		 * read in resolution, size info, font info, etc.
+		 * and set params
+		 */
 
-	sprintf(temp, "%s/dev%s/DESC.out", fontdir, devname);
+	sprintf(temp, "%s/devip/DESC.out", fontdir);
 	if ((fin = open(temp, 0)) < 0)
 		error(FATAL, "can't open tables for %s", temp);
 	read(fin, &dev, sizeof(struct dev));
@@ -430,27 +463,40 @@ fileinit()	/* read in font and code files, etc. */
 	pstab = (short *) filebase;
 	chtab = pstab + nsizes + 1;
 	chname = (char *) (chtab + dev.nchtab);
-	p = chname + dev.lchname;
-	for (i = 0; i <= nfonts; i++) {
-		fontbase[i] = NULL;
-		widthtab[i] = codetab[i] = fitab[i] = NULL;
+	p = (unsigned char *) chname + dev.lchname;
+	for (i = 1; i <= nfonts; i++) {
+		fontbase[i] = (struct font *) p;
+		nw = *p & BMASK;		/* 1st thing is width count */
+		p += sizeof(struct font);
+		widtab[i] = p;			/* then width table */
+		codetab[i] = p + 2 * nw;	/* then code conversion table */
+		fitab[i] = p + 3 * nw;		/* then font inclusion table */
+		p += 3 * nw + dev.nchtab + 128 - 32;
+		t_fp(i, fontbase[i]->namefont, fontbase[i]->intname);
+#ifdef DEBUGABLE
+		if (dbg > 1) fontprint(i);
+#endif
 	}
-	close(fin);
+	fontbase[0] = NULL;
+	close(fin);				/* no fonts loaded yet */
+	for (i = 0; i <= NFONT; i++) fontdata[i].font = fontdata[i].size = -1;
 }
 
+
+#ifdef DEBUGABLE
 fontprint(i)	/* debugging print of font i (0,...) */
 {
-	int j, k, n;
+	int j, n;
 	char *p;
 
 	printf("font %d:\n", i);
 	p = (char *) fontbase[i];
 	n = fontbase[i]->nwfont & BMASK;
 	printf("base=0%o, nchars=%d, spec=%d, name=%s, widtab=0%o, fitab=0%o\n",
-		p, n, fontbase[i]->specfont, fontbase[i]->namefont, widthtab[i], fitab[i]);
+		p, n, fontbase[i]->specfont, fontbase[i]->namefont, widtab[i], fitab[i]);
 	printf("widths:\n");
 	for (j=0; j <= n; j++) {
-		printf(" %2d", widthtab[i][j] & BMASK);
+		printf(" %2d", widtab[i][j] & BMASK);
 		if (j % 20 == 19) printf("\n");
 	}
 	printf("\ncodetab:\n");
@@ -465,20 +511,22 @@ fontprint(i)	/* debugging print of font i (0,...) */
 	}
 	printf("\n");
 }
+#endif
+
 
 loadfont(n, s, s1)	/* load font info for font s on position n (0...) */
 int n;
 char *s, *s1;
 {
 	char temp[60];
-	int fin, nw, norig;
+	int fin, nw;
 
 	if (n < 0 || n > NFONT)
 		error(FATAL, "illegal fp command %d %s", n, s);
 	if (fontbase[n] != NULL && strcmp(s, fontbase[n]->namefont) == 0)
 		return;
 	if (s1 == NULL || s1[0] == '\0')
-		sprintf(temp, "%s/dev%s/%s.out", fontdir, devname, s);
+		sprintf(temp, "%s/devip/%s.out", fontdir, s);
 	else
 		sprintf(temp, "%s/%s.out", s1, s);
 	if ((fin = open(temp, 0)) < 0) {
@@ -493,158 +541,77 @@ char *s, *s1;
 		error(FATAL, "Out of space in loadfont %s", s);
 	read(fin, fontbase[n], 3*255 + nchtab+128-32 + sizeof(struct font));
 	close(fin);
-	if (smnt == 0 && fontbase[n]->specfont == 1)
-		smnt = n;
 	nw = fontbase[n]->nwfont & BMASK;
-	widthtab[n] = (char *) fontbase[n] + sizeof(struct font);
-	codetab[n] = (char *) widthtab[n] + 2 * nw;
-	fitab[n] = (char *) widthtab[n] + 3 * nw;
+	widtab[n] = (unsigned char *) fontbase[n] + sizeof(struct font);
+	codetab[n] = (unsigned char *) widtab[n] + 2 * nw;
+	fitab[n] = (unsigned char *) widtab[n] + 3 * nw;
 	t_fp(n, fontbase[n]->namefont, fontbase[n]->intname);
+#ifdef DEBUGABLE
 	if (dbg > 1) fontprint(n);
+#endif
 }
 
-cleanup()
+
+/*VARARGS2*/
+error(f, s, a1, a2, a3, a4, a5, a6, a7)
+int f;
+char *s;
 {
-	unlink(tempfile);
-	exit(1);
-}
-
-error(f, s, a1, a2, a3, a4, a5, a6, a7) {
 	fprintf(stderr, "dip: ");
 	fprintf(stderr, s, a1, a2, a3, a4, a5, a6, a7);
 	fprintf(stderr, "\n");
 	if (f)
-		cleanup();
+		exit(1);
 }
 
-
-/*
-	Here beginneth all the stuff that really depends
-	on the canon (we hope).
-*/
-
-#define	SLOP	1	/* how much positioning error is allowed? */
-#define	MAXX	(8*RES + RES/2)		/* 8-1/2 inches? */
-#define	MAXY	(11 * RES)
-#define	WIDTH	8
-#define	LOGWID	3
-#define	K	* 1024	/* clever, so watch out */
-
-char	devname[20]	= "ip";
-
-int	nglyph		= 0;	/* number of glyphs loaded */
-int	totglyph	= 0;	/* total space used by glyphs sent down */
-int	maxglyph	= 28 K;	/* maximum space for glyphs */
-
-#define	oput(c)	if (output) xychar(c); else;
-
-/* input coordinate system: */
-
-int	size	= 1;
-int	font	= 1;		/* current font */
-int	hpos;		/* horizontal position where we are supposed to be next (left = 0) */
-int	vpos;		/* current vertical position (down positive) */
-int	lastw	= 0;	/* width of last input character */
-int	DX	= 10;	/* step size in x for drawing */
-int	DY	= 10;	/* step size in y for drawing */
-
-/* canon coordinate system: */
-
-int	lastsize	= -1;
-int	lastfont	= -1;
-int	lastx		= -1;
-int	lasty		= -1;
-int	lastfam		= -1;
-
-int	drawdot	= '.';	/* draw with this character */
-int	drawsize = 1;	/* shrink by this factor when drawing */
 
 t_init(reinit)	/* initialize device */
 int reinit;
 {
-	int i;
-
 	if (! reinit) {
-		for (i = 0; i < nchtab; i++)
-			if (strcmp(&chname[chtab[i]], "l.") == 0)
-				break;
-		if (i < nchtab) {
-			drawdot = i + 128;
-			drawsize = 1;
-		} else {
-			drawdot = '.';
-			drawsize = 2;	/* half size */
-		}
-
-		/* some Imagen-specific junk: */
-		fprintf(tf, "%1d", inputarea);	/* their kludge for setting */
-						/* input area to x * 8k */
-		maxglyph = (68 -  inputarea - 4) K;
-						/* glyph area = 68K - input */
-		fprintf(tf, " %s\n\0", username);	/* terminated string */
-		fprintf(tf, "%8.8s", "d_ip1/24");	/* padding 8 bytes */
-						     /* ignored but needed */
+		drawthick(3);		/* set the line thickness parameter */
 	}
 	hpos = vpos = 0;
 	setsize(t_size(10));	/* start somewhere */
 }
 
-t_line(n, m, s)
-	int n, m;
-	char *s;
-{
-	if (m == 0) {	/* horizontal rule needed */
-		if (n > 0) {
-			t_rule(n, 2);
-			hmot(n);	/* finish at the end */
-		} else {
-			hmot(n);
-			t_rule(-n, 2);
-		}
-	} else if (n == 0) {	/* vertical rule */
-		if (m > 0) {
-			vmot(m);	/* finish at the end */
-			t_rule(2, m);
-		} else {
-			t_rule(2, -m);
-			vmot(m);
-		}
-	} else {
-		drawline(n, m, s);
-	}
-}
+
+/*----------------------------------------------------------------------------*
+ | Routine:	t_page ( page_number )
+ |
+ | Results:	mark this page done for printing.  If we think we've filled
+ |		the imagen too much, delete some of the info in the glyph cache.
+ |		This is a good time to do this since it's at the end of a page
+ |		and will get done every so often.
+ *----------------------------------------------------------------------------*/
 
 t_page(pg)	/* do whatever new page functions */
 {
-	register int i, j, n;
-	register unsigned char *p;
-	static int firstpage = 1;
+	register int i;
+	register int threshold;
 
 	pageno = pg;
+#ifdef DEBUGABLE
 	if(dbg)fprintf(stderr, "t_page %d, output=%d\n", pg, output);
-	if (output != 0) {
-		/* beginning of first page, or */
-		/* have just printed something, and seen p<n> for next one */
-		/* ought to read in entire page, select needed glyphs */
+#endif
+	if (output != 0)
 		putc(AEND, tf);
-		firstpage = 0;
-	}
 	output = in_olist(pg);
+
 	if (output) {
-		if (totglyph >= maxglyph) {
-			clearglyphs();
-			totglyph = 0;
+	    threshold = BOTTOMTHRESH;
+	    while (totglyph >= maxglyph) {
+		for (i = 0; i < NFONT; i++) {
+		    if (fontdata[i].font != -1)
+			clearglyphs(i, threshold);
 		}
-		acctpages++;
+		threshold += DELTATHRESH;
+	    }
 	}
 	lastx = lasty = -1;
 	t_init(1);
 }
 
-t_newline()	/* do whatever for the end of a line */
-{
-	hpos = 0;
-}
 
 t_size(n)	/* convert integer to internal size number*/
 int n;
@@ -654,11 +621,12 @@ int n;
 	if (n <= pstab[0])
 		return(1);
 	else if (n >= pstab[nsizes-1])
-		return(nsizes);
+		return(nsizes-1);
 	for (i = 0; n > pstab[i]; i++)
 		;
-	return(i+1);
+	return(i);
 }
+
 
 t_charht(n)	/* set character height to n */
 int n;
@@ -666,11 +634,13 @@ int n;
 	/* punt for now */
 }
 
+
 t_slant(n)	/* set slant to n */
 int n;
 {
 	/* punt for now */
 }
+
 
 t_font(s)	/* convert string to internal font number */
 char *s;
@@ -683,13 +653,6 @@ char *s;
 	return(n);
 }
 
-t_reset(c)
-{
-	int n;
-
-	if (output)
-		acctpages++;
-}
 
 t_wrapup()
 {
@@ -697,50 +660,6 @@ t_wrapup()
 	putc(AEOF, tf);
 }
 
-account()	/* record paper use */
-{
-/*					HIDE THIS!!!
-	FILE *f = NULL;
-
-	if (tf == stdout)
-		return;
-	f = fopen(acctfile, "a");
-	if (f != NULL) {
-		if (username == NULL)
-			username = "???";
-		fprintf(f, "%4d %s\n", acctpages, username);
-	}
-*/
-}
-
-banner(s)
-	char *s;
-{
-	long t, time();
-	char *ctime();
-
-	time(&t);
-	putc(AEND, tf); /* clean up previous page */
-	setsize(16);
-	loadfont(1, "CW", "");
-	lastx = lasty = -1;
-	vgoto(1500);
-	hgoto(500);
-	while (*s) {
-		put1(*s++);
-		hmot(128);
-	}
-	hmot(3*128);
-	put1(' ');
-	t_rule(960, 24);
-	vgoto(2500);
-	hgoto(2000);
-	s = ctime(&t);
-	while (*s) {
-		put1(*s++);
-		hmot(128);
-	}
-}
 
 t_rule(w, h)
 {
@@ -752,42 +671,16 @@ t_rule(w, h)
 }
 
 
-t_trailer()
-{
-}
-
-hgoto(n)
-{
-	hpos = n;	/* this is where we want to be */
-			/* before printing a character, */
-			/* have to make sure it's true */
-}
-
-hmot(n)	/* generate n units of horizontal motion */
-int n;
-{
-	hpos += n;
-}
-
-vgoto(n)
-{
-	vpos = n;
-}
-
-vmot(n)	/* generate n units of vertical motion */
-int n;
-{
-	vgoto(vpos + n);	/* ignores rounding */
-}
-
 put1s(s)	/* s is a funny char name */
-	register char *s;
+register char *s;
 {
 	static int i = 0;
 
 	if (!output)
 		return;
+#ifdef DEBUGABLE
 	if (dbg) printf("%s ", s);
+#endif
 	if (strcmp(s, &chname[chtab[i]]) != 0)
 		for (i = 0; i < nchtab; i++)
 			if (strcmp(&chname[chtab[i]], s) == 0)
@@ -798,51 +691,62 @@ put1s(s)	/* s is a funny char name */
 		i = 0;
 }
 
+
 put1(c)	/* output char c */
-	register int c;
+register int c;
 {
-	char *pw;
-	register char *p;
-	register int i, j, k;
-	int ofont, code, w;
+	register unsigned char *pw;
+	register unsigned char *p;
+	register int i;
+	register int j;
+	register int k;
+	int ofont, code;
 
 	if (!output)
 		return;
 	c -= 32;
 	if (c <= 0) {
+#ifdef DEBUGABLE
 		if (dbg) printf("non-exist 0%o\n", c+32);
+#endif
 		return;
 	}
-	k = ofont = font;
-	i = fitab[font][c] & BMASK;
+	ofont = font;
+	i = fitab[font][c];
 	if (i != 0) {	/* it's on this font */
 		p = codetab[font];
-		pw = widthtab[font];
-	} else if (smnt > 0) {		/* on special (we hope) */
-		for (k=smnt, j=0; j <= nfonts; j++, k = (k+1) % (nfonts+1))
-			if ((i = fitab[k][c] & BMASK) != 0) {
+		pw = widtab[font];
+	} else {		/* on another font */
+		k = 1;		/* start with ROMAN, then run down the list */
+		for (j=0; j++ <= nfonts; k = (k+1) % (nfonts+1))
+			if (fontbase[k] != NULL && (i = fitab[k][c]) != 0) {
 				p = codetab[k];
-				pw = widthtab[k];
+				pw = widtab[k];
 				setfont(k);
 				break;
 			}
 	}
-	if (i == 0 || (code = p[i] & BMASK) == 0 || k > nfonts) {
+	code = p[i] & BMASK;
+	if (i == 0) {
+#ifdef DEBUGABLE
 		if (dbg) printf("not found 0%o\n", c+32);
+#endif
 		return;
 	}
-	lastw = pw[i] & 077;
-	lastw = (lastw * pstab[size-1] + dev.unitwidth/2) / dev.unitwidth;
+	lastw = (pw[i] * pstab[size] + dev.unitwidth/2) / dev.unitwidth;
+#ifdef DEBUGABLE
 	if (dbg) {
 		if (isprint(c+32))
 			printf("%c %d\n", c+32, code);
 		else
 			printf("%03o %d\n", c+32, code);
 	} else
-		oput(code);
+#endif
+		if (output) xychar(code);
 	if (font != ofont)
 		setfont(ofont);
 }
+
 
 setsize(n)	/* set point size to n (internal) */
 int n;
@@ -850,20 +754,36 @@ int n;
 	size = n;
 }
 
-/* font position info: */
 
-struct {
-	char *name;
-	int number;
-} fontname[NFONT+1];
+/*----------------------------------------------------------------------------*
+ | Routine:	t_fp ( number, string, string_internal )
+ |
+ | Results:	font position number now contains font 'string', internal
+ |		font name (number) is ignored.
+ |
+ | Side Efct:	any fonts loaded into fontdata with this font number are
+ |		removed.  And, to make sure they're not accessed, if lastfont
+ |		equals number, it is "disabled" by setting lastfont to -1.
+ *----------------------------------------------------------------------------*/
 
-t_fp(n, s, si)	/* font position n now contains font s, intname si */
+t_fp(n, s, si)
 int n;
 char *s, *si;
 {
-	fontname[n].name = s;
-	fontname[n].number = atoi(si);
+	register int i;
+
+	fontname[n] = s;
+	for (i = 0; i <= NFONT; i++)		/* release any font files */
+		if (fontdata[i].font == n) {	/* for this font */
+			clearglyphs (i, 1000);
+			putc(AFORCE, tf);
+			free (fontdata[i].cdp);
+			free (fontdata[i].glyph);
+			fontdata[i].font = -1;
+		}
+	if (n == lastfont) lastfont = -1;
 }
+
 
 setfont(n)	/* set font to n */
 int n;
@@ -875,279 +795,251 @@ int n;
 	font = n;
 }
 
-done()
+
+/*----------------------------------------------------------------------------*
+ | Routine:	rd1, rd2, rd3, rd4 ( file_pointer )
+ |
+ | Results:	gets one, two three or four bytes from a file and interprets
+ |		them as integers.  Most significant bytes come first.
+ *----------------------------------------------------------------------------*/
+
+int rd1(fp)
+FILE *fp;
 {
-	exit(0);
+    register int i;
+
+    if((i = getc(fp)) == EOF) error(FATAL, "font file read error");
+    return i;
 }
 
-/*
-	The following things manage raster font information.
-	The big problem is mapping desired font + size into
-	available font + size.  For now, a file RASTERLIST
-	contains entries like
-		R 6 8 10 14 999
-		I 8 10 12 999
-		...
-	This data is used to create an array "fontdata" that
-	describes legal fonts and sizes, and pointers to any
-	data from files that has actually been loaded.
-*/
+int rd2(fp)
+FILE *fp;
+{
+    register short i = rd1(fp) << 8;
 
-struct fontdata {
-	char	name[4];	/* e.g., "R" or "PA" */
-	int	size[10];	/* e.g., 6 8 10 14 0 */
-	struct	fontset	*fsp[10];	/* either NULL or block of data */
-};
+    return i | rd1(fp);
+}
 
-#define	MAXFONT	60	/* no more than this many fonts forever */
+int rd3(fp)
+FILE *fp;
+{
+    register int i = rd2(fp) << 8;
 
-struct	fontdata	fontdata[MAXFONT];
-int	maxfonts	= 0;	/* how many actually used; set in initfontdata() */
+    return i | rd1(fp);
+}
 
-struct	Fontheader	fh;
-struct	fontset {
-	int	size;
-	int	family;
-	struct	Charparam *chp;
-	unsigned char	*cdp;	/* char data pointer */
-	unsigned char	*chused;	/* bit-indexed; 1 if char downloaded */
-};
+int rd4(fp)
+FILE *fp;
+{
+    register int i = rd2(fp) << 16;
 
-/* A global variable for the current font+size */
-struct	fontset	*fs;
-int	nfamily		= 0;	/* number of "families" (font+size) */
+    return i | rd2(fp);
+}
 
-initfontdata()	/* read RASTERLIST information */
+
+/*----------------------------------------------------------------------------*
+ | Routine:	getfontdata ( font, size )
+ |
+ | Results:	returns the family number of the font/size found.  The font
+ |		information pointer, fs, is set to point to data for "font"
+ |		at point size "size".  If no information for that font is
+ |		available, the info is read in from the appropriate font file.
+ |		The table "fontdata" holds all the fonts, and it is cleared
+ |		of a random font/size if necessary.
+ *----------------------------------------------------------------------------*/
+
+int getfontdata(f, s)
+int f;
+int s;
 {
 	char name[100];
-	FILE *fp;
-	int i, j, n;
+	register FILE *fd;
+	register int i;
+	register int fam;
+	register int bitbase;
+	register glyph_dir *maxgp;
+	register glyph_dir *mingp;
+	register glyph_dir *gp;
+	preamble p;
 
-	sprintf(name, "%s/dev%s/RASTERLIST", fontdir, devname);
-	if ((fp = fopen(name, "r")) == NULL)
+				/* first check if it's here already */
+	for (fam = 0; fam <= NFONT; fam++)
+	    if (fontdata[fam].font == f && fontdata[fam].size == s) {
+		fs = &fontdata[fam];
+		return (fam);
+	    }
+						/* find an empty slot */
+	for (fam = 0; fam < NFONT && fontdata[fam].font != -1; fam++);
+	fs = &fontdata[fam];
+	if (fs->font != -1) {		/* clear a slot if not empty */
+		clearglyphs(fam, 1000);		/* dumb version - always take */
+		putc(AFORCE, tf);		/* the last one to replace */
+		free(fs->glyph);
+		free(fs->cdp);
+	}
+					/* open font file */
+	sprintf(name, "%s/%s.%d", bitdir, fontname[f], pstab[s]);
+	if ((fd = fopen(name, "r")) == NULL)
 		error(FATAL, "can't open %s", name);
-	maxfonts = 0;
-	while (fscanf(fp, "%s", fontdata[maxfonts].name) != EOF) {
-		i = 0;
-		while (fscanf(fp, "%d", &n) != EOF && n < 100) {
-			fontdata[maxfonts].size[i] = n;
-			fontdata[maxfonts].fsp[i] = NULL;
-			i++;
-		}
-		fontdata[maxfonts].size[i] = 999;
-		if (++maxfonts > MAXFONT)
-			error(FATAL, "Too many fonts in RASTERLIST");
+						/* check for proper file mark */
+	i = fscanf(fd, "%8s", &filemark[0]);
+	if (strncmp(filemark, "Rast", 4) || i == EOF)
+		error(FATAL, "bad File Mark in %s.", name);
+					/* get preamble */
+	p.p_size = rd2(fd);
+	p.p_version = rd1(fd);
+	if (p.p_version)
+		error(FATAL, "wrong version of Font file: %s.", name);
+	p.p_glyph = rd3(fd);
+	p.p_first = rd2(fd);
+	p.p_last = rd2(fd);
+				/* skip rest of preamble */
+	i = p.p_glyph - 18;
+	while (i--) getc(fd);
+	fs->glyph = (glyph_dir *)	/* allocate first */
+		((char *) malloc((p.p_last - p.p_first + 1) * sizeof(glyph_dir))
+		- (char *) (p.p_first * sizeof(glyph_dir)));
+	mingp = maxgp = gp = fs->glyph;
+	for (i = p.p_first; i++ <= p.p_last; gp++) {
+	    gp->g_height = rd2(fd);
+	    gp->g_width = rd2(fd);
+	    gp->g_up = rd2(fd);
+	    gp->g_left = rd2(fd);
+	    gp->g_pwidth = rd4(fd);
+	    if ((gp->g_bitp = rd3(fd)) > maxgp->g_bitp)	/* find the glyphs */
+		maxgp = gp;				/* farthest and */
+	    else if(gp->g_bitp < mingp->g_bitp)		/* nearest to the */
+		mingp = gp;				/* start of the file */
 	}
-	fclose(fp);
-	if (dbg) {
-		fprintf(stderr, "initfontdata():  maxfonts=%d\n", maxfonts);
-		for (i = 0; i < maxfonts; i++) {
-			fprintf(stderr, "%.4s ", fontdata[i].name);
-			for (j = 0; fontdata[i].size[j] < 100; j++)
-				fprintf(stderr, " %3d", fontdata[i].size[j]);
-			fprintf(stderr, "\n");
-		}
-	}
+	bitbase = mingp->g_bitp;	/* remove file offset in bit pointers */
+	for (gp = fs->glyph, i = p.p_first; i++ <= p.p_last; gp++)
+	    gp->g_bitp -= bitbase;
+
+	i = maxgp->g_bitp + maxgp->g_height * ((maxgp->g_width + 7) / 8);
+	fs->cdp = (unsigned char *) malloc(i);
+	lseek(fileno(fd), (long) bitbase, 0);
+	if (read(fileno (fd), fs->cdp, i) != i)
+		error(FATAL, "can't read in %s", name);
+	fclose(fd);
+
+	fs->size = s;
+	fs->font = f;
+	for (i = 0; i < CHARRAY; fs->chused[i++] = 0);
+	return (fam);
 }
 
-getfontdata(f, s)	/* causes loading of font information if needed */
-	char *f;
-	int s;
-{
-	int fd, n, i, j;
-	char name[100];
-	static int first = 1;
-
-	if (first) {
-		initfontdata();
-		first = 0;
-	}
-
-	for (i = 0; i < maxfonts; i++)
-		if (strcmp(f, fontdata[i].name) == 0)
-			break;
-	if (i >= maxfonts)	/* the requested font wasn't there */
-		i = 0;		/* use the first one (probably R) */
-
-	/* find the best approximation to size s */
-	for (j = 1; s >= fontdata[i].size[j]; j++)
-		;
-	j--;
-
-	/* open file if necessary */
-	if (fontdata[i].fsp[j] == NULL) {
-		fs = (struct fontset *) malloc(sizeof(struct fontset));
-		fontdata[i].fsp[j] = fs;
-		fs->chp = (struct Charparam *) malloc(256*sizeof(struct Charparam));
-		sprintf(name, "%s/%s.%d%s", bitdir,
-			f, fontdata[i].size[j], rotate? "r" : "");
-		fd = open(name, 0);
-		if (fd == -1)
-			error(FATAL, "can't open %s", name);
-		read(fd, &fh, sizeof(struct Fontheader));
-		read(fd, fs->chp, 256*sizeof(struct Charparam));
-		fs->size = fontdata[i].size[j];
-		fs->family = nfamily;
-		nfamily += 2;	/* even-odd leaves room for big fonts */
-		fs->cdp = (unsigned char *) malloc(fh.f_size);
-		fs->chused = (unsigned char *) malloc(256/8);
-		for (n = 0; n < 256/8; n++)
-			fs->chused[n] = 0;
-		n = read(fd, fs->cdp, fh.f_size);
-		close(fd);
-	}
-	fs = fontdata[i].fsp[j];
-}
 
 xychar(c)
-	register int c;
+register int c;
 {
 	register unsigned char *p;
-	register struct Charparam *par;
-	register int x;
-	register int y;
-	int i, n, rwid, ht, fam;
+	register glyph_dir *par;
+	register int gsize;
 
-	x = hpos;
-	y = vpos;
 
+	if (c >= CHARRAY) {
+#ifdef DEBUGABLE
+		if (dbg) error(!FATAL, "character out of range: %d 0%o", c, c);
+#endif
+		return;
+	}
 	if (font != lastfont || size != lastsize) {
-		getfontdata(fontname[font].name, pstab[size-1]);
+		family = getfontdata(font, size);
 		lastsize = size;
 		lastfont = font;
 	}
-	par = fs->chp + c;
-	p = fs->cdp + par->c_addr;
-
-	fam = fs->family;
-	if (c > 127)
-		fam++;
-	if (fam != lastfam) {
+	par = &(fs->glyph[c]);
+	p = fs->cdp + par->g_bitp;
+	if (family != lastfam) {
 		putc(AF, tf);
-		putc(lastfam = fam, tf);
+		putc(lastfam = family ,tf);
 	}
 
-	/* first cut:  ship each glyph as needed. */
-	/* ignore memory use, efficiency, etc. */
-
-	if ( !bit(fs->chused, c) ) {	/* 1st use of this character */
-		nglyph++;
+	if (fs->chused[c] == 0) {	/* 1st use of this character */
 		totglyph += glspace(par);
-		setbit(fs->chused, c);
-		putc(ASGLY, tf);
-		putint((fam << 7) | c, tf);
-		par->c_width = (lastw * RES) / res;
- 		putc(par->c_width, tf);	/* character width */
-		putc(par->c_left + par->c_right + 1, tf);
-		putc(par->c_left, tf);
-  /* this nonsense fixes a bug in output produced by rec.c: */
-  /* when up is < 0 (and = 0?) size is one too big */
-		rwid = (1 + par->c_left + par->c_right + WIDTH-1) / WIDTH;
-		ht = par->c_size / rwid;
-		par->c_down = ht - par->c_up;
-		putc(par->c_down + par->c_up, tf);
-		putc(par->c_up, tf);
-		for (i = par->c_size; i--; )
+		if ((fs->chused[c])++ == BMASK) fs->chused[c] = BMASK;
+		putc(ABGLY, tf);
+		putint((family << 7) | c, tf);
+ 		putint(lastw, tf);		/* use troff's width, not */
+		putint(par->g_width, tf);	/* the RST character width */
+		putint(par->g_left, tf);
+		putint(par->g_height, tf);
+		putint(par->g_up, tf);
+		gsize = ((par->g_width + 7)/8) * par->g_height;
+		while (gsize--)
 			putc(*p++, tf);
 	}
 
-	if (y != lasty) {
-		putc(AV, tf);
-		putint(y<<1, tf);
-		lasty = y;
-	}
-
-	if (abs(x-lastx) > 127) {
-		putc(AH, tf);
-		putint(x<<1, tf);
-		lastx = x + par->c_width;
-	} else if (abs(x-lastx) > SLOP) {
-		putc(AM, tf);
-		putc(x-lastx, tf);
-		putc(AM, tf);
-		lastx = x + par->c_width;
-	} else {
-		lastx += par->c_width;
-	}
-
-	if (c <= 127)
-		putc(c, tf);	/* fails if c > 127, probably disastrously */
-	else
-		putc(c-128, tf);
+	hvflush();
+	putc(c, tf);		/* guaranteed to be in range */
+	lastx += lastw;		/* take account of the automatic advance */
 }
 
-hvflush()	/* force position recorded in hpos,vpos */
+
+/*----------------------------------------------------------------------------*
+ | Routine:	hvflush ( )
+ |
+ | Results:	force current position (hpos, vpos) on the imagen
+ *----------------------------------------------------------------------------*/
+
+hvflush()
 {
-	register int x;
-	register int y;
-
-	x = hpos;
-	y = vpos;
-
-	if (y != lasty) {
-		putc(AV, tf);
-		putint(y<<1, tf);
-		lasty = y;
+	if (vpos != lasty) {
+		putc(ASETV, tf);
+		putint(lasty = vpos, tf);
 	}
-	if (abs(x-lastx) > 127) {
-		putc(AH, tf);
-		putint(x<<1, tf);
-		lastx = x;
-	} else if (abs(x-lastx) > SLOP) {
-		putc(AM, tf);
-		putc(x-lastx, tf);
-		putc(AM, tf);
-		lastx = x;
+	if (hpos != lastx) {
+		putc(ASETH, tf);
+		putint(lastx = hpos, tf);
 	}
 }
+
+
+/*----------------------------------------------------------------------------*
+ | Routine:	glspace ( glyph )
+ |
+ | Results:	returns how much space the glyph (defined by the glyph_dir
+ |		entry) will take in the imagen's memory.
+ *----------------------------------------------------------------------------*/
 
 glspace(par)
-	struct Charparam *par;
+glyph_dir *par;
 {
-	int n;
-
-	/* works only for small glyphs right now */
-
-	n = 12
-	  + ((par->c_left+par->c_right+1+15)/16 ) * (par->c_up+par->c_down)
-	  + 2;
-	return n;
+	return 19 + ((par->g_width + 15) / 16 ) * (par->g_height);
 }
 
-clearglyphs()	/* remove "used" bits from all glyphs */
-		/* delete all families */
-		/* very conservative policy */
-{
-	int i, j, k;
-	struct fontset *f;
 
-	if (tf == stdout) fprintf(stderr, "clear %d glyphs (%d/%d) on page %d\n",
-		nglyph, totglyph, maxglyph, pageno);
-	for (i = 0; i < maxfonts; i++)
-		for (j = 0; fontdata[i].size[j] < 999; j++) {
-			f = fontdata[i].fsp[j];
-			if (f != NULL) {
-				putc(ADELF, tf);
-				putc(f->family, tf);
-				for (k = 0; k < 256/8; k++)
-					f->chused[k] = 0;
-			}
+/*----------------------------------------------------------------------------*
+ | Routine:	clearglyphs ( index, limit )
+ |
+ | Results:	any glyphs downloaded into the imagen with a "chused" entry
+ |		less than "limit" (and > 0) are marked for deletion and their
+ |		space is "unrecorded" in totglyph.
+ |
+ | Bugs:	clearglyphs does NOT check index to make sure the family exists
+ *----------------------------------------------------------------------------*/
+
+clearglyphs(index, limit)
+int index;
+int limit;
+{
+	register fontset *f = &fontdata[index];
+	register int j;
+
+#ifdef DEBUGABLE
+	if (dbg) fprintf(stderr, "clear %d family of %d (%d/%d) on page %d\n",
+			index, limit, totglyph, maxglyph, pageno);
+#endif
+	for (j = 0; j < CHARRAY; j++) {
+		if (f->chused[j] && f->chused[j] < limit) {
+			putc(ADELG, tf);
+			putint(index<<7 | j, tf);
+			totglyph -= glspace (&(f->glyph[j]));
+			f->chused[j] = 0;
 		}
+	}
 }
 
-bit(p, n)	/* return n-th bit of p[] */
-char *p;
-int n;
-{
-	return (p[n/8] >> (7 - n%8)) & 01;
-}
-
-setbit(p, n)	/* set bit n of p[] */
-char *p;
-int n;
-{
-	p[n/8] |= 01 << (7 - n%8);
-}
 
 putint(n, f)
 int n;
