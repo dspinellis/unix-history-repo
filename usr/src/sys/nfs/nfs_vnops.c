@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.20 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.21 (Berkeley) %G%
  */
 
 /*
@@ -1390,7 +1390,7 @@ nfs_doio(bp)
 		 */
 		io.iov_base = vbase+o;
 		io.iov_len = uiop->uio_resid = bp->b_bcount;
-		uiop->uio_offset = bp->b_lblkno * DEV_BSIZE;
+		uiop->uio_offset = bp->b_blkno * DEV_BSIZE;
 		if (bp->b_flags & B_READ) {
 			uiop->uio_rw = UIO_READ;
 			nfsstats.read_physios++;
@@ -1413,7 +1413,7 @@ nfs_doio(bp)
 	} else {
 		if (bp->b_flags & B_READ) {
 			io.iov_len = uiop->uio_resid = bp->b_bcount;
-			uiop->uio_offset = bp->b_lblkno * DEV_BSIZE;
+			uiop->uio_offset = bp->b_blkno * DEV_BSIZE;
 			io.iov_base = bp->b_un.b_addr;
 			uiop->uio_rw = UIO_READ;
 			nfsstats.read_bios++;
@@ -1421,7 +1421,7 @@ nfs_doio(bp)
 		} else {
 			io.iov_len = uiop->uio_resid = bp->b_dirtyend
 				- bp->b_dirtyoff;
-			uiop->uio_offset = (bp->b_lblkno * DEV_BSIZE)
+			uiop->uio_offset = (bp->b_blkno * DEV_BSIZE)
 				+ bp->b_dirtyoff;
 			io.iov_base = bp->b_un.b_addr + bp->b_dirtyoff;
 			uiop->uio_rw = UIO_WRITE;
