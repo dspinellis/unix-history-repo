@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.16 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -13,13 +13,14 @@
 #include "ioctl.h"
 #include "tty.h"
 #include "buf.h"
+#include "file.h"
 
 #include "vm/vm.h"
 
 #include "kinfo_proc.h"
 
 #define snderr(e) { error = (e); goto release;}
-extern int kinfo_doproc(), kinfo_rtable(), kinfo_vnode();
+extern int kinfo_doproc(), kinfo_rtable(), kinfo_vnode(), kinfo_file();
 struct kinfo_lock kinfo_lock;
 
 /* ARGSUSED */
@@ -53,6 +54,10 @@ getkerninfo(p, uap, retval)
 
 	case KINFO_VNODE:
 		server = kinfo_vnode;
+		break;
+
+	case KINFO_FILE:
+		server = kinfo_file;
 		break;
 
 	default:
@@ -213,4 +218,57 @@ fill_eproc(p, ep)
 		strncpy(ep->e_wmesg, p->p_wmesg, WMESGLEN);
 	ep->e_xsize = ep->e_xrssize = 0;
 	ep->e_xccount = ep->e_xswrss = 0;
+}
+
+/*
+ * Get file structures.
+ */
+kinfo_file(op, where, acopysize, arg, aneeded)
+	register char *where;
+	int *acopysize, *aneeded;
+{
+	int buflen, needed, error;
+	struct file *fp;
+	char *start = where;
+
+	if (where == NULL) {
+		/*
+		 * overestimate by 10 files
+		 */
+		*aneeded = sizeof (filehead) + 
+			(nfiles + 10) * sizeof (struct file);
+		return (0);
+	}
+	buflen = *acopysize;
+	needed = 0;
+
+	/*
+	 * first copyout filehead
+	 */
+	if (buflen > sizeof (filehead)) {
+		if (error = copyout((caddr_t)&filehead, where,
+		    sizeof (filehead)))
+			return (error);
+		buflen -= sizeof (filehead);
+		where += sizeof (filehead);
+	}
+	needed += sizeof (filehead);
+
+	/*
+	 * followed by an array of file structures
+	 */
+	for (fp = filehead; fp != NULL; fp = fp->f_filef) {
+		if (buflen > sizeof (struct file)) {
+			if (error = copyout((caddr_t)fp, where,
+			    sizeof (struct file)))
+				return (error);
+			buflen -= sizeof (struct file);
+			where += sizeof (struct file);
+		}
+		needed += sizeof (struct file);
+	}
+	*acopysize = where - start;
+	*aneeded = needed;
+
+	return (0);
 }
