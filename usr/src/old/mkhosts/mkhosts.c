@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)mkhosts.c	4.3 (Berkeley) 84/05/17";
+static	char *sccsid = "@(#)mkhosts.c	4.4 (Berkeley) 84/08/28";
 #endif
 
 #include <sys/file.h>
@@ -17,7 +17,8 @@ main(argc, argv)
 	datum key, content;
 	register char *cp, *tp, **sp;
 	register int naliases, *nap;
-	int verbose = 0, entries = 0, maxlen = 0;
+	int verbose = 0, entries = 0, maxlen = 0, error = 0;
+	char tempname[BUFSIZ], newname[BUFSIZ];
 
 	if (argc > 1 && strcmp(argv[1], "-v") == 0) {
 		verbose++;
@@ -32,13 +33,14 @@ main(argc, argv)
 		exit(1);
 	}
 	umask(0);
-	dp = ndbmopen(argv[1], O_WRONLY|O_CREAT|O_EXCL, 0644);
+
+	sprintf(tempname, "%s.new", argv[1]);
+	dp = dbm_open(tempname, O_WRONLY|O_CREAT|O_EXCL, 0644);
 	if (dp == NULL) {
-		fprintf(stderr, "dbminit failed: ");
+		fprintf(stderr, "dbm_open failed: ");
 		perror(argv[1]);
 		exit(1);
 	}
-	dp->db_maxbno = 0;
 	sethostfile(argv[1]);
 	sethostent(1);
 	while (hp = gethostent()) {
@@ -68,20 +70,49 @@ main(argc, argv)
 			printf("store %s, %d aliases\n", hp->h_name, naliases);
 		key.dptr = hp->h_name;
 		key.dsize = strlen(hp->h_name);
-		dbmstore(dp, key, content, DB_INSERT);
+		if (dbm_store(dp, key, content, DBM_INSERT) < 0) {
+			perror(hp->h_name);
+			goto err;
+		}
 		for (sp = hp->h_aliases; *sp; sp++) {
 			key.dptr = *sp;
 			key.dsize = strlen(*sp);
-			dbmstore(dp, key, content, DB_INSERT);
+			if (dbm_store(dp, key, content, DBM_INSERT) < 0) {
+				perror(*sp);
+				goto err;
+			}
 		}
 		key.dptr = hp->h_addr;
 		key.dsize = hp->h_length;
-		dbmstore(dp, key, content, DB_INSERT);
+		if (dbm_store(dp, key, content, DBM_INSERT) < 0) {
+			perror("dbm_store host address");
+			goto err;
+		}
 		entries++;
 		if (cp - buf > maxlen)
 			maxlen = cp - buf;
 	}
 	endhostent();
+	dbm_close(dp);
+
+	sprintf(tempname, "%s.new.pag", argv[1]);
+	sprintf(newname, "%s.pag", argv[1]);
+	if (rename(tempname, newname) < 0) {
+		perror("rename .pag");
+		exit(1);
+	}
+	sprintf(tempname, "%s.new.dir", argv[1]);
+	sprintf(newname, "%s.dir", argv[1]);
+	if (rename(tempname, newname) < 0) {
+		perror("rename .dir");
+		exit(1);
+	}
 	printf("%d host entries, maximum length %d\n", entries, maxlen);
 	exit(0);
+err:
+	sprintf(tempname, "%s.new.pag", argv[1]);
+	unlink(tempname);
+	sprintf(tempname, "%s.new.dir", argv[1]);
+	unlink(tempname);
+	exit(1);
 }
