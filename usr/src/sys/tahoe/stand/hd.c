@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)hd.c	7.5 (Berkeley) %G%
+ *	@(#)hd.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -121,7 +121,7 @@ hdopen(io)
 	mcb.chain[0].memadr = (long)dlbuf;
 	if (hdimcb(&mcb, io))
 		return(ERDLAB);
-	dlp = (struct disklabel *)(dlbuf + LABELOFFSET);
+	dlp = (struct disklabel *)(dlbuf + (LABELOFFSET / sizeof(long)));
 	if (dlp->d_magic != DISKMAGIC || dlp->d_magic2 != DISKMAGIC)
 #ifdef COMPAT_42
 	{
@@ -193,7 +193,7 @@ hdimcb(mcb, io)
 		if (master.mcs&MCS_DONE)
 			return(0);
 	}
-	printf("hdc: controller timed out.\n");
+	printf("hdc%d: timed out.\n", io->i_ctlr);
 	return(1);
 }
 
