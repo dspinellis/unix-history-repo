@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)unistd.h	5.13 (Berkeley) %G%
+ *	@(#)unistd.h	5.14 (Berkeley) %G%
  */
 
 #ifndef _UNISTD_H_
@@ -27,8 +27,6 @@
 #ifndef NULL
 #define	NULL		0	/* null pointer constant */
 #endif
-
-typedef	int ssize_t;		/* count of bytes or error indication */
 
 __BEGIN_DECLS
 void	 _exit __P((int));
