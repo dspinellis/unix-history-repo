@@ -4,24 +4,24 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.60 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.61 (Berkeley) %G%
  */
 
 /*
  * External virtual filesystem routines
  */
 
-#include "param.h"
-#include "proc.h"
-#include "mount.h"
-#include "time.h"
-#include "vnode.h"
-#include "specdev.h"
-#include "namei.h"
-#include "ucred.h"
-#include "buf.h"
-#include "errno.h"
-#include "malloc.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/mount.h>
+#include <sys/time.h>
+#include <sys/vnode.h>
+#include <sys/specdev.h>
+#include <sys/namei.h>
+#include <sys/ucred.h>
+#include <sys/buf.h>
+#include <sys/errno.h>
+#include <sys/malloc.h>
 
 /*
  * Remove a mount point from the list of mounted filesystems.
@@ -413,8 +413,9 @@ vinvalbuf(vp, save)
 			bp->b_flags |= B_BUSY;
 			splx(s);
 			if (save && (bp->b_flags & B_DELWRI)) {
-				dirty++;
-				(void) bwrite(bp);
+				dirty++;			/* XXX */
+				if (vp->v_mount->mnt_stat.f_type != MOUNT_LFS)
+					(void) bwrite(bp);
 				break;
 			}
 			if (bp->b_vp != vp)
