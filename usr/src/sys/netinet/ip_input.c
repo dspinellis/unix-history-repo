@@ -1,4 +1,4 @@
-/*	ip_input.c	1.60	83/01/03	*/
+/*	ip_input.c	1.61	83/01/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -506,7 +506,7 @@ ip_dooptions(ip)
 
 			case IPOPT_TS_PRESPEC:
 				ipaddr.sin_addr = *sin;
-				if (!if_ifwithaddr((struct sockaddr *)&ipaddr))
+				if (if_ifwithaddr((struct sockaddr *)&ipaddr) == 0)
 					continue;
 				if (ipt->ipt_ptr + 8 > ipt->ipt_len)
 					goto bad;

@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.37	82/12/16	*/
+/*	tcp_subr.c	4.38	83/01/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -49,7 +49,7 @@ tcp_template(tp)
 	register struct tcpiphdr *n;
 
 	m = m_get(M_WAIT, MT_HEADER);
-	if (m == 0)
+	if (m == NULL)
 		return (0);
 	m->m_off = MMAXOFF - sizeof (struct tcpiphdr);
 	m->m_len = sizeof (struct tcpiphdr);
@@ -102,7 +102,7 @@ tcp_respond(tp, ti, ack, seq, flags)
 	}
 	if (flags == 0) {
 		m = m_get(M_DONTWAIT, MT_HEADER);
-		if (m == 0)
+		if (m == NULL)
 			return;
 		m->m_len = sizeof (struct tcpiphdr) + 1;
 		*mtod(m, struct tcpiphdr *) = *ti;
@@ -149,8 +149,8 @@ tcp_newtcpcb(inp)
 	struct mbuf *m = m_getclr(M_DONTWAIT, MT_PCB);
 	register struct tcpcb *tp;
 
-	if (m == 0)
-		return (0);
+	if (m == NULL)
+		return ((struct tcpcb *)0);
 	tp = mtod(m, struct tcpcb *);
 	tp->seg_next = tp->seg_prev = (struct tcpiphdr *)tp;
 	/*

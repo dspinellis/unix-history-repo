@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.41	82/12/14	*/
+/*	udp_usrreq.c	4.42	83/01/04	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -89,11 +89,8 @@ udp_input(m0)
 	    ui->ui_src, ui->ui_sport, ui->ui_dst, ui->ui_dport,
 		INPLOOKUP_WILDCARD);
 	if (inp == 0) {
-		struct in_addr broadcastaddr;
-
-		broadcastaddr =
-		    if_makeaddr(in_netof(ui->ui_dst), INADDR_ANY);
-		if (ui->ui_dst.s_addr == broadcastaddr.s_addr)
+		/* don't send ICMP response for broadcast packet */
+		if (in_lnaof(ui->ui_dst) == INADDR_ANY)
 			goto bad;
 		icmp_error((struct ip *)ui, ICMP_UNREACH, ICMP_UNREACH_PORT);
 		return;
@@ -107,10 +104,8 @@ udp_input(m0)
 	udp_in.sin_addr = ui->ui_src;
 	m->m_len -= sizeof (struct udpiphdr);
 	m->m_off += sizeof (struct udpiphdr);
-SBCHECK(&inp->inp_socket->so_rcv, "udpinput before");
 	if (sbappendaddr(&inp->inp_socket->so_rcv, (struct sockaddr *)&udp_in, m) == 0)
 		goto bad;
-SBCHECK(&inp->inp_socket->so_rcv, "udpinput after");
 	sorwakeup(inp->inp_socket);
 	return;
 bad:
@@ -247,7 +242,7 @@ udp_usrreq(so, req, m, nam, opt)
 		break;
 
 	case PRU_CONNECT:
-		if (inp->inp_faddr.s_addr)
+		if (inp->inp_faddr.s_addr != INADDR_ANY)
 			return (EISCONN);
 		error = in_pcbconnect(inp, nam);
 		if (error == 0)
@@ -258,7 +253,7 @@ udp_usrreq(so, req, m, nam, opt)
 		return (EOPNOTSUPP);
 
 	case PRU_DISCONNECT:
-		if (inp->inp_faddr.s_addr == 0)
+		if (inp->inp_faddr.s_addr == INADDR_ANY)
 			return (ENOTCONN);
 		in_pcbdisconnect(inp);
 		soisdisconnected(so);
@@ -273,13 +268,13 @@ udp_usrreq(so, req, m, nam, opt)
 
 		if (nam) {
 			laddr = inp->inp_laddr;
-			if (inp->inp_faddr.s_addr)
+			if (inp->inp_faddr.s_addr != INADDR_ANY)
 				return (EISCONN);
 			error = in_pcbconnect(inp, nam);
 			if (error)
 				break;
 		} else {
-			if (inp->inp_faddr.s_addr == 0)
+			if (inp->inp_faddr.s_addr == INADDR_ANY)
 				return (ENOTCONN);
 		}
 		error = udp_output(inp, m);
