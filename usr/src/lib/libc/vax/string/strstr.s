@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)strstr.s	5.1 (Berkeley) %G%"
+	.asciz "@(#)strstr.s	5.2 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -23,7 +23,7 @@ ENTRY(strstr, 0)
 	movzwl	$65535,r2	/* r2 = locc/matchc limit */
 	locc	$0,r2,(r4)	/* find '\0' in s2 */
 	beql	4f
-	subl3	r1,r4,r5	/* r5 = strlen(s2) */
+	subl3	r4,r1,r5	/* r5 = strlen(s2) */
 	beql	1f		/* if r5 == 0, return s1 */
 
 	/*
@@ -36,7 +36,7 @@ ENTRY(strstr, 0)
 	/*
 	 * Both strings are `short'; we can use matchc directly.
 	 */
-	subl3	r1,r3,r1	/* r1 = strlen(s1) */
+	subl3	r3,r1,r1	/* r1 = strlen(s1) */
 	matchc	r5,(r4),r1,(r3)	/* find substring */
 	bneq	2f
 
