@@ -1,4 +1,4 @@
-/*	@(#)defs.h	1.5 83/07/28		*/
+/*	@(#)defs.h	1.6 83/07/28		*/
 
 #include "ww.h"
 #include <signal.h>
@@ -25,8 +25,3 @@ struct ww *cmdwin;
 char quit;
 char terse;
 char escapec;
-
-	/* flags to doclose() */
-#define CLOSE_ONE	0
-#define CLOSE_ALL	1
-#define CLOSE_DEAD	2
