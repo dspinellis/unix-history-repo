@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)gprof.c	1.5 (Berkeley) %G%";
+    static	char *sccsid = "@(#)gprof.c	1.6 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -21,10 +21,12 @@ main(argc, argv)
 #	    ifdef DEBUG
 		printf( "[main] debug = %d\n" , debug );
 #	    endif DEBUG
-	} else if ( **argv == 'z' ) {
-	    zflg++;
+	} else if ( **argv == 'a' ) {
+	    aflag++;
 	} else if ( **argv == 'c' ) {
 	    cflag++;
+	} else if ( **argv == 'z' ) {
+	    zflg++;
 	}
 	argv++;
     }
@@ -134,7 +136,7 @@ getsymtab(nfile)
     nname = 0;
     for (i = xbuf.a_syms; i > 0; i -= sizeof(struct nlist)) {
 	fread(&nbuf, sizeof(nbuf), 1, nfile);
-	if ( nbuf.n_type != N_TEXT+N_EXT ) {
+	if ( ! funcsymbol( &nbuf ) ) {
 	    continue;
 	}
 	nname++;
@@ -164,7 +166,13 @@ getsymtab(nfile)
     nname = 0;
     for (i = xbuf.a_syms; i > 0; i -= sizeof(struct nlist)) {
 	fread(&nbuf, sizeof(nbuf), 1, nfile);
-	if ( nbuf.n_type != N_TEXT+N_EXT ) {
+	if ( ! funcsymbol( &nbuf ) ) {
+#	    ifdef DEBUG
+		if ( debug & AOUTDEBUG ) {
+		    printf( "[getsymtab] rejecting: 0x%x %s\n" ,
+			    nbuf.n_type , strtab + nbuf.n_un.n_strx );
+		}
+#	    endif DEBUG
 	    continue;
 	}
 	npe->value = nbuf.n_value;
@@ -396,6 +404,35 @@ max(a, b)
     if (a>b)
 	return(a);
     return(b);
+}
+
+bool
+funcsymbol( nlistp )
+    struct nlist	*nlistp;
+{
+    extern char	*strtab;	/* string table from a.out */
+    extern int	aflag;		/* if static functions desired */
+    char	*name;
+
+	/*
+	 *	must be a text symbol,
+	 *	and static text symbols qualify if aflag set.
+	 */
+    if ( ! (  ( nlistp -> n_type == ( N_TEXT | N_EXT ) )
+	   || ( ( nlistp -> n_type == N_TEXT ) && aflag ) ) ) {
+	return FALSE;
+    }
+	/*
+	 *	can't have any `funny characters in name,
+	 *	where `funny' includes	`.', .o file names
+	 *			and	`$', pascal labels.
+	 */
+    for ( name = strtab + nlistp -> n_un.n_strx ; *name ; name += 1 ) {
+	if ( *name == '.' || *name == '$' ) {
+	    return FALSE;
+	}
+    }
+    return TRUE;
 }
 
 done()
