@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 1988 University of Utah.
  * Copyright (c) 1992 OMRON Corporation.
- * Copyright (c) 1982, 1986, 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1986, 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * the Systems Programming Group of the University of Utah Computer
@@ -13,7 +13,7 @@
  * from: Utah $Hdr: trap.c 1.35 91/12/26$
  * from: hp300/hp300/trap.c	7.26 (Berkeley) 12/27/92
  *
- *	@(#)trap.c	7.6 (Berkeley) %G%
+ *	@(#)trap.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
