@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)split.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)split.c	4.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -32,7 +32,6 @@ static char sccsid[] = "@(#)split.c	4.6 (Berkeley) %G%";
 
 #define DEFLINE	1000			/* default num lines per file */
 #define ERR	-1			/* general error */
-#define ERREXIT	0			/* error exit */
 #define NO	0			/* no/false */
 #define OK	0			/* okay exit */
 #define YES	1			/* yes/true */
@@ -46,12 +45,12 @@ static char	bfr[MAXBSIZE],		/* I/O buffer */
 		fname[MAXPATHLEN];	/* file name */
 
 main(argc, argv)
-	int	argc;
-	char	**argv;
+	int argc;
+	char **argv;
 {
-	register int	cnt;		/* general counter */
-	long	atol();
-	char	*strcpy();
+	register int cnt;
+	long atol();
+	char *strcpy();
 
 	for (cnt = 1; cnt < argc; ++cnt) {
 		if (argv[cnt][0] == '-')
@@ -85,7 +84,7 @@ main(argc, argv)
 		else if (ifd == ERR) {		/* input file */
 			if ((ifd = open(argv[cnt], O_RDONLY, 0)) < 0) {
 				perror(argv[cnt]);
-				exit(ERREXIT);
+				exit(1);
 			}
 		}
 		else if (!*fname)		/* output file prefix */
@@ -100,19 +99,18 @@ main(argc, argv)
 	if (!numlines)
 		numlines = DEFLINE;
 	split2();
+	exit(0);
 }
 
 /*
  * split1 --
  *	split by bytes
  */
-static
 split1()
 {
-	register long	bcnt;		/* byte counter */
-	register int	dist,		/* buffer offset */
-			len;		/* read length */
-	register char	*C;		/* tmp pointer into buffer */
+	register long bcnt;
+	register int dist, len;
+	register char *C;
 
 	for (bcnt = 0;;)
 		switch(len = read(ifd, bfr, MAXBSIZE)) {
@@ -120,7 +118,7 @@ split1()
 			exit(OK);
 		case ERR:
 			perror("read");
-			exit(ERREXIT);
+			exit(1);
 		default:
 			if (!file_open) {
 				newfile();
@@ -128,15 +126,18 @@ split1()
 			}
 			if (bcnt + len >= bytecnt) {
 				dist = bytecnt - bcnt;
-				write(ofd, bfr, dist);
+				if (write(ofd, bfr, dist) != dist)
+					wrerror();
 				len -= dist;
 				for (C = bfr + dist; len >= bytecnt; len -= bytecnt, C += bytecnt) {
 					newfile();
-					write(ofd, C, (int)bytecnt);
+					if (write(ofd, C, (int)bytecnt) != bytecnt)
+						wrerror();
 				}
 				if (len) {
 					newfile();
-					write(ofd, C, len);
+					if (write(ofd, C, len) != len)
+						wrerror();
 				}
 				else
 					file_open = NO;
@@ -144,7 +145,8 @@ split1()
 			}
 			else {
 				bcnt += len;
-				write(ofd, bfr, len);
+				if (write(ofd, bfr, len) != len)
+					wrerror();
 			}
 		}
 }
@@ -153,13 +155,11 @@ split1()
  * split2 --
  *	split by lines
  */
-static
 split2()
 {
-	register char	*Ce,			/* start/end pointers */
-			*Cs;
-	register long	lcnt;			/* line counter */
-	register int	len;			/* read length */
+	register char *Ce, *Cs;
+	register long lcnt;
+	register int len, bcnt;
 
 	for (lcnt = 0;;)
 		switch(len = read(ifd, bfr, MAXBSIZE)) {
@@ -167,7 +167,7 @@ split2()
 			exit(0);
 		case ERR:
 			perror("read");
-			break;
+			exit(1);
 		default:
 			if (!file_open) {
 				newfile();
@@ -175,7 +175,9 @@ split2()
 			}
 			for (Cs = Ce = bfr; len--; Ce++)
 				if (*Ce == '\n' && ++lcnt == numlines) {
-					write(ofd, Cs, (int)(Ce - Cs) + 1);
+					bcnt = Ce - Cs + 1;
+					if (write(ofd, Cs, bcnt) != bcnt)
+						wrerror();
 					lcnt = 0;
 					Cs = Ce + 1;
 					if (len)
@@ -183,8 +185,11 @@ split2()
 					else
 						file_open = NO;
 				}
-			if (Cs < Ce)
-				write(ofd, Cs, (int)(Ce - Cs));
+			if (Cs < Ce) {
+				bcnt = Ce - Cs;
+				if (write(ofd, Cs, bcnt) != bcnt)
+					wrerror();
+			}
 		}
 }
 
@@ -192,12 +197,11 @@ split2()
  * newfile --
  *	open a new file
  */
-static
 newfile()
 {
-	static long	fnum;		/* file name counter */
-	static short	defname;	/* using default name, "x" */
-	static char	*fpnt;		/* output file name pointer */
+	static long fnum;
+	static short defname;
+	static char *fpnt;
 
 	if (ofd == ERR) {
 		if (fname[0]) {
@@ -219,7 +223,7 @@ newfile()
 	if (fnum == MAXFILES) {
 		if (!defname || fname[0] == 'z') {
 			fputs("split: too many files.\n", stderr);
-			exit(ERREXIT);
+			exit(1);
 		}
 		++fname[0];
 		fnum = 0;
@@ -237,9 +241,18 @@ newfile()
  * usage --
  *	print usage message and die
  */
-static
 usage()
 {
 	fputs("usage: split [-] [-#] [-b byte_count] [file [prefix]]\n", stderr);
-	exit(ERREXIT);
+	exit(1);
+}
+
+/*
+ * wrerror --
+ *	write error
+ */
+wrerror()
+{
+	perror("split: write");
+	exit(1);
 }
