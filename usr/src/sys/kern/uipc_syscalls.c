@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.14	82/02/25	*/
+/*	uipc_syscalls.c	4.15	82/03/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -179,7 +179,7 @@ COUNT(SACCEPT);
 	}
 	s = splnet();
 	so = fp->f_socket;
-	if ((so->so_options & SO_NONBLOCKING) &&
+	if ((so->so_state & SS_NBIO) &&
 	    (so->so_state & SS_CONNAWAITING) == 0) {
 		u.u_error = EWOULDBLOCK;
 		splx(s);
@@ -236,7 +236,7 @@ COUNT(SCONNECT);
 	if (u.u_error)
 		return;
 	s = splnet();
-	if ((so->so_options & SO_NONBLOCKING) &&
+	if ((so->so_state & SS_NBIO) &&
 	    (so->so_state & SS_ISCONNECTING)) {
 		u.u_error = EINPROGRESS;
 		splx(s);
@@ -282,7 +282,7 @@ COUNT(SDISCONNECT);
 	if (u.u_error)
 		return;
 	s = splnet();
-	if ((so->so_options&SO_NONBLOCKING) && (so->so_state&SS_ISDISCONNECTING)) {
+	if ((so->so_state&SS_NBIO) && (so->so_state&SS_ISDISCONNECTING)) {
 		u.u_error = EINPROGRESS;
 		splx(s);
 		return;

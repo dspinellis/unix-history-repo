@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.33	82/03/12	*/
+/*	uipc_socket.c	4.34	82/03/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -70,6 +70,9 @@ COUNT(SOCREATE);
 		return (ENOBUFS);
 	so = mtod(m, struct socket *);
 	so->so_options = options;
+	so->so_state = 0;
+	if (u.u_uid == 0)
+		so->so_state = SS_PRIV;
 
 	/*
 	 * Attach protocol to socket, initializing
@@ -125,7 +128,7 @@ COUNT(SOCLOSE);
 		}
 		if ((so->so_options & SO_DONTLINGER) == 0) {
 			if ((so->so_state & SS_ISDISCONNECTING) &&
-			    (so->so_options & SO_NONBLOCKING) &&
+			    (so->so_state & SS_NBIO) &&
 			    exiting == 0) {
 				u.u_error = EINPROGRESS;
 				splx(s);
@@ -272,7 +275,7 @@ COUNT(SOSEND);
 	}
 	if (sosendallatonce(so) && u.u_count > so->so_snd.sb_hiwat)
 		return (EMSGSIZE);
-	if ((so->so_snd.sb_flags & SB_LOCK) && (so->so_options & SO_NONBLOCKING))
+	if ((so->so_snd.sb_flags & SB_LOCK) && (so->so_state & SS_NBIO))
 		return (EWOULDBLOCK);
 	sblock(&so->so_snd);
 #define	snderr(errno)	{ error = errno; splx(s); goto release; }
@@ -306,7 +309,7 @@ again:
 	}
 	space = sbspace(&so->so_snd);
 	if (space <= 0 || sosendallatonce(so) && space < u.u_count) {
-		if (so->so_options & SO_NONBLOCKING)
+		if (so->so_state & SS_NBIO)
 			snderr(EWOULDBLOCK);
 		sbunlock(&so->so_snd);
 		sbwait(&so->so_snd);
@@ -376,7 +379,7 @@ restart:
 		if ((so->so_state & SS_ISCONNECTED) == 0 &&
 		    (so->so_proto->pr_flags & PR_CONNREQUIRED))
 			rcverr(ENOTCONN);
-		if (so->so_options & SO_NONBLOCKING)
+		if (so->so_state & SS_NBIO)
 			rcverr(EWOULDBLOCK);
 		sbunlock(&so->so_rcv);
 		sbwait(&so->so_rcv);
@@ -475,9 +478,9 @@ COUNT(SOIOCTL);
 			return;
 		}
 		if (nbio)
-			so->so_options |= SO_NONBLOCKING;
+			so->so_state |= SS_NBIO;
 		else
-			so->so_options &= ~SO_NONBLOCKING;
+			so->so_state &= ~SS_NBIO;
 		return;
 	}
 
@@ -488,9 +491,9 @@ COUNT(SOIOCTL);
 			return;
 		}
 		if (async)
-			;
+			so->so_state |= SS_ASYNC;
 		else
-			;
+			so->so_state &= ~SS_ASYNC;
 		return;
 	}
 
@@ -501,14 +504,14 @@ COUNT(SOIOCTL);
 			return;
 		}
 		if (keep)
-			so->so_options &= ~SO_NOKEEPALIVE;
+			so->so_options &= ~SO_KEEPALIVE;
 		else
-			so->so_options |= SO_NOKEEPALIVE;
+			so->so_options |= SO_KEEPALIVE;
 		return;
 	}
 
 	case SIOCGKEEP: {
-		int keep = (so->so_options & SO_NOKEEPALIVE) == 0;
+		int keep = (so->so_options & SO_KEEPALIVE) != 0;
 		if (copyout((caddr_t)&keep, cmdp, sizeof (keep)))
 			u.u_error = EFAULT;
 		return;

@@ -1,4 +1,4 @@
-/*	machdep.c	4.51	82/02/08	*/
+/*	machdep.c	4.52	82/03/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -499,13 +499,14 @@ boot(paniced, arghowto)
 	(void) spl1();
 	howto = arghowto;
 	if ((howto&RB_NOSYNC)==0 && waittime < 0 && bfreelist[0].b_forw) {
-		register int cnt;
-		register struct buf *bp;
-		int iter, nbusy;
 		waittime = 0;
 		update(1);
 		printf("syncing disks... ");
-		for (iter = 0; iter < 10; iter++) {
+#ifdef notdef
+		{ register struct buf *bp;
+		  int iter, nbusy;
+
+		  for (iter = 0; iter < 10; iter++) {
 			nbusy = 0;
 			for (bp = &buf[nbuf]; --bp >= buf; )
 				if (bp->b_flags & B_BUSY)
@@ -513,7 +514,11 @@ boot(paniced, arghowto)
 			if (nbusy == 0)
 				break;
 			printf("%d ", nbusy);
+		  }
 		}
+#else
+		DELAY(10000000);
+#endif
 		printf("done\n");
 	}
 	splx(0x1f);			/* extreme priority */
