@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ns.c	7.10 (Berkeley) %G%
+ *	@(#)ns.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -105,6 +105,7 @@ ns_control(so, cmd, data, ifp)
 				malloc(sizeof *ia, M_IFADDR, M_WAITOK);
 			if (oia == (struct ns_ifaddr *)NULL)
 				return (ENOBUFS);
+			bzero((caddr_t)oia, sizeof(*oia));
 			if (ia = ns_ifaddr) {
 				for ( ; ia->ia_next; ia = ia->ia_next)
 					;
