@@ -125,6 +125,15 @@ distribution) for more details.
   You can eliminate this by adding commas at the end of each line
   of the :include: file.
 
+* Excessive mailing list nesting can run out of file descriptors.
+
+  If you have a mailing list that includes lots of other mailing
+  lists, each of which has a separate owner, you can run out of
+  file descriptors.  Each mailing list with a separate owner uses
+  one open file descriptor (prior to 8.6.6 it was three open
+  file descriptors per list).  This is particularly egregious if
+  you have your connection cache set to be large.
+
 
 +-------------------------------------------+
 | THE FOLLOWING PROBLEMS ARE FIXED IN 8.6.5 |
@@ -168,4 +177,4 @@ distribution) for more details.
   (There was a bug that was fixed in 8.6.beta.13 that might be related,
   but I think this bug still exists.)
 
-(Version 8.15, last updated %G%)
+(Version 8.16, last updated %G%)
