@@ -1,4 +1,4 @@
-/*	clock.h	4.1	%G%	*/
+/*	clock.h	4.2	%G%	*/
 
 /*
  * VAX clock registers
@@ -20,7 +20,7 @@
 #define	TODRZERO	((unsigned)(1<<28))
 
 #define	YRREF		1970
-#define	LEAPYEAR(year)	((year)%4==0 && year != 2000)	/* good till 2100 */
+#define	LEAPYEAR(year)	((year)%4==0)	/* good till time becomes negative */
 
 /*
  * Start a 60 HZ clock.
