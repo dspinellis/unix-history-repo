@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)monop.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)monop.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 # include	"monop.def"
@@ -72,7 +72,7 @@ over:
 	name_list[i] = 0;
 	for (i = 0; i < num_play; i++)
 		for (j = i + 1; j < num_play; j++)
-			if (strcmp(name_list[i], name_list[j]) == 0) {
+			if (strcasecmp(name_list[i], name_list[j]) == 0) {
 				if (i != num_play - 1)
 					printf("Hey!!! Some of those are IDENTICAL!!  Let's try that again....\n");
 				else
