@@ -9,7 +9,7 @@
 #include <whoami.h>
 #include <sysexits.h>
 
-static char SccsId[] = "@(#)mail.local.c	4.4	%G%";
+static char SccsId[] = "@(#)mail.local.c	4.5	%G%";
 
 #define DELIVERMAIL	"/etc/delivermail"
 
@@ -425,6 +425,7 @@ char **argv;
 		if (rmail)
 			*ap-- = "-s";
 		*ap = "-delivermail";
+		setuid(getuid());
 		execv(DELIVERMAIL, ap);
 		perror(DELIVERMAIL);
 		exit(EX_UNAVAILABLE);
