@@ -1,27 +1,51 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1991 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)subr_xxx.c	7.8 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)subr_xxx.c	7.9 (Berkeley) %G%
  */
 
+/*
+ * Miscellaneous trivial functions, including many
+ * that are often inline-expanded or done in assembler.
+ */
+#include "types.h"
+#include "machine/cpu.h"
 #include "errno.h"
 
 /*
- * Routine placed in illegal entries in the bdevsw and cdevsw tables.
+ * Unsupported device function (e.g. writing to read-only device).
  */
-nodev()
+enodev()
 {
 
 	return (ENODEV);
 }
 
 /*
- * Null routine; placed in insignificant entries
- * in the bdevsw and cdevsw tables.
+ * Unconfigured device function; driver not configured.
  */
-nulldev()
+enxio()
+{
+
+	return (ENXIO);
+}
+
+/*
+ * Return error for unsupported operation.
+ */
+eopnotsupp()
+{
+
+	return (EOPNOTSUPP);
+}
+
+/*
+ * Generic null operation, always returns success.
+ */
+nullop()
 {
 
 	return (0);
@@ -33,28 +57,62 @@ nulldev()
  */
 #if !defined(vax) && !defined(tahoe)
 imin(a, b)
+	int a, b;
 {
 
 	return (a < b ? a : b);
 }
 
 imax(a, b)
+	int a, b;
 {
 
 	return (a > b ? a : b);
 }
 
-unsigned
+unsigned int
 min(a, b)
-	unsigned a, b;
+	unsigned int a, b;
 {
 
 	return (a < b ? a : b);
 }
 
-unsigned
+unsigned int
 max(a, b)
-	unsigned a, b;
+	unsigned int a, b;
+{
+
+	return (a > b ? a : b);
+}
+
+long
+lmin(a, b)
+	long a, b;
+{
+
+	return (a < b ? a : b);
+}
+
+long
+lmax(a, b)
+	long a, b;
+{
+
+	return (a > b ? a : b);
+}
+
+unsigned long
+ulmin(a, b)
+	unsigned long a, b;
+{
+
+	return (a < b ? a : b);
+}
+
+unsigned long
+ulmax(a, b)
+	unsigned long a, b;
 {
 
 	return (a > b ? a : b);
@@ -78,10 +136,11 @@ ffs(mask)
 #endif
 
 #if !defined(vax) && !defined(hp300)
-bcmp(s1, s2, len)
-	register char *s1, *s2;
+bcmp(v1, v2, len)
+	void *v1, *v2;
 	register unsigned len;
 {
+	register u_char *s1 = v1, *s2 = v2;
 
 	while (len--)
 		if (*s1++ != *s2++)
@@ -95,7 +154,7 @@ strlen(s1)
 	register int len;
 
 	for (len = 0; *s1++ != '\0'; len++)
-		/* void */;
+		;
 	return (len);
 }
 #endif

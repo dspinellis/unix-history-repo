@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1989, 1991 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)init_main.c	7.33 (Berkeley) %G%
+ *	@(#)init_main.c	7.34 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -23,60 +23,59 @@
 #include "protosw.h"
 #include "reboot.h"
 
-#include "machine/reg.h"
 #include "machine/cpu.h"
 
-#include "../vm/vm_param.h"
-#include "../vm/vm_map.h"
+#include "vm/vm.h"
+#include "vm/vm_param.h"
+#include "vm/vm_map.h"
+
+/*
+ * Components of process 0;
+ * never freed.
+ */
+struct	session session0;
+struct	pgrp pgrp0;
+struct	proc proc0;
+struct	pcred cred0;
+struct	filedesc filedesc0;
+struct	file *fd0[NOEXTENT];
+char	fdflags0[NOEXTENT];
+struct	plimit limit0;
+struct	vmspace vmspace0;
+struct	proc *initproc, *pageproc;
 
 int	cmask = CMASK;
 extern	caddr_t proc0paddr;
 extern	int (*mountroot)();
-extern	char	initflags[];
+extern	char initflags[];
 
 /*
- * Initialization code.
- * Called from cold start routine as
- * soon as a stack and segmentation
- * have been established.
- * Functions:
- *	clear and free user core
- *	turn on clock
- *	hand craft 0th process
- *	call all initialization routines
- *	fork - process 0 to schedule
- *	     - process 1 execute bootstrap
- *	     - process 2 to page out
+ * System startup; initialize the world, create process 0,
+ * mount root filesystem, and fork to create init and pagedaemon.
+ * Most of the hard work is done in the lower-level initialization
+ * routines including startup(), which does memory initialization
+ * and autoconfiguration.
  */
 main(firstaddr)
 	int firstaddr;
 {
 	register int i;
 	register struct proc *p;
-	register struct pgrp *pg;
 	register struct filedesc *fdp;
-	char *ip = initflags;
-	int s;
-
-	rqinit();
+	int s, rval[2];
 
 	/*
-	 * set boot flags
+	 * Initialize curproc before any possible traps/probes
+	 * to simplify trap processing.
 	 */
-	*ip++ = '-';
-	if (boothowto&RB_SINGLE)
-		*ip++ = 's';
-	/* if (boothowto&RB_FASTBOOT)
-		*ip++ = 'f'; */
-	*ip++ = '\0';
-
-#if defined(hp300) && defined(DEBUG)
+	p = &proc0;
+	curproc = p;
 	/*
-	 * Assumes mapping is really on
+	 * Attempt to find console and initialize
+	 * in case of early panic or other messages.
 	 */
-	find_devs();
-	cninit();
-#endif
+	consinit();
+
 	vm_mem_init();
 	kmeminit();
 	startup(firstaddr);
@@ -84,66 +83,77 @@ main(firstaddr)
 	/*
 	 * set up system process 0 (swapper)
 	 */
-	p = &proc[0];
-	bcopy("swapper", p->p_comm, sizeof ("swapper"));
+	p = &proc0;
+	curproc = p;
+
+	allproc = p;
+	p->p_prev = &allproc;
+	p->p_pgrp = &pgrp0;
+	pgrphash[0] = &pgrp0;
+	pgrp0.pg_mem = p;
+	pgrp0.pg_session = &session0;
+	session0.s_count = 1;
+	session0.s_leader = p;
+
+	p->p_flag = SLOAD|SSYS;
 	p->p_stat = SRUN;
-	p->p_flag |= SLOAD|SSYS;
 	p->p_nice = NZERO;
+	bcopy("swapper", p->p_comm, sizeof ("swapper"));
+
 	/*
-	 * Allocate a prototype map so we have something to fork
+	 * Setup credentials
 	 */
-	p->p_map = vm_map_create(pmap_create(0),
-				 round_page(VM_MIN_ADDRESS),
-				 trunc_page(VM_MAX_ADDRESS), TRUE);
-	p->p_addr = proc0paddr;
-	u.u_procp = p;
-	MALLOC(pgrphash[0], struct pgrp *, sizeof (struct pgrp), 
-		M_PGRP, M_NOWAIT);
-	if ((pg = pgrphash[0]) == NULL)
-		panic("no space to craft zero'th process group");
-	pg->pg_id = 0;
-	pg->pg_hforw = 0;
-	pg->pg_mem = p;
-	pg->pg_jobc = 0;
-	p->p_pgrp = pg;
-	p->p_pgrpnxt = 0;
-	MALLOC(pg->pg_session, struct session *, sizeof (struct session),
-		M_SESSION, M_NOWAIT);
-	if (pg->pg_session == NULL)
-		panic("no space to craft zero'th session");
-	pg->pg_session->s_count = 1;
-	pg->pg_session->s_leader = NULL;
-	pg->pg_session->s_ttyvp = NULL;
-	pg->pg_session->s_ttyp = NULL;
-#ifdef KTRACE
-	p->p_tracep = NULL;
-	p->p_traceflag = 0;
-#endif
-	/*
-	 * These assume that the u. area is always mapped 
-	 * to the same virtual address. Otherwise must be
-	 * handled when copying the u. area in newproc().
-	 */
-	ndinit(&u.u_nd);
+	p->p_cred = &cred0;
+	p->p_ucred = crget();
+	p->p_ucred->cr_ngroups = 1;	/* group 0 */
 
 	/*
 	 * Create the file descriptor table for process 0.
 	 */
-	fdp = (struct filedesc *)malloc(sizeof(*fdp), M_FILE, M_WAITOK);
-	bzero((char *)fdp, sizeof(struct filedesc));
+	fdp = &filedesc0;
 	p->p_fd = fdp;
 	fdp->fd_refcnt = 1;
 	fdp->fd_cmask = cmask;
-	fdp->fd_lastfile = -1;
-	fdp->fd_maxfiles = NDFILE;
-	for (i = 0; i < sizeof(u.u_rlimit)/sizeof(u.u_rlimit[0]); i++)
-		u.u_rlimit[i].rlim_cur = u.u_rlimit[i].rlim_max = 
-		    RLIM_INFINITY;
+	fdp->fd_ofiles = fd0;
+	fdp->fd_ofileflags = fdflags0;
+	fdp->fd_nfiles = NOEXTENT;
+
+	/*
+	 * Set initial limits
+	 */
+	p->p_limit = &limit0;
+	for (i = 0; i < sizeof(p->p_rlimit)/sizeof(p->p_rlimit[0]); i++)
+		limit0.pl_rlimit[i].rlim_cur =
+		    limit0.pl_rlimit[i].rlim_max = RLIM_INFINITY;
+	limit0.pl_rlimit[RLIMIT_OFILE].rlim_cur = NOFILE;
+	limit0.pl_rlimit[RLIMIT_NPROC].rlim_cur = MAXUPRC;
+	limit0.p_refcnt = 1;
+
+	/*
+	 * Allocate a prototype map so we have something to fork
+	 */
+	p->p_vmspace = &vmspace0;
+	vmspace0.vm_refcnt = 1;
+	pmap_pinit(&vmspace0.vm_pmap);
+	vm_map_init(&p->p_vmspace->vm_map, round_page(VM_MIN_ADDRESS),
+	    trunc_page(VM_MAX_ADDRESS), TRUE);
+	vmspace0.vm_map.pmap = &vmspace0.vm_pmap;
+	p->p_addr = proc0paddr;				/* XXX */
+
+	/*
+	 * We continue to place resource usage info
+	 * and signal actions in the user struct so they're pageable.
+	 */
+	p->p_stats = &u.u_stats;
+	p->p_sigacts = &u.u_sigacts;
+
+	rqinit();
+
 	/*
 	 * configure virtual memory system,
 	 * set vm rlimits
 	 */
-	vminit();
+	vm_init_limits(p);
 
 	/*
 	 * Initialize the file systems.
@@ -155,12 +165,6 @@ main(firstaddr)
 	    bdevvp(argdev, &argdev_vp) ||
 	    bdevvp(rootdev, &rootvp))
 		panic("can't setup bdevvp's");
-
-	/*
-	 * Setup credentials
-	 */
-	u.u_cred = crget();
-	u.u_cred->cr_ngroups = 1;
 
 	startrtclock();
 #if defined(vax)
@@ -194,18 +198,19 @@ main(firstaddr)
 	ifinit();
 	domaininit();
 	splx(s);
-	pqinit();
-	swapinit();
+
 #ifdef GPROF
 	kmstartup();
 #endif
 
-/* kick off timeout driven events by calling first time */
+	/* kick off timeout driven events by calling first time */
 	roundrobin();
 	schedcpu();
 	enablertclock();		/* enable realtime clock interrupts */
 
-/* set up the root file system */
+	/*
+	 * Set up the root file system and vnode.
+	 */
 	if ((*mountroot)())
 		panic("cannot mount root");
 	/*
@@ -218,38 +223,67 @@ main(firstaddr)
 	VREF(fdp->fd_cdir);
 	VOP_UNLOCK(rootdir);
 	fdp->fd_rdir = NULL;
-	boottime = u.u_start =  time;
+	swapinit();
+
+	/*
+	 * Now can look at time, having had a chance
+	 * to verify the time from the file system.
+	 */
+	boottime = p->p_stats->p_start = time;
 
 	/*
 	 * make init process
 	 */
-
-	siginit(&proc[0]);
-	if (newproc(0)) {
+	siginit(p);
+	if (fork(p, (void *) NULL, rval))
+		panic("fork init");
+	if (rval[1]) {
+		char *ip = initflags;
 		vm_offset_t addr = 0;
 
-		(void) vm_allocate(u.u_procp->p_map,
-				   &addr, round_page(szicode), FALSE);
-		if (addr != 0)
+		/*
+		 * Now in process 1.  Set init flags into icode,
+		 * get a minimal address space, copy out "icode",
+		 * and return to it to do an exec of init.
+		 */
+		p = curproc;
+		initproc = p;
+		*ip++ = '-';
+		if (boothowto&RB_SINGLE)
+			*ip++ = 's';
+#ifdef notyet
+		if (boothowto&RB_FASTBOOT)
+			*ip++ = 'f';
+		*ip++ = '\0';
+#endif
+
+		if (vm_allocate(&p->p_vmspace->vm_map, &addr,
+		    round_page(szicode), FALSE) != KERN_SUCCESS || addr != 0)
 			panic("init: couldn't allocate at zero");
 
 		/* need just enough stack to exec from */
 		addr = trunc_page(VM_MAX_ADDRESS - PAGE_SIZE);
-		(void) vm_allocate(u.u_procp->p_map, &addr, PAGE_SIZE, FALSE);
-		u.u_maxsaddr = (caddr_t)addr;
+		if (vm_allocate(&p->p_vmspace->vm_map, &addr,
+		    PAGE_SIZE, FALSE) != KERN_SUCCESS)
+			panic("vm_allocate init stack");
+		p->p_vmspace->vm_maxsaddr = (caddr_t)addr;
 		(void) copyout((caddr_t)icode, (caddr_t)0, (unsigned)szicode);
-		/*
-		 * Return goes to loc. 0 of user init
-		 * code just copied out.
-		 */
-		return;
+		return;			/* returns to icode */
 	}
+
 	/*
 	 * Start up pageout daemon (process 2).
 	 */
-	if (newproc(0)) {
-		proc[2].p_flag |= SLOAD|SSYS;
-		bcopy("pagedaemon", proc[2].p_comm, sizeof ("pagedaemon"));
+	if (fork(p, (void *) NULL, rval))
+		panic("fork pager");
+	if (rval[1]) {
+		/*
+		 * Now in process 2.
+		 */
+		p = curproc;
+		pageproc = p;
+		p->p_flag |= SLOAD|SSYS;		/* XXX */
+		bcopy("pagedaemon", curproc->p_comm, sizeof ("pagedaemon"));
 		vm_pageout();
 		/*NOTREACHED*/
 	}
@@ -260,27 +294,19 @@ main(firstaddr)
 	sched();
 }
 
+/* MOVE TO vfs_bio.c (bufinit) XXX */
 /*
- * Initialize hash links for buffers.
+ * Initialize buffers and hash links for buffers.
  */
-bhinit()
+bufinit()
 {
 	register int i;
-	register struct bufhd *bp;
-
-	for (bp = bufhash, i = 0; i < BUFHSZ; i++, bp++)
-		bp->b_forw = bp->b_back = (struct buf *)bp;
-}
-
-/*
- * Initialize the buffer I/O system by freeing
- * all buffers and setting all device buffer lists to empty.
- */
-binit()
-{
 	register struct buf *bp, *dp;
-	register int i;
+	register struct bufhd *hp;
 	int base, residual;
+
+	for (hp = bufhash, i = 0; i < BUFHSZ; i++, hp++)
+		hp->b_forw = hp->b_back = (struct buf *)hp;
 
 	for (dp = bfreelist; dp < &bfreelist[BQUEUES]; dp++) {
 		dp->b_forw = dp->b_back = dp->av_forw = dp->av_back = dp;
@@ -304,70 +330,5 @@ binit()
 		binshash(bp, &bfreelist[BQ_AGE]);
 		bp->b_flags = B_BUSY|B_INVAL;
 		brelse(bp);
-	}
-}
-
-/*
- * Set up swap devices.
- * Initialize linked list of free swap
- * headers. These do not actually point
- * to buffers, but rather to pages that
- * are being swapped in and out.
- */
-swapinit()
-{
-	register int i;
-	register struct buf *sp = swbuf;
-	struct swdevt *swp;
-	int error;
-
-	/*
-	 * Count swap devices, and adjust total swap space available.
-	 * Some of this space will not be available until a swapon()
-	 * system is issued, usually when the system goes multi-user.
-	 */
-	nswdev = 0;
-	nswap = 0;
-	for (swp = swdevt; swp->sw_dev; swp++) {
-		nswdev++;
-		if (swp->sw_nblks > nswap)
-			nswap = swp->sw_nblks;
-	}
-	if (nswdev == 0)
-		panic("swapinit");
-	if (nswdev > 1)
-		nswap = ((nswap + dmmax - 1) / dmmax) * dmmax;
-	nswap *= nswdev;
-	if (bdevvp(swdevt[0].sw_dev, &swdevt[0].sw_vp))
-		panic("swapvp");
-	if (error = swfree(0)) {
-		printf("swfree errno %d\n", error);	/* XXX */
-		panic("swapinit swfree 0");
-	}
-
-	/*
-	 * Now set up swap buffer headers.
-	 */
-	bswlist.av_forw = sp;
-	for (i=0; i<nswbuf-1; i++, sp++)
-		sp->av_forw = sp+1;
-	sp->av_forw = NULL;
-}
-
-/*
- * Initialize clist by freeing all character blocks, then count
- * number of character devices. (Once-only routine)
- */
-cinit()
-{
-	register int ccp;
-	register struct cblock *cp;
-
-	ccp = (int)cfree;
-	ccp = (ccp+CROUND) & ~CROUND;
-	for(cp=(struct cblock *)ccp; cp < &cfree[nclist-1]; cp++) {
-		cp->c_next = cfreelist;
-		cfreelist = cp;
-		cfreecount += CBSIZE;
 	}
 }

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_process.c	7.15 (Berkeley) %G%
+ *	@(#)sys_process.c	7.16 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -17,8 +17,8 @@
 
 #include "machine/reg.h"
 #include "machine/psl.h"
-#include "../vm/vm_page.h"
-#include "../vm/vm_prot.h"
+#include "vm/vm_page.h"
+#include "vm/vm_prot.h"
 
 /*
  * Priority for tracing
@@ -60,7 +60,7 @@ ptrace(curp, uap, retval)
 		return (0);
 	}
 	p = pfind(uap->pid);
-	if (p == 0 || p->p_stat != SSTOP || p->p_ppid != curp->p_pid ||
+	if (p == 0 || p->p_stat != SSTOP || p->p_pptr != curp ||
 	    !(p->p_flag & STRC))
 		return (ESRCH);
 	while (ipc.ip_lock)
@@ -147,12 +147,13 @@ procxmt(p)
 
 			sa = trunc_page((vm_offset_t)ipc.ip_addr);
 			ea = round_page((vm_offset_t)ipc.ip_addr+sizeof(int)-1);
-			rv = vm_map_protect(p->p_map, sa, ea,
+			rv = vm_map_protect(&p->p_vmspace->vm_map, sa, ea,
 					VM_PROT_DEFAULT, FALSE);
 			if (rv == KERN_SUCCESS) {
 				i = suiword((caddr_t)ipc.ip_addr, ipc.ip_data);
-				(void) vm_map_protect(p->p_map, sa, ea,
-					VM_PROT_READ|VM_PROT_EXECUTE, FALSE);
+				(void) vm_map_protect(&p->p_vmspace->vm_map,
+					sa, ea, VM_PROT_READ|VM_PROT_EXECUTE,
+					FALSE);
 			}
 		}
 		if (i < 0)
@@ -174,9 +175,9 @@ procxmt(p)
 		i = (int)ipc.ip_addr;
 		poff = (int *)PHYSOFF(&u, i);
 		for (i=0; i<NIPCREG; i++)
-			if (poff == &u.u_ar0[ipcreg[i]])
+			if (poff == &p->p_regs[ipcreg[i]])
 				goto ok;
-		if (poff == &u.u_ar0[PS]) {
+		if (poff == &p->p_regs[PS]) {
 			ipc.ip_data |= PSL_USERSET;
 			ipc.ip_data &= ~PSL_USERCLR;
 #ifdef PSL_CM_CLR
@@ -201,12 +202,12 @@ procxmt(p)
 	case PT_STEP:			/* single step the child */
 	case PT_CONTINUE:		/* continue the child */
 		if ((int)ipc.ip_addr != 1)
-			u.u_ar0[PC] = (int)ipc.ip_addr;
+			p->p_regs[PC] = (int)ipc.ip_addr;
 		if ((unsigned)ipc.ip_data > NSIG)
 			goto error;
 		p->p_xstat = ipc.ip_data;	/* see issig */
 		if (i == PT_STEP) 
-			u.u_ar0[PS] |= PSL_T;
+			p->p_regs[PS] |= PSL_T;
 		wakeup((caddr_t)&ipc);
 		return (1);
 
