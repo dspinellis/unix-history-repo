@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.8	(Berkeley)	%G%
+#	@(#)Makefile	4.9	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -17,7 +17,7 @@ SCRIPT=	false true
 STD=	ar cat cc chgrp chmod cmp date dd df du echo ed expr \
 	grep hostid hostname kill ld ln login ls mail mkdir mt nice \
 	nm od pagesize passwd pr pwd rm rmail rmdir size strip stty su sync \
-	tee test wall who write
+	tar tee test wall who write
 
 # Programs that must run setuid to root
 #
@@ -25,7 +25,7 @@ SETUID=	chgrp df login mail passwd su
 
 # C programs that live in the current directory and need explicit make lines.
 #
-NSTD=	ps tar time
+NSTD=	ps time
 
 all:	${SUBDIR} ${STD} ${NSTD} cp
 
@@ -76,9 +76,6 @@ depend:
 
 ps:
 	cc ${CFLAGS} -o ps ps.c -lm
-
-tar:
-	cc ${CFLAGS} -o tar tar.c -ljobs
 
 time:
 	cc ${CFLAGS} -o time time.c -ljobs
