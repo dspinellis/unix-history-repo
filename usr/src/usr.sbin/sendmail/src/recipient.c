@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)recipient.c	3.4	%G%";
+static char SccsId[] = "@(#)recipient.c	3.5	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -97,12 +97,12 @@ recipient(a)
 	**  Do sickly crude mapping for program mailing, etc.
 	*/
 
-	if (a->q_mailer == M_LOCAL)
+	if (a->q_mailer == MN_LOCAL)
 	{
 		if (a->q_user[0] == '|')
 		{
-			a->q_mailer = M_PROG;
-			m = Mailer[M_PROG];
+			a->q_mailer = MN_PROG;
+			m = Mailer[MN_PROG];
 			a->q_user++;
 		}
 	}
@@ -145,7 +145,7 @@ recipient(a)
 	**  Alias the name and handle :include: specs.
 	*/
 
-	if (a->q_mailer == M_LOCAL)
+	if (a->q_mailer == MN_LOCAL)
 	{
 		if (strncmp(a->q_user, ":include:", 9) == 0)
 		{
@@ -166,7 +166,7 @@ recipient(a)
 	**  the user (which is probably correct anyway).
 	*/
 
-	if (!bitset(QDONTSEND, a->q_flags) && a->q_mailer == M_LOCAL)
+	if (!bitset(QDONTSEND, a->q_flags) && a->q_mailer == MN_LOCAL)
 	{
 		char buf[MAXNAME];
 

@@ -2,9 +2,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-static char SccsId[] = "@(#)alias.c	3.16	%G%	(with DBM)";
+static char SccsId[] = "@(#)alias.c	3.17	%G%	(with DBM)";
 # else DBM
-static char SccsId[] = "@(#)alias.c	3.16	%G%	(without DBM)";
+static char SccsId[] = "@(#)alias.c	3.17	%G%	(without DBM)";
 # endif DBM
 
 /*
@@ -285,7 +285,7 @@ readaliases(aliasfile, init)
 				break;
 			lineno++;
 		}
-		if (al.q_mailer != M_LOCAL)
+		if (al.q_mailer != MN_LOCAL)
 		{
 			syserr("aliases: %d: cannot alias non-local names", lineno);
 			continue;
@@ -339,7 +339,7 @@ forward(user)
 		printf("forward(%s)\n", user->q_paddr);
 # endif DEBUG
 
-	if (user->q_mailer != M_LOCAL || bitset(QBADADDR, user->q_flags))
+	if (user->q_mailer != MN_LOCAL || bitset(QBADADDR, user->q_flags))
 		return;
 
 	/* good address -- look for .forward file in home */
