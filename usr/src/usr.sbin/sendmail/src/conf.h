@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.36 (Berkeley) %G%
+ *	@(#)conf.h	8.37 (Berkeley) %G%
  */
 
 /*
@@ -13,6 +13,7 @@
 */
 
 # include <sys/param.h>
+# include <sys/types.h>
 # include <sys/stat.h>
 # include <sys/file.h>
 # include <sys/wait.h>

@@ -1,36 +1,28 @@
-(Version 8.4 of %G%)
+(Version 8.5 of %G%)
 
-*****	Database (keyed lookup) locking and rebuild.
+Key:
+  X -- extension (user visible change)
+  B -- bug fix
+  S -- security fix
+  E -- enhancement to existing algorithm
 
-****	8 -> 7 bit MIME conversion.
+X ****	Database (keyed lookup) locking and rebuild.
 
-***	NIS support for aliases.
+X ****	8 -> 7 bit MIME conversion.
 
-***	cf/cf/Makefile.dist
+E ****	Change NoReturn to be an envelope flag. [8.7]
 
-**	Handle Expires: header field (if still in queue).
+X ****	Add M_NOLOOPBACKCHK (k) mailer flag to turn off check of name in
+	HELO command. [8.8]
 
-**	Find a good test suite and include in the distribution.
+X ****	Merge Sun changes.  [8.7]
 
-*	WIN/3B support (non-atomic rename, no h_addr_list, others?)
-	(Bruce Lilly <blilly!bruce@uu.psi.com>)
+X ****	Provide a way to turn off all DNS lookup in the I option, e.g.,
+	``OIoff''.
 
-*	Sun YBTS daemon uses -ba.  [Martin Kiff <MGK@newton.npl.co.uk>]
+E ***	Dynamically allocate MAXNAME buffers for headers.
 
-*	EXPN adds @domain to all mailers, including prog.  Is this right?
-	[Bob Henry]
-
-*	EXPN adds @localhost instead of @$M.  [Pel Emanuelsson]
-
-**	[AEJ] You can use symbolic links to point into protected directories.
-
-*	Change body put code to time out around individual puts.  This will
-	make the timeout algorithm more responsive and more resilient.
-	Unfortunately, it's also a pain in the butt.
-
-***	Dynamically allocate MAXNAME buffers for headers.
-
-***	Should have new mailer flags to override LocalMailer stuff:
+X ***	Should have new mailer flags to override LocalMailer stuff:
 	- M_ALIASABLE (A) -- can use as the LHS of an alias.
 	- M_HASPWENT (w) -- should have a /etc/passwd entry.  If not found
 	  there, implies user unknown.  Also implies .forward and UDB
@@ -40,29 +32,48 @@
 	  reasons.)
 	- Need for $@host part of triple and Return-Receipt-To: processing
 	  should also be split apart.
+	[8.8]
 
-*	Some way to relay unfound local users to another site.
+X ***	Add ability to disable Return-Receipt-To: on a privacy flag. [8.8]
 
-*	Disable all default RW sets except mailer-specific?
+X **	Handle Expires: header field (if still in queue).
 
-**	Extend OI to allow separate settings for canonification, MX, and A
-	lookups.
+X **	Find a good test suite and include in the distribution.
 
-**	Add $!x class to match any number of words not in class x [KRE].
+S **	[AEJ] You can use symbolic links to point into protected directories.
 
-****	Change NoReturn to be an envelope flag.
+X **	Extend OI to allow separate settings for canonification, MX, and A
+	lookups. [8.8?]
 
-****	Add M_NOLOOPBACKCHK (k) mailer flag to turn off check of name in
-	HELO command.
+X **	Add $!x class to match any number of words not in class x [KRE].
 
-***	Add ability to disable Return-Receipt-To: on a privacy flag.
+X **	LOCAL_RULE_5 (Spencer Sun, spencer@phoenix.Princeton.EDU)
 
-**	LOCAL_RULE_5 (Spencer Sun, spencer@phoenix.Princeton.EDU)
+X **	Add "null" map -- no transformation, always returns TRUE, to
+	allow you to break $&x into tokens.  Could be related to dequote.
+	[8.7?]
 
-******	init_md() hook in main to conf.c.
+X **	Add "bestmx" map -- returns "best MX host" for this address.
+	Allows you to do automatic detection of when you are the best
+	MX for a given address.  [8.7?]
 
-*****	init_md hook for setcompat(COMPAT_BSDPROT | getcompat()); on A/UX.
+E *	Don't send ErrMsgFile to postmaster bounces.  (Josh Smith,
+	josh@osiris.ac.hmc.edu).
 
-****	Merge Sun changes.
+X *	WIN/3B support (non-atomic rename, no h_addr_list, others?)
+	(Bruce Lilly <blilly!bruce@uu.psi.com>)
 
-***	Merge Encore changes.
+X *	Sun YBTS daemon uses -ba.  [Martin Kiff <MGK@newton.npl.co.uk>]
+
+B *	EXPN adds @domain to all mailers, including prog.  Is this right?
+	[Bob Henry]
+
+B *	EXPN adds @localhost instead of @$M.  [Pel Emanuelsson]
+
+E *	Change body put code to time out around individual puts.  This will
+	make the timeout algorithm more responsive and more resilient.
+	Unfortunately, it's also a pain in the butt.
+
+X *	Some way to relay unfound local users to another site.
+
+X *	Disable all default RW sets except mailer-specific?

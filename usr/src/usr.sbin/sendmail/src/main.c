@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -99,6 +99,9 @@ main(argc, argv, envp)
 	char jbuf[60];			/* holds MyHostName */
 	extern int DtableSize;
 	extern time_t convtime();
+
+	/* do machine-dependent initializations */
+	init_md();
 
 	/* in 4.4BSD, the table can be huge; impose a reasonable limit */
 	DtableSize = getdtsize();

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.40 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -476,6 +476,23 @@ holdsigs()
 
 rlsesigs()
 {
+}
+/*
+**  INIT_MD -- do machine dependent initializations
+**
+**	Systems that have global modes that should be set should do
+**	them here rather than in main.
+*/
+
+#ifdef _AUX_SOURCE
+# include	<compat.h>
+#endif
+
+init_md()
+{
+#ifdef _AUX_SOURCE
+	setcompat(getcompat() | COMPAT_BSDPROT);
+#endif
 }
 /*
 **  GETLA -- get the current load average
