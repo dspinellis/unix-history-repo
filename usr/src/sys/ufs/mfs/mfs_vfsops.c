@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vfsops.c	7.8 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -24,6 +24,7 @@
 #include "buf.h"
 #include "mount.h"
 #include "vnode.h"
+#include "tsleep.h"
 #include "../ufs/inode.h"
 #include "../ufs/ufsmount.h"
 #include "../ufs/mfsnode.h"
@@ -137,7 +138,7 @@ mfs_start(mp, flags)
 		 */
 		(void) dounmount(mp, MNT_NOFORCE);
 	} else {
-		sleep((caddr_t)vp, PWAIT);
+		tsleep((caddr_t)vp, PWAIT, SLP_MFS, 0);
 	}
 	while (mfsp->mfs_buflist != (struct buf *)(-1)) {
 		while (bp = mfsp->mfs_buflist) {
@@ -145,7 +146,7 @@ mfs_start(mp, flags)
 			mfs_doio(bp, base);
 			wakeup((caddr_t)bp);
 		}
-		sleep((caddr_t)vp, PWAIT);
+		tsleep((caddr_t)vp, PWAIT, SLP_MFS, 0);
 	}
 	return (0);
 }
