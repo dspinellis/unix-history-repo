@@ -3,24 +3,30 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)reboot.8	5.1 (Berkeley) %G%
+.\"	@(#)reboot.8	5.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt REBOOT 8
 .Os
 .Sh NAME
-.Nm reboot
+.Nm reboot ,
+.Nm halt
 .Nd
-restarting the system
+stopping and restarting the system
 .Sh SYNOPSIS
+.Nm halt
+.Op Fl nq
 .Nm reboot
 .Op Fl nq
 .Sh DESCRIPTION
 The
+.Nm halt
+and
 .Nm reboot
-utility flushes the file system cache to disk, sends all running processes
-a SIGTERM (and subsequently a SIGKILL) and restarts the system.
-The restart is logged, including entering a shutdown record into the login
+utilities flush the file system cache to disk, send all running processes
+a SIGTERM (and subsequently a SIGKILL) and, respectively, halt or restart
+the system.
+The action is logged, including entering a shutdown record into the login
 accounting file.
 .Pp
 The options are as follows:
@@ -29,29 +35,26 @@ The options are as follows:
 If the
 .Fl n
 option is specified,
-.Nm reboot
-neither flushes the file system cache or does any logging of the restart.
+the file system cache is not flushed.
+This option should probably not be used.
 .It Fl q
 If the
 .Fl q
 option is specified,
-.Nm reboot
-restarts the system quickly and ungracefully.
-Processes are not signalled, the file system cache is not flushed and the
-restart is not logged.
-This option should not be used.
+the system is halted or restarted quickly and ungracefully, and only
+the flushing of the file system cache is performed.
+This option should probably not be used.
 .El
 .Pp
-Normally, when the system needs to be restarted, the
+Normally, the
 .Xr shutdown 8
-utility is used and users given advance warning of the impending
-restart.
+utility is used when the system needs to be halted or restarted, giving
+users advance warning of their impending doom.
 .Sh SEE ALSO
 .Xr sync 1 ,
 .Xr utmp 5 ,
 .Xr boot 8 ,
-.Xr halt 8 ,
-.Xr shutdown 8 ,
+.Xr shutdown 8
 .Sh HISTORY
 The
 .Nm

@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)reboot.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)reboot.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/reboot.h>
@@ -28,6 +28,8 @@ static char sccsid[] = "@(#)reboot.c	5.12 (Berkeley) %G%";
 void err __P((const char *fmt, ...));
 void usage __P((void));
 
+int dohalt;
+
 int
 main(argc, argv)
 	int argc;
@@ -35,19 +37,26 @@ main(argc, argv)
 {
 	register int i;
 	struct passwd *pw;
-	int ch, howto, nflag, qflag, sverrno;
-	char *user;
+	int ch, howto, lflag, nflag, qflag, sverrno;
+	char *p, *user;
 
-	howto = nflag = qflag = 0;
-	while ((ch = getopt(argc, argv, "nq")) != EOF)
+	if (!strcmp((p = rindex(*argv, '/')) ? p + 1 : *argv, "halt")) {
+		dohalt = 1;
+		howto = RB_HALT;
+	} else
+		howto = 0;
+	lflag = nflag = qflag = 0;
+	while ((ch = getopt(argc, argv, "lnq")) != EOF)
 		switch(ch) {
+		case 'l':		/* Undocumented; used by shutdown. */
+			lflag = 1;
+			break;
 		case 'n':
 			nflag = 1;
 			howto |= RB_NOSYNC;
 			break;
 		case 'q':
 			qflag = 1;
-			howto |= RB_NOSYNC;
 			break;
 		case '?':
 		default:
@@ -64,6 +73,21 @@ main(argc, argv)
 		err("%s", strerror(errno));
 	}
 
+	/* Log the reboot. */
+	if (!lflag)  {
+		if ((user = getlogin()) == NULL)
+			user = (pw = getpwuid(getuid())) ?
+			    pw->pw_name : "???";
+		if (dohalt) {
+			openlog("halt", 0, LOG_AUTH | LOG_CONS);
+			syslog(LOG_CRIT, "halted by %s", user);
+		} else {
+			openlog("reboot", 0, LOG_AUTH | LOG_CONS);
+			syslog(LOG_CRIT, "rebooted by %s", user);
+		}
+	}
+	logwtmp("~", "shutdown", "");
+
 	/*
 	 * Do a sync early on, so disks start transfers while we're off
 	 * killing processes.  Don't worry about writes done before the
@@ -75,7 +99,6 @@ main(argc, argv)
 	/* Just stop init -- if we fail, we'll restart it. */
 	if (kill(1, SIGTSTP) == -1)
 		err("SIGTSTP init: %s", strerror(errno));
-	sleep(1);
 
 	/* Ignore the SIGHUP we get when our parent shell dies. */
 	(void)signal(SIGHUP, SIG_IGN);
@@ -83,7 +106,16 @@ main(argc, argv)
 	/* Send a SIGTERM first, a chance to save the buffers. */
 	if (kill(-1, SIGTERM) == -1)
 		err("SIGTERM processes: %s", strerror(errno));
-	sleep(5);
+
+	/*
+	 * After the processes receive the signal, start the rest of the
+	 * buffers on their way.  Wait 5 seconds between the SIGTERM and
+	 * the SIGKILL to give everybody a chance.
+	 */
+	sleep(2);
+	if (!nflag)
+		sync();
+	sleep(3);
 
 	for (i = 1;; ++i) {
 		if (kill(-1, SIGKILL) == -1) {
@@ -99,22 +131,12 @@ main(argc, argv)
 		(void)sleep(2 * i);
 	}
 
-	/* Log the reboot. */
-	if (!nflag) {
-		openlog("reboot", 0, LOG_AUTH | LOG_CONS);
-
-		if ((user = getlogin()) == NULL)
-			user = (pw = getpwuid(getuid())) ? pw->pw_name : "???";
-		syslog(LOG_CRIT, "rebooted by %s", user);
-		logwtmp("~", "shutdown", "");
-	}
-
 	reboot(howto);
-	/* NOTREACHED */
+	/* FALLTHROUGH */
 
 restart:
 	sverrno = errno;
-	err("%s%s", kill(1, SIGHUP) == -1 ? "(can't restart init)" : "",
+	err("%s%s", kill(1, SIGHUP) == -1 ? "(can't restart init): " : "",
 	    strerror(sverrno));
 	/* NOTREACHED */
 }
@@ -122,7 +144,7 @@ restart:
 void
 usage()
 {
-	(void)fprintf(stderr, "usage: reboot [-nq]\n");
+	(void)fprintf(stderr, "usage: %s [-nq]\n", dohalt ? "halt" : "reboot");
 	exit(1);
 }
 
@@ -147,7 +169,7 @@ err(fmt, va_alist)
 #else
 	va_start(ap);
 #endif
-	(void)fprintf(stderr, "reboot: ");
+	(void)fprintf(stderr, "%s: ", dohalt ? "halt" : "reboot");
 	(void)vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	(void)fprintf(stderr, "\n");
