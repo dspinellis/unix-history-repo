@@ -16,19 +16,21 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bcmp.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)bcmp.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
+
+#include <string.h>
 
 /*
  * bcmp -- vax cmpc3 instruction
  */
 bcmp(b1, b2, length)
 	register char *b1, *b2;
-	register int length;
+	register size_t length;
 {
 
 	if (length == 0)
-		return (0);
+		return(0);
 	do
 		if (*b1++ != *b2++)
 			break;
