@@ -26,6 +26,7 @@ SOFTWARE.
  */
 /* $Header: clnp.h,v 4.3 88/09/12 13:34:40 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/clnp.h,v $ */
+/*	@(#)clnp.h	7.2 (Berkeley) %G% */
 
 #ifndef BYTE_ORDER
 /*
@@ -46,8 +47,7 @@ SOFTWARE.
 /*
  *	Return true if the mbuf is a cluster mbuf
  */
-#define	IS_CLUSTER(m)\
-	((m)->m_off > MMAXOFF)
+#define	IS_CLUSTER(m)	((m)->m_flags & M_EXT)
 
 /*
  *	Move the halfword into the two characters
