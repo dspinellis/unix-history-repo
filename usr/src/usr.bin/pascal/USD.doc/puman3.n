@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)puman3.n	8.1 (Berkeley) %G%
+.\"	@(#)puman3.n	8.2 (Berkeley) %G%
 .\"
 .if !\n(xx \{\
 .so tmac.p \}
@@ -149,6 +149,7 @@ identifier or
 .I what 
 number should be inserted,
 hence these are considered fatal syntax errors.
+.ne 1i
 .PP
 Consider the following example.
 .LS
