@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)replace.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)replace.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -135,7 +135,7 @@ append:	while (file = *argv++) {
 	
 	(void)lseek(afd, (off_t)SARMAG, SEEK_SET);
 
-	SETCF(tfd1, tname, afd, archive, RPAD|WPAD);
+	SETCF(tfd1, tname, afd, archive, 0);
 	if (tfd1 != -1) {
 		tsize = size = lseek(tfd1, (off_t)0, SEEK_CUR);
 		(void)lseek(tfd1, (off_t)0, SEEK_SET);
