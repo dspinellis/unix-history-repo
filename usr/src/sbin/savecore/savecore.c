@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)savecore.c	4.12 (Berkeley) 83/05/03";
+static	char *sccsid = "@(#)savecore.c	4.13 (Berkeley) 83/07/02";
 #endif
 
 /*
@@ -10,7 +10,7 @@ static	char *sccsid = "@(#)savecore.c	4.12 (Berkeley) 83/05/03";
 #include <sys/param.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
-#include <time.h>
+#include <sys/time.h>
 
 #define	DAY	(60L*60L*24L)
 #define	LEEWAY	(3*DAY)

@@ -1,9 +1,12 @@
-static char *sccsid = "@(#)cron.c	4.6 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid = "@(#)cron.c	4.7 (Berkeley) %G%";
+#endif
+
 #include <sys/types.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
-#include <time.h>
+#include <sys/time.h>
 #include <sys/stat.h>
 
 #define	LISTS	(2*BUFSIZ)

@@ -1,17 +1,17 @@
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	4.16 83/06/12";
+static char sccsid[] = "@(#)rshd.c	4.17 (Berkeley) 83/07/02";
 #endif
 
 #include <sys/ioctl.h>
 #include <sys/param.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 
 #include <netinet/in.h>
 
 #include <stdio.h>
 #include <errno.h>
 #include <pwd.h>
-#include <wait.h>
 #include <signal.h>
 #include <netdb.h>
 

@@ -1,4 +1,6 @@
-/*	tftpd.c	4.10	83/06/12	*/
+#ifndef lint
+static char sccsid[] = "@(#)tftpd.c	4.11 (Berkeley) %G%";
+#endif
 
 /*
  * Trivial file transfer protocol server.
@@ -6,15 +8,15 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
 
 #include <netinet/in.h>
 
 #include <arpa/tftp.h>
 
 #include <signal.h>
-#include <stat.h>
 #include <stdio.h>
-#include <wait.h>
 #include <errno.h>
 #include <ctype.h>
 #include <netdb.h>
