@@ -1,0 +1,60 @@
+cc -E -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 ex.c | /usr/ucb/xstr -c -
+cc -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 -c x.c 
+mv x.o ex.o
+cc -E -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 ex_addr.c | /usr/ucb/xstr -c -
+cc -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 -c x.c 
+mv x.o ex_addr.o
+cc -E -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 ex_cmds.c | /usr/ucb/xstr -c -
+cc -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 -c x.c 
+mv x.o ex_cmds.o
+cc -E -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 ex_cmds2.c | /usr/ucb/xstr -c -
+cc -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 -c x.c 
+mv x.o ex_cmds2.o
+cc -E -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 ex_cmdsub.c | /usr/ucb/xstr -c -
+cc -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 -c x.c 
+mv x.o ex_cmdsub.o
+cc -E -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 ex_data.c | /usr/ucb/xstr -c -
+cc -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 -c x.c 
+mv x.o ex_data.o
+cc -E -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 ex_extern.c | /usr/ucb/xstr -c -
+cc -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 -c x.c 
+mv x.o ex_extern.o
+cc -E -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 ex_get.c | /usr/ucb/xstr -c -
+cc -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 -c x.c 
+mv x.o ex_get.o
+cc -E -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 ex_io.c | /usr/ucb/xstr -c -
+cc -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 -c x.c 
+mv x.o ex_io.o
+cc -E -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 ex_put.c | /usr/ucb/xstr -c -
+cc -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 -c x.c 
+mv x.o ex_put.o
+cc -E -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 ex_re.c | /usr/ucb/xstr -c -
+cc -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 -c x.c 
+mv x.o ex_re.o
+cc -E -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 ex_set.c | /usr/ucb/xstr -c -
+cc -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 -c x.c 
+"ex_set.c", line 48: B1200 undefined
+"ex_set.c", line 56: B1200 undefined
+"ex_set.c", line 56: B2400 undefined
+"ex_set.c", line 60: B2400 undefined
+*** Error code 1
+cc -E -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 ex_subr.c | /usr/ucb/xstr -c -
+cc -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 -c x.c 
+mv x.o ex_subr.o
+cc -E -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 ex_temp.c | /usr/ucb/xstr -c -
+cc -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 -c x.c 
+mv x.o ex_temp.o
+cc -E -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 ex_tty.c | /usr/ucb/xstr -c -
+cc -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 -c x.c 
+"ex_tty.c", line 20: B1200 undefined
+"ex_tty.c", line 76: B1200 undefined
+"ex_tty.c", line 78: B2400 undefined
+*** Error code 1
+cc -E -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 ex_unix.c | /usr/ucb/xstr -c -
+cc -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 -c x.c 
+mv x.o ex_unix.o
+cc -E -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 ex_v.c | /usr/ucb/xstr -c -
+cc -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 -c x.c 
+mv x.o ex_v.o
+cc -E -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 ex_vadj.c | /usr/ucb/xstr -c -
+cc -DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DSTDIO -O	 -c x.c 
