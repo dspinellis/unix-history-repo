@@ -1,6 +1,6 @@
-#ifndef lint
+#if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)fakcu.c	5.2 (Berkeley) %G%";
-#endif not lint
+#endif LIBC_SCCS and not lint
 
 /*
  * Null cleanup routine to resolve reference in exit() 

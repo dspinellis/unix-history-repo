@@ -8,8 +8,8 @@
  * Sys5 compat routine
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)memccpy.c	5.1 (Berkeley) 85/08/05";
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)memccpy.c	5.2 (Berkeley) 86/03/09";
 #endif
 
 

@@ -1,6 +1,6 @@
-#ifndef lint
-	.asciz	"@(#)ldexp.s	5.1 (Berkeley) %G%"
-#endif not lint
+#ifdef LIBC_SCCS
+	.asciz	"@(#)ldexp.s	5.2 (Berkeley) %G%"
+#endif LIBC_SCCS
 
 /*
  * double ldexp (value, exp)

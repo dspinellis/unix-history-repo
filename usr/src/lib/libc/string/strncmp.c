@@ -1,6 +1,6 @@
-#ifndef lint
-static char sccsid[] = "@(#)strncmp.c	5.1 (Berkeley) %G%";
-#endif not lint
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)strncmp.c	5.2 (Berkeley) %G%";
+#endif LIBC_SCCS and not lint
 
 /*
  * Compare strings (at most n bytes):  s1>s2: >0  s1==s2: 0  s1<s2: <0

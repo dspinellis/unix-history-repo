@@ -4,9 +4,9 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)sethostent.c	6.1 (Berkeley) %G%";
-#endif not lint
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)sethostent.c	6.2 (Berkeley) %G%";
+#endif LIBC_SCCS and not lint
 
 /*
  * These are dummy routines to allow old programs that used /etc/hosts

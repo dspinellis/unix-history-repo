@@ -4,9 +4,9 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef lint
-	.asciz	"@(#)alloca.s	5.2 (Berkeley) %G%"
-#endif not lint
+#ifdef LIBC_SCCS
+	.asciz	"@(#)alloca.s	5.3 (Berkeley) %G%"
+#endif LIBC_SCCS
 
 /* like alloc, but automatic free in return */
 

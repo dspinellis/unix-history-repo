@@ -1,6 +1,6 @@
-#ifndef lint
-static char sccsid[] = "@(#)strrchr.c	5.1 (berkeley) 85/08/04";
-#endif not lint
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)strrchr.c	5.2 (berkeley) 86/03/09";
+#endif LIBC_SCCS and not lint
 
 /*
  * Return the ptr in sp at which the character c last
