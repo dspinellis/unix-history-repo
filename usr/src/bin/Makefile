@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.10	(Berkeley)	%G%
+#	@(#)Makefile	4.11	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -38,8 +38,10 @@ ${STD} cp mv:
 # take care with cp and mv, install uses them
 install:
 	install cp ${DESTDIR}/bin/newcp; \
-		mv ${DESTDIR}/bin/newcp ${DESTDIR}/bin/cp
-	install -c mv ${DESTDIR}/bin/mv; rm -f mv
+		mv ${DESTDIR}/bin/newcp ${DESTDIR}/bin/cp; \
+		strip ${DESTDIR}/bin/cp
+	rm -f ${DESTDIR}/bin/mv; cp mv ${DESTDIR}/bin/mv; rm -f mv; \
+		strip ${DESTDIR}/bin/mv
 	for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
 	for i in ${SCRIPT}; do (install -c $$i.sh ${DESTDIR}/bin/$$i); done
@@ -112,16 +114,9 @@ chmod: /usr/include/sys/stat.h
 cmp: cmp.c
 cmp: /usr/include/stdio.h
 cmp: /usr/include/ctype.h
-cp: cp.c
-cp: /usr/include/stdio.h
-cp: /usr/include/sys/param.h
-cp: /usr/include/sys/stat.h
-cp: /usr/include/dir.h
 date: date.c
 date: /usr/include/stdio.h
 date: /usr/include/time.h
-date: /usr/include/sys/types.h
-date: /usr/include/sys/timeb.h
 date: /usr/include/utmp.h
 dd: dd.c
 dd: /usr/include/stdio.h
@@ -148,6 +143,7 @@ expr: /usr/include/stdio.h
 grep: grep.c
 grep: /usr/include/stdio.h
 grep: /usr/include/ctype.h
+hostid: hostid.c
 hostname: hostname.c
 hostname: /usr/include/stdio.h
 kill: kill.c
@@ -162,20 +158,24 @@ ld: /usr/include/ar.h
 ld: /usr/include/a.out.h
 ld: /usr/include/ranlib.h
 ld: /usr/include/stat.h
-ld: /usr/include/pagsiz.h
 ln: ln.c
 ln: /usr/include/stdio.h
 ln: /usr/include/sys/types.h
 ln: /usr/include/sys/stat.h
+ln: /usr/include/errno.h
 login: login.c
 login: /usr/include/sys/types.h
+login: /usr/include/sys/quota.h
+login: /usr/include/sys/stat.h
+login: /usr/include/sys/time.h
+login: /usr/include/sys/resource.h
 login: /usr/include/sgtty.h
 login: /usr/include/utmp.h
 login: /usr/include/signal.h
 login: /usr/include/pwd.h
 login: /usr/include/stdio.h
-login: /usr/include/sys/stat.h
 login: /usr/include/lastlog.h
+login: /usr/include/errno.h
 ls: ls.c
 ls: /usr/include/sys/param.h
 ls: /usr/include/sys/stat.h
@@ -197,11 +197,9 @@ mail: /usr/include/setjmp.h
 mail: /usr/include/sysexits.h
 mail: /usr/include/sys/socket.h
 mail: /usr/include/netinet/in.h
+mail: /usr/include/netdb.h
 mkdir: mkdir.c
-mkdir: /usr/include/signal.h
 mkdir: /usr/include/stdio.h
-mkdir: /usr/include/sys/types.h
-mkdir: /usr/include/stat.h
 mt: mt.c
 mt: /usr/include/stdio.h
 mt: /usr/include/ctype.h
@@ -213,13 +211,10 @@ mt: /usr/include/vaxmba/htreg.h
 mt: /usr/include/vaxuba/utreg.h
 mt: /usr/include/vaxuba/tmreg.h
 mt: /usr/include/vaxuba/tsreg.h
-mv: mv.c
-mv: /usr/include/stdio.h
-mv: /usr/include/sys/types.h
-mv: /usr/include/sys/stat.h
-mv: /usr/include/signal.h
 nice: nice.c
 nice: /usr/include/stdio.h
+nice: /usr/include/sys/time.h
+nice: /usr/include/sys/resource.h
 nm: nm.c
 nm: /usr/include/sys/types.h
 nm: /usr/include/ar.h
@@ -227,14 +222,18 @@ nm: /usr/include/stdio.h
 nm: /usr/include/ctype.h
 nm: /usr/include/a.out.h
 nm: /usr/include/stab.h
-nm: /usr/include/pagsiz.h
 nm: /usr/include/stat.h
 od: od.c
 od: /usr/include/stdio.h
+od: /usr/include/sys/types.h
+od: /usr/include/sys/stat.h
+pagesize: pagesize.c
 passwd: passwd.c
+passwd: /usr/include/sys/file.h
 passwd: /usr/include/stdio.h
 passwd: /usr/include/signal.h
 passwd: /usr/include/pwd.h
+passwd: /usr/include/errno.h
 pr: pr.c
 pr: /usr/include/stdio.h
 pr: /usr/include/signal.h
@@ -243,8 +242,6 @@ pr: /usr/include/sys/stat.h
 pwd: pwd.c
 pwd: /usr/include/stdio.h
 pwd: /usr/include/sys/param.h
-pwd: /usr/include/sys/stat.h
-pwd: /usr/include/dir.h
 rm: rm.c
 rm: /usr/include/stdio.h
 rm: /usr/include/sys/param.h
@@ -252,10 +249,8 @@ rm: /usr/include/sys/stat.h
 rm: /usr/include/dir.h
 rmail: rmail.c
 rmail: /usr/include/stdio.h
+rmail: /usr/include/sysexits.h
 rmdir: rmdir.c
-rmdir: /usr/include/sys/param.h
-rmdir: /usr/include/sys/stat.h
-rmdir: /usr/include/dir.h
 rmdir: /usr/include/stdio.h
 size: size.c
 size: /usr/include/stdio.h
@@ -263,7 +258,6 @@ size: /usr/include/a.out.h
 strip: strip.c
 strip: /usr/include/a.out.h
 strip: /usr/include/signal.h
-strip: /usr/include/pagsiz.h
 stty: stty.c
 stty: /usr/include/stdio.h
 stty: /usr/include/sgtty.h
@@ -275,25 +269,20 @@ tar: tar.c
 tar: /usr/include/stdio.h
 tar: /usr/include/sys/param.h
 tar: /usr/include/sys/stat.h
-tar: /usr/include/dir.h
+tar: /usr/include/sys/dir.h
 tar: /usr/include/sys/ioctl.h
 tar: /usr/include/sys/mtio.h
 tar: /usr/include/signal.h
+tar: /usr/include/errno.h
 tee: tee.c
 tee: /usr/include/signal.h
 tee: /usr/include/sys/types.h
 tee: /usr/include/sys/stat.h
 tee: /usr/include/errno.h
-tee: /usr/include/pagsiz.h
 test: test.c
 test: /usr/include/stdio.h
 test: /usr/include/sys/types.h
 test: /usr/include/sys/stat.h
-time: time.c
-time: /usr/include/stdio.h
-time: /usr/include/signal.h
-time: /usr/include/sys/types.h
-time: /usr/include/sys/times.h
 wall: wall.c
 wall: /usr/include/stdio.h
 wall: /usr/include/utmp.h
@@ -318,15 +307,21 @@ ps: /usr/include/nlist.h
 ps: /usr/include/pwd.h
 ps: /usr/include/sys/param.h
 ps: /usr/include/sys/tty.h
-ps: /usr/include/dir.h
+ps: /usr/include/sys/dir.h
 ps: /usr/include/sys/user.h
 ps: /usr/include/sys/proc.h
 ps: /usr/include/machine/pte.h
 ps: /usr/include/sys/vm.h
 ps: /usr/include/sys/text.h
 ps: /usr/include/sys/stat.h
+ps: /usr/include/sys/mbuf.h
 ps: /usr/include/math.h
-ps: /usr/include/sys/vlimit.h
+time: time.c
+time: /usr/include/stdio.h
+time: /usr/include/signal.h
+time: /usr/include/sys/types.h
+time: /usr/include/time.h
+time: /usr/include/resource.h
 # DEPENDENCIES MUST END AT END OF FILE
 # IF YOU PUT STUFF HERE IT WILL GO AWAY
 # see make depend above
