@@ -1,4 +1,4 @@
-/*	tm.c	4.5	81/04/03	*/
+/*	tm.c	4.6	81/12/01	*/
 
 /*
  * TM11/TE??
@@ -39,8 +39,8 @@ tmstrategy(io, func)
 	register struct iob *io;
 {
 	register int com, unit, errcnt;
-	register struct device *tmaddr =
-	    (struct device *)ubamem(io->i_unit, tmstd[0]);
+	register struct tmdevice *tmaddr =
+	    (struct tmdevice *)ubamem(io->i_unit, tmstd[0]);
 	int word, info;
 
 	unit = io->i_unit;
@@ -87,7 +87,7 @@ retry:
 }
 
 tmquiet(tmaddr)
-	register struct device *tmaddr;
+	register struct tmdevice *tmaddr;
 {
 	register word;
 	for (;;) {
