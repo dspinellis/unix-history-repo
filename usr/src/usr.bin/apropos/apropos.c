@@ -22,17 +22,19 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)apropos.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)apropos.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <strings.h>
-#include "pathnames.h"
+#include "../man/pathnames.h"
 
-#define	MAXLINELEN	1000			/* max line handled */
-#define	WHATIS		"whatis"		/* database name */
+#define	MAXLINELEN	256			/* max line handled */
+
+int *found, foundman;
+char *progname;
 
 main(argc, argv)
 	int argc;
@@ -40,16 +42,20 @@ main(argc, argv)
 {
 	extern char *optarg;
 	extern int optind;
-	register char *beg, *end, **p;
-	int ch, foundman = 0, *found;
-	char *manpath, buf[MAXLINELEN + 1], fname[MAXPATHLEN + 1];
-	char wbuf[MAXLINELEN + 1], *getenv(), *malloc();
+	register char **p;
+	int ch;
+	char *p_augment, *p_path, *config(), *getenv(), *malloc();
 
-	while ((ch = getopt(argc, argv, "M:P:")) != EOF)
+	progname = "apropos";
+	p_augment = p_path = NULL;
+	while ((ch = getopt(argc, argv, "M:m:P:")) != EOF)
 		switch((char)ch) {
 		case 'M':
 		case 'P':		/* backward compatible */
-			manpath = optarg;
+			p_path = optarg;
+			break;
+		case 'm':
+			p_augment = optarg;
 			break;
 		case '?':
 		default:
@@ -57,27 +63,49 @@ main(argc, argv)
 		}
 	argv += optind;
 	argc -= optind;
+
 	if (argc < 1)
 		usage();
 
-	if (!(manpath = getenv("MANPATH")))
-		manpath = _PATH_DEFAULT;
+	if (!p_path && !(p_path = getenv("MANPATH")))
+		p_path = config();
 
 	/*NOSTRICT*/
-	if (!(found = (int *)malloc((u_int)argc))) {
-		fprintf(stderr, "apropos: out of space.\n");
-		exit(1);
-	}
+	if (!(found = (int *)malloc((u_int)argc)))
+		enomem();
 	bzero((char *)found, argc * sizeof(int));
 
 	for (p = argv; *p; ++p)			/* convert to lower-case */
 		lowstr(*p, *p);
-	for (beg = manpath; beg; beg = end) {	/* through path list */
+
+	if (p_augment)
+		apropos(argv, p_augment);
+	if (p_path)
+		apropos(argv, p_path);
+	if (!foundman) {
+		(void)fprintf(stderr, "apropos: no %s file found.\n",
+		    _PATH_WHATIS);
+		exit(1);
+	}
+	for (p = argv; *p; ++p)
+		if (!found[p - argv])
+			(void)printf("%s: nothing appropriate\n", *p);
+}
+
+apropos(argv, path)
+	char **argv, *path;
+{
+	register char *beg, *end, **p;
+	char fname[MAXPATHLEN + 1];
+	char buf[MAXLINELEN + 1], wbuf[MAXLINELEN + 1];
+
+	for (beg = path; beg; beg = end) {	/* through path list */
 		end = index(beg, ':');
 		if (!end)
-			(void)sprintf(fname, "%s/%s", beg, WHATIS);
+			(void)sprintf(fname, "%s/%s", beg, _PATH_WHATIS);
 		else {
-			(void)sprintf(fname, "%.*s/%s", end - beg, beg, WHATIS);
+			(void)sprintf(fname, "%.*s/%s", end - beg, beg,
+			    _PATH_WHATIS);
 			++end;
 		}
 		if (!freopen(fname, "r", stdin))
@@ -85,10 +113,15 @@ main(argc, argv)
 
 		/* for each file found */
 		for (foundman = 1; fgets(buf, sizeof(buf), stdin);) {
+			if (!index(buf, '\n')) {
+				(void)fprintf(stderr,
+				    "apropos: %s line too long.\n", fname);
+				exit(1);
+			}
 			lowstr(buf, wbuf);
 			for (p = argv; *p; ++p)
 				if (match(wbuf, *p)) {
-					printf("%s", buf);
+					(void)printf("%s", buf);
 					found[p - argv] = 1;
 
 					/* only print line once */
@@ -99,14 +132,6 @@ main(argc, argv)
 				}
 		}
 	}
-	if (!foundman) {
-		fprintf(stderr, "apropos: no %s file found in %s.\n",
-		    WHATIS, manpath);
-		exit(1);
-	}
-	for (p = argv; *p; ++p)
-		if (!found[p - argv])
-			printf("%s: nothing appropriate\n", *p);
 }
 
 /*
@@ -150,6 +175,7 @@ lowstr(from, to)
  */
 usage()
 {
-	fprintf(stderr, "usage: apropos [-M path] string ...\n");
+	(void)fprintf(stderr,
+	    "usage: apropos [-M path] [-m path] keyword ...\n");
 	exit(1);
 }
