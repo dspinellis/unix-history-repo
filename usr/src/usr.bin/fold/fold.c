@@ -1,6 +1,9 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Kevin Ruddy.
  *
  * Redistribution and use in source and binary forms are permitted
  * provided that the above copyright notice and this paragraph are
@@ -12,108 +15,122 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+"@(#) Copyright (c) 1990 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fold.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)fold.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
-/*
- * fold - fold long lines for finite output devices
- *
- * Bill Joy UCB June 28, 1977
- */
+#include <strings.h>
 
-int	fold =  80;
+#define	DEFLINEWIDTH	80
 
 main(argc, argv)
 	int argc;
-	char *argv[];
+	char **argv;
 {
-	register c;
-	FILE *f;
+	extern int errno, optind;
+	extern char *optarg;
+	register int ch;
+	int width;
+	char *p;
 
-	argc--, argv++;
-	if (argc > 0 && argv[0][0] == '-') {
-		fold = 0;
-		argv[0]++;
-		while (*argv[0] >= '0' && *argv[0] <= '9')
-			fold *= 10, fold += *argv[0]++ - '0';
-		if (*argv[0]) {
-			printf("Bad number for fold\n");
-			exit(1);
-		}
-		argc--, argv++;
-	}
-	do {
-		if (argc > 0) {
-			if (freopen(argv[0], "r", stdin) == NULL) {
-				perror(argv[0]);
+	width = -1;
+	while ((ch = getopt(argc, argv, "0123456789w:")) != EOF)
+		switch (ch) {
+		case 'w':
+			if ((width = atoi(optarg)) <= 0) {
+				(void)fprintf(stderr,
+				    "fold: illegal width value.\n");
 				exit(1);
 			}
-			argc--, argv++;
+			break;
+		case '0': case '1': case '2': case '3': case '4':
+		case '5': case '6': case '7': case '8': case '9':
+			if (width == -1) {
+				p = argv[optind - 1];
+				if (p[0] == '-' && p[1] == ch && !p[2])
+					width = atoi(++p);
+				else
+					width = atoi(argv[optind] + 1);
+			}
+			break;
+		default:
+			(void)fprintf(stderr,
+			    "usage: fold [-w width] [file ...]\n");
+			exit(1);
 		}
-		for (;;) {
-			c = getc(stdin);
-			if (c == -1)
-				break;
-			putch(c);
-		}
-	} while (argc > 0);
+	argv += optind;
+	argc -= optind;
+
+	if (width == -1)
+		width = DEFLINEWIDTH;
+	if (!*argv)
+		fold(width);
+	else for (; *argv; ++argv)
+		if (!freopen(*argv, "r", stdin)) {
+			(void)fprintf(stderr,
+			    "fold: %s: %s\n", *argv, strerror(errno));
+			exit(1);
+		} else
+			fold(width);
 	exit(0);
 }
 
-int	col;
-
-putch(c)
-	register c;
+fold(width)
+	register int width;
 {
-	register ncol;
+	register int ch, col, new;
 
-	switch (c) {
+	for (col = 0;;) {
+		switch (ch = getchar()) {
+		case EOF:
+			return;
+		case '\b':
+			new = col ? col - 1 : 0;
+			break;
 		case '\n':
-			ncol = 0;
+		case '\r':
+			new = 0;
 			break;
 		case '\t':
-			ncol = (col + 8) &~ 7;
-			break;
-		case '\b':
-			ncol = col ? col - 1 : 0;
-			break;
-		case '\r':
-			ncol = 0;
+			new = (col + 8) & ~7;
 			break;
 		default:
-			ncol = col + 1;
-	}
-	if (ncol > fold)
-		putchar('\n'), col = 0;
-	putchar(c);
-	switch (c) {
+			new = col + 1;
+			break;
+		}
+
+		if (new > width) {
+			putchar('\n');
+			col = 0;
+		}
+		putchar(ch);
+
+		switch (ch) {
+		case '\b':
+			if (col > 0)
+				--col;
+			break;
 		case '\n':
+		case '\r':
 			col = 0;
 			break;
 		case '\t':
 			col += 8;
 			col &= ~7;
 			break;
-		case '\b':
-			if (col)
-				col--;
-			break;
-		case '\r':
-			col = 0;
-			break;
 		default:
-			col++;
+			++col;
 			break;
+		}
 	}
 }
