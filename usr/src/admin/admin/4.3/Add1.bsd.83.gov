@@ -1,0 +1,116 @@
+.\" @(#)Add1.bsd.83.gov	1.1 (CSRG - distribution) %G%
+.nr PO 0.6875i
+.nr LL 6.625i
+.ND
+.ce 5
+ADDENDUM NUMBER ONE
+.sp 2
+to
+.sp 2
+FOURTH BERKELEY SOFTWARE DISTRIBUTION
+.sp 2
+LICENSE (6/83) AGREEMENT BETWEEN
+.sp 2
+THE REGENTS OF THE UNIVERSITY OF CALIFORNIA AND THE FEDERAL GOVERNMENT
+.sp 4
+.IP 1.
+The above-referenced License Agreement (``Agreement'')
+entered into between The Regents of the University of California
+(``Regents'') and the below-named Licensee controls Licensee's use
+of release 4.2 of Regents' Fourth Berkeley Software Distribution
+(``4BSD'') which was distributed upon execution of the Agreement.
+Pursuant to the provisions of Article 2, ``Fees'', of Agreement,
+release 4.3 of 4BSD, which is an update of release 4.2, is hereby made
+available to Licensee under the same terms and conditions set forth in the
+Agreement, except that the distribution fee for release
+4.3 for previous licensees is six hundred dollars ($600.00) and for new 
+licensees is one thousand dollars ($1000.00).
+.sp
+.IP 2.
+The parties agree that the computer software and computer software
+documentation deliverable under this License Agreement are commercial
+computer software as defined in Department of Defense Federal Acquisition
+Regulation Supplement ("DOD FAR Supplement") 52.227.7013 (15 August
+1985).
+.sp
+.IP 3.
+Notwithstanding the provision of Paragraph (b) (3) (i) of DOD FAR 
+Supplement 52.227.7013, the government hereby agrees that upon
+receipt of the computer software and computer software documentation
+licensed herein, the government will affix to said software and
+documentation the following Restricted Rights legend:
+.sp
+.QP
+"Use, duplication or disclosure by the Government is
+subject to the restrictions set forth in Government Purchase
+Order No._____________________, the License Agreement between 
+The Regents of the University of California and the Government
+(Rev. 4/86), and the Software Agreement between AT&T and the
+Government, No. ___________________.
+.sp
+.IP 4.
+It is further agreed that in the event LICENSEE desires to
+have a contractor, subcontractor, agent of the government,
+or any other party use the licensed computer software and
+computer software documentation in the performance of an
+agreement between LICENSEE and said party, LICENSEE may
+issue a sublicense to said party ("sublicensee") to use, but
+not further sublicense, said software and documentation provided
+such sublicense is in writing and requires the sublicensee
+to abide by the terms and conditions of this License Agreement.
+.sp
+.IP 5.
+LICENSEE agrees to abide by the terms and conditions of this
+License Agreement to the extent permitted by federal law.
+.sp
+.IP 6.
+The provisions of paragraph 10 of this License Agreement
+shall not be interpreted to waive the rights of LICENSEE
+under DOD FAR Supplement 27.404-1 (d), which implements
+28 United States Code section 1498.
+.sp
+.IP 7.
+The provisions of paragraphs 11 and 12 are agreed upon to
+the extent permitted by 31 United States Code section 1341
+(Subtitle II, Chapter 13, Subchapter III, "Limitations on
+Expending and Obligating Amounts").
+.sp
+.IP 8.
+The term "Agreement" referenced in paragraph 16 refers to
+this License Agreement, Addendum No. 1 to this License
+Agreement, and Government Purchase Order No. ________________.
+In the event of a conflict between the foregoing documents, the
+terms and conditions of the License Agreement and Addendum Number
+One thereto shall prevail.
+.sp
+.IP 9.
+Under no circumstances shall the Government have unrestricted
+rights in the computer software and computer software
+documentation.
+.sp
+.PP
+IN WITNESS WHEREOF, Regents and Licensee have executed this
+Amendment Number One on the dates specified below.  The 
+effective date of this amendment shall be the date of execution by 
+Regents.
+.sp 4
+.TS
+expand tab(~);
+cw(2.9375i) cw(0.75i) cw(2.9375i).
+THE REGENTS OF THE UNIVERSITY~~
+\v'-10p'\l'2.9375i'~~\l'2.9375i'
+\v'-7p'OF CALIFORNIA~~
+\v'-17p'\l'2.9375i'~~\l'2.9375i'
+\v'-15p'(LICENSOR)~~(LICENSEE)
+.T&
+lw(2.9375i) cw(0.75i) lw(2.9375i).
+~
+~
+~
+By\l'2.75i'~~By\l'2.75i'
+~
+Title\l'2.625i'~~Title\l'2.625i'
+~
+Date\l'2.625i'~~Date\l'2.625i'
+.TE
+
