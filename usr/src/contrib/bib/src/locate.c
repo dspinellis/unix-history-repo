@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)locate.c	2.3	%G%";
+static char sccsid[] = "@(#)locate.c	2.4	%G%";
 #endif not lint
 #
 
@@ -13,7 +13,7 @@ struct reftype{
     long int start, length;
     };
 
-char *malloc();
+char *calloc();
 char *rindex();
 char *stripkeys();
 int   fetchref();
@@ -21,7 +21,7 @@ int   fetchref();
 /*  locate(keys, name, max_klen, common):
         Returns a string containing all references pointed to by name
         that contain all keys in keys.  Common is name of common word file.
-    Pointer returned comes from malloc.  Use free to return storage.
+    Pointer returned comes from calloc.  Use free to return storage.
     NB A zero length string returned if nothing is found.
        A NULL pointer indicates an error accessing the file "name".
 */
@@ -83,7 +83,7 @@ int  max_klen;          /* max key length */
         keys= stripkeys(keys,key, max_klen, common);
 	if (*key==NULL)
 	{ fprintf(stderr,"locate: no keys for citation\n");
-	  allrefs = malloc(1);
+	  allrefs = (char *) calloc(1, sizeof (char));
 	  if (allrefs==NULL)
 	  {  fprintf(stderr, 
 	       "locate: insufficient space for references\n");
@@ -145,7 +145,7 @@ int  max_klen;          /* max key length */
 	total += strlen(refs[i].reffile) + 1;
     }
 
-    allrefs= malloc(total+1);
+    allrefs= (char *) calloc(total+1, sizeof (char));
     if (allrefs==NULL)
     {   fprintf(stderr, "locate: insufficient space for references\n");
 	exit(1);
