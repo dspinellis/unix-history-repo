@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umap_subr.c	8.1 (Berkeley) %G%
+ *	@(#)umap_subr.c	8.2 (Berkeley) %G%
  *
  * $Id: lofs_subr.c,v 1.11 1992/05/30 10:05:43 jsp Exp jsp $
  */
@@ -104,7 +104,7 @@ umap_node_find(mp, targetvp)
 			 * stuff, but we don't want to lock
 			 * the lower node.
 			 */
-			if (vget_nolock(vp)) {
+			if (vget(vp, 0)) {
 				printf ("null_node_find: vget failed.\n");
 				goto loop;
 			}
