@@ -4,7 +4,7 @@
  *	This routine performs an insert-line on the window, leaving
  * (_cury,_curx) unchanged.
  *
- * %G% (Berkeley) @(#)insertln.c	1.3
+ * %G% (Berkeley) @(#)insertln.c	1.4
  */
 winsertln(win)
 reg WINDOW	*win; {
@@ -24,4 +24,13 @@ reg WINDOW	*win; {
 	for (end = &temp[win->_maxx]; temp < end; )
 		*temp++ = ' ';
 	win->_y[win->_cury] = temp - win->_maxx;
+	if (win->_cury == LINES - 1 && win->_y[LINES-1][COLS-1] != ' ')
+		if (win->_scroll) {
+			wrefresh(win);
+			scroll(win);
+			win->_cury--;
+		}
+		else
+			return ERR;
+	return OK;
 }
