@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)du.1	8.1 (Berkeley) %G%
+.\"	@(#)du.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DU 1
@@ -13,8 +13,9 @@
 .Nd display disk usage statistics
 .Sh SYNOPSIS
 .Nm du
-.Op Fl a Li \&| Fl s
-.Op Fl Hhx
+.Op Fl H | Fl L | Fl P
+.Op Fl a | Fl s
+.Op Fl x
 .Op Ar file ...
 .Sh DESCRIPTION
 The
@@ -31,25 +32,41 @@ Partial numbers of blocks are rounded up.
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
+.It Fl H
+Symbolic links on the command line are followed.
+(Symbolic links encountered in the tree traversal are not followed.)
+.It Fl L
+All symbolic links are followed.
+.It Fl P
+No symbolic links are followed.
 .It Fl a
 Display an entry for each file in the file hierarchy.
 .It Fl s
 Display only the grand total for the specified files.
-.It Fl H
-When encountering a symbolic link on the command line, follow it.  All other
-symbolic links encountered in the traversal are not followed.
-.It Fl h
-When encountering a symbolic link anywhere in the traversal, follow it.
 .It Fl x
 Filesystem mount points are not traversed.
 .El
 .Pp
 .Nm Du
-references symbolic links as the links themselves unless the
+counts the storage used by symbolic links and not the files they
+reference unless the
 .Fl H
 or 
-.Fl h 
-flags are specified, in which case behavior is as detailed above.
+.Fl L 
+option is specified.
+If either the
+.Fl H
+or
+.Fl L
+options are specified, storage used by any symbolic links which are
+followed is not counted or displayed.
+The
+.Fl H ,
+.Fl L
+and
+.Fl P
+options override each other and the command's actions are determined
+by the last one specified.
 .Pp
 Files having multiple hard links are counted (and displayed) a single
 time per
