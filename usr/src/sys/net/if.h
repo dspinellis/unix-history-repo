@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.h	7.21 (Berkeley) %G%
+ *	@(#)if.h	7.22 (Berkeley) %G%
  */
 
 /*
@@ -39,8 +39,11 @@
 /*
  * Forward structure declarations for function prototypes [sic].
  */
-struct	rtentry;	
 struct	mbuf;
+struct	proc;
+struct	rtentry;	
+struct	socket;
+struct	ether_header;
 #endif
 /*
  * Structure describing information about an interface
@@ -295,9 +298,40 @@ struct	ifconf {
 		(ifa)->ifa_refcnt--;
 
 struct	ifnet	*ifnet;
-struct	ifaddr	*ifa_ifwithaddr __P((struct sockaddr *)),
-		*ifa_ifwithnet __P((struct sockaddr *)),
-		*ifa_ifwithdstaddr __P((struct sockaddr *));
-void	ifafree __P((struct ifaddr *));
+
+void	ether_ifattach __P((struct ifnet *));
+void	ether_input __P((struct ifnet *, struct ether_header *, struct mbuf *));
+int	ether_output __P((struct ifnet *,
+	   struct mbuf *, struct sockaddr *, struct rtentry *));
+char	*ether_sprintf __P((u_char *));
+
 void	if_attach __P((struct ifnet *));
+void	if_down __P((struct ifnet *));
+void	if_qflush __P((struct ifqueue *));
+void	if_slowtimo __P((void *));
+void	if_up __P((struct ifnet *));
+#ifdef vax
+void	ifubareset __P((int));
+#endif
+int	ifconf __P((int, caddr_t));
+void	ifinit __P((void));
+int	ifioctl __P((struct socket *, int, caddr_t, struct proc *));
+int	ifpromisc __P((struct ifnet *, int));
+struct	ifnet *ifunit __P((char *));
+
+struct	ifaddr *ifa_ifwithaddr __P((struct sockaddr *));
+struct	ifaddr *ifa_ifwithaf __P((int));
+struct	ifaddr *ifa_ifwithdstaddr __P((struct sockaddr *));
+struct	ifaddr *ifa_ifwithnet __P((struct sockaddr *));
+struct	ifaddr *ifa_ifwithroute __P((int, struct sockaddr *,
+					struct sockaddr *));
+struct	ifaddr *ifaof_ifpforaddr __P((struct sockaddr *, struct ifnet *));
+void	ifafree __P((struct ifaddr *));
+void	link_rtrequest __P((int, struct rtentry *, struct sockaddr *));
+
+int	loioctl __P((struct ifnet *, int, caddr_t));
+void	loopattach __P((int));
+int	looutput __P((struct ifnet *,
+	   struct mbuf *, struct sockaddr *, struct rtentry *));
+void	lortrequest __P((int, struct rtentry *, struct sockaddr *));
 #endif
