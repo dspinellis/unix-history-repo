@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_balloc.c	7.19 (Berkeley) %G%
+ *	@(#)ffs_balloc.c	7.20 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -31,10 +31,6 @@
 int
 ffs_bmap (ap)
 	struct vop_bmap_args *ap;
-#define vp (ap->a_vp)
-#define bn (ap->a_bn)
-#define vpp (ap->a_vpp)
-#define bnp (ap->a_bnp)
 {
 	register struct inode *ip;
 	register struct fs *fs;
@@ -48,37 +44,37 @@ ffs_bmap (ap)
 	 * Check for underlying vnode requests and ensure that logical
 	 * to physical mapping is requested.
 	 */
-	ip = VTOI(vp);
-	if (vpp != NULL)
-		*vpp = ip->i_devvp;
-	if (bnp == NULL)
+	ip = VTOI(ap->a_vp);
+	if (ap->a_vpp != NULL)
+		*ap->a_vpp = ip->i_devvp;
+	if (ap->a_bnp == NULL)
 		return (0);
-	if (bn < 0)
+	if (ap->a_bn < 0)
 		return (EFBIG);
 	fs = ip->i_fs;
 
 	/*
 	 * The first NDADDR blocks are direct blocks
 	 */
-	if (bn < NDADDR) {
-		nb = ip->i_db[bn];
+	if (ap->a_bn < NDADDR) {
+		nb = ip->i_db[ap->a_bn];
 		if (nb == 0) {
-			*bnp = (daddr_t)-1;
+			*ap->a_bnp = (daddr_t)-1;
 			return (0);
 		}
-		*bnp = fsbtodb(fs, nb);
+		*ap->a_bnp = fsbtodb(fs, nb);
 		return (0);
 	}
 	/*
 	 * Determine the number of levels of indirection.
 	 */
 	sh = 1;
-	bn -= NDADDR;
+	ap->a_bn -= NDADDR;
 	for (j = NIADDR; j > 0; j--) {
 		sh *= NINDIR(fs);
-		if (bn < sh)
+		if (ap->a_bn < sh)
 			break;
-		bn -= sh;
+		ap->a_bn -= sh;
 	}
 	if (j == 0)
 		return (EFBIG);
@@ -87,7 +83,7 @@ ffs_bmap (ap)
 	 */
 	nb = ip->i_ib[NIADDR - j];
 	if (nb == 0) {
-		*bnp = (daddr_t)-1;
+		*ap->a_bnp = (daddr_t)-1;
 		return (0);
 	}
 	for (; j <= NIADDR; j++) {
@@ -98,22 +94,18 @@ ffs_bmap (ap)
 		}
 		bap = bp->b_un.b_daddr;
 		sh /= NINDIR(fs);
-		i = (bn / sh) % NINDIR(fs);
+		i = (ap->a_bn / sh) % NINDIR(fs);
 		nb = bap[i];
 		if (nb == 0) {
-			*bnp = (daddr_t)-1;
+			*ap->a_bnp = (daddr_t)-1;
 			brelse(bp);
 			return (0);
 		}
 		brelse(bp);
 	}
-	*bnp = fsbtodb(fs, nb);
+	*ap->a_bnp = fsbtodb(fs, nb);
 	return (0);
 }
-#undef vp
-#undef bn
-#undef vpp
-#undef bnp
 
 /*
  * Balloc defines the structure of file system storage

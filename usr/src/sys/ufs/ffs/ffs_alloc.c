@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	7.35 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	7.36 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -278,10 +278,6 @@ nospace:
  */
 ffs_valloc (ap)
 	struct vop_valloc_args *ap;
-#define pvp (ap->a_pvp)
-#define mode (ap->a_mode)
-#define cred (ap->a_cred)
-#define vpp (ap->a_vpp)
 {
 	USES_VOP_VFREE;
 	USES_VOP_VGET;
@@ -291,30 +287,30 @@ ffs_valloc (ap)
 	ino_t ino, ipref;
 	int cg, error;
 	
-	*vpp = NULL;
-	pip = VTOI(pvp);
+	*ap->a_vpp = NULL;
+	pip = VTOI(ap->a_pvp);
 	fs = pip->i_fs;
 	if (fs->fs_cstotal.cs_nifree == 0)
 		goto noinodes;
 
-	if ((mode & IFMT) == IFDIR)
+	if ((ap->a_mode & IFMT) == IFDIR)
 		ipref = ffs_dirpref(fs);
 	else
 		ipref = pip->i_number;
 	if (ipref >= fs->fs_ncg * fs->fs_ipg)
 		ipref = 0;
 	cg = itog(fs, ipref);
-	ino = (ino_t)ffs_hashalloc(pip, cg, (long)ipref, mode, ffs_ialloccg);
+	ino = (ino_t)ffs_hashalloc(pip, cg, (long)ipref, ap->a_mode, ffs_ialloccg);
 	if (ino == 0)
 		goto noinodes;
-	error = FFS_VGET(pvp->v_mount, ino, vpp);
+	error = FFS_VGET(ap->a_pvp->v_mount, ino, ap->a_vpp);
 	if (error) {
-		VOP_VFREE(pvp, ino, mode);
+		VOP_VFREE(ap->a_pvp, ino, ap->a_mode);
 		return (error);
 	}
-	ip = VTOI(*vpp);
+	ip = VTOI(*ap->a_vpp);
 	if (ip->i_mode) {
-		printf("mode = 0%o, inum = %d, fs = %s\n",
+		printf("ap->a_mode = 0%o, inum = %d, fs = %s\n",
 		    ip->i_mode, ip->i_number, fs->fs_fsmnt);
 		panic("ffs_valloc: dup alloc");
 	}
@@ -332,14 +328,10 @@ ffs_valloc (ap)
 	ip->i_gen = nextgennumber;
 	return (0);
 noinodes:
-	ffs_fserr(fs, cred->cr_uid, "out of inodes");
+	ffs_fserr(fs, ap->a_cred->cr_uid, "out of inodes");
 	uprintf("\n%s: create/symlink failed, no inodes free\n", fs->fs_fsmnt);
 	return (ENOSPC);
 }
-#undef pvp
-#undef mode
-#undef cred
-#undef vpp
 
 /*
  * Find a cylinder to place a directory.
@@ -973,9 +965,6 @@ ffs_blkfree(ip, bno, size)
 int
 ffs_vfree (ap)
 	struct vop_vfree_args *ap;
-#define pvp (ap->a_pvp)
-#define ino (ap->a_ino)
-#define mode (ap->a_mode)
 {
 	register struct fs *fs;
 	register struct cg *cgp;
@@ -983,12 +972,12 @@ ffs_vfree (ap)
 	struct buf *bp;
 	int error, cg;
 
-	pip = VTOI(pvp);
+	pip = VTOI(ap->a_pvp);
 	fs = pip->i_fs;
-	if ((u_int)ino >= fs->fs_ipg * fs->fs_ncg)
-		panic("ifree: range: dev = 0x%x, ino = %d, fs = %s\n",
-		    pip->i_dev, ino, fs->fs_fsmnt);
-	cg = itog(fs, ino);
+	if ((u_int)ap->a_ino >= fs->fs_ipg * fs->fs_ncg)
+		panic("ifree: range: dev = 0x%x, ap->a_ino = %d, fs = %s\n",
+		    pip->i_dev, ap->a_ino, fs->fs_fsmnt);
+	cg = itog(fs, ap->a_ino);
 	error = bread(pip->i_devvp, fsbtodb(fs, cgtod(fs, cg)),
 		(int)fs->fs_cgsize, NOCRED, &bp);
 	if (error) {
@@ -1001,20 +990,20 @@ ffs_vfree (ap)
 		return (0);
 	}
 	cgp->cg_time = time.tv_sec;
-	ino %= fs->fs_ipg;
-	if (isclr(cg_inosused(cgp), ino)) {
-		printf("dev = 0x%x, ino = %d, fs = %s\n",
-		    pip->i_dev, ino, fs->fs_fsmnt);
+	ap->a_ino %= fs->fs_ipg;
+	if (isclr(cg_inosused(cgp), ap->a_ino)) {
+		printf("dev = 0x%x, ap->a_ino = %d, fs = %s\n",
+		    pip->i_dev, ap->a_ino, fs->fs_fsmnt);
 		if (fs->fs_ronly == 0)
 			panic("ifree: freeing free inode");
 	}
-	clrbit(cg_inosused(cgp), ino);
-	if (ino < cgp->cg_irotor)
-		cgp->cg_irotor = ino;
+	clrbit(cg_inosused(cgp), ap->a_ino);
+	if (ap->a_ino < cgp->cg_irotor)
+		cgp->cg_irotor = ap->a_ino;
 	cgp->cg_cs.cs_nifree++;
 	fs->fs_cstotal.cs_nifree++;
 	fs->fs_cs(fs, cg).cs_nifree++;
-	if ((mode & IFMT) == IFDIR) {
+	if ((ap->a_mode & IFMT) == IFDIR) {
 		cgp->cg_cs.cs_ndir--;
 		fs->fs_cstotal.cs_ndir--;
 		fs->fs_cs(fs, cg).cs_ndir--;
@@ -1023,9 +1012,6 @@ ffs_vfree (ap)
 	bdwrite(bp);
 	return (0);
 }
-#undef pvp
-#undef ino
-#undef mode
 
 /*
  * Find a block of the specified size in the specified cylinder group.

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_inode.c	7.45 (Berkeley) %G%
+ *	@(#)ufs_inode.c	7.46 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -61,22 +61,21 @@ ufs_iput(ip)
 int
 ufs_reclaim (ap)
 	struct vop_reclaim_args *ap;
-#define vp (ap->a_vp)
 {
 	register struct inode *ip;
 	int i, type;
 
-	if (prtactive && vp->v_usecount != 0)
-		vprint("ufs_reclaim: pushing active", vp);
+	if (prtactive && ap->a_vp->v_usecount != 0)
+		vprint("ufs_reclaim: pushing active", ap->a_vp);
 	/*
 	 * Remove the inode from its hash chain.
 	 */
-	ip = VTOI(vp);
+	ip = VTOI(ap->a_vp);
 	remque(ip);
 	/*
 	 * Purge old data structures associated with the inode.
 	 */
-	cache_purge(vp);
+	cache_purge(ap->a_vp);
 	if (ip->i_devvp) {
 		vrele(ip->i_devvp);
 		ip->i_devvp = 0;
@@ -84,12 +83,12 @@ ufs_reclaim (ap)
 #ifdef QUOTA
 	for (i = 0; i < MAXQUOTAS; i++) {
 		if (ip->i_dquot[i] != NODQUOT) {
-			dqrele(vp, ip->i_dquot[i]);
+			dqrele(ap->a_vp, ip->i_dquot[i]);
 			ip->i_dquot[i] = NODQUOT;
 		}
 	}
 #endif
-	switch (vp->v_mount->mnt_stat.f_type) {
+	switch (ap->a_vp->v_mount->mnt_stat.f_type) {
 	case MOUNT_UFS:
 		type = M_FFSNODE;
 		break;
@@ -102,11 +101,10 @@ ufs_reclaim (ap)
 	default:
 		panic("ufs_reclaim: not ufs file");
 	}
-	FREE(vp->v_data, type);
-	vp->v_data = NULL;
+	FREE(ap->a_vp->v_data, type);
+	ap->a_vp->v_data = NULL;
 	return (0);
 }
-#undef vp
 
 /*
  * Lock an inode. If its already locked, set the WANT bit and sleep.
