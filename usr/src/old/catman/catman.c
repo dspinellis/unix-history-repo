@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)catman.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)catman.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -116,7 +116,7 @@ doit(mandir)
 		printf("cd %s\n", mandir);
 	msp = &man[5];
 	csp = &cat[5];
-	(void) umask(02);
+	(void) umask(0);
 	for (sp = sections; *sp; sp++) {
 		register DIR *mdir;
 		register struct direct *dir;
@@ -139,7 +139,7 @@ doit(mandir)
 				*cp = '\0';
 			if (pflag)
 				printf("mkdir %s\n", buf);
-			else if (mkdir(buf, 0775) < 0) {
+			else if (mkdir(buf, 0777) < 0) {
 				sprintf(buf, "catman: mkdir: %s", cat);
 				perror(buf);
 				exstat = 1;
