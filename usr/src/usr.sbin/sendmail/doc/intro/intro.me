@@ -1,7 +1,7 @@
 .nr DR 1	\" this is a draft copy
 .nr si 3n
 .he 'SENDMAIL''%'
-.fo 'Version 3.25'DRAFT'Last Mod %G%'
+.fo 'Version 3.26'DRAFT'Last Mod %G%'
 .if n .ls 2
 .+c
 .(l C
@@ -77,7 +77,7 @@ techniques,
 such as
 providing network names that appear local to hosts
 on other networks,
-as with the Ethernet at Xerox PARC [ref?].
+as with the Ethernet at Xerox PARC.
 However,  the general case is extremely complex.
 For example,
 some networks require point-to-point routing,
@@ -152,7 +152,7 @@ include:
 Compatibility with the existing mail programs,
 including Bell version 6 mail,
 Bell version 7 mail
-[UNIX80],
+[UNIX83],
 Berkeley
 .i Mail
 [Shoens79],
@@ -355,7 +355,7 @@ in a special format.
 .pp
 This technique is similar to the previous technique,
 except that it uses a 4.2bsd IPC channel
-[ref?].
+[UNIX83].
 This method is exceptionally flexible
 in that the mailer need not reside
 on the same machine.
@@ -1124,7 +1124,7 @@ itself.
 .pp
 As a more interesting case,
 the CSNET name server
-[ref?]
+[Solomon81]
 provides an facility that goes beyond a single
 tightly-coupled environment.
 Such a facility would normally exist outside of
@@ -1379,6 +1379,12 @@ Network Information Center,
 SRI International,
 Menlo Park, California.
 May 1981.
+.ip [Solomon81]
+Solomon, M., Landweber, L., and Neuhengen, D.,
+.q "The Design of the CSNET Name Server."
+CS-DN-2,
+University of Wisconsin, Madison.
+November 1981.
 .ip [Su82]
 Su, Zaw-Sing,
 and
@@ -1390,12 +1396,12 @@ Network Information Center,
 SRI International,
 Menlo Park, California.
 August 1982.
-.ip [UNIX80]
+.ip [UNIX83]
 .ul
 The UNIX Programmer's Manual, Seventh Edition,
 Virtual VAX-11 Version,
 Volume 1.
 Bell Laboratories,
 modified by the University of California,
-Berkeley California.
-November 1980.
+Berkeley, California.
+March, 1983.
