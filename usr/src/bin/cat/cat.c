@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cat.c	4.6 (Berkeley) %G%";
+static	char *sccsid = "@(#)cat.c	4.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -10,7 +10,6 @@ static	char *sccsid = "@(#)cat.c	4.6 (Berkeley) %G%";
 #include <sys/types.h>
 #include <sys/stat.h>
 
-char	stdbuf[BUFSIZ];
 int	bflg, eflg, nflg, sflg, tflg, vflg;
 int	spaced, col, lno, inline;
 
@@ -24,7 +23,6 @@ char **argv;
 	struct stat statb;
 
 	lno = 1;
-	setbuf(stdout, stdbuf);
 	for( ; argc>1 && argv[1][0]=='-'; argc--,argv++) {
 		switch(argv[1][1]) {
 		case 0:
