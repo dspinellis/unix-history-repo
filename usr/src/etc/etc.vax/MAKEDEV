@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)MAKEDEV	4.5	%G%
+#	@(#)MAKEDEV	4.6	%G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices (for 730 must be followed by tu0 & tu1)
@@ -184,7 +184,7 @@ pty*)
 	case $class in
 	0|1|2)
 		umask 0
-		eval `echo $class $name | awk ' { b=$1; n=$2 } END {
+		eval `echo $offset $name | awk ' { b=$1; n=$2 } END {
 			for (i = 0; i < 16; i++)
 				printf("/etc/mknod tty%s%x c 20 %d; \
 					/etc/mknod pty%s%x c 21 %d; ", \
