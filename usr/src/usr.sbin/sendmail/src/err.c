@@ -4,7 +4,7 @@
 # include <log.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)err.c	1.4	%G%";
+static char	SccsId[] = "@(#)err.c	1.5	%G%";
 
 /*
 **  SYSERR -- Print error message.
@@ -52,7 +52,7 @@ syserr(fmt, a, b, c, d, e)
 		if (errno == 0)
 			ExitStat = EX_SOFTWARE;
 		else
-			ExitStat = EX_UNAVAIL;
+			ExitStat = EX_OSERR;
 	}
 
 # ifdef LOG

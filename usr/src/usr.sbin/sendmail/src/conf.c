@@ -103,7 +103,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	1.9	%G%";
+static char SccsId[] = "@(#)conf.c	1.10	%G%";
 
 
 bool	UseMsgId = FALSE;	/* don't put message id's in anywhere */
@@ -191,13 +191,13 @@ struct mailer Mailer[] =
 	/* pipes through programs -- must be #1 */
 	{
 		"/bin/csh",
-		M_HDR|M_NOHOST,			EX_UNAVAIL,	NULL,
+		M_HDR|M_NOHOST,			EX_UNAVAILABLE,	NULL,
 		{ "...prog%mail", "-fc", "$u", NULL }
 	},
 	/* local berkeley mail */
 	{
 		"/usr/net/bin/sendberkmail",
-		M_FOPT|M_HDR|M_STRIPQ,		EX_UNAVAIL,	BerkLocal,
+		M_FOPT|M_HDR|M_STRIPQ,		EX_UNAVAILABLE,	BerkLocal,
 		{ "...berk%mail", "-m", "$h", "-t", "$u", "-h", "$c", NULL }
 	},
 	/* arpanet mail */

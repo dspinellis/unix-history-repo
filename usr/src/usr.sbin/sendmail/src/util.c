@@ -1,7 +1,7 @@
 # include <sysexits.h>
 # include "useful.h"
 
-static char	SccsId[] = "@(#)util.c	1.3	%G%";
+static char	SccsId[] = "@(#)util.c	1.4	%G%";
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -66,7 +66,7 @@ xalloc(sz)
 	if (p == NULL)
 	{
 		syserr("Out of memory!!");
-		exit(EX_UNAVAIL);
+		exit(EX_UNAVAILABLE);
 	}
 	return (p);
 }
