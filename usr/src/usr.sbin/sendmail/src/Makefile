@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.12 (Berkeley) %G%
+#	@(#)Makefile	5.13 (Berkeley) %G%
 #
 SRCS=	alias.c arpadate.c clock.c collect.c conf.c convtime.c daemon.c \
 	deliver.c domain.c envelope.c err.c headers.c macro.c main.c \
@@ -44,7 +44,6 @@ dsendmail: ${OBJS} Version.o
 install: ${MAN}
 	install -c -s -o root -g kmem -m 6755 sendmail ${DESTDIR}/usr/lib
 	install -c -o bin -g bin -m 644 /dev/null ${DESTDIR}/usr/lib/sendmail.fc
-	install -c -o bin -g bin -m 666 /dev/null ${DESTDIR}/usr/lib/sendmail.st
 	install -c -o bin -g bin -m 666 /dev/null ${DESTDIR}/usr/lib/sendmail.st
 	install -c -o bin -g bin -m 444 sendmail.hf /usr/lib/sendmail.hf
 	install -c -o bin -g bin -m 444 sendmail.0 ${DESTDIR}/usr/man/cat8
