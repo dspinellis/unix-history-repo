@@ -1,0 +1,65 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)sigstack.2	5.1 (Berkeley) %G%
+.\"
+.TH SIGSTACK 2 "15 June 1983"
+.UC 5
+.SH NAME
+sigstack \- set and/or get signal stack context
+.SH SYNOPSIS
+.nf
+.B #include <signal.h>
+.PP
+.B struct sigstack {
+.B	caddr_t	ss_sp;
+.B	int	ss_onstack;
+.B };
+.PP
+.B sigstack(ss, oss);
+.B struct sigstack *ss, *oss;
+.SH DESCRIPTION
+.I Sigstack
+allows users to define an alternate stack on which signals
+are to be processed.  If
+.I ss
+is non-zero,
+it specifies a
+.I "signal stack"
+on which to deliver signals
+and tells the system if the process is currently executing
+on that stack.  When a signal's action indicates its handler
+should execute on the signal stack (specified with a
+.IR sigvec (2)
+call), the system checks to see
+if the process is currently executing on that stack.  If the
+process is not currently executing on the signal stack,
+the system arranges a switch to the signal stack for the
+duration of the signal handler's execution. 
+If
+.I oss
+is non-zero, the current signal stack state is returned.
+.SH NOTES
+Signal stacks are not ``grown'' automatically, as is
+done for the normal stack.  If the stack overflows
+unpredictable results may occur.
+.SH "RETURN VALUE
+Upon successful completion, a value of 0 is returned.
+Otherwise, a value of \-1 is returned and 
+.I errno
+is set to indicate the error.
+.SH ERRORS
+.I Sigstack
+will fail and the signal stack context will remain unchanged
+if one of the following occurs.
+.TP 15
+[EFAULT]
+Either
+.I ss
+or
+.I oss
+points to memory which is not a valid part of the process
+address space.
+.SH "SEE ALSO"
+sigvec(2), setjmp(3)
