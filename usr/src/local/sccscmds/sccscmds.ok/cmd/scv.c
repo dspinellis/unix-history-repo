@@ -13,7 +13,7 @@
 # include	"../hdr/defines.h"
 # include	"dir.h"
 
-SCCSID(@(#)scv.c	4.3);
+SCCSID(@(#)scv.c	4.4);
 
 
 /*
@@ -54,7 +54,7 @@ struct Deltab {
 /*	long  Ddatetime;
 */
 	short Ddthi,Ddtlo;
-	char Dpgmr[8];
+	char Dpgmr[SZLNAM];
 	char Dhist[200];
 };
 
@@ -422,7 +422,7 @@ struct packet *pkt;
 		if (c = *up++) {
 			j = 0;
 			for (mask = 1; mask; mask =<< 1) {
-				if ((c & mask) && (p = getlnam(i * 8 + j)))
+				if ((c & mask) && (p = getlnam(i * SZLNAM + j)))
 					putline(pkt,sprintf(str,"%s\n",p));
 				j++;
 			}

@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-SCCSID(@(#)cmt.c	4.1);
+SCCSID(@(#)cmt.c	4.2);
 
 struct packet gpkt;
 int	num_files, had_ffile;
@@ -81,7 +81,7 @@ register char *file;
 {
 	extern char had_dir, had_standinp;
 	extern	char	*Sflags[];
-	extern	char	Pgmr[8];
+	extern	char	Pgmr[SZLNAM];
 	char	line[BUFSIZ];
 	int	fowner, downer, user;
 
