@@ -1,4 +1,4 @@
-/*	if_imphost.h	4.1	82/02/06	*/
+/*	if_imphost.h	4.2	82/02/12	*/
 
 /*
  * Host structure used with IMP's.
@@ -36,6 +36,6 @@ struct hmbuf {
 };
 
 #ifdef KERNEL
-struct host *h_lookup();
-struct host *h_enter();
+struct host *hostlookup();
+struct host *hostenter();
 #endif

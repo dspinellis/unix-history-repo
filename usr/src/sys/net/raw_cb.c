@@ -1,4 +1,4 @@
-/*	raw_cb.c	4.2	82/02/01	*/
+/*	raw_cb.c	4.3	82/02/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -39,6 +39,7 @@ COUNT(RAW_ATTACH);
 	 */
 	if (addr) switch (addr->sa_family) {
 
+	case AF_IMPLINK:
 	case AF_INET: {
 		register struct sockaddr_in *sin = (struct sockaddr_in *)addr;
 

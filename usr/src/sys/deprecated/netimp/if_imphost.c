@@ -1,4 +1,4 @@
-/*	if_imphost.c	4.1	82/02/06	*/
+/*	if_imphost.c	4.2	82/02/12	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -24,20 +24,20 @@ struct mbuf hosttable = { 0, MMINOFF };
  * return a host structure (if it exists).
  */
 struct host *
-h_lookup(addr)
+hostlookup(addr)
 	struct in_addr addr;
 {
 	register struct host *hp;
 	register struct mbuf *m;
 	register int hash = HOSTHASH(addr);
 
-COUNT(H_LOOKUP);
-printf("h_lookup(%x)\n", addr);
+COUNT(HOSTLOOKUP);
+printf("hostlookup(%x)\n", addr);
 	for (m = &hosttable; m; m = m->m_next) {
 		hp = &mtod(m, struct hmbuf *)->hm_hosts[hash];
 		if (hp->h_refcnt == 0)
 			break;
-printf("h_lookup: addr=%x\n", hp->h_addr.s_addr);
+printf("hostlookup: addr=%x\n", hp->h_addr.s_addr);
 	        if (hp->h_addr.s_addr == addr.s_addr)    
 			return (hp);
 	}
@@ -50,20 +50,20 @@ printf("h_lookup: addr=%x\n", hp->h_addr.s_addr);
  * one and hook it into the host database.
  */
 struct host *
-h_enter(addr)                 
+hostenter(addr)                 
 	struct in_addr addr;
 {
 	register struct mbuf *m, *mprev;
 	register struct host *hp;
 	register int hash = HOSTHASH(addr);
 
-COUNT(H_ENTER);
-printf("h_enter(%x)\n", addr);
+COUNT(HOSTENTER);
+printf("hostenter(%x)\n", addr);
 	for (m = &hosttable; m; mprev = m, m = m->m_next) {
 		hp = &mtod(m, struct hmbuf *)->hm_hosts[hash];
 		if (hp->h_refcnt == 0)
 			break;
-printf("h_enter: addr=%x\n", addr);
+printf("hostenter: addr=%x\n", addr);
 	        if (hp->h_addr.s_addr == addr.s_addr)    
 			goto foundhost;
 	}
@@ -73,7 +73,7 @@ printf("h_enter: addr=%x\n", addr);
 	 * If our search ran off the end of the
 	 * chain of mbuf's, allocate another.
 	 */
-printf("h_enter: new host\n");
+printf("hostenter: new host\n");
 	if (m == 0) {
 		m = m_getclr(M_DONTWAIT);
 		if (m == 0)
@@ -95,26 +95,26 @@ foundhost:
  * Free a reference to a host.  If this causes the
  * host structure to be released do so.
  */
-h_free(addr)                               
+hostfree(addr)                               
 	struct in_addr addr;
 {
 	register struct mbuf *m;
 	register struct host *hp;
 	register int hash = HOSTHASH(addr);
 
-COUNT(H_FREE);
-printf("h_free(%x)\n", addr);
+COUNT(HOSTFREE);
+printf("hostfree(%x)\n", addr);
 	for (m = &hosttable; m; m = m->m_next) {
 		hp = &mtod(m, struct hmbuf *)->hm_hosts[hash];
 		if (hp->h_refcnt == 0)
 			return;
 	        if (hp->h_addr.s_addr == addr.s_addr) {
 			if (--hp->h_refcnt == 0)
-				h_release(mtod(m, struct hmbuf *), hp);
+				hostrelease(mtod(m, struct hmbuf *), hp);
 			return;
 		}
 	}
-	panic("h_free");
+	panic("hostfree");
 }
 
 /*
@@ -122,20 +122,20 @@ printf("h_free(%x)\n", addr);
  * This involves clearing all packet queue's
  * and releasing host structures.
  */
-h_reset(net)	    
+hostreset(net)	    
 	int net;
 {
 	register struct mbuf *m;
 	register struct host *hp, *lp;
 
-COUNT(H_RESET);
-printf("h_reset(%x)\n", net);
+COUNT(HOSTRESET);
+printf("hostreset(%x)\n", net);
 	for (m = &hosttable; m; m = m->m_next) {
 		hp = mtod(m, struct hmbuf *)->hm_hosts; 
 		lp = hp + HPMBUF;
 		while (hp < lp) {
 			if (hp->h_addr.s_net == net)
-				h_release(mtod(m, struct hmbuf *), hp);
+				hostrelease(mtod(m, struct hmbuf *), hp);
 			hp++;
 		}
 	}
@@ -145,19 +145,21 @@ printf("h_reset(%x)\n", net);
  * Remove a host structure and release
  * any resources it's accumulated.
  */
-h_release(hm, hp)
+hostrelease(hm, hp)
 	struct hmbuf *hm;
 	register struct host *hp;
 {
 	register struct mbuf *m;
 
-COUNT(H_RELEASE);
-printf("h_release(%x,%x)\n", hm, hp);
+COUNT(HOSTRELEASE);
+printf("hostrelease(%x,%x)\n", hm, hp);
 	/*
 	 * Discard any packets left on the waiting q
 	 */
-	while (m = hp->h_q) {
-		hp->h_q = m->m_act;
+	if (m = hp->h_q) {
+		m = m->m_next;
+		hp->h_q->m_next = 0;
+		hp->h_q = 0;
 		m_freem(m);
 	}
 	/*
@@ -165,10 +167,10 @@ printf("h_release(%x,%x)\n", hm, hp);
 	 * it worth it?  For now we assume not and just
 	 * handle the simple case.
 	 */
-printf("h_releasse: count=%d\n", hm->h_count);
+printf("hostrelease: count=%d\n", hm->hm_count);
 	if (--hm->hm_count || (m = dtom(hm)) == &hosttable)
 		return;
 	m->m_act->m_next = m->m_next;
 	m->m_next->m_act = m->m_act;
-	m_freem(m);
+	(void) m_free(m);
 }

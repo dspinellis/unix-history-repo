@@ -1,4 +1,4 @@
-/*	raw_imp.c	4.2	82/02/01	*/
+/*	raw_imp.c	4.3	82/02/12	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -39,15 +39,22 @@ imp_output(m, so)		/* too close to impoutput */
 	register struct imp_leader *ip;
 	register struct sockaddr_in *sin;
 	register struct rawcb *rp = sotorawcb(so);
+	struct ifnet *ifp;
+	struct control_leader *cp;
 
 COUNT(IMP_OUTPUT);
 	/*
 	 * Verify user has supplied necessary space
 	 * for the leader and check parameters in it.
 	 */
-	if ((m->m_off > MMAXOFF || m->m_len < sizeof(struct imp_leader)) &&
-	    (m = m_pullup(m, sizeof(struct imp_leader))) == 0)
-		goto bad;
+	if ((m->m_off > MMAXOFF || m->m_len < sizeof(struct control_leader)) &&
+	    (m = m_pullup(m, sizeof(struct control_leader))) == 0)
+		return (0);
+	cp = mtod(m, struct control_leader *);
+	if (cp->dl_mtype == IMPTYPE_DATA)
+		if (m->m_len < sizeof(struct imp_leader) &&
+		    (m = m_pullup(m, sizeof(struct imp_leader))) == 0)
+			return (0);
 	ip = mtod(m, struct imp_leader *);
 	if (ip->il_format != IMP_NFF)
 		goto bad;
@@ -62,13 +69,20 @@ COUNT(IMP_OUTPUT);
 	 */
 	for (len = 0, n = m; n; n = n->m_next)
 		len += n->m_len;
-	ip->il_length = len << 3;
+	ip->il_length = htons(len << 3);
 	sin = (struct sockaddr_in *)&rp->rcb_addr;
 	ip->il_network = sin->sin_addr.s_net;
 	ip->il_host = sin->sin_addr.s_host;
 	ip->il_imp = sin->sin_addr.s_imp;
-
-	return (impoutput((struct ifnet *)rp->rcb_pcb, m, PF_IMPLINK));
+printf("imp_output: net=%x, host=%x, imp=%x\n", ip->il_network, ip->il_host,
+ip->il_impno);
+	ifp = if_ifonnetof(sin->sin_addr);
+	if (ifp == 0) {
+		ifp = if_gatewayfor(sin->sin_addr);
+		if (ifp == 0)
+			goto bad;
+	}
+	return (impoutput(ifp, m, PF_IMPLINK));
 
 bad:
 	m_freem(m);
@@ -86,6 +100,8 @@ imp_usrreq(so, req, m, addr)
 	caddr_t addr;
 {
 	register struct rawcb *rp = sotorawcb(so);
+	register struct sockaddr_in *sin;
+	register struct ifnet *ifp;
 
 COUNT(IMP_USRREQ);
 	if (rp == 0 && req != PRU_ATTACH)
@@ -94,14 +110,11 @@ COUNT(IMP_USRREQ);
 	switch (req) {
 
 	/*
-	 * Verify address has an interface to go with it
-	 * and record information for use in output routine.
+	 * Verify address has an interface to go with it.
 	 */
-	case PRU_SEND:
-	case PRU_CONNECT: {
-		register struct sockaddr_in *sin;
-		register struct ifnet *ifp;
-
+	case PRU_CONNECT:
+		if (rp->rcb_pcb)
+			return (EISCONN);
 		sin = (struct sockaddr_in *)addr;
 		ifp = if_ifonnetof(sin->sin_addr);
 		if (ifp == 0) {
@@ -111,7 +124,6 @@ COUNT(IMP_USRREQ);
 		}
 		rp->rcb_pcb = (caddr_t)ifp;
 		break;
-		}
 
 	case PRU_DISCONNECT:
 		rp->rcb_pcb = 0;
