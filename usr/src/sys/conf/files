@@ -62,7 +62,6 @@ kern/vfs_lookup.c	standard
 kern/vfs_subr.c		standard
 kern/vfs_syscalls.c	standard
 kern/vfs_vnops.c	standard
-machine/vnode_if.c	standard
 miscfs/deadfs/dead_vnops.c	standard
 miscfs/fdesc/fdesc_vfsops.c	optional fdesc
 miscfs/fdesc/fdesc_vnops.c	optional fdesc
