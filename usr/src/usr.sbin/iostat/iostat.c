@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -58,6 +58,10 @@ struct nlist namelist[] = {
 #if defined(hp300) || defined(luna68k)
 #define	X_HPDINIT	(X_END+1)
 	{ "_hp_dinit" },
+#endif
+#ifdef mips
+#define	X_SCSI_DINIT	(X_END+1)
+	{ "_scsi_dinit" },
 #endif
 #ifdef tahoe
 #define	X_VBDINIT	(X_END+1)
