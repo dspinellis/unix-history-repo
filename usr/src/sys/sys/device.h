@@ -6,11 +6,16 @@
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
  * contributed to Berkeley.
  *
+ * All advertising materials mentioning features or use of this software
+ * must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Lawrence Berkeley Laboratories.
+ *
  * %sccs.include.redist.c%
  *
  *	@(#)device.h	7.5 (Berkeley) %G%
  *
- * from: $Header: device.h,v 1.6 92/06/11 17:56:45 torek Exp $ (LBL)
+ * from: $Header: device.h,v 1.7 92/11/17 01:55:17 torek Exp $ (LBL)
  */
 
 /*
@@ -30,10 +35,11 @@ struct device {
 	enum	devclass dv_class;	/* this device's classification */
 	struct	device *dv_next;	/* next in list of all */
 	struct	cfdata *dv_cfdata;	/* config data that found us */
-	char	*dv_name;		/* device name */
 	int	dv_unit;		/* device unit number */
-	char	*dv_xname;		/* expanded name (name + unit) */
+	char	dv_xname[16];		/* external name (name + unit) */
 	struct	device *dv_parent;	/* pointer to parent device */
+	int	dv_evcnt[2];		/* event counters */
+	char	dv_evnam[2][8];		/* and their names */
 };
 
 /*
@@ -70,6 +76,7 @@ struct cfdriver {
 	enum	devclass cd_class;	/* device classification */
 	size_t	cd_devsize;		/* size of dev data (for malloc) */
 	void	*cd_aux;		/* additional driver, if any */
+	char	cd_evnam[2][8];		/* names for dv_evnam */
 	int	cd_ndevs;		/* size of cd_devs array */
 };
 
