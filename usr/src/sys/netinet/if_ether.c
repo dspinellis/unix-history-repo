@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ether.c	7.12 (Berkeley) %G%
+ *	@(#)if_ether.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -184,7 +184,7 @@ arpresolve(ac, m, destip, desten, usetrailers)
 		if (useloopback) {
 			sin.sin_family = AF_INET;
 			sin.sin_addr = *destip;
-			(void) looutput(&loif, m, (struct sockaddr *)&sin);
+			(void) looutput(&loif, m, (struct sockaddr *)&sin, 0);
 			/*
 			 * The packet has already been sent and freed.
 			 */
