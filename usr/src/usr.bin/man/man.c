@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -276,49 +276,29 @@ main(argc, argv)
 
 	/* 8: If it's simple, display it fast. */
 	if (f_cat) {
-		found = 0;
 		for (ap = pg.gl_pathv; *ap != NULL; ++ap) {
 			if (**ap == '\0')
 				continue;
 			cat(*ap);
-			if (!f_all) {
-				found = 1;
-				break;
-			}
 		}
-		if (!found) {
-			if (intmpp != NULL)
-				intmpp = intmpp->list.qe_next;
-			for (; intmpp != NULL; intmpp = intmpp->list.qe_next) {
-				cat(intmpp->s);
-				if (!f_all)
-					break;
-			}
-		}
+		if (intmpp != NULL)
+			intmpp = intmpp->list.qe_next;
+		for (; intmpp != NULL; intmpp = intmpp->list.qe_next)
+			cat(intmpp->s);
 		cleanup();
 		exit (0);
 	}
 	if (f_how) {
-		found = 0;
 		for (ap = pg.gl_pathv; *ap != NULL; ++ap) {
 			if (**ap == '\0')
 				continue;
 			how(*ap);
-			if (!f_all) {
-				found = 1;
-				break;
-			}
 		}
-		if (!found) {
-			intmpp = getlist("_intmp");
-			if (intmpp != NULL)
-				intmpp = intmpp->list.qe_next;
-			for (; intmpp != NULL; intmpp = intmpp->list.qe_next) {
-				how(intmpp->s);
-				if (!f_all)
-					break;
-			}
-		}
+		intmpp = getlist("_intmp");
+		if (intmpp != NULL)
+			intmpp = intmpp->list.qe_next;
+		for (; intmpp != NULL; intmpp = intmpp->list.qe_next)
+			how(intmpp->s);
 		cleanup();
 		exit (0);
 	}
@@ -341,26 +321,16 @@ main(argc, argv)
 	 * 9: We display things in a single command; build a list of things
 	 *    to display.
 	 */
-	found = 0;
 	for (ap = pg.gl_pathv, len = strlen(pager) + 1; *ap != NULL; ++ap) {
 		if (**ap == '\0')
 			continue;
 		len += strlen(*ap) + 1;
-		if (!f_all) {
-			found = 1;
-			break;
-		}
 	}
-	if (!found) {
-		intmpp = getlist("_intmp");
-		if (intmpp != NULL)
-			intmpp = intmpp->list.qe_next;
-		for (; intmpp != NULL; intmpp = intmpp->list.qe_next) {
-			len += strlen(intmpp->s);
-			if (!f_all)
-				break;
-		}
-	}
+	intmpp = getlist("_intmp");
+	if (intmpp != NULL)
+		intmpp = intmpp->list.qe_next;
+	for (; intmpp != NULL; intmpp = intmpp->list.qe_next)
+		len += strlen(intmpp->s);
 
 	if ((cmd = malloc(len)) == NULL) {
 		cleanup();
@@ -371,7 +341,6 @@ main(argc, argv)
 	memmove(p, pager, len);
 	p += len;
 	*p++ = ' ';
-	found = 0;
 	for (ap = pg.gl_pathv; *ap != NULL; ++ap) {
 		if (**ap == '\0')
 			continue;
@@ -379,21 +348,15 @@ main(argc, argv)
 		memmove(p, *ap, len);
 		p += len;
 		*p++ = ' ';
-		if (!f_all) {
-			found = 1;
-			break;
-		}
 	}
-	if (!found) {
-		intmpp = getlist("_intmp");
-		if (intmpp != NULL)
-			intmpp = intmpp->list.qe_next;
-		for (; intmpp != NULL; intmpp = intmpp->list.qe_next) {
-			len = strlen(intmpp->s);
-			memmove(p, intmpp->s, len);
-			p += len;
-			*p++ = ' ';
-		}
+	intmpp = getlist("_intmp");
+	if (intmpp != NULL)
+		intmpp = intmpp->list.qe_next;
+	for (; intmpp != NULL; intmpp = intmpp->list.qe_next) { 
+		len = strlen(intmpp->s);
+		memmove(p, intmpp->s, len);
+		p += len;
+		*p++ = ' ';
 	}
 	*p = '\0';
 
