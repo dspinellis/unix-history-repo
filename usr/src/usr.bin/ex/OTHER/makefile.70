@@ -61,7 +61,7 @@ VHDR=	"Ex Version ${VERSION}"
 	mv x.o $*.o
 
 a.out: ${OBJS}
-	cc ${LDFLAGS} ${OBJS} ${TERMLIB}
+	${CC} ${LDFLAGS} ${OBJS} ${TERMLIB}
 
 all:	a.out exrecover expreserve tags
 
@@ -74,14 +74,14 @@ ${OBJS}: ex_vars.h
 # 	csh makeoptions ${CFLAGS}
 
 bcopy.o:	bcopy.c
-	cc -c ${CFLAGS} bcopy.c
+	${CC} -c ${CFLAGS} bcopy.c
 
 # xstr: hands off!
 strings.o: strings
 	${XSTR}
 	${CC} -c -S xs.c
 	ed - <:rofix xs.s
-	as -o strings.o xs.s
+	${AS} -o strings.o xs.s
 	rm xs.s
 	
 exrecover: exrecover.o
@@ -96,19 +96,10 @@ expreserve: expreserve.o
 expreserve.o:
 	${CC} ${CFLAGS} -c -O expreserve.c
 
-simpclean:
+clean:
 #	If we dont have ex we cant make it so dont rm ex_vars.h
 	-rm -f a.out exrecover expreserve strings core errs trace
 	-rm -f *.o x*.[cs]
-
-clean:	simpclean
-	-rm -f ${HDRS}
-	-rm -f ${SRC1}
-	-rm -f ${SRC2}
-	-rm -f ${SRC3}
-	-rm -f ${SRC4}
-	-rm -f ${SRC5}
-	-rm -f ${SRC6}
 
 # install a new version for testing in /usr/new
 ninstall: a.out
