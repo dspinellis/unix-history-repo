@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kill.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)kill.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <ctype.h>
@@ -32,8 +32,8 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	register int errors, numsig, pid;
-	register const char *const *p;
+	const char *const *p;
+	int errors, numsig, pid;
 	char *ep;
 
 	if (argc < 2)
@@ -88,8 +88,8 @@ void
 nosig(name)
 	char *name;
 {
-	(void)fprintf(stderr,
-	    "kill: unknown signal %s; valid signals:\n", name);
+
+	warnx("unknown signal %s; valid signals:", name);
 	printsig(stderr);
 	exit(1);
 }
@@ -98,8 +98,8 @@ void
 printsig(fp)
 	FILE *fp;
 {
-	register int cnt;
-	register const char *const *p;
+	const char *const *p;
+	int cnt;
 
 	for (cnt = NSIG, p = sys_signame + 1; --cnt; ++p) {
 		(void)fprintf(fp, "%s ", *p);
@@ -112,6 +112,7 @@ printsig(fp)
 void
 usage()
 {
+
 	(void)fprintf(stderr, "usage: kill [-l] [-sig] pid ...\n");
 	exit(1);
 }
