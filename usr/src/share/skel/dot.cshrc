@@ -1,5 +1,6 @@
 # .cshrc initialization
 
+alias f		finger
 alias h		'history -r | more'
 alias j		jobs -l
 alias la	ls -a
@@ -19,4 +20,3 @@ if ($?prompt) then
 	set filec
 	set mail = (/usr/spool/mail/$USER)
 endif
-
