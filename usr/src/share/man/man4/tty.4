@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tty.4	6.6 (Berkeley) %G%
+.\"	@(#)tty.4	6.7 (Berkeley) %G%
 .\"
 .TH TTY 4 ""
 .UC 4
@@ -21,7 +21,8 @@ and the terminal drivers used for conversational computing.
 The system provides different
 .I "line disciplines"
 for controlling communications lines.
-In this version of the system there are three disciplines available:
+In this version of the system there are two disciplines available for use
+with terminals:
 .IP "old" 8
 The old (Version 7) terminal driver.  This is sometimes used when using the
 standard shell
@@ -41,6 +42,8 @@ Line discipline switching is accomplished with the TIOCSETD
 where LDISC is OTTYDISC for the standard tty driver
 and NTTYDISC for the ``new'' driver.
 The standard (currently old) tty driver is discipline 0 by convention.
+Other disciplines may exist for special purposes, such as use of communications
+lines for network connections.
 The current line discipline can be obtained with the TIOCGETD
 .IR ioctl .
 Pending input is discarded when the line discipline is changed.
@@ -147,8 +150,9 @@ from the control terminal will never block, but rather
 return an error indication (EWOULDBLOCK) if there is no
 input available.
 .PP
-A process may also request a SIGIO signal be sent it whenever input
-is present.  To enable this mode the FASYNC flag should be set using
+A process may also request that a SIGIO signal be sent it whenever input
+is present and also whenever output queues fall below the low-water mark.
+To enable this mode the FASYNC flag should be set using
 .IR fcntl (2).
 .LP
 .B "Input editing."
@@ -449,6 +453,16 @@ Processes which are holding or ignoring SIGTTOU signals
 or which are in the middle of a
 .IR vfork (2)
 are excepted and allowed to produce output.
+.B "Terminal/window sizes."
+In order to accommodate terminals and workstations with variable-sized
+windows, the terminal driver provides a mechanism for obtaining and setting
+the current terminal size.
+The driver does not use this information internally, but only stores it
+and provides a uniform access mechanism.
+When the size is changed, a SIGWINCH signal is sent to the terminal's process
+group so that knowledgeable programs may detect size changes.
+This facility was added in 4.3BSD and is not available in earlier
+versions of the system.
 .LP
 .B "Summary of modes."
 .LP
@@ -862,7 +876,7 @@ into which the current local mode word is placed.
 .Ul "Local special chars"
 .PP
 The
-final structure associated with each terminal is the
+final control structure associated with each terminal is the
 .I ltchars
 structure which defines control characters
 for the new terminal driver.
@@ -896,6 +910,42 @@ structure which defines the new local special characters.
 is a pointer to an
 .I ltchars
 structure into which is placed the current set of local special characters.
+.LP
+.Ul "Window/terminal sizes"
+.PP
+Each terminal has provision for storage of the current terminal or window
+size in a
+.I winsize
+structure, with format:
+.nf
+.sp
+.ft B
+.ta .5i +\w'unsigned short\ \ \ \ 'u +\w'ws_ypixel;\ \ \ \ \ 'u
+struct winsize {
+	unsigned short	ws_row;	/* rows, in characters */
+	unsigned short	ws_col;	/* columns, in characters */
+	unsigned short	ws_xpixel;	/* horizontal size, pixels */
+	unsigned short	ws_ypixel;	/* vertical size, pixels */
+};
+.ft R
+.fi
+.LP
+A value of 0 in any field is interpreted as ``undefined;''
+the entire structure is zeroed on final close.
+.PP
+The applicable \fIioctl\fP functions are:
+.IP TIOCGWINSZ
+.I arg
+is a pointer to a
+.B "struct winsize"
+into which will be placed the current terminal or window size information.
+.IP TIOCSWINSZ
+.I arg
+is a pointer to a
+.B "struct winsize"
+which will be used to set the current terminal or window size information.
+If the new information is different than the old information,
+a SIGWINCH signal will be sent to the terminal's process group.
 .SH FILES
 /dev/tty
 .br
@@ -905,6 +955,7 @@ structure into which is placed the current set of local special characters.
 .SH SEE ALSO
 csh(1),
 stty(1),
+tset(1),
 ioctl(2),
 sigvec(2),
 stty(3C),
