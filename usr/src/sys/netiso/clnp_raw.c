@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: clnp_raw.c,v 4.2 88/06/29 14:58:56 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/clnp_raw.c,v $ */
-/*	@(#)clnp_raw.c	7.5 (Berkeley) %G% */
+/*	@(#)clnp_raw.c	7.6 (Berkeley) %G% */
 #ifndef lint
 static char *rcsid = "$Header: clnp_raw.c,v 4.2 88/06/29 14:58:56 hagens Exp $";
 #endif lint
@@ -52,8 +52,6 @@ static char *rcsid = "$Header: clnp_raw.c,v 4.2 88/06/29 14:58:56 hagens Exp $";
 
 #include "tp_user.h"/* XXX -- defines SOL_NETWORK */
 
-struct sockaddr_iso	rclnp_src	= { sizeof(rclnp_src), AF_ISO };
-struct sockaddr_iso	rclnp_dst	= { sizeof(rclnp_src), AF_ISO };
 struct sockproto	rclnp_proto	= { PF_ISO, 0 };
 /*
  * FUNCTION:		rclnp_input
@@ -71,8 +69,8 @@ struct sockproto	rclnp_proto	= { PF_ISO, 0 };
  */
 rclnp_input(m, src, dst, hdrlen)
 struct mbuf 		*m;		/* ptr to packet */
-struct iso_addr		*src;	/* ptr to src address */
-struct iso_addr		*dst;	/* ptr to dest address */
+struct sockaddr_iso	*src;	/* ptr to src address */
+struct sockaddr_iso	*dst;	/* ptr to dest address */
 int					hdrlen; /* length (in bytes) of clnp header */
 {
 #ifdef	TROLL
@@ -82,10 +80,8 @@ int					hdrlen; /* length (in bytes) of clnp header */
 	}
 #endif	TROLL
 
-	rclnp_src.siso_addr = *src;
-	rclnp_dst.siso_addr = *dst;
-	if (raw_input(m, &rclnp_proto, (struct sockaddr *)&rclnp_src,
-		(struct sockaddr *)&rclnp_dst) == 0) {
+	if (raw_input(m, &rclnp_proto, (struct sockaddr *)src,
+		(struct sockaddr *)dst) == 0) {
 			clnp_stat.cns_delivered--;
 			clnp_stat.cns_noproto++;
 	}
