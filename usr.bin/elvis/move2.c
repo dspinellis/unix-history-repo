@@ -309,12 +309,13 @@ MARK	m_bsrch(m, ptrn)
 		if (regexec(re, line, 1) && (int)(re->startp[0] - line) < pos)
 #endif
 		{
+			try = 0;
 			/* match!  now find the last acceptable one in this line */
 			do
 			{
 #ifdef REGEX
-				last = rm[0].rm_so;
-				try = rm[0].rm_eo;
+				last = try + rm[0].rm_so;
+				try += rm[0].rm_eo;
 #else
 				last = (int)(re->startp[0] - line);
 				try = (int)(re->endp[0] - line);

@@ -1,8 +1,7 @@
 
-CFLAGS=-g -DBSD #-DREGEX
-CC=	gcc
+CFLAGS+=-DBSD -DREGEX
 DPADD=	${LIBTERM}
-LDADD=	-ltermcap #-lgnuregex
+LDADD=	-ltermcap -lgnuregex
 
 PROG=	elvis
 SRCS=	blk.c cmd1.c cmd2.c ctype.c curses.c cut.c ex.c input.c main.c misc.c \
