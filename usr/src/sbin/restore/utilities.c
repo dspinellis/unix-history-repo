@@ -1,12 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	3.17	(Berkeley)	85/01/14";
+static char sccsid[] = "@(#)utilities.c	3.18	(Berkeley)	85/01/18";
 #endif
 
 /* Copyright (c) 1983 Regents of the University of California */
 
 #include "restore.h"
-
-char *copynext();
 
 /*
  * Insure that all the components of a pathname exist.
@@ -291,44 +289,6 @@ dirlookup(name)
 }
 
 /*
- * Canonicalize file names to always start with ``./'' and
- * remove any imbedded ".." components.
- */
-canon(rawname, canonname)
-	char *rawname, *canonname;
-{
-	register char *cp, *np;
-	int len;
-
-	if (strcmp(rawname, ".") == 0 || strncmp(rawname, "./", 2) == 0)
-		(void) strcpy(canonname, "");
-	else if (rawname[0] == '/')
-		(void) strcpy(canonname, ".");
-	else
-		(void) strcpy(canonname, "./");
-	(void) strcat(canonname, rawname);
-	len = strlen(canonname) - 1;
-	if (canonname[len] == '/')
-		canonname[len] = '\0';
-	/*
-	 * Eliminate extraneous ".." from pathnames.
-	 */
-	for (np = canonname; *np != '\0'; ) {
-		np++;
-		cp = np;
-		while (*np != '/' && *np != '\0')
-			np++;
-		if (np - cp == 2 && strncmp(cp, "..", 2) == 0) {
-			cp--;
-			while (cp > &canonname[1] && *--cp != '/')
-				/* find beginning of name */;
-			(void) strcpy(cp, np);
-			np = cp;
-		}
-	}
-}
-
-/*
  * Elicit a reply.
  */
 reply(question)
@@ -348,147 +308,6 @@ reply(question)
 	if (c == 'y')
 		return (GOOD);
 	return (FAIL);
-}
-
-/*
- * Read and parse an interactive command.
- * The first word on the line is assigned to "cmd". If
- * there are no arguments on the command line, then "curdir"
- * is returned as the argument. If there are arguments
- * on the line they are returned one at a time on each
- * successive call to getcmd. Each argument is first assigned
- * to "name". If it does not start with "/" the pathname in
- * "curdir" is prepended to it. Finally "canon" is called to
- * eliminate any embedded ".." components.
- */
-getcmd(curdir, cmd, name)
-	char *curdir, *cmd, *name;
-{
-	register char *cp;
-	static char *nextarg = NULL;
-	static char input[BUFSIZ];
-	char output[BUFSIZ];
-#	define rawname input	/* save space by reusing input buffer */
-
-	/*
-	 * Check to see if still processing arguments.
-	 */
-	if (nextarg != NULL)
-		goto getnext;
-	/*
-	 * Read a command line and trim off trailing white space.
-	 */
-	do	{
-		fprintf(stderr, "restore > ");
-		(void) fflush(stderr);
-		(void) fgets(input, BUFSIZ, terminal);
-	} while (!feof(terminal) && input[0] == '\n');
-	if (feof(terminal)) {
-		(void) strcpy(cmd, "quit");
-		return;
-	}
-	for (cp = &input[strlen(input) - 2]; *cp == ' ' || *cp == '\t'; cp--)
-		/* trim off trailing white space and newline */;
-	*++cp = '\0';
-	/*
-	 * Copy the command into "cmd".
-	 */
-	cp = copynext(input, cmd);
-	/*
-	 * If no argument, use curdir as the default.
-	 */
-	if (*cp == '\0') {
-		(void) strcpy(name, curdir);
-		return;
-	}
-	nextarg = cp;
-	/*
-	 * Find the next argument.
-	 */
-getnext:
-	cp = copynext(nextarg, rawname);
-	if (*cp == '\0')
-		nextarg = NULL;
-	else
-		nextarg = cp;
-	/*
-	 * If it an absolute pathname, canonicalize it and return it.
-	 */
-	if (rawname[0] == '/') {
-		canon(rawname, name);
-		return;
-	}
-	/*
-	 * For relative pathnames, prepend the current directory to
-	 * it then canonicalize and return it.
-	 */
-	(void) strcpy(output, curdir);
-	(void) strcat(output, "/");
-	(void) strcat(output, rawname);
-	canon(output, name);
-#	undef rawname
-}
-
-/*
- * Strip off the next token of the input.
- */
-char *
-copynext(input, output)
-	char *input, *output;
-{
-	register char *cp, *bp;
-	char quote;
-
-	for (cp = input; *cp == ' ' || *cp == '\t'; cp++)
-		/* skip to argument */;
-	bp = output;
-	while (*cp != ' ' && *cp != '\t' && *cp != '\0') {
-		/*
-		 * Handle back slashes.
-		 */
-		if (*cp == '\\') {
-			if (*++cp == '\0') {
-				fprintf(stderr,
-					"command lines cannot be continued\n");
-				continue;
-			}
-			*bp++ = *cp++;
-			continue;
-		}
-		/*
-		 * The usual unquoted case.
-		 */
-		if (*cp != '\'' && *cp != '"') {
-			*bp++ = *cp++;
-			continue;
-		}
-		/*
-		 * Handle single and double quotes.
-		 */
-		quote = *cp++;
-		while (*cp != quote && *cp != '\0')
-			*bp++ = *cp++;
-		if (*cp++ == '\0') {
-			fprintf(stderr, "missing %c\n", quote);
-			cp--;
-			continue;
-		}
-	}
-	*bp = '\0';
-	return (cp);
-}
-
-/*
- * respond to interrupts
- */
-onintr()
-{
-	if (reply("restore interrupted, continue") == FAIL)
-		done(1);
-	if (signal(SIGINT, onintr) == SIG_IGN)
-		(void) signal(SIGINT, SIG_IGN);
-	if (signal(SIGTERM, onintr) == SIG_IGN)
-		(void) signal(SIGTERM, SIG_IGN);
 }
 
 /*
