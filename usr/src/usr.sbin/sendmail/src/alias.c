@@ -3,7 +3,7 @@
 # include <pwd.h>
 # include "dlvrmail.h"
 
-static char SccsId[] = "@(#)alias.c	1.6	%G%";
+static char SccsId[] = "@(#)alias.c	1.7	%G%";
 
 /*
 **  ALIAS -- Compute aliases.
@@ -62,6 +62,7 @@ extern datum fetch();
 alias()
 {
 	register addrq *q;
+	addrq *q2;
 	FILE *af;
 	char line[MAXLINE+1];
 	register char *p;
@@ -196,8 +197,11 @@ alias()
 	**	scanning.
 	*/
 
-	for (q = &SendQ; (q = nxtinq(q)) != NULL; )
+	for (q2 = nxtinq(&SendQ); (q = q2) != NULL; )
 	{
+		/* save ptr to next address */
+		q2 = nxtinq(q);
+
 		/* only alias local users */
 		if (q->q_mailer != &Mailer[0])
 			continue;
