@@ -1,4 +1,4 @@
-/*	trap.c	1.3	86/01/07	*/
+/*	trap.c	1.4	86/01/09	*/
 
 #include "../tahoe/psl.h"
 #include "../tahoe/reg.h"
@@ -147,7 +147,7 @@ trap(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 			panic("ksp not valid");
 		/* fall thru... */
 	case T_KSPNOTVAL + USER:
-		printf("pid %d: ksp not valid\n", u.u._procp->p_pid);
+		printf("pid %d: ksp not valid\n", u.u_procp->p_pid);
 		/* must insure valid kernel stack pointer? */
 		psignal(u.u_procp, SIGKILL);
 		return;
