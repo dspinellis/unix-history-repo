@@ -15,14 +15,14 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)maketape	5.5 (Berkeley) %G%
+#	@(#)maketape	5.6 (Berkeley) %G%
 #
 
 # maketape [ 6250 | 1600 [ tapename [ remotetapemachine ] ] ]
 miniroot=dk4a
 bootroot=dk2b
 nbsd=dk1a
-nbsdusr=dk2c
+nbsdusr=dk0c
 tape=/dev/rmt20
 type=6250
 block=40
@@ -48,8 +48,8 @@ then
 	type=1600
 fi
 
-echo "Add image of bootstrap file system"
-eval dd if=/dev/r${bootroot} count=600 bs=1024 conv=sync ${remote+"| rsh"} \
+echo "Install image of bootstrap file system"
+eval dd if=/dev/r${bootroot} count=750 bs=1024 conv=sync ${remote+"| rsh"} \
 	${remote-"of=$tape"} ${remote+'/usr/local/20b 1024 ">" $tape'}
 
 echo "Add image of mini-root file system"
@@ -57,7 +57,7 @@ eval dd if=/dev/r${miniroot} count=205 bs=10240 conv=sync ${remote+"| rsh"} \
 	${remote-"of=$tape"} ${remote+'/usr/local/20b ">" $tape'}
 
 echo "Add full dump of real file system"
-/etc/${remote+r}dump 0uf $remote${remote+:}${tape} /nbsd
+/sbin/${remote+r}dump 0uf $remote${remote+:}${tape} /nbsd
 echo "Add tar image of /usr"
 cd /nbsd/usr; eval tar ${tflag} ${block} ${tartape} adm bin dict doc games \
 	guest hosts include lib local man msgs new \
