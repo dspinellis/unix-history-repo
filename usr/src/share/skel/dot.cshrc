@@ -7,6 +7,8 @@ alias lf	ls -FA
 alias ll	ls -lA
 alias su	su -m
 
+setenv	EXINIT	'set autoindent'
+
 set path = (~/bin /bin /usr/{bin,X11/bin,contrib/bin,games,old/bin} /usr/local/bin)
 
 if ($?prompt) then
