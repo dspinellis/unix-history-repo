@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.41 (Berkeley) %G%
+.\"	@(#)op.me	8.42 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.41
+Version 8.42
 .sp
 For Sendmail Version 8.7
 .)l
@@ -3557,13 +3557,26 @@ can be set from a configuration file.
 Options are represented by single characters.
 The syntax of this line is:
 .(b F
+.b O \0
+.i option \c
+.b = \c
+.i value
+.)b
+This sets option
+.i option
+to be
+.i value .
+Note that there
+.i must
+be a space between the letter `O' and the name of the option.
+An older version is:
+.(b F
 .b O \c
 .i o\|value
 .)b
-This sets option
+where the option
 .i o
-to be
-.i value .
+is a single character.
 Depending on the option,
 .i value
 may be a string, an integer,
@@ -3578,9 +3591,10 @@ the default is TRUE),
 or
 a time interval.
 .pp
-The options supported are:
+The options supported (with the old, one character names in brackets) are:
 .nr ii 1i
-.ip a\fIN\fP
+.ip AliasWait=\fIN\fP
+[a]
 If set,
 wait up to
 .i N
@@ -3596,7 +3610,8 @@ rebuild the database
 .b D
 option is also set)
 or issue a warning.
-.ip "A\fIspec, spec, ...\fP"
+.ip "AliasFile=\fIspec, spec, ...\fP"
+[A]
 Specify possible alias file(s).
 Each
 .i spec
@@ -3636,7 +3651,8 @@ If a list of
 are provided,
 .i sendmail
 searches them in order.
-.ip b\fIN\fP/\fIM\fP
+.ip MinFreeBlocks=\fIN\fP/\fIM\fP
+[b]
 Insist on at least
 .i N
 blocks free on the filesystem that holds the queue files
@@ -3650,18 +3666,21 @@ The optional
 .i M
 is a maximum message size advertised in the ESMTP EHLO response.
 It is currently otherwise unused.
-.ip B\fIc\fP
+.ip BlankSub=\fIc\fP
+[B]
 Set the blank substitution character to
 .i c .
 Unquoted spaces in addresses are replaced by this character.
 Defaults to space (i.e., no change is made).
-.ip c
+.ip HoldExpensive
+[c]
 If an outgoing mailer is marked as being expensive,
 don't connect immediately.
 This requires that queueing be compiled in,
 since it will depend on a queue run process to
 actually send the mail.
-.ip C\fIN\fP
+.ip CheckpointInterval=\fIN\fP
+[C]
 Checkpoints the queue every
 .i N
 (default 10)
@@ -3670,7 +3689,8 @@ If your system crashes during delivery to a large list,
 this prevents retransmission to any but the last
 .I N
 recipients.
-.ip d\fIx\fP
+.ip DeliveryMode=\fIx\fP
+[d]
 Deliver in mode
 .i x .
 Legal modes are:
@@ -3683,7 +3703,8 @@ q	Just queue the message (deliver during queue run)
 Defaults to ``b'' if no option is specified,
 ``i'' if it is specified but given no argument
 (i.e., ``Od'' is equivalent to ``Odi'').
-.ip D
+.ip AutoRebuildAliases
+[D]
 If set,
 rebuild the alias database if necessary and possible.
 If this option is not set,
@@ -3692,7 +3713,8 @@ will never rebuild the alias database
 unless explicitly requested
 using
 .b \-bi .
-.ip e\fIx\fP
+.ip ErrorMode=\fIx\fP
+[e]
 Dispose of errors using mode
 .i x .
 The values for
@@ -3705,7 +3727,8 @@ m	Mail back errors
 w	Write back errors (mail if user not logged in)
 e	Mail back errors and give zero exit stat always
 .)b
-.ip E\fIfile/message\fP
+.ip ErrorHeader=\fIfile/message\fP
+[E]
 Prepend error messages with the indicated message.
 If it begins with a slash,
 it is assumed to be the pathname of a file
@@ -3717,23 +3740,27 @@ in to end users.
 If the option is missing or null,
 or if it names a file which does not exist or which is not readable,
 no message is printed.
-.ip f
+.ip SaveFromLine
+[f]
 Save
 Unix-style
 .q From
 lines at the front of headers.
 Normally they are assumed redundant
 and discarded.
-.ip F\fImode\fP
+.ip TempFileMode=\fImode\fP
+[F]
 The file mode for queue files.
-.ip g\fIn\fP
+.ip DefaultGroup=\fIn\fP
+[g]
 Set the default group id
 for mailers to run in
 to
 .i n .
 Defaults to 1.
 The value can also be given as a symbolic group name.
-.ip G
+.ip MatchGECOS
+[G]
 Allow fuzzy matching on the GECOS field.
 If this flag is set,
 and the usual user name lookups fail
@@ -3745,20 +3772,24 @@ for a matching entry in the GECOS field.
 This also requires that MATCHGECOS
 be turned on during compilation.
 This option is not recommended.
-.ip h\fIN\fP
+.ip MaxHopCount=\fIN\fP
+[h]
 The maximum hop count.
 Messages that have been processed more than
 .i N
 times are assumed to be in a loop and are rejected.
 Defaults to 25.
-.ip H\fIfile\fP
+.ip HelpFile=\fIfile\fP
+[H]
 Specify the help file
 for SMTP.
-.ip i
+.ip IgnoreDots
+[i]
 Ignore dots in incoming messages.
 This is always disabled (that is, dots are always accepted)
 when reading SMTP mail.
-.ip I
+.ip NameServerOptions
+[I]
 Insist that the BIND name server be running
 to resolve host names.
 If this is not set and the name server is not running,
@@ -3779,10 +3810,12 @@ if the name server is not available.
 Thus, you should
 .i never
 set this option if you do not run the name server.
-.ip j
+.ip SendMIMEErrors
+[j]
 If set, send error messages in MIME format
 (see RFC1341 and RFC1344 for details).
-.ip J\fIpath\fP
+.ip ForwardPath=\fIpath\fP
+[J]
 Set the path for searching for users' .forward files.
 The default is
 .q $z/.forward .
@@ -3799,7 +3832,8 @@ will search first in /var/forward/\c
 and then in
 .i ~username /.forward
 (but only if the first file does not exist).
-.ip k\fIN\fP
+.ip ConnectionCacheSize=\fIN\fP
+[k]
 The maximum number of open connections that will be cached at a time.
 The default is one.
 This delays closing the current connection until
@@ -3809,7 +3843,8 @@ needs to connect to another host
 or it terminates.
 Setting it to zero defaults to the old behavior,
 that is, connections are closed immediately.
-.ip K\fItimeout\fP
+.ip ConnectionCacheTimeout=\fItimeout\fP
+[K]
 The maximum amount of time a cached connection will be permitted to idle
 without activity.
 If this time is exceeded,
@@ -3826,7 +3861,8 @@ The point of this option is to be a good network neighbor
 and avoid using up excessive resources
 on the other end.
 The default is five minutes.
-.ip l
+.ip UseErrorsTo
+[l]
 If there is an
 .q Errors-To:
 header, send error messages to the addresses listed there.
@@ -3834,22 +3870,27 @@ They normally go to the envelope sender.
 Use of this option causes
 .i sendmail
 to violate RFC 1123.
-.ip L\fIn\fP
+.ip LogLevel\fIn\fP
+[L]
 Set the default log level to
 .i n .
 Defaults to 9.
-.ip m
+.ip MeToo
+[m]
 Send to me too,
 even if I am in an alias expansion.
 .ip M\fIx\|value\fP
+[no long version]
 Set the macro
 .i x
 to
 .i value .
 This is intended only for use from the command line.
-.ip n
+.ip CheckAliases
+[n]
 Validate the RHS of aliases when rebuilding the alias database.
-.ip o
+.ip OldStyleHeaders
+[o]
 Assume that the headers may be in old format,
 i.e.,
 spaces delimit names.
@@ -3861,7 +3902,8 @@ it will be assumed that commas already exist.
 If this flag is not on,
 only commas delimit names.
 Headers are always output with commas between the names.
-.ip O\fIoptions\fP
+.ip DaemonPortOptions=\fIoptions\fP
+[O]
 Set server SMTP options.
 The options are
 .i key=value
@@ -3878,7 +3920,8 @@ The
 .i Addr ess
 mask may be a numeric address in dot notation
 or a network name.
-.ip p\fI\|opt,opt,...\fP
+.ip PrivacyOptions=\fI\|opt,opt,...\fP
+[p]
 Set the privacy
 .i opt ions.
 ``Privacy'' is really a misnomer;
@@ -3916,7 +3959,8 @@ can run the queue.
 Authentication Warnings add warnings about various conditions
 that may indicate attempts to spoof the mail system,
 such as using an non-standard queue directory.
-.ip P\fIpostmaster\fP
+.ip PostmasterCopy=\fIpostmaster\fP
+[P]
 If set,
 copies of error messages will be sent to the named
 .i postmaster .
@@ -3925,7 +3969,8 @@ Since most errors are user problems,
 this is probably not a good idea on large sites,
 and arguably contains all sorts of privacy violations,
 but it seems to be popular with certain operating systems vendors.
-.ip q\fIfactor\fP
+.ip QueueFactor=\fIfactor\fP
+[q]
 Use
 .i factor
 as the multiplier in the map function
@@ -3938,11 +3983,13 @@ flag)
 to determine the maximum message priority
 that will be sent.
 Defaults to 600000.
-.ip Q\fIdir\fP
+.ip QueueDirectory=\fIdir\fP
+[Q]
 Use the named
 .i dir
 as the queue directory.
-.ip r\|\fItimeouts\fP
+.ip ReadTimeout=\|\fItimeouts\fP
+[r]
 Timeout reads after
 .i time
 interval.
@@ -3974,7 +4021,8 @@ apply to client SMTP.
 For back compatibility,
 a timeout with no ``keyword='' part
 will set all of the longer values.
-.ip R
+.ip DontPruneRoutes
+[R]
 Normally,
 .i sendmail
 tries to eliminate any unnecessary explicit routes
@@ -3995,7 +4043,8 @@ option is set, this will be disabled,
 and the mail will be sent to the first address in the route,
 even if later addresses are known.
 This may be useful if you are caught behind a firewall.
-.ip s
+.ip SuperSafe
+[s]
 Be super-safe when running things,
 i.e.,
 always instantiate the queue file,
@@ -4004,10 +4053,12 @@ even if you are going to attempt immediate delivery.
 always instantiates the queue file
 before returning control the client
 under any circumstances.
-.ip S\fIfile\fP
+.ip StatusFile=\fIfile\fP
+[S]
 Log statistics in the named
 .i file .
-.ip t\fItzinfo\fP
+.ip TimeZoneSpec=\fItzinfo\fP
+[t]
 Set the local time zone info to
 .i tzinfo
 \*- for example,
@@ -4016,7 +4067,8 @@ Actually, if this is not set,
 the TZ environment variable is cleared (so the system default is used);
 if set but null, the user's TZ variable is used,
 and if set and non-null the TZ variable is set to this value.
-.ip T\fIrtime/wtime\fP
+.ip QueueTimeout=\fIrtime/wtime\fP
+[T]
 Set the queue timeout to
 .i rtime .
 After this interval,
@@ -4028,7 +4080,8 @@ The optional
 is the time after which a warning message is sent.
 If it is missing or zero
 then no warning messages are sent.
-.ip u\fIn\fP
+.ip DefaultUser=\fIn\fP
+[u]
 Set the default userid for mailers to
 .i n .
 Mailers without the
@@ -4037,9 +4090,11 @@ flag in the mailer definition
 will run as this user.
 Defaults to 1.
 The value can also be given as a symbolic user name.
-.ip U\fIudbspec\fP
+.ip UserDatabaseSpec=\fIudbspec\fP
+[U]
 The user database specification.
-.ip v
+.ip Verbose
+[v]
 Run in verbose mode.
 If this is set,
 .i sendmail
@@ -4058,13 +4113,15 @@ should
 .i never
 be set in the configuration file;
 it is intended for command line use only.
-.ip V\fIfallbackhost\fP
+.ip FallbackMXhost=\fIfallbackhost\fP
+[V]
 If specified, the
 .i fallbackhost
 acts like a very low priority MX
 on every host.
 This is intended to be used by sites with poor network connectivity.
-.ip w
+.ip TryNullMXList
+[w]
 If you are the
 .q best
 (that is, lowest preference)
@@ -4087,18 +4144,21 @@ or
 .q "message timed out"
 instead of something more meaningful.
 This option is disrecommended.
-.ip x\fILA\fP
+.ip QueueLA=\fILA\fP
+[x]
 When the system load average exceeds
 .i LA ,
 just queue messages
 (i.e., don't try to send them).
 Defaults to 8.
-.ip X\fILA\fP
+.ip RefuseLA=\fILA\fP
+[X]
 When the system load average exceeds
 .i LA ,
 refuse incoming SMTP connections.
 Defaults to 12.
-.ip y\fIfact\fP
+.ip RecipientFactor=\fIfact\fP
+[y]
 The indicated
 .i fact or
 is added to the priority (thus
@@ -4107,13 +4167,15 @@ the priority of the job)
 for each recipient,
 i.e., this value penalizes jobs with large numbers of recipients.
 Defaults to 30000.
-.ip Y
+.ip ForkQueueRuns
+[Y]
 If set,
 deliver each job that is run from the queue in a separate process.
 Use this option if you are short of memory,
 since the default tends to consume considerable amounts of memory
 while the queue is being processed.
-.ip z\fIfact\fP
+.ip ClassFactor=\fIfact\fP
+[z]
 The indicated
 .i fact or
 is multiplied by the message class
@@ -4124,7 +4186,8 @@ lines in the configuration file)
 and subtracted from the priority.
 Thus, messages with a higher Priority: will be favored.
 Defaults to 1800.
-.ip Z\fIfact\fP
+.ip TimeFactor=\fIfact\fP
+[Z]
 The
 .i fact or
 is added to the priority
@@ -4135,10 +4198,12 @@ its priority will be decreased by the indicated value.
 In most environments this should be positive,
 since hosts that are down are all too often down for a long time.
 Defaults to 90000.
-.ip 7
+.ip SevenBitInput
+[7]
 Strip input to seven bits for compatibility with old systems.
 This shouldn't be necessary.
-.ip 8
+.ip EightBitMode
+[8]
 Set handling of eight-bit data.
 There are two kinds of eight-bit data:
 that declared as such using the
@@ -4311,6 +4376,7 @@ change many of the local processing options
 `|' characters)
 to be mailer flags;
 this allows fine-grained control over the special local processing.
+Level six configuration files may also use long option names.
 .pp
 The
 .b V
@@ -6349,6 +6415,8 @@ host.
 handling technique.
 .ip 7
 Do not run eight bit clean.
+.ip 8
+Eight bit data handling mode.
 .sh 2 "Extended Options"
 .pp
 The
@@ -6406,6 +6474,10 @@ Check for |program addresses.
 Check for /file addresses.
 .ip @
 Check this user against the user database.
+.sh 2 "Long Option Names"
+.pp
+All options can be specified using long names,
+and some new options can only be specified with long names.
 .sh 2 "New Pre-Defined Macros"
 .pp
 The following macros are pre-defined:
@@ -6838,6 +6910,15 @@ and
 .b w
 indicating that a warning message has been sent
 announcing that the mail has been delayed.
+.ip N
+The total number of delivery attempts.
+.ip K
+The time (as seconds since January 1, 1970)
+of the last delivery attempt.
+.ip I
+The i-number of the data file;
+this can be used to recover your mail queue
+after a disasterous disk crash.
 .ip $
 A macro definition.
 The values of certain macros
@@ -6975,7 +7056,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.41
+.\"Version 8.42
 .\".ce 0
 .bp 2
 .rs
