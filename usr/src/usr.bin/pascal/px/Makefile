@@ -3,9 +3,9 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
-SCCSID = "@(#)Makefile 5.2 %G%"
+SCCSID = "@(#)Makefile 5.3 %G%"
 
 DESTDIR =
 BINDIR = /usr/ucb
@@ -17,6 +17,7 @@ CFLAGS = -O -I${SRCDIR} -I${LIBPCDIR}
 OPT = /lib/c2
 AS = as
 RM = rm -f
+MACHINE = unknown
 
 PSHDR =	opc.c pic.c
 
@@ -26,7 +27,7 @@ PXSRC =	int.c interp.c utilities.c
 
 PXOBJ =	int.o interp.o utilities.o
 
-PXUTL =	interp.sed clean.sed version.c
+PXUTL =	${MACHINE}.sed clean.sed version.c
 
 .c.o:
 	${CC} ${CFLAGS} -c $*.c
@@ -37,9 +38,9 @@ Version.c: version.c
 	${CC} ${CFLAGS} -o version version.c
 	./version >Version.c
 	${RM}  version
-interp.o interp.s: interp.c interp.sed
+interp.o interp.s: interp.c ${MACHINE}.sed
 	${CC} -S -I${SRCDIR} -I${LIBPCDIR} interp.c
-	sed -f interp.sed <interp.s >tmp
+	sed -f ${MACHINE}.sed <interp.s >tmp
 	${OPT} tmp interp.s
 	/usr/lib/pc2 <interp.s >tmp
 	mv tmp interp.s
