@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <signal.h>
@@ -107,8 +107,10 @@ main(argc, argv)  char **argv; {
 			goto state1;
 		else if (state == 2)
 			goto state2;
-		else
+		else if (state == 3)
 			goto state3;
+		else
+			goto state4;
 	}
 	handler = &jmploc;
 #ifdef DEBUG
@@ -126,17 +128,21 @@ main(argc, argv)  char **argv; {
 state1:
 		state = 2;
 		read_profile(".profile");
-	} else if ((sflag || minusc) && (shinit = getenv("SHINIT")) != NULL) {
-		state = 2;
-		evalstring(shinit);
-	}
+	} 
 state2:
 	state = 3;
+	if ((sflag || minusc) && (shinit = lookupvar("ENV")) != NULL &&
+	     *shinit != '\0') {
+		state = 3;
+		read_profile(shinit);
+	}
+state3:
+	state = 4;
 	if (minusc) {
 		evalstring(minusc);
 	}
 	if (sflag || minusc == NULL) {
-state3:
+state4:	/* XXX ??? - why isn't this before the "if" statement */
 		cmdloop(1);
 	}
 #if PROFILE
@@ -176,7 +182,7 @@ cmdloop(top) {
 		/* showtree(n); */
 #endif
 		if (n == NEOF) {
-			if (Iflag == 0 || numeof >= 50)
+			if (Iflag == 0 || !top || numeof >= 50)
 				break;
 			out2str("\nUse \"exit\" to leave shell.\n");
 			numeof++;
