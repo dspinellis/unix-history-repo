@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)proc.h	7.1 (Berkeley) %G%
+ *	@(#)proc.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -12,9 +12,7 @@
  */
 struct mdproc {
 	int	md_flags;		/* machine-dependent flags */
-#ifdef notyet
-	int	*p_regs;		/* registers on current frame */
-#endif
+	int	*md_regs;		/* registers on current frame */
 };
 
 /* md_flags */
