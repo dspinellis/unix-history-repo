@@ -1,4 +1,4 @@
-/*	if_imp.c	4.37	82/06/20	*/
+/*	if_imp.c	4.38	82/10/05	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -451,7 +451,6 @@ impoutput(ifp, m0, dst)
 			goto drop;
 		}
 		m->m_next = m0;
-		m->m_off = MMINOFF;
 		m->m_len = sizeof(struct imp_leader);
 	} else {
 		m->m_off -= sizeof(struct imp_leader);
@@ -569,7 +568,6 @@ impnoops(sc)
 	for (i = 0; i < IMP_DROPCNT + 1; i++ ) { 
 		if ((m = m_getclr(M_DONTWAIT)) == 0) 
 			return;
-		m->m_off = MMINOFF;
 		m->m_len = sizeof(struct control_leader);
 		cp = mtod(m, struct control_leader *);
 		cp->dl_format = IMP_NFF;

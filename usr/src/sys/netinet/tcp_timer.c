@@ -1,4 +1,4 @@
-/*	tcp_timer.c	4.24	82/06/26	*/
+/*	tcp_timer.c	4.25	82/10/05	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -192,18 +192,5 @@ printf("rexmt set to %d\n", tp->t_timer[TCPT_REXMT]);
 	dropit:
 		tcp_drop(tp, ETIMEDOUT);
 		return;
-
-#ifdef TCPTRUEOOB
-	/*
-	 * Out-of-band data retransmit timer.
-	 */
-	case TCPT_OOBREXMT:
-		if (tp->t_flags & TF_NOOPT)
-			return;
-		(void) tcp_output(tp);
-		TCPT_RANGESET(tp->t_timer[TCPT_OOBREXMT],
-		    2 * tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
-		return;
-#endif
 	}
 }

@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.74	82/09/26	*/
+/*	tcp_input.c	1.75	82/10/05	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -104,7 +104,6 @@ tcp_input(m0)
 		om = m_get(M_DONTWAIT);
 		if (om == 0)
 			goto drop;
-		om->m_off = MMINOFF;
 		om->m_len = off - sizeof (struct tcphdr);
 		{ caddr_t op = mtod(m, caddr_t) + sizeof (struct tcpiphdr);
 		  bcopy(op, mtod(om, caddr_t), (unsigned)om->m_len);
@@ -207,7 +206,6 @@ tcp_input(m0)
 
 		if (m == 0)
 			goto drop;
-		m->m_off = MMINOFF;
 		m->m_len = sizeof (struct sockaddr_in);
 		if (tiflags & TH_RST)
 			goto drop;
@@ -600,10 +598,7 @@ step6:
 			    (tp->rcv_up - tp->rcv_nxt) - 1;
 			if (so->so_oobmark == 0)
 				so->so_state |= SS_RCVATMARK;
-#ifdef TCPTRUEOOB
-			if ((tp->t_flags & TF_DOOOB) == 0)
-#endif
-				sohasoutofband(so);
+			sohasoutofband(so);
 			tp->t_oobflags &= ~TCPOOB_HAVEDATA;
 		}
 		/*
@@ -766,58 +761,6 @@ tcp_dooptions(tp, om)
 			tp->t_maxseg = ntohs((u_short)tp->t_maxseg);
 #endif
 			break;
-			
-#ifdef TCPTRUEOOB
-		case TCPOPT_WILLOOB:
-			tp->t_flags |= TF_DOOOB;
-printf("tp %x dooob\n", tp);
-			break;
-
-		case TCPOPT_OOBDATA: {
-			int seq;
-			register struct socket *so = tp->t_inpcb->inp_socket;
-			tcp_seq mark;
-
-			if (optlen != 8)
-				continue;
-			seq = cp[2];
-			if (seq < tp->t_iobseq)
-				seq += 256;
-printf("oobdata cp[2] %d iobseq %d seq %d\n", cp[2], tp->t_iobseq, seq);
-			if (seq - tp->t_iobseq > 128) {
-printf("bad seq\n");
-				tp->t_oobflags |= TCPOOB_OWEACK;
-				break;
-			}
-			tp->t_iobseq = cp[2];
-			tp->t_iobc = cp[3];
-			mark = *(tcp_seq *)(cp + 4);
-#if vax || pdp11
-			mark = ntohl(mark);
-#endif
-			so->so_oobmark = so->so_rcv.sb_cc + (mark-tp->rcv_nxt);
-			if (so->so_oobmark == 0)
-				so->so_state |= SS_RCVATMARK;
-printf("take oob data %x input iobseq now %x\n", tp->t_iobc, tp->t_iobseq);
-			sohasoutofband(so);
-			break;
-		}
-
-		case TCPOPT_OOBACK: {
-			int seq;
-
-			if (optlen != 4)
-				continue;
-			if (tp->t_oobseq != cp[2]) {
-printf("wrong ack\n");
-				break;
-			}
-printf("take oob ack %x and cancel rexmt\n", cp[2]);
-			tp->t_oobflags &= ~TCPOOB_NEEDACK;
-			tp->t_timer[TCPT_OOBREXMT] = 0;
-			break;
-		}
-#endif TCPTRUEOOB
 		}
 	}
 	(void) m_free(om);

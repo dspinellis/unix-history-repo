@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.44	82/08/02	*/
+/*	tcp_output.c	4.45	82/10/05	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -25,15 +25,9 @@
 char *tcpstates[]; /* XXX */
 
 /*
- * Initial options: indicate max segment length 1/2 of space
- * allocated for receive; if TCPTRUEOOB is defined, indicate
- * willingness to do true out-of-band.
+ * Initial options.
  */
-#ifndef TCPTRUEOOB
 u_char	tcp_initopt[4] = { TCPOPT_MAXSEG, 4, 0x0, 0x0, };
-#else
-u_char	tcp_initopt[6] = { TCPOPT_MAXSEG, 4, 0x0, 0x0, TCPOPT_WILLOOB, 2 };
-#endif
 
 /*
  * Tcp output routine: figure out what should be sent and send it.
@@ -97,13 +91,6 @@ again:
 	if (tp->t_flags&TF_ACKNOW)
 		goto send;
 
-#ifdef TCPTRUEOOB
-	/*
-	 * Send if an out of band data or ack should be transmitted.
-	 */
-	if (tp->t_oobflags&(TCPOOB_OWEACK|TCPOOB_NEEDACK)))
-		goto send;
-#endif
 
 	/*
 	 * Calculate available window in i, and also amount
@@ -188,7 +175,7 @@ send:
 			goto noopt;
 		opt = tcp_initopt;
 		optlen = sizeof (tcp_initopt);
-		*(u_short *)(opt + 2) = so->so_rcv.sb_hiwat / 2;
+		*(u_short *)(opt + 2) = MIN(so->so_rcv.sb_hiwat / 2, 1024);
 #if vax
 		*(u_short *)(opt + 2) = htons(*(u_short *)(opt + 2));
 #endif
@@ -198,12 +185,7 @@ send:
 		opt = mtod(tp->t_tcpopt, u_char *);
 		optlen = tp->t_tcpopt->m_len;
 	}
-#ifndef TCPTRUEOOB
-	if (opt)
-#else
-	if (opt || (tp->t_oobflags&(TCPOOB_OWEACK|TCPOOB_NEEDACK)))
-#endif
-	{
+	if (opt) {
 		m0 = m->m_next;
 		m->m_next = m_get(M_DONTWAIT);
 		if (m->m_next == 0) {
@@ -213,35 +195,9 @@ send:
 		}
 		m->m_next->m_next = m0;
 		m0 = m->m_next;
-		m0->m_off = MMINOFF;
 		m0->m_len = optlen;
 		bcopy((caddr_t)opt, mtod(m0, caddr_t), optlen);
 		opt = (u_char *)(mtod(m0, caddr_t) + optlen);
-#ifdef TCPTRUEOOB
-		if (tp->t_oobflags&TCPOOB_OWEACK) {
-printf("tp %x send OOBACK for %x\n", tp->t_iobseq);
-			*opt++ = TCPOPT_OOBACK;
-			*opt++ = 3;
-			*opt++ = tp->t_iobseq;
-			m0->m_len += 3;
-			tp->t_oobflags &= ~TCPOOB_OWEACK;
-			/* sender should rexmt oob to force ack repeat */
-		}
-		if (tp->t_oobflags&TCPOOB_NEEDACK) {
-printf("tp %x send OOBDATA seq %x data %x\n", tp->t_oobseq, tp->t_oobc);
-			*opt++ = TCPOPT_OOBDATA;
-			*opt++ = 8;
-			*opt++ = tp->t_oobseq;
-			*opt++ = tp->t_oobc;
-			*(tcp_seq *)opt = tp->t_oobmark - tp->snd_nxt;
-#ifdef vax
-			*(tcp_seq *)opt = htonl((unsigned)*(tcp_seq *)opt);
-#endif
-			m0->m_len += 8;
-			TCPT_RANGESET(tp->t_timer[TCPT_OOBREXMT],
-			    tcp_beta * tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
-		}
-#endif
 		while (m0->m_len & 0x3) {
 			*opt++ = TCPOPT_EOL;
 			m0->m_len++;
