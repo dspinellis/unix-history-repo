@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)split.1	8.1 (Berkeley) %G%
+.\"	@(#)split.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SPLIT 1
@@ -13,40 +13,39 @@
 .Nd split a file into pieces
 .Sh SYNOPSIS
 .Nm split
-.Op Fl Ns Ar n
-.Op Fl b Ar bytes
+.Op Fl Ns Ar number
+.Op Fl b Ar number
 .Op Ar file Op Ar name
 .Sh DESCRIPTION
 The
 .Nm split
 utility reads the given
 .Ar file
-and splits it up in to
-smaller files.
+and splits it up into smaller files of 1000 lines each.
 .Pp
-Available options:
-.Bl -tag -width "bb bytesx"
-.It Fl Ns Ar lines
-Create files of length
-.Fl Ns Ar n
-lines long.
-.It Fl b Ar bytes
-Create files of length
-.Ar bytes .
-If no output file length is specified, the file size
-will default to a lenght of 1000 lines.
+The options are as follows:
+.Bl -tag -width "XXXnumber"
+.It Fl number
+Create smaller files
+.Ar n
+lines in length.
+.It Fl b
+Create smaller files
+.Ar number
+bytes in length.
 .El
 .Pp
 Available operands:
 .Bl -tag -width name
-.It Fl
-Read from the standard input.
 .It Ar file
 A pathname specifying the
 .Ar file 
-to be split.  If no
+to be split.
+If no
 .Ar file
-operand is given,
+operand is given, or if a file operand of
+.Dq Li \&-
+is given,
 .Nm split
 reads from the standard input.
 .It Ar name
@@ -55,23 +54,25 @@ If the
 operand is given,
 the output files will begin with the prefix
 .Ar name
-and each sequential portion of the split file
-receives a lexically ordered suffix
-in the range of 
+and each sequential portion of the split file receives a lexically
+ordered suffix in the range of 
 .Bq Em aa-zz .
 If the operand
 .Ar name
-is not specified,
-the default prefix of
+is not specified, a default prefix of
 .Em x
-is be used.
+is used, and files are named from
+.Dq xaa
+to
+.Dq zzz .
 .Pp
 .Sh BUGS
 If you provide
 .Ar name ,
 .Nm split
 can only create 676 separate
-files.  The default naming convention allows 2028 separate files.
+files.
+The default naming convention allows 2028 separate files.
 .Sh HISTORY
 A
 .Nm split
