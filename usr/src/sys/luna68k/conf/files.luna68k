@@ -17,12 +17,12 @@ luna68k/luna68k/vm_machdep.c		standard
 luna68k/luna68k/hpux_float.o		optional hpfplib
 luna68k/luna68k/cons.c			standard
 luna68k/dev/fb.c			standard
+luna68k/dev/kbd.c			standard
 luna68k/dev/dbgprf.c			optional debugprint
-luna68k/dev/sio.c			optional sio device-driver
+luna68k/dev/sio.c			standard sio device-driver
 luna68k/dev/bmc.c			optional bmc device-driver
 luna68k/dev/bmd.c			optional bmc
 luna68k/font/font.c			optional bmc
-luna68k/dev/kbd.c			optional bmc
 luna68k/dev/if_le.c			optional le device-driver
 luna68k/dev/sc.c			optional sc device-driver
 luna68k/dev/ac.c			optional ac
