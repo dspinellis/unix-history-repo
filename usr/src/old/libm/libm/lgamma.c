@@ -1,11 +1,13 @@
-/*	@(#)lgamma.c	4.4	%G% */
+#ifndef lint
+static char sccsid[] = "@(#)lgamma.c	4.4 (Berkeley) %G%";
+#endif not lint
 
 /*
-	C program for floating point log gamma function
+	C program for floating point log Gamma function
 
-	gamma(x) computes the log of the absolute
-	value of the gamma function.
-	The sign of the gamma function is returned in the
+	lgamma(x) computes the log of the absolute
+	value of the Gamma function.
+	The sign of the Gamma function is returned in the
 	external quantity signgam.
 
 	The coefficients for expansion around zero
@@ -15,15 +17,10 @@
 	Calls log, floor and sin.
 */
 
-#include <errno.h>
 #include <math.h>
 #ifdef VAX
-static long	NaN_[] = {0x8000, 0x0};
-#define NaN	(*(double *) NaN_)
+#include <errno.h>
 #endif
-
-
-int	errno;
 int	signgam = 0;
 static double goobie	= 0.9189385332046727417803297;	/* log(2*pi)/2 */
 static double pi	= 3.1415926535897932384626434;
@@ -60,7 +57,7 @@ static double q2[] = {
 };
 
 double
-gamma(arg)
+lgamma(arg)
 double arg;
 {
 	double log(), pos(), neg(), asym();
@@ -106,18 +103,13 @@ double arg;
       */
 	t = floor(arg);
 	if (arg - t  > 0.5e0)
-	    t += 1.e0;			/* t := integer nearest arg */
-#if !(IEEE|NATIONAL)
-	if(arg == t) {
-		errno = EDOM;
+	    t += 1.e0;				/* t := integer nearest arg */
 #ifdef VAX
-		return (NaN);
-#else
-		return(HUGE);
-#endif
+	if (arg == t) {
+	    extern double infnan();
+	    return(infnan(ERANGE));		/* +INF */
 	}
 #endif
-
 	signgam = (int) (t - 2*floor(t/2));	/* signgam =  1 if t was odd, */
 						/*            0 if t was even */
 	signgam = signgam - 1 + signgam;	/* signgam =  1 if t was odd, */
