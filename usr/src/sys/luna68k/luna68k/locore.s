@@ -15,7 +15,7 @@
  *
  * from: hp300/hp300/locore.s   7.16 (Berkeley) 7/8/92
  *
- *	@(#)locore.s	7.6 (Berkeley) %G%
+ *	@(#)locore.s	7.7 (Berkeley) %G%
  */
 
 #include "assym.s"
@@ -437,7 +437,7 @@ _lev6intr:
 	addql	#1,_intrcnt+24
 	clrw	sp@-
 	moveml	#0xC0C0,sp@-
-	jbsr	_siointr
+	jbsr	__siointr
 	moveml	sp@+,#0x0303
 	addql	#2,sp
 	addql	#1,_cnt+V_INTR
