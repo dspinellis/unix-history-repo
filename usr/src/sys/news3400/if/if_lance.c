@@ -9,7 +9,7 @@
  *
  * from: $Hdr: if_lance.c,v 4.300 91/06/09 06:25:58 root Rel41 $ SONY
  *
- *	@(#)if_lance.c	7.1 (Berkeley) %G%
+ *	@(#)if_lance.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -104,12 +104,12 @@ Lance_chan lancesw[NEN] = {
       {	(Lance_reg *)LANCE_PORT1,
 	(caddr_t)LANCE_MEMORY1,
 	(caddr_t)ETHER_ID1 },
-#endif /* NEN > 1 */
+#endif
 #if NEN > 2
       {	(Lance_reg *)LANCE_PORT2,
 	(caddr_t)LANCE_MEMORY2,
 	(caddr_t)ETHER_ID2 },
-#endif /* NEN > 2 */
+#endif
 };
 
 lance_probe(chan)
@@ -239,10 +239,6 @@ next:
 	if (rmd == NULL)
 		return (NULL);
 
-#ifdef news700
-	lance_led();
-#endif /* news700 */
-
 	if (RECV_ERR(rmd)) {
 		recv_error(lance, rmd);
 		RELEASE_RECV_BUF(rmd);
@@ -310,10 +306,6 @@ lance_transmit(chan, count)
 
 	tmd = lance->lance_last_tmd;
 	TRANSMIT(lance, tmd, count);
-
-#ifdef news700
-	lance_led();
-#endif /* news700 */
 }
 
 lance_xmit_error(chan)
@@ -532,15 +524,6 @@ get_hard_addr(chan, addr)
 	}
 	
 	bcopy(hard_addr, (char *)addr, 6);
-}
-
-lance_led()
-{
-
-#ifdef news700
-	*(u_char *)ETHER_LED = 1;
-	*(u_char *)ETHER_LED = 0;
-#endif /* news700 */
 }
 
 #if defined(mips) && defined(CPU_SINGLE)
