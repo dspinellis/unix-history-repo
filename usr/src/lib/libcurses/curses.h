@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)curses.h	5.32 (Berkeley) %G%
+ *	@(#)curses.h	5.33 (Berkeley) %G%
  */
 
 #ifndef _CURSES_H_
@@ -153,6 +153,7 @@ extern char	*ttytype;		/* Full name of current terminal. */
 #define	insch(ch)			winsch(stdscr, ch)
 #define	insertln()			winsertln(stdscr)
 #define	move(y, x)			wmove(stdscr, y, x)
+#define mvcur(fx, fy, tx, ty)		__mvcur(fx, fy, tx, ty, 0)
 #define	refresh()			wrefresh(stdscr)
 #define	standend()			wstandend(stdscr)
 #define	standout()			wstandout(stdscr)
@@ -270,6 +271,7 @@ void	 __cputchar __P((int));		/* Public: backward compatibility */
 void	 __TRACE __P((const char *, ...));
 u_int	 __hash __P((char *, int));
 void	 __id_subwins __P((WINDOW *));
+int	 __mvcur __P((int, int, int, int, int));
 void	 __set_subwin __P((WINDOW *, WINDOW *));
 void	 __startwin __P((void));
 void	 __stop_signal_handler __P((int));
