@@ -1,4 +1,4 @@
-/*	hp.c	4.5	%G%	*/
+/*	hp.c	4.6	%G%	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -603,7 +603,7 @@ hpdump(dev)
 		while ((hpaddr->hpds & DRY) == 0)
 			;
 		if (hpaddr->hpds&ERR) {
-			printf("hp dump dsk err: (%d,%d,%d) ds=%X er=%X\n",
+			printf("hp dump dsk err: (%d,%d,%d) ds=%x er=%x\n",
 			    cn, tn, sn, hpaddr->hpds, hpaddr->hper1);
 			return (-1);
 		}

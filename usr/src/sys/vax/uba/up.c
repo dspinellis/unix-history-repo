@@ -1,10 +1,7 @@
-/*	up.c	4.11	%G%	*/
+/*	up.c	4.12	%G%	*/
 
 #include "up.h"
 #if NUP > 0
-#if SC11 > 0
-#include "../dev/up.c.SC11"
-#else
 /*
  * UNIBUS disk driver with overlapped seeks and ECC recovery.
  */
@@ -23,32 +20,9 @@
 #include "../h/mtpr.h"
 #include "../h/uba.h"
 #include "../h/vm.h"
+#include "../h/cmap.h"
 
-#define	ushort	unsigned short
-
-struct	device
-{
-	ushort	upcs1;		/* control and status register 1 */
-	short	upwc;		/* word count register */
-	ushort	upba;		/* UNIBUS address register */
-	ushort	upda;		/* desired address register */
-	ushort	upcs2;		/* control and status register 2 */
-	ushort	upds;		/* drive Status */
-	ushort	uper1;		/* error register 1 */
-	ushort	upas;		/* attention summary */
-	ushort	upla;		/* look ahead */
-	ushort	updb;		/* data buffer */
-	ushort	upmr;		/* maintenance */ 
-	ushort	updt;		/* drive type */
-	ushort	upsn;		/* serial number */
-	ushort	upof;		/* offset register */
-	ushort	updc;		/* desired cylinder address register */
-	ushort	upcc;		/* current cylinder */
-	ushort	uper2;		/* error register 2 */
-	ushort	uper3;		/* error register 3 */
-	ushort	upec1;		/* burst error bit position */
-	ushort	upec2;		/* burst error bit pattern */
-};
+#include "../h/upreg.h"
 
 /*
  * Software extension to the upas register, so we can
@@ -147,44 +121,6 @@ struct	buf	uptab;
 struct	buf	uputab[NUP];
 
 struct	buf	rupbuf;			/* Buffer for raw i/o */
-
-/* Drive commands, placed in upcs1 */
-#define	GO	01		/* Go bit, set in all commands */
-#define	PRESET	020		/* Preset drive at init or after errors */
-#define	OFFSET	014		/* Offset heads to try to recover error */
-#define	RTC	016		/* Return to center-line after OFFSET */
-#define	SEARCH	030		/* Search for cylinder+sector */
-#define	SEEK	04		/* Seek to cylinder */
-#define	RECAL	06		/* Recalibrate, needed after seek error */
-#define	DCLR	010		/* Drive clear, after error */
-#define	WCOM	060		/* Write */
-#define	RCOM	070		/* Read */
-
-/* Other bits of upcs1 */
-#define	IE	0100		/* Controller wide interrupt enable */
-#define	TRE	040000		/* Transfer error */
-#define	RDY	0200		/* Transfer terminated */
-
-/* Drive status bits of upds */
-#define	PIP	020000		/* Positioning in progress */
-#define	ERR	040000		/* Error has occurred, DCLR necessary */
-#define	VV	0100		/* Volume is valid, set by PRESET */
-#define	DPR	0400		/* Drive has been preset */
-#define	MOL	010000		/* Drive is online, heads loaded, etc */
-#define	DRY	0200		/* Drive ready */
-
-/* Bits of upcs2 */
-#define	CLR	040		/* Controller clear */
-#define	MXF	01000
-#define	NEM	04000
-
-/* Bits of uper1 */
-#define	DCK	0100000		/* Ecc error occurred */
-#define	ECH	0100		/* Ecc error was unrecoverable */
-#define	WLE	04000		/* Attempt to write read-only drive */
-
-/* Bits of upof; the offset bits above are also in this register */
-#define	FMT22	010000		/* 16 bits/word, must be always set */
 
 #define	b_cylin b_resid
 
@@ -780,5 +716,90 @@ active:
 		printf("\n");
 	}
 }
+
+#define	DBSIZE	20
+
+updump(dev)
+	dev_t dev;
+{
+	struct device *upaddr;
+	char *start;
+	int num, blk, unit, nsect, ntrak, nspc;
+	struct size *sizes;
+#if VAX==780
+	register struct uba_regs *up = (struct uba_regs *)PHYSUBA0;
+	register short *rp;
+	int bdp;
+
+	up->uba_cr = ADINIT;
+	up->uba_cr = IFS|BRIE|USEFIE|SUEFIE;
+	while ((up->uba_cnfgr & UBIC) == 0)
+		;
 #endif
+	DELAY(1000000);
+	while ((UPADDR->upcs1&DVA) == 0)
+		;
+	num = maxfree;
+	start = 0;
+	unit = minor(dev) >> 3;
+	if (unit >= NUP) {
+		printf("bad unit\n");
+		return (-1);
+	}
+	upaddr = UPPHYS;
+	upaddr->upcs2 = unit;
+	if ((upaddr->upds & VV) == 0) {
+		upaddr->upcs1 = DCLR|GO;
+		upaddr->upcs1 = PRESET|GO;
+		upaddr->upof = FMT22;
+	}
+	if ((upaddr->upds & (DPR|MOL)) != (DPR|MOL)) {
+		printf("up !DPR || !MOL\n");
+		return (-1);
+	}
+	nsect = NSECT; ntrak = NTRAC; sizes = up_sizes;
+	if (dumplo < 0 || dumplo + num >= sizes[minor(dev)&07].nblocks) {
+		printf("dumplo+num, sizes %d %d\n", dumplo+num, sizes[minor(dev)&07].nblocks);
+		return (-1);
+	}
+	nspc = nsect * ntrak;
+	while (num > 0) {
+		register struct pte *io;
+		register int i;
+		int cn, sn, tn;
+		daddr_t bn;
+
+		blk = num > DBSIZE ? DBSIZE : num;
+		bdp = 1;		/* trick pcc */
+		((struct uba_regs *)PHYSUBA0)->uba_dpr[bdp] |= BNE;
+		io = ((struct uba_regs *)PHYSUBA0)->uba_map;
+		for (i = 0; i < blk; i++)
+			*(int *)io++ = (btop(start)+i) | (1<<21) | MRV;
+		*(int *)io = 0;
+		bn = dumplo + btop(start);
+		cn = bn/nspc + sizes[minor(dev)&07].cyloff;
+		sn = bn%nspc;
+		tn = sn/nsect;
+		sn = sn%nsect;
+		upaddr->updc = cn;
+		rp = (short *) &upaddr->upda;
+		*rp = (tn << 8) + sn;
+		*--rp = 0;
+		*--rp = -blk*NBPG / sizeof (short);
+		*--rp = GO|WCOM;
+		do {
+			DELAY(25);
+		} while ((upaddr->upcs1 & RDY) == 0);
+		if (upaddr->upcs1&ERR) {
+			printf("up dump dsk err: (%d,%d,%d) cs1=%x, er1=%x\n",
+			    cn, tn, sn, upaddr->upcs1, upaddr->uper1);
+			return (-1);
+		}
+		start += blk*NBPG;
+		num -= blk;
+	}
+	bdp = 1;		/* crud to fool c compiler */
+	((struct uba_regs *)PHYSUBA0)->uba_dpr[bdp] |= BNE;
+	return (0);
+}
 #endif
