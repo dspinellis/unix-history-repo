@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.46 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.47 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -52,6 +52,8 @@ static char sccsid[] = "@(#)rlogind.c	5.46 (Berkeley) %G%";
 #include <sys/termios.h>
 
 #include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
 
 #include <errno.h>
 #include <pwd.h>
@@ -153,6 +155,9 @@ main(argc, argv)
 	if (keepalive &&
 	    setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof (on)) < 0)
 		syslog(LOG_WARNING, "setsockopt (SO_KEEPALIVE): %m");
+	on = IPTOS_LOWDELAY;
+	if (setsockopt(0, IPPROTO_IP, IP_TOS, (char *)&on, sizeof(int)) < 0)
+		syslog(LOG_WARNING, "setsockopt (IP_TOS): %m");
 	doit(0, &from);
 }
 
@@ -219,7 +224,7 @@ doit(f, fromp)
 #ifdef	KERBEROS
 	if (use_kerberos) {
 		if (!hostok)
-			fatal(f, "krlogind: Host address mismatch.", 0);
+			fatal(f, "rlogind: Host address mismatch.", 0);
 		retval = do_krb_login(hp->h_name, fromp, encrypt);
 		if (retval == 0)
 			authenticated++;
@@ -332,11 +337,13 @@ vhangup();
 		(void)close(t);
 
 		if (authenticated) {
+#ifdef	KERBEROS
 			if (use_kerberos && (pwd->pw_uid == 0))
 				syslog(LOG_INFO|LOG_AUTH,
 				    "ROOT Kerberos login from %s.%s@%s on %s\n",
 				    kdata->pname, kdata->pinst, kdata->prealm,
 				    hp->h_name);
+#endif
 
 			execl(_PATH_LOGIN, "login", "-p",
 			    "-h", hp->h_name, "-f", lusername, 0);
