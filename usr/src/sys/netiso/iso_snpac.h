@@ -24,7 +24,7 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/*	@(#)iso_snpac.h	7.3 (Berkeley) %G% */
+/*	@(#)iso_snpac.h	7.4 (Berkeley) %G% */
 #define	MAX_SNPALEN		8			/* curiously equal to sizeof x.121 (
 										plus 1 for nibble len) addr */
 struct snpa_req {
@@ -64,6 +64,11 @@ struct systype_req {
 	char	sr_type;		/* SNPA_ES or SNPA_IS */
 };
 
+/* ISO arp IOCTL data structures */
+
+#define	SIOCSISOMAP	_IOW('a',30, struct snpa_req)	/* set arp entry */
+#define	SIOCGISOMAP	_IOWR('a',38, struct snpa_req)/* get arp entry */
+#define	SIOCDISOMAP	_IOW('a',31, struct snpa_req)	/* delete arp entry */
 #define	SIOCSSTYPE 	_IOW('a', 39, struct systype_req) /* set system type */
 #define	SIOCGSTYPE 	_IOW('a', 40, struct systype_req) /* set system type */
 
