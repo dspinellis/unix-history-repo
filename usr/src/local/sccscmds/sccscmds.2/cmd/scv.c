@@ -13,6 +13,8 @@
 # include	"../hdr/defines.h"
 # include	"dir.h"
 
+SCCSID(@(#)scv.c	4.2);
+
 
 /*
 	Release 3 SCCS File Structures  (2.1  78/06/05 17:31:17)

@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-SCCSID(@(#)delta	2.1);
+SCCSID(@(#)delta.c	4.1);
 USXALLOC();
 
 char	Diffpgm[]	"/usr/local/bdiff";
