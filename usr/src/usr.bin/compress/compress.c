@@ -16,7 +16,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)compress.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)compress.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /* 
@@ -1218,17 +1218,6 @@ getcode() {
     return code;
 }
 
-char *
-rindex(s, c)		/* For those who don't have it in libc.a */
-register char *s, c;
-{
-	char *p;
-	for (p = NULL; *s; s++)
-	    if (*s == c)
-		p = s;
-	return(p);
-}
-
 #ifdef DEBUG
 printcodes()
 {
@@ -1530,7 +1519,7 @@ long int num, den;
 
 version()
 {
-	fprintf(stderr, "%s, Berkeley 5.13 %G%\n", rcs_ident);
+	fprintf(stderr, "%s, Berkeley 5.14 %G%\n", rcs_ident);
 	fprintf(stderr, "Options: ");
 #ifdef vax
 	fprintf(stderr, "vax, ");
