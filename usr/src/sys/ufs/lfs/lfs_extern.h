@@ -59,7 +59,7 @@ __END_DECLS
 extern struct vnodeops lfs_vnodeops, lfs_specops;
 #ifdef FIFO
 extern struct vnodeops lfs_fifoops;
-#define LFS_FIFOOPS &lfs_fifoops
+#define LFS_FIFOOPS lfs_fifoop_p
 #else
 #define LFS_FIFOOPS NULL
 #endif

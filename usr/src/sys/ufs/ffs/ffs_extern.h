@@ -72,7 +72,7 @@ extern struct vnodeops ffs_vnodeops;
 extern struct vnodeops ffs_specops;
 #ifdef FIFO
 extern struct vnodeops ffs_fifoops;
-#define FFS_FIFOOPS &ffs_fifoops
+#define FFS_FIFOOPS ffs_fifoop_p
 #else
 #define FFS_FIFOOPS NULL
 #endif
