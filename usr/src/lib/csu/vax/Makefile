@@ -1,4 +1,4 @@
-# @(#)Makefile	4.4 (Berkeley) %G%
+# @(#)Makefile	4.5 (Berkeley) %G%
 #
 #	crt0	Normal C run time startoff
 #	mcrt0	C run time start off for profiling, ``prof'' conventions
@@ -15,18 +15,20 @@ install: ${OBJS}
 
 crt0.s:	cmgt.crt0.c
 	cc -S ${DFLAGS} -DCRT0 cmgt.crt0.c
-	mv cmgt.crt0.s crt0.s
-mcrt0.s: cmgt.crt0.c
+	/lib/cpp cmgt.crt0.s > crt0.s
+	rm -f cmgt.crt0.s
+mcrt0.s: cmgt.crt0.c crt0.ex
 	cc -S ${DFLAGS} -DMCRT0 cmgt.crt0.c
-	mv cmgt.crt0.s mcrt0.s
-gcrt0.s: cmgt.crt0.c gcrt0.h
+	ex - cmgt.crt0.s < crt0.ex
+	/lib/cpp cmgt.crt0.s > mcrt0.s
+	rm -f cmgt.crt0.s
+gcrt0.s: cmgt.crt0.c gcrt0.h crt0.ex
 	cc -S ${DFLAGS} -DGCRT0 cmgt.crt0.c
-	mv cmgt.crt0.s gcrt0.s
+	ex - cmgt.crt0.s < crt0.ex
+	/lib/cpp cmgt.crt0.s > gcrt0.s
+	rm -f cmgt.crt0.s
 
-.s.o: crt0.ex
-	ex - $*.s < crt0.ex
-	/lib/cpp $*.s > $*.S
-	mv $*.S $*.s
+.s.o:
 	as -o $*.o $*.s
 	ld -x -r $*.o
 	mv a.out $*.o
