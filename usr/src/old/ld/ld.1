@@ -3,9 +3,8 @@
 .\"
 .\" %sccs.include.proprietary.man%
 .\"
-.\"	@(#)ld.1	6.6 (Berkeley) %G%
+.\"	@(#)ld.1	6.7 (Berkeley) %G%
 .\"
-.Vx
 .Dd 
 .Dt LD 1
 .Os BSD 4
@@ -15,7 +14,7 @@
 .Sh SYNOPSIS
 .Nm ld
 .Op  option
-\&...
+.Ar ...
 .Ar file ...
 .Sh DESCRIPTION
 .Nm Ld
@@ -80,8 +79,8 @@ understands several options.
 Except for
 .Fl l  ,
 they should appear before the file names.
-.Tw Ds
-.Tp Fl A
+.Bl -tag -width flagx
+.It Fl A
 This option specifies incremental loading, i.e.
 linking is to be done in a manner so that the resulting object
 may be read into an already executing program.
@@ -99,30 +98,26 @@ option may be used as well, and will be taken to mean that the
 newly linked segment will commence at the corresponding address
 (which must be a multiple of 1024).
 The default value is the old value of _end.
-.Tp Fl D
+.It Fl D
 Take the next argument as a hexadecimal number and pad the data segment
 with zero bytes to the indicated length.
-.Tp Fl d
+.It Fl d
 Force definition of common storage
 even if the
 .Fl r
 flag is present.
-.Tp Fl e
+.It Fl e
 The following argument is taken to be the
 name of the entry point of the loaded
 program; location 0 is the default.
-.Tc Fl L
-.Ar dir
-.Cx
+.It Fl L Ns Ar dir 
 Add
 .Ar dir
 to the list of directories in which libraries are searched for.
 Directories specified with
 .Fl L
 are searched before the standard directories.
-.Tc Fl l
-.Ar x
-.Cx
+.It Fl l Ns Ar x 
 This
 option is an abbreviation for the library name
 .Sq Pa libx.a,
@@ -142,12 +137,12 @@ A library is searched when its name is encountered,
 so the placement of a
 .Fl l
 is significant.
-.Tp Fl M
+.It Fl M
 produce a primitive load map, listing the names of the files
 which will be loaded.
-.Tp Fl N
+.It Fl N
 Do not make the text portion read only or sharable.  (Use "magic number" 0407.)
-.Tp Fl n
+.It Fl n
 Arrange (by giving the output file a 0410 "magic number") that
 when the output file is executed,
 the text portion will be read-only and shared
@@ -155,7 +150,7 @@ among all users executing the file.
 This involves moving the data areas up to the first
 possible 1024 byte boundary following the
 end of the text.
-.Tp Fl o
+.It Fl o
 The
 .Ar name
 argument after
@@ -164,7 +159,7 @@ is used as the name of the
 .Nm ld
 output file, instead of
 .Pa a.out  .
-.Tp Fl r
+.It Fl r
 Generate relocation bits in the output file
 so that it can be the subject of another
 .Nm ld
@@ -172,49 +167,49 @@ run.
 This flag also prevents final definitions from being
 given to common symbols,
 and suppresses the `undefined symbol' diagnostics.
-.Tp Fl S
+.It Fl S
 `Strip' the output by removing all symbols except locals and globals.
-.Tp Fl s
+.It Fl s
 `Strip' the output, that is, remove the symbol table
 and relocation bits to save space (but impair the
 usefulness of the debuggers).
 This information can also be removed by
 .Xr strip  1  .
-.Tp Fl T
+.It Fl T
 The next argument is a hexadecimal number which sets the text segment origin.
 The default origin is 0.
-.Tp Fl t
+.It Fl t
 ("trace")  Print the name of each file as it is processed.
-.Tp Fl u
+.It Fl u
 Take the following argument as a symbol and enter
 it as undefined in the symbol table.  This is useful
 for loading wholly from a library, since initially the symbol
 table is empty and an unresolved reference is needed
 to force the loading of the first routine.
-.Tp Fl X
+.It Fl X
 Save local symbols
 except for those whose names begin with `L'.
 This option is used by
 .Xr cc  1
 to discard internally-generated labels while
 retaining symbols local to routines.
-.Tp Fl x
+.It Fl x
 Do not preserve local
 (non-.globl) symbols in the output symbol table; only enter
 external symbols.
 This option saves some space in the output file.
-.Tc Fl y
-.Ar sym
-.Cx
+.It Fl y Ns Ar sym 
 Indicate each file in which
 .Ar sym
 appears, its type and whether the file defines or references it.
 Many such options may be given to trace many symbols.
 (It is usually necessary to begin
 .Ar sym
-with an `_', as external C, FORTRAN and Pascal variables begin
+with an `_', as external C,
+.Tn FORTRAN
+and Pascal variables begin
 with underscores.)
-.Tp Fl z
+.It Fl z
 Arrange for the process to be loaded on
 demand from the resulting executable file (413 format)
 rather than preloaded.
@@ -222,30 +217,33 @@ This is the default.
 Results in a 1024 byte header on the output file followed by
 a text and data segment each of which have size a multiple of 1024 bytes
 (being padded out with nulls in the file if necessary).
-With this format the first few BSS segment symbols may actually appear
+With this format the first few
+.Tn BSS
+segment symbols may actually appear
 (from the output of
 .Xr size  1  )
 to live in the data segment;
 this to avoid wasting the space resulting from data segment size roundup.
-.Tp
+.El
 .Sh FILES
-.Dw /usr/local/lib/lib*.a
-.Di L
-.Dp Pa /usr/lib/lib*.a
-libraries
-.Dp Pa /usr/local/lib/lib*.a
-more libraries
-.Dp Pa a.out
-output file
-.Dp
+.Bl -tag -width /usr/local/lib/lib*.a -compact
+.It Pa /usr/lib/lib*.a
+Libraries.
+.It Pa /usr/local/lib/lib*.a
+More libraries.
+.It Pa a.out
+Output file.
+.El
 .Sh SEE ALSO
 .Xr as 1 ,
 .Xr ar 1 ,
 .Xr cc 1 ,
 .Xr ranlib 1
 .Sh HISTORY
-.Nm Ld
-appeared in Version 6 AT&T Unix.
+The
+.Nm ld
+command appeared in
+.At v6 .
 .Sh BUGS
 There is no way to force data to be page aligned.
 .Nm Ld

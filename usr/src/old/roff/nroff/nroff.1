@@ -3,9 +3,8 @@
 .\"
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)nroff.1	6.7 (Berkeley) %G%
+.\"	@(#)nroff.1	6.8 (Berkeley) %G%
 .\"
-.Vx
 .Dd 
 .Dt NROFF 1
 .Os BSD 4.2
@@ -14,10 +13,10 @@
 .Nd text formatting
 .Sh SYNOPSIS
 .Nm nroff
-.Op  option
-\&...
-.Op  file
-\&...
+.Op option
+.Ar ...
+.Op file
+.Ar ...
 .Sh DESCRIPTION
 .Nm Nroff
 formats text in the named
@@ -27,7 +26,7 @@ for typewriter-like devices.  See also
 The full capabilities of
 .Nm nroff
 are described in the
-.Em Nroff/Troff User's Manual .
+.%T "Nroff/Troff User's Manual" .
 .Pp
 If no
 .Ar file
@@ -39,10 +38,8 @@ is taken to be a file name corresponding to the standard input.
 The options, which may appear in any order so long as they appear
 .Ar before
 the files, are:
-.Tw Fl
-.Tp Cx Fl o
-.Ar list
-.Cx
+.Bl -tag -width indent
+.It Fl o Ns Ar list 
 Print only pages whose page numbers appear in the comma-separated
 .Ar list
 of numbers and ranges.  A range
@@ -60,14 +57,10 @@ and a final
 means from
 .Ar N
 to the end.
-.Tp Cx Fl n
-.Ar N
-.Cx
+.It Fl n Ns Ar N 
 Number first generated page
 .Ar N  .
-.Tp Cx Fl s
-.Ar N
-.Cx
+.It Fl s Ns Ar N 
 Stop every
 .Ar N
 pages.
@@ -75,102 +68,87 @@ pages.
 will halt prior to every
 .Ar N
 pages (default
-.Cx Ar N
-.Cx =1)
-.Cx
+.Ar N Ns =1) 
 to allow paper loading or changing, and will resume upon receipt of a newline.
-.Tp Cx Fl m
-.Ar name
-.Cx
+.It Fl m Ns Ar name 
 Prepend the macro file
 .Pa /usr/share/tmac/tmac.name
 to the input
 .Ar files  .
-.Tp Cx Fl r
-.Ar aN
-.Cx
+.It Fl r Ns Ar aN 
 Set register
 .Ar a
 (one-character) to
 .Ar N  .
-.Tp Fl i
+.It Fl i
 Read standard input after the input files are exhausted.
-.Tp Fl q
+.It Fl q
 Invoke the simultaneous input-output mode of the
 .Ar rd
 request.
-.Tp Cx Fl T
-.Ar name
-.Cx
+.It Fl T Ns Ar name 
 Prepare output for specified terminal.  Known
 .Ar names
 are:
 .Pp
-.Tw Cm
-.Tp Cm 37
+.Bl -tag -width xeroxxx -compact
+.It Cm 37
 for the Teletype Corporation Model 37 terminal,
-.Tp Cm crt
+.It Cm crt
 the default; linked to lpr and tn300, for the GE TermiNet 300 (or any
 terminal without reverse-line or half-line capability),
-.Tp Cm 300
+.It Cm 300
 for the DTC 300,
-.Tp Cm 302
+.It Cm 302
 for the DTC 302S and the DTC 300S,
-.Tp Cm 382
+.It Cm 382
 for the DTC 382,
-.Tp Cm 450
+.It Cm 450
 for the DTC 450 and the IPSI 1622,
-.Tp Cm 833
+.It Cm 833
 for the AJ 832/833,
-.Tp Cm epson
+.It Cm epson
 for the Epson FX80,
-.Tp Cm itoh
+.It Cm itoh
 for the C:ITOH Prowriter
-.Tp Cm nec
+.It Cm nec
 for the NEC-55?0/77?0 Spinwriter, with the Courier-72/Manifold
 thimble,
-.Tp Cm nec-t
+.It Cm nec-t
 for the NEC-55?0/77?0 Spinwriter, with the Tech-Math/Times-Roman
 thimble,
-.Tp Cm nec25-t
+.It Cm nec25-t
 for the NEC-5525/7725 Spinwriter, with the Tech-Math/Times-Roman
 thimble,
-.Tp Cm qume
+.It Cm qume
 for the Qume Sprint 5 or 9,
-.Tp Cm x-ecs
+.It Cm x-ecs
 for the Xerox/Diablo 1730/630, extended character set,
-.Tp Cm xerox
+.It Cm xerox
 for the Xerox 17?0 or the Diablo 16?0.
 Most of these also have versions for 12 pitch.
-where did this file go? see
+See
 .Pa /usr/libdata/term/README
 for more information.
-.Tp Fl e
+.El
+.It Fl e
 Produce equally-spaced words in adjusted lines, using full terminal resolution.
-.Tp Fl h
+.It Fl h
 Use output tabs during horizontal spacing
 to speed output and reduce output character count.
 Tab settings are assumed to be every 8 nominal character widths.
-.Tp
+.El
 .Sh FILES
-.Dw /usr/share/tmac/tmac.*
-.Di L
-.Dp Pa /tmp/ta*
-temporary file
-.Dp Pa /usr/share/tmac/tmac.*
-standard macro files
-.Dp Pa /usr/libdata/term/*
-terminal driving tables for
-.Nm nroff
-.br
-.Dp
+.Bl -tag -width /usr/share/tmac/tmac.* -compact
+.It Pa /tmp/ta*
+Temporary file.
+.It Pa /usr/share/tmac/tmac.*
+Standard macro files
+.It Pa /usr/libdata/term/*
+Terminal driving tables for
+.Nm nroff .
+.El
 .Sh SEE ALSO
-J. F. Ossanna,
-.Em Nroff/ Troff user's manual
-.br
-B. W. Kernighan,
-.Em A TROFF Tutorial
-.br
 .Xr troff 1 ,
 .Xr eqn 1 ,
 .Xr tbl 1 ,
@@ -178,9 +156,18 @@ B. W. Kernighan,
 .Xr me 7 ,
 .Xr man 7 ,
 .Xr col 1
+.Rs
+.%A J. F. Ossanna
+.%T "Nroff/Troff user's manual"
+.Re
+.Rs
+.%A B. W. Kernighan
+.%T A TROFF Tutorial
+.Re
 .Sh HISTORY
-.Nm Nroff
-appeared in Version 6 AT&T UNIX.
-The version described here is
-Version 7.
-
+An
+.Nm nroff
+command appeared in
+.At v6 .
+The version described here appeared in
+.At v7 .

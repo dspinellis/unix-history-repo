@@ -1,15 +1,16 @@
 .\" Copyright (c) 1980, 1990 Regents of the University of California.
-.\" All rights reserved.  The Berkeley Software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" All rights reserved.
 .\"
-.\"     @(#)lint.1	6.5 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)lint.1	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LINT 1
 .Os BSD 4
 .Sh NAME
 .Nm lint
-.Nd a C program verifier
+.Nd "a C program verifier"
 .Sh SYNOPSIS
 .Nm lint
 .Op Fl abchnpuvx
@@ -56,7 +57,7 @@ where
 are the C sources of library
 .Ar foo .
 The result is a file
-.Em llib-lfoo .ln
+.Pa llib-lfoo .ln
 in the correct library format suitable for linting programs
 using
 .Ar foo .
@@ -64,23 +65,24 @@ using
 Any number of the options in the following list
 may be used.
 The
-.Fl D
+.Fl D ,
 .Fl U
 and
 .Fl I
 options of
 .Xr cc  1
 are also recognized as separate arguments.
-.Tp Fl p
+.Bl -tag -width flag
+.It Fl p
 Attempt to check portability to the
-.Em IBM
+.Tn IBM
 and
-.Em GCOS
+.Tn GCOS
 dialects of C.
-.Tp Fl h
+.It Fl h
 Apply a number of heuristic tests to attempt to
 intuit bugs, improve style, and reduce waste.
-.Tp Fl b
+.It Fl b
 Report
 .Ar break
 statements that cannot be reached.
@@ -90,26 +92,26 @@ most
 and many
 .Xr yacc 1
 outputs produce dozens of such comments.)
-.Tp Fl v
+.It Fl v
 Suppress complaints about unused arguments in functions.
-.Tp Fl x
+.It Fl x
 Report variables referred to by extern declarations,
 but never used.
-.Tp Fl a
+.It Fl a
 Report assignments of long values to int variables.
-.Tp Fl c
+.It Fl c
 Complain about casts which have questionable portability.
-.Tp Fl u
+.It Fl u
 Do not complain about functions and variables used and not
 defined, or defined and not used (this is suitable for running
 .Nm lint
 on a subset of files out of a larger program).
-.Tp Fl n
+.It Fl n
 Do not check compatibility against the standard library.
-.Tp Fl z
+.It Fl z
 Do not complain about structures that are never defined (e.g.
 using a structure pointer without knowing its contents.).
-.Tp
+.El
 .Pp
 .Xr Exit  2
 and other functions which do not return
@@ -118,11 +120,11 @@ are not understood; this causes various lies.
 Certain conventional comments in the C source
 will change the behavior of
 .Nm lint  :
-.Tw Ds
-.Tp Li /*NOTREACHED*/
+.Bl -tag -width Ds
+.It Li /*NOTREACHED*/
 at appropriate points
 stops comments about unreachable code.
-.Tp Li /*VARARGS n */
+.It Li /*VARARGS n */
 suppresses
 the usual checking for variable numbers of arguments
 in the following function declaration.
@@ -132,46 +134,46 @@ arguments are checked;
 a missing
 .Ar n
 is taken to be 0.
-.Tp Li /*NOSTRICT*/
+.It Li /*NOSTRICT*/
 shuts off strict type checking in the next expression.
-.Tp Li /*ARGSUSED*/
+.It Li /*ARGSUSED*/
 turns on the
 .Fl v
 option for the next function.
-.Tp Li /*LINTLIBRARY*/
+.It Li /*LINTLIBRARY*/
 at the beginning of a file shuts off complaints about
 unused functions in this file.
-.Yp
 .Sh AUTHOR
 S.C. Johnson.  Lint library construction implemented by Edward Wang.
 .Sh FILES
-.Dw /usr/libdata/lint/llib-port.ln
-.Di L
-.Dp Pa /usr/libdata/lint/llib-lc.ln
-declarations for standard functions
-.Dp Pa /usr/libdata/lint/llib-lc
-human readable version of above
-.Dp Pa /usr/lib/lintdata/llib-port.ln
-declarations for portable functions
-.Dp Pa /usr/lib/lintdata/llib-port
-human readable . . .
-.Dp Pa llib-l*.ln
-library created with
-.Fl C
-.Dp
+.Bl -tag -width /usr/libdata/lint/llib-port.ln -compact
+.It Pa /usr/libdata/lint/llib-lc.ln
+Declarations for standard functions.
+.It Pa /usr/libdata/lint/llib-lc
+Human readable version of above.
+.It Pa /usr/lib/lintdata/llib-port.ln
+Declarations for portable functions.
+.It Pa /usr/lib/lintdata/llib-port
+Human readable.
+.It Pa llib-l*.ln
+Library created with
+.Fl C .
+.El
 .Sh SEE ALSO
 .Xr cc 1
-.br
-S. C. Johnson,
-.Em Lint ,
-a C Program Checker
+.Rs
+.%A S. C. Johnson,
+.%T "Lint, a C Program Checker"
+.Re
 .Sh HISTORY
-.Nm Lint
-appeared in Version 7 AT&T Unix.
+The
+.Nm lint
+program appeared in
+.At v7 .
 .Sh BUGS
 There are some things you just
 can't
 get lint to shut up about.
 .Pp
-/*NOSTRICT*/
+.Li /*NOSTRICT*/
 is not implemented in the current version (alas).

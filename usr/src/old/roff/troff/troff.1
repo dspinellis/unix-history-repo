@@ -1,162 +1,162 @@
+.\" Copyright (c) 1985, 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)troff.1	6.2 (Berkeley) %G%
+.\"     @(#)troff.1	6.3 (Berkeley) %G%
 .\"
-.TH TROFF 1 ""
-.AT 3
-.SH NAME
-troff, nroff \- text formatting and typesetting
-.SH SYNOPSIS
-.B troff
-[ option ] ...
-[ file ] ...
-.PP
-.B nroff
-[ option ] ...
-[ file ] ...
-.SH DESCRIPTION
-.I Troff
+.Dd 
+.Dt TROFF 1
+.Os ATT 7th
+.Sh NAME
+.Nm troff ,
+.Nm nroff
+.Nd text formatting and typesetting
+.Sh SYNOPSIS
+.Nm troff
+.Op Ar option
+.Ar ...
+.Op Ar file
+.Ar ...
+.Sh DESCRIPTION
+.Nm Troff
 formats text in the named
-.I files
-for printing on a Graphic Systems C/A/T phototypesetter;
-.I nroff
-is used for for typewriter-like devices.
-Their capabilities are described in the
-.I Nroff/Troff user's manual.
-.PP
+.Ar files
+for printing on a Graphic Systems
+.Tn C/A/T
+phototypesetter;
+Its capabilities are described in the
+.%T Nroff/Troff user's manual .
+.Pp
 If no
-.I file
+.Ar file
 argument is present, the standard input is read.
 An argument consisting of a single minus
-.RB ( \- )
+.Pq Fl
 is taken to be a file name corresponding to the standard input.
 The options, which may appear in any order so long as they appear
 before the files, are:
-.TP "\w'\f3\-m\f1name 'u"
-.BI \-o list
+.Bl -tag -width indent
+.It Fl o Ar list
 Print only pages whose page numbers appear in the comma-separated
-.I list
+.Ar list
 of numbers and ranges.
 A range
-.IB N \- M
+.Ar N\-M
 means pages
-.I N
+.Ar N
 through
-.IR M ;
+.Ar M ;
 an initial
-.I \-N
+.Ar \-N
 means from the beginning to page
-.IR N ;
+.Ar N ;
 and a final
-.IR N \-
+.Ar N\-
 means from
-.I N
+.Ar N
 to the end.
-.TP
-.BI \-n N
+.It Fl n Ar N
 Number first generated page
-.IR N .
-.TP
-.BI \-s N
+.Ar N .
+.It Fl s Ar N
 Stop every
-.I N
+.Ar N
 pages.
-.I Nroff
-will halt prior to every
-.I N
-pages (default
-.IR N =1)
-to allow paper loading or changing, and will resume upon receipt of a newline.
-.I Troff
+.Nm Troff
 will stop the phototypesetter every
-.I N
+.Ar N
 pages, produce a trailer to allow changing cassettes,
 and resume when the typesetter's start button is pressed.
-.TP
-.BI \-m name
+.It Fl m Ar name
 Prepend the macro file
-.BI /usr/lib/tmac/tmac. name
+.Pa /usr/lib/tmac/tmac. Ns Em name
 to the input
-.IR files .
-.TP
-.BI \-r aN
+.Ar files .
+.It Fl r Ns Ar aN
 Set register
-.I a
+.Ar a
 (one-character) to
-.IR N .
-.TP
-.B \-i
+.Ar N .
+.It Fl i
 Read standard input after the input files are exhausted.
-.TP
-.B \-q
+.It Fl q
 Invoke the simultaneous input-output mode of the
-.B rd
+.Ic rd
 request.
-.HP
-.bd I 3
-.I Troff only
-.br
-.bd I
-.TP
-.B \-t
+.It Fl t
 Direct output to the standard output instead of the phototypesetter.
-.TP
-.B \-f
+.It Fl f
 Refrain from feeding out paper and stopping
 phototypesetter at the end of the run.
-.TP
-.B \-w
+.It Fl w
 Wait until phototypesetter is available, if currently busy.
-.TP
-.B \-b
+.It Fl b
 Report whether the phototypesetter is busy or available.
 No text processing is done.
-.TP
-.B \-a
-Send a printable ASCII approximation of the results to the standard output.
-.TP
-.BR \-p N
+.It Fl a
+Send a printable
+.Tn ASCII
+approximation of the results to the standard output.
+.It Fl p Ar N
 Print all characters in point size
-.I  N
+.Ar N
 while retaining all prescribed spacings and motions,
 to reduce phototypesetter elapsed time.
-.TP
-.BI \-F fontdir
+.It Fl F Ar fontdir
 The directory
-.I fontdir
+.Ar fontdir
 contains the font width tables instead of the default directory
-/usr/lib/fonts. This option can be used to produce output for devices
+.Pa /usr/libdata/troff_font .
+This option can be used to produce output for devices
 besides the phototypesetter.
-.PP
+.El
+.Pp
 If the file
-.I /usr/adm/tracct
+.Pa /var/account/tracct
 is writable,
-.I troff
+.Nm troff
 keeps phototypesetter accounting records there.
 The integrity of that file may be secured by making
-.I troff
-a 'set user-id' program.
-.SH FILES
-.ta \w'/usr/lib/tmac/tmac.*  'u
-/tmp/ta*	temporary file
-.br
-/usr/lib/tmac/tmac.*	standard macro files
-.br
-/usr/lib/term/*	terminal driving tables for
-.I nroff
-.br
-/usr/lib/font/*	font width tables for
-.I troff
-.br
-/dev/cat	phototypesetter
-.br
-/usr/adm/tracct	accounting statistics for /dev/cat
-.SH "SEE ALSO"
-J. F. Ossanna,
-.I Nroff/Troff user's manual
-.br
-B. W. Kernighan,
-.I
-A TROFF Tutorial
-.br
-eqn(1), tbl(1), ms(7), me(7), man(7), col(1)
+.Nm troff
+a  'set user-id' program.
+.Sh FILES
+.Bl -tag -width /usr/libdata/troff_font/ftXXXX -compact
+.It Pa /tmp/ta*
+Temporary file.
+.It Pa /usr/share/tmac/tmac.*
+Standard macro files.
+.It Pa /usr/libdata/term/tab*
+Terminal driving tables for
+.Nm nroff .
+.It Pa /usr/libdata/troff_font/ftXX*
+Font width tables for
+.Nm troff
+.Pa /dev/cat
+phototypesetter.
+.It Pa /var/account/tracct
+Accounting statistics for
+.Pa /dev/cat .
+.El
+.Sh SEE ALSO
+.Xr eqn 1 ,
+.Xr tbl 1 ,
+.Xr ms 7 ,
+.Xr me 7 ,
+.Xr man 7 ,
+.Xr col 1
+.Rs
+.%T Nroff/Troff user's manual
+.%A J. F. Ossanna
+.Re
+.Rs
+.%T A TROFF Tutorial
+.%A B. W. Kernighan
+.Re
+.Sh HISTORY
+The
+.Nm troff
+command appeared in
+.At v6 .
+The version this man page decribes appeared in
+.At v7 .
