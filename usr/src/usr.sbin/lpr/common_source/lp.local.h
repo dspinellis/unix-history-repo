@@ -1,4 +1,4 @@
-/*	lp.local.h	4.3	83/06/29	*/
+/*	lp.local.h	4.4	83/08/24	*/
 /*
  * Possibly, local parameters to the spooling system
  */
@@ -62,8 +62,9 @@
 #define DROP	3		/* offset to drop characters with descenders */
 
 /*
- * path name of socket created by lpd.
+ * path name of files created by lpd.
  */
+#define MASTERLOCK "/usr/spool/lpd.lock"
 #define SOCKETNAME "/dev/printer"
 
 /*

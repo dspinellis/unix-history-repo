@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lpd.c	4.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpd.c	4.10 (Berkeley) %G%";
 #endif
 
 /*
@@ -52,7 +52,7 @@ main(argc, argv)
 	int f, funix, finet, options, defreadfds, fromlen;
 	struct sockaddr_un sun, fromunix;
 	struct sockaddr_in sin, frominet;
-	int omask;
+	int omask, lfd;
 
 	gethostname(host, sizeof(host));
 	name = argv[0];
@@ -73,6 +73,7 @@ main(argc, argv)
 				break;
 			}
 	}
+
 #ifndef DEBUG
 	/*
 	 * Set up standard environment by detaching from the parent.
@@ -90,12 +91,35 @@ main(argc, argv)
 		(void) close(f);
 	}
 #endif
-	signal(SIGCHLD, reapchild);
+
 	(void) umask(0);
+	lfd = open(MASTERLOCK, O_WRONLY|O_CREAT, 0644);
+	if (lfd < 0) {
+		log("cannot create %s", MASTERLOCK);
+		exit(1);
+	}
+	if (flock(lfd, LOCK_EX|LOCK_NB) < 0) {
+		if (errno == EWOULDBLOCK)	/* active deamon present */
+			exit(0);
+		log("cannot lock %s", MASTERLOCK);
+		exit(1);
+	}
+	ftruncate(lfd, 0);
+	/*
+	 * write process id for others to know
+	 */
+	sprintf(line, "%u\n", getpid());
+	f = strlen(line);
+	if (write(lfd, line, f) != f) {
+		log("cannot write daemon pid");
+		exit(1);
+	}
+	signal(SIGCHLD, reapchild);
 	/*
 	 * Restart all the printers.
 	 */
 	startup();
+	(void) unlink(SOCKETNAME);
 	funix = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (funix < 0) {
 		logerr("socket");
