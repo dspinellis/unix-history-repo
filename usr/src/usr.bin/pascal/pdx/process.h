@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)process.h 1.2 %G%"; */
+/* static char sccsid[] = "@(#)process.h 1.3 %G%"; */
 
 /*
  * Definitions for process module.
@@ -15,7 +15,8 @@ PROCESS *process;
 
 start();		/* start up process */
 run();			/* start program running */
-arginit();		/* initialize for program arguments */
+arginit();		/* initialize program arguments */
+setargs();		/* special argument handling */
 newarg();		/* add a new argument to list for program */
 inarg();		/* set standard input for program */
 outarg();		/* set standard output for program */
