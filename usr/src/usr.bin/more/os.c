@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)os.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)os.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -265,8 +265,6 @@ glob(filename)
  * (if it cannot be opened or is a directory, etc.)
  */
 
-#if STAT
-
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -297,19 +295,6 @@ bad_file(filename, message, len)
 	}
 	return (NULL);
 }
-
-#else
-
-	public char *
-bad_file(filename, message, len)
-	char *filename;
-	char *message;
-	unsigned int len;
-{
-	return (NULL);
-}
-
-#endif
 
 /*
  * errno_message: Return an error message based on the value of "errno".
