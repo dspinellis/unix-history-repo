@@ -1,0 +1,401 @@
+\input texinfo   @c -*-texinfo-*-
+@setfilename graph.info
+@settitle graph
+
+@ifinfo
+This file documents graph, a utility for creating plot files.
+
+Copyright @copyright{} 1989 Free Software Foundation, Inc.
+@end ifinfo
+
+@titlepage
+@sp 10
+@center @titlefont{graph}
+@sp 2
+@center A utility for creating plot files
+@sp 2
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1989 Free Software Foundation
+@end titlepage
+
+@node Top, Options, , (dir)
+@chapter The @code{graph} Utility
+
+@code{graph} is a utility for creating plots from data.  It reads ascii
+data and writes a plot with axes and labels.  You can specify labels and
+ranges for the axes, and you can set the sizes and position of the plot
+on the page.  Each invocations of graph produces a single box with a set
+of axes and data draw within.  You can place an arbitrary number of
+plots on the page by concatenating the plot output of each
+invocation.@refill
+
+@menu
+* Options::	     Command line options for graph.
+* Graph Examples::   How to use graph.
+* plot2ps::          A GNU plot to postscript conversion utility.
+@end menu
+
+@chapter Options at a glance
+@table @samp
+@item Option:
+Description:
+
+@item -C
+print copyright notice
+
+@item -D
+binary double precision data
+
+@item -E
+use extended plot file format
+
+@item -H CHARACTER_HEIGHT
+fractional height of characters
+
+@item -I
+binary integer data
+
+@item -K
+Change symbol when each new line is stared.
+
+@item -L
+Change line style when each new line is stared.
+
+@item -M [x|y] MARGIN
+amount of margin between data and x or y axes.
+
+@item -N TICKS
+number of tick marks on each axis
+
+@item -P SIZE
+plot file coordinate range
+
+@item -S SYMBOL_NUMBER SYMBOL_SIZE
+draw symbols at each point
+
+@item -T TICK_SIZE
+fractional size of tick marks
+
+@item -W CHARACTER_WIDTH
+fractional width of characters
+
+@item -X X_LABEL
+label printed below the x axis
+
+@item -Y Y_LABEL
+label printed right of the y axis
+
+@item -a STEP_SIZE LOWER_LIMIT
+generate abscissa, read only y values
+
+@item -b
+break lines whenever x decreases
+
+@item -c POINT_LABEL
+default label printed at each point
+
+@item -d
+print debugging information
+
+@item -g GRID_STYLE
+draw a grid in the plot
+
+@item -h HEIGHT
+fractional height of the plot
+
+@item -l TOP_LABEL
+label printed above the plot
+
+@item -m LINE_MODE
+solid and dashed lines
+
+@item -r RIGHT
+move plot right by fractional amount
+
+@item -s
+save the screen - do not erase
+
+@item -t
+transpose x and y axes
+
+@item -u UP
+move plot up by fractional amount
+
+@item -w WIDTH
+fractional width of the plot
+
+@item -x [BTl] LOWER_LIMIT UPPER_LIMIT
+labels on bottom or top, log scale, axis limits
+
+@item -y [LRl] LOWER_LIMIT UPPER_LIMIT
+labels on left or right, log scale, axis limits 
+
+@item -z
+do not read data from standard input
+@end table
+
+@node Options, Graph Examples, Top, Top
+@chapter Command Line Options
+The following table describes each of the command line arguments to graph.
+Each option which takes an argument is followed by the type and default
+values of the argument in parentheses.
+
+@table @samp
+@item -C
+Print out the GNU copyright notice.@refill
+@item -D
+Read double precision binary data rather than ascii data.
+Since @code{graph} is generally I/O bound, this can decrease execution
+time.@refill
+@item -E
+Use an extended plot file format. This provides automatic adjustment of
+labels with respect to tick marks.  The @samp{-H} and @samp{-W} options
+are ignored if @samp{-E} is specified.  You will need the GNU plot
+utility @code{plot2ps} in oder to print the output.@refill
+@item -H
+(double, default .03) The fractional height of printed characters.  This
+value is used to adjust location of labels with respect to the tick
+marks.@refill
+@item -I
+Read integer binary data rather than ascii data.@refill
+@item -K
+Change symbol when each new line is stared.  A new line is started
+whenever the abscissal (x) value decreases and the @samp{-b} option is
+specified.  The symbol number is incremented through the values show in
+the table below (see @samp{-S}).@refill
+@item -L
+Change line style when each new line is stared. As in @samp{-K}, the
+line style number is incremented through the values shown in the table
+below (see @samp{-m}).@refill
+@item -M @samp{[x|y]} @var{margin}
+(double, default 0 for x and .05 for y) @var{margin} is the fractional
+amount of margin between the data and the horizontal or vertical edges
+of the box. A value of .05 for y produces a space which is 5% of the
+height of the box, placed above and below the data.@refill
+@item -M  
+amount of margin between data and x or y axes.
+@item -N @var{ticks}
+(integer, default 5) @var{ticks} is the minimum number of tick marks for
+each axis.  @code{graph} tries to pick as few digits as possible for
+tick mark labels and uses at least this many tick marks.@refill
+@item -P @var{size}
+(integer, default 4096) @var{size} is the upper limit on coordinate
+values in the plot file @code{graph} creates.  For devices with higher
+resolution, this value can be increased.  A value of 4096 is sufficient
+for 300 dot per inch devices such as laser writers.  This limit on the
+values of coordinates (0 to @var{size}) output by @code{graph} is
+rigidly enforced to prevent unpredictable behaviors by device drivers
+such as @code{plot}.@refill
+@item -S @var{symbol_number} @var{symbol_size}
+(integer and float, defaults -1 and 0.01) Draw a symbol at each point in
+the data. @var{symbol_number} specifies the shape of the symbol
+according to the following table and @var{symbol_size} specifies the
+fractional size of the symbol with respect to the height and width of
+the plot.  Note that you can specify sybols to be drawn without any line
+connecting them by specifying the option @code{-m -1}.@refill
+@table @asis
+@item -1 no symbol at all
+@item 0 plus sign
+@item 1 cross
+@item 2 diamond
+@item 3 square
+@item 4 triangle
+@item 5 circle
+@item 6 circle with a line through it
+@end table
+@item -T @var{tick_size}
+(float, default .01) @var{tick_size} is the fractional size of the tick
+marks on each axis.  A value of 1.0 produces tick marks on the x (y)
+axis whose length is equal to the width (height) of the plot.@refill
+@item -W
+(double, default .02) The fractional width of printed characters.  Like
+the @samp{-H} option, this value is used to adjust location of labels
+with respect to the tick marks.@refill
+@item -X @var{x_label}
+(string, default blank) @var{x_label} is a label printed below the x
+axis.@refill
+@item -Y @var{y_label}
+(string, default blank) @var{y_label} is a label printed to the right of
+the y axis.@refill
+@item -a @var{step_size} @var{lower_limit}
+(floats, defaults 1 and 0) Automaticly generate abscissa (x) values.
+This option specifies that the data contains only ordinate (y) values.
+@var{step_size} specifies the interval between neighboring points and
+@var{lower_limit} specifies the first abscissa (x) value.@refill
+@item -b
+Break the lines in the graph whenever the abscissa (x) values
+decrease.  Several curves with monotonically increasing abscissa
+values can be concatenated and fed to graph using this option.@refill
+@item -c @var{point_label}
+(string, default blank) @var{point_label} is the default label placed at
+each point in the plot when none is read from the input for that point.
+That is, labels read from the input are printed instead of the default
+whenever they are present.@refill
+@item -d
+Debugging information, including the data read in, is sent to the
+standard error output.  This is useful for double checking binary data
+files.@refill
+@item -g @var{grid_style}
+(integer, default 1) @var{grid_style} specifies the type of box framing
+the plot and whether grid lines are drawn inside the box.@refill
+@table @asis
+@item 0 no box around plot, no axes, no labels.
+@item 1 box around plot, axes with tick marks and labels.
+@item 2 box containing a grid and axes with tick marks and labels.
+@end table
+@item -h @var{height}
+(float, default 0.8) @var{height} specifies the fractional height of the
+plot with respect to the height of the plotting area.  A value of 1.0
+will produce a box which fills the available area.  Note that the tick
+marks and labels are outside this area so that values less than 1.0 are
+generally used.@refill
+@item -l @var{top_label}
+(string, default blank) @var{top_label} is a label placed above the
+plot.@refill
+@item -m @var{line_mode}
+(integer, default 0) @var{line_mode} specifies the mode (or style) of
+lines drawn between data points.@refill
+@table @asis
+@item -1 no line at all
+@item 0 solid
+@item 1 longdashed
+@item 2 dotted
+@item 3 disconnected
+@item 4 dotdashed
+@item 5 shortdashed
+@end table
+@item -r @var{right}
+(float, default 0.1) Move the plot to the right by a fractional amount
+@var{right} with respect to the width of the plotting area.  This
+produces a margin on the left hand side of the plot.  A value of 0.5
+will produce a margin half the width of the available area.  Note that
+the tick marks and labels are drawn in the margin.@refill
+@item -s
+Save the screen. This option prevent graph from erasing the previous
+contents of the graphics window or device.@refill
+@item -t
+Transpose the axes and axis labels. This option flips the plot over by
+interchanging x and y values and labels.@refill
+@item -u @var{up}
+(float, default 0.1) Move the plot up by a fractional amount @var{up}
+with respect to the height of the plotting area.  This produces a margin
+below the plot.  A value of 0.5 will produce a margin half the height of
+the available area.  Note that the tick marks and labels are drawn in
+the margin.@refill
+@item -w @var{width}
+(float, default 0.8) @var{width} specifies the fractional width of the
+plot with respect to the width of the plotting area.  A value of 1.0
+will produce a box which fills the available area.  Note that the tick
+marks and labels are outside this area, so values less than 1.0 are
+generally used.@refill
+@item -x @samp{[BTl]} @var{lower_limit} @var{upper_limit}
+(char, floats) Labels for the tick marks are placed on the top or bottom
+of the plot when @samp{B} or @samp{T} are specified respectively.  The
+default position is the bottom.  @samp{l} is optional and specifies that
+a logarithmic scale be used for the x axis, by default a linear scale is
+used. Each of these option letters must be listed seperately, and
+seperated from the other letters or options by white space characters.
+The arguments @var{lower_limit} and @var{upper_limit} specify the limits
+of the x axis. By default the upper and lower limits are taken from the
+data.@refill
+@item -y @samp{[LRl]} @var{lower_limit} @var{upper_limit}
+Labels for the tick marks are placed on the left or right of the plot
+when @samp{L} or @samp{R} are specified respectively.  The default
+position is the right.  The other arguments specify the scale and limits
+of the y axis as those do for the x axis above.@refill
+@item -z
+Do not read data from the standard input.  You can specify input files
+on the command line.  @code{graph} prints the file names and point
+numbers when it encounters error in ascii input files. If input files are
+named and contain one coordinate per line in the file axis whose length
+is equal to the width (height) of the plot you can use the emacs
+@code{next-error} function to locate the source of the error.@refill
+@end table
+
+@node Graph Examples, plot2ps, Options, Top
+@chapter @code{graph} Examples
+
+@section The format of input to @code{graph}
+@code{graph} reads in ascii data.  Most often, the data is in the form
+of pairs of x and y values:@refill
+@example
+0.0  0.0
+1.0  0.2
+2.0  0.0
+3.0  0.4
+4.0  0.2
+5.0  0.6
+@end example
+
+You can add labels to specific data points by appending a string after
+the  y coordinate.  The label ends at the end of the line:@refill
+@example
+3.0  0.4 this is a label for point (3.0, 0.4).
+@end example
+
+Using the @samp{-b} option, you can put more than one data set in the
+input as long as each is monotonic in x values and decreases from the
+end of one set to the start of the next:@refill
+@example
+0.0  0.0 first data set
+2.0  0.0
+4.0  0.2
+0.0  0.1 second data set
+2.0  0.2
+4.0  0.3
+@end example
+
+If your data contains only y values which are equally sampled along the x
+axis, you can use the @samp{-a} option to specify the x axis values
+implicitly.@refill
+@example
+0.0
+0.1
+0.2 label for point (2.0, 0.2)
+0.3
+0.2
+0.3
+@end example
+
+@section How to put multiple plots on one page
+
+The command
+@example
+graph -h .4 -w .4 -r .1 -u .1 < ascii_data_file_1 >  plot_file
+@end example
+
+will put a single box containing the plot in the lower left hand
+quarter of the page.  You can add another plot to the upper left hand
+corner of the page using the command
+@example
+graph -h .4 -w .4 -r .1 -u .6 < ascii_data_file_2 >> plot_file
+@end example
+
+Likewise you can add plots to the right hand side of the page using
+@example
+graph -h .4 -w .4 -r .6 -u .1 < ascii_data_file_3 >> plot_file
+graph -h .4 -w .4 -r .6 -u .6 < ascii_data_file_4 >> plot_file
+@end example
+
+The tick marks can be moved inside the box and labels moved to the
+opposite sides using
+@example
+graph -T -.005 -x T -y L < ascii_data_file >> plot_file
+@end example
+
+@node plot2ps,, Graph Examples, Top
+@section The @code{plot2ps} Utility
+
+@code{plot2ps} is a utility for converting Unix plot files into
+postscript.  The @code{plot2ps} utility reads plotting commands from
+named files or the standard input and writes postscript to the standard
+output.  You can then print the postscript output on a printer, or edit
+it using the @code{idraw} graphics editor.  You can also easily include
+the output in LaTeX documents using the @code{dvi2ps} utility and the
+LaTeX command @code{psfig}.@refill
+
+The source code and documentation for @code{plot2ps} and a more complete
+description of this are available via anonymous ftp from qed.rice.edu
+(128.42.4.38) in the directory @file{/pub}.
+@contents
+@bye
