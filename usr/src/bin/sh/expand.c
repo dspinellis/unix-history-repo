@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)expand.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)expand.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -683,7 +683,7 @@ varvalue(name, quoted, allow_split)
 	int num;
 	char *p;
 	int i;
-	extern int exitstatus;
+	extern int oexitstatus;
 	char sep;
 	char **ap;
 	char const *syntax;
@@ -708,7 +708,7 @@ varvalue(name, quoted, allow_split)
 		num = rootpid;
 		goto numvar;
 	case '?':
-		num = exitstatus;
+		num = oexitstatus;
 		goto numvar;
 	case '#':
 		num = shellparam.nparam;

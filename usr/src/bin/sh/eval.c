@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)eval.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)eval.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <signal.h>
@@ -63,6 +63,7 @@ int funcnest;			/* depth of function calls */
 char *commandname;
 struct strlist *cmdenviron;
 int exitstatus;			/* exit status of last command */
+int oexitstatus;		/* saved exit status */
 
 
 STATIC void evalloop __P((union node *));
@@ -303,6 +304,7 @@ evalfor(n)
 	setstackmark(&smark);
 	arglist.lastp = &arglist.list;
 	for (argp = n->nfor.args ; argp ; argp = argp->narg.next) {
+		oexitstatus = exitstatus;
 		expandarg(argp, &arglist, EXP_FULL | EXP_TILDE);
 		if (evalskip)
 			goto out;
@@ -343,6 +345,7 @@ evalcase(n, flags)
 
 	setstackmark(&smark);
 	arglist.lastp = &arglist.list;
+	oexitstatus = exitstatus;
 	expandarg(n->ncase.expr, &arglist, EXP_TILDE);
 	for (cp = n->ncase.cases ; cp && evalskip == 0 ; cp = cp->nclist.next) {
 		for (patp = cp->nclist.pattern ; patp ; patp = patp->narg.next) {
@@ -402,6 +405,7 @@ expredir(n)
 	for (redir = n ; redir ; redir = redir->nfile.next) {
 		struct arglist fn;
 		fn.lastp = &fn.list;
+		oexitstatus = exitstatus;
 		switch (redir->type) {
 		case NFROM:
 		case NTO:
@@ -509,12 +513,15 @@ evalbackcmd(n, result)
 	result->buf = NULL;
 	result->nleft = 0;
 	result->jp = NULL;
-	exitstatus = 0;
-	if (n == NULL)
+	if (n == NULL) {
+		exitstatus = 0;
 		goto out;
+	}
 	if (n->type == NCMD) {
+		exitstatus = oexitstatus;
 		evalcommand(n, EV_BACKCMD, result);
 	} else {
+		exitstatus = 0;
 		if (pipe(pip) < 0)
 			error("Pipe call failed");
 		jp = makejob(n, 1);
@@ -584,6 +591,8 @@ evalcommand(cmd, flags, backcmd)
 	arglist.lastp = &arglist.list;
 	varlist.lastp = &varlist.list;
 	varflag = 1;
+	oexitstatus = exitstatus;
+	exitstatus = 0;
 	for (argp = cmd->ncmd.args ; argp ; argp = argp->narg.next) {
 		char *p = argp->narg.text;
 		if (varflag && is_name(*p)) {
