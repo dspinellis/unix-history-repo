@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)prof.c	4.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)prof.c	4.2 (Berkeley) %G%";
 #endif
 /*
  * prof
@@ -584,6 +584,8 @@ plotprof()
 		if(np->value < lowpc)
 			continue;
 		if(np->value >= highpc)
+			continue;
+		if(zflg == 0 && np->time == 0 && np->ncall == 0)
 			continue;
 		time = np->time/totime;
 		lasty = ranoff - (np->value - lowpc)*scale;
