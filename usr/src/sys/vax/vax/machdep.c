@@ -1,4 +1,4 @@
-/*	machdep.c	6.3	84/01/03	*/
+/*	machdep.c	6.4	84/02/02	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -426,19 +426,25 @@ memenable()
 
 	for (m = 0; m < nmcr; m++) {
 		mcr = mcraddr[m];
-		switch (cpu) {
+		switch (mcrtype[m]) {
 #if VAX780
-		case VAX_780:
-			M780_ENA(mcr);
+		case M780C:
+			M780C_ENA(mcr);
+			break;
+		case M780EL:
+			M780EL_ENA(mcr);
+			break;
+		case M780EU:
+			M780EU_ENA(mcr);
 			break;
 #endif
 #if VAX750
-		case VAX_750:
+		case M750:
 			M750_ENA(mcr);
 			break;
 #endif
 #if VAX730
-		case VAX_730:
+		case M730:
 			M730_ENA(mcr);
 			break;
 #endif
@@ -461,21 +467,37 @@ memerr()
 
 	for (m = 0; m < nmcr; m++) {
 		mcr = mcraddr[m];
-		switch (cpu) {
+		switch (mcrtype[m]) {
 #if VAX780
-		case VAX_780:
-			if (M780_ERR(mcr)) {
+		case M780C:
+			if (M780C_ERR(mcr)) {
 				printf("mcr%d: soft ecc addr %x syn %x\n",
-				    m, M780_ADDR(mcr), M780_SYN(mcr));
+				    m, M780C_ADDR(mcr), M780C_SYN(mcr));
 #ifdef TRENDATA
 				memlog(m, mcr);
 #endif
-				M780_INH(mcr);
+				M780C_INH(mcr);
+			}
+			break;
+
+		case M780EL:
+			if (M780EL_ERR(mcr)) {
+				printf("mcr%d: soft ecc addr %x syn %x\n",
+				    m, M780EL_ADDR(mcr), M780EL_SYN(mcr));
+				M780EL_INH(mcr);
+			}
+			break;
+
+		case M780EU:
+			if (M780EU_ERR(mcr)) {
+				printf("mcr%d: soft ecc addr %x syn %x\n",
+				    m, M780EU_ADDR(mcr), M780EU_SYN(mcr));
+				M780EU_INH(mcr);
 			}
 			break;
 #endif
 #if VAX750
-		case VAX_750:
+		case M750:
 			if (M750_ERR(mcr)) {
 				struct mcr amcr;
 				amcr.mc_reg[0] = mcr->mc_reg[0];
@@ -486,7 +508,7 @@ memerr()
 			break;
 #endif
 #if VAX730
-		case VAX_730: {
+		case M730: {
 			register int mcreg = mcr->mc_reg[1];
 
 			if (mcreg & M730_CRD) {
@@ -539,18 +561,18 @@ memlog (m, mcr)
 {
 	register i;
 
-	switch (cpu) {
+	switch (mcrtype[m]) {
 
 #if VAX780
-	case VAX_780:
+	case M780C:
 	for (i = 0; i < (sizeof (memlogtab) / sizeof (memlogtab[0])); i++)
-		if ((u_char)(M780_SYN(mcr)) == memlogtab[i].m_syndrome) {
+		if ((u_char)(M780C_SYN(mcr)) == memlogtab[i].m_syndrome) {
 			printf (
 	"mcr%d: replace %s chip in %s bank of memory board %d (0-15)\n",
 				m,
 				memlogtab[i].m_chip,
-				(M780_ADDR(mcr) & 0x8000) ? "upper" : "lower",
-				(M780_ADDR(mcr) >> 16));
+				(M780C_ADDR(mcr) & 0x8000) ? "upper" : "lower",
+				(M780C_ADDR(mcr) >> 16));
 			return;
 		}
 	printf ("mcr%d: multiple errors, not traceable\n", m);
