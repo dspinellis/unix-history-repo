@@ -13,7 +13,7 @@
 	.data
 	.align	2
 _sccsid:
-.asciz	"@(#)atan2.s	1.2 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%"
+.asciz	"@(#)atan2.s	1.2 (Berkeley) 8/21/85; 5.1 (ucb.elefunt) %G%"
 
 # ATAN2(Y,X)
 # RETURN ARG (X+iY)
