@@ -6,10 +6,9 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.20 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -20,10 +19,13 @@ static char sccsid[] = "@(#)fts.c	5.19 (Berkeley) %G%";
 #include <string.h>
 #include <unistd.h>
 
-static FTSENT *fts_alloc(), *fts_build(), *fts_sort();
-static void fts_load(), fts_lfree();
-static u_short fts_stat();
-static char *fts_path();
+static FTSENT	*fts_alloc __P((FTS *, char *, int));
+static FTSENT	*fts_build __P((FTS *, int));
+static void	 fts_lfree __P((FTSENT *));
+static void	 fts_load __P((FTS *, FTSENT *));
+static char	*fts_path __P((FTS *, int));
+static FTSENT	*fts_sort __P((FTS *, FTSENT *, int));
+static u_short	 fts_stat __P((FTS *, FTSENT *, int));
 
 #define	ISSET(opt)	(sp->fts_options & opt)
 #define	SET(opt)	(sp->fts_options |= opt)
