@@ -2,11 +2,37 @@
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.
  *
- * %sccs.include.redist.c%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	5.16 (Berkeley) 8/6/92";
 #endif /* not lint */
 
 /*
@@ -19,7 +45,10 @@ static char sccsid[] = "@(#)printjob.c	5.15 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
+#include <pwd.h>
+#include <unistd.h>
 #include <signal.h>
 #include <sgtty.h>
 #include <syslog.h>
@@ -28,6 +57,7 @@ static char sccsid[] = "@(#)printjob.c	5.15 (Berkeley) %G%";
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "lp.h"
 #include "lp.local.h"
 #include "pathnames.h"
@@ -47,30 +77,31 @@ static char sccsid[] = "@(#)printjob.c	5.15 (Berkeley) %G%";
 #define	FILTERERR	3
 #define	ACCESS		4
 
-char	title[80];		/* ``pr'' title */
-FILE	*cfp;			/* control file */
-int	pfd;			/* printer file descriptor */
-int	ofd;			/* output filter file descriptor */
-int	lfd;			/* lock file descriptor */
-int	pid;			/* pid of lpd process */
-int	prchild;		/* id of pr process */
-int	child;			/* id of any filters */
-int	ofilter;		/* id of output filter, if any */
-int	tof;			/* true if at top of form */
-int	remote;			/* true if sending files to remote */
-dev_t	fdev;			/* device of file pointed to by symlink */
-ino_t	fino;			/* inode of file pointed to by symlink */
+static dev_t	 fdev;		/* device of file pointed to by symlink */
+static ino_t	 fino;		/* inode of file pointed to by symlink */
+static FILE	*cfp;		/* control file */
+static int	 child;		/* id of any filters */
+static int	 lfd;		/* lock file descriptor */
+static int	 ofd;		/* output filter file descriptor */
+static int	 ofilter;	/* id of output filter, if any */
+static int	 pfd;		/* prstatic inter file descriptor */
+static int	 pid;		/* pid of lpd process */
+static int	 prchild;	/* id of pr process */
+static int	 remote;	/* true if sending files to remote */
+static char	 title[80];	/* ``pr'' title */
+static int	 tof;		/* true if at top of form */
 
-char	fromhost[32];		/* user's host machine */
-char	logname[32];		/* user's login name */
-char	jobname[100];		/* job or file name */
-char	class[32];		/* classification field */
-char	width[10] = "-w";	/* page width in characters */
-char	length[10] = "-l";	/* page length in lines */
-char	pxwidth[10] = "-x";	/* page width in pixels */
-char	pxlength[10] = "-y";	/* page length in pixels */
-char	indent[10] = "-i0";	/* indentation size in characters */
-char	tempfile[] = "errsXXXXXX"; /* file name for filter output */
+static char	class[32];		/* classification field */
+static char	fromhost[32];		/* user's host machine */
+				/* indentation size in static characters */
+static char	indent[10] = "-i0"; 
+static char	jobname[100];		/* job or file name */
+static char	length[10] = "-l";	/* page length in lines */
+static char	logname[32];		/* user's login name */
+static char	pxlength[10] = "-y";	/* page length in pixels */
+static char	pxwidth[10] = "-x";	/* page width in pixels */
+static char	tempfile[] = "errsXXXXXX"; /* file name for filter output */
+static char	width[10] = "-w";	/* page width in static characters */
 
 static void       abortpr __P((int));
 static void       banner __P((char *, char *));
@@ -635,11 +666,9 @@ start:
 
 	/* Copy filter output to "lf" logfile */
 	if (fp = fopen(tempfile, "r")) {
-		char tbuf[512];
-
 		while (fgets(buf, sizeof(buf), fp))
 			fputs(buf, stderr);
-		close(fp);
+		fclose(fp);
 	}
 
 	if (!WIFEXITED(status)) {
@@ -1076,72 +1105,77 @@ init()
 	int status;
 	char *s;
 
-	if ((status = pgetent(line, printer)) < 0) {
+	if ((status = cgetent(&bp, printcapdb, printer)) == -2) {
 		syslog(LOG_ERR, "can't open printer description file");
 		exit(1);
-	} else if (status == 0) {
+	} else if (status == -1) {
 		syslog(LOG_ERR, "unknown printer: %s", printer);
 		exit(1);
-	}
-	if ((LP = pgetstr("lp", &bp)) == NULL)
+	} else if (status == -3)
+		fatal("potential reference loop detected in printcap file");
+
+	if (cgetstr(bp, "lp", &LP) == -1)
 		LP = _PATH_DEFDEVLP;
-	if ((RP = pgetstr("rp", &bp)) == NULL)
+	if (cgetstr(bp, "rp", &RP) == -1)
 		RP = DEFLP;
-	if ((LO = pgetstr("lo", &bp)) == NULL)
+	if (cgetstr(bp, "lo", &LO) == -1)
 		LO = DEFLOCK;
-	if ((ST = pgetstr("st", &bp)) == NULL)
+	if (cgetstr(bp, "st", &ST) == -1)
 		ST = DEFSTAT;
-	if ((LF = pgetstr("lf", &bp)) == NULL)
+	if (cgetstr(bp, "lf", &LF) == -1)
 		LF = _PATH_CONSOLE;
-	if ((SD = pgetstr("sd", &bp)) == NULL)
+	if (cgetstr(bp, "sd", &SD) == -1)
 		SD = _PATH_DEFSPOOL;
-	if ((DU = pgetnum("du")) < 0)
+	if (cgetnum(bp, "du", &DU) < 0)
 		DU = DEFUID;
-	if ((FF = pgetstr("ff", &bp)) == NULL)
+	if (cgetstr(bp,"ff", &FF) == -1)
 		FF = DEFFF;
-	if ((PW = pgetnum("pw")) < 0)
+	if (cgetnum(bp, "pw", &PW) < 0)
 		PW = DEFWIDTH;
 	sprintf(&width[2], "%d", PW);
-	if ((PL = pgetnum("pl")) < 0)
+	if (cgetnum(bp, "pl", &PL) < 0)
 		PL = DEFLENGTH;
 	sprintf(&length[2], "%d", PL);
-	if ((PX = pgetnum("px")) < 0)
+	if (cgetnum(bp,"px", &PX) < 0)
 		PX = 0;
 	sprintf(&pxwidth[2], "%d", PX);
-	if ((PY = pgetnum("py")) < 0)
+	if (cgetnum(bp, "py", &PY) < 0)
 		PY = 0;
 	sprintf(&pxlength[2], "%d", PY);
-	RM = pgetstr("rm", &bp);
+	cgetstr(bp, "rm", &RM);
 	if (s = checkremote())
 		syslog(LOG_WARNING, s);
 
-	AF = pgetstr("af", &bp);
-	OF = pgetstr("of", &bp);
-	IF = pgetstr("if", &bp);
-	RF = pgetstr("rf", &bp);
-	TF = pgetstr("tf", &bp);
-	NF = pgetstr("nf", &bp);
-	DF = pgetstr("df", &bp);
-	GF = pgetstr("gf", &bp);
-	VF = pgetstr("vf", &bp);
-	CF = pgetstr("cf", &bp);
-	TR = pgetstr("tr", &bp);
-	RS = pgetflag("rs");
-	SF = pgetflag("sf");
-	SH = pgetflag("sh");
-	SB = pgetflag("sb");
-	HL = pgetflag("hl");
-	RW = pgetflag("rw");
-	BR = pgetnum("br");
-	if ((FC = pgetnum("fc")) < 0)
+	cgetstr(bp, "af", &AF);
+	cgetstr(bp, "of", &OF);
+	cgetstr(bp, "if", &IF);
+	cgetstr(bp, "rf", &RF);
+	cgetstr(bp, "tf", &TF);
+	cgetstr(bp, "nf", &NF);
+	cgetstr(bp, "df", &DF);
+	cgetstr(bp, "gf", &GF);
+	cgetstr(bp, "vf", &VF);
+	cgetstr(bp, "cf", &CF);
+	cgetstr(bp, "tr", &TR);
+
+	RS = (cgetcap(bp, "rs", ':') != NULL);
+	SF = (cgetcap(bp, "sf", ':') != NULL);
+	SH = (cgetcap(bp, "sh", ':') != NULL);
+	SB = (cgetcap(bp, "sb", ':') != NULL);
+	HL = (cgetcap(bp, "hl", ':') != NULL);
+	RW = (cgetcap(bp, "rw", ':') != NULL);
+
+	cgetnum(bp, "br", &BR);
+	if (cgetnum(bp, "fc", &FC) < 0)
 		FC = 0;
-	if ((FS = pgetnum("fs")) < 0)
+	if (cgetnum(bp, "fs", &FS) < 0)
 		FS = 0;
-	if ((XC = pgetnum("xc")) < 0)
+	if (cgetnum(bp, "xc", &XC) < 0)
 		XC = 0;
-	if ((XS = pgetnum("xs")) < 0)
+	if (cgetnum(bp, "xs", &XS) < 0)
 		XS = 0;
-	tof = !pgetflag("fo");
+
+	tof = (cgetcap(bp, "fo", ':') == NULL);
 }
 
 /*
