@@ -1,4 +1,5 @@
-SCCSID = "@(#)Makefile 1.27 %G%"
+SCCSID = "@(#)Makefile 1.28 %G%"
+
 INSTALLDIR = $(DESTDIR)/usr/lib
 INSTALLNAME = ${INSTALLDIR}/pc0
 WHOAMI = pc
@@ -57,11 +58,6 @@ OBJS =	ato.o \
 a.out: ${OBJS} config.c
 	${CC} ${CFLAGS} ${LDFLAGS} ${OBJS} config.c
 
-sources: whoami.h ${SRCS} ${HDRS} ${OTHERS}
-	
-${SRCS} ${HDRS} ${OTHERS}:
-	${GET} $@
-
 .c.o:
 	${RM} ${TMPDIR}/$*.c
 	${MKSTR} - ${ERRORSTRINGS} ${TMPDIR}/ $*.c
@@ -84,6 +80,12 @@ opcode.h: OPnames.h opc.c
 	cc opc.c -o opc
 	opc >opcode.h
 	${RM} opc
+
+0.h:
+	${TOUCH} 0.h
+
+yy.h:
+	${TOUCH} yy.h
 
 pTree.h:
 	echo "/* this is not pTree.h */" > pTree.h
