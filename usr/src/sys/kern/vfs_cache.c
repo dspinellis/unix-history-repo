@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_cache.c	7.14 (Berkeley) %G%
+ *	@(#)vfs_cache.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -147,10 +147,13 @@ cache_lookup(dvp, vpp, cnp)
 	ncp->nc_forw = NULL;
 	ncp->nc_back = NULL;
 	/* insert at head of LRU list (first to grab) */
-	ncp->nc_nxt = nchhead;
-	ncp->nc_prev = &nchhead;
-	nchhead->nc_prev = &ncp->nc_nxt;
+	if (ncq = nchhead)
+		ncq->nc_prev = &ncp->nc_nxt;
+	else
+		nchtail = &ncp->nc_nxt;
 	nchhead = ncp;
+	ncp->nc_nxt = ncq;
+	ncp->nc_prev = &nchhead;
 	return (0);
 }
 
@@ -287,11 +290,13 @@ cache_purgevfs(mp)
 			nchtail = ncp->nc_prev;
 		*ncp->nc_prev = nxtcp;
 		/* cause rescan of list, it may have altered */
-		nxtcp = nchhead;
-		/* put the now-free entry at head of LRU */
+		/* also put the now-free entry at head of LRU */
+		if (nxtcp = nchhead)
+			nxtcp->nc_prev = &ncp->nc_nxt;
+		else
+			nchtail = &ncp->nc_nxt;
+		nchhead = ncp;
 		ncp->nc_nxt = nxtcp;
 		ncp->nc_prev = &nchhead;
-		nxtcp->nc_prev = &ncp->nc_nxt;
-		nchhead = ncp;
 	}
 }
