@@ -1,4 +1,4 @@
-#	Makefile	1.13	84/10/05
+#	Makefile	1.14	85/02/19
 #
 #	dump.h			header file
 #	dumpitime.c		reads /etc/ddate
@@ -41,13 +41,18 @@ install: rdump dump
 	install -s -m 4750 -g operator rdump $(DESTDIR)/etc
 	install -s -m 4750 -g operator dump $(DESTDIR)/etc
 
-dumprmain.o: dumpmain.c
-	cp dumpmain.c dumprmain.c
+dumprmain.c:
+	ln -s dumpmain.c dumprmain.c
+dumprmain.o: dumprmain.c
 	${CC} -c -DRDUMP ${CFLAGS} dumprmain.c
-	rm -f dumprmain.c
+
+dumprtape.c:
+	ln -s dumptape.c dumprtape.c
+dumprtape.o: dumprtape.c
+	${CC} -c -DRDUMP ${CFLAGS} dumprtape.c
 
 clean:
-	rm -f *.o rdump dump errs dumprmain.c
+	rm -f *.o rdump dump errs dumprmain.c dumprtape.c
 
 lint:
 	lint $(DFLAGS) $(SRCS)
