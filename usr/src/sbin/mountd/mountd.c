@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	5.25 (Berkeley) %G%";
 #endif not lint
 
 #include <pwd.h>
@@ -832,7 +832,7 @@ getexp_err(ep, grp)
 	struct grouplist *tgrp;
 
 	syslog(LOG_ERR, "Bad exports list line %s", line);
-	if (ep && ep->ex_next == (struct exportlist *)0)
+	if (ep && (ep->ex_flag & EX_LINKED) == 0)
 		free_exp(ep);
 	while (grp) {
 		tgrp = grp;
