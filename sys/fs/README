@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 1994
+ *	Rodney W. Grimes, Accurate Automation Company, Portland, OR.
+ *	All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    may, but is not required to, display the following acknowledgement:
+ *	This product includes software developed by Rodney W. Grimes of
+ *	Accurate Automation Company, Portland, OR.
+ * 4. The name Accurate Automation Company or the name Rodney W. Grimes
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY ACCURATE AUTOMATION COMPANY AND ITS CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ACCURATE AUTOMATION COMPANY OR
+ * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *	$Id: lfs_vnops.c,v 1.3 1994/01/24 04:54:17 rgrimes Exp $
+ */
+
+My claim to copyright is for this file, and the derived work of the conversion
+and intergration from the UCLA FICUS project and BSD 4.4.
+
+This area (/sys/fs) is currently under contruction.  What is here has not
+yet been intergrated into the rest of the kernel.  It has been placed into
+the cvs tree of FreeBSD so that the work that is occuring in this area is
+visible to the FreeBSD team.
+
+This file will be growing as work goes on in the intergration of the rest of
+the code.  For now only the lfs code has been imported and minimally cleaned
+up.
+
+
+HISTORY of work on doing the new fs system:
+Sun Jan 23 1994
+	sys/fs:
+		Initial creation of the new fs code tree.
+	sys/fs/lfs:
+		Imported lfs as it was supplied.  Fixed sccsid's to be a
+		reference to the original BSD 4.4 code.  Added $Id$ to all lfs 
+		files.  Fixed #includes for the new structure of the source
+		tree.
+
