@@ -1,0 +1,142 @@
+expr:	  lhs
+		{ if($1->tag == TCALL)
+			$1 = funcinv($1);
+		  if($1->vtype==TYUNDEFINED && $1->vext==0)
+			impldecl($1);
+		  else if($1->tag==TNAME && $1->vdcldone==0
+			  && $1->vext==0 && !inbound)
+				dclit($1);
+		  if($1->vtype==TYFIELD)
+			$$ = extrfield($1);
+		}
+	| CONST
+	| logcon
+		{ $$ = mkconst(TYLOG, ($1 == TRUE ? ".true." : ".false.") ); }
+	| specs parexprs
+		{ $$ = typexpr($1,$2); }
+	| sizeof
+	| lengthof
+	| parexprs
+		{ if( !ininit && $1->tag== TLIST)
+			$$ = compconst($1); 
+		  else $1->needpar = 1; }
+	| expr ADDOP expr
+		{ $$ = mknode(TAROP,$2,$1,$3); }
+	| expr MULTOP expr
+		{ $$ = mknode(TAROP,$2,$1,$3); }
+	| expr POWER expr
+		{ $$ = mknode(TAROP,$2,$1,$3); }
+	| ADDOP expr  %prec MULTOP
+		{ if($1==OPMINUS)
+			$$ = mknode(TNEGOP,OPMINUS, $2, PNULL);
+		  else	$$ = $2;  }
+	| DOUBLEADDOP lhs  %prec MULTOP
+		{ $$ =  mknode(TASGNOP,$1,$2,mkint(1)); }
+	| expr RELOP expr
+		{ $$ = mknode(TRELOP,$2,$1,$3); }
+	| expr OR expr
+		{ $$ = mknode(TLOGOP,$2,$1,$3); }
+	| expr AND expr
+		{ $$ = mknode(TLOGOP,$2,$1,$3); }
+	| NOT expr
+		{ $$ = mknode(TNOTOP,$1,$2,PNULL); }
+	| lhs ASGNOP expr
+		{ if($1->tag == TCALL)
+			{
+			exprerr("may not assign to a function", CNULL);
+			$$ = errnode();
+			}
+		  else
+			$$ = mknode(TASGNOP,$2,$1,$3);
+		}
+	| expr REPOP expr
+		{ $$ = mknode(TREPOP,0,$1,$3); }
+	| iostat
+	| error
+		{ $$ = errnode(); }
+	;
+
+lhs:	lhs1
+		{ if($1->tag==TNAME && $1->vdcldone==0 &&
+			$1->vsubs==0 && $1->vext==0 && !inbound)
+				dclit($1);
+		}
+	;
+
+lhs1:	  lhsname
+	| lhsname parexprs
+		{
+		if($2->tag!=TLIST)
+			$2 = mknode(TLIST,0, mkchain($2,CHNULL), PNULL);
+		if($1->vdim)
+			{
+			if($1->vdcldone==0 && $1->vext==0)
+				dclit($1);
+			$$ = subscript($1,$2);
+			}
+		else	$$ = mkcall($1,$2);
+		}
+	| lhs QUALOP NAME
+		{ $$ = strucelt($1,$3); }
+	| lhs QUALOP NAME parexprs
+		{ if($4->tag != TLIST)
+			$4 = mknode(TLIST,0, mkchain($4,CHNULL), PNULL);
+		  $$ = subscript(strucelt($1,$3), $4);
+		}
+	| lhs ARROW STRUCTNAME
+		{ $$ = mkarrow($1,$3); }
+	;
+
+lhsname:  NAME
+		{ if($1->varp == 0) mkvar($1);
+		  if(inbound)
+			  $1->varp->vadjdim = 1;
+		  $$ = cpexpr($1->varp); }
+	;
+
+parexprs: LPAR RPAR
+		{ $$ = mknode(TLIST, 0, PNULL, PNULL); }
+	| LPAR expr RPAR
+		{ $$ = $2; }
+	| LPAR exprlist RPAR
+		{ $$ = mknode(TLIST,0,$2,PNULL); }
+	;
+
+exprlist: expr COMMA expr
+		{ $$ = mkchain($1, mkchain($3, CHNULL) ); }
+	| exprlist COMMA expr
+		{ hookup($1, mkchain($3,CHNULL) ); }
+	;
+
+sizeof:	  SIZEOF LPAR expr RPAR
+		{ $$ = esizeof($3->vtype, $3->vtypep, $3->vdim);
+		  frexpr($3); }
+	| SIZEOF LPAR specs RPAR
+		{ if($3->attype==TYREAL && $3->atprec)
+			$3->attype = TYLREAL;
+		  $$ = esizeof($3->attype, $3->attypep, $3->atdim);
+		  cfree($3);
+		}
+	| SIZEOF LPAR CHARACTER RPAR
+		{ $$ = mkint(tailor.ftnsize[FTNINT]/tailor.ftnchwd); }
+	;
+
+lengthof:	  LENGTHOF LPAR expr RPAR
+		{ $$ = elenof($3->vtype, $3->vtypep, $3->vdim);
+		  frexpr($3); }
+	| LENGTHOF LPAR specs RPAR
+		{ $$ = elenof($3->attype, $3->attypep, $3->atdim);
+		  cfree($3);
+		}
+	| LENGTHOF LPAR CHARACTER RPAR
+		{ $$ = mkint(1); }
+	;
+
+logcon:   logval
+	| QUALOP logval QUALOP
+		{ $$ = $2; }
+	;
+
+logval:   TRUE
+	| FALSE
+	;
