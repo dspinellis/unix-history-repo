@@ -1,14 +1,18 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1980 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
  */
 
 #ifndef lint
-static char *sccsid = "@(#)printf.c	7.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)printf.c	7.5 (Berkeley) %G%";
+#endif /* not lint */
+
+#ifndef lint
 /* The pwb version this is based on */
 static char *printf_id = "@(#) printf.c:2.2 6/5/79";
-#endif not lint
+#endif /* not lint */
 
 #include <varargs.h>
  

@@ -1,6 +1,10 @@
+/*-
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)dprog.c	4.4	(Berkeley)	91/03/01";
-#endif not lint
+static char sccsid[] = "@(#)dprog.c	4.5 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * diction -- print all sentences containing one of default phrases

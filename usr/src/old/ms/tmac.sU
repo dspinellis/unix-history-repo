@@ -1,4 +1,7 @@
-.\"	@(#)tmac.sU	5.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)tmac.sU	5.2 (Berkeley) %G%
+.\"
 .\" Modify -ms macros for typesetting manuals for Usenix distribution.
 .\" Differences: page numbers even on page 1, MH = Bell Labs,
 .\" default line length (and title length) 6.5i instead of 6i.

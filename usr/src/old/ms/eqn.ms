@@ -1,4 +1,7 @@
-.\" @(#)eqn.ms	1.3 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)eqn.ms	5.1 (Berkeley) %G%
+.\"
 .bd S B 3
 .	\" EQ - equation, breakout and display
 .de EQ

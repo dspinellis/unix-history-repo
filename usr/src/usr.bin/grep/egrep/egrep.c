@@ -1,6 +1,19 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)egrep.c	5.13 (Berkeley) %G%";
-#endif not lint
+char copyright[] =
+"@(#) Copyright (c) 1991 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)egrep.c	5.14 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
      Hybrid Boyer/Moore/Gosper-assisted 'grep/egrep/fgrep' search, with delta0

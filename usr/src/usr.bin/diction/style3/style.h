@@ -1,4 +1,9 @@
-/*	style.h	4.3	83/08/11	*/
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)style.h	4.4 (Berkeley) %G%
+ */
+
 extern int part;
 extern int style;
 extern int topic;

@@ -1,5 +1,21 @@
 %{
-static	char *sccsid = "@(#)bc.y	4.7 (Berkeley) 89/09/15";
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1991 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)bc.y	5.1 (Berkeley) %G%";
+#endif /* not lint */
+
 	int *getout();
 %}
 %right '='

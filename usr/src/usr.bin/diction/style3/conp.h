@@ -1,4 +1,8 @@
-/*	conp.h	4.3	83/08/11	*/
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)conp.h	4.4 (Berkeley) %G%
+ */
 
 #define SLENG 250
 #define SCHAR 1500

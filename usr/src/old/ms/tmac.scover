@@ -1,3 +1,7 @@
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)tmac.scover	5.1 (Berkeley) %G%
+.\"
 .	\"OK - "other keywords" for cover sheet.
 .de OK
 .br

@@ -1,4 +1,13 @@
-/* Copyright (c) 1985 Regents of the University of California */
+/*-
+ * Copyright (c) 1980 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)ex_tagio.c	7.5 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * These routines are for faster tag lookup.  They support the binary
@@ -6,11 +15,7 @@
  * is quite noticable looking for a tag at the end of a long tags
  * file.  Define FASTTAG in the Makefile to use these routines.
  */
-
 #ifdef FASTTAG
-#ifndef lint
-static char *sccsid = "@(#)ex_tagio.c	7.4 (Berkeley) %G%";
-#endif
 
 #ifndef vms
 #include <sys/file.h>

@@ -1,4 +1,11 @@
-/*	lrnref.h	4.4	86/05/15	*/
+/*-
+ * Copyright (c) 1986 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)lrnref.h	4.5 (Berkeley) %G%
+ */
 
 #define	READY	0
 #define	PRINT	1

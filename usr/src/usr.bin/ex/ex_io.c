@@ -1,12 +1,13 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1980 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_io.c	7.18.1.1 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)ex_io.c	7.19 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "ex.h"
 #include "ex_argv.h"
@@ -416,6 +417,10 @@ rop(c)
 		error(" Directory");
 
 	case S_IFREG:
+#ifdef CRYPT
+		if (xflag)
+			break;
+#endif
 		i = read(io, (char *)&head, sizeof(head));
 		(void)lseek(io, 0L, L_SET);
 		if (i != sizeof(head))
@@ -831,6 +836,18 @@ getfile()
 				}
 				return (EOF);
 			}
+#ifdef CRYPT
+			if (kflag) {
+				fp = genbuf;
+				while(fp < &genbuf[ninbuf]) {
+					if (*fp++ & 0200) {
+						crblock(perm, genbuf, ninbuf+1,
+	cntch);
+						break;
+					}
+				}
+			}
+#endif
 			fp = genbuf;
 			cntch += ninbuf+1;
 		}
@@ -888,6 +905,10 @@ int isfilter;
 		for (;;) {
 			if (--nib < 0) {
 				nib = fp - genbuf;
+#ifdef CRYPT
+                		if(kflag && !isfilter)
+                                        crblock(perm, genbuf, nib, cntch);
+#endif
 				if (write(io, genbuf, nib) != nib) {
 					wrerror();
 				}
@@ -902,6 +923,10 @@ int isfilter;
 		}
 	} while (a1 <= addr2);
 	nib = fp - genbuf;
+#ifdef CRYPT
+	if(kflag && !isfilter)
+		crblock(perm, genbuf, nib, cntch);
+#endif
 	if (write(io, genbuf, nib) != nib) {
 		wrerror();
 	}
