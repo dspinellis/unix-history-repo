@@ -30,9 +30,10 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)pathnames.h	5.4 (Berkeley) 3/7/91
+ *	from: @(#)pathnames.h	5.4 (Berkeley) 3/7/91
+ *	$Id$
  */
 
-#define	MAIL_CMD	"/usr/sbin/sendmail -i -t -F \"Bugs Bunny\" -f owner-bugs"
+#define	MAIL_CMD	"/usr/sbin/sendmail -i -t -F \"Bugs Bunny\" -f BUGS_HOME"
 #undef _PATH_TMP
 #define	_PATH_TMP	"/tmp/BUG_XXXXXX"

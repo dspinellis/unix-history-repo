@@ -31,10 +31,8 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-#	@(#)sendbug.sh	5.11 (Berkeley) 7/25/90
-#
-#  Modified to support FreeBSD bugfiler running at freefall.cdrom.com
-#  by Rodney W. Grimes on August 3, 1993.
+#	form: @(#)sendbug.sh	5.11 (Berkeley) 7/25/90
+#	$Id$
 #
 
 # create a bug report and mail it to 'bugs'.
@@ -46,8 +44,8 @@ TEMP=/tmp/bug$$
 FORMAT=/usr/share/misc/bugformat
 
 # uucp sites should use:
-#	": ${BUGADDR=freefall.cdrom.com!FreeBSD-bugs}" with a suitable path.
-: ${BUGADDR=FreeBSD-bugs@freefall.cdrom.com}
+#	": ${BUGADDR=freefall.cdrom.com!FreeBSD-bugfiler}" with a suitable path.
+: ${BUGADDR=FreeBSD-bugfiler@freefall.cdrom.com}
 : ${EDITOR=vi}
 
 trap 'rm -f $TEMP ; exit 1' 1 2 3 13 15
