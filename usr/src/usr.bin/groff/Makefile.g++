@@ -1,0 +1,23 @@
+#	@(#)Makefile.g++	6.2 (Berkeley) 3/3/91
+
+#
+# Define g++ compilation rules.
+#
+
+GXX=		g++
+GXXFLAGS=	-O -felide-constructors
+LDXX=		/usr/libexec/ld++
+# Temporary, to achieve linking
+CC=		g++
+
+.SUFFIXES: .cc
+
+.cc.o:
+	$(GXX) $(GXXFLAGS) -c $(.IMPSRC)
+
+.y.o:
+	$(YACC) $(YFLAGS) $(.IMPSRC)
+	mv y.tab.c $(.PREFIX).cc
+	mv y.tab.h $(.PREFIX).tab.h
+	$(GXX) $(GXXFLAGS) -c $(.PREFIX).cc
+	-rm -f $(.PREFIX).cc
