@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pw_util.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pw_util.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -33,7 +33,6 @@ extern char *tempname;
 pw_init()
 {
 	struct rlimit rlim;
-	sigset_t set;
 
 	/* Unlimited cpu, file size. */
 	rlim.rlim_cur = rlim.rlim_max = RLIM_INFINITY;
@@ -45,13 +44,11 @@ pw_init()
 	(void)setrlimit(RLIMIT_CORE, &rlim);
 
 	/* Turn off usual signals. */
-	sigemptyset(&set);
-	(void)sigaddset(&set, SIGTSTP);
-	(void)sigaddset(&set, SIGHUP);
-	(void)sigaddset(&set, SIGINT);
-	(void)sigaddset(&set, SIGQUIT);
-	(void)sigaddset(&set, SIGTERM);
-	(void)sigprocmask(SIG_BLOCK, &set, (sigset_t *)NULL);
+	(void)signal(SIGHUP, SIG_IGN);
+	(void)signal(SIGINT, SIG_IGN);
+	(void)signal(SIGQUIT, SIG_IGN);
+	(void)signal(SIGTERM, SIG_IGN);
+	(void)signal(SIGTSTP, SIG_IGN);
 
 	/* Create with exact permissions. */
 	(void)umask(0);
