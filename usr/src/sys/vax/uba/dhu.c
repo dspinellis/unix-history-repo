@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982 Regents of the University of California.
+ * Copyright (c) 1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dhu.c	4.7 (Berkeley) %G%
+ *	@(#)dhu.c	4.8 (Berkeley) %G%
  */
 
 /*
@@ -162,6 +162,7 @@ dhuattach(ui)
 {
 
 	dhusoftCAR[ui->ui_unit] = ui->ui_flags;
+	cbase[ui->ui_ubanum] = -1;
 }
 
 /*
@@ -194,11 +195,11 @@ dhuopen(dev, flag)
 	 * block uba resets which can clear the state.
 	 */
 	s = spl5();
-	if (cbase[ui->ui_ubanum] == 0) {
+	if (cbase[ui->ui_ubanum] == -1) {
 		dhu_ubinfo[ui->ui_ubanum] =
 		    uballoc(ui->ui_ubanum, (caddr_t)cfree,
 			nclist*sizeof(struct cblock), 0);
-		cbase[ui->ui_ubanum] = dhu_ubinfo[ui->ui_ubanum]&0x3ffff;
+		cbase[ui->ui_ubanum] = UBAI_ADDR(dhu_ubinfo[ui->ui_ubanum]);
 	}
 	if ((dhuact&(1<<dhu)) == 0) {
 		addr->dhucsr = DHU_SELECT(0) | DHU_IE;
@@ -717,10 +718,10 @@ dhureset(uban)
 		if (ui == 0 || ui->ui_alive == 0 || ui->ui_ubanum != uban)
 			continue;
 		printf(" dhu%d", dhu);
-		if (cbase[uban] == 0) {
+		if (dhu_ubinfo[uban]) {
 			dhu_ubinfo[uban] = uballoc(uban, (caddr_t)cfree,
 					    nclist*sizeof (struct cblock), 0);
-			cbase[uban] = dhu_ubinfo[uban]&0x3ffff;
+			cbase[uban] = UBAI_ADDR(dhu_ubinfo[uban]);
 		}
 		addr = (struct dhudevice *)ui->ui_addr;
 		addr->dhucsr = DHU_SELECT(0) | DHU_IE;

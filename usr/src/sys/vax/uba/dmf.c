@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmf.c	6.12 (Berkeley) %G%
+ *	@(#)dmf.c	6.13 (Berkeley) %G%
  */
 
 #include "dmf.h"
@@ -207,6 +207,7 @@ dmfattach(ui)
 	dmfsoftCAR[ui->ui_unit] = ui->ui_flags & 0xff;
 	dmfl_softc[ui->ui_unit].dmfl_cols = cols==0?DMFL_DEFCOLS:cols;
 	dmfl_softc[ui->ui_unit].dmfl_lines = lines==0?DMFL_DEFLINES:lines;
+	cbase[ui->ui_ubanum] = -1;
 }
 
 
@@ -243,11 +244,11 @@ dmfopen(dev, flag)
 	 * block uba resets which can clear the state.
 	 */
 	s = spltty();
-	if (cbase[ui->ui_ubanum] == 0) {
+	if (cbase[ui->ui_ubanum] == -1) {
 		dmf_ubinfo[ui->ui_ubanum] =
 		    uballoc(ui->ui_ubanum, (caddr_t)cfree,
 			nclist*sizeof(struct cblock), 0);
-		cbase[ui->ui_ubanum] = dmf_ubinfo[ui->ui_ubanum]&0x3ffff;
+		cbase[ui->ui_ubanum] = UBAI_ADDR(dmf_ubinfo[ui->ui_ubanum]);
 	}
 	if ((dmfact&(1<<dmf)) == 0) {
 		addr->dmfcsr |= DMF_IE;
@@ -798,10 +799,10 @@ dmfreset(uban)
 		if (ui == 0 || ui->ui_alive == 0 || ui->ui_ubanum != uban)
 			continue;
 		printf(" dmf%d", dmf);
-		if (cbase[uban] == 0) {
+		if (dmf_ubinfo[uban]) {
 			dmf_ubinfo[uban] = uballoc(uban, (caddr_t)cfree,
 			    nclist*sizeof (struct cblock), 0);
-			cbase[uban] = dmf_ubinfo[uban]&0x3ffff;
+			cbase[uban] = UBAI_ADDR(dmf_ubinfo[uban]);
 		}
 		addr = (struct dmfdevice *)ui->ui_addr;
 		addr->dmfcsr = DMF_IE;

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dh.c	6.14 (Berkeley) %G%
+ *	@(#)dh.c	6.15 (Berkeley) %G%
  */
 
 #include "dh.h"
@@ -134,6 +134,7 @@ dhattach(ui)
 {
 
 	dhsoftCAR[ui->ui_unit] = ui->ui_flags;
+	cbase[ui->ui_ubanum] = -1;
 }
 
 /*
@@ -194,11 +195,11 @@ dhopen(dev, flag)
 	 * block uba resets which can clear the state.
 	 */
 	s = spl5();
-	if (cbase[ui->ui_ubanum] == 0) {
+	if (cbase[ui->ui_ubanum] == -1) {
 		dh_ubinfo[ui->ui_ubanum] =
 		    uballoc(ui->ui_ubanum, (caddr_t)cfree,
 			nclist*sizeof(struct cblock), 0);
-		cbase[ui->ui_ubanum] = dh_ubinfo[ui->ui_ubanum]&0x3ffff;
+		cbase[ui->ui_ubanum] = UBAI_ADDR(dh_ubinfo[ui->ui_ubanum]);
 	}
 	if (timerstarted == 0) {
 		timerstarted++;
@@ -595,10 +596,10 @@ dhreset(uban)
 		if (ui == 0 || ui->ui_alive == 0 || ui->ui_ubanum != uban)
 			continue;
 		printf(" dh%d", dh);
-		if (cbase[uban] == 0) {
+		if (dh_ubinfo[uban]) {
 			dh_ubinfo[uban] = uballoc(uban, (caddr_t)cfree,
 			    nclist*sizeof (struct cblock), 0);
-			cbase[uban] = dh_ubinfo[uban]&0x3ffff;
+			cbase[uban] = UBAI_ADDR(dh_ubinfo[uban]);
 		}
 		((struct dhdevice *)ui->ui_addr)->un.dhcsr |= DH_IE;
 		((struct dhdevice *)ui->ui_addr)->dhsilo = 0;
