@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bibargs.c	2.11	%G%";
+static char sccsid[] = "@(#)bibargs.c	2.12	%G%";
 #endif not lint
 /*
         Authored by: Tim Budd, University of Arizona, 1983.
@@ -880,7 +880,8 @@ return(cp);
    if (getname(1, name1, temp, ref)) {
       for (fp = name1; *fp; )
          *cp++ = *fp++;
-      if ((maxauthors >= 3) && (getname(4, name3, temp, ref))) {
+      if (((maxauthors >= 3) && (getname(4, name3, temp, ref)))
+	  || ((maxauthors < 3) && (getname(3, name3, temp, ref)))) {
          for (fp = " \\*(e]"; *fp; )
             *cp++ = *fp++;
          }
