@@ -1,4 +1,4 @@
-/* tcp.h 1.4 81/10/21 */
+/* tcp.h 1.5 81/10/22 */
 
 /*
  * Tcp header (fits over ip header).
@@ -96,35 +96,6 @@ struct tcb {
 	u_char	t_xmt;			/* round trip transmission time */
 };
 
-#define	ISSINCR		128		/* increment for iss each second */
-#define	TCPROTO		6		/* TCP-4 protocol number */
-#define	TCPSIZE		20		/* size of TCP leader (bytes) */
-#define	T_2ML		10		/* 2*maximum packet lifetime */
-#define	T_PERS		5		/* persist time */
-#define	T_INIT		30		/* init too long timeout */
-#define	T_REXMT		1		/* base for retransmission time */
-#define	T_REXMTTL	30		/* retransmit too long timeout */
-#define	T_REMAX		30		/* maximum retransmission time */
-#define	ACTIVE		1		/* active open */
-#define	PASSIVE		0		/* passive open */
-
-/*
- * Tcp debugging record.
- */
-struct t_debug {
-	long	t_tod;			/* time of day */
-	struct	tcb *t_tcb;		/* -> tcb */
-	char	t_old;			/* old state */
-	char	t_inp;			/* input */
-	char	t_tim;			/* timer id */
-	char	t_new;			/* new state */
-	seq_t	t_sno;			/* seq_t number */
-	seq_t	t_ano;			/* acknowledgement */
-	u_short	t_wno;			/* window */
-	u_short	t_lno;			/* length */
-	u_char	t_flg;			/* message flags */
-};
-
 /*
  * Tcp machine predicates
  */
@@ -141,3 +112,40 @@ struct t_debug {
 #define	rcv_empty(x) \
     (((x)->tc_flags&TC_USR_ABORT) || \
       ((x)->t_ucb->uc_rbuf == NULL && (x)->t_rcv_next == (x)->t_rcv_prev))
+
+#define	ISSINCR		128		/* increment for iss each second */
+#define	TCPROTO		6		/* TCP-4 protocol number */
+#define	TCPSIZE		20		/* size of TCP leader (bytes) */
+#define	T_2ML		10		/* 2*maximum packet lifetime */
+#define	T_PERS		5		/* persist time */
+#define	T_INIT		30		/* init too long timeout */
+#define	T_REXMT		1		/* base for retransmission time */
+#define	T_REXMTTL	30		/* retransmit too long timeout */
+#define	T_REMAX		30		/* maximum retransmission time */
+#define	ACTIVE		1		/* active open */
+#define	PASSIVE		0		/* passive open */
+
+#ifdef TCPDEBUG
+#define	TDBSIZE		50
+/*
+ * Tcp debugging record.
+ */
+struct tcp_debug {
+	long	td_tod;			/* time of day */
+	struct	tcb *td_tcb;		/* -> tcb */
+	char	td_old;			/* old state */
+	char	td_inp;			/* input */
+	char	td_tim;			/* timer id */
+	char	td_new;			/* new state */
+	seq_t	td_sno;			/* seq_t number */
+	seq_t	td_ano;			/* acknowledgement */
+	u_short	td_wno;			/* window */
+	u_short	td_lno;			/* length */
+	u_char	td_flg;			/* message flags */
+};
+#ifdef KERNEL
+int	tcpconsdebug;		/* set to 1 traces on console */
+struct	tcp_debug tcp_debug[TDBSIZE];
+int	tdbx;			/* rotating index into tcp_debug */
+#endif
+#endif
