@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)init_main.c	7.18 (Berkeley) %G%
+ *	@(#)init_main.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -152,7 +152,6 @@ main(firstaddr)
 	nchinit();
 #ifdef GPROF
 	kmstartup();
-#endif
 
 	fs = mountfs(rootdev, boothowto & RB_RDONLY, (struct inode *)0);
 	if (fs == 0)
