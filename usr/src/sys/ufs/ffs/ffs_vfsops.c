@@ -1,4 +1,4 @@
-/*	ffs_vfsops.c	6.3	84/02/07	*/
+/*	ffs_vfsops.c	6.4	84/06/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -48,7 +48,6 @@ smount()
 	*cp = 0;
 }
 
-/* this routine has lousy error codes */
 /* this routine has races if running twice */
 struct fs *
 mountfs(dev, ronly, ip)
@@ -63,30 +62,36 @@ mountfs(dev, ronly, ip)
 	int blks;
 	caddr_t space;
 	int i, size;
+	register error;
 
-	u.u_error =
+	error =
 	    (*bdevsw[major(dev)].d_open)(dev, ronly ? FREAD : FREAD|FWRITE);
-	if (u.u_error) {
-		u.u_error = EIO;
+	if (error)
 		goto out;
-	}
 	tp = bread(dev, SBLOCK, SBSIZE);
 	if (tp->b_flags & B_ERROR)
 		goto out;
 	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
 		if (mp->m_bufp != 0 && dev == mp->m_dev) {
 			mp = 0;
+			error = EBUSY;
 			goto out;
 		}
 	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
 		if (mp->m_bufp == 0)
 			goto found;
 	mp = 0;
+	error = EMFILE;		/* needs translation */
 	goto out;
 found:
 	mp->m_bufp = tp;	/* just to reserve this slot */
 	mp->m_dev = NODEV;
 	fs = tp->b_un.b_fs;
+	if (fs->fs_magic != FS_MAGIC || fs->fs_bsize > MAXBSIZE
+	    || fs->fs_bsize < sizeof(struct fs)) {
+		error = EINVAL;		/* also needs translation */
+		goto out;
+	}
 	bp = geteblk((int)fs->fs_sbsize);
 	mp->m_bufp = bp;
 	bcopy((caddr_t)tp->b_un.b_addr, (caddr_t)bp->b_un.b_addr,
@@ -94,15 +99,15 @@ found:
 	brelse(tp);
 	tp = 0;
 	fs = bp->b_un.b_fs;
-	if (fs->fs_magic != FS_MAGIC || fs->fs_bsize > MAXBSIZE)
-		goto out;
 	fs->fs_ronly = (ronly != 0);
 	if (ronly == 0)
 		fs->fs_fmod = 1;
 	blks = howmany(fs->fs_cssize, fs->fs_fsize);
 	space = wmemall(vmemall, (int)fs->fs_cssize);
-	if (space == 0)
+	if (space == 0) {
+		error = ENOMEM;
 		goto out;
+	}
 	for (i = 0; i < blks; i += fs->fs_frag) {
 		size = fs->fs_bsize;
 		if (i + fs->fs_frag > blks)
@@ -126,7 +131,8 @@ found:
 	}
 	return (fs);
 out:
-	u.u_error = EBUSY;
+	if (error == 0)
+		error = EIO;
 	if (ip)
 		iput(ip);
 	if (mp)
@@ -135,6 +141,7 @@ out:
 		brelse(bp);
 	if (tp)
 		brelse(tp);
+	u.u_error = error;
 	return (0);
 }
 
