@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmd1.c	2.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd1.c	2.14 (Berkeley) %G%";
 #endif
 
 #include "rcv.h"
@@ -137,6 +137,9 @@ screensize()
 {
 	register char *cp;
 	register int s;
+#ifdef	TIOCGWINSZ
+	struct winsize ws;
+#endif
 
 	if ((cp = value("screen")) != NOSTR) {
 		s = atoi(cp);
@@ -147,6 +150,10 @@ screensize()
 		s = 5;
 	else if (baud == B1200)
 		s = 10;
+#ifdef	TIOCGWINSZ
+	else if (ioctl(fileno(stdout), TIOCGWINSZ, &ws) == 0 && ws.ws_row != 0)
+		s = ws.ws_row - 4;
+#endif
 	else
 		s = 20;
 	return(s);
@@ -262,13 +269,32 @@ pcmdlist()
 }
 
 /*
+ * Paginate messages, honor ignored fields.
+ */
+more(msgvec)
+	int *msgvec;
+{
+	return (type1(msgvec, 1, 1));
+}
+
+/*
+ * Paginate messages, even printing ignored fields.
+ */
+More(msgvec)
+	int *msgvec;
+{
+
+	return (type1(msgvec, 0, 1));
+}
+
+/*
  * Type out messages, honor ignored fields.
  */
 type(msgvec)
 	int *msgvec;
 {
 
-	return(type1(msgvec, 1));
+	return(type1(msgvec, 1, 0));
 }
 
 /*
@@ -278,7 +304,7 @@ Type(msgvec)
 	int *msgvec;
 {
 
-	return(type1(msgvec, 0));
+	return(type1(msgvec, 0, 0));
 }
 
 /*
@@ -286,7 +312,7 @@ Type(msgvec)
  */
 jmp_buf	pipestop;
 
-type1(msgvec, doign)
+type1(msgvec, doign, page)
 	int *msgvec;
 {
 	register *ip;
@@ -306,10 +332,13 @@ type1(msgvec, doign)
 		sigset(SIGPIPE, SIG_DFL);
 		return(0);
 	}
-	if (intty && outtty && (cp = value("crt")) != NOSTR) {
-		for (ip = msgvec, nlines = 0; *ip && ip-msgvec < msgCount; ip++)
-			nlines += message[*ip - 1].m_lines;
-		if (nlines > atoi(cp)) {
+	if (intty && outtty && (page || (cp = value("crt")) != NOSTR)) {
+		if (!page) {
+			nlines = 0;
+			for (ip = msgvec; *ip && ip-msgvec < msgCount; ip++)
+				nlines += message[*ip - 1].m_lines;
+		}
+		if (page || nlines > atoi(cp)) {
 			obuf = popen(MORE, "w");
 			if (obuf == NULL) {
 				perror(MORE);
