@@ -3,10 +3,10 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)ex.rm	8.1 (Berkeley) %G%
+.\"	@(#)ex.rm	8.2 (Berkeley) %G%
 .\"
-.EH 'USD:13-%''Ex Reference Manual'
-.OH 'Ex Reference Manual''USD:13-%'
+.EH 'USD:12-%''Ex Reference Manual'
+.OH 'Ex Reference Manual''USD:12-%'
 .de ZP
 .nr pd \\n()P
 .nr )P 0
