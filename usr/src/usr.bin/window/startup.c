@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)startup.c	1.2 83/07/22";
+static	char *sccsid = "@(#)startup.c	1.3 83/07/29";
 #endif
 
 #include "defs.h"
@@ -14,7 +14,7 @@ doconfig()
 
 	if ((home = getenv("HOME")) == 0)
 		home = "";
-	sprintf(buf, "%s/.windowcf", home);
+	sprintf(buf, "%s/.windowrc", home);
 	return dosource(buf);
 }
 
