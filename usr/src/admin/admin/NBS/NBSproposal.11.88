@@ -1,4 +1,4 @@
-.\"	@(#)NBSproposal.11.88	1.1	88/11/14
+.\"	@(#)NBSproposal.11.88	1.2	88/11/18
 .\" *troff -ms
 .de CO
 .br
@@ -91,10 +91,12 @@ operating systems research.
 .NH 2
 OSI Network Protocol Development
 .PP
+.CO sklower "I have wacked on this some"
 The network architecture of 4.2BSD was designed to accommodate
 multiple network protocol families and address formats.
-Our current prototype implementation of the ISO OSI network protocols
-is fitting into this framework without much difficulty.
+The current prototype implementation of the ISO OSI network protocols
+make use of all of the existing facilities, but will be aided by
+some architectural changes described below.
 The outline of the proposal is to
 implement the OSI connectionless internet protocol (CLNP),
 and device drivers for X.25, 802.3, and possibly 802.5 interfaces, and
@@ -108,17 +110,30 @@ London and the University of Nottingham will also be available for testing
 and distribution.
 This work will include participation in
 interoperability tests with vendors and users on OSINET.
-.CO sklower "refine this into accomplishments and what we still have to do
 .PP
-Several structural changes need to be made to the networking
-to provide the functionality necessary to support the OSI
-protocols, and to improve throughput.
-These changes include a new network buffer layout and a
-prototype header size.
-Additionally, the layering needs improved communication between
-the layers, particularly between the  network layer and the
-three services that it interacts with, address resolution protocol
-(ARP), routing, and the transport level.
+To this end, we have already changed network buffer layouts,
+allowed variable length network addresses, contructed a uniform
+hierchical routing lookup algorithm.
+We have made alterations to the socket interface to allow
+transmission of record boundaries,
+distinction between dequeueing connection requests and explicit
+confirmation, and passage of ancillary data such as user connection\-
+or disconnection\-request data. 
+.PP
+We are designing additional structures (analogous to the ``Streams''
+concept of Bell Laborities 9th edition UNIX, or system V.3)
+which will make uniform the processing of serial data,
+improve communication between protocol layers,
+and provide a more natural framework for
+devices already providing virtual circuit services
+(such as X.25 devices).
+Such structures would also provide a natural setting
+for kernel resident virtual terminal services,
+or the other extreme of direct access to communications-layer devices,
+and would make it easier to tunnel one protocol through another.
+Additional work may be necessary for IP,
+(address resolution protocol -- ARP, in particular) to allow such
+revisions.
 .CO karels/sklower "elaborate on this
 .NH 2
 Compliance with POSIX 1003
