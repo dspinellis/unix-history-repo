@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.5 (Berkeley) %G%
+#	@(#)Makefile.inc	5.6 (Berkeley) %G%
 
 # net sources
 .PATH: ${.CURDIR}/${MACHINE}/net ${.CURDIR}/net
@@ -11,7 +11,7 @@ SRCS+=	gethostnamadr.c getnetbyaddr.c getnetbyname.c getnetent.c \
 	res_debug.c res_init.c res_mkquery.c res_query.c res_send.c \
 	send.c sethostent.c
 
-.if   (${MACHINE} == "hp300")
+.if   (${MACHINE} == "hp300" || ${MACHINE} == "luna68k")
 SRCS+=	htonl.s htons.s ntohl.s ntohs.s
 .elif (${MACHINE} == "i386")
 SRCS+=	htonl.s htons.s ntohl.s ntohs.s

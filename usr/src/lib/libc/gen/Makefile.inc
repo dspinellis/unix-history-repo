@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.26 (Berkeley) %G%
+#	@(#)Makefile.inc	5.27 (Berkeley) %G%
 
 # gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen ${.CURDIR}/gen/regexp
@@ -20,7 +20,7 @@ SRCS+=	alarm.c assert.c clock.c closedir.c crypt.c ctermid.c ctime.c \
 # gen/regexp sources
 SRCS+=	regerror.c regexp.c regsub.c
 
-.if   (${MACHINE} == "hp300")
+.if   (${MACHINE} == "hp300" || ${MACHINE} == "luna68k")
 SRCS+=	_setjmp.s alloca.s fabs.s ldexp.s modf.s setjmp.s
 SRCS+=	adddf3.s addsf3.s ashlsi3.s ashrsi3.s cmpdf2.s cmpsf2.s divdf3.s \
 	divsf3.s divsi3.s extendsfdf2.s fixdfsi.s fixunsdfsi.s \

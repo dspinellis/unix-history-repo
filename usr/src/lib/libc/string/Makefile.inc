@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.9 (Berkeley) %G%
+#	@(#)Makefile.inc	5.10 (Berkeley) %G%
 
 # string sources
 .PATH: ${.CURDIR}/${MACHINE}/string ${.CURDIR}/string
@@ -6,7 +6,7 @@
 SRCS+=	memccpy.c strcasecmp.c strcoll.c strdup.c strerror.c \
 	strftime.c strmode.c strtok.c strxfrm.c swab.c
 
-.if   (${MACHINE} == "hp300")
+.if   (${MACHINE} == "hp300" || ${MACHINE} == "luna68k")
 SRCS+=	bcmp.s bcopy.s bzero.s ffs.s index.s memchr.c memcmp.c memset.c \
 	rindex.s strcat.c strcmp.s strcpy.s strcspn.c strlen.s \
 	strncat.c strncmp.s strncpy.s strpbrk.c strsep.c \

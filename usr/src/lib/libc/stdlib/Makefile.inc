@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.9 (Berkeley) %G%
+#	@(#)Makefile.inc	5.10 (Berkeley) %G%
 
 # stdlib sources
 .PATH: ${.CURDIR}/${MACHINE}/stdlib ${.CURDIR}/stdlib
@@ -8,7 +8,7 @@ SRCS+=	abort.c atexit.c atoi.c atol.c bsearch.c calloc.c div.c exit.c \
 	multibyte.c putenv.c qsort.c radixsort.c rand.c random.c setenv.c \
 	strtol.c strtoul.c system.c
 
-.if   (${MACHINE} == "hp300")
+.if   (${MACHINE} == "hp300" || ${MACHINE} == "luna68k")
 SRCS+=	abs.s atof.c
 .elif (${MACHINE} == "i386")
 SRCS+=	abs.s atof.c
