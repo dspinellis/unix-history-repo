@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.4	%G%	*/
+/*	vfs_vnops.c	4.5	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -100,7 +100,7 @@ register struct file *fp;
 	}
 
 	if ((flag & FMP) == 0) {
-		for(fp=file; fp < &file[NFILE]; fp++)
+		for(fp=file; fp < fileNFILE; fp++)
 			if (fp->f_count && (ip=fp->f_inode)->i_un.i_rdev==dev &&
 			    (ip->i_mode&IFMT) == mode)
 				return;
@@ -270,7 +270,7 @@ falloc()
 	i = ufalloc();
 	if(i < 0)
 		return(NULL);
-	for(fp = lastf; fp < &file[NFILE]; fp++)
+	for(fp = lastf; fp < fileNFILE; fp++)
 		if(fp->f_count == 0)
 			goto slot;
 	for(fp = &file[0]; fp < lastf; fp++)

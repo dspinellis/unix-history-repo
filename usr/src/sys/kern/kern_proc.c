@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.5	%G%	*/
+/*	kern_proc.c	4.6	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -301,7 +301,7 @@ register struct inode *ip;
 	if(u.u_exdata.ux_tsize!=0 && (ip->i_flag&ITEXT)==0 && ip->i_count!=1) {
 		register struct file *fp;
 
-		for (fp = file; fp < &file[NFILE]; fp++)
+		for (fp = file; fp < fileNFILE; fp++)
 			if (fp->f_inode == ip && (fp->f_flag&FWRITE)) {
 				u.u_error = ETXTBSY;
 				goto bad;
