@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)curses.3	4.1 (Berkeley) %G%
+.\"	@(#)curses.3	5.1 (Berkeley) %G%
 .\"
-.TH CURSES 3
+.TH CURSES 3X "19 January 1983"
 .UC 4
 .SH NAME
 curses \- screen functions with ``optimal'' cursor motion
@@ -14,29 +14,24 @@ curses \- screen functions with ``optimal'' cursor motion
 .B \-lcurses \-ltermcap
 [ libraries ]
 .SH DESCRIPTION
-These routines give the user a method
-of updating screens with reasonable optimization.
-They keep an image of the current screen,
-and the user sets up an image of a new one.
-Then the
+These routines give the user a method of updating screens with reasonable
+optimization.  They keep an image of the current screen,
+and the user sets up an image of a new one.  Then the
 .I refresh()
-tells the routines to make the current screen look
-like the new one.
-In order to initialize the routines,
-the routine
+tells the routines to make the current screen look like the new one.
+In order to initialize the routines, the routine
 .I initscr()
-must be called before any of the other routines
-that deal with windows and screens
-are used.
-The routine
+must be called before any of the other routines that deal with windows and
+screens are used.  The routine
 .I endwin()
 should be called before exiting.
 .SH SEE ALSO
 .I "Screen Updating and Cursor Movement Optimization: A Library Package,"
 Ken Arnold,
 .br
-stty(2),
-setenv(3),
+ioctl(2),
+getenv(3),
+tty(4),
 termcap(5)
 .SH AUTHOR
 Ken Arnold
@@ -113,3 +108,4 @@ wrefresh(win)	make screen look like \*w
 wscanw(win,fmt,arg1,arg2,...)\ 	scanf through \*w
 wstandend(win)	end standout mode on \*w
 wstandout(win)	start standout mode on \*w
+.SH BUGS
