@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)iostat.c	4.10 (Berkeley) 83/10/19";
+static	char *sccsid = "@(#)iostat.c	4.11 (Berkeley) 84/11/24";
 /*
  * iostat
  */
@@ -162,6 +162,7 @@ loop:
 	for (i=0; i<CPUSTATES; i++)
 		stat1(i);
 	printf("\n");
+	fflush(stdout);
 contin:
 	--iter;
 	if(iter)
@@ -213,7 +214,7 @@ stat1(o)
 		time += s.cp_time[i];
 	if (time == 0.0)
 		time = 1.0;
-	printf("%3.0f", 100*s.cp_time[o]/time);
+	printf("%3.0f", 100.*s.cp_time[o]/time);
 }
 
 #define steal(where, var) lseek(mf, where, 0); read(mf, &var, sizeof var);
