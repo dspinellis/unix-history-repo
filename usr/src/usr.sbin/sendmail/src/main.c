@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.129 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.130 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -1519,7 +1519,7 @@ auth_warning(e, msg, va_alist)
 		vsprintf(p, msg, ap);
 		VA_END;
 		addheader("X-Authentication-Warning", buf, &e->e_header);
-#if LOG
+#ifdef LOG
 		if (LogLevel > 3)
 			syslog(LOG_INFO, "%s: Authentication-Warning: %s",
 				e->e_id == NULL ? "[NOQUEUE]" : e->e_id, buf);
