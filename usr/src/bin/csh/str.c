@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)str.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)str.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -190,7 +190,7 @@ s_strncpy(dst, src, n)
     sdst = dst;
     do 
 	if ((*dst++ = *src++) == '\0') {
-	    while (--n > 0)
+	    while (--n != 0)
 		*dst++ = '\0';
 	    return(sdst);
 	}
