@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 PROG=	mset
 CFLAGS+=-I${.CURDIR} -I.
@@ -20,7 +20,7 @@ astosc.OUT: ${.CURDIR}/../ctlr/${KBD} ${.CURDIR}/../tools/mkastosc/obj/mkastosc
 	${.CURDIR}/../tools/mkastosc/obj/mkastosc \
 	    ${.CURDIR}/../ctlr/hostctlr.h ${.CURDIR}/../ctlr/function.h \
 	    < ${.CURDIR}/../ctlr/${KBD} > ${.TARGET}
-	ln -s astosc.OUT astosc.out
+	rm -f astosc.out; ln -s astosc.OUT astosc.out
 
 # astosc.out
 ${.CURDIR}/../tools/mkastosc/obj/mkastosc:
