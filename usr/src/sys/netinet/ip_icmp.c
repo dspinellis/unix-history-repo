@@ -1,4 +1,4 @@
-/*	ip_icmp.c	4.27	83/02/10	*/
+/*	ip_icmp.c	4.28	83/02/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -186,6 +186,7 @@ icmp_input(m)
 		goto free;
 	}
 reflect:
+	ip->ip_len += hlen;		/* since ip_input deducts this */
 	icmp_reflect(ip);
 	return;
 free:
