@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	8.2 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -641,7 +641,11 @@ fill_eproc(p, ep)
 	} else {
 		register struct vmspace *vm = p->p_vmspace;
 
+#ifdef pmap_resident_count
+		ep->e_vm.vm_rssize = pmap_resident_count(&vm->vm_pmap); /*XXX*/
+#else
 		ep->e_vm.vm_rssize = vm->vm_rssize;
+#endif
 		ep->e_vm.vm_tsize = vm->vm_tsize;
 		ep->e_vm.vm_dsize = vm->vm_dsize;
 		ep->e_vm.vm_ssize = vm->vm_ssize;
