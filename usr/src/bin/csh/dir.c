@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -191,9 +191,8 @@ printdirs()
 	    (void) fprintf(cshout, "%d\t", idx++);
 	    cur = 0;
 	}
-	len = Strlen(hp);
 	if (!(dirflag & DIR_LONG) && hp != NULL && !eq(hp, STRslash) &&
-	    Strncmp(hp, dp->di_name, len) == 0 &&
+	    (len = Strlen(hp), Strncmp(hp, dp->di_name, len) == 0) &&
 	    (dp->di_name[len] == '\0' || dp->di_name[len] == '/')) 
 	    len = Strlen(s = (dp->di_name + len)) + 2;
 	else
