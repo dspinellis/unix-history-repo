@@ -38,7 +38,8 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)strip.c	5.8 (Berkeley) 11/6/91";
+/*static char sccsid[] = "from: @(#)strip.c	5.8 (Berkeley) 11/6/91";*/
+static char rcsid[] = "$Id: strip.c,v 1.6 1993/09/07 16:12:15 brezak Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -62,6 +63,8 @@ void s_stab __P((const char *, int, EXEC *));
 void s_sym __P((const char *, int, EXEC *));
 void usage __P((void));
 
+int xflag = 0;
+        
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -73,8 +76,11 @@ main(argc, argv)
 	char *fn;
 
 	sfcn = s_sym;
-	while ((ch = getopt(argc, argv, "d")) != EOF)
+	while ((ch = getopt(argc, argv, "dx")) != EOF)
 		switch(ch) {
+                case 'x':
+                        xflag = 1;
+                        /*FALLTHROUGH*/
 		case 'd':
 			sfcn = s_stab;
 			break;
@@ -108,7 +114,6 @@ s_sym(fn, fd, ep)
 	int fd;
 	register EXEC *ep;
 {
-	static int pagesize = -1;
 	register off_t fsize;
 
 	/* If no symbols or data/text relocation info, quit. */
@@ -120,11 +125,7 @@ s_sym(fn, fd, ep)
 	 * and NMAGIC formats have the text/data immediately following the
 	 * header.  ZMAGIC format wastes the rest of of header page.
 	 */
-	if (ep->a_magic == ZMAGIC)
-		fsize = pagesize == -1 ? (pagesize = getpagesize()) : pagesize;
-	else
-		fsize = sizeof(EXEC);
-	fsize += ep->a_text + ep->a_data;
+	fsize = N_RELOFF(*ep);
 
 	/* Set symbol size and relocation info values to 0. */
 	ep->a_syms = ep->a_trsize = ep->a_drsize = 0;
@@ -185,6 +186,14 @@ s_stab(fn, fd, ep)
 			*nsym = *sym;
 			nsym->strx = nstr - nstrbase;
 			p = strbase + sym->strx;
+                        if (xflag && 
+                            (!(sym->n_type & N_EXT) ||
+                             (sym->n_type & ~N_EXT) == N_FN ||
+                             strcmp(p, "gcc_compiled.") == 0 ||
+                             strcmp(p, "gcc2_compiled.") == 0 ||
+                             strcmp(p, "___gnu_compiled_c") == 0)) {
+                                continue;
+                        }
 			len = strlen(p) + 1;
 			bcopy(p, nstr, len);
 			nstr += len;

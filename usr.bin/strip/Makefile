@@ -1,4 +1,5 @@
-#	@(#)Makefile	5.4 (Berkeley) 5/11/90
+#	from: @(#)Makefile	5.4 (Berkeley) 5/11/90
+#	$Id$
 
 PROG=	strip
 
