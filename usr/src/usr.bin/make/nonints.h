@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nonints.h	8.1 (Berkeley) %G%
+ *	@(#)nonints.h	8.2 (Berkeley) %G%
  */
 
 char **brk_string(), *emalloc(), *str_concat();
@@ -77,6 +77,8 @@ Boolean	 Parse_IsVar();
 Lst	 Parse_MainName();
 void	 Punt __P((const char *, ...));
 int	 Str_Match();
+char	*Str_SYSVMatch __P((char *, char *, int *len));
+void	 Str_SYSVSubst __P((Buffer, char *, char *, int));
 void	 Suff_AddInclude();
 void	 Suff_AddLib();
 void	 Suff_AddSuffix();

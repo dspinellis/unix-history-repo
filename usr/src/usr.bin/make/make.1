@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)make.1	8.2 (Berkeley) %G%
+.\"	@(#)make.1	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAKE 1
@@ -458,9 +458,20 @@ This is the
 .At V
 style variable substitution.
 It must be the last modifier specified.
-.Ar Old_string
-is anchored at the end of each word, so only suffixes or entire
-words may be replaced.
+If 
+.Ar old_string
+or
+.Ar new_string
+do not contain the pattern matching character
+.Ar %
+then it is assumed that they are 
+anchored at the end of each word, so only suffixes or entire
+words may be replaced. Otherwise 
+.Ar %
+is the substring of 
+.Ar old_string 
+to be replaced in
+.Ar new_string
 .El
 .Sh INCLUDE STATEMENTS, CONDITIONALS AND FOR LOOPS
 Makefile inclusion, conditional structures and for loops  reminiscent 
