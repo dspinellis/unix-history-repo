@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.10 (Berkeley) %G%
+ *	@(#)autoconf.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -644,6 +644,9 @@ unifind(uhp0, pumem)
 	 */
 	uhp->uh_map = (struct map *)
 		malloc(UAMSIZ * sizeof (struct map), M_DEVBUF, M_NOWAIT);
+	if (uhp->uh_map == 0)
+		panic("no mem for unibus map");
+	bzero(uhp->uh_map, UNAMSIZ * sizeof (struct map));
 	ubainitmaps(uhp);
 
 	/*
