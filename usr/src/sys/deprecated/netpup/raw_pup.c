@@ -1,4 +1,4 @@
-/*	raw_pup.c	4.19	83/06/30	*/
+/*	raw_pup.c	4.20	83/06/30	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -104,7 +104,7 @@ rpup_output(m, so)
 	 */
 	pc = (u_short *)(mtod(last, caddr_t) + last->m_len - sizeof (short));
 	if (*pc != PUP_NOCKSUM)
-		*pc = pup_cksum(m, len - sizeof (short));
+		*pc = htons((u_short)pup_cksum(m, len - sizeof (short)));
 	return ((*ifp->if_output)(ifp, m, (struct sockaddr *)dst));
 bad:
 	m_freem(m);
