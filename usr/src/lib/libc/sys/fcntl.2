@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fcntl.2	6.3 (Berkeley) %G%
+.\"	@(#)fcntl.2	6.4 (Berkeley) %G%
 .\"
 .TH FCNTL 2 ""
 .UC 5
@@ -99,7 +99,7 @@ corresponds to the O_APPEND flag of
 .TP
 FASYNC
 Enable the SIGIO signal to be sent to the process group
-when I/O is possible, e.g.
+when I/O is possible, e.g.,
 upon availability of data to be read.
 .SH "RETURN VALUE
 Upon successful completion, the value returned depends on
@@ -135,7 +135,7 @@ open.
 .I Cmd
 is F_DUPFD and
 .I arg
-is negative or greater the maximum allowable number
+is negative or greater than the maximum allowable number
 (see
 .IR getdtablesize (2)).
 .TP 15

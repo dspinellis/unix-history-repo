@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)close.2	6.2 (Berkeley) %G%
+.\"	@(#)close.2	6.3 (Berkeley) %G%
 .\"
 .TH CLOSE 2 ""
 .UC 4
@@ -24,8 +24,8 @@ on the last close of a
 .IR socket (2)
 associated naming information and queued data are discarded;
 on the last close of a file holding an advisory lock
-the lock is released; see further
-.IR flock (2).
+the lock is released (see further
+.IR flock (2)\fR).
 .PP
 A close of all of a process's descriptors is automatic on
 .IR exit ,
