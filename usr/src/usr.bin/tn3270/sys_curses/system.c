@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)system.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)system.c	4.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -91,6 +91,7 @@ static long storage[1000];
 static union REGS inputRegs;
 static struct SREGS inputSregs;
 
+extern int apitrace;
 
 static void
 kill_connection()
@@ -361,6 +362,9 @@ int
     }
     getstorage(where, length, 1);
     memcpy(local, (char *)(storage+((where-storage_location))), length);
+    if (apitrace) {
+	Dump('(', local, length);
+    }
 }
 
 /*ARGSUSED*/
@@ -385,6 +389,9 @@ int
     }
     freestorage();
     memcpy((char *)storage, local, length);
+    if (apitrace) {
+	Dump(')', local, length);
+    }
     storage_length = length;
     storage_location = where;
     storage_must_send = 1;
