@@ -1,5 +1,5 @@
 /*
-char id_fstat[] = "@(#)fstat_.c	1.1";
+char id_fstat[] = "@(#)fstat_.c	1.2";
  *
  * get file status
  *
@@ -23,7 +23,7 @@ long *lunit, *stbuf;
 	struct stat statb;
 
 	if (*lunit < 0 || *lunit >= MXUNIT)
-		return((long)(errno=F_ERARG));
+		return((long)(errno=F_ERUNIT));
 	if (!units[*lunit].ufd)
 		return((long)(errno=F_ERNOPEN));
 	if (fstat(fileno(units[*lunit].ufd), &statb) == 0)
