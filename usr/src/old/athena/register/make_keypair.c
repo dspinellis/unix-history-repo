@@ -36,7 +36,7 @@ char	**argv;
 	printf("One copy of the each key should be put in /kerberos on the\n");
 	printf("Kerberos machine (mode 600, owner root).\n");
 	printf("Another copy of each key should be put on the named\n");
-	printf("client as /.updated.keyXXX.XXX.XXX.XXX (same modes as above).\n");
+	printf("client as /.update.keyXXX.XXX.XXX.XXX (same modes as above).\n");
 	fflush(stdout);
 }
 
