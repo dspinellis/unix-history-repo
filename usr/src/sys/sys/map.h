@@ -1,4 +1,4 @@
-/*	map.h	4.2	81/02/19	*/
+/*	map.h	4.3	81/02/27	*/
 
 /*
  * Resource Allocation Maps
@@ -10,9 +10,7 @@ struct map
 };
 
 #ifdef KERNEL
-struct	map swapmap[SMAPSIZ];	/* space for swap allocation */
-#define	AMAPSIZ	25
-struct	map argmap[AMAPSIZ];
-
-struct	map kernelmap[NPROC];	/* space for kernel map for user page tables */
+struct	map *swapmap;
+struct	map *argmap;
+struct	map *kernelmap;
 #endif

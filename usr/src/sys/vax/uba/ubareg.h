@@ -1,4 +1,4 @@
-/*	ubareg.h	4.14	81/02/26	*/
+/*	ubareg.h	4.15	81/02/27	*/
 
 /*
  * UNIBUS adaptor
@@ -8,6 +8,7 @@
 #define	UMEM750	((u_short *)0xfc0000)
 #endif
 
+#ifndef LOCORE
 /*
  * UBA registers
  */
@@ -27,6 +28,7 @@ struct uba_regs
 	struct	pte uba_map[496];	/* unibus map register */
 	int	pad3[16];		/* no maps for device address space */
 };
+#endif
 
 #if VAX780
 /* UBA control register, UBACR */
@@ -88,6 +90,7 @@ struct uba_regs
 
 #define	UBA_DPSHIFT	21		/* shift to data path designator */
 
+#ifndef LOCORE
 /*
  * Each UNIBUS mass storage controller has uba_minfo structure,
  * and a uba_dinfo structure (as below) for each attached drive.
@@ -128,6 +131,7 @@ struct uba_dinfo {
 	struct	uba_minfo *ui_mi;
 	struct	uba_hd *ui_hd;
 };
+#endif
 
 #define	NUBA780	4
 #define	NUBA750	1
@@ -137,6 +141,7 @@ struct uba_dinfo {
 #define	MAXNUBA	1
 #endif
 
+#ifndef LOCORE
 /*
  * This structure exists per-uba.
  */
@@ -155,7 +160,10 @@ struct	uba_hd {
 	short	uh_xclu;		/* an rk07 is using this uba! */
 #define	UAMSIZ	50
 	struct	map *uh_map;
-} uba_hd[MAXNUBA];
+};
+#ifdef KERNEL
+struct	uba_hd uba_hd[MAXNUBA];
+#endif
 /*
  * Each UNIBUS driver defines entries for a set of routines
  * as well as an array of types which are acceptable to it.
@@ -172,6 +180,7 @@ struct uba_driver {
 	struct	uba_minfo **ud_minfo;	/* backpointers to ubminit structs */
 	short	ud_xclu;		/* want exclusive use of bdp's */
 };
+#endif
 
 /*
  * unibus maps
@@ -192,6 +201,7 @@ struct uba_driver {
 /*
  * UNIBUS related kernel variables
  */
+#ifndef LOCORE
 #ifdef KERNEL
 extern	struct	uba_minfo ubminit[];
 extern	struct	uba_dinfo ubdinit[];
@@ -201,5 +211,6 @@ extern	char umem[MAXNUBA][16*NBPG];
 extern	int (*UNIvec[])();
 #if VAX780
 extern	Xua0int(), Xua1int(), Xua2int(), Xua3int();
+#endif
 #endif
 #endif
