@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_extern.h	7.21 (Berkeley) %G%
+ *	@(#)lfs_extern.h	7.22 (Berkeley) %G%
  */
 
 struct fid;
@@ -21,9 +21,6 @@ __BEGIN_DECLS
 u_long	 cksum __P((void *, size_t));				/* XXX */
 int	 lfs_balloc __P((struct vnode *, u_long, daddr_t, struct buf **));
 int	 lfs_blkatoff __P((struct vop_blkatoff_args *));
-int	 lfs_bmap __P((struct vop_bmap_args *));
-int	 lfs_bmaparray
-	    __P((struct vnode *, daddr_t, daddr_t *, INDIR *, int *));
 int	 lfs_bwrite __P((struct vop_bwrite_args *));
 int	 lfs_check __P((struct vnode *, daddr_t));
 int	 lfs_close __P((struct vop_close_args *));
