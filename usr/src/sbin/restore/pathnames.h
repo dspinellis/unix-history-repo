@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	5.2 (Berkeley) %G%
+ *	@(#)pathnames.h	5.3 (Berkeley) %G%
  */
 
 #include <paths.h>

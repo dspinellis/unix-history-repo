@@ -6,14 +6,27 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/param.h>
+#include <sys/stat.h>
+
+#include <ufs/ufs/dinode.h>
+
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "restore.h"
+#include "extern.h"
 
 /*
  * Insure that all the components of a pathname exist.
  */
+void
 pathcheck(name)
 	char *name;
 {
@@ -29,7 +42,7 @@ pathcheck(name)
 			continue;
 		*cp = '\0';
 		ep = lookupname(name);
-		if (ep == NIL) {
+		if (ep == NULL) {
 			ep = addentry(name, pathsearch(name), NODE);
 			newnode(ep);
 		}
@@ -41,6 +54,7 @@ pathcheck(name)
 /*
  * Change a name to a unique temporary name.
  */
+void
 mktempname(ep)
 	register struct entry *ep;
 {
@@ -67,9 +81,10 @@ gentempname(ep)
 	struct entry *np;
 	long i = 0;
 
-	for (np = lookupino(ep->e_ino); np != NIL && np != ep; np = np->e_links)
+	for (np = lookupino(ep->e_ino);
+	    np != NULL && np != ep; np = np->e_links)
 		i++;
-	if (np == NIL)
+	if (np == NULL)
 		badentry(ep, "not on ino list");
 	(void) sprintf(name, "%s%d%d", TMPHDR, i, ep->e_ino);
 	return (name);
@@ -78,13 +93,13 @@ gentempname(ep)
 /*
  * Rename a file or directory.
  */
+void
 renameit(from, to)
 	char *from, *to;
 {
 	if (!Nflag && rename(from, to) < 0) {
-		fprintf(stderr, "Warning: cannot rename %s to %s", from, to);
-		(void) fflush(stderr);
-		perror("");
+		fprintf(stderr, "warning: cannot rename %s to %s: %s\n",
+		    from, to, strerror(errno));
 		return;
 	}
 	vprintf(stdout, "rename %s to %s\n", from, to);
@@ -93,6 +108,7 @@ renameit(from, to)
 /*
  * Create a new node (directory).
  */
+void
 newnode(np)
 	struct entry *np;
 {
@@ -103,9 +119,7 @@ newnode(np)
 	cp = myname(np);
 	if (!Nflag && mkdir(cp, 0777) < 0) {
 		np->e_flags |= EXISTED;
-		fprintf(stderr, "Warning: ");
-		(void) fflush(stderr);
-		perror(cp);
+		fprintf(stderr, "warning: %s: %s\n", cp, strerror(errno));
 		return;
 	}
 	vprintf(stdout, "Make node %s\n", cp);
@@ -114,6 +128,7 @@ newnode(np)
 /*
  * Remove an old node (directory).
  */
+void
 removenode(ep)
 	register struct entry *ep;
 {
@@ -121,15 +136,13 @@ removenode(ep)
 
 	if (ep->e_type != NODE)
 		badentry(ep, "removenode: not a node");
-	if (ep->e_entries != NIL)
+	if (ep->e_entries != NULL)
 		badentry(ep, "removenode: non-empty directory");
 	ep->e_flags |= REMOVED;
 	ep->e_flags &= ~TMPNAME;
 	cp = myname(ep);
 	if (!Nflag && rmdir(cp) < 0) {
-		fprintf(stderr, "Warning: ");
-		(void) fflush(stderr);
-		perror(cp);
+		fprintf(stderr, "warning: %s: %s\n", cp, strerror(errno));
 		return;
 	}
 	vprintf(stdout, "Remove node %s\n", cp);
@@ -138,6 +151,7 @@ removenode(ep)
 /*
  * Remove a leaf.
  */
+void
 removeleaf(ep)
 	register struct entry *ep;
 {
@@ -149,9 +163,7 @@ removeleaf(ep)
 	ep->e_flags &= ~TMPNAME;
 	cp = myname(ep);
 	if (!Nflag && unlink(cp) < 0) {
-		fprintf(stderr, "Warning: ");
-		(void) fflush(stderr);
-		perror(cp);
+		fprintf(stderr, "warning: %s: %s\n", cp, strerror(errno));
 		return;
 	}
 	vprintf(stdout, "Remove leaf %s\n", cp);
@@ -160,6 +172,7 @@ removeleaf(ep)
 /*
  * Create a link.
  */
+int
 linkit(existing, new, type)
 	char *existing, *new;
 	int type;
@@ -168,19 +181,15 @@ linkit(existing, new, type)
 	if (type == SYMLINK) {
 		if (!Nflag && symlink(existing, new) < 0) {
 			fprintf(stderr,
-				"Warning: cannot create symbolic link %s->%s: ",
-				new, existing);
-			(void) fflush(stderr);
-			perror("");
+			    "warning: cannot create symbolic link %s->%s: %s\n",
+			    new, existing, strerror(errno));
 			return (FAIL);
 		}
 	} else if (type == HARDLINK) {
 		if (!Nflag && link(existing, new) < 0) {
 			fprintf(stderr,
-				"Warning: cannot create hard link %s->%s: ",
-				new, existing);
-			(void) fflush(stderr);
-			perror("");
+			    "warning: cannot create hard link %s->%s: %s\n",
+			    new, existing, strerror(errno));
 			return (FAIL);
 		}
 	} else {
@@ -203,7 +212,7 @@ lowerbnd(start)
 
 	for ( ; start < maxino; start++) {
 		ep = lookupino(start);
-		if (ep == NIL || ep->e_type == NODE)
+		if (ep == NULL || ep->e_type == NODE)
 			continue;
 		if (ep->e_flags & (NEW|EXTRACT))
 			return (start);
@@ -222,7 +231,7 @@ upperbnd(start)
 
 	for ( ; start > ROOTINO; start--) {
 		ep = lookupino(start);
-		if (ep == NIL || ep->e_type == NODE)
+		if (ep == NULL || ep->e_type == NODE)
 			continue;
 		if (ep->e_flags & (NEW|EXTRACT))
 			return (start);
@@ -233,6 +242,7 @@ upperbnd(start)
 /*
  * report on a badly formed entry
  */
+void
 badentry(ep, msg)
 	register struct entry *ep;
 	char *msg;
@@ -241,14 +251,15 @@ badentry(ep, msg)
 	fprintf(stderr, "bad entry: %s\n", msg);
 	fprintf(stderr, "name: %s\n", myname(ep));
 	fprintf(stderr, "parent name %s\n", myname(ep->e_parent));
-	if (ep->e_sibling != NIL)
+	if (ep->e_sibling != NULL)
 		fprintf(stderr, "sibling name: %s\n", myname(ep->e_sibling));
-	if (ep->e_entries != NIL)
+	if (ep->e_entries != NULL)
 		fprintf(stderr, "next entry name: %s\n", myname(ep->e_entries));
-	if (ep->e_links != NIL)
+	if (ep->e_links != NULL)
 		fprintf(stderr, "next link name: %s\n", myname(ep->e_links));
-	if (ep->e_next != NIL)
-		fprintf(stderr, "next hashchain name: %s\n", myname(ep->e_next));
+	if (ep->e_next != NULL)
+		fprintf(stderr,
+		    "next hashchain name: %s\n", myname(ep->e_next));
 	fprintf(stderr, "entry type: %s\n",
 		ep->e_type == NODE ? "NODE" : "LEAF");
 	fprintf(stderr, "inode number: %ld\n", ep->e_ino);
@@ -299,6 +310,7 @@ dirlookup(name)
 /*
  * Elicit a reply.
  */
+int
 reply(question)
 	char *question;
 {
@@ -320,13 +332,29 @@ reply(question)
 /*
  * handle unexpected inconsistencies
  */
-/* VARARGS1 */
-panic(msg, d1, d2)
-	char *msg;
-	long d1, d2;
-{
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
 
-	fprintf(stderr, msg, d1, d2);
+void
+#if __STDC__
+panic(const char *fmt, ...)
+#else
+panic(fmt, va_alist)
+	char *fmt;
+	va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+
+	vfprintf(stderr, fmt, ap);
 	if (yflag)
 		return;
 	if (reply("abort") == GOOD) {

@@ -6,10 +6,21 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)restore.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#include <ufs/ufs/dinode.h>
+
+#include <stdio.h>
+#include <string.h>
+
 #include "restore.h"
+#include "extern.h"
+
+static char *keyval __P((int));
 
 /*
  * This implements the 't' option.
@@ -57,7 +68,7 @@ addfile(name, ino, type)
 		}
 	}
 	ep = lookupino(ino);
-	if (ep != NIL) {
+	if (ep != NULL) {
 		if (strcmp(name, myname(ep)) == 0) {
 			ep->e_flags |= NEW;
 			return (descend);
@@ -88,7 +99,7 @@ deletefile(name, ino, type)
 	if (TSTINO(ino, dumpmap) == 0)
 		return (descend);
 	ep = lookupino(ino);
-	if (ep != NIL)
+	if (ep != NULL)
 		ep->e_flags &= ~NEW;
 	return (descend);
 }
@@ -112,6 +123,7 @@ static struct entry *removelist;
  *	Remove unneeded leaves from the old tree.
  *	Remove directories from the lookup chains.
  */
+void
 removeoldleaves()
 {
 	register struct entry *ep;
@@ -120,11 +132,11 @@ removeoldleaves()
 	vprintf(stdout, "Mark entries to be removed.\n");
 	for (i = ROOTINO + 1; i < maxino; i++) {
 		ep = lookupino(i);
-		if (ep == NIL)
+		if (ep == NULL)
 			continue;
 		if (TSTINO(i, clrimap))
 			continue;
-		for ( ; ep != NIL; ep = ep->e_links) {
+		for ( ; ep != NULL; ep = ep->e_links) {
 			dprintf(stdout, "%s: REMOVE\n", myname(ep));
 			if (ep->e_type == LEAF) {
 				removeleaf(ep);
@@ -163,7 +175,6 @@ nodeupdates(name, ino, type)
 #		define INOFND	0x2	/* inode already exists */
 #		define NAMEFND	0x4	/* name already exists */
 #		define MODECHG	0x8	/* mode of inode changed */
-	extern char *keyval();
 
 	/*
 	 * This routine is called once for each element in the 
@@ -179,7 +190,7 @@ nodeupdates(name, ino, type)
 	 * Check to see if the name exists, and if the name is a link.
 	 */
 	np = lookupname(name);
-	if (np != NIL) {
+	if (np != NULL) {
 		key |= NAMEFND;
 		ip = lookupino(np->e_ino);
 		if (ip == NULL)
@@ -192,9 +203,9 @@ nodeupdates(name, ino, type)
 	 * corresponds to the name (if one was found).
 	 */
 	ip = lookupino(ino);
-	if (ip != NIL) {
+	if (ip != NULL) {
 		key |= INOFND;
-		for (ep = ip->e_links; ep != NIL; ep = ep->e_links) {
+		for (ep = ip->e_links; ep != NULL; ep = ep->e_links) {
 			if (ep == np) {
 				ip = ep;
 				break;
@@ -223,7 +234,7 @@ nodeupdates(name, ino, type)
 				myname(np));
 			mktempname(np);
 		}
-		np = NIL;
+		np = NULL;
 		key &= ~NAMEFND;
 	}
 	if ((key & ONTAPE) &&
@@ -403,7 +414,7 @@ nodeupdates(name, ino, type)
 	 * for it, we discard the name knowing that it will be on the
 	 * next incremental tape.
 	 */
-	case NIL:
+	case NULL:
 		fprintf(stderr, "%s: (inode %d) not found on tape\n",
 			name, ino);
 		break;
@@ -434,7 +445,7 @@ nodeupdates(name, ino, type)
 /*
  * Calculate the active flags in a key.
  */
-char *
+static char *
 keyval(key)
 	int key;
 {
@@ -456,6 +467,7 @@ keyval(key)
 /*
  * Find unreferenced link names.
  */
+void
 findunreflinks()
 {
 	register struct entry *ep, *np;
@@ -464,9 +476,9 @@ findunreflinks()
 	vprintf(stdout, "Find unreferenced names.\n");
 	for (i = ROOTINO; i < maxino; i++) {
 		ep = lookupino(i);
-		if (ep == NIL || ep->e_type == LEAF || TSTINO(i, dumpmap) == 0)
+		if (ep == NULL || ep->e_type == LEAF || TSTINO(i, dumpmap) == 0)
 			continue;
-		for (np = ep->e_entries; np != NIL; np = np->e_sibling) {
+		for (np = ep->e_entries; np != NULL; np = np->e_sibling) {
 			if (np->e_flags == 0) {
 				dprintf(stdout,
 				    "%s: remove unreferenced name\n",
@@ -479,8 +491,8 @@ findunreflinks()
 	/*
 	 * Any leaves remaining in removed directories is unreferenced.
 	 */
-	for (ep = removelist; ep != NIL; ep = ep->e_next) {
-		for (np = ep->e_entries; np != NIL; np = np->e_sibling) {
+	for (ep = removelist; ep != NULL; ep = ep->e_next) {
+		for (np = ep->e_entries; np != NULL; np = np->e_sibling) {
 			if (np->e_type == LEAF) {
 				if (np->e_flags != 0)
 					badentry(np, "unreferenced with flags");
@@ -503,6 +515,7 @@ findunreflinks()
  * topologically sorted, the deletion could be done in
  * time O(N).
  */
+void
 removeoldnodes()
 {
 	register struct entry *ep, **prev;
@@ -512,8 +525,8 @@ removeoldnodes()
 	do	{
 		change = 0;
 		prev = &removelist;
-		for (ep = removelist; ep != NIL; ep = *prev) {
-			if (ep->e_entries != NIL) {
+		for (ep = removelist; ep != NULL; ep = *prev) {
+			if (ep->e_entries != NULL) {
 				prev = &ep->e_next;
 				continue;
 			}
@@ -523,7 +536,7 @@ removeoldnodes()
 			change++;
 		}
 	} while (change);
-	for (ep = removelist; ep != NIL; ep = ep->e_next)
+	for (ep = removelist; ep != NULL; ep = ep->e_next)
 		badentry(ep, "cannot remove, non-empty");
 }
 
@@ -531,6 +544,7 @@ removeoldnodes()
  * This is the routine used to extract files for the 'r' command.
  * Extract new leaves.
  */
+void
 createleaves(symtabfile)
 	char *symtabfile;
 {
@@ -557,7 +571,7 @@ createleaves(symtabfile)
 		 */
 		while (first < curfile.ino) {
 			ep = lookupino(first);
-			if (ep == NIL)
+			if (ep == NULL)
 				panic("%d: bad first\n", first);
 			fprintf(stderr, "%s: not found on tape\n", myname(ep));
 			ep->e_flags &= ~(NEW|EXTRACT);
@@ -577,7 +591,7 @@ createleaves(symtabfile)
 			goto next;
 		}
 		ep = lookupino(curfile.ino);
-		if (ep == NIL)
+		if (ep == NULL)
 			panic("unknown file on tape\n");
 		if ((ep->e_flags & (NEW|EXTRACT)) == 0)
 			badentry(ep, "unexpected file on tape");
@@ -610,6 +624,7 @@ createleaves(symtabfile)
  * This is the routine used to extract files for the 'x' and 'i' commands.
  * Efficiently extract a subset of the files on a tape.
  */
+void
 createfiles()
 {
 	register ino_t first, next, last;
@@ -672,7 +687,7 @@ createfiles()
 		 */
 		while (next < curfile.ino) {
 			ep = lookupino(next);
-			if (ep == NIL)
+			if (ep == NULL)
 				panic("corrupted symbol table\n");
 			fprintf(stderr, "%s: not found on tape\n", myname(ep));
 			ep->e_flags &= ~NEW;
@@ -684,7 +699,7 @@ createfiles()
 		 */
 		if (next == curfile.ino && next <= last) {
 			ep = lookupino(next);
-			if (ep == NIL)
+			if (ep == NULL)
 				panic("corrupted symbol table\n");
 			(void) extractfile(myname(ep));
 			ep->e_flags &= ~NEW;
@@ -697,6 +712,7 @@ createfiles()
 /*
  * Add links.
  */
+void
 createlinks()
 {
 	register struct entry *np, *ep;
@@ -706,9 +722,9 @@ createlinks()
 	vprintf(stdout, "Add links\n");
 	for (i = ROOTINO; i < maxino; i++) {
 		ep = lookupino(i);
-		if (ep == NIL)
+		if (ep == NULL)
 			continue;
-		for (np = ep->e_links; np != NIL; np = np->e_links) {
+		for (np = ep->e_links; np != NULL; np = np->e_links) {
 			if ((np->e_flags & NEW) == 0)
 				continue;
 			(void) strcpy(name, myname(ep));
@@ -727,6 +743,7 @@ createlinks()
  * We do this to insure that all the requested work was done, and
  * that no temporary names remain.
  */
+void
 checkrestore()
 {
 	register struct entry *ep;
@@ -734,7 +751,7 @@ checkrestore()
 
 	vprintf(stdout, "Check the symbol table.\n");
 	for (i = ROOTINO; i < maxino; i++) {
-		for (ep = lookupino(i); ep != NIL; ep = ep->e_links) {
+		for (ep = lookupino(i); ep != NULL; ep = ep->e_links) {
 			ep->e_flags &= ~KEEP;
 			if (ep->e_type == NODE)
 				ep->e_flags &= ~(NEW|EXISTED);
@@ -758,17 +775,17 @@ verifyfile(name, ino, type)
 	long descend = GOOD;
 
 	ep = lookupname(name);
-	if (ep == NIL) {
+	if (ep == NULL) {
 		fprintf(stderr, "Warning: missing name %s\n", name);
 		return (FAIL);
 	}
 	np = lookupino(ino);
 	if (np != ep)
 		descend = FAIL;
-	for ( ; np != NIL; np = np->e_links)
+	for ( ; np != NULL; np = np->e_links)
 		if (np == ep)
 			break;
-	if (np == NIL)
+	if (np == NULL)
 		panic("missing inumber %d\n", ino);
 	if (ep->e_type == LEAF && type != LEAF)
 		badentry(ep, "type should be LEAF");
