@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_generic.c	6.13 (Berkeley) %G%
+ *	@(#)sys_generic.c	6.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -266,8 +266,8 @@ select()
 	int s, ncoll, ni;
 	label_t lqsave;
 
-	bzero(ibits, sizeof(ibits));
-	bzero(obits, sizeof(obits));
+	bzero((caddr_t)ibits, sizeof(ibits));
+	bzero((caddr_t)obits, sizeof(obits));
 	if (uap->nd > NOFILE)
 		uap->nd = NOFILE;	/* forgiving, if slightly wrong */
 	ni = howmany(uap->nd, NFDBITS);
@@ -275,7 +275,7 @@ select()
 #define	getbits(name, x) \
 	if (uap->name) { \
 		u.u_error = copyin((caddr_t)uap->name, (caddr_t)&ibits[x], \
-		    ni * sizeof(fd_mask)); \
+		    (unsigned)(ni * sizeof(fd_mask))); \
 		if (u.u_error) \
 			goto done; \
 	}
@@ -335,7 +335,7 @@ done:
 #define	putbits(name, x) \
 	if (uap->name) { \
 		int error = copyout((caddr_t)&obits[x], (caddr_t)uap->name, \
-		    ni * sizeof(fd_mask)); \
+		    (unsigned)(ni * sizeof(fd_mask))); \
 		if (error) \
 			u.u_error = error; \
 	}
