@@ -2,14 +2,16 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)brk.2	5.1 (Berkeley) %G%
+.\"	@(#)brk.2	6.1 (Berkeley) %G%
 .\"
-.TH BRK 2 "27 July 1983"
+.TH BRK 2 ""
 .UC 4
 .SH NAME
 brk, sbrk \- change data segment size
 .SH SYNOPSIS
 .nf
+#include <sys/types.h>
+.PP
 .ft B
 caddr_t brk(addr)
 caddr_t addr;
