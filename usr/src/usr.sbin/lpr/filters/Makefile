@@ -1,19 +1,20 @@
-#	@(#)Makefile	4.1	(Berkeley)	%G%
+#	Makefile	4.2	83/07/17
 #
 # makefile for line printer filters and associated programs
 #
 
-CFLAGS=-O
-LIBDIR=/usr/lib
-CXREF=/usr/ucb/ctags -x
 DESTDIR=
-
+CFLAGS=	-O
+LIBDIR=	/usr/lib
+CXREF=	/usr/ucb/ctags -x
 SRCS=	lpf.c necf.c \
-	rvsort.c rvcat.c vsort.c vcat.c vpf.c vpsf.c vdmp.c vpltdmp.c \
+	chrtab.c rvsort.c rvcat.c vsort.c vcat.c vpf.c vpsf.c vdmp.c vpltdmp.c \
 	vplotf.c vfontinfo.c vwidth.c vfw.c fcvt.c rotate.c rotprt.c
-PRINTER=	lpf necf
+PRINTER=lpf necf
 VARIAN=	rvsort rvcat vsort vcat vpf vpsf vdmp vpltdmp vplotf vfontinfo vwidth \
 	vfw fcvt rotate rotprt
+
+all:	printer varian
 
 printer: ${PRINTER}
 
@@ -49,8 +50,8 @@ vdmp: vdmp.c
 vpltdmp: vpltdmp.c
 	${CC} -o vpltdmp ${CFLAGS} vpltdmp.c
 
-vplotf: vplotf.c
-	${CC} -o vplotf ${CFLAGS} vplotf.c
+vplotf: vplotf.c chrtab.o
+	${CC} -o vplotf ${CFLAGS} vplotf.c chrtab.o
 
 vfontinfo: vfontinfo.c
 	${CC} -o vfontinfo ${CFLAGS} vfontinfo.c
@@ -71,27 +72,27 @@ rotprt: rotprt.c
 	${CC} -o rotprt ${CFLAGS} rotprt.c
 
 install: printer
-	install -s lpf ${DESTDIR}${LIBDIR}/lpf
-	install -s necf ${DESTDIR}${LIBDIR}/necf
+	install -s lpf ${DESTDIR}/${LIBDIR}/lpf
+	install -s necf ${DESTDIR}/${LIBDIR}/necf
 
 installv: varian
-	install -s vfontinfo ${DESTDIR}${LIBDIR}/vfontinfo
-	install -s vwidth ${DESTDIR}${LIBDIR}/vwidth
-	install -s vfw ${DESTDIR}${LIBDIR}/vfw
-	install -s fcvt ${DESTDIR}${LIBDIR}/fcvt
-	install -s rotate ${DESTDIR}${LIBDIR}/rotate
-	install -s rotprt ${DESTDIR}${LIBDIR}/rotprt
-	install -s rvsort ${DESTDIR}${LIBDIR}/rvsort
-	install -s rvcat ${DESTDIR}${LIBDIR}/rvcat
-	install -s vsort ${DESTDIR}${LIBDIR}/vsort
-	install -s vcat ${DESTDIR}${LIBDIR}/vcat
-	install -s vpf ${DESTDIR}${LIBDIR}/vpf
-	ln ${DESTDIR}${LIBDIR}/vpf ${DESTDIR}${LIBDIR}/vpfW
-	install -s vpsf ${DESTDIR}${LIBDIR}/vpsf
-	ln ${DESTDIR}${LIBDIR}/vpsf ${DESTDIR}${LIBDIR}/vpsfW
-	install -s vdmp ${DESTDIR}${LIBDIR}/vdmp
-	install -s vpltdmp ${DESTDIR}${LIBDIR}/vpltdmp
-	install -s vplotf ${DESTDIR}${LIBDIR}/vplotf
+	install -s vfontinfo ${DESTDIR}/${LIBDIR}/vfontinfo
+	install -s vwidth ${DESTDIR}/${LIBDIR}/vwidth
+	install -s vfw ${DESTDIR}/${LIBDIR}/vfw
+	install -s fcvt ${DESTDIR}/${LIBDIR}/fcvt
+	install -s rotate ${DESTDIR}/${LIBDIR}/rotate
+	install -s rotprt ${DESTDIR}/${LIBDIR}/rotprt
+	install -s rvsort ${DESTDIR}/${LIBDIR}/rvsort
+	install -s rvcat ${DESTDIR}/${LIBDIR}/rvcat
+	install -s vsort ${DESTDIR}/${LIBDIR}/vsort
+	install -s vcat ${DESTDIR}/${LIBDIR}/vcat
+	install -s vpf ${DESTDIR}/${LIBDIR}/vpf
+	ln ${DESTDIR}/${LIBDIR}/vpf ${DESTDIR}/${LIBDIR}/vpfW
+	install -s vpsf ${DESTDIR}/${LIBDIR}/vpsf
+	ln ${DESTDIR}/${LIBDIR}/vpsf ${DESTDIR}/${LIBDIR}/vpsfW
+	install -s vdmp ${DESTDIR}/${LIBDIR}/vdmp
+	install -s vpltdmp ${DESTDIR}/${LIBDIR}/vpltdmp
+	install -s vplotf ${DESTDIR}/${LIBDIR}/vplotf
 
 clean:
 	rm -f ${PRINTER} ${VARIAN} *.o
