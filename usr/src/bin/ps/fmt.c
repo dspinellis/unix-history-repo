@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fmt.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)fmt.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -16,6 +16,7 @@ static char sccsid[] = "@(#)fmt.c	8.3 (Berkeley) %G%";
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <vis.h>
 #include "ps.h"
 
 static char *cmdpart __P((char *));
@@ -30,7 +31,7 @@ shquote(argv)
 	char **argv;
 {
 	char **p, *dst, *src;
-	static char buf[1024];		/* XXX */
+	static char buf[4096];		/* XXX */
 
 	if (*argv == 0) {
 		buf[0] = 0;
@@ -40,11 +41,12 @@ shquote(argv)
 	for (p = argv; (src = *p++) != 0; ) {
 		if (*src == 0)
 			continue;
-		while ((*dst++ = *src++) != 0)
-			continue;
-		dst[-1] = ' ';
+		strvis(dst, src, VIS_NL | VIS_CSTYLE);
+		while (*dst)
+			dst++;
+		*dst++ = ' ';
 	}
-	dst[-1] = 0;
+	*dst = '\0';
 	return (buf);
 }
 
