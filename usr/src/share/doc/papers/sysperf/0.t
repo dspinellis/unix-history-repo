@@ -2,13 +2,13 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	1.2 (Berkeley) %G%
+.\"	@(#)0.t	1.3 (Berkeley) %G%
 .\"
 .if n .ND
 .TL
 Measuring and Improving the Performance of Berkeley UNIX*
 .sp
-Revised July 16, August 11, 1985
+
 .AU
 Marshall Kirk McKusick,
 Samuel J. Leffler\(dg,
@@ -122,11 +122,11 @@ performance.
 .lt \\n(.lu
 ..
 .af PN i
-.ds LH File System
+.ds LH Performance
 .ds RH Contents
 .bp 1
-.if t .ds CF July 16, 1985
-.if t .ds LF TOCS
+.if t .ds CF 
+.if t .ds LF DRAFT
 .if t .ds RF McKusick, et. al.
 .ce
 .B "TABLE OF CONTENTS"
@@ -223,7 +223,7 @@ performance.
 .LP
 .sp .5v
 .nf
-.B Appendix - Benchmark Programs
+.B "Appendix \- Benchmark Programs"
 .de _d
 .if t .ta .6i 2.1i 2.6i
 .\" 2.94 went to 2.6, 3.64 to 3.30
