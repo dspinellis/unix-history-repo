@@ -1,0 +1,36 @@
+.th SWITCH III 3/15/72
+.sh NAME
+switch \*- switch on value
+.sh SYNOPSIS
+.lp +7 7
+	(switch value in r0)
+.lp +7 7
+.ft B
+	jsr	r5,switch; swtab
+.lp +7 7
+.ft R
+	(not-found return)
+.lp +7 7
+.ft B
+	...
+.lp +7 7
+swtab:	val1; lab1;
+.lp +7 7
+	...
+.lp +7 7
+	valn;	labn
+.lp +7 7
+	..;  0
+.i0
+.dt
+.ft R
+.sh DESCRIPTION
+.it Switch
+compares the value of r0 against each of the val\s8\fI\di\fR\u\s10; if
+a match is found, control is transferred to the corresponding
+lab\s8\fI\di\fR\u\s10 (after popping the stack once).
+If no match has been found by the time a null lab\s8\fI\di\fR\u\s10
+occurs,
+.it switch
+returns.
+.sh BUGS
