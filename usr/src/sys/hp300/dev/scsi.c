@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsi.c	8.1 (Berkeley) %G%
+ *	@(#)scsi.c	8.2 (Berkeley) %G%
  */
 
 #ifndef DEBUG
@@ -798,10 +798,10 @@ scsi_request_sense(ctlr, slave, unit, buf, len)
 
 int
 scsi_immed_command(ctlr, slave, unit, cdb, buf, len, rd)
-	int ctlr, slave, unit;
+	int ctlr, slave, unit, rd;
 	struct scsi_fmt_cdb *cdb;
 	u_char *buf;
-	unsigned len;
+	u_int len;
 {
 	register struct scsi_softc *hs = &scsi_softc[ctlr];
 
@@ -1078,7 +1078,7 @@ scsidone(unit)
 
 #ifdef DEBUG
 	if (scsi_debug)
-		printf("scsi%d: done called!\n");
+		printf("scsi%d: done called!\n", unit);
 #endif
 	/* dma operation is done -- turn off card dma */
 	hd->scsi_csr &=~ (CSR_DE1|CSR_DE0);
@@ -1153,7 +1153,7 @@ scsifree(dq)
 #if NST > 0
 int
 scsi_tt_oddio(ctlr, slave, unit, buf, len, b_flags, freedma)
-	int ctlr, slave, unit, b_flags;
+	int ctlr, slave, unit, b_flags, freedma;
 	u_char *buf;
 	u_int len;
 {

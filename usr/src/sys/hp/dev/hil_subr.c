@@ -7,7 +7,7 @@
  *
  * from: Utah $Hdr: hil_subr.c 1.1 91/11/19$
  *
- *	@(#)hil_subr.c	8.1 (Berkeley) %G%
+ *	@(#)hil_subr.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -30,6 +30,7 @@
 hilq_to_b(q, cp, cc)
 	register struct clist *q;
 	register char *cp;
+	int cc;
 {
 	register struct cblock *bp;
 	register int nc;

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  *
- *	@(#)clock.c	8.1 (Berkeley) %G%
+ *	@(#)clock.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -404,6 +404,7 @@ read_bbc_reg(reg)
 
 u_char
 write_bbc_reg(reg, data)
+	int reg;
 	u_int data;
 {
 	u_char tmp;

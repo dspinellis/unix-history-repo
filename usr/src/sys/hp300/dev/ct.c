@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ct.c	8.1 (Berkeley) %G%
+ *	@(#)ct.c	8.2 (Berkeley) %G%
  */
 
 #include "ct.h"
@@ -276,6 +276,7 @@ ctopen(dev, flag, type, p)
 /*ARGSUSED*/
 ctclose(dev, flag)
 	dev_t dev;
+	int flag;
 {
 	register struct ct_softc *sc = &ct_softc[UNIT(dev)];
 
@@ -306,6 +307,7 @@ ctclose(dev, flag)
 
 ctcommand(dev, cmd, cnt)
 	dev_t dev;
+	int cmd;
 	register int cnt;
 {
 	register struct ct_softc *sc = &ct_softc[UNIT(dev)];
@@ -769,6 +771,7 @@ ctwrite(dev, uio)
 /*ARGSUSED*/
 ctioctl(dev, cmd, data, flag)
 	dev_t dev;
+	int cmd, flag;
 	caddr_t data;
 {
 	register struct mtop *op;

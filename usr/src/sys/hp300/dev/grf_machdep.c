@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: grf_machdep.c 1.1 92/01/21
  *
- *	@(#)grf_machdep.c	8.1 (Berkeley) %G%
+ *	@(#)grf_machdep.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -101,6 +101,7 @@ grfprobe(hd)
 
 grfinit(addr, unit)
 	caddr_t addr;
+	int unit;
 {
 	struct grf_softc *gp = &grf_softc[unit];
 	register struct grfsw *gsw;

@@ -11,7 +11,7 @@
  *
  * from Utah: $Hdr: dcm.c 1.29 92/01/21$
  *
- *	@(#)dcm.c	8.2 (Berkeley) %G%
+ *	@(#)dcm.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -402,6 +402,7 @@ dcmclose(dev, flag, mode, p)
 dcmread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
+	int flag;
 {
 	register struct tty *tp;
  
@@ -412,6 +413,7 @@ dcmread(dev, uio, flag)
 dcmwrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
+	int flag;
 {
 	int unit = UNIT(dev);
 	register struct tty *tp;
@@ -974,6 +976,7 @@ out:
  */
 dcmstop(tp, flag)
 	register struct tty *tp;
+	int flag;
 {
 	int s;
 
