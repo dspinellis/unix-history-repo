@@ -1,4 +1,4 @@
-/* %G% (Berkeley) @(#)curses.h	1.7 */
+/* %G% (Berkeley) @(#)curses.h	1.8 */
 # ifndef WINDOW
 
 # include	<stdio.h>
@@ -140,6 +140,6 @@ int	__void__;
 #define	resetty() (_tty.sg_flags = _res_flg, stty(_tty_ch, &_tty))
 
 WINDOW	*initscr(), *newwin(), *subwin();
-char	*longname();
+char	*longname(), *getcap();
 
 # endif
