@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mapc.c	5.3 (Berkeley) %G%
+ *	@(#)mapc.c	5.4 (Berkeley) %G%
  *
  * $Id: mapc.c,v 5.2.1.9 91/05/07 22:18:07 jsp Alpha $
  *
@@ -255,10 +255,10 @@ FILE *fp;
 	}
 }
 
-static char *reg_error = "?";
-void regerror P((char *m));
+static const char *reg_error = "?";
+void regerror P((const char *m));
 void regerror(m)
-char *m;
+const char *m;
 {
 	reg_error = m;
 }
