@@ -1,4 +1,4 @@
-/*	tu.c	81/11/20	4.3	*/
+/*	tu.c	82/01/17	4.4	*/
 
 #if defined(VAX750) || defined(VAX7ZZ)
 /*
@@ -137,6 +137,7 @@ struct buf tutab;		/* I/O queue header */
 tuopen(dev, flag)
 {
 	extern int tuwatch();
+	register s;
 
 #ifdef lint
 	turintr(); tuwintr();
@@ -149,7 +150,7 @@ tuopen(dev, flag)
 		tutimer++;
 		timeout(tuwatch, (caddr_t)0, hz);
 	}
-	splx(TUIPL);
+	s = splx(TUIPL);
 	if (tu.state != IDLE) {
 		tureset();
 		sleep((caddr_t)&tu, PZERO);
@@ -163,7 +164,7 @@ tuopen(dev, flag)
 		}
 	} else
 		mtpr(CSRS, IE);
-	spl0();
+	splx(s);
 }
 
 /*
@@ -210,6 +211,7 @@ tureset()
 tustrategy(bp)
 	register struct buf *bp;
 {
+	register int s;
 
 	if (bp->b_blkno >= NTUBLK) {	/* block number out of range? */
 		bp->b_flags |= B_ERROR;
@@ -217,7 +219,7 @@ tustrategy(bp)
 		return;
 	}
 	bp->av_forw = NULL;
-	splx(TUIPL);
+	s = splx(TUIPL);
 	if (tutab.b_actf == NULL)
 		tutab.b_actf = bp;
 	else
@@ -225,7 +227,7 @@ tustrategy(bp)
 	tutab.b_actl = bp;
 	if (tutab.b_active == NULL)
 		tustart();
-	spl0();
+	splx(s);
 }
 
 /*

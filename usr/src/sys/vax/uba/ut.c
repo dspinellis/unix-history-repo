@@ -1,4 +1,4 @@
-/*	ut.c	4.9	81/11/18	*/
+/*	ut.c	4.10	82/01/17	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -129,6 +129,7 @@ utopen(dev, flag)
 	register struct uba_device *ui;
 	register struct tj_softc *sc;
 	int olddens, dens;
+	register int s;
 
 	if (tjunit >= NTJ || (sc = &tj_softc[tjunit])->sc_openf ||
 	    (ui = tjdinfo[tjunit]) == 0 || ui->ui_alive == 0) {
@@ -170,13 +171,13 @@ get:
 	 * For 6250 bpi take exclusive use of the UNIBUS.
 	 */
 	ui->ui_driver->ud_xclu = (dens&(T_1600BPI|T_6250BPI)) == T_6250BPI;
-	(void) spl6();
+	s = spl6();
 	if (sc->sc_tact == 0) {
 		sc->sc_timo = INF;
 		sc->sc_tact = 1;
 		timeout(uttimer, (caddr_t)dev, 5*hz);
 	}
-	(void) spl0();
+	splx(s);
 }
 
 utclose(dev, flag)
@@ -200,9 +201,10 @@ utcommand(dev, com, count)
 	int com, count;
 {
 	register struct buf *bp;
+	register int s;
 
 	bp = &cutbuf[UTUNIT(dev)];
-	(void) spl5();
+	s = spl5();
 	while (bp->b_flags&B_BUSY) {
 		if(bp->b_repcnt == 0 && (bp->b_flags&B_DONE))
 			break;
@@ -210,7 +212,7 @@ utcommand(dev, com, count)
 		sleep((caddr_t)bp, PRIBIO);
 	}
 	bp->b_flags = B_BUSY|B_READ;
-	(void) spl0();
+	splx(s);
 	bp->b_dev = dev;
 	bp->b_command = com;
 	bp->b_repcnt = count;
