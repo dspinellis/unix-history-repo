@@ -1,11 +1,14 @@
 #ifndef lint
-static char sccsid[] = "@(#)rexec.c	4.3 82/04/01";
+static char sccsid[] = "@(#)rexec.c	4.4 82/11/14";
 #endif
 
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <net/in.h>
+
+#include <netinet/in.h>
+
+#include <stdio.h>
+#include <netdb.h>
 #include <errno.h>
 
 extern	errno;
@@ -19,30 +22,29 @@ rexec(ahost, rport, name, pass, cmd, fd2p)
 	char *name, *pass, *cmd;
 	int *fd2p;
 {
-	int s, addr, timo = 1;
+	int s, timo = 1, s3;
 	struct sockaddr_in sin, sin2, from;
 	char c;
 	short port;
+	struct hostent *hp;
 
-	addr = rhost(ahost);
-	if (addr == -1) {
+	hp = gethostbyname(*ahost);
+	if (hp == 0) {
 		fprintf(stderr, "%s: unknown host\n", *ahost);
 		return (-1);
 	}
-	ruserpass(*ahost, &name, &pass);
+	*ahost = hp->h_name;
+	ruserpass(hp->h_name, &name, &pass);
 retry:
-	sin.sin_family = AF_INET;
-	sin.sin_port = 0;
-	sin.sin_addr.s_addr = 0;
-	s = socket(SOCK_STREAM, 0, &sin, rexecoptions|SO_KEEPALIVE);
-	if (s < 0)
+	s = socket(0, SOCK_STREAM, 0, 0);
+	if (s < 0) {
+		perror("rexec: socket");
 		return (-1);
-	sin.sin_addr.s_addr = addr;
+	}
+	sin.sin_family = hp->h_addrtype;
 	sin.sin_port = rport;
-#if vax
-	sin.sin_port =
-	    ((sin.sin_port << 8) & 0xff00) | ((sin.sin_port >> 8) & 0x00ff);
-#endif
+	bcopy(hp->h_addr, (caddr_t)&sin.sin_addr, hp->h_length);
+	sin.sin_port = htons((u_short)rport);
 	if (connect(s, &sin) < 0) {
 		if (errno == ECONNREFUSED && timo <= 16) {
 			(void) close(s);
@@ -50,7 +52,7 @@ retry:
 			timo *= 2;
 			goto retry;
 		}
-		perror(*ahost);
+		perror(hp->h_name);
 		return (-1);
 	}
 	if (fd2p == 0) {
@@ -60,27 +62,26 @@ retry:
 		char num[8];
 		int s2;
 		
-		sin.sin_family = AF_INET;
-		sin.sin_port = 0;
-		sin.sin_addr.s_addr = 0;
-		s2 = socket(SOCK_STREAM, 0, &sin, rexecoptions|SO_ACCEPTCONN);
-
+		s2 = socket(0, SOCK_STREAM, 0, 0);
 		if (s2 < 0) {
 			(void) close(s);
 			return (-1);
 		}
+		listen(s2, 1);
 		socketaddr(s2, &sin2);
-		port = sin2.sin_port;
-#if vax
-		port = ((port << 8) & 0xff00) | ((port >> 8) & 0x00ff);
-#endif
+		port = ntohs((u_short)sin2.sin_port);
 		(void) sprintf(num, "%d", port);
 		(void) write(s, num, strlen(num)+1);
-		if (accept(s2, &from) < 0) {
+		{ int len = sizeof (from);
+		  s3 = accept(s2, &from, &len, 0);
+		  close(s2);
+		  if (s3 < 0) {
 			perror("accept");
+			port = 0;
 			goto bad;
+		  }
 		}
-		*fd2p = s2;
+		*fd2p = s3;
 	}
 	(void) write(s, name, strlen(name) + 1);
 	/* should public key encypt the password here */
