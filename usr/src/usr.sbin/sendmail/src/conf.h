@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.62 (Berkeley) %G%
+ *	@(#)conf.h	8.63 (Berkeley) %G%
  */
 
 /*
@@ -255,8 +255,12 @@ extern long	dgux_inet_addr();
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASFLOCK	1	/* has flock(2) call */
-# define LA_TYPE	LA_INT
-# define LA_AVENRUN	"avenrun"
+# ifdef vax
+#  define LA_TYPE	LA_FLOAT
+# else
+#  define LA_TYPE	LA_INT
+#  define LA_AVENRUN	"avenrun"
+# endif
 # undef IDENTPROTO		/* TCP/IP implementation is broken */
 #endif
 
