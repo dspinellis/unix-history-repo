@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.21 (Berkeley) %G%
+ *	@(#)hp.c	7.22 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -39,7 +39,6 @@ int	hpbdebug;
 #include "sys/stat.h"
 
 #include "../include/pte.h"
-#include "../vax/dkio.h"
 #include "mbareg.h"
 #include "mbavar.h"
 #include "hpreg.h"
@@ -893,12 +892,6 @@ hpioctl(dev, cmd, data, flag)
 		fop->df_reg[3] = sc->sc_er2;
 		break;
 	    }
-
-#ifdef COMPAT_42
-	case DKIOCHDR:  /* do header read/write */	/* XXX */
-		sc->sc_hdr = 1;
-		break;
-#endif
 
 	default:
 		error = ENOTTY;
