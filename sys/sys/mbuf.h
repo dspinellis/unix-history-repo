@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)mbuf.h	7.14 (Berkeley) 12/5/90
- *	$Id: mbuf.h,v 1.8.1.1 1994/05/01 02:27:52 jtw Exp $
+ *	$Id: mbuf.h,v 1.9 1994/05/05 23:47:35 wollman Exp $
  */
 
 #ifndef _SYS_MBUF_H_
@@ -163,15 +163,15 @@ struct mbuf {
 struct mbuf *mbuffree;
 int mbuffreecnt;
 #define	MGET(m, how, type) { \
-	disable_intr(); \
+	int s = splimp(); \
 	if( mbuffree == 0) { \
-		enable_intr(); \
+		splx(s); \
 		MALLOC((m), struct mbuf *, MSIZE, mbtypes[type], (how)); \
 	} else { \
 		--mbuffreecnt; \
 		(m) = mbuffree; \
 		mbuffree = (m)->m_next; \
-		enable_intr(); \
+		splx(s); \
 	} \
 	if (m) { \
 		(m)->m_type = (type); \
