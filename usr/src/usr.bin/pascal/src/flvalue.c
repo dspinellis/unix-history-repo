@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)flvalue.c 1.1 %G%";
+static	char sccsid[] = "@(#)flvalue.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -11,6 +11,15 @@ static	char sccsid[] = "@(#)flvalue.c 1.1 %G%";
 #   include "pc.h"
 #   include "pcops.h"
 #endif PC
+#ifdef OBJ
+/*
+ * define the display structure for purposes of allocating
+ * a temporary
+ */
+struct dispsave {
+	char	*ptr;
+};
+#endif OBJ
 
     /*
      *	flvalue generates the code to either pass on a formal routine,
@@ -18,34 +27,35 @@ static	char sccsid[] = "@(#)flvalue.c 1.1 %G%";
      *	it tells the difference by looking at the tree it's given.
      */
 struct nl *
-flvalue( r )
-    int	*r;
+flvalue( r , formalp )
+    int		*r;
+    struct nl	*formalp;
     {
 	struct nl	*p;
 	long		tempoff;
+	char		*typename;
 
 	if ( r == NIL ) {
 	    return NIL;
 	}
+	typename = formalp -> class == FFUNC ? "function":"procedure";
+	if ( r[0] != T_VAR ) {
+	    error("Expression given, %s required for %s parameter %s" ,
+		    typename , typename , formalp -> symbol );
+	    return NIL;
+	}
 	p = lookup(r[2]);
 	if (p == NIL) {
-		return NIL;
+	    return NIL;
 	}
-	switch ( r[0] ) {
-	    case T_FFUNC:
+	switch ( p -> class ) {
+	    case FFUNC:
+	    case FPROC:
 		    if ( r[3] != NIL ) {
-			error("Formal function %s cannot be qualified" ,
-				p -> symbol );
+			error("Formal %s %s cannot be qualified" ,
+				typename , p -> symbol );
 			return NIL;
 		    }
-		    goto froutine;
-	    case T_FPROC:
-		    if ( r[3] != NIL ) {
-			error("Formal procedure %s cannot be qualified" ,
-				p -> symbol );
-			return NIL;
-		    }
-	    froutine:
 #		    ifdef OBJ
 			put( 2 , PTR_RV | bn << 8+INDX , p -> value[NL_OFFS] );
 #		    endif OBJ
@@ -54,18 +64,18 @@ flvalue( r )
 				p2type( p ) );
 #		    endif PC
 		    return p -> type;
-	    case T_FUNC:
+	    case FUNC:
+	    case PROC:
 		    if ( r[3] != NIL ) {
-			error("Function %s cannot be qualified" , p -> symbol );
+			error("%s %s cannot be qualified" , typename ,
+				p -> symbol );
 			return NIL;
 		    }
-		    goto routine;
-	    case T_PROC:
-		    if ( r[3] != NIL ) {
-			error("Procedure %s cannot be qualified", p -> symbol );
+		    if (bn == 0) {
+			error("Built-in %s %s cannot be passed as a parameter" ,
+				typename , p -> symbol );
 			return NIL;
 		    }
-	    routine:
 			/*
 			 *	formal routine structure:
 			 *
@@ -75,7 +85,7 @@ flvalue( r )
 			 *		struct dispsave	disp[2*MAXLVL];
 			 *	};
 			 */
-		    sizes[ cbn ].om_off -=	  sizeof (long (*()))
+		    sizes[ cbn ].om_off -=	  sizeof (long (*)())
 						+ sizeof (long)
 						+ 2*bn*sizeof (struct dispsave);
 		    tempoff = sizes[ cbn ].om_off;
@@ -83,13 +93,13 @@ flvalue( r )
 			sizes[ cbn ].om_max = tempoff;
 		    }
 #		    ifdef OBJ
-			put( 2 , PTR_LV | cbn << 8 + INDX , tempoff );
+			put( 2 , O_LV | cbn << 8 + INDX , tempoff );
 			put( 2 , O_FSAV | bn << 8 + INDX , p -> entloc );
 #		    endif OBJ
 #		    ifdef PC
 			putlbracket( ftnno , -tempoff );
 			putleaf( P2ICON , 0 , 0 ,
-			    ADDTYPE( P2PTR , ADDTYPE( P2FTN , P2PTR|P2STR ) ) ,
+			    ADDTYPE( P2PTR , ADDTYPE( P2FTN , P2PTR|P2STRTY ) ) ,
 			    "_FSAV" );
 			{
 			    char	extname[ BUFSIZ ];
@@ -110,12 +120,14 @@ flvalue( r )
 			}
 			putleaf( P2ICON , bn , 0 , P2INT , 0 );
 			putop( P2LISTOP , P2INT );
-			putLV( 0 , cbn , tempoff , P2STR );
+			putLV( 0 , cbn , tempoff , P2STRTY );
 			putop( P2LISTOP , P2INT );
 			putop( P2CALL , P2PTR | P2STRTY );
 #		    endif PC
 		    return p -> type;
 	    default:
-		    panic("flvalue");
+		    error("Variable given, %s required for %s parameter %s" ,
+			    typename , typename , formalp -> symbol );
+		    return NIL;
 	}
     }

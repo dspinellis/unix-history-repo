@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)fdec.c 1.3 %G%";
+static	char sccsid[] = "@(#)fdec.c 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -138,10 +138,10 @@ funchdr(r)
 			    case TREC:
 			    case TSET:
 			    case TSTR:
-				    warning();
-				    if (opt('s'))
+				    if (opt('s')) {
 					    standard();
-				    error("Functions should not return %ss", clnames[o]);
+					    error("Functions should not return %ss", clnames[o]);
+				    }
 		    }
 #		    ifdef PC
 			enclosing[ cbn ] = r[2];
@@ -256,9 +256,27 @@ funchdr(r)
 #					    endif PC
 					    break;
 				    case T_PFUNC:
+#					    ifdef OBJ
+						dp = defnl(il[1], FFUNC, p, o -= sizeof ( int * ) );
+#					    endif OBJ
+#					    ifdef PC
+						dp = defnl( il[1] , FFUNC , p
+							, o = roundup( o , A_STACK ) );
+						o += sizeof(char *);
+#					    endif PC
+					    dp -> nl_flags |= NMOD;
+					    break;
 				    case T_PPROC:
-					    error("Procedure/function parameters not implemented");
-					    continue;
+#					    ifdef OBJ
+						dp = defnl(il[1], FPROC, p, o -= sizeof ( int * ) );
+#					    endif OBJ
+#					    ifdef PC
+						dp = defnl( il[1] , FPROC , p
+							, o = roundup( o , A_STACK ) );
+						o += sizeof(char *);
+#					    endif PC
+					    dp -> nl_flags |= NMOD;
+					    break;
 				    }
 				if (dp != NIL) {
 					cp->chain = dp;
@@ -506,6 +524,11 @@ funcend(fp, bundle, endline)
 	 */
 	var = put(2, (lenstr(fp->symbol,0) << 8)
 			| (cbn == 1 && opt('p') == 0 ? O_NODUMP: O_BEG), 0);
+	    /*
+	     *  output the number of bytes of arguments
+	     *  this is only checked on formal calls.
+	     */
+	put(2, O_CASE4, cbn == 1 ? 0 : fp->value[NL_OFFS]-DPOFF2);
 	put(2, O_CASE2, bundle[1]);
 	putstr(fp->symbol, 0);
 #endif OBJ
@@ -597,15 +620,30 @@ funcend(fp, bundle, endline)
 	     *	and zero them if checking is on
 	     *	by calling zframe( bytes of locals , highest local address );
 	     */
-	if ( opt( 't' ) && ( -sizes[ cbn ].om_max ) > DPOFF1 ) {
-	    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
-		    , "_ZFRAME" );
-	    putleaf( P2ICON ,  ( -sizes[ cbn ].om_max ) - DPOFF1
-		    , 0 , P2INT , 0 );
-	    putLV( 0 , cbn , sizes[ cbn ].om_max , P2CHAR );
-	    putop( P2LISTOP , P2INT );
-	    putop( P2CALL , P2INT );
-	    putdot( filename , line );
+	if ( opt( 't' ) ) {
+	    if ( ( -sizes[ cbn ].om_max ) > DPOFF1 ) {
+		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+			, "_ZFRAME" );
+		putleaf( P2ICON ,  ( -sizes[ cbn ].om_max ) - DPOFF1
+			, 0 , P2INT , 0 );
+		putLV( 0 , cbn , sizes[ cbn ].om_max , P2CHAR );
+		putop( P2LISTOP , P2INT );
+		putop( P2CALL , P2INT );
+		putdot( filename , line );
+	    }
+		/*
+		 *  check number of longs of arguments
+		 *  this can only be wrong for formal calls.
+		 */
+	    if ( fp -> class != PROG ) {
+		    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2PTR , P2FTN | P2INT ) ,
+			    "_NARGCHK" );
+		    putleaf( P2ICON ,
+			(fp->value[NL_OFFS] - DPOFF2) / sizeof(long) ,
+			0 , P2INT , 0 );
+		    putop( P2CALL , P2INT );
+		    putdot( filename , line );
+	    }
 	}
 #endif PC
 	if ( monflg ) {
@@ -857,6 +895,8 @@ funcend(fp, bundle, endline)
 	    if ( fp -> class == FUNC ) {
 		struct nl	*fvar = fp -> ptr[ NL_FVAR ];
 		long		fvartype = p2type( fvar -> type );
+		long		label;
+		char		labelname[ BUFSIZ ];
 
 		switch ( classify( fvar -> type ) ) {
 		    case TBOOL:
@@ -869,8 +909,19 @@ funcend(fp, bundle, endline)
 				, fvar -> value[ NL_OFFS ] , fvartype );
 			break;
 		    default:
+			label = getlab();
+			sprintf( labelname , PREFIXFORMAT ,
+				LABELPREFIX , label );
+			putprintf( "	.data" , 0 );
+			putprintf( "	.lcomm	%s,%d" , 0 ,
+				    labelname , lwidth( fvar -> type ) );
+			putprintf( "	.text" , 0 );
+			putRV( labelname , 0 , 0 , fvartype );
 			putLV( fvar -> symbol , ( fvar -> nl_block ) & 037
 				, fvar -> value[ NL_OFFS ] , fvartype );
+			putstrop( P2STASG , fvartype , lwidth( fvar -> type ) ,
+				align( fvar -> type ) );
+			putLV( labelname , 0 , 0 , fvartype );
 			break;
 		}
 		putop( P2FORCE , fvartype );

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)func.c 1.1 %G%";
+static	char sccsid[] = "@(#)func.c 1.2 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -39,7 +39,7 @@ funccod(r)
 		rvlist(r[3]);
 		return (NIL);
 	}
-	if (p->class != FUNC) {
+	if (p->class != FUNC && p->class != FFUNC) {
 		error("%s is not a function", p->symbol);
 		rvlist(r[3]);
 		return (NIL);
