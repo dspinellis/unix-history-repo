@@ -1,6 +1,6 @@
 /* #define	OLD_BSD		if you're running < 4.2bsd */
 /*
-char	id_trpfpe[] = "@(#)trpfpe_.c	1.2";
+char	id_trpfpe[] = "@(#)trpfpe_.c	1.3";
  *
  *	Fortran floating-point error handler
  *
@@ -396,7 +396,7 @@ cant_fix:
 	ps &= ~(PSW_V|PSW_FU);
 #else
 	ipc = (char **)&sc->sc_pc;
-	isp = (char *)&ap->al_arg[ap->al_numarg] + sizeof (struct sigcontext);
+	isp = (char *)sc + sizeof (struct sigcontext);
 	sc->sc_ps &= ~(PSW_V|PSW_FU);
 #endif
 
