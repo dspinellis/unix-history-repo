@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile.install	5.2 (Berkeley) %G%
+#	@(#)Makefile.install	5.3 (Berkeley) %G%
 #
 # Makefile for /usr/include, used to convert system include subdirectories
 # between symbolic links and copies of kernel headers.
@@ -13,8 +13,12 @@
 # follow symbolic links.
 #
 DESTDIR=
-MACHINE=vax
-MACHDEP=${MACHINE} vaxif vaxmba vaxuba
+#ifdef vax
+#MACHINE=vax
+#MACHDEP=${MACHINE} vaxif vaxmba vaxuba
+#endif
+MACHINE=tahoe
+MACHDEP=${MACHINE} tahoeif tahoevba
 NETDIRS=net netimp netinet netns
 SYSDIRS=${NETDIRS} stand ${MACHDEP}
 SYS=/sys
