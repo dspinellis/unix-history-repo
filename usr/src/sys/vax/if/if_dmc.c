@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.7	82/03/28	*/
+/*	if_dmc.c	4.8	82/03/30	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -31,6 +31,7 @@ int dmcdebug = 1;
 #include "../net/if_dmc.h"
 #include "../net/ip.h"
 #include "../net/ip_var.h"
+#include "../net/route.h"
 
 /*
  * Driver information for auto-configuration stuff.
@@ -83,6 +84,7 @@ dmcprobe(reg)
 	register struct dmcdevice *addr = (struct dmcdevice *)reg;
 	register int i;
 
+COUNT(DMCPROBE);
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
 	dmcrint(0); dmcxint(0);
@@ -112,6 +114,7 @@ dmcattach(ui)
 	register struct dmc_softc *sc = &dmc_softc[ui->ui_unit];
 	register struct sockaddr_in *sin;
 
+COUNT(DMCATTACH);
 	sc->sc_if.if_unit = ui->ui_unit;
 	sc->sc_if.if_name = "dmc";
 	sc->sc_if.if_mtu = DMCMTU;
@@ -136,6 +139,7 @@ dmcreset(unit, uban)
 {
 	register struct uba_device *ui;
 
+COUNT(DMCRESET);
 	if (unit >= NDMC || (ui = dmcinfo[unit]) == 0 || ui->ui_alive == 0 ||
 	    ui->ui_ubanum != uban)
 		return;
@@ -154,6 +158,7 @@ dmcinit(unit)
 	register struct dmcdevice *addr;
 	int base;
 
+COUNT(DMCINIT);
 	printd("dmcinit\n");
 	if ((sc->sc_flag&DMCBMAPPED) == 0) {
 		sc->sc_ubinfo = uballoc(ui->ui_ubanum,
@@ -176,6 +181,12 @@ dmcinit(unit)
 	dmcload(sc, DMC_READ, base, ((base>>2)&DMC_XMEM)|DMCMTU);
 	printd("  first read queued, addr 0x%x\n", base);
 	sc->sc_if.if_flags |= IFF_UP;
+	/* set up routing table entry */
+	if ((sc->sc_if.if_flags & IFF_ROUTE) == 0) {
+		rtinit(&sc->sc_if.if_addr, &sc->sc_if.if_addr,
+			RTF_DIRECT|RTF_UP);
+		sc->sc_if.if_flags |= IFF_ROUTE;
+	}
 }
 
 /*
@@ -192,6 +203,7 @@ dmcstart(dev)
 	int addr, len;
 	struct mbuf *m;
 
+COUNT(DMCSTART);
 	printd("dmcstart\n");
 	/*
 	 * Dequeue a request and map it to the UNIBUS.
@@ -225,6 +237,7 @@ dmcload(sc, type, w0, w1)
 	register struct dmcdevice *addr;
 	register int unit, sps, n;
 
+COUNT(DMCLOAD);
 	printd("dmcload: 0x%x 0x%x 0x%x\n", type, w0, w1);
 	unit = sc - dmc_softc;
 	addr = (struct dmcdevice *)dmcinfo[unit]->ui_addr;
@@ -253,6 +266,7 @@ dmcrint(unit)
 	register int n;
 	int w0, w1; /* DEBUG */
 
+COUNT(DMCRINT);
 	addr = (struct dmcdevice *)dmcinfo[unit]->ui_addr;
 	sc = &dmc_softc[unit];
 	while (addr->bsel0&DMC_RDYI) {
@@ -295,6 +309,7 @@ dmcxint(unit)
 	register struct ifqueue *inq;
 	int arg, cmd, len;
 
+COUNT(DMCXINT);
 	addr = (struct dmcdevice *)ui->ui_addr;
 	arg = addr->sel6;
 	cmd = addr->bsel2&7;
@@ -392,6 +407,7 @@ dmcoutput(ifp, m, dst)
 	struct uba_device *ui = dmcinfo[ifp->if_unit];
 	int s;
 
+COUNT(DMCOUTPUT);
 	printd("dmcoutput\n");
 	if (dst->sa_family != (ui->ui_flags & DMC_AF)) {
 		printf("dmc%d: af%d not supported\n", ifp->if_unit, pf);

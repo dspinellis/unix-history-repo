@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.23	82/03/29	*/
+/*	in_pcb.c	4.24	82/03/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -202,7 +202,7 @@ in_pcbdetach(inp)
 	so->so_pcb = 0;
 	sofree(so);
 	if (inp->inp_route.ro_rt)
-		freeroute(inp->inp_route.ro_rt);
+		rtfree(inp->inp_route.ro_rt);
 	remque(inp);
 	(void) m_free(dtom(inp));
 }

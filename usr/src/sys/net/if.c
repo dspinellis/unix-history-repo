@@ -1,4 +1,4 @@
-/*	if.c	4.11	82/03/28	*/
+/*	if.c	4.12	82/03/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -154,4 +154,23 @@ if_makeaddr(net, host)
 	addr = htonl(addr);
 #endif
 	return (*(struct in_addr *)&addr);
+}
+
+/*
+ * Initialize an interface's routing
+ * table entry according to the network.
+ * INTERNET SPECIFIC.
+ */
+if_rtinit(ifp, flags)
+	register struct ifnet *ifp;
+	int flags;
+{
+	struct sockaddr_in sin;
+
+	if (ifp->if_flags & IFF_ROUTE)
+		return;
+	bzero((caddr_t)&sin, sizeof (sin));
+	sin.sin_family = AF_INET;
+	sin.sin_addr = if_makeaddr(ifp->if_net, 0);
+	rtinit(&sin, &sin, flags);
 }
