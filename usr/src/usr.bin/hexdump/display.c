@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)display.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)display.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -27,6 +27,8 @@ static char sccsid[] = "@(#)display.c	5.5 (Berkeley) %G%";
 #include <stdio.h>
 #include <strings.h>
 #include "hexdump.h"
+
+enum _vflag vflag = FIRST;
 
 static off_t address;			/* address/offset in stream */
 static off_t eaddress;			/* end address */
