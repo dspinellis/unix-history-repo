@@ -1,0 +1,9 @@
+# %Z% %M% %I% %E% %Z%
+#FIELDS domain server suffix=.tic.com no=@
+#domain                  server
+tic.com                  akasha
+tic.com                  ns2.psi.net@
+128.135.192.in-addr.arpa akasha
+128.135.192.in-addr.arpa ns2.psi.net@
+localhost                localhost@
+127.in-addr.arpa         localhost@
