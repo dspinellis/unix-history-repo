@@ -92,7 +92,7 @@ int	 ufs_symlink
 	    __P((struct vnode *, struct vnode **, struct componentname *, struct vattr *, char *));
 int	 ufs_unlock __P((struct vnode *));
 int	 ufs_vinit __P((struct mount *,
-	    struct vnodeops *, struct vnodeops *, struct vnode **));
+	    int (**)(), int (**)(), struct vnode **));
 int	 ufsspec_close
 	    __P((struct vnode *, int, struct ucred *, struct proc *));
 int	 ufsspec_read __P((struct vnode *, struct uio *, int, struct ucred *));
