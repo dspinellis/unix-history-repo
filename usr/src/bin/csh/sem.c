@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sem.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)sem.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -426,7 +426,7 @@ doio(t, pipein, pipeout)
     int    *pipein, *pipeout;
 {
     register int fd;
-    register Char *cp;
+    register Char *cp, *dp;
     register int flags = t->t_dflg;
 
     if (didfds || (flags & F_REPEAT))
@@ -441,10 +441,11 @@ doio(t, pipein, pipeout)
 	    (void) dcopy(SHIN, 0);
 	    (void) dcopy(SHOUT, 1);
 	    (void) dcopy(SHDIAG, 2);
-	    cp = globone(Dfix1(cp), G_IGNORE);
+	    cp = globone(dp = Dfix1(cp), G_IGNORE);
 	    (void) strncpy(tmp, short2str(cp), MAXPATHLEN);
 	    tmp[MAXPATHLEN] = '\0';
 	    xfree((ptr_t) cp);
+	    xfree((ptr_t) dp);
 	    if ((fd = open(tmp, O_RDONLY)) < 0)
 		stderror(ERR_SYSTEM, tmp, strerror(errno));
 	    (void) dmove(fd, 0);
@@ -468,10 +469,11 @@ doio(t, pipein, pipeout)
     if (cp = t->t_drit) {
 	char    tmp[MAXPATHLEN+1];
 
-	cp = globone(Dfix1(cp), G_IGNORE);
+	cp = globone(dp = Dfix1(cp), G_IGNORE);
 	(void) strncpy(tmp, short2str(cp), MAXPATHLEN);
 	tmp[MAXPATHLEN] = '\0';
 	xfree((ptr_t) cp);
+	xfree((ptr_t) dp);
 	/*
 	 * so > /dev/std{out,err} work
 	 */
