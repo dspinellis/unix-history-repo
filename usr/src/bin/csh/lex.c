@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -81,6 +81,7 @@ static int exclc = 0;
 
 /* "Globp" for alias resubstitution */
 static Char *alvecp = NULL;
+int aret = F_SEEK;
 
 /*
  * Labuf implements a general buffer for lookahead during lexical operations.
@@ -118,10 +119,10 @@ lex(hp)
     register struct wordent *wdp;
     int     c;
 
-    lineloc = fseekp;
+    btell(&lineloc);
     hp->next = hp->prev = hp;
     hp->word = STRNULL;
-    alvecp = 0, hadhist = 0;
+    hadhist = 0;
     do
 	c = readc(0);
     while (c == ' ' || c == '\t');
@@ -1090,7 +1091,7 @@ gethent(sc)
 	    }
 	    np = lhsb;
 	    event = 0;
-	    while (!any(": \t\\\n}'\"", c)) {
+	    while (!cmap(c, _META | _Q | _Q1) && !any("{}:", c)) {
 		if (event != -1 && Isdigit(c))
 		    event = event * 10 + c - '0';
 		else
@@ -1231,17 +1232,25 @@ readc(wanteof)
     register int c;
     static  sincereal;
 
+    aret = F_SEEK;
     if (c = peekread) {
 	peekread = 0;
 	return (c);
     }
 top:
+    aret = F_SEEK;
     if (alvecp) {
-	if (c = *alvecp++)
+	aret = A_SEEK;
+	if (c = *alvecp++) 
 	    return (c);
 	if (alvec && *alvec) {
-	    alvecp = *alvec++;
-	    return (' ');
+		alvecp = *alvec++;
+		return (' ');
+	}
+	else {
+	    aret = F_SEEK;
+	    alvecp = NULL;
+	    return('\n');
 	}
     }
     if (alvec) {
@@ -1253,12 +1262,14 @@ top:
 	return ('\n');
     }
     if (evalp) {
+	aret = E_SEEK;
 	if (c = *evalp++)
 	    return (c);
-	if (*evalvec) {
+	if (evalvec && *evalvec) {
 	    evalp = *evalvec++;
 	    return (' ');
 	}
+	aret = F_SEEK;
 	evalp = 0;
     }
     if (evalvec) {
@@ -1461,29 +1472,46 @@ bfree()
 
 void
 bseek(l)
-    off_t   l;
-
+    struct Ain   *l;
 {
+    switch (aret = l->type) {
+    case E_SEEK:
+	evalvec = l->a_seek;
+	evalp = (Char *) l->f_seek;
+	return;
+    case A_SEEK:
+	alvec = l->a_seek;
+	alvecp = (Char *) l->f_seek;
+	return;
+    case F_SEEK:	
+	fseekp = l->f_seek;
+	return;
+    default:
+	(void) fprintf(csherr, "Bad seek type %d\n", aret);
+	abort();
+    }
+}
 
-    fseekp = l;
-    if (!cantell) {
-#ifdef notdef
-	register struct whyle *wp;
-#endif
-
-	if (!whyles)
-	    return;
-#ifdef notdef
-	/*
-	 * Christos: I don't understand this? both wp and l are local. What is
-	 * this used for? I suspect the author meant fseek = wp->w_start
-	 * This seek/tell stuff needs to be re-written...
-	 */
-	for (wp = whyles; wp->w_next; wp = wp->w_next)
-	    continue;
-	if (wp->w_start > l)
-	    l = wp->w_start;
-#endif
+void
+btell(l)
+    struct Ain *l;
+{
+    switch (l->type = aret) {
+    case E_SEEK:
+	l->a_seek = evalvec;
+	l->f_seek = (off_t) evalp;
+	return;
+    case A_SEEK:
+	l->a_seek = alvec;
+	l->f_seek = (off_t) alvecp;
+	return;
+    case F_SEEK:
+	l->f_seek = fseekp;
+	l->a_seek = NULL;
+	return;
+    default:
+	(void) fprintf(csherr, "Bad seek type %d\n", aret);
+	abort();
     }
 }
 

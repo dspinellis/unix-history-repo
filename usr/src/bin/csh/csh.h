@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)csh.h	5.18 (Berkeley) %G%
+ *	@(#)csh.h	5.19 (Berkeley) %G%
  */
 
 /*
@@ -209,6 +209,23 @@ struct Bin {
     Char  **Bfbuf;		/* The array of buffer blocks */
 }       B;
 
+/*
+ * This structure allows us to seek inside aliases
+ */
+struct Ain {
+    int type;
+#define I_SEEK -1		/* Invalid seek */
+#define A_SEEK	0		/* Alias seek */
+#define F_SEEK	1		/* File seek */
+#define E_SEEK	2		/* Eval seek */
+    off_t f_seek;
+    Char **a_seek;
+} ;
+extern int aret;		/* What was the last character returned */
+#define SEEKEQ(a, b) ((a)->type == (b)->type && \
+		      (a)->f_seek == (b)->f_seek && \
+		      (a)->a_seek == (b)->a_seek)
+
 #define	fseekp	B.Bfseekp
 #define	fbobp	B.Bfbobp
 #define	feobp	B.Bfeobp
@@ -220,7 +237,7 @@ struct Bin {
  * For whiles, in particular, it reseeks to the beginning of the
  * line the while was on; hence the while placement restrictions.
  */
-off_t   lineloc;
+struct Ain lineloc;
 
 bool    cantell;		/* Is current source tellable ? */
 
@@ -353,8 +370,8 @@ extern int nsrchn;
  * input.  For foreach (fe), the word list is attached here.
  */
 struct whyle {
-    off_t   w_start;		/* Point to restart loop */
-    off_t   w_end;		/* End of loop (0 if unknown) */
+    struct Ain   w_start;	/* Point to restart loop */
+    struct Ain   w_end;		/* End of loop (0 if unknown) */
     Char  **w_fe, **w_fe0;	/* Current/initial wordlist for fe */
     Char   *w_fename;		/* Name for fe */
     struct whyle *w_next;	/* Next (more outer) loop */
