@@ -14,13 +14,15 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)wait.h	7.5 (Berkeley) %G%
+ *	@(#)wait.h	7.6 (Berkeley) %G%
  */
 
 /*
  * This file holds definitions relevent to the wait4 system call
  * and the alternate interfaces that use it (wait, wait3, waitpid).
  */
+
+#ifndef _POSIX_SOURCE
 
 #ifndef BYTE_ORDER
 #include <machine/endian.h>
@@ -79,6 +81,7 @@ union wait {
 
 
 #define	WSTOPPED	0177	/* value of s.stopval if process is stopped */
+#endif /* _POSIX_SOURCE */
 
 /*
  * Option bits for the second argument of wait4.  WNOHANG causes the
@@ -93,12 +96,15 @@ union wait {
  */
 #define WNOHANG		1	/* dont hang in wait */
 #define WUNTRACED	2	/* tell about stopped, untraced children */
+#ifndef _POSIX_SOURCE
 #define WSIGRESTART	4	/* restart wait if signal is received */
+#endif /* _POSIX_SOURCE */
 
 /*
  * Macros to test the exit status returned by wait
  * and extract the relevant values.
  */
+#ifndef _POSIX_SOURCE
 #define WIFSTOPPED(x)	((x).w_stopval == WSTOPPED)
 #define WSTOPSIG(x)	((x).w_stopsig)
 
@@ -106,5 +112,17 @@ union wait {
 #define WTERMSIG(x)	((x).w_termsig)
 #define WCOREDUMP(x)	((x).w_coredump)
 
-#define WIFEXITED(x)	((x).w_stopval != WSTOPPED && (x).w_termsig == 0)
+#define WIFEXITED(x)	((x).w_termsig == 0)
 #define WEXITSTATUS(x)	((x).w_retcode)
+
+#else /* _POSIX_SOURCE */
+
+#define WIFSTOPPED(x)	(((x) & 0377) == 0177)
+#define WSTOPSIG(x)	((x) >> 8)
+
+#define WIFSIGNALED(x)	(((x) & 0377 != 0177 && ((x) & 0377) != 0)
+#define WTERMSIG(x)	((x) & 0177)
+
+#define WIFEXITED(x)	(((x) & 0377) == 0)
+#define WEXITSTATUS(x)	((x) >> 8)
+#endif /* _POSIX_SOURCE */
