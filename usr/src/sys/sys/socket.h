@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)socket.h	6.9 (Berkeley) %G%
+ *	@(#)socket.h	6.10 (Berkeley) %G%
  */
 
 /*
@@ -22,14 +22,15 @@
 /*
  * Option flags per-socket.
  */
-#define	SO_DEBUG	0x01		/* turn on debugging info recording */
-#define	SO_ACCEPTCONN	0x02		/* socket has had listen() */
-#define	SO_REUSEADDR	0x04		/* allow local address reuse */
-#define	SO_KEEPALIVE	0x08		/* keep connections alive */
-#define	SO_DONTROUTE	0x10		/* just use interface addresses */
-#define	SO_BROADCAST	0x20		/* permit sending of broadcast msgs */
-#define	SO_USELOOPBACK	0x40		/* bypass hardware when possible */
-#define	SO_LINGER	0x80		/* linger on close if data present */
+#define	SO_DEBUG	0x0001		/* turn on debugging info recording */
+#define	SO_ACCEPTCONN	0x0002		/* socket has had listen() */
+#define	SO_REUSEADDR	0x0004		/* allow local address reuse */
+#define	SO_KEEPALIVE	0x0008		/* keep connections alive */
+#define	SO_DONTROUTE	0x0010		/* just use interface addresses */
+#define	SO_BROADCAST	0x0020		/* permit sending of broadcast msgs */
+#define	SO_USELOOPBACK	0x0040		/* bypass hardware when possible */
+#define	SO_LINGER	0x0080		/* linger on close if data present */
+#define	SO_OOBINLINE	0x0100		/* leave received OOB data in line */
 
 /*
  * Additional options, not kept in so_options.

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_socket.c	6.25 (Berkeley) %G%
+ *	@(#)uipc_socket.c	6.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -649,6 +649,7 @@ sosetopt(so, level, optname, m0)
 		case SO_USELOOPBACK:
 		case SO_BROADCAST:
 		case SO_REUSEADDR:
+		case SO_OOBINLINE:
 			if (m == NULL || m->m_len < sizeof (int)) {
 				error = EINVAL;
 				goto bad;
@@ -738,6 +739,7 @@ sogetopt(so, level, optname, mp)
 		case SO_KEEPALIVE:
 		case SO_REUSEADDR:
 		case SO_BROADCAST:
+		case SO_OOBINLINE:
 			*mtod(m, int *) = so->so_options & optname;
 			break;
 
