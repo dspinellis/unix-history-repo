@@ -92,7 +92,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.69 %G%";
+static char SccsId[] = "@(#)sccs.c	1.70 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -1081,7 +1081,7 @@ unedit(fn)
 	char *fn;
 {
 	register FILE *pfp;
-	char *pfn;
+	char *cp, *pfn;
 	static char tfn[] = "/tmp/sccsXXXXX";
 	FILE *tfp;
 	register char *q;
@@ -1148,6 +1148,32 @@ unedit(fn)
 		}
 	}
 
+	/*
+	 * Before changing anything, make sure we can remove
+	 * the file in question (assuming it exists).
+	 */
+	if (delete) {
+		extern int errno;
+
+		cp = tail(fn);
+		errno = 0;
+		if (access(cp, 0) < 0 && errno != ENOENT)
+			goto bad;
+		if (errno == 0)
+			/*
+			 * This is wrong, but the rest of the program
+			 * has built in assumptions about "." as well,
+			 * so why make unedit a special case?
+			 */
+			if (access(".", 2) < 0) {
+	bad:
+				printf("%12s: can't remove\n", cp);
+				fclose(tfp);
+				fclose(pfp);
+				unlink(tfn);
+				return (FALSE);
+			}
+	}
 	/* do final cleanup */
 	if (others)
 	{
@@ -1177,8 +1203,13 @@ unedit(fn)
 	/* actually remove the g-file */
 	if (delete)
 	{
-		unlink(tail(fn));
-		printf("%12s: removed\n", tail(fn));
+		/*
+		 * Since we've checked above, we can
+		 * use the return from unlink to
+		 * determine if the file existed or not.
+		 */
+		if (unlink(cp) >= 0)
+			printf("%12s: removed\n", cp);
 		return (TRUE);
 	}
 	else
