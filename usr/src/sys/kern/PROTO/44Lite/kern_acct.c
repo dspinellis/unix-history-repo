@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	from: @(#)kern_acct.c	8.4 (Berkeley) 6/2/94
+ *	from: @(#)kern_acct.c 8.8 (Berkeley) 5/14/95
  */
 
 #include <sys/param.h>
@@ -20,12 +20,11 @@
 #include <sys/syslog.h>
 #include <sys/kernel.h>
 
-struct acct_args {
-	char	*fname;
-};
 acct(a1, a2, a3)
 	struct proc *a1;
-	struct acct_args *a2;
+	struct acct_args /* {
+		syscallarg(char *) path;
+	} */ *a2;
 	int *a3;
 {
 	/*
