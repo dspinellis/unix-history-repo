@@ -1,7 +1,8 @@
-SCCSID = "@(#)Makefile 1.6 %G%"
+SCCSID = "@(#)Makefile 1.7 %G%"
 
 CFLAGS = -O
 DEFS =
+SRCDIR =/usr/ucb
 DESTDIR =/usr/ucb
 LIBDIR =/usr/lib
 PASCALDIR = /usr/src/cmd/pascal
@@ -62,12 +63,16 @@ prt: interp.s
 	sed -f clean.sed <interp.s
 
 grind: sources
-	@vpr READ_ME makefile
-	@${CC} ${CFLAGS} -o pic pic.c
-	@./pic | vpr
-	@/usr/ucb/vgrind vars.h objfmt.h machdep.h
-	@/usr/ucb/vgrind ${PXSRC}
-	@${RM} pic*
+	${SRCDIR}/ctags -v *.h *.c *.s | sort -f >index
+	${SRCDIR}/vgrind -t -x index >lpr
+	${CC} ${CFLAGS} -o pic pic.c
+	${SRCDIR}/vgrind -t -n READ_ME makefile lst >>lpr
+	${SRCDIR}/vgrind -t ${PCHDR} ${PXHDR} objfmt.h panics.h whoami.h >>lpr
+	${SRCDIR}/vgrind -t ${PXSRC} >>lpr
+	./pic >lst
+	${SRCDIR}/vpr lst
+	${SRCDIR}/vpr -t lpr
+	${RM} index pic lst
 
 depend:	sources
 	/bin/grep '^#[ 	]*include' *.c \
@@ -86,10 +91,14 @@ depend:	sources
 
 # DO NOT DELETE THIS LINE -- make depend uses it
 # DEPENDENCIES MUST END AT END OF FILE
+except.o: whoami.h
 except.o: panics.h
 except.o: vars.h
+int.o: whoami.h
 int.o: vars.h
 int.o: objfmt.h
+interp.o: whoami.h
+interp.o: objfmt.h
 interp.o: vars.h
 interp.o: panics.h
 interp.o: h02opcs.h
@@ -98,6 +107,7 @@ interp.o: h01errs.h
 interp.o: libpc.h
 opc.o: OPnames.h
 pic.o: OPnames.h
+utilities.o: whoami.h
 utilities.o: vars.h
 utilities.o: panics.h
 utilities.o: h02opcs.h
