@@ -110,10 +110,10 @@ struct keyidlist {
 
 void fb64_stream_iv P((Block, struct stinfo *));
 void fb64_init P((struct fb *));
-int fb64_start P((struct fb *, int, int));
+static int fb64_start P((struct fb *, int, int));
 int fb64_is P((unsigned char *, int, struct fb *));
 int fb64_reply P((unsigned char *, int, struct fb *));
-void fb64_session P((Session_Key *, int, struct fb *));
+static void fb64_session P((Session_Key *, int, struct fb *));
 void fb64_stream_key P((Block, struct stinfo *));
 int fb64_keyid P((int, unsigned char *, int *, struct fb *));
 
