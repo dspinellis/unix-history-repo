@@ -48,12 +48,12 @@ static char sccsid[] = "@(#)login.c	5.70 (Berkeley) %G%";
  * be patched on machines where it's too small.
  */
 int	timeout = 300;
+int	rootlogin;
 #ifdef KERBEROS
 int	notickets = 1;
-int	rootlogin = 0;
-#define	ROOTLOGIN	(rootlogin || (pwd && pwd->pw_uid == 0))
-#else
-#define	ROOTLOGIN	(pwd && pwd->pw_uid == 0)
+char	*instance;
+char	*krbtkfile_env;
+int	authok;
 #endif
 
 struct	passwd *pwd;
@@ -174,8 +174,6 @@ main(argc, argv)
 	argv += optind;
 	if (*argv) {
 		username = *argv;
-		if (strlen(username) > UT_NAMESIZE)
-			username[UT_NAMESIZE] = '\0';
 		ask = 0;
 	} else
 		ask = 1;
@@ -200,6 +198,19 @@ main(argc, argv)
 			fflag = 0;
 			getloginname();
 		}
+#ifdef	KERBEROS
+		if ((instance = index(username, '.')) != NULL) {
+			if (strncmp(instance, ".root", 5) == 0)
+				rootlogin++;
+			*instance++ = '\0';
+		} else {
+			rootlogin = 0;
+			instance = "";
+		}
+#endif
+		if (strlen(username) > UT_NAMESIZE)
+			username[UT_NAMESIZE] = '\0';
+
 		/*
 		 * Note if trying multiple user names; log failures for
 		 * previous user name, but don't bother logging one failure
@@ -227,12 +238,39 @@ main(argc, argv)
 		    fflag && (uid == 0 || uid == pwd->pw_uid)))
 			break;
 		fflag = 0;
+		if (pwd && pwd->pw_uid == 0)
+			rootlogin = 1;
+
+		(void)setpriority(PRIO_PROCESS, 0, -4);
+
+		p = getpass("Password:");
+
+		if (pwd) {
+#ifdef KERBEROS
+			rval = klogin(pwd, instance, localhost, p);
+			if (rval == 0)
+				authok = 1;
+			else if (rval == 1) {
+				if (pwd->pw_uid != 0)
+					rootlogin = 0;
+				rval = strcmp(crypt(p, salt), pwd->pw_passwd);
+			}
+#else
+			rval = strcmp(crypt(p, salt), pwd->pw_passwd);
+#endif
+		}
+		bzero(p, strlen(p));
+
+		(void)setpriority(PRIO_PROCESS, 0, 0);
 
 		/*
-		 * If trying to log in as root, but with insecure terminal,
-		 * refuse the login attempt.
+		 * If trying to log in as root without Kerberos,
+		 * but with insecure terminal, refuse the login attempt.
 		 */
-		if (ROOTLOGIN && !rootterm(tty)) {
+#ifdef KERBEROS
+		if (authok == 0)
+#endif
+		if (pwd && rootlogin && !rootterm(tty)) {
 			(void)fprintf(stderr,
 			    "%s login refused on this terminal.\n",
 			    pwd->pw_name);
@@ -246,15 +284,6 @@ main(argc, argv)
 				     pwd->pw_name, tty);
 			continue;
 		}
-
-		(void)setpriority(PRIO_PROCESS, 0, -4);
-
-		p = getpass("Password:");
-
-		if (pwd) {
-		bzero(p, strlen(p));
-
-		(void)setpriority(PRIO_PROCESS, 0, 0);
 
 		if (pwd && !rval)
 			break;
@@ -274,11 +303,10 @@ main(argc, argv)
 	/* committed to login -- turn off timeout */
 	(void)alarm((u_int)0);
 
-	/* paranoia... */
 	endpwent();
 
 	/* if user not super-user, check for disabled logins */
-	if (!(ROOTLOGIN))
+	if (!(rootlogin))
 		checknologin();
 
 	if (chdir(pwd->pw_dir) < 0) {
@@ -318,8 +346,7 @@ main(argc, argv)
 		if (tp.tv_sec >= pwd->pw_change) {
 			(void)printf("Sorry -- your password has expired.\n");
 			sleepexit(1);
-		}
-		else if (pwd->pw_change - tp.tv_sec <
+		} else if (pwd->pw_change - tp.tv_sec <
 		    2 * DAYSPERWEEK * SECSPERDAY && !quietlog)
 			(void)printf("Warning: your password expires on %s",
 			    ctime(&pwd->pw_expire));
@@ -327,8 +354,7 @@ main(argc, argv)
 		if (tp.tv_sec >= pwd->pw_expire) {
 			(void)printf("Sorry -- your account has expired.\n");
 			sleepexit(1);
-		}
-		else if (pwd->pw_expire - tp.tv_sec <
+		} else if (pwd->pw_expire - tp.tv_sec <
 		    2 * DAYSPERWEEK * SECSPERDAY && !quietlog)
 			(void)printf("Warning: your account expires on %s",
 			    ctime(&pwd->pw_expire));
@@ -367,11 +393,15 @@ main(argc, argv)
 	(void)setenv("TERM", term, 0);
 	(void)setenv("USER", pwd->pw_name, 1);
 	(void)setenv("PATH", _PATH_DEFPATH, 0);
+#ifdef KERBEROS
+	if (krbtkfile_env)
+		(void)setenv("KRBTKFILE", krbtkfile_env, 1);
+#endif
 
 	if (tty[sizeof("tty")-1] == 'd')
 		syslog(LOG_INFO, "DIALUP %s, %s", tty, pwd->pw_name);
 	/* if fflag is on, assume caller/authenticator has logged root login */
-	if (ROOTLOGIN && fflag == 0)
+	if (rootlogin && fflag == 0)
 		if (hostname)
 			syslog(LOG_NOTICE, "ROOT LOGIN (%s) ON %s FROM %s",
 			    username, tty, hostname);
@@ -409,10 +439,10 @@ main(argc, argv)
 		syslog(LOG_ERR, "setlogin() failure: %m");
 
 	/* discard permissions last so can't get killed and drop core */
-	if (ROOTLOGIN)
+	if (rootlogin)
 		(void) setuid(0);
 	else
-		(void)setuid(pwd->pw_uid);
+		(void) setuid(pwd->pw_uid);
 
 	execlp(pwd->pw_shell, tbuf, 0);
 	(void)fprintf(stderr, "login: no shell: %s.\n", strerror(errno));
@@ -428,7 +458,7 @@ main(argc, argv)
 getloginname()
 {
 	register int ch;
-	register char *p, *instance;
+	register char *p;
 	static char nbuf[NBUFSIZ];
 
 	for (;;) {
@@ -451,17 +481,6 @@ getloginname()
 				break;
 			}
 	}
-#ifdef	KERBEROS
-	if ((instance = index(nbuf, '.')) != NULL) {
-		if (strncmp(instance, ".root", 5) == 0) {
-			rootlogin++;
-		}
-		*instance = '\0';
-		if ((instance - nbuf) > UT_NAMESIZE)
-			nbuf[UT_NAMESIZE] = '\0';
-	} else
-		rootlogin = 0;
-#endif
 }
 
 void
