@@ -7,10 +7,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
+# include <sys/stat.h>
 
 /*
 **  READCF -- read control file.
@@ -62,20 +63,39 @@ readcf(cfname)
 	register char *p;
 	extern char **prescan();
 	extern char **copyplist();
+	struct stat statb;
 	char exbuf[MAXLINE];
 	char pvpbuf[PSBUFSIZE];
 	extern char *fgetfolded();
 	extern char *munchstring();
 
+	FileName = cfname;
+	LineNumber = 0;
+
 	cf = fopen(cfname, "r");
 	if (cf == NULL)
 	{
-		syserr("cannot open %s", cfname);
+		syserr("cannot open");
 		exit(EX_OSFILE);
 	}
 
-	FileName = cfname;
-	LineNumber = 0;
+	if (fstat(fileno(cf), &statb) < 0)
+	{
+		syserr("cannot fstat");
+		exit(EX_OSFILE);
+	}
+
+	if (!S_ISREG(statb.st_mode))
+	{
+		syserr("not a plain file");
+		exit(EX_OSFILE);
+	}
+
+	if (OpMode != MD_TEST && bitset(S_IWGRP|S_IWOTH, statb.st_mode))
+	{
+		syserr("WARNING: dangerous write permissions");
+	}
+
 	while (fgetfolded(buf, sizeof buf, cf) != NULL)
 	{
 		if (buf[0] == '#')
@@ -84,6 +104,36 @@ readcf(cfname)
 		/* map $ into \001 (ASCII SOH) for macro expansion */
 		for (p = buf; *p != '\0'; p++)
 		{
+			if (*p == '#' && p > buf && ConfigLevel >= 3)
+			{
+				/* this is an on-line comment */
+				register char *e;
+
+				switch (*--p)
+				{
+				  case '\001':
+					/* it's from $# -- let it go through */
+					p++;
+					break;
+
+				  case '\\':
+					/* it's backslash escaped */
+					(void) strcpy(p, p + 1);
+					break;
+
+				  default:
+					/* delete preceeding white space */
+					while (isspace(*p) && p > buf)
+						p--;
+					if ((e = index(++p, '\n')) != NULL)
+						(void) strcpy(p, e);
+					else
+						p[0] = p[1] = '\0';
+					break;
+				}
+				continue;
+			}
+
 			if (*p != '$')
 				continue;
 
@@ -264,7 +314,7 @@ readcf(cfname)
 	}
 	if (ferror(cf))
 	{
-		syserr("Error reading %s", cfname);
+		syserr("I/O read error", cfname);
 		exit(EX_OSFILE);
 	}
 	fclose(cf);
