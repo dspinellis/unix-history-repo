@@ -512,7 +512,7 @@ CalcRootVisible()
 	    XUnionRectWithRegion(&rect, covered, covered);
 	}
     }
-    XFree(children);
+    XFree((char *)children);
 
 #if GRAB_SERVER
     XUngrabServer(display);
