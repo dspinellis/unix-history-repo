@@ -1,4 +1,4 @@
-/*	inet_makeaddr.c	4.3	82/11/14	*/
+/*	inet_makeaddr.c	4.4	85/06/02	*/
 
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -14,11 +14,11 @@ inet_makeaddr(net, host)
 	u_long addr;
 
 	if (net < 128)
-		addr = (net << IN_CLASSA_NSHIFT) | host;
+		addr = (net << IN_CLASSA_NSHIFT) | (host & IN_CLASSA_HOST);
 	else if (net < 65536)
-		addr = (net << IN_CLASSB_NSHIFT) | host;
+		addr = (net << IN_CLASSB_NSHIFT) | (host & IN_CLASSB_HOST);
 	else
-		addr = (net << IN_CLASSC_NSHIFT) | host;
+		addr = (net << IN_CLASSC_NSHIFT) | (host & IN_CLASSC_HOST);
 	addr = htonl(addr);
 	return (*(struct in_addr *)&addr);
 }
