@@ -3,7 +3,7 @@
 # include <sys/stat.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)recipient.c	3.16	%G%";
+static char SccsId[] = "@(#)recipient.c	3.17	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -14,6 +14,8 @@ static char SccsId[] = "@(#)recipient.c	3.16	%G%";
 **	Parameters:
 **		list -- the send list.
 **		copyf -- the copy flag; passed to parse.
+**		ctladdr -- the address template for the person to
+**			send to -- effective uid/gid are important.
 **
 **	Returns:
 **		none
@@ -24,9 +26,10 @@ static char SccsId[] = "@(#)recipient.c	3.16	%G%";
 
 # define MAXRCRSN	10
 
-sendto(list, copyf)
+sendto(list, copyf, ctladdr)
 	char *list;
 	int copyf;
+	ADDRESS *ctladdr;
 {
 	register char *p;
 	bool more;		/* set if more addresses to send to */
@@ -64,6 +67,7 @@ sendto(list, copyf)
 
 		/* put it on the local send list */
 		a->q_next = al;
+		a->q_alias = ctladdr;
 		al = a;
 	}
 
@@ -99,6 +103,7 @@ recipient(a)
 	register ADDRESS *q;
 	ADDRESS **pq;
 	register struct mailer *m;
+	extern ADDRESS *getctladdr();
 
 	To = a->q_paddr;
 	m = Mailer[a->q_mailer];
@@ -126,13 +131,11 @@ recipient(a)
 			a->q_mailer = MN_PROG;
 			m = Mailer[MN_PROG];
 			a->q_user++;
-# ifdef PARANOID
-			if (AliasLevel <= 0)
+			if (getctladdr(a) == &From && Debug == 0)
 			{
 				usrerr("Cannot mail directly to programs");
 				a->q_flags |= QDONTSEND;
 			}
-# endif PARANOID
 		}
 	}
 
@@ -171,9 +174,14 @@ recipient(a)
 		if (strncmp(a->q_user, ":include:", 9) == 0)
 		{
 			a->q_flags |= QDONTSEND;
-			if (Verbose)
-				message(Arpa_Info, "including file %s", &a->q_user[9]);
-			include(&a->q_user[9], " sending");
+			if (getctladdr(a) == &From && Debug == 0)
+				usrerr("Cannot mail directly to :include:s");
+			else
+			{
+				if (Verbose)
+					message(Arpa_Info, "including file %s", &a->q_user[9]);
+				include(&a->q_user[9], " sending", a);
+			}
 		}
 		else
 			alias(a);
@@ -193,15 +201,26 @@ recipient(a)
 		register char *p;
 		struct stat stb;
 		extern bool writable();
+		bool quoted = FALSE;
 
 		strcpy(buf, a->q_user);
+		for (p = buf; *p != '\0' && !quoted; p++)
+		{
+			if (!isascii(*p))
+				quoted = TRUE;
+		}
 		stripquotes(buf, TRUE);
 
 		/* see if this is to a file */
 		if ((p = rindex(buf, '/')) != NULL)
 		{
 			/* check if writable or creatable */
-			if ((stat(buf, &stb) >= 0) ? (!writable(&stb)) :
+			if (getctladdr(a) == &From && Debug == 0)
+			{
+				usrerr("Cannot mail directly to files");
+				a->q_flags |= QDONTSEND;
+			}
+			else if ((stat(buf, &stb) >= 0) ? (!writable(&stb)) :
 			    (*p = '\0', access(buf, 3) < 0))
 			{
 				a->q_flags |= QBADADDR;
@@ -228,7 +247,8 @@ recipient(a)
 				}
 				a->q_home = newstr(pw->pw_dir);
 				a->q_uid = pw->pw_uid;
-				if (strcmp(buf, a->q_user) == 0)
+				a->q_gid = pw->pw_gid;
+				if (!quoted)
 					forward(a);
 			}
 		}
@@ -343,6 +363,9 @@ writable(s)
 **	Parameters:
 **		fname -- filename to include.
 **		msg -- message to print in verbose mode.
+**		ctladdr -- address template to use to fill in these
+**			addresses -- effective user/group id are
+**			the important things.
 **
 **	Returns:
 **		none.
@@ -352,9 +375,10 @@ writable(s)
 **		listed in that file.
 */
 
-include(fname, msg)
+include(fname, msg, ctladdr)
 	char *fname;
 	char *msg;
+	ADDRESS *ctladdr;
 {
 	char buf[MAXLINE];
 	register FILE *fp;
@@ -380,7 +404,7 @@ include(fname, msg)
 		if (Verbose)
 			message(Arpa_Info, "%s to %s", msg, buf);
 		AliasLevel++;
-		sendto(buf, 1);
+		sendto(buf, 1, ctladdr);
 		AliasLevel--;
 	}
 
@@ -423,6 +447,31 @@ sendtoargv(argv)
 				argv += 2;
 			}
 		}
-		sendto(p, 0);
+		sendto(p, 0, &From);
 	}
+}
+/*
+**  GETCTLADDR -- get controlling address from an address header.
+**
+**	If none, get one corresponding to the effective userid.
+**
+**	Parameters:
+**		a -- the address to find the controller of.
+**
+**	Returns:
+**		the controlling address.
+**
+**	Side Effects:
+**		none.
+*/
+
+ADDRESS *
+getctladdr(a)
+	register ADDRESS *a;
+{
+	while (a != NULL && a->q_home == NULL)
+		a = a->q_alias;
+	if (a == NULL)
+		return (&From);
+	return (a);
 }

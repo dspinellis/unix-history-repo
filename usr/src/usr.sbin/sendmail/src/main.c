@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.36	%G%";
+static char	SccsId[] = "@(#)main.c	3.37	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -642,6 +642,11 @@ setfrom(from, realname)
 	else
 		FromFlag = TRUE;
 	SuprErrs = FALSE;
+	From.q_uid = getuid();
+	From.q_gid = getgid();
+# ifndef V6
+	From.q_home = getenv("HOME");
+# endif V6
 
 	/*
 	**  Rewrite the from person to dispose of possible implicit

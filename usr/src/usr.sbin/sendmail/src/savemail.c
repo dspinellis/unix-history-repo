@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)savemail.c	3.17	%G%";
+static char	SccsId[] = "@(#)savemail.c	3.18	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -169,7 +169,7 @@ savemail()
 		define('z', p);
 		(void) expand("$z/dead.letter", buf, &buf[sizeof buf - 1]);
 		To = buf;
-		i = mailfile(buf);
+		i = mailfile(buf, &From);
 		giveresponse(i, TRUE, Mailer[MN_LOCAL]);
 	}
 

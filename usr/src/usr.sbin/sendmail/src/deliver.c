@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.38	%G%";
+static char SccsId[] = "@(#)deliver.c	3.39	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -49,6 +49,8 @@ deliver(to, editfcn)
 	char *pv[MAXPV+1];
 	char tobuf[MAXLINE];
 	char buf[MAXNAME];
+	ADDRESS *ctladdr;
+	extern ADDRESS *getctladdr();
 
 	if (!ForceMail && bitset(QDONTSEND, to->q_flags))
 		return (0);
@@ -124,6 +126,7 @@ deliver(to, editfcn)
 
 	tobuf[0] = '\0';
 	To = tobuf;
+	ctladdr = NULL;
 	for (; to != NULL; to = to->q_next)
 	{
 		/* avoid sending multiple recipients to dumb mailers */
@@ -134,6 +137,11 @@ deliver(to, editfcn)
 		if ((!ForceMail && bitset(QDONTSEND, to->q_flags)) ||
 		    strcmp(to->q_host, host) != 0)
 			continue;
+
+		/* compute effective uid/gid when sending */
+		if (to->q_mailer == MN_PROG)
+			ctladdr = getctladdr(to);
+
 		user = to->q_user;
 		To = to->q_paddr;
 		to->q_flags |= QDONTSEND;
@@ -199,7 +207,7 @@ deliver(to, editfcn)
 		{
 			if (index(user, '/') != NULL)
 			{
-				i = mailfile(user);
+				i = mailfile(user, getctladdr(to));
 				giveresponse(i, TRUE, m);
 				continue;
 			}
@@ -256,7 +264,9 @@ deliver(to, editfcn)
 
 	if (editfcn == NULL)
 		editfcn = putmessage;
-	i = sendoff(m, pv, editfcn);
+	if (ctladdr == NULL)
+		ctladdr = &From;
+	i = sendoff(m, pv, editfcn, ctladdr);
 
 	return (i);
 }
@@ -308,6 +318,8 @@ deliver(to, editfcn)
 **		m -- mailer descriptor.
 **		pvp -- parameter vector to send to it.
 **		editfcn -- function to pipe it through.
+**		ctladdr -- an address pointer controlling the
+**			user/groupid etc. of the mailer.
 **
 **	Returns:
 **		exit status of mailer.
@@ -316,10 +328,11 @@ deliver(to, editfcn)
 **		none.
 */
 
-sendoff(m, pvp, editfcn)
+sendoff(m, pvp, editfcn, ctladdr)
 	struct mailer *m;
 	char **pvp;
 	int (*editfcn)();
+	ADDRESS *ctladdr;
 {
 	auto int st;
 	register int i;
@@ -371,8 +384,8 @@ sendoff(m, pvp, editfcn)
 		(void) close(pvect[1]);
 		if (!bitset(M_RESTR, m->m_flags))
 		{
-			(void) setuid(getuid());
-			(void) setgid(getgid());
+			(void) setuid(ctladdr->q_uid);
+			(void) setgid(ctladdr->q_gid);
 		}
 # ifndef VFORK
 		/*
@@ -660,6 +673,8 @@ samefrom(ifrom, efrom)
 **
 **	Parameters:
 **		filename -- the name of the file to send to.
+**		ctladdr -- the controlling address header -- includes
+**			the userid/groupid to be when sending.
 **
 **	Returns:
 **		The exit code associated with the operation.
@@ -668,8 +683,9 @@ samefrom(ifrom, efrom)
 **		none.
 */
 
-mailfile(filename)
+mailfile(filename, ctladdr)
 	char *filename;
+	ADDRESS *ctladdr;
 {
 	register FILE *f;
 	register int pid;
@@ -698,9 +714,9 @@ mailfile(filename)
 		if (bitset(0111, stb.st_mode))
 			exit(EX_CANTCREAT);
 		if (!bitset(S_ISGID, stb.st_mode) || setgid(stb.st_gid) < 0)
-			(void) setgid(getgid());
+			(void) setgid(ctladdr->q_gid);
 		if (!bitset(S_ISUID, stb.st_mode) || setuid(stb.st_uid) < 0)
-			(void) setuid(getuid());
+			(void) setuid(ctladdr->q_uid);
 		f = fopen(filename, "a");
 		if (f == NULL)
 			exit(EX_CANTCREAT);

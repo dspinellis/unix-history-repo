@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.41	%G%
+**	@(#)sendmail.h	3.42	%G%
 */
 
 
@@ -57,8 +57,10 @@ struct address
 	short		q_rmailer;	/* real mailer (before mapping) */
 	u_short		q_flags;	/* status flags, see below */
 	short		q_uid;		/* user-id of receiver (if known) */
+	short		q_gid;		/* group-id of receiver (if known) */
 	char		*q_home;	/* home dir (local mailer only) */
 	struct address	*q_next;	/* chain */
+	struct address	*q_alias;	/* address this results from */
 };
 
 typedef struct address ADDRESS;
