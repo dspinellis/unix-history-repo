@@ -1,4 +1,4 @@
-/* @(#)short.c	1.2	%G%
+/* @(#)short.c	1.3	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -838,7 +838,7 @@ int sym;
 		(void) DBCopy(elist, xmat, &(MEN[sym]));
 		elist = DBNextofSet(elist);
 	}  /* end while */;
-	if (SEQ = 0)     /* no positioning points */
+	if (SEQ == 0)     /* no positioning points */
 	{
 		MENPOINT[sym].x = 0;
 		MENPOINT[sym].y = 0;
