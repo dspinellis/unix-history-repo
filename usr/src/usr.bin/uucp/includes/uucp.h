@@ -1,4 +1,4 @@
-/*	uucp.h	5.7	85/06/23	*/
+/*	uucp.h	5.8	85/06/24	*/
 
 #include <stdio.h>
 
@@ -84,7 +84,7 @@
 #if defined(VENTEL) || defined(NOVATION) || defined(DF112) || defined(PENRIL)
 /*
  * We need a timer to write slowly to ventels.
- * define INTERVALTIMER to use 4.2 bsd interval timer.
+ * define INTERVALTIMER to use 4.[23] bsd interval timer.
  * define FASTTIMER if you have the nap() system call.
  * define FTIME if you have the ftime() system call.
  * define BUSYLOOP if you must do a busy loop.
@@ -107,8 +107,10 @@
 /*#define	USG	/**/
 
 /*
- * If you are running 4.2bsd, define BSD4_2
+ * If you are running 4.3bsd, define BSD4_3 and BSD4_2
+ * If you are just running 4.2bsd, define BSD4_2
  */
+#define BSD4_3 	/**/
 #define BSD4_2 	/**/
 
 /*
@@ -120,6 +122,14 @@
  * If you are using /etc/inetd with 4.2bsd, define BSDINETD
  */
 #define BSDINETD	/**/
+
+/*
+ * If you are running 4.3bsd, you are running the inetd
+ */
+
+#if defined(BSD4_3) && !defined(BSDINETD)
+#define BSDINETD
+#endif BSD4_3 && !BSDINETD
 
 /*#define VMSDTR	/* Turn on modem control on vms(works DTR) for
 			   develcon and gandalf ports to gain access */
