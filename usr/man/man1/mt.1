@@ -1,0 +1,99 @@
+.TH MT 1 "11 May 1981"
+.UC 4
+.SH NAME
+mt \- magnetic tape manipulating program
+.SH SYNOPSIS
+\fBmt\fP [ \fB\-t\fP \fItapename\fP ] \fIcommand\fP [ \fIcount\fP ]
+.br
+\fBmt\fP [ \fB\-f\fP \fItapename\fP ] \fIcommand\fP [ \fIcount\fP ]
+.SH DESCRIPTION
+.LP
+.I Mt
+is used to give commands to nine-track tape or an archive
+quarter-inch tape drive.  If a tape name is not
+specified, the environment variable TAPE is used;  if no such
+environment variable exists,
+.I mt
+uses the device
+.IR /dev/rmt12 .
+Note
+that
+.I tapename
+must reference a raw (not block) tape device.
+If the optional
+.I count
+is not specified, 
+.I mt
+uses a count of 1.
+.LP
+A command can be abbreviated to as few letters as are necessary to
+uniquely identify it. 
+Here are the commands and the types of tape drives they can apply to:
+
+.nf
+.ta +0.8i +0.8i +1.8i
+Nine-Track	Archive	Command	Description
+Yes	Yes	\fBeof\fP, \fBweof\fP	write \fIcount\fP end-of-file marks
+Yes	Yes	\fBfsf\fP	space forward \fIcount\fP files
+Yes	No	\fBfsr\fP	space forward \fIcount\fP records
+Yes	No	\fBbsf\fP	space backward \fIcount\fP files
+Yes	No	\fBbsr\fP	space backward \fIcount\fP records
+Yes	Yes	\fBrewind\fP	rewind tape
+Yes	Yes	\fBoffline\fP, \fBrewoffl\fP	rewind tape and go offline
+Yes	Yes	\fBstatus\fP	return status of the tape unit
+.fi
+.SH FILES
+.DT
+/dev/rmt*	Raw magnetic tape interface
+.br
+/dev/rar*	Raw archive cartridge tape interface
+.SH SEE ALSO
+ar(4), mt(4), dd(1), ioctl(2), environ(7)
+.SH MESSAGES
+.IP "usage: mt [ -f device ] command [ count ]" 10
+.br
+This is a memory jogger message to tell you how to use the \fImt\fP
+command in the event that you typed something wrong.
+.IP "mt: don't grok \fIcommand\fP" 10
+.br
+This message indicates that the magnetic tape \fIcommand\fP that you typed as
+an argument to \fImt\fP was not in the set of requests it recognizes.
+See the list of correct commands above.
+.IP "mt: negative repeat count" 10
+.br
+The repeat count for commands such as \fBfsf\fP must be positive.
+.IP "\fIcommand\fP \fInnn\fP \fIdevice\fP failed: \fIsome error message\fP" 10
+.br
+The magnetic tape \fIcommand\fP applied to \fIdevice\fP with a repeat
+count of \fInnn\fP did not work for some reason.  The reason appears as
+the string \fIsome\ error\ message\fP.  Check that the device
+name was correct, or that the command is applicable to that device.
+For example, the message might appear as:
+.IP
+fsf 1 f/dev/rar0 failed: File not found
+.IP "mt: \fIsome error message\fP" 10
+.br
+This message usually means that you are applying the \fImt\fP command to
+the wrong kind of device, that is, a device that the \fImt\fP command
+does not recognize.  The \fIsome\ error\ message\fP is often cryptic,
+for example:
+.IP
+% \fBmt  -f /dev/console  fsf 5\fP
+.IP
+/dev/console: not a typewriter
+.IP "mt: can't open \fItapename\fP: \fIsome error message\fP" 10
+.br
+The \fImt\fP command cannot access the device specified by \fItapename\fP.
+.IP "mt: can't get status from \fItapename\fP: \fIsome error\fP" 10
+.br
+The device specified by \fItapename\fP doesn't support the system call
+necessary to obtain the status of the tape drive.
+.SH "EXIT CODES"
+.IP 0
+Successful completion
+.IP 1
+\fIMt\fP did not recognize the command;  the device could not be opened.
+.IP 2
+The
+.IR ioctl (2)
+system call to the tape driver failed.
