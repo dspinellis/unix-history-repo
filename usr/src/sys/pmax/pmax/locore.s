@@ -22,7 +22,7 @@
  * from: $Header: /sprite/src/kernel/vm/ds3100.md/vmPmaxAsm.s,
  *	v 1.1 89/07/10 14:27:41 nelson Exp $ SPRITE (DECWRL)
  *
- *	@(#)locore.s	8.5 (Berkeley) %G%
+ *	@(#)locore.s	8.6 (Berkeley) %G%
  */
 
 /*
@@ -876,6 +876,14 @@ NON_LEAF(cpu_switch, STAND_FRAME_SIZE, ra)
 	subu	sp, sp, STAND_FRAME_SIZE
 	sw	ra, STAND_RA_OFFSET(sp)
 	.mask	0x80000000, (STAND_RA_OFFSET - STAND_FRAME_SIZE)
+#ifdef DEBUG
+	lw	a1, intr_level
+	sw	a0, STAND_FRAME_SIZE(sp)
+	beq	a1, zero, 1f
+	nop
+	PANIC("cpu_switch: intr_level %d")	# can't sleep in interrupt()
+1:
+#endif
 	lw	t2, cnt+V_SWTCH			# for statistics
 	lw	t1, whichqs			# look for non-empty queue
 	sw	s0, UADDR+U_PCB_CONTEXT+0	# do a 'savectx()'

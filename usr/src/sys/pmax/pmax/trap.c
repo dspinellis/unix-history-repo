@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	8.5 (Berkeley) %G%
+ *	@(#)trap.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -134,6 +134,8 @@ struct trapdebug {		/* trap history buffer for debugging */
 	u_int	ra;
 	u_int	code;
 } trapdebug[TRAPSIZE], *trp = trapdebug;
+
+u_int	intr_level;		/* number of nested interrupts */
 #endif
 
 static void pmax_errintr();
@@ -727,6 +729,8 @@ interrupt(statusReg, causeReg, pc)
 	trp->code = 0;
 	if (++trp == &trapdebug[TRAPSIZE])
 		trp = trapdebug;
+
+	intr_level++;
 #endif
 
 	cnt.v_intr++;
@@ -777,6 +781,9 @@ interrupt(statusReg, causeReg, pc)
 		}
 #endif
 	}
+#ifdef DEBUG
+	intr_level--;
+#endif
 }
 
 /*
