@@ -1,4 +1,4 @@
-/*	vd.c	7.4	86/11/04	*/
+/*	vd.c	7.5	86/12/19	*/
 
 /*
  * Stand alone driver for the VDDC controller 
@@ -43,7 +43,7 @@ struct vdinfo {
 
 static char	junk[1024];
 
-#define	VDADDR(ctlr)	((cdr *)(vddcaddr[(ctlr)]+VBIOBASE))
+#define	VDADDR(ctlr)	((cdr *)vddcaddr[(ctlr)])
 
 vdopen(io)
 	register struct iob *io;
@@ -60,7 +60,7 @@ vdopen(io)
 		_stop("");
 	}
 	/* check file system for validity */
-	if ((unsigned)io->i_boff > 8) {
+	if ((unsigned)io->i_boff >= 8) {
 		printf("dk%d: invalid partition number (%d)\n",
 		    io->i_unit, io->i_boff);
 		_stop("");
@@ -113,12 +113,12 @@ vdinit(io)
 		ctlr_addr->cdr_ccf = CCF_STS | XMD_32BIT | BSZ_16WRD |
 		    CCF_ENP | CCF_EPE /* | CCF_EDE */ | CCF_ECE | CCF_ERR;
 	}
-	if (vdaccess_with_no_trailer(io, INIT, 8) & HRDERR) {
+	if (vdnotrailer(io, INIT, 8) & HRDERR) {
 		vdprint_error(io->i_unit, "init error",
-		    dcb.operrsta,dcb.err_code);
+		    dcb.operrsta, dcb.err_code);
 		_stop("");
 	}
-	if (vdaccess_with_no_trailer(io, DIAG, 8) & HRDERR) {
+	if (vdnotrailer(io, DIAG, 8) & HRDERR) {
 		vdprint_error(io->i_unit, "diagnostic error",
 		    dcb.operrsta, dcb.err_code);
 		_stop("");
@@ -158,12 +158,8 @@ vdstart_drive(io)
 	register int ctlr = VDCTLR(io->i_unit), unit = VDUNIT(io->i_unit);
 	int ounit = io->i_unit;
 
-	if (vdinfo[ctlr].vd_flags&VDF_BUSY) {
-		DELAY(5500000);
-		return;
-	}
 	io->i_unit &= ~3;
-	if (vdaccess_with_no_trailer(io, VDSTART, ((unit * 6) + 62)) & HRDERR) {
+	if (vdnotrailer(io, VDSTART, 62) & HRDERR) {
 		vdprint_error(io->i_unit, "start error",
 		    dcb.operrsta, dcb.err_code);
 		_stop("");
@@ -213,14 +209,21 @@ vdconfigure(io, pass)
 		} else
 			_stop(" during drive configuration.\n");
 	}
-	if ((dcb.operrsta & (NOTCYLERR | DRVNRDY)) && !pass) {
-		vdstart_drive(io);
-		vdconfigure(io, 1);
-	}
 	if (dcb.operrsta & HRDERR) {
-		vdprint_error(io->i_unit, "configuration error",
-		    dcb.operrsta, dcb.err_code);
-		_stop("");
+		if (vdinfo[ctlr].vd_type == SMD_ECTLR &&
+		    (ctlr_addr->cdr_status[io->i_unit] & STA_US) == 0) {
+			printf("dk%d: ", io->i_unit);
+			_stop("nonexistent drive");
+		}
+		if ((dcb.operrsta & (NOTCYLERR|DRVNRDY)) == 0) {
+			vdprint_error(io->i_unit, "configuration error",
+			    dcb.operrsta, dcb.err_code);
+			_stop("");
+		}
+		if (pass == 0) {
+			vdstart_drive(io);
+			vdconfigure(io, 1);
+		}
 	}
 }
 
@@ -255,30 +258,12 @@ vdstrategy(io, func)
 	if (vdaccess(io, &daddr, op) & HRDERR) {
 		vdprint_error(io->i_unit, "i/o error", dcb.operrsta,
 		    dcb.err_code);
+		io->i_error = EIO;
 		return (-1);
 	}
 	mtpr(PADC, 0);
 	return (io->i_cc);
 }
-
-struct	vdstatus {
-	int	bit;
-	char	*meaning;
-} vdstatus[] = {
-	{ DRVNRDY,	"drive not ready" },
-	{ INVDADR,	"invalid disk address" },
-	{ DNEMEM,	"non-existent memory" },
-	{ PARERR,	"parity error" },
-	{ OPABRT,	"operation aborted" },
-	{ WPTERR,	"drive write protect" },
-	{ DSEEKERR,	"seek error" },
-	{ UCDATERR,	"uncorrectable data error" },
-	{ CTLRERR,	"controller error" },
-	{ NOTCYLERR,	"not on cylinder" },
-	{ INVCMD,	"invalid controller command" },
-	{ -1,		"controller error" }
-};
-#define	NVDSTATUS	(sizeof (vdstatus) / sizeof (vdstatus[0]))
 
 vdprint_error(unit, str, status, smde_status)
 	int unit;
@@ -288,18 +273,13 @@ vdprint_error(unit, str, status, smde_status)
 {
 	register struct vdstatus *sp;
 
-	printf("dk%d: %s; ", unit, str);
-	for (sp = vdstatus; sp < &vdstatus[NVDSTATUS]; sp++)
-		if (status & sp->bit) {
-			printf("%s. status %x", sp->meaning, status);
-			break;
-		}
+	printf("dk%d: %s; status %b", unit, str, status, ERRBITS);
 	if (smde_status)
 		printf(", code %x", smde_status);
 	printf("\n");
 }
 
-vdaccess_with_no_trailer(io, function, time)
+vdnotrailer(io, function, time)
 	register struct iob *io;
 	register int function, time;
 {
@@ -380,10 +360,10 @@ vdpoll(addr, dcb, t, type)
 {
 
 	t *= 1000;
-	uncache(&dcb->operrsta);
-	while ((dcb->operrsta&(DCBCMP|DCBABT)) == 0) {
-		DELAY(1000);
+	for (;;) {
 		uncache(&dcb->operrsta);
+		if (dcb->operrsta & (DCBCMP|DCBABT))
+			break;
 		if (--t <= 0) {
 			printf("vd: controller timeout");
 			VDDC_ABORT(addr, type);
@@ -391,12 +371,14 @@ vdpoll(addr, dcb, t, type)
 			uncache(&dcb->operrsta);
 			return (0);
 		}
+		DELAY(1000);
 	}
 	if (type == SMD_ECTLR) {
-		uncache(&addr->cdr_csr);
-		while (addr->cdr_csr&CS_GO) {
-			DELAY(50);
+		for (;;) {
 			uncache(&addr->cdr_csr);
+			if ((addr->cdr_csr & CS_GO) == 0)
+				break;
+			DELAY(50);
 		}
 		DELAY(300);
 		uncache(&dcb->err_code);
