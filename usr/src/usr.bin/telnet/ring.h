@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ring.h	5.2 (Berkeley) %G%
+ *	@(#)ring.h	5.3 (Berkeley) %G%
  */
 
 #if defined(P)
@@ -33,7 +33,7 @@ typedef struct {
 			*bottom,	/* lowest address in buffer */
 			*top,		/* highest address+1 in buffer */
 			*mark;		/* marker (user defined) */
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
     unsigned char	*clearto;	/* Data to this point is clear text */
     unsigned char	*encryyptedto;	/* Data is encrypted to here */
 #endif
@@ -68,7 +68,7 @@ extern int
 	ring_full_count P((Ring *ring)),
 	ring_full_consecutive P((Ring *ring));
 
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
 extern void
 	ring_encrypt P((Ring *ring, void (*func)())),
 	ring_clearto P((Ring *ring));

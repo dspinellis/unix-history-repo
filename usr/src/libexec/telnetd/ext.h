@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ext.h	5.7 (Berkeley) %G%
+ *	@(#)ext.h	5.8 (Berkeley) %G%
  */
 
 /*
@@ -24,6 +24,7 @@ extern int	lmodetype;	/* Client support for linemode */
 # endif	/* KLUDGELINEMODE */
 #endif	/* LINEMODE */
 extern int	flowmode;	/* current flow control state */
+extern int	restartany;	/* restart output on any character state */
 #ifdef DIAGNOSTICS
 extern int	diagnostic;	/* telnet diagnostic capabilities */
 #endif /* DIAGNOSTICS */
@@ -33,7 +34,7 @@ extern int	bftpd;		/* behave as bftp daemon */
 #if	defined(SecurID)
 extern int	require_SecurID;
 #endif
-#if	defined(AUTHENTICATE)
+#if	defined(AUTHENTICATION)
 extern int	auth_level;
 #endif
 
@@ -114,7 +115,7 @@ extern void
 	set_termbuf P((void)),
 	start_login P((char *, int, char *)),
 	start_slc P((int)),
-#if	defined(AUTHENTICATE)
+#if	defined(AUTHENTICATION)
 	start_slave P((char *)),
 #else
 	start_slave P((char *, int, char *)),
@@ -135,6 +136,7 @@ extern int
 	terminit P((void)),
 	termstat P((void)),
 	tty_flowmode P((void)),
+	tty_restartany P((void)),
 	tty_isbinaryin P((void)),
 	tty_isbinaryout P((void)),
 	tty_iscrnl P((void)),
@@ -160,7 +162,7 @@ extern void
 	wontoption P((int)),
 	writenet P((unsigned char *, int));
 
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
 extern void	(*encrypt_output) P((unsigned char *, int));
 extern int	(*decrypt_input) P((int));
 extern char	*nclearto;
@@ -191,8 +193,18 @@ extern struct {
 extern int	needtermstat;
 #endif
 
-#ifndef	CRAY
-#define DEFAULT_IM	"\r\n\r\n4.3 BSD UNIX (%h) (%t)\r\n\r\r\n\r"
-#else
-#define DEFAULT_IM	"\r\n\r\nCray UNICOS (%h) (%t)\r\n\r\r\n\r"
+#ifndef	DEFAULT_IM
+# ifdef CRAY
+#  define DEFAULT_IM	"\r\n\r\nCray UNICOS (%h) (%t)\r\n\r\r\n\r"
+# else
+#  ifdef sun
+#   define DEFAULT_IM	"\r\n\r\nSunOS UNIX (%h) (%t)\r\n\r\r\n\r"
+#  else
+#   ifdef ultrix
+#    define DEFAULT_IM	"\r\n\r\nULTRIX (%h) (%t)\r\n\r\r\n\r"
+#   else
+#    define DEFAULT_IM	"\r\n\r\n4.4 BSD UNIX (%h) (%t)\r\n\r\r\n\r"
+#   endif
+#  endif
+# endif
 #endif

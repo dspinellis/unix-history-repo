@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	TELOPTS
@@ -385,7 +385,7 @@ printsub(direction, pointer, length)
 		fprintf(NetTrace, " ?%d?", pointer[i]);
 	    break;
 
-#if	defined(AUTHENTICATE)
+#if	defined(AUTHENTICATION)
 	case TELOPT_AUTHENTICATION:
 	    fprintf(NetTrace, "AUTHENTICATION");
 	    if (length < 2) {
@@ -452,7 +452,7 @@ printsub(direction, pointer, length)
 	    break;
 #endif
 
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
 	case TELOPT_ENCRYPT:
 	    fprintf(NetTrace, "ENCRYPT");
 	    if (length < 2) {
@@ -747,6 +747,13 @@ printsub(direction, pointer, length)
 
 			case ENV_ESC:
 			    fprintf(NetTrace, "\" ESC " + noquote);
+			    noquote = 2;
+			    break;
+
+			case ENV_USERVAR:
+			    if (pointer[1] == TELQUAL_SEND)
+				goto def_case;
+			    fprintf(NetTrace, "\" USERVAR " + noquote);
 			    noquote = 2;
 			    break;
 

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)termstat.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)termstat.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -49,6 +49,7 @@ int	newmap = 1;	/* nonzero if \n maps to ^M^J */
  *	handle real linemode, or if use of kludgeomatic linemode
  *	is preferred.  It will be set to one of the following:
  *		REAL_LINEMODE : use linemode option
+ *		NO_KLUDGE : don't initiate kludge linemode.
  *		KLUDGE_LINEMODE : use kludge linemode
  *		NO_LINEMODE : client is ignorant of linemode
  *
@@ -79,6 +80,7 @@ int	newmap = 1;	/* nonzero if \n maps to ^M^J */
  *	   then lmodetype is set to REAL_LINEMODE and all linemode
  *	   processing occurs in the context of the linemode option.
  *	2) If the attempt to negotiate the linemode option failed,
+ *	   and the "-k" (don't initiate kludge linemode) isn't set,
  *	   then we try to use kludge linemode.  We test for this
  *	   capability by sending "do Timing Mark".  If a positive
  *	   response comes back, then we assume that the client
@@ -141,7 +143,17 @@ localstat()
 		if (tty_flowmode() != flowmode) {
 			flowmode = tty_flowmode();
 			(void) sprintf(nfrontp, "%c%c%c%c%c%c", IAC, SB,
-				TELOPT_LFLOW, flowmode, IAC, SE);
+				TELOPT_LFLOW, flowmode ? LFLOW_ON : LFLOW_OFF,
+				IAC, SE);
+			nfrontp += 6;
+			restartany = tty_restartany();
+			if (restartany >= 0) {
+				(void) sprintf(nfrontp, "%c%c%c%c%c%c",
+					IAC, SB, TELOPT_LFLOW,
+					restartany ? LFLOW_RESTART_ANY
+						   : LFLOW_RESTART_XON,
+					IAC, SE);
+			}
 			nfrontp += 6;
 		}
 	}
@@ -160,7 +172,7 @@ localstat()
 		tty_setlinemode(uselinemode);
 	}
 
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
 	/*
 	 * If the terminal is not echoing, but editing is enabled,
 	 * something like password input is going to happen, so
@@ -203,6 +215,10 @@ localstat()
 			send_wont(TELOPT_ECHO, 1);
 		else
 			need_will_echo = 1;
+#ifdef	KLUDGELINEMODE
+		if (lmodetype == KLUDGE_OK)
+			lmodetype = KLUDGE_LINEMODE;
+#endif
 	}
 
 	/*
@@ -406,6 +422,8 @@ clientstat(code, parm1, parm2)
 
 			linemode = uselinemode;
 
+			if (!linemode)
+				send_will(TELOPT_ECHO, 1);
 		}
 		break;
 	
@@ -599,7 +617,7 @@ defer_terminit()
 	int
 terminit()
 {
-	return _terminit;
+	return(_terminit);
 
 }  /* end of terminit */
 #endif	/* LINEMODE */

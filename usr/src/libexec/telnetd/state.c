@@ -6,11 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)state.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)state.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
-#if	defined(AUTHENTICATE)
+#if	defined(AUTHENTICATION)
 #include <libtelnet/auth.h>
 #endif
 
@@ -63,7 +63,7 @@ telrcv()
 		if ((&ptyobuf[BUFSIZ] - pfrontp) < 2)
 			break;
 		c = *netip++ & 0377, ncc--;
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
 		if (decrypt_input)
 			c = (*decrypt_input)(c);
 #endif
@@ -95,7 +95,7 @@ telrcv()
 			 */
 			if ((c == '\r') && his_state_is_wont(TELOPT_BINARY)) {
 				int nc = *netip;
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
 				if (decrypt_input)
 					nc = (*decrypt_input)(nc & 0xff);
 #endif
@@ -111,7 +111,7 @@ telrcv()
 				} else
 #endif
 				{
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
 					if (decrypt_input)
 						(void)(*decrypt_input)(-1);
 #endif
@@ -427,13 +427,13 @@ send_do(option, init)
 	DIAG(TD_OPTIONS, printoption("td: send do", option));
 }
 
-#ifdef	AUTHENTICATE
+#ifdef	AUTHENTICATION
 extern void auth_request();
 #endif
 #ifdef	LINEMODE
 extern void doclientstat();
 #endif
-#ifdef	ENCRYPT
+#ifdef	ENCRYPTION
 extern void encrypt_send_support();
 #endif
 
@@ -499,6 +499,8 @@ willoption(option)
 				lmodetype = KLUDGE_LINEMODE;
 				clientstat(TELOPT_LINEMODE, WILL, 0);
 				send_wont(TELOPT_SGA, 1);
+			} else if (lmodetype == NO_AUTOKLUDGE) {
+				lmodetype = KLUDGE_OK;
 			}
 #endif	/* defined(LINEMODE) && defined(KLUDGELINEMODE) */
 			/*
@@ -539,14 +541,14 @@ willoption(option)
 			break;
 #endif	/* LINEMODE */
 
-#ifdef	AUTHENTICATE
+#ifdef	AUTHENTICATION
 		case TELOPT_AUTHENTICATION:
 			func = auth_request;
 			changeok++;
 			break;
 #endif
 
-#ifdef	ENCRYPT
+#ifdef	ENCRYPTION
 		case TELOPT_ENCRYPT:
 			func = encrypt_send_support;
 			changeok++;
@@ -605,13 +607,13 @@ willoption(option)
 			break;
 #endif	/* LINEMODE */
 
-#ifdef	AUTHENTICATE
+#ifdef	AUTHENTICATION
 		case TELOPT_AUTHENTICATION:
 			func = auth_request;
 			break;
 #endif
 
-#ifdef	ENCRYPT
+#ifdef	ENCRYPTION
 		case TELOPT_ENCRYPT:
 			func = encrypt_send_support;
 			break;
@@ -707,7 +709,7 @@ wontoption(option)
 			slctab[SLC_XOFF].defset.flag |= SLC_CANTCHANGE;
 			break;
 
-#if	defined(AUTHENTICATE)
+#if	defined(AUTHENTICATION)
 		case TELOPT_AUTHENTICATION:
 			auth_finished(0, AUTH_REJECT);
 			break;
@@ -747,7 +749,7 @@ wontoption(option)
 		switch (option) {
 		case TELOPT_TM:
 #if	defined(LINEMODE) && defined(KLUDGELINEMODE)
-			if (lmodetype < REAL_LINEMODE) {
+			if (lmodetype < NO_AUTOKLUDGE) {
 				lmodetype = NO_LINEMODE;
 				clientstat(TELOPT_LINEMODE, WONT, 0);
 				send_will(TELOPT_SGA, 1);
@@ -756,7 +758,7 @@ wontoption(option)
 #endif	/* defined(LINEMODE) && defined(KLUDGELINEMODE) */
 			break;
 
-#if	defined(AUTHENTICATE)
+#if	defined(AUTHENTICATION)
 		case TELOPT_AUTHENTICATION:
 			auth_finished(0, AUTH_REJECT);
 			break;
@@ -899,7 +901,7 @@ dooption(option)
 			/* NOT REACHED */
 			break;
 
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
 		case TELOPT_ENCRYPT:
 			changeok++;
 			break;
@@ -970,7 +972,8 @@ dontoption(option)
 		case TELOPT_ECHO:	/* we should stop echoing */
 #ifdef	LINEMODE
 # ifdef	KLUDGELINEMODE
-			if (lmodetype == NO_LINEMODE)
+			if ((lmodetype != REAL_LINEMODE) &&
+			    (lmodetype != KLUDGE_LINEMODE))
 # else
 			if (his_state_is_wont(TELOPT_LINEMODE))
 # endif
@@ -989,11 +992,13 @@ dontoption(option)
 			 * must process an incoming do SGA for
 			 * linemode purposes.
 			 */
-			if (lmodetype == KLUDGE_LINEMODE) {
+			if ((lmodetype == KLUDGE_LINEMODE) ||
+			    (lmodetype == KLUDGE_OK)) {
 				/*
 				 * The client is asking us to turn
 				 * linemode on.
 				 */
+				lmodetype = KLUDGE_LINEMODE;
 				clientstat(TELOPT_LINEMODE, WILL, 0);
 				/*
 				 * If we did not turn line mode on,
@@ -1009,7 +1014,7 @@ dontoption(option)
 				send_wont(option, 0);
 			set_my_state_wont(option);
 			if (turn_on_sga ^= 1)
-				send_will(option);
+				send_will(option, 1);
 			return;
 #endif	/* defined(LINEMODE) && defined(KLUDGELINEMODE) */
 
@@ -1213,8 +1218,11 @@ suboption()
 	else if (c != TELQUAL_INFO)
 		return;
 
-	while (!SB_EOF() && SB_GET() != ENV_VAR)
-		;
+	while (!SB_EOF()) {
+		c = SB_GET();
+		if ((c == ENV_VAR) || (c == ENV_USERVAR))
+			break;
+	}
 
 	if (SB_EOF())
 		return;
@@ -1230,6 +1238,7 @@ suboption()
 			break;
 
 		case ENV_VAR:
+		case ENV_USERVAR:
 			*cp = '\0';
 			if (valp)
 				(void)setenv(varp, valp, 1);
@@ -1256,7 +1265,7 @@ suboption()
 		unsetenv(varp);
 	break;
     }  /* end of case TELOPT_ENVIRON */
-#if	defined(AUTHENTICATE)
+#if	defined(AUTHENTICATION)
     case TELOPT_AUTHENTICATION:
 	if (SB_EOF())
 		break;
@@ -1277,7 +1286,7 @@ suboption()
 	}
 	break;
 #endif
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
     case TELOPT_ENCRYPT:
 	if (SB_EOF())
 		break;
@@ -1377,8 +1386,24 @@ send_status()
 	if (his_want_state_is_will(TELOPT_LFLOW)) {
 		ADD(SB);
 		ADD(TELOPT_LFLOW);
-		ADD(flowmode);
+		if (flowmode) {
+			ADD(LFLOW_ON);
+		} else {
+			ADD(LFLOW_OFF);
+		}
 		ADD(SE);
+
+		if (restartany >= 0) {
+			ADD(SB)
+			ADD(TELOPT_LFLOW);
+			if (restartany) {
+				ADD(LFLOW_RESTART_ANY);
+			} else {
+				ADD(LFLOW_RESTART_XON);
+			}
+			ADD(SE)
+			ADD(SB);
+		}
 	}
 
 #ifdef	LINEMODE

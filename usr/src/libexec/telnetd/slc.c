@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slc.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)slc.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -176,6 +176,7 @@ end_slc(bufp)
 			len = slcptr - slcbuf;
 			writenet(slcbuf, len);
 			netflush();  /* force it out immediately */
+			DIAG(TD_OPTIONS, printsub('>', slcbuf+2, len-2););
 		}
 	}
 	return (0);
