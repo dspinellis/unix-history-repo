@@ -1,4 +1,4 @@
-# @(#)README	1.2 (ELEFUNT) %G%
+# @(#)README	1.3 (ELEFUNT) %G%
 -1.  The machine-independent Version 7 math library found in 4.2BSD
      is now "/usr/lib/libom.a".  To compile with those routines use -lom.
 

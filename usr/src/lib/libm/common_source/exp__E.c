@@ -12,7 +12,8 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exp__E.c	1.1 (ELEFUNT) %G%";
+static char sccsid[] =
+"@(#)exp__E.c	1.2 (Berkeley) 8/21/85; 1.2 (ucb.elefunt) %G%";
 #endif not lint
 
 /* exp__E(x,c)

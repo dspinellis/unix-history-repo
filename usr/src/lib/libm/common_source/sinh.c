@@ -12,7 +12,8 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sinh.c	1.1 (ELEFUNT) %G%";
+static char sccsid[] =
+"@(#)sinh.c	4.3 (Berkeley) 8/21/85; 1.2 (ucb.elefunt) %G%";
 #endif not lint
 
 /* SINH(X)
