@@ -1,4 +1,4 @@
-/*	if_vv.c	4.11	82/12/17	*/
+/*	if_vv.c	4.12	82/12/23	*/
 
 #include "vv.h"
 #if NVV > 0
@@ -17,9 +17,12 @@
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/vmmac.h"
+#include <time.h>
+#include "../h/kernel.h"
 #include <errno.h>
 
 #include "../net/if.h"
+#include "../net/netisr.h"
 #include "../net/route.h"
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
@@ -289,9 +292,9 @@ retry:
 	 */
 	DELAY(1000);
 	for (waitcount = 0; (addr->vvicsr & VV_RDY) == 0; waitcount++)
-		if (waitcount < 10)
+		if (waitcount < 10) {
 			DELAY(1000);
-		else {
+		} else {
 			if (attempts++ < 10)
 				goto retry;
 			else {
