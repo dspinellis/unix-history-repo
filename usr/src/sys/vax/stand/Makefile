@@ -1,4 +1,4 @@
-#	Makefile	4.23	83/02/04
+#	Makefile	4.24	83/02/12
 
 DESTDIR=/
 CFLAGS=	-O -DSTANDALONE ${COPTS} 
@@ -13,8 +13,7 @@ DRIVERS=autoconf.o hp.o ht.o idc.o mba.o mt.o rk.o tm.o ts.o \
 NEWDRIVERS=hp.new.o up.new.o
 
 ALL=	/usr/lib/libsa.a srt0.o boot tpboot copy tpcopy \
-	boothp boothk bootup \
-	format drtest
+	format tpformat drtest boothp boothk bootup
 
 all: ${ALL}
 
