@@ -1,5 +1,5 @@
 /*-
- *	@(#)READ_ME	8.16 (Berkeley) %G%
+ *	@(#)READ_ME	8.17 (Berkeley) %G%
  */
 
 			SENDMAIL RELEASE 8
@@ -123,8 +123,8 @@ relevant to sendmail) are:
 	RFC1049	Content-Type header field (extension to RFC822)
 
 Warning to AIX users: this version of sendmail does not implement
-MB, MR, or MG DNS resource records, as defined as experiments in
-RFC883.
+MB, MR, or MG DNS resource records, as defined (as experiments) in
+RFC1035.
 
 
 +-------------------+
