@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)lastcomm.c	4.11 (Berkeley) %G%";
+static char *sccsid = "@(#)lastcomm.c	4.12 (Berkeley) %G%";
 #endif
 
 /*
@@ -58,12 +58,12 @@ main(argc, argv)
 					*cp = '?';
 			if (!ok(argc, argv, acp) && argc != 1)
 				continue;
-			printf("%-*s %s %-*s %-*s %6.1f secs %.16s\n",
+			printf("%-*s %s %-*s %-*s %6.2f secs %.16s\n",
 				fldsiz(acct, ac_comm), acp->ac_comm,
 				flagbits(acp->ac_flag),
 				fldsiz(utmp, ut_name), getname(acp->ac_uid),
 				fldsiz(utmp, ut_line), getdev(acp->ac_tty),
-				x / 64.0, ctime(&acp->ac_btime));
+				x / (double)AHZ, ctime(&acp->ac_btime));
 		}
 	}
 }
