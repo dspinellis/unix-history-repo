@@ -1,4 +1,4 @@
-/*	@(#)if_qe.c	7.1 (Berkeley) %G% */
+/*	@(#)if_qe.c	7.2 (Berkeley) %G% */
 
 /* from  @(#)if_qe.c	1.15	(ULTRIX)	4/16/86 */
  
@@ -141,7 +141,11 @@
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
  
-#define NRCV	25	 		/* Receive descriptors		*/
+#if NQE > 1
+#define NRCV	15	 		/* Receive descriptors		*/
+#else
+#define NRCV	20	 		/* Receive descriptors		*/
+#endif
 #define NXMT	5	 		/* Transmit descriptors		*/
 #define NTOT	(NXMT + NRCV)
  
@@ -848,8 +852,8 @@ qeioctl(ifp, cmd, data)
 			((struct qedevice *)
 			   (qeinfo[ifp->if_unit]->ui_addr))->qe_csr = QE_RESET;
 			sc->qe_flags &= ~QEF_RUNNING;
-		} else if (ifp->if_flags & IFF_UP &&
-		    (sc->qe_flags & QEF_RUNNING) == 0)
+		} else if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) ==
+		    IFF_RUNNING && (sc->qe_flags & QEF_RUNNING) == 0)
 			qerestart(sc);
 		break;
 
