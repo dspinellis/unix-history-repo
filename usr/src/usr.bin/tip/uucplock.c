@@ -5,13 +5,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)uucplock.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)uucplock.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
  * defs that come from uucp.h
  */
-#define NAMESIZE 15
+#define NAMESIZE 32
 #define FAIL -1
 #define SAME 0
 #define SLCKTIME 28800	/* system/device timeout (LCK.. files) in seconds (8 hours) */
