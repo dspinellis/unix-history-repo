@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spec_vnops.c	7.17 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -25,7 +25,6 @@
 #include "buf.h"
 #include "mount.h"
 #include "vnode.h"
-#include "../ufs/inode.h"
 #include "stat.h"
 #include "errno.h"
 #include "ioctl.h"
@@ -145,11 +144,6 @@ spec_read(vp, uio, ioflag, cred)
 		panic("spec_read mode");
 	if (uio->uio_resid == 0)
 		return (0);
-	/*
-	 * XXX  Set access flag for the ufs filesystem.
-	 */
-	if (vp->v_tag == VT_UFS)
-		VTOI(vp)->i_flag |= IACC;
 
 	switch (vp->v_type) {
 
@@ -224,11 +218,6 @@ spec_write(vp, uio, ioflag, cred)
 
 	if (uio->uio_rw != UIO_WRITE)
 		panic("spec_write mode");
-	/*
-	 * XXX  Set update and change flags for the ufs filesystem.
-	 */
-	if (vp->v_tag == VT_UFS)
-		VTOI(vp)->i_flag |= IUPD|ICHG;
 
 	switch (vp->v_type) {
 
