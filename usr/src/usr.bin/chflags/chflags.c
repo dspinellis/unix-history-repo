@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chflags.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)chflags.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -42,23 +42,34 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	register FTS *fts;
+	register FTS *ftsp;
 	register FTSENT *p;
 	register long oflags;
 	register int oct;
 	register char *flags;
 	struct stat sb;
 	void *set;
-	int ch, rflag;
+	int ch, rflag, hflag, Hflag;
 	char *ep;
+	int fts_options;
 
-	rflag = 0;
-	while ((ch = getopt(argc, argv, "R")) != EOF)
+	rflag = hflag = Hflag = 0;
+	fts_options = FTS_PHYSICAL;
+	while ((ch = getopt(argc, argv, "HRh")) != EOF)
 		switch((char)ch) {
+		case 'H':
+			Hflag = 1;
+			fts_options |= FTS_COMFOLLOW;
+			break;
 		case 'R':
 			rflag = 1;
 			break;
-		case '?':
+		case 'h':
+			hflag = 1;
+			fts_options &= ~FTS_PHYSICAL;
+			fts_options |= FTS_LOGICAL;
+			break;
+      		case '?':
 		default:
 			usage();
 		}
@@ -81,35 +92,30 @@ main(argc, argv)
 	}
 
 	retval = 0;
-	if (rflag) {
-		if (!(fts = fts_open(++argv,
-		    oct ? FTS_NOSTAT|FTS_PHYSICAL : FTS_PHYSICAL, 0)))
-			err("%s", strerror(errno));
-		while (p = fts_read(fts))
-			switch(p->fts_info) {
-			case FTS_D:
-				break;
-			case FTS_DNR:
-			case FTS_ERR:
-			case FTS_NS:
-				err("%s: %s", p->fts_path, strerror(errno));
-			default:
-				if (chflags(p->fts_accpath, oct ? oflags :
-				    getflags(set, p->fts_statp->st_flags)))
-					error(p->fts_path);
-				break;
-			}
-		exit(retval);
-	}
-	if (oct) {
-		while (*++argv)
-			if (chflags(*argv, oflags))
-				error(*argv);
-	} else
-		while (*++argv)
-			if (lstat(*argv, &sb) ||
-			    chflags(*argv, getflags(set, sb.st_flags)))
-				error(*argv);
+	if (oct)
+		fts_options |= FTS_NOSTAT;
+	if (!(ftsp = fts_open(++argv, fts_options , 0)))
+		err("%s", strerror(errno));
+	while (p = fts_read(ftsp))
+		switch(p->fts_info) {
+		case FTS_D:
+			if (!rflag)
+				fts_set(ftsp, p, FTS_SKIP);
+			break;
+		case FTS_DNR:
+		case FTS_ERR:
+		case FTS_NS:
+			err("%s: %s", p->fts_path, strerror(errno));
+		default:
+                        if (p->fts_info == FTS_SL &&
+                            !(hflag ||
+                            (Hflag && p->fts_level == FTS_ROOTLEVEL)))
+				continue;
+			if (chflags(p->fts_accpath, oct ? oflags :
+			    getflags(set, p->fts_statp->st_flags)))
+				error(p->fts_path);
+			break;
+		}
 	exit(retval);
 }
 
@@ -190,6 +196,6 @@ error(name)
 void
 usage()
 {
-	(void)fprintf(stderr, "usage: chflags [-R] flags file ...\n");
+	(void)fprintf(stderr, "usage: chflags [-HRh] flags file ...\n");
 	exit(1);
 }
