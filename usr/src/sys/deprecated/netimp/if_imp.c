@@ -1,4 +1,4 @@
-/*	if_imp.c	4.9	82/02/21	*/
+/*	if_imp.c	4.10	82/02/27	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -86,8 +86,8 @@ COUNT(IMPATTACH);
 	ifp->if_name = "imp";
 	ifp->if_mtu = IMP_MTU;
 	ifp->if_net = ui->ui_flags;
-	/* this should be found by talking to the imp */
-	ifp->if_addr.s_addr = 0x4e00000a;
+	/* the host and imp fields will be filled in by the imp */
+	ifp->if_addr.s_addr = if_makeaddr(ifp->if_net, 0);
 	ifp->if_init = impinit;
 	ifp->if_output = impoutput;
 	/* reset is handled at the hardware level */
@@ -255,7 +255,7 @@ COUNT(IMPINPUT);
 		/* restart output in case something was q'd */
 		(*sc->imp_cb.ic_start)(sc->imp_if.if_unit);
 		goto drop;
-		}
+	}
 
 	/*
 	 * RFNM or INCOMPLETE message, record in
@@ -379,14 +379,12 @@ impoutput(ifp, m0, pf)
 	int x, dhost, dimp, dlink, len, dnet;
 
 COUNT(IMPOUTPUT);
-#ifdef notdef
 	/*
 	 * Don't even try if the IMP is unavailable.
 	 */
 	x = imp_softc[ifp->if_unit].imp_state;
 	if (x == IMPS_DOWN || x == IMPS_GOINGDOWN)
 		goto drop;
-#endif
 
 	switch (pf) {
 
