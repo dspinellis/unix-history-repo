@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -30,7 +30,7 @@ find_idle_and_ttywrite(w)
 	if (stat(tbuf, &sb) < 0) {
 		(void)fprintf(stderr,
 		    "finger: %s: %s\n", tbuf, strerror(errno));
-		exit(1);
+		return;
 	}
 	w->idletime = now < sb.st_atime ? 0 : now - sb.st_atime;
 
