@@ -1,5 +1,5 @@
 /*
-char id_err[] = "@(#)err.c	1.13";
+char id_err[] = "@(#)err.c	1.14";
  *
  * file i/o error and initialization routines
  */
@@ -16,7 +16,7 @@ char id_err[] = "@(#)err.c	1.13";
 char *tmplate = "tmp.FXXXXXX";	/* scratch file template */
 char *fortfile = "fort.%d";	/* default file template */
 
-unit units[MXUNIT] = 0;	/*unit table*/
+unit units[MXUNIT];	/*unit table*/
 flag reading;		/*1 if reading,		0 if writing*/
 flag external;		/*1 if external io,	0 if internal */
 flag sequential;	/*1 if sequential io,	0 if direct*/
