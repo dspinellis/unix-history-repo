@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	5.4 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	5.5 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	5.4 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	5.5 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -25,21 +25,11 @@ static char sccsid [] = "@(#)udb.c	5.4 (Berkeley) %G% (without USERDB)";
 #include <db.h>
 
 /*
-**  UDBEXPAND -- look up user in database and expand
+**  UDBEXPAND.C -- interface between sendmail and Berkeley User Data Base.
 **
-**	Parameters:
-**		a -- address to expand.
-**		sendq -- pointer to head of sendq to put the expansions in.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		Modifies sendq.
+**	This depends on the 4.4BSD db package.
 */
 
-int	UdbPort = 1616;
-int	UdbTimeout = 10;
 
 struct udbent
 {
@@ -81,6 +71,29 @@ struct udbent
 #define UDB_FORWARD	4	/* forward to remote host */
 
 #define MAXUDBENT	10	/* maximum number of UDB entries */
+
+
+struct option
+{
+	char	*name;
+	char	*val;
+};
+/*
+**  UDBEXPAND -- look up user in database and expand
+**
+**	Parameters:
+**		a -- address to expand.
+**		sendq -- pointer to head of sendq to put the expansions in.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Modifies sendq.
+*/
+
+int	UdbPort = 1616;
+int	UdbTimeout = 10;
 
 struct udbent	UdbEnts[MAXUDBENT + 1];
 int		UdbSock = -1;
@@ -255,6 +268,8 @@ udbexpand(a, sendq)
 	}
 }
 
+#define MAXUDBOPTS	27
+
 void
 _udbx_init()
 {
@@ -269,9 +284,11 @@ _udbx_init()
 	{
 		char *spec;
 		auto int rcode;
+		int nopts;
 		int nmx;
 		register struct hostent *h;
 		char *mxhosts[MAXMXHOSTS + 1];
+		struct option opts[MAXUDBOPTS + 1];
 
 		while (*p == ' ' || *p == '\t' || *p == ',')
 			p++;
@@ -281,41 +298,54 @@ _udbx_init()
 		p = index(p, ',');
 		if (*p != '\0')
 			*p++ = '\0';
+
+		/* extract options */
+		nopts = _udb_parsespec(spec, opts, MAXUDBOPTS);
+
+		/*
+		**  Decode database specification.
+		**
+		**	In the sendmail tradition, the leading character
+		**	defines the semantics of the rest of the entry.
+		**
+		**	+hostname --	send a datagram to the udb server
+		**			on host "hostname" asking for the
+		**			home mail server for this user.
+		**	*hostname --	similar to +hostname, except that the
+		**			hostname is searched as an MX record;
+		**			resulting hosts are searched as for
+		**			+mxhostname.  If no MX host is found,
+		**			this is the same as +hostname.
+		**	@hostname --	forward email to the indicated host.
+		**			This should be the last in the list,
+		**			since it always matches the input.
+		**	/dbname	 --	search the named database on the local
+		**			host using the Berkeley db package.
+		*/
+
 		switch (*spec)
 		{
 		  case '+':	/* search remote database */
-			h = gethostbyname(spec + 1);
-			if (h == NULL)
-				continue;
-			up->udb_type = UDB_REMOTE;
-			up->udb_addr.sin_family = h->h_addrtype;
-			up->udb_addr.sin_len = h->h_length;
-			bcopy(h->h_addr_list[0],
-			      (char *) &up->udb_addr.sin_addr,
-			      h->h_length);
-			up->udb_addr.sin_port = UdbPort;
-			up->udb_timeout = UdbTimeout;
-			up++;
-
-			/* set up a datagram socket */
-			if (UdbSock < 0)
-			{
-				UdbSock = socket(AF_INET, SOCK_DGRAM, 0);
-				(void) fcntl(UdbSock, F_SETFD, 1);
-			}
-			break;
-
 		  case '*':	/* search remote database (expand MX) */
-			nmx = getmxrr(spec + 1, mxhosts, "", &rcode);
-			if (tTd(28, 16))
+			if (*spec == '*')
 			{
-				int i;
+				nmx = getmxrr(spec + 1, mxhosts, "", &rcode);
+				if (tTd(28, 16))
+				{
+					int i;
 
-				printf("getmxrr(%s): %d", spec + 1, nmx);
-				for (i = 0; i <= nmx; i++)
-					printf(" %s", mxhosts[i]);
-				printf("\n");
+					printf("getmxrr(%s): %d", spec + 1, nmx);
+					for (i = 0; i <= nmx; i++)
+						printf(" %s", mxhosts[i]);
+					printf("\n");
+				}
 			}
+			else
+			{
+				nmx = 1;
+				mxhosts[0] = spec + 1;
+			}
+
 			for (i = 0; i < nmx; i++)
 			{
 				h = gethostbyname(mxhosts[i]);
@@ -387,6 +417,36 @@ _udbx_init()
 			}
 		}
 	}
+}
+
+int
+_udb_parsespec(udbspec, opt, maxopts)
+	char *udbspec;
+	struct option opt[];
+	int maxopts;
+{
+	register char *spec;
+	register char *spec_end;
+	register int optnum;
+
+	spec_end = index(udbspec, ':');
+	for (optnum = 0; optnum < maxopts && (spec = spec_end) != NULL; optnum++)
+	{
+		register char *p;
+
+		while (isspace(*spec))
+			spec++;
+		spec_end = index(spec, ':');
+		if (spec_end != NULL)
+			*spec_end++ = '\0';
+
+		opt[optnum].name = spec;
+		opt[optnum].val = NULL;
+		p = index(spec, '=');
+		if (p != NULL)
+			opt[optnum].val = ++p;
+	}
+	return optnum;
 }
 
 #else /* not USERDB */
