@@ -45,15 +45,15 @@ ${ASM}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
 	@echo creating ${.PREFIX}.o
 	@printf '#include "SYS.h"\nRSYSCALL(${.PREFIX})\n' | \
 	    ${CPP} ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.o
-	@${LD} -x -r ${.PREFIX}.o
-	@mv a.out ${.PREFIX}.o
+#	@${LD} -x -r ${.PREFIX}.o
+#	@mv a.out ${.PREFIX}.o
 
 ${PASM}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
 	@echo creating ${.PREFIX}.po
 	@printf '#include "SYS.h"\nRSYSCALL(${.PREFIX})\n' | \
 	    ${CPP} -DPROF ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.po
-	@${LD} -x -r ${.PREFIX}.po
-	@mv a.out ${.PREFIX}.po
+#	@${LD} -x -r ${.PREFIX}.po
+#	@mv a.out ${.PREFIX}.po
 
 ${SASM}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
 	@echo creating ${.TARGET}
@@ -64,15 +64,15 @@ ${PSEUDO}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
 	@echo creating ${.PREFIX}.o 
 	@printf '#include "SYS.h"\nPSEUDO(${.PREFIX},${.PREFIX:S/_//})\n' | \
 	    ${CPP} ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.o
-	@${LD} -x -r ${.PREFIX}.o
-	@mv a.out ${.PREFIX}.o
+#	@${LD} -x -r ${.PREFIX}.o
+#	@mv a.out ${.PREFIX}.o
 
 ${PPSEUDO}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
 	@echo creating ${.PREFIX}.po
 	@printf '#include "SYS.h"\nPSEUDO(${.PREFIX},${.PREFIX:S/_//})\n' | \
 	    ${CPP} -DPROF ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.po
-	@${LD} -x -r ${.PREFIX}.po
-	@mv a.out ${.PREFIX}.po
+#	@${LD} -x -r ${.PREFIX}.po
+#	@mv a.out ${.PREFIX}.po
 
 ${SPSEUDO}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
 	@echo creating ${.TARGET}
