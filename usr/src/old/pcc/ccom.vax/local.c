@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)local.c	1.13 (Berkeley) %G%";
+static char *sccsid ="@(#)local.c	1.14 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -453,13 +453,13 @@ tlen(p) NODE *p;
 			
 		case SHORT:
 		case USHORT:
-			return(2);
+			return(SZSHORT/SZCHAR);
 			
 		case DOUBLE:
-			return(8);
+			return(SZDOUBLE/SZCHAR);
 			
 		default:
-			return(4);
+			return(SZINT/SZCHAR);
 		}
 	}
 #endif
