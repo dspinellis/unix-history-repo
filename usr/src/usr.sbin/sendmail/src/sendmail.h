@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.96 (Berkeley) %G%
+ *	@(#)sendmail.h	8.97 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.96		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.97		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -464,37 +464,37 @@ EXTERN struct rewrite	*RewriteRules[MAXRWSETS];
 */
 
 /* left hand side items */
-# define MATCHZANY	0220	/* match zero or more tokens */
-# define MATCHANY	0221	/* match one or more tokens */
-# define MATCHONE	0222	/* match exactly one token */
-# define MATCHCLASS	0223	/* match one token in a class */
-# define MATCHNCLASS	0224	/* match anything not in class */
-# define MATCHREPL	0225	/* replacement on RHS for above */
+# define MATCHZANY	((u_char)0220)	/* match zero or more tokens */
+# define MATCHANY	((u_char)0221)	/* match one or more tokens */
+# define MATCHONE	((u_char)0222)	/* match exactly one token */
+# define MATCHCLASS	((u_char)0223)	/* match one token in a class */
+# define MATCHNCLASS	((u_char)0224)	/* match anything not in class */
+# define MATCHREPL	((u_char)0225)	/* replacement on RHS for above */
 # define MATCHLOOKUP	'\035'	/* look up and replace a sequence */
 # define MATCHELOOKUP	'\036'	/* end of the sequence */
 
 /* right hand side items */
-# define CANONNET	0226	/* canonical net, next token */
-# define CANONHOST	0227	/* canonical host, next token */
-# define CANONUSER	0230	/* canonical user, next N tokens */
-# define CALLSUBR	0231	/* call another rewriting set */
+# define CANONNET	((u_char)0226)	/* canonical net, next token */
+# define CANONHOST	((u_char)0227)	/* canonical host, next token */
+# define CANONUSER	((u_char)0230)	/* canonical user, next N tokens */
+# define CALLSUBR	((u_char)0231)	/* call another rewriting set */
 
 /* conditionals in macros */
-# define CONDIF		0232	/* conditional if-then */
-# define CONDELSE	0233	/* conditional else */
-# define CONDFI		0234	/* conditional fi */
+# define CONDIF		((u_char)0232)	/* conditional if-then */
+# define CONDELSE	((u_char)0233)	/* conditional else */
+# define CONDFI		((u_char)0234)	/* conditional fi */
 
 /* bracket characters for host name lookup */
-# define HOSTBEGIN	0235	/* hostname lookup begin */
-# define HOSTEND	0236	/* hostname lookup end */
+# define HOSTBEGIN	((u_char)0235)	/* hostname lookup begin */
+# define HOSTEND	((u_char)0236)	/* hostname lookup end */
 
 /* bracket characters for generalized lookup */
-# define LOOKUPBEGIN	0205	/* generalized lookup begin */
-# define LOOKUPEND	0206	/* generalized lookup end */
+# define LOOKUPBEGIN	((u_char)0205)	/* generalized lookup begin */
+# define LOOKUPEND	((u_char)0206)	/* generalized lookup end */
 
 /* macro substitution character */
-# define MACROEXPAND	0201	/* macro expansion */
-# define MACRODEXPAND	0202	/* deferred macro expansion */
+# define MACROEXPAND	((u_char)0201)	/* macro expansion */
+# define MACRODEXPAND	((u_char)0202)	/* deferred macro expansion */
 
 /* to make the code clearer */
 # define MATCHZERO	CANONHOST
@@ -548,7 +548,7 @@ MAP
 {
 	MAPCLASS	*map_class;	/* the class of this map */
 	char		*map_mname;	/* name of this map */
-	int		map_mflags;	/* flags, see below */
+	long		map_mflags;	/* flags, see below */
 	char		*map_file;	/* the (nominal) filename */
 	ARBPTR_T	map_db1;	/* the open database ptr */
 	ARBPTR_T	map_db2;	/* an "extra" database pointer */
@@ -566,22 +566,22 @@ MAP
 };
 
 /* bit values for map_mflags */
-# define MF_VALID	0x0001		/* this entry is valid */
-# define MF_INCLNULL	0x0002		/* include null byte in key */
-# define MF_OPTIONAL	0x0004		/* don't complain if map not found */
-# define MF_NOFOLDCASE	0x0008		/* don't fold case in keys */
-# define MF_MATCHONLY	0x0010		/* don't use the map value */
-# define MF_OPEN	0x0020		/* this entry is open */
-# define MF_WRITABLE	0x0040		/* open for writing */
-# define MF_ALIAS	0x0080		/* this is an alias file */
-# define MF_TRY0NULL	0x0100		/* try with no null byte */
-# define MF_TRY1NULL	0x0200		/* try with the null byte */
-# define MF_LOCKED	0x0400		/* this map is currently locked */
-# define MF_ALIASWAIT	0x0800		/* alias map in aliaswait state */
-# define MF_IMPL_HASH	0x1000		/* implicit: underlying hash database */
-# define MF_IMPL_NDBM	0x2000		/* implicit: underlying NDBM database */
-# define MF_UNSAFEDB	0x4000		/* this map is world writable */
-# define MF_APPEND	0x8000		/* append new entry on rebuiled */
+# define MF_VALID	0x00000001	/* this entry is valid */
+# define MF_INCLNULL	0x00000002	/* include null byte in key */
+# define MF_OPTIONAL	0x00000004	/* don't complain if map not found */
+# define MF_NOFOLDCASE	0x00000008	/* don't fold case in keys */
+# define MF_MATCHONLY	0x00000010	/* don't use the map value */
+# define MF_OPEN	0x00000020	/* this entry is open */
+# define MF_WRITABLE	0x00000040	/* open for writing */
+# define MF_ALIAS	0x00000080	/* this is an alias file */
+# define MF_TRY0NULL	0x00000100	/* try with no null byte */
+# define MF_TRY1NULL	0x00000200	/* try with the null byte */
+# define MF_LOCKED	0x00000400	/* this map is currently locked */
+# define MF_ALIASWAIT	0x00000800	/* alias map in aliaswait state */
+# define MF_IMPL_HASH	0x00001000	/* implicit: underlying hash database */
+# define MF_IMPL_NDBM	0x00002000	/* implicit: underlying NDBM database */
+# define MF_UNSAFEDB	0x00004000	/* this map is world writable */
+# define MF_APPEND	0x00008000	/* append new entry on rebuiled */
 
 /* indices for map_actions */
 # define MA_NOTFOUND	0		/* member map returned "not found" */
