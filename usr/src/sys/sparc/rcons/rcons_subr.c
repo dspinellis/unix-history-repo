@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rcons_subr.c	7.3 (Berkeley) %G%
+ *	@(#)rcons_subr.c	7.4 (Berkeley) %G%
  *
- * from: $Header: rcons_subr.c,v 1.36 92/06/17 06:23:39 torek Exp $
+ * from: $Header: rcons_subr.c,v 1.38 93/04/20 11:15:39 torek Exp $
  */
 
 #ifdef KERNEL

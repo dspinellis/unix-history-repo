@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bwtwo.c	7.3 (Berkeley) %G%
+ *	@(#)bwtwo.c	7.4 (Berkeley) %G%
  *
- * from: $Header: bwtwo.c,v 1.13 92/06/17 06:59:29 torek Exp $
+ * from: $Header: bwtwo.c,v 1.14 92/11/26 02:28:04 torek Exp $
  */
 
 /*
@@ -23,8 +23,6 @@
  *
  * Does not handle interrupts, even though they can occur.
  */
-
-#include "bwtwo.h"
 
 #include <sys/param.h>
 #include <sys/device.h>

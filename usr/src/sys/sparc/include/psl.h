@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)psl.h	7.2 (Berkeley) %G%
+ *	@(#)psl.h	7.3 (Berkeley) %G%
  *
- * from: $Header: psl.h,v 1.11 92/06/20 09:04:46 mccanne Exp $
+ * from: $Header: psl.h,v 1.12 92/11/26 02:04:42 torek Exp $
  */
 
 #ifndef PSR_IMPL

@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)signal.h	7.2 (Berkeley) %G%
+ *	@(#)signal.h	7.3 (Berkeley) %G%
  *
- * from: $Header: signal.h,v 1.4 92/06/17 06:10:28 torek Exp $
+ * from: $Header: signal.h,v 1.5 92/11/26 02:04:46 torek Exp $
  */
 
 #ifndef LOCORE

@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)varargs.h	7.3 (Berkeley) %G%
+ *	@(#)varargs.h	7.4 (Berkeley) %G%
  *
- * from: $Header: varargs.h,v 1.5 92/10/16 04:16:09 torek Exp $
+ * from: $Header: varargs.h,v 1.6 92/11/26 02:04:48 torek Exp $
  */
 
 #ifndef _MACHINE_VARARGS_H_
