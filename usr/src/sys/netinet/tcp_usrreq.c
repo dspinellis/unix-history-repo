@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.77	83/05/13	*/
+/*	tcp_usrreq.c	1.78	83/05/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -29,6 +29,7 @@
  */
 extern	char *tcpstates[];
 struct	tcpcb *tcp_newtcpcb();
+int	tcpsenderrors;
 
 /*
  * Process a TCP user request for TCP tb.  If this is a send request
@@ -36,10 +37,10 @@ struct	tcpcb *tcp_newtcpcb();
  * (called from the software clock routine), then timertype tells which timer.
  */
 /*ARGSUSED*/
-tcp_usrreq(so, req, m, nam)
+tcp_usrreq(so, req, m, nam, rights)
 	struct socket *so;
 	int req;
-	struct mbuf *m, *nam;
+	struct mbuf *m, *nam, *rights;
 {
 	register struct inpcb *inp = sotoinpcb(so);
 	register struct tcpcb *tp;
@@ -47,6 +48,10 @@ tcp_usrreq(so, req, m, nam)
 	int error = 0;
 	int ostate;
 
+	if (rights && rights->m_len) {
+		splx(s);
+		return (EINVAL);
+	}
 	/*
 	 * When a TCP is attached to a socket, then there will be
 	 * a (struct inpcb) pointed at by the socket, and this
@@ -205,8 +210,11 @@ tcp_usrreq(so, req, m, nam)
 			tp->snd_end = tp->snd_una + so->so_snd.sb_cc;
 #endif
 		error = tcp_output(tp);
-		if (error == ENOBUFS)		/* XXX */
-			error = 0;		/* XXX */
+		if (error) {		/* XXX fix to use other path */
+			if (error == ENOBUFS)		/* XXX */
+				error = 0;		/* XXX */
+			tcpsenderrors++;
+		}
 		break;
 
 	/*
