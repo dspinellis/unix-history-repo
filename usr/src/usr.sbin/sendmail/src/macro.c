@@ -1,6 +1,6 @@
 # include "useful.h"
 
-static char SccsId[] = "@(#)macro.c	3.1	%G%";
+static char SccsId[] = "@(#)macro.c	3.2	%G%";
 
 char	*Macro[128];
 extern int	Debug;
@@ -65,7 +65,7 @@ expand(s, buf, buflim)
 				q = Macro[c & 0177];
 				break;
 			}
-			if (q == NULL)
+			if (q == NULL && c != '$')
 				continue;
 		}
 
