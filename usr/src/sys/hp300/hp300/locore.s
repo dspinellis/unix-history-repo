@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: locore.s 1.66 92/12/22$
  *
- *	@(#)locore.s	7.23 (Berkeley) %G%
+ *	@(#)locore.s	7.24 (Berkeley) %G%
  */
 
 /*
@@ -1162,8 +1162,13 @@ _szicode:
 #define EXPORT(name)	.globl _/**/name; _/**/name:
 #endif
 #ifdef GPROF
+#if __GNUC__ >= 2
 #define	ENTRY(name) \
 	EXPORT(name) link a6,\#0; jbsr mcount; unlk a6
+#else
+#define	ENTRY(name) \
+	EXPORT(name) link a6,#0; jbsr mcount; unlk a6
+#endif
 #define ALTENTRY(name, rname) \
 	ENTRY(name); jra rname+12
 #else
