@@ -11,7 +11,7 @@ extern	int	synerr;
 definition(s)	/* collect definition for s and install */
 	char *s;	/* definitions picked up lexically */
 {
-	char buf[2000], *p, *tostring();
+	char buf[4000], *p, *tostring();
 	int c, delim;
 	struct symtab *stp;
 
@@ -118,7 +118,7 @@ getarg(p)	/* pick up single argument, store in p, return length */
 	return(n + 1);
 }
 
-#define	PBSIZE	2000
+#define	PBSIZE	4000
 char	pbuf[PBSIZE];		/* pushback buffer */
 char	*pb	= pbuf-1;	/* next pushed back character */
 
