@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mail.1	6.3 (Berkeley) %G%
+.\"	@(#)mail.1	6.4 (Berkeley) %G%
 .\"
 .TH MAIL 1 ""
 .UC 4
@@ -572,6 +572,10 @@ by the option
 .TP 12n
 .BR ~! command
 Execute the indicated shell command, then return to the message.
+.TP
+\fB~b\fR name ...
+Add the given names to the list of carbon copy recipients but do not make
+the names visible in the Cc: line ("blind" carbon copy).
 .TP
 \fB~c\fR name ...
 Add the given names to the list of carbon copy recipients.
