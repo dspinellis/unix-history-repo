@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_socket.c	6.21 (Berkeley) %G%
+ *	@(#)uipc_socket.c	6.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -154,7 +154,7 @@ soclose(so)
 		goto discard;
 	if (so->so_state & SS_ISCONNECTED) {
 		if ((so->so_state & SS_ISDISCONNECTING) == 0) {
-			error = sodisconnect(so, (struct mbuf *)0);
+			error = sodisconnect(so);
 			if (error)
 				goto drop;
 		}
@@ -248,9 +248,8 @@ soconnect2(so1, so2)
 	return (error);
 }
 
-sodisconnect(so, nam)
+sodisconnect(so)
 	register struct socket *so;
-	struct mbuf *nam;
 {
 	int s = splnet();
 	int error;
@@ -264,7 +263,7 @@ sodisconnect(so, nam)
 		goto bad;
 	}
 	error = (*so->so_proto->pr_usrreq)(so, PRU_DISCONNECT,
-	    (struct mbuf *)0, nam, (struct mbuf *)0);
+	    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0);
 bad:
 	splx(s);
 	return (error);
