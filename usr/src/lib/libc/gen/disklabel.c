@@ -6,10 +6,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)disklabel.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.14 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
+#include <sys/errno.h>
 #include <ufs/fs.h>
 #include <sys/file.h>
 #define DKTYPENAMES
@@ -141,15 +142,18 @@ dgetent(bp, name)
 	int tf;
 
 	tbuf = bp;
-	tf = open(DISKTAB, 0);
-	if (tf < 0)
+	tf = open(_PATH_DISKTAB, 0);
+	if (tf < 0) {
+		error(errno);
 		return (-1);
+	}
 	for (;;) {
 		cp = bp;
 		for (;;) {
 			if (i == cnt) {
 				cnt = read(tf, ibuf, BUFSIZ);
 				if (cnt <= 0) {
+					error(errno);
 					close(tf);
 					return (0);
 				}
@@ -164,7 +168,7 @@ dgetent(bp, name)
 				break;
 			}
 			if (cp >= bp+BUFSIZ) {
-				write(2,"Disktab entry too long\n", 23);
+				error(EBADFORMAT);
 				break;
 			} else
 				*cp++ = c;
@@ -391,4 +395,17 @@ dkcksum(lp)
 	while (start < end)
 		sum ^= *start++;
 	return (sum);
+}
+
+static
+error(err)
+	int err;
+{
+	char *p;
+
+	(void)write(STDERR_FILENO, "disktab: ", 9);
+	(void)write(STDERR_FILENO, _PATH_DISKTAB, sizeof(_PATH_DISKTAB) - 1);
+	p = strerror(err);
+	(void)write(STDERR_FILENO, p, strlen(p));
+	(void)write(STDERR_FILENO, "\n", 1);
 }
