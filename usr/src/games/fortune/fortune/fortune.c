@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fortune.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)fortune.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	<sys/param.h>
@@ -952,6 +952,8 @@ get_fort()
 	(void) lseek(fp->datfd,
 		     (off_t) (sizeof fp->tbl + fp->pos * sizeof Seekpts[0]), 0);
 	read(fp->datfd, Seekpts, sizeof Seekpts);
+	Seekpts[0] = ntohl(Seekpts[0]);
+	Seekpts[1] = ntohl(Seekpts[1]);
 }
 
 /*
@@ -1095,6 +1097,11 @@ FILEDESC	*fp;
 			fprintf(stderr, "fortune:%s corrupted\n", fp->path);
 			exit(1);
 		}
+		/* fp->tbl.str_version = ntohl(fp->tbl.str_version); */
+		fp->tbl.str_numstr = ntohl(fp->tbl.str_numstr);
+		fp->tbl.str_longlen = ntohl(fp->tbl.str_longlen);
+		fp->tbl.str_shortlen = ntohl(fp->tbl.str_shortlen);
+		fp->tbl.str_flags = ntohl(fp->tbl.str_flags);
 		(void) close(fd);
 	}
 	else {
