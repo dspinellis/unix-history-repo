@@ -52,7 +52,7 @@
 #	Turn off logging.
 
 PROG=	larn
-MAN6=	larn.0
+MAN6=	larn.6
 CFLAGS+=-DBSD -DVER=12 -DSUBVER=0 -DNONAP
 SRCS=	main.c object.c create.c tok.c display.c global.c data.c io.c \
 	monster.c store.c diag.c help.c config.c nap.c bill.c scores.c \

@@ -1,7 +1,7 @@
 #	@(#)Makefile	5.5 (Berkeley) 1/18/91
 
 PROG=	fish
-MAN6=	fish.0
+MAN6=	fish.6
 HIDEGAME=hidegame
 
 beforeinstall: 

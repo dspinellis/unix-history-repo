@@ -8,6 +8,6 @@ SRCS=	curses.c hit.c init.c inventory.c level.c machdep.c main.c \
 DPADD=	${LIBCURSES} ${LIBTERM}
 LDADD=	-lcurses -ltermlib
 HIDEGAME=hidegame
-MAN6=	rogue.0
+MAN6=	rogue.6
 
 .include <bsd.prog.mk>
