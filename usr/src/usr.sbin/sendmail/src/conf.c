@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.92 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.93 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -699,8 +699,8 @@ getla()
 					_PATH_UNIX, LA_AVENRUN);
 			return (-1);
 		}
-#ifdef IRIX
-		Nl[X_AVENRUN].n_value &= 0x7fffffff;
+#ifdef NAMELISTMASK
+		Nl[X_AVENRUN].n_value &= NAMELISTMASK;
 #endif
 	}
 	if (tTd(3, 20))

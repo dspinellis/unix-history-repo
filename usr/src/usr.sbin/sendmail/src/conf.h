@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.111 (Berkeley) %G%
+ *	@(#)conf.h	8.112 (Berkeley) %G%
  */
 
 /*
@@ -166,6 +166,7 @@ extern int	syslog(int, char *, ...);
 # define GIDSET_T	gid_t
 # define SFS_TYPE	SFS_4ARGS	/* four argument statfs() call */
 # define LA_TYPE	LA_INT
+# define NAMELISTMASK	0x7fffffff	/* mask for nlist() values */
 # endif
 
 
