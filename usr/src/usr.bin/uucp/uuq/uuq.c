@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuq.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuq.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -136,7 +136,8 @@ char **argv;
 					hours > 1 ? "s": "");
 				minutes -= 60 * hours;
 			}
-			printf("%3.1f minutes (@ %d baud)",minutes,(int)baudrate/6);
+			printf("%3.1f minutes (@ effective baudrate of %d)",
+				minutes,(int)baudrate/6);
 		}
 		putchar('\n');
 		if (hflag)
