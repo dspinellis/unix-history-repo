@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.36 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -512,7 +512,6 @@ rlsesigs()
 #if (LA_TYPE == LA_INT) || (LA_TYPE == LA_FLOAT)
 
 #include <nlist.h>
-#include <fcntl.h>
 
 #ifndef LA_AVENRUN
 #define LA_AVENRUN	"_avenrun"
