@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1988 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software written by Ken Arnold and
  * published in UNIX Review, Vol. 6, No. 8.
@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)popen.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
