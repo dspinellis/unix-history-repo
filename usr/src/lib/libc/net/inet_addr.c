@@ -1,23 +1,30 @@
-/*	inet_addr.c	4.2	82/10/05	*/
+/*	inet_addr.c	4.3	82/10/07	*/
 
 #include <sys/types.h>
 #include <ctype.h>
+#include <net/in.h>
 
 /*
  * Internet address interpretation routine.
  * All the network library routines call this
  * routine to interpret entries in the data bases
  * which are expected to be an address.
+ * The value returned is in network order.
  */
-u_long
+struct in_addr
 inet_addr(cp)
 	register char *cp;
 {
-	register unsigned long val, base, n;
+	register u_long val, base, n;
 	register char c;
-	unsigned long parts[4], *pp = parts;
+	u_long parts[4], *pp = parts;
 
 again:
+	/*
+	 * Collect number up to ``.''.
+	 * Values are specified as for C:
+	 * 0x=hex, 0=octal, other=decimal.
+	 */
 	val = 0; base = 10;
 	if (*cp == '0')
 		base = 8, cp++;
@@ -48,26 +55,40 @@ again:
 		*pp++ = val, cp++;
 		goto again;
 	}
+	/*
+	 * Check for trailing characters.
+	 */
 	if (*cp && !isspace(*cp))
 		return (-1);
+	*pp++ = val;
+	/*
+	 * Concoct the address according to
+	 * the number of parts specified.
+	 */
 	n = pp - parts;
-	if (n > 0) {
-		if (n > 4)
-			return (-1);
-		*pp++ = val; n++;
+	switch (n) {
+
+	case 1:				/* a -- 32 bits */
 		val = parts[0];
-		if (n > 1)
-			val <<= 24;
-		if (n > 2)
-			val |= (parts[1] & 0xff) << 16;
-		if (n > 3)
-			val |= (parts[2] & 0xff) << 8;
-		if (n > 1)
-			val |= parts[n - 1];
-#if vax || pdp11
-		val = htonl(val);
-#endif
+		break;
+
+	case 2:				/* a.b -- 8.24 bits */
+		val = (parts[0] << 24) | (parts[1] & 0xffffff);
+		break;
+
+	case 3:				/* a.b.c -- 8.8.16 bits */
+		val = (parts[0] << 24) | ((parts[1] & 0xff) << 16) |
+			(parts[2] & 0xffff);
+		break;
+
+	case 4:				/* a.b.c.d -- 8.8.8.8 bits */
+		val = (parts[0] << 24) | ((parts[1] & 0xff) << 16) |
+		      ((parts[2] & 0xff) << 8) | (parts[3] & 0xff);
+		break;
+
+	default:
+		return (-1);
 	}
+	val = htonl(val);
 	return (val);
 }
-
