@@ -360,8 +360,8 @@ skip:
 	    /* start of a string? */
 	    if (strptr != NIL)
 		if ((strptr < chrptr || chrptr == NIL)
-		  && (comptr < blksptr || blksptr == NIL)
-		  && (comptr < blkeptr || blkeptr == NIL)) {
+		  && (strptr < blksptr || blksptr == NIL)
+		  && (strptr < blkeptr || blkeptr == NIL)) {
 		    putKcp (s, strptr-1, FALSE);
 		    s = strptr;
 		    instr = TRUE;
@@ -370,8 +370,8 @@ skip:
 
 	    /* start of a character string? */
 	    if (chrptr != NIL)
-		if ((comptr < blksptr || blksptr == NIL)
-		  && (comptr < blkeptr || blkeptr == NIL)) {
+		if ((chrptr < blksptr || blksptr == NIL)
+		  && (chrptr < blkeptr || blkeptr == NIL)) {
 		    putKcp (s, chrptr-1, FALSE);
 		    s = chrptr;
 		    inchr = TRUE;
