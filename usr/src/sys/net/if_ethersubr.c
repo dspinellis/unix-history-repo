@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
+ * Copyright (c) 1982, 1989 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -73,16 +73,15 @@ ether_output(ifp, m0, dst)
 	register struct mbuf *m = m0;
 	struct mbuf *mcopy = (struct mbuf *)0;
 	register struct ether_header *eh;
-	int usetrailers, off;
+	int usetrailers, off, len = m->m_pkthdr.len;
+	extern struct timeval time;
 #define	ac ((struct arpcom *)ifp)
 
 	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
 		error = ENETDOWN;
 		goto bad;
 	}
-	if (ifp->if_flags & IFF_SIMPLEX && dst->sa_family != AF_UNSPEC &&
-	    !bcmp((caddr_t)edst, (caddr_t)etherbroadcastaddr, sizeof (edst)))
-		mcopy = m_copy(m, 0, (int)M_COPYALL);
+	ifp->if_lastchange = time;
 	switch (dst->sa_family) {
 
 #ifdef INET
@@ -99,6 +98,7 @@ ether_output(ifp, m0, dst)
 			type = ETHERTYPE_TRAIL + (off>>9);
 			m->m_data -= 2 * sizeof (u_short);
 			m->m_len += 2 * sizeof (u_short);
+			len += 2 * sizeof (u_short);
 			*mtod(m, u_short *) = htons((u_short)ETHERTYPE_IP);
 			*(mtod(m, u_short *) + 1) = htons((u_short)m->m_len);
 			goto gottrailertype;
@@ -109,10 +109,10 @@ ether_output(ifp, m0, dst)
 #ifdef NS
 	case AF_NS:
 		type = ETHERTYPE_NS;
-		if (!bcmp((caddr_t)edst, (caddr_t)&ns_thishost, sizeof(edst)))
-			return(looutput(&loif, m, dst));
  		bcopy((caddr_t)&(((struct sockaddr_ns *)dst)->sns_addr.x_host),
 		    (caddr_t)edst, sizeof (edst));
+		if (!bcmp((caddr_t)edst, (caddr_t)&ns_thishost, sizeof(edst)))
+			return(looutput(&loif, m, dst));
 		if ((ifp->if_flags & IFF_SIMPLEX) && (*edst & 1))
 		    mcopy = m_copy(m, 0, (int)M_COPYALL);
 		goto gottype;
@@ -138,6 +138,7 @@ ether_output(ifp, m0, dst)
 		l = mtod(m, struct llc *);
 		l->llc_dsap = l->llc_ssap = LLC_ISO_LSAP;
 		l->llc_control = LLC_UI;
+		len += 3;
 		IFDEBUG(D_ETHER)
 			int i;
 			printf("unoutput: sending pkt to: ");
@@ -205,6 +206,9 @@ gottype:
 	splx(s);
 	if (mcopy)
 		(void) looutput(&loif, mcopy, dst);
+	ifp->if_obytes += len + sizeof (struct ether_header);
+	if (edst[0] & 1)
+		ifp->if_omcasts++;
 	return (error);
 
 bad:
@@ -229,11 +233,15 @@ ether_input(ifp, eh, m)
 	register struct llc *l;
 	int s;
 
+	ifp->if_lastchange = time;
+	ifp->if_ibytes += m->m_pkthdr.len + sizeof (*eh);
 	if (bcmp((caddr_t)etherbroadcastaddr, (caddr_t)eh->ether_dhost,
 	    sizeof(etherbroadcastaddr)) == 0)
 		m->m_flags |= M_BCAST;
 	else if (eh->ether_dhost[0] & 1)
 		m->m_flags |= M_MCAST;
+	if (m->m_flags & (M_BCAST|M_MCAST))
+		ifp->if_imcasts++;
 
 	switch (eh->ether_type) {
 #ifdef INET
