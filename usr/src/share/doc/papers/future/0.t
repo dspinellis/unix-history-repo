@@ -1,4 +1,4 @@
-.\"	@(#)0.t	1.2	(Copyright 1986 M. K. McKusick)	86/11/29
+.\"	@(#)0.t	1.3	(Copyright 1986 M. K. McKusick)	86/12/04
 .rm CM
 .TL
 Directions of UNIX at Berkeley
@@ -23,7 +23,3 @@ Berkeley systems will use this technology.
 .AE
 .LP
 .sp 2
-.ls 2
-..PS 12
-..VS 14
-..LL 4.25i
