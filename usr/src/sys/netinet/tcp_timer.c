@@ -1,4 +1,4 @@
-/* tcp_timer.c 4.10 81/12/21 */
+/* tcp_timer.c 4.11 82/01/13 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -158,7 +158,11 @@ printf("rexmt set to %d\n", tp->t_timer[TCPT_REXMT]);
 			tcp_drop(tp, ETIMEDOUT);
 			return;
 		}
-		tcp_respond(tp->t_template, tp->rcv_nxt, tp->snd_una-1, 0);
+		if (tp->t_inpcb->inp_socket->so_options & SO_NOKEEPALIVE)
+			tp->t_idle = 0;
+		else
+			tcp_respond(tp,
+			    tp->t_template, tp->rcv_nxt, tp->snd_una-1, 0);
 		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
 		return;
 	}

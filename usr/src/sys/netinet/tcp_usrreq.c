@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.45 81/12/21 */
+/* tcp_usrreq.c 1.46 82/01/13 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -87,6 +87,8 @@ COUNT(TCP_USRREQ);
 		error = tcp_attach(so, (struct sockaddr *)addr);
 		if (error)
 			break;
+		if ((so->so_options & SO_DONTLINGER) == 0)
+			so->so_linger = TCP_LINGERTIME;
 		tp = sototcpcb(so);
 		break;
 
@@ -273,7 +275,7 @@ tcp_disconnect(tp)
 
 	if (tp->t_state < TCPS_ESTABLISHED)
 		tcp_close(tp);
-	else if ((so->so_options & SO_LETDATADRAIN) == 0)
+	else if (so->so_linger == 0)
 		tcp_drop(tp, 0);
 	else {
 		soisdisconnecting(so);

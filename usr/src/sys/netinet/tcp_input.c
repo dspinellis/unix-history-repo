@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.46	82/01/07	*/
+/*	tcp_input.c	1.47	82/01/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -38,7 +38,7 @@ tcp_input(m0)
 	struct inpcb *inp;
 	register struct mbuf *m;
 	int len, tlen, off;
-	register struct tcpcb *tp;
+	register struct tcpcb *tp = 0;
 	register int tiflags;
 	struct socket *so;
 	int todrop, acked;
@@ -213,7 +213,8 @@ COUNT(TCP_INPUT);
 		tcp_rcvseqinit(tp);
 		tp->t_flags |= TF_ACKNOW;
 		if (SEQ_GT(tp->snd_una, tp->iss)) {
-			so->so_state |= SS_CONNAWAITING;
+			if (so->so_options & SO_ACCEPTCONN)
+				so->so_state |= SS_CONNAWAITING;
 			soisconnected(so);
 			tp->t_state = TCPS_ESTABLISHED;
 			(void) tcp_reass(tp, (struct tcpiphdr *)0);
@@ -373,7 +374,8 @@ trimthenstep6:
 		if (SEQ_LT(tp->snd_nxt, tp->snd_una))
 			tp->snd_nxt = tp->snd_una;
 		tp->t_timer[TCPT_REXMT] = 0;
-		so->so_state |= SS_CONNAWAITING;
+		if (so->so_options & SO_ACCEPTCONN)
+			so->so_state |= SS_CONNAWAITING;
 		soisconnected(so);
 		tp->t_state = TCPS_ESTABLISHED;
 		(void) tcp_reass(tp, (struct tcpiphdr *)0);
@@ -493,8 +495,11 @@ step6:
 	 * Update window information.
 	 */
 	if (SEQ_LT(tp->snd_wl1, ti->ti_seq) || tp->snd_wl1 == ti->ti_seq &&
-	    (SEQ_LEQ(tp->snd_wl2, ti->ti_ack) ||
+	    (SEQ_LT(tp->snd_wl2, ti->ti_ack) ||
 	     tp->snd_wl2 == ti->ti_ack && ti->ti_win > tp->snd_wnd)) {
+/*
+printf("wl1 %x seq %x wl2 %x ack %x win %x wnd %x\n", tp->snd_wl1, ti->ti_seq, tp->snd_wl2, ti->ti_ack, ti->ti_win, tp->snd_wnd);
+*/
 		tp->snd_wnd = ti->ti_win;
 		tp->snd_wl1 = ti->ti_seq;
 		tp->snd_wl2 = ti->ti_ack;
@@ -606,7 +611,7 @@ dropafterack:
 	 */
 	if (tiflags & TH_RST)
 		goto drop;
-	tcp_respond(ti, tp->rcv_nxt, tp->snd_nxt, TH_ACK);
+	tcp_respond(tp, ti, tp->rcv_nxt, tp->snd_nxt, TH_ACK);
 	return;
 
 dropwithreset:
@@ -617,11 +622,11 @@ dropwithreset:
 	if (tiflags & TH_RST)
 		goto drop;
 	if (tiflags & TH_ACK)
-		tcp_respond(ti, (tcp_seq)0, ti->ti_ack, TH_RST);
+		tcp_respond(tp, ti, (tcp_seq)0, ti->ti_ack, TH_RST);
 	else {
 		if (tiflags & TH_SYN)
 			ti->ti_len++;
-		tcp_respond(ti, ti->ti_seq+ti->ti_len, (tcp_seq)0, TH_RST|TH_ACK);
+		tcp_respond(tp, ti, ti->ti_seq+ti->ti_len, (tcp_seq)0, TH_RST|TH_ACK);
 	}
 	return;
 
