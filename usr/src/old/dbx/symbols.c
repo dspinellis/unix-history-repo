@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)symbols.c 1.3 %G%";
+static char sccsid[] = "@(#)symbols.c 1.4 %G%";
 
 /*
  * Symbol management.
@@ -1036,44 +1036,56 @@ Node a, slist;
     register Symbol t;
     register Node p;
     Symbol etype, atype, eltype;
-    Node esub, olda;
+    Node esub, r;
 
-    olda = a;
+    r = a;
     t = rtype(a->nodetype);
-    if (t->class != ARRAY) {
+    eltype = t->type;
+    if (t->class == PTR) {
+	p = slist->value.arg[0];
+	if (not compatible(p->nodetype, t_int)) {
+	    beginerrmsg();
+	    fprintf(stderr, "bad type for subscript of ");
+	    prtree(stderr, a);
+	    enderrmsg();
+	}
+	r = build(O_MUL, p, build(O_LCON, (long) size(eltype)));
+	r = build(O_ADD, build(O_RVAL, a), r);
+	r->nodetype = eltype;
+    } else if (t->class != ARRAY) {
 	beginerrmsg();
 	prtree(stderr, a);
 	fprintf(stderr, " is not an array");
 	enderrmsg();
-    }
-    eltype = t->type;
-    p = slist;
-    t = t->chain;
-    for (; p != nil and t != nil; p = p->value.arg[1], t = t->chain) {
-	esub = p->value.arg[0];
-	etype = rtype(esub->nodetype);
-	atype = rtype(t);
-	if (not compatible(atype, etype)) {
+    } else {
+	p = slist;
+	t = t->chain;
+	for (; p != nil and t != nil; p = p->value.arg[1], t = t->chain) {
+	    esub = p->value.arg[0];
+	    etype = rtype(esub->nodetype);
+	    atype = rtype(t);
+	    if (not compatible(atype, etype)) {
+		beginerrmsg();
+		fprintf(stderr, "subscript ");
+		prtree(stderr, esub);
+		fprintf(stderr, " is the wrong type");
+		enderrmsg();
+	    }
+	    r = build(O_INDEX, r, esub);
+	    r->nodetype = eltype;
+	}
+	if (p != nil or t != nil) {
 	    beginerrmsg();
-	    fprintf(stderr, "subscript ");
-	    prtree(stderr, esub);
-	    fprintf(stderr, " is the wrong type");
+	    if (p != nil) {
+		fprintf(stderr, "too many subscripts for ");
+	    } else {
+		fprintf(stderr, "not enough subscripts for ");
+	    }
+	    prtree(stderr, a);
 	    enderrmsg();
 	}
-	a = build(O_INDEX, a, esub);
-	a->nodetype = eltype;
     }
-    if (p != nil or t != nil) {
-	beginerrmsg();
-	if (p != nil) {
-	    fprintf(stderr, "too many subscripts for ");
-	} else {
-	    fprintf(stderr, "not enough subscripts for ");
-	}
-	prtree(stderr, olda);
-	enderrmsg();
-    }
-    return a;
+    return r;
 }
 
 /*
