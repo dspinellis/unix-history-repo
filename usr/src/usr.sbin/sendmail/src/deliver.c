@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.49 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.50 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -899,23 +899,19 @@ openmailer(m, pvp, ctladdr, clever, e)
 			if (clever)
 			{
 				(void) close(rpvect[0]);
-				(void) close(1);
-				(void) dup(rpvect[1]);
+				(void) dup2(rpvect[1], STDOUT_FILENO);
 				(void) close(rpvect[1]);
 			}
 			else if (OpMode == MD_SMTP || HoldErrs)
 			{
 				/* put mailer output in transcript */
-				(void) close(1);
-				(void) dup(fileno(e->e_xfp));
+				(void) dup2(fileno(e->e_xfp), STDOUT_FILENO);
 			}
-			(void) close(2);
-			(void) dup(1);
+			(void) dup2(STDOUT_FILENO, STDERR_FILENO);
 
 			/* arrange to get standard input */
 			(void) close(mpvect[1]);
-			(void) close(0);
-			if (dup(mpvect[0]) < 0)
+			if (dup2(mpvect[0], STDIN_FILENO) < 0)
 			{
 				syserr("Cannot dup to zero!");
 				_exit(EX_OSERR);
