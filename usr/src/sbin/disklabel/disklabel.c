@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)disklabel.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.25 (Berkeley) %G%";
 /* from static char sccsid[] = "@(#)disklabel.c	1.2 (Symmetric) 11/28/85"; */
 #endif /* not lint */
 
@@ -1207,10 +1207,13 @@ setbootflag(lp)
 		pp = &lp->d_partitions[i];
 		if (pp->p_size == 0)
 			continue;
-		if (boffset > pp->p_offset && pp->p_fstype != FS_BOOT) {
+		if (boffset <= pp->p_offset) {
+			if (pp->p_fstype == FS_BOOT)
+				pp->p_fstype = FS_UNUSED;
+		} else if (pp->p_fstype != FS_BOOT) {
 			if (pp->p_fstype != FS_UNUSED) {
 				fprintf(stderr,
-				   "boot overlaps used partition %c\n",
+					"boot overlaps used partition %c\n",
 					part);
 				errors++;
 			} else {
@@ -1218,8 +1221,7 @@ setbootflag(lp)
 				Warning("boot overlaps partition %c, %s",
 					part, "marked as FS_BOOT");
 			}
-		} else if (pp->p_fstype == FS_BOOT)
-			pp->p_fstype = FS_UNUSED;
+		}
 	}
 	if (errors) {
 		fprintf(stderr, "Cannot install boot program\n");
