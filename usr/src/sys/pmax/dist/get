@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)get	8.1 (Berkeley) %G%
+#	@(#)get	8.2 (Berkeley) %G%
 #
 
 # Shell script to build a mini-root file system in preparation for building
@@ -44,7 +44,7 @@ for i in $USBIN; do
 done
 ln sbin/restore sbin/rrestore
 
-BIN="[ cat cp dd echo ed expr ls mkdir mv rcp rm sh stty sync"
+BIN="[ cat cp dd echo ed expr ls mkdir mv pax rcp rm sh stty sync"
 UBIN="awk mt"
 for i in $BIN; do
 	cp $DISTROOT/bin/$i bin/$i
