@@ -68,12 +68,10 @@ nextstore()
 	storage_length = 0;
 	return -1;
     }
-    if (storage_length != 0) {
-	if (api_exch_intype(EXCH_TYPE_BYTES, storage_length, (char *)storage)
-							    == -1) {
-	    storage_length = 0;
-	    return -1;
-	}
+    if (api_exch_intype(EXCH_TYPE_BYTES, storage_length, (char *)storage)
+							== -1) {
+	storage_length = 0;
+	return -1;
     }
     return 0;
 }
@@ -209,12 +207,10 @@ freestorage()
 	kill_connection();
 	return;
     }
-    if (storage_length != 0) {
-	if (api_exch_outtype(EXCH_TYPE_BYTES, storage_length, (char *)storage)
-								== -1) {
-	    kill_connection();
-	    return;
-	}
+    if (api_exch_outtype(EXCH_TYPE_BYTES, storage_length, (char *)storage)
+							    == -1) {
+	kill_connection();
+	return;
     }
 }
 
