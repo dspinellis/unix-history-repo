@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 1983 Regents of the University of California,
- * All rights reserved.  Redistribution permitted subject to
- * the terms of the Berkeley Software License Agreement.
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
-static	char *sccsid = "@(#)lo_main.c	2.3 85/04/23";
-#endif
+static char sccsid[] = "@(#)lo_main.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 /*
  * Print out the top ten SAILors

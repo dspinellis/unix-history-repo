@@ -1,11 +1,9 @@
 /*
- * Copyright (c) 1983 Regents of the University of California,
- * All rights reserved.  Redistribution permitted subject to
- * the terms of the Berkeley Software License Agreement.
- */
-
-/*
- * @(#)machdep.h	2.7 %G%
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)machdep.h	5.1 (Berkeley) %G%
  */
 
 #define LOGFILE "/usr/games/lib/saillog"	/* has to match the makefile */
