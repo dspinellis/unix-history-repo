@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vtimes.3	6.1 (Berkeley) %G%
+.\"	@(#)vtimes.3	6.2 (Berkeley) %G%
 .\"
 .TH VTIMES 3C ""
 .UC 4
@@ -10,6 +10,9 @@
 vtimes \- get information about resource utilization
 .SH SYNOPSIS
 .nf
+.PP
+.B "#include <sys/vtimes.h>"
+.PP
 .B "vtimes(par_vm, ch_vm)"
 .B "struct vtimes *par_vm, *ch_vm;"
 .fi
