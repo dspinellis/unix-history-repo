@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if.c	6.11 (Berkeley) %G%
+ *	@(#)if.c	6.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -256,6 +256,10 @@ ifioctl(so, cmd, data)
 		ifr->ifr_flags = ifp->if_flags;
 		break;
 
+	case SIOCGIFMETRIC:
+		ifr->ifr_metric = ifp->if_metric;
+		break;
+
 	case SIOCSIFFLAGS:
 		if (!suser())
 			return (u.u_error);
@@ -268,6 +272,12 @@ ifioctl(so, cmd, data)
 			(ifr->ifr_flags &~ IFF_CANTCHANGE);
 		if (ifp->if_ioctl)
 			(void) (*ifp->if_ioctl)(ifp, cmd, data);
+		break;
+
+	case SIOCSIFMETRIC:
+		if (!suser())
+			return (u.u_error);
+		ifp->if_metric = ifr->ifr_metric;
 		break;
 
 	default:
