@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.t	6.4 (Berkeley) %G%
+.\"	@(#)1.t	6.5 (Berkeley) %G%
 .\"
 .\".ds RH Introduction
 .ne 2i
@@ -12,7 +12,7 @@
 INTRODUCTION
 .PP
 .I Config
-is a tool used in building 4.3BSD system images (the UNIX kernel).
+is a tool used in building 4.4BSD system images (the UNIX kernel).
 It takes a file describing a system's tunable parameters and
 hardware support, and generates a collection
 of files which are then used to build a copy of UNIX appropriate

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)e.t	6.3 (Berkeley) %G%
+.\"	@(#)e.t	6.4 (Berkeley) %G%
 .\"
 .\".ds RH "Network configuration options
 .bp
@@ -37,19 +37,18 @@ sending them packets to be forwarded.
 .br
 This option forces the system to limit its initial TCP sequence numbers
 to positive numbers.
-Without this option, 4.3BSD systems may have problems with TCP connections
+Without this option, 4.4BSD systems may have problems with TCP connections
 to 4.2BSD systems that connect but never transfer data.
-The problem is a bug in the 4.2BSD TCP; this option should be used
-during the period of conversion to 4.3BSD.
+The problem is a bug in the 4.2BSD TCP.
 .IP \fBIPFORWARDING\fP
 .br
-Normally, 4.3BSD machines with multiple network interfaces
+Normally, 4.4BSD machines with multiple network interfaces
 will forward IP packets received that should be resent to another host.
 If the line ``options IPFORWARDING="0"'' is in the system configuration
 file, IP packet forwarding will be disabled.
 .IP \fBIPSENDREDIRECTS\fP
 .br
-When forwarding IP packets, 4.3BSD IP will note when a packet is forwarded
+When forwarding IP packets, 4.4BSD IP will note when a packet is forwarded
 using the same interface on which it arrived.
 When this is noted, if the source machine is on the directly-attached
 network, an ICMP redirect is sent to the source host.
@@ -68,14 +67,6 @@ the size will be no larger than 576 bytes.
 For this test, other subnets of a directly-connected subnetted
 network are considered to be local unless the line
 ``options SUBNETSARELOCAL="0"'' is used in the system configuration file.
-.IP \fBCOMPAT_42\fP
-.br
-This option, intended as a catchall for 4.2BSD compatibility options,
-has only a single function thus far.
-It disables the checking of UDP input packet checksums.
-As the calculation of UDP packet checksums was incorrect in 4.2BSD,
-this option allows a 4.3BSD system to receive UDP packets from
-a 4.2BSD system.
 .LP
 The following options are supported by the Xerox NS protocols:
 .IP \fBNSIP\fP
