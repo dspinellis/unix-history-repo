@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -30,7 +30,7 @@ static char sccsid[] = "@(#)mount.c	5.3 (Berkeley) %G%";
 #define	MTAB	"/etc/mtab"
 
 static struct mtab mtab[NMOUNT];
-static int fake, verbose;
+static int fake, rval, verbose;
 
 main(argc, argv)
 	int argc;
@@ -82,7 +82,7 @@ main(argc, argv)
 			if (strcmp(fs->fs_file, "/") && !BADTYPE(fs->fs_type))
 				mountfs(fs->fs_spec, fs->fs_file,
 				    type ? type : fs->fs_type);
-		exit(0);
+		exit(rval);
 	}
 
 	if (argc == 0) {
@@ -110,13 +110,14 @@ main(argc, argv)
 			exit(1);
 		}
 		mountfs(fs->fs_spec, fs->fs_file, type ? type : fs->fs_type);
-		exit(0);
+		exit(rval);
 	}
 
 	if (argc != 2)
 		usage();
 
 	mountfs(argv[0], argv[1], type ? type : "rw");
+	exit(rval);
 }
 
 static
@@ -132,6 +133,7 @@ mountfs(spec, name, type)
 
 	if (!fake) {
 		if (mount(spec, name, type)) {
+			rval = 1;
 			fprintf(stderr, "%s on %s: ", spec, name);
 			switch (errno) {
 			case EMFILE:
