@@ -1,4 +1,4 @@
-/*	flp.c	4.8	82/10/13	*/
+/*	flp.c	4.9	82/10/17	*/
 
 #if VAX780
 #include "../h/param.h"
@@ -30,18 +30,15 @@ flopen(dev, flag)
 	struct buf *geteblk();
 
 #if VAX750
-	if (cpu != VAX_780) {
-		u.u_error = ENXIO;
-		return;
-	}
+	if (cpu != VAX_780)
+		return (ENXIO);
 #endif
-	if (fltab.fl_state != 0) {
-		u.u_error = ENXIO;
-		return;
-	}
+	if (fltab.fl_state != 0)
+		return (ENXIO);
 	fltab.fl_state = FL_OPEN;
 	fltab.fl_buf = geteblk(512);
 	fltab.fl_active = FL_IDLE;
+	return (0);
 }
 
 /*ARGSUSED*/

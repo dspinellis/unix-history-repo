@@ -1,4 +1,4 @@
-/*	cons.c	4.16	82/10/13	*/
+/*	cons.c	4.17	82/10/17	*/
 
 /*
  * Vax console driver and floppy interface
@@ -36,13 +36,11 @@ cnopen(dev, flag)
 		tp->t_state = TS_ISOPEN|TS_CARR_ON;
 		tp->t_flags = EVENP|ECHO|XTABS|CRMOD;
 	}
-	if (tp->t_state&TS_XCLUDE && u.u_uid != 0) {
-		u.u_error = EBUSY;
-		return;
-	}
+	if (tp->t_state&TS_XCLUDE && u.u_uid != 0)
+		return (EBUSY);
 	mtpr(RXCS, mfpr(RXCS)|RXCS_IE);
 	mtpr(TXCS, mfpr(TXCS)|TXCS_IE);
-	(*linesw[tp->t_line].l_open)(dev, tp);
+	return ((*linesw[tp->t_line].l_open)(dev, tp));
 }
 
 /*ARGSUSED*/
@@ -105,12 +103,15 @@ cnioctl(dev, cmd, addr, flag)
 	caddr_t addr;
 {
 	register struct tty *tp = &cons;
+	int error;
  
-	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr);
-	if (cmd == 0)
-		return;
-	if (ttioctl(tp, cmd, addr, flag) == 0)
-		u.u_error = ENOTTY;
+	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr);
+	if (error >= 0)
+		return (error);
+	error = ttioctl(tp, cmd, addr, flag);
+	if (error < 0)
+		error = ENOTTY;
+	return (error);
 }
 
 int	consdone = 1;
