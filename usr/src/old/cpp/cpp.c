@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cpp.c	1.12 %G%";
+static char sccsid[] = "@(#)cpp.c	1.13 %G%";
 #endif lint
 
 #ifdef FLEXNAMES
@@ -18,6 +18,7 @@ static char sccsid[] = "@(#)cpp.c	1.12 %G%";
 #define STATIC
 
 #define FIRSTOPEN -2
+#define STDIN 0
 #define READ 0
 #define WRITE 1
 #define SALT '#'
@@ -152,6 +153,7 @@ STATIC	FILE	*fout	= stdout;
 STATIC	int	nd	= 1;
 STATIC	int	pflag;	/* don't put out lines "# 12 foo.c" */
 int	passcom;	/* don't delete comments */
+int	incomment;	/* True if parsing a comment */
 STATIC	int rflag;	/* allow macro recursion */
 STATIC	int mflag;	/* generate makefile dependencies */
 STATIC	char *infile;	/* name of .o file to build dependencies from */
@@ -342,7 +344,10 @@ refill(p) register char *p; {
 					return(p);
 				}
 				if (trulvl || flslvl)
-					pperror("missing endif");
+					if (incomment)
+						pperror("unterminated comment");
+					else
+						pperror("missing endif");
 				inp=p; dump(); exit(exfail);
 			}
 			close(fin); fin=fins[--ifno]; dirs[0]=dirnams[ifno]; sayline(BACK);
@@ -389,6 +394,7 @@ again:
 	} break;
 	case '/': for (;;) {
 		if (*p++=='*') {/* comment */
+			incomment++;
 			if (!passcom) {inp=p-2; dump(); ++flslvl;}
 			for (;;) {
 				while (!iscom(*p++));
@@ -415,6 +421,7 @@ again:
 				} else ++p; /* ignore null byte */
 			}
 		endcom:
+			incomment--;
 			if (!passcom) {outp=inp=p; --flslvl; goto again;}
 			break;
 		}
@@ -775,22 +782,47 @@ for (;;) {
 #endif
 	} else if (np==lneloc) {/* line */
 		if (flslvl==0 && pflag==0) {
-			char *cp, *cp2, *savestring();
-			outp=inp=p; *--outp='#'; while (*inp!='\n') p=cotoken(p);
-			cp = outp + 1;
-			while (isspace(*cp) && cp < inp)
-				cp++;
-			while (isdigit(*cp) && cp < inp)
-				cp++;
-			while (*cp != '"' && cp < inp)
-				cp++;
-			if (cp < inp) {
-				cp++;
-				cp2 = cp;
-				while (*cp2 != '"' && cp2 < inp)
-					cp2++;
-				fnames[ifno] = savestring(cp, cp2);
+			char *savestring();
+			char filename[BUFSIZ], *cp = filename;
+			outp=inp=p; *--outp='#';
+			/* Find the line number.. */
+			do {
+				p = cotoken(p);
+			} while (!isnum(*inp) && *inp != '\n');
+			if (isnum(*inp))
+				lineno[ifno] = atoi(inp)-1;
+			/* Skip over the blank token */
+			inp = p;
+			if (*inp != '\n') {
+				p = cotoken(p); inp = p;
 			}
+			/* Add a quote if missing..  */
+			if (*inp != '\n') {
+				p = cotoken(p);
+				/* Add a quote if missing..  */
+				if (*inp == '"')
+					inp++;
+				else {
+					dump();
+					*--outp = '"';
+				}
+				while (*inp != '\n') {
+					while (inp < p && *inp != '"' &&
+						cp < filename+sizeof(filename))
+						*cp++ = *inp++;
+					if (*inp == '"')
+						break;
+					inp = p; p = cotoken(p);
+				}
+				fnames[ifno] = savestring(filename, cp);
+				/* Add a quote if missing..  */
+				if (*inp != '"') {
+					dump();
+					*--outp = '"';
+				}
+			}
+			while (*inp != '\n')
+				p = cotoken(p);
 			continue;
 		}
 	} else if (np==identloc) {/* ident (for Sys 5r3 compat) */
@@ -1142,6 +1174,8 @@ main(argc,argv)
 				} else pperror("extraneous name %s", argv[i]);
 			}
 		}
+	if (fin == FIRSTOPEN)
+		fin = STDIN;
 
 	if (mflag) {
 		if (infile==(char *)0) {
