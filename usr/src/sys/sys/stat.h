@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)stat.h	7.1 (Berkeley) %G%
+ *	@(#)stat.h	7.2 (Berkeley) %G%
  */
 
 struct	stat
@@ -24,7 +24,8 @@ struct	stat
 	int	st_spare3;
 	long	st_blksize;
 	long	st_blocks;
-	long	st_spare4[2];
+	u_long	st_flags;
+	u_long	st_gen;
 };
 
 #define	S_IFMT	0170000		/* type of file */
