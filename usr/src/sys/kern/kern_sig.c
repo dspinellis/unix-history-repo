@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	7.42 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.43 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -1039,19 +1039,7 @@ coredump(p)
 	p->p_acflag |= ACORE;
 	bcopy(p, &p->p_addr->u_kproc.kp_proc, sizeof(struct proc));
 	fill_eproc(p, &p->p_addr->u_kproc.kp_eproc);
-#ifdef HPUXCOMPAT
-	/*
-	 * BLETCH!  If we loaded from an HPUX format binary file
-	 * we have to dump an HPUX style user struct so that the
-	 * HPUX debuggers can grok it.
-	 */
-	if (p->p_addr->u_pcb.pcb_flags & PCB_HPUXBIN)
-		error = hpuxdumpu(vp, cred);
-	else
-#endif
-	error = vn_rdwr(UIO_WRITE, vp, (caddr_t) p->p_addr, ctob(UPAGES),
-	    (off_t)0, UIO_SYSSPACE, IO_NODELOCKED|IO_UNIT, cred, (int *) NULL,
-	    p);
+	error = cpu_coredump(p, vp, cred);
 	if (error == 0)
 		error = vn_rdwr(UIO_WRITE, vp, vm->vm_daddr,
 		    (int)ctob(vm->vm_dsize), (off_t)ctob(UPAGES), UIO_USERSPACE,
