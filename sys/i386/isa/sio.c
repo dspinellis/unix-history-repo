@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)com.c	7.5 (Berkeley) 5/16/91
- *	$Id: sio.c,v 1.51 1994/05/31 02:49:11 ache Exp $
+ *	$Id: sio.c,v 1.52 1994/05/31 18:18:46 ache Exp $
  */
 
 #include "sio.h"
@@ -56,6 +56,7 @@
 #include "malloc.h"
 #include "syslog.h"
 
+#include "i386/isa/icu.h"	/* XXX */
 #include "i386/isa/isa.h"
 #include "i386/isa/isa_device.h"
 #include "i386/isa/comreg.h"
@@ -86,6 +87,7 @@
 #endif /* COM_MULTIPORT */
 
 #define	COM_NOFIFO(dev)	((dev)->id_flags & 0x02)
+#define	COM_QUIET(dev)	((dev)->id_flags & 0x80)
 
 #define	com_scr		7	/* scratch register for 16450-16550 (R/W) */
 
@@ -313,32 +315,18 @@ static	struct speedtab comspeedtab[] = {
 /* XXX - configure this list */
 static Port_t likely_com_ports[] = { 0x3f8, 0x2f8, 0x3e8, 0x2e8, };
 
-#if 0
-#define	FAIL(x)	1
-#else
-#define	FAIL(x)	(printf("sioprobe flunked test %d\n", (x)), 1)
-#endif
-
-#ifdef COM_MULTIPORT
-#define	NEED_IRQ(dev)	(!COM_ISMULTIPORT(dev) || \
-			 !COM_NOMASTER(dev) || (dev)->id_irq !=	0)
-#else
-#define	NEED_IRQ(dev)	1
-#endif
-
 static int
 sioprobe(dev)
 	struct isa_device	*dev;
 {
 	static bool_t	already_init;
 	Port_t		*com_ptr;
+	bool_t		failures[10];
+	int		fn;
+	struct isa_device	*idev;
 	Port_t		iobase;
 	u_char		mcr_image;
 	int		result;
-#ifdef COM_MULTIPORT
-	struct	isa_device	*mdev;
-#endif /* COM_MULTIPORT */
-	struct	isa_device	*tdev;
 
 	if (!already_init) {
 		/*
@@ -358,24 +346,41 @@ sioprobe(dev)
 	/*
 	 * If the port is on a multiport card and has a master port,
 	 * initialize the common interrupt control register in the
-	 * master and prepare to leave MCR_IENABLE clear.  Otherwise,
-	 * prepare to set MCR_IENABLE.
+	 * master and prepare to leave MCR_IENABLE clear in the mcr.
+	 * Otherwise, prepare to set MCR_IENABLE in the mcr.
+	 * Point idev to the device struct giving the correct id_irq.
+	 * This is the struct for the master device if there is one.
 	 */
+	idev = dev;
 	mcr_image = MCR_IENABLE;
 #ifdef COM_MULTIPORT
-	if (COM_ISMULTIPORT(dev) && !COM_NOMASTER(dev)) {
-		mdev = find_isadev(isa_devtab_tty, &siodriver,
-				   COM_MPMASTER(dev));
-		if (mdev != NULL) {
-			outb(mdev->id_iobase + com_scr, 0x80);
+	if (COM_ISMULTIPORT(dev)) {
+		if (!COM_NOMASTER(dev))	{
+			idev = find_isadev(isa_devtab_tty, &siodriver,
+					   COM_MPMASTER(dev));
+			if (idev == NULL) {
+				printf("sio%d: master device %d not found\n",
+				       dev->id_unit, COM_MPMASTER(dev));
+				return (0);
+			}
+			if (idev->id_irq == 0) {
+				printf("sio%d: master device %d irq not configured\n",
+				       dev->id_unit, COM_MPMASTER(dev));
+				return (0);
+			}
+			outb(idev->id_iobase + com_scr,	0x80);
 			mcr_image = 0;
-		} else
-			return (0);
+		}
 	}
+	else
 #endif /* COM_MULTIPORT */
+	if (idev->id_irq == 0) {
+		printf("sio%d: irq not configured\n", dev->id_unit);
+		return (0);
+	}
 
+	bzero(failures, sizeof failures);
 	iobase = dev->id_iobase;
-	result = IO_COMSIZE;
 
 	/*
 	 * We don't want to get actual interrupts, just masked ones.
@@ -384,6 +389,14 @@ sioprobe(dev)
 	 * (misconfigured) shared interrupts.
 	 */
 	disable_intr();
+
+	/*
+	 * XXX DELAY() reenables CPU interrupts.  This is a problem for
+	 * shared interrupts after the first device using one has been
+	 * successfully probed - config_isadev() has enabled the interrupt
+	 * in the ICU.
+	 */
+	outb(IO_ICU1 + 1, 0xff);
 
 	/*
 	 * Initialize the speed and the word size and wait long enough to
@@ -440,18 +453,9 @@ sioprobe(dev)
 	 * an interrupt line high.  It doesn't matter if the interrupt
 	 * line oscillates while we are not looking at it, since interrupts
 	 * are disabled.
-	 * XXX interrupts are NOT disabled for the multiport shared
-	 * interrupt case!  DELAY() reenables them for the CPU.
-	 * config_isadev() enables for the ICU them after the probe of the
-	 * first device on a shared interrupt succeeds.
 	 */
 	outb(iobase + com_mcr, mcr_image);
 
-	tdev = dev;
-#ifdef COM_MULTIPORT
-	if (COM_ISMULTIPORT(dev) && !COM_NOMASTER(dev))
-		tdev = mdev;
-#endif /*COM_MULTIPORT*/
 	/*
 	 * Check that
 	 *	o the CFCR, IER and MCR in UART hold the values written to them
@@ -460,14 +464,14 @@ sioprobe(dev)
 	 *	o an output interrupt is generated and its vector is correct.
 	 *	o the interrupt goes away when the IIR in the UART is read.
 	 */
-	if (   inb(iobase + com_cfcr) != CFCR_8BITS && FAIL(0)
-	    || inb(iobase + com_ier) != IER_ETXRDY && FAIL(1)
-	    || inb(iobase + com_mcr) != mcr_image && FAIL(2)
-	    || NEED_IRQ(tdev) && !isa_irq_pending(tdev)	&& FAIL(3)
-	    || (inb(iobase + com_iir) & IIR_IMASK) != IIR_TXRDY && FAIL(4)
-	    || NEED_IRQ(tdev) && isa_irq_pending(tdev) && FAIL(5)
-	    || (inb(iobase + com_iir) & IIR_IMASK) != IIR_NOPEND && FAIL(6))
-		result = 0;
+	failures[0] = inb(iobase + com_cfcr) - CFCR_8BITS;
+	failures[1] = inb(iobase + com_ier) - IER_ETXRDY;
+	failures[2] = inb(iobase + com_mcr) - mcr_image;
+	if (idev->id_irq != 0)
+		failures[3] = isa_irq_pending(idev) ? 0 : 1;
+	failures[4] = (inb(iobase + com_iir) & IIR_IMASK) - IIR_TXRDY;
+	failures[5] = isa_irq_pending(idev) ? 1	: 0;
+	failures[6] = (inb(iobase + com_iir) & IIR_IMASK) - IIR_NOPEND;
 
 	/*
 	 * Turn off all device interrupts and check that they go off properly.
@@ -480,14 +484,22 @@ sioprobe(dev)
 	 */
 	outb(iobase + com_ier, 0);
 	outb(iobase + com_cfcr, CFCR_8BITS);	/* dummy to avoid bus echo */
-	if (   inb(iobase + com_ier) != 0 && FAIL(7)
-	    || NEED_IRQ(tdev) && isa_irq_pending(tdev) && FAIL(8)
-	    || (inb(iobase + com_iir) & IIR_IMASK) != IIR_NOPEND && FAIL(9))
-		result = 0;
-	if (result == 0)
-		outb(iobase + com_mcr, 0);
+	failures[7] = inb(iobase + com_ier);
+	failures[8] = isa_irq_pending(idev) ? 1	: 0;
+	failures[9] = (inb(iobase + com_iir) & IIR_IMASK) - IIR_NOPEND;
 
+	outb(IO_ICU1 + 1, imen);	/* XXX */
 	enable_intr();
+
+	result = IO_COMSIZE;
+	for (fn = 0; fn < sizeof failures; ++fn)
+		if (failures[fn]) {
+			outb(iobase + com_mcr, 0);
+			result = 0;
+			if (!COM_QUIET(dev))
+				printf("sio%d: probe test %d failed\n",
+				       dev->id_unit, fn);
+		}
 	return (result);
 }
 
@@ -605,7 +617,7 @@ determined_type: ;
 	if (COM_ISMULTIPORT(isdp)) {
 		com->multiport = TRUE;
 		printf(" (multiport");
-		if (!COM_NOMASTER(isdp)	&& COM_MPMASTER(isdp) == unit)
+		if (!COM_NOMASTER(isdp)	&& unit	== COM_MPMASTER(isdp))
 			printf(" master");
 		printf(")");
 	 }
@@ -614,7 +626,7 @@ determined_type: ;
 
 #ifdef KGDB
 	if (kgdb_dev == makedev(commajor, unit)) {
-		if (comconsole == unit)
+		if (unit == comconsole)
 			kgdb_dev = -1;	/* can't debug over console port */
 		else {
 			int divisor;
