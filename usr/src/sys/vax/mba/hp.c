@@ -1,4 +1,4 @@
-/*	hp.c	4.38	81/05/10	*/
+/*	hp.c	4.39	81/05/11	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -49,7 +49,7 @@ struct	size {
 	0,	0,
 	0,	0,
 #ifndef NOBADSECT
-	291302,	118,		/* G=cyl 118 thru 814 */
+	291280,	118,		/* G=cyl 118 thru 814 */
 #else
 	291346,	118,
 #endif
@@ -62,7 +62,7 @@ struct	size {
 	0,	0,
 	0,	0,
 #ifndef NOBADSECT
-	82016,	310,		/* G=cyl 310 thru 822 */
+	81984,	310,		/* G=cyl 310 thru 822 */
 #else
 	82080,	310,
 #endif
@@ -74,8 +74,8 @@ struct	size {
 	15884,	562,		/* D=cyl 562 thru 588 */
 	55936,	589,		/* E=cyl 589 thru 680 */
 #ifndef NOBADSECT
-	86572,	681,		/* F=cyl 681 thru 822 */
-	158624,	562,		/* G=cyl 562 thru 822 */
+	86240,	681,		/* F=cyl 681 thru 822 */
+	158592,	562,		/* G=cyl 562 thru 822 */
 #else
 	86636,	681,
 	158688,	562,
@@ -89,15 +89,15 @@ struct	size {
 	0,	0,
 	0,	0,
 	82080,	115,		/* G=cyl 115 thru 304 */
-	110174,	305,		/* H=cyl 305 thru 558 */
+	110143,	305,		/* H=cyl 305 thru 558 */
 }, hp7_sizes[8] = {
 	15844,	0,		/* A=cyl 0 thru 9 */
 	64000,	10,		/* B=cyl 10 thru 49 */
 	1008000,0,		/* C=cyl 0 thru 629 */
 	15884,	330,		/* D=cyl 330 thru 339 */
 	256000,	340,		/* E=cyl 340 thru 499 */
-	207900,	500,		/* F=cyl 500 thru 629 */
-	479900,	330,		/* G=cyl 330 thru 629 */
+	207850,	500,		/* F=cyl 500 thru 629 */
+	479850,	330,		/* G=cyl 330 thru 629 */
 	448000,	50,		/* H=cyl 50 thru 329 */
 };
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
