@@ -3,16 +3,16 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)vi.1	6.3 (Berkeley) %G%
+.\"     @(#)vi.1	6.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt VI 1
 .Os BSD 3
 .Sh NAME
-.Nm vi
+.Nm \&vi
 .Nd screen oriented (visual) display editor based on ex
 .Sh SYNOPSIS
-.Nm vi
+.Nm \&vi
 .Op Fl R
 .Op Fl l
 .Op Fl r
@@ -21,17 +21,17 @@
 .Op Cm \&+ Ns Ar command
 .Ar name ...
 .Sh DESCRIPTION
-.Nm Vi
+.Nm \&Vi
 (visual) is a display oriented text editor based on
-.Xr ex 1 .
+.Xr \&ex 1 .
 .Xr \&Ex
 and
-.Nm vi
+.Nm \&vi
 run the same code; it is possible to get to
 the command mode of
-.Xr ex
+.Xr \&ex
 from within
-.Nm vi
+.Nm \&vi
 and vice-versa.
 .Pp
 Available options:
@@ -71,7 +71,7 @@ The
 card and the
 .%T "Introduction to Display Editing with Vi"
 provide full details on using
-.Nm vi .
+.Nm \&vi .
 .Sh ENVIRONMENT
 The
 .Nm
@@ -79,9 +79,9 @@ command uses the following environment variables.
 .Bl -tag -width Fl
 .It Ev EXINIT
 User specified startup values for
-.Xr ex
+.Xr \&ex
 and
-.Nm vi .
+.Nm \&vi .
 Usually specified in the file
 .Pa ~/.exrc
 .It Ev HOME
@@ -92,7 +92,7 @@ the file
 Shell used for
 .Em escaped
 commands (with the
-.Xr ex
+.Xr \&ex
 .Ic \&:!
 command).
 .It Ev TERM
@@ -114,20 +114,20 @@ preserve command
 describes capabilities of terminals
 .It Pa  ~/.exrc
 editor startup file
-.Dc Pa /tmp/Ex Ns Em nnnnn
+.It Pa /tmp/Ex Ns Em nnnnn
 editor temporary
-.Dc Pa /tmp/Rx Ns Em nnnnn
+.It Pa /tmp/Rx Ns Em nnnnn
 named buffer temporary
 .It Pa /var/preserve
 preservation directory
 .El
 .Sh SEE ALSO
 .Xr awk 1 ,
-.Xr ed 1 ,
+.Xr \&ed 1 ,
 .Xr grep 1 ,
 .Xr sed 1 ,
 .Xr grep 1 ,
-.Xr vi 1 ,
+.Xr \&vi 1 ,
 .Xr termcap 5 ,
 .Xr environ 7
 .Rs
@@ -174,14 +174,14 @@ on a
 you must
 .Ic Q
 to
-.Xr ex
+.Xr \&ex
 command mode,
 execute them, and then reenter the screen editor with
-.Nm vi
+.Nm \&vi
 or
 .Ic open .
 .Sh HISTORY
 The
-.Nm
+.Nm \&vi
 command appeared in
 .Bx 3.0 .
