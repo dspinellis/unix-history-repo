@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	4.36	83/03/21	*/
+/*	ufs_lookup.c	4.37	83/04/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -428,18 +428,39 @@ found:
 	}
 
 	/*
-	 * Check for symbolic link, which may require us
-	 * to massage the name before we continue translation.
-	 * To avoid deadlock have to unlock the current directory,
-	 * but don't iput it because we may need it again (if
-	 * the symbolic link is relative to .).  Instead save
-	 * it (unlocked) as pdp.
+	 * Check for symbolic link, which may require us to massage the
+	 * name before we continue translation.  We do not `iput' the
+	 * directory because we may need it again if the symbolic link
+	 * is relative to the current directory.  Instead we save it
+	 * unlocked as "pdp".  We must get the target inode before unlocking
+	 * the directory to insure that the inode will not be removed
+	 * before we get it.  We prevent deadlock by always fetching
+	 * inodes from the root, moving down the directory tree. Thus
+	 * when following backward pointers ".." we must unlock the
+	 * parent directory before getting the requested directory.
+	 * There is a potential race condition here if both the current
+	 * and parent directories are removed before the `iget' for the
+	 * inode associated with ".." returns.  We hope that this occurs
+	 * infrequently since we cannot avoid this race condition without
+	 * implementing a sophistocated deadlock detection algorithm.
+	 * Note also that this simple deadlock detection scheme will not
+	 * work if the file system has any hard links other than ".."
+	 * that point backwards in the directory structure.
 	 */
 	pdp = dp;
-	iunlock(pdp);
-	dp = iget(dp->i_dev, fs, u.u_dent.d_ino);
-	if (dp == NULL)
-		goto bad2;
+	if (bcmp(u.u_dent.d_name, "..", 3) == 0) {
+		iunlock(pdp);	/* race to get the inode */
+		dp = iget(dp->i_dev, fs, u.u_dent.d_ino);
+		if (dp == NULL)
+			goto bad2;
+	} else if (dp->i_number == u.u_dent.d_ino) {
+		dp->i_count++;	/* we want ourself, ie "." */
+	} else {
+		dp = iget(dp->i_dev, fs, u.u_dent.d_ino);
+		iunlock(pdp);
+		if (dp == NULL)
+			goto bad2;
+	}
 	fs = dp->i_fs;
 
 	/*
