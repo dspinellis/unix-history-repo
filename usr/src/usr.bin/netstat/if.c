@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)if.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)if.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -40,6 +40,7 @@ extern	int nflag;
 extern	char *interface;
 extern	int unit;
 extern	char *routename(), *netname(), *ns_phost();
+extern	char *index();
 
 /*
  * Print a description of the network interfaces.
@@ -80,8 +81,6 @@ intpr(interval, ifnetaddr)
 		struct sockaddr_in *sin;
 		register char *cp;
 		int n;
-		char *index();
-		struct in_addr inet_makeaddr();
 
 		if (ifaddraddr == 0) {
 			klseek(kmem, ifnetaddr, 0);
@@ -116,6 +115,7 @@ intpr(interval, ifnetaddr)
 			case AF_INET:
 				sin = (struct sockaddr_in *)&ifaddr.in.ia_addr;
 #ifdef notdef
+extern struct in_addr inet_makeaddr();
 				/* can't use inet_makeaddr because kernel
 				 * keeps nets unshifted.
 				 */
