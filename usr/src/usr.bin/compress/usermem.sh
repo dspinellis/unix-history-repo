@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)usermem.sh	5.2 (Berkeley) %G%
+#	@(#)usermem.sh	5.3 (Berkeley) %G%
 #
 : This shell script snoops around to find the maximum amount of available
 : user memory.  These variables need to be set only if there is no
@@ -16,6 +16,22 @@ UNIX=
 CLICKSIZE=512
 eval $*
 
+if test -n "$UNIX"
+then
+    : User must have specified it already.
+elif test -r /vmunix
+then
+    UNIX=/vmunix
+    CLICKSIZE=512	# Probably VAX
+elif test -r /edition7
+then
+    UNIX=/edition7
+    CLICKSIZE=2048	# Perkin-Elmer: change to 4096 on a 3205
+elif test -r /unix
+then
+    UNIX=/unix		# Could be anything
+fi
+
 SIZE=0
 if test -r /usr/adm/messages	# probably the most transportable
 then
@@ -26,21 +42,6 @@ if test 0$SIZE -le 0		# no SIZE in /usr/adm/messages
 then
     if test -r $KMEM		# Readable KMEM
     then
-	if test -n "$UNIX"
-	then
-	    : User must have specified it already.
-	elif test -r /vmunix
-	then
-	    UNIX=/vmunix
-	    CLICKSIZE=512	# Probably VAX
-	elif test -r /edition7
-	then
-	    UNIX=/edition7
-	    CLICKSIZE=2048	# Perkin-Elmer: change to 4096 on a 3205
-	elif test -r /unix
-	then
-	    UNIX=/unix		# Could be anything
-	fi
 	if test -n "$UNIX"
 	then
 	    SIZE=`echo maxmem/D | adb $UNIX $KMEM | sed -n '$s/.*[ 	]//p'`
