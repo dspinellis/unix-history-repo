@@ -6,10 +6,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vis.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)vis.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
+#include <limits.h>
 #include <ctype.h>
 #include <vis.h>
 
@@ -19,16 +20,12 @@ static char sccsid[] = "@(#)vis.c	5.5 (Berkeley) %G%";
  * vis - visually encode characters
  */
 char *
-#if __STDC__
-vis(register char *dst, register char c, register int flag, char nextc)
-#else
 vis(dst, c, flag, nextc)
-	register char *dst, c;
-	char nextc;
+	register char *dst;
+	int c, nextc;
 	register int flag;
-#endif
 {
-	if (isascii(c) && isgraph(c) ||
+	if ((u_int)c <= UCHAR_MAX && isgraph(c) ||
 	   ((flag & VIS_SP) == 0 && c == ' ') ||
 	   ((flag & VIS_TAB) == 0 && c == '\t') ||
 	   ((flag & VIS_NL) == 0 && c == '\n') ||
