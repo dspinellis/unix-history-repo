@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.19 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -63,14 +63,17 @@ syslog(pri, fmt, args)
 
 vsyslog(pri, fmt, ap)
 	int pri;
-	char *fmt;
+	register char *fmt;
 	va_list ap;
 {
+	extern int errno;
 	register int cnt;
 	register char *p;
 	time_t now, time();
-	int pid;
-	char tbuf[2048], *ctime();
+	int pid, saved_errno;
+	char tbuf[2048], fmt_cpy[1024], *ctime();
+
+	saved_errno = errno;
 
 	/* see if we should just throw out this message */
 	if ((u_int)LOG_FAC(pri) >= LOG_NFACILITIES ||
@@ -100,7 +103,22 @@ vsyslog(pri, fmt, ap)
 		*p++ = ' ';
 	}
 
-	(void)vsprintf(p, fmt, ap);
+	/* substitute error message for %m */
+	{
+		register char ch, *t1, *t2;
+		char *strerror();
+
+		for (t1 = fmt_cpy; ch = *fmt; ++fmt)
+			if (ch == '%' && fmt[1] == 'm') {
+				++fmt;
+				for (t2 = strerror(saved_errno);
+				    *t1 = *t2++; ++t1);
+			}
+			else
+				*t1++ = ch;
+	}
+
+	(void)vsprintf(p, fmt_cpy, ap);
 
 	/* output the message to the local logger */
 	if (send(LogFile, tbuf, cnt = strlen(tbuf), 0) >= 0 ||
