@@ -1,4 +1,4 @@
-/*	tftpd.c	4.6	82/11/15	*/
+/*	tftpd.c	4.7	82/12/25	*/
 
 /*
  * Trivial file transfer protocol server.
@@ -38,7 +38,7 @@ main(argc, argv)
 		fprintf(stderr, "tftpd: udp/tftp: unknown service\n");
 		exit(1);
 	}
-	sin.sin_port = htons((u_short)sp->s_port);
+	sin.sin_port = sp->s_port;
 #ifndef DEBUG
 	if (fork())
 		exit(0);
