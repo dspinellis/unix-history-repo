@@ -1,33 +1,43 @@
-static	char *sccsid = "@(#)tape.c	1.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)tape.c	1.4 (Berkeley) %G%";
 #include "dump.h"
 
-char	tblock[NTREC][BSIZE];
-daddr_t	tdaddr[NTREC];
-int	trecno;
+char	tblock[NTREC][TP_BSIZE];
+int	trecno = 0;
 
 taprec(dp)
 char *dp;
 {
 	register i;
 
-	for(i=0; i<BSIZE; i++)
+	for(i=0; i<TP_BSIZE; i++)
 		tblock[trecno][i] = *dp++;
-	tdaddr[trecno] = 0;
 	trecno++;
 	spcl.c_tapea++;
 	if(trecno >= NTREC)
 		flusht();
 }
 
-tapsrec(d)
-daddr_t d;
+dmpblk(blkno, size)
+	daddr_t blkno;
+	int size;
 {
+	int avail, blks;
 
-	if(d == 0)
-		return;
-	tdaddr[trecno] = d;
-	trecno++;
-	spcl.c_tapea++;
+	if (size % FRAG != 0)
+		msg("bad size to dmpblk: %d\n", size);
+	avail = NTREC - trecno;
+	for (blks = size / TP_BSIZE; blks > avail; ) {
+		bread(blkno, tblock[trecno], TP_BSIZE * avail);
+		trecno += avail;
+		spcl.c_tapea += avail;
+		flusht();
+		blkno += avail;
+		blks -= avail;
+		avail = NTREC - trecno;
+	}
+	bread(blkno, tblock[trecno], TP_BSIZE * blks);
+	trecno += blks;
+	spcl.c_tapea += blks;
 	if(trecno >= NTREC)
 		flusht();
 }
@@ -39,22 +49,6 @@ flusht()
 	register i, si;
 	daddr_t d;
 
-	while(trecno < NTREC)
-		tdaddr[trecno++] = 1;
-
-loop:
-	d = 0;
-	for(i=0; i<NTREC; i++)
-		if(tdaddr[i] != 0)
-		if(d == 0 || tdaddr[i] < d) {
-			si = i;
-			d = tdaddr[i];
-		}
-	if(d != 0) {
-		bread(d, tblock[si], BSIZE);
-		tdaddr[si] = 0;
-		goto loop;
-	}
 	trecno = 0;
 	if (write(to, tblock[0], sizeof(tblock)) != sizeof(tblock) ){
 		msg("Tape write error on tape %d\n", tapeno);

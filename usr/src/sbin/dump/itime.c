@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)itime.c	1.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)itime.c	1.3 (Berkeley) %G%";
 #include "dump.h"
 
 char *prdate(d)
@@ -220,14 +220,15 @@ est(ip)
 	long s;
 
 	esize++;
-	s = (ip->di_size + BSIZE-1) / BSIZE;
+	s = (ip->di_size + FSIZE-1) / FSIZE;
 	esize += s;
+	s /= FRAG;
 	if (s > NDADDR) {
 		s -= NDADDR;
 		if (s > BSIZE / sizeof(daddr_t))
 			esize++;
 		s = (s + (BSIZE/sizeof(daddr_t)) - 1) / (BSIZE/sizeof(daddr_t));
-		esize += s;
+		esize += s * FRAG;
 	}
 }
 
@@ -243,5 +244,5 @@ short *map;
 	if(n < 0)
 		return;
 	esize++;
-	esize += (n + (BSIZE/sizeof(short))-1) / (BSIZE/sizeof(short));
+	esize += (n + (BSIZE/sizeof(short))-1) / (BSIZE/sizeof(short)) * FRAG;
 }
