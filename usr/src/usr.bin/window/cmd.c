@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.4 83/08/19";
+static	char *sccsid = "@(#)cmd.c	3.5 83/08/22";
 #endif
 
 #include "defs.h"
@@ -74,26 +74,6 @@ top:
 		/*
 		case 'e':
 			doescape();
-			break;
-		case 'L':
-			dolabel();
-			break;
-		case 'r':
-			selwin->ww_refresh = 0;
-			break;
-		case 'R':
-			selwin->ww_refresh = 1;
-			break;
-		*/
-		case 's':
-			dostat();
-			break;
-		case 't':
-			dotime(RUSAGE_SELF);
-			break;
-		case 'T':
-			dotime(RUSAGE_CHILDREN);
-			break;
 		case ':':
 			docolon();
 			break;
@@ -137,13 +117,39 @@ top:
 			if (quit)
 				goto out;
 			break;
-		case '.':
-			if (terse)
-				Ding();
-			else
-				wwputs("Use q to quit.  ", cmdwin);
+			break;
+		case 't':
+			c_time(RUSAGE_SELF);
+			break;
+		case 'T':
+			c_time(RUSAGE_CHILDREN);
+			break;
+		/* debugging commands */
+		case 'M':
+			if (!debug)
+				goto badcmd;
+			wwdumpsmap();
+			break;
+		case 'V':
+			if (!debug)
+				goto badcmd;
+			if ((w = getwin()) != 0)
+				wwdumpnvis(w);
+			break;
+		case 'D':
+			if (!debug)
+				goto badcmd;
+			if ((w = getwin()) != 0)
+				wwdumpcov(w);
+			break;
+		case 'W':
+			if (!debug)
+				goto badcmd;
+			if ((w = getwin()) != 0)
+				wwdumpwin(w);
 			break;
 		default:
+		badcmd:
 			if (c == escapec) {
 				write(selwin->ww_pty, &escapec, 1);
 				goto out;
