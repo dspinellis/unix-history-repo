@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.7	(Berkeley)	%G%
+#	@(#)Makefile	4.8	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -21,7 +21,7 @@ STD=	ar cat cc chgrp chmod cmp date dd df du echo ed expr \
 
 # Programs that must run setuid to root
 #
-SETUID=	chgrp df login mail mv passwd su
+SETUID=	chgrp df login mail passwd su
 
 # C programs that live in the current directory and need explicit make lines.
 #
