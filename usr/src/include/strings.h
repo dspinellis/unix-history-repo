@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)strings.h	5.2 (Berkeley) %G%
+ *	@(#)strings.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -21,3 +21,11 @@ char	*strncpy();
 int	strlen();
 char	*index();
 char	*rindex();
+
+/* S5 compatibility */
+char	*strchr();
+char	*strrchr();
+char	*strpbrk();
+int	strspn();
+int	strcspn();
+char	*strtok();
