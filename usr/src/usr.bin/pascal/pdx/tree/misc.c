@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)misc.c 1.2 %G%";
+static char sccsid[] = "@(#)misc.c 1.3 %G%";
 
 /*
  * Miscellaneous commands "edit" and "help".
@@ -96,6 +96,8 @@ help()
 	puts("where                  - print currently active procedures");
 	puts("print <exp>            - print the value of the expression");
 	puts("whatis <name>          - print the declaration of the name");
+	puts("list <line>, <line>    - list source lines");
+	puts("edit <proc>            - edit file containing <proc>");
 	puts("gripe                  - send mail to the person in charge of pdx");
 	puts("quit                   - exit pdx");
 }
