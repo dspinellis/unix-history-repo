@@ -1,4 +1,4 @@
-/*	vm_meter.c	6.2	84/05/22	*/
+/*	vm_meter.c	6.3	84/08/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
