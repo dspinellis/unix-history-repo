@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.19 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -61,20 +61,14 @@ struct	sigvec rvec = { reset, sigmask(SIGHUP), 0 };
 main(argc, argv)
 	char **argv;
 {
+	/* insure proper semantics for setjmp/longjmp */
+	static int howto, oldhowto, started = 0;
 #if defined(tahoe)
 	register int r12;		/* make sure r11 gets bootflags */
 #endif
 #if defined(vax) || defined(tahoe) || defined(hp300)
-	register int r11;		/* passed thru from boot */
-#endif
-#ifdef __GNUC__
-	/* insure proper semantics for setjmp/longjmp */
-	static
-#endif
-	int howto, oldhowto, started = 0;
-
-#if defined(vax) || defined(tahoe) || defined(hp300)
 	/* howto passed in high-order register XXX */
+	register int r11;		/* passed thru from boot */
 #ifdef __GNUC__
 #ifdef hp300
 	asm("movl d7,%0" : "=rm" (howto));
@@ -84,24 +78,31 @@ main(argc, argv)
 #else
 	howto = r11;
 #endif /* __GNUC__ */
-#else  /* defined(vax) || defined(tahoe) || defined(hp300) */
+#else  /* vax || tahoe || hp300 */
 	/* howto passed as argument */
+	howto = 0;
+#endif  /* ! (vax || tahoe || hp300) */
+
+	/*
+	 * We expect a single options argument from the kernel.
+	 * If it is present, we ignore anything in registers from above.
+	 */
 	if (argc > 1 && argv[1][0] == '-') {
 		char *cp;
 
 		howto = 0;
 		cp = &argv[1][1];
 		while (*cp) switch (*cp++) {
-		case 'a':
-			howto |= RB_ASKNAME;
+#ifdef notyet
+		case 'f':
+			howto |= RB_FASTBOOT;
 			break;
+#endif
 		case 's':
 			howto |= RB_SINGLE;
 			break;
 		}
-	} else
-		howto = RB_SINGLE;
-#endif
+	}
 	if (getuid() != 0)
 		exit(1);
 	openlog("init", LOG_CONS|LOG_ODELAY, LOG_AUTH);
