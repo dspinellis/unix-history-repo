@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkdate.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkdate.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: mkdate.c,v 1.5 84/12/26 10:40:30 linton Exp $";
@@ -29,6 +29,7 @@ main()
     printf(" (%s)", name);
     printf("\";\n");
     DoVersionNumber();
+    exit(0);
 }
 
 DoVersionNumber()
