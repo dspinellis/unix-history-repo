@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_2.c	2.1 83/10/31";
+static	char *sccsid = "@(#)dr_2.c	2.2 83/12/12";
 #endif
 
 #include "driver.h"
@@ -42,9 +42,6 @@ checkup()
 	register struct ship *sp, *sq;
 	register char explode, sink;
 
-	/*
-	readpos();
-	*/
 	foreachship(sp) {
 		explode = sp->file->explode;
 		sink = sp->file->sink;
@@ -53,9 +50,7 @@ checkup()
 		if (explode != 1 && sink != 1)
 			continue;
 		Write(sink ? W_SINK : W_EXPLODE, sp, 0, 2, 0, 0, 0);
-		sp->file->dir = 0;	/* hopefully enough to kill ship */
-		/* Write(n, 0, 10, 0); XXX */
-		Write(W_CLASS, sp, 0, 0, 0, 0, 0);
+		Write(W_SHIPDIR, sp, 0, 0, 0, 0, 0);
 		if (fouled(sp) || grappled(sp)) {
 			for (k = 0; k < NSHIP; k++) {
 				if (sp->file->fouls[k].turnfoul)
@@ -158,31 +153,6 @@ char onlytemp;
 		fp->dir = dir;
 	}
 	return total;
-}
-
-moveship(ship, movement)
-struct ship *ship;
-char *movement;
-{
-	register struct File *fp = ship->file;
-	char drift = fp->drift;
-	int row = fp->row;
-	int col = fp->col;
-	int dir = fp->dir;
-
-	if (fp->dir == 0)
-		return;
-	move(movement, ship, &fp->dir, &fp->row, &fp->col, &drift);
-	if (drift > 2 || *movement == 0)
-		(void) strcat(movement, "d");
-	if (fp->drift != drift)
-		Write(W_DRIFT, ship, 0, drift, 0, 0, 0);
-	if (fp->row != row)
-		Write(W_SHIPROW, ship, 0, fp->row, 0, 0, 0);
-	if (fp->col != col)
-		Write(W_SHIPCOL, ship, 0, fp->col, 0, 0, 0);
-	if (fp->dir != dir)
-		Write(W_SHIPDIR, ship, 0, fp->dir, 0, 0, 0);
 }
 
 move(p, ship, dir, row, col, drift)
