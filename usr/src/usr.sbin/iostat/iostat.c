@@ -12,13 +12,14 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/buf.h>
 #include <sys/dkstat.h>
 
+#include <err.h>
 #include <ctype.h>
 #include <fcntl.h>
 #include <kvm.h>
@@ -86,12 +87,11 @@ struct _disk {
 	long	tk_nout;
 } cur, last;
 
-double etime;
-long *dk_wpms;
-int dk_ndrive, *dr_select, hz, kmemfd, ndrives;
-char **dr_name;
-
-kvm_t *kd;
+kvm_t	 *kd;
+double	  etime;
+long	 *dk_wpms;
+int	  dk_ndrive, *dr_select, hz, kmemfd, ndrives;
+char	**dr_name;
 
 #define nlread(x, v) \
 	kvm_read(kd, namelist[x].n_value, &(v), sizeof(v))
@@ -100,13 +100,13 @@ kvm_t *kd;
 
 void cpustats __P((void));
 void dkstats __P((void));
-void err __P((const char *, ...));
 void phdr __P((int));
 void usage __P((void));
 
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	register int i;
 	long tmp;
@@ -119,7 +119,8 @@ main(argc, argv)
 	while ((ch = getopt(argc, argv, "c:M:N:w:")) != EOF)
 		switch(ch) {
 		case 'c':
-			reps = atoi(optarg);
+			if ((reps = atoi(optarg)) <= 0)
+				errx(1, "repetition count <= 0.");
 			break;
 		case 'M':
 			memf = optarg;
@@ -128,7 +129,8 @@ main(argc, argv)
 			nlistf = optarg;
 			break;
 		case 'w':
-			interval = atoi(optarg);
+			if ((interval = atoi(optarg)) <= 0)
+				errx(1, "interval <= 0.");
 			break;
 		case '?':
 		default:
@@ -146,14 +148,14 @@ main(argc, argv)
 
         kd = kvm_openfiles(nlistf, memf, NULL, O_RDONLY, errbuf);
 	if (kd == 0)
-		err("kvm_openfiles: %s", errbuf);
+		errx(1, "kvm_openfiles: %s", errbuf);
 	if (kvm_nlist(kd, namelist) == -1)
-		err("kvm_nlist: %s", kvm_geterr(kd));
+		errx(1, "kvm_nlist: %s", kvm_geterr(kd));
 	if (namelist[X_DK_NDRIVE].n_type == 0)
-		err("dk_ndrive not found in namelist");
+		errx(1, "dk_ndrive not found in namelist");
 	(void)nlread(X_DK_NDRIVE, dk_ndrive);
 	if (dk_ndrive <= 0)
-		err("invalid dk_ndrive %d\n", dk_ndrive);
+		errx(1, "invalid dk_ndrive %d\n", dk_ndrive);
 
 	cur.dk_time = calloc(dk_ndrive, sizeof(long));
 	cur.dk_wds = calloc(dk_ndrive, sizeof(long));
@@ -294,8 +296,8 @@ main(argc, argv)
 
 /* ARGUSED */
 void
-phdr(notused)
-	int notused;
+phdr(signo)
+	int signo;
 {
 	register int i;
 
@@ -360,33 +362,4 @@ usage()
 	(void)fprintf(stderr,
 "usage: iostat [-c count] [-M core] [-N system] [-w wait] [drives]\n");
 	exit(1);
-}
-
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-void
-#if __STDC__
-err(const char *fmt, ...)
-#else
-err(fmt, va_alist)
-	char *fmt;
-        va_dcl
-#endif
-{
-	va_list ap;
-#if __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	(void)fprintf(stderr, "iostat: ");
-	(void)vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	(void)fprintf(stderr, "\n");
-	exit(1);
-	/* NOTREACHED */
 }
