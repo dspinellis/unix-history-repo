@@ -20,6 +20,10 @@ typedef	unsigned long Ooff_t;
 #include <a.out.h>
 #include <sys/ptrace.h>
 
+#ifdef NEWVM
+#undef TRUE
+#undef FALSE
+#endif
 #include "mac.h"
 #include "mode.h"
 #include "head.h"
