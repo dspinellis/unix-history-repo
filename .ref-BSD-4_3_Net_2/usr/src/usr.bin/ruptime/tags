@@ -1,8 +1,0 @@
-ISDOWN	ruptime.c	/^#define	ISDOWN(h)		(now - (h)->hs_wd->wd_recvtime /
-Mruptime	ruptime.c	/^main(argc, argv)$/
-hscmp	ruptime.c	/^hscmp(a1, a2)$/
-interval	ruptime.c	/^interval(tval, updown)$/
-lcmp	ruptime.c	/^lcmp(a1, a2)$/
-morehosts	ruptime.c	/^morehosts()$/
-tcmp	ruptime.c	/^tcmp(a1, a2)$/
-ucmp	ruptime.c	/^ucmp(a1, a2)$/

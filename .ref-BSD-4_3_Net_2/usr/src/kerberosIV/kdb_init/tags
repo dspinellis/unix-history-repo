@@ -1,2 +1,0 @@
-Mkdb_init	kdb_init.c	/^main(argc, argv)$/
-add_principal	kdb_init.c	/^add_principal(name, instance, aap_op)$/

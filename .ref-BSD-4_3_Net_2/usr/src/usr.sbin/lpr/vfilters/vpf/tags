@@ -1,4 +1,0 @@
-Mvpf	vpf.c	/^main(argc, argv)$/
-getline	vpf.c	/^getline()$/
-putline	vpf.c	/^putline(ff)$/
-send	vpf.c	/^send()$/

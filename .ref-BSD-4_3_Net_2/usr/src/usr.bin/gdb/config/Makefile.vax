@@ -1,6 +1,0 @@
-#	@(#)Makefile.vax	6.1 (Berkeley) 3/11/91
-
-CONFIGSRCS=	default-dep.c vax-pinsn.c
-
-param.h:
-	ln -s $(.CURDIR)/config/m-vax.h param.h

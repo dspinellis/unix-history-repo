@@ -1,9 +1,0 @@
-Mrwhod	rwhod.c	/^main()$/
-configure	rwhod.c	/^configure(s)$/
-getkmem	rwhod.c	/^getkmem()$/
-interval	rwhod.c	/^interval(time, updown)$/
-max	rwhod.c	/^#define max(a, b) (a > b ? a : b)$/
-onalrm	rwhod.c	/^onalrm()$/
-sendto	rwhod.c	/^sendto(s, buf, cc, flags, to, tolen)$/
-size	rwhod.c	/^#define size(p)	max((p).sa_len, sizeof(p))$/
-verify	rwhod.c	/^verify(name)$/
