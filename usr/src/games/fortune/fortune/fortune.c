@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fortune.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)fortune.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	<sys/param.h>
@@ -116,26 +116,6 @@ bool	Debug = FALSE;			/* print debug messages */
 #endif
 
 char	*Fortbuf = NULL;			/* fortune buffer for -m */
-char	*Usage[]	= {
-# ifdef	NO_REGEX
-       "usage:  fortune [ - ] [ -fwsloa ] [ [N%] file/dir/\"all\" ]",
-# else	/* NO_REGEX */
-       "usage:  fortune [ - ] [ -fwsloai ] [ -m pattern ] [ [N%] file/dir/\"all\" ]",
-# endif	/* NO_REGEX */
-       "	- - give this summary of usage",
-       "	f - list fortune files",
-       "	w - wait after printing message in order to give time to read",
-       "	s - short fortunes only",
-       "	l - long fortunes only",
-       "	o - offensive fortunes only",
-       "	a - any fortune, regular or offensive",
-# ifndef NO_REGEX
-       "	m - print fortunes which match a pattern",
-       "	i - ignore case in matching patterns",
-# endif	/* NO_REGEX */
-       "		Mail suggested fortunes to \"fortune@berkeley.edu\"",
-	NULL
-	};
 
 int	Fort_len = 0;
 
@@ -186,7 +166,9 @@ main(ac, av)
 int	ac;
 char	*av[];
 {
+#ifdef	OK_TO_WRITE_DISK
 	int	fd;
+#endif	/* OK_TO_WRITE_DISK */
 	char	line[BUFSIZ];
 
 	getargs(ac, av);
@@ -266,97 +248,78 @@ fortlen()
 /*
  *	This routine evaluates the arguments on the command line
  */
-getargs(ac, av)
-register int	ac;
-register char	*av[];
+getargs(argc, argv)
+register int	argc;
+register char	**argv;
 {
-	register int	i;
-	register char	*sp;
-	register int	j;
-	register short	bad;
 	register int	ignore_case;
 # ifndef NO_REGEX
 	register char	*pat;
 # endif	/* NO_REGEX */
+	extern char *optarg;
+	extern int optind;
+	int ch;
 
 	ignore_case = FALSE;
-	bad = FALSE;
 	pat = NULL;
-	for (i = 1; i < ac; i++)  {
-		if (av[i][0] != '-')
-			break;
-		else if (av[i][1] == '\0') {
-			j = 0;
-			while (Usage[j] != NULL)
-				puts(Usage[j++]);
-			exit(0);
-			/* NOTREACHED */
-		}
-		else
-			for (sp = &av[i][1]; *sp != '\0'; sp++)
-				switch (*sp) {
-				  case 'f':	/* find fortune files */
-					Find_files++;
-					break;
-				  case 'w':	/* give time to read */
-					Wait++;
-					break;
-				  case 's':	/* short ones only */
-					Short_only++;
-					Long_only = FALSE;
-					break;
-				  case 'l':	/* long ones only */
-					Long_only++;
-					Short_only = FALSE;
-					break;
-				  case 'o':	/* offensive ones only */
-					Offend++;
-					break;
-				  case 'a':	/* any fortune */
-					All_forts++;
-					break;
-				  case 'm':	/* dump out the fortunes */
-# ifdef	NO_REGEX
-				  case 'i':
-					fprintf(stderr,
-						"can't match fortunes on this system (Sorry)\n");
-					bad++;
-# else	/* NO_REGEX */
-					Match++;
-					if (sp[1]) {
-						pat = ++sp;
-						while (*sp)
-							sp++;
-					}
-					else if (i + 1 < ac)
-						pat = av[++i];
-					else {
-						fprintf(stderr,
-							"must give pattern\n");
-						bad++;
-						break;
-					}
-					break;
-				  case 'i':
-					ignore_case++;
-					break;
-				  case 'e':
-					Equal_probs++;
-					break;
+
 # ifdef DEBUG
-				  case 'D':
-					Debug++;
-					break;
+	while ((ch = getopt(argc, argv, "aDfilm:osw")) != EOF)
+#else
+	while ((ch = getopt(argc, argv, "afilm:osw")) != EOF)
+#endif /* DEBUG */
+		switch(ch) {
+		case 'a':		/* any fortune */
+			All_forts++;
+			break;
+# ifdef DEBUG
+		case 'D':
+			Debug++;
+			break;
 # endif /* DEBUG */
+		case 'e':
+			Equal_probs++;	/* scatter un-allocted prob equally */
+			break;
+		case 'f':		/* find fortune files */
+			Find_files++;
+			break;
+		case 'l':		/* long ones only */
+			Long_only++;
+			Short_only = FALSE;
+			break;
+		case 'o':		/* offensive ones only */
+			Offend++;
+			break;
+		case 's':		/* short ones only */
+			Short_only++;
+			Long_only = FALSE;
+			break;
+		case 'w':		/* give time to read */
+			Wait++;
+			break;
+# ifdef	NO_REGEX
+		case 'i':			/* case-insensitive match */
+		case 'm':			/* dump out the fortunes */
+			(void) fprintf(stderr,
+			    "fortune: can't match fortunes on this system (Sorry)\n");
+			exit(0);
+# else	/* NO_REGEX */
+		case 'm':			/* dump out the fortunes */
+			Match++;
+			pat = optarg;
+			break;
+		case 'i':			/* case-insensitive match */
+			ignore_case++;
+			break;
 # endif	/* NO_REGEX */
-				  default:
-					fprintf(stderr, "unknown flag: '%c'\n",
-						*sp);
-					bad++;
-					break;
-				}
-	}
-	if (!bad && !form_file_list(&av[i], ac - i))
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
+
+	if (!form_file_list(argv, argc))
 		exit(1);	/* errors printed through form_file_list() */
 #ifdef DEBUG
 	if (Debug >= 1)
@@ -377,15 +340,9 @@ register char	*av[];
 #else	/* REGCMP */
 			fprintf(stderr, "bad pattern: %s\n", pat);
 #endif	/* REGCMP */
-			bad++;
 		}
 	}
 # endif	/* NO_REGEX */
-
-	if (bad) {
-		printf("use \"%s -\" to get usage\n", av[0]);
-		exit(-1);
-	}
 }
 
 /*
@@ -738,6 +695,7 @@ char	*file;
  *	overhead.  Files which start with ".", or which have "illegal"
  *	suffixes, as contained in suflist[], are ruled out.
  */
+/* ARGSUSED */
 is_fortfile(file, datp, posp, check_for_offend)
 char	*file;
 char	**datp, **posp;
@@ -1079,7 +1037,9 @@ FILEDESC	*fp;
 get_pos(fp)
 FILEDESC	*fp;
 {
+#ifdef	OK_TO_WRITE_DISK
 	int	fd;
+#endif /* OK_TO_WRITE_DISK */
 
 	assert(fp->read_tbl);
 	if (fp->pos == POS_UNKNOWN) {
@@ -1319,3 +1279,21 @@ FILEDESC	*list;
 	}
 }
 # endif	/* NO_REGEX */
+
+usage()
+{
+	(void) fprintf(stderr, "fortune [-a");
+#ifdef	DEBUG
+	(void) fprintf(stderr, "D");
+#endif	/* DEBUG */
+	(void) fprintf(stderr, "f");
+#ifndef	NO_REGEX
+	(void) fprintf(stderr, "i");
+#endif	/* NO_REGEX */
+	(void) fprintf(stderr, "losw]");
+#ifndef	NO_REGEX
+	(void) fprintf(stderr, " [-m pattern]");
+#endif	/* NO_REGEX */
+	(void) fprintf(stderr, "[ [#%%] file/directory/all]\n");
+	exit(1);
+}
