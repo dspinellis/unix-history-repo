@@ -42,6 +42,14 @@ char *const binary_op[] = {
       NULL
 };
 
+char *const andor_op[] = {
+      "-o",
+      "|",
+      "-a",
+      "&",
+      NULL
+};
+
 const char op_priority[] = {
       3,
       12,

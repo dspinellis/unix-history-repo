@@ -160,7 +160,7 @@ main(argc, argv)
 		}
 		break;
 	case 4:				/* % test ! arg1 op arg2 */
-		if (IS_BANG(argv[1])) {
+		if (IS_BANG(argv[1]) && lookup_op(argv[3], andor_op) < 0) {
 			ret_val = posix_binary_op(&argv[2]);
 			if (ret_val >= 0)
 				return (!ret_val);
