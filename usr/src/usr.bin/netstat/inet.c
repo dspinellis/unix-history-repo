@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	4.5 82/11/14";
+static char sccsid[] = "@(#)inet.c	4.6 82/12/05";
 #endif
 
 #include <sys/types.h>
@@ -111,6 +111,69 @@ protopr(off, name)
 		putchar('\n');
 		prev = next;
 	}
+}
+
+/*
+ * Dump TCP statistics structure.
+ */
+tcp_stats(off, name)
+	off_t off;
+	char *name;
+{
+	struct tcpstat tcpstat;
+
+	if (off == 0) {
+		printf("%sstat: symbol not in namelist\n", name);
+		return;
+	}
+	klseek(kmem, off, 0);
+	read(kmem, (char *)&tcpstat, sizeof (tcpstat));
+	printf("%s:\n\t%d bad header checksums\n", name, tcpstat.tcps_badsum);
+	printf("\t%d bad header offset fields\n", tcpstat.tcps_badoff);
+	printf("\t%d incomplete headers\n", tcpstat.tcps_hdrops);
+#ifdef notdef
+	printf("\t%d bad segments\n", tcpstat.tcps_badsegs);
+	printf("\t%d unacknowledged packets\n", tcpstat.tcps_unack);
+#endif
+}
+
+/*
+ * Dump UDP statistics structure.
+ */
+udp_stats(off, name)
+	off_t off;
+	char *name;
+{
+	struct udpstat udpstat;
+
+	if (off == 0) {
+		printf("%sstat: symbol not in namelist\n", name);
+		return;
+	}
+	klseek(kmem, off, 0);
+	read(kmem, (char *)&udpstat, sizeof (udpstat));
+	printf("%s:\n\t%d bad header checksums\n", name, udpstat.udps_badsum);
+	printf("\t%d incomplete headers\n", udpstat.udps_hdrops);
+	printf("\t%d bad data length fields\n", udpstat.udps_badlen);
+}
+
+/*
+ * Dump IP statistics structure.
+ */
+ip_stats(off, name)
+	off_t off;
+	char *name;
+{
+	struct ipstat ipstat;
+
+	if (off == 0) {
+		printf("%sstat: symbol not in namelist\n", name);
+		return;
+	}
+	klseek(kmem, off, 0);
+	read(kmem, (char *)&ipstat, sizeof (ipstat));
+	printf("%s:\n\t%d bad header checksums\n", name, ipstat.ips_badsum);
+	printf("\t%d incomplete packets\n", ipstat.ips_tooshort);
 }
 
 /*

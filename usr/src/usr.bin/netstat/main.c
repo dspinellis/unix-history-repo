@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.2 82/10/06";
+static char sccsid[] = "@(#)main.c	4.3 82/12/05";
 #endif
 
 #include <sys/param.h>
@@ -40,14 +40,25 @@ struct nlist nl[] = {
 	0,
 };
 
+extern	int protopr();
+extern	int tcp_stats(), udp_stats(), ip_stats();
+
 struct protox {
-	short	pr_index;	/* index into nlist of cb head */
-	short	pr_wanted;	/* 1 if wanted, 0 otherwise */
-	char	*pr_name;	/* well-known name */
+	u_char	pr_index;		/* index into nlist of cb head */
+	u_char	pr_sindex;		/* index into nlist of stat block */
+	u_char	pr_wanted;		/* 1 if wanted, 0 otherwise */
+	int	(*pr_cblocks)();	/* control blocks printing routine */
+	int	(*pr_stats)();		/* statistics printing routine */
+	char	*pr_name;		/* well-known name */
 } protox[] = {
-	{ N_TCB,	1,	"tcp" },
-	{ N_UDB,	1,	"udp" },
-	{ -1,		0,	0 }
+	{ N_TCB,	N_TCPSTAT,	1,	protopr,
+	  tcp_stats,	"tcp" },
+	{ N_UDB,	N_UDPSTAT,	1,	protopr,
+	  udp_stats,	"udp" },
+	{ -1,		N_IPSTAT,	1,	0,
+	  ip_stats,	"ip" },
+	{ -1,		-1,		0,	0,
+	  0,		0 }
 };
 
 struct	pte *Sysmap;
@@ -191,12 +202,17 @@ use:
 	while (p = getprotoent()) {
 		register struct protox *tp;
 
-		for (tp = protox; tp->pr_index >= 0; tp++)
+		for (tp = protox; tp->pr_name; tp++)
 			if (strcmp(tp->pr_name, p->p_name) == 0)
 				break;
-		if (tp->pr_index < 0 || tp->pr_wanted == 0)
+		if (tp->pr_name == 0 || tp->pr_wanted == 0)
 			continue;
-		protopr(nl[tp->pr_index].n_value, p->p_name);
+		if (sflag && tp->pr_stats) {
+			(*tp->pr_stats)(nl[tp->pr_sindex].n_value, p->p_name);
+			continue;
+		}
+		if (tp->pr_cblocks)
+			(*tp->pr_cblocks)(nl[tp->pr_index].n_value, p->p_name);
 	}
 	endprotoent();
 }
