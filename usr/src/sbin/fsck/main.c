@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -35,6 +35,12 @@ main(argc, argv)
 	struct fstab *fsp;
 	int pid, passno, anygtr, sumstatus;
 	char *name;
+	struct worklist {
+		int	pid;		/* pid of child doing the check */
+		struct	worklist *next;	/* next in list */
+		char	name[MAXMNTLEN];/* name of file system */
+	} *listhead = 0, *freelist = 0, *badlist = 0;
+	register struct worklist *wp, *pwp;
 
 	sync();
 	while (--argc > 0 && **++argv == '-') {
@@ -110,6 +116,13 @@ main(argc, argv)
 			} else if (fsp->fs_passno > passno) {
 				anygtr = 1;
 			} else if (fsp->fs_passno == passno) {
+				name = blockcheck(fsp->fs_spec);
+				if (name == NULL) {
+					pwarn("BAD DISK NAME %s\n",
+						fsp->fs_spec);
+					sumstatus |= 8;
+					continue;
+				}
 				pid = fork();
 				if (pid < 0) {
 					perror("fork");
@@ -117,23 +130,60 @@ main(argc, argv)
 				}
 				if (pid == 0) {
 					(void)signal(SIGQUIT, voidquit);
-					name = blockcheck(fsp->fs_spec);
-					if (name == NULL)
-						exit(8);
 					checkfilesys(name);
 					exit(0);
+				} else {
+					if (freelist == 0) {
+						wp = (struct worklist *) malloc
+						    (sizeof(struct worklist));
+					} else {
+						wp = freelist;
+						freelist = wp->next;
+					}
+					wp->next = listhead;
+					listhead = wp;
+					wp->pid = pid;
+					sprintf(wp->name, "%s (%s)", name,
+					    fsp->fs_file);
 				}
 			}
 		}
 		if (preen) {
 			union wait status;
-			while (wait(&status) != -1)
+			while ((pid = wait(&status)) != -1) {
 				sumstatus |= status.w_retcode;
+				pwp = 0;
+				for (wp = listhead; wp; pwp = wp, wp = wp->next)
+					if (wp->pid == pid)
+						break;
+				if (wp == 0) {
+					printf("Unknown pid %d\n", pid);
+					continue;
+				}
+				if (pwp == 0)
+					listhead = wp->next;
+				else
+					pwp->next = wp->next;
+				if (status.w_retcode != 0) {
+					wp->next = badlist;
+					badlist = wp;
+				} else {
+					wp->next = freelist;
+					freelist = wp;
+				}
+			}
 		}
 		passno++;
 	} while (anygtr);
-	if (sumstatus)
+	if (sumstatus) {
+		if (badlist == 0)
+			exit(8);
+		printf("THE FOLLOWING FILE SYSTEM%s HAD AN %s\n\t",
+			badlist->next ? "S" : "", "UNEXPECTED INCONSISTENCY:");
+		for (wp = badlist; wp; wp = wp->next)
+			printf("%s%s", wp->name, wp->next ? ", " : "\n");
 		exit(8);
+	}
 	(void)endfsent();
 	if (returntosingle)
 		exit(2);
