@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)netstat.1	5.1 (Berkeley) %G%
+.\"	@(#)netstat.1	6.1 (Berkeley) %G%
 .\"
-.TH NETSTAT 1 "18 October 1982"
+.TH NETSTAT 1 ""
 .UC 5
 .SH NAME
 netstat \- show network status
@@ -13,10 +13,11 @@ netstat \- show network status
 [ 
 .B \-Aahimnrs
 ] [
-.B \-p
-.I protocol 
+.B \-I
+.I interface
 ] [
-.B \-a
+.B \-p
+.I protocol
 ] [
 .I interval
 ] [
@@ -45,6 +46,12 @@ show the state of the IMP host table
 show the state of interfaces which have been auto-configured
 (interfaces statically configured into a system, but not
 located at boot time are not shown)
+.TP
+.BI \-I " interface"
+show information only about this interface
+(see also
+.I interval
+below)
 .TP
 .B \-m
 show statistics recorded by the memory management routines
