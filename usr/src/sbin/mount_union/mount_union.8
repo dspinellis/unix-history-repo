@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mount_union.8	8.1 (Berkeley) %G%
+.\"	@(#)mount_union.8	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MOUNT_UNION 8
@@ -26,32 +26,22 @@ The
 command
 attaches
 .Ar directory
-(called the
-.Em upper
-layer)
 above
 .Ar uniondir
-(called the
+in such a way that the contents of both directory trees remain visible.
+By default,
+.Ar directory
+becomes the
+.Em upper
+layer and
+.Ar uniondir
+becomes the
 .Em lower
-layer)
-in such a way that the contents of both directories are remain visible.
+layer.
 .Nm mount_union
 is setuid root and can be used by any user.
-The kernel enforces security by only allow attempts to mount
-onto a directory to which the current user has write permission.
-.Pp
-Once the mount is complete, the lower layer becomes read-only
-when accessed via
-.Ar uniondir .
-The union operation applies recursively down the directory tree
-now rooted at
-.Em uniondir .
-This differs from the
-.Em union
-option to
-.Xr mount 8
-which only applies the union operation to the mount point itself,
-and then only for lookups.
+To enforce filesystem security, the user must be superuser or else
+have write permission on the mounted on directory.
 .Pp
 Filenames are looked up firstly in the upper layer and then in the
 lower layer.
@@ -83,13 +73,25 @@ file to be made to the upper layer, and then for the upper layer copy
 to be opened.
 Similarly, an attempt to truncate a lower layer file to zero length
 causes an empty file to be created in the upper layer.
+Any other operation which would ultimately require modification to
+the lower layer fails with
+.Dv EROFS .
 .Pp
-The union filesystem actually deals with namespace, rather than
+The union filesystem manipulates the namespace, rather than
 individual filesystems.
-This means that any filesystems which are mounted under
+The union operation applies recursively down the directory tree
+now rooted at
+.Em uniondir .
+This differs from the
+.Em union
+option to
+.Xr mount 8
+which only applies the union operation to the mount point itself,
+and then only for lookups.
+This also means that any filesystems which are mounted under
 .Ar uniondir
 will take part in the union operation.
-.Pp
+.Sh OPTIONS
 The options are:
 .Bl -tag -width indent
 .It Fl above
@@ -108,7 +110,7 @@ becomes the lower layer and
 .Ar uniondir
 becomes the upper layer.
 .Ar uniondir
-is still the mount point.
+remains the mount point.
 .It Fl replace
 This simply hides the lower layer completely in
 the same way as mounting with
@@ -118,7 +120,7 @@ or
 .Sh EXAMPLES
 The commands
 .Bd -literal -offset indent
-mount -t iso9660 -o ro /dev/cd0a /usr/src
+mount -t cd9660 -o ro /dev/cd0a /usr/src
 mount -t union -o -above /var/obj /usr/src
 .Ed
 .Pp
