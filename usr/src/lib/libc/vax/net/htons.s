@@ -5,14 +5,14 @@
  */
 
 #ifdef LIBC_SCCS
-_sccsid:.asciz	"@(#)htons.s	5.3 (Berkeley) %G%"
+_sccsid:.asciz	"@(#)htons.s	5.4 (Berkeley) %G%"
 #endif LIBC_SCCS
 
 /* hostorder = htons(netorder) */
 
 #include "DEFS.h"
 
-ENTRY(htons)
+ENTRY(htons, 0)
 	rotl	$8,4(ap),r0
 	movb	5(ap),r0
 	movzwl	r0,r0
