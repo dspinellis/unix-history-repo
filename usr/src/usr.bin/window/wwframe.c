@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwframe.c	3.4 83/08/16";
+static	char *sccsid = "@(#)wwframe.c	3.5 83/08/18";
 #endif
 
 #include "ww.h"
@@ -34,7 +34,7 @@ struct ww *wframe;
 				if ((a2 || a3) && b3)
 					code |= WWF_R;
 				if (code)
-					wwframec(r, c, wframe, code|WWF_TOP);
+					wwframec(wframe, r, c, code|WWF_TOP, 1);
 			}
 			a1 = a2;
 			a2 = a3;
@@ -42,7 +42,7 @@ struct ww *wframe;
 			b2 = b3;
 		}
 		if ((a1 || a2) && b1 && b2)
-			wwframec(r, c, wframe, WWF_L|WWF_TOP);
+			wwframec(wframe, r, c, WWF_L|WWF_TOP, 1);
 	}
 
 	if (w->ww_w.b < wwnrow) {
@@ -64,7 +64,7 @@ struct ww *wframe;
 				if ((a2 || a3) && b3)
 					code |= WWF_R;
 				if (code)
-					wwframec(r, c, wframe, code);
+					wwframec(wframe, r, c, code, 1);
 			}
 			a1 = a2;
 			a2 = a3;
@@ -72,7 +72,7 @@ struct ww *wframe;
 			b2 = b3;
 		}
 		if ((a1 || a2) && b1 && b2)
-			wwframec(r, c, wframe, WWF_L);
+			wwframec(wframe, r, c, WWF_L, 1);
 	}
 
 	if (w->ww_w.l > 0) {
@@ -93,7 +93,7 @@ struct ww *wframe;
 				if ((a2 || a3) && b3)
 					code |= WWF_D;
 				if (code)
-					wwframec(r, c, wframe, code);
+					wwframec(wframe, r, c, code, 1);
 			}
 			a1 = a2;
 			a2 = a3;
@@ -101,7 +101,7 @@ struct ww *wframe;
 			b2 = b3;
 		}
 		if ((a1 || a2) && b1 && b2)
-			wwframec(r, c, wframe, WWF_U);
+			wwframec(wframe, r, c, WWF_U, 1);
 	}
 
 	if (w->ww_w.r < wwncol) {
@@ -122,7 +122,7 @@ struct ww *wframe;
 				if ((a2 || a3) && b3)
 					code |= WWF_D;
 				if (code)
-					wwframec(r, c, wframe, code);
+					wwframec(wframe, r, c, code, 1);
 			}
 			a1 = a2;
 			a2 = a3;
@@ -130,7 +130,7 @@ struct ww *wframe;
 			b2 = b3;
 		}
 		if ((a1 || a2) && b1 && b2)
-			wwframec(r, c, wframe, WWF_U);
+			wwframec(wframe, r, c, WWF_U, 1);
 	}
 }
 
@@ -146,14 +146,16 @@ register r, c;
 	return !w1->ww_hasframe || w1->ww_order > w->ww_order;
 }
 
-wwframec(rr, cc, f, code)
+wwframec(f, rr, cc, code, dofmap)
 register struct ww *f;
 register rr, cc;
 int code;
+char dofmap;
 {
 	register r, c;
 
-	if (rr < 0 || rr >= wwnrow || cc < 0 || cc >= wwncol)
+	if (rr < f->ww_w.t || rr >= f->ww_w.b
+	    || cc < f->ww_w.l || cc >= f->ww_w.r)
 		return;
 	{
 		register struct ww *w;
@@ -169,7 +171,7 @@ int code;
 			wwsmap[rr][cc] = f->ww_index;
 		}
 	}
-	{
+	if (dofmap) {
 		register char *fmap;
 		fmap = &wwfmap[rr][cc];
 		*fmap |= code;
@@ -193,15 +195,3 @@ int code;
 		}
 	}
 }
-
-/*
-wwckns()
-{
-	register i, j;
-
-	for (i = 0; i < wwnrow; i++)
-		for (j = 0; j < wwncol; j++)
-			if ((wwns[i][j].c_c & 0x7f) < ' ')
-				abort();
-}
-*/

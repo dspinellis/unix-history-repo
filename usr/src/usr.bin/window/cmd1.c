@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.3 83/08/18";
+static	char *sccsid = "@(#)cmd1.c	3.4 83/08/18";
 #endif
 
 #include "defs.h"
@@ -17,15 +17,17 @@ c_window()
 		(void) wwputs("Upper left corner: ", cmdwin);
 	col = 0;
 	row = 1;
+	wwadd(boxwin, framewin->ww_back);
 	for (;;) {
+		wwunbox(boxwin);
+		wwbox(boxwin, row - 1, col - 1, 3, 3);
 		wwsetcursor(row, col);
 		while (bpeekc() < 0)
 			bread();
 		switch (getpos(&row, &col, 1, 0)) {
 		case -1:
-			/*
-			WBoxActive = 0;
-			*/
+			wwunbox(boxwin);
+			wwdelete(boxwin);
 			if (!terse)
 				(void) wwputs("\r\nCancelled.  ", cmdwin);
 			return;
@@ -41,18 +43,17 @@ c_window()
 	xcol = col;
 	xrow = row;
 	for (;;) {
-		/*
-		Wbox(col, row, xcol - col + 1, xrow - row + 1);
-		*/
+		wwunbox(boxwin);
+		wwbox(boxwin, row - 1, col - 1,
+			xrow - row + 3, xcol - col + 3);
 		wwsetcursor(xrow, xcol);
 		wwflush();
 		while (bpeekc() < 0)
 			bread();
 		switch (getpos(&xrow, &xcol, row, col)) {
 		case -1:
-			/*
-			WBoxActive = 0;
-			*/
+			wwunbox(boxwin);
+			wwdelete(boxwin);
 			if (!terse)
 				(void) wwputs("\r\nCancelled.  ", cmdwin);
 			return;
@@ -63,9 +64,8 @@ c_window()
 		}
 		break;
 	}
-	/*
-	WBoxActive = 0;
-	*/
+	wwunbox(boxwin);
+	wwdelete(boxwin);
 	if (!terse)
 		(void) wwputs("\r\n", cmdwin);
 	wwcurtowin(cmdwin);

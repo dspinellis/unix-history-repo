@@ -1,5 +1,5 @@
 /*
- *	@(#)defs.h	3.1 83/08/11	
+ *	@(#)defs.h	3.2 83/08/18	
  */
 
 #include "ww.h"
@@ -27,6 +27,7 @@ struct ww *window[NWINDOW];	/* the windows */
 struct ww *selwin;		/* the selected window */
 struct ww *cmdwin;		/* the command window */
 struct ww *framewin;		/* the window for framing */
+struct ww *boxwin;		/* the window for the box */
 struct ww *curwin;
 
 char *shell;

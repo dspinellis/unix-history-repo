@@ -1,11 +1,18 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwunframe.c	3.5 83/08/16";
+static	char *sccsid = "@(#)wwunframe.c	3.6 83/08/18";
 #endif
 
 #include "ww.h"
 
 wwunframe(w)
 register struct ww *w;
+{
+	wwunframe1(w, 1);
+}
+
+wwunframe1(w, dofmap)
+register struct ww *w;
+char dofmap;
 {
 	register i, j;
 	register char *win;
@@ -22,7 +29,8 @@ register struct ww *w;
 				continue;
 			}
 			*win++ |= WWM_GLS;
-			*fmap++ = 0;
+			if (dofmap)
+				*fmap++ = 0;
 			if (wwsmap[i][j] == w->ww_index) {
 				wwsmap[i][j] = WWX_NOBODY;
 				wwns[i][j].c_w = ' ';

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.2 83/08/17";
+static	char *sccsid = "@(#)main.c	3.3 83/08/18";
 #endif
 
 #include "defs.h"
@@ -76,6 +76,11 @@ char **argv;
 		goto bad;
 	}
 	wwadd(framewin, &wwhead);
+	if ((boxwin = wwopen(WWO_GLASS, wwnrow, wwncol, 0, 0, 0)) == 0) {
+		(void) wwflush();
+		(void) fprintf(stderr, "Can't open box window.\r\n");
+		goto bad;
+	}
 
 	curwin = cmdwin;
 	wwupdate();
