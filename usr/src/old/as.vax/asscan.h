@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-/* "@(#)asscan.h 4.1 %G%" */
+/* "@(#)asscan.h 4.2 %G%" */
 /*
  *	The character scanner is called to fill up one token buffer
  *
@@ -49,11 +49,11 @@ typedef short lgtype;			/*for storing length of strings or skiping*/
 #define	puchar(ptr,val)		*ptr++  = val
 
 #define	pshort(ptr,val)		*(short *)ptr=val,	ptr += sizeof(short)
-#define	pushort(ptr,val)	*(unsigned short *)ptr=val, ptr += sizeof(short)
+#define	pushort(ptr,val)	*(unsigned short *)ptr=val,	ptr += sizeof(short)
 #define	pint(ptr,val)		*(int *)ptr  = val,	ptr += sizeof(int)
-#define	puint(ptr,val)		*(unsigned int *)ptr=val, ptr += sizeof(int)
+#define	puint(ptr,val)		*(unsigned int *)ptr=val,	ptr += sizeof(int)
 #define	plong(ptr,val)		*(long *)ptr  = val,	ptr += sizeof(long)
-#define	pulong(ptr,val)		*(unsigned long *)ptr=val,ptr += sizeof(long)
+#define	pulong(ptr,val)		*(unsigned long *)ptr=val,	ptr += sizeof(long)
 #define	pfloat(ptr,val)		*(float *)ptr  = val,	ptr += sizeof (float)
 #define	pdouble(ptr,val)	*(double *)ptr  = val,	ptr += sizeof (double)
 #define	pptr(ptr,val)		*(int *)ptr  = (val),	ptr += sizeof(ptrall)
