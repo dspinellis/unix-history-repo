@@ -1,8 +1,9 @@
-/*	cu.c	4.4	83/06/15	*/
+#ifndef lint
+static char sccsid[] = "@(#)cu.c	4.5 (Berkeley) %G%";
+#endif
 
 #include "tip.h"
 
-static char *sccsid = "@(#)cu.c	4.4 %G%";
 int	cleanup();
 int	timeout();
 

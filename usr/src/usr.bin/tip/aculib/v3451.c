@@ -1,17 +1,16 @@
-/*	v3451.c	4.2	83/06/24	*/
+#ifndef lint
+static char sccsid[] = "@(#)v3451.c	4.3 (Berkeley) %G%";
+#endif
 
-#if VADIC
+#ifdef V3451
 /*
  * Routines for calling up on a Vadic 3451 Modem
  */
 #include "tip.h"
-#include <setjmp.h>
-#include <errno.h>
-#include <signal.h>
 
 static	jmp_buf Sjbuf;
 
-vadic_dialer(num, acu)
+v3451_dialer(num, acu)
 	register char *num;
 	char *acu;
 {
@@ -86,13 +85,13 @@ vadic_dialer(num, acu)
 	return (1);
 }
 
-vadic_disconnect()
+v3451_disconnect()
 {
 
 	close(FD);
 }
 
-vadic_abort()
+v3451_abort()
 {
 
 	close(FD);
@@ -176,3 +175,4 @@ prefix(s1, s2)
 			return (1);
 	return (c == '\0');
 }
+#endif

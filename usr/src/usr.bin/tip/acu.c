@@ -1,8 +1,9 @@
-/*	acu.c	4.8	83/06/15	*/
-#include "tip.h"
-#include <setjmp.h>
+#ifndef lint
+static char sccsid[] = "@(#)acu.c	4.9 (Berkeley) %G%";
+#endif
 
-static char *sccsid = "@(#)acu.c	4.8 %G%";
+#include "tip.h"
+
 static acu_t *acu = NOACU;
 static int conflag;
 static int acuabort();

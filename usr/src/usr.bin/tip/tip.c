@@ -1,4 +1,6 @@
-/*	tip.c	4.14	83/06/15	*/
+#ifndef lint
+static char sccsid[] = "@(#)tip.c	4.15 (Berkeley) %G%";
+#endif
 
 /*
  * tip - UNIX link to other systems
@@ -8,8 +10,6 @@
  */
 #include "tip.h"
 
-static char *sccsid = "@(#)tip.c	4.14 %G%";
-
 /*
  * Baud rate mapping table
  */
@@ -18,10 +18,7 @@ int bauds[] = {
 	1200, 1800, 2400, 4800, 9600, 19200, -1
 };
 
-#ifdef VMUNIX
 int	disc = OTTYDISC;		/* tip normally runs this way */
-#endif
-
 int	intprompt();
 int	timeout();
 int	cleanup();
@@ -142,9 +139,7 @@ cucommon:
 	ioctl(0, TIOCGETP, (char *)&defarg);
 	ioctl(0, TIOCGETC, (char *)&defchars);
 	ioctl(0, TIOCGLTC, (char *)&deflchars);
-#ifdef VMUNIX
 	ioctl(0, TIOCGETD, (char *)&odisc);
-#endif
 	arg = defarg;
 	arg.sg_flags = ANYP | CBREAK;
 	tchars = defchars;
@@ -174,11 +169,10 @@ cucommon:
 
 cleanup()
 {
+
 	delock(uucplock);
-#ifdef VMUNIX
 	if (odisc)
 		ioctl(0, TIOCSETD, (char *)&odisc);
-#endif
 	exit(0);
 }
 
@@ -187,12 +181,11 @@ cleanup()
  */
 raw()
 {
+
 	ioctl(0, TIOCSETP, &arg);
 	ioctl(0, TIOCSETC, &tchars);
 	ioctl(0, TIOCSLTC, &ltchars);
-#ifdef VMUNIX
 	ioctl(0, TIOCSETD, (char *)&disc);
-#endif
 }
 
 
@@ -201,13 +194,14 @@ raw()
  */
 unraw()
 {
-#ifdef VMUNIX
+
 	ioctl(0, TIOCSETD, (char *)&odisc);
-#endif
 	ioctl(0, TIOCSETP, (char *)&defarg);
 	ioctl(0, TIOCSETC, (char *)&defchars);
 	ioctl(0, TIOCSLTC, (char *)&deflchars);
 }
+
+static	jmp_buf promptbuf;
 
 /*
  * Print string ``s'', then read a string
@@ -219,23 +213,22 @@ prompt(s, p)
 	register char *p;
 {
 	register char *b = p;
+	int (*oint)(), (*oquit)();
 
 	stoprompt = 0;
-	signal(SIGINT, intprompt);
-	signal(SIGQUIT, SIG_IGN);
+	oint = signal(SIGINT, intprompt);
+	oint = signal(SIGQUIT, SIG_IGN);
 	unraw();
 	printf("%s", s);
-	while ((*p = getchar()) != EOF && *p != '\n') {
-		if (stoprompt)
-			goto pbreak;
-		p++;
-	}
+	if (setjmp(promptbuf) == 0)
+		while ((*p = getchar()) != EOF && *p != '\n')
+			p++;
 	*p = '\0';
-pbreak:
+
 	raw();
-	signal(SIGINT, SIG_DFL);
-	signal(SIGQUIT,SIG_DFL);
-	return(stoprompt || p == b);
+	signal(SIGINT, oint);
+	signal(SIGQUIT, oint);
+	return (stoprompt || p == b);
 }
 
 /*
@@ -243,9 +236,11 @@ pbreak:
  */
 intprompt()
 {
+
 	signal(SIGINT, SIG_IGN);
 	stoprompt = 1;
 	printf("\r\n");
+	longjmp(promptbuf, 1);
 }
 
 /*
@@ -310,41 +305,42 @@ escape()
 				continue;
 			printf("%s", ctrl(c));
 			(*p->e_func)(gch);
-			return(0);
+			return (0);
 		}
 	/* ESCAPE ESCAPE forces ESCAPE */
 	if (c != gch)
 		pwrite(FD, &c, 1);
-	return(gch);
+	return (gch);
 }
 
 speed(n)
+	int n;
 {
 	register int *p;
 
 	for (p = bauds; *p != -1;  p++)
 		if (*p == n)
-			return(p-bauds);
-	return(NULL);
+			return (p - bauds);
+	return (NULL);
 }
 
 any(c, p)
 	register char c, *p;
 {
-	if (p)
-	while (*p)
+	while (p && *p)
 		if (*p++ == c)
-			return(1);
-	return(0);
+			return (1);
+	return (0);
 }
 
 size(s)
 	register char	*s;
 {
-	register int	i = 0;
+	register int i = 0;
 
-	while (*s++) i++;
-	return(i);
+	while (s && *s++)
+		i++;
+	return (i);
 }
 
 char *
@@ -370,7 +366,7 @@ interp(s)
 		;
 	}
 	*p = '\0';
-	return(buf);
+	return (buf);
 }
 
 char *
@@ -387,7 +383,7 @@ ctrl(c)
 		s[0] = c;
 		s[1] = '\0';
 	}
-	return(s);
+	return (s);
 }
 
 /*
@@ -413,20 +409,16 @@ help(c)
  * Set up the "remote" tty's state
  */
 ttysetup(speed)
+	int speed;
 {
-#ifdef VMUNIX
 	unsigned bits = LDECCTQ;
-#endif
 
 	arg.sg_ispeed = arg.sg_ospeed = speed;
+	arg.sg_flags = RAW;
 	if (boolean(value(TAND)))
-		arg.sg_flags = TANDEM|RAW;
-	else
-		arg.sg_flags = RAW;
+		arg.sg_flags |= TANDEM;
 	ioctl(FD, TIOCSETP, (char *)&arg);
-#ifdef VMUNIX
 	ioctl(FD, TIOCLBIS, (char *)&bits);
-#endif
 }
 
 /*
@@ -445,12 +437,11 @@ sname(s)
 	return (p);
 }
 
-extern char chartab[];
 static char partab[0200];
 
 /*
- * do a write to the remote machine with the correct parity
- * we are doing 8 bit wide output, so we just generate a character
+ * Do a write to the remote machine with the correct parity.
+ * We are doing 8 bit wide output, so we just generate a character
  * with the right parity and output it.
  */
 pwrite(fd, buf, n)
@@ -459,48 +450,47 @@ pwrite(fd, buf, n)
 	register int n;
 {
 	register int i;
-	register char *bp = buf;
+	register char *bp;
 
-	for (i = 0, bp = buf; i < n; i++, bp++) {
+	bp = buf;
+	for (i = 0; i < n; i++) {
 		*bp = partab[(*bp) & 0177];
+		bp++;
 	}
 	write(fd, buf, n);
 }
 
 /*
- * build a parity table with the right high-order bit
- * copy an even-parity table and doctor it
+ * Build a parity table with appropriate high-order bit.
  */
 setparity()
 {
-	int i;
+	register int i;
 	char *parity;
+	extern char evenpartab[];
 
 	if (value(PARITY) == NOSTR)
 		value(PARITY) = "even";
-
 	parity = value(PARITY);
-
 	for (i = 0; i < 0200; i++)
-		partab[i] = chartab[i];
-
+		partab[i] = evenpartab[i];
+	if (equal(parity, "even"))
+		return;
 	if (equal(parity, "odd")) {
 		for (i = 0; i < 0200; i++)
 			partab[i] ^= 0200;	/* reverse bit 7 */
+		return;
 	}
-	else if (equal(parity, "none") || equal(parity, "zero")) {
+	if (equal(parity, "none") || equal(parity, "zero")) {
 		for (i = 0; i < 0200; i++)
 			partab[i] &= ~0200;	/* turn off bit 7 */
+		return;
 	}
-	else if (equal(parity, "one")) {
+	if (equal(parity, "one")) {
 		for (i = 0; i < 0200; i++)
 			partab[i] |= 0200;	/* turn on bit 7 */
+		return;
 	}
-	else if (equal(parity, "even")) {
-		/* table is already even parity */
-	}
-	else {
-		fprintf(stderr, "parity value %s unknown\n", PA);
-		fflush(stderr);
-	}
+	fprintf(stderr, "%s: unknown parity value\n", PA);
+	fflush(stderr);
 }

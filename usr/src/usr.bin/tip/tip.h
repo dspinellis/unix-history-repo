@@ -1,16 +1,19 @@
-/*	tip.h	4.10	83/06/15	*/
+/*	tip.h	4.11	83/06/25	*/
+
 /*
  * tip - terminal interface program
- *
- * Samuel J. Leffler
  */
+
+#include <sys/types.h>
+#include <sys/file.h>
 
 #include <sgtty.h>
 #include <signal.h>
 #include <stdio.h>
 #include <pwd.h>
-#include <sys/types.h>
 #include <ctype.h>
+#include <setjmp.h>
+#include <errno.h>
 
 /*
  * Remote host attributes
@@ -159,53 +162,28 @@ extern value_t	vtable[];	/* variable table */
 #define FORCE		8
 #define FRAMESIZE	9
 #define HOST		10
-#if ACULOG
-#define LOCK		11
-#define LOG		12
-#define PHONES		13
-#define PROMPT		14
-#define RAISE		15
-#define RAISECHAR	16
-#define RECORD		17
-#define REMOTE		18
-#define SCRIPT		19
-#define TABEXPAND	20
-#define VERBOSE		21
-#define SHELL		22
-#define HOME		23
-#define ECHOCHECK	24
-#define DISCONNECT	25
-#define TAND		26
-#define LDELAY		27
-#define CDELAY		28
-#define ETIMEOUT	29
-#define RAWFTP		30
-#define HALFDUPLEX	31
-#define	LECHO		32
-#define	PARITY		33
-#else
-#define PHONES		11
-#define PROMPT		12
-#define RAISE		13
-#define RAISECHAR	14
-#define RECORD		15
-#define REMOTE		16
-#define SCRIPT		17
-#define TABEXPAND	18
-#define VERBOSE		19
-#define SHELL		20
-#define HOME		21
-#define ECHOCHECK	22
-#define DISCONNECT	23
-#define TAND		24
-#define LDELAY		25
-#define CDELAY		26
-#define ETIMEOUT	27
-#define RAWFTP		28
-#define HALFDUPLEX	29
-#define	LECHO		30
-#define	PARITY		31
-#endif
+#define LOG		11
+#define PHONES		12
+#define PROMPT		13
+#define RAISE		14
+#define RAISECHAR	15
+#define RECORD		16
+#define REMOTE		17
+#define SCRIPT		18
+#define TABEXPAND	19
+#define VERBOSE		20
+#define SHELL		21
+#define HOME		22
+#define ECHOCHECK	23
+#define DISCONNECT	24
+#define TAND		25
+#define LDELAY		26
+#define CDELAY		27
+#define ETIMEOUT	28
+#define RAWFTP		29
+#define HALFDUPLEX	30
+#define	LECHO		31
+#define	PARITY		32
 
 #define NOVAL	((value_t *)NULL)
 #define NOACU	((acu_t *)NULL)
@@ -242,40 +220,17 @@ char	ccc;			/* synchronization character */
 char	ch;			/* for tipout */
 char	*uucplock;		/* name of lock file for uucp's */
 
-/*
- * From <sys/tty.h> (PDP-11 V7) ... it's put in here to avoid lots
- *  of naming conflicts with stuff we have to pull in to use tty.h
- */
-#ifndef TIOCFLUSH
-#	define TIOCFLUSH	(('t'<<8)|16)
-#endif
-
-/*
- * On PDP-11 V7 systems with Rand's capacity call use this
- *  stuff, otherwise <assuming it's a VM system> use FIONREAD
- */
-#ifndef FIONREAD
-#define	FIOCAPACITY	(('f'<<8)|3)
-
-struct capacity {
-	off_t	cp_nbytes;
-	char	cp_eof;
-};
-#endif
-
-#ifdef VMUNIX
 int	odisc;				/* initial tty line discipline */
-extern int disc;			/* current tty discpline */
-#endif
+extern	int disc;			/* current tty discpline */
 
-extern char		*ctrl();
-extern char		*ctime();
-extern long		time();
-extern struct passwd 	*getpwuid();
-extern char		*getlogin();
-extern char		*vinterp();
-extern char		*getenv();
-extern char		*rindex();
-extern char		*index();
-extern char		*malloc();
-extern char		*connect();
+extern	char *ctrl();
+extern	char *ctime();
+extern	long time();
+extern	struct passwd *getpwuid();
+extern	char *getlogin();
+extern	char *vinterp();
+extern	char *getenv();
+extern	char *rindex();
+extern	char *index();
+extern	char *malloc();
+extern	char *connect();

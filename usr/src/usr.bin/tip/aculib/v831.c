@@ -1,19 +1,14 @@
-/*	v831.c	4.3	83/06/18	*/
+#ifndef lint
+static char sccsid[] = "@(#)v831.c	4.4 (Berkeley) %G%";
+#endif
 
 #ifdef V831
 /*
  * Routines for dialing up on Vadic 831
  */
-#include <sys/file.h>
 #include <sys/time.h>
 
-#include <setjmp.h>
-#include <errno.h>
-#include <sgtty.h>
-
 #include "tip.h"
-
-static char *sccsid = "@(#)v831.c	4.3 %G%";
 
 int	v831_abort();
 static	int alarmtr();
@@ -105,7 +100,6 @@ v831_disconnect()
         struct sgttyb cntrl;
 
         sleep(2);
-#ifdef VMUNIX
 #ifdef DEBUG
         printf("[disconnect: FD=%d]\n", FD);
 #endif
@@ -116,7 +110,6 @@ v831_disconnect()
                 ioctl(FD, TIOCSETP, &cntrl);
                 ioctl(FD, TIOCNXCL, (struct sgttyb *)NULL);
         }
-#endif
         close(FD);
 }
 
@@ -132,10 +125,8 @@ v831_abort()
         if (AC > 0)
                 ioctl(FD, TIOCNXCL, (struct sgttyb *)NULL);
                 close(AC);
-#ifdef VMUNIX
         if (FD > 0)
                 ioctl(FD, TIOCCDTR, 0);
-#endif
         close(FD);
 }
 #endif

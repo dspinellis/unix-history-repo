@@ -1,14 +1,15 @@
-/*	cmdtab.c	4.5	83/06/15	*/
+#ifndef lint
+static char sccsid[] = "@(#)cmdtab.c	4.6 (Berkeley) %G%";
+#endif
+
 #include "tip.h"
 
-extern int shell(), lcmd(), getfl(), sendfile(), chdirectory(),
-	finish(), help(), pipefile(), consh(), variable(),
-	cu_take(), cu_put(), dollar(), genbrk(), suspend();
+extern	int shell(), getfl(), sendfile(), chdirectory();
+extern	int finish(), help(), pipefile(), consh(), variable();
+extern	int cu_take(), cu_put(), dollar(), genbrk(), suspend();
 
-esctable_t etable[] =
-{
-	{ '%',	NORM,	"shell",			 shell },
-	{ '!',	NORM,	"local command",		 lcmd },
+esctable_t etable[] = {
+	{ '!',	NORM,	"shell",			 shell },
 	{ '<',	NORM,	"receive file from remote host", getfl },
 	{ '>',	NORM,	"send file to remote host",	 sendfile },
 	{ 't',	NORM,	"take file from remote UNIX",	 cu_take },
@@ -20,9 +21,7 @@ esctable_t etable[] =
 	{ 'c',	NORM,	"change directory",		 chdirectory },
 	{ '.',	NORM,	"exit from tip",		 finish },
 	{CTRL(d),NORM,	"exit from tip",		 finish },
-#ifdef SIGTSTP
 	{CTRL(z),NORM,	"suspend tip",			 suspend },
-#endif
 	{ 's',	NORM,	"set variable",			 variable },
 	{ '?',	NORM,	"get this summary",		 help },
 	{ '#',	NORM,	"send break",			 genbrk },

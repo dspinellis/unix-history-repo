@@ -1,4 +1,7 @@
-/*	vars.c	4.5	83/06/15	*/
+#ifndef lint
+static char sccsid[] = "@(#)vars.c	4.6 (Berkeley) %G%";
+#endif
+
 #include "tip.h"
 
 /*
@@ -27,12 +30,8 @@ value_t vtable[] = {
 	  "fr",		(char *)&FS },
 	{ "host",	STRING|IREMOTE|INIT,	READ<<PUBLIC,
 	  "ho",		(char *)&HO },
-#ifdef ACULOG
-	{ "lock",	STRING|INIT,		(READ|WRITE)<<ROOT,
-	  NOSTR,	"/tmp/aculock" },
 	{ "log",	STRING|INIT,		(READ|WRITE)<<ROOT,
 	  NOSTR,	"/usr/adm/aculog" },
-#endif
 	{ "phones",	STRING|INIT|IREMOTE,	READ<<PUBLIC,
 	  NOSTR,	(char *)&PH },
 	{ "prompt",	CHAR,			(READ|WRITE)<<PUBLIC,
@@ -73,7 +72,7 @@ value_t vtable[] = {
 	  "hdx",	(char *)FALSE },
 	{ "localecho",	BOOL,			(READ|WRITE)<<PUBLIC,
 	  "le",		(char *)FALSE },
-	{ "parity",	STRING|INIT|IREMOTE,		(READ|WRITE)<<PUBLIC,
+	{ "parity",	STRING|INIT|IREMOTE,	(READ|WRITE)<<PUBLIC,
 	  "par",	(char *)&PA },
 	{ NOSTR, NULL, NULL, NOSTR, NOSTR }
 };
