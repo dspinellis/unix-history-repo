@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)pstat.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)pstat.c	4.4 (Berkeley) %G%";
 /*
  * Print system stuff
  */
@@ -19,6 +19,9 @@ static char *sccsid = "@(#)pstat.c	4.3 (Berkeley) %G%";
 #include <sys/vm.h>
 #include <nlist.h>
 #include <sys/pte.h>
+#define	KERNEL
+#include <sys/mx.h>
+#undef	KERNEL
 
 char	*fcore	= "/dev/kmem";
 char	*fnlist	= "/vmunix";
@@ -51,6 +54,12 @@ struct nlist nl[] = {
 	{ "_dh11" },
 #define	SNDH	12
 	{ "_ndh11" },
+#define	SGROUP	13
+	{ "_groups" },
+#define	SCHANS	14
+	{ "_chans" },
+#define	SSCHANS	15
+	{ "_schans" },
 	0,
 };
 
@@ -59,6 +68,8 @@ int	txtf;
 int	prcf;
 int	ttyf;
 int	usrf;
+int	mpxf;
+int	groupf;
 long	ubase;
 int	filf;
 int	swpf;
@@ -127,6 +138,12 @@ char **argv;
 		case 's':
 			swpf++;
 			break;
+		case 'm':
+			mpxf++;
+			break;
+		case 'g':
+			groupf++;
+			break;
 		}
 	}
 	if (argc>0)
@@ -163,6 +180,10 @@ char **argv;
 		dousr();
 	if (swpf||totflg)
 		doswap();
+	if (mpxf||totflg)
+		dompx();
+	if (groupf||totflg)
+		dogroup();
 }
 
 doinode()
@@ -213,7 +234,7 @@ putf(v, n)
 	if (v)
 		printf("%c", n);
 	else
-		printf(" ");
+		printf("_");
 }
 
 dotext()
@@ -623,4 +644,102 @@ struct text *xp;
 	if (xp->x_flag & XPAGI)
 		return (clrnd(xp->x_size + ctopt(xp->x_size)));
 	return (xp->x_size);
+}
+
+dompx()
+{
+	register int i;
+	struct chan chans[NCHANS];
+	struct schan schans[NPORTS];
+
+	lseek(fc, (long)nl[SCHANS].n_value, 0);
+	read(fc, chans, sizeof chans);
+	lseek(fc, (long)nl[SSCHANS].n_value, 0);
+	read(fc, schans, sizeof schans);
+
+	printf("CHAN  FLAGS            INDEX     LINE  GROUP     FILE      TTYP      CTLX      PGRP    OTTYP     OLINE  DATQ      CTLY\n");
+	for (i = 0; i < NCHANS; i++) {
+		printf("%3d   ", i);
+		putf(chans[i].c_flags&INUSE, 'I');
+		putf(chans[i].c_flags&SIOCTL, 'S');
+		putf(chans[i].c_flags&XGRP, 'X');
+		putf(chans[i].c_flags&YGRP, 'Y');
+		putf(chans[i].c_flags&WCLOSE, 'W');
+		putf(chans[i].c_flags&ISGRP, 'i');
+		putf(chans[i].c_flags&BLOCK, 'B');
+		putf(chans[i].c_flags&EOTMARK, 'E');
+		putf(chans[i].c_flags&SIGBLK, 's');
+		putf(chans[i].c_flags&BLKMSG, 'b');
+		putf(chans[i].c_flags&ENAMSG, 'e');
+		putf(chans[i].c_flags&WFLUSH, 'w');
+		putf(chans[i].c_flags&NMBUF, 'N');
+		putf(chans[i].c_flags&PORT, 'P');
+		putf(chans[i].c_flags&ALT, 'A');
+		putf(chans[i].c_flags&FBLOCK, 'F');
+		printf("%8x  ", chans[i].c_index);
+		printf("%3d   ", chans[i].c_line);
+		printf("%8x  ", chans[i].c_group);
+		printf("%8x  ", chans[i].c_fy);
+		printf("%8x  ", chans[i].c_ttyp);
+		printf("%8x  ", chans[i].c_ctlx);
+		printf("%6d  ", chans[i].c_pgrp);
+		printf("%8x  ", chans[i].c_ottyp);
+		printf("%3d   ", chans[i].c_oline);
+		printf("%8x  ", chans[i].cx.datq);
+		printf("%8x\n", chans[i].c_ctly);
+	}
+
+	printf("\nCHAN  FLAGS            INDEX     LINE  GROUP     FILE      TTYP      CTLX      PGRP\n");
+	for (i = 0; i < NPORTS; i++) {
+		printf("%3d  ", i);
+		putf(schans[i].c_flags&INUSE, 'I');
+		putf(schans[i].c_flags&SIOCTL, 'S');
+		putf(schans[i].c_flags&XGRP, 'X');
+		putf(schans[i].c_flags&YGRP, 'Y');
+		putf(schans[i].c_flags&WCLOSE, 'W');
+		putf(schans[i].c_flags&ISGRP, 'i');
+		putf(schans[i].c_flags&BLOCK, 'B');
+		putf(schans[i].c_flags&EOTMARK, 'E');
+		putf(schans[i].c_flags&SIGBLK, 's');
+		putf(schans[i].c_flags&BLKMSG, 'b');
+		putf(schans[i].c_flags&ENAMSG, 'e');
+		putf(schans[i].c_flags&WFLUSH, 'w');
+		putf(schans[i].c_flags&NMBUF, 'N');
+		putf(schans[i].c_flags&PORT, 'P');
+		putf(schans[i].c_flags&ALT, 'A');
+		putf(schans[i].c_flags&FBLOCK, 'F');
+		printf("%8x  ", schans[i].c_index);
+		printf("%3d   ", schans[i].c_line);
+		printf("%8x  ", schans[i].c_group);
+		printf("%8x  ", schans[i].c_fy);
+		printf("%8x  ", schans[i].c_ttyp);
+		printf("%8x  ", schans[i].c_ctlx);
+		printf("%6d\n", schans[i].c_pgrp);
+	}
+}
+
+dogroup()
+{
+	register int i, j;
+	struct group *groups[NGROUPS];
+	struct group g;
+
+	lseek(fc, (long)nl[SGROUP].n_value, 0);
+	read(fc, groups, sizeof groups);
+	printf("GROUP STATE      INDEX     ROT  *GROUP    *INODE    *FILE     ROTM  DATQ\n");
+	for (i = 0; i < NGROUPS; i++) {
+		if (groups[i] == 0)
+			continue;
+		lseek(fc, (long) groups[i], 0);
+		read(fc, &g, sizeof g);
+		printf("%3d   ", i);
+		printf("%8x  ", g.g_state);
+		printf("%8x  ", g.g_index);
+		printf("%3d  ", g.g_rot);
+		printf("%8x  ", g.g_group);
+		printf("%8x  ", g.g_inode);
+		printf("%8x  ", g.g_file);
+		printf("%3d   ", g.g_rotmask);
+		printf("%3d\n", g.g_datq);
+	}
 }
