@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	8.6 (Berkeley) %G%
+ *	@(#)kern_exit.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -132,9 +132,15 @@ exit1(p, rv)
 				if (sp->s_ttyp->t_pgrp)
 					pgsignal(sp->s_ttyp->t_pgrp, SIGHUP, 1);
 				(void) ttywait(sp->s_ttyp);
-				vgoneall(sp->s_ttyvp);
+				/*
+				 * The tty could have been revoked
+				 * if we blocked.
+				 */
+				if (sp->s_ttyvp)
+					vgoneall(sp->s_ttyvp);
 			}
-			vrele(sp->s_ttyvp);
+			if (sp->s_ttyvp)
+				vrele(sp->s_ttyvp);
 			sp->s_ttyvp = NULL;
 			/*
 			 * s_ttyp is not zero'd; we use this to indicate
