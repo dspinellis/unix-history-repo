@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -427,7 +427,8 @@ manual(page, list, pg)
 	for (listp = list; listp != NULL; listp = listp->list.qe_next) {
 		(void)snprintf(buf, sizeof(buf), "%s/%s.*", listp->s, page);
 		if (glob(buf,
-		    GLOB_APPEND | GLOB_NOSORT | GLOB_BRACE, NULL, pg)) {
+		    GLOB_APPEND | GLOB_BRACE | GLOB_NOSORT | GLOB_QUOTE,
+		    NULL, pg)) {
 			cleanup();
 			err(1, "globbing");
 		}
