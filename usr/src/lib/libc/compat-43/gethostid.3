@@ -3,10 +3,10 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)gethostid.3	6.6 (Berkeley) %G%
+.\"     @(#)gethostid.3	6.7 (Berkeley) %G%
 .\"
 .Dd 
-.Dt GETHOSTID 2
+.Dt GETHOSTID 3
 .Os BSD 4.2
 .Sh NAME
 .Nm gethostid ,
@@ -28,13 +28,22 @@ super-user and is normally performed at boot time.
 .Pp
 .Fn Gethostid
 returns the 32-bit identifier for the current processor.
+.Pp
+This function has been deprecated.
+The hostid should be set or retrieved by use of
+.Xr sysctl 2 .
 .Sh SEE ALSO
-.Xr hostid 1 ,
-.Xr gethostname 2
+.Xr sysctl 2 ,
+.Xr gethostname 3 ,
+.Xr sysctl 8 .
 .Sh BUGS
 32 bits for the identifier is too small.
 .Sh HISTORY
 The
-.Nm
-function call appeared in
-.Bx 4.2 .
+.Fn gethostid
+and
+.Fn sethostid
+syscalls appeared in 
+.Bx 4.2
+and were dropped in
+.Bx 4.4 .
