@@ -4,11 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)limits.h	7.8 (Berkeley) %G%
+ *	@(#)limits.h	7.9 (Berkeley) %G%
  */
 
 #define	CHAR_BIT	8		/* number of bits in a char */
-#define	MB_LEN_MAX	1		/* no multibyte characters */
+#define	MB_LEN_MAX	6		/* Allow 31 bit UTF2 */
+
 
 #define	CLK_TCK		60		/* ticks per second */
 
