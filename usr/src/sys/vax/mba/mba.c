@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mba.c	6.7 (Berkeley) %G%
+ *	@(#)mba.c	6.8 (Berkeley) %G%
  */
 
 #include "mba.h"
@@ -295,7 +295,7 @@ mbintr(mbanum)
 	 * Service drives which require attention
 	 * after non-data-transfer operations.
 	 */
-	while (drive = ffs(as)) {
+	while (drive = ffs((long)as)) {
 		drive--;		/* was 1 origin */
 		as &= ~(1 << drive);
 		mi = mhp->mh_mbip[drive];

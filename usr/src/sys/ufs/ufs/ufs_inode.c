@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_inode.c	6.18 (Berkeley) %G%
+ *	@(#)ufs_inode.c	6.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -485,7 +485,7 @@ itrunc(oip, length)
 	 * All whole direct blocks or frags.
 	 */
 	for (i = NDADDR - 1; i > lastblock; i--) {
-		register int bsize;
+		register off_t bsize;
 
 		bn = ip->i_db[i];
 		if (bn == 0)
@@ -504,7 +504,7 @@ itrunc(oip, length)
 	 */
 	bn = ip->i_db[lastblock];
 	if (bn != 0) {
-		int oldspace, newspace;
+		off_t oldspace, newspace;
 
 		/*
 		 * Calculate amount of space we're giving
@@ -609,7 +609,7 @@ indirtrunc(ip, bn, lastbn, level)
 		if (level > SINGLE)
 			blocksreleased +=
 			    indirtrunc(ip, nb, (daddr_t)-1, level - 1);
-		free(ip, nb, (int)fs->fs_bsize);
+		free(ip, nb, (off_t)fs->fs_bsize);
 		blocksreleased += nblocks;
 	}
 

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	6.25 (Berkeley) %G%
+ *	@(#)machdep.c	6.26 (Berkeley) %G%
  */
 
 #include "reg.h"
@@ -333,7 +333,7 @@ sendsig(p, sig, mask)
 		scp = (struct sigcontext *)regs[SP] - 1;
 	fp = (struct sigframe *)scp - 1;
 	if ((int)fp <= USRSTACK - ctob(u.u_ssize)) 
-		grow((unsigned)fp);
+		(void)grow((unsigned)fp);
 	if (useracc((caddr_t)fp, sizeof (*fp) + sizeof (*scp), B_WRITE) == 0) {
 		/*
 		 * Process has trashed its stack; give it an illegal

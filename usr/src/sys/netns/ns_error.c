@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_error.c	6.6 (Berkeley) %G%
+ *	@(#)ns_error.c	6.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -140,7 +140,6 @@ ns_err_input(m)
 	register struct ns_epidp *epidp = mtod(m, struct ns_epidp *);
 	register int i;
 	int type, code, param;
-	extern struct ns_addr if_makeaddr();
 
 	/*
 	 * Locate ns_err structure in mbuf, and check
@@ -268,6 +267,6 @@ register struct idp *idp;
 		idp->idp_sum = 0;
 		idp->idp_sum = ns_cksum(m, (((ntohs(idp->idp_len) - 1)|1)+1));
 	}
-	(void) ns_output(m, 0, NS_FORWARDING);
+	(void) ns_output(m, (struct route *)0, NS_FORWARDING);
 	return(0);
 }

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ffs_vnops.c	6.21 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	6.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -331,7 +331,8 @@ symlink()
 	ip = maknode(IFLNK | 0777, ndp);
 	if (ip == NULL)
 		return;
-	u.u_error = rdwri(UIO_WRITE, ip, uap->target, nc, 0, 0, (int *)0);
+	u.u_error = rdwri(UIO_WRITE, ip, uap->target, nc, (off_t)0, 0,
+	    (int *)0);
 	/* handle u.u_error != 0 */
 	iput(ip);
 }
@@ -516,7 +517,8 @@ readlink()
 		u.u_error = EINVAL;
 		goto out;
 	}
-	u.u_error = rdwri(UIO_READ, ip, uap->buf, uap->count, 0, 0, &resid);
+	u.u_error = rdwri(UIO_READ, ip, uap->buf, uap->count, (off_t)0, 0,
+	    &resid);
 out:
 	iput(ip);
 	u.u_r.r_val1 = uap->count - resid;
@@ -664,7 +666,7 @@ chown1(ip, uid, gid)
 #ifdef QUOTA
 	ip->i_dquot = inoquota(ip);
 	(void) chkdq(ip, change, 1);
-	(void) chkiq(ip->i_dev, (struct inode *)NULL, uid, 1);
+	(void) chkiq(ip->i_dev, (struct inode *)NULL, (uid_t)uid, 1);
 	return (u.u_error);		/* should == 0 ALWAYS !! */
 #else
 	return (0);

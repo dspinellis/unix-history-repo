@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mt.c	6.5 (Berkeley) %G%
+ *	@(#)mt.c	6.6 (Berkeley) %G%
  */
 
 #include "mu.h"
@@ -110,9 +110,6 @@ void mtcreset();
 mtattach(mi)
 	struct mba_device *mi;
 {
-#ifdef lint
-	mtread(0); mtwrite(0); mtioctl(0, 0, 0, 0);
-#endif
 }
 
 mtslave(mi, ms, sn)
@@ -122,7 +119,7 @@ mtslave(mi, ms, sn)
 {
 	register struct mu_softc *sc = &mu_softc[ms->ms_unit];
 	register struct mtdevice *mtaddr = (struct mtdevice *)mi->mi_drv;
-	int s = spl7(), rtn = 0, i;
+	int s = spl5(), rtn = 0, i;
 
 	/* Just in case the controller is ill, reset it.  Then issue	*/
 	/* a sense operation and wait about a second for it to respond.	*/
@@ -298,6 +295,7 @@ mtustart(mi)
 	register struct buf *bp = mi->mi_tab.b_actf;
 	register struct mu_softc *sc = &mu_softc[MUUNIT(bp->b_dev)];
 	daddr_t blkno;
+	int count;
 
 	if (sc->sc_openf < 0) {
 		bp->b_flags |= B_ERROR;
@@ -370,13 +368,12 @@ mtustart(mi)
 	/* Issue skip operations to position the next block for cooked I/O. */
 
 	if (blkno < bdbtofsb(bp->b_blkno))
-		mtaddr->mtncs[MUUNIT(bp->b_dev)] =
-		  (min((unsigned)(bdbtofsb(bp->b_blkno) - blkno), 0377) << 8) |
-			MT_SFORW|MT_GO;
+		count = (unsigned)(bdbtofsb(bp->b_blkno) - blkno);
 	else
-		mtaddr->mtncs[MUUNIT(bp->b_dev)] =
-		  (min((unsigned)(blkno - bdbtofsb(bp->b_blkno)), 0377) << 8) |
-			MT_SREV|MT_GO;
+		count = (unsigned)(blkno - bdbtofsb(bp->b_blkno));
+	if (count > 0377)
+		count = 0377;
+	mtaddr->mtncs[MUUNIT(bp->b_dev)] = count | MT_SFORW|MT_GO;
 	return (MBU_STARTED);
 }
 

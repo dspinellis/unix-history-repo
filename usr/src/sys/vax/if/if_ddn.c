@@ -1,4 +1,4 @@
-/*	@(#)if_ddn.c	6.4 (Berkeley) %G% */
+/*	@(#)if_ddn.c	6.5 (Berkeley) %G% */
 
 
 /************************************************************************\
@@ -768,7 +768,7 @@ printf("ddn%d: x25_init()\n", ds->ddn_if.if_unit);
 
     init_msg[3] = sizeof(init_msg) - 4;	/* set cmnd ext length */
 
-    bcopy(init_msg, mtod(m, u_char *), sizeof(init_msg));
+    bcopy((caddr_t)init_msg, mtod(m, caddr_t), sizeof(init_msg));
 
     m->m_len = sizeof(init_msg);	/* set msg length */
 
@@ -1010,13 +1010,13 @@ register struct ddn_softc *ds;
 register struct ddn_cb *dc;
   {
     register struct mbuf *m_callbfr;
-    register u_char *cb;
+    register caddr_t cb;
 
     MGET(m_callbfr, M_DONTWAIT, MT_DATA);  /* try to get call cmnd buffer */
     if (m_callbfr == 0)
 	return(0);
 
-    cb = mtod(m_callbfr, u_char *);
+    cb = mtod(m_callbfr, caddr_t);
 
     convert_ip_addr(ds->ddn_ipaddr, cb_calling_addr);
 
@@ -1046,27 +1046,27 @@ register struct ddn_cb *dc;
     m_callbfr->m_len = cb_cmnd[3] + 4;
 
     /* copy command header */
-    bcopy(cb_cmnd, cb, 4);
+    bcopy((caddr_t)cb_cmnd, cb, 4);
     cb += 4;
 
     /* copy called address */
-    bcopy(cb_called_addr, cb, cb_called_addr[0] + 1);
+    bcopy((caddr_t)cb_called_addr, cb, cb_called_addr[0] + 1);
     cb += (cb_called_addr[0] + 1);
 
     /* copy calling address */
-    bcopy(cb_calling_addr, cb, cb_calling_addr[0] + 1);
+    bcopy((caddr_t)cb_calling_addr, cb, cb_calling_addr[0] + 1);
     cb += (cb_calling_addr[0] + 1);
 
     /* copy protocol */
-    bcopy(cb_protocol, cb, cb_protocol[0] + 1);
+    bcopy((caddr_t)cb_protocol, cb, cb_protocol[0] + 1);
     cb += (cb_protocol[0] + 1);
 
     /* copy facilities */
-    bcopy(cb_facilities, cb, cb_facilities[0] + 1);
+    bcopy((caddr_t)cb_facilities, cb, cb_facilities[0] + 1);
     cb += (cb_facilities[0] + 1);
 
     /* copy user data */
-    bcopy(cb_user_data, cb, cb_user_data[0] + 1);
+    bcopy((caddr_t)cb_user_data, cb, cb_user_data[0] + 1);
     cb += (cb_user_data[0] + 1);
 
     dc->dc_state = LC_CALL_PENDING;		/* set state */

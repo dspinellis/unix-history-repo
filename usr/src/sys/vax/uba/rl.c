@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rl.c	6.6 (Berkeley) %G%
+ *	@(#)rl.c	6.7 (Berkeley) %G%
  */
 
 #include "rl.h"
@@ -538,7 +538,7 @@ rlintr(rl21)
 	 * the unit start routine to place the slave
 	 * on the controller device queue.
 	 */
-	while (unit = ffs(as)) {
+	while (unit = ffs((long)as)) {
 		unit--;		/* was 1 origin */
 		as &= ~(1<<unit);
 		rlustart(rlip[rl21][unit]);

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lpa.c	6.3 (Berkeley) %G%
+ *	@(#)lpa.c	6.4 (Berkeley) %G%
  */
 
 #include "lpa.h"
@@ -207,7 +207,7 @@ TRACER("OPEN\n");
 	if (unit >= NLPA || sc->sc_flag & OPEN || ui == 0 ||
 	    ui->ui_alive == 0)
 		return (ENXIO);
-	(void) spl7();
+	(void) splhigh();
 	lpaaddr->lcim = RESET;
 	lpaaddr->lcim = 0;
 	(void) spl0();
@@ -246,14 +246,14 @@ TRACER("SLEEP\n");
 			sleep((caddr_t)sc, LPAPRI);
 		}
 	}
-	(void) spl7();
+	(void) splhigh();
 	lpaaddr->lcim = RESET;
 	lpaaddr->lcim = 0;
 	(void) spl0();
 	if (sc->sc_ubabuf) {
 		ubarelse(ui->ui_ubanum, &sc->sc_ubabuf);
 		sc->sc_ubabuf = 0;
-		(void) spl6();
+		(void) splclock();
 		vsunlock(sc->sc_ubuffer.b_un.b_addr, sc->sc_ubuffer.b_bcount,
 			(sc->sc_device)? B_READ : B_WRITE);
 		u.u_procp->p_flag &= ~SPHYSIO;
@@ -351,7 +351,7 @@ lpadmdt(lpaaddr, sc, ubanum, uio)
 	*p++ = ADIO3;
 	*p++ = ADIO4;
 	*p++ = ADIO5;
-	n = min(uio->uio_resid, 256);	/* dedicated mode dispatch table */
+	n = MIN(uio->uio_resid, 256);	/* dedicated mode dispatch table */
 	error = uiomove((char *)p, n, UIO_WRITE, uio);
 	if (error)
 		return (error);
@@ -567,11 +567,11 @@ TRACER("<STOP?>");
 	}
 	inc(sc_lbufnx);
 TRACERN("<USTAT %o>", sc->sc_ustat);
-	spx = spl7();
+	spx = splhigh();
 	sc->sc_ustat &= ~NBI;
 	sc->sc_ustat |= sc->sc_lbufnx << 8;
 	sc->sc_ustat &= ~DONE;
-	(void) splx(spx);
+	splx(spx);
 TRACERN("<LPAN %d>}", sc->sc_lbufnx);
 }
 
@@ -592,7 +592,7 @@ TRACER("LPA RESET\n");
 		lpaaddr = (struct lpadevice *)ui->ui_addr;
 		sc = &lpa_softc[unit];
 		sc->sc_flag |= ERROR;
-		(void) spl7();
+		(void) splhigh();
 		lpaaddr->lcim = RESET;
 		lpaaddr->lcim = 0;
 		(void) spl0();

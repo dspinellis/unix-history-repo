@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_fork.c	6.8 (Berkeley) %G%
+ *	@(#)kern_fork.c	6.9 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -73,8 +73,8 @@ fork1(isvfork)
 	if (p2==NULL || (u.u_uid!=0 && (p2->p_nxt == NULL || a>MAXUPRC))) {
 		u.u_error = EAGAIN;
 		if (!isvfork) {
-			(void) vsexpand(0, &u.u_cdmap, 1);
-			(void) vsexpand(0, &u.u_csmap, 1);
+			(void) vsexpand((size_t)0, &u.u_cdmap, 1);
+			(void) vsexpand((size_t)0, &u.u_csmap, 1);
 		}
 		goto out;
 	}

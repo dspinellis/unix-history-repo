@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	6.34 (Berkeley) %G%
+ *	@(#)locore.s	6.35 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -1159,7 +1159,7 @@ ENTRY(savectx, 0)
 /*
  * Setrq(p), using fancy VAX instructions.
  *
- * Call should be made at spl6(), and p->p_stat should be SRUN
+ * Call should be made at splclock(), and p->p_stat should be SRUN
  */
 	.align	1
  JSBENTRY(Setrq, R0)
@@ -1181,7 +1181,7 @@ set3:	.asciz	"setrq"
 /*
  * Remrq(p), using fancy VAX instructions
  *
- * Call should be made at spl6().
+ * Call should be made at splclock().
  */
 	.align	1
  JSBENTRY(Remrq, R0)

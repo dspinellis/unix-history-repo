@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ether.c	6.16 (Berkeley) %G%
+ *	@(#)if_ether.c	6.17 (Berkeley) %G%
  */
 
 /*
@@ -93,7 +93,7 @@ arpwhohas(ac, addr)
 	struct sockaddr sa;
 
 	if ((m = m_get(M_DONTWAIT, MT_DATA)) == NULL)
-		return (1);
+		return;
 	m->m_len = sizeof *ea;
 	m->m_off = MMAXOFF - m->m_len;
 	ea = mtod(m, struct ether_arp *);
@@ -113,7 +113,7 @@ arpwhohas(ac, addr)
 	   sizeof(ea->arp_spa));
 	bcopy((caddr_t)addr, (caddr_t)ea->arp_tpa, sizeof(ea->arp_tpa));
 	sa.sa_family = AF_UNSPEC;
-	return ((*ac->ac_if.if_output)(&ac->ac_if, m, &sa));
+	(*ac->ac_if.if_output)(&ac->ac_if, m, &sa);
 }
 
 /*

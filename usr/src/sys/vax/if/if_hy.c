@@ -1,9 +1,5 @@
 /*
- * Copyright (c) 1982 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
- *
- *	@(#)if_hy.c	6.8 (Berkeley) %G%
+ *	@(#)if_hy.c	6.9 (Berkeley) %G%
  */
 
 /*
@@ -1462,7 +1458,7 @@ hyioctl(ifp, cmd, data)
 				goto out;
 			}
 			hy_log.hyl_wait = sgl->hylsg_cmd;
-			sleep((caddr_t)&hy_log);
+			sleep((caddr_t)&hy_log, PZERO - 1);
 		}
 
 		if (copyout((caddr_t)&hy_log, sgl->hylsg_ptr, sizeof(hy_log))) {

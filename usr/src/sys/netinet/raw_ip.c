@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)raw_ip.c	6.7 (Berkeley) %G%
+ *	@(#)raw_ip.c	6.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -136,7 +136,7 @@ rip_ctloutput(op, so, level, optname, m)
 				(*m)->m_off = rp->rcb_options->m_off;
 				(*m)->m_len = rp->rcb_options->m_len;
 				bcopy(mtod(rp->rcb_options, caddr_t),
-				    mtod(*m, caddr_t), (*m)->m_len);
+				    mtod(*m, caddr_t), (unsigned)(*m)->m_len);
 			} else
 				(*m)->m_len = 0;
 			break;
@@ -147,6 +147,6 @@ rip_ctloutput(op, so, level, optname, m)
 		break;
 	}
 	if (op == PRCO_SETOPT)
-		m_free(*m);
+		(void)m_free(*m);
 	return (error);
 }

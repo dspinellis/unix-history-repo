@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in_var.h	6.3 (Berkeley) %G%
+ *	@(#)in_var.h	6.4 (Berkeley) %G%
  */
 
 /*
@@ -37,6 +37,6 @@ struct in_ifaddr {
 #define	IFA_ROUTE	0x01		/* routing entry installed */
 
 #ifdef	KERNEL
-extern	struct in_ifaddr *in_ifaddr;
-extern	struct in_ifaddr *in_iaonnetof();
+struct in_ifaddr *in_ifaddr;
+struct in_ifaddr *in_iaonnetof();
 #endif

@@ -1,5 +1,5 @@
 /*
- * @(#)ioa.h	1.2 (Berkeley) %G%
+ * @(#)ioa.h	1.3 (Berkeley) %G%
  */
 /************************************************************************
  *									*
@@ -83,6 +83,3 @@ struct ioa ioa[MAXNIOA];
 
 #define IOA_TYPMSK 0xf0
 #define IOA_SBIA	0x10
-#define IOA_SBI780	0x01
-#define IOA_CMI750	0x02
-#define IOA_XXX730	0x04

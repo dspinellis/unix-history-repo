@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_uba.h	6.5 (Berkeley) %G%
+ *	@(#)if_uba.h	6.6 (Berkeley) %G%
  */
 
 /*
@@ -96,10 +96,10 @@ struct ifuba {
 #ifdef 	KERNEL
 #define	if_ubainit(ifuba, uban, hlen, nmr) \
 		if_ubaminit(&(ifuba)->ifu_info, uban, hlen, nmr, \
-			&(ifuba)->ifu_r, 1, &(ifuba)->ifu_w, 1)
+			&(ifuba)->ifu_r, 1, &(ifuba)->ifu_xmt, 1)
 #define	if_rubaget(ifu, totlen, off0, ifp) \
 		if_ubaget(&(ifu)->ifu_info, &(ifu)->ifu_r, totlen, off0, ifp)
 #define	if_wubaput(ifu, m) \
-		if_ubaput(&(ifu)->ifu_info, &(ifu)->ifu_w, m)
+		if_ubaput(&(ifu)->ifu_info, &(ifu)->ifu_xmt, m)
 struct	mbuf *if_ubaget();
 #endif

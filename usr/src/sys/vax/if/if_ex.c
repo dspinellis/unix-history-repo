@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ex.c	6.13 (Berkeley) %G%
+ *	@(#)if_ex.c	6.14 (Berkeley) %G%
  */
 
 
@@ -94,7 +94,7 @@ struct	ex_softc {
 #define EX_SETADDR	(1<<3)		/* physaddr has been changed */
 	struct	ex_msg *xs_h2xnext;	/* host pointer to request queue */
 	struct	ex_msg *xs_x2hnext;	/* host pointer to reply queue */
-	u_long	xs_ubaddr;		/* map info for structs below */
+	int	xs_ubaddr;		/* map info for structs below */
 #define	UNIADDR(x)	((u_long)(x)&0x3FFFF)
 #define	P_UNIADDR(x)	((u_long)(x)&0x3FFF0)
 	/* the following structures are always mapped in */
@@ -105,11 +105,11 @@ struct	ex_softc {
 	struct	confmsg xs_cm;		/* configuration message */
 	struct	stat_array xs_xsa;	/* EXOS writes stats here */
 	/* end mapped area */
-#define	INCORE_BASE(p)	(((u_long)(&(p)->xs_h2xhdr)) & 0xFFFFFFF0)
+#define	INCORE_BASE(p)	((caddr_t)((u_long)(&(p)->xs_h2xhdr) & 0xFFFFFFF0))
 #define	RVAL_OFF(unit, n) \
-	((u_long)(&(ex_softc[unit].n)) - INCORE_BASE(&ex_softc[unit]))
+	((caddr_t)(&(ex_softc[unit].n)) - INCORE_BASE(&ex_softc[unit]))
 #define	LVAL_OFF(unit, n) \
-	((u_long)(ex_softc[unit].n) - INCORE_BASE(&ex_softc[unit]))
+	((caddr_t)(ex_softc[unit].n) - INCORE_BASE(&ex_softc[unit]))
 #define	H2XHDR_OFFSET(unit)	RVAL_OFF(unit, xs_h2xhdr)
 #define	X2HHDR_OFFSET(unit)	RVAL_OFF(unit, xs_x2hhdr)
 #define	H2XENT_OFFSET(unit)	LVAL_OFF(unit, xs_h2xent)
@@ -159,6 +159,7 @@ exprobe(reg)
 	}
 #ifdef lint
 	br = br;
+	excdint(0);
 #endif
 	ex_ncall++;
 	return (sizeof(struct exdevice));
@@ -294,7 +295,7 @@ exinit(unit)
 	xs->xs_if.if_flags |= IFF_RUNNING;
 	xs->xs_flags |= EX_RUNNING;
 	if (xs->xs_flags & EX_SETADDR)
-		ex_setaddr(0, unit);
+		ex_setaddr((u_char *)0, unit);
 	exstart(unit);				/* start transmits */
 	splx(s);
 }
@@ -904,7 +905,7 @@ ex_setaddr(physaddr, unit)
 	bp->mb_rqst = LLNET_ADDRS;
 	bp->mb_na.na_mask = READ_OBJ|WRITE_OBJ;
 	bp->mb_na.na_slot = PHYSSLOT;
-	bcopy(xs->xs_addr, bp->mb_na.na_addrs, 6);
+	bcopy((caddr_t)xs->xs_addr, (caddr_t)bp->mb_na.na_addrs, 6);
 	bp->mb_status |= MH_EXOS;
 	addr->xd_portb = EX_NTRUPT;
 	bp = xs->xs_x2hnext;

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prf.c	6.11 (Berkeley) %G%
+ *	@(#)subr_prf.c	6.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -141,7 +141,7 @@ logpri(level)
 {
 
 	putchar('<', TOLOG, (struct tty *)0);
-	printn(level, 10, TOLOG, (struct tty *)0);
+	printn((u_long)level, 10, TOLOG, (struct tty *)0);
 	putchar('>', TOLOG, (struct tty *)0);
 }
 

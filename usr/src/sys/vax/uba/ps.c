@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ps.c	6.6 (Berkeley) %G%
+ *	@(#)ps.c	6.7 (Berkeley) %G%
  */
 
 /*
@@ -357,7 +357,7 @@ psioctl(dev, cmd, data, flag)
 
 #define SAVEPSADDR(psaddr, savepsaddr) { \
 	register short i, xx1; \
-	xx1 = spl6(); \
+	xx1 = splclock(); \
 	i = psaddr->ps_addr; \
 	while ((psaddr->ps_iostat & DIOREADY) == 0) \
 		; \
@@ -366,7 +366,7 @@ psioctl(dev, cmd, data, flag)
 }
 #define RESTORPSADDR(psaddr, savepsaddr) { \
 	register short xx2; \
-	xx2 = spl6(); \
+	xx2 = splclock(); \
 	while ((psaddr->ps_iostat & DIOREADY) == 0) \
 		;\
 	psaddr->ps_addr = savepsaddr; \
@@ -451,7 +451,7 @@ pssystemintr(dev)
 					else
 						psp->ps_map.mode = WAITING_RF;
 #ifdef EXTERNAL_SYNC
-					x = spl6();
+					x = splclock();
 #endif
 					(void) psrfnext(psp, psaddr);
 #ifdef EXTERNAL_SYNC
@@ -494,7 +494,7 @@ tryrf:
 				}
 				psp->ps_refresh.srcntr = 0;
 #ifdef EXTERNAL_SYNC
-				x = spl6();
+				x = splclock();
 #endif
 				psp->ps_refresh.mode = SYNCING_RF;
 				if (psp->ps_clockticks)

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mem.c	6.3 (Berkeley) %G%
+ *	@(#)mem.c	6.4 (Berkeley) %G%
  */
 
 /*
@@ -72,8 +72,9 @@ mmrw(dev, uio, rw)
 				(rw == UIO_READ ? PG_KR : PG_KW);
 			mtpr(TBIS, vmmap);
 			o = (int)uio->uio_offset & PGOFSET;
-			c = min((u_int)(NBPG - o), (u_int)iov->iov_len);
-			c = min(c, (u_int)(NBPG - ((int)iov->iov_base&PGOFSET)));
+			c = (u_int)(NBPG - ((int)iov->iov_base & PGOFSET));
+			c = MIN(c, (u_int)(NBPG - o));
+			c = MIN(c, (u_int)iov->iov_len);
 			error = uiomove((caddr_t)&vmmap[o], (int)c, rw, uio);
 			continue;
 

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_xxx.c	6.6 (Berkeley) %G%
+ *	@(#)subr_xxx.c	6.7 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -40,7 +40,7 @@ nulldev()
 	return (0);
 }
 
-#ifndef vax
+#ifdef notdef
 imin(a, b)
 {
 
@@ -68,7 +68,7 @@ max(a, b)
 
 	return (a > b ? a : b);
 }
-#endif not vax
+#endif notdef
 
 extern	cabase, calimit;
 extern	struct pte camap[];
@@ -105,6 +105,7 @@ calloc(size)
 	return (res);
 }
 
+#ifdef notdef
 /*
  * Stub routine in case it is ever possible to free space.
  */
@@ -114,6 +115,7 @@ cfreemem(cp, size)
 {
 	printf("freeing %x, size %d\n", cp, size);
 }
+#endif
 
 #ifndef vax
 ffs(mask)

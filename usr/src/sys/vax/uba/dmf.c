@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmf.c	6.14 (Berkeley) %G%
+ *	@(#)dmf.c	6.15 (Berkeley) %G%
  */
 
 #include "dmf.h"
@@ -86,13 +86,12 @@ char	dmf_speeds[] =
 struct	tty dmf_tty[NDMF*8];
 char	dmfsoftCAR[NDMF];
 
-struct dmfl_softc
-{
-	unsigned dmfl_state; 		/* soft state bits */
-	unsigned dmfl_info;		/* uba info */
-	unsigned short dmfl_lines;	/* lines per page (66 def.) */
-	unsigned short dmfl_cols; 	/* cols per line (132 def.) */
-	char dmfl_buf[DMFL_BUFSIZ];
+struct dmfl_softc {
+	u_int	dmfl_state; 		/* soft state bits */
+	int	dmfl_info;		/* uba info */
+	u_short	dmfl_lines;		/* lines per page (66 def.) */
+	u_short	dmfl_cols; 		/* cols per line (132 def.) */
+	char	dmfl_buf[DMFL_BUFSIZ];
 } dmfl_softc[NDMF];
 
 /*
@@ -141,7 +140,7 @@ dmfprobe(reg, ctlr)
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
 	dmfxint(0); dmfrint(0);
-	dmfsrint(); dmfsxint(); dmfdaint(); dmfdbint(); dmflint();
+	dmfsrint(); dmfsxint(); dmfdaint(); dmfdbint(); dmflint(0);
 #endif
 	/*
 	 * Pick the usual size DMF vector here (don't decrement it here).
@@ -854,28 +853,27 @@ dmflclose(dev, flag)
 	register int dmf= DMFL_UNIT(dev);
 	register struct dmfl_softc *sc = &dmfl_softc[dmf];
 
-	dmflout(dev, "\f", 1);
+	(void)dmflout(dev, "\f", 1);
 	sc->dmfl_state = 0;
 	if (sc->dmfl_info != 0)
-		ubarelse((struct dmfdevice *)(dmfinfo[dmf])->ui_ubanum,
+		ubarelse((int)dmfinfo[dmf]->ui_ubanum,
 			&(sc->dmfl_info));
 
 	((struct dmfdevice *)(dmfinfo[dmf]->ui_addr))->dmfl[0] = 0;
-	return (0);
 }
 
 dmflwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	register unsigned int n;
+	register int n;
 	register int error;
 	register struct dmfl_softc *sc;
 
 	sc = &dmfl_softc[DMFL_UNIT(dev)];
 	if (sc->dmfl_state&ERROR)
 		return(EIO);
-	while (n = min(DMFL_BUFSIZ, (unsigned)uio->uio_resid)) {
+	while (n = MIN(DMFL_BUFSIZ, (unsigned)uio->uio_resid)) {
 		if (error = uiomove(&sc->dmfl_buf[0], (int)n, UIO_WRITE, uio)) {
 			printf("uio move error\n");
 			return (error);
@@ -904,8 +902,7 @@ dmflout(dev, cp, n)
 	register int dmf;
 	register struct uba_device *ui;
 	register struct dmfdevice *d;
-	register unsigned info;
-	register unsigned i;
+	int i;
 
 	dmf = DMFL_UNIT(dev);
 	sc = &dmfl_softc[dmf];
@@ -916,20 +913,20 @@ dmflout(dev, cp, n)
 	 * allocate unibus resources, will be released when io
 	 * operation is done.
 	 */
-	sc->dmfl_info = info = uballoc(ui->ui_ubanum,cp,n,0);
+	sc->dmfl_info = uballoc(ui->ui_ubanum,cp,n,0);
 	d = (struct dmfdevice *)ui->ui_addr;
 	d->dmfl[0] = (2<<8) | DMFL_FORMAT;	/* indir reg 2 */
 	/* indir reg auto increments on r/w */
 	/* SO DON'T CHANGE THE ORDER OF THIS CODE */
 	d->dmfl[1] = 0;			/* prefix chars & num */
 	d->dmfl[1] = 0;			/* suffix chars & num */
-	d->dmfl[1] = info; 		/* dma lo 16 bits addr */
+	d->dmfl[1] = sc->dmfl_info; 		/* dma lo 16 bits addr */
 
 	/* NOT DOCUMENTED !! */
 	d->dmfl[1] = -n;		/* number of chars */
 	/* ----------^-------- */
 
-	d->dmfl[1] = ((info>>16)&3) /* dma hi 2 bits addr */
+	d->dmfl[1] = ((sc->dmfl_info>>16)&3) /* dma hi 2 bits addr */
 		| (1<<8) /* auto cr insert */
 		| (1<<9) /* use real ff */
 		| (1<<15); /* no u/l conversion */
@@ -941,8 +938,8 @@ dmflout(dev, cp, n)
 	while (sc->dmfl_state & ASLP) {
 		sleep(&sc->dmfl_buf[0], (PZERO+8));
 		while (sc->dmfl_state & ERROR) {
-			timeout(dmflint, dmf, 10*hz);
-			sleep(&sc->dmfl_state, (PZERO+8));
+			timeout(dmflint, (caddr_t)dmf, 10*hz);
+			sleep((caddr_t)&sc->dmfl_state, (PZERO+8));
 		}
 		/*if (sc->dmfl_state&ERROR) return (EIO);*/
 	}
@@ -970,7 +967,7 @@ dmflint(dmf)
 		printf("dmfl: intr while in error state \n");
 		if ((d->dmfl[0]&DMFL_OFFLINE) == 0)
 			sc->dmfl_state &= ~ERROR;
-		wakeup(&sc->dmfl_state);
+		wakeup((caddr_t)&sc->dmfl_state);
 		return;
 	}
 	if (d->dmfl[0] & DMFL_DMAERR)
@@ -986,7 +983,7 @@ dmflint(dmf)
 #endif
 	}
 	sc->dmfl_state &= ~ASLP;
-	wakeup(&sc->dmfl_buf[0]);
+	wakeup((caddr_t)&sc->dmfl_buf[0]);
 	if (sc->dmfl_info != 0)
 		ubarelse(ui->ui_ubanum, &sc->dmfl_info);
 	sc->dmfl_info = 0;

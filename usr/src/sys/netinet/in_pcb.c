@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in_pcb.c	6.13 (Berkeley) %G%
+ *	@(#)in_pcb.c	6.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -186,7 +186,7 @@ in_pcbconnect(inp, nam)
 		return (EADDRINUSE);
 	if (inp->inp_laddr.s_addr == INADDR_ANY) {
 		if (inp->inp_lport == 0)
-			in_pcbbind(inp, (struct mbuf *)0);
+			(void)in_pcbbind(inp, (struct mbuf *)0);
 		inp->inp_laddr = ifaddr->sin_addr;
 	}
 	inp->inp_faddr = sin->sin_addr;
@@ -212,7 +212,7 @@ in_pcbdetach(inp)
 	so->so_pcb = 0;
 	sofree(so);
 	if (inp->inp_options)
-		m_free(inp->inp_options);
+		(void)m_free(inp->inp_options);
 	if (inp->inp_route.ro_rt)
 		rtfree(inp->inp_route.ro_rt);
 	remque(inp);
@@ -289,7 +289,7 @@ in_losing(inp)
 
 	if ((rt = inp->inp_route.ro_rt)) {
 		if (rt->rt_flags & RTF_DYNAMIC)
-			rtrequest(SIOCDELRT, rt);
+			(void) rtrequest(SIOCDELRT, rt);
 		rtfree(rt);
 		inp->inp_route.ro_rt = 0;
 		/*

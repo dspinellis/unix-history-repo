@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_exec.c	6.16 (Berkeley) %G%
+ *	@(#)kern_exec.c	6.17 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -52,7 +52,8 @@ execve()
 	register char *cp;
 	register struct buf *bp;
 	register struct execa *uap;
-	int na, ne, ucp, ap, len, cc;
+	int na, ne, ucp, ap, cc;
+	unsigned len;
 	int indir, uid, gid;
 	char *sharg;
 	struct inode *ip;
@@ -109,7 +110,7 @@ execve()
 	 */
 	exdata.ex_shell[0] = '\0';	/* for zero length files */
 	u.u_error = rdwri(UIO_READ, ip, (caddr_t)&exdata, sizeof (exdata),
-	    0, 1, &resid);
+	    (off_t)0, 1, &resid);
 	if (u.u_error)
 		goto bad;
 #ifndef lint
@@ -246,10 +247,11 @@ execve()
 				cp = bp->b_un.b_addr;
 			}
 			if (sharg) {
-				error = copystr(sharg, cp, cc, &len);
+				error = copystr(sharg, cp, (unsigned)cc, &len);
 				sharg += len;
 			} else {
-				error = copyinstr((caddr_t)ap, cp, cc, &len);
+				error = copyinstr((caddr_t)ap, cp, (unsigned)cc,
+				    &len);
 				ap += len;
 			}
 			cp += len;
@@ -313,7 +315,8 @@ badarg:
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
 				cp = bp->b_un.b_addr;
 			}
-			error = copyoutstr(cp, (caddr_t)ucp, cc, &len);
+			error = copyoutstr(cp, (caddr_t)ucp, (unsigned)cc,
+			    &len);
 			ucp += len;
 			cp += len;
 			nc += len;
@@ -329,7 +332,7 @@ badarg:
 	 * remain held through p_sigmask.
 	 */
 	while (u.u_procp->p_sigcatch) {
-		nc = ffs(u.u_procp->p_sigcatch);
+		nc = ffs((long)u.u_procp->p_sigcatch);
 		u.u_procp->p_sigcatch &= ~sigmask(nc);
 		u.u_signal[nc] = SIG_DFL;
 	}
@@ -457,13 +460,13 @@ getxfile(ip, ep, nargc, uid, gid)
 		    rdwri(UIO_READ, ip,
 			(char *)ctob(dptov(u.u_procp, 0)),
 			(int)ep->a_data,
-			(int)(sizeof (struct exec) + ep->a_text),
+			(off_t)(sizeof (struct exec) + ep->a_text),
 			0, (int *)0);
 	xalloc(ip, ep, pagi);
 	if (pagi && u.u_procp->p_textp)
 		vinifod((struct fpte *)dptopte(u.u_procp, 0),
 		    PG_FTEXT, u.u_procp->p_textp->x_iptr,
-		    (long)(1 + ts/CLSIZE), (int)btoc(ep->a_data));
+		    (long)(1 + ts/CLSIZE), (size_t)btoc(ep->a_data));
 
 #ifdef vax
 	/* THIS SHOULD BE DONE AT A LOWER LEVEL, IF AT ALL */

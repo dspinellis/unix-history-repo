@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lp.c	6.7 (Berkeley) %G%
+ *	@(#)lp.c	6.8 (Berkeley) %G%
  */
 
 #include "lp.h"
@@ -36,10 +36,11 @@
 #define	LPLWAT	650
 #define	LPHWAT	800
 
-#define MAXCOL	132
-#define CAP	1
+#define	LPBUFSIZE	1024
+#define MAXCOL		132
+#define CAP		1
 
-#define LPUNIT(dev) (minor(dev) >> 3)
+#define LPUNIT(dev)	(minor(dev) >> 3)
 
 struct lpdevice {
 	short	lpsr;
@@ -118,7 +119,7 @@ lpopen(dev, flag)
 	if (lpaddr->lpsr&ERROR)
 		return (EIO);
 	sc->sc_state |= OPEN;
-	sc->sc_inbuf = geteblk(512);
+	sc->sc_inbuf = geteblk(LPBUFSIZE);
 	sc->sc_flags = minor(dev) & 07;
 	s = spl4();
 	if ((sc->sc_state&TOUT) == 0) {
@@ -151,7 +152,7 @@ lpwrite(dev, uio)
 	register struct lp_softc *sc = &lp_softc[LPUNIT(dev)];
 	int error;
 
-	while (n = min(512, (unsigned)uio->uio_resid)) {
+	while (n = MIN(LPBUFSIZE, (unsigned)uio->uio_resid)) {
 		cp = sc->sc_inbuf->b_un.b_addr;
 		error = uiomove(cp, (int)n, UIO_WRITE, uio);
 		if (error)
