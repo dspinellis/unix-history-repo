@@ -1,4 +1,4 @@
-#	Makefile	6.4	85/09/19
+#	Makefile	6.5	86/03/12
 #
 # Make a 780 rx01 floppy
 # 
@@ -32,6 +32,7 @@ update:	${OBJS}
 		flcopy -t3 -f ${FLOPPY}; rm -f floppy; arff crf ${FLOPPY} *
 	rm -rf fromdec
 	arff rf ${FLOPPY} ${OBJS}
+	-rm -f defboo.cmd
 
 defboo.cmd:
 	@echo You must copy one of \{${DEFBOO}\} to defboo.cmd.

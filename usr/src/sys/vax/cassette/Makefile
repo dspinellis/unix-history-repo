@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	6.4 (Berkeley) %G%
+#	@(#)Makefile	6.5 (Berkeley) %G%
 #
 # Make a 750/730 tu58 cassette
 # 
@@ -53,6 +53,7 @@ update:	copy.730 drtest.730
 	cp copy.730 copy
 	cp drtest.730 drtest
 	arff mrf ${CASSETTE} ${OBJS}
+	-rm -f defboo.cmd
 
 defboo.cmd:
 	@echo You must copy one of ${DEFBOO} to defboo.cmd.
