@@ -1,4 +1,4 @@
-/*	@(#)if_qe.c	7.2 (Berkeley) %G% */
+/*	@(#)if_qe.c	7.3 (Berkeley) %G% */
 
 /* from  @(#)if_qe.c	1.15	(ULTRIX)	4/16/86 */
  
@@ -607,10 +607,11 @@ qetint(unit)
 			 * transmits.
 			 */
 			ifxp = &sc->qe_ifw[sc->otindex];
-			if (bcmp((caddr_t)ifxp->ifw_addr,
-			    (caddr_t)etherbroadcastaddr,
-			    sizeof(etherbroadcastaddr)) == 0)
-				qeread(sc, &ifxp->ifrw, len);
+			if (bcmp((caddr_t)((struct ether_header *)ifxp->ifw_addr)->ether_dhost,
+			   (caddr_t)etherbroadcastaddr,
+			   sizeof(etherbroadcastaddr)) == 0)
+				qeread(sc, &ifxp->ifrw,
+				    len - sizeof(struct ether_header));
 			if (ifxp->ifw_xtofree) {
 				m_freem(ifxp->ifw_xtofree);
 				ifxp->ifw_xtofree = 0;
@@ -658,9 +659,10 @@ qerint(unit)
 		len = ((status1 & QE_RBL_HI) | (status2 & QE_RBL_LO)) + 60;
 		sc->is_if.if_ipackets++;
  
-		if (status1 & QE_ERROR)
-			sc->is_if.if_ierrors++;
-		else {
+		if (status1 & QE_ERROR) {
+			if ((status1 & QE_RUNT) == 0)
+				sc->is_if.if_ierrors++;
+		} else {
 			/*
 			 * We don't process setup packets.
 			 */
