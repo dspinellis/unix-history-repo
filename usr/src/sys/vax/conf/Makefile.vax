@@ -1,4 +1,4 @@
-#	Makefile.vax	6.9	%G%
+#	Makefile.vax	6.10	%G%
 #
 # Makefile for 4.2 BSD
 #
@@ -84,6 +84,7 @@ assym.s: ../h/param.h ../machine/pte.h ../h/buf.h ../h/vmparam.h \
 	./a.out >assym.s; rm -f a.out
 
 depend: 
+	-if [ ! -f assym.s ]; then touch assym.s; fi
 	${CC} -M ${COPTS} ${CFILES} | \
 	sed -e ':loop' \
 	    -e 's/\.\.\/[^ /]*\/\.\./../' \
