@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spec_vnops.c	7.15 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -28,6 +28,9 @@
 #include "../ufs/inode.h"
 #include "stat.h"
 #include "errno.h"
+#include "ioctl.h"
+#include "file.h"
+#include "disklabel.h"
 
 int	spec_lookup(),
 	spec_open(),
@@ -126,11 +129,16 @@ spec_open(vp, mode, cred)
  */
 spec_read(vp, uio, ioflag, cred)
 	register struct vnode *vp;
-	struct uio *uio;
+	register struct uio *uio;
 	int ioflag;
 	struct ucred *cred;
 {
-	int error;
+	struct buf *bp;
+	daddr_t bn;
+	long bsize, bscale;
+	struct partinfo dpart;
+	register int n, on;
+	int error = 0;
 	extern int mem_no;
 
 	if (uio->uio_rw != UIO_READ)
@@ -160,7 +168,36 @@ spec_read(vp, uio, ioflag, cred)
 	case VBLK:
 		if (uio->uio_offset < 0)
 			return (EINVAL);
-		return (readblkvp(vp, uio, cred, ioflag));
+		bsize = BLKDEV_IOSIZE;
+		if ((*bdevsw[major(vp->v_rdev)].d_ioctl)(vp->v_rdev, DIOCGPART,
+		    (caddr_t)&dpart, FREAD) == 0) {
+			if (dpart.part->p_fstype == FS_BSDFFS &&
+			    dpart.part->p_frag != 0 && dpart.part->p_fsize != 0)
+				bsize = dpart.part->p_frag *
+				    dpart.part->p_fsize;
+		}
+		bscale = bsize / DEV_BSIZE;
+		do {
+			bn = (uio->uio_offset / DEV_BSIZE) &~ (bscale - 1);
+			on = uio->uio_offset % bsize;
+			n = MIN((unsigned)(bsize - on), uio->uio_resid);
+			if (vp->v_lastr + bscale == bn)
+				error = breada(vp, bn, (int)bsize, bn + bscale,
+					(int)bsize, NOCRED, &bp);
+			else
+				error = bread(vp, bn, (int)bsize, NOCRED, &bp);
+			vp->v_lastr = bn;
+			n = MIN(n, bsize - bp->b_resid);
+			if (error) {
+				brelse(bp);
+				return (error);
+			}
+			error = uiomove(bp->b_un.b_addr + on, n, uio);
+			if (n + on == bsize)
+				bp->b_flags |= B_AGE;
+			brelse(bp);
+		} while (error == 0 && uio->uio_resid > 0 && n != 0);
+		return (error);
 
 	default:
 		panic("spec_read type");
@@ -173,11 +210,16 @@ spec_read(vp, uio, ioflag, cred)
  */
 spec_write(vp, uio, ioflag, cred)
 	register struct vnode *vp;
-	struct uio *uio;
+	register struct uio *uio;
 	int ioflag;
 	struct ucred *cred;
 {
-	int error;
+	struct buf *bp;
+	daddr_t bn;
+	int bsize, blkmask;
+	struct partinfo dpart;
+	register int n, on, i;
+	int count, error = 0;
 	extern int mem_no;
 
 	if (uio->uio_rw != UIO_WRITE)
@@ -207,7 +249,39 @@ spec_write(vp, uio, ioflag, cred)
 			return (0);
 		if (uio->uio_offset < 0)
 			return (EINVAL);
-		return (writeblkvp(vp, uio, cred, ioflag));
+		bsize = BLKDEV_IOSIZE;
+		if ((*bdevsw[major(vp->v_rdev)].d_ioctl)(vp->v_rdev, DIOCGPART,
+		    (caddr_t)&dpart, FREAD) == 0) {
+			if (dpart.part->p_fstype == FS_BSDFFS &&
+			    dpart.part->p_frag != 0 && dpart.part->p_fsize != 0)
+				bsize = dpart.part->p_frag *
+				    dpart.part->p_fsize;
+		}
+		blkmask = (bsize / DEV_BSIZE) - 1;
+		do {
+			bn = (uio->uio_offset / DEV_BSIZE) &~ blkmask;
+			on = uio->uio_offset % bsize;
+			n = MIN((unsigned)(bsize - on), uio->uio_resid);
+			count = howmany(bsize, CLBYTES);
+			for (i = 0; i < count; i++)
+				munhash(vp, bn + i * (CLBYTES / DEV_BSIZE));
+			if (n == bsize)
+				bp = getblk(vp, bn, bsize);
+			else
+				error = bread(vp, bn, bsize, NOCRED, &bp);
+			n = MIN(n, bsize - bp->b_resid);
+			if (error) {
+				brelse(bp);
+				return (error);
+			}
+			error = uiomove(bp->b_un.b_addr + on, n, uio);
+			if (n + on == bsize) {
+				bp->b_flags |= B_AGE;
+				bawrite(bp);
+			} else
+				bdwrite(bp);
+		} while (error == 0 && uio->uio_resid > 0 && n != 0);
+		return (error);
 
 	default:
 		panic("spec_write type");
