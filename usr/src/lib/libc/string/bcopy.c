@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bcopy.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)bcopy.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -56,9 +56,9 @@ bcopy(src, dst, length)
 			else {
 				length /= sizeof(word);
 				do {	/* copy by words */
-					*(word *)dst = *(word *)src;
 					src -= sizeof(word);
 					dst -= sizeof(word);
+					*(word *)dst = *(word *)src;
 				} while (--length);
 			}
 		}
