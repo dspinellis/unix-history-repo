@@ -1,0 +1,30 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)abort.3	5.1 (Berkeley) %G%
+.\"
+.TH ABORT 3F "18 July 1983"
+.UC 5
+.SH NAME
+abort \- terminate abruptly with memory image
+.SH SYNOPSIS
+.B subroutine abort (string)
+.br
+.B character*(*) string
+.SH DESCRIPTION
+.I Abort
+cleans up the I/O buffers and then aborts producing a
+.I core
+file in the current directory.
+If
+.I string
+is given, it is written to logical unit 0 preceeded by ``abort:''.
+.SH FILES
+.ie \nM /usr/ucb/lib/libF77.a
+.el /usr/lib/libF77.a
+.SH "SEE ALSO"
+abort(3)
+.SH BUGS
+.I String
+is ignored on the PDP11.
