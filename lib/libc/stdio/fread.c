@@ -52,7 +52,7 @@ fread(buf, size, count, fp)
 	size_t total;
 
 	if ((resid = count * size) == 0)
-		return (count);
+		return (resid);
 	if (fp->_r < 0)
 		fp->_r = 0;
 	total = resid;
