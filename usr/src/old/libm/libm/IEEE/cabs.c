@@ -13,7 +13,7 @@ From Prof. Kahan at UC at Berkeley
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cabs.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cabs.c	1.3 (Berkeley) %G%";
 #endif not lint
 
 /* CABS(Z)
@@ -90,7 +90,7 @@ struct { double x, y;} z;
  * shown.
  */
 
-#ifdef VAX	/* VAX D format */
+#if defined(VAX) || defined(TAHOE)	/* VAX D format */
 /* static double */
 /* r2p1hi =  2.4142135623730950345E0     , Hex  2^  2   *  .9A827999FCEF32 */
 /* r2p1lo =  1.4349369327986523769E-17   , Hex  2^-55   *  .84597D89B3754B */
