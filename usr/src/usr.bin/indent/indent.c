@@ -11,1163 +11,1286 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)indent.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)indent.c	5.2 (Berkeley) %G%";
 #endif not lint
 
-/*
-
-			  Copyright (C) 1976
-				by the
-			  Board of Trustees
-				of the
-			University of Illinois
-
-			 All rights reserved
-
-
+/*-
+  
+	Copyright (C) 1976
+		by the
+	Board of Trustees
+		of the
+	University of Illinois
+  
+	All rights reserved
+  
+  
 NAME:
-	indent main program
-
+indent main program
+  
 FUNCTION:
-	This is the main program of the indent program.  Indent will take a C
-	program source and reformat it into a semi-reasonable form.
-
+This is the main program of the indent program.  Indent will take a C
+program source and reformat it into a semi-reasonable form.
+  
 ALGORITHM:
-	The routine lexi scans tokens and passes them back one at a time to the
-	main routine.  The subroutine parse takes care of much of the work of
-	figuring indentation level.  
+The routine lexi scans tokens and passes them back one at a time to the
+main routine.  The subroutine parse takes care of much of the work of
+figuring indentation level.  
+  
+1) Call lexi
+2) Enter a monster switch statement on the code returned by lexi.  If 
+the indentation level for the line yet to be printed should be 
+changed, set the variable ps.ind_level.  If the indentation level for
+the following line should be changed, set the variable ps.i_l_follow.
 
-	1) Call lexi
-	2) Enter a monster switch statement on the code returned by lexi.  If 
-	   the indentation level for the line yet to be printed should be 
-	   changed, set the variable ind_level.  If the indentation level for
-	   the following line should be changed, set the variable i_l_follow.
-
-PARAMETERS:
-	None
-
-RETURNS:
-	Nothing
-
-GLOBALS:
-	be_save =
-	break_comma
-	bp_save =
-	btype_2 =
-	code_lines
-	com_ind =
-	com_lines
-	dec_nest =
-	decl_com_ind =
-	decl_on_line =
-	i_l_follow =
-	in_decl =
-	ind_level =
-	ind_size =
-	ind_stmt =
-	last_u_d =
-	leave_comma =
-	line_no =
-	ljust_decl =
-	max_col =
-	out_coms
-	out_lines
-	p_l_follow =
-	paren_level =
-	pcase =
-	sc_end =
-	unindent_displace =
-	use_ff =
-	verbose =
-
-CALLS:
-	atoi (lib)
-	cmp
-	creat (lib)
-	dump_line
-	eqin
-	fill_buffer
-	lexi
-	open (lib)
-	parse
-	pr_comment
-	printf (lib)
-	seek (lib)
-	time (lib)
-
-CALLED BY:
-	No one (main routine)
-
-HISTORY:
-	November 1976	D A Willcox of CAC	Initial coding
-	12/9/76		D A Willcox of CAC	Fixed defaults for decl_com_ind
-						to be 8 less than com_ind if 
-						left justifying declarations
-	12/9/76		D A Willcox of CAC	Fixed processing of nested
-						<c>?<s>:<s> constructs
-	1/7/77		D A Willcox of CAC	Added check for overwrite of
-						input file
-						Added code to handle -br and -bl
-						parameters
-*/
+*/
 #include "indent_globs.h";
 #include "indent_codes.h";
 
-/* #define dolog 1	/* if this define is removed, then the code to
-			   produce a log file will be removed */
+char       *in_name = "Standard Input";	/* will always point to name of
+					 * input file */
+char       *out_name = "Standard Output";	/* will always point to
+						 * name of output file */
+char        bakfile[32] = "";
 
-struct templ {		       /* this is a template for the list of
-			          command line args */
-    char   *str;	       /* pointer to string which is a valid
-			          command line arg */
-    int     code;	       /* code to be used in switch for processing
-			          this arg */
-};
-
-
-struct templ    options[] =
-{			       /* warning - because of the way that this
-			          table is scanned, if one entry is an
-			          initial substring of another, then the
-			          longer entry should occur first */
-    "-cd", 4,
-    "-c", 2,
-    "-l", 1,
-    "-i", 3,
-    "-v", 5,
-    "-nv", 6,
-    "-dj", 7,
-    "-d", 13,		       /* unindented comment placement */
-    "-ndj", 8,
-    "-bc", 10,		       /* break after command in decl */
-    "-nbc", 9,		       /* don't break after comma */
-    "-br", 14,		       /* put brace on right of stmt */
-    "-bl", 15,		       /* put brace on left by itself */
-    "-st", 16,		       /* use the standard input and output
-				  files */
-    0, 0
-};
-
-
-char   *in_name = "Standard Input";
-			       /* will always point to name of input file 
-			       */
-char   *out_name = "Standard Output";
-			       /* will always point to name of output file
-			          */
-char    bakfile[32] = "";
-
-main (argc, argv)
-int     argc;
-char  **argv;
+main(argc, argv)
+    int         argc;
+    char      **argv;
 {
 
-    int     dec_ind;	       /* current indentation for declarations */
-    int     di_stack[20];      /* a stack of structure indentation levels 
-			       */
-    int     flushed_nl;	       /* used when buffering up comments to
-			          remember that a newline was passed over 
-			       */
-    int     force_nl;	       /* when true, code must be broken */
-    int     hd_type;	       /* used to store type of stmt for if (...),
-			          for (...), etc */
-    register int    i;	       /* local loop counter */
-    int     in_or_st;	       /* Will be true iff there has been a
-			          declarator (e.g. int or char) and no
-			          left paren since the last semicolon.
-			          When true, a { is starting a structure
-			          definition or an initialization list */
-    register int    j;	       /* local loop counter */
-    int     scase;	       /* set to true when we see a case, so we
-			          will know what to do with the following
-			          colon */
-    int     sp_sw;	       /* when true, we are in the expressin of
-			          if(...), while(...), etc. */
-    int     squest;	       /* when this is positive, we have seen a ?
-			          without the matching : in a <c>?<s>:<s>
-			          construct */
-    register char  *t_ptr;     /* used for copying tokens */
-    int     type_code;	       /* the type of token, returned by lexi */
-    int     want_blank;	       /* set to true when the following token
-			          should be prefixed by a blank. (Said
-			          prefixing is ignored in some cases.) */
+    int         dec_ind;	/* current indentation for declarations */
+    int         di_stack[20];	/* a stack of structure indentation levels */
+    int         flushed_nl;	/* used when buffering up comments to
+				 * remember that a newline was passed over */
+    int         force_nl;	/* when true, code must be broken */
+    int         hd_type;	/* used to store type of stmt for if
+				 * (...), for (...), etc */
+    register int i;		/* local loop counter */
+    register int j;		/* local loop counter */
+    int         scase;		/* set to true when we see a case, so we
+				 * will know what to do with the following
+				 * colon */
+    int         sp_sw;		/* when true, we are in the expressin of
+				 * if(...), while(...), etc. */
+    int         squest;		/* when this is positive, we have seen a ?
+				 * without the matching : in a <c>?<s>:<s>
+				 * construct */
+    register char *t_ptr;	/* used for copying tokens */
+    int         type_code;	/* the type of token, returned by lexi */
 
-#ifdef dolog		       /* include declarations needed for log */
-    int     log_fid;	       /* fid of log file */
+    int         last_else = 0;	/* true iff last keyword was an else */
 
-    struct logtmpl {	       /* structure of a log entry */
-	int     tvec[2];       /* time of execution */
-	char    inp;	       /* input fid */
-	char    outp;	       /* output fid */
-	int     nout;	       /* # output lines */
-	int     ncom;	       /* # comments */
-	int     wcom;	       /* # lines w/ comments */
-	int     wcode;	       /* # lines w/code */
-	char    mc;	       /* max line size */
-	char    ci;	       /* comment indentation */
-	char    inds;	       /* indent size */
-	char    dci;	       /* decl comment indentation */
-	char    verb;	       /* verbose */
-	char    ljus;	       /* left just */
-	char    lvcom;	       /* leave commas */
-	char    unin;	       /* unindented comment indentation */
-	char    uid;	       /* the user id */
-	char    bropt;	       /* btype_2 */
-	int     reserved[2];
-    };
 
-    struct logtmpl  logent;
-#endif
-
-/*-----------------------------------------------*\
-|    INITIALIZATION
+    /*-----------------------------------------------*\
+|		      INITIALIZATION		      |
 \*-----------------------------------------------*/
 
 
-    combuf[0] = codebuf[0] = labbuf[0] = ' ';
- /* set up code, label, and comment buffers */
+    ps.p_stack[0] = stmt;	/* this is the parser's stack */
+    ps.last_nl = true;		/* this is true if the last thing scanned
+				 * was a newline */
+    ps.last_token = semicolon;
+    combuf[0] = codebuf[0] = labbuf[0] = ' ';	/* set up code, label, and
+						 * comment buffers */
     combuf[1] = codebuf[1] = labbuf[1] = '\0';
+    ps.else_if = 1;		/* Default else-if special processing to
+				 * on */
     s_lab = e_lab = labbuf + 1;
     s_code = e_code = codebuf + 1;
     s_com = e_com = combuf + 1;
 
     buf_ptr = buf_end = in_buffer;
     line_no = 1;
-    had_eof = in_decl = decl_on_line = break_comma = false;
+    had_eof = ps.in_decl = ps.decl_on_line = break_comma = false;
     sp_sw = force_nl = false;
-    in_or_st = false;
-    bl_line = true;
+    ps.in_or_st = false;
+    ps.bl_line = true;
     dec_ind = 0;
-    di_stack[dec_nest = 0] = 0;
-    want_blank = in_stmt = ind_stmt = false;
+    di_stack[ps.dec_nest = 0] = 0;
+    ps.want_blank = ps.in_stmt = ps.ind_stmt = false;
 
 
-    scase = pcase = false;
+    scase = ps.pcase = false;
     squest = 0;
     sc_end = 0;
     bp_save = 0;
     be_save = 0;
 
-    input = -1;
-    output = -1;
-    ljust_decl = d_ljust;
+    output = 0;
 
 
 
-/*--------------------------------------------------*\
+    /*--------------------------------------------------*\
 |   COMMAND LINE SCAN
-\*--------------------------------------------------*/
+\*--------------------------------------------------
+*/
 
-    max_col = d_max_col;       /* set up some default values */
-    com_ind = d_com_ind;
-    ind_size = d_ind_size;
-    verbose = d_verbose;
-    decl_com_ind = 0;	       /* if this is not set to some positive
-			          value by an arg, we will set this equal
-			          to com_ind */
-    btype_2 = d_btype_2;
-    unindent_displace = d_unindent;
-    leave_comma = d_leave_comma;
+    max_col = 78;		/* -l78 */
+    lineup_to_parens = 1;	/* -lp */
+    ps.ljust_decl = 0;		/* -ndj */
+    ps.com_ind = 33;		/* -c33 */
+    star_comment_cont = 1;	/* -sc */
+    ps.ind_size = 8;		/* -i8 */
+    verbose = 0;
+    ps.decl_indent = 16;	/* -di16 */
+    ps.indent_parameters = 1;	/* -ip */
+    ps.decl_com_ind = 0;	/* if this is not set to some positive
+				 * value by an arg, we will set this equal
+				 * to ps.com_ind */
+    btype_2 = 1;		/* -br */
+    cuddle_else = 1;		/* -ce */
+    ps.unindent_displace = 0;	/* -d0 */
+    ps.case_indent = 0;		/* -cli0 */
+    format_col1_comments = 1;	/* -fc1 */
+    procnames_start_line = 1;	/* -psl */
+    proc_calls_space = 0;	/* -npcs */
+    comment_delimiter_on_blankline = 1;	/* -cdb */
+    ps.leave_comma = 1;		/* -nbc */
 
-    set_profile ();
+    for (i = 1; i < argc; ++i)
+	if (strcmp(argv[i], "-npro") == 0)
+	    break;
+    if (i >= argc)
+	set_profile();
 
     for (i = 1; i < argc; ++i) {
-    /* look thru args (if any) for changes to defaults */
+
+	/*
+	 * look thru args (if any) for changes to defaults 
+	 */
 	if (argv[i][0] != '-') {/* no flag on parameter */
-	    if (input < 0) {   /* we must have the input file */
-		in_name = argv[i];	/* remember name of input
-					   file */
-		input = open (in_name, 0);
-		if (input < 0) {	/* check for open error */
-		    printf ("Can't open %s\n", argv[i]);
-		    exit ();
+	    if (input == 0) {	/* we must have the input file */
+		in_name = argv[i];	/* remember name of input file */
+		input = fopen(in_name, "r");
+		if (input == 0) {	/* check for open error */
+		    printf("Can't open %s\n", argv[i]);
+		    exit();
+		}
+		continue;
+	    } else if (output == 0) {	/* we have the output file */
+		out_name = argv[i];	/* remember name of output file */
+		if (strcmp(in_name, out_name) == 0) {	/* attempt to overwrite
+							 * the file */
+		    printf("Input and output files must be different\n");
+		    exit();
+		}
+		output = fopen(out_name, "w");
+		if (output == 0) {	/* check for create error */
+		    printf("Can't create %s\n", argv[i]);
+		    exit();
 		}
 		continue;
 	    }
-	    else
-		if (output < 0) {	/* we have the output file */
-		    out_name = argv[i];	/* remember name of output file */
-		    if (cmp (in_name, out_name) == 0) {	 /* attempt to
-					   overwright the file */
-			printf ("Input and output files must be different\n");
-			exit ();
-		    }
-		    output = creat (out_name, 0644);
-		    if (output < 0) {   /* check for create error */
-			printf ("Can't create %s\n", argv[i]);
-			exit ();
-		    }
-		    continue;
-		}
+	    printf("Unknown parameter: %s\n", argv[i]);
+	    exit();
+	} else
+	    set_option(argv[i]);
 
-	    printf ("Unknown parameter: %s\n", argv[i]);
-	    exit ();
+    }				/* end of for */
+    if (input == 0) {
+	printf("Usage: indent file [ outfile ] [ options ]\n");
+	exit();
+    }
+    if (output == 0)
+	if (troff)
+	    output = stdout;
+	else {
+	    out_name = in_name;
+	    bakcopy();
 	}
-	else
-	    set_option (argv[i]);
+    if (ps.com_ind <= 1)
+	ps.com_ind = 2;		/* dont put normal comments before column
+				 * 2 */
+    if (block_comment_max_col <= 0)
+	block_comment_max_col = max_col;
+    if (ps.decl_com_ind <= 0)	/* if not specified by user, set this */
+	ps.decl_com_ind = ps.ljust_decl ? (ps.com_ind <= 10 ? 2 : ps.com_ind - 8) : ps.com_ind;
+    if (continuation_indent == 0)
+	continuation_indent = ps.ind_size;
+    fill_buffer();		/* get first batch of stuff into input
+				 * buffer */
 
-    }			       /* end of for */
+    parse(semicolon);
+    {
+	register char *p = buf_ptr;
+	register    col = 1;
 
-    if (input < 0) {
-	printf ("Usage: indent file [ outfile ] [ options ]\n");
-	exit ();
+	while (1) {
+	    if (*p == ' ')
+		col++;
+	    else if (*p == '\t')
+		col = ((col - 1) & ~7) + 9;
+	    else
+		break;
+	    p++;
+	};
+	if (col > ps.ind_size)
+	    ps.ind_level = ps.i_l_follow = col / ps.ind_size;
     }
-    if (output < 0) {
-	out_name = in_name;
-	bakcopy ();
+    if (troff) {
+	register char *p = in_name,
+	           *beg = in_name;
+
+	while (*p)
+	    if (*p++ == '/')
+		beg = p;
+	fprintf(output, ".Fn \"%s\"\n", beg);
     }
 
-    if (com_ind <= 1)
-	com_ind = 2;	       /* don't put normal comments before column
-			          2 */
-
-    if (decl_com_ind <= 0)     /* if not specified by user, set this */
-	decl_com_ind = ljust_decl ? (com_ind <= 10 ? 2 : com_ind - 8) : com_ind;
-
-    fill_buffer ();	       /* get first batch of stuff into input
-			          buffer */
-
-    parse (semicolon);
-/*-----------------------------------------------------
-|   START OF MAIN LOOP
-\*----------------------------------------------------*/
-
-    while (1) {		       /* this is the main loop.  it will go until
-			          we reach eof */
-	type_code = lexi ();   /* lexi reads one token.  The actual
-			          characters read are stored in "token".
-			          lexi returns a code indicating the type
-			          of token */
-
-    /* 
-     * The following code moves everything following an if (), while (),
-     * else, etc. up to the start of the following stmt to a buffer.  This
-     * allows proper handling of both kinds of brace placement.
+    /*
+     * START OF MAIN LOOP 
      */
 
+    while (1) {			/* this is the main loop.  it will go
+				 * until we reach eof */
+	int         is_procname;
+
+	type_code = lexi();	/* lexi reads one token.  The actual
+				 * characters read are stored in "token".
+				 * lexi returns a code indicating the type
+				 * of token */
+	is_procname = ps.procname[0];
+
+	/*
+	 * The following code moves everything following an if (), while
+	 * (), else, etc. up to the start of the following stmt to a
+	 * buffer.  This allows proper handling of both kinds of brace
+	 * placement. 
+	 */
+
 	flushed_nl = false;
-	while (search_brace) { /* if we scanned an if(), while(), etc., we
-			          might need to copy stuff into a buffer 
-	*//* we must loop, copying stuff into save_com, until we find the
-	   start of the stmt which follows the if, or whatever */
+	while (ps.search_brace) {	/* if we scanned an if(), while(),
+					 * etc., we might need to copy
+					 * stuff into a buffer we must
+					 * loop, copying stuff into
+					 * save_com, until we find the
+					 * start of the stmt which follows
+					 * the if, or whatever */
 	    switch (type_code) {
-		case newline: 
+		case newline:
 		    ++line_no;
 		    flushed_nl = true;
-		case form_feed: 
-		    break;     /* form feeds and newlines found here will
-			          be ignored */
+		case form_feed:
+		    break;	/* form feeds and newlines found here will
+				 * be ignored */
 
-		case lbrace:   /* this is a brace that starts the compound
-			          stmt */
-		    if (sc_end == 0) {
-		    /* ignore buffering if a comment wasn't stored up */
-			search_brace = false;
+		case lbrace:	/* this is a brace that starts the
+				 * compound stmt */
+		    if (sc_end == 0) {	/* ignore buffering if a comment
+					 * wasnt stored up */
+			ps.search_brace = false;
 			goto check_type;
 		    }
-
 		    if (btype_2) {
-			save_com[0] = '{';
-		    /* we either want to put the brace right after the if 
-		    */
-			goto sw_buffer;
-		    /* go to common code to get out of this loop */
+			save_com[0] = '{';	/* we either want to put
+						 * the brace right after
+						 * the if */
+			goto sw_buffer;	/* go to common code to get out of
+					 * this loop */
 		    }
+		case comment:	/* we have a comment, so we must copy it
+				 * into the buffer */
+		    if (!flushed_nl) {
+			if (sc_end == 0) {	/* if this is the first
+						 * comment, we must set up
+						 * the buffer */
+			    save_com[0] = save_com[1] = ' ';
+			    sc_end = &(save_com[2]);
+			} else {
+			    *sc_end++ = '\n';	/* add newline between
+						 * comments */
+			    *sc_end++ = ' ';
+			    --line_no;
+			}
+			*sc_end++ = '/';	/* copy in start of
+						 * comment */
+			*sc_end++ = '*';
 
-		default:       /* it is the start of a normal statment */
-		    if (flushed_nl)
-			       /* if we flushed a newline, make sure it is
-			          put back */
+			for (;;) {	/* loop until we get to the end of
+					 * the comment */
+			    *sc_end = *buf_ptr++;
+			    if (buf_ptr >= buf_end)
+				fill_buffer();
+
+			    if (*sc_end++ == '*' && *buf_ptr == '/')
+				break;	/* we are at end of comment */
+
+			    if (sc_end >= &(save_com[sc_size])) {	/* check for temp buffer
+									 * overflow */
+				diag(1, "Internal buffer overflow - Move big comment from right after if, while, or whatever.");
+				fflush(output);
+				exit();
+			    }
+			}
+			*sc_end++ = '/';	/* add ending slash */
+			if (++buf_ptr >= buf_end)	/* get past / in buffer */
+			    fill_buffer();
+			break;
+		    }
+		default:	/* it is the start of a normal statment */
+		    if (flushed_nl)	/* if we flushed a newline, make
+					 * sure it is put back */
 			force_nl = true;
+		    if (type_code == sp_paren && *token == 'i'
+			&& last_else && ps.else_if
+			|| type_code == sp_nparen && *token == 'e'
+			&& e_code != s_code && e_code[-1] == '}')
+			force_nl = false;
 
-		    if (sc_end == 0) {
-		    /* ignore buffering if comment wasn't saved up */
-			search_brace = false;
+		    if (sc_end == 0) {	/* ignore buffering if comment
+					 * wasnt saved up */
+			ps.search_brace = false;
 			goto check_type;
 		    }
-
-		    if (force_nl) {
-		    /* if we should insert a nl here, put it into the
-		       buffer */
+		    if (force_nl) {	/* if we should insert a nl here,
+					 * put it into the buffer */
 			force_nl = false;
-			--line_no;
-		    /* this will be re-increased when the nl is read from
-		       the buffer */
+			--line_no;	/* this will be re-increased when
+					 * the nl is read from the buffer */
 			*sc_end++ = '\n';
 			*sc_end++ = ' ';
-			if (verbose && !flushed_nl)
-			       /* print error msg if the line was not
-			          already broken */
-			    printf ("%d: Line broken\n", line_no);
+			if (verbose && !flushed_nl)	/* print error msg if
+							 * the line was not
+							 * already broken */
+			    diag(0, "Line broken");
 			flushed_nl = false;
 		    }
-
 		    for (t_ptr = token; *t_ptr; ++t_ptr)
-			*sc_end++ = *t_ptr;
-		/* copy token into temp buffer */
+			*sc_end++ = *t_ptr;	/* copy token into temp
+						 * buffer */
 
-	    sw_buffer: 
-		    search_brace = false;
-		/* stop looking for start of stmt */
-		    bp_save = buf_ptr;
-		/* save current input buffer */
+	    sw_buffer:
+		    ps.search_brace = false;	/* stop looking for start
+						 * of stmt */
+		    bp_save = buf_ptr;	/* save current input buffer */
 		    be_save = buf_end;
-		    buf_ptr = save_com;
-		/* fix so that subsequent calls to lexi will take tokens
-		   out of save_com */
-		    *sc_end++ = ' ';
-		/* add trailing blank, just in case */
+		    buf_ptr = save_com;	/* fix so that subsequent calls to
+					 * lexi will take tokens out of
+					 * save_com */
+		    *sc_end++ = ' ';	/* add trailing blank, just in
+					 * case */
 		    buf_end = sc_end;
 		    sc_end = 0;
 		    break;
-
-		case comment:  /* we have a comment, so we must copy it
-			          into the buffer */
-		    if (sc_end == 0) {
-		    /* if this is the first comment, we must set up the
-		       buffer */
-			save_com[0] = save_com[1] = ' ';
-			sc_end = &(save_com[2]);
-		    }
-		    else {
-			*sc_end++ = '\n';
-		    /* add newline between comments */
-			*sc_end++ = ' ';
-			--line_no;
-		    }
-
-		    *sc_end++ = '/';
-		/* copy in start of comment */
-		    *sc_end++ = '*';
-
-		    for (;;) { /* loop until we get to the end of the
-			          comment */
-			*sc_end = *buf_ptr++;
-			if (buf_ptr >= buf_end)
-			    fill_buffer ();
-
-			if (*sc_end++ == '*' && *buf_ptr == '/')
-			    break;
-		    /* we are at end of comment */
-
-			if (sc_end >= &(save_com[sc_size])) {
-			/* check for temp buffer overflow */
-			    printf ("%d: Internal buffer overflow.\n",
-				    line_no);
-			    printf ("Move big comment from right after if,\
- while, or whatever.\n");
-			    exit ();
-			}
-		    }
-
-		    *sc_end++ = '/';
-		/* add ending slash */
-		    if (++buf_ptr >= buf_end)/* get past / in buffer */
-			fill_buffer ();
-		    break;
-	    }		       /* end of switch */
-
-	    if (type_code != 0)/* we must make this check, just in case
-			          there was an unexpected EOF */
-		type_code = lexi ();
-	/* read another token */
-	}		       /* end of while (serach_brace) */
-check_type: 
-
-	if (type_code == 0) {  /* we got eof */
+	    }			/* end of switch */
+	    if (type_code != 0)	/* we must make this check, just in case
+				 * there was an unexpected EOF */
+		type_code = lexi();	/* read another token */
+	    is_procname = ps.procname[0];
+	}			/* end of while (serach_brace) */
+	last_else = 0;
+check_type:
+	if (type_code == 0) {	/* we got eof */
 	    if (s_lab != e_lab || s_code != e_code
-		    || s_com != e_com)/* must dump end of line */
-		dump_line ();
-	    if (i_l_follow != 0)/* check for balanced braces */
-		printf ("%d too few }'s\n", i_l_follow);
+		|| s_com != e_com)	/* must dump end of line */
+		dump_line();
+	    if (ps.tos > 1)	/* check for balanced braces */
+		diag(1, "Stuff missing from end of file.");
 
-#ifdef dolog		       /* only include this stuff if we want to
-			          keep a log */
-	    log_fid = open ("/mnt/net/willcox/indent/indent_log", 1);
-	/* open the log file */
-	    if (log_fid >= 0) {
-		seek (log_fid, 0, 2);
-	    /* point to end of log */
-		time (logent.tvec);
-	    /* get current time */
-		logent.inp = input;
-	    /* set up the log entry */
-		logent.outp = output;
-		logent.nout = out_lines;
-		logent.ncom = out_coms;
-		logent.wcom = com_lines;
-		logent.wcode = code_lines;
-		logent.mc = max_col;
-		logent.ci = com_ind;
-		logent.inds = ind_size;
-		logent.dci = decl_com_ind;
-		logent.verb = verbose;
-		logent.ljus = ljust_decl;
-		logent.lvcom = leave_comma;
-		logent.unin = unindent_displace;
-		logent.uid = getuid ();
-		logent.bropt = btype_2;
-		write (log_fid, &logent, sizeof logent);
-	    }
-#endif
 	    if (verbose) {
-		printf ("There were %d output lines and %d comments\n",
-			out_lines, out_coms);
-		printf ("(Lines with comments)/(Lines with code): %6.3f\n",
-			(1.0 * com_lines) / code_lines);
+		printf("There were %d output lines and %d comments\n",
+		       ps.out_lines, ps.out_coms);
+		printf("(Lines with comments)/(Lines with code): %6.3f\n",
+		       (1.0 * ps.com_lines) / code_lines);
 	    }
-
-	    exit ();
+	    fflush(output);
+	    exit();
 	}
-
 	if (
-		(type_code != comment) &&
-		(type_code != newline) &&
-		(type_code != preesc) &&
-		(type_code != form_feed)) {
+	    (type_code != comment) &&
+	    (type_code != newline) &&
+	    (type_code != preesc) &&
+	    (type_code != form_feed)) {
 	    if (
-		    force_nl
-		    &&
-		    (type_code != semicolon) &&
-		    (
-			type_code != lbrace
-			||
-			!btype_2
-		    )) {       /* we should force a broken line here */
+		force_nl
+		&&
+		(type_code != semicolon) &&
+		(
+		 type_code != lbrace
+		 ||
+		 !btype_2
+		 )) {		/* we should force a broken line here */
 		if (verbose && !flushed_nl)
-		    printf ("%d: Line broken\n", line_no);
+		    diag(0, "Line broken");
 		flushed_nl = false;
-		dump_line ();
-		want_blank = false;
-	    /* don't insert blank at line start */
+		dump_line();
+		ps.want_blank = false;	/* dont insert blank at line start */
 		force_nl = false;
 	    }
-
-	    in_stmt = true;    /* turn on flag which causes an extra level
-			          of indentation. this is turned off by a
-			          ; or } */
-	    if (s_com != e_com) {
-	    /* the turkey has embedded a comment in a line. fix it */
+	    ps.in_stmt = true;	/* turn on flag which causes an extra
+				 * level of indentation. this is turned
+				 * off by a ; or '}' */
+	    if (s_com != e_com) {	/* the turkey has embedded a
+					 * comment in a line. fix it */
 		*e_code++ = ' ';
 		for (t_ptr = s_com; *t_ptr; ++t_ptr)
 		    *e_code++ = *t_ptr;
 		*e_code++ = ' ';
-		*e_code = '\0';/* null terminate code sect */
-		want_blank = false;
+		*e_code = '\0';	/* null terminate code sect */
+		ps.want_blank = false;
 		e_com = s_com;
 	    }
-	}
-	else
-	    if (type_code != comment)
-			       /* preserve force_nl thru a comment */
-		force_nl = false;
-    /* cancel forced newline after newline, form feed, etc */
+	} else if (type_code != comment)	/* preserve force_nl thru
+						 * a comment */
+	    force_nl = false;
+
+	/*
+	 * cancel forced newline after newline, form feed, etc 
+	 */
 
 
 
-    /*----------------------------------------------------*\
-    |   do switch on type of token scanned
-    \*----------------------------------------------------*/
-	switch (type_code) {   /* now, decide what to do with the token */
+	/*----------------------------------------------------*\
+|   do switch on type of token scanned
+\*----------------------------------------------------*/
+	switch (type_code) {	/* now, decide what to do with the token */
 
-	    case form_feed:    /* found a form feed in line */
-		use_ff = true; /* a form feed is treated much like a
-			          newline */
-		dump_line ();
-		want_blank = false;
+	    case form_feed:	/* found a form feed in line */
+		ps.use_ff = true;	/* a form feed is treated much
+					 * like a newline */
+		dump_line();
+		ps.want_blank = false;
 		break;
 
-	    case newline: 
-		dump_line ();
-		++line_no;     /* keep track of input line number */
-		want_blank = false;
+	    case newline:
+		if (ps.last_token != comma || ps.p_l_follow > 0
+		    || !ps.leave_comma || !break_comma || s_com != e_com) {
+		    dump_line();
+		    ps.want_blank = false;
+		}
+		++line_no;	/* keep track of input line number */
 		break;
 
-	    case lparen:       /* got a ( or [ */
-		++p_l_follow;  /* count parens to make Healy happy */
-		if (want_blank && *token != '[')
-			       /* don't put space in front of square
-			          bracket */
+	    case lparen:	/* got a '(' or '[' */
+		++ps.p_l_follow;/* count parens to make Healy happy */
+		if (ps.want_blank && *token != '[' &&
+		    (ps.last_token != ident || proc_calls_space
+		     || (ps.its_a_keyword && !ps.sizeof_keyword)))
 		    *e_code++ = ' ';
+		if (ps.in_decl && !ps.block_init)
+		    if (troff && !ps.dumped_decl_indent) {
+			ps.dumped_decl_indent = 1;
+			sprintf(e_code, "\\c\n.Du %dp+\200p \"%s\"\n", dec_ind * 7, token);
+			e_code += strlen(e_code);
+		    } else {
+			while ((e_code - s_code) < dec_ind)
+			    *e_code++ = ' ';
+			*e_code++ = token[0];
+		} else
+		    *e_code++ = token[0];
+		ps.paren_indents[ps.p_l_follow - 1] = e_code - s_code;
+		ps.want_blank = false;
+		if (ps.in_or_st && *token == '(') {
 
-		if (in_decl)
-		    while ((e_code - s_code) < dec_ind)
-			*e_code++ = ' ';
-
-		*e_code++ = token[0];
-		want_blank = false;
-		if (in_or_st && *token == '(') {
-		/* this is a kluge to make sure that declarations will be
-		   aaigned right if proc decl has an explicit type on it,
-		   i.e. "int a(x) {..." */
-		    parse (semicolon);
-		/* I said this was a kluge... */
-		    in_or_st = false;
-		/* turn off flag for structure decl or initialization */
+		    /*
+		     * this is a kluge to make sure that declarations will
+		     * be aligned right if proc decl has an explicit type
+		     * on it, i.e. "int a(x) {..." 
+		     */
+		    parse(semicolon);	/* I said this was a kluge... */
+		    ps.in_or_st = false;	/* turn off flag for
+						 * structure decl or
+						 * initialization */
 		}
-
+		if (ps.sizeof_keyword) ps.sizeof_mask |= 1<<ps.p_l_follow;
 		break;
 
-	    case rparen:       /* got a ) or ] */
-		if (--p_l_follow < 0) {
-		    p_l_follow = 0;
-		    printf ("%d: Extra %c\n", line_no, *token);
+	    case rparen:	/* got a ')' or ']' */
+		if (ps.cast_mask & (1 << ps.p_l_follow) & ~ps.sizeof_mask) {
+		    ps.last_u_d = true;
+		    ps.cast_mask &= (1 << ps.p_l_follow) - 1;
 		}
-
-		if (e_code == s_code)/* if the paren starts the line */
-		    paren_level = p_l_follow;
-	    /*    then indent it */
+		ps.sizeof_mask &= (1 << ps.p_l_follow) - 1;
+		if (--ps.p_l_follow < 0) {
+		    ps.p_l_follow = 0;
+		    diag(0, "Extra %c", *token);
+		}
+		if (e_code == s_code)	/* if the paren starts the line */
+		    ps.paren_level = ps.p_l_follow;	/* then indent it */
 
 		*e_code++ = token[0];
-		want_blank = true;
+		ps.want_blank = true;
 
-		if (sp_sw && (p_l_follow == 0)) {
-		/* check for end of if (...), or some such */
+		if (sp_sw && (ps.p_l_follow == 0)) {	/* check for end of if
+							 * (...), or some such */
 		    sp_sw = false;
-		    force_nl = true;
-		/* must force newline after if */
-		    last_u_d = true;
-		/* inform lexi that a following operator is unary */
-		    in_stmt = false;
-		/* don't use stmt continuation indentation */
+		    force_nl = true;	/* must force newline after if */
+		    ps.last_u_d = true;	/* inform lexi that a following
+					 * operator is unary */
+		    ps.in_stmt = false;	/* dont use stmt continuation
+					 * indentation */
 
-		    parse (hd_type);
-		/* let parser worry about if, or whatever */
+		    parse(hd_type);	/* let parser worry about if, or
+					 * whatever */
 		}
-
-		search_brace = btype_2;
-	    /* this should insure that constructs such as main(){... and
-	       int[]{... have their braces put in the right place */
+		ps.search_brace = btype_2;	/* this should insure that
+						 * constructs such as
+						 * main(){...} and
+						 * int[]{...} have their
+						 * braces put in the right
+						 * place */
 		break;
 
-	    case unary_op:     /* this could be any unary operation */
-		if (want_blank)
+	    case unary_op:	/* this could be any unary operation */
+		if (ps.want_blank)
 		    *e_code++ = ' ';
 
-		if (in_decl) { /* if this is a unary op in a *//*
-			          declaration, we should indent this token
-			          */
-		    for (i = 0; token[i]; ++i);
-		/* find length of token */
-		    while ((e_code - s_code) < (dec_ind - i))
-			*e_code++ = ' ';
-		/* pad it */
+		if (troff && !ps.dumped_decl_indent && ps.in_decl) {
+		    sprintf(e_code, "\\c\n.Du %dp+\200p \"%s\"\n", dec_ind * 7, token);
+		    ps.dumped_decl_indent = 1;
+		    e_code += strlen(e_code);
+		} else {
+		    char       *res = token;
+
+		    if (ps.in_decl && !ps.block_init) {	/* if this is a unary op
+							 * in a declaration, we
+							 * should indent this
+							 * token */
+			for (i = 0; token[i]; ++i);	/* find length of token */
+			while ((e_code - s_code) < (dec_ind - i))
+			    *e_code++ = ' ';	/* pad it */
+		    }
+		    if (troff && token[0] == '-' && token[1] == '>')
+			res = "\\(->";
+		    for (t_ptr = res; *t_ptr; ++t_ptr)
+			*e_code++ = *t_ptr;
 		}
-
-		for (t_ptr = token; *t_ptr; ++t_ptr)
-		    *e_code++ = *t_ptr;
-	    /* move the token to buffer */
-		want_blank = false;
+		ps.want_blank = false;
 		break;
 
-	    case binary_op:    /* any binary operation */
-	do_binary: 
-		if (want_blank)
+	    case binary_op:	/* any binary operation */
+	do_binary:
+		if (ps.want_blank)
 		    *e_code++ = ' ';
-		for (t_ptr = token; *t_ptr; ++t_ptr)
-		    *e_code++ = *t_ptr;
-	    /* move the operator */
-		want_blank = true;
+		{
+		    char       *res = token;
+
+		    if (troff)
+			switch (token[0]) {
+			    case '<':
+				if (token[1] == '=')
+				    res = "\\(<=";
+				break;
+			    case '>':
+				if (token[1] == '=')
+				    res = "\\(>=";
+				break;
+			    case '!':
+				if (token[1] == '=')
+				    res = "\\(!=";
+				break;
+			    case '|':
+				if (token[1] == '|')
+				    res = "\\(br\\(br";
+				else if (token[1] == 0)
+				    res = "\\(br";
+				break;
+			}
+		    for (t_ptr = res; *t_ptr; ++t_ptr)
+			*e_code++ = *t_ptr;	/* move the operator */
+		}
+		ps.want_blank = true;
 		break;
 
-	    case postop:       /* got a trailing ++ or -- */
+	    case postop:	/* got a trailing ++ or -- */
 		*e_code++ = token[0];
 		*e_code++ = token[1];
-		want_blank = true;
+		ps.want_blank = true;
 		break;
 
-	    case question:     /* got a ? */
-		squest++;      /* this will be used when a later colon
-			          appears so we can distinguish the
-			          <c>?<n>:<n> construct */
-		if (want_blank)
+	    case question:	/* got a ? */
+		squest++;	/* this will be used when a later colon
+				 * appears so we can distinguish the
+				 * <c>?<n>:<n> construct */
+		if (ps.want_blank)
 		    *e_code++ = ' ';
 		*e_code++ = '?';
-		want_blank = true;
+		ps.want_blank = true;
 		break;
 
-	    case casestmt:     /* got word 'case' or 'default' */
-		scase = true;  /* so we can process the later colon
-			          properly */
-		if (want_blank)
-		    *e_code++ = ' ';
-		for (t_ptr = token; *t_ptr; ++t_ptr)
-		    *e_code++ = *t_ptr;
-		want_blank = true;
-		break;
+	    case casestmt:	/* got word 'case' or 'default' */
+		scase = true;	/* so we can process the later colon
+				 * properly */
+		goto copy_id;
 
-	    case colon:        /* got a ':' */
-		if (squest > 0) {
-		/* it is part of the <c>?<n>: <n> construct */
+	    case colon:	/* got a ':' */
+		if (squest > 0) {	/* it is part of the <c>?<n>: <n>
+					 * construct */
 		    --squest;
-		    if (want_blank)
+		    if (ps.want_blank)
 			*e_code++ = ' ';
 		    *e_code++ = ':';
-		    want_blank = true;
+		    ps.want_blank = true;
 		    break;
 		}
-
-		in_stmt = false;
-	    /* seeing a label does not imply we are in a stmt */
+		if (ps.in_decl) {
+		    *e_code++ = ':';
+		    ps.want_blank = false;
+		    break;
+		}
+		ps.in_stmt = false;	/* seeing a label does not imply
+					 * we are in a stmt */
 		for (t_ptr = s_code; *t_ptr; ++t_ptr)
-		    *e_lab++ = *t_ptr;
-	    /* turn everything so far into a label */
+		    *e_lab++ = *t_ptr;	/* turn everything so far into a
+					 * label */
 		e_code = s_code;
 		*e_lab++ = ':';
 		*e_lab++ = ' ';
 		*e_lab = '\0';
 
-		force_nl = pcase = scase;
-	    /* pcase will be used by dump_line to decide how to indent the
-	       label. force_nl will force a case n: to be on a line by
-	       itself */
+		force_nl = ps.pcase = scase;	/* ps.pcase will be used
+						 * by dump_line to decide
+						 * how to indent the
+						 * label. force_nl will
+						 * force a case n: to be
+						 * on a line by itself */
 		scase = false;
-		want_blank = false;
+		ps.want_blank = false;
 		break;
 
-	    case semicolon:    /* got a ';' */
-		in_or_st = false;
-	    /* we are not in an initialization or structure declaration */
-		scase = false; /* these will only need resetting in a
-			          error */
+	    case semicolon:	/* got a ';' */
+		ps.in_or_st = false;	/* we are not in an initialization
+					 * or structure declaration */
+		scase = false;	/* these will only need resetting in a
+				 * error */
 		squest = 0;
+		if (ps.last_token == rparen)
+		    ps.in_parameter_declaration = 0;
+		ps.cast_mask = 0;
+		ps.sizeof_mask = 0;
+		ps.block_init = 0;
+		ps.just_saw_decl--;
 
-		if (in_decl && s_code == e_code)
-			       /* align this in a declaration */
+		if (ps.in_decl && s_code == e_code && !ps.block_init)
 		    while ((e_code - s_code) < (dec_ind - 1))
 			*e_code++ = ' ';
 
-		in_decl = (dec_nest > 0);
-	    /* if we were in a first level structure declaration, we
-	       aren't any more */
+		ps.in_decl = (ps.dec_nest > 0);	/* if we were in a first
+						 * level structure
+						 * declaration, we arent
+						 * any more */
 
-		if ((!sp_sw || hd_type != forstmt) && p_l_follow > 0) {
-		/* This should be true iff there were unbalanced parens in
-		   the stmt.  It is a bit complicated, because the
-		   semicolon might be in a for stmt */
-		    printf ("%d: Unbalanced parens\n", line_no);
-		    p_l_follow = 0;
-		    if (sp_sw) {
-		    /* this is a check for a if, while, etc. with
-		       unbalanced parens */
+		if ((!sp_sw || hd_type != forstmt) && ps.p_l_follow > 0) {
+
+		    /*
+		     * This should be true iff there were unbalanced
+		     * parens in the stmt.  It is a bit complicated,
+		     * because the semicolon might be in a for stmt 
+		     */
+		    diag(1, "Unbalanced parens");
+		    ps.p_l_follow = 0;
+		    if (sp_sw) {/* this is a check for a if, while, etc.
+				 * with unbalanced parens */
 			sp_sw = false;
-			parse (hd_type);
-		    /* don't lose the if, or whatever */
+			parse(hd_type);	/* dont lose the if, or whatever */
 		    }
 		}
-
 		*e_code++ = ';';
-		want_blank = true;
-		in_stmt = (p_l_follow > 0);
-	    /* we are no longer in the middle of a stmt */
+		ps.want_blank = true;
+		ps.in_stmt = (ps.p_l_follow > 0);	/* we are no longer in
+							 * the middle of a stmt */
 
-		if (!sp_sw) {  /* if not if for (;;) */
-		    parse (semicolon);
-		/* let parser know about end of stmt */
-		    force_nl = true;
-		/* force newline after a end of stmt */
+		if (!sp_sw) {	/* if not if for (;;) */
+		    parse(semicolon);	/* let parser know about end of
+					 * stmt */
+		    force_nl = true;	/* force newline after a end of
+					 * stmt */
 		}
-
 		break;
 
-	    case lbrace:       /* got a { */
-		in_stmt = false;
-	    /* don't indent the { */
-		force_nl = true;
-	    /* force other stuff on same line as { onto new line */
+	    case lbrace:	/* got a '{' */
+		ps.in_stmt = false;	/* dont indent the {} */
+		if (!ps.block_init)
+		    force_nl = true;	/* force other stuff on same line
+					 * as '{' onto new line */
 
-		if (s_code != e_code && !btype_2) {
-		/* bracket is not alone on line */
-		    if (verbose)
-			printf ("%d: Line broken\n", line_no);
-		    dump_line ();
-		    want_blank = false;
-		}
-
-		if (p_l_follow > 0) {
-		/* check for preceeding unbalanced parens */
-		    printf ("%d: Unbalanced parens\n", line_no);
-		    p_l_follow = 0;
-		    if (sp_sw) {
-		    /* check for unclosed if, for, etc. */
-			sp_sw = false;
-			parse (hd_type);
-			ind_level = i_l_follow;
+		if (s_code != e_code && !ps.block_init) {
+		    if (!btype_2) {
+			dump_line();
+			ps.want_blank = false;
+		    } else if (ps.in_parameter_declaration && !ps.in_or_st) {
+			ps.i_l_follow = 0;
+			dump_line();
+			ps.want_blank = false;
 		    }
 		}
+		if (ps.in_parameter_declaration)
+		    prefix_blankline_requested = 0;
 
-		if (s_code == e_code)
-		    ind_stmt = false;
-	    /* don't put extra indentation on line with '{' */
-		if (in_decl && in_or_st) {
-		/* this is either a structure declaration or an init */
-		    di_stack[dec_nest++] = dec_ind;
-		    dec_ind = 0;
+		if (ps.p_l_follow > 0) {	/* check for preceeding
+						 * unbalanced parens */
+		    diag(1, "Unbalanced parens");
+		    ps.p_l_follow = 0;
+		    if (sp_sw) {/* check for unclosed if, for, etc. */
+			sp_sw = false;
+			parse(hd_type);
+			ps.ind_level = ps.i_l_follow;
+		    }
 		}
-		else
-		    decl_on_line = false;
-	    /* we can't be in the middle of a declaration, so don't do
-	       special indentation of comments */
-
-		parse (lbrace);/* let parser know about this */
-		if (want_blank)/* put a blank before { if { is not at
-			          start of line */
+		if (s_code == e_code)
+		    ps.ind_stmt = false;	/* dont put extra
+						 * indentation on line
+						 * with '{' */
+		if (ps.in_decl && ps.in_or_st) {	/* this is either a
+							 * structure declaration
+							 * or an init */
+		    di_stack[ps.dec_nest++] = dec_ind;
+		    dec_ind = 0;
+		} else {
+		    ps.decl_on_line = false;	/* we cant be in the
+						 * middle of a
+						 * declaration, so dont do
+						 * special indentation of
+						 * comments */
+		    ps.in_parameter_declaration = 0;
+		}
+		parse(lbrace);	/* let parser know about this */
+		if (ps.want_blank)	/* put a blank before '{' if '{'
+					 * is not at start of line */
 		    *e_code++ = ' ';
-		want_blank = false;
+		ps.want_blank = false;
 		*e_code++ = '{';
+		ps.just_saw_decl = 0;
 		break;
 
-	    case rbrace:       /* got a } */
-		if (p_l_follow) {
-		/* check for unclosed if, for, else. */
-		    printf ("%d: Unbalanced parens\n", line_no);
-		    p_l_follow = 0;
+	    case rbrace:	/* got a '}' */
+		if (ps.p_l_follow) {	/* check for unclosed if, for,
+					 * else. */
+		    diag(1, "Unbalanced parens");
+		    ps.p_l_follow = 0;
 		    sp_sw = false;
 		}
-
-		if (s_code != e_code) {
-		/* } must be first on line */
+		ps.just_saw_decl = 0;
+		if (s_code != e_code && !ps.block_init) {	/* '}' must be first on
+								 * line */
 		    if (verbose)
-			printf ("%d: Line broken\n", line_no);
-		    dump_line ();
+			diag(0, "Line broken");
+		    dump_line();
 		}
-
 		*e_code++ = '}';
-		want_blank = true;
-		in_stmt = ind_stmt = false;
-
-		if (dec_nest > 0) {
-		/* we are in multi-level structure declaration */
-		    dec_ind = di_stack[--dec_nest];
-		    in_decl = true;
+		ps.want_blank = true;
+		ps.in_stmt = ps.ind_stmt = false;
+		if (ps.dec_nest > 0) {	/* we are in multi-level structure
+					 * declaration */
+		    dec_ind = di_stack[--ps.dec_nest];
+		    if (ps.dec_nest == 0 && !ps.in_parameter_declaration)
+			ps.just_saw_decl = 2;
+		    ps.in_decl = true;
 		}
-
-		parse (rbrace);/*   let parser know about this */
+		prefix_blankline_requested = 0;
+		parse(rbrace);	/* let parser know about this */
+		ps.search_brace = cuddle_else && ps.p_stack[ps.tos] == ifhead && ps.il[ps.tos] >= ps.ind_level;
+		if (ps.tos <= 1 && blanklines_after_procs && ps.dec_nest <= 0)
+		    postfix_blankline_requested = 1;
 		break;
 
-	    case swstmt:       /* got keyword "switch" */
+	    case swstmt:	/* got keyword "switch" */
 		sp_sw = true;
-		hd_type = swstmt;
-	    /* keep this for when we have seen the expression */
-		goto copy_id;  /* go move the token into buffer */
+		hd_type = swstmt;	/* keep this for when we have seen
+					 * the expression */
+		goto copy_id;	/* go move the token into buffer */
 
-	    case sp_paren:     /* token is if, while, for */
-		sp_sw = true;  /* the interesting stuff is done after the
-			          expression is scanned */
+	    case sp_paren:	/* token is if, while, for */
+		sp_sw = true;	/* the interesting stuff is done after the
+				 * expression is scanned */
 		hd_type = (*token == 'i' ? ifstmt :
-			(*token == 'w' ? whilestmt : forstmt));
-	    /* remember the type of header for later use by parser */
-		goto copy_id;  /* copy the token into line */
+			   (*token == 'w' ? whilestmt : forstmt));
 
-	    case sp_nparen:    /* got else, do */
-		in_stmt = false;
-		if (e_code != s_code) {
-		/* make sure this starts a line */
-		    if (verbose)
-			printf ("%d: Line broken\n", line_no);
-		    dump_line ();
-		    want_blank = false;
+		/*
+		 * remember the type of header for later use by parser 
+		 */
+		goto copy_id;	/* copy the token into line */
+
+	    case sp_nparen:	/* got else, do */
+		ps.in_stmt = false;
+		if (*token == 'e') {
+		    if (e_code != s_code && (!cuddle_else || e_code[-1] != '}')) {
+			if (verbose)
+			    diag(0, "Line broken");
+			dump_line();	/* make sure this starts a line */
+			ps.want_blank = false;
+		    }
+		    force_nl = true;	/* also, following stuff must go
+					 * onto new line */
+		    last_else = 1;
+		    parse(elselit);
+		} else {
+		    if (e_code != s_code) {	/* make sure this starts a
+						 * line */
+			if (verbose)
+			    diag(0, "Line broken");
+			dump_line();
+			ps.want_blank = false;
+		    }
+		    force_nl = true;	/* also, following stuff must go
+					 * onto new line */
+		    last_else = 0;
+		    parse(dolit);
 		}
+		goto copy_id;	/* move the token into line */
 
-		force_nl = true;
-	    /* also, following stuff must go onto new line */
-		parse (*token == 'e' ? elselit : dolit);
-	    /* pass token on to parser */
-		goto copy_id;  /* move the token into line */
+	    case decl:		/* we have a declaration type (int,
+				 * register, etc.) */
+		parse(decl);	/* let parser worry about indentation */
+		if (ps.last_token == rparen && ps.tos <= 1)
+		    ps.in_parameter_declaration = 1;
+		if (ps.in_parameter_declaration && ps.indent_parameters && ps.dec_nest == 0) {
+		    ps.ind_level = ps.i_l_follow = 1;
+		    ps.ind_stmt = 0;
+		}
+		ps.in_or_st = true;	/* this might be a structure or
+					 * initialization declaration */
+		ps.in_decl = ps.decl_on_line = true;
+		if ( /* !ps.in_or_st && */ ps.dec_nest <= 0)
+		    ps.just_saw_decl = 2;
+		prefix_blankline_requested = 0;
+		for (i = 0; token[i++];);	/* get length of token */
 
-	    case decl: 	       /* we have a declaration type (int,
-			          register, etc.) */
-		parse (decl);  /* let parser worry about indentation */
-		in_or_st = true;
-	    /* this might be a structure or initialization declaration */
-		in_decl = decl_on_line = true;
-		for (i = 0; token[i++];);
-	    /* get length of token */
-
-		if (i <= 3)
-		    i = 4;
-
-		dec_ind = ((e_code - s_code + i) / ind_size + 1) * ind_size;
-	    /* this will tell us how far to indent subsequent identifiers 
-	    */
+		/*
+		 * dec_ind = e_code - s_code + (ps.decl_indent>i ?
+		 * ps.decl_indent : i); 
+		 */
+		dec_ind = ps.decl_indent > 0 ? ps.decl_indent : i;
 		goto copy_id;
 
-	    case ident:        /* got an identifier or constant */
-		if (in_decl) { /* if we are in a declaration, we must
-			          indent identifier */
-		    if (want_blank)
+	    case ident:	/* got an identifier or constant */
+		if (ps.in_decl) {	/* if we are in a declaration, we
+					 * must indent identifier */
+		    if (ps.want_blank)
 			*e_code++ = ' ';
-		    want_blank = false;
-
-		    while ((e_code - s_code) < dec_ind)
-			*e_code++ = ' ';
-		}
-		else
-		    if (sp_sw && p_l_follow == 0) {
-		    /* check for if expr w/o parens *//* this will make
-		       JRM's obsurd "for ever" statements work */
-			sp_sw = false;
-			force_nl = true;
-			last_u_d = true;
-			in_stmt = false;
-			parse (hd_type);
+		    ps.want_blank = false;
+		    if (is_procname == 0 || !procnames_start_line) {
+			if (!ps.block_init)
+			    if (troff && !ps.dumped_decl_indent) {
+				sprintf(e_code, "\\c\n.De %dp+\200p\n", dec_ind * 7);
+				ps.dumped_decl_indent = 1;
+				e_code += strlen(e_code);
+			    } else
+				while ((e_code - s_code) < dec_ind)
+				    *e_code++ = ' ';
+		    } else {
+			if (dec_ind && s_code != e_code)
+			    dump_line();
+			dec_ind = 0;
+			ps.want_blank = false;
 		    }
-
-	copy_id: 
-		if (want_blank)
+		} else if (sp_sw && ps.p_l_follow == 0) {
+		    sp_sw = false;
+		    force_nl = true;
+		    ps.last_u_d = true;
+		    ps.in_stmt = false;
+		    parse(hd_type);
+		}
+	copy_id:
+		if (ps.want_blank)
 		    *e_code++ = ' ';
+		if (troff && ps.its_a_keyword) {
+		    *e_code++ = BACKSLASH;
+		    *e_code++ = 'f';
+		    *e_code++ = 'B';
+		}
 		for (t_ptr = token; *t_ptr; ++t_ptr)
 		    *e_code++ = *t_ptr;
-		want_blank = true;
+		if (troff && ps.its_a_keyword) {
+		    *e_code++ = BACKSLASH;
+		    *e_code++ = 'f';
+		    *e_code++ = 'R';
+		}
+		ps.want_blank = true;
 		break;
 
-	    case period:       /* treat a period kind of like a binary
-			          operation */
-		*e_code++ = '.';
-	    /* move the period into line */
-		want_blank = false;
-	    /* don't put a blank after a period */
+	    case period:	/* treat a period kind of like a binary
+				 * operation */
+		*e_code++ = '.';/* move the period into line */
+		ps.want_blank = false;	/* dont put a blank after a period */
 		break;
 
-	    case comma: 
-		want_blank = (s_code != e_code);
-	    /* only put blank after comma if comma does not start the line
-	       */
-		if (in_decl)   /* align these in a declaration */
+	    case comma:
+		ps.want_blank = (s_code != e_code);	/* only put blank after
+							 * comma if comma does
+							 * not start the line */
+		if (ps.in_decl && is_procname == 0 && !ps.block_init)
 		    while ((e_code - s_code) < (dec_ind - 1))
 			*e_code++ = ' ';
 
 		*e_code++ = ',';
-
-		if (break_comma && p_l_follow == 0 && !leave_comma)
-		    force_nl = true;
-
+		if (ps.p_l_follow == 0) {
+		    ps.block_init = 0;
+		    if (break_comma && !ps.leave_comma)
+			force_nl = true;
+		}
 		break;
 
-	    case preesc:       /* got the character '#' */
-		if (
-			(s_com != e_com) ||
-			(s_lab != e_lab) ||
-			(s_code != e_code)) {
-		/* true iff the '#' was not at start of the line */
-		    printf ("%d: What is this # doing here?\n", line_no);
-		    goto do_binary;
-		/* treat it as a binary operator */
-		}
+	    case preesc:	/* got the character '#' */
+		if ((s_com != e_com) ||
+		    (s_lab != e_lab) ||
+		    (s_code != e_code))
+		    dump_line();
+		*e_lab++ = '#';	/* move whole line to 'label' buffer */
+		{
+		    int         in_comment = 0;
+		    char       *com_start = 0;
+		    char        quote = 0;
+		    char       *com_end = 0;
 
-		*e_lab++ = '#';/* move whole line to 'label' buffer */
-		while (*buf_ptr != '\n') {
-		    *e_lab = *buf_ptr++;
-		    if (buf_ptr >= buf_end)
-			fill_buffer ();
-
-		    if (*e_lab++ == '/' && *buf_ptr == '*') {
-		    /* check for comment on preprocessor line */
-			e_lab - = 2;
-		    /* skip back over slash */
-			while (*e_lab == '\t' || *e_lab == ' ')
-			    --e_lab;
-		    /* strip off trailing blanks and tabs */
-			*(++e_lab) = '\0';
-		    /* null terminate the line */
-			if (++buf_ptr >= buf_end)
-			       /* space past start of comment */
-			    fill_buffer ();
-			col_1 = false;
-		    /* don't let pr_comment think that this comment starts
-		       in column 1 */
-			decl_on_line = true;
-		    /* treat this as a declaration for comment placement
-		       purposes */
-			goto proc_comment;
-		    /* go process the comment */
+		    while (*buf_ptr != '\n' || in_comment) {
+			*e_lab = *buf_ptr++;
+			if (buf_ptr >= buf_end)
+			    fill_buffer();
+			switch (*e_lab++) {
+			    case BACKSLASH:
+				if (troff)
+				    *e_lab++ = BACKSLASH;
+				if (!in_comment) {
+				    *e_lab++ = *buf_ptr++;
+				    if (buf_ptr >= buf_end)
+					fill_buffer();
+				}
+				break;
+			    case '/':
+				if (*buf_ptr == '*' && !in_comment && !quote) {
+				    in_comment = 1;
+				    *e_lab++ = *buf_ptr++;
+				    com_start = e_lab - 2;
+				}
+				break;
+			    case '"':
+				if (quote == '"')
+				    quote = 0;
+				break;
+			    case '\'':
+				if (quote == '\'')
+				    quote = 0;
+				break;
+			    case '*':
+				if (*buf_ptr == '/' && in_comment) {
+				    in_comment = 0;
+				    *e_lab++ = *buf_ptr++;
+				    com_end = e_lab;
+				}
+				break;
+			}
 		    }
+		    while (e_lab > s_lab && (e_lab[-1] == ' ' || e_lab[-1] == '\t'))
+			e_lab--;
+		    if (e_lab == com_end && bp_save == 0) {	/* comment on
+								 * preprocessor line */
+			if (sc_end == 0)	/* if this is the first
+						 * comment, we must set up
+						 * the buffer */
+			    sc_end = &(save_com[0]);
+			else {
+			    *sc_end++ = '\n';	/* add newline between
+						 * comments */
+			    *sc_end++ = ' ';
+			    --line_no;
+			}
+			bcopy(com_start, sc_end, com_end - com_start);
+			sc_end += com_end - com_start;
+			e_lab = com_start;
+			while (e_lab > s_lab && (e_lab[-1] == ' ' || e_lab[-1] == '\t'))
+			    e_lab--;
+			bp_save = buf_ptr;	/* save current input
+						 * buffer */
+			be_save = buf_end;
+			buf_ptr = save_com;	/* fix so that subsequent
+						 * calls to lexi will take
+						 * tokens out of save_com */
+			*sc_end++ = ' ';	/* add trailing blank,
+						 * just in case */
+			buf_end = sc_end;
+			sc_end = 0;
+		    }
+		    *e_lab = '\0';	/* null terminate line */
+		    ps.pcase = false;
 		}
+		if (strncmp(s_lab, "#if", 3) == 0)
+		    if (ifdef_level < sizeof state_stack / sizeof state_stack[0]) {
+			match_state[ifdef_level].tos = -1;
+			state_stack[ifdef_level++] = ps;
+		    } else
+			diag(1, "#if stack overflow");
+		else if (strncmp(s_lab, "#else", 5) == 0)
+		    if (ifdef_level <= 0)
+			diag(1, "Unmatched #else");
+		    else {
+			match_state[ifdef_level - 1] = ps;
+			ps = state_stack[ifdef_level - 1];
+		} else if (strncmp(s_lab, "#endif", 6) == 0)
+		    if (ifdef_level <= 0)
+			diag(1, "Unmatched #endif");
+		    else {
+			ifdef_level--;
+#ifdef undef
 
-		*e_lab = '\0'; /* null terminate line */
-		pcase = false;
-		break;	       /* subsequent processing of the newline
-			          character will cause the line to be
-			          printed */
+			/*
+			 * This match needs to be more intelligent before
+			 * the message is useful 
+			 */
+			if (match_state[ifdef_level].tos >= 0
+			    && bcmp(&ps, &match_state[ifdef_level], sizeof ps))
+			    diag(0, "Syntactically inconsistant #ifdef alternatives.");
+#endif
+		    }
+		break;		/* subsequent processing of the newline
+				 * character will cause the line to be
+				 * printed */
 
-	    case comment:      /* we have gotten a /*  this is a biggie */
-	proc_comment: 
-		pr_comment ();
+	    case comment:	/* we have gotten a /*  this is a biggie */
+	proc_comment:
+		if (flushed_nl) {	/* we should force a broken line
+					 * here */
+		    flushed_nl = false;
+		    dump_line();
+		    ps.want_blank = false;	/* dont insert blank at
+						 * line start */
+		    force_nl = false;
+		}
+		pr_comment();
 		break;
-	}		       /* end of big switch stmt */
-
-	*e_code = '\0';	       /* make sure code section is null
-			          terminated */
-
-    }			       /* end of main while (1) loop */
+	}			/* end of big switch stmt */
+	*e_code = '\0';		/* make sure code section is null
+				 * terminated */
+	if (type_code != comment && type_code != newline && type_code != preesc)
+	    ps.last_token = type_code;
+    }				/* end of main while (1) loop */
 };
 
 /*
- * copy input file to backup file
- * if in_name is /blah/blah/blah/file, then backup file
- * will be ".Bfile"
- * then make the backup file the input and original
- * input file the output
+ * copy input file to backup file if in_name is /blah/blah/blah/file, then
+ * backup file will be ".Bfile" then make the backup file the input and
+ * original input file the output 
  */
-bakcopy () {
-    int     n,
-            bakchn;
-    char    buff[512];
-    register char  *p;
+bakcopy()
+{
+    int         n,
+                bakchn;
+    char        buff[512];
+    register char *p;
 
- /* construct file name .Bfile */
-    for (p = in_name; *p; p++);/* skip to end of string */
-    while (p > in_name && *p != '/')/* find last '/' */
+    /* construct file name .Bfile */
+    for (p = in_name; *p; p++);	/* skip to end of string */
+    while (p > in_name && *p != '/')	/* find last '/' */
 	p--;
     if (*p == '/')
 	p++;
-    sprintf (bakfile, ".B%s", p);
+    sprintf(bakfile, "%s.BAK", p);
 
- /* copy in_name to backup file */
-    bakchn = creat (bakfile, 0600);
+    /* copy in_name to backup file */
+    bakchn = creat(bakfile, 0600);
     if (bakchn < 0) {
-	printf ("can't create backup file \"%s\"\n", bakfile);
-	exit ();
+	printf("can't create backup file \"%s\"\n", bakfile);
+	exit();
     }
-    while (n = read (input, buff, 512))
-	write (bakchn, buff, n);
-    close (bakchn);
-    close (input);
+    while (n = read(fileno(input), buff, 512))
+	write(bakchn, buff, n);
+    close(bakchn);
+    fclose(input);
 
- /* re-open backup file as the input file */
-    input = open (bakfile, 0);
+    /* re-open backup file as the input file */
+    input = fopen(bakfile, "r");
     if (input < 0) {
-	printf ("can't re-open backup file\n");
-	exit ();
+	printf("can't re-open backup file\n");
+	exit();
     }
-
- /* now the original input file will be the output */
-    output = creat (in_name, 0644);
-    if (output < 0) {
-	printf ("can't create %s\n", in_name);
-	unlink (bakfile);
-	exit ();
+    /* now the original input file will be the output */
+    output = fopen(in_name, "w");
+    if (output == 0) {
+	printf("can't create %s\n", in_name);
+	unlink(bakfile);
+	exit();
     }
 }
 
 
-set_option (arg)
-char   *arg;
+char       *param_start;
+
+eqin(s1, s2)
+    register char *s1;
+    register char *s2;
 {
-    register    j;
-    for (j = 0; options[j].str != 0; ++j) {
-			       /* look thru list of possible options */
-	if (eqin (options[j].str, arg)) {
-	    set_var (j, arg);
-	    break;	       /* get out of for loop */
+    while (*s1) {
+	if (*s1++ != *s2++)
+	    return (false);
+    }
+    param_start = s2;
+    return (true);
+}
+
+
+set_option(arg)
+    char       *arg;
+{
+    if (!eqin("-npro", arg))
+	if (eqin("-lc", arg))	/* comment line length */
+	    block_comment_max_col = atoi(param_start);
+	else if (eqin("-lp", arg))
+	    lineup_to_parens = 1;
+	else if (eqin("-nlp", arg))
+	    lineup_to_parens = 0;
+	else if (eqin("-l", arg))	/* line length */
+	    max_col = atoi(param_start);
+	else if (eqin("-psl", arg))	/* if true, the names of
+					 * procedures being defined get
+					 * placed in column 1 (ie. a
+					 * newline is placed between the
+					 * type of the procedure and its
+					 * name) */
+	    procnames_start_line = 1;
+	else if (eqin("-npsl", arg))
+	    procnames_start_line = 0;
+	else if (eqin("-fc1", arg))
+	    format_col1_comments = 1;
+	else if (eqin("-nfc1", arg))
+	    format_col1_comments = 0;
+	else if (eqin("-pcs", arg))	/* If true, procedure calls look
+					 * like: foo(bar) rather than foo
+					 * (bar) */
+	    proc_calls_space = 1;
+	else if (eqin("-npcs", arg))
+	    proc_calls_space = 0;
+	else if (eqin("-ip", arg))	/* indent parameters */
+	    ps.indent_parameters = 1;
+	else if (eqin("-nip", arg))	/* no indent parameters */
+	    ps.indent_parameters = 0;
+	else if (eqin("-cli", arg)) {	/* case label indent */
+	    extern float atof();
+
+	    ps.case_indent = atof(param_start);
 	}
-    }
-
-    if (options[j].str == 0) { /* illegal arg given */
-	printf ("Unknown parameter: %s\n", arg);
-	exit ();
-    }
-}
-
-
-set_var (j, arg)
-char   *arg;
-{
-    switch (options[j].code) {
-	case 1: 	       /* have -lnnn */
-	    max_col = atoi (&arg[2]);
-	    break;
-	case 2: 	       /* have -cnnn */
-	    com_ind = atoi (&arg[2]);
-	    break;
-	case 3: 	       /* have -innn */
-	    ind_size = atoi (&arg[2]);
-	    break;
-	case 4: 	       /* have -cdnnn */
-	    decl_com_ind = atoi (&arg[3]);
-	    break;
-	case 5: 	       /* have -v */
+	else if (eqin("-ci",arg))
+	    continuation_indent = atoi(param_start);
+	else if (eqin("-cdb", arg))	/* comment delimiters should be on
+					 * lines by themselves */
+	    comment_delimiter_on_blankline = 1;
+	else if (eqin("-ncdb", arg))	/* comment delimiters shouldnt be
+					 * on lines by themselves */
+	    comment_delimiter_on_blankline = 0;
+	else if (eqin("-i", arg))	/* indent width */
+	    ps.ind_size = atoi(param_start);
+	else if (eqin("-cd", arg))	/* indent for comments on
+					 * declarations */
+	    ps.decl_com_ind = atoi(param_start);
+	else if (eqin("-ce", arg))	/* true iff 'else' should cuddle
+					 * up to '}' */
+	    cuddle_else = 1;
+	else if (eqin("-c", arg))	/* comment indent */
+	    ps.com_ind = atoi(param_start);
+	else if (eqin("-v", arg))	/* spew out rubbish */
 	    verbose = true;
-	    break;
-	case 6: 	       /* have -nv */
+	else if (eqin("-nv", arg))	/* keep quiet */
 	    verbose = false;
-	    break;
-	case 7: 	       /* have -dj */
-	    ljust_decl = true;
-	    break;
-	case 8: 	       /* have -ndj */
-	    ljust_decl = false;
-	    break;
-	case 9: 	       /* -nbc */
-	    leave_comma = true;
-	    break;
-	case 10: 	       /* -bc */
-	    leave_comma = false;
-	    break;
-	case 13: 	       /* -dnnn */
-	    unindent_displace = atoi (&arg[2]);
-	    break;
-	case 14: 	       /* -br */
+	else if (eqin("-dj", arg))
+	    ps.ljust_decl = true;
+	else if (eqin("-ndj", arg))
+	    ps.ljust_decl = false;
+	else if (eqin("-nbc", arg))	/* dont break after commas in
+					 * declarations */
+	    ps.leave_comma = true;
+	else if (eqin("-bc", arg))	/* break after commas in
+					 * declarations */
+	    ps.leave_comma = false;
+	else if (eqin("-di", arg))	/* indent from type to varname in
+					 * a declaration */
+	    ps.decl_indent = atoi(param_start);
+	else if (eqin("-d", arg))
+	    ps.unindent_displace = atoi(param_start);
+	else if (eqin("-br", arg))
 	    btype_2 = true;
-	    break;
-	case 15: 	       /* -bl */
+	else if (eqin("-bl", arg))
 	    btype_2 = false;
-	    break;
-	case 16:
-	    if(input<0) input = 0;
-	    if(output<0) output = 1;
-	    break;
-    }
+	else if (eqin("-st", arg)) {	/* input and output on standard IO */
+	    if (input == 0)
+		input = stdin;
+	    if (output == 0)
+		output = stdout;
+	} else if (eqin("-ei", arg))	/* else-ifs should be stuck
+					 * together */
+	    ps.else_if = 1;
+	else if (eqin("-nei", arg))	/* else-ifs should be broken apart */
+	    ps.else_if = 0;
+	else if (eqin("-nce", arg))	/* else should always start a line */
+	    cuddle_else = 0;
+	else if (eqin("-sc", arg))	/* comment continuations should
+					 * start with a * */
+	    star_comment_cont = 1;
+	else if (eqin("-nsc", arg))
+	    star_comment_cont = 0;	/* comments shouldnt start with a
+					 * star */
+	else if (eqin("-bap", arg))	/* blanklines after procedures */
+	    blanklines_after_procs = 1;
+	else if (eqin("-nbap", arg))	/* blanklines after procedures */
+	    blanklines_after_procs = 0;
+	else if (eqin("-sob", arg))	/* swallow optional blanklines */
+	    swallow_optional_blanklines = 1;
+	else if (eqin("-nsob", arg))	/* swallow optional blanklines */
+	    swallow_optional_blanklines = 0;
+	else if (eqin("-bad", arg))	/* blanklines after declarations */
+	    blanklines_after_declarations = 1;
+	else if (eqin("-nbad", arg))	/* blanklines after declarations */
+	    blanklines_after_declarations = 0;
+	else if (eqin("-bbb", arg))	/* blanklines before blockcomments */
+	    blanklines_before_blockcomments = 1;
+	else if (eqin("-nbbb", arg))	/* blanklines before blockcomments */
+	    blanklines_before_blockcomments = 0;
+	else if (eqin("-troff", arg))
+	    troff = 1;
+	else if (arg[0] == '-' && arg[1] == 'T')	/* -Ttypename */
+	    addkey(arg + 2, 4);
+	else {			/* illegal arg given */
+	    printf("Unknown parameter: %s\n", arg);
+	    exit();
+	}
 }
 
 
 /*
- * GETPRO - get profile file
- * profile file is max 127 characters
+ * GETPRO - get profile file profile file is max 127 characters 
  */
-getpro (name, buf)
-char   *name,		       /* profile file name, as in '.indent.pro' 
-			       */
-       *buf;		       /* will receive contents of .pro file */
+getpro(name, buf, len)
+    char       *name,		/* profile file name, as in '.indent.pro' */
+               *buf;		/* will receive contents of .pro file */
 {
     register    chn,
                 n;
-    char    file[32];
+    char        file[100];
 
     file[0] = 0;
-    strcat (file, getenv ("HOME"));
-    strcat (file, "/");
-    strcat (file, name);
-    chn = open (file, 0);
+    strcat(file, getenv("HOME"));
+    strcat(file, "/");
+    strcat(file, name);
+    if ((chn = open(name, 0)) < 0)
+	chn = open(file, 0);
     if (chn < 0)
 	return (-1);
-    n = read (chn, buf, 127);
+    n = read(chn, buf, len);
     if (n < 0)
 	return (-1);
-    buf[n--] = 0;	       /* null terminate line */
+    buf[n--] = 0;		/* null terminate line */
     if (buf[n] == '\n')
 	buf[n] = 0;
-    close (chn);
+    close(chn);
     return (0);
 }
 
 
 /*
- * strip off arguments in a string:
- * p is address of a character pointer
- * nextchr returns pointer to front of first arg
- * arg is null terminated.
- * p is reset to after arg for subsequent calls
+ * strip off arguments in a string: p is address of a character pointer
+ * nextchr returns pointer to front of first arg arg is null terminated. p
+ * is reset to after arg for subsequent calls 
  */
-char   *nxtarg (p)
-char  **p;
+char       *
+nxtarg(p)
+    char      **p;
 {
-    register char  *f,
-                   *b;
-    f = b = *p;
-    while (*f && (*f == ' ' || *f == '\t'))
+    register char *f,
+               *b;
+
+    f = *p;
+    while (*f && *f <= ' ')
 	f++;
-    while (*b && (*b != ' ' && *b != '\t'))
+    b = f;
+    while (*b > ' ')
 	b++;
     if (*b != 0)
 	*b++ = 0;
@@ -1176,16 +1299,18 @@ char  **p;
 }
 
 
-set_profile () {
-    char    line[128],
-           *b;
-    register char  *f;
-    extern char *nxtarg ();
+set_profile()
+{
+    char        line[1000],
+               *b;
+    register char *f;
+    extern char *nxtarg();
 
-    if (getpro (".indent.pro", line) < 0)
+    if (getpro(".indent.pro", line, sizeof line) < 0)
 	return;
     b = line;
-    if(verbose) printf ("profile: %s\n", b);
-    while (*(f = nxtarg (&b)))
-	set_option (f);
+    if (verbose)
+	printf("profile: %s\n", b);
+    while (*(f = nxtarg(&b)))
+	set_option(f);
 }
