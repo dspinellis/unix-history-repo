@@ -1,12 +1,32 @@
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)readcf.c	3.13	%G%";
+static char SccsId[] = "@(#)readcf.c	3.14	%G%";
 
 /*
 **  READCF -- read control file.
 **
 **	This routine reads the control file and builds the internal
 **	form.
+**
+**	The file is formatted as a sequence of lines, each taken
+**	atomically.  The first character of each line describes how
+**	the line is to be interpreted.  The lines are:
+**		Dxval		Define macro x to have value val.
+**		Cxword		Put word into class x.
+**		Fxfile [fmt]	Read file for lines to put into
+**				class x.  Use scanf string 'fmt'
+**				or "%s" if not present.  Fmt should
+**				only produce one string-valued result.
+**		Hname: value	Define header with field-name 'name'
+**				and value as specified; this will be
+**				macro expanded immediately before
+**				use.
+**		Sn		Use rewriting set n.
+**		Rlhs rhs	Rewrite addresses that match lhs to
+**				be rhs.
+**		Mn p f r a	Define mailer.  n - internal name,
+**				p - pathname, f - flags, r - rewriting
+**				rule for sender, a - argument vector.
 **
 **	Parameters:
 **		cfname -- control file name.
@@ -105,6 +125,7 @@ readcf(cfname, safe)
 			break;
 
 		  case 'C':		/* word class */
+		  case 'F':		/* word class from file */
 			class = buf[1];
 			if (!isalpha(class))
 				goto badline;
@@ -112,8 +133,26 @@ readcf(cfname, safe)
 				class -= 'A';
 			else
 				class -= 'a';
+			
+			/* read list of words from argument or file */
+			if (buf[0] == 'F')
+			{
+				/* read from file */
+				for (p = &buf[2]; *p != '\0' && !isspace(*p); p++)
+					continue;
+				if (*p == '\0')
+					p = "%s";
+				else
+				{
+					*p = '\0';
+					while (isspace(*++p))
+						continue;
+				}
+				fileclass(class, &buf[2], p);
+				break;
+			}
 
-			/* scan the list of words and set class 'i' for all */
+			/* scan the list of words and set class for all */
 			for (p = &buf[2]; *p != '\0'; )
 			{
 				register char *wd;
@@ -145,6 +184,51 @@ readcf(cfname, safe)
 			syserr("unknown control line \"%s\"", buf);
 		}
 	}
+}
+/*
+**  FILECLASS -- read members of a class from a file
+**
+**	Parameters:
+**		class -- class to define.
+**		filename -- name of file to read.
+**		fmt -- scanf string to use for match.
+**
+**	Returns:
+**		none
+**
+**	Side Effects:
+**
+**		puts all lines in filename that match a scanf into
+**			the named class.
+*/
+
+fileclass(class, filename, fmt)
+	int class;
+	char *filename;
+	char *fmt;
+{
+	register FILE *f;
+	char buf[MAXLINE];
+
+	f = fopen(filename, "r");
+	if (f == NULL)
+	{
+		syserr("cannot open %s", filename);
+		return;
+	}
+
+	while (fgets(buf, sizeof buf, f) != NULL)
+	{
+		register STAB *s;
+		char wordbuf[MAXNAME+1];
+
+		if (sscanf(buf, fmt, wordbuf) != 1)
+			continue;
+		s = stab(wordbuf, ST_CLASS, ST_ENTER);
+		s->s_class |= 1 << class;
+	}
+
+	fclose(f);
 }
 /*
 **  MAKEMAILER -- define a new mailer.
