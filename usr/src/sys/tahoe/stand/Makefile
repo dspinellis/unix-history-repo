@@ -1,4 +1,12 @@
-#	@(#)Makefile	7.16 (Berkeley) %G%
+#	@(#)Makefile	7.17 (Berkeley) %G%
+
+DESTDIR=
+STAND=	../../stand
+INCPATH=-I. -I../..
+VPATH=	${STAND}
+
+CC=	cc
+AS=	as
 
 RELOC=		800
 MTBOOTRELOC=	e0000
@@ -7,20 +15,20 @@ LDT1MBSYSOPT=	-T ${MTBOOTRELOC} -x
 LDTSYSOPT=	-T ${BOOTRELOC} -x
 LDTOPT=		-T ${RELOC} -e _entry -x
 
-DESTDIR=
-VPATH=	../../stand
-LIBS=	libsa.a ${DESTDIR}/usr/lib/libc.a
-COPTS=	-O -I. -I../..
-CFLAGS=	-DSTANDALONE -DCOMPAT_42 -DTAHOE -DRELOC=0x${RELOC} ${COPTS}
+DEFS=	-DSTANDALONE -DCOMPAT_42 -DTAHOE -DRELOC=0x${RELOC}
+CFLAGS=	-O ${INCPATH} ${DEFS}
+
 SUBDIR=	vdformat
 ALL=	boot cat copy ls
 
-SRCS=	boot.c cat.c conf.c copy.c dev.c getfile.c gets.c ls.c printf.c \
-	prf.c srt0.c sys.c vd.c cy.c hd.c
-DRIVERS=cy.o vd.o hd.o
+DRIVERS=cy.c hd.c vd.c
+SASRC=  bmap.c close.c dev.c getfile.c gets.c ioctl.c lseek.c open.c \
+	printf.c read.c sys.c write.c
+SRCS=	boot.c cat.c conf.c copy.c cy.c hd.c ls.c prf.c srt0.c \
+	${SASRC} ${DRIVERS}
+LIBS=	libsa.a ${DESTDIR}/usr/lib/libc.a
 
-#all: srt0.o libsa.a ${ALL} ${SUBDIR}
-all: srt0.o libsa.a ${ALL}
+all: srt0.o libsa.a ${ALL} 		# ${SUBDIR}
 
 ${SUBDIR}:
 	cd $@; make ${MFLAGS}
@@ -28,8 +36,7 @@ ${SUBDIR}:
 machdep.o: machdep.c ../include/mtpr.h ../tahoe/mem.h ../tahoe/SYS.h
 	${CC} -E ${CFLAGS} machdep.c | ${AS}  -o machdep.o
 
-libsa.a: conf.o dev.o getfile.o gets.o machdep.o prf.o printf.o sys.o \
-	${DRIVERS}
+libsa.a: conf.o machdep.o prf.o ${DRIVERS:.c=.o} ${SASRC:.c=.o}
 	ar crv $@ $?
 	ranlib $@
 
