@@ -5,9 +5,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-SCCSID(@(#)alias.c	3.46		%G%	(with DBM));
+SCCSID(@(#)alias.c	3.47		%G%	(with DBM));
 # else DBM
-SCCSID(@(#)alias.c	3.46		%G%	(without DBM));
+SCCSID(@(#)alias.c	3.47		%G%	(without DBM));
 # endif DBM
 
 /*
@@ -164,6 +164,7 @@ initaliases(aliasfile, init)
 	if (stat(aliasfile, &stb) < 0)
 	{
 		NoAlias = TRUE;
+		errno = 0;
 		return;
 	}
 
@@ -194,6 +195,7 @@ initaliases(aliasfile, init)
 	stb.st_ino = 0;
 	if (!init && (atcnt < 0 || stat(buf, &stb) < 0 || stb.st_mtime < modtime))
 	{
+		errno = 0;
 		if (AutoRebuild && stb.st_ino != 0 &&
 		    ((stb.st_mode & 0777) == 0666 || stb.st_uid == geteuid()))
 		{

@@ -4,7 +4,7 @@
 # include "sendmail.h"
 # include <sys/file.h>
 
-SCCSID(@(#)main.c	3.157		%G%);
+SCCSID(@(#)main.c	3.158		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -921,6 +921,7 @@ disconnect(fulldrop)
 			(void) ioctl(fd, TIOCNOTTY, 0);
 			(void) close(fd);
 		}
+		errno = 0;
 	}
 #endif TIOCNOTTY
 

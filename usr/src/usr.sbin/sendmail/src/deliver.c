@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.149		%G%);
+SCCSID(@(#)deliver.c	3.150		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -1138,7 +1138,10 @@ mailfile(filename, ctladdr)
 		(void) signal(SIGTERM, SIG_DFL);
 		umask(OldUmask);
 		if (stat(filename, &stb) < 0)
+		{
+			errno = 0;
 			stb.st_mode = 0666;
+		}
 		if (bitset(0111, stb.st_mode))
 			exit(EX_CANTCREAT);
 		if (ctladdr == NULL)
