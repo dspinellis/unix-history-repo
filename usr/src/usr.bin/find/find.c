@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)find.c	4.7.1.1 (Berkeley) %G%";
+static char *sccsid = "@(#)find.c	4.10 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <sys/param.h>
