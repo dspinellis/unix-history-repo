@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kgdb_glue.c	7.3 (Berkeley) %G%
+ *	@(#)kgdb_glue.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -29,18 +29,8 @@
 
 #ifndef lint
 static char rcsid[] =
-    "@(#) $Header: kgdb_glue.c,v 1.4 91/03/08 07:02:37 van Exp $ (LBL)";
+    "@(#) $Header: /usr/src/sys/hp300/hp300/RCS/kgdb_glue.c,v 1.5 92/12/20 15:48:57 mike Exp $ (LBL)";
 #endif
-
-/*
- * # of additional bytes in 680x0 exception frame format n.
- */
-static int frame_bytes[16] = {
-	0, 0, sizeof(struct fmt2), 0,
-	0, 0, 0, 0,
-	0, sizeof(struct fmt9), sizeof(struct fmtA), sizeof(struct fmtB),
-	0, 0, 0, 0
-};
 
 #define KGDB_STACKSIZE 0x800
 #define KGDB_STACKWORDS (KGDB_STACKSIZE / sizeof(u_long))
@@ -70,12 +60,16 @@ kgdb_trap_glue(type, frame)
 {
 	u_long osp, nsp;
 	u_int fsize, s;
+	extern short exframesize[];
 
 	/*
 	 * After a kernel mode trap, the saved sp doesn't point to the right
-	 * place.  The correct value is the top of the frame.
+	 * place.  The correct value is the top of the frame (i.e. before the
+	 * KGDB trap).
+	 *
+	 * XXX this may have to change if we implement an interrupt stack.
 	 */
-	fsize = sizeof(frame) - sizeof(frame.F_u) + frame_bytes[frame.f_format];
+	fsize = sizeof(frame) - sizeof(frame.F_u) + exframesize[frame.f_format];
 	frame.f_regs[SP] = (u_long)&frame + fsize;
 
 	/*
@@ -118,7 +112,7 @@ kgdb_trap_glue(type, frame)
 	 * unneeded usp (we trapped from kernel mode) and pad word,
 	 * and return to the trapped thread.
 	 */
-	asm("moveml sp@+,#0x7FFF; addql #6,sp; rte");
+	asm("moveml sp@+,#0x7FFF; addql #8,sp; rte");
 }
 
 int kgdb_testval;
