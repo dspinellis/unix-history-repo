@@ -1,4 +1,4 @@
-/*	ufs_vnops.c	4.58	83/05/28	*/
+/*	ufs_vnops.c	4.59	83/05/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -620,34 +620,6 @@ chown1(ip, uid, gid)
 	return (0);
 #endif
 }
-
-#ifndef NOCOMPAT
-/*
- * Set IUPD and IACC times on file.
- * Can't set ICHG.
- */
-outime()
-{
-	register struct a {
-		char	*fname;
-		time_t	*tptr;
-	} *uap = (struct a *)u.u_ap;
-	register struct inode *ip;
-	time_t tv[2];
-	struct timeval tv0, tv1;
-
-	if ((ip = owner(1)) == NULL)
-		return;
-	u.u_error = copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof (tv));
-	if (u.u_error == 0) {
-		ip->i_flag |= IACC|IUPD|ICHG;
-		tv0.tv_sec = tv[0]; tv0.tv_usec = 0;
-		tv1.tv_sec = tv[1]; tv1.tv_usec = 0;
-		iupdat(ip, &tv0, &tv1, 0);
-	}
-	iput(ip);
-}
-#endif
 
 utimes()
 {

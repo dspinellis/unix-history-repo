@@ -1,4 +1,4 @@
-/*	kern_xxx.c	4.1	83/05/27	*/
+/*	kern_xxx.c	4.2	83/05/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -7,7 +7,6 @@
 #include "../h/kernel.h"
 #include "../h/proc.h"
 #include "../h/reboot.h"
-#include "../h/quota.h"
 
 gethostid()
 {
@@ -68,6 +67,8 @@ reboot()
 }
 
 #ifndef NOCOMPAT
+#include "../h/quota.h"
+
 osetuid()
 {
 	register uid;
@@ -266,6 +267,26 @@ ovtimes()
 		if (u.u_error)
 			return;
 	}
+}
+
+#include "../machine/psl.h"
+#include "../machine/reg.h"
+
+owait()
+{
+	struct rusage ru;
+	struct vtimes *vtp, avt;
+
+	if ((u.u_ar0[PS] & PSL_ALLCC) != PSL_ALLCC) {
+		u.u_error = wait1(0, (struct rusage *)0);
+		return;
+	}
+	vtp = (struct vtimes *)u.u_ar0[R1];
+	u.u_error = wait1(u.u_ar0[R0], &ru);
+	if (u.u_error)
+		return;
+	getvtimes(&ru, &avt);
+	(void) copyout((caddr_t)&avt, (caddr_t)vtp, sizeof (struct vtimes));
 }
 
 getvtimes(aru, avt)
