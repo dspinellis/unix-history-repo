@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_uba.c	6.6 (Berkeley) %G%
+ *	@(#)if_uba.c	6.7 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -16,6 +16,7 @@
 #include "cmap.h"
 #include "vmmac.h"
 #include "socket.h"
+#include "syslog.h"
 
 #include "../net/if.h"
 
@@ -90,6 +91,7 @@ if_ubaminit(ifu, uban, hlen, nmr, ifr, nr, ifw, nw)
 		for (i = 0; i < nmr; i++)
 			ifw[nw].ifw_wmap[i] = ifw[nw].ifw_mr[i];
 		ifw[nw].ifw_xswapd = 0;
+		ifw[nw].ifw_flags = IFRW_W;
 	}
 	return (1);
 bad:
@@ -139,6 +141,10 @@ if_ubaalloc(ifu, ifrw, nmr)
  * easily by remapping, and take advantage of this here.
  * Prepend a pointer to the interface structure,
  * so that protocols can determine where incoming packets arrived.
+ * Note: we may be called to receive from a transmit buffer by some
+ * devices.  In that case, we must force normal mapping of the buffer,
+ * so that the correct data will appear (only unibus maps are 
+ * changed when remapping the transmit buffers).
  */
 struct mbuf *
 if_ubaget(ifu, ifr, totlen, off0, ifp)
@@ -154,10 +160,15 @@ if_ubaget(ifu, ifr, totlen, off0, ifp)
 
 	top = 0;
 	mp = &top;
+	if (ifr->ifrw_flags & IFRW_W)
+		rcv_xmtbuf((struct ifxmt *)ifr);
 	while (totlen > 0) {
 		MGET(m, M_DONTWAIT, MT_DATA);
-		if (m == 0)
-			goto bad;
+		if (m == 0) {
+			m_freem(top);
+			top = 0;
+			goto out;
+		}
 		if (off) {
 			len = totlen - off;
 			cp = ifr->ifrw_addr + ifu->iff_hlen + off;
@@ -241,10 +252,62 @@ nocopy:
 			ifp = (struct ifnet *)0;
 		}
 	}
+out:
+	if (ifr->ifrw_flags & IFRW_W)
+		restor_xmtbuf((struct ifxmt *)ifr);
 	return (top);
-bad:
-	m_freem(top);
-	return (0);
+}
+
+/*
+ * Change the mapping on a transmit buffer so that if_ubaget may
+ * receive from that buffer.  Copy data from any pages mapped to Unibus
+ * into the pages mapped to normal kernel virtual memory, so that
+ * they can be accessed and swapped as usual.  We take advantage
+ * of the fact that clusters are placed on the xtofree list
+ * in inverse order, finding the last one.
+ */
+static
+rcv_xmtbuf(ifw)
+	register struct ifxmt *ifw;
+{
+	register struct mbuf *m;
+	struct mbuf **mprev;
+	register i;
+	int t;
+	char *cp;
+
+	while (i = ffs(ifw->ifw_xswapd)) {
+		cp = ifw->ifw_base + i * CLBYTES;
+		i--;
+		ifw->ifw_xswapd &= ~(1<<i);
+		i *= CLSIZE;
+		mprev = &ifw->ifw_xtofree;
+		for (m = ifw->ifw_xtofree; m && m->m_next; m = m->m_next)
+			mprev = &m->m_next;
+		if (m == NULL)
+			panic("rcv_xmtbuf");
+		bcopy(mtod(m, caddr_t), cp, CLBYTES);
+		m_free(m);
+		*mprev = NULL;
+		for (t = 0; t < CLSIZE; t++) {
+			ifw->ifw_mr[i] = ifw->ifw_wmap[i];
+			i++;
+		}
+	}
+}
+
+/*
+ * Put a transmit buffer back together after doing an if_ubaget on it,
+ * which may have swapped pages.
+ */
+static
+restor_xmtbuf(ifw)
+	register struct ifxmt *ifw;
+{
+	register i;
+
+	for (i = 0; i < IF_MAXNUBAMR; i++)
+		ifw->ifw_wmap[i] = ifw->ifw_mr[i];
 }
 
 /*
