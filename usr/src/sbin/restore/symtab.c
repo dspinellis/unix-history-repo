@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)symtab.c	3.5	(Berkeley)	83/01/16";
+static char sccsid[] = "@(#)symtab.c	3.1	(Berkeley)	83/02/18";
 #endif
 
 #include "restore.h"
@@ -10,18 +10,12 @@ static char sccsid[] = "@(#)symtab.c	3.5	(Berkeley)	83/01/16";
 struct symtableheader {
 	long	volno;
 	long	stringsize;
-	long	entrytblsize;
-	time_t	dumptime;
-	time_t	dumpdate;
 	ino_t	maxino;
 };
 
-static struct entry *freelist = NIL;
-static struct entry **entry;
-static long entrytblsize;
-/* used to scale maxino to get inode hash table size */
-#define HASHFACTOR 5
+struct entry *freelist = NIL;
 
+#ifndef lookupino
 /*
  * Look up an entry by inode number
  */
@@ -29,57 +23,35 @@ struct entry *
 lookupino(inum)
 	ino_t inum;
 {
-	register struct entry *ep;
 
-	if (inum < ROOTINO || inum >= maxino)
-		return (NIL);
-	for (ep = entry[inum % entrytblsize]; ep != NIL; ep = ep->e_next)
-		if (ep->e_ino == inum)
-			return (ep);
-	return (NIL);
+	return (entry[inum]);
 }
+#endif lookupino
 
+#ifndef addino
 /*
  * Add an entry into the entry table
  */
 addino(inum, np)
-	ino_t inum;
+	long inum;
 	struct entry *np;
 {
-	struct entry **epp;
 
-	if (inum < ROOTINO || inum >= maxino)
-		panic("addino: out of range %d\n", inum);
-	epp = &entry[inum % entrytblsize];
-	np->e_next = *epp;
-	*epp = np;
-	if (dflag)
-		for (np = np->e_next; np != NIL; np = np->e_next)
-			if (np->e_ino == inum)
-				badentry(np, "duplicate inum");
+	entry[inum] = np;
 }
+#endif addino
 
+#ifndef deleteino
 /*
  * Delete an entry from the entry table
  */
 deleteino(inum)
-	ino_t inum;
+	long inum;
 {
-	register struct entry *next;
-	struct entry **prev;
 
-	if (inum < ROOTINO || inum >= maxino)
-		panic("deleteino: out of range %d\n", inum);
-	prev = &entry[inum % entrytblsize];
-	for (next = *prev; next != NIL; next = next->e_next) {
-		if (next->e_ino == inum) {
-			*prev = next->e_next;
-			return;
-		}
-		prev = &next->e_next;
-	}
-	panic("deleteino: %d not found\n", inum);
+	entry[inum] = NIL;
 }
+#endif deleteino
 
 /*
  * Look up an entry by name
@@ -102,10 +74,10 @@ lookupname(name)
 				break;
 		if (ep == NIL)
 			break;
-		if (*cp++ == '\0')
+		if (*cp == '\0')
 			return (ep);
 	}
-	return (NIL);
+	/* NOTREACHED */
 }
 
 /*
@@ -123,11 +95,11 @@ lookupparent(name)
 		return (NIL);
 	*tailindex = '\0';
 	ep = lookupname(name);
-	*tailindex = '/';
 	if (ep == NIL)
 		return (NIL);
 	if (ep->e_type != NODE)
 		panic("%s is not a directory\n", name);
+	*tailindex = '/';
 	return (ep);
 }
 
@@ -236,8 +208,30 @@ freeentry(ep)
 	}
 	removeentry(ep);
 	free(ep->e_name);
+	if (ep->e_newname != NULL)
+		free(ep->e_newname);
 	ep->e_sibling = freelist;
 	freelist = ep;
+}
+
+/*
+ * change the number associated with an entry
+ */
+renumber(ep, newinum)
+	struct entry *ep;
+	ino_t newinum;
+{
+	register struct entry *np;
+
+	if (lookupino(newinum) != NIL)
+		badentry(ep, "renumber to active inum");
+	np = lookupino(ep->e_ino);
+	if (np == NIL)
+		badentry(ep, "lookupino failed");
+	deleteino(ep->e_ino);
+	addino(newinum, ep);
+	for (; np != NIL; np = np->e_links)
+		np->e_ino = newinum;
 }
 
 /*
@@ -308,15 +302,12 @@ savename(name)
 	char *name;
 {
 	long len;
-	char *cp;
 
 	if (name == NULL)
 		panic("bad name\n");
 	len = strlen(name) + 2;
 	len = (len + 3) & ~3;
-	cp = malloc((unsigned)len);
-	(void) strcpy(cp, name);
-	return (cp);
+	return ((char *)malloc((unsigned)len));
 }
 
 /*
@@ -327,7 +318,7 @@ dumpsymtable(filename, checkpt)
 	long checkpt;
 {
 	register struct entry *ep;
-	register ino_t i;
+	register long i;
 	struct entry *next;
 	long mynum = 0, stroff = 0;
 	FILE *fd;
@@ -346,7 +337,7 @@ dumpsymtable(filename, checkpt)
 	 */
 	for (i = ROOTINO; i < maxino; i++) {
 		for (ep = lookupino(i); ep != NIL; ep = ep->e_links) {
-			ep->e_index = mynum++;
+			ep->e_newname = (char *)mynum++;
 			fwrite(ep->e_name, sizeof(char), (int)ep->e_namlen, fd);
 			ep->e_name = (char *)stroff;
 			stroff += ep->e_namlen;
@@ -355,40 +346,30 @@ dumpsymtable(filename, checkpt)
 	/*
 	 * Convert entry pointers to indexes, and output
 	 */
-	for (i = 0; i < entrytblsize; i++) {
+	for (i = 0; i < maxino; i++) {
 		if (entry[i] == NIL)
 			continue;
-		entry[i] = (struct entry *)entry[i]->e_index;
+		entry[i] = (struct entry *)entry[i]->e_newname;
 	}
-	fwrite((char *)entry, sizeof(struct entry *), (int)entrytblsize, fd);
+	fwrite((char *)entry, sizeof(struct entry *), (int)maxino, fd);
 	/*
 	 * Convert pointers to indexes, and output
 	 */
 	for (i = ROOTINO; i < maxino; i++) {
 		for (ep = lookupino(i); ep != NIL; ep = next) {
 			next = ep->e_links;
-			ep->e_parent = (struct entry *)ep->e_parent->e_index;
-			if (ep->e_links != NIL)
-				ep->e_links =
-					(struct entry *)ep->e_links->e_index;
-			if (ep->e_sibling != NIL)
-				ep->e_sibling =
-					(struct entry *)ep->e_sibling->e_index;
-			if (ep->e_entries != NIL)
-				ep->e_entries =
-					(struct entry *)ep->e_entries->e_index;
-			if (ep->e_next != NIL)
-				ep->e_next =
-					(struct entry *)ep->e_next->e_index;
+			ep->e_parent = (struct entry *)ep->e_parent->e_newname;
+			ep->e_links = (struct entry *)ep->e_links->e_newname;
+			ep->e_sibling =
+				(struct entry *)ep->e_sibling->e_newname;
+			ep->e_entries =
+				(struct entry *)ep->e_entries->e_newname;
 			fwrite((char *)ep, sizeof(struct entry), 1, fd);
 		}
 	}
 	hdr.volno = checkpt;
 	hdr.maxino = maxino;
-	hdr.entrytblsize = entrytblsize;
 	hdr.stringsize = stroff;
-	hdr.dumptime = dumptime;
-	hdr.dumpdate = dumpdate;
 	fwrite((char *)&hdr, sizeof(struct symtableheader), 1, fd);
 	if (ferror(fd)) {
 		perror("fwrite");
@@ -414,15 +395,6 @@ initsymtable(filename)
 	int fd;
 
 	vprintf(stdout, "Initialize symbol table.\n");
-	if (filename == NULL) {
-		entrytblsize = maxino / HASHFACTOR;
-		entry = (struct entry **)
-			calloc((unsigned)entrytblsize, sizeof(struct entry *));
-		if (entry == (struct entry **)NIL)
-			panic("no memory for entry table\n");
-		(void)addentry(".", ROOTINO, NODE);
-		return;
-	}
 	if ((fd = open(filename, 0)) < 0) {
 		perror("open");
 		panic("cannot open symbol table file %s\n", filename);
@@ -432,7 +404,7 @@ initsymtable(filename)
 		panic("cannot stat symbol table file %s\n", filename);
 	}
 	tblsize = stbuf.st_size - sizeof(struct symtableheader);
-	base = malloc((unsigned)tblsize);
+	base = (char *)malloc((unsigned)tblsize);
 	if (base == NULL)
 		panic("cannot allocate space for symbol table\n");
 	if (read(fd, base, (int)tblsize) < 0 ||
@@ -440,39 +412,13 @@ initsymtable(filename)
 		perror("read");
 		panic("cannot read symbol table file %s\n", filename);
 	}
-	switch (command) {
-	case 'r':
-		/*
-		 * For normal continuation, insure that we are using
-		 * the next incremental tape
-		 */
-		if (hdr.dumptime != dumpdate) {
-			if (hdr.dumptime < dumpdate)
-				fprintf(stderr, "Incremental tape too low\n");
-			else
-				fprintf(stderr, "Incremental tape too high\n");
-			done(1);
-		}
-		break;
-	case 'R':
-		/*
-		 * For restart, insure that we are using the same tape
-		 */
-		curfile.action = SKIP;
-		dumptime = hdr.dumptime;
-		dumpdate = hdr.dumpdate;
-		getvol(hdr.volno);
-		break;
-	default:
-		panic("initsymtable called from command %c\n", command);
-		break;
-	}
 	maxino = hdr.maxino;
-	entrytblsize = hdr.entrytblsize;
+	curfile.action = SKIP;
+	getvol(hdr.volno);
 	entry = (struct entry **)(base + hdr.stringsize);
-	baseep = (struct entry *)(&entry[entrytblsize]);
+	baseep = (struct entry *)(&entry[maxino]);
 	lep = (struct entry *)(base + tblsize);
-	for (i = 0; i < entrytblsize; i++) {
+	for (i = 0; i < maxino; i++) {
 		if (entry[i] == NIL)
 			continue;
 		entry[i] = &baseep[(long)entry[i]];
@@ -480,13 +426,8 @@ initsymtable(filename)
 	for (ep = baseep; ep < lep; ep++) {
 		ep->e_name = base + (long)ep->e_name;
 		ep->e_parent = &baseep[(long)ep->e_parent];
-		if (ep->e_sibling != NIL)
-			ep->e_sibling = &baseep[(long)ep->e_sibling];
-		if (ep->e_links != NIL)
-			ep->e_links = &baseep[(long)ep->e_links];
-		if (ep->e_entries != NIL)
-			ep->e_entries = &baseep[(long)ep->e_entries];
-		if (ep->e_next != NIL)
-			ep->e_next = &baseep[(long)ep->e_next];
+		ep->e_sibling = &baseep[(long)ep->e_sibling];
+		ep->e_links = &baseep[(long)ep->e_links];
+		ep->e_entries = &baseep[(long)ep->e_entries];
 	}
 }
