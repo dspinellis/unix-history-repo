@@ -1,4 +1,4 @@
-/*	ioctl.h	6.7	85/01/24	*/
+/*	ioctl.h	6.8	85/03/07	*/
 /*
  * Ioctl definitions
  */
@@ -194,6 +194,7 @@ struct winsize {
 #define	TIOCREMOTE	_IO(t, 105)		/* remote input editing */
 #define TIOCGWINSZ	_IOR(t, 104, struct winsize)	/* get window size */
 #define TIOCSWINSZ	_IOW(t, 103, struct winsize)	/* set window size */
+#define TIOCUCNTL	_IOW(t, 102, int)	/* pty: set/clr usr cntl mode */
 
 #define	OTTYDISC	0		/* old, v7 std tty driver */
 #define	NETLDISC	1		/* line discip for berk net */
@@ -229,7 +230,10 @@ struct winsize {
 #define	SIOCSIFFLAGS	_IOW(i, 16, struct ifreq)	/* set ifnet flags */
 #define	SIOCGIFFLAGS	_IOWR(i,17, struct ifreq)	/* get ifnet flags */
 #define	SIOCGIFBRDADDR	_IOWR(i,18, struct ifreq)	/* get broadcast addr */
+#define	SIOCSIFBRDADDR	_IOW(i,19, struct ifreq)	/* set broadcast addr */
 #define	SIOCGIFCONF	_IOWR(i,20, struct ifconf)	/* get ifnet list */
+#define	SIOCGIFNETMASK	_IOWR(i,21, struct ifreq)	/* get net addr mask */
+#define	SIOCSIFNETMASK	_IOW(i,22, struct ifreq)	/* set net addr mask */
 
 #define	SIOCSARP	_IOW(i, 30, struct arpreq)	/* set arp entry */
 #define	SIOCGARP	_IOWR(i,31, struct arpreq)	/* get arp entry */
