@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.99 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.100 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2129,9 +2129,17 @@ putbody(mci, e, separator)
 		if (hvalue("MIME-Version", e->e_header) == NULL)
 			putline("MIME-Version: 1.0", mci);
 
-		/* as recommended by RFC 1428 section 3... */
 		if (hvalue("Content-Type", e->e_header) == NULL)
-			putline("Content-Type: text/plain; charset=unknown-8bit", mci);
+		{
+			char *charset = DefaultCharSet;
+
+			/* as recommended by RFC 1428 section 3... */
+			if (charset == NULL)
+				charset = "unknown-8bit";
+			sprintf(buf, "Content-Type: text/plain; charset=%s",
+				charset);
+			putline(buf, mci);
+		}
 
 		/* now do the hard work */
 		mime8to7(mci, e->e_header, e, NULL);
