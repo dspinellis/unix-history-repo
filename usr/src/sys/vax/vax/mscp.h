@@ -1,4 +1,5 @@
-/*	mscp.h	6.1	83/07/29	*/
+/*	mscp.h	6.2	84/06/27	*/
+
 /*
  * Definitions for the Mass Storage Control Protocol
  */
@@ -184,7 +185,12 @@ struct mscp {
 		char	Mscp_rctcpys;	/* RCT copies */
 	} mscp_getunitsts;
 	} mscp_un;
+	short mscp_fil1;
+	short mscp_fil2;
+	short mscp_fil3;
 };
+
+#define mscp_msglen (sizeof (struct mscp) - sizeof(struct mscp_header))
 
 /*
  * generic packet
@@ -305,3 +311,4 @@ struct mslg {
 
 #define	mslg_busaddr	mslg_unitid.val[0]
 #define	mslg_sdecyl	mslg_group
+
