@@ -14,45 +14,11 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)makefile	4.2 (Berkeley) %G%
-# msdos versus unix defines
-O	= .o
-#PC_O	= .obj
-
-X	=
-#PC_X	= .exe
-
-L	=
-#PC_L	= -link
-
-CC	= cc
-#PC_CC	= cl
-
-MV	= mv
-#PC_MV	= rename
-
-RM	= rm -f
-#PC_RM= erase
-
-LINT_ARGS =
-#PC_LINT_ARGS = -DLINT_ARGS
-
+#	@(#)makefile	4.3 (Berkeley) %G%
+#
 DEBUG_FLAGS = -g
-#PC_DEBUG_FLAGS = -Zi -Od
 
-AR	= ar
-AR1	= cr
-AR2	=
-AR3	=
-#PC_AR	= lib
-#PC_AR1	=
-#PC_AR2	= +
-#PC_AR3	= ";"
-
-RANLIB	= ranlib
-#PC_RANLIB = echo "Done with "
-
-CFLAGS = ${DEBUG_FLAGS}
+CFLAGS = -I obj ${DEBUG_FLAGS}
 
 PRINT = lpr -p
 
@@ -70,26 +36,25 @@ ALLPRINT =	${ALLHC}
 
 ALLSOURCE = ${ALLPRINT} makefile makefile.mak
 
-ALLO = apilib$O api_bsd$O api_exch$O astosc$O asc_ebc$O dctype$O \
-		disp_asc$O ebc_disp$O
+ALLO = apilib.o api_bsd.o api_exch.o astosc.o asc_ebc.o dctype.o \
+		disp_asc.o ebc_disp.o
 
 #.c.obj:
 #	${CC} ${CFLAGS} -c $<
 
 apilib.a: ${ALLO}
-	${RM} $@
-	for i in ${ALLO}; do (${AR} ${AR1} $@ ${AR2} $$i${AR3}); done
+	-rm $@
+	${AR} ${ARFLAGS} $@ ${ALLO}
 	${RANLIB} $@
 
 .DEFAULT:
 	sccs get $<
 
 clean:
-	for i in ${ALLO} errs apilib.a makefile.bak \
+	-rm ${ALLO} errs apilib.a makefile.bak \
 		disp_out asc_disp.out astosc.out disp_asc.out \
 		astosc.OUT disp_asc.OUT \
-		test* test$O t1* t1$O t2* t2$O; \
-			do (${RM} $$i); done
+		test* test.o t1* t1.o t2* t2.o
 
 sccsclean:
 	-sccs clean
@@ -98,14 +63,14 @@ sccsclean:
 action:
 	${ACTION}
 
-test:	apilib.a test$O
-	${CC} ${CFLAGS} -o $@ test$O apilib.a
+test:	apilib.a test.o
+	${CC} ${CFLAGS} -o $@ test.o apilib.a
 
-t1:	apilib.a t1$O
-	${CC} ${CFLAGS} -o $@ t1$O apilib.a
+t1:	apilib.a t1.o
+	${CC} ${CFLAGS} -o $@ t1.o apilib.a
 
-t2:	apilib.a t2$O
-	${CC} ${CFLAGS} -o $@ t2$O apilib.a
+t2:	apilib.a t2.o
+	${CC} ${CFLAGS} -o $@ t2.o apilib.a
 
 print:
 	${PRINT} ${ALLPRINT}
@@ -123,28 +88,28 @@ sourcelist:	${ALLSOURCE}
 		do (echo ${DIRPATH}$$i); done
 
 astosc.OUT:	../ctlr/function.h ../ctlr/hostctlr.h ../ctlr/$(KBD)
-	(cd ${.CURDIR}/../tools; make mkastosc$X )
-	${RM} $@ astosc.out
+	(cd ${.CURDIR}/../tools; make mkastosc )
+	-rm $@ astosc.out
 	../tools/mkastosc ${.CURDIR}/../ctlr/hostctlr.h \
 		${.CURDIR}/../ctlr/function.h < \
 				${.CURDIR}/../ctlr/$(KBD) > $@
 	ln $@ astosc.out
 
-asc_disp.out:	ebc_disp$O
-	(cd ${.CURDIR}/../tools; make mkastods$X )
-	${RM} $@
+asc_disp.out:	ebc_disp.o
+	(cd ${.CURDIR}/../tools; make mkastods )
+	-rm $@
 	../tools/mkastods > $@
 
-disp_asc.OUT:	ebc_disp$O
-	(cd ${.CURDIR}/../tools; make mkdstoas$X )
-	${RM} $@ disp_asc.out
+disp_asc.OUT:	ebc_disp.o
+	(cd ${.CURDIR}/../tools; make mkdstoas )
+	-rm $@ disp_asc.out
 	../tools/mkdstoas > $@
 	ln $@ disp_asc.out
 
 depend:
 	grep '^#include' ${ALLC} | grep -v '<' | \
 	sed -e 's/:[^"]*"\([^"]*\)".*/: \1/' \
-	    -e 's/\.c/$$O/' | \
+	    -e 's/\.c/$.o/' | \
 	awk ' { if ($$1 != prev) { print rec; rec = $$0; prev = $$1; } \
 		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
 		       else rec = rec " " $$2 } } \
@@ -156,14 +121,14 @@ depend:
 	-rm -f makefile.bak
 	cp makefile makefile.bak
 	ed - makefile < eddep
-	rm eddep makedep
+	-rm eddep makedep
 
 # DO NOT DELETE THIS LINE
 
-apilib$O: ../ctlr/api.h apilib.h
-api_bsd$O: ../ctlr/api.h api_exch.h
-api_exch$O: ../general/general.h api_exch.h
-asc_ebc$O: asc_ebc.h
-astosc$O: ../general/general.h ../ctlr/function.h astosc.h astosc.OUT
-dctype$O: dctype.h
-disp_asc$O: disp_asc.h asc_disp.out disp_asc.OUT
+apilib.o: ../ctlr/api.h apilib.h
+api_bsd.o: ../ctlr/api.h api_exch.h
+api_exch.o: ../general/general.h api_exch.h
+asc_ebc.o: asc_ebc.h
+astosc.o: ../general/general.h ../ctlr/function.h astosc.h astosc.OUT
+dctype.o: dctype.h
+disp_asc.o: disp_asc.h asc_disp.out disp_asc.OUT
