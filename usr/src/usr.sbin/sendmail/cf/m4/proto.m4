@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.66 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.67 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -353,6 +353,9 @@ _OPTION(NoRecipientAction, `confNO_RCPT_ACTION', add-to-undisclosed)
 
 # chrooted environment for writing to files
 _OPTION(SafeFileEnvironment, `confSAFE_FILE_ENV', /arch)
+
+# are colons OK in addresses?
+_OPTION(ColonOkInAddr, `confCOLON_OK_IN_ADDR')
 
 ###########################
 #   Message precedences   #
