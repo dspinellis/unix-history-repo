@@ -1,4 +1,4 @@
-/*	dver.c	1.11	83/12/18
+/*	dver.c	1.12	84/02/09
  *
  * Versatec driver for the new troff
  *
@@ -81,7 +81,7 @@ x ..\n	device control functions:
 #define  vmot(n)	vgoto(vpos + (n))
 
 
-char	SccsId[]= "dver.c	1.11	83/12/18";
+char	SccsId[]= "dver.c	1.12	84/02/09";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
