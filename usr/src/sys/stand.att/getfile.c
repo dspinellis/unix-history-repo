@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)getfile.c	7.5 (Berkeley) %G%
+ *	@(#)getfile.c	7.6 (Berkeley) %G%
  */
 
-#include "sys/param.h"
-#include "sys/time.h"
+#include <sys/param.h>
+#include <sys/time.h>
 #include "saio.h"
 
 getfile(prompt, mode)
