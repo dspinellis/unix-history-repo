@@ -1,6 +1,6 @@
 .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 3.10'DRAFT'Last Mod %G%'
+.fo 'Version 3.11'DRAFT'Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -26,7 +26,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.10
+Version 3.11
 .)l
 .sp 3
 .pp
@@ -180,17 +180,56 @@ the file might be renamed
 .i ucsfcgl.cf.
 This file
 is now ready for installation as
-.i /usr/lib/sendmail.cf :
+.i /usr/lib/sendmail.cf .
+.sh 2 "Installation Using the Makefile"
+.pp
+A makefile exists in the root of the
+.i sendmail
+directory that will do all of these steps
+for a 4.2bsd system.
+It may have to be slightly tailored
+for use on other systems.
+.pp
+Before using this makefile,
+you should already have created your configuration file
+and left it in the file
+.q cf/\fIsystem\fP.cf
+where
+.i system
+is the name of your system
+(i.e., what is returned by
+.i hostname (1)).
+If you do not have
+.i hostname
+you can use the declaration
+.q HOST=\fIsystem\fP
+on the
+.i make (1)
+command line.
+.pp
+The basic installation procedure is to type:
 .(b
-cp ucsfcgl.cf /usr/lib/sendmail.cf
+make
+make install
 .)b
-.sh 2 "System Changes"
+in the root directory of the
+.i sendmail
+distribution.
+This will make all binaries
+and install them in the standard places.
+The second
+.i make
+command must be executed as the superuser (root).
+.sh 2 "Installation by Hand"
 .pp
 Along with building a configuration file,
-you will have to install the sendmail startup into your UNIX system.
+you will have to install the
+.i sendmail
+startup into your UNIX system.
 If you are doing this installation
 in conjunction with a regular Berkeley UNIX install,
 these steps will already be complete.
+Many of these steps will have to be executed as the superuser (root).
 .sh 3 "lib/libsys.a"
 .pp
 The library in lib/libsys.a
@@ -225,6 +264,14 @@ cd src
 rm -f *.o
 make
 cp sendmail /usr/lib
+.)b
+.sh 3 "/usr/lib/sendmail.cf"
+.pp
+The configuration file
+that you created earlier
+should be installed in /usr/lib/sendmail.cf:
+.(b
+cp cf/\fIsystem\fP.cf /usr/lib/sendmail.cf
 .)b
 .sh 3 "/usr/ucb/newaliases"
 .pp
@@ -3523,7 +3570,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.10
+Version 3.11
 .ce 0
 .bp 1
 .ce
