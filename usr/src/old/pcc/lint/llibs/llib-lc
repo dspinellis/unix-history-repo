@@ -1,4 +1,4 @@
-/*	@(#)llib-lc	1.35 (Berkeley) %G%	*/
+/*	@(#)llib-lc	1.36 (Berkeley) %G%	*/
 
 /* LINTLIBRARY */
 
@@ -284,12 +284,17 @@ double	ldexp( v, e) double v; { return v; }
 	longjmperror() {;}
 struct	tm *localtime(c) long *c; { return localtime(c); }
 char *	malloc(n) unsigned n; {static char c; return(&c);}
-double	modf( v, p ) double v, *p; { return v; }
+char *	memccpy(t, f, c, n) char *t, *f; { return t; }
+char *	memchr(s, c, n) char *s; { return s; }
+int	memcmp(s1, s2, n) char *s1, *s2; { return 0; }
+char *	memcpy(t, f, n) char *t, *f; { return t; }
+char *	memset(s, c, n) char *s; { return s; }
 char *	mktemp(p) char *p; { return(p);}
 int	mkstemp(p) char *p; { return(0);}
+double	modf( v, p ) double v, *p; { return v; }
+	moncontrol(mode) { ; }
 	monitor(l, h, b, s, n) int (*l)(), (*h)(); short *b; {}
 	monstartup( l, h) int (*l)(), (*h)(); {;}
-	moncontrol(mode) { ; }
 int	nice(incr) { return 0; }
 int	nlist( f, n) char *f; struct nlist n[]; { return (0);}
 struct ns_addr	ns_addr(name) char *name; { struct ns_addr ns; return ns; }
@@ -348,12 +353,21 @@ int	siginterrupt(sig, flag) { return 0; }
 	sleep(i) unsigned i; {}
 int	srand(s){ return s; }
 char *	strcat(a, b) char *a, *b; { return a; }
+char *	strcatn(a, b, n) char *a, *b; { return a;}
+char *	strchr(s, c) char *s, c; { return s; }
 int	strcmp(a, b) char *a, *b; { return(1); }
+int	strcmpn(a, b, n) char *a, *b; { return(1); }
 char *	strcpy(a, b) char *a, *b; { return a; }
+char *	strcpyn(a, b, n) char *a, *b; { return a; }
+int	strcspn(s, set) char *s, *set; { return(0); }
 int	strlen(s) char *s; { return(1); }
 char *	strncat(a, b, n) char *a, *b; { return a;}
 int	strncmp(a, b, n) char *a, *b; { return(1); }
 char *	strncpy(a, b, n) char *a, *b; { return a; }
+int	strpbrk(s, brk) char *s, *brk; { return(0); }
+char *	strrchr(s, c) char *s, c; { return s; }
+int	strspn(s, set) char *s, *set; { return(0); }
+int	strtok(s, sep) char *s, *sep; { return(0); }
 int	stty(f, b) struct sgttyb *b; { return(0); }
 	swab( f, t, n) char *f, *t; {;}
 	/* VARARGS2 */
@@ -367,6 +381,7 @@ long	telldir( p ) DIR *p; { return 1L; }
 long	time(t) long *t; { return( 0L );}
 int	times(tmsp) struct tms *tmsp; { return 0; }
 char *	timezone( z, d ){ return (char *)0; }
+char *	tmpnam(s) char *s; { return s; }
 char *	ttyname(f) { return " "; }
 int	ttyslot() { return 1; }
 unsigned	ualarm(value, interval) unsigned value, interval; { return 0; }
