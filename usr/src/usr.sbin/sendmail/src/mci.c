@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mci.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)mci.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -249,6 +249,8 @@ mci_get(host, m)
 	bzero(&CurHostAddr, sizeof CurHostAddr);
 #endif
 
+	if (m->m_mno < 0)
+		syserr("negative mno %d (%s)", m->m_mno, m->m_name);
 	s = stab(host, ST_MCI + m->m_mno, ST_ENTER);
 	mci = &s->s_mci;
 	mci->mci_host = s->s_name;
