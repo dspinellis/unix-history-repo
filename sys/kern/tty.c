@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.17 1994/01/31 07:47:51 ache Exp $
+ *	$Id: tty.c,v 1.18 1994/02/08 06:46:47 ache Exp $
  */
 
 #include "param.h"
@@ -223,7 +223,7 @@ ttywait(tp)
 		    (tp->t_state&TS_CARR_ON || tp->t_cflag&CLOCAL)) {
 			tp->t_state |= TS_ASLEEP;
 			if (error = ttysleep(tp, (caddr_t)&tp->t_out,
-			    TTOPRI | PCATCH, ttyout, 0))
+			    TTOPRI | PCATCH, "ttywai", 0))
 				break;
 		} else
 			break;
@@ -290,7 +290,7 @@ ttyflush(tp, rw)
 			tp->t_state &= ~TS_TBLOCK;
 			if (t_state & TS_TBLOCK && RB_LEN(&tp->t_out) != 0)
 				ttysleep(tp, (caddr_t)&tp->t_out, TTIPRI,
-					 ttyout, hz / 10);
+					 "ttyfls", hz / 10);
 			if (out_cc == 0 && RB_LEN(&tp->t_out) != 0) {
 				(*cdevsw[major(tp->t_dev)].d_stop)(tp, FWRITE);
 				flushq(&tp->t_out);
