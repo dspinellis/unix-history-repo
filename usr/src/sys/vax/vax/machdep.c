@@ -1,4 +1,4 @@
-/*	machdep.c	4.75	83/02/10	*/
+/*	machdep.c	4.75	83/02/11	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -21,11 +21,11 @@
 #include "../h/clist.h"
 #include "../h/callout.h"
 #include "../h/cmap.h"
-#include <frame.h>
 #include "../h/mbuf.h"
 #include "../h/msgbuf.h"
 #include "../h/quota.h"
 
+#include "../vax/frame.h"
 #include "../vax/cons.h"
 #include "../vax/cpu.h"
 #include "../vax/mem.h"
