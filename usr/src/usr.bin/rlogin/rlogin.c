@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	4.16 (Berkeley) 84/12/03";
+static char sccsid[] = "@(#)rlogin.c	4.17 (Berkeley) 85/03/17";
 #endif
 
 /*
@@ -17,6 +17,7 @@ static char sccsid[] = "@(#)rlogin.c	4.16 (Berkeley) 84/12/03";
 #include <pwd.h>
 #include <signal.h>
 #include <netdb.h>
+#include <setjmp.h>
 
 char	*index(), *rindex(), *malloc(), *getenv();
 struct	passwd *getpwuid();
@@ -27,9 +28,13 @@ int	eight;
 char	*speeds[] =
     { "0", "50", "75", "110", "134", "150", "200", "300",
       "600", "1200", "1800", "2400", "4800", "9600", "19200", "38400" };
-char	term[64] = "network";
+char	term[256] = "network";
 extern	int errno;
 int	lostpeer();
+int	nosigwin;
+jmp_buf	winsizechanged;
+struct	winsize winsize;
+int	sigwinch();
 
 main(argc, argv)
 	int argc;
@@ -73,6 +78,11 @@ another:
 		argv++, argc--;
 		goto another;
 	}
+	if (argc > 0 && !strcmp(*argv, "-w")) {
+		nosigwin++;
+		argv++, argc--;
+		goto another;
+	}
 	if (host == 0)
 		goto usage;
 	if (argc > 0)
@@ -90,9 +100,14 @@ another:
 	cp = getenv("TERM");
 	if (cp)
 		strcpy(term, cp);
-	if (ioctl(0, TIOCGETP, &ttyb)==0) {
+	if (ioctl(0, TIOCGETP, &ttyb) == 0) {
 		strcat(term, "/");
 		strcat(term, speeds[ttyb.sg_ospeed]);
+	}
+	if (!nosigwin && ioctl(0, TIOCGWINSZ, &winsize) == 0) {
+		cp = index(term, '\0');
+		sprintf(cp, "/%u,%u,%u,%u", winsize.ws_row, winsize.ws_col,
+		    winsize.ws_xpixel, winsize.ws_ypixel);
 	}
 	signal(SIGPIPE, lostpeer);
         rem = rcmd(&host, sp->s_port, pwd->pw_name,
@@ -159,6 +174,8 @@ doit()
 		exit(3);
 	}
 	signal(SIGCHLD, catchild);
+	if (!nosigwin)
+		signal(SIGWINCH, sigwinch);
 	writer();
 	prf("Closed connection.");
 	done();
@@ -198,25 +215,47 @@ again:
  */
 writer()
 {
-	char b[600], c;
-	register char *p;
+	char obuf[600], c;
+	register char *op;
 	register n;
 
+	/*
+	 * Handle SIGWINCH's with in-band signaling of new
+	 * window size.  It seems reasonable that we flush
+	 * pending input and not force out of band signal
+	 * as this most likely will occur from an input device
+	 * other than the keyboard (e.g. a mouse).
+	 *
+	 * The hack of using 0377 to signal an in-band signal
+	 * is pretty bad, but otherwise we'd be forced to
+	 * either get complicated (use MSG_OOB) or go to a
+	 * serious (telnet-style) protocol.
+	 */
+	if (setjmp(winsizechanged)) {
+		struct winsize *wp = (struct winsize *)(obuf+4);
+
+		obuf[0] = 0377;			/* XXX */
+		obuf[1] = 0377;			/* XXX */
+		obuf[2] = 's';			/* XXX */
+		obuf[3] = 's';			/* XXX */
+		wp->ws_row = htons(winsize.ws_row);
+		wp->ws_col = htons(winsize.ws_col);
+		wp->ws_xpixel = htons(winsize.ws_xpixel);
+		wp->ws_ypixel = htons(winsize.ws_ypixel);
+		(void) write(rem, obuf, 4+sizeof (*wp));
+	}
 top:
-	p = b;
+	op = obuf;
 	for (;;) {
 		int local;
 
 		n = read(0, &c, 1);
-		if (n == 0)
-			break;
-		if (n < 0)
-			if (errno == EINTR)
+		if (n <= 0) {
+			if (n < 0 && errno == EINTR)
 				continue;
-			else
-				break;
-
-		if (eight == 0)
+			break;
+		}
+		if (!eight)
 			c &= 0177;
 		/*
 		 * If we're at the beginning of the line
@@ -226,20 +265,20 @@ top:
 		 * character is doubled, this acts as a 
 		 * force and local echo is suppressed.
 		 */
-		if (p == b)
+		if (op == obuf)
 			local = (c == cmdchar);
-		if (p == b + 1 && *b == cmdchar)
+		if (op == obuf + 1 && *obuf == cmdchar)
 			local = (c != cmdchar);
 		if (!local) {
 			if (write(rem, &c, 1) == 0) {
 				prf("line gone");
 				return;
 			}
-			if (eight == 0)
+			if (!eight)
 				c &= 0177;
 		} else {
 			if (c == '\r' || c == '\n') {
-				char cmdc = b[1];
+				char cmdc = obuf[1];
 
 				if (cmdc == '.' || cmdc == deftc.t_eofc) {
 					write(0, CRLF, sizeof(CRLF));
@@ -247,32 +286,51 @@ top:
 				}
 				if (cmdc == defltc.t_suspc ||
 				    cmdc == defltc.t_dsuspc) {
-					write(0, CRLF, sizeof(CRLF));
-					mode(0);
-					signal(SIGCHLD, SIG_IGN);
-					kill(cmdc == defltc.t_suspc ?
-					  0 : getpid(), SIGTSTP);
-					signal(SIGCHLD, catchild);
-					mode(1);
+					stop(cmdc);
 					goto top;
 				}
-				*p++ = c;
-				write(rem, b, p - b);
+				*op++ = c;
+				write(rem, obuf, op - obuf);
 				goto top;
 			}
 			write(1, &c, 1);
 		}
-		*p++ = c;
+		*op++ = c;
 		if (c == deferase) {
-			p -= 2; 
-			if (p < b)
+			op -= 2; 
+			if (op < obuf)
 				goto top;
 		}
 		if (c == defkill || c == deftc.t_eofc ||
 		    c == '\r' || c == '\n')
 			goto top;
-		if (p >= &b[sizeof b])
-			p--;
+		if (op >= &obuf[sizeof (obuf)])
+			op--;
+	}
+}
+
+stop(cmdc)
+	char cmdc;
+{
+	struct winsize ws;
+
+	write(0, CRLF, sizeof(CRLF));
+	mode(0);
+	signal(SIGCHLD, SIG_IGN);
+	kill(cmdc == defltc.t_suspc ? 0 : getpid(), SIGTSTP);
+	signal(SIGCHLD, catchild);
+	mode(1);
+	sigwinch();			/* check for size changes */
+}
+
+sigwinch()
+{
+	struct winsize ws;
+
+	if (!nosigwin && ioctl(0, TIOCGWINSZ, &ws) == 0 &&
+	    bcmp(&ws, &winsize, sizeof (ws))) {
+		winsize = ws;
+		longjmp(winsizechanged, 1);
 	}
 }
 
