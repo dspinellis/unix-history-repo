@@ -1,4 +1,4 @@
-#	@(#)Files.base	8.20 (Berkeley) %G%
+#	@(#)Files.base	8.21 (Berkeley) %G%
 FAQ
 KNOWNBUGS
 Makefile
@@ -84,7 +84,7 @@ src/Makefiles/Makefile.Dynix
 src/Makefiles/Makefile.FreeBSD
 src/Makefiles/Makefile.HP-UX
 src/Makefiles/Makefile.HP-UX.8xx
-src/Makefiles/Makefile.UNIX_SV.i386.4.2
+src/Makefiles/Makefile.UNIX_SV.4.2.i386
 src/Makefiles/Makefile.IRIX
 src/Makefiles/Makefile.IRIX64
 src/Makefiles/Makefile.ISC
