@@ -1,5 +1,5 @@
 /*
- * mkmakefile.c	1.8	81/04/03
+ * mkmakefile.c	1.9	81/04/03
  *	Functions in this file build the makefile from the files list
  *	and the information in the config table
  */
