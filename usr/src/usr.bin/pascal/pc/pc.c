@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)pc.c 3.4 %G%";
+static	char sccsid[] = "@(#)pc.c 3.5 %G%";
 #include <stdio.h>
 #include <signal.h>
 #include <wait.h>
@@ -115,7 +115,7 @@ main(argc, argv)
 			switch (argp[2]) {
 
 			case '0':
-				pc0 = "/vb/grad/peter/pc/pc0/src/a.out";
+				pc0 = "/usr/src/new/pc0/a.out";
 				continue;
 			case '1':
 				pc1 = "/usr/src/new/pcc/pc1";
@@ -124,7 +124,7 @@ main(argc, argv)
 				pc2 = "/usr/new/pc2";
 				continue;
 			case '3':
-				pc3 = "/usr/new/pc3";
+				pc3 = "/usr/src/new/pc3/a.out";
 				continue;
 			case 'l':
 				lpc = "-lnpc";
