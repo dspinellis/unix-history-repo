@@ -139,6 +139,12 @@ install:
 #	install -c -m 444 man/mset.1 $(MANDIR)1/mset.1
 #	install -c -m 444 man/map3270.5 $(MANDIR)5/map3270.5
 
+action:
+	${ACTION}
+
+everywhere:
+	for i in ${SUBDIR} tools; do (echo "[$$i]"; cd $$i; make ${MFLAGS} action "ACTION=${ACTION}"); done
+
 clean:
 	rm -f $(ALLO) mset tn3270 errs makefile.bak tn3270.a
 	for i in ${SUBDIR} tools; do (cd $$i; make ${MFLAGS} clean); done
