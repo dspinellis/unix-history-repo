@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tncomp.h	4.2 (Berkeley) %G%
+ *	@(#)tncomp.h	8.1 (Berkeley) %G%
  */
 
 /*
