@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.1	81/11/15	*/
+/*	uipc_socket2.c	4.2	81/11/16	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -63,6 +63,22 @@ soisdisconnected(so)
 	sorwakeup(so);
 }
 
+socantsendmore(so)
+	struct socket *so;
+{
+
+	so->so_state |= SS_CANTSENDMORE;
+	sowwakeup(so);
+}
+
+socantrcvmore(so)
+	struct socket *so;
+{
+
+	so->so_state |= SS_CANTRCVMORE;
+	sorwakeup(so);
+}
+
 /*
  * Select a socket.
  */
@@ -92,10 +108,21 @@ sbselqueue(sb)
 {
 	register struct proc *p;
 
-	if ((p = sb->sb_sel) && p->p_wchan == (caddr_t)select)
+	if ((p = sb->sb_sel) && p->p_wchan == (caddr_t)&selwait)
 		sb->sb_flags |= SB_COLL;
 	else
 		sb->sb_sel = u.u_procp;
+}
+
+/*
+ * Wait for data to arrive at/drain from a socket buffer.
+ */
+sbwait(sb)
+	struct sockbuf *sb;
+{
+
+	sb->sb_flags |= SB_WAIT;
+	sleep((caddr_t)&sb->sb_cc, PZERO+1);
 }
 
 /*
@@ -127,6 +154,7 @@ sbreserve(sb, cc)
 		return (0);
 	sb->sb_cc = cc;
 	sb->sb_mbcnt = (cc*2)/MSIZE;
+	return (1);
 }
 
 /*
@@ -162,7 +190,8 @@ sbappend(sb, m)
 		if (n && n->m_off <= MMAXOFF && m->m_off <= MMAXOFF &&
 		   (int)n->m_act == 0 && (int)m->m_act == 0 &&
 		   (n->m_off + n->m_len + m->m_off) <= MMAXOFF) {
-			bcopy(mtod(m, caddr_t), mtod(n, caddr_t), m->m_len);
+			bcopy(mtod(m, caddr_t), mtod(n, caddr_t),
+			    (unsigned)m->m_len);
 			n->m_len += m->m_len;
 			sb->sb_cc += m->m_len;
 			m = m_free(m);
@@ -219,7 +248,7 @@ sbdrop(sb, len)
 }
 
 struct mbuf *
-sb_copy(sb, off, len)
+sbcopy(sb, off, len)
 	struct sockbuf *sb;
 	int off;
 	register int len;
@@ -258,7 +287,7 @@ COUNT(SB_COPY);
 		} else {
 			n->m_off = MMINOFF;
 			bcopy(mtod(m, caddr_t)+off, mtod(n, caddr_t),
-			    n->m_len);
+			    (unsigned)n->m_len);
 		}
 		len -= n->m_len;
 		off = 0;

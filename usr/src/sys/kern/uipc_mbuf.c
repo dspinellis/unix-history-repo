@@ -1,4 +1,4 @@
-/* uipc_mbuf.c 1.9 81/11/14 */
+/*	uipc_mbuf.c	1.10	81/11/16	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -8,7 +8,7 @@
 #include "../h/cmap.h"
 #include "../h/map.h"
 #include "../h/mbuf.h"
-#include "../net/inet_systm.h"		/* ### */
+#include "../net/inet_systm.h"		/* XXX */
 #include "../h/vm.h"
 
 m_reserve(mbufs)
@@ -19,6 +19,7 @@ m_reserve(mbufs)
 		return (0);
 	mbstat.m_lowat += mbufs;
 	mbstat.m_hiwat = 2 * mbstat.m_lowat;
+	return (1);
 }
 
 m_release(mbufs)
@@ -47,7 +48,7 @@ m_getclr(canwait)
 	register struct mbuf *m;
 
 COUNT(M_GETCLR);
-	m = m_get(m, canwait);
+	m = m_get(canwait);
 	if (m == 0)
 		return (0);
 	m->m_off = MMINOFF;
@@ -66,11 +67,11 @@ COUNT(M_FREE);
 	return (n);
 }
 
+/*ARGSUSED*/
 struct mbuf *
 m_more(type)
 	int type;
 {
-	int s;
 	register struct mbuf *m;
 
 COUNT(M_MORE);
@@ -78,8 +79,8 @@ COUNT(M_MORE);
 		mbstat.m_drops++;
 		return (NULL);
 	}
-#define m_more(x) ((struct mbuf *)panic("m_more"))
-	MGET(m, 0);
+#define m_more(x) (panic("m_more"), (struct mbuf *)0)
+	MGET(m, type);
 	return (m);
 }
 
@@ -87,21 +88,21 @@ m_freem(m)
 	register struct mbuf *m;
 {
 	register struct mbuf *n;
-	register int s, cnt;
+	register int s, i;
 
 COUNT(M_FREEM);
 	if (m == NULL)
-		return (0);
-	cnt = 0;
+		return;
+	i = 0;
 	s = splimp();
 	do {
 		if (m->m_off > MMAXOFF)
-			cnt += NMBPG;
-		cnt++;
+			i += NMBPG;
+		i++;
 		MFREE(m, n);
 	} while (m = n);
 	splx(s);
-	return (cnt);
+	return;
 }
 
 mbinit()
@@ -111,23 +112,23 @@ mbinit()
 
 COUNT(MBUFINIT);
 	m = (struct mbuf *)&mbutl[0];  /* ->start of buffer virt mem */
-	vmemall(&Mbmap[0], 2, proc, CSYS);
-	vmaccess(&Mbmap[0], m, 2);
+	(void) vmemall(&Mbmap[0], 2, proc, CSYS);
+	vmaccess(&Mbmap[0], (caddr_t)m, 2);
 	for (i=0; i < NMBPG; i++) {
 		m->m_off = 0;
 		m_free(m);
 		m++;
 	}
-	pg_alloc(3);
+	(void) pg_alloc(3);
 	mbstat.m_pages = 4;
 	mbstat.m_bufs = 32;
 	mbstat.m_lowat = 16;
 	mbstat.m_hiwat = 32;
-	{ int i,j,k,n;
+	{ int j,k,n;
 	n = 32;
 	k = n << 1;
 	if ((i = rmalloc(mbmap, n)) == 0)
-		return (0);
+		panic("mbinit");
 	j = i<<1;
 	m = pftom(i);
 	/* should use vmemall sometimes */
@@ -178,7 +179,6 @@ COUNT(PG_ALLOC);
 m_expand()
 {
 	register i;
-	register struct mbuf *m, *n;
 	int need, needp, needs;
 
 COUNT(M_EXPAND);
@@ -193,6 +193,7 @@ COUNT(M_EXPAND);
 steal:
 	/* while (not enough) ask protocols to free code */
 	;
+	return (0);
 }
 
 #ifdef notdef
@@ -211,7 +212,8 @@ m_cat(m, n)
 		m = m->m_next;
 	while (n)
 		if (m->m_off + m->m_len + n->m_len <= MMAXOFF) {
-			bcopy(mtod(n, caddr_t), mtod(m, caddr_t) + m->m_len, n->m_len);
+			bcopy(mtod(n, caddr_t), mtod(m, caddr_t) + m->m_len,
+			    (u_int)n->m_len);
 			m->m_len += n->m_len;
 			n = m_free(n);
 		} else {
@@ -223,7 +225,7 @@ m_cat(m, n)
 
 m_adj(mp, len)
 	struct mbuf *mp;
-	register len;
+	register int len;
 {
 	register struct mbuf *m, *n;
 

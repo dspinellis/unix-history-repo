@@ -1,4 +1,4 @@
-/*	uipc_pipe.c	4.1	81/11/15	*/
+/*	uipc_pipe.c	4.2	81/11/16	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -68,6 +68,7 @@ pi_splice(pso, so)
  * User requests on pipes and other internally implemented
  * structures.
  */
+/*ARGSUSED*/
 pi_usrreq(so, req, m, addr)
 	struct socket *so;
 	int req;
@@ -89,16 +90,15 @@ pi_usrreq(so, req, m, addr)
 		if (so2 == 0)
 			return (ENOTCONN);
 		so->so_pcb = 0;
-		sodetwakeup(so2);
-		so->so_state &= ~SS_ISCONNECTED;
+		soisdisconnected(so);
 		break;
 
 	case PRU_FLUSH:
-		soflush(so);
-		break;
+		return (EOPNOTSUPP);
 
 	case PRU_SHUTDOWN:
 		so->so_state |= SS_CANTSENDMORE;
+		sowwakeup(so);
 		if (so2) {
 			so2->so_state |= SS_CANTRCVMORE;
 			sorwakeup(so2);

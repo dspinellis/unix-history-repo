@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.15	81/11/14	*/
+/*	vfs_vnops.c	4.16	81/11/16	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -11,6 +11,8 @@
 #include "../h/reg.h"
 #include "../h/acct.h"
 #include "../h/mount.h"
+#include "../h/socket.h"
+#include "../h/socketvar.h"
 
 /*
  * Convert a user supplied file descriptor into a pointer

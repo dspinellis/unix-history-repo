@@ -1,4 +1,4 @@
-/*	uipc_proto.c	4.3	81/11/14	*/
+/*	uipc_proto.c	4.4	81/11/16	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -21,7 +21,7 @@ int	pi_usrreq();
 /*
  * TCP/IP protocol family: IP, ICMP, UDP, TCP.
  */
-int	ip_input(),ip_output(),ip_ctloutput();
+int	ip_input(),ip_output();
 int	ip_init(),ip_slowtimo(),ip_drain();
 int	icmp_input();
 int	icmp_drain();
