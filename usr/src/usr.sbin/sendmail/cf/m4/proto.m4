@@ -8,21 +8,48 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.62 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.63 (Berkeley) %G%')
 
 MAILER(local)dnl
 
 # level 6 config file format
-V6
-ifdef(`confSMTP_MAILER',, `define(`confSMTP_MAILER', `smtp')')dnl
-ifdef(`confLOCAL_MAILER',, `define(`confLOCAL_MAILER', `local')')dnl
+V6/Berkeley
+divert(-1)
+
+# pick our default mailers
+ifdef(`confSMTP_MAILER',, `define(`confSMTP_MAILER', `smtp')')
+ifdef(`confLOCAL_MAILER',, `define(`confLOCAL_MAILER', `local')')
 ifdef(`confRELAY_MAILER',,
 	`define(`confRELAY_MAILER',
 		`ifdef(`_MAILER_smtp_', `relay',
-			`ifdef(`_MAILER_uucp', `suucp', `unknown')')')')dnl
+			`ifdef(`_MAILER_uucp', `suucp', `unknown')')')')
 define(`_SMTP_', `confSMTP_MAILER')dnl		for readability only
 define(`_LOCAL_', `confLOCAL_MAILER')dnl	for readability only
 define(`_RELAY_', `confRELAY_MAILER')dnl	for readability only
+
+# back compatibility with old config files
+ifdef(`confDEF_GROUP_ID',
+	`errprint(`*** confDEF_GROUP_ID is obsolete.')
+	 errprint(`    Use confDEF_USER_ID with a colon in the value instead.')')
+ifdef(`confREAD_TIMEOUT',
+	`errprint(`*** confREAD_TIMEOUT is obsolete.')
+	 errprint(`    Use individual confTO_<timeout> parameters instead.')')
+ifdef(`confMESSAGE_TIMEOUT',
+	`define(`_ARG_', index(confMESSAGE_TIMEOUT, /))
+	 ifelse(_ARG_, -1,
+		`define(`confTO_QUEUERETURN', confMESSAGE_TIMEOUT)',
+		`define(`confTO_QUEUERETURN',
+			substr(confMESSAGE_TIMEOUT, 0, _ARG_))
+		 define(`confTO_QUEUEWARN',
+			substr(confMESSAGE_TIMEOUT, eval(_ARG_+1)))')')
+ifdef(`confMIN_FREE_BLOCKS', `ifelse(index(confMIN_FREE_BLOCKS, /), -1,,
+	`errprint(`*** compound confMIN_FREE_BLOCKS is obsolete.')
+	 errprint(`    Use confMAX_MESSAGE_SIZE for the second part of the value.')')')
+
+# clean option definitions below....
+define(`_OPTION', `ifdef(`$2', `O $1=$2', `#O $1`'ifelse($3, `',, `=$3')')')dnl
+
+divert(0)dnl
 
 ##################
 #   local info   #
@@ -33,14 +60,12 @@ ifdef(`USE_CW_FILE',
 `# file containing names of hosts for which we receive email
 Fw`'confCW_FILE',
 	`dnl')
-ifdef(`confDOMAIN_NAME', `
-# my official domain name
-Dj`'confDOMAIN_NAME',
-	`dnl')
 
-ifdef(`_NULL_CLIENT_ONLY_',
-`include(../m4/nullrelay.m4)m4exit',
-	`dnl')
+# my official domain name
+# ... define this only if sendmail cannot automatically determine your domain
+ifdef(`confDOMAIN_NAME', `Dj`'confDOMAIN_NAME', `#Dj$w.Foo.COM')
+
+ifdef(`_NULL_CLIENT_ONLY_', `divert(-1)')dnl
 
 CP.
 
@@ -71,6 +96,12 @@ Kuser user -m -a<>
 DL`'LUSER_RELAY
 ', `dnl')
 
+# operators that cannot be in local usernames (i.e., network indicators)
+CO @ % ifdef(`_NO_UUCP_', `', `!')
+
+# a class with just dot (for identifying canonical names)
+C..
+
 ifdef(`MAILER_TABLE',
 `# Mailer table (overriding domains)
 Kmailertable MAILER_TABLE
@@ -87,9 +118,6 @@ DR`'ifdef(`LOCAL_RELAY', LOCAL_RELAY)
 # who gets all local email traffic ($R has precedence for unqualified names)
 DH`'ifdef(`MAIL_HUB', MAIL_HUB)
 
-# who I masquerade as (null for no masquerading)
-DM`'ifdef(`MASQUERADE_NAME', MASQUERADE_NAME)
-
 # class L: names that should be delivered locally, even if we have a relay
 # class E: names that should be exposed as from this host, even if we masquerade
 # class D: dotted names, e.g., root.machinename
@@ -100,14 +128,12 @@ ifdef(`__DOTTED_USER_LIST__',
 	`__DOTTED_USER_LIST__',
 	`#CD postmaster')
 
-# operators that cannot be in local usernames (i.e., network indicators)
-CO @ % ifdef(`_NO_UUCP_', `', `!')
-
-# a class with just dot (for identifying canonical names)
-C..
-
 # dequoting map
 Kdequote dequote
+
+divert(0)dnl
+# who I masquerade as (null for no masquerading)
+DM`'ifdef(`MASQUERADE_NAME', MASQUERADE_NAME)
 
 undivert(6)dnl
 
@@ -136,189 +162,200 @@ include(`../m4/version.m4')
 ###############
 
 # strip message body to 7 bits on input?
-O7`'confSEVEN_BIT_INPUT
+_OPTION(SevenBitInput, `confSEVEN_BIT_INPUT')
 
 # 8-bit data handling
-O8`'confEIGHT_BIT_HANDLING
+_OPTION(EightBitMode, `confEIGHT_BIT_HANDLING', adaptive)
 
-# wait (in minutes) for alias file rebuild
-Oa`'confALIAS_WAIT
+# wait for alias file rebuild (default units: minutes)
+_OPTION(AliasWait, `confALIAS_WAIT', 5m)
 
 # location of alias file
-OA`'ifdef(`ALIAS_FILE', `ALIAS_FILE', /etc/aliases)
+O AliasFile=ifdef(`ALIAS_FILE', `ALIAS_FILE', /etc/aliases)
 
 # minimum number of free blocks on filesystem
-Ob`'confMIN_FREE_BLOCKS
+_OPTION(MinFreeBlocks, `confMIN_FREE_BLOCKS', 100)
+
+# maximum message size
+_OPTION(MaxMessageSize, `confMAX_MESSAGE_SIZE', 1000000)
 
 # substitution for space (blank) characters
-OB`'confBLANK_SUB
+_OPTION(BlankSub, `confBLANK_SUB', _)
 
 # avoid connecting to "expensive" mailers on initial submission?
-Oc`'confCON_EXPENSIVE
+_OPTION(HoldExpensive, `confCON_EXPENSIVE')
 
 # checkpoint queue runs after every N successful deliveries
-OC`'confCHECKPOINT_INTERVAL
+_OPTION(CheckpointInterval, `confCHECKPOINT_INTERVAL', 10)
 
 # default delivery mode
-Od`'confDELIVERY_MODE
+_OPTION(DeliveryMode, `confDELIVERY_MODE', background)
 
 # automatically rebuild the alias database?
-OD`'confAUTO_REBUILD
+_OPTION(AutoRebuildAliases, `confAUTO_REBUILD')
 
 # error message header/file
-ifdef(`confERROR_MESSAGE',
-	OE`'confERROR_MESSAGE,
-	#OE/etc/sendmail.oE)
+_OPTION(ErrorHeader, `confERROR_MESSAGE', /etc/sendmail.oE)
 
 # error mode
-ifdef(`confERROR_MODE',
-	Oe`'confERROR_MODE,
-	#Oep)
+_OPTION(ErrorMode, `confERROR_MODE', print)
 
 # save Unix-style "From_" lines at top of header?
-Of`'confSAVE_FROM_LINES
+_OPTION(SaveFromLine, `confSAVE_FROM_LINES')
 
 # temporary file mode
-OF`'confTEMP_FILE_MODE
+_OPTION(TempFileMode, `confTEMP_FILE_MODE', 0600)
 
 # match recipients against GECOS field?
-OG`'confMATCH_GECOS
-
-# default GID
-Og`'confDEF_GROUP_ID
+_OPTION(MatchGECOS, `confMATCH_GECOS')
 
 # maximum hop count
-Oh`'confMAX_HOP
+_OPTION(MaxHopCount, `confMAX_HOP', 17)
 
 # location of help file
-OH`'ifdef(`HELP_FILE', HELP_FILE, /usr/lib/sendmail.hf)
+O HelpFile=ifdef(`HELP_FILE', HELP_FILE, /usr/lib/sendmail.hf)
 
 # ignore dots as terminators in incoming messages?
-Oi`'confIGNORE_DOTS
+_OPTION(IgnoreDots, `confIGNORE_DOTS')
 
-# Insist that the BIND name server be running to resolve names
-ifdef(`confBIND_OPTS',
-	OI`'confBIND_OPTS,
-	#OI)
+# name resolver options
+_OPTION(ResolverOptions, `confBIND_OPTS', +AAONLY)
 
 # deliver MIME-encapsulated error messages?
-Oj`'confMIME_FORMAT_ERRORS
+_OPTION(SendMimeErrors, `confMIME_FORMAT_ERRORS')
 
 # Forward file search path
-ifdef(`confFORWARD_PATH',
-	OJ`'confFORWARD_PATH,
-	#OJ/var/forward/$u:$z/.forward.$w:$z/.forward)
+_OPTION(ForwardPath, `confFORWARD_PATH', /var/forward/$u:$z/.forward.$w:$z/.forward)
 
 # open connection cache size
-Ok`'confMCI_CACHE_SIZE
+_OPTION(ConnectionCacheSize, `confMCI_CACHE_SIZE', 2)
 
 # open connection cache timeout
-OK`'confMCI_CACHE_TIMEOUT
+_OPTION(ConnectionCacheTimeout, `confMCI_CACHE_TIMEOUT', 5m)
 
 # use Errors-To: header?
-Ol`'confUSE_ERRORS_TO
+_OPTION(UseErrorsTo, `confUSE_ERRORS_TO')
 
 # log level
-OL`'confLOG_LEVEL
+_OPTION(LogLevel, `confLOG_LEVEL', 10)
 
 # send to me too, even in an alias expansion?
-Om`'confME_TOO
+_OPTION(MeToo, `confME_TOO')
 
 # verify RHS in newaliases?
-On`'confCHECK_ALIASES
+_OPTION(CheckAliases, `confCHECK_ALIASES')
 
 # default messages to old style headers if no special punctuation?
-Oo`'confOLD_STYLE_HEADERS
+_OPTION(OldStyleHeaders, `confOLD_STYLE_HEADERS')
 
 # SMTP daemon options
-ifdef(`confDAEMON_OPTIONS',
-	OO`'confDAEMON_OPTIONS,
-	#OOPort=esmtp)
+_OPTION(DaemonPortOptions, `confDAEMON_OPTIONS', Port=esmtp)
 
 # privacy flags
-Op`'confPRIVACY_FLAGS
+_OPTION(PrivacyOptions, `confPRIVACY_FLAGS', authwarnings)
 
 # who (if anyone) should get extra copies of error messages
-ifdef(`confCOPY_ERRORS_TO',
-	OP`'confCOPY_ERRORS_TO,
-	#OPPostmaster)
+_OPTION(PostMasterCopy, `confCOPY_ERRORS_TO', Postmaster)
 
 # slope of queue-only function
-ifdef(`confQUEUE_FACTOR',
-	Oq`'confQUEUE_FACTOR,
-	#Oq600000)
+_OPTION(QueueFactor, `confQUEUE_FACTOR', 600000)
 
 # queue directory
-OQ`'ifdef(`QUEUE_DIR', QUEUE_DIR, /var/spool/mqueue)
+O QueueDirectory=ifdef(`QUEUE_DIR', QUEUE_DIR, /var/spool/mqueue)
 
-# read timeout -- now OK per RFC 1123 section 5.3.2
-ifdef(`confREAD_TIMEOUT',
-	Or`'confREAD_TIMEOUT,
-	#Ordatablock=10m)
+# timeouts (many of these)
+_OPTION(Timeout.initial, `confTO_INITIAL', 5m)
+_OPTION(Timeout.helo, `confTO_HELO', 5m)
+_OPTION(Timeout.mail, `confTO_MAIL', 10m)
+_OPTION(Timeout.rcpt, `confTO_RCPT', 1h)
+_OPTION(Timeout.datainit, `confTO_DATAINIT', 5m)
+_OPTION(Timeout.datablock, `confTO_DATABLOCK', 1h)
+_OPTION(Timeout.datafinal, `confTO_DATAFINAL', 1h)
+_OPTION(Timeout.rset, `confTO_RSET', 5m)
+_OPTION(Timeout.quit, `confTO_QUIT', 2m)
+_OPTION(Timeout.misc, `confTO_MISC', 2m)
+_OPTION(Timeout.command, `confTO_COMMAND', 1h)
+_OPTION(Timeout.ident, `confTO_IDENT', 30s)
+_OPTION(Timeout.fileopen, `confTO_FILEOPEN', 60s)
+_OPTION(Timeout.queuereturn, `confTO_QUEUERETURN', 5d)
+_OPTION(Timeout.queuereturn.normal, `confTO_QUEUERETURN_NORMAL', 5d)
+_OPTION(Timeout.queuereturn.urgent, `confTO_QUEUERETURN_URGENT', 2d)
+_OPTION(Timeout.queuereturn.non-urgent, `confTO_QUEUERETURN_NONURGENT', 7d)
+_OPTION(Timeout.queuewarn, `confTO_QUEUEWARN', 4h)
+_OPTION(Timeout.queuewarn.normal, `confTO_QUEUEWARN_NORMAL', 4h)
+_OPTION(Timeout.queuewarn.urgent, `confTO_QUEUEWARN_URGENT', 1h)
+_OPTION(Timeout.queuewarn.non-urgent, `confTO_QUEUEWARN_NONURGENT', 12h)
 
 # should we not prune routes in route-addr syntax addresses?
-OR`'confDONT_PRUNE_ROUTES
+_OPTION(DontPruneRoutes, `confDONT_PRUNE_ROUTES')
 
 # queue up everything before forking?
-Os`'confSAFE_QUEUE
+_OPTION(SuperSafe, `confSAFE_QUEUE')
 
 # status file
-OS`'ifdef(`STATUS_FILE', STATUS_FILE, /etc/sendmail.st)
-
-# default message timeout interval
-OT`'confMESSAGE_TIMEOUT
+_OPTION(StatusFile, `STATUS_FILE', /etc/sendmail.st)
 
 # time zone handling:
 #  if undefined, use system default
 #  if defined but null, use TZ envariable passed in
 #  if defined and non-null, use that info
-ifelse(confTIME_ZONE, `USE_SYSTEM', `#Ot',
-	confTIME_ZONE, `USE_TZ', `Ot',
-	`Ot`'confTIME_ZONE')
+ifelse(confTIME_ZONE, `USE_SYSTEM', `#O TimeZoneSpec=',
+	confTIME_ZONE, `USE_TZ', `O TimeZoneSpec=',
+	`O TimeZoneSpec=confTIME_ZONE')
 
-# default UID
-Ou`'confDEF_USER_ID
+# default UID (can be username or userid:groupid)
+_OPTION(DefaultUser, `confDEF_USER_ID', nobody)
 
 # list of locations of user database file (null means no lookup)
-OU`'ifdef(`confUSERDB_SPEC', `confUSERDB_SPEC')
+_OPTION(UserDatabaseSpec, `confUSERDB_SPEC', /etc/userdb)
 
 # fallback MX host
-ifdef(`confFALLBACK_MX',
-	OV`'confFALLBACK_MX,
-	#OVfall.back.host.net)
+_OPTION(FallbackMXhost, `confFALLBACK_MX', fall.back.host.net)
 
 # if we are the best MX host for a site, try it directly instead of config err
-Ow`'confTRY_NULL_MX_LIST
+_OPTION(TryNullMXList, `confTRY_NULL_MX_LIST')
 
 # load average at which we just queue messages
-Ox`'confQUEUE_LA
+_OPTION(QueueLA, `confQUEUE_LA', 8)
 
 # load average at which we refuse connections
-OX`'confREFUSE_LA
+_OPTION(RefuseLA, `confREFUSE_LA', 12)
 
 # work recipient factor
-ifdef(`confWORK_RECIPIENT_FACTOR',
-	Oy`'confWORK_RECIPIENT_FACTOR,
-	#Oy30000)
+_OPTION(RecipientFactor, `confWORK_RECIPIENT_FACTOR', 30000)
 
 # deliver each queued job in a separate process?
-OY`'confSEPARATE_PROC
+_OPTION(ForkEachJob, `confSEPARATE_PROC')
 
 # work class factor
-ifdef(`confWORK_CLASS_FACTOR',
-	Oz`'confWORK_CLASS_FACTOR,
-	#Oz1800)
+_OPTION(ClassFactor, `confWORK_CLASS_FACTOR', 1800)
 
 # work time factor
-ifdef(`confWORK_TIME_FACTOR',
-	OZ`'confWORK_TIME_FACTOR,
-	#OZ90000)
+_OPTION(RetryFactor, `confWORK_TIME_FACTOR', 90000)
 
 # do our SMTP peers choke on multi-line greeting messages?
-O BrokenSmtpPeers=confBROKEN_SMTP_PEERS
+_OPTION(BrokenSmtpPeers, `confBROKEN_SMTP_PEERS')
 
 # shall we sort the queue by hostname first?
-O QueueSortOrder=confQUEUE_SORT_ORDER
+_OPTION(QueueSortOrder, `confQUEUE_SORT_ORDER', priority)
+
+# minimum time in queue before retry
+_OPTION(MinQueueAge, `confMIN_QUEUE_AGE', 30m)
+
+# default character set
+_OPTION(DefaultCharSet, `confDEF_CHAR_SET', iso-8859-1)
+
+# service switch file (ignored on Solaris, Ultrix, OSF/1, others)
+_OPTION(ServiceSwitchFile, `confSERVICE_SWITCH_FILE', /etc/service.switch)
+
+# dialup line delay on connection failure
+_OPTION(DialDelay, `confDIAL_DELAY', 10s)
+
+# action to take if there are no recipients in the message
+_OPTION(NoRecipientAction, `confNO_RCPT_ACTION', add-to-undisclosed)
+
+# chrooted environment for writing to files
+_OPTION(SafeFileEnvironment, `confSAFE_FILE_ENV', /arch)
 
 ###########################
 #   Message precedences   #
@@ -334,6 +371,8 @@ Pjunk=-100
 #   Trusted users   #
 #####################
 
+# this is equivalent to setting class "t"
+#Ft/etc/sendmail.trusted
 Troot
 Tdaemon
 Tuucp
@@ -354,6 +393,9 @@ HSubject:
 # H?l?Received-Date: $b
 H?M?Resent-Message-Id: <$t.$i@$j>
 H?M?Message-Id: <$t.$i@$j>
+ifdef(`_NULL_CLIENT_ONLY_',
+	`include(../m4/nullrelay.m4)m4exit',
+	`dnl')
 #
 ######################################################################
 ######################################################################
