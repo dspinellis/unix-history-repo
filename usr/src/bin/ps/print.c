@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <machine/pte.h>
@@ -324,10 +324,8 @@ cputime(k, v)
 		 * round and scale to 100's
 		 */
 		psecs = (psecs + 5000) / 10000;
-		if (psecs >= 100) {
-			psecs -= 100;
-			secs++;
-		}
+		secs += psecs / 100;
+		psecs = psecs % 100;
 	}
 	(void) sprintf(obuff, "%3ld:%02ld.%02ld", secs/60, secs%60, psecs);
 	(void) printf("%*s", v->width, obuff);
