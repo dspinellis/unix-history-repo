@@ -1,11 +1,3 @@
-Received: from jsdinc.root.com (uucp@localhost) by Root.COM (8.6.5/8.6.5) with UUCP id MAA09093 for implode.root.com!davidg; Sat, 19 Mar 1994 12:12:17 -0800
-Received: from localhost (root@localhost) by jsdinc.root.com (8.6.5/8.6.5) id PAA00122 for implode!davidg; Sat, 19 Mar 1994 15:09:05 -0459
-Date: Sat, 19 Mar 1994 15:09:05 -0459
-From: John Dyson <toor@jsdinc.root.com>
-Message-Id: <199403192008.PAA00122@jsdinc.root.com>
-To: davidg@implode.root.com
-Subject: new kern_physio.c
-
 /*
  * Copyright (c) 1989, 1990, 1991, 1992 William F. Jolitz, TeleMuse
  * All rights reserved.
@@ -53,7 +45,7 @@ Subject: new kern_physio.c
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: kern_physio.c,v 1.2 1994/03/14 21:54:16 davidg Exp $
+ *	$Id: kern_physio.c,v 1.3 1994/03/19 22:13:37 davidg Exp $
  */
 
 #include "param.h"
