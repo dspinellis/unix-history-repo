@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_debug.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 #if defined(lint) && !defined(DEBUG)
@@ -268,6 +268,13 @@ p_rr(cp, msg, file)
 		cp += sizeof(u_long);
 		break;
 
+	case T_MX:
+		fprintf(file,"\tname = ");
+		cp = p_cdname(cp, msg, file);
+		fprintf(file,", preference = %ld",getlong(cp));
+		cp += sizeof(u_long);
+		break;
+
 	case T_MINFO:
 		fprintf(file,"\trequests = ");
 		cp = p_cdname(cp, msg, file);
@@ -345,6 +352,8 @@ p_type(type)
 		return("MB");
 	case T_MG:		/* mail group member */
 		return("MG");
+	case T_MX:		/* mail routing info */
+		return("MX");
 	case T_MR:		/* mail rename name */
 		return("MR");
 	case T_NULL:		/* null resource record */

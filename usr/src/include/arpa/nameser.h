@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)nameser.h	5.8 (Berkeley) %G%
+ *	@(#)nameser.h	5.9 (Berkeley) %G%
  */
 
 /*
@@ -66,6 +66,7 @@
 #define T_PTR		12		/* domain name pointer */
 #define T_HINFO		13		/* host information */
 #define T_MINFO		14		/* mailbox information */
+#define T_MX		15		/* mail routing information */
 	/* non standard */
 #define T_UINFO		100		/* user (finger) information */
 #define T_UID		101		/* user ID */
