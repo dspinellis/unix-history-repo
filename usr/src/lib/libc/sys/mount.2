@@ -13,12 +13,12 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)mount.2	6.7 (Berkeley) %G%
+.\"	@(#)mount.2	6.8 (Berkeley) %G%
 .\"
 .TH MOUNT 2 ""
 .UC 4
 .SH NAME
-mount, umount \- mount or remove file system
+mount, unmount \- mount or remove file system
 .SH SYNOPSIS
 .nf
 #include <sys/mount.h>
@@ -31,7 +31,7 @@ int flags;
 caddr_t data;
 .PP
 .ft B
-umount(dir, flags)
+unmount(dir, flags)
 char *dir;
 int flags;
 .fi
