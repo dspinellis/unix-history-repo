@@ -1,4 +1,4 @@
-/*	va.c	4.9	81/03/10	*/
+/*	va.c	4.10	81/07/08	*/
 
 #include "va.h"
 #if NVA > 0
@@ -65,8 +65,6 @@ struct va_softc {
 	struct	buf *sc_bp;
 	int	sc_ubinfo;
 } va_softc[NVA];
-
-struct	uba_device *vadinfo[NVA];
 
 #define	VAUNIT(dev)	(minor(dev))
 
