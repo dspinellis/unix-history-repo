@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1991, 1993
+ * Copyright (c) 1991, 1993, 1995
  *	The Regents of the University of California.  All rights reserved.
  * (c) UNIX System Laboratories, Inc.
  * All or some portions of this file are derived from material licensed
@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_inode.c	8.8 (Berkeley) %G%
+ *	@(#)ufs_inode.c	8.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -35,40 +35,30 @@ int
 ufs_inactive(ap)
 	struct vop_inactive_args /* {
 		struct vnode *a_vp;
+		struct proc *a_p;
 	} */ *ap;
 {
-	register struct vnode *vp = ap->a_vp;
-	register struct inode *ip = VTOI(vp);
+	struct vnode *vp = ap->a_vp;
+	struct inode *ip = VTOI(vp);
+	struct proc *p = ap->a_p;
 	struct timeval tv;
-	int mode, error;
+	int mode, error = 0;
 	extern int prtactive;
 
 	if (prtactive && vp->v_usecount != 0)
 		vprint("ffs_inactive: pushing active", vp);
 
-	/* Get rid of inodes related to stale file handles. */
-	if (ip->i_mode == 0) {
-		if ((vp->v_flag & VXLOCK) == 0)
-			vgone(vp);
-		return (0);
-	}
-
-	error = 0;
-#ifdef DIAGNOSTIC
-	if (VOP_ISLOCKED(vp))
-		panic("ffs_inactive: locked inode");
-	if (curproc)
-		ip->i_lockholder = curproc->p_pid;
-	else
-		ip->i_lockholder = -1;
-#endif
-	ip->i_flag |= IN_LOCKED;
+	/*
+	 * Ignore inodes related to stale file handles.
+	 */
+	if (ip->i_mode == 0)
+		goto out;
 	if (ip->i_nlink <= 0 && (vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
 #ifdef QUOTA
 		if (!getinoquota(ip))
 			(void)chkiq(ip, -1, NOCRED, 0);
 #endif
-		error = VOP_TRUNCATE(vp, (off_t)0, 0, NOCRED, NULL);
+		error = VOP_TRUNCATE(vp, (off_t)0, 0, NOCRED, p);
 		ip->i_rdev = 0;
 		mode = ip->i_mode;
 		ip->i_mode = 0;
@@ -79,13 +69,14 @@ ufs_inactive(ap)
 		tv = time;
 		VOP_UPDATE(vp, &tv, &tv, 0);
 	}
-	VOP_UNLOCK(vp);
+out:
+	VOP_UNLOCK(vp, 0, p);
 	/*
 	 * If we are done with the inode, reclaim it
 	 * so that it can be reused immediately.
 	 */
-	if (vp->v_usecount == 0 && ip->i_mode == 0)
-		vgone(vp);
+	if (ip->i_mode == 0)
+		vrecycle(vp, (struct simplelock *)0, p);
 	return (error);
 }
 
@@ -93,8 +84,9 @@ ufs_inactive(ap)
  * Reclaim an inode so that it can be used for other purposes.
  */
 int
-ufs_reclaim(vp)
-	register struct vnode *vp;
+ufs_reclaim(vp, p)
+	struct vnode *vp;
+	struct proc *p;
 {
 	register struct inode *ip;
 	int i;
