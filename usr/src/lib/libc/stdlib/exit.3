@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)exit.3	6.3 (Berkeley) %G%
+.\"	@(#)exit.3	6.4 (Berkeley) %G%
 .\"
 .TH EXIT 3 ""
 .UC 5
@@ -12,6 +12,9 @@ exit \- perform normal program termination
 .SH SYNOPSIS
 .nf
 .ft B
+#include <stdlib.h>
+
+void
 exit(status)
 int status;
 .fi
