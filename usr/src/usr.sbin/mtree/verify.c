@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)verify.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)verify.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -39,13 +39,13 @@ vwalk()
 
 	argv[0] = ".";
 	argv[1] = (char *)NULL;
-	if (!(t = ftsopen(argv, ftsoptions, (int (*)())NULL))) {
+	if (!(t = fts_open(argv, ftsoptions, (int (*)())NULL))) {
 		(void)fprintf(stderr,
-		    "mtree: ftsopen: %s.\n", strerror(errno));
+		    "mtree: fts_open: %s.\n", strerror(errno));
 		exit(1);
 	}
 	level = root;
-	while (p = ftsread(t)) {
+	while (p = fts_read(t)) {
 		switch(p->fts_info) {
 		case FTS_D:
 			if (!strcmp(p->fts_name, "."))
@@ -87,7 +87,7 @@ vwalk()
 			    !strcmp(ep->name, p->fts_name)) {
 				ep->flags |= F_VISIT;
 				if (ep->flags & F_IGN) {
-					(void)ftsset(t, p, FTS_SKIP);
+					(void)fts_set(t, p, FTS_SKIP);
 					continue;
 				}
 				compare(ep->name, ep, p);
@@ -112,9 +112,9 @@ vwalk()
 			}
 			(void)putchar('\n');
 		}
-		(void)ftsset(t, p, FTS_SKIP);
+		(void)fts_set(t, p, FTS_SKIP);
 	}
-	(void)ftsclose(t);
+	(void)fts_close(t);
 }
 
 miss(p, tail)

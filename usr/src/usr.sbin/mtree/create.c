@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)create.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)create.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -48,12 +48,12 @@ cwalk()
 
 	argv[0] = ".";
 	argv[1] = (char *)NULL;
-	if (!(t = ftsopen(argv, ftsoptions, dsort))) {
+	if (!(t = fts_open(argv, ftsoptions, dsort))) {
 		(void)fprintf(stderr,
-		    "mtree: ftsopen: %s.\n", strerror(errno));
+		    "mtree: fts_open: %s.\n", strerror(errno));
 		exit(1);
 	}
-	while (p = ftsread(t)) {
+	while (p = fts_read(t)) {
 		switch(p->fts_info) {
 		case FTS_D:
 			if (dflag)
@@ -139,7 +139,7 @@ cwalk()
 		}
 		(void)putchar('\n');
 	}
-	(void)ftsclose(t);
+	(void)fts_close(t);
 }
 
 #define	MAXGID	5000
@@ -163,7 +163,7 @@ statdir(t, parent, puid, pgid, pmode, tabs)
 	mode_t savemode;
 	u_short maxgid, maxuid, maxmode, g[MAXGID], u[MAXUID], m[MAXMODE];
 
-	if (!(p = ftschildren(t))) {
+	if (!(p = fts_children(t))) {
 		if (errno) {
 			(void)fprintf(stderr, "mtree: %s: %s.\n",
 			    RP(parent), strerror(errno));
