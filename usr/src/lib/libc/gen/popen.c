@@ -19,7 +19,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)popen.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -91,20 +91,20 @@ pclose(iop)
 {
 	register int fdes;
 	int omask;
-	int stat_loc;
-	pid_t waitpid();
+	union wait pstat;
+	pid_t pid, waitpid();
 
 	/*
 	 * pclose returns -1 if stream is not associated with a
-	 * `popened' command, or, if already `pclosed'.
+	 * `popened' command, if already `pclosed', or waitpid
+	 * returns an error.
 	 */
 	if (pids == NULL || pids[fdes = fileno(iop)] == 0)
 		return(-1);
 	(void)fclose(iop);
 	omask = sigblock(sigmask(SIGINT)|sigmask(SIGQUIT)|sigmask(SIGHUP));
-	stat_loc = waitpid(pids[fdes], &stat_loc, 0) == -1 ?
-	    -1 : WEXITSTATUS(stat_loc);
+	pid = waitpid(pids[fdes], &pstat, 0);
 	(void)sigsetmask(omask);
 	pids[fdes] = 0;
-	return(stat_loc);
+	return(pid == -1 ? -1 : pstat.w_status);
 }
