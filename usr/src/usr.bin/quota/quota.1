@@ -1,5 +1,8 @@
-.\" Copyright (c) 1983 Regents of the University of California.
+.\" Copyright (c) 1983, 1990 Regents of the University of California.
 .\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Robert Elz at The University of Melbourne.
 .\"
 .\" Redistribution and use in source and binary forms are permitted
 .\" provided that the above copyright notice and this paragraph are
@@ -13,46 +16,84 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)quota.1	6.3 (Berkeley) %G%
+.\"	@(#)quota.1	6.4 (Berkeley) %G%
 .\"
 .TH QUOTA 1 ""
 .UC 5
 .SH NAME
-quota \- display disc usage and limits
+quota \- display disk usage and limits
 .SH SYNOPSIS
 .B quota
 [
-.B \-qv
+.B \-g
 ] [
-user
+.B \-u
+] [
+.B "\-v | \-q"
 ]
+.br
+.B quota
+[
+.B \-u
+] [
+.B "\-v | \-q"
+]
+user
+.br
+.B quota
+.B \-g
+[
+.B "\-v | \-q"
+]
+group
+.br
 .SH DESCRIPTION
 .I Quota
-displays users' disc usage and limits. 
-Only the super-user may use the optional
-.I user
-argument to view the limits of users other than
-himself.
+displays users' disk usage and limits. 
+By default only the user quotas are printed.
+The optional \fI-g\fP flag specifies that group quotas
+for the groups of which the user is a member should be printed.
+Specifying both \fI-g\fP and \fI-u\fP
+specifies that both the user quotas and the group quotas for
+the groups of which the user is a member should be printed.
+The optional \fI-u\fP flag is equivalent to the default.
 .PP
-The
-.B \-q
-flag prints a more terse message,
-containing only information
-on file systems where usage is over quota.
+Only the super-user may use the \fI-u\fP flag and the optional
+.I user
+argument to view the limits of other users.
+Non-super-users can use the the \fI-g\fP flag and optional
+.I group
+argument to view only the limits of groups of which they are members.
 .PP
 If a
 .B \-v
 flag is supplied, 
 .I quota
-will also display user's quotas on file systems
+will also display quotas on filesystems
 where no storage is allocated.
 .PP
+The
+.B \-q
+flag prints a more terse message,
+containing only information
+on filesystems where usage is over quota.
+The \fI-q\fP flag takes precedence over the \fI-v\fP flag.
+.PP
 .I Quota
-reports only on file systems which have
-disc quotas. 
+reports the quotas of all the filesystems listed in
+.IR /etc/fstab .
 If 
 .I quota
-exits with a non-zero status, one or more file
-systems are over quota.
-.SH "SEE ALSO"
-quota(2), quotaon(8)
+exits with a non-zero status, one or more filesystems
+are over quota.
+.SH FILES
+.DT
+\fIquota.user\fP	at the filesystem root with user quotas
+.br
+\fIquota.group\fP	at the filesystem root with group quotas
+.br
+/etc/fstab	to find filesystem names and locations
+.SH SEE ALSO
+quotactl(2),
+fstab(5),
+edquota(8), quotacheck(8), quotaon(8), repquota(8)
