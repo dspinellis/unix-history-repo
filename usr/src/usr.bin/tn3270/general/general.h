@@ -23,7 +23,7 @@
 				    char buffer[100]; \
 				    \
 				    sprintf( \
-				    "Attempt to use memchr(, != 0,) in %s, %s.\n, \
+				"Attempt to use memchr(, != 0,) in %s, %s.\n", \
 						__FILE__, __LINE__); \
 				    ExitString(stderr, buffer, 1); \
 				}
