@@ -1,4 +1,4 @@
-.\"	@(#)fclose.3	6.1 (Berkeley) %G%
+.\"	@(#)fclose.3	6.2 (Berkeley) %G%
 .\"
 .TH FCLOSE 3S  ""
 .AT 3
@@ -14,6 +14,12 @@ fclose, fflush \- close or flush a stream
 .B *stream;
 .PP
 .B fflush(stream)
+.br
+.SM
+.B FILE
+.B *stream;
+.PP
+.B fpurge(stream)
 .br
 .SM
 .B FILE
@@ -36,10 +42,13 @@ causes any buffered data for the named output
 .I stream
 to be written to that file.
 The stream remains open.
+.PP
+.I Fpurge
+causes any buffered data for the named
+.I stream
+to be lost.  The stream remains open.
 .SH "SEE ALSO"
-close(2),
-fopen(3S),
-setbuf(3S)
+close(2), fopen(3), setbuf(3)
 .SH DIAGNOSTICS
 These routines return
 .SM
