@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.33 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -44,7 +44,7 @@ static int   hdestroy __P((HTAB *));
 static HTAB *init_hash __P((HTAB *, HASHINFO *));
 static int   init_htab __P((HTAB *, int));
 #if BYTE_ORDER == LITTLE_ENDIAN
-static void  swap_header __P((HTAB *, void));
+static void  swap_header __P((HTAB *));
 static void  swap_header_copy __P((HASHHDR *, HASHHDR *));
 #endif
 
