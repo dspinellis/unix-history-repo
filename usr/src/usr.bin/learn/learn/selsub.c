@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)selsub.c	4.3	(Berkeley)	%G%";
+static char sccsid[] = "@(#)selsub.c	4.4	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
@@ -73,13 +73,15 @@ char *argv[];
 		printf("press RETURN; otherwise type the name of\n");
 		printf("the course you want, followed by RETURN.\n");
 		fflush(stdout);
-		gets(sname=subname);
+		if (gets(sname=subname) == NULL)
+			exit(0);
 		if (sname[0] == '\0') {
 			list("Xinfo");
 			do {
 				printf("\nWhich subject?  ");
 				fflush(stdout);
-				gets(sname=subname);
+				if (gets(sname=subname) == NULL)
+					exit(0);
 			} while (sname[0] == '\0');
 		}
 	}
@@ -94,7 +96,8 @@ char *argv[];
 		printf("and I will look for the first lesson containing it.\n");
 		printf("To start at the beginning, just hit RETURN.\n");
 		fflush(stdout);
-		gets(ans2);
+		if (gets(ans2) == NULL)
+			exit(0);
 		if (ans2[0]==0)
 			strcpy(ans2,"0");
 		else

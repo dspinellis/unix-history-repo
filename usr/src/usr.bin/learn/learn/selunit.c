@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)selunit.c	4.3	(Berkeley)	%G%";
+static char sccsid[] = "@(#)selunit.c	4.4	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
@@ -30,7 +30,8 @@ selunit()
 	while (ask) {
 		printf("What lesson? ");
 		fflush(stdout);
-		gets(dobuff);
+		if (gets(dobuff) == NULL)
+			wrapup(1);
 		if (strcmp(dobuff, "bye") == 0)
 			wrapup(1);
 		level = dobuff;

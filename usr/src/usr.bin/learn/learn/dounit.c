@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)dounit.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)dounit.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
@@ -65,7 +65,8 @@ retry:
 				fflush(stdout);
 				break;
 			} else {
-				printf("Please type yes, no or bye:  ");
+				printf("\nPlease type yes, no or bye:  ");
+				clearerr(stdin);
 				fflush(stdout);
 			}
 		}
