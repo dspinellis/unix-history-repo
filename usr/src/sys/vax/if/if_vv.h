@@ -1,9 +1,12 @@
-/*	if_vv.h	4.2	82/08/01	*/
+/*	if_vv.h	4.3	83/02/20	*/
 /*
  * Local network header for V2LNI Ring
  * This is arbitrated by "V2LNI-PEOPLE@MIT-MC"
  * (aka Joel N. Chiappa)
  */
+
+#undef	NEW_BROADCAST		/* new plas for broadcast problem */
+
 struct vv_header {
 	 /* the first two fields are required by the hardware */
 	u_char	vh_dhost;	/* destination address */
@@ -14,22 +17,21 @@ struct vv_header {
 	short	vh_info;	/* protocol-specific information */
 };
 
-#define	RING_VERSION	1	/* current version of v2lni header */
+#define	RING_VERSION	2	/* current version of v2lni header */
 
 /*
  * Packet types (protocol numbers) in v2lni header
- *
- * NOTE: the Trailer format stuff is lifted right out of
- * the other drivers.  It will be changed to take advantage
- * of the fields in the vv_header, but the packet throw-away
- * code must first be improved.
  */
 #define	RING_IP		1
 #define	RING_IPTrailer	2
 #define	RING_IPNTrailer	16
 #define	RING_WHOAMI	0xa5	/* insure some bit transitions */
 
-#define	VV_BROADCAST	0	/* hardware-defined broadcast address */
+#ifdef NEW_BROADCAST
+#define	VV_BROADCAST	0xff	/* hardware-defined broadcast address */
+#else
+#define	VV_BROADCAST	0x00	/* hardware-defined broadcast address */
+#endif
 
 /*
  * Proteon V2LNI Hardware definitions
