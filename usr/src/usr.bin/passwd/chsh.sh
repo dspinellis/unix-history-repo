@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)chsh.sh	4.7 (Berkeley) %G%";
+static char *sccsid = "@(#)chsh.sh	4.8 (Berkeley) %G%";
 #endif
 
 /*
@@ -12,8 +12,12 @@ static char *sccsid = "@(#)chsh.sh	4.7 (Berkeley) %G%";
 #include <sys/time.h>
 #include <sys/resource.h>
 
+char	temp[] = "/etc/ptmp";
+char	temp_pag[] = "/etc/ptmp.pag";
+char	temp_dir[] = "/etc/ptmp.dir";
 char	passwd[] = "/etc/passwd";
-char	temp[]	 = "/etc/ptmp";
+char	passwd_pag[] = "/etc/passwd.pag";
+char	passwd_dir[] = "/etc/passwd.dir";
 struct	passwd *pwd;
 struct	passwd *getpwent();
 int	endpwent();
@@ -57,17 +61,11 @@ register char *argv[];
 	}
 	unlimit(RLIMIT_CPU);
 	unlimit(RLIMIT_FSIZE);
-	while ((pwd=getpwent()) != NULL) {
-		if (strcmp(pwd->pw_name, argv[1]) == 0) {
-			u = getuid();
-			if (u!=0 && u != pwd->pw_uid) {
-				printf("Permission denied.\n");
-				exit(1);
-			}
-			break;
-		}
+	u = getuid();
+	if (u != 0 && ((pwd = getpwnam(argv[1])) == NULL || u != pwd->pw_uid)) {
+		printf("Permission denied.\n");
+		exit(1);
 	}
-	endpwent();
 
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGINT, SIG_IGN);
@@ -88,7 +86,6 @@ register char *argv[];
 	 */
 	while ((pwd=getpwent()) != NULL) {
 		if (strcmp(pwd->pw_name, argv[1]) == 0) {
-			u = getuid();
 			if (u != 0 && u != pwd->pw_uid) {
 				printf("Permission denied.\n");
 				goto out;
@@ -108,14 +105,22 @@ register char *argv[];
 		);
 	}
 	endpwent();
-	if (rename(temp, passwd) < 0) {
-		fprintf(stderr, "chsh: "); perror("rename");
-  out:
-		unlink(temp);
-		exit(1);
-	}
 	fclose(tf);
-	exit(0);
+	if (makedb(temp) < 0)
+		fprintf(stderr, "chsh: mkpasswd failed\n");
+	else if (rename(temp_pag, passwd_pag) < 0)
+		fprintf(stderr, "chsh: "), perror(temp_pag);
+	else if (rename(temp_dir, passwd_dir) < 0)
+		fprintf(stderr, "chsh: "), perror(temp_dir);
+	else if (rename(temp, passwd) < 0)
+		fprintf(stderr, "chsh: "), perror("rename");
+	else
+		exit(0);
+out:
+	unlink(temp_pag);
+	unlink(temp_dir);
+	unlink(temp);
+	exit(1);
 }
 
 unlimit(lim)
@@ -124,4 +129,20 @@ unlimit(lim)
 
 	rlim.rlim_cur = rlim.rlim_max = RLIM_INFINITY;
 	setrlimit(lim, &rlim);
+}
+
+makedb(file)
+	char *file;
+{
+	int status, pid, w;
+
+	if ((pid = vfork()) == 0) {
+		execl("/etc/mkpasswd", "mkpasswd", file, 0);
+		_exit(127);
+	}
+	while ((w = wait(&status)) != pid && w != -1)
+		;
+	if (w == -1 || status != 0)
+		status = -1;
+	return(status);
 }

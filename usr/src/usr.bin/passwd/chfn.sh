@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)chfn.sh	4.6 (Berkeley) %G%";
+static char *sccsid = "@(#)chfn.sh	4.7 (Berkeley) %G%";
 #endif lint
 
 /*
@@ -20,11 +20,13 @@ struct default_values {
 	char *home_phone;
 };
 
+char	temp[] = "/etc/ptmp";
+char	temp_pag[] = "/etc/ptmp.pag";
+char	temp_dir[] = "/etc/ptmp.dir";
 char	passwd[] = "/etc/passwd";
-char	temp[]	 = "/etc/ptmp";
+char	passwd_pag[] = "/etc/passwd.pag";
+char	passwd_dir[] = "/etc/passwd.dir";
 struct	passwd *pwd;
-struct	passwd *getpwent(), *getpwnam(), *getpwuid();
-int	endpwent();
 char	*crypt();
 char	*getpass();
 
@@ -122,14 +124,22 @@ main(argc, argv)
 			pwd->pw_shell);
 	}
 	(void) endpwent();
-	if (rename(temp, passwd) < 0) {
-		fprintf(stderr, "chfn: "); perror("rename");
-  out:
-		(void) unlink(temp);
-		exit(1);
-	}
 	(void) fclose(tf);
-	exit(0);
+	if (makedb(temp) < 0)
+		fprintf(stderr, "chfn: mkpasswd failed\n");
+	else if (rename(temp_pag, passwd_pag) < 0)
+		fprintf(stderr, "chfn: "), perror(temp_pag);
+	else if (rename(temp_dir, passwd_dir) < 0)
+		fprintf(stderr, "chfn: "), perror(temp_dir);
+	else if (rename(temp, passwd) < 0)
+		fprintf(stderr, "chfn: "), perror("rename");
+	else
+		exit(0);
+out:
+	unlink(temp_pag);
+	unlink(temp_dir);
+	unlink(temp);
+	exit(1);
 }
 
 unlimit(lim)
@@ -138,6 +148,22 @@ unlimit(lim)
 
 	rlim.rlim_cur = rlim.rlim_max = RLIM_INFINITY;
 	(void) setrlimit(lim, &rlim);
+}
+
+makedb(file)
+	char *file;
+{
+	int status, pid, w;
+
+	if ((pid = vfork()) == 0) {
+		execl("/etc/mkpasswd", "mkpasswd", file, 0);
+		_exit(127);
+	}
+	while ((w = wait(&status)) != pid && w != -1)
+		;
+	if (w == -1 || status != 0)
+		status = -1;
+	return(status);
 }
 
 /*
