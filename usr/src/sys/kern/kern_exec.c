@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_exec.c	7.41 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.42 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -411,7 +411,7 @@ execve(p, uap, retval)
 	 */
 	while (fdp->fd_lastfile > 0 && fdp->fd_ofiles[fdp->fd_lastfile] == NULL)
 		fdp->fd_lastfile--;
-	setregs(exdata.ex_exec.a_entry, retval);
+	setregs(p, exdata.ex_exec.a_entry, retval);
 #ifdef COPY_SIGCODE
 	/*
 	 * Install sigcode at top of user stack.
@@ -500,8 +500,8 @@ getxfile(p, vp, ep, paged, nargc, uid, gid)
 	 * empty out the existing vmspace.
 	 */
 	if (vm->vm_refcnt > 1) {
-		p->p_vmspace = vmspace_alloc(vm_map_min(&vm->vm_map),
-		    vm_map_max(&vm->vm_map), 1);
+		p->p_vmspace = vmspace_alloc(VM_MIN_ADDRESS,
+		    VM_MAXUSER_ADDRESS, 1);
 		vmspace_free(vm);
 		vm = p->p_vmspace;
 	} else {
@@ -509,8 +509,8 @@ getxfile(p, vp, ep, paged, nargc, uid, gid)
 		if (vm->vm_shm)
 			shmexit(p);
 #endif
-		(void) vm_map_remove(&vm->vm_map, vm_map_min(&vm->vm_map),
-		    vm_map_max(&vm->vm_map));
+		(void) vm_map_remove(&vm->vm_map, VM_MIN_ADDRESS,
+		    VM_MAXUSER_ADDRESS);
 	}
 	/*
 	 * If parent is waiting for us to exec or exit,
@@ -538,10 +538,16 @@ getxfile(p, vp, ep, paged, nargc, uid, gid)
 		goto badmap;
 	}
 	size = round_page(MAXSSIZ);		/* XXX */
-	addr = trunc_page(VM_MAX_ADDRESS - size);
+	addr = trunc_page(USRSTACK - size);
 	if (vm_allocate(&vm->vm_map, &addr, size, FALSE)) {
 		uprintf("Cannot allocate stack space\n");
 		error = ENOMEM;			/* XXX */
+		goto badmap;
+	}
+	size -= round_page(p->p_rlimit[RLIMIT_STACK].rlim_cur);
+	if (vm_map_protect(&vm->vm_map, addr, addr+size, VM_PROT_NONE, FALSE)) {
+		uprintf("Cannot protect stack space\n");
+		error = ENOMEM;
 		goto badmap;
 	}
 	vm->vm_maxsaddr = (caddr_t)addr;
