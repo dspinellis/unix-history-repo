@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bibargs.c	2.2	%G%";
+static char sccsid[] = "@(#)bibargs.c	2.3	%G%";
 #endif not lint
 /*
         Authored by: Tim Budd, University of Arizona, 1983.
@@ -638,7 +638,8 @@ char c;
    bldcite(cp, i, ref)
    char *cp, ref[];
    int  i;
-{  char *p, *q, c, *fp, field[REFSIZE], *getfield(), *aabet(), *astro();
+{  char *p, *q, c, *fp, field[REFSIZE];
+   char *getfield(), *aabet(), *aabetlast(), *astro();
 
    getfield("F", field, ref);
    if (field[0] != 0)
@@ -665,6 +666,8 @@ char c;
             cp = aabet(cp, ref);
          else if (c == '3')                     /* Astrophysical Journal style*/
             cp = astro(cp, ref);
+         else if (c == '9')                     /* Last name of Senior Author*/
+            cp = aabetlast(cp, ref);
 /*       else if (c == '4')          here is how to add new styles */
          else if (c == '{') {                   /* other information   */
             while (*p != '}')
@@ -714,6 +717,22 @@ char c;
          }
       }
 return(cp);
+}
+
+/* alternate alphabetic citation style -
+	entire last name of senior author
+*/
+   char *aabetlast(cp, ref)
+   char *cp, ref[];
+{  char field[REFSIZE], temp[100];
+   char	*fp;
+   int getname();
+
+   if (getname(1, field, temp, ref)) {
+      for (fp = field; *fp; )
+         *cp++ = *fp++;
+   }
+   return(cp);
 }
 
 /* Astrophysical Journal style
