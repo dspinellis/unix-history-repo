@@ -63,7 +63,13 @@ char	*argv[];
 	if (!quiet) {
 	    msg("Do you need instructions for cribbage? ");
 	    if (getuchar() == 'Y') {
+		endwin();
+		fflush(stdout);
 		system(INSTRCMD);
+		crmode();
+		noecho();
+		clear();
+		refresh();
 		msg("For the rules of this program, do \"man cribbage\"");
 	    }
 	}
