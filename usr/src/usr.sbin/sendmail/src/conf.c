@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.93 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.94 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1999,13 +1999,23 @@ chownsafe(fd)
 #  endif
 # else
 #  ifdef _PC_CHOWN_RESTRICTED
-	return fpathconf(fd, _PC_CHOWN_RESTRICTED) > 0;
-#  else
-#   ifdef BSD
+	int rval;
+
+	/*
+	**  Some systems (e.g., SunOS) seem to have the call and the
+	**  #define _PC_CHOWN_RESTRICTED, but don't actually implement
+	**  the call.  This heuristic checks for that.
+	*/
+
+	errno = 0;
+	rval = fpathconf(fd, _PC_CHOWN_RESTRICTED);
+	if (errno == 0)
+		return rval > 0;
+#  endif
+#  ifdef BSD
 	return TRUE;
-#   else
+#  else
 	return FALSE;
-#   endif
 #  endif
 # endif
 #endif
