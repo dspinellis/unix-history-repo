@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttgeneric.c	3.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttgeneric.c	3.36 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -45,6 +45,7 @@ struct tt_str ansi_AS = {
 	"\033(0", 3
 };
 
+struct tt_str *gen_PC;
 struct tt_str *gen_CM;
 struct tt_str *gen_IM;
 struct tt_str *gen_IC;
@@ -64,13 +65,14 @@ struct tt_str *gen_SO;
 struct tt_str *gen_SE;
 struct tt_str *gen_US;
 struct tt_str *gen_UE;
-struct tt_str *gen_UP;
-struct tt_str *gen_PC;
-struct tt_str *gen_BC;
+struct tt_str *gen_LE;
 struct tt_str *gen_ND;
-struct tt_str *gen_HO;
+struct tt_str *gen_UP;
+struct tt_str *gen_DO;
+struct tt_str *gen_BC;
 struct tt_str *gen_NL;
 struct tt_str *gen_CR;
+struct tt_str *gen_HO;
 struct tt_str *gen_AS;
 struct tt_str *gen_AE;
 struct tt_str *gen_XS;
@@ -237,8 +239,8 @@ register int row, col;
 				goto out;
 			}
 		} else if (tt.tt_col == col + 1) {
-			if (gen_BC) {
-				ttxputs(gen_BC);
+			if (gen_LE) {
+				ttxputs(gen_LE);
 				goto out;
 			}
 		}
@@ -249,8 +251,8 @@ register int row, col;
 				ttxputs(gen_UP);
 				goto out;
 			}
-		} else if (tt.tt_row == row + 1) {
-			ttxputs(gen_NL);
+		} else if (tt.tt_row == row - 1) {
+			ttxputs(gen_DO);
 			goto out;
 		}
 	}
@@ -355,12 +357,14 @@ tt_generic()
 	gen_SE = ttxgetstr("se");
 	gen_US = ttxgetstr("us");
 	gen_UE = ttxgetstr("ue");
-	gen_UP = ttxgetstr("up");
-	gen_BC = ttxgetstr("bc");
+	gen_LE = ttxgetstr("le");
 	gen_ND = ttxgetstr("nd");
-	gen_HO = ttxgetstr("ho");
+	gen_UP = ttxgetstr("up");
+	gen_DO = ttxgetstr("do");
+	gen_BC = ttxgetstr("bc");
 	gen_NL = ttxgetstr("nl");
 	gen_CR = ttxgetstr("cr");
+	gen_HO = ttxgetstr("ho");
 	gen_AS = ttxgetstr("as");
 	gen_AE = ttxgetstr("ae");
 	gen_XS = ttxgetstr("XS");
@@ -384,22 +388,42 @@ tt_generic()
 	if (gen_CL == 0 || gen_OS || gen_CM == 0)
 		return -1;
 
+	/*
+	 * Deal with obsolete termcap fields.
+	 */
+	if (gen_LE == 0)
+		if (gen_BC)
+			gen_LE = gen_BC;
+		else if (gen_BS) {
+			static struct tt_str bc = { "\b", 1 };
+			gen_BC = &bc;
+		}
 	if (gen_NL == 0) {
 		static struct tt_str nl = { "\n", 1 };
 		gen_NL = &nl;
 	}
+	if (gen_DO == 0)
+		gen_DO = gen_NL;
 	if (gen_CR == 0) {
 		static struct tt_str cr = { "\r", 1 };
 		gen_CR = &cr;
 	}
-	if (gen_BC == 0 && gen_BS) {
-		static struct tt_str bc = { "\b", 1 };
-		gen_BC = &bc;
-	}
+	/*
+	 * Most terminal will scroll with "nl", but very few specify "sf".
+	 * We shouldn't use "do" here.
+	 */
 	if (gen_SF == 0 && !gen_NS)
 		gen_SF = gen_NL;
-	BC = gen_BC ? gen_BC->ts_str : 0;
+	BC = gen_LE ? gen_LE->ts_str : 0;
 	UP = gen_UP ? gen_UP->ts_str : 0;
+	/*
+	 * Fix up display attributes that we can't handle, or don't
+	 * really exist.
+	 */
+	if (gen_SG > 0)
+		gen_SO = 0;
+	if (gen_UG > 0 || gen_US && gen_SO && ttstrcmp(gen_US, gen_SO) == 0)
+		gen_US = 0;
 
 	if (gen_DC)
 		tt.tt_delchar = gen_delchar;
@@ -421,10 +445,6 @@ tt_generic()
 		tt.tt_scroll_up = gen_scroll_up;
 	if (gen_CS)
 		tt.tt_setscroll = gen_setscroll;
-	if (gen_SG > 0)
-		gen_SO = 0;
-	if (gen_UG > 0 || gen_US && gen_SO && ttstrcmp(gen_US, gen_SO) == 0)
-		gen_US = 0;
 	if (gen_SO)
 		tt.tt_availmodes |= WWM_REV;
 	if (gen_US)
