@@ -58,9 +58,11 @@ reverse(fp, style, off, sbp)
 	else
 		switch(style) {
 		case FBYTES:
+		case RBYTES:
 			bytes(fp, off);
 			break;
 		case FLINES:
+		case RLINES:
 			lines(fp, off);
 			break;
 		case REVERSE:
@@ -82,14 +84,12 @@ r_reg(fp, style, off, sbp)
 	register off_t size;
 	register int llen;
 	register char *p;
-	int fd;
 
 	if (!(size = sbp->st_size))
 		return;
 
-	fd = fileno(fp);
 	if ((p = mmap(NULL,
-	    size, PROT_READ, MAP_FILE, fd, (off_t)0)) == (caddr_t)-1) {
+	    size, PROT_READ, MAP_FILE, fileno(fp), (off_t)0)) == (caddr_t)-1) {
 		err(0, "%s", strerror(errno));
 		return;
 	}
