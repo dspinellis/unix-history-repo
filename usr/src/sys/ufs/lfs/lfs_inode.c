@@ -1,4 +1,4 @@
-/*	lfs_inode.c	4.24	82/09/06	*/
+/*	lfs_inode.c	4.25	82/10/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -9,7 +9,6 @@
 #include "../h/fs.h"
 #include "../h/conf.h"
 #include "../h/buf.h"
-#include "../h/inline.h"
 #ifdef QUOTA
 #include "../h/quota.h"
 #endif
@@ -115,7 +114,7 @@ loop:
 	ih = &ihead[INOHASH(dev, ino)];
 	for (ip = ih->ih_chain[0]; ip != (struct inode *)ih; ip = ip->i_forw)
 		if (ino == ip->i_number && dev == ip->i_dev) {
-			if ((ip->i_flag&ILOCK) != 0) {
+			if ((ip->i_flag&ILOCKED) != 0) {
 				ip->i_flag |= IWANT;
 				sleep((caddr_t)ip, PINOD);
 				goto loop;
@@ -140,7 +139,7 @@ loop:
 				ip->i_freeb = NULL;
 			}
 			ip->i_count++;
-			ip->i_flag |= ILOCK;
+			ip->i_flag |= ILOCKED;
 			return(ip);
 		}
 
@@ -169,7 +168,7 @@ loop:
 	ip->i_dev = dev;
 	ip->i_fs = fs;
 	ip->i_number = ino;
-	ip->i_flag = ILOCK;
+	ip->i_flag = ILOCKED;
 	ip->i_count++;
 	ip->i_lastr = 0;
 	bp = bread(dev, fsbtodb(fs, itod(fs, ino)), fs->fs_bsize);
@@ -223,7 +222,7 @@ iput(ip)
 	register struct inode *ip;
 {
 
-	if ((ip->i_flag & ILOCK) == 0)
+	if ((ip->i_flag & ILOCKED) == 0)
 		panic("iput");
 	iunlock(ip);
 	irele(ip);
@@ -237,7 +236,7 @@ irele(ip)
 	int mode;
 
 	if (ip->i_count == 1) {
-		ip->i_flag |= ILOCK;
+		ip->i_flag |= ILOCKED;
 		if (ip->i_nlink <= 0) {
 			itrunc(ip, 0);
 			mode = ip->i_mode;
@@ -528,12 +527,6 @@ iflush(dev)
 	return (open);
 }
 
-#ifdef ilock
-#undef ilock
-#endif
-#ifdef iunlock
-#undef iunlock
-#endif
 /*
  * Lock an inode. If its already locked, set the WANT bit and sleep.
  */
@@ -541,11 +534,7 @@ ilock(ip)
 	register struct inode *ip;
 {
 
-	while (ip->i_flag&ILOCK) {
-		ip->i_flag |= IWANT;
-		sleep((caddr_t)ip, PINOD);
-	}
-	ip->i_flag |= ILOCK;
+	ILOCK(ip);
 }
 
 /*
@@ -555,9 +544,5 @@ iunlock(ip)
 	register struct inode *ip;
 {
 
-	ip->i_flag &= ~ILOCK;
-	if (ip->i_flag&IWANT) {
-		ip->i_flag &= ~IWANT;
-		wakeup((caddr_t)ip);
-	}
+	IUNLOCK(ip);
 }

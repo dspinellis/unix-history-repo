@@ -1,4 +1,4 @@
-/*	ffs_vnops.c	4.37	82/09/06	*/
+/*	ffs_vnops.c	4.38	82/10/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -11,10 +11,6 @@
 #include "../h/fs.h"
 #include "../h/buf.h"
 #include "../h/proc.h"
-#include "../h/inline.h"
-/* no reason to inline expand these guys here */
-#undef ilock
-#undef iunlock
 #include "../h/quota.h"
 #include "../h/descrip.h"
 #include "../h/uio.h"
