@@ -1,8 +1,0 @@
-[ READ-ME - Mon Oct 30 12:44:01 1989 - ISODE/SunLink OSI notes - /mtr ]
-
-
-    This program is used to convert entries from the /usr/etc/osi.hosts file
-    into network addresses formatted for the isoentities file.
-
-    Note that in SunLink OSI 6.0 and later, the osi.hosts file is called
-    /etc/sunlink/osi/hosts

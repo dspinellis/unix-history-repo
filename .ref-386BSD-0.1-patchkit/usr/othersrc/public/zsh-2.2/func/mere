@@ -1,3 +1,0 @@
-#! /bin/sh
-# read a man page in the current directory
-nroff -man -Tman $1 | less -s

@@ -1,1 +1,0 @@
-#define NSWAPPAGER 1

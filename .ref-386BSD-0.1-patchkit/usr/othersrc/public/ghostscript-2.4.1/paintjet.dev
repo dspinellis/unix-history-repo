@@ -1,2 +1,0 @@
-./gsaddres -obj gdevpjet.o gdevprn.o gdevpcl.o
-./gsaddres -dev paintjet

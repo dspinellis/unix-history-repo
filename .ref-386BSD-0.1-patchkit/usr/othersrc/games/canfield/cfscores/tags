@@ -1,2 +1,0 @@
-Mcfscores	cfscores.c	/^main(argc, argv)$/
-printuser	cfscores.c	/^printuser(pw, printfail)$/
