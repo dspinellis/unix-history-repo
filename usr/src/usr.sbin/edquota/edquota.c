@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)edquota.c	4.3 (Berkeley, from Melbourne) %G%";
+static char sccsid[] = "@(#)edquota.c	4.4 (Berkeley, from Melbourne) %G%";
 #endif
 
 /*
@@ -13,10 +13,10 @@ static char sccsid[] = "@(#)edquota.c	4.3 (Berkeley, from Melbourne) %G%";
 #include <fstab.h>
 
 #include <sys/param.h>
-#define QUOTA
-#include <sys/quota.h>
 #include <sys/stat.h>
 #include <sys/file.h>
+#define QUOTA
+#include <sys/quota.h>
 
 #define	DEFEDITOR	"/usr/ucb/vi"
 
@@ -27,19 +27,20 @@ char	odqf[NMOUNT][MAXPATHLEN + 1];
 
 char	tmpfil[] = "/tmp/EdP.aXXXXX";
 char	*qfname = "quotas";
-char	*arg0;
 char	*getenv();
 
 main(argc, argv)
 	char **argv;
 {
+	int uid;
+	char *arg0;
 
 	mktemp(tmpfil);
 	close(creat(tmpfil, 0600));
 	chown(tmpfil, getuid(), getgid());
 	arg0 = *argv++;
 	if (argc < 2) {
-		fprintf(stderr, "Usage: %s username ...\n", arg0);
+		fprintf(stderr, "Usage: %s [-p username] username ...\n", arg0);
 		unlink(tmpfil);
 		exit(1);
 	}
@@ -49,30 +50,53 @@ main(argc, argv)
 		unlink(tmpfil);
 		exit(1);
 	}
-	while (--argc >= 0)
-		doedit(*argv++);
+	if (argc > 2 && strcmp(*argv, "-p") == 0) {
+		argc--, argv++;
+		uid = getentry(*argv++);
+		if (uid < 0) {
+			unlink(tmpfil);
+			exit(1);
+		}
+		getprivs(uid);
+		argc--;
+		while (argc-- > 0) {
+			uid = getentry(*argv++);
+			if (uid < 0)
+				continue;
+			getdiscq(uid, odq, odqf);
+			putprivs(uid);
+		}
+		unlink(tmpfil);
+		exit(0);
+	}
+	while (--argc >= 0) {
+		uid = getentry(*argv++);
+		if (uid < 0)
+			continue;
+		getprivs(uid);
+		if (editit())
+			putprivs(uid);
+	}
 	unlink(tmpfil);
 	exit(0);
 }
 
-doedit(name)
-	register char *name;
+getentry(name)
+	char *name;
 {
-	register uid;
-	register struct passwd *pw;
+	struct passwd *pw;
+	int uid;
 
 	if (alldigits(name))
 		uid = atoi(name);
 	else if (pw = getpwnam(name))
 		uid = pw->pw_uid;
 	else {
-		fprintf(stderr, "%s: no such user\n");
+		fprintf(stderr, "%s: no such user\n", name);
 		sleep(1);
-		return;
+		return (-1);
 	}
-	getprivs(uid);
-	if (editit())
-		putprivs(uid);
+	return (uid);
 }
 
 editit()
