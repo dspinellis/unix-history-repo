@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
@@ -39,6 +39,7 @@ depend: ${SRCS}
 
 install: ${MAN}
 	install -s -o bin -g bin -m 755 nice ${DESTDIR}/bin
+	install -c -o bin -g bin -m 755 nohup.sh ${DESTDIR}/usr/bin/nohup
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 	rm -f ln ${DESTDIR}/usr/man/cat1/nohup.0
 	ln ${DESTDIR}/usr/man/cat1/nice.0 ${DESTDIR}/usr/man/cat1/nohup.0
