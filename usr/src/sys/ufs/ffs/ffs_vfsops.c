@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.7 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -357,12 +357,6 @@ ffs_mountfs(devvp, mp, p)
 	fs->fs_ronly = ronly;
 	if (ronly == 0)
 		fs->fs_fmod = 1;
-	if (havepart) {
-		dpart.part->p_fstype = FS_BSDFFS;
-		dpart.part->p_fsize = fs->fs_fsize;
-		dpart.part->p_frag = fs->fs_frag;
-		dpart.part->p_cpg = fs->fs_cpg;
-	}
 #ifdef SECSIZE
 	/*
 	 * If we have a disk label, force per-partition
