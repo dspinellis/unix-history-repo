@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)mount.8	8.3 (Berkeley) %G%
+.\"     @(#)mount.8	8.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MOUNT 8
@@ -13,13 +13,13 @@
 .Nd mount file systems
 .Sh SYNOPSIS
 .Nm mount
-.Op Fl afrwu
+.Op Fl adfruvw
 .Op Fl t Ar ufs | lfs | external_type
 .Nm mount
-.Op Fl frwu
+.Op Fl dfruvw
 .Ar special | node
 .Nm mount
-.Op Fl frwu
+.Op Fl dfruvw
 .Op Fl t Ar ufs | lfs | external_type
 .Op Fl o Ar options
 .Ar special node
@@ -204,7 +204,9 @@ file system table
 .Xr mount_nfs 8 ,
 .Xr mount_null 8 ,
 .Xr mount_portal 8 ,
+.Xr mount_procfs 8 ,
 .Xr mount_umap 8 ,
+.Xr mount_union 8 ,
 .Xr umount 8
 .Sh BUGS
 It is possible for a corrupted file system to cause a crash.
