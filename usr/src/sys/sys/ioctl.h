@@ -1,9 +1,12 @@
+#ifndef _POSIX_VDISABLE
+#define _POSIX_VDISABLE	((unsigned char)'\377')
+#endif
 /*
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ioctl.h	7.7 (Berkeley) %G%
+ *	@(#)ioctl.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -87,26 +90,31 @@ struct ttysize {
  */
 #define	IOCPARM_MASK	0x1fff		/* parameter length, at most 13 bits */
 #define	IOCPARM_LEN(x)	(((x) >> 16) & IOCPARM_MASK)
+#define	IOCBASECMD(x)	((x) & ~IOCPARM_MASK)
+#define	IOCGROUP(x)	(((x) >> 8) & 0xff)
+
 #define	IOCPARM_MAX	NBPG		/* max size of ioctl, mult. of NBPG */
 #define	IOC_VOID	0x20000000	/* no parameters */
 #define	IOC_OUT		0x40000000	/* copy out parameters */
 #define	IOC_IN		0x80000000	/* copy in parameters */
 #define	IOC_INOUT	(IOC_IN|IOC_OUT)
 #define	IOC_DIRMASK	(IOC_IN|IOC_OUT|IOC_VOID)
-/* the 0x20000000 is so we can distinguish new ioctl's from old */
-#define	_IO(x,y)	(IOC_VOID|(x<<8)|y)
-#define	_IOR(x,y,t)	(IOC_OUT|((sizeof(t)&IOCPARM_MASK)<<16)|(x<<8)|y)
-#define	_IOW(x,y,t)	(IOC_IN|((sizeof(t)&IOCPARM_MASK)<<16)|(x<<8)|y)
+
+#define _IOC(inout,group,num,len) \
+	(inout | ((len & IOCPARM_MASK) << 16) | ((group) << 8) | (num))
+#define	_IO(g,n)	_IOC(IOC_VOID,	0, (g), (n))
+#define	_IOR(g,n,t)	_IOC(IOC_OUT,	(g), (n), sizeof(t))
+#define	_IOW(g,n,t)	_IOC(IOC_IN,	(g), (n), sizeof(t))
 /* this should be _IORW, but stdio got there first */
-#define	_IOWR(x,y,t)	(IOC_INOUT|((sizeof(t)&IOCPARM_MASK)<<16)|(x<<8)|y)
+#define	_IOWR(g,n,t)	_IOC(IOC_INOUT,	(g), (n), sizeof(t))
 #define	_IOWX(x,y,s)	(IOC_IN|(((s)&IOCPARM_MASK)<<16)|(x<<8)|(y))
 #endif
 
 /*
  * tty ioctl commands
  */
-#define	TIOCGETD	_IOR('t', 0, int)	/* get line discipline */
-#define	TIOCSETD	_IOW('t', 1, int)	/* set line discipline */
+#define	TIOCGETDCOMPAT	_IOR('t', 0, int)	/* get line discipline */
+#define	TIOCSETDCOMPAT	_IOW('t', 1, int)	/* set line discipline */
 #define	TIOCHPCL	_IO('t', 2)		/* hang up on last close */
 #define	TIOCMODG	_IOR('t', 3, int)	/* get modem control state */
 #define	TIOCMODS	_IOW('t', 4, int)	/* set modem control state */
@@ -176,7 +184,6 @@ struct ttysize {
 #define		PENDIN		0x20000000	/* tp->t_rawq needs reread */
 #define		DECCTQ		0x40000000	/* only ^Q starts after ^S */
 #define		NOFLSH		0x80000000	/* no output flush on signal */
-/* POSIX line discipline */
 #define	TIOCGETA	_IOR('t', 19, struct termios) /* get termios struct */
 #define	TIOCSETA	_IOW('t', 20, struct termios) /* set termios struct */
 #define	TIOCSETAW	_IOW('t', 21, struct termios) /* drain output, set */
@@ -188,6 +195,8 @@ struct ttysize {
 #define TCSETA	TIOCSETA
 #define TCSETAW	TIOCSETAW
 #define TCSETAF	TIOCSETAF
+#define	TIOCGETD	_IOR('t', 26, int)	/* get line discipline */
+#define	TIOCSETD	_IOW('t', 27, int)	/* set line discipline */
 /* locals, from 127 down */
 #define	TIOCLBIS	_IOW('t', 127, int)	/* bis local mode bits */
 #define	TIOCLBIC	_IOW('t', 126, int)	/* bic local mode bits */
@@ -245,9 +254,9 @@ struct ttysize {
 #define	TIOCCONS	_IO('t', 98)		/* become virtual console */
 #define	TIOCSCTTY	_IO('t', 97)		/* become controlling tty */
 
-#define	OTTYDISC	0		/* termios ldisc */
+#define	OTTYDISC	0		/* termios */
+#define	NTTYDISC	0		/* COMPAT_43 */
 #define	NETLDISC	1		/* line discip for berk net */
-#define	NTTYDISC	2		/* also termios ldisc */
 #define	TABLDISC	3		/* tablet discipline */
 #define	SLIPDISC	4		/* serial IP discipline */
 
@@ -269,25 +278,33 @@ struct ttysize {
 #define	SIOCSPGRP	_IOW('s',  8, int)		/* set process group */
 #define	SIOCGPGRP	_IOR('s',  9, int)		/* get process group */
 
-#define	SIOCADDRT	_IOW('r', 10, struct rtentry)	/* add route */
-#define	SIOCDELRT	_IOW('r', 11, struct rtentry)	/* delete route */
+#define	SIOCADDRT	_IOW('r', 10, struct ortentry)	/* add route */
+#define	SIOCDELRT	_IOW('r', 11, struct ortentry)	/* delete route */
 
 #define	SIOCSIFADDR	_IOW('i', 12, struct ifreq)	/* set ifnet address */
-#define	SIOCGIFADDR	_IOWR('i',13, struct ifreq)	/* get ifnet address */
+#define	OSIOCGIFADDR	_IOWR('i',13, struct ifreq)	/* get ifnet address */
+#define	SIOCGIFADDR	_IOWR('i',33, struct ifreq)	/* get ifnet address */
 #define	SIOCSIFDSTADDR	_IOW('i', 14, struct ifreq)	/* set p-p address */
-#define	SIOCGIFDSTADDR	_IOWR('i',15, struct ifreq)	/* get p-p address */
+#define	OSIOCGIFDSTADDR	_IOWR('i',15, struct ifreq)	/* get p-p address */
+#define	SIOCGIFDSTADDR	_IOWR('i',34, struct ifreq)	/* get p-p address */
 #define	SIOCSIFFLAGS	_IOW('i', 16, struct ifreq)	/* set ifnet flags */
 #define	SIOCGIFFLAGS	_IOWR('i',17, struct ifreq)	/* get ifnet flags */
-#define	SIOCGIFBRDADDR	_IOWR('i',18, struct ifreq)	/* get broadcast addr */
+#define	OSIOCGIFBRDADDR	_IOWR('i',18, struct ifreq)	/* get broadcast addr */
+#define	SIOCGIFBRDADDR	_IOWR('i',35, struct ifreq)	/* get broadcast addr */
 #define	SIOCSIFBRDADDR	_IOW('i',19, struct ifreq)	/* set broadcast addr */
-#define	SIOCGIFCONF	_IOWR('i',20, struct ifconf)	/* get ifnet list */
-#define	SIOCGIFNETMASK	_IOWR('i',21, struct ifreq)	/* get net addr mask */
+#define	OSIOCGIFCONF	_IOWR('i',20, struct ifconf)	/* get ifnet list */
+#define	SIOCGIFCONF	_IOWR('i',36, struct ifconf)	/* get ifnet list */
+#define	OSIOCGIFNETMASK	_IOWR('i',21, struct ifreq)	/* get net addr mask */
+#define	SIOCGIFNETMASK	_IOWR('i',37, struct ifreq)	/* get net addr mask */
 #define	SIOCSIFNETMASK	_IOW('i',22, struct ifreq)	/* set net addr mask */
 #define	SIOCGIFMETRIC	_IOWR('i',23, struct ifreq)	/* get IF metric */
 #define	SIOCSIFMETRIC	_IOW('i',24, struct ifreq)	/* set IF metric */
+#define	SIOCDIFADDR	_IOW('i',38, struct ifreq)	/* delete IF addr */
+#define	SIOCAIFADDR	_IOW('i',39, struct ifaliasreq)	/* add/chg IF alias */
 
 #define	SIOCSARP	_IOW('i', 30, struct arpreq)	/* set arp entry */
-#define	SIOCGARP	_IOWR('i',31, struct arpreq)	/* get arp entry */
+#define	OSIOCGARP	_IOWR('i',31, struct arpreq)	/* get arp entry */
+#define	SIOCGARP	_IOWR('i',38, struct arpreq)	/* get arp entry */
 #define	SIOCDARP	_IOW('i', 32, struct arpreq)	/* delete arp entry */
 
 #endif
