@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_object.c	8.4 (Berkeley) %G%
+ *	@(#)vm_object.c	8.5 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -1222,7 +1222,7 @@ void vm_object_collapse(object)
 			 *	to us.  If it did, clear it. 
 			 */
 			if (backing_object->copy == object) {
-				backing_object->copy = VM_OBJECT_NULL;
+				backing_object->copy = NULL;
 			}
 	
 			/*	Drop the reference count on backing_object.
