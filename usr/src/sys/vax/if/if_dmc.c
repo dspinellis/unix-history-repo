@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_dmc.c	7.4 (Berkeley) %G%
+ *	@(#)if_dmc.c	7.5 (Berkeley) %G%
  */
 
 #include "dmc.h"
@@ -317,7 +317,7 @@ dmcinit(unit)
 	/* receives */
 	ifrw = &sc->sc_ifr[0];
 	for (rp = &sc->sc_rbufs[0]; rp < &sc->sc_rbufs[NRCV]; rp++) {
-		rp->ubinfo = ifrw->ifrw_info & 0x3ffff;
+		rp->ubinfo = UBAI_ADDR(ifrw->ifrw_info);
 		rp->cc = DMCMTU + sizeof (struct dmc_header);
 		rp->flags = DBUF_OURS|DBUF_RCV;
 		ifrw++; 
@@ -325,7 +325,7 @@ dmcinit(unit)
 	/* transmits */
 	ifxp = &sc->sc_ifw[0];
 	for (rp = &sc->sc_xbufs[0]; rp < &sc->sc_xbufs[NXMT]; rp++) {
-		rp->ubinfo = ifxp->ifw_info & 0x3ffff;
+		rp->ubinfo = UBAI_ADDR(ifxp->ifw_info);
 		rp->cc = 0;
 		rp->flags = DBUF_OURS|DBUF_XMIT;
 		ifxp++; 
@@ -341,8 +341,8 @@ dmcinit(unit)
 	}
 
 	/* base in */
-	base = sc->sc_ubinfo & 0x3ffff;
-	dmcload(sc, DMC_BASEI, base, (base>>2) & DMC_XMEM);
+	base = UBAI_ADDR(sc->sc_ubinfo);
+	dmcload(sc, DMC_BASEI, (u_short)base, (base>>2) & DMC_XMEM);
 	/* specify half duplex operation, flags tell if primary */
 	/* or secondary station */
 	if (ui->ui_flags == 0)
@@ -420,7 +420,8 @@ dmcstart(unit)
  */
 dmcload(sc, type, w0, w1)
 	register struct dmc_softc *sc;
-	int type, w0, w1;
+	int type;
+	u_short w0, w1;
 {
 	register struct dmcdevice *addr;
 	register int unit, sps;
@@ -601,6 +602,12 @@ dmcxint(unit)
 			m = if_ubaget(&sc->sc_ifuba, ifrw, len, off, ifp);
 			if (m == 0)
 				goto setup;
+			if (off) {
+				ifp = *(mtod(m, struct ifnet **));
+				m->m_off += 2 * sizeof (u_short);
+				m->m_len -= 2 * sizeof (u_short);
+				*(mtod(m, struct ifnet **)) = ifp;
+			}
 			switch (dh->dmc_type) {
 
 #ifdef INET
@@ -624,7 +631,7 @@ dmcxint(unit)
 
 	setup:
 			/* is this needed? */
-			rp->ubinfo = ifrw->ifrw_info & 0x3ffff;
+			rp->ubinfo = UBAI_ADDR(ifrw->ifrw_info);
 
 			dmcload(sc, DMC_READ, rp->ubinfo, 
 			    ((rp->ubinfo >> 2) & DMC_XMEM) | rp->cc);
@@ -717,7 +724,7 @@ dmcxint(unit)
 				 * procedure error
 				 */
 				sc->sc_flag |= DMC_RESTART;
-				arg = sc->sc_ubinfo & 0x3ffff;
+				arg = UBAI_ADDR(sc->sc_ubinfo);
 				dmcload(sc, DMC_BASEI, arg, (arg>>2)&DMC_XMEM);
 			}
 			break;
@@ -755,13 +762,12 @@ dmcoutput(ifp, m0, dst)
 	switch (dst->sa_family) {
 #ifdef	INET
 	case AF_INET:
-		off = m->m_pkthdr.len - m->m_len;
+		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
 		if (off > 0 && (off & 0x1ff) == 0 &&
-		    (m->m_flags & M_EXT) == 0 &&
-		    m->m_data >= m->m_pktdat + 2 * sizeof (u_short)) {
+		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
 			type = DMC_TRAILER + (off>>9);
-			m->m_data -= 2 * sizeof (u_short);
+			m->m_off -= 2 * sizeof (u_short);
 			m->m_len += 2 * sizeof (u_short);
 			*mtod(m, u_short *) = htons((u_short)DMC_IPTYPE);
 			*(mtod(m, u_short *) + 1) = htons((u_short)m->m_len);
@@ -801,10 +807,19 @@ gottype:
 	 * Add local network header
 	 * (there is space for a uba on a vax to step on)
 	 */
-	M_PREPEND(m, sizeof(struct dmc_header), M_DONTWAIT);
-	if (m == 0) {
-		error = ENOBUFS;
-		goto bad;
+	if (m->m_off > MMAXOFF ||
+	    MMINOFF + sizeof(struct dmc_header) > m->m_off) {
+		m = m_get(M_DONTWAIT, MT_HEADER);
+		if (m == 0) {
+			error = ENOBUFS;
+			goto bad;
+		}
+		m->m_next = m0;
+		m->m_off = MMINOFF;
+		m->m_len = sizeof (struct dmc_header);
+	} else {
+		m->m_off -= sizeof (struct dmc_header);
+		m->m_len += sizeof (struct dmc_header);
 	}
 	dh = mtod(m, struct dmc_header *);
 	dh->dmc_type = htons((u_short)type);
