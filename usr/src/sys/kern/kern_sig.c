@@ -1,4 +1,4 @@
-/*	kern_sig.c	5.20	83/06/09	*/
+/*	kern_sig.c	5.21	83/06/10	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -523,12 +523,13 @@ issig()
 			} while (!procxmt() && p->p_flag&STRC);
 
 			/*
-			 * If the traced bit got turned off,
-			 * then put the signal taken above back into p_sig
-			 * and go back up to the top to rescan signals.
-			 * This ensures that siga0 and u_signal are consistent.
+			 * If the traced bit got turned off or signal
+			 * is being masked, then put the signal taken
+			 * above back into p_sig and go back up to the
+			 * top to rescan signals.  This ensures that
+			 * p_sig* and u_signal are consistent.
 			 */
-			if ((p->p_flag&STRC) == 0) {
+			if ((p->p_flag&STRC) == 0 || (p->p_sigmask & sigmask)) {
 				p->p_sig |= sigmask;
 				continue;
 			}
