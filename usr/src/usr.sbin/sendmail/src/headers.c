@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.65 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.66 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -207,7 +207,15 @@ chompheader(line, def, hdrp, e)
 		if (strcasecmp(fname, h->h_field) == 0 &&
 		    bitset(H_DEFAULT, h->h_flags) &&
 		    !bitset(H_FORCE, h->h_flags))
+		{
 			h->h_value = NULL;
+			if (!cond)
+			{
+				/* copy conditions from default case */
+				bcopy((char *)h->h_mflags, (char *)mopts,
+						sizeof mopts);
+			}
+		}
 	}
 
 	/* create a new node */
