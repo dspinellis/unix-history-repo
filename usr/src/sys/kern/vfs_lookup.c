@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vfs_lookup.c	6.24 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	6.25 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1118,8 +1118,6 @@ dirempty(ip, parentino)
 #define	MINDIRSIZ (sizeof (struct dirtemplate) / 2)
 
 	for (off = 0; off < ip->i_size; off += dp->d_reclen) {
-		if (dp->d_reclen <= 0)
-			return (0);
 		error = rdwri(UIO_READ, ip, (caddr_t)dp, MINDIRSIZ,
 		    off, 1, &count);
 		/*
@@ -1127,6 +1125,9 @@ dirempty(ip, parentino)
 		 * be 0 unless we're at end of file.
 		 */
 		if (error || count != 0)
+			return (0);
+		/* avoid infinite loops */
+		if (dp->d_reclen <= 0)
 			return (0);
 		/* skip empty entries */
 		if (dp->d_ino == 0)
