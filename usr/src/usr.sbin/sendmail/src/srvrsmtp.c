@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] =	"@(#)srvrsmtp.c	3.5	%G%";
+static char	SccsId[] =	"@(#)srvrsmtp.c	3.6	%G%";
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -130,7 +130,7 @@ smtp()
 				Errors++;
 				break;
 			}
-			sendto(p, 1, NULL);
+			sendto(p, 1, (ADDRESS *) NULL);
 			if (Errors == 0)
 			{
 				message("250", "Recipient ok");
@@ -168,7 +168,7 @@ smtp()
 			finis();
 
 		  case CMDVRFY:		/* vrfy -- verify address */
-			sendto(p, 1, NULL);
+			sendto(p, 1, (ADDRESS *) NULL);
 			if (Errors == 0)
 				message("250", "user ok");
 			break;
@@ -325,5 +325,5 @@ help(topic)
 		message("504", "HELP topic unknown");
 	else
 		message("214", "End of HELP info");
-	fclose(hf);
+	(void) fclose(hf);
 }

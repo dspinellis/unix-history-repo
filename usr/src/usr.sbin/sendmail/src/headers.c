@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)headers.c	3.9	%G%";
+static char	SccsId[] = "@(#)headers.c	3.10	%G%";
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -31,15 +31,35 @@ chompheader(line, def)
 	char *fname;
 	char *fvalue;
 	struct hdrinfo *hi;
+	u_long mopts;
+	extern u_long mfencode();
 
 	/* strip off trailing newline */
 	p = rindex(line, '\n');
 	if (p != NULL)
 		*p = '\0';
 
+	/* strip off options */
+	mopts = 0;
+	p = line;
+	if (*p == '?')
+	{
+		/* have some */
+		register char *q = index(p + 1, *p);
+		
+		if (q != NULL)
+		{
+			*q++ = '\0';
+			mopts = mfencode(p + 1);
+			p = q;
+		}
+		else
+			syserr("chompheader: syntax error, line \"%s\"", line);
+	}
+
 	/* find canonical name */
-	fname = line;
-	p = index(line, ':');
+	fname = p;
+	p = index(p, ':');
 	fvalue = &p[1];
 	while (isspace(*--p))
 		continue;
@@ -85,17 +105,17 @@ chompheader(line, def)
 		h->h_value = NULL;
 		h->h_link = NULL;
 		h->h_flags = hi->hi_flags;
-		h->h_mflags = hi->hi_mflags;
+		h->h_mflags = mopts | hi->hi_mflags;
 	}
 	if (def)
 		h->h_flags |= H_DEFAULT;
-	else
+	else if (mopts == 0)
 		h->h_flags &= ~H_CHECK;
 	if (h->h_value != NULL)
 		free(h->h_value);
 	h->h_value = newstr(fvalue);
 	if (!def && GrabTo && bitset(H_ADDR, h->h_flags))
-		sendto(h->h_value, 0, NULL);
+		sendto(h->h_value, 0, (ADDRESS *) NULL);
 
 	return (h->h_flags);
 }

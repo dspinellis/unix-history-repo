@@ -1,9 +1,8 @@
 # include <pwd.h>
-# include <sys/types.h>
-# include <sys/stat.h>
 # include "sendmail.h"
+# include <sys/stat.h>
 
-static char SccsId[] = "@(#)recipient.c	3.27	%G%";
+static char SccsId[] = "@(#)recipient.c	3.28	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -124,6 +123,7 @@ recipient(a)
 	ADDRESS **pq;
 	register struct mailer *m;
 	extern ADDRESS *getctladdr();
+	extern bool safefile();
 
 	To = a->q_paddr;
 	m = a->q_mailer;
@@ -144,16 +144,19 @@ recipient(a)
 	}
 
 	/*
-	**  Do sickly crude mapping for program mailing, etc.
+	**  Finish setting up address structure.
 	*/
 
+	a->q_timeout = TimeOut;
+
+	/* do sickly crude mapping for program mailing, etc. */
 	if (a->q_mailer == LocalMailer)
 	{
 		if (a->q_user[0] == '|')
 		{
 			a->q_mailer = m = ProgMailer;
 			a->q_user++;
-			if (a->q_alias == NULL && Debug == 0)
+			if (a->q_alias == NULL && Debug == 0 && !QueueRun)
 			{
 				usrerr("Cannot mail directly to programs");
 				a->q_flags |= QDONTSEND;
@@ -204,7 +207,7 @@ recipient(a)
 		if (strncmp(a->q_user, ":include:", 9) == 0)
 		{
 			a->q_flags |= QDONTSEND;
-			if (a->q_alias == NULL && Debug == 0)
+			if (a->q_alias == NULL && Debug == 0 && !QueueRun)
 				usrerr("Cannot mail directly to :include:s");
 			else
 			{
@@ -245,7 +248,7 @@ recipient(a)
 		if ((p = rindex(buf, '/')) != NULL)
 		{
 			/* check if writable or creatable */
-			if (a->q_alias == NULL && Debug == 0)
+			if (a->q_alias == NULL && Debug == 0 && !QueueRun)
 			{
 				usrerr("Cannot mail directly to files");
 				a->q_flags |= QDONTSEND;
@@ -492,7 +495,7 @@ sendtoargv(argv)
 				argv += 2;
 			}
 		}
-		sendto(p, 0, NULL);
+		sendto(p, 0, (ADDRESS *) NULL);
 	}
 }
 /*
