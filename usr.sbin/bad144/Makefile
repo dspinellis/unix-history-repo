@@ -2,6 +2,7 @@
 
 PROG=	bad144
 MAN8=	bad144.8
-MANSUBDIR=/i386
+MLINKS= bad144.8 ../bad144.8
+MANSUBDIR=/${MACHINE}
 
 .include <bsd.prog.mk>
