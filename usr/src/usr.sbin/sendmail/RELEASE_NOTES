@@ -884,6 +884,8 @@ summary of the changes in that release.
 			non-DEC resolver.  Suggested by Allan Johannesen.
 		UnixWare 2.0 fixes from Petr Lampa of the Technical
 			University of Brno (Czech Republic).
+		KSR OS 1.2.2 support from Todd Miller of the University
+			of Colorado.
 	MAKEMAP: allow -d flag to allow insertion of duplicate aliases
 		in type ``btree'' maps.  The semantics of this are undefined
 		for regular maps, but it can be useful for the user database.
@@ -1049,6 +1051,7 @@ summary of the changes in that release.
 		src/Makefiles/Makefile.IRIX.5.x
 		src/Makefiles/Makefile.IRIX64
 		src/Makefiles/Makefile.ISC
+		src/Makefiles/Makefile.KSR
 		src/Makefiles/Makefile.NEWS-OS.4.x
 		src/Makefiles/Makefile.NEWS-OS.6.x
 		src/Makefiles/Makefile.NEXTSTEP
