@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)glob.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -61,6 +61,7 @@ static Char	**libglob __P((Char **));
 static Char	**globexpand __P((Char **));
 static int	globbrace __P((Char *, Char *, Char ***));
 static void	expbrace __P((Char ***, Char ***, int));
+static int	pmatch __P((Char *, Char *));
 static void	pword __P((void));
 static void	psave __P((int));
 static void	backeval __P((Char *, bool));
@@ -804,7 +805,7 @@ Gmatch(string, pattern)
     return(gres == gpol);
 } 
 
-int
+static int
 pmatch(string, pattern)
     register Char *string, *pattern;
 {
