@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)connect.2	6.4 (Berkeley) %G%
+.\"	@(#)connect.2	6.5 (Berkeley) %G%
 .\"
 .TH CONNECT 2 ""
 .UC 5
@@ -84,15 +84,15 @@ The address is already in use.
 The \fIname\fP parameter specifies an area outside
 the process address space.
 .TP 20
-[EWOULDBLOCK]
+[EINPROGRESS]
 The socket is non-blocking and the
 and the connection cannot
 be completed immediately.
 It is possible to
 .IR select (2)
-the socket while it is connecting by selecting it for writing.
+for completion by selecting the socket for writing.
 .TP 20
-[EINPROGRESS]
+[EALREADY]
 The socket is non-blocking
 and a previous connection attempt
 has not yet completed.
