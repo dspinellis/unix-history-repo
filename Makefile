@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.44 1994/03/06 08:40:31 ache Exp $
+#	$Id: Makefile,v 1.45 1994/04/13 12:38:01 jkh Exp $
 #
 
 SUBDIR=
@@ -167,10 +167,10 @@ bootstrapld:	directories cleandist mk includes
 	cd ${.CURDIR}/gnu/usr.bin/ld/rtld;	make depend all install ${CLEANDIR} obj
 
 # You MUST run this the first time you get the new sources to boot strap
-# the *pwd.db databases onto you system.  This target should only
-# need to be run once on a system.
+# the *pwd.db databases onto your system.  This target should only
+# need to be run once on a system when first going to -current.
 
-bootstrappwd:
+bootstrappwd:	directories
 	cd ${.CURDIR}/lib/libc; make all
 	cd ${.CURDIR}/usr.sbin/pwd_mkdb; make all install ${CLEANDIR}
 	cp /etc/master.passwd /etc/mp.t; pwd_mkdb /etc/mp.t
@@ -180,7 +180,7 @@ bootstrappwd:
 	cd ${.CURDIR}/bin; make all install ${CLEANDIR}
 	cd ${.CURDIR}/sbin; make all install ${CLEANDIR}
 	@echo "--------------------------------------------------------------"
-	@echo " Do reboot now because all daemons needs restart"
+	@echo " Do a reboot now because all daemons need restarting"
 	@echo "--------------------------------------------------------------"
 
 libraries:
