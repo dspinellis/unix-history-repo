@@ -1,4 +1,6 @@
-static	char *sccsid = "@(#)more.c	4.13 (Berkeley) 83/07/01";
+#ifndef lint
+static	char *sccsid = "@(#)more.c	4.14 (Berkeley) 83/07/02";
+#endif
 
 /*
 ** more.c - General purpose tty output filter and file perusal program
@@ -17,12 +19,9 @@ static	char *sccsid = "@(#)more.c	4.13 (Berkeley) 83/07/01";
 #include <setjmp.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <local/uparm.h>
 
-/* Help file will eventually go in libpath(more.help) on all systems */
-
-#define HELPFILE	libpath(more.help)
-#define VI		binpath(vi)
+#define HELPFILE	"/usr/lib/more.help"
+#define VI		"/usr/ucb/vi"
 
 #define Fopen(s,m)	(Currline = 0,file_pos=0,fopen(s,m))
 #define Ftell(f)	file_pos
