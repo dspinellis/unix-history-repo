@@ -9,7 +9,7 @@
  */
 
 #if !defined(lint) && !defined(SCCSID)
-static char sccsid[] = "@(#)tty.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)tty.c	5.5 (Berkeley) %G%";
 #endif /* not lint && not SCCSID */
 
 /* 
@@ -424,7 +424,6 @@ private void    tty__getchar	__P((struct termios *, unsigned char *));
 private void    tty__setchar	__P((struct termios *, unsigned char *));
 private speed_t tty__getspeed	__P((struct termios *));
 private int     tty_setup	__P((EditLine *));
-private void	tty_bind_char	__P((EditLine *));
 
 #define t_qu t_ts
 
@@ -717,13 +716,14 @@ tty__setchar(td, s)
 /* tty_bind_char():
  *	Rebind the editline functions
  */
-private void
-tty_bind_char(el)
+protected void
+tty_bind_char(el, force)
     EditLine *el;
+    int force;
 {
     unsigned char *t_n = el->el_tty.t_c[ED_IO];
     unsigned char *t_o = el->el_tty.t_ed.c_cc;
-    unsigned char new[2], old[2];
+    char new[2], old[2];
     ttymap_t *tp;
     el_action_t  *dmap, *dalt, *map, *alt;
     new[1] = old[1] = '\0';
@@ -743,18 +743,18 @@ tty_bind_char(el)
     for (tp = tty_map; tp->nch != -1; tp++) {
 	new[0] = t_n[tp->nch];
 	old[0] = t_o[tp->och];
-	if (new[0] == old[0])
+	if (new[0] == old[0] && !force)
 	    continue;
 	/* Put the old default binding back, and set the new binding */
-	key_clear(el, map, (char *)old);
+	key_clear(el, map, old);
 	map[old[0]] = dmap[old[0]];
-	key_clear(el, map, (char *)new);
+	key_clear(el, map, new);
 	/* MAP_VI == 1, MAP_EMACS == 0... */
 	map[new[0]] = tp->bind[el->el_map.type];
 	if (dalt) {
-	    key_clear(el, alt, (char *)old);
+	    key_clear(el, alt, old);
 	    alt[old[0]] = dalt[old[0]];
-	    key_clear(el, alt, (char *)new);
+	    key_clear(el, alt, new);
 	    alt[new[0]] = tp->bind[el->el_map.type+1];
 	}
     }
@@ -866,7 +866,7 @@ tty_rawmode(el)
 		    if (el->el_tty.t_t[ED_IO][M_CHAR].t_clrmask & C_SH(i))
 			el->el_tty.t_c[ED_IO][i] = el->el_tty.t_vdisable;
 		}
-		tty_bind_char(el);
+		tty_bind_char(el, 0);
 		tty__setchar(&el->el_tty.t_ed, el->el_tty.t_c[ED_IO]);
 
 		for (i = 0; i < C_NCC; i++) {

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty.h	5.4 (Berkeley) %G%
+ *	@(#)tty.h	5.5 (Berkeley) %G%
  */
 
 /*
@@ -433,6 +433,7 @@ protected int	tty_rawmode	__P((EditLine *));
 protected int	tty_cookedmode	__P((EditLine *));
 protected int	tty_quotemode	__P((EditLine *));
 protected int	tty_noquotemode	__P((EditLine *));
+protected void	tty_bind_char	__P((EditLine *, int));
 
 typedef struct {
     ttyperm_t t_t;
