@@ -14,8 +14,11 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dirent.h	5.2 (Berkeley) %G%
+ *	@(#)dirent.h	5.3 (Berkeley) %G%
  */
+
+#ifndef _DIRENT_
+#define _DIRENT_
 
 /*
  * A directory entry has a struct direct at the front of it,
@@ -28,11 +31,12 @@
 #define	MAXNAMLEN	255
 
 struct	dirent {
-	u_long	d_ino;			/* inode number of entry */
+	u_long	d_fileno;		/* file number of entry */
 	u_short	d_reclen;		/* length of this record */
 	u_short	d_namlen;		/* length of string in d_name */
 	char	d_name[MAXNAMLEN + 1];	/* name must be no longer than this */
 };
+#define d_ino d_fileno		/* backward compatibility */
 
 /*
  * Definitions for library routines operating on directories.
@@ -57,3 +61,4 @@ extern	long telldir();
 extern	void seekdir();
 #define rewinddir(dirp)	seekdir((dirp), (long)0)
 extern	void closedir();
+#endif /* _DIRENT_ */
