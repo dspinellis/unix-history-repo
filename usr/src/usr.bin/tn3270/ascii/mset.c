@@ -57,6 +57,17 @@ static char array[5000];		/* lot's of room */
 static int toshell = 0;			/* export to shell */
 static int numbchars = 0;		/* number of chars in envir. var */
 
+static int
+MyStrcmp(str1, str2)
+char *str1, *str2;
+{
+	if (strncmp(str1, "PFK", 3) == 0 && strncmp(str2, "PFK", 3) == 0
+	    && strlen(str1) != strlen(str2)) {
+	   return(strlen(str1) - strlen(str2));
+	}
+	return(strcmp(str1, str2));
+}
+
 static void
 forwRegister(regptr, sptr)
 struct regstate *regptr, *sptr;
@@ -94,7 +105,7 @@ register struct regstate *regptr;
 	regptr->forward = pivot++;
 	return(++regptr);
     }
-    if ((check = strcmp(regptr->result, pivot->result)) < 0) {
+    if ((check = MyStrcmp(regptr->result, pivot->result)) < 0) {
 	while (check < 0) {
 	    if (sptr->backward == regstates) {
 		backRegister(regptr, sptr);
@@ -102,7 +113,7 @@ register struct regstate *regptr;
 		return(++regptr);
 	     }
 	     sptr = sptr->backward;
-	     check = strcmp(regptr->result, sptr->result);
+	     check = MyStrcmp(regptr->result, sptr->result);
 	}
 	forwRegister(regptr, sptr);
 	pivot = pivot->backward;
@@ -115,10 +126,12 @@ register struct regstate *regptr;
 	    return(++regptr);
 	}
 	sptr = sptr->forward;
-	check = strcmp(regptr->result, sptr->result);
+	check = MyStrcmp(regptr->result, sptr->result);
     }
     backRegister(regptr, sptr);
-    pivot = pivot->forward;
+    if (pivot->forward->result) {
+	pivot = pivot->forward;
+    }
     return(++regptr);
 }
 
