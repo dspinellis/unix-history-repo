@@ -1,4 +1,4 @@
-/*	swapgeneric.c	4.12	81/12/03	*/
+/*	swapgeneric.c	4.2	82/05/27	*/
 
 #include "mba.h"
 
@@ -30,6 +30,7 @@ long	dumplo;
 extern	struct mba_driver hpdriver;
 extern	struct uba_driver scdriver;
 extern	struct uba_driver hkdriver;
+extern	struct uba_driver idcdriver;
 extern	struct uba_driver udadriver;
 
 struct	genericconf {
@@ -42,6 +43,8 @@ struct	genericconf {
    (caddr_t)&hpdriver,	"hp", makedev(0, 0), 33440, 33440 - 10*2048,
    (caddr_t)&scdriver,	"up", makedev(2, 0), 33440, 33440 - 10*2048,
    (caddr_t)&udadriver,	"ra", makedev(9, 0), 33440, 33440 - 10*2048,
+   (caddr_t)&idcdriver, "rb", makedev(11, 0),33440, 33440 - 10*2048,
+   (caddr_t)&idcdriver, "rl", makedev(11, 0), 4480, 0,
    (caddr_t)&hkdriver,	"hk", makedev(3, 0), 10032, 10032 - 2*(2048+1024),
    0,
 };
@@ -70,7 +73,7 @@ gotit:
 		}
 		printf("bad/missing unit number\n");
 bad:
-		printf("use hp%%d, up%%d, ra%%d or hk%%d\n");
+		printf("use hp%%d, up%%d, ra%%d, rb%%d, rl%%d or hk%%d\n");
 		goto retry;
 	}
 	unit = 0;
