@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lfs_inode.c	7.4 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -19,6 +19,7 @@
 #include "quota.h"
 #endif
 #include "kernel.h"
+#include "malloc.h"
 
 #define	INOHSZ	512
 #if	((INOHSZ&(INOHSZ-1)) == 0)
@@ -571,10 +572,10 @@ indirtrunc(ip, bn, lastbn, level)
 	int level;
 {
 	register int i;
-	struct buf *bp, *copy;
-	register daddr_t *bap;
+	struct buf *bp;
 	register struct fs *fs = ip->i_fs;
-	daddr_t nb, last;
+	register daddr_t *bap;
+	daddr_t *copy, nb, last;
 	long factor;
 	int blocksreleased = 0, nblocks;
 
@@ -595,7 +596,6 @@ indirtrunc(ip, bn, lastbn, level)
 	 * entries corresponding to blocks to be free'd,
 	 * and update on disk copy first.
 	 */
-	copy = geteblk((int)fs->fs_bsize);
 #ifdef SECSIZE
 	bp = bread(ip->i_dev, fsbtodb(fs, bn), (int)fs->fs_bsize,
 	    fs->fs_dbsize);
@@ -603,16 +603,16 @@ indirtrunc(ip, bn, lastbn, level)
 	bp = bread(ip->i_dev, fsbtodb(fs, bn), (int)fs->fs_bsize);
 #endif SECSIZE
 	if (bp->b_flags&B_ERROR) {
-		brelse(copy);
 		brelse(bp);
 		return (0);
 	}
 	bap = bp->b_un.b_daddr;
-	bcopy((caddr_t)bap, (caddr_t)copy->b_un.b_daddr, (u_int)fs->fs_bsize);
+	MALLOC(copy, daddr_t *, fs->fs_bsize, M_TEMP, M_WAITOK);
+	bcopy((caddr_t)bap, (caddr_t)copy, (u_int)fs->fs_bsize);
 	bzero((caddr_t)&bap[last + 1],
 	  (u_int)(NINDIR(fs) - (last + 1)) * sizeof (daddr_t));
 	bwrite(bp);
-	bp = copy, bap = bp->b_un.b_daddr;
+	bap = copy;
 
 	/*
 	 * Recursively free totally unused blocks.
@@ -637,7 +637,7 @@ indirtrunc(ip, bn, lastbn, level)
 		if (nb != 0)
 			blocksreleased += indirtrunc(ip, nb, last, level - 1);
 	}
-	brelse(bp);
+	FREE(copy, M_TEMP);
 	return (blocksreleased);
 }
 
