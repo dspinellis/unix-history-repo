@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.2 85/06/15";
+static char sccsid[] = "@(#)route.c	5.3 85/08/16";
 #endif
 
 #include <sys/types.h>
@@ -250,7 +250,7 @@ struct sockaddr_ns *sns;
 	register char *p = mybuf;
 	short port = dna->x_port;
 
-	sprintf(p,"%ld:", net);
+	sprintf(p,"%lx:", net);
 
 	while(*p)p++; /* find end of string */
 
@@ -263,7 +263,7 @@ struct sockaddr_ns *sns;
 			    dna->x_host.c_host[4], dna->x_host.c_host[5]);
 	if (port) {
 	while(*p)p++; /* find end of string */
-		printf(":%d",port);
+		sprintf(p,":%x",ntohs(port));
 	}
 	return(mybuf);
 }
