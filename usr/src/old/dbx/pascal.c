@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)pascal.c 1.2 %G%";
+static char sccsid[] = "@(#)pascal.c 1.2 12/15/82";
+
+static char rcsid[] = "$Header: pascal.c,v 1.3 84/03/27 10:23:04 linton Exp $";
 
 /*
  * Pascal-dependent symbol routines.
@@ -20,18 +22,24 @@ static char sccsid[] = "@(#)pascal.c 1.2 %G%";
 #ifndef public
 #endif
 
+private Language pasc;
+
 /*
  * Initialize Pascal information.
  */
 
 public pascal_init()
 {
-    Language lang;
-
-    lang = language_define("pascal", ".p");
-    language_setop(lang, L_PRINTDECL, pascal_printdecl);
-    language_setop(lang, L_PRINTVAL, pascal_printval);
-    language_setop(lang, L_TYPEMATCH, pascal_typematch);
+    pasc = language_define("pascal", ".p");
+    language_setop(pasc, L_PRINTDECL, pascal_printdecl);
+    language_setop(pasc, L_PRINTVAL, pascal_printval);
+    language_setop(pasc, L_TYPEMATCH, pascal_typematch);
+    language_setop(pasc, L_BUILDAREF, pascal_buildaref);
+    language_setop(pasc, L_EVALAREF, pascal_evalaref);
+    language_setop(pasc, L_MODINIT, pascal_modinit);
+    language_setop(pasc, L_HASMODULES, pascal_hasmodules);
+    language_setop(pasc, L_PASSADDR, pascal_passaddr);
+    initTypes();
 }
 
 /*
@@ -212,7 +220,7 @@ Symbol t;
 
 	    r0 = t->symvalue.rangev.lower;
 	    r1 = t->symvalue.rangev.upper;
-	    if (t == t_char) {
+	    if (t == t_char or istypename(t,"char")) {
 		if (r0 < 0x20 or r0 > 0x7e) {
 		    printf("%ld..", r0);
 		} else {
@@ -248,7 +256,7 @@ Symbol t;
 
 	case SCAL:
 	    printf("(");
-	    t = t->type->chain;
+	    t = t->chain;
 	    if (t != nil) {
 		printf("%s", symname(t));
 		t = t->chain;
@@ -323,17 +331,20 @@ Symbol s;
     int len;
     double r;
 
-    if (s->class == REF) {
-	s = s->type;
-    }
     switch (s->class) {
+	case CONST:
 	case TYPE:
+	case VAR:
+	case REF:
+	case FVAR:
+	case TAG:
+	case FIELD:
 	    pascal_printval(s->type);
 	    break;
 
 	case ARRAY:
 	    t = rtype(s->type);
-	    if (t==t_char or (t->class==RANGE and t->type==t_char)) {
+	    if (t->class==RANGE and istypename(t->type,"char")) {
 		len = size(s);
 		sp -= len;
 		printf("'%.*s'", len, sp);
@@ -355,7 +366,7 @@ Symbol s;
 	case RANGE:
 	    if (s == t_boolean) {
 		printf(((Boolean) popsmall(s)) == true ? "true" : "false");
-	    } else if (s == t_char) {
+	    } else if (s == t_char or istypename(s,"char")) {
 		printf("'%c'", pop(char));
 	    } else if (s->symvalue.rangev.upper == 0 and
 			s->symvalue.rangev.lower > 0) {
@@ -392,9 +403,6 @@ Symbol s;
 	    break;
 	}
 
-	case FIELD:
-	    error("missing record specification");
-	    break;
 
 	case SCAL: {
 	    int scalar;
@@ -437,4 +445,132 @@ Symbol s;
 	    error("don't know how to print a %s", classname(s));
 	    /* NOTREACHED */
     }
+}
+
+/*
+ * Construct a node for subscripting.
+ */
+
+public Node pascal_buildaref (a, slist)
+Node a, slist;
+{
+    register Symbol t;
+    register Node p;
+    Symbol etype, atype, eltype;
+    Node esub, r;
+
+    r = a;
+    t = rtype(a->nodetype);
+    eltype = t->type;
+    if (t->class != ARRAY) {
+	beginerrmsg();
+	prtree(stderr, a);
+	fprintf(stderr, " is not an array");
+	enderrmsg();
+    } else {
+	p = slist;
+	t = t->chain;
+	for (; p != nil and t != nil; p = p->value.arg[1], t = t->chain) {
+	    esub = p->value.arg[0];
+	    etype = rtype(esub->nodetype);
+	    atype = rtype(t);
+	    if (not compatible(atype, etype)) {
+		beginerrmsg();
+		fprintf(stderr, "subscript ");
+		prtree(stderr, esub);
+		fprintf(stderr, " is the wrong type");
+		enderrmsg();
+	    }
+	    r = build(O_INDEX, r, esub);
+	    r->nodetype = eltype;
+	}
+	if (p != nil or t != nil) {
+	    beginerrmsg();
+	    if (p != nil) {
+		fprintf(stderr, "too many subscripts for ");
+	    } else {
+		fprintf(stderr, "not enough subscripts for ");
+	    }
+	    prtree(stderr, a);
+	    enderrmsg();
+	}
+    }
+    return r;
+}
+
+/*
+ * Evaluate a subscript index.
+ */
+
+public int pascal_evalaref (s, i)
+Symbol s;
+long i;
+{
+    long lb, ub;
+
+    s = rtype(rtype(s)->chain);
+    lb = s->symvalue.rangev.lower;
+    ub = s->symvalue.rangev.upper;
+    if (i < lb or i > ub) {
+	error("subscript %d out of range [%d..%d]", i, lb, ub);
+    }
+    return (i - lb);
+}
+
+/*
+ * Initial Pascal type information.
+ */
+
+#define NTYPES 4
+
+private Symbol inittype[NTYPES];
+private integer count;
+
+private addType (s, lower, upper)
+String s;
+long lower, upper;
+{
+    register Symbol t;
+
+    if (count > NTYPES) {
+	panic("too many initial types");
+    }
+    t = maketype(s, lower, upper);
+    t->language = pasc;
+    inittype[count] = t;
+    ++count;
+}
+
+private initTypes ()
+{
+    count = 1;
+    addType("integer", 0x80000000L, 0x7fffffffL);
+    addType("char", 0L, 255L);
+    addType("boolean", 0L, 1L);
+    addType("real", 4L, 0L);
+}
+
+/*
+ * Initialize typetable.
+ */
+
+public pascal_modinit (typetable)
+Symbol typetable[];
+{
+    register integer i;
+
+    for (i = 1; i < NTYPES; i++) {
+	typetable[i] = inittype[i];
+    }
+}
+
+public boolean pascal_hasmodules ()
+{
+    return false;
+}
+
+public boolean pascal_passaddr (param, exprtype)
+Symbol param, exprtype;
+{
+    return false;
 }

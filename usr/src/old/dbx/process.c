@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)process.c 1.12 %G%";
+static char sccsid[] = "@(#)process.c 1.12 8/19/83";
+
+static char rcsid[] = "$Header: process.c,v 1.3 84/03/27 10:23:24 linton Exp $";
 
 /*
  * Process management.
@@ -24,6 +26,8 @@ static char sccsid[] = "@(#)process.c 1.12 %G%";
 #include <signal.h>
 #include <errno.h>
 #include <sys/param.h>
+#include <sys/dir.h>
+#include <sys/user.h>
 #include <machine/reg.h>
 #include <sys/stat.h>
 
@@ -44,8 +48,9 @@ Process process;
 #define FINISHED 0
 
 /*
- * Cache-ing of instruction segment is done to reduce the number
- * of system calls.
+ * A cache of the instruction segment is kept to reduce the number
+ * of system calls.  Might be better just to read the entire
+ * code space into memory.
  */
 
 #define CSIZE 1003       /* size of instruction cache */
@@ -70,6 +75,7 @@ struct Process {
     long sigset;		/* bit array of traced signals */
     CacheWord word[CSIZE];	/* text segment cache */
     Ttyinfo ttyinfo;		/* process' terminal characteristics */
+    Address sigstatus;		/* process' handler for current signal */
 };
 
 /*
@@ -176,7 +182,7 @@ String infile, outfile;
     pstart(process, argv, infile, outfile);
     if (process->status == STOPPED) {
 	pc = 0;
-	curfunc = program;
+	setcurfunc(program);
 	if (objsize != 0) {
 	    cond = build(O_EQ, build(O_SYM, pcsym), build(O_LCON, lastaddr()));
 	    event_once(cond, buildcmdlist(build(O_ENDX)));
@@ -307,8 +313,10 @@ private intr();
 #define fails       == false
 
 public cont(signo)
-int signo;
+integer signo;
 {
+    integer s;
+
     dbintr = signal(SIGINT, intr);
     if (just_started) {
 	just_started = false;
@@ -319,13 +327,15 @@ int signo;
 	isstopped = false;
 	stepover();
     }
+    s = signo;
     for (;;) {
 	if (single_stepping) {
 	    printnews();
 	} else {
 	    setallbps();
-	    resume(signo);
+	    resume(s);
 	    unsetallbps();
+	    s = DEFSIG;
 	    if (bpact() fails) {
 		printstatus();
 	    }
@@ -365,17 +375,8 @@ int signo;
     register Process p;
 
     p = process;
-    if (traceexec) {
-	printf("execution resumes at pc 0x%x\n", process->reg[PROGCTR]);
-	fflush(stdout);
-    }
     pcont(p, signo);
     pc = process->reg[PROGCTR];
-    if (traceexec) {
-	printf("execution stops at pc 0x%x on sig %d\n",
-	    process->reg[PROGCTR], p->signo);
-	fflush(stdout);
-    }
     if (p->status != STOPPED) {
 	if (p->signo != 0) {
 	    error("program terminated by signal %d", p->signo);
@@ -410,12 +411,58 @@ public stepc()
 
 public next()
 {
+    Address oldfrp, newfrp;
+
     if (not isstopped) {
 	error("can't continue execution");
     }
     isstopped = false;
-    dostep(true);
+    oldfrp = reg(FRP);
+    do {
+	dostep(true);
+	pc = reg(PROGCTR);
+	newfrp = reg(FRP);
+    } while (newfrp < oldfrp and newfrp != 0);
     isstopped = true;
+}
+
+/*
+ * Continue execution until the current function returns, or,
+ * if the given argument is non-nil, until execution returns to
+ * somewhere within the given function.
+ */
+
+public rtnfunc (f)
+Symbol f;
+{
+    Address addr;
+    Symbol t;
+
+    if (not isstopped) {
+	error("can't continue execution");
+    } else if (f != nil and not isactive(f)) {
+	error("%s is not active", symname(f));
+    } else {
+	addr = return_addr();
+	if (addr == nil) {
+	    error("no place to return to");
+	} else {
+	    isstopped = false;
+	    contto(addr);
+	    if (f != nil) {
+		for (;;) {
+		    t = whatblock(pc);
+		    addr = return_addr();
+		if (t == f or addr == nil) break;
+		    contto(addr);
+		}
+	    }
+	    if (bpact() fails) {
+		isstopped = true;
+		printstatus();
+	    }
+	}
+    }
 }
 
 /*
@@ -427,10 +474,13 @@ public next()
  * source line.
  */
 
-private stepover()
+public stepover()
 {
     Boolean b;
 
+    if (traceexec) {
+	printf("!! stepping over 0x%x\n", process->reg[PROGCTR]);
+    }
     if (single_stepping) {
 	dostep(false);
     } else {
@@ -438,6 +488,9 @@ private stepover()
 	inst_tracing = true;
 	dostep(false);
 	inst_tracing = b;
+    }
+    if (traceexec) {
+	printf("!! stepped over to 0x%x\n", process->reg[PROGCTR]);
     }
 }
 
@@ -450,11 +503,41 @@ private stepover()
 public stepto(addr)
 Address addr;
 {
-    setbp(addr);
-    resume(DEFSIG);
-    unsetbp(addr);
-    if (not isbperr()) {
-	printstatus();
+    xto(addr, false);
+}
+
+private contto (addr)
+Address addr;
+{
+    xto(addr, true);
+}
+
+private xto (addr, catchbps)
+Address addr;
+boolean catchbps;
+{
+    Address curpc;
+
+    if (catchbps) {
+	stepover();
+    }
+    curpc = process->reg[PROGCTR];
+    if (addr != curpc) {
+	if (traceexec) {
+	    printf("!! stepping from 0x%x to 0x%x\n", curpc, addr);
+	}
+	if (catchbps) {
+	    setallbps();
+	}
+	setbp(addr);
+	resume(DEFSIG);
+	unsetbp(addr);
+	if (catchbps) {
+	    unsetallbps();
+	}
+	if (not isbperr()) {
+	    printstatus();
+	}
     }
 }
 
@@ -470,7 +553,7 @@ public printstatus()
     if (process->status == FINISHED) {
 	exit(0);
     } else {
-	curfunc = whatblock(pc);
+	setcurfunc(whatblock(pc));
 	getsrcpos();
 	if (process->signo == SIGINT) {
 	    isstopped = true;
@@ -486,7 +569,6 @@ public printstatus()
 	    }
 	    erecover();
 	} else {
-	    fixbps();
 	    fixintr();
 	    isstopped = true;
 	    printerror();
@@ -717,12 +799,9 @@ String infile;
 String outfile;
 {
     int status;
-    Fileid in, out;
 
-    if (p->pid != 0) {			/* child already running? */
-	ptrace(PKILL, p->pid, 0, 0);	/* ... kill it! */
-	pwait(p->pid, &status);		/* wait for it to exit */
-	unptraced(p->pid);
+    if (p->pid != 0) {
+	pterm(p);
     }
     psigtrace(p, SIGTRAP, true);
     p->pid = vfork();
@@ -732,24 +811,10 @@ String outfile;
     if (ischild(p->pid)) {
 	traceme();
 	if (infile != nil) {
-	    in = open(infile, 0);
-	    if (in == -1) {
-		write(2, "can't read ", 11);
-		write(2, infile, strlen(infile));
-		write(2, "\n", 1);
-		_exit(1);
-	    }
-	    fswap(0, in);
+	    infrom(infile);
 	}
 	if (outfile != nil) {
-	    out = creat(outfile, 0666);
-	    if (out == -1) {
-		write(2, "can't write ", 12);
-		write(2, outfile, strlen(outfile));
-		write(2, "\n", 1);
-		_exit(1);
-	    }
-	    fswap(1, out);
+	    outto(outfile);
 	}
 	execv(argv[0], argv);
 	write(2, "can't exec ", 11);
@@ -766,6 +831,22 @@ String outfile;
 }
 
 /*
+ * Terminate a ptrace'd process.
+ */
+
+public pterm (p)
+Process p;
+{
+    integer status;
+
+    if (p != nil and p->pid != 0) {
+	ptrace(PKILL, p->pid, 0, 0);
+	pwait(p->pid, &status);
+	unptraced(p->pid);
+    }
+}
+
+/*
  * Continue a stopped process.  The first argument points to a Process
  * structure.  Before the process is restarted it's user area is modified
  * according to the values in the structure.  When this routine finishes,
@@ -779,13 +860,19 @@ private pcont(p, signo)
 Process p;
 int signo;
 {
-    int status;
+    int s, status;
 
     if (p->pid == 0) {
 	error("program not active");
     }
+    s = signo;
     do {
-	setinfo(p, signo);
+	setinfo(p, s);
+	if (traceexec) {
+	    printf("!! pcont from 0x%x with signal %d (%d)\n",
+		p->reg[PROGCTR], s, p->signo);
+	    fflush(stdout);
+	}
 	sigs_off();
 	if (ptrace(CONT, p->pid, p->reg[PROGCTR], p->signo) < 0) {
 	    panic("error %d trying to continue process", errno);
@@ -793,24 +880,48 @@ int signo;
 	pwait(p->pid, &status);
 	sigs_on();
 	getinfo(p, status);
+	if (traceexec and not istraced(p)) {
+	    printf("!! ignored signal %d at 0x%x\n", p->signo, p->reg[PROGCTR]);
+	    fflush(stdout);
+	}
+	s = p->signo;
     } while (p->status == STOPPED and not istraced(p));
+    if (traceexec) {
+	printf("!! pcont to 0x%x on signal %d\n", p->reg[PROGCTR], p->signo);
+	fflush(stdout);
+    }
 }
 
 /*
  * Single step as best ptrace can.
  */
 
-public pstep(p)
+public pstep(p, signo)
 Process p;
+integer signo;
 {
     int status;
 
-    setinfo(p, DEFSIG);
+    setinfo(p, signo);
+    if (traceexec) {
+	printf("!! pstep from pc 0x%x with signal %d (%d)\n",
+	    p->reg[PROGCTR], signo, p->signo);
+	fflush(stdout);
+    }
     sigs_off();
-    ptrace(SSTEP, p->pid, p->reg[PROGCTR], p->signo);
+    if (ptrace(SSTEP, p->pid, p->reg[PROGCTR], p->signo) < 0) {
+	panic("error %d trying to step process", errno);
+    }
     pwait(p->pid, &status);
     sigs_on();
     getinfo(p, status);
+    if (traceexec) {
+	printf("!! pstep to pc 0x%x on signal %d\n", p->reg[PROGCTR], p->signo);
+	fflush(stdout);
+    }
+    if (p->status != STOPPED) {
+	error("program unexpectedly exited with %d\n", p->exitval);
+    }
 }
 
 /*
@@ -885,12 +996,14 @@ register Process p;
 register int status;
 {
     register int i;
+    Address addr;
 
     p->signo = (status&0177);
     p->exitval = ((status >> 8)&0377);
     if (p->signo != STOPPED) {
 	p->status = FINISHED;
 	p->pid = 0;
+	p->reg[PROGCTR] = 0;
     } else {
 	p->status = p->signo;
 	p->signo = p->exitval;
@@ -901,6 +1014,8 @@ register int status;
 	    p->oreg[i] = p->reg[i];
 	}
 	savetty(stdout, &(p->ttyinfo));
+	addr = (Address) &(((struct user *) 0)->u_signal[p->signo]);
+	p->sigstatus = (Address) ptrace(UREAD, p->pid, addr, 0);
     }
 }
 
@@ -916,7 +1031,7 @@ int signo;
     register int r;
 
     if (signo == DEFSIG) {
-	if (istraced(p)) {
+	if (istraced(p) and (p->sigstatus == 0 or p->sigstatus == 1)) {
 	    p->signo = 0;
 	}
     } else {
@@ -928,6 +1043,23 @@ int signo;
 	}
     }
     restoretty(stdout, &(p->ttyinfo));
+}
+
+/*
+ * Return the address associated with the current signal.
+ * (Plus two since the address points to the beginning of a procedure).
+ */
+
+public Address usignal (p)
+Process p;
+{
+    Address r;
+
+    r = p->sigstatus;
+    if (r != 0 and r != 1) {
+	r += 2;
+    }
+    return r;
 }
 
 /*
@@ -1096,12 +1228,53 @@ public printptraceinfo()
 }
 
 /*
- * Swap file numbers so as to redirect standard input and output.
+ * Redirect input.
+ * Assuming this is called from a child, we should be careful to avoid
+ * (possibly) shared standard I/O buffers.
+ */
+
+private infrom (filename)
+String filename;
+{
+    Fileid in;
+
+    in = open(filename, 0);
+    if (in == -1) {
+	write(2, "can't read ", 11);
+	write(2, filename, strlen(filename));
+	write(2, "\n", 1);
+	_exit(1);
+    }
+    fswap(0, in);
+}
+
+/*
+ * Redirect standard output.
+ * Same assumptions as for "infrom" above.
+ */
+
+private outto (filename)
+String filename;
+{
+    Fileid out;
+
+    out = creat(filename, 0666);
+    if (out == -1) {
+	write(2, "can't write ", 12);
+	write(2, filename, strlen(filename));
+	write(2, "\n", 1);
+	_exit(1);
+    }
+    fswap(1, out);
+}
+
+/*
+ * Swap file numbers, useful for redirecting standard input or output.
  */
 
 private fswap(oldfd, newfd)
-int oldfd;
-int newfd;
+Fileid oldfd;
+Fileid newfd;
 {
     if (oldfd != newfd) {
 	close(oldfd);

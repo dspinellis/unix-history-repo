@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)keywords.c 1.3 %G%";
+static char sccsid[] = "@(#)keywords.c 1.3 5/18/83";
+
+static char rcsid[] = "$Header: keywords.c,v 1.3 84/03/27 10:21:05 linton Exp $";
 
 /*
  * Keyword management.
@@ -20,12 +22,12 @@ static char sccsid[] = "@(#)keywords.c 1.3 %G%";
 
 private String reserved[] ={
     "alias", "and", "assign", "at", "call", "catch", "cont",
-    "debug", "delete", "div", "dump", "edit", "file", "func",
+    "debug", "delete", "div", "down", "dump", "edit", "file", "func",
     "gripe", "help", "if", "ignore", "in",
     "list", "mod", "next", "nexti", "nil", "not", "or",
-    "print", "psym", "quit", "run",
+    "print", "psym", "quit", "rerun", "return", "run",
     "sh", "skip", "source", "status", "step", "stepi",
-    "stop", "stopi", "trace", "tracei",
+    "stop", "stopi", "trace", "tracei", "up",
     "use", "whatis", "when", "where", "whereis", "which",
     "INT", "REAL", "NAME", "STRING",
     "LFORMER", "RFORMER", "#^", "->"
@@ -63,6 +65,19 @@ public enterkeywords()
 	keyword(reserved[ord(i) - ord(ALIAS)], i, false);
     }
     keyword("set", ASSIGN, false);
+    keyword("c", CONT, true);
+    keyword("d", DELETE, true);
+    keyword("h", HELP, true);
+    keyword("e", EDIT, true);
+    keyword("l", LIST, true);
+    keyword("n", NEXT, true);
+    keyword("p", PRINT, true);
+    keyword("q", QUIT, true);
+    keyword("r", RUN, true);
+    keyword("s", STEP, true);
+    keyword("st", STOP, true);
+    keyword("j", STATUS, true);
+    keyword("t", WHERE, true);
 }
 
 /*
@@ -120,22 +135,35 @@ Token t;
 }
 
 /*
- * Find a keyword in the keyword table.
- * We assume that tokens cannot legitimately be nil (0).
+ * Find the keyword associated with the given string.
  */
 
-public Token findkeyword(n)
+private Keyword kwlookup (n)
 Name n;
 {
-    register Hashvalue h;
+    Hashvalue h;
     register Keyword k;
-    Token t;
 
     h = hash(n);
     k = hashtab[h];
     while (k != nil and k->name != n) {
 	k = k->chain;
     }
+    return k;
+}
+
+/*
+ * Return the token associated with a given keyword string.
+ * We assume that tokens cannot legitimately be nil (0).
+ */
+
+public Token findkeyword(n)
+Name n;
+{
+    Keyword k;
+    Token t;
+
+    k = kwlookup(n);
     if (k == nil) {
 	t = nil;
     } else {
@@ -153,12 +181,18 @@ Name newcmd;
 Name oldcmd;
 {
     Token t;
+    Keyword k;
 
     t = findkeyword(oldcmd);
     if (t == nil) {
 	error("\"%s\" is not a command", ident(oldcmd));
     } else {
-	keyword(ident(newcmd), t, true);
+	k = kwlookup(newcmd);
+	if (k == nil) {
+	    keyword(ident(newcmd), t, true);
+	} else {
+	    k->toknum = t;
+	}
     }
 }
 

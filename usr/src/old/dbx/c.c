@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)c.c 1.7 %G%";
+static char sccsid[] = "@(#)c.c 1.6 8/5/83";
+
+static char rcsid[] = "$Header: c.c,v 1.3 84/03/27 10:19:40 linton Exp $";
 
 /*
  * C-dependent symbol routines.
@@ -29,20 +31,23 @@ static char sccsid[] = "@(#)c.c 1.7 %G%";
 
 #define isrange(t, name) (t->class == RANGE and istypename(t->type, name))
 
+private Language langC;
+
 /*
  * Initialize C language information.
  */
 
 public c_init()
 {
-    Language lang;
-
-    lang = language_define("c", ".c");
-    language_setop(lang, L_PRINTDECL, c_printdecl);
-    language_setop(lang, L_PRINTVAL, c_printval);
-    language_setop(lang, L_TYPEMATCH, c_typematch);
-    language_setop(lang, L_BUILDAREF, c_buildaref);
-    language_setop(lang, L_EVALAREF, c_evalaref);
+    langC = language_define("c", ".c");
+    language_setop(langC, L_PRINTDECL, c_printdecl);
+    language_setop(langC, L_PRINTVAL, c_printval);
+    language_setop(langC, L_TYPEMATCH, c_typematch);
+    language_setop(langC, L_BUILDAREF, c_buildaref);
+    language_setop(langC, L_EVALAREF, c_evalaref);
+    language_setop(langC, L_MODINIT, c_modinit);
+    language_setop(langC, L_HASMODULES, c_hasmodules);
+    language_setop(langC, L_PASSADDR, c_passaddr);
 }
 
 /*
@@ -62,7 +67,7 @@ Symbol type1, type2;
     } else {
 	t1 = rtype(t1);
 	t2 = rtype(t2);
-	if (t1->type == t_char or t1->type == t_int or t1->type == t_real) {
+	if (t1 == t_char->type or t1 == t_int->type or t1 == t_real->type) {
 	    tmp = t1;
 	    t1 = t2;
 	    t2 = tmp;
@@ -70,18 +75,22 @@ Symbol type1, type2;
 	b = (Boolean) (
 	    (
 		isrange(t1, "int") and
-		(t2->type == t_int or t2->type == t_char)
+		(t2 == t_int->type or t2 == t_char->type)
 	    ) or (
 		isrange(t1, "char") and
-		(t2->type == t_char or t2->type == t_int)
+		(t2 == t_char->type or t2 == t_int->type)
 	    ) or (
-		t1->class == RANGE and isdouble(t1) and t2->type == t_real
+		t1->class == RANGE and isdouble(t1) and t2 == t_real->type
 	    ) or (
 		t1->type == t2->type and (
 		    (t1->class == t2->class) or
 		    (t1->class == SCAL and t2->class == CONST) or
 		    (t1->class == CONST and t2->class == SCAL)
 		)
+	    ) or (
+		t1->class == PTR and c_typematch(t1->type, t_char) and
+		t2->class == ARRAY and c_typematch(t2->type, t_char) and
+		t2->language == primlang
 	    )
 	);
     }
@@ -152,7 +161,7 @@ Integer indent;
 	case TYPE:
 	case VAR:
 	    if (s->class != TYPE) {
-		if (s->level == 2) {
+		if (s->level == 1 and s->block != program) {
 		    printf("static ");
 		} else if (s->level < 0) {
 		    printf("register ");
@@ -345,13 +354,14 @@ Integer indent;
 	    break;
 
 	case FUNC:
+	case FFUNC:
 	    printtype(t, t->type, indent);
 	    printf("()");
 	    break;
 
 	case TYPE:
 	    if (t->name != nil) {
-		printf("%s", symname(t));
+		printname(stdout, t);
 	    } else {
 		printtype(t, t->type, indent);
 	    }
@@ -435,7 +445,7 @@ Symbol s;
 {
     register Symbol t;
     register Address a;
-    register int i, len;
+    integer i, len;
 
     switch (s->class) {
 	case CONST:
@@ -449,16 +459,10 @@ Symbol s;
 
 	case FIELD:
 	    if (isbitfield(s)) {
-		len = s->symvalue.field.length;
-		if (len <= BITSPERBYTE) {
-		    i = pop(char);
-		} else if (len <= sizeof(short)*BITSPERBYTE) {
-		    i = pop(short);
-		} else {
-		    i = pop(long);
-		}
+		i = 0;
+		popn(size(s), &i);
 		i >>= (s->symvalue.field.offset mod BITSPERBYTE);
-		i &= ((1 << len) - 1);
+		i &= ((1 << s->symvalue.field.length) - 1);
 		t = rtype(s->type);
 		if (t->class == SCAL) {
 		    printenum(i, t);
@@ -472,7 +476,9 @@ Symbol s;
 
 	case ARRAY:
 	    t = rtype(s->type);
-	    if (t->class == RANGE and istypename(t->type, "char")) {
+	    if ((t->class == RANGE and istypename(t->type, "char")) or
+		t == t_char->type
+	    ) {
 		len = size(s);
 		sp -= len;
 		printf("\"%.*s\"", len, sp);
@@ -531,7 +537,7 @@ Symbol s;
 		panic("printval: bad class %d", ord(s->class));
 	    }
 	    sp -= size(s);
-	    printf("<%s>", c_classname(s));
+	    printf("[%s]", c_classname(s));
 	    break;
     }
 }
@@ -554,7 +560,7 @@ Symbol s;
     for (;;) {
 	off = f->symvalue.field.offset;
 	len = f->symvalue.field.length;
-	n = (off + len + 7) div BITSPERBYTE;
+	n = (off + len + BITSPERBYTE - 1) div BITSPERBYTE;
 	sp += n;
 	printf("%s = ", symname(f));
 	c_printval(f);
@@ -746,4 +752,30 @@ long i;
 	error("subscript out of range");
     }
     return (i - lb);
+}
+
+/*
+ * Initialize typetable information.
+ */
+
+public c_modinit (typetable)
+Symbol typetable[];
+{
+    /* nothing right now */
+}
+
+public boolean c_hasmodules ()
+{
+    return false;
+}
+
+public boolean c_passaddr (param, exprtype)
+Symbol param, exprtype;
+{
+    boolean b;
+    Symbol t;
+
+    t = rtype(exprtype);
+    b = (boolean) (t->class == ARRAY);
+    return b;
 }
