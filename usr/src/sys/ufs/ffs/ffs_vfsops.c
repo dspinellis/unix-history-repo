@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.26 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.27 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -71,9 +71,11 @@ ffs_mountroot()
 	/*
 	 * Get vnodes for swapdev and rootdev.
 	 */
-	if (bdevvp(swapdev, &swapdev_vp) || bdevvp(rootdev, &rootvp))
-		panic("ffs_mountroot: can't setup bdevvp's");
-
+	if ((error = bdevvp(swapdev, &swapdev_vp)) ||
+	    (error = bdevvp(rootdev, &rootvp))) {
+		printf("ffs_mountroot: can't setup bdevvp's");
+		return (error);
+	}
 	if (error = vfs_rootmountalloc("ufs", "root_device", &mp))
 		return (error);
 	if (error = ffs_mountfs(rootvp, mp, p)) {
