@@ -10,19 +10,18 @@
  * The CMU software License Agreement specifies the terms and conditions
  * for use and redistribution.
  *
- *	@(#)vm_map.c	7.1 (Berkeley) %G%
+ *	@(#)vm_map.c	7.2 (Berkeley) %G%
  */
 
 /*
  *	Virtual memory mapping module.
  */
 
-#include "types.h"
+#include "param.h"
 #include "malloc.h"
-#include "../vm/vm_param.h"
-#include "../vm/vm_map.h"
-#include "../vm/vm_page.h"
-#include "../vm/vm_object.h"
+#include "vm.h"
+#include "vm_page.h"
+#include "vm_object.h"
 
 /*
  *	Virtual memory maps provide for the mapping, protection,
@@ -67,7 +66,7 @@
  */
 
 /*
- *	vm_map_init:
+ *	vm_map_startup:
  *
  *	Initialize the vm_map module.  Must be called before
  *	any other vm_map routines.
@@ -87,7 +86,7 @@ vm_size_t	kentry_data_size;
 vm_map_entry_t	kentry_free;
 vm_map_t	kmap_free;
 
-void vm_map_init()
+void vm_map_startup()
 {
 	register int i;
 	register vm_map_entry_t mep;
@@ -103,7 +102,7 @@ void vm_map_init()
 		mp->header.next = (vm_map_entry_t) (mp + 1);
 		mp++;
 	}
-	mp++->header.next = VM_MAP_ENTRY_NULL;
+	mp++->header.next = NULL;
 
 	/*
 	 * Form a free list of statically allocated kernel map entries
@@ -115,7 +114,47 @@ void vm_map_init()
 		mep->next = mep + 1;
 		mep++;
 	}
-	mep->next = VM_MAP_ENTRY_NULL;
+	mep->next = NULL;
+}
+
+/*
+ * Allocate a vmspace structure, including a vm_map and pmap,
+ * and initialize those structures.  The refcnt is set to 1.
+ * The remaining fields must be initialized by the caller.
+ */
+struct vmspace *
+vmspace_alloc(min, max, pageable)
+	vm_offset_t min, max;
+	int pageable;
+{
+	register struct vmspace *vm;
+
+	MALLOC(vm, struct vmspace *, sizeof(struct vmspace), M_VMMAP, M_WAITOK);
+	bzero(vm, (caddr_t) &vm->vm_startcopy - (caddr_t) vm);
+	vm_map_init(&vm->vm_map, min, max, pageable);
+	pmap_pinit(&vm->vm_pmap);
+	vm->vm_map.pmap = &vm->vm_pmap;		/* XXX */
+	vm->vm_refcnt = 1;
+	return (vm);
+}
+
+void
+vmspace_free(vm)
+	register struct vmspace *vm;
+{
+
+	if (--vm->vm_refcnt == 0) {
+		/*
+		 * Lock the map, to wait out all other references to it.
+		 * Delete all of the mappings and pages they hold,
+		 * then call the pmap module to reclaim anything left.
+		 */
+		vm_map_lock(&vm->vm_map);
+		(void) vm_map_delete(&vm->vm_map, vm->vm_map.min_offset,
+		    vm->vm_map.max_offset);
+		pmap_release(&vm->vm_pmap);
+		FREE(vm, M_VMMAP);
+	}
 }
 
 /*
@@ -133,32 +172,45 @@ vm_map_t vm_map_create(pmap, min, max, pageable)
 	register vm_map_t	result;
 	extern vm_map_t		kernel_map, kmem_map;
 
-	if (kmem_map == VM_MAP_NULL) {
+	if (kmem_map == NULL) {
 		result = kmap_free;
 		kmap_free = (vm_map_t) result->header.next;
+		if (result == NULL)
+			panic("vm_map_create: out of maps");
 	} else
 		MALLOC(result, vm_map_t, sizeof(struct vm_map),
 		       M_VMMAP, M_WAITOK);
 
-	if (result == VM_MAP_NULL)
-		panic("vm_map_create: out of maps");
-
-	result->header.next = result->header.prev = &result->header;
-	result->nentries = 0;
-	result->size = 0;
-	result->ref_count = 1;
+	vm_map_init(result, min, max, pageable);
 	result->pmap = pmap;
-	result->is_main_map = TRUE;
-	result->min_offset = min;
-	result->max_offset = max;
-	result->entries_pageable = pageable;
-	result->first_free = &result->header;
-	result->hint = &result->header;
-	result->timestamp = 0;
-	lock_init(&result->lock, TRUE);
-	simple_lock_init(&result->ref_lock);
-	simple_lock_init(&result->hint_lock);
 	return(result);
+}
+
+/*
+ * Initialize an existing vm_map structure
+ * such as that in the vmspace structure.
+ * The pmap is set elsewhere.
+ */
+void
+vm_map_init(map, min, max, pageable)
+	register struct vm_map *map;
+	vm_offset_t	min, max;
+	boolean_t	pageable;
+{
+	map->header.next = map->header.prev = &map->header;
+	map->nentries = 0;
+	map->size = 0;
+	map->ref_count = 1;
+	map->is_main_map = TRUE;
+	map->min_offset = min;
+	map->max_offset = max;
+	map->entries_pageable = pageable;
+	map->first_free = &map->header;
+	map->hint = &map->header;
+	map->timestamp = 0;
+	lock_init(&map->lock, TRUE);
+	simple_lock_init(&map->ref_lock);
+	simple_lock_init(&map->hint_lock);
 }
 
 /*
@@ -179,7 +231,7 @@ vm_map_entry_t vm_map_entry_create(map)
 	} else
 		MALLOC(entry, vm_map_entry_t, sizeof(struct vm_map_entry),
 		       M_VMMAPENT, M_WAITOK);
-	if (entry == VM_MAP_ENTRY_NULL)
+	if (entry == NULL)
 		panic("vm_map_entry_create: out of map entries");
 
 	return(entry);
@@ -232,7 +284,7 @@ void vm_map_entry_dispose(map, entry)
 void vm_map_reference(map)
 	register vm_map_t	map;
 {
-	if (map == VM_MAP_NULL)
+	if (map == NULL)
 		return;
 
 	simple_lock(&map->ref_lock);
@@ -252,7 +304,7 @@ void vm_map_deallocate(map)
 {
 	register int		c;
 
-	if (map == VM_MAP_NULL)
+	if (map == NULL)
 		return;
 
 	simple_lock(&map->ref_lock);
@@ -330,7 +382,7 @@ vm_map_insert(map, object, offset, start, end)
 	 *	extending one of our neighbors.
 	 */
 
-	if (object == VM_OBJECT_NULL) {
+	if (object == NULL) {
 		if ((prev_entry != &map->header) &&
 		    (prev_entry->end == start) &&
 		    (map->is_main_map) &&
@@ -342,7 +394,7 @@ vm_map_insert(map, object, offset, start, end)
 		    (prev_entry->wired_count == 0)) {
 
 			if (vm_object_coalesce(prev_entry->object.vm_object,
-					VM_OBJECT_NULL,
+					NULL,
 					prev_entry->offset,
 					(vm_offset_t) 0,
 					(vm_size_t)(prev_entry->end
@@ -819,7 +871,7 @@ vm_map_submap(map, start, end, submap)
 
 	if ((entry->start == start) && (entry->end == end) &&
 	    (!entry->is_a_map) &&
-	    (entry->object.vm_object == VM_OBJECT_NULL) &&
+	    (entry->object.vm_object == NULL) &&
 	    (!entry->copy_on_write)) {
 		entry->is_a_map = FALSE;
 		entry->is_sub_map = TRUE;
@@ -1136,7 +1188,7 @@ vm_map_pageable(map, start, end, new_pageable)
 							- entry->start));
 				entry->needs_copy = FALSE;
 			    }
-			    else if (entry->object.vm_object == VM_OBJECT_NULL) {
+			    else if (entry->object.vm_object == NULL) {
 				entry->object.vm_object =
 				    vm_object_allocate((vm_size_t)(entry->end
 				    			- entry->start));
@@ -1417,7 +1469,7 @@ void vm_map_copy_entry(src_map, dst_map, src_entry, dst_entry)
 	if (src_entry->is_sub_map || dst_entry->is_sub_map)
 		return;
 
-	if (dst_entry->object.vm_object != VM_OBJECT_NULL &&
+	if (dst_entry->object.vm_object != NULL &&
 	    !dst_entry->object.vm_object->internal)
 		printf("vm_map_copy_entry: copying over permanent data!\n");
 
@@ -1630,7 +1682,7 @@ vm_map_copy(dst_map, src_map,
 
 		if (dst_alloc) {
 			/* XXX Consider making this a vm_map_find instead */
-			if ((result = vm_map_insert(dst_map, VM_OBJECT_NULL,
+			if ((result = vm_map_insert(dst_map, NULL,
 					(vm_offset_t) 0, dst_start, dst_end)) != KERN_SUCCESS)
 				goto Return;
 		}
@@ -1760,7 +1812,7 @@ vm_map_copy(dst_map, src_map,
 							new_dst_start,
 							new_dst_end);
 					(void) vm_map_insert(new_dst_map,
-							VM_OBJECT_NULL,
+							NULL,
 							(vm_offset_t) 0,
 							new_dst_start,
 							new_dst_end);
@@ -1832,17 +1884,20 @@ vm_map_copy(dst_map, src_map,
 }
 
 /*
- *	vm_map_fork:
+ * vmspace_fork:
+ * Create a new process vmspace structure and vm_map
+ * based on those of an existing process.  The new map
+ * is based on the old map, according to the inheritance
+ * values on the regions in that map.
  *
- *	Create and return a new map based on the old
- *	map, according to the inheritance values on the
- *	regions in that map.
- *
- *	The source map must not be locked.
+ * The source map must not be locked.
  */
-vm_map_t vm_map_fork(old_map)
-	vm_map_t	old_map;
+struct vmspace *
+vmspace_fork(vm1)
+	register struct vmspace *vm1;
 {
+	register struct vmspace *vm2;
+	vm_map_t	old_map = &vm1->vm_map;
 	vm_map_t	new_map;
 	vm_map_entry_t	old_entry;
 	vm_map_entry_t	new_entry;
@@ -1850,11 +1905,12 @@ vm_map_t vm_map_fork(old_map)
 
 	vm_map_lock(old_map);
 
-	new_pmap = pmap_create((vm_size_t) 0);
-	new_map = vm_map_create(new_pmap,
-			old_map->min_offset,
-			old_map->max_offset,
-			old_map->entries_pageable);
+	vm2 = vmspace_alloc(old_map->min_offset, old_map->max_offset,
+	    old_map->entries_pageable);
+	bcopy(&vm1->vm_startcopy, &vm2->vm_startcopy,
+	    (caddr_t) (vm1 + 1) - (caddr_t) &vm1->vm_startcopy);
+	new_pmap = &vm2->vm_pmap;		/* XXX */
+	new_map = &vm2->vm_map;			/* XXX */
 
 	old_entry = old_map->header.next;
 
@@ -1879,7 +1935,7 @@ vm_map_t vm_map_fork(old_map)
 				 *	Create a new sharing map
 				 */
 				 
-				new_share_map = vm_map_create(PMAP_NULL,
+				new_share_map = vm_map_create(NULL,
 							old_entry->start,
 							old_entry->end,
 							TRUE);
@@ -1948,7 +2004,7 @@ vm_map_t vm_map_fork(old_map)
 			new_entry = vm_map_entry_create(new_map);
 			*new_entry = *old_entry;
 			new_entry->wired_count = 0;
-			new_entry->object.vm_object = VM_OBJECT_NULL;
+			new_entry->object.vm_object = NULL;
 			new_entry->is_a_map = FALSE;
 			vm_map_entry_link(new_map, new_map->header.prev,
 							new_entry);
@@ -1977,7 +2033,7 @@ vm_map_t vm_map_fork(old_map)
 	new_map->size = old_map->size;
 	vm_map_unlock(old_map);
 
-	return(new_map);
+	return(vm2);
 }
 
 /*
@@ -2174,7 +2230,7 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry,
 	/*
 	 *	Create an object if necessary.
 	 */
-	if (entry->object.vm_object == VM_OBJECT_NULL) {
+	if (entry->object.vm_object == NULL) {
 
 		if (lock_read_to_write(&share_map->lock)) {
 			if (share_map != map)
