@@ -1,5 +1,6 @@
-/*	cpu.h	4.2	81/02/19	*/
+/*	cpu.h	4.3	81/02/26	*/
 
+#ifndef LOCORE
 /*
  * Cpu identification, from SID register.
  */
@@ -22,11 +23,13 @@ union cpusid {
 			cp_type:8;		/* VAX_750 */
 	} cpu750;
 };
+#endif
 #define	VAX_780		1
 #define	VAX_750		2
 
 #define	VAX_MAX		2
 
+#ifndef LOCORE
 /*
  * Per-cpu information for system.
  */
@@ -37,4 +40,5 @@ struct	percpu {
 
 #ifdef KERNEL
 int	cpu;
+#endif
 #endif

@@ -1,10 +1,8 @@
 
-/*	vmmeter.h	4.2	%G%	*/
+/*	vmmeter.h	4.3	%G%	*/
 
 /*
  * Virtual memory related instrumentation
- *
- * NB: THE OFFSETS IN THE vmmeter STRUCTURE ARE KNOWN IN vm.m.
  */
 struct vmmeter
 {

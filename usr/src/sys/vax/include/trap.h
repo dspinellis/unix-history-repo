@@ -1,9 +1,7 @@
-/*	trap.h	4.3	81/02/19	*/
+/*	trap.h	4.4	81/02/26	*/
 
 /*
  * Trap type values
- *
- * NB: OFFSETS HERE ARE ALSO DEFINED IN trap.m
  */
 
 #define	RESADFLT	0		/* reserved addressing fault */
