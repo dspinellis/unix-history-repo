@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.30 (Berkeley) %G%
+.\"	@(#)op.me	8.31 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.30
+Version 8.31
 .sp
 For Sendmail Version 8.6
 .)l
@@ -2767,7 +2767,7 @@ is equivalent to
 Defaults to
 .q MAILER-DAEMON .
 .ip $o\(dg
-.b "The set of "operators" in addresses."
+.b "The set of \*(lqoperators\*(rq in addresses."
 A list of characters
 which will be considered tokens
 and which will separate tokens
@@ -4997,7 +4997,7 @@ The usual backslash escapes
 may be used.
 .pp
 Finally,
-an argv template is given as the E field.
+an argv template is given as the A field.
 It may have embedded spaces.
 If there is no argv with a
 .b $u
@@ -5174,7 +5174,7 @@ If a
 .q maildrop
 is found for the user,
 but no corresponding
-.q maildrop
+.q mailname
 record exists,
 the record
 .q :default:mailname
@@ -6802,7 +6802,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.30
+.\"Version 8.31
 .\".ce 0
 .bp 2
 .rs
