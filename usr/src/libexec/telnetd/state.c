@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)state.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)state.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -132,8 +132,7 @@ gotiac:			switch (c) {
 				if (diagnostic & TD_OPTIONS)
 					printoption("td: recv IAC", c);
 #endif /* DIAGNOSTICS */
-				(void) strcpy(nfrontp, "\r\n[Yes]\r\n");
-				nfrontp += 9;
+				recv_ayt();
 				break;
 
 			/*
@@ -149,7 +148,7 @@ gotiac:			switch (c) {
 				init_termbuf();
 
 				if (slctab[SLC_AO].sptr &&
-				    *slctab[SLC_AO].sptr != (cc_t)-1) {
+				    *slctab[SLC_AO].sptr != (cc_t)(_POSIX_VDISABLE)) {
 				    *pfrontp++ =
 					(unsigned char)*slctab[SLC_AO].sptr;
 				}
@@ -184,7 +183,7 @@ gotiac:			switch (c) {
 					ch = *slctab[SLC_EC].sptr;
 				else
 					ch = *slctab[SLC_EL].sptr;
-				if (ch != (cc_t)-1)
+				if (ch != (cc_t)(_POSIX_VDISABLE))
 					*pfrontp++ = (unsigned char)ch;
 				break;
 			    }
@@ -730,7 +729,7 @@ wontoption(option)
 				lmodetype = NO_LINEMODE;
 				clientstat(TELOPT_LINEMODE, WONT, 0);
 				send_will(TELOPT_SGA, 1);
-/*@*/				send_will(TELOPT_ECHO, 1);
+				send_will(TELOPT_ECHO, 1);
 			}
 #endif	/* defined(LINEMODE) && defined(KLUDGELINEMODE) */
 		default:
@@ -764,6 +763,17 @@ send_will(option, init)
 #endif /* DIAGNOSTICS */
 }
 
+#if	!defined(LINEMODE) || !defined(KLUDGELINEMODE)
+/*
+ * When we get a DONT SGA, we will try once to turn it
+ * back on.  If the other side responds DONT SGA, we
+ * leave it at that.  This is so that when we talk to
+ * clients that understand KLUDGELINEMODE but not LINEMODE,
+ * we'll keep them in char-at-a-time mode.
+ */
+int turn_on_sga = 0;
+#endif
+
 dooption(option)
 	int option;
 {
@@ -791,14 +801,17 @@ dooption(option)
 		switch (option) {
 		case TELOPT_ECHO:
 #ifdef	LINEMODE
-			if (lmodetype == NO_LINEMODE) {
+# ifdef	KLUDGELINEMODE
+			if (lmodetype == NO_LINEMODE)
+# else
+			if (his_state_is_wont(TELOPT_LINEMODE))
+# endif
 #endif
+			{
 				init_termbuf();
 				tty_setecho(1);
 				set_termbuf();
-#ifdef	LINEMODE
 			}
-#endif
 			changeok++;
 			break;
 
@@ -833,6 +846,8 @@ dooption(option)
 				if (linemode)
 					break;
 			}
+#else
+			turn_on_sga = 0;
 #endif	/* defined(LINEMODE) && defined(KLUDGELINEMODE) */
 			changeok++;
 			break;
@@ -925,14 +940,17 @@ dontoption(option)
 
 		case TELOPT_ECHO:	/* we should stop echoing */
 #ifdef	LINEMODE
-			if (lmodetype == NO_LINEMODE) {
+# ifdef	KLUDGELINEMODE
+			if (lmodetype == NO_LINEMODE)
+# else
+			if (his_state_is_wont(TELOPT_LINEMODE))
+# endif
 #endif
+			{
 				init_termbuf();
 				tty_setecho(0);
 				set_termbuf();
-#ifdef	LINEMODE
 			}
-#endif
 			break;
 
 		case TELOPT_SGA:
@@ -955,6 +973,15 @@ dontoption(option)
 				 * Gross.  Very Gross.
 				 */
 			}
+			break;
+#else
+			set_my_want_state_wont(option);
+			if (my_state_is_will(option))
+				send_wont(option, 0);
+			set_my_state_wont(option);
+			if (turn_on_sga ^= 1)
+				send_will(option);
+			return;
 #endif	/* defined(LINEMODE) && defined(KLUDGELINEMODE) */
 
 		default:
