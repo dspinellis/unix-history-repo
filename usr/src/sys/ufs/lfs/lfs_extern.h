@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_extern.h	7.19 (Berkeley) %G%
+ *	@(#)lfs_extern.h	7.20 (Berkeley) %G%
  */
 
 struct fid;
@@ -25,10 +25,12 @@ int	 lfs_bmap __P((struct vop_bmap_args *));
 int	 lfs_bmaparray
 	    __P((struct vnode *, daddr_t, daddr_t *, INDIR *, int *));
 int	 lfs_bwrite __P((struct vop_bwrite_args *));
+int	 lfs_check __P((struct vnode *, daddr_t));
 int	 lfs_create __P((struct vop_create_args *));
 int	 lfs_fhtovp __P((struct mount *, struct fid *, struct mbuf *,
 	    struct vnode **, int *, struct ucred **));
 int	 lfs_fsync __P((struct vop_fsync_args *));
+int	 lfs_getattr __P((struct vop_getattr_args *));
 struct dinode *
 	 lfs_ifind __P((struct lfs *, ino_t, struct dinode *));
 int	 lfs_inactive __P((struct vop_inactive_args *));
@@ -40,6 +42,8 @@ int	 lfs_mknod __P((struct vop_mknod_args *));
 int	 lfs_mount __P((struct mount *,
 	    char *, caddr_t, struct nameidata *, struct proc *));
 int	 lfs_mountroot __P((void));
+struct buf *
+	 lfs_newbuf __P((struct vnode *, daddr_t, size_t));
 int	 lfs_read __P((struct vop_read_args *));
 int	 lfs_remove __P((struct vop_remove_args *));
 int	 lfs_rmdir __P((struct vop_rmdir_args *));
