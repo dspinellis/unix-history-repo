@@ -39,7 +39,7 @@
  * SUCH DAMAGE.
  *
  *	from:	@(#)pmap.c	7.7 (Berkeley)	5/12/91
- *	$Id: pmap.c,v 1.24 1994/04/20 07:06:14 davidg Exp $
+ *	$Id: pmap.c,v 1.25 1994/05/02 05:31:03 davidg Exp $
  */
 
 /*
@@ -1897,21 +1897,6 @@ i386_protection_init()
 }
 
 #ifdef DEBUG
-void
-pmap_pvdump(pa)
-	vm_offset_t pa;
-{
-	register pv_entry_t pv;
-
-	printf("pa %x", pa);
-	for (pv = pa_to_pvh(pa); pv; pv = pv->pv_next) {
-		printf(" -> pmap %x, va %x, flags %x",
-		       pv->pv_pmap, pv->pv_va, pv->pv_flags);
-		pads(pv->pv_pmap);
-	}
-	printf(" ");
-}
-
 /* print address space of pmap*/
 void
 pads(pm)
@@ -1934,5 +1919,24 @@ pads(pm)
 					printf("%x:%x ", va, *(int *)ptep); 
 			} ;
 				
+}
+
+void
+pmap_pvdump(pa)
+	vm_offset_t pa;
+{
+	register pv_entry_t pv;
+
+	printf("pa %x", pa);
+	for (pv = pa_to_pvh(pa); pv; pv = pv->pv_next) {
+#ifdef used_to_be
+		printf(" -> pmap %x, va %x, flags %x",
+		       pv->pv_pmap, pv->pv_va, pv->pv_flags);
+#endif
+		printf(" -> pmap %x, va %x",
+		       pv->pv_pmap, pv->pv_va);
+		pads(pv->pv_pmap);
+	}
+	printf(" ");
 }
 #endif
