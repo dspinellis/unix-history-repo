@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "restore.h"
@@ -303,14 +303,13 @@ reply(question)
 {
 	char c;
 
-	fprintf(stderr, "%s? ", question);
 	do	{
-		fprintf(stderr, "[yn] ");
+		fprintf(stderr, "%s? [yn] ", question);
 		(void) fflush(stderr);
 		c = getc(terminal);
 		while (c != '\n' && getc(terminal) != '\n')
 			if (feof(terminal))
-				done(1);
+				return (FAIL);
 	} while (c != 'y' && c != 'n');
 	if (c == 'y')
 		return (GOOD);
