@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_generic.c	7.32 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.33 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -628,9 +628,9 @@ selwakeup(sip)
 		sip->si_flags &= ~SI_COLL;
 		wakeup((caddr_t)&selwait);
 	}
-	if ((p = pfind(sip->si_pid)) == 0) {
-		sip->si_pid = 0;
-	} else {
+	p = pfind(sip->si_pid);
+	sip->si_pid = 0;
+	if (p != NULL) {
 		s = splhigh();
 		if (p->p_wchan == (caddr_t)&selwait) {
 			if (p->p_stat == SSLEEP)
