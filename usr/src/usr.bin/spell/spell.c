@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)spell.c	4.1 %G%";
+static char sccsid[] = "@(#)spell.c	4.2 %G%";
 #endif
 
 #include "spell.h"
@@ -154,8 +154,10 @@ char **argv;
 		affix[0] = 0;
 		file = found;
 		for(ep=word;(*ep=j=getchar())!='\n';ep++)
-			if(j == EOF)
+			if(j == EOF) {
+				fclose(found);
 				exit(0);
+			}
 		for(cp=word,dp=original; cp<ep; )
 			*dp++ = *cp++;
 		*dp = 0;
