@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.16	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.17	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1103,6 +1103,8 @@ Xu|4112-5|4112 in 5 line dialog area:li#5:tc=4112:
 #
 # a: ADDS
 #
+# From ralph@UCBARPA Tue May 17 10:49:19 1983
+#
 # Regent: lowest common denominator, works on all regents.
 a0|regent|Adds Regent Series:li#24:co#80:am:cl=^L:ll=^A:up=^Z:\
 	:bs:bc=^U:nd=^F:do=^J:bl=^G:ho=\EY  :
@@ -1984,6 +1986,12 @@ z8|v50|visual 50:\
 	:cd=\Ek:ce=\EK:cl=^Z:cm=\E=%+\040%+\040:co#80:do=^J:ho=\EH:\
 	:kb=^H:kd=\EB:kh=\EH:kl=\ED:kr=\EC:ku=\EA:li#24:ms:nd=^L:pt:\
 	:so=\EU:se=\ET:up=^K:
+z9|trs2|trsII|trs80II|Radio Shack Model II using P&T CP/M:\
+	:nl=^_:\
+	:al=^D:am:bs:cd=^B:ce=^A:cl=^L:cm=\EY%+ %+ :co#80:\
+	:dl=^K:do=^_:ho=^F:li#24:nd=^]:\
+	:ms:pt:se=^O:so=^N:up:=^^:\
+	:kb=^H:kd=^_:kl=^\:kr=^]:ku=^^:
 #
 # END OF TERMCAP
 #  ------------------------
