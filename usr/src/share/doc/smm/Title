@@ -1,9 +1,9 @@
-.\" Copyright (c) 1986 The Regents of the University of California.
+.\" Copyright (c) 1986, 1993 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)Title	8.1 (Berkeley) %G%
+.\"	@(#)Title	6.6 (Berkeley) %G%
 .\"
 .ps 18
 .vs 22
@@ -43,7 +43,8 @@ for licensed use of the software is granted to licensees of this
 software, provided this copyright notice and statement of permission
 are included.
 .sp 2
-Documents SMM:15, 16, and 17
+Manual pages clri.8, cron.8, icheck.8, ncheck.8, and sa.8
+and documents SMM:15, 16, and 17
 are copyright 1979, AT&T Bell Laboratories, Incorporated.
 Document SMM:14 is a modification of an earlier document that
 is copyrighted 1979 by AT&T Bell Laboratories, Incorporated.
