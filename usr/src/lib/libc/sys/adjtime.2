@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)adjtime.2	1.2 (Berkeley) %G%
+.\"	@(#)adjtime.2	1.3 (Berkeley) %G%
 .\"
 .TH ADJTIME 2 ""
 .UC 6
@@ -23,7 +23,7 @@ struct timeval *olddelta;
 makes small adjustments to the system time, as returned by
 .IR gettimeofday (2),
 advancing or retarding it
-by the time speicified by the timeval
+by the time specified by the timeval
 \fIdelta\fP.
 If \fIdelta\fP is negative, the clock is
 slowed down by incrementing it more slowly than normal until
