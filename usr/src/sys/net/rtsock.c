@@ -14,13 +14,12 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)rtsock.c	7.3 (Berkeley) %G%
+ *	@(#)rtsock.c	7.4 (Berkeley) %G%
  */
 
 #ifndef RTF_UP
 #include "param.h"
 #include "mbuf.h"
-#include "dir.h"
 #include "user.h"
 #include "proc.h"
 #include "socket.h"
