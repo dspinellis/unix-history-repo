@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)sysctl.8	5.3 (Berkeley) %G%
+.\"	@(#)sysctl.8	5.4 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt SYSCTL 8
@@ -67,7 +67,9 @@ purpose programs such as
 .Nm systat ,
 and
 .Nm netstat .
-The string and integer information is detailed below.
+The string and integer information is summaried below.
+For a detailed description of these variable see
+.Xr sysctl 3 .
 The changeable column indicates whether a process with appropriate
 privilege can change the value.
 .Bl -column net.inet.ip.forwardingxxxxxx integerxxx
