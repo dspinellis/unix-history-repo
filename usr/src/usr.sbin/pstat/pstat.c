@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)pstat.c	4.22 (Berkeley) %G%";
+static char *sccsid = "@(#)pstat.c	4.23 (Berkeley) %G%";
 #endif
 /*
  * Print system stuff
@@ -669,6 +669,7 @@ doswap()
 	lseek(fc, getw(nl[SWAPMAP].n_value), 0);
 	read(fc, swapmap, nswapmap * sizeof (struct map));
 	swapmap->m_name = "swap";
+	swapmap->m_limit = (struct mapent *)&swapmap[nswapmap];
 	nswap = getw(nl[SNSWAP].n_value);
 	dmmin = getw(nl[SDMMIN].n_value);
 	dmmax = getw(nl[SDMMAX].n_value);
