@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)termcap.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)termcap.c	4.3 (Berkeley) %G%";
 #endif
 
 #define	BUFSIZ		1024
@@ -44,7 +44,7 @@ tgetent(bp, name)
 	int tf;
 
 	tbuf = bp;
-	tf = 0;
+	tf = -1;
 #ifndef V6
 	cp = getenv("TERMCAP");
 	/*
@@ -66,7 +66,7 @@ tgetent(bp, name)
 		} else
 			tf = open(cp, 0);
 	}
-	if (tf==0)
+	if (tf < 0)
 		tf = open(E_TERMCAP, 0);
 #else
 	tf = open(E_TERMCAP, 0);
@@ -144,8 +144,10 @@ tnchktc()
 		write(2, "Infinite tc= loop\n", 18);
 		return (0);
 	}
-	if (tgetent(tcbuf, tcname) != 1)
+	if (tgetent(tcbuf, tcname) != 1) {
+		hopcount = 0;		/* unwind recursion */
 		return(0);
+	}
 	for (q=tcbuf; *q != ':'; q++)
 		;
 	l = p - holdtbuf + strlen(q);
@@ -155,6 +157,7 @@ tnchktc()
 	}
 	strcpy(p, q+1);
 	tbuf = holdtbuf;
+	hopcount = 0;			/* unwind recursion */
 	return(1);
 }
 
