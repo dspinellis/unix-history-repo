@@ -671,8 +671,9 @@ sosetopt(so, level, optname, m0)
 
 			case SO_SNDBUF:
 			case SO_RCVBUF:
-				if (sbreserve(optname == SO_SNDBUF ? &so->so_snd :
-				    &so->so_rcv, *mtod(m, int *)) == 0) {
+				if (sbreserve(optname == SO_SNDBUF ?
+				    &so->so_snd : &so->so_rcv,
+				    (u_long) *mtod(m, int *)) == 0) {
 					error = ENOBUFS;
 					goto bad;
 				}

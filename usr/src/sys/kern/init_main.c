@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)init_main.c	7.5 (Berkeley) %G%
+ *	@(#)init_main.c	7.6 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -248,6 +248,7 @@ swapinit()
 	register int i;
 	register struct buf *sp = swbuf;
 	struct swdevt *swp;
+	int error;
 
 	/*
 	 * Count swap devices, and adjust total swap space available.
@@ -272,7 +273,10 @@ swapinit()
 	 */
 	if (nswdev > 1)
 		maxpgio = (maxpgio * (2 * nswdev - 1)) / 2;
-	swfree(0);
+	if (error = swfree(0)) {
+		printf("swfree errno %d\n", error);	/* XXX */
+		panic("swapinit swfree 0");
+	}
 
 	/*
 	 * Now set up swap buffer headers.

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.11 (Berkeley) %G%
+ *	@(#)tty.c	7.12 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -1495,8 +1495,8 @@ loop:
 			if (!(tp->t_oflag&OPOST))
 				ce = cc;
 			else {
-				ce = cc - scanc((unsigned)cc, (caddr_t)cp,
-				   (caddr_t)partab, 077);
+				ce = cc - scanc((unsigned)cc, (u_char *)cp,
+				   (u_char *)partab, 077);
 				/*
 				 * If ce is zero, then we're processing
 				 * a special character through ttyoutput.
