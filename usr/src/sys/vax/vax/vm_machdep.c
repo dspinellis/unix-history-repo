@@ -1,4 +1,4 @@
-/*	vm_machdep.c	5.5	83/05/18	*/
+/*	vm_machdep.c	5.6	83/05/27	*/
 
 #include "../machine/pte.h"
 
@@ -34,8 +34,8 @@ setredzone(pte, vaddr)
  */
 mapin(pte, v, pfnum, count, prot)
 	struct pte *pte;
-	u_int v;
-	int pfnum, count, prot;
+	u_int v, pfnum;
+	int count, prot;
 {
 
 	while (count > 0) {
@@ -62,7 +62,7 @@ mapout(pte, size)
  * Check for valid program size
  */
 chksize(ts, ds, ss)
-	unsigned ts, ds, ss;
+	register unsigned ts, ds, ss;
 {
 	static int maxdmap = 0;
 
@@ -72,7 +72,7 @@ chksize(ts, ds, ss)
 	}
 	/* check for swap map overflow */
 	if (maxdmap == 0) {
-		int i, blk;
+		register int i, blk;
 
 		blk = dmmin;
 		for (i = 0; i < NDMAP; i++) {
@@ -145,7 +145,8 @@ chgprot(addr, tprot)
 	if (pte->pg_fod == 0 && pte->pg_pfnum) {
 		c = &cmap[pgtocm(pte->pg_pfnum)];
 		if (c->c_blkno && c->c_mdev != MSWAPX)
-			munhash(mount[c->c_mdev].m_dev, c->c_blkno);
+			munhash(mount[c->c_mdev].m_dev,
+			    (daddr_t)(u_long)c->c_blkno);
 	}
 	*(int *)pte &= ~PG_PROT;
 	*(int *)pte |= tprot;

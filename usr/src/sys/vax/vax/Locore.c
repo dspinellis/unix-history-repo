@@ -1,4 +1,4 @@
-/*	Locore.c	4.23	82/12/17	*/
+/*	Locore.c	4.24	83/05/27	*/
 
 #include "dz.h"
 #include "mba.h"
@@ -42,6 +42,9 @@ Xmba0int() { }
 
 lowinit()
 {
+	extern int dumpmag;
+
+	dumpmag = 0;			/* used only by savecore */
 
 	/*
 	 * Pseudo-uses of globals.
@@ -198,6 +201,10 @@ useracc(udaddr, bcnt, rw) caddr_t udaddr; unsigned bcnt; { return (0); }
 /*ARGSUSED*/
 kernacc(addr, bcnt, rw) caddr_t addr; unsigned bcnt; { return (0); }
 
+/*
+ * Routines handled by asm.sed script.
+ */
+
 /*VARARGS1*/
 /*ARGSUSED*/
 mtpr(reg, value) int reg, value; { }
@@ -225,8 +232,19 @@ bzero(base, count) caddr_t base; unsigned count; { ; }
 bcmp(s1, s2, count) caddr_t s1, s2; unsigned count; { return (0); }
 
 /*ARGSUSED*/
+scanc(size, cp, table, mask)
+unsigned size; caddr_t cp, table; int mask; { return (0); }
+
+/*ARGSUSED*/
 ffs(i) { return (0); }
 
 ntohs(s) u_short s; { return ((int)s); }
 
 htons(s) u_short s; { return ((int)s); }
+
+/*
+ * Variables declared for savecore, or
+ * implicitly, such as by config or the loader.
+ */
+char	version[] = "4.2 BSD UNIX ....";
+char	etext;
