@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_physio.c	6.8 (Berkeley) %G%
+ *	@(#)kern_physio.c	6.9 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -61,7 +61,7 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 	extern swdone();
 	int error = 0;
 
-	s = spl6();
+	s = splbio();
 	while (bswlist.av_forw == NULL) {
 		bswlist.b_flags |= B_WANTED;
 		sleep((caddr_t)&bswlist, PSWP+1);
@@ -118,7 +118,7 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 		nbytes -= c;
 		dblkno += btodb(c);
 	}
-	s = spl6();
+	s = splbio();
 	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS|B_PAGET|B_UAREA|B_DIRTY);
 	bp->av_forw = bswlist.av_forw;
 	bswlist.av_forw = bp;
@@ -142,7 +142,7 @@ swdone(bp)
 
 	if (bp->b_flags & B_ERROR)
 		panic("IO err in push");
-	s = spl6();
+	s = splbio();
 	bp->av_forw = bclnlist;
 	cnt.v_pgout++;
 	cnt.v_pgpgout += bp->b_bcount / NBPG;
@@ -207,7 +207,7 @@ nextiov:
 	iov = uio->uio_iov;
 	if (useracc(iov->iov_base,(u_int)iov->iov_len,rw==B_READ?B_WRITE:B_READ) == NULL)
 		return (EFAULT);
-	s = spl6();
+	s = splbio();
 	while (bp->b_flags&B_BUSY) {
 		bp->b_flags |= B_WANTED;
 		sleep((caddr_t)bp, PRIBIO+1);
@@ -226,7 +226,7 @@ nextiov:
 		u.u_procp->p_flag |= SPHYSIO;
 		vslock(a = bp->b_un.b_addr, c);
 		physstrat(bp, strat, PRIBIO);
-		(void) spl6();
+		(void) splbio();
 		vsunlock(a, c, rw);
 		u.u_procp->p_flag &= ~SPHYSIO;
 		if (bp->b_flags&B_WANTED)
