@@ -32,6 +32,8 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ *	$Id$
  */
 
 #if defined(SYSLIBC_SCCS) && !defined(lint)
@@ -64,11 +66,11 @@ vforkok:
 verror:
 #ifdef PIC
 	PIC_PROLOGUE
-	movl    PIC_GOT(_errno), %edx
-	movl    %eax,(%edx)
+	movl	PIC_GOT(_errno), %edx
+	movl	%eax,(%edx)
 	PIC_EPILOGUE
 #else
-	movl    %eax,_errno
+	movl	%eax,_errno
 #endif
 	movl	$-1,%eax
 	jmp	%ecx
