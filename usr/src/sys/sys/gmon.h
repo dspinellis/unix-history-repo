@@ -4,14 +4,21 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)gmon.h	7.2 (Berkeley) %G%
+ *	@(#)gmon.h	7.3 (Berkeley) %G%
  */
 
+/*
+ * This structure must agree with that defined in lib/csu.gmon/gmon.h
+ */
 struct phdr {
     char	*lpc;
     char	*hpc;
     int		ncnt;
+    int		version;
+    int		profrate;
+    int		spare[3];
 };
+#define GMONVERSION	0x00051879
 
     /*
      *	histogram counters are unsigned shorts (according to the kernel).
