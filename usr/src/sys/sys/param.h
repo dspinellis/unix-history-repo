@@ -1,4 +1,4 @@
-/*	param.h	4.3	%G%	*/
+/*	param.h	4.4	%G%	*/
 
 /*
  * tunable variables
@@ -78,7 +78,7 @@
 
 #define	NBPW	sizeof(int)	/* number of bytes in an integer */
 
-#define	UPAGES	6		/* pages of u-area */
+#define	UPAGES	8		/* pages of u-area */
 #define	NULL	0
 #define	CMASK	0		/* default mask for file creation */
 #define	NODEV	(dev_t)(-1)
