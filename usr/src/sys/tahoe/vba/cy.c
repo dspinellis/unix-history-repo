@@ -1,6 +1,5 @@
-/*	cy.c	1.4	86/01/26	*/
+/*	cy.c	1.5	86/01/26	*/
 
-#include "cy.h"
 #include "yc.h"
 #if NCY > 0
 /*
