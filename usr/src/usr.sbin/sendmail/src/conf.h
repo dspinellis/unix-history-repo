@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.124 (Berkeley) %G%
+ *	@(#)conf.h	8.125 (Berkeley) %G%
  */
 
 /*
@@ -317,6 +317,21 @@ extern long	dgux_inet_addr();
 # define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
 # ifndef IDENTPROTO
 #  define IDENTPROTO	0	/* TCP/IP implementation is broken */
+# endif
+#endif
+
+
+/*
+**  OSF/1 for Intel Paragon.
+**
+**	Contributed by Jeff A. Earickson <jeff@ithaca.ccs.ornl.gov>
+**	of Oak Ridge National Lab.
+*/
+
+#ifdef __PARAGON__
+# define __osf__	1	/* get OSF/1 defines below */
+# ifndef _PATH_SENDMAILCF
+#  define _PATH_SENDMAILCF	"/var/adm/sendmail/sendmail.cf"
 # endif
 #endif
 
