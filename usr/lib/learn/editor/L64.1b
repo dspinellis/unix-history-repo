@@ -1,0 +1,14 @@
+#print
+Another exercise in the effective use of the 't'
+command:  What command should be typed to make
+a second copy of the current line?
+Type "answer XX", where XX is the command.
+#copyin
+#user
+#uncopyin
+#match t.
+#match .t.
+You could just say "t.".
+#log
+#next
+65.1a 10

@@ -1,0 +1,29 @@
+#print
+Note that there is quite a list of special characters
+recognized by the editor:
+ . [ * ^ $ & /
+What do you do when you want to specifically use
+one of these characters as itself, rather than
+for its funny meaning?  You must precede it by a backslash,
+as in
+  s/\./,/p
+which will change the line
+  x, y. and z
+into
+  x, y, and z
+easily.  The same works for all the other special
+characters.  What command would change
+  *
+into
+  c
+Type "answer COMMAND" where COMMAND is of the form
+  s/.././p
+#copyin
+#user
+#uncopyin
+#match s/\*/c/p
+#match s/\*/c/
+You forgot the "p" on the end.
+#log
+#next
+44.1a 10
