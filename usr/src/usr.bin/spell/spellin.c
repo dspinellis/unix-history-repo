@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)spellin.c	4.1 %G%";
+static char sccsid[] = "@(#)spellin.c	4.2 %G%";
 #endif
 
 #include "spell.h"
@@ -10,6 +10,7 @@ static char sccsid[] = "@(#)spellin.c	4.1 %G%";
 */
 
 main(argc,argv)
+int argc;
 char **argv;
 {
 	register i, j;
