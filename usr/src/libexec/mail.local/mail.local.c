@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -206,11 +206,14 @@ deliver(fd, name)
 	 * XXX
 	 * open(2) should support flock'ing the file.
 	 */
+tryagain:
 	if (lstat(path, &sb)) {
-		if ((mbfd = open(path,
-		    O_APPEND|O_CREAT|O_EXCL|O_WRONLY, S_IRUSR|S_IWUSR)) < 0)
-			mbfd = open(path, O_APPEND|O_WRONLY, 0);
-		else if (fchown(mbfd, pw->pw_uid, pw->pw_gid)) {
+		mbfd = open(path,
+		    O_APPEND|O_CREAT|O_EXCL|O_WRONLY, S_IRUSR|S_IWUSR);
+		if (mbfd == -1) {
+			if (errno == EEXIST)
+				goto tryagain;
+		} else if (fchown(mbfd, pw->pw_uid, pw->pw_gid)) {
 			e_to_sys(errno);
 			warn("chown %u.%u: %s", pw->pw_uid, pw->pw_gid, name);
 			return;
