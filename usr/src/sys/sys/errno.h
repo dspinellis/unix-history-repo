@@ -1,4 +1,4 @@
-/*	errno.h	6.1	83/07/29	*/
+/*	errno.h	6.2	85/06/02	*/
 
 /*
  * Error codes
