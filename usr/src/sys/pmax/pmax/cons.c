@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: cons.c 1.1 90/07/09$
  *
- *	@(#)cons.c	7.2 (Berkeley) %G%
+ *	@(#)cons.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -65,11 +65,16 @@ cnputc(c)
 #if NPM > 0
 	pmPutc(c);
 #else
+#include "cfb.h"
+#if NCFB > 0
+	cfbPutc(c);
+#else
 	int s;
 	void (*f)() = (void (*)())MACH_MON_PUTCHAR;
 
 	s = splhigh();
 	(*f)(c);
 	splx(s);
+#endif
 #endif
 }

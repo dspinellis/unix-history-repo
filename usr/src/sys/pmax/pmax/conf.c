@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	7.2 (Berkeley) %G%
+ *	@(#)conf.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -215,6 +215,9 @@ cdev_decl(bpf);
 	(dev_type_reset((*))) enodev, 0, dev_init(c,n,select), \
 	(dev_type_map((*))) enodev, 0 }
 
+#include "cfb.h"
+cdev_decl(cfb);
+
 struct cdevsw	cdevsw[] =
 {
 	cdev_dc_init(1,dc),		/* 0: virtual console */
@@ -230,6 +233,7 @@ struct cdevsw	cdevsw[] =
 	cdev_tape_init(NTZ,tz),		/* 10: SCSI tape */
 	cdev_vn_init(NVN,vn),		/* 11: vnode disk */
 	cdev_bpf_init(NBPFILTER,bpf),	/* 12: berkeley packet filter */
+	cdev_pm_init(NCFB,cfb),		/* 13: color frame buffer */
 };
 
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
