@@ -38,7 +38,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ioctl.h	7.19 (Berkeley) 6/26/91
- *	$Id: ioctl.h,v 1.8 1994/05/04 08:30:41 rgrimes Exp $
+ *	$Id: ioctl.h,v 1.9 1994/05/17 22:31:20 jkh Exp $
  */
 
 #ifndef	_IOCTL_H_
@@ -154,8 +154,6 @@ struct ttysize {
 #define	TIOCEXT		_IOW('t', 96, int)	/* pty: external processing */
 #define	TIOCSIG		_IO('t', 95)		/* pty: generate signal */
 #define	TIOCDRAIN	_IO('t', 94)		/* wait till output drained */
-#define	TIOCMSBIDIR	_IOW('t', 93, int)	/* modem: set bidir cap. */
-#define	TIOCMGBIDIR	_IOR('t', 92, int)	/* modem: get bidir cap. */
 #define TIOCMSDTRWAIT	_IOW('t', 91, int)	/* modem: set wait on close */
 #define TIOCMGDTRWAIT	_IOR('t', 90, int)	/* modem: get wait on close */
 #define TIOCTIMESTAMP	_IOR('t', 89, struct timeval)	/* get timestamp of 
