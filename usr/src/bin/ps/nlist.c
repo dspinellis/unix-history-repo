@@ -29,6 +29,13 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00051
+ * --------------------         -----   ----------------------
+ *
+ * 14 Aug 92	David Greenman		Fixed NEWVM mempages calculation
  */
 
 #ifndef lint
@@ -101,6 +108,7 @@ donlist()
 		eval = rval = 1;
 	}
 	mempages -= tmp;
+	mempages = mempages / NBPG;			/* 14 Aug 92*/
 #else
 	if (kread(X_ECMX, mempages)) {
 		(void)fprintf(stderr, "ps: ecmx: %s\n", kvm_geterr());
