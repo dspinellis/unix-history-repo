@@ -1,5 +1,5 @@
 /*
- * mkmakefile.c	1.5	81/03/06
+ * mkmakefile.c	1.7	81/03/31
  *	Functions in this file build the makefile from the files list
  *	and the information in the config table
  */
@@ -63,6 +63,7 @@ makefile()
     FILE *ifp, *ofp;
     char line[BUFSIZ];
     struct cputype *cp;
+    struct opt *op;
 
     read_files();			/* Read in the "files" file */
     ifp = fopen("../conf/makefile", "r");
@@ -82,6 +83,8 @@ makefile()
     }
     for (cp = cputype; cp; cp = cp->cpu_next)
 	fprintf(ofp, " -D%s", cp->cpu_name);
+    for (op = opt; op; op = op->op_next)
+	  fprintf(ofp, " -D%s", op->op_name);
     fprintf(ofp, "\n");
     if (hz == 0) {
 	printf("hz not specified; 50hz assumed\n");
@@ -95,8 +98,8 @@ makefile()
     } else if (maxusers < 8) {
 	printf("minimum of 8 maxusers assumed\n");
 	maxusers = 8;
-    } else if (maxusers > 100) {
-	printf("maxusers truncated to 100\n");
+    } else if (maxusers > 128) {
+	printf("maxusers truncated to 128\n");
 	maxusers = 128;
     }
     fprintf(ofp, "PARAM=-DHZ=%d -DTIMEZONE=%d -DDST=%d -DMAXUSERS=%d\n",
@@ -201,6 +204,7 @@ FILE *fp;
     register struct file_list *tp;
     register int lpos, len;
     register char *cp, och, *sp;
+    char *tail();
 
     fprintf(fp, "OBJS=");
     lpos = 6;
@@ -208,7 +212,7 @@ FILE *fp;
     {
 	if (tp->f_type == INVISIBLE)
 	    continue;
-	sp = rindex(tp->f_fn, '/') + 1;
+	sp = tail(tp->f_fn);
 	cp = sp + (len = strlen(sp)) - 1;
 	och = *cp;
 	*cp = 'o';
@@ -241,6 +245,8 @@ FILE *fp;
     for (tp = ftab; tp != NULL; tp = tp->f_next)
     {
 	if (tp->f_type == INVISIBLE)
+	    continue;
+	if (tp->f_fn[strlen(tp->f_fn)-1] != 'c')
 	    continue;
 	if ((len = 3 + strlen(tp->f_fn)) + lpos > 72)
 	{
@@ -319,13 +325,9 @@ register FILE *f;
 {
     register struct file_list *fl;
 
-    fprintf(f, "all:");
-    for (fl = conf_list; fl != NULL; fl = fl->f_next)
-	fprintf(f, " %s", fl->f_needs);
-    putc('\n', f);
     for (fl = conf_list; fl != NULL; fl = fl->f_next)
     {
-	fprintf(f, "\n%s: makefile locore.o ${OBJS} ioconf.o param.o swap%s.o\n",
+	fprintf(f, "%s: makefile locore.o ${OBJS} ioconf.o param.o swap%s.o\n",
 		fl->f_needs, fl->f_fn);
 	fprintf(f, "\t@echo loading %s\n\t@rm -f %s\n\t",
 		fl->f_needs, fl->f_needs);
@@ -335,17 +337,21 @@ register FILE *f;
 	fprintf(f, "\t@echo rearranging symbols\n");
 	fprintf(f, "\t@-symorder ../sys/symbols.sort %s\n", fl->f_needs);
 	fprintf(f, "\t@size %s\n", fl->f_needs);
-	fprintf(f, "\t@chmod 755 %s\n", fl->f_needs);
+	fprintf(f, "\t@chmod 755 %s\n\n", fl->f_needs);
     }
     for (fl = conf_list; fl != NULL; fl = fl->f_next)
     {
-	fprintf(f, "\nswap%s.o: ../dev/swap%s.c\n", fl->f_fn, fl->f_fn);
+	fprintf(f, "swap%s.o: ../dev/swap%s.c\n", fl->f_fn, fl->f_fn);
 	fprintf(f, "\t${CC} -I. -c -S ${COPTS} ../dev/swap%s.c\n", fl->f_fn);
 	fprintf(f,
 	    "\t${C2} swap%s.s | sed -f ../sys/asm.sed | ${AS} -o swap%s.o\n",
 	    fl->f_fn, fl->f_fn);
-	fprintf(f, "\trm -f swap%s.s\n", fl->f_fn);
+	fprintf(f, "\trm -f swap%s.s\n\n", fl->f_fn);
     }
+    fprintf(f, "all:");
+    for (fl = conf_list; fl != NULL; fl = fl->f_next)
+	fprintf(f, " %s", fl->f_needs);
+    putc('\n', f);
 }
 
 raise(str)

@@ -1,11 +1,12 @@
-%token CPU IDENT CONFIG ANY DEVICE UBA MBA NEXUS CSR DRIVE VECTOR
-%token CONTROLLER PSEUDO_DEVICE FLAGS ID SEMICOLON NUMBER FPNUMBER OPTIONS TRACE
-%token DISK SLAVE AT HZ TIMEZONE DST MAXUSERS
+%token CPU IDENT CONFIG ANY DEVICE UBA MBA NEXUS CSR DRIVE VECTOR OPTIONS
+%token CONTROLLER PSEUDO_DEVICE FLAGS ID SEMICOLON NUMBER FPNUMBER TRACE
+%token DISK SLAVE AT HZ TIMEZONE DST MAXUSERS MASTER COMMA
 %{
-/*	config.y	1.4	81/03/06	*/
+/*	config.y	1.5	81/03/31	*/
 #include "config.h"
 #include <stdio.h>
 	struct device cur;
+	struct device *curp = NULL;
 	char *temp_id;
 %}
 %%
@@ -34,6 +35,7 @@ Config_spec:
 		    cputype = cp;
 		    free(temp_id);
 		    } |
+	OPTIONS Opt_list |
 	IDENT ID { ident = ns($2); } |
 	CONFIG Save_id ID = { mkconf(temp_id, $3); free(temp_id); } |
 	HZ NUMBER = {
@@ -48,6 +50,21 @@ Config_spec:
 	MAXUSERS NUMBER = { maxusers = $2; }
 	;
 
+Opt_list:
+	Opt_list COMMA Option |
+	Option
+	;
+
+Option:
+	Save_id = {
+		    struct opt *op = malloc(sizeof (struct opt));
+		    op->op_name = ns($1);
+		    op->op_next = opt;
+		    opt = op;
+		    free(temp_id);
+	}
+	;
+
 Save_id:
 	ID = { $$ = temp_id = ns($1); }
 	;
@@ -60,6 +77,7 @@ Dev:
 
 Device_spec:
 	DEVICE Dev_name Dev_info Int_spec = {  cur.d_type = DEVICE; } |
+	MASTER Dev_name Dev_info Int_spec = {  cur.d_type = MASTER; } |
 	DISK Dev_name Dev_info Int_spec =
 				{  cur.d_dk = 1; cur.d_type = DEVICE; } |
 	CONTROLLER Dev_name Dev_info Int_spec = {  cur.d_type = CONTROLLER; } |
@@ -87,8 +105,13 @@ Dev_info:
 	;
 
 Con_info:
-	AT Dev NUMBER = { cur.d_conn = connect($2, $3); } |
-	AT NEXUS NUMBER = { check_nexus(&cur, $2); cur.d_conn = TO_NEXUS; }
+	AT Dev NUMBER = {
+		if (eq(cur.d_name, "mba") || eq(cur.d_name, "uba"))
+			yyerror(sprintf(errbuf,
+				"%s must be connected to a nexus", cur.d_name));
+		cur.d_conn = connect($2, $3);
+	} |
+	AT NEXUS NUMBER = { check_nexus(&cur, $3); cur.d_conn = TO_NEXUS; }
 	;
     
 Info_list:
@@ -99,7 +122,14 @@ Info_list:
 Info:
 	CSR NUMBER = { cur.d_addr = $2; } |
 	DRIVE NUMBER = { cur.d_drive = $2; } |
-	SLAVE NUMBER = { cur.d_slave = $2; } |
+	SLAVE NUMBER =
+	{
+		if (cur.d_conn != NULL && cur.d_conn != TO_NEXUS
+		    && cur.d_conn->d_type == MASTER)
+			cur.d_slave = $2;
+		else
+			yyerror("can't specify slave--not to master");
+	} |
 	FLAGS NUMBER = { cur.d_flags = $2; }
 	;
 
@@ -143,8 +173,11 @@ register struct device *dp;
 
 	np = (struct device *) malloc(sizeof *np);
 	*np = *dp;
-	np->d_next = dtab;
-	dtab = np;
+	if (curp == NULL)
+		dtab = np;
+	else
+		curp->d_next = np;
+	curp = np;
 }
 
 /*
@@ -183,8 +216,8 @@ register int num;
 	if (num == QUES)
 	    return huhcon(dev);
 	for (dp = dtab; dp != NULL; dp = dp->d_next)
-		if (num == dp->d_unit) && eq(dev, dp->d_name))
-		    if (dp->d_type != CONTROLLER)
+		if ((num == dp->d_unit) && eq(dev, dp->d_name))
+		    if (dp->d_type != CONTROLLER && dp->d_type != MASTER)
 		    {
 			yyerror(sprintf(errbuf,
 			    "%s connected to non-controller", dev));
@@ -206,6 +239,7 @@ register char *dev;
 {
     register struct device *dp, *dcp;
     struct device rdev;
+    int oldtype;
 
     /*
      * First make certain that there are some of these to wildcard on
@@ -218,6 +252,7 @@ register char *dev;
 	yyerror(sprintf(errbuf, "no %s's to wildcard", dev));
 	return NULL;
     }
+    oldtype = dp->d_type;
     dcp = dp->d_conn;
     /*
      * Now see if there is already a wildcard entry for this device
@@ -236,8 +271,9 @@ register char *dev;
 	init_dev(dp);
 	dp->d_unit = QUES;
 	dp->d_name = ns(dev);
+	dp->d_type = oldtype;
 	newdev(dp);
-	dp = dtab;
+	dp = curp;
 	/*
 	 * Connect it to the same thing that other similar things are
 	 * connected to, but make sure it is a wildcard unit
@@ -285,4 +321,16 @@ int num;
 	yyerror("only uba's and mba's should be connected to the nexus");
     if (num != QUES)
 	yyerror("can't give specific nexus numbers");
+}
+
+/*
+ * Check the timezone to make certain it is sensible
+ */
+
+check_tz()
+{
+	if (timezone > 24 * 60)
+		yyerror("timezone is unreasonable");
+	else
+		hadtz = TRUE;
 }
