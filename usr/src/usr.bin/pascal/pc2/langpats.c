@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)langpats.c 1.15 %G%";
+static char sccsid[] = "@(#)langpats.c 1.16 %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -458,6 +458,26 @@ struct pats {
 1:\n\
 	moveq	#0,d0\n\
 2:\n" },
+	{ "_RANG4\n",
+"	movl	sp@,d0\n\
+	cmpl	sp@(4),d0\n\
+	jlt	1f\n\
+	cmpl	sp@(8),d0\n\
+	jle	2f\n\
+1:\n\
+	pea	_ERANG\n\
+	jbsr	_ERROR\n\
+	addqw	#4,sp\n\
+2:\n" },
+	{ "_RSNG4\n",
+"	movl	sp@,d0\n\
+	cmpl	sp@(4),d0\n\
+	jls	1f\n\
+	pea	_ERANG\n\
+	jbsr	_ERROR\n\
+	addqw	#4,sp\n\
+1:\n" },
+
 #endif mc68000
 
 };
