@@ -1,4 +1,4 @@
-/*	kern_synch.c	4.1	%G%	*/
+/*	kern_synch.c	4.2	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -376,7 +376,7 @@ retry:
 	if (procdup(rpp, isvfork))
 		return (1);
 
-	spl6();
+	(void) spl6();
 	rpp->p_stat = SRUN;
 	setrq(rpp);
 	spl0();

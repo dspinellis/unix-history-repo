@@ -1,4 +1,4 @@
-/*	trap.c	4.1	%G%	*/
+/*	trap.c	4.2	%G%	*/
 
 
 #include "../h/param.h"
@@ -114,7 +114,7 @@ out:
 		 * swtch()'ed, we might not be on the queue indicated by
 		 * our priority.
 		 */
-		spl6();
+		(void) spl6();
 		setrq(p);
 		swtch();
 	}
@@ -198,7 +198,7 @@ bad:
 		 * swtch()'ed, we might not be on the queue indicated by
 		 * our priority.
 		 */
-		spl6();
+		(void) spl6();
 		setrq(p);
 		swtch();
 	}
