@@ -31,6 +31,8 @@ vaxif/if_ex.c		optional ex device-driver
 vaxif/if_hdh.c		optional hdh device-driver
 vaxif/if_hy.c		optional hy device-driver
 vaxif/if_il.c		optional il device-driver
+vaxif/if_ix.c		optional np device-driver
+vaxuba/np.c		optional np device-driver
 vaxif/if_pcl.c		optional pcl device-driver
 vaxif/if_qe.c		optional qe device-driver
 vaxif/if_uba.c		optional inet device-driver
