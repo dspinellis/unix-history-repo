@@ -22,7 +22,6 @@
 static char sccsid[] = "@(#)crypt.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/cdefs.h>
 #include <unistd.h>
 
 /*
@@ -74,15 +73,17 @@ static char sccsid[] = "@(#)crypt.c	5.6 (Berkeley) %G%";
 /*
  * define "LARGEDATA" to get faster permutations, by using about 72 kilobytes
  * of lookup tables.  This speeds up des_setkey() and des_cipher(), but has
- * little effect on crypt(). 
+ * little effect on crypt().
  */
 #if defined(notdef)
 #define	LARGEDATA
 #endif
 
-/* comment out "static" when profiling */
+/* compile with "-DSTATIC=int" when profiling */
+#ifndef STATIC
 #define	STATIC	static
-STATIC init_des(), perminit(), permute();
+#endif
+STATIC init_des(), init_perm(), permute();
 #ifdef DEBUG
 STATIC prtab();
 #endif
@@ -113,7 +114,7 @@ STATIC prtab();
  * most significant ones.  The low two bits of each byte are zero.  (Thus,
  * bit 1 of the 48 bit E expansion is stored as the "4"-valued bit of the
  * first byte in the eight byte representation, bit 2 of the 48 bit value is
- * the "8"-valued bit, and so on.) In fact, a combined "SPE"-box lookup is
+ * the "8"-valued bit, and so on.)  In fact, a combined "SPE"-box lookup is
  * used, in which the output is the 64 bit result of an S-box lookup which
  * has been permuted by P and expanded by E, and is ready for use in the next
  * iteration.  Two 32-bit wide tables, SPE[0] and SPE[1], are used for this
@@ -138,7 +139,7 @@ STATIC prtab();
  * 64-bit datatype since the relative order of i0 and i1 are unknown.  It
  * also inhibits grouping the SPE table to look up 12 bits at a time.  (The
  * 12 bits can be stored in a 16-bit field with 3 low-order zeroes and 1
- * high-order zero, providing fast indexing into a 64-bit wide SPE.) On the
+ * high-order zero, providing fast indexing into a 64-bit wide SPE.)  On the
  * other hand, 64-bit datatypes are currently rare, and a 12-bit SPE lookup
  * requires a 128 kilobyte table, so perhaps this is not a big loss.
  *
@@ -197,11 +198,12 @@ STATIC prtab();
  * 16777216 possible values.  (The original salt was 12 bits and could not
  * swap bits 13..24 with 36..48.)
  *
- * It is possible, but expensive and ugly, to warp the SPE table account for
- * the salt permutation.  Fortunately, the conditional bit swapping requires
- * only about four machine instructions and can be done on-the-fly with only
- * a 2% performance penalty.
+ * It is possible, but ugly, to warp the SPE table to account for the salt
+ * permutation.  Fortunately, the conditional bit swapping requires only
+ * about four machine instructions and can be done on-the-fly with about an
+ * 8% performance penalty.
  */
+
 typedef union {
 	unsigned char b[8];
 	struct {
@@ -444,7 +446,8 @@ static C_block	constdatablock;			/* encryption constant */
 static char	cryptresult[1+4+4+11+1];	/* encrypted result */
 
 /*
- * XXX need comment
+ * Return a pointer to static data consisting of the "setting"
+ * followed by an encryption produced by the "key" and "setting".
  */
 char *
 crypt(key, setting)
@@ -453,13 +456,16 @@ crypt(key, setting)
 {
 	register char *encp;
 	register long i;
+	register int t;
 	long salt;
 	int num_iter, salt_size, key_size;
 	C_block keyblock, rsltblock;
 
-	for (i = 0; i < 8; i++)
-		if ((keyblock.b[i] = 2*(unsigned char)(*key)) != 0)
+	for (i = 0; i < 8; i++) {
+		if ((t = 2*(unsigned char)(*key)) != 0)
 			key++;
+		keyblock.b[i] = t;
+	}
 	des_setkey((char *)keyblock.b);	/* also initializes "a64toi" */
 
 	encp = &cryptresult[0];
@@ -474,9 +480,10 @@ crypt(key, setting)
 		/* get iteration count */
 		num_iter = 0;
 		for (i = 4; --i >= 0; ) {
-			num_iter = (num_iter<<6) |
-				a64toi[(unsigned char)
-					(encp[i] = (unsigned char)setting[i])];
+			if ((t = (unsigned char)setting[i]) == '\0')
+				t = '.';
+			encp[i] = t;
+			num_iter = (num_iter<<6) | a64toi[t];
 		}
 		setting += 4;
 		encp += 4;
@@ -486,9 +493,10 @@ crypt(key, setting)
 
 	salt = 0;
 	for (i = salt_size; --i >= 0; ) {
-		salt = (salt<<6) |
-			a64toi[(unsigned char)
-				(encp[i] = (unsigned char)setting[i])];
+		if ((t = (unsigned char)setting[i]) == '\0')
+			t = '.';
+		encp[i] = t;
+		salt = (salt<<6) | a64toi[t];
 	}
 	encp += salt_size;
 	des_cipher((char *)&constdatablock, (char *)&rsltblock, salt, num_iter);
@@ -499,11 +507,13 @@ crypt(key, setting)
 	while ((key_size -= 8) > 0 && *key) {
 		C_block xdatablock;
 
-		for (i = 0; i < 8; i++)
-			if ((keyblock.b[i] = 2*(unsigned char)(*key)) != 0)
+		for (i = 0; i < 8; i++) {
+			if ((t = 2*(unsigned char)(*key)) != 0)
 				key++;
-			else
+			keyblock.b[i] = t;
+			if (t == 0)
 				break;	/* pad out with previous key */
+		}
 		des_setkey((char *)keyblock.b);
 		des_cipher((char *)&constdatablock, (char *)&xdatablock, 0L, 1);
 		rsltblock.b32.i0 ^= xdatablock.b32.i0;
@@ -529,6 +539,7 @@ crypt(key, setting)
 	encp[0] = itoa64[i];
 
 	encp[3] = 0;
+
 	return(cryptresult);
 }
 
@@ -580,7 +591,7 @@ void
 des_cipher(in, out, salt, num_iter)
 	const char *in;
 	char *out;
-	u_long salt;
+	long salt;
 	int num_iter;
 {
 	/* variables that we want in registers, most important first */
@@ -733,7 +744,7 @@ init_des()
 #ifdef DEBUG
 	prtab("pc1tab", perm, 8);
 #endif
-	perminit(PC1ROT, perm, 8, 8);
+	init_perm(PC1ROT, perm, 8, 8);
 
 	/*
 	 * PC2ROT - PC2 inverse, then Rotate (once or twice), then PC2.
@@ -757,7 +768,7 @@ init_des()
 #ifdef DEBUG
 		prtab("pc2tab", perm, 8);
 #endif
-		perminit(PC2ROT[j], perm, 8, 8);
+		init_perm(PC2ROT[j], perm, 8, 8);
 	}
 
 	/*
@@ -781,7 +792,7 @@ init_des()
 #ifdef DEBUG
 	prtab("ietab", perm, 8);
 #endif
-	perminit(IE3264, perm, 4, 8);
+	init_perm(IE3264, perm, 4, 8);
 
 	/*
 	 * Compression, then final permutation, then bit reverse.
@@ -798,7 +809,7 @@ init_des()
 #ifdef DEBUG
 	prtab("cftab", perm, 8);
 #endif
-	perminit(CF6464, perm, 8, 8);
+	init_perm(CF6464, perm, 8, 8);
 
 	/*
 	 * SPE table
@@ -834,13 +845,16 @@ init_des()
 	}
 }
 
-
 /*
- * XXX need comment
+ * Initialize "perm" to represent transformation "p", which rearranges
+ * (perhaps with expansion and/or contraction) one packed array of bits
+ * (of size "chars_in" characters) into another array (of size "chars_out"
+ * characters).
+ *
  * "perm" must be all-zeroes on entry to this routine.
  */
 STATIC
-perminit(perm, p, chars_in, chars_out)
+init_perm(perm, p, chars_in, chars_out)
 	C_block perm[64/CHUNKBITS][1<<CHUNKBITS];
 	unsigned char p[64];
 	int chars_in, chars_out;
