@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)oldsyntax.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)oldsyntax.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -17,7 +17,7 @@ static char sccsid[] = "@(#)oldsyntax.c	5.1 (Berkeley) %G%";
  *	a pointer to them.  The old find syntax assumes all command arguments
  *	up to the first one beginning with a '-', '(' or '!' are pathnames.
  */
-char **
+void
 oldsyntax(argvp)
 	char ***argvp;
 {
