@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.16 1993/10/05 21:55:35 rgrimes Exp $
+#	$Id: Makefile,v 1.17 1993/10/21 23:36:21 rgrimes Exp $
 #
 
 SUBDIR=
@@ -115,9 +115,10 @@ libraries:
 .endif
 	cd ${.CURDIR}/lib;		make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/gnu/gcc2/libgcc;	make depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/usr.bin/lex;	make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/libg++;	make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/gnu/libregex;	make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/gnu/libmalloc;	make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/usr.bin/lex;	make depend all install ${CLEANDIR} obj
 
 tools:
 	@echo "--------------------------------------------------------------"
