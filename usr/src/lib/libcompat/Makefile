@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 
 LIB=compat
 CFLAGS+=-DLIBC_SCCS -DSYSLIBC_SCCS
@@ -25,6 +25,8 @@ SRCS+=	ecvt.c gcvt.c lsearch.c regex.c rexec.c ruserpass.c sibuf.c \
 .if	(${MACHINE} == "hp300")
 SRCS+=	insque.s remque.s
 .elif	(${MACHINE} == "i386")
+SRCS+=	insque.c remque.c
+.elif	(${MACHINE} == "sparc")
 SRCS+=	insque.c remque.c
 .elif	(${MACHINE} == "tahoe")
 SRCS+=	nargs.s insque.s remque.s
