@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_loop.c	7.12 (Berkeley) %G%
+ *	@(#)if_loop.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -40,12 +40,6 @@
 #ifdef ISO
 #include "../netiso/iso.h"
 #include "../netiso/iso_var.h"
-#endif
-
-#ifdef CCITT
-#include "../netccitt/x25.h"
-#include "../netccitt/hdlc.h"
-#include "../netccitt/hd_var.h"
 #endif
 
 #define	LOMTU	(1024+512)
@@ -85,7 +79,6 @@ looutput(ifp, m, dst, rt)
 		m_freem(m);
 		return (rt->rt_flags & RTF_HOST ? EHOSTUNREACH : ENETUNREACH);
 	}
-	s = splimp();
 	ifp->if_opackets++;
 	ifp->if_obytes += m->m_pkthdr.len;
 	switch (dst->sa_family) {
@@ -108,19 +101,13 @@ looutput(ifp, m, dst, rt)
 		isr = NETISR_ISO;
 		break;
 #endif
-#ifdef CCITT
-	case AF_CCITT:
-		ifq = &hdintrq;
-		isr = NETISR_CCITT;
-		break;
-#endif
 	default:
-		splx(s);
 		printf("lo%d: can't handle af%d\n", ifp->if_unit,
 			dst->sa_family);
 		m_freem(m);
 		return (EAFNOSUPPORT);
 	}
+	s = splimp();
 	if (IF_QFULL(ifq)) {
 		IF_DROP(ifq);
 		m_freem(m);
@@ -135,6 +122,15 @@ looutput(ifp, m, dst, rt)
 	return (0);
 }
 
+/* ARGSUSED */
+lortrequest(cmd, rt, sa)
+struct rtentry *rt;
+struct sockaddr *sa;
+{
+	if (rt)
+		rt->rt_rmx.rmx_mtu = LOMTU;
+}
+
 /*
  * Process an ioctl request.
  */
@@ -144,15 +140,16 @@ loioctl(ifp, cmd, data)
 	int cmd;
 	caddr_t data;
 {
+	register struct ifaddr *ifa;
 	int error = 0;
 
 	switch (cmd) {
 
-#ifdef CCITT
-	case SIOCSIFCONF_X25:
-#endif
 	case SIOCSIFADDR:
 		ifp->if_flags |= IFF_UP;
+		ifa = (struct ifaddr *)data;
+		if (ifa != 0 && ifa->ifa_addr->sa_family == AF_ISO)
+			ifa->ifa_rtrequest = lortrequest;
 		/*
 		 * Everything else is done at a higher level.
 		 */
