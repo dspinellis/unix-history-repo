@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -117,6 +117,7 @@ bufinit()
 		bufhead.b_next = bp;
 		initbarea(bp);
 	}
+	bufhead.b_size = i;	/* save number of buffers */
 }
 
 /*
@@ -211,6 +212,7 @@ rwerr(s, blk)
 ckfini()
 {
 	register BUFAREA *bp;
+	int cnt = 0;
 
 	flush(&dfile, &sblk);
 	if (havesb && sblk.b_bno != SBOFF / dev_bsize &&
@@ -220,11 +222,15 @@ ckfini()
 		flush(&dfile, &sblk);
 	}
 	flush(&dfile, &cgblk);
-	for (bp = bufhead.b_prev; bp != &bufhead; bp = bp->b_prev)
+	for (bp = bufhead.b_prev; bp != &bufhead; bp = bp->b_prev) {
+		cnt++;
 		flush(&dfile, bp);
+	}
+	if (bufhead.b_size != cnt)
+		errexit("Panic: lost %d buffers\n", bufhead.b_size - cnt);
 	if (debug)
-		printf("cache hit %d of %d (%d%%)\n", totalreads - diskreads,
-		    totalreads, (totalreads - diskreads) * 100 / totalreads);
+		printf("cache missed %d of %d (%d%%)\n", diskreads,
+		    totalreads, diskreads * 100 / totalreads);
 	(void)close(dfile.rfdes);
 	(void)close(dfile.wfdes);
 }
