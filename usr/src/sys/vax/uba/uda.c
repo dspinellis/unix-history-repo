@@ -1,5 +1,5 @@
 /*
- *	@(#)uda.c	6.14 (Berkeley) %G%
+ *	@(#)uda.c	6.15 (Berkeley) %G%
  */
 
 /************************************************************************
@@ -11,16 +11,8 @@
  ************************************************************************/
 /* 
  * uda.c - UDA50A Driver
- * 
- * Date:        Jan  30 1984
  *
- * This thing has been beaten beyound belief.  It still has two main features.
- * 1) When this device is on the same unibus as another DMA device
- * like a versatec or a rk07. the Udstrat routine complains that it still
- * has a buffered data path that it shouldn't.  I don't know why.
- *
- * decvax!rich.
- *
+ * decvax!rich
  */
 
 #define	DEBUG
@@ -115,14 +107,14 @@ struct size {
 }, ra81_sizes[8] ={
 /*
  * These are the new standard partition sizes for ra81's.
- * A COMPAT_42 system is compiled with D, E, and F corresponding
+ * An RA_COMPAT system is compiled with D, E, and F corresponding
  * to the 4.2 partitions for G, H, and F respectively.
  */
 #ifndef	UCBRA
 	15884,	0,		/* A=sectors 0 thru 15883 */
 	66880,	16422,		/* B=sectors 16422 thru 83301 */
 	891072,	0,		/* C=sectors 0 thru 891071 */
-#ifdef COMPAT_42
+#ifdef RA_COMPAT
 	82080,	49324,		/* 4.2 G => D=sectors 49324 thru 131403 */
 	759668,	131404,		/* 4.2 H => E=sectors 131404 thru 891071 */
 	478582,	412490,		/* 4.2 F => F=sectors 412490 thru 891071 */
@@ -130,7 +122,7 @@ struct size {
 	15884,	375564,		/* D=sectors 375564 thru 391447 */
 	307200,	391986,		/* E=sectors 391986 thru 699185 */
 	191352,	699720,		/* F=sectors 699720 thru 891071 */
-#endif COMPAT_42
+#endif RA_COMPAT
 	515508,	375564,		/* G=sectors 375564 thru 891071 */
 	291346,	83538,		/* H=sectors 83538 thru 374883 */
 
@@ -622,6 +614,10 @@ loop:
 	if ((i = ubasetup(um->um_ubanum, bp, i)) == 0)
 		return(1);
 	if ((mp = udgetcp(um)) == NULL) {
+#if defined(VAX750)
+		if (cpu == VAX_750)
+			i &= 0xfffffff;         /* mask off bdp */
+#endif
 		ubarelse(um->um_ubanum,&i);
 		return(0);
 	}
@@ -998,7 +994,7 @@ udrsp(um, ud, sc, i)
 		bp->av_back->av_forw = bp->av_forw;
 		bp->av_forw->av_back = bp->av_back;
 #if defined(VAX750)
-		if (cpu == VAX_750
+		if (cpu == VAX_750 && um->um_tab.b_active == 0
 		    && udwtab[um->um_ctlr].av_forw == &udwtab[um->um_ctlr]) {
 			if (um->um_ubinfo == 0)
 				printf("udintr: um_ubinfo == 0\n");
