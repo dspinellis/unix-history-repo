@@ -1,4 +1,4 @@
-/*	scb.s	6.1	83/07/29	*/
+/*	scb.s	4.15	83/08/01	*/
 
 /*
  * System control block
@@ -39,3 +39,8 @@ _scb:	.globl	_scb
 	.globl	_UNIvec
 _UNIvec:	.space	512		# 750 unibus intr vector
 					# 1st UBA jump table on 780's
+#if NUBA > 1
+	.globl	_UNI1vec
+_UNI1vec:	.space	512		# 750 second unibus intr vector
+					# 2nd UBA jump table on 780's
+#endif

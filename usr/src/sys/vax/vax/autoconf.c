@@ -1,4 +1,4 @@
-/*	autoconf.c	6.1	83/07/29	*/
+/*	autoconf.c	4.49	83/08/01	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -86,13 +86,17 @@ configure()
 		if (ocp->pc_cputype == cpusid.cpuany.cp_type) {
 			probenexus(ocp);
 			/*
-			 * Write protect the scb.  It is strange
-			 * that this code is here, but this is as soon
-			 * as we are done mucking with it, and the
+			 * Write protect the scb and UNIBUS interrupt vectors.
+			 * It is strange that this code is here, but this is
+			 * as soon as we are done mucking with it, and the
 			 * write-enable was done in assembly language
 			 * to which we will never return.
 			 */
 			ip = (int *)Sysmap; *ip &= ~PG_PROT; *ip |= PG_KR;
+			ip++; *ip &= ~PG_PROT; *ip |= PG_KR;
+#if NUBA > 1
+			ip++; *ip &= ~PG_PROT; *ip |= PG_KR;
+#endif
 			mtpr(TBIS, Sysbase);
 #if GENERIC
 			setconf();
@@ -183,6 +187,11 @@ probenexus(pcpu)
 		case NEX_MEM4I:
 		case NEX_MEM16:
 		case NEX_MEM16I:
+		case NEX_MEM64L:
+		case NEX_MEM64LI:
+		case NEX_MEM64U:
+		case NEX_MEM64UI:
+		case NEX_MEM64I:
 			printf("mcr%d at tr%d\n", nmcr, nexnum);
 			if (nmcr >= 4) {
 				printf("5 mcr's");
@@ -196,6 +205,10 @@ probenexus(pcpu)
 		case NEX_MPM2:
 		case NEX_MPM3:
 			printf("mpm");
+			goto unsupp;
+
+		case NEX_CI:
+			printf("ci");
 			goto unsupp;
 
 		default:
@@ -392,11 +405,20 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 	 */
 	uhp->uh_uba = vubp;
 	uhp->uh_physuba = pubp;
-/* HAVE TO DO SOMETHING SPECIAL FOR SECOND UNIBUS ON COMETS HERE */
 	if (numuba == 0)
 		uhp->uh_vec = UNIvec;
-	else
-		uhp->uh_vec = (int(**)())calloc(512);
+#if NUBA > 1
+	else if (numuba == 1)
+		uhp->uh_vec = UNI1vec;
+	else {
+#if defined(VAX_750)
+		if (cpu == VAX_750)
+			printf("More than 2 UBA's not supported\n");
+		else
+#endif
+			uhp->uh_vec = (int(**)())calloc(512);
+	}
+#endif
 	for (i = 0; i < 128; i++)
 		uhp->uh_vec[i] =
 		    scbentry(&catcher[i*2], SCB_ISTACK);

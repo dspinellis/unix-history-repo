@@ -1,4 +1,4 @@
-/*	nexus.h	6.1	83/07/29	*/
+/*	nexus.h	4.12	83/08/01	*/
 
 /*
  * Information about nexus's.
@@ -80,7 +80,13 @@ struct nexus nexus[MAXNNEXUS];
 #define	NEX_UBA2	0x2a
 #define	NEX_UBA3	0x2b
 #define	NEX_DR32	0x30		/* DR32 user i'face to SBI */
+#define	NEX_CI		0x38		/* CI adaptor */
 #define	NEX_MPM0	0x40		/* Multi-port mem */
 #define	NEX_MPM1	0x41		/* Who knows why 4 different ones ? */
 #define	NEX_MPM2	0x42
 #define	NEX_MPM3	0x43
+#define	NEX_MEM64L	0x68		/* 64K chips, non-interleaved, lower */
+#define	NEX_MEM64LI	0x69		/* 64K chips, ext-interleaved, lower */
+#define	NEX_MEM64U	0x6a		/* 64K chips, non-interleaved, upper */
+#define	NEX_MEM64UI	0x6b		/* 64K chips, ext-interleaved, upper */
+#define	NEX_MEM64I	0x6c		/* 64K chips, interleaved */

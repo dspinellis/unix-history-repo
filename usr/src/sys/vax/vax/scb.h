@@ -1,4 +1,4 @@
-/*	scb.h	6.1	83/07/29	*/
+/*	scb.h	4.4	83/08/01	*/
 
 /*
  * VAX System control block layout
@@ -44,6 +44,7 @@ struct scb {
 	int	(*scb_ipl16[16])();	/*   "		"    IPL 16 */
 	int	(*scb_ipl17[16])();	/*   "		"    IPL 17 */
 	int	(*scb_ubaint[128])();	/* Unibus device intr */
+	int	(*scb_uba1int[128])();	/* Unibus 1 device intr */
 };
 
 #ifdef KERNEL
