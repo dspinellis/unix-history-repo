@@ -1,22 +1,38 @@
-static char *sccsid = "@(#)sleep.c	4.1 (Berkeley) %G%";
-main(argc, argv)
-char **argv;
-{
-	int c, n;
-	char *s;
+/*
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ */
 
-	n = 0;
-	if(argc < 2) {
-		printf("arg count\n");
-		exit(0);
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1988 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)sleep.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
+
+#include <stdio.h>
+
+main(argc, argv)
+	int argc;
+	char **argv;
+{
+	int secs;
+
+	if (argc != 2) {
+		fputs("usage: sleep time\n", stderr);
+		exit(1);
 	}
-	s = argv[1];
-	while(c = *s++) {
-		if(c<'0' || c>'9') {
-			printf("bad character\n");
-			exit(0);
-		}
-		n = n*10 + c - '0';
-	}
-	sleep(n);
+	if ((secs = atoi(argv[1])) > 0)
+		(void)sleep(secs);
+	exit(0);
 }
