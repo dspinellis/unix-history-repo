@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	8.8 (Berkeley) %G%
+ *	@(#)kern_exit.c	8.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -251,7 +251,7 @@ struct wait_args {
 #define GETPS(rp)	(rp)[PS]
 #endif
 
-owait(p, uap, retval)
+compat_43_wait(p, uap, retval)
 	struct proc *p;
 	register struct wait_args *uap;
 	int *retval;
