@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)events.c 1.2 %G%";
+static char sccsid[] = "@(#)events.c 1.3 %G%";
 
 /*
  * Event/breakpoint managment.
@@ -302,6 +302,27 @@ Node exp;
 }
 
 /*
+ * Determine if the given function can be executed at full speed.
+ * This can only be done if there are no breakpoints within the function.
+ */
+
+public Boolean canskip(f)
+Symbol f;
+{
+    Breakpoint p;
+    Boolean ok;
+
+    ok = true;
+    foreach (Breakpoint, p, bplist)
+	if (whatblock(p->bpaddr) == f) {
+	    ok = false;
+	    break;
+	}
+    endfor
+    return ok;
+}
+
+/*
  * Print out what's currently being traced by looking at
  * the currently active events.
  *
@@ -312,35 +333,42 @@ Node exp;
 public status()
 {
     Event e;
-    Command cmd;
 
     foreach (Event, e, eventlist)
 	if (not e->temporary) {
-	    if (not isredirected()) {
-		printf("(%d) ", e->id);
-	    }
-	    cmd = list_element(Command, list_head(e->actions));
-	    if (cmd->op == O_PRINTCALL) {
-		printf("trace ");
-		printname(stdout, cmd->value.sym);
-	    } else {
-		if (list_size(e->actions) > 1) {
-		    printf("{ ");
-		}
-		foreach (Command, cmd, e->actions)
-		    printcmd(stdout, cmd);
-		    if (not list_islast()) {
-			printf("; ");
-		    }
-		endfor
-		if (list_size(e->actions) > 1) {
-		    printf(" }");
-		}
-		printcond(e->condition);
-	    }
-	    printf("\n");
+	    printevent(e);
 	}
     endfor
+}
+
+public printevent(e)
+Event e;
+{
+    Command cmd;
+
+    if (not isredirected()) {
+	printf("(%d) ", e->id);
+    }
+    cmd = list_element(Command, list_head(e->actions));
+    if (cmd->op == O_PRINTCALL) {
+	printf("trace ");
+	printname(stdout, cmd->value.sym);
+    } else {
+	if (list_size(e->actions) > 1) {
+	    printf("{ ");
+	}
+	foreach (Command, cmd, e->actions)
+	    printcmd(stdout, cmd);
+	    if (not list_islast()) {
+		printf("; ");
+	    }
+	endfor
+	if (list_size(e->actions) > 1) {
+	    printf(" }");
+	}
+	printcond(e->condition);
+    }
+    printf("\n");
 }
 
 /*
@@ -465,6 +493,7 @@ Cmdlist cmdlist;
     Breakpoint bp;
     Node until;
     Cmdlist actions;
+    Address ret;
 
     trcmd = new(Trcmd);
     ++trid;
@@ -478,9 +507,12 @@ Cmdlist cmdlist;
     } else {
 	list_append(list_item(trcmd), nil, eachline);
     }
-    until = build(O_EQ, build(O_SYM, pcsym), build(O_LCON, return_addr()));
-    actions = buildcmdlist(build(O_TRACEOFF, trcmd->trid));
-    event_once(until, actions);
+    ret = return_addr();
+    if (ret != 0) {
+	until = build(O_EQ, build(O_SYM, pcsym), build(O_LCON, ret));
+	actions = buildcmdlist(build(O_TRACEOFF, trcmd->trid));
+	event_once(until, actions);
+    }
     if (tracebpts) {
 	printf("adding trace %d for event %d\n", trcmd->trid, event->id);
     }
@@ -535,7 +567,11 @@ private printrmtr(t)
 Trcmd t;
 {
     if (tracebpts) {
-	printf("removing trace %d for event %d\n", t->trid, t->event->id);
+	printf("removing trace %d", t->trid);
+	if (t->event != nil) {
+	    printf(" for event %d", t->event->id);
+	}
+	printf("\n");
     }
 }
 
@@ -578,11 +614,11 @@ Boolean iscall;
     register Trcmd t;
     register Command cmd;
 
+    curfunc = whatblock(pc);
     foreach (Trcmd, t, list)
 	foreach (Command, cmd, t->cmdlist)
 	    if (cmd->op == O_PRINTSRCPOS and
 	      (cmd->value.arg[0] == nil or cmd->value.arg[0]->op == O_QLINE)) {
-		curfunc = whatblock(pc);
 		if (iscall) {
 		    printentry(curfunc);
 		} else {
