@@ -1,4 +1,4 @@
-/*	dz.c	4.37	82/05/12	*/
+/*	dz.c	4.38	82/05/19	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -252,7 +252,7 @@ dzclose(dev, flag)
 		(void) dzmctl(dev, DZ_BRK, DMBIC);
 	else
 		dzaddr->dzbrk = (dz_brk[dz] &= ~(1 << (unit&07)));
-	if ((tp->t_state&TS_HUPCLS) || (tp->t_state&TS_ISOPEN) == 0)
+	if ((tp->t_state&(TS_HUPCLS|TS_WOPEN)) || (tp->t_state&TS_ISOPEN) == 0)
 		(void) dzmctl(dev, DZ_OFF, DMSET);
 	ttyclose(tp);
 }
