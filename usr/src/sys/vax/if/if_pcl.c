@@ -1,4 +1,4 @@
-/*	if_pcl.c	6.2	84/08/29	*/
+/*	if_pcl.c	6.3	85/06/03	*/
 
 #include "pcl.h"
 #if NPCL > 0
@@ -122,6 +122,7 @@ pclattach(ui)
 	sc->sc_if.if_output = pcloutput;
 	sc->sc_if.if_ioctl = pclioctl;
 	sc->sc_if.if_reset = pclreset;
+	sc->sc_if.if_flags = IFF_BROADCAST;
 	sc->sc_ifuba.ifu_flags = UBA_NEEDBDP;
 	if_attach(&sc->sc_if);
 }
@@ -152,18 +153,17 @@ pclinit(unit)
 	register struct pcl_softc *sc = &pcl_softc[unit];
 	register struct uba_device *ui = pclinfo[unit];
 	register struct pcldevice *addr;
-	struct sockaddr_in *sin;
 	int s;
 
-	sin = (struct sockaddr_in *)&sc->sc_if.if_addr;
-	if (sin->sin_addr.s_addr == 0)
+	if (sc->sc_if.if_addrlist == (struct ifaddr *)0)
 		return;
 	if (if_ubainit(&sc->sc_ifuba, ui->ui_ubanum, 0,
 	    (int)btoc(PCLMTU)) == 0) { 
 		printf("pcl%d: can't init\n", unit);
-		sc->sc_if.if_flags &= ~IFF_UP;
+		sc->sc_if.if_flags &= ~(IFF_UP | IFF_RUNNING);
 		return;
 	}
+	sc->sc_if.if_flags |= IFF_RUNNING;
 	addr = (struct pcldevice *)ui->ui_addr;
 	addr->pcl_rcr = PCL_RCINIT;
 	addr->pcl_tcr = PCL_TXINIT;
@@ -178,11 +178,8 @@ pclinit(unit)
 	addr->pcl_rcr = (((int)(sc->sc_ifuba.ifu_r.ifrw_info>>12))&0x0030) |
 		PCL_RCNPR | PCL_RCVWD | PCL_RCVDAT | PCL_IE;
 	sc->sc_oactive = 0;
-	sc->sc_if.if_flags |= IFF_UP|IFF_RUNNING;
 	pclstart(unit);
 	splx(s);
-	/* Set up routing table entry */
-	if_rtinit(&sc->sc_if, RTF_UP);
 }
 
 /*
@@ -201,7 +198,10 @@ pcloutput(ifp, m, dst)
 
 #ifdef INET
 	case AF_INET:
-		dest = in_lnaof(((struct sockaddr_in *)dst)->sin_addr);
+		if (in_broadcast(((struct sockaddr_in *)dst)->sin_addr))
+			dest = 0;
+		else
+			dest = in_lnaof(((struct sockaddr_in *)dst)->sin_addr);
 		if (dest > PCLMAXTDM) {
 			error = EHOSTUNREACH;
 			goto bad;
@@ -458,27 +458,14 @@ pclioctl(ifp, cmd, data)
 	int cmd;
 	caddr_t data;
 {
-	struct ifreq *ifr = (struct ifreq *)data;
-	struct sockaddr_in *sin;
 	int s = splimp(), error = 0;
 
 	switch (cmd) {
 
 	case SIOCSIFADDR:
-		if (ifp->if_flags & IFF_RUNNING)
-			if_rtinit(ifp, -1);	/* delete previous route */
-		sin = (struct sockaddr_in *)&ifr->ifr_addr;
-		ifp->if_addr = *(struct sockaddr *)sin;
-		ifp->if_net = in_netof(sin->sin_addr);
-		ifp->if_host[0] = in_lnaof(sin->sin_addr);
-		ifp->if_broadaddr = *(struct sockaddr *)sin;
-		sin = (struct sockaddr_in *)&ifp->if_broadaddr;
-		sin->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
-		ifp->if_flags |= IFF_BROADCAST;
-		if (ifp->if_flags & IFF_RUNNING)
-			if_rtinit(ifp, RTF_UP);
-		else
+		if ((ifp->if_flags & IFF_RUNNING) == 0)
 			pclinit(ifp->if_unit);
+		ifp->if_flags |= IFF_UP;
 		break;
 
 	default:

@@ -1,4 +1,4 @@
-/*	@(#)if_hy.c	6.3 (Berkeley) %G% */
+/*	@(#)if_hy.c	6.4 (Berkeley) %G% */
 
 /*
  * 4.2 BSD Unix Kernel - Vax Network Interface Support
@@ -68,17 +68,17 @@
  */
 #include "machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mbuf.h"
-#include "../h/buf.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/vmmac.h"
-#include "../h/errno.h"
-#include "../h/time.h"
-#include "../h/kernel.h"
-#include "../h/ioctl.h"
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "buf.h"
+#include "protosw.h"
+#include "socket.h"
+#include "vmmac.h"
+#include "errno.h"
+#include "time.h"
+#include "kernel.h"
+#include "ioctl.h"
 
 #include "../net/if.h"
 #include "../net/netisr.h"
@@ -107,9 +107,9 @@
 #define	HYLOG
 #endif
 
-#include "../vaxif/if_hy.h"
-#include "../vaxif/if_hyreg.h"
-#include "../vaxif/if_uba.h"
+#include "if_hy.h"
+#include "if_hyreg.h"
+#include "if_uba.h"
 
 int	hyprobe(), hyattach(), hyinit(), hyioctl();
 int	hyoutput(), hyreset(), hywatch();
@@ -135,6 +135,8 @@ struct	hy_softc {
 	struct	ifuba hy_ifuba;		/* UNIBUS resources */
 	short	hy_flags;		/* flags */
 	short	hy_state;		/* driver state */
+	u_short	hy_host;		/* local host number */
+	struct	in_addr hy_addr;	/* internet address */
 	int	hy_olen;		/* packet length on output */
 	int	hy_lastwcr;		/* last command's word count */
 	short	hy_savedstate;		/* saved for reissue after status */
@@ -218,14 +220,11 @@ hyattach(ui)
 {
 	register struct hy_softc *is = &hy_softc[ui->ui_unit];
 	register struct ifnet *ifp = &is->hy_if;
-	register struct sockaddr_in *sin;
 
 	ifp->if_unit = ui->ui_unit;
 	ifp->if_name = "hy";
 	ifp->if_mtu = HYMTU;
 	is->hy_state = STARTUP;		/* don't allow state transitions yet */
-	sin = (struct sockaddr_in *)&ifp->if_addr;
-	sin->sin_family = AF_INET;
 	ifp->if_init = hyinit;
 	ifp->if_ioctl = hyioctl;
 	ifp->if_output = hyoutput;
@@ -268,11 +267,9 @@ hyinit(unit)
 	register struct hy_softc *is = &hy_softc[unit];
 	register struct uba_device *ui = hyinfo[unit];
 	register struct mbuf *m;
-	struct sockaddr_in *sin;
 	int s;
 
-	sin = (struct sockaddr_in *)&is->hy_if.if_addr;
-	if (sin->sin_addr.s_addr == 0)		/* address still unknown */
+	if (is->hy_if.if_addrlist == 0)		/* address still unknown */
 		return;
 	if (is->hy_if.if_flags & IFF_RUNNING)	/* just reset the device */
 		goto justreset;
@@ -658,7 +655,7 @@ headerexists:
 	if (hym->hym_mplen > MPSIZE || (dlen > MPSIZE && hym->hym_mplen == 0))
 		hym->hym_mplen = MPSIZE;
 
-	hym->hym_from = htons((u_short)ifp->if_host[0]);
+	hym->hym_from = htons(hy_softc[ifp->if_unit].hy_host);
 	if (hym->hym_mplen)
 		hym->hym_ctl |= H_ASSOC;
 	else
@@ -747,7 +744,6 @@ hyroute(ifp, dest, hym)
 	}
 #endif
 
-	hym->hym_from = htons((u_short)ifp->if_host[0]);
 	if (hym->hym_param == 0)
 		return(0);
 	else
@@ -861,8 +857,6 @@ actloop:
 				 0, 0);
 			} else if (rq & RQ_MARKUP) {
 				register struct ifnet *ifp = &is->hy_if;
-				register struct sockaddr_in *sin =
-				   (struct sockaddr_in *)&ifp->if_addr;
 
 				is->hy_flags &= ~RQ_MARKUP;
 				is->hy_retry = 0;
@@ -879,11 +873,10 @@ actloop:
 						is->hy_stat.hyc_atype[1],
 					is->hy_stat.hyc_atype[2]);
 
-				ifp->if_host[0] =
+				is->hy_host =
 				  (is->hy_stat.hyc_uaddr << 8) |
 					PORTNUM(&is->hy_status);
 				ifp->if_flags |= IFF_UP;
-				if_rtinit(ifp, RTF_UP);
 #ifdef HYLOG
 				hylog(HYL_UP, 0, (char *)0);
 #endif
@@ -1168,8 +1161,8 @@ hyrecvdata(ui, hym, len)
 			bcopy((caddr_t)hym, mtod(m0, caddr_t), sizeof(struct hym_hdr));
 			m = m0;
 			hypproto.sp_protocol = 0;
-			hypdst.sin_addr = ((struct sockaddr_in *)&is->hy_if.if_addr)->sin_addr;
-			hypsrc.sin_addr = if_makeaddr(is->hy_if.if_net, is->hy_if.if_host[0]);
+			hypdst.sin_addr = is->hy_addr;
+			hypsrc.sin_addr = is->hy_addr;
 			raw_input(m, &hypproto, (struct sockaddr *)&hypsrc,
 				(struct sockaddr *)&hypdst);
 			return;
@@ -1346,7 +1339,7 @@ hyioctl(ifp, cmd, data)
 	int cmd;
 	caddr_t	data;
 {
-	struct sockaddr_in *sin = (struct sockaddr_in *)data;
+	struct ifaddr *ifa = (struct ifaddr *) data;
 	struct hyrsetget *sg = (struct hyrsetget *)data;
 #if defined(HYLOG) || defined(HYELOG)
 	struct hylsetget *sgl = (struct hylsetget *)data;
@@ -1376,14 +1369,12 @@ hyioctl(ifp, cmd, data)
 	case SIOCSIFADDR:
 		if (sin->sin_family != AF_INET)
 			return(EINVAL);
-		if (ifp->if_flags & IFF_RUNNING)
-			if_rtinit(ifp, -1);
+		if ((ifp->if_flags & IFF_RUNNING) == 0)
+			hyinit(ifp->if_unit);
+		hy_softc[ifp->if_unit].hy_addr = IA_SIN(ifa)->sin_addr;
 #ifdef HYLOG
-		hil.haddr = ((struct sockaddr_in *)&ifp->if_addr)->sin_addr.s_addr;
+		hil.haddr = is->hy_addr.s_addr;
 #endif
-		ifp->if_addr = *(struct sockaddr *)sin;
-		ifp->if_net = in_netof(sin->sin_addr);
-		hyinit(ifp->if_unit);
 		break;
 
 	case HYSETROUTE:
@@ -1482,7 +1473,7 @@ out:
 #ifdef HYLOG
 	hil.herror = error;
 	hil.iflags = ifp->if_flags;
-	hil.haddr = ((struct sockaddr_in *)&ifp->if_addr)->sin_addr.s_addr;
+	hil.haddr = is->hy_addr.s_addr;
 	hylog(HYL_IOCTL, sizeof(hil), (char *)&hil);
 #endif
 	splx(s);
