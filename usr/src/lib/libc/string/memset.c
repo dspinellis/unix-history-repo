@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)memset.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)memset.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -21,11 +21,19 @@ static char sccsid[] = "@(#)memset.c	5.8 (Berkeley) %G%";
 #define	wmask	(wsize - 1)
 
 #ifdef BZERO
+#define	RETURN	return
+#define	VAL	0
+#define	WIDEVAL	0
+
 void
 bzero(dst0, length)
 	void *dst0;
 	register size_t length;
 #else
+#define	RETURN	return (dst0)
+#define	VAL	c0
+#define	WIDEVAL	c
+
 void *
 memset(dst0, c0, length)
 	void *dst0;
@@ -53,18 +61,10 @@ memset(dst0, c0, length)
 	 */ 
 	if (length < 3 * wsize) {
 		while (length != 0) {
-#ifdef BZERO
-			*dst++ = 0;
-#else
-			*dst++ = c0;
-#endif
+			*dst++ = VAL;
 			--length;
 		}
-#ifdef BZERO
-		return;
-#else
-		return (dst0);
-#endif
+		RETURN;
 	}
 
 #ifndef BZERO
@@ -83,22 +83,14 @@ memset(dst0, c0, length)
 		t = wsize - t;
 		length -= t;
 		do {
-#ifdef BZERO
-			*dst++ = 0;
-#else
-			*dst++ = c0;
-#endif
+			*dst++ = VAL;
 		} while (--t != 0);
 	}
 
 	/* Fill words.  Length was >= 2*words so we know t >= 1 here. */
 	t = length / wsize;
 	do {
-#ifdef	BZERO
-		*(u_int *)dst = 0;
-#else
-		*(u_int *)dst = c;
-#endif
+		*(u_int *)dst = WIDEVAL;
 		dst += wsize;
 	} while (--t != 0);
 
@@ -106,15 +98,7 @@ memset(dst0, c0, length)
 	t = length & wmask;
 	if (t != 0)
 		do {
-#ifdef BZERO
-			*dst++ = 0;
-#else
-			*dst++ = c0;
-#endif
+			*dst++ = VAL;
 		} while (--t != 0);
-#ifdef BZERO
-	return;
-#else
-	return (dst0);
-#endif
+	RETURN;
 }
