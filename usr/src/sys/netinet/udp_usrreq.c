@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)udp_usrreq.c	7.17 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -359,11 +359,9 @@ udp_usrreq(so, req, m, addr, control)
 		goto release;
 	}
 	/*
-	 * block udp_input while changing udp pcb queue,
-	 * addresses; should be done for individual cases,
-	 * but it's not worth it.
+	 * Note: need to block udp_input while changing
+	 * the udp pcb queue and/or pcb addresses.
 	 */
-	s = splnet();
 	switch (req) {
 
 	case PRU_ATTACH:
@@ -383,11 +381,13 @@ udp_usrreq(so, req, m, addr, control)
 		break;
 
 	case PRU_DETACH:
-		in_pcbdetach(inp);
+		udp_detach(inp);
 		break;
 
 	case PRU_BIND:
+		s = splnet();
 		error = in_pcbbind(inp, addr);
+		splx(s);
 		break;
 
 	case PRU_LISTEN:
@@ -399,7 +399,9 @@ udp_usrreq(so, req, m, addr, control)
 			error = EISCONN;
 			break;
 		}
+		s = splnet();
 		error = in_pcbconnect(inp, addr);
+		splx(s);
 		if (error == 0)
 			soisconnected(so);
 		break;
@@ -417,8 +419,10 @@ udp_usrreq(so, req, m, addr, control)
 			error = ENOTCONN;
 			break;
 		}
+		s = splnet();
 		in_pcbdisconnect(inp);
 		inp->inp_laddr.s_addr = INADDR_ANY;
+		splx(s);
 		so->so_state &= ~SS_ISCONNECTED;		/* XXX */
 		break;
 
@@ -427,12 +431,11 @@ udp_usrreq(so, req, m, addr, control)
 		break;
 
 	case PRU_SEND:
-		splx(s);
 		return (udp_output(inp, m, addr, control));
 
 	case PRU_ABORT:
 		soisdisconnected(so);
-		in_pcbdetach(inp);
+		udp_detach(inp);
 		break;
 
 	case PRU_SOCKADDR:
@@ -464,7 +467,6 @@ udp_usrreq(so, req, m, addr, control)
 	default:
 		panic("udp_usrreq");
 	}
-	splx(s);
 
 release:
 	if (control) {
@@ -474,4 +476,15 @@ release:
 	if (m)
 		m_freem(m);
 	return (error);
+}
+
+udp_detach(inp)
+	struct inpcb *inp;
+{
+	int s = splnet();
+
+	if (inp == udp_last_inpcb)
+		udp_last_inpcb = &udb;
+	in_pcbdetach(inp);
+	splx(s);
 }
