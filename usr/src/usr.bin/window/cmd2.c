@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	1.5 83/07/26";
+static	char *sccsid = "@(#)cmd2.c	1.6 83/07/27";
 #endif
 
 #include "defs.h"
@@ -113,11 +113,13 @@ dostat()
 {
 	register struct ww *w;
 
-	if ((w = openwin(22, "IO Statics")) == 0) {
+	if ((w = openwin(6, "IO Statics")) == 0) {
 		wwputs("Can't open statistics window.  ", cmdwin);
 		return;
 	}
-	wwprintf(w, "nread: %d\r\n", nread);
+	wwprintf(w, "nread\tnreadz\tnreade\tnreadc\tnwrite\tnwritec\r\n");
+	wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\r\n",
+		nread, nreadz, nreade, nreadc, wwnwrite, wwnwritec);
 	waitnl(w);
 	closewin(w);
 }

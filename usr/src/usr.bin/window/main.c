@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	1.6 83/07/22";
+static	char *sccsid = "@(#)main.c	1.7 83/07/27";
 #endif
 
 #include "defs.h"
@@ -50,8 +50,14 @@ main()
 				continue;
 			/* NOTE: ibufc == 0 */
 			ibufp = ibuf;
-			if ((ibufc = read(0, ibuf, sizeof ibuf)) < 0)
+			if ((ibufc = read(0, ibuf, sizeof ibuf)) < 0) {
 				ibufc = 0;
+				nreade++;
+			} else if (ibufc == 0)
+				nreadz++;
+			else
+				nreadc += ibufc;
+			nread++;
 		}
 		/*
 		 * Weird loop.  Copy the buffer to the pty stopping

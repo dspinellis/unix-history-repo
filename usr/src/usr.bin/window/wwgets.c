@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwgets.c	1.3 83/07/22";
+static	char *sccsid = "@(#)wwgets.c	1.4 83/07/27";
 #endif
 
 #include "defs.h"
@@ -26,7 +26,13 @@ bread()
 			p = ibufp + ibufc;
 			n = (ibuf + sizeof ibuf) - p;
 		}
-		if ((n = read(0, p, n)) > 0)
+		if ((n = read(0, p, n)) > 0) {
 			ibufc += n;
+			nreadc += n;
+		} else if (n == 0)
+			nreadz++;
+		else
+			nreade++;
+		nread++;
 	}
 }

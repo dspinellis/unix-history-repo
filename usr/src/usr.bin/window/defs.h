@@ -1,4 +1,4 @@
-/*	@(#)defs.h	1.3 83/07/22		*/
+/*	@(#)defs.h	1.4 83/07/27		*/
 
 #include "ww.h"
 #include <signal.h>
@@ -8,6 +8,9 @@
 #define ESCAPE CTRL(p)
 
 int nread;
+int nreade;
+int nreadz;
+int nreadc;
 struct timeval starttime;
 struct timezone timezone;
 
