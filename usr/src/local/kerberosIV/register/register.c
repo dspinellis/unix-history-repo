@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)register.c	1.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)register.c	1.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -26,16 +26,15 @@ static char sccsid[] = "@(#)register.c	1.5 (Berkeley) %G%";
 #include <stdio.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <kerberos/krb.h>
+#include <krb.h>
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/signal.h>
+#include "pathnames.h"
 #include "register_proto.h"
 
 #define	SERVICE	"krbupdate"
 #define	PROTO	"tcp"
-#define	KFILE	"/.update.key%s"
-#define	KPASSWD	"/usr/athena/kpasswd"
 
 char	realm[REALM_SZ];
 char	krbhst[MAX_HSTNM];
@@ -123,25 +122,25 @@ char	**argv;
 	}
 
 	code = APPEND_DB;
-	if(des_write(sock, &code, 1) != 1) {
+	if (des_write(sock, &code, 1) != 1) {
 		perror("write 1");
 		cleanup();
 		exit(1);
 	}
 
-	if(des_write(sock, pname, ANAME_SZ) != ANAME_SZ) {
+	if (des_write(sock, pname, ANAME_SZ) != ANAME_SZ) {
 		perror("write principal name");
 		cleanup();
 		exit(1);
 	}
 
-	if(des_write(sock, iname, INST_SZ) != INST_SZ) {
+	if (des_write(sock, iname, INST_SZ) != INST_SZ) {
 		perror("write instance name");
 		cleanup();
 		exit(1);
 	}
 
-	if(des_write(sock, password, 255) != 255) {
+	if (des_write(sock, password, 255) != 255) {
 		perror("write password");
 		cleanup();
 		exit(1);
@@ -166,7 +165,7 @@ char	**argv;
 		}
 
 		cc = des_read(sock, msgbuf, BUFSIZ);
-		if(cc <= 0) {
+		if (cc <= 0) {
 			fprintf(stderr, "protocol error during read\n");
 			cleanup();
 			exit(1);
@@ -197,7 +196,7 @@ get_user_info()
 	struct	passwd	*pw;
 	char	*pas, *namep;
 
-	if((pw = getpwuid(uid)) == NULL) {
+	if ((pw = getpwuid(uid)) == NULL) {
 		fprintf(stderr, "Who are you?\n");
 		return(0);
 	}
@@ -206,7 +205,7 @@ get_user_info()
 	for(i = 1; i < 3; i++) {
 		pas = getpass("login password:");
 		namep = crypt(pas, pw->pw_passwd);
-		if(strcmp(namep, pw->pw_passwd)) {
+		if (strcmp(namep, pw->pw_passwd)) {
 			fprintf(stderr, "Password incorrect\n");
 			continue;
 		} else {
@@ -214,7 +213,7 @@ get_user_info()
 			break;
 		}
 	}
-	if(!valid)
+	if (!valid)
 		return(0);
 	pas = getpass("Kerberos password (may be the same):");
 	while(*pas == NULL) {
@@ -223,7 +222,7 @@ get_user_info()
 	}
 	strcpy(password, pas);		/* password */
 	pas = getpass("Retype Kerberos password:");
-	if(strcmp(password, pas)) {
+	if (strcmp(password, pas)) {
 		fprintf(stderr, "Password mismatch -- aborted\n");
 		return(0);
 	}
@@ -241,16 +240,19 @@ setup_key(local)
 	char	namebuf[MAXPATHLEN];
 	extern int errno;
 
-	sprintf(namebuf, KFILE, inet_ntoa(local.sin_addr));
+	(void) sprintf(namebuf, "%s%s"
+		CLIENT_KEYFILE,
+		inet_ntoa(local.sin_addr));
+
 	fd = open(namebuf, O_RDONLY);
-	if(fd < 0) {
+	if (fd < 0) {
 		fprintf(stderr, "couldn't open key file for local host %s\n",
 			inet_ntoa(local.sin_addr));
 		perror("open");
 		exit(1);
 	}
 
-	if(read(fd, (char *)&kdata, sizeof(kdata)) != sizeof(kdata)) {
+	if (read(fd, (char *)&kdata, sizeof(kdata)) != sizeof(kdata)) {
 		fprintf(stderr,"size error reading key file for local host %s\n",
 			inet_ntoa(local.sin_addr));
 		exit(1);
@@ -266,12 +268,12 @@ type_info()
 	printf("The Kerberos password you enter now will be used in the future\n");
 	printf("as your Kerberos password for all machines in the %s realm.\n", realm);
 	printf("You will only be allowed to perform this operation once, although you may run\n");
-	printf("the %s program from now on to change your Kerberos password.\n\n", KPASSWD);
+	printf("the %s program from now on to change your Kerberos password.\n\n", _PATH_KPASSWD);
 }
 
 die()
 {
-	fprintf(stderr, "\nServer no longer listeninga\n");
+	fprintf(stderr, "\nServer no longer listening\n");
 	fflush(stderr);
 	cleanup();
 	exit(1);

@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)registerd.c	1.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)registerd.c	1.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -29,11 +29,11 @@ static char sccsid[] = "@(#)registerd.c	1.4 (Berkeley) %G%";
 #include <netinet/in.h>
 #include <stdio.h>
 #include <syslog.h>
-#include <kerberos/krb.h>
-#include <kerberos/krb_db.h>
+#include <krb.h>
+#include <krb_db.h>
+#include "pathnames.h"
 #include "register_proto.h"
 
-#define	SKEYFILE	"/kerberos/update.key%s"
 #define	KBUFSIZ		(sizeof(struct keyfile_data))
 #define	CRYPT		0x00
 #define	CLEAR		0x01
@@ -64,7 +64,7 @@ char	**argv;
 	signal(SIGINT, SIG_IGN);
 	signal(SIGTSTP, SIG_IGN);
 	signal(SIGPIPE, die);
-	if(setrlimit(RLIMIT_CORE, &rl) < 0) {
+	if (setrlimit(RLIMIT_CORE, &rl) < 0) {
 		syslog(LOG_ERR, "setrlimit: %m");
 		exit(1);
 	}
@@ -73,22 +73,28 @@ char	**argv;
 	/* figure out who we are talking to */
 
 	sval = sizeof(sin);
-	if(getpeername(0, (struct sockaddr *) &sin, &sval) < 0) {
+	if (getpeername(0, (struct sockaddr *) &sin, &sval) < 0) {
 		syslog(LOG_ERR, "getpeername: %m");
 		exit(1);
 	}
 
 	/* get encryption key */
 
-	(void) sprintf(keyfile, SKEYFILE, inet_ntoa(sin.sin_addr));
-	if((kf = open(keyfile, O_RDONLY)) < 0) {
-		syslog(LOG_ERR, "error opening Kerberos update keyfile (%s): %m", keyfile);
-		(void) sprintf(msgbuf, "couldn't open session keyfile for your host");
+	(void) sprintf(keyfile, "%s%s%s"
+		SERVER_KEYDIR,
+		CLIENT_KEYFILE,
+		inet_ntoa(sin.sin_addr));
+
+	if ((kf = open(keyfile, O_RDONLY)) < 0) {
+		syslog(LOG_ERR,
+		    "error opening Kerberos update keyfile (%s): %m", keyfile);
+		(void) sprintf(msgbuf,
+		    "couldn't open session keyfile for your host");
 		send_packet(msgbuf, CLEAR);
 		exit(1);
 	}
 
-	if(read(kf, keybuf, KBUFSIZ) != KBUFSIZ) {
+	if (read(kf, keybuf, KBUFSIZ) != KBUFSIZ) {
 		syslog(LOG_ERR, "wrong read size of Kerberos update keyfile");
 		(void) sprintf(msgbuf,
 			"couldn't read session key from your host's keyfile");
@@ -103,7 +109,7 @@ char	**argv;
 
 	/* read the command code byte */
 
-	if(des_read(0, &code, 1) == 1) {
+	if (des_read(0, &code, 1) == 1) {
 
 		switch(code) {
 		case	APPEND_DB:
@@ -116,7 +122,8 @@ char	**argv;
 		default:
 			retval = KFAILURE;
 			syslog(LOG_NOTICE,
-				"invalid command code on db update (0x%x)", code);
+				"invalid command code on db update (0x%x)",
+				code);
 		}
 
 	} else {
@@ -125,9 +132,9 @@ char	**argv;
 	}
 
 	code = (u_char) retval; 
-	if(code != KSUCCESS) {
+	if (code != KSUCCESS) {
 		(void) sprintf(msgbuf, "%s", krb_err_txt[code]);
-		send_packet(msgbuf,CRYPT);
+		send_packet(msgbuf, CRYPT);
 	} else {
 		(void) sprintf(msgbuf, "Update complete.");
 		send_packet(msgbuf, CRYPT);
@@ -153,13 +160,13 @@ do_append()
 
 
 	/* get master key from MKEYFILE */
-	if(kdb_get_master_key(0, master_key, master_key_schedule) != 0) {
+	if (kdb_get_master_key(0, master_key, master_key_schedule) != 0) {
 		syslog(LOG_ERR, "couldn't get master key");
 		return(KFAILURE);
 	}
 
 	mkeyversion = kdb_verify_master_key(master_key, master_key_schedule, NULL);
-	if(mkeyversion < 0) {
+	if (mkeyversion < 0) {
 		syslog(LOG_ERR, "couldn't validate master key");
 		return(KFAILURE);
 	}
@@ -167,7 +174,7 @@ do_append()
 	n = kerb_get_principal(KERB_DEFAULT_NAME, KERB_DEFAULT_INST,
 		&default_princ, 1, &more);
 
-	if(n != 1) {
+	if (n != 1) {
 		syslog(LOG_ERR, "couldn't get default principal");
 		return(KFAILURE);
 	}
@@ -177,7 +184,7 @@ do_append()
 	 * convert password to key and store it
 	 */
 
-	if(net_get_principal(input_name, input_instance, key) != 0) {
+	if (net_get_principal(input_name, input_instance, key) != 0) {
 		return(KFAILURE);
 	}
 
@@ -190,9 +197,10 @@ do_append()
 		&more
 	);
 
-	if(j != 0) {
+	if (j != 0) {
 		/* already in database, no update */
-		syslog(LOG_NOTICE, "attempt to add duplicate entry for principal %s.%s",
+		syslog(LOG_NOTICE,
+			"attempt to add duplicate entry for principal %s.%s",
 			input_name, input_instance);
 		return(KDC_PR_N_UNIQUE);
 	}
@@ -224,7 +232,10 @@ do_append()
 	bzero(key, sizeof(key));
 
 	principal_data[0].key_version = 1;	/* 1st entry */
-	if(kerb_put_principal(&principal_data[0], 1)) {
+
+	/* and write it to the database */
+
+	if (kerb_put_principal(&principal_data[0], 1)) {
 		syslog(LOG_INFO, "Kerberos update failure: put_principal failed");
 		return(KFAILURE);
 	}
@@ -269,19 +280,19 @@ net_get_principal(pname, iname, keyp)
 	static	char	password[255];
 
 	cc = des_read(0, pname, ANAME_SZ);
-	if(cc != ANAME_SZ) {
+	if (cc != ANAME_SZ) {
 		syslog(LOG_ERR, "couldn't get principal name");
 		return(-1);
 	}
 
 	cc = des_read(0, iname, INST_SZ);
-	if(cc != INST_SZ) {
+	if (cc != INST_SZ) {
 		syslog(LOG_ERR, "couldn't get instance name");
 		return(-1);
 	}
 
 	cc = des_read(0, password, 255);
-	if(cc != 255) {
+	if (cc != 255) {
 		syslog(LOG_ERR, "couldn't get password");
 		bzero(password, 255);
 		return(-1);
