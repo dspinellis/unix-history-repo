@@ -16,10 +16,10 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)errlst.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)errlst.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-char	*sys_errlist[] = {
+char *sys_errlist[] = {
 	"Error 0",
 	"Not owner",				/* 1 - EPERM */
 	"No such file or directory",		/* 2 - ENOENT */
@@ -80,7 +80,8 @@ char	*sys_errlist[] = {
 	"Address already in use",		/* 48 - EADDRINUSE */
 	"Can't assign requested address",	/* 49 - EADDRNOTAVAIL */
 
-	/* operational errors */
+/* operational errors */
+
 	"Network is down",			/* 50 - ENETDOWN */
 	"Network is unreachable",		/* 51 - ENETUNREACH */
 	"Network dropped connection on reset",	/* 52 - ENETRESET */
@@ -102,4 +103,5 @@ char	*sys_errlist[] = {
 	"Too many users",			/* 68 - EUSERS */
 	"Disc quota exceeded",			/* 69 - EDQUOT */
 };
-int	sys_nerr = { sizeof sys_errlist/sizeof sys_errlist[0] };
+int sys_nerr = { sizeof sys_errlist/sizeof sys_errlist[0] };
+int errno;
