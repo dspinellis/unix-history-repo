@@ -1,10 +1,21 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)udp.4	6.2 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.TH UDP 4P ""
+.\"	@(#)udp.4	6.3 (Berkeley) %G%
+.\"
+.TH UDP 4 ""
 .UC 5
 .SH NAME
 udp \- Internet User Datagram Protocol
@@ -45,7 +56,7 @@ this) by using a reserved \*(lqbroadcast address\*(rq; this address
 is network interface dependent.
 .PP
 Options at the IP transport level may be used with UDP; see
-.IR ip (4P).
+.IR ip (4).
 .SH DIAGNOSTICS
 A socket operation may fail with one of the following errors returned:
 .TP 15
@@ -73,4 +84,4 @@ when an attempt is made to create a
 socket with a network address for which no network interface
 exists.
 .SH SEE ALSO
-getsockopt(2), recv(2), send(2), socket(2), intro(4N), inet(4F), ip(4P)
+getsockopt(2), recv(2), send(2), socket(2), intro(4), inet(4), ip(4)

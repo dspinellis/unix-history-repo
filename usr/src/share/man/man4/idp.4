@@ -1,10 +1,21 @@
-.\" Copyright (c) 1985 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1985 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)idp.4	1.1 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.TH IDP 4P "July 30, 1985"
+.\"	@(#)idp.4	1.2 (Berkeley) %G%
+.\"
+.TH IDP 4 "July 30, 1985"
 .UC 6
 .SH NAME
 idp \- Xerox Internet Datagram Protocol
@@ -122,7 +133,4 @@ When requested, this returns a sequence number which is not likely
 to be repeated until the machine crashes or a very long time has passed.
 It is useful in constructing Packet Exchange Protocol packets.
 .SH SEE ALSO
-send(2),
-recv(2),
-intro(4N),
-ns(4F)
+send(2), recv(2), intro(4), ns(4)

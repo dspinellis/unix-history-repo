@@ -1,10 +1,21 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)inet.4	6.3 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.TH INET 4F ""
+.\"	@(#)inet.4	6.4 (Berkeley) %G%
+.\"
+.TH INET 4 ""
 .UC 5
 .SH NAME
 inet \- Internet protocol family
@@ -91,7 +102,7 @@ Subnet addressing is enabled and examined by the following
 commands on a datagram socket in the Internet domain;
 they have the same form as the
 SIOCIFADDR command (see
-.IR intro (4N)).
+.IR intro (4)).
 .PP
 .TP 20
 SIOCSIFNETMASK
@@ -103,7 +114,7 @@ then subnets are in use.
 SIOCGIFNETMASK
 Get interface network mask.
 .SH SEE ALSO
-ioctl(2), socket(2), intro(4N), tcp(4P), udp(4P), ip(4P), icmp(4P)
+ioctl(2), socket(2), intro(4), tcp(4), udp(4), ip(4), icmp(4)
 .PP
 An Introductory 4.3BSD Interprocess Communication Tutorial (PS1:7).
 .PP
