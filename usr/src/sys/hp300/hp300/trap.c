@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.35 91/12/26$
  *
- *	@(#)trap.c	7.21 (Berkeley) %G%
+ *	@(#)trap.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -21,6 +21,7 @@
 #include "kernel.h"
 #include "signalvar.h"
 #include "resourcevar.h"
+#include "syscall.h"
 #include "syslog.h"
 #include "user.h"
 #ifdef KTRACE
@@ -78,7 +79,7 @@ short	exframesize[] = {
 	-1, -1, -1, -1	/* type C-F - undefined */
 };
 
-#if defined(HP380)
+#ifdef HP380
 #define KDFAULT(c)	(mmutype == MMU_68040 ? \
 			    ((c) & SSW4_TMMASK) == SSW4_TMKD : \
 			    ((c) & (SSW_DF|FC_SUPERD)) == (SSW_DF|FC_SUPERD))
@@ -100,6 +101,80 @@ int mmupid = -1;
 #endif
 
 /*
+ * trap and syscall both need the following work done before returning
+ * to user mode.
+ */
+static inline void
+userret(p, fp, oticks, faultaddr, fromtrap)
+	register struct proc *p;
+	register struct frame *fp;
+	u_quad_t oticks;
+	u_int faultaddr;
+	int fromtrap;
+{
+	int sig, s;
+#ifdef HP380
+	int beenhere = 0;
+
+again:
+#endif
+	/* take pending signals */
+	while ((sig = CURSIG(p)) != 0)
+		psig(sig);
+	p->p_pri = p->p_usrpri;
+	if (want_resched) {
+		/*
+		 * Since we are curproc, clock will normally just change
+		 * our priority without moving us from one queue to another
+		 * (since the running process is not on a queue.)
+		 * If that happened after we setrq ourselves but before we
+		 * swtch()'ed, we might not be on the queue indicated by
+		 * our priority.
+		 */
+		s = splstatclock();
+		setrq(p);
+		p->p_stats->p_ru.ru_nivcsw++;
+		swtch();
+		splx(s);
+		while ((sig = CURSIG(p)) != 0)
+			psig(sig);
+	}
+
+	/*
+	 * If profiling, charge system time to the trapped pc.
+	 */
+	if (p->p_flag & SPROFIL)
+		addupc_intr(p, fp->f_pc, (int)(p->p_sticks - oticks));
+#ifdef HP380
+	/*
+	 * Deal with user mode writebacks (from trap, or from sigreturn).
+	 * If any writeback fails, go back and attempt signal delivery.
+	 * unless we have already been here and attempted the writeback
+	 * (e.g. bad address with user ignoring SIGSEGV).  In that case
+	 * we just return to the user without sucessfully completing
+	 * the writebacks.  Maybe we should just drop the sucker?
+	 */
+	if (mmutype == MMU_68040 && fp->f_format == FMT7) {
+		if (beenhere) {
+#ifdef DEBUG
+			if (mmudebug & MDB_WBFAILED)
+				printf(fromtrap ?
+		"pid %d(%s): writeback aborted, pc=%x, fa=%x\n" :
+		"pid %d(%s): writeback aborted in sigreturn, pc=%x\n",
+				    p->p_pid, p->p_comm, fp->f_pc, faultaddr);
+#endif
+		} else if (sig = writeback(fp, fromtrap)) {
+			beenhere = 1;
+			oticks = p->p_sticks;
+			trapsignal(p, sig, faultaddr);
+			goto again;
+		}
+	}
+#endif
+	curpri = p->p_pri;
+}
+
+/*
  * Trap is called from locore to handle most types of processor traps,
  * including events such as simulated software interrupts/AST's.
  * System calls are broken out for efficiency.
@@ -112,20 +187,18 @@ trap(type, code, v, frame)
 	struct frame frame;
 {
 	register int i;
-	unsigned ucode = 0;
-	register struct proc *p = curproc;
-	struct timeval syst;
+	unsigned ucode;
+	register struct proc *p;
+	u_quad_t sticks;
 	unsigned ncode;
-	int s;
-#if defined(HP380)
-	int beenhere = 0;
-#endif
 	extern char fswintr[];
 
 	cnt.v_trap++;
-	syst = p->p_stime;
+	p = curproc;
+	ucode = 0;
 	if (USERMODE(frame.f_sr)) {
 		type |= T_USER;
+		sticks = p->p_sticks;
 		p->p_md.md_regs = frame.f_regs;
 	}
 	switch (type) {
@@ -203,7 +276,7 @@ copyfault:
 		break;
 #endif
 
-#if defined(HP380)
+#ifdef HP380
 	case T_FPEMULI|T_USER:	/* unimplemented FP instuction */
 	case T_FPEMULD|T_USER:	/* unimplemented FP data type */
 		/* XXX need to FSAVE */
@@ -321,7 +394,7 @@ copyfault:
 		if (ssir & SIR_CLOCK) {
 			siroff(SIR_CLOCK);
 			cnt.v_soft++;
-			softclock((caddr_t)frame.f_pc, (int)frame.f_sr);
+			softclock();
 		}
 		/*
 		 * If this was not an AST trap, we are all done.
@@ -331,12 +404,10 @@ copyfault:
 			return;
 		}
 		spl0();
-#ifndef PROFTIMER
-		if ((p->p_flag&SOWEUPC) && p->p_stats->p_prof.pr_scale) {
-			addupc(frame.f_pc, &p->p_stats->p_prof, 1);
+		if (p->p_flag & SOWEUPC) {
 			p->p_flag &= ~SOWEUPC;
+			ADDUPROF(p);
 		}
-#endif
 		goto out;
 
 	case T_MMUFLT:		/* kernel mode page fault */
@@ -411,7 +482,7 @@ copyfault:
 		}
 		if (rv == KERN_SUCCESS) {
 			if (type == T_MMUFLT) {
-#if defined(HP380)
+#ifdef HP380
 				if (mmutype == MMU_68040)
 					(void) writeback(&frame, 1);
 #endif
@@ -437,72 +508,10 @@ copyfault:
 	if ((type & T_USER) == 0)
 		return;
 out:
-	while (i = CURSIG(p))
-		psig(i);
-	p->p_pri = p->p_usrpri;
-	if (want_resched) {
-		/*
-		 * Since we are curproc, clock will normally just change
-		 * our priority without moving us from one queue to another
-		 * (since the running process is not on a queue.)
-		 * If that happened after we setrq ourselves but before we
-		 * swtch()'ed, we might not be on the queue indicated by
-		 * our priority.
-		 */
-		s = splclock();
-		setrq(p);
-		p->p_stats->p_ru.ru_nivcsw++;
-		swtch();
-		splx(s);
-		while (i = CURSIG(p))
-			psig(i);
-	}
-	if (p->p_stats->p_prof.pr_scale) {
-		int ticks;
-		struct timeval *tv = &p->p_stime;
-
-		ticks = ((tv->tv_sec - syst.tv_sec) * 1000 +
-			(tv->tv_usec - syst.tv_usec) / 1000) / (tick / 1000);
-		if (ticks) {
-#ifdef PROFTIMER
-			extern int profscale;
-			addupc(frame.f_pc, &p->p_stats->p_prof,
-			    ticks * profscale);
-#else
-			addupc(frame.f_pc, &p->p_stats->p_prof, ticks);
-#endif
-		}
-	}
-#if defined(HP380)
-	/*
-	 * Deal with user mode writebacks.
-	 * If any writeback fails, go back and attempt signal delivery.
-	 * unless we have already been here and attempted the writeback
-	 * (e.g. bad address with user ignoring SIGSEGV).  In that case
-	 * we just return to the user without sucessfully completing
-	 * the writebacks.  Maybe we should just drop the sucker?
-	 */
-	if (mmutype == MMU_68040 && frame.f_format == FMT7) {
-		if (beenhere) {
-#ifdef DEBUG
-			if (mmudebug & MDB_WBFAILED)
-			printf("pid %d(%s): writeback aborted, pc=%x, fa=%x\n",
-			       p->p_pid, p->p_comm, frame.f_pc, v);
-#endif
-			;
-		} else if (i = writeback(&frame, 1)) {
-			beenhere++;
-			ucode = v;
-			syst = p->p_stime;
-			trapsignal(p, i, ucode);
-			goto out;
-		}
-	}
-#endif
-	curpri = p->p_pri;
+	userret(p, &frame, sticks, v, 1);
 }
 
-#if defined(HP380)
+#ifdef HP380
 #ifdef DEBUG
 struct writebackstats {
 	int calls;
@@ -839,64 +848,76 @@ fppanic(frame)
  * Proces a system call.
  */
 syscall(code, frame)
-	volatile unsigned code;
+	u_int code;
 	struct frame frame;
 {
 	register caddr_t params;
-	register int i;
 	register struct sysent *callp;
-	register struct proc *p = curproc;
+	register struct proc *p;
 	int error, opc, numsys, s;
+	u_int argsize;
 	struct args {
 		int i[8];
 	} args;
 	int rval[2];
-	struct timeval syst;
-	struct sysent *systab;
-#if defined(HP380)
-	int beenhere = 0;
-#endif
+	u_quad_t sticks;
 #ifdef HPUXCOMPAT
 	extern struct sysent hpuxsysent[];
 	extern int hpuxnsysent, notimp();
 #endif
 
 	cnt.v_syscall++;
-	syst = p->p_stime;
 	if (!USERMODE(frame.f_sr))
 		panic("syscall");
+	p = curproc;
+	sticks = p->p_sticks;
 	p->p_md.md_regs = frame.f_regs;
 	opc = frame.f_pc - 2;
-	systab = sysent;
-	numsys = nsysent;
 #ifdef HPUXCOMPAT
-	if (p->p_flag & SHPUX) {
-		systab = hpuxsysent;
-		numsys = hpuxnsysent;
-	}
+	if (p->p_flag & SHPUX)
+		callp = hpuxsysent, numsys = hpuxnsysent;
+	else
 #endif
+		callp = sysent, numsys = nsysent;
 	params = (caddr_t)frame.f_regs[SP] + sizeof(int);
-	if (code == 0) {			/* indir */
+	switch (code) {
+
+	case SYS_indir:
+		/*
+		 * Code is first argument, followed by actual args.
+		 */
 		code = fuword(params);
 		params += sizeof(int);
-	}
-	if (code >= numsys)
-		callp = &systab[0];		/* indir (illegal) */
-	else
-		callp = &systab[code];
-	if ((i = callp->sy_narg * sizeof (int)) &&
-	    (error = copyin(params, (caddr_t)&args, (u_int)i))) {
+		break;
+
+#ifdef SYS___indir
+	case SYS___indir:
+		/*
+		 * Like indir, but code is a quad, so as to maintain
+		 * quad alignment for the rest of the arguments.
+		 */
 #ifdef HPUXCOMPAT
 		if (p->p_flag & SHPUX)
-			error = bsdtohpuxerrno(error);
+			break;
 #endif
-		frame.f_regs[D0] = error;
-		frame.f_sr |= PSL_C;	/* carry bit */
+		code = fuword(params + QUAD_LOWWORD * sizeof(int));
+		params += sizeof(quad);
+		break;
+#endif
+
+	/* nothing to do by default */
+	}
+	if (code < numsys)
+		callp += code;
+	else
+		callp += SYS_indir;	/* => nosys */
+	argsize = callp->sy_narg * sizeof(int);
+	if (argsize && (error = copyin(params, (caddr_t)&args, argsize))) {
 #ifdef KTRACE
 		if (KTRPOINT(p, KTR_SYSCALL))
 			ktrsyscall(p->p_tracep, code, callp->sy_narg, args.i);
 #endif
-		goto done;
+		goto bad;
 	}
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_SYSCALL))
@@ -910,100 +931,39 @@ syscall(code, frame)
 		error = notimp(p, args.i, rval, code, callp->sy_narg);
 	else
 #endif
-	error = (*callp->sy_call)(p, &args, rval);
-#ifdef DIAGNOSTIC
-	if (curproc->p_spare[0])
-		panic("syscall: M_NAMEI");
-	if (curproc->p_spare[1])
-		panic("syscall: STARTSAVE");
-	if (curproc->p_spare[2])
-		panic("syscall: LOCK COUNT");
-#endif
-	if (error == ERESTART)
-		frame.f_pc = opc;
-	else if (error != EJUSTRETURN) {
-		if (error) {
-#ifdef HPUXCOMPAT
-			if (p->p_flag & SHPUX)
-				error = bsdtohpuxerrno(error);
-#endif
-			frame.f_regs[D0] = error;
-			frame.f_sr |= PSL_C;	/* carry bit */
-		} else {
-			frame.f_regs[D0] = rval[0];
-			frame.f_regs[D1] = rval[1];
-			frame.f_sr &= ~PSL_C;
-		}
-	}
-	/* else if (error == EJUSTRETURN) */
-		/* nothing to do */
+		error = (*callp->sy_call)(p, &args, rval);
+	switch (error) {
 
-done:
-	/*
-	 * Reinitialize proc pointer `p' as it may be different
-	 * if this is a child returning from fork syscall.
-	 */
-	p = curproc;
-	while (i = CURSIG(p))
-		psig(i);
-	p->p_pri = p->p_usrpri;
-	if (want_resched) {
+	case 0:
 		/*
-		 * Since we are curproc, clock will normally just change
-		 * our priority without moving us from one queue to another
-		 * (since the running process is not on a queue.)
-		 * If that happened after we setrq ourselves but before we
-		 * swtch()'ed, we might not be on the queue indicated by
-		 * our priority.
+		 * Reinitialize proc pointer `p' as it may be different
+		 * if this is a child returning from fork syscall.
 		 */
-		s = splclock();
-		setrq(p);
-		p->p_stats->p_ru.ru_nivcsw++;
-		swtch();
-		splx(s);
-		while (i = CURSIG(p))
-			psig(i);
-	}
-	if (p->p_stats->p_prof.pr_scale) {
-		int ticks;
-		struct timeval *tv = &p->p_stime;
+		p = curproc;
+		frame.f_regs[D0] = rval[0];
+		frame.f_regs[D1] = rval[1];
+		frame.f_sr &= ~PSL_C;
+		break;
 
-		ticks = ((tv->tv_sec - syst.tv_sec) * 1000 +
-			(tv->tv_usec - syst.tv_usec) / 1000) / (tick / 1000);
-		if (ticks) {
-#ifdef PROFTIMER
-			extern int profscale;
-			addupc(frame.f_pc, &p->p_stats->p_prof,
-			    ticks * profscale);
-#else
-			addupc(frame.f_pc, &p->p_stats->p_prof, ticks);
+	case ERESTART:
+		frame.f_pc = opc;
+		break;
+
+	case EJUSTRETURN:
+		break;		/* nothing to do */
+
+	default:
+	bad:
+#ifdef HPUXCOMPAT
+		if (p->p_flag & SHPUX)
+			error = bsdtohpuxerrno(error);
 #endif
-		}
+		frame.f_regs[D0] = error;
+		frame.f_sr |= PSL_C;
+		break;
 	}
-#if defined(HP380)
-	/*
-	 * Deal with writebacks when returning from sigreturn.
-	 * They may generate another signal to be processed.
-	 * Again, we don't attempt the writeback if we have already
-	 * tried and failed (see comment in trap).
-	 */
-	if (mmutype == MMU_68040 && frame.f_format == FMT7) {
-		if (beenhere) {
-#ifdef DEBUG
-			if (mmudebug & MDB_WBFAILED)
-			printf("pid %d(%s): writeback aborted in sigreturn, pc=%x\n",
-			       p->p_pid, p->p_comm, frame.f_pc);
-#endif
-			;
-		} else if (i = writeback(&frame, 0)) {
-			beenhere++;
-			syst = p->p_stime;
-			trapsignal(p, i, 0);
-			goto done;
-		}
-	}
-#endif
-	curpri = p->p_pri;
+
+	userret(p, &frame, sticks, (u_int)0, 0);
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_SYSRET))
 		ktrsysret(p->p_tracep, code, error, rval[0]);
