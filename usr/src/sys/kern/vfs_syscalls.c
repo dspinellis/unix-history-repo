@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.11 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -221,6 +221,39 @@ fstatfs()
 	if (error = VFS_STATFS(((struct vnode *)fp->f_data)->v_mount, &sb))
 		RETURN (error);
 	RETURN (copyout((caddr_t)&sb, (caddr_t)uap->buf, sizeof(sb)));
+}
+
+/*
+ * get statistics on all filesystems
+ */
+getfsstat()
+{
+	struct a {
+		struct statfs *buf;
+		long bufsize;
+	} *uap = (struct a *)u.u_ap;
+	register struct mount *mp;
+	register struct statfs *sfsp;
+	long count, maxcount, error;
+
+	maxcount = uap->bufsize / sizeof(struct statfs);
+	sfsp = uap->buf;
+	mp = rootfs;
+	count = 0;
+	do {
+		count++;
+		if (sfsp && count <= maxcount) {
+			if (error = VFS_STATFS(mp, sfsp))
+				RETURN (error);
+			sfsp++;
+		}
+		mp = mp->m_prev;
+	} while (mp != rootfs);
+	if (sfsp && count > maxcount)
+		u.u_r.r_val1 = maxcount;
+	else
+		u.u_r.r_val1 = count;
+	RETURN (0);
 }
 
 /*
