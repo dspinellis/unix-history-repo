@@ -1,4 +1,4 @@
-/*	ip_output.c	1.48	83/05/15	*/
+/*	ip_output.c	1.49	83/05/27	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -17,8 +17,6 @@
 #ifdef vax
 #include "../vax/mtpr.h"
 #endif
-
-int	ipnorouteprint = 0;
 
 ip_output(m, opt, ro, flags)
 	struct mbuf *m;
@@ -92,7 +90,7 @@ gotif:
 	 * and verify user is allowed to send
 	 * such a packet.
 	 */
-	if (in_lnaof(dst) == INADDR_ANY) {
+	if (in_lnaof(((struct sockaddr_in *)dst)->sin_addr) == INADDR_ANY) {
 		if ((ifp->if_flags & IFF_BROADCAST) == 0) {
 			error = EADDRNOTAVAIL;
 			goto bad;
