@@ -7,8 +7,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sysctl.h	7.21 (Berkeley) %G%
+ *	@(#)sysctl.h	7.22 (Berkeley) %G%
  */
+
+#ifndef _SYS_SYSCTL_H_
+#define	_SYS_SYSCTL_H_
 
 /*
  * These are for the eproc structure defined below.
@@ -203,8 +206,8 @@ struct kinfo_proc {
 #define	CTL_DEBUG_VALUE		1	/* int: variable value */
 #define	CTL_DEBUG_MAXID		20
 
-#ifdef KERNEL
-#ifdef DEBUG
+#ifdef	KERNEL
+#ifdef	DEBUG
 /*
  * CTL_DEBUG variables.
  *
@@ -225,7 +228,7 @@ extern struct ctldebug debug0, debug1, debug2, debug3, debug4;
 extern struct ctldebug debug5, debug6, debug7, debug8, debug9;
 extern struct ctldebug debug10, debug11, debug12, debug13, debug14;
 extern struct ctldebug debug15, debug16, debug17, debug18, debug19;
-#endif /* DEBUG */
+#endif	/* DEBUG */
 
 /*
  * Internal sysctl function calling convention:
@@ -246,10 +249,11 @@ int sysctl_rdstring __P((void *, size_t *, void *, char *));
 int sysctl_rdstruct __P((void *, size_t *, void *, void *, int));
 void fill_eproc __P((struct proc *, struct eproc *));
 
-#else /* !KERNEL */
+#else	/* !KERNEL */
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
 int	sysctl __P((int *, u_int, void *, size_t *, void *, size_t));
 __END_DECLS
-#endif /* KERNEL */
+#endif	/* KERNEL */
+#endif	/* !_SYS_SYSCTL_H_ */
