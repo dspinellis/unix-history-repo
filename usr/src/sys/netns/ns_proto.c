@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ns_proto.c	8.1 (Berkeley) %G%
+ *	@(#)ns_proto.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -20,12 +20,12 @@
 /*
  * NS protocol family: IDP, ERR, PE, SPP, ROUTE.
  */
-int	ns_init();
-int	idp_input(), idp_output(), idp_ctlinput(), idp_usrreq();
-int	idp_raw_usrreq(), idp_ctloutput();
-int	spp_input(), spp_ctlinput();
+void	ns_init();
+int	idp_output(), idp_usrreq(), idp_raw_usrreq(), idp_ctloutput();
+void	idp_input(), idp_ctlinput();
+void	spp_input(), spp_ctlinput();
 int	spp_usrreq(), spp_usrreq_sp(), spp_ctloutput();
-int	spp_init(), spp_fasttimo(), spp_slowtimo();
+void	spp_init(), spp_fasttimo(), spp_slowtimo();
 extern	int raw_usrreq();
 
 extern	struct domain nsdomain;
