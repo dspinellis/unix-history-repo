@@ -1,0 +1,56 @@
+.\" @(#)LOAreno.86.dom.div	1.1 (CSRG - distribution) %G%
+.ll 6.8i
+.nr LL 6.8i
+.vs 24
+.nr VS 24
+.ps 12
+.nr PS 12
+.ce 2
+\fBLETTER OF AUTHORIZATION\fR
+(Reno release)
+.sp 2
+.LP
+I authorize \l'3.5i', a division of \l'1.35i'
+\l'2i', to receive a copy of the Reno release of 4.3BSD under the terms
+and conditions of the revised Berkeley License Agreement (4/86)
+and the Reno Addendum between \l'3i'
+and the Regents of the University of California.  I warrant that 
+\l'3.5i' will abide by said Agreement and accompanying addenda,
+and that I have the authority to make this authorization on
+behalf of \l'3.i'.
+.sp
+.LP
+Please send a copy of the Reno release of 4.3BSD to:         
+.sp
+.nf
+.ce 4
+\l'4i'
+\l'4i'
+\l'4i'
+\l'4i'
+.sp
+Signed:
+By\l'2.75i'
+Title\l'2.65i'
+Date\l'2.65i'
+.\"
+.\" Go back and add the little subtitles
+.\"
+.sp -19
+.sp 14u
+.ps 8
+.ti .96875i
+division name
+.br
+.sp -1
+.ti 5.625i
+parent name
+.sp 2
+.ti .125i
+parent name
+.ti .875i
+division name
+.sp 
+.ti .125i
+parent name
+
