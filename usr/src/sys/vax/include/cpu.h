@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cpu.h	7.6 (Berkeley) %G%
+ *	@(#)cpu.h	7.7 (Berkeley) %G%
  */
 
 #ifndef LOCORE
@@ -171,6 +171,10 @@ struct qbus {
 	caddr_t	qb_maddr;		/* "unibus" memory address */
 	caddr_t	qb_iopage;		/* "unibus" IO page address */
 };
+
+#ifndef _MTPR_H_
+#include "mtpr.h"
+#endif
 
 #ifdef KERNEL
 int	cpu;
