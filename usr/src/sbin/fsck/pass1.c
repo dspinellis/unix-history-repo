@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass1.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass1.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -112,20 +112,37 @@ checkinode(inumber, idesc)
 	if (mode == IFBLK || mode == IFCHR)
 		ndb++;
 	if (mode == IFLNK) {
-		if (doinglevel2 && dp->di_size < MAXSYMLINKLEN &&
-		    (dp->di_ouid != -1 || dp->di_gid != -1)) {
+		if (doinglevel2 &&
+		    dp->di_size > 0 && dp->di_size < MAXSYMLINKLEN &&
+		    dp->di_blocks != 0) {
 			if (bread(fsreadfd, symbuf,
 			    fsbtodb(&sblock, dp->di_db[0]),
 			    (long)dp->di_size) != 0)
 				errexit("cannot read symlink");
+			if (debug) {
+				symbuf[dp->di_size] = 0;
+				printf("convert symlink %d(%s) of size %d\n",
+					inumber, symbuf, (long)dp->di_size);
+			}
 			dp = ginode(inumber);
 			bcopy(symbuf, (caddr_t)dp->di_shortlink,
 			    (long)dp->di_size);
 			dp->di_blocks = 0;
 			inodirty();
 		}
-		if (dp->di_size < sblock.fs_maxsymlinklen)
+		/*
+		 * Fake ndb value so direct/indirect block checks below
+		 * will detect any garbage after symlink string.
+		 */
+		if (dp->di_size < sblock.fs_maxsymlinklen) {
 			ndb = howmany(dp->di_size, sizeof(daddr_t));
+			if (ndb > NDADDR) {
+				j = ndb - NDADDR;
+				for (ndb = 1; j > 1; j--)
+					ndb *= NINDIR(&sblock);
+				ndb += NDADDR;
+			}
+		}
 	}
 	for (j = ndb; j < NDADDR; j++)
 		if (dp->di_db[j] != 0) {
@@ -167,7 +184,7 @@ checkinode(inumber, idesc)
 	} else
 		statemap[inumber] = FSTATE;
 	typemap[inumber] = IFTODT(mode);
-	if (doinglevel2 && (dp->di_ouid != -1 || dp->di_gid != -1)) {
+	if (doinglevel2 && (dp->di_ouid != -1 || dp->di_ogid != -1)) {
 		dp = ginode(inumber);
 		dp->di_uid = dp->di_ouid;
 		dp->di_ouid = -1;
