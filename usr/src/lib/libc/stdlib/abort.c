@@ -16,14 +16,18 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)abort.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)abort.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <signal.h>
+#include <sys/signal.h>
 
 abort()
 {
 	(void)sigblock(~0L);
+	(void)sigsetmask(~sigmask(SIGABRT));
+	/* leave catch function active to give program a crack at it */
+	(void)kill(getpid(), SIGABRT);
+	/* if we got here, it was no good; reset to default and stop */
 	(void)signal(SIGABRT, SIG_DFL);
 	(void)sigsetmask(~sigmask(SIGABRT));
 	(void)kill(getpid(), SIGABRT);
