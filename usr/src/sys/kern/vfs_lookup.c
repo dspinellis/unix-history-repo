@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_lookup.c	7.17 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -252,15 +252,17 @@ dirloop:
 #ifdef NAMEI_DIAGNOSTIC
 		printf("not found\n");
 #endif
+		if (flag == LOOKUP || flag == DELETE ||
+		    error != ENOENT || *cp != 0)
+			goto bad;
 		/*
 		 * If creating and at end of pathname, then can consider
 		 * allowing file to be created.
 		 */
-		if (ndp->ni_dvp->v_mount->m_flag & M_RDONLY)
+		if (ndp->ni_dvp->v_mount->m_flag & M_RDONLY) {
 			error = EROFS;
-		if (flag == LOOKUP || flag == DELETE ||
-		    error != ENOENT || *cp != 0)
 			goto bad;
+		}
 		/*
 		 * We return with ni_vp NULL to indicate that the entry
 		 * doesn't currently exist, leaving a pointer to the
