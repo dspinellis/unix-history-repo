@@ -6,11 +6,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)devname.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)devname.c	5.15 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <db.h>
 #include <stdio.h>
 #include <paths.h>
@@ -29,9 +30,9 @@ devname(dev, type)
 	DBT data, key;
 
 	if (!db && !failure &&
-	    !(db = hash_open(_PATH_DEVDB, O_RDONLY, 0, NULL))) {
+	    !(db = dbopen(_PATH_DEVDB, O_RDONLY, 0, DB_HASH, NULL))) {
 		(void)fprintf(stderr,
-		    "warning: no device database %s\n", _PATH_DEVDB);
+		    "warning: %s: %s\n", _PATH_DEVDB, strerror(errno));
 		failure = 1;
 	}
 	if (failure)
