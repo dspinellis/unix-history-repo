@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)os.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)os.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -108,7 +108,7 @@ lsystem(cmd)
 			cmd = shell;
 		else
 		{
-			sprintf(cmdbuf, "%s -c \"%s\"", shell, cmd);
+			(void)sprintf(cmdbuf, "%s -c \"%s\"", shell, cmd);
 			cmd = cmdbuf;
 		}
 	}
@@ -194,7 +194,7 @@ glob(filename)
 	FILE *f;
 	char *p;
 	int ch;
-	char *cmd;
+	char *cmd, *malloc();
 	static char buffer[FILENAME];
 
 	if (filename[0] == '#')
@@ -210,19 +210,19 @@ glob(filename)
 		/*
 		 * Read the output of <echo filename>.
 		 */
-		cmd = calloc(strlen(filename)+8, sizeof(char));
+		cmd = malloc((u_int)(strlen(filename)+8));
 		if (cmd == NULL)
 			return (filename);
-		sprintf(cmd, "echo \"%s\"", filename);
+		(void)sprintf(cmd, "echo \"%s\"", filename);
 	} else
 	{
 		/*
 		 * Read the output of <$SHELL -c "echo filename">.
 		 */
-		cmd = calloc(strlen(p)+12);
+		cmd = malloc((u_int)(strlen(p)+12));
 		if (cmd == NULL)
 			return (filename);
-		sprintf(cmd, "%s -c \"echo %s\"", p, filename);
+		(void)sprintf(cmd, "%s -c \"echo %s\"", p, filename);
 	}
 
 	if ((f = popen(cmd, "r")) == NULL)
@@ -256,6 +256,7 @@ bad_file(filename, message, len)
 	unsigned int len;
 {
 	struct stat statbuf;
+	char *strcat();
 
 	if (stat(filename, &statbuf) < 0)
 		return (errno_message(filename, message, len));
@@ -264,14 +265,14 @@ bad_file(filename, message, len)
 	{
 		static char is_dir[] = " is a directory";
 		strtcpy(message, filename, len-sizeof(is_dir)-1);
-		strcat(message, is_dir);
+		(void)strcat(message, is_dir);
 		return (message);
 	}
 	if ((statbuf.st_mode & S_IFMT) != S_IFREG)
 	{
 		static char not_reg[] = " is not a regular file";
 		strtcpy(message, filename, len-sizeof(not_reg)-1);
-		strcat(message, not_reg);
+		(void)strcat(message, not_reg);
 		return (message);
 	}
 	return (NULL);
@@ -300,11 +301,11 @@ errno_message(filename, message, len)
 		p = sys_errlist[errno];
 	else
 	{
-		sprintf(msg, "Error %d", errno);
+		(void)sprintf(msg, "Error %d", errno);
 		p = msg;
 	}
 	strtcpy(message, filename, len-strlen(p)-3);
-	strcat(message, ": ");
-	strcat(message, p);
+	(void)strcat(message, ": ");
+	(void)strcat(message, p);
 	return (message);
 }
