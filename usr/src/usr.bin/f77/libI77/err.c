@@ -1,5 +1,5 @@
 /*
-char id_err[] = "@(#)err.c	1.6";
+char id_err[] = "@(#)err.c	1.7";
  *
  * file i/o error and initialization routines
  */
@@ -157,8 +157,9 @@ FILE	*f;
 }
 
 /*initialization routine*/
+short	init66_;
 f_init()
-{	extern short init66_;
+{
 	ini_std(STDERR, stderr, WRITE, 0);
 	ini_std(STDIN, stdin, READ, 0);
 	ini_std(STDOUT, stdout, WRITE, init66_);
