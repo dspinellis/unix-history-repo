@@ -1,0 +1,62 @@
+head     1.2;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     83.02.10.02.15.06;  author layer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     83.02.08.11.35.39;  author jkf;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@fixed DESTDIR and "make install"
+@
+text
+@# $Header: /usr/src/ucb/sysline/RCS/Makefile,v 1.1 83/02/08 11:35:39 jkf Exp $
+#  See the sysline program source for options you may want to modify
+#
+DESTDIR =
+
+CFLAGS = -O -n
+
+.DEFAULT:sysline
+
+sysline: sysline.c
+	${CC} ${CFLAGS} -o sysline sysline.c -lcurses -ltermlib
+
+install: sysline
+	install -s sysline $(DESTDIR)/usr/ucb
+
+clean:
+	rm -f sysline
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+# $Header$
+d4 1
+a4 1
+DESTDIR = /usr/ucb
+d14 1
+a14 1
+	install -c -s sysline $(DESTDIR)
+@
