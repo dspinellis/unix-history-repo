@@ -1,5 +1,5 @@
 #ifndef lint
-static char SccsId[] =	"@(#)syslog.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	4.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -14,6 +14,9 @@ static char SccsId[] =	"@(#)syslog.c	4.3 (Berkeley) %G%";
  *	adds a newline on the end of the message.
  *
  * The output of this routine is intended to be read by /etc/syslogd.
+ *
+ * Author: Eric Allman
+ * Modified to use UNIX domain IPC by Ralph Campbell
  */
 
 #include <sys/types.h>
@@ -46,28 +49,26 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 	register char *b, *f, *o;
 	register int c;
 	long now;
-	int pid;
+	int pid, olderrno = errno;
 
 	/* see if we should just throw out this message */
-	if (pri > LogMask)
+	if (pri < LOG_ALERT || pri > LogMask)
 		return;
 	if (LogFile < 0)
 		openlog(NULL, 0, 0);
 	o = outline;
-	if (pri > 0) {
-		sprintf(o, "<%d>", pri);
-		o += strlen(o);
-	}
+	sprintf(o, "<%d>", pri);
+	o += strlen(o);
 	if (LogTag) {
 		strcpy(o, LogTag);
 		o += strlen(o);
 	}
 	if (LogStat & LOG_PID) {
-		sprintf(o, " (%d)", getpid());
+		sprintf(o, "[%d]", getpid());
 		o += strlen(o);
 	}
 	time(&now);
-	sprintf(o, " %.15s -- ", ctime(&now) + 4);
+	sprintf(o, ": %.15s-- ", ctime(&now) + 4);
 	o += strlen(o);
 
 	b = buf;
@@ -82,10 +83,10 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 			*b++ = c;
 			continue;
 		}
-		if ((unsigned)errno > sys_nerr)
-			sprintf(b, "error %d", errno);
+		if ((unsigned)olderrno > sys_nerr)
+			sprintf(b, "error %d", olderrno);
 		else
-			strcpy(b, sys_errlist[errno]);
+			strcpy(b, sys_errlist[olderrno]);
 		b += strlen(b);
 	}
 	*b++ = '\n';
@@ -107,7 +108,7 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 		close(LogFile);
 		exit(0);
 	}
-	while (wait((int *)0) != pid)
+	while ((c = wait((int *)0)) > 0 && c != pid)
 		;
 }
 
@@ -119,7 +120,7 @@ openlog(ident, logstat, logmask)
 	int logstat, logmask;
 {
 
-	LogTag = ident;
+	LogTag = (ident != NULL) ? ident : "syslog";
 	LogStat = logstat;
 	if (logmask > 0 && logmask <= LOG_DEBUG)
 		LogMask = logmask;
@@ -150,6 +151,7 @@ setlogmask(pri)
 	int opri;
 
 	opri = LogMask;
-	LogMask = pri;
+	if (pri > 0 && pri <= LOG_DEBUG)
+		LogMask = pri;
 	return (opri);
 }
