@@ -8,12 +8,17 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs.h	8.1 (Berkeley) %G%
+ *	@(#)kernfs.h	8.2 (Berkeley) %G%
  */
 
 #define	_PATH_KERNFS	"/kern"		/* Default mountpoint */
 
 #ifdef KERNEL
+
+#ifndef VT_KERNFS
+#define VT_KERNFS VT_UFS
+#endif
+
 struct kernfs_mount {
 	struct vnode	*kf_root;	/* Root node */
 };

@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)portal_vnops.c	8.1 (Berkeley) %G%
+ *	@(#)portal_vnops.c	8.2 (Berkeley) %G%
  *
  * $Id: portal_vnops.c,v 1.4 1992/05/30 10:05:24 jsp Exp jsp $
  */
@@ -92,7 +92,7 @@ portal_lookup(ap)
 #ifdef PORTAL_DIAGNOSTIC
 	printf("portal_lookup: allocate new vnode\n");
 #endif
-	error = getnewvnode(VT_UFS, ap->a_dvp->v_mount, portal_vnodeop_p, &fvp);
+	error = getnewvnode(VT_PORTAL, ap->a_dvp->v_mount, portal_vnodeop_p, &fvp);
 	if (error)
 		goto bad;
 	fvp->v_type = VREG;

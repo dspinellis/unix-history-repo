@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vfsops.c	8.1 (Berkeley) %G%
+ *	@(#)kernfs_vfsops.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -109,7 +109,7 @@ kernfs_mount(mp, path, data, ndp, p)
 	if (mp->mnt_flag & MNT_UPDATE)
 		return (EOPNOTSUPP);
 
-	error = getnewvnode(VT_UFS, mp, kernfs_vnodeop_p, &rvp);	/* XXX */
+	error = getnewvnode(VT_KERNFS, mp, kernfs_vnodeop_p, &rvp);	/* XXX */
 	if (error)
 		return (error);
 
