@@ -1,4 +1,4 @@
-/*	route.c	6.6	84/08/28	*/
+/*	route.c	6.7	84/09/05	*/
 
 #include "param.h"
 #include "systm.h"
@@ -16,6 +16,7 @@
 
 int	rttrash;		/* routes not in table but not freed */
 struct	sockaddr wildcard;	/* zero valued cookie for wildcard searches */
+int	rthashsize = RTHASHSIZ;	/* for netstat, etc. */
 
 /*
  * Packet routing routines.
@@ -27,10 +28,9 @@ rtalloc(ro)
 	register struct mbuf *m;
 	register u_long hash;
 	struct sockaddr *dst = &ro->ro_dst;
-	int (*match)(), doinghost;
+	int (*match)(), doinghost, s;
 	struct afhash h;
 	u_int af = dst->sa_family;
-	struct rtentry *rtmin;
 	struct mbuf **table;
 
 	if (ro->ro_rt && ro->ro_rt->rt_ifp && (ro->ro_rt->rt_flags & RTF_UP))
@@ -38,9 +38,9 @@ rtalloc(ro)
 	if (af >= AF_MAX)
 		return;
 	(*afswitch[af].af_hash)(dst, &h);
-	rtmin = 0;
 	match = afswitch[af].af_netmatch;
 	hash = h.afh_hosthash, table = rthost, doinghost = 1;
+	s = splnet();
 again:
 	for (m = table[RTHASHMOD(hash)]; m; m = m->m_next) {
 		rt = mtod(m, struct rtentry *);
@@ -58,10 +58,14 @@ again:
 			    !(*match)(&rt->rt_dst, dst))
 				continue;
 		}
-		if (rtmin == 0 || rt->rt_use < rtmin->rt_use)
-			rtmin = rt;
+		rt->rt_refcnt++;
+		splx(s);
+		if (dst == &wildcard)
+			rtstat.rts_wildcard++;
+		ro->ro_rt = rt;
+		return;
 	}
-	if (rtmin == 0 && doinghost) {
+	if (doinghost) {
 		doinghost = 0;
 		hash = h.afh_nethash, table = rtnet;
 		goto again;
@@ -69,18 +73,12 @@ again:
 	/*
 	 * Check for wildcard gateway, by convention network 0.
 	 */
-	if (rtmin == 0 && dst != &wildcard) {
+	if (dst != &wildcard) {
 		dst = &wildcard, hash = 0;
 		goto again;
 	}
-	ro->ro_rt = rtmin;
-	if (rtmin == 0) {
-		rtstat.rts_unreach++;
-		return;
-	}
-	rtmin->rt_refcnt++;
-	if (dst == &wildcard)
-		rtstat.rts_wildcard++;
+	splx(s);
+	rtstat.rts_unreach++;
 }
 
 rtfree(rt)
