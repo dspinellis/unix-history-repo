@@ -1,4 +1,4 @@
-/*	mkheaders.c	1.10	82/10/24	*/
+/*	mkheaders.c	1.11	82/10/24	*/
 
 /*
  * Make all the .h files for the optional entries
@@ -24,7 +24,7 @@ headers()
  */
 do_count(dev, hname, search)
 	register char *dev, *hname;
-	bool search;
+	int search;
 {
 	register struct device *dp, *mp;
 	register int count;
@@ -139,7 +139,7 @@ toheader(dev)
 
 	strcpy(hbuf, path(dev));
 	strcat(hbuf, ".h");
-	return (hbuf)
+	return (hbuf);
 }
 
 /*
@@ -156,5 +156,5 @@ char *tomacro(dev)
 	while (*dev)
 		*cp++ = toupper(*dev++);
 	*cp++ = 0;
-	return (mbuf)
+	return (mbuf);
 }
