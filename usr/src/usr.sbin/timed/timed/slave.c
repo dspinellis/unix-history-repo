@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slave.c	2.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)slave.c	2.5 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -37,6 +37,7 @@ slave()
 	struct tsp resp;
 	extern int Mflag;
 #ifdef MEASURE
+	int tempstat;
 	extern FILE *fp;
 #endif
 	if (slavenet) {
@@ -102,12 +103,25 @@ loop:
 					ntp->status = IGNORE;
 			}
 		}
+#ifdef MEASURE
+		tempstat = status;
+#endif
 		setstatus();
+#ifdef MEASURE
+		/*
+		 * Check to see if we just became master
+		 */
+		if ((status & MASTER) && !(tempstat & MASTER)) {
+			fp = fopen("/usr/adm/timed.masterlog", "w");
+			setlinebuf(fp);
+		}
+#endif
 		
 		if (nignorednets > 0) {
 			(void)gettimeofday(&time, (struct timezone *)0);
 			looktime = time.tv_sec + delay2;
-		}
+		} else
+			looktime = 0;
 	}
 	wait.tv_sec = electiontime - time.tv_sec + 10;
 	wait.tv_usec = 0;
