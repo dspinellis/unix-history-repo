@@ -3,7 +3,7 @@
 +/"outq.cc"16t"outq.cf"16t"outq.cl"nDXX
 +/"oproc"16t"rsel"16t"wsel"16tnpXX
 +/"linep"16t"addr"nXX
-+/"maj"8t"min"8t"flags"16t"state"16t"pgrp"n+b2-b3+XXd
++/"maj"8t"min"8t"flags"16t"state"16t"pgrp"nbb2+XXd
 +/"delct"8t"line"8t"col"8t"ispeed"8t"ospeed"n5b
 +/"rocount"8t"rocol"n2b
 +/"erase"8t"kill"8t"intrc"8t"quitc"8t"startc"nC8tC8tC8tC8tC
