@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_cache.c	7.10 (Berkeley) %G%
+ *	@(#)vfs_cache.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -228,7 +228,7 @@ nchinit()
 	nchashtbl = (union nchash *)malloc((u_long)nchashsize,
 	    M_CACHE, M_WAITOK);
 	for (nchash = 1; nchash <= nchashsize / sizeof *nchp; nchash <<= 1)
-		/* void */;
+		continue;
 	nchash = (nchash >> 1) - 1;
 	for (nchp = &nchashtbl[nchash]; nchp >= nchashtbl; nchp--) {
 		nchp->nch_head[0] = nchp;
