@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)pk0.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)pk0.c	5.6 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -514,7 +514,10 @@ register struct pack *pk;
 		free((char *)bp);
 	}
 	if (rcheck != pk->p_rwindow) {
-		logent("PK0", "pkclose rcheck != p_rwindow");
+		char buf[256];
+
+		sprintf(buf, "PK0: rc %d rw %d", rcheck, pk->p_rwindow);
+		logent(buf, "pkclose rcheck != p_rwindow");
 	}
 	free((char *)pk);
 }
