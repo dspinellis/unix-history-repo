@@ -320,6 +320,7 @@ tcp_ctloutput(op, so, level, optname, mp)
 	struct inpcb *inp = sotoinpcb(so);
 	register struct tcpcb *tp = intotcpcb(inp);
 	register struct mbuf *m;
+	register int i;
 
 	if (level != IPPROTO_TCP)
 		return (ip_ctloutput(op, so, level, optname, mp));
@@ -339,7 +340,13 @@ tcp_ctloutput(op, so, level, optname, mp)
 				tp->t_flags &= ~TF_NODELAY;
 			break;
 
-		case TCP_MAXSEG:	/* not yet */
+		case TCP_MAXSEG:
+			if (m && (i = *mtod(m, int *)) > 0 && i <= tp->t_maxseg)
+				tp->t_maxseg = i;
+			else
+				error = EINVAL;
+			break;
+
 		default:
 			error = EINVAL;
 			break;
@@ -368,8 +375,8 @@ tcp_ctloutput(op, so, level, optname, mp)
 	return (error);
 }
 
-u_long	tcp_sendspace = 1024*4;
-u_long	tcp_recvspace = 1024*4;
+u_long	tcp_sendspace = 1024*8;
+u_long	tcp_recvspace = 1024*8;
 
 /*
  * Attach TCP protocol to socket, allocating
