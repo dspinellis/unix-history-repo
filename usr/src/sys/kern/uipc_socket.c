@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.67	83/01/04	*/
+/*	uipc_socket.c	4.68	83/01/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -26,10 +26,9 @@
  */
 
 /*ARGSUSED*/
-socreate(dom, aso, type, proto, opt)
+socreate(dom, aso, type, proto)
 	struct socket **aso;
 	int type, proto;
-	struct socketopt *opt;
 {
 	register struct protosw *prp;
 	register struct socket *so;
@@ -48,14 +47,14 @@ socreate(dom, aso, type, proto, opt)
 	if (m == 0)
 		return (ENOBUFS);
 	so = mtod(m, struct socket *);
-	so->so_options = 0;
+	so->so_options = SO_LINGER;
 	so->so_state = 0;
 	so->so_type = type;
 	if (u.u_uid == 0)
 		so->so_state = SS_PRIV;
 	so->so_proto = prp;
 	error = (*prp->pr_usrreq)(so, PRU_ATTACH,
-	    (struct mbuf *)0, (struct mbuf *)0, opt);
+	    (struct mbuf *)0, (struct mbuf *)0);
 	if (error) {
 		so->so_state |= SS_NOFDREF;
 		sofree(so);
@@ -65,17 +64,15 @@ socreate(dom, aso, type, proto, opt)
 	return (0);
 }
 
-sobind(so, nam, opt)
+sobind(so, nam)
 	struct socket *so;
 	struct mbuf *nam;
-	struct socketopt *opt;
 {
 	int s = splnet();
 	int error;
 
 	error =
-	    (*so->so_proto->pr_usrreq)(so, PRU_BIND,
-		(struct mbuf *)0, nam, opt);
+	    (*so->so_proto->pr_usrreq)(so, PRU_BIND, (struct mbuf *)0, nam);
 	splx(s);
 	return (error);
 }
@@ -88,7 +85,7 @@ solisten(so, backlog)
 	int error;
 
 	error = (*so->so_proto->pr_usrreq)(so, PRU_LISTEN,
-	    (struct mbuf *)0, (struct mbuf *)0, (struct socketopt *)0);
+	    (struct mbuf *)0, (struct mbuf *)0);
 	if (error) {
 		splx(s);
 		return (error);
@@ -154,7 +151,7 @@ soclose(so, exiting)
 				return (error);
 			}
 		}
-		if ((so->so_options & SO_DONTLINGER) == 0) {
+		if (so->so_options & SO_LINGER) {
 			if ((so->so_state & SS_ISDISCONNECTING) &&
 			    (so->so_state & SS_NBIO) &&
 			    exiting == 0)
@@ -167,7 +164,7 @@ soclose(so, exiting)
 drop:
 	if (so->so_pcb) {
 		error = (*so->so_proto->pr_usrreq)(so, PRU_DETACH,
-		    (struct mbuf *)0, (struct mbuf *)0, (struct socketopt *)0);
+		    (struct mbuf *)0, (struct mbuf *)0);
 		if (exiting == 0 && error) {
 			splx(s);
 			return (error);
@@ -192,24 +189,23 @@ sostat(so, ub)
 	return (0);					/* XXX */
 }
 
-soaccept(so, nam, opt)
+soaccept(so, nam)
 	struct socket *so;
 	struct mbuf *nam;
-	struct socketopt *opt;
 {
 	int s = splnet();
 	int error;
 
+	so->so_state &= ~SS_NOFDREF;
 	error = (*so->so_proto->pr_usrreq)(so, PRU_ACCEPT,
-	    (struct mbuf *)0, nam, opt);
+	    (struct mbuf *)0, nam);
 	splx(s);
 	return (error);
 }
 
-soconnect(so, nam, opt)
+soconnect(so, nam)
 	struct socket *so;
 	struct mbuf *nam;
-	struct socketopt *opt;
 {
 	int s = splnet();
 	int error;
@@ -219,7 +215,7 @@ soconnect(so, nam, opt)
 		goto bad;
 	}
 	error = (*so->so_proto->pr_usrreq)(so, PRU_CONNECT,
-	    (struct mbuf *)0, nam, opt);
+	    (struct mbuf *)0, nam);
 bad:
 	splx(s);
 	return (error);
@@ -241,7 +237,7 @@ sodisconnect(so, nam)
 		goto bad;
 	}
 	error = (*so->so_proto->pr_usrreq)(so, PRU_DISCONNECT,
-	    (struct mbuf *)0, nam, (struct socketopt *)0);
+	    (struct mbuf *)0, nam);
 bad:
 	splx(s);
 	return (error);
@@ -264,10 +260,13 @@ sosend(so, nam, uio, flags)
 	struct mbuf *top = 0;
 	register struct mbuf *m, **mp = &top;
 	register int len;
-	int error = 0, space, s;
+	int error = 0, space, s, dontroute;
 
 	if (sosendallatonce(so) && uio->uio_resid > so->so_snd.sb_hiwat)
 		return (EMSGSIZE);
+	dontroute = (flags & SOF_DONTROUTE) &&
+		(so->so_options & SO_DONTROUTE) == 0 &&
+		(so->so_proto->pr_flags & PR_ATOMIC);
 restart:
 	sblock(&so->so_snd);
 #define	snderr(errno)	{ error = errno; splx(s); goto release; }
@@ -292,9 +291,13 @@ again:
 			snderr(EDESTADDRREQ);
 	}
 	if (top) {
+		if (dontroute)
+			so->so_options |= SO_DONTROUTE;
 		error = (*so->so_proto->pr_usrreq)(so,
 		    (flags & SOF_OOB) ? PRU_SENDOOB : PRU_SEND,
-		    top, (caddr_t)nam, (struct socketopt *)0);
+		    top, (caddr_t)nam);
+		if (dontroute)
+			so->so_options &= ~SO_DONTROUTE;
 		top = 0;
 		if (error) {
 			splx(s);
@@ -380,7 +383,7 @@ soreceive(so, aname, uio, flags)
 		if (m == NULL)
 			return (ENOBUFS);
 		error = (*so->so_proto->pr_usrreq)(so, PRU_RCVOOB,
-		    m, (struct mbuf *)0, (struct socketopt *)0);
+		    m, (struct mbuf *)0);
 		if (error)
 			goto bad;
 		do {
@@ -514,11 +517,101 @@ restart:
 		} while (eor == 0);
 	if ((so->so_proto->pr_flags & PR_WANTRCVD) && so->so_pcb)
 		(*so->so_proto->pr_usrreq)(so, PRU_RCVD,
-		    (struct mbuf *)0, (struct mbuf *)0, (struct socketopt *)0);
+		    (struct mbuf *)0, (struct mbuf *)0);
 release:
 	sbunlock(&so->so_rcv);
 	splx(s);
 	return (error);
+}
+
+soshutdown(so, how)
+	struct socket *so;
+	int how;
+{
+
+	how++;
+	if (how & FREAD) {
+		int s = splimp();
+		socantrcvmore(so);
+		sbflush(&so->so_rcv);
+		splx(s);
+	}
+	if (how & FWRITE)
+		return ((*so->so_proto->pr_usrreq)(so, PRU_SHUTDOWN,
+		    (struct mbuf *)0, (struct mbuf *)0));
+	return (0);
+}
+
+sosetopt(so, level, optname, m)
+	struct socket *so;
+	int level, optname;
+	struct mbuf *m;
+{
+	int optval;
+
+	if (level != SOL_SOCKET)
+		return (EINVAL);	/* XXX */
+	if (m->m_len != sizeof (int))
+		return (EINVAL);
+	optval = *mtod(m, int *);
+	switch (optname) {
+
+	case SO_DEBUG:
+		so->so_options |= SO_DEBUG;
+		break;
+
+	case SO_LINGER:
+		so->so_options |= SO_LINGER;
+		so->so_linger = optval;
+		break;
+
+	case SO_DONTLINGER:
+		so->so_options &= ~SO_LINGER;
+		so->so_linger = 0;
+		break;
+
+	case SO_DONTROUTE:
+		so->so_options |= SO_DONTROUTE;
+		break;
+
+	case SO_USELOOPBACK:
+		so->so_options |= SO_USELOOPBACK;
+		break;
+
+	default:
+		return (EINVAL);
+	}
+	return (0);
+}
+
+sogetopt(so, level, optname, m)
+	struct socket *so;
+	int level, optname;
+	struct mbuf *m;
+{
+	int *optval;
+
+	if (level != SOL_SOCKET)
+		return (EINVAL);	/* XXX */
+	switch (optname) {
+
+	case SO_USELOOPBACK:
+	case SO_DONTROUTE:
+	case SO_DEBUG:
+	case SO_KEEPALIVE:
+	case SO_LINGER:
+		if ((so->so_options & optname) == 0)
+			return (ENOPROTOOPT);
+		if (optname == SO_LINGER) {
+			*mtod(m, int *) = so->so_linger;
+			m->m_len = sizeof (so->so_linger);
+		}
+		break;
+
+	default:
+		return (EINVAL);
+	}
+	return (0);
 }
 
 sohasoutofband(so)
@@ -560,29 +653,6 @@ soioctl(so, cmd, data)
 			so->so_state &= ~SS_ASYNC;
 		break;
 
-	case SIOCSKEEP:
-		if (*(int *)data)
-			so->so_options &= ~SO_KEEPALIVE;
-		else
-			so->so_options |= SO_KEEPALIVE;
-		break;
-
-	case SIOCGKEEP:
-		*(int *)data = (so->so_options & SO_KEEPALIVE) != 0;
-		break;
-
-	case SIOCSLINGER:
-		so->so_linger = *(int *)data;
-		if (so->so_linger)
-			so->so_options &= ~SO_DONTLINGER;
-		else
-			so->so_options |= SO_DONTLINGER;
-		break;
-
-	case SIOCGLINGER:
-		*(int *)data = so->so_linger;
-		break;
-
 	case SIOCSPGRP:
 		so->so_pgrp = *(int *)data;
 		break;
@@ -590,23 +660,6 @@ soioctl(so, cmd, data)
 	case SIOCGPGRP:
 		*(int *)data = so->so_pgrp;
 		break;
-
-	case SIOCDONE: {
-		int flags = *(int *)data;
-
-		flags++;
-		if (flags & FREAD) {
-			int s = splimp();
-			socantrcvmore(so);
-			sbflush(&so->so_rcv);
-			splx(s);
-		}
-		if (flags & FWRITE)
-			return ((*so->so_proto->pr_usrreq)(so, PRU_SHUTDOWN,
-			    (struct mbuf *)0, (struct mbuf *)0,
-			    (struct socketopt *)0));
-		break;
-	}
 
 	case SIOCATMARK:
 		*(int *)data = (so->so_state&SS_RCVATMARK) != 0;
