@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.38 (Berkeley) %G%
+.\"	@(#)op.me	6.39 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.38
+Version 6.39
 .sp
-For Sendmail Version 6.52
+For Sendmail Version 6.53
 .)l
 .sp 2
 .pp
@@ -2275,12 +2275,20 @@ and is passed to the local mailer for local use.
 .)f
 The
 .i mailer
-and
-.i host
 must be a single word,
 but the
+.i host
+and
 .i user
 may be multi-part.
+If the
+.i mailer
+is the builtin IPC mailer,
+the
+.i host
+may be a colon-separated list of hosts
+that are searched in order for the first working address
+(exactly like MX records).
 .pp
 A RHS may also be preceded by a
 .b $@
@@ -2448,7 +2456,12 @@ to translate internal to external form.
 .sh 4 "IPC mailers"
 .pp
 Some special processing occurs
-if the ruleset zero resolves to an IPC mailer.
+if the ruleset zero resolves to an IPC mailer
+(that is, a mailer that has
+.q [IPC]
+listed as the Path in the
+.b M
+configuration line.
 The host name passed after
 .q $@
 has MX expansion performed;
@@ -2461,6 +2474,16 @@ for example:
 .)b
 This causes direct conversion of the numeric value
 to a TCP/IP host address.
+.pp
+The host name passed in after the
+.q $@
+may also be a colon-separated list of hosts.
+Each is separately MX expanded and the results are concatenated
+to make (essentially) one long MX list.
+The intent here is to create
+.q fake
+MX records that are not published in DNS
+for private internal networks.
 .pp
 As a final special case, the host name can be passed in
 as a text string
@@ -4915,7 +4938,8 @@ referred to this as
 this old usage is now incorrect.
 .ip NETISO
 If set,
-support for ISO protocol networking is compiled in.
+support for ISO protocol networking is compiled in
+(it may be appropriate to #define this in the Makefile instead of conf.h).
 .ip LOG
 If set,
 the
@@ -4975,6 +4999,17 @@ This adds a new level of local name expansion
 between aliasing and forwarding.
 It also uses the NEWDB package.
 This may change in future releases.
+.ip IDENTPROTO
+Compile in the IDENT protocol as defined in RFC 1413.
+This defaults on for all systems except Ultrix,
+which apparently has the interesting
+.q feature
+that when it receives a
+.q "host unreachable"
+message it closes all open connections to that host.
+Since some firewall gateways send this error code
+when you access an unauthorized port (such as 113, used by IDENT),
+Ultrix cannot receive email from such hosts.
 .sh 2 "Configuration in src/conf.c"
 .pp
 The following changes can be made in conf.c.
@@ -5604,6 +5639,19 @@ As an optimization, if you run with your default delivery mode being
 queue-only,
 the RCPT command will also not chase aliases and .forward files.
 It will chase them when it processes the queue.
+.sh 2 "[IPC] Mailers Allow Multiple Hosts"
+.pp
+When an address resolves to a mailer that has
+.q [IPC]
+as its
+.q Path ,
+the $@ part (host name)
+can be a colon-separated list of hosts instead of a single hostname.
+This asks sendmail to search the list for the first entry that is available
+exactly as though it were an MX record.
+The intent is to route internal traffic through internal networks
+without publishing an MX record to the net.
+MX expansion is still done on the individual items.
 .sh 2 "Portability and Security Enhancements"
 .pp
 A number of internal changes have been made to enhance portability.
@@ -6017,7 +6065,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.38
+.\"Version 6.39
 .\".ce 0
 .pn 2
 .bp
