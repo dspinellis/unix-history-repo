@@ -1,7 +1,4 @@
-From IngVAX:root  Wed Apr  9 02:43:54 1980
-To: vax:bill
-
-/*	lp.c	4.1	%G%	*/
+/*	lp.c	4.2	%G%	*/
 
 #include "../conf/lp.h"
 #if NLP > 0
@@ -316,4 +313,3 @@ lpreset()
 	printf("lp ");
 	LPADDR->lpsr |= IENABLE;
 }
-
