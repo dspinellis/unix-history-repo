@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tstp.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)tstp.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -14,6 +14,7 @@ static char sccsid[] = "@(#)tstp.c	5.8 (Berkeley) %G%";
 #include <signal.h>
 #include <termios.h>
 #include <unistd.h>
+
 
 /*
  * stop_signal_handler --
@@ -26,7 +27,7 @@ __stop_signal_handler(signo)
 	struct termios save;
 	sigset_t oset, set;
 
-	/* Get the current terminal state. */
+	/* Get the current terminal state (which the user may have changed). */
 	if (tcgetattr(STDIN_FILENO, &save))
 		return;
 
@@ -50,16 +51,19 @@ __stop_signal_handler(signo)
 	(void)sigprocmask(SIG_UNBLOCK, &set, NULL);
 
 	/* Stop ourselves. */
-	(void)signal(SIGTSTP, SIG_DFL);
+	__restore_stophandler();
 	(void)kill(0, SIGTSTP);
 
 	/* Time passes ... */
 
 	/* Reset the curses SIGTSTP signal handler. */
-	(void)signal(SIGTSTP, __stop_signal_handler);
+	__set_stophandler();
 
-	/* Reset the terminal state its mode when we stopped. */
-	(void)tcsetattr(STDIN_FILENO, TCSADRAIN, &save);
+	/* save the new "default" terminal state */
+	(void)tcgetattr(STDIN_FILENO, &__orig_termios);
+
+	/* Reset the terminal state to the mode just before we stopped. */
+	(void)tcsetattr(STDIN_FILENO, __tcaction, &save);
 
 	/* Restart the screen. */
 	__startwin();
@@ -69,4 +73,24 @@ __stop_signal_handler(signo)
 
 	/* Reset the signals. */
 	(void)sigprocmask(SIG_SETMASK, &oset, NULL);
+}
+
+static void (*otstpfn)() = SIG_DFL;
+
+/*
+ * Set the TSTP handler.
+ */
+void
+__set_stophandler()
+{
+	otstpfn = signal(SIGTSTP, __stop_signal_handler);
+}
+
+/*
+ * Restore the TSTP handler.
+ */
+void
+__restore_stophandler()
+{
+	(void)signal(SIGTSTP, otstpfn);
 }

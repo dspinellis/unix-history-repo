@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)curses.h	5.37 (Berkeley) %G%
+ *	@(#)curses.h	5.38 (Berkeley) %G%
  */
 
 #ifndef _CURSES_H_
@@ -33,12 +33,12 @@
 #define	_putchar(c)	__cputchar(c)
 
 /* Old-style terminal modes access. */
-#define	baudrate()	(cfgetospeed(&__orig_termios))
+#define	baudrate()	(cfgetospeed(&__baset))
 #define	crmode()	cbreak()
-#define	erasechar()	(__orig_termios.c_cc[VERASE])
-#define	killchar()	(__orig_termios.c_cc[VKILL])
+#define	erasechar()	(__baset.c_cc[VERASE])
+#define	killchar()	(__baset.c_cc[VKILL])
 #define	nocrmode()	nocbreak()
-#define	ospeed		(cfgetospeed(&__orig_termios))
+#define	ospeed		(cfgetospeed(&__baset))
 #endif /* _CURSES_PRIVATE */
 
 extern char	 GT;			/* Gtty indicates tabs. */
@@ -126,7 +126,10 @@ typedef struct __window {		/* Window structure. */
 extern WINDOW	*curscr;		/* Current screen. */
 extern WINDOW	*stdscr;		/* Standard screen. */
 
-extern struct termios __orig_termios;	/* Original terminal modes. */
+extern struct termios __orig_termios;	/* Terminal state before curses */
+extern struct termios __baset;		/* Our base terminal state */
+extern int __tcaction;			/* Controls whether tcsetattr will
+					   ignore hardware settings */
 
 extern int	 COLS;			/* Columns on the screen. */
 extern int	 LINES;			/* Lines on the screen. */
@@ -273,6 +276,8 @@ void	 __CTRACE __P((const char *, ...));
 u_int	 __hash __P((char *, int));
 void	 __id_subwins __P((WINDOW *));
 int	 __mvcur __P((int, int, int, int, int));
+void	 __restore_stophandler __P((void));
+void	 __set_stophandler __P((void));
 void	 __set_subwin __P((WINDOW *, WINDOW *));
 void	 __startwin __P((void));
 void	 __stop_signal_handler __P((int));
