@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.91 (Berkeley) %G%
+#	@(#)READ_ME	8.92 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -273,6 +273,9 @@ HASGETUSERSHELL	Define this to 1 if you have getusershell(3) in your
 		that file does not exist) to get a list of unrestricted
 		user shells.  This is used to determine whether users
 		are allowed to forward their mail to a program or a file.
+NEEDPUTENV	Define this if your system needs am emulation of the
+		putenv(3) call.  Define to 1 to implement it in terms
+		of setenv(3) or to 2 to do it in terms of primitives.
 GIDSET_T	The type of entries in a gidset passed as the second
 		argument to getgroups(2).  Historically this has been an
 		int, so this is the default, but some systems (such as
@@ -411,8 +414,9 @@ HESIOD		Define this to get Hesiod support for aliases and maps.
 		Normally defined in the Makefile.
 NETINFO		Define this to get NeXT NetInfo support for aliases and maps.
 		Normally defined in the Makefile.
-USERDB		Include support for the User Information Database.  Implied
-		by NEWDB in conf.h.
+USERDB		Define this to 1 to include support for the User Information
+		Database.  Implied by NEWDB or HESIOD.  You can use
+		-DUSERDB=0 to explicitly turn it off.
 IDENTPROTO	Define this as 1 to get IDENT (RFC 1413) protocol support.
 		This is assumed unless you are running on Ultrix or
 		HP-UX, both of which have a problem in the UDP
@@ -1023,4 +1027,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.91, last update %G% 07:55:31)
+(Version 8.92, last update %G% 07:44:01)
