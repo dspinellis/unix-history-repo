@@ -1,4 +1,4 @@
-/*	old.bin.grep.c	4.1	82/05/07	*/
+/*	old.bin.grep.c	4.2	83/03/17	*/
 
 /*
  * grep -- print lines matching (or not matching) a pattern
@@ -41,6 +41,7 @@ int	nfile;
 int	hflag	= 1;
 int	sflag;
 int	yflag;
+int	retcode = 0;
 int	circf;
 int	blkno;
 long	tln;
@@ -143,7 +144,7 @@ out:
 		argv++;
 		execute(*argv);
 	}
-	exit(nsucc == 0);
+	exit(retcode != 0 ? retcode : nsucc == 0);
 }
 
 compile(astr)
@@ -270,8 +271,10 @@ char *file;
 	register c;
 
 	if (file) {
-		if (freopen(file, "r", stdin) == NULL)
-			errexit("grep: can't open %s\n", file);
+		if (freopen(file, "r", stdin) == NULL) {
+			fprintf(stderr, "grep: can't open %s\n", file);
+			retcode = 2;
+		}
 	}
 	lnum = 0;
 	tln = 0;
