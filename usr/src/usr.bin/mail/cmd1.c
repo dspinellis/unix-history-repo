@@ -8,7 +8,7 @@
  * User commands.
  */
 
-static char *SccsId = "@(#)cmd1.c	1.1 %G%";
+static char *SccsId = "@(#)cmd1.c	1.2 %G%";
 
 /*
  * Print the current active headings.
@@ -196,37 +196,83 @@ pcmdlist()
  * Type out the messages requested.
  */
 
+jmp_buf	pipestop;
+
 type(msgvec)
 	int *msgvec;
 {
 	register *ip;
 	register struct message *mp;
 	register int mesg;
-	int c;
-	FILE *ibuf;
+	register char *cp;
+	int c, nlines;
+	int brokpipe();
+	FILE *ibuf, *obuf;
 
+	obuf = stdout;
+	if (setjmp(pipestop)) {
+		if (obuf != stdout) {
+			pclose(obuf);
+			pipef = NULL;
+		}
+		signal(SIGPIPE, SIG_DFL);
+		return(0);
+	}
+	if (intty && outtty && (cp = value("crt")) != NOSTR) {
+		for (ip = msgvec, nlines = 0; *ip && ip-msgvec < msgCount; ip++)
+			nlines += message[*ip - 1].m_lines;
+		if (nlines > atoi(cp)) {
+			obuf = popen(MORE, "w");
+			if (obuf == NULL) {
+				perror(MORE);
+				obuf = stdout;
+			}
+			else {
+				pipef = obuf;
+				signal(SIGPIPE, brokpipe);
+			}
+		}
+	}
 	for (ip = msgvec; *ip && ip-msgvec < msgCount; ip++) {
 		mesg = *ip;
 		touch(mesg);
 		mp = &message[mesg-1];
 		dot = mp;
-		print(mp);
+		print(mp, obuf);
+	}
+	signal(SIGPIPE, SIG_DFL);
+	if (obuf != stdout) {
+		pclose(obuf);
+		pipef = NULL;
 	}
 	return(0);
+}
+
+/*
+ * Respond to a broken pipe signal --
+ * probably caused by using quitting more.
+ */
+
+brokpipe()
+{
+
+	signal(SIGPIPE, SIG_IGN);
+	longjmp(pipestop, 1);
 }
 
 /*
  * Print the indicated message on standard output.
  */
 
-print(mp)
+print(mp, obuf)
 	register struct message *mp;
+	FILE *obuf;
 {
 
 	if (value("quiet") == NOSTR)
-		printf("Message %2d:\n", mp - &message[0] + 1);
+		fprintf(obuf, "Message %2d:\n", mp - &message[0] + 1);
 	touch(mp - &message[0] + 1);
-	send(mp, stdout);
+	send(mp, obuf);
 }
 
 /*
