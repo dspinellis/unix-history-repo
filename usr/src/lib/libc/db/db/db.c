@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)db.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)db.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -55,6 +55,7 @@ __dbpanic(dbp)
 {
 	/* The only thing that can succeed is a close. */
 	dbp->del = (int (*)())__dberr;
+	dbp->fd = (int (*)())__dberr;
 	dbp->get = (int (*)())__dberr;
 	dbp->put = (int (*)())__dberr;
 	dbp->seq = (int (*)())__dberr;
