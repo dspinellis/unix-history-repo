@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd3.c	3.6 83/12/06";
+static	char *sccsid = "@(#)cmd3.c	3.7 84/01/11";
 #endif
 
 #include "defs.h"
@@ -85,7 +85,7 @@ register struct ww *w;
 	if (w->ww_id >= 0 && w->ww_id < NWINDOW)
 		window[w->ww_id] = 0;
 	if (w->ww_label)
-		free(w->ww_label);
+		str_free(w->ww_label);
 	wwdelete(w);
 	wwclose(w);
 }
