@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)log1p.c	1.3 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
+"@(#)log1p.c	1.3 (Berkeley) 8/21/85; 1.5 (ucb.elefunt) %G%";
 #endif not lint
 
 /* LOG1P(x) 
@@ -77,14 +77,18 @@ static char sccsid[] =
 
 #if (defined(VAX)||defined(TAHOE))	/* VAX D format */
 #include <errno.h>
-
+#ifdef VAX
+#define _0x(A,B)	0x/**/A/**/B
+#else	/* VAX */
+#define _0x(A,B)	0x/**/B/**/A
+#endif	/* VAX */
 /* static double */
 /* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
 /* ln2lo  =  1.6465949582897081279E-12   , Hex  2^-39   *  .E7BCD5E4F1D9CC */
 /* sqrt2  =  1.4142135623730950622E0     ; Hex  2^  1   *  .B504F333F9DE65 */
-static long     ln2hix[] = { 0x72174031, 0x0000f7d0};
-static long     ln2lox[] = { 0xbcd52ce7, 0xd9cce4f1};
-static long     sqrt2x[] = { 0x04f340b5, 0xde6533f9};
+static long     ln2hix[] = { _0x(7217,4031), _0x(0000,f7d0)};
+static long     ln2lox[] = { _0x(bcd5,2ce7), _0x(d9cc,e4f1)};
+static long     sqrt2x[] = { _0x(04f3,40b5), _0x(de65,33f9)};
 #define    ln2hi    (*(double*)ln2hix)
 #define    ln2lo    (*(double*)ln2lox)
 #define    sqrt2    (*(double*)sqrt2x)

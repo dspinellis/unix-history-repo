@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)cosh.c	1.2 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
+"@(#)cosh.c	1.2 (Berkeley) 8/21/85; 1.5 (ucb.elefunt) %G%";
 #endif not lint
 
 /* COSH(X)
@@ -64,13 +64,18 @@ static char sccsid[] =
  */
 
 #if (defined(VAX)||defined(TAHOE))
+#ifdef VAX
+#define _0x(A,B)	0x/**/A/**/B
+#else	/* VAX */
+#define _0x(A,B)	0x/**/B/**/A
+#endif	/* VAX */
 /* static double  */
 /* mln2hi =  8.8029691931113054792E1     , Hex  2^  7   *  .B00F33C7E22BDB */
 /* mln2lo = -4.9650192275318476525E-16   , Hex  2^-50   * -.8F1B60279E582A */
 /* lnovfl =  8.8029691931113053016E1     ; Hex  2^  7   *  .B00F33C7E22BDA */
-static long    mln2hix[] = { 0x0f3343b0, 0x2bdbc7e2};
-static long    mln2lox[] = { 0x1b60a70f, 0x582a279e};
-static long    lnovflx[] = { 0x0f3343b0, 0x2bdac7e2};
+static long    mln2hix[] = { _0x(0f33,43b0), _0x(2bdb,c7e2)};
+static long    mln2lox[] = { _0x(1b60,a70f), _0x(582a,279e)};
+static long    lnovflx[] = { _0x(0f33,43b0), _0x(2bda,c7e2)};
 #define   mln2hi    (*(double*)mln2hix)
 #define   mln2lo    (*(double*)mln2lox)
 #define   lnovfl    (*(double*)lnovflx)

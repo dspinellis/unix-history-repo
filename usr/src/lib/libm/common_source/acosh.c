@@ -13,9 +13,8 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)acosh.c	1.2 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
+"@(#)acosh.c	1.2 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
 #endif not lint
-
 /* ACOSH(X)
  * RETURN THE INVERSE HYPERBOLIC COSINE OF X
  * DOUBLE PRECISION (VAX D FORMAT 56 BITS, IEEE DOUBLE 53 BITS)
@@ -54,11 +53,16 @@ static char sccsid[] =
  */
 
 #if (defined(VAX)||defined(TAHOE))	/* VAX D format */
+#ifdef VAX
+#define _0x(A,B)	0x/**/A/**/B
+#else	/* VAX */
+#define _0x(A,B)	0x/**/B/**/A
+#endif	/* VAX */
 /* static double */
 /* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
 /* ln2lo  =  1.6465949582897081279E-12   ; Hex  2^-39   *  .E7BCD5E4F1D9CC */
-static long     ln2hix[] = { 0x72174031, 0x0000f7d0};
-static long     ln2lox[] = { 0xbcd52ce7, 0xd9cce4f1};
+static long     ln2hix[] = { _0x(7217,4031), _0x(0000,f7d0)};
+static long     ln2lox[] = { _0x(bcd5,2ce7), _0x(d9cc,e4f1)};
 #define    ln2hi    (*(double*)ln2hix)
 #define    ln2lo    (*(double*)ln2lox)
 #else	/* IEEE double */

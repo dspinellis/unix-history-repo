@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)log__L.c	1.2 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
+"@(#)log__L.c	1.2 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
 #endif not lint
 
 /* log__L(Z)
@@ -51,6 +51,11 @@ static char sccsid[] =
  */
 
 #if (defined(VAX)||defined(TAHOE))	/* VAX D format (56 bits) */
+#ifdef VAX
+#define _0x(A,B)	0x/**/A/**/B
+#else	/* VAX */
+#define _0x(A,B)	0x/**/B/**/A
+#endif	/* VAX */
 /* static double */
 /* L1     =  6.6666666666666703212E-1    , Hex  2^  0   *  .AAAAAAAAAAAAC5 */
 /* L2     =  3.9999999999970461961E-1    , Hex  2^ -1   *  .CCCCCCCCCC2684 */
@@ -60,14 +65,14 @@ static char sccsid[] =
 /* L6     =  1.5382888777946145467E-1    , Hex  2^ -2   *  .9D8551E8C5781D */
 /* L7     =  1.3338356561139403517E-1    , Hex  2^ -2   *  .8895B3907FCD92 */
 /* L8     =  1.2500000000000000000E-1    , Hex  2^ -2   *  .80000000000000 */
-static long        L1x[] = { 0xaaaa402a, 0xaac5aaaa};
-static long        L2x[] = { 0xcccc3fcc, 0x2684cccc};
-static long        L3x[] = { 0x49243f92, 0x578292f8};
-static long        L4x[] = { 0x8e383f63, 0xaf2c39b7};
-static long        L5x[] = { 0x2eb43f3a, 0x655ecc39};
-static long        L6x[] = { 0x85513f1d, 0x781de8c5};
-static long        L7x[] = { 0x95b33f08, 0xcd92907f};
-static long        L8x[] = { 0x00003f00, 0x00000000};
+static long        L1x[] = { _0x(aaaa,402a), _0x(aac5,aaaa)};
+static long        L2x[] = { _0x(cccc,3fcc), _0x(2684,cccc)};
+static long        L3x[] = { _0x(4924,3f92), _0x(5782,92f8)};
+static long        L4x[] = { _0x(8e38,3f63), _0x(af2c,39b7)};
+static long        L5x[] = { _0x(2eb4,3f3a), _0x(655e,cc39)};
+static long        L6x[] = { _0x(8551,3f1d), _0x(781d,e8c5)};
+static long        L7x[] = { _0x(95b3,3f08), _0x(cd92,907f)};
+static long        L8x[] = { _0x(0000,3f00), _0x(0000,0000)};
 #define       L1    (*(double*)L1x)
 #define       L2    (*(double*)L2x)
 #define       L3    (*(double*)L3x)
