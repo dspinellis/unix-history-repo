@@ -1,9 +1,11 @@
-#! /bin/csh
+#! /bin/csh -f
 #
-#	@(#)which.csh	4.3	(Berkeley)	84/01/23
+#	@(#)which.csh	4.4	(Berkeley)	85/03/11
 #
 #	which : tells you which program you get
 #
+set prompt = "% "
+source ~/.cshrc
 set noglob
 foreach arg ( $argv )
     set alius = `alias $arg`
