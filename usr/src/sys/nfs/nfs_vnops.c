@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.85 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.86 (Berkeley) %G%
  */
 
 /*
@@ -28,6 +28,7 @@
 #include <sys/specdev.h>
 #include <sys/fifo.h>
 #include <sys/map.h>
+#include <sys/dirent.h>
 
 #include <vm/vm.h>
 
@@ -202,7 +203,7 @@ extern char nfsiobuf[MAXPHYS+NBPG];
 struct buf nfs_bqueue;		/* Queue head for nfsiod's */
 struct proc *nfs_iodwant[NFS_MAXASYNCDAEMON];
 int nfs_numasync = 0;
-#define	DIRHDSIZ	(sizeof (struct readdir) - (MAXNAMLEN + 1))
+#define	DIRHDSIZ	(sizeof (struct dirent) - (MAXNAMLEN + 1))
 
 /*
  * nfs null call from vfs.
@@ -1418,7 +1419,7 @@ nfs_readdirrpc(vp, uiop, cred)
 	struct ucred *cred;
 {
 	register long len;
-	register struct readdir *dp;
+	register struct dirent *dp;
 	register u_long *tl;
 	register caddr_t cp;
 	register long t1;
@@ -1431,7 +1432,7 @@ nfs_readdirrpc(vp, uiop, cred)
 	int siz;
 	int more_dirs = 1;
 	off_t off, savoff;
-	struct readdir *savdp;
+	struct dirent *savdp;
 	struct nfsmount *nmp;
 	struct nfsnode *np = VTONFS(vp);
 	long tresid;
@@ -1464,14 +1465,14 @@ nfs_readdirrpc(vp, uiop, cred)
 		/* loop thru the dir entries, doctoring them to 4bsd form */
 		off = uiop->uio_offset;
 #ifdef lint
-		dp = (struct readdir *)0;
+		dp = (struct dirent *)0;
 #endif /* lint */
 		while (more_dirs && siz < uiop->uio_resid) {
 			savoff = off;		/* Hold onto offset and dp */
 			savdp = dp;
 			nfsm_dissecton(tl, u_long *, 2*NFSX_UNSIGNED);
-			dp = (struct readdir *)tl;
-			dp->d_ino = fxdr_unsigned(u_long, *tl++);
+			dp = (struct dirent *)tl;
+			dp->d_fileno = fxdr_unsigned(u_long, *tl++);
 			len = fxdr_unsigned(int, *tl);
 			if (len <= 0 || len > NFS_MAXNAMLEN) {
 				error = EBADRPC;
@@ -1538,7 +1539,7 @@ nfs_readdirrpc(vp, uiop, cred)
 	if (uiop->uio_resid < tresid) {
 		len = uiop->uio_resid & (NFS_DIRBLKSIZ - 1);
 		if (len > 0) {
-			dp = (struct readdir *)
+			dp = (struct dirent *)
 				(uiop->uio_iov->iov_base - lastlen);
 			dp->d_reclen += len;
 			uiop->uio_iov->iov_base += len;
@@ -1561,7 +1562,7 @@ nfs_readdirlookrpc(vp, uiop, cred)
 	struct ucred *cred;
 {
 	register int len;
-	register struct readdir *dp;
+	register struct dirent *dp;
 	register u_long *tl;
 	register caddr_t cp;
 	register long t1;
@@ -1640,8 +1641,8 @@ nfs_readdirlookrpc(vp, uiop, cred)
 			if ((tlen + DIRHDSIZ) > uiop->uio_resid)
 				bigenough = 0;
 			if (bigenough && doit) {
-				dp = (struct readdir *)uiop->uio_iov->iov_base;
-				dp->d_ino = fileno;
+				dp = (struct dirent *)uiop->uio_iov->iov_base;
+				dp->d_fileno = fileno;
 				dp->d_namlen = len;
 				dp->d_reclen = tlen + DIRHDSIZ;
 				uiop->uio_resid -= DIRHDSIZ;
