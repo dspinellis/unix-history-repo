@@ -1,4 +1,11 @@
-.TH TFTP 1C "7 February 1986"
+.\" Copyright (c) 1986 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)tftp.1	5.2 (Berkeley) %G%
+.\"
+.TH TFTP 1C ""
+.UC 6
 .SH NAME
 tftp \- trivial file transfer program
 .SH SYNOPSIS
@@ -57,8 +64,10 @@ The default is
 .IR ascii .
 .TP
 \fBput\fP \fIfile\fP
+.ns
 .TP
 \fBput\fP \fIlocalfile remotefile\fP
+.ns
 .TP
 \fBput\fP \fIfile1 file2 ... fileN remote-directory\fP
 Put a file or set of files to the specified
@@ -77,8 +86,10 @@ assumed to be a
 machine.
 .TP
 \fBget\fP \fIfilename\fP
+.ns
 .TP
 \fBget\fP \fIremotename\fP \fIlocalname\fP
+.ns
 .TP
 \fBget\fP \fIfile1\fP \fIfile2\fP ... \fIfileN\fP
 Get a file or set of files from the specified
@@ -95,6 +106,7 @@ the last hostname specified becomes the default for future transfers.
 .B quit
 Exit
 .IR tftp .
+An end of file also exits.
 .TP
 .B verbose
 Toggle verbose mode.
