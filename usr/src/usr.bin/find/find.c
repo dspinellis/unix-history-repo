@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)find.c	4.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)find.c	4.31 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -51,16 +51,22 @@ main(argc, argv)
 	ftsoptions = FTS_NOSTAT|FTS_PHYSICAL;
 
 	/*
-	 * if arguments start with an option, it's new syntax; otherwise,
-	 * if has a "-option" anywhere it must be old syntax.
+	 * if arguments start with an option, treat it like new syntax;
+	 * otherwise, if has a "-option" anywhere (which isn't an argument
+	 * to another command) treat it as old syntax.
 	 */
 	if (argv[1][0] != '-')
-		for (p = argv + 1; *p; ++p)
+		for (p = argv + 1; *p; ++p) {
+			if (!strcmp(*p, "exec") || !strcmp(*p, "ok")) {
+				while (p[1] && strcmp(*++p, ";"));
+				continue;
+			}
 			if (**p == '-') {
 				deprecated = 1;
 				oldsyntax(&argv);
 				break;
 			}
+		}
 	if (!deprecated)
 		newsyntax(argc, &argv);
     
