@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kernel.h	7.4 (Berkeley) 2/15/91
- *	$Id: kernel.h,v 1.7 1993/12/20 16:13:05 wollman Exp $
+ *	$Id: kernel.h,v 1.8 1993/12/20 19:31:42 wollman Exp $
  */
 
 #ifndef _SYS_KERNEL_H_
@@ -71,8 +71,10 @@ extern char *s_lowpc;
 
 extern const char *panicstr;	/* panic message */
 extern const char version[];	/* system version */
-extern const char copyright[];	/* system copyright */
-
+extern const char ostype[];	/* operating system type */
+extern const char osrelease[];	/* operating system release */
+extern const int osbuild;	/* operating system build number */
+extern const char osconfig[];	/* operating system configuration name */
 extern int nblkdev;		/* number of entries in bdevsw */
 extern int nchrdev;		/* number of entries in cdevsw */
 extern int nswdev;		/* number of swap devices */
@@ -102,7 +104,7 @@ extern u_char curpri;		/* priority of current process */
  * are collected by the linker into a `struct linker_set' as defined below.
  *
  * NB: the constants defined below must match those defined in
- * /usr/src/gnu/ld/ld.h.  Since their calculation requires arithmetic, we
+ * ld/ld.h.  Since their calculation requires arithmetic, we
  * can't name them symbolically (e.g., 23 is N_SETT | N_EXT).
  */
 #define MAKE_SET(set, sym, type) \
