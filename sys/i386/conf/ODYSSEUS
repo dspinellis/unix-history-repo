@@ -29,7 +29,7 @@ device		pc0	at isa? port "IO_KBD" tty irq 1 vector pcrint
 device		npx0	at isa? port "IO_NPX" irq 13 vector npxintr
 device		com0	at isa? port "IO_COM1" tty irq 4 vector comintr
 # device		com1	at isa? port "IO_COM2" tty irq 3 vector comintr
-device ed0 at isa? port 0x280 net irq 3 iomem 0xd0000 iosiz 8192 vector weintr
+device ed0 at isa? port 0x280 net irq 3 iomem 0xd0000 vector edintr
 
 pseudo-device	loop
 # pseudo-device	pty
