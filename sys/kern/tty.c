@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.12 1993/12/30 05:27:01 davidg Exp $
+ *	$Id: tty.c,v 1.13 1994/01/08 12:09:47 ache Exp $
  */
 
 #include "param.h"
@@ -194,9 +194,14 @@ ttywait(tp)
 	    (tp->t_state&TS_CARR_ON || tp->t_cflag&CLOCAL) && 
 	    tp->t_oproc) {
 		(*tp->t_oproc)(tp);
-		tp->t_state |= TS_ASLEEP;
-		if (error = ttysleep(tp, (caddr_t)&tp->t_out, 
-		    TTOPRI | PCATCH, ttyout, 0))
+		if ((RB_LEN(&tp->t_out) || tp->t_state&TS_BUSY) &&
+		    (tp->t_state&TS_CARR_ON || tp->t_cflag&CLOCAL)) {
+			tp->t_state |= TS_ASLEEP;
+			if (error = ttysleep(tp, (caddr_t)&tp->t_out,
+			    TTOPRI | PCATCH, ttyout, 0))
+				break;
+		}
+		else
 			break;
 	}
 	splx(s);
