@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)termcap.5	6.5 (Berkeley) %G%
+.\"	@(#)termcap.5	6.6 (Berkeley) %G%
 .\"
 .ie n \{\
 .	ds lq \&"\"
@@ -686,13 +686,8 @@ Thus its
 .B cm
 capability is \*(lqcm=6\eE&%r%2c%2Y\*(rq.
 .PP
-The Microterm
-.SM ACT-IV
-needs the current row and column sent
-simply encoded in binary
-preceded by a
-.BR ^T ,
-\*(lqcm=^T%.%.\*(rq.
+The Datamedia 2500 needs the current row and column sent
+encoded in binary using \*(lq%.\*(rq.
 Terminals that use \*(lq%.\*(rq need to be able to
 backspace the cursor
 .RB ( le )
