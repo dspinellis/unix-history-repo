@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.32 81/11/20 */
+/* tcp_usrreq.c 1.33 81/11/24 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -143,35 +143,38 @@ COUNT(TCP_USRREQ);
 			error = EISCONN;
 			break;
 		}
-		tp = tcp_newtcpcb();
-		if (tp == 0) {
-			error = ENOBUFS;
-			break;
-		}
 		error = in_pcballoc(so, &tcb, 2048, 2048, (struct sockaddr_in *)addr);
 		if (error) {
 			(void) m_free(dtom(tp));
 			break;
 		}
 		inp = (struct inpcb *)so->so_pcb;
-		tp->t_inpcb = inp;
-		inp->inp_ppcb = (caddr_t)tp;
-		if (so->so_options & SO_ACCEPTCONN)
+		if (so->so_options & SO_ACCEPTCONN) {
+			tp = tcp_newtcpcb(inp);
+			if (tp == 0) {
+				error = ENOBUFS;
+				break;
+			}
 			nstate = LISTEN;
-		else
+		} else
 			nstate = CLOSED;
 		break;
 
 	case PRU_DETACH:
-		tcp_detach(tp);
 		break;
 
 	case PRU_CONNECT:
-		if (tp->t_state != 0 && tp->t_state != CLOSED)
-			goto bad;
 		error = in_pcbsetpeer(inp, (struct sockaddr_in *)addr);
 		if (error)
 			break;
+		tp = tcp_newtcpcb(inp);
+		if (tp == 0) {
+			inp->inp_faddr.s_addr = 0;
+			error = ENOBUFS;
+			break;
+		}
+		tp->t_inpcb = inp;
+		inp->inp_ppcb = (caddr_t)tp;
 		(void) tcp_sndctl(tp);
 		nstate = SYN_SENT;
 		soisconnecting(so);
@@ -182,14 +185,11 @@ COUNT(TCP_USRREQ);
 		break;
 
 	case PRU_DISCONNECT:
-		if ((tp->tc_flags & TC_FIN_RCVD) == 0)
-			goto abort;
 		if (nstate < ESTAB)
 			tcp_disconnect(tp);
 		else {
 			tp->tc_flags |= TC_SND_FIN;
 			(void) tcp_sndctl(tp);
-			tp->tc_flags |= TC_USR_CLOSED;
 			soisdisconnecting(so);
 		}
 		break;
@@ -208,7 +208,6 @@ COUNT(TCP_USRREQ);
 		case CLOSE_WAIT:
 			tp->tc_flags |= TC_SND_FIN;
 			(void) tcp_sndctl(tp);
-			tp->tc_flags |= TC_USR_CLOSED;
 			nstate = nstate != CLOSE_WAIT ? FIN_W1 : LAST_ACK;
 			break;
 			
@@ -229,10 +228,6 @@ COUNT(TCP_USRREQ);
 		if (nstate < ESTAB || nstate == CLOSED)
 			goto bad;
 		tcp_sndwin(tp);
-		if ((tp->tc_flags&TC_FIN_RCVD) &&
-		    (tp->tc_flags&TC_USR_CLOSED) == 0 &&
-		    rcv_empty(tp))
-			error = ESHUTDOWN;
 		if (nstate == RCV_WAIT && rcv_empty(tp))
 			nstate = CLOSED;
 		break;
@@ -254,7 +249,6 @@ COUNT(TCP_USRREQ);
 		}
 		break;
 
-abort:
 	case PRU_ABORT:
 		tcp_abort(tp);
 		nstate = CLOSED;
@@ -309,7 +303,8 @@ abort:
 }
 
 struct tcpcb *
-tcp_newtcpcb()
+tcp_newtcpcb(inp)
+	struct inpcb *inp;
 {
 	struct mbuf *m = m_getclr(0);
 	register struct tcpcb *tp;
@@ -332,16 +327,13 @@ COUNT(TCP_NEWTCPCB);
 	    tp->iss = tcp_iss;
 	tp->snd_off = tp->iss + 1;
 	tcp_iss += (ISSINCR >> 1) + 1;
+
+	/*
+	 * Hook to inpcb.
+	 */
+	tp->t_inpcb = inp;
+	inp->inp_ppcb = (caddr_t)tp;
 	return (tp);
-}
-
-tcp_detach(tp)
-	struct tcpcb *tp;
-{
-COUNT(TCP_DETACH);
-
-	in_pcbfree(tp->t_inpcb);
-	(void) m_free(dtom(tp));
 }
 
 tcp_disconnect(tp)
@@ -360,6 +352,7 @@ COUNT(TCP_DISCONNECT);
 		tp->t_template = 0;
 	}
 	in_pcbfree(tp->t_inpcb);
+	(void) m_free(dtom(tp));
 }
 
 tcp_abort(tp)
@@ -378,6 +371,7 @@ COUNT(TCP_ABORT);
 		tcp_sndnull(tp);
 	}
 	soisdisconnected(tp->t_inpcb->inp_socket);
+	tcp_disconnect(tp);
 }
 
 /*
@@ -449,13 +443,8 @@ COUNT(TCP_TIMERS);
 		return (SAME);
 
 	case TREXMTTL:		/* retransmit too long */
-		if (tp->t_rtl_val > tp->snd_una)		/* 36 */
-			tcp_error(tp, EIO);		/* URXTIMO !?! */
-		/*
-		 * If user has already closed, abort the connection.
-		 */
-		if (tp->tc_flags & TC_USR_CLOSED) {
-			tcp_abort(tp);
+		if (tp->t_rtl_val > tp->snd_una) {		/* 36 */
+			tcp_error(tp, ETIMEDOUT);
 			return (CLOSED);
 		}
 		return (SAME);
@@ -481,7 +470,7 @@ COUNT(TCP_SENSE);
 	return (EOPNOTSUPP);
 }
 
-tcp_error(tp, errno)
+tcp_drop(tp, errno)
 	struct tcpcb *tp;
 	int errno;
 {
@@ -491,6 +480,7 @@ COUNT(TCP_ERROR);
 	so->so_error = errno;
 	sorwakeup(so);
 	sowwakeup(so);
+	tcp_disconnect(tp);
 }
 
 #ifdef TCPDEBUG
