@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)comp.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)comp.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"mille.h"
@@ -37,6 +37,8 @@ calcmove()
 	cango = 0;
 	canstop = FALSE;
 	foundend = FALSE;
+
+	/* Try for a Coup Forre, and see what we have. */
 	for (i = 0; i < NUM_CARDS; i++)
 		count[i] = 0;
 	for (i = 0; i < HAND_SZ; i++) {
@@ -77,12 +79,16 @@ norm:
 			playit[i] = TRUE;
 			break;
 		}
-		++count[card];
+		if (card >= 0)
+			++count[card];
 	}
+
+	/* No Coup Forre.  Draw to fill hand, then restart, as needed. */
 	if (pp->hand[0] == C_INIT && Topcard > Deck) {
 		Movetype = M_DRAW;
 		return;
 	}
+
 #ifdef DEBUG
 	if (Debug)
 		fprintf(outf, "CALCMOVE: cango = %d, canstop = %d, safe = %d\n",
@@ -348,16 +354,8 @@ normbad:
 	if (cango) {
 play_it:
 		mvaddstr(MOVE_Y + 1, MOVE_X, "PLAY\n");
-#ifdef DEBUG
-		if (Debug)
-			getmove();
-		if (!Debug || Movetype == M_DRAW) {
-#else
-		if (Movetype == M_DRAW) {
-#endif
-			Movetype = M_PLAY;
-			Card_no = nummax;
-		}
+		Movetype = M_PLAY;
+		Card_no = nummax;
 	}
 	else {
 		if (issafety(pp->hand[nummin])) { /* NEVER discard a safety */
@@ -365,20 +363,15 @@ play_it:
 			goto play_it;
 		}
 		mvaddstr(MOVE_Y + 1, MOVE_X, "DISCARD\n");
-#ifdef DEBUG
-		if (Debug)
-			getmove();
-		if (!Debug || Movetype == M_DRAW) {
-#else
-		if (Movetype == M_DRAW) {
-#endif
-			Movetype = M_DISCARD;
-			Card_no = nummin;
-		}
+		Movetype = M_DISCARD;
+		Card_no = nummin;
 	}
 	mvprintw(MOVE_Y + 2, MOVE_X, "%16s", C_name[pp->hand[Card_no]]);
 }
 
+/*
+ * Return true if the given player could conceivably win with his next card.
+ */
 onecard(pp)
 register PLAY	*pp;
 {
