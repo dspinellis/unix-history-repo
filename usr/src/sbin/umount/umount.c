@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)umount.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)umount.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -282,10 +282,12 @@ int
 selected(type)
 	int type;
 {
+	int *av;
+
 	/* If no type specified, it's always selected. */
 	if (typelist == NULL)
 		return (1);
-	for (; *typelist != MOUNT_NONE; ++typelist)
+	for (av = typelist; *av != NULL; ++av)
 		if (type == *typelist)
 			return (which == IN_LIST ? 1 : 0);
 	return (which == IN_LIST ? 0 : 1);
