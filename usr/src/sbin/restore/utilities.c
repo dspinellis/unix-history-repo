@@ -6,13 +6,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 
 #include <ufs/ufs/dinode.h>
+#include <ufs/ufs/dir.h>
 
 #include <errno.h>
 #include <stdio.h>
@@ -43,7 +44,7 @@ pathcheck(name)
 		*cp = '\0';
 		ep = lookupname(name);
 		if (ep == NULL) {
-			ep = addentry(name, pathsearch(name), NODE);
+			ep = addentry(name, pathsearch(name)->d_ino, NODE);
 			newnode(ep);
 		}
 		ep->e_flags |= NEW|KEEP;
@@ -301,7 +302,7 @@ dirlookup(name)
 {
 	ino_t ino;
 
-	ino = pathsearch(name);
+	ino = pathsearch(name)->d_ino;
 	if (ino == 0 || TSTINO(ino, dumpmap) == 0)
 		fprintf(stderr, "%s is not on tape\n", name);
 	return (ino);
