@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)regex2.h	8.1 (Berkeley) %G%
+ *	@(#)regex2.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -144,3 +144,4 @@ struct re_guts {
 
 /* misc utilities */
 #define	OUT	(CHAR_MAX+1)	/* a non-character value */
+#define	ISWORD(c)	(isalnum(c) || (c) == '_')
