@@ -34,6 +34,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)nfsv2.h	7.8 (Berkeley) 6/28/90
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00053
+ * --------------------         -----   ----------------------
+ *
+ * 08 Sep 92    Rick "gopher I"         Fix "reserved port" bug, fixed for
+ *                                              AIX3.2 NFS clients
  */
 
 /*
@@ -91,6 +99,7 @@
 #define	NFSPROC_GETATTR		1
 #define	NFSPROC_SETATTR		2
 #define	NFSPROC_ROOT		3		/* Obsolete */
+#define NFSPROC_NOOP		3	/* Fake for err returns XXX 08 Sep 92*/
 #define	NFSPROC_LOOKUP		4
 #define	NFSPROC_READLINK	5
 #define	NFSPROC_READ		6

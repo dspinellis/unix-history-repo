@@ -34,6 +34,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)nfs_syscalls.c	7.26 (Berkeley) 4/16/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00053
+ * --------------------         -----   ----------------------
+ *
+ * 08 Sep 92    Rick "gopher I"         Fix "reserved port" bug, fixed for
+ *                                              AIX3.2 NFS clients
  */
 
 #include "param.h"
@@ -223,7 +231,7 @@ nfssvc(p, uap, retval)
 	for (;;) {
 		if (error = nfs_getreq(so, nfs_prog, nfs_vers, NFS_NPROCS-1,
 		   &nam, &mrep, &md, &dpos, &retxid, &procid, cr,
-		   &msk, &mtch, &wascomp)) {
+/* 08 Sep 92*/	   &msk, &mtch, &wascomp, &repstat)) {
 			if (nam)
 				m_freem(nam);
 			if (error == EPIPE || error == EINTR ||

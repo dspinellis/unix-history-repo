@@ -34,6 +34,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)nfs_socket.c	7.23 (Berkeley) 4/20/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00053
+ * --------------------         -----   ----------------------
+ *
+ * 08 Sep 92    Rick "gopher I"         Fix "reserved port" bug, fixed for
+ *						AIX3.2 NFS clients
  */
 
 /*
@@ -150,15 +158,38 @@ nfs_connect(nmp)
 	register struct nfsmount *nmp;
 {
 	register struct socket *so;
+	struct sockaddr *saddr;					/* 08 Sep 92*/
 	int s, error, bufsize;
 	struct mbuf *m;
+	struct sockaddr_in *sin;				/* 08 Sep 92*/
+	u_short tport;						/* 08 Sep 92*/
 
 	nmp->nm_so = (struct socket *)0;
-	if (error = socreate(mtod(nmp->nm_nam, struct sockaddr *)->sa_family,
+	saddr = mtod(nmp->nm_nam, struct sockaddr *);		/* 08 Sep 92*/
+	if (error = socreate(saddr->sa_family,			/* 08 Sep 92*/
 		&nmp->nm_so, nmp->nm_sotype, nmp->nm_soproto))
 		goto bad;
 	so = nmp->nm_so;
 	nmp->nm_soflags = so->so_proto->pr_flags;
+
+	/*
+	 * 08 Sep 92
+	 *
+	 * Some servers require that the client port be a reserved port number.
+	 */
+	if (saddr->sa_family == AF_INET) {
+		MGET(m, M_WAIT, MT_SONAME);
+		sin = mtod(m, struct sockaddr_in *);
+		sin->sin_len = m->m_len = sizeof (struct sockaddr_in);
+		sin->sin_family = AF_INET;
+		sin->sin_addr.s_addr = INADDR_ANY;
+		tport = IPPORT_RESERVED - 1;
+		sin->sin_port = htons(tport);
+		while (sobind(so, m) == EADDRINUSE &&
+		       --tport > IPPORT_RESERVED / 2)
+			sin->sin_port = htons(tport);
+		m_freem(m);
+	}
 
 	if (nmp->nm_sotype == SOCK_DGRAM)
 		bufsize = min(4 * (nmp->nm_wsize + NFS_MAXPKTHDR),
@@ -901,7 +932,7 @@ nfsmout:
  * - fill in the cred struct.
  */
 nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, procnum, cr,
-	msk, mtch, wascomp)
+	msk, mtch, wascomp, repstat)				/* 08 Aug 92*/
 	struct socket *so;
 	u_long prog;
 	u_long vers;
@@ -914,7 +945,7 @@ nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, procnum, cr,
 	u_long *procnum;
 	register struct ucred *cr;
 	struct mbuf *msk, *mtch;
-	int *wascomp;
+	int *wascomp, *repstat;					/* 08 Aug 92*/
 {
 	register int i;
 	register u_long *tl;
@@ -924,6 +955,7 @@ nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, procnum, cr,
 	struct mbuf *mrep, *md;
 	int len;
 
+	*repstat = 0;						/* 08 Aug 92*/
 	if (so->so_proto->pr_flags & PR_CONNREQUIRED) {
 		error = nfs_receive(so, nam, &mrep, (struct nfsreq *)0);
 	} else {
@@ -948,21 +980,23 @@ nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, procnum, cr,
 	dpos = mtod(mrep, caddr_t);
 	nfsm_disect(tl, u_long *, 10*NFSX_UNSIGNED);
 	*retxid = *tl++;
-	if (*tl++ != rpc_call) {
-		m_freem(mrep);
-		return (ERPCMISMATCH);
-	}
-	if (*tl++ != rpc_vers) {
-		m_freem(mrep);
-		return (ERPCMISMATCH);
+	if (*tl++ != rpc_call || *tl++ != rpc_vers) {		/* 08 Aug 92*/
+		*mrp = mrep;
+		*procnum = NFSPROC_NOOP;
+		*repstat = ERPCMISMATCH;
+		return (0);
 	}
 	if (*tl++ != prog) {
-		m_freem(mrep);
-		return (EPROGUNAVAIL);
+		*mrp = mrep;					/* 08 Aug 92*/
+		*procnum = NFSPROC_NOOP;
+		*repstat = EPROGUNAVAIL;
+		return (0);
 	}
 	if (*tl++ != vers) {
-		m_freem(mrep);
-		return (EPROGMISMATCH);
+		*mrp = mrep;					/* 08 Aug 92*/
+		*procnum = NFSPROC_NOOP;
+		*repstat = EPROGMISMATCH;
+		return (0);
 	}
 	*procnum = fxdr_unsigned(u_long, *tl++);
 	if (*procnum == NFSPROC_NULL) {
@@ -970,8 +1004,10 @@ nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, procnum, cr,
 		return (0);
 	}
 	if (*procnum > maxproc || *tl++ != rpc_auth_unix) {
-		m_freem(mrep);
-		return (EPROCUNAVAIL);
+		*mrp = mrep;					/* 08 Aug 92*/
+		*procnum = NFSPROC_NOOP;
+		*repstat = EPROCUNAVAIL;
+		return (0);
 	}
 	len = fxdr_unsigned(int, *tl++);
 	if (len < 0 || len > RPCAUTH_MAXSIZ) {
