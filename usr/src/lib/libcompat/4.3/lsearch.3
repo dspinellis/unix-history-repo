@@ -1,0 +1,111 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)lsearch.3	5.1 (Berkeley) %G%
+.\"
+.TH LSEARCH 3 ""
+.UC 7
+.SH NAME
+lsearch, lfind, rlsearch, wlsearch \- linear searching routines
+.SH SYNOPSIS
+.ft B
+.nf
+char *lsearch(key, base, nelp, width, compar)
+char *key, base;
+unsigned int *nelp, width;
+int (*compar)();
+.sp
+char *lfind(key, base, nelp, width, compar)
+char *key, base;
+unsigned int *nelp, width;
+int (*compar)();
+.sp
+char *rlsearch(fd, nelp, width)
+int fd;
+unsigned int *nelp, *width;
+.sp
+wlsearch(fd, base, nelp, width)
+int fd;
+char *base;
+unsigned int nelp, width;
+.ft R
+.SH DESCRIPTION
+The functions
+.IR lsearch ,
+.IR lfind ,
+.IR rlsearch ,
+and
+.I wlsearch
+provide basic linear searching functionality.
+.PP
+.I Base
+is the pointer to the beginning of an array.
+.I Nelp
+is the current number of elements in the array, where each element
+is
+.I width
+bytes long.
+.I Compar
+is a comparison routine which is used to compare two elements.
+It is called with two arguments that are pointers to the two elements
+to be compared and must return 0 if the elements are equal and non-zero
+otherwise.
+.PP
+.I Lsearch
+and
+.I lfind
+return a pointer into the array referenced by
+.I base
+where
+.I key
+is located.
+If
+.I key
+does not exist,
+.I lfind
+will return a NULL pointer and
+.I lsearch
+will add it to the array.
+When an element is added to the array by
+.I lsearch
+the location referenced by the argument
+.I nelp
+is incremented by one.
+.PP
+.I Wlsearch
+writes the array pointed to by
+.I base
+to the file descriptor
+.IR fd ,
+preceded by a machine independent representation of the number
+of elements and the element width as
+.IR longs .
+A value of 0 is returned on success and -1 if an error occurs.
+.PP
+.I Rlsearch
+returns a pointer to a
+.IR malloc 'd
+array read from the file descriptor
+.IR fd ,
+as written by
+.IR wlsearch .
+The number of elements in the array and the width of each element is
+stored in the locations referenced by
+.I nelp
+and
+.IR width .
+NULL is returned if an error occurs.
+.SH "SEE ALSO"
+bsearch(3), hsearch(3), tsearch(3)
