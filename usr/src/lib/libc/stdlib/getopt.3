@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getopt.3	6.2 (Berkeley) %G%
+.\"	@(#)getopt.3	6.3 (Berkeley) %G%
 .\"
 .TH GETOPT 3 ""
 .UC 6
@@ -131,13 +131,9 @@ char **argv;
 	\&.
 }
 .RE
-.PP
-A template similar to this can be found in
-.IR /usr/pub/template.c .
 .SH HISTORY
 Written by Henry Spencer, working from a Bell Labs manual page.
-Behavior believed identical to the Bell version.
-Modified by Keith Bostic to behave closer to the System V version.
+Modified by Keith Bostic to behave more like the System V version.
 .SH BUGS
 It is not obvious how
 `\-'
