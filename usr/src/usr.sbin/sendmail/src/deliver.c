@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sendmail.h>
@@ -23,6 +23,8 @@ static char sccsid[] = "@(#)deliver.c	5.19 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <netdb.h>
 #include <errno.h>
+#include <arpa/nameser.h>
+#include <resolv.h>
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -72,6 +74,12 @@ deliver(e, firstto)
 	errno = 0;
 	if (!ForceMail && bitset(QDONTSEND|QPSEUDO, to->q_flags))
 		return (0);
+
+	/* unless interactive, try twice, over a minute */
+	if (OpMode == MD_DAEMON || OpMode == MD_SMTP) {
+		_res.retrans = 30;
+		_res.retry = 2;
+	}
 
 	m = to->q_mailer;
 	host = to->q_host;
@@ -362,6 +370,7 @@ deliver(e, firstto)
 
 	if (ctladdr == NULL)
 		ctladdr = &e->e_from;
+	_res.options &= ~(RES_DEFNAMES | RES_DNSRCH);		/* XXX */
 #ifdef SMTP
 	if (clever) {
 		expand("\001w", buf, &buf[sizeof(buf) - 1], e);
@@ -369,47 +378,49 @@ deliver(e, firstto)
 		if (host[0] == '[') {
 			Nmx = 1;
 			MxHosts[0] = host;
-		}
-		else if ((Nmx = getmxrr(host, MxHosts, buf, &rcode)) >= 0 &&
-		    (rcode = smtpinit(m, pv)) == EX_OK) {
-			message(Arpa_Info, "Connecting to %s.%s...", MxHosts[0],
-			    m->m_name);
-			/* send the recipient list */
-			tobuf[0] = '\0';
-			for (to = tochain; to; to = to->q_tchain) {
-				register int i;
-				register char *t = tobuf;
+		} else
+			Nmx = getmxrr(host, MxHosts, buf, &rcode);
+		if (Nmx >= 0) {
+			message(Arpa_Info, "Connecting to %s (%s)...",
+			    MxHosts[0], m->m_name);
+			if ((rcode = smtpinit(m, pv)) == EX_OK) {
+				/* send the recipient list */
+				tobuf[0] = '\0';
+				for (to = tochain; to; to = to->q_tchain) {
+					register int i;
+					register char *t = tobuf;
 
-				e->e_to = to->q_paddr;
-				i = smtprcpt(to, m);
-				if (i != EX_OK) {
-					markfailure(e, to, i);
-					giveresponse(i, m, e);
+					e->e_to = to->q_paddr;
+					if ((i = smtprcpt(to, m)) != EX_OK) {
+						markfailure(e, to, i);
+						giveresponse(i, m, e);
+					}
+					else {
+						*t++ = ',';
+						for (p = to->q_paddr; *p; *t++ = *p++);
+					}
 				}
+
+				/* now send the data */
+				if (tobuf[0] == '\0')
+					e->e_to = NULL;
 				else {
-					*t++ = ',';
-					for (p = to->q_paddr; *p; *t++ = *p++);
+					e->e_to = tobuf + 1;
+					rcode = smtpdata(m, e);
 				}
-			}
 
-			/* now send the data */
-			if (tobuf[0] == '\0')
-				e->e_to = NULL;
-			else {
-				e->e_to = tobuf + 1;
-				rcode = smtpdata(m, e);
+				/* now close the connection */
+				smtpquit(m);
 			}
-
-			/* now close the connection */
-			smtpquit(m);
 		}
 	}
 	else
 #endif /* SMTP */
 	{
-		message(Arpa_Info, "Connecting to %s.%s...", host, m->m_name);
+		message(Arpa_Info, "Connecting to %s (%s)...", host, m->m_name);
 		rcode = sendoff(e, m, pv, ctladdr);
 	}
+	_res.options |= RES_DEFNAMES | RES_DNSRCH;	/* XXX */
 
 	/*
 	**  Do final status disposal.
@@ -554,7 +565,7 @@ dofork()
 **	Side Effects:
 **		none.
 */
-
+static
 sendoff(e, m, pvp, ctladdr)
 	register ENVELOPE *e;
 	MAILER *m;
@@ -732,8 +743,13 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 #ifdef HOSTINFO
 		/* see if we have already determined that this host is fried */
 			st = stab(MxHosts[j], ST_HOST, ST_FIND);
-			if (st == NULL || st->s_host.ho_exitstat == EX_OK)
+			if (st == NULL || st->s_host.ho_exitstat == EX_OK) {
+				if (j > 1)
+					message(Arpa_Info,
+					    "Connecting to %s (%s)...",
+					    MxHosts[j], m->m_name);
 				i = makeconnection(MxHosts[j], port, pmfile, prfile);
+			}
 			else
 			{
 				i = st->s_host.ho_exitstat;
