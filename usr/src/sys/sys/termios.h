@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)termios.h	7.8 (Berkeley) %G%
+ *	@(#)termios.h	7.9 (Berkeley) %G%
  */
 
 /*
@@ -34,36 +34,36 @@
 #define	VEOL		1	/* ICANON */
 #ifndef _POSIX_SOURCE
 #define	VEOL2		2	/* ICANON */
-#endif  /*_POSIX_SOURCE */
+#endif
 #define	VERASE		3	/* ICANON */
 #ifndef _POSIX_SOURCE
 #define VWERASE 	4	/* ICANON */
-#endif  /*_POSIX_SOURCE */
+#endif 
 #define VKILL		5	/* ICANON */
 #ifndef _POSIX_SOURCE
 #define	VREPRINT 	6	/* ICANON */
-#endif  /*_POSIX_SOURCE */
+#endif
 /*			7	   spare 1 */
 #define VINTR		8	/* ISIG */
 #define VQUIT		9	/* ISIG */
 #define VSUSP		10	/* ISIG */
 #ifndef _POSIX_SOURCE
 #define VDSUSP		11	/* ISIG */
-#endif  /*_POSIX_SOURCE */
+#endif
 #define VSTART		12	/* IXON, IXOFF */
 #define VSTOP		13	/* IXON, IXOFF */
 #ifndef _POSIX_SOURCE
 #define	VLNEXT		14	/* IEXTEN */
 #define	VFLUSHO		15	/* IEXTEN */
 #define	VFLUSH		VFLUSHO	/* for sun */
-#endif  /*_POSIX_SOURCE */
+#endif
 #define VMIN		16	/* !ICANON */
 #define VTIME		17	/* !ICANON */
 #ifndef _POSIX_SOURCE
 #define VINFO		18	/* ICANON */
 /*			19	   spare 2 */
 #define	NCC		20
-#endif  /*_POSIX_SOURCE */
+#endif
 
 #define _POSIX_VDISABLE	((unsigned char)'\377')
 
@@ -108,7 +108,7 @@
  */
 #ifndef _POSIX_SOURCE
 #define	CIGNORE		0x00000001	/* ignore control flags */
-#endif  /*_POSIX_SOURCE */
+#endif
 #define CSIZE		0x00000300	/* character size mask */
 #define     CS5		    0x00000000	    /* 5 bits (pseudo) */
 #define     CS6		    0x00000100	    /* 6 bits */
@@ -120,14 +120,14 @@
 #define PARODD		0x00002000	/* odd parity, else even */
 #ifndef _POSIX_SOURCE
 #define HUPCL		0x00004000	/* hang up on last close */
-#endif  /*_POSIX_SOURCE */
+#endif
 #define CLOCAL		0x00008000	/* ignore modem status lines */
 #ifndef _POSIX_SOURCE
 #define CCTS_OFLOW	0x00010000	/* CTS flow control of output */
 #define CRTSCTS		CCTS_OFLOW	/* ??? */
 #define CRTS_IFLOW	0x00020000	/* RTS flow control of input */
 #define	MDMBUF		0x00100000	/* flow control output via Carrier */
-#endif  /*_POSIX_SOURCE */
+#endif
 
 
 /* 
@@ -155,6 +155,7 @@
 #define ALTWERASE	0x00000200	/* use alternate WERASE algorithm */
 #endif  /*_POSIX_SOURCE */
 #define	IEXTEN		0x00000400	/* enable FLUSHO and LNEXT */
+#define EXTPROC         0x00000800      /* external processing */
 #define TOSTOP		0x00400000	/* stop background jobs from output */
 #ifndef _POSIX_SOURCE
 #define FLUSHO		0x00800000	/* output being flushed (state) */
