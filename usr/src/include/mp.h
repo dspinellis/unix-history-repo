@@ -1,4 +1,4 @@
-/*	mp.h	4.1	83/05/03	*/
+/*	mp.h	4.2	83/07/01	*/
 
 #define MINT struct mint
 MINT
@@ -9,7 +9,7 @@ MINT
 #ifndef DBG
 #define shfree(u) free((char *)u)
 #else
-#include "stdio.h"
+#include <stdio.h>
 #define shfree(u) { if(dbg) fprintf(stderr, "free %o\n", u); free((char *)u);}
 extern int dbg;
 #endif
