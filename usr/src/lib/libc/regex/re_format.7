@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)re_format.7	5.1 (Berkeley) %G%
+.\"	@(#)re_format.7	5.2 (Berkeley) %G%
 .\"
 .TH RE_FORMAT 7 ""
 .SH NAME
@@ -64,14 +64,14 @@ a \fIbracket expression\fR (see below), `.'
 beginning of a line), `$' (matching the null string at the
 end of a line), a `\e' followed by one of the characters
 `^.[$()|*+?{\e'
-(matching
-that character taken as an ordinary character),
+(matching that character taken as an ordinary character),
+a `\e' followed by any other character\(dg
+(matching that character taken as an ordinary character,
+as if the `\e' had not been present\(dg),
 or a single character with no other significance (matching that character).
 A `{' followed by a character other than a digit is an ordinary
 character, not the beginning of a bound\(dg.
-It is illegal to precede a character
-with `\e' other than as provided above\(dg,
-or to end an RE with `\e'.
+It is illegal to end an RE with `\e'.
 .PP
 A \fIbracket expression\fR is a list of characters enclosed in `[]'.
 It normally matches any single character from the list (but see below).
@@ -134,10 +134,25 @@ cntrl	print	xdigit
 .fi
 .RE
 .PP
-Which stand for the character classes defined in
+These stand for the character classes defined in
 .IR ctype (3).
 A locale may provide others.
 A character class may not be used as an endpoint of a range.
+.PP
+There are two special cases\(dg of bracket expressions:
+the bracket expressions `[[:<:]]' and `[[:>:]]' match the null string at
+the beginning and end of a word respectively.
+A word is defined as a sequence of
+.I alnum
+characters (as defined by
+.IR ctype (3))
+which is neither preceded nor followed by
+.I alnum
+characters.
+This is an extension,
+compatible with but not specified by POSIX 1003.2,
+and should be used with
+caution in software intended to be portable to other systems.
 .PP
 In the event that an RE could match more than one substring of a given
 string,
@@ -185,8 +200,6 @@ The delimiters for bounds are `\e{' and `\e}',
 with `{' and `}' by themselves ordinary characters.
 The parentheses for nested subexpressions are `\e(' and `\e)',
 with `(' and `)' by themselves ordinary characters.
-The list of characters that become ordinary when preceded by `\e' is
-`^.[$*\e'.
 `^' is an ordinary character except at the beginning of the
 RE or\(dg the beginning of a parenthesized subexpression,
 `$' is an ordinary character except at the end of the
@@ -224,5 +237,3 @@ Avoid using them.
 1003.2's specification of case-independent matching is vague.
 The ``one case implies all cases'' definition given above
 is current consensus among implementors as to the right interpretation.
-.SH AUTHOR
-Henry Spencer

@@ -8,15 +8,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)regfree.c	5.1 (Berkeley) %G%
+ *	@(#)regfree.c	5.2 (Berkeley) %G%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)regfree.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)regfree.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <regex.h>
@@ -26,6 +25,7 @@ static char sccsid[] = "@(#)regfree.c	5.1 (Berkeley) %G%";
 
 /*
  - regfree - free everything
+ = extern void regfree(regex_t *preg);
  */
 void
 regfree(preg)
@@ -49,5 +49,6 @@ regex_t *preg;
 	if (g->setbits != NULL)
 		free((char *)g->setbits);
 	if (g->must != NULL)
-		free((char *)g->must);
+		free(g->must);
+	free((char *)g);
 }

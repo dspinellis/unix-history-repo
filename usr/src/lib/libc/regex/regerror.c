@@ -8,11 +8,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)regerror.c	5.3 (Berkeley) %G%
+ *	@(#)regerror.c	5.4 (Berkeley) %G%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)regerror.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)regerror.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -25,31 +25,56 @@ static char sccsid[] = "@(#)regerror.c	5.3 (Berkeley) %G%";
 
 #include "utils.h"
 
+static char *regatoi __P((const regex_t *, char *));
+
+/*
+ = #define	REG_NOMATCH	 1
+ = #define	REG_BADPAT	 2
+ = #define	REG_ECOLLATE	 3
+ = #define	REG_ECTYPE	 4
+ = #define	REG_EESCAPE	 5
+ = #define	REG_ESUBREG	 6
+ = #define	REG_EBRACK	 7
+ = #define	REG_EPAREN	 8
+ = #define	REG_EBRACE	 9
+ = #define	REG_BADBR	10
+ = #define	REG_ERANGE	11
+ = #define	REG_ESPACE	12
+ = #define	REG_BADRPT	13
+ = #define	REG_EMPTY	14
+ = #define	REG_ASSERT	15
+ = #define	REG_INVARG	16
+ = #define	REG_ATOI	255	// convert name to number (!)
+ = #define	REG_ITOA	0400	// convert number to name (!)
+ */
 static struct rerr {
 	int code;
 	char *name;
 	char *explain;
 } rerrs[] = {
-	REG_NOMATCH,	"NOMATCH",	"regexec() failed to match",
-	REG_BADPAT,	"BADPAT",	"invalid regular expression",
-	REG_ECOLLATE,	"ECOLLATE",	"invalid collating element",
-	REG_ECTYPE,	"ECTYPE",	"invalid character class",
-	REG_EESCAPE,	"EESCAPE",	"trailing backslash (\\)",
-	REG_ESUBREG,	"ESUBREG",	"invalid backreference number",
-	REG_EBRACK,	"EBRACK",	"brackets ([ ]) not balanced",
-	REG_EPAREN,	"EPAREN",	"parentheses not balanced",
-	REG_EBRACE,	"EBRACE",	"braces not balanced",
-	REG_BADBR,	"BADBR",	"invalid repetition count(s)",
-	REG_ERANGE,	"ERANGE",	"invalid character range",
-	REG_ESPACE,	"ESPACE",	"out of memory",
-	REG_BADRPT,	"BADRPT",	"repetition-operator operand invalid",
-	REG_EMPTY,	"EMPTY",	"empty (sub)expression",
-	REG_ASSERT,	"ASSERT",	"\"can't happen\" -- you found a bug",
+	REG_NOMATCH,	"REG_NOMATCH",	"regexec() failed to match",
+	REG_BADPAT,	"REG_BADPAT",	"invalid regular expression",
+	REG_ECOLLATE,	"REG_ECOLLATE",	"invalid collating element",
+	REG_ECTYPE,	"REG_ECTYPE",	"invalid character class",
+	REG_EESCAPE,	"REG_EESCAPE",	"trailing backslash (\\)",
+	REG_ESUBREG,	"REG_ESUBREG",	"invalid backreference number",
+	REG_EBRACK,	"REG_EBRACK",	"brackets ([ ]) not balanced",
+	REG_EPAREN,	"REG_EPAREN",	"parentheses not balanced",
+	REG_EBRACE,	"REG_EBRACE",	"braces not balanced",
+	REG_BADBR,	"REG_BADBR",	"invalid repetition count(s)",
+	REG_ERANGE,	"REG_ERANGE",	"invalid character range",
+	REG_ESPACE,	"REG_ESPACE",	"out of memory",
+	REG_BADRPT,	"REG_BADRPT",	"repetition-operator operand invalid",
+	REG_EMPTY,	"REG_EMPTY",	"empty (sub)expression",
+	REG_ASSERT,	"REG_ASSERT",	"\"can't happen\" -- you found a bug",
+	REG_INVARG,	"REG_INVARG",	"invalid argument to regex routine",
 	0,		"",		"*** unknown regexp error code ***",
 };
 
 /*
  - regerror - the interface to error numbers
+ = extern size_t regerror(int errcode, const regex_t *preg, char *errbuf, \
+ =							size_t errbuf_size);
  */
 /* ARGSUSED */
 size_t
@@ -61,17 +86,34 @@ size_t errbuf_size;
 {
 	register struct rerr *r;
 	register size_t len;
+	register int target = errcode &~ REG_ITOA;
+	register char *s;
+	char convbuf[50];
 
-	for (r = rerrs; r->code != 0; r++)
-		if (r->code == errcode)
-			break;
+	if (errcode == REG_ATOI)
+		s = regatoi(preg, convbuf);
+	else {
+		for (r = rerrs; r->code != 0; r++)
+			if (r->code == target)
+				break;
+	
+		if (errcode&REG_ITOA) {
+			if (r->code != 0)
+				(void) strcpy(convbuf, r->name);
+			else
+				sprintf(convbuf, "REG_0x%x", target);
+			assert(strlen(convbuf) < sizeof(convbuf));
+			s = convbuf;
+		} else
+			s = r->explain;
+	}
 
-	len = strlen(r->explain) + 1;
+	len = strlen(s) + 1;
 	if (errbuf_size > 0) {
 		if (errbuf_size > len)
-			(void) strcpy(errbuf, r->explain);
+			(void) strcpy(errbuf, s);
 		else {
-			(void) strncpy(errbuf, r->explain, errbuf_size-1);
+			(void) strncpy(errbuf, s, errbuf_size-1);
 			errbuf[errbuf_size-1] = '\0';
 		}
 	}
@@ -79,36 +121,25 @@ size_t errbuf_size;
 	return(len);
 }
 
-#ifdef REDEBUG
 /*
- - eprint - express an error number as a string
+ - regatoi - internal routine to implement REG_ATOI
+ = static char *regatoi(const regex_t *preg, char *localbuf);
  */
-char *
-eprint(eno)
-int eno;
+static char *
+regatoi(preg, localbuf)
+const regex_t *preg;
+char *localbuf;
 {
 	register struct rerr *r;
-	static char eval[10];
+	register size_t siz;
+	register char *p;
 
 	for (r = rerrs; r->code != 0; r++)
-		if (r->code == eno)
-			return(r->name);
-	sprintf(eval, "#%d", r->code);
-	return(eval);
-}
+		if (strcmp(r->name, preg->re_endp) == 0)
+			break;
+	if (r->code == 0)
+		return("0");
 
-/*
- - efind - find an error name
- */
-int
-efind(ename)
-char *ename;
-{
-	register struct rerr *r;
-
-	for (r = rerrs; r->code != 0; r++)
-		if (strcmp(r->name, ename) == 0)
-			return(r->code);
-	return(0);		/* it'll do */
+	sprintf(localbuf, "%d", r->code);
+	return(localbuf);
 }
-#endif
