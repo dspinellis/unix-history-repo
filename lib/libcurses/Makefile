@@ -10,6 +10,7 @@ SRCS=	addbytes.c addch.c addnstr.c box.c clear.c clrtobot.c clrtoeol.c \
 MAN3=	curses.3
 
 CFLAGS+=-D_CURSES_PRIVATE -I${.CURDIR}
+SHARED_LDADD+= -ltermcap
 
 beforeinstall:
 	-cd ${.CURDIR}; cmp -s curses.h ${DESTDIR}/usr/include/curses.h > \
