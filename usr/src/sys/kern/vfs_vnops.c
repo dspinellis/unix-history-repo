@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_vnops.c	7.17 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -32,7 +32,6 @@
 #include "vnode.h"
 #include "ioctl.h"
 #include "tty.h"
-#include "tsleep.h"
 
 int	vn_read(), vn_write(), vn_ioctl(), vn_select(), vn_close();
 struct 	fileops vnops =
@@ -110,11 +109,6 @@ vn_open(ndp, fmode, cmode)
 			goto bad;
 	}
 	VOP_UNLOCK(vp);
-	if (setjmp(&u.u_qsave)) {
-		if (error == 0)
-			error = EINTR;
-		return (error);
-	}
 	error = VOP_OPEN(vp, fmode, ndp->ni_cred);
 	if (error)
 		vrele(vp);
@@ -122,7 +116,7 @@ vn_open(ndp, fmode, cmode)
 
 bad:
 	vput(vp);
-	return(error);
+	return (error);
 }
 
 /*
@@ -336,12 +330,6 @@ vn_ioctl(fp, com, data)
 	case VCHR:
 	case VBLK:
 		u.u_r.r_val1 = 0;
-		if (setjmp(&u.u_qsave)) {
-			if ((u.u_sigintr & sigmask(u.u_procp->p_cursig)) != 0)
-				return(EINTR);
-			u.u_eosys = RESTARTSYS;
-			return (0);
-		}
 		error = VOP_IOCTL(vp, com, data, fp->f_flag, u.u_cred);
 		if (error == 0 && com == TIOCSCTTY) {
 			u.u_procp->p_session->s_ttyvp = vp;
@@ -358,7 +346,7 @@ vn_select(fp, which)
 	struct file *fp;
 	int which;
 {
-	return(VOP_SELECT(((struct vnode *)fp->f_data), which, fp->f_flag,
+	return (VOP_SELECT(((struct vnode *)fp->f_data), which, fp->f_flag,
 		u.u_cred));
 }
 
@@ -394,15 +382,13 @@ vn_lock(fp, cmd)
 {
 	register int priority = PLOCK;
 	register struct vnode *vp = (struct vnode *)fp->f_data;
+	int error = 0;
+	static char lockstr[] = "flock";
 
 	if ((cmd & LOCK_EX) == 0)
 		priority += 4;
-	if (setjmp(&u.u_qsave)) {
-		if ((u.u_sigintr & sigmask(u.u_procp->p_cursig)) != 0)
-			return(EINTR);
-		u.u_eosys = RESTARTSYS;
-		return (0);
-	}
+	priority |= PCATCH;
+
 	/*
 	 * If there's a exclusive lock currently applied
 	 * to the file, then we've gotta wait for the
@@ -421,9 +407,11 @@ again:
 		if (cmd & LOCK_NB)
 			return (EWOULDBLOCK);
 		vp->v_flag |= VLWAIT;
-		tsleep((caddr_t)&vp->v_exlockc, priority, SLP_EXLCK, 0);
+		if (error = tsleep((caddr_t)&vp->v_exlockc, priority,
+		    lockstr, 0))
+			return (error);
 	}
-	if ((cmd & LOCK_EX) && (vp->v_flag & VSHLOCK)) {
+	if (error = 0 && (cmd & LOCK_EX) && (vp->v_flag & VSHLOCK)) {
 		/*
 		 * Must wait for any shared locks to finish
 		 * before we try to apply a exclusive lock.
@@ -438,8 +426,9 @@ again:
 		if (cmd & LOCK_NB)
 			return (EWOULDBLOCK);
 		vp->v_flag |= VLWAIT;
-		tsleep((caddr_t)&vp->v_shlockc, PLOCK, SLP_SHLCK, 0);
-		goto again;
+		if (error = tsleep((caddr_t)&vp->v_shlockc, PLOCK | PCATCH,
+		    lockstr, 0) == 0)
+			return (error);
 	}
 	if (fp->f_flag & FEXLOCK)
 		panic("vn_lock");
