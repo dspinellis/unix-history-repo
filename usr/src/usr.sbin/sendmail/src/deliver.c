@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.48 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.49 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1489,6 +1489,7 @@ sendall(e, mode)
 	register ADDRESS *q;
 	char *owner;
 	int otherowners;
+	register ENVELOPE *ee;
 	ENVELOPE *splitenv = NULL;
 
 	/* determine actual delivery mode */
@@ -1600,7 +1601,6 @@ sendall(e, mode)
 
 		if (owner != NULL && otherowners > 0)
 		{
-			register ENVELOPE *ee;
 			extern HDR *copyheader();
 			extern ADDRESS *copyqueue();
 
@@ -1688,13 +1688,16 @@ sendall(e, mode)
 	if ((mode == SM_QUEUE || mode == SM_FORK ||
 	     (mode != SM_VERIFY && SuperSafe)) &&
 	    !bitset(EF_INQUEUE, e->e_flags))
+	{
+		/* be sure everything is instantiated in the queue */
 		queueup(e, TRUE, mode == SM_QUEUE);
+		for (ee = splitenv; ee != NULL; ee = ee->e_sibling)
+			queueup(ee, TRUE, mode == SM_QUEUE);
+	}
 #endif /* QUEUE */
 
 	if (splitenv != NULL)
 	{
-		register ENVELOPE *ee;
-
 		if (tTd(13, 1))
 		{
 			printf("\nsendall: Split queue; remaining queue:\n");
