@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)bpfdesc.h	7.5 (Berkeley) %G%
+ *      @(#)bpfdesc.h	7.6 (Berkeley) %G%
  *
  * @(#) $Header: bpfdesc.h,v 1.9 91/10/27 21:22:38 mccanne Exp $ (LBL)
  */
@@ -66,3 +66,7 @@ struct bpf_if {
 	u_int bif_hdrlen;		/* length of header (with padding) */
 	struct ifnet *bif_ifp;		/* correspoding interface */
 };
+
+#ifdef KERNEL
+int	 bpf_setf __P((struct bpf_d *, struct bpf_program *));
+#endif
