@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)operators.c 1.7 %G%";
+static char sccsid[] = "@(#)operators.c 1.8 %G%";
 /*
  * Tree node classes.
  */
@@ -197,5 +197,5 @@ public Opinfo opinfo[] ={
 /* O_STOPX */		0,	null,		"stop",
 /* O_TRACEON */		1,	null,		"traceon",
 /* O_TRACEOFF */	1,	null,		"traceoff",
-/* O_TYPERENAME */	2,	UNARY,		"traceoff",
+/* O_TYPERENAME */	2,	UNARY,		"typerename",
 };
