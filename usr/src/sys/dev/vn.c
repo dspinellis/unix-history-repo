@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vn.c 1.1 91/04/30$
  *
- *	@(#)vn.c	7.6 (Berkeley) %G%
+ *	@(#)vn.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -136,7 +136,7 @@ vnstrategy(bp)
 		return;
 	}
 	bn = dbtob(bn);
-	bsize = vn->sc_vp->v_mount->mnt_stat.f_bsize;
+	bsize = vn->sc_vp->v_mount->mnt_stat.f_iosize;
 	addr = bp->b_un.b_addr;
 	flags = bp->b_flags | B_CALL;
 	for (resid = bp->b_resid; resid; resid -= sz) {
