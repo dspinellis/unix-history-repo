@@ -1,5 +1,5 @@
 #
-#	"@(#)bibinc.fullnames	2.2	%G%";
+#	"@(#)bibinc.fullnames	2.3	%G%";
 # full journal names, and other names
 #
 # journals
@@ -12,6 +12,7 @@ D COMPJOUR The Computer Journal
 D COMPLANG Journal of Computer Languages
 D COMPSUR ACM Computing Surveys
 D I&C Information and Control
+D IBMJRD IBM Journal of Research and Development
 D IEEETSE IEEE Transactions on Software Engineering
 D IEEETC IEEE Transactions on Computers
 D IJCIS International Journal of Computer and Information Sciences
@@ -26,6 +27,7 @@ D SIGPLAN SI\&GPLAN Notices
 D SIGSOFT Software Engineering Notes
 D SP&E Software\(emPractice & Experience
 D SPE Software\(emPractice & Experience
+D TOCS ACM Transactions on Computer Systems
 D TODS ACM Transactions on Database Systems
 D TOMS ACM Transactions on Mathematical Software
 D TOPLAS ACM Transactions on Programming Languages and Systems
@@ -35,6 +37,21 @@ D TOPLAS ACM Transactions on Programming Languages and Systems
 D PROC Proceedings
 D CONF Conference
 D SYMP Symposium
+D ASPLOS82 PROC of the SYMP on Architectural Support for Programming Langauges and Operating Systems\
+%C Palo Alto, California\
+%D MAR 1982
+D CCC79 PROC of the SIGPLAN 1979 SYMP on Compiler Construction\
+%C Denver, Colorado\
+%D AUG 1979
+D CCC82 PROC of the SIGPLAN 1982 SYMP on Compiler Construction\
+%C Boston, Massachusetts
+%D JUN 1982
+D CCC84 PROC of the SIGPLAN 1984 SYMP on Compiler Construction\
+%C Montreal, Quebec
+%D JUN 1984
+D PLISS83 PROC SIGPLAN 1983 SYMP on Programming Language Issues in Software Systems\
+%C San Francisco, California\
+%D JUN 1983
 D POPL ACM SYMP on Principles of Programming Languages
 D POPL5 CONF Record of the Fifth POPL\
 %C Tucson, Arizona\
@@ -51,7 +68,12 @@ D POPL8 CONF Record of the Eighth POPL\
 D POPL9 CONF Record of the Ninth POPL\
 %C Albuquerque, New Mexico\
 %D JAN 1982
-D POPL10 CONF Record of the Tenth POPL
+D POPL10 CONF Record of the Tenth POPL\
+%C Las Vegas, Nevada\
+%D JAN 1983
+D POPL11 CONF Record of the Eleventh POPL\
+%C Salt Lake City, Utah\
+%D JAN 1984
 D STOC Annual ACM SYMP on Theory of Computing
 D FOCS Annual SYMP on Foundations of Computer Science
 D SOSP SYMP on Operating System Principles
