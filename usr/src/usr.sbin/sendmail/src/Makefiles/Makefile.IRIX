@@ -7,7 +7,7 @@
 #
 #  This has been tested on IRIX 4.0.4.
 #
-#	@(#)Makefile.IRIX	8.6 (Berkeley) %G%
+#	@(#)Makefile.IRIX	8.7 (Berkeley) %G%
 #
 SHELL=	/bin/sh
 
@@ -22,7 +22,7 @@ CC=gcc
 # The really old (V7) DBM library is no longer supported.
 # See READ_ME for a description of how these flags interact.
 #
-DBMDEF=	-DNDBM
+DBMDEF=	-DNDBM -DNIS
 
 # environment definitions (e.g., -D_AIX3)
 ENVDEF= -DIRIX
@@ -36,7 +36,7 @@ INCDIRS=
 LIBDIRS=
 
 # libraries required on your system
-LIBS= -lmld -lmalloc
+LIBS= -lmld -lmalloc -lsun
 
 # location of sendmail binary (usually /usr/sbin or /usr/lib)
 BINDIR=	${DESTDIR}/usr/lib
