@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)talk.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)talk.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "talk.h"
@@ -34,13 +34,12 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-
 	get_names(argc, argv);
 	init_display();
 	open_ctl();
 	open_sockt();
 	start_msgs();
-	if (!check_local() )
+	if (!check_local())
 		invite_remote();
 	end_msgs();
 	set_edit_chars();

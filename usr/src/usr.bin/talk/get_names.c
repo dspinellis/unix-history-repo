@@ -5,17 +5,17 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)get_names.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)get_names.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "talk.h"
 #include <sys/param.h>
 #include <protocols/talkd.h>
+#include <pwd.h>
 
 char	*getlogin();
 char	*ttyname();
 char	*rindex();
-static	any();
 extern	CTL_MSG msg;
 
 /*
@@ -39,14 +39,17 @@ get_names(argc, argv)
 		printf("Standard input must be a tty, not a pipe or a file\n");
 		exit(-1);
 	}
-	my_name = getlogin();
-	if (my_name == NULL) {
-		printf("You don't exist. Go away.\n");
-		exit(-1);
+	if ((my_name = getlogin()) == NULL) {
+		struct passwd *pw;
+
+		if ((pw = getpwuid(getuid())) == NULL) {
+			printf("You don't exist. Go away.\n");
+			exit(-1);
+		}
+		my_name = pw->pw_name;
 	}
 	gethostname(hostname, sizeof (hostname));
 	my_machine_name = hostname;
-	my_tty = rindex(ttyname(0), '/') + 1;
 	/* check for, and strip out, the machine name of the target */
 	for (cp = argv[1]; *cp && !any(*cp, "@:!."); cp++)
 		;
