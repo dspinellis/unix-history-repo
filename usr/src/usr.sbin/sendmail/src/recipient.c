@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.44 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.45 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -216,7 +216,9 @@ recipient(a, sendq, e)
 	register char *p;
 	bool quoted = FALSE;		/* set if the addr has a quote bit */
 	int findusercount = 0;
-	char buf[MAXNAME];		/* unquoted image of the user name */
+	int i;
+	char *buf;
+	char buf0[MAXNAME];		/* unquoted image of the user name */
 	extern int safefile();
 
 	e->e_to = a->q_paddr;
@@ -252,6 +254,11 @@ recipient(a, sendq, e)
 	a->q_timeout = TimeOuts.to_q_return;
 
 	/* get unquoted user for file, program or user.name check */
+	i = strlen(a->q_user);
+	if (i >= sizeof buf)
+		buf = xalloc(i + 1);
+	else
+		buf = buf0;
 	(void) strcpy(buf, a->q_user);
 	for (p = buf; *p != '\0' && !quoted; p++)
 	{
@@ -491,7 +498,7 @@ recipient(a, sendq, e)
 					a->q_flags |= QBADADDR;
 					usrerr("554 aliasing/forwarding loop for %s broken",
 						pw->pw_name);
-					return (a);
+					goto done;
 				}
 
 				/* see if it aliases */
@@ -539,6 +546,10 @@ recipient(a, sendq, e)
 			usrerr("554 aliasing/forwarding loop broken");
 		}
 	}
+
+  done:
+	if (buf != buf0)
+		free(buf);
 	return (a);
 
 	return (a);
